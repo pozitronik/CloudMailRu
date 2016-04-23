@@ -66,10 +66,14 @@ procedure TForm1.Button2Click(Sender: TObject);
 var
 	cloud: TCloudMailRu;
 	loginResult: Boolean;
+	dirJSON, tmp: Widestring;
 begin
 	cloud := TCloudMailRu.Create;
 	loginResult := cloud.login;
-	cloud.getToken();
+	cloud.getToken(tmp);
+	Memo1.Lines.Add(tmp);
+	cloud.getDir('/', dirJSON);
+	Memo1.Lines.Add(dirJSON)
 end;
 
 end.

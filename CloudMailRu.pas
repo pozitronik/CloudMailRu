@@ -12,6 +12,7 @@ type
 	TCloudMailRu = class
 
 	private
+		domain: WideString;
 		user: WideString;
 		password: WideString;
 		dir: WideString;
@@ -32,7 +33,7 @@ type
 		constructor Create;
 		destructor Destroy;
 		function login(): boolean;
-		function getToken(): boolean;
+		function getToken(var ParseData:WideString): boolean;
 		function getDir(path: WideString; var data: WideString): boolean;
 	end;
 
@@ -54,6 +55,7 @@ begin
 
 	self.user := 'mds_free';
 	self.password := 'd;jgedst,kbe;f';
+	self.domain := 'mail.ru';
 end;
 
 destructor TCloudMailRu.Destroy;
@@ -62,11 +64,19 @@ begin
 end;
 
 function TCloudMailRu.getDir(path: WideString; var data: WideString): boolean;
+var
+	URL: WideString;
 begin
-
+	path := StringReplace(path, WideString('/'), WideString('%2F'),
+		[rfReplaceAll, rfIgnoreCase]);
+	URL := 'https://cloud.mail.ru/api/v2/folder?home=%2F&sort={%22type%22%3A%22name%22%2C%22order%22%3A%22asc%22}&offset=0&limit=10000&home='
+		+ path + '&api=2&build=' + self.build + '&x-page-id=' + self.x_page_id +
+		'&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user +
+		'%40' + self.domain + '&token=' + self.token + '&_=1433249148810';
+	getDir := self.HTTPGet(URL, data)
 end;
 
-function TCloudMailRu.getToken(): boolean;
+function TCloudMailRu.getToken(var ParseData:WideString): boolean;
 var
 	URL: WideString;
 	PostData: TStringList;
@@ -75,12 +85,13 @@ var
 begin
 	URL := 'https://cloud.mail.ru/?from=promo&from=authpopup';
 	PostResult := self.HTTPGet(URL, Answer);
+  ParseData:=Answer;
 	if PostResult then begin
 		self.token := self.getTokenFromText(Answer);
 		self.x_page_id := self.get_x_page_id_FromText(Answer);
 		self.build := self.get_build_FromText(Answer);
 		self.upload_url := self.get_upload_url_FromText(Answer);
-    getToken:=true;
+		getToken := true;
 	end
 	else begin
 		getToken := false;
@@ -109,7 +120,7 @@ var
 begin
 	start := Pos(WideString('"BUILD"'), Text);
 	if start > 0 then begin
-		temp := Copy(Text, start + 10, 100);
+		temp := Copy(Text, start + 9, 100);
 		finish := Pos(WideString('"'), temp);
 		get_build_FromText := Copy(temp, 0, finish - 1);
 	end
@@ -146,7 +157,7 @@ var
 begin
 	start := Pos(WideString('"x-page-id"'), Text);
 	if start > 0 then begin
-		get_x_page_id_FromText := Copy(Text, start + 14, 11);
+		get_x_page_id_FromText := Copy(Text, start + 13, 10);
 	end
 	else begin
 		get_x_page_id_FromText := '';
@@ -164,6 +175,7 @@ end;
 function TCloudMailRu.HTTPGet(URL: WideString; var Answer: WideString): boolean;
 begin
 	Answer := self.HTTP.Get(URL);
+
 	// todo: проверку на состояние ответа
 	HTTPGet := true;
 
