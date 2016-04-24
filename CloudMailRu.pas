@@ -3,10 +3,14 @@
 interface
 
 uses
-	System.Classes, System.SysUtils, XSuperJson, XSuperObject,
+	System.Classes, System.SysUtils, XSuperJson, XSuperObject,  HTTPApp,
 	IdCookieManager, IdIOHandler, IdIOHandlerSocket, IdIOHandlerStack, IdSSL,
 	IdSSLOpenSSL, IdBaseComponent, IdComponent, IdTCPConnection, IdTCPClient,
 	IdHTTP, IdAuthentication, IdIOHandlerStream;
+
+const
+	TYPE_DIR = 'folder';
+	TYPE_FILE = 'file';
 
 type
 	TCloudMailRuDirListingItem = Record
@@ -36,10 +40,8 @@ type
 		HTTP: TIdHTTP;
 		Cookie: TIdCookieManager;
 		SSL: TIdSSLIOHandlerSocketOpenSSL;
-		function HTTPPost(URL: WideString; PostData: TStringList): boolean;
-			overload;
-		function HTTPPost(URL: WideString; PostData: TStringList;
-			var Answer: WideString): boolean; overload;
+		function HTTPPost(URL: WideString; PostData: TStringList): boolean; overload;
+		function HTTPPost(URL: WideString; PostData: TStringList; var Answer: WideString): boolean; overload;
 		function HTTPGet(URL: WideString; var Answer: WideString): boolean;
 		function getTokenFromText(Text: WideString): WideString;
 		function get_x_page_id_FromText(Text: WideString): WideString;
@@ -48,20 +50,19 @@ type
 		function getDirListingFromJSON(JSON: WideString): TCloudMailRuDirListing;
 		function getShardFromJSON(JSON: WideString): WideString;
 	public
-		constructor Create;
+		constructor Create(user, domain, password: WideString);
 		destructor Destroy;
 		function login(): boolean;
 		function getToken(var ParseData: WideString): boolean;
 		function getShard(var Shard: WideString): boolean;
-		function getDir(path: WideString;
-			var DirListing: TCloudMailRuDirListing): boolean;
+		function getDir(path: WideString; var DirListing: TCloudMailRuDirListing): boolean;
 	end;
 
 implementation
 
 { TCloudMailRu }
 
-constructor TCloudMailRu.Create;
+constructor TCloudMailRu.Create(user, domain, password: WideString);
 begin
 	self.SSL := TIdSSLIOHandlerSocketOpenSSL.Create();
 	self.Cookie := TIdCookieManager.Create();
@@ -70,12 +71,11 @@ begin
 	self.HTTP.IOHandler := SSL;
 	self.HTTP.AllowCookies := true;
 	self.HTTP.HandleRedirects := true;
-	self.HTTP.Request.UserAgent :=
-		'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.17 (KHTML, like Gecko) Chrome/24.0.1312.57 Safari/537.17';
+	self.HTTP.Request.UserAgent := 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.17 (KHTML, like Gecko) Chrome/24.0.1312.57 Safari/537.17';
 
-	self.user := 'mds_free';
-	self.password := 'd;jgedst,kbe;f';
-	self.domain := 'mail.ru';
+	self.user := user;
+	self.password := password;
+	self.domain := domain;
 end;
 
 destructor TCloudMailRu.Destroy;
@@ -86,26 +86,23 @@ begin
 
 end;
 
-function TCloudMailRu.getDir(path: WideString;
-	var DirListing: TCloudMailRuDirListing): boolean;
+function TCloudMailRu.getDir(path: WideString; var DirListing: TCloudMailRuDirListing): boolean;
 var
 	URL: WideString;
 	JSON: WideString;
 
 begin
-	path := StringReplace(path, WideString('/'), WideString('%2F'),
-		[rfReplaceAll, rfIgnoreCase]);
-	URL := 'https://cloud.mail.ru/api/v2/folder?home=%2F&sort={%22type%22%3A%22name%22%2C%22order%22%3A%22asc%22}&offset=0&limit=10000&home='
-		+ path + '&api=2&build=' + self.build + '&x-page-id=' + self.x_page_id +
-		'&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user +
-		'%40' + self.domain + '&token=' + self.token + '&_=1433249148810';
+	path := StringReplace(path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]);
+ //	path := StringReplace(path, WideString('/'), WideString('%2F'), [rfReplaceAll, rfIgnoreCase]);
+	URL := 'https://cloud.mail.ru/api/v2/folder?sort={%22type%22%3A%22name%22%2C%22order%22%3A%22asc%22}&offset=0&limit=10000&home=' + HTTPEncode(path) + '&api=2&build=' +
+		self.build + '&x-page-id=' + self.x_page_id + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&token=' +
+		self.token + '&_=1433249148810';
 	getDir := self.HTTPGet(URL, JSON);
 	DirListing := self.getDirListingFromJSON(JSON);
 
 end;
 
-function TCloudMailRu.getDirListingFromJSON(JSON: WideString)
-	: TCloudMailRuDirListing;
+function TCloudMailRu.getDirListingFromJSON(JSON: WideString): TCloudMailRuDirListing;
 var
 	X, Obj: ISuperObject;
 	J: integer;
@@ -214,15 +211,18 @@ end;
 
 function TCloudMailRu.HTTPGet(URL: WideString; var Answer: WideString): boolean;
 begin
-	Answer := self.HTTP.Get(URL);
+	HTTPGet := true;
+	try
+		Answer := self.HTTP.Get(URL);
+	Except
+		HTTPGet := false;
+	end;
 
 	// todo: проверку на состояние ответа
-	HTTPGet := true;
 
 end;
 
-function TCloudMailRu.HTTPPost(URL: WideString; PostData: TStringList;
-	var Answer: WideString): boolean;
+function TCloudMailRu.HTTPPost(URL: WideString; PostData: TStringList; var Answer: WideString): boolean;
 var
 	MemStream: TStringStream;
 begin
@@ -276,8 +276,7 @@ begin
 
 		temp := Copy(Text, start1, Length);
 		start2 := Pos(WideString('https://'), temp);
-		get_upload_url_FromText := Copy(temp, start2, StrLen(PWideChar(temp))
-			- start2);
+		get_upload_url_FromText := Copy(temp, start2, StrLen(PWideChar(temp)) - start2);
 	end
 	else begin
 		get_upload_url_FromText := '';
