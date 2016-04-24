@@ -116,6 +116,11 @@ begin
 	X := TSuperObject.Create(JSON);
 	X := X['body'].AsObject;
 	SetLength(ResultItems, X.A['list'].Length);
+	if (X.A['list'].Length = 0) then begin
+		result := ResultItems;
+		exit;
+	end;
+
 	with X.A['list'] do
 		for J := 0 to X.A['list'].Length - 1 do begin
 			Obj := O[J];
@@ -124,7 +129,7 @@ begin
 				grev := Obj.I['grev'];
 				size := Obj.I['size'];
 				kind := Obj.S['kind'];
-					weblink := Obj.S['weblink'];
+				weblink := Obj.S['weblink'];
 				rev := Obj.I['rev'];
 				type_ := Obj.S['type'];
 				home := Obj.S['home'];
@@ -135,11 +140,11 @@ begin
 					hash := Obj.S['hash'];
 				end
 				else begin
-					mtime:=0;
+					mtime := 0;
 				end;
 			end;
 		end;
-	Result := ResultItems;
+	result := ResultItems;
 end;
 
 function TCloudMailRu.getFile(remotePath, localPath: WideString): boolean;
@@ -161,7 +166,7 @@ var
 begin
 	X := TSuperObject.Create(JSON);
 	X := X['body'].AsObject;
-	Result := X.A['get'].O[0].S['url'];
+	result := X.A['get'].O[0].S['url'];
 
 end;
 
@@ -223,17 +228,17 @@ begin
 	PostData.Values['new_auth_form'] := '1';
 	PostResult := self.HTTPPost(URL, PostData);
 	PostData.Destroy;
-	login := PostResult;//todo проверять успешность авторизации
+	login := PostResult; // todo проверять успешность авторизации
 end;
 
 function TCloudMailRu.UrlEncode(URL: UTF8String): WideString;
 var
 	I: integer;
 begin
-	Result := '';
+	result := '';
 	for I := 1 to Length(URL) do
-		if URL[I] in ['a' .. 'z', 'A' .. 'Z'] then Result := Result + URL[I]
-		else Result := Result + '%' + IntToHex(Ord(URL[I]), 2);
+		if URL[I] in ['a' .. 'z', 'A' .. 'Z'] then result := result + URL[I]
+		else result := result + '%' + IntToHex(Ord(URL[I]), 2);
 end;
 
 function TCloudMailRu.HTTPPost(URL: WideString; PostData: TStringList): boolean;

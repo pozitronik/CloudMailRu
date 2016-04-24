@@ -3,15 +3,15 @@ library MailRuCloud;
 {$R *.dres}
 
 uses
-  SysUtils,
-  DateUtils,
-  windows,
-  Classes,
-  PLUGIN_TYPES,
-  PLUGIN_MAIN,
-  messages,
-  inifiles,
-  CloudMailRu in 'CloudMailRu.pas';
+	SysUtils,
+	DateUtils,
+	windows,
+	Classes,
+	PLUGIN_TYPES,
+	PLUGIN_MAIN,
+	messages,
+	inifiles,
+	CloudMailRu in 'CloudMailRu.pas';
 
 {$E wfx}
 {$R *.res}
@@ -231,6 +231,13 @@ begin
 
 		if CurrentLogon then begin
 			Cloud.getDir(RealPath.path, CurrentListing);
+
+			if Length(CurrentListing) = 0 then begin
+				//setlasterror(ERROR_NO_MORE_FILES);
+				Result := 0;
+				exit;
+
+			end;
 			// Todo Function ListingToFindData
 			if (CurrentListing[0].type_ = TYPE_DIR) then FindData.dwFileAttributes := FILE_ATTRIBUTE_DIRECTORY
 			else FindData.dwFileAttributes := 0;
@@ -289,31 +296,12 @@ begin
 				inc(FileCounter);
 			end
 			else begin
+				FillChar(FindData,sizeof(WIN32_FIND_DATA),0);
 				FileCounter := 0;
 				Result := false;
 			end;
 		end;
 	end;
-	(*
-		// Получение последующих файлов в папке (вызывается до тех пор, пока не вернёт false).
-		if (length(CurrentListing) > FileCounter) then begin
-		if (CurrentListing[FileCounter].type_ = TYPE_DIR) then FindData.dwFileAttributes := FILE_ATTRIBUTE_DIRECTORY
-		else FindData.dwFileAttributes := 0;
-		if (CurrentListing[FileCounter].size > MAXDWORD) then FindData.nFileSizeHigh := CurrentListing[FileCounter].size div MAXDWORD
-		else FindData.nFileSizeHigh := 0;
-
-		FindData.nFileSizeLow := CurrentListing[FileCounter].size;
-		FindData.ftCreationTime := DateTimeToFileTime(UnixToDateTime(CurrentListing[FileCounter].mtime)); // todo optimization
-		FindData.ftLastWriteTime := DateTimeToFileTime(UnixToDateTime(CurrentListing[FileCounter].mtime));
-		strpcopy(FindData.cFileName, CurrentListing[FileCounter].name);
-		Result := true;
-		inc(FileCounter);
-		end
-		else begin
-		FileCounter := 0;
-		Result := false;
-		end;
-	*)
 end;
 
 function FsFindClose(Hdl: thandle): integer; stdcall;
