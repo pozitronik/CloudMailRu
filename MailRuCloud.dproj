@@ -6,7 +6,7 @@
         <Config Condition="'$(Config)'==''">Debug</Config>
         <TargetedPlatforms>17</TargetedPlatforms>
         <AppType>Library</AppType>
-        <FrameworkType>None</FrameworkType>
+        <FrameworkType>VCL</FrameworkType>
         <ProjectVersion>18.1</ProjectVersion>
         <Platform Condition="'$(Platform)'==''">Win32</Platform>
     </PropertyGroup>
@@ -54,7 +54,7 @@
         <GenDll>true</GenDll>
         <DCC_F>false</DCC_F>
         <VerInfo_Locale>1049</VerInfo_Locale>
-        <DCC_Namespace>System;Xml;Data;Datasnap;Web;Soap;Winapi;$(DCC_Namespace)</DCC_Namespace>
+        <DCC_Namespace>System;Xml;Data;Datasnap;Web;Soap;Winapi;Vcl;Vcl.Imaging;Vcl.Touch;Vcl.Samples;Vcl.Shell;$(DCC_Namespace)</DCC_Namespace>
         <DCC_K>false</DCC_K>
         <DCC_DebugInformation>true</DCC_DebugInformation>
         <DCC_ImageBase>00400000</DCC_ImageBase>

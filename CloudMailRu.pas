@@ -124,7 +124,7 @@ begin
 				grev := Obj.I['grev'];
 				size := Obj.I['size'];
 				kind := Obj.S['kind'];
-				weblink := Obj.S['weblink'];
+					weblink := Obj.S['weblink'];
 				rev := Obj.I['rev'];
 				type_ := Obj.S['type'];
 				home := Obj.S['home'];
@@ -217,13 +217,13 @@ begin
 	PostData := TStringList.Create;
 	PostData.Values['page'] := 'https://cloud.mail.ru/?from=promo';
 	PostData.Values['FailPage'] := '';
-	PostData.Values['Domain'] := 'mail.ru';
+	PostData.Values['Domain'] := self.domain;
 	PostData.Values['Login'] := self.user;
 	PostData.Values['Password'] := self.password;
 	PostData.Values['new_auth_form'] := '1';
 	PostResult := self.HTTPPost(URL, PostData);
 	PostData.Destroy;
-	login := PostResult;
+	login := PostResult;//todo проверять успешность авторизации
 end;
 
 function TCloudMailRu.UrlEncode(URL: UTF8String): WideString;
