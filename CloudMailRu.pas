@@ -231,13 +231,13 @@ begin
 	login := PostResult; // todo проверять успешность авторизации
 end;
 
-function TCloudMailRu.UrlEncode(URL: UTF8String): WideString;
+function TCloudMailRu.UrlEncode(URL: UTF8String): WideString;//todo нужно добиться корректного формирования урлов
 var
 	I: integer;
 begin
 	result := '';
 	for I := 1 to Length(URL) do
-		if URL[I] in ['a' .. 'z', 'A' .. 'Z'] then result := result + URL[I]
+		if URL[I] in ['a' .. 'z', 'A' .. 'Z','/','_','-','.'] then result := result + URL[I]
 		else result := result + '%' + IntToHex(Ord(URL[I]), 2);
 end;
 

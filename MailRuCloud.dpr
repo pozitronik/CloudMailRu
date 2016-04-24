@@ -233,7 +233,7 @@ begin
 			Cloud.getDir(RealPath.path, CurrentListing);
 
 			if Length(CurrentListing) = 0 then begin
-				//setlasterror(ERROR_NO_MORE_FILES);
+				// setlasterror(ERROR_NO_MORE_FILES);
 				Result := 0;
 				exit;
 
@@ -296,7 +296,7 @@ begin
 				inc(FileCounter);
 			end
 			else begin
-				FillChar(FindData,sizeof(WIN32_FIND_DATA),0);
+				FillChar(FindData, sizeof(WIN32_FIND_DATA), 0);
 				FileCounter := 0;
 				Result := false;
 			end;
@@ -343,12 +343,15 @@ begin
 end;
 
 function FsGetFileW(RemoteName, LocalName: PWideChar; CopyFlags: integer; RemoteInfo: pRemoteInfo): integer; stdcall;
-
+var
+	RealPath: TRealPath;
 begin
-
-	Cloud.getFile(WideString(RemoteName), WideString(LocalName));
+	RealPath := ExtractRealPath(RemoteName);
+	// ProgressProc (PluginNum,pchar(InFileName),pchar(OutFilename),round(((SizeDone/SizeFile)*100)))
+		MyProgressProc(PluginNum, LocalName, RemoteName, 0);
+	Cloud.getFile(WideString(RealPath.path), WideString(LocalName));
 	Result := FS_FILE_OK;
-
+	MyProgressProc(PluginNum, LocalName, RemoteName, 100);
 	// Копирование файла из файловой системы плагина
 end;
 

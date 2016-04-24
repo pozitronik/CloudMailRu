@@ -1,14 +1,14 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <BorlandProject>
 	<Transactions>
-    <Transaction>1899.12.30 00:00:00.000.087,D:\DATA\WORKPLACE\WORKSPACE\CloudMailRu\Unit1.pas=D:\DATA\WORKPLACE\WORKSPACE\CloudMailRu\MRC_Helper.pas</Transaction>
-    <Transaction>1899.12.30 00:00:00.000.981,=D:\DATA\WORKPLACE\WORKSPACE\CloudMailRu\Unit1.pas</Transaction>
-    <Transaction>1899.12.30 00:00:00.000.461,D:\DATA\WORKPLACE\WORKSPACE\CloudMailRu\MailRuCloud.dproj=D:\DATA\WORKPLACE\WORKSPACE\CloudMailRu\SAMPLE_WFX.dproj</Transaction>
-    <Transaction>1899.12.30 00:00:00.000.087,D:\DATA\WORKPLACE\WORKSPACE\CloudMailRu\Unit1.dfm=D:\DATA\WORKPLACE\WORKSPACE\CloudMailRu\MRC_Helper.dfm</Transaction>
-    <Transaction>1899.12.30 00:00:00.000.333,D:\DATA\WORKPLACE\WORKSPACE\CloudMailRu\Unit1.pas=D:\DATA\WORKPLACE\WORKSPACE\CloudMailRu\MRC_Helper.pas</Transaction>
-    <Transaction>1899.12.30 00:00:00.000.411,=D:\DATA\WORKPLACE\WORKSPACE\CloudMailRu\Unit1.pas</Transaction>
-    <Transaction>1899.12.30 00:00:00.000.452,D:\DATA\WORKPLACE\WORKSPACE\CloudMailRu\Unit1.pas=D:\DATA\WORKPLACE\WORKSPACE\CloudMailRu\CloudMailRu.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.087,D:\DATA\WORKPLACE\WORKSPACE\CloudMailRu\MRC_Helper.dfm=D:\DATA\WORKPLACE\WORKSPACE\CloudMailRu\Unit1.dfm</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.461,D:\DATA\WORKPLACE\WORKSPACE\CloudMailRu\SAMPLE_WFX.dproj=D:\DATA\WORKPLACE\WORKSPACE\CloudMailRu\MailRuCloud.dproj</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.333,D:\DATA\WORKPLACE\WORKSPACE\CloudMailRu\MRC_Helper.pas=D:\DATA\WORKPLACE\WORKSPACE\CloudMailRu\Unit1.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.087,D:\DATA\WORKPLACE\WORKSPACE\CloudMailRu\MRC_Helper.pas=D:\DATA\WORKPLACE\WORKSPACE\CloudMailRu\Unit1.pas</Transaction>
     <Transaction>1899.12.30 00:00:00.000.174,=D:\DATA\WORKPLACE\WORKSPACE\CloudMailRu\Unit1.pas</Transaction>
-    <Transaction>2016.04.24 18:08:40.581,=D:\DATA\WORKPLACE\WORKSPACE\CloudMailRu\icon.ico</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.452,D:\DATA\WORKPLACE\WORKSPACE\CloudMailRu\CloudMailRu.pas=D:\DATA\WORKPLACE\WORKSPACE\CloudMailRu\Unit1.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.581,=D:\DATA\WORKPLACE\WORKSPACE\CloudMailRu\icon.ico</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.411,=D:\DATA\WORKPLACE\WORKSPACE\CloudMailRu\Unit1.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.981,=D:\DATA\WORKPLACE\WORKSPACE\CloudMailRu\Unit1.pas</Transaction>
   </Transactions>
 </BorlandProject>
