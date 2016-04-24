@@ -2,7 +2,7 @@ object Form1: TForm1
   Left = 0
   Top = 0
   Caption = 'Example'
-  ClientHeight = 381
+  ClientHeight = 727
   ClientWidth = 733
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -13,36 +13,55 @@ object Form1: TForm1
   OldCreateOrder = False
   DesignSize = (
     733
-    381)
+    727)
   PixelsPerInch = 96
   TextHeight = 13
   object Memo1: TMemo
     Left = -3
     Top = 0
     Width = 728
-    Height = 344
+    Height = 342
     Anchors = [akLeft, akTop, akRight, akBottom]
     ScrollBars = ssVertical
     TabOrder = 0
   end
   object Button1: TButton
     Left = 653
-    Top = 350
+    Top = 696
     Width = 75
     Height = 25
     Anchors = [akRight, akBottom]
     Caption = 'test'
     TabOrder = 1
     OnClick = Button1Click
+    ExplicitTop = 350
   end
   object Button2: TButton
     Left = 8
-    Top = 348
+    Top = 696
     Width = 75
     Height = 25
     Caption = 'Test Class'
     TabOrder = 2
     OnClick = Button2Click
+  end
+  object Button3: TButton
+    Left = 320
+    Top = 696
+    Width = 75
+    Height = 25
+    Caption = 'Parse JSON'
+    TabOrder = 3
+    OnClick = Button3Click
+  end
+  object Memo2: TMemo
+    Left = -3
+    Top = 349
+    Width = 728
+    Height = 342
+    Anchors = [akLeft, akTop, akRight, akBottom]
+    ScrollBars = ssVertical
+    TabOrder = 4
   end
   object IdSSLIOHandlerSocketOpenSSL1: TIdSSLIOHandlerSocketOpenSSL
     MaxLineAction = maException
