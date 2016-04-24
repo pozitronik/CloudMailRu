@@ -2,6 +2,7 @@ library MailRuCloud;
 
 uses
 	SysUtils,
+	DateUtils,
 	windows,
 	Classes,
 	PLUGIN_TYPES,
@@ -25,6 +26,19 @@ var
 	MyRequestProc: TRequestProc;
 	Cloud: TCloudMailRu;
 	CurrentListing: TCloudMailRuDirListing;
+
+function DateTimeToFileTime(FileTime: TDateTime): TFileTime;
+var
+	LocalFileTime, Ft: TFileTime;
+	SystemTime: TSystemTime;
+begin
+	Result.dwLowDateTime := 0;
+	Result.dwHighDateTime := 0;
+	DateTimeToSystemTime(FileTime, SystemTime);
+	SystemTimeToFileTime(SystemTime, LocalFileTime);
+	LocalFileTimeToFileTime(LocalFileTime, Ft);
+	Result := Ft;
+end;
 
 procedure FsStatusInfo(RemoteDir: PAnsiChar; InfoStartEnd, InfoOperation: integer); stdcall;
 begin
@@ -145,6 +159,8 @@ begin
 	if (CurrentListing[0].size > MAXDWORD) then FindData.nFileSizeHigh := CurrentListing[0].size div MAXDWORD
 	else FindData.nFileSizeHigh := 0;
 	FindData.nFileSizeLow := CurrentListing[0].size;
+	FindData.ftCreationTime := DateTimeToFileTime(UnixToDateTime(CurrentListing[0].mtime)); // todo optimization
+	FindData.ftLastWriteTime := DateTimeToFileTime(UnixToDateTime(CurrentListing[0].mtime));
 	strpcopy(FindData.cFileName, CurrentListing[0].name);
 	FileCounter := 1;
 	Result := 1;
@@ -160,6 +176,8 @@ begin
 		else FindData.nFileSizeHigh := 0;
 
 		FindData.nFileSizeLow := CurrentListing[FileCounter].size;
+		FindData.ftCreationTime := DateTimeToFileTime(UnixToDateTime(CurrentListing[FileCounter].mtime)); // todo optimization
+		FindData.ftLastWriteTime := DateTimeToFileTime(UnixToDateTime(CurrentListing[FileCounter].mtime));
 		strpcopy(FindData.cFileName, CurrentListing[FileCounter].name);
 		Result := true;
 		inc(FileCounter);

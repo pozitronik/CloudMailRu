@@ -23,6 +23,9 @@ type
 		rev: integer;
 		type_: WideString;
 		home: WideString;
+		mtime: integer;
+		hash: WideString;
+		virus_scan: WideString;
 	End;
 
 	TCloudMailRuDirListing = array of TCloudMailRuDirListingItem;
@@ -126,6 +129,14 @@ begin
 				type_ := Obj.S['type'];
 				home := Obj.S['home'];
 				name := Obj.S['name'];
+				if (type_ = TYPE_FILE) then begin
+					mtime := Obj.I['mtime'];
+					virus_scan := Obj.S['virus_scan'];
+					hash := Obj.S['hash'];
+				end
+				else begin
+					mtime:=0;
+				end;
 			end;
 		end;
 	Result := ResultItems;
@@ -220,7 +231,7 @@ var
 	I: integer;
 begin
 	Result := '';
-	for I := 1 to Length(Url) do
+	for I := 1 to Length(URL) do
 		if URL[I] in ['a' .. 'z', 'A' .. 'Z'] then Result := Result + URL[I]
 		else Result := Result + '%' + IntToHex(Ord(URL[I]), 2);
 end;
