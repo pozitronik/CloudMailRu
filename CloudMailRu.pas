@@ -1,16 +1,29 @@
-unit CloudMailRu;
+п»їunit CloudMailRu;
 
 interface
 
 uses
-	System.Classes, System.SysUtils,
+	System.Classes, System.SysUtils, XSuperJson, XSuperObject,
 	IdCookieManager, IdIOHandler, IdIOHandlerSocket, IdIOHandlerStack, IdSSL,
 	IdSSLOpenSSL, IdBaseComponent, IdComponent, IdTCPConnection, IdTCPClient,
 	IdHTTP, IdAuthentication, IdIOHandlerStream;
 
 type
-	TCloudMailRu = class
+	TCloudMailRuDirListingItem = Record
+		tree: WideString;
+		name: WideString;
+		grev: integer;
+		size: int64;
+		kind: WideString;
+		weblink: WideString;
+		rev: integer;
+		type_: WideString;
+		home: WideString;
+	End;
 
+	TCloudMailRuDirListing = array of TCloudMailRuDirListingItem;
+
+	TCloudMailRu = class
 	private
 		domain: WideString;
 		user: WideString;
@@ -24,17 +37,23 @@ type
 		Cookie: TIdCookieManager;
 		SSL: TIdSSLIOHandlerSocketOpenSSL;
 		function HTTPPost(URL: WideString; PostData: TStringList): boolean;
+			overload;
+		function HTTPPost(URL: WideString; PostData: TStringList;
+			var Answer: WideString): boolean; overload;
 		function HTTPGet(URL: WideString; var Answer: WideString): boolean;
 		function getTokenFromText(Text: WideString): WideString;
 		function get_x_page_id_FromText(Text: WideString): WideString;
 		function get_build_FromText(Text: WideString): WideString;
 		function get_upload_url_FromText(Text: WideString): WideString;
+		function getDirListingFromJSON(JSON: WideString): TCloudMailRuDirListing;
 	public
 		constructor Create;
 		destructor Destroy;
 		function login(): boolean;
-		function getToken(var ParseData:WideString): boolean;
-		function getDir(path: WideString; var data: WideString): boolean;
+		function getToken(var ParseData: WideString): boolean;
+		function getShard(var Shard: WideString): boolean;
+		function getDir(path: WideString;
+			var DirListing: TCloudMailRuDirListing): boolean;
 	end;
 
 implementation
@@ -60,12 +79,19 @@ end;
 
 destructor TCloudMailRu.Destroy;
 begin
+	self.HTTP.Destroy;
+	self.SSL.Destroy;
+	self.Cookie.Destroy;
 
 end;
 
-function TCloudMailRu.getDir(path: WideString; var data: WideString): boolean;
+function TCloudMailRu.getDir(path: WideString;
+	var DirListing: TCloudMailRuDirListing): boolean;
 var
 	URL: WideString;
+	JSON: WideString;
+	Listing: TCloudMailRuDirListing;
+	ListingIterator: integer;
 begin
 	path := StringReplace(path, WideString('/'), WideString('%2F'),
 		[rfReplaceAll, rfIgnoreCase]);
@@ -73,10 +99,66 @@ begin
 		+ path + '&api=2&build=' + self.build + '&x-page-id=' + self.x_page_id +
 		'&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user +
 		'%40' + self.domain + '&token=' + self.token + '&_=1433249148810';
-	getDir := self.HTTPGet(URL, data)
+	getDir := self.HTTPGet(URL, JSON);
+	DirListing := self.getDirListingFromJSON(JSON);
+
 end;
 
-function TCloudMailRu.getToken(var ParseData:WideString): boolean;
+function TCloudMailRu.getDirListingFromJSON(JSON: WideString)
+	: TCloudMailRuDirListing;
+var
+	X, Obj: ISuperObject;
+	AMember, OMember: IMember;
+	J, Length: integer;
+	ResultItems: TCloudMailRuDirListing;
+begin
+	X := TSuperObject.Create(JSON);
+	X := X['body'].AsObject;
+	SetLength(ResultItems, X.A['list'].Length);
+	with X.A['list'] do
+		for J := 0 to X.A['list'].Length - 1 do begin
+			Obj := O[J];
+			With ResultItems[J] do begin
+				tree := Obj.S['tree'];
+				grev := Obj.I['grev'];
+				size := Obj.I['size'];
+				kind := Obj.S['kind'];
+				weblink := Obj.S['weblink'];
+				rev := Obj.I['rev'];
+				type_ := Obj.S['type'];
+				home := Obj.S['home'];
+				name := Obj.S['name'];
+			end;
+		end;
+	(* Obj.First;
+		while not Obj.EoF do begin
+		CurrentItem.[Obj.CurrentKey] := Obj.CurrentValue.AsVariant;
+		Obj.Next;
+		end;
+	*)
+	Result := ResultItems;
+end;
+
+function TCloudMailRu.getShard(var Shard: WideString): boolean;
+var
+	URL: WideString;
+	PostData: TStringList;
+	Answer: WideString;
+	JSON: TJSONObject;
+begin
+	URL := 'https://cloud.mail.ru/api/v2/dispatcher/';
+	PostData := TStringList.Create;
+	PostData.Values['api'] := '2';
+	PostData.Values['build'] := self.build;
+	PostData.Values['email'] := self.user + '%40' + self.domain;
+	PostData.Values['token'] := self.token;
+	PostData.Values['x-email'] := self.user + '%40' + self.domain;
+	PostData.Values['x-page-id'] := self.x_page_id;
+	self.HTTPPost(URL, PostData, Answer);
+	Shard := Answer;
+end;
+
+function TCloudMailRu.getToken(var ParseData: WideString): boolean;
 var
 	URL: WideString;
 	PostData: TStringList;
@@ -85,7 +167,7 @@ var
 begin
 	URL := 'https://cloud.mail.ru/?from=promo&from=authpopup';
 	PostResult := self.HTTPGet(URL, Answer);
-  ParseData:=Answer;
+	ParseData := Answer;
 	if PostResult then begin
 		self.token := self.getTokenFromText(Answer);
 		self.x_page_id := self.get_x_page_id_FromText(Answer);
@@ -97,6 +179,54 @@ begin
 		getToken := false;
 	end;
 
+end;
+
+function TCloudMailRu.login(): boolean;
+var
+	URL: WideString;
+	PostData: TStringList;
+	PostResult: boolean;
+begin
+	URL := 'http://auth.mail.ru/cgi-bin/auth?lang=ru_RU&from=authpopup';
+	PostData := TStringList.Create;
+	PostData.Values['page'] := 'https://cloud.mail.ru/?from=promo';
+	PostData.Values['FailPage'] := '';
+	PostData.Values['Domain'] := 'mail.ru';
+	PostData.Values['Login'] := self.user;
+	PostData.Values['Password'] := self.password;
+	PostData.Values['new_auth_form'] := '1';
+	PostResult := self.HTTPPost(URL, PostData);
+	PostData.Destroy;
+	login := PostResult;
+end;
+
+function TCloudMailRu.HTTPPost(URL: WideString; PostData: TStringList): boolean;
+var
+	MemStream: TStream;
+begin
+	MemStream := TMemoryStream.Create;
+	HTTP.Post(URL, PostData, MemStream);
+	MemStream.Free;
+end;
+
+function TCloudMailRu.HTTPGet(URL: WideString; var Answer: WideString): boolean;
+begin
+	Answer := self.HTTP.Get(URL);
+
+	// todo: РїСЂРѕРІРµСЂРєСѓ РЅР° СЃРѕСЃС‚РѕСЏРЅРёРµ РѕС‚РІРµС‚Р°
+	HTTPGet := true;
+
+end;
+
+function TCloudMailRu.HTTPPost(URL: WideString; PostData: TStringList;
+	var Answer: WideString): boolean;
+var
+	MemStream: TStringStream;
+begin
+	MemStream := TStringStream.Create;
+	HTTP.Post(URL, PostData, MemStream);
+	Answer := MemStream.DataString;
+	MemStream.Free;
 end;
 
 function TCloudMailRu.getTokenFromText(Text: WideString): WideString;
@@ -132,16 +262,16 @@ end;
 
 function TCloudMailRu.get_upload_url_FromText(Text: WideString): WideString;
 var
-	start, start1, start2, finish, finish1, length: integer;
+	start, start1, start2, finish, finish1, Length: integer;
 	temp: WideString;
 begin
 	start := Pos(WideString('mail.ru/upload/"'), Text);
 	if start > 0 then begin
 		start1 := start - 50;
 		finish1 := start + 15;
-		length := finish1 - start1;
+		Length := finish1 - start1;
 
-		temp := Copy(Text, start1, length);
+		temp := Copy(Text, start1, Length);
 		start2 := Pos(WideString('https://'), temp);
 		get_upload_url_FromText := Copy(temp, start2, StrLen(PWideChar(temp))
 			- start2);
@@ -162,42 +292,6 @@ begin
 	else begin
 		get_x_page_id_FromText := '';
 	end;
-end;
-
-function TCloudMailRu.HTTPPost(URL: WideString; PostData: TStringList): boolean;
-var
-	MemStream: TStream;
-begin
-	MemStream := TMemoryStream.Create;
-	HTTP.Post(URL, PostData, MemStream);
-end;
-
-function TCloudMailRu.HTTPGet(URL: WideString; var Answer: WideString): boolean;
-begin
-	Answer := self.HTTP.Get(URL);
-
-	// todo: проверку на состояние ответа
-	HTTPGet := true;
-
-end;
-
-function TCloudMailRu.login(): boolean;
-var
-	URL: WideString;
-	PostData: TStringList;
-	PostResult: boolean;
-begin
-	URL := 'http://auth.mail.ru/cgi-bin/auth?lang=ru_RU&from=authpopup';
-	PostData := TStringList.Create;
-	PostData.Values['page'] := 'https://cloud.mail.ru/?from=promo';
-	PostData.Values['FailPage'] := '';
-	PostData.Values['Domain'] := 'mail.ru';
-	PostData.Values['Login'] := self.user;
-	PostData.Values['Password'] := self.password;
-	PostData.Values['new_auth_form'] := '1';
-	PostResult := self.HTTPPost(URL, PostData);
-	PostData.Destroy;
-	login := PostResult;
 end;
 
 end.
