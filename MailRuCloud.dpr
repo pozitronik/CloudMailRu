@@ -199,6 +199,16 @@ begin
 	// Копирование файла из файловой системы плагина
 end;
 
+function FsGetFileW(RemoteName, LocalName: PWideChar; CopyFlags: integer; RemoteInfo: pRemoteInfo): integer; stdcall;
+
+begin
+
+	Cloud.getFile(WideString(RemoteName),WideString(LocalName));
+  result:= FS_FILE_OK;
+
+	// Копирование файла из файловой системы плагина
+end;
+
 function FsPutFile(LocalName, RemoteName: PAnsiChar; CopyFlags: integer): integer; stdcall;
 begin
 	// Копирование файла в файловую систему плагина
@@ -209,7 +219,7 @@ Begin
 	// Удаление файла из файловой ссистемы плагина
 End;
 
-exports FsGetDefRootName, FsInit, FsInitW, FsFindFirst, FsFindFirstW, FsFindNext, FsFindNextW, FsFindClose;
+exports FsGetDefRootName, FsInit, FsInitW, FsFindFirst, FsFindFirstW, FsFindNext, FsFindNextW, FsFindClose, FsGetFile, FsGetFileW;
 
 (* ,
 	FsExecuteFile,

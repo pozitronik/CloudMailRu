@@ -3,7 +3,7 @@
 interface
 
 uses
-	System.Classes, System.SysUtils, XSuperJson, XSuperObject,  HTTPApp,
+	System.Classes, System.SysUtils, XSuperJson, XSuperObject,
 	IdCookieManager, IdIOHandler, IdIOHandlerSocket, IdIOHandlerStack, IdSSL,
 	IdSSLOpenSSL, IdBaseComponent, IdComponent, IdTCPConnection, IdTCPClient,
 	IdHTTP, IdAuthentication, IdIOHandlerStream;
@@ -49,6 +49,7 @@ type
 		function get_upload_url_FromText(Text: WideString): WideString;
 		function getDirListingFromJSON(JSON: WideString): TCloudMailRuDirListing;
 		function getShardFromJSON(JSON: WideString): WideString;
+		function UrlEncode(URL: UTF8String): WideString;
 	public
 		constructor Create(user, domain, password: WideString);
 		destructor Destroy;
@@ -56,6 +57,7 @@ type
 		function getToken(var ParseData: WideString): boolean;
 		function getShard(var Shard: WideString): boolean;
 		function getDir(path: WideString; var DirListing: TCloudMailRuDirListing): boolean;
+		function getFile(remotePath, localPath: WideString): boolean;
 	end;
 
 implementation
@@ -92,9 +94,9 @@ var
 	JSON: WideString;
 
 begin
-	path := StringReplace(path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]);
- //	path := StringReplace(path, WideString('/'), WideString('%2F'), [rfReplaceAll, rfIgnoreCase]);
-	URL := 'https://cloud.mail.ru/api/v2/folder?sort={%22type%22%3A%22name%22%2C%22order%22%3A%22asc%22}&offset=0&limit=10000&home=' + HTTPEncode(path) + '&api=2&build=' +
+	path := self.UrlEncode(StringReplace(path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
+	// path := StringReplace(path, WideString('/'), WideString('%2F'), [rfReplaceAll, rfIgnoreCase]);
+	URL := 'https://cloud.mail.ru/api/v2/folder?sort={%22type%22%3A%22name%22%2C%22order%22%3A%22asc%22}&offset=0&limit=10000&home=' + path + '&api=2&build=' +
 		self.build + '&x-page-id=' + self.x_page_id + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&token=' +
 		self.token + '&_=1433249148810';
 	getDir := self.HTTPGet(URL, JSON);
@@ -127,6 +129,19 @@ begin
 			end;
 		end;
 	Result := ResultItems;
+end;
+
+function TCloudMailRu.getFile(remotePath, localPath: WideString): boolean;
+var
+	FileStream: TMemoryStream;
+	Shard: WideString; // todo make this global
+begin
+	FileStream := TMemoryStream.Create;
+	self.getShard(Shard);
+	remotePath := self.UrlEncode(StringReplace(remotePath, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
+	remotePath := Shard + remotePath;
+	self.HTTP.Get(remotePath, FileStream);
+	FileStream.SaveToFile(localPath);
 end;
 
 function TCloudMailRu.getShardFromJSON(JSON: WideString): WideString;
@@ -198,6 +213,16 @@ begin
 	PostResult := self.HTTPPost(URL, PostData);
 	PostData.Destroy;
 	login := PostResult;
+end;
+
+function TCloudMailRu.UrlEncode(URL: UTF8String): WideString;
+var
+	I: integer;
+begin
+	Result := '';
+	for I := 1 to Length(Url) do
+		if URL[I] in ['a' .. 'z', 'A' .. 'Z'] then Result := Result + URL[I]
+		else Result := Result + '%' + IntToHex(Ord(URL[I]), 2);
 end;
 
 function TCloudMailRu.HTTPPost(URL: WideString; PostData: TStringList): boolean;
