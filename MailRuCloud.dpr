@@ -135,11 +135,16 @@ begin
 	// Получение первого файла в папке. Result тоталом не используется (можно использовать для работы плагина).
 	// setlasterror(ERROR_NO_MORE_FILES);
 	GlobalPath := path;
+	if path = '\' then begin
+
+	end;
+
 	Cloud.getDir(path, CurrentListing);
 	if (CurrentListing[0].type_ = TYPE_DIR) then FindData.dwFileAttributes := FILE_ATTRIBUTE_DIRECTORY
 	else FindData.dwFileAttributes := 0;
-	FindData.nFileSizeHigh := 0;
-	FindData.nFileSizeLow := 0;
+	if (CurrentListing[0].size > MAXDWORD) then FindData.nFileSizeHigh := CurrentListing[0].size div MAXDWORD
+	else FindData.nFileSizeHigh := 0;
+	FindData.nFileSizeLow := CurrentListing[0].size;
 	strpcopy(FindData.cFileName, CurrentListing[0].name);
 	FileCounter := 1;
 	Result := 1;
@@ -151,13 +156,18 @@ begin
 	if (length(CurrentListing) > FileCounter) then begin
 		if (CurrentListing[FileCounter].type_ = TYPE_DIR) then FindData.dwFileAttributes := FILE_ATTRIBUTE_DIRECTORY
 		else FindData.dwFileAttributes := 0;
-		FindData.nFileSizeHigh := 0;
-		FindData.nFileSizeLow := 0;
+		if (CurrentListing[FileCounter].size > MAXDWORD) then FindData.nFileSizeHigh := CurrentListing[FileCounter].size div MAXDWORD
+		else FindData.nFileSizeHigh := 0;
+
+		FindData.nFileSizeLow := CurrentListing[FileCounter].size;
 		strpcopy(FindData.cFileName, CurrentListing[FileCounter].name);
 		Result := true;
 		inc(FileCounter);
 	end
-	else Result := false;
+	else begin
+		FileCounter := 0;
+		Result := false;
+	end;
 
 end;
 
@@ -203,8 +213,8 @@ function FsGetFileW(RemoteName, LocalName: PWideChar; CopyFlags: integer; Remote
 
 begin
 
-	Cloud.getFile(WideString(RemoteName),WideString(LocalName));
-  result:= FS_FILE_OK;
+	Cloud.getFile(WideString(RemoteName), WideString(LocalName));
+	Result := FS_FILE_OK;
 
 	// Копирование файла из файловой системы плагина
 end;
