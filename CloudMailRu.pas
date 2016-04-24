@@ -91,8 +91,7 @@ function TCloudMailRu.getDir(path: WideString;
 var
 	URL: WideString;
 	JSON: WideString;
-	Listing: TCloudMailRuDirListing;
-	ListingIterator: integer;
+
 begin
 	path := StringReplace(path, WideString('/'), WideString('%2F'),
 		[rfReplaceAll, rfIgnoreCase]);
@@ -109,8 +108,7 @@ function TCloudMailRu.getDirListingFromJSON(JSON: WideString)
 	: TCloudMailRuDirListing;
 var
 	X, Obj: ISuperObject;
-	AMember, OMember: IMember;
-	J, Length: integer;
+	J: integer;
 	ResultItems: TCloudMailRuDirListing;
 begin
 	X := TSuperObject.Create(JSON);
@@ -136,10 +134,7 @@ end;
 
 function TCloudMailRu.getShardFromJSON(JSON: WideString): WideString;
 var
-	X, Obj: ISuperObject;
-	A: ISuperArray;
-	AMember, OMember: IMember;
-	J, Length: integer;
+	X: ISuperObject;
 begin
 	X := TSuperObject.Create(JSON);
 	X := X['body'].AsObject;
@@ -165,7 +160,6 @@ begin
 	self.HTTPPost(URL, PostData, Answer);
 	Shard := self.getShardFromJSON(Answer);
 end;
-
 
 function TCloudMailRu.getToken(var ParseData: WideString): boolean;
 var
