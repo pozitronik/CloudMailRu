@@ -1,4 +1,4 @@
-library SAMPLE_WFX;
+library MailRuCloud;
 
 {
 	Sample wfx plugin for Total Commander by D1P.Antikiller
