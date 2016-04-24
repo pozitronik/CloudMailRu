@@ -143,9 +143,7 @@ var
 begin
 	X := TSuperObject.Create(JSON);
 	X := X['body'].AsObject;
-	A := X.A['get'];
-	Obj := A.O[0];
-	Result := Obj.S['url'];
+	Result := X.A['get'].O[0].S['url'];
 
 end;
 
