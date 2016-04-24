@@ -46,6 +46,7 @@ type
 		function get_build_FromText(Text: WideString): WideString;
 		function get_upload_url_FromText(Text: WideString): WideString;
 		function getDirListingFromJSON(JSON: WideString): TCloudMailRuDirListing;
+		function getShardFromJSON(JSON: WideString): WideString;
 	public
 		constructor Create;
 		destructor Destroy;
@@ -130,13 +131,22 @@ begin
 				name := Obj.S['name'];
 			end;
 		end;
-	(* Obj.First;
-		while not Obj.EoF do begin
-		CurrentItem.[Obj.CurrentKey] := Obj.CurrentValue.AsVariant;
-		Obj.Next;
-		end;
-	*)
 	Result := ResultItems;
+end;
+
+function TCloudMailRu.getShardFromJSON(JSON: WideString): WideString;
+var
+	X, Obj: ISuperObject;
+	A: ISuperArray;
+	AMember, OMember: IMember;
+	J, Length: integer;
+begin
+	X := TSuperObject.Create(JSON);
+	X := X['body'].AsObject;
+	A := X.A['get'];
+	Obj := A.O[0];
+	Result := Obj.S['url'];
+
 end;
 
 function TCloudMailRu.getShard(var Shard: WideString): boolean;
@@ -155,8 +165,9 @@ begin
 	PostData.Values['x-email'] := self.user + '%40' + self.domain;
 	PostData.Values['x-page-id'] := self.x_page_id;
 	self.HTTPPost(URL, PostData, Answer);
-	Shard := Answer;
+	Shard := self.getShardFromJSON(Answer);
 end;
+
 
 function TCloudMailRu.getToken(var ParseData: WideString): boolean;
 var

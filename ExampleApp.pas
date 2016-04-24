@@ -78,13 +78,13 @@ begin
 	cloud := TCloudMailRu.Create;
 	loginResult := cloud.login;
 	cloud.getToken(tmp);
-	cloud.getDir('/', Listing);
+	(*cloud.getDir('/', Listing);
 	for I := 0 to length(Listing) - 1 do begin
 		Memo1.Lines.Add(Listing[I].name + '|' + Listing[I].type_ + '|' +
 			IntToStr(Listing[I].size) + '|' + Listing[I].home);
-	end;
-	// cloud.getShard(ShardData);
-	// Memo1.Lines.Add(ShardData);
+	end;*)
+	 cloud.getShard(ShardData);
+	 Memo1.Lines.Add(ShardData);
 end;
 
 procedure TForm1.Button3Click(Sender: TObject);
