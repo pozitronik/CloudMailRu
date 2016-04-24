@@ -1,15 +1,17 @@
 library MailRuCloud;
 
+{$R *.dres}
+
 uses
-	SysUtils,
-	DateUtils,
-	windows,
-	Classes,
-	PLUGIN_TYPES,
-	PLUGIN_MAIN,
-	messages,
-	inifiles,
-	CloudMailRu in 'CloudMailRu.pas';
+  SysUtils,
+  DateUtils,
+  windows,
+  Classes,
+  PLUGIN_TYPES,
+  PLUGIN_MAIN,
+  messages,
+  inifiles,
+  CloudMailRu in 'CloudMailRu.pas';
 
 {$E wfx}
 {$R *.res}
