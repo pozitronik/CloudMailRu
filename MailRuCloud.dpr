@@ -332,7 +332,7 @@ End;
 
 function FsGetFile(RemoteName, LocalName: PAnsiChar; CopyFlags: integer; RemoteInfo: pRemoteInfo): integer; stdcall;
 begin
-SetLastError(ERROR_INVALID_FUNCTION);
+	setlasterror(ERROR_INVALID_FUNCTION);
 	Result := FS_FILE_NOTSUPPORTED; // Ansi-заглушка
 	// Копирование файла из файловой системы плагина
 end;
@@ -347,6 +347,7 @@ begin
 	Cloud.getFile(WideString(RealPath.path), WideString(LocalName), MyProgressProc);
 	Result := FS_FILE_OK;
 	MyProgressProc(PluginNum, LocalName, RemoteName, 100);
+	MyLogProc(PluginNum, MSGTYPE_TRANSFERCOMPLETE, PWideChar(RemoteName + '->' + LocalName));
 	// Копирование файла из файловой системы плагина
 end;
 

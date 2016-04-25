@@ -128,11 +128,10 @@ begin
 	FileStream := TMemoryStream.Create;
 	self.getShard(Shard);
 	remotePath := self.UrlEncode(StringReplace(remotePath, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
-	remotePath := Shard + remotePath;
-
 	self.HTTP.OnWork := self.HttpProgress;
-	self.HTTP.Get(remotePath, FileStream);
+	self.HTTP.Get(Shard + remotePath, FileStream);
 	FileStream.SaveToFile(localPath);
+
 end;
 
 function TCloudMailRu.getShard(var Shard: WideString): boolean;
