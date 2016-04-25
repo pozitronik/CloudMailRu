@@ -162,6 +162,7 @@ var
 	Answer: WideString;
 begin
 	URL := 'https://cloud.mail.ru/?from=promo&from=authpopup';
+	getToken := true;
 	PostResult := self.HTTPGet(URL, Answer);
 	(* ParseData := Answer; *)
 	if PostResult then begin
@@ -169,7 +170,8 @@ begin
 		self.x_page_id := self.get_x_page_id_FromText(Answer);
 		self.build := self.get_build_FromText(Answer);
 		self.upload_url := self.get_upload_url_FromText(Answer);
-		getToken := true;
+		if (self.token = '') or (self.x_page_id = '') or (self.build = '') or (self.upload_url = '') then getToken := false; //В полученной странице нет нужных данных
+
 	end
 	else begin
 		getToken := false;

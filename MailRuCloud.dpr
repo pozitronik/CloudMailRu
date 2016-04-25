@@ -247,7 +247,7 @@ begin
 			Result := 1;
 		end
 		else begin
-			strpcopy(FindData.cFileName, 'ќшибка входа по указанным данным');
+			strpcopy(FindData.cFileName, 'ќшибка входа по указанным данным');//—юда никогда не должны попасть
 		end;
 	end;
 end;
