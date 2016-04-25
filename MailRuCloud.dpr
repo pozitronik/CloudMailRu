@@ -47,6 +47,11 @@ end;
 
 procedure FsStatusInfo(RemoteDir: PAnsiChar; InfoStartEnd, InfoOperation: integer); stdcall;
 begin
+	SetLastError(ERROR_NOT_SUPPORTED);
+end;
+
+procedure FsStatusInfoW(RemoteDir: PWideChar; InfoStartEnd, InfoOperation: integer); stdcall;
+begin
 	if Assigned(Cloud) then Cloud.CancelCopy := false; //todo: временно сделал
 	// Ќачало и конец операций FS
 	if (InfoStartEnd = FS_STATUS_START) then begin
@@ -379,7 +384,7 @@ begin
 end;
 
 exports FsGetDefRootName, FsInit, FsInitW, FsFindFirst, FsFindFirstW, FsFindNext, FsFindNextW, FsFindClose, FsGetFile, FsGetFileW,
-	FsDisconnect, FsDisconnectW;
+	FsDisconnect, FsDisconnectW,FsStatusInfo,FsStatusInfoW;
 
 (* ,
 	FsExecuteFile,
