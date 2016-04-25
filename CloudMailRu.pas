@@ -46,7 +46,7 @@ type
 		ExternalProgressProc: TProgressProc;
 		ExternalLogProc: TLogProc;
 
-		function getToken( (* var ParseData: WideString *) ): boolean;
+		function getToken(): boolean;
 		function getShard(var Shard: WideString): boolean;
 		function HTTPPost(URL: WideString; PostData: TStringList): boolean; overload;
 		function HTTPPost(URL: WideString; PostData: TStringList; var Answer: WideString): boolean; overload;
@@ -68,7 +68,7 @@ type
 		function login(): boolean;
 
 		function getDir(path: WideString; var DirListing: TCloudMailRuDirListing): boolean;
-		function getFile(remotePath, localPath: WideString; ProgressProc: TProgressProc): boolean;
+		function getFile(remotePath, localPath: WideString; ProgressProc: TProgressProc): integer;
 	end;
 
 implementation
@@ -120,16 +120,23 @@ begin
 
 end;
 
-function TCloudMailRu.getFile(remotePath, localPath: WideString; ProgressProc: TProgressProc): boolean;
+function TCloudMailRu.getFile(remotePath, localPath: WideString; ProgressProc: TProgressProc): integer; // 0 - ok, else error
 var
 	FileStream: TMemoryStream;
 	Shard: WideString; // todo make this global
 begin
+	result := FS_FILE_OK;
 	FileStream := TMemoryStream.Create;
-	self.getShard(Shard);
+	if not self.getShard(Shard) then begin
+		exit(FS_FILE_NOTFOUND);
+	end;
 	remotePath := self.UrlEncode(StringReplace(remotePath, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
 	self.HTTP.OnWork := self.HttpProgress;
-	self.HTTP.Get(Shard + remotePath, FileStream);
+	try
+		self.HTTP.Get(Shard + remotePath, FileStream);
+	except
+		exit(FS_FILE_READERROR);
+	end;
 	FileStream.SaveToFile(localPath);
 
 end;
@@ -140,7 +147,7 @@ var
 	PostData: TStringList;
 	Answer: WideString;
 	JSON: TJSONObject;
-begin
+begin // todo error handling
 	URL := 'https://cloud.mail.ru/api/v2/dispatcher/';
 	PostData := TStringList.Create;
 	PostData.Values['api'] := '2';
@@ -149,11 +156,14 @@ begin
 	PostData.Values['token'] := self.token;
 	PostData.Values['x-email'] := self.user + '%40' + self.domain;
 	PostData.Values['x-page-id'] := self.x_page_id;
-	self.HTTPPost(URL, PostData, Answer);
+	if not self.HTTPPost(URL, PostData, Answer) then exit(false);
+
 	Shard := self.getShardFromJSON(Answer);
+	if Shard = '' then result := false
+	else result := true;
 end;
 
-function TCloudMailRu.getToken( (* var ParseData: WideString *) ): boolean;
+function TCloudMailRu.getToken(): boolean;
 var
 	URL: WideString;
 	PostData: TStringList;
@@ -163,13 +173,13 @@ begin
 	URL := 'https://cloud.mail.ru/?from=promo&from=authpopup';
 	getToken := true;
 	PostResult := self.HTTPGet(URL, Answer);
-	(* ParseData := Answer; *)
 	if PostResult then begin
 		self.token := self.getTokenFromText(Answer);
 		self.x_page_id := self.get_x_page_id_FromText(Answer);
 		self.build := self.get_build_FromText(Answer);
 		self.upload_url := self.get_upload_url_FromText(Answer);
-		if (self.token = '') or (self.x_page_id = '') or (self.build = '') or (self.upload_url = '') then getToken := false; //В полученной странице нет нужных данных
+		if (self.token = '') or (self.x_page_id = '') or (self.build = '') or (self.upload_url = '') then getToken := false;
+		// В полученной странице нет нужных данных
 
 	end
 	else begin
@@ -184,7 +194,6 @@ var
 	PostData: TStringList;
 	PostResult: boolean;
 begin
-	// self.ExternalProgressProc(ExternalPluginNr, PWideChar('Process login'), PWideChar(self.user + '@' + self.domain), 0);
 	self.ExternalLogProc(ExternalPluginNr, MSGTYPE_DETAILS, PWideChar('Login to ' + self.user + '@' + self.domain));
 	URL := 'http://auth.mail.ru/cgi-bin/auth?lang=ru_RU&from=authpopup';
 	PostData := TStringList.Create;
@@ -261,7 +270,9 @@ begin
 
 	if (Pos('chunked', LowerCase(HTTP.Response.TransferEncoding)) = 0) and (ContentLength > 0) then begin
 		Percent := 100 * AWorkCount div ContentLength;
-		self.ExternalProgressProc(self.ExternalPluginNr, self.ExternalSourceName, self.ExternalTargetName, Percent);
+		if self.ExternalProgressProc(self.ExternalPluginNr, self.ExternalSourceName, self.ExternalTargetName, Percent) = 1 then begin
+			HTTP.Disconnect; // todo нотификация FS_FILE_USERABORT
+		end;
 	end;
 end;
 
@@ -348,8 +359,7 @@ begin
 	X := X['body'].AsObject;
 	SetLength(ResultItems, X.A['list'].Length);
 	if (X.A['list'].Length = 0) then begin
-		result := ResultItems;
-		exit;
+		exit(ResultItems);
 	end;
 
 	with X.A['list'] do

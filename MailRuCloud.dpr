@@ -171,13 +171,11 @@ begin
 			FindData.nFileSizeLow := 0;
 			FindData.dwFileAttributes := FILE_ATTRIBUTE_DIRECTORY;
 			FileCounter := 1;
-			Result := 0;
-			exit;
+			exit(0);
 		end
 		else begin
 			setlasterror(ERROR_NO_MORE_FILES);
-			Result := INVALID_HANDLE_VALUE;
-			exit;
+			exit(INVALID_HANDLE_VALUE);
 		end;
 
 	end
@@ -196,8 +194,7 @@ begin
 				CurrentLogon := false;
 				FreeAndNil(Cloud);
 				setlasterror(ERROR_NETWORK_ACCESS_DENIED);
-				Result := INVALID_HANDLE_VALUE;
-				exit;
+				exit(INVALID_HANDLE_VALUE);
 			end;
 
 		end;
@@ -207,8 +204,7 @@ begin
 
 			if Length(CurrentListing) = 0 then begin
 				// setlasterror(ERROR_NO_MORE_FILES);
-				Result := 0;
-				exit;
+				exit(0);
 
 			end;
 			// Todo Function ListingToFindData
@@ -316,17 +312,38 @@ begin
 end;
 
 function FsGetFileW(RemoteName, LocalName: PWideChar; CopyFlags: integer; RemoteInfo: pRemoteInfo): integer; stdcall;
+// Копирование файла из файловой системы плагина
 var
 	RealPath: TRealPath;
 begin
 	RealPath := ExtractRealPath(RemoteName);
-	// ProgressProc (PluginNum,pchar(InFileName),pchar(OutFilename),round(((SizeDone/SizeFile)*100)))
+
 	MyProgressProc(PluginNum, LocalName, RemoteName, 0);
-	Cloud.getFile(WideString(RealPath.path), WideString(LocalName), MyProgressProc);
-	Result := FS_FILE_OK;
-	MyProgressProc(PluginNum, LocalName, RemoteName, 100);
-	MyLogProc(PluginNum, MSGTYPE_TRANSFERCOMPLETE, PWideChar(RemoteName + '->' + LocalName));
-	// Копирование файла из файловой системы плагина
+
+	case CopyFlags of
+		FS_FILE_OK: Begin
+				if FileExists(LocalName) then begin
+					exit(FS_FILE_EXISTS);
+				end
+				else begin
+					Result := Cloud.getFile(WideString(RealPath.path), WideString(LocalName), MyProgressProc);
+					MyProgressProc(PluginNum, LocalName, RemoteName, 100);
+					MyLogProc(PluginNum, MSGTYPE_TRANSFERCOMPLETE, PWideChar(RemoteName + '->' + LocalName));
+				end;
+
+			End;
+		FS_COPYFLAGS_MOVE: Begin
+				Result := FS_FILE_NOTSUPPORTED; // todo
+			End;
+		FS_COPYFLAGS_RESUME: Begin { NEVER CALLED HERE }
+				Result := FS_FILE_NOTSUPPORTED;
+			End;
+		FS_COPYFLAGS_OVERWRITE: Begin
+				Result := Cloud.getFile(WideString(RealPath.path), WideString(LocalName), MyProgressProc);
+				MyProgressProc(PluginNum, LocalName, RemoteName, 100);
+				MyLogProc(PluginNum, MSGTYPE_TRANSFERCOMPLETE, PWideChar(RemoteName + '->' + LocalName));
+			End;
+	end;
 end;
 
 function FsPutFile(LocalName, RemoteName: PAnsiChar; CopyFlags: integer): integer; stdcall;
@@ -374,7 +391,7 @@ begin
 	freemem(tmp);
 	PluginPath := IncludeTrailingbackslash(ExtractFilePath(PluginPath));
 	tempString := PluginPath + 'MailRuCloud.ini';
-	if not fileexists(tempString) then FileClose(FileCreate(tempString));
+	if not FileExists(tempString) then FileClose(FileCreate(tempString));
 	PluginIniFile := TIniFile.Create(tempString);
 
 end.

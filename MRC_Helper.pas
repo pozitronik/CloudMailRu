@@ -15,7 +15,7 @@ function ExtractRealPath(VirtualPath: WideString): TRealPath;
 
 implementation
 
-function Implode(S: TStringList; Delimiter: Char): WideString; // todo helper
+function Implode(S: TStringList; Delimiter: Char): WideString;
 var
 	iCount: integer;
 begin
@@ -25,7 +25,7 @@ begin
 	System.Delete(Result, Length(Result), 1);
 end;
 
-function ExtractRealPath(VirtualPath: WideString): TRealPath; // todo helper
+function ExtractRealPath(VirtualPath: WideString): TRealPath;
 var
 	List: TStringList;
 begin
