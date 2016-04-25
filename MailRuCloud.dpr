@@ -150,7 +150,7 @@ function FsFindNext(Hdl: thandle; var FindData: tWIN32FINDDATAA): bool; stdcall;
 begin
 end;
 
-function Implode(S: TStringList; Delimiter: Char): WideString;
+function Implode(S: TStringList; Delimiter: Char): WideString; // todo helper
 var
 	iCount: integer;
 begin
@@ -160,7 +160,7 @@ begin
 	System.Delete(Result, Length(Result), 1);
 end;
 
-function ExtractRealPath(VirtualPath: WideString): TRealPath;
+function ExtractRealPath(VirtualPath: WideString): TRealPath; // todo helper
 var
 	List: TStringList;
 begin
@@ -332,7 +332,8 @@ End;
 
 function FsGetFile(RemoteName, LocalName: PAnsiChar; CopyFlags: integer; RemoteInfo: pRemoteInfo): integer; stdcall;
 begin
-	// Ansi-заглушка
+SetLastError(ERROR_INVALID_FUNCTION);
+	Result := FS_FILE_NOTSUPPORTED; // Ansi-заглушка
 	// Копирование файла из файловой системы плагина
 end;
 
@@ -351,22 +352,27 @@ end;
 
 function FsPutFile(LocalName, RemoteName: PAnsiChar; CopyFlags: integer): integer; stdcall;
 begin
+	setlasterror(ERROR_INVALID_FUNCTION);
+	Result := FS_FILE_NOTSUPPORTED; // Ansi-заглушка
 	// Копирование файла в файловую систему плагина
 end;
 
 function FsDeleteFile(RemoteName: PAnsiChar): bool; stdcall;
 Begin
+	setlasterror(ERROR_INVALID_FUNCTION); // Ansi-заглушка
 	// Удаление файла из файловой ссистемы плагина
 End;
 
 function FsDisconnect(DisconnectRoot: PAnsiChar): bool; stdcall;
 begin
+	setlasterror(ERROR_INVALID_FUNCTION);
 	// ansi-заглушка
 end;
 
 function FsDisconnectW(DisconnectRoot: PWideChar): bool; stdcall;
 begin
 	if Assigned(Cloud) then FreeAndNil(Cloud);
+	Result := true;
 end;
 
 exports FsGetDefRootName, FsInit, FsInitW, FsFindFirst, FsFindFirstW, FsFindNext, FsFindNextW, FsFindClose, FsGetFile, FsGetFileW,
