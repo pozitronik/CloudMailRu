@@ -13,8 +13,12 @@ uses
 	inifiles,
 	CloudMailRu in 'CloudMailRu.pas',
 	MRC_Helper in 'MRC_Helper.pas';
-
+{$IFDEF WIN64}
+{$E wfx64}
+{$ENDIF}
+{$IFDEF WIN32}
 {$E wfx}
+{$ENDIF}
 {$R *.res}
 
 var
@@ -354,7 +358,7 @@ begin
 				MyProgressProc(PluginNum, LocalName, RemoteName, 100);
 				MyLogProc(PluginNum, MSGTYPE_TRANSFERCOMPLETE, PWideChar(RemoteName + '->' + LocalName));
 			End;
-	else result := FS_FILE_NOTSUPPORTED; //это. не можыд. быт. Чтобы ворнинга не было
+	else Result := FS_FILE_NOTSUPPORTED; // это. не можыд. быт. Чтобы ворнинга не было
 	end;
 end;
 
