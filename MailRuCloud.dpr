@@ -144,10 +144,14 @@ end;
 
 function FsFindFirst(path: PAnsiChar; var FindData: tWIN32FINDDATAA): thandle; stdcall;
 begin
+	setlasterror(ERROR_INVALID_FUNCTION);
+	Result := ERROR_INVALID_HANDLE; // Ansi-заглушка
 end;
 
 function FsFindNext(Hdl: thandle; var FindData: tWIN32FINDDATAA): bool; stdcall;
 begin
+	setlasterror(ERROR_INVALID_FUNCTION);
+	Result := false; // Ansi-заглушка
 end;
 
 function Implode(S: TStringList; Delimiter: Char): WideString; // todo helper
@@ -195,6 +199,7 @@ begin
 			FindData.nFileSizeLow := 0;
 			FindData.dwFileAttributes := FILE_ATTRIBUTE_DIRECTORY;
 			FileCounter := 1;
+			Result := 0;
 			exit;
 		end
 		else begin
@@ -247,6 +252,8 @@ begin
 			Result := 1;
 		end
 		else begin
+			setlasterror(ERROR_INVALID_HANDLE);
+			Result := INVALID_HANDLE_VALUE;
 			strpcopy(FindData.cFileName, 'Ошибка входа по указанным данным'); // Сюда никогда не должны попасть
 		end;
 	end;
@@ -255,7 +262,6 @@ end;
 function FsFindNextW(Hdl: thandle; var FindData: tWIN32FINDDATAW): bool; stdcall;
 var
 	Sections: TStringList;
-	RealPath: TRealPath;
 begin
 	if GlobalPath = '\' then begin
 		Sections := TStringList.Create;
@@ -361,13 +367,14 @@ end;
 function FsDeleteFile(RemoteName: PAnsiChar): bool; stdcall;
 Begin
 	setlasterror(ERROR_INVALID_FUNCTION); // Ansi-заглушка
+  result:=false;
 	// Удаление файла из файловой ссистемы плагина
 End;
 
 function FsDisconnect(DisconnectRoot: PAnsiChar): bool; stdcall;
 begin
 	setlasterror(ERROR_INVALID_FUNCTION);
-	// ansi-заглушка
+	result:=false;// ansi-заглушка
 end;
 
 function FsDisconnectW(DisconnectRoot: PWideChar): bool; stdcall;
