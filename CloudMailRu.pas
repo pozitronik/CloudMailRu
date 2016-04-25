@@ -1,4 +1,4 @@
-unit CloudMailRu;
+﻿unit CloudMailRu;
 
 interface
 
@@ -45,6 +45,8 @@ type
 		SSL: TIdSSLIOHandlerSocketOpenSSL;
 		ExternalProgressProc: TProgressProc;
 		ExternalLogProc: TLogProc;
+
+		Shard: WideString;
 
 		function getToken(): boolean;
 		function getShard(var Shard: WideString): boolean;
@@ -125,19 +127,28 @@ end;
 function TCloudMailRu.getFile(remotePath, localPath: WideString; ProgressProc: TProgressProc): integer; // 0 - ok, else error
 var
 	FileStream: TMemoryStream;
-	Shard: WideString; // todo make this global
 begin
+	if self.Shard = '' then begin
+		self.ExternalLogProc(ExternalPluginNr, MSGTYPE_DETAILS, PWideChar('Current shard is undefined, trying to get one'));
+		if self.getShard(self.Shard) then begin
+			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_DETAILS, PWideChar('Current shard: ' + self.Shard));
+		end
+		else begin
+			// А вот теперь это критическая ошибка, тут уже не получится копировать
+			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Sorry, downloading unsupported'));
+			exit(FS_FILE_NOTSUPPORTED);
+		end;
+	end;
+
 	if self.CancelCopy then exit(FS_FILE_USERABORT);
 
 	result := FS_FILE_OK;
 	FileStream := TMemoryStream.Create;
-	if not self.getShard(Shard) then begin
-		exit(FS_FILE_NOTFOUND);
-	end;
+
 	remotePath := self.UrlEncode(StringReplace(remotePath, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
 	self.HTTP.OnWork := self.HttpProgress;
 	try
-		self.HTTP.Get(Shard + remotePath, FileStream);
+		self.HTTP.Get(self.Shard + remotePath, FileStream);
 	except
 		on E: Exception do begin
 			if E.ClassName = 'EAbort' then begin
@@ -239,7 +250,7 @@ begin
 	PostData.Destroy;
 	result := PostResult;
 	if (PostResult) then begin
-		self.ExternalLogProc(ExternalPluginNr, MSGTYPE_DETAILS, PWideChar('Getting auth token for ' + self.user + '@' + self.domain));
+		self.ExternalLogProc(ExternalPluginNr, MSGTYPE_DETAILS, PWideChar('Requesting auth token for ' + self.user + '@' + self.domain));
 		result := self.getToken();
 		if (result) then begin
 			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_DETAILS, PWideChar('Connected to ' + self.user + '@' + self.domain));
@@ -247,7 +258,14 @@ begin
 		else begin
 			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Error getting auth token for ' + self.user + '@' + self.domain));
 		end;
-
+		self.ExternalLogProc(ExternalPluginNr, MSGTYPE_DETAILS, PWideChar('Requesting download shard for current session'));
+		if self.getShard(self.Shard) then begin
+			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_DETAILS, PWideChar('Current shard: ' + self.Shard));
+		end
+		else begin
+			// Это не критическая ошибка, попробуем получить шард прямо в процессе копирования
+			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_DETAILS, PWideChar('Current shard is undefined, downloading can be unsupported'));
+		end;
 	end
 	else self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Error login to ' + self.user + '@' + self.domain));
 end;
