@@ -44,6 +44,7 @@ type
 		Cookie: TIdCookieManager;
 		SSL: TIdSSLIOHandlerSocketOpenSSL;
 		ExternalProgressProc: TProgressProc;
+		ExternalLogProc: TLogProc;
 
 		function getToken( (* var ParseData: WideString *) ): boolean;
 		function getShard(var Shard: WideString): boolean;
@@ -62,7 +63,7 @@ type
 		ExternalPluginNr: integer;
 		ExternalSourceName: PWideChar;
 		ExternalTargetName: PWideChar;
-		constructor Create(user, domain, password: WideString; ExternalProgressProc: TProgressProc; PluginNr: integer);
+		constructor Create(user, domain, password: WideString; ExternalProgressProc: TProgressProc; PluginNr: integer; ExternalLogProc: TLogProc);
 		destructor Destroy;
 		function login(): boolean;
 
@@ -74,7 +75,7 @@ implementation
 
 { TCloudMailRu }
 
-constructor TCloudMailRu.Create(user, domain, password: WideString; ExternalProgressProc: TProgressProc; PluginNr: integer);
+constructor TCloudMailRu.Create(user, domain, password: WideString; ExternalProgressProc: TProgressProc; PluginNr: integer; ExternalLogProc: TLogProc);
 begin
 	self.SSL := TIdSSLIOHandlerSocketOpenSSL.Create();
 	self.Cookie := TIdCookieManager.Create();
@@ -90,6 +91,8 @@ begin
 	self.password := password;
 	self.domain := domain;
 	self.ExternalProgressProc := ExternalProgressProc;
+	self.ExternalLogProc := ExternalLogProc;
+
 	self.ExternalPluginNr := PluginNr;
 	self.ExternalSourceName := '';
 	self.ExternalTargetName := '';
@@ -180,6 +183,8 @@ var
 	PostData: TStringList;
 	PostResult: boolean;
 begin
+	// self.ExternalProgressProc(ExternalPluginNr, PWideChar('Process login'), PWideChar(self.user + '@' + self.domain), 0);
+	self.ExternalLogProc(ExternalPluginNr, MSGTYPE_DETAILS, PWideChar('Login to ' + self.user + '@' + self.domain));
 	URL := 'http://auth.mail.ru/cgi-bin/auth?lang=ru_RU&from=authpopup';
 	PostData := TStringList.Create;
 	PostData.Values['page'] := 'https://cloud.mail.ru/?from=promo';
@@ -192,8 +197,17 @@ begin
 	PostData.Destroy;
 	result := PostResult;
 	if (PostResult) then begin
-		result := self.getToken()
-	end;
+		self.ExternalLogProc(ExternalPluginNr, MSGTYPE_DETAILS, PWideChar('Getting auth token for ' + self.user + '@' + self.domain));
+		result := self.getToken();
+		if (result) then begin
+			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_CONNECT, PWideChar('CONNECT ' + self.user + '@' + self.domain));
+		end
+		else begin
+			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Error gettong auth token for ' + self.user + '@' + self.domain));
+		end;
+
+	end
+	else self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Error login to ' + self.user + '@' + self.domain));
 end;
 
 function TCloudMailRu.HTTPPost(URL: WideString; PostData: TStringList): boolean;

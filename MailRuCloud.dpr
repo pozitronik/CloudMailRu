@@ -211,7 +211,7 @@ begin
 		password := PluginIniFile.ReadString(RealPath.account, 'password', '');
 		// todo проверка на пустые данные
 		if not Assigned(Cloud) then begin
-			Cloud := TCloudMailRu.Create(user, domain, password, MyProgressProc, PluginNum);
+			Cloud := TCloudMailRu.Create(user, domain, password, MyProgressProc, PluginNum, MyLogProc);
 			if Cloud.login() then begin
 				CurrentLogon := true;
 			end
