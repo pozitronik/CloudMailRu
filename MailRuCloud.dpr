@@ -247,7 +247,7 @@ begin
 			Result := 1;
 		end
 		else begin
-			strpcopy(FindData.cFileName, 'ќшибка входа по указанным данным');//—юда никогда не должны попасть
+			strpcopy(FindData.cFileName, 'ќшибка входа по указанным данным'); // —юда никогда не должны попасть
 		end;
 	end;
 end;
@@ -359,7 +359,18 @@ Begin
 	// ”даление файла из файловой ссистемы плагина
 End;
 
-exports FsGetDefRootName, FsInit, FsInitW, FsFindFirst, FsFindFirstW, FsFindNext, FsFindNextW, FsFindClose, FsGetFile, FsGetFileW;
+function FsDisconnect(DisconnectRoot: PAnsiChar): bool; stdcall;
+begin
+	// ansi-заглушка
+end;
+
+function FsDisconnectW(DisconnectRoot: PWideChar): bool; stdcall;
+begin
+	if Assigned(Cloud) then FreeAndNil(Cloud);
+end;
+
+exports FsGetDefRootName, FsInit, FsInitW, FsFindFirst, FsFindFirstW, FsFindNext, FsFindNextW, FsFindClose, FsGetFile, FsGetFileW,
+	FsDisconnect, FsDisconnectW;
 
 (* ,
 	FsExecuteFile,
