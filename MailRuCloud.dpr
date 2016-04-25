@@ -132,8 +132,6 @@ Begin
 end;
 
 function FsInitW(PluginNr: integer; pProgressProc: TProgressProc; pLogProc: TLogProc; pRequestProc: TRequestProc): integer; stdcall;
-var
-	debug: WideString;
 Begin
 	PluginNum := PluginNr;
 	MyProgressProc := pProgressProc;
@@ -141,10 +139,6 @@ Begin
 	MyRequestProc := pRequestProc;
 	CurrentLogon := false;
 	// Вход в плагин.
-
-	// Cloud := TCloudMailRu.Create('mds_free', 'mail.ru', 'd;jgedst,kbe;f');
-	// if (Cloud.login() and Cloud.getToken(debug)) then Result := 0
-	// else Result := -1;
 	Result := 0;
 end;
 
@@ -184,7 +178,6 @@ var
 	Sections: TStringList;
 	RealPath: TRealPath;
 	user, domain, password: WideString;
-	debug: WideString;
 begin
 	// Получение первого файла в папке. Result тоталом не используется (можно использовать для работы плагина).
 	// setlasterror(ERROR_NO_MORE_FILES);
@@ -218,7 +211,7 @@ begin
 		password := PluginIniFile.ReadString(RealPath.account, 'password', '');
 		// todo проверка на пустые данные
 		if not Assigned(Cloud) then begin
-			Cloud := TCloudMailRu.Create(user, domain, password,MyProgressProc,PluginNum);
+			Cloud := TCloudMailRu.Create(user, domain, password, MyProgressProc, PluginNum);
 			if Cloud.login() then begin
 				CurrentLogon := true;
 			end
@@ -314,18 +307,16 @@ end;
 // Процедура вызывается один раз при установке плагина
 procedure FsGetDefRootName(DefRootName: PAnsiChar; maxlen: integer); stdcall;
 Begin
-	strlcopy(DefRootName, PAnsiChar('Cloud'), maxlen);
+	StrLCopy(DefRootName, PAnsiChar('Cloud'), maxlen);
 	messagebox(FindTCWindow, PWideChar('Installation succeful'), 'Information', mb_ok + mb_iconinformation);
 End;
 
-function FsExecuteFile(MainWin: thandle; RemoteName, Verb: PAnsiChar): integer; stdcall;
+function FsExecuteFileW(MainWin: thandle; RemoteName, Verb: PWideChar): integer; stdcall;
 Begin
 	// Запуск файла
 	Result := FS_EXEC_OK;
 	if Verb = 'open' then begin
-		if extractfileext(lowercase(RemoteName)) = '.txt' then begin
-			WinExec('notepad.exe', 1);
-		end;
+
 	end
 	else if Verb = 'properties' then begin
 		messagebox(MainWin, PWideChar(RemoteName), PWideChar(Verb), mb_ok + mb_iconinformation);
@@ -338,7 +329,7 @@ End;
 
 function FsGetFile(RemoteName, LocalName: PAnsiChar; CopyFlags: integer; RemoteInfo: pRemoteInfo): integer; stdcall;
 begin
-
+	// Ansi-заглушка
 	// Копирование файла из файловой системы плагина
 end;
 
@@ -348,8 +339,8 @@ var
 begin
 	RealPath := ExtractRealPath(RemoteName);
 	// ProgressProc (PluginNum,pchar(InFileName),pchar(OutFilename),round(((SizeDone/SizeFile)*100)))
-		MyProgressProc(PluginNum, LocalName, RemoteName, 0);
-	Cloud.getFile(WideString(RealPath.path), WideString(LocalName),MyProgressProc);
+	MyProgressProc(PluginNum, LocalName, RemoteName, 0);
+	Cloud.getFile(WideString(RealPath.path), WideString(LocalName), MyProgressProc);
 	Result := FS_FILE_OK;
 	MyProgressProc(PluginNum, LocalName, RemoteName, 100);
 	// Копирование файла из файловой системы плагина

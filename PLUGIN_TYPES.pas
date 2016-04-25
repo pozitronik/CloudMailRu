@@ -77,11 +77,6 @@ const
 	FS_ICON_EXTRACTED_DESTROY = 2;
 	FS_ICON_DELAYED = 3;
 
-Const
-	Hallo = 'TWinAmp2 (Fast) version 1.0 by Pavel Dubrovsky.';
-	About = Hallo;
-	NO_INI_FILE = '?';
-
 type
 	tRemoteInfo = record
 		SizeLow, SizeHigh: longint;

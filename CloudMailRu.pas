@@ -109,53 +109,12 @@ var
 
 begin
 	path := self.UrlEncode(StringReplace(path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
-	// path := StringReplace(path, WideString('/'), WideString('%2F'), [rfReplaceAll, rfIgnoreCase]);
 	URL := 'https://cloud.mail.ru/api/v2/folder?sort={%22type%22%3A%22name%22%2C%22order%22%3A%22asc%22}&offset=0&limit=10000&home=' + path + '&api=2&build=' +
 		self.build + '&x-page-id=' + self.x_page_id + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&token=' +
 		self.token + '&_=1433249148810';
 	getDir := self.HTTPGet(URL, JSON);
 	DirListing := self.getDirListingFromJSON(JSON);
 
-end;
-
-function TCloudMailRu.getDirListingFromJSON(JSON: WideString): TCloudMailRuDirListing;
-var
-	X, Obj: ISuperObject;
-	J: integer;
-	ResultItems: TCloudMailRuDirListing;
-begin
-	X := TSuperObject.Create(JSON);
-	X := X['body'].AsObject;
-	SetLength(ResultItems, X.A['list'].Length);
-	if (X.A['list'].Length = 0) then begin
-		result := ResultItems;
-		exit;
-	end;
-
-	with X.A['list'] do
-		for J := 0 to X.A['list'].Length - 1 do begin
-			Obj := O[J];
-			With ResultItems[J] do begin
-				tree := Obj.S['tree'];
-				grev := Obj.I['grev'];
-				size := Obj.I['size'];
-				kind := Obj.S['kind'];
-				weblink := Obj.S['weblink'];
-				rev := Obj.I['rev'];
-				type_ := Obj.S['type'];
-				home := Obj.S['home'];
-				name := Obj.S['name'];
-				if (type_ = TYPE_FILE) then begin
-					mtime := Obj.I['mtime'];
-					virus_scan := Obj.S['virus_scan'];
-					hash := Obj.S['hash'];
-				end
-				else begin
-					mtime := 0;
-				end;
-			end;
-		end;
-	result := ResultItems;
 end;
 
 function TCloudMailRu.getFile(remotePath, localPath: WideString; ProgressProc: TProgressProc): boolean;
@@ -171,16 +130,6 @@ begin
 	self.HTTP.OnWork := self.HttpProgress;
 	self.HTTP.Get(remotePath, FileStream);
 	FileStream.SaveToFile(localPath);
-end;
-
-function TCloudMailRu.getShardFromJSON(JSON: WideString): WideString;
-var
-	X: ISuperObject;
-begin
-	X := TSuperObject.Create(JSON);
-	X := X['body'].AsObject;
-	result := X.A['get'].O[0].S['url'];
-
 end;
 
 function TCloudMailRu.getShard(var Shard: WideString): boolean;
@@ -247,23 +196,18 @@ begin
 	end;
 end;
 
-function TCloudMailRu.UrlEncode(URL: UTF8String): WideString; // todo нужно добиться корректного формирования урлов
-var
-	I: integer;
-begin
-	result := '';
-	for I := 1 to Length(URL) do
-		if URL[I] in ['a' .. 'z', 'A' .. 'Z', '/', '_', '-', '.'] then result := result + URL[I]
-		else result := result + '%' + IntToHex(Ord(URL[I]), 2);
-end;
-
 function TCloudMailRu.HTTPPost(URL: WideString; PostData: TStringList): boolean;
 var
 	MemStream: TStream;
 begin
-	MemStream := TMemoryStream.Create;
-	HTTP.Post(URL, PostData, MemStream);
-	MemStream.Free;
+	result := true;
+	try
+		MemStream := TMemoryStream.Create;
+		HTTP.Post(URL, PostData, MemStream);
+		MemStream.Free;
+	except
+		result := false;
+	end;
 end;
 
 function TCloudMailRu.HTTPGet(URL: WideString; var Answer: WideString): boolean;
@@ -367,5 +311,65 @@ begin
 		get_x_page_id_FromText := '';
 	end;
 end;
+
+function TCloudMailRu.getShardFromJSON(JSON: WideString): WideString;
+var
+	X: ISuperObject;
+begin
+	X := TSuperObject.Create(JSON);
+	X := X['body'].AsObject;
+	result := X.A['get'].O[0].S['url'];
+end;
+
+function TCloudMailRu.getDirListingFromJSON(JSON: WideString): TCloudMailRuDirListing;
+var
+	X, Obj: ISuperObject;
+	J: integer;
+	ResultItems: TCloudMailRuDirListing;
+begin
+	X := TSuperObject.Create(JSON);
+	X := X['body'].AsObject;
+	SetLength(ResultItems, X.A['list'].Length);
+	if (X.A['list'].Length = 0) then begin
+		result := ResultItems;
+		exit;
+	end;
+
+	with X.A['list'] do
+		for J := 0 to X.A['list'].Length - 1 do begin
+			Obj := O[J];
+			With ResultItems[J] do begin
+				tree := Obj.S['tree'];
+				grev := Obj.I['grev'];
+				size := Obj.I['size'];
+				kind := Obj.S['kind'];
+				weblink := Obj.S['weblink'];
+				rev := Obj.I['rev'];
+				type_ := Obj.S['type'];
+				home := Obj.S['home'];
+				name := Obj.S['name'];
+				if (type_ = TYPE_FILE) then begin
+					mtime := Obj.I['mtime'];
+					virus_scan := Obj.S['virus_scan'];
+					hash := Obj.S['hash'];
+				end
+				else begin
+					mtime := 0;
+				end;
+			end;
+		end;
+	result := ResultItems;
+end;
+
+function TCloudMailRu.UrlEncode(URL: UTF8String): WideString; // todo нужно добиться корректного формирования урлов
+var
+	I: integer;
+begin
+	result := '';
+	for I := 1 to Length(URL) do
+		if URL[I] in ['a' .. 'z', 'A' .. 'Z', '/', '_', '-', '.'] then result := result + URL[I]
+		else result := result + '%' + IntToHex(Ord(URL[I]), 2);
+end;
+
 
 end.
