@@ -218,7 +218,7 @@ begin
 		password := PluginIniFile.ReadString(RealPath.account, 'password', '');
 		// todo проверка на пустые данные
 		if not Assigned(Cloud) then begin
-			Cloud := TCloudMailRu.Create(user, domain, password);
+			Cloud := TCloudMailRu.Create(user, domain, password,MyProgressProc,PluginNum);
 			if (Cloud.login() and Cloud.getToken(debug)) then begin
 				CurrentLogon := true;
 			end
@@ -349,7 +349,7 @@ begin
 	RealPath := ExtractRealPath(RemoteName);
 	// ProgressProc (PluginNum,pchar(InFileName),pchar(OutFilename),round(((SizeDone/SizeFile)*100)))
 		MyProgressProc(PluginNum, LocalName, RemoteName, 0);
-	Cloud.getFile(WideString(RealPath.path), WideString(LocalName));
+	Cloud.getFile(WideString(RealPath.path), WideString(LocalName),MyProgressProc);
 	Result := FS_FILE_OK;
 	MyProgressProc(PluginNum, LocalName, RemoteName, 100);
 	// Копирование файла из файловой системы плагина

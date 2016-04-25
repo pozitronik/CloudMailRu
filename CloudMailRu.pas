@@ -3,7 +3,7 @@
 interface
 
 uses
-	System.Classes, System.SysUtils, XSuperJson, XSuperObject,
+	System.Classes, System.SysUtils, XSuperJson, XSuperObject, PLUGIN_Types,
 	IdCookieManager, IdIOHandler, IdIOHandlerSocket, IdIOHandlerStack, IdSSL,
 	IdSSLOpenSSL, IdBaseComponent, IdComponent, IdTCPConnection, IdTCPClient,
 	IdHTTP, IdAuthentication, IdIOHandlerStream;
@@ -43,6 +43,8 @@ type
 		HTTP: TIdHTTP;
 		Cookie: TIdCookieManager;
 		SSL: TIdSSLIOHandlerSocketOpenSSL;
+		ExternalProgressProc: TProgressProc;
+
 		function HTTPPost(URL: WideString; PostData: TStringList): boolean; overload;
 		function HTTPPost(URL: WideString; PostData: TStringList; var Answer: WideString): boolean; overload;
 		function HTTPGet(URL: WideString; var Answer: WideString): boolean;
@@ -53,21 +55,25 @@ type
 		function getDirListingFromJSON(JSON: WideString): TCloudMailRuDirListing;
 		function getShardFromJSON(JSON: WideString): WideString;
 		function UrlEncode(URL: UTF8String): WideString;
+		procedure HttpProgress(ASender: TObject; AWorkMode: TWorkMode; AWorkCount: int64);
 	public
-		constructor Create(user, domain, password: WideString);
+		ExternalPluginNr: integer;
+		ExternalSourceName: PWideChar;
+		ExternalTargetName: PWideChar;
+		constructor Create(user, domain, password: WideString; ExternalProgressProc: TProgressProc; PluginNr: integer);
 		destructor Destroy;
 		function login(): boolean;
 		function getToken(var ParseData: WideString): boolean;
 		function getShard(var Shard: WideString): boolean;
 		function getDir(path: WideString; var DirListing: TCloudMailRuDirListing): boolean;
-		function getFile(remotePath, localPath: WideString): boolean;
+		function getFile(remotePath, localPath: WideString; ProgressProc: TProgressProc): boolean;
 	end;
 
 implementation
 
 { TCloudMailRu }
 
-constructor TCloudMailRu.Create(user, domain, password: WideString);
+constructor TCloudMailRu.Create(user, domain, password: WideString; ExternalProgressProc: TProgressProc; PluginNr: integer);
 begin
 	self.SSL := TIdSSLIOHandlerSocketOpenSSL.Create();
 	self.Cookie := TIdCookieManager.Create();
@@ -81,6 +87,10 @@ begin
 	self.user := user;
 	self.password := password;
 	self.domain := domain;
+	self.ExternalProgressProc := ExternalProgressProc;
+	self.ExternalPluginNr := PluginNr;
+	self.ExternalSourceName := '';
+	self.ExternalTargetName := '';
 end;
 
 destructor TCloudMailRu.Destroy;
@@ -147,7 +157,7 @@ begin
 	result := ResultItems;
 end;
 
-function TCloudMailRu.getFile(remotePath, localPath: WideString): boolean;
+function TCloudMailRu.getFile(remotePath, localPath: WideString; ProgressProc: TProgressProc): boolean;
 var
 	FileStream: TMemoryStream;
 	Shard: WideString; // todo make this global
@@ -156,6 +166,8 @@ begin
 	self.getShard(Shard);
 	remotePath := self.UrlEncode(StringReplace(remotePath, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
 	remotePath := Shard + remotePath;
+
+	self.HTTP.OnWork := self.HttpProgress;
 	self.HTTP.Get(remotePath, FileStream);
 	FileStream.SaveToFile(localPath);
 end;
@@ -231,13 +243,13 @@ begin
 	login := PostResult; // todo проверять успешность авторизации
 end;
 
-function TCloudMailRu.UrlEncode(URL: UTF8String): WideString;//todo нужно добиться корректного формирования урлов
+function TCloudMailRu.UrlEncode(URL: UTF8String): WideString; // todo нужно добиться корректного формирования урлов
 var
 	I: integer;
 begin
 	result := '';
 	for I := 1 to Length(URL) do
-		if URL[I] in ['a' .. 'z', 'A' .. 'Z','/','_','-','.'] then result := result + URL[I]
+		if URL[I] in ['a' .. 'z', 'A' .. 'Z', '/', '_', '-', '.'] then result := result + URL[I]
 		else result := result + '%' + IntToHex(Ord(URL[I]), 2);
 end;
 
@@ -271,6 +283,21 @@ begin
 	HTTP.Post(URL, PostData, MemStream);
 	Answer := MemStream.DataString;
 	MemStream.Free;
+end;
+
+procedure TCloudMailRu.HttpProgress(ASender: TObject; AWorkMode: TWorkMode; AWorkCount: int64);
+var
+	HTTP: TIdHTTP;
+	ContentLength: int64;
+	Percent: integer;
+begin
+	HTTP := TIdHTTP(ASender);
+	ContentLength := HTTP.Response.ContentLength;
+
+	if (Pos('chunked', LowerCase(HTTP.Response.TransferEncoding)) = 0) and (ContentLength > 0) then begin
+		Percent := 100 * AWorkCount div ContentLength;
+		self.ExternalProgressProc(self.ExternalPluginNr, self.ExternalSourceName, self.ExternalTargetName, Percent);
+	end;
 end;
 
 function TCloudMailRu.getTokenFromText(Text: WideString): WideString;
