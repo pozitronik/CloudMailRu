@@ -60,6 +60,7 @@ type
 		function UrlEncode(URL: UTF8String): WideString;
 		procedure HttpProgress(ASender: TObject; AWorkMode: TWorkMode; AWorkCount: int64);
 	public
+		CancelCopy: boolean;
 		ExternalPluginNr: integer;
 		ExternalSourceName: PWideChar;
 		ExternalTargetName: PWideChar;
@@ -69,6 +70,7 @@ type
 
 		function getDir(path: WideString; var DirListing: TCloudMailRuDirListing): boolean;
 		function getFile(remotePath, localPath: WideString; ProgressProc: TProgressProc): integer;
+
 	end;
 
 implementation
@@ -125,6 +127,8 @@ var
 	FileStream: TMemoryStream;
 	Shard: WideString; // todo make this global
 begin
+	if self.CancelCopy then exit(FS_FILE_USERABORT);
+
 	result := FS_FILE_OK;
 	FileStream := TMemoryStream.Create;
 	if not self.getShard(Shard) then begin
@@ -135,10 +139,39 @@ begin
 	try
 		self.HTTP.Get(Shard + remotePath, FileStream);
 	except
-		exit(FS_FILE_READERROR);
+		on E: Exception do begin
+			if E.ClassName = 'EAbort' then begin
+				exit(FS_FILE_USERABORT);
+			end
+			else begin
+				self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar(E.ClassName + ' ошибка с сообщением : ' + E.Message));
+				exit(FS_FILE_READERROR);
+			end;
+
+		end;
 	end;
 	FileStream.SaveToFile(localPath);
+end;
 
+procedure TCloudMailRu.HttpProgress(ASender: TObject; AWorkMode: TWorkMode; AWorkCount: int64);
+var
+	HTTP: TIdHTTP;
+	ContentLength: int64;
+	Percent: integer;
+begin
+	if self.CancelCopy then Abort;
+
+	HTTP := TIdHTTP(ASender);
+	ContentLength := HTTP.Response.ContentLength;
+	if (Pos('chunked', LowerCase(HTTP.Response.TransferEncoding)) = 0) and (ContentLength > 0) then begin
+		Percent := 100 * AWorkCount div ContentLength;
+		if self.ExternalProgressProc(self.ExternalPluginNr, self.ExternalSourceName, self.ExternalTargetName, Percent) = 1 then begin
+			self.CancelCopy := true;
+			// HTTP.Disconnect;
+
+			Abort;
+		end;
+	end;
 end;
 
 function TCloudMailRu.getShard(var Shard: WideString): boolean;
@@ -147,7 +180,8 @@ var
 	PostData: TStringList;
 	Answer: WideString;
 	JSON: TJSONObject;
-begin // todo error handling
+begin
+	// todo error handling
 	URL := 'https://cloud.mail.ru/api/v2/dispatcher/';
 	PostData := TStringList.Create;
 	PostData.Values['api'] := '2';
@@ -210,10 +244,10 @@ begin
 		self.ExternalLogProc(ExternalPluginNr, MSGTYPE_DETAILS, PWideChar('Getting auth token for ' + self.user + '@' + self.domain));
 		result := self.getToken();
 		if (result) then begin
-			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_CONNECT, PWideChar('CONNECT ' + self.user + '@' + self.domain));
+			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_DETAILS, PWideChar('Connected to ' + self.user + '@' + self.domain));
 		end
 		else begin
-			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Error gettong auth token for ' + self.user + '@' + self.domain));
+			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Error getting auth token for ' + self.user + '@' + self.domain));
 		end;
 
 	end
@@ -258,23 +292,6 @@ begin
 		exit(false);
 	end;
 	result := Answer <> '';
-end;
-
-procedure TCloudMailRu.HttpProgress(ASender: TObject; AWorkMode: TWorkMode; AWorkCount: int64);
-var
-	HTTP: TIdHTTP;
-	ContentLength: int64;
-	Percent: integer;
-begin
-	HTTP := TIdHTTP(ASender);
-	ContentLength := HTTP.Response.ContentLength;
-
-	if (Pos('chunked', LowerCase(HTTP.Response.TransferEncoding)) = 0) and (ContentLength > 0) then begin
-		Percent := 100 * AWorkCount div ContentLength;
-		if self.ExternalProgressProc(self.ExternalPluginNr, self.ExternalSourceName, self.ExternalTargetName, Percent) = 1 then begin
-			HTTP.Disconnect; // todo нотификация FS_FILE_USERABORT
-		end;
-	end;
 end;
 
 function TCloudMailRu.getTokenFromText(Text: WideString): WideString;

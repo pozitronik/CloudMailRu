@@ -31,10 +31,12 @@ var
 begin
 	List := TStringList.Create;
 	ExtractStrings(['\'], [], PWideChar(VirtualPath), List);
-	ExtractRealPath.account := List.Strings[0];
+	result.account := List.Strings[0];
 	List.Delete(0);
 
-	ExtractRealPath.path := Implode(List, '\');
+	result.path := Implode(List, '\');
+	if result.path = '' then ExtractRealPath.path := '\';
+
 	List.Free;
 end;
 

@@ -47,6 +47,7 @@ end;
 
 procedure FsStatusInfo(RemoteDir: PAnsiChar; InfoStartEnd, InfoOperation: integer); stdcall;
 begin
+	if Assigned(Cloud) then Cloud.CancelCopy := false; //todo: временно сделал
 	// Начало и конец операций FS
 	if (InfoStartEnd = FS_STATUS_START) then begin
 		case InfoOperation of
@@ -181,17 +182,17 @@ begin
 	end
 	else begin
 		RealPath := ExtractRealPath(GlobalPath);
-		user := PluginIniFile.ReadString(RealPath.account, 'user', '');
-		domain := PluginIniFile.ReadString(RealPath.account, 'domain', '');
-		password := PluginIniFile.ReadString(RealPath.account, 'password', '');
-		// todo проверка на пустые данные
 		if not Assigned(Cloud) then begin
+			user := PluginIniFile.ReadString(RealPath.account, 'user', '');
+			domain := PluginIniFile.ReadString(RealPath.account, 'domain', '');
+			password := PluginIniFile.ReadString(RealPath.account, 'password', '');
+			// todo проверка на пустые данные
+			MyLogProc(PluginNum, MSGTYPE_CONNECT, PWideChar('CONNECT ' + user + '@' + domain));
 			Cloud := TCloudMailRu.Create(user, domain, password, MyProgressProc, PluginNum, MyLogProc);
 			if Cloud.login() then begin
 				CurrentLogon := true;
 			end
 			else begin
-				//MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, PWideChar('Error login to ' + user + '@' + domain));
 				CurrentLogon := false;
 				FreeAndNil(Cloud);
 				setlasterror(ERROR_NETWORK_ACCESS_DENIED);
@@ -201,8 +202,10 @@ begin
 		end;
 
 		if CurrentLogon then begin
-			MyProgressProc(PluginNum, 'opening', PWideChar(RealPath.path), 0);
-			Cloud.getDir(RealPath.path, CurrentListing);
+			if not Cloud.getDir(RealPath.path, CurrentListing) then begin
+				setlasterror(ERROR_PATH_NOT_FOUND);
+				exit(INVALID_HANDLE_VALUE);
+			end;
 
 			if Length(CurrentListing) = 0 then begin
 				// setlasterror(ERROR_NO_MORE_FILES);
@@ -278,7 +281,6 @@ end;
 
 function FsFindClose(Hdl: thandle): integer; stdcall;
 Begin
-	MyProgressProc(PluginNum, '', '', 100);
 	// Завершение получения списка файлов. Result тоталом не используется (всегда равен 0)
 	Result := 0;
 	FileCounter := 0;
@@ -329,6 +331,7 @@ begin
 					exit(FS_FILE_EXISTS);
 				end
 				else begin
+
 					Result := Cloud.getFile(WideString(RealPath.path), WideString(LocalName), MyProgressProc);
 					MyProgressProc(PluginNum, LocalName, RemoteName, 100);
 					MyLogProc(PluginNum, MSGTYPE_TRANSFERCOMPLETE, PWideChar(RemoteName + '->' + LocalName));
