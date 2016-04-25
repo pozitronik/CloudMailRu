@@ -52,7 +52,7 @@ end;
 
 procedure FsStatusInfoW(RemoteDir: PWideChar; InfoStartEnd, InfoOperation: integer); stdcall;
 begin
-	if Assigned(Cloud) then Cloud.CancelCopy := false; //todo: временно сделал
+	if Assigned(Cloud) then Cloud.CancelCopy := false; // todo: временно сделал
 	// Начало и конец операций FS
 	if (InfoStartEnd = FS_STATUS_START) then begin
 		case InfoOperation of
@@ -145,13 +145,13 @@ end;
 
 function FsFindFirst(path: PAnsiChar; var FindData: tWIN32FINDDATAA): thandle; stdcall;
 begin
-	setlasterror(ERROR_INVALID_FUNCTION);
+	SetLastError(ERROR_INVALID_FUNCTION);
 	Result := ERROR_INVALID_HANDLE; // Ansi-заглушка
 end;
 
 function FsFindNext(Hdl: thandle; var FindData: tWIN32FINDDATAA): bool; stdcall;
 begin
-	setlasterror(ERROR_INVALID_FUNCTION);
+	SetLastError(ERROR_INVALID_FUNCTION);
 	Result := false; // Ansi-заглушка
 end;
 
@@ -180,7 +180,7 @@ begin
 			exit(0);
 		end
 		else begin
-			setlasterror(ERROR_NO_MORE_FILES);
+			SetLastError(ERROR_NO_MORE_FILES);
 			exit(INVALID_HANDLE_VALUE);
 		end;
 
@@ -200,7 +200,7 @@ begin
 			else begin
 				CurrentLogon := false;
 				FreeAndNil(Cloud);
-				setlasterror(ERROR_NETWORK_ACCESS_DENIED);
+				SetLastError(ERROR_NETWORK_ACCESS_DENIED);
 				exit(INVALID_HANDLE_VALUE);
 			end;
 
@@ -208,7 +208,7 @@ begin
 
 		if CurrentLogon then begin
 			if not Cloud.getDir(RealPath.path, CurrentListing) then begin
-				setlasterror(ERROR_PATH_NOT_FOUND);
+				SetLastError(ERROR_PATH_NOT_FOUND);
 				exit(INVALID_HANDLE_VALUE);
 			end;
 
@@ -230,7 +230,7 @@ begin
 			Result := 1;
 		end
 		else begin
-			setlasterror(ERROR_INVALID_HANDLE);
+			SetLastError(ERROR_INVALID_HANDLE);
 			Result := INVALID_HANDLE_VALUE;
 			strpcopy(FindData.cFileName, 'Ошибка входа по указанным данным'); // Сюда никогда не должны попасть
 		end;
@@ -316,7 +316,7 @@ End;
 
 function FsGetFile(RemoteName, LocalName: PAnsiChar; CopyFlags: integer; RemoteInfo: pRemoteInfo): integer; stdcall;
 begin
-	setlasterror(ERROR_INVALID_FUNCTION);
+	SetLastError(ERROR_INVALID_FUNCTION);
 	Result := FS_FILE_NOTSUPPORTED; // Ansi-заглушка
 	// Копирование файла из файловой системы плагина
 end;
@@ -354,26 +354,27 @@ begin
 				MyProgressProc(PluginNum, LocalName, RemoteName, 100);
 				MyLogProc(PluginNum, MSGTYPE_TRANSFERCOMPLETE, PWideChar(RemoteName + '->' + LocalName));
 			End;
+	else result := FS_FILE_NOTSUPPORTED; //это. не можыд. быт. Чтобы ворнинга не было
 	end;
 end;
 
 function FsPutFile(LocalName, RemoteName: PAnsiChar; CopyFlags: integer): integer; stdcall;
 begin
-	setlasterror(ERROR_INVALID_FUNCTION);
+	SetLastError(ERROR_INVALID_FUNCTION);
 	Result := FS_FILE_NOTSUPPORTED; // Ansi-заглушка
 	// Копирование файла в файловую систему плагина
 end;
 
 function FsDeleteFile(RemoteName: PAnsiChar): bool; stdcall;
 Begin
-	setlasterror(ERROR_INVALID_FUNCTION); // Ansi-заглушка
+	SetLastError(ERROR_INVALID_FUNCTION); // Ansi-заглушка
 	Result := false;
 	// Удаление файла из файловой ссистемы плагина
 End;
 
 function FsDisconnect(DisconnectRoot: PAnsiChar): bool; stdcall;
 begin
-	setlasterror(ERROR_INVALID_FUNCTION);
+	SetLastError(ERROR_INVALID_FUNCTION);
 	Result := false; // ansi-заглушка
 end;
 
@@ -384,7 +385,7 @@ begin
 end;
 
 exports FsGetDefRootName, FsInit, FsInitW, FsFindFirst, FsFindFirstW, FsFindNext, FsFindNextW, FsFindClose, FsGetFile, FsGetFileW,
-	FsDisconnect, FsDisconnectW,FsStatusInfo,FsStatusInfoW;
+	FsDisconnect, FsDisconnectW, FsStatusInfo, FsStatusInfoW;
 
 (* ,
 	FsExecuteFile,

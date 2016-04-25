@@ -24,3 +24,6 @@
 /Example.dproj.local
 /Example.dpr
 /Win32
+/XSuperObject.dcu
+/XSuperJSON.dcu
+/MRC_Helper.dcu

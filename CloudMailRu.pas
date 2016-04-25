@@ -1,4 +1,4 @@
-﻿unit CloudMailRu;
+unit CloudMailRu;
 
 interface
 
@@ -179,7 +179,6 @@ var
 	URL: WideString;
 	PostData: TStringList;
 	Answer: WideString;
-	JSON: TJSONObject;
 begin
 	// todo error handling
 	URL := 'https://cloud.mail.ru/api/v2/dispatcher/';
@@ -200,7 +199,6 @@ end;
 function TCloudMailRu.getToken(): boolean;
 var
 	URL: WideString;
-	PostData: TStringList;
 	PostResult: boolean;
 	Answer: WideString;
 begin
