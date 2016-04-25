@@ -91,6 +91,7 @@
             <MainSource>MainSource</MainSource>
         </DelphiCompile>
         <DCCReference Include="CloudMailRu.pas"/>
+        <DCCReference Include="MRC_Helper.pas"/>
         <RcItem Include="icon.ico">
             <ResourceType>ICON</ResourceType>
             <ResourceId>MainIcon</ResourceId>

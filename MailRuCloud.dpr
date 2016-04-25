@@ -11,16 +11,11 @@ uses
 	PLUGIN_MAIN,
 	messages,
 	inifiles,
-	CloudMailRu in 'CloudMailRu.pas';
+	CloudMailRu in 'CloudMailRu.pas',
+	MRC_Helper in 'MRC_Helper.pas';
 
 {$E wfx}
 {$R *.res}
-
-type
-	TRealPath = record
-		account: WideString;
-		path: WideString;
-	end;
 
 var
 	tmp: pchar;
@@ -152,29 +147,6 @@ function FsFindNext(Hdl: thandle; var FindData: tWIN32FINDDATAA): bool; stdcall;
 begin
 	setlasterror(ERROR_INVALID_FUNCTION);
 	Result := false; // Ansi-заглушка
-end;
-
-function Implode(S: TStringList; Delimiter: Char): WideString; // todo helper
-var
-	iCount: integer;
-begin
-	Result := '';
-	if (S.Count = 0) then exit;
-	for iCount := 0 to pred(S.Count) do Result := Result + S.Strings[iCount] + Delimiter;
-	System.Delete(Result, Length(Result), 1);
-end;
-
-function ExtractRealPath(VirtualPath: WideString): TRealPath; // todo helper
-var
-	List: TStringList;
-begin
-	List := TStringList.Create;
-	ExtractStrings(['\'], [], PWideChar(VirtualPath), List);
-	ExtractRealPath.account := List.Strings[0];
-	List.Delete(0);
-
-	ExtractRealPath.path := Implode(List, '\');
-	List.Free;
 end;
 
 function FsFindFirstW(path: PWideChar; var FindData: tWIN32FINDDATAW): thandle; stdcall;
@@ -367,14 +339,14 @@ end;
 function FsDeleteFile(RemoteName: PAnsiChar): bool; stdcall;
 Begin
 	setlasterror(ERROR_INVALID_FUNCTION); // Ansi-заглушка
-  result:=false;
+	Result := false;
 	// Удаление файла из файловой ссистемы плагина
 End;
 
 function FsDisconnect(DisconnectRoot: PAnsiChar): bool; stdcall;
 begin
 	setlasterror(ERROR_INVALID_FUNCTION);
-	result:=false;// ansi-заглушка
+	Result := false; // ansi-заглушка
 end;
 
 function FsDisconnectW(DisconnectRoot: PWideChar): bool; stdcall;
