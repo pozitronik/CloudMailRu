@@ -35,7 +35,7 @@ type
 		domain: WideString;
 		user: WideString;
 		password: WideString;
-		dir: WideString;
+		// dir: WideString;
 		token: WideString;
 		x_page_id: WideString;
 		build: WideString;
@@ -115,9 +115,9 @@ begin
 	URL := 'https://cloud.mail.ru/api/v2/folder?sort={%22type%22%3A%22name%22%2C%22order%22%3A%22asc%22}&offset=0&limit=10000&home=' + path + '&api=2&build=' +
 		self.build + '&x-page-id=' + self.x_page_id + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&token=' +
 		self.token + '&_=1433249148810';
-	getDir := self.HTTPGet(URL, JSON);
+	result := self.HTTPGet(URL, JSON);
+	if not result then exit(false);
 	DirListing := self.getDirListingFromJSON(JSON);
-
 end;
 
 function TCloudMailRu.getFile(remotePath, localPath: WideString; ProgressProc: TProgressProc): integer; // 0 - ok, else error
@@ -249,14 +249,15 @@ begin
 	MemStream.Free;
 end;
 
-function TCloudMailRu.HTTPGet(URL: WideString; var Answer: WideString): boolean; // todo: проверку на состояние ответа
+function TCloudMailRu.HTTPGet(URL: WideString; var Answer: WideString): boolean;
 begin
-	HTTPGet := true;
+	result := true;
 	try
 		Answer := self.HTTP.Get(URL);
 	Except
-		HTTPGet := false;
+		exit(false);
 	end;
+	result := Answer <> '';
 end;
 
 procedure TCloudMailRu.HttpProgress(ASender: TObject; AWorkMode: TWorkMode; AWorkCount: int64);
@@ -309,14 +310,14 @@ end;
 
 function TCloudMailRu.get_upload_url_FromText(Text: WideString): WideString;
 var
-	start, start1, start2, finish, finish1, Length: integer;
+	start, start1, start2, finish, Length: integer;
 	temp: WideString;
 begin
 	start := Pos(WideString('mail.ru/upload/"'), Text);
 	if start > 0 then begin
 		start1 := start - 50;
-		finish1 := start + 15;
-		Length := finish1 - start1;
+		finish := start + 15;
+		Length := finish - start1;
 
 		temp := Copy(Text, start1, Length);
 		start2 := Pos(WideString('https://'), temp);

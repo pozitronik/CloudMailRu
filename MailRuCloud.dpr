@@ -191,6 +191,7 @@ begin
 				CurrentLogon := true;
 			end
 			else begin
+				//MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, PWideChar('Error login to ' + user + '@' + domain));
 				CurrentLogon := false;
 				FreeAndNil(Cloud);
 				setlasterror(ERROR_NETWORK_ACCESS_DENIED);
@@ -200,6 +201,7 @@ begin
 		end;
 
 		if CurrentLogon then begin
+			MyProgressProc(PluginNum, 'opening', PWideChar(RealPath.path), 0);
 			Cloud.getDir(RealPath.path, CurrentListing);
 
 			if Length(CurrentListing) = 0 then begin
@@ -276,6 +278,7 @@ end;
 
 function FsFindClose(Hdl: thandle): integer; stdcall;
 Begin
+	MyProgressProc(PluginNum, '', '', 100);
 	// «авершение получени€ списка файлов. Result тоталом не используетс€ (всегда равен 0)
 	Result := 0;
 	FileCounter := 0;
