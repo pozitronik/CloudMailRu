@@ -1,9 +1,9 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <BorlandProject>
 	<Transactions>
-    <Transaction>1899.12.30 00:00:00.000.236,D:\DATA\WORKPLACE\WORKSPACE\CloudMailRu\ExampleApp.pas=C:\Users\Asus\Documents\RAD Studio\Projects\Unit1.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.300,C:\Users\Asus\Documents\RAD Studio\Projects\Project1.dproj=D:\DATA\WORKPLACE\WORKSPACE\CloudMailRu\Example.dproj</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.236,C:\Users\Asus\Documents\RAD Studio\Projects\Unit1.dfm=D:\DATA\WORKPLACE\WORKSPACE\CloudMailRu\ExampleApp.dfm</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.236,C:\Users\Asus\Documents\RAD Studio\Projects\Unit1.pas=D:\DATA\WORKPLACE\WORKSPACE\CloudMailRu\ExampleApp.pas</Transaction>
     <Transaction>1899.12.30 00:00:00.000.711,=C:\Users\Asus\Documents\RAD Studio\Projects\Unit1.pas</Transaction>
-    <Transaction>1899.12.30 00:00:00.000.300,D:\DATA\WORKPLACE\WORKSPACE\CloudMailRu\Example.dproj=C:\Users\Asus\Documents\RAD Studio\Projects\Project1.dproj</Transaction>
-    <Transaction>1899.12.30 00:00:00.000.236,D:\DATA\WORKPLACE\WORKSPACE\CloudMailRu\ExampleApp.dfm=C:\Users\Asus\Documents\RAD Studio\Projects\Unit1.dfm</Transaction>
   </Transactions>
 </BorlandProject>

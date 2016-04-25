@@ -217,7 +217,10 @@ begin
 			end
 			else begin
 				CurrentLogon := false;
-				Cloud.Free;
+				FreeAndNil(Cloud);
+				setlasterror(ERROR_NETWORK_ACCESS_DENIED);
+				Result := INVALID_HANDLE_VALUE;
+				exit;
 			end;
 
 		end;

@@ -83,6 +83,7 @@ begin
 	self.HTTP.IOHandler := SSL;
 	self.HTTP.AllowCookies := true;
 	self.HTTP.HandleRedirects := true;
+	// self.HTTP.ConnectTimeout:=10;
 	self.HTTP.Request.UserAgent := 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.17 (KHTML, like Gecko) Chrome/24.0.1312.57 Safari/537.17';
 
 	self.user := user;
@@ -99,7 +100,6 @@ begin
 	self.HTTP.Destroy;
 	self.SSL.Destroy;
 	self.Cookie.Destroy;
-
 end;
 
 function TCloudMailRu.getDir(path: WideString; var DirListing: TCloudMailRuDirListing): boolean;
@@ -190,9 +190,9 @@ begin
 	PostData.Values['new_auth_form'] := '1';
 	PostResult := self.HTTPPost(URL, PostData); // todo проверять успешность авторизации
 	PostData.Destroy;
-	login := PostResult;
-	if (login) then begin
-		login := self.getToken()
+	result := PostResult;
+	if (PostResult) then begin
+		result := self.getToken()
 	end;
 end;
 
@@ -201,16 +201,31 @@ var
 	MemStream: TStream;
 begin
 	result := true;
+	MemStream := TMemoryStream.Create;
 	try
-		MemStream := TMemoryStream.Create;
-		HTTP.Post(URL, PostData, MemStream);
-		MemStream.Free;
+		self.HTTP.Post(URL, PostData, MemStream);
 	except
 		result := false;
 	end;
+	MemStream.Free;
 end;
 
-function TCloudMailRu.HTTPGet(URL: WideString; var Answer: WideString): boolean;
+function TCloudMailRu.HTTPPost(URL: WideString; PostData: TStringList; var Answer: WideString): boolean;
+var
+	MemStream: TStringStream;
+begin
+	result := true;
+	MemStream := TStringStream.Create;
+	try
+		self.HTTP.Post(URL, PostData, MemStream);
+		Answer := MemStream.DataString;
+	except
+		result := false;
+	end;
+	MemStream.Free;
+end;
+
+function TCloudMailRu.HTTPGet(URL: WideString; var Answer: WideString): boolean; // todo: проверку на состояние ответа
 begin
 	HTTPGet := true;
 	try
@@ -218,19 +233,6 @@ begin
 	Except
 		HTTPGet := false;
 	end;
-
-	// todo: проверку на состояние ответа
-
-end;
-
-function TCloudMailRu.HTTPPost(URL: WideString; PostData: TStringList; var Answer: WideString): boolean;
-var
-	MemStream: TStringStream;
-begin
-	MemStream := TStringStream.Create;
-	HTTP.Post(URL, PostData, MemStream);
-	Answer := MemStream.DataString;
-	MemStream.Free;
 end;
 
 procedure TCloudMailRu.HttpProgress(ASender: TObject; AWorkMode: TWorkMode; AWorkCount: int64);
@@ -370,6 +372,5 @@ begin
 		if URL[I] in ['a' .. 'z', 'A' .. 'Z', '/', '_', '-', '.'] then result := result + URL[I]
 		else result := result + '%' + IntToHex(Ord(URL[I]), 2);
 end;
-
 
 end.
