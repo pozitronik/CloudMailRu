@@ -219,7 +219,7 @@ begin
 		// todo проверка на пустые данные
 		if not Assigned(Cloud) then begin
 			Cloud := TCloudMailRu.Create(user, domain, password,MyProgressProc,PluginNum);
-			if (Cloud.login() and Cloud.getToken(debug)) then begin
+			if Cloud.login() then begin
 				CurrentLogon := true;
 			end
 			else begin

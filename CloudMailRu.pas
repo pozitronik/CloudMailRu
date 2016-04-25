@@ -45,6 +45,8 @@ type
 		SSL: TIdSSLIOHandlerSocketOpenSSL;
 		ExternalProgressProc: TProgressProc;
 
+		function getToken( (* var ParseData: WideString *) ): boolean;
+		function getShard(var Shard: WideString): boolean;
 		function HTTPPost(URL: WideString; PostData: TStringList): boolean; overload;
 		function HTTPPost(URL: WideString; PostData: TStringList; var Answer: WideString): boolean; overload;
 		function HTTPGet(URL: WideString; var Answer: WideString): boolean;
@@ -63,8 +65,7 @@ type
 		constructor Create(user, domain, password: WideString; ExternalProgressProc: TProgressProc; PluginNr: integer);
 		destructor Destroy;
 		function login(): boolean;
-		function getToken(var ParseData: WideString): boolean;
-		function getShard(var Shard: WideString): boolean;
+
 		function getDir(path: WideString; var DirListing: TCloudMailRuDirListing): boolean;
 		function getFile(remotePath, localPath: WideString; ProgressProc: TProgressProc): boolean;
 	end;
@@ -201,7 +202,7 @@ begin
 	Shard := self.getShardFromJSON(Answer);
 end;
 
-function TCloudMailRu.getToken(var ParseData: WideString): boolean;
+function TCloudMailRu.getToken( (* var ParseData: WideString *) ): boolean;
 var
 	URL: WideString;
 	PostData: TStringList;
@@ -210,7 +211,7 @@ var
 begin
 	URL := 'https://cloud.mail.ru/?from=promo&from=authpopup';
 	PostResult := self.HTTPGet(URL, Answer);
-	ParseData := Answer;
+	(* ParseData := Answer; *)
 	if PostResult then begin
 		self.token := self.getTokenFromText(Answer);
 		self.x_page_id := self.get_x_page_id_FromText(Answer);
@@ -238,9 +239,12 @@ begin
 	PostData.Values['Login'] := self.user;
 	PostData.Values['Password'] := self.password;
 	PostData.Values['new_auth_form'] := '1';
-	PostResult := self.HTTPPost(URL, PostData);
+	PostResult := self.HTTPPost(URL, PostData); // todo проверять успешность авторизации
 	PostData.Destroy;
-	login := PostResult; // todo проверять успешность авторизации
+	login := PostResult;
+	if (login) then begin
+		login := self.getToken()
+	end;
 end;
 
 function TCloudMailRu.UrlEncode(URL: UTF8String): WideString; // todo нужно добиться корректного формирования урлов
