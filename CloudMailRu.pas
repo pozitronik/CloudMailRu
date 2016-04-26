@@ -4,6 +4,7 @@ interface
 
 uses
 	System.Classes, System.SysUtils, XSuperJson, XSuperObject, PLUGIN_Types,
+	MRC_helper,
 	IdCookieManager, IdIOHandler, IdIOHandlerSocket, IdIOHandlerStack, IdSSL,
 	IdSSLOpenSSL, IdBaseComponent, IdComponent, IdTCPConnection, IdTCPClient,
 	IdHTTP, IdAuthentication, IdIOHandlerStream;
@@ -50,6 +51,8 @@ type
 
 		function getToken(): boolean;
 		function getShard(var Shard: WideString): boolean;
+		function putFileToCloud(localPath: WideString; Return: TStringList): boolean;
+		function addFileToCloud(putFileArray: TStringList; remotePath: WideString; var JSONAnswer: WideString): boolean;
 		function HTTPPost(URL: WideString; PostData: TStringList): boolean; overload;
 		function HTTPPost(URL: WideString; PostData: TStringList; var Answer: WideString): boolean; overload;
 		function HTTPGet(URL: WideString; var Answer: WideString): boolean;
@@ -72,6 +75,7 @@ type
 
 		function getDir(path: WideString; var DirListing: TCloudMailRuDirListing): boolean;
 		function getFile(remotePath, localPath: WideString): integer;
+		function putFile(localPath, remotePath: WideString): integer;
 
 	end;
 
@@ -268,6 +272,58 @@ begin
 		end;
 	end
 	else self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Error login to ' + self.user + '@' + self.domain));
+end;
+
+function TCloudMailRu.putFile(localPath, remotePath: WideString): integer;
+var
+	PutResult: TStringList;
+	JSONAnswer: WideString;
+begin
+	PutResult := TStringList.Create;
+	if self.putFileToCloud(localPath, PutResult) then begin
+		self.addFileToCloud(PutResult, remotePath, JSONAnswer);
+		self.ExternalLogProc(ExternalPluginNr, MSGTYPE_DETAILS, PWideChar(JSONAnswer));
+	end;
+	PutResult.Destroy;
+end;
+
+function TCloudMailRu.putFileToCloud(localPath: WideString; Return: TStringList): boolean;
+var
+	URL, Answer: WideString;
+	PostData: TStringList;
+begin
+	URL := self.upload_url + '?cloud_domain=1&x-email=' + self.user + '%40' + self.domain + '&fileapi' + IntToStr(DateTimeToUnix(now)) + '0246';
+	PostData := TStringList.Create;
+	PostData.Values['file'] := '@' + localPath;
+	result := self.HTTPPost(URL, PostData, Answer);
+	PostData.Destroy;
+	if (result) then begin
+		ExtractStrings([';'], [], PWideChar(Answer), Return);
+		if Length(Return.Strings[0]) = 40 then begin
+			exit(true);
+		end
+		else exit(false);
+	end;
+end;
+
+function TCloudMailRu.addFileToCloud(putFileArray: TStringList; remotePath: WideString; var JSONAnswer: WideString): boolean;
+var
+	URL: WideString;
+	PostData: TStringList;
+begin
+	URL := 'https://cloud.mail.ru/api/v2/file/add';
+	PostData.Values['api'] := '2';
+	PostData.Values['build'] := self.build;
+	PostData.Values['conflict'] := 'rename';
+	PostData.Values['email'] := self.user + '%40' + self.domain;
+	PostData.Values['home'] := remotePath;
+	PostData.Values['hash'] := putFileArray.Strings[0];
+	PostData.Values['size'] := putFileArray.Strings[1];
+	PostData.Values['token'] := self.token;
+	PostData.Values['x-email'] := self.user + '%40' + self.domain;
+	PostData.Values['x-page-id'] := self.x_page_id;
+	result := self.HTTPPost(URL, PostData, JSONAnswer);
+
 end;
 
 function TCloudMailRu.HTTPPost(URL: WideString; PostData: TStringList): boolean;

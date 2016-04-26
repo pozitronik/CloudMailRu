@@ -362,6 +362,14 @@ begin
 	end;
 end;
 
+function FsPutFileW(LocalName, RemoteName: PWideChar; CopyFlags: integer): integer; stdcall;
+var
+	RealPath: TRealPath;
+begin
+	RealPath := ExtractRealPath(RemoteName);
+	Cloud.putFile(WIdeString(LocalName), WideString(RealPath.path));
+end;
+
 function FsPutFile(LocalName, RemoteName: PAnsiChar; CopyFlags: integer): integer; stdcall;
 begin
 	SetLastError(ERROR_INVALID_FUNCTION);
@@ -389,7 +397,7 @@ begin
 end;
 
 exports FsGetDefRootName, FsInit, FsInitW, FsFindFirst, FsFindFirstW, FsFindNext, FsFindNextW, FsFindClose, FsGetFile, FsGetFileW,
-	FsDisconnect, FsDisconnectW, FsStatusInfo, FsStatusInfoW;
+	FsDisconnect, FsDisconnectW, FsStatusInfo, FsStatusInfoW, FsPutFile, FsPutFileW;
 
 (* ,
 	FsExecuteFile,

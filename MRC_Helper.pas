@@ -12,6 +12,7 @@ type
 
 function Implode(S: TStringList; Delimiter: Char): WideString;
 function ExtractRealPath(VirtualPath: WideString): TRealPath;
+function DateTimeToUnix(ConvDate: TDateTime): Integer;
 
 implementation
 
@@ -31,13 +32,21 @@ var
 begin
 	List := TStringList.Create;
 	ExtractStrings(['\'], [], PWideChar(VirtualPath), List);
-	result.account := List.Strings[0];
+	Result.account := List.Strings[0];
 	List.Delete(0);
 
-	result.path := Implode(List, '\');
-	if result.path = '' then ExtractRealPath.path := '\';
+	Result.path := Implode(List, '\');
+	if Result.path = '' then ExtractRealPath.path := '\';
 
-	List.Free;
+	List.Destroy;
+end;
+
+function DateTimeToUnix(ConvDate: TDateTime): Integer;
+const
+	UnixStartDate: TDateTime = 25569.0;
+begin
+	// example: DateTimeToUnix(now);
+	Result := Round((ConvDate - UnixStartDate) * 86400);
 end;
 
 end.
