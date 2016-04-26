@@ -350,7 +350,11 @@ begin
 		self.HTTP.Post(URL, PostData, MemStream);
 		Answer := MemStream.DataString;
 	except
-		result := false;
+		on E: Exception do begin
+			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar(E.ClassName + ' ошибка с сообщением : ' + E.Message));
+			result := false;
+		end;
+
 	end;
 	MemStream.Free;
 end;
