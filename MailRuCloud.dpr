@@ -341,7 +341,7 @@ begin
 				end
 				else begin
 
-					Result := Cloud.getFile(WideString(RealPath.path), WideString(LocalName), MyProgressProc);
+					Result := Cloud.getFile(WideString(RealPath.path), WideString(LocalName));
 					MyProgressProc(PluginNum, LocalName, RemoteName, 100);
 					MyLogProc(PluginNum, MSGTYPE_TRANSFERCOMPLETE, PWideChar(RemoteName + '->' + LocalName));
 				end;
@@ -354,7 +354,7 @@ begin
 				Result := FS_FILE_NOTSUPPORTED;
 			End;
 		FS_COPYFLAGS_OVERWRITE: Begin
-				Result := Cloud.getFile(WideString(RealPath.path), WideString(LocalName), MyProgressProc);
+				Result := Cloud.getFile(WideString(RealPath.path), WideString(LocalName));
 				MyProgressProc(PluginNum, LocalName, RemoteName, 100);
 				MyLogProc(PluginNum, MSGTYPE_TRANSFERCOMPLETE, PWideChar(RemoteName + '->' + LocalName));
 			End;

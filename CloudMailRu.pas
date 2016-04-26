@@ -71,7 +71,7 @@ type
 		function login(): boolean;
 
 		function getDir(path: WideString; var DirListing: TCloudMailRuDirListing): boolean;
-		function getFile(remotePath, localPath: WideString; ProgressProc: TProgressProc): integer;
+		function getFile(remotePath, localPath: WideString): integer;
 
 	end;
 
@@ -124,7 +124,7 @@ begin
 	DirListing := self.getDirListingFromJSON(JSON);
 end;
 
-function TCloudMailRu.getFile(remotePath, localPath: WideString; ProgressProc: TProgressProc): integer; // 0 - ok, else error
+function TCloudMailRu.getFile(remotePath, localPath: WideString): integer; // 0 - ok, else error
 var
 	FileStream: TMemoryStream;
 begin
