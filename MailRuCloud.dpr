@@ -426,8 +426,20 @@ begin
 	MyProgressProc(PluginNum, LocalName, PWideChar(RealPath.path), 0);
 	if CheckFlag(FS_COPYFLAGS_OVERWRITE, CopyFlags) then
 	begin
-		{ TODO: в апи не вскрыт метод перезаписи, поэтому надо сначала удалить файл }
-		Result := Cloud.putFile(WideString(LocalName), RealPath.path, CLOUD_CONFLICT_RENAME);
+		if Cloud.deleteFile(RealPath.path) then
+		begin
+			Result := Cloud.putFile(WideString(LocalName), RealPath.path);
+			if Result = FS_FILE_OK then
+			begin
+				MyProgressProc(PluginNum, LocalName, PWideChar(RealPath.path), 100);
+				MyLogProc(PluginNum, MSGTYPE_TRANSFERCOMPLETE, PWideChar(LocalName + '->' + RemoteName));
+			end;
+
+		end else begin
+			Result := FS_FILE_NOTSUPPORTED;
+
+		end;
+
 	end;
 	if CheckFlag(FS_COPYFLAGS_RESUME, CopyFlags) then
 	begin // NOT SUPPORTED
@@ -444,12 +456,13 @@ begin
 	if CopyFlags = 0 then
 	begin
 		Result := Cloud.putFile(WideString(LocalName), RealPath.path);
+		if Result = FS_FILE_OK then
+		begin
+			MyProgressProc(PluginNum, LocalName, PWideChar(RealPath.path), 100);
+			MyLogProc(PluginNum, MSGTYPE_TRANSFERCOMPLETE, PWideChar(LocalName + '->' + RemoteName));
+		end;
 	end;
-	if Result = FS_FILE_OK then
-	begin
-		MyProgressProc(PluginNum, LocalName, PWideChar(RealPath.path), 100);
-		MyLogProc(PluginNum, MSGTYPE_TRANSFERCOMPLETE, PWideChar(LocalName + '->' + RemoteName));
-	end;
+
 end;
 
 function FsDeleteFileW(RemoteName: PWideChar): bool; stdcall; // Удаление файла из файловой ссистемы плагина

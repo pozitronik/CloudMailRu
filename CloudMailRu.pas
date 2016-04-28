@@ -96,7 +96,7 @@ implementation
 
 { TCloudMailRu }
 
-{CONSTRUCTOR/DESTRUCTOR}
+{ CONSTRUCTOR/DESTRUCTOR }
 
 constructor TCloudMailRu.Create(user, domain, password: WideString; ExternalProgressProc: TProgressProc; PluginNr: integer; ExternalLogProc: TLogProc);
 begin
@@ -128,7 +128,7 @@ begin
 	self.Cookie.Destroy;
 end;
 
-{PRIVATE METHODS}
+{ PRIVATE METHODS }
 
 function TCloudMailRu.login(): boolean;
 var
@@ -202,7 +202,7 @@ begin
 	PostData.Destroy;
 end;
 
-function TCloudMailRu.putFileToCloud(localPath: WideString; Return: TStringList): boolean;{Заливка на сервер состоит из двух шагов: заливаем файл на сервер в putFileToCloud и добавляем его в облако addFileToCloud}
+function TCloudMailRu.putFileToCloud(localPath: WideString; Return: TStringList): boolean; { Заливка на сервер состоит из двух шагов: заливаем файл на сервер в putFileToCloud и добавляем его в облако addFileToCloud }
 var
 	URL, PostAnswer: WideString;
 	PostData: TIdMultipartFormDataStream;
@@ -302,7 +302,7 @@ begin
 	if self.CancelCopy then Abort;
 	HTTP := TIdHTTP(ASender);
 	if AWorkMode = wmRead then ContentLength := HTTP.Response.ContentLength
-	else ContentLength := HTTP.Request.ContentLength; //Считаем размер обработанных данных зависимости от того, скачивание это или загрузка
+	else ContentLength := HTTP.Request.ContentLength; // Считаем размер обработанных данных зависимости от того, скачивание это или загрузка
 	if (Pos('chunked', LowerCase(HTTP.Response.TransferEncoding)) = 0) and (ContentLength > 0) then
 	begin
 		Percent := 100 * AWorkCount div ContentLength;
@@ -314,7 +314,7 @@ begin
 	end;
 end;
 
-{PUBLIC METHODS}
+{ PUBLIC METHODS }
 
 function TCloudMailRu.deleteFile(path: WideString): boolean;
 var
@@ -403,7 +403,7 @@ begin
 	Except
 		on E: Exception do
 		begin
-			if E.ClassName = 'EAbort' then { TODO : Сделать аналогично в загрузке }
+			if E.ClassName = 'EAbort' then
 			begin
 				result := FS_FILE_USERABORT;
 			end else begin
@@ -437,7 +437,7 @@ begin
 	end;
 end;
 
-{PRIVATE STATIC METHODS (kinda)}
+{ PRIVATE STATIC METHODS (kinda) }
 
 function TCloudMailRu.getTokenFromText(Text: WideString): WideString;
 var
@@ -511,7 +511,7 @@ end;
 
 function TCloudMailRu.getDirListingFromJSON(JSON: WideString): TCloudMailRuDirListing;
 var
-	X, Obj: ISuperObject; // todo проверить, нужен ли ISuperObject destroy
+	X, Obj: ISuperObject; //Это интерфейсы, им дестрой не нужен
 	J: integer;
 	ResultItems: TCloudMailRuDirListing;
 begin
