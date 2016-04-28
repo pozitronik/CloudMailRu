@@ -58,68 +58,98 @@ procedure FsStatusInfoW(RemoteDir: PWideChar; InfoStartEnd, InfoOperation: integ
 begin
 	if Assigned(Cloud) then Cloud.CancelCopy := false; // todo: временно сделал
 	// Начало и конец операций FS
-	if (InfoStartEnd = FS_STATUS_START) then begin
+	if (InfoStartEnd = FS_STATUS_START) then
+	begin
 		case InfoOperation of
-			FS_STATUS_OP_LIST: begin
+			FS_STATUS_OP_LIST:
+				begin
 				end;
-			FS_STATUS_OP_GET_SINGLE: begin
+			FS_STATUS_OP_GET_SINGLE:
+				begin
 				end;
-			FS_STATUS_OP_GET_MULTI: begin
+			FS_STATUS_OP_GET_MULTI:
+				begin
 				end;
-			FS_STATUS_OP_PUT_SINGLE: begin
+			FS_STATUS_OP_PUT_SINGLE:
+				begin
 				end;
-			FS_STATUS_OP_PUT_MULTI: begin
+			FS_STATUS_OP_PUT_MULTI:
+				begin
 				end;
-			FS_STATUS_OP_RENMOV_SINGLE: begin
+			FS_STATUS_OP_RENMOV_SINGLE:
+				begin
 				end;
-			FS_STATUS_OP_RENMOV_MULTI: begin
+			FS_STATUS_OP_RENMOV_MULTI:
+				begin
 				end;
-			FS_STATUS_OP_DELETE: begin
+			FS_STATUS_OP_DELETE:
+				begin
 				end;
-			FS_STATUS_OP_ATTRIB: begin
+			FS_STATUS_OP_ATTRIB:
+				begin
 				end;
-			FS_STATUS_OP_MKDIR: begin
+			FS_STATUS_OP_MKDIR:
+				begin
 				end;
-			FS_STATUS_OP_EXEC: begin
+			FS_STATUS_OP_EXEC:
+				begin
 				end;
-			FS_STATUS_OP_CALCSIZE: begin
+			FS_STATUS_OP_CALCSIZE:
+				begin
 				end;
-			FS_STATUS_OP_SEARCH: begin
+			FS_STATUS_OP_SEARCH:
+				begin
 				end;
-			FS_STATUS_OP_SEARCH_TEXT: begin
+			FS_STATUS_OP_SEARCH_TEXT:
+				begin
 				end;
 		end;
 		exit;
 	end;
-	if (InfoStartEnd = FS_STATUS_END) then begin
+	if (InfoStartEnd = FS_STATUS_END) then
+	begin
 		case InfoOperation of
-			FS_STATUS_OP_LIST: begin
+			FS_STATUS_OP_LIST:
+				begin
 				end;
-			FS_STATUS_OP_GET_SINGLE: begin
+			FS_STATUS_OP_GET_SINGLE:
+				begin
 				end;
-			FS_STATUS_OP_GET_MULTI: begin
+			FS_STATUS_OP_GET_MULTI:
+				begin
 				end;
-			FS_STATUS_OP_PUT_SINGLE: begin
+			FS_STATUS_OP_PUT_SINGLE:
+				begin
 				end;
-			FS_STATUS_OP_PUT_MULTI: begin
+			FS_STATUS_OP_PUT_MULTI:
+				begin
 				end;
-			FS_STATUS_OP_RENMOV_SINGLE: begin
+			FS_STATUS_OP_RENMOV_SINGLE:
+				begin
 				end;
-			FS_STATUS_OP_RENMOV_MULTI: begin
+			FS_STATUS_OP_RENMOV_MULTI:
+				begin
 				end;
-			FS_STATUS_OP_DELETE: begin
+			FS_STATUS_OP_DELETE:
+				begin
 				end;
-			FS_STATUS_OP_ATTRIB: begin
+			FS_STATUS_OP_ATTRIB:
+				begin
 				end;
-			FS_STATUS_OP_MKDIR: begin
+			FS_STATUS_OP_MKDIR:
+				begin
 				end;
-			FS_STATUS_OP_EXEC: begin
+			FS_STATUS_OP_EXEC:
+				begin
 				end;
-			FS_STATUS_OP_CALCSIZE: begin
+			FS_STATUS_OP_CALCSIZE:
+				begin
 				end;
-			FS_STATUS_OP_SEARCH: begin
+			FS_STATUS_OP_SEARCH:
+				begin
 				end;
-			FS_STATUS_OP_SEARCH_TEXT: begin
+			FS_STATUS_OP_SEARCH_TEXT:
+				begin
 				end;
 		end;
 		exit;
@@ -168,12 +198,14 @@ begin
 	// Получение первого файла в папке. Result тоталом не используется (можно использовать для работы плагина).
 	// setlasterror(ERROR_NO_MORE_FILES);
 	GlobalPath := path;
-	if path = '\' then begin
+	if path = '\' then
+	begin
 		if Assigned(Cloud) then FreeAndNil(Cloud);
 
 		Sections := TStringList.Create;
 		PluginIniFile.ReadSections(Sections);
-		if (Sections.Count > 0) then begin
+		if (Sections.Count > 0) then
+		begin
 			strpcopy(FindData.cFileName, Sections.Strings[0]);
 			FindData.ftCreationTime.dwLowDateTime := 0;
 			FindData.ftCreationTime.dwHighDateTime := 0;
@@ -182,26 +214,25 @@ begin
 			FindData.dwFileAttributes := FILE_ATTRIBUTE_DIRECTORY;
 			FileCounter := 1;
 			exit(0);
-		end
-		else begin
+		end else begin
 			SetLastError(ERROR_NO_MORE_FILES);
 			exit(INVALID_HANDLE_VALUE);
 		end;
 
-	end
-	else begin
+	end else begin
 		RealPath := ExtractRealPath(GlobalPath);
-		if not Assigned(Cloud) then begin
+		if not Assigned(Cloud) then
+		begin
 			user := PluginIniFile.ReadString(RealPath.account, 'user', '');
 			domain := PluginIniFile.ReadString(RealPath.account, 'domain', '');
 			password := PluginIniFile.ReadString(RealPath.account, 'password', '');
 			// todo проверка на пустые данные
 			MyLogProc(PluginNum, MSGTYPE_CONNECT, PWideChar('CONNECT ' + user + '@' + domain));
 			Cloud := TCloudMailRu.Create(user, domain, password, MyProgressProc, PluginNum, MyLogProc);
-			if Cloud.login() then begin
+			if Cloud.login() then
+			begin
 				CurrentLogon := true;
-			end
-			else begin
+			end else begin
 				CurrentLogon := false;
 				FreeAndNil(Cloud);
 				SetLastError(ERROR_NETWORK_ACCESS_DENIED);
@@ -210,13 +241,16 @@ begin
 
 		end;
 
-		if CurrentLogon then begin
-			if not Cloud.getDir(RealPath.path, CurrentListing) then begin
+		if CurrentLogon then
+		begin
+			if not Cloud.getDir(RealPath.path, CurrentListing) then
+			begin
 				SetLastError(ERROR_PATH_NOT_FOUND);
 				exit(INVALID_HANDLE_VALUE);
 			end;
 
-			if Length(CurrentListing) = 0 then begin
+			if Length(CurrentListing) = 0 then
+			begin
 				// setlasterror(ERROR_NO_MORE_FILES);
 				exit(0);
 
@@ -232,8 +266,7 @@ begin
 			strpcopy(FindData.cFileName, CurrentListing[0].name);
 			FileCounter := 1;
 			Result := 1;
-		end
-		else begin
+		end else begin
 			SetLastError(ERROR_INVALID_HANDLE);
 			Result := INVALID_HANDLE_VALUE;
 			strpcopy(FindData.cFileName, 'Ошибка входа по указанным данным'); // Сюда никогда не должны попасть
@@ -245,10 +278,12 @@ function FsFindNextW(Hdl: thandle; var FindData: tWIN32FINDDATAW): bool; stdcall
 var
 	Sections: TStringList;
 begin
-	if GlobalPath = '\' then begin
+	if GlobalPath = '\' then
+	begin
 		Sections := TStringList.Create;
 		PluginIniFile.ReadSections(Sections);
-		if (Sections.Count > FileCounter) then begin
+		if (Sections.Count > FileCounter) then
+		begin
 			strpcopy(FindData.cFileName, Sections.Strings[FileCounter]);
 			FindData.ftCreationTime.dwLowDateTime := 0;
 			FindData.ftCreationTime.dwHighDateTime := 0;
@@ -259,14 +294,14 @@ begin
 			Result := true;
 		end
 		else Result := false;
-	end
-	else begin
-		if not CurrentLogon then begin
+	end else begin
+		if not CurrentLogon then
+		begin
 			Result := false;
-		end
-		else begin
+		end else begin
 			// Получение последующих файлов в папке (вызывается до тех пор, пока не вернёт false).
-			if (Length(CurrentListing) > FileCounter) then begin
+			if (Length(CurrentListing) > FileCounter) then
+			begin
 				if (CurrentListing[FileCounter].type_ = TYPE_DIR) then FindData.dwFileAttributes := FILE_ATTRIBUTE_DIRECTORY
 				else FindData.dwFileAttributes := 0;
 				if (CurrentListing[FileCounter].size > MAXDWORD) then FindData.nFileSizeHigh := CurrentListing[FileCounter].size div MAXDWORD
@@ -278,8 +313,7 @@ begin
 				strpcopy(FindData.cFileName, CurrentListing[FileCounter].name);
 				Result := true;
 				inc(FileCounter);
-			end
-			else begin
+			end else begin
 				FillChar(FindData, sizeof(WIN32_FIND_DATA), 0);
 				FileCounter := 0;
 				Result := false;
@@ -306,15 +340,16 @@ function FsExecuteFileW(MainWin: thandle; RemoteName, Verb: PWideChar): integer;
 Begin
 	// Запуск файла
 	Result := FS_EXEC_OK;
-	if Verb = 'open' then begin
+	if Verb = 'open' then
+	begin
 
-	end
-	else if Verb = 'properties' then begin
+	end else if Verb = 'properties' then
+	begin
 		messagebox(MainWin, PWideChar(RemoteName), PWideChar(Verb), mb_ok + mb_iconinformation);
-	end
-	else if copy(Verb, 1, 5) = 'chmod' then begin
-	end
-	else if copy(Verb, 1, 5) = 'quote' then begin
+	end else if copy(Verb, 1, 5) = 'chmod' then
+	begin
+	end else if copy(Verb, 1, 5) = 'quote' then
+	begin
 	end;
 End;
 
@@ -335,11 +370,12 @@ begin
 	MyProgressProc(PluginNum, LocalName, RemoteName, 0);
 
 	case CopyFlags of
-		FS_FILE_OK: Begin
-				if FileExists(LocalName) then begin
+		FS_FILE_OK:
+			Begin
+				if FileExists(LocalName) then
+				begin
 					exit(FS_FILE_EXISTS);
-				end
-				else begin
+				end else begin
 
 					Result := Cloud.getFile(WideString(RealPath.path), WideString(LocalName));
 					MyProgressProc(PluginNum, LocalName, RemoteName, 100);
@@ -347,13 +383,16 @@ begin
 				end;
 
 			End;
-		FS_COPYFLAGS_MOVE: Begin
+		FS_COPYFLAGS_MOVE:
+			Begin
 				Result := FS_FILE_NOTSUPPORTED; // todo
 			End;
-		FS_COPYFLAGS_RESUME: Begin { NEVER CALLED HERE }
+		FS_COPYFLAGS_RESUME:
+			Begin { NEVER CALLED HERE }
 				Result := FS_FILE_NOTSUPPORTED;
 			End;
-		FS_COPYFLAGS_OVERWRITE: Begin
+		FS_COPYFLAGS_OVERWRITE:
+			Begin
 				Result := Cloud.getFile(WideString(RealPath.path), WideString(LocalName));
 				MyProgressProc(PluginNum, LocalName, RemoteName, 100);
 				MyLogProc(PluginNum, MSGTYPE_TRANSFERCOMPLETE, PWideChar(RemoteName + '->' + LocalName));

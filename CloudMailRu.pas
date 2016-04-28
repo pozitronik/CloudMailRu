@@ -123,9 +123,7 @@ var
 
 begin
 	path := self.UrlEncode(StringReplace(path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
-	URL := 'https://cloud.mail.ru/api/v2/folder?sort={%22type%22%3A%22name%22%2C%22order%22%3A%22asc%22}&offset=0&limit=10000&home=' + path + '&api=2&build=' +
-		self.build + '&x-page-id=' + self.x_page_id + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&token=' +
-		self.token + '&_=1433249148810';
+	URL := 'https://cloud.mail.ru/api/v2/folder?sort={%22type%22%3A%22name%22%2C%22order%22%3A%22asc%22}&offset=0&limit=10000&home=' + path + '&api=2&build=' + self.build + '&x-page-id=' + self.x_page_id + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&token=' + self.token + '&_=1433249148810';
 	result := self.HTTPGet(URL, JSON);
 	if not result then exit(false);
 	DirListing := self.getDirListingFromJSON(JSON);
@@ -135,12 +133,13 @@ function TCloudMailRu.getFile(remotePath, localPath: WideString): integer; // 0 
 var
 	FileStream: TMemoryStream;
 begin
-	if self.Shard = '' then begin
+	if self.Shard = '' then
+	begin
 		self.ExternalLogProc(ExternalPluginNr, MSGTYPE_DETAILS, PWideChar('Current shard is undefined, trying to get one'));
-		if self.getShard(self.Shard) then begin
+		if self.getShard(self.Shard) then
+		begin
 			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_DETAILS, PWideChar('Current shard: ' + self.Shard));
-		end
-		else begin
+		end else begin
 			// А вот теперь это критическая ошибка, тут уже не получится копировать
 			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Sorry, downloading unsupported'));
 			exit(FS_FILE_NOTSUPPORTED);
@@ -157,11 +156,12 @@ begin
 	try
 		self.HTTP.Get(self.Shard + remotePath, FileStream);
 	except
-		on E: Exception do begin
-			if E.ClassName = 'EAbort' then begin
+		on E: Exception do
+		begin
+			if E.ClassName = 'EAbort' then
+			begin
 				exit(FS_FILE_USERABORT);
-			end
-			else begin
+			end else begin
 				self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar(E.ClassName + ' ошибка с сообщением : ' + E.Message));
 				exit(FS_FILE_READERROR);
 			end;
@@ -181,9 +181,11 @@ begin
 
 	HTTP := TIdHTTP(ASender);
 	ContentLength := HTTP.Response.ContentLength;
-	if (Pos('chunked', LowerCase(HTTP.Response.TransferEncoding)) = 0) and (ContentLength > 0) then begin
+	if (Pos('chunked', LowerCase(HTTP.Response.TransferEncoding)) = 0) and (ContentLength > 0) then
+	begin
 		Percent := 100 * AWorkCount div ContentLength;
-		if self.ExternalProgressProc(self.ExternalPluginNr, self.ExternalSourceName, self.ExternalTargetName, Percent) = 1 then begin
+		if self.ExternalProgressProc(self.ExternalPluginNr, self.ExternalSourceName, self.ExternalTargetName, Percent) = 1 then
+		begin
 			self.CancelCopy := true;
 			// HTTP.Disconnect;
 
@@ -223,7 +225,8 @@ begin
 	URL := 'https://cloud.mail.ru/?from=promo&from=authpopup';
 	getToken := true;
 	PostResult := self.HTTPGet(URL, Answer);
-	if PostResult then begin
+	if PostResult then
+	begin
 		self.token := self.getTokenFromText(Answer);
 		self.x_page_id := self.get_x_page_id_FromText(Answer);
 		self.build := self.get_build_FromText(Answer);
@@ -231,8 +234,7 @@ begin
 		if (self.token = '') or (self.x_page_id = '') or (self.build = '') or (self.upload_url = '') then getToken := false;
 		// В полученной странице нет нужных данных
 
-	end
-	else begin
+	end else begin
 		getToken := false;
 	end;
 
@@ -256,20 +258,21 @@ begin
 	PostResult := self.HTTPPost(URL, PostData); // todo проверять успешность авторизации
 	PostData.Destroy;
 	result := PostResult;
-	if (PostResult) then begin
+	if (PostResult) then
+	begin
 		self.ExternalLogProc(ExternalPluginNr, MSGTYPE_DETAILS, PWideChar('Requesting auth token for ' + self.user + '@' + self.domain));
 		result := self.getToken();
-		if (result) then begin
+		if (result) then
+		begin
 			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_DETAILS, PWideChar('Connected to ' + self.user + '@' + self.domain));
-		end
-		else begin
+		end else begin
 			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Error getting auth token for ' + self.user + '@' + self.domain));
 		end;
 		self.ExternalLogProc(ExternalPluginNr, MSGTYPE_DETAILS, PWideChar('Requesting download shard for current session'));
-		if self.getShard(self.Shard) then begin
+		if self.getShard(self.Shard) then
+		begin
 			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_DETAILS, PWideChar('Current shard: ' + self.Shard));
-		end
-		else begin
+		end else begin
 			// Это не критическая ошибка, попробуем получить шард прямо в процессе копирования
 			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_DETAILS, PWideChar('Current shard is undefined, downloading can be unsupported'));
 		end;
@@ -282,14 +285,18 @@ var
 	PutResult: TStringList;
 	JSONAnswer: WideString;
 	I, Code: integer;
-
 begin
+	result := FS_FILE_WRITEERROR;
 	PutResult := TStringList.Create;
-	if self.putFileToCloud(localPath, PutResult) then begin
+	if self.putFileToCloud(localPath, PutResult) then
+	begin
 		self.ExternalLogProc(ExternalPluginNr, MSGTYPE_DETAILS, PWideChar('putFileToCloud result: ' + PutResult.Text));
-		Val(PutResult.Strings[1], I, Code);
-		self.addFileToCloud(PutResult.Strings[0], I, self.UrlEncode(StringReplace(remotePath, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase])),
-			JSONAnswer);
+		Val(PutResult.Strings[1], I, Code); // Тут ошибка маловероятна
+		if self.addFileToCloud(PutResult.Strings[0], I, self.UrlEncode(StringReplace(remotePath, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase])), JSONAnswer) then
+		begin
+
+		end;
+
 		self.ExternalLogProc(ExternalPluginNr, MSGTYPE_DETAILS, PWideChar(JSONAnswer));
 	end;
 	PutResult.Destroy;
@@ -306,9 +313,11 @@ begin
 	PostData.AddFile('file', localPath, 'application/octet-stream');
 	result := self.HTTPPost(URL, PostData, Answer);
 	PostData.Destroy;
-	if (result) then begin
+	if (result) then
+	begin
 		ExtractStrings([';'], [], PWideChar(Answer), Return);
-		if Length(Return.Strings[0]) = 40 then begin
+		if Length(Return.Strings[0]) = 40 then
+		begin
 			exit(true);
 		end
 		else exit(false);
@@ -322,9 +331,7 @@ var
 begin
 	URL := 'https://cloud.mail.ru/api/v2/file/add';
 
-	PostData := TStringStream.Create('conflict=rename&home=/' + remotePath + '&hash=' + hash + '&size=' + IntToStr(size) + '&token=' + self.token +
-		'&api=2&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id,
-		TEncoding.UTF8); {Экспериментально выяснено, что параметры api, build, email, x-email, x-page-id в запросе не обязательны}
+	PostData := TStringStream.Create('conflict=rename&home=/' + remotePath + '&hash=' + hash + '&size=' + IntToStr(size) + '&token=' + self.token + '&api=2&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id, TEncoding.UTF8); { Экспериментально выяснено, что параметры api, build, email, x-email, x-page-id в запросе не обязательны }
 	result := self.HTTPPost(URL, PostData, JSONAnswer);
 	PostData.Destroy;
 end;
@@ -353,9 +360,9 @@ begin
 		self.HTTP.Post(URL, PostData, MemStream);
 		Answer := MemStream.DataString;
 	except
-		on E: Exception do begin
-			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR,
-				PWideChar(E.ClassName + ' ошибка с сообщением : ' + E.Message + ' при отправке данных на адрес ' + URL + ', response: ' + self.HTTP.ResponseText));
+		on E: Exception do
+		begin
+			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar(E.ClassName + ' ошибка с сообщением : ' + E.Message + ' при отправке данных на адрес ' + URL + ', response: ' + self.HTTP.ResponseText));
 			result := false;
 		end;
 	end;
@@ -373,9 +380,9 @@ begin
 		self.HTTP.Post(URL, PostData, MemStream);
 		Answer := MemStream.DataString;
 	except
-		on E: Exception do begin
-			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR,
-				PWideChar(E.ClassName + ' ошибка с сообщением : ' + E.Message + ' при отправке данных на адрес ' + URL + ', response: ' + self.HTTP.ResponseText));
+		on E: Exception do
+		begin
+			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar(E.ClassName + ' ошибка с сообщением : ' + E.Message + ' при отправке данных на адрес ' + URL + ', response: ' + self.HTTP.ResponseText));
 			result := false;
 		end;
 	end;
@@ -392,7 +399,8 @@ begin
 		self.HTTP.Post(URL, PostData, MemStream);
 		Answer := MemStream.DataString;
 	except
-		on E: Exception do begin
+		on E: Exception do
+		begin
 			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar(E.ClassName + ' ошибка с сообщением : ' + E.Message));
 			result := false;
 		end;
@@ -416,10 +424,10 @@ var
 	start: integer;
 begin
 	start := Pos(WideString('"csrf"'), Text);
-	if start > 0 then begin
+	if start > 0 then
+	begin
 		getTokenFromText := Copy(Text, start + 8, 32);
-	end
-	else begin
+	end else begin
 		getTokenFromText := '';
 	end;
 
@@ -431,12 +439,12 @@ var
 	temp: WideString;
 begin
 	start := Pos(WideString('"BUILD"'), Text);
-	if start > 0 then begin
+	if start > 0 then
+	begin
 		temp := Copy(Text, start + 9, 100);
 		finish := Pos(WideString('"'), temp);
 		get_build_FromText := Copy(temp, 0, finish - 1);
-	end
-	else begin
+	end else begin
 		get_build_FromText := '';
 	end;
 
@@ -448,7 +456,8 @@ var
 	temp: WideString;
 begin
 	start := Pos(WideString('mail.ru/upload/"'), Text);
-	if start > 0 then begin
+	if start > 0 then
+	begin
 		start1 := start - 50;
 		finish := start + 15;
 		Length := finish - start1;
@@ -456,8 +465,7 @@ begin
 		temp := Copy(Text, start1, Length);
 		start2 := Pos(WideString('https://'), temp);
 		get_upload_url_FromText := Copy(temp, start2, StrLen(PWideChar(temp)) - start2);
-	end
-	else begin
+	end else begin
 		get_upload_url_FromText := '';
 	end;
 end;
@@ -467,10 +475,10 @@ var
 	start: integer;
 begin
 	start := Pos(WideString('"x-page-id"'), Text);
-	if start > 0 then begin
+	if start > 0 then
+	begin
 		get_x_page_id_FromText := Copy(Text, start + 13, 10);
-	end
-	else begin
+	end else begin
 		get_x_page_id_FromText := '';
 	end;
 end;
@@ -493,14 +501,17 @@ begin
 	X := TSuperObject.Create(JSON);
 	X := X['body'].AsObject;
 	SetLength(ResultItems, X.A['list'].Length);
-	if (X.A['list'].Length = 0) then begin
+	if (X.A['list'].Length = 0) then
+	begin
 		exit(ResultItems);
 	end;
 
 	with X.A['list'] do
-		for J := 0 to X.A['list'].Length - 1 do begin
+		for J := 0 to X.A['list'].Length - 1 do
+		begin
 			Obj := O[J];
-			With ResultItems[J] do begin
+			With ResultItems[J] do
+			begin
 				tree := Obj.S['tree'];
 				grev := Obj.I['grev'];
 				size := Obj.I['size'];
@@ -510,12 +521,12 @@ begin
 				type_ := Obj.S['type'];
 				home := Obj.S['home'];
 				name := Obj.S['name'];
-				if (type_ = TYPE_FILE) then begin
+				if (type_ = TYPE_FILE) then
+				begin
 					mtime := Obj.I['mtime'];
 					virus_scan := Obj.S['virus_scan'];
 					hash := Obj.S['hash'];
-				end
-				else begin
+				end else begin
 					mtime := 0;
 				end;
 			end;
