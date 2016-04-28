@@ -400,7 +400,12 @@ begin
 
 	if CheckFlag(FS_COPYFLAGS_MOVE, CopyFlags) then
 	begin
-		Result := FS_FILE_NOTSUPPORTED; // todo
+		Result := Cloud.getFile(WideString(RealPath.path), WideString(LocalName));
+		if Result = FS_FILE_OK then
+		begin
+			Cloud.deleteFile(RealPath.path);
+		end;
+
 	end;
 	if CheckFlag(FS_COPYFLAGS_RESUME, CopyFlags) then
 	begin { NEVER CALLED HERE }
@@ -426,7 +431,7 @@ begin
 	MyProgressProc(PluginNum, LocalName, PWideChar(RealPath.path), 0);
 	if CheckFlag(FS_COPYFLAGS_OVERWRITE, CopyFlags) then
 	begin
-		if Cloud.deleteFile(RealPath.path) then
+		if Cloud.deleteFile(RealPath.path) then // Неизвестно, как перезаписать файл черз API, но мы можем его удалить
 		begin
 			Result := Cloud.putFile(WideString(LocalName), RealPath.path);
 			if Result = FS_FILE_OK then
@@ -459,7 +464,7 @@ begin
 			MyLogProc(PluginNum, MSGTYPE_TRANSFERCOMPLETE, PWideChar(LocalName + '->' + RemoteName));
 		end;
 		if not DeleteFileW(LocalName) then
-		begin //Не получилось удалить
+		begin // Не получилось удалить
 			exit(FS_FILE_NOTSUPPORTED);
 		end;
 	end;
