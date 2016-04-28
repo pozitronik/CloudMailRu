@@ -18,6 +18,11 @@ const
 	CLOUD_OPERATION_OK = 0;
 	CLOUD_ERROR_FILE_EXISTS = 1;
 
+	{ Режимы работы при конфликтах копирования }
+	CLOUD_CONFLICT_STRICT = 'strict'; // возвращаем ошибку при существовании файла
+	CLOUD_CONFLICT_RENAME = 'rename'; // Переименуем новый файл
+	// CLOUD_CONFLICT_REPLACE = 'overwrite'; // хз, этот ключ не вскрыт
+
 type
 	TCloudMailRuDirListingItem = Record
 		tree: WideString;
@@ -57,12 +62,10 @@ type
 		function getToken(): boolean;
 		function getShard(var Shard: WideString): boolean;
 		function putFileToCloud(localPath: WideString; Return: TStringList): boolean;
-		function addFileToCloud(hash: WideString; size: integer; remotePath: WideString; var JSONAnswer: WideString): boolean;
-		function HTTPPost(URL: WideString; PostData: TStringList): boolean; overload; // Постинг без ответа
-		function HTTPPost(URL: WideString; PostData: TStringList; var Answer: WideString): boolean; overload; // Постинг и получение ответа
-		function HTTPPost(URL: WideString; PostData: TStringStream; var Answer: WideString): boolean; overload;
-		// Постинг и получение ответа (альтернативный вариант для отправки некоторых запросов).
-		function HTTPPost(URL: WideString; PostData: TIdMultipartFormDataStream; var Answer: WideString): boolean; overload; // Постинг файла и получение ответа
+		function addFileToCloud(hash: WideString; size: integer; remotePath: WideString; var JSONAnswer: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT): boolean;
+		function HTTPPost(URL: WideString; PostData: TStringStream; var Answer: WideString; ContentType: WideString = 'application/x-www-form-urlencoded'): boolean; // Постинг данных с возможным получением ответа
+
+		function HTTPPostFile(URL: WideString; PostData: TIdMultipartFormDataStream; var Answer: WideString): boolean; overload; // Постинг файла и получение ответа
 		function HTTPGet(URL: WideString; var Answer: WideString): boolean;
 		function getTokenFromText(Text: WideString): WideString;
 		function get_x_page_id_FromText(Text: WideString): WideString;
@@ -72,7 +75,8 @@ type
 		function getShardFromJSON(JSON: WideString): WideString;
 		function getOperationResultFromJSON(JSON: WideString; var OperationStatus: integer): integer;
 		function UrlEncode(URL: UTF8String): WideString;
-		procedure HttpProgress(ASender: TObject; AWorkMode: TWorkMode; AWorkCount: int64);
+		procedure HttpDownloadProgress(ASender: TObject; AWorkMode: TWorkMode; AWorkCount: int64);
+		procedure HttpUploadProgress(ASender: TObject; AWorkMode: TWorkMode; AWorkCount: int64);
 	public
 		CancelCopy: boolean;
 		ExternalPluginNr: integer;
@@ -84,7 +88,8 @@ type
 
 		function getDir(path: WideString; var DirListing: TCloudMailRuDirListing): boolean;
 		function getFile(remotePath, localPath: WideString): integer;
-		function putFile(localPath, remotePath: WideString): integer;
+		function putFile(localPath, remotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT): integer;
+		function deleteFile(path: WideString): boolean;
 
 	end;
 
@@ -113,6 +118,19 @@ begin
 	self.ExternalPluginNr := PluginNr;
 	self.ExternalSourceName := '';
 	self.ExternalTargetName := '';
+end;
+
+function TCloudMailRu.deleteFile(path: WideString): boolean;
+var
+	URL: WideString;
+	PostData: TStringStream;
+	PostAnswer: WideString; { Не используется }
+begin
+	path := self.UrlEncode(StringReplace(path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
+	URL := 'https://cloud.mail.ru/api/v2/file/remove';
+	PostData := TStringStream.Create('home=/' + path + '&token=' + self.token + '&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id + '&conflict', TEncoding.UTF8);
+	result := self.HTTPPost(URL, PostData, PostAnswer);
+	PostData.Destroy;
 end;
 
 destructor TCloudMailRu.Destroy;
@@ -147,7 +165,7 @@ begin
 			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_DETAILS, PWideChar('Current shard: ' + self.Shard));
 		end else begin
 			// А вот теперь это критическая ошибка, тут уже не получится копировать
-			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Sorry, downloading unsupported'));
+			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Sorry, downloading impossible'));
 			exit(FS_FILE_NOTSUPPORTED);
 		end;
 	end;
@@ -158,7 +176,7 @@ begin
 	FileStream := TMemoryStream.Create;
 
 	remotePath := self.UrlEncode(StringReplace(remotePath, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
-	self.HTTP.OnWork := self.HttpProgress;
+	self.HTTP.OnWork := self.HttpDownloadProgress;
 	try
 		self.HTTP.Get(self.Shard + remotePath, FileStream);
 	except
@@ -177,7 +195,7 @@ begin
 	FileStream.SaveToFile(localPath);
 end;
 
-procedure TCloudMailRu.HttpProgress(ASender: TObject; AWorkMode: TWorkMode; AWorkCount: int64);
+procedure TCloudMailRu.HttpDownloadProgress(ASender: TObject; AWorkMode: TWorkMode; AWorkCount: int64);
 var
 	HTTP: TIdHTTP;
 	ContentLength: int64;
@@ -203,23 +221,18 @@ end;
 function TCloudMailRu.getShard(var Shard: WideString): boolean;
 var
 	URL: WideString;
-	PostData: TStringList;
+	PostData: TStringStream;
 	Answer: WideString;
 begin
-	// todo error handling
 	URL := 'https://cloud.mail.ru/api/v2/dispatcher/';
-	PostData := TStringList.Create;
-	PostData.Values['api'] := '2';
-	PostData.Values['build'] := self.build;
-	PostData.Values['email'] := self.user + '%40' + self.domain;
-	PostData.Values['token'] := self.token;
-	PostData.Values['x-email'] := self.user + '%40' + self.domain;
-	PostData.Values['x-page-id'] := self.x_page_id;
-	if not self.HTTPPost(URL, PostData, Answer) then exit(false);
-
-	Shard := self.getShardFromJSON(Answer);
-	if Shard = '' then result := false
-	else result := true;
+	PostData := TStringStream.Create('api=2&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&token=' + self.token + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id, TEncoding.UTF8);
+	if self.HTTPPost(URL, PostData, Answer) then
+	begin
+		Shard := self.getShardFromJSON(Answer);
+		if Shard = '' then result := false
+		else result := true;
+	end;
+	PostData.Destroy;
 end;
 
 function TCloudMailRu.getToken(): boolean;
@@ -237,8 +250,7 @@ begin
 		self.x_page_id := self.get_x_page_id_FromText(Answer);
 		self.build := self.get_build_FromText(Answer);
 		self.upload_url := self.get_upload_url_FromText(Answer);
-		if (self.token = '') or (self.x_page_id = '') or (self.build = '') or (self.upload_url = '') then getToken := false;
-		// В полученной странице нет нужных данных
+		if (self.token = '') or (self.x_page_id = '') or (self.build = '') or (self.upload_url = '') then getToken := false; // В полученной странице нет нужных данных
 
 	end else begin
 		getToken := false;
@@ -249,22 +261,16 @@ end;
 function TCloudMailRu.login(): boolean;
 var
 	URL: WideString;
-	PostData: TStringList;
-	PostResult: boolean;
+	PostData: TStringStream;
+	PostAnswer: WideString; { Не используется }
 begin
 	self.ExternalLogProc(ExternalPluginNr, MSGTYPE_DETAILS, PWideChar('Login to ' + self.user + '@' + self.domain));
 	URL := 'http://auth.mail.ru/cgi-bin/auth?lang=ru_RU&from=authpopup';
-	PostData := TStringList.Create;
-	PostData.Values['page'] := 'https://cloud.mail.ru/?from=promo';
-	PostData.Values['FailPage'] := '';
-	PostData.Values['Domain'] := self.domain;
-	PostData.Values['Login'] := self.user;
-	PostData.Values['Password'] := self.password;
-	PostData.Values['new_auth_form'] := '1';
-	PostResult := self.HTTPPost(URL, PostData); // todo проверять успешность авторизации
+
+	PostData := TStringStream.Create('page=https://cloud.mail.ru/?from=promo&new_auth_form=1&Domain=' + self.domain + '&Login=' + self.user + '&Password=' + self.password + '&FailPage=', TEncoding.UTF8);
+	result := self.HTTPPost(URL, PostData, PostAnswer);
 	PostData.Destroy;
-	result := PostResult;
-	if (PostResult) then
+	if (result) then
 	begin
 		self.ExternalLogProc(ExternalPluginNr, MSGTYPE_DETAILS, PWideChar('Requesting auth token for ' + self.user + '@' + self.domain));
 		result := self.getToken();
@@ -273,6 +279,7 @@ begin
 			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_DETAILS, PWideChar('Connected to ' + self.user + '@' + self.domain));
 		end else begin
 			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Error getting auth token for ' + self.user + '@' + self.domain));
+			exit(false);
 		end;
 		self.ExternalLogProc(ExternalPluginNr, MSGTYPE_DETAILS, PWideChar('Requesting download shard for current session'));
 		if self.getShard(self.Shard) then
@@ -286,19 +293,41 @@ begin
 	else self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Error login to ' + self.user + '@' + self.domain));
 end;
 
-function TCloudMailRu.putFile(localPath, remotePath: WideString): integer;
+function TCloudMailRu.putFile(localPath, remotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT): integer;
 var
 	PutResult: TStringList;
-	JSONAnswer: WideString;
-	I, Code, OperationStatus: integer;
+	JSONAnswer, FileHash: WideString;
+	FileSize, Code, OperationStatus: integer;
+	successPut: boolean;
 begin
+	if self.CancelCopy then exit(FS_FILE_USERABORT);
 	result := FS_FILE_WRITEERROR;
-	PutResult := TStringList.Create;
-	if self.putFileToCloud(localPath, PutResult) then
+
+	try
+		PutResult := TStringList.Create;
+		successPut := self.putFileToCloud(localPath, PutResult);
+		FileHash := PutResult.Strings[0];
+		Val(PutResult.Strings[1], FileSize, Code); // Тут ошибка маловероятна
+		PutResult.Destroy;
+	Except
+		on E: Exception do
+		begin
+			if E.ClassName = 'EAbort' then { TODO : Сделать аналогично в загрузке }
+			begin
+				result := FS_FILE_USERABORT;
+			end else begin
+				self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Error uploading to cloud: ' + E.ClassName + ' ошибка с сообщением : ' + E.Message));
+			end;
+
+		end;
+
+	end;
+
+	if successPut then
 	begin
 		self.ExternalLogProc(ExternalPluginNr, MSGTYPE_DETAILS, PWideChar('putFileToCloud result: ' + PutResult.Text));
-		Val(PutResult.Strings[1], I, Code); // Тут ошибка маловероятна
-		if self.addFileToCloud(PutResult.Strings[0], I, self.UrlEncode(StringReplace(remotePath, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase])), JSONAnswer) then
+
+		if self.addFileToCloud(FileHash, FileSize, self.UrlEncode(StringReplace(remotePath, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase])), JSONAnswer) then
 		begin
 			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_DETAILS, PWideChar(JSONAnswer));
 			case self.getOperationResultFromJSON(JSONAnswer, OperationStatus) of
@@ -319,23 +348,46 @@ begin
 		end;
 
 	end;
-	PutResult.Destroy;
+
+end;
+
+procedure TCloudMailRu.HttpUploadProgress(ASender: TObject; AWorkMode: TWorkMode; AWorkCount: int64); { TODO : Объединить с DownloadProgress }
+var
+	HTTP: TIdHTTP;
+	ContentLength: int64;
+	Percent: integer;
+begin
+	// if self.CancelCopy then exit;
+
+	HTTP := TIdHTTP(ASender);
+	ContentLength := HTTP.Request.ContentLength;
+	if (Pos('chunked', LowerCase(HTTP.Response.TransferEncoding)) = 0) and (ContentLength > 0) then
+	begin
+		Percent := 100 * AWorkCount div ContentLength;
+		if self.ExternalProgressProc(self.ExternalPluginNr, self.ExternalSourceName, self.ExternalTargetName, Percent) = 1 then
+		begin
+			self.CancelCopy := true;
+			// HTTP.Disconnect;
+
+			Abort;
+		end;
+	end;
 end;
 
 function TCloudMailRu.putFileToCloud(localPath: WideString; Return: TStringList): boolean;
 var
-	URL, Answer: WideString;
+	URL, PostAnswer: WideString;
 	PostData: TIdMultipartFormDataStream;
 begin
 	URL := self.upload_url + '/?cloud_domain=1&x-email=' + self.user + '%40' + self.domain + '&fileapi' + IntToStr(DateTimeToUnix(now)) + '0246';
 	PostData := TIdMultipartFormDataStream.Create;
 	self.ExternalLogProc(ExternalPluginNr, MSGTYPE_DETAILS, PWideChar('Uploading to ' + URL));
 	PostData.AddFile('file', localPath, 'application/octet-stream');
-	result := self.HTTPPost(URL, PostData, Answer);
+	result := self.HTTPPostFile(URL, PostData, PostAnswer);
 	PostData.Destroy;
 	if (result) then
 	begin
-		ExtractStrings([';'], [], PWideChar(Answer), Return);
+		ExtractStrings([';'], [], PWideChar(PostAnswer), Return);
 		if Length(Return.Strings[0]) = 40 then
 		begin
 			exit(true);
@@ -344,60 +396,26 @@ begin
 	end;
 end;
 
-function TCloudMailRu.addFileToCloud(hash: WideString; size: integer; remotePath: WideString; var JSONAnswer: WideString): boolean;
+function TCloudMailRu.addFileToCloud(hash: WideString; size: integer; remotePath: WideString; var JSONAnswer: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT): boolean;
 var
 	URL: WideString;
 	PostData: TStringStream;
 begin
 	URL := 'https://cloud.mail.ru/api/v2/file/add';
-	// если добавить conflict=rename к запросу, облако будет само переименоввывать файлы
-	PostData := TStringStream.Create('conflict=strict&home=/' + remotePath + '&hash=' + hash + '&size=' + IntToStr(size) + '&token=' + self.token + '&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id + '&conflict', TEncoding.UTF8);
+	PostData := TStringStream.Create('conflict=' + ConflictMode + '&home=/' + remotePath + '&hash=' + hash + '&size=' + IntToStr(size) + '&token=' + self.token + '&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id + '&conflict', TEncoding.UTF8);
 	{ Экспериментально выяснено, что параметры api, build, email, x-email, x-page-id в запросе не обязательны }
 	result := self.HTTPPost(URL, PostData, JSONAnswer);
 	PostData.Destroy;
 end;
 
-function TCloudMailRu.HTTPPost(URL: WideString; PostData: TStringList): boolean;
-var
-	MemStream: TStream;
-begin
-	result := true;
-	MemStream := TMemoryStream.Create;
-	try
-		self.HTTP.Post(URL, PostData, MemStream);
-	except
-		result := false;
-	end;
-	MemStream.Free;
-end;
-
-function TCloudMailRu.HTTPPost(URL: WideString; PostData: TStringList; var Answer: WideString): boolean;
+function TCloudMailRu.HTTPPost(URL: WideString; PostData: TStringStream; var Answer: WideString; ContentType: WideString = 'application/x-www-form-urlencoded'): boolean;
 var
 	MemStream: TStringStream;
 begin
 	result := true;
 	MemStream := TStringStream.Create;
 	try
-		self.HTTP.Post(URL, PostData, MemStream);
-		Answer := MemStream.DataString;
-	except
-		on E: Exception do
-		begin
-			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar(E.ClassName + ' ошибка с сообщением : ' + E.Message + ' при отправке данных на адрес ' + URL + ', response: ' + self.HTTP.ResponseText));
-			result := false;
-		end;
-	end;
-	MemStream.Free;
-end;
-
-function TCloudMailRu.HTTPPost(URL: WideString; PostData: TStringStream; var Answer: WideString): boolean;
-var
-	MemStream: TStringStream;
-begin
-	result := true;
-	MemStream := TStringStream.Create;
-	try
-		self.HTTP.Request.ContentType := 'application/x-www-form-urlencoded'; // Без этого сервер прикинется чайником и вернёт 418
+		if ContentType <> '' then self.HTTP.Request.ContentType := ContentType;
 		self.HTTP.Post(URL, PostData, MemStream);
 		Answer := MemStream.DataString;
 	except
@@ -405,10 +423,10 @@ begin
 		begin
 			if self.HTTP.ResponseCode = 400 then
 			begin { сервер вернёт 400, но нужно пропарсить результат для дальнейшего определения действий }
-				Answer := e.ErrorMessage;
+				Answer := E.ErrorMessage;
 				result := true;
 			end else begin
-				self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar(E.ClassName + ' ошибка с сообщением : ' + E.Message + ' при отправке данных на адрес ' + URL + ', response: ' + IntToStr(self.HTTP.ResponseCode)));
+				self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar(E.ClassName + ' ошибка с сообщением : ' + E.Message + ' при отправке данных на адрес ' + URL + ', ответ сервера: ' + E.ErrorMessage));
 				result := false;
 			end;
 
@@ -417,19 +435,20 @@ begin
 	MemStream.Free;
 end;
 
-function TCloudMailRu.HTTPPost(URL: WideString; PostData: TIdMultipartFormDataStream; var Answer: WideString): boolean;
+function TCloudMailRu.HTTPPostFile(URL: WideString; PostData: TIdMultipartFormDataStream; var Answer: WideString): boolean;
 var
 	MemStream: TStringStream;
 begin
 	result := true;
 	MemStream := TStringStream.Create;
 	try
+		self.HTTP.OnWork := self.HttpUploadProgress;
 		self.HTTP.Post(URL, PostData, MemStream);
 		Answer := MemStream.DataString;
 	except
-		on E: Exception do
+		on E: EIdHTTPProtocolException do
 		begin
-			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar(E.ClassName + ' ошибка с сообщением : ' + E.Message));
+			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar(E.ClassName + ' ошибка с сообщением : ' + E.Message + ' при отправке данных на адрес ' + URL + ', ответ сервера: ' + E.ErrorMessage));
 			result := false;
 		end;
 	end;

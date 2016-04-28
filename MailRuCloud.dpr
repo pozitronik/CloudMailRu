@@ -13,6 +13,7 @@ uses
 	inifiles,
 	CloudMailRu in 'CloudMailRu.pas',
 	MRC_Helper in 'MRC_Helper.pas';
+
 {$IFDEF WIN64}
 {$E wfx64}
 {$ENDIF}
@@ -365,39 +366,35 @@ function FsGetFileW(RemoteName, LocalName: PWideChar; CopyFlags: integer; Remote
 var
 	RealPath: TRealPath;
 begin
+	Result := FS_FILE_NOTSUPPORTED;
 	RealPath := ExtractRealPath(RemoteName);
 
 	MyProgressProc(PluginNum, LocalName, RemoteName, 0);
 
-	case CopyFlags of
-		FS_FILE_OK:
-			Begin
-				if FileExists(LocalName) then
-				begin
-					exit(FS_FILE_EXISTS);
-				end else begin
-
-					Result := Cloud.getFile(WideString(RealPath.path), WideString(LocalName));
-					MyProgressProc(PluginNum, LocalName, RemoteName, 100);
-					MyLogProc(PluginNum, MSGTYPE_TRANSFERCOMPLETE, PWideChar(RemoteName + '->' + LocalName));
-				end;
-
-			End;
-		FS_COPYFLAGS_MOVE:
-			Begin
-				Result := FS_FILE_NOTSUPPORTED; // todo
-			End;
-		FS_COPYFLAGS_RESUME:
-			Begin { NEVER CALLED HERE }
-				Result := FS_FILE_NOTSUPPORTED;
-			End;
-		FS_COPYFLAGS_OVERWRITE:
-			Begin
-				Result := Cloud.getFile(WideString(RealPath.path), WideString(LocalName));
-				MyProgressProc(PluginNum, LocalName, RemoteName, 100);
-				MyLogProc(PluginNum, MSGTYPE_TRANSFERCOMPLETE, PWideChar(RemoteName + '->' + LocalName));
-			End;
-	else Result := FS_FILE_NOTSUPPORTED; // это. не можыд. быт. Чтобы ворнинга не было
+	if CheckFlag(FS_FILE_OK, CopyFlags) then
+	begin
+		if FileExists(LocalName) then
+		begin
+			exit(FS_FILE_EXISTS);
+		end else begin
+			Result := Cloud.getFile(WideString(RealPath.path), WideString(LocalName));
+			MyProgressProc(PluginNum, LocalName, RemoteName, 100);
+			MyLogProc(PluginNum, MSGTYPE_TRANSFERCOMPLETE, PWideChar(RemoteName + '->' + LocalName));
+		end;
+	end;
+	if CheckFlag(FS_COPYFLAGS_MOVE, CopyFlags) then
+	begin
+		Result := FS_FILE_NOTSUPPORTED; // todo
+	end;
+	if CheckFlag(FS_COPYFLAGS_RESUME, CopyFlags) then
+	begin { NEVER CALLED HERE }
+		Result := FS_FILE_NOTSUPPORTED;
+	end;
+	if CheckFlag(FS_COPYFLAGS_OVERWRITE, CopyFlags) then
+	begin
+		Result := Cloud.getFile(WideString(RealPath.path), WideString(LocalName));
+		MyProgressProc(PluginNum, LocalName, RemoteName, 100);
+		MyLogProc(PluginNum, MSGTYPE_TRANSFERCOMPLETE, PWideChar(RemoteName + '->' + LocalName));
 	end;
 end;
 
@@ -406,7 +403,33 @@ var
 	RealPath: TRealPath;
 begin
 	RealPath := ExtractRealPath(RemoteName);
-	result:=Cloud.putFile(WideString(LocalName), WideString(RealPath.path));
+	MyProgressProc(PluginNum, LocalName, PWideChar(RealPath.path), 0);
+	if CheckFlag(FS_COPYFLAGS_OVERWRITE, CopyFlags) then
+	begin
+  {TODO: в апи не вскрыт метод перезаписи, поэтому надо сначала удалить файл}
+		Result := Cloud.putFile(WideString(LocalName), RealPath.path, CLOUD_CONFLICT_RENAME);
+		MyProgressProc(PluginNum, LocalName, PWideChar(RealPath.path), 100);
+		MyLogProc(PluginNum, MSGTYPE_TRANSFERCOMPLETE, PWideChar(LocalName + '->' + RemoteName)); // todo fixme TRANSFERCOMPLETE только в случае FS_FILE_OK
+	end;
+	if CheckFlag(FS_COPYFLAGS_RESUME, CopyFlags) then
+	begin // NOT SUPPORTED
+		exit(FS_FILE_NOTSUPPORTED);
+	end;
+	if CheckFlag(FS_COPYFLAGS_MOVE, CopyFlags) then
+	begin
+
+	end;
+	if CheckFlag(FS_COPYFLAGS_EXISTS_SAMECASE, CopyFlags) or CheckFlag(FS_COPYFLAGS_EXISTS_DIFFERENTCASE, CopyFlags) then // Облако не поддерживает разные регистры
+	begin
+		exit(FS_FILE_EXISTS);
+	end;
+	if CopyFlags = 0 then
+	begin
+		Result := Cloud.putFile(WideString(LocalName), RealPath.path);
+		MyProgressProc(PluginNum, LocalName, PWideChar(RealPath.path), 100);
+		MyLogProc(PluginNum, MSGTYPE_TRANSFERCOMPLETE, PWideChar(LocalName + '->' + RemoteName)); // todo fixme TRANSFERCOMPLETE только в случае FS_FILE_OK
+	end;
+
 end;
 
 function FsPutFile(LocalName, RemoteName: PAnsiChar; CopyFlags: integer): integer; stdcall;
@@ -417,6 +440,13 @@ begin
 end;
 
 function FsDeleteFile(RemoteName: PAnsiChar): bool; stdcall;
+Begin
+	SetLastError(ERROR_INVALID_FUNCTION); // Ansi-заглушка
+	Result := false;
+	// Удаление файла из файловой ссистемы плагина
+End;
+
+function FsDeleteFileW(RemoteName: PWideChar): bool; stdcall;
 Begin
 	SetLastError(ERROR_INVALID_FUNCTION); // Ansi-заглушка
 	Result := false;
@@ -436,7 +466,7 @@ begin
 end;
 
 exports FsGetDefRootName, FsInit, FsInitW, FsFindFirst, FsFindFirstW, FsFindNext, FsFindNextW, FsFindClose, FsGetFile, FsGetFileW,
-	FsDisconnect, FsDisconnectW, FsStatusInfo, FsStatusInfoW, FsPutFile, FsPutFileW;
+	FsDisconnect, FsDisconnectW, FsStatusInfo, FsStatusInfoW, FsPutFile, FsPutFileW, FsDeleteFile, FsDeleteFileW;
 
 (* ,
 	FsExecuteFile,

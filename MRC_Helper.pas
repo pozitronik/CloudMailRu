@@ -13,12 +13,13 @@ type
 function Implode(S: TStringList; Delimiter: Char): WideString;
 function ExtractRealPath(VirtualPath: WideString): TRealPath;
 function DateTimeToUnix(ConvDate: TDateTime): Integer;
+function CheckFlag(Check: Byte; Flags: Integer): Boolean; // Определяет, установлен ли указанный бит
 
 implementation
 
 function Implode(S: TStringList; Delimiter: Char): WideString;
 var
-	iCount: integer;
+	iCount: Integer;
 begin
 	Result := '';
 	if (S.Count = 0) then exit;
@@ -48,5 +49,11 @@ begin
 	// example: DateTimeToUnix(now);
 	Result := Round((ConvDate - UnixStartDate) * 86400);
 end;
+
+function CheckFlag(Check: Byte; Flags: LongInt): Boolean; // Определяет, установлен ли указанный бит
+begin
+	Result := (Flags and Check) <> 0;
+end;
+
 
 end.
