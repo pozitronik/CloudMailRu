@@ -37,7 +37,7 @@ var
 	PluginIniFile: TIniFile;
 	CurrentLogon: boolean;
 
-function DateTimeToFileTime(FileTime: TDateTime): TFileTime;
+function DateTimeToFileTime(FileTime: TDateTime): TFileTime; { TODO : TO HELPER }
 var
 	LocalFileTime, Ft: TFileTime;
 	SystemTime: TSystemTime;
@@ -117,6 +117,12 @@ begin
 end;
 
 function FsMkDir(path: PAnsiChar): bool; stdcall;
+begin
+	SetLastError(ERROR_INVALID_FUNCTION);
+	Result := false; // ansi-заглушка
+end;
+
+function FsRemoveDir(RemoteName: PAnsiChar): bool; stdcall;
 begin
 	SetLastError(ERROR_INVALID_FUNCTION);
 	Result := false; // ansi-заглушка
@@ -501,7 +507,15 @@ var
 	RealPath: TRealPath;
 Begin
 	RealPath := ExtractRealPath(WideString(path));
-	result:=	cloud.createDir(RealPath.path);
+	Result := Cloud.createDir(RealPath.path);
+end;
+
+function FsRemoveDirW(RemoteName: PWideChar): bool; stdcall;
+var
+	RealPath: TRealPath;
+Begin
+	RealPath := ExtractRealPath(WideString(RemoteName));
+	Result := Cloud.removeDir(RealPath.path);
 end;
 
 function FsDisconnectW(DisconnectRoot: PWideChar): bool; stdcall;
@@ -511,7 +525,8 @@ begin
 end;
 
 exports FsGetDefRootName, FsInit, FsInitW, FsFindFirst, FsFindFirstW, FsFindNext, FsFindNextW, FsFindClose, FsGetFile, FsGetFileW,
-	FsDisconnect, FsDisconnectW, FsStatusInfo, FsStatusInfoW, FsPutFile, FsPutFileW, FsDeleteFile, FsDeleteFileW,FsMkDir,FsMkDirW;
+	FsDisconnect, FsDisconnectW, FsStatusInfo, FsStatusInfoW, FsPutFile, FsPutFileW, FsDeleteFile, FsDeleteFileW, FsMkDir, FsMkDirW,
+	FsRemoveDir, FsRemoveDirW;
 
 (* ,
 	FsExecuteFile,

@@ -90,6 +90,7 @@ type
 		function putFile(localPath, remotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT): integer;
 		function deleteFile(path: WideString): boolean;
 		function createDir(path: WideString): boolean;
+		function removeDir(path: WideString): boolean;
 
 	end;
 
@@ -469,6 +470,19 @@ begin
 			end;
 		end;
 	end;
+end;
+
+function TCloudMailRu.removeDir(path: WideString): boolean;
+var
+	URL: WideString;
+	PostData: TStringStream;
+	PostAnswer: WideString; { Не используется }
+begin
+	path := self.UrlEncode(StringReplace(path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
+	URL := 'https://cloud.mail.ru/api/v2/file/remove';
+	PostData := TStringStream.Create('api=2&home=/' + path + '/&token=' + self.token + '&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id + '&conflict', TEncoding.UTF8);
+	result := self.HTTPPost(URL, PostData, PostAnswer); // API всегда отвечает true, даже если путь не существует
+	PostData.Destroy;
 end;
 
 { PRIVATE STATIC METHODS (kinda) }
