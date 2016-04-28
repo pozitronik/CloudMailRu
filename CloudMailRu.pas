@@ -89,6 +89,7 @@ type
 		function getFile(remotePath, localPath: WideString): integer;
 		function putFile(localPath, remotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT): integer;
 		function deleteFile(path: WideString): boolean;
+		function createDir(path: WideString): boolean;
 
 	end;
 
@@ -437,6 +438,39 @@ begin
 	end;
 end;
 
+function TCloudMailRu.createDir(path: WideString): boolean;
+var
+	URL: WideString;
+	PostData: TStringStream;
+	PostAnswer: WideString;
+	SucessCreate: boolean;
+	OperationStatus: integer;
+begin
+	path := self.UrlEncode(StringReplace(path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
+	URL := 'https://cloud.mail.ru/api/v2/folder/add';
+	PostData := TStringStream.Create('api=2&home=/' + path + '&token=' + self.token + '&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id + '&conflict', TEncoding.UTF8);
+	SucessCreate := self.HTTPPost(URL, PostData, PostAnswer);
+	PostData.Destroy;
+	if SucessCreate then
+	begin
+		case self.getOperationResultFromJSON(PostAnswer, OperationStatus) of
+			CLOUD_OPERATION_OK:
+				begin
+					result := true;
+				end;
+			CLOUD_ERROR_FILE_EXISTS:
+				begin
+					result := false;
+				end;
+		else
+			begin
+				self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Error creating directory: got ' + IntToStr(OperationStatus) + ' status'));
+				result := false;
+			end;
+		end;
+	end;
+end;
+
 { PRIVATE STATIC METHODS (kinda) }
 
 function TCloudMailRu.getTokenFromText(Text: WideString): WideString;
@@ -511,7 +545,7 @@ end;
 
 function TCloudMailRu.getDirListingFromJSON(JSON: WideString): TCloudMailRuDirListing;
 var
-	X, Obj: ISuperObject; //Это интерфейсы, им дестрой не нужен
+	X, Obj: ISuperObject; // Это интерфейсы, им дестрой не нужен
 	J: integer;
 	ResultItems: TCloudMailRuDirListing;
 begin

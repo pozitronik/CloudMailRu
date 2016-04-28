@@ -115,6 +115,13 @@ begin
 	SetLastError(ERROR_INVALID_FUNCTION);
 	Result := false; // ansi-заглушка
 end;
+
+function FsMkDir(path: PAnsiChar): bool; stdcall;
+begin
+	SetLastError(ERROR_INVALID_FUNCTION);
+	Result := false; // ansi-заглушка
+end;
+
 { GLORIOUS UNICODE MASTER RACE }
 
 function FsInitW(PluginNr: integer; pProgressProc: TProgressProc; pLogProc: TLogProc; pRequestProc: TRequestProc): integer; stdcall; // ¬ход в плагин.
@@ -489,6 +496,14 @@ Begin
 	Result := Cloud.deleteFile(RealPath.path);
 End;
 
+function FsMkDirW(path: PWideChar): bool; stdcall;
+var
+	RealPath: TRealPath;
+Begin
+	RealPath := ExtractRealPath(WideString(path));
+	result:=	cloud.createDir(RealPath.path);
+end;
+
 function FsDisconnectW(DisconnectRoot: PWideChar): bool; stdcall;
 begin
 	if Assigned(Cloud) then FreeAndNil(Cloud);
@@ -496,7 +511,7 @@ begin
 end;
 
 exports FsGetDefRootName, FsInit, FsInitW, FsFindFirst, FsFindFirstW, FsFindNext, FsFindNextW, FsFindClose, FsGetFile, FsGetFileW,
-	FsDisconnect, FsDisconnectW, FsStatusInfo, FsStatusInfoW, FsPutFile, FsPutFileW, FsDeleteFile, FsDeleteFileW;
+	FsDisconnect, FsDisconnectW, FsStatusInfo, FsStatusInfoW, FsPutFile, FsPutFileW, FsDeleteFile, FsDeleteFileW,FsMkDir,FsMkDirW;
 
 (* ,
 	FsExecuteFile,
