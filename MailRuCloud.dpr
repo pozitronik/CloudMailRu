@@ -453,9 +453,11 @@ begin
 end;
 
 function FsDeleteFileW(RemoteName: PWideChar): bool; stdcall; // Удаление файла из файловой ссистемы плагина
+var
+	RealPath: TRealPath;
 Begin
-	SetLastError(ERROR_INVALID_FUNCTION); // Ansi-заглушка
-	Result := false;
+	RealPath := ExtractRealPath(WideString(RemoteName));
+	Result := Cloud.deleteFile(RealPath.path);
 End;
 
 function FsDisconnectW(DisconnectRoot: PWideChar): bool; stdcall;
