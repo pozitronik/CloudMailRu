@@ -63,7 +63,7 @@ type
 		function getShard(var Shard: WideString): boolean;
 		function putFileToCloud(localPath: WideString; Return: TStringList): boolean;
 		function addFileToCloud(hash: WideString; size: integer; remotePath: WideString; var JSONAnswer: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT): boolean;
-		function HTTPPost(URL: WideString; PostData: TStringStream; var Answer: WideString; ContentType: WideString = 'application/x-www-form-urlencoded'): boolean; // Постинг данных с возможным получением ответа
+		function HTTPPost(URL: WideString; PostData: TStringStream; var Answer: WideString; ContentType: WideString = 'application/x-www-form-urlencoded'): boolean; // Постинг данных с возможным получением ответа.
 
 		function HTTPPostFile(URL: WideString; PostData: TIdMultipartFormDataStream; var Answer: WideString): boolean; overload; // Постинг файла и получение ответа
 		function HTTPGet(URL: WideString; var Answer: WideString): boolean;
@@ -75,8 +75,7 @@ type
 		function getShardFromJSON(JSON: WideString): WideString;
 		function getOperationResultFromJSON(JSON: WideString; var OperationStatus: integer): integer;
 		function UrlEncode(URL: UTF8String): WideString;
-		procedure HttpDownloadProgress(ASender: TObject; AWorkMode: TWorkMode; AWorkCount: int64);
-		procedure HttpUploadProgress(ASender: TObject; AWorkMode: TWorkMode; AWorkCount: int64);
+		procedure HttpProgress(ASender: TObject; AWorkMode: TWorkMode; AWorkCount: int64);
 	public
 		CancelCopy: boolean;
 		ExternalPluginNr: integer;
@@ -176,7 +175,7 @@ begin
 	FileStream := TMemoryStream.Create;
 
 	remotePath := self.UrlEncode(StringReplace(remotePath, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
-	self.HTTP.OnWork := self.HttpDownloadProgress;
+	self.HTTP.OnWork := self.HttpProgress;
 	try
 		self.HTTP.Get(self.Shard + remotePath, FileStream);
 	except
@@ -195,16 +194,16 @@ begin
 	FileStream.SaveToFile(localPath);
 end;
 
-procedure TCloudMailRu.HttpDownloadProgress(ASender: TObject; AWorkMode: TWorkMode; AWorkCount: int64);
+procedure TCloudMailRu.HttpProgress(ASender: TObject; AWorkMode: TWorkMode; AWorkCount: int64);
 var
 	HTTP: TIdHTTP;
 	ContentLength: int64;
 	Percent: integer;
 begin
 	if self.CancelCopy then Abort;
-
 	HTTP := TIdHTTP(ASender);
-	ContentLength := HTTP.Response.ContentLength;
+	if AWorkMode = wmRead then ContentLength := HTTP.Response.ContentLength
+	else ContentLength := HTTP.Request.ContentLength; //Считаем размер обработанных данных зависимости от того, скачивание это или загрузка
 	if (Pos('chunked', LowerCase(HTTP.Response.TransferEncoding)) = 0) and (ContentLength > 0) then
 	begin
 		Percent := 100 * AWorkCount div ContentLength;
@@ -351,29 +350,6 @@ begin
 
 end;
 
-procedure TCloudMailRu.HttpUploadProgress(ASender: TObject; AWorkMode: TWorkMode; AWorkCount: int64); { TODO : Объединить с DownloadProgress }
-var
-	HTTP: TIdHTTP;
-	ContentLength: int64;
-	Percent: integer;
-begin
-	// if self.CancelCopy then exit;
-
-	HTTP := TIdHTTP(ASender);
-	ContentLength := HTTP.Request.ContentLength;
-	if (Pos('chunked', LowerCase(HTTP.Response.TransferEncoding)) = 0) and (ContentLength > 0) then
-	begin
-		Percent := 100 * AWorkCount div ContentLength;
-		if self.ExternalProgressProc(self.ExternalPluginNr, self.ExternalSourceName, self.ExternalTargetName, Percent) = 1 then
-		begin
-			self.CancelCopy := true;
-			// HTTP.Disconnect;
-
-			Abort;
-		end;
-	end;
-end;
-
 function TCloudMailRu.putFileToCloud(localPath: WideString; Return: TStringList): boolean;
 var
 	URL, PostAnswer: WideString;
@@ -442,7 +418,7 @@ begin
 	result := true;
 	MemStream := TStringStream.Create;
 	try
-		self.HTTP.OnWork := self.HttpUploadProgress;
+		self.HTTP.OnWork := self.HttpProgress;
 		self.HTTP.Post(URL, PostData, MemStream);
 		Answer := MemStream.DataString;
 	except

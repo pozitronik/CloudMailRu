@@ -371,17 +371,16 @@ begin
 
 	MyProgressProc(PluginNum, LocalName, RemoteName, 0);
 
-	if CheckFlag(FS_FILE_OK, CopyFlags) then
+	if CopyFlags = FS_FILE_OK then
 	begin
 		if FileExists(LocalName) then
 		begin
 			exit(FS_FILE_EXISTS);
 		end else begin
 			Result := Cloud.getFile(WideString(RealPath.path), WideString(LocalName));
-			MyProgressProc(PluginNum, LocalName, RemoteName, 100);
-			MyLogProc(PluginNum, MSGTYPE_TRANSFERCOMPLETE, PWideChar(RemoteName + '->' + LocalName));
 		end;
 	end;
+
 	if CheckFlag(FS_COPYFLAGS_MOVE, CopyFlags) then
 	begin
 		Result := FS_FILE_NOTSUPPORTED; // todo
@@ -393,9 +392,13 @@ begin
 	if CheckFlag(FS_COPYFLAGS_OVERWRITE, CopyFlags) then
 	begin
 		Result := Cloud.getFile(WideString(RealPath.path), WideString(LocalName));
+	end;
+	if Result = FS_FILE_OK then
+	begin
 		MyProgressProc(PluginNum, LocalName, RemoteName, 100);
 		MyLogProc(PluginNum, MSGTYPE_TRANSFERCOMPLETE, PWideChar(RemoteName + '->' + LocalName));
 	end;
+
 end;
 
 function FsPutFileW(LocalName, RemoteName: PWideChar; CopyFlags: integer): integer; stdcall;
@@ -406,10 +409,8 @@ begin
 	MyProgressProc(PluginNum, LocalName, PWideChar(RealPath.path), 0);
 	if CheckFlag(FS_COPYFLAGS_OVERWRITE, CopyFlags) then
 	begin
-  {TODO: в апи не вскрыт метод перезаписи, поэтому надо сначала удалить файл}
+		{ TODO: в апи не вскрыт метод перезаписи, поэтому надо сначала удалить файл }
 		Result := Cloud.putFile(WideString(LocalName), RealPath.path, CLOUD_CONFLICT_RENAME);
-		MyProgressProc(PluginNum, LocalName, PWideChar(RealPath.path), 100);
-		MyLogProc(PluginNum, MSGTYPE_TRANSFERCOMPLETE, PWideChar(LocalName + '->' + RemoteName)); // todo fixme TRANSFERCOMPLETE только в случае FS_FILE_OK
 	end;
 	if CheckFlag(FS_COPYFLAGS_RESUME, CopyFlags) then
 	begin // NOT SUPPORTED
@@ -426,10 +427,12 @@ begin
 	if CopyFlags = 0 then
 	begin
 		Result := Cloud.putFile(WideString(LocalName), RealPath.path);
-		MyProgressProc(PluginNum, LocalName, PWideChar(RealPath.path), 100);
-		MyLogProc(PluginNum, MSGTYPE_TRANSFERCOMPLETE, PWideChar(LocalName + '->' + RemoteName)); // todo fixme TRANSFERCOMPLETE только в случае FS_FILE_OK
 	end;
-
+	if Result = FS_FILE_OK then
+	begin
+		MyProgressProc(PluginNum, LocalName, PWideChar(RealPath.path), 100);
+		MyLogProc(PluginNum, MSGTYPE_TRANSFERCOMPLETE, PWideChar(LocalName + '->' + RemoteName));
+	end;
 end;
 
 function FsPutFile(LocalName, RemoteName: PAnsiChar; CopyFlags: integer): integer; stdcall;
