@@ -12,6 +12,11 @@ uses
 const
 	TYPE_DIR = 'folder';
 	TYPE_FILE = 'file';
+	{ Константы для обозначения ошибок, возвращаемых при парсинге ответов облака. Дополняем по мере обнаружения }
+	CLOUD_ERROR_UNKNOWN = -2;
+	CLOUD_OPERATION_ERROR_STATUS_UNKNOWN = -1;
+	CLOUD_OPERATION_OK = 0;
+	CLOUD_ERROR_FILE_EXISTS = 1;
 
 type
 	TCloudMailRuDirListingItem = Record
@@ -65,6 +70,7 @@ type
 		function get_upload_url_FromText(Text: WideString): WideString;
 		function getDirListingFromJSON(JSON: WideString): TCloudMailRuDirListing;
 		function getShardFromJSON(JSON: WideString): WideString;
+		function getOperationResultFromJSON(JSON: WideString; var OperationStatus: integer): integer;
 		function UrlEncode(URL: UTF8String): WideString;
 		procedure HttpProgress(ASender: TObject; AWorkMode: TWorkMode; AWorkCount: int64);
 	public
@@ -284,7 +290,7 @@ function TCloudMailRu.putFile(localPath, remotePath: WideString): integer;
 var
 	PutResult: TStringList;
 	JSONAnswer: WideString;
-	I, Code: integer;
+	I, Code, OperationStatus: integer;
 begin
 	result := FS_FILE_WRITEERROR;
 	PutResult := TStringList.Create;
@@ -294,10 +300,24 @@ begin
 		Val(PutResult.Strings[1], I, Code); // Тут ошибка маловероятна
 		if self.addFileToCloud(PutResult.Strings[0], I, self.UrlEncode(StringReplace(remotePath, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase])), JSONAnswer) then
 		begin
-
+			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_DETAILS, PWideChar(JSONAnswer));
+			case self.getOperationResultFromJSON(JSONAnswer, OperationStatus) of
+				CLOUD_OPERATION_OK:
+					begin
+						result := FS_FILE_OK;
+					end;
+				CLOUD_ERROR_FILE_EXISTS:
+					begin
+						result := FS_FILE_EXISTS;
+					end;
+			else
+				begin
+					self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Error uploading to cloud: got ' + IntToStr(OperationStatus) + ' status'));
+					result := FS_FILE_WRITEERROR;
+				end;
+			end;
 		end;
 
-		self.ExternalLogProc(ExternalPluginNr, MSGTYPE_DETAILS, PWideChar(JSONAnswer));
 	end;
 	PutResult.Destroy;
 end;
@@ -330,8 +350,9 @@ var
 	PostData: TStringStream;
 begin
 	URL := 'https://cloud.mail.ru/api/v2/file/add';
-
-	PostData := TStringStream.Create('conflict=rename&home=/' + remotePath + '&hash=' + hash + '&size=' + IntToStr(size) + '&token=' + self.token + '&api=2&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id, TEncoding.UTF8); { Экспериментально выяснено, что параметры api, build, email, x-email, x-page-id в запросе не обязательны }
+	// если добавить conflict=rename к запросу, облако будет само переименоввывать файлы
+	PostData := TStringStream.Create('conflict=strict&home=/' + remotePath + '&hash=' + hash + '&size=' + IntToStr(size) + '&token=' + self.token + '&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id + '&conflict', TEncoding.UTF8);
+	{ Экспериментально выяснено, что параметры api, build, email, x-email, x-page-id в запросе не обязательны }
 	result := self.HTTPPost(URL, PostData, JSONAnswer);
 	PostData.Destroy;
 end;
@@ -380,10 +401,17 @@ begin
 		self.HTTP.Post(URL, PostData, MemStream);
 		Answer := MemStream.DataString;
 	except
-		on E: Exception do
+		on E: EIdHTTPProtocolException do
 		begin
-			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar(E.ClassName + ' ошибка с сообщением : ' + E.Message + ' при отправке данных на адрес ' + URL + ', response: ' + self.HTTP.ResponseText));
-			result := false;
+			if self.HTTP.ResponseCode = 400 then
+			begin { сервер вернёт 400, но нужно пропарсить результат для дальнейшего определения действий }
+				Answer := e.ErrorMessage;
+				result := true;
+			end else begin
+				self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar(E.ClassName + ' ошибка с сообщением : ' + E.Message + ' при отправке данных на адрес ' + URL + ', response: ' + IntToStr(self.HTTP.ResponseCode)));
+				result := false;
+			end;
+
 		end;
 	end;
 	MemStream.Free;
@@ -494,7 +522,7 @@ end;
 
 function TCloudMailRu.getDirListingFromJSON(JSON: WideString): TCloudMailRuDirListing;
 var
-	X, Obj: ISuperObject;
+	X, Obj: ISuperObject; // todo проверить, нужен ли ISuperObject destroy
 	J: integer;
 	ResultItems: TCloudMailRuDirListing;
 begin
@@ -532,6 +560,24 @@ begin
 			end;
 		end;
 	result := ResultItems;
+end;
+
+function TCloudMailRu.getOperationResultFromJSON(JSON: WideString; var OperationStatus: integer): integer;
+var
+	X: ISuperObject;
+	Error: WideString;
+	ErrCode: integer;
+begin
+	X := TSuperObject.Create(JSON).AsObject;
+	OperationStatus := X.I['status'];
+	if OperationStatus <> 200 then
+	begin
+		Error := X.O['body'].O['home'].S['error'];
+		if Error = 'exists' then exit(CLOUD_ERROR_FILE_EXISTS)
+		else exit(CLOUD_ERROR_UNKNOWN); // Эту ошибку мы пока не встречали
+	end;
+	result := CLOUD_OPERATION_OK;
+
 end;
 
 function TCloudMailRu.UrlEncode(URL: UTF8String): WideString; // todo нужно добиться корректного формирования урлов
