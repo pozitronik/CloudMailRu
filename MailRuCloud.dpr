@@ -445,14 +445,25 @@ begin
 	begin // NOT SUPPORTED
 		exit(FS_FILE_NOTSUPPORTED);
 	end;
-	if CheckFlag(FS_COPYFLAGS_MOVE, CopyFlags) then
-	begin
 
-	end;
 	if CheckFlag(FS_COPYFLAGS_EXISTS_SAMECASE, CopyFlags) or CheckFlag(FS_COPYFLAGS_EXISTS_DIFFERENTCASE, CopyFlags) then // Облако не поддерживает разные регистры
 	begin
 		exit(FS_FILE_EXISTS);
 	end;
+	if CheckFlag(FS_COPYFLAGS_MOVE, CopyFlags) then
+	begin
+		Result := Cloud.putFile(WideString(LocalName), RealPath.path);
+		if Result = FS_FILE_OK then
+		begin
+			MyProgressProc(PluginNum, LocalName, PWideChar(RealPath.path), 100);
+			MyLogProc(PluginNum, MSGTYPE_TRANSFERCOMPLETE, PWideChar(LocalName + '->' + RemoteName));
+		end;
+		if not DeleteFileW(LocalName) then
+		begin //Не получилось удалить
+			exit(FS_FILE_NOTSUPPORTED);
+		end;
+	end;
+
 	if CopyFlags = 0 then
 	begin
 		Result := Cloud.putFile(WideString(LocalName), RealPath.path);
