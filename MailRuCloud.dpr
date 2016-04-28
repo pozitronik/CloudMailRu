@@ -50,9 +50,81 @@ begin
 	Result := Ft;
 end;
 
+procedure FsGetDefRootName(DefRootName: PAnsiChar; maxlen: integer); stdcall; // Процедура вызывается один раз при установке плагина
+Begin
+	StrLCopy(DefRootName, PAnsiChar('Cloud'), maxlen);
+	messagebox(FindTCWindow, PWideChar('Installation succeful'), 'Information', mb_ok + mb_iconinformation);
+End;
+
+function FsFindClose(Hdl: thandle): integer; stdcall;
+Begin
+	// Завершение получения списка файлов. Result тоталом не используется (всегда равен 0)
+	Result := 0;
+	FileCounter := 0;
+end;
+
+{ ANSI PEASANTS }
+
+function FsInit(PluginNr: integer; pProgressProc: TProgressProc; pLogProc: TLogProc; pRequestProc: TRequestProc): integer; stdcall;
+Begin
+	PluginNum := PluginNr;
+	MyProgressProc := pProgressProc;
+	MyLogProc := pLogProc;
+	MyRequestProc := pRequestProc;
+	// Вход в плагин.
+	Result := 0;
+end;
+
 procedure FsStatusInfo(RemoteDir: PAnsiChar; InfoStartEnd, InfoOperation: integer); stdcall;
 begin
 	SetLastError(ERROR_NOT_SUPPORTED);
+end;
+
+function FsFindFirst(path: PAnsiChar; var FindData: tWIN32FINDDATAA): thandle; stdcall;
+begin
+	SetLastError(ERROR_INVALID_FUNCTION);
+	Result := ERROR_INVALID_HANDLE; // Ansi-заглушка
+end;
+
+function FsFindNext(Hdl: thandle; var FindData: tWIN32FINDDATAA): bool; stdcall;
+begin
+	SetLastError(ERROR_INVALID_FUNCTION);
+	Result := false; // Ansi-заглушка
+end;
+
+function FsGetFile(RemoteName, LocalName: PAnsiChar; CopyFlags: integer; RemoteInfo: pRemoteInfo): integer; stdcall; // Копирование файла из файловой системы плагина
+begin
+	SetLastError(ERROR_INVALID_FUNCTION);
+	Result := FS_FILE_NOTSUPPORTED; // Ansi-заглушка
+end;
+
+function FsPutFile(LocalName, RemoteName: PAnsiChar; CopyFlags: integer): integer; stdcall; // Копирование файла в файловую систему плагина
+begin
+	SetLastError(ERROR_INVALID_FUNCTION);
+	Result := FS_FILE_NOTSUPPORTED; // Ansi-заглушка
+end;
+
+function FsDeleteFile(RemoteName: PAnsiChar): bool; stdcall; // Удаление файла из файловой ссистемы плагина
+Begin
+	SetLastError(ERROR_INVALID_FUNCTION); // Ansi-заглушка
+	Result := false;
+End;
+
+function FsDisconnect(DisconnectRoot: PAnsiChar): bool; stdcall;
+begin
+	SetLastError(ERROR_INVALID_FUNCTION);
+	Result := false; // ansi-заглушка
+end;
+{ GLORIOUS UNICODE MASTER RACE }
+
+function FsInitW(PluginNr: integer; pProgressProc: TProgressProc; pLogProc: TLogProc; pRequestProc: TRequestProc): integer; stdcall; // Вход в плагин.
+Begin
+	PluginNum := PluginNr;
+	MyProgressProc := pProgressProc;
+	MyLogProc := pLogProc;
+	MyRequestProc := pRequestProc;
+	CurrentLogon := false;
+	Result := 0;
 end;
 
 procedure FsStatusInfoW(RemoteDir: PWideChar; InfoStartEnd, InfoOperation: integer); stdcall;
@@ -155,39 +227,6 @@ begin
 		end;
 		exit;
 	end;
-end;
-
-function FsInit(PluginNr: integer; pProgressProc: TProgressProc; pLogProc: TLogProc; pRequestProc: TRequestProc): integer; stdcall;
-Begin
-	PluginNum := PluginNr;
-	MyProgressProc := pProgressProc;
-	MyLogProc := pLogProc;
-	MyRequestProc := pRequestProc;
-	// Вход в плагин.
-	Result := 0;
-end;
-
-function FsInitW(PluginNr: integer; pProgressProc: TProgressProc; pLogProc: TLogProc; pRequestProc: TRequestProc): integer; stdcall;
-Begin
-	PluginNum := PluginNr;
-	MyProgressProc := pProgressProc;
-	MyLogProc := pLogProc;
-	MyRequestProc := pRequestProc;
-	CurrentLogon := false;
-	// Вход в плагин.
-	Result := 0;
-end;
-
-function FsFindFirst(path: PAnsiChar; var FindData: tWIN32FINDDATAA): thandle; stdcall;
-begin
-	SetLastError(ERROR_INVALID_FUNCTION);
-	Result := ERROR_INVALID_HANDLE; // Ansi-заглушка
-end;
-
-function FsFindNext(Hdl: thandle; var FindData: tWIN32FINDDATAA): bool; stdcall;
-begin
-	SetLastError(ERROR_INVALID_FUNCTION);
-	Result := false; // Ansi-заглушка
 end;
 
 function FsFindFirstW(path: PWideChar; var FindData: tWIN32FINDDATAW): thandle; stdcall;
@@ -323,20 +362,6 @@ begin
 	end;
 end;
 
-function FsFindClose(Hdl: thandle): integer; stdcall;
-Begin
-	// Завершение получения списка файлов. Result тоталом не используется (всегда равен 0)
-	Result := 0;
-	FileCounter := 0;
-end;
-
-// Процедура вызывается один раз при установке плагина
-procedure FsGetDefRootName(DefRootName: PAnsiChar; maxlen: integer); stdcall;
-Begin
-	StrLCopy(DefRootName, PAnsiChar('Cloud'), maxlen);
-	messagebox(FindTCWindow, PWideChar('Installation succeful'), 'Information', mb_ok + mb_iconinformation);
-End;
-
 function FsExecuteFileW(MainWin: thandle; RemoteName, Verb: PWideChar): integer; stdcall;
 Begin
 	// Запуск файла
@@ -354,15 +379,7 @@ Begin
 	end;
 End;
 
-function FsGetFile(RemoteName, LocalName: PAnsiChar; CopyFlags: integer; RemoteInfo: pRemoteInfo): integer; stdcall;
-begin
-	SetLastError(ERROR_INVALID_FUNCTION);
-	Result := FS_FILE_NOTSUPPORTED; // Ansi-заглушка
-	// Копирование файла из файловой системы плагина
-end;
-
-function FsGetFileW(RemoteName, LocalName: PWideChar; CopyFlags: integer; RemoteInfo: pRemoteInfo): integer; stdcall;
-// Копирование файла из файловой системы плагина
+function FsGetFileW(RemoteName, LocalName: PWideChar; CopyFlags: integer; RemoteInfo: pRemoteInfo): integer; stdcall; // Копирование файла из файловой системы плагина
 var
 	RealPath: TRealPath;
 begin
@@ -435,32 +452,11 @@ begin
 	end;
 end;
 
-function FsPutFile(LocalName, RemoteName: PAnsiChar; CopyFlags: integer): integer; stdcall;
-begin
-	SetLastError(ERROR_INVALID_FUNCTION);
-	Result := FS_FILE_NOTSUPPORTED; // Ansi-заглушка
-	// Копирование файла в файловую систему плагина
-end;
-
-function FsDeleteFile(RemoteName: PAnsiChar): bool; stdcall;
+function FsDeleteFileW(RemoteName: PWideChar): bool; stdcall; // Удаление файла из файловой ссистемы плагина
 Begin
 	SetLastError(ERROR_INVALID_FUNCTION); // Ansi-заглушка
 	Result := false;
-	// Удаление файла из файловой ссистемы плагина
 End;
-
-function FsDeleteFileW(RemoteName: PWideChar): bool; stdcall;
-Begin
-	SetLastError(ERROR_INVALID_FUNCTION); // Ansi-заглушка
-	Result := false;
-	// Удаление файла из файловой ссистемы плагина
-End;
-
-function FsDisconnect(DisconnectRoot: PAnsiChar): bool; stdcall;
-begin
-	SetLastError(ERROR_INVALID_FUNCTION);
-	Result := false; // ansi-заглушка
-end;
 
 function FsDisconnectW(DisconnectRoot: PWideChar): bool; stdcall;
 begin
