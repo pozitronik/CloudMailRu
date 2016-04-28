@@ -52,10 +52,11 @@ type
 		function getToken(): boolean;
 		function getShard(var Shard: WideString): boolean;
 		function putFileToCloud(localPath: WideString; Return: TStringList): boolean;
-		function addFileToCloud(putFileArray: TStringList; remotePath: WideString; var JSONAnswer: WideString): boolean;
+		function addFileToCloud(hash: WideString; size: integer; remotePath: WideString; var JSONAnswer: WideString): boolean;
 		function HTTPPost(URL: WideString; PostData: TStringList): boolean; overload; // Постинг без ответа
 		function HTTPPost(URL: WideString; PostData: TStringList; var Answer: WideString): boolean; overload; // Постинг и получение ответа
-		function HTTPPost(URL: WideString; PostData: TStringStream; var Answer: WideString): boolean; overload; // Постинг строчкой и получение ответа
+		function HTTPPost(URL: WideString; PostData: TStringStream; var Answer: WideString): boolean; overload;
+		// Постинг и получение ответа (альтернативный вариант для отправки некоторых запросов).
 		function HTTPPost(URL: WideString; PostData: TIdMultipartFormDataStream; var Answer: WideString): boolean; overload; // Постинг файла и получение ответа
 		function HTTPGet(URL: WideString; var Answer: WideString): boolean;
 		function getTokenFromText(Text: WideString): WideString;
@@ -280,11 +281,15 @@ function TCloudMailRu.putFile(localPath, remotePath: WideString): integer;
 var
 	PutResult: TStringList;
 	JSONAnswer: WideString;
+	I, Code: integer;
+
 begin
 	PutResult := TStringList.Create;
 	if self.putFileToCloud(localPath, PutResult) then begin
 		self.ExternalLogProc(ExternalPluginNr, MSGTYPE_DETAILS, PWideChar('putFileToCloud result: ' + PutResult.Text));
-		self.addFileToCloud(PutResult, ExtractFileDir(remotePath), JSONAnswer);
+		Val(PutResult.Strings[1], I, Code);
+		self.addFileToCloud(PutResult.Strings[0], I, self.UrlEncode(StringReplace(remotePath, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase])),
+			JSONAnswer);
 		self.ExternalLogProc(ExternalPluginNr, MSGTYPE_DETAILS, PWideChar(JSONAnswer));
 	end;
 	PutResult.Destroy;
@@ -310,27 +315,16 @@ begin
 	end;
 end;
 
-function TCloudMailRu.addFileToCloud(putFileArray: TStringList; remotePath: WideString; var JSONAnswer: WideString): boolean;
+function TCloudMailRu.addFileToCloud(hash: WideString; size: integer; remotePath: WideString; var JSONAnswer: WideString): boolean;
 var
 	URL: WideString;
 	PostData: TStringStream;
 begin
 	URL := 'https://cloud.mail.ru/api/v2/file/add';
-	PostData := TStringStream.Create('conflict=rename&home=test.txt&hash=C097B6E19A922A189B23657E3B2CE0CC7D8FE4FF&size=36766&token=' + self.token,
-		TEncoding.UTF8);
-	{
-		PostData.Values['api'] := '2';
-		PostData.Values['build'] := self.build;
-		PostData.Values['conflict'] := 'rename';
-		PostData.Values['email'] := self.user + '%40' + self.domain;
-		PostData.Values['home'] := 'test.txt';
-		PostData.Values['hash'] := putFileArray.Strings[0];
-		PostData.Values['size'] := putFileArray.Strings[1];
-		PostData.Values['token'] := self.token;
-		PostData.Values['x-email'] := self.user + '%40' + self.domain;
-		PostData.Values['x-page-id'] := self.x_page_id;
-	}
 
+	PostData := TStringStream.Create('conflict=rename&home=/' + remotePath + '&hash=' + hash + '&size=' + IntToStr(size) + '&token=' + self.token +
+		'&api=2&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id,
+		TEncoding.UTF8); {Экспериментально выяснено, что параметры api, build, email, x-email, x-page-id в запросе не обязательны}
 	result := self.HTTPPost(URL, PostData, JSONAnswer);
 	PostData.Destroy;
 end;
@@ -356,7 +350,6 @@ begin
 	result := true;
 	MemStream := TStringStream.Create;
 	try
-		// self.HTTP.Request.ContentType:='application/x-www-form-urlencoded';
 		self.HTTP.Post(URL, PostData, MemStream);
 		Answer := MemStream.DataString;
 	except
@@ -376,7 +369,7 @@ begin
 	result := true;
 	MemStream := TStringStream.Create;
 	try
-		self.HTTP.Request.ContentType:='application/x-www-form-urlencoded';
+		self.HTTP.Request.ContentType := 'application/x-www-form-urlencoded'; // Без этого сервер прикинется чайником и вернёт 418
 		self.HTTP.Post(URL, PostData, MemStream);
 		Answer := MemStream.DataString;
 	except
