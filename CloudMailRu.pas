@@ -7,7 +7,7 @@ uses
 	MRC_helper,
 	IdCookieManager, IdIOHandler, IdIOHandlerSocket, IdIOHandlerStack, IdSSL,
 	IdSSLOpenSSL, IdBaseComponent, IdComponent, IdTCPConnection, IdTCPClient,
-	IdHTTP, IdAuthentication, IdIOHandlerStream;
+	IdHTTP, IdAuthentication, IdIOHandlerStream, IdMultipartFormData;
 
 const
 	TYPE_DIR = 'folder';
@@ -53,8 +53,10 @@ type
 		function getShard(var Shard: WideString): boolean;
 		function putFileToCloud(localPath: WideString; Return: TStringList): boolean;
 		function addFileToCloud(putFileArray: TStringList; remotePath: WideString; var JSONAnswer: WideString): boolean;
-		function HTTPPost(URL: WideString; PostData: TStringList): boolean; overload;
-		function HTTPPost(URL: WideString; PostData: TStringList; var Answer: WideString): boolean; overload;
+		function HTTPPost(URL: WideString; PostData: TStringList): boolean; overload; // Постинг без ответа
+		function HTTPPost(URL: WideString; PostData: TStringList; var Answer: WideString): boolean; overload; // Постинг и получение ответа
+		function HTTPPost(URL: WideString; PostData: TStringStream; var Answer: WideString): boolean; overload; // Постинг строчкой и получение ответа
+		function HTTPPost(URL: WideString; PostData: TIdMultipartFormDataStream; var Answer: WideString): boolean; overload; // Постинг файла и получение ответа
 		function HTTPGet(URL: WideString; var Answer: WideString): boolean;
 		function getTokenFromText(Text: WideString): WideString;
 		function get_x_page_id_FromText(Text: WideString): WideString;
@@ -281,7 +283,8 @@ var
 begin
 	PutResult := TStringList.Create;
 	if self.putFileToCloud(localPath, PutResult) then begin
-		self.addFileToCloud(PutResult, remotePath, JSONAnswer);
+		self.ExternalLogProc(ExternalPluginNr, MSGTYPE_DETAILS, PWideChar('putFileToCloud result: ' + PutResult.Text));
+		self.addFileToCloud(PutResult, ExtractFileDir(remotePath), JSONAnswer);
 		self.ExternalLogProc(ExternalPluginNr, MSGTYPE_DETAILS, PWideChar(JSONAnswer));
 	end;
 	PutResult.Destroy;
@@ -290,11 +293,12 @@ end;
 function TCloudMailRu.putFileToCloud(localPath: WideString; Return: TStringList): boolean;
 var
 	URL, Answer: WideString;
-	PostData: TStringList;
+	PostData: TIdMultipartFormDataStream;
 begin
-	URL := self.upload_url + '?cloud_domain=1&x-email=' + self.user + '%40' + self.domain + '&fileapi' + IntToStr(DateTimeToUnix(now)) + '0246';
-	PostData := TStringList.Create;
-	PostData.Values['file'] := '@' + localPath;
+	URL := self.upload_url + '/?cloud_domain=1&x-email=' + self.user + '%40' + self.domain + '&fileapi' + IntToStr(DateTimeToUnix(now)) + '0246';
+	PostData := TIdMultipartFormDataStream.Create;
+	self.ExternalLogProc(ExternalPluginNr, MSGTYPE_DETAILS, PWideChar('Uploading to ' + URL));
+	PostData.AddFile('file', localPath, 'application/octet-stream');
 	result := self.HTTPPost(URL, PostData, Answer);
 	PostData.Destroy;
 	if (result) then begin
@@ -309,21 +313,26 @@ end;
 function TCloudMailRu.addFileToCloud(putFileArray: TStringList; remotePath: WideString; var JSONAnswer: WideString): boolean;
 var
 	URL: WideString;
-	PostData: TStringList;
+	PostData: TStringStream;
 begin
 	URL := 'https://cloud.mail.ru/api/v2/file/add';
-	PostData.Values['api'] := '2';
-	PostData.Values['build'] := self.build;
-	PostData.Values['conflict'] := 'rename';
-	PostData.Values['email'] := self.user + '%40' + self.domain;
-	PostData.Values['home'] := remotePath;
-	PostData.Values['hash'] := putFileArray.Strings[0];
-	PostData.Values['size'] := putFileArray.Strings[1];
-	PostData.Values['token'] := self.token;
-	PostData.Values['x-email'] := self.user + '%40' + self.domain;
-	PostData.Values['x-page-id'] := self.x_page_id;
-	result := self.HTTPPost(URL, PostData, JSONAnswer);
+	PostData := TStringStream.Create('conflict=rename&home=test.txt&hash=C097B6E19A922A189B23657E3B2CE0CC7D8FE4FF&size=36766&token=' + self.token,
+		TEncoding.UTF8);
+	{
+		PostData.Values['api'] := '2';
+		PostData.Values['build'] := self.build;
+		PostData.Values['conflict'] := 'rename';
+		PostData.Values['email'] := self.user + '%40' + self.domain;
+		PostData.Values['home'] := 'test.txt';
+		PostData.Values['hash'] := putFileArray.Strings[0];
+		PostData.Values['size'] := putFileArray.Strings[1];
+		PostData.Values['token'] := self.token;
+		PostData.Values['x-email'] := self.user + '%40' + self.domain;
+		PostData.Values['x-page-id'] := self.x_page_id;
+	}
 
+	result := self.HTTPPost(URL, PostData, JSONAnswer);
+	PostData.Destroy;
 end;
 
 function TCloudMailRu.HTTPPost(URL: WideString; PostData: TStringList): boolean;
@@ -347,6 +356,46 @@ begin
 	result := true;
 	MemStream := TStringStream.Create;
 	try
+		// self.HTTP.Request.ContentType:='application/x-www-form-urlencoded';
+		self.HTTP.Post(URL, PostData, MemStream);
+		Answer := MemStream.DataString;
+	except
+		on E: Exception do begin
+			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR,
+				PWideChar(E.ClassName + ' ошибка с сообщением : ' + E.Message + ' при отправке данных на адрес ' + URL + ', response: ' + self.HTTP.ResponseText));
+			result := false;
+		end;
+	end;
+	MemStream.Free;
+end;
+
+function TCloudMailRu.HTTPPost(URL: WideString; PostData: TStringStream; var Answer: WideString): boolean;
+var
+	MemStream: TStringStream;
+begin
+	result := true;
+	MemStream := TStringStream.Create;
+	try
+		self.HTTP.Request.ContentType:='application/x-www-form-urlencoded';
+		self.HTTP.Post(URL, PostData, MemStream);
+		Answer := MemStream.DataString;
+	except
+		on E: Exception do begin
+			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR,
+				PWideChar(E.ClassName + ' ошибка с сообщением : ' + E.Message + ' при отправке данных на адрес ' + URL + ', response: ' + self.HTTP.ResponseText));
+			result := false;
+		end;
+	end;
+	MemStream.Free;
+end;
+
+function TCloudMailRu.HTTPPost(URL: WideString; PostData: TIdMultipartFormDataStream; var Answer: WideString): boolean;
+var
+	MemStream: TStringStream;
+begin
+	result := true;
+	MemStream := TStringStream.Create;
+	try
 		self.HTTP.Post(URL, PostData, MemStream);
 		Answer := MemStream.DataString;
 	except
@@ -354,7 +403,6 @@ begin
 			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar(E.ClassName + ' ошибка с сообщением : ' + E.Message));
 			result := false;
 		end;
-
 	end;
 	MemStream.Free;
 end;

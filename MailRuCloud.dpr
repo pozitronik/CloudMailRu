@@ -367,7 +367,7 @@ var
 	RealPath: TRealPath;
 begin
 	RealPath := ExtractRealPath(RemoteName);
-	Cloud.putFile(WIdeString(LocalName), WideString(RealPath.path));
+	Cloud.putFile(WideString(LocalName), WideString(RealPath.path));
 end;
 
 function FsPutFile(LocalName, RemoteName: PAnsiChar; CopyFlags: integer): integer; stdcall;
