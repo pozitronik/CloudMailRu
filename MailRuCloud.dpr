@@ -29,9 +29,11 @@ var
 	FileCounter: integer = 0;
 	{ Callback data }
 	PluginNum: integer;
+	CryptoNum: integer;
 	MyProgressProc: TProgressProc;
 	MyLogProc: TLogProc;
 	MyRequestProc: TRequestProc;
+	MyCryptProc: TCryptProc;
 	Cloud: TCloudMailRu;
 	CurrentListing: TCloudMailRuDirListing;
 	PluginIniFile: TIniFile;
@@ -126,6 +128,11 @@ function FsRemoveDir(RemoteName: PAnsiChar): bool; stdcall;
 begin
 	SetLastError(ERROR_INVALID_FUNCTION);
 	Result := false; // ansi-заглушка
+end;
+
+procedure FsSetCryptCallback(PCryptProc: TCryptProc; CryptoNr: integer; Flags: integer); stdcall;
+begin
+
 end;
 
 { GLORIOUS UNICODE MASTER RACE }
@@ -524,9 +531,15 @@ begin
 	Result := true;
 end;
 
+procedure FsSetCryptCallbackW(PCryptProc: TCryptProc; CryptoNr: integer; Flags: integer); stdcall;
+begin
+	MyCryptProc := PCryptProc;
+	CryptoNum := CryptoNr;
+end;
+
 exports FsGetDefRootName, FsInit, FsInitW, FsFindFirst, FsFindFirstW, FsFindNext, FsFindNextW, FsFindClose, FsGetFile, FsGetFileW,
 	FsDisconnect, FsDisconnectW, FsStatusInfo, FsStatusInfoW, FsPutFile, FsPutFileW, FsDeleteFile, FsDeleteFileW, FsMkDir, FsMkDirW,
-	FsRemoveDir, FsRemoveDirW;
+	FsRemoveDir, FsRemoveDirW, FsSetCryptCallback, FsSetCryptCallbackW;
 
 (* ,
 	FsExecuteFile,
