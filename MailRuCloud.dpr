@@ -281,6 +281,8 @@ begin
 
 	end else begin
 		RealPath := ExtractRealPath(GlobalPath);
+		if RealPath.account = '' then exit(INVALID_HANDLE_VALUE);
+
 		if not Assigned(Cloud) then
 		begin
 			user := PluginIniFile.ReadString(RealPath.account, 'user', '');
@@ -507,6 +509,8 @@ var
 	RealPath: TRealPath;
 Begin
 	RealPath := ExtractRealPath(WideString(RemoteName));
+	if RealPath.account = '' then exit(false);
+	if not Assigned(Cloud) then exit(false);
 	Result := Cloud.deleteFile(RealPath.path);
 End;
 
