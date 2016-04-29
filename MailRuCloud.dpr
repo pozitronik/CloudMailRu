@@ -519,6 +519,7 @@ var
 	RealPath: TRealPath;
 Begin
 	RealPath := ExtractRealPath(WideString(path));
+	if RealPath.account = '' then exit(false);
 	Result := Cloud.createDir(RealPath.path);
 end;
 
