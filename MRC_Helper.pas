@@ -33,11 +33,17 @@ var
 begin
 	List := TStringList.Create;
 	ExtractStrings(['\'], [], PWideChar(VirtualPath), List);
-	Result.account := List.Strings[0];
-	List.Delete(0);
+	if List.Count = 1 then
+	begin // в виртуальной ФС это каталог первого уровня
+		Result.account := '';
+		Result.path := '';
+	end else begin
+		Result.account := List.Strings[0];
+		List.Delete(0);
 
-	Result.path := Implode(List, '\');
-	if Result.path = '' then ExtractRealPath.path := '\';
+		Result.path := Implode(List, '\');
+		if Result.path = '' then ExtractRealPath.path := '\';
+	end;
 
 	List.Destroy;
 end;
@@ -54,6 +60,5 @@ function CheckFlag(Check: Byte; Flags: LongInt): Boolean; // Определяет, установ
 begin
 	Result := (Flags and Check) <> 0;
 end;
-
 
 end.

@@ -448,6 +448,7 @@ var
 	RealPath: TRealPath;
 begin
 	RealPath := ExtractRealPath(RemoteName);
+	if RealPath.account = '' then exit(FS_FILE_NOTSUPPORTED);
 	MyProgressProc(PluginNum, LocalName, PWideChar(RealPath.path), 0);
 	if CheckFlag(FS_COPYFLAGS_OVERWRITE, CopyFlags) then
 	begin
