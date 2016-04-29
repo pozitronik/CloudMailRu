@@ -10,10 +10,15 @@ type
 		path: WideString;
 	end;
 
+	TAccountSettings = record
+		name, email, password: WideString;
+		use_tc_password_manager: boolean;
+	end;
+
 function Implode(S: TStringList; Delimiter: Char): WideString;
 function ExtractRealPath(VirtualPath: WideString): TRealPath;
 function DateTimeToUnix(ConvDate: TDateTime): Integer;
-function CheckFlag(Check: Byte; Flags: Integer): Boolean; // Определяет, установлен ли указанный бит
+function CheckFlag(Check: Byte; Flags: Integer): boolean; // Определяет, установлен ли указанный бит
 
 implementation
 
@@ -33,7 +38,7 @@ var
 begin
 	List := TStringList.Create;
 	ExtractStrings(['\'], [], PWideChar(VirtualPath), List);
-	if List.Count <2 then
+	if List.Count < 2 then
 	begin // в виртуальной ФС это каталог первого уровня
 		Result.account := '';
 		Result.path := '';
@@ -56,7 +61,7 @@ begin
 	Result := Round((ConvDate - UnixStartDate) * 86400);
 end;
 
-function CheckFlag(Check: Byte; Flags: LongInt): Boolean; // Определяет, установлен ли указанный бит
+function CheckFlag(Check: Byte; Flags: LongInt): boolean; // Определяет, установлен ли указанный бит
 begin
 	Result := (Flags and Check) <> 0;
 end;

@@ -2,9 +2,9 @@ object AccountsForm: TAccountsForm
   Left = 0
   Top = 0
   BorderStyle = bsDialog
-  Caption = 'AccountsForm'
+  Caption = 'Cloud Accounts'
   ClientHeight = 421
-  ClientWidth = 594
+  ClientWidth = 494
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -149,107 +149,103 @@ object AccountsForm: TAccountsForm
     000000000000000000000000000000000000000000000000000000000000}
   OldCreateOrder = False
   Position = poOwnerFormCenter
+  OnHide = FormHide
+  OnShow = FormShow
   DesignSize = (
-    594
+    494
     421)
   PixelsPerInch = 96
   TextHeight = 13
   object UsernameLabel: TLabel
-    Left = 311
+    Left = 231
     Top = 72
-    Width = 275
+    Width = 255
     Height = 13
     Anchors = [akLeft, akTop, akRight]
     Caption = 'Email:'
-    ExplicitWidth = 265
   end
   object AccountNameLabel: TLabel
-    Left = 311
+    Left = 231
     Top = 16
-    Width = 275
+    Width = 175
     Height = 13
     Anchors = [akLeft, akTop, akRight]
     Caption = 'Account name'
-    ExplicitWidth = 265
+    ExplicitWidth = 275
   end
   object PasswordLabel: TLabel
-    Left = 311
+    Left = 231
     Top = 120
-    Width = 275
+    Width = 255
     Height = 13
     Anchors = [akLeft, akTop, akRight]
     Caption = 'Password'
-    ExplicitWidth = 265
   end
   object AccountsGroupBox: TGroupBox
     Left = 0
     Top = 0
-    Width = 305
+    Width = 225
     Height = 417
     Anchors = [akLeft, akTop, akBottom]
     Caption = 'Accounts'
     TabOrder = 0
     DesignSize = (
-      305
+      225
       417)
     object AccountsList: TListBox
       Left = 4
       Top = 16
-      Width = 298
+      Width = 218
       Height = 398
-      Anchors = [akLeft, akTop, akBottom]
+      Anchors = [akLeft, akTop, akRight, akBottom]
       ItemHeight = 13
       TabOrder = 0
+      OnClick = AccountsListClick
+      ExplicitWidth = 298
       ExplicitHeight = 450
     end
   end
   object EmailEdit: TEdit
-    Left = 311
+    Left = 231
     Top = 91
-    Width = 275
+    Width = 255
     Height = 21
     Anchors = [akLeft, akTop, akRight]
     TabOrder = 1
-    Text = 'EmailEdit'
-    ExplicitWidth = 265
   end
   object AccountNameEdit: TEdit
-    Left = 311
+    Left = 231
     Top = 35
-    Width = 275
+    Width = 255
     Height = 21
     Anchors = [akLeft, akTop, akRight]
     TabOrder = 2
-    Text = 'AccountNameEdit'
-    ExplicitWidth = 265
   end
   object PasswordEdit: TEdit
-    Left = 311
+    Left = 231
     Top = 139
-    Width = 275
+    Width = 255
     Height = 21
     Anchors = [akLeft, akTop, akRight]
     PasswordChar = '*'
     TabOrder = 3
-    Text = 'UserNameEdit'
-    ExplicitWidth = 265
   end
-  object CheckBox1: TCheckBox
-    Left = 311
+  object UseTCPwdMngrCB: TCheckBox
+    Left = 231
     Top = 166
-    Width = 275
+    Width = 255
     Height = 17
     Anchors = [akLeft, akTop, akRight]
     Caption = 'Use TC master password to protect the password'
     TabOrder = 4
-    ExplicitWidth = 265
   end
   object ApplyButton: TButton
-    Left = 311
+    Left = 231
     Top = 189
     Width = 75
     Height = 25
     Caption = 'Apply'
     TabOrder = 5
+    OnClick = ApplyButtonClick
   end
 end

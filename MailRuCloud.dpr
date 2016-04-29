@@ -23,7 +23,7 @@ uses
 
 var
 	tmp: pchar;
-	tempString: WideString;
+	IniFilePath: WideString;
 	GlobalPath, PluginPath: WideString;
 	FileCounter: integer = 0;
 	{ Callback data }
@@ -425,14 +425,15 @@ Begin
 		exit(FS_EXEC_YOURSELF);
 	end else if Verb = 'properties' then
 	begin
-    if RealPath.path='' then
-    begin
-      AccountsForm:=TAccountsForm.Create(nil);
-      AccountsForm.ParentWindow:=MainWin;
-      AccountsForm.ShowModal;
-      AccountsForm.Destroy;
-    end;
-		messagebox(MainWin, PWideChar(RemoteName), PWideChar(Verb), mb_ok + mb_iconinformation);
+		if RealPath.path = '' then
+		begin
+			AccountsForm := TAccountsForm.Create(nil);
+			AccountsForm.ParentWindow := MainWin;
+			AccountsForm.IniPath := IniFilePath;
+			AccountsForm.ShowModal;
+			AccountsForm.Destroy;
+		end;
+	 //	messagebox(MainWin, PWideChar(RemoteName), PWideChar(Verb), mb_ok + mb_iconinformation);
 	end else if copy(Verb, 1, 5) = 'chmod' then
 	begin
 	end else if copy(Verb, 1, 5) = 'quote' then
@@ -600,8 +601,8 @@ begin
 	PluginPath := tmp;
 	freemem(tmp);
 	PluginPath := IncludeTrailingbackslash(ExtractFilePath(PluginPath));
-	tempString := PluginPath + 'MailRuCloud.ini';
-	if not FileExists(tempString) then FileClose(FileCreate(tempString));
-	PluginIniFile := TIniFile.Create(tempString);
+	IniFilePath := PluginPath + 'MailRuCloud.ini';
+	if not FileExists(IniFilePath) then FileClose(FileCreate(IniFilePath));
+	PluginIniFile := TIniFile.Create(IniFilePath); // todo destroy
 
 end.
