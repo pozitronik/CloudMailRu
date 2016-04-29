@@ -281,10 +281,11 @@ begin
 
 	end else begin
 		RealPath := ExtractRealPath(GlobalPath);
-		if RealPath.account = '' then exit(INVALID_HANDLE_VALUE);
 
 		if not Assigned(Cloud) then
 		begin
+			if RealPath.account = '' then RealPath.account:=ExtractFileName(GlobalPath);
+
 			user := PluginIniFile.ReadString(RealPath.account, 'user', '');
 			domain := PluginIniFile.ReadString(RealPath.account, 'domain', '');
 			password := PluginIniFile.ReadString(RealPath.account, 'password', '');
@@ -384,13 +385,16 @@ begin
 	end;
 end;
 
-function FsExecuteFileW(MainWin: thandle; RemoteName, Verb: PWideChar): integer; stdcall;
+function FsExecuteFileW(MainWin: thandle; RemoteName, Verb: PWideChar): integer; stdcall; // Запуск файла
+var
+	RealPath: TRealPath;
 Begin
-	// Запуск файла
+	RealPath := ExtractRealPath(RemoteName);
+
 	Result := FS_EXEC_OK;
 	if Verb = 'open' then
 	begin
-
+		exit(FS_EXEC_YOURSELF);
 	end else if Verb = 'properties' then
 	begin
 		messagebox(MainWin, PWideChar(RemoteName), PWideChar(Verb), mb_ok + mb_iconinformation);
@@ -510,7 +514,6 @@ var
 Begin
 	RealPath := ExtractRealPath(WideString(RemoteName));
 	if RealPath.account = '' then exit(false);
-	if not Assigned(Cloud) then exit(false);
 	Result := Cloud.deleteFile(RealPath.path);
 End;
 
