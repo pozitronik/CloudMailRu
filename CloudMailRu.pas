@@ -246,9 +246,13 @@ begin
 	MemStream := TStringStream.Create;
 	try
 		if ContentType <> '' then self.HTTP.Request.ContentType := ContentType;
-		self.HTTP.Post(URL, PostData, MemStream);
+		self.HTTP.Post(URL, PostData, MemStream); { TODO : При отсутствии сети TIdHTTP вываливается без всяких там }
 		Answer := MemStream.DataString;
 	except
+		on E: EAbort do
+		begin
+			exit(false);
+		end;
 		on E: EIdHTTPProtocolException do
 		begin
 			if self.HTTP.ResponseCode = 400 then
@@ -280,6 +284,10 @@ begin
 			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar(E.ClassName + ' ошибка с сообщением : ' + E.Message + ' при отправке данных на адрес ' + URL + ', ответ сервера: ' + E.ErrorMessage));
 			result := false;
 		end;
+		on E: Exception do
+    begin
+      exit(false);
+    end;
 	end;
 	MemStream.Free;
 end;
