@@ -1,7 +1,5 @@
 library MailRuCloud;
 
-{$R *.dres}
-
 uses
 	SysUtils,
 	DateUtils,
@@ -12,7 +10,8 @@ uses
 	messages,
 	inifiles,
 	CloudMailRu in 'CloudMailRu.pas',
-	MRC_Helper in 'MRC_Helper.pas';
+	MRC_Helper in 'MRC_Helper.pas',
+	Accounts in 'Accounts.pas' {AccountsForm};
 
 {$IFDEF WIN64}
 {$E wfx64}
@@ -93,6 +92,12 @@ begin
 	SetLastError(ERROR_INVALID_FUNCTION);
 	Result := false; // Ansi-заглушка
 end;
+
+function FsExecuteFile(MainWin: thandle; RemoteName, Verb: PAnsiChar): integer; stdcall; // Запуск файла
+Begin
+	SetLastError(ERROR_INVALID_FUNCTION);
+	Result := FS_EXEC_ERROR; // Ansi-заглушка
+End;
 
 function FsGetFile(RemoteName, LocalName: PAnsiChar; CopyFlags: integer; RemoteInfo: pRemoteInfo): integer; stdcall; // Копирование файла из файловой системы плагина
 begin
@@ -254,6 +259,7 @@ var
 	Sections: TStringList;
 	RealPath: TRealPath;
 	user, domain, password: WideString;
+	CryptResult: integer;
 begin
 	// Получение первого файла в папке. Result тоталом не используется (можно использовать для работы плагина).
 	// setlasterror(ERROR_NO_MORE_FILES);
@@ -284,11 +290,33 @@ begin
 
 		if not Assigned(Cloud) then
 		begin
-			if RealPath.account = '' then RealPath.account:=ExtractFileName(GlobalPath);
+			if RealPath.account = '' then RealPath.account := ExtractFileName(GlobalPath);
 
 			user := PluginIniFile.ReadString(RealPath.account, 'user', '');
 			domain := PluginIniFile.ReadString(RealPath.account, 'domain', '');
 			password := PluginIniFile.ReadString(RealPath.account, 'password', '');
+			if password = '' then
+			begin
+				CryptResult := MyCryptProc(PluginNum, CryptoNum, FS_CRYPT_LOAD_PASSWORD, PWideChar(RealPath.account), PWideChar(password), SizeOf(password));
+				case CryptResult of
+					FS_FILE_OK:
+						begin
+
+						end;
+					FS_FILE_NOTSUPPORTED:
+						begin
+
+						end;
+					FS_FILE_READERROR:
+						begin
+							// ask password
+						end;
+					FS_FILE_NOTFOUND:
+						begin
+
+						end;
+				end;
+			end;
 			// todo проверка на пустые данные
 			MyLogProc(PluginNum, MSGTYPE_CONNECT, PWideChar('CONNECT ' + user + '@' + domain));
 			Cloud := TCloudMailRu.Create(user, domain, password, MyProgressProc, PluginNum, MyLogProc);
@@ -377,7 +405,7 @@ begin
 				Result := true;
 				inc(FileCounter);
 			end else begin
-				FillChar(FindData, sizeof(WIN32_FIND_DATA), 0);
+				FillChar(FindData, SizeOf(WIN32_FIND_DATA), 0);
 				FileCounter := 0;
 				Result := false;
 			end;
@@ -397,6 +425,13 @@ Begin
 		exit(FS_EXEC_YOURSELF);
 	end else if Verb = 'properties' then
 	begin
+    if RealPath.path='' then
+    begin
+      AccountsForm:=TAccountsForm.Create(nil);
+      AccountsForm.ParentWindow:=MainWin;
+      AccountsForm.ShowModal;
+      AccountsForm.Destroy;
+    end;
 		messagebox(MainWin, PWideChar(RemoteName), PWideChar(Verb), mb_ok + mb_iconinformation);
 	end else if copy(Verb, 1, 5) = 'chmod' then
 	begin
@@ -548,7 +583,7 @@ end;
 
 exports FsGetDefRootName, FsInit, FsInitW, FsFindFirst, FsFindFirstW, FsFindNext, FsFindNextW, FsFindClose, FsGetFile, FsGetFileW,
 	FsDisconnect, FsDisconnectW, FsStatusInfo, FsStatusInfoW, FsPutFile, FsPutFileW, FsDeleteFile, FsDeleteFileW, FsMkDir, FsMkDirW,
-	FsRemoveDir, FsRemoveDirW, FsSetCryptCallback, FsSetCryptCallbackW;
+	FsRemoveDir, FsRemoveDirW, FsSetCryptCallback, FsSetCryptCallbackW, FsExecuteFileW;
 
 (* ,
 	FsExecuteFile,

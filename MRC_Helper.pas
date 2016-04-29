@@ -33,7 +33,7 @@ var
 begin
 	List := TStringList.Create;
 	ExtractStrings(['\'], [], PWideChar(VirtualPath), List);
-	if List.Count = 1 then
+	if List.Count <2 then
 	begin // в виртуальной ФС это каталог первого уровня
 		Result.account := '';
 		Result.path := '';

@@ -77,6 +77,20 @@ const
 	FS_ICON_EXTRACTED_DESTROY = 2;
 	FS_ICON_DELAYED = 3;
 
+	{ Flags for crypto callback function }
+	FS_CRYPT_SAVE_PASSWORD = 1;
+	FS_CRYPT_LOAD_PASSWORD = 2;
+	FS_CRYPT_LOAD_PASSWORD_NO_UI = 3; { Load password only if master password has already been entered! }
+	FS_CRYPT_COPY_PASSWORD = 4;
+	FS_CRYPT_MOVE_PASSWORD = 5;
+	FS_CRYPT_DELETE_PASSWORD = 6;
+
+	FS_CRYPTOPT_MASTERPASS_SET = 1; { The user already has a master password defined }
+
+	BG_DOWNLOAD = 1; { Plugin supports downloads in background }
+	BG_UPLOAD = 2; { Plugin supports uploads in background }
+	BG_ASK_USER = 4; { Plugin requires separate connection for background transfers -> ask user first }
+
 type
 	tRemoteInfo = record
 		SizeLow, SizeHigh: longint;
