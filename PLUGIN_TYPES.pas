@@ -112,7 +112,8 @@ type
 	TProgressProc = function(PluginNr: integer; SourceName, TargetName: pchar; PercentDone: integer): integer; stdcall;
 	TLogProc = procedure(PluginNr, MsgType: integer; LogString: pchar); stdcall;
 	TRequestProc = function(PluginNr, RequestType: integer; CustomTitle, CustomText, ReturnedText: pchar; maxlen: integer): bool; stdcall;
-	TCryptProc = function(PluginNr, CryptoNumber, mode: integer; ConnectionName, Password: pchar; maxlen: integer): integer; stdcall;
+	//TCryptProc = function(PluginNr, CryptoNumber, mode: integer; ConnectionName, Password: pchar; maxlen: integer): integer; stdcall;
+ 	TCryptProcW = function(PluginNr, CryptoNumber, mode: integer; ConnectionName, Password: pWidechar; maxlen: integer): integer; stdcall;
 
 	{ ------------------------------------------------------------------------------ }
 

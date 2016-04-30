@@ -13,6 +13,7 @@ object AskPasswordForm: TAskPasswordForm
   Font.Style = []
   OldCreateOrder = False
   Position = poOwnerFormCenter
+  OnShow = FormShow
   PixelsPerInch = 96
   TextHeight = 13
   object PasswordEditLabel: TLabel
@@ -29,6 +30,8 @@ object AskPasswordForm: TAskPasswordForm
     Height = 21
     PasswordChar = '*'
     TabOrder = 0
+    OnChange = PasswordEditChange
+    OnKeyUp = PasswordEditKeyUp
   end
   object OkButton: TButton
     Left = 348
@@ -36,8 +39,10 @@ object AskPasswordForm: TAskPasswordForm
     Width = 75
     Height = 25
     Caption = 'OK'
+    Enabled = False
     ModalResult = 1
-    TabOrder = 1
+    TabOrder = 2
+    OnKeyUp = PasswordEditKeyUp
   end
   object UseTCPwdMngrCB: TCheckBox
     Left = 8
@@ -45,6 +50,7 @@ object AskPasswordForm: TAskPasswordForm
     Width = 415
     Height = 17
     Caption = 'Use TC passwords storage'
-    TabOrder = 2
+    TabOrder = 1
+    OnKeyUp = PasswordEditKeyUp
   end
 end

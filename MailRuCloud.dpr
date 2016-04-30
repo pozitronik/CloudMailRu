@@ -34,7 +34,7 @@ var
 	MyProgressProc: TProgressProc;
 	MyLogProc: TLogProc;
 	MyRequestProc: TRequestProc;
-	MyCryptProc: TCryptProc;
+	MyCryptProc: TCryptProcW;
 	Cloud: TCloudMailRu;
 	CurrentListing: TCloudMailRuDirListing;
 	CurrentLogon: boolean;
@@ -123,9 +123,9 @@ begin
 	Result := false; // ansi-заглушка
 end;
 
-procedure FsSetCryptCallback(PCryptProc: TCryptProc; CryptoNr: integer; Flags: integer); stdcall;
+procedure FsSetCryptCallback(PCryptProc: TCryptProcW; CryptoNr: integer; Flags: integer); stdcall;
 begin
-
+	SetLastError(ERROR_INVALID_FUNCTION);
 end;
 
 { GLORIOUS UNICODE MASTER RACE }
@@ -242,6 +242,87 @@ begin
 	end;
 end;
 
+// ѕолучает пароль из файла, из тоталовского менеджера или запрашивает пр€мой ввод
+function GetMyPasswordNow(var AccountSettings: TAccountSettings): boolean;
+var
+	CryptResult: integer;
+	AskResult: integer;
+	TmpString: WideString;
+	buf: PWideChar;
+begin
+	if AccountSettings.use_tc_password_manager then
+	begin // пароль должен братьс€ из TC
+		CryptResult := FS_FILE_NOTFOUND;
+		repeat
+
+			GetMem(buf, 1024);
+			CryptResult := MyCryptProc(PluginNum, CryptoNum, FS_CRYPT_LOAD_PASSWORD_NO_UI, PWideChar(AccountSettings.name), buf, 1024); // ѕытаемс€ вз€ть пароль по-тихому
+
+			case CryptResult of
+				FS_FILE_OK: // ”спешно получили пароль
+					begin
+						AccountSettings.password := buf;
+						FreeMemory(buf);
+						exit(true);
+					end;
+				FS_FILE_NOTSUPPORTED: // пароль есть, но получить обломно
+					begin
+						MyLogProc(PluginNum, msgtype_importanterror, PWideChar('CryptProc returns error: Decrypt failed'));
+					end;
+				FS_FILE_READERROR:
+					begin
+						MyLogProc(PluginNum, msgtype_importanterror, PWideChar('CryptProc returns error: Password not found in password store'));
+					end;
+				FS_FILE_NOTFOUND:
+					begin
+						MyLogProc(PluginNum, msgtype_details, PWideChar('No master password entered yet'));
+						CryptResult := MyCryptProc(PluginNum, CryptoNum, FS_CRYPT_LOAD_PASSWORD, PWideChar(AccountSettings.name), buf, 1024);
+					end;
+			end;
+		until CryptResult in [FS_FILE_NOTFOUND];
+	end else begin
+		// ничего не делаем, пароль уже должен быть в настройках (вз€т в открытом виде из инишника)
+	end;
+	if AccountSettings.password = '' then // но парол€ нет, не в инишнике, не в тотале
+	begin
+		AskResult := TAskPasswordForm.AskPassword(FindTCWindow, AccountSettings.name, AccountSettings.password, AccountSettings.use_tc_password_manager);
+		if AskResult <> mrOK then
+		begin // не указали пароль в диалоге
+			exit(false); // отказались вводить пароль
+		end else begin
+			if AccountSettings.use_tc_password_manager then
+			begin
+				case MyCryptProc(PluginNum, CryptoNum, FS_CRYPT_SAVE_PASSWORD, PWideChar(AccountSettings.name), PWideChar(AccountSettings.password), SizeOf(AccountSettings.password)) of
+					FS_FILE_OK:
+						begin // TC скушал пароль, запомним в инишник галочку
+							MyLogProc(PluginNum, msgtype_details, PWideChar('Password saved in TC password manager'));
+							TmpString := AccountSettings.password;
+							AccountSettings.password := '';
+							SetAccountSettingsToIniFile(IniFilePath, AccountSettings);
+							AccountSettings.password := TmpString;
+						end;
+					FS_FILE_NOTSUPPORTED: // —охранение не получилось
+						begin
+							MyLogProc(PluginNum, msgtype_importanterror, PWideChar('CryptProc returns error: Encrypt failed'));
+						end;
+					FS_FILE_WRITEERROR: // —охранение оп€ть не получилось
+						begin
+							MyLogProc(PluginNum, msgtype_importanterror, PWideChar('Password NOT saved: Could not write password to password store'));
+						end;
+					FS_FILE_NOTFOUND: // Ќе указан мастер-пароль
+						begin
+							MyLogProc(PluginNum, msgtype_importanterror, PWideChar('Password NOT saved: No master password entered yet'));
+						end;
+					// ќшибки здесь не значат, что пароль мы не получили - он может быть введЄн в диалоге
+				end;
+			end;
+			exit(true);
+		end;
+
+	end;
+
+end;
+
 function FsFindFirstW(path: PWideChar; var FindData: tWIN32FINDDATAW): thandle; stdcall;
 var
 	Sections: TStringList;
@@ -279,87 +360,16 @@ begin
 
 		if not Assigned(Cloud) then
 		begin
-			if RealPath.account = '' then RealPath.account := ExtractFileName(GlobalPath);
+			if RealPath.Account = '' then RealPath.Account := ExtractFileName(GlobalPath);
 
-			AccountSettings := GetAccountSettingsFromIniFile(IniFilePath, RealPath.account);
+			AccountSettings := GetAccountSettingsFromIniFile(IniFilePath, RealPath.Account);
 
-			if AccountSettings.use_tc_password_manager then
+			if not GetMyPasswordNow(AccountSettings) then
 			begin
-				CryptResult := MyCryptProc(PluginNum, CryptoNum, FS_CRYPT_LOAD_PASSWORD, PWideChar(RealPath.account), PWideChar(AccountSettings.password), SizeOf(AccountSettings.password));
-				case CryptResult of
-					FS_FILE_OK:
-						begin
-
-						end;
-					FS_FILE_NOTSUPPORTED:
-						begin
-
-						end;
-					FS_FILE_READERROR:
-						begin
-							if not TAskPasswordForm.AskPassword(FindTCWindow, AccountSettings.name, AccountSettings.password, AccountSettings.use_tc_password_manager) = mrOK then
-							begin // не указали пароль в диалоге
-								SetLastError(ERROR_WRONG_PASSWORD);
-								exit(INVALID_HANDLE_VALUE);
-							end else begin
-								if AccountSettings.use_tc_password_manager then
-								begin
-									case MyCryptProc(PluginNum, CryptoNum, FS_CRYPT_SAVE_PASSWORD, PWideChar(AccountSettings.name), PWideChar(AccountSettings.password), SizeOf(AccountSettings.password)) of
-										FS_FILE_OK:
-											begin // TC скушал пароль
-
-											end;
-										FS_FILE_NOTSUPPORTED: // —охранение не получилось
-											begin
-
-											end;
-										FS_FILE_WRITEERROR: // —охранение оп€ть не получилось
-											begin
-
-											end;
-										FS_FILE_NOTFOUND: // Ќе указан мастер-пароль
-											begin
-
-											end;
-									end;
-								end;
-							end;
-						end;
-					FS_FILE_NOTFOUND:
-						begin
-
-						end;
-				end;
-			end else begin // галочка "сохранить в менеджере" не поставлена
-				if not TAskPasswordForm.AskPassword(FindTCWindow, AccountSettings.name, AccountSettings.password, AccountSettings.use_tc_password_manager) = mrOK then
-				begin // не указали пароль в диалоге
-					SetLastError(ERROR_WRONG_PASSWORD);
-					exit(INVALID_HANDLE_VALUE);
-				end else begin
-					if AccountSettings.use_tc_password_manager then
-					begin
-						case MyCryptProc(PluginNum, CryptoNum, FS_CRYPT_SAVE_PASSWORD, PWideChar(AccountSettings.name), PWideChar(AccountSettings.password), SizeOf(AccountSettings.password)) of
-							FS_FILE_OK:
-								begin // TC скушал пароль
-									MyLogProc(PluginNum, msgtype_details, PWideChar('Password saved in TC password manager'));
-								end;
-							FS_FILE_NOTSUPPORTED: // —охранение не получилось
-								begin
-									MyLogProc(PluginNum, msgtype_importanterror, PWideChar('Password NOT saved: FS_FILE_NOT_SUPPORTED'));
-								end;
-							FS_FILE_WRITEERROR: // —охранение оп€ть не получилось
-								begin
-									MyLogProc(PluginNum, msgtype_importanterror, PWideChar('Password NOT saved: FS_FILE_WRITEERROR'));
-								end;
-							FS_FILE_NOTFOUND: // Ќе указан мастер-пароль
-								begin
-									MyLogProc(PluginNum, msgtype_importanterror, PWideChar('Password NOT saved: FS_FILE_NOT_FOUND'));
-								end;
-						end;
-					end;
-				end;
+				SetLastError(ERROR_WRONG_PASSWORD);
+				exit(INVALID_HANDLE_VALUE);
 			end;
-			// todo проверка на пустые данные
+
 			MyLogProc(PluginNum, MSGTYPE_CONNECT, PWideChar('CONNECT ' + AccountSettings.email));
 			Cloud := TCloudMailRu.Create(AccountSettings.user, AccountSettings.domain, AccountSettings.password, MyProgressProc, PluginNum, MyLogProc);
 			if Cloud.login() then
@@ -379,7 +389,7 @@ begin
 			if not Cloud.getDir(RealPath.path, CurrentListing) then
 			begin
 				SetLastError(ERROR_PATH_NOT_FOUND);
-				exit(INVALID_HANDLE_VALUE);
+
 			end;
 
 			if Length(CurrentListing) = 0 then
@@ -528,7 +538,7 @@ var
 	RealPath: TRealPath;
 begin
 	RealPath := ExtractRealPath(RemoteName);
-	if RealPath.account = '' then exit(FS_FILE_NOTSUPPORTED);
+	if RealPath.Account = '' then exit(FS_FILE_NOTSUPPORTED);
 	MyProgressProc(PluginNum, LocalName, PWideChar(RealPath.path), 0);
 	if CheckFlag(FS_COPYFLAGS_OVERWRITE, CopyFlags) then
 	begin
@@ -587,7 +597,7 @@ var
 	RealPath: TRealPath;
 Begin
 	RealPath := ExtractRealPath(WideString(RemoteName));
-	if RealPath.account = '' then exit(false);
+	if RealPath.Account = '' then exit(false);
 	Result := Cloud.deleteFile(RealPath.path);
 End;
 
@@ -596,7 +606,7 @@ var
 	RealPath: TRealPath;
 Begin
 	RealPath := ExtractRealPath(WideString(path));
-	if RealPath.account = '' then exit(false);
+	if RealPath.Account = '' then exit(false);
 	Result := Cloud.createDir(RealPath.path);
 end;
 
@@ -614,7 +624,7 @@ begin
 	Result := true;
 end;
 
-procedure FsSetCryptCallbackW(PCryptProc: TCryptProc; CryptoNr: integer; Flags: integer); stdcall;
+procedure FsSetCryptCallbackW(PCryptProc: TCryptProcW; CryptoNr: integer; Flags: integer); stdcall;
 begin
 	MyCryptProc := PCryptProc;
 	CryptoNum := CryptoNr;

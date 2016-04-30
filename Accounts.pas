@@ -25,13 +25,15 @@ type
 		procedure UpdateAccountsList();
 		procedure DeleteButtonClick(Sender: TObject);
 		procedure AccountsListKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
-		class procedure ShowAccounts(parentWindow: HWND; IniPath: WideString; CryptProc: TCryptProc; PluginNum, CryptoNum: Integer);
+		class procedure ShowAccounts(parentWindow: HWND; IniPath: WideString; CryptProc: TCryptProcW; PluginNum, CryptoNum: Integer);
+		procedure AccountNameEditChange(Sender: TObject);
+		procedure EmailEditChange(Sender: TObject);
 	private
 		{ Private declarations }
 	public
 		{ Public declarations }
 		IniPath: WideString;
-		CryptProc: TCryptProc;
+		CryptProc: TCryptProcW;
 		PluginNum: Integer;
 		CryptoNum: Integer;
 
@@ -43,6 +45,13 @@ var
 implementation
 
 {$R *.dfm}
+
+procedure TAccountsForm.AccountNameEditChange(Sender: TObject);
+begin
+	if AccountsList.Items.IndexOf(AccountNameEdit.Text) = -1 then ApplyButton.Caption := 'Add'
+	else ApplyButton.Caption := 'Save';
+	ApplyButton.Enabled := (EmailEdit.Text <> '') and (AccountNameEdit.Text <> '');
+end;
 
 procedure TAccountsForm.AccountsListClick(Sender: TObject);
 var
@@ -56,6 +65,11 @@ begin
 		PasswordEdit.Text := CASettings.password;
 		UseTCPwdMngrCB.Checked := CASettings.use_tc_password_manager;
 
+	end else begin
+		AccountNameEdit.Text := '';
+		EmailEdit.Text := '';
+		PasswordEdit.Text := '';
+		UseTCPwdMngrCB.Checked := false;
 	end;
 
 end;
@@ -112,6 +126,11 @@ begin
 	end;
 end;
 
+procedure TAccountsForm.EmailEditChange(Sender: TObject);
+begin
+	ApplyButton.Enabled := (EmailEdit.Text <> '') and (AccountNameEdit.Text <> '');
+end;
+
 procedure TAccountsForm.FormShow(Sender: TObject);
 begin
 	AccountsList.SetFocus;
@@ -124,7 +143,7 @@ begin
 
 end;
 
-class procedure TAccountsForm.ShowAccounts(parentWindow: HWND; IniPath: WideString; CryptProc: TCryptProc; PluginNum, CryptoNum: Integer);
+class procedure TAccountsForm.ShowAccounts(parentWindow: HWND; IniPath: WideString; CryptProc: TCryptProcW; PluginNum, CryptoNum: Integer);
 var
 	AccountsForm: TAccountsForm;
 begin
@@ -149,6 +168,8 @@ begin
 	GetAccountsListFromIniFile(IniPath, TempList);
 	AccountsList.Items := TempList;
 	TempList.Destroy;
+	AccountsList.OnClick(self);
+	ApplyButton.Enabled := (EmailEdit.Text <> '') and (AccountNameEdit.Text <> '');
 end;
 
 end.

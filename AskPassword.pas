@@ -13,6 +13,9 @@ type
 		OkButton: TButton;
 		UseTCPwdMngrCB: TCheckBox;
 		class function AskPassword(ParentWindow: HWND; AccountName: WideString; var Password: WideString; var UseTCPwdMngr: Boolean): integer;
+		procedure PasswordEditChange(Sender: TObject);
+		procedure FormShow(Sender: TObject);
+		procedure PasswordEditKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
 	private
 		{ Private declarations }
 	public
@@ -43,6 +46,29 @@ begin
 		end;
 	finally
 		FreeAndNil(AskPasswordForm);
+	end;
+end;
+
+procedure TAskPasswordForm.FormShow(Sender: TObject);
+begin
+	(Sender as TAskPasswordForm).PasswordEdit.SetFocus;
+end;
+
+procedure TAskPasswordForm.PasswordEditChange(Sender: TObject);
+begin
+	OkButton.Enabled := PasswordEdit.Text <> '';
+
+end;
+
+procedure TAskPasswordForm.PasswordEditKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
+begin
+	if Key = VK_ESCAPE then
+	begin
+		(PasswordEdit.Parent as TAskPasswordForm).Close;
+	end;
+	if (Key = VK_RETURN) and OkButton.Enabled then
+	begin
+		OkButton.Click;
 	end;
 end;
 

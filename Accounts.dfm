@@ -210,7 +210,8 @@ object AccountsForm: TAccountsForm
     Width = 255
     Height = 21
     Anchors = [akLeft, akTop, akRight]
-    TabOrder = 1
+    TabOrder = 2
+    OnChange = EmailEditChange
   end
   object AccountNameEdit: TEdit
     Left = 231
@@ -218,7 +219,8 @@ object AccountsForm: TAccountsForm
     Width = 255
     Height = 21
     Anchors = [akLeft, akTop, akRight]
-    TabOrder = 2
+    TabOrder = 1
+    OnChange = AccountNameEditChange
   end
   object PasswordEdit: TEdit
     Left = 231
@@ -239,16 +241,16 @@ object AccountsForm: TAccountsForm
     TabOrder = 4
   end
   object ApplyButton: TButton
-    Left = 411
+    Left = 231
     Top = 189
     Width = 75
     Height = 25
-    Caption = 'Apply'
+    Caption = 'Add'
     TabOrder = 5
     OnClick = ApplyButtonClick
   end
   object DeleteButton: TButton
-    Left = 231
+    Left = 411
     Top = 189
     Width = 75
     Height = 25
