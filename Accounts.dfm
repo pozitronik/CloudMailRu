@@ -201,6 +201,7 @@ object AccountsForm: TAccountsForm
       ItemHeight = 13
       TabOrder = 0
       OnClick = AccountsListClick
+      OnKeyUp = AccountsListKeyUp
     end
   end
   object EmailEdit: TEdit

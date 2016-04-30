@@ -24,6 +24,7 @@ type
 		procedure ApplyButtonClick(Sender: TObject);
 		procedure UpdateAccountsList();
 		procedure DeleteButtonClick(Sender: TObject);
+		procedure AccountsListKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
 	private
 		{ Private declarations }
 	public
@@ -43,11 +44,21 @@ procedure TAccountsForm.AccountsListClick(Sender: TObject);
 var
 	CASettings: TAccountSettings;
 begin
-	CASettings := GetAccountSettingsFromIniFile(IniPath, AccountsList.Items[AccountsList.ItemIndex]);
-	AccountNameEdit.Text := CASettings.name;
-	EmailEdit.Text := CASettings.email;
-	PasswordEdit.Text := CASettings.password;
-	UseTCPwdMngrCB.Checked := CASettings.use_tc_password_manager;
+	if (AccountsList.Items.Count > 0) and (AccountsList.ItemIndex <> -1) then
+	begin
+		CASettings := GetAccountSettingsFromIniFile(IniPath, AccountsList.Items[AccountsList.ItemIndex]);
+		AccountNameEdit.Text := CASettings.name;
+		EmailEdit.Text := CASettings.email;
+		PasswordEdit.Text := CASettings.password;
+		UseTCPwdMngrCB.Checked := CASettings.use_tc_password_manager;
+
+	end;
+
+end;
+
+procedure TAccountsForm.AccountsListKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
+begin
+	if Key = VK_DELETE then DeleteButtonClick(nil);
 
 end;
 
