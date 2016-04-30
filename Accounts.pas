@@ -95,20 +95,15 @@ begin
 				begin // TC скушал пароль
 					CASettings.password := '';
 				end;
-			FS_FILE_NOTSUPPORTED: // Сохранение не получилось
-				begin
-
+			FS_FILE_NOTSUPPORTED: // нажали отмену на вводе мастер-пароля
+				begin //просто выйдем
+					exit();
 				end;
-			FS_FILE_WRITEERROR: // Сохранение опять не получилось
+			FS_FILE_WRITEERROR: // Сохранение не получилось по другой причине. Сохранять не будем, выйдем
 				begin
-
-				end;
-			FS_FILE_NOTFOUND: // Не указан мастер-пароль
-				begin
-
+					exit();
 				end;
 		end;
-
 	end;
 
 	SetAccountSettingsToIniFile(IniPath, CASettings);

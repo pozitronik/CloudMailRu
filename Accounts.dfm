@@ -237,7 +237,7 @@ object AccountsForm: TAccountsForm
     Width = 255
     Height = 17
     Anchors = [akLeft, akTop, akRight]
-    Caption = 'Use TC master password to protect the password'
+    Caption = 'Store password in TC password manager'
     TabOrder = 4
   end
   object ApplyButton: TButton

@@ -49,7 +49,7 @@ object AskPasswordForm: TAskPasswordForm
     Top = 54
     Width = 415
     Height = 17
-    Caption = 'Use TC passwords storage'
+    Caption = 'Store password in TC password manager'
     TabOrder = 1
     OnKeyUp = PasswordEditKeyUp
   end
