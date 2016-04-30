@@ -1,5 +1,7 @@
 library MailRuCloud;
 
+{$R *.dres}
+
 uses
 	SysUtils,
 	DateUtils,
@@ -41,8 +43,8 @@ var
 
 procedure FsGetDefRootName(DefRootName: PAnsiChar; maxlen: integer); stdcall; // ѕроцедура вызываетс€ один раз при установке плагина
 Begin
-	StrLCopy(DefRootName, PAnsiChar('Cloud'), maxlen);
-	messagebox(FindTCWindow, PWideChar('Installation succeful'), 'Information', mb_ok + mb_iconinformation);
+	StrLCopy(DefRootName, PAnsiChar('CloudMailRu'), maxlen);
+	// messagebox(FindTCWindow, PWideChar('Installation succeful'), 'Information', mb_ok + mb_iconinformation);
 End;
 
 function FsFindClose(Hdl: thandle): integer; stdcall;
@@ -312,7 +314,7 @@ begin
 			exit(true);
 		end;
 
-	end//пароль из инишника напр€мую
+	end // пароль из инишника напр€мую
 	else exit(true);
 end;
 
@@ -472,7 +474,7 @@ Begin
 	begin
 		if RealPath.path = '' then
 		begin
-			TAccountsForm.ShowAccounts(MainWin, IniFilePath, MyCryptProc, PluginNum, CryptoNum,RemoteName);
+			TAccountsForm.ShowAccounts(MainWin, IniFilePath, MyCryptProc, PluginNum, CryptoNum, RemoteName);
 		end;
 		// messagebox(MainWin, PWideChar(RemoteName), PWideChar(Verb), mb_ok + mb_iconinformation);
 	end else if copy(Verb, 1, 5) = 'chmod' then
