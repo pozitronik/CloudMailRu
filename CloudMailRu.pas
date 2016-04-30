@@ -285,9 +285,9 @@ begin
 			result := false;
 		end;
 		on E: Exception do
-    begin
-      exit(false);
-    end;
+		begin
+			exit(false);
+		end;
 	end;
 	MemStream.Free;
 end;

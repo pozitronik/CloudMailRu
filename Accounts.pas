@@ -25,7 +25,7 @@ type
 		procedure UpdateAccountsList();
 		procedure DeleteButtonClick(Sender: TObject);
 		procedure AccountsListKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
-		class procedure ShowAccounts(parentWindow: HWND; IniPath: WideString; CryptProc: TCryptProcW; PluginNum, CryptoNum: Integer);
+		class procedure ShowAccounts(parentWindow: HWND; IniPath: WideString; CryptProc: TCryptProcW; PluginNum, CryptoNum: Integer; RemoteName: WideString);
 		procedure AccountNameEditChange(Sender: TObject);
 		procedure EmailEditChange(Sender: TObject);
 	private
@@ -36,6 +36,7 @@ type
 		CryptProc: TCryptProcW;
 		PluginNum: Integer;
 		CryptoNum: Integer;
+		SelectedAccount: WideString;
 
 	end;
 
@@ -56,6 +57,7 @@ end;
 procedure TAccountsForm.AccountsListClick(Sender: TObject);
 var
 	CASettings: TAccountSettings;
+
 begin
 	if (AccountsList.Items.Count > 0) and (AccountsList.ItemIndex <> -1) then
 	begin
@@ -96,7 +98,7 @@ begin
 					CASettings.password := '';
 				end;
 			FS_FILE_NOTSUPPORTED: // нажали отмену на вводе мастер-пароля
-				begin //просто выйдем
+				begin // просто выйдем
 					exit();
 				end;
 			FS_FILE_WRITEERROR: // Сохранение не получилось по другой причине. Сохранять не будем, выйдем
@@ -128,17 +130,22 @@ end;
 
 procedure TAccountsForm.FormShow(Sender: TObject);
 begin
-	AccountsList.SetFocus;
 	UpdateAccountsList();
+	AccountsList.SetFocus;
 	if AccountsList.Items.Count > 0 then
 	begin
-		AccountsList.Selected[0] := true;
+		if (self.SelectedAccount <> '') and (AccountsList.Items.IndexOf(self.SelectedAccount) <> -1) then
+		begin
+			AccountsList.Selected[AccountsList.Items.IndexOf(self.SelectedAccount)] := true;
+		end else begin
+			AccountsList.Selected[0] := true;
+
+		end;
 		AccountsList.OnClick(self);
 	end;
-
 end;
 
-class procedure TAccountsForm.ShowAccounts(parentWindow: HWND; IniPath: WideString; CryptProc: TCryptProcW; PluginNum, CryptoNum: Integer);
+class procedure TAccountsForm.ShowAccounts(parentWindow: HWND; IniPath: WideString; CryptProc: TCryptProcW; PluginNum, CryptoNum: Integer; RemoteName: WideString);
 var
 	AccountsForm: TAccountsForm;
 begin
@@ -149,6 +156,8 @@ begin
 		AccountsForm.CryptProc := CryptProc;
 		AccountsForm.PluginNum := PluginNum;
 		AccountsForm.CryptoNum := CryptoNum;
+		AccountsForm.SelectedAccount := '';
+		if RemoteName <> '' then AccountsForm.SelectedAccount := Copy(RemoteName, 2, length(RemoteName) - 1);
 		AccountsForm.ShowModal;
 	finally
 		FreeAndNil(AccountsForm);
@@ -167,4 +176,4 @@ begin
 	ApplyButton.Enabled := (EmailEdit.Text <> '') and (AccountNameEdit.Text <> '');
 end;
 
-end.
+end.oc

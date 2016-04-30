@@ -472,7 +472,7 @@ Begin
 	begin
 		if RealPath.path = '' then
 		begin
-			TAccountsForm.ShowAccounts(MainWin, IniFilePath, MyCryptProc, PluginNum, CryptoNum);
+			TAccountsForm.ShowAccounts(MainWin, IniFilePath, MyCryptProc, PluginNum, CryptoNum,RemoteName);
 		end;
 		// messagebox(MainWin, PWideChar(RemoteName), PWideChar(Verb), mb_ok + mb_iconinformation);
 	end else if copy(Verb, 1, 5) = 'chmod' then
