@@ -21,11 +21,9 @@ type
 		procedure FormShow(Sender: TObject);
 		procedure AccountsListClick(Sender: TObject);
 		procedure ApplyButtonClick(Sender: TObject);
-		procedure FormHide(Sender: TObject);
+		procedure UpdateAccountsList();
 	private
 		{ Private declarations }
-		IniFile: TIniFile;
-
 	public
 		{ Public declarations }
 		IniPath: WideString;
@@ -43,11 +41,7 @@ procedure TAccountsForm.AccountsListClick(Sender: TObject);
 var
 	CASettings: TAccountSettings;
 begin
-	CASettings.name := AccountsList.Items[AccountsList.ItemIndex];
-	CASettings.email := IniFile.ReadString(CASettings.name, 'email', '');
-	CASettings.password := IniFile.ReadString(CASettings.name, 'password', '');
-	CASettings.use_tc_password_manager := IniFile.ReadBool(CASettings.name, 'tc_pwd_mngr', false);
-
+	CASettings := GetAccountSettingsFromIniFile(IniPath, AccountsList.Items[AccountsList.ItemIndex]);
 	AccountNameEdit.Text := CASettings.name;
 	EmailEdit.Text := CASettings.email;
 	PasswordEdit.Text := CASettings.password;
@@ -56,22 +50,39 @@ begin
 end;
 
 procedure TAccountsForm.ApplyButtonClick(Sender: TObject);
+var
+	CASettings: TAccountSettings;
 begin
-	IniFile.WriteString(AccountNameEdit.Text, 'email', EmailEdit.Text);
-	IniFile.WriteString(AccountNameEdit.Text, 'password', PasswordEdit.Text);
-	IniFile.WriteBool(AccountNameEdit.Text, 'tc_pwd_mngr', UseTCPwdMngrCB.Checked);
-  IniFile.ReadSections(AccountsList.Items);
-end;
+	CASettings.name := AccountNameEdit.Text;
+	CASettings.email := EmailEdit.Text;
+	CASettings.password := PasswordEdit.Text;
+	CASettings.use_tc_password_manager := UseTCPwdMngrCB.Checked;
+	SetAccountSettingsToIniFile(IniPath, CASettings);
 
-procedure TAccountsForm.FormHide(Sender: TObject);
-begin
-	IniFile.Destroy;
+	UpdateAccountsList();
+
 end;
 
 procedure TAccountsForm.FormShow(Sender: TObject);
 begin
-	IniFile := TIniFile.Create(IniPath);
-	IniFile.ReadSections(AccountsList.Items);
+	AccountsList.SetFocus;
+	UpdateAccountsList();
+	if AccountsList.Items.Count > 0 then
+	begin
+		AccountsList.Selected[0] := true;
+		AccountsList.OnClick(self);
+	end;
+
+end;
+
+procedure TAccountsForm.UpdateAccountsList;
+var
+	TempList: TStrings;
+begin
+	TempList := TStringList.Create;
+	GetAccountsListFromIniFile(IniPath, TempList);
+	AccountsList.Items := TempList;
+	TempList.Destroy;
 end;
 
 end.

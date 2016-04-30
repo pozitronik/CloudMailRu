@@ -35,7 +35,6 @@ var
 	MyCryptProc: TCryptProc;
 	Cloud: TCloudMailRu;
 	CurrentListing: TCloudMailRuDirListing;
-	PluginIniFile: TIniFile;
 	CurrentLogon: boolean;
 
 procedure FsGetDefRootName(DefRootName: PAnsiChar; maxlen: integer); stdcall; // Процедура вызывается один раз при установке плагина
@@ -243,10 +242,10 @@ end;
 
 function FsFindFirstW(path: PWideChar; var FindData: tWIN32FINDDATAW): thandle; stdcall;
 var
-	Sections: TStringList;
+	Sections: TStrings;
 	RealPath: TRealPath;
-	user, domain, password: WideString;
 	CryptResult: integer;
+	AccountSettings: TAccountSettings;
 begin
 	// Получение первого файла в папке. Result тоталом не используется (можно использовать для работы плагина).
 	// setlasterror(ERROR_NO_MORE_FILES);
@@ -255,8 +254,9 @@ begin
 	begin
 		if Assigned(Cloud) then FreeAndNil(Cloud);
 
-		Sections := TStringList.Create;
-		PluginIniFile.ReadSections(Sections);
+		Sections := TStrings.Create;
+		GetAccountsListFromIniFile(IniFilePath, Sections);
+
 		if (Sections.Count > 0) then
 		begin
 			strpcopy(FindData.cFileName, Sections.Strings[0]);
@@ -279,12 +279,11 @@ begin
 		begin
 			if RealPath.account = '' then RealPath.account := ExtractFileName(GlobalPath);
 
-			user := PluginIniFile.ReadString(RealPath.account, 'user', '');
-			domain := PluginIniFile.ReadString(RealPath.account, 'domain', '');
-			password := PluginIniFile.ReadString(RealPath.account, 'password', '');
-			if password = '' then
+			AccountSettings := GetAccountSettingsFromIniFile(IniFilePath, RealPath.account);
+
+			if AccountSettings.password = '' then
 			begin
-				CryptResult := MyCryptProc(PluginNum, CryptoNum, FS_CRYPT_LOAD_PASSWORD, PWideChar(RealPath.account), PWideChar(password), SizeOf(password));
+				CryptResult := MyCryptProc(PluginNum, CryptoNum, FS_CRYPT_LOAD_PASSWORD, PWideChar(RealPath.account), PWideChar(AccountSettings.password), SizeOf(AccountSettings.password));
 				case CryptResult of
 					FS_FILE_OK:
 						begin
@@ -305,8 +304,8 @@ begin
 				end;
 			end;
 			// todo проверка на пустые данные
-			MyLogProc(PluginNum, MSGTYPE_CONNECT, PWideChar('CONNECT ' + user + '@' + domain));
-			Cloud := TCloudMailRu.Create(user, domain, password, MyProgressProc, PluginNum, MyLogProc);
+			MyLogProc(PluginNum, MSGTYPE_CONNECT, PWideChar('CONNECT ' + AccountSettings.email));
+			Cloud := TCloudMailRu.Create(AccountSettings.user, AccountSettings.domain, AccountSettings.password, MyProgressProc, PluginNum, MyLogProc);
 			if Cloud.login() then
 			begin
 				CurrentLogon := true;
@@ -354,12 +353,12 @@ end;
 
 function FsFindNextW(Hdl: thandle; var FindData: tWIN32FINDDATAW): bool; stdcall;
 var
-	Sections: TStringList;
+	Sections: TStrings;
 begin
 	if GlobalPath = '\' then
 	begin
 		Sections := TStringList.Create;
-		PluginIniFile.ReadSections(Sections);
+		GetAccountsListFromIniFile(IniFilePath, Sections);
 		if (Sections.Count > FileCounter) then
 		begin
 			strpcopy(FindData.cFileName, Sections.Strings[FileCounter]);
@@ -590,6 +589,6 @@ begin
 	PluginPath := IncludeTrailingbackslash(ExtractFilePath(PluginPath));
 	IniFilePath := PluginPath + 'MailRuCloud.ini';
 	if not FileExists(IniFilePath) then FileClose(FileCreate(IniFilePath));
-	PluginIniFile := TIniFile.Create(IniFilePath); // todo destroy
+
 
 end.

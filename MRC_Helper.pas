@@ -2,7 +2,7 @@ unit MRC_Helper;
 
 interface
 
-uses Classes, Windows, SysUtils;
+uses Classes, Windows, SysUtils, IniFiles;
 
 type
 	TRealPath = record
@@ -13,6 +13,7 @@ type
 	TAccountSettings = record
 		name, email, password: WideString;
 		use_tc_password_manager: boolean;
+		user, domain: WideString; // parsed values from email
 	end;
 
 function Implode(S: TStringList; Delimiter: Char): WideString;
@@ -20,6 +21,9 @@ function ExtractRealPath(VirtualPath: WideString): TRealPath;
 function DateTimeToUnix(ConvDate: TDateTime): Integer;
 function CheckFlag(Check: Byte; Flags: Integer): boolean; // Определяет, установлен ли указанный бит
 function DateTimeToFileTime(FileTime: TDateTime): TFileTime;
+function GetAccountSettingsFromIniFile(IniFilePath: WideString; AccountName: WideString): TAccountSettings;
+function SetAccountSettingsToIniFile(IniFilePath: WideString; AccountSettings: TAccountSettings): boolean;
+procedure GetAccountsListFromIniFile(IniFilePath: WideString; var AccountsList: TStrings);
 
 implementation
 
@@ -78,6 +82,46 @@ begin
 	SystemTimeToFileTime(SystemTime, LocalFileTime);
 	LocalFileTimeToFileTime(LocalFileTime, Ft);
 	Result := Ft;
+end;
+
+function GetAccountSettingsFromIniFile(IniFilePath: WideString; AccountName: WideString): TAccountSettings;
+var
+	IniFile: TIniFile;
+	AtPos: Integer;
+begin
+	IniFile := TIniFile.Create(IniFilePath);
+	Result.name := AccountName;
+	Result.email := IniFile.ReadString(Result.name, 'email', '');
+	Result.password := IniFile.ReadString(Result.name, 'password', '');
+	Result.use_tc_password_manager := IniFile.ReadBool(Result.name, 'tc_pwd_mngr', false);
+	AtPos := AnsiPos('@', Result.email);
+	if AtPos <> 0 then
+	begin
+		Result.user := Copy(Result.email, 0, AtPos);
+		Result.domain := Copy(Result.email, AtPos + 1, Length(Result.email) - Length(Result.user) + 1);
+	end;
+	IniFile.Destroy;
+end;
+
+function SetAccountSettingsToIniFile(IniFilePath: WideString; AccountSettings: TAccountSettings): boolean;
+var
+	IniFile: TIniFile;
+begin
+	if AccountSettings.name <> '' then Result := true;
+	IniFile := TIniFile.Create(IniFilePath);
+	IniFile.WriteString(AccountSettings.name, 'email', AccountSettings.email);
+	IniFile.WriteString(AccountSettings.name, 'password', AccountSettings.password);
+	IniFile.WriteBool(AccountSettings.name, 'tc_pwd_mngr', AccountSettings.use_tc_password_manager);
+	IniFile.Destroy;
+end;
+
+procedure GetAccountsListFromIniFile(IniFilePath: WideString; var AccountsList: TStrings);
+var
+	IniFile: TIniFile;
+begin
+	IniFile := TIniFile.Create(IniFilePath);
+	IniFile.ReadSections(AccountsList);
+	IniFile.Destroy
 end;
 
 end.

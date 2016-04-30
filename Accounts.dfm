@@ -149,7 +149,6 @@ object AccountsForm: TAccountsForm
     000000000000000000000000000000000000000000000000000000000000}
   OldCreateOrder = False
   Position = poOwnerFormCenter
-  OnHide = FormHide
   OnShow = FormShow
   DesignSize = (
     494
@@ -159,7 +158,7 @@ object AccountsForm: TAccountsForm
   object UsernameLabel: TLabel
     Left = 231
     Top = 72
-    Width = 255
+    Width = 28
     Height = 13
     Anchors = [akLeft, akTop, akRight]
     Caption = 'Email:'
@@ -167,16 +166,15 @@ object AccountsForm: TAccountsForm
   object AccountNameLabel: TLabel
     Left = 231
     Top = 16
-    Width = 175
+    Width = 68
     Height = 13
     Anchors = [akLeft, akTop, akRight]
     Caption = 'Account name'
-    ExplicitWidth = 275
   end
   object PasswordLabel: TLabel
     Left = 231
     Top = 120
-    Width = 255
+    Width = 46
     Height = 13
     Anchors = [akLeft, akTop, akRight]
     Caption = 'Password'
@@ -201,8 +199,6 @@ object AccountsForm: TAccountsForm
       ItemHeight = 13
       TabOrder = 0
       OnClick = AccountsListClick
-      ExplicitWidth = 298
-      ExplicitHeight = 450
     end
   end
   object EmailEdit: TEdit
