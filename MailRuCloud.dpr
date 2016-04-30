@@ -1,17 +1,18 @@
 library MailRuCloud;
 
 uses
-	SysUtils,
-	DateUtils,
-	windows,
-	Classes,
-	PLUGIN_TYPES,
-	PLUGIN_MAIN,
-	messages,
-	inifiles,
-	CloudMailRu in 'CloudMailRu.pas',
-	MRC_Helper in 'MRC_Helper.pas',
-	Accounts in 'Accounts.pas' {AccountsForm};
+  SysUtils,
+  DateUtils,
+  windows,
+  Classes,
+  PLUGIN_TYPES,
+  PLUGIN_MAIN,
+  messages,
+  inifiles,
+  CloudMailRu in 'CloudMailRu.pas',
+  MRC_Helper in 'MRC_Helper.pas',
+  Accounts in 'Accounts.pas' {AccountsForm},
+  AskPassword in 'AskPassword.pas' {AskPasswordForm};
 
 {$IFDEF WIN64}
 {$E wfx64}
@@ -281,7 +282,7 @@ begin
 
 			AccountSettings := GetAccountSettingsFromIniFile(IniFilePath, RealPath.account);
 
-			if AccountSettings.password = '' then
+			if AccountSettings.use_tc_password_manager then
 			begin
 				CryptResult := MyCryptProc(PluginNum, CryptoNum, FS_CRYPT_LOAD_PASSWORD, PWideChar(RealPath.account), PWideChar(AccountSettings.password), SizeOf(AccountSettings.password));
 				case CryptResult of
@@ -416,6 +417,9 @@ Begin
 			AccountsForm := TAccountsForm.Create(nil);
 			AccountsForm.ParentWindow := MainWin;
 			AccountsForm.IniPath := IniFilePath;
+			AccountsForm.CryptProc := MyCryptProc;
+			AccountsForm.PluginNum := PluginNum;
+			AccountsForm.CryptoNum := CryptoNum;
 			AccountsForm.ShowModal;
 			AccountsForm.Destroy;
 		end;
@@ -589,6 +593,5 @@ begin
 	PluginPath := IncludeTrailingbackslash(ExtractFilePath(PluginPath));
 	IniFilePath := PluginPath + 'MailRuCloud.ini';
 	if not FileExists(IniFilePath) then FileClose(FileCreate(IniFilePath));
-
 
 end.

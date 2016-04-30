@@ -4,7 +4,7 @@ interface
 
 uses
 	Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
-	Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, IniFiles, MRC_Helper;
+	Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, IniFiles, MRC_Helper, PLUGIN_Types;
 
 type
 	TAccountsForm = class(TForm)
@@ -30,6 +30,9 @@ type
 	public
 		{ Public declarations }
 		IniPath: WideString;
+		CryptProc: TCryptProc;
+		PluginNum: Integer;
+		CryptoNum: Integer;
 
 	end;
 
@@ -70,6 +73,29 @@ begin
 	CASettings.email := EmailEdit.Text;
 	CASettings.password := PasswordEdit.Text;
 	CASettings.use_tc_password_manager := UseTCPwdMngrCB.Checked;
+	if CASettings.use_tc_password_manager then // просим TC сохранить пароль
+	begin
+		case self.CryptProc(self.PluginNum, self.CryptoNum, FS_CRYPT_SAVE_PASSWORD, PWideChar(CASettings.name), PWideChar(CASettings.password), SizeOf(CASettings.name)) of
+			FS_FILE_OK:
+				begin // TC скушал пароль
+					CASettings.password := '';
+				end;
+			FS_FILE_NOTSUPPORTED: // —охранение не получилось
+				begin
+
+				end;
+			FS_FILE_WRITEERROR: // —охранение оп€ть не получилось
+				begin
+
+				end;
+			FS_FILE_NOTFOUND: // Ќе указан мастер-пароль
+				begin
+
+				end;
+		end;
+
+	end;
+
 	SetAccountSettingsToIniFile(IniPath, CASettings);
 
 	UpdateAccountsList();
