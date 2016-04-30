@@ -252,34 +252,27 @@ var
 begin
 	if AccountSettings.use_tc_password_manager then
 	begin // пароль должен браться из TC
-		CryptResult := FS_FILE_NOTFOUND;
-		repeat
-
-			GetMem(buf, 1024);
-			CryptResult := MyCryptProc(PluginNum, CryptoNum, FS_CRYPT_LOAD_PASSWORD_NO_UI, PWideChar(AccountSettings.name), buf, 1024); // Пытаемся взять пароль по-тихому
-
-			case CryptResult of
-				FS_FILE_OK: // Успешно получили пароль
-					begin
-						AccountSettings.password := buf;
-						FreeMemory(buf);
-						exit(true);
-					end;
-				FS_FILE_NOTSUPPORTED: // пароль есть, но получить обломно
-					begin
-						MyLogProc(PluginNum, msgtype_importanterror, PWideChar('CryptProc returns error: Decrypt failed'));
-					end;
-				FS_FILE_READERROR:
-					begin
-						MyLogProc(PluginNum, msgtype_importanterror, PWideChar('CryptProc returns error: Password not found in password store'));
-					end;
-				FS_FILE_NOTFOUND:
-					begin
-						MyLogProc(PluginNum, msgtype_details, PWideChar('No master password entered yet'));
-						CryptResult := MyCryptProc(PluginNum, CryptoNum, FS_CRYPT_LOAD_PASSWORD, PWideChar(AccountSettings.name), buf, 1024);
-					end;
-			end;
-		until CryptResult in [FS_FILE_NOTFOUND];
+		GetMem(buf, 1024);
+		CryptResult := MyCryptProc(PluginNum, CryptoNum, FS_CRYPT_LOAD_PASSWORD_NO_UI, PWideChar(AccountSettings.name), buf, 1024); // Пытаемся взять пароль по-тихому
+		if CryptResult = FS_FILE_NOTFOUND then
+		begin
+			MyLogProc(PluginNum, msgtype_details, PWideChar('No master password entered yet'));
+			CryptResult := MyCryptProc(PluginNum, CryptoNum, FS_CRYPT_LOAD_PASSWORD, PWideChar(AccountSettings.name), buf, 1024);
+		end;
+		if CryptResult = FS_FILE_OK then // Успешно получили пароль
+		begin
+			AccountSettings.password := buf;
+			Result := true;
+		end;
+		if CryptResult = FS_FILE_NOTSUPPORTED then // пользователь отменил ввод главного пароля
+		begin
+			MyLogProc(PluginNum, msgtype_importanterror, PWideChar('CryptProc returns error: Decrypt failed'));
+		end;
+		if CryptResult = FS_FILE_READERROR then
+		begin
+			MyLogProc(PluginNum, msgtype_importanterror, PWideChar('CryptProc returns error: Password not found in password store'));
+		end;
+		FreeMemory(buf);
 	end else begin
 		// ничего не делаем, пароль уже должен быть в настройках (взят в открытом виде из инишника)
 	end;
@@ -319,8 +312,8 @@ begin
 			exit(true);
 		end;
 
-	end;
-
+	end//пароль из инишника напрямую
+	else exit(true);
 end;
 
 function FsFindFirstW(path: PWideChar; var FindData: tWIN32FINDDATAW): thandle; stdcall;
