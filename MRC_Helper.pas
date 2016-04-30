@@ -2,7 +2,7 @@ unit MRC_Helper;
 
 interface
 
-uses Classes;
+uses Classes, Windows, SysUtils;
 
 type
 	TRealPath = record
@@ -19,6 +19,7 @@ function Implode(S: TStringList; Delimiter: Char): WideString;
 function ExtractRealPath(VirtualPath: WideString): TRealPath;
 function DateTimeToUnix(ConvDate: TDateTime): Integer;
 function CheckFlag(Check: Byte; Flags: Integer): boolean; // Определяет, установлен ли указанный бит
+function DateTimeToFileTime(FileTime: TDateTime): TFileTime;
 
 implementation
 
@@ -64,6 +65,19 @@ end;
 function CheckFlag(Check: Byte; Flags: LongInt): boolean; // Определяет, установлен ли указанный бит
 begin
 	Result := (Flags and Check) <> 0;
+end;
+
+function DateTimeToFileTime(FileTime: TDateTime): TFileTime;
+var
+	LocalFileTime, Ft: TFileTime;
+	SystemTime: TSystemTime;
+begin
+	Result.dwLowDateTime := 0;
+	Result.dwHighDateTime := 0;
+	DateTimeToSystemTime(FileTime, SystemTime);
+	SystemTimeToFileTime(SystemTime, LocalFileTime);
+	LocalFileTimeToFileTime(LocalFileTime, Ft);
+	Result := Ft;
 end;
 
 end.

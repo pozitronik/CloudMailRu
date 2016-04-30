@@ -38,19 +38,6 @@ var
 	PluginIniFile: TIniFile;
 	CurrentLogon: boolean;
 
-function DateTimeToFileTime(FileTime: TDateTime): TFileTime; { TODO : TO HELPER }
-var
-	LocalFileTime, Ft: TFileTime;
-	SystemTime: TSystemTime;
-begin
-	Result.dwLowDateTime := 0;
-	Result.dwHighDateTime := 0;
-	DateTimeToSystemTime(FileTime, SystemTime);
-	SystemTimeToFileTime(SystemTime, LocalFileTime);
-	LocalFileTimeToFileTime(LocalFileTime, Ft);
-	Result := Ft;
-end;
-
 procedure FsGetDefRootName(DefRootName: PAnsiChar; maxlen: integer); stdcall; // Процедура вызывается один раз при установке плагина
 Begin
 	StrLCopy(DefRootName, PAnsiChar('Cloud'), maxlen);
@@ -433,7 +420,7 @@ Begin
 			AccountsForm.ShowModal;
 			AccountsForm.Destroy;
 		end;
-	 //	messagebox(MainWin, PWideChar(RemoteName), PWideChar(Verb), mb_ok + mb_iconinformation);
+		// messagebox(MainWin, PWideChar(RemoteName), PWideChar(Verb), mb_ok + mb_iconinformation);
 	end else if copy(Verb, 1, 5) = 'chmod' then
 	begin
 	end else if copy(Verb, 1, 5) = 'quote' then
