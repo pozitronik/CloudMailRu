@@ -76,7 +76,7 @@ begin
 	CASettings.use_tc_password_manager := UseTCPwdMngrCB.Checked;
 	if CASettings.use_tc_password_manager then // просим TC сохранить пароль
 	begin
-		case self.CryptProc(self.PluginNum, self.CryptoNum, FS_CRYPT_SAVE_PASSWORD, PWideChar(CASettings.name), PWideChar(CASettings.password), SizeOf(CASettings.name)) of
+		case self.CryptProc(self.PluginNum, self.CryptoNum, FS_CRYPT_SAVE_PASSWORD, PWideChar(CASettings.name), PWideChar(CASettings.password), SizeOf(CASettings.password)) of
 			FS_FILE_OK:
 				begin // TC скушал пароль
 					CASettings.password := '';

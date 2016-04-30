@@ -36,6 +36,7 @@ object AskPasswordForm: TAskPasswordForm
     Width = 75
     Height = 25
     Caption = 'OK'
+    ModalResult = 1
     TabOrder = 1
   end
   object UseTCPwdMngrCB: TCheckBox

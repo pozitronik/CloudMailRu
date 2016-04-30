@@ -9,6 +9,7 @@ uses
 	PLUGIN_MAIN,
 	messages,
 	inifiles,
+	Vcl.controls,
 	CloudMailRu in 'CloudMailRu.pas',
 	MRC_Helper in 'MRC_Helper.pas',
 	Accounts in 'Accounts.pas' {AccountsForm} ,
@@ -296,12 +297,66 @@ begin
 						end;
 					FS_FILE_READERROR:
 						begin
-							// ask password
+							if not TAskPasswordForm.AskPassword(FindTCWindow, AccountSettings.name, AccountSettings.password, AccountSettings.use_tc_password_manager) = mrOK then
+							begin // не указали пароль в диалоге
+								SetLastError(ERROR_WRONG_PASSWORD);
+								exit(INVALID_HANDLE_VALUE);
+							end else begin
+								if AccountSettings.use_tc_password_manager then
+								begin
+									case MyCryptProc(PluginNum, CryptoNum, FS_CRYPT_SAVE_PASSWORD, PWideChar(AccountSettings.name), PWideChar(AccountSettings.password), SizeOf(AccountSettings.password)) of
+										FS_FILE_OK:
+											begin // TC скушал пароль
+
+											end;
+										FS_FILE_NOTSUPPORTED: // —охранение не получилось
+											begin
+
+											end;
+										FS_FILE_WRITEERROR: // —охранение оп€ть не получилось
+											begin
+
+											end;
+										FS_FILE_NOTFOUND: // Ќе указан мастер-пароль
+											begin
+
+											end;
+									end;
+								end;
+							end;
 						end;
 					FS_FILE_NOTFOUND:
 						begin
 
 						end;
+				end;
+			end else begin // галочка "сохранить в менеджере" не поставлена
+				if not TAskPasswordForm.AskPassword(FindTCWindow, AccountSettings.name, AccountSettings.password, AccountSettings.use_tc_password_manager) = mrOK then
+				begin // не указали пароль в диалоге
+					SetLastError(ERROR_WRONG_PASSWORD);
+					exit(INVALID_HANDLE_VALUE);
+				end else begin
+					if AccountSettings.use_tc_password_manager then
+					begin
+						case MyCryptProc(PluginNum, CryptoNum, FS_CRYPT_SAVE_PASSWORD, PWideChar(AccountSettings.name), PWideChar(AccountSettings.password), SizeOf(AccountSettings.password)) of
+							FS_FILE_OK:
+								begin // TC скушал пароль
+									MyLogProc(PluginNum, msgtype_details, PWideChar('Password saved in TC password manager'));
+								end;
+							FS_FILE_NOTSUPPORTED: // —охранение не получилось
+								begin
+									MyLogProc(PluginNum, msgtype_importanterror, PWideChar('Password NOT saved: FS_FILE_NOT_SUPPORTED'));
+								end;
+							FS_FILE_WRITEERROR: // —охранение оп€ть не получилось
+								begin
+									MyLogProc(PluginNum, msgtype_importanterror, PWideChar('Password NOT saved: FS_FILE_WRITEERROR'));
+								end;
+							FS_FILE_NOTFOUND: // Ќе указан мастер-пароль
+								begin
+									MyLogProc(PluginNum, msgtype_importanterror, PWideChar('Password NOT saved: FS_FILE_NOT_FOUND'));
+								end;
+						end;
+					end;
 				end;
 			end;
 			// todo проверка на пустые данные
