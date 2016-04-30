@@ -24,6 +24,7 @@ function DateTimeToFileTime(FileTime: TDateTime): TFileTime;
 function GetAccountSettingsFromIniFile(IniFilePath: WideString; AccountName: WideString): TAccountSettings;
 function SetAccountSettingsToIniFile(IniFilePath: WideString; AccountSettings: TAccountSettings): boolean;
 procedure GetAccountsListFromIniFile(IniFilePath: WideString; var AccountsList: TStringList);
+procedure DeleteAccountFromIniFile(IniFilePath: WideString; AccountName: WideString);
 
 implementation
 
@@ -97,7 +98,7 @@ begin
 	AtPos := AnsiPos('@', Result.email);
 	if AtPos <> 0 then
 	begin
-		Result.user := Copy(Result.email, 0, AtPos-1);
+		Result.user := Copy(Result.email, 0, AtPos - 1);
 		Result.domain := Copy(Result.email, AtPos + 1, Length(Result.email) - Length(Result.user) + 1);
 	end;
 	IniFile.Destroy;
@@ -121,7 +122,16 @@ var
 begin
 	IniFile := TIniFile.Create(IniFilePath);
 	IniFile.ReadSections(AccountsList);
-	IniFile.Destroy
+	IniFile.Destroy;
+end;
+
+procedure DeleteAccountFromIniFile(IniFilePath: WideString; AccountName: WideString);
+var
+	IniFile: TIniFile;
+begin
+	IniFile := TIniFile.Create(IniFilePath);
+	IniFile.EraseSection(AccountName);
+	IniFile.Destroy;
 end;
 
 end.

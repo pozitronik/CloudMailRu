@@ -18,10 +18,12 @@ type
 		PasswordLabel: TLabel;
 		UseTCPwdMngrCB: TCheckBox;
 		ApplyButton: TButton;
+		DeleteButton: TButton;
 		procedure FormShow(Sender: TObject);
 		procedure AccountsListClick(Sender: TObject);
 		procedure ApplyButtonClick(Sender: TObject);
 		procedure UpdateAccountsList();
+		procedure DeleteButtonClick(Sender: TObject);
 	private
 		{ Private declarations }
 	public
@@ -61,6 +63,15 @@ begin
 
 	UpdateAccountsList();
 
+end;
+
+procedure TAccountsForm.DeleteButtonClick(Sender: TObject);
+begin
+	if (AccountsList.Items.Count > 0) and (AccountsList.ItemIndex <> -1) then
+	begin
+		DeleteAccountFromIniFile(IniPath, AccountsList.Items[AccountsList.ItemIndex]);
+		UpdateAccountsList();
+	end;
 end;
 
 procedure TAccountsForm.FormShow(Sender: TObject);

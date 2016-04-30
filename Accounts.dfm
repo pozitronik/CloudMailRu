@@ -195,7 +195,9 @@ object AccountsForm: TAccountsForm
       Top = 16
       Width = 218
       Height = 398
+      Style = lbVirtual
       Anchors = [akLeft, akTop, akRight, akBottom]
+      ExtendedSelect = False
       ItemHeight = 13
       TabOrder = 0
       OnClick = AccountsListClick
@@ -236,12 +238,21 @@ object AccountsForm: TAccountsForm
     TabOrder = 4
   end
   object ApplyButton: TButton
-    Left = 231
+    Left = 411
     Top = 189
     Width = 75
     Height = 25
     Caption = 'Apply'
     TabOrder = 5
     OnClick = ApplyButtonClick
+  end
+  object DeleteButton: TButton
+    Left = 231
+    Top = 189
+    Width = 75
+    Height = 25
+    Caption = 'Delete'
+    TabOrder = 6
+    OnClick = DeleteButtonClick
   end
 end
