@@ -27,8 +27,8 @@ object AskPasswordForm: TAskPasswordForm
     Top = 27
     Width = 415
     Height = 21
+    PasswordChar = '*'
     TabOrder = 0
-    Text = 'PasswordEdit'
   end
   object OkButton: TButton
     Left = 348

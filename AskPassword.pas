@@ -8,10 +8,10 @@ uses
 
 type
 	TAskPasswordForm = class(TForm)
-    PasswordEditLabel: TLabel;
-    PasswordEdit: TEdit;
-    OkButton: TButton;
-    UseTCPwdMngrCB: TCheckBox;
+		PasswordEditLabel: TLabel;
+		PasswordEdit: TEdit;
+		OkButton: TButton;
+		UseTCPwdMngrCB: TCheckBox;
 	private
 		{ Private declarations }
 	public

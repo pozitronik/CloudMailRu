@@ -25,6 +25,7 @@ type
 		procedure UpdateAccountsList();
 		procedure DeleteButtonClick(Sender: TObject);
 		procedure AccountsListKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
+		class procedure ShowAccounts(parentWindow: HWND; IniPath: WideString; CryptProc: TCryptProc; PluginNum, CryptoNum: Integer);
 	private
 		{ Private declarations }
 	public
@@ -121,6 +122,23 @@ begin
 		AccountsList.OnClick(self);
 	end;
 
+end;
+
+class procedure TAccountsForm.ShowAccounts(parentWindow: HWND; IniPath: WideString; CryptProc: TCryptProc; PluginNum, CryptoNum: Integer);
+var
+	AccountsForm: TAccountsForm;
+begin
+	try
+		AccountsForm := TAccountsForm.Create(nil);
+		AccountsForm.parentWindow := parentWindow;
+		AccountsForm.IniPath := IniPath;
+		AccountsForm.CryptProc := CryptProc;
+		AccountsForm.PluginNum := PluginNum;
+		AccountsForm.CryptoNum := CryptoNum;
+		AccountsForm.ShowModal;
+	finally
+		FreeAndNil(AccountsForm);
+	end;
 end;
 
 procedure TAccountsForm.UpdateAccountsList;

@@ -1,18 +1,18 @@
 library MailRuCloud;
 
 uses
-  SysUtils,
-  DateUtils,
-  windows,
-  Classes,
-  PLUGIN_TYPES,
-  PLUGIN_MAIN,
-  messages,
-  inifiles,
-  CloudMailRu in 'CloudMailRu.pas',
-  MRC_Helper in 'MRC_Helper.pas',
-  Accounts in 'Accounts.pas' {AccountsForm},
-  AskPassword in 'AskPassword.pas' {AskPasswordForm};
+	SysUtils,
+	DateUtils,
+	windows,
+	Classes,
+	PLUGIN_TYPES,
+	PLUGIN_MAIN,
+	messages,
+	inifiles,
+	CloudMailRu in 'CloudMailRu.pas',
+	MRC_Helper in 'MRC_Helper.pas',
+	Accounts in 'Accounts.pas' {AccountsForm} ,
+	AskPassword in 'AskPassword.pas' {AskPasswordForm};
 
 {$IFDEF WIN64}
 {$E wfx64}
@@ -414,14 +414,7 @@ Begin
 	begin
 		if RealPath.path = '' then
 		begin
-			AccountsForm := TAccountsForm.Create(nil);
-			AccountsForm.ParentWindow := MainWin;
-			AccountsForm.IniPath := IniFilePath;
-			AccountsForm.CryptProc := MyCryptProc;
-			AccountsForm.PluginNum := PluginNum;
-			AccountsForm.CryptoNum := CryptoNum;
-			AccountsForm.ShowModal;
-			AccountsForm.Destroy;
+			TAccountsForm.ShowAccounts(MainWin, IniFilePath, MyCryptProc, PluginNum, CryptoNum);
 		end;
 		// messagebox(MainWin, PWideChar(RemoteName), PWideChar(Verb), mb_ok + mb_iconinformation);
 	end else if copy(Verb, 1, 5) = 'chmod' then
