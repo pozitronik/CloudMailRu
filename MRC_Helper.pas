@@ -23,7 +23,7 @@ function CheckFlag(Check: Byte; Flags: Integer): boolean; // Определяет, установ
 function DateTimeToFileTime(FileTime: TDateTime): TFileTime;
 function GetAccountSettingsFromIniFile(IniFilePath: WideString; AccountName: WideString): TAccountSettings;
 function SetAccountSettingsToIniFile(IniFilePath: WideString; AccountSettings: TAccountSettings): boolean;
-procedure GetAccountsListFromIniFile(IniFilePath: WideString; var AccountsList: TStrings);
+procedure GetAccountsListFromIniFile(IniFilePath: WideString; var AccountsList: TStringList);
 
 implementation
 
@@ -115,7 +115,7 @@ begin
 	IniFile.Destroy;
 end;
 
-procedure GetAccountsListFromIniFile(IniFilePath: WideString; var AccountsList: TStrings);
+procedure GetAccountsListFromIniFile(IniFilePath: WideString; var AccountsList: TStringList);
 var
 	IniFile: TIniFile;
 begin

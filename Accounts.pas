@@ -77,7 +77,7 @@ end;
 
 procedure TAccountsForm.UpdateAccountsList;
 var
-	TempList: TStrings;
+	TempList: TStringList;
 begin
 	TempList := TStringList.Create;
 	GetAccountsListFromIniFile(IniPath, TempList);

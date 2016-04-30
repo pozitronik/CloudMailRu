@@ -242,7 +242,7 @@ end;
 
 function FsFindFirstW(path: PWideChar; var FindData: tWIN32FINDDATAW): thandle; stdcall;
 var
-	Sections: TStrings;
+	Sections: TStringList;
 	RealPath: TRealPath;
 	CryptResult: integer;
 	AccountSettings: TAccountSettings;
@@ -254,7 +254,7 @@ begin
 	begin
 		if Assigned(Cloud) then FreeAndNil(Cloud);
 
-		Sections := TStrings.Create;
+		Sections := TStringList.Create;
 		GetAccountsListFromIniFile(IniFilePath, Sections);
 
 		if (Sections.Count > 0) then
@@ -353,7 +353,7 @@ end;
 
 function FsFindNextW(Hdl: thandle; var FindData: tWIN32FINDDATAW): bool; stdcall;
 var
-	Sections: TStrings;
+	Sections: TStringList;
 begin
 	if GlobalPath = '\' then
 	begin
