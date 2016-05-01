@@ -41,6 +41,92 @@ var
 	CurrentListing: TCloudMailRuDirListing;
 	CurrentLogon: boolean;
 
+function CloudMailRuDirListingItemToFindData(DirListing: TCloudMailRuDirListingItem): tWIN32FINDDATAW;
+begin
+	if (DirListing.type_ = TYPE_DIR) then Result.dwFileAttributes := FILE_ATTRIBUTE_DIRECTORY
+	else Result.dwFileAttributes := 0;
+	if (DirListing.size > MAXDWORD) then Result.nFileSizeHigh := DirListing.size div MAXDWORD
+	else Result.nFileSizeHigh := 0;
+	Result.nFileSizeLow := DirListing.size;
+	Result.ftCreationTime := DateTimeToFileTime(UnixToDateTime(DirListing.mtime)); // todo optimization
+	Result.ftLastWriteTime := DateTimeToFileTime(UnixToDateTime(DirListing.mtime));
+	strpcopy(Result.cFileName, DirListing.name);
+end;
+
+// Получает пароль из файла, из тоталовского менеджера или запрашивает прямой ввод
+function GetMyPasswordNow(var AccountSettings: TAccountSettings): boolean;
+var
+	CryptResult: integer;
+	AskResult: integer;
+	TmpString: WideString;
+	buf: PWideChar;
+begin
+	if AccountSettings.use_tc_password_manager then
+	begin // пароль должен браться из TC
+		GetMem(buf, 1024);
+		CryptResult := MyCryptProc(PluginNum, CryptoNum, FS_CRYPT_LOAD_PASSWORD_NO_UI, PWideChar(AccountSettings.name), buf, 1024); // Пытаемся взять пароль по-тихому
+		if CryptResult = FS_FILE_NOTFOUND then
+		begin
+			MyLogProc(PluginNum, msgtype_details, PWideChar('No master password entered yet'));
+			CryptResult := MyCryptProc(PluginNum, CryptoNum, FS_CRYPT_LOAD_PASSWORD, PWideChar(AccountSettings.name), buf, 1024);
+		end;
+		if CryptResult = FS_FILE_OK then // Успешно получили пароль
+		begin
+			AccountSettings.password := buf;
+			Result := true;
+		end;
+		if CryptResult = FS_FILE_NOTSUPPORTED then // пользователь отменил ввод главного пароля
+		begin
+			MyLogProc(PluginNum, msgtype_importanterror, PWideChar('CryptProc returns error: Decrypt failed'));
+		end;
+		if CryptResult = FS_FILE_READERROR then
+		begin
+			MyLogProc(PluginNum, msgtype_importanterror, PWideChar('CryptProc returns error: Password not found in password store'));
+		end;
+		FreeMemory(buf);
+	end else begin
+		// ничего не делаем, пароль уже должен быть в настройках (взят в открытом виде из инишника)
+	end;
+	if AccountSettings.password = '' then // но пароля нет, не в инишнике, не в тотале
+	begin
+		AskResult := TAskPasswordForm.AskPassword(FindTCWindow, AccountSettings.name, AccountSettings.password, AccountSettings.use_tc_password_manager);
+		if AskResult <> mrOK then
+		begin // не указали пароль в диалоге
+			exit(false); // отказались вводить пароль
+		end else begin
+			if AccountSettings.use_tc_password_manager then
+			begin
+				case MyCryptProc(PluginNum, CryptoNum, FS_CRYPT_SAVE_PASSWORD, PWideChar(AccountSettings.name), PWideChar(AccountSettings.password), SizeOf(AccountSettings.password)) of
+					FS_FILE_OK:
+						begin // TC скушал пароль, запомним в инишник галочку
+							MyLogProc(PluginNum, msgtype_details, PWideChar('Password saved in TC password manager'));
+							TmpString := AccountSettings.password;
+							AccountSettings.password := '';
+							SetAccountSettingsToIniFile(IniFilePath, AccountSettings);
+							AccountSettings.password := TmpString;
+						end;
+					FS_FILE_NOTSUPPORTED: // Сохранение не получилось
+						begin
+							MyLogProc(PluginNum, msgtype_importanterror, PWideChar('CryptProc returns error: Encrypt failed'));
+						end;
+					FS_FILE_WRITEERROR: // Сохранение опять не получилось
+						begin
+							MyLogProc(PluginNum, msgtype_importanterror, PWideChar('Password NOT saved: Could not write password to password store'));
+						end;
+					FS_FILE_NOTFOUND: // Не указан мастер-пароль
+						begin
+							MyLogProc(PluginNum, msgtype_importanterror, PWideChar('Password NOT saved: No master password entered yet'));
+						end;
+					// Ошибки здесь не значат, что пароль мы не получили - он может быть введён в диалоге
+				end;
+			end;
+			exit(true);
+		end;
+
+	end // пароль из инишника напрямую
+	else exit(true);
+end;
+
 procedure FsGetDefRootName(DefRootName: PAnsiChar; maxlen: integer); stdcall; // Процедура вызывается один раз при установке плагина
 Begin
 	StrLCopy(DefRootName, PAnsiChar('CloudMailRu'), maxlen);
@@ -244,80 +330,6 @@ begin
 	end;
 end;
 
-// Получает пароль из файла, из тоталовского менеджера или запрашивает прямой ввод
-function GetMyPasswordNow(var AccountSettings: TAccountSettings): boolean;
-var
-	CryptResult: integer;
-	AskResult: integer;
-	TmpString: WideString;
-	buf: PWideChar;
-begin
-	if AccountSettings.use_tc_password_manager then
-	begin // пароль должен браться из TC
-		GetMem(buf, 1024);
-		CryptResult := MyCryptProc(PluginNum, CryptoNum, FS_CRYPT_LOAD_PASSWORD_NO_UI, PWideChar(AccountSettings.name), buf, 1024); // Пытаемся взять пароль по-тихому
-		if CryptResult = FS_FILE_NOTFOUND then
-		begin
-			MyLogProc(PluginNum, msgtype_details, PWideChar('No master password entered yet'));
-			CryptResult := MyCryptProc(PluginNum, CryptoNum, FS_CRYPT_LOAD_PASSWORD, PWideChar(AccountSettings.name), buf, 1024);
-		end;
-		if CryptResult = FS_FILE_OK then // Успешно получили пароль
-		begin
-			AccountSettings.password := buf;
-			Result := true;
-		end;
-		if CryptResult = FS_FILE_NOTSUPPORTED then // пользователь отменил ввод главного пароля
-		begin
-			MyLogProc(PluginNum, msgtype_importanterror, PWideChar('CryptProc returns error: Decrypt failed'));
-		end;
-		if CryptResult = FS_FILE_READERROR then
-		begin
-			MyLogProc(PluginNum, msgtype_importanterror, PWideChar('CryptProc returns error: Password not found in password store'));
-		end;
-		FreeMemory(buf);
-	end else begin
-		// ничего не делаем, пароль уже должен быть в настройках (взят в открытом виде из инишника)
-	end;
-	if AccountSettings.password = '' then // но пароля нет, не в инишнике, не в тотале
-	begin
-		AskResult := TAskPasswordForm.AskPassword(FindTCWindow, AccountSettings.name, AccountSettings.password, AccountSettings.use_tc_password_manager);
-		if AskResult <> mrOK then
-		begin // не указали пароль в диалоге
-			exit(false); // отказались вводить пароль
-		end else begin
-			if AccountSettings.use_tc_password_manager then
-			begin
-				case MyCryptProc(PluginNum, CryptoNum, FS_CRYPT_SAVE_PASSWORD, PWideChar(AccountSettings.name), PWideChar(AccountSettings.password), SizeOf(AccountSettings.password)) of
-					FS_FILE_OK:
-						begin // TC скушал пароль, запомним в инишник галочку
-							MyLogProc(PluginNum, msgtype_details, PWideChar('Password saved in TC password manager'));
-							TmpString := AccountSettings.password;
-							AccountSettings.password := '';
-							SetAccountSettingsToIniFile(IniFilePath, AccountSettings);
-							AccountSettings.password := TmpString;
-						end;
-					FS_FILE_NOTSUPPORTED: // Сохранение не получилось
-						begin
-							MyLogProc(PluginNum, msgtype_importanterror, PWideChar('CryptProc returns error: Encrypt failed'));
-						end;
-					FS_FILE_WRITEERROR: // Сохранение опять не получилось
-						begin
-							MyLogProc(PluginNum, msgtype_importanterror, PWideChar('Password NOT saved: Could not write password to password store'));
-						end;
-					FS_FILE_NOTFOUND: // Не указан мастер-пароль
-						begin
-							MyLogProc(PluginNum, msgtype_importanterror, PWideChar('Password NOT saved: No master password entered yet'));
-						end;
-					// Ошибки здесь не значат, что пароль мы не получили - он может быть введён в диалоге
-				end;
-			end;
-			exit(true);
-		end;
-
-	end // пароль из инишника напрямую
-	else exit(true);
-end;
-
 function FsFindFirstW(path: PWideChar; var FindData: tWIN32FINDDATAW): thandle; stdcall;
 var
 	Sections: TStringList;
@@ -387,7 +399,7 @@ begin
 
 			if Length(CurrentListing) = 0 then
 			begin
-				strpcopy(FindData.cFileName, '.'); //воркароунд бага с невозможностью входа в пустой каталог, см. http://www.ghisler.ch/board/viewtopic.php?t=42399
+				strpcopy(FindData.cFileName, '.'); // воркароунд бага с невозможностью входа в пустой каталог, см. http://www.ghisler.ch/board/viewtopic.php?t=42399
 				FindData.ftCreationTime.dwLowDateTime := 0;
 				FindData.ftCreationTime.dwHighDateTime := 0;
 				FindData.nFileSizeHigh := 0;
@@ -398,15 +410,7 @@ begin
 				SetLastError(ERROR_NO_MORE_FILES);
 
 			end else begin
-				// Todo Function ListingToFindData
-				if (CurrentListing[0].type_ = TYPE_DIR) then FindData.dwFileAttributes := FILE_ATTRIBUTE_DIRECTORY
-				else FindData.dwFileAttributes := 0;
-				if (CurrentListing[0].size > MAXDWORD) then FindData.nFileSizeHigh := CurrentListing[0].size div MAXDWORD
-				else FindData.nFileSizeHigh := 0;
-				FindData.nFileSizeLow := CurrentListing[0].size;
-				FindData.ftCreationTime := DateTimeToFileTime(UnixToDateTime(CurrentListing[0].mtime)); // todo optimization
-				FindData.ftLastWriteTime := DateTimeToFileTime(UnixToDateTime(CurrentListing[0].mtime));
-				strpcopy(FindData.cFileName, CurrentListing[0].name);
+				FindData := CloudMailRuDirListingItemToFindData(CurrentListing[0]);
 				FileCounter := 1;
 				Result := 1;
 			end;
@@ -446,15 +450,7 @@ begin
 			// Получение последующих файлов в папке (вызывается до тех пор, пока не вернёт false).
 			if (Length(CurrentListing) > FileCounter) then
 			begin
-				if (CurrentListing[FileCounter].type_ = TYPE_DIR) then FindData.dwFileAttributes := FILE_ATTRIBUTE_DIRECTORY
-				else FindData.dwFileAttributes := 0;
-				if (CurrentListing[FileCounter].size > MAXDWORD) then FindData.nFileSizeHigh := CurrentListing[FileCounter].size div MAXDWORD
-				else FindData.nFileSizeHigh := 0;
-
-				FindData.nFileSizeLow := CurrentListing[FileCounter].size;
-				FindData.ftCreationTime := DateTimeToFileTime(UnixToDateTime(CurrentListing[FileCounter].mtime)); // todo optimization
-				FindData.ftLastWriteTime := DateTimeToFileTime(UnixToDateTime(CurrentListing[FileCounter].mtime));
-				strpcopy(FindData.cFileName, CurrentListing[FileCounter].name);
+				FindData := CloudMailRuDirListingItemToFindData(CurrentListing[FileCounter]);
 				Result := true;
 				inc(FileCounter);
 			end else begin

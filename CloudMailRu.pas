@@ -300,7 +300,7 @@ begin
 	MemStream := TStringStream.Create;
 	try
 		if ContentType <> '' then self.HTTP.Request.ContentType := ContentType;
-		self.HTTP.Post(URL, PostData, MemStream); { TODO : При отсутствии сети TIdHTTP вываливается без всяких там }
+		self.HTTP.Post(URL, PostData, MemStream);
 		Answer := MemStream.DataString;
 	except
 		on E: EAbort do
