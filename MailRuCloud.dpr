@@ -3,19 +3,19 @@ library MailRuCloud;
 {$R *.dres}
 
 uses
-  SysUtils,
-  DateUtils,
-  windows,
-  Classes,
-  PLUGIN_TYPES,
-  PLUGIN_MAIN,
-  messages,
-  inifiles,
-  Vcl.controls,
-  CloudMailRu in 'CloudMailRu.pas',
-  MRC_Helper in 'MRC_Helper.pas',
-  Accounts in 'Accounts.pas' {AccountsForm},
-  AskPassword in 'AskPassword.pas' {AskPasswordForm};
+	SysUtils,
+	DateUtils,
+	windows,
+	Classes,
+	PLUGIN_TYPES,
+	PLUGIN_MAIN,
+	messages,
+	inifiles,
+	Vcl.controls,
+	CloudMailRu in 'CloudMailRu.pas',
+	MRC_Helper in 'MRC_Helper.pas',
+	Accounts in 'Accounts.pas' {AccountsForm} ,
+	AskPassword in 'AskPassword.pas' {AskPasswordForm};
 
 {$IFDEF WIN64}
 {$E wfx64}
@@ -328,8 +328,8 @@ begin
 	// Получение первого файла в папке. Result тоталом не используется (можно использовать для работы плагина).
 	// setlasterror(ERROR_NO_MORE_FILES);
 	GlobalPath := path;
-	if path = '\' then
-	begin
+	if GlobalPath = '\' then
+	begin // список соединений
 		if Assigned(Cloud) then FreeAndNil(Cloud);
 
 		Sections := TStringList.Create;
@@ -346,10 +346,10 @@ begin
 			FileCounter := 1;
 			exit(0);
 		end else begin
-			SetLastError(ERROR_NO_MORE_FILES);
-			exit(INVALID_HANDLE_VALUE);
-		end;
 
+			Result := INVALID_HANDLE_VALUE; // Нельзя использовать exit
+			SetLastError(ERROR_NO_MORE_FILES);
+		end;
 	end else begin
 		RealPath := ExtractRealPath(GlobalPath);
 
@@ -373,8 +373,8 @@ begin
 			end else begin
 				CurrentLogon := false;
 				FreeAndNil(Cloud);
-				SetLastError(ERROR_NETWORK_ACCESS_DENIED);
-				exit(INVALID_HANDLE_VALUE);
+				Result := INVALID_HANDLE_VALUE; // Нельзя использовать exit
+				SetLastError(ERROR_NO_MORE_FILES);
 			end;
 
 		end;
@@ -384,26 +384,26 @@ begin
 			if not Cloud.getDir(RealPath.path, CurrentListing) then
 			begin
 				SetLastError(ERROR_PATH_NOT_FOUND);
-
 			end;
 
 			if Length(CurrentListing) = 0 then
 			begin
+				Result := INVALID_HANDLE_VALUE; // Нельзя использовать exit
 				SetLastError(ERROR_NO_MORE_FILES);
-				exit(INVALID_HANDLE_VALUE);
 
+			end else begin
+				// Todo Function ListingToFindData
+				if (CurrentListing[0].type_ = TYPE_DIR) then FindData.dwFileAttributes := FILE_ATTRIBUTE_DIRECTORY
+				else FindData.dwFileAttributes := 0;
+				if (CurrentListing[0].size > MAXDWORD) then FindData.nFileSizeHigh := CurrentListing[0].size div MAXDWORD
+				else FindData.nFileSizeHigh := 0;
+				FindData.nFileSizeLow := CurrentListing[0].size;
+				FindData.ftCreationTime := DateTimeToFileTime(UnixToDateTime(CurrentListing[0].mtime)); // todo optimization
+				FindData.ftLastWriteTime := DateTimeToFileTime(UnixToDateTime(CurrentListing[0].mtime));
+				strpcopy(FindData.cFileName, CurrentListing[0].name);
+				FileCounter := 1;
+				Result := 1;
 			end;
-			// Todo Function ListingToFindData
-			if (CurrentListing[0].type_ = TYPE_DIR) then FindData.dwFileAttributes := FILE_ATTRIBUTE_DIRECTORY
-			else FindData.dwFileAttributes := 0;
-			if (CurrentListing[0].size > MAXDWORD) then FindData.nFileSizeHigh := CurrentListing[0].size div MAXDWORD
-			else FindData.nFileSizeHigh := 0;
-			FindData.nFileSizeLow := CurrentListing[0].size;
-			FindData.ftCreationTime := DateTimeToFileTime(UnixToDateTime(CurrentListing[0].mtime)); // todo optimization
-			FindData.ftLastWriteTime := DateTimeToFileTime(UnixToDateTime(CurrentListing[0].mtime));
-			strpcopy(FindData.cFileName, CurrentListing[0].name);
-			FileCounter := 1;
-			Result := 1;
 		end else begin
 			SetLastError(ERROR_INVALID_HANDLE);
 			Result := INVALID_HANDLE_VALUE;
