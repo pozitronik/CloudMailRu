@@ -4,8 +4,7 @@ interface
 
 uses
 	System.Classes, System.SysUtils, XSuperJson, XSuperObject, PLUGIN_Types,
-	MRC_helper, Winapi.Windows, PLUGIN_MAIN,
-	IdCookieManager, IdIOHandler, IdIOHandlerSocket, IdIOHandlerStack, IdSSL,
+	MRC_helper, IdCookieManager, IdIOHandler, IdIOHandlerSocket, IdIOHandlerStack, IdSSL,
 	IdSSLOpenSSL, IdBaseComponent, IdComponent, IdTCPConnection, IdTCPClient,
 	IdHTTP, IdAuthentication, IdIOHandlerStream, IdMultipartFormData;
 
@@ -125,7 +124,7 @@ begin
 	except
 		on E: Exception do
 		begin
-			messagebox(FindTCWindow, PWideChar('Cloud initialization error ' + E.Message + ' at class ' + E.ClassName), 'Information', mb_ok + MB_ICONERROR);
+			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Cloud initialization error ' + E.Message));
 		end;
 
 	end;
@@ -147,24 +146,25 @@ var
 	PostData: TStringStream;
 	PostAnswer: WideString; { Не используется }
 begin
-
+	Result := false;
 	self.ExternalLogProc(ExternalPluginNr, MSGTYPE_DETAILS, PWideChar('Login to ' + self.user + '@' + self.domain));
 	URL := 'http://auth.mail.ru/cgi-bin/auth?lang=ru_RU&from=authpopup';
+	PostData := TStringStream.Create('page=https://cloud.mail.ru/?from=promo&new_auth_form=1&Domain=' + self.domain + '&Login=' + self.user + '&Password=' + self.password + '&FailPage=', TEncoding.UTF8);
 	try
-		PostData := TStringStream.Create('page=https://cloud.mail.ru/?from=promo&new_auth_form=1&Domain=' + self.domain + '&Login=' + self.user + '&Password=' + self.password + '&FailPage=', TEncoding.UTF8);
-		result := self.HTTPPost(URL, PostData, PostAnswer);
-		PostData.Destroy;
+		Result := self.HTTPPost(URL, PostData, PostAnswer);
 	except
 		on E: Exception do
 		begin
-			messagebox(FindTCWindow, PWideChar('Cloud login error ' + E.Message + ' at class ' + E.ClassName), 'Information', mb_ok + MB_ICONERROR);
+			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Cloud login error ' + E.Message));
+			if Assigned(PostData) then PostData.Destroy;
 		end;
 	end;
-	if (result) then
+	PostData.Destroy;
+	if (Result) then
 	begin
 		self.ExternalLogProc(ExternalPluginNr, MSGTYPE_DETAILS, PWideChar('Requesting auth token for ' + self.user + '@' + self.domain));
-		result := self.getToken();
-		if (result) then
+		Result := self.getToken();
+		if (Result) then
 		begin
 			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_DETAILS, PWideChar('Connected to ' + self.user + '@' + self.domain));
 		end else begin
@@ -191,7 +191,15 @@ var
 begin
 	URL := 'https://cloud.mail.ru/?from=promo&from=authpopup';
 	getToken := true;
-	PostResult := self.HTTPGet(URL, Answer);
+	try
+		PostResult := self.HTTPGet(URL, Answer);
+	except
+		on E: Exception do
+		begin
+			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Get token error ' + E.Message));
+		end;
+
+	end;
 	if PostResult then
 	begin
 		self.token := self.getTokenFromText(Answer);
@@ -209,14 +217,25 @@ var
 	URL: WideString;
 	PostData: TStringStream;
 	Answer: WideString;
+	SuccessPost: boolean;
 begin
+	Result := false;
 	URL := 'https://cloud.mail.ru/api/v2/dispatcher/';
 	PostData := TStringStream.Create('api=2&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&token=' + self.token + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id, TEncoding.UTF8);
-	if self.HTTPPost(URL, PostData, Answer) then
+	try
+		SuccessPost := self.HTTPPost(URL, PostData, Answer);
+	except
+		on E: Exception do
+		begin
+			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Get shard error ' + E.Message));
+			if Assigned(PostData) then PostData.Destroy;
+		end;
+	end;
+	if SuccessPost then
 	begin
 		Shard := self.getShardFromJSON(Answer);
-		if Shard = '' then result := false
-		else result := true;
+		if Shard = '' then Result := false
+		else Result := true;
 	end;
 	PostData.Destroy;
 end;
@@ -226,13 +245,22 @@ var
 	URL, PostAnswer: WideString;
 	PostData: TIdMultipartFormDataStream;
 begin
+	Result := false;
 	URL := self.upload_url + '/?cloud_domain=1&x-email=' + self.user + '%40' + self.domain + '&fileapi' + IntToStr(DateTimeToUnix(now)) + '0246';
 	PostData := TIdMultipartFormDataStream.Create;
 	self.ExternalLogProc(ExternalPluginNr, MSGTYPE_DETAILS, PWideChar('Uploading to ' + URL));
 	PostData.AddFile('file', localPath, 'application/octet-stream');
-	result := self.HTTPPostFile(URL, PostData, PostAnswer);
+	try
+		Result := self.HTTPPostFile(URL, PostData, PostAnswer);
+	except
+		on E: Exception do
+		begin
+			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Posting file error ' + E.Message));
+			if Assigned(PostData) then PostData.Destroy;
+		end;
+	end;
 	PostData.Destroy;
-	if (result) then
+	if (Result) then
 	begin
 		ExtractStrings([';'], [], PWideChar(PostAnswer), Return);
 		if Length(Return.Strings[0]) = 40 then
@@ -251,15 +279,24 @@ begin
 	URL := 'https://cloud.mail.ru/api/v2/file/add';
 	PostData := TStringStream.Create('conflict=' + ConflictMode + '&home=/' + remotePath + '&hash=' + hash + '&size=' + IntToStr(size) + '&token=' + self.token + '&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id + '&conflict', TEncoding.UTF8);
 	{ Экспериментально выяснено, что параметры api, build, email, x-email, x-page-id в запросе не обязательны }
-	result := self.HTTPPost(URL, PostData, JSONAnswer);
+	try
+		Result := self.HTTPPost(URL, PostData, JSONAnswer);
+	except
+		on E: Exception do
+		begin
+			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Adding file error ' + E.Message));
+			if Assigned(PostData) then PostData.Destroy;
+		end;
+	end;
 	PostData.Destroy;
+
 end;
 
 function TCloudMailRu.HTTPPost(URL: WideString; PostData: TStringStream; var Answer: WideString; ContentType: WideString = 'application/x-www-form-urlencoded'): boolean;
 var
 	MemStream: TStringStream;
 begin
-	result := true;
+	Result := true;
 	MemStream := TStringStream.Create;
 	try
 		if ContentType <> '' then self.HTTP.Request.ContentType := ContentType;
@@ -275,10 +312,10 @@ begin
 			if self.HTTP.ResponseCode = 400 then
 			begin { сервер вернёт 400, но нужно пропарсить результат для дальнейшего определения действий }
 				Answer := E.ErrorMessage;
-				result := true;
+				Result := true;
 			end else begin
 				self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar(E.ClassName + ' ошибка с сообщением : ' + E.Message + ' при отправке данных на адрес ' + URL + ', ответ сервера: ' + E.ErrorMessage));
-				result := false;
+				Result := false;
 			end;
 		end;
 	end;
@@ -289,7 +326,7 @@ function TCloudMailRu.HTTPPostFile(URL: WideString; PostData: TIdMultipartFormDa
 var
 	MemStream: TStringStream;
 begin
-	result := true;
+	Result := true;
 	MemStream := TStringStream.Create;
 	try
 		self.HTTP.OnWork := self.HttpProgress;
@@ -299,7 +336,7 @@ begin
 		on E: EIdHTTPProtocolException do
 		begin
 			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar(E.ClassName + ' ошибка с сообщением : ' + E.Message + ' при отправке данных на адрес ' + URL + ', ответ сервера: ' + E.ErrorMessage));
-			result := false;
+			Result := false;
 		end;
 		on E: Exception do
 		begin
@@ -311,13 +348,13 @@ end;
 
 function TCloudMailRu.HTTPGet(URL: WideString; var Answer: WideString): boolean;
 begin
-	result := true;
+	Result := true;
 	try
 		Answer := self.HTTP.Get(URL);
 	Except
 		exit(false);
 	end;
-	result := Answer <> '';
+	Result := Answer <> '';
 end;
 
 procedure TCloudMailRu.HttpProgress(ASender: TObject; AWorkMode: TWorkMode; AWorkCount: int64);
@@ -349,10 +386,19 @@ var
 	PostData: TStringStream;
 	PostAnswer: WideString; { Не используется }
 begin
+	Result := false;
 	path := self.UrlEncode(StringReplace(path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
 	URL := 'https://cloud.mail.ru/api/v2/file/remove';
 	PostData := TStringStream.Create('api=2&home=/' + path + '&token=' + self.token + '&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id + '&conflict', TEncoding.UTF8);
-	result := self.HTTPPost(URL, PostData, PostAnswer);
+	try
+		Result := self.HTTPPost(URL, PostData, PostAnswer);
+	except
+		on E: Exception do
+		begin
+			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Delete file error ' + E.Message));
+			if Assigned(PostData) then PostData.Destroy;
+		end;
+	end;
 	PostData.Destroy;
 end;
 
@@ -360,12 +406,19 @@ function TCloudMailRu.getDir(path: WideString; var DirListing: TCloudMailRuDirLi
 var
 	URL: WideString;
 	JSON: WideString;
-
 begin
+	Result := false;
 	path := self.UrlEncode(StringReplace(path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
 	URL := 'https://cloud.mail.ru/api/v2/folder?sort={%22type%22%3A%22name%22%2C%22order%22%3A%22asc%22}&offset=0&limit=10000&home=' + path + '&api=2&build=' + self.build + '&x-page-id=' + self.x_page_id + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&token=' + self.token + '&_=1433249148810';
-	result := self.HTTPGet(URL, JSON);
-	if not result then exit(false);
+	try
+		Result := self.HTTPGet(URL, JSON);
+	except
+		on E: Exception do
+		begin
+			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Directory list getting error ' + E.Message));
+		end;
+	end;
+	if not Result then exit(false);
 	DirListing := self.getDirListingFromJSON(JSON);
 end;
 
@@ -388,7 +441,7 @@ begin
 
 	if self.CancelCopy then exit(FS_FILE_USERABORT);
 
-	result := FS_FILE_OK;
+	Result := FS_FILE_OK;
 	FileStream := TMemoryStream.Create;
 
 	remotePath := self.UrlEncode(StringReplace(remotePath, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
@@ -419,7 +472,7 @@ var
 	successPut: boolean;
 begin
 	if self.CancelCopy then exit(FS_FILE_USERABORT);
-	result := FS_FILE_WRITEERROR;
+	Result := FS_FILE_WRITEERROR;
 
 	try
 		PutResult := TStringList.Create;
@@ -432,7 +485,7 @@ begin
 		begin
 			if E.ClassName = 'EAbort' then
 			begin
-				result := FS_FILE_USERABORT;
+				Result := FS_FILE_USERABORT;
 			end else begin
 				self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Error uploading to cloud: ' + E.ClassName + ' ошибка с сообщением : ' + E.Message));
 			end;
@@ -448,16 +501,16 @@ begin
 			case self.getOperationResultFromJSON(JSONAnswer, OperationStatus) of
 				CLOUD_OPERATION_OK:
 					begin
-						result := FS_FILE_OK;
+						Result := FS_FILE_OK;
 					end;
 				CLOUD_ERROR_FILE_EXISTS:
 					begin
-						result := FS_FILE_EXISTS;
+						Result := FS_FILE_EXISTS;
 					end;
 			else
 				begin
 					self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Error uploading to cloud: got ' + IntToStr(OperationStatus) + ' status'));
-					result := FS_FILE_WRITEERROR;
+					Result := FS_FILE_WRITEERROR;
 				end;
 			end;
 		end;
@@ -475,23 +528,31 @@ begin
 	path := self.UrlEncode(StringReplace(path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
 	URL := 'https://cloud.mail.ru/api/v2/folder/add';
 	PostData := TStringStream.Create('api=2&home=/' + path + '&token=' + self.token + '&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id + '&conflict', TEncoding.UTF8);
-	SucessCreate := self.HTTPPost(URL, PostData, PostAnswer);
+	try
+		SucessCreate := self.HTTPPost(URL, PostData, PostAnswer);
+	except
+		on E: Exception do
+		begin
+			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Directory creation error ' + E.Message));
+			if Assigned(PostData) then PostData.Destroy;
+		end;
+	end;
 	PostData.Destroy;
 	if SucessCreate then
 	begin
 		case self.getOperationResultFromJSON(PostAnswer, OperationStatus) of
 			CLOUD_OPERATION_OK:
 				begin
-					result := true;
+					Result := true;
 				end;
 			CLOUD_ERROR_FILE_EXISTS:
 				begin
-					result := false;
+					Result := false;
 				end;
 		else
 			begin
 				self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Error creating directory: got ' + IntToStr(OperationStatus) + ' status'));
-				result := false;
+				Result := false;
 			end;
 		end;
 	end;
@@ -503,10 +564,19 @@ var
 	PostData: TStringStream;
 	PostAnswer: WideString; { Не используется }
 begin
+	Result := false;
 	path := self.UrlEncode(StringReplace(path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
 	URL := 'https://cloud.mail.ru/api/v2/file/remove';
 	PostData := TStringStream.Create('api=2&home=/' + path + '/&token=' + self.token + '&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id + '&conflict', TEncoding.UTF8);
-	result := self.HTTPPost(URL, PostData, PostAnswer); // API всегда отвечает true, даже если путь не существует
+	try
+		Result := self.HTTPPost(URL, PostData, PostAnswer); // API всегда отвечает true, даже если путь не существует
+	except
+		on E: Exception do
+		begin
+			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Delete directory error ' + E.Message));
+			if Assigned(PostData) then PostData.Destroy;
+		end;
+	end;
 	PostData.Destroy;
 end;
 
@@ -579,7 +649,7 @@ var
 begin
 	X := TSuperObject.Create(JSON);
 	X := X['body'].AsObject;
-	result := X.A['get'].O[0].S['url'];
+	Result := X.A['get'].O[0].S['url'];
 end;
 
 function TCloudMailRu.getDirListingFromJSON(JSON: WideString): TCloudMailRuDirListing;
@@ -621,7 +691,7 @@ begin
 				end;
 			end;
 		end;
-	result := ResultItems;
+	Result := ResultItems;
 end;
 
 function TCloudMailRu.getOperationResultFromJSON(JSON: WideString; var OperationStatus: integer): integer;
@@ -638,7 +708,7 @@ begin
 		if Error = 'exists' then exit(CLOUD_ERROR_FILE_EXISTS)
 		else exit(CLOUD_ERROR_UNKNOWN); // Эту ошибку мы пока не встречали
 	end;
-	result := CLOUD_OPERATION_OK;
+	Result := CLOUD_OPERATION_OK;
 
 end;
 
@@ -646,10 +716,10 @@ function TCloudMailRu.UrlEncode(URL: UTF8String): WideString; // todo нужно
 var
 	I: integer;
 begin
-	result := '';
+	Result := '';
 	for I := 1 to Length(URL) do
-		if URL[I] in ['a' .. 'z', 'A' .. 'Z', '/', '_', '-', '.'] then result := result + URL[I]
-		else result := result + '%' + IntToHex(Ord(URL[I]), 2);
+		if URL[I] in ['a' .. 'z', 'A' .. 'Z', '/', '_', '-', '.'] then Result := Result + URL[I]
+		else Result := Result + '%' + IntToHex(Ord(URL[I]), 2);
 end;
 
 end.
