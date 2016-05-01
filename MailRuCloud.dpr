@@ -344,7 +344,6 @@ begin
 			FindData.nFileSizeLow := 0;
 			FindData.dwFileAttributes := FILE_ATTRIBUTE_DIRECTORY;
 			FileCounter := 1;
-			exit(0);
 		end else begin
 
 			Result := INVALID_HANDLE_VALUE; // Нельзя использовать exit
@@ -388,7 +387,14 @@ begin
 
 			if Length(CurrentListing) = 0 then
 			begin
-				Result := INVALID_HANDLE_VALUE; // Нельзя использовать exit
+				strpcopy(FindData.cFileName, '.'); //воркароунд бага с невозможностью входа в пустой каталог, см. http://www.ghisler.ch/board/viewtopic.php?t=42399
+				FindData.ftCreationTime.dwLowDateTime := 0;
+				FindData.ftCreationTime.dwHighDateTime := 0;
+				FindData.nFileSizeHigh := 0;
+				FindData.nFileSizeLow := 0;
+				FindData.dwFileAttributes := FILE_ATTRIBUTE_DIRECTORY;
+
+				Result := 0; // Нельзя использовать exit
 				SetLastError(ERROR_NO_MORE_FILES);
 
 			end else begin
