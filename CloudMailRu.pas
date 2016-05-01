@@ -4,7 +4,7 @@ interface
 
 uses
 	System.Classes, System.SysUtils, XSuperJson, XSuperObject, PLUGIN_Types,
-	MRC_helper,
+	MRC_helper, Winapi.Windows, PLUGIN_MAIN,
 	IdCookieManager, IdIOHandler, IdIOHandlerSocket, IdIOHandlerStack, IdSSL,
 	IdSSLOpenSSL, IdBaseComponent, IdComponent, IdTCPConnection, IdTCPClient,
 	IdHTTP, IdAuthentication, IdIOHandlerStream, IdMultipartFormData;
@@ -102,25 +102,34 @@ implementation
 
 constructor TCloudMailRu.Create(user, domain, password: WideString; ExternalProgressProc: TProgressProc; PluginNr: integer; ExternalLogProc: TLogProc);
 begin
-	self.SSL := TIdSSLIOHandlerSocketOpenSSL.Create();
-	self.Cookie := TIdCookieManager.Create();
-	self.HTTP := TIdHTTP.Create();
-	self.HTTP.CookieManager := Cookie;
-	self.HTTP.IOHandler := SSL;
-	self.HTTP.AllowCookies := true;
-	self.HTTP.HandleRedirects := true;
-	// self.HTTP.ConnectTimeout:=10;
-	self.HTTP.Request.UserAgent := 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.17 (KHTML, like Gecko) Chrome/24.0.1312.57 Safari/537.17';
+	try
+		self.SSL := TIdSSLIOHandlerSocketOpenSSL.Create();
+		self.Cookie := TIdCookieManager.Create();
+		self.HTTP := TIdHTTP.Create();
+		self.HTTP.CookieManager := Cookie;
+		self.HTTP.IOHandler := SSL;
+		self.HTTP.AllowCookies := true;
+		self.HTTP.HandleRedirects := true;
+		// self.HTTP.ConnectTimeout:=10;
+		self.HTTP.Request.UserAgent := 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.17 (KHTML, like Gecko) Chrome/24.0.1312.57 Safari/537.17';
 
-	self.user := user;
-	self.password := password;
-	self.domain := domain;
-	self.ExternalProgressProc := ExternalProgressProc;
-	self.ExternalLogProc := ExternalLogProc;
+		self.user := user;
+		self.password := password;
+		self.domain := domain;
+		self.ExternalProgressProc := ExternalProgressProc;
+		self.ExternalLogProc := ExternalLogProc;
 
-	self.ExternalPluginNr := PluginNr;
-	self.ExternalSourceName := '';
-	self.ExternalTargetName := '';
+		self.ExternalPluginNr := PluginNr;
+		self.ExternalSourceName := '';
+		self.ExternalTargetName := '';
+	except
+		on E: Exception do
+		begin
+			messagebox(FindTCWindow, PWideChar('Cloud initialization error ' + E.Message + ' at class ' + E.ClassName), 'Information', mb_ok + MB_ICONERROR);
+		end;
+
+	end;
+
 end;
 
 destructor TCloudMailRu.Destroy;
@@ -138,11 +147,19 @@ var
 	PostData: TStringStream;
 	PostAnswer: WideString; { Не используется }
 begin
+
 	self.ExternalLogProc(ExternalPluginNr, MSGTYPE_DETAILS, PWideChar('Login to ' + self.user + '@' + self.domain));
 	URL := 'http://auth.mail.ru/cgi-bin/auth?lang=ru_RU&from=authpopup';
-	PostData := TStringStream.Create('page=https://cloud.mail.ru/?from=promo&new_auth_form=1&Domain=' + self.domain + '&Login=' + self.user + '&Password=' + self.password + '&FailPage=', TEncoding.UTF8);
-	result := self.HTTPPost(URL, PostData, PostAnswer);
-	PostData.Destroy;
+	try
+		PostData := TStringStream.Create('page=https://cloud.mail.ru/?from=promo&new_auth_form=1&Domain=' + self.domain + '&Login=' + self.user + '&Password=' + self.password + '&FailPage=', TEncoding.UTF8);
+		result := self.HTTPPost(URL, PostData, PostAnswer);
+		PostData.Destroy;
+	except
+		on E: Exception do
+		begin
+			messagebox(FindTCWindow, PWideChar('Cloud login error ' + E.Message + ' at class ' + E.ClassName), 'Information', mb_ok + MB_ICONERROR);
+		end;
+	end;
 	if (result) then
 	begin
 		self.ExternalLogProc(ExternalPluginNr, MSGTYPE_DETAILS, PWideChar('Requesting auth token for ' + self.user + '@' + self.domain));

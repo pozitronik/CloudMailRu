@@ -3,19 +3,19 @@ library MailRuCloud;
 {$R *.dres}
 
 uses
-  SysUtils,
-  DateUtils,
-  windows,
-  Classes,
-  PLUGIN_TYPES,
-  PLUGIN_MAIN,
-  messages,
-  inifiles,
-  Vcl.controls,
-  CloudMailRu in 'CloudMailRu.pas',
-  MRC_Helper in 'MRC_Helper.pas',
-  Accounts in 'Accounts.pas' {AccountsForm},
-  AskPassword in 'AskPassword.pas' {AskPasswordForm};
+	SysUtils,
+	DateUtils,
+	windows,
+	Classes,
+	PLUGIN_TYPES,
+	PLUGIN_MAIN,
+	messages,
+	inifiles,
+	Vcl.controls,
+	CloudMailRu in 'CloudMailRu.pas',
+	MRC_Helper in 'MRC_Helper.pas',
+	Accounts in 'Accounts.pas' {AccountsForm} ,
+	AskPassword in 'AskPassword.pas' {AskPasswordForm};
 
 {$IFDEF WIN64}
 {$E wfx64}
@@ -44,7 +44,7 @@ var
 procedure FsGetDefRootName(DefRootName: PAnsiChar; maxlen: integer); stdcall; // Процедура вызывается один раз при установке плагина
 Begin
 	StrLCopy(DefRootName, PAnsiChar('CloudMailRu'), maxlen);
-	// messagebox(FindTCWindow, PWideChar('Installation succeful'), 'Information', mb_ok + mb_iconinformation);
+	messagebox(FindTCWindow, PWideChar('Installation succeful'), 'Information', mb_ok + mb_iconinformation);
 End;
 
 function FsFindClose(Hdl: thandle): integer; stdcall;
@@ -389,7 +389,7 @@ begin
 
 			if Length(CurrentListing) = 0 then
 			begin
-				setlasterror(ERROR_NO_MORE_FILES);
+				SetLastError(ERROR_NO_MORE_FILES);
 				exit(INVALID_HANDLE_VALUE);
 
 			end;
