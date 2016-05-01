@@ -53,6 +53,16 @@ begin
 	strpcopy(Result.cFileName, DirListing.name);
 end;
 
+function FindData_emptyDir(DirName: WideString = '.'): tWIN32FINDDATAW;
+begin
+	strpcopy(Result.cFileName, DirName);
+	Result.ftCreationTime.dwLowDateTime := 0;
+	Result.ftCreationTime.dwHighDateTime := 0;
+	Result.nFileSizeHigh := 0;
+	Result.nFileSizeLow := 0;
+	Result.dwFileAttributes := FILE_ATTRIBUTE_DIRECTORY;
+end;
+
 // Получает пароль из файла, из тоталовского менеджера или запрашивает прямой ввод
 function GetMyPasswordNow(var AccountSettings: TAccountSettings): boolean;
 var
@@ -349,15 +359,9 @@ begin
 
 		if (Sections.Count > 0) then
 		begin
-			strpcopy(FindData.cFileName, Sections.Strings[0]);
-			FindData.ftCreationTime.dwLowDateTime := 0;
-			FindData.ftCreationTime.dwHighDateTime := 0;
-			FindData.nFileSizeHigh := 0;
-			FindData.nFileSizeLow := 0;
-			FindData.dwFileAttributes := FILE_ATTRIBUTE_DIRECTORY;
+			FindData := FindData_emptyDir(Sections.Strings[0]);
 			FileCounter := 1;
 		end else begin
-
 			Result := INVALID_HANDLE_VALUE; // Нельзя использовать exit
 			SetLastError(ERROR_NO_MORE_FILES);
 		end;
@@ -399,16 +403,9 @@ begin
 
 			if Length(CurrentListing) = 0 then
 			begin
-				strpcopy(FindData.cFileName, '.'); // воркароунд бага с невозможностью входа в пустой каталог, см. http://www.ghisler.ch/board/viewtopic.php?t=42399
-				FindData.ftCreationTime.dwLowDateTime := 0;
-				FindData.ftCreationTime.dwHighDateTime := 0;
-				FindData.nFileSizeHigh := 0;
-				FindData.nFileSizeLow := 0;
-				FindData.dwFileAttributes := FILE_ATTRIBUTE_DIRECTORY;
-
+				FindData := FindData_emptyDir(); // воркароунд бага с невозможностью входа в пустой каталог, см. http://www.ghisler.ch/board/viewtopic.php?t=42399
 				Result := 0; // Нельзя использовать exit
 				SetLastError(ERROR_NO_MORE_FILES);
-
 			end else begin
 				FindData := CloudMailRuDirListingItemToFindData(CurrentListing[0]);
 				FileCounter := 1;
@@ -432,12 +429,7 @@ begin
 		GetAccountsListFromIniFile(IniFilePath, Sections);
 		if (Sections.Count > FileCounter) then
 		begin
-			strpcopy(FindData.cFileName, Sections.Strings[FileCounter]);
-			FindData.ftCreationTime.dwLowDateTime := 0;
-			FindData.ftCreationTime.dwHighDateTime := 0;
-			FindData.nFileSizeHigh := 0;
-			FindData.nFileSizeLow := 0;
-			FindData.dwFileAttributes := FILE_ATTRIBUTE_DIRECTORY;
+			FindData := FindData_emptyDir(Sections.Strings[FileCounter]);
 			inc(FileCounter);
 			Result := true;
 		end
