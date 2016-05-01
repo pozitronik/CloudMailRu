@@ -72,7 +72,9 @@ begin
 	Result := (Flags and Check) <> 0;
 end;
 
+
 function DateTimeToFileTime(FileTime: TDateTime): TFileTime;
+
 var
 	LocalFileTime, Ft: TFileTime;
 	SystemTime: TSystemTime;
@@ -133,6 +135,5 @@ begin
 	IniFile.EraseSection(AccountName);
 	IniFile.Destroy;
 end;
-
 
 end.

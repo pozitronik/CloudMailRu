@@ -48,8 +48,9 @@ begin
 	if (DirListing.size > MAXDWORD) then Result.nFileSizeHigh := DirListing.size div MAXDWORD
 	else Result.nFileSizeHigh := 0;
 	Result.nFileSizeLow := DirListing.size;
-	Result.ftCreationTime := DateTimeToFileTime(UnixToDateTime(DirListing.mtime)); // todo optimization
+	Result.ftCreationTime := DateTimeToFileTime(UnixToDateTime(DirListing.mtime));
 	Result.ftLastWriteTime := DateTimeToFileTime(UnixToDateTime(DirListing.mtime));
+
 	strpcopy(Result.cFileName, DirListing.name);
 end;
 
@@ -58,6 +59,8 @@ begin
 	strpcopy(Result.cFileName, DirName);
 	Result.ftCreationTime.dwLowDateTime := 0;
 	Result.ftCreationTime.dwHighDateTime := 0;
+	Result.ftLastWriteTime.dwHighDateTime := 0;
+	Result.ftLastWriteTime.dwLowDateTime := 0;
 	Result.nFileSizeHigh := 0;
 	Result.nFileSizeLow := 0;
 	Result.dwFileAttributes := FILE_ATTRIBUTE_DIRECTORY;
