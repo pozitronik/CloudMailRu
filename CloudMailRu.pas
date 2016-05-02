@@ -20,7 +20,7 @@ const
 	CLOUD_ERROR_FILE_EXISTS = 1;
 
 	{ Режимы работы при конфликтах копирования }
-	CLOUD_CONFLICT_STRICT = 'strict'; // возвращаем ошибку при существовании файла
+	CLOUD_CONFLICT_STRICT = 'strict'; // возвращаем ошибку при существовании файла { TODO : CLOUD_CONFLICT_IGNORE = 'ignore' }
 	CLOUD_CONFLICT_RENAME = 'rename'; // Переименуем новый файл
 	// CLOUD_CONFLICT_REPLACE = 'overwrite'; // хз, этот ключ не вскрыт
 
@@ -94,6 +94,7 @@ type
 		function deleteFile(path: WideString): boolean;
 		function createDir(path: WideString): boolean;
 		function removeDir(path: WideString): boolean;
+		function renameFile(OldName, NewName: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT): integer;
 
 	end;
 
@@ -445,7 +446,7 @@ begin
 		end else begin
 			// А вот теперь это критическая ошибка, тут уже не получится копировать
 			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Sorry, downloading impossible'));
-			result:=FS_FILE_NOTSUPPORTED;
+			Result := FS_FILE_NOTSUPPORTED;
 		end;
 	end;
 
@@ -463,10 +464,10 @@ begin
 		begin
 			if E.ClassName = 'EAbort' then
 			begin
-				result:=FS_FILE_USERABORT;
+				Result := FS_FILE_USERABORT;
 			end else begin
 				self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar(E.ClassName + ' ошибка с сообщением : ' + E.Message));
-				result:=FS_FILE_READERROR;
+				Result := FS_FILE_READERROR;
 			end;
 
 		end;
@@ -593,6 +594,34 @@ begin
 		end;
 	end;
 	PostData.Free;
+end;
+
+function TCloudMailRu.renameFile(OldName, NewName, ConflictMode: WideString): integer;
+var
+	URL: WideString;
+	PostData: TStringStream;
+	PostAnswer: WideString;
+	PostResult: boolean;
+begin
+	Result := CLOUD_OPERATION_OK;
+	OldName := self.UrlEncode(StringReplace(OldName, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
+	NewName := self.UrlEncode(StringReplace(NewName, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
+	URL := 'https://cloud.mail.ru/api/v2/file/rename';
+	try
+		PostData := TStringStream.Create('api=2&home=/' + OldName + '&name' + NewName + '/&token=' + self.token + '&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id + '&conflict', TEncoding.UTF8);
+		PostResult := self.HTTPPost(URL, PostData, PostAnswer);
+	except
+		on E: Exception do
+		begin
+			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Rename file error ' + E.Message));
+		end;
+	end;
+	PostData.Free;
+	if PostResult then
+	begin  //Парсим ответ
+
+	end;
+
 end;
 
 { PRIVATE STATIC METHODS (kinda) }

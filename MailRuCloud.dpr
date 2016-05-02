@@ -3,19 +3,19 @@ library MailRuCloud;
 {$R *.dres}
 
 uses
-  SysUtils,
-  DateUtils,
-  windows,
-  Classes,
-  PLUGIN_TYPES,
-  PLUGIN_MAIN,
-  messages,
-  inifiles,
-  Vcl.controls,
-  CloudMailRu in 'CloudMailRu.pas',
-  MRC_Helper in 'MRC_Helper.pas',
-  Accounts in 'Accounts.pas' {AccountsForm},
-  AskPassword in 'AskPassword.pas' {AskPasswordForm};
+	SysUtils,
+	DateUtils,
+	windows,
+	Classes,
+	PLUGIN_TYPES,
+	PLUGIN_MAIN,
+	messages,
+	inifiles,
+	Vcl.controls,
+	CloudMailRu in 'CloudMailRu.pas',
+	MRC_Helper in 'MRC_Helper.pas',
+	Accounts in 'Accounts.pas' {AccountsForm} ,
+	AskPassword in 'AskPassword.pas' {AskPasswordForm};
 
 {$IFDEF WIN64}
 {$E wfx64}
@@ -215,6 +215,12 @@ Begin
 	SetLastError(ERROR_INVALID_FUNCTION); // Ansi-заглушка
 	Result := false;
 End;
+
+function FsRenMovFile(OldName: PAnsiChar; NewName: PAnsiChar; Move: boolean; OverWrite: boolean; ri: pRemoteInfo): integer;
+begin
+	SetLastError(ERROR_INVALID_FUNCTION);
+	Result := FS_FILE_NOTSUPPORTED; // Ansi-заглушка
+end;
 
 function FsDisconnect(DisconnectRoot: PAnsiChar): bool; stdcall;
 begin
@@ -620,6 +626,18 @@ Begin
 	Result := Cloud.removeDir(RealPath.path);
 end;
 
+function FsRenMovFileW(OldName: PWideChar; NewName: PWideChar; Move: boolean; OverWrite: boolean; ri: pRemoteInfo): integer; stdcall;
+var
+	OldRealPath: TRealPath;
+	NewRealPath: TRealPath;
+Begin
+	OldRealPath := ExtractRealPath(WideString(OldName));
+	NewRealPath := ExtractRealPath(WideString(NewName));
+
+	Result := Cloud.renameFile(OldRealPath.path, NewRealPath.path);
+
+end;
+
 function FsDisconnectW(DisconnectRoot: PWideChar): bool; stdcall;
 begin
 	if Assigned(Cloud) then FreeAndNil(Cloud);
@@ -634,7 +652,7 @@ end;
 
 exports FsGetDefRootName, FsInit, FsInitW, FsFindFirst, FsFindFirstW, FsFindNext, FsFindNextW, FsFindClose, FsGetFile, FsGetFileW,
 	FsDisconnect, FsDisconnectW, FsStatusInfo, FsStatusInfoW, FsPutFile, FsPutFileW, FsDeleteFile, FsDeleteFileW, FsMkDir, FsMkDirW,
-	FsRemoveDir, FsRemoveDirW, FsSetCryptCallback, FsSetCryptCallbackW, FsExecuteFileW;
+	FsRemoveDir, FsRemoveDirW, FsSetCryptCallback, FsSetCryptCallbackW, FsExecuteFileW, FsRenMovFile, FsRenMovFileW;
 
 (* ,
 	FsExecuteFile,
