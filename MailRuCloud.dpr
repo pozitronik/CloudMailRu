@@ -117,7 +117,7 @@ begin
 		begin // не указали пароль в диалоге
 			exit(false); // отказались вводить пароль
 		end else begin
-			if AccountSettings.use_tc_password_manager then
+			if AccountSettings.use_tc_password_manager then { TODO : Ѕаг с неактивной формой запроса парол€ при открытии тотала по пути, требующему парол€ }
 			begin
 				case MyCryptProc(PluginNum, CryptoNum, FS_CRYPT_SAVE_PASSWORD, PWideChar(AccountSettings.name), PWideChar(AccountSettings.password), SizeOf(AccountSettings.password)) of
 					FS_FILE_OK:
