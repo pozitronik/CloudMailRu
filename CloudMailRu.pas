@@ -152,7 +152,7 @@ begin
 	try
 		PostData := TStringStream.Create('page=https://cloud.mail.ru/?from=promo&new_auth_form=1&Domain=' + self.domain + '&Login=' + self.user + '&Password=' + self.password + '&FailPage=', TEncoding.UTF8);
 		Result := self.HTTPPost(URL, PostData, PostAnswer);
-		if Assigned(PostData) then PostData.Destroy; //free or destroy is better
+		if Assigned(PostData) then PostData.Destroy; // free or destroy is better
 	except
 		on E: Exception do
 		begin
@@ -339,13 +339,20 @@ begin
 		self.HTTP.Post(URL, PostData, MemStream);
 		Answer := MemStream.DataString;
 	except
+		on E: EAbort do
+		begin
+			MemStream.Free;
+			exit(false);
+		end;
 		on E: EIdHTTPProtocolException do
 		begin
+			MemStream.Free;
 			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar(E.ClassName + ' ошибка с сообщением : ' + E.Message + ' при отправке данных на адрес ' + URL + ', ответ сервера: ' + E.ErrorMessage));
 			Result := false;
 		end;
 		on E: Exception do
 		begin
+			MemStream.Free;
 			exit(false);
 		end;
 	end;
@@ -484,8 +491,12 @@ begin
 	try
 		PutResult := TStringList.Create;
 		successPut := self.putFileToCloud(localPath, PutResult);
-		FileHash := PutResult.Strings[0];
-		Val(PutResult.Strings[1], FileSize, Code); // Тут ошибка маловероятна
+		if successPut then
+		begin
+			FileHash := PutResult.Strings[0];
+			Val(PutResult.Strings[1], FileSize, Code); // Тут ошибка маловероятна
+
+		end;
 		PutResult.Destroy;
 	Except
 		on E: Exception do
