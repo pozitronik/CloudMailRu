@@ -22,6 +22,8 @@ const
 	CLOUD_CONFLICT_RENAME = 'rename'; // Переименуем новый файл
 	// CLOUD_CONFLICT_REPLACE = 'overwrite'; // хз, этот ключ не вскрыт
 
+	CLOUD_MAX_FILESIZE = $80000000; // 2Gb
+
 type
 	TCloudMailRuDirListingItem = Record
 		tree: WideString;
@@ -352,6 +354,7 @@ begin
 		end;
 		on E: Exception do
 		begin
+			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar(E.ClassName + ' ошибка с сообщением : ' + E.Message + ' при отправке данных на адрес ' + URL + ', класс ошибки: ' + E.ClassName));
 			MemStream.Free;
 			exit(false);
 		end;
@@ -485,6 +488,7 @@ var
 	FileSize, Code, OperationStatus: integer;
 	successPut: boolean;
 begin
+	if (SizeOfFile(localPath) > CLOUD_MAX_FILESIZE) then exit(FS_FILE_NOTSUPPORTED);
 	if self.CancelCopy then exit(FS_FILE_USERABORT);
 	Result := FS_FILE_WRITEERROR;
 

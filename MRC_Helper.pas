@@ -18,6 +18,7 @@ type
 
 function Implode(S: TStringList; Delimiter: Char): WideString;
 function ExtractRealPath(VirtualPath: WideString): TRealPath;
+function SizeOfFile(const FileName: String): Int64;
 function DateTimeToUnix(ConvDate: TDateTime): Integer;
 function CheckFlag(Check: Byte; Flags: Integer): boolean; // Определяет, установлен ли указанный бит
 function DateTimeToFileTime(FileTime: TDateTime): TFileTime;
@@ -72,6 +73,19 @@ begin
 	Result := (Flags and Check) <> 0;
 end;
 
+function SizeOfFile(const FileName: String): Int64;
+var
+	fHandle: DWORD;
+begin
+	fHandle := CreateFile(PChar(fileName), 0, 0, nil, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+	if fHandle = INVALID_HANDLE_VALUE then Result := -1
+	else
+		try
+			Int64Rec(Result).Lo := GetFileSize(fHandle, @Int64Rec(Result).Hi);
+		finally
+			CloseHandle(fHandle);
+		end;
+end;
 
 function DateTimeToFileTime(FileTime: TDateTime): TFileTime;
 
