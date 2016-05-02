@@ -246,7 +246,7 @@ begin
 end;
 
 function TCloudMailRu.putFileToCloud(localPath: WideString; Return: TStringList): integer; { Заливка на сервер состоит из двух шагов: заливаем файл на сервер в putFileToCloud и добавляем его в облако addFileToCloud }
-var { TODO : Возвращать состояние отмены }
+var
 	URL, PostAnswer: WideString;
 	PostData: TIdMultipartFormDataStream;
 begin
