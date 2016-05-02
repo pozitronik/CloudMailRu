@@ -310,12 +310,10 @@ begin
 	except
 		on E: EAbort do
 		begin
-			MemStream.Free;
 			exit(false);
 		end;
 		on E: EIdHTTPProtocolException do
 		begin
-			MemStream.Free;
 			if self.HTTP.ResponseCode = 400 then
 			begin { сервер вернёт 400, но нужно пропарсить результат для дальнейшего определения действий }
 				Answer := E.ErrorMessage;
@@ -344,19 +342,16 @@ begin
 	except
 		on E: EAbort do
 		begin
-			// MemStream.Free;
 			Result := CLOUD_OPERATION_CANCELLED;
 		end;
 		on E: EIdHTTPProtocolException do
 		begin
-			// MemStream.Free;
 			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar(E.ClassName + ' ошибка с сообщением : ' + E.Message + ' при отправке данных на адрес ' + URL + ', ответ сервера: ' + E.ErrorMessage));
 			Result := CLOUD_OPERATION_FAILED;
 		end;
 		on E: Exception do
 		begin
 			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar(E.ClassName + ' ошибка с сообщением : ' + E.Message + ' при отправке данных на адрес ' + URL + ', класс ошибки: ' + E.ClassName));
-			// MemStream.Free;
 			Result := CLOUD_OPERATION_FAILED;
 		end;
 	end;
@@ -407,14 +402,13 @@ begin
 	Result := false;
 	path := self.UrlEncode(StringReplace(path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
 	URL := 'https://cloud.mail.ru/api/v2/file/remove';
-	PostData := TStringStream.Create('api=2&home=/' + path + '&token=' + self.token + '&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id + '&conflict', TEncoding.UTF8);
 	try
+		PostData := TStringStream.Create('api=2&home=/' + path + '&token=' + self.token + '&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id + '&conflict', TEncoding.UTF8);
 		Result := self.HTTPPost(URL, PostData, PostAnswer);
 	except
 		on E: Exception do
 		begin
 			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Delete file error ' + E.Message));
-			PostData.Free;
 		end;
 	end;
 	PostData.Free;
@@ -513,7 +507,7 @@ begin
 		Val(PutResult.Strings[1], FileSize, Code); // Тут ошибка маловероятна
 	end else if OperationResult = CLOUD_OPERATION_CANCELLED then
 	begin
-		Result:=FS_FILE_USERABORT;
+		Result := FS_FILE_USERABORT;
 	end;
 	PutResult.Free;
 
@@ -552,14 +546,13 @@ var
 begin
 	path := self.UrlEncode(StringReplace(path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
 	URL := 'https://cloud.mail.ru/api/v2/folder/add';
-	PostData := TStringStream.Create('api=2&home=/' + path + '&token=' + self.token + '&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id + '&conflict', TEncoding.UTF8);
 	try
+		PostData := TStringStream.Create('api=2&home=/' + path + '&token=' + self.token + '&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id + '&conflict', TEncoding.UTF8);
 		SucessCreate := self.HTTPPost(URL, PostData, PostAnswer);
 	except
 		on E: Exception do
 		begin
 			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Directory creation error ' + E.Message));
-			PostData.Free;
 		end;
 	end;
 	PostData.Free;
@@ -592,14 +585,13 @@ begin
 	Result := false;
 	path := self.UrlEncode(StringReplace(path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
 	URL := 'https://cloud.mail.ru/api/v2/file/remove';
-	PostData := TStringStream.Create('api=2&home=/' + path + '/&token=' + self.token + '&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id + '&conflict', TEncoding.UTF8);
 	try
+		PostData := TStringStream.Create('api=2&home=/' + path + '/&token=' + self.token + '&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id + '&conflict', TEncoding.UTF8);
 		Result := self.HTTPPost(URL, PostData, PostAnswer); // API всегда отвечает true, даже если путь не существует
 	except
 		on E: Exception do
 		begin
 			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Delete directory error ' + E.Message));
-			PostData.Free;
 		end;
 	end;
 	PostData.Free;
