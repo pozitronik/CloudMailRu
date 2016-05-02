@@ -330,7 +330,7 @@ function TCloudMailRu.HTTPPostFile(URL: WideString; PostData: TIdMultipartFormDa
 var
 	MemStream: TStringStream;
 begin
-	Result := CLOUD_OPERATION_FAILED;
+	Result := CLOUD_OPERATION_OK;
 
 	try
 		MemStream := TStringStream.Create;
