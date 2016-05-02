@@ -149,9 +149,10 @@ begin
 	Result := false;
 	self.ExternalLogProc(ExternalPluginNr, MSGTYPE_DETAILS, PWideChar('Login to ' + self.user + '@' + self.domain));
 	URL := 'http://auth.mail.ru/cgi-bin/auth?lang=ru_RU&from=authpopup';
-	PostData := TStringStream.Create('page=https://cloud.mail.ru/?from=promo&new_auth_form=1&Domain=' + self.domain + '&Login=' + self.user + '&Password=' + self.password + '&FailPage=', TEncoding.UTF8);
 	try
+		PostData := TStringStream.Create('page=https://cloud.mail.ru/?from=promo&new_auth_form=1&Domain=' + self.domain + '&Login=' + self.user + '&Password=' + self.password + '&FailPage=', TEncoding.UTF8);
 		Result := self.HTTPPost(URL, PostData, PostAnswer);
+		if Assigned(PostData) then PostData.Destroy; //free or destroy is better
 	except
 		on E: Exception do
 		begin
@@ -159,7 +160,7 @@ begin
 			if Assigned(PostData) then PostData.Destroy;
 		end;
 	end;
-	PostData.Destroy;
+
 	if (Result) then
 	begin
 		self.ExternalLogProc(ExternalPluginNr, MSGTYPE_DETAILS, PWideChar('Requesting auth token for ' + self.user + '@' + self.domain));
@@ -221,8 +222,8 @@ var
 begin
 	Result := false;
 	URL := 'https://cloud.mail.ru/api/v2/dispatcher/';
-	PostData := TStringStream.Create('api=2&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&token=' + self.token + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id, TEncoding.UTF8);
 	try
+		PostData := TStringStream.Create('api=2&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&token=' + self.token + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id, TEncoding.UTF8);
 		SuccessPost := self.HTTPPost(URL, PostData, Answer);
 	except
 		on E: Exception do
@@ -237,7 +238,7 @@ begin
 		if Shard = '' then Result := false
 		else Result := true;
 	end;
-	PostData.Destroy;
+	if Assigned(PostData) then PostData.Destroy;
 end;
 
 function TCloudMailRu.putFileToCloud(localPath: WideString; Return: TStringList): boolean; { Заливка на сервер состоит из двух шагов: заливаем файл на сервер в putFileToCloud и добавляем его в облако addFileToCloud }
@@ -247,10 +248,10 @@ var
 begin
 	Result := false;
 	URL := self.upload_url + '/?cloud_domain=1&x-email=' + self.user + '%40' + self.domain + '&fileapi' + IntToStr(DateTimeToUnix(now)) + '0246';
-	PostData := TIdMultipartFormDataStream.Create;
 	self.ExternalLogProc(ExternalPluginNr, MSGTYPE_DETAILS, PWideChar('Uploading to ' + URL));
-	PostData.AddFile('file', localPath, 'application/octet-stream');
 	try
+		PostData := TIdMultipartFormDataStream.Create;
+		PostData.AddFile('file', localPath, 'application/octet-stream');
 		Result := self.HTTPPostFile(URL, PostData, PostAnswer);
 	except
 		on E: Exception do
@@ -259,7 +260,7 @@ begin
 			if Assigned(PostData) then PostData.Destroy;
 		end;
 	end;
-	PostData.Destroy;
+	if Assigned(PostData) then PostData.Destroy;
 	if (Result) then
 	begin
 		ExtractStrings([';'], [], PWideChar(PostAnswer), Return);
@@ -277,9 +278,9 @@ var
 	PostData: TStringStream;
 begin
 	URL := 'https://cloud.mail.ru/api/v2/file/add';
-	PostData := TStringStream.Create('conflict=' + ConflictMode + '&home=/' + remotePath + '&hash=' + hash + '&size=' + IntToStr(size) + '&token=' + self.token + '&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id + '&conflict', TEncoding.UTF8);
-	{ Экспериментально выяснено, что параметры api, build, email, x-email, x-page-id в запросе не обязательны }
 	try
+		PostData := TStringStream.Create('conflict=' + ConflictMode + '&home=/' + remotePath + '&hash=' + hash + '&size=' + IntToStr(size) + '&token=' + self.token + '&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id + '&conflict', TEncoding.UTF8);
+		{ Экспериментально выяснено, что параметры api, build, email, x-email, x-page-id в запросе не обязательны }
 		Result := self.HTTPPost(URL, PostData, JSONAnswer);
 	except
 		on E: Exception do
@@ -288,7 +289,7 @@ begin
 			if Assigned(PostData) then PostData.Destroy;
 		end;
 	end;
-	PostData.Destroy;
+	if Assigned(PostData) then PostData.Destroy;
 
 end;
 
@@ -297,18 +298,21 @@ var
 	MemStream: TStringStream;
 begin
 	Result := true;
-	MemStream := TStringStream.Create;
+
 	try
 		if ContentType <> '' then self.HTTP.Request.ContentType := ContentType;
+		MemStream := TStringStream.Create;
 		self.HTTP.Post(URL, PostData, MemStream);
 		Answer := MemStream.DataString;
 	except
 		on E: EAbort do
 		begin
+			if Assigned(MemStream) then MemStream.Destroy;
 			exit(false);
 		end;
 		on E: EIdHTTPProtocolException do
 		begin
+			if Assigned(MemStream) then MemStream.Destroy;
 			if self.HTTP.ResponseCode = 400 then
 			begin { сервер вернёт 400, но нужно пропарсить результат для дальнейшего определения действий }
 				Answer := E.ErrorMessage;
@@ -318,8 +322,9 @@ begin
 				Result := false;
 			end;
 		end;
+
 	end;
-	MemStream.Free;
+	if Assigned(MemStream) then MemStream.Destroy;
 end;
 
 function TCloudMailRu.HTTPPostFile(URL: WideString; PostData: TIdMultipartFormDataStream; var Answer: WideString): boolean;
@@ -327,8 +332,9 @@ var
 	MemStream: TStringStream;
 begin
 	Result := true;
-	MemStream := TStringStream.Create;
+
 	try
+		MemStream := TStringStream.Create;
 		self.HTTP.OnWork := self.HttpProgress;
 		self.HTTP.Post(URL, PostData, MemStream);
 		Answer := MemStream.DataString;
@@ -343,7 +349,8 @@ begin
 			exit(false);
 		end;
 	end;
-	MemStream.Free;
+	MemStream.Free
+
 end;
 
 function TCloudMailRu.HTTPGet(URL: WideString; var Answer: WideString): boolean;
