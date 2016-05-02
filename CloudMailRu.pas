@@ -15,6 +15,8 @@ const
 	CLOUD_ERROR_UNKNOWN = -2;
 	CLOUD_OPERATION_ERROR_STATUS_UNKNOWN = -1;
 	CLOUD_OPERATION_OK = 0;
+	CLOUD_OPERATION_FAILED = 1;
+	CLOUD_OPERATION_CANCELLED = 5;
 	CLOUD_ERROR_FILE_EXISTS = 1;
 
 	{ Режимы работы при конфликтах копирования }
@@ -62,11 +64,11 @@ type
 
 		function getToken(): boolean;
 		function getShard(var Shard: WideString): boolean;
-		function putFileToCloud(localPath: WideString; Return: TStringList): boolean;
+		function putFileToCloud(localPath: WideString; Return: TStringList): integer;
 		function addFileToCloud(hash: WideString; size: integer; remotePath: WideString; var JSONAnswer: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT): boolean;
 		function HTTPPost(URL: WideString; PostData: TStringStream; var Answer: WideString; ContentType: WideString = 'application/x-www-form-urlencoded'): boolean; // Постинг данных с возможным получением ответа.
 
-		function HTTPPostFile(URL: WideString; PostData: TIdMultipartFormDataStream; var Answer: WideString): boolean; overload; // Постинг файла и получение ответа
+		function HTTPPostFile(URL: WideString; PostData: TIdMultipartFormDataStream; var Answer: WideString): integer; // Постинг файла и получение ответа
 		function HTTPGet(URL: WideString; var Answer: WideString): boolean;
 		function getTokenFromText(Text: WideString): WideString;
 		function get_x_page_id_FromText(Text: WideString): WideString;
@@ -243,12 +245,12 @@ begin
 	PostData.Free;
 end;
 
-function TCloudMailRu.putFileToCloud(localPath: WideString; Return: TStringList): boolean; { Заливка на сервер состоит из двух шагов: заливаем файл на сервер в putFileToCloud и добавляем его в облако addFileToCloud }
-var  { TODO : Возвращать состояние отмены }
+function TCloudMailRu.putFileToCloud(localPath: WideString; Return: TStringList): integer; { Заливка на сервер состоит из двух шагов: заливаем файл на сервер в putFileToCloud и добавляем его в облако addFileToCloud }
+var { TODO : Возвращать состояние отмены }
 	URL, PostAnswer: WideString;
 	PostData: TIdMultipartFormDataStream;
 begin
-	Result := false;
+	Result := CLOUD_OPERATION_FAILED;
 	URL := self.upload_url + '/?cloud_domain=1&x-email=' + self.user + '%40' + self.domain + '&fileapi' + IntToStr(DateTimeToUnix(now)) + '0246';
 	self.ExternalLogProc(ExternalPluginNr, MSGTYPE_DETAILS, PWideChar('Uploading to ' + URL));
 	try
@@ -263,14 +265,13 @@ begin
 		end;
 	end;
 	PostData.Free;
-	if (Result) then
+	if (Result = CLOUD_OPERATION_OK) then
 	begin
 		ExtractStrings([';'], [], PWideChar(PostAnswer), Return);
-		if Length(Return.Strings[0]) = 40 then
+		if Length(Return.Strings[0]) <> 40 then
 		begin
-			exit(true);
+			Result := CLOUD_OPERATION_FAILED;
 		end
-		else exit(false);
 	end;
 end;
 
@@ -329,11 +330,11 @@ begin
 	MemStream.Free;
 end;
 
-function TCloudMailRu.HTTPPostFile(URL: WideString; PostData: TIdMultipartFormDataStream; var Answer: WideString): boolean;
+function TCloudMailRu.HTTPPostFile(URL: WideString; PostData: TIdMultipartFormDataStream; var Answer: WideString): integer;
 var
 	MemStream: TStringStream;
 begin
-	Result := true;
+	Result := CLOUD_OPERATION_FAILED;
 
 	try
 		MemStream := TStringStream.Create;
@@ -343,20 +344,20 @@ begin
 	except
 		on E: EAbort do
 		begin
-			MemStream.Free;
-			exit(false);
+			// MemStream.Free;
+			Result := CLOUD_OPERATION_CANCELLED;
 		end;
 		on E: EIdHTTPProtocolException do
 		begin
-			MemStream.Free;
+			// MemStream.Free;
 			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar(E.ClassName + ' ошибка с сообщением : ' + E.Message + ' при отправке данных на адрес ' + URL + ', ответ сервера: ' + E.ErrorMessage));
-			Result := false;
+			Result := CLOUD_OPERATION_FAILED;
 		end;
 		on E: Exception do
 		begin
 			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar(E.ClassName + ' ошибка с сообщением : ' + E.Message + ' при отправке данных на адрес ' + URL + ', класс ошибки: ' + E.ClassName));
-			MemStream.Free;
-			exit(false);
+			// MemStream.Free;
+			Result := CLOUD_OPERATION_FAILED;
 		end;
 	end;
 	MemStream.Free
@@ -486,7 +487,7 @@ var
 	PutResult: TStringList;
 	JSONAnswer, FileHash: WideString;
 	FileSize, Code, OperationStatus: integer;
-	successPut: boolean;
+	OperationResult: integer;
 begin
 	if (SizeOfFile(localPath) > CLOUD_MAX_FILESIZE) then exit(FS_FILE_NOTSUPPORTED);
 	if self.CancelCopy then exit(FS_FILE_USERABORT);
@@ -494,14 +495,7 @@ begin
 
 	try
 		PutResult := TStringList.Create;
-		successPut := self.putFileToCloud(localPath, PutResult);
-		if successPut then
-		begin
-			FileHash := PutResult.Strings[0];
-			Val(PutResult.Strings[1], FileSize, Code); // Тут ошибка маловероятна
-
-		end;
-		PutResult.Free;
+		OperationResult := self.putFileToCloud(localPath, PutResult);
 	Except
 		on E: Exception do
 		begin
@@ -513,8 +507,17 @@ begin
 			end;
 		end;
 	end;
+	if OperationResult = CLOUD_OPERATION_OK then
+	begin
+		FileHash := PutResult.Strings[0];
+		Val(PutResult.Strings[1], FileSize, Code); // Тут ошибка маловероятна
+	end else if OperationResult = CLOUD_OPERATION_CANCELLED then
+	begin
+		Result:=FS_FILE_USERABORT;
+	end;
+	PutResult.Free;
 
-	if successPut then
+	if OperationResult = CLOUD_OPERATION_OK then
 	begin
 		self.ExternalLogProc(ExternalPluginNr, MSGTYPE_DETAILS, PWideChar('putFileToCloud result: ' + PutResult.Text));
 		if self.addFileToCloud(FileHash, FileSize, self.UrlEncode(StringReplace(remotePath, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase])), JSONAnswer) then
