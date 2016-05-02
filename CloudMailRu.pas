@@ -156,15 +156,14 @@ begin
 	try
 		PostData := TStringStream.Create('page=https://cloud.mail.ru/?from=promo&new_auth_form=1&Domain=' + self.domain + '&Login=' + self.user + '&Password=' + self.password + '&FailPage=', TEncoding.UTF8);
 		Result := self.HTTPPost(URL, PostData, PostAnswer);
-		PostData.Free;
+
 	except
 		on E: Exception do
 		begin
 			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Cloud login error ' + E.Message));
-			PostData.Free;
 		end;
 	end;
-
+	PostData.Free;
 	if (Result) then
 	begin
 		self.ExternalLogProc(ExternalPluginNr, MSGTYPE_DETAILS, PWideChar('Requesting auth token for ' + self.user + '@' + self.domain));
@@ -261,7 +260,6 @@ begin
 		on E: Exception do
 		begin
 			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Posting file error ' + E.Message));
-			PostData.Free;
 		end;
 	end;
 	PostData.Free;
@@ -447,7 +445,7 @@ begin
 		end else begin
 			// А вот теперь это критическая ошибка, тут уже не получится копировать
 			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Sorry, downloading impossible'));
-			exit(FS_FILE_NOTSUPPORTED);
+			result:=FS_FILE_NOTSUPPORTED;
 		end;
 	end;
 
@@ -465,10 +463,10 @@ begin
 		begin
 			if E.ClassName = 'EAbort' then
 			begin
-				exit(FS_FILE_USERABORT);
+				result:=FS_FILE_USERABORT;
 			end else begin
 				self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar(E.ClassName + ' ошибка с сообщением : ' + E.Message));
-				exit(FS_FILE_READERROR);
+				result:=FS_FILE_READERROR;
 			end;
 
 		end;
