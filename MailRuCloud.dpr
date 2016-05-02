@@ -3,19 +3,19 @@ library MailRuCloud;
 {$R *.dres}
 
 uses
-	SysUtils,
-	DateUtils,
-	windows,
-	Classes,
-	PLUGIN_TYPES,
-	PLUGIN_MAIN,
-	messages,
-	inifiles,
-	Vcl.controls,
-	CloudMailRu in 'CloudMailRu.pas',
-	MRC_Helper in 'MRC_Helper.pas',
-	Accounts in 'Accounts.pas' {AccountsForm} ,
-	AskPassword in 'AskPassword.pas' {AskPasswordForm};
+  SysUtils,
+  DateUtils,
+  windows,
+  Classes,
+  PLUGIN_TYPES,
+  PLUGIN_MAIN,
+  messages,
+  inifiles,
+  Vcl.controls,
+  CloudMailRu in 'CloudMailRu.pas',
+  MRC_Helper in 'MRC_Helper.pas',
+  Accounts in 'Accounts.pas' {AccountsForm},
+  AskPassword in 'AskPassword.pas' {AskPasswordForm};
 
 {$IFDEF WIN64}
 {$E wfx64}
