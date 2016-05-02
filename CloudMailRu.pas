@@ -152,12 +152,12 @@ begin
 	try
 		PostData := TStringStream.Create('page=https://cloud.mail.ru/?from=promo&new_auth_form=1&Domain=' + self.domain + '&Login=' + self.user + '&Password=' + self.password + '&FailPage=', TEncoding.UTF8);
 		Result := self.HTTPPost(URL, PostData, PostAnswer);
-		if Assigned(PostData) then PostData.Destroy; // free or destroy is better
+		PostData.Free;
 	except
 		on E: Exception do
 		begin
 			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Cloud login error ' + E.Message));
-			if Assigned(PostData) then PostData.Destroy;
+			PostData.Free;
 		end;
 	end;
 
@@ -229,7 +229,7 @@ begin
 		on E: Exception do
 		begin
 			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Get shard error ' + E.Message));
-			if Assigned(PostData) then PostData.Destroy;
+			PostData.Free;
 		end;
 	end;
 	if SuccessPost then
@@ -238,7 +238,7 @@ begin
 		if Shard = '' then Result := false
 		else Result := true;
 	end;
-	if Assigned(PostData) then PostData.Destroy;
+	PostData.Free;
 end;
 
 function TCloudMailRu.putFileToCloud(localPath: WideString; Return: TStringList): boolean; { Заливка на сервер состоит из двух шагов: заливаем файл на сервер в putFileToCloud и добавляем его в облако addFileToCloud }
@@ -257,10 +257,10 @@ begin
 		on E: Exception do
 		begin
 			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Posting file error ' + E.Message));
-			if Assigned(PostData) then PostData.Destroy;
+			PostData.Free;
 		end;
 	end;
-	if Assigned(PostData) then PostData.Destroy;
+	PostData.Free;
 	if (Result) then
 	begin
 		ExtractStrings([';'], [], PWideChar(PostAnswer), Return);
@@ -286,10 +286,10 @@ begin
 		on E: Exception do
 		begin
 			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Adding file error ' + E.Message));
-			if Assigned(PostData) then PostData.Destroy;
+			PostData.Free;
 		end;
 	end;
-	if Assigned(PostData) then PostData.Destroy;
+	PostData.Free;
 
 end;
 
@@ -307,12 +307,12 @@ begin
 	except
 		on E: EAbort do
 		begin
-			if Assigned(MemStream) then MemStream.Destroy;
+			MemStream.Free;
 			exit(false);
 		end;
 		on E: EIdHTTPProtocolException do
 		begin
-			if Assigned(MemStream) then MemStream.Destroy;
+			MemStream.Free;
 			if self.HTTP.ResponseCode = 400 then
 			begin { сервер вернёт 400, но нужно пропарсить результат для дальнейшего определения действий }
 				Answer := E.ErrorMessage;
@@ -324,7 +324,7 @@ begin
 		end;
 
 	end;
-	if Assigned(MemStream) then MemStream.Destroy;
+	MemStream.Free;
 end;
 
 function TCloudMailRu.HTTPPostFile(URL: WideString; PostData: TIdMultipartFormDataStream; var Answer: WideString): boolean;
@@ -410,10 +410,10 @@ begin
 		on E: Exception do
 		begin
 			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Delete file error ' + E.Message));
-			if Assigned(PostData) then PostData.Destroy;
+			PostData.Free;
 		end;
 	end;
-	PostData.Destroy;
+	PostData.Free;
 end;
 
 function TCloudMailRu.getDir(path: WideString; var DirListing: TCloudMailRuDirListing): boolean;
@@ -497,7 +497,7 @@ begin
 			Val(PutResult.Strings[1], FileSize, Code); // Тут ошибка маловероятна
 
 		end;
-		PutResult.Destroy;
+		PutResult.Free;
 	Except
 		on E: Exception do
 		begin
@@ -552,10 +552,10 @@ begin
 		on E: Exception do
 		begin
 			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Directory creation error ' + E.Message));
-			if Assigned(PostData) then PostData.Destroy;
+			PostData.Free;
 		end;
 	end;
-	PostData.Destroy;
+	PostData.Free;
 	if SucessCreate then
 	begin
 		case self.getOperationResultFromJSON(PostAnswer, OperationStatus) of
@@ -592,10 +592,10 @@ begin
 		on E: Exception do
 		begin
 			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Delete directory error ' + E.Message));
-			if Assigned(PostData) then PostData.Destroy;
+			PostData.Free;
 		end;
 	end;
-	PostData.Destroy;
+	PostData.Free;
 end;
 
 { PRIVATE STATIC METHODS (kinda) }
