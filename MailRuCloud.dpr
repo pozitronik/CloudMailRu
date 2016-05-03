@@ -633,8 +633,17 @@ var
 Begin
 	OldRealPath := ExtractRealPath(WideString(OldName));
 	NewRealPath := ExtractRealPath(WideString(NewName));
-
-	Result := Cloud.renameFile(OldRealPath.path, NewRealPath.path);
+	if OverWrite then //непонятно, но TC не показывает диалог перезаписи при FS_FILE_EXISTS
+	begin
+		if Cloud.deleteFile(OldRealPath.path) then // мы не умеем перезаписывать, но мы можем удалить прежний файл
+		begin
+			Result := Cloud.renameFile(OldRealPath.path, NewRealPath.path);
+		end else begin
+			Result := FS_FILE_NOTSUPPORTED;
+		end;
+	end else begin
+		Result := Cloud.renameFile(OldRealPath.path, NewRealPath.path);
+	end;
 
 end;
 

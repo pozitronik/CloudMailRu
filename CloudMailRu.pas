@@ -1,5 +1,26 @@
 ﻿unit CloudMailRu;
 
+(*
+	var MAX_NAME_LENGTH = 255;
+
+	var errors = {
+	exists: 'Папка с таким названием уже существует. Попробуйте другое название'
+	, required: 'Название папки не может быть пустым'
+	, invalid: '&laquo;' + app.escapeHTML(name) + '&raquo; это неправильное название папки. В названии папок нельзя использовать символы «" * / : < > ?  \\ |»'
+	, readonly: 'Невозможно создать. Доступ только для просмотра'
+	, read_only: 'Невозможно создать. Доступ только для просмотра'
+	, name_length_exceeded: 'Ошибка: Превышена длина имени папки. <a href="https://help.mail.ru/cloud_web/confines" target="_blank">Подробнее…</a>'
+	, unknown: 'Ошибка на сервере'
+	};
+
+	var errors = {
+	exists: 'Элемент с таким названием уже существует. Попробуйте другое название'
+	, required: 'Название нужно таки указать'
+	, invalid: 'Недопустимое имя файла или папки. В названии нельзя использовать символы «" * / : < > ?  \ |»'
+	, unknown: 'Не удалось переместить'
+	, "read_only": 'Невозможно переместить. Доступ только для просмотра'
+	};
+*)
 interface
 
 uses
@@ -12,12 +33,17 @@ const
 	TYPE_DIR = 'folder';
 	TYPE_FILE = 'file';
 	{ Константы для обозначения ошибок, возвращаемых при парсинге ответов облака. Дополняем по мере обнаружения }
-	CLOUD_ERROR_UNKNOWN = -2;
+	CLOUD_ERROR_UNKNOWN = -2; // unknown: 'Ошибка на сервере'
 	CLOUD_OPERATION_ERROR_STATUS_UNKNOWN = -1;
 	CLOUD_OPERATION_OK = 0;
 	CLOUD_OPERATION_FAILED = 1;
 	CLOUD_OPERATION_CANCELLED = 5;
-	CLOUD_ERROR_FILE_EXISTS = 1;
+
+	CLOUD_ERROR_EXISTS = 1; // exists: 'Папка с таким названием уже существует. Попробуйте другое название'
+	CLOUD_ERROR_REQUIRED = 2; // required: 'Название папки не может быть пустым'
+	CLOUD_ERROR_INVALID = 3; // invalid: '&laquo;' + app.escapeHTML(name) + '&raquo; это неправильное название папки. В названии папок нельзя использовать символы «" * / : < > ?  \\ |»'
+	CLOUD_ERROR_READONLY = 4; // readonly|read_only: 'Невозможно создать. Доступ только для просмотра'
+	CLOUD_ERROR_NAME_LENGTH_EXCEEDED = 5; // name_length_exceeded: 'Ошибка: Превышена длина имени папки. <a href="https://help.mail.ru/cloud_web/confines" target="_blank">Подробнее…</a>'
 
 	{ Режимы работы при конфликтах копирования }
 	CLOUD_CONFLICT_STRICT = 'strict'; // возвращаем ошибку при существовании файла { TODO : CLOUD_CONFLICT_IGNORE = 'ignore' }
@@ -94,7 +120,7 @@ type
 		function deleteFile(path: WideString): boolean;
 		function createDir(path: WideString): boolean;
 		function removeDir(path: WideString): boolean;
-		function renameFile(OldName, NewName: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT): integer;
+		function renameFile(OldName, NewName: WideString): integer;
 
 	end;
 
@@ -516,12 +542,12 @@ begin
 		if self.addFileToCloud(FileHash, FileSize, self.UrlEncode(StringReplace(remotePath, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase])), JSONAnswer) then
 		begin
 			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_DETAILS, PWideChar(JSONAnswer));
-			case self.getOperationResultFromJSON(JSONAnswer, OperationStatus) of
+			case self.getOperationResultFromJSON(JSONAnswer, OperationStatus) of { TODO : Обработка всех типов ошибок }
 				CLOUD_OPERATION_OK:
 					begin
 						Result := FS_FILE_OK;
 					end;
-				CLOUD_ERROR_FILE_EXISTS:
+				CLOUD_ERROR_EXISTS:
 					begin
 						Result := FS_FILE_EXISTS;
 					end;
@@ -557,12 +583,12 @@ begin
 	PostData.Free;
 	if SucessCreate then
 	begin
-		case self.getOperationResultFromJSON(PostAnswer, OperationStatus) of
+		case self.getOperationResultFromJSON(PostAnswer, OperationStatus) of { TODO : Обработка всех типов ошибок }
 			CLOUD_OPERATION_OK:
 				begin
 					Result := true;
 				end;
-			CLOUD_ERROR_FILE_EXISTS:
+			CLOUD_ERROR_EXISTS:
 				begin
 					Result := false;
 				end;
@@ -596,19 +622,20 @@ begin
 	PostData.Free;
 end;
 
-function TCloudMailRu.renameFile(OldName, NewName, ConflictMode: WideString): integer;
+function TCloudMailRu.renameFile(OldName, NewName:WideString): integer;
 var
 	URL: WideString;
 	PostData: TStringStream;
 	PostAnswer: WideString;
 	PostResult: boolean;
+	OperationStatus: integer;
 begin
 	Result := CLOUD_OPERATION_OK;
 	OldName := self.UrlEncode(StringReplace(OldName, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
 	NewName := self.UrlEncode(StringReplace(NewName, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
 	URL := 'https://cloud.mail.ru/api/v2/file/rename';
 	try
-		PostData := TStringStream.Create('api=2&home=/' + OldName + '&name' + NewName + '/&token=' + self.token + '&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id + '&conflict', TEncoding.UTF8);
+		PostData := TStringStream.Create('api=2&home=' + OldName + '&name=' + NewName + '&token=' + self.token + '&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id, TEncoding.UTF8);
 		PostResult := self.HTTPPost(URL, PostData, PostAnswer);
 	except
 		on E: Exception do
@@ -618,8 +645,38 @@ begin
 	end;
 	PostData.Free;
 	if PostResult then
-	begin  //Парсим ответ
-
+	begin // Парсим ответ
+		case self.getOperationResultFromJSON(PostAnswer, OperationStatus) of
+			CLOUD_OPERATION_OK:
+				begin
+					Result := CLOUD_OPERATION_OK
+				end;
+			CLOUD_ERROR_EXISTS:
+				begin
+					Result := FS_FILE_EXISTS;
+				end;
+			CLOUD_ERROR_REQUIRED:
+				begin
+					Result := FS_FILE_WRITEERROR;
+				end;
+			CLOUD_ERROR_INVALID:
+				begin
+					Result := FS_FILE_WRITEERROR;
+				end;
+			CLOUD_ERROR_READONLY:
+				begin
+					Result := FS_FILE_WRITEERROR;
+				end;
+			CLOUD_ERROR_NAME_LENGTH_EXCEEDED:
+				begin
+					Result := FS_FILE_WRITEERROR;
+				end;
+			CLOUD_ERROR_UNKNOWN:
+				begin
+					Result := FS_FILE_NOTSUPPORTED;
+				end;
+		end;
+//		self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Error creating directory: got ' + IntToStr(OperationStatus) + ' status'));
 	end;
 
 end;
@@ -749,8 +806,13 @@ begin
 	if OperationStatus <> 200 then
 	begin
 		Error := X.O['body'].O['home'].S['error'];
-		if Error = 'exists' then exit(CLOUD_ERROR_FILE_EXISTS)
-		else exit(CLOUD_ERROR_UNKNOWN); // Эту ошибку мы пока не встречали
+		if Error = 'exists' then exit(CLOUD_ERROR_EXISTS);
+		if Error = 'required' then exit(CLOUD_ERROR_REQUIRED);
+		if Error = 'readonly' then exit(CLOUD_ERROR_READONLY);
+		if Error = 'read_only' then exit(CLOUD_ERROR_READONLY);
+		if Error = 'name_length_exceeded' then exit(CLOUD_ERROR_NAME_LENGTH_EXCEEDED);
+		if Error = 'unknown' then exit(CLOUD_ERROR_UNKNOWN);
+		exit(CLOUD_ERROR_UNKNOWN); // Эту ошибку мы пока не встречали
 	end;
 	Result := CLOUD_OPERATION_OK;
 
