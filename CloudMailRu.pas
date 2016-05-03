@@ -523,17 +523,37 @@ begin
 		if self.addFileToCloud(FileHash, FileSize, self.UrlEncode(StringReplace(remotePath, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase])), JSONAnswer) then
 		begin
 			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_DETAILS, PWideChar(JSONAnswer));
-			case self.getOperationResultFromJSON(JSONAnswer, OperationStatus) of { TODO : Обработка всех типов ошибок }
+			case self.getOperationResultFromJSON(JSONAnswer, OperationStatus) of
 				CLOUD_OPERATION_OK:
 					begin
-						Result := FS_FILE_OK;
+						Result := CLOUD_OPERATION_OK
 					end;
 				CLOUD_ERROR_EXISTS:
 					begin
 						Result := FS_FILE_EXISTS;
 					end;
+				CLOUD_ERROR_REQUIRED:
+					begin
+						Result := FS_FILE_WRITEERROR;
+					end;
+				CLOUD_ERROR_INVALID:
+					begin
+						Result := FS_FILE_WRITEERROR;
+					end;
+				CLOUD_ERROR_READONLY:
+					begin
+						Result := FS_FILE_WRITEERROR;
+					end;
+				CLOUD_ERROR_NAME_LENGTH_EXCEEDED:
+					begin
+						Result := FS_FILE_WRITEERROR;
+					end;
+				CLOUD_ERROR_UNKNOWN:
+					begin
+						Result := FS_FILE_NOTSUPPORTED;
+					end;
 			else
-				begin
+				begin // что-то неизвестное
 					self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Error uploading to cloud: got ' + IntToStr(OperationStatus) + ' status'));
 					Result := FS_FILE_WRITEERROR;
 				end;
@@ -570,6 +590,26 @@ begin
 					Result := true;
 				end;
 			CLOUD_ERROR_EXISTS:
+				begin
+					Result := false;
+				end;
+			CLOUD_ERROR_REQUIRED:
+				begin
+					Result := false;
+				end;
+			CLOUD_ERROR_INVALID:
+				begin
+					Result := false;
+				end;
+			CLOUD_ERROR_READONLY:
+				begin
+					Result := false;
+				end;
+			CLOUD_ERROR_NAME_LENGTH_EXCEEDED:
+				begin
+					Result := false;
+				end;
+			CLOUD_ERROR_UNKNOWN:
 				begin
 					Result := false;
 				end;
@@ -656,8 +696,13 @@ begin
 				begin
 					Result := FS_FILE_NOTSUPPORTED;
 				end;
+		else
+			begin // что-то неизвестное
+				self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Error file rename: got ' + IntToStr(OperationStatus) + ' status'));
+				Result := FS_FILE_WRITEERROR;
+			end;
+
 		end;
-		// self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Error creating directory: got ' + IntToStr(OperationStatus) + ' status'));
 	end;
 end;
 
@@ -714,8 +759,12 @@ begin
 				begin
 					Result := FS_FILE_NOTSUPPORTED;
 				end;
+		else
+			begin // что-то неизвестное
+				self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Error file move: got ' + IntToStr(OperationStatus) + ' status'));
+				Result := FS_FILE_WRITEERROR;
+			end;
 		end;
-		// self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Error creating directory: got ' + IntToStr(OperationStatus) + ' status'));
 	end;
 end;
 
