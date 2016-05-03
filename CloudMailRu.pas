@@ -1,26 +1,5 @@
 ﻿unit CloudMailRu;
 
-(*
-	var MAX_NAME_LENGTH = 255;
-
-	var errors = {
-	exists: 'Папка с таким названием уже существует. Попробуйте другое название'
-	, required: 'Название папки не может быть пустым'
-	, invalid: '&laquo;' + app.escapeHTML(name) + '&raquo; это неправильное название папки. В названии папок нельзя использовать символы «" * / : < > ?  \\ |»'
-	, readonly: 'Невозможно создать. Доступ только для просмотра'
-	, read_only: 'Невозможно создать. Доступ только для просмотра'
-	, name_length_exceeded: 'Ошибка: Превышена длина имени папки. <a href="https://help.mail.ru/cloud_web/confines" target="_blank">Подробнее…</a>'
-	, unknown: 'Ошибка на сервере'
-	};
-
-	var errors = {
-	exists: 'Элемент с таким названием уже существует. Попробуйте другое название'
-	, required: 'Название нужно таки указать'
-	, invalid: 'Недопустимое имя файла или папки. В названии нельзя использовать символы «" * / : < > ?  \ |»'
-	, unknown: 'Не удалось переместить'
-	, "read_only": 'Невозможно переместить. Доступ только для просмотра'
-	};
-*)
 interface
 
 uses
@@ -51,6 +30,7 @@ const
 	// CLOUD_CONFLICT_REPLACE = 'overwrite'; // хз, этот ключ не вскрыт
 
 	CLOUD_MAX_FILESIZE = $80000000; // 2Gb
+	CLOUD_MAX_NAME_LENGTH = 255;
 
 type
 	TCloudMailRuDirListingItem = Record
@@ -120,8 +100,9 @@ type
 		function deleteFile(path: WideString): boolean;
 		function createDir(path: WideString): boolean;
 		function removeDir(path: WideString): boolean;
-		function renameFile(OldName, NewName: WideString): integer;
-
+		function renameFile(OldName, NewName: WideString): integer; // смена имени без перемещения
+		function moveFile(OldName, ToPath: WideString): integer; // перемещение по дереву каталогов
+		function mvFile(OldName, NewName: WideString): integer; // объединяющая функция, определяет делать rename или move
 	end;
 
 implementation
@@ -622,7 +603,7 @@ begin
 	PostData.Free;
 end;
 
-function TCloudMailRu.renameFile(OldName, NewName:WideString): integer;
+function TCloudMailRu.renameFile(OldName, NewName: WideString): integer;
 var
 	URL: WideString;
 	PostData: TStringStream;
@@ -676,7 +657,75 @@ begin
 					Result := FS_FILE_NOTSUPPORTED;
 				end;
 		end;
-//		self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Error creating directory: got ' + IntToStr(OperationStatus) + ' status'));
+		// self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Error creating directory: got ' + IntToStr(OperationStatus) + ' status'));
+	end;
+end;
+
+function TCloudMailRu.moveFile(OldName, ToPath: WideString): integer;
+var
+	URL: WideString;
+	PostData: TStringStream;
+	PostAnswer: WideString;
+	PostResult: boolean;
+	OperationStatus: integer;
+begin
+	Result := CLOUD_OPERATION_OK;
+	OldName := self.UrlEncode(StringReplace(OldName, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
+	ToPath := self.UrlEncode(StringReplace(ToPath, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
+	URL := 'https://cloud.mail.ru/api/v2/file/move';
+	try
+		PostData := TStringStream.Create('api=2&home=' + OldName + '&folder=' + ToPath + '&token=' + self.token + '&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id + '&conflict', TEncoding.UTF8);
+		PostResult := self.HTTPPost(URL, PostData, PostAnswer);
+	except
+		on E: Exception do
+		begin
+			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Rename file error ' + E.Message));
+		end;
+	end;
+	PostData.Free;
+	if PostResult then
+	begin // Парсим ответ
+		case self.getOperationResultFromJSON(PostAnswer, OperationStatus) of
+			CLOUD_OPERATION_OK:
+				begin
+					Result := CLOUD_OPERATION_OK
+				end;
+			CLOUD_ERROR_EXISTS:
+				begin
+					Result := FS_FILE_EXISTS;
+				end;
+			CLOUD_ERROR_REQUIRED:
+				begin
+					Result := FS_FILE_WRITEERROR;
+				end;
+			CLOUD_ERROR_INVALID:
+				begin
+					Result := FS_FILE_WRITEERROR;
+				end;
+			CLOUD_ERROR_READONLY:
+				begin
+					Result := FS_FILE_WRITEERROR;
+				end;
+			CLOUD_ERROR_NAME_LENGTH_EXCEEDED:
+				begin
+					Result := FS_FILE_WRITEERROR;
+				end;
+			CLOUD_ERROR_UNKNOWN:
+				begin
+					Result := FS_FILE_NOTSUPPORTED;
+				end;
+		end;
+		// self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Error creating directory: got ' + IntToStr(OperationStatus) + ' status'));
+	end;
+end;
+
+function TCloudMailRu.mvFile(OldName, NewName: WideString): integer;
+begin
+	if ExtractFilePath(OldName) = ExtractFilePath(NewName) then
+	begin // один каталог
+		Result := self.renameFile(OldName, NewName);
+	end else begin
+		Result := self.moveFile(OldName, ExtractFilePath(NewName));
 	end;
 
 end;
