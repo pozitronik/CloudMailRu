@@ -526,7 +526,7 @@ begin
 			case self.getOperationResultFromJSON(JSONAnswer, OperationStatus) of
 				CLOUD_OPERATION_OK:
 					begin
-						Result := CLOUD_OPERATION_OK
+						Result := FS_FILE_OK;
 					end;
 				CLOUD_ERROR_EXISTS:
 					begin
@@ -584,7 +584,7 @@ begin
 	PostData.Free;
 	if SucessCreate then
 	begin
-		case self.getOperationResultFromJSON(PostAnswer, OperationStatus) of { TODO : Обработка всех типов ошибок }
+		case self.getOperationResultFromJSON(PostAnswer, OperationStatus) of
 			CLOUD_OPERATION_OK:
 				begin
 					Result := true;
