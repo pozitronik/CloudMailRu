@@ -12,6 +12,7 @@ uses
 	messages,
 	inifiles,
 	Vcl.controls,
+	AnsiStrings,
 	CloudMailRu in 'CloudMailRu.pas',
 	MRC_Helper in 'MRC_Helper.pas',
 	Accounts in 'Accounts.pas' {AccountsForm} ,
@@ -96,7 +97,7 @@ begin
 		if CryptResult = FS_FILE_OK then // Успешно получили пароль
 		begin
 			AccountSettings.password := buf;
-			Result := true;
+			//Result := true;
 		end;
 		if CryptResult = FS_FILE_NOTSUPPORTED then // пользователь отменил ввод главного пароля
 		begin
@@ -107,9 +108,8 @@ begin
 			MyLogProc(PluginNum, msgtype_importanterror, PWideChar('CryptProc returns error: Password not found in password store'));
 		end;
 		FreeMemory(buf);
-	end else begin
-		// ничего не делаем, пароль уже должен быть в настройках (взят в открытом виде из инишника)
-	end;
+	end; // else // ничего не делаем, пароль уже должен быть в настройках (взят в открытом виде из инишника)
+
 	if AccountSettings.password = '' then // но пароля нет, не в инишнике, не в тотале
 	begin
 		AskResult := TAskPasswordForm.AskPassword(FindTCWindow, AccountSettings.name, AccountSettings.password, AccountSettings.use_tc_password_manager);
@@ -143,16 +143,14 @@ begin
 					// Ошибки здесь не значат, что пароль мы не получили - он может быть введён в диалоге
 				end;
 			end;
-			exit(true);
+			Result := true;
 		end;
-
-	end // пароль из инишника напрямую
-	else exit(true);
+	end else result:=true; //пароль взят из инишника напрямую
 end;
 
 procedure FsGetDefRootName(DefRootName: PAnsiChar; maxlen: integer); stdcall; // Процедура вызывается один раз при установке плагина
 Begin
-	StrLCopy(DefRootName, PAnsiChar('CloudMailRu'), maxlen);
+	AnsiStrings.StrLCopy(DefRootName, PAnsiChar('CloudMailRu'), maxlen);
 	messagebox(FindTCWindow, PWideChar('Installation succeful'), 'Information', mb_ok + mb_iconinformation);
 End;
 
@@ -360,14 +358,12 @@ begin
 end;
 
 function FsFindFirstW(path: PWideChar; var FindData: tWIN32FINDDATAW): thandle; stdcall;
-var
+var // Получение первого файла в папке. Result тоталом не используется (можно использовать для работы плагина).
 	Sections: TStringList;
 	RealPath: TRealPath;
-	CryptResult: integer;
 	AccountSettings: TAccountSettings;
 begin
-	// Получение первого файла в папке. Result тоталом не используется (можно использовать для работы плагина).
-	// setlasterror(ERROR_NO_MORE_FILES);
+	Result := 0;
 	GlobalPath := path;
 	if GlobalPath = '\' then
 	begin // список соединений
@@ -407,8 +403,9 @@ begin
 			end else begin
 				CurrentLogon := false;
 				FreeAndNil(Cloud);
-				Result := INVALID_HANDLE_VALUE; // Нельзя использовать exit
 				SetLastError(ERROR_NO_MORE_FILES);
+				exit(INVALID_HANDLE_VALUE);
+
 			end;
 
 		end;
@@ -423,7 +420,7 @@ begin
 			if Length(CurrentListing) = 0 then
 			begin
 				FindData := FindData_emptyDir(); // воркароунд бага с невозможностью входа в пустой каталог, см. http://www.ghisler.ch/board/viewtopic.php?t=42399
-				Result := 0; // Нельзя использовать exit
+				Result := 0;
 				SetLastError(ERROR_NO_MORE_FILES);
 			end else begin
 				FindData := CloudMailRuDirListingItemToFindData(CurrentListing[0]);
@@ -545,6 +542,7 @@ function FsPutFileW(LocalName, RemoteName: PWideChar; CopyFlags: integer): integ
 var
 	RealPath: TRealPath;
 begin
+	Result := FS_FILE_NOTSUPPORTED;
 	RealPath := ExtractRealPath(RemoteName);
 	if RealPath.Account = '' then exit(FS_FILE_NOTSUPPORTED);
 	MyProgressProc(PluginNum, LocalName, PWideChar(RealPath.path), 0);

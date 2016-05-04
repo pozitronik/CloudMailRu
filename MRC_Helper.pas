@@ -124,6 +124,7 @@ function SetAccountSettingsToIniFile(IniFilePath: WideString; AccountSettings: T
 var
 	IniFile: TIniFile;
 begin
+	Result:=false;
 	if AccountSettings.name <> '' then Result := true;
 	IniFile := TIniFile.Create(IniFilePath);
 	IniFile.WriteString(AccountSettings.name, 'email', AccountSettings.email);

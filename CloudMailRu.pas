@@ -83,7 +83,7 @@ type
 		function getDirListingFromJSON(JSON: WideString): TCloudMailRuDirListing;
 		function getShardFromJSON(JSON: WideString): WideString;
 		function getOperationResultFromJSON(JSON: WideString; var OperationStatus: integer): integer;
-		function UrlEncode(URL: UTF8String): WideString;
+		function UrlEncode(URL: UTF8String): WideString; { TODO : Временная реализация! }
 		procedure HttpProgress(ASender: TObject; AWorkMode: TWorkMode; AWorkCount: int64);
 	public
 		CancelCopy: boolean;
@@ -91,7 +91,7 @@ type
 		ExternalSourceName: PWideChar;
 		ExternalTargetName: PWideChar;
 		constructor Create(user, domain, password: WideString; ExternalProgressProc: TProgressProc; PluginNr: integer; ExternalLogProc: TLogProc);
-		destructor Destroy;
+		destructor Destroy; override;
 		function login(): boolean;
 
 		function getDir(path: WideString; var DirListing: TCloudMailRuDirListing): boolean;
@@ -286,6 +286,7 @@ var
 	URL: WideString;
 	PostData: TStringStream;
 begin
+	Result := false;
 	URL := 'https://cloud.mail.ru/api/v2/file/add';
 	try
 		PostData := TStringStream.Create('conflict=' + ConflictMode + '&home=/' + remotePath + '&hash=' + hash + '&size=' + IntToStr(size) + '&token=' + self.token + '&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id + '&conflict', TEncoding.UTF8);
@@ -367,7 +368,6 @@ end;
 
 function TCloudMailRu.HTTPGet(URL: WideString; var Answer: WideString): boolean;
 begin
-	Result := true;
 	try
 		Answer := self.HTTP.Get(URL);
 	Except
@@ -453,7 +453,7 @@ begin
 		end else begin
 			// А вот теперь это критическая ошибка, тут уже не получится копировать
 			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Sorry, downloading impossible'));
-			Result := FS_FILE_NOTSUPPORTED;
+			exit(FS_FILE_NOTSUPPORTED);
 		end;
 	end;
 
@@ -492,7 +492,7 @@ begin
 	if (SizeOfFile(localPath) > CLOUD_MAX_FILESIZE) then exit(FS_FILE_NOTSUPPORTED);
 	if self.CancelCopy then exit(FS_FILE_USERABORT);
 	Result := FS_FILE_WRITEERROR;
-
+	OperationResult := CLOUD_OPERATION_FAILED;
 	try
 		PutResult := TStringList.Create;
 		OperationResult := self.putFileToCloud(localPath, PutResult);
@@ -570,6 +570,8 @@ var
 	SucessCreate: boolean;
 	OperationStatus: integer;
 begin
+	Result := false;
+	SucessCreate := false;
 	path := self.UrlEncode(StringReplace(path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
 	URL := 'https://cloud.mail.ru/api/v2/folder/add';
 	try
@@ -812,7 +814,7 @@ end;
 
 function TCloudMailRu.get_upload_url_FromText(Text: WideString): WideString;
 var
-	start, start1, start2, finish, Length: integer;
+	start, start1, start2, finish, Length: Cardinal;
 	temp: WideString;
 begin
 	start := Pos(WideString('mail.ru/upload/"'), Text);
@@ -897,7 +899,6 @@ function TCloudMailRu.getOperationResultFromJSON(JSON: WideString; var Operation
 var
 	X: ISuperObject;
 	Error: WideString;
-	ErrCode: integer;
 begin
 	X := TSuperObject.Create(JSON).AsObject;
 	OperationStatus := X.I['status'];
