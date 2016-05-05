@@ -2,7 +2,7 @@ object PropertyForm: TPropertyForm
   Left = 0
   Top = 0
   BorderStyle = bsDialog
-  ClientHeight = 101
+  ClientHeight = 87
   ClientWidth = 438
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -17,7 +17,7 @@ object PropertyForm: TPropertyForm
   OnShow = FormShow
   DesignSize = (
     438
-    101)
+    87)
   PixelsPerInch = 96
   TextHeight = 13
   object PublicLinkLabel: TLabel
@@ -47,7 +47,7 @@ object PropertyForm: TPropertyForm
   end
   object OkButton: TButton
     Left = 342
-    Top = 68
+    Top = 54
     Width = 88
     Height = 25
     Anchors = [akTop, akRight]

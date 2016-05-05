@@ -509,10 +509,7 @@ Begin
 		end else begin
 			CurrentItem := FindListingItemByName(CurrentListing, RealPath.path);
 			TPropertyForm.ShowProperty(MainWin, CurrentItem, Cloud);
-
-			// messagebox(MainWin, PWideChar(CurrentItem.home), PWideChar(CurrentItem.weblink), mb_ok + mb_iconinformation)
 		end;
-		// messagebox(MainWin, PWideChar(RemoteName), PWideChar(Verb), mb_ok + mb_iconinformation);
 	end else if copy(Verb, 1, 5) = 'chmod' then
 	begin
 	end else if copy(Verb, 1, 5) = 'quote' then

@@ -492,11 +492,11 @@ var
 	URL: WideString;
 	PostData: TStringStream;
 	PostAnswer: WideString;
-	SucessCreate: boolean;
+	SucessPublish: boolean;
 	OperationStatus: integer;
 begin
 	Result := false;
-	SucessCreate := false;
+	SucessPublish := false;
 	path := self.UrlEncode(StringReplace(path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
 	if publish then URL := 'https://cloud.mail.ru/api/v2/file/publish'
 	else URL := 'https://cloud.mail.ru/api/v2/file/unpublish';
@@ -508,7 +508,7 @@ begin
 			PostData := TStringStream.Create('api=2&weblink='+ PublicLink + '&token=' + self.token + '&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id + '&conflict', TEncoding.UTF8);
 		end;
 
-		SucessCreate := self.HTTPPost(URL, PostData, PostAnswer);
+		SucessPublish := self.HTTPPost(URL, PostData, PostAnswer);
 	except
 		on E: Exception do
 		begin
@@ -516,7 +516,7 @@ begin
 		end;
 	end;
 	PostData.Free;
-	if SucessCreate then
+	if SucessPublish then
 	begin
 		case self.getOperationResultFromJSON(PostAnswer, OperationStatus) of
 			CLOUD_OPERATION_OK:
@@ -553,7 +553,7 @@ begin
 				end;
 		else
 			begin
-				self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Error creating directory: got ' + IntToStr(OperationStatus) + ' status'));
+				self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Error publishing file: got ' + IntToStr(OperationStatus) + ' status'));
 				Result := false;
 			end;
 		end;
