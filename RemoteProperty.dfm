@@ -1,20 +1,21 @@
 object PropertyForm: TPropertyForm
   Left = 0
   Top = 0
-  BorderStyle = bsSizeToolWin
+  BorderStyle = bsDialog
   ClientHeight = 101
-  ClientWidth = 635
+  ClientWidth = 438
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
   Font.Height = -11
   Font.Name = 'Tahoma'
   Font.Style = []
-  FormStyle = fsMDIChild
+  FormStyle = fsStayOnTop
   OldCreateOrder = False
-  Visible = True
+  Position = poOwnerFormCenter
+  OnShow = FormShow
   DesignSize = (
-    635
+    438
     101)
   PixelsPerInch = 96
   TextHeight = 13
@@ -25,29 +26,34 @@ object PropertyForm: TPropertyForm
     Height = 13
     Caption = 'Public link (Ctrl+C to copy):'
   end
-  object PublicLinkEdit: TEdit
+  object WebLink: TEdit
     Left = 8
     Top = 27
-    Width = 619
+    Width = 422
     Height = 21
     Anchors = [akLeft, akTop, akRight]
     ReadOnly = True
     TabOrder = 0
+    ExplicitWidth = 619
   end
-  object AccessLabel: TCheckBox
+  object AccessCB: TCheckBox
     Left = 8
     Top = 54
     Width = 131
     Height = 17
     Caption = 'Public access enabled'
     TabOrder = 1
+    OnClick = AccessCBClick
   end
   object OkButton: TButton
-    Left = 552
-    Top = 64
-    Width = 75
+    Left = 342
+    Top = 68
+    Width = 88
     Height = 25
+    Anchors = [akTop, akRight]
     Caption = 'OK'
+    ModalResult = 1
     TabOrder = 2
+    OnClick = OkButtonClick
   end
 end

@@ -16,7 +16,8 @@ uses
 	CloudMailRu in 'CloudMailRu.pas',
 	MRC_Helper in 'MRC_Helper.pas',
 	Accounts in 'Accounts.pas' {AccountsForm} ,
-	AskPassword in 'AskPassword.pas' {AskPasswordForm};
+	AskPassword in 'AskPassword.pas' {AskPasswordForm} ,
+	RemoteProperty in 'RemoteProperty.pas' {PropertyForm};
 
 {$IFDEF WIN64}
 {$E wfx64}
@@ -475,7 +476,7 @@ function FindListingItemByName(DirListing: TCloudMailRuDirListing; ItemName: Wid
 var
 	I: integer;
 begin
-	ItemName:='/'+StringReplace(ItemName, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]);
+	ItemName := '/' + StringReplace(ItemName, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]);
 	for I := 0 to Length(DirListing) - 1 do
 	begin
 		if DirListing[I].home = ItemName then
@@ -505,7 +506,8 @@ Begin
 			TAccountsForm.ShowAccounts(MainWin, IniFilePath, MyCryptProc, PluginNum, CryptoNum, RemoteName);
 		end else begin
 			CurrentItem := FindListingItemByName(CurrentListing, RealPath.path);
-			messagebox(MainWin, PWideChar(CurrentItem.home), PWideChar(CurrentItem.weblink), mb_ok + mb_iconinformation)
+			TPropertyForm.ShowProperty(MainWin, 	CurrentItem);
+			// messagebox(MainWin, PWideChar(CurrentItem.home), PWideChar(CurrentItem.weblink), mb_ok + mb_iconinformation)
 		end;
 		// messagebox(MainWin, PWideChar(RemoteName), PWideChar(Verb), mb_ok + mb_iconinformation);
 	end else if copy(Verb, 1, 5) = 'chmod' then
