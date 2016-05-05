@@ -4,7 +4,7 @@ interface
 
 uses
 	Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
-	Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, CloudMailRu;
+	Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, CloudMailRu, Vcl.Menus;
 
 type
 	TPropertyForm = class(TForm)
@@ -16,8 +16,10 @@ type
 		procedure AccessCBClick(Sender: TObject);
 		procedure FormShow(Sender: TObject);
 		procedure OkButtonClick(Sender: TObject);
+		procedure FormDestroy(Sender: TObject);
 	private
 		{ Private declarations }
+		procedure WMHotKey(var Message: TMessage); message WM_HOTKEY;
 	protected
 		Props: TCloudMailRuDirListingItem;
 	public
@@ -38,6 +40,11 @@ implementation
 procedure TPropertyForm.AccessCBClick(Sender: TObject);
 begin
 	WebLink.Enabled := AccessCB.checked;
+end;
+
+procedure TPropertyForm.FormDestroy(Sender: TObject);
+begin
+	UnregisterHotKey((Sender as TPropertyForm).handle, 1)
 end;
 
 procedure TPropertyForm.FormShow(Sender: TObject);
@@ -66,10 +73,17 @@ begin
 		PropertyForm.parentWindow := parentWindow; { TODO : Ќормальное позиционирование относительно окна TC }
 		PropertyForm.Caption := RemoteProperty.name;
 		PropertyForm.Props := RemoteProperty;
+		RegisterHotKey(PropertyForm.Handle, 1, 0, VK_ESCAPE);
 		PropertyForm.Showmodal;
+
 	finally
 		FreeAndNil(PropertyForm);
 	end;
+end;
+
+procedure TPropertyForm.WMHotKey(var Message: TMessage);
+begin
+	close;
 end;
 
 end.

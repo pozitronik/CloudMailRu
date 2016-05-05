@@ -13,6 +13,7 @@ object PropertyForm: TPropertyForm
   FormStyle = fsStayOnTop
   OldCreateOrder = False
   Position = poOwnerFormCenter
+  OnDestroy = FormDestroy
   OnShow = FormShow
   DesignSize = (
     438
