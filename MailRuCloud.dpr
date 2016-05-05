@@ -496,8 +496,7 @@ var
 	PublicLink: WideString;
 Begin
 	RealPath := ExtractRealPath(RemoteName);
-
-	Result := FS_EXEC_OK;
+ 	Result := FS_EXEC_OK;
 	if Verb = 'open' then
 	begin
 		exit(FS_EXEC_YOURSELF);
@@ -508,7 +507,12 @@ Begin
 			TAccountsForm.ShowAccounts(MainWin, IniFilePath, MyCryptProc, PluginNum, CryptoNum, RemoteName);
 		end else begin
 			CurrentItem := FindListingItemByName(CurrentListing, RealPath.path);
-			TPropertyForm.ShowProperty(MainWin, CurrentItem, Cloud);
+			if CurrentItem.home <> '' then TPropertyForm.ShowProperty(MainWin, CurrentItem, Cloud)
+			else
+			begin
+      { TODO : После выделения каталогов меняется CurrentListing, требуется либо перечитывать список каталогов, либо запрашивать инфу о файле (предпочтительно) }
+				MyLogProc(PluginNum, msgtype_importanterror, PWideChar('Cant find file under cursor, check FindListingItemByName function'));
+			end;
 		end;
 	end else if copy(Verb, 1, 5) = 'chmod' then
 	begin
