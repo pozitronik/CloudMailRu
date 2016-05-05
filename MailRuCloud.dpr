@@ -508,13 +508,8 @@ Begin
 			TAccountsForm.ShowAccounts(MainWin, IniFilePath, MyCryptProc, PluginNum, CryptoNum, RemoteName);
 		end else begin
 			CurrentItem := FindListingItemByName(CurrentListing, RealPath.path);
-			publishResult := TPropertyForm.ShowProperty(MainWin, CurrentItem);
-			if publishResult = mrOK then
-			begin
-				Cloud.publishFile(RealPath.path, PublicLink);
-			end else begin
-				Cloud.publishFile(RealPath.path, CurrentItem.weblink, CLOUD_UNPUBLISH);
-			end;
+			TPropertyForm.ShowProperty(MainWin, CurrentItem, Cloud);
+
 			// messagebox(MainWin, PWideChar(CurrentItem.home), PWideChar(CurrentItem.weblink), mb_ok + mb_iconinformation)
 		end;
 		// messagebox(MainWin, PWideChar(RemoteName), PWideChar(Verb), mb_ok + mb_iconinformation);

@@ -43,7 +43,6 @@ object PropertyForm: TPropertyForm
     Height = 17
     Caption = 'Public access enabled'
     TabOrder = 1
-    Visible = False
     OnClick = AccessCBClick
   end
   object OkButton: TButton

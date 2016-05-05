@@ -12,7 +12,7 @@ type
 		WebLink: TEdit;
 		AccessCB: TCheckBox;
 		OkButton: TButton;
-		class function ShowProperty(parentWindow: HWND; RemoteProperty: TCloudMailRuDirListingItem):integer;
+		class function ShowProperty(parentWindow: HWND; RemoteProperty: TCloudMailRuDirListingItem; var Cloud: TCloudMailRu): integer;
 		procedure AccessCBClick(Sender: TObject);
 		procedure FormShow(Sender: TObject);
 		procedure FormDestroy(Sender: TObject);
@@ -21,6 +21,7 @@ type
 		procedure WMHotKey(var Message: TMessage); message WM_HOTKEY;
 	protected
 		Props: TCloudMailRuDirListingItem;
+		Cloud: TCloudMailRu;
 	public
 		{ Public declarations }
 
@@ -35,8 +36,30 @@ implementation
 { TPropertyForm }
 
 procedure TPropertyForm.AccessCBClick(Sender: TObject);
+var
+	PublicLink: WideString;
 begin
-	WebLink.Enabled := AccessCB.checked;
+	if AccessCB.checked then
+	begin
+		if Self.Cloud.publishFile(Props.home, PublicLink) then
+		begin
+			WebLink.Text := 'https://cloud.mail.ru/public/' + PublicLink;
+			Props.WebLink := PublicLink;
+			WebLink.Enabled:=true;
+			WebLink.SetFocus;
+			WebLink.SelectAll;
+		end else begin
+			{ TODO : Error handling }
+		end;
+
+	end else begin
+		if Cloud.publishFile(Props.home, Props.WebLink, CLOUD_UNPUBLISH) then
+		begin
+			WebLink.Text := '';
+			Props.WebLink := '';
+			WebLink.Enabled := false;
+		end;
+	end;
 end;
 
 procedure TPropertyForm.FormDestroy(Sender: TObject);
@@ -48,7 +71,7 @@ procedure TPropertyForm.FormShow(Sender: TObject);
 begin
 	if not(Props.WebLink = '') then
 	begin
-		WebLink.text := 'https://cloud.mail.ru/public/' + Props.WebLink;
+		WebLink.Text := 'https://cloud.mail.ru/public/' + Props.WebLink;
 		WebLink.SetFocus;
 		WebLink.SelectAll;
 	end;
@@ -56,7 +79,7 @@ begin
 	WebLink.Enabled := AccessCB.checked;
 end;
 
-class function  TPropertyForm.ShowProperty(parentWindow: HWND; RemoteProperty: TCloudMailRuDirListingItem):integer;
+class function TPropertyForm.ShowProperty(parentWindow: HWND; RemoteProperty: TCloudMailRuDirListingItem; var Cloud: TCloudMailRu): integer;
 var
 	PropertyForm: TPropertyForm;
 begin
@@ -64,9 +87,10 @@ begin
 		PropertyForm := TPropertyForm.Create(nil);
 		PropertyForm.parentWindow := parentWindow; { TODO : Ќормальное позиционирование относительно окна TC }
 		PropertyForm.Caption := RemoteProperty.name;
+		PropertyForm.Cloud := Cloud;
 		PropertyForm.Props := RemoteProperty;
-		RegisterHotKey(PropertyForm.Handle, 1, 0, VK_ESCAPE);
-		result:=PropertyForm.Showmodal;
+		RegisterHotKey(PropertyForm.handle, 1, 0, VK_ESCAPE);
+		result := PropertyForm.Showmodal;
 
 	finally
 		FreeAndNil(PropertyForm);
