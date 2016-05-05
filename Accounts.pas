@@ -78,7 +78,7 @@ end;
 
 procedure TAccountsForm.AccountsListKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
 begin
-	if Key = VK_DELETE then DeleteButtonClick(nil);
+	if Key = VK_DELETE then DeleteButtonClick(nil); { TODO : Переделать на хоткеи, как в RemoteProperty }
 
 end;
 

@@ -61,7 +61,7 @@ begin
 end;
 
 procedure TAskPasswordForm.PasswordEditKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
-begin
+begin { TODO : Переделать на хоткеи, как в RemoteProperty }
 	if Key = VK_ESCAPE then
 	begin
 		(PasswordEdit.Parent as TAskPasswordForm).Close;
