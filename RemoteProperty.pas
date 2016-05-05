@@ -12,10 +12,9 @@ type
 		WebLink: TEdit;
 		AccessCB: TCheckBox;
 		OkButton: TButton;
-		class procedure ShowProperty(parentWindow: HWND; RemoteProperty: TCloudMailRuDirListingItem);
+		class function ShowProperty(parentWindow: HWND; RemoteProperty: TCloudMailRuDirListingItem):integer;
 		procedure AccessCBClick(Sender: TObject);
 		procedure FormShow(Sender: TObject);
-		procedure OkButtonClick(Sender: TObject);
 		procedure FormDestroy(Sender: TObject);
 	private
 		{ Private declarations }
@@ -57,12 +56,7 @@ begin
 	WebLink.Enabled := AccessCB.checked;
 end;
 
-procedure TPropertyForm.OkButtonClick(Sender: TObject);
-begin
-	close;
-end;
-
-class procedure TPropertyForm.ShowProperty(parentWindow: HWND; RemoteProperty: TCloudMailRuDirListingItem);
+class function  TPropertyForm.ShowProperty(parentWindow: HWND; RemoteProperty: TCloudMailRuDirListingItem):integer;
 var
 	PropertyForm: TPropertyForm;
 begin
@@ -72,7 +66,7 @@ begin
 		PropertyForm.Caption := RemoteProperty.name;
 		PropertyForm.Props := RemoteProperty;
 		RegisterHotKey(PropertyForm.Handle, 1, 0, VK_ESCAPE);
-		PropertyForm.Showmodal;
+		result:=PropertyForm.Showmodal;
 
 	finally
 		FreeAndNil(PropertyForm);

@@ -31,6 +31,8 @@ const
 
 	CLOUD_MAX_FILESIZE = $80000000; // 2Gb
 	CLOUD_MAX_NAME_LENGTH = 255;
+	CLOUD_PUBLISH = true;
+	CLOUD_UNPUBLISH = false;
 
 type
 	TCloudMailRuDirListingItem = Record
@@ -82,8 +84,9 @@ type
 		function get_upload_url_FromText(Text: WideString): WideString;
 		function getDirListingFromJSON(JSON: WideString): TCloudMailRuDirListing;
 		function getShardFromJSON(JSON: WideString): WideString;
+		function getPublicLinkFromJSON(JSON: WideString): WideString;
 		function getOperationResultFromJSON(JSON: WideString; var OperationStatus: integer): integer;
-
+		function UrlEncode(URL: UTF8String): WideString; { TODO : Временная реализация! } { TODO : Вынести в хелпер }
 		procedure HttpProgress(ASender: TObject; AWorkMode: TWorkMode; AWorkCount: int64);
 	public
 		CancelCopy: boolean;
@@ -103,8 +106,8 @@ type
 		function renameFile(OldName, NewName: WideString): integer; // смена имени без перемещения
 		function moveFile(OldName, ToPath: WideString): integer; // перемещение по дереву каталогов
 		function mvFile(OldName, NewName: WideString): integer; // объединяющая функция, определяет делать rename или move
+		function publishFile(path: WideString; var PublicLink: WideString; publish: boolean = CLOUD_PUBLISH): boolean;
 
-    function UrlEncode(URL: UTF8String): WideString; { TODO : Временная реализация! } { TODO : Вынести в хелпер }
 	end;
 
 implementation
@@ -482,6 +485,80 @@ begin
 		end;
 	end;
 	FileStream.SaveToFile(localPath);
+end;
+
+function TCloudMailRu.publishFile(path: WideString; var PublicLink: WideString; publish: boolean = CLOUD_PUBLISH): boolean;
+var
+	URL: WideString;
+	PostData: TStringStream;
+	PostAnswer: WideString;
+	SucessCreate: boolean;
+	OperationStatus: integer;
+begin
+	Result := false;
+	SucessCreate := false;
+	path := self.UrlEncode(StringReplace(path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
+	if publish then URL := 'https://cloud.mail.ru/api/v2/file/publish'
+	else URL := 'https://cloud.mail.ru/api/v2/file/unpublish';
+	try
+		if publish then
+		begin
+			PostData := TStringStream.Create('api=2&home=/' + path + '&token=' + self.token + '&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id + '&conflict', TEncoding.UTF8);
+		end else begin
+			PostData := TStringStream.Create('api=2&weblink='+ PublicLink + '&token=' + self.token + '&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id + '&conflict', TEncoding.UTF8);
+		end;
+
+		SucessCreate := self.HTTPPost(URL, PostData, PostAnswer);
+	except
+		on E: Exception do
+		begin
+			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('File publish error ' + E.Message));
+		end;
+	end;
+	PostData.Free;
+	if SucessCreate then
+	begin
+		case self.getOperationResultFromJSON(PostAnswer, OperationStatus) of
+			CLOUD_OPERATION_OK:
+				begin
+					if publish then
+					begin
+						PublicLink := self.getPublicLinkFromJSON(PostAnswer);
+					end;
+					Result := true;
+				end;
+			CLOUD_ERROR_EXISTS:
+				begin
+					Result := false;
+				end;
+			CLOUD_ERROR_REQUIRED:
+				begin
+					Result := false;
+				end;
+			CLOUD_ERROR_INVALID:
+				begin
+					Result := false;
+				end;
+			CLOUD_ERROR_READONLY:
+				begin
+					Result := false;
+				end;
+			CLOUD_ERROR_NAME_LENGTH_EXCEEDED:
+				begin
+					Result := false;
+				end;
+			CLOUD_ERROR_UNKNOWN:
+				begin
+					Result := false;
+				end;
+		else
+			begin
+				self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Error creating directory: got ' + IntToStr(OperationStatus) + ' status'));
+				Result := false;
+			end;
+		end;
+	end;
+
 end;
 
 function TCloudMailRu.putFile(localPath, remotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT): integer;
@@ -916,7 +993,14 @@ begin
 		exit(CLOUD_ERROR_UNKNOWN); // Эту ошибку мы пока не встречали
 	end;
 	Result := CLOUD_OPERATION_OK;
+end;
 
+function TCloudMailRu.getPublicLinkFromJSON(JSON: WideString): WideString;
+var
+	X: ISuperObject;
+begin
+	X := TSuperObject.Create(JSON).AsObject;
+	Result := X.S['body'];
 end;
 
 function TCloudMailRu.UrlEncode(URL: UTF8String): WideString; // todo нужно добиться корректного формирования урлов

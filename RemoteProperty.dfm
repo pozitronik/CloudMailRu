@@ -35,7 +35,6 @@ object PropertyForm: TPropertyForm
     Anchors = [akLeft, akTop, akRight]
     ReadOnly = True
     TabOrder = 0
-    ExplicitWidth = 619
   end
   object AccessCB: TCheckBox
     Left = 8
@@ -56,6 +55,5 @@ object PropertyForm: TPropertyForm
     Caption = 'OK'
     ModalResult = 1
     TabOrder = 2
-    OnClick = OkButtonClick
   end
 end

@@ -492,6 +492,8 @@ function FsExecuteFileW(MainWin: thandle; RemoteName, Verb: PWideChar): integer;
 var
 	RealPath: TRealPath;
 	CurrentItem: TCloudMailRuDirListingItem;
+	publishResult: integer;
+	PublicLink: WideString;
 Begin
 	RealPath := ExtractRealPath(RemoteName);
 
@@ -506,7 +508,13 @@ Begin
 			TAccountsForm.ShowAccounts(MainWin, IniFilePath, MyCryptProc, PluginNum, CryptoNum, RemoteName);
 		end else begin
 			CurrentItem := FindListingItemByName(CurrentListing, RealPath.path);
-			TPropertyForm.ShowProperty(MainWin, CurrentItem);
+			publishResult := TPropertyForm.ShowProperty(MainWin, CurrentItem);
+			if publishResult = mrOK then
+			begin
+				Cloud.publishFile(RealPath.path, PublicLink);
+			end else begin
+				Cloud.publishFile(RealPath.path, CurrentItem.weblink, CLOUD_UNPUBLISH);
+			end;
 			// messagebox(MainWin, PWideChar(CurrentItem.home), PWideChar(CurrentItem.weblink), mb_ok + mb_iconinformation)
 		end;
 		// messagebox(MainWin, PWideChar(RemoteName), PWideChar(Verb), mb_ok + mb_iconinformation);
