@@ -97,7 +97,7 @@ begin
 		if CryptResult = FS_FILE_OK then // Успешно получили пароль
 		begin
 			AccountSettings.password := buf;
-			//Result := true;
+			// Result := true;
 		end;
 		if CryptResult = FS_FILE_NOTSUPPORTED then // пользователь отменил ввод главного пароля
 		begin
@@ -145,7 +145,8 @@ begin
 			end;
 			Result := true;
 		end;
-	end else result:=true; //пароль взят из инишника напрямую
+	end
+	else Result := true; // пароль взят из инишника напрямую
 end;
 
 procedure FsGetDefRootName(DefRootName: PAnsiChar; maxlen: integer); stdcall; // Процедура вызывается один раз при установке плагина
@@ -470,9 +471,26 @@ begin
 	end;
 end;
 
+function FindListingItemByName(DirListing: TCloudMailRuDirListing; ItemName: WideString): TCloudMailRuDirListingItem;
+var
+	I: integer;
+begin
+	ItemName:='/'+StringReplace(ItemName, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]);
+	for I := 0 to Length(DirListing) - 1 do
+	begin
+		if DirListing[I].home = ItemName then
+		begin
+			exit(DirListing[I]);
+		end;
+
+	end;
+
+end;
+
 function FsExecuteFileW(MainWin: thandle; RemoteName, Verb: PWideChar): integer; stdcall; // Запуск файла
 var
 	RealPath: TRealPath;
+	CurrentItem: TCloudMailRuDirListingItem;
 Begin
 	RealPath := ExtractRealPath(RemoteName);
 
@@ -485,6 +503,9 @@ Begin
 		if RealPath.path = '' then
 		begin
 			TAccountsForm.ShowAccounts(MainWin, IniFilePath, MyCryptProc, PluginNum, CryptoNum, RemoteName);
+		end else begin
+			CurrentItem := FindListingItemByName(CurrentListing, RealPath.path);
+			messagebox(MainWin, PWideChar(CurrentItem.home), PWideChar(CurrentItem.weblink), mb_ok + mb_iconinformation)
 		end;
 		// messagebox(MainWin, PWideChar(RemoteName), PWideChar(Verb), mb_ok + mb_iconinformation);
 	end else if copy(Verb, 1, 5) = 'chmod' then

@@ -83,7 +83,7 @@ type
 		function getDirListingFromJSON(JSON: WideString): TCloudMailRuDirListing;
 		function getShardFromJSON(JSON: WideString): WideString;
 		function getOperationResultFromJSON(JSON: WideString; var OperationStatus: integer): integer;
-		function UrlEncode(URL: UTF8String): WideString; { TODO : Временная реализация! }
+
 		procedure HttpProgress(ASender: TObject; AWorkMode: TWorkMode; AWorkCount: int64);
 	public
 		CancelCopy: boolean;
@@ -103,6 +103,8 @@ type
 		function renameFile(OldName, NewName: WideString): integer; // смена имени без перемещения
 		function moveFile(OldName, ToPath: WideString): integer; // перемещение по дереву каталогов
 		function mvFile(OldName, NewName: WideString): integer; // объединяющая функция, определяет делать rename или move
+
+    function UrlEncode(URL: UTF8String): WideString; { TODO : Временная реализация! } { TODO : Вынести в хелпер }
 	end;
 
 implementation
