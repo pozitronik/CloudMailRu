@@ -506,7 +506,7 @@ Begin
 			TAccountsForm.ShowAccounts(MainWin, IniFilePath, MyCryptProc, PluginNum, CryptoNum, RemoteName);
 		end else begin
 			CurrentItem := FindListingItemByName(CurrentListing, RealPath.path);
-			TPropertyForm.ShowProperty(MainWin, 	CurrentItem);
+			TPropertyForm.ShowProperty(MainWin, CurrentItem);
 			// messagebox(MainWin, PWideChar(CurrentItem.home), PWideChar(CurrentItem.weblink), mb_ok + mb_iconinformation)
 		end;
 		// messagebox(MainWin, PWideChar(RemoteName), PWideChar(Verb), mb_ok + mb_iconinformation);

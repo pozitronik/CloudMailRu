@@ -35,8 +35,6 @@ implementation
 {$R *.dfm}
 { TPropertyForm }
 
-{ TPropertyForm }
-
 procedure TPropertyForm.AccessCBClick(Sender: TObject);
 begin
 	WebLink.Enabled := AccessCB.checked;
