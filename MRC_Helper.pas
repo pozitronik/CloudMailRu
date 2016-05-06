@@ -27,6 +27,7 @@ function SetAccountSettingsToIniFile(IniFilePath: WideString; AccountSettings: T
 procedure GetAccountsListFromIniFile(IniFilePath: WideString; var AccountsList: TStringList);
 procedure DeleteAccountFromIniFile(IniFilePath: WideString; AccountName: WideString);
 procedure CenterWindow(WindowToStay, WindowToCenter: HWND);
+function UrlEncode(URL: UTF8String): WideString; { TODO : Временная реализация! }
 
 implementation
 
@@ -178,4 +179,13 @@ begin
 	SetWindowPos(WindowToCenter, 0, X, Y, 0, 0, SWP_NOACTIVATE or SWP_NOOWNERZORDER or SWP_NOSIZE or SWP_NOZORDER);
 end;
 
+function UrlEncode(URL: UTF8String): WideString; // todo нужно добиться корректного формирования урлов
+var
+	I: integer;
+begin
+	Result := '';
+	for I := 1 to Length(URL) do
+		if URL[I] in ['a' .. 'z', 'A' .. 'Z', '/', '_', '-', '.'] then Result := Result + URL[I]
+		else Result := Result + '%' + IntToHex(Ord(URL[I]), 2);
+end;
 end.
