@@ -165,7 +165,7 @@ end;
 
 function FsGetBackgroundFlags: integer; stdcall;
 begin
-	Result := BG_DOWNLOAD + BG_UPLOAD + BG_ASK_USER;
+	Result := BG_DOWNLOAD + BG_UPLOAD;// + BG_ASK_USER;
 end;
 
 { ANSI PEASANTS }

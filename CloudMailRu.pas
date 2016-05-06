@@ -405,8 +405,10 @@ end;
 
 procedure TCloudMailRu.HTTPDestroy(var HTTP: TIdHTTP; var SSL: TIdSSLIOHandlerSocketOpenSSL);
 begin
-	HTTP.Destroy;
-	SSL.Destroy;
+	HTTP.DisconnectNotifyPeer;
+	HTTP.Disconnect;
+	HTTP.Free;
+	SSL.Free;
 end;
 
 procedure TCloudMailRu.HttpProgress(ASender: TObject; AWorkMode: TWorkMode; AWorkCount: int64);
@@ -415,7 +417,7 @@ var
 	ContentLength: int64;
 	Percent: integer;
 begin
-	if self.CancelCopy then Abort;
+	// if self.CancelCopy then Abort;
 	HTTP := TIdHTTP(ASender);
 	if AWorkMode = wmRead then ContentLength := HTTP.Response.ContentLength
 	else ContentLength := HTTP.Request.ContentLength; // Считаем размер обработанных данных зависимости от того, скачивание это или загрузка
