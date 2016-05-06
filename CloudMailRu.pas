@@ -92,7 +92,6 @@ type
 		procedure HTTPInit(var HTTP: TIdHTTP; var SSL: TIdSSLIOHandlerSocketOpenSSL; var Cookie: TIdCookieManager);
 		procedure HTTPDestroy(var HTTP: TIdHTTP; var SSL: TIdSSLIOHandlerSocketOpenSSL);
 	public
-		CancelCopy: boolean;
 		ExternalPluginNr: integer;
 		ExternalSourceName: PWideChar;
 		ExternalTargetName: PWideChar;
@@ -384,7 +383,11 @@ begin
 		Answer := HTTP.Get(URL);
 		self.HTTPDestroy(HTTP, SSL);
 	Except
-		exit(false);
+		on E: Exception do
+		begin
+			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar(E.ClassName + ' ошибка с сообщением : ' + E.Message + ' при запросе данных с адреса ' + URL + ', класс ошибки: ' + E.ClassName));
+			exit(false);
+		end;
 	end;
 	Result := Answer <> '';
 end;
@@ -426,7 +429,6 @@ begin
 		Percent := 100 * AWorkCount div ContentLength;
 		if self.ExternalProgressProc(self.ExternalPluginNr, self.ExternalSourceName, self.ExternalTargetName, Percent) = 1 then
 		begin
-			self.CancelCopy := true;
 			Abort;
 		end;
 	end;
@@ -493,8 +495,6 @@ begin
 			exit(FS_FILE_NOTSUPPORTED);
 		end;
 	end;
-
-	if self.CancelCopy then exit(FS_FILE_USERABORT);
 
 	Result := FS_FILE_OK;
 	FileStream := TMemoryStream.Create;
@@ -604,7 +604,6 @@ var
 	OperationResult: integer;
 begin
 	if (SizeOfFile(localPath) > CLOUD_MAX_FILESIZE) then exit(FS_FILE_NOTSUPPORTED);
-	if self.CancelCopy then exit(FS_FILE_USERABORT);
 	Result := FS_FILE_WRITEERROR;
 	OperationResult := CLOUD_OPERATION_FAILED;
 	try

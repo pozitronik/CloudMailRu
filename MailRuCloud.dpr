@@ -262,10 +262,8 @@ Begin
 	Result := 0;
 end;
 
-procedure FsStatusInfoW(RemoteDir: PWideChar; InfoStartEnd, InfoOperation: integer); stdcall;
+procedure FsStatusInfoW(RemoteDir: PWideChar; InfoStartEnd, InfoOperation: integer); stdcall; // Начало и конец операций FS
 begin
-	if Assigned(Cloud) then Cloud.CancelCopy := false; // todo: временно сделал
-	// Начало и конец операций FS
 	if (InfoStartEnd = FS_STATUS_START) then
 	begin
 		case InfoOperation of
