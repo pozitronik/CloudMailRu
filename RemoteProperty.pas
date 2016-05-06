@@ -39,17 +39,18 @@ procedure TPropertyForm.AccessCBClick(Sender: TObject);
 var
 	PublicLink: WideString;
 begin
+	AccessCB.Enabled := false; // блокируем во избежание повторных кликов
 	if AccessCB.checked then
 	begin
 		if Self.Cloud.publishFile(Props.home, PublicLink) then
 		begin
 			WebLink.Text := 'https://cloud.mail.ru/public/' + PublicLink;
 			Props.WebLink := PublicLink;
-			WebLink.Enabled:=true;
+			WebLink.Enabled := true;
 			WebLink.SetFocus;
 			WebLink.SelectAll;
 		end else begin
-			{ TODO : Error handling }
+			MessageBoxW(Self.Handle, 'File publishing error', PWideChar('Error while publishing file ' + Props.home + ', see main log'), MB_OK + MB_ICONERROR);
 		end;
 
 	end else begin
@@ -58,13 +59,16 @@ begin
 			WebLink.Text := '';
 			Props.WebLink := '';
 			WebLink.Enabled := false;
+		end else begin
+			MessageBoxW(Self.Handle, 'File unpublishing error', PWideChar('Error while unpublishing file ' + Props.home + ', see main log'), MB_OK + MB_ICONERROR);
 		end;
 	end;
+	AccessCB.Enabled := true;
 end;
 
 procedure TPropertyForm.FormDestroy(Sender: TObject);
 begin
-	UnregisterHotKey((Sender as TPropertyForm).handle, 1)
+	UnregisterHotKey((Sender as TPropertyForm).Handle, 1)
 end;
 
 procedure TPropertyForm.FormShow(Sender: TObject);
@@ -89,7 +93,7 @@ begin
 		PropertyForm.Caption := RemoteProperty.name;
 		PropertyForm.Cloud := Cloud;
 		PropertyForm.Props := RemoteProperty;
-		RegisterHotKey(PropertyForm.handle, 1, 0, VK_ESCAPE);
+		RegisterHotKey(PropertyForm.Handle, 1, 0, VK_ESCAPE);
 		result := PropertyForm.Showmodal;
 
 	finally
