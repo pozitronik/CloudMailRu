@@ -999,7 +999,7 @@ function TCloudMailRu.getFileStatusFromJSON(JSON: WideString): TCloudMailRuDirLi
 var
 	X: ISuperObject;
 begin
-	X := TSuperObject.Create(JSON); // '{"email":"bogdan.parkhomchuk@mail.ru","body":{"mtime":1462271914,"virus_scan":"pass","name":"[MomsTeachSex] Jessa Rhodes, Lucy Doll (Stepmom Steps In - 18.04.16) rq (360p).mp4","size":294276178,"hash":"D2C6942055D89590E119A05DCD92B64137DF555F","kind":"file","type":"file","home":"/torrents_f/[MomsTeachSex] Jessa Rhodes, Lucy Doll (Stepmom Steps In - 18.04.16) rq (360p).mp4"},"time":1462518311334,"status":200}'
+	X := TSuperObject.Create(JSON);
 	X := X['body'].AsObject;
 	With Result do
 	begin
