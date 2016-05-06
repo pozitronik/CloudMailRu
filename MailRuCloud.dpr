@@ -510,7 +510,7 @@ Begin
 			if CurrentItem.home <> '' then TPropertyForm.ShowProperty(MainWin, CurrentItem, Cloud)
 			else
 			begin
-				MyLogProc(PluginNum, msgtype_importanterror, PWideChar('Cant find file under cursor, check FindListingItemByName function'));
+				MyLogProc(PluginNum, msgtype_importanterror, PWideChar('Cant find file under cursor!'));
 			end;
 		end;
 	end else if copy(Verb, 1, 5) = 'chmod' then
