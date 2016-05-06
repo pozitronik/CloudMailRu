@@ -83,6 +83,7 @@ type
 		function get_build_FromText(Text: WideString): WideString;
 		function get_upload_url_FromText(Text: WideString): WideString;
 		function getDirListingFromJSON(JSON: WideString): TCloudMailRuDirListing;
+		function getFileStatusFromJSON(JSON: WideString): TCloudMailRuDirListingItem;
 		function getShardFromJSON(JSON: WideString): WideString;
 		function getPublicLinkFromJSON(JSON: WideString): WideString;
 		function getOperationResultFromJSON(JSON: WideString; var OperationStatus: integer): integer;
@@ -107,6 +108,7 @@ type
 		function moveFile(OldName, ToPath: WideString): integer; // перемещение по дереву каталогов
 		function mvFile(OldName, NewName: WideString): integer; // объединяющая функция, определяет делать rename или move
 		function publishFile(path: WideString; var PublicLink: WideString; publish: boolean = CLOUD_PUBLISH): boolean;
+		function statusFile(path: WideString; var FileInfo: TCloudMailRuDirListingItem): boolean;
 
 	end;
 
@@ -505,7 +507,7 @@ begin
 		begin
 			PostData := TStringStream.Create('api=2&home=/' + path + '&token=' + self.token + '&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id + '&conflict', TEncoding.UTF8);
 		end else begin
-			PostData := TStringStream.Create('api=2&weblink='+ PublicLink + '&token=' + self.token + '&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id + '&conflict', TEncoding.UTF8);
+			PostData := TStringStream.Create('api=2&weblink=' + PublicLink + '&token=' + self.token + '&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id + '&conflict', TEncoding.UTF8);
 		end;
 
 		SucessPublish := self.HTTPPost(URL, PostData, PostAnswer);
@@ -787,6 +789,26 @@ begin
 	end;
 end;
 
+function TCloudMailRu.statusFile(path: WideString; var FileInfo: TCloudMailRuDirListingItem): boolean;
+var
+	URL: WideString;
+	JSON: WideString;
+begin
+	Result := false;
+	path := self.UrlEncode(StringReplace(path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
+	URL := 'https://cloud.mail.ru/api/v2/file?home=' + path + '&api=2&build=' + self.build + '&x-page-id=' + self.x_page_id + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&token=' + self.token + '&_=1433249148810';
+	try
+		Result := self.HTTPGet(URL, JSON);
+	except
+		on E: Exception do
+		begin
+			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('File status getting error ' + E.Message));
+		end;
+	end;
+	if not Result then exit(false);
+	FileInfo := getFileStatusFromJSON(JSON);
+end;
+
 function TCloudMailRu.moveFile(OldName, ToPath: WideString): integer;
 var
 	URL: WideString;
@@ -945,7 +967,6 @@ begin
 	begin
 		exit(ResultItems);
 	end;
-
 	with X.A['list'] do
 		for J := 0 to X.A['list'].Length - 1 do
 		begin
@@ -972,6 +993,34 @@ begin
 			end;
 		end;
 	Result := ResultItems;
+end;
+
+function TCloudMailRu.getFileStatusFromJSON(JSON: WideString): TCloudMailRuDirListingItem;
+var
+	X: ISuperObject;
+begin
+	X := TSuperObject.Create(JSON); // '{"email":"bogdan.parkhomchuk@mail.ru","body":{"mtime":1462271914,"virus_scan":"pass","name":"[MomsTeachSex] Jessa Rhodes, Lucy Doll (Stepmom Steps In - 18.04.16) rq (360p).mp4","size":294276178,"hash":"D2C6942055D89590E119A05DCD92B64137DF555F","kind":"file","type":"file","home":"/torrents_f/[MomsTeachSex] Jessa Rhodes, Lucy Doll (Stepmom Steps In - 18.04.16) rq (360p).mp4"},"time":1462518311334,"status":200}'
+	X := X['body'].AsObject;
+	With Result do
+	begin
+		tree := X.S['tree'];
+		grev := X.I['grev'];
+		size := X.I['size'];
+		kind := X.S['kind'];
+		weblink := X.S['weblink'];
+		rev := X.I['rev'];
+		type_ := X.S['type'];
+		home := X.S['home'];
+		name := X.S['name'];
+		if (type_ = TYPE_FILE) then
+		begin
+			mtime := X.I['mtime'];
+			virus_scan := X.S['virus_scan'];
+			hash := X.S['hash'];
+		end else begin
+			mtime := 0;
+		end;
+	end;
 end;
 
 function TCloudMailRu.getOperationResultFromJSON(JSON: WideString; var OperationStatus: integer): integer;

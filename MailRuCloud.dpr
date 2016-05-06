@@ -506,11 +506,10 @@ Begin
 		begin
 			TAccountsForm.ShowAccounts(MainWin, IniFilePath, MyCryptProc, PluginNum, CryptoNum, RemoteName);
 		end else begin
-			CurrentItem := FindListingItemByName(CurrentListing, RealPath.path);
+			Cloud.statusFile(RealPath.path, CurrentItem);
 			if CurrentItem.home <> '' then TPropertyForm.ShowProperty(MainWin, CurrentItem, Cloud)
 			else
 			begin
-				{ TODO : После выделения каталогов меняется CurrentListing, требуется либо перечитывать список каталогов, либо запрашивать инфу о файле (предпочтительно) }
 				MyLogProc(PluginNum, msgtype_importanterror, PWideChar('Cant find file under cursor, check FindListingItemByName function'));
 			end;
 		end;
