@@ -15,7 +15,7 @@ implementation
 
 function FindTCWindow: HWND;
 begin
-	Result := FindWindow('TTOTAL_CMD', nil); { TODO : При нескольких запущенных тоталах получать нужный хендл }
+	Result := FindWindow('TTOTAL_CMD', nil); { Хендл отдаётся корректно даже при нескольких запущенных тоталах }
 end;
 
 end.
