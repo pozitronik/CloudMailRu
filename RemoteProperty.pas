@@ -4,7 +4,7 @@ interface
 
 uses
 	Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
-	Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, CloudMailRu, Vcl.Menus;
+	Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, CloudMailRu;
 
 type
 	TPropertyForm = class(TForm)
@@ -39,6 +39,7 @@ procedure TPropertyForm.AccessCBClick(Sender: TObject);
 var
 	PublicLink: WideString;
 begin
+	WebLink.Text := 'Wait for it...';
 	AccessCB.Enabled := false; // блокируем во избежание повторных кликов
 	if AccessCB.checked then
 	begin
@@ -50,7 +51,7 @@ begin
 			WebLink.SetFocus;
 			WebLink.SelectAll;
 		end else begin
-			MessageBoxW(Self.Handle, 'File publishing error', PWideChar('Error while publishing file ' + Props.home + ', see main log'), MB_OK + MB_ICONERROR);
+			MessageBoxW(Self.Handle, PWideChar('Error while publishing file ' + Props.home + ', see main log'), 'File unpublishing error', MB_OK + MB_ICONERROR);
 		end;
 
 	end else begin
@@ -60,7 +61,7 @@ begin
 			Props.WebLink := '';
 			WebLink.Enabled := false;
 		end else begin
-			MessageBoxW(Self.Handle, 'File unpublishing error', PWideChar('Error while unpublishing file ' + Props.home + ', see main log'), MB_OK + MB_ICONERROR);
+			MessageBoxW(Self.Handle, PWideChar('Error while unpublishing file ' + Props.home + ', see main log'), 'File unpublishing error', MB_OK + MB_ICONERROR);
 		end;
 	end;
 	AccessCB.Enabled := true;
