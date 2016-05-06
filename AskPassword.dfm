@@ -31,7 +31,6 @@ object AskPasswordForm: TAskPasswordForm
     PasswordChar = '*'
     TabOrder = 0
     OnChange = PasswordEditChange
-    OnKeyUp = PasswordEditKeyUp
   end
   object OkButton: TButton
     Left = 348
@@ -42,7 +41,6 @@ object AskPasswordForm: TAskPasswordForm
     Enabled = False
     ModalResult = 1
     TabOrder = 2
-    OnKeyUp = PasswordEditKeyUp
   end
   object UseTCPwdMngrCB: TCheckBox
     Left = 8
@@ -51,6 +49,5 @@ object AskPasswordForm: TAskPasswordForm
     Height = 17
     Caption = 'Store password in TC password manager'
     TabOrder = 1
-    OnKeyUp = PasswordEditKeyUp
   end
 end

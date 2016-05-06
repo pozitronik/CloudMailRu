@@ -104,7 +104,7 @@ end;
 
 procedure TPropertyForm.WMHotKey(var Message: TMessage);
 begin
-if Message.LParamHi = VK_ESCAPE then close;
+	if Message.LParamHi = VK_ESCAPE then close;
 end;
 
 end.

@@ -15,9 +15,9 @@ type
 		class function AskPassword(ParentWindow: HWND; AccountName: WideString; var Password: WideString; var UseTCPwdMngr: Boolean): integer;
 		procedure PasswordEditChange(Sender: TObject);
 		procedure FormShow(Sender: TObject);
-		procedure PasswordEditKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
 	private
 		{ Private declarations }
+		procedure WMHotKey(var Message: TMessage); message WM_HOTKEY;
 	public
 		{ Public declarations }
 	end;
@@ -38,6 +38,10 @@ begin
 		AskPasswordForm := TAskPasswordForm.Create(nil);
 		AskPasswordForm.ParentWindow := ParentWindow;
 		AskPasswordForm.Caption := AccountName + ' password';
+
+		RegisterHotKey(AskPasswordForm.Handle, 1, 0, VK_ESCAPE);
+		RegisterHotKey(AskPasswordForm.Handle, 2, 0, VK_RETURN);
+
 		result := AskPasswordForm.ShowModal;
 		if result = mrOk then
 		begin
@@ -57,19 +61,12 @@ end;
 procedure TAskPasswordForm.PasswordEditChange(Sender: TObject);
 begin
 	OkButton.Enabled := PasswordEdit.Text <> '';
-
 end;
 
-procedure TAskPasswordForm.PasswordEditKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
-begin { TODO : Переделать на хоткеи, как в RemoteProperty }
-	if Key = VK_ESCAPE then
-	begin
-		(PasswordEdit.Parent as TAskPasswordForm).Close;
-	end;
-	if (Key = VK_RETURN) and OkButton.Enabled then
-	begin
-		OkButton.Click;
-	end;
+procedure TAskPasswordForm.WMHotKey(var Message: TMessage);
+begin
+	if Message.LParamHi = VK_ESCAPE then Close;
+	if (Message.LParamHi = VK_RETURN) and OkButton.Enabled then OkButton.Click;
 end;
 
 end.
