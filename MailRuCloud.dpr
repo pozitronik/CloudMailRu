@@ -535,7 +535,7 @@ begin
 	Result := FS_FILE_NOTSUPPORTED;
 	RealPath := ExtractRealPath(RemoteName);
 
-	MyProgressProc(PluginNum, LocalName, RemoteName, 0);
+	MyProgressProc(PluginNum, RemoteName,LocalName, 0);
 
 	if CopyFlags = FS_FILE_OK then
 	begin
