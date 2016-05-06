@@ -365,7 +365,7 @@ begin
 		end;
 		on E: Exception do
 		begin
-			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar(E.ClassName + ' ошибка с сообщением : ' + E.Message + ' при отправке данных на адрес ' + URL + ', класс ошибки: ' + E.ClassName));
+			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar(E.ClassName + ' ошибка с сообщением : ' + E.Message + ' при отправке данных на адрес ' + URL));
 			Result := CLOUD_OPERATION_FAILED;
 		end;
 	end;
@@ -385,7 +385,7 @@ begin
 	Except
 		on E: Exception do
 		begin
-			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar(E.ClassName + ' ошибка с сообщением : ' + E.Message + ' при запросе данных с адреса ' + URL + ', класс ошибки: ' + E.ClassName));
+			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar(E.ClassName + ' ошибка с сообщением : ' + E.Message + ' при запросе данных с адреса ' + URL));
 			exit(false);
 		end;
 	end;
