@@ -62,9 +62,9 @@ type
 		x_page_id: WideString;
 		build: WideString;
 		upload_url: WideString;
-		HTTP: TIdHTTP;
+		// HTTP: TIdHTTP;
 		Cookie: TIdCookieManager;
-		SSL: TIdSSLIOHandlerSocketOpenSSL;
+		// SSL: TIdSSLIOHandlerSocketOpenSSL;
 		ExternalProgressProc: TProgressProc;
 		ExternalLogProc: TLogProc;
 
@@ -88,6 +88,9 @@ type
 		function getPublicLinkFromJSON(JSON: WideString): WideString;
 		function getOperationResultFromJSON(JSON: WideString; var OperationStatus: integer): integer;
 		procedure HttpProgress(ASender: TObject; AWorkMode: TWorkMode; AWorkCount: int64);
+	protected
+		procedure HTTPInit(var HTTP: TIdHTTP; var SSL: TIdSSLIOHandlerSocketOpenSSL; var Cookie: TIdCookieManager);
+		procedure HTTPDestroy(var HTTP: TIdHTTP; var SSL: TIdSSLIOHandlerSocketOpenSSL);
 	public
 		CancelCopy: boolean;
 		ExternalPluginNr: integer;
@@ -120,15 +123,7 @@ implementation
 constructor TCloudMailRu.Create(user, domain, password: WideString; ExternalProgressProc: TProgressProc; PluginNr: integer; ExternalLogProc: TLogProc);
 begin
 	try
-		self.SSL := TIdSSLIOHandlerSocketOpenSSL.Create();
 		self.Cookie := TIdCookieManager.Create();
-		self.HTTP := TIdHTTP.Create();
-		self.HTTP.CookieManager := Cookie;
-		self.HTTP.IOHandler := SSL;
-		self.HTTP.AllowCookies := true;
-		self.HTTP.HandleRedirects := true;
-		// self.HTTP.ConnectTimeout:=10;
-		self.HTTP.Request.UserAgent := 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.17 (KHTML, like Gecko) Chrome/24.0.1312.57 Safari/537.17';
 
 		self.user := user;
 		self.password := password;
@@ -151,8 +146,6 @@ end;
 
 destructor TCloudMailRu.Destroy;
 begin
-	self.HTTP.Destroy;
-	self.SSL.Destroy;
 	self.Cookie.Destroy;
 end;
 
@@ -312,13 +305,18 @@ end;
 function TCloudMailRu.HTTPPost(URL: WideString; PostData: TStringStream; var Answer: WideString; ContentType: WideString = 'application/x-www-form-urlencoded'): boolean;
 var
 	MemStream: TStringStream;
+	HTTP: TIdHTTP;
+	SSL: TIdSSLIOHandlerSocketOpenSSL;
 begin
 	Result := true;
 
 	try
-		if ContentType <> '' then self.HTTP.Request.ContentType := ContentType;
+
 		MemStream := TStringStream.Create;
-		self.HTTP.Post(URL, PostData, MemStream);
+		self.HTTPInit(HTTP, SSL, self.Cookie);
+		if ContentType <> '' then HTTP.Request.ContentType := ContentType;
+		HTTP.Post(URL, PostData, MemStream);
+		self.HTTPDestroy(HTTP, SSL);
 		Answer := MemStream.DataString;
 	except
 		on E: EAbort do
@@ -327,7 +325,7 @@ begin
 		end;
 		on E: EIdHTTPProtocolException do
 		begin
-			if self.HTTP.ResponseCode = 400 then
+			if HTTP.ResponseCode = 400 then
 			begin { сервер вернёт 400, но нужно пропарсить результат для дальнейшего определения действий }
 				Answer := E.ErrorMessage;
 				Result := true;
@@ -344,14 +342,18 @@ end;
 function TCloudMailRu.HTTPPostFile(URL: WideString; PostData: TIdMultipartFormDataStream; var Answer: WideString): integer;
 var
 	MemStream: TStringStream;
+	HTTP: TIdHTTP;
+	SSL: TIdSSLIOHandlerSocketOpenSSL;
 begin
 	Result := CLOUD_OPERATION_OK;
 
 	try
+		self.HTTPInit(HTTP, SSL, self.Cookie);
 		MemStream := TStringStream.Create;
-		self.HTTP.OnWork := self.HttpProgress;
-		self.HTTP.Post(URL, PostData, MemStream);
+		HTTP.OnWork := self.HttpProgress;
+		HTTP.Post(URL, PostData, MemStream);
 		Answer := MemStream.DataString;
+		self.HTTPDestroy(HTTP, SSL);
 	except
 		on E: EAbort do
 		begin
@@ -373,13 +375,38 @@ begin
 end;
 
 function TCloudMailRu.HTTPGet(URL: WideString; var Answer: WideString): boolean;
+var
+	HTTP: TIdHTTP;
+	SSL: TIdSSLIOHandlerSocketOpenSSL;
 begin
 	try
-		Answer := self.HTTP.Get(URL);
+		self.HTTPInit(HTTP, SSL, self.Cookie);
+		Answer := HTTP.Get(URL);
+		self.HTTPDestroy(HTTP, SSL);
 	Except
 		exit(false);
 	end;
 	Result := Answer <> '';
+end;
+
+procedure TCloudMailRu.HTTPInit(var HTTP: TIdHTTP; var SSL: TIdSSLIOHandlerSocketOpenSSL; var Cookie: TIdCookieManager);
+begin
+	SSL := TIdSSLIOHandlerSocketOpenSSL.Create();
+	if not(Assigned(Cookie)) then Cookie := TIdCookieManager.Create();
+
+	HTTP := TIdHTTP.Create();
+	HTTP.CookieManager := Cookie;
+	HTTP.IOHandler := SSL;
+	HTTP.AllowCookies := true;
+	HTTP.HandleRedirects := true;
+	// HTTP.ConnectTimeout:=10;
+	HTTP.Request.UserAgent := 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.17 (KHTML, like Gecko) Chrome/24.0.1312.57 Safari/537.17';
+end;
+
+procedure TCloudMailRu.HTTPDestroy(var HTTP: TIdHTTP; var SSL: TIdSSLIOHandlerSocketOpenSSL);
+begin
+	HTTP.Destroy;
+	SSL.Destroy;
 end;
 
 procedure TCloudMailRu.HttpProgress(ASender: TObject; AWorkMode: TWorkMode; AWorkCount: int64);
@@ -449,6 +476,8 @@ end;
 function TCloudMailRu.getFile(remotePath, localPath: WideString): integer; // 0 - ok, else error
 var
 	FileStream: TMemoryStream;
+	HTTP: TIdHTTP;
+	SSL: TIdSSLIOHandlerSocketOpenSSL;
 begin
 	if self.Shard = '' then
 	begin
@@ -469,9 +498,12 @@ begin
 	FileStream := TMemoryStream.Create;
 
 	remotePath := UrlEncode(StringReplace(remotePath, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
-	self.HTTP.OnWork := self.HttpProgress;
+
 	try
-		self.HTTP.Get(self.Shard + remotePath, FileStream);
+		self.HTTPInit(HTTP, SSL, self.Cookie);
+		HTTP.OnWork := self.HttpProgress;
+		HTTP.Get(self.Shard + remotePath, FileStream); { TODO : В отдельную процедуру }
+		self.HTTPDestroy(HTTP, SSL);
 	except
 		on E: Exception do
 		begin

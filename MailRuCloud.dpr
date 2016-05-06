@@ -163,6 +163,11 @@ Begin
 	FileCounter := 0;
 end;
 
+function FsGetBackgroundFlags: integer; stdcall;
+begin
+	Result := BG_DOWNLOAD + BG_UPLOAD + BG_ASK_USER;
+end;
+
 { ANSI PEASANTS }
 
 function FsInit(PluginNr: integer; pProgressProc: TProgressProc; pLogProc: TLogProc; pRequestProc: TRequestProc): integer; stdcall;
@@ -513,7 +518,7 @@ Begin
 				begin
 					MyLogProc(PluginNum, msgtype_importanterror, PWideChar('Cant find file under cursor!'));
 				end;
-			end;//Не рапортуем, это будет уровнем выше
+			end; // Не рапортуем, это будет уровнем выше
 
 		end;
 	end else if copy(Verb, 1, 5) = 'chmod' then
@@ -692,7 +697,7 @@ end;
 
 exports FsGetDefRootName, FsInit, FsInitW, FsFindFirst, FsFindFirstW, FsFindNext, FsFindNextW, FsFindClose, FsGetFile, FsGetFileW,
 	FsDisconnect, FsDisconnectW, FsStatusInfo, FsStatusInfoW, FsPutFile, FsPutFileW, FsDeleteFile, FsDeleteFileW, FsMkDir, FsMkDirW,
-	FsRemoveDir, FsRemoveDirW, FsSetCryptCallback, FsSetCryptCallbackW, FsExecuteFileW, FsRenMovFile, FsRenMovFileW;
+	FsRemoveDir, FsRemoveDirW, FsSetCryptCallback, FsSetCryptCallbackW, FsExecuteFileW, FsRenMovFile, FsRenMovFileW, FsGetBackgroundFlags;
 
 (* ,
 	FsExecuteFile,
