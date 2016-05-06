@@ -506,12 +506,15 @@ Begin
 		begin
 			TAccountsForm.ShowAccounts(MainWin, IniFilePath, MyCryptProc, PluginNum, CryptoNum, RemoteName);
 		end else begin
-			Cloud.statusFile(RealPath.path, CurrentItem);
-			if CurrentItem.home <> '' then TPropertyForm.ShowProperty(MainWin, CurrentItem, Cloud)
-			else
+			if Cloud.statusFile(RealPath.path, CurrentItem) then
 			begin
-				MyLogProc(PluginNum, msgtype_importanterror, PWideChar('Cant find file under cursor!'));
-			end;
+				if CurrentItem.home <> '' then TPropertyForm.ShowProperty(MainWin, CurrentItem, Cloud)
+				else
+				begin
+					MyLogProc(PluginNum, msgtype_importanterror, PWideChar('Cant find file under cursor!'));
+				end;
+			end;//Не рапортуем, это будет уровнем выше
+
 		end;
 	end else if copy(Verb, 1, 5) = 'chmod' then
 	begin
