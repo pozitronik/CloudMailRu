@@ -2,7 +2,7 @@ unit MRC_Helper;
 
 interface
 
-uses Classes, Windows, SysUtils, IniFiles;
+uses Classes, Windows, SysUtils, IniFiles, MultiMon, Math;
 
 type
 	TRealPath = record
@@ -26,6 +26,7 @@ function GetAccountSettingsFromIniFile(IniFilePath: WideString; AccountName: Wid
 function SetAccountSettingsToIniFile(IniFilePath: WideString; AccountSettings: TAccountSettings): boolean;
 procedure GetAccountsListFromIniFile(IniFilePath: WideString; var AccountsList: TStringList);
 procedure DeleteAccountFromIniFile(IniFilePath: WideString; AccountName: WideString);
+procedure CenterWindow(WindowToStay, WindowToCenter: HWND);
 
 implementation
 
@@ -77,7 +78,7 @@ function SizeOfFile(const FileName: String): Int64;
 var
 	fHandle: DWORD;
 begin
-	fHandle := CreateFile(PChar(fileName), 0, 0, nil, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+	fHandle := CreateFile(PChar(FileName), 0, 0, nil, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
 	if fHandle = INVALID_HANDLE_VALUE then Result := -1
 	else
 		try
@@ -124,7 +125,7 @@ function SetAccountSettingsToIniFile(IniFilePath: WideString; AccountSettings: T
 var
 	IniFile: TIniFile;
 begin
-	Result:=false;
+	Result := false;
 	if AccountSettings.name <> '' then Result := true;
 	IniFile := TIniFile.Create(IniFilePath);
 	IniFile.WriteString(AccountSettings.name, 'email', AccountSettings.email);
@@ -149,6 +150,32 @@ begin
 	IniFile := TIniFile.Create(IniFilePath);
 	IniFile.EraseSection(AccountName);
 	IniFile.Destroy;
+end;
+
+procedure CenterWindow(WindowToStay, WindowToCenter: HWND);
+var
+	R1: TRect;
+	R2: TRect;
+	Monitor: HMonitor;
+	MonInfo: TMonitorInfo;
+	MonRect: TRect;
+	X: Integer;
+	Y: Integer;
+begin
+	GetWindowRect(WindowToStay, R1);
+	GetWindowRect(WindowToCenter, R2);
+	Monitor := MonitorFromWindow(WindowToStay, MONITOR_DEFAULTTONEAREST);
+	MonInfo.cbSize := SizeOf(MonInfo);
+	GetMonitorInfo(Monitor, @MonInfo);
+	MonRect := MonInfo.rcWork;
+	with R1 do
+	begin
+		X := (Right - Left - R2.Right + R2.Left) div 2 + Left;
+		Y := (Bottom - Top - R2.Bottom + R2.Top) div 2 + Top;
+	end;
+	X := Max(MonRect.Left, Min(X, MonRect.Right - R2.Right + R2.Left));
+	Y := Max(MonRect.Top, Min(Y, MonRect.Bottom - R2.Bottom + R2.Top));
+	SetWindowPos(WindowToCenter, 0, X, Y, 0, 0, SWP_NOACTIVATE or SWP_NOOWNERZORDER or SWP_NOSIZE or SWP_NOZORDER);
 end;
 
 end.

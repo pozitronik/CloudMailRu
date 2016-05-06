@@ -149,6 +149,7 @@ object AccountsForm: TAccountsForm
     000000000000000000000000000000000000000000000000000000000000}
   OldCreateOrder = False
   Position = poOwnerFormCenter
+  OnActivate = FormActivate
   OnShow = FormShow
   DesignSize = (
     494

@@ -28,6 +28,7 @@ type
 		class procedure ShowAccounts(parentWindow: HWND; IniPath: WideString; CryptProc: TCryptProcW; PluginNum, CryptoNum: Integer; RemoteName: WideString);
 		procedure AccountNameEditChange(Sender: TObject);
 		procedure EmailEditChange(Sender: TObject);
+		procedure FormActivate(Sender: TObject);
 	private
 		{ Private declarations }
 	public
@@ -127,6 +128,11 @@ begin
 	ApplyButton.Enabled := (EmailEdit.Text <> '') and (AccountNameEdit.Text <> '');
 end;
 
+procedure TAccountsForm.FormActivate(Sender: TObject);
+begin
+	CenterWindow(self.parentWindow, self.Handle);
+end;
+
 procedure TAccountsForm.FormShow(Sender: TObject);
 begin
 	UpdateAccountsList();
@@ -174,6 +180,5 @@ begin
 	AccountsList.OnClick(self);
 	ApplyButton.Enabled := (EmailEdit.Text <> '') and (AccountNameEdit.Text <> '');
 end;
-
 
 end.

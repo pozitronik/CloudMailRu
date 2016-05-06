@@ -12,7 +12,8 @@ object PropertyForm: TPropertyForm
   Font.Style = []
   FormStyle = fsStayOnTop
   OldCreateOrder = False
-  Position = poOwnerFormCenter
+  Position = poMainFormCenter
+  OnActivate = FormActivate
   OnDestroy = FormDestroy
   OnShow = FormShow
   DesignSize = (

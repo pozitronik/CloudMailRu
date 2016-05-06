@@ -4,7 +4,7 @@ interface
 
 uses
 	Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
-	Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls;
+	Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, MRC_Helper;
 
 type
 	TAskPasswordForm = class(TForm)
@@ -15,6 +15,7 @@ type
 		class function AskPassword(ParentWindow: HWND; AccountName: WideString; var Password: WideString; var UseTCPwdMngr: Boolean): integer;
 		procedure PasswordEditChange(Sender: TObject);
 		procedure FormShow(Sender: TObject);
+		procedure FormActivate(Sender: TObject);
 	private
 		{ Private declarations }
 		procedure WMHotKey(var Message: TMessage); message WM_HOTKEY;
@@ -51,6 +52,11 @@ begin
 	finally
 		FreeAndNil(AskPasswordForm);
 	end;
+end;
+
+procedure TAskPasswordForm.FormActivate(Sender: TObject);
+begin
+	CenterWindow(Self.ParentWindow, Self.Handle);
 end;
 
 procedure TAskPasswordForm.FormShow(Sender: TObject);

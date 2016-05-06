@@ -3,7 +3,7 @@ object AskPasswordForm: TAskPasswordForm
   Top = 0
   BorderStyle = bsDialog
   Caption = 'Password'
-  ClientHeight = 111
+  ClientHeight = 85
   ClientWidth = 431
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -13,6 +13,7 @@ object AskPasswordForm: TAskPasswordForm
   Font.Style = []
   OldCreateOrder = False
   Position = poOwnerFormCenter
+  OnActivate = FormActivate
   OnShow = FormShow
   PixelsPerInch = 96
   TextHeight = 13
@@ -34,7 +35,7 @@ object AskPasswordForm: TAskPasswordForm
   end
   object OkButton: TButton
     Left = 348
-    Top = 77
+    Top = 54
     Width = 75
     Height = 25
     Caption = 'OK'
@@ -45,7 +46,7 @@ object AskPasswordForm: TAskPasswordForm
   object UseTCPwdMngrCB: TCheckBox
     Left = 8
     Top = 54
-    Width = 415
+    Width = 334
     Height = 17
     Caption = 'Store password in TC password manager'
     TabOrder = 1
