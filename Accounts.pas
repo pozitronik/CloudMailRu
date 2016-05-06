@@ -78,8 +78,7 @@ end;
 
 procedure TAccountsForm.AccountsListKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
 begin
-	if Key = VK_DELETE then DeleteButtonClick(nil); { TODO : Переделать на хоткеи, как в RemoteProperty }
-
+	if Key = VK_DELETE then DeleteButtonClick(nil);
 end;
 
 procedure TAccountsForm.ApplyButtonClick(Sender: TObject);
@@ -175,5 +174,6 @@ begin
 	AccountsList.OnClick(self);
 	ApplyButton.Enabled := (EmailEdit.Text <> '') and (AccountNameEdit.Text <> '');
 end;
+
 
 end.
