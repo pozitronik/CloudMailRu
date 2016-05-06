@@ -77,6 +77,7 @@ type
 		function HTTPPost(URL: WideString; PostData: TStringStream; var Answer: WideString; ContentType: WideString = 'application/x-www-form-urlencoded'): boolean; // Постинг данных с возможным получением ответа.
 
 		function HTTPPostFile(URL: WideString; PostData: TIdMultipartFormDataStream; var Answer: WideString): integer; // Постинг файла и получение ответа
+		function HTTPGetFile(URL: WideString; var FileStream: TMemoryStream): integer;
 		function HTTPGet(URL: WideString; var Answer: WideString): boolean;
 		function getTokenFromText(Text: WideString): WideString;
 		function get_x_page_id_FromText(Text: WideString): WideString;
@@ -308,9 +309,7 @@ var
 	SSL: TIdSSLIOHandlerSocketOpenSSL;
 begin
 	Result := true;
-
 	try
-
 		MemStream := TStringStream.Create;
 		self.HTTPInit(HTTP, SSL, self.Cookie);
 		if ContentType <> '' then HTTP.Request.ContentType := ContentType;
@@ -333,7 +332,6 @@ begin
 				Result := false;
 			end;
 		end;
-
 	end;
 	MemStream.Free;
 end;
@@ -345,7 +343,6 @@ var
 	SSL: TIdSSLIOHandlerSocketOpenSSL;
 begin
 	Result := CLOUD_OPERATION_OK;
-
 	try
 		self.HTTPInit(HTTP, SSL, self.Cookie);
 		MemStream := TStringStream.Create;
@@ -370,7 +367,6 @@ begin
 		end;
 	end;
 	MemStream.Free
-
 end;
 
 function TCloudMailRu.HTTPGet(URL: WideString; var Answer: WideString): boolean;
@@ -392,11 +388,35 @@ begin
 	Result := Answer <> '';
 end;
 
+function TCloudMailRu.HTTPGetFile(URL: WideString; var FileStream: TMemoryStream): integer;
+var
+	HTTP: TIdHTTP;
+	SSL: TIdSSLIOHandlerSocketOpenSSL;
+begin
+	Result := FS_FILE_OK;
+	try
+		self.HTTPInit(HTTP, SSL, self.Cookie);
+		HTTP.OnWork := self.HttpProgress;
+		HTTP.Get(URL, FileStream);
+		self.HTTPDestroy(HTTP, SSL);
+	except
+		on E: Exception do
+		begin
+			if E.ClassName = 'EAbort' then
+			begin
+				Result := FS_FILE_USERABORT;
+			end else begin
+				self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar(E.ClassName + ' ошибка с сообщением : ' + E.Message + ' при копировании файла с адреса ' + URL));
+				Result := FS_FILE_READERROR;
+			end;
+		end;
+	end;
+end;
+
 procedure TCloudMailRu.HTTPInit(var HTTP: TIdHTTP; var SSL: TIdSSLIOHandlerSocketOpenSSL; var Cookie: TIdCookieManager);
 begin
 	SSL := TIdSSLIOHandlerSocketOpenSSL.Create();
-	if not(Assigned(Cookie)) then Cookie := TIdCookieManager.Create();
-
+	// if not(Assigned(Cookie)) then Cookie := TIdCookieManager.Create(); // Кука должна быть
 	HTTP := TIdHTTP.Create();
 	HTTP.CookieManager := Cookie;
 	HTTP.IOHandler := SSL;
@@ -470,7 +490,7 @@ begin
 	except
 		on E: Exception do
 		begin
-			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Directory list getting error ' + E.Message));
+			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Directory list receiving error ' + E.Message));
 		end;
 	end;
 	if not Result then exit(false);
@@ -480,8 +500,6 @@ end;
 function TCloudMailRu.getFile(remotePath, localPath: WideString): integer; // 0 - ok, else error
 var
 	FileStream: TMemoryStream;
-	HTTP: TIdHTTP;
-	SSL: TIdSSLIOHandlerSocketOpenSSL;
 begin
 	if self.Shard = '' then
 	begin
@@ -497,29 +515,19 @@ begin
 	end;
 
 	Result := FS_FILE_OK;
-	FileStream := TMemoryStream.Create;
-
 	remotePath := UrlEncode(StringReplace(remotePath, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
 
 	try
-		self.HTTPInit(HTTP, SSL, self.Cookie);
-		HTTP.OnWork := self.HttpProgress;
-		HTTP.Get(self.Shard + remotePath, FileStream); { TODO : В отдельную процедуру }
-		self.HTTPDestroy(HTTP, SSL);
+		FileStream := TMemoryStream.Create;
+		Result := self.HTTPGetFile(self.Shard + remotePath, FileStream);
+		if Result = FS_FILE_OK then FileStream.SaveToFile(localPath);
 	except
 		on E: Exception do
 		begin
-			if E.ClassName = 'EAbort' then
-			begin
-				Result := FS_FILE_USERABORT;
-			end else begin
-				self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar(E.ClassName + ' ошибка с сообщением : ' + E.Message));
-				Result := FS_FILE_READERROR;
-			end;
-
+			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('File receiving error ' + E.Message));
 		end;
 	end;
-	FileStream.SaveToFile(localPath);
+	FileStream.Free;
 end;
 
 function TCloudMailRu.publishFile(path: WideString; var PublicLink: WideString; publish: boolean = CLOUD_PUBLISH): boolean;
