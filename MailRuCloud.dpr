@@ -567,8 +567,6 @@ function FsExecuteFileW(MainWin: thandle; RemoteName, Verb: PWideChar): integer;
 var
 	RealPath: TRealPath;
 	CurrentItem: TCloudMailRuDirListingItem;
-	publishResult: integer;
-	PublicLink: WideString;
 Begin
 	RealPath := ExtractRealPath(RemoteName);
 	Result := FS_EXEC_OK;
@@ -768,12 +766,10 @@ end;
 function FsContentGetValueW(FileName: PWideChar; FieldIndex: integer; UnitIndex: integer; FieldValue: Pointer; maxlen: integer; Flags: integer): integer; stdcall;
 var
 	Item: TCloudMailRuDirListingItem;
-	StatusResult: boolean;
 	RealPath: TRealPath;
 	Filetime: TFileTime;
-	DateTime: TDateTime;
-	t: int64;
 begin
+	Result := ft_nosuchfield;
 	RealPath := ExtractRealPath(FileName);
 	if (RealPath.path = '') then exit(ft_nosuchfield);
 

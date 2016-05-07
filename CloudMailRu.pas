@@ -392,7 +392,6 @@ function TCloudMailRu.HTTPGetFile(URL: WideString; var FileStream: TFileStream):
 var
 	HTTP: TIdHTTP;
 	SSL: TIdSSLIOHandlerSocketOpenSSL;
-	s: WideString;
 begin
 	Result := FS_FILE_OK;
 	try
@@ -538,7 +537,7 @@ begin
 	FileStream.Free;
 	if Result <> FS_FILE_OK then
 	begin
-		System.SysUtils.DeleteFile(localPath);
+		System.SysUtils.deleteFile(localPath);
 	end;
 end;
 
@@ -790,6 +789,7 @@ begin
 	OldName := UrlEncode(StringReplace(OldName, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
 	NewName := UrlEncode(StringReplace(NewName, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
 	URL := 'https://cloud.mail.ru/api/v2/file/rename';
+	PostResult := false;
 	try
 		PostData := TStringStream.Create('api=2&home=' + OldName + '&name=' + NewName + '&token=' + self.token + '&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id, TEncoding.UTF8);
 		PostResult := self.HTTPPost(URL, PostData, PostAnswer);
@@ -873,6 +873,7 @@ begin
 	OldName := UrlEncode(StringReplace(OldName, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
 	ToPath := UrlEncode(StringReplace(ToPath, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
 	URL := 'https://cloud.mail.ru/api/v2/file/move';
+	PostResult := false;
 	try
 		PostData := TStringStream.Create('api=2&home=' + OldName + '&folder=' + ToPath + '&token=' + self.token + '&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id + '&conflict', TEncoding.UTF8);
 		PostResult := self.HTTPPost(URL, PostData, PostAnswer);
