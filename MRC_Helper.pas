@@ -185,7 +185,7 @@ var
 begin
 	Result := '';
 	for I := 1 to Length(URL) do
-		if URL[I] in ['a' .. 'z', 'A' .. 'Z', '/', '_', '-', '.'] then Result := Result + URL[I]
+		if URL[I] in ['a' .. 'z', 'A' .. 'Z', '/', '_', '-', '.','0'..'9'] then Result := Result + URL[I]
 		else Result := Result + '%' + IntToHex(Ord(URL[I]), 2);
 end;
 end.

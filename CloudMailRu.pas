@@ -77,7 +77,7 @@ type
 		function HTTPPost(URL: WideString; PostData: TStringStream; var Answer: WideString; ContentType: WideString = 'application/x-www-form-urlencoded'): boolean; // Постинг данных с возможным получением ответа.
 
 		function HTTPPostFile(URL: WideString; PostData: TIdMultipartFormDataStream; var Answer: WideString): integer; // Постинг файла и получение ответа
-		function HTTPGetFile(URL: WideString; var FileStream: TMemoryStream): integer;
+		function HTTPGetFile(URL: WideString; var FileStream: TFileStream): integer;
 		function HTTPGet(URL: WideString; var Answer: WideString): boolean;
 		function getTokenFromText(Text: WideString): WideString;
 		function get_x_page_id_FromText(Text: WideString): WideString;
@@ -388,27 +388,34 @@ begin
 	Result := Answer <> '';
 end;
 
-function TCloudMailRu.HTTPGetFile(URL: WideString; var FileStream: TMemoryStream): integer;
+function TCloudMailRu.HTTPGetFile(URL: WideString; var FileStream: TFileStream): integer;
 var
 	HTTP: TIdHTTP;
 	SSL: TIdSSLIOHandlerSocketOpenSSL;
+	s: WideString;
 begin
 	Result := FS_FILE_OK;
 	try
 		self.HTTPInit(HTTP, SSL, self.Cookie);
+		HTTP.Request.ContentType := 'application/octet-stream';
+		HTTP.Response.KeepAlive := true;
 		HTTP.OnWork := self.HttpProgress;
 		HTTP.Get(URL, FileStream);
 		self.HTTPDestroy(HTTP, SSL);
 	except
+		on E: EAbort do
+		begin
+			Result := FS_FILE_USERABORT;
+		end;
+		(* on E: EOutOfMemory do
+			begin
+			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar(E.ClassName + ' ошибка с сообщением : ' + E.Message + ' при копировании файла с адреса ' + URL + ' E.ErrorMessage=' + E.ErrorMessage));
+			Result := FS_FILE_READERROR;
+			end; *)
 		on E: Exception do
 		begin
-			if E.ClassName = 'EAbort' then
-			begin
-				Result := FS_FILE_USERABORT;
-			end else begin
-				self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar(E.ClassName + ' ошибка с сообщением : ' + E.Message + ' при копировании файла с адреса ' + URL));
-				Result := FS_FILE_READERROR;
-			end;
+			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar(E.ClassName + ' ошибка с сообщением : ' + E.Message + ' при копировании файла с адреса ' + URL));
+			Result := FS_FILE_READERROR;
 		end;
 	end;
 end;
@@ -421,6 +428,7 @@ begin
 	HTTP.CookieManager := Cookie;
 	HTTP.IOHandler := SSL;
 	HTTP.AllowCookies := true;
+	HTTP.HTTPOptions := [hoForceEncodeParams, hoNoParseMetaHTTPEquiv];
 	HTTP.HandleRedirects := true;
 	// HTTP.ConnectTimeout:=10;
 	HTTP.Request.UserAgent := 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.17 (KHTML, like Gecko) Chrome/24.0.1312.57 Safari/537.17';
@@ -499,7 +507,7 @@ end;
 
 function TCloudMailRu.getFile(remotePath, localPath: WideString): integer; // 0 - ok, else error
 var
-	FileStream: TMemoryStream;
+	FileStream: TFileStream;
 begin
 	if self.Shard = '' then
 	begin
@@ -518,9 +526,9 @@ begin
 	remotePath := UrlEncode(StringReplace(remotePath, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
 
 	try
-		FileStream := TMemoryStream.Create;
+		FileStream := TFileStream.Create (localPath,fmCreate);
 		Result := self.HTTPGetFile(self.Shard + remotePath, FileStream);
-		if Result = FS_FILE_OK then FileStream.SaveToFile(localPath);
+		//if Result = FS_FILE_OK then FileStream.SaveToFile(localPath);
 	except
 		on E: Exception do
 		begin
@@ -991,7 +999,7 @@ var
 begin
 	X := TSuperObject.Create(JSON);
 	X := X['body'].AsObject;
-	Result := X.A['get'].O[0].S['url'];
+	Result := X.A['get'].O[0].s['url'];
 end;
 
 function TCloudMailRu.getDirListingFromJSON(JSON: WideString): TCloudMailRuDirListing;
@@ -1013,20 +1021,20 @@ begin
 			Obj := O[J];
 			With ResultItems[J] do
 			begin
-				tree := Obj.S['tree'];
+				tree := Obj.s['tree'];
 				grev := Obj.I['grev'];
 				size := Obj.I['size'];
-				kind := Obj.S['kind'];
-				weblink := Obj.S['weblink'];
+				kind := Obj.s['kind'];
+				weblink := Obj.s['weblink'];
 				rev := Obj.I['rev'];
-				type_ := Obj.S['type'];
-				home := Obj.S['home'];
-				name := Obj.S['name'];
+				type_ := Obj.s['type'];
+				home := Obj.s['home'];
+				name := Obj.s['name'];
 				if (type_ = TYPE_FILE) then
 				begin
 					mtime := Obj.I['mtime'];
-					virus_scan := Obj.S['virus_scan'];
-					hash := Obj.S['hash'];
+					virus_scan := Obj.s['virus_scan'];
+					hash := Obj.s['hash'];
 				end else begin
 					mtime := 0;
 				end;
@@ -1043,20 +1051,20 @@ begin
 	X := X['body'].AsObject;
 	With Result do
 	begin
-		tree := X.S['tree'];
+		tree := X.s['tree'];
 		grev := X.I['grev'];
 		size := X.I['size'];
-		kind := X.S['kind'];
-		weblink := X.S['weblink'];
+		kind := X.s['kind'];
+		weblink := X.s['weblink'];
 		rev := X.I['rev'];
-		type_ := X.S['type'];
-		home := X.S['home'];
-		name := X.S['name'];
+		type_ := X.s['type'];
+		home := X.s['home'];
+		name := X.s['name'];
 		if (type_ = TYPE_FILE) then
 		begin
 			mtime := X.I['mtime'];
-			virus_scan := X.S['virus_scan'];
-			hash := X.S['hash'];
+			virus_scan := X.s['virus_scan'];
+			hash := X.s['hash'];
 		end else begin
 			mtime := 0;
 		end;
@@ -1072,7 +1080,7 @@ begin
 	OperationStatus := X.I['status'];
 	if OperationStatus <> 200 then
 	begin
-		Error := X.O['body'].O['home'].S['error'];
+		Error := X.O['body'].O['home'].s['error'];
 		if Error = 'exists' then exit(CLOUD_ERROR_EXISTS);
 		if Error = 'required' then exit(CLOUD_ERROR_REQUIRED);
 		if Error = 'readonly' then exit(CLOUD_ERROR_READONLY);
@@ -1089,7 +1097,7 @@ var
 	X: ISuperObject;
 begin
 	X := TSuperObject.Create(JSON).AsObject;
-	Result := X.S['body'];
+	Result := X.s['body'];
 end;
 
 end.
