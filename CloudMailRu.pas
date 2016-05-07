@@ -526,9 +526,9 @@ begin
 	remotePath := UrlEncode(StringReplace(remotePath, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
 
 	try
-		FileStream := TFileStream.Create (localPath,fmCreate);
+		FileStream := TFileStream.Create(localPath, fmCreate);
 		Result := self.HTTPGetFile(self.Shard + remotePath, FileStream);
-		//if Result = FS_FILE_OK then FileStream.SaveToFile(localPath);
+
 	except
 		on E: Exception do
 		begin
@@ -536,6 +536,10 @@ begin
 		end;
 	end;
 	FileStream.Free;
+	if Result <> FS_FILE_OK then
+	begin
+		System.SysUtils.DeleteFile(localPath);
+	end;
 end;
 
 function TCloudMailRu.publishFile(path: WideString; var PublicLink: WideString; publish: boolean = CLOUD_PUBLISH): boolean;
