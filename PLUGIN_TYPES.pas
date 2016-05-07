@@ -91,6 +91,24 @@ const
 	BG_UPLOAD = 2; { Plugin supports uploads in background }
 	BG_ASK_USER = 4; { Plugin requires separate connection for background transfers -> ask user first }
 
+const
+	ft_nomorefields = 0;
+	ft_numeric_32 = 1;
+	ft_numeric_64 = 2;
+	ft_numeric_floating = 3;
+	ft_date = 4;
+	ft_time = 5;
+	ft_boolean = 6;
+	ft_multiplechoice = 7;
+	ft_string = 8;
+	ft_fulltext = 9;
+	ft_datetime = 10;
+	ft_stringw = 11;
+
+	// for ContentGetValue
+	ft_nosuchfield = -1;
+	ft_fileerror = -2;
+
 type
 	tRemoteInfo = record
 		SizeLow, SizeHigh: longint;
@@ -112,8 +130,8 @@ type
 	TProgressProc = function(PluginNr: integer; SourceName, TargetName: pchar; PercentDone: integer): integer; stdcall;
 	TLogProc = procedure(PluginNr, MsgType: integer; LogString: pchar); stdcall;
 	TRequestProc = function(PluginNr, RequestType: integer; CustomTitle, CustomText, ReturnedText: pchar; maxlen: integer): bool; stdcall;
-	//TCryptProc = function(PluginNr, CryptoNumber, mode: integer; ConnectionName, Password: pchar; maxlen: integer): integer; stdcall;
- 	TCryptProcW = function(PluginNr, CryptoNumber, mode: integer; ConnectionName, Password: pWidechar; maxlen: integer): integer; stdcall;
+	// TCryptProc = function(PluginNr, CryptoNumber, mode: integer; ConnectionName, Password: pchar; maxlen: integer): integer; stdcall;
+	TCryptProcW = function(PluginNr, CryptoNumber, mode: integer; ConnectionName, Password: pWidechar; maxlen: integer): integer; stdcall;
 
 	{ ------------------------------------------------------------------------------ }
 

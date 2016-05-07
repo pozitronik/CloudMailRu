@@ -165,7 +165,7 @@ end;
 
 function FsGetBackgroundFlags: integer; stdcall;
 begin
-	Result := BG_DOWNLOAD + BG_UPLOAD;// + BG_ASK_USER;
+	Result := BG_DOWNLOAD + BG_UPLOAD; // + BG_ASK_USER;
 end;
 
 { ANSI PEASANTS }
@@ -248,6 +248,91 @@ end;
 procedure FsSetCryptCallback(PCryptProc: TCryptProcW; CryptoNr: integer; Flags: integer); stdcall;
 begin
 	SetLastError(ERROR_INVALID_FUNCTION);
+end;
+
+function FsContentGetSupportedField(FieldIndex: integer; FieldName: PAnsiChar; Units: PAnsiChar; maxlen: integer): integer; stdcall;
+begin
+	Result := ft_nomorefields;
+	case FieldIndex of
+		0:
+			begin
+				System.AnsiStrings.strpcopy(FieldName, 'tree');
+				maxlen := 32;
+				Result := ft_stringw;
+			end;
+		1:
+			begin
+				System.AnsiStrings.strpcopy(FieldName, 'name');
+				maxlen := 1024;
+				Result := ft_stringw;
+			end;
+		2:
+			begin
+				System.AnsiStrings.strpcopy(FieldName, 'grev');
+				maxlen := 32;
+				Result := ft_numeric_32;
+			end;
+		3:
+			begin
+				System.AnsiStrings.strpcopy(FieldName, 'size');
+				maxlen := 64;
+				Result := ft_numeric_64;
+			end;
+		4:
+			begin
+				System.AnsiStrings.strpcopy(FieldName, 'kind');
+				maxlen := 1024;
+				Result := ft_stringw;
+			end;
+		5:
+			begin
+				System.AnsiStrings.strpcopy(FieldName, 'weblink');
+				maxlen := 1024;
+				Result := ft_stringw;
+			end;
+		6:
+			begin
+				System.AnsiStrings.strpcopy(FieldName, 'rev');
+				maxlen := 32;
+				Result := ft_numeric_32;
+			end;
+		7:
+			begin
+				System.AnsiStrings.strpcopy(FieldName, 'type');
+				maxlen := 1024;
+				Result := ft_stringw;
+			end;
+		8:
+			begin
+				System.AnsiStrings.strpcopy(FieldName, 'home');
+				maxlen := 1024;
+				Result := ft_stringw;
+			end;
+		9:
+			begin
+				System.AnsiStrings.strpcopy(FieldName, 'mtime');
+				maxlen := 1024;
+				Result := ft_time;
+			end;
+		10:
+			begin
+				System.AnsiStrings.strpcopy(FieldName, 'hash');
+				maxlen := 49;
+				Result := ft_stringw;
+			end;
+		11:
+			begin
+				System.AnsiStrings.strpcopy(FieldName, 'virus_scan');
+				maxlen := 1024;
+				Result := ft_stringw;
+			end;
+	end;
+end;
+
+function FsContentGetValue(FileName: PAnsiChar; FieldIndex: integer; UnitIndex: integer; FieldValue: Pointer; maxlen: integer; Flags: integer): integer; stdcall;
+begin
+	SetLastError(ERROR_INVALID_FUNCTION);
+	Result := ft_nosuchfield;
 end;
 
 { GLORIOUS UNICODE MASTER RACE }
@@ -533,7 +618,7 @@ begin
 	Result := FS_FILE_NOTSUPPORTED;
 	RealPath := ExtractRealPath(RemoteName);
 
-	MyProgressProc(PluginNum, RemoteName,LocalName, 0);
+	MyProgressProc(PluginNum, RemoteName, LocalName, 0);
 
 	if CopyFlags = FS_FILE_OK then
 	begin
@@ -693,18 +778,17 @@ begin
 	CryptoNum := CryptoNr;
 end;
 
+function FsContentGetValueW(FileName: PWideChar; FieldIndex: integer; UnitIndex: integer; FieldValue: Pointer; maxlen: integer; Flags: integer): integer; stdcall;
+begin
+	SetLastError(ERROR_INVALID_FUNCTION);
+	Result := ft_nosuchfield;
+end;
+
 exports FsGetDefRootName, FsInit, FsInitW, FsFindFirst, FsFindFirstW, FsFindNext, FsFindNextW, FsFindClose, FsGetFile, FsGetFileW,
 	FsDisconnect, FsDisconnectW, FsStatusInfo, FsStatusInfoW, FsPutFile, FsPutFileW, FsDeleteFile, FsDeleteFileW, FsMkDir, FsMkDirW,
-	FsRemoveDir, FsRemoveDirW, FsSetCryptCallback, FsSetCryptCallbackW, FsExecuteFileW, FsRenMovFile, FsRenMovFileW, FsGetBackgroundFlags;
+	FsRemoveDir, FsRemoveDirW, FsSetCryptCallback, FsSetCryptCallbackW, FsExecuteFileW, FsRenMovFile, FsRenMovFileW, FsGetBackgroundFlags,
+	FsContentGetSupportedField, FsContentGetValue, FsContentGetValueW;
 
-(* ,
-	FsExecuteFile,
-	FsGetFile,
-	FsPutFile,
-	FsDeleteFile,
-	FsStatusInfo,
-	; *)
-// FsExtractCustomIcon, {В примере отсутствует - при помощи этой функции можно устанавливать свои иконки на отображаемый файл}
 begin
 
 	GetMem(tmp, max_path);
