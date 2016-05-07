@@ -160,7 +160,7 @@ var
 	Monitor: HMonitor;
 	MonInfo: TMonitorInfo;
 	MonRect: TRect;
-	X: Integer;
+	x: Integer;
 	Y: Integer;
 begin
 	GetWindowRect(WindowToStay, R1);
@@ -171,21 +171,22 @@ begin
 	MonRect := MonInfo.rcWork;
 	with R1 do
 	begin
-		X := (Right - Left - R2.Right + R2.Left) div 2 + Left;
+		x := (Right - Left - R2.Right + R2.Left) div 2 + Left;
 		Y := (Bottom - Top - R2.Bottom + R2.Top) div 2 + Top;
 	end;
-	X := Max(MonRect.Left, Min(X, MonRect.Right - R2.Right + R2.Left));
+	x := Max(MonRect.Left, Min(x, MonRect.Right - R2.Right + R2.Left));
 	Y := Max(MonRect.Top, Min(Y, MonRect.Bottom - R2.Bottom + R2.Top));
-	SetWindowPos(WindowToCenter, 0, X, Y, 0, 0, SWP_NOACTIVATE or SWP_NOOWNERZORDER or SWP_NOSIZE or SWP_NOZORDER);
+	SetWindowPos(WindowToCenter, 0, x, Y, 0, 0, SWP_NOACTIVATE or SWP_NOOWNERZORDER or SWP_NOSIZE or SWP_NOZORDER);
 end;
 
 function UrlEncode(URL: UTF8String): WideString; // todo нужно добиться корректного формирования урлов
 var
-	I: integer;
+	I: Integer;
 begin
 	Result := '';
 	for I := 1 to Length(URL) do
-		if URL[I] in ['a' .. 'z', 'A' .. 'Z', '/', '_', '-', '.','0'..'9'] then Result := Result + URL[I]
+		if URL[I] in ['a' .. 'z', 'A' .. 'Z', '/', '_', '-', '.', '0' .. '9'] then Result := Result + URL[I]
 		else Result := Result + '%' + IntToHex(Ord(URL[I]), 2);
 end;
+
 end.

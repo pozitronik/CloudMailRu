@@ -78,6 +78,20 @@ begin
 	Result.dwFileAttributes := FILE_ATTRIBUTE_DIRECTORY;
 end;
 
+function FindListingItemByName(DirListing: TCloudMailRuDirListing; ItemName: WideString): TCloudMailRuDirListingItem;
+var
+	I: integer;
+begin
+	ItemName := '/' + StringReplace(ItemName, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]);
+	for I := 0 to Length(DirListing) - 1 do
+	begin
+		if DirListing[I].home = ItemName then
+		begin
+			exit(DirListing[I]);
+		end;
+	end;
+end;
+
 // Получает пароль из файла, из тоталовского менеджера или запрашивает прямой ввод
 function GetMyPasswordNow(var AccountSettings: TAccountSettings): boolean;
 var
@@ -257,73 +271,61 @@ begin
 		0:
 			begin
 				System.AnsiStrings.strpcopy(FieldName, 'tree');
-				maxlen := 32;
 				Result := ft_stringw;
 			end;
 		1:
 			begin
 				System.AnsiStrings.strpcopy(FieldName, 'name');
-				maxlen := 1024;
 				Result := ft_stringw;
 			end;
 		2:
 			begin
 				System.AnsiStrings.strpcopy(FieldName, 'grev');
-				maxlen := 32;
 				Result := ft_numeric_32;
 			end;
 		3:
 			begin
 				System.AnsiStrings.strpcopy(FieldName, 'size');
-				maxlen := 64;
 				Result := ft_numeric_64;
 			end;
 		4:
 			begin
 				System.AnsiStrings.strpcopy(FieldName, 'kind');
-				maxlen := 1024;
 				Result := ft_stringw;
 			end;
 		5:
 			begin
 				System.AnsiStrings.strpcopy(FieldName, 'weblink');
-				maxlen := 1024;
 				Result := ft_stringw;
 			end;
 		6:
 			begin
 				System.AnsiStrings.strpcopy(FieldName, 'rev');
-				maxlen := 32;
 				Result := ft_numeric_32;
 			end;
 		7:
 			begin
 				System.AnsiStrings.strpcopy(FieldName, 'type');
-				maxlen := 1024;
 				Result := ft_stringw;
 			end;
 		8:
 			begin
 				System.AnsiStrings.strpcopy(FieldName, 'home');
-				maxlen := 1024;
 				Result := ft_stringw;
 			end;
 		9:
 			begin
 				System.AnsiStrings.strpcopy(FieldName, 'mtime');
-				maxlen := 1024;
-				Result := ft_time;
+				Result := ft_datetime;
 			end;
 		10:
 			begin
 				System.AnsiStrings.strpcopy(FieldName, 'hash');
-				maxlen := 49;
 				Result := ft_stringw;
 			end;
 		11:
 			begin
 				System.AnsiStrings.strpcopy(FieldName, 'virus_scan');
-				maxlen := 1024;
 				Result := ft_stringw;
 			end;
 	end;
@@ -331,6 +333,7 @@ end;
 
 function FsContentGetValue(FileName: PAnsiChar; FieldIndex: integer; UnitIndex: integer; FieldValue: Pointer; maxlen: integer; Flags: integer): integer; stdcall;
 begin
+
 	SetLastError(ERROR_INVALID_FUNCTION);
 	Result := ft_nosuchfield;
 end;
@@ -560,22 +563,6 @@ begin
 	end;
 end;
 
-function FindListingItemByName(DirListing: TCloudMailRuDirListing; ItemName: WideString): TCloudMailRuDirListingItem;
-var
-	I: integer;
-begin
-	ItemName := '/' + StringReplace(ItemName, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]);
-	for I := 0 to Length(DirListing) - 1 do
-	begin
-		if DirListing[I].home = ItemName then
-		begin
-			exit(DirListing[I]);
-		end;
-
-	end;
-
-end;
-
 function FsExecuteFileW(MainWin: thandle; RemoteName, Verb: PWideChar): integer; stdcall; // Запуск файла
 var
 	RealPath: TRealPath;
@@ -779,15 +766,100 @@ begin
 end;
 
 function FsContentGetValueW(FileName: PWideChar; FieldIndex: integer; UnitIndex: integer; FieldValue: Pointer; maxlen: integer; Flags: integer): integer; stdcall;
+var
+	Item: TCloudMailRuDirListingItem;
+	StatusResult: boolean;
+	RealPath: TRealPath;
+	Filetime: TFileTime;
+	DateTime: TDateTime;
+	t: int64;
 begin
-	SetLastError(ERROR_INVALID_FUNCTION);
-	Result := ft_nosuchfield;
+	RealPath := ExtractRealPath(FileName);
+	if (RealPath.path = '') then exit(ft_nosuchfield);
+
+	Item := FindListingItemByName(CurrentListing, RealPath.path); // сначала попробуем найти поле в имеющемся списке
+	if Item.home = '' then // если там его нет (нажали пробел на папке, например), то запросим в болаке напрямую
+	begin
+		if Cloud.statusFile(RealPath.path, Item) then
+		begin
+			if Item.home = '' then
+			begin
+				MyLogProc(PluginNum, msgtype_importanterror, PWideChar('Cant find file ' + RealPath.path)); { Такого быть не может, но... }
+				exit(ft_nosuchfield);
+			end;
+		end; // Не рапортуем, это будет уровнем выше
+	end;
+	case FieldIndex of
+		0:
+			begin
+				strpcopy(FieldValue, Item.tree);
+				Result := ft_stringw;
+			end;
+		1:
+			begin
+				strpcopy(FieldValue, Item.name);
+				Result := ft_stringw;
+			end;
+		2:
+			begin
+				Move(Item.grev, FieldValue^, SizeOf(Item.grev));
+				Result := ft_numeric_32;
+			end;
+		3:
+			begin
+				Move(Item.size, FieldValue^, SizeOf(Item.size));
+				Result := ft_numeric_64;
+			end;
+		4:
+			begin
+				strpcopy(FieldValue, Item.kind);
+				Result := ft_stringw;
+			end;
+		5:
+			begin
+				strpcopy(FieldValue, Item.weblink);
+				Result := ft_stringw;
+			end;
+		6:
+			begin
+				Move(Item.rev, FieldValue^, SizeOf(Item.rev));
+				Result := ft_numeric_32;
+			end;
+		7:
+			begin
+				strpcopy(FieldValue, Item.type_);
+				Result := ft_stringw;
+			end;
+		8:
+			begin
+				strpcopy(FieldValue, Item.home);
+				Result := ft_stringw;
+			end;
+		9:
+			begin
+				if Item.mtime = 0 then exit(ft_nosuchfield);
+
+				Filetime.dwHighDateTime := 0;
+				Filetime.dwLowDateTime := 0;
+				Filetime := DateTimeToFileTime(UnixToDateTime(Item.mtime));
+				Move(Filetime, FieldValue^, SizeOf(Filetime));
+				Result := ft_datetime;
+			end;
+		10:
+			begin
+				strpcopy(FieldValue, Item.hash);
+				Result := ft_stringw;
+			end;
+		11:
+			begin
+				strpcopy(FieldValue, Item.virus_scan);
+				Result := ft_stringw;
+			end;
+	end;
+
 end;
 
-exports FsGetDefRootName, FsInit, FsInitW, FsFindFirst, FsFindFirstW, FsFindNext, FsFindNextW, FsFindClose, FsGetFile, FsGetFileW,
-	FsDisconnect, FsDisconnectW, FsStatusInfo, FsStatusInfoW, FsPutFile, FsPutFileW, FsDeleteFile, FsDeleteFileW, FsMkDir, FsMkDirW,
-	FsRemoveDir, FsRemoveDirW, FsSetCryptCallback, FsSetCryptCallbackW, FsExecuteFileW, FsRenMovFile, FsRenMovFileW, FsGetBackgroundFlags,
-	FsContentGetSupportedField, FsContentGetValue, FsContentGetValueW;
+exports FsGetDefRootName, FsInit, FsInitW, FsFindFirst, FsFindFirstW, FsFindNext, FsFindNextW, FsFindClose, FsGetFile, FsGetFileW, FsDisconnect, FsDisconnectW, FsStatusInfo, FsStatusInfoW, FsPutFile, FsPutFileW, FsDeleteFile, FsDeleteFileW, FsMkDir, FsMkDirW, FsRemoveDir, FsRemoveDirW, FsSetCryptCallback, FsSetCryptCallbackW, FsExecuteFileW, FsRenMovFile, FsRenMovFileW, FsGetBackgroundFlags, FsContentGetSupportedField, FsContentGetValue, FsContentGetValueW;
 
 begin
 
