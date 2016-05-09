@@ -169,13 +169,6 @@ Begin
 	messagebox(FindTCWindow, PWideChar('Installation succeful'), 'Information', mb_ok + mb_iconinformation);
 End;
 
-function FsFindClose(Hdl: thandle): integer; stdcall;
-Begin
-	// Завершение получения списка файлов. Result тоталом не используется (всегда равен 0)
-	Result := 0;
-	FileCounter := 0;
-end;
-
 function FsGetBackgroundFlags: integer; stdcall;
 begin
 	Result := 0; // BG_DOWNLOAD + BG_UPLOAD; // + BG_ASK_USER;
@@ -458,8 +451,6 @@ begin
 	GlobalPath := path;
 	if GlobalPath = '\' then
 	begin // список соединений
-		if Assigned(Cloud) then FreeAndNil(Cloud);
-
 		Sections := TStringList.Create;
 		GetAccountsListFromIniFile(IniFilePath, Sections);
 
@@ -528,6 +519,7 @@ begin
 			Result := true;
 		end
 		else Result := false;
+    Sections.Free;
 	end else begin
 		// Получение последующих файлов в папке (вызывается до тех пор, пока не вернёт false).
 		if (Length(CurrentListing) > FileCounter) then
@@ -541,6 +533,13 @@ begin
 			Result := false;
 		end;
 	end;
+end;
+
+function FsFindClose(Hdl: thandle): integer; stdcall;
+Begin // Завершение получения списка файлов. Result тоталом не используется (всегда равен 0)
+	if Assigned(Cloud) then FreeAndNil(Cloud);
+	Result := 0;
+	FileCounter := 0;
 end;
 
 function FsExecuteFileW(MainWin: thandle; RemoteName, Verb: PWideChar): integer; stdcall; // Запуск файла
