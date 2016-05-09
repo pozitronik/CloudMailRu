@@ -183,13 +183,6 @@ begin
 			exit(false);
 		end;
 		self.ExternalLogProc(ExternalPluginNr, MSGTYPE_DETAILS, PWideChar('Requesting download shard for current session'));
-		if self.getShard(self.Shard) then
-		begin
-			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_DETAILS, PWideChar('Current shard: ' + self.Shard));
-		end else begin
-			// Это не критическая ошибка, попробуем получить шард прямо в процессе копирования
-			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_DETAILS, PWideChar('Current shard is undefined, downloading can be unsupported'));
-		end;
 	end
 	else self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Error login to ' + self.user + '@' + self.domain));
 end;
