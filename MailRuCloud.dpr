@@ -449,6 +449,7 @@ var // Получение первого файла в папке. Result тоталом не используется (можно ис
 begin
 	Result := 0;
 	GlobalPath := path;
+	if Assigned(Cloud) then FreeAndNil(Cloud);
 	if GlobalPath = '\' then
 	begin // список соединений
 		Sections := TStringList.Create;
@@ -519,7 +520,7 @@ begin
 			Result := true;
 		end
 		else Result := false;
-    Sections.Free;
+		Sections.Free;
 	end else begin
 		// Получение последующих файлов в папке (вызывается до тех пор, пока не вернёт false).
 		if (Length(CurrentListing) > FileCounter) then
@@ -537,7 +538,6 @@ end;
 
 function FsFindClose(Hdl: thandle): integer; stdcall;
 Begin // Завершение получения списка файлов. Result тоталом не используется (всегда равен 0)
-	if Assigned(Cloud) then FreeAndNil(Cloud);
 	Result := 0;
 	FileCounter := 0;
 end;
