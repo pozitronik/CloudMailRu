@@ -41,7 +41,6 @@ var
 	MyCryptProc: TCryptProcW;
 	Cloud: TCloudMailRu;
 	CurrentListing: TCloudMailRuDirListing;
-	CurrentLogon: boolean;
 
 function CloudMailRuDirListingItemToFindData(DirListing: TCloudMailRuDirListingItem): tWIN32FINDDATAW;
 begin
@@ -179,7 +178,7 @@ end;
 
 function FsGetBackgroundFlags: integer; stdcall;
 begin
-	Result := 0;// BG_DOWNLOAD + BG_UPLOAD; // + BG_ASK_USER;
+	Result := 0; // BG_DOWNLOAD + BG_UPLOAD; // + BG_ASK_USER;
 end;
 
 { ANSI PEASANTS }
@@ -346,7 +345,6 @@ Begin
 	MyProgressProc := pProgressProc;
 	MyLogProc := pLogProc;
 	MyRequestProc := pRequestProc;
-	CurrentLogon := false;
 	Result := 0;
 end;
 
@@ -473,6 +471,7 @@ begin
 			Result := INVALID_HANDLE_VALUE; // Нельзя использовать exit
 			SetLastError(ERROR_NO_MORE_FILES);
 		end;
+		Sections.Free;
 	end else begin
 		RealPath := ExtractRealPath(GlobalPath);
 
@@ -490,11 +489,8 @@ begin
 
 			MyLogProc(PluginNum, MSGTYPE_CONNECT, PWideChar('CONNECT ' + AccountSettings.email));
 			Cloud := TCloudMailRu.Create(AccountSettings.user, AccountSettings.domain, AccountSettings.password, MyProgressProc, PluginNum, MyLogProc);
-			if Cloud.login() then
+			if not Cloud.login() then
 			begin
-				CurrentLogon := true;
-			end else begin
-				CurrentLogon := false;
 				FreeAndNil(Cloud);
 				SetLastError(ERROR_NO_MORE_FILES);
 				exit(INVALID_HANDLE_VALUE);
@@ -503,27 +499,16 @@ begin
 
 		end;
 
-		if CurrentLogon then
+		if not Cloud.getDir(RealPath.path, CurrentListing) then SetLastError(ERROR_PATH_NOT_FOUND);
+		if Length(CurrentListing) = 0 then
 		begin
-			if not Cloud.getDir(RealPath.path, CurrentListing) then
-			begin
-				SetLastError(ERROR_PATH_NOT_FOUND);
-			end;
-
-			if Length(CurrentListing) = 0 then
-			begin
-				FindData := FindData_emptyDir(); // воркароунд бага с невозможностью входа в пустой каталог, см. http://www.ghisler.ch/board/viewtopic.php?t=42399
-				Result := 0;
-				SetLastError(ERROR_NO_MORE_FILES);
-			end else begin
-				FindData := CloudMailRuDirListingItemToFindData(CurrentListing[0]);
-				FileCounter := 1;
-				Result := 1;
-			end;
+			FindData := FindData_emptyDir(); // воркароунд бага с невозможностью входа в пустой каталог, см. http://www.ghisler.ch/board/viewtopic.php?t=42399
+			Result := 0;
+			SetLastError(ERROR_NO_MORE_FILES);
 		end else begin
-			SetLastError(ERROR_INVALID_HANDLE);
-			Result := INVALID_HANDLE_VALUE;
-			strpcopy(FindData.cFileName, 'Ошибка входа по указанным данным'); // Сюда никогда не должны попасть
+			FindData := CloudMailRuDirListingItemToFindData(CurrentListing[0]);
+			FileCounter := 1;
+			Result := 1;
 		end;
 	end;
 end;
@@ -544,21 +529,16 @@ begin
 		end
 		else Result := false;
 	end else begin
-		if not CurrentLogon then
+		// Получение последующих файлов в папке (вызывается до тех пор, пока не вернёт false).
+		if (Length(CurrentListing) > FileCounter) then
 		begin
-			Result := false;
+			FindData := CloudMailRuDirListingItemToFindData(CurrentListing[FileCounter]);
+			Result := true;
+			inc(FileCounter);
 		end else begin
-			// Получение последующих файлов в папке (вызывается до тех пор, пока не вернёт false).
-			if (Length(CurrentListing) > FileCounter) then
-			begin
-				FindData := CloudMailRuDirListingItemToFindData(CurrentListing[FileCounter]);
-				Result := true;
-				inc(FileCounter);
-			end else begin
-				FillChar(FindData, SizeOf(WIN32_FIND_DATA), 0);
-				FileCounter := 0;
-				Result := false;
-			end;
+			FillChar(FindData, SizeOf(WIN32_FIND_DATA), 0);
+			FileCounter := 0;
+			Result := false;
 		end;
 	end;
 end;
