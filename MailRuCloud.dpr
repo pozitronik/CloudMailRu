@@ -17,7 +17,8 @@ uses
 	MRC_Helper in 'MRC_Helper.pas',
 	Accounts in 'Accounts.pas' {AccountsForm} ,
 	AskPassword in 'AskPassword.pas' {AskPasswordForm} ,
-	RemoteProperty in 'RemoteProperty.pas' {PropertyForm};
+	RemoteProperty in 'RemoteProperty.pas' {PropertyForm} ,
+	ConnectionManager in 'ConnectionManager.pas';
 
 {$IFDEF WIN64}
 {$E wfx64}
