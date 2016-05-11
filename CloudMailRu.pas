@@ -158,6 +158,8 @@ var
 	PostAnswer: WideString; { Не используется }
 begin
 	Result := false;
+	if not(Assigned(self)) then exit; // Проверка на вызов без инициализации
+
 	self.ExternalLogProc(ExternalPluginNr, MSGTYPE_DETAILS, PWideChar('Login to ' + self.user + '@' + self.domain));
 	URL := 'http://auth.mail.ru/cgi-bin/auth?lang=ru_RU&from=authpopup';
 	try
@@ -194,7 +196,8 @@ var
 	Answer: WideString;
 begin
 	URL := 'https://cloud.mail.ru/?from=promo&from=authpopup';
-	getToken := true;
+	Result := false;
+	if not(Assigned(self)) then exit; // Проверка на вызов без инициализации
 	try
 		PostResult := self.HTTPGet(URL, Answer);
 	except
@@ -206,13 +209,12 @@ begin
 	end;
 	if PostResult then
 	begin
+		Result := true;
 		self.token := self.getTokenFromText(Answer);
 		self.x_page_id := self.get_x_page_id_FromText(Answer);
 		self.build := self.get_build_FromText(Answer);
 		self.upload_url := self.get_upload_url_FromText(Answer);
-		if (self.token = '') or (self.x_page_id = '') or (self.build = '') or (self.upload_url = '') then getToken := false; // В полученной странице нет нужных данных
-	end else begin
-		getToken := false;
+		if (self.token = '') or (self.x_page_id = '') or (self.build = '') or (self.upload_url = '') then Result := false; // В полученной странице нет нужных данных
 	end;
 end;
 
@@ -224,6 +226,7 @@ var
 	SuccessPost: boolean;
 begin
 	Result := false;
+	if not(Assigned(self)) then exit; // Проверка на вызов без инициализации
 	URL := 'https://cloud.mail.ru/api/v2/dispatcher/';
 	try
 		PostData := TStringStream.Create('api=2&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&token=' + self.token + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id, TEncoding.UTF8);
@@ -250,6 +253,7 @@ var
 	PostData: TIdMultipartFormDataStream;
 begin
 	Result := CLOUD_OPERATION_FAILED;
+	if not(Assigned(self)) then exit; // Проверка на вызов без инициализации
 	URL := self.upload_url + '/?cloud_domain=1&x-email=' + self.user + '%40' + self.domain + '&fileapi' + IntToStr(DateTimeToUnix(now)) + '0246';
 	self.ExternalLogProc(ExternalPluginNr, MSGTYPE_DETAILS, PWideChar('Uploading to ' + URL));
 	try
@@ -428,8 +432,8 @@ end;
 
 procedure TCloudMailRu.HTTPDestroy(var HTTP: TIdHTTP; var SSL: TIdSSLIOHandlerSocketOpenSSL);
 begin
-	HTTP.DisconnectNotifyPeer;
-	HTTP.Disconnect;
+	{ HTTP.DisconnectNotifyPeer;
+		HTTP.Disconnect; }
 	HTTP.Free;
 	SSL.Free;
 end;
@@ -463,6 +467,7 @@ var
 	PostAnswer: WideString; { Не используется }
 begin
 	Result := false;
+	if not(Assigned(self)) then exit; // Проверка на вызов без инициализации
 	path := UrlEncode(StringReplace(path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
 	URL := 'https://cloud.mail.ru/api/v2/file/remove';
 	try
@@ -483,6 +488,7 @@ var
 	JSON: WideString;
 begin
 	Result := false;
+	if not(Assigned(self)) then exit; // Проверка на вызов без инициализации
 	path := UrlEncode(StringReplace(path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
 	URL := 'https://cloud.mail.ru/api/v2/folder?sort={%22type%22%3A%22name%22%2C%22order%22%3A%22asc%22}&offset=0&limit=10000&home=' + path + '&api=2&build=' + self.build + '&x-page-id=' + self.x_page_id + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&token=' + self.token + '&_=1433249148810';
 	try
@@ -501,6 +507,8 @@ function TCloudMailRu.getFile(remotePath, localPath: WideString): integer; // 0 
 var
 	FileStream: TFileStream;
 begin
+	Result := FS_FILE_NOTSUPPORTED;
+	if not(Assigned(self)) then exit; // Проверка на вызов без инициализации
 	if self.Shard = '' then
 	begin
 		self.ExternalLogProc(ExternalPluginNr, MSGTYPE_DETAILS, PWideChar('Current shard is undefined, trying to get one'));
@@ -543,6 +551,7 @@ var
 	OperationStatus: integer;
 begin
 	Result := false;
+	if not(Assigned(self)) then exit; // Проверка на вызов без инициализации
 	SucessPublish := false;
 	path := UrlEncode(StringReplace(path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
 	if publish then URL := 'https://cloud.mail.ru/api/v2/file/publish'
@@ -617,6 +626,7 @@ var
 begin
 	if (SizeOfFile(localPath) > CLOUD_MAX_FILESIZE) then exit(FS_FILE_NOTSUPPORTED);
 	Result := FS_FILE_WRITEERROR;
+	if not(Assigned(self)) then exit; // Проверка на вызов без инициализации
 	OperationResult := CLOUD_OPERATION_FAILED;
 	try
 		PutResult := TStringList.Create;
@@ -696,6 +706,7 @@ var
 	OperationStatus: integer;
 begin
 	Result := false;
+	if not(Assigned(self)) then exit; // Проверка на вызов без инициализации
 	SucessCreate := false;
 	path := UrlEncode(StringReplace(path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
 	URL := 'https://cloud.mail.ru/api/v2/folder/add';
@@ -756,6 +767,7 @@ var
 	PostAnswer: WideString; { Не используется }
 begin
 	Result := false;
+	if not(Assigned(self)) then exit; // Проверка на вызов без инициализации
 	path := UrlEncode(StringReplace(path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
 	URL := 'https://cloud.mail.ru/api/v2/file/remove';
 	try
@@ -778,7 +790,8 @@ var
 	PostResult: boolean;
 	OperationStatus: integer;
 begin
-	Result := CLOUD_OPERATION_OK;
+	Result := FS_FILE_WRITEERROR;
+	if not(Assigned(self)) then exit; // Проверка на вызов без инициализации
 	OldName := UrlEncode(StringReplace(OldName, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
 	NewName := UrlEncode(StringReplace(NewName, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
 	URL := 'https://cloud.mail.ru/api/v2/file/rename';
@@ -840,6 +853,7 @@ var
 	JSON: WideString;
 begin
 	Result := false;
+	if not(Assigned(self)) then exit; // Проверка на вызов без инициализации
 	path := UrlEncode(StringReplace(path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
 	URL := 'https://cloud.mail.ru/api/v2/file?home=' + path + '&api=2&build=' + self.build + '&x-page-id=' + self.x_page_id + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&token=' + self.token + '&_=1433249148810';
 	try
@@ -862,7 +876,8 @@ var
 	PostResult: boolean;
 	OperationStatus: integer;
 begin
-	Result := CLOUD_OPERATION_OK;
+	Result := FS_FILE_WRITEERROR;
+	if not(Assigned(self)) then exit; // Проверка на вызов без инициализации
 	OldName := UrlEncode(StringReplace(OldName, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
 	ToPath := UrlEncode(StringReplace(ToPath, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
 	URL := 'https://cloud.mail.ru/api/v2/file/move';
