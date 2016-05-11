@@ -74,7 +74,7 @@ begin
 		if not initialized(connectionName) then iResult := init(connectionName);
 		if (iResult = CLOUD_OPERATION_OK) then result := get(connectionName, false);
 	end;
-
+	{ если подключиться не удалось, все функции облака будут возвращать негативный результат, но без AV }
 end;
 
 function TConnectionManager.set_(connectionName: WideString; cloud: TCloudMailRu): boolean;
@@ -138,7 +138,7 @@ end;
 function TConnectionManager.free(connectionName: WideString): integer;
 begin
 	result := CLOUD_OPERATION_OK;
-	get(connectionName).Destroy;
+	get(connectionName, false).Destroy;
 end;
 
 function TConnectionManager.freeAll: integer;
@@ -151,7 +151,7 @@ begin
 	begin
 		Connections[I].Connection.Destroy;
 	end;
-  SetLength(Connections,0);
+	SetLength(Connections, 0);
 
 end;
 
