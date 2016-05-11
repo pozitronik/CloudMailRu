@@ -401,6 +401,7 @@ begin
 		if RealPath.account = '' then RealPath.account := ExtractFileName(GlobalPath);
 
 		if not ConnectionManager.get(RealPath.account, getResult).getDir(RealPath.path, CurrentListing) then SetLastError(ERROR_PATH_NOT_FOUND);
+		if getResult <> CLOUD_OPERATION_OK then exit (getResult);
 
 		if Length(CurrentListing) = 0 then
 		begin
@@ -636,16 +637,16 @@ Begin
 	begin
 		if ConnectionManager.get(OldRealPath.account, getResult).deleteFile(OldRealPath.path) then // мы не умеем перезаписывать, но мы можем удалить прежний файл
 		begin
-			Result := ConnectionManager.get(OldRealPath.account,getResult).mvFile(OldRealPath.path, NewRealPath.path);
+			Result := ConnectionManager.get(OldRealPath.account, getResult).mvFile(OldRealPath.path, NewRealPath.path);
 		end else begin
 			Result := FS_FILE_NOTSUPPORTED;
 		end;
 	end else begin
-		Result := ConnectionManager.get(OldRealPath.account,getResult).mvFile(OldRealPath.path, NewRealPath.path);
+		Result := ConnectionManager.get(OldRealPath.account, getResult).mvFile(OldRealPath.path, NewRealPath.path);
 	end;
 	if (Result = FS_FILE_OK) and Move then
 	begin
-		ConnectionManager.get(OldRealPath.account,getResult).deleteFile(OldRealPath.path);
+		ConnectionManager.get(OldRealPath.account, getResult).deleteFile(OldRealPath.path);
 	end;
 
 end;
@@ -669,7 +670,7 @@ var
 	Item: TCloudMailRuDirListingItem;
 	RealPath: TRealPath;
 	Filetime: TFileTime;
-  getResult:Integer;
+	getResult: integer;
 begin
 	Result := ft_nosuchfield;
 	RealPath := ExtractRealPath(FileName);
@@ -678,7 +679,7 @@ begin
 	Item := FindListingItemByName(CurrentListing, RealPath.path); // сначала попробуем найти поле в имеющемся списке
 	if Item.home = '' then // если там его нет (нажали пробел на папке, например), то запросим в болаке напрямую
 	begin
-		if ConnectionManager.get(RealPath.account,getResult).statusFile(RealPath.path, Item) then
+		if ConnectionManager.get(RealPath.account, getResult).statusFile(RealPath.path, Item) then
 		begin
 			if Item.home = '' then
 			begin
