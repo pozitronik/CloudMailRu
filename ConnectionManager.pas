@@ -34,9 +34,9 @@ type
 		MyCryptProc: TCryptProcW;
 		constructor Create(IniFileName: WideString; PluginNum: integer; MyProgressProc: TProgressProcW; MyLogProc: TLogProcW);
 		destructor Destroy();
-		function get(connectionName: WideString; doInit: boolean = true): TCloudMailRu; // возвращает готовое подклчение по имени
+		function get(connectionName: WideString; var OperationResult:integer; doInit: boolean = true): TCloudMailRu; // возвращает готовое подклчение по имени
 		function set_(connectionName: WideString; cloud: TCloudMailRu): boolean;
-		function init(connectionName: WideString): cardinal; // инициализирует подключение по его имени, возвращает код состо€ни€
+		function init(connectionName: WideString): integer; // инициализирует подключение по его имени, возвращает код состо€ни€
 		function free(connectionName: WideString): integer; // освобождает подключение по его имени, возвращает код состо€ни€
 		function freeAll: integer; // освобождает все подключени€
 		function initialized(connectionName: WideString): boolean; // ѕровер€ет, инициализировано ли подключение
@@ -60,10 +60,9 @@ begin
 	freeAll();
 end;
 
-function TConnectionManager.get(connectionName: WideString; doInit: boolean = true): TCloudMailRu;
+function TConnectionManager.get(connectionName: WideString; var OperationResult:integer; doInit: boolean = true): TCloudMailRu;
 var
 	ConnectionIndex: integer;
-	iResult: cardinal;
 begin
 	ConnectionIndex := ConnectionExists(connectionName);
 	if ConnectionIndex <> -1 then
@@ -74,9 +73,9 @@ begin
 	end;
 	if (doInit) then
 	begin
-		iResult := CLOUD_OPERATION_FAILED;
-		if not initialized(connectionName) then iResult := init(connectionName);
-		if (iResult = CLOUD_OPERATION_OK) then result := get(connectionName, false);
+		OperationResult := CLOUD_OPERATION_FAILED;
+		if not initialized(connectionName) then OperationResult := init(connectionName);
+		if (OperationResult = CLOUD_OPERATION_OK) then result := get(connectionName, OperationResult, false);
 	end;
 	{ если подключитьс€ не удалось, все функции облака будут возвращать негативный результат, но без AV }
 end;
@@ -91,11 +90,12 @@ begin
 	result := true;
 end;
 
-function TConnectionManager.init(connectionName: WideString): cardinal;
+function TConnectionManager.init(connectionName: WideString): integer;
 var
 	cloud: TCloudMailRu;
 	AccountSettings: TAccountSettings;
 begin
+	result := CLOUD_OPERATION_OK;
 	AccountSettings := GetAccountSettingsFromIniFile(IniFileName, connectionName);
 
 	if not GetMyPasswordNow(AccountSettings) then exit(INVALID_HANDLE_VALUE);
@@ -105,19 +105,16 @@ begin
 	cloud := TCloudMailRu.Create(AccountSettings.user, AccountSettings.domain, AccountSettings.password, MyProgressProc, PluginNum, MyLogProc);
 	if not set_(connectionName, cloud) then exit(INVALID_HANDLE_VALUE);
 
-	if not(get(connectionName, false).login()) then
-	begin
-		free(connectionName);
-		exit(INVALID_HANDLE_VALUE);
-	end;
+	if not(get(connectionName,result, false).login()) then free(connectionName);
 
-	result := CLOUD_OPERATION_OK;
 	// cloud.Destroy;
 end;
 
 function TConnectionManager.initialized(connectionName: WideString): boolean;
+var
+dump:integer;
 begin
-	result := Assigned(get(connectionName, false));
+	result := Assigned(get(connectionName, dump, false));
 end;
 
 function TConnectionManager.new(connectionName: WideString): integer;
@@ -142,7 +139,7 @@ end;
 function TConnectionManager.free(connectionName: WideString): integer;
 begin
 	result := CLOUD_OPERATION_OK;
-	get(connectionName, false).free;
+	get(connectionName, result, false).free;
 	set_(connectionName, nil);
 end;
 

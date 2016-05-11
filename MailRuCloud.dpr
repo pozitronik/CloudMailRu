@@ -377,11 +377,10 @@ function FsFindFirstW(path: PWideChar; var FindData: tWIN32FINDDATAW): thandle; 
 var // Получение первого файла в папке. Result тоталом не используется (можно использовать для работы плагина).
 	Sections: TStringList;
 	RealPath: TRealPath;
-
+	getResult: integer;
 begin
 	Result := 0;
 	GlobalPath := path;
-	// if Assigned(Cloud) then FreeAndNil(Cloud);
 	if GlobalPath = '\' then
 	begin // список соединений
 		Sections := TStringList.Create;
@@ -401,7 +400,7 @@ begin
 
 		if RealPath.account = '' then RealPath.account := ExtractFileName(GlobalPath);
 
-		if not ConnectionManager.get(RealPath.account).getDir(RealPath.path, CurrentListing) then SetLastError(ERROR_PATH_NOT_FOUND);
+		if not ConnectionManager.get(RealPath.account, getResult).getDir(RealPath.path, CurrentListing) then SetLastError(ERROR_PATH_NOT_FOUND);
 
 		if Length(CurrentListing) = 0 then
 		begin
@@ -449,7 +448,7 @@ end;
 
 function FsFindClose(Hdl: thandle): integer; stdcall;
 Begin // Завершение получения списка файлов. Result тоталом не используется (всегда равен 0)
-	SetLength(CurrentListing,0);//Пусть будет
+	SetLength(CurrentListing, 0); // Пусть будет
 	Result := 0;
 	FileCounter := 0;
 end;
@@ -459,6 +458,7 @@ var
 	RealPath: TRealPath;
 	CurrentItem: TCloudMailRuDirListingItem;
 	Cloud: TCloudMailRu;
+	getResult: integer;
 Begin
 	RealPath := ExtractRealPath(RemoteName);
 	Result := FS_EXEC_OK;
@@ -471,9 +471,9 @@ Begin
 		begin
 			TAccountsForm.ShowAccounts(MainWin, IniFilePath, MyCryptProc, PluginNum, CryptoNum, RemoteName);
 		end else begin
-			if ConnectionManager.get(RealPath.account).statusFile(RealPath.path, CurrentItem) then
+			if ConnectionManager.get(RealPath.account, getResult).statusFile(RealPath.path, CurrentItem) then
 			begin
-				Cloud := ConnectionManager.get(RealPath.account);
+				Cloud := ConnectionManager.get(RealPath.account, getResult);
 				if CurrentItem.home <> '' then TPropertyForm.ShowProperty(MainWin, CurrentItem, Cloud)
 				else
 				begin
@@ -492,6 +492,7 @@ End;
 function FsGetFileW(RemoteName, LocalName: PWideChar; CopyFlags: integer; RemoteInfo: pRemoteInfo): integer; stdcall; // Копирование файла из файловой системы плагина
 var
 	RealPath: TRealPath;
+	getResult: integer;
 begin
 	Result := FS_FILE_NOTSUPPORTED;
 	RealPath := ExtractRealPath(RemoteName);
@@ -504,16 +505,16 @@ begin
 		begin
 			exit(FS_FILE_EXISTS);
 		end else begin
-			Result := ConnectionManager.get(RealPath.account).getFile(WideString(RealPath.path), WideString(LocalName));
+			Result := ConnectionManager.get(RealPath.account, getResult).getFile(WideString(RealPath.path), WideString(LocalName));
 		end;
 	end;
 
 	if CheckFlag(FS_COPYFLAGS_MOVE, CopyFlags) then
 	begin
-		Result := ConnectionManager.get(RealPath.account).getFile(WideString(RealPath.path), WideString(LocalName));
+		Result := ConnectionManager.get(RealPath.account, getResult).getFile(WideString(RealPath.path), WideString(LocalName));
 		if Result = FS_FILE_OK then
 		begin
-			ConnectionManager.get(RealPath.account).deleteFile(RealPath.path);
+			ConnectionManager.get(RealPath.account, getResult).deleteFile(RealPath.path);
 		end;
 
 	end;
@@ -523,7 +524,7 @@ begin
 	end;
 	if CheckFlag(FS_COPYFLAGS_OVERWRITE, CopyFlags) then
 	begin
-		Result := ConnectionManager.get(RealPath.account).getFile(WideString(RealPath.path), WideString(LocalName));
+		Result := ConnectionManager.get(RealPath.account, getResult).getFile(WideString(RealPath.path), WideString(LocalName));
 	end;
 	if Result = FS_FILE_OK then
 	begin
@@ -536,6 +537,7 @@ end;
 function FsPutFileW(LocalName, RemoteName: PWideChar; CopyFlags: integer): integer; stdcall;
 var
 	RealPath: TRealPath;
+	getResult: integer;
 begin
 	Result := FS_FILE_NOTSUPPORTED;
 	RealPath := ExtractRealPath(RemoteName);
@@ -543,9 +545,9 @@ begin
 	MyProgressProc(PluginNum, LocalName, PWideChar(RealPath.path), 0);
 	if CheckFlag(FS_COPYFLAGS_OVERWRITE, CopyFlags) then
 	begin
-		if ConnectionManager.get(RealPath.account).deleteFile(RealPath.path) then // Неизвестно, как перезаписать файл черз API, но мы можем его удалить
+		if ConnectionManager.get(RealPath.account, getResult).deleteFile(RealPath.path) then // Неизвестно, как перезаписать файл черз API, но мы можем его удалить
 		begin
-			Result := ConnectionManager.get(RealPath.account).putFile(WideString(LocalName), RealPath.path);
+			Result := ConnectionManager.get(RealPath.account, getResult).putFile(WideString(LocalName), RealPath.path);
 			if Result = FS_FILE_OK then
 			begin
 				MyProgressProc(PluginNum, LocalName, PWideChar(RealPath.path), 100);
@@ -569,7 +571,7 @@ begin
 	end;
 	if CheckFlag(FS_COPYFLAGS_MOVE, CopyFlags) then
 	begin
-		Result := ConnectionManager.get(RealPath.account).putFile(WideString(LocalName), RealPath.path);
+		Result := ConnectionManager.get(RealPath.account, getResult).putFile(WideString(LocalName), RealPath.path);
 		if Result = FS_FILE_OK then
 		begin
 			MyProgressProc(PluginNum, LocalName, PWideChar(RealPath.path), 100);
@@ -583,7 +585,7 @@ begin
 
 	if CopyFlags = 0 then
 	begin
-		Result := ConnectionManager.get(RealPath.account).putFile(WideString(LocalName), RealPath.path);
+		Result := ConnectionManager.get(RealPath.account, getResult).putFile(WideString(LocalName), RealPath.path);
 		if Result = FS_FILE_OK then
 		begin
 			MyProgressProc(PluginNum, LocalName, PWideChar(RealPath.path), 100);
@@ -596,50 +598,54 @@ end;
 function FsDeleteFileW(RemoteName: PWideChar): bool; stdcall; // Удаление файла из файловой ссистемы плагина
 var
 	RealPath: TRealPath;
+	getResult: integer;
 Begin
 	RealPath := ExtractRealPath(WideString(RemoteName));
 	if RealPath.account = '' then exit(false);
-	Result := ConnectionManager.get(RealPath.account).deleteFile(RealPath.path);
+	Result := ConnectionManager.get(RealPath.account, getResult).deleteFile(RealPath.path);
 End;
 
 function FsMkDirW(path: PWideChar): bool; stdcall;
 var
 	RealPath: TRealPath;
+	getResult: integer;
 Begin
 	RealPath := ExtractRealPath(WideString(path));
 	if RealPath.account = '' then exit(false);
-	Result := ConnectionManager.get(RealPath.account).createDir(RealPath.path);
+	Result := ConnectionManager.get(RealPath.account, getResult).createDir(RealPath.path);
 end;
 
 function FsRemoveDirW(RemoteName: PWideChar): bool; stdcall;
 var
 	RealPath: TRealPath;
+	getResult: integer;
 Begin
 	RealPath := ExtractRealPath(WideString(RemoteName));
-	Result := ConnectionManager.get(RealPath.account).removeDir(RealPath.path);
+	Result := ConnectionManager.get(RealPath.account, getResult).removeDir(RealPath.path);
 end;
 
 function FsRenMovFileW(OldName: PWideChar; NewName: PWideChar; Move: boolean; OverWrite: boolean; ri: pRemoteInfo): integer; stdcall;
 var
 	OldRealPath: TRealPath;
 	NewRealPath: TRealPath;
+	getResult: integer;
 Begin
 	OldRealPath := ExtractRealPath(WideString(OldName));
 	NewRealPath := ExtractRealPath(WideString(NewName));
 	if OverWrite then // непонятно, но TC не показывает диалог перезаписи при FS_FILE_EXISTS
 	begin
-		if ConnectionManager.get(OldRealPath.account).deleteFile(OldRealPath.path) then // мы не умеем перезаписывать, но мы можем удалить прежний файл
+		if ConnectionManager.get(OldRealPath.account, getResult).deleteFile(OldRealPath.path) then // мы не умеем перезаписывать, но мы можем удалить прежний файл
 		begin
-			Result := ConnectionManager.get(OldRealPath.account).mvFile(OldRealPath.path, NewRealPath.path);
+			Result := ConnectionManager.get(OldRealPath.account,getResult).mvFile(OldRealPath.path, NewRealPath.path);
 		end else begin
 			Result := FS_FILE_NOTSUPPORTED;
 		end;
 	end else begin
-		Result := ConnectionManager.get(OldRealPath.account).mvFile(OldRealPath.path, NewRealPath.path);
+		Result := ConnectionManager.get(OldRealPath.account,getResult).mvFile(OldRealPath.path, NewRealPath.path);
 	end;
 	if (Result = FS_FILE_OK) and Move then
 	begin
-		ConnectionManager.get(OldRealPath.account).deleteFile(OldRealPath.path);
+		ConnectionManager.get(OldRealPath.account,getResult).deleteFile(OldRealPath.path);
 	end;
 
 end;
@@ -663,6 +669,7 @@ var
 	Item: TCloudMailRuDirListingItem;
 	RealPath: TRealPath;
 	Filetime: TFileTime;
+  getResult:Integer;
 begin
 	Result := ft_nosuchfield;
 	RealPath := ExtractRealPath(FileName);
@@ -671,7 +678,7 @@ begin
 	Item := FindListingItemByName(CurrentListing, RealPath.path); // сначала попробуем найти поле в имеющемся списке
 	if Item.home = '' then // если там его нет (нажали пробел на папке, например), то запросим в болаке напрямую
 	begin
-		if ConnectionManager.get(RealPath.account).statusFile(RealPath.path, Item) then
+		if ConnectionManager.get(RealPath.account,getResult).statusFile(RealPath.path, Item) then
 		begin
 			if Item.home = '' then
 			begin
