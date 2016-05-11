@@ -31,6 +31,7 @@ type
 		procedure FormActivate(Sender: TObject);
 	private
 		{ Private declarations }
+		procedure WMHotKey(var Message: TMessage); message WM_HOTKEY;
 	public
 		{ Public declarations }
 		IniPath: WideString;
@@ -163,6 +164,7 @@ begin
 		AccountsForm.CryptoNum := CryptoNum;
 		AccountsForm.SelectedAccount := '';
 		if RemoteName <> '' then AccountsForm.SelectedAccount := Copy(RemoteName, 2, length(RemoteName) - 1);
+    RegisterHotKey(AccountsForm.Handle, 1, 0, VK_ESCAPE);
 		AccountsForm.ShowModal;
 	finally
 		FreeAndNil(AccountsForm);
@@ -179,6 +181,11 @@ begin
 	TempList.Destroy;
 	AccountsList.OnClick(self);
 	ApplyButton.Enabled := (EmailEdit.Text <> '') and (AccountNameEdit.Text <> '');
+end;
+
+procedure TAccountsForm.WMHotKey(var Message: TMessage);
+begin
+if Message.LParamHi = VK_ESCAPE then Close;
 end;
 
 end.
