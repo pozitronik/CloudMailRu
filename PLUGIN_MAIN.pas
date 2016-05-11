@@ -13,7 +13,7 @@ function FindTCWindow: HWND;
 
 implementation
 
-function FindTCWindow: HWND;
+function FindTCWindow: HWND;  { TODO : Вытащить в хелпер }
 begin
 	Result := FindWindow('TTOTAL_CMD', nil); { Хендл отдаётся корректно даже при нескольких запущенных тоталах }
 end;
