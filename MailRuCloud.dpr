@@ -108,13 +108,13 @@ end;
 
 function FsInit(PluginNr: integer; pProgressProc: TProgressProc; pLogProc: TLogProc; pRequestProc: TRequestProc): integer; stdcall;
 Begin
-	PluginNum := PluginNr;
+	{PluginNum := PluginNr;
 	MyProgressProc := pProgressProc;
 	MyLogProc := pLogProc;
-	MyRequestProc := pRequestProc;
+	MyRequestProc := pRequestProc;  }
 	// Вход в плагин.
 	Result := 0;
-	ConnectionManager := TConnectionManager.Create(IniFilePath, PluginNum, MyProgressProc, MyLogProc);
+
 end;
 
 procedure FsStatusInfo(RemoteDir: PAnsiChar; InfoStartEnd, InfoOperation: integer); stdcall;
@@ -263,13 +263,14 @@ end;
 
 { GLORIOUS UNICODE MASTER RACE }
 
-function FsInitW(PluginNr: integer; pProgressProc: TProgressProc; pLogProc: TLogProc; pRequestProc: TRequestProc): integer; stdcall; // Вход в плагин.
+function FsInitW(PluginNr: integer; pProgressProc: TProgressProcW; pLogProc: TLogProcW; pRequestProc: TRequestProcW): integer; stdcall; // Вход в плагин.
 Begin
 	PluginNum := PluginNr;
 	MyProgressProc := pProgressProc;
 	MyLogProc := pLogProc;
 	MyRequestProc := pRequestProc;
 	Result := 0;
+	ConnectionManager := TConnectionManager.Create(IniFilePath, PluginNum, MyProgressProc, MyLogProc);
 end;
 
 procedure FsStatusInfoW(RemoteDir: PWideChar; InfoStartEnd, InfoOperation: integer); stdcall; // Начало и конец операций FS

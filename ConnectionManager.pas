@@ -32,7 +32,7 @@ type
 	public
 		CryptoNum: integer;
 		MyCryptProc: TCryptProcW;
-		constructor Create(IniFileName: WideString; PluginNum: integer; MyProgressProc: TProgressProc; MyLogProc: TLogProc);
+		constructor Create(IniFileName: WideString; PluginNum: integer; MyProgressProc: TProgressProcW; MyLogProc: TLogProcW);
 		destructor Destroy();
 		function get(connectionName: WideString; doInit: boolean = true): TCloudMailRu; // возвращает готовое подклчение по имени
 		function set_(connectionName: WideString; cloud: TCloudMailRu): boolean;
@@ -46,7 +46,7 @@ type
 implementation
 
 { TConnectionManager }
-constructor TConnectionManager.Create(IniFileName: WideString; PluginNum: integer; MyProgressProc: TProgressProc; MyLogProc: TLogProc);
+constructor TConnectionManager.Create(IniFileName: WideString; PluginNum: integer; MyProgressProc: TProgressProcW; MyLogProc: TLogProcW);
 begin
 	SetLength(Connections, 0);
 	self.IniFileName := IniFileName;
