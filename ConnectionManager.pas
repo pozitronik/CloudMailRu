@@ -74,6 +74,7 @@ begin
 	cloud := TCloudMailRu.Create(AccountSettings.user, AccountSettings.domain, AccountSettings.password, MyProgressProc, PluginNum, MyLogProc);
 	if not set_(connectionName, cloud) then exit(INVALID_HANDLE_VALUE);
 	result := CLOUD_OPERATION_OK;
+	// cloud.destroy;
 end;
 
 function TConnectionManager.initialized(connectionName: WideString): boolean;
@@ -127,7 +128,7 @@ begin
 	if ConnectionIndex <> -1 then exit(Connections[ConnectionIndex].Connection);
 	result := Connections[new(connectionName)].Connection;
 
-	if not initialized(connectionName) then init(connectionName);
+	//if not initialized(connectionName) then init(connectionName);
 
 end;
 
