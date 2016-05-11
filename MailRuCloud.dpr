@@ -400,14 +400,6 @@ begin
 
 		if RealPath.account = '' then RealPath.account := ExtractFileName(GlobalPath);
 
-		if not ConnectionManager.get(RealPath.account).login() then
-		begin
-			ConnectionManager.get(RealPath.account).Free;
-			SetLastError(ERROR_NO_MORE_FILES);
-			exit(INVALID_HANDLE_VALUE);
-
-		end;
-
 		if not ConnectionManager.get(RealPath.account).getDir(RealPath.path, CurrentListing) then SetLastError(ERROR_PATH_NOT_FOUND);
 		if Length(CurrentListing) = 0 then
 		begin

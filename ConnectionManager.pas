@@ -34,7 +34,7 @@ type
 		MyCryptProc: TCryptProcW;
 		constructor Create(IniFileName: WideString; PluginNum: integer; MyProgressProc: TProgressProc; MyLogProc: TLogProc);
 		destructor Destroy();
-		function get(connectionName: WideString): TCloudMailRu; // возвращает готовое подклчение по имени
+		function get(connectionName: WideString; doInit: boolean = true): TCloudMailRu; // возвращает готовое подклчение по имени
 		function set_(connectionName: WideString; cloud: TCloudMailRu): boolean;
 		function init(connectionName: WideString): cardinal; // инициализирует подключение по его имени, возвращает код состояния
 		function free(connectionName: WideString): integer; // освобождает подключение по его имени, возвращает код состояния
@@ -60,7 +60,7 @@ begin
 	freeAll();
 end;
 
-function TConnectionManager.get(connectionName: WideString): TCloudMailRu;
+function TConnectionManager.get(connectionName: WideString; doInit: boolean = true): TCloudMailRu;
 var
 	ConnectionIndex: integer;
 	iResult: cardinal;
@@ -69,8 +69,11 @@ begin
 	if ConnectionIndex <> -1 then exit(Connections[ConnectionIndex].Connection);
 	result := Connections[new(connectionName)].Connection;
 
-	if not initialized(connectionName) then iResult := init(connectionName);
-	if (iResult = CLOUD_OPERATION_OK) then result := get(connectionName);
+	if (doInit) then
+	begin
+		if not initialized(connectionName) then iResult := init(connectionName);
+		if (iResult = CLOUD_OPERATION_OK) then result := get(connectionName, false);
+	end;
 
 end;
 
@@ -97,8 +100,15 @@ begin
 
 	cloud := TCloudMailRu.Create(AccountSettings.user, AccountSettings.domain, AccountSettings.password, MyProgressProc, PluginNum, MyLogProc);
 	if not set_(connectionName, cloud) then exit(INVALID_HANDLE_VALUE);
+
+	if not(get(connectionName, false).login()) then
+	begin
+		free(connectionName);
+		exit(INVALID_HANDLE_VALUE);
+	end;
+
 	result := CLOUD_OPERATION_OK;
-	// cloud.destroy;
+	// cloud.Destroy;
 end;
 
 function TConnectionManager.initialized(connectionName: WideString): boolean;
@@ -141,6 +151,7 @@ begin
 	begin
 		Connections[I].Connection.Destroy;
 	end;
+  SetLength(Connections,0);
 
 end;
 
