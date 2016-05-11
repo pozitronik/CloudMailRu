@@ -113,7 +113,7 @@ end;
 
 function TConnectionManager.initialized(connectionName: WideString): boolean;
 begin
-	result := Assigned(get(connectionName));
+	result := Assigned(get(connectionName, false));
 end;
 
 function TConnectionManager.new(connectionName: WideString): integer;
@@ -138,7 +138,8 @@ end;
 function TConnectionManager.free(connectionName: WideString): integer;
 begin
 	result := CLOUD_OPERATION_OK;
-	get(connectionName, false).Destroy;
+	get(connectionName, false).free;
+	set_(connectionName, nil);
 end;
 
 function TConnectionManager.freeAll: integer;
@@ -149,7 +150,11 @@ begin
 
 	for I := 0 to Length(Connections) - 1 do
 	begin
-		Connections[I].Connection.Destroy;
+		if initialized(Connections[I].Name) then
+		begin
+			Connections[I].Connection.free;
+			set_(Connections[I].Name, nil);
+		end;
 	end;
 	SetLength(Connections, 0);
 

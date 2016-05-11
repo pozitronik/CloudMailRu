@@ -146,7 +146,10 @@ end;
 
 destructor TCloudMailRu.Destroy;
 begin
-	self.Cookie.Destroy;
+	if Assigned(self.Cookie) then
+	begin
+		self.Cookie.free;
+	end;
 end;
 
 { PRIVATE METHODS }
@@ -172,7 +175,7 @@ begin
 			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Cloud login error ' + E.Message));
 		end;
 	end;
-	PostData.Free;
+	PostData.free;
 	if (Result) then
 	begin
 		self.ExternalLogProc(ExternalPluginNr, MSGTYPE_DETAILS, PWideChar('Requesting auth token for ' + self.user + '@' + self.domain));
@@ -235,7 +238,7 @@ begin
 		on E: Exception do
 		begin
 			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Get shard error ' + E.Message));
-			PostData.Free;
+			PostData.free;
 		end;
 	end;
 	if SuccessPost then
@@ -244,7 +247,7 @@ begin
 		if Shard = '' then Result := false
 		else Result := true;
 	end;
-	PostData.Free;
+	PostData.free;
 end;
 
 function TCloudMailRu.putFileToCloud(localPath: WideString; Return: TStringList): integer; { Заливка на сервер состоит из двух шагов: заливаем файл на сервер в putFileToCloud и добавляем его в облако addFileToCloud }
@@ -266,7 +269,7 @@ begin
 			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Posting file error ' + E.Message));
 		end;
 	end;
-	PostData.Free;
+	PostData.free;
 	if (Result = CLOUD_OPERATION_OK) then
 	begin
 		ExtractStrings([';'], [], PWideChar(PostAnswer), Return);
@@ -292,10 +295,10 @@ begin
 		on E: Exception do
 		begin
 			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Adding file error ' + E.Message));
-			PostData.Free;
+			PostData.free;
 		end;
 	end;
-	PostData.Free;
+	PostData.free;
 
 end;
 
@@ -330,7 +333,7 @@ begin
 			end;
 		end;
 	end;
-	MemStream.Free;
+	MemStream.free;
 end;
 
 function TCloudMailRu.HTTPPostFile(URL: WideString; PostData: TIdMultipartFormDataStream; var Answer: WideString): integer;
@@ -363,7 +366,7 @@ begin
 			Result := CLOUD_OPERATION_FAILED;
 		end;
 	end;
-	MemStream.Free
+	MemStream.free
 end;
 
 function TCloudMailRu.HTTPGet(URL: WideString; var Answer: WideString): boolean;
@@ -434,8 +437,8 @@ procedure TCloudMailRu.HTTPDestroy(var HTTP: TIdHTTP; var SSL: TIdSSLIOHandlerSo
 begin
 	{ HTTP.DisconnectNotifyPeer;
 		HTTP.Disconnect; }
-	HTTP.Free;
-	SSL.Free;
+	HTTP.free;
+	SSL.free;
 end;
 
 procedure TCloudMailRu.HttpProgress(ASender: TObject; AWorkMode: TWorkMode; AWorkCount: int64);
@@ -479,7 +482,7 @@ begin
 			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Delete file error ' + E.Message));
 		end;
 	end;
-	PostData.Free;
+	PostData.free;
 end;
 
 function TCloudMailRu.getDir(path: WideString; var DirListing: TCloudMailRuDirListing): boolean;
@@ -535,7 +538,7 @@ begin
 			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('File receiving error ' + E.Message));
 		end;
 	end;
-	FileStream.Free;
+	FileStream.free;
 	if Result <> FS_FILE_OK then
 	begin
 		System.SysUtils.deleteFile(localPath);
@@ -571,7 +574,7 @@ begin
 			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('File publish error ' + E.Message));
 		end;
 	end;
-	PostData.Free;
+	PostData.free;
 	if SucessPublish then
 	begin
 		case self.getOperationResultFromJSON(PostAnswer, OperationStatus) of
@@ -650,7 +653,7 @@ begin
 	begin
 		Result := FS_FILE_USERABORT;
 	end;
-	PutResult.Free;
+	PutResult.free;
 
 	if OperationResult = CLOUD_OPERATION_OK then
 	begin
@@ -719,7 +722,7 @@ begin
 			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Directory creation error ' + E.Message));
 		end;
 	end;
-	PostData.Free;
+	PostData.free;
 	if SucessCreate then
 	begin
 		case self.getOperationResultFromJSON(PostAnswer, OperationStatus) of
@@ -779,7 +782,7 @@ begin
 			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Delete directory error ' + E.Message));
 		end;
 	end;
-	PostData.Free;
+	PostData.free;
 end;
 
 function TCloudMailRu.renameFile(OldName, NewName: WideString): integer;
@@ -805,7 +808,7 @@ begin
 			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Rename file error ' + E.Message));
 		end;
 	end;
-	PostData.Free;
+	PostData.free;
 	if PostResult then
 	begin // Парсим ответ
 		case self.getOperationResultFromJSON(PostAnswer, OperationStatus) of
@@ -891,7 +894,7 @@ begin
 			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Rename file error ' + E.Message));
 		end;
 	end;
-	PostData.Free;
+	PostData.free;
 	if PostResult then
 	begin // Парсим ответ
 		case self.getOperationResultFromJSON(PostAnswer, OperationStatus) of
