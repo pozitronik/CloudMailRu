@@ -73,7 +73,7 @@ begin
 	end;
 	if (doInit) then
 	begin
-		OperationResult := CLOUD_OPERATION_FAILED;
+		OperationResult := CLOUD_OPERATION_OK;
 		if not initialized(connectionName) then OperationResult := init(connectionName);
 		if (OperationResult = CLOUD_OPERATION_OK) then result := get(connectionName, OperationResult, false);
 	end;
