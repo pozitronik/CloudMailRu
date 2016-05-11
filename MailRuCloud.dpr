@@ -280,7 +280,6 @@ begin
 		case InfoOperation of
 			FS_STATUS_OP_LIST:
 				begin
-					GlobalPath := RemoteDir;
 				end;
 			FS_STATUS_OP_GET_SINGLE:
 				begin
@@ -381,8 +380,8 @@ var // ѕолучение первого файла в папке. Result тоталом не используетс€ (можно ис
 	getResult: integer;
 begin
 	Result := 0;
-
-	if GlobalPath = '\' then
+	GlobalPath := path;
+	if GlobalPath = '\' then { TODO : ѕри копировании каталогов из FS плагина неправильно подставл€етс€ путь }
 	begin // список соединений
 		Sections := TStringList.Create;
 		GetAccountsListFromIniFile(IniFilePath, Sections);
@@ -399,7 +398,7 @@ begin
 	end else begin
 		RealPath := ExtractRealPath(GlobalPath);
 
-		if RealPath.account = '' then RealPath.account := ExtractFileName(GlobalPath);
+		if RealPath.account = '' then RealPath.account := ExtractFileName(ExcludeTrailingBackslash(GlobalPath));
 
 		if not ConnectionManager.get(RealPath.account, getResult).getDir(RealPath.path, CurrentListing) then SetLastError(ERROR_PATH_NOT_FOUND);
 		if getResult <> CLOUD_OPERATION_OK then exit(getResult);
