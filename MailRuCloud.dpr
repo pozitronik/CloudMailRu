@@ -400,14 +400,14 @@ begin
 
 		if RealPath.account = '' then RealPath.account := ExtractFileName(GlobalPath);
 
-		if not Assigned(ConnectionManager.get(RealPath.account)) then // todo: if connection.exists &
-		begin
+	 {	if not Assigned(ConnectionManager.get(RealPath.account)) then // todo: if connection.exists &
+		begin    }
 
-			if ConnectionManager.init(RealPath.account) <> CLOUD_OPERATION_OK then
+{			if ConnectionManager.init(RealPath.account) <> CLOUD_OPERATION_OK then
 			begin
 				SetLastError(ERROR_CONNECTION_UNAVAIL);
 				exit(INVALID_HANDLE_VALUE);
-			end;
+			end; }
 
 			if not ConnectionManager.get(RealPath.account).login() then
 			begin
@@ -417,7 +417,7 @@ begin
 
 			end;
 
-		end;
+{		end;    }
 
 		if not ConnectionManager.get(RealPath.account).getDir(RealPath.path, CurrentListing) then SetLastError(ERROR_PATH_NOT_FOUND);
 		if Length(CurrentListing) = 0 then

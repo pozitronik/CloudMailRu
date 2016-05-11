@@ -27,7 +27,7 @@ type
 
 		function ConnectionExists(connectionName: WideString): integer; // проверяет существование подключение
 		function new(connectionName: WideString): integer; // Добавляет подключение в пул
-		function GetMyPasswordNow(var AccountSettings: TAccountSettings): boolean;// Получает пароль из файла, из тоталовского менеджера или запрашивает прямой ввод
+		function GetMyPasswordNow(var AccountSettings: TAccountSettings): boolean; // Получает пароль из файла, из тоталовского менеджера или запрашивает прямой ввод
 
 	public
 		CryptoNum: integer;
@@ -36,9 +36,10 @@ type
 		destructor Destroy();
 		function get(connectionName: WideString): TCloudMailRu; // возвращает готовое подклчение по имени
 		function set_(connectionName: WideString; cloud: TCloudMailRu): boolean;
-		function init(connectionName: WideString): integer; // инициализирует подключение по его имени, возвращает код состояния
+		function init(connectionName: WideString): cardinal; // инициализирует подключение по его имени, возвращает код состояния
 		function free(connectionName: WideString): integer; // освобождает подключение по его имени, возвращает код состояния
 		function freeAll: integer; // освобождает все подключения
+		function initialized(connectionName: WideString): boolean; // Проверяет, инициализировано ли подключение
 
 	end;
 
@@ -59,7 +60,7 @@ begin
 	freeAll();
 end;
 
-function TConnectionManager.init(connectionName: WideString): integer;
+function TConnectionManager.init(connectionName: WideString): cardinal;
 var
 	cloud: TCloudMailRu;
 	AccountSettings: TAccountSettings;
@@ -72,7 +73,12 @@ begin
 
 	cloud := TCloudMailRu.Create(AccountSettings.user, AccountSettings.domain, AccountSettings.password, MyProgressProc, PluginNum, MyLogProc);
 	if not set_(connectionName, cloud) then exit(INVALID_HANDLE_VALUE);
-	result:=CLOUD_OPERATION_OK;
+	result := CLOUD_OPERATION_OK;
+end;
+
+function TConnectionManager.initialized(connectionName: WideString): boolean;
+begin
+	result := Assigned(get(connectionName));
 end;
 
 function TConnectionManager.new(connectionName: WideString): integer;
@@ -84,7 +90,6 @@ end;
 
 function TConnectionManager.ConnectionExists(connectionName: WideString): integer;
 var
-	Connection: TNamedConnection;
 	I: integer;
 begin
 	result := -1;
@@ -97,11 +102,20 @@ end;
 
 function TConnectionManager.free(connectionName: WideString): integer;
 begin
-
+	result := CLOUD_OPERATION_OK;
+	get(connectionName).Destroy;
 end;
 
 function TConnectionManager.freeAll: integer;
+var
+	I: integer;
 begin
+	result := CLOUD_OPERATION_OK;
+
+	for I := 0 to Length(Connections) - 1 do
+	begin
+		Connections[I].Connection.Destroy;
+	end;
 
 end;
 
@@ -111,8 +125,10 @@ var
 begin
 	ConnectionIndex := ConnectionExists(connectionName);
 	if ConnectionIndex <> -1 then exit(Connections[ConnectionIndex].Connection);
-
 	result := Connections[new(connectionName)].Connection;
+
+	if not initialized(connectionName) then init(connectionName);
+
 end;
 
 function TConnectionManager.set_(connectionName: WideString; cloud: TCloudMailRu): boolean;
