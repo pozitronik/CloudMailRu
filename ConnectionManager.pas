@@ -60,6 +60,30 @@ begin
 	freeAll();
 end;
 
+function TConnectionManager.get(connectionName: WideString): TCloudMailRu;
+var
+	ConnectionIndex: integer;
+	iResult: cardinal;
+begin
+	ConnectionIndex := ConnectionExists(connectionName);
+	if ConnectionIndex <> -1 then exit(Connections[ConnectionIndex].Connection);
+	result := Connections[new(connectionName)].Connection;
+
+	if not initialized(connectionName) then iResult := init(connectionName);
+	if (iResult = CLOUD_OPERATION_OK) then result := get(connectionName);
+
+end;
+
+function TConnectionManager.set_(connectionName: WideString; cloud: TCloudMailRu): boolean;
+var
+	ConnectionIndex: integer;
+begin
+	ConnectionIndex := ConnectionExists(connectionName);
+	if ConnectionIndex = -1 then exit(false);
+	Connections[ConnectionIndex].Connection := cloud;
+	result := true;
+end;
+
 function TConnectionManager.init(connectionName: WideString): cardinal;
 var
 	cloud: TCloudMailRu;
@@ -117,29 +141,6 @@ begin
 	begin
 		Connections[I].Connection.Destroy;
 	end;
-
-end;
-
-function TConnectionManager.get(connectionName: WideString): TCloudMailRu;
-var
-	ConnectionIndex: integer;
-begin
-	ConnectionIndex := ConnectionExists(connectionName);
-	if ConnectionIndex <> -1 then exit(Connections[ConnectionIndex].Connection);
-	result := Connections[new(connectionName)].Connection;
-
-	//if not initialized(connectionName) then init(connectionName);
-
-end;
-
-function TConnectionManager.set_(connectionName: WideString; cloud: TCloudMailRu): boolean;
-var
-	ConnectionIndex: integer;
-begin
-	ConnectionIndex := ConnectionExists(connectionName);
-	if ConnectionIndex = -1 then exit(false);
-	Connections[ConnectionIndex].Connection := cloud;
-	result := true;
 
 end;
 

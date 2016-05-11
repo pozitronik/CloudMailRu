@@ -400,22 +400,11 @@ begin
 
 		if RealPath.account = '' then RealPath.account := ExtractFileName(GlobalPath);
 
-	 	if not ConnectionManager.initialized(RealPath.account) then // todo: if connection.exists &
+		if not ConnectionManager.get(RealPath.account).login() then
 		begin
-
-			if ConnectionManager.init(RealPath.account) <> CLOUD_OPERATION_OK then
-			begin
-				SetLastError(ERROR_CONNECTION_UNAVAIL);
-				exit(INVALID_HANDLE_VALUE);
-			end;
-
-			if not ConnectionManager.get(RealPath.account).login() then
-			begin
-				ConnectionManager.get(RealPath.account).Free;
-				SetLastError(ERROR_NO_MORE_FILES);
-				exit(INVALID_HANDLE_VALUE);
-
-			end;
+			ConnectionManager.get(RealPath.account).Free;
+			SetLastError(ERROR_NO_MORE_FILES);
+			exit(INVALID_HANDLE_VALUE);
 
 		end;
 
