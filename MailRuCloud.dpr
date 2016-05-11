@@ -8,7 +8,7 @@ uses
 	windows,
 	Classes,
 	PLUGIN_TYPES,
-	PLUGIN_MAIN,
+
 	messages,
 	inifiles,
 	Vcl.controls,

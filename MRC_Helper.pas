@@ -28,6 +28,7 @@ procedure GetAccountsListFromIniFile(IniFilePath: WideString; var AccountsList: 
 procedure DeleteAccountFromIniFile(IniFilePath: WideString; AccountName: WideString);
 procedure CenterWindow(WindowToStay, WindowToCenter: HWND);
 function UrlEncode(URL: UTF8String): WideString; { TODO : Временная реализация! }
+function FindTCWindow: HWND;
 
 implementation
 
@@ -187,6 +188,11 @@ begin
 	for I := 1 to Length(URL) do
 		if URL[I] in ['a' .. 'z', 'A' .. 'Z', '/', '_', '-', '.', '0' .. '9'] then Result := Result + URL[I]
 		else Result := Result + '%' + IntToHex(Ord(URL[I]), 2);
+end;
+
+function FindTCWindow: HWND;  { TODO : Вытащить в хелпер }
+begin
+	Result := FindWindow('TTOTAL_CMD', nil); { Хендл отдаётся корректно даже при нескольких запущенных тоталах }
 end;
 
 end.

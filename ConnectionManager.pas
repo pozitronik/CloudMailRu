@@ -6,7 +6,7 @@ unit ConnectionManager;
 interface
 
 uses CloudMailRu, MRC_Helper, windows, controls, PLUGIN_Types,
-	AskPassword, PLUGIN_MAIN;
+	AskPassword;
 
 type
 
@@ -71,6 +71,7 @@ begin
 
 	if (doInit) then
 	begin
+  	iResult:=CLOUD_OPERATION_FAILED;
 		if not initialized(connectionName) then iResult := init(connectionName);
 		if (iResult = CLOUD_OPERATION_OK) then result := get(connectionName, false);
 	end;
