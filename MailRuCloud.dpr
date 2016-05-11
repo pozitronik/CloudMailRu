@@ -35,9 +35,9 @@ var
 	{ Callback data }
 	PluginNum: integer;
 	CryptoNum: integer;
-	MyProgressProc: TProgressProc;
-	MyLogProc: TLogProc;
-	MyRequestProc: TRequestProc;
+	MyProgressProc: TProgressProcW;
+	MyLogProc: TLogProcW;
+	MyRequestProc: TRequestProcW;
 	MyCryptProc: TCryptProcW;
 
 	CurrentListing: TCloudMailRuDirListing;
@@ -643,7 +643,6 @@ end;
 
 function FsDisconnectW(DisconnectRoot: PWideChar): bool; stdcall;
 begin
-	// if Assigned(Cloud) then FreeAndNil(Cloud);
 	ConnectionManager.freeAll;
 	Result := true;
 end;

@@ -65,8 +65,8 @@ type
 		// HTTP: TIdHTTP;
 		Cookie: TIdCookieManager;
 		// SSL: TIdSSLIOHandlerSocketOpenSSL;
-		ExternalProgressProc: TProgressProc;
-		ExternalLogProc: TLogProc;
+		ExternalProgressProc: TProgressProcW;
+		ExternalLogProc: TLogProcW;
 
 		Shard: WideString;
 
@@ -146,10 +146,7 @@ end;
 
 destructor TCloudMailRu.Destroy;
 begin
-	if Assigned(self.Cookie) then
-	begin
-		self.Cookie.free;
-	end;
+	if Assigned(self.Cookie) then self.Cookie.free;
 end;
 
 { PRIVATE METHODS }

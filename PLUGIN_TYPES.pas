@@ -128,10 +128,15 @@ type
 
 type
 	TProgressProc = function(PluginNr: integer; SourceName, TargetName: pchar; PercentDone: integer): integer; stdcall;
+	TProgressProcW = function(PluginNr: integer; SourceName, TargetName: pwidechar; PercentDone: integer): integer; stdcall;
 	TLogProc = procedure(PluginNr, MsgType: integer; LogString: pchar); stdcall;
-TRequestProc = function(PluginNr, RequestType: integer; CustomTitle, CustomText, ReturnedText: pchar; maxlen: integer): bool; stdcall;
-	// TCryptProc = function(PluginNr, CryptoNumber, mode: integer; ConnectionName, Password: pchar; maxlen: integer): integer; stdcall;
-	TCryptProcW = function(PluginNr, CryptoNumber, mode: integer; ConnectionName, Password: pWidechar; maxlen: integer): integer; stdcall;
+	TLogProcW = procedure(PluginNr, MsgType: integer; LogString: pwidechar); stdcall;
+	TRequestProc = function(PluginNr, RequestType: integer; CustomTitle, CustomText, ReturnedText: pchar; maxlen: integer): bool; stdcall;
+	TRequestProcW = function(PluginNr, RequestType: integer; CustomTitle, CustomText, ReturnedText: pwidechar; maxlen: integer): bool; stdcall;
+	PCryptProc = ^TCryptProc;
+	TCryptProc = function(PluginNr, CryptoNumber: integer; mode: integer; ConnectionName, Password: pchar; maxlen: integer): integer; stdcall;
+	PCryptProcW = ^TCryptProcW;
+	TCryptProcW = function(PluginNr, CryptoNumber: integer; mode: integer; ConnectionName, Password: pwidechar; maxlen: integer): integer; stdcall;
 
 	{ ------------------------------------------------------------------------------ }
 

@@ -22,8 +22,8 @@ type
 
 		PluginNum: integer;
 
-		MyProgressProc: TProgressProc;
-		MyLogProc: TLogProc;
+		MyProgressProc: TProgressProcW;
+		MyLogProc: TLogProcW;
 
 		function ConnectionExists(connectionName: WideString): integer; // проверяет существование подключение
 		function new(connectionName: WideString): integer; // Добавляет подключение в пул
