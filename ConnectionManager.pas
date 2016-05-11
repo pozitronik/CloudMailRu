@@ -66,12 +66,15 @@ var
 	iResult: cardinal;
 begin
 	ConnectionIndex := ConnectionExists(connectionName);
-	if ConnectionIndex <> -1 then exit(Connections[ConnectionIndex].Connection);
-	result := Connections[new(connectionName)].Connection;
-
+	if ConnectionIndex <> -1 then
+	begin
+		result := Connections[ConnectionIndex].Connection;
+	end else begin
+		result := Connections[new(connectionName)].Connection;
+	end;
 	if (doInit) then
 	begin
-  	iResult:=CLOUD_OPERATION_FAILED;
+		iResult := CLOUD_OPERATION_FAILED;
 		if not initialized(connectionName) then iResult := init(connectionName);
 		if (iResult = CLOUD_OPERATION_OK) then result := get(connectionName, false);
 	end;

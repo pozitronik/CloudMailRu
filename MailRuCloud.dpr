@@ -108,10 +108,10 @@ end;
 
 function FsInit(PluginNr: integer; pProgressProc: TProgressProc; pLogProc: TLogProc; pRequestProc: TRequestProc): integer; stdcall;
 Begin
-	{PluginNum := PluginNr;
-	MyProgressProc := pProgressProc;
-	MyLogProc := pLogProc;
-	MyRequestProc := pRequestProc;  }
+	{ PluginNum := PluginNr;
+		MyProgressProc := pProgressProc;
+		MyLogProc := pLogProc;
+		MyRequestProc := pRequestProc; }
 	// Вход в плагин.
 	Result := 0;
 
@@ -402,6 +402,7 @@ begin
 		if RealPath.account = '' then RealPath.account := ExtractFileName(GlobalPath);
 
 		if not ConnectionManager.get(RealPath.account).getDir(RealPath.path, CurrentListing) then SetLastError(ERROR_PATH_NOT_FOUND);
+
 		if Length(CurrentListing) = 0 then
 		begin
 			FindData := FindData_emptyDir(); // воркароунд бага с невозможностью входа в пустой каталог, см. http://www.ghisler.ch/board/viewtopic.php?t=42399
@@ -448,6 +449,7 @@ end;
 
 function FsFindClose(Hdl: thandle): integer; stdcall;
 Begin // Завершение получения списка файлов. Result тоталом не используется (всегда равен 0)
+	SetLength(CurrentListing,0);//Пусть будет
 	Result := 0;
 	FileCounter := 0;
 end;
