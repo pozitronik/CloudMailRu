@@ -27,7 +27,7 @@ function SetAccountSettingsToIniFile(IniFilePath: WideString; AccountSettings: T
 procedure GetAccountsListFromIniFile(IniFilePath: WideString; var AccountsList: TStringList);
 procedure DeleteAccountFromIniFile(IniFilePath: WideString; AccountName: WideString);
 procedure CenterWindow(WindowToStay, WindowToCenter: HWND);
-function UrlEncode(URL: WideString): WideString; { TODO : Временная реализация! }
+function UrlEncode(URL: WideString): WideString;
 function FindTCWindow: HWND;
 
 implementation
@@ -192,7 +192,7 @@ begin
 		else Result := Result + '%' + IntToHex(Ord(UTF8[I]), 2);
 end;
 
-function FindTCWindow: HWND; { TODO : Вытащить в хелпер }
+function FindTCWindow: HWND;
 begin
 	Result := FindWindow('TTOTAL_CMD', nil); { Хендл отдаётся корректно даже при нескольких запущенных тоталах }
 end;

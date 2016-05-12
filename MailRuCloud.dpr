@@ -381,7 +381,7 @@ var // ѕолучение первого файла в папке. Result тоталом не используетс€ (можно ис
 begin
 	Result := 0;
 	GlobalPath := path;
-	if GlobalPath = '\' then { TODO : ѕри копировании каталогов из FS плагина неправильно подставл€етс€ путь }
+	if GlobalPath = '\' then
 	begin // список соединений
 		Sections := TStringList.Create;
 		GetAccountsListFromIniFile(IniFilePath, Sections);
