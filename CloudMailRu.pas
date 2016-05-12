@@ -100,7 +100,7 @@ type
 		ExternalPluginNr: integer;
 		ExternalSourceName: PWideChar;
 		ExternalTargetName: PWideChar;
-		constructor Create(user, domain, password: WideString; ExternalProgressProc: TProgressProcW; PluginNr: integer = -1; ExternalLogProc: TLogProcW = nil);
+		constructor Create(user, domain, password: WideString; ExternalProgressProc: TProgressProcW = nil; PluginNr: integer = -1; ExternalLogProc: TLogProcW = nil);
 		destructor Destroy; override;
 		function login(): boolean;
 
@@ -454,9 +454,9 @@ begin
 	if (Pos('chunked', LowerCase(HTTP.Response.TransferEncoding)) = 0) and (ContentLength > 0) then
 	begin
 		Percent := 100 * AWorkCount div ContentLength;
-		if self.ExternalProgressProc(self.ExternalPluginNr, self.ExternalSourceName, self.ExternalTargetName, Percent) = 1 then
+		if Assigned(ExternalProgressProc) then
 		begin
-			Abort;
+			if ExternalProgressProc(self.ExternalPluginNr, self.ExternalSourceName, self.ExternalTargetName, Percent) = 1 then Abort;
 		end;
 	end;
 end;
@@ -507,7 +507,7 @@ begin
 	except
 		on E: Exception do
 		begin
-			Log(MSGTYPE_IMPORTANTERROR,'Directory list receiving error ' + E.Message);
+			Log(MSGTYPE_IMPORTANTERROR, 'Directory list receiving error ' + E.Message);
 		end;
 	end;
 	if not Result then exit(false);
