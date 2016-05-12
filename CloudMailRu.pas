@@ -227,6 +227,7 @@ var
 	SuccessPost: boolean;
 begin
 	Result := false;
+	SuccessPost := false;
 	if not(Assigned(self)) then exit; // Проверка на вызов без инициализации
 	URL := 'https://cloud.mail.ru/api/v2/dispatcher/';
 	try
@@ -625,6 +626,7 @@ var
 	OperationResult: integer;
 begin
 	if (SizeOfFile(localPath) > CLOUD_MAX_FILESIZE) then exit(FS_FILE_NOTSUPPORTED);
+	FileSize := 0;
 	Result := FS_FILE_WRITEERROR;
 	if not(Assigned(self)) then exit; // Проверка на вызов без инициализации
 	OperationResult := CLOUD_OPERATION_FAILED;
