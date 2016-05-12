@@ -60,14 +60,11 @@ type
 		domain: WideString;
 		user: WideString;
 		password: WideString;
-		// dir: WideString;
 		token: WideString;
 		x_page_id: WideString;
 		build: WideString;
 		upload_url: WideString;
-		// HTTP: TIdHTTP;
 		Cookie: TIdCookieManager;
-		// SSL: TIdSSLIOHandlerSocketOpenSSL;
 		ExternalProgressProc: TProgressProcW;
 		ExternalLogProc: TLogProcW;
 
@@ -300,7 +297,6 @@ begin
 		end;
 	end;
 	PostData.free;
-
 end;
 
 function TCloudMailRu.HTTPPost(URL: WideString; PostData: TStringStream; var Answer: WideString; ContentType: WideString = 'application/x-www-form-urlencoded'): boolean;
@@ -422,7 +418,6 @@ end;
 procedure TCloudMailRu.HTTPInit(var HTTP: TIdHTTP; var SSL: TIdSSLIOHandlerSocketOpenSSL; var Cookie: TIdCookieManager);
 begin
 	SSL := TIdSSLIOHandlerSocketOpenSSL.Create();
-	// if not(Assigned(Cookie)) then Cookie := TIdCookieManager.Create(); // Кука должна быть
 	HTTP := TIdHTTP.Create();
 	HTTP.CookieManager := Cookie;
 	HTTP.IOHandler := SSL;
@@ -435,8 +430,6 @@ end;
 
 procedure TCloudMailRu.HTTPDestroy(var HTTP: TIdHTTP; var SSL: TIdSSLIOHandlerSocketOpenSSL);
 begin
-	{ HTTP.DisconnectNotifyPeer;
-		HTTP.Disconnect; }
 	HTTP.free;
 	SSL.free;
 end;
@@ -447,7 +440,6 @@ var
 	ContentLength: int64;
 	Percent: integer;
 begin
-	// if self.CancelCopy then Abort;
 	HTTP := TIdHTTP(ASender);
 	if AWorkMode = wmRead then ContentLength := HTTP.Response.ContentLength
 	else ContentLength := HTTP.Request.ContentLength; // Считаем размер обработанных данных зависимости от того, скачивание это или загрузка
@@ -526,8 +518,7 @@ begin
 		if self.getShard(self.Shard) then
 		begin
 			Log(MSGTYPE_DETAILS, 'Current shard: ' + self.Shard);
-		end else begin
-			// А вот теперь это критическая ошибка, тут уже не получится копировать
+		end else begin // А вот теперь это критическая ошибка, тут уже не получится копировать
 			Log(MSGTYPE_IMPORTANTERROR, 'Sorry, downloading impossible');
 			exit(FS_FILE_NOTSUPPORTED);
 		end;
@@ -539,7 +530,6 @@ begin
 	try
 		FileStream := TFileStream.Create(localPath, fmCreate);
 		Result := self.HTTPGetFile(self.Shard + remotePath, FileStream);
-
 	except
 		on E: Exception do
 		begin
@@ -574,7 +564,6 @@ begin
 		end else begin
 			PostData := TStringStream.Create('api=2&weblink=' + PublicLink + '&token=' + self.token + '&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id + '&conflict', TEncoding.UTF8);
 		end;
-
 		SucessPublish := self.HTTPPost(URL, PostData, PostAnswer);
 	except
 		on E: Exception do
@@ -859,7 +848,6 @@ begin
 				Log(MSGTYPE_IMPORTANTERROR, 'Error file rename: got ' + IntToStr(OperationStatus) + ' status');
 				Result := FS_FILE_WRITEERROR;
 			end;
-
 		end;
 	end;
 end;
@@ -957,7 +945,6 @@ begin
 	end else begin
 		Result := self.moveFile(OldName, ExtractFilePath(NewName));
 	end;
-
 end;
 
 { PRIVATE STATIC METHODS (kinda) }
