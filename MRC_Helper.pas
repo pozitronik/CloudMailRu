@@ -27,7 +27,7 @@ function SetAccountSettingsToIniFile(IniFilePath: WideString; AccountSettings: T
 procedure GetAccountsListFromIniFile(IniFilePath: WideString; var AccountsList: TStringList);
 procedure DeleteAccountFromIniFile(IniFilePath: WideString; AccountName: WideString);
 procedure CenterWindow(WindowToStay, WindowToCenter: HWND);
-function UrlEncode(URL: UTF8String): WideString; { TODO : Временная реализация! }
+function UrlEncode(URL: WideString): WideString; { TODO : Временная реализация! }
 function FindTCWindow: HWND;
 
 implementation
@@ -180,17 +180,19 @@ begin
 	SetWindowPos(WindowToCenter, 0, x, Y, 0, 0, SWP_NOACTIVATE or SWP_NOOWNERZORDER or SWP_NOSIZE or SWP_NOZORDER);
 end;
 
-function UrlEncode(URL: UTF8String): WideString; // todo нужно добиться корректного формирования урлов
+function UrlEncode(URL: WideString): WideString; // todo нужно добиться корректного формирования урлов
 var
 	I: Integer;
+	UTF8: UTF8String;
 begin
+	UTF8 := UTF8String(URL);
 	Result := '';
-	for I := 1 to Length(URL) do
-		if URL[I] in ['a' .. 'z', 'A' .. 'Z', '/', '_', '-', '.', '0' .. '9'] then Result := Result + URL[I]
-		else Result := Result + '%' + IntToHex(Ord(URL[I]), 2);
+	for I := 1 to Length(UTF8) do
+		if UTF8[I] in ['a' .. 'z', 'A' .. 'Z', '/', '_', '-', '.', '0' .. '9'] then Result := Result + UTF8[I]
+		else Result := Result + '%' + IntToHex(Ord(UTF8[I]), 2);
 end;
 
-function FindTCWindow: HWND;  { TODO : Вытащить в хелпер }
+function FindTCWindow: HWND; { TODO : Вытащить в хелпер }
 begin
 	Result := FindWindow('TTOTAL_CMD', nil); { Хендл отдаётся корректно даже при нескольких запущенных тоталах }
 end;

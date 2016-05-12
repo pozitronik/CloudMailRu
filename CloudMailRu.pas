@@ -171,7 +171,7 @@ begin
 	except
 		on E: Exception do
 		begin
-			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Cloud login error ' + E.Message));
+			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Cloud login error: ' + E.Message));
 		end;
 	end;
 	PostData.free;
@@ -359,12 +359,12 @@ begin
 		end;
 		on E: EIdHTTPProtocolException do
 		begin
-			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar(E.ClassName + ' ошибка с сообщением : ' + E.Message + ' при отправке данных на адрес ' + URL + ', ответ сервера: ' + E.ErrorMessage));
+			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar(E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при отправке данных на адрес ' + URL + ', ответ сервера: ' + E.ErrorMessage));
 			Result := CLOUD_OPERATION_FAILED;
 		end;
 		on E: Exception do
 		begin
-			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar(E.ClassName + ' ошибка с сообщением : ' + E.Message + ' при отправке данных на адрес ' + URL));
+			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar(E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при отправке данных на адрес ' + URL));
 			Result := CLOUD_OPERATION_FAILED;
 		end;
 	end;
@@ -383,7 +383,7 @@ begin
 	Except
 		on E: Exception do
 		begin
-			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar(E.ClassName + ' ошибка с сообщением : ' + E.Message + ' при запросе данных с адреса ' + URL));
+			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar(E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при запросе данных с адреса ' + URL));
 			exit(false);
 		end;
 	end;
@@ -410,7 +410,7 @@ begin
 		end;
 		on E: Exception do
 		begin
-			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar(E.ClassName + ' ошибка с сообщением : ' + E.Message + ' при копировании файла с адреса ' + URL));
+			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar(E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при копировании файла с адреса ' + URL));
 			Result := FS_FILE_READERROR;
 		end;
 	end;
@@ -1106,6 +1106,8 @@ begin
 		if Error = 'unknown' then exit(CLOUD_ERROR_UNKNOWN);
 		if Error = 'overquota' then exit(CLOUD_ERROR_OVERQUOTA);
 		if Error = 'quota_exceeded' then exit(CLOUD_ERROR_OVERQUOTA);
+		if Error = 'invalid' then exit(CLOUD_ERROR_INVALID);
+
 
 		exit(CLOUD_ERROR_UNKNOWN); // Эту ошибку мы пока не встречали
 	end;
