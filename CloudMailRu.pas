@@ -27,7 +27,8 @@ const
 	CLOUD_ERROR_QUOTA_EXCEEDED = 7; // "quota_exceeded": 'Невозможно скопировать, в вашем Облаке недостаточно места'
 
 	{ Режимы работы при конфликтах копирования }
-	CLOUD_CONFLICT_STRICT = 'strict'; // возвращаем ошибку при существовании файла { TODO : CLOUD_CONFLICT_IGNORE = 'ignore' }
+	CLOUD_CONFLICT_STRICT = 'strict'; // возвращаем ошибку при существовании файла
+	CLOUD_CONFLICT_IGNORE = 'ignore'; // В API, видимо, не реализовано
 	CLOUD_CONFLICT_RENAME = 'rename'; // Переименуем новый файл
 	// CLOUD_CONFLICT_REPLACE = 'overwrite'; // хз, этот ключ не вскрыт
 

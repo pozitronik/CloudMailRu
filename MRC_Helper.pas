@@ -180,7 +180,7 @@ begin
 	SetWindowPos(WindowToCenter, 0, x, Y, 0, 0, SWP_NOACTIVATE or SWP_NOOWNERZORDER or SWP_NOSIZE or SWP_NOZORDER);
 end;
 
-function UrlEncode(URL: WideString): WideString; // todo нужно добиться корректного формирования урлов
+function UrlEncode(URL: WideString): WideString;
 var
 	I: Integer;
 	UTF8: UTF8String;
