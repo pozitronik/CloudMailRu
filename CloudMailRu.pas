@@ -256,7 +256,7 @@ begin
 	Result := CLOUD_OPERATION_FAILED;
 	if not(Assigned(self)) then exit; // Проверка на вызов без инициализации
 	URL := self.upload_url + '/?cloud_domain=1&x-email=' + self.user + '%40' + self.domain + '&fileapi' + IntToStr(DateTimeToUnix(now)) + '0246';
-	//self.ExternalLogProc(ExternalPluginNr, MSGTYPE_DETAILS, PWideChar('Uploading to ' + URL));
+	// self.ExternalLogProc(ExternalPluginNr, MSGTYPE_DETAILS, PWideChar('Uploading to ' + URL));
 	try
 		PostData := TIdMultipartFormDataStream.Create;
 		PostData.AddFile('file', localPath, 'application/octet-stream');
@@ -654,10 +654,10 @@ begin
 
 	if OperationResult = CLOUD_OPERATION_OK then
 	begin
-		//self.ExternalLogProc(ExternalPluginNr, MSGTYPE_DETAILS, PWideChar('putFileToCloud result: ' + PutResult.Text));
+		// self.ExternalLogProc(ExternalPluginNr, MSGTYPE_DETAILS, PWideChar('putFileToCloud result: ' + PutResult.Text));
 		if self.addFileToCloud(FileHash, FileSize, UrlEncode(StringReplace(remotePath, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase])), JSONAnswer) then
 		begin
-			//self.ExternalLogProc(ExternalPluginNr, MSGTYPE_DETAILS, PWideChar(JSONAnswer));
+			// self.ExternalLogProc(ExternalPluginNr, MSGTYPE_DETAILS, PWideChar(JSONAnswer));
 			case self.getOperationResultFromJSON(JSONAnswer, OperationStatus) of
 				CLOUD_OPERATION_OK:
 					begin
@@ -685,6 +685,7 @@ begin
 					end;
 				CLOUD_ERROR_OVERQUOTA:
 					begin
+						self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Insufficient Storage'));
 						Result := FS_FILE_WRITEERROR;
 					end;
 				CLOUD_ERROR_UNKNOWN:
@@ -1107,7 +1108,6 @@ begin
 		if Error = 'overquota' then exit(CLOUD_ERROR_OVERQUOTA);
 		if Error = 'quota_exceeded' then exit(CLOUD_ERROR_OVERQUOTA);
 		if Error = 'invalid' then exit(CLOUD_ERROR_INVALID);
-
 
 		exit(CLOUD_ERROR_UNKNOWN); // Эту ошибку мы пока не встречали
 	end;
