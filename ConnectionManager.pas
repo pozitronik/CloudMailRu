@@ -98,12 +98,12 @@ begin
 	result := CLOUD_OPERATION_OK;
 	AccountSettings := GetAccountSettingsFromIniFile(IniFileName, connectionName);
 
-	if not GetMyPasswordNow(AccountSettings) then exit(INVALID_HANDLE_VALUE);
+	if not GetMyPasswordNow(AccountSettings) then exit(CLOUD_OPERATION_ERROR_STATUS_UNKNOWN); //INVALID_HANDLE_VALUE
 
 	MyLogProc(PluginNum, MSGTYPE_CONNECT, PWideChar('CONNECT ' + AccountSettings.email));
 
 	cloud := TCloudMailRu.Create(AccountSettings.user, AccountSettings.domain, AccountSettings.password, MyProgressProc, PluginNum, MyLogProc);
-	if not set_(connectionName, cloud) then exit(INVALID_HANDLE_VALUE);
+	if not set_(connectionName, cloud) then exit(CLOUD_OPERATION_ERROR_STATUS_UNKNOWN); //INVALID_HANDLE_VALUE
 
 	if not(get(connectionName,result, false).login()) then free(connectionName);
 
