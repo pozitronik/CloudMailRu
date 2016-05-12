@@ -188,7 +188,7 @@ begin
 	UTF8 := UTF8String(URL);
 	Result := '';
 	for I := 1 to Length(UTF8) do
-		if UTF8[I] in ['a' .. 'z', 'A' .. 'Z', '/', '_', '-', '.', '0' .. '9'] then Result := Result + UTF8[I]
+		if UTF8[I] in ['a' .. 'z', 'A' .. 'Z', '/', '_', '-', '.', '0' .. '9'] then Result := Result + WideString(UTF8[I])
 		else Result := Result + '%' + IntToHex(Ord(UTF8[I]), 2);
 end;
 
