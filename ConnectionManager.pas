@@ -33,7 +33,7 @@ type
 		CryptoNum: integer;
 		MyCryptProc: TCryptProcW;
 		constructor Create(IniFileName: WideString; PluginNum: integer; MyProgressProc: TProgressProcW; MyLogProc: TLogProcW);
-		destructor Destroy();
+		destructor Destroy(); override;
 		function get(connectionName: WideString; var OperationResult:integer; doInit: boolean = true): TCloudMailRu; // возвращает готовое подклчение по имени
 		function set_(connectionName: WideString; cloud: TCloudMailRu): boolean;
 		function init(connectionName: WideString): integer; // инициализирует подключение по его имени, возвращает код состояния
