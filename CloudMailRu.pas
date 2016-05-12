@@ -23,6 +23,8 @@ const
 	CLOUD_ERROR_INVALID = 3; // invalid: '&laquo;' + app.escapeHTML(name) + '&raquo; это неправильное название папки. В названии папок нельзя использовать символы «" * / : < > ?  \\ |»'
 	CLOUD_ERROR_READONLY = 4; // readonly|read_only: 'Невозможно создать. Доступ только для просмотра'
 	CLOUD_ERROR_NAME_LENGTH_EXCEEDED = 5; // name_length_exceeded: 'Ошибка: Превышена длина имени папки. <a href="https://help.mail.ru/cloud_web/confines" target="_blank">Подробнее…</a>'
+	CLOUD_ERROR_OVERQUOTA = 7; // overquota: 'Невозможно скопировать, в вашем Облаке недостаточно места'
+	CLOUD_ERROR_QUOTA_EXCEEDED = 7; // "quota_exceeded": 'Невозможно скопировать, в вашем Облаке недостаточно места'
 
 	{ Режимы работы при конфликтах копирования }
 	CLOUD_CONFLICT_STRICT = 'strict'; // возвращаем ошибку при существовании файла { TODO : CLOUD_CONFLICT_IGNORE = 'ignore' }
@@ -323,8 +325,12 @@ begin
 			begin { сервер вернёт 400, но нужно пропарсить результат для дальнейшего определения действий }
 				Answer := E.ErrorMessage;
 				Result := true;
+			end else if HTTP.ResponseCode = 507 then // кончилось место
+			begin
+				Answer := E.ErrorMessage;
+				Result := true;
 			end else begin
-				self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar(E.ClassName + ' ошибка с сообщением : ' + E.Message + ' при отправке данных на адрес ' + URL + ', ответ сервера: ' + E.ErrorMessage));
+				self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar(E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при отправке данных на адрес ' + URL + ', ответ сервера: ' + E.ErrorMessage));
 				Result := false;
 			end;
 		end;
@@ -679,6 +685,10 @@ begin
 						Result := FS_FILE_WRITEERROR;
 					end;
 				CLOUD_ERROR_NAME_LENGTH_EXCEEDED:
+					begin
+						Result := FS_FILE_WRITEERROR;
+					end;
+				CLOUD_ERROR_OVERQUOTA:
 					begin
 						Result := FS_FILE_WRITEERROR;
 					end;
@@ -1099,6 +1109,9 @@ begin
 		if Error = 'read_only' then exit(CLOUD_ERROR_READONLY);
 		if Error = 'name_length_exceeded' then exit(CLOUD_ERROR_NAME_LENGTH_EXCEEDED);
 		if Error = 'unknown' then exit(CLOUD_ERROR_UNKNOWN);
+		if Error = 'overquota' then exit(CLOUD_ERROR_OVERQUOTA);
+		if Error = 'quota_exceeded' then exit(CLOUD_ERROR_OVERQUOTA);
+
 		exit(CLOUD_ERROR_UNKNOWN); // Эту ошибку мы пока не встречали
 	end;
 	Result := CLOUD_OPERATION_OK;
