@@ -92,6 +92,7 @@ type
 		function getPublicLinkFromJSON(JSON: WideString): WideString;
 		function getOperationResultFromJSON(JSON: WideString; var OperationStatus: integer): integer;
 		procedure HttpProgress(ASender: TObject; AWorkMode: TWorkMode; AWorkCount: int64);
+		procedure Log(MsgType: integer; LogString: WideString);
 	protected
 		procedure HTTPInit(var HTTP: TIdHTTP; var SSL: TIdSSLIOHandlerSocketOpenSSL; var Cookie: TIdCookieManager);
 		procedure HTTPDestroy(var HTTP: TIdHTTP; var SSL: TIdSSLIOHandlerSocketOpenSSL);
@@ -99,7 +100,7 @@ type
 		ExternalPluginNr: integer;
 		ExternalSourceName: PWideChar;
 		ExternalTargetName: PWideChar;
-		constructor Create(user, domain, password: WideString; ExternalProgressProc: TProgressProcW; PluginNr: integer; ExternalLogProc: TLogProcW);
+		constructor Create(user, domain, password: WideString; ExternalProgressProc: TProgressProcW; PluginNr: integer = -1; ExternalLogProc: TLogProcW = nil);
 		destructor Destroy; override;
 		function login(): boolean;
 
@@ -140,7 +141,7 @@ begin
 	except
 		on E: Exception do
 		begin
-			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Cloud initialization error ' + E.Message));
+			Log(MSGTYPE_IMPORTANTERROR, 'Cloud initialization error ' + E.Message);
 		end;
 
 	end;
@@ -163,7 +164,7 @@ begin
 	Result := false;
 	if not(Assigned(self)) then exit; // Проверка на вызов без инициализации
 
-	self.ExternalLogProc(ExternalPluginNr, MSGTYPE_DETAILS, PWideChar('Login to ' + self.user + '@' + self.domain));
+	Log(MSGTYPE_DETAILS, 'Login to ' + self.user + '@' + self.domain);
 	URL := 'http://auth.mail.ru/cgi-bin/auth?lang=ru_RU&from=authpopup';
 	try
 		PostData := TStringStream.Create('page=https://cloud.mail.ru/?from=promo&new_auth_form=1&Domain=' + self.domain + '&Login=' + self.user + '&Password=' + self.password + '&FailPage=', TEncoding.UTF8);
@@ -172,23 +173,23 @@ begin
 	except
 		on E: Exception do
 		begin
-			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Cloud login error: ' + E.Message));
+			Log(MSGTYPE_IMPORTANTERROR, 'Cloud login error: ' + E.Message);
 		end;
 	end;
 	PostData.free;
 	if (Result) then
 	begin
-		self.ExternalLogProc(ExternalPluginNr, MSGTYPE_DETAILS, PWideChar('Requesting auth token for ' + self.user + '@' + self.domain));
+		Log(MSGTYPE_DETAILS, 'Requesting auth token for ' + self.user + '@' + self.domain);
 		Result := self.getToken();
 		if (Result) then
 		begin
-			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_DETAILS, PWideChar('Connected to ' + self.user + '@' + self.domain));
+			Log(MSGTYPE_DETAILS, 'Connected to ' + self.user + '@' + self.domain);
 		end else begin
-			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Error getting auth token for ' + self.user + '@' + self.domain));
+			Log(MSGTYPE_IMPORTANTERROR, 'Error getting auth token for ' + self.user + '@' + self.domain);
 			exit(false);
 		end;
 	end
-	else self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Error login to ' + self.user + '@' + self.domain));
+	else Log(MSGTYPE_IMPORTANTERROR, 'Error login to ' + self.user + '@' + self.domain);
 end;
 
 function TCloudMailRu.getToken(): boolean;
@@ -205,7 +206,7 @@ begin
 	except
 		on E: Exception do
 		begin
-			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Get token error ' + E.Message));
+			Log(MSGTYPE_IMPORTANTERROR, 'Get token error ' + E.Message);
 		end;
 
 	end;
@@ -237,7 +238,7 @@ begin
 	except
 		on E: Exception do
 		begin
-			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Get shard error ' + E.Message));
+			Log(MSGTYPE_IMPORTANTERROR, 'Get shard error ' + E.Message);
 			PostData.free;
 		end;
 	end;
@@ -258,7 +259,7 @@ begin
 	Result := CLOUD_OPERATION_FAILED;
 	if not(Assigned(self)) then exit; // Проверка на вызов без инициализации
 	URL := self.upload_url + '/?cloud_domain=1&x-email=' + self.user + '%40' + self.domain + '&fileapi' + IntToStr(DateTimeToUnix(now)) + '0246';
-	// self.ExternalLogProc(ExternalPluginNr, MSGTYPE_DETAILS, PWideChar('Uploading to ' + URL));
+	// Log( MSGTYPE_DETAILS, 'Uploading to ' + URL);
 	try
 		PostData := TIdMultipartFormDataStream.Create;
 		PostData.AddFile('file', localPath, 'application/octet-stream');
@@ -266,7 +267,7 @@ begin
 	except
 		on E: Exception do
 		begin
-			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Posting file error ' + E.Message));
+			Log(MSGTYPE_IMPORTANTERROR, 'Posting file error ' + E.Message);
 		end;
 	end;
 	PostData.free;
@@ -294,7 +295,7 @@ begin
 	except
 		on E: Exception do
 		begin
-			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Adding file error ' + E.Message));
+			Log(MSGTYPE_IMPORTANTERROR, 'Adding file error ' + E.Message);
 			PostData.free;
 		end;
 	end;
@@ -332,7 +333,7 @@ begin
 				Answer := E.ErrorMessage;
 				Result := true;
 			end else begin
-				self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar(E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при отправке данных на адрес ' + URL + ', ответ сервера: ' + E.ErrorMessage));
+				Log(MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при отправке данных на адрес ' + URL + ', ответ сервера: ' + E.ErrorMessage);
 				Result := false;
 			end;
 		end;
@@ -361,12 +362,12 @@ begin
 		end;
 		on E: EIdHTTPProtocolException do
 		begin
-			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar(E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при отправке данных на адрес ' + URL + ', ответ сервера: ' + E.ErrorMessage));
+			Log(MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при отправке данных на адрес ' + URL + ', ответ сервера: ' + E.ErrorMessage);
 			Result := CLOUD_OPERATION_FAILED;
 		end;
 		on E: Exception do
 		begin
-			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar(E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при отправке данных на адрес ' + URL));
+			Log(MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при отправке данных на адрес ' + URL);
 			Result := CLOUD_OPERATION_FAILED;
 		end;
 	end;
@@ -385,7 +386,7 @@ begin
 	Except
 		on E: Exception do
 		begin
-			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar(E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при запросе данных с адреса ' + URL));
+			Log(MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при запросе данных с адреса ' + URL);
 			exit(false);
 		end;
 	end;
@@ -412,7 +413,7 @@ begin
 		end;
 		on E: Exception do
 		begin
-			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar(E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при копировании файла с адреса ' + URL));
+			Log(MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при копировании файла с адреса ' + URL);
 			Result := FS_FILE_READERROR;
 		end;
 	end;
@@ -460,6 +461,14 @@ begin
 	end;
 end;
 
+procedure TCloudMailRu.Log(MsgType: integer; LogString: WideString);
+begin
+	if Assigned(ExternalLogProc) then
+	begin
+		ExternalLogProc(ExternalPluginNr, MsgType, PWideChar(LogString));
+	end;
+end;
+
 { PUBLIC METHODS }
 
 function TCloudMailRu.deleteFile(path: WideString): boolean;
@@ -478,7 +487,7 @@ begin
 	except
 		on E: Exception do
 		begin
-			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Delete file error ' + E.Message));
+			Log(MSGTYPE_IMPORTANTERROR, 'Delete file error ' + E.Message);
 		end;
 	end;
 	PostData.free;
@@ -498,7 +507,7 @@ begin
 	except
 		on E: Exception do
 		begin
-			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Directory list receiving error ' + E.Message));
+			Log(MSGTYPE_IMPORTANTERROR,'Directory list receiving error ' + E.Message);
 		end;
 	end;
 	if not Result then exit(false);
@@ -513,13 +522,13 @@ begin
 	if not(Assigned(self)) then exit; // Проверка на вызов без инициализации
 	if self.Shard = '' then
 	begin
-		self.ExternalLogProc(ExternalPluginNr, MSGTYPE_DETAILS, PWideChar('Current shard is undefined, trying to get one'));
+		Log(MSGTYPE_DETAILS, 'Current shard is undefined, trying to get one');
 		if self.getShard(self.Shard) then
 		begin
-			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_DETAILS, PWideChar('Current shard: ' + self.Shard));
+			Log(MSGTYPE_DETAILS, 'Current shard: ' + self.Shard);
 		end else begin
 			// А вот теперь это критическая ошибка, тут уже не получится копировать
-			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Sorry, downloading impossible'));
+			Log(MSGTYPE_IMPORTANTERROR, 'Sorry, downloading impossible');
 			exit(FS_FILE_NOTSUPPORTED);
 		end;
 	end;
@@ -534,7 +543,7 @@ begin
 	except
 		on E: Exception do
 		begin
-			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('File receiving error ' + E.Message));
+			Log(MSGTYPE_IMPORTANTERROR, 'File receiving error ' + E.Message);
 		end;
 	end;
 	FileStream.free;
@@ -570,7 +579,7 @@ begin
 	except
 		on E: Exception do
 		begin
-			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('File publish error ' + E.Message));
+			Log(MSGTYPE_IMPORTANTERROR, 'File publish error ' + E.Message);
 		end;
 	end;
 	PostData.free;
@@ -611,7 +620,7 @@ begin
 				end;
 		else
 			begin
-				self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Error publishing file: got ' + IntToStr(OperationStatus) + ' status'));
+				Log(MSGTYPE_IMPORTANTERROR, 'Error publishing file: got ' + IntToStr(OperationStatus) + ' status');
 				Result := false;
 			end;
 		end;
@@ -641,7 +650,7 @@ begin
 			begin
 				Result := FS_FILE_USERABORT;
 			end else begin
-				self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Error uploading to cloud: ' + E.ClassName + ' ошибка с сообщением: ' + E.Message));
+				Log(MSGTYPE_IMPORTANTERROR, 'Error uploading to cloud: ' + E.ClassName + ' ошибка с сообщением: ' + E.Message);
 			end;
 		end;
 	end;
@@ -657,10 +666,10 @@ begin
 
 	if OperationResult = CLOUD_OPERATION_OK then
 	begin
-		// self.ExternalLogProc(ExternalPluginNr, MSGTYPE_DETAILS, PWideChar('putFileToCloud result: ' + PutResult.Text));
+		// Log( MSGTYPE_DETAILS, 'putFileToCloud result: ' + PutResult.Text);
 		if self.addFileToCloud(FileHash, FileSize, UrlEncode(StringReplace(remotePath, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase])), JSONAnswer) then
 		begin
-			// self.ExternalLogProc(ExternalPluginNr, MSGTYPE_DETAILS, PWideChar(JSONAnswer));
+			// Log( MSGTYPE_DETAILS, JSONAnswer);
 			case self.getOperationResultFromJSON(JSONAnswer, OperationStatus) of
 				CLOUD_OPERATION_OK:
 					begin
@@ -688,7 +697,7 @@ begin
 					end;
 				CLOUD_ERROR_OVERQUOTA:
 					begin
-						self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Insufficient Storage'));
+						Log(MSGTYPE_IMPORTANTERROR, 'Insufficient Storage');
 						Result := FS_FILE_WRITEERROR;
 					end;
 				CLOUD_ERROR_UNKNOWN:
@@ -697,7 +706,7 @@ begin
 					end;
 			else
 				begin // что-то неизвестное
-					self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Error uploading to cloud: got ' + IntToStr(OperationStatus) + ' status'));
+					Log(MSGTYPE_IMPORTANTERROR, 'Error uploading to cloud: got ' + IntToStr(OperationStatus) + ' status');
 					Result := FS_FILE_WRITEERROR;
 				end;
 			end;
@@ -724,7 +733,7 @@ begin
 	except
 		on E: Exception do
 		begin
-			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Directory creation error ' + E.Message));
+			Log(MSGTYPE_IMPORTANTERROR, 'Directory creation error ' + E.Message);
 		end;
 	end;
 	PostData.free;
@@ -761,7 +770,7 @@ begin
 				end;
 		else
 			begin
-				self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Error creating directory: got ' + IntToStr(OperationStatus) + ' status'));
+				Log(MSGTYPE_IMPORTANTERROR, 'Error creating directory: got ' + IntToStr(OperationStatus) + ' status');
 				Result := false;
 			end;
 		end;
@@ -784,7 +793,7 @@ begin
 	except
 		on E: Exception do
 		begin
-			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Delete directory error ' + E.Message));
+			Log(MSGTYPE_IMPORTANTERROR, 'Delete directory error ' + E.Message);
 		end;
 	end;
 	PostData.free;
@@ -810,7 +819,7 @@ begin
 	except
 		on E: Exception do
 		begin
-			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Rename file error ' + E.Message));
+			Log(MSGTYPE_IMPORTANTERROR, 'Rename file error ' + E.Message);
 		end;
 	end;
 	PostData.free;
@@ -847,7 +856,7 @@ begin
 				end;
 		else
 			begin // что-то неизвестное
-				self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Error file rename: got ' + IntToStr(OperationStatus) + ' status'));
+				Log(MSGTYPE_IMPORTANTERROR, 'Error file rename: got ' + IntToStr(OperationStatus) + ' status');
 				Result := FS_FILE_WRITEERROR;
 			end;
 
@@ -869,7 +878,7 @@ begin
 	except
 		on E: Exception do
 		begin
-			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('File status getting error ' + E.Message));
+			Log(MSGTYPE_IMPORTANTERROR, 'File status getting error ' + E.Message);
 		end;
 	end;
 	if not Result then exit(false);
@@ -896,7 +905,7 @@ begin
 	except
 		on E: Exception do
 		begin
-			self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Rename file error ' + E.Message));
+			Log(MSGTYPE_IMPORTANTERROR, 'Rename file error ' + E.Message);
 		end;
 	end;
 	PostData.free;
@@ -933,7 +942,7 @@ begin
 				end;
 		else
 			begin // что-то неизвестное
-				self.ExternalLogProc(ExternalPluginNr, MSGTYPE_IMPORTANTERROR, PWideChar('Error file move: got ' + IntToStr(OperationStatus) + ' status'));
+				Log(MSGTYPE_IMPORTANTERROR, 'Error file move: got ' + IntToStr(OperationStatus) + ' status');
 				Result := FS_FILE_WRITEERROR;
 			end;
 		end;
