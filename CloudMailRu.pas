@@ -1012,7 +1012,7 @@ end;
 
 function TCloudMailRu.getShardFromJSON(JSON: WideString): WideString;
 begin
-	Result := ((((TJSONObject.ParseJSONValue(JSON) as TJSONObject).Get('body').JsonValue as TJSONObject).Get('get').JsonValue as TJSONArray).Get(0) as TJSONObject).Get('url').JsonValue.Value;
+	Result := ((((TJSONObject.ParseJSONValue(JSON) as TJSONObject).values['body'] as TJSONObject).Values['get'] as TJSONArray).Items[0] as TJSONObject).Values['url'].Value;
 end;
 
 function TCloudMailRu.getDirListingFromJSON(JSON: WideString): TCloudMailRuDirListing;
@@ -1022,12 +1022,11 @@ var
 	ResultItems: TCloudMailRuDirListing;
 	A: TJSONArray;
 begin
-	Obj := (TJSONObject.ParseJSONValue(JSON) as TJSONObject).Get('body').JsonValue as TJSONObject;
-	A := Obj.Get('list').JsonValue as TJSONArray;
+	A := ((TJSONObject.ParseJSONValue(JSON) as TJSONObject).Values['body'] as TJSONObject).Values['list'] as TJSONArray;
 	SetLength(ResultItems, A.count);
 	for J := 0 to A.count - 1 do
 	begin
-		Obj := A.Get(J) as TJSONObject;
+		Obj := A.Items[J] as TJSONObject;
 		with ResultItems[J] do
 		begin
 			if Assigned(Obj.Values['size']) then size := Obj.Values['size'].Value.ToInt64;
@@ -1054,43 +1053,42 @@ begin
 end;
 
 function TCloudMailRu.getFileStatusFromJSON(JSON: WideString): TCloudMailRuDirListingItem;
-{ var
-	X: ISuperObject; }
+var
+	Obj: TJSONObject;
 begin
-	{ X := TSuperObject.Create(JSON);
-		X := X['body'].AsObject;
-		With Result do
-		begin
-		tree := X.s['tree'];
-		grev := X.I['grev'];
-		size := X.I['size'];
-		kind := X.s['kind'];
-		weblink := X.s['weblink'];
-		rev := X.I['rev'];
-		type_ := X.s['type'];
-		home := X.s['home'];
-		name := X.s['name'];
+	Obj := (TJSONObject.ParseJSONValue(JSON) as TJSONObject).Values['body'] as TJSONObject;
+	with Result do
+	begin
+		if Assigned(Obj.Values['size']) then size := Obj.Values['size'].Value.ToInt64;
+		if Assigned(Obj.Values['kind']) then kind := Obj.Values['kind'].Value;
+		if Assigned(Obj.Values['weblink']) then weblink := Obj.Values['weblink'].Value;
+		if Assigned(Obj.Values['type']) then type_ := Obj.Values['type'].Value;
+		if Assigned(Obj.Values['home']) then home := Obj.Values['home'].Value;
+		if Assigned(Obj.Values['name']) then name := Obj.Values['name'].Value;
 		if (type_ = TYPE_FILE) then
 		begin
-		mtime := X.I['mtime'];
-		virus_scan := X.s['virus_scan'];
-		hash := X.s['hash'];
+			if Assigned(Obj.Values['mtime']) then mtime := Obj.Values['mtime'].Value.ToInteger;
+			if Assigned(Obj.Values['virus_scan']) then virus_scan := Obj.Values['virus_scan'].Value;
+			if Assigned(Obj.Values['hash']) then hash := Obj.Values['hash'].Value;
 		end else begin
-		mtime := 0;
+			if Assigned(Obj.Values['tree']) then tree := Obj.Values['tree'].Value;
+			if Assigned(Obj.Values['grev']) then grev := Obj.Values['grev'].Value.ToInteger;
+			if Assigned(Obj.Values['rev']) then rev := Obj.Values['rev'].Value.ToInteger;
+			mtime := 0;
 		end;
-		end; }
+	end;
 end;
 
 function TCloudMailRu.getOperationResultFromJSON(JSON: WideString; var OperationStatus: integer): integer;
-{ var
-	X: ISuperObject;
-	Error: WideString; }
+var
+	Obj: TJSONObject;
+	Error: WideString;
 begin
-	{ X := TSuperObject.Create(JSON).AsObject;
-		OperationStatus := X.I['status'];
-		if OperationStatus <> 200 then
-		begin
-		Error := X.O['body'].O['home'].s['error'];
+	Obj := TJSONObject.ParseJSONValue(JSON) as TJSONObject;
+	OperationStatus := Obj.Values['status'].Value.ToInteger;
+	if OperationStatus <> 200 then
+	begin
+		Error := ((Obj.Values['body'] as TJSONObject).Values['home'] as TJSONObject).Values['error'].Value;
 		if Error = 'exists' then exit(CLOUD_ERROR_EXISTS);
 		if Error = 'required' then exit(CLOUD_ERROR_REQUIRED);
 		if Error = 'readonly' then exit(CLOUD_ERROR_READONLY);
@@ -1102,16 +1100,13 @@ begin
 		if Error = 'invalid' then exit(CLOUD_ERROR_INVALID);
 
 		exit(CLOUD_ERROR_UNKNOWN); // Эту ошибку мы пока не встречали
-		end;
-		Result := CLOUD_OPERATION_OK; }
+	end;
+	Result := CLOUD_OPERATION_OK;
 end;
 
 function TCloudMailRu.getPublicLinkFromJSON(JSON: WideString): WideString;
-{ var
-	X: ISuperObject; }
 begin
-	{ X := TSuperObject.Create(JSON).AsObject;
-		Result := X.s['body']; }
+	result:=(TJSONObject.ParseJSONValue(JSON) as TJSONObject).Values['body'].Value;
 end;
 
 end.
