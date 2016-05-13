@@ -3,7 +3,7 @@
 interface
 
 uses
-	System.Classes, System.SysUtils, XSuperJson, XSuperObject, PLUGIN_Types,
+	System.Classes, System.SysUtils, PLUGIN_Types, JSON,
 	MRC_helper, IdCookieManager, IdIOHandler, IdIOHandlerSocket, IdIOHandlerStack, IdSSL,
 	IdSSLOpenSSL, IdBaseComponent, IdComponent, IdTCPConnection, IdTCPClient,
 	IdHTTP, IdAuthentication, IdIOHandlerStream, IdMultipartFormData;
@@ -1011,63 +1011,56 @@ begin
 end;
 
 function TCloudMailRu.getShardFromJSON(JSON: WideString): WideString;
-var
-	X: ISuperObject;
 begin
-	X := TSuperObject.Create(JSON);
-	X := X['body'].AsObject;
-	Result := X.A['get'].O[0].s['url'];
+	Result := ((((TJSONObject.ParseJSONValue(JSON) as TJSONObject).Get('body').JsonValue as TJSONObject).Get('get').JsonValue as TJSONArray).Get(0) as TJSONObject).Get('url').JsonValue.Value;
 end;
 
 function TCloudMailRu.getDirListingFromJSON(JSON: WideString): TCloudMailRuDirListing;
 var
-	X, Obj: ISuperObject; // Это интерфейсы, им дестрой не нужен
+	Obj: TJSONObject;
 	J: integer;
 	ResultItems: TCloudMailRuDirListing;
+	A: TJSONArray;
 begin
-	X := TSuperObject.Create(JSON);
-	X := X['body'].AsObject;
-	SetLength(ResultItems, X.A['list'].Length);
-	if (X.A['list'].Length = 0) then
+	Obj := (TJSONObject.ParseJSONValue(JSON) as TJSONObject).Get('body').JsonValue as TJSONObject;
+	A := Obj.Get('list').JsonValue as TJSONArray;
+	SetLength(ResultItems, A.count);
+	for J := 0 to A.count - 1 do
 	begin
-		exit(ResultItems);
-	end;
-	with X.A['list'] do
-		for J := 0 to X.A['list'].Length - 1 do
+		Obj := A.Get(J) as TJSONObject;
+		with ResultItems[J] do
 		begin
-			Obj := O[J];
-			With ResultItems[J] do
+			if Assigned(Obj.Values['size']) then size := Obj.Values['size'].Value.ToInt64;
+			if Assigned(Obj.Values['kind']) then kind := Obj.Values['kind'].Value;
+			if Assigned(Obj.Values['weblink']) then weblink := Obj.Values['weblink'].Value;
+			if Assigned(Obj.Values['type']) then type_ := Obj.Values['type'].Value;
+			if Assigned(Obj.Values['home']) then home := Obj.Values['home'].Value;
+			if Assigned(Obj.Values['name']) then name := Obj.Values['name'].Value;
+			if (type_ = TYPE_FILE) then
 			begin
-				tree := Obj.s['tree'];
-				grev := Obj.I['grev'];
-				size := Obj.I['size'];
-				kind := Obj.s['kind'];
-				weblink := Obj.s['weblink'];
-				rev := Obj.I['rev'];
-				type_ := Obj.s['type'];
-				home := Obj.s['home'];
-				name := Obj.s['name'];
-				if (type_ = TYPE_FILE) then
-				begin
-					mtime := Obj.I['mtime'];
-					virus_scan := Obj.s['virus_scan'];
-					hash := Obj.s['hash'];
-				end else begin
-					mtime := 0;
-				end;
+				if Assigned(Obj.Values['mtime']) then mtime := Obj.Values['mtime'].Value.ToInteger;
+				if Assigned(Obj.Values['virus_scan']) then virus_scan := Obj.Values['virus_scan'].Value;
+				if Assigned(Obj.Values['hash']) then hash := Obj.Values['hash'].Value;
+			end else begin
+				if Assigned(Obj.Values['tree']) then tree := Obj.Values['tree'].Value;
+				if Assigned(Obj.Values['grev']) then grev := Obj.Values['grev'].Value.ToInteger;
+				if Assigned(Obj.Values['rev']) then rev := Obj.Values['rev'].Value.ToInteger;
+				mtime := 0;
 			end;
 		end;
+	end;
+
 	Result := ResultItems;
 end;
 
 function TCloudMailRu.getFileStatusFromJSON(JSON: WideString): TCloudMailRuDirListingItem;
-var
-	X: ISuperObject;
+{ var
+	X: ISuperObject; }
 begin
-	X := TSuperObject.Create(JSON);
-	X := X['body'].AsObject;
-	With Result do
-	begin
+	{ X := TSuperObject.Create(JSON);
+		X := X['body'].AsObject;
+		With Result do
+		begin
 		tree := X.s['tree'];
 		grev := X.I['grev'];
 		size := X.I['size'];
@@ -1079,24 +1072,24 @@ begin
 		name := X.s['name'];
 		if (type_ = TYPE_FILE) then
 		begin
-			mtime := X.I['mtime'];
-			virus_scan := X.s['virus_scan'];
-			hash := X.s['hash'];
+		mtime := X.I['mtime'];
+		virus_scan := X.s['virus_scan'];
+		hash := X.s['hash'];
 		end else begin
-			mtime := 0;
+		mtime := 0;
 		end;
-	end;
+		end; }
 end;
 
 function TCloudMailRu.getOperationResultFromJSON(JSON: WideString; var OperationStatus: integer): integer;
-var
+{ var
 	X: ISuperObject;
-	Error: WideString;
+	Error: WideString; }
 begin
-	X := TSuperObject.Create(JSON).AsObject;
-	OperationStatus := X.I['status'];
-	if OperationStatus <> 200 then
-	begin
+	{ X := TSuperObject.Create(JSON).AsObject;
+		OperationStatus := X.I['status'];
+		if OperationStatus <> 200 then
+		begin
 		Error := X.O['body'].O['home'].s['error'];
 		if Error = 'exists' then exit(CLOUD_ERROR_EXISTS);
 		if Error = 'required' then exit(CLOUD_ERROR_REQUIRED);
@@ -1109,16 +1102,16 @@ begin
 		if Error = 'invalid' then exit(CLOUD_ERROR_INVALID);
 
 		exit(CLOUD_ERROR_UNKNOWN); // Эту ошибку мы пока не встречали
-	end;
-	Result := CLOUD_OPERATION_OK;
+		end;
+		Result := CLOUD_OPERATION_OK; }
 end;
 
 function TCloudMailRu.getPublicLinkFromJSON(JSON: WideString): WideString;
-var
-	X: ISuperObject;
+{ var
+	X: ISuperObject; }
 begin
-	X := TSuperObject.Create(JSON).AsObject;
-	Result := X.s['body'];
+	{ X := TSuperObject.Create(JSON).AsObject;
+		Result := X.s['body']; }
 end;
 
 end.
