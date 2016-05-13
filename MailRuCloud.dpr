@@ -251,6 +251,16 @@ begin
 				System.AnsiStrings.strpcopy(FieldName, 'virus_scan');
 				Result := ft_stringw;
 			end;
+		12:
+			begin
+				System.AnsiStrings.strpcopy(FieldName, 'folders_count');
+				Result := ft_numeric_32;
+			end;
+		13:
+			begin
+				System.AnsiStrings.strpcopy(FieldName, 'files_count');
+				Result := ft_numeric_32;
+			end;
 	end;
 end;
 
@@ -691,6 +701,7 @@ begin
 	case FieldIndex of
 		0:
 			begin
+				if Item.mtime <> 0 then exit(ft_nosuchfield);
 				strpcopy(FieldValue, Item.tree);
 				Result := ft_stringw;
 			end;
@@ -701,6 +712,7 @@ begin
 			end;
 		2:
 			begin
+				if Item.mtime <> 0 then exit(ft_nosuchfield);
 				Move(Item.grev, FieldValue^, SizeOf(Item.grev));
 				Result := ft_numeric_32;
 			end;
@@ -721,6 +733,7 @@ begin
 			end;
 		6:
 			begin
+				if Item.mtime <> 0 then exit(ft_nosuchfield);
 				Move(Item.rev, FieldValue^, SizeOf(Item.rev));
 				Result := ft_numeric_32;
 			end;
@@ -737,7 +750,6 @@ begin
 		9:
 			begin
 				if Item.mtime = 0 then exit(ft_nosuchfield);
-
 				Filetime.dwHighDateTime := 0;
 				Filetime.dwLowDateTime := 0;
 				Filetime := DateTimeToFileTime(UnixToDateTime(Item.mtime));
@@ -753,6 +765,18 @@ begin
 			begin
 				strpcopy(FieldValue, Item.virus_scan);
 				Result := ft_stringw;
+			end;
+		12:
+			begin
+				if Item.mtime <> 0 then exit(ft_nosuchfield);
+				Move(Item.folders_count, FieldValue^, SizeOf(Item.folders_count));
+				Result := ft_numeric_32;
+			end;
+		13:
+			begin
+				if Item.mtime <> 0 then exit(ft_nosuchfield);
+				Move(Item.files_count, FieldValue^, SizeOf(Item.files_count));
+				Result := ft_numeric_32;
 			end;
 	end;
 

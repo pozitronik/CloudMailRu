@@ -51,6 +51,8 @@ type
 		mtime: integer;
 		hash: WideString;
 		virus_scan: WideString;
+		folders_count: integer;
+		files_count: integer;
 	End;
 
 	TCloudMailRuDirListing = array of TCloudMailRuDirListingItem;
@@ -1012,7 +1014,7 @@ end;
 
 function TCloudMailRu.getShardFromJSON(JSON: WideString): WideString;
 begin
-	Result := ((((TJSONObject.ParseJSONValue(JSON) as TJSONObject).values['body'] as TJSONObject).Values['get'] as TJSONArray).Items[0] as TJSONObject).Values['url'].Value;
+	Result := ((((TJSONObject.ParseJSONValue(JSON) as TJSONObject).values['body'] as TJSONObject).values['get'] as TJSONArray).Items[0] as TJSONObject).values['url'].Value;
 end;
 
 function TCloudMailRu.getDirListingFromJSON(JSON: WideString): TCloudMailRuDirListing;
@@ -1022,28 +1024,30 @@ var
 	ResultItems: TCloudMailRuDirListing;
 	A: TJSONArray;
 begin
-	A := ((TJSONObject.ParseJSONValue(JSON) as TJSONObject).Values['body'] as TJSONObject).Values['list'] as TJSONArray;
+	A := ((TJSONObject.ParseJSONValue(JSON) as TJSONObject).values['body'] as TJSONObject).values['list'] as TJSONArray;
 	SetLength(ResultItems, A.count);
 	for J := 0 to A.count - 1 do
 	begin
 		Obj := A.Items[J] as TJSONObject;
 		with ResultItems[J] do
 		begin
-			if Assigned(Obj.Values['size']) then size := Obj.Values['size'].Value.ToInt64;
-			if Assigned(Obj.Values['kind']) then kind := Obj.Values['kind'].Value;
-			if Assigned(Obj.Values['weblink']) then weblink := Obj.Values['weblink'].Value;
-			if Assigned(Obj.Values['type']) then type_ := Obj.Values['type'].Value;
-			if Assigned(Obj.Values['home']) then home := Obj.Values['home'].Value;
-			if Assigned(Obj.Values['name']) then name := Obj.Values['name'].Value;
+			if Assigned(Obj.values['size']) then size := Obj.values['size'].Value.ToInt64;
+			if Assigned(Obj.values['kind']) then kind := Obj.values['kind'].Value;
+			if Assigned(Obj.values['weblink']) then weblink := Obj.values['weblink'].Value;
+			if Assigned(Obj.values['type']) then type_ := Obj.values['type'].Value;
+			if Assigned(Obj.values['home']) then home := Obj.values['home'].Value;
+			if Assigned(Obj.values['name']) then name := Obj.values['name'].Value;
 			if (type_ = TYPE_FILE) then
 			begin
-				if Assigned(Obj.Values['mtime']) then mtime := Obj.Values['mtime'].Value.ToInteger;
-				if Assigned(Obj.Values['virus_scan']) then virus_scan := Obj.Values['virus_scan'].Value;
-				if Assigned(Obj.Values['hash']) then hash := Obj.Values['hash'].Value;
+				if Assigned(Obj.values['mtime']) then mtime := Obj.values['mtime'].Value.ToInteger;
+				if Assigned(Obj.values['virus_scan']) then virus_scan := Obj.values['virus_scan'].Value;
+				if Assigned(Obj.values['hash']) then hash := Obj.values['hash'].Value;
 			end else begin
-				if Assigned(Obj.Values['tree']) then tree := Obj.Values['tree'].Value;
-				if Assigned(Obj.Values['grev']) then grev := Obj.Values['grev'].Value.ToInteger;
-				if Assigned(Obj.Values['rev']) then rev := Obj.Values['rev'].Value.ToInteger;
+				if Assigned(Obj.values['tree']) then tree := Obj.values['tree'].Value;
+				if Assigned(Obj.values['grev']) then grev := Obj.values['grev'].Value.ToInteger;
+				if Assigned(Obj.values['rev']) then rev := Obj.values['rev'].Value.ToInteger;
+				if Assigned((Obj.values['count'] as TJSONObject).values['folders']) then folders_count := (Obj.values['count'] as TJSONObject).values['folders'].Value.ToInteger();
+				if Assigned((Obj.values['count'] as TJSONObject).values['files']) then files_count := (Obj.values['count'] as TJSONObject).values['files'].Value.ToInteger();
 				mtime := 0;
 			end;
 		end;
@@ -1056,24 +1060,26 @@ function TCloudMailRu.getFileStatusFromJSON(JSON: WideString): TCloudMailRuDirLi
 var
 	Obj: TJSONObject;
 begin
-	Obj := (TJSONObject.ParseJSONValue(JSON) as TJSONObject).Values['body'] as TJSONObject;
+	Obj := (TJSONObject.ParseJSONValue(JSON) as TJSONObject).values['body'] as TJSONObject;
 	with Result do
 	begin
-		if Assigned(Obj.Values['size']) then size := Obj.Values['size'].Value.ToInt64;
-		if Assigned(Obj.Values['kind']) then kind := Obj.Values['kind'].Value;
-		if Assigned(Obj.Values['weblink']) then weblink := Obj.Values['weblink'].Value;
-		if Assigned(Obj.Values['type']) then type_ := Obj.Values['type'].Value;
-		if Assigned(Obj.Values['home']) then home := Obj.Values['home'].Value;
-		if Assigned(Obj.Values['name']) then name := Obj.Values['name'].Value;
+		if Assigned(Obj.values['size']) then size := Obj.values['size'].Value.ToInt64;
+		if Assigned(Obj.values['kind']) then kind := Obj.values['kind'].Value;
+		if Assigned(Obj.values['weblink']) then weblink := Obj.values['weblink'].Value;
+		if Assigned(Obj.values['type']) then type_ := Obj.values['type'].Value;
+		if Assigned(Obj.values['home']) then home := Obj.values['home'].Value;
+		if Assigned(Obj.values['name']) then name := Obj.values['name'].Value;
 		if (type_ = TYPE_FILE) then
 		begin
-			if Assigned(Obj.Values['mtime']) then mtime := Obj.Values['mtime'].Value.ToInteger;
-			if Assigned(Obj.Values['virus_scan']) then virus_scan := Obj.Values['virus_scan'].Value;
-			if Assigned(Obj.Values['hash']) then hash := Obj.Values['hash'].Value;
+			if Assigned(Obj.values['mtime']) then mtime := Obj.values['mtime'].Value.ToInteger;
+			if Assigned(Obj.values['virus_scan']) then virus_scan := Obj.values['virus_scan'].Value;
+			if Assigned(Obj.values['hash']) then hash := Obj.values['hash'].Value;
 		end else begin
-			if Assigned(Obj.Values['tree']) then tree := Obj.Values['tree'].Value;
-			if Assigned(Obj.Values['grev']) then grev := Obj.Values['grev'].Value.ToInteger;
-			if Assigned(Obj.Values['rev']) then rev := Obj.Values['rev'].Value.ToInteger;
+			if Assigned(Obj.values['tree']) then tree := Obj.values['tree'].Value;
+			if Assigned(Obj.values['grev']) then grev := Obj.values['grev'].Value.ToInteger;
+			if Assigned(Obj.values['rev']) then rev := Obj.values['rev'].Value.ToInteger;
+			if Assigned((Obj.values['count'] as TJSONObject).values['folders']) then folders_count := (Obj.values['count'] as TJSONObject).values['folders'].Value.ToInteger();
+			if Assigned((Obj.values['count'] as TJSONObject).values['files']) then files_count := (Obj.values['count'] as TJSONObject).values['files'].Value.ToInteger();
 			mtime := 0;
 		end;
 	end;
@@ -1085,10 +1091,10 @@ var
 	Error: WideString;
 begin
 	Obj := TJSONObject.ParseJSONValue(JSON) as TJSONObject;
-	OperationStatus := Obj.Values['status'].Value.ToInteger;
+	OperationStatus := Obj.values['status'].Value.ToInteger;
 	if OperationStatus <> 200 then
 	begin
-		Error := ((Obj.Values['body'] as TJSONObject).Values['home'] as TJSONObject).Values['error'].Value;
+		Error := ((Obj.values['body'] as TJSONObject).values['home'] as TJSONObject).values['error'].Value;
 		if Error = 'exists' then exit(CLOUD_ERROR_EXISTS);
 		if Error = 'required' then exit(CLOUD_ERROR_REQUIRED);
 		if Error = 'readonly' then exit(CLOUD_ERROR_READONLY);
@@ -1106,7 +1112,7 @@ end;
 
 function TCloudMailRu.getPublicLinkFromJSON(JSON: WideString): WideString;
 begin
-	result:=(TJSONObject.ParseJSONValue(JSON) as TJSONObject).Values['body'].Value;
+	Result := (TJSONObject.ParseJSONValue(JSON) as TJSONObject).values['body'].Value;
 end;
 
 end.
