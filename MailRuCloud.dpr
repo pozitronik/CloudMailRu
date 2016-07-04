@@ -8,6 +8,7 @@ uses
 	windows,
 	Classes,
 	PLUGIN_TYPES,
+	IdSSLOpenSSLHeaders,
 
 	messages,
 	inifiles,
@@ -785,7 +786,6 @@ end;
 exports FsGetDefRootName, FsInit, FsInitW, FsFindFirst, FsFindFirstW, FsFindNext, FsFindNextW, FsFindClose, FsGetFile, FsGetFileW, FsDisconnect, FsDisconnectW, FsStatusInfo, FsStatusInfoW, FsPutFile, FsPutFileW, FsDeleteFile, FsDeleteFileW, FsMkDir, FsMkDirW, FsRemoveDir, FsRemoveDirW, FsSetCryptCallback, FsSetCryptCallbackW, FsExecuteFileW, FsRenMovFile, FsRenMovFileW, FsGetBackgroundFlags, FsContentGetSupportedField, FsContentGetValue, FsContentGetValueW;
 
 begin
-
 	GetMem(tmp, max_path);
 	GetModuleFilename(hInstance, tmp, max_path);
 	PluginPath := tmp;
@@ -793,5 +793,6 @@ begin
 	PluginPath := IncludeTrailingbackslash(ExtractFilePath(PluginPath));
 	IniFilePath := PluginPath + 'MailRuCloud.ini';
 	if not FileExists(IniFilePath) then FileClose(FileCreate(IniFilePath));
+	IdOpenSSLSetLibPath(PluginPath);
 
 end.
