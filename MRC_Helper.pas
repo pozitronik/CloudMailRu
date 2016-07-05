@@ -2,7 +2,7 @@ unit MRC_Helper;
 
 interface
 
-uses Classes, Windows, SysUtils, IniFiles, MultiMon, Math;
+uses Classes, Windows, SysUtils, IniFiles, MultiMon, Math,System.Variants;
 
 type
 	TRealPath = record
@@ -16,6 +16,10 @@ type
 		user, domain: WideString; // parsed values from email
 	end;
 
+	TPluginSettings = record
+		LoadSSLDLLOnlyFromPluginDir: boolean;
+	end;
+
 function Implode(S: TStringList; Delimiter: Char): WideString;
 function ExtractRealPath(VirtualPath: WideString): TRealPath;
 function SizeOfFile(const FileName: String): Int64;
@@ -26,6 +30,9 @@ function GetAccountSettingsFromIniFile(IniFilePath: WideString; AccountName: Wid
 function SetAccountSettingsToIniFile(IniFilePath: WideString; AccountSettings: TAccountSettings): boolean;
 procedure GetAccountsListFromIniFile(IniFilePath: WideString; var AccountsList: TStringList);
 procedure DeleteAccountFromIniFile(IniFilePath: WideString; AccountName: WideString);
+function GetPluginSettings(IniFilePath: WideString): TPluginSettings;
+function SetPluginSettings(IniFilePath: WideString; PluginSettings: TPluginSettings): boolean;
+function SetPluginSettingsValue(IniFilePath: WideString; OptionName: WideString; OptionValue: Variant): boolean;
 procedure CenterWindow(WindowToStay, WindowToCenter: HWND);
 function UrlEncode(URL: WideString): WideString;
 function FindTCWindow: HWND;
@@ -151,6 +158,40 @@ var
 begin
 	IniFile := TIniFile.Create(IniFilePath);
 	IniFile.EraseSection(AccountName);
+	IniFile.Destroy;
+end;
+
+function GetPluginSettings(IniFilePath: WideString): TPluginSettings;
+var
+	IniFile: TIniFile;
+begin
+	IniFile := TIniFile.Create(IniFilePath);
+	GetPluginSettings.LoadSSLDLLOnlyFromPluginDir := IniFile.ReadBool('Main', 'LoadSSLDLLOnlyFromPluginDir', false);
+	IniFile.Destroy;
+end;
+
+function SetPluginSettings(IniFilePath: WideString; PluginSettings: TPluginSettings): boolean;
+var
+	IniFile: TIniFile;
+begin
+	IniFile := TIniFile.Create(IniFilePath);
+	IniFile.WriteBool('Main', 'LoadSSLDLLOnlyFromPluginDir', PluginSettings.LoadSSLDLLOnlyFromPluginDir);
+	IniFile.Destroy;
+end;
+
+function SetPluginSettingsValue(IniFilePath: WideString; OptionName: WideString; OptionValue: Variant): boolean;
+var
+	IniFile: TIniFile;
+	basicType: Integer;
+begin
+	IniFile := TIniFile.Create(IniFilePath);
+	basicType := VarType(OptionValue);
+	case basicType of
+		varInteger: IniFile.WriteInteger('Main', OptionName, OptionValue);
+		varString: IniFile.WriteString('Main', OptionName, OptionValue);
+		varBoolean: IniFile.WriteBool('Main', OptionName, OptionValue);
+	end;
+
 	IniFile.Destroy;
 end;
 

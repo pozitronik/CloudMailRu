@@ -30,7 +30,8 @@ uses
 
 var
 	tmp: pchar;
-	IniFilePath: WideString;
+	AccountsIniFilePath: WideString;  //todo rename to AccountsIniFilePath
+	SettingsIniFilePath: WideString;
 	GlobalPath, PluginPath: WideString;
 	FileCounter: integer = 0;
 	{ Callback data }
@@ -102,7 +103,7 @@ End;
 
 function FsGetBackgroundFlags: integer; stdcall;
 begin
-	Result := 0 ;//BG_DOWNLOAD + BG_UPLOAD; // + BG_ASK_USER;
+	Result := 0; // BG_DOWNLOAD + BG_UPLOAD; // + BG_ASK_USER;
 end;
 
 { ANSI PEASANTS }
@@ -281,7 +282,7 @@ Begin
 	MyLogProc := pLogProc;
 	MyRequestProc := pRequestProc;
 	Result := 0;
-	ConnectionManager := TConnectionManager.Create(IniFilePath, PluginNum, MyProgressProc, MyLogProc);
+	ConnectionManager := TConnectionManager.Create(AccountsIniFilePath, PluginNum, MyProgressProc, MyLogProc);
 end;
 
 procedure FsStatusInfoW(RemoteDir: PWideChar; InfoStartEnd, InfoOperation: integer); stdcall; // Ќачало и конец операций FS
@@ -395,7 +396,7 @@ begin
 	if GlobalPath = '\' then
 	begin // список соединений
 		Sections := TStringList.Create;
-		GetAccountsListFromIniFile(IniFilePath, Sections);
+		GetAccountsListFromIniFile(AccountsIniFilePath, Sections);
 
 		if (Sections.Count > 0) then
 		begin
@@ -434,7 +435,7 @@ begin
 	if GlobalPath = '\' then
 	begin
 		Sections := TStringList.Create;
-		GetAccountsListFromIniFile(IniFilePath, Sections);
+		GetAccountsListFromIniFile(AccountsIniFilePath, Sections);
 		if (Sections.Count > FileCounter) then
 		begin
 			FindData := FindData_emptyDir(Sections.Strings[FileCounter]);
@@ -481,7 +482,7 @@ Begin
 	begin
 		if RealPath.path = '' then
 		begin
-			TAccountsForm.ShowAccounts(MainWin, IniFilePath, MyCryptProc, PluginNum, CryptoNum, RemoteName);
+			TAccountsForm.ShowAccounts(MainWin, AccountsIniFilePath, SettingsIniFilePath, MyCryptProc, PluginNum, CryptoNum, RemoteName);
 		end else begin
 			if ConnectionManager.get(RealPath.account, getResult).statusFile(RealPath.path, CurrentItem) then
 			begin
@@ -791,8 +792,9 @@ begin
 	PluginPath := tmp;
 	freemem(tmp);
 	PluginPath := IncludeTrailingbackslash(ExtractFilePath(PluginPath));
-	IniFilePath := PluginPath + 'MailRuCloud.ini';
-	if not FileExists(IniFilePath) then FileClose(FileCreate(IniFilePath));
-	IdOpenSSLSetLibPath(PluginPath);
+	AccountsIniFilePath := PluginPath + 'MailRuCloud.ini';
+	SettingsIniFilePath := PluginPath + 'MailRuCloud.global.ini';
+	if not FileExists(AccountsIniFilePath) then FileClose(FileCreate(AccountsIniFilePath));
+	if GetPluginSettings(SettingsIniFilePath).LoadSSLDLLOnlyFromPluginDir then IdOpenSSLSetLibPath(PluginPath);
 
 end.

@@ -19,22 +19,26 @@ type
 		UseTCPwdMngrCB: TCheckBox;
 		ApplyButton: TButton;
 		DeleteButton: TButton;
+		GlobalOptionsGroup: TGroupBox;
+		UseDLLFromPluginDir: TCheckBox;
 		procedure FormShow(Sender: TObject);
 		procedure AccountsListClick(Sender: TObject);
 		procedure ApplyButtonClick(Sender: TObject);
 		procedure UpdateAccountsList();
 		procedure DeleteButtonClick(Sender: TObject);
 		procedure AccountsListKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
-		class procedure ShowAccounts(parentWindow: HWND; IniPath: WideString; CryptProc: TCryptProcW; PluginNum, CryptoNum: Integer; RemoteName: WideString);
+		class procedure ShowAccounts(parentWindow: HWND; IniPath, SettingsIniFilePath: WideString; CryptProc: TCryptProcW; PluginNum, CryptoNum: Integer; RemoteName: WideString);
 		procedure AccountNameEditChange(Sender: TObject);
 		procedure EmailEditChange(Sender: TObject);
 		procedure FormActivate(Sender: TObject);
+		procedure UseDLLFromPluginDirClick(Sender: TObject);
 	private
 		{ Private declarations }
 		procedure WMHotKey(var Message: TMessage); message WM_HOTKEY;
 	public
 		{ Public declarations }
-		IniPath: WideString;
+		IniPath: WideString; // todo rename
+		SettingsIniFilePath: WideString;
 		CryptProc: TCryptProcW;
 		PluginNum: Integer;
 		CryptoNum: Integer;
@@ -151,7 +155,7 @@ begin
 	end;
 end;
 
-class procedure TAccountsForm.ShowAccounts(parentWindow: HWND; IniPath: WideString; CryptProc: TCryptProcW; PluginNum, CryptoNum: Integer; RemoteName: WideString);
+class procedure TAccountsForm.ShowAccounts(parentWindow: HWND; IniPath, SettingsIniFilePath: WideString; CryptProc: TCryptProcW; PluginNum, CryptoNum: Integer; RemoteName: WideString);
 var
 	AccountsForm: TAccountsForm;
 begin
@@ -159,12 +163,14 @@ begin
 		AccountsForm := TAccountsForm.Create(nil);
 		AccountsForm.parentWindow := parentWindow;
 		AccountsForm.IniPath := IniPath;
+		AccountsForm.SettingsIniFilePath := SettingsIniFilePath;
 		AccountsForm.CryptProc := CryptProc;
 		AccountsForm.PluginNum := PluginNum;
 		AccountsForm.CryptoNum := CryptoNum;
 		AccountsForm.SelectedAccount := '';
+    AccountsForm.UseDLLFromPluginDir.Checked:=GetPluginSettings(SettingsIniFilePath).LoadSSLDLLOnlyFromPluginDir;
 		if RemoteName <> '' then AccountsForm.SelectedAccount := Copy(RemoteName, 2, length(RemoteName) - 1);
-    RegisterHotKey(AccountsForm.Handle, 1, 0, VK_ESCAPE);
+		RegisterHotKey(AccountsForm.Handle, 1, 0, VK_ESCAPE);
 		AccountsForm.ShowModal;
 	finally
 		FreeAndNil(AccountsForm);
@@ -183,9 +189,14 @@ begin
 	ApplyButton.Enabled := (EmailEdit.Text <> '') and (AccountNameEdit.Text <> '');
 end;
 
+procedure TAccountsForm.UseDLLFromPluginDirClick(Sender: TObject);
+begin
+	SetPluginSettingsValue(SettingsIniFilePath, 'LoadSSLDLLOnlyFromPluginDir', UseDLLFromPluginDir.Checked);
+end;
+
 procedure TAccountsForm.WMHotKey(var Message: TMessage);
 begin
-if Message.LParamHi = VK_ESCAPE then Close;
+	if Message.LParamHi = VK_ESCAPE then Close;
 end;
 
 end.

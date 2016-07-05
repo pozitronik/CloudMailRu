@@ -259,4 +259,21 @@ object AccountsForm: TAccountsForm
     TabOrder = 6
     OnClick = DeleteButtonClick
   end
+  object GlobalOptionsGroup: TGroupBox
+    Left = 231
+    Top = 220
+    Width = 255
+    Height = 45
+    Caption = 'Global options'
+    TabOrder = 7
+    object UseDLLFromPluginDir: TCheckBox
+      Left = 3
+      Top = 16
+      Width = 238
+      Height = 17
+      Caption = 'Load ssl libraries only from plugin directory'
+      TabOrder = 0
+      OnClick = UseDLLFromPluginDirClick
+    end
+  end
 end
