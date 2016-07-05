@@ -271,7 +271,7 @@ object AccountsForm: TAccountsForm
       Top = 16
       Width = 238
       Height = 17
-      Caption = 'Load ssl libraries only from plugin directory'
+      Caption = 'Load SSL libraries only from plugin directory'
       TabOrder = 0
       OnClick = UseDLLFromPluginDirClick
     end
