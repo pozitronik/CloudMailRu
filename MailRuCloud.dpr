@@ -30,7 +30,7 @@ uses
 
 var
 	tmp: pchar;
-	AccountsIniFilePath: WideString;  //todo rename to AccountsIniFilePath
+	AccountsIniFilePath: WideString;
 	SettingsIniFilePath: WideString;
 	GlobalPath, PluginPath: WideString;
 	FileCounter: integer = 0;

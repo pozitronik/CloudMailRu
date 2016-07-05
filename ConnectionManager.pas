@@ -34,7 +34,7 @@ type
 		MyCryptProc: TCryptProcW;
 		constructor Create(IniFileName: WideString; PluginNum: integer; MyProgressProc: TProgressProcW; MyLogProc: TLogProcW);
 		destructor Destroy(); override;
-		function get(connectionName: WideString; var OperationResult:integer; doInit: boolean = true): TCloudMailRu; // возвращает готовое подклчение по имени
+		function get(connectionName: WideString; var OperationResult: integer; doInit: boolean = true): TCloudMailRu; // возвращает готовое подклчение по имени
 		function set_(connectionName: WideString; cloud: TCloudMailRu): boolean;
 		function init(connectionName: WideString): integer; // инициализирует подключение по его имени, возвращает код состояния
 		function free(connectionName: WideString): integer; // освобождает подключение по его имени, возвращает код состояния
@@ -60,7 +60,7 @@ begin
 	freeAll();
 end;
 
-function TConnectionManager.get(connectionName: WideString; var OperationResult:integer; doInit: boolean = true): TCloudMailRu;
+function TConnectionManager.get(connectionName: WideString; var OperationResult: integer; doInit: boolean = true): TCloudMailRu;
 var
 	ConnectionIndex: integer;
 begin
@@ -98,21 +98,21 @@ begin
 	result := CLOUD_OPERATION_OK;
 	AccountSettings := GetAccountSettingsFromIniFile(IniFileName, connectionName);
 
-	if not GetMyPasswordNow(AccountSettings) then exit(CLOUD_OPERATION_ERROR_STATUS_UNKNOWN); //INVALID_HANDLE_VALUE
+	if not GetMyPasswordNow(AccountSettings) then exit(CLOUD_OPERATION_ERROR_STATUS_UNKNOWN); // INVALID_HANDLE_VALUE
 
 	MyLogProc(PluginNum, MSGTYPE_CONNECT, PWideChar('CONNECT ' + AccountSettings.email));
 
 	cloud := TCloudMailRu.Create(AccountSettings.user, AccountSettings.domain, AccountSettings.password, MyProgressProc, PluginNum, MyLogProc);
-	if not set_(connectionName, cloud) then exit(CLOUD_OPERATION_ERROR_STATUS_UNKNOWN); //INVALID_HANDLE_VALUE
+	if not set_(connectionName, cloud) then exit(CLOUD_OPERATION_ERROR_STATUS_UNKNOWN); // INVALID_HANDLE_VALUE
 
-	if not(get(connectionName,result, false).login()) then free(connectionName);
+	if not(get(connectionName, result, false).login()) then free(connectionName);
 
 	// cloud.Destroy;
 end;
 
 function TConnectionManager.initialized(connectionName: WideString): boolean;
 var
-dump:integer;
+	dump: integer;
 begin
 	result := Assigned(get(connectionName, dump, false));
 end;

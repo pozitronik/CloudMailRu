@@ -37,7 +37,7 @@ type
 		procedure WMHotKey(var Message: TMessage); message WM_HOTKEY;
 	public
 		{ Public declarations }
-		IniPath: WideString; // todo rename
+		IniPath: WideString;
 		SettingsIniFilePath: WideString;
 		CryptProc: TCryptProcW;
 		PluginNum: Integer;
@@ -168,7 +168,7 @@ begin
 		AccountsForm.PluginNum := PluginNum;
 		AccountsForm.CryptoNum := CryptoNum;
 		AccountsForm.SelectedAccount := '';
-    AccountsForm.UseDLLFromPluginDir.Checked:=GetPluginSettings(SettingsIniFilePath).LoadSSLDLLOnlyFromPluginDir;
+		AccountsForm.UseDLLFromPluginDir.Checked := GetPluginSettings(SettingsIniFilePath).LoadSSLDLLOnlyFromPluginDir;
 		if RemoteName <> '' then AccountsForm.SelectedAccount := Copy(RemoteName, 2, length(RemoteName) - 1);
 		RegisterHotKey(AccountsForm.Handle, 1, 0, VK_ESCAPE);
 		AccountsForm.ShowModal;
