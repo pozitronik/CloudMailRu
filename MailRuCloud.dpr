@@ -28,7 +28,16 @@ uses
 {$ENDIF}
 {$R *.res}
 
+const
+{$IFDEF WIN64}
+	PlatformDllPath = 'x64';
+{$ENDIF}
+{$IFDEF WIN32}
+	PlatformDllPath = 'x32';
+{$ENDIF}
+
 var
+	// PlatformDllPath: WideString;
 	tmp: pchar;
 	AccountsIniFilePath: WideString;
 	SettingsIniFilePath: WideString;
@@ -160,7 +169,7 @@ Begin
 	Result := false;
 End;
 
-function FsRenMovFile(OldName: PAnsiChar; NewName: PAnsiChar; Move: boolean; OverWrite: boolean; ri: pRemoteInfo): integer;
+function FsRenMovFile(OldName: PAnsiChar; NewName: PAnsiChar; Move: Boolean; OverWrite: Boolean; ri: pRemoteInfo): integer;
 begin
 	SetLastError(ERROR_INVALID_FUNCTION);
 	Result := FS_FILE_NOTSUPPORTED; // Ansi-заглушка
@@ -637,7 +646,7 @@ Begin
 	Result := ConnectionManager.get(RealPath.account, getResult).removeDir(RealPath.path);
 end;
 
-function FsRenMovFileW(OldName: PWideChar; NewName: PWideChar; Move: boolean; OverWrite: boolean; ri: pRemoteInfo): integer; stdcall;
+function FsRenMovFileW(OldName: PWideChar; NewName: PWideChar; Move: Boolean; OverWrite: Boolean; ri: pRemoteInfo): integer; stdcall;
 var
 	OldRealPath: TRealPath;
 	NewRealPath: TRealPath;
@@ -795,6 +804,15 @@ begin
 	AccountsIniFilePath := PluginPath + 'MailRuCloud.ini';
 	SettingsIniFilePath := PluginPath + 'MailRuCloud.global.ini';
 	if not FileExists(AccountsIniFilePath) then FileClose(FileCreate(AccountsIniFilePath));
-	if GetPluginSettings(SettingsIniFilePath).LoadSSLDLLOnlyFromPluginDir then IdOpenSSLSetLibPath(PluginPath);
+	if GetPluginSettings(SettingsIniFilePath).LoadSSLDLLOnlyFromPluginDir then
+	begin
+		if DirectoryExists(PluginPath + PlatformDllPath) then
+		begin // try to load dll from platform subdir
+			IdOpenSSLSetLibPath(PluginPath + PlatformDllPath);
+		end else begin // else try to load it from plugin dir
+			IdOpenSSLSetLibPath(PluginPath);
+		end;
+
+	end;
 
 end.
