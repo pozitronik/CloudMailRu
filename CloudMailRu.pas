@@ -1090,22 +1090,32 @@ var
 	Obj: TJSONObject;
 	Error: WideString;
 begin
-	Obj := TJSONObject.ParseJSONValue(JSON) as TJSONObject;
-	OperationStatus := Obj.values['status'].Value.ToInteger;
-	if OperationStatus <> 200 then
-	begin
-		Error := ((Obj.values['body'] as TJSONObject).values['home'] as TJSONObject).values['error'].Value;
-		if Error = 'exists' then exit(CLOUD_ERROR_EXISTS);
-		if Error = 'required' then exit(CLOUD_ERROR_REQUIRED);
-		if Error = 'readonly' then exit(CLOUD_ERROR_READONLY);
-		if Error = 'read_only' then exit(CLOUD_ERROR_READONLY);
-		if Error = 'name_length_exceeded' then exit(CLOUD_ERROR_NAME_LENGTH_EXCEEDED);
-		if Error = 'unknown' then exit(CLOUD_ERROR_UNKNOWN);
-		if Error = 'overquota' then exit(CLOUD_ERROR_OVERQUOTA);
-		if Error = 'quota_exceeded' then exit(CLOUD_ERROR_OVERQUOTA);
-		if Error = 'invalid' then exit(CLOUD_ERROR_INVALID);
+	try
+		Obj := TJSONObject.ParseJSONValue(JSON) as TJSONObject;
 
-		exit(CLOUD_ERROR_UNKNOWN); // Эту ошибку мы пока не встречали
+		OperationStatus := Obj.values['status'].Value.ToInteger;
+		if OperationStatus <> 200 then
+		begin
+			Error := ((Obj.values['body'] as TJSONObject).values['home'] as TJSONObject).values['error'].Value;
+			if Error = 'exists' then exit(CLOUD_ERROR_EXISTS);
+			if Error = 'required' then exit(CLOUD_ERROR_REQUIRED);
+			if Error = 'readonly' then exit(CLOUD_ERROR_READONLY);
+			if Error = 'read_only' then exit(CLOUD_ERROR_READONLY);
+			if Error = 'name_length_exceeded' then exit(CLOUD_ERROR_NAME_LENGTH_EXCEEDED);
+			if Error = 'unknown' then exit(CLOUD_ERROR_UNKNOWN);
+			if Error = 'overquota' then exit(CLOUD_ERROR_OVERQUOTA);
+			if Error = 'quota_exceeded' then exit(CLOUD_ERROR_OVERQUOTA);
+			if Error = 'invalid' then exit(CLOUD_ERROR_INVALID);
+
+			exit(CLOUD_ERROR_UNKNOWN); // Эту ошибку мы пока не встречали
+		end;
+
+	except
+		on E: {EJSON}Exception do
+		begin
+			Log(MSGTYPE_IMPORTANTERROR, 'Can''t parse server answer: ' + JSON);
+			exit(CLOUD_ERROR_UNKNOWN);
+		end;
 	end;
 	Result := CLOUD_OPERATION_OK;
 end;
