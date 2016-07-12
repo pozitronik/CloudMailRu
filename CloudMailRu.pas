@@ -943,7 +943,7 @@ function TCloudMailRu.mvFile(OldName, NewName: WideString): integer;
 begin
 	if ExtractFilePath(OldName) = ExtractFilePath(NewName) then
 	begin // один каталог
-		Result := self.renameFile(OldName, NewName);
+		Result := self.renameFile(OldName, ExtractFileName(NewName));
 	end else begin
 		Result := self.moveFile(OldName, ExtractFilePath(NewName));
 	end;
