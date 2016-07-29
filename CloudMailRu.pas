@@ -482,6 +482,7 @@ begin
 		on E: Exception do
 		begin
 			Log(MSGTYPE_IMPORTANTERROR, 'Delete file error ' + E.Message);
+			Result := false;
 		end;
 	end;
 	PostData.free;
@@ -642,6 +643,7 @@ begin
 				Result := FS_FILE_USERABORT;
 			end else begin
 				Log(MSGTYPE_IMPORTANTERROR, 'Error uploading to cloud: ' + E.ClassName + ' ошибка с сообщением: ' + E.Message);
+				Result := FS_FILE_WRITEERROR;
 			end;
 		end;
 	end;
@@ -785,6 +787,7 @@ begin
 		on E: Exception do
 		begin
 			Log(MSGTYPE_IMPORTANTERROR, 'Delete directory error ' + E.Message);
+			Result := false;
 		end;
 	end;
 	PostData.free;
@@ -1111,7 +1114,7 @@ begin
 		end;
 
 	except
-		on E: {EJSON}Exception do
+		on E: { EJSON } Exception do
 		begin
 			Log(MSGTYPE_IMPORTANTERROR, 'Can''t parse server answer: ' + JSON);
 			exit(CLOUD_ERROR_UNKNOWN);
