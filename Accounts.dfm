@@ -175,10 +175,10 @@ object AccountsForm: TAccountsForm
   object PasswordLabel: TLabel
     Left = 231
     Top = 120
-    Width = 46
+    Width = 210
     Height = 13
     Anchors = [akLeft, akTop, akRight]
-    Caption = 'Password'
+    Caption = 'Password (stored as plaintext, see readme)'
   end
   object AccountsGroupBox: TGroupBox
     Left = 0
