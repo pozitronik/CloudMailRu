@@ -5,7 +5,7 @@ interface
 uses
 	System.Classes, System.SysUtils, PLUGIN_Types, JSON,
 	MRC_helper, IdCookieManager, IdIOHandler, IdIOHandlerSocket, IdIOHandlerStack, IdSSL,
-	IdSSLOpenSSL, IdBaseComponent, IdComponent, IdTCPConnection, IdTCPClient,
+	IdSSLOpenSSL, IdBaseComponent, IdComponent, IdTCPConnection, IdTCPClient, IdSocks,
 	IdHTTP, IdAuthentication, IdIOHandlerStream, IdMultipartFormData;
 
 const
@@ -58,11 +58,14 @@ type
 	TCloudMailRuSpaceInfo = record
 		overquota: Boolean;
 		total: int64;
-		used: int64 End;
+		used: int64;
+	End;
 
-		TCloudMailRuDirListing = array of TCloudMailRuDirListingItem;
+	TCloudMailRuDirListing = array of TCloudMailRuDirListingItem;
 
-		TCloudMailRu = class private domain: WideString;
+	TCloudMailRu = class
+	private
+		domain: WideString;
 		user: WideString;
 		password: WideString;
 		token: WideString;
@@ -74,6 +77,12 @@ type
 		ExternalLogProc: TLogProcW;
 
 		Shard: WideString;
+
+		ProxyType: integer;
+		ProxyServer: WideString;
+		ProxyPort: integer;
+		ProxyUser: WideString;
+		ProxyPassword: WideString;
 
 		function getToken(): Boolean;
 		function getShard(var Shard: WideString): Boolean;
@@ -97,13 +106,13 @@ type
 		procedure HttpProgress(ASender: TObject; AWorkMode: TWorkMode; AWorkCount: int64);
 		procedure Log(MsgType: integer; LogString: WideString);
 	protected
-		procedure HTTPInit(var HTTP: TIdHTTP; var SSL: TIdSSLIOHandlerSocketOpenSSL; var Cookie: TIdCookieManager);
-		procedure HTTPDestroy(var HTTP: TIdHTTP; var SSL: TIdSSLIOHandlerSocketOpenSSL);
+		procedure HTTPInit(var HTTP: TIdHTTP; var SSL: TIdSSLIOHandlerSocketOpenSSL; var Socks: TIdSocksInfo; var Cookie: TIdCookieManager);
+		procedure HTTPDestroy(var HTTP: TIdHTTP; var SSL: TIdSSLIOHandlerSocketOpenSSL; var Socks: TIdSocksInfo);
 	public
 		ExternalPluginNr: integer;
 		ExternalSourceName: PWideChar;
 		ExternalTargetName: PWideChar;
-		constructor Create(user, domain, password: WideString; ExternalProgressProc: TProgressProcW = nil; PluginNr: integer = -1; ExternalLogProc: TLogProcW = nil);
+		constructor Create(user, domain, password: WideString; ProxyType:Integer = 0; ProxyServer:WideString=''; ProxyPort:integer=0; ProxyUser:WideString=''; ProxyPassword:WideString=''; ExternalProgressProc: TProgressProcW = nil; PluginNr: integer = -1; ExternalLogProc: TLogProcW = nil);
 		destructor Destroy; override;
 		function login(): Boolean;
 
@@ -128,7 +137,7 @@ implementation
 
 { CONSTRUCTOR/DESTRUCTOR }
 
-constructor TCloudMailRu.Create(user, domain, password: WideString; ExternalProgressProc: TProgressProcW; PluginNr: integer; ExternalLogProc: TLogProcW);
+constructor TCloudMailRu.Create(user, domain, password: WideString; ProxyType:Integer; ProxyServer:WideString; ProxyPort:integer; ProxyUser:WideString; ProxyPassword:WideString; ExternalProgressProc: TProgressProcW; PluginNr: integer; ExternalLogProc: TLogProcW);
 begin
 	try
 		self.Cookie := TIdCookieManager.Create();
@@ -322,14 +331,15 @@ var
 	MemStream: TStringStream;
 	HTTP: TIdHTTP;
 	SSL: TIdSSLIOHandlerSocketOpenSSL;
+	Socks: TIdSocksInfo;
 begin
 	Result := true;
 	try
 		MemStream := TStringStream.Create;
-		self.HTTPInit(HTTP, SSL, self.Cookie);
+		self.HTTPInit(HTTP, SSL, Socks, self.Cookie);
 		if ContentType <> '' then HTTP.Request.ContentType := ContentType;
 		HTTP.Post(URL, PostData, MemStream);
-		self.HTTPDestroy(HTTP, SSL);
+		self.HTTPDestroy(HTTP, SSL, Socks);
 		Answer := MemStream.DataString;
 	except
 		on E: EAbort do
@@ -360,15 +370,16 @@ var
 	MemStream: TStringStream;
 	HTTP: TIdHTTP;
 	SSL: TIdSSLIOHandlerSocketOpenSSL;
+	Socks: TIdSocksInfo;
 begin
 	Result := CLOUD_OPERATION_OK;
 	try
-		self.HTTPInit(HTTP, SSL, self.Cookie);
+		self.HTTPInit(HTTP, SSL, Socks, self.Cookie);
 		MemStream := TStringStream.Create;
 		HTTP.OnWork := self.HttpProgress;
 		HTTP.Post(URL, PostData, MemStream);
 		Answer := MemStream.DataString;
-		self.HTTPDestroy(HTTP, SSL);
+		self.HTTPDestroy(HTTP, SSL, Socks);
 	except
 		on E: EAbort do
 		begin
@@ -392,11 +403,12 @@ function TCloudMailRu.HTTPGet(URL: WideString; var Answer: WideString): Boolean;
 var
 	HTTP: TIdHTTP;
 	SSL: TIdSSLIOHandlerSocketOpenSSL;
+	Socks: TIdSocksInfo;
 begin
 	try
-		self.HTTPInit(HTTP, SSL, self.Cookie);
+		self.HTTPInit(HTTP, SSL, Socks, self.Cookie);
 		Answer := HTTP.Get(URL);
-		self.HTTPDestroy(HTTP, SSL);
+		self.HTTPDestroy(HTTP, SSL, Socks);
 	Except
 		on E: Exception do
 		begin
@@ -411,15 +423,16 @@ function TCloudMailRu.HTTPGetFile(URL: WideString; var FileStream: TFileStream):
 var
 	HTTP: TIdHTTP;
 	SSL: TIdSSLIOHandlerSocketOpenSSL;
+	Socks: TIdSocksInfo;
 begin
 	Result := FS_FILE_OK;
 	try
-		self.HTTPInit(HTTP, SSL, self.Cookie);
+		self.HTTPInit(HTTP, SSL, Socks, self.Cookie);
 		HTTP.Request.ContentType := 'application/octet-stream';
 		HTTP.Response.KeepAlive := true;
 		HTTP.OnWork := self.HttpProgress;
 		HTTP.Get(URL, FileStream);
-		self.HTTPDestroy(HTTP, SSL);
+		self.HTTPDestroy(HTTP, SSL, Socks);
 	except
 		on E: EAbort do
 		begin
@@ -433,12 +446,22 @@ begin
 	end;
 end;
 
-procedure TCloudMailRu.HTTPInit(var HTTP: TIdHTTP; var SSL: TIdSSLIOHandlerSocketOpenSSL; var Cookie: TIdCookieManager);
+procedure TCloudMailRu.HTTPInit(var HTTP: TIdHTTP; var SSL: TIdSSLIOHandlerSocketOpenSSL; var Socks: TIdSocksInfo; var Cookie: TIdCookieManager);
 begin
 	SSL := TIdSSLIOHandlerSocketOpenSSL.Create();
 	HTTP := TIdHTTP.Create();
+	Socks := TIdSocksInfo.Create(HTTP);
+	Socks.Host := '127.0.0.1';
+	Socks.Port := 8080;
+	Socks.Authentication := saNoAuthentication;
+	Socks.Username := '1';
+	Socks.password := '1';
+	Socks.Version := svSocks5; // or svSocks4
+
 	HTTP.CookieManager := Cookie;
 	HTTP.IOHandler := SSL;
+	SSL.TransparentProxy := Socks;
+
 	HTTP.AllowCookies := true;
 	HTTP.HTTPOptions := [hoForceEncodeParams, hoNoParseMetaHTTPEquiv];
 	HTTP.HandleRedirects := true;
@@ -446,10 +469,11 @@ begin
 	HTTP.Request.UserAgent := 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.17 (KHTML, like Gecko) Chrome/24.0.1312.57 Safari/537.17';
 end;
 
-procedure TCloudMailRu.HTTPDestroy(var HTTP: TIdHTTP; var SSL: TIdSSLIOHandlerSocketOpenSSL);
+procedure TCloudMailRu.HTTPDestroy(var HTTP: TIdHTTP; var SSL: TIdSSLIOHandlerSocketOpenSSL; var Socks: TIdSocksInfo);
 begin
 	HTTP.free;
 	SSL.free;
+	Socks.free;
 end;
 
 procedure TCloudMailRu.HttpProgress(ASender: TObject; AWorkMode: TWorkMode; AWorkCount: int64);

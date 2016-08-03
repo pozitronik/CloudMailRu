@@ -94,9 +94,11 @@ function TConnectionManager.init(connectionName: WideString): integer;
 var
 	cloud: TCloudMailRu;
 	AccountSettings: TAccountSettings;
+  ProxySettings:TPluginSettings;
 begin
 	result := CLOUD_OPERATION_OK;
 	AccountSettings := GetAccountSettingsFromIniFile(IniFileName, connectionName);
+  ProxySettings:=GetPluginSettings(SettingsIniFilePath)
 
 	if not GetMyPasswordNow(AccountSettings) then exit(CLOUD_OPERATION_ERROR_STATUS_UNKNOWN); // INVALID_HANDLE_VALUE
 
