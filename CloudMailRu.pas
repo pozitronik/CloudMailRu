@@ -164,6 +164,8 @@ var
 	URL: WideString;
 	PostData: TStringStream;
 	PostAnswer: WideString; { Не используется }
+	US: TCloudMailRuSpaceInfo;
+	QuotaInfo: WideString;
 begin
 	Result := false;
 	if not(Assigned(self)) then exit; // Проверка на вызов без инициализации
@@ -188,6 +190,15 @@ begin
 		if (Result) then
 		begin
 			Log(MSGTYPE_DETAILS, 'Connected to ' + self.user + '@' + self.domain);
+			if self.getUserSpace(US) then
+			begin
+				if (US.overquota) then QuotaInfo := ' Warning: space quota exhausted!'
+				else QuotaInfo := '';
+
+				Log(MSGTYPE_DETAILS, 'Total space: ' + US.total.ToString() + 'Mb, used: ' + US.used.ToString() + 'Mb, free: ' + (US.total - US.used).ToString() + 'Mb.' + QuotaInfo);
+			end else begin
+				Log(MSGTYPE_IMPORTANTERROR, 'Error getting user space information for ' + self.user + '@' + self.domain);
+			end;
 		end else begin
 			Log(MSGTYPE_IMPORTANTERROR, 'Error getting auth token for ' + self.user + '@' + self.domain);
 			exit(false);
