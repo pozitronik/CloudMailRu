@@ -55,11 +55,14 @@ type
 		files_count: integer;
 	End;
 
-	TCloudMailRuDirListing = array of TCloudMailRuDirListingItem;
+	TCloudMailRuSpaceInfo = record
+		overquota: Boolean;
+		total: int64;
+		used: int64 End;
 
-	TCloudMailRu = class
-	private
-		domain: WideString;
+		TCloudMailRuDirListing = array of TCloudMailRuDirListingItem;
+
+		TCloudMailRu = class private domain: WideString;
 		user: WideString;
 		password: WideString;
 		token: WideString;
@@ -72,20 +75,21 @@ type
 
 		Shard: WideString;
 
-		function getToken(): boolean;
-		function getShard(var Shard: WideString): boolean;
+		function getToken(): Boolean;
+		function getShard(var Shard: WideString): Boolean;
 		function putFileToCloud(localPath: WideString; Return: TStringList): integer;
-		function addFileToCloud(hash: WideString; size: integer; remotePath: WideString; var JSONAnswer: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT): boolean;
-		function HTTPPost(URL: WideString; PostData: TStringStream; var Answer: WideString; ContentType: WideString = 'application/x-www-form-urlencoded'): boolean; // Постинг данных с возможным получением ответа.
+		function addFileToCloud(hash: WideString; size: integer; remotePath: WideString; var JSONAnswer: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT): Boolean;
+		function HTTPPost(URL: WideString; PostData: TStringStream; var Answer: WideString; ContentType: WideString = 'application/x-www-form-urlencoded'): Boolean; // Постинг данных с возможным получением ответа.
 
 		function HTTPPostFile(URL: WideString; PostData: TIdMultipartFormDataStream; var Answer: WideString): integer; // Постинг файла и получение ответа
 		function HTTPGetFile(URL: WideString; var FileStream: TFileStream): integer;
-		function HTTPGet(URL: WideString; var Answer: WideString): boolean;
+		function HTTPGet(URL: WideString; var Answer: WideString): Boolean;
 		function getTokenFromText(Text: WideString): WideString;
 		function get_x_page_id_FromText(Text: WideString): WideString;
 		function get_build_FromText(Text: WideString): WideString;
 		function get_upload_url_FromText(Text: WideString): WideString;
 		function getDirListingFromJSON(JSON: WideString): TCloudMailRuDirListing;
+		function getUserSpaceFromJSON(JSON: WideString): TCloudMailRuSpaceInfo;
 		function getFileStatusFromJSON(JSON: WideString): TCloudMailRuDirListingItem;
 		function getShardFromJSON(JSON: WideString): WideString;
 		function getPublicLinkFromJSON(JSON: WideString): WideString;
@@ -101,19 +105,20 @@ type
 		ExternalTargetName: PWideChar;
 		constructor Create(user, domain, password: WideString; ExternalProgressProc: TProgressProcW = nil; PluginNr: integer = -1; ExternalLogProc: TLogProcW = nil);
 		destructor Destroy; override;
-		function login(): boolean;
+		function login(): Boolean;
 
-		function getDir(path: WideString; var DirListing: TCloudMailRuDirListing): boolean;
+		function getUserSpace(var SpaceInfo: TCloudMailRuSpaceInfo): Boolean;
+		function getDir(path: WideString; var DirListing: TCloudMailRuDirListing): Boolean;
 		function getFile(remotePath, localPath: WideString): integer;
 		function putFile(localPath, remotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT): integer;
-		function deleteFile(path: WideString): boolean;
-		function createDir(path: WideString): boolean;
-		function removeDir(path: WideString): boolean;
+		function deleteFile(path: WideString): Boolean;
+		function createDir(path: WideString): Boolean;
+		function removeDir(path: WideString): Boolean;
 		function renameFile(OldName, NewName: WideString): integer; // смена имени без перемещения
 		function moveFile(OldName, ToPath: WideString): integer; // перемещение по дереву каталогов
 		function mvFile(OldName, NewName: WideString): integer; // объединяющая функция, определяет делать rename или move
-		function publishFile(path: WideString; var PublicLink: WideString; publish: boolean = CLOUD_PUBLISH): boolean;
-		function statusFile(path: WideString; var FileInfo: TCloudMailRuDirListingItem): boolean;
+		function publishFile(path: WideString; var PublicLink: WideString; publish: Boolean = CLOUD_PUBLISH): Boolean;
+		function statusFile(path: WideString; var FileInfo: TCloudMailRuDirListingItem): Boolean;
 
 	end;
 
@@ -154,7 +159,7 @@ end;
 
 { PRIVATE METHODS }
 
-function TCloudMailRu.login(): boolean;
+function TCloudMailRu.login(): Boolean;
 var
 	URL: WideString;
 	PostData: TStringStream;
@@ -191,10 +196,10 @@ begin
 	else Log(MSGTYPE_IMPORTANTERROR, 'Error login to ' + self.user + '@' + self.domain);
 end;
 
-function TCloudMailRu.getToken(): boolean;
+function TCloudMailRu.getToken(): Boolean;
 var
 	URL: WideString;
-	PostResult: boolean;
+	PostResult: Boolean;
 	Answer: WideString;
 begin
 	URL := 'https://cloud.mail.ru/?from=promo&from=authpopup';
@@ -220,12 +225,12 @@ begin
 	end;
 end;
 
-function TCloudMailRu.getShard(var Shard: WideString): boolean;
+function TCloudMailRu.getShard(var Shard: WideString): Boolean;
 var
 	URL: WideString;
 	PostData: TStringStream;
 	Answer: WideString;
-	SuccessPost: boolean;
+	SuccessPost: Boolean;
 begin
 	Result := false;
 	SuccessPost := false;
@@ -280,7 +285,7 @@ begin
 	end;
 end;
 
-function TCloudMailRu.addFileToCloud(hash: WideString; size: integer; remotePath: WideString; var JSONAnswer: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT): boolean;
+function TCloudMailRu.addFileToCloud(hash: WideString; size: integer; remotePath: WideString; var JSONAnswer: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT): Boolean;
 var
 	URL: WideString;
 	PostData: TStringStream;
@@ -301,7 +306,7 @@ begin
 	PostData.free;
 end;
 
-function TCloudMailRu.HTTPPost(URL: WideString; PostData: TStringStream; var Answer: WideString; ContentType: WideString = 'application/x-www-form-urlencoded'): boolean;
+function TCloudMailRu.HTTPPost(URL: WideString; PostData: TStringStream; var Answer: WideString; ContentType: WideString = 'application/x-www-form-urlencoded'): Boolean;
 var
 	MemStream: TStringStream;
 	HTTP: TIdHTTP;
@@ -372,7 +377,7 @@ begin
 	MemStream.free
 end;
 
-function TCloudMailRu.HTTPGet(URL: WideString; var Answer: WideString): boolean;
+function TCloudMailRu.HTTPGet(URL: WideString; var Answer: WideString): Boolean;
 var
 	HTTP: TIdHTTP;
 	SSL: TIdSSLIOHandlerSocketOpenSSL;
@@ -465,7 +470,27 @@ end;
 
 { PUBLIC METHODS }
 
-function TCloudMailRu.deleteFile(path: WideString): boolean;
+function TCloudMailRu.getUserSpace(var SpaceInfo: TCloudMailRuSpaceInfo): Boolean;
+var
+	URL: WideString;
+	JSON: WideString;
+begin
+	Result := false;
+	if not(Assigned(self)) then exit; // Проверка на вызов без инициализации
+	URL := 'https://cloud.mail.ru/api/v2/user/space?api=2&home=/&build=' + self.build + '&x-page-id=' + self.x_page_id + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&token=' + self.token + '&_=1433249148810';
+	try
+		Result := self.HTTPGet(URL, JSON);
+	except
+		on E: Exception do
+		begin
+			Log(MSGTYPE_IMPORTANTERROR, 'User space receiving error ' + E.Message);
+		end;
+	end;
+	if not Result then exit(false);
+	SpaceInfo := self.getUserSpaceFromJSON(JSON);
+end;
+
+function TCloudMailRu.deleteFile(path: WideString): Boolean;
 var
 	URL: WideString;
 	PostData: TStringStream;
@@ -488,7 +513,7 @@ begin
 	PostData.free;
 end;
 
-function TCloudMailRu.getDir(path: WideString; var DirListing: TCloudMailRuDirListing): boolean;
+function TCloudMailRu.getDir(path: WideString; var DirListing: TCloudMailRuDirListing): Boolean;
 var
 	URL: WideString;
 	JSON: WideString;
@@ -546,12 +571,12 @@ begin
 	end;
 end;
 
-function TCloudMailRu.publishFile(path: WideString; var PublicLink: WideString; publish: boolean = CLOUD_PUBLISH): boolean;
+function TCloudMailRu.publishFile(path: WideString; var PublicLink: WideString; publish: Boolean = CLOUD_PUBLISH): Boolean;
 var
 	URL: WideString;
 	PostData: TStringStream;
 	PostAnswer: WideString;
-	SucessPublish: boolean;
+	SucessPublish: Boolean;
 	OperationStatus: integer;
 begin
 	Result := false;
@@ -707,12 +732,12 @@ begin
 	end;
 end;
 
-function TCloudMailRu.createDir(path: WideString): boolean;
+function TCloudMailRu.createDir(path: WideString): Boolean;
 var
 	URL: WideString;
 	PostData: TStringStream;
 	PostAnswer: WideString;
-	SucessCreate: boolean;
+	SucessCreate: Boolean;
 	OperationStatus: integer;
 begin
 	Result := false;
@@ -770,7 +795,7 @@ begin
 	end;
 end;
 
-function TCloudMailRu.removeDir(path: WideString): boolean;
+function TCloudMailRu.removeDir(path: WideString): Boolean;
 var
 	URL: WideString;
 	PostData: TStringStream;
@@ -798,7 +823,7 @@ var
 	URL: WideString;
 	PostData: TStringStream;
 	PostAnswer: WideString;
-	PostResult: boolean;
+	PostResult: Boolean;
 	OperationStatus: integer;
 begin
 	Result := FS_FILE_WRITEERROR;
@@ -857,7 +882,7 @@ begin
 	end;
 end;
 
-function TCloudMailRu.statusFile(path: WideString; var FileInfo: TCloudMailRuDirListingItem): boolean;
+function TCloudMailRu.statusFile(path: WideString; var FileInfo: TCloudMailRuDirListingItem): Boolean;
 var
 	URL: WideString;
 	JSON: WideString;
@@ -883,7 +908,7 @@ var
 	URL: WideString;
 	PostData: TStringStream;
 	PostAnswer: WideString;
-	PostResult: boolean;
+	PostResult: Boolean;
 	OperationStatus: integer;
 begin
 	Result := FS_FILE_WRITEERROR;
@@ -1018,6 +1043,20 @@ end;
 function TCloudMailRu.getShardFromJSON(JSON: WideString): WideString;
 begin
 	Result := ((((TJSONObject.ParseJSONValue(JSON) as TJSONObject).values['body'] as TJSONObject).values['get'] as TJSONArray).Items[0] as TJSONObject).values['url'].Value;
+end;
+
+function TCloudMailRu.getUserSpaceFromJSON(JSON: WideString): TCloudMailRuSpaceInfo;
+var
+	Obj: TJSONObject;
+begin
+	Obj := (TJSONObject.ParseJSONValue(JSON) as TJSONObject).values['body'] as TJSONObject;
+	with Result do
+	begin
+		if Assigned(Obj.values['overquota']) then overquota := Obj.values['overquota'].Value.ToBoolean;
+		if Assigned(Obj.values['total']) then total := Obj.values['total'].Value.ToInt64;
+		if Assigned(Obj.values['used']) then used := Obj.values['used'].Value.ToInt64;
+	end;
+
 end;
 
 function TCloudMailRu.getDirListingFromJSON(JSON: WideString): TCloudMailRuDirListing;
