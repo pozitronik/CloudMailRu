@@ -2,7 +2,7 @@ unit MRC_Helper;
 
 interface
 
-uses Classes, Windows, SysUtils, IniFiles, MultiMon, Math,System.Variants;
+uses Classes, Windows, SysUtils, IniFiles, MultiMon, Math, System.Variants;
 
 type
 	TRealPath = record
@@ -18,6 +18,11 @@ type
 
 	TPluginSettings = record
 		LoadSSLDLLOnlyFromPluginDir: boolean;
+		ProxyType: Integer;
+		ProxyServer: WideString;
+		ProxyPort: Integer;
+		ProxyUser: WideString;
+		ProxyPassword: WideString;
 	end;
 
 function Implode(S: TStringList; Delimiter: Char): WideString;
@@ -167,10 +172,15 @@ var
 begin
 	IniFile := TIniFile.Create(IniFilePath);
 	GetPluginSettings.LoadSSLDLLOnlyFromPluginDir := IniFile.ReadBool('Main', 'LoadSSLDLLOnlyFromPluginDir', false);
+	GetPluginSettings.ProxyType := IniFile.ReadInteger('Main', 'ProxyType', 0);
+	GetPluginSettings.ProxyServer := IniFile.ReadString('Main', 'ProxyServer', '');
+	GetPluginSettings.ProxyPort := IniFile.ReadInteger('Main', 'ProxyPort', 0);
+	GetPluginSettings.ProxyUser := IniFile.ReadString('Main', 'ProxyUser', '');
+	GetPluginSettings.ProxyPassword := IniFile.ReadString('Main', 'ProxyPassword', '');
 	IniFile.Destroy;
 end;
 
-function SetPluginSettings(IniFilePath: WideString; PluginSettings: TPluginSettings): boolean;
+function SetPluginSettings(IniFilePath: WideString; PluginSettings: TPluginSettings): boolean; { Не используется }
 var
 	IniFile: TIniFile;
 begin
@@ -188,7 +198,7 @@ begin
 	basicType := VarType(OptionValue);
 	case basicType of
 		varInteger: IniFile.WriteInteger('Main', OptionName, OptionValue);
-		varString: IniFile.WriteString('Main', OptionName, OptionValue);
+		varString,varUString: IniFile.WriteString('Main', OptionName, OptionValue);
 		varBoolean: IniFile.WriteBool('Main', OptionName, OptionValue);
 	end;
 
