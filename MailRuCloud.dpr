@@ -565,6 +565,12 @@ begin
 	RealPath := ExtractRealPath(RemoteName);
 	if RealPath.account = '' then exit(FS_FILE_NOTSUPPORTED);
 	MyProgressProc(PluginNum, LocalName, PWideChar(RealPath.path), 0);
+
+	if CheckFlag(FS_COPYFLAGS_RESUME, CopyFlags) then
+	begin // NOT SUPPORTED
+		exit(FS_FILE_NOTSUPPORTED);
+	end;
+
 	if CheckFlag(FS_COPYFLAGS_OVERWRITE, CopyFlags) then
 	begin
 		if ConnectionManager.get(RealPath.account, getResult).deleteFile(RealPath.path) then // Неизвестно, как перезаписать файл черз API, но мы можем его удалить
@@ -581,13 +587,7 @@ begin
 
 		end;
 
-	end;
-	if CheckFlag(FS_COPYFLAGS_RESUME, CopyFlags) then
-	begin // NOT SUPPORTED
-		exit(FS_FILE_NOTSUPPORTED);
-	end;
-
-	if CheckFlag(FS_COPYFLAGS_EXISTS_SAMECASE, CopyFlags) or CheckFlag(FS_COPYFLAGS_EXISTS_DIFFERENTCASE, CopyFlags) then // Облако не поддерживает разные регистры
+	end else if CheckFlag(FS_COPYFLAGS_EXISTS_SAMECASE, CopyFlags) or CheckFlag(FS_COPYFLAGS_EXISTS_DIFFERENTCASE, CopyFlags) then // Облако не поддерживает разные регистры
 	begin
 		exit(FS_FILE_EXISTS);
 	end;
