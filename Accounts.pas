@@ -21,6 +21,17 @@ type
 		DeleteButton: TButton;
 		GlobalOptionsGroup: TGroupBox;
 		UseDLLFromPluginDir: TCheckBox;
+		ProxyCB: TComboBox;
+		ProxyTypeLabel: TLabel;
+		ProxyPWDLabel: TLabel;
+		ProxyServerLabel: TLabel;
+		ProxyPortLabel: TLabel;
+		ProxyServerEdit: TEdit;
+		ProxyPortEdit: TEdit;
+		ProxyDivLabel: TLabel;
+		ProxyPWDEdit: TEdit;
+		ProxyUserLabel: TLabel;
+		ProxyUserEdit: TEdit;
 		procedure FormShow(Sender: TObject);
 		procedure AccountsListClick(Sender: TObject);
 		procedure ApplyButtonClick(Sender: TObject);
@@ -32,6 +43,11 @@ type
 		procedure EmailEditChange(Sender: TObject);
 		procedure FormActivate(Sender: TObject);
 		procedure UseDLLFromPluginDirClick(Sender: TObject);
+		procedure ProxyCBChange(Sender: TObject);
+		procedure ProxyServerEditChange(Sender: TObject);
+		procedure ProxyPortEditChange(Sender: TObject);
+		procedure ProxyUserEditChange(Sender: TObject);
+		procedure ProxyPWDEditChange(Sender: TObject);
 	private
 		{ Private declarations }
 		procedure WMHotKey(var Message: TMessage); message WM_HOTKEY;
@@ -155,6 +171,31 @@ begin
 	end;
 end;
 
+procedure TAccountsForm.ProxyCBChange(Sender: TObject);
+begin
+	SetPluginSettingsValue(SettingsIniFilePath, 'ProxyType', ProxyCB.ItemIndex);
+end;
+
+procedure TAccountsForm.ProxyPortEditChange(Sender: TObject);
+begin
+	SetPluginSettingsValue(SettingsIniFilePath, 'ProxyPort', ProxyPortEdit.Text);
+end;
+
+procedure TAccountsForm.ProxyPWDEditChange(Sender: TObject);
+begin
+	SetPluginSettingsValue(SettingsIniFilePath, 'ProxyPassword', ProxyPWDEdit.Text);
+end;
+
+procedure TAccountsForm.ProxyServerEditChange(Sender: TObject);
+begin
+	SetPluginSettingsValue(SettingsIniFilePath, 'ProxyServer', ProxyServerEdit.Text);
+end;
+
+procedure TAccountsForm.ProxyUserEditChange(Sender: TObject);
+begin
+	SetPluginSettingsValue(SettingsIniFilePath, 'ProxyUser', ProxyUserEdit.Text);
+end;
+
 class procedure TAccountsForm.ShowAccounts(parentWindow: HWND; IniPath, SettingsIniFilePath: WideString; CryptProc: TCryptProcW; PluginNum, CryptoNum: Integer; RemoteName: WideString);
 var
 	AccountsForm: TAccountsForm;
@@ -168,7 +209,14 @@ begin
 		AccountsForm.PluginNum := PluginNum;
 		AccountsForm.CryptoNum := CryptoNum;
 		AccountsForm.SelectedAccount := '';
+		{ global settings }
 		AccountsForm.UseDLLFromPluginDir.Checked := GetPluginSettings(SettingsIniFilePath).LoadSSLDLLOnlyFromPluginDir;
+		AccountsForm.ProxyCB.ItemIndex := GetPluginSettings(SettingsIniFilePath).ProxyType;
+		AccountsForm.ProxyServerEdit.Text := GetPluginSettings(SettingsIniFilePath).ProxyServer;
+		AccountsForm.ProxyPortEdit.Text := GetPluginSettings(SettingsIniFilePath).ProxyPort.ToString;
+		AccountsForm.ProxyUserEdit.Text := GetPluginSettings(SettingsIniFilePath).ProxyUser;
+		AccountsForm.ProxyPWDEdit.Text := GetPluginSettings(SettingsIniFilePath).ProxyPassword;
+		{ global settings }
 		if RemoteName <> '' then AccountsForm.SelectedAccount := Copy(RemoteName, 2, length(RemoteName) - 1);
 		RegisterHotKey(AccountsForm.Handle, 1, 0, VK_ESCAPE);
 		AccountsForm.ShowModal;

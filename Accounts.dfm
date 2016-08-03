@@ -4,7 +4,7 @@ object AccountsForm: TAccountsForm
   BorderStyle = bsDialog
   Caption = 'Cloud Accounts'
   ClientHeight = 421
-  ClientWidth = 494
+  ClientWidth = 489
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -152,29 +152,29 @@ object AccountsForm: TAccountsForm
   OnActivate = FormActivate
   OnShow = FormShow
   DesignSize = (
-    494
+    489
     421)
   PixelsPerInch = 96
   TextHeight = 13
   object UsernameLabel: TLabel
-    Left = 231
-    Top = 72
+    Left = 228
+    Top = 54
     Width = 28
     Height = 13
     Anchors = [akLeft, akTop, akRight]
     Caption = 'Email:'
   end
   object AccountNameLabel: TLabel
-    Left = 231
-    Top = 16
+    Left = 228
+    Top = 8
     Width = 68
     Height = 13
     Anchors = [akLeft, akTop, akRight]
     Caption = 'Account name'
   end
   object PasswordLabel: TLabel
-    Left = 231
-    Top = 120
+    Left = 228
+    Top = 100
     Width = 210
     Height = 13
     Anchors = [akLeft, akTop, akRight]
@@ -206,44 +206,44 @@ object AccountsForm: TAccountsForm
     end
   end
   object EmailEdit: TEdit
-    Left = 231
-    Top = 91
-    Width = 255
+    Left = 228
+    Top = 73
+    Width = 258
     Height = 21
     Anchors = [akLeft, akTop, akRight]
     TabOrder = 2
     OnChange = EmailEditChange
   end
   object AccountNameEdit: TEdit
-    Left = 231
-    Top = 35
-    Width = 255
+    Left = 228
+    Top = 27
+    Width = 258
     Height = 21
     Anchors = [akLeft, akTop, akRight]
     TabOrder = 1
     OnChange = AccountNameEditChange
   end
   object PasswordEdit: TEdit
-    Left = 231
-    Top = 139
-    Width = 255
+    Left = 228
+    Top = 115
+    Width = 258
     Height = 21
     Anchors = [akLeft, akTop, akRight]
     PasswordChar = '*'
     TabOrder = 3
   end
   object UseTCPwdMngrCB: TCheckBox
-    Left = 231
-    Top = 166
-    Width = 255
+    Left = 228
+    Top = 142
+    Width = 250
     Height = 17
     Anchors = [akLeft, akTop, akRight]
     Caption = 'Store password in TC password manager'
     TabOrder = 4
   end
   object ApplyButton: TButton
-    Left = 231
-    Top = 189
+    Left = 228
+    Top = 165
     Width = 75
     Height = 25
     Caption = 'Add'
@@ -252,7 +252,7 @@ object AccountsForm: TAccountsForm
   end
   object DeleteButton: TButton
     Left = 411
-    Top = 189
+    Top = 165
     Width = 75
     Height = 25
     Caption = 'Delete'
@@ -260,20 +260,109 @@ object AccountsForm: TAccountsForm
     OnClick = DeleteButtonClick
   end
   object GlobalOptionsGroup: TGroupBox
-    Left = 231
-    Top = 220
-    Width = 255
-    Height = 45
+    Left = 228
+    Top = 196
+    Width = 258
+    Height = 221
     Caption = 'Global options'
     TabOrder = 7
-    object UseDLLFromPluginDir: TCheckBox
+    object ProxyTypeLabel: TLabel
+      Left = 5
+      Top = 39
+      Width = 53
+      Height = 13
+      Caption = 'Proxy type'
+    end
+    object ProxyPWDLabel: TLabel
       Left = 3
+      Top = 178
+      Width = 149
+      Height = 13
+      Caption = 'Proxy authentication password'
+    end
+    object ProxyServerLabel: TLabel
+      Left = 5
+      Top = 85
+      Width = 62
+      Height = 13
+      Caption = 'Proxy server'
+    end
+    object ProxyPortLabel: TLabel
+      Left = 190
+      Top = 85
+      Width = 20
+      Height = 13
+      Caption = 'Port'
+    end
+    object ProxyDivLabel: TLabel
+      Left = 185
+      Top = 104
+      Width = 4
+      Height = 13
+      Caption = ':'
+    end
+    object ProxyUserLabel: TLabel
+      Left = 5
+      Top = 131
+      Width = 230
+      Height = 13
+      Caption = 'Proxy authentication username (blank for none)'
+    end
+    object UseDLLFromPluginDir: TCheckBox
+      Left = 5
       Top = 16
       Width = 238
       Height = 17
       Caption = 'Load SSL libraries only from plugin directory'
       TabOrder = 0
       OnClick = UseDLLFromPluginDirClick
+    end
+    object ProxyCB: TComboBox
+      Left = 5
+      Top = 58
+      Width = 250
+      Height = 21
+      ItemIndex = 0
+      TabOrder = 1
+      Text = 'No proxy'
+      OnChange = ProxyCBChange
+      Items.Strings = (
+        'No proxy'
+        'Socks5'
+        'Socks4')
+    end
+    object ProxyServerEdit: TEdit
+      Left = 5
+      Top = 104
+      Width = 180
+      Height = 21
+      TabOrder = 2
+      OnChange = ProxyServerEditChange
+    end
+    object ProxyPortEdit: TEdit
+      Left = 190
+      Top = 104
+      Width = 65
+      Height = 21
+      NumbersOnly = True
+      TabOrder = 3
+      OnChange = ProxyPortEditChange
+    end
+    object ProxyPWDEdit: TEdit
+      Left = 5
+      Top = 197
+      Width = 249
+      Height = 21
+      TabOrder = 4
+      OnChange = ProxyPWDEditChange
+    end
+    object ProxyUserEdit: TEdit
+      Left = 5
+      Top = 151
+      Width = 250
+      Height = 21
+      TabOrder = 5
+      OnChange = ProxyUserEditChange
     end
   end
 end
