@@ -295,7 +295,7 @@ object AccountsForm: TAccountsForm
       Caption = 'Port'
     end
     object ProxyDivLabel: TLabel
-      Left = 185
+      Left = 186
       Top = 104
       Width = 4
       Height = 13
@@ -321,7 +321,8 @@ object AccountsForm: TAccountsForm
       Left = 5
       Top = 58
       Width = 250
-      Height = 21
+      Height = 22
+      Style = csOwnerDrawFixed
       ItemIndex = 0
       TabOrder = 1
       Text = 'No proxy'
@@ -349,16 +350,16 @@ object AccountsForm: TAccountsForm
       OnChange = ProxyPortEditChange
     end
     object ProxyPWDEdit: TEdit
-      Left = 5
+      Left = 3
       Top = 197
-      Width = 249
+      Width = 250
       Height = 21
       TabOrder = 4
       OnChange = ProxyPWDEditChange
     end
     object ProxyUserEdit: TEdit
-      Left = 5
-      Top = 151
+      Left = 3
+      Top = 150
       Width = 250
       Height = 21
       TabOrder = 5

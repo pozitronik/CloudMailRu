@@ -211,11 +211,11 @@ begin
 		AccountsForm.SelectedAccount := '';
 		{ global settings }
 		AccountsForm.UseDLLFromPluginDir.Checked := GetPluginSettings(SettingsIniFilePath).LoadSSLDLLOnlyFromPluginDir;
-		AccountsForm.ProxyCB.ItemIndex := GetPluginSettings(SettingsIniFilePath).ProxyType;
-		AccountsForm.ProxyServerEdit.Text := GetPluginSettings(SettingsIniFilePath).ProxyServer;
-		AccountsForm.ProxyPortEdit.Text := GetPluginSettings(SettingsIniFilePath).ProxyPort.ToString;
-		AccountsForm.ProxyUserEdit.Text := GetPluginSettings(SettingsIniFilePath).ProxyUser;
-		AccountsForm.ProxyPWDEdit.Text := GetPluginSettings(SettingsIniFilePath).ProxyPassword;
+		AccountsForm.ProxyCB.ItemIndex := GetPluginSettings(SettingsIniFilePath).Proxy.ProxyType;
+		AccountsForm.ProxyServerEdit.Text := GetPluginSettings(SettingsIniFilePath).Proxy.Server;
+		AccountsForm.ProxyPortEdit.Text := GetPluginSettings(SettingsIniFilePath).Proxy.Port.ToString;
+		AccountsForm.ProxyUserEdit.Text := GetPluginSettings(SettingsIniFilePath).Proxy.User;
+		AccountsForm.ProxyPWDEdit.Text := GetPluginSettings(SettingsIniFilePath).Proxy.Password;
 		{ global settings }
 		if RemoteName <> '' then AccountsForm.SelectedAccount := Copy(RemoteName, 2, length(RemoteName) - 1);
 		RegisterHotKey(AccountsForm.Handle, 1, 0, VK_ESCAPE);

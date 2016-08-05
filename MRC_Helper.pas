@@ -4,6 +4,11 @@ interface
 
 uses Classes, Windows, SysUtils, IniFiles, MultiMon, Math, System.Variants;
 
+const
+	ProxyNone = 0;
+	ProxySocks5 = 1;
+	ProxySocks4 = 2;
+
 type
 	TRealPath = record
 		account: WideString;
@@ -16,13 +21,17 @@ type
 		user, domain: WideString; // parsed values from email
 	end;
 
+	TProxySettings = record
+		ProxyType: Integer;
+		Server: WideString;
+		Port: Integer;
+		user: WideString;
+		password: WideString;
+	end;
+
 	TPluginSettings = record
 		LoadSSLDLLOnlyFromPluginDir: boolean;
-		ProxyType: Integer;
-		ProxyServer: WideString;
-		ProxyPort: Integer;
-		ProxyUser: WideString;
-		ProxyPassword: WideString;
+		Proxy: TProxySettings;
 	end;
 
 function Implode(S: TStringList; Delimiter: Char): WideString;
@@ -172,11 +181,11 @@ var
 begin
 	IniFile := TIniFile.Create(IniFilePath);
 	GetPluginSettings.LoadSSLDLLOnlyFromPluginDir := IniFile.ReadBool('Main', 'LoadSSLDLLOnlyFromPluginDir', false);
-	GetPluginSettings.ProxyType := IniFile.ReadInteger('Main', 'ProxyType', 0);
-	GetPluginSettings.ProxyServer := IniFile.ReadString('Main', 'ProxyServer', '');
-	GetPluginSettings.ProxyPort := IniFile.ReadInteger('Main', 'ProxyPort', 0);
-	GetPluginSettings.ProxyUser := IniFile.ReadString('Main', 'ProxyUser', '');
-	GetPluginSettings.ProxyPassword := IniFile.ReadString('Main', 'ProxyPassword', '');
+	GetPluginSettings.Proxy.ProxyType := IniFile.ReadInteger('Main', 'ProxyType', ProxyNone);
+	GetPluginSettings.Proxy.Server := IniFile.ReadString('Main', 'ProxyServer', '');
+	GetPluginSettings.Proxy.Port := IniFile.ReadInteger('Main', 'ProxyPort', 0);
+	GetPluginSettings.Proxy.user := IniFile.ReadString('Main', 'ProxyUser', '');
+	GetPluginSettings.Proxy.password := IniFile.ReadString('Main', 'ProxyPassword', '');
 	IniFile.Destroy;
 end;
 
@@ -198,7 +207,7 @@ begin
 	basicType := VarType(OptionValue);
 	case basicType of
 		varInteger: IniFile.WriteInteger('Main', OptionName, OptionValue);
-		varString,varUString: IniFile.WriteString('Main', OptionName, OptionValue);
+		varString, varUString: IniFile.WriteString('Main', OptionName, OptionValue);
 		varBoolean: IniFile.WriteBool('Main', OptionName, OptionValue);
 	end;
 

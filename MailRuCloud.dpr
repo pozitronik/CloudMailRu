@@ -115,7 +115,7 @@ begin
 	Result := 0; // BG_DOWNLOAD + BG_UPLOAD; // + BG_ASK_USER;
 end;
 
-{ ANSI PEASANTS }
+{DIRTY ANSI PEASANTS }
 
 function FsInit(PluginNr: integer; pProgressProc: TProgressProc; pLogProc: TLogProc; pRequestProc: TRequestProc): integer; stdcall;
 Begin
@@ -291,7 +291,7 @@ Begin
 	MyLogProc := pLogProc;
 	MyRequestProc := pRequestProc;
 	Result := 0;
-	ConnectionManager := TConnectionManager.Create(AccountsIniFilePath, PluginNum, MyProgressProc, MyLogProc);
+	ConnectionManager := TConnectionManager.Create(AccountsIniFilePath, PluginNum, MyProgressProc, MyLogProc, GetPluginSettings(SettingsIniFilePath).Proxy);
 end;
 
 procedure FsStatusInfoW(RemoteDir: PWideChar; InfoStartEnd, InfoOperation: integer); stdcall; // Начало и конец операций FS

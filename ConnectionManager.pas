@@ -19,6 +19,7 @@ type
 	private
 		Connections: array of TNamedConnection;
 		IniFileName: WideString;
+		Proxy: TProxySettings;
 
 		PluginNum: integer;
 
@@ -32,11 +33,11 @@ type
 	public
 		CryptoNum: integer;
 		MyCryptProc: TCryptProcW;
-		constructor Create(IniFileName: WideString; PluginNum: integer; MyProgressProc: TProgressProcW; MyLogProc: TLogProcW);
+		constructor Create(IniFileName: WideString; PluginNum: integer; MyProgressProc: TProgressProcW; MyLogProc: TLogProcW; ProxySettings: TProxySettings);
 		destructor Destroy(); override;
 		function get(connectionName: WideString; var OperationResult: integer; doInit: boolean = true): TCloudMailRu; // возвращает готовое подклчение по имени
 		function set_(connectionName: WideString; cloud: TCloudMailRu): boolean;
-		function init(connectionName: WideString): integer; // инициализирует подключение по его имени, возвращает код состояния
+		function init(connectionName: WideString; ProxySettings: TProxySettings): integer; // инициализирует подключение по его имени, возвращает код состояния
 		function free(connectionName: WideString): integer; // освобождает подключение по его имени, возвращает код состояния
 		function freeAll: integer; // освобождает все подключения
 		function initialized(connectionName: WideString): boolean; // Проверяет, инициализировано ли подключение
@@ -46,13 +47,14 @@ type
 implementation
 
 { TConnectionManager }
-constructor TConnectionManager.Create(IniFileName: WideString; PluginNum: integer; MyProgressProc: TProgressProcW; MyLogProc: TLogProcW);
+constructor TConnectionManager.Create(IniFileName: WideString; PluginNum: integer; MyProgressProc: TProgressProcW; MyLogProc: TLogProcW; ProxySettings: TProxySettings);
 begin
 	SetLength(Connections, 0);
 	self.IniFileName := IniFileName;
 	self.PluginNum := PluginNum;
 	self.MyProgressProc := MyProgressProc;
 	self.MyLogProc := MyLogProc;
+	self.Proxy := ProxySettings;
 end;
 
 destructor TConnectionManager.Destroy;
@@ -74,7 +76,7 @@ begin
 	if (doInit) then
 	begin
 		OperationResult := CLOUD_OPERATION_OK;
-		if not initialized(connectionName) then OperationResult := init(connectionName);
+		if not initialized(connectionName) then OperationResult := init(connectionName,self.Proxy);
 		if (OperationResult = CLOUD_OPERATION_OK) then result := get(connectionName, OperationResult, false);
 	end;
 	{ если подключиться не удалось, все функции облака будут возвращать негативный результат, но без AV }
@@ -90,21 +92,19 @@ begin
 	result := true;
 end;
 
-function TConnectionManager.init(connectionName: WideString): integer;
+function TConnectionManager.init(connectionName: WideString; ProxySettings: TProxySettings): integer;
 var
 	cloud: TCloudMailRu;
 	AccountSettings: TAccountSettings;
-  ProxySettings:TPluginSettings;
 begin
 	result := CLOUD_OPERATION_OK;
 	AccountSettings := GetAccountSettingsFromIniFile(IniFileName, connectionName);
-  ProxySettings:=GetPluginSettings(SettingsIniFilePath)
 
 	if not GetMyPasswordNow(AccountSettings) then exit(CLOUD_OPERATION_ERROR_STATUS_UNKNOWN); // INVALID_HANDLE_VALUE
 
 	MyLogProc(PluginNum, MSGTYPE_CONNECT, PWideChar('CONNECT ' + AccountSettings.email));
 
-	cloud := TCloudMailRu.Create(AccountSettings.user, AccountSettings.domain, AccountSettings.password, MyProgressProc, PluginNum, MyLogProc);
+	cloud := TCloudMailRu.Create(AccountSettings.user, AccountSettings.domain, AccountSettings.password, self.Proxy, MyProgressProc, PluginNum, MyLogProc);
 	if not set_(connectionName, cloud) then exit(CLOUD_OPERATION_ERROR_STATUS_UNKNOWN); // INVALID_HANDLE_VALUE
 
 	if not(get(connectionName, result, false).login()) then free(connectionName);

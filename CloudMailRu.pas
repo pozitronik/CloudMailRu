@@ -78,11 +78,7 @@ type
 
 		Shard: WideString;
 
-		ProxyType: integer;
-		ProxyServer: WideString;
-		ProxyPort: integer;
-		ProxyUser: WideString;
-		ProxyPassword: WideString;
+		Proxy: TProxySettings;
 
 		function getToken(): Boolean;
 		function getShard(var Shard: WideString): Boolean;
@@ -112,7 +108,7 @@ type
 		ExternalPluginNr: integer;
 		ExternalSourceName: PWideChar;
 		ExternalTargetName: PWideChar;
-		constructor Create(user, domain, password: WideString; ProxyType:Integer = 0; ProxyServer:WideString=''; ProxyPort:integer=0; ProxyUser:WideString=''; ProxyPassword:WideString=''; ExternalProgressProc: TProgressProcW = nil; PluginNr: integer = -1; ExternalLogProc: TLogProcW = nil);
+		constructor Create(user, domain, password: WideString; Proxy: TProxySettings; ExternalProgressProc: TProgressProcW = nil; PluginNr: integer = -1; ExternalLogProc: TLogProcW = nil);
 		destructor Destroy; override;
 		function login(): Boolean;
 
@@ -137,10 +133,11 @@ implementation
 
 { CONSTRUCTOR/DESTRUCTOR }
 
-constructor TCloudMailRu.Create(user, domain, password: WideString; ProxyType:Integer; ProxyServer:WideString; ProxyPort:integer; ProxyUser:WideString; ProxyPassword:WideString; ExternalProgressProc: TProgressProcW; PluginNr: integer; ExternalLogProc: TLogProcW);
+constructor TCloudMailRu.Create(user, domain, password: WideString; Proxy: TProxySettings; ExternalProgressProc: TProgressProcW; PluginNr: integer; ExternalLogProc: TLogProcW);
 begin
 	try
 		self.Cookie := TIdCookieManager.Create();
+		self.Proxy := Proxy;
 
 		self.user := user;
 		self.password := password;
@@ -450,17 +447,38 @@ procedure TCloudMailRu.HTTPInit(var HTTP: TIdHTTP; var SSL: TIdSSLIOHandlerSocke
 begin
 	SSL := TIdSSLIOHandlerSocketOpenSSL.Create();
 	HTTP := TIdHTTP.Create();
-	Socks := TIdSocksInfo.Create(HTTP);
-	Socks.Host := '127.0.0.1';
-	Socks.Port := 8080;
-	Socks.Authentication := saNoAuthentication;
-	Socks.Username := '1';
-	Socks.password := '1';
-	Socks.Version := svSocks5; // or svSocks4
+
+	if Proxy.ProxyType <> ProxyNone then
+	begin
+		Socks := TIdSocksInfo.Create(HTTP);
+		SSL.TransparentProxy := Socks;
+
+		case self.Proxy.ProxyType of
+			ProxySocks5:
+				begin
+					Socks.Version := svSocks5;
+				end;
+			ProxySocks4:
+				begin
+					Socks.Version := svSocks4;
+				end;
+		end;
+
+		Socks.Host := self.Proxy.Server;
+		Socks.Port := self.Proxy.Port;
+		if self.Proxy.user <> '' then
+		begin
+			Socks.Authentication := saUsernamePassword;
+			Socks.Username := Proxy.user;
+			Socks.password := Proxy.password;
+		end
+		else Socks.Authentication := saNoAuthentication;
+
+		Socks.Enabled := true;
+	end;
 
 	HTTP.CookieManager := Cookie;
 	HTTP.IOHandler := SSL;
-	SSL.TransparentProxy := Socks;
 
 	HTTP.AllowCookies := true;
 	HTTP.HTTPOptions := [hoForceEncodeParams, hoNoParseMetaHTTPEquiv];
