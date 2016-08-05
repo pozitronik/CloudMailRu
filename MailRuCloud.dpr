@@ -112,7 +112,7 @@ End;
 
 function FsGetBackgroundFlags: integer; stdcall;
 begin
-	Result := 0; // BG_DOWNLOAD + BG_UPLOAD; // + BG_ASK_USER;
+	Result := BG_DOWNLOAD + BG_UPLOAD + BG_ASK_USER;
 end;
 
 { DIRTY ANSI PEASANTS }
@@ -807,6 +807,7 @@ end;
 exports FsGetDefRootName, FsInit, FsInitW, FsFindFirst, FsFindFirstW, FsFindNext, FsFindNextW, FsFindClose, FsGetFile, FsGetFileW, FsDisconnect, FsDisconnectW, FsStatusInfo, FsStatusInfoW, FsPutFile, FsPutFileW, FsDeleteFile, FsDeleteFileW, FsMkDir, FsMkDirW, FsRemoveDir, FsRemoveDirW, FsSetCryptCallback, FsSetCryptCallbackW, FsExecuteFileW, FsRenMovFile, FsRenMovFileW, FsGetBackgroundFlags, FsContentGetSupportedField, FsContentGetValue, FsContentGetValueW;
 
 begin
+	IsMultiThread := True;
 	GetMem(tmp, max_path);
 	GetModuleFilename(hInstance, tmp, max_path);
 	PluginPath := tmp;
