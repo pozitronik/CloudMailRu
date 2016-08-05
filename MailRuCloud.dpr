@@ -115,7 +115,7 @@ begin
 	Result := 0; // BG_DOWNLOAD + BG_UPLOAD; // + BG_ASK_USER;
 end;
 
-{DIRTY ANSI PEASANTS }
+{ DIRTY ANSI PEASANTS }
 
 function FsInit(PluginNr: integer; pProgressProc: TProgressProc; pLogProc: TLogProc; pRequestProc: TRequestProc): integer; stdcall;
 Begin
@@ -295,6 +295,12 @@ Begin
 end;
 
 procedure FsStatusInfoW(RemoteDir: PWideChar; InfoStartEnd, InfoOperation: integer); stdcall; // Начало и конец операций FS
+var
+	RealPath: TRealPath;
+	getResult: integer;
+	US: TCloudMailRuSpaceInfo;
+	QuotaInfo: WideString;
+	Cloud: TCloudMailRu;
 begin
 	if (InfoStartEnd = FS_STATUS_START) then
 	begin
@@ -358,18 +364,23 @@ begin
 				end;
 			FS_STATUS_OP_PUT_SINGLE:
 				begin
+					// ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
 				end;
 			FS_STATUS_OP_PUT_MULTI:
 				begin
+					// ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
 				end;
 			FS_STATUS_OP_RENMOV_SINGLE:
 				begin
+					// ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
 				end;
 			FS_STATUS_OP_RENMOV_MULTI:
 				begin
+					// ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
 				end;
 			FS_STATUS_OP_DELETE:
 				begin
+					// ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
 				end;
 			FS_STATUS_OP_ATTRIB:
 				begin
@@ -499,7 +510,7 @@ Begin
 				if CurrentItem.home <> '' then TPropertyForm.ShowProperty(MainWin, CurrentItem, Cloud)
 				else
 				begin
-					MyLogProc(PluginNum, msgtype_importanterror, PWideChar('Cant find file under cursor!'));
+					MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, PWideChar('Cant find file under cursor!'));
 				end;
 			end; // Не рапортуем, это будет уровнем выше
 
@@ -704,7 +715,7 @@ begin
 		begin
 			if Item.home = '' then
 			begin
-				MyLogProc(PluginNum, msgtype_importanterror, PWideChar('Cant find file ' + RealPath.path)); { Такого быть не может, но... }
+				MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, PWideChar('Cant find file ' + RealPath.path)); { Такого быть не может, но... }
 				exit(ft_nosuchfield);
 			end;
 		end; // Не рапортуем, это будет уровнем выше

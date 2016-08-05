@@ -73,17 +73,20 @@ type
 		build: WideString;
 		upload_url: WideString;
 		Cookie: TIdCookieManager;
+		Socks: TIdSocksInfo;
+
 		ExternalProgressProc: TProgressProcW;
 		ExternalLogProc: TLogProcW;
 
 		Shard: WideString;
 
-		Proxy: TProxySettings;
+		// Proxy: TProxySettings;
 
 		function getToken(): Boolean;
 		function getShard(var Shard: WideString): Boolean;
 		function putFileToCloud(localPath: WideString; Return: TStringList): integer;
 		function addFileToCloud(hash: WideString; size: integer; remotePath: WideString; var JSONAnswer: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT): Boolean;
+		function getUserSpace(var SpaceInfo: TCloudMailRuSpaceInfo): Boolean;
 		function HTTPPost(URL: WideString; PostData: TStringStream; var Answer: WideString; ContentType: WideString = 'application/x-www-form-urlencoded'): Boolean; // Постинг данных с возможным получением ответа.
 
 		function HTTPPostFile(URL: WideString; PostData: TIdMultipartFormDataStream; var Answer: WideString): integer; // Постинг файла и получение ответа
@@ -112,7 +115,7 @@ type
 		destructor Destroy; override;
 		function login(): Boolean;
 
-		function getUserSpace(var SpaceInfo: TCloudMailRuSpaceInfo): Boolean;
+		procedure logUserSpaceInfo();
 		function getDir(path: WideString; var DirListing: TCloudMailRuDirListing): Boolean;
 		function getFile(remotePath, localPath: WideString): integer;
 		function putFile(localPath, remotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT): integer;
@@ -137,7 +140,37 @@ constructor TCloudMailRu.Create(user, domain, password: WideString; Proxy: TProx
 begin
 	try
 		self.Cookie := TIdCookieManager.Create();
-		self.Proxy := Proxy;
+		self.Socks := TIdSocksInfo.Create();
+
+		if Proxy.ProxyType <> ProxyNone then
+		begin
+
+			// SSL.TransparentProxy := Socks;
+
+			case Proxy.ProxyType of
+				ProxySocks5:
+					begin
+						Socks.Version := svSocks5;
+					end;
+				ProxySocks4:
+					begin
+						Socks.Version := svSocks4;
+					end;
+			end;
+
+			self.Socks.Host := Proxy.Server;
+			self.Socks.Port := Proxy.Port;
+			if Proxy.user <> '' then
+			begin
+				self.Socks.Authentication := saUsernamePassword;
+				self.Socks.Username := Proxy.user;
+				self.Socks.password := Proxy.password;
+			end
+			else self.Socks.Authentication := saNoAuthentication;
+
+			self.Socks.Enabled := true;
+		end
+		else self.Socks.Enabled := false;
 
 		self.user := user;
 		self.password := password;
@@ -161,6 +194,7 @@ end;
 destructor TCloudMailRu.Destroy;
 begin
 	if Assigned(self.Cookie) then self.Cookie.free;
+	if Assigned(self.Socks) then self.Socks.free;
 end;
 
 { PRIVATE METHODS }
@@ -170,8 +204,7 @@ var
 	URL: WideString;
 	PostData: TStringStream;
 	PostAnswer: WideString; { Не используется }
-	US: TCloudMailRuSpaceInfo;
-	QuotaInfo: WideString;
+
 begin
 	Result := false;
 	if not(Assigned(self)) then exit; // Проверка на вызов без инициализации
@@ -196,15 +229,7 @@ begin
 		if (Result) then
 		begin
 			Log(MSGTYPE_DETAILS, 'Connected to ' + self.user + '@' + self.domain);
-			if self.getUserSpace(US) then
-			begin
-				if (US.overquota) then QuotaInfo := ' Warning: space quota exhausted!'
-				else QuotaInfo := '';
-
-				Log(MSGTYPE_DETAILS, 'Total space: ' + US.total.ToString() + 'Mb, used: ' + US.used.ToString() + 'Mb, free: ' + (US.total - US.used).ToString() + 'Mb.' + QuotaInfo);
-			end else begin
-				Log(MSGTYPE_IMPORTANTERROR, 'Error getting user space information for ' + self.user + '@' + self.domain);
-			end;
+			self.logUserSpaceInfo;
 		end else begin
 			Log(MSGTYPE_IMPORTANTERROR, 'Error getting auth token for ' + self.user + '@' + self.domain);
 			exit(false);
@@ -321,6 +346,26 @@ begin
 		end;
 	end;
 	PostData.free;
+end;
+
+function TCloudMailRu.getUserSpace(var SpaceInfo: TCloudMailRuSpaceInfo): Boolean;
+var
+	URL: WideString;
+	JSON: WideString;
+begin
+	Result := false;
+	if not(Assigned(self)) then exit; // Проверка на вызов без инициализации
+	URL := 'https://cloud.mail.ru/api/v2/user/space?api=2&home=/&build=' + self.build + '&x-page-id=' + self.x_page_id + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&token=' + self.token + '&_=1433249148810';
+	try
+		Result := self.HTTPGet(URL, JSON);
+	except
+		on E: Exception do
+		begin
+			Log(MSGTYPE_IMPORTANTERROR, 'User space receiving error ' + E.Message);
+		end;
+	end;
+	if not Result then exit(false);
+	SpaceInfo := self.getUserSpaceFromJSON(JSON);
 end;
 
 function TCloudMailRu.HTTPPost(URL: WideString; PostData: TStringStream; var Answer: WideString; ContentType: WideString = 'application/x-www-form-urlencoded'): Boolean;
@@ -448,33 +493,10 @@ begin
 	SSL := TIdSSLIOHandlerSocketOpenSSL.Create();
 	HTTP := TIdHTTP.Create();
 
-	if Proxy.ProxyType <> ProxyNone then
+	if self.Socks.Enabled then
 	begin
-		Socks := TIdSocksInfo.Create(HTTP);
-		SSL.TransparentProxy := Socks;
-
-		case self.Proxy.ProxyType of
-			ProxySocks5:
-				begin
-					Socks.Version := svSocks5;
-				end;
-			ProxySocks4:
-				begin
-					Socks.Version := svSocks4;
-				end;
-		end;
-
-		Socks.Host := self.Proxy.Server;
-		Socks.Port := self.Proxy.Port;
-		if self.Proxy.user <> '' then
-		begin
-			Socks.Authentication := saUsernamePassword;
-			Socks.Username := Proxy.user;
-			Socks.password := Proxy.password;
-		end
-		else Socks.Authentication := saNoAuthentication;
-
-		Socks.Enabled := true;
+		// self.Socks.Owner := SSL;
+		SSL.TransparentProxy := self.Socks;
 	end;
 
 	HTTP.CookieManager := Cookie;
@@ -491,7 +513,6 @@ procedure TCloudMailRu.HTTPDestroy(var HTTP: TIdHTTP; var SSL: TIdSSLIOHandlerSo
 begin
 	HTTP.free;
 	SSL.free;
-	Socks.free;
 end;
 
 procedure TCloudMailRu.HttpProgress(ASender: TObject; AWorkMode: TWorkMode; AWorkCount: int64);
@@ -523,26 +544,6 @@ end;
 
 { PUBLIC METHODS }
 
-function TCloudMailRu.getUserSpace(var SpaceInfo: TCloudMailRuSpaceInfo): Boolean;
-var
-	URL: WideString;
-	JSON: WideString;
-begin
-	Result := false;
-	if not(Assigned(self)) then exit; // Проверка на вызов без инициализации
-	URL := 'https://cloud.mail.ru/api/v2/user/space?api=2&home=/&build=' + self.build + '&x-page-id=' + self.x_page_id + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&token=' + self.token + '&_=1433249148810';
-	try
-		Result := self.HTTPGet(URL, JSON);
-	except
-		on E: Exception do
-		begin
-			Log(MSGTYPE_IMPORTANTERROR, 'User space receiving error ' + E.Message);
-		end;
-	end;
-	if not Result then exit(false);
-	SpaceInfo := self.getUserSpaceFromJSON(JSON);
-end;
-
 function TCloudMailRu.deleteFile(path: WideString): Boolean;
 var
 	URL: WideString;
@@ -564,6 +565,22 @@ begin
 		end;
 	end;
 	PostData.free;
+end;
+
+procedure TCloudMailRu.logUserSpaceInfo;
+var
+	US: TCloudMailRuSpaceInfo;
+	QuotaInfo: WideString;
+begin
+	if self.getUserSpace(US) then
+	begin
+		if (US.overquota) then QuotaInfo := ' Warning: space quota exhausted!'
+		else QuotaInfo := '';
+
+		Log(MSGTYPE_DETAILS, 'Total space: ' + US.total.ToString() + 'Mb, used: ' + US.used.ToString() + 'Mb, free: ' + (US.total - US.used).ToString() + 'Mb.' + QuotaInfo);
+	end else begin
+		Log(MSGTYPE_IMPORTANTERROR, 'Error getting user space information for ' + self.user + '@' + self.domain);
+	end;
 end;
 
 function TCloudMailRu.getDir(path: WideString; var DirListing: TCloudMailRuDirListing): Boolean;
