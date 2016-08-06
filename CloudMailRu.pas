@@ -68,6 +68,7 @@ type
 		domain: WideString;
 		user: WideString;
 		password: WideString;
+		unlimited_filesize: Boolean;
 		token: WideString;
 		x_page_id: WideString;
 		build: WideString;
@@ -111,7 +112,7 @@ type
 		ExternalPluginNr: integer;
 		ExternalSourceName: PWideChar;
 		ExternalTargetName: PWideChar;
-		constructor Create(user, domain, password: WideString; Proxy: TProxySettings; ExternalProgressProc: TProgressProcW = nil; PluginNr: integer = -1; ExternalLogProc: TLogProcW = nil);
+		constructor Create(user, domain, password: WideString; unlimited_filesize: Boolean; Proxy: TProxySettings; ExternalProgressProc: TProgressProcW = nil; PluginNr: integer = -1; ExternalLogProc: TLogProcW = nil);
 		destructor Destroy; override;
 		function login(): Boolean;
 
@@ -136,7 +137,7 @@ implementation
 
 { CONSTRUCTOR/DESTRUCTOR }
 
-constructor TCloudMailRu.Create(user, domain, password: WideString; Proxy: TProxySettings; ExternalProgressProc: TProgressProcW; PluginNr: integer; ExternalLogProc: TLogProcW);
+constructor TCloudMailRu.Create(user, domain, password: WideString; unlimited_filesize: Boolean; Proxy: TProxySettings; ExternalProgressProc: TProgressProcW; PluginNr: integer; ExternalLogProc: TLogProcW);
 begin
 	try
 		self.Cookie := TIdCookieManager.Create();
@@ -175,6 +176,7 @@ begin
 		self.user := user;
 		self.password := password;
 		self.domain := domain;
+		self.unlimited_filesize := unlimited_filesize;
 		self.ExternalProgressProc := ExternalProgressProc;
 		self.ExternalLogProc := ExternalLogProc;
 
@@ -722,7 +724,11 @@ var
 	FileSize, Code, OperationStatus: integer;
 	OperationResult: integer;
 begin
-	if (SizeOfFile(localPath) > CLOUD_MAX_FILESIZE) then exit(FS_FILE_NOTSUPPORTED);
+	if (not(self.unlimited_filesize)) and (SizeOfFile(localPath) > CLOUD_MAX_FILESIZE) then
+	begin
+		Log(MSGTYPE_IMPORTANTERROR, 'File size > ' + CLOUD_MAX_FILESIZE.ToString() + ' bytes, ignored');
+		exit(FS_FILE_NOTSUPPORTED);
+	end;
 	FileSize := 0;
 	Result := FS_FILE_WRITEERROR;
 	if not(Assigned(self)) then exit; // Проверка на вызов без инициализации

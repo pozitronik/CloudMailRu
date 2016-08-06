@@ -32,6 +32,7 @@ type
 		ProxyPWDEdit: TEdit;
 		ProxyUserLabel: TLabel;
 		ProxyUserEdit: TEdit;
+		UnlimitedFileSizeCB: TCheckBox;
 		procedure FormShow(Sender: TObject);
 		procedure AccountsListClick(Sender: TObject);
 		procedure ApplyButtonClick(Sender: TObject);
@@ -88,7 +89,7 @@ begin
 		EmailEdit.Text := CASettings.email;
 		PasswordEdit.Text := CASettings.password;
 		UseTCPwdMngrCB.Checked := CASettings.use_tc_password_manager;
-
+		UnlimitedFileSizeCB.Checked := CASettings.unlimited_filesize;
 	end else begin
 		AccountNameEdit.Text := '';
 		EmailEdit.Text := '';
@@ -111,6 +112,7 @@ begin
 	CASettings.email := EmailEdit.Text;
 	CASettings.password := PasswordEdit.Text;
 	CASettings.use_tc_password_manager := UseTCPwdMngrCB.Checked;
+	CASettings.unlimited_filesize := UnlimitedFileSizeCB.Checked;
 	if CASettings.use_tc_password_manager then // просим TC сохранить пароль
 	begin
 		case self.CryptProc(self.PluginNum, self.CryptoNum, FS_CRYPT_SAVE_PASSWORD, PWideChar(CASettings.name), PWideChar(CASettings.password), SizeOf(CASettings.password)) of
@@ -215,7 +217,7 @@ begin
 		AccountsForm.ProxyServerEdit.Text := GetPluginSettings(SettingsIniFilePath).Proxy.Server;
 		AccountsForm.ProxyPortEdit.Text := GetPluginSettings(SettingsIniFilePath).Proxy.Port.ToString;
 		AccountsForm.ProxyUserEdit.Text := GetPluginSettings(SettingsIniFilePath).Proxy.User;
-		AccountsForm.ProxyPWDEdit.Text := GetPluginSettings(SettingsIniFilePath).Proxy.Password;
+		AccountsForm.ProxyPWDEdit.Text := GetPluginSettings(SettingsIniFilePath).Proxy.password;
 		{ global settings }
 		if RemoteName <> '' then AccountsForm.SelectedAccount := Copy(RemoteName, 2, length(RemoteName) - 1);
 		RegisterHotKey(AccountsForm.Handle, 1, 0, VK_ESCAPE);

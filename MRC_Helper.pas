@@ -19,6 +19,7 @@ type
 		name, email, password: WideString;
 		use_tc_password_manager: boolean;
 		user, domain: WideString; // parsed values from email
+		unlimited_filesize: boolean;
 	end;
 
 	TProxySettings = record
@@ -135,6 +136,7 @@ begin
 	Result.email := IniFile.ReadString(Result.name, 'email', '');
 	Result.password := IniFile.ReadString(Result.name, 'password', '');
 	Result.use_tc_password_manager := IniFile.ReadBool(Result.name, 'tc_pwd_mngr', false);
+	Result.unlimited_filesize := IniFile.ReadBool(Result.name, 'unlimited_filesize', false);
 	AtPos := AnsiPos('@', Result.email);
 	if AtPos <> 0 then
 	begin
@@ -154,6 +156,7 @@ begin
 	IniFile.WriteString(AccountSettings.name, 'email', AccountSettings.email);
 	IniFile.WriteString(AccountSettings.name, 'password', AccountSettings.password);
 	IniFile.WriteBool(AccountSettings.name, 'tc_pwd_mngr', AccountSettings.use_tc_password_manager);
+	IniFile.WriteBool(AccountSettings.name, 'unlimited_filesize', AccountSettings.unlimited_filesize);
 	IniFile.Destroy;
 end;
 

@@ -3,7 +3,7 @@ object AccountsForm: TAccountsForm
   Top = 0
   BorderStyle = bsDialog
   Caption = 'Cloud Accounts'
-  ClientHeight = 421
+  ClientHeight = 456
   ClientWidth = 489
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -153,7 +153,7 @@ object AccountsForm: TAccountsForm
   OnShow = FormShow
   DesignSize = (
     489
-    421)
+    456)
   PixelsPerInch = 96
   TextHeight = 13
   object UsernameLabel: TLabel
@@ -184,18 +184,19 @@ object AccountsForm: TAccountsForm
     Left = 0
     Top = 0
     Width = 225
-    Height = 417
+    Height = 452
     Anchors = [akLeft, akTop, akBottom]
     Caption = 'Accounts'
     TabOrder = 0
+    ExplicitHeight = 417
     DesignSize = (
       225
-      417)
+      452)
     object AccountsList: TListBox
       Left = 4
       Top = 16
       Width = 218
-      Height = 398
+      Height = 433
       Style = lbVirtual
       Anchors = [akLeft, akTop, akRight, akBottom]
       ExtendedSelect = False
@@ -203,6 +204,7 @@ object AccountsForm: TAccountsForm
       TabOrder = 0
       OnClick = AccountsListClick
       OnKeyUp = AccountsListKeyUp
+      ExplicitHeight = 398
     end
   end
   object EmailEdit: TEdit
@@ -243,25 +245,25 @@ object AccountsForm: TAccountsForm
   end
   object ApplyButton: TButton
     Left = 228
-    Top = 165
+    Top = 192
     Width = 75
-    Height = 25
+    Height = 27
     Caption = 'Add'
     TabOrder = 5
     OnClick = ApplyButtonClick
   end
   object DeleteButton: TButton
-    Left = 411
-    Top = 165
+    Left = 406
+    Top = 192
     Width = 75
-    Height = 25
+    Height = 27
     Caption = 'Delete'
     TabOrder = 6
     OnClick = DeleteButtonClick
   end
   object GlobalOptionsGroup: TGroupBox
     Left = 228
-    Top = 196
+    Top = 231
     Width = 258
     Height = 221
     Caption = 'Global options'
@@ -365,5 +367,14 @@ object AccountsForm: TAccountsForm
       TabOrder = 5
       OnChange = ProxyUserEditChange
     end
+  end
+  object UnlimitedFileSizeCB: TCheckBox
+    Left = 228
+    Top = 165
+    Width = 250
+    Height = 17
+    Anchors = [akLeft, akTop, akRight]
+    Caption = 'Ignore 2Gb limit (paid account)'
+    TabOrder = 8
   end
 end
