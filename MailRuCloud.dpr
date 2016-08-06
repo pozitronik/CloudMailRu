@@ -112,7 +112,7 @@ End;
 
 function FsGetBackgroundFlags: integer; stdcall;
 begin
-	Result := BG_DOWNLOAD + BG_UPLOAD; // + BG_ASK_USER;
+	Result := 0; // BG_DOWNLOAD + BG_UPLOAD; // + BG_ASK_USER;
 end;
 
 { DIRTY ANSI PEASANTS }
@@ -384,23 +384,23 @@ begin
 				end;
 			FS_STATUS_OP_PUT_SINGLE:
 				begin
-					ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
+					if RealPath.account <> '' then ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
 				end;
 			FS_STATUS_OP_PUT_MULTI:
 				begin
-					ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
+					if RealPath.account <> '' then ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
 				end;
 			FS_STATUS_OP_RENMOV_SINGLE:
 				begin
-					ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
+					if RealPath.account <> '' then ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
 				end;
 			FS_STATUS_OP_RENMOV_MULTI:
 				begin
-					ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
+					if RealPath.account <> '' then ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
 				end;
 			FS_STATUS_OP_DELETE:
 				begin
-					ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
+					if RealPath.account <> '' then ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
 				end;
 			FS_STATUS_OP_ATTRIB:
 				begin
@@ -425,23 +425,23 @@ begin
 				end;
 			FS_STATUS_OP_SYNC_GET:
 				begin
-					ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
+					if RealPath.account <> '' then ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
 				end;
 			FS_STATUS_OP_SYNC_PUT:
 				begin
-					ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
+					if RealPath.account <> '' then ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
 				end;
 			FS_STATUS_OP_SYNC_DELETE:
 				begin
-					ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
+					if RealPath.account <> '' then ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
 				end;
 			FS_STATUS_OP_GET_MULTI_THREAD:
 				begin
-					ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
+					if RealPath.account <> '' then ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
 				end;
 			FS_STATUS_OP_PUT_MULTI_THREAD:
 				begin
-					ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
+					if RealPath.account <> '' then ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
 				end;
 		end;
 		exit;
