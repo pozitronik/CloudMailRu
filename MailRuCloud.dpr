@@ -652,10 +652,7 @@ begin
 		begin
 			MyProgressProc(PluginNum, LocalName, PWideChar(RealPath.path), 100);
 			MyLogProc(PluginNum, MSGTYPE_TRANSFERCOMPLETE, PWideChar(LocalName + '->' + RemoteName));
-		end;
-		if not DeleteFileW(LocalName) then
-		begin // Не получилось удалить
-			exit(FS_FILE_NOTSUPPORTED);
+			if not DeleteFileW(LocalName) then exit(FS_FILE_NOTSUPPORTED);
 		end;
 	end;
 
