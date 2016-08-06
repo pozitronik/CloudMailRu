@@ -112,7 +112,7 @@ End;
 
 function FsGetBackgroundFlags: integer; stdcall;
 begin
-	Result := BG_DOWNLOAD + BG_UPLOAD + BG_ASK_USER;
+	Result := BG_DOWNLOAD + BG_UPLOAD; // + BG_ASK_USER;
 end;
 
 { DIRTY ANSI PEASANTS }
@@ -347,11 +347,31 @@ begin
 			FS_STATUS_OP_SEARCH_TEXT:
 				begin
 				end;
+			FS_STATUS_OP_SYNC_SEARCH:
+				begin
+				end;
+			FS_STATUS_OP_SYNC_GET:
+				begin
+				end;
+			FS_STATUS_OP_SYNC_PUT:
+				begin
+				end;
+			FS_STATUS_OP_SYNC_DELETE:
+				begin
+				end;
+			FS_STATUS_OP_GET_MULTI_THREAD:
+				begin
+				end;
+			FS_STATUS_OP_PUT_MULTI_THREAD:
+				begin
+				end;
 		end;
 		exit;
 	end;
 	if (InfoStartEnd = FS_STATUS_END) then
 	begin
+		RealPath := ExtractRealPath(RemoteDir);
+		if RealPath.account = '' then RealPath.account := ExtractFileName(ExcludeTrailingBackslash(RemoteDir));
 		case InfoOperation of
 			FS_STATUS_OP_LIST:
 				begin
@@ -364,23 +384,23 @@ begin
 				end;
 			FS_STATUS_OP_PUT_SINGLE:
 				begin
-					// ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
+					ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
 				end;
 			FS_STATUS_OP_PUT_MULTI:
 				begin
-					// ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
+					ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
 				end;
 			FS_STATUS_OP_RENMOV_SINGLE:
 				begin
-					// ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
+					ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
 				end;
 			FS_STATUS_OP_RENMOV_MULTI:
 				begin
-					// ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
+					ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
 				end;
 			FS_STATUS_OP_DELETE:
 				begin
-					// ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
+					ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
 				end;
 			FS_STATUS_OP_ATTRIB:
 				begin
@@ -399,6 +419,29 @@ begin
 				end;
 			FS_STATUS_OP_SEARCH_TEXT:
 				begin
+				end;
+			FS_STATUS_OP_SYNC_SEARCH:
+				begin
+				end;
+			FS_STATUS_OP_SYNC_GET:
+				begin
+					ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
+				end;
+			FS_STATUS_OP_SYNC_PUT:
+				begin
+					ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
+				end;
+			FS_STATUS_OP_SYNC_DELETE:
+				begin
+					ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
+				end;
+			FS_STATUS_OP_GET_MULTI_THREAD:
+				begin
+					ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
+				end;
+			FS_STATUS_OP_PUT_MULTI_THREAD:
+				begin
+					ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
 				end;
 		end;
 		exit;
@@ -807,7 +850,7 @@ end;
 exports FsGetDefRootName, FsInit, FsInitW, FsFindFirst, FsFindFirstW, FsFindNext, FsFindNextW, FsFindClose, FsGetFile, FsGetFileW, FsDisconnect, FsDisconnectW, FsStatusInfo, FsStatusInfoW, FsPutFile, FsPutFileW, FsDeleteFile, FsDeleteFileW, FsMkDir, FsMkDirW, FsRemoveDir, FsRemoveDirW, FsSetCryptCallback, FsSetCryptCallbackW, FsExecuteFileW, FsRenMovFile, FsRenMovFileW, FsGetBackgroundFlags, FsContentGetSupportedField, FsContentGetValue, FsContentGetValueW;
 
 begin
-	IsMultiThread := True;
+	IsMultiThread := true;
 	GetMem(tmp, max_path);
 	GetModuleFilename(hInstance, tmp, max_path);
 	PluginPath := tmp;
