@@ -1,4 +1,4 @@
-﻿unit CloudMailRu;
+unit CloudMailRu;
 
 interface
 

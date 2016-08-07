@@ -1,4 +1,4 @@
-library MailRuCloud;
+п»їlibrary MailRuCloud;
 
 {$R *.dres}
 
@@ -104,7 +104,7 @@ begin
 	end;
 end;
 
-procedure FsGetDefRootName(DefRootName: PAnsiChar; maxlen: integer); stdcall; // Процедура вызывается один раз при установке плагина
+procedure FsGetDefRootName(DefRootName: PAnsiChar; maxlen: integer); stdcall; // РџСЂРѕС†РµРґСѓСЂР° РІС‹Р·С‹РІР°РµС‚СЃСЏ РѕРґРёРЅ СЂР°Р· РїСЂРё СѓСЃС‚Р°РЅРѕРІРєРµ РїР»Р°РіРёРЅР°
 Begin
 	AnsiStrings.StrLCopy(DefRootName, PAnsiChar('CloudMailRu'), maxlen);
 	messagebox(FindTCWindow, PWideChar('Installation succeful'), 'Information', mb_ok + mb_iconinformation);
@@ -123,7 +123,7 @@ Begin
 		MyProgressProc := pProgressProc;
 		MyLogProc := pLogProc;
 		MyRequestProc := pRequestProc; }
-	// Вход в плагин.
+	// Р’С…РѕРґ РІ РїР»Р°РіРёРЅ.
 	Result := 0;
 
 end;
@@ -136,61 +136,61 @@ end;
 function FsFindFirst(path: PAnsiChar; var FindData: tWIN32FINDDATAA): thandle; stdcall;
 begin
 	SetLastError(ERROR_INVALID_FUNCTION);
-	Result := ERROR_INVALID_HANDLE; // Ansi-заглушка
+	Result := ERROR_INVALID_HANDLE; // Ansi-Р·Р°РіР»СѓС€РєР°
 end;
 
 function FsFindNext(Hdl: thandle; var FindData: tWIN32FINDDATAA): bool; stdcall;
 begin
 	SetLastError(ERROR_INVALID_FUNCTION);
-	Result := false; // Ansi-заглушка
+	Result := false; // Ansi-Р·Р°РіР»СѓС€РєР°
 end;
 
-function FsExecuteFile(MainWin: thandle; RemoteName, Verb: PAnsiChar): integer; stdcall; // Запуск файла
+function FsExecuteFile(MainWin: thandle; RemoteName, Verb: PAnsiChar): integer; stdcall; // Р—Р°РїСѓСЃРє С„Р°Р№Р»Р°
 Begin
 	SetLastError(ERROR_INVALID_FUNCTION);
-	Result := FS_EXEC_ERROR; // Ansi-заглушка
+	Result := FS_EXEC_ERROR; // Ansi-Р·Р°РіР»СѓС€РєР°
 End;
 
-function FsGetFile(RemoteName, LocalName: PAnsiChar; CopyFlags: integer; RemoteInfo: pRemoteInfo): integer; stdcall; // Копирование файла из файловой системы плагина
+function FsGetFile(RemoteName, LocalName: PAnsiChar; CopyFlags: integer; RemoteInfo: pRemoteInfo): integer; stdcall; // РљРѕРїРёСЂРѕРІР°РЅРёРµ С„Р°Р№Р»Р° РёР· С„Р°Р№Р»РѕРІРѕР№ СЃРёСЃС‚РµРјС‹ РїР»Р°РіРёРЅР°
 begin
 	SetLastError(ERROR_INVALID_FUNCTION);
-	Result := FS_FILE_NOTSUPPORTED; // Ansi-заглушка
+	Result := FS_FILE_NOTSUPPORTED; // Ansi-Р·Р°РіР»СѓС€РєР°
 end;
 
-function FsPutFile(LocalName, RemoteName: PAnsiChar; CopyFlags: integer): integer; stdcall; // Копирование файла в файловую систему плагина
+function FsPutFile(LocalName, RemoteName: PAnsiChar; CopyFlags: integer): integer; stdcall; // РљРѕРїРёСЂРѕРІР°РЅРёРµ С„Р°Р№Р»Р° РІ С„Р°Р№Р»РѕРІСѓСЋ СЃРёСЃС‚РµРјСѓ РїР»Р°РіРёРЅР°
 begin
 	SetLastError(ERROR_INVALID_FUNCTION);
-	Result := FS_FILE_NOTSUPPORTED; // Ansi-заглушка
+	Result := FS_FILE_NOTSUPPORTED; // Ansi-Р·Р°РіР»СѓС€РєР°
 end;
 
-function FsDeleteFile(RemoteName: PAnsiChar): bool; stdcall; // Удаление файла из файловой ссистемы плагина
+function FsDeleteFile(RemoteName: PAnsiChar): bool; stdcall; // РЈРґР°Р»РµРЅРёРµ С„Р°Р№Р»Р° РёР· С„Р°Р№Р»РѕРІРѕР№ СЃСЃРёСЃС‚РµРјС‹ РїР»Р°РіРёРЅР°
 Begin
-	SetLastError(ERROR_INVALID_FUNCTION); // Ansi-заглушка
+	SetLastError(ERROR_INVALID_FUNCTION); // Ansi-Р·Р°РіР»СѓС€РєР°
 	Result := false;
 End;
 
 function FsRenMovFile(OldName: PAnsiChar; NewName: PAnsiChar; Move: Boolean; OverWrite: Boolean; ri: pRemoteInfo): integer;
 begin
 	SetLastError(ERROR_INVALID_FUNCTION);
-	Result := FS_FILE_NOTSUPPORTED; // Ansi-заглушка
+	Result := FS_FILE_NOTSUPPORTED; // Ansi-Р·Р°РіР»СѓС€РєР°
 end;
 
 function FsDisconnect(DisconnectRoot: PAnsiChar): bool; stdcall;
 begin
 	SetLastError(ERROR_INVALID_FUNCTION);
-	Result := false; // ansi-заглушка
+	Result := false; // ansi-Р·Р°РіР»СѓС€РєР°
 end;
 
 function FsMkDir(path: PAnsiChar): bool; stdcall;
 begin
 	SetLastError(ERROR_INVALID_FUNCTION);
-	Result := false; // ansi-заглушка
+	Result := false; // ansi-Р·Р°РіР»СѓС€РєР°
 end;
 
 function FsRemoveDir(RemoteName: PAnsiChar): bool; stdcall;
 begin
 	SetLastError(ERROR_INVALID_FUNCTION);
-	Result := false; // ansi-заглушка
+	Result := false; // ansi-Р·Р°РіР»СѓС€РєР°
 end;
 
 procedure FsSetCryptCallback(PCryptProc: TCryptProcW; CryptoNr: integer; Flags: integer); stdcall;
@@ -284,7 +284,7 @@ end;
 
 { GLORIOUS UNICODE MASTER RACE }
 
-function FsInitW(PluginNr: integer; pProgressProc: TProgressProcW; pLogProc: TLogProcW; pRequestProc: TRequestProcW): integer; stdcall; // Вход в плагин.
+function FsInitW(PluginNr: integer; pProgressProc: TProgressProcW; pLogProc: TLogProcW; pRequestProc: TRequestProcW): integer; stdcall; // Р’С…РѕРґ РІ РїР»Р°РіРёРЅ.
 Begin
 	PluginNum := PluginNr;
 	MyProgressProc := pProgressProc;
@@ -294,7 +294,7 @@ Begin
 	ConnectionManager := TConnectionManager.Create(AccountsIniFilePath, PluginNum, MyProgressProc, MyLogProc, GetPluginSettings(SettingsIniFilePath).Proxy);
 end;
 
-procedure FsStatusInfoW(RemoteDir: PWideChar; InfoStartEnd, InfoOperation: integer); stdcall; // Начало и конец операций FS
+procedure FsStatusInfoW(RemoteDir: PWideChar; InfoStartEnd, InfoOperation: integer); stdcall; // РќР°С‡Р°Р»Рѕ Рё РєРѕРЅРµС† РѕРїРµСЂР°С†РёР№ FS
 var
 	RealPath: TRealPath;
 	getResult: integer;
@@ -449,7 +449,7 @@ begin
 end;
 
 function FsFindFirstW(path: PWideChar; var FindData: tWIN32FINDDATAW): thandle; stdcall;
-var // Получение первого файла в папке. Result тоталом не используется (можно использовать для работы плагина).
+var // РџРѕР»СѓС‡РµРЅРёРµ РїРµСЂРІРѕРіРѕ С„Р°Р№Р»Р° РІ РїР°РїРєРµ. Result С‚РѕС‚Р°Р»РѕРј РЅРµ РёСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ (РјРѕР¶РЅРѕ РёСЃРїРѕР»СЊР·РѕРІР°С‚СЊ РґР»СЏ СЂР°Р±РѕС‚С‹ РїР»Р°РіРёРЅР°).
 	Sections: TStringList;
 	RealPath: TRealPath;
 	getResult: integer;
@@ -457,7 +457,7 @@ begin
 	Result := 0;
 	GlobalPath := path;
 	if GlobalPath = '\' then
-	begin // список соединений
+	begin // СЃРїРёСЃРѕРє СЃРѕРµРґРёРЅРµРЅРёР№
 		Sections := TStringList.Create;
 		GetAccountsListFromIniFile(AccountsIniFilePath, Sections);
 
@@ -466,7 +466,7 @@ begin
 			FindData := FindData_emptyDir(Sections.Strings[0]);
 			FileCounter := 1;
 		end else begin
-			Result := INVALID_HANDLE_VALUE; // Нельзя использовать exit
+			Result := INVALID_HANDLE_VALUE; // РќРµР»СЊР·СЏ РёСЃРїРѕР»СЊР·РѕРІР°С‚СЊ exit
 			SetLastError(ERROR_NO_MORE_FILES);
 		end;
 		Sections.Free;
@@ -480,7 +480,7 @@ begin
 
 		if Length(CurrentListing) = 0 then
 		begin
-			FindData := FindData_emptyDir(); // воркароунд бага с невозможностью входа в пустой каталог, см. http://www.ghisler.ch/board/viewtopic.php?t=42399
+			FindData := FindData_emptyDir(); // РІРѕСЂРєР°СЂРѕСѓРЅРґ Р±Р°РіР° СЃ РЅРµРІРѕР·РјРѕР¶РЅРѕСЃС‚СЊСЋ РІС…РѕРґР° РІ РїСѓСЃС‚РѕР№ РєР°С‚Р°Р»РѕРі, СЃРј. http://www.ghisler.ch/board/viewtopic.php?t=42399
 			Result := 0;
 			SetLastError(ERROR_NO_MORE_FILES);
 		end else begin
@@ -508,7 +508,7 @@ begin
 		else Result := false;
 		Sections.Free;
 	end else begin
-		// Получение последующих файлов в папке (вызывается до тех пор, пока не вернёт false).
+		// РџРѕР»СѓС‡РµРЅРёРµ РїРѕСЃР»РµРґСѓСЋС‰РёС… С„Р°Р№Р»РѕРІ РІ РїР°РїРєРµ (РІС‹Р·С‹РІР°РµС‚СЃСЏ РґРѕ С‚РµС… РїРѕСЂ, РїРѕРєР° РЅРµ РІРµСЂРЅС‘С‚ false).
 		if (Length(CurrentListing) > FileCounter) then
 		begin
 			FindData := CloudMailRuDirListingItemToFindData(CurrentListing[FileCounter]);
@@ -523,13 +523,13 @@ begin
 end;
 
 function FsFindClose(Hdl: thandle): integer; stdcall;
-Begin // Завершение получения списка файлов. Result тоталом не используется (всегда равен 0)
-	SetLength(CurrentListing, 0); // Пусть будет
+Begin // Р—Р°РІРµСЂС€РµРЅРёРµ РїРѕР»СѓС‡РµРЅРёСЏ СЃРїРёСЃРєР° С„Р°Р№Р»РѕРІ. Result С‚РѕС‚Р°Р»РѕРј РЅРµ РёСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ (РІСЃРµРіРґР° СЂР°РІРµРЅ 0)
+	SetLength(CurrentListing, 0); // РџСѓСЃС‚СЊ Р±СѓРґРµС‚
 	Result := 0;
 	FileCounter := 0;
 end;
 
-function FsExecuteFileW(MainWin: thandle; RemoteName, Verb: PWideChar): integer; stdcall; // Запуск файла
+function FsExecuteFileW(MainWin: thandle; RemoteName, Verb: PWideChar): integer; stdcall; // Р—Р°РїСѓСЃРє С„Р°Р№Р»Р°
 var
 	RealPath: TRealPath;
 	CurrentItem: TCloudMailRuDirListingItem;
@@ -555,7 +555,7 @@ Begin
 				begin
 					MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, PWideChar('Cant find file under cursor!'));
 				end;
-			end; // Не рапортуем, это будет уровнем выше
+			end; // РќРµ СЂР°РїРѕСЂС‚СѓРµРј, СЌС‚Рѕ Р±СѓРґРµС‚ СѓСЂРѕРІРЅРµРј РІС‹С€Рµ
 
 		end;
 	end else if copy(Verb, 1, 5) = 'chmod' then
@@ -565,7 +565,7 @@ Begin
 	end;
 End;
 
-function FsGetFileW(RemoteName, LocalName: PWideChar; CopyFlags: integer; RemoteInfo: pRemoteInfo): integer; stdcall; // Копирование файла из файловой системы плагина
+function FsGetFileW(RemoteName, LocalName: PWideChar; CopyFlags: integer; RemoteInfo: pRemoteInfo): integer; stdcall; // РљРѕРїРёСЂРѕРІР°РЅРёРµ С„Р°Р№Р»Р° РёР· С„Р°Р№Р»РѕРІРѕР№ СЃРёСЃС‚РµРјС‹ РїР»Р°РіРёРЅР°
 var
 	RealPath: TRealPath;
 	getResult: integer;
@@ -627,7 +627,7 @@ begin
 
 	if CheckFlag(FS_COPYFLAGS_OVERWRITE, CopyFlags) then
 	begin
-		if ConnectionManager.get(RealPath.account, getResult).deleteFile(RealPath.path) then // Неизвестно, как перезаписать файл черз API, но мы можем его удалить
+		if ConnectionManager.get(RealPath.account, getResult).deleteFile(RealPath.path) then // РќРµРёР·РІРµСЃС‚РЅРѕ, РєР°Рє РїРµСЂРµР·Р°РїРёСЃР°С‚СЊ С„Р°Р№Р» С‡РµСЂР· API, РЅРѕ РјС‹ РјРѕР¶РµРј РµРіРѕ СѓРґР°Р»РёС‚СЊ
 		begin
 			Result := ConnectionManager.get(RealPath.account, getResult).putFile(WideString(LocalName), RealPath.path);
 			if Result = FS_FILE_OK then
@@ -641,7 +641,7 @@ begin
 
 		end;
 
-	end else if CheckFlag(FS_COPYFLAGS_EXISTS_SAMECASE, CopyFlags) or CheckFlag(FS_COPYFLAGS_EXISTS_DIFFERENTCASE, CopyFlags) then // Облако не поддерживает разные регистры
+	end else if CheckFlag(FS_COPYFLAGS_EXISTS_SAMECASE, CopyFlags) or CheckFlag(FS_COPYFLAGS_EXISTS_DIFFERENTCASE, CopyFlags) then // РћР±Р»Р°РєРѕ РЅРµ РїРѕРґРґРµСЂР¶РёРІР°РµС‚ СЂР°Р·РЅС‹Рµ СЂРµРіРёСЃС‚СЂС‹
 	begin
 		exit(FS_FILE_EXISTS);
 	end;
@@ -668,7 +668,7 @@ begin
 
 end;
 
-function FsDeleteFileW(RemoteName: PWideChar): bool; stdcall; // Удаление файла из файловой ссистемы плагина
+function FsDeleteFileW(RemoteName: PWideChar): bool; stdcall; // РЈРґР°Р»РµРЅРёРµ С„Р°Р№Р»Р° РёР· С„Р°Р№Р»РѕРІРѕР№ СЃСЃРёСЃС‚РµРјС‹ РїР»Р°РіРёРЅР°
 var
 	RealPath: TRealPath;
 	getResult: integer;
@@ -705,9 +705,9 @@ var
 Begin
 	OldRealPath := ExtractRealPath(WideString(OldName));
 	NewRealPath := ExtractRealPath(WideString(NewName));
-	if OverWrite then // непонятно, но TC не показывает диалог перезаписи при FS_FILE_EXISTS
+	if OverWrite then // РЅРµРїРѕРЅСЏС‚РЅРѕ, РЅРѕ TC РЅРµ РїРѕРєР°Р·С‹РІР°РµС‚ РґРёР°Р»РѕРі РїРµСЂРµР·Р°РїРёСЃРё РїСЂРё FS_FILE_EXISTS
 	begin
-		if ConnectionManager.get(OldRealPath.account, getResult).deleteFile(OldRealPath.path) then // мы не умеем перезаписывать, но мы можем удалить прежний файл
+		if ConnectionManager.get(OldRealPath.account, getResult).deleteFile(OldRealPath.path) then // РјС‹ РЅРµ СѓРјРµРµРј РїРµСЂРµР·Р°РїРёСЃС‹РІР°С‚СЊ, РЅРѕ РјС‹ РјРѕР¶РµРј СѓРґР°Р»РёС‚СЊ РїСЂРµР¶РЅРёР№ С„Р°Р№Р»
 		begin
 			Result := ConnectionManager.get(OldRealPath.account, getResult).mvFile(OldRealPath.path, NewRealPath.path);
 		end else begin
@@ -748,17 +748,17 @@ begin
 	RealPath := ExtractRealPath(FileName);
 	if (RealPath.path = '') then exit(ft_nosuchfield);
 
-	Item := FindListingItemByName(CurrentListing, RealPath.path); // сначала попробуем найти поле в имеющемся списке
-	if Item.home = '' then // если там его нет (нажали пробел на папке, например), то запросим в болаке напрямую
+	Item := FindListingItemByName(CurrentListing, RealPath.path); // СЃРЅР°С‡Р°Р»Р° РїРѕРїСЂРѕР±СѓРµРј РЅР°Р№С‚Рё РїРѕР»Рµ РІ РёРјРµСЋС‰РµРјСЃСЏ СЃРїРёСЃРєРµ
+	if Item.home = '' then // РµСЃР»Рё С‚Р°Рј РµРіРѕ РЅРµС‚ (РЅР°Р¶Р°Р»Рё РїСЂРѕР±РµР» РЅР° РїР°РїРєРµ, РЅР°РїСЂРёРјРµСЂ), С‚Рѕ Р·Р°РїСЂРѕСЃРёРј РІ Р±РѕР»Р°РєРµ РЅР°РїСЂСЏРјСѓСЋ
 	begin
 		if ConnectionManager.get(RealPath.account, getResult).statusFile(RealPath.path, Item) then
 		begin
 			if Item.home = '' then
 			begin
-				MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, PWideChar('Cant find file ' + RealPath.path)); { Такого быть не может, но... }
+				MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, PWideChar('Cant find file ' + RealPath.path)); { РўР°РєРѕРіРѕ Р±С‹С‚СЊ РЅРµ РјРѕР¶РµС‚, РЅРѕ... }
 				exit(ft_nosuchfield);
 			end;
-		end; // Не рапортуем, это будет уровнем выше
+		end; // РќРµ СЂР°РїРѕСЂС‚СѓРµРј, СЌС‚Рѕ Р±СѓРґРµС‚ СѓСЂРѕРІРЅРµРј РІС‹С€Рµ
 	end;
 	case FieldIndex of
 		0:

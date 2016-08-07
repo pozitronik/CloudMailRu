@@ -113,18 +113,18 @@ begin
 	CASettings.password := PasswordEdit.Text;
 	CASettings.use_tc_password_manager := UseTCPwdMngrCB.Checked;
 	CASettings.unlimited_filesize := UnlimitedFileSizeCB.Checked;
-	if CASettings.use_tc_password_manager then // просим TC сохранить пароль
+	if CASettings.use_tc_password_manager then // РїСЂРѕСЃРёРј TC СЃРѕС…СЂР°РЅРёС‚СЊ РїР°СЂРѕР»СЊ
 	begin
 		case self.CryptProc(self.PluginNum, self.CryptoNum, FS_CRYPT_SAVE_PASSWORD, PWideChar(CASettings.name), PWideChar(CASettings.password), SizeOf(CASettings.password)) of
 			FS_FILE_OK:
-				begin // TC скушал пароль
+				begin // TC СЃРєСѓС€Р°Р» РїР°СЂРѕР»СЊ
 					CASettings.password := '';
 				end;
-			FS_FILE_NOTSUPPORTED: // нажали отмену на вводе мастер-пароля
-				begin // просто выйдем
+			FS_FILE_NOTSUPPORTED: // РЅР°Р¶Р°Р»Рё РѕС‚РјРµРЅСѓ РЅР° РІРІРѕРґРµ РјР°СЃС‚РµСЂ-РїР°СЂРѕР»СЏ
+				begin // РїСЂРѕСЃС‚Рѕ РІС‹Р№РґРµРј
 					exit();
 				end;
-			FS_FILE_WRITEERROR: // Сохранение не получилось по другой причине. Сохранять не будем, выйдем
+			FS_FILE_WRITEERROR: // РЎРѕС…СЂР°РЅРµРЅРёРµ РЅРµ РїРѕР»СѓС‡РёР»РѕСЃСЊ РїРѕ РґСЂСѓРіРѕР№ РїСЂРёС‡РёРЅРµ. РЎРѕС…СЂР°РЅСЏС‚СЊ РЅРµ Р±СѓРґРµРј, РІС‹Р№РґРµРј
 				begin
 					exit();
 				end;

@@ -39,7 +39,7 @@ function Implode(S: TStringList; Delimiter: Char): WideString;
 function ExtractRealPath(VirtualPath: WideString): TRealPath;
 function SizeOfFile(const FileName: String): Int64;
 function DateTimeToUnix(ConvDate: TDateTime): Integer;
-function CheckFlag(Check: Byte; Flags: Integer): boolean; // Определяет, установлен ли указанный бит
+function CheckFlag(Check: Byte; Flags: Integer): boolean; // РћРїСЂРµРґРµР»СЏРµС‚, СѓСЃС‚Р°РЅРѕРІР»РµРЅ Р»Рё СѓРєР°Р·Р°РЅРЅС‹Р№ Р±РёС‚
 function DateTimeToFileTime(FileTime: TDateTime): TFileTime;
 function GetAccountSettingsFromIniFile(IniFilePath: WideString; AccountName: WideString): TAccountSettings;
 function SetAccountSettingsToIniFile(IniFilePath: WideString; AccountSettings: TAccountSettings): boolean;
@@ -71,7 +71,7 @@ begin
 	List := TStringList.Create;
 	ExtractStrings(['\'], [], PWideChar(VirtualPath), List);
 	if List.Count < 2 then
-	begin // в виртуальной ФС это каталог первого уровня
+	begin // РІ РІРёСЂС‚СѓР°Р»СЊРЅРѕР№ Р¤РЎ СЌС‚Рѕ РєР°С‚Р°Р»РѕРі РїРµСЂРІРѕРіРѕ СѓСЂРѕРІРЅСЏ
 		Result.account := '';
 		Result.path := '';
 	end else begin
@@ -93,7 +93,7 @@ begin
 	Result := Round((ConvDate - UnixStartDate) * 86400);
 end;
 
-function CheckFlag(Check: Byte; Flags: LongInt): boolean; // Определяет, установлен ли указанный бит
+function CheckFlag(Check: Byte; Flags: LongInt): boolean; // РћРїСЂРµРґРµР»СЏРµС‚, СѓСЃС‚Р°РЅРѕРІР»РµРЅ Р»Рё СѓРєР°Р·Р°РЅРЅС‹Р№ Р±РёС‚
 begin
 	Result := (Flags and Check) <> 0;
 end;
@@ -192,7 +192,7 @@ begin
 	IniFile.Destroy;
 end;
 
-function SetPluginSettings(IniFilePath: WideString; PluginSettings: TPluginSettings): boolean; { Не используется }
+function SetPluginSettings(IniFilePath: WideString; PluginSettings: TPluginSettings): boolean; { РќРµ РёСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ }
 var
 	IniFile: TIniFile;
 begin
@@ -257,7 +257,7 @@ end;
 
 function FindTCWindow: HWND;
 begin
-	Result := FindWindow('TTOTAL_CMD', nil); { Хендл отдаётся корректно даже при нескольких запущенных тоталах }
+	Result := FindWindow('TTOTAL_CMD', nil); { РҐРµРЅРґР» РѕС‚РґР°С‘С‚СЃСЏ РєРѕСЂСЂРµРєС‚РЅРѕ РґР°Р¶Рµ РїСЂРё РЅРµСЃРєРѕР»СЊРєРёС… Р·Р°РїСѓС‰РµРЅРЅС‹С… С‚РѕС‚Р°Р»Р°С… }
 end;
 
 end.

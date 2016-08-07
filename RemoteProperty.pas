@@ -42,7 +42,7 @@ var
 	PublicLink: WideString;
 begin
 	WebLink.Text := 'Wait for it...';
-	AccessCB.Enabled := false; // блокируем во избежание повторных кликов
+	AccessCB.Enabled := false; // Р±Р»РѕРєРёСЂСѓРµРј РІРѕ РёР·Р±РµР¶Р°РЅРёРµ РїРѕРІС‚РѕСЂРЅС‹С… РєР»РёРєРѕРІ
 	if AccessCB.checked then
 	begin
 		if Self.Cloud.publishFile(Props.home, PublicLink) then

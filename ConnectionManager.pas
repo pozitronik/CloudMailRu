@@ -1,7 +1,7 @@
 unit ConnectionManager;
 
-{ Обеспечиваем управление множественными поключениями без необходимости постоянных переподключений. При первом обращении нужное подключение создаётся,
-	при последующих - отдаются уже созданные. }
+{ РћР±РµСЃРїРµС‡РёРІР°РµРј СѓРїСЂР°РІР»РµРЅРёРµ РјРЅРѕР¶РµСЃС‚РІРµРЅРЅС‹РјРё РїРѕРєР»СЋС‡РµРЅРёСЏРјРё Р±РµР· РЅРµРѕР±С…РѕРґРёРјРѕСЃС‚Рё РїРѕСЃС‚РѕСЏРЅРЅС‹С… РїРµСЂРµРїРѕРґРєР»СЋС‡РµРЅРёР№. РџСЂРё РїРµСЂРІРѕРј РѕР±СЂР°С‰РµРЅРёРё РЅСѓР¶РЅРѕРµ РїРѕРґРєР»СЋС‡РµРЅРёРµ СЃРѕР·РґР°С‘С‚СЃСЏ,
+	РїСЂРё РїРѕСЃР»РµРґСѓСЋС‰РёС… - РѕС‚РґР°СЋС‚СЃСЏ СѓР¶Рµ СЃРѕР·РґР°РЅРЅС‹Рµ. }
 
 interface
 
@@ -26,21 +26,21 @@ type
 		MyProgressProc: TProgressProcW;
 		MyLogProc: TLogProcW;
 
-		function ConnectionExists(connectionName: WideString): integer; // проверяет существование подключение
-		function new(connectionName: WideString): integer; // Добавляет подключение в пул
-		function GetMyPasswordNow(var AccountSettings: TAccountSettings): boolean; // Получает пароль из файла, из тоталовского менеджера или запрашивает прямой ввод
+		function ConnectionExists(connectionName: WideString): integer; // РїСЂРѕРІРµСЂСЏРµС‚ СЃСѓС‰РµСЃС‚РІРѕРІР°РЅРёРµ РїРѕРґРєР»СЋС‡РµРЅРёРµ
+		function new(connectionName: WideString): integer; // Р”РѕР±Р°РІР»СЏРµС‚ РїРѕРґРєР»СЋС‡РµРЅРёРµ РІ РїСѓР»
+		function GetMyPasswordNow(var AccountSettings: TAccountSettings): boolean; // РџРѕР»СѓС‡Р°РµС‚ РїР°СЂРѕР»СЊ РёР· С„Р°Р№Р»Р°, РёР· С‚РѕС‚Р°Р»РѕРІСЃРєРѕРіРѕ РјРµРЅРµРґР¶РµСЂР° РёР»Рё Р·Р°РїСЂР°С€РёРІР°РµС‚ РїСЂСЏРјРѕР№ РІРІРѕРґ
 
 	public
 		CryptoNum: integer;
 		MyCryptProc: TCryptProcW;
 		constructor Create(IniFileName: WideString; PluginNum: integer; MyProgressProc: TProgressProcW; MyLogProc: TLogProcW; ProxySettings: TProxySettings);
 		destructor Destroy(); override;
-		function get(connectionName: WideString; var OperationResult: integer; doInit: boolean = true): TCloudMailRu; // возвращает готовое подклчение по имени
+		function get(connectionName: WideString; var OperationResult: integer; doInit: boolean = true): TCloudMailRu; // РІРѕР·РІСЂР°С‰Р°РµС‚ РіРѕС‚РѕРІРѕРµ РїРѕРґРєР»С‡РµРЅРёРµ РїРѕ РёРјРµРЅРё
 		function set_(connectionName: WideString; cloud: TCloudMailRu): boolean;
-		function init(connectionName: WideString; ProxySettings: TProxySettings): integer; // инициализирует подключение по его имени, возвращает код состояния
-		function free(connectionName: WideString): integer; // освобождает подключение по его имени, возвращает код состояния
-		function freeAll: integer; // освобождает все подключения
-		function initialized(connectionName: WideString): boolean; // Проверяет, инициализировано ли подключение
+		function init(connectionName: WideString; ProxySettings: TProxySettings): integer; // РёРЅРёС†РёР°Р»РёР·РёСЂСѓРµС‚ РїРѕРґРєР»СЋС‡РµРЅРёРµ РїРѕ РµРіРѕ РёРјРµРЅРё, РІРѕР·РІСЂР°С‰Р°РµС‚ РєРѕРґ СЃРѕСЃС‚РѕСЏРЅРёСЏ
+		function free(connectionName: WideString): integer; // РѕСЃРІРѕР±РѕР¶РґР°РµС‚ РїРѕРґРєР»СЋС‡РµРЅРёРµ РїРѕ РµРіРѕ РёРјРµРЅРё, РІРѕР·РІСЂР°С‰Р°РµС‚ РєРѕРґ СЃРѕСЃС‚РѕСЏРЅРёСЏ
+		function freeAll: integer; // РѕСЃРІРѕР±РѕР¶РґР°РµС‚ РІСЃРµ РїРѕРґРєР»СЋС‡РµРЅРёСЏ
+		function initialized(connectionName: WideString): boolean; // РџСЂРѕРІРµСЂСЏРµС‚, РёРЅРёС†РёР°Р»РёР·РёСЂРѕРІР°РЅРѕ Р»Рё РїРѕРґРєР»СЋС‡РµРЅРёРµ
 
 	end;
 
@@ -79,7 +79,7 @@ begin
 		if not initialized(connectionName) then OperationResult := init(connectionName,self.Proxy);
 		if (OperationResult = CLOUD_OPERATION_OK) then result := get(connectionName, OperationResult, false);
 	end;
-	{ если подключиться не удалось, все функции облака будут возвращать негативный результат, но без AV }
+	{ РµСЃР»Рё РїРѕРґРєР»СЋС‡РёС‚СЊСЃСЏ РЅРµ СѓРґР°Р»РѕСЃСЊ, РІСЃРµ С„СѓРЅРєС†РёРё РѕР±Р»Р°РєР° Р±СѓРґСѓС‚ РІРѕР·РІСЂР°С‰Р°С‚СЊ РЅРµРіР°С‚РёРІРЅС‹Р№ СЂРµР·СѓР»СЊС‚Р°С‚, РЅРѕ Р±РµР· AV }
 end;
 
 function TConnectionManager.set_(connectionName: WideString; cloud: TCloudMailRu): boolean;
@@ -171,20 +171,20 @@ var
 	buf: PWideChar;
 begin
 	if AccountSettings.use_tc_password_manager then
-	begin // пароль должен браться из TC
+	begin // РїР°СЂРѕР»СЊ РґРѕР»Р¶РµРЅ Р±СЂР°С‚СЊСЃСЏ РёР· TC
 		GetMem(buf, 1024);
-		CryptResult := MyCryptProc(PluginNum, CryptoNum, FS_CRYPT_LOAD_PASSWORD_NO_UI, PWideChar(AccountSettings.Name), buf, 1024); // Пытаемся взять пароль по-тихому
+		CryptResult := MyCryptProc(PluginNum, CryptoNum, FS_CRYPT_LOAD_PASSWORD_NO_UI, PWideChar(AccountSettings.Name), buf, 1024); // РџС‹С‚Р°РµРјСЃСЏ РІР·СЏС‚СЊ РїР°СЂРѕР»СЊ РїРѕ-С‚РёС…РѕРјСѓ
 		if CryptResult = FS_FILE_NOTFOUND then
 		begin
 			MyLogProc(PluginNum, msgtype_details, PWideChar('No master password entered yet'));
 			CryptResult := MyCryptProc(PluginNum, CryptoNum, FS_CRYPT_LOAD_PASSWORD, PWideChar(AccountSettings.Name), buf, 1024);
 		end;
-		if CryptResult = FS_FILE_OK then // Успешно получили пароль
+		if CryptResult = FS_FILE_OK then // РЈСЃРїРµС€РЅРѕ РїРѕР»СѓС‡РёР»Рё РїР°СЂРѕР»СЊ
 		begin
 			AccountSettings.password := buf;
 			// Result := true;
 		end;
-		if CryptResult = FS_FILE_NOTSUPPORTED then // пользователь отменил ввод главного пароля
+		if CryptResult = FS_FILE_NOTSUPPORTED then // РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ РѕС‚РјРµРЅРёР» РІРІРѕРґ РіР»Р°РІРЅРѕРіРѕ РїР°СЂРѕР»СЏ
 		begin
 			MyLogProc(PluginNum, msgtype_importanterror, PWideChar('CryptProc returns error: Decrypt failed'));
 		end;
@@ -193,45 +193,45 @@ begin
 			MyLogProc(PluginNum, msgtype_importanterror, PWideChar('CryptProc returns error: Password not found in password store'));
 		end;
 		FreeMemory(buf);
-	end; // else // ничего не делаем, пароль уже должен быть в настройках (взят в открытом виде из инишника)
+	end; // else // РЅРёС‡РµРіРѕ РЅРµ РґРµР»Р°РµРј, РїР°СЂРѕР»СЊ СѓР¶Рµ РґРѕР»Р¶РµРЅ Р±С‹С‚СЊ РІ РЅР°СЃС‚СЂРѕР№РєР°С… (РІР·СЏС‚ РІ РѕС‚РєСЂС‹С‚РѕРј РІРёРґРµ РёР· РёРЅРёС€РЅРёРєР°)
 
-	if AccountSettings.password = '' then // но пароля нет, не в инишнике, не в тотале
+	if AccountSettings.password = '' then // РЅРѕ РїР°СЂРѕР»СЏ РЅРµС‚, РЅРµ РІ РёРЅРёС€РЅРёРєРµ, РЅРµ РІ С‚РѕС‚Р°Р»Рµ
 	begin
 		AskResult := TAskPasswordForm.AskPassword(FindTCWindow, AccountSettings.Name, AccountSettings.password, AccountSettings.use_tc_password_manager);
 		if AskResult <> mrOK then
-		begin // не указали пароль в диалоге
-			exit(false); // отказались вводить пароль
+		begin // РЅРµ СѓРєР°Р·Р°Р»Рё РїР°СЂРѕР»СЊ РІ РґРёР°Р»РѕРіРµ
+			exit(false); // РѕС‚РєР°Р·Р°Р»РёСЃСЊ РІРІРѕРґРёС‚СЊ РїР°СЂРѕР»СЊ
 		end else begin
 			if AccountSettings.use_tc_password_manager then
 			begin
 				case MyCryptProc(PluginNum, CryptoNum, FS_CRYPT_SAVE_PASSWORD, PWideChar(AccountSettings.Name), PWideChar(AccountSettings.password), SizeOf(AccountSettings.password)) of
 					FS_FILE_OK:
-						begin // TC скушал пароль, запомним в инишник галочку
+						begin // TC СЃРєСѓС€Р°Р» РїР°СЂРѕР»СЊ, Р·Р°РїРѕРјРЅРёРј РІ РёРЅРёС€РЅРёРє РіР°Р»РѕС‡РєСѓ
 							MyLogProc(PluginNum, msgtype_details, PWideChar('Password saved in TC password manager'));
 							TmpString := AccountSettings.password;
 							AccountSettings.password := '';
 							SetAccountSettingsToIniFile(IniFileName, AccountSettings);
 							AccountSettings.password := TmpString;
 						end;
-					FS_FILE_NOTSUPPORTED: // Сохранение не получилось
+					FS_FILE_NOTSUPPORTED: // РЎРѕС…СЂР°РЅРµРЅРёРµ РЅРµ РїРѕР»СѓС‡РёР»РѕСЃСЊ
 						begin
 							MyLogProc(PluginNum, msgtype_importanterror, PWideChar('CryptProc returns error: Encrypt failed'));
 						end;
-					FS_FILE_WRITEERROR: // Сохранение опять не получилось
+					FS_FILE_WRITEERROR: // РЎРѕС…СЂР°РЅРµРЅРёРµ РѕРїСЏС‚СЊ РЅРµ РїРѕР»СѓС‡РёР»РѕСЃСЊ
 						begin
 							MyLogProc(PluginNum, msgtype_importanterror, PWideChar('Password NOT saved: Could not write password to password store'));
 						end;
-					FS_FILE_NOTFOUND: // Не указан мастер-пароль
+					FS_FILE_NOTFOUND: // РќРµ СѓРєР°Р·Р°РЅ РјР°СЃС‚РµСЂ-РїР°СЂРѕР»СЊ
 						begin
 							MyLogProc(PluginNum, msgtype_importanterror, PWideChar('Password NOT saved: No master password entered yet'));
 						end;
-					// Ошибки здесь не значат, что пароль мы не получили - он может быть введён в диалоге
+					// РћС€РёР±РєРё Р·РґРµСЃСЊ РЅРµ Р·РЅР°С‡Р°С‚, С‡С‚Рѕ РїР°СЂРѕР»СЊ РјС‹ РЅРµ РїРѕР»СѓС‡РёР»Рё - РѕРЅ РјРѕР¶РµС‚ Р±С‹С‚СЊ РІРІРµРґС‘РЅ РІ РґРёР°Р»РѕРіРµ
 				end;
 			end;
 			result := true;
 		end;
 	end
-	else result := true; // пароль взят из инишника напрямую
+	else result := true; // РїР°СЂРѕР»СЊ РІР·СЏС‚ РёР· РёРЅРёС€РЅРёРєР° РЅР°РїСЂСЏРјСѓСЋ
 end;
 
 end.
