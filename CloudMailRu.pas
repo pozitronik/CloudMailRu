@@ -1,9 +1,9 @@
-unit CloudMailRu;
+﻿unit CloudMailRu;
 
 interface
 
 uses
-	System.Classes, System.SysUtils, PLUGIN_Types, JSON,
+	System.Classes, System.SysUtils, PLUGIN_Types, JSON, Winapi.Windows,
 	MRC_helper, IdCookieManager, IdIOHandler, IdIOHandlerSocket, IdIOHandlerStack, IdSSL,
 	IdSSLOpenSSL, IdBaseComponent, IdComponent, IdTCPConnection, IdTCPClient, IdSocks,
 	IdHTTP, IdAuthentication, IdIOHandlerStream, IdMultipartFormData;
@@ -636,6 +636,7 @@ begin
 			Log(MSGTYPE_IMPORTANTERROR, 'File receiving error ' + E.Message);
 		end;
 	end;
+	FlushFileBuffers(FileStream.Handle);
 	FileStream.free;
 	if Result <> FS_FILE_OK then
 	begin
