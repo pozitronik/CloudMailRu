@@ -716,11 +716,6 @@ Begin
 	end else begin
 		Result := ConnectionManager.get(OldRealPath.account, getResult).mvFile(OldRealPath.path, NewRealPath.path);
 	end;
-	if (Result = FS_FILE_OK) and Move then
-	begin
-		ConnectionManager.get(OldRealPath.account, getResult).deleteFile(OldRealPath.path);
-	end;
-
 end;
 
 function FsDisconnectW(DisconnectRoot: PWideChar): bool; stdcall;
