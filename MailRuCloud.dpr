@@ -744,7 +744,7 @@ begin
 	if (RealPath.path = '') then exit(ft_nosuchfield);
 
 	Item := FindListingItemByName(CurrentListing, RealPath.path); // сначала попробуем найти поле в имеющемся списке
-	if Item.home = '' then // если там его нет (нажали пробел на папке, например), то запросим в болаке напрямую
+	if Item.home = '' then // если там его нет (нажали пробел на папке, например), то запросим в облаке напрямую
 	begin
 		if ConnectionManager.get(RealPath.account, getResult).statusFile(RealPath.path, Item) then
 		begin
