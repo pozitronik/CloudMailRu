@@ -48,7 +48,7 @@ type
 		rev: integer;
 		type_: WideString;
 		home: WideString;
-		mtime: integer;
+		mtime: int64;
 		hash: WideString;
 		virus_scan: WideString;
 		folders_count: integer;
@@ -1158,7 +1158,7 @@ begin
 			if Assigned(Obj.values['name']) then name := Obj.values['name'].Value;
 			if (type_ = TYPE_FILE) then
 			begin
-				if Assigned(Obj.values['mtime']) then mtime := Obj.values['mtime'].Value.ToInteger;
+				if Assigned(Obj.values['mtime']) then mtime := Obj.values['mtime'].Value.ToInt64;
 				if Assigned(Obj.values['virus_scan']) then virus_scan := Obj.values['virus_scan'].Value;
 				if Assigned(Obj.values['hash']) then hash := Obj.values['hash'].Value;
 			end else begin
