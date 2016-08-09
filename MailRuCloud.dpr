@@ -598,7 +598,7 @@ begin
 		if GetPluginSettings(SettingsIniFilePath).PreserveFileTime then
 		begin
 			Item := GetListingItemByName(CurrentListing, RealPath);
-			if Item.mtime <> 0 then SetAllFileTime(LocalName, DateTimeToFileTime(UnixToDateTime(Item.mtime)));
+			if Item.mtime <> 0 then SetAllFileTime('\\?\'+LocalName, DateTimeToFileTime(UnixToDateTime(Item.mtime)));
 		end;
 		if CheckFlag(FS_COPYFLAGS_MOVE, CopyFlags) then ConnectionManager.get(RealPath.account, getResult).deleteFile(RealPath.path);
 		MyProgressProc(PluginNum, LocalName, RemoteName, 100);
@@ -649,7 +649,7 @@ begin
 		begin
 			MyProgressProc(PluginNum, LocalName, PWideChar(RealPath.path), 100);
 			MyLogProc(PluginNum, MSGTYPE_TRANSFERCOMPLETE, PWideChar(LocalName + '->' + RemoteName));
-			if not DeleteFileW(LocalName) then exit(FS_FILE_NOTSUPPORTED);
+			if not DeleteFileW(PWideChar('\\?\'+LocalName)) then exit(FS_FILE_NOTSUPPORTED);
 		end;
 	end;
 

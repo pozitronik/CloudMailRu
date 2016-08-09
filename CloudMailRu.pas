@@ -310,7 +310,7 @@ begin
 	// Log( MSGTYPE_DETAILS, 'Uploading to ' + URL);
 	try
 		PostData := TIdMultipartFormDataStream.Create;
-		PostData.AddFile('file', localPath, 'application/octet-stream');
+		PostData.AddFile('file', '\\?\'+ localPath, 'application/octet-stream');
 		Result := self.HTTPPostFile(URL, PostData, PostAnswer);
 	except
 		on E: Exception do
@@ -628,7 +628,7 @@ begin
 	remotePath := UrlEncode(StringReplace(remotePath, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
 
 	try
-		FileStream := TFileStream.Create(localPath, fmCreate);
+		FileStream := TFileStream.Create('\\?\'+localPath, fmCreate);
 		Result := self.HTTPGetFile(self.Shard + remotePath, FileStream);
 	except
 		on E: Exception do
@@ -640,7 +640,7 @@ begin
 	FileStream.free;
 	if Result <> FS_FILE_OK then
 	begin
-		System.SysUtils.deleteFile(localPath);
+		System.SysUtils.deleteFile('\\?\'+localPath);
 	end;
 end;
 
@@ -725,7 +725,7 @@ var
 	FileSize, Code, OperationStatus: integer;
 	OperationResult: integer;
 begin
-	if (not(self.unlimited_filesize)) and (SizeOfFile(localPath) > CLOUD_MAX_FILESIZE) then
+	if (not(self.unlimited_filesize)) and (SizeOfFile('\\?\'+localPath) > CLOUD_MAX_FILESIZE) then
 	begin
 		Log(MSGTYPE_IMPORTANTERROR, 'File size > ' + CLOUD_MAX_FILESIZE.ToString() + ' bytes, ignored');
 		exit(FS_FILE_NOTSUPPORTED);
