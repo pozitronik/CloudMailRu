@@ -598,7 +598,7 @@ begin
 		if GetPluginSettings(SettingsIniFilePath).PreserveFileTime then
 		begin
 			Item := GetListingItemByName(CurrentListing, RealPath);
-			if Item.mtime <> 0 then SetAllFileTime('\\?\'+LocalName, DateTimeToFileTime(UnixToDateTime(Item.mtime)));
+			if Item.mtime <> 0 then SetAllFileTime('\\?\' + LocalName, DateTimeToFileTime(UnixToDateTime(Item.mtime)));
 		end;
 		if CheckFlag(FS_COPYFLAGS_MOVE, CopyFlags) then ConnectionManager.get(RealPath.account, getResult).deleteFile(RealPath.path);
 		MyProgressProc(PluginNum, LocalName, RemoteName, 100);
@@ -617,50 +617,25 @@ begin
 	if RealPath.account = '' then exit(FS_FILE_NOTSUPPORTED);
 	MyProgressProc(PluginNum, LocalName, PWideChar(RealPath.path), 0);
 
-	if CheckFlag(FS_COPYFLAGS_RESUME, CopyFlags) then
-	begin // NOT SUPPORTED
-		exit(FS_FILE_NOTSUPPORTED);
-	end;
+	if CheckFlag(FS_COPYFLAGS_RESUME, CopyFlags) then exit(FS_FILE_NOTSUPPORTED); // NOT SUPPORTED
+
+	if (CheckFlag(FS_COPYFLAGS_EXISTS_SAMECASE, CopyFlags) or CheckFlag(FS_COPYFLAGS_EXISTS_DIFFERENTCASE, CopyFlags)) and not(CheckFlag(FS_COPYFLAGS_OVERWRITE, CopyFlags)) then exit(FS_FILE_EXISTS); // Облако не поддерживает разные регистры
 
 	if CheckFlag(FS_COPYFLAGS_OVERWRITE, CopyFlags) then
 	begin
-		if ConnectionManager.get(RealPath.account, getResult).deleteFile(RealPath.path) then // Неизвестно, как перезаписать файл черз API, но мы можем его удалить
-		begin
-			Result := ConnectionManager.get(RealPath.account, getResult).putFile(WideString(LocalName), RealPath.path);
-			if Result = FS_FILE_OK then
-			begin
-				MyProgressProc(PluginNum, LocalName, PWideChar(RealPath.path), 100);
-				MyLogProc(PluginNum, MSGTYPE_TRANSFERCOMPLETE, PWideChar(LocalName + '->' + RemoteName));
-			end;
-
-		end else begin
-			Result := FS_FILE_NOTSUPPORTED;
-
-		end;
-
-	end else if CheckFlag(FS_COPYFLAGS_EXISTS_SAMECASE, CopyFlags) or CheckFlag(FS_COPYFLAGS_EXISTS_DIFFERENTCASE, CopyFlags) then // Облако не поддерживает разные регистры
-	begin
-		exit(FS_FILE_EXISTS);
+		if not(ConnectionManager.get(RealPath.account, getResult).deleteFile(RealPath.path)) then exit(FS_FILE_NOTSUPPORTED);// Неизвестно, как перезаписать файл черз API, но мы можем его удалить
 	end;
+
+	Result := ConnectionManager.get(RealPath.account, getResult).putFile(WideString(LocalName), RealPath.path);
+	if Result = FS_FILE_OK then
+	begin
+		MyProgressProc(PluginNum, LocalName, PWideChar(RealPath.path), 100);
+		MyLogProc(PluginNum, MSGTYPE_TRANSFERCOMPLETE, PWideChar(LocalName + '->' + RemoteName));
+	end;
+
 	if CheckFlag(FS_COPYFLAGS_MOVE, CopyFlags) then
 	begin
-		Result := ConnectionManager.get(RealPath.account, getResult).putFile(WideString(LocalName), RealPath.path);
-		if Result = FS_FILE_OK then
-		begin
-			MyProgressProc(PluginNum, LocalName, PWideChar(RealPath.path), 100);
-			MyLogProc(PluginNum, MSGTYPE_TRANSFERCOMPLETE, PWideChar(LocalName + '->' + RemoteName));
-			if not DeleteFileW(PWideChar('\\?\'+LocalName)) then exit(FS_FILE_NOTSUPPORTED);
-		end;
-	end;
-
-	if CopyFlags = 0 then
-	begin
-		Result := ConnectionManager.get(RealPath.account, getResult).putFile(WideString(LocalName), RealPath.path);
-		if Result = FS_FILE_OK then
-		begin
-			MyProgressProc(PluginNum, LocalName, PWideChar(RealPath.path), 100);
-			MyLogProc(PluginNum, MSGTYPE_TRANSFERCOMPLETE, PWideChar(LocalName + '->' + RemoteName));
-		end;
+		if not DeleteFileW(PWideChar('\\?\' + LocalName)) then exit(FS_FILE_NOTSUPPORTED);
 	end;
 
 end;
