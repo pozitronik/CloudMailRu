@@ -1,4 +1,4 @@
-unit MRC_Helper;
+﻿unit MRC_Helper;
 
 interface
 
@@ -41,6 +41,7 @@ function SizeOfFile(const FileName: String): Int64;
 function DateTimeToUnix(ConvDate: TDateTime): Integer;
 function CheckFlag(Check: Byte; Flags: Integer): boolean; // Определяет, установлен ли указанный бит
 function DateTimeToFileTime(FileTime: TDateTime): TFileTime;
+procedure SetAllFileTime(const FileName: string; const FileTime: TFileTime);
 function GetAccountSettingsFromIniFile(IniFilePath: WideString; AccountName: WideString): TAccountSettings;
 function SetAccountSettingsToIniFile(IniFilePath: WideString; AccountSettings: TAccountSettings): boolean;
 procedure GetAccountsListFromIniFile(IniFilePath: WideString; var AccountsList: TStringList);
@@ -113,7 +114,6 @@ begin
 end;
 
 function DateTimeToFileTime(FileTime: TDateTime): TFileTime;
-
 var
 	LocalFileTime, Ft: TFileTime;
 	SystemTime: TSystemTime;
@@ -124,6 +124,19 @@ begin
 	SystemTimeToFileTime(SystemTime, LocalFileTime);
 	LocalFileTimeToFileTime(LocalFileTime, Ft);
 	Result := Ft;
+end;
+
+procedure SetAllFileTime(const FileName: string; const FileTime: TFileTime);
+var
+	Handle: thandle;
+begin
+	Handle := CreateFile(pchar(FileName), FILE_WRITE_ATTRIBUTES, FILE_SHARE_READ or FILE_SHARE_WRITE, nil, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+	if Handle = INVALID_HANDLE_VALUE then RaiseLastOSError;
+	try
+		if not SetFileTime(Handle, @FileTime, @FileTime, @FileTime) then RaiseLastOSError;
+	finally
+		CloseHandle(Handle);
+	end;
 end;
 
 function GetAccountSettingsFromIniFile(IniFilePath: WideString; AccountName: WideString): TAccountSettings;
