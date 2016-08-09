@@ -104,6 +104,20 @@ begin
 	end;
 end;
 
+function GetListingItemByName(CurrentListing: TCloudMailRuDirListing; path: TRealPath): TCloudMailRuDirListingItem;
+var
+	getResult: integer;
+begin
+	Result := FindListingItemByName(CurrentListing, path.path); // сначала попробуем найти поле в имеющемся списке
+	if Result.name = '' then // если там его нет (нажали пробел на папке, например), то запросим в облаке напрямую
+	begin
+		if ConnectionManager.get(path.account, getResult).statusFile(path.path, Result) then
+		begin
+			if Result.home = '' then MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, PWideChar('Cant find file ' + path.path)); { Такого быть не может, но... }
+		end;
+	end; // Не рапортуем, это будет уровнем выше
+end;
+
 procedure FsGetDefRootName(DefRootName: PAnsiChar; maxlen: integer); stdcall; // Процедура вызывается один раз при установке плагина
 Begin
 	AnsiStrings.StrLCopy(DefRootName, PAnsiChar('CloudMailRu'), maxlen);
@@ -569,41 +583,29 @@ function FsGetFileW(RemoteName, LocalName: PWideChar; CopyFlags: integer; Remote
 var
 	RealPath: TRealPath;
 	getResult: integer;
+	Item: TCloudMailRuDirListingItem;
+	FileTime: TFileTime;
+	R: integer;
 begin
 	Result := FS_FILE_NOTSUPPORTED;
+	If CheckFlag(FS_COPYFLAGS_RESUME, CopyFlags) then exit(FS_FILE_NOTSUPPORTED); { NEVER CALLED HERE }
 	RealPath := ExtractRealPath(RemoteName);
 
 	MyProgressProc(PluginNum, RemoteName, LocalName, 0);
 
-	if CopyFlags = FS_FILE_OK then
-	begin
-		if FileExists(LocalName) then
-		begin
-			exit(FS_FILE_EXISTS);
-		end else begin
-			Result := ConnectionManager.get(RealPath.account, getResult).getFile(WideString(RealPath.path), WideString(LocalName));
-		end;
-	end;
+	if (FileExists(LocalName) and not(CheckFlag(FS_COPYFLAGS_OVERWRITE, CopyFlags))) then exit(FS_FILE_EXISTS);
+
+	Result := ConnectionManager.get(RealPath.account, getResult).getFile(WideString(RealPath.path), WideString(LocalName));
 
 	if CheckFlag(FS_COPYFLAGS_MOVE, CopyFlags) then
 	begin
-		Result := ConnectionManager.get(RealPath.account, getResult).getFile(WideString(RealPath.path), WideString(LocalName));
-		if Result = FS_FILE_OK then
-		begin
-			ConnectionManager.get(RealPath.account, getResult).deleteFile(RealPath.path);
-		end;
+		if Result = FS_FILE_OK then ConnectionManager.get(RealPath.account, getResult).deleteFile(RealPath.path);
+	end;
 
-	end;
-	if CheckFlag(FS_COPYFLAGS_RESUME, CopyFlags) then
-	begin { NEVER CALLED HERE }
-		Result := FS_FILE_NOTSUPPORTED;
-	end;
-	if CheckFlag(FS_COPYFLAGS_OVERWRITE, CopyFlags) then
-	begin
-		Result := ConnectionManager.get(RealPath.account, getResult).getFile(WideString(RealPath.path), WideString(LocalName));
-	end;
 	if Result = FS_FILE_OK then
 	begin
+		Item := GetListingItemByName(CurrentListing, RealPath);
+		if Item.mtime <> 0 then SetAllFileTime(LocalName, DateTimeToFileTime(UnixToDateTime(Item.mtime))); // TODO: сделать опциональным сохранение времени
 		MyProgressProc(PluginNum, LocalName, RemoteName, 100);
 		MyLogProc(PluginNum, MSGTYPE_TRANSFERCOMPLETE, PWideChar(RemoteName + '->' + LocalName));
 	end;
@@ -736,25 +738,16 @@ function FsContentGetValueW(FileName: PWideChar; FieldIndex: integer; UnitIndex:
 var
 	Item: TCloudMailRuDirListingItem;
 	RealPath: TRealPath;
-	Filetime: TFileTime;
+	FileTime: TFileTime;
 	getResult: integer;
 begin
 	Result := ft_nosuchfield;
 	RealPath := ExtractRealPath(FileName);
 	if (RealPath.path = '') then exit(ft_nosuchfield);
 
-	Item := FindListingItemByName(CurrentListing, RealPath.path); // сначала попробуем найти поле в имеющемся списке
-	if Item.home = '' then // если там его нет (нажали пробел на папке, например), то запросим в облаке напрямую
-	begin
-		if ConnectionManager.get(RealPath.account, getResult).statusFile(RealPath.path, Item) then
-		begin
-			if Item.home = '' then
-			begin
-				MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, PWideChar('Cant find file ' + RealPath.path)); { Такого быть не может, но... }
-				exit(ft_nosuchfield);
-			end;
-		end; // Не рапортуем, это будет уровнем выше
-	end;
+	Item := GetListingItemByName(CurrentListing, RealPath);
+	if Item.home = '' then exit(ft_nosuchfield);
+
 	case FieldIndex of
 		0:
 			begin
@@ -807,10 +800,10 @@ begin
 		9:
 			begin
 				if Item.mtime = 0 then exit(ft_nosuchfield);
-				Filetime.dwHighDateTime := 0;
-				Filetime.dwLowDateTime := 0;
-				Filetime := DateTimeToFileTime(UnixToDateTime(Item.mtime));
-				Move(Filetime, FieldValue^, SizeOf(Filetime));
+				FileTime.dwHighDateTime := 0;
+				FileTime.dwLowDateTime := 0;
+				FileTime := DateTimeToFileTime(UnixToDateTime(Item.mtime));
+				Move(FileTime, FieldValue^, SizeOf(FileTime));
 				Result := ft_datetime;
 			end;
 		10:
