@@ -312,9 +312,7 @@ procedure FsStatusInfoW(RemoteDir: PWideChar; InfoStartEnd, InfoOperation: integ
 var
 	RealPath: TRealPath;
 	getResult: integer;
-	US: TCloudMailRuSpaceInfo;
-	QuotaInfo: WideString;
-	Cloud: TCloudMailRu;
+
 begin
 	if (InfoStartEnd = FS_STATUS_START) then
 	begin
@@ -584,8 +582,6 @@ var
 	RealPath: TRealPath;
 	getResult: integer;
 	Item: TCloudMailRuDirListingItem;
-	FileTime: TFileTime;
-	R: integer;
 begin
 	Result := FS_FILE_NOTSUPPORTED;
 	If CheckFlag(FS_COPYFLAGS_RESUME, CopyFlags) then exit(FS_FILE_NOTSUPPORTED); { NEVER CALLED HERE }
@@ -597,13 +593,9 @@ begin
 
 	Result := ConnectionManager.get(RealPath.account, getResult).getFile(WideString(RealPath.path), WideString(LocalName));
 
-	if CheckFlag(FS_COPYFLAGS_MOVE, CopyFlags) then
-	begin
-		if Result = FS_FILE_OK then ConnectionManager.get(RealPath.account, getResult).deleteFile(RealPath.path);
-	end;
-
 	if Result = FS_FILE_OK then
 	begin
+		if CheckFlag(FS_COPYFLAGS_MOVE, CopyFlags) then ConnectionManager.get(RealPath.account, getResult).deleteFile(RealPath.path);
 		Item := GetListingItemByName(CurrentListing, RealPath);
 		if Item.mtime <> 0 then SetAllFileTime(LocalName, DateTimeToFileTime(UnixToDateTime(Item.mtime))); // TODO: сделать опциональным сохранение времени
 		MyProgressProc(PluginNum, LocalName, RemoteName, 100);
@@ -739,7 +731,6 @@ var
 	Item: TCloudMailRuDirListingItem;
 	RealPath: TRealPath;
 	FileTime: TFileTime;
-	getResult: integer;
 begin
 	Result := ft_nosuchfield;
 	RealPath := ExtractRealPath(FileName);
