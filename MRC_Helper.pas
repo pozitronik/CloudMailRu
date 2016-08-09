@@ -32,6 +32,7 @@ type
 
 	TPluginSettings = record
 		LoadSSLDLLOnlyFromPluginDir: boolean;
+		PreserveFileTime: boolean;
 		Proxy: TProxySettings;
 	end;
 
@@ -130,7 +131,7 @@ procedure SetAllFileTime(const FileName: string; const FileTime: TFileTime);
 var
 	Handle: thandle;
 begin
-	Handle := CreateFile(pchar(FileName), FILE_WRITE_ATTRIBUTES, FILE_SHARE_READ or FILE_SHARE_WRITE, nil, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+	Handle := CreateFile(PChar(FileName), FILE_WRITE_ATTRIBUTES, FILE_SHARE_READ or FILE_SHARE_WRITE, nil, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
 	if Handle = INVALID_HANDLE_VALUE then RaiseLastOSError;
 	try
 		if not SetFileTime(Handle, @FileTime, @FileTime, @FileTime) then RaiseLastOSError;
@@ -197,6 +198,7 @@ var
 begin
 	IniFile := TIniFile.Create(IniFilePath);
 	GetPluginSettings.LoadSSLDLLOnlyFromPluginDir := IniFile.ReadBool('Main', 'LoadSSLDLLOnlyFromPluginDir', false);
+	GetPluginSettings.PreserveFileTime := IniFile.ReadBool('Main', 'PreserveFileTime', false);
 	GetPluginSettings.Proxy.ProxyType := IniFile.ReadInteger('Main', 'ProxyType', ProxyNone);
 	GetPluginSettings.Proxy.Server := IniFile.ReadString('Main', 'ProxyServer', '');
 	GetPluginSettings.Proxy.Port := IniFile.ReadInteger('Main', 'ProxyPort', 0);
@@ -211,6 +213,7 @@ var
 begin
 	IniFile := TIniFile.Create(IniFilePath);
 	IniFile.WriteBool('Main', 'LoadSSLDLLOnlyFromPluginDir', PluginSettings.LoadSSLDLLOnlyFromPluginDir);
+	IniFile.WriteBool('Main', 'PreserveFileTime', PluginSettings.PreserveFileTime);
 	IniFile.Destroy;
 end;
 

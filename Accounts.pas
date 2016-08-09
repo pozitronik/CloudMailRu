@@ -1,4 +1,4 @@
-unit Accounts;
+﻿unit Accounts;
 
 interface
 
@@ -33,6 +33,7 @@ type
 		ProxyUserLabel: TLabel;
 		ProxyUserEdit: TEdit;
 		UnlimitedFileSizeCB: TCheckBox;
+		PreserveFileTimeCB: TCheckBox;
 		procedure FormShow(Sender: TObject);
 		procedure AccountsListClick(Sender: TObject);
 		procedure ApplyButtonClick(Sender: TObject);
@@ -49,6 +50,7 @@ type
 		procedure ProxyPortEditChange(Sender: TObject);
 		procedure ProxyUserEditChange(Sender: TObject);
 		procedure ProxyPWDEditChange(Sender: TObject);
+		procedure PreserveFileTimeCBClick(Sender: TObject);
 	private
 		{ Private declarations }
 		procedure WMHotKey(var Message: TMessage); message WM_HOTKEY;
@@ -173,6 +175,11 @@ begin
 	end;
 end;
 
+procedure TAccountsForm.PreserveFileTimeCBClick(Sender: TObject);
+begin
+	SetPluginSettingsValue(SettingsIniFilePath, 'PreserveFileTime', PreserveFileTimeCB.Checked);
+end;
+
 procedure TAccountsForm.ProxyCBChange(Sender: TObject);
 begin
 	SetPluginSettingsValue(SettingsIniFilePath, 'ProxyType', ProxyCB.ItemIndex);
@@ -213,6 +220,7 @@ begin
 		AccountsForm.SelectedAccount := '';
 		{ global settings }
 		AccountsForm.UseDLLFromPluginDir.Checked := GetPluginSettings(SettingsIniFilePath).LoadSSLDLLOnlyFromPluginDir;
+		AccountsForm.PreserveFileTimeCB.Checked := GetPluginSettings(SettingsIniFilePath).PreserveFileTime;
 		AccountsForm.ProxyCB.ItemIndex := GetPluginSettings(SettingsIniFilePath).Proxy.ProxyType;
 		AccountsForm.ProxyServerEdit.Text := GetPluginSettings(SettingsIniFilePath).Proxy.Server;
 		AccountsForm.ProxyPortEdit.Text := GetPluginSettings(SettingsIniFilePath).Proxy.Port.ToString;

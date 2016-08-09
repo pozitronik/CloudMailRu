@@ -595,9 +595,12 @@ begin
 
 	if Result = FS_FILE_OK then
 	begin
+		if GetPluginSettings(SettingsIniFilePath).PreserveFileTime then
+		begin
+			Item := GetListingItemByName(CurrentListing, RealPath);
+			if Item.mtime <> 0 then SetAllFileTime(LocalName, DateTimeToFileTime(UnixToDateTime(Item.mtime)));
+		end;
 		if CheckFlag(FS_COPYFLAGS_MOVE, CopyFlags) then ConnectionManager.get(RealPath.account, getResult).deleteFile(RealPath.path);
-		Item := GetListingItemByName(CurrentListing, RealPath);
-		if Item.mtime <> 0 then SetAllFileTime(LocalName, DateTimeToFileTime(UnixToDateTime(Item.mtime))); // TODO: сделать опциональным сохранение времени
 		MyProgressProc(PluginNum, LocalName, RemoteName, 100);
 		MyLogProc(PluginNum, MSGTYPE_TRANSFERCOMPLETE, PWideChar(RemoteName + '->' + LocalName));
 	end;

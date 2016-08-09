@@ -3,7 +3,7 @@ object AccountsForm: TAccountsForm
   Top = 0
   BorderStyle = bsDialog
   Caption = 'Cloud Accounts'
-  ClientHeight = 456
+  ClientHeight = 478
   ClientWidth = 489
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -153,7 +153,7 @@ object AccountsForm: TAccountsForm
   OnShow = FormShow
   DesignSize = (
     489
-    456)
+    478)
   PixelsPerInch = 96
   TextHeight = 13
   object UsernameLabel: TLabel
@@ -184,19 +184,19 @@ object AccountsForm: TAccountsForm
     Left = 0
     Top = 0
     Width = 225
-    Height = 452
+    Height = 474
     Anchors = [akLeft, akTop, akBottom]
     Caption = 'Accounts'
     TabOrder = 0
-    ExplicitHeight = 417
+    ExplicitHeight = 452
     DesignSize = (
       225
-      452)
+      474)
     object AccountsList: TListBox
       Left = 4
       Top = 16
       Width = 218
-      Height = 433
+      Height = 455
       Style = lbVirtual
       Anchors = [akLeft, akTop, akRight, akBottom]
       ExtendedSelect = False
@@ -204,7 +204,7 @@ object AccountsForm: TAccountsForm
       TabOrder = 0
       OnClick = AccountsListClick
       OnKeyUp = AccountsListKeyUp
-      ExplicitHeight = 398
+      ExplicitHeight = 433
     end
   end
   object EmailEdit: TEdit
@@ -263,49 +263,51 @@ object AccountsForm: TAccountsForm
   end
   object GlobalOptionsGroup: TGroupBox
     Left = 228
-    Top = 231
+    Top = 223
     Width = 258
-    Height = 221
+    Height = 251
+    Anchors = [akLeft, akTop, akBottom]
     Caption = 'Global options'
     TabOrder = 7
+    ExplicitHeight = 221
     object ProxyTypeLabel: TLabel
       Left = 5
-      Top = 39
+      Top = 63
       Width = 53
       Height = 13
       Caption = 'Proxy type'
     end
     object ProxyPWDLabel: TLabel
       Left = 3
-      Top = 178
+      Top = 202
       Width = 149
       Height = 13
       Caption = 'Proxy authentication password'
     end
     object ProxyServerLabel: TLabel
       Left = 5
-      Top = 85
+      Top = 109
       Width = 62
       Height = 13
       Caption = 'Proxy server'
     end
     object ProxyPortLabel: TLabel
       Left = 190
-      Top = 85
+      Top = 109
       Width = 20
       Height = 13
       Caption = 'Port'
     end
     object ProxyDivLabel: TLabel
       Left = 186
-      Top = 104
+      Top = 128
       Width = 4
       Height = 13
       Caption = ':'
     end
     object ProxyUserLabel: TLabel
       Left = 5
-      Top = 131
+      Top = 155
       Width = 230
       Height = 13
       Caption = 'Proxy authentication username (blank for none)'
@@ -321,7 +323,7 @@ object AccountsForm: TAccountsForm
     end
     object ProxyCB: TComboBox
       Left = 5
-      Top = 58
+      Top = 82
       Width = 250
       Height = 22
       Style = csOwnerDrawFixed
@@ -336,7 +338,7 @@ object AccountsForm: TAccountsForm
     end
     object ProxyServerEdit: TEdit
       Left = 5
-      Top = 104
+      Top = 128
       Width = 180
       Height = 21
       TabOrder = 2
@@ -344,7 +346,7 @@ object AccountsForm: TAccountsForm
     end
     object ProxyPortEdit: TEdit
       Left = 190
-      Top = 104
+      Top = 128
       Width = 65
       Height = 21
       NumbersOnly = True
@@ -353,7 +355,7 @@ object AccountsForm: TAccountsForm
     end
     object ProxyPWDEdit: TEdit
       Left = 3
-      Top = 197
+      Top = 221
       Width = 250
       Height = 21
       TabOrder = 4
@@ -361,11 +363,20 @@ object AccountsForm: TAccountsForm
     end
     object ProxyUserEdit: TEdit
       Left = 3
-      Top = 150
+      Top = 174
       Width = 250
       Height = 21
       TabOrder = 5
       OnChange = ProxyUserEditChange
+    end
+    object PreserveFileTimeCB: TCheckBox
+      Left = 5
+      Top = 39
+      Width = 238
+      Height = 17
+      Caption = 'Preserve file creation time'
+      TabOrder = 6
+      OnClick = PreserveFileTimeCBClick
     end
   end
   object UnlimitedFileSizeCB: TCheckBox
