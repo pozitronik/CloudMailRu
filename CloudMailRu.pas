@@ -9,6 +9,12 @@ uses
 	IdHTTP, IdAuthentication, IdIOHandlerStream, IdMultipartFormData;
 
 const
+{$IFDEF WIN64}
+	PlatformX = 'x64';
+{$ENDIF}
+{$IFDEF WIN32}
+	PlatformX = 'x32';
+{$ENDIF}
 	TYPE_DIR = 'folder';
 	TYPE_FILE = 'file';
 	{ Константы для обозначения ошибок, возвращаемых при парсинге ответов облака. Дополняем по мере обнаружения }
@@ -310,7 +316,7 @@ begin
 	// Log( MSGTYPE_DETAILS, 'Uploading to ' + URL);
 	try
 		PostData := TIdMultipartFormDataStream.Create;
-		PostData.AddFile('file', '\\?\'+ localPath, 'application/octet-stream');
+		PostData.AddFile('file', '\\?\' + localPath, 'application/octet-stream');
 		Result := self.HTTPPostFile(URL, PostData, PostAnswer);
 	except
 		on E: Exception do
@@ -508,7 +514,8 @@ begin
 	HTTP.HTTPOptions := [hoForceEncodeParams, hoNoParseMetaHTTPEquiv];
 	HTTP.HandleRedirects := true;
 	// HTTP.ConnectTimeout:=10;
-	HTTP.Request.UserAgent := 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.17 (KHTML, like Gecko) Chrome/24.0.1312.57 Safari/537.17';
+
+	HTTP.Request.UserAgent := 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.17 (KHTML, like Gecko) Chrome/24.0.1312.57 Safari/537.17/TCWFX('+PlatformX+')';
 end;
 
 procedure TCloudMailRu.HTTPDestroy(var HTTP: TIdHTTP; var SSL: TIdSSLIOHandlerSocketOpenSSL; var Socks: TIdSocksInfo);
@@ -628,7 +635,7 @@ begin
 	remotePath := UrlEncode(StringReplace(remotePath, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
 
 	try
-		FileStream := TFileStream.Create('\\?\'+localPath, fmCreate);
+		FileStream := TFileStream.Create('\\?\' + localPath, fmCreate);
 		Result := self.HTTPGetFile(self.Shard + remotePath, FileStream);
 	except
 		on E: Exception do
@@ -640,7 +647,7 @@ begin
 	FileStream.free;
 	if Result <> FS_FILE_OK then
 	begin
-		System.SysUtils.deleteFile('\\?\'+localPath);
+		System.SysUtils.deleteFile('\\?\' + localPath);
 	end;
 end;
 
@@ -725,7 +732,7 @@ var
 	FileSize, Code, OperationStatus: integer;
 	OperationResult: integer;
 begin
-	if (not(self.unlimited_filesize)) and (SizeOfFile('\\?\'+localPath) > CLOUD_MAX_FILESIZE) then
+	if (not(self.unlimited_filesize)) and (SizeOfFile('\\?\' + localPath) > CLOUD_MAX_FILESIZE) then
 	begin
 		Log(MSGTYPE_IMPORTANTERROR, 'File size > ' + CLOUD_MAX_FILESIZE.ToString() + ' bytes, ignored');
 		exit(FS_FILE_NOTSUPPORTED);
