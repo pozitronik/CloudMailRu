@@ -515,7 +515,7 @@ begin
 	HTTP.HandleRedirects := true;
 	// HTTP.ConnectTimeout:=10;
 
-	HTTP.Request.UserAgent := 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.17 (KHTML, like Gecko) Chrome/24.0.1312.57 Safari/537.17/TCWFX('+PlatformX+')';
+	HTTP.Request.UserAgent := 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.17 (KHTML, like Gecko) Chrome/24.0.1312.57 Safari/537.17/TCWFX(' + PlatformX + ')';
 end;
 
 procedure TCloudMailRu.HTTPDestroy(var HTTP: TIdHTTP; var SSL: TIdSSLIOHandlerSocketOpenSSL; var Socks: TIdSocksInfo);
@@ -580,13 +580,21 @@ procedure TCloudMailRu.logUserSpaceInfo;
 var
 	US: TCloudMailRuSpaceInfo;
 	QuotaInfo: WideString;
+
+	function FormatSize(Megabytes: integer): WideString; // Форматируем размер в удобочитаемый вид
+	begin
+		if Megabytes > (1024 * 1023) then exit((Megabytes div (1024 * 1024)).ToString() + 'Tb');
+		if Megabytes > 1024 then exit((Megabytes div 1024).ToString() + 'Gb');
+		exit(Megabytes.ToString() + 'Mb');
+	end;
+
 begin
 	if self.getUserSpace(US) then
 	begin
 		if (US.overquota) then QuotaInfo := ' Warning: space quota exhausted!'
 		else QuotaInfo := '';
 
-		Log(MSGTYPE_DETAILS, 'Total space: ' + US.total.ToString() + 'Mb, used: ' + US.used.ToString() + 'Mb, free: ' + (US.total - US.used).ToString() + 'Mb.' + QuotaInfo);
+		Log(MSGTYPE_DETAILS, 'Total space: ' + FormatSize(US.total) + ', used: ' + FormatSize(US.used) + ', free: ' + FormatSize(US.total - US.used) + '.' + QuotaInfo);
 	end else begin
 		Log(MSGTYPE_IMPORTANTERROR, 'Error getting user space information for ' + self.user + '@' + self.domain);
 	end;
