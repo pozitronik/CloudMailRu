@@ -584,7 +584,8 @@ var
 	function FormatSize(Megabytes: integer): WideString; // Форматируем размер в удобочитаемый вид
 	begin
 		if Megabytes > (1024 * 1023) then exit((Megabytes div (1024 * 1024)).ToString() + 'Tb');
-		if Megabytes > 1024 then exit((Megabytes div 1024).ToString() + 'Gb');
+		// (CurrToStrF((Megabytes div 1024), ffNumber, 2))
+		if Megabytes > 1024 then exit((CurrToStrF((Megabytes / 1024), ffNumber, 2)) + 'Gb');
 		exit(Megabytes.ToString() + 'Mb');
 	end;
 
