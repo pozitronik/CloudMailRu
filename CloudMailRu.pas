@@ -584,7 +584,6 @@ var
 	function FormatSize(Megabytes: integer): WideString; // Форматируем размер в удобочитаемый вид
 	begin
 		if Megabytes > (1024 * 1023) then exit((Megabytes div (1024 * 1024)).ToString() + 'Tb');
-		// (CurrToStrF((Megabytes div 1024), ffNumber, 2))
 		if Megabytes > 1024 then exit((CurrToStrF((Megabytes / 1024), ffNumber, 2)) + 'Gb');
 		exit(Megabytes.ToString() + 'Mb');
 	end;
@@ -642,18 +641,30 @@ begin
 
 	Result := FS_FILE_OK;
 	remotePath := UrlEncode(StringReplace(remotePath, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
-
 	try
 		FileStream := TFileStream.Create('\\?\' + localPath, fmCreate);
-		Result := self.HTTPGetFile(self.Shard + remotePath, FileStream);
 	except
 		on E: Exception do
 		begin
-			Log(MSGTYPE_IMPORTANTERROR, 'File receiving error ' + E.Message);
+			Log(MSGTYPE_IMPORTANTERROR, E.Message);
+			exit(FS_FILE_WRITEERROR);
 		end;
 	end;
-	FlushFileBuffers(FileStream.Handle);
-	FileStream.free;
+
+	if (Assigned(FileStream)) then
+	begin
+		try
+			Result := self.HTTPGetFile(self.Shard + remotePath, FileStream);
+		except
+			on E: Exception do
+			begin
+				Log(MSGTYPE_IMPORTANTERROR, 'File receiving error ' + E.Message);
+			end;
+		end;
+		FlushFileBuffers(FileStream.Handle);
+		FileStream.free;
+	end;
+
 	if Result <> FS_FILE_OK then
 	begin
 		System.SysUtils.deleteFile('\\?\' + localPath);
