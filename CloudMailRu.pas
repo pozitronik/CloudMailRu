@@ -765,8 +765,8 @@ begin
 	Result := FS_FILE_WRITEERROR;
 	if not(Assigned(self)) then exit; // Проверка на вызов без инициализации
 	OperationResult := CLOUD_OPERATION_FAILED;
+	PutResult := TStringList.Create;
 	try
-		PutResult := TStringList.Create;
 		OperationResult := self.putFileToCloud(localPath, PutResult);
 	Except
 		on E: Exception do
