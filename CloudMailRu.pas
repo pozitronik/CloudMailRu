@@ -314,8 +314,9 @@ begin
 	if not(Assigned(self)) then exit; // Проверка на вызов без инициализации
 	URL := self.upload_url + '/?cloud_domain=1&x-email=' + self.user + '%40' + self.domain + '&fileapi' + IntToStr(DateTimeToUnix(now)) + '0246';
 	// Log( MSGTYPE_DETAILS, 'Uploading to ' + URL);
+	PostData := TIdMultipartFormDataStream.Create;
 	try
-		PostData := TIdMultipartFormDataStream.Create;
+
 		PostData.AddFile('file', '\\?\' + localPath, 'application/octet-stream');
 		Result := self.HTTPPostFile(URL, PostData, PostAnswer);
 	except
