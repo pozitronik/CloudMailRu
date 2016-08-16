@@ -424,9 +424,9 @@ var
 	Socks: TIdSocksInfo;
 begin
 	Result := CLOUD_OPERATION_OK;
+	MemStream := TStringStream.Create;
 	try
 		self.HTTPInit(HTTP, SSL, Socks, self.Cookie);
-		MemStream := TStringStream.Create;
 		HTTP.OnWork := self.HttpProgress;
 		HTTP.Post(URL, PostData, MemStream);
 		Answer := MemStream.DataString;
