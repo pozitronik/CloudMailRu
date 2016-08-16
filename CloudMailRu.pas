@@ -249,7 +249,7 @@ end;
 function TCloudMailRu.getToken(): Boolean;
 var
 	URL: WideString;
- //	PostResult: Boolean;
+	// PostResult: Boolean;
 	Answer: WideString;
 begin
 	URL := 'https://cloud.mail.ru/?from=promo&from=authpopup';
@@ -286,8 +286,8 @@ begin
 	SuccessPost := false;
 	if not(Assigned(self)) then exit; // Проверка на вызов без инициализации
 	URL := 'https://cloud.mail.ru/api/v2/dispatcher/';
+	PostData := TStringStream.Create('api=2&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&token=' + self.token + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id, TEncoding.UTF8);
 	try
-		PostData := TStringStream.Create('api=2&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&token=' + self.token + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id, TEncoding.UTF8);
 		SuccessPost := self.HTTPPost(URL, PostData, Answer);
 	except
 		on E: Exception do
