@@ -385,8 +385,8 @@ var
 	Socks: TIdSocksInfo;
 begin
 	Result := true;
+	MemStream := TStringStream.Create;
 	try
-		MemStream := TStringStream.Create;
 		self.HTTPInit(HTTP, SSL, Socks, self.Cookie);
 		if ContentType <> '' then HTTP.Request.ContentType := ContentType;
 		HTTP.Post(URL, PostData, MemStream);
