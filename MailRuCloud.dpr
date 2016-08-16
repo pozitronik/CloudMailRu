@@ -623,7 +623,7 @@ begin
 
 	if CheckFlag(FS_COPYFLAGS_OVERWRITE, CopyFlags) then
 	begin
-		if not(ConnectionManager.get(RealPath.account, getResult).deleteFile(RealPath.path)) then exit(FS_FILE_NOTSUPPORTED);// Неизвестно, как перезаписать файл черз API, но мы можем его удалить
+		if not(ConnectionManager.get(RealPath.account, getResult).deleteFile(RealPath.path)) then exit(FS_FILE_NOTSUPPORTED); // Неизвестно, как перезаписать файл черз API, но мы можем его удалить
 	end;
 
 	Result := ConnectionManager.get(RealPath.account, getResult).putFile(WideString(LocalName), RealPath.path);
@@ -631,11 +631,10 @@ begin
 	begin
 		MyProgressProc(PluginNum, LocalName, PWideChar(RealPath.path), 100);
 		MyLogProc(PluginNum, MSGTYPE_TRANSFERCOMPLETE, PWideChar(LocalName + '->' + RemoteName));
-	end;
-
-	if CheckFlag(FS_COPYFLAGS_MOVE, CopyFlags) then
-	begin
-		if not DeleteFileW(PWideChar('\\?\' + LocalName)) then exit(FS_FILE_NOTSUPPORTED);
+		if CheckFlag(FS_COPYFLAGS_MOVE, CopyFlags) then
+		begin
+			if not DeleteFileW(PWideChar('\\?\' + LocalName)) then exit(FS_FILE_NOTSUPPORTED);
+		end;
 	end;
 
 end;
