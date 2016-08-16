@@ -49,7 +49,7 @@ procedure GetAccountsListFromIniFile(IniFilePath: WideString; var AccountsList: 
 procedure DeleteAccountFromIniFile(IniFilePath: WideString; AccountName: WideString);
 function GetPluginSettings(IniFilePath: WideString): TPluginSettings;
 procedure SetPluginSettings(IniFilePath: WideString; PluginSettings: TPluginSettings);
-function SetPluginSettingsValue(IniFilePath: WideString; OptionName: WideString; OptionValue: Variant): boolean;
+procedure SetPluginSettingsValue(IniFilePath: WideString; OptionName: WideString; OptionValue: Variant);
 procedure CenterWindow(WindowToStay, WindowToCenter: HWND);
 function UrlEncode(URL: WideString): WideString;
 function FindTCWindow: HWND;
@@ -217,7 +217,7 @@ begin
 	IniFile.Destroy;
 end;
 
-function SetPluginSettingsValue(IniFilePath: WideString; OptionName: WideString; OptionValue: Variant): boolean;
+procedure SetPluginSettingsValue(IniFilePath: WideString; OptionName: WideString; OptionValue: Variant);
 var
 	IniFile: TIniFile;
 	basicType: Integer;
