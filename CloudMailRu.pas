@@ -343,9 +343,9 @@ var
 begin
 	Result := false;
 	URL := 'https://cloud.mail.ru/api/v2/file/add';
+	PostData := TStringStream.Create('conflict=' + ConflictMode + '&home=/' + remotePath + '&hash=' + hash + '&size=' + IntToStr(size) + '&token=' + self.token + '&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id + '&conflict', TEncoding.UTF8);
+	{ Экспериментально выяснено, что параметры api, build, email, x-email, x-page-id в запросе не обязательны }
 	try
-		PostData := TStringStream.Create('conflict=' + ConflictMode + '&home=/' + remotePath + '&hash=' + hash + '&size=' + IntToStr(size) + '&token=' + self.token + '&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id + '&conflict', TEncoding.UTF8);
-		{ Экспериментально выяснено, что параметры api, build, email, x-email, x-page-id в запросе не обязательны }
 		Result := self.HTTPPost(URL, PostData, JSONAnswer);
 	except
 		on E: Exception do
