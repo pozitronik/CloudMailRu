@@ -249,14 +249,14 @@ end;
 function TCloudMailRu.getToken(): Boolean;
 var
 	URL: WideString;
-	PostResult: Boolean;
+ //	PostResult: Boolean;
 	Answer: WideString;
 begin
 	URL := 'https://cloud.mail.ru/?from=promo&from=authpopup';
 	Result := false;
 	if not(Assigned(self)) then exit; // Проверка на вызов без инициализации
 	try
-		PostResult := self.HTTPGet(URL, Answer);
+		Result := self.HTTPGet(URL, Answer);
 	except
 		on E: Exception do
 		begin
@@ -264,7 +264,7 @@ begin
 		end;
 
 	end;
-	if PostResult then
+	if Result then
 	begin
 		Result := true;
 		self.token := self.getTokenFromText(Answer);
