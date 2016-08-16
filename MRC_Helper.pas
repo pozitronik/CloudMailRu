@@ -48,7 +48,7 @@ function SetAccountSettingsToIniFile(IniFilePath: WideString; AccountSettings: T
 procedure GetAccountsListFromIniFile(IniFilePath: WideString; var AccountsList: TStringList);
 procedure DeleteAccountFromIniFile(IniFilePath: WideString; AccountName: WideString);
 function GetPluginSettings(IniFilePath: WideString): TPluginSettings;
-function SetPluginSettings(IniFilePath: WideString; PluginSettings: TPluginSettings): boolean;
+procedure SetPluginSettings(IniFilePath: WideString; PluginSettings: TPluginSettings);
 function SetPluginSettingsValue(IniFilePath: WideString; OptionName: WideString; OptionValue: Variant): boolean;
 procedure CenterWindow(WindowToStay, WindowToCenter: HWND);
 function UrlEncode(URL: WideString): WideString;
@@ -207,7 +207,7 @@ begin
 	IniFile.Destroy;
 end;
 
-function SetPluginSettings(IniFilePath: WideString; PluginSettings: TPluginSettings): boolean; { Не используется }
+procedure SetPluginSettings(IniFilePath: WideString; PluginSettings: TPluginSettings); { Не используется }
 var
 	IniFile: TIniFile;
 begin
