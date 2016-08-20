@@ -92,7 +92,7 @@ type
 		function getToken(): Boolean;
 		function getShard(var Shard: WideString): Boolean;
 		function putFileToCloud(localPath: WideString; Return: TStringList): integer;
-		function addFileToCloud(hash: WideString; size: integer; remotePath: WideString; var JSONAnswer: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT): Boolean;
+		function addFileToCloud(hash: WideString; size: int64; remotePath: WideString; var JSONAnswer: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT): Boolean;
 		function getUserSpace(var SpaceInfo: TCloudMailRuSpaceInfo): Boolean;
 		function HTTPPost(URL: WideString; PostData: TStringStream; var Answer: WideString; ContentType: WideString = 'application/x-www-form-urlencoded'): Boolean; // Постинг данных с возможным получением ответа.
 
@@ -336,7 +336,7 @@ begin
 	end;
 end;
 
-function TCloudMailRu.addFileToCloud(hash: WideString; size: integer; remotePath: WideString; var JSONAnswer: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT): Boolean;
+function TCloudMailRu.addFileToCloud(hash: WideString; size: int64; remotePath: WideString; var JSONAnswer: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT): Boolean;
 var
 	URL: WideString;
 	PostData: TStringStream;
@@ -753,7 +753,8 @@ function TCloudMailRu.putFile(localPath, remotePath: WideString; ConflictMode: W
 var
 	PutResult: TStringList;
 	JSONAnswer, FileHash: WideString;
-	FileSize, Code, OperationStatus: integer;
+	FileSize: int64;
+	Code, OperationStatus: integer;
 	OperationResult: integer;
 begin
 	if (not(self.unlimited_filesize)) and (SizeOfFile('\\?\' + localPath) > CLOUD_MAX_FILESIZE) then
@@ -1025,7 +1026,7 @@ begin
 	ToPath := UrlEncode(StringReplace(ToPath, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
 	URL := 'https://cloud.mail.ru/api/v2/file/move';
 	PostResult := false;
-		PostData := TStringStream.Create('api=2&home=' + OldName + '&folder=' + ToPath + '&token=' + self.token + '&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id + '&conflict', TEncoding.UTF8);
+	PostData := TStringStream.Create('api=2&home=' + OldName + '&folder=' + ToPath + '&token=' + self.token + '&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id + '&conflict', TEncoding.UTF8);
 	try
 		PostResult := self.HTTPPost(URL, PostData, PostAnswer);
 	except
