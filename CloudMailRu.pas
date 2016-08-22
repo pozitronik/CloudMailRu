@@ -483,7 +483,13 @@ begin
 		HTTP.Response.KeepAlive := true;
 		HTTP.OnWork := self.HttpProgress;
 		HTTP.Get(URL, FileStream);
+		if (HTTP.RedirectCount = HTTP.RedirectMaximum) and (FileStream.size = 0) then
+		begin
+			Log(MSGTYPE_IMPORTANTERROR, 'Достигнуто максимальное количество перенаправлений при запросе файла с адреса ' + URL);
+			Result := FS_FILE_READERROR;
+		end;
 		self.HTTPDestroy(HTTP, SSL, Socks);
+
 	except
 		on E: EAbort do
 		begin
