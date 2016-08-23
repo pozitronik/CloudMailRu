@@ -3,8 +3,8 @@ object AccountsForm: TAccountsForm
   Top = 0
   BorderStyle = bsDialog
   Caption = 'Cloud Accounts'
-  ClientHeight = 478
-  ClientWidth = 489
+  ClientHeight = 405
+  ClientWidth = 492
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -151,241 +151,251 @@ object AccountsForm: TAccountsForm
   Position = poOwnerFormCenter
   OnActivate = FormActivate
   OnShow = FormShow
-  DesignSize = (
-    489
-    478)
   PixelsPerInch = 96
   TextHeight = 13
-  object UsernameLabel: TLabel
-    Left = 228
-    Top = 54
-    Width = 28
-    Height = 13
-    Anchors = [akLeft, akTop, akRight]
-    Caption = 'Email:'
-  end
-  object AccountNameLabel: TLabel
-    Left = 228
-    Top = 8
-    Width = 68
-    Height = 13
-    Anchors = [akLeft, akTop, akRight]
-    Caption = 'Account name'
-  end
-  object PasswordLabel: TLabel
-    Left = 228
-    Top = 100
-    Width = 210
-    Height = 13
-    Anchors = [akLeft, akTop, akRight]
-    Caption = 'Password (stored as plaintext, see readme)'
-  end
-  object AccountsGroupBox: TGroupBox
+  object OptionPages: TPageControl
     Left = 0
     Top = 0
-    Width = 225
-    Height = 474
-    Anchors = [akLeft, akTop, akBottom]
-    Caption = 'Accounts'
+    Width = 492
+    Height = 405
+    ActivePage = AccountsTab
+    Align = alClient
     TabOrder = 0
-    ExplicitHeight = 452
-    DesignSize = (
-      225
-      474)
-    object AccountsList: TListBox
-      Left = 4
-      Top = 16
-      Width = 218
-      Height = 455
-      Style = lbVirtual
-      Anchors = [akLeft, akTop, akRight, akBottom]
-      ExtendedSelect = False
-      ItemHeight = 13
-      TabOrder = 0
-      OnClick = AccountsListClick
-      OnKeyUp = AccountsListKeyUp
-      ExplicitHeight = 433
+    object AccountsTab: TTabSheet
+      Caption = 'Accounts settings'
+      ExplicitLeft = 8
+      ExplicitTop = 28
+      DesignSize = (
+        484
+        377)
+      object PasswordLabel: TLabel
+        Left = 225
+        Top = 97
+        Width = 255
+        Height = 13
+        Anchors = [akLeft, akTop, akRight]
+        Caption = 'Password (stored as plaintext, see readme)'
+      end
+      object UsernameLabel: TLabel
+        Left = 225
+        Top = 54
+        Width = 255
+        Height = 13
+        Anchors = [akLeft, akTop, akRight]
+        Caption = 'Email:'
+      end
+      object AccountNameLabel: TLabel
+        Left = 225
+        Top = 10
+        Width = 255
+        Height = 13
+        Anchors = [akLeft, akTop, akRight]
+        Caption = 'Account name'
+      end
+      object AccountsGroupBox: TGroupBox
+        Left = -4
+        Top = 0
+        Width = 225
+        Height = 378
+        Anchors = [akLeft, akTop, akBottom]
+        Caption = 'Accounts'
+        TabOrder = 0
+        ExplicitHeight = 585
+        DesignSize = (
+          225
+          378)
+        object AccountsList: TListBox
+          Left = 4
+          Top = 17
+          Width = 218
+          Height = 358
+          Style = lbVirtual
+          Anchors = [akLeft, akTop, akRight, akBottom]
+          ExtendedSelect = False
+          ItemHeight = 13
+          TabOrder = 0
+          OnClick = AccountsListClick
+          OnKeyUp = AccountsListKeyUp
+          ExplicitHeight = 506
+        end
+      end
+      object ApplyButton: TButton
+        Left = 225
+        Top = 347
+        Width = 75
+        Height = 27
+        Caption = 'Add'
+        TabOrder = 1
+        OnClick = ApplyButtonClick
+      end
+      object DeleteButton: TButton
+        Left = 405
+        Top = 347
+        Width = 75
+        Height = 27
+        Caption = 'Delete'
+        TabOrder = 2
+        OnClick = DeleteButtonClick
+      end
+      object UnlimitedFileSizeCB: TCheckBox
+        Left = 225
+        Top = 165
+        Width = 255
+        Height = 17
+        Anchors = [akLeft, akTop, akRight]
+        Caption = 'Ignore 2Gb limit (paid account)'
+        TabOrder = 3
+      end
+      object UseTCPwdMngrCB: TCheckBox
+        Left = 225
+        Top = 142
+        Width = 255
+        Height = 17
+        Anchors = [akLeft, akTop, akRight]
+        Caption = 'Store password in TC password manager'
+        TabOrder = 4
+      end
+      object PasswordEdit: TEdit
+        Left = 225
+        Top = 115
+        Width = 255
+        Height = 21
+        Anchors = [akLeft, akTop, akRight]
+        PasswordChar = '*'
+        TabOrder = 5
+      end
+      object EmailEdit: TEdit
+        Left = 225
+        Top = 69
+        Width = 255
+        Height = 21
+        Anchors = [akLeft, akTop, akRight]
+        TabOrder = 6
+        OnChange = EmailEditChange
+      end
+      object AccountNameEdit: TEdit
+        Left = 225
+        Top = 27
+        Width = 255
+        Height = 21
+        Anchors = [akLeft, akTop, akRight]
+        TabOrder = 7
+        OnChange = AccountNameEditChange
+      end
     end
-  end
-  object EmailEdit: TEdit
-    Left = 228
-    Top = 73
-    Width = 258
-    Height = 21
-    Anchors = [akLeft, akTop, akRight]
-    TabOrder = 2
-    OnChange = EmailEditChange
-  end
-  object AccountNameEdit: TEdit
-    Left = 228
-    Top = 27
-    Width = 258
-    Height = 21
-    Anchors = [akLeft, akTop, akRight]
-    TabOrder = 1
-    OnChange = AccountNameEditChange
-  end
-  object PasswordEdit: TEdit
-    Left = 228
-    Top = 115
-    Width = 258
-    Height = 21
-    Anchors = [akLeft, akTop, akRight]
-    PasswordChar = '*'
-    TabOrder = 3
-  end
-  object UseTCPwdMngrCB: TCheckBox
-    Left = 228
-    Top = 142
-    Width = 250
-    Height = 17
-    Anchors = [akLeft, akTop, akRight]
-    Caption = 'Store password in TC password manager'
-    TabOrder = 4
-  end
-  object ApplyButton: TButton
-    Left = 228
-    Top = 192
-    Width = 75
-    Height = 27
-    Caption = 'Add'
-    TabOrder = 5
-    OnClick = ApplyButtonClick
-  end
-  object DeleteButton: TButton
-    Left = 406
-    Top = 192
-    Width = 75
-    Height = 27
-    Caption = 'Delete'
-    TabOrder = 6
-    OnClick = DeleteButtonClick
-  end
-  object GlobalOptionsGroup: TGroupBox
-    Left = 228
-    Top = 223
-    Width = 258
-    Height = 251
-    Anchors = [akLeft, akTop, akBottom]
-    Caption = 'Global options'
-    TabOrder = 7
-    ExplicitHeight = 221
-    object ProxyTypeLabel: TLabel
-      Left = 5
-      Top = 63
-      Width = 53
-      Height = 13
-      Caption = 'Proxy type'
+    object GlobalTab: TTabSheet
+      Caption = 'Global settings'
+      ImageIndex = 1
+      ExplicitLeft = 8
+      ExplicitTop = 28
+      object ProxyPWDLabel: TLabel
+        Left = 5
+        Top = 189
+        Width = 475
+        Height = 13
+        Caption = 'Proxy authentication password'
+      end
+      object ProxyUserLabel: TLabel
+        Left = 5
+        Top = 142
+        Width = 475
+        Height = 13
+        Caption = 'Proxy authentication username (blank for none)'
+      end
+      object ProxyDivLabel: TLabel
+        Left = 391
+        Top = 115
+        Width = 4
+        Height = 13
+        Caption = ':'
+      end
+      object ProxyPortLabel: TLabel
+        Left = 399
+        Top = 96
+        Width = 20
+        Height = 13
+        Caption = 'Port'
+      end
+      object ProxyServerLabel: TLabel
+        Left = 5
+        Top = 96
+        Width = 475
+        Height = 13
+        Caption = 'Proxy server'
+      end
+      object ProxyTypeLabel: TLabel
+        Left = 5
+        Top = 50
+        Width = 475
+        Height = 13
+        Caption = 'Proxy type'
+      end
+      object ProxyPWDEdit: TEdit
+        Left = 5
+        Top = 208
+        Width = 475
+        Height = 21
+        TabOrder = 0
+        OnChange = ProxyPWDEditChange
+      end
+      object ProxyUserEdit: TEdit
+        Left = 5
+        Top = 161
+        Width = 475
+        Height = 21
+        TabOrder = 1
+        OnChange = ProxyUserEditChange
+      end
+      object ProxyServerEdit: TEdit
+        Left = 5
+        Top = 115
+        Width = 382
+        Height = 21
+        TabOrder = 2
+        OnChange = ProxyServerEditChange
+      end
+      object ProxyPortEdit: TEdit
+        Left = 399
+        Top = 115
+        Width = 81
+        Height = 21
+        NumbersOnly = True
+        TabOrder = 3
+        OnChange = ProxyPortEditChange
+      end
+      object ProxyCB: TComboBox
+        Left = 5
+        Top = 69
+        Width = 475
+        Height = 22
+        Style = csOwnerDrawFixed
+        ItemIndex = 0
+        TabOrder = 4
+        Text = 'No proxy'
+        OnChange = ProxyCBChange
+        Items.Strings = (
+          'No proxy'
+          'Socks5'
+          'Socks4')
+      end
+      object PreserveFileTimeCB: TCheckBox
+        Left = 5
+        Top = 26
+        Width = 475
+        Height = 17
+        Caption = 'Preserve file creation time'
+        TabOrder = 5
+        OnClick = PreserveFileTimeCBClick
+      end
+      object UseDLLFromPluginDir: TCheckBox
+        Left = 5
+        Top = 3
+        Width = 475
+        Height = 17
+        Caption = 'Load SSL libraries only from plugin directory'
+        TabOrder = 6
+        OnClick = UseDLLFromPluginDirClick
+      end
     end
-    object ProxyPWDLabel: TLabel
-      Left = 3
-      Top = 202
-      Width = 149
-      Height = 13
-      Caption = 'Proxy authentication password'
-    end
-    object ProxyServerLabel: TLabel
-      Left = 5
-      Top = 109
-      Width = 62
-      Height = 13
-      Caption = 'Proxy server'
-    end
-    object ProxyPortLabel: TLabel
-      Left = 190
-      Top = 109
-      Width = 20
-      Height = 13
-      Caption = 'Port'
-    end
-    object ProxyDivLabel: TLabel
-      Left = 186
-      Top = 128
-      Width = 4
-      Height = 13
-      Caption = ':'
-    end
-    object ProxyUserLabel: TLabel
-      Left = 5
-      Top = 155
-      Width = 230
-      Height = 13
-      Caption = 'Proxy authentication username (blank for none)'
-    end
-    object UseDLLFromPluginDir: TCheckBox
-      Left = 5
-      Top = 16
-      Width = 238
-      Height = 17
-      Caption = 'Load SSL libraries only from plugin directory'
-      TabOrder = 0
-      OnClick = UseDLLFromPluginDirClick
-    end
-    object ProxyCB: TComboBox
-      Left = 5
-      Top = 82
-      Width = 250
-      Height = 22
-      Style = csOwnerDrawFixed
-      ItemIndex = 0
-      TabOrder = 1
-      Text = 'No proxy'
-      OnChange = ProxyCBChange
-      Items.Strings = (
-        'No proxy'
-        'Socks5'
-        'Socks4')
-    end
-    object ProxyServerEdit: TEdit
-      Left = 5
-      Top = 128
-      Width = 180
-      Height = 21
-      TabOrder = 2
-      OnChange = ProxyServerEditChange
-    end
-    object ProxyPortEdit: TEdit
-      Left = 190
-      Top = 128
-      Width = 65
-      Height = 21
-      NumbersOnly = True
-      TabOrder = 3
-      OnChange = ProxyPortEditChange
-    end
-    object ProxyPWDEdit: TEdit
-      Left = 3
-      Top = 221
-      Width = 250
-      Height = 21
-      TabOrder = 4
-      OnChange = ProxyPWDEditChange
-    end
-    object ProxyUserEdit: TEdit
-      Left = 3
-      Top = 174
-      Width = 250
-      Height = 21
-      TabOrder = 5
-      OnChange = ProxyUserEditChange
-    end
-    object PreserveFileTimeCB: TCheckBox
-      Left = 5
-      Top = 39
-      Width = 238
-      Height = 17
-      Caption = 'Preserve file creation time'
-      TabOrder = 6
-      OnClick = PreserveFileTimeCBClick
-    end
-  end
-  object UnlimitedFileSizeCB: TCheckBox
-    Left = 228
-    Top = 165
-    Width = 250
-    Height = 17
-    Anchors = [akLeft, akTop, akRight]
-    Caption = 'Ignore 2Gb limit (paid account)'
-    TabOrder = 8
   end
 end

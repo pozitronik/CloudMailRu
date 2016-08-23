@@ -4,36 +4,38 @@ interface
 
 uses
 	Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
-	Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, IniFiles, MRC_Helper, PLUGIN_Types;
+	Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, IniFiles, MRC_Helper, PLUGIN_Types, Vcl.ComCtrls;
 
 type
 	TAccountsForm = class(TForm)
+		OptionPages: TPageControl;
+		AccountsTab: TTabSheet;
+		GlobalTab: TTabSheet;
 		AccountsGroupBox: TGroupBox;
 		AccountsList: TListBox;
-		UsernameLabel: TLabel;
-		EmailEdit: TEdit;
-		AccountNameLabel: TLabel;
-		AccountNameEdit: TEdit;
-		PasswordEdit: TEdit;
-		PasswordLabel: TLabel;
-		UseTCPwdMngrCB: TCheckBox;
 		ApplyButton: TButton;
 		DeleteButton: TButton;
-		GlobalOptionsGroup: TGroupBox;
-		UseDLLFromPluginDir: TCheckBox;
-		ProxyCB: TComboBox;
-		ProxyTypeLabel: TLabel;
+		UnlimitedFileSizeCB: TCheckBox;
+		UseTCPwdMngrCB: TCheckBox;
+		PasswordEdit: TEdit;
+		PasswordLabel: TLabel;
+		EmailEdit: TEdit;
+		UsernameLabel: TLabel;
+		AccountNameEdit: TEdit;
+		AccountNameLabel: TLabel;
+		ProxyPWDEdit: TEdit;
 		ProxyPWDLabel: TLabel;
-		ProxyServerLabel: TLabel;
-		ProxyPortLabel: TLabel;
+		ProxyUserEdit: TEdit;
+		ProxyUserLabel: TLabel;
 		ProxyServerEdit: TEdit;
 		ProxyPortEdit: TEdit;
 		ProxyDivLabel: TLabel;
-		ProxyPWDEdit: TEdit;
-		ProxyUserLabel: TLabel;
-		ProxyUserEdit: TEdit;
-		UnlimitedFileSizeCB: TCheckBox;
+		ProxyPortLabel: TLabel;
+		ProxyServerLabel: TLabel;
+		ProxyCB: TComboBox;
+		ProxyTypeLabel: TLabel;
 		PreserveFileTimeCB: TCheckBox;
+		UseDLLFromPluginDir: TCheckBox;
 		procedure FormShow(Sender: TObject);
 		procedure AccountsListClick(Sender: TObject);
 		procedure ApplyButtonClick(Sender: TObject);
