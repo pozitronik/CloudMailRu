@@ -9,6 +9,8 @@ const
 	ProxySocks5 = 1;
 	ProxySocks4 = 2;
 
+	MAX_UNC_PATH = 32767;
+
 type
 	TRealPath = record
 		account: WideString;
@@ -53,6 +55,7 @@ procedure SetPluginSettingsValue(IniFilePath: WideString; OptionName: WideString
 procedure CenterWindow(WindowToStay, WindowToCenter: HWND);
 function UrlEncode(URL: WideString): WideString;
 function FindTCWindow: HWND;
+function GetTmpDir: WideString;
 
 implementation
 
@@ -284,6 +287,15 @@ end;
 function FindTCWindow: HWND;
 begin
 	Result := FindWindow('TTOTAL_CMD', nil); { Хендл отдаётся корректно даже при нескольких запущенных тоталах }
+end;
+
+function GetTmpDir: WideString;
+var
+	tempFolder: array [0 .. MAX_UNC_PATH] of WideChar;
+begin
+	GetTempPathW(MAX_PATH, @tempFolder);
+	Result := IncludeTrailingBackslash(StrPas(tempFolder));
+  GetCurrentProcessId.ToString()
 end;
 
 end.
