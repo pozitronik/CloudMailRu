@@ -9,7 +9,6 @@ uses
 	Classes,
 	PLUGIN_TYPES,
 	IdSSLOpenSSLHeaders,
-
 	messages,
 	inifiles,
 	Vcl.controls,
@@ -583,7 +582,7 @@ var
 	getResult: integer;
 	Item: TCloudMailRuDirListingItem;
 begin
-//	Result := FS_FILE_NOTSUPPORTED;
+	// Result := FS_FILE_NOTSUPPORTED;
 	If CheckFlag(FS_COPYFLAGS_RESUME, CopyFlags) then exit(FS_FILE_NOTSUPPORTED); { NEVER CALLED HERE }
 	RealPath := ExtractRealPath(RemoteName);
 
@@ -612,7 +611,7 @@ var
 	RealPath: TRealPath;
 	getResult: integer;
 begin
-//	Result := FS_FILE_NOTSUPPORTED;
+	// Result := FS_FILE_NOTSUPPORTED;
 	RealPath := ExtractRealPath(RemoteName);
 	if RealPath.account = '' then exit(FS_FILE_NOTSUPPORTED);
 	MyProgressProc(PluginNum, LocalName, PWideChar(RealPath.path), 0);
