@@ -36,6 +36,7 @@ type
 		ProxyTypeLabel: TLabel;
 		PreserveFileTimeCB: TCheckBox;
 		UseDLLFromPluginDir: TCheckBox;
+		SplitLargeFilesCB: TCheckBox;
 		procedure FormShow(Sender: TObject);
 		procedure AccountsListClick(Sender: TObject);
 		procedure ApplyButtonClick(Sender: TObject);
@@ -94,6 +95,7 @@ begin
 		PasswordEdit.Text := CASettings.password;
 		UseTCPwdMngrCB.Checked := CASettings.use_tc_password_manager;
 		UnlimitedFileSizeCB.Checked := CASettings.unlimited_filesize;
+		SplitLargeFilesCB.Checked := CASettings.split_large_files;
 	end else begin
 		AccountNameEdit.Text := '';
 		EmailEdit.Text := '';
@@ -117,6 +119,7 @@ begin
 	CASettings.password := PasswordEdit.Text;
 	CASettings.use_tc_password_manager := UseTCPwdMngrCB.Checked;
 	CASettings.unlimited_filesize := UnlimitedFileSizeCB.Checked;
+	CASettings.split_large_files := SplitLargeFilesCB.Checked;
 	if CASettings.use_tc_password_manager then // просим TC сохранить пароль
 	begin
 		case self.CryptProc(self.PluginNum, self.CryptoNum, FS_CRYPT_SAVE_PASSWORD, PWideChar(CASettings.name), PWideChar(CASettings.password), SizeOf(CASettings.password)) of

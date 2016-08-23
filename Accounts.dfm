@@ -282,6 +282,15 @@ object AccountsForm: TAccountsForm
         TabOrder = 7
         OnChange = AccountNameEditChange
       end
+      object SplitLargeFilesCB: TCheckBox
+        Left = 224
+        Top = 188
+        Width = 255
+        Height = 17
+        Anchors = [akLeft, akTop, akRight]
+        Caption = 'Split large files to 2Gb parts'
+        TabOrder = 8
+      end
     end
     object GlobalTab: TTabSheet
       Caption = 'Global settings'

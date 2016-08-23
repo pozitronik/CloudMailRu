@@ -22,6 +22,7 @@ type
 		use_tc_password_manager: boolean;
 		user, domain: WideString; // parsed values from email
 		unlimited_filesize: boolean;
+		split_large_files: boolean;
 	end;
 
 	TProxySettings = record
@@ -154,6 +155,7 @@ begin
 	Result.password := IniFile.ReadString(Result.name, 'password', '');
 	Result.use_tc_password_manager := IniFile.ReadBool(Result.name, 'tc_pwd_mngr', false);
 	Result.unlimited_filesize := IniFile.ReadBool(Result.name, 'unlimited_filesize', false);
+	Result.split_large_files := IniFile.ReadBool(Result.name, 'split_large_files', false);
 	AtPos := AnsiPos('@', Result.email);
 	if AtPos <> 0 then
 	begin
@@ -174,6 +176,7 @@ begin
 	IniFile.WriteString(AccountSettings.name, 'password', AccountSettings.password);
 	IniFile.WriteBool(AccountSettings.name, 'tc_pwd_mngr', AccountSettings.use_tc_password_manager);
 	IniFile.WriteBool(AccountSettings.name, 'unlimited_filesize', AccountSettings.unlimited_filesize);
+	IniFile.WriteBool(AccountSettings.name, 'split_large_files', AccountSettings.split_large_files);
 	IniFile.Destroy;
 end;
 
@@ -295,7 +298,7 @@ var
 begin
 	GetTempPathW(MAX_PATH, @tempFolder);
 	Result := IncludeTrailingBackslash(StrPas(tempFolder));
-  GetCurrentProcessId.ToString()
+	GetCurrentProcessId.ToString()
 end;
 
 end.
