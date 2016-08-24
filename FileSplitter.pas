@@ -94,7 +94,7 @@ begin
 	self.Splitted.filename := filename;
 	self.Splitted.size := SizeOfFile(filename);
 	self.totalPartsCount := self.Splitted.size div self.PartSize;
-  if (self.Splitted.size mod self.PartSize)<>0 then inc(self.totalPartsCount);
+	if (self.Splitted.size mod self.PartSize) <> 0 then inc(self.totalPartsCount);
 
 	self.Splitted.path := IncludeTrailingBackslash(GetTmpDir + GetCurrentProcessId.ToString());
 	if not DirectoryExists(self.Splitted.path) then
@@ -106,7 +106,7 @@ end;
 
 destructor TFileSplitter.Destroy;
 begin
-  //TODO: delete all files
+	// TODO: delete all files
 	inherited;
 end;
 
@@ -144,7 +144,7 @@ begin
 
 	FStream.Position := self.PartSize * partNumber;
 
-	if partNumber = self.totalPartsCount-1 then // last part of file
+	if partNumber = self.totalPartsCount - 1 then // last part of file
 	begin
 		PartSize := self.Splitted.size - (self.PartSize * partNumber);
 	end
@@ -169,7 +169,7 @@ begin
 	FStream.Position := 0;
 
 	SetLength(self.Splitted.parts, self.totalPartsCount);
-	for partsCount := 0 to self.totalPartsCount-1 do
+	for partsCount := 0 to self.totalPartsCount - 1 do
 	begin
 		PartName := self.Splitted.path + ExtractFileName(ChangeFileExt(self.Splitted.filename, '.' + self.AddLeadingZeroes(partsCount + 1, 3)));
 		try
@@ -178,7 +178,7 @@ begin
 			exit(FS_FILE_WRITEERROR);
 		end;
 		FStream.Position := self.PartSize * partsCount;
-		if partsCount = self.totalPartsCount-1 then // last part of file
+		if partsCount = self.totalPartsCount - 1 then // last part of file
 		begin
 			PartSize := self.Splitted.size - (self.PartSize * partsCount);
 		end
