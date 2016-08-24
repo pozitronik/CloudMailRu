@@ -298,7 +298,6 @@ var
 begin
 	GetTempPathW(MAX_PATH, @tempFolder);
 	Result := IncludeTrailingBackslash(StrPas(tempFolder));
-	GetCurrentProcessId.ToString()
 end;
 
 end.
