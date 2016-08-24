@@ -184,6 +184,7 @@ begin
 		self.password := password;
 		self.domain := domain;
 		self.unlimited_filesize := unlimited_filesize;
+		self.split_large_files := split_large_files;
 		self.ExternalProgressProc := ExternalProgressProc;
 		self.ExternalLogProc := ExternalLogProc;
 
@@ -787,7 +788,7 @@ begin
 				Splitter.Destroy;
 				exit(FS_FILE_NOTSUPPORTED);
 			end;
-			for SplittedPartIndex := 0 to Length(Splitter.SplitResult.parts) - 1 do
+			for SplittedPartIndex := 0 to Length(Splitter.SplitResult.parts) do
 			begin
 				self.putFile(Splitter.SplitResult.parts[SplittedPartIndex].filename, remotePath + SplittedPartIndex.ToString(), ConflictMode);
 			end;
