@@ -788,7 +788,7 @@ begin
 				Splitter.Destroy;
 				exit(FS_FILE_NOTSUPPORTED);
 			end;
-			for SplittedPartIndex := 0 to Length(Splitter.SplitResult.parts) do
+			for SplittedPartIndex := 0 to Length(Splitter.SplitResult.parts)-1 do
 			begin
 				self.putFile(Splitter.SplitResult.parts[SplittedPartIndex].filename, remotePath + SplittedPartIndex.ToString(), ConflictMode);
 			end;
