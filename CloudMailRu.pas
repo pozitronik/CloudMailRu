@@ -319,7 +319,7 @@ begin
 	PostData := TIdMultipartFormDataStream.Create;
 	try
 
-		PostData.AddFile('file', '\\?\' + localPath, 'application/octet-stream');
+		PostData.AddFile('file', ExpandUNCFileName(localPath), 'application/octet-stream');
 		Result := self.HTTPPostFile(URL, PostData, PostAnswer);
 	except
 		on E: Exception do
@@ -651,7 +651,7 @@ begin
 	Result := FS_FILE_OK;
 	remotePath := UrlEncode(StringReplace(remotePath, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
 	try
-		FileStream := TFileStream.Create('\\?\' + localPath, fmCreate);
+		FileStream := TFileStream.Create(ExpandUNCFileName(localPath), fmCreate);
 	except
 		on E: Exception do
 		begin
@@ -676,7 +676,7 @@ begin
 
 	if Result <> FS_FILE_OK then
 	begin
-		System.SysUtils.deleteFile('\\?\' + localPath);
+		System.SysUtils.deleteFile(ExpandUNCFileName(localPath));
 	end;
 end;
 
@@ -767,7 +767,7 @@ var
 	Splitter: TFileSplitter;
 	// SplitedFile: TSplittedFile;
 begin
-	if (not(self.unlimited_filesize)) and (SizeOfFile('\\?\' + localPath) >= CLOUD_MAX_FILESIZE+1) then
+	if (not(self.unlimited_filesize)) and (SizeOfFile(ExpandUNCFileName(localPath)) >= CLOUD_MAX_FILESIZE+1) then
 	begin
 		if self.split_large_files then
 		begin
