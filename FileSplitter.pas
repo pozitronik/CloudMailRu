@@ -104,7 +104,7 @@ end;
 
 destructor TFileSplitter.Destroy;
 begin
-
+  //TODO: delete all files
 	inherited;
 end;
 

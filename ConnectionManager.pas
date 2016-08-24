@@ -1,4 +1,4 @@
-unit ConnectionManager;
+﻿unit ConnectionManager;
 
 { Обеспечиваем управление множественными поключениями без необходимости постоянных переподключений. При первом обращении нужное подключение создаётся,
 	при последующих - отдаются уже созданные. }
@@ -104,7 +104,7 @@ begin
 
 	MyLogProc(PluginNum, MSGTYPE_CONNECT, PWideChar('CONNECT ' + AccountSettings.email));
 
-	cloud := TCloudMailRu.Create(AccountSettings.user, AccountSettings.domain, AccountSettings.password, AccountSettings.unlimited_filesize, self.Proxy, MyProgressProc, PluginNum, MyLogProc);
+	cloud := TCloudMailRu.Create(AccountSettings.user, AccountSettings.domain, AccountSettings.password, AccountSettings.unlimited_filesize, AccountSettings.split_large_files, self.Proxy, MyProgressProc, PluginNum, MyLogProc);
 	if not set_(connectionName, cloud) then exit(CLOUD_OPERATION_ERROR_STATUS_UNKNOWN); // INVALID_HANDLE_VALUE
 
 	if not(get(connectionName, result, false).login()) then free(connectionName);

@@ -6,7 +6,7 @@ uses
 	System.Classes, System.SysUtils, PLUGIN_Types, JSON, Winapi.Windows,
 	MRC_helper, IdCookieManager, IdIOHandler, IdIOHandlerSocket, IdIOHandlerStack, IdSSL,
 	IdSSLOpenSSL, IdBaseComponent, IdComponent, IdTCPConnection, IdTCPClient, IdSocks,
-	IdHTTP, IdAuthentication, IdIOHandlerStream, IdMultipartFormData;
+	IdHTTP, IdAuthentication, IdIOHandlerStream, IdMultipartFormData, FileSplitter;
 
 const
 {$IFDEF WIN64}
@@ -75,6 +75,7 @@ type
 		user: WideString;
 		password: WideString;
 		unlimited_filesize: Boolean;
+		split_large_files: Boolean;
 		token: WideString;
 		x_page_id: WideString;
 		build: WideString;
@@ -118,7 +119,7 @@ type
 		ExternalPluginNr: integer;
 		ExternalSourceName: PWideChar;
 		ExternalTargetName: PWideChar;
-		constructor Create(user, domain, password: WideString; unlimited_filesize: Boolean; Proxy: TProxySettings; ExternalProgressProc: TProgressProcW = nil; PluginNr: integer = -1; ExternalLogProc: TLogProcW = nil);
+		constructor Create(user, domain, password: WideString; unlimited_filesize: Boolean; split_large_files: Boolean; Proxy: TProxySettings; ExternalProgressProc: TProgressProcW = nil; PluginNr: integer = -1; ExternalLogProc: TLogProcW = nil);
 		destructor Destroy; override;
 		function login(): Boolean;
 
@@ -143,7 +144,7 @@ implementation
 
 { CONSTRUCTOR/DESTRUCTOR }
 
-constructor TCloudMailRu.Create(user, domain, password: WideString; unlimited_filesize: Boolean; Proxy: TProxySettings; ExternalProgressProc: TProgressProcW; PluginNr: integer; ExternalLogProc: TLogProcW);
+constructor TCloudMailRu.Create(user, domain, password: WideString; unlimited_filesize: Boolean; split_large_files: Boolean; Proxy: TProxySettings; ExternalProgressProc: TProgressProcW; PluginNr: integer; ExternalLogProc: TLogProcW);
 begin
 	try
 		self.Cookie := TIdCookieManager.Create();
@@ -761,12 +762,41 @@ var
 	JSONAnswer, FileHash: WideString;
 	FileSize: int64;
 	Code, OperationStatus: integer;
-	OperationResult: integer;
+	OperationResult, SplitResult, SplittedPartIndex: integer;
+	Splitter: TFileSplitter;
+	// SplitedFile: TSplittedFile;
 begin
 	if (not(self.unlimited_filesize)) and (SizeOfFile('\\?\' + localPath) > CLOUD_MAX_FILESIZE) then
 	begin
-		Log(MSGTYPE_IMPORTANTERROR, 'File size > ' + CLOUD_MAX_FILESIZE.ToString() + ' bytes, ignored');
-		exit(FS_FILE_NOTSUPPORTED);
+		if self.split_large_files then
+		begin
+			Log(MSGTYPE_DETAILS, 'File size > ' + CLOUD_MAX_FILESIZE.ToString() + ' bytes, file will be splitted.');
+			try
+				Splitter := TFileSplitter.Create(localPath);
+			except
+				on E: Exception do
+				begin
+					Log(MSGTYPE_IMPORTANTERROR, 'File splitting error: ' + E.Message + ', ignored');
+					exit(FS_FILE_NOTSUPPORTED);
+				end;
+			end;
+			SplitResult := Splitter.split();
+			if SplitResult <> FS_FILE_OK then
+			begin
+				Log(MSGTYPE_IMPORTANTERROR, 'File splitting error code: ' + SplitResult.ToString + ', ignored');
+				Splitter.Destroy;
+				exit(FS_FILE_NOTSUPPORTED);
+			end;
+			for SplittedPartIndex := 0 to Length(Splitter.SplitResult.parts) - 1 do
+			begin
+				self.putFile(Splitter.SplitResult.parts[SplittedPartIndex].filename, remotePath + SplittedPartIndex.ToString(), ConflictMode);
+			end;
+			Splitter.Destroy;
+		end else begin
+			Log(MSGTYPE_IMPORTANTERROR, 'File size > ' + CLOUD_MAX_FILESIZE.ToString() + ' bytes, ignored');
+			exit(FS_FILE_NOTSUPPORTED);
+		end;
+
 	end;
 	FileSize := 0;
 	Result := FS_FILE_WRITEERROR;
