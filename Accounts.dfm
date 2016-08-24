@@ -163,15 +163,13 @@ object AccountsForm: TAccountsForm
     TabOrder = 0
     object AccountsTab: TTabSheet
       Caption = 'Accounts settings'
-      ExplicitLeft = 8
-      ExplicitTop = 28
       DesignSize = (
         484
         377)
       object PasswordLabel: TLabel
         Left = 225
         Top = 97
-        Width = 255
+        Width = 210
         Height = 13
         Anchors = [akLeft, akTop, akRight]
         Caption = 'Password (stored as plaintext, see readme)'
@@ -179,7 +177,7 @@ object AccountsForm: TAccountsForm
       object UsernameLabel: TLabel
         Left = 225
         Top = 54
-        Width = 255
+        Width = 28
         Height = 13
         Anchors = [akLeft, akTop, akRight]
         Caption = 'Email:'
@@ -187,7 +185,7 @@ object AccountsForm: TAccountsForm
       object AccountNameLabel: TLabel
         Left = 225
         Top = 10
-        Width = 255
+        Width = 68
         Height = 13
         Anchors = [akLeft, akTop, akRight]
         Caption = 'Account name'
@@ -200,7 +198,6 @@ object AccountsForm: TAccountsForm
         Anchors = [akLeft, akTop, akBottom]
         Caption = 'Accounts'
         TabOrder = 0
-        ExplicitHeight = 585
         DesignSize = (
           225
           378)
@@ -216,7 +213,6 @@ object AccountsForm: TAccountsForm
           TabOrder = 0
           OnClick = AccountsListClick
           OnKeyUp = AccountsListKeyUp
-          ExplicitHeight = 506
         end
       end
       object ApplyButton: TButton
@@ -288,26 +284,24 @@ object AccountsForm: TAccountsForm
         Width = 255
         Height = 17
         Anchors = [akLeft, akTop, akRight]
-        Caption = 'Split large files to 2Gb parts'
+        Caption = 'Split large files to 2Gb parts (EXPERIMENTAL)'
         TabOrder = 8
       end
     end
     object GlobalTab: TTabSheet
       Caption = 'Global settings'
       ImageIndex = 1
-      ExplicitLeft = 8
-      ExplicitTop = 28
       object ProxyPWDLabel: TLabel
         Left = 5
         Top = 189
-        Width = 475
+        Width = 149
         Height = 13
         Caption = 'Proxy authentication password'
       end
       object ProxyUserLabel: TLabel
         Left = 5
         Top = 142
-        Width = 475
+        Width = 230
         Height = 13
         Caption = 'Proxy authentication username (blank for none)'
       end
@@ -328,14 +322,14 @@ object AccountsForm: TAccountsForm
       object ProxyServerLabel: TLabel
         Left = 5
         Top = 96
-        Width = 475
+        Width = 62
         Height = 13
         Caption = 'Proxy server'
       end
       object ProxyTypeLabel: TLabel
         Left = 5
         Top = 50
-        Width = 475
+        Width = 53
         Height = 13
         Caption = 'Proxy type'
       end
