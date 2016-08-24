@@ -38,7 +38,7 @@ const
 	CLOUD_CONFLICT_RENAME = 'rename'; // Переименуем новый файл
 	// CLOUD_CONFLICT_REPLACE = 'overwrite'; // хз, этот ключ не вскрыт
 
-	CLOUD_MAX_FILESIZE = $80000000; // 2Gb
+	CLOUD_MAX_FILESIZE = 2000000000; // 2Gb, not $80000000 => 2Gib
 	CLOUD_MAX_NAME_LENGTH = 255;
 	CLOUD_PUBLISH = true;
 	CLOUD_UNPUBLISH = false;
@@ -767,13 +767,13 @@ var
 	Splitter: TFileSplitter;
 	// SplitedFile: TSplittedFile;
 begin
-	if (not(self.unlimited_filesize)) and (SizeOfFile('\\?\' + localPath) > CLOUD_MAX_FILESIZE) then
+	if (not(self.unlimited_filesize)) and (SizeOfFile('\\?\' + localPath) >= CLOUD_MAX_FILESIZE+1) then
 	begin
 		if self.split_large_files then
 		begin
 			Log(MSGTYPE_DETAILS, 'File size > ' + CLOUD_MAX_FILESIZE.ToString() + ' bytes, file will be splitted.');
 			try
-				Splitter := TFileSplitter.Create(localPath);
+				Splitter := TFileSplitter.Create(localPath, CLOUD_MAX_FILESIZE);
 			except
 				on E: Exception do
 				begin
@@ -788,7 +788,7 @@ begin
 				Splitter.Destroy;
 				exit(FS_FILE_NOTSUPPORTED);
 			end;
-			for SplittedPartIndex := 0 to Length(Splitter.SplitResult.parts)-1 do
+			for SplittedPartIndex := 0 to Length(Splitter.SplitResult.parts) - 1 do
 			begin
 				self.putFile(Splitter.SplitResult.parts[SplittedPartIndex].filename, remotePath + SplittedPartIndex.ToString(), ConflictMode);
 			end;
