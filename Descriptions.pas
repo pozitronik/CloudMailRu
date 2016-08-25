@@ -4,7 +4,7 @@ unit Descriptions;
 interface
 
 uses
-	System.Types, System.AnsiStrings, RegularExpressions, Generics.Collections;
+	System.Types, System.AnsiStrings,  Generics.Collections;
 
 type
 
@@ -19,12 +19,18 @@ type
 		destructor Destroy; override;
 		function Read(ion_filename: WideString): integer;
 		function GetValue(item: String): String;
+		procedure Clear;
 
 	end;
 
 implementation
 
 { TDescription }
+
+procedure TDescription.Clear;
+begin
+ self.items.Clear;
+end;
 
 constructor TDescription.Create;
 begin
@@ -45,11 +51,9 @@ function TDescription.Read(ion_filename: WideString): integer; // Loads desript.
 var
 	f: TextFile;
 	line, key, value: WideString;
-	R: TRegEx;
 	t: integer;
 begin
-	items.Clear;
-	R.Create('/^((".+")|(\w|\.)+)/');
+	self.Clear;
 	AssignFile(f, ion_filename);
 	Reset(f);
 	while not Eof(f) do
