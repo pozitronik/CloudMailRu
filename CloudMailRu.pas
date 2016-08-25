@@ -125,6 +125,7 @@ type
 		function login(): Boolean;
 
 		procedure logUserSpaceInfo();
+		function getDescriptionFile(remotePath, localCopy: WideString): integer; // Если в каталоге remotePath есть descript.ion - скопировать его в файл localcopy
 		function getDir(path: WideString; var DirListing: TCloudMailRuDirListing): Boolean;
 		function getFile(remotePath, localPath: WideString): integer;
 		function putFile(localPath, remotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT): integer;
@@ -608,6 +609,11 @@ begin
 	end else begin
 		Log(MSGTYPE_IMPORTANTERROR, 'Error getting user space information for ' + self.user + '@' + self.domain);
 	end;
+end;
+
+function TCloudMailRu.getDescriptionFile(remotePath, localCopy: WideString): integer; // 0 - ok, else error
+begin
+	Result := self.getFile(remotePath, localCopy);
 end;
 
 function TCloudMailRu.getDir(path: WideString; var DirListing: TCloudMailRuDirListing): Boolean;
