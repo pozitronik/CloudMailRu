@@ -38,8 +38,8 @@ const
 	CLOUD_CONFLICT_RENAME = 'rename'; // Переименуем новый файл
 	// CLOUD_CONFLICT_REPLACE = 'overwrite'; // хз, этот ключ не вскрыт
 
-	// CLOUD_MAX_FILESIZE = 2000000000; // 2Gb, not $80000000 => 2Gib
-	CLOUD_MAX_FILESIZE = 10000;
+	CLOUD_MAX_FILESIZE = 2000000000; // 2Gb, not $80000000 => 2Gib
+
 	CLOUD_MAX_NAME_LENGTH = 255;
 	CLOUD_PUBLISH = true;
 	CLOUD_UNPUBLISH = false;
