@@ -767,7 +767,7 @@ var
 	Splitter: TFileSplitter;
 	// SplitedFile: TSplittedFile;
 begin
-	if (not(self.unlimited_filesize)) and (SizeOfFile(ExpandUNCFileName(localPath)) >= CLOUD_MAX_FILESIZE+1) then
+	if (not(self.unlimited_filesize)) and (SizeOfFile(ExpandUNCFileName(localPath)) >= CLOUD_MAX_FILESIZE + 1) then
 	begin
 		if self.split_large_files then
 		begin
@@ -790,7 +790,13 @@ begin
 			end;
 			for SplittedPartIndex := 0 to Length(Splitter.SplitResult.parts) - 1 do
 			begin
-				self.putFile(Splitter.SplitResult.parts[SplittedPartIndex].filename, CopyExt(Splitter.SplitResult.parts[SplittedPartIndex].filename,remotePath), ConflictMode);
+				Result := self.putFile(Splitter.SplitResult.parts[SplittedPartIndex].filename, CopyExt(Splitter.SplitResult.parts[SplittedPartIndex].filename, remotePath), ConflictMode);
+				if Result <> FS_FILE_OK then
+				begin // Отваливаемся при ошибке
+					if Result <> FS_FILE_USERABORT then Log(MSGTYPE_IMPORTANTERROR, 'Partial upload aborted')
+					else Log(MSGTYPE_IMPORTANTERROR, 'Partial upload error');
+					exit;
+				end;
 			end;
 			Splitter.Destroy;
 		end else begin
