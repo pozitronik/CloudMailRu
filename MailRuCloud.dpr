@@ -17,6 +17,7 @@ uses
 	MRC_Helper in 'MRC_Helper.pas',
 	Accounts in 'Accounts.pas' {AccountsForm} ,
 	RemoteProperty in 'RemoteProperty.pas' {PropertyForm} ,
+	Descriptions in 'Descriptions.pas',
 	ConnectionManager in 'ConnectionManager.pas';
 
 {$IFDEF WIN64}
@@ -51,8 +52,8 @@ var
 	MyCryptProc: TCryptProcW;
 
 	CurrentListing: TCloudMailRuDirListing;
-
 	ConnectionManager: TConnectionManager;
+	CurrentDescriptions: TDescription;
 
 function CloudMailRuDirListingItemToFindData(DirListing: TCloudMailRuDirListingItem): tWIN32FINDDATAW;
 begin
@@ -89,14 +90,27 @@ begin
 	Result.dwFileAttributes := FILE_ATTRIBUTE_DIRECTORY;
 end;
 
+function FindListingItemByHomePath(DirListing: TCloudMailRuDirListing; HomePath: WideString): TCloudMailRuDirListingItem;
+var
+	I: integer;
+begin
+	HomePath := '/' + StringReplace(HomePath, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]);
+	for I := 0 to Length(DirListing) - 1 do
+	begin
+		if DirListing[I].home = HomePath then
+		begin
+			exit(DirListing[I]);
+		end;
+	end;
+end;
+
 function FindListingItemByName(DirListing: TCloudMailRuDirListing; ItemName: WideString): TCloudMailRuDirListingItem;
 var
 	I: integer;
 begin
-	ItemName := '/' + StringReplace(ItemName, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]);
 	for I := 0 to Length(DirListing) - 1 do
 	begin
-		if DirListing[I].home = ItemName then
+		if DirListing[I].name = ItemName then
 		begin
 			exit(DirListing[I]);
 		end;
@@ -107,7 +121,7 @@ function GetListingItemByName(CurrentListing: TCloudMailRuDirListing; path: TRea
 var
 	getResult: integer;
 begin
-	Result := FindListingItemByName(CurrentListing, path.path); // сначала попробуем найти поле в имеющемся списке
+	Result := FindListingItemByHomePath(CurrentListing, path.path); // сначала попробуем найти поле в имеющемся списке
 	if Result.name = '' then // если там его нет (нажали пробел на папке, например), то запросим в облаке напрямую
 	begin
 		if ConnectionManager.get(path.account, getResult).statusFile(path.path, Result) then
@@ -285,6 +299,11 @@ begin
 				System.AnsiStrings.strpcopy(FieldName, 'files_count');
 				Result := ft_numeric_32;
 			end;
+		14:
+			begin
+				System.AnsiStrings.strpcopy(FieldName, 'description');
+				Result := ft_stringw;
+			end;
 	end;
 end;
 
@@ -305,13 +324,15 @@ Begin
 	MyRequestProc := pRequestProc;
 	Result := 0;
 	ConnectionManager := TConnectionManager.Create(AccountsIniFilePath, PluginNum, MyProgressProc, MyLogProc, GetPluginSettings(SettingsIniFilePath).Proxy);
+	CurrentDescriptions := TDescription.Create;
 end;
 
 procedure FsStatusInfoW(RemoteDir: PWideChar; InfoStartEnd, InfoOperation: integer); stdcall; // Начало и конец операций FS
 var
 	RealPath: TRealPath;
 	getResult: integer;
-
+	DescriptionItem: TCloudMailRuDirListingItem;
+	TmpIon: WideString;
 begin
 	if (InfoStartEnd = FS_STATUS_START) then
 	begin
@@ -386,6 +407,15 @@ begin
 		case InfoOperation of
 			FS_STATUS_OP_LIST:
 				begin
+					DescriptionItem := FindListingItemByName(CurrentListing, 'descript.ion');
+					if DescriptionItem.name <> '' then
+					begin
+						TmpIon := GetTmpFileName('ion');
+						ConnectionManager.get(RealPath.account, getResult).getDescriptionFile(DescriptionItem.home, TmpIon);
+						CurrentDescriptions.Read(TmpIon);
+					end
+					else CurrentDescriptions.Clear;
+
 				end;
 			FS_STATUS_OP_GET_SINGLE:
 				begin
@@ -465,6 +495,7 @@ var // Получение первого файла в папке. Result тот
 	RealPath: TRealPath;
 	getResult: integer;
 begin
+	SetLength(CurrentListing, 0);
 	Result := 0;
 	GlobalPath := path;
 	if GlobalPath = '\' then
@@ -535,7 +566,7 @@ end;
 
 function FsFindClose(Hdl: thandle): integer; stdcall;
 Begin // Завершение получения списка файлов. Result тоталом не используется (всегда равен 0)
-	SetLength(CurrentListing, 0); // Пусть будет
+	// SetLength(CurrentListing, 0); // Пусть будет
 	Result := 0;
 	FileCounter := 0;
 end;
@@ -590,7 +621,7 @@ begin
 
 	if (FileExists(LocalName) and not(CheckFlag(FS_COPYFLAGS_OVERWRITE, CopyFlags))) then exit(FS_FILE_EXISTS);
 
-	Result := ConnectionManager.get(RealPath.account, getResult).getFile(WideString(RealPath.path), WideString(LocalName));
+	Result := ConnectionManager.get(RealPath.account, getResult).getFile(WideString(RealPath.path), WideString(LocalName)); // ?WideString?
 
 	if Result = FS_FILE_OK then
 	begin
@@ -707,6 +738,7 @@ var
 	Item: TCloudMailRuDirListingItem;
 	RealPath: TRealPath;
 	FileTime: TFileTime;
+	description: WideString;
 begin
 	Result := ft_nosuchfield;
 	RealPath := ExtractRealPath(FileName);
@@ -794,6 +826,12 @@ begin
 				if Item.mtime <> 0 then exit(ft_nosuchfield);
 				Move(Item.files_count, FieldValue^, SizeOf(Item.files_count));
 				Result := ft_numeric_32;
+			end;
+		14:
+			begin
+				description := CurrentDescriptions.GetValue(Item.name);
+				strpcopy(FieldValue, description);
+				Result := ft_stringw;
 			end;
 	end;
 
