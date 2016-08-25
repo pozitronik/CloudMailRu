@@ -38,7 +38,8 @@ const
 	CLOUD_CONFLICT_RENAME = 'rename'; // Переименуем новый файл
 	// CLOUD_CONFLICT_REPLACE = 'overwrite'; // хз, этот ключ не вскрыт
 
-	CLOUD_MAX_FILESIZE = 2000000000; // 2Gb, not $80000000 => 2Gib
+	// CLOUD_MAX_FILESIZE = 2000000000; // 2Gb, not $80000000 => 2Gib
+	CLOUD_MAX_FILESIZE = 10000;
 	CLOUD_MAX_NAME_LENGTH = 255;
 	CLOUD_PUBLISH = true;
 	CLOUD_UNPUBLISH = false;
@@ -765,7 +766,7 @@ var
 	Code, OperationStatus: integer;
 	OperationResult, SplitResult, SplittedPartIndex: integer;
 	Splitter: TFileSplitter;
-	// SplitedFile: TSplittedFile;
+	CRCFileName: WideString;
 begin
 	if (not(self.unlimited_filesize)) and (SizeOfFile(ExpandUNCFileName(localPath)) >= CLOUD_MAX_FILESIZE + 1) then
 	begin
@@ -799,8 +800,17 @@ begin
 					exit;
 				end;
 			end;
-			// TODO: generate crc file
+			CRCFileName := Splitter.writeCRCFile;
+			Result := self.putFile(CRCFileName, CopyExt(CRCFileName, remotePath), ConflictMode);
+			if Result <> FS_FILE_OK then
+			begin // Отваливаемся при ошибке
+				if Result <> FS_FILE_USERABORT then Log(MSGTYPE_IMPORTANTERROR, 'Checksum upload aborted')
+				else Log(MSGTYPE_IMPORTANTERROR, 'Checksum upload error');
+				Splitter.Destroy;
+				exit;
+			end;
 			Splitter.Destroy;
+			exit(FS_FILE_OK); // Файлик залит по частям, выходим
 		end else begin
 			Log(MSGTYPE_IMPORTANTERROR, 'File size > ' + CLOUD_MAX_FILESIZE.ToString() + ' bytes, ignored');
 			exit(FS_FILE_NOTSUPPORTED);

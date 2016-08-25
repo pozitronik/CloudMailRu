@@ -40,7 +40,7 @@ type
 		function split(): integer;
 		function getSplittedPart(partNumber: integer; var partStream: TFileStream): integer; { Get nth part as tfilestream without splitting of all file }
 		function getCRC32File(filename: WideString): WideString;
-		function writeCRCFile: integer;
+		function writeCRCFile: WideString;
 		property SplitResult: TSplittedFile read Splitted;
 
 	end;
@@ -112,6 +112,7 @@ begin
 	begin
 		if FileExists(self.SplitResult.parts[SplittedPartIndex].filename) then DeleteFileW(PWideChar(self.SplitResult.parts[SplittedPartIndex].filename));
 	end;
+	if FileExists(self.Splitted.path + ChangeFileExt(ExtractFileName(self.Splitted.filename), '.crc')) then DeleteFileW(PWideChar(self.Splitted.path + ChangeFileExt(ExtractFileName(self.Splitted.filename), '.crc')));
 	inherited;
 end;
 
@@ -201,13 +202,14 @@ begin
 	result := FS_FILE_OK;
 end;
 
-function TFileSplitter.writeCRCFile: integer;
+function TFileSplitter.writeCRCFile: WideString;
 var
 	content: TStringList;
 begin
 	content := TStringList.Create;
 	content.Text := 'filename=' + ExtractFileName(self.Splitted.filename) + sLineBreak + 'size=' + self.SplitResult.size.ToString + sLineBreak + 'crc32=' + self.getCRC32File(self.Splitted.filename);
-	content.SaveToFile(self.Splitted.path + ChangeFileExt(ExtractFileName(self.Splitted.filename), '.crc'));
+	result := self.Splitted.path + ChangeFileExt(ExtractFileName(self.Splitted.filename), '.crc');
+	content.SaveToFile(result);
 	content.Destroy;
 end;
 
