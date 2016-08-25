@@ -790,7 +790,7 @@ begin
 			end;
 			for SplittedPartIndex := 0 to Length(Splitter.SplitResult.parts) - 1 do
 			begin
-				self.putFile(Splitter.SplitResult.parts[SplittedPartIndex].filename, remotePath + SplittedPartIndex.ToString(), ConflictMode);
+				self.putFile(Splitter.SplitResult.parts[SplittedPartIndex].filename, CopyExt(Splitter.SplitResult.parts[SplittedPartIndex].filename,remotePath), ConflictMode);
 			end;
 			Splitter.Destroy;
 		end else begin

@@ -57,6 +57,7 @@ procedure CenterWindow(WindowToStay, WindowToCenter: HWND);
 function UrlEncode(URL: WideString): WideString;
 function FindTCWindow: HWND;
 function GetTmpDir: WideString;
+function CopyExt(FromFilename, ToFilename: WideString): WideString;
 
 implementation
 
@@ -298,6 +299,11 @@ var
 begin
 	GetTempPathW(MAX_PATH, @tempFolder);
 	Result := IncludeTrailingBackslash(StrPas(tempFolder));
+end;
+
+function CopyExt(FromFilename, ToFilename: WideString): WideString;
+begin
+	Result := ChangeFileExt(ToFilename, ExtractFileExt(FromFilename));
 end;
 
 end.
