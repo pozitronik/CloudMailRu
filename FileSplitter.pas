@@ -105,8 +105,13 @@ begin
 end;
 
 destructor TFileSplitter.Destroy;
+var
+	SplittedPartIndex: integer;
 begin
-	// TODO: delete all files
+	for SplittedPartIndex := 0 to Length(self.SplitResult.parts) - 1 do
+	begin
+		if FileExists(self.SplitResult.parts[SplittedPartIndex].filename) then DeleteFileW(PWideChar(self.SplitResult.parts[SplittedPartIndex].filename));
+	end;
 	inherited;
 end;
 

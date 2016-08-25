@@ -795,9 +795,11 @@ begin
 				begin // Отваливаемся при ошибке
 					if Result <> FS_FILE_USERABORT then Log(MSGTYPE_IMPORTANTERROR, 'Partial upload aborted')
 					else Log(MSGTYPE_IMPORTANTERROR, 'Partial upload error');
+					Splitter.Destroy;
 					exit;
 				end;
 			end;
+			// TODO: generate crc file
 			Splitter.Destroy;
 		end else begin
 			Log(MSGTYPE_IMPORTANTERROR, 'File size > ' + CLOUD_MAX_FILESIZE.ToString() + ' bytes, ignored');
