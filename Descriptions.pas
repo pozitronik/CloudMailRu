@@ -4,7 +4,7 @@ unit Descriptions;
 interface
 
 uses
-	System.Types, System.AnsiStrings,  Generics.Collections;
+	System.Types, System.AnsiStrings, Generics.Collections,System.SysUtils, System.WideStrUtils;
 
 type
 
@@ -29,7 +29,7 @@ implementation
 
 procedure TDescription.Clear;
 begin
- self.items.Clear;
+	self.items.Clear;
 end;
 
 constructor TDescription.Create;
@@ -44,7 +44,8 @@ end;
 
 function TDescription.GetValue(item: String): String;
 begin
-	if not items.TryGetValue(item, result) then result := '';
+	if not items.TryGetValue(item, result) then exit('');
+	result := WideStringReplace(WideStringReplace(result, '\n', '  ', [rfReplaceAll]),chr($04)+'Â','',[rfReplaceAll]);
 end;
 
 function TDescription.Read(ion_filename: WideString): integer; // Loads desript.ion file
