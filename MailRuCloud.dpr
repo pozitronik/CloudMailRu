@@ -725,7 +725,7 @@ end;
 function FsDisconnectW(DisconnectRoot: PWideChar): bool; stdcall;
 begin
 	ConnectionManager.freeAll;
-	CurrentDescriptions.Destroy;
+	//CurrentDescriptions.Destroy;
 	Result := true;
 end;
 
