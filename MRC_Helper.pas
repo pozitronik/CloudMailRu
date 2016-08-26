@@ -36,6 +36,7 @@ type
 	TPluginSettings = record
 		LoadSSLDLLOnlyFromPluginDir: boolean;
 		PreserveFileTime: boolean;
+		DescriptionEnabled: boolean;
 		Proxy: TProxySettings;
 	end;
 
@@ -207,6 +208,7 @@ begin
 	IniFile := TIniFile.Create(IniFilePath);
 	GetPluginSettings.LoadSSLDLLOnlyFromPluginDir := IniFile.ReadBool('Main', 'LoadSSLDLLOnlyFromPluginDir', false);
 	GetPluginSettings.PreserveFileTime := IniFile.ReadBool('Main', 'PreserveFileTime', false);
+	GetPluginSettings.DescriptionEnabled := IniFile.ReadBool('Main', 'DescriptionEnabled', false);
 	GetPluginSettings.Proxy.ProxyType := IniFile.ReadInteger('Main', 'ProxyType', ProxyNone);
 	GetPluginSettings.Proxy.Server := IniFile.ReadString('Main', 'ProxyServer', '');
 	GetPluginSettings.Proxy.Port := IniFile.ReadInteger('Main', 'ProxyPort', 0);
@@ -238,9 +240,7 @@ begin
 			varString, varUString: IniFile.WriteString('Main', OptionName, OptionValue);
 			varBoolean: IniFile.WriteBool('Main', OptionName, OptionValue);
 		end;
-
 		IniFile.Destroy;
-
 	except
 		On E: EIniFileException do
 		begin

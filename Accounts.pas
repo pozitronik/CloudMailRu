@@ -23,20 +23,22 @@ type
 		UsernameLabel: TLabel;
 		AccountNameEdit: TEdit;
 		AccountNameLabel: TLabel;
-		ProxyPWDEdit: TEdit;
-		ProxyPWDLabel: TLabel;
-		ProxyUserEdit: TEdit;
-		ProxyUserLabel: TLabel;
-		ProxyServerEdit: TEdit;
-		ProxyPortEdit: TEdit;
-		ProxyDivLabel: TLabel;
-		ProxyPortLabel: TLabel;
-		ProxyServerLabel: TLabel;
-		ProxyCB: TComboBox;
-		ProxyTypeLabel: TLabel;
 		PreserveFileTimeCB: TCheckBox;
 		UseDLLFromPluginDir: TCheckBox;
 		SplitLargeFilesCB: TCheckBox;
+		ProxyGB: TGroupBox;
+		ProxyTypeLabel: TLabel;
+		ProxyCB: TComboBox;
+		ProxyServerEdit: TEdit;
+		ProxyDivLabel: TLabel;
+		ProxyPortEdit: TEdit;
+		ProxyPortLabel: TLabel;
+		ProxyUserLabel: TLabel;
+		ProxyUserEdit: TEdit;
+		ProxyPWDLabel: TLabel;
+		ProxyPWDEdit: TEdit;
+		ProxyServerLabel: TLabel;
+		DescriptionEnabledCB: TCheckBox;
 		procedure FormShow(Sender: TObject);
 		procedure AccountsListClick(Sender: TObject);
 		procedure ApplyButtonClick(Sender: TObject);
@@ -54,6 +56,7 @@ type
 		procedure ProxyUserEditChange(Sender: TObject);
 		procedure ProxyPWDEditChange(Sender: TObject);
 		procedure PreserveFileTimeCBClick(Sender: TObject);
+		procedure DescriptionEnabledCBClick(Sender: TObject);
 	private
 		{ Private declarations }
 		procedure WMHotKey(var Message: TMessage); message WM_HOTKEY;
@@ -153,6 +156,11 @@ begin
 	end;
 end;
 
+procedure TAccountsForm.DescriptionEnabledCBClick(Sender: TObject);
+begin
+	SetPluginSettingsValue(SettingsIniFilePath, 'DescriptionEnabled', DescriptionEnabledCB.Checked);
+end;
+
 procedure TAccountsForm.EmailEditChange(Sender: TObject);
 begin
 	ApplyButton.Enabled := (EmailEdit.Text <> '') and (AccountNameEdit.Text <> '');
@@ -226,6 +234,7 @@ begin
 		{ global settings }
 		AccountsForm.UseDLLFromPluginDir.Checked := GetPluginSettings(SettingsIniFilePath).LoadSSLDLLOnlyFromPluginDir;
 		AccountsForm.PreserveFileTimeCB.Checked := GetPluginSettings(SettingsIniFilePath).PreserveFileTime;
+		AccountsForm.DescriptionEnabledCB.Checked := GetPluginSettings(SettingsIniFilePath).DescriptionEnabled;
 		AccountsForm.ProxyCB.ItemIndex := GetPluginSettings(SettingsIniFilePath).Proxy.ProxyType;
 		AccountsForm.ProxyServerEdit.Text := GetPluginSettings(SettingsIniFilePath).Proxy.Server;
 		AccountsForm.ProxyPortEdit.Text := GetPluginSettings(SettingsIniFilePath).Proxy.Port.ToString;

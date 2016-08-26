@@ -291,103 +291,15 @@ object AccountsForm: TAccountsForm
     object GlobalTab: TTabSheet
       Caption = 'Global settings'
       ImageIndex = 1
-      object ProxyPWDLabel: TLabel
-        Left = 5
-        Top = 189
-        Width = 149
-        Height = 13
-        Caption = 'Proxy authentication password'
-      end
-      object ProxyUserLabel: TLabel
-        Left = 5
-        Top = 142
-        Width = 230
-        Height = 13
-        Caption = 'Proxy authentication username (blank for none)'
-      end
-      object ProxyDivLabel: TLabel
-        Left = 391
-        Top = 115
-        Width = 4
-        Height = 13
-        Caption = ':'
-      end
-      object ProxyPortLabel: TLabel
-        Left = 399
-        Top = 96
-        Width = 20
-        Height = 13
-        Caption = 'Port'
-      end
-      object ProxyServerLabel: TLabel
-        Left = 5
-        Top = 96
-        Width = 62
-        Height = 13
-        Caption = 'Proxy server'
-      end
-      object ProxyTypeLabel: TLabel
-        Left = 5
-        Top = 50
-        Width = 53
-        Height = 13
-        Caption = 'Proxy type'
-      end
-      object ProxyPWDEdit: TEdit
-        Left = 5
-        Top = 208
-        Width = 475
-        Height = 21
-        TabOrder = 0
-        OnChange = ProxyPWDEditChange
-      end
-      object ProxyUserEdit: TEdit
-        Left = 5
-        Top = 161
-        Width = 475
-        Height = 21
-        TabOrder = 1
-        OnChange = ProxyUserEditChange
-      end
-      object ProxyServerEdit: TEdit
-        Left = 5
-        Top = 115
-        Width = 382
-        Height = 21
-        TabOrder = 2
-        OnChange = ProxyServerEditChange
-      end
-      object ProxyPortEdit: TEdit
-        Left = 399
-        Top = 115
-        Width = 81
-        Height = 21
-        NumbersOnly = True
-        TabOrder = 3
-        OnChange = ProxyPortEditChange
-      end
-      object ProxyCB: TComboBox
-        Left = 5
-        Top = 69
-        Width = 475
-        Height = 22
-        Style = csOwnerDrawFixed
-        ItemIndex = 0
-        TabOrder = 4
-        Text = 'No proxy'
-        OnChange = ProxyCBChange
-        Items.Strings = (
-          'No proxy'
-          'Socks5'
-          'Socks4')
-      end
+      ExplicitLeft = 8
+      ExplicitTop = 28
       object PreserveFileTimeCB: TCheckBox
         Left = 5
         Top = 26
         Width = 475
         Height = 17
         Caption = 'Preserve file creation time'
-        TabOrder = 5
+        TabOrder = 0
         OnClick = PreserveFileTimeCBClick
       end
       object UseDLLFromPluginDir: TCheckBox
@@ -396,8 +308,115 @@ object AccountsForm: TAccountsForm
         Width = 475
         Height = 17
         Caption = 'Load SSL libraries only from plugin directory'
-        TabOrder = 6
+        TabOrder = 1
         OnClick = UseDLLFromPluginDirClick
+      end
+      object ProxyGB: TGroupBox
+        Left = 5
+        Top = 72
+        Width = 475
+        Height = 209
+        Caption = 'Proxy settings'
+        TabOrder = 2
+        object ProxyTypeLabel: TLabel
+          Left = 5
+          Top = 18
+          Width = 53
+          Height = 13
+          Caption = 'Proxy type'
+        end
+        object ProxyDivLabel: TLabel
+          Left = 392
+          Top = 87
+          Width = 8
+          Height = 13
+          Caption = ':'
+        end
+        object ProxyPortLabel: TLabel
+          Left = 399
+          Top = 68
+          Width = 20
+          Height = 13
+          Caption = 'Port'
+        end
+        object ProxyUserLabel: TLabel
+          Left = 5
+          Top = 111
+          Width = 230
+          Height = 13
+          Caption = 'Proxy authentication username (blank for none)'
+        end
+        object ProxyPWDLabel: TLabel
+          Left = 5
+          Top = 157
+          Width = 149
+          Height = 13
+          Caption = 'Proxy authentication password'
+        end
+        object ProxyServerLabel: TLabel
+          Left = 5
+          Top = 65
+          Width = 62
+          Height = 13
+          Caption = 'Proxy server'
+        end
+        object ProxyCB: TComboBox
+          Left = 5
+          Top = 37
+          Width = 465
+          Height = 22
+          Style = csOwnerDrawFixed
+          ItemIndex = 0
+          TabOrder = 0
+          Text = 'No proxy'
+          OnChange = ProxyCBChange
+          Items.Strings = (
+            'No proxy'
+            'Socks5'
+            'Socks4')
+        end
+        object ProxyServerEdit: TEdit
+          Left = 5
+          Top = 84
+          Width = 385
+          Height = 21
+          TabOrder = 1
+          OnChange = ProxyServerEditChange
+        end
+        object ProxyPortEdit: TEdit
+          Left = 398
+          Top = 84
+          Width = 72
+          Height = 21
+          NumbersOnly = True
+          TabOrder = 2
+          OnChange = ProxyPortEditChange
+        end
+        object ProxyUserEdit: TEdit
+          Left = 5
+          Top = 130
+          Width = 465
+          Height = 21
+          TabOrder = 3
+          OnChange = ProxyUserEditChange
+        end
+        object ProxyPWDEdit: TEdit
+          Left = 5
+          Top = 176
+          Width = 465
+          Height = 21
+          TabOrder = 4
+          OnChange = ProxyPWDEditChange
+        end
+      end
+      object DescriptionEnabledCB: TCheckBox
+        Left = 5
+        Top = 49
+        Width = 475
+        Height = 17
+        Caption = 'Descript.ion files support'
+        TabOrder = 3
+        OnClick = DescriptionEnabledCBClick
       end
     end
   end

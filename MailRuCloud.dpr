@@ -407,14 +407,17 @@ begin
 		case InfoOperation of
 			FS_STATUS_OP_LIST:
 				begin
-					DescriptionItem := FindListingItemByName(CurrentListing, 'descript.ion');
-					if DescriptionItem.name <> '' then
+					if GetPluginSettings(SettingsIniFilePath).DescriptionEnabled then
 					begin
-						TmpIon := GetTmpFileName('ion');
-						ConnectionManager.get(RealPath.account, getResult).getDescriptionFile(DescriptionItem.home, TmpIon);
-						CurrentDescriptions.Read(TmpIon);
-					end
-					else CurrentDescriptions.Clear;
+						DescriptionItem := FindListingItemByName(CurrentListing, 'descript.ion');
+						if DescriptionItem.name <> '' then
+						begin
+							TmpIon := GetTmpFileName('ion');
+							ConnectionManager.get(RealPath.account, getResult).getDescriptionFile(DescriptionItem.home, TmpIon);
+							CurrentDescriptions.Read(TmpIon);
+						end
+						else CurrentDescriptions.Clear;
+					end;
 
 				end;
 			FS_STATUS_OP_GET_SINGLE:
@@ -722,6 +725,7 @@ end;
 function FsDisconnectW(DisconnectRoot: PWideChar): bool; stdcall;
 begin
 	ConnectionManager.freeAll;
+	CurrentDescriptions.Destroy;
 	Result := true;
 end;
 
@@ -738,7 +742,6 @@ var
 	Item: TCloudMailRuDirListingItem;
 	RealPath: TRealPath;
 	FileTime: TFileTime;
-	description: WideString;
 begin
 	Result := ft_nosuchfield;
 	RealPath := ExtractRealPath(FileName);
@@ -829,8 +832,12 @@ begin
 			end;
 		14:
 			begin
-				description := CurrentDescriptions.GetValue(Item.name);
-				strpcopy(FieldValue, description);
+				if GetPluginSettings(SettingsIniFilePath).DescriptionEnabled then
+				begin
+					strpcopy(FieldValue, CurrentDescriptions.GetValue(Item.name));
+				end else begin
+					strpcopy(FieldValue, '<disabled>');
+				end;
 				Result := ft_stringw;
 			end;
 	end;
