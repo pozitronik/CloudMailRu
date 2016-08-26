@@ -76,7 +76,7 @@ begin
 	if (doInit) then
 	begin
 		OperationResult := CLOUD_OPERATION_OK;
-		if not initialized(connectionName) then OperationResult := init(connectionName,self.Proxy);
+		if not initialized(connectionName) then OperationResult := init(connectionName, self.Proxy);
 		if (OperationResult = CLOUD_OPERATION_OK) then result := get(connectionName, OperationResult, false);
 	end;
 	{ если подключиться не удалось, все функции облака будут возвращать негативный результат, но без AV }
@@ -107,7 +107,11 @@ begin
 	cloud := TCloudMailRu.Create(AccountSettings.user, AccountSettings.domain, AccountSettings.password, AccountSettings.unlimited_filesize, AccountSettings.split_large_files, self.Proxy, MyProgressProc, PluginNum, MyLogProc);
 	if not set_(connectionName, cloud) then exit(CLOUD_OPERATION_ERROR_STATUS_UNKNOWN); // INVALID_HANDLE_VALUE
 
-	if not(get(connectionName, result, false).login()) then free(connectionName);
+	if not(get(connectionName, result, false).login()) then
+	begin
+		result := CLOUD_OPERATION_FAILED;
+		free(connectionName);
+	end;
 
 	// cloud.Destroy;
 end;

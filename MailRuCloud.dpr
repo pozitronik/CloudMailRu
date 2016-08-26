@@ -521,9 +521,13 @@ begin
 		if RealPath.account = '' then RealPath.account := ExtractFileName(ExcludeTrailingBackslash(GlobalPath));
 
 		if not ConnectionManager.get(RealPath.account, getResult).getDir(RealPath.path, CurrentListing) then SetLastError(ERROR_PATH_NOT_FOUND);
-		if getResult <> CLOUD_OPERATION_OK then exit(getResult);
+		if getResult <> CLOUD_OPERATION_OK then
+		begin
+			SetLastError(ERROR_ACCESS_DENIED);
+			exit(INVALID_HANDLE_VALUE);
+		end;
 
-		if Length(CurrentListing) = 0 then
+		if (Length(CurrentListing) = 0) then
 		begin
 			FindData := FindData_emptyDir(); // воркароунд бага с невозможностью входа в пустой каталог, см. http://www.ghisler.ch/board/viewtopic.php?t=42399
 			Result := 0;
@@ -725,7 +729,7 @@ end;
 function FsDisconnectW(DisconnectRoot: PWideChar): bool; stdcall;
 begin
 	ConnectionManager.freeAll;
-	//CurrentDescriptions.Destroy;
+	// CurrentDescriptions.Destroy;
 	Result := true;
 end;
 

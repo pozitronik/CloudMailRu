@@ -600,6 +600,7 @@ var
 	end;
 
 begin
+	if not(Assigned(self)) then exit; // Проверка на вызов без инициализации
 	if self.getUserSpace(US) then
 	begin
 		if (US.overquota) then QuotaInfo := ' Warning: space quota exhausted!'
@@ -774,6 +775,7 @@ var
 	Splitter: TFileSplitter;
 	CRCFileName: WideString;
 begin
+	if not(Assigned(self)) then exit; // Проверка на вызов без инициализации
 	if (not(self.unlimited_filesize)) and (SizeOfFile(ExpandUNCFileName(localPath)) >= CLOUD_MAX_FILESIZE + 1) then
 	begin
 		if self.split_large_files then
