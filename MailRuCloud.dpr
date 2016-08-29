@@ -334,11 +334,23 @@ var
 	DescriptionItem: TCloudMailRuDirListingItem;
 	TmpIon: WideString;
 begin
+	RealPath := ExtractRealPath(RemoteDir);
+	if RealPath.account = '' then RealPath.account := ExtractFileName(ExcludeTrailingBackslash(RemoteDir));
 	if (InfoStartEnd = FS_STATUS_START) then
 	begin
 		case InfoOperation of
 			FS_STATUS_OP_LIST:
 				begin
+					if (GetPluginSettings(SettingsIniFilePath).DescriptionEnabled) and (RealPath.account <> '') then
+					begin
+						TmpIon := GetTmpFileName('ion');
+						if ConnectionManager.get(RealPath.account, getResult).getDescriptionFile(IncludeTrailingBackslash(RealPath.path) + 'descript.ion', TmpIon) = FS_FILE_OK then
+						begin
+							CurrentDescriptions.Read(TmpIon);
+						end else begin
+							CurrentDescriptions.Clear;
+						end;
+					end;
 				end;
 			FS_STATUS_OP_GET_SINGLE:
 				begin
@@ -402,23 +414,9 @@ begin
 	end;
 	if (InfoStartEnd = FS_STATUS_END) then
 	begin
-		RealPath := ExtractRealPath(RemoteDir);
-		if RealPath.account = '' then RealPath.account := ExtractFileName(ExcludeTrailingBackslash(RemoteDir));
 		case InfoOperation of
 			FS_STATUS_OP_LIST:
 				begin
-					if GetPluginSettings(SettingsIniFilePath).DescriptionEnabled then
-					begin
-						DescriptionItem := FindListingItemByName(CurrentListing, 'descript.ion');
-						if DescriptionItem.name <> '' then
-						begin
-							TmpIon := GetTmpFileName('ion');
-							ConnectionManager.get(RealPath.account, getResult).getDescriptionFile(DescriptionItem.home, TmpIon);
-							CurrentDescriptions.Read(TmpIon);
-						end
-						else CurrentDescriptions.Clear;
-					end;
-
 				end;
 			FS_STATUS_OP_GET_SINGLE:
 				begin
@@ -835,9 +833,10 @@ begin
 				Result := ft_numeric_32;
 			end;
 		14:
-			begin
+			begin // При включённой сортировке Запрос происходит при появлении в списке
 				if GetPluginSettings(SettingsIniFilePath).DescriptionEnabled then
 				begin
+
 					strpcopy(FieldValue, CurrentDescriptions.GetValue(Item.name));
 				end else begin
 					strpcopy(FieldValue, '<disabled>');
