@@ -99,7 +99,7 @@ type
 		function HTTPPost(URL: WideString; PostData: TStringStream; var Answer: WideString; ContentType: WideString = 'application/x-www-form-urlencoded'): Boolean; // Постинг данных с возможным получением ответа.
 
 		function HTTPPostFile(URL: WideString; PostData: TIdMultipartFormDataStream; var Answer: WideString): integer; // Постинг файла и получение ответа
-		function HTTPGetFile(URL: WideString; var FileStream: TFileStream): integer;
+		function HTTPGetFile(URL: WideString; var FileStream: TFileStream; LogErrors: Boolean = true): integer;
 		function HTTPGet(URL: WideString; var Answer: WideString): Boolean;
 		function getTokenFromText(Text: WideString): WideString;
 		function get_x_page_id_FromText(Text: WideString): WideString;
@@ -127,7 +127,7 @@ type
 		procedure logUserSpaceInfo();
 		function getDescriptionFile(remotePath, localCopy: WideString): integer; // Если в каталоге remotePath есть descript.ion - скопировать его в файл localcopy
 		function getDir(path: WideString; var DirListing: TCloudMailRuDirListing): Boolean;
-		function getFile(remotePath, localPath: WideString): integer;
+		function getFile(remotePath, localPath: WideString; LogErrors: Boolean = true): integer; // LogErrors=false => не логируем результат копирования, нужно для запроса descript.ion (которого может не быть)
 		function putFile(localPath, remotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT): integer;
 		function deleteFile(path: WideString): Boolean;
 		function createDir(path: WideString): Boolean;
@@ -474,7 +474,7 @@ begin
 	Result := Answer <> '';
 end;
 
-function TCloudMailRu.HTTPGetFile(URL: WideString; var FileStream: TFileStream): integer;
+function TCloudMailRu.HTTPGetFile(URL: WideString; var FileStream: TFileStream; LogErrors: Boolean = true): integer;
 var
 	HTTP: TIdHTTP;
 	SSL: TIdSSLIOHandlerSocketOpenSSL;
@@ -501,7 +501,7 @@ begin
 		end;
 		on E: Exception do
 		begin
-			Log(MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при копировании файла с адреса ' + URL);
+			if LogErrors then Log(MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при копировании файла с адреса ' + URL);
 			Result := FS_FILE_READERROR;
 		end;
 	end;
@@ -614,7 +614,7 @@ end;
 
 function TCloudMailRu.getDescriptionFile(remotePath, localCopy: WideString): integer; // 0 - ok, else error
 begin
-	Result := self.getFile(remotePath, localCopy);
+	Result := self.getFile(remotePath, localCopy, false);
 end;
 
 function TCloudMailRu.getDir(path: WideString; var DirListing: TCloudMailRuDirListing): Boolean;
@@ -638,7 +638,7 @@ begin
 	DirListing := self.getDirListingFromJSON(JSON);
 end;
 
-function TCloudMailRu.getFile(remotePath, localPath: WideString): integer; // 0 - ok, else error
+function TCloudMailRu.getFile(remotePath, localPath: WideString; LogErrors: Boolean = true): integer; // 0 - ok, else error
 var
 	FileStream: TFileStream;
 begin
@@ -671,11 +671,11 @@ begin
 	if (Assigned(FileStream)) then
 	begin
 		try
-			Result := self.HTTPGetFile(self.Shard + remotePath, FileStream);
+			Result := self.HTTPGetFile(self.Shard + remotePath, FileStream,LogErrors);
 		except
 			on E: Exception do
 			begin
-				Log(MSGTYPE_IMPORTANTERROR, 'File receiving error ' + E.Message);
+				if LogErrors then Log(MSGTYPE_IMPORTANTERROR, 'File receiving error ' + E.Message);
 			end;
 		end;
 		FlushFileBuffers(FileStream.Handle);
