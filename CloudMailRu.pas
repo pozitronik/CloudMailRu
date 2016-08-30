@@ -104,7 +104,7 @@ type
 		Shard: WideString;
 		login_method: integer;
 
-		// Proxy: TProxySettings;
+		Proxy: TProxySettings;
 
 		function getToken(): Boolean;
 		function getOAuthToken(var OAuthToken: TCloudMailRuOAuthInfo): Boolean;
@@ -132,7 +132,7 @@ type
 		procedure Log(MsgType: integer; LogString: WideString);
 	protected
 		procedure HTTPInit(var HTTP: TIdHTTP; var SSL: TIdSSLIOHandlerSocketOpenSSL; var Socks: TIdSocksInfo; var Cookie: TIdCookieManager);
-		procedure HTTPDestroy(var HTTP: TIdHTTP; var SSL: TIdSSLIOHandlerSocketOpenSSL; var Socks: TIdSocksInfo);
+		procedure HTTPDestroy(var HTTP: TIdHTTP; var SSL: TIdSSLIOHandlerSocketOpenSSL);
 	public
 		ExternalPluginNr: integer;
 		ExternalSourceName: PWideChar;
@@ -167,12 +167,19 @@ constructor TCloudMailRu.Create(user, domain, password: WideString; unlimited_fi
 begin
 	try
 		self.Cookie := TIdCookieManager.Create();
-		self.Socks := TIdSocksInfo.Create();
-
-		if Proxy.ProxyType <> ProxyNone then
+		self.Proxy := Proxy;
+		if Proxy.ProxyType in SocksProxyTypes then // SOCKS proxy initialization
 		begin
-
-			// SSL.TransparentProxy := Socks;
+			self.Socks := TIdSocksInfo.Create();
+			self.Socks.Host := Proxy.Server;
+			self.Socks.Port := Proxy.Port;
+			if Proxy.user <> '' then
+			begin
+				self.Socks.Authentication := saUsernamePassword;
+				self.Socks.Username := Proxy.user;
+				self.Socks.password := Proxy.password;
+			end
+			else self.Socks.Authentication := saNoAuthentication;
 
 			case Proxy.ProxyType of
 				ProxySocks5:
@@ -184,20 +191,8 @@ begin
 						Socks.Version := svSocks4;
 					end;
 			end;
-
-			self.Socks.Host := Proxy.Server;
-			self.Socks.Port := Proxy.Port;
-			if Proxy.user <> '' then
-			begin
-				self.Socks.Authentication := saUsernamePassword;
-				self.Socks.Username := Proxy.user;
-				self.Socks.password := Proxy.password;
-			end
-			else self.Socks.Authentication := saNoAuthentication;
-
 			self.Socks.Enabled := true;
-		end
-		else self.Socks.Enabled := false;
+		end;
 
 		self.user := user;
 		self.password := password;
@@ -397,7 +392,7 @@ begin
 		self.HTTPInit(HTTP, SSL, Socks, self.Cookie);
 		if ContentType <> '' then HTTP.Request.ContentType := ContentType;
 		HTTP.Post(URL, PostData, MemStream);
-		self.HTTPDestroy(HTTP, SSL, Socks);
+		self.HTTPDestroy(HTTP, SSL);
 		Answer := MemStream.DataString;
 	except
 		on E: EAbort do
@@ -437,7 +432,7 @@ begin
 		HTTP.OnWork := self.HttpProgress;
 		HTTP.Post(URL, PostData, MemStream);
 		Answer := MemStream.DataString;
-		self.HTTPDestroy(HTTP, SSL, Socks);
+		self.HTTPDestroy(HTTP, SSL);
 	except
 		on E: EAbort do
 		begin
@@ -466,7 +461,7 @@ begin
 	try
 		self.HTTPInit(HTTP, SSL, Socks, self.Cookie);
 		Answer := HTTP.Get(URL);
-		self.HTTPDestroy(HTTP, SSL, Socks);
+		self.HTTPDestroy(HTTP, SSL);
 	Except
 		on E: Exception do
 		begin
@@ -495,7 +490,7 @@ begin
 			Log(MSGTYPE_IMPORTANTERROR, 'Достигнуто максимальное количество перенаправлений при запросе файла с адреса ' + URL);
 			Result := FS_FILE_READERROR;
 		end;
-		self.HTTPDestroy(HTTP, SSL, Socks);
+		self.HTTPDestroy(HTTP, SSL);
 
 	except
 		on E: EAbort do
@@ -515,10 +510,20 @@ begin
 	SSL := TIdSSLIOHandlerSocketOpenSSL.Create();
 	HTTP := TIdHTTP.Create();
 
-	if self.Socks.Enabled then
+	if (self.Proxy.ProxyType in SocksProxyTypes) and (self.Socks.Enabled) then SSL.TransparentProxy := self.Socks;
+
+	if self.Proxy.ProxyType = ProxyHTTP then
 	begin
-		// self.Socks.Owner := SSL;
-		SSL.TransparentProxy := self.Socks;
+		HTTP.ProxyParams.ProxyServer := self.Proxy.Server;
+		HTTP.ProxyParams.ProxyPort := self.Proxy.Port;
+
+		if self.Proxy.user <> '' then
+		begin
+			HTTP.ProxyParams.BasicAuthentication:=true;
+			HTTP.ProxyParams.ProxyUsername := self.Proxy.user;
+			HTTP.ProxyParams.ProxyPassword := self.Proxy.password;
+		end
+
 	end;
 
 	HTTP.CookieManager := Cookie;
@@ -532,7 +537,7 @@ begin
 	HTTP.Request.UserAgent := 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.17 (KHTML, like Gecko) Chrome/24.0.1312.57 Safari/537.17/TCWFX(' + PlatformX + ')';
 end;
 
-procedure TCloudMailRu.HTTPDestroy(var HTTP: TIdHTTP; var SSL: TIdSSLIOHandlerSocketOpenSSL; var Socks: TIdSocksInfo);
+procedure TCloudMailRu.HTTPDestroy(var HTTP: TIdHTTP; var SSL: TIdSSLIOHandlerSocketOpenSSL);
 begin
 	HTTP.free;
 	SSL.free;
@@ -1382,7 +1387,7 @@ end;
 function TCloudMailRu.getOperationResultFromJSON(JSON: WideString; var OperationStatus: integer): integer;
 var
 	Obj: TJSONObject;
-	Error: WideString;
+	error: WideString;
 begin
 	try
 		Obj := TJSONObject.ParseJSONValue(JSON) as TJSONObject;
