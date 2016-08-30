@@ -4,7 +4,7 @@ interface
 
 uses
 	Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
-	Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, IniFiles, MRC_Helper, PLUGIN_Types, Vcl.ComCtrls;
+	Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, IniFiles, MRC_Helper, PLUGIN_Types, Vcl.ComCtrls, Vcl.Mask;
 
 type
 	TAccountsForm = class(TForm)
@@ -36,9 +36,9 @@ type
 		ProxyUserLabel: TLabel;
 		ProxyUserEdit: TEdit;
 		ProxyPWDLabel: TLabel;
-		ProxyPWDEdit: TEdit;
 		ProxyServerLabel: TLabel;
 		DescriptionEnabledCB: TCheckBox;
+		ProxyPwd: TMaskEdit;
 		procedure FormShow(Sender: TObject);
 		procedure AccountsListClick(Sender: TObject);
 		procedure ApplyButtonClick(Sender: TObject);
@@ -54,9 +54,9 @@ type
 		procedure ProxyServerEditChange(Sender: TObject);
 		procedure ProxyPortEditChange(Sender: TObject);
 		procedure ProxyUserEditChange(Sender: TObject);
-		procedure ProxyPWDEditChange(Sender: TObject);
 		procedure PreserveFileTimeCBClick(Sender: TObject);
 		procedure DescriptionEnabledCBClick(Sender: TObject);
+		procedure ProxyPwdChange(Sender: TObject);
 	private
 		{ Private declarations }
 		procedure WMHotKey(var Message: TMessage); message WM_HOTKEY;
@@ -203,9 +203,9 @@ begin
 	SetPluginSettingsValue(SettingsIniFilePath, 'ProxyPort', ProxyPortEdit.Text);
 end;
 
-procedure TAccountsForm.ProxyPWDEditChange(Sender: TObject);
+procedure TAccountsForm.ProxyPwdChange(Sender: TObject);
 begin
-	SetPluginSettingsValue(SettingsIniFilePath, 'ProxyPassword', ProxyPWDEdit.Text);
+	SetPluginSettingsValue(SettingsIniFilePath, 'ProxyPassword', ProxyPwd.Text);
 end;
 
 procedure TAccountsForm.ProxyServerEditChange(Sender: TObject);
@@ -239,7 +239,7 @@ begin
 		AccountsForm.ProxyServerEdit.Text := GetPluginSettings(SettingsIniFilePath).Proxy.Server;
 		AccountsForm.ProxyPortEdit.Text := GetPluginSettings(SettingsIniFilePath).Proxy.Port.ToString;
 		AccountsForm.ProxyUserEdit.Text := GetPluginSettings(SettingsIniFilePath).Proxy.User;
-		AccountsForm.ProxyPWDEdit.Text := GetPluginSettings(SettingsIniFilePath).Proxy.password;
+		AccountsForm.ProxyPWD.Text := GetPluginSettings(SettingsIniFilePath).Proxy.password;
 		{ global settings }
 		if RemoteName <> '' then AccountsForm.SelectedAccount := Copy(RemoteName, 2, length(RemoteName) - 1);
 		RegisterHotKey(AccountsForm.Handle, 1, 0, VK_ESCAPE);

@@ -399,13 +399,15 @@ object AccountsForm: TAccountsForm
           TabOrder = 3
           OnChange = ProxyUserEditChange
         end
-        object ProxyPWDEdit: TEdit
+        object ProxyPwd: TMaskEdit
           Left = 5
           Top = 176
           Width = 465
           Height = 21
+          PasswordChar = '*'
           TabOrder = 4
-          OnChange = ProxyPWDEditChange
+          Text = ''
+          OnChange = ProxyPwdChange
         end
       end
       object DescriptionEnabledCB: TCheckBox
