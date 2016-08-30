@@ -291,8 +291,6 @@ object AccountsForm: TAccountsForm
     object GlobalTab: TTabSheet
       Caption = 'Global settings'
       ImageIndex = 1
-      ExplicitLeft = 8
-      ExplicitTop = 28
       object PreserveFileTimeCB: TCheckBox
         Left = 5
         Top = 26
@@ -328,7 +326,7 @@ object AccountsForm: TAccountsForm
         object ProxyDivLabel: TLabel
           Left = 392
           Top = 87
-          Width = 8
+          Width = 4
           Height = 13
           Caption = ':'
         end
@@ -373,7 +371,8 @@ object AccountsForm: TAccountsForm
           Items.Strings = (
             'No proxy'
             'Socks5'
-            'Socks4')
+            'Socks4'
+            'HTTP')
         end
         object ProxyServerEdit: TEdit
           Left = 5
