@@ -585,7 +585,7 @@ begin
 	case self.login_method of
 		CLOUD_AUTH_METHOD_WEB: // todo: вынести в отдельный метод
 			begin
-				URL := 'http://auth.mail.ru/cgi-bin/auth?lang=ru_RU&from=authpopup';
+				URL := 'https://auth.mail.ru/cgi-bin/auth?lang=ru_RU&from=authpopup';
 				PostData := TStringStream.Create('page=https://cloud.mail.ru/?from=promo&new_auth_form=1&Domain=' + self.domain + '&Login=' + self.user + '&Password=' + UrlEncode(self.password) + '&FailPage=', TEncoding.UTF8);
 				try
 					Result := self.HTTPPost(URL, PostData, PostAnswer);
