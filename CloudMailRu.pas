@@ -44,6 +44,10 @@ const
 	CLOUD_PUBLISH = true;
 	CLOUD_UNPUBLISH = false;
 
+	{ Поддерживаемые методы авторизации }
+	CLOUD_AUTH_METHOD_WEB = 0; // Через парсинг HTTP-страницы
+	CLOUD_AUTH_METHOD_OAUTH = 1; // Через сервер OAuth-авторизации
+
 type
 	TCloudMailRuDirListingItem = Record
 		tree: WideString;
@@ -62,6 +66,15 @@ type
 		files_count: integer;
 	End;
 
+	TCloudMailRuOAuthInfo = Record
+		error: WideString;
+		error_code: integer;
+		error_description: WideString;
+		expires_in: integer;
+		refresh_token: WideString;
+		access_token: WideString;
+	end;
+
 	TCloudMailRuSpaceInfo = record
 		overquota: Boolean;
 		total: int64;
@@ -78,6 +91,7 @@ type
 		unlimited_filesize: Boolean;
 		split_large_files: Boolean;
 		token: WideString;
+		OAuthToken: TCloudMailRuOAuthInfo;
 		x_page_id: WideString;
 		build: WideString;
 		upload_url: WideString;
@@ -88,10 +102,12 @@ type
 		ExternalLogProc: TLogProcW;
 
 		Shard: WideString;
+		login_method: integer;
 
 		// Proxy: TProxySettings;
 
 		function getToken(): Boolean;
+		function getOAuthToken(var OAuthToken: TCloudMailRuOAuthInfo): Boolean;
 		function getShard(var Shard: WideString): Boolean;
 		function putFileToCloud(localPath: WideString; Return: TStringList): integer;
 		function addFileToCloud(hash: WideString; size: int64; remotePath: WideString; var JSONAnswer: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT): Boolean;
@@ -109,6 +125,7 @@ type
 		function getUserSpaceFromJSON(JSON: WideString): TCloudMailRuSpaceInfo;
 		function getFileStatusFromJSON(JSON: WideString): TCloudMailRuDirListingItem;
 		function getShardFromJSON(JSON: WideString): WideString;
+		function getOAuthTokenInfoFromJson(JSON: WideString): TCloudMailRuOAuthInfo;
 		function getPublicLinkFromJSON(JSON: WideString): WideString;
 		function getOperationResultFromJSON(JSON: WideString; var OperationStatus: integer): integer;
 		procedure HttpProgress(ASender: TObject; AWorkMode: TWorkMode; AWorkCount: int64);
@@ -122,7 +139,7 @@ type
 		ExternalTargetName: PWideChar;
 		constructor Create(user, domain, password: WideString; unlimited_filesize: Boolean; split_large_files: Boolean; Proxy: TProxySettings; ExternalProgressProc: TProgressProcW = nil; PluginNr: integer = -1; ExternalLogProc: TLogProcW = nil);
 		destructor Destroy; override;
-		function login(): Boolean;
+		function login(method: integer = CLOUD_AUTH_METHOD_WEB): Boolean;
 
 		procedure logUserSpaceInfo();
 		function getDescriptionFile(remotePath, localCopy: WideString): integer; // Если в каталоге remotePath есть descript.ion - скопировать его в файл localcopy
@@ -211,49 +228,9 @@ end;
 
 { PRIVATE METHODS }
 
-function TCloudMailRu.login(): Boolean;
-var
-	URL: WideString;
-	PostData: TStringStream;
-	PostAnswer: WideString; { Не используется }
-
-begin
-	Result := false;
-	if not(Assigned(self)) then exit; // Проверка на вызов без инициализации
-
-	Log(MSGTYPE_DETAILS, 'Login to ' + self.user + '@' + self.domain);
-	URL := 'http://auth.mail.ru/cgi-bin/auth?lang=ru_RU&from=authpopup';
-	PostData := TStringStream.Create('page=https://cloud.mail.ru/?from=promo&new_auth_form=1&Domain=' + self.domain + '&Login=' + self.user + '&Password=' + UrlEncode(self.password) + '&FailPage=', TEncoding.UTF8);
-
-	try
-		Result := self.HTTPPost(URL, PostData, PostAnswer);
-	except
-		on E: Exception do
-		begin
-			Log(MSGTYPE_IMPORTANTERROR, 'Cloud login error: ' + E.Message);
-		end;
-	end;
-	PostData.free;
-	if (Result) then
-	begin
-		Log(MSGTYPE_DETAILS, 'Requesting auth token for ' + self.user + '@' + self.domain);
-		Result := self.getToken();
-		if (Result) then
-		begin
-			Log(MSGTYPE_DETAILS, 'Connected to ' + self.user + '@' + self.domain);
-			self.logUserSpaceInfo;
-		end else begin
-			Log(MSGTYPE_IMPORTANTERROR, 'Error getting auth token for ' + self.user + '@' + self.domain);
-			exit(false);
-		end;
-	end
-	else Log(MSGTYPE_IMPORTANTERROR, 'Error login to ' + self.user + '@' + self.domain);
-end;
-
 function TCloudMailRu.getToken(): Boolean;
 var
 	URL: WideString;
-	// PostResult: Boolean;
 	Answer: WideString;
 begin
 	URL := 'https://cloud.mail.ru/?from=promo&from=authpopup';
@@ -277,6 +254,32 @@ begin
 		self.upload_url := self.get_upload_url_FromText(Answer);
 		if (self.token = '') or (self.x_page_id = '') or (self.build = '') or (self.upload_url = '') then Result := false; // В полученной странице нет нужных данных
 	end;
+end;
+
+function TCloudMailRu.getOAuthToken(var OAuthToken: TCloudMailRuOAuthInfo): Boolean;
+var
+	URL: WideString;
+	Answer: WideString;
+	PostData: TStringStream;
+	SuccessPost: Boolean;
+begin
+	URL := 'https://o2.mail.ru/token';
+	PostData := TStringStream.Create('client_id=cloud-win&grant_type=password&username=' + self.user + '%40' + self.domain + '&password=' + UrlEncode(self.password), TEncoding.UTF8);
+	try
+		SuccessPost := self.HTTPPost(URL, PostData, Answer);
+	except
+		on E: Exception do
+		begin
+			Log(MSGTYPE_IMPORTANTERROR, 'Get OAuth token error ' + E.Message);
+			PostData.free;
+		end;
+	end;
+	if SuccessPost then
+	begin
+		OAuthToken := self.getOAuthTokenInfoFromJson(Answer);
+		Result := OAuthToken.error_code = NOERROR;
+	end;
+	PostData.free;
 end;
 
 function TCloudMailRu.getShard(var Shard: WideString): Boolean;
@@ -564,6 +567,57 @@ end;
 
 { PUBLIC METHODS }
 
+function TCloudMailRu.login(method: integer = CLOUD_AUTH_METHOD_WEB): Boolean;
+var
+	URL: WideString;
+	PostData: TStringStream;
+	PostAnswer: WideString; { Не используется }
+begin
+	Result := false;
+	self.login_method := method;
+	if not(Assigned(self)) then exit; // Проверка на вызов без инициализации
+	Log(MSGTYPE_DETAILS, 'Login to ' + self.user + '@' + self.domain);
+	case self.login_method of
+		CLOUD_AUTH_METHOD_WEB: // todo: вынести в отдельный метод
+			begin
+				URL := 'http://auth.mail.ru/cgi-bin/auth?lang=ru_RU&from=authpopup';
+				PostData := TStringStream.Create('page=https://cloud.mail.ru/?from=promo&new_auth_form=1&Domain=' + self.domain + '&Login=' + self.user + '&Password=' + UrlEncode(self.password) + '&FailPage=', TEncoding.UTF8);
+				try
+					Result := self.HTTPPost(URL, PostData, PostAnswer);
+				except
+					on E: Exception do
+					begin
+						Log(MSGTYPE_IMPORTANTERROR, 'Cloud login error: ' + E.Message);
+					end;
+				end;
+				PostData.free;
+				if (Result) then
+				begin
+					Log(MSGTYPE_DETAILS, 'Requesting auth token for ' + self.user + '@' + self.domain);
+					Result := self.getToken();
+					if (Result) then
+					begin
+						Log(MSGTYPE_DETAILS, 'Connected to ' + self.user + '@' + self.domain);
+						self.logUserSpaceInfo;
+					end else begin
+						Log(MSGTYPE_IMPORTANTERROR, 'Error getting auth token for ' + self.user + '@' + self.domain);
+						exit(false);
+					end;
+				end
+				else Log(MSGTYPE_IMPORTANTERROR, 'Error login to ' + self.user + '@' + self.domain);
+			end;
+		CLOUD_AUTH_METHOD_OAUTH:
+			begin
+				Result := self.getOAuthToken(self.OAuthToken);
+				if not Result then
+				begin
+					Log(MSGTYPE_IMPORTANTERROR, 'OAuth error: ' + self.OAuthToken.error + '(' + self.OAuthToken.error_description + ')');
+				end;
+			end;
+	end;
+
+end;
+
 function TCloudMailRu.deleteFile(path: WideString): Boolean;
 var
 	URL: WideString;
@@ -671,7 +725,7 @@ begin
 	if (Assigned(FileStream)) then
 	begin
 		try
-			Result := self.HTTPGetFile(self.Shard + remotePath, FileStream,LogErrors);
+			Result := self.HTTPGetFile(self.Shard + remotePath, FileStream, LogErrors);
 		except
 			on E: Exception do
 			begin
@@ -1217,6 +1271,32 @@ begin
 	Result := ((((TJSONObject.ParseJSONValue(JSON) as TJSONObject).values['body'] as TJSONObject).values['get'] as TJSONArray).Items[0] as TJSONObject).values['url'].Value;
 end;
 
+function TCloudMailRu.getOAuthTokenInfoFromJson(JSON: WideString): TCloudMailRuOAuthInfo;
+var
+	Obj: TJSONObject;
+begin
+	try
+		Obj := (TJSONObject.ParseJSONValue(JSON) as TJSONObject);
+		with Result do
+		begin
+			if Assigned(Obj.values['error']) then error := Obj.values['error'].Value;
+			if Assigned(Obj.values['error_code']) then error_code := Obj.values['error_code'].Value.ToInteger;
+			if Assigned(Obj.values['error_description']) then error_description := Obj.values['error_description'].Value;
+			if Assigned(Obj.values['expires_in']) then expires_in := Obj.values['expires_in'].Value.ToInteger;
+			if Assigned(Obj.values['refresh_token']) then refresh_token := Obj.values['refresh_token'].Value;
+			if Assigned(Obj.values['access_token']) then access_token := Obj.values['access_token'].Value;
+		end;
+	except
+		on E: { EJSON } Exception do
+		begin
+			Log(MSGTYPE_IMPORTANTERROR, 'Can''t parse server answer: ' + JSON);
+			Result.error_code := CLOUD_ERROR_UNKNOWN;
+			Result.error := 'Answer parsing';
+			Result.error_description := 'JSON parsing error at ' + JSON;
+		end;
+	end;
+end;
+
 function TCloudMailRu.getUserSpaceFromJSON(JSON: WideString): TCloudMailRuSpaceInfo;
 var
 	Obj: TJSONObject;
@@ -1310,16 +1390,16 @@ begin
 		OperationStatus := Obj.values['status'].Value.ToInteger;
 		if OperationStatus <> 200 then
 		begin
-			Error := ((Obj.values['body'] as TJSONObject).values['home'] as TJSONObject).values['error'].Value;
-			if Error = 'exists' then exit(CLOUD_ERROR_EXISTS);
-			if Error = 'required' then exit(CLOUD_ERROR_REQUIRED);
-			if Error = 'readonly' then exit(CLOUD_ERROR_READONLY);
-			if Error = 'read_only' then exit(CLOUD_ERROR_READONLY);
-			if Error = 'name_length_exceeded' then exit(CLOUD_ERROR_NAME_LENGTH_EXCEEDED);
-			if Error = 'unknown' then exit(CLOUD_ERROR_UNKNOWN);
-			if Error = 'overquota' then exit(CLOUD_ERROR_OVERQUOTA);
-			if Error = 'quota_exceeded' then exit(CLOUD_ERROR_OVERQUOTA);
-			if Error = 'invalid' then exit(CLOUD_ERROR_INVALID);
+			error := ((Obj.values['body'] as TJSONObject).values['home'] as TJSONObject).values['error'].Value;
+			if error = 'exists' then exit(CLOUD_ERROR_EXISTS);
+			if error = 'required' then exit(CLOUD_ERROR_REQUIRED);
+			if error = 'readonly' then exit(CLOUD_ERROR_READONLY);
+			if error = 'read_only' then exit(CLOUD_ERROR_READONLY);
+			if error = 'name_length_exceeded' then exit(CLOUD_ERROR_NAME_LENGTH_EXCEEDED);
+			if error = 'unknown' then exit(CLOUD_ERROR_UNKNOWN);
+			if error = 'overquota' then exit(CLOUD_ERROR_OVERQUOTA);
+			if error = 'quota_exceeded' then exit(CLOUD_ERROR_OVERQUOTA);
+			if error = 'invalid' then exit(CLOUD_ERROR_INVALID);
 
 			exit(CLOUD_ERROR_UNKNOWN); // Эту ошибку мы пока не встречали
 		end;
