@@ -8,6 +8,9 @@ const
 	ProxyNone = 0;
 	ProxySocks5 = 1;
 	ProxySocks4 = 2;
+	ProxyHTTP = 3;
+
+	SocksProxyTypes = [ProxySocks5, ProxySocks4];
 
 	MAX_UNC_PATH = 32767;
 
