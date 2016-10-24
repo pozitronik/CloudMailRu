@@ -668,7 +668,7 @@ begin
 		MyLogProc(PluginNum, MSGTYPE_TRANSFERCOMPLETE, PWideChar(LocalName + '->' + RemoteName));
 		if CheckFlag(FS_COPYFLAGS_MOVE, CopyFlags) then
 		begin
-			if not DeleteFileW(PWideChar(ExpandUNCFileName(LocalName))) then exit(FS_FILE_NOTSUPPORTED);
+			if not DeleteFileW(PWideChar(GetUNCFilePath(LocalName))) then exit(FS_FILE_NOTSUPPORTED);
 		end;
 	end;
 
