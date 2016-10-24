@@ -221,7 +221,7 @@ object AccountsForm: TAccountsForm
         Width = 75
         Height = 27
         Caption = 'Add'
-        TabOrder = 1
+        TabOrder = 7
         OnClick = ApplyButtonClick
       end
       object DeleteButton: TButton
@@ -230,7 +230,7 @@ object AccountsForm: TAccountsForm
         Width = 75
         Height = 27
         Caption = 'Delete'
-        TabOrder = 2
+        TabOrder = 8
         OnClick = DeleteButtonClick
       end
       object UnlimitedFileSizeCB: TCheckBox
@@ -240,7 +240,7 @@ object AccountsForm: TAccountsForm
         Height = 17
         Anchors = [akLeft, akTop, akRight]
         Caption = 'Ignore 2Gb limit (paid account)'
-        TabOrder = 3
+        TabOrder = 5
       end
       object UseTCPwdMngrCB: TCheckBox
         Left = 225
@@ -258,7 +258,7 @@ object AccountsForm: TAccountsForm
         Height = 21
         Anchors = [akLeft, akTop, akRight]
         PasswordChar = '*'
-        TabOrder = 5
+        TabOrder = 3
       end
       object EmailEdit: TEdit
         Left = 225
@@ -266,7 +266,7 @@ object AccountsForm: TAccountsForm
         Width = 255
         Height = 21
         Anchors = [akLeft, akTop, akRight]
-        TabOrder = 6
+        TabOrder = 2
         OnChange = EmailEditChange
       end
       object AccountNameEdit: TEdit
@@ -275,7 +275,7 @@ object AccountsForm: TAccountsForm
         Width = 255
         Height = 21
         Anchors = [akLeft, akTop, akRight]
-        TabOrder = 7
+        TabOrder = 1
         OnChange = AccountNameEditChange
       end
       object SplitLargeFilesCB: TCheckBox
@@ -285,7 +285,7 @@ object AccountsForm: TAccountsForm
         Height = 17
         Anchors = [akLeft, akTop, akRight]
         Caption = 'Split large files to 2Gb parts (EXPERIMENTAL)'
-        TabOrder = 8
+        TabOrder = 6
       end
     end
     object GlobalTab: TTabSheet
@@ -297,7 +297,7 @@ object AccountsForm: TAccountsForm
         Width = 475
         Height = 17
         Caption = 'Preserve file creation time'
-        TabOrder = 0
+        TabOrder = 1
         OnClick = PreserveFileTimeCBClick
       end
       object UseDLLFromPluginDir: TCheckBox
@@ -306,7 +306,7 @@ object AccountsForm: TAccountsForm
         Width = 475
         Height = 17
         Caption = 'Load SSL libraries only from plugin directory'
-        TabOrder = 1
+        TabOrder = 0
         OnClick = UseDLLFromPluginDirClick
       end
       object ProxyGB: TGroupBox
@@ -315,7 +315,7 @@ object AccountsForm: TAccountsForm
         Width = 475
         Height = 209
         Caption = 'Proxy settings'
-        TabOrder = 2
+        TabOrder = 3
         object ProxyTypeLabel: TLabel
           Left = 5
           Top = 18
@@ -416,7 +416,7 @@ object AccountsForm: TAccountsForm
         Width = 475
         Height = 17
         Caption = 'Descript.ion files support'
-        TabOrder = 3
+        TabOrder = 2
         OnClick = DescriptionEnabledCBClick
       end
     end
