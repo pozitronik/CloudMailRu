@@ -63,6 +63,7 @@ function FindTCWindow: HWND;
 function GetTmpDir: WideString;
 function GetTmpFileName(Prefix: WideString = ''): WideString;
 function CopyExt(FromFilename, ToFilename: WideString): WideString;
+function GetUNCFilePath(FilePath: WideString): WideString;
 
 implementation
 
@@ -316,6 +317,11 @@ end;
 function CopyExt(FromFilename, ToFilename: WideString): WideString;
 begin
 	Result := ChangeFileExt(ToFilename, ExtractFileExt(FromFilename));
+end;
+
+function GetUNCFilePath(FilePath: WideString): WideString;
+begin
+	Result := '\\?\' + FilePath;
 end;
 
 end.

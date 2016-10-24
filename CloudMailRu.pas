@@ -319,7 +319,7 @@ begin
 	PostData := TIdMultipartFormDataStream.Create;
 	try
 
-		PostData.AddFile('file', ExpandUNCFileName(localPath), 'application/octet-stream');
+		PostData.AddFile('file', GetUNCFilePath(localPath), 'application/octet-stream');
 		Result := self.HTTPPostFile(URL, PostData, PostAnswer);
 	except
 		on E: Exception do
@@ -718,7 +718,7 @@ begin
 	Result := FS_FILE_OK;
 	remotePath := UrlEncode(StringReplace(remotePath, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
 	try
-		FileStream := TFileStream.Create(ExpandUNCFileName(localPath), fmCreate);
+		FileStream := TFileStream.Create(GetUNCFilePath(localPath), fmCreate);
 	except
 		on E: Exception do
 		begin
@@ -743,7 +743,7 @@ begin
 
 	if Result <> FS_FILE_OK then
 	begin
-		System.SysUtils.deleteFile(ExpandUNCFileName(localPath));
+		System.SysUtils.deleteFile(GetUNCFilePath(localPath));
 	end;
 end;
 
@@ -835,7 +835,7 @@ var
 	CRCFileName: WideString;
 begin
 	if not(Assigned(self)) then exit; // Проверка на вызов без инициализации
-	if (not(self.unlimited_filesize)) and (SizeOfFile(ExpandUNCFileName(localPath)) >= CLOUD_MAX_FILESIZE + 1) then
+	if (not(self.unlimited_filesize)) and (SizeOfFile(GetUNCFilePath(localPath)) >= CLOUD_MAX_FILESIZE + 1) then
 	begin
 		if self.split_large_files then
 		begin
