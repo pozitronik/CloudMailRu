@@ -709,18 +709,37 @@ var
 	NewRealPath: TRealPath;
 	getResult: integer;
 Begin
+
 	OldRealPath := ExtractRealPath(WideString(OldName));
 	NewRealPath := ExtractRealPath(WideString(NewName));
+
+	if OldRealPath.account <> NewRealPath.account then
+	begin
+		MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, PWideChar('Operations between accounts not supported yet'));
+		exit(FS_FILE_NOTSUPPORTED);
+	end;
+
 	if OverWrite then // непонятно, но TC не показывает диалог перезаписи при FS_FILE_EXISTS
 	begin
-		if ConnectionManager.get(OldRealPath.account, getResult).deleteFile(OldRealPath.path) then // мы не умеем перезаписывать, но мы можем удалить прежний файл
+		if ConnectionManager.get(OldRealPath.account, getResult).deleteFile(NewRealPath.path) then // мы не умеем перезаписывать, но мы можем удалить существующий файл
 		begin
-			Result := ConnectionManager.get(OldRealPath.account, getResult).mvFile(OldRealPath.path, NewRealPath.path);
+			if Move then
+			begin
+				Result := ConnectionManager.get(OldRealPath.account, getResult).mvFile(OldRealPath.path, NewRealPath.path);
+			end else begin
+				Result := ConnectionManager.get(OldRealPath.account, getResult).cpFile(OldRealPath.path, NewRealPath.path);
+			end;
+
 		end else begin
 			Result := FS_FILE_NOTSUPPORTED;
 		end;
 	end else begin
-		Result := ConnectionManager.get(OldRealPath.account, getResult).mvFile(OldRealPath.path, NewRealPath.path);
+		if Move then
+		begin
+			Result := ConnectionManager.get(OldRealPath.account, getResult).mvFile(OldRealPath.path, NewRealPath.path);
+		end else begin
+			Result := ConnectionManager.get(OldRealPath.account, getResult).cpFile(OldRealPath.path, NewRealPath.path);
+		end;
 	end;
 end;
 
@@ -855,7 +874,7 @@ begin
 	GetModuleFilename(hInstance, tmp, max_path);
 	PluginPath := tmp;
 	freemem(tmp);
-	PluginPath := IncludeTrailingbackslash(ExtractFilePath(PluginPath));
+	PluginPath := IncludeTrailingBackslash(ExtractFilePath(PluginPath));
 	AccountsIniFilePath := PluginPath + 'MailRuCloud.ini';
 	SettingsIniFilePath := PluginPath + 'MailRuCloud.global.ini';
 	if not FileExists(AccountsIniFilePath) then FileClose(FileCreate(AccountsIniFilePath));

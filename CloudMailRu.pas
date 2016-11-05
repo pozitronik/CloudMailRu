@@ -411,6 +411,9 @@ begin
 			begin
 				Answer := E.ErrorMessage;
 				Result := true;
+//			end else if (HTTP.ResponseCode = 500) then // Внезапно, сервер так отвечает, если при перемещении файл уже существует, но полагаться на это мы не можем
+//			begin
+
 			end else begin
 				Log(MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при отправке данных на адрес ' + URL + ', ответ сервера: ' + E.ErrorMessage);
 				Result := false;
@@ -1269,27 +1272,45 @@ begin
 end;
 
 function TCloudMailRu.mvFile(OldName, NewName: WideString): integer;
+var
+	NewPath: WideString;
+	SameDir, SameName: Boolean;
 begin // К сожалению, переименование и перемещение в облаке - разные действия
-	if ExtractFilePath(OldName) = ExtractFilePath(NewName) then
+	NewPath := ExtractFilePath(NewName);
+	SameDir := ExtractFilePath(OldName) = ExtractFilePath(NewName);
+	SameName := ExtractFileName(OldName) = ExtractFileName(NewName);
+	if SameDir then
 	begin // один каталог
 		Result := self.renameFile(OldName, ExtractFileName(NewName));
 	end else begin
-		Result := self.moveFile(OldName, ExtractFilePath(NewName));
+		Result := self.moveFile(OldName, ExtractFilePath(NewName)); //Если файл со старым именем лежит в новом каталоге, вернётся ошибка. Так реализовано в облаке, а мудрить со временными каталогами я не хочу
+		if Result <> CLOUD_OPERATION_OK then exit;
+		if not(SameName) then
+		begin // скопированный файл лежит в новом каталоге со старым именем
+			Result := self.renameFile(NewPath + ExtractFileName(OldName), ExtractFileName(NewName));
+		end;
 	end;
 end;
 
 function TCloudMailRu.cpFile(OldName, NewName: WideString): integer;
 var
 	NewPath: WideString;
+	SameDir, SameName: Boolean;
 begin // Облако умеет скопировать файл, но не сможет его переименовать, поэтому хитрим
 	NewPath := ExtractFilePath(NewName);
-	if ExtractFilePath(OldName) <> ExtractFilePath(NewName) then //Разные каталоги, надо копировать, иначе достаточно переименовать
+	SameDir := ExtractFilePath(OldName) = ExtractFilePath(NewName);
+	SameName := ExtractFileName(OldName) = ExtractFileName(NewName);
+
+	if (SameDir) then // копирование в тот же каталог не поддерживается напрямую, а мудрить со временными каталогами я не хочу
 	begin
+		Log(MSGTYPE_IMPORTANTERROR, 'Copying in same dir not supported by cloud');
+		exit(FS_FILE_NOTSUPPORTED);
+	end else begin
 		Result := self.copyFile(OldName, NewPath);
 		if Result <> CLOUD_OPERATION_OK then exit;
 	end;
 
-	if ExtractFileName(OldName) <> ExtractFileName(NewName) then
+	if not(SameName) then
 	begin // скопированный файл лежит в новом каталоге со старым именем
 		Result := self.renameFile(NewPath + ExtractFileName(OldName), ExtractFileName(NewName));
 	end;
