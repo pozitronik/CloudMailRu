@@ -151,7 +151,9 @@ type
 		function removeDir(path: WideString): Boolean;
 		function renameFile(OldName, NewName: WideString): integer; // смена имени без перемещения
 		function moveFile(OldName, ToPath: WideString): integer; // перемещение по дереву каталогов
+		function copyFile(OldName, ToPath: WideString): integer; // Копирование файла внутри одного каталога
 		function mvFile(OldName, NewName: WideString): integer; // объединяющая функция, определяет делать rename или move
+		function cpFile(OldName, NewName: WideString): integer; // Копирует файл, и переименует, если нужно
 		function publishFile(path: WideString; var PublicLink: WideString; publish: Boolean = CLOUD_PUBLISH): Boolean;
 		function statusFile(path: WideString; var FileInfo: TCloudMailRuDirListingItem): Boolean;
 
@@ -519,7 +521,7 @@ begin
 
 		if self.Proxy.user <> '' then
 		begin
-			HTTP.ProxyParams.BasicAuthentication:=true;
+			HTTP.ProxyParams.BasicAuthentication := true;
 			HTTP.ProxyParams.ProxyUsername := self.Proxy.user;
 			HTTP.ProxyParams.ProxyPassword := self.Proxy.password;
 		end
@@ -1134,6 +1136,72 @@ begin
 	FileInfo := getFileStatusFromJSON(JSON);
 end;
 
+function TCloudMailRu.copyFile(OldName, ToPath: WideString): integer;
+var
+	URL: WideString;
+	PostData: TStringStream;
+	PostAnswer: WideString;
+	PostResult: Boolean;
+	OperationStatus: integer;
+begin
+	Result := FS_FILE_WRITEERROR;
+	if not(Assigned(self)) then exit; // Проверка на вызов без инициализации
+	OldName := UrlEncode(StringReplace(OldName, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
+	ToPath := UrlEncode(StringReplace(ToPath, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
+	if (ToPath = '') then ToPath := '/'; // preventing error
+
+	URL := 'https://cloud.mail.ru/api/v2/file/copy';
+	PostResult := false;
+	PostData := TStringStream.Create('api=2&home=' + OldName + '&folder=' + ToPath + '&token=' + self.token + '&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id + '&conflict', TEncoding.UTF8);
+	try
+		PostResult := self.HTTPPost(URL, PostData, PostAnswer);
+	except
+		on E: Exception do
+		begin
+			Log(MSGTYPE_IMPORTANTERROR, 'Copy file error ' + E.Message);
+		end;
+	end;
+	PostData.free;
+	if PostResult then
+	begin // Парсим ответ
+		case self.getOperationResultFromJSON(PostAnswer, OperationStatus) of
+			CLOUD_OPERATION_OK:
+				begin
+					Result := CLOUD_OPERATION_OK
+				end;
+			CLOUD_ERROR_EXISTS:
+				begin
+					Result := FS_FILE_EXISTS;
+				end;
+			CLOUD_ERROR_REQUIRED:
+				begin
+					Result := FS_FILE_WRITEERROR;
+				end;
+			CLOUD_ERROR_INVALID:
+				begin
+					Result := FS_FILE_WRITEERROR;
+				end;
+			CLOUD_ERROR_READONLY:
+				begin
+					Result := FS_FILE_WRITEERROR;
+				end;
+			CLOUD_ERROR_NAME_LENGTH_EXCEEDED:
+				begin
+					Result := FS_FILE_WRITEERROR;
+				end;
+			CLOUD_ERROR_UNKNOWN:
+				begin
+					Result := FS_FILE_NOTSUPPORTED;
+				end;
+		else
+			begin // что-то неизвестное
+				Log(MSGTYPE_IMPORTANTERROR, 'Error file copy: got ' + IntToStr(OperationStatus) + ' status');
+				Result := FS_FILE_WRITEERROR;
+			end;
+		end;
+	end;
+end;
+
 function TCloudMailRu.moveFile(OldName, ToPath: WideString): integer;
 var
 	URL: WideString;
@@ -1146,6 +1214,8 @@ begin
 	if not(Assigned(self)) then exit; // Проверка на вызов без инициализации
 	OldName := UrlEncode(StringReplace(OldName, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
 	ToPath := UrlEncode(StringReplace(ToPath, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
+	if (ToPath = '') then ToPath := '/'; // preventing error
+
 	URL := 'https://cloud.mail.ru/api/v2/file/move';
 	PostResult := false;
 	PostData := TStringStream.Create('api=2&home=' + OldName + '&folder=' + ToPath + '&token=' + self.token + '&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id + '&conflict', TEncoding.UTF8);
@@ -1199,13 +1269,31 @@ begin
 end;
 
 function TCloudMailRu.mvFile(OldName, NewName: WideString): integer;
-begin
+begin // К сожалению, переименование и перемещение в облаке - разные действия
 	if ExtractFilePath(OldName) = ExtractFilePath(NewName) then
 	begin // один каталог
 		Result := self.renameFile(OldName, ExtractFileName(NewName));
 	end else begin
 		Result := self.moveFile(OldName, ExtractFilePath(NewName));
 	end;
+end;
+
+function TCloudMailRu.cpFile(OldName, NewName: WideString): integer;
+var
+	NewPath: WideString;
+begin // Облако умеет скопировать файл, но не сможет его переименовать, поэтому хитрим
+	NewPath := ExtractFilePath(NewName);
+	if ExtractFilePath(OldName) <> ExtractFilePath(NewName) then //Разные каталоги, надо копировать, иначе достаточно переименовать
+	begin
+		Result := self.copyFile(OldName, NewPath);
+		if Result <> CLOUD_OPERATION_OK then exit;
+	end;
+
+	if ExtractFileName(OldName) <> ExtractFileName(NewName) then
+	begin // скопированный файл лежит в новом каталоге со старым именем
+		Result := self.renameFile(NewPath + ExtractFileName(OldName), ExtractFileName(NewName));
+	end;
+
 end;
 
 { PRIVATE STATIC METHODS (kinda) }
