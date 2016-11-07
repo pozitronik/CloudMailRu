@@ -331,7 +331,7 @@ procedure FsStatusInfoW(RemoteDir: PWideChar; InfoStartEnd, InfoOperation: integ
 var
 	RealPath: TRealPath;
 	getResult: integer;
-//	DescriptionItem: TCloudMailRuDirListingItem;
+	// DescriptionItem: TCloudMailRuDirListingItem;
 	TmpIon: WideString;
 begin
 	RealPath := ExtractRealPath(RemoteDir);
@@ -582,7 +582,7 @@ var
 	CurrentItem: TCloudMailRuDirListingItem;
 	Cloud: TCloudMailRu;
 	getResult: integer;
-	command: WideString;
+	command, param: WideString;
 Begin
 	RealPath := ExtractRealPath(RemoteName);
 	Result := FS_EXEC_OK;
@@ -613,8 +613,18 @@ Begin
 		command := LowerCase(GetWord(Verb, 1));
 		if command = 'rmdir' then
 		begin
-			RealPath := ExtractRealPath(RemoteName+GetWord(Verb, 2));
+			RealPath := ExtractRealPath(RemoteName + GetWord(Verb, 2));
 			if (ConnectionManager.get(RealPath.account, getResult).removeDir(RealPath.path) <> true) then Result := FS_EXEC_ERROR;
+		end else if command = 'clone' then
+		begin
+			RealPath := ExtractRealPath(RemoteName);
+			if RealPath.account = '' then //Некрасивое решение, надо переделать
+			begin
+				RealPath.account := ExtractFileName(ExcludeTrailingBackslash(RemoteName));
+				RealPath.path := '\';
+			end;
+			param := ExtractLinkFromUrl(GetWord(Verb, 2));
+			if (ConnectionManager.get(RealPath.account, getResult).cloneWeblink(RealPath.path, param) <> true) then Result := FS_EXEC_ERROR;
 		end;
 
 	end;

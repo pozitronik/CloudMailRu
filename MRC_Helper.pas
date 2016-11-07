@@ -66,6 +66,7 @@ function GetTmpFileName(Prefix: WideString = ''): WideString;
 function CopyExt(FromFilename, ToFilename: WideString): WideString;
 function GetUNCFilePath(FilePath: WideString): WideString;
 function GetWord(command: WideString; WordIndex: Integer = 0): WideString; // Возвращает указанное значащее слово из строки с учётом кавычек (парсинг команд)
+function ExtractLinkFromUrl(URL: WideString): WideString; // При необходимости преобразует адрес публичной ссылки к нужному виду
 
 implementation
 
@@ -340,10 +341,16 @@ begin
 	Result := '';
 	Exploded := Explode(command, ' ');
 	if Exploded.Count = 0 then exit;
-
 	if Exploded.Count <= WordIndex then exit;
 	Result := Exploded.Strings[WordIndex];
+end;
 
+function ExtractLinkFromUrl(URL: WideString): WideString; // При необходимости преобразует адрес публичной ссылки к нужному виду
+const
+	pulicPrefix = 'https://cloud.mail.ru/public';
+begin
+	Result := URL;
+	if pos(WideString(pulicPrefix), URL) <> 0 then Result := Copy(URL, Length(pulicPrefix)+1, Length(URL) - Length(pulicPrefix));
 end;
 
 end.
