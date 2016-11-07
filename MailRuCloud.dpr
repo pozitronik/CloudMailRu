@@ -18,7 +18,7 @@ uses
 	Accounts in 'Accounts.pas' {AccountsForm} ,
 	RemoteProperty in 'RemoteProperty.pas' {PropertyForm} ,
 	Descriptions in 'Descriptions.pas',
-	ConnectionManager in 'ConnectionManager.pas';
+	ConnectionManager in 'ConnectionManager.pas ';
 
 {$IFDEF WIN64}
 {$E wfx64}
@@ -331,7 +331,7 @@ procedure FsStatusInfoW(RemoteDir: PWideChar; InfoStartEnd, InfoOperation: integ
 var
 	RealPath: TRealPath;
 	getResult: integer;
-	DescriptionItem: TCloudMailRuDirListingItem;
+//	DescriptionItem: TCloudMailRuDirListingItem;
 	TmpIon: WideString;
 begin
 	RealPath := ExtractRealPath(RemoteDir);
@@ -582,6 +582,7 @@ var
 	CurrentItem: TCloudMailRuDirListingItem;
 	Cloud: TCloudMailRu;
 	getResult: integer;
+	command: WideString;
 Begin
 	RealPath := ExtractRealPath(RemoteName);
 	Result := FS_EXEC_OK;
@@ -608,7 +609,14 @@ Begin
 	end else if copy(Verb, 1, 5) = 'chmod' then
 	begin
 	end else if copy(Verb, 1, 5) = 'quote' then
-	begin
+	begin // обработка внутренних команд плагина
+		command := LowerCase(GetWord(Verb, 1));
+		if command = 'rmdir' then
+		begin
+			RealPath := ExtractRealPath(RemoteName+GetWord(Verb, 2));
+			if (ConnectionManager.get(RealPath.account, getResult).removeDir(RealPath.path) <> true) then Result := FS_EXEC_ERROR;
+		end;
+
 	end;
 End;
 
@@ -852,7 +860,8 @@ begin
 				Result := ft_numeric_32;
 			end;
 		14:
-			begin // При включённой сортировке Запрос происходит при появлении в списке
+			begin
+				// При включённой сортировке Запрос происходит при появлении в списке
 				if GetPluginSettings(SettingsIniFilePath).DescriptionEnabled then
 				begin
 

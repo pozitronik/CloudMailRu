@@ -43,7 +43,8 @@ type
 		Proxy: TProxySettings;
 	end;
 
-function Implode(S: TStringList; Delimiter: Char): WideString;
+function Implode(S: TStringList; Delimiter: WideString): WideString;
+function Explode(S: WideString; Delimiter: char): TStringList;
 function ExtractRealPath(VirtualPath: WideString): TRealPath;
 function SizeOfFile(const FileName: String): Int64;
 function DateTimeToUnix(ConvDate: TDateTime): Integer;
@@ -64,10 +65,11 @@ function GetTmpDir: WideString;
 function GetTmpFileName(Prefix: WideString = ''): WideString;
 function CopyExt(FromFilename, ToFilename: WideString): WideString;
 function GetUNCFilePath(FilePath: WideString): WideString;
+function GetWord(command: WideString; WordIndex: Integer = 0): WideString; // Возвращает указанное значащее слово из строки с учётом кавычек (парсинг команд)
 
 implementation
 
-function Implode(S: TStringList; Delimiter: Char): WideString;
+function Implode(S: TStringList; Delimiter: WideString): WideString;
 var
 	iCount: Integer;
 begin
@@ -75,6 +77,13 @@ begin
 	if (S.Count = 0) then exit;
 	for iCount := 0 to pred(S.Count) do Result := Result + S.Strings[iCount] + Delimiter;
 	System.Delete(Result, Length(Result), 1);
+end;
+
+function Explode(S: WideString; Delimiter: char): TStringList;
+begin
+	Result := TStringList.Create;
+	Result.DelimitedText := S;
+	Result.Delimiter := Delimiter;
 end;
 
 function ExtractRealPath(VirtualPath: WideString): TRealPath;
@@ -322,6 +331,19 @@ end;
 function GetUNCFilePath(FilePath: WideString): WideString;
 begin
 	Result := '\\?\' + FilePath;
+end;
+
+function GetWord(command: WideString; WordIndex: Integer = 0): WideString;
+var
+	Exploded: TStringList;
+begin
+	Result := '';
+	Exploded := Explode(command, ' ');
+	if Exploded.Count = 0 then exit;
+
+	if Exploded.Count < WordIndex then exit;
+	Result := Exploded.Strings[WordIndex];
+
 end;
 
 end.
