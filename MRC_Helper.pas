@@ -341,7 +341,7 @@ begin
 	Exploded := Explode(command, ' ');
 	if Exploded.Count = 0 then exit;
 
-	if Exploded.Count < WordIndex then exit;
+	if Exploded.Count <= WordIndex then exit;
 	Result := Exploded.Strings[WordIndex];
 
 end;
