@@ -156,6 +156,7 @@ type
 		function cpFile(OldName, NewName: WideString): integer; // Копирует файл, и переименует, если нужно
 		function publishFile(path: WideString; var PublicLink: WideString; publish: Boolean = CLOUD_PUBLISH): Boolean;
 		function statusFile(path: WideString; var FileInfo: TCloudMailRuDirListingItem): Boolean;
+		function cloneWeblink(path, link: WideString; ConflictMode: WideString = CLOUD_CONFLICT_RENAME): Boolean; // клонировать публичную ссылку в текущий каталог
 
 	end;
 
@@ -411,8 +412,8 @@ begin
 			begin
 				Answer := E.ErrorMessage;
 				Result := true;
-//			end else if (HTTP.ResponseCode = 500) then // Внезапно, сервер так отвечает, если при перемещении файл уже существует, но полагаться на это мы не можем
-//			begin
+				// end else if (HTTP.ResponseCode = 500) then // Внезапно, сервер так отвечает, если при перемещении файл уже существует, но полагаться на это мы не можем
+				// begin
 
 			end else begin
 				Log(MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при отправке данных на адрес ' + URL + ', ответ сервера: ' + E.ErrorMessage);
@@ -1139,6 +1140,27 @@ begin
 	FileInfo := getFileStatusFromJSON(JSON);
 end;
 
+function TCloudMailRu.cloneWeblink(path, link: WideString; ConflictMode: WideString = CLOUD_CONFLICT_RENAME): Boolean;
+var
+	URL: WideString;
+	JSON: WideString;
+begin
+	Result := false;
+	if not(Assigned(self)) then exit; // Проверка на вызов без инициализации
+	path := UrlEncode(StringReplace(path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
+	URL := 'https://cloud.mail.ru/api/v2/clone?folder=' + path + '&weblink=' + link + '&conflict=' + ConflictMode + '&api=2&build=' + self.build + '&x-page-id=' + self.x_page_id + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&token=' + self.token + '&_=1433249148810';
+	try
+		Result := self.HTTPGet(URL, JSON);
+	except
+		on E: Exception do
+		begin
+			Log(MSGTYPE_IMPORTANTERROR, 'File status getting error ' + E.Message);
+		end;
+	end;
+	if not Result then exit(false);
+
+end;
+
 function TCloudMailRu.copyFile(OldName, ToPath: WideString): integer;
 var
 	URL: WideString;
@@ -1283,7 +1305,7 @@ begin // К сожалению, переименование и перемеще
 	begin // один каталог
 		Result := self.renameFile(OldName, ExtractFileName(NewName));
 	end else begin
-		Result := self.moveFile(OldName, ExtractFilePath(NewName)); //Если файл со старым именем лежит в новом каталоге, вернётся ошибка. Так реализовано в облаке, а мудрить со временными каталогами я не хочу
+		Result := self.moveFile(OldName, ExtractFilePath(NewName)); // Если файл со старым именем лежит в новом каталоге, вернётся ошибка. Так реализовано в облаке, а мудрить со временными каталогами я не хочу
 		if Result <> CLOUD_OPERATION_OK then exit;
 		if not(SameName) then
 		begin // скопированный файл лежит в новом каталоге со старым именем
