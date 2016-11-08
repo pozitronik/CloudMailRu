@@ -618,13 +618,13 @@ Begin
 		end else if command = 'clone' then
 		begin
 			RealPath := ExtractRealPath(RemoteName);
-			if RealPath.account = '' then //Некрасивое решение, надо переделать
+			if RealPath.account = '' then // Некрасивое решение, надо переделать
 			begin
 				RealPath.account := ExtractFileName(ExcludeTrailingBackslash(RemoteName));
 				RealPath.path := '\';
 			end;
 			param := ExtractLinkFromUrl(GetWord(Verb, 2));
-			if (ConnectionManager.get(RealPath.account, getResult).cloneWeblink(RealPath.path, param) <> true) then Result := FS_EXEC_ERROR;
+			if (ConnectionManager.get(RealPath.account, getResult).cloneWeblink(RealPath.path, param) <> FS_FILE_OK) then Result := FS_EXEC_ERROR;
 		end;
 
 	end;
@@ -726,26 +726,71 @@ var
 	OldRealPath: TRealPath;
 	NewRealPath: TRealPath;
 	getResult: integer;
-Begin
+	CurrentItem: TCloudMailRuDirListingItem;
+	OldCloud, NewCloud: TCloudMailRu;
+	NeedUnpublish: Boolean;
+	CloneResult: integer;
+Begin  //todo: refactore this
+
+	Result := FS_FILE_NOTSUPPORTED;
 
 	OldRealPath := ExtractRealPath(WideString(OldName));
 	NewRealPath := ExtractRealPath(WideString(NewName));
 
+	OldCloud := ConnectionManager.get(OldRealPath.account, getResult);
+	NewCloud := ConnectionManager.get(NewRealPath.account, getResult);
+
 	if OldRealPath.account <> NewRealPath.account then
 	begin
-		MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, PWideChar('Operations between accounts not supported yet'));
-		exit(FS_FILE_NOTSUPPORTED);
+		if (GetPluginSettings(SettingsIniFilePath).OperationsViaPublicLinkEnabled) then // разрешено копирование через публичные ссылки
+		begin
+
+			if OverWrite then
+			begin
+				if not(NewCloud.deleteFile(NewRealPath.path)) then exit(FS_FILE_NOTSUPPORTED);
+			end;
+
+			if OldCloud.statusFile(OldRealPath.path, CurrentItem) then
+			begin
+				if CurrentItem.Weblink = '' then // create temporary weblink
+				begin
+					NeedUnpublish := true;
+					if not(OldCloud.publishFile(CurrentItem.home, CurrentItem.Weblink)) then // problem publishing
+					begin
+						MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, PWideChar('Can''t get temporary public link on ' + CurrentItem.home));
+						exit(FS_FILE_READERROR);
+					end;
+				end;
+				Result := NewCloud.cloneWeblink(ExtractFileDir(NewRealPath.path), CurrentItem.Weblink, CLOUD_CONFLICT_STRICT);
+
+				if (NeedUnpublish) then
+				begin
+					if not(OldCloud.publishFile(CurrentItem.home, CurrentItem.Weblink, CLOUD_UNPUBLISH)) then MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, PWideChar('Can''t remove temporary public link on ' + CurrentItem.home));
+				end;
+				if Result = FS_FILE_EXISTS then exit;
+
+				if Move then
+				begin
+					if not(OldCloud.deleteFile(OldRealPath.path)) then MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, PWideChar('Can''t delete ' + CurrentItem.home)); // пишем в лог, но не отваливаемся
+				end;
+				exit; // with result
+			end;
+		end else begin
+			MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, PWideChar('Operations between accounts not supported yet'));
+			exit(FS_FILE_NOTSUPPORTED);
+		end;
+
 	end;
 
 	if OverWrite then // непонятно, но TC не показывает диалог перезаписи при FS_FILE_EXISTS
 	begin
-		if ConnectionManager.get(OldRealPath.account, getResult).deleteFile(NewRealPath.path) then // мы не умеем перезаписывать, но мы можем удалить существующий файл
+		if NewCloud.deleteFile(NewRealPath.path) then // мы не умеем перезаписывать, но мы можем удалить существующий файл
 		begin
 			if Move then
 			begin
-				Result := ConnectionManager.get(OldRealPath.account, getResult).mvFile(OldRealPath.path, NewRealPath.path);
+				Result := OldCloud.mvFile(OldRealPath.path, NewRealPath.path);
 			end else begin
-				Result := ConnectionManager.get(OldRealPath.account, getResult).cpFile(OldRealPath.path, NewRealPath.path);
+				Result := OldCloud.cpFile(OldRealPath.path, NewRealPath.path);
 			end;
 
 		end else begin
@@ -754,9 +799,9 @@ Begin
 	end else begin
 		if Move then
 		begin
-			Result := ConnectionManager.get(OldRealPath.account, getResult).mvFile(OldRealPath.path, NewRealPath.path);
+			Result := OldCloud.mvFile(OldRealPath.path, NewRealPath.path);
 		end else begin
-			Result := ConnectionManager.get(OldRealPath.account, getResult).cpFile(OldRealPath.path, NewRealPath.path);
+			Result := OldCloud.cpFile(OldRealPath.path, NewRealPath.path);
 		end;
 	end;
 end;
@@ -819,7 +864,7 @@ begin
 			end;
 		5:
 			begin
-				strpcopy(FieldValue, Item.weblink);
+				strpcopy(FieldValue, Item.Weblink);
 				Result := ft_stringw;
 			end;
 		6:

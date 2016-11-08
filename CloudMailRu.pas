@@ -156,7 +156,7 @@ type
 		function cpFile(OldName, NewName: WideString): integer; // Копирует файл, и переименует, если нужно
 		function publishFile(path: WideString; var PublicLink: WideString; publish: Boolean = CLOUD_PUBLISH): Boolean;
 		function statusFile(path: WideString; var FileInfo: TCloudMailRuDirListingItem): Boolean;
-		function cloneWeblink(path, link: WideString; ConflictMode: WideString = CLOUD_CONFLICT_RENAME): Boolean; // клонировать публичную ссылку в текущий каталог
+		function cloneWeblink(path, link: WideString; ConflictMode: WideString = CLOUD_CONFLICT_RENAME): Integer; // клонировать публичную ссылку в текущий каталог
 
 	end;
 
@@ -469,10 +469,24 @@ begin
 		Answer := HTTP.Get(URL);
 		self.HTTPDestroy(HTTP, SSL);
 	Except
+		on E: EAbort do
+		begin
+			exit(false);
+		end;
 		on E: EIdHTTPProtocolException do
 		begin
-			Log(MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при отправке данных на адрес ' + URL + ', ответ сервера: ' + E.ErrorMessage);
-			exit(false);
+			if HTTP.ResponseCode = 400 then
+			begin { сервер вернёт 400, но нужно пропарсить результат для дальнейшего определения действий }
+				Answer := E.ErrorMessage;
+				Result := true;
+			end else if HTTP.ResponseCode = 507 then // кончилось место
+			begin
+				Answer := E.ErrorMessage;
+				Result := true;
+			end else begin
+				Log(MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при отправке данных на адрес ' + URL + ', ответ сервера: ' + E.ErrorMessage);
+				Result := false;
+			end;
 		end;
 		on E: Exception do
 		begin
@@ -1145,25 +1159,62 @@ begin
 	FileInfo := getFileStatusFromJSON(JSON);
 end;
 
-function TCloudMailRu.cloneWeblink(path, link: WideString; ConflictMode: WideString = CLOUD_CONFLICT_RENAME): Boolean;
+function TCloudMailRu.cloneWeblink(path, link: WideString; ConflictMode: WideString = CLOUD_CONFLICT_RENAME): Integer;
 var
 	URL: WideString;
-	JSON: WideString;
+	GetAnswer: WideString;
+	GetResult: Boolean;
+	OperationStatus: integer;
 begin
-	Result := false;
+	Result :=FS_FILE_WRITEERROR;
 	if not(Assigned(self)) then exit; // Проверка на вызов без инициализации
 	path := UrlEncode(StringReplace(path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
 	if (path = '') then path := '/'; // preventing error
 	URL := 'https://cloud.mail.ru/api/v2/clone?folder=' + path + '&weblink=' + link + '&conflict=' + ConflictMode + '&api=2&build=' + self.build + '&x-page-id=' + self.x_page_id + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&token=' + self.token + '&_=1433249148810';
 	try
-		Result := self.HTTPGet(URL, JSON);
+		GetResult := self.HTTPGet(URL, GetAnswer);
 	except
 		on E: Exception do
 		begin
-			Log(MSGTYPE_IMPORTANTERROR, 'File status getting error ' + E.Message);
+			Log(MSGTYPE_IMPORTANTERROR, 'Public link clone error ' + E.Message);
 		end;
 	end;
-	if not Result then exit(false);
+	if GetResult then
+	begin // Парсим ответ
+		case self.getOperationResultFromJSON(GetAnswer, OperationStatus) of
+			CLOUD_OPERATION_OK:
+				begin
+					Result := CLOUD_OPERATION_OK
+				end;
+			CLOUD_ERROR_EXISTS:
+				begin
+					Result := FS_FILE_EXISTS;
+				end;
+			CLOUD_ERROR_REQUIRED:
+				begin
+					Result := FS_FILE_WRITEERROR;
+				end;
+			CLOUD_ERROR_INVALID:
+				begin
+					Result := FS_FILE_WRITEERROR;
+				end;
+			CLOUD_ERROR_READONLY:
+				begin
+					Result := FS_FILE_WRITEERROR;
+				end;
+			CLOUD_ERROR_NAME_LENGTH_EXCEEDED:
+				begin
+					Result := FS_FILE_WRITEERROR;
+				end;
+			CLOUD_ERROR_UNKNOWN:
+				begin
+					Result := FS_FILE_NOTSUPPORTED;
+				end;
+		end;
+	end else begin
+		Log(MSGTYPE_IMPORTANTERROR, 'Error file move: got ' + IntToStr(OperationStatus) + ' status');
+		Result := FS_FILE_WRITEERROR;
+	end;
 
 end;
 
