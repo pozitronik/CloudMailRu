@@ -730,7 +730,7 @@ var
 	OldCloud, NewCloud: TCloudMailRu;
 	NeedUnpublish: Boolean;
 	CloneResult: integer;
-Begin  //todo: refactore this
+Begin
 
 	Result := FS_FILE_NOTSUPPORTED;
 
@@ -740,15 +740,12 @@ Begin  //todo: refactore this
 	OldCloud := ConnectionManager.get(OldRealPath.account, getResult);
 	NewCloud := ConnectionManager.get(NewRealPath.account, getResult);
 
-	if OldRealPath.account <> NewRealPath.account then
+	if OldRealPath.account <> NewRealPath.account then // разные аккаунты
 	begin
 		if (GetPluginSettings(SettingsIniFilePath).OperationsViaPublicLinkEnabled) then // разрешено копирование через публичные ссылки
 		begin
 
-			if OverWrite then
-			begin
-				if not(NewCloud.deleteFile(NewRealPath.path)) then exit(FS_FILE_NOTSUPPORTED);
-			end;
+			if OverWrite and not(NewCloud.deleteFile(NewRealPath.path)) then exit(FS_FILE_NOTSUPPORTED);
 
 			if OldCloud.statusFile(OldRealPath.path, CurrentItem) then
 			begin
@@ -763,47 +760,29 @@ Begin  //todo: refactore this
 				end;
 				Result := NewCloud.cloneWeblink(ExtractFileDir(NewRealPath.path), CurrentItem.Weblink, CLOUD_CONFLICT_STRICT);
 
-				if (NeedUnpublish) then
-				begin
-					if not(OldCloud.publishFile(CurrentItem.home, CurrentItem.Weblink, CLOUD_UNPUBLISH)) then MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, PWideChar('Can''t remove temporary public link on ' + CurrentItem.home));
-				end;
-				if Result = FS_FILE_EXISTS then exit;
+				if (NeedUnpublish) and not(OldCloud.publishFile(CurrentItem.home, CurrentItem.Weblink, CLOUD_UNPUBLISH)) then MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, PWideChar('Can''t remove temporary public link on ' + CurrentItem.home));
 
-				if Move then
-				begin
-					if not(OldCloud.deleteFile(OldRealPath.path)) then MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, PWideChar('Can''t delete ' + CurrentItem.home)); // пишем в лог, но не отваливаемся
-				end;
-				exit; // with result
+				if Result <> CLOUD_OPERATION_OK then exit;
+
+				if Move and not(OldCloud.deleteFile(OldRealPath.path)) then MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, PWideChar('Can''t delete ' + CurrentItem.home)); // пишем в лог, но не отваливаемся
 			end;
 		end else begin
 			MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, PWideChar('Operations between accounts not supported yet'));
 			exit(FS_FILE_NOTSUPPORTED);
 		end;
 
-	end;
+	end else begin // один аккаунт
 
-	if OverWrite then // непонятно, но TC не показывает диалог перезаписи при FS_FILE_EXISTS
-	begin
-		if NewCloud.deleteFile(NewRealPath.path) then // мы не умеем перезаписывать, но мы можем удалить существующий файл
-		begin
-			if Move then
-			begin
-				Result := OldCloud.mvFile(OldRealPath.path, NewRealPath.path);
-			end else begin
-				Result := OldCloud.cpFile(OldRealPath.path, NewRealPath.path);
-			end;
-
-		end else begin
-			Result := FS_FILE_NOTSUPPORTED;
-		end;
-	end else begin
+		if OverWrite and not(NewCloud.deleteFile(NewRealPath.path)) then exit(FS_FILE_NOTSUPPORTED); // мы не умеем перезаписывать, но мы можем удалить существующий файл
 		if Move then
 		begin
 			Result := OldCloud.mvFile(OldRealPath.path, NewRealPath.path);
 		end else begin
 			Result := OldCloud.cpFile(OldRealPath.path, NewRealPath.path);
 		end;
+
 	end;
+
 end;
 
 function FsDisconnectW(DisconnectRoot: PWideChar): bool; stdcall;
