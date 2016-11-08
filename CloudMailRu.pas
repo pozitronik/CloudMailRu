@@ -31,6 +31,7 @@ const
 	CLOUD_ERROR_NAME_LENGTH_EXCEEDED = 5; // name_length_exceeded: 'Ошибка: Превышена длина имени папки. <a href="https://help.mail.ru/cloud_web/confines" target="_blank">Подробнее…</a>'
 	CLOUD_ERROR_OVERQUOTA = 7; // overquota: 'Невозможно скопировать, в вашем Облаке недостаточно места'
 	CLOUD_ERROR_QUOTA_EXCEEDED = 7; // "quota_exceeded": 'Невозможно скопировать, в вашем Облаке недостаточно места'
+	CLOUD_ERROR_NOT_EXISTS = 8; // not_exists": 'Копируемая ссылка не существует'
 
 	{ Режимы работы при конфликтах копирования }
 	CLOUD_CONFLICT_STRICT = 'strict'; // возвращаем ошибку при существовании файла
@@ -156,7 +157,7 @@ type
 		function cpFile(OldName, NewName: WideString): integer; // Копирует файл, и переименует, если нужно
 		function publishFile(path: WideString; var PublicLink: WideString; publish: Boolean = CLOUD_PUBLISH): Boolean;
 		function statusFile(path: WideString; var FileInfo: TCloudMailRuDirListingItem): Boolean;
-		function cloneWeblink(path, link: WideString; ConflictMode: WideString = CLOUD_CONFLICT_RENAME): Integer; // клонировать публичную ссылку в текущий каталог
+		function cloneWeblink(path, link: WideString; ConflictMode: WideString = CLOUD_CONFLICT_RENAME): integer; // клонировать публичную ссылку в текущий каталог
 
 	end;
 
@@ -1159,14 +1160,14 @@ begin
 	FileInfo := getFileStatusFromJSON(JSON);
 end;
 
-function TCloudMailRu.cloneWeblink(path, link: WideString; ConflictMode: WideString = CLOUD_CONFLICT_RENAME): Integer;
+function TCloudMailRu.cloneWeblink(path, link: WideString; ConflictMode: WideString = CLOUD_CONFLICT_RENAME): integer;
 var
 	URL: WideString;
 	GetAnswer: WideString;
 	GetResult: Boolean;
 	OperationStatus: integer;
 begin
-	Result :=FS_FILE_WRITEERROR;
+	Result := FS_FILE_WRITEERROR;
 	if not(Assigned(self)) then exit; // Проверка на вызов без инициализации
 	path := UrlEncode(StringReplace(path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
 	if (path = '') then path := '/'; // preventing error
@@ -1575,7 +1576,7 @@ end;
 function TCloudMailRu.getOperationResultFromJSON(JSON: WideString; var OperationStatus: integer): integer;
 var
 	Obj: TJSONObject;
-	error: WideString;
+	error, nodename: WideString;
 begin
 	try
 		Obj := TJSONObject.ParseJSONValue(JSON) as TJSONObject;
@@ -1583,8 +1584,17 @@ begin
 		OperationStatus := Obj.values['status'].Value.ToInteger;
 		if OperationStatus <> 200 then
 		begin
-			error := ((Obj.values['body'] as TJSONObject).values['home'] as TJSONObject).values['error'].Value;
+			if (Assigned((Obj.values['body'] as TJSONObject).values['home'])) then nodename := 'home'
+			else if (Assigned((Obj.values['body'] as TJSONObject).values['weblink'])) then nodename := 'weblink'
+			else
+			begin
+				Log(MSGTYPE_IMPORTANTERROR, 'Can''t parse server answer: ' + JSON);
+				exit(CLOUD_ERROR_UNKNOWN);
+			end;
+
+			error := ((Obj.values['body'] as TJSONObject).values[nodename] as TJSONObject).values['error'].Value;
 			if error = 'exists' then exit(CLOUD_ERROR_EXISTS);
+			if error = 'not_exists' then exit(CLOUD_ERROR_NOT_EXISTS);
 			if error = 'required' then exit(CLOUD_ERROR_REQUIRED);
 			if error = 'readonly' then exit(CLOUD_ERROR_READONLY);
 			if error = 'read_only' then exit(CLOUD_ERROR_READONLY);
