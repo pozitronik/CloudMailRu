@@ -31,7 +31,8 @@ const
 	CLOUD_ERROR_NAME_LENGTH_EXCEEDED = 5; // name_length_exceeded: 'Ошибка: Превышена длина имени папки. <a href="https://help.mail.ru/cloud_web/confines" target="_blank">Подробнее…</a>'
 	CLOUD_ERROR_OVERQUOTA = 7; // overquota: 'Невозможно скопировать, в вашем Облаке недостаточно места'
 	CLOUD_ERROR_QUOTA_EXCEEDED = 7; // "quota_exceeded": 'Невозможно скопировать, в вашем Облаке недостаточно места'
-	CLOUD_ERROR_NOT_EXISTS = 8; // not_exists": 'Копируемая ссылка не существует'
+	CLOUD_ERROR_NOT_EXISTS = 8; // "not_exists": 'Копируемая ссылка не существует'
+	CLOUD_ERROR_OWN = 9; // "own": 'Невозможно клонировать собственную ссылку'
 
 	{ Режимы работы при конфликтах копирования }
 	CLOUD_CONFLICT_STRICT = 'strict'; // возвращаем ошибку при существовании файла
@@ -1594,7 +1595,6 @@ begin
 
 			error := ((Obj.values['body'] as TJSONObject).values[nodename] as TJSONObject).values['error'].Value;
 			if error = 'exists' then exit(CLOUD_ERROR_EXISTS);
-			if error = 'not_exists' then exit(CLOUD_ERROR_NOT_EXISTS);
 			if error = 'required' then exit(CLOUD_ERROR_REQUIRED);
 			if error = 'readonly' then exit(CLOUD_ERROR_READONLY);
 			if error = 'read_only' then exit(CLOUD_ERROR_READONLY);
@@ -1603,6 +1603,8 @@ begin
 			if error = 'overquota' then exit(CLOUD_ERROR_OVERQUOTA);
 			if error = 'quota_exceeded' then exit(CLOUD_ERROR_OVERQUOTA);
 			if error = 'invalid' then exit(CLOUD_ERROR_INVALID);
+			if error = 'not_exists' then exit(CLOUD_ERROR_NOT_EXISTS);
+			if error = 'own' then exit(CLOUD_ERROR_OWN);
 
 			exit(CLOUD_ERROR_UNKNOWN); // Эту ошибку мы пока не встречали
 		end;
