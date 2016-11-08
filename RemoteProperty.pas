@@ -1,4 +1,4 @@
-unit RemoteProperty;
+﻿unit RemoteProperty;
 
 interface
 
@@ -53,7 +53,7 @@ begin
 			WebLink.SetFocus;
 			WebLink.SelectAll;
 		end else begin
-			MessageBoxW(Self.Handle, PWideChar('Error while publishing file ' + Props.home + ', see main log'), 'File unpublishing error', MB_OK + MB_ICONERROR);
+			MessageBoxW(Self.Handle, PWideChar('Error while publishing file ' + Props.home + ', see main log'), 'File publishing error', MB_OK + MB_ICONERROR);
 		end;
 
 	end else begin
@@ -92,7 +92,7 @@ begin
 	WebLink.Enabled := AccessCB.checked;
 end;
 
-class function TPropertyForm.ShowProperty(parentWindow: HWND; RemoteProperty: TCloudMailRuDirListingItem; var Cloud: TCloudMailRu): integer;
+class function TPropertyForm.ShowProperty(parentWindow: HWND; RemoteProperty: TCloudMailRuDirListingItem; var Cloud: TCloudMailRu): integer; //todo do we need cloud as var parameter?
 var
 	PropertyForm: TPropertyForm;
 begin
