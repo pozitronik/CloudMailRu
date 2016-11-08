@@ -767,7 +767,7 @@ Begin
 				if Move and not(OldCloud.deleteFile(OldRealPath.path)) then MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, PWideChar('Can''t delete ' + CurrentItem.home)); // пишем в лог, но не отваливаемся
 			end;
 		end else begin
-			MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, PWideChar('Operations between accounts not supported yet'));
+			MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, PWideChar('Direct operations between accounts not supported'));
 			exit(FS_FILE_NOTSUPPORTED);
 		end;
 
