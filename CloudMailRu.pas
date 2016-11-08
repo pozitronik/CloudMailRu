@@ -1213,7 +1213,7 @@ begin
 				end;
 		end;
 	end else begin
-		Log(MSGTYPE_IMPORTANTERROR, 'Error file move: got ' + IntToStr(OperationStatus) + ' status');
+		Log(MSGTYPE_IMPORTANTERROR, 'Public link clone error: got ' + IntToStr(OperationStatus) + ' status');
 		Result := FS_FILE_WRITEERROR;
 	end;
 
@@ -1307,7 +1307,7 @@ begin
 	except
 		on E: Exception do
 		begin
-			Log(MSGTYPE_IMPORTANTERROR, 'Rename file error ' + E.Message);
+			Log(MSGTYPE_IMPORTANTERROR, 'Move file error ' + E.Message);
 		end;
 	end;
 	PostData.free;
