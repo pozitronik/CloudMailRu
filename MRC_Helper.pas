@@ -40,6 +40,7 @@ type
 		LoadSSLDLLOnlyFromPluginDir: boolean;
 		PreserveFileTime: boolean;
 		DescriptionEnabled: boolean;
+		OperationsViaPublicLinkEnabled: boolean;
 		Proxy: TProxySettings;
 	end;
 
@@ -223,6 +224,7 @@ begin
 	GetPluginSettings.LoadSSLDLLOnlyFromPluginDir := IniFile.ReadBool('Main', 'LoadSSLDLLOnlyFromPluginDir', false);
 	GetPluginSettings.PreserveFileTime := IniFile.ReadBool('Main', 'PreserveFileTime', false);
 	GetPluginSettings.DescriptionEnabled := IniFile.ReadBool('Main', 'DescriptionEnabled', false);
+	GetPluginSettings.OperationsViaPublicLinkEnabled := IniFile.ReadBool('Main', 'OperationsViaPublicLinkEnabled', false);
 	GetPluginSettings.Proxy.ProxyType := IniFile.ReadInteger('Main', 'ProxyType', ProxyNone);
 	GetPluginSettings.Proxy.Server := IniFile.ReadString('Main', 'ProxyServer', '');
 	GetPluginSettings.Proxy.Port := IniFile.ReadInteger('Main', 'ProxyPort', 0);
@@ -350,7 +352,7 @@ const
 	pulicPrefix = 'https://cloud.mail.ru/public';
 begin
 	Result := URL;
-	if pos(WideString(pulicPrefix), URL) <> 0 then Result := Copy(URL, Length(pulicPrefix)+1, Length(URL) - Length(pulicPrefix));
+	if pos(WideString(pulicPrefix), URL) <> 0 then Result := Copy(URL, Length(pulicPrefix) + 1, Length(URL) - Length(pulicPrefix));
 end;
 
 end.

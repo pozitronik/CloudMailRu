@@ -311,11 +311,11 @@ object AccountsForm: TAccountsForm
       end
       object ProxyGB: TGroupBox
         Left = 5
-        Top = 72
+        Top = 97
         Width = 475
         Height = 209
         Caption = 'Proxy settings'
-        TabOrder = 3
+        TabOrder = 4
         object ProxyTypeLabel: TLabel
           Left = 5
           Top = 18
@@ -418,6 +418,15 @@ object AccountsForm: TAccountsForm
         Caption = 'Descript.ion files support'
         TabOrder = 2
         OnClick = DescriptionEnabledCBClick
+      end
+      object OperationsViaPublicLinkEnabledCB: TCheckBox
+        Left = 5
+        Top = 71
+        Width = 475
+        Height = 17
+        Caption = 'Copying/moving between accouns via public link'
+        TabOrder = 3
+        OnClick = OperationsViaPublicLinkEnabledCBClick
       end
     end
   end

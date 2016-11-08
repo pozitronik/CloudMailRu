@@ -39,6 +39,7 @@ type
 		ProxyServerLabel: TLabel;
 		DescriptionEnabledCB: TCheckBox;
 		ProxyPwd: TMaskEdit;
+		OperationsViaPublicLinkEnabledCB: TCheckBox;
 		procedure FormShow(Sender: TObject);
 		procedure AccountsListClick(Sender: TObject);
 		procedure ApplyButtonClick(Sender: TObject);
@@ -57,6 +58,7 @@ type
 		procedure PreserveFileTimeCBClick(Sender: TObject);
 		procedure DescriptionEnabledCBClick(Sender: TObject);
 		procedure ProxyPwdChange(Sender: TObject);
+		procedure OperationsViaPublicLinkEnabledCBClick(Sender: TObject);
 	private
 		{ Private declarations }
 		procedure WMHotKey(var Message: TMessage); message WM_HOTKEY;
@@ -188,6 +190,11 @@ begin
 	end;
 end;
 
+procedure TAccountsForm.OperationsViaPublicLinkEnabledCBClick(Sender: TObject);
+begin
+	SetPluginSettingsValue(SettingsIniFilePath, 'OperationsViaPublicLinkEnabled', OperationsViaPublicLinkEnabledCB.Checked);
+end;
+
 procedure TAccountsForm.PreserveFileTimeCBClick(Sender: TObject);
 begin
 	SetPluginSettingsValue(SettingsIniFilePath, 'PreserveFileTime', PreserveFileTimeCB.Checked);
@@ -235,11 +242,13 @@ begin
 		AccountsForm.UseDLLFromPluginDir.Checked := GetPluginSettings(SettingsIniFilePath).LoadSSLDLLOnlyFromPluginDir;
 		AccountsForm.PreserveFileTimeCB.Checked := GetPluginSettings(SettingsIniFilePath).PreserveFileTime;
 		AccountsForm.DescriptionEnabledCB.Checked := GetPluginSettings(SettingsIniFilePath).DescriptionEnabled;
+		AccountsForm.OperationsViaPublicLinkEnabledCB.Checked := GetPluginSettings(SettingsIniFilePath).OperationsViaPublicLinkEnabled;
 		AccountsForm.ProxyCB.ItemIndex := GetPluginSettings(SettingsIniFilePath).Proxy.ProxyType;
 		AccountsForm.ProxyServerEdit.Text := GetPluginSettings(SettingsIniFilePath).Proxy.Server;
 		AccountsForm.ProxyPortEdit.Text := GetPluginSettings(SettingsIniFilePath).Proxy.Port.ToString;
 		AccountsForm.ProxyUserEdit.Text := GetPluginSettings(SettingsIniFilePath).Proxy.User;
-		AccountsForm.ProxyPWD.Text := GetPluginSettings(SettingsIniFilePath).Proxy.password;
+		AccountsForm.ProxyPwd.Text := GetPluginSettings(SettingsIniFilePath).Proxy.password;
+
 		{ global settings }
 		if RemoteName <> '' then AccountsForm.SelectedAccount := Copy(RemoteName, 2, length(RemoteName) - 1);
 		RegisterHotKey(AccountsForm.Handle, 1, 0, VK_ESCAPE);
