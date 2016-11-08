@@ -731,7 +731,7 @@ var
 	NeedUnpublish: Boolean;
 	CloneResult: integer;
 Begin
-
+	MyProgressProc(PluginNum, OldName, NewName, 0);
 	Result := FS_FILE_NOTSUPPORTED;
 
 	OldRealPath := ExtractRealPath(WideString(OldName));
@@ -782,7 +782,7 @@ Begin
 		end;
 
 	end;
-
+	MyProgressProc(PluginNum, OldName, NewName, 100);
 end;
 
 function FsDisconnectW(DisconnectRoot: PWideChar): bool; stdcall;
