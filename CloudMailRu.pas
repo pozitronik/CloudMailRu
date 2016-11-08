@@ -468,6 +468,7 @@ var
 begin
 	try
 		self.HTTPInit(HTTP, SSL, Socks, self.Cookie);
+		//HTTP.OnWork := self.HttpProgress; //Вызов прогресса ведёт к возможности отменить получение списка каталогов и других операций. Пока не понятно, как это обойти
 		Answer := HTTP.Get(URL);
 		self.HTTPDestroy(HTTP, SSL);
 	Except
