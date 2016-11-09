@@ -4,7 +4,7 @@ unit Descriptions;
 interface
 
 uses
-	System.Types, System.AnsiStrings, Generics.Collections,System.SysUtils, System.WideStrUtils;
+	System.Types, System.Classes, System.AnsiStrings, Generics.Collections, System.SysUtils, System.WideStrUtils;
 
 type
 
@@ -12,15 +12,14 @@ type
 
 	private
 	var
-		items: TDictionary<String, String>;
+		items: TDictionary<WideString, WideString>;
 
 	public
 		constructor Create();
 		destructor Destroy; override;
 		function Read(ion_filename: WideString): integer;
-		function GetValue(item: String): String;
+		function GetValue(item: WideString): WideString;
 		procedure Clear;
-
 	end;
 
 implementation
@@ -34,7 +33,7 @@ end;
 
 constructor TDescription.Create;
 begin
-	self.items := TDictionary<String, String>.Create;
+	self.items := TDictionary<WideString, WideString>.Create;
 end;
 
 destructor TDescription.Destroy;
@@ -42,24 +41,24 @@ begin
 	self.items.Free;
 end;
 
-function TDescription.GetValue(item: String): String;
+function TDescription.GetValue(item: WideString): WideString;
 begin
 	if not items.TryGetValue(item, result) then exit('');
-	result := WideStringReplace(WideStringReplace(result, '\n', '  ', [rfReplaceAll]),chr($04)+'Â','',[rfReplaceAll]);
+
+	result := WideStringReplace(WideStringReplace(result, '\n', '  ', [rfReplaceAll]), chr($04) + 'Â', '', [rfReplaceAll]);
 end;
 
 function TDescription.Read(ion_filename: WideString): integer; // Loads desript.ion file
 var
-	f: TextFile;
+	fStream: TStreamReader;
 	line, key, value: WideString;
 	t: integer;
 begin
 	self.Clear;
-	AssignFile(f, ion_filename);
-	Reset(f);
-	while not Eof(f) do
+	fStream := TStreamReader.Create(ion_filename, TEncoding.Default, True);
+	while not fStream.EndOfStream do
 	begin
-		Readln(f, line);
+		line := fStream.ReadLine;
 		if StartsStr('"', line) then
 		begin
 			t := PosEx('" ', line);
@@ -73,7 +72,7 @@ begin
 
 		items.Add(key, value);
 	end;
-	CloseFile(f);
+	fStream.Free;
 end;
 
 end.
