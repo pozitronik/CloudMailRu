@@ -555,8 +555,8 @@ begin
 		end;
 		on E: EIdSocketError do
 		begin
-			Log(MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка сети: ' + E.Message + ' при копировании файла с адреса ' + URL);
-			Result := CLOUD_OPERATION_FAILED;
+			if LogErrors then Log(MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка сети: ' + E.Message + ' при копировании файла с адреса ' + URL);
+			Result := FS_FILE_READERROR;
 		end;
 		on E: Exception do
 		begin
@@ -593,7 +593,11 @@ begin
 	HTTP.AllowCookies := true;
 	HTTP.HTTPOptions := [hoForceEncodeParams, hoNoParseMetaHTTPEquiv];
 	HTTP.HandleRedirects := true;
-	if (self.ConnectTimeout < 0) then HTTP.ConnectTimeout := self.ConnectTimeout;
+	if (self.ConnectTimeout < 0) then
+	begin
+		HTTP.ConnectTimeout := self.ConnectTimeout;
+		HTTP.ReadTimeout := self.ConnectTimeout;
+	end;
 
 	HTTP.Request.UserAgent := 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.17 (KHTML, like Gecko) Chrome/24.0.1312.57 Safari/537.17/TCWFX(' + PlatformX + ')';
 end;

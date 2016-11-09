@@ -294,9 +294,9 @@ object AccountsForm: TAccountsForm
       object SocketTimeoutLabel: TLabel
         Left = 5
         Top = 94
-        Width = 188
+        Width = 228
         Height = 13
-        Caption = 'Connection timeout, ms (-1 to default):'
+        Caption = 'Network operations timeout, ms (-1 to default):'
       end
       object PreserveFileTimeCB: TCheckBox
         Left = 5
@@ -436,7 +436,7 @@ object AccountsForm: TAccountsForm
         OnClick = OperationsViaPublicLinkEnabledCBClick
       end
       object SocketTimeoutEdit: TEdit
-        Left = 198
+        Left = 239
         Top = 94
         Width = 121
         Height = 21
