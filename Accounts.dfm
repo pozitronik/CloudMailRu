@@ -284,7 +284,7 @@ object AccountsForm: TAccountsForm
         Width = 255
         Height = 17
         Anchors = [akLeft, akTop, akRight]
-        Caption = 'Split large files to 2Gb parts (EXPERIMENTAL)'
+        Caption = 'Split large files to 2Gb parts'
         TabOrder = 6
       end
     end
