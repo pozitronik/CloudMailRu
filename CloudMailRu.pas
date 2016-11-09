@@ -3,7 +3,7 @@
 interface
 
 uses
-	System.Classes, System.SysUtils, PLUGIN_Types, JSON, Winapi.Windows,
+	System.Classes, System.SysUtils, PLUGIN_Types, JSON, Winapi.Windows, IdStack,
 	MRC_helper, IdCookieManager, IdIOHandler, IdIOHandlerSocket, IdIOHandlerStack, IdSSL,
 	IdSSLOpenSSL, IdBaseComponent, IdComponent, IdTCPConnection, IdTCPClient, IdSocks,
 	IdHTTP, IdAuthentication, IdIOHandlerStream, IdMultipartFormData, FileSplitter;
@@ -429,6 +429,11 @@ begin
 				Result := false;
 			end;
 		end;
+		on E: EIdSocketError do
+		begin
+			Log(MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка сети: ' + E.Message + ' при отправке данных на адрес ' + URL);
+			Result := false;
+		end;
 	end;
 	MemStream.free;
 end;
@@ -456,6 +461,11 @@ begin
 		on E: EIdHTTPProtocolException do
 		begin
 			Log(MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при отправке данных на адрес ' + URL + ', ответ сервера: ' + E.ErrorMessage);
+			Result := CLOUD_OPERATION_FAILED;
+		end;
+		on E: EIdSocketError do
+		begin
+			Log(MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка сети: ' + E.Message + ' при отправке данных на адрес ' + URL);
 			Result := CLOUD_OPERATION_FAILED;
 		end;
 		on E: Exception do
@@ -504,6 +514,11 @@ begin
 				Result := false;
 			end;
 		end;
+		on E: EIdSocketError do
+		begin
+			Log(MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка сети: ' + E.Message + ' при запросе данных с адреса ' + URL);
+			Result := false;
+		end;
 		on E: Exception do
 		begin
 			Log(MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при запросе данных с адреса ' + URL);
@@ -537,6 +552,11 @@ begin
 		on E: EAbort do
 		begin
 			Result := FS_FILE_USERABORT;
+		end;
+		on E: EIdSocketError do
+		begin
+			Log(MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка сети: ' + E.Message + ' при копировании файла с адреса ' + URL);
+			Result := CLOUD_OPERATION_FAILED;
 		end;
 		on E: Exception do
 		begin
@@ -573,7 +593,7 @@ begin
 	HTTP.AllowCookies := true;
 	HTTP.HTTPOptions := [hoForceEncodeParams, hoNoParseMetaHTTPEquiv];
 	HTTP.HandleRedirects := true;
-	if (self.ConnectTimeout<0) then HTTP.ConnectTimeout := self.ConnectTimeout;
+	if (self.ConnectTimeout < 0) then HTTP.ConnectTimeout := self.ConnectTimeout;
 
 	HTTP.Request.UserAgent := 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.17 (KHTML, like Gecko) Chrome/24.0.1312.57 Safari/537.17/TCWFX(' + PlatformX + ')';
 end;
