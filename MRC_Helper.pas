@@ -41,6 +41,7 @@ type
 		PreserveFileTime: boolean;
 		DescriptionEnabled: boolean;
 		OperationsViaPublicLinkEnabled: boolean;
+		AlertOnSocketErrors: boolean;
 		Proxy: TProxySettings;
 	end;
 
@@ -225,6 +226,7 @@ begin
 	GetPluginSettings.PreserveFileTime := IniFile.ReadBool('Main', 'PreserveFileTime', false);
 	GetPluginSettings.DescriptionEnabled := IniFile.ReadBool('Main', 'DescriptionEnabled', false);
 	GetPluginSettings.OperationsViaPublicLinkEnabled := IniFile.ReadBool('Main', 'OperationsViaPublicLinkEnabled', false);
+	GetPluginSettings.AlertOnSocketErrors := IniFile.ReadBool('Main', 'AlertOnSocketErrors', false);
 	GetPluginSettings.Proxy.ProxyType := IniFile.ReadInteger('Main', 'ProxyType', ProxyNone);
 	GetPluginSettings.Proxy.Server := IniFile.ReadString('Main', 'ProxyServer', '');
 	GetPluginSettings.Proxy.Port := IniFile.ReadInteger('Main', 'ProxyPort', 0);

@@ -118,7 +118,7 @@ type
 
 		function HTTPPostFile(URL: WideString; PostData: TIdMultipartFormDataStream; var Answer: WideString): integer; // Постинг файла и получение ответа
 		function HTTPGetFile(URL: WideString; var FileStream: TFileStream; LogErrors: Boolean = true): integer;
-		function HTTPGet(URL: WideString; var Answer: WideString): Boolean;
+		function HTTPGet(URL: WideString; var Answer: WideString; var ProgressEnabled: Boolean): Boolean; // если ProgressEnabled - включаем обработчик onWork, возвращаем ProgressEnabled=false при отмене
 		function getTokenFromText(Text: WideString): WideString;
 		function get_x_page_id_FromText(Text: WideString): WideString;
 		function get_build_FromText(Text: WideString): WideString;
@@ -232,12 +232,14 @@ function TCloudMailRu.getToken(): Boolean;
 var
 	URL: WideString;
 	Answer: WideString;
+	Progress: Boolean;
 begin
 	URL := 'https://cloud.mail.ru/?from=promo&from=authpopup';
 	Result := false;
 	if not(Assigned(self)) then exit; // Проверка на вызов без инициализации
 	try
-		Result := self.HTTPGet(URL, Answer);
+		Progress := false;
+		Result := self.HTTPGet(URL, Answer, Progress);
 	except
 		on E: Exception do
 		begin
@@ -368,12 +370,14 @@ function TCloudMailRu.getUserSpace(var SpaceInfo: TCloudMailRuSpaceInfo): Boolea
 var
 	URL: WideString;
 	JSON: WideString;
+	Progress: Boolean;
 begin
 	Result := false;
 	if not(Assigned(self)) then exit; // Проверка на вызов без инициализации
 	URL := 'https://cloud.mail.ru/api/v2/user/space?api=2&home=/&build=' + self.build + '&x-page-id=' + self.x_page_id + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&token=' + self.token + '&_=1433249148810';
 	try
-		Result := self.HTTPGet(URL, JSON);
+		Progress := false;
+		Result := self.HTTPGet(URL, JSON, Progress);
 	except
 		on E: Exception do
 		begin
@@ -460,7 +464,7 @@ begin
 	MemStream.free
 end;
 
-function TCloudMailRu.HTTPGet(URL: WideString; var Answer: WideString): Boolean;
+function TCloudMailRu.HTTPGet(URL: WideString; var Answer: WideString; var ProgressEnabled: Boolean): Boolean;
 var
 	HTTP: TIdHTTP;
 	SSL: TIdSSLIOHandlerSocketOpenSSL;
@@ -468,12 +472,18 @@ var
 begin
 	try
 		self.HTTPInit(HTTP, SSL, Socks, self.Cookie);
-		//HTTP.OnWork := self.HttpProgress; //Вызов прогресса ведёт к возможности отменить получение списка каталогов и других операций. Пока не понятно, как это обойти
+		if ProgressEnabled then // Вызов прогресса ведёт к возможности отменить получение списка каталогов и других операций, поэтому он нужен не всегда
+		begin
+			HTTP.OnWork := self.HttpProgress;
+		end;
+
 		Answer := HTTP.Get(URL);
 		self.HTTPDestroy(HTTP, SSL);
 	Except
 		on E: EAbort do
 		begin
+			Answer := E.Message;
+			ProgressEnabled := false; // сообщаем об отмене
 			exit(false);
 		end;
 		on E: EIdHTTPProtocolException do
@@ -708,13 +718,15 @@ function TCloudMailRu.getDir(path: WideString; var DirListing: TCloudMailRuDirLi
 var
 	URL: WideString;
 	JSON: WideString;
+	Progress: Boolean;
 begin
 	Result := false;
 	if not(Assigned(self)) then exit; // Проверка на вызов без инициализации
 	path := UrlEncode(StringReplace(path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
 	URL := 'https://cloud.mail.ru/api/v2/folder?sort={%22type%22%3A%22name%22%2C%22order%22%3A%22asc%22}&offset=0&limit=10000&home=' + path + '&api=2&build=' + self.build + '&x-page-id=' + self.x_page_id + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&token=' + self.token + '&_=1433249148810';
 	try
-		Result := self.HTTPGet(URL, JSON);
+		Progress := false;
+		Result := self.HTTPGet(URL, JSON, Progress);
 	except
 		on E: Exception do
 		begin
@@ -1145,13 +1157,15 @@ function TCloudMailRu.statusFile(path: WideString; var FileInfo: TCloudMailRuDir
 var
 	URL: WideString;
 	JSON: WideString;
+	Progress: Boolean;
 begin
 	Result := false;
 	if not(Assigned(self)) then exit; // Проверка на вызов без инициализации
 	path := UrlEncode(StringReplace(path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
 	URL := 'https://cloud.mail.ru/api/v2/file?home=' + path + '&api=2&build=' + self.build + '&x-page-id=' + self.x_page_id + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&token=' + self.token + '&_=1433249148810';
 	try
-		Result := self.HTTPGet(URL, JSON);
+		Progress := false;
+		Result := self.HTTPGet(URL, JSON, Progress);
 	except
 		on E: Exception do
 		begin
@@ -1168,6 +1182,7 @@ var
 	GetAnswer: WideString;
 	GetResult: Boolean;
 	OperationStatus: integer;
+	Progress: Boolean;
 begin
 	Result := FS_FILE_WRITEERROR;
 	if not(Assigned(self)) then exit; // Проверка на вызов без инициализации
@@ -1175,7 +1190,8 @@ begin
 	if (path = '') then path := '/'; // preventing error
 	URL := 'https://cloud.mail.ru/api/v2/clone?folder=' + path + '&weblink=' + link + '&conflict=' + ConflictMode + '&api=2&build=' + self.build + '&x-page-id=' + self.x_page_id + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&token=' + self.token + '&_=1433249148810';
 	try
-		GetResult := self.HTTPGet(URL, GetAnswer);
+		Progress := true;
+		GetResult := self.HTTPGet(URL, GetAnswer, Progress);
 	except
 		on E: Exception do
 		begin
@@ -1215,8 +1231,14 @@ begin
 				end;
 		end;
 	end else begin
-		Log(MSGTYPE_IMPORTANTERROR, 'Public link clone error: got ' + IntToStr(OperationStatus) + ' status');
-		Result := FS_FILE_WRITEERROR;
+		if not(Progress) then
+		begin // user cancelled
+			Result := FS_FILE_USERABORT;
+		end else begin // unknown error
+			Log(MSGTYPE_IMPORTANTERROR, 'Public link clone error: got ' + IntToStr(OperationStatus) + ' status');
+			Result := FS_FILE_WRITEERROR;
+		end;
+
 	end;
 
 end;
