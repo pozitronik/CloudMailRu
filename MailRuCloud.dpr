@@ -656,6 +656,14 @@ begin
 		if CheckFlag(FS_COPYFLAGS_MOVE, CopyFlags) then ConnectionManager.get(RealPath.account, getResult).deleteFile(RealPath.path);
 		MyProgressProc(PluginNum, LocalName, RemoteName, 100);
 		MyLogProc(PluginNum, MSGTYPE_TRANSFERCOMPLETE, PWideChar(RemoteName + '->' + LocalName));
+	end else begin
+		if GetPluginSettings(SettingsIniFilePath).HaltOnErrors then
+		begin
+			if messagebox(FindTCWindow, PWideChar('Error downloading file ' + RemoteName + '. Continue operation?'), 'Download error', MB_YESNO + MB_ICONERROR) = IDNO then
+			begin
+				Result := FS_FILE_USERABORT;
+			end;
+		end;
 	end;
 
 end;
@@ -687,6 +695,14 @@ begin
 		if CheckFlag(FS_COPYFLAGS_MOVE, CopyFlags) then
 		begin
 			if not DeleteFileW(PWideChar(GetUNCFilePath(LocalName))) then exit(FS_FILE_NOTSUPPORTED);
+		end;
+	end else begin
+		if GetPluginSettings(SettingsIniFilePath).HaltOnErrors then
+		begin
+			if messagebox(FindTCWindow, PWideChar('Error uploading file ' + RemoteName + '. Continue operation?'), 'Download error', MB_YESNO + MB_ICONERROR) = IDNO then
+			begin
+				Result := FS_FILE_USERABORT;
+			end;
 		end;
 	end;
 
