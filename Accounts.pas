@@ -42,6 +42,7 @@ type
 		OperationsViaPublicLinkEnabledCB: TCheckBox;
 		SocketTimeoutLabel: TLabel;
 		SocketTimeoutEdit: TEdit;
+    AskOnErrorsCB: TCheckBox;
 		procedure FormShow(Sender: TObject);
 		procedure AccountsListClick(Sender: TObject);
 		procedure ApplyButtonClick(Sender: TObject);
@@ -62,6 +63,7 @@ type
 		procedure ProxyPwdChange(Sender: TObject);
 		procedure OperationsViaPublicLinkEnabledCBClick(Sender: TObject);
 		procedure SocketTimeoutEditChange(Sender: TObject);
+    procedure AskOnErrorsCBClick(Sender: TObject);
 	private
 		{ Private declarations }
 		procedure WMHotKey(var Message: TMessage); message WM_HOTKEY;
@@ -150,6 +152,11 @@ begin
 
 	UpdateAccountsList();
 
+end;
+
+procedure TAccountsForm.AskOnErrorsCBClick(Sender: TObject);
+begin
+	SetPluginSettingsValue(SettingsIniFilePath, 'AskOnErrors', DescriptionEnabledCB.Checked);
 end;
 
 procedure TAccountsForm.DeleteButtonClick(Sender: TObject);
@@ -246,6 +253,7 @@ begin
 		AccountsForm.PreserveFileTimeCB.Checked := GetPluginSettings(SettingsIniFilePath).PreserveFileTime;
 		AccountsForm.DescriptionEnabledCB.Checked := GetPluginSettings(SettingsIniFilePath).DescriptionEnabled;
 		AccountsForm.OperationsViaPublicLinkEnabledCB.Checked := GetPluginSettings(SettingsIniFilePath).OperationsViaPublicLinkEnabled;
+    AccountsForm.AskOnErrorsCB.Checked := GetPluginSettings(SettingsIniFilePath).AskOnErrors;
 		AccountsForm.SocketTimeoutEdit.Text := GetPluginSettings(SettingsIniFilePath).SocketTimeout.ToString;
 		AccountsForm.ProxyCB.ItemIndex := GetPluginSettings(SettingsIniFilePath).Proxy.ProxyType;
 		AccountsForm.ProxyServerEdit.Text := GetPluginSettings(SettingsIniFilePath).Proxy.Server;

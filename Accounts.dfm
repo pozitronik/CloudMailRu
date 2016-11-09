@@ -293,14 +293,14 @@ object AccountsForm: TAccountsForm
       ImageIndex = 1
       object SocketTimeoutLabel: TLabel
         Left = 5
-        Top = 94
+        Top = 115
         Width = 228
         Height = 13
         Caption = 'Network operations timeout, ms (-1 to default):'
       end
       object PreserveFileTimeCB: TCheckBox
         Left = 5
-        Top = 26
+        Top = 25
         Width = 475
         Height = 17
         Caption = 'Preserve file creation time'
@@ -318,11 +318,11 @@ object AccountsForm: TAccountsForm
       end
       object ProxyGB: TGroupBox
         Left = 5
-        Top = 121
+        Top = 137
         Width = 475
         Height = 209
         Caption = 'Proxy settings'
-        TabOrder = 4
+        TabOrder = 6
         object ProxyTypeLabel: TLabel
           Left = 5
           Top = 18
@@ -418,8 +418,8 @@ object AccountsForm: TAccountsForm
         end
       end
       object DescriptionEnabledCB: TCheckBox
-        Left = 5
-        Top = 49
+        Left = 6
+        Top = 46
         Width = 475
         Height = 17
         Caption = 'Descript.ion files support'
@@ -428,7 +428,7 @@ object AccountsForm: TAccountsForm
       end
       object OperationsViaPublicLinkEnabledCB: TCheckBox
         Left = 5
-        Top = 71
+        Top = 69
         Width = 475
         Height = 17
         Caption = 'Copying/moving between accouns via public link'
@@ -437,12 +437,21 @@ object AccountsForm: TAccountsForm
       end
       object SocketTimeoutEdit: TEdit
         Left = 239
-        Top = 94
+        Top = 115
         Width = 121
         Height = 21
         NumbersOnly = True
         TabOrder = 5
         OnChange = SocketTimeoutEditChange
+      end
+      object AskOnErrorsCB: TCheckBox
+        Left = 5
+        Top = 91
+        Width = 475
+        Height = 17
+        Caption = 'Ask to stop downloads/uploads on any error'
+        TabOrder = 4
+        OnClick = AskOnErrorsCBClick
       end
     end
   end
