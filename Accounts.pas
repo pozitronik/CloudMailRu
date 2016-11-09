@@ -40,6 +40,8 @@ type
 		DescriptionEnabledCB: TCheckBox;
 		ProxyPwd: TMaskEdit;
 		OperationsViaPublicLinkEnabledCB: TCheckBox;
+		SocketTimeoutLabel: TLabel;
+		SocketTimeoutEdit: TEdit;
 		procedure FormShow(Sender: TObject);
 		procedure AccountsListClick(Sender: TObject);
 		procedure ApplyButtonClick(Sender: TObject);
@@ -59,6 +61,7 @@ type
 		procedure DescriptionEnabledCBClick(Sender: TObject);
 		procedure ProxyPwdChange(Sender: TObject);
 		procedure OperationsViaPublicLinkEnabledCBClick(Sender: TObject);
+		procedure SocketTimeoutEditChange(Sender: TObject);
 	private
 		{ Private declarations }
 		procedure WMHotKey(var Message: TMessage); message WM_HOTKEY;
@@ -243,6 +246,7 @@ begin
 		AccountsForm.PreserveFileTimeCB.Checked := GetPluginSettings(SettingsIniFilePath).PreserveFileTime;
 		AccountsForm.DescriptionEnabledCB.Checked := GetPluginSettings(SettingsIniFilePath).DescriptionEnabled;
 		AccountsForm.OperationsViaPublicLinkEnabledCB.Checked := GetPluginSettings(SettingsIniFilePath).OperationsViaPublicLinkEnabled;
+		AccountsForm.SocketTimeoutEdit.Text := GetPluginSettings(SettingsIniFilePath).SocketTimeout.ToString;
 		AccountsForm.ProxyCB.ItemIndex := GetPluginSettings(SettingsIniFilePath).Proxy.ProxyType;
 		AccountsForm.ProxyServerEdit.Text := GetPluginSettings(SettingsIniFilePath).Proxy.Server;
 		AccountsForm.ProxyPortEdit.Text := GetPluginSettings(SettingsIniFilePath).Proxy.Port.ToString;
@@ -256,6 +260,11 @@ begin
 	finally
 		FreeAndNil(AccountsForm);
 	end;
+end;
+
+procedure TAccountsForm.SocketTimeoutEditChange(Sender: TObject);
+begin
+	SetPluginSettingsValue(SettingsIniFilePath, 'SocketTimeout', SocketTimeoutEdit.Text);
 end;
 
 procedure TAccountsForm.UpdateAccountsList;

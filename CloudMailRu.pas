@@ -108,6 +108,8 @@ type
 
 		Proxy: TProxySettings;
 
+		ConnectTimeout: integer;
+
 		function getToken(): Boolean;
 		function getOAuthToken(var OAuthToken: TCloudMailRuOAuthInfo): Boolean;
 		function getShard(var Shard: WideString): Boolean;
@@ -139,7 +141,7 @@ type
 		ExternalPluginNr: integer;
 		ExternalSourceName: PWideChar;
 		ExternalTargetName: PWideChar;
-		constructor Create(user, domain, password: WideString; unlimited_filesize: Boolean; split_large_files: Boolean; Proxy: TProxySettings; ExternalProgressProc: TProgressProcW = nil; PluginNr: integer = -1; ExternalLogProc: TLogProcW = nil);
+		constructor Create(user, domain, password: WideString; unlimited_filesize: Boolean; split_large_files: Boolean; Proxy: TProxySettings; ConnectTimeout: integer; ExternalProgressProc: TProgressProcW = nil; PluginNr: integer = -1; ExternalLogProc: TLogProcW = nil);
 		destructor Destroy; override;
 		function login(method: integer = CLOUD_AUTH_METHOD_WEB): Boolean;
 
@@ -168,7 +170,7 @@ implementation
 
 { CONSTRUCTOR/DESTRUCTOR }
 
-constructor TCloudMailRu.Create(user, domain, password: WideString; unlimited_filesize: Boolean; split_large_files: Boolean; Proxy: TProxySettings; ExternalProgressProc: TProgressProcW; PluginNr: integer; ExternalLogProc: TLogProcW);
+constructor TCloudMailRu.Create(user, domain, password: WideString; unlimited_filesize: Boolean; split_large_files: Boolean; Proxy: TProxySettings; ConnectTimeout: integer; ExternalProgressProc: TProgressProcW; PluginNr: integer; ExternalLogProc: TLogProcW);
 begin
 	try
 		self.Cookie := TIdCookieManager.Create();
@@ -204,6 +206,7 @@ begin
 		self.domain := domain;
 		self.unlimited_filesize := unlimited_filesize;
 		self.split_large_files := split_large_files;
+		self.ConnectTimeout := ConnectTimeout;
 		self.ExternalProgressProc := ExternalProgressProc;
 		self.ExternalLogProc := ExternalLogProc;
 
@@ -570,7 +573,7 @@ begin
 	HTTP.AllowCookies := true;
 	HTTP.HTTPOptions := [hoForceEncodeParams, hoNoParseMetaHTTPEquiv];
 	HTTP.HandleRedirects := true;
-	// HTTP.ConnectTimeout:=10;
+	if (self.ConnectTimeout<0) then HTTP.ConnectTimeout := self.ConnectTimeout;
 
 	HTTP.Request.UserAgent := 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.17 (KHTML, like Gecko) Chrome/24.0.1312.57 Safari/537.17/TCWFX(' + PlatformX + ')';
 end;

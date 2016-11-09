@@ -291,6 +291,13 @@ object AccountsForm: TAccountsForm
     object GlobalTab: TTabSheet
       Caption = 'Global settings'
       ImageIndex = 1
+      object SocketTimeoutLabel: TLabel
+        Left = 5
+        Top = 94
+        Width = 188
+        Height = 13
+        Caption = 'Connection timeout, ms (-1 to default):'
+      end
       object PreserveFileTimeCB: TCheckBox
         Left = 5
         Top = 26
@@ -311,7 +318,7 @@ object AccountsForm: TAccountsForm
       end
       object ProxyGB: TGroupBox
         Left = 5
-        Top = 97
+        Top = 121
         Width = 475
         Height = 209
         Caption = 'Proxy settings'
@@ -427,6 +434,15 @@ object AccountsForm: TAccountsForm
         Caption = 'Copying/moving between accouns via public link'
         TabOrder = 3
         OnClick = OperationsViaPublicLinkEnabledCBClick
+      end
+      object SocketTimeoutEdit: TEdit
+        Left = 198
+        Top = 94
+        Width = 121
+        Height = 21
+        NumbersOnly = True
+        TabOrder = 5
+        OnChange = SocketTimeoutEditChange
       end
     end
   end

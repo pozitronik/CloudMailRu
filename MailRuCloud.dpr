@@ -323,7 +323,7 @@ Begin
 	MyLogProc := pLogProc;
 	MyRequestProc := pRequestProc;
 	Result := 0;
-	ConnectionManager := TConnectionManager.Create(AccountsIniFilePath, PluginNum, MyProgressProc, MyLogProc, GetPluginSettings(SettingsIniFilePath).Proxy);
+	ConnectionManager := TConnectionManager.Create(AccountsIniFilePath, PluginNum, MyProgressProc, MyLogProc, GetPluginSettings(SettingsIniFilePath).Proxy, GetPluginSettings(SettingsIniFilePath).SocketTimeout);
 	CurrentDescriptions := TDescription.Create;
 end;
 

@@ -42,6 +42,7 @@ type
 		DescriptionEnabled: boolean;
 		OperationsViaPublicLinkEnabled: boolean;
 		AlertOnSocketErrors: boolean;
+		SocketTimeout: Integer;
 		Proxy: TProxySettings;
 	end;
 
@@ -227,6 +228,7 @@ begin
 	GetPluginSettings.DescriptionEnabled := IniFile.ReadBool('Main', 'DescriptionEnabled', false);
 	GetPluginSettings.OperationsViaPublicLinkEnabled := IniFile.ReadBool('Main', 'OperationsViaPublicLinkEnabled', false);
 	GetPluginSettings.AlertOnSocketErrors := IniFile.ReadBool('Main', 'AlertOnSocketErrors', false);
+	GetPluginSettings.SocketTimeout := IniFile.ReadInteger('Main', 'SocketTimeout', -1);
 	GetPluginSettings.Proxy.ProxyType := IniFile.ReadInteger('Main', 'ProxyType', ProxyNone);
 	GetPluginSettings.Proxy.Server := IniFile.ReadString('Main', 'ProxyServer', '');
 	GetPluginSettings.Proxy.Port := IniFile.ReadInteger('Main', 'ProxyPort', 0);
