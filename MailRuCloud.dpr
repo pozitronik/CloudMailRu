@@ -659,7 +659,7 @@ begin
 	end else begin
 		if GetPluginSettings(SettingsIniFilePath).AskOnErrors then
 		begin
-			if messagebox(FindTCWindow, PWideChar('Error downloading file ' + RemoteName + '. Continue operation?'), 'Download error', MB_YESNO + MB_ICONERROR) = IDNO then
+			if messagebox(FindTCWindow, PWideChar('Error downloading file ' + sLineBreak + RemoteName + sLineBreak + 'Continue operation?'), 'Download error', MB_YESNO + MB_ICONERROR) = IDNO then
 			begin
 				Result := FS_FILE_USERABORT;
 			end;
@@ -699,7 +699,7 @@ begin
 	end else begin
 		if GetPluginSettings(SettingsIniFilePath).AskOnErrors then
 		begin
-			if messagebox(FindTCWindow, PWideChar('Error uploading file ' + RemoteName + '. Continue operation?'), 'Download error', MB_YESNO + MB_ICONERROR) = IDNO then
+			if messagebox(FindTCWindow, PWideChar('Error uploading file' + sLineBreak + RemoteName + sLineBreak + 'Continue operation?'), 'Download error', MB_YESNO + MB_ICONERROR) = IDNO then
 			begin
 				Result := FS_FILE_USERABORT;
 			end;
