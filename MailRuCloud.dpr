@@ -3,22 +3,23 @@
 {$R *.dres}
 
 uses
-	SysUtils,
-	DateUtils,
-	windows,
-	Classes,
-	PLUGIN_TYPES,
-	IdSSLOpenSSLHeaders,
-	messages,
-	inifiles,
-	Vcl.controls,
-	AnsiStrings,
-	CloudMailRu in 'CloudMailRu.pas',
-	MRC_Helper in 'MRC_Helper.pas',
-	Accounts in 'Accounts.pas' {AccountsForm} ,
-	RemoteProperty in 'RemoteProperty.pas' {PropertyForm} ,
-	Descriptions in 'Descriptions.pas',
-	ConnectionManager in 'ConnectionManager.pas';
+  SysUtils,
+  DateUtils,
+  windows,
+  Classes,
+  PLUGIN_TYPES,
+  IdSSLOpenSSLHeaders,
+  messages,
+  inifiles,
+  Vcl.controls,
+  AnsiStrings,
+  CloudMailRu in 'CloudMailRu.pas',
+  MRC_Helper in 'MRC_Helper.pas',
+  Accounts in 'Accounts.pas' {AccountsForm},
+  RemoteProperty in 'RemoteProperty.pas' {PropertyForm},
+  Descriptions in 'Descriptions.pas',
+  ConnectionManager in 'ConnectionManager.pas',
+  Settings in 'Settings.pas';
 
 {$IFDEF WIN64}
 {$E wfx64}

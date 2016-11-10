@@ -5,7 +5,7 @@
 
 interface
 
-uses CloudMailRu, MRC_Helper, windows, controls, PLUGIN_Types,
+uses CloudMailRu, MRC_Helper, windows, controls, PLUGIN_Types, Settings,
 	AskPassword;
 
 type
