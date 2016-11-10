@@ -268,6 +268,8 @@ var
 	PostData: TStringStream;
 	SuccessPost: Boolean;
 begin
+	SuccessPost := false;
+	Result := false;
 	URL := 'https://o2.mail.ru/token';
 	PostData := TStringStream.Create('client_id=cloud-win&grant_type=password&username=' + self.user + '%40' + self.domain + '&password=' + UrlEncode(self.password), TEncoding.UTF8);
 	try
@@ -504,20 +506,20 @@ begin
 			if HTTP.ResponseCode = 400 then
 			begin { сервер вернёт 400, но нужно пропарсить результат для дальнейшего определения действий }
 				Answer := E.ErrorMessage;
-				Result := true;
+				exit(true);
 			end else if HTTP.ResponseCode = 507 then // кончилось место
 			begin
 				Answer := E.ErrorMessage;
-				Result := true;
+				exit(true);
 			end else begin
 				Log(MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при отправке данных на адрес ' + URL + ', ответ сервера: ' + E.ErrorMessage);
-				Result := false;
+				exit(false);
 			end;
 		end;
 		on E: EIdSocketError do
 		begin
 			Log(MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка сети: ' + E.Message + ' при запросе данных с адреса ' + URL);
-			Result := false;
+			exit(false);
 		end;
 		on E: Exception do
 		begin
@@ -901,7 +903,7 @@ var
 	Splitter: TFileSplitter;
 	CRCFileName: WideString;
 begin
-	if not(Assigned(self)) then exit; // Проверка на вызов без инициализации
+	if not(Assigned(self)) then exit(FS_FILE_WRITEERROR); // Проверка на вызов без инициализации
 	if (not(self.unlimited_filesize)) and (SizeOfFile(GetUNCFilePath(localPath)) >= CLOUD_MAX_FILESIZE + 1) then
 	begin
 		if self.split_large_files then
@@ -1211,6 +1213,7 @@ var
 	OperationStatus: integer;
 	Progress: Boolean;
 begin
+	GetResult := false;
 	Result := FS_FILE_WRITEERROR;
 	if not(Assigned(self)) then exit; // Проверка на вызов без инициализации
 	path := UrlEncode(StringReplace(path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
