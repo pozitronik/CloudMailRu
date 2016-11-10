@@ -3,23 +3,23 @@
 {$R *.dres}
 
 uses
-  SysUtils,
-  DateUtils,
-  windows,
-  Classes,
-  PLUGIN_TYPES,
-  IdSSLOpenSSLHeaders,
-  messages,
-  inifiles,
-  Vcl.controls,
-  AnsiStrings,
-  CloudMailRu in 'CloudMailRu.pas',
-  MRC_Helper in 'MRC_Helper.pas',
-  Accounts in 'Accounts.pas' {AccountsForm},
-  RemoteProperty in 'RemoteProperty.pas' {PropertyForm},
-  Descriptions in 'Descriptions.pas',
-  ConnectionManager in 'ConnectionManager.pas',
-  Settings in 'Settings.pas';
+	SysUtils,
+	DateUtils,
+	windows,
+	Classes,
+	PLUGIN_TYPES,
+	IdSSLOpenSSLHeaders,
+	messages,
+	inifiles,
+	Vcl.controls,
+	AnsiStrings,
+	CloudMailRu in 'CloudMailRu.pas',
+	MRC_Helper in 'MRC_Helper.pas',
+	Accounts in 'Accounts.pas' {AccountsForm} ,
+	RemoteProperty in 'RemoteProperty.pas' {PropertyForm} ,
+	Descriptions in 'Descriptions.pas',
+	ConnectionManager in 'ConnectionManager.pas',
+	Settings in 'Settings.pas';
 
 {$IFDEF WIN64}
 {$E wfx64}
@@ -55,6 +55,7 @@ var
 	CurrentListing: TCloudMailRuDirListing;
 	ConnectionManager: TConnectionManager;
 	CurrentDescriptions: TDescription;
+	ProxySettings: TProxySettings;
 
 function CloudMailRuDirListingItemToFindData(DirListing: TCloudMailRuDirListingItem): tWIN32FINDDATAW;
 begin
@@ -324,7 +325,6 @@ Begin
 	MyLogProc := pLogProc;
 	MyRequestProc := pRequestProc;
 	Result := 0;
-	ConnectionManager := TConnectionManager.Create(AccountsIniFilePath, PluginNum, MyProgressProc, MyLogProc, GetPluginSettings(SettingsIniFilePath).Proxy, GetPluginSettings(SettingsIniFilePath).SocketTimeout);
 	CurrentDescriptions := TDescription.Create;
 end;
 
@@ -814,8 +814,16 @@ procedure FsSetCryptCallbackW(PCryptProc: TCryptProcW; CryptoNr: integer; Flags:
 begin
 	MyCryptProc := PCryptProc;
 	CryptoNum := CryptoNr;
+
+	ProxySettings := GetPluginSettings(SettingsIniFilePath).Proxy;
+	GetProxyPasswordNow(ProxySettings, MyLogProc, MyCryptProc, PluginNum, CryptoNum);
+
+	if ProxySettings.use_tc_password_manager then SetPluginSettingsValue(SettingsIniFilePath, 'ProxyTCPwdMngr', true);
+
+	ConnectionManager := TConnectionManager.Create(AccountsIniFilePath, PluginNum, MyProgressProc, MyLogProc, ProxySettings, GetPluginSettings(SettingsIniFilePath).SocketTimeout);
 	ConnectionManager.CryptoNum := CryptoNum;
 	ConnectionManager.MyCryptProc := MyCryptProc;
+
 end;
 
 function FsContentGetValueW(FileName: PWideChar; FieldIndex: integer; UnitIndex: integer; FieldValue: Pointer; maxlen: integer; Flags: integer): integer; stdcall;

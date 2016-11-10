@@ -2,7 +2,7 @@ unit Settings;
 
 interface
 
-uses Classes, Windows, SysUtils, IniFiles, System.Variants;
+uses Classes, Windows, SysUtils, IniFiles, System.Variants, Plugin_Types, AskPassword, MRC_Helper, controls;
 
 const
 	ProxyNone = 0;
@@ -42,22 +42,89 @@ type
 		Proxy: TProxySettings;
 	end;
 
-
+function GetProxyPasswordNow(var ProxySettings: TProxySettings; MyLogProc: TLogProcW; MyCryptProc: TCryptProcW; PluginNum: Integer; CryptoNum: Integer): boolean;
 function GetPluginSettings(IniFilePath: WideString): TPluginSettings;
 procedure SetPluginSettings(IniFilePath: WideString; PluginSettings: TPluginSettings);
 procedure SetPluginSettingsValue(IniFilePath: WideString; OptionName: WideString; OptionValue: Variant);
-
 function GetAccountSettingsFromIniFile(IniFilePath: WideString; AccountName: WideString): TAccountSettings;
 function SetAccountSettingsToIniFile(IniFilePath: WideString; AccountSettings: TAccountSettings): boolean;
-procedure GetAccountsListFromIniFile(IniFilePath: WideString; var AccountsList: TStringList); // todo move this to accounts mb
+procedure GetAccountsListFromIniFile(IniFilePath: WideString; var AccountsList: TStringList);
 procedure DeleteAccountFromIniFile(IniFilePath: WideString; AccountName: WideString);
 
 implementation
 
+function GetProxyPasswordNow(var ProxySettings: TProxySettings; MyLogProc: TLogProcW; MyCryptProc: TCryptProcW; PluginNum: Integer; CryptoNum: Integer): boolean;
+var
+	CryptResult: Integer;
+	AskResult: Integer;
+	TmpString: WideString;
+	buf: PWideChar;
+begin
+	if ProxySettings.user = '' then exit(true); // no username means no password required
 
+	if ProxySettings.use_tc_password_manager then
+	begin // пароль должен браться из TC
+		GetMem(buf, 1024);
+		CryptResult := MyCryptProc(PluginNum, CryptoNum, FS_CRYPT_LOAD_PASSWORD_NO_UI, PWideChar('proxy' + ProxySettings.user), buf, 1024); // Пытаемся взять пароль по-тихому
+		if CryptResult = FS_FILE_NOTFOUND then
+		begin
+			MyLogProc(PluginNum, msgtype_details, PWideChar('No master password entered yet'));
+			CryptResult := MyCryptProc(PluginNum, CryptoNum, FS_CRYPT_LOAD_PASSWORD, PWideChar('proxy' + ProxySettings.user), buf, 1024);
+		end;
+		if CryptResult = FS_FILE_OK then // Успешно получили пароль
+		begin
+			ProxySettings.password := buf;
+			// Result := true;
+		end;
+		if CryptResult = FS_FILE_NOTSUPPORTED then // пользователь отменил ввод главного пароля
+		begin
+			MyLogProc(PluginNum, msgtype_importanterror, PWideChar('CryptProc returns error: Decrypt failed'));
+		end;
+		if CryptResult = FS_FILE_READERROR then
+		begin
+			MyLogProc(PluginNum, msgtype_importanterror, PWideChar('CryptProc returns error: Password not found in password store'));
+		end;
+		FreeMemory(buf);
+	end; // else // ничего не делаем, пароль уже должен быть в настройках (взят в открытом виде из инишника)
 
-
-
+	if ProxySettings.password = '' then // но пароля нет, не в инишнике, не в тотале
+	begin
+		AskResult := TAskPasswordForm.AskPassword(FindTCWindow, 'User ' + ProxySettings.user+ ' proxy', ProxySettings.password, ProxySettings.use_tc_password_manager);
+		if AskResult <> mrOK then
+		begin // не указали пароль в диалоге
+			exit(false); // отказались вводить пароль
+		end else begin
+			if ProxySettings.use_tc_password_manager then
+			begin
+				case MyCryptProc(PluginNum, CryptoNum, FS_CRYPT_SAVE_PASSWORD, PWideChar('proxy' + ProxySettings.user), PWideChar(ProxySettings.password), SizeOf(ProxySettings.password)) of
+					FS_FILE_OK:
+						begin // TC скушал пароль, запомним в инишник галочку
+							MyLogProc(PluginNum, msgtype_details, PWideChar('Password saved in TC password manager'));
+							TmpString := ProxySettings.password;
+							ProxySettings.password := '';
+							ProxySettings.use_tc_password_manager := true; // Не забыть сохранить!
+							ProxySettings.password := TmpString;
+						end;
+					FS_FILE_NOTSUPPORTED: // Сохранение не получилось
+						begin
+							MyLogProc(PluginNum, msgtype_importanterror, PWideChar('CryptProc returns error: Encrypt failed'));
+						end;
+					FS_FILE_WRITEERROR: // Сохранение опять не получилось
+						begin
+							MyLogProc(PluginNum, msgtype_importanterror, PWideChar('Password NOT saved: Could not write password to password store'));
+						end;
+					FS_FILE_NOTFOUND: // Не указан мастер-пароль
+						begin
+							MyLogProc(PluginNum, msgtype_importanterror, PWideChar('Password NOT saved: No master password entered yet'));
+						end;
+					// Ошибки здесь не значат, что пароль мы не получили - он может быть введён в диалоге
+				end;
+			end;
+			result := true;
+		end;
+	end
+	else result := true; // пароль взят из инишника напрямую
+end;
 
 function GetPluginSettings(IniFilePath: WideString): TPluginSettings;
 var
@@ -75,8 +142,8 @@ begin
 	GetPluginSettings.Proxy.Server := IniFile.ReadString('Main', 'ProxyServer', '');
 	GetPluginSettings.Proxy.Port := IniFile.ReadInteger('Main', 'ProxyPort', 0);
 	GetPluginSettings.Proxy.user := IniFile.ReadString('Main', 'ProxyUser', '');
+	GetPluginSettings.Proxy.use_tc_password_manager := IniFile.ReadBool('Main', 'ProxyTCPwdMngr', false);
 	GetPluginSettings.Proxy.password := IniFile.ReadString('Main', 'ProxyPassword', '');
-	GetPluginSettings.Proxy.use_tc_password_manager := IniFile.ReadBool('Main', 'TCPwdMngr', false);
 	IniFile.Destroy;
 end;
 
@@ -120,17 +187,17 @@ var
 	AtPos: Integer;
 begin
 	IniFile := TIniFile.Create(IniFilePath);
-	Result.name := AccountName;
-	Result.email := IniFile.ReadString(Result.name, 'email', '');
-	Result.password := IniFile.ReadString(Result.name, 'password', '');
-	Result.use_tc_password_manager := IniFile.ReadBool(Result.name, 'tc_pwd_mngr', false);
-	Result.unlimited_filesize := IniFile.ReadBool(Result.name, 'unlimited_filesize', false);
-	Result.split_large_files := IniFile.ReadBool(Result.name, 'split_large_files', false);
-	AtPos := AnsiPos('@', Result.email);
+	result.name := AccountName;
+	result.email := IniFile.ReadString(result.name, 'email', '');
+	result.password := IniFile.ReadString(result.name, 'password', '');
+	result.use_tc_password_manager := IniFile.ReadBool(result.name, 'tc_pwd_mngr', false);
+	result.unlimited_filesize := IniFile.ReadBool(result.name, 'unlimited_filesize', false);
+	result.split_large_files := IniFile.ReadBool(result.name, 'split_large_files', false);
+	AtPos := AnsiPos('@', result.email);
 	if AtPos <> 0 then
 	begin
-		Result.user := Copy(Result.email, 0, AtPos - 1);
-		Result.domain := Copy(Result.email, AtPos + 1, Length(Result.email) - Length(Result.user) + 1);
+		result.user := Copy(result.email, 0, AtPos - 1);
+		result.domain := Copy(result.email, AtPos + 1, Length(result.email) - Length(result.user) + 1);
 	end;
 	IniFile.Destroy;
 end;
@@ -139,8 +206,8 @@ function SetAccountSettingsToIniFile(IniFilePath: WideString; AccountSettings: T
 var
 	IniFile: TIniFile;
 begin
-	Result := false;
-	if AccountSettings.name <> '' then Result := true;
+	result := false;
+	if AccountSettings.name <> '' then result := true;
 	IniFile := TIniFile.Create(IniFilePath);
 	IniFile.WriteString(AccountSettings.name, 'email', AccountSettings.email);
 	IniFile.WriteString(AccountSettings.name, 'password', AccountSettings.password);

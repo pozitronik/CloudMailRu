@@ -13,7 +13,6 @@ type
 		path: WideString;
 	end;
 
-
 function Implode(S: TStringList; Delimiter: WideString): WideString;
 function Explode(S: WideString; Delimiter: char): TStringList;
 function ExtractRealPath(VirtualPath: WideString): TRealPath;

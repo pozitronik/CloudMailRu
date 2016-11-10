@@ -43,6 +43,7 @@ type
 		SocketTimeoutLabel: TLabel;
 		SocketTimeoutEdit: TEdit;
 		AskOnErrorsCB: TCheckBox;
+		ProxyTCPwdMngrCB: TCheckBox;
 		procedure FormShow(Sender: TObject);
 		procedure AccountsListClick(Sender: TObject);
 		procedure ApplyButtonClick(Sender: TObject);
@@ -64,6 +65,7 @@ type
 		procedure OperationsViaPublicLinkEnabledCBClick(Sender: TObject);
 		procedure SocketTimeoutEditChange(Sender: TObject);
 		procedure AskOnErrorsCBClick(Sender: TObject);
+		procedure ProxyTCPwdMngrCBClick(Sender: TObject);
 	private
 		{ Private declarations }
 		procedure WMHotKey(var Message: TMessage); message WM_HOTKEY;
@@ -180,6 +182,7 @@ end;
 
 procedure TAccountsForm.FormActivate(Sender: TObject);
 begin
+	ProxyTCPwdMngrCB.Enabled := ProxyUserEdit.Text <> '';
 	CenterWindow(self.parentWindow, self.Handle);
 end;
 
@@ -230,9 +233,32 @@ begin
 	SetPluginSettingsValue(SettingsIniFilePath, 'ProxyServer', ProxyServerEdit.Text);
 end;
 
+procedure TAccountsForm.ProxyTCPwdMngrCBClick(Sender: TObject);
+begin
+	SetPluginSettingsValue(SettingsIniFilePath, 'ProxyTCPwdMngr', ProxyTCPwdMngrCB.Checked);
+	if ProxyTCPwdMngrCB.Checked then // просим TC сохранить пароль
+	begin
+		case self.CryptProc(self.PluginNum, self.CryptoNum, FS_CRYPT_SAVE_PASSWORD, PWideChar('proxy' + ProxyUserEdit.Text), PWideChar(ProxyPwd.Text), SizeOf(ProxyPwd.Text)) of
+			FS_FILE_OK:
+				begin // TC скушал пароль
+					SetPluginSettingsValue(SettingsIniFilePath, 'ProxyPassword', '');
+				end;
+			FS_FILE_NOTSUPPORTED: // нажали отмену на вводе мастер-пароля
+				begin // просто выйдем
+					exit();
+				end;
+			FS_FILE_WRITEERROR: // Сохранение не получилось по другой причине. Сохранять не будем, выйдем
+				begin
+					exit();
+				end;
+		end;
+	end;
+end;
+
 procedure TAccountsForm.ProxyUserEditChange(Sender: TObject);
 begin
 	SetPluginSettingsValue(SettingsIniFilePath, 'ProxyUser', ProxyUserEdit.Text);
+	ProxyTCPwdMngrCB.Enabled := ProxyUserEdit.Text <> '';
 end;
 
 class procedure TAccountsForm.ShowAccounts(parentWindow: HWND; IniPath, SettingsIniFilePath: WideString; CryptProc: TCryptProcW; PluginNum, CryptoNum: Integer; RemoteName: WideString);
@@ -260,6 +286,7 @@ begin
 		AccountsForm.ProxyPortEdit.Text := GetPluginSettings(SettingsIniFilePath).Proxy.Port.ToString;
 		AccountsForm.ProxyUserEdit.Text := GetPluginSettings(SettingsIniFilePath).Proxy.User;
 		AccountsForm.ProxyPwd.Text := GetPluginSettings(SettingsIniFilePath).Proxy.password;
+		AccountsForm.ProxyTCPwdMngrCB.Checked := GetPluginSettings(SettingsIniFilePath).Proxy.use_tc_password_manager;
 
 		{ global settings }
 		if RemoteName <> '' then AccountsForm.SelectedAccount := Copy(RemoteName, 2, length(RemoteName) - 1);

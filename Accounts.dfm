@@ -163,6 +163,8 @@ object AccountsForm: TAccountsForm
     TabOrder = 0
     object AccountsTab: TTabSheet
       Caption = 'Accounts settings'
+      ExplicitLeft = 8
+      ExplicitTop = 28
       DesignSize = (
         484
         377)
@@ -279,7 +281,7 @@ object AccountsForm: TAccountsForm
         OnChange = AccountNameEditChange
       end
       object SplitLargeFilesCB: TCheckBox
-        Left = 224
+        Left = 225
         Top = 188
         Width = 255
         Height = 17
@@ -415,6 +417,15 @@ object AccountsForm: TAccountsForm
           TabOrder = 4
           Text = ''
           OnChange = ProxyPwdChange
+        end
+        object ProxyTCPwdMngrCB: TCheckBox
+          Left = 161
+          Top = 156
+          Width = 309
+          Height = 17
+          Caption = 'Store proxy password in TC password manager'
+          TabOrder = 5
+          OnClick = ProxyTCPwdMngrCBClick
         end
       end
       object DescriptionEnabledCB: TCheckBox
