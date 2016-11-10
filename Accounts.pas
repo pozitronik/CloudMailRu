@@ -156,7 +156,7 @@ end;
 
 procedure TAccountsForm.AskOnErrorsCBClick(Sender: TObject);
 begin
-	SetPluginSettingsValue(SettingsIniFilePath, 'AskOnErrors', DescriptionEnabledCB.Checked);
+	SetPluginSettingsValue(SettingsIniFilePath, 'AskOnErrors', AskOnErrorsCB.Checked);
 end;
 
 procedure TAccountsForm.DeleteButtonClick(Sender: TObject);
