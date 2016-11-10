@@ -307,7 +307,6 @@ object AccountsForm: TAccountsForm
         Height = 17
         Caption = 'Preserve file creation time'
         TabOrder = 1
-        OnClick = PreserveFileTimeCBClick
       end
       object UseDLLFromPluginDir: TCheckBox
         Left = 5
@@ -316,7 +315,6 @@ object AccountsForm: TAccountsForm
         Height = 17
         Caption = 'Load SSL libraries only from plugin directory'
         TabOrder = 0
-        OnClick = UseDLLFromPluginDirClick
       end
       object ProxyGB: TGroupBox
         Left = 5
@@ -376,7 +374,6 @@ object AccountsForm: TAccountsForm
           ItemIndex = 0
           TabOrder = 0
           Text = 'No proxy'
-          OnChange = ProxyCBChange
           Items.Strings = (
             'No proxy'
             'Socks5'
@@ -389,7 +386,6 @@ object AccountsForm: TAccountsForm
           Width = 385
           Height = 21
           TabOrder = 1
-          OnChange = ProxyServerEditChange
         end
         object ProxyPortEdit: TEdit
           Left = 398
@@ -398,7 +394,6 @@ object AccountsForm: TAccountsForm
           Height = 21
           NumbersOnly = True
           TabOrder = 2
-          OnChange = ProxyPortEditChange
         end
         object ProxyUserEdit: TEdit
           Left = 5
@@ -416,7 +411,6 @@ object AccountsForm: TAccountsForm
           PasswordChar = '*'
           TabOrder = 4
           Text = ''
-          OnChange = ProxyPwdChange
         end
         object ProxyTCPwdMngrCB: TCheckBox
           Left = 161
@@ -425,7 +419,6 @@ object AccountsForm: TAccountsForm
           Height = 17
           Caption = 'Store proxy password in TC password manager'
           TabOrder = 5
-          OnClick = ProxyTCPwdMngrCBClick
         end
       end
       object DescriptionEnabledCB: TCheckBox
@@ -435,7 +428,6 @@ object AccountsForm: TAccountsForm
         Height = 17
         Caption = 'Descript.ion files support'
         TabOrder = 2
-        OnClick = DescriptionEnabledCBClick
       end
       object OperationsViaPublicLinkEnabledCB: TCheckBox
         Left = 5
@@ -444,7 +436,6 @@ object AccountsForm: TAccountsForm
         Height = 17
         Caption = 'Copying/moving between accouns via public link'
         TabOrder = 3
-        OnClick = OperationsViaPublicLinkEnabledCBClick
       end
       object SocketTimeoutEdit: TEdit
         Left = 239
@@ -453,7 +444,6 @@ object AccountsForm: TAccountsForm
         Height = 21
         NumbersOnly = True
         TabOrder = 5
-        OnChange = SocketTimeoutEditChange
       end
       object AskOnErrorsCB: TCheckBox
         Left = 5
@@ -462,7 +452,17 @@ object AccountsForm: TAccountsForm
         Height = 17
         Caption = 'Ask to stop downloads/uploads on any error'
         TabOrder = 4
-        OnClick = AskOnErrorsCBClick
+      end
+      object GlobalSettingApplyBTN: TButton
+        Left = 405
+        Top = 349
+        Width = 75
+        Height = 25
+        Caption = 'Apply'
+        ParentShowHint = False
+        ShowHint = False
+        TabOrder = 7
+        OnClick = GlobalSettingApplyBTNClick
       end
     end
   end

@@ -44,6 +44,7 @@ type
 		SocketTimeoutEdit: TEdit;
 		AskOnErrorsCB: TCheckBox;
 		ProxyTCPwdMngrCB: TCheckBox;
+		GlobalSettingApplyBTN: TButton;
 		procedure FormShow(Sender: TObject);
 		procedure AccountsListClick(Sender: TObject);
 		procedure ApplyButtonClick(Sender: TObject);
@@ -54,18 +55,8 @@ type
 		procedure AccountNameEditChange(Sender: TObject);
 		procedure EmailEditChange(Sender: TObject);
 		procedure FormActivate(Sender: TObject);
-		procedure UseDLLFromPluginDirClick(Sender: TObject);
-		procedure ProxyCBChange(Sender: TObject);
-		procedure ProxyServerEditChange(Sender: TObject);
-		procedure ProxyPortEditChange(Sender: TObject);
 		procedure ProxyUserEditChange(Sender: TObject);
-		procedure PreserveFileTimeCBClick(Sender: TObject);
-		procedure DescriptionEnabledCBClick(Sender: TObject);
-		procedure ProxyPwdChange(Sender: TObject);
-		procedure OperationsViaPublicLinkEnabledCBClick(Sender: TObject);
-		procedure SocketTimeoutEditChange(Sender: TObject);
-		procedure AskOnErrorsCBClick(Sender: TObject);
-		procedure ProxyTCPwdMngrCBClick(Sender: TObject);
+		procedure GlobalSettingApplyBTNClick(Sender: TObject);
 	private
 		{ Private declarations }
 		procedure WMHotKey(var Message: TMessage); message WM_HOTKEY;
@@ -156,11 +147,6 @@ begin
 
 end;
 
-procedure TAccountsForm.AskOnErrorsCBClick(Sender: TObject);
-begin
-	SetPluginSettingsValue(SettingsIniFilePath, 'AskOnErrors', AskOnErrorsCB.Checked);
-end;
-
 procedure TAccountsForm.DeleteButtonClick(Sender: TObject);
 begin
 	if (AccountsList.Items.Count > 0) and (AccountsList.ItemIndex <> -1) then
@@ -168,11 +154,6 @@ begin
 		DeleteAccountFromIniFile(IniPath, AccountsList.Items[AccountsList.ItemIndex]);
 		UpdateAccountsList();
 	end;
-end;
-
-procedure TAccountsForm.DescriptionEnabledCBClick(Sender: TObject);
-begin
-	SetPluginSettingsValue(SettingsIniFilePath, 'DescriptionEnabled', DescriptionEnabledCB.Checked);
 end;
 
 procedure TAccountsForm.EmailEditChange(Sender: TObject);
@@ -203,44 +184,28 @@ begin
 	end;
 end;
 
-procedure TAccountsForm.OperationsViaPublicLinkEnabledCBClick(Sender: TObject);
+procedure TAccountsForm.GlobalSettingApplyBTNClick(Sender: TObject);
 begin
-	SetPluginSettingsValue(SettingsIniFilePath, 'OperationsViaPublicLinkEnabled', OperationsViaPublicLinkEnabledCB.Checked);
-end;
-
-procedure TAccountsForm.PreserveFileTimeCBClick(Sender: TObject);
-begin
+	SetPluginSettingsValue(SettingsIniFilePath, 'LoadSSLDLLOnlyFromPluginDir', UseDLLFromPluginDir.Checked);
 	SetPluginSettingsValue(SettingsIniFilePath, 'PreserveFileTime', PreserveFileTimeCB.Checked);
-end;
-
-procedure TAccountsForm.ProxyCBChange(Sender: TObject);
-begin
+	SetPluginSettingsValue(SettingsIniFilePath, 'DescriptionEnabled', DescriptionEnabledCB.Checked);
+	SetPluginSettingsValue(SettingsIniFilePath, 'OperationsViaPublicLinkEnabled', OperationsViaPublicLinkEnabledCB.Checked);
+	SetPluginSettingsValue(SettingsIniFilePath, 'AskOnErrors', AskOnErrorsCB.Checked);
+	SetPluginSettingsValue(SettingsIniFilePath, 'SocketTimeout', SocketTimeoutEdit.Text);
 	SetPluginSettingsValue(SettingsIniFilePath, 'ProxyType', ProxyCB.ItemIndex);
-end;
-
-procedure TAccountsForm.ProxyPortEditChange(Sender: TObject);
-begin
-	SetPluginSettingsValue(SettingsIniFilePath, 'ProxyPort', ProxyPortEdit.Text);
-end;
-
-procedure TAccountsForm.ProxyPwdChange(Sender: TObject);
-begin
-	SetPluginSettingsValue(SettingsIniFilePath, 'ProxyPassword', ProxyPwd.Text);
-end;
-
-procedure TAccountsForm.ProxyServerEditChange(Sender: TObject);
-begin
 	SetPluginSettingsValue(SettingsIniFilePath, 'ProxyServer', ProxyServerEdit.Text);
-end;
+	SetPluginSettingsValue(SettingsIniFilePath, 'ProxyPort', ProxyPortEdit.Text);
 
-procedure TAccountsForm.ProxyTCPwdMngrCBClick(Sender: TObject);
-begin
+	SetPluginSettingsValue(SettingsIniFilePath, 'ProxyUser', ProxyUserEdit.Text);
+	SetPluginSettingsValue(SettingsIniFilePath, 'ProxyPassword', ProxyPwd.Text);
 	SetPluginSettingsValue(SettingsIniFilePath, 'ProxyTCPwdMngr', ProxyTCPwdMngrCB.Checked);
+
 	if ProxyTCPwdMngrCB.Checked then // просим TC сохранить пароль
 	begin
 		case self.CryptProc(self.PluginNum, self.CryptoNum, FS_CRYPT_SAVE_PASSWORD, PWideChar('proxy' + ProxyUserEdit.Text), PWideChar(ProxyPwd.Text), SizeOf(ProxyPwd.Text)) of
 			FS_FILE_OK:
 				begin // TC скушал пароль
+					ProxyPwd.Text := '';
 					SetPluginSettingsValue(SettingsIniFilePath, 'ProxyPassword', '');
 				end;
 			FS_FILE_NOTSUPPORTED: // нажали отмену на вводе мастер-пароля
@@ -253,11 +218,11 @@ begin
 				end;
 		end;
 	end;
+
 end;
 
 procedure TAccountsForm.ProxyUserEditChange(Sender: TObject);
 begin
-	SetPluginSettingsValue(SettingsIniFilePath, 'ProxyUser', ProxyUserEdit.Text);
 	ProxyTCPwdMngrCB.Enabled := ProxyUserEdit.Text <> '';
 end;
 
@@ -297,11 +262,6 @@ begin
 	end;
 end;
 
-procedure TAccountsForm.SocketTimeoutEditChange(Sender: TObject);
-begin
-	SetPluginSettingsValue(SettingsIniFilePath, 'SocketTimeout', SocketTimeoutEdit.Text);
-end;
-
 procedure TAccountsForm.UpdateAccountsList;
 var
 	TempList: TStringList;
@@ -312,11 +272,6 @@ begin
 	TempList.Destroy;
 	AccountsList.OnClick(self);
 	ApplyButton.Enabled := (EmailEdit.Text <> '') and (AccountNameEdit.Text <> '');
-end;
-
-procedure TAccountsForm.UseDLLFromPluginDirClick(Sender: TObject);
-begin
-	SetPluginSettingsValue(SettingsIniFilePath, 'LoadSSLDLLOnlyFromPluginDir', UseDLLFromPluginDir.Checked);
 end;
 
 procedure TAccountsForm.WMHotKey(var Message: TMessage);
