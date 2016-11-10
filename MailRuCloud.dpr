@@ -940,9 +940,9 @@ begin
 	if not FileExists(PluginPath + 'MailRuCloud.global.ini') then
 	begin
 		If IsWriteable(PluginPath) then
-		begin // new ini file created
+		begin
 			IniDir := PluginPath;
-		end else begin // can't create ini file, try to use appdata dir
+		end else begin
 			IniDir := AppDataDir;
 		end;
 
