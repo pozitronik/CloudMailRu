@@ -18,7 +18,7 @@ uses
 	Accounts in 'Accounts.pas' {AccountsForm} ,
 	RemoteProperty in 'RemoteProperty.pas' {PropertyForm} ,
 	Descriptions in 'Descriptions.pas',
-	ConnectionManager in 'ConnectionManager.pas ';
+	ConnectionManager in 'ConnectionManager.pas';
 
 {$IFDEF WIN64}
 {$E wfx64}
@@ -41,7 +41,7 @@ var
 	tmp: pchar;
 	AccountsIniFilePath: WideString;
 	SettingsIniFilePath: WideString;
-	GlobalPath, PluginPath: WideString;
+	GlobalPath, PluginPath, AppDataDir, IniDir: WideString;
 	FileCounter: integer = 0;
 	{ Callback data }
 	PluginNum: integer;
@@ -160,19 +160,19 @@ begin
 	SetLastError(ERROR_NOT_SUPPORTED);
 end;
 
-function FsFindFirst(path: PAnsiChar; var FindData: tWIN32FINDDATAA): thandle; stdcall;
+function FsFindFirst(path: PAnsiChar; var FindData: tWIN32FINDDATAA): THandle; stdcall;
 begin
 	SetLastError(ERROR_INVALID_FUNCTION);
 	Result := ERROR_INVALID_HANDLE; // Ansi-заглушка
 end;
 
-function FsFindNext(Hdl: thandle; var FindData: tWIN32FINDDATAA): bool; stdcall;
+function FsFindNext(Hdl: THandle; var FindData: tWIN32FINDDATAA): bool; stdcall;
 begin
 	SetLastError(ERROR_INVALID_FUNCTION);
 	Result := false; // Ansi-заглушка
 end;
 
-function FsExecuteFile(MainWin: thandle; RemoteName, Verb: PAnsiChar): integer; stdcall; // Запуск файла
+function FsExecuteFile(MainWin: THandle; RemoteName, Verb: PAnsiChar): integer; stdcall; // Запуск файла
 Begin
 	SetLastError(ERROR_INVALID_FUNCTION);
 	Result := FS_EXEC_ERROR; // Ansi-заглушка
@@ -490,7 +490,7 @@ begin
 	end;
 end;
 
-function FsFindFirstW(path: PWideChar; var FindData: tWIN32FINDDATAW): thandle; stdcall;
+function FsFindFirstW(path: PWideChar; var FindData: tWIN32FINDDATAW): THandle; stdcall;
 var // Получение первого файла в папке. Result тоталом не используется (можно использовать для работы плагина).
 	Sections: TStringList;
 	RealPath: TRealPath;
@@ -538,7 +538,7 @@ begin
 	end;
 end;
 
-function FsFindNextW(Hdl: thandle; var FindData: tWIN32FINDDATAW): bool; stdcall;
+function FsFindNextW(Hdl: THandle; var FindData: tWIN32FINDDATAW): bool; stdcall;
 var
 	Sections: TStringList;
 begin
@@ -569,14 +569,14 @@ begin
 	end;
 end;
 
-function FsFindClose(Hdl: thandle): integer; stdcall;
+function FsFindClose(Hdl: THandle): integer; stdcall;
 Begin // Завершение получения списка файлов. Result тоталом не используется (всегда равен 0)
 	// SetLength(CurrentListing, 0); // Пусть будет
 	Result := 0;
 	FileCounter := 0;
 end;
 
-function FsExecuteFileW(MainWin: thandle; RemoteName, Verb: PWideChar): integer; stdcall; // Запуск файла
+function FsExecuteFileW(MainWin: THandle; RemoteName, Verb: PWideChar): integer; stdcall; // Запуск файла
 var
 	RealPath: TRealPath;
 	CurrentItem: TCloudMailRuDirListingItem;
@@ -745,8 +745,9 @@ var
 	CurrentItem: TCloudMailRuDirListingItem;
 	OldCloud, NewCloud: TCloudMailRu;
 	NeedUnpublish: Boolean;
-	CloneResult: integer;
+	// CloneResult: integer;
 Begin
+	NeedUnpublish := false;
 	MyProgressProc(PluginNum, OldName, NewName, 0);
 	Result := FS_FILE_NOTSUPPORTED;
 
@@ -933,10 +934,38 @@ begin
 	GetModuleFilename(hInstance, tmp, max_path);
 	PluginPath := tmp;
 	freemem(tmp);
+	AppDataDir := IncludeTrailingBackslash(IncludeTrailingBackslash(SysUtils.GetEnvironmentVariable('APPDATA')) + 'MailRuCloud');
 	PluginPath := IncludeTrailingBackslash(ExtractFilePath(PluginPath));
-	AccountsIniFilePath := PluginPath + 'MailRuCloud.ini';
-	SettingsIniFilePath := PluginPath + 'MailRuCloud.global.ini';
-	if not FileExists(AccountsIniFilePath) then FileClose(FileCreate(AccountsIniFilePath));
+
+	if not FileExists(PluginPath + 'MailRuCloud.global.ini') then
+	begin
+		If IsWriteable(PluginPath) then
+		begin // new ini file created
+			IniDir := PluginPath;
+		end else begin // can't create ini file, try to use appdata dir
+			IniDir := AppDataDir;
+		end;
+
+	end else begin
+		case GetPluginSettings(PluginPath + 'MailRuCloud.global.ini').IniPath of
+			0: // use default path
+				begin
+					IniDir := PluginPath;
+				end;
+			1: // use appdata path
+				begin
+					IniDir := AppDataDir;
+				end;
+			2: // use plugin dir if writeable
+				begin
+					if IsWriteable(PluginPath) then IniDir := PluginPath
+					else IniDir := AppDataDir;
+				end;
+		end;
+	end;
+
+	AccountsIniFilePath := IniDir + 'MailRuCloud.ini';
+	SettingsIniFilePath := IniDir + 'MailRuCloud.global.ini';
 	if GetPluginSettings(SettingsIniFilePath).LoadSSLDLLOnlyFromPluginDir then
 	begin
 		if DirectoryExists(PluginPath + PlatformDllPath) then

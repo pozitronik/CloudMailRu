@@ -37,6 +37,7 @@ type
 	end;
 
 	TPluginSettings = record
+		IniPath: Integer;
 		LoadSSLDLLOnlyFromPluginDir: boolean;
 		PreserveFileTime: boolean;
 		DescriptionEnabled: boolean;
@@ -70,6 +71,7 @@ function CopyExt(FromFilename, ToFilename: WideString): WideString;
 function GetUNCFilePath(FilePath: WideString): WideString;
 function GetWord(command: WideString; WordIndex: Integer = 0): WideString; // Возвращает указанное значащее слово из строки с учётом кавычек (парсинг команд)
 function ExtractLinkFromUrl(URL: WideString): WideString; // При необходимости преобразует адрес публичной ссылки к нужному виду
+function IsWriteable(const DirName: WideString; FileName: WideString = 'delete.me'): boolean;
 
 implementation
 
@@ -223,6 +225,7 @@ var
 	IniFile: TIniFile;
 begin
 	IniFile := TIniFile.Create(IniFilePath);
+	GetPluginSettings.IniPath := IniFile.ReadInteger('Main', 'IniPath', 0);
 	GetPluginSettings.LoadSSLDLLOnlyFromPluginDir := IniFile.ReadBool('Main', 'LoadSSLDLLOnlyFromPluginDir', false);
 	GetPluginSettings.PreserveFileTime := IniFile.ReadBool('Main', 'PreserveFileTime', false);
 	GetPluginSettings.DescriptionEnabled := IniFile.ReadBool('Main', 'DescriptionEnabled', false);
@@ -357,6 +360,18 @@ const
 begin
 	Result := URL;
 	if pos(WideString(pulicPrefix), URL) <> 0 then Result := Copy(URL, Length(pulicPrefix) + 1, Length(URL) - Length(pulicPrefix));
+end;
+
+function IsWriteable(const DirName: WideString; FileName: WideString = 'delete.me'{; CleanFile: boolean = true}): boolean;
+var
+	NewName: WideString;
+	H: thandle;
+begin
+	FileName := IncludeTrailingPathDelimiter(DirName) + FileName;
+	H := CreateFile(PChar(NewName), GENERIC_READ or GENERIC_WRITE, 0, nil, CREATE_NEW, FILE_ATTRIBUTE_TEMPORARY or FILE_FLAG_DELETE_ON_CLOSE, 0);
+	Result := H <> INVALID_HANDLE_VALUE;
+	if Result then CloseHandle(H);
+
 end;
 
 end.
