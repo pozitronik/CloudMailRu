@@ -4,7 +4,7 @@ unit Descriptions;
 interface
 
 uses
-	System.Types, System.Classes, System.AnsiStrings, Generics.Collections, System.SysUtils, System.WideStrUtils;
+	System.Types, System.Classes, System.StrUtils, Generics.Collections, System.SysUtils, System.WideStrUtils;
 
 type
 
@@ -54,6 +54,7 @@ var
 	line, key, value: WideString;
 	t: integer;
 begin
+	result := 0; // not used
 	self.Clear;
 	fStream := TStreamReader.Create(ion_filename, TEncoding.Default, True);
 	while not fStream.EndOfStream do
