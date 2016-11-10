@@ -964,8 +964,12 @@ begin
 		end;
 	end;
 
+	if not FileExists(IniDir) then createDir(IniDir); //assume this in appdata dir
+
 	AccountsIniFilePath := IniDir + 'MailRuCloud.ini';
 	SettingsIniFilePath := IniDir + 'MailRuCloud.global.ini';
+	// IsWriteable(PluginPath,)
+
 	if GetPluginSettings(SettingsIniFilePath).LoadSSLDLLOnlyFromPluginDir then
 	begin
 		if DirectoryExists(PluginPath + PlatformDllPath) then

@@ -71,7 +71,7 @@ function CopyExt(FromFilename, ToFilename: WideString): WideString;
 function GetUNCFilePath(FilePath: WideString): WideString;
 function GetWord(command: WideString; WordIndex: Integer = 0): WideString; // Возвращает указанное значащее слово из строки с учётом кавычек (парсинг команд)
 function ExtractLinkFromUrl(URL: WideString): WideString; // При необходимости преобразует адрес публичной ссылки к нужному виду
-function IsWriteable(const DirName: WideString; FileName: WideString = 'delete.me'): boolean;
+function IsWriteable(const DirName: WideString; FileName: WideString = 'delete.me'; CleanFile: boolean = true): boolean;
 
 implementation
 
@@ -362,16 +362,20 @@ begin
 	if pos(WideString(pulicPrefix), URL) <> 0 then Result := Copy(URL, Length(pulicPrefix) + 1, Length(URL) - Length(pulicPrefix));
 end;
 
-function IsWriteable(const DirName: WideString; FileName: WideString = 'delete.me'{; CleanFile: boolean = true}): boolean;
+function IsWriteable(const DirName: WideString; FileName: WideString = 'delete.me'; CleanFile: boolean = true): boolean;
 var
 	NewName: WideString;
 	H: thandle;
 begin
-	FileName := IncludeTrailingPathDelimiter(DirName) + FileName;
-	H := CreateFile(PChar(NewName), GENERIC_READ or GENERIC_WRITE, 0, nil, CREATE_NEW, FILE_ATTRIBUTE_TEMPORARY or FILE_FLAG_DELETE_ON_CLOSE, 0);
+	NewName := IncludeTrailingPathDelimiter(DirName) + FileName;
+	if CleanFile then
+	begin
+		H := CreateFile(PChar(NewName), GENERIC_READ or GENERIC_WRITE, 0, nil, CREATE_NEW, FILE_ATTRIBUTE_TEMPORARY or FILE_FLAG_DELETE_ON_CLOSE, 0);
+	end else begin //
+		H := CreateFile(PChar(NewName), GENERIC_READ or GENERIC_WRITE, 0, nil, OPEN_EXISTING or CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
+	end;
 	Result := H <> INVALID_HANDLE_VALUE;
 	if Result then CloseHandle(H);
-
 end;
 
 end.
