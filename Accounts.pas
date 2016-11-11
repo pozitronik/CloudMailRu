@@ -45,6 +45,7 @@ type
 		AskOnErrorsCB: TCheckBox;
 		ProxyTCPwdMngrCB: TCheckBox;
 		GlobalSettingApplyBTN: TButton;
+    TwostepAuthCB: TCheckBox;
 		procedure FormShow(Sender: TObject);
 		procedure AccountsListClick(Sender: TObject);
 		procedure ApplyButtonClick(Sender: TObject);
@@ -123,6 +124,7 @@ begin
 	CASettings.use_tc_password_manager := UseTCPwdMngrCB.Checked;
 	CASettings.unlimited_filesize := UnlimitedFileSizeCB.Checked;
 	CASettings.split_large_files := SplitLargeFilesCB.Checked;
+  CASettings.twostep_auth := TwostepAuthCB.Checked;
 	if CASettings.use_tc_password_manager then // просим TC сохранить пароль
 	begin
 		case self.CryptProc(self.PluginNum, self.CryptoNum, FS_CRYPT_SAVE_PASSWORD, PWideChar(CASettings.name), PWideChar(CASettings.password), SizeOf(CASettings.password)) of

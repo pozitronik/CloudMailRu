@@ -163,8 +163,6 @@ object AccountsForm: TAccountsForm
     TabOrder = 0
     object AccountsTab: TTabSheet
       Caption = 'Accounts settings'
-      ExplicitLeft = 8
-      ExplicitTop = 28
       DesignSize = (
         484
         377)
@@ -288,6 +286,14 @@ object AccountsForm: TAccountsForm
         Anchors = [akLeft, akTop, akRight]
         Caption = 'Split large files to 2Gb parts'
         TabOrder = 6
+      end
+      object TwostepAuthCB: TCheckBox
+        Left = 225
+        Top = 210
+        Width = 255
+        Height = 17
+        Caption = 'Two-step authentification'
+        TabOrder = 9
       end
     end
     object GlobalTab: TTabSheet

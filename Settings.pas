@@ -16,7 +16,7 @@ type
 
 	TAccountSettings = record
 		name, email, password: WideString;
-		use_tc_password_manager: boolean;
+		use_tc_password_manager, twostep_auth: boolean;
 		user, domain: WideString; // parsed values from email
 		unlimited_filesize: boolean;
 		split_large_files: boolean;
@@ -89,7 +89,7 @@ begin
 
 	if ProxySettings.password = '' then // но пароля нет, не в инишнике, не в тотале
 	begin
-		AskResult := TAskPasswordForm.AskPassword(FindTCWindow, 'User ' + ProxySettings.user+ ' proxy', ProxySettings.password, ProxySettings.use_tc_password_manager);
+		AskResult := TAskPasswordForm.AskPassword(FindTCWindow, 'User ' + ProxySettings.user + ' proxy', ProxySettings.password, ProxySettings.use_tc_password_manager);
 		if AskResult <> mrOK then
 		begin // не указали пароль в диалоге
 			exit(false); // отказались вводить пароль
@@ -193,6 +193,7 @@ begin
 	result.use_tc_password_manager := IniFile.ReadBool(result.name, 'tc_pwd_mngr', false);
 	result.unlimited_filesize := IniFile.ReadBool(result.name, 'unlimited_filesize', false);
 	result.split_large_files := IniFile.ReadBool(result.name, 'split_large_files', false);
+	result.twostep_auth := IniFile.ReadBool(result.name, 'twostep_auth', false);
 	AtPos := AnsiPos('@', result.email);
 	if AtPos <> 0 then
 	begin
@@ -214,6 +215,7 @@ begin
 	IniFile.WriteBool(AccountSettings.name, 'tc_pwd_mngr', AccountSettings.use_tc_password_manager);
 	IniFile.WriteBool(AccountSettings.name, 'unlimited_filesize', AccountSettings.unlimited_filesize);
 	IniFile.WriteBool(AccountSettings.name, 'split_large_files', AccountSettings.split_large_files);
+	IniFile.WriteBool(AccountSettings.name, 'twostep_auth', AccountSettings.twostep_auth);
 	IniFile.Destroy;
 end;
 
