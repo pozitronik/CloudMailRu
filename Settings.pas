@@ -60,7 +60,7 @@ var
 	TmpString: WideString;
 	buf: PWideChar;
 begin
-	if ProxySettings.user = '' then exit(true); // no username means no password required
+	if (ProxySettings.ProxyType = ProxyNone) or (ProxySettings.user = '') then exit(true); // no username means no password required
 
 	if ProxySettings.use_tc_password_manager then
 	begin // пароль должен браться из TC
