@@ -57,21 +57,27 @@ begin
 	result := 0; // not used
 	self.Clear;
 	fStream := TStreamReader.Create(ion_filename, TEncoding.Default, True);
-	while not fStream.EndOfStream do
-	begin
-		line := fStream.ReadLine;
-		if StartsStr('"', line) then
-		begin
-			t := PosEx('" ', line);
-			value := copy(line, t + 2, length(line));
-			key := copy(line, 2, t - 2);
-		end else begin
-			t := PosEx(' ', line);
-			value := copy(line, t + 1, length(line));
-			key := copy(line, 0, t - 1);
-		end;
 
-		items.Add(key, value);
+	try
+		while not fStream.EndOfStream do
+		begin
+			line := fStream.ReadLine;
+			if StartsStr('"', line) then
+			begin
+				t := PosEx('" ', line);
+				value := copy(line, t + 2, length(line));
+				key := copy(line, 2, t - 2);
+			end else begin
+				t := PosEx(' ', line);
+				value := copy(line, t + 1, length(line));
+				key := copy(line, 0, t - 1);
+			end;
+
+			items.Add(key, value);
+		end;
+	except
+		fStream.Free;
+		exit(-1);
 	end;
 	fStream.Free;
 end;
