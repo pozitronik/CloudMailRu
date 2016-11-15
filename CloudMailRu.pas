@@ -2,11 +2,7 @@
 
 interface
 
-uses
-	System.Classes, System.SysUtils, PLUGIN_Types, JSON, Winapi.Windows, IdStack,
-	MRC_helper, Settings, IdCookieManager, IdIOHandler, IdIOHandlerSocket, IdIOHandlerStack, IdSSL,
-	IdSSLOpenSSL, IdBaseComponent, IdComponent, IdTCPConnection, IdTCPClient, IdSocks,
-	IdHTTP, IdAuthentication, IdIOHandlerStream, IdMultipartFormData, FileSplitter;
+uses System.Classes, System.SysUtils, PLUGIN_Types, JSON, Winapi.Windows, IdStack, MRC_helper, Settings, IdCookieManager, IdIOHandler, IdIOHandlerSocket, IdIOHandlerStack, IdSSL, IdSSLOpenSSL, IdBaseComponent, IdComponent, IdTCPConnection, IdTCPClient, IdSocks, IdHTTP, IdAuthentication, IdIOHandlerStream, IdMultipartFormData, FileSplitter;
 
 const
 {$IFDEF WIN64}
@@ -17,38 +13,38 @@ const
 {$ENDIF}
 	TYPE_DIR = 'folder';
 	TYPE_FILE = 'file';
-	{ Константы для обозначения ошибок, возвращаемых при парсинге ответов облака. Дополняем по мере обнаружения }
-	CLOUD_ERROR_UNKNOWN = -2; // unknown: 'Ошибка на сервере'
+	{Константы для обозначения ошибок, возвращаемых при парсинге ответов облака. Дополняем по мере обнаружения}
+	CLOUD_ERROR_UNKNOWN = -2; //unknown: 'Ошибка на сервере'
 	CLOUD_OPERATION_ERROR_STATUS_UNKNOWN = -1;
 	CLOUD_OPERATION_OK = 0;
 	CLOUD_OPERATION_FAILED = 1;
 	CLOUD_OPERATION_CANCELLED = 5;
 
-	CLOUD_ERROR_EXISTS = 1; // exists: 'Папка с таким названием уже существует. Попробуйте другое название'
-	CLOUD_ERROR_REQUIRED = 2; // required: 'Название папки не может быть пустым'
-	CLOUD_ERROR_INVALID = 3; // invalid: '&laquo;' + app.escapeHTML(name) + '&raquo; это неправильное название папки. В названии папок нельзя использовать символы «" * / : < > ?  \\ |»'
-	CLOUD_ERROR_READONLY = 4; // readonly|read_only: 'Невозможно создать. Доступ только для просмотра'
-	CLOUD_ERROR_NAME_LENGTH_EXCEEDED = 5; // name_length_exceeded: 'Ошибка: Превышена длина имени папки. <a href="https://help.mail.ru/cloud_web/confines" target="_blank">Подробнее…</a>'
-	CLOUD_ERROR_OVERQUOTA = 7; // overquota: 'Невозможно скопировать, в вашем Облаке недостаточно места'
-	CLOUD_ERROR_QUOTA_EXCEEDED = 7; // "quota_exceeded": 'Невозможно скопировать, в вашем Облаке недостаточно места'
-	CLOUD_ERROR_NOT_EXISTS = 8; // "not_exists": 'Копируемая ссылка не существует'
-	CLOUD_ERROR_OWN = 9; // "own": 'Невозможно клонировать собственную ссылку'
+	CLOUD_ERROR_EXISTS = 1; //exists: 'Папка с таким названием уже существует. Попробуйте другое название'
+	CLOUD_ERROR_REQUIRED = 2; //required: 'Название папки не может быть пустым'
+	CLOUD_ERROR_INVALID = 3; //invalid: '&laquo;' + app.escapeHTML(name) + '&raquo; это неправильное название папки. В названии папок нельзя использовать символы «" * / : < > ?  \\ |»'
+	CLOUD_ERROR_READONLY = 4; //readonly|read_only: 'Невозможно создать. Доступ только для просмотра'
+	CLOUD_ERROR_NAME_LENGTH_EXCEEDED = 5; //name_length_exceeded: 'Ошибка: Превышена длина имени папки. <a href="https://help.mail.ru/cloud_web/confines" target="_blank">Подробнее…</a>'
+	CLOUD_ERROR_OVERQUOTA = 7; //overquota: 'Невозможно скопировать, в вашем Облаке недостаточно места'
+	CLOUD_ERROR_QUOTA_EXCEEDED = 7; //"quota_exceeded": 'Невозможно скопировать, в вашем Облаке недостаточно места'
+	CLOUD_ERROR_NOT_EXISTS = 8; //"not_exists": 'Копируемая ссылка не существует'
+	CLOUD_ERROR_OWN = 9; //"own": 'Невозможно клонировать собственную ссылку'
 
-	{ Режимы работы при конфликтах копирования }
-	CLOUD_CONFLICT_STRICT = 'strict'; // возвращаем ошибку при существовании файла
-	CLOUD_CONFLICT_IGNORE = 'ignore'; // В API, видимо, не реализовано
-	CLOUD_CONFLICT_RENAME = 'rename'; // Переименуем новый файл
-	// CLOUD_CONFLICT_REPLACE = 'overwrite'; // хз, этот ключ не вскрыт
+	{Режимы работы при конфликтах копирования}
+	CLOUD_CONFLICT_STRICT = 'strict'; //возвращаем ошибку при существовании файла
+	CLOUD_CONFLICT_IGNORE = 'ignore'; //В API, видимо, не реализовано
+	CLOUD_CONFLICT_RENAME = 'rename'; //Переименуем новый файл
+	//CLOUD_CONFLICT_REPLACE = 'overwrite'; // хз, этот ключ не вскрыт
 
-	CLOUD_MAX_FILESIZE = 2000000000; // 2Gb, not $80000000 => 2Gib
+	CLOUD_MAX_FILESIZE = 2000000000; //2Gb, not $80000000 => 2Gib
 
 	CLOUD_MAX_NAME_LENGTH = 255;
 	CLOUD_PUBLISH = true;
 	CLOUD_UNPUBLISH = false;
 
-	{ Поддерживаемые методы авторизации }
-	CLOUD_AUTH_METHOD_WEB = 0; // Через парсинг HTTP-страницы
-	CLOUD_AUTH_METHOD_OAUTH = 1; // Через сервер OAuth-авторизации
+	{Поддерживаемые методы авторизации}
+	CLOUD_AUTH_METHOD_WEB = 0; //Через парсинг HTTP-страницы
+	CLOUD_AUTH_METHOD_OAUTH = 1; //Через сервер OAuth-авторизации
 
 type
 	TCloudMailRuDirListingItem = Record
@@ -116,11 +112,11 @@ type
 		function putFileToCloud(localPath: WideString; Return: TStringList): integer;
 		function addFileToCloud(hash: WideString; size: int64; remotePath: WideString; var JSONAnswer: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT): Boolean;
 		function getUserSpace(var SpaceInfo: TCloudMailRuSpaceInfo): Boolean;
-		function HTTPPost(URL: WideString; PostData: TStringStream; var Answer: WideString; ContentType: WideString = 'application/x-www-form-urlencoded'): Boolean; // Постинг данных с возможным получением ответа.
+		function HTTPPost(URL: WideString; PostData: TStringStream; var Answer: WideString; ContentType: WideString = 'application/x-www-form-urlencoded'): Boolean; //Постинг данных с возможным получением ответа.
 
-		function HTTPPostFile(URL: WideString; PostData: TIdMultipartFormDataStream; var Answer: WideString): integer; // Постинг файла и получение ответа
+		function HTTPPostFile(URL: WideString; PostData: TIdMultipartFormDataStream; var Answer: WideString): integer; //Постинг файла и получение ответа
 		function HTTPGetFile(URL: WideString; var FileStream: TFileStream; LogErrors: Boolean = true): integer;
-		function HTTPGet(URL: WideString; var Answer: WideString; var ProgressEnabled: Boolean): Boolean; // если ProgressEnabled - включаем обработчик onWork, возвращаем ProgressEnabled=false при отмене
+		function HTTPGet(URL: WideString; var Answer: WideString; var ProgressEnabled: Boolean): Boolean; //если ProgressEnabled - включаем обработчик onWork, возвращаем ProgressEnabled=false при отмене
 		function getTokenFromText(Text: WideString): WideString;
 		function get_x_page_id_FromText(Text: WideString): WideString;
 		function get_build_FromText(Text: WideString): WideString;
@@ -146,36 +142,36 @@ type
 		function login(method: integer = CLOUD_AUTH_METHOD_WEB): Boolean;
 
 		procedure logUserSpaceInfo();
-		function getDescriptionFile(remotePath, localCopy: WideString): integer; // Если в каталоге remotePath есть descript.ion - скопировать его в файл localcopy
+		function getDescriptionFile(remotePath, localCopy: WideString): integer; //Если в каталоге remotePath есть descript.ion - скопировать его в файл localcopy
 		function getDir(path: WideString; var DirListing: TCloudMailRuDirListing): Boolean;
-		function getFile(remotePath, localPath: WideString; LogErrors: Boolean = true): integer; // LogErrors=false => не логируем результат копирования, нужно для запроса descript.ion (которого может не быть)
+		function getFile(remotePath, localPath: WideString; LogErrors: Boolean = true): integer; //LogErrors=false => не логируем результат копирования, нужно для запроса descript.ion (которого может не быть)
 		function putFile(localPath, remotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT): integer;
 		function deleteFile(path: WideString): Boolean;
 		function createDir(path: WideString): Boolean;
 		function removeDir(path: WideString): Boolean;
-		function renameFile(OldName, NewName: WideString): integer; // смена имени без перемещения
-		function moveFile(OldName, ToPath: WideString): integer; // перемещение по дереву каталогов
-		function copyFile(OldName, ToPath: WideString): integer; // Копирование файла внутри одного каталога
-		function mvFile(OldName, NewName: WideString): integer; // объединяющая функция, определяет делать rename или move
-		function cpFile(OldName, NewName: WideString): integer; // Копирует файл, и переименует, если нужно
+		function renameFile(OldName, NewName: WideString): integer; //смена имени без перемещения
+		function moveFile(OldName, ToPath: WideString): integer; //перемещение по дереву каталогов
+		function copyFile(OldName, ToPath: WideString): integer; //Копирование файла внутри одного каталога
+		function mvFile(OldName, NewName: WideString): integer; //объединяющая функция, определяет делать rename или move
+		function cpFile(OldName, NewName: WideString): integer; //Копирует файл, и переименует, если нужно
 		function publishFile(path: WideString; var PublicLink: WideString; publish: Boolean = CLOUD_PUBLISH): Boolean;
 		function statusFile(path: WideString; var FileInfo: TCloudMailRuDirListingItem): Boolean;
-		function cloneWeblink(path, link: WideString; ConflictMode: WideString = CLOUD_CONFLICT_RENAME): integer; // клонировать публичную ссылку в текущий каталог
+		function cloneWeblink(path, link: WideString; ConflictMode: WideString = CLOUD_CONFLICT_RENAME): integer; //клонировать публичную ссылку в текущий каталог
 
 	end;
 
 implementation
 
-{ TCloudMailRu }
+{TCloudMailRu}
 
-{ CONSTRUCTOR/DESTRUCTOR }
+{CONSTRUCTOR/DESTRUCTOR}
 
 constructor TCloudMailRu.Create(user, domain, password: WideString; unlimited_filesize: Boolean; split_large_files: Boolean; Proxy: TProxySettings; ConnectTimeout: integer; ExternalProgressProc: TProgressProcW; PluginNr: integer; ExternalLogProc: TLogProcW);
 begin
 	try
 		self.Cookie := TIdCookieManager.Create();
 		self.Proxy := Proxy;
-		if Proxy.ProxyType in SocksProxyTypes then // SOCKS proxy initialization
+		if Proxy.ProxyType in SocksProxyTypes then //SOCKS proxy initialization
 		begin
 			self.Socks := TIdSocksInfo.Create();
 			self.Socks.Host := Proxy.Server;
@@ -186,7 +182,8 @@ begin
 				self.Socks.Username := Proxy.user;
 				self.Socks.password := Proxy.password;
 			end
-			else self.Socks.Authentication := saNoAuthentication;
+			else
+				self.Socks.Authentication := saNoAuthentication;
 
 			case Proxy.ProxyType of
 				ProxySocks5:
@@ -225,11 +222,13 @@ end;
 
 destructor TCloudMailRu.Destroy;
 begin
-	if Assigned(self.Cookie) then self.Cookie.free;
-	if Assigned(self.Socks) then self.Socks.free;
+	if Assigned(self.Cookie) then
+		self.Cookie.free;
+	if Assigned(self.Socks) then
+		self.Socks.free;
 end;
 
-{ PRIVATE METHODS }
+{PRIVATE METHODS}
 
 function TCloudMailRu.getToken(): Boolean;
 var
@@ -239,7 +238,8 @@ var
 begin
 	URL := 'https://cloud.mail.ru/?from=promo&from=authpopup';
 	Result := false;
-	if not(Assigned(self)) then exit; // Проверка на вызов без инициализации
+	if not(Assigned(self)) then
+		exit; //Проверка на вызов без инициализации
 	try
 		Progress := false;
 		Result := self.HTTPGet(URL, Answer, Progress);
@@ -257,7 +257,8 @@ begin
 		self.x_page_id := self.get_x_page_id_FromText(Answer);
 		self.build := self.get_build_FromText(Answer);
 		self.upload_url := self.get_upload_url_FromText(Answer);
-		if (self.token = '') or (self.x_page_id = '') or (self.build = '') or (self.upload_url = '') then Result := false; // В полученной странице нет нужных данных
+		if (self.token = '') or (self.x_page_id = '') or (self.build = '') or (self.upload_url = '') then
+			Result := false; //В полученной странице нет нужных данных
 	end;
 end;
 
@@ -298,7 +299,8 @@ var
 begin
 	Result := false;
 	SuccessPost := false;
-	if not(Assigned(self)) then exit; // Проверка на вызов без инициализации
+	if not(Assigned(self)) then
+		exit; //Проверка на вызов без инициализации
 	URL := 'https://cloud.mail.ru/api/v2/dispatcher/';
 	PostData := TStringStream.Create('api=2&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&token=' + self.token + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id, TEncoding.UTF8);
 	try
@@ -313,21 +315,24 @@ begin
 	if SuccessPost then
 	begin
 		Shard := self.getShardFromJSON(Answer);
-		if Shard = '' then Result := false
-		else Result := true;
+		if Shard = '' then
+			Result := false
+		else
+			Result := true;
 	end;
 	PostData.free;
 end;
 
-function TCloudMailRu.putFileToCloud(localPath: WideString; Return: TStringList): integer; { Заливка на сервер состоит из двух шагов: заливаем файл на сервер в putFileToCloud и добавляем его в облако addFileToCloud }
+function TCloudMailRu.putFileToCloud(localPath: WideString; Return: TStringList): integer; {Заливка на сервер состоит из двух шагов: заливаем файл на сервер в putFileToCloud и добавляем его в облако addFileToCloud}
 var
 	URL, PostAnswer: WideString;
 	PostData: TIdMultipartFormDataStream;
 begin
 	Result := CLOUD_OPERATION_FAILED;
-	if not(Assigned(self)) then exit; // Проверка на вызов без инициализации
+	if not(Assigned(self)) then
+		exit; //Проверка на вызов без инициализации
 	URL := self.upload_url + '/?cloud_domain=1&x-email=' + self.user + '%40' + self.domain + '&fileapi' + IntToStr(DateTimeToUnix(now)) + '0246';
-	// Log( MSGTYPE_DETAILS, 'Uploading to ' + URL);
+	//Log( MSGTYPE_DETAILS, 'Uploading to ' + URL);
 	PostData := TIdMultipartFormDataStream.Create;
 	try
 
@@ -358,7 +363,7 @@ begin
 	Result := false;
 	URL := 'https://cloud.mail.ru/api/v2/file/add';
 	PostData := TStringStream.Create('conflict=' + ConflictMode + '&home=/' + remotePath + '&hash=' + hash + '&size=' + IntToStr(size) + '&token=' + self.token + '&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id + '&conflict', TEncoding.UTF8);
-	{ Экспериментально выяснено, что параметры api, build, email, x-email, x-page-id в запросе не обязательны }
+	{Экспериментально выяснено, что параметры api, build, email, x-email, x-page-id в запросе не обязательны}
 	try
 		Result := self.HTTPPost(URL, PostData, JSONAnswer);
 	except
@@ -378,7 +383,8 @@ var
 	Progress: Boolean;
 begin
 	Result := false;
-	if not(Assigned(self)) then exit; // Проверка на вызов без инициализации
+	if not(Assigned(self)) then
+		exit; //Проверка на вызов без инициализации
 	URL := 'https://cloud.mail.ru/api/v2/user/space?api=2&home=/&build=' + self.build + '&x-page-id=' + self.x_page_id + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&token=' + self.token + '&_=1433249148810';
 	try
 		Progress := false;
@@ -389,7 +395,8 @@ begin
 			Log(MSGTYPE_IMPORTANTERROR, 'User space receiving error ' + E.Message);
 		end;
 	end;
-	if not Result then exit(false);
+	if not Result then
+		exit(false);
 	SpaceInfo := self.getUserSpaceFromJSON(JSON);
 end;
 
@@ -404,7 +411,8 @@ begin
 	MemStream := TStringStream.Create;
 	try
 		self.HTTPInit(HTTP, SSL, Socks, self.Cookie);
-		if ContentType <> '' then HTTP.Request.ContentType := ContentType;
+		if ContentType <> '' then
+			HTTP.Request.ContentType := ContentType;
 		HTTP.Post(URL, PostData, MemStream);
 		self.HTTPDestroy(HTTP, SSL);
 		Answer := MemStream.DataString;
@@ -416,15 +424,15 @@ begin
 		on E: EIdHTTPProtocolException do
 		begin
 			if HTTP.ResponseCode = 400 then
-			begin { сервер вернёт 400, но нужно пропарсить результат для дальнейшего определения действий }
+			begin {сервер вернёт 400, но нужно пропарсить результат для дальнейшего определения действий}
 				Answer := E.ErrorMessage;
 				Result := true;
-			end else if HTTP.ResponseCode = 507 then // кончилось место
+			end else if HTTP.ResponseCode = 507 then //кончилось место
 			begin
 				Answer := E.ErrorMessage;
 				Result := true;
-				// end else if (HTTP.ResponseCode = 500) then // Внезапно, сервер так отвечает, если при перемещении файл уже существует, но полагаться на это мы не можем
-				// begin
+				//end else if (HTTP.ResponseCode = 500) then // Внезапно, сервер так отвечает, если при перемещении файл уже существует, но полагаться на это мы не можем
+				//begin
 
 			end else begin
 				Log(MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при отправке данных на адрес ' + URL + ', ответ сервера: ' + E.ErrorMessage);
@@ -487,7 +495,7 @@ var
 begin
 	try
 		self.HTTPInit(HTTP, SSL, Socks, self.Cookie);
-		if ProgressEnabled then // Вызов прогресса ведёт к возможности отменить получение списка каталогов и других операций, поэтому он нужен не всегда
+		if ProgressEnabled then //Вызов прогресса ведёт к возможности отменить получение списка каталогов и других операций, поэтому он нужен не всегда
 		begin
 			HTTP.OnWork := self.HttpProgress;
 		end;
@@ -498,16 +506,16 @@ begin
 		on E: EAbort do
 		begin
 			Answer := E.Message;
-			ProgressEnabled := false; // сообщаем об отмене
+			ProgressEnabled := false; //сообщаем об отмене
 			exit(false);
 		end;
 		on E: EIdHTTPProtocolException do
 		begin
 			if HTTP.ResponseCode = 400 then
-			begin { сервер вернёт 400, но нужно пропарсить результат для дальнейшего определения действий }
+			begin {сервер вернёт 400, но нужно пропарсить результат для дальнейшего определения действий}
 				Answer := E.ErrorMessage;
 				exit(true);
-			end else if HTTP.ResponseCode = 507 then // кончилось место
+			end else if HTTP.ResponseCode = 507 then //кончилось место
 			begin
 				Answer := E.ErrorMessage;
 				exit(true);
@@ -557,12 +565,14 @@ begin
 		end;
 		on E: EIdSocketError do
 		begin
-			if LogErrors then Log(MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка сети: ' + E.Message + ' при копировании файла с адреса ' + URL);
+			if LogErrors then
+				Log(MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка сети: ' + E.Message + ' при копировании файла с адреса ' + URL);
 			Result := FS_FILE_READERROR;
 		end;
 		on E: Exception do
 		begin
-			if LogErrors then Log(MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при копировании файла с адреса ' + URL);
+			if LogErrors then
+				Log(MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при копировании файла с адреса ' + URL);
 			Result := FS_FILE_READERROR;
 		end;
 	end;
@@ -573,7 +583,8 @@ begin
 	SSL := TIdSSLIOHandlerSocketOpenSSL.Create();
 	HTTP := TIdHTTP.Create();
 
-	if (self.Proxy.ProxyType in SocksProxyTypes) and (self.Socks.Enabled) then SSL.TransparentProxy := self.Socks;
+	if (self.Proxy.ProxyType in SocksProxyTypes) and (self.Socks.Enabled) then
+		SSL.TransparentProxy := self.Socks;
 
 	if self.Proxy.ProxyType = ProxyHTTP then
 	begin
@@ -617,14 +628,17 @@ var
 	Percent: integer;
 begin
 	HTTP := TIdHTTP(ASender);
-	if AWorkMode = wmRead then ContentLength := HTTP.Response.ContentLength
-	else ContentLength := HTTP.Request.ContentLength; // Считаем размер обработанных данных зависимости от того, скачивание это или загрузка
+	if AWorkMode = wmRead then
+		ContentLength := HTTP.Response.ContentLength
+	else
+		ContentLength := HTTP.Request.ContentLength; //Считаем размер обработанных данных зависимости от того, скачивание это или загрузка
 	if (Pos('chunked', LowerCase(HTTP.Response.TransferEncoding)) = 0) and (ContentLength > 0) then
 	begin
 		Percent := 100 * AWorkCount div ContentLength;
 		if Assigned(ExternalProgressProc) then
 		begin
-			if ExternalProgressProc(self.ExternalPluginNr, self.ExternalSourceName, self.ExternalTargetName, Percent) = 1 then Abort;
+			if ExternalProgressProc(self.ExternalPluginNr, self.ExternalSourceName, self.ExternalTargetName, Percent) = 1 then
+				Abort;
 		end;
 	end;
 end;
@@ -637,20 +651,21 @@ begin
 	end;
 end;
 
-{ PUBLIC METHODS }
+{PUBLIC METHODS}
 
 function TCloudMailRu.login(method: integer = CLOUD_AUTH_METHOD_WEB): Boolean;
 var
 	URL: WideString;
 	PostData: TStringStream;
-	PostAnswer: WideString; { Не используется }
+	PostAnswer: WideString; {Не используется}
 begin
 	Result := false;
 	self.login_method := method;
-	if not(Assigned(self)) then exit; // Проверка на вызов без инициализации
+	if not(Assigned(self)) then
+		exit; //Проверка на вызов без инициализации
 	Log(MSGTYPE_DETAILS, 'Login to ' + self.user + '@' + self.domain);
 	case self.login_method of
-		CLOUD_AUTH_METHOD_WEB: // todo: вынести в отдельный метод
+		CLOUD_AUTH_METHOD_WEB: //todo: вынести в отдельный метод
 			begin
 				URL := 'https://auth.mail.ru/cgi-bin/auth?lang=ru_RU&from=authpopup';
 				PostData := TStringStream.Create('page=https://cloud.mail.ru/?from=promo&new_auth_form=1&Domain=' + self.domain + '&Login=' + self.user + '&Password=' + UrlEncode(self.password) + '&FailPage=', TEncoding.UTF8);
@@ -676,7 +691,8 @@ begin
 						exit(false);
 					end;
 				end
-				else Log(MSGTYPE_IMPORTANTERROR, 'Error login to ' + self.user + '@' + self.domain);
+				else
+					Log(MSGTYPE_IMPORTANTERROR, 'Error login to ' + self.user + '@' + self.domain);
 			end;
 		CLOUD_AUTH_METHOD_OAUTH:
 			begin
@@ -694,10 +710,11 @@ function TCloudMailRu.deleteFile(path: WideString): Boolean;
 var
 	URL: WideString;
 	PostData: TStringStream;
-	PostAnswer: WideString; { Не используется }
+	PostAnswer: WideString; {Не используется}
 begin
 	Result := false;
-	if not(Assigned(self)) then exit; // Проверка на вызов без инициализации
+	if not(Assigned(self)) then
+		exit; //Проверка на вызов без инициализации
 	path := UrlEncode(StringReplace(path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
 	URL := 'https://cloud.mail.ru/api/v2/file/remove';
 	PostData := TStringStream.Create('api=2&home=/' + path + '&token=' + self.token + '&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id + '&conflict', TEncoding.UTF8);
@@ -718,19 +735,24 @@ var
 	US: TCloudMailRuSpaceInfo;
 	QuotaInfo: WideString;
 
-	function FormatSize(Megabytes: integer): WideString; // Форматируем размер в удобочитаемый вид
+	function FormatSize(Megabytes: integer): WideString; //Форматируем размер в удобочитаемый вид
 	begin
-		if Megabytes > (1024 * 1023) then exit((Megabytes div (1024 * 1024)).ToString() + 'Tb');
-		if Megabytes > 1024 then exit((CurrToStrF((Megabytes / 1024), ffNumber, 2)) + 'Gb');
+		if Megabytes > (1024 * 1023) then
+			exit((Megabytes div (1024 * 1024)).ToString() + 'Tb');
+		if Megabytes > 1024 then
+			exit((CurrToStrF((Megabytes / 1024), ffNumber, 2)) + 'Gb');
 		exit(Megabytes.ToString() + 'Mb');
 	end;
 
 begin
-	if not(Assigned(self)) then exit; // Проверка на вызов без инициализации
+	if not(Assigned(self)) then
+		exit; //Проверка на вызов без инициализации
 	if self.getUserSpace(US) then
 	begin
-		if (US.overquota) then QuotaInfo := ' Warning: space quota exhausted!'
-		else QuotaInfo := '';
+		if (US.overquota) then
+			QuotaInfo := ' Warning: space quota exhausted!'
+		else
+			QuotaInfo := '';
 
 		Log(MSGTYPE_DETAILS, 'Total space: ' + FormatSize(US.total) + ', used: ' + FormatSize(US.used) + ', free: ' + FormatSize(US.total - US.used) + '.' + QuotaInfo);
 	end else begin
@@ -738,7 +760,7 @@ begin
 	end;
 end;
 
-function TCloudMailRu.getDescriptionFile(remotePath, localCopy: WideString): integer; // 0 - ok, else error
+function TCloudMailRu.getDescriptionFile(remotePath, localCopy: WideString): integer; //0 - ok, else error
 begin
 	Result := self.getFile(remotePath, localCopy, false);
 end;
@@ -748,9 +770,11 @@ var
 	URL: WideString;
 	JSON: WideString;
 	Progress: Boolean;
+	OperationStatus: integer;
 begin
 	Result := false;
-	if not(Assigned(self)) then exit; // Проверка на вызов без инициализации
+	if not(Assigned(self)) then
+		exit; //Проверка на вызов без инициализации
 	path := UrlEncode(StringReplace(path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
 	URL := 'https://cloud.mail.ru/api/v2/folder?sort={%22type%22%3A%22name%22%2C%22order%22%3A%22asc%22}&offset=0&limit=10000&home=' + path + '&api=2&build=' + self.build + '&x-page-id=' + self.x_page_id + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&token=' + self.token + '&_=1433249148810';
 	try
@@ -762,23 +786,46 @@ begin
 			Log(MSGTYPE_IMPORTANTERROR, 'Directory list receiving error ' + E.Message);
 		end;
 	end;
-	if not Result then exit(false);
-	DirListing := self.getDirListingFromJSON(JSON);
+	if Result then
+	begin
+		case self.getOperationResultFromJSON(JSON, OperationStatus) of
+			CLOUD_OPERATION_OK:
+				begin
+					DirListing := self.getDirListingFromJSON(JSON);
+					Result := true;
+				end;
+			CLOUD_ERROR_EXISTS, CLOUD_ERROR_REQUIRED, CLOUD_ERROR_INVALID, CLOUD_ERROR_READONLY, CLOUD_ERROR_NAME_LENGTH_EXCEEDED, CLOUD_ERROR_UNKNOWN:
+				begin
+					Result := false;
+				end;
+			CLOUD_ERROR_NOT_EXISTS:
+				begin
+					Log(MSGTYPE_IMPORTANTERROR, 'Path not exists');
+				end
+			else
+				begin
+					Log(MSGTYPE_IMPORTANTERROR, 'Directory list receiving error: got ' + IntToStr(OperationStatus) + ' status');
+					Result := false;
+				end;
+		end;
+
+	end;
 end;
 
-function TCloudMailRu.getFile(remotePath, localPath: WideString; LogErrors: Boolean = true): integer; // 0 - ok, else error
+function TCloudMailRu.getFile(remotePath, localPath: WideString; LogErrors: Boolean = true): integer; //0 - ok, else error
 var
 	FileStream: TFileStream;
 begin
 	Result := FS_FILE_NOTSUPPORTED;
-	if not(Assigned(self)) then exit; // Проверка на вызов без инициализации
+	if not(Assigned(self)) then
+		exit; //Проверка на вызов без инициализации
 	if self.Shard = '' then
 	begin
 		Log(MSGTYPE_DETAILS, 'Current shard is undefined, trying to get one');
 		if self.getShard(self.Shard) then
 		begin
 			Log(MSGTYPE_DETAILS, 'Current shard: ' + self.Shard);
-		end else begin // А вот теперь это критическая ошибка, тут уже не получится копировать
+		end else begin //А вот теперь это критическая ошибка, тут уже не получится копировать
 			Log(MSGTYPE_IMPORTANTERROR, 'Sorry, downloading impossible');
 			exit(FS_FILE_NOTSUPPORTED);
 		end;
@@ -803,7 +850,8 @@ begin
 		except
 			on E: Exception do
 			begin
-				if LogErrors then Log(MSGTYPE_IMPORTANTERROR, 'File receiving error ' + E.Message);
+				if LogErrors then
+					Log(MSGTYPE_IMPORTANTERROR, 'File receiving error ' + E.Message);
 			end;
 		end;
 		FlushFileBuffers(FileStream.Handle);
@@ -825,7 +873,8 @@ var
 	OperationStatus: integer;
 begin
 	Result := false;
-	if not(Assigned(self)) then exit; // Проверка на вызов без инициализации
+	if not(Assigned(self)) then
+		exit; //Проверка на вызов без инициализации
 	SucessPublish := false;
 	path := UrlEncode(StringReplace(path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
 
@@ -883,11 +932,11 @@ begin
 				begin
 					Result := false;
 				end;
-		else
-			begin
-				Log(MSGTYPE_IMPORTANTERROR, 'Error publishing file: got ' + IntToStr(OperationStatus) + ' status');
-				Result := false;
-			end;
+			else
+				begin
+					Log(MSGTYPE_IMPORTANTERROR, 'Error publishing file: got ' + IntToStr(OperationStatus) + ' status');
+					Result := false;
+				end;
 		end;
 	end;
 
@@ -903,7 +952,8 @@ var
 	Splitter: TFileSplitter;
 	CRCFileName: WideString;
 begin
-	if not(Assigned(self)) then exit(FS_FILE_WRITEERROR); // Проверка на вызов без инициализации
+	if not(Assigned(self)) then
+		exit(FS_FILE_WRITEERROR); //Проверка на вызов без инициализации
 	if (not(self.unlimited_filesize)) and (SizeOfFile(GetUNCFilePath(localPath)) >= CLOUD_MAX_FILESIZE + 1) then
 	begin
 		if self.split_large_files then
@@ -929,9 +979,11 @@ begin
 			begin
 				Result := self.putFile(Splitter.SplitResult.parts[SplittedPartIndex].filename, CopyExt(Splitter.SplitResult.parts[SplittedPartIndex].filename, remotePath), ConflictMode);
 				if Result <> FS_FILE_OK then
-				begin // Отваливаемся при ошибке
-					if Result <> FS_FILE_USERABORT then Log(MSGTYPE_IMPORTANTERROR, 'Partial upload aborted')
-					else Log(MSGTYPE_IMPORTANTERROR, 'Partial upload error');
+				begin //Отваливаемся при ошибке
+					if Result <> FS_FILE_USERABORT then
+						Log(MSGTYPE_IMPORTANTERROR, 'Partial upload aborted')
+					else
+						Log(MSGTYPE_IMPORTANTERROR, 'Partial upload error');
 					Splitter.Destroy;
 					exit;
 				end;
@@ -939,14 +991,16 @@ begin
 			CRCFileName := Splitter.writeCRCFile;
 			Result := self.putFile(CRCFileName, CopyExt(CRCFileName, remotePath), ConflictMode);
 			if Result <> FS_FILE_OK then
-			begin // Отваливаемся при ошибке
-				if Result <> FS_FILE_USERABORT then Log(MSGTYPE_IMPORTANTERROR, 'Checksum upload aborted')
-				else Log(MSGTYPE_IMPORTANTERROR, 'Checksum upload error');
+			begin //Отваливаемся при ошибке
+				if Result <> FS_FILE_USERABORT then
+					Log(MSGTYPE_IMPORTANTERROR, 'Checksum upload aborted')
+				else
+					Log(MSGTYPE_IMPORTANTERROR, 'Checksum upload error');
 				Splitter.Destroy;
 				exit;
 			end;
 			Splitter.Destroy;
-			exit(FS_FILE_OK); // Файлик залит по частям, выходим
+			exit(FS_FILE_OK); //Файлик залит по частям, выходим
 		end else begin
 			Log(MSGTYPE_IMPORTANTERROR, 'File size > ' + CLOUD_MAX_FILESIZE.ToString() + ' bytes, ignored');
 			exit(FS_FILE_NOTSUPPORTED);
@@ -955,7 +1009,8 @@ begin
 	end;
 	FileSize := 0;
 	Result := FS_FILE_WRITEERROR;
-	if not(Assigned(self)) then exit; // Проверка на вызов без инициализации
+	if not(Assigned(self)) then
+		exit; //Проверка на вызов без инициализации
 	OperationResult := CLOUD_OPERATION_FAILED;
 	PutResult := TStringList.Create;
 	try
@@ -975,7 +1030,7 @@ begin
 	if OperationResult = CLOUD_OPERATION_OK then
 	begin
 		FileHash := PutResult.Strings[0];
-		Val(PutResult.Strings[1], FileSize, Code); // Тут ошибка маловероятна
+		Val(PutResult.Strings[1], FileSize, Code); //Тут ошибка маловероятна
 	end else if OperationResult = CLOUD_OPERATION_CANCELLED then
 	begin
 		Result := FS_FILE_USERABORT;
@@ -984,10 +1039,10 @@ begin
 
 	if OperationResult = CLOUD_OPERATION_OK then
 	begin
-		// Log( MSGTYPE_DETAILS, 'putFileToCloud result: ' + PutResult.Text);
+		//Log( MSGTYPE_DETAILS, 'putFileToCloud result: ' + PutResult.Text);
 		if self.addFileToCloud(FileHash, FileSize, UrlEncode(StringReplace(remotePath, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase])), JSONAnswer) then
 		begin
-			// Log( MSGTYPE_DETAILS, JSONAnswer);
+			//Log( MSGTYPE_DETAILS, JSONAnswer);
 			case self.getOperationResultFromJSON(JSONAnswer, OperationStatus) of
 				CLOUD_OPERATION_OK:
 					begin
@@ -1022,11 +1077,11 @@ begin
 					begin
 						Result := FS_FILE_NOTSUPPORTED;
 					end;
-			else
-				begin // что-то неизвестное
-					Log(MSGTYPE_IMPORTANTERROR, 'Error uploading to cloud: got ' + IntToStr(OperationStatus) + ' status');
-					Result := FS_FILE_WRITEERROR;
-				end;
+				else
+					begin //что-то неизвестное
+						Log(MSGTYPE_IMPORTANTERROR, 'Error uploading to cloud: got ' + IntToStr(OperationStatus) + ' status');
+						Result := FS_FILE_WRITEERROR;
+					end;
 			end;
 		end;
 	end;
@@ -1041,7 +1096,8 @@ var
 	OperationStatus: integer;
 begin
 	Result := false;
-	if not(Assigned(self)) then exit; // Проверка на вызов без инициализации
+	if not(Assigned(self)) then
+		exit; //Проверка на вызов без инициализации
 	SucessCreate := false;
 	path := UrlEncode(StringReplace(path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
 	URL := 'https://cloud.mail.ru/api/v2/folder/add';
@@ -1086,11 +1142,11 @@ begin
 				begin
 					Result := false;
 				end;
-		else
-			begin
-				Log(MSGTYPE_IMPORTANTERROR, 'Error creating directory: got ' + IntToStr(OperationStatus) + ' status');
-				Result := false;
-			end;
+			else
+				begin
+					Log(MSGTYPE_IMPORTANTERROR, 'Error creating directory: got ' + IntToStr(OperationStatus) + ' status');
+					Result := false;
+				end;
 		end;
 	end;
 end;
@@ -1099,15 +1155,16 @@ function TCloudMailRu.removeDir(path: WideString): Boolean;
 var
 	URL: WideString;
 	PostData: TStringStream;
-	PostAnswer: WideString; { Не используется }
+	PostAnswer: WideString; {Не используется}
 begin
 	Result := false;
-	if not(Assigned(self)) then exit; // Проверка на вызов без инициализации
+	if not(Assigned(self)) then
+		exit; //Проверка на вызов без инициализации
 	path := UrlEncode(StringReplace(path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
 	URL := 'https://cloud.mail.ru/api/v2/file/remove';
 	PostData := TStringStream.Create('api=2&home=/' + path + '/&token=' + self.token + '&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id + '&conflict', TEncoding.UTF8);
 	try
-		Result := self.HTTPPost(URL, PostData, PostAnswer); // API всегда отвечает true, даже если путь не существует
+		Result := self.HTTPPost(URL, PostData, PostAnswer); //API всегда отвечает true, даже если путь не существует
 	except
 		on E: Exception do
 		begin
@@ -1127,7 +1184,8 @@ var
 	OperationStatus: integer;
 begin
 	Result := FS_FILE_WRITEERROR;
-	if not(Assigned(self)) then exit; // Проверка на вызов без инициализации
+	if not(Assigned(self)) then
+		exit; //Проверка на вызов без инициализации
 	OldName := UrlEncode(StringReplace(OldName, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
 	NewName := UrlEncode(StringReplace(NewName, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
 	URL := 'https://cloud.mail.ru/api/v2/file/rename';
@@ -1143,7 +1201,7 @@ begin
 	end;
 	PostData.free;
 	if PostResult then
-	begin // Парсим ответ
+	begin //Парсим ответ
 		case self.getOperationResultFromJSON(PostAnswer, OperationStatus) of
 			CLOUD_OPERATION_OK:
 				begin
@@ -1173,11 +1231,11 @@ begin
 				begin
 					Result := FS_FILE_NOTSUPPORTED;
 				end;
-		else
-			begin // что-то неизвестное
-				Log(MSGTYPE_IMPORTANTERROR, 'Error file rename: got ' + IntToStr(OperationStatus) + ' status');
-				Result := FS_FILE_WRITEERROR;
-			end;
+			else
+				begin //что-то неизвестное
+					Log(MSGTYPE_IMPORTANTERROR, 'Error file rename: got ' + IntToStr(OperationStatus) + ' status');
+					Result := FS_FILE_WRITEERROR;
+				end;
 		end;
 	end;
 end;
@@ -1189,7 +1247,8 @@ var
 	Progress: Boolean;
 begin
 	Result := false;
-	if not(Assigned(self)) then exit; // Проверка на вызов без инициализации
+	if not(Assigned(self)) then
+		exit; //Проверка на вызов без инициализации
 	path := UrlEncode(StringReplace(path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
 	URL := 'https://cloud.mail.ru/api/v2/file?home=' + path + '&api=2&build=' + self.build + '&x-page-id=' + self.x_page_id + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&token=' + self.token + '&_=1433249148810';
 	try
@@ -1201,7 +1260,8 @@ begin
 			Log(MSGTYPE_IMPORTANTERROR, 'File status getting error ' + E.Message);
 		end;
 	end;
-	if not Result then exit(false);
+	if not Result then
+		exit(false);
 	FileInfo := getFileStatusFromJSON(JSON);
 end;
 
@@ -1215,9 +1275,11 @@ var
 begin
 	GetResult := false;
 	Result := FS_FILE_WRITEERROR;
-	if not(Assigned(self)) then exit; // Проверка на вызов без инициализации
+	if not(Assigned(self)) then
+		exit; //Проверка на вызов без инициализации
 	path := UrlEncode(StringReplace(path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
-	if (path = '') then path := '/'; // preventing error
+	if (path = '') then
+		path := '/'; //preventing error
 	URL := 'https://cloud.mail.ru/api/v2/clone?folder=' + path + '&weblink=' + link + '&conflict=' + ConflictMode + '&api=2&build=' + self.build + '&x-page-id=' + self.x_page_id + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&token=' + self.token + '&_=1433249148810';
 	try
 		Progress := true;
@@ -1229,7 +1291,7 @@ begin
 		end;
 	end;
 	if GetResult then
-	begin // Парсим ответ
+	begin //Парсим ответ
 		case self.getOperationResultFromJSON(GetAnswer, OperationStatus) of
 			CLOUD_OPERATION_OK:
 				begin
@@ -1262,9 +1324,9 @@ begin
 		end;
 	end else begin
 		if not(Progress) then
-		begin // user cancelled
+		begin //user cancelled
 			Result := FS_FILE_USERABORT;
-		end else begin // unknown error
+		end else begin //unknown error
 			Log(MSGTYPE_IMPORTANTERROR, 'Public link clone error: got ' + IntToStr(OperationStatus) + ' status');
 			Result := FS_FILE_WRITEERROR;
 		end;
@@ -1282,10 +1344,12 @@ var
 	OperationStatus: integer;
 begin
 	Result := FS_FILE_WRITEERROR;
-	if not(Assigned(self)) then exit; // Проверка на вызов без инициализации
+	if not(Assigned(self)) then
+		exit; //Проверка на вызов без инициализации
 	OldName := UrlEncode(StringReplace(OldName, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
 	ToPath := UrlEncode(StringReplace(ToPath, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
-	if (ToPath = '') then ToPath := '/'; // preventing error
+	if (ToPath = '') then
+		ToPath := '/'; //preventing error
 
 	URL := 'https://cloud.mail.ru/api/v2/file/copy';
 	PostResult := false;
@@ -1300,7 +1364,7 @@ begin
 	end;
 	PostData.free;
 	if PostResult then
-	begin // Парсим ответ
+	begin //Парсим ответ
 		case self.getOperationResultFromJSON(PostAnswer, OperationStatus) of
 			CLOUD_OPERATION_OK:
 				begin
@@ -1330,11 +1394,11 @@ begin
 				begin
 					Result := FS_FILE_NOTSUPPORTED;
 				end;
-		else
-			begin // что-то неизвестное
-				Log(MSGTYPE_IMPORTANTERROR, 'Error file copy: got ' + IntToStr(OperationStatus) + ' status');
-				Result := FS_FILE_WRITEERROR;
-			end;
+			else
+				begin //что-то неизвестное
+					Log(MSGTYPE_IMPORTANTERROR, 'Error file copy: got ' + IntToStr(OperationStatus) + ' status');
+					Result := FS_FILE_WRITEERROR;
+				end;
 		end;
 	end;
 end;
@@ -1348,10 +1412,12 @@ var
 	OperationStatus: integer;
 begin
 	Result := FS_FILE_WRITEERROR;
-	if not(Assigned(self)) then exit; // Проверка на вызов без инициализации
+	if not(Assigned(self)) then
+		exit; //Проверка на вызов без инициализации
 	OldName := UrlEncode(StringReplace(OldName, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
 	ToPath := UrlEncode(StringReplace(ToPath, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
-	if (ToPath = '') then ToPath := '/'; // preventing error
+	if (ToPath = '') then
+		ToPath := '/'; //preventing error
 
 	URL := 'https://cloud.mail.ru/api/v2/file/move';
 	PostResult := false;
@@ -1366,7 +1432,7 @@ begin
 	end;
 	PostData.free;
 	if PostResult then
-	begin // Парсим ответ
+	begin //Парсим ответ
 		case self.getOperationResultFromJSON(PostAnswer, OperationStatus) of
 			CLOUD_OPERATION_OK:
 				begin
@@ -1396,11 +1462,11 @@ begin
 				begin
 					Result := FS_FILE_NOTSUPPORTED;
 				end;
-		else
-			begin // что-то неизвестное
-				Log(MSGTYPE_IMPORTANTERROR, 'Error file move: got ' + IntToStr(OperationStatus) + ' status');
-				Result := FS_FILE_WRITEERROR;
-			end;
+			else
+				begin //что-то неизвестное
+					Log(MSGTYPE_IMPORTANTERROR, 'Error file move: got ' + IntToStr(OperationStatus) + ' status');
+					Result := FS_FILE_WRITEERROR;
+				end;
 		end;
 	end;
 end;
@@ -1409,18 +1475,19 @@ function TCloudMailRu.mvFile(OldName, NewName: WideString): integer;
 var
 	NewPath: WideString;
 	SameDir, SameName: Boolean;
-begin // К сожалению, переименование и перемещение в облаке - разные действия
+begin //К сожалению, переименование и перемещение в облаке - разные действия
 	NewPath := ExtractFilePath(NewName);
 	SameDir := ExtractFilePath(OldName) = ExtractFilePath(NewName);
 	SameName := ExtractFileName(OldName) = ExtractFileName(NewName);
 	if SameDir then
-	begin // один каталог
+	begin //один каталог
 		Result := self.renameFile(OldName, ExtractFileName(NewName));
 	end else begin
-		Result := self.moveFile(OldName, ExtractFilePath(NewName)); // Если файл со старым именем лежит в новом каталоге, вернётся ошибка. Так реализовано в облаке, а мудрить со временными каталогами я не хочу
-		if Result <> CLOUD_OPERATION_OK then exit;
+		Result := self.moveFile(OldName, ExtractFilePath(NewName)); //Если файл со старым именем лежит в новом каталоге, вернётся ошибка. Так реализовано в облаке, а мудрить со временными каталогами я не хочу
+		if Result <> CLOUD_OPERATION_OK then
+			exit;
 		if not(SameName) then
-		begin // скопированный файл лежит в новом каталоге со старым именем
+		begin //скопированный файл лежит в новом каталоге со старым именем
 			Result := self.renameFile(NewPath + ExtractFileName(OldName), ExtractFileName(NewName));
 		end;
 	end;
@@ -1430,28 +1497,29 @@ function TCloudMailRu.cpFile(OldName, NewName: WideString): integer;
 var
 	NewPath: WideString;
 	SameDir, SameName: Boolean;
-begin // Облако умеет скопировать файл, но не сможет его переименовать, поэтому хитрим
+begin //Облако умеет скопировать файл, но не сможет его переименовать, поэтому хитрим
 	NewPath := ExtractFilePath(NewName);
 	SameDir := ExtractFilePath(OldName) = ExtractFilePath(NewName);
 	SameName := ExtractFileName(OldName) = ExtractFileName(NewName);
 
-	if (SameDir) then // копирование в тот же каталог не поддерживается напрямую, а мудрить со временными каталогами я не хочу
+	if (SameDir) then //копирование в тот же каталог не поддерживается напрямую, а мудрить со временными каталогами я не хочу
 	begin
 		Log(MSGTYPE_IMPORTANTERROR, 'Copying in same dir not supported by cloud');
 		exit(FS_FILE_NOTSUPPORTED);
 	end else begin
 		Result := self.copyFile(OldName, NewPath);
-		if Result <> CLOUD_OPERATION_OK then exit;
+		if Result <> CLOUD_OPERATION_OK then
+			exit;
 	end;
 
 	if not(SameName) then
-	begin // скопированный файл лежит в новом каталоге со старым именем
+	begin //скопированный файл лежит в новом каталоге со старым именем
 		Result := self.renameFile(NewPath + ExtractFileName(OldName), ExtractFileName(NewName));
 	end;
 
 end;
 
-{ PRIVATE STATIC METHODS (kinda) }
+{PRIVATE STATIC METHODS (kinda)}
 
 function TCloudMailRu.getTokenFromText(Text: WideString): WideString;
 var
@@ -1527,15 +1595,21 @@ begin
 		Obj := (TJSONObject.ParseJSONValue(JSON) as TJSONObject);
 		with Result do
 		begin
-			if Assigned(Obj.values['error']) then error := Obj.values['error'].Value;
-			if Assigned(Obj.values['error_code']) then error_code := Obj.values['error_code'].Value.ToInteger;
-			if Assigned(Obj.values['error_description']) then error_description := Obj.values['error_description'].Value;
-			if Assigned(Obj.values['expires_in']) then expires_in := Obj.values['expires_in'].Value.ToInteger;
-			if Assigned(Obj.values['refresh_token']) then refresh_token := Obj.values['refresh_token'].Value;
-			if Assigned(Obj.values['access_token']) then access_token := Obj.values['access_token'].Value;
+			if Assigned(Obj.values['error']) then
+				error := Obj.values['error'].Value;
+			if Assigned(Obj.values['error_code']) then
+				error_code := Obj.values['error_code'].Value.ToInteger;
+			if Assigned(Obj.values['error_description']) then
+				error_description := Obj.values['error_description'].Value;
+			if Assigned(Obj.values['expires_in']) then
+				expires_in := Obj.values['expires_in'].Value.ToInteger;
+			if Assigned(Obj.values['refresh_token']) then
+				refresh_token := Obj.values['refresh_token'].Value;
+			if Assigned(Obj.values['access_token']) then
+				access_token := Obj.values['access_token'].Value;
 		end;
 	except
-		on E: { EJSON } Exception do
+		on E: {EJSON}Exception do
 		begin
 			Log(MSGTYPE_IMPORTANTERROR, 'Can''t parse server answer: ' + JSON);
 			Result.error_code := CLOUD_ERROR_UNKNOWN;
@@ -1552,9 +1626,12 @@ begin
 	Obj := (TJSONObject.ParseJSONValue(JSON) as TJSONObject).values['body'] as TJSONObject;
 	with Result do
 	begin
-		if Assigned(Obj.values['overquota']) then overquota := Obj.values['overquota'].Value.ToBoolean;
-		if Assigned(Obj.values['total']) then total := Obj.values['total'].Value.ToInt64;
-		if Assigned(Obj.values['used']) then used := Obj.values['used'].Value.ToInt64;
+		if Assigned(Obj.values['overquota']) then
+			overquota := Obj.values['overquota'].Value.ToBoolean;
+		if Assigned(Obj.values['total']) then
+			total := Obj.values['total'].Value.ToInt64;
+		if Assigned(Obj.values['used']) then
+			used := Obj.values['used'].Value.ToInt64;
 	end;
 
 end;
@@ -1573,23 +1650,37 @@ begin
 		Obj := A.Items[J] as TJSONObject;
 		with ResultItems[J] do
 		begin
-			if Assigned(Obj.values['size']) then size := Obj.values['size'].Value.ToInt64;
-			if Assigned(Obj.values['kind']) then kind := Obj.values['kind'].Value;
-			if Assigned(Obj.values['weblink']) then weblink := Obj.values['weblink'].Value;
-			if Assigned(Obj.values['type']) then type_ := Obj.values['type'].Value;
-			if Assigned(Obj.values['home']) then home := Obj.values['home'].Value;
-			if Assigned(Obj.values['name']) then name := Obj.values['name'].Value;
+			if Assigned(Obj.values['size']) then
+				size := Obj.values['size'].Value.ToInt64;
+			if Assigned(Obj.values['kind']) then
+				kind := Obj.values['kind'].Value;
+			if Assigned(Obj.values['weblink']) then
+				weblink := Obj.values['weblink'].Value;
+			if Assigned(Obj.values['type']) then
+				type_ := Obj.values['type'].Value;
+			if Assigned(Obj.values['home']) then
+				home := Obj.values['home'].Value;
+			if Assigned(Obj.values['name']) then
+				name := Obj.values['name'].Value;
 			if (type_ = TYPE_FILE) then
 			begin
-				if Assigned(Obj.values['mtime']) then mtime := Obj.values['mtime'].Value.ToInt64;
-				if Assigned(Obj.values['virus_scan']) then virus_scan := Obj.values['virus_scan'].Value;
-				if Assigned(Obj.values['hash']) then hash := Obj.values['hash'].Value;
+				if Assigned(Obj.values['mtime']) then
+					mtime := Obj.values['mtime'].Value.ToInt64;
+				if Assigned(Obj.values['virus_scan']) then
+					virus_scan := Obj.values['virus_scan'].Value;
+				if Assigned(Obj.values['hash']) then
+					hash := Obj.values['hash'].Value;
 			end else begin
-				if Assigned(Obj.values['tree']) then tree := Obj.values['tree'].Value;
-				if Assigned(Obj.values['grev']) then grev := Obj.values['grev'].Value.ToInteger;
-				if Assigned(Obj.values['rev']) then rev := Obj.values['rev'].Value.ToInteger;
-				if Assigned((Obj.values['count'] as TJSONObject).values['folders']) then folders_count := (Obj.values['count'] as TJSONObject).values['folders'].Value.ToInteger();
-				if Assigned((Obj.values['count'] as TJSONObject).values['files']) then files_count := (Obj.values['count'] as TJSONObject).values['files'].Value.ToInteger();
+				if Assigned(Obj.values['tree']) then
+					tree := Obj.values['tree'].Value;
+				if Assigned(Obj.values['grev']) then
+					grev := Obj.values['grev'].Value.ToInteger;
+				if Assigned(Obj.values['rev']) then
+					rev := Obj.values['rev'].Value.ToInteger;
+				if Assigned((Obj.values['count'] as TJSONObject).values['folders']) then
+					folders_count := (Obj.values['count'] as TJSONObject).values['folders'].Value.ToInteger();
+				if Assigned((Obj.values['count'] as TJSONObject).values['files']) then
+					files_count := (Obj.values['count'] as TJSONObject).values['files'].Value.ToInteger();
 				mtime := 0;
 			end;
 		end;
@@ -1605,23 +1696,37 @@ begin
 	Obj := (TJSONObject.ParseJSONValue(JSON) as TJSONObject).values['body'] as TJSONObject;
 	with Result do
 	begin
-		if Assigned(Obj.values['size']) then size := Obj.values['size'].Value.ToInt64;
-		if Assigned(Obj.values['kind']) then kind := Obj.values['kind'].Value;
-		if Assigned(Obj.values['weblink']) then weblink := Obj.values['weblink'].Value;
-		if Assigned(Obj.values['type']) then type_ := Obj.values['type'].Value;
-		if Assigned(Obj.values['home']) then home := Obj.values['home'].Value;
-		if Assigned(Obj.values['name']) then name := Obj.values['name'].Value;
+		if Assigned(Obj.values['size']) then
+			size := Obj.values['size'].Value.ToInt64;
+		if Assigned(Obj.values['kind']) then
+			kind := Obj.values['kind'].Value;
+		if Assigned(Obj.values['weblink']) then
+			weblink := Obj.values['weblink'].Value;
+		if Assigned(Obj.values['type']) then
+			type_ := Obj.values['type'].Value;
+		if Assigned(Obj.values['home']) then
+			home := Obj.values['home'].Value;
+		if Assigned(Obj.values['name']) then
+			name := Obj.values['name'].Value;
 		if (type_ = TYPE_FILE) then
 		begin
-			if Assigned(Obj.values['mtime']) then mtime := Obj.values['mtime'].Value.ToInteger;
-			if Assigned(Obj.values['virus_scan']) then virus_scan := Obj.values['virus_scan'].Value;
-			if Assigned(Obj.values['hash']) then hash := Obj.values['hash'].Value;
+			if Assigned(Obj.values['mtime']) then
+				mtime := Obj.values['mtime'].Value.ToInteger;
+			if Assigned(Obj.values['virus_scan']) then
+				virus_scan := Obj.values['virus_scan'].Value;
+			if Assigned(Obj.values['hash']) then
+				hash := Obj.values['hash'].Value;
 		end else begin
-			if Assigned(Obj.values['tree']) then tree := Obj.values['tree'].Value;
-			if Assigned(Obj.values['grev']) then grev := Obj.values['grev'].Value.ToInteger;
-			if Assigned(Obj.values['rev']) then rev := Obj.values['rev'].Value.ToInteger;
-			if Assigned((Obj.values['count'] as TJSONObject).values['folders']) then folders_count := (Obj.values['count'] as TJSONObject).values['folders'].Value.ToInteger();
-			if Assigned((Obj.values['count'] as TJSONObject).values['files']) then files_count := (Obj.values['count'] as TJSONObject).values['files'].Value.ToInteger();
+			if Assigned(Obj.values['tree']) then
+				tree := Obj.values['tree'].Value;
+			if Assigned(Obj.values['grev']) then
+				grev := Obj.values['grev'].Value.ToInteger;
+			if Assigned(Obj.values['rev']) then
+				rev := Obj.values['rev'].Value.ToInteger;
+			if Assigned((Obj.values['count'] as TJSONObject).values['folders']) then
+				folders_count := (Obj.values['count'] as TJSONObject).values['folders'].Value.ToInteger();
+			if Assigned((Obj.values['count'] as TJSONObject).values['files']) then
+				files_count := (Obj.values['count'] as TJSONObject).values['files'].Value.ToInteger();
 			mtime := 0;
 		end;
 	end;
@@ -1638,8 +1743,10 @@ begin
 		OperationStatus := Obj.values['status'].Value.ToInteger;
 		if OperationStatus <> 200 then
 		begin
-			if (Assigned((Obj.values['body'] as TJSONObject).values['home'])) then nodename := 'home'
-			else if (Assigned((Obj.values['body'] as TJSONObject).values['weblink'])) then nodename := 'weblink'
+			if (Assigned((Obj.values['body'] as TJSONObject).values['home'])) then
+				nodename := 'home'
+			else if (Assigned((Obj.values['body'] as TJSONObject).values['weblink'])) then
+				nodename := 'weblink'
 			else
 			begin
 				Log(MSGTYPE_IMPORTANTERROR, 'Can''t parse server answer: ' + JSON);
@@ -1647,23 +1754,34 @@ begin
 			end;
 
 			error := ((Obj.values['body'] as TJSONObject).values[nodename] as TJSONObject).values['error'].Value;
-			if error = 'exists' then exit(CLOUD_ERROR_EXISTS);
-			if error = 'required' then exit(CLOUD_ERROR_REQUIRED);
-			if error = 'readonly' then exit(CLOUD_ERROR_READONLY);
-			if error = 'read_only' then exit(CLOUD_ERROR_READONLY);
-			if error = 'name_length_exceeded' then exit(CLOUD_ERROR_NAME_LENGTH_EXCEEDED);
-			if error = 'unknown' then exit(CLOUD_ERROR_UNKNOWN);
-			if error = 'overquota' then exit(CLOUD_ERROR_OVERQUOTA);
-			if error = 'quota_exceeded' then exit(CLOUD_ERROR_OVERQUOTA);
-			if error = 'invalid' then exit(CLOUD_ERROR_INVALID);
-			if error = 'not_exists' then exit(CLOUD_ERROR_NOT_EXISTS);
-			if error = 'own' then exit(CLOUD_ERROR_OWN);
+			if error = 'exists' then
+				exit(CLOUD_ERROR_EXISTS);
+			if error = 'required' then
+				exit(CLOUD_ERROR_REQUIRED);
+			if error = 'readonly' then
+				exit(CLOUD_ERROR_READONLY);
+			if error = 'read_only' then
+				exit(CLOUD_ERROR_READONLY);
+			if error = 'name_length_exceeded' then
+				exit(CLOUD_ERROR_NAME_LENGTH_EXCEEDED);
+			if error = 'unknown' then
+				exit(CLOUD_ERROR_UNKNOWN);
+			if error = 'overquota' then
+				exit(CLOUD_ERROR_OVERQUOTA);
+			if error = 'quota_exceeded' then
+				exit(CLOUD_ERROR_OVERQUOTA);
+			if error = 'invalid' then
+				exit(CLOUD_ERROR_INVALID);
+			if error = 'not_exists' then
+				exit(CLOUD_ERROR_NOT_EXISTS);
+			if error = 'own' then
+				exit(CLOUD_ERROR_OWN);
 
-			exit(CLOUD_ERROR_UNKNOWN); // Эту ошибку мы пока не встречали
+			exit(CLOUD_ERROR_UNKNOWN); //Эту ошибку мы пока не встречали
 		end;
 
 	except
-		on E: { EJSON } Exception do
+		on E: {EJSON}Exception do
 		begin
 			Log(MSGTYPE_IMPORTANTERROR, 'Can''t parse server answer: ' + JSON);
 			exit(CLOUD_ERROR_UNKNOWN);
