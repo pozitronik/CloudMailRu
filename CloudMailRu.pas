@@ -230,30 +230,47 @@ end;
 function TCloudMailRu.getToken(): Boolean;
 var
 	URL: WideString;
-	Answer: WideString;
+	JSON: WideString;
 	Progress: Boolean;
+	OperationStatus, OperationResult: integer;
 begin
 	URL := 'https://cloud.mail.ru/?from=promo&from=authpopup';
 	Result := false;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
 	try
 		Progress := false;
-		Result := self.HTTPGet(URL, Answer, Progress);
+		Result := self.HTTPGet(URL, JSON, Progress);
 	except
 		on E: Exception do
 		begin
 			Log(MSGTYPE_IMPORTANTERROR, 'Get token error ' + E.Message);
 		end;
-
 	end;
+
 	if Result then
 	begin
-		Result := true;
-		self.token := self.getTokenFromText(Answer);
-		self.x_page_id := self.get_x_page_id_FromText(Answer);
-		self.build := self.get_build_FromText(Answer);
-		self.upload_url := self.get_upload_url_FromText(Answer);
-		if (self.token = '') or (self.x_page_id = '') or (self.build = '') or (self.upload_url = '') then Result := false; //В полученной странице нет нужных данных
+		OperationResult := self.getOperationResultFromJSON(JSON, OperationStatus);
+		case OperationResult of
+			CLOUD_OPERATION_OK:
+				begin
+					Result := true;
+					self.token := self.getTokenFromText(JSON);
+					self.x_page_id := self.get_x_page_id_FromText(JSON);
+					self.build := self.get_build_FromText(JSON);
+					self.upload_url := self.get_upload_url_FromText(JSON);
+					if (self.token = '') or (self.x_page_id = '') or (self.build = '') or (self.upload_url = '') then Result := false; //В полученной странице нет нужных данных
+				end;
+			CLOUD_ERROR_EXISTS, CLOUD_ERROR_REQUIRED, CLOUD_ERROR_INVALID, CLOUD_ERROR_READONLY, CLOUD_ERROR_NAME_LENGTH_EXCEEDED, CLOUD_ERROR_UNKNOWN, CLOUD_ERROR_NOT_EXISTS:
+				begin
+					Result := false;
+					Log(MSGTYPE_IMPORTANTERROR, 'Get token error, code: ' + OperationResult.ToString());
+				end;
+			else
+				begin
+					Log(MSGTYPE_IMPORTANTERROR, 'Get token error, got ' + IntToStr(OperationStatus) + ' status');
+					Result := false;
+				end;
+		end;
 	end;
 end;
 
@@ -372,6 +389,7 @@ var
 	URL: WideString;
 	JSON: WideString;
 	Progress: Boolean;
+	OperationResult, OperationStatus: integer;
 begin
 	Result := false;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
@@ -385,8 +403,29 @@ begin
 			Log(MSGTYPE_IMPORTANTERROR, 'User space receiving error ' + E.Message);
 		end;
 	end;
-	if not Result then exit(false);
-	SpaceInfo := self.getUserSpaceFromJSON(JSON);
+
+	if Result then
+	begin
+		OperationResult := self.getOperationResultFromJSON(JSON, OperationStatus);
+		case OperationResult of
+			CLOUD_OPERATION_OK:
+				begin
+					Result := true;
+					SpaceInfo := self.getUserSpaceFromJSON(JSON);
+				end;
+			CLOUD_ERROR_EXISTS, CLOUD_ERROR_REQUIRED, CLOUD_ERROR_INVALID, CLOUD_ERROR_READONLY, CLOUD_ERROR_NAME_LENGTH_EXCEEDED, CLOUD_ERROR_UNKNOWN, CLOUD_ERROR_NOT_EXISTS:
+				begin
+					Result := false;
+					Log(MSGTYPE_IMPORTANTERROR, 'User space receiving error, code: ' + OperationResult.ToString());
+				end;
+			else
+				begin
+					Log(MSGTYPE_IMPORTANTERROR, 'User space receiving error, got ' + IntToStr(OperationStatus) + ' status');
+					Result := false;
+				end;
+		end;
+	end;
+
 end;
 
 function TCloudMailRu.HTTPPost(URL: WideString; PostData: TStringStream; var Answer: WideString; ContentType: WideString = 'application/x-www-form-urlencoded'): Boolean;
@@ -744,7 +783,7 @@ var
 	URL: WideString;
 	JSON: WideString;
 	Progress: Boolean;
-	OperationStatus: integer;
+	OperationStatus, OperationResult: integer;
 begin
 	Result := false;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
@@ -760,7 +799,8 @@ begin
 	end;
 	if Result then
 	begin
-		case self.getOperationResultFromJSON(JSON, OperationStatus) of
+		OperationResult:= self.getOperationResultFromJSON(JSON, OperationStatus);
+		case OperationResult of
 			CLOUD_OPERATION_OK:
 				begin
 					DirListing := self.getDirListingFromJSON(JSON);
@@ -768,6 +808,7 @@ begin
 				end;
 			CLOUD_ERROR_EXISTS, CLOUD_ERROR_REQUIRED, CLOUD_ERROR_INVALID, CLOUD_ERROR_READONLY, CLOUD_ERROR_NAME_LENGTH_EXCEEDED, CLOUD_ERROR_UNKNOWN:
 				begin
+					Log(MSGTYPE_IMPORTANTERROR, 'User space receiving error, code: ' + OperationResult.ToString());
 					Result := false;
 				end;
 			CLOUD_ERROR_NOT_EXISTS:
@@ -1205,6 +1246,7 @@ var
 	URL: WideString;
 	JSON: WideString;
 	Progress: Boolean;
+	OperationResult, OperationStatus: integer;
 begin
 	Result := false;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
@@ -1219,8 +1261,31 @@ begin
 			Log(MSGTYPE_IMPORTANTERROR, 'File status getting error ' + E.Message);
 		end;
 	end;
+
+	if Result then
+	begin
+		OperationResult := self.getOperationResultFromJSON(JSON, OperationStatus);
+		case OperationResult of
+			CLOUD_OPERATION_OK:
+				begin
+					Result := true;
+					FileInfo := getFileStatusFromJSON(JSON);
+				end;
+			CLOUD_ERROR_EXISTS, CLOUD_ERROR_REQUIRED, CLOUD_ERROR_INVALID, CLOUD_ERROR_READONLY, CLOUD_ERROR_NAME_LENGTH_EXCEEDED, CLOUD_ERROR_UNKNOWN, CLOUD_ERROR_NOT_EXISTS:
+				begin
+					Result := false;
+					Log(MSGTYPE_IMPORTANTERROR, 'File status getting error, code: ' + OperationResult.ToString());
+				end;
+			else
+				begin
+					Log(MSGTYPE_IMPORTANTERROR, 'File status getting error, got ' + IntToStr(OperationStatus) + ' status');
+					Result := false;
+				end;
+		end;
+	end;
+
 	if not Result then exit(false);
-	FileInfo := getFileStatusFromJSON(JSON);
+
 end;
 
 function TCloudMailRu.cloneWeblink(path, link: WideString; ConflictMode: WideString = CLOUD_CONFLICT_RENAME): integer;
@@ -1274,6 +1339,10 @@ begin
 					Result := FS_FILE_WRITEERROR;
 				end;
 			CLOUD_ERROR_UNKNOWN:
+				begin
+					Result := FS_FILE_NOTSUPPORTED;
+				end;
+			else
 				begin
 					Result := FS_FILE_NOTSUPPORTED;
 				end;
