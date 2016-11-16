@@ -249,28 +249,11 @@ begin
 
 	if Result then
 	begin
-		OperationResult := self.getOperationResultFromJSON(JSON, OperationStatus);
-		case OperationResult of
-			CLOUD_OPERATION_OK:
-				begin
-					Result := true;
-					self.token := self.getTokenFromText(JSON);
-					self.x_page_id := self.get_x_page_id_FromText(JSON);
-					self.build := self.get_build_FromText(JSON);
-					self.upload_url := self.get_upload_url_FromText(JSON);
-					if (self.token = '') or (self.x_page_id = '') or (self.build = '') or (self.upload_url = '') then Result := false; //В полученной странице нет нужных данных
-				end;
-			CLOUD_ERROR_EXISTS, CLOUD_ERROR_REQUIRED, CLOUD_ERROR_INVALID, CLOUD_ERROR_READONLY, CLOUD_ERROR_NAME_LENGTH_EXCEEDED, CLOUD_ERROR_UNKNOWN, CLOUD_ERROR_NOT_EXISTS:
-				begin
-					Result := false;
-					Log(MSGTYPE_IMPORTANTERROR, 'Get token error, code: ' + OperationResult.ToString());
-				end;
-			else
-				begin
-					Log(MSGTYPE_IMPORTANTERROR, 'Get token error, got ' + IntToStr(OperationStatus) + ' status');
-					Result := false;
-				end;
-		end;
+		self.token := self.getTokenFromText(JSON);
+		self.x_page_id := self.get_x_page_id_FromText(JSON);
+		self.build := self.get_build_FromText(JSON);
+		self.upload_url := self.get_upload_url_FromText(JSON);
+		if (self.token = '') or (self.x_page_id = '') or (self.build = '') or (self.upload_url = '') then Result := false; //В полученной странице нет нужных данных
 	end;
 end;
 
