@@ -2,24 +2,7 @@
 
 {$R *.dres}
 
-uses
-	SysUtils,
-	DateUtils,
-	windows,
-	Classes,
-	PLUGIN_TYPES,
-	IdSSLOpenSSLHeaders,
-	messages,
-	inifiles,
-	Vcl.controls,
-	AnsiStrings,
-	CloudMailRu in 'CloudMailRu.pas',
-	MRC_Helper in 'MRC_Helper.pas',
-	Accounts in 'Accounts.pas' {AccountsForm} ,
-	RemoteProperty in 'RemoteProperty.pas' {PropertyForm} ,
-	Descriptions in 'Descriptions.pas',
-	ConnectionManager in 'ConnectionManager.pas',
-	Settings in 'Settings.pas';
+uses SysUtils, DateUtils, windows, Classes, PLUGIN_TYPES, IdSSLOpenSSLHeaders, messages, inifiles, Vcl.controls, AnsiStrings, CloudMailRu in 'CloudMailRu.pas', MRC_Helper in 'MRC_Helper.pas', Accounts in 'Accounts.pas'{AccountsForm}, RemoteProperty in 'RemoteProperty.pas'{PropertyForm}, Descriptions in 'Descriptions.pas', ConnectionManager in 'ConnectionManager.pas', Settings in 'Settings.pas';
 
 {$IFDEF WIN64}
 {$E wfx64}
@@ -38,13 +21,13 @@ const
 {$ENDIF}
 
 var
-	// PlatformDllPath: WideString;
+	//PlatformDllPath: WideString;
 	tmp: pchar;
 	AccountsIniFilePath: WideString;
 	SettingsIniFilePath: WideString;
 	GlobalPath, PluginPath, AppDataDir, IniDir: WideString;
 	FileCounter: integer = 0;
-	{ Callback data }
+	{Callback data}
 	PluginNum: integer;
 	CryptoNum: integer;
 	MyProgressProc: TProgressProcW;
@@ -123,17 +106,17 @@ function GetListingItemByName(CurrentListing: TCloudMailRuDirListing; path: TRea
 var
 	getResult: integer;
 begin
-	Result := FindListingItemByHomePath(CurrentListing, path.path); // сначала попробуем найти поле в имеющемся списке
-	if Result.name = '' then // если там его нет (нажали пробел на папке, например), то запросим в облаке напрямую
+	Result := FindListingItemByHomePath(CurrentListing, path.path); //сначала попробуем найти поле в имеющемся списке
+	if Result.name = '' then //если там его нет (нажали пробел на папке, например), то запросим в облаке напрямую
 	begin
 		if ConnectionManager.get(path.account, getResult).statusFile(path.path, Result) then
 		begin
-			if Result.home = '' then MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, PWideChar('Cant find file ' + path.path)); { Такого быть не может, но... }
+			if Result.home = '' then MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, PWideChar('Cant find file ' + path.path)); {Такого быть не может, но...}
 		end;
-	end; // Не рапортуем, это будет уровнем выше
+	end; //Не рапортуем, это будет уровнем выше
 end;
 
-procedure FsGetDefRootName(DefRootName: PAnsiChar; maxlen: integer); stdcall; // Процедура вызывается один раз при установке плагина
+procedure FsGetDefRootName(DefRootName: PAnsiChar; maxlen: integer); stdcall; //Процедура вызывается один раз при установке плагина
 Begin
 	AnsiStrings.StrLCopy(DefRootName, PAnsiChar('CloudMailRu'), maxlen);
 	messagebox(FindTCWindow, PWideChar('Installation succeful'), 'Information', mb_ok + mb_iconinformation);
@@ -141,18 +124,18 @@ End;
 
 function FsGetBackgroundFlags: integer; stdcall;
 begin
-	Result := BG_DOWNLOAD + BG_UPLOAD; // + BG_ASK_USER;
+	Result := BG_DOWNLOAD + BG_UPLOAD; //+ BG_ASK_USER;
 end;
 
-{ DIRTY ANSI PEASANTS }
+{DIRTY ANSI PEASANTS}
 
 function FsInit(PluginNr: integer; pProgressProc: TProgressProc; pLogProc: TLogProc; pRequestProc: TRequestProc): integer; stdcall;
 Begin
-	{ PluginNum := PluginNr;
-		MyProgressProc := pProgressProc;
-		MyLogProc := pLogProc;
-		MyRequestProc := pRequestProc; }
-	// Вход в плагин.
+	{PluginNum := PluginNr;
+	 MyProgressProc := pProgressProc;
+	 MyLogProc := pLogProc;
+	 MyRequestProc := pRequestProc;}
+	//Вход в плагин.
 	Result := 0;
 
 end;
@@ -165,61 +148,61 @@ end;
 function FsFindFirst(path: PAnsiChar; var FindData: tWIN32FINDDATAA): THandle; stdcall;
 begin
 	SetLastError(ERROR_INVALID_FUNCTION);
-	Result := ERROR_INVALID_HANDLE; // Ansi-заглушка
+	Result := ERROR_INVALID_HANDLE; //Ansi-заглушка
 end;
 
 function FsFindNext(Hdl: THandle; var FindData: tWIN32FINDDATAA): bool; stdcall;
 begin
 	SetLastError(ERROR_INVALID_FUNCTION);
-	Result := false; // Ansi-заглушка
+	Result := false; //Ansi-заглушка
 end;
 
-function FsExecuteFile(MainWin: THandle; RemoteName, Verb: PAnsiChar): integer; stdcall; // Запуск файла
+function FsExecuteFile(MainWin: THandle; RemoteName, Verb: PAnsiChar): integer; stdcall; //Запуск файла
 Begin
 	SetLastError(ERROR_INVALID_FUNCTION);
-	Result := FS_EXEC_ERROR; // Ansi-заглушка
+	Result := FS_EXEC_ERROR; //Ansi-заглушка
 End;
 
-function FsGetFile(RemoteName, LocalName: PAnsiChar; CopyFlags: integer; RemoteInfo: pRemoteInfo): integer; stdcall; // Копирование файла из файловой системы плагина
+function FsGetFile(RemoteName, LocalName: PAnsiChar; CopyFlags: integer; RemoteInfo: pRemoteInfo): integer; stdcall; //Копирование файла из файловой системы плагина
 begin
 	SetLastError(ERROR_INVALID_FUNCTION);
-	Result := FS_FILE_NOTSUPPORTED; // Ansi-заглушка
+	Result := FS_FILE_NOTSUPPORTED; //Ansi-заглушка
 end;
 
-function FsPutFile(LocalName, RemoteName: PAnsiChar; CopyFlags: integer): integer; stdcall; // Копирование файла в файловую систему плагина
+function FsPutFile(LocalName, RemoteName: PAnsiChar; CopyFlags: integer): integer; stdcall; //Копирование файла в файловую систему плагина
 begin
 	SetLastError(ERROR_INVALID_FUNCTION);
-	Result := FS_FILE_NOTSUPPORTED; // Ansi-заглушка
+	Result := FS_FILE_NOTSUPPORTED; //Ansi-заглушка
 end;
 
-function FsDeleteFile(RemoteName: PAnsiChar): bool; stdcall; // Удаление файла из файловой ссистемы плагина
+function FsDeleteFile(RemoteName: PAnsiChar): bool; stdcall; //Удаление файла из файловой ссистемы плагина
 Begin
-	SetLastError(ERROR_INVALID_FUNCTION); // Ansi-заглушка
+	SetLastError(ERROR_INVALID_FUNCTION); //Ansi-заглушка
 	Result := false;
 End;
 
 function FsRenMovFile(OldName: PAnsiChar; NewName: PAnsiChar; Move: Boolean; OverWrite: Boolean; ri: pRemoteInfo): integer;
 begin
 	SetLastError(ERROR_INVALID_FUNCTION);
-	Result := FS_FILE_NOTSUPPORTED; // Ansi-заглушка
+	Result := FS_FILE_NOTSUPPORTED; //Ansi-заглушка
 end;
 
 function FsDisconnect(DisconnectRoot: PAnsiChar): bool; stdcall;
 begin
 	SetLastError(ERROR_INVALID_FUNCTION);
-	Result := false; // ansi-заглушка
+	Result := false; //ansi-заглушка
 end;
 
 function FsMkDir(path: PAnsiChar): bool; stdcall;
 begin
 	SetLastError(ERROR_INVALID_FUNCTION);
-	Result := false; // ansi-заглушка
+	Result := false; //ansi-заглушка
 end;
 
 function FsRemoveDir(RemoteName: PAnsiChar): bool; stdcall;
 begin
 	SetLastError(ERROR_INVALID_FUNCTION);
-	Result := false; // ansi-заглушка
+	Result := false; //ansi-заглушка
 end;
 
 procedure FsSetCryptCallback(PCryptProc: TCryptProcW; CryptoNr: integer; Flags: integer); stdcall;
@@ -316,9 +299,9 @@ begin
 	Result := ft_nosuchfield;
 end;
 
-{ GLORIOUS UNICODE MASTER RACE }
+{GLORIOUS UNICODE MASTER RACE}
 
-function FsInitW(PluginNr: integer; pProgressProc: TProgressProcW; pLogProc: TLogProcW; pRequestProc: TRequestProcW): integer; stdcall; // Вход в плагин.
+function FsInitW(PluginNr: integer; pProgressProc: TProgressProcW; pLogProc: TLogProcW; pRequestProc: TRequestProcW): integer; stdcall; //Вход в плагин.
 Begin
 	PluginNum := PluginNr;
 	MyProgressProc := pProgressProc;
@@ -328,11 +311,11 @@ Begin
 	CurrentDescriptions := TDescription.Create;
 end;
 
-procedure FsStatusInfoW(RemoteDir: PWideChar; InfoStartEnd, InfoOperation: integer); stdcall; // Начало и конец операций FS
+procedure FsStatusInfoW(RemoteDir: PWideChar; InfoStartEnd, InfoOperation: integer); stdcall; //Начало и конец операций FS
 var
 	RealPath: TRealPath;
 	getResult: integer;
-	// DescriptionItem: TCloudMailRuDirListingItem;
+	//DescriptionItem: TCloudMailRuDirListingItem;
 	TmpIon: WideString;
 begin
 	RealPath := ExtractRealPath(RemoteDir);
@@ -492,7 +475,7 @@ begin
 end;
 
 function FsFindFirstW(path: PWideChar; var FindData: tWIN32FINDDATAW): THandle; stdcall;
-var // Получение первого файла в папке. Result тоталом не используется (можно использовать для работы плагина).
+var //Получение первого файла в папке. Result тоталом не используется (можно использовать для работы плагина).
 	Sections: TStringList;
 	RealPath: TRealPath;
 	getResult: integer;
@@ -501,7 +484,7 @@ begin
 	Result := 0;
 	GlobalPath := path;
 	if GlobalPath = '\' then
-	begin // список соединений
+	begin //список соединений
 		Sections := TStringList.Create;
 		GetAccountsListFromIniFile(AccountsIniFilePath, Sections);
 
@@ -510,7 +493,7 @@ begin
 			FindData := FindData_emptyDir(Sections.Strings[0]);
 			FileCounter := 1;
 		end else begin
-			Result := INVALID_HANDLE_VALUE; // Нельзя использовать exit
+			Result := INVALID_HANDLE_VALUE; //Нельзя использовать exit
 			SetLastError(ERROR_NO_MORE_FILES);
 		end;
 		Sections.Free;
@@ -528,7 +511,7 @@ begin
 
 		if (Length(CurrentListing) = 0) then
 		begin
-			FindData := FindData_emptyDir(); // воркароунд бага с невозможностью входа в пустой каталог, см. http://www.ghisler.ch/board/viewtopic.php?t=42399
+			FindData := FindData_emptyDir(); //воркароунд бага с невозможностью входа в пустой каталог, см. http://www.ghisler.ch/board/viewtopic.php?t=42399
 			Result := 0;
 			SetLastError(ERROR_NO_MORE_FILES);
 		end else begin
@@ -556,7 +539,7 @@ begin
 		else Result := false;
 		Sections.Free;
 	end else begin
-		// Получение последующих файлов в папке (вызывается до тех пор, пока не вернёт false).
+		//Получение последующих файлов в папке (вызывается до тех пор, пока не вернёт false).
 		if (Length(CurrentListing) > FileCounter) then
 		begin
 			FindData := CloudMailRuDirListingItemToFindData(CurrentListing[FileCounter]);
@@ -571,13 +554,13 @@ begin
 end;
 
 function FsFindClose(Hdl: THandle): integer; stdcall;
-Begin // Завершение получения списка файлов. Result тоталом не используется (всегда равен 0)
-	// SetLength(CurrentListing, 0); // Пусть будет
+Begin //Завершение получения списка файлов. Result тоталом не используется (всегда равен 0)
+	//SetLength(CurrentListing, 0); // Пусть будет
 	Result := 0;
 	FileCounter := 0;
 end;
 
-function FsExecuteFileW(MainWin: THandle; RemoteName, Verb: PWideChar): integer; stdcall; // Запуск файла
+function FsExecuteFileW(MainWin: THandle; RemoteName, Verb: PWideChar): integer; stdcall; //Запуск файла
 var
 	RealPath: TRealPath;
 	CurrentItem: TCloudMailRuDirListingItem;
@@ -604,13 +587,13 @@ Begin
 				begin
 					MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, PWideChar('Cant find file under cursor!'));
 				end;
-			end; // Не рапортуем, это будет уровнем выше
+			end; //Не рапортуем, это будет уровнем выше
 
 		end;
 	end else if copy(Verb, 1, 5) = 'chmod' then
 	begin
 	end else if copy(Verb, 1, 5) = 'quote' then
-	begin // обработка внутренних команд плагина
+	begin //обработка внутренних команд плагина
 		command := LowerCase(GetWord(Verb, 1));
 		if command = 'rmdir' then
 		begin
@@ -619,7 +602,7 @@ Begin
 		end else if command = 'clone' then
 		begin
 			RealPath := ExtractRealPath(RemoteName);
-			if RealPath.account = '' then // Некрасивое решение, надо переделать
+			if RealPath.account = '' then //Некрасивое решение, надо переделать
 			begin
 				RealPath.account := ExtractFileName(ExcludeTrailingBackslash(RemoteName));
 				RealPath.path := '\';
@@ -631,21 +614,21 @@ Begin
 	end;
 End;
 
-function FsGetFileW(RemoteName, LocalName: PWideChar; CopyFlags: integer; RemoteInfo: pRemoteInfo): integer; stdcall; // Копирование файла из файловой системы плагина
+function FsGetFileW(RemoteName, LocalName: PWideChar; CopyFlags: integer; RemoteInfo: pRemoteInfo): integer; stdcall; //Копирование файла из файловой системы плагина
 var
 	RealPath: TRealPath;
 	getResult: integer;
 	Item: TCloudMailRuDirListingItem;
 begin
-	// Result := FS_FILE_NOTSUPPORTED;
-	If CheckFlag(FS_COPYFLAGS_RESUME, CopyFlags) then exit(FS_FILE_NOTSUPPORTED); { NEVER CALLED HERE }
+	//Result := FS_FILE_NOTSUPPORTED;
+	If CheckFlag(FS_COPYFLAGS_RESUME, CopyFlags) then exit(FS_FILE_NOTSUPPORTED); {NEVER CALLED HERE}
 	RealPath := ExtractRealPath(RemoteName);
 
 	MyProgressProc(PluginNum, RemoteName, LocalName, 0);
 
 	if (FileExists(LocalName) and not(CheckFlag(FS_COPYFLAGS_OVERWRITE, CopyFlags))) then exit(FS_FILE_EXISTS);
 
-	Result := ConnectionManager.get(RealPath.account, getResult).getFile(WideString(RealPath.path), WideString(LocalName)); // ?WideString?
+	Result := ConnectionManager.get(RealPath.account, getResult).getFile(WideString(RealPath.path), WideString(LocalName)); //?WideString?
 
 	if Result = FS_FILE_OK then
 	begin
@@ -658,7 +641,7 @@ begin
 		MyProgressProc(PluginNum, LocalName, RemoteName, 100);
 		MyLogProc(PluginNum, MSGTYPE_TRANSFERCOMPLETE, PWideChar(RemoteName + '->' + LocalName));
 	end else begin
-		if GetPluginSettings(SettingsIniFilePath).AskOnErrors and not (Result=FS_FILE_USERABORT) then
+		if GetPluginSettings(SettingsIniFilePath).AskOnErrors and not(Result = FS_FILE_USERABORT) then
 		begin
 			if messagebox(FindTCWindow, PWideChar('Error downloading file ' + sLineBreak + RemoteName + sLineBreak + 'Continue operation?'), 'Download error', MB_YESNO + MB_ICONERROR) = IDNO then
 			begin
@@ -674,18 +657,18 @@ var
 	RealPath: TRealPath;
 	getResult: integer;
 begin
-	// Result := FS_FILE_NOTSUPPORTED;
+	//Result := FS_FILE_NOTSUPPORTED;
 	RealPath := ExtractRealPath(RemoteName);
 	if RealPath.account = '' then exit(FS_FILE_NOTSUPPORTED);
 	MyProgressProc(PluginNum, LocalName, PWideChar(RealPath.path), 0);
 
-	if CheckFlag(FS_COPYFLAGS_RESUME, CopyFlags) then exit(FS_FILE_NOTSUPPORTED); // NOT SUPPORTED
+	if CheckFlag(FS_COPYFLAGS_RESUME, CopyFlags) then exit(FS_FILE_NOTSUPPORTED); //NOT SUPPORTED
 
-	if (CheckFlag(FS_COPYFLAGS_EXISTS_SAMECASE, CopyFlags) or CheckFlag(FS_COPYFLAGS_EXISTS_DIFFERENTCASE, CopyFlags)) and not(CheckFlag(FS_COPYFLAGS_OVERWRITE, CopyFlags)) then exit(FS_FILE_EXISTS); // Облако не поддерживает разные регистры
+	if (CheckFlag(FS_COPYFLAGS_EXISTS_SAMECASE, CopyFlags) or CheckFlag(FS_COPYFLAGS_EXISTS_DIFFERENTCASE, CopyFlags)) and not(CheckFlag(FS_COPYFLAGS_OVERWRITE, CopyFlags)) then exit(FS_FILE_EXISTS); //Облако не поддерживает разные регистры
 
 	if CheckFlag(FS_COPYFLAGS_OVERWRITE, CopyFlags) then
 	begin
-		if not(ConnectionManager.get(RealPath.account, getResult).deleteFile(RealPath.path)) then exit(FS_FILE_NOTSUPPORTED); // Неизвестно, как перезаписать файл черз API, но мы можем его удалить
+		if not(ConnectionManager.get(RealPath.account, getResult).deleteFile(RealPath.path)) then exit(FS_FILE_NOTSUPPORTED); //Неизвестно, как перезаписать файл черз API, но мы можем его удалить
 	end;
 
 	Result := ConnectionManager.get(RealPath.account, getResult).putFile(WideString(LocalName), RealPath.path);
@@ -698,7 +681,7 @@ begin
 			if not DeleteFileW(PWideChar(GetUNCFilePath(LocalName))) then exit(FS_FILE_NOTSUPPORTED);
 		end;
 	end else begin
-		if GetPluginSettings(SettingsIniFilePath).AskOnErrors and not(Result=FS_FILE_USERABORT) then
+		if GetPluginSettings(SettingsIniFilePath).AskOnErrors and not(Result = FS_FILE_USERABORT) then
 		begin
 			if messagebox(FindTCWindow, PWideChar('Error uploading file' + sLineBreak + RemoteName + sLineBreak + 'Continue operation?'), 'Download error', MB_YESNO + MB_ICONERROR) = IDNO then
 			begin
@@ -706,10 +689,9 @@ begin
 			end;
 		end;
 	end;
-
 end;
 
-function FsDeleteFileW(RemoteName: PWideChar): bool; stdcall; // Удаление файла из файловой ссистемы плагина
+function FsDeleteFileW(RemoteName: PWideChar): bool; stdcall; //Удаление файла из файловой ссистемы плагина
 var
 	RealPath: TRealPath;
 	getResult: integer;
@@ -746,7 +728,7 @@ var
 	CurrentItem: TCloudMailRuDirListingItem;
 	OldCloud, NewCloud: TCloudMailRu;
 	NeedUnpublish: Boolean;
-	// CloneResult: integer;
+	//CloneResult: integer;
 Begin
 	NeedUnpublish := false;
 	MyProgressProc(PluginNum, OldName, NewName, 0);
@@ -758,19 +740,19 @@ Begin
 	OldCloud := ConnectionManager.get(OldRealPath.account, getResult);
 	NewCloud := ConnectionManager.get(NewRealPath.account, getResult);
 
-	if OldRealPath.account <> NewRealPath.account then // разные аккаунты
+	if OldRealPath.account <> NewRealPath.account then //разные аккаунты
 	begin
-		if (GetPluginSettings(SettingsIniFilePath).OperationsViaPublicLinkEnabled) then // разрешено копирование через публичные ссылки
+		if (GetPluginSettings(SettingsIniFilePath).OperationsViaPublicLinkEnabled) then //разрешено копирование через публичные ссылки
 		begin
 
 			if OverWrite and not(NewCloud.deleteFile(NewRealPath.path)) then exit(FS_FILE_NOTSUPPORTED);
 
 			if OldCloud.statusFile(OldRealPath.path, CurrentItem) then
 			begin
-				if CurrentItem.Weblink = '' then // create temporary weblink
+				if CurrentItem.Weblink = '' then //create temporary weblink
 				begin
 					NeedUnpublish := true;
-					if not(OldCloud.publishFile(CurrentItem.home, CurrentItem.Weblink)) then // problem publishing
+					if not(OldCloud.publishFile(CurrentItem.home, CurrentItem.Weblink)) then //problem publishing
 					begin
 						MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, PWideChar('Can''t get temporary public link on ' + CurrentItem.home));
 						exit(FS_FILE_READERROR);
@@ -782,16 +764,16 @@ Begin
 
 				if Result <> CLOUD_OPERATION_OK then exit;
 
-				if Move and not(OldCloud.deleteFile(OldRealPath.path)) then MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, PWideChar('Can''t delete ' + CurrentItem.home)); // пишем в лог, но не отваливаемся
+				if Move and not(OldCloud.deleteFile(OldRealPath.path)) then MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, PWideChar('Can''t delete ' + CurrentItem.home)); //пишем в лог, но не отваливаемся
 			end;
 		end else begin
 			MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, PWideChar('Direct operations between accounts not supported'));
-			exit(FS_FILE_NOTSUPPORTED);
+			exit(FS_FILE_USERABORT);
 		end;
 
-	end else begin // один аккаунт
+	end else begin //один аккаунт
 
-		if OverWrite and not(NewCloud.deleteFile(NewRealPath.path)) then exit(FS_FILE_NOTSUPPORTED); // мы не умеем перезаписывать, но мы можем удалить существующий файл
+		if OverWrite and not(NewCloud.deleteFile(NewRealPath.path)) then exit(FS_FILE_NOTSUPPORTED); //мы не умеем перезаписывать, но мы можем удалить существующий файл
 		if Move then
 		begin
 			Result := OldCloud.mvFile(OldRealPath.path, NewRealPath.path);
@@ -806,7 +788,7 @@ end;
 function FsDisconnectW(DisconnectRoot: PWideChar): bool; stdcall;
 begin
 	ConnectionManager.freeAll;
-	// CurrentDescriptions.Destroy;
+	//CurrentDescriptions.Destroy;
 	Result := true;
 end;
 
@@ -921,7 +903,7 @@ begin
 			end;
 		14:
 			begin
-				// При включённой сортировке Запрос происходит при появлении в списке
+				//При включённой сортировке Запрос происходит при появлении в списке
 				if GetPluginSettings(SettingsIniFilePath).DescriptionEnabled then
 				begin
 
@@ -957,15 +939,15 @@ begin
 
 	end else begin
 		case GetPluginSettings(PluginPath + 'MailRuCloud.global.ini').IniPath of
-			0: // use default path
+			0: //use default path
 				begin
 					IniDir := PluginPath;
 				end;
-			1: // use appdata path
+			1: //use appdata path
 				begin
 					IniDir := AppDataDir;
 				end;
-			2: // use plugin dir if writeable
+			2: //use plugin dir if writeable
 				begin
 					if IsWriteable(PluginPath) then IniDir := PluginPath
 					else IniDir := AppDataDir;
@@ -973,18 +955,18 @@ begin
 		end;
 	end;
 
-	if not FileExists(IniDir) then createDir(IniDir); // assume this in appdata dir
+	if not FileExists(IniDir) then createDir(IniDir); //assume this in appdata dir
 
 	AccountsIniFilePath := IniDir + 'MailRuCloud.ini';
 	SettingsIniFilePath := IniDir + 'MailRuCloud.global.ini';
-	// IsWriteable(PluginPath,)
+	//IsWriteable(PluginPath,)
 
 	if GetPluginSettings(SettingsIniFilePath).LoadSSLDLLOnlyFromPluginDir then
 	begin
 		if DirectoryExists(PluginPath + PlatformDllPath) then
-		begin // try to load dll from platform subdir
+		begin //try to load dll from platform subdir
 			IdOpenSSLSetLibPath(PluginPath + PlatformDllPath);
-		end else begin // else try to load it from plugin dir
+		end else begin //else try to load it from plugin dir
 			IdOpenSSLSetLibPath(PluginPath);
 		end;
 
