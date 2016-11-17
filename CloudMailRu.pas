@@ -232,7 +232,6 @@ var
 	URL: WideString;
 	JSON: WideString;
 	Progress: Boolean;
-	OperationStatus, OperationResult: integer;
 begin
 	URL := 'https://cloud.mail.ru/?from=promo&from=authpopup';
 	Result := false;
@@ -289,8 +288,9 @@ function TCloudMailRu.getShard(var Shard: WideString): Boolean;
 var
 	URL: WideString;
 	PostData: TStringStream;
-	Answer: WideString;
+	JSON: WideString;
 	SuccessPost: Boolean;
+	OperationResult, OperationStatus: integer;
 begin
 	Result := false;
 	SuccessPost := false;
@@ -298,7 +298,7 @@ begin
 	URL := 'https://cloud.mail.ru/api/v2/dispatcher/';
 	PostData := TStringStream.Create('api=2&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&token=' + self.token + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id, TEncoding.UTF8);
 	try
-		SuccessPost := self.HTTPPost(URL, PostData, Answer);
+		SuccessPost := self.HTTPPost(URL, PostData, JSON);
 	except
 		on E: Exception do
 		begin
@@ -306,13 +306,23 @@ begin
 			PostData.free;
 		end;
 	end;
+	PostData.free;
 	if SuccessPost then
 	begin
-		Shard := self.getShardFromJSON(Answer);
-		if Shard = '' then Result := false
-		else Result := true;
+		OperationResult := self.getOperationResultFromJSON(JSON, OperationStatus);
+		case OperationResult of
+			CLOUD_OPERATION_OK:
+				begin
+					Shard := self.getShardFromJSON(JSON);
+					Result:=Shard <> '';
+				end;
+			else
+				begin
+					Result := false;
+					Log(MSGTYPE_IMPORTANTERROR, 'Get shard error, code: ' + OperationResult.ToString() + ', status: ' + OperationStatus.ToString());
+				end;
+		end;
 	end;
-	PostData.free;
 end;
 
 function TCloudMailRu.putFileToCloud(localPath: WideString; Return: TStringList): integer; {Заливка на сервер состоит из двух шагов: заливаем файл на сервер в putFileToCloud и добавляем его в облако addFileToCloud}
@@ -326,7 +336,6 @@ begin
 	//Log( MSGTYPE_DETAILS, 'Uploading to ' + URL);
 	PostData := TIdMultipartFormDataStream.Create;
 	try
-
 		PostData.AddFile('file', GetUNCFilePath(localPath), 'application/octet-stream');
 		Result := self.HTTPPostFile(URL, PostData, PostAnswer);
 	except
@@ -339,7 +348,7 @@ begin
 	if (Result = CLOUD_OPERATION_OK) then
 	begin
 		ExtractStrings([';'], [], PWideChar(PostAnswer), Return);
-		if Length(Return.Strings[0]) <> 40 then
+		if Length(Return.Strings[0]) <> 40 then //? добавить анализ ответа?
 		begin
 			Result := CLOUD_OPERATION_FAILED;
 		end
@@ -396,19 +405,13 @@ begin
 					Result := true;
 					SpaceInfo := self.getUserSpaceFromJSON(JSON);
 				end;
-			CLOUD_ERROR_EXISTS, CLOUD_ERROR_REQUIRED, CLOUD_ERROR_INVALID, CLOUD_ERROR_READONLY, CLOUD_ERROR_NAME_LENGTH_EXCEEDED, CLOUD_ERROR_UNKNOWN, CLOUD_ERROR_NOT_EXISTS:
-				begin
-					Result := false;
-					Log(MSGTYPE_IMPORTANTERROR, 'User space receiving error, code: ' + OperationResult.ToString());
-				end;
 			else
 				begin
-					Log(MSGTYPE_IMPORTANTERROR, 'User space receiving error, got ' + IntToStr(OperationStatus) + ' status');
 					Result := false;
+					Log(MSGTYPE_IMPORTANTERROR, 'User space receiving error, code: ' + OperationResult.ToString() + ', status: ' + OperationStatus.ToString());
 				end;
 		end;
 	end;
-
 end;
 
 function TCloudMailRu.HTTPPost(URL: WideString; PostData: TStringStream; var Answer: WideString; ContentType: WideString = 'application/x-www-form-urlencoded'): Boolean;
@@ -712,7 +715,8 @@ function TCloudMailRu.deleteFile(path: WideString): Boolean;
 var
 	URL: WideString;
 	PostData: TStringStream;
-	PostAnswer: WideString; {Не используется}
+	JSON: WideString;
+	OperationResult, OperationStatus: integer;
 begin
 	Result := false;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
@@ -720,7 +724,7 @@ begin
 	URL := 'https://cloud.mail.ru/api/v2/file/remove';
 	PostData := TStringStream.Create('api=2&home=/' + path + '&token=' + self.token + '&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id + '&conflict', TEncoding.UTF8);
 	try
-		Result := self.HTTPPost(URL, PostData, PostAnswer);
+		Result := self.HTTPPost(URL, PostData, JSON);
 	except
 		on E: Exception do
 		begin
@@ -729,6 +733,22 @@ begin
 		end;
 	end;
 	PostData.free;
+	if Result then
+	begin
+		OperationResult:= self.getOperationResultFromJSON(JSON, OperationStatus);
+		case OperationResult of
+			CLOUD_OPERATION_OK:
+				begin
+					Result := true;
+				end;
+			else
+				begin
+					Result := false;
+					Log(MSGTYPE_IMPORTANTERROR, 'Delete file error, code: ' + OperationResult.ToString() + ', status: ' + OperationStatus.ToString());
+				end;
+		end;
+	end;
+
 end;
 
 procedure TCloudMailRu.logUserSpaceInfo;
@@ -789,18 +809,14 @@ begin
 					DirListing := self.getDirListingFromJSON(JSON);
 					Result := true;
 				end;
-			CLOUD_ERROR_EXISTS, CLOUD_ERROR_REQUIRED, CLOUD_ERROR_INVALID, CLOUD_ERROR_READONLY, CLOUD_ERROR_NAME_LENGTH_EXCEEDED, CLOUD_ERROR_UNKNOWN:
-				begin
-					Log(MSGTYPE_IMPORTANTERROR, 'User space receiving error, code: ' + OperationResult.ToString());
-					Result := false;
-				end;
 			CLOUD_ERROR_NOT_EXISTS:
 				begin
 					Log(MSGTYPE_IMPORTANTERROR, 'Path not exists: ' + path);
+					Result := false;
 				end
 			else
 				begin
-					Log(MSGTYPE_IMPORTANTERROR, 'Directory list receiving error: got ' + IntToStr(OperationStatus) + ' status');
+					Log(MSGTYPE_IMPORTANTERROR, 'Delete file error, code: ' + OperationResult.ToString() + ', status: ' + OperationStatus.ToString());
 					Result := false;
 				end;
 		end;
@@ -862,13 +878,12 @@ function TCloudMailRu.publishFile(path: WideString; var PublicLink: WideString; 
 var
 	URL: WideString;
 	PostData: TStringStream;
-	PostAnswer: WideString;
-	SucessPublish: Boolean;
-	OperationStatus: integer;
+	JSON: WideString;
+	OperationStatus, OperationResult: integer;
 begin
 	Result := false;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
-	SucessPublish := false;
+
 	path := UrlEncode(StringReplace(path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
 
 	if publish then
@@ -882,7 +897,7 @@ begin
 
 	try
 
-		SucessPublish := self.HTTPPost(URL, PostData, PostAnswer);
+		Result := self.HTTPPost(URL, PostData, JSON);
 	except
 		on E: Exception do
 		begin
@@ -890,49 +905,23 @@ begin
 		end;
 	end;
 	PostData.free;
-	if SucessPublish then
+
+	if Result then
 	begin
-		case self.getOperationResultFromJSON(PostAnswer, OperationStatus) of
+		OperationResult:= self.getOperationResultFromJSON(JSON, OperationStatus);
+		case OperationResult of
 			CLOUD_OPERATION_OK:
 				begin
-					if publish then
-					begin
-						PublicLink := self.getPublicLinkFromJSON(PostAnswer);
-					end;
+					if publish then PublicLink := self.getPublicLinkFromJSON(JSON);
 					Result := true;
-				end;
-			CLOUD_ERROR_EXISTS:
-				begin
-					Result := false;
-				end;
-			CLOUD_ERROR_REQUIRED:
-				begin
-					Result := false;
-				end;
-			CLOUD_ERROR_INVALID:
-				begin
-					Result := false;
-				end;
-			CLOUD_ERROR_READONLY:
-				begin
-					Result := false;
-				end;
-			CLOUD_ERROR_NAME_LENGTH_EXCEEDED:
-				begin
-					Result := false;
-				end;
-			CLOUD_ERROR_UNKNOWN:
-				begin
-					Result := false;
 				end;
 			else
 				begin
-					Log(MSGTYPE_IMPORTANTERROR, 'Error publishing file: got ' + IntToStr(OperationStatus) + ' status');
 					Result := false;
+					Log(MSGTYPE_IMPORTANTERROR, 'File publish error, code: ' + OperationResult.ToString() + ', status: ' + OperationStatus.ToString());
 				end;
 		end;
 	end;
-
 end;
 
 function TCloudMailRu.putFile(localPath, remotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT): integer;
@@ -1080,7 +1069,7 @@ var
 	PostData: TStringStream;
 	PostAnswer: WideString;
 	SucessCreate: Boolean;
-	OperationStatus: integer;
+	OperationStatus, OperationResult: integer;
 begin
 	Result := false;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
@@ -1099,38 +1088,15 @@ begin
 	PostData.free;
 	if SucessCreate then
 	begin
-		case self.getOperationResultFromJSON(PostAnswer, OperationStatus) of
+		OperationResult :=self.getOperationResultFromJSON(PostAnswer, OperationStatus);
+		case OperationResult of
 			CLOUD_OPERATION_OK:
 				begin
 					Result := true;
 				end;
-			CLOUD_ERROR_EXISTS:
-				begin
-					Result := false;
-				end;
-			CLOUD_ERROR_REQUIRED:
-				begin
-					Result := false;
-				end;
-			CLOUD_ERROR_INVALID:
-				begin
-					Result := false;
-				end;
-			CLOUD_ERROR_READONLY:
-				begin
-					Result := false;
-				end;
-			CLOUD_ERROR_NAME_LENGTH_EXCEEDED:
-				begin
-					Result := false;
-				end;
-			CLOUD_ERROR_UNKNOWN:
-				begin
-					Result := false;
-				end;
 			else
 				begin
-					Log(MSGTYPE_IMPORTANTERROR, 'Error creating directory: got ' + IntToStr(OperationStatus) + ' status');
+					Log(MSGTYPE_IMPORTANTERROR, 'Directory creation error, code: ' + OperationResult.ToString() + ', status: ' + OperationStatus.ToString());
 					Result := false;
 				end;
 		end;
@@ -1141,7 +1107,8 @@ function TCloudMailRu.removeDir(path: WideString): Boolean;
 var
 	URL: WideString;
 	PostData: TStringStream;
-	PostAnswer: WideString; {Не используется}
+	JSON: WideString;
+	OperationResult, OperationStatus: integer;
 begin
 	Result := false;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
@@ -1149,7 +1116,7 @@ begin
 	URL := 'https://cloud.mail.ru/api/v2/file/remove';
 	PostData := TStringStream.Create('api=2&home=/' + path + '/&token=' + self.token + '&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id + '&conflict', TEncoding.UTF8);
 	try
-		Result := self.HTTPPost(URL, PostData, PostAnswer); //API всегда отвечает true, даже если путь не существует
+		Result := self.HTTPPost(URL, PostData, JSON); //API всегда отвечает true, даже если путь не существует
 	except
 		on E: Exception do
 		begin
@@ -1158,15 +1125,30 @@ begin
 		end;
 	end;
 	PostData.free;
+	if Result then
+	begin
+		OperationResult:= self.getOperationResultFromJSON(JSON, OperationStatus);
+		case OperationResult of
+			CLOUD_OPERATION_OK:
+				begin
+					Result := true;
+				end;
+			else
+				begin
+					Result := false;
+					Log(MSGTYPE_IMPORTANTERROR, 'Delete directory error, code: ' + OperationResult.ToString() + ', status: ' + OperationStatus.ToString());
+				end;
+		end;
+	end;
 end;
 
 function TCloudMailRu.renameFile(OldName, NewName: WideString): integer;
 var
 	URL: WideString;
 	PostData: TStringStream;
-	PostAnswer: WideString;
+	JSON: WideString;
 	PostResult: Boolean;
-	OperationStatus: integer;
+	OperationStatus, OperationResult: integer;
 begin
 	Result := FS_FILE_WRITEERROR;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
@@ -1176,7 +1158,7 @@ begin
 	PostResult := false;
 	PostData := TStringStream.Create('api=2&home=' + OldName + '&name=' + NewName + '&token=' + self.token + '&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id, TEncoding.UTF8);
 	try
-		PostResult := self.HTTPPost(URL, PostData, PostAnswer);
+		PostResult := self.HTTPPost(URL, PostData, JSON);
 	except
 		on E: Exception do
 		begin
@@ -1186,7 +1168,8 @@ begin
 	PostData.free;
 	if PostResult then
 	begin //Парсим ответ
-		case self.getOperationResultFromJSON(PostAnswer, OperationStatus) of
+		OperationResult :=self.getOperationResultFromJSON(JSON, OperationStatus);
+		case OperationResult of
 			CLOUD_OPERATION_OK:
 				begin
 					Result := CLOUD_OPERATION_OK
@@ -1217,7 +1200,7 @@ begin
 				end;
 			else
 				begin //что-то неизвестное
-					Log(MSGTYPE_IMPORTANTERROR, 'Error file rename: got ' + IntToStr(OperationStatus) + ' status');
+					Log(MSGTYPE_IMPORTANTERROR, 'Rename file error, code: ' + OperationResult.ToString() + ', status: ' + OperationStatus.ToString());
 					Result := FS_FILE_WRITEERROR;
 				end;
 		end;
@@ -1254,14 +1237,9 @@ begin
 					Result := true;
 					FileInfo := getFileStatusFromJSON(JSON);
 				end;
-			CLOUD_ERROR_EXISTS, CLOUD_ERROR_REQUIRED, CLOUD_ERROR_INVALID, CLOUD_ERROR_READONLY, CLOUD_ERROR_NAME_LENGTH_EXCEEDED, CLOUD_ERROR_UNKNOWN, CLOUD_ERROR_NOT_EXISTS:
-				begin
-					Result := false;
-					Log(MSGTYPE_IMPORTANTERROR, 'File status getting error, code: ' + OperationResult.ToString());
-				end;
 			else
 				begin
-					Log(MSGTYPE_IMPORTANTERROR, 'File status getting error, got ' + IntToStr(OperationStatus) + ' status');
+					Log(MSGTYPE_IMPORTANTERROR, 'File publish error, code: ' + OperationResult.ToString() + ', status: ' + OperationStatus.ToString());
 					Result := false;
 				end;
 		end;
@@ -1274,9 +1252,9 @@ end;
 function TCloudMailRu.cloneWeblink(path, link: WideString; ConflictMode: WideString = CLOUD_CONFLICT_RENAME): integer;
 var
 	URL: WideString;
-	GetAnswer: WideString;
+	JSON: WideString;
 	GetResult: Boolean;
-	OperationStatus: integer;
+	OperationStatus, OperationResult: integer;
 	Progress: Boolean;
 begin
 	GetResult := false;
@@ -1287,7 +1265,7 @@ begin
 	URL := 'https://cloud.mail.ru/api/v2/clone?folder=' + path + '&weblink=' + link + '&conflict=' + ConflictMode + '&api=2&build=' + self.build + '&x-page-id=' + self.x_page_id + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&token=' + self.token + '&_=1433249148810';
 	try
 		Progress := true;
-		GetResult := self.HTTPGet(URL, GetAnswer, Progress);
+		GetResult := self.HTTPGet(URL, JSON, Progress);
 	except
 		on E: Exception do
 		begin
@@ -1296,7 +1274,8 @@ begin
 	end;
 	if GetResult then
 	begin //Парсим ответ
-		case self.getOperationResultFromJSON(GetAnswer, OperationStatus) of
+		OperationResult := self.getOperationResultFromJSON(JSON, OperationStatus);
+		case OperationResult of
 			CLOUD_OPERATION_OK:
 				begin
 					Result := CLOUD_OPERATION_OK
@@ -1327,10 +1306,11 @@ begin
 				end;
 			else
 				begin
-					Result := FS_FILE_NOTSUPPORTED;
+					Log(MSGTYPE_IMPORTANTERROR, 'File publish error, code: ' + OperationResult.ToString() + ', status: ' + OperationStatus.ToString());
+					Result := FS_FILE_WRITEERROR;
 				end;
 		end;
-	end else begin
+	end else begin //посмотреть это
 		if not(Progress) then
 		begin //user cancelled
 			Result := FS_FILE_USERABORT;
@@ -1347,9 +1327,9 @@ function TCloudMailRu.copyFile(OldName, ToPath: WideString): integer;
 var
 	URL: WideString;
 	PostData: TStringStream;
-	PostAnswer: WideString;
+	JSON: WideString;
 	PostResult: Boolean;
-	OperationStatus: integer;
+	OperationStatus, OperationResult: integer;
 begin
 	Result := FS_FILE_WRITEERROR;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
@@ -1361,7 +1341,7 @@ begin
 	PostResult := false;
 	PostData := TStringStream.Create('api=2&home=' + OldName + '&folder=' + ToPath + '&token=' + self.token + '&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id + '&conflict', TEncoding.UTF8);
 	try
-		PostResult := self.HTTPPost(URL, PostData, PostAnswer);
+		PostResult := self.HTTPPost(URL, PostData, JSON);
 	except
 		on E: Exception do
 		begin
@@ -1371,7 +1351,8 @@ begin
 	PostData.free;
 	if PostResult then
 	begin //Парсим ответ
-		case self.getOperationResultFromJSON(PostAnswer, OperationStatus) of
+		OperationResult:=self.getOperationResultFromJSON(JSON, OperationStatus);
+		case OperationResult of
 			CLOUD_OPERATION_OK:
 				begin
 					Result := CLOUD_OPERATION_OK
@@ -1402,7 +1383,7 @@ begin
 				end;
 			else
 				begin //что-то неизвестное
-					Log(MSGTYPE_IMPORTANTERROR, 'Error file copy: got ' + IntToStr(OperationStatus) + ' status');
+					Log(MSGTYPE_IMPORTANTERROR, 'File publish error, code: ' + OperationResult.ToString() + ', status: ' + OperationStatus.ToString());
 					Result := FS_FILE_WRITEERROR;
 				end;
 		end;
@@ -1413,9 +1394,9 @@ function TCloudMailRu.moveFile(OldName, ToPath: WideString): integer;
 var
 	URL: WideString;
 	PostData: TStringStream;
-	PostAnswer: WideString;
+	JSON: WideString;
 	PostResult: Boolean;
-	OperationStatus: integer;
+	OperationStatus, OperationResult: integer;
 begin
 	Result := FS_FILE_WRITEERROR;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
@@ -1427,7 +1408,7 @@ begin
 	PostResult := false;
 	PostData := TStringStream.Create('api=2&home=' + OldName + '&folder=' + ToPath + '&token=' + self.token + '&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id + '&conflict', TEncoding.UTF8);
 	try
-		PostResult := self.HTTPPost(URL, PostData, PostAnswer);
+		PostResult := self.HTTPPost(URL, PostData, JSON);
 	except
 		on E: Exception do
 		begin
@@ -1437,7 +1418,8 @@ begin
 	PostData.free;
 	if PostResult then
 	begin //Парсим ответ
-		case self.getOperationResultFromJSON(PostAnswer, OperationStatus) of
+		OperationResult:=self.getOperationResultFromJSON(JSON, OperationStatus);
+		case OperationResult of
 			CLOUD_OPERATION_OK:
 				begin
 					Result := CLOUD_OPERATION_OK
@@ -1468,7 +1450,7 @@ begin
 				end;
 			else
 				begin //что-то неизвестное
-					Log(MSGTYPE_IMPORTANTERROR, 'Error file move: got ' + IntToStr(OperationStatus) + ' status');
+					Log(MSGTYPE_IMPORTANTERROR, 'File publish error, code: ' + OperationResult.ToString() + ', status: ' + OperationStatus.ToString());
 					Result := FS_FILE_WRITEERROR;
 				end;
 		end;
