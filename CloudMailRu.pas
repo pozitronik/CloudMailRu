@@ -131,6 +131,7 @@ type
 		function getOperationResultFromJSON(JSON: WideString; var OperationStatus: integer): integer;
 		procedure HttpProgress(ASender: TObject; AWorkMode: TWorkMode; AWorkCount: int64);
 		procedure Log(MsgType: integer; LogString: WideString);
+		function getErrorText(ErrorCode: integer): WideString;
 	protected
 		procedure HTTPInit(var HTTP: TIdHTTP; var SSL: TIdSSLIOHandlerSocketOpenSSL; var Socks: TIdSocksInfo; var Cookie: TIdCookieManager);
 		procedure HTTPDestroy(var HTTP: TIdHTTP; var SSL: TIdSSLIOHandlerSocketOpenSSL);
@@ -213,7 +214,7 @@ begin
 	except
 		on E: Exception do
 		begin
-			Log(MSGTYPE_IMPORTANTERROR, 'Cloud initialization error ' + E.Message);
+			Log(MSGTYPE_IMPORTANTERROR, 'Cloud initialization error: ' + E.Message);
 		end;
 
 	end;
@@ -243,7 +244,7 @@ begin
 	except
 		on E: Exception do
 		begin
-			Log(MSGTYPE_IMPORTANTERROR, 'Get token error ' + E.Message);
+			Log(MSGTYPE_IMPORTANTERROR, 'Get token error: ' + E.Message);
 		end;
 	end;
 
@@ -273,7 +274,7 @@ begin
 	except
 		on E: Exception do
 		begin
-			Log(MSGTYPE_IMPORTANTERROR, 'Get OAuth token error ' + E.Message);
+			Log(MSGTYPE_IMPORTANTERROR, 'Get OAuth token error: ' + E.Message);
 			PostData.free;
 		end;
 	end;
@@ -303,7 +304,7 @@ begin
 	except
 		on E: Exception do
 		begin
-			Log(MSGTYPE_IMPORTANTERROR, 'Get shard error ' + E.Message);
+			Log(MSGTYPE_IMPORTANTERROR, 'Get shard error: ' + E.Message);
 			PostData.free;
 		end;
 	end;
@@ -320,7 +321,7 @@ begin
 			else
 				begin
 					Result := false;
-					Log(MSGTYPE_IMPORTANTERROR, 'Get shard error, code: ' + OperationResult.ToString() + ', status: ' + OperationStatus.ToString());
+					Log(MSGTYPE_IMPORTANTERROR, 'Get shard error: ' + self.getErrorText(OperationResult) + ' Status: ' + OperationStatus.ToString());
 				end;
 		end;
 	end;
@@ -333,7 +334,7 @@ var
 begin
 	Result := CLOUD_OPERATION_FAILED;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
-	URL := self.upload_url + '/?cloud_domain=1&x-email=' + self.user + '%40' + self.domain + '&fileapi' + IntToStr(DateTimeToUnix(now)) + '0246';
+	URL := self.upload_url + '/?cloud_domain=1&x-email=' + self.user + '%40' + self.domain + '&fileapi' + DateTimeToUnix(now).ToString + '0246';
 	//Log( MSGTYPE_DETAILS, 'Uploading to ' + URL);
 	PostData := TIdMultipartFormDataStream.Create;
 	try
@@ -342,7 +343,7 @@ begin
 	except
 		on E: Exception do //todo проверь, нужны ли эти исключения
 		begin
-			Log(MSGTYPE_IMPORTANTERROR, 'Posting file error ' + E.Message);
+			Log(MSGTYPE_IMPORTANTERROR, 'Posting file error: ' + E.Message);
 		end;
 	end;
 	PostData.free;
@@ -363,14 +364,14 @@ var
 begin
 	Result := false;
 	URL := 'https://cloud.mail.ru/api/v2/file/add';
-	PostData := TStringStream.Create('conflict=' + ConflictMode + '&home=/' + remotePath + '&hash=' + hash + '&size=' + IntToStr(size) + '&token=' + self.token + '&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id + '&conflict', TEncoding.UTF8);
+	PostData := TStringStream.Create('conflict=' + ConflictMode + '&home=/' + remotePath + '&hash=' + hash + '&size=' + size.ToString + '&token=' + self.token + '&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id + '&conflict', TEncoding.UTF8);
 	{Экспериментально выяснено, что параметры api, build, email, x-email, x-page-id в запросе не обязательны}
 	try
 		Result := self.HTTPPost(URL, PostData, JSONAnswer);
 	except
 		on E: Exception do
 		begin
-			Log(MSGTYPE_IMPORTANTERROR, 'Adding file error ' + E.Message);
+			Log(MSGTYPE_IMPORTANTERROR, 'Adding file error: ' + E.Message);
 			PostData.free;
 		end;
 	end;
@@ -393,7 +394,7 @@ begin
 	except
 		on E: Exception do
 		begin
-			Log(MSGTYPE_IMPORTANTERROR, 'User space receiving error ' + E.Message);
+			Log(MSGTYPE_IMPORTANTERROR, 'User space receiving error: ' + E.Message);
 		end;
 	end;
 
@@ -409,7 +410,7 @@ begin
 			else
 				begin
 					Result := false;
-					Log(MSGTYPE_IMPORTANTERROR, 'User space receiving error, code: ' + OperationResult.ToString() + ', status: ' + OperationStatus.ToString());
+					Log(MSGTYPE_IMPORTANTERROR, 'User space receiving error: ' + self.getErrorText(OperationResult) + ' Status: ' + OperationStatus.ToString());
 				end;
 		end;
 	end;
@@ -453,7 +454,7 @@ begin
 				Result := false;
 			end;
 		end;
-		on E: EIdSocketError do
+		on E: EIdSocketerror do
 		begin
 			Log(MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка сети: ' + E.Message + ' при отправке данных на адрес ' + URL);
 			Result := false;
@@ -487,7 +488,7 @@ begin
 			Log(MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при отправке данных на адрес ' + URL + ', ответ сервера: ' + E.ErrorMessage);
 			Result := CLOUD_OPERATION_FAILED;
 		end;
-		on E: EIdSocketError do
+		on E: EIdSocketerror do
 		begin
 			Log(MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка сети: ' + E.Message + ' при отправке данных на адрес ' + URL);
 			Result := CLOUD_OPERATION_FAILED;
@@ -538,7 +539,7 @@ begin
 				exit(false);
 			end;
 		end;
-		on E: EIdSocketError do
+		on E: EIdSocketerror do
 		begin
 			Log(MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка сети: ' + E.Message + ' при запросе данных с адреса ' + URL);
 			exit(false);
@@ -577,7 +578,7 @@ begin
 		begin
 			Result := FS_FILE_USERABORT;
 		end;
-		on E: EIdSocketError do
+		on E: EIdSocketerror do
 		begin
 			if LogErrors then Log(MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка сети: ' + E.Message + ' при копировании файла с адреса ' + URL);
 			Result := FS_FILE_READERROR;
@@ -659,6 +660,22 @@ begin
 	end;
 end;
 
+function TCloudMailRu.getErrorText(ErrorCode: integer): WideString;
+begin
+	case ErrorCode of
+		CLOUD_ERROR_EXISTS: exit('Папка с таким названием уже существует. Попробуйте другое название.');
+		CLOUD_ERROR_REQUIRED: exit('Название папки не может быть пустым.');
+		CLOUD_ERROR_INVALID: exit('Неправильное название папки. В названии папок нельзя использовать символы «" * / : < > ?  \\ |».');
+		CLOUD_ERROR_READONLY: exit('Невозможно создать. Доступ только для просмотра.');
+		CLOUD_ERROR_NAME_LENGTH_EXCEEDED: exit('Превышена длина имени папки.');
+		CLOUD_ERROR_OVERQUOTA: exit('Невозможно скопировать, в вашем Облаке недостаточно места.');
+		CLOUD_ERROR_NOT_EXISTS: exit('Копируемая ссылка не существует.');
+		CLOUD_ERROR_OWN: exit('Невозможно клонировать собственную ссылку.');
+		CLOUD_ERROR_NAME_TOO_LONG: exit('Превышена длина имени файла.');
+		else exit('Неизвестная ошибка (' + ErrorCode.ToString + ')');
+	end;
+end;
+
 {PUBLIC METHODS}
 
 function TCloudMailRu.login(method: integer = CLOUD_AUTH_METHOD_WEB): Boolean;
@@ -694,11 +711,11 @@ begin
 						Log(MSGTYPE_DETAILS, 'Connected to ' + self.user + '@' + self.domain);
 						self.logUserSpaceInfo;
 					end else begin
-						Log(MSGTYPE_IMPORTANTERROR, 'Error getting auth token for ' + self.user + '@' + self.domain);
+						Log(MSGTYPE_IMPORTANTERROR, 'error: getting auth token for ' + self.user + '@' + self.domain);
 						exit(false);
 					end;
 				end
-				else Log(MSGTYPE_IMPORTANTERROR, 'Error login to ' + self.user + '@' + self.domain);
+				else Log(MSGTYPE_IMPORTANTERROR, 'error: login to ' + self.user + '@' + self.domain);
 			end;
 		CLOUD_AUTH_METHOD_OAUTH:
 			begin
@@ -729,7 +746,7 @@ begin
 	except
 		on E: Exception do
 		begin
-			Log(MSGTYPE_IMPORTANTERROR, 'Delete file error ' + E.Message);
+			Log(MSGTYPE_IMPORTANTERROR, 'Delete file error: ' + E.Message);
 			Result := false;
 		end;
 	end;
@@ -745,7 +762,7 @@ begin
 			else
 				begin
 					Result := false;
-					Log(MSGTYPE_IMPORTANTERROR, 'Delete file error, code: ' + OperationResult.ToString() + ', status: ' + OperationStatus.ToString());
+					Log(MSGTYPE_IMPORTANTERROR, 'Delete file error: ' + self.getErrorText(OperationResult) + ' Status: ' + OperationStatus.ToString());
 				end;
 		end;
 	end;
@@ -773,7 +790,7 @@ begin
 
 		Log(MSGTYPE_DETAILS, 'Total space: ' + FormatSize(US.total) + ', used: ' + FormatSize(US.used) + ', free: ' + FormatSize(US.total - US.used) + '.' + QuotaInfo);
 	end else begin
-		Log(MSGTYPE_IMPORTANTERROR, 'Error getting user space information for ' + self.user + '@' + self.domain);
+		Log(MSGTYPE_IMPORTANTERROR, 'error: getting user space information for ' + self.user + '@' + self.domain);
 	end;
 end;
 
@@ -798,7 +815,7 @@ begin
 	except
 		on E: Exception do
 		begin
-			Log(MSGTYPE_IMPORTANTERROR, 'Directory list receiving error ' + E.Message);
+			Log(MSGTYPE_IMPORTANTERROR, 'Directory list receiving error: ' + E.Message);
 		end;
 	end;
 	if Result then
@@ -817,7 +834,7 @@ begin
 				end
 			else
 				begin
-					Log(MSGTYPE_IMPORTANTERROR, 'Delete file error, code: ' + OperationResult.ToString() + ', status: ' + OperationStatus.ToString());
+					Log(MSGTYPE_IMPORTANTERROR, 'Delete file error: ' + self.getErrorText(OperationResult) + ' Status: ' + OperationStatus.ToString());
 					Result := false;
 				end;
 		end;
@@ -862,7 +879,7 @@ begin
 		except
 			on E: Exception do
 			begin
-				if LogErrors then Log(MSGTYPE_IMPORTANTERROR, 'File receiving error ' + E.Message);
+				if LogErrors then Log(MSGTYPE_IMPORTANTERROR, 'File receiving error: ' + E.Message);
 			end;
 		end;
 		FlushFileBuffers(FileStream.Handle);
@@ -902,7 +919,7 @@ begin
 	except
 		on E: Exception do
 		begin
-			Log(MSGTYPE_IMPORTANTERROR, 'File publish error ' + E.Message);
+			Log(MSGTYPE_IMPORTANTERROR, 'File publish error: ' + E.Message);
 		end;
 	end;
 	PostData.free;
@@ -919,7 +936,7 @@ begin
 			else
 				begin
 					Result := false;
-					Log(MSGTYPE_IMPORTANTERROR, 'File publish error, code: ' + OperationResult.ToString() + ', status: ' + OperationStatus.ToString());
+					Log(MSGTYPE_IMPORTANTERROR, 'File publish error: ' + self.getErrorText(OperationResult) + ' Status: ' + OperationStatus.ToString());
 				end;
 		end;
 	end;
@@ -953,7 +970,7 @@ begin
 			SplitResult := Splitter.split();
 			if SplitResult <> FS_FILE_OK then
 			begin
-				Log(MSGTYPE_IMPORTANTERROR, 'File splitting error code: ' + SplitResult.ToString + ', ignored');
+				Log(MSGTYPE_IMPORTANTERROR, 'File splitting error: code: ' + SplitResult.ToString + ', ignored');
 				Splitter.Destroy;
 				exit(FS_FILE_NOTSUPPORTED);
 			end;
@@ -999,7 +1016,7 @@ begin
 			begin
 				Result := FS_FILE_USERABORT;
 			end else begin
-				Log(MSGTYPE_IMPORTANTERROR, 'Error uploading to cloud: ' + E.ClassName + ' ошибка с сообщением: ' + E.Message);
+				Log(MSGTYPE_IMPORTANTERROR, 'error: uploading to cloud: ' + E.ClassName + ' ошибка с сообщением: ' + E.Message);
 				Result := FS_FILE_WRITEERROR;
 			end;
 		end;
@@ -1061,7 +1078,7 @@ begin
 					end;
 				else
 					begin //что-то неизвестное
-						Log(MSGTYPE_IMPORTANTERROR, 'Directory creation error, code: ' + OperationResult.ToString() + ', status: ' + OperationStatus.ToString());
+						Log(MSGTYPE_IMPORTANTERROR, 'Directory creation error: ' + self.getErrorText(OperationResult) + ' Status: ' + OperationStatus.ToString());
 						Result := FS_FILE_WRITEERROR;
 					end;
 			end;
@@ -1088,7 +1105,7 @@ begin
 	except
 		on E: Exception do
 		begin
-			Log(MSGTYPE_IMPORTANTERROR, 'Directory creation error ' + E.Message);
+			Log(MSGTYPE_IMPORTANTERROR, 'Directory creation error: ' + E.Message);
 		end;
 	end;
 	PostData.free;
@@ -1102,7 +1119,7 @@ begin
 				end;
 			else
 				begin
-					Log(MSGTYPE_IMPORTANTERROR, 'Directory creation error, code: ' + OperationResult.ToString() + ', status: ' + OperationStatus.ToString());
+					Log(MSGTYPE_IMPORTANTERROR, 'Directory creation error: ' + self.getErrorText(OperationResult) + ' Status: ' + OperationStatus.ToString());
 					Result := false;
 				end;
 		end;
@@ -1126,7 +1143,7 @@ begin
 	except
 		on E: Exception do
 		begin
-			Log(MSGTYPE_IMPORTANTERROR, 'Delete directory error ' + E.Message);
+			Log(MSGTYPE_IMPORTANTERROR, 'Delete directory error: ' + E.Message);
 			Result := false;
 		end;
 	end;
@@ -1142,7 +1159,7 @@ begin
 			else
 				begin
 					Result := false;
-					Log(MSGTYPE_IMPORTANTERROR, 'Delete directory error, code: ' + OperationResult.ToString() + ', status: ' + OperationStatus.ToString());
+					Log(MSGTYPE_IMPORTANTERROR, 'Delete directory error: ' + self.getErrorText(OperationResult) + ' Status: ' + OperationStatus.ToString());
 				end;
 		end;
 	end;
@@ -1168,7 +1185,7 @@ begin
 	except
 		on E: Exception do
 		begin
-			Log(MSGTYPE_IMPORTANTERROR, 'Rename file error ' + E.Message);
+			Log(MSGTYPE_IMPORTANTERROR, 'Rename file error: ' + E.Message);
 		end;
 	end;
 	PostData.free;
@@ -1206,7 +1223,7 @@ begin
 				end;
 			else
 				begin //что-то неизвестное
-					Log(MSGTYPE_IMPORTANTERROR, 'Rename file error, code: ' + OperationResult.ToString() + ', status: ' + OperationStatus.ToString());
+					Log(MSGTYPE_IMPORTANTERROR, 'Rename file error: ' + self.getErrorText(OperationResult) + ' Status: ' + OperationStatus.ToString());
 					Result := FS_FILE_WRITEERROR;
 				end;
 		end;
@@ -1230,7 +1247,7 @@ begin
 	except
 		on E: Exception do
 		begin
-			Log(MSGTYPE_IMPORTANTERROR, 'File status getting error ' + E.Message);
+			Log(MSGTYPE_IMPORTANTERROR, 'File status getting error: ' + E.Message);
 		end;
 	end;
 
@@ -1245,7 +1262,7 @@ begin
 				end;
 			else
 				begin
-					Log(MSGTYPE_IMPORTANTERROR, 'File publish error, code: ' + OperationResult.ToString() + ', status: ' + OperationStatus.ToString());
+					Log(MSGTYPE_IMPORTANTERROR, 'File publish error: ' + self.getErrorText(OperationResult) + ' Status: ' + OperationStatus.ToString());
 					Result := false;
 				end;
 		end;
@@ -1275,7 +1292,7 @@ begin
 	except
 		on E: Exception do
 		begin
-			Log(MSGTYPE_IMPORTANTERROR, 'Public link clone error ' + E.Message);
+			Log(MSGTYPE_IMPORTANTERROR, 'Public link clone error: ' + E.Message);
 		end;
 	end;
 	if GetResult then
@@ -1312,7 +1329,7 @@ begin
 				end;
 			else
 				begin
-					Log(MSGTYPE_IMPORTANTERROR, 'File publish error, code: ' + OperationResult.ToString() + ', status: ' + OperationStatus.ToString());
+					Log(MSGTYPE_IMPORTANTERROR, 'File publish error: ' + self.getErrorText(OperationResult) + ' Status: ' + OperationStatus.ToString());
 					Result := FS_FILE_WRITEERROR;
 				end;
 		end;
@@ -1321,7 +1338,7 @@ begin
 		begin //user cancelled
 			Result := FS_FILE_USERABORT;
 		end else begin //unknown error
-			Log(MSGTYPE_IMPORTANTERROR, 'Public link clone error: got ' + IntToStr(OperationStatus) + ' status');
+			Log(MSGTYPE_IMPORTANTERROR, 'Public link clone error: got ' + OperationStatus.ToString + ' status');
 			Result := FS_FILE_WRITEERROR;
 		end;
 
@@ -1351,7 +1368,7 @@ begin
 	except
 		on E: Exception do
 		begin
-			Log(MSGTYPE_IMPORTANTERROR, 'Copy file error ' + E.Message);
+			Log(MSGTYPE_IMPORTANTERROR, 'Copy file error: ' + E.Message);
 		end;
 	end;
 	PostData.free;
@@ -1389,7 +1406,7 @@ begin
 				end;
 			else
 				begin //что-то неизвестное
-					Log(MSGTYPE_IMPORTANTERROR, 'File publish error, code: ' + OperationResult.ToString() + ', status: ' + OperationStatus.ToString());
+					Log(MSGTYPE_IMPORTANTERROR, 'File publish error: ' + self.getErrorText(OperationResult) + ' Status: ' + OperationStatus.ToString());
 					Result := FS_FILE_WRITEERROR;
 				end;
 		end;
@@ -1418,7 +1435,7 @@ begin
 	except
 		on E: Exception do
 		begin
-			Log(MSGTYPE_IMPORTANTERROR, 'Move file error ' + E.Message);
+			Log(MSGTYPE_IMPORTANTERROR, 'Move file error: ' + E.Message);
 		end;
 	end;
 	PostData.free;
@@ -1456,7 +1473,7 @@ begin
 				end;
 			else
 				begin //что-то неизвестное
-					Log(MSGTYPE_IMPORTANTERROR, 'File publish error, code: ' + OperationResult.ToString() + ', status: ' + OperationStatus.ToString());
+					Log(MSGTYPE_IMPORTANTERROR, 'File publish error: ' + self.getErrorText(OperationResult) + ' Status: ' + OperationStatus.ToString());
 					Result := FS_FILE_WRITEERROR;
 				end;
 		end;
@@ -1598,7 +1615,7 @@ begin
 			Log(MSGTYPE_IMPORTANTERROR, 'Can''t parse server answer: ' + JSON);
 			Result.error_code := CLOUD_ERROR_UNKNOWN;
 			Result.error := 'Answer parsing';
-			Result.error_description := 'JSON parsing error at ' + JSON;
+			Result.error_description := 'JSON parsing error: at ' + JSON;
 		end;
 	end;
 end;
