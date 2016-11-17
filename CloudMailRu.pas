@@ -29,6 +29,7 @@ const
 	CLOUD_ERROR_QUOTA_EXCEEDED = 7; //"quota_exceeded": 'Невозможно скопировать, в вашем Облаке недостаточно места'
 	CLOUD_ERROR_NOT_EXISTS = 8; //"not_exists": 'Копируемая ссылка не существует'
 	CLOUD_ERROR_OWN = 9; //"own": 'Невозможно клонировать собственную ссылку'
+	CLOUD_ERROR_NAME_TOO_LONG = 10; //"name_too_long": 'Превышен размер имени файла'
 
 	{Режимы работы при конфликтах копирования}
 	CLOUD_CONFLICT_STRICT = 'strict'; //возвращаем ошибку при существовании файла
@@ -339,7 +340,7 @@ begin
 		PostData.AddFile('file', GetUNCFilePath(localPath), 'application/octet-stream');
 		Result := self.HTTPPostFile(URL, PostData, PostAnswer);
 	except
-		on E: Exception do   //todo проверь, нужны ли эти исключения
+		on E: Exception do //todo проверь, нужны ли эти исключения
 		begin
 			Log(MSGTYPE_IMPORTANTERROR, 'Posting file error ' + E.Message);
 		end;
@@ -1018,8 +1019,8 @@ begin
 		//Log( MSGTYPE_DETAILS, 'putFileToCloud result: ' + PutResult.Text);
 		if self.addFileToCloud(FileHash, FileSize, UrlEncode(StringReplace(remotePath, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase])), JSONAnswer) then
 		begin
-			//Log( MSGTYPE_DETAILS, JSONAnswer);
-			case self.getOperationResultFromJSON(JSONAnswer, OperationStatus) of
+			OperationResult := self.getOperationResultFromJSON(JSONAnswer, OperationStatus);
+			case OperationResult of
 				CLOUD_OPERATION_OK:
 					begin
 						Result := FS_FILE_OK;
@@ -1049,13 +1050,18 @@ begin
 						Log(MSGTYPE_IMPORTANTERROR, 'Insufficient Storage');
 						Result := FS_FILE_WRITEERROR;
 					end;
+				CLOUD_ERROR_NAME_TOO_LONG:
+					begin
+						Log(MSGTYPE_IMPORTANTERROR, 'Name too long');
+						Result := FS_FILE_WRITEERROR;
+					end;
 				CLOUD_ERROR_UNKNOWN:
 					begin
 						Result := FS_FILE_NOTSUPPORTED;
 					end;
 				else
 					begin //что-то неизвестное
-						Log(MSGTYPE_IMPORTANTERROR, 'Error uploading to cloud: got ' + IntToStr(OperationStatus) + ' status');
+						Log(MSGTYPE_IMPORTANTERROR, 'Directory creation error, code: ' + OperationResult.ToString() + ', status: ' + OperationStatus.ToString());
 						Result := FS_FILE_WRITEERROR;
 					end;
 			end;
@@ -1710,6 +1716,7 @@ begin
 			if error = 'invalid' then exit(CLOUD_ERROR_INVALID);
 			if error = 'not_exists' then exit(CLOUD_ERROR_NOT_EXISTS);
 			if error = 'own' then exit(CLOUD_ERROR_OWN);
+			if error = 'name_too_long' then exit(CLOUD_ERROR_NAME_TOO_LONG);
 
 			exit(CLOUD_ERROR_UNKNOWN); //Эту ошибку мы пока не встречали
 		end;
