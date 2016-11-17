@@ -339,7 +339,7 @@ begin
 		PostData.AddFile('file', GetUNCFilePath(localPath), 'application/octet-stream');
 		Result := self.HTTPPostFile(URL, PostData, PostAnswer);
 	except
-		on E: Exception do
+		on E: Exception do   //todo проверь, нужны ли эти исключения
 		begin
 			Log(MSGTYPE_IMPORTANTERROR, 'Posting file error ' + E.Message);
 		end;
