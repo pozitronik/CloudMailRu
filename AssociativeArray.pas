@@ -16,6 +16,7 @@ type
 	public
 		function Add(const Value: DWORD): integer;
 		function Delete(index: integer): boolean;
+		function DeleteValue(const Value: DWORD): boolean;
 		procedure Clear;
 		function IndexOf(const Value: DWORD): integer;
 		property Count: integer read GetCount;
@@ -42,7 +43,8 @@ function TAssociativeArray.Delete(index: integer): boolean;
 var
 	k: integer;
 begin
-	if (Index < 0) or (Index >= Count) then exit(false);
+	result:=false;
+	if (Index < 0) or (Index >= Count) then exit;
 
 	for k := Index to Count - 2{2nd last element} do
 	begin
@@ -50,6 +52,21 @@ begin
 	end;
 
 	SetLength(FItems, Count - 1);
+	result:=true;
+end;
+
+function TAssociativeArray.DeleteValue(const Value: DWORD): boolean;
+var
+	index: integer;
+begin
+	result:=false;
+	index:=self.IndexOf(Value);
+	if index = -1 then exit
+	else
+	begin
+		result:= self.Delete(index);
+	end;
+
 end;
 
 function TAssociativeArray.GetCount: integer;

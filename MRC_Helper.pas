@@ -18,7 +18,7 @@ function Explode(S: WideString; Delimiter: char): TStringList;
 function ExtractRealPath(VirtualPath: WideString): TRealPath;
 function SizeOfFile(const FileName: String): Int64;
 function DateTimeToUnix(ConvDate: TDateTime): Integer;
-function CheckFlag(Check: Byte; Flags: Integer): boolean; // Определяет, установлен ли указанный бит
+function CheckFlag(Check: Byte; Flags: Integer): boolean; //Определяет, установлен ли указанный бит
 function DateTimeToFileTime(FileTime: TDateTime): TFileTime;
 procedure SetAllFileTime(const FileName: string; const FileTime: TFileTime);
 procedure CenterWindow(WindowToStay, WindowToCenter: HWND);
@@ -28,8 +28,8 @@ function GetTmpDir: WideString;
 function GetTmpFileName(Prefix: WideString = ''): WideString;
 function CopyExt(FromFilename, ToFilename: WideString): WideString;
 function GetUNCFilePath(FilePath: WideString): WideString;
-function GetWord(command: WideString; WordIndex: Integer = 0): WideString; // Возвращает указанное значащее слово из строки с учётом кавычек (парсинг команд)
-function ExtractLinkFromUrl(URL: WideString): WideString; // При необходимости преобразует адрес публичной ссылки к нужному виду
+function GetWord(command: WideString; WordIndex: Integer = 0): WideString; //Возвращает указанное значащее слово из строки с учётом кавычек (парсинг команд)
+function ExtractLinkFromUrl(URL: WideString): WideString; //При необходимости преобразует адрес публичной ссылки к нужному виду
 function IsWriteable(const DirName: WideString; FileName: WideString = 'delete.me'; CleanFile: boolean = true): boolean;
 
 implementation
@@ -58,7 +58,7 @@ begin
 	List := TStringList.Create;
 	ExtractStrings(['\'], [], PWideChar(VirtualPath), List);
 	if List.Count < 2 then
-	begin // в виртуальной ФС это каталог первого уровня
+	begin //в виртуальной ФС это каталог первого уровня
 		Result.account := '';
 		Result.path := '';
 	end else begin
@@ -76,11 +76,11 @@ function DateTimeToUnix(ConvDate: TDateTime): Integer;
 const
 	UnixStartDate: TDateTime = 25569.0;
 begin
-	// example: DateTimeToUnix(now);
+	//example: DateTimeToUnix(now);
 	Result := Round((ConvDate - UnixStartDate) * 86400);
 end;
 
-function CheckFlag(Check: Byte; Flags: LongInt): boolean; // Определяет, установлен ли указанный бит
+function CheckFlag(Check: Byte; Flags: LongInt): boolean; //Определяет, установлен ли указанный бит
 begin
 	Result := (Flags and Check) <> 0;
 end;
@@ -125,8 +125,6 @@ begin
 	end;
 end;
 
-
-
 procedure CenterWindow(WindowToStay, WindowToCenter: HWND);
 var
 	R1: TRect;
@@ -167,7 +165,7 @@ end;
 
 function FindTCWindow: HWND;
 begin
-	Result := FindWindow('TTOTAL_CMD', nil); { Хендл отдаётся корректно даже при нескольких запущенных тоталах }
+	Result := FindWindow('TTOTAL_CMD', nil); {Хендл отдаётся корректно даже при нескольких запущенных тоталах}
 end;
 
 function GetTmpDir: WideString;
@@ -207,7 +205,7 @@ begin
 	Result := Exploded.Strings[WordIndex];
 end;
 
-function ExtractLinkFromUrl(URL: WideString): WideString; // При необходимости преобразует адрес публичной ссылки к нужному виду
+function ExtractLinkFromUrl(URL: WideString): WideString; //При необходимости преобразует адрес публичной ссылки к нужному виду
 const
 	pulicPrefix = 'https://cloud.mail.ru/public';
 begin
