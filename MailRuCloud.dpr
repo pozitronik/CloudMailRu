@@ -2,7 +2,8 @@
 
 {$R *.dres}
 
-uses SysUtils, DateUtils, windows, Classes, PLUGIN_TYPES, IdSSLOpenSSLHeaders, messages, inifiles, Vcl.controls, AnsiStrings, CloudMailRu in 'CloudMailRu.pas', MRC_Helper in 'MRC_Helper.pas', Accounts in 'Accounts.pas'{AccountsForm}, RemoteProperty in 'RemoteProperty.pas'{PropertyForm}, Descriptions in 'Descriptions.pas', ConnectionManager in 'ConnectionManager.pas', Settings in 'Settings.pas';
+uses
+	SysUtils, DateUtils, windows, Classes, PLUGIN_TYPES, IdSSLOpenSSLHeaders, messages, inifiles, Vcl.controls, AnsiStrings, CloudMailRu in 'CloudMailRu.pas', MRC_Helper in 'MRC_Helper.pas', Accounts in 'Accounts.pas'{AccountsForm}, RemoteProperty in 'RemoteProperty.pas'{PropertyForm}, Descriptions in 'Descriptions.pas', ConnectionManager in 'ConnectionManager.pas', Settings in 'Settings.pas', AssociativeArray in 'AssociativeArray.pas';
 
 {$IFDEF WIN64}
 {$E wfx64}
@@ -27,7 +28,7 @@ var
 	SettingsIniFilePath: WideString;
 	GlobalPath, PluginPath, AppDataDir, IniDir: WideString;
 	FileCounter: integer = 0;
-	SkipList: Boolean = false;
+	ThreadSkipList: TAssociativeArray;
 	{Callback data}
 	PluginNum: integer;
 	CryptoNum: integer;
@@ -354,10 +355,11 @@ begin
 				end;
 			FS_STATUS_OP_RENMOV_MULTI:
 				begin
+					ThreadSkipList.Add(GetCurrentThreadID());
 				end;
 			FS_STATUS_OP_DELETE:
 				begin
-					SkipList := true;
+					ThreadSkipList.Add(GetCurrentThreadID());
 				end;
 			FS_STATUS_OP_ATTRIB:
 				begin
@@ -424,11 +426,12 @@ begin
 				end;
 			FS_STATUS_OP_RENMOV_MULTI:
 				begin
+					ThreadSkipList.DeleteValue(GetCurrentThreadID());
 					if RealPath.account <> '' then ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
 				end;
 			FS_STATUS_OP_DELETE:
 				begin
-					SkipList := false;
+					ThreadSkipList.DeleteValue(GetCurrentThreadID());
 					if RealPath.account <> '' then ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
 				end;
 			FS_STATUS_OP_ATTRIB:
@@ -483,7 +486,7 @@ var //Получение первого файла в папке. Result тот�
 	RealPath: TRealPath;
 	getResult: integer;
 begin
-	if SkipList then
+	if ThreadSkipList.IndexOf(GetCurrentThreadID()) <> -1 then
 	begin
 		SetLastError(ERROR_NO_MORE_FILES);
 		exit(INVALID_HANDLE_VALUE);
