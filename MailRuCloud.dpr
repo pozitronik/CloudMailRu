@@ -27,6 +27,7 @@ var
 	SettingsIniFilePath: WideString;
 	GlobalPath, PluginPath, AppDataDir, IniDir: WideString;
 	FileCounter: integer = 0;
+	SkipList: Boolean = false;
 	{Callback data}
 	PluginNum: integer;
 	CryptoNum: integer;
@@ -356,6 +357,7 @@ begin
 				end;
 			FS_STATUS_OP_DELETE:
 				begin
+					SkipList := true;
 				end;
 			FS_STATUS_OP_ATTRIB:
 				begin
@@ -426,6 +428,7 @@ begin
 				end;
 			FS_STATUS_OP_DELETE:
 				begin
+					SkipList := false;
 					if RealPath.account <> '' then ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
 				end;
 			FS_STATUS_OP_ATTRIB:
@@ -480,6 +483,12 @@ var //Получение первого файла в папке. Result тот�
 	RealPath: TRealPath;
 	getResult: integer;
 begin
+	if SkipList then
+	begin
+		SetLastError(ERROR_NO_MORE_FILES);
+		exit(INVALID_HANDLE_VALUE);
+	end;
+
 	SetLength(CurrentListing, 0);
 	Result := 0;
 	GlobalPath := path;
