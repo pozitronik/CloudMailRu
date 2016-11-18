@@ -28,7 +28,8 @@ var
 	SettingsIniFilePath: WideString;
 	GlobalPath, PluginPath, AppDataDir, IniDir: WideString;
 	FileCounter: integer = 0;
-	ThreadSkipList: TAssociativeArray;
+	ThreadSkipListDelete: TAssociativeArray;//Массив id потоков, для которых операции получения листинга должны быть пропущены (при удалении)
+//	ThreadSkipListRenMov: TAssociativeArray;//Массив id потоков, для которых операции получения листинга должны быть пропущены (при копировании/перемещении)
 	{Callback data}
 	PluginNum: integer;
 	CryptoNum: integer;
@@ -296,7 +297,6 @@ end;
 
 function FsContentGetValue(FileName: PAnsiChar; FieldIndex: integer; UnitIndex: integer; FieldValue: Pointer; maxlen: integer; Flags: integer): integer; stdcall;
 begin
-
 	SetLastError(ERROR_INVALID_FUNCTION);
 	Result := ft_nosuchfield;
 end;
@@ -355,11 +355,11 @@ begin
 				end;
 			FS_STATUS_OP_RENMOV_MULTI:
 				begin
-					ThreadSkipList.Add(GetCurrentThreadID());
+//					ThreadSkipListRenMov.Add(GetCurrentThreadID());
 				end;
 			FS_STATUS_OP_DELETE:
 				begin
-					ThreadSkipList.Add(GetCurrentThreadID());
+					ThreadSkipListDelete.Add(GetCurrentThreadID());
 				end;
 			FS_STATUS_OP_ATTRIB:
 				begin
@@ -426,12 +426,12 @@ begin
 				end;
 			FS_STATUS_OP_RENMOV_MULTI:
 				begin
-					ThreadSkipList.DeleteValue(GetCurrentThreadID());
+//					ThreadSkipListRenMov.DeleteValue(GetCurrentThreadID());
 					if RealPath.account <> '' then ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
 				end;
 			FS_STATUS_OP_DELETE:
 				begin
-					ThreadSkipList.DeleteValue(GetCurrentThreadID());
+					ThreadSkipListDelete.DeleteValue(GetCurrentThreadID());
 					if RealPath.account <> '' then ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
 				end;
 			FS_STATUS_OP_ATTRIB:
@@ -486,7 +486,7 @@ var //Получение первого файла в папке. Result тот�
 	RealPath: TRealPath;
 	getResult: integer;
 begin
-	if ThreadSkipList.IndexOf(GetCurrentThreadID()) <> -1 then
+	if ThreadSkipListDelete.IndexOf(GetCurrentThreadID()) <> -1 then
 	begin
 		SetLastError(ERROR_NO_MORE_FILES);
 		exit(INVALID_HANDLE_VALUE);
