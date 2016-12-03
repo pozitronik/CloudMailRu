@@ -44,7 +44,6 @@
 /dump.txt
 /*.rsm
 /MailRuCloud.global.ini
-/x64
 /CloudMailRu.zip
 /pluginst.inf
 /debug.json
