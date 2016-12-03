@@ -2,7 +2,7 @@ unit Settings;
 
 interface
 
-uses Classes, Windows, SysUtils, IniFiles, System.Variants, Plugin_Types, AskPassword, MRC_Helper, controls;
+uses Classes, Windows, SysUtils, IniFiles, System.Variants, Plugin_Types, AskPassword, MRC_Helper, VCL.Controls;
 
 const
 	ProxyNone = 0;
