@@ -30,6 +30,7 @@ const
 	CLOUD_ERROR_NOT_EXISTS = 8; //"not_exists": 'Копируемая ссылка не существует'
 	CLOUD_ERROR_OWN = 9; //"own": 'Невозможно клонировать собственную ссылку'
 	CLOUD_ERROR_NAME_TOO_LONG = 10; //"name_too_long": 'Превышен размер имени файла'
+	CLOUD_ERROR_VIRUS_SCAN_FAIL = 11; //"virus_scan_fail": 'Файл заражен вирусом'
 
 	{Режимы работы при конфликтах копирования}
 	CLOUD_CONFLICT_STRICT = 'strict'; //возвращаем ошибку при существовании файла
@@ -672,6 +673,7 @@ begin
 		CLOUD_ERROR_NOT_EXISTS: exit('Копируемая ссылка не существует.');
 		CLOUD_ERROR_OWN: exit('Невозможно клонировать собственную ссылку.');
 		CLOUD_ERROR_NAME_TOO_LONG: exit('Превышена длина имени файла.');
+		CLOUD_ERROR_VIRUS_SCAN_FAIL: exit('Файл заражен вирусом');
 		else exit('Неизвестная ошибка (' + ErrorCode.ToString + ')');
 	end;
 end;
@@ -1831,6 +1833,7 @@ begin
 			if error = 'not_exists' then exit(CLOUD_ERROR_NOT_EXISTS);
 			if error = 'own' then exit(CLOUD_ERROR_OWN);
 			if error = 'name_too_long' then exit(CLOUD_ERROR_NAME_TOO_LONG);
+			if error = 'virus_scan_fail' then exit(CLOUD_ERROR_VIRUS_SCAN_FAIL);
 
 			exit(CLOUD_ERROR_UNKNOWN); //Эту ошибку мы пока не встречали
 		end;
