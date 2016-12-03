@@ -191,7 +191,7 @@ end;
 
 function GetUNCFilePath(FilePath: WideString): WideString;
 begin
-	Result := '\\?\' + FilePath;
+	Result := '\\?\' + FilePath;//TODO fix network unc path
 end;
 
 function GetWord(command: WideString; WordIndex: Integer = 0): WideString;
