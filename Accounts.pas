@@ -3,8 +3,7 @@
 interface
 
 uses
-	Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics, Settings,
-	Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, IniFiles, MRC_Helper, PLUGIN_Types, Vcl.ComCtrls, Vcl.Mask;
+	Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics, Settings, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, IniFiles, MRC_Helper, PLUGIN_Types, Vcl.ComCtrls, Vcl.Mask;
 
 type
 	TAccountsForm = class(TForm)
@@ -45,7 +44,7 @@ type
 		AskOnErrorsCB: TCheckBox;
 		ProxyTCPwdMngrCB: TCheckBox;
 		GlobalSettingApplyBTN: TButton;
-    TwostepAuthCB: TCheckBox;
+		TwostepAuthCB: TCheckBox;
 		procedure FormShow(Sender: TObject);
 		procedure AccountsListClick(Sender: TObject);
 		procedure ApplyButtonClick(Sender: TObject);
@@ -59,10 +58,10 @@ type
 		procedure ProxyUserEditChange(Sender: TObject);
 		procedure GlobalSettingApplyBTNClick(Sender: TObject);
 	private
-		{ Private declarations }
+		{Private declarations}
 		procedure WMHotKey(var Message: TMessage); message WM_HOTKEY;
 	public
-		{ Public declarations }
+		{Public declarations}
 		IniPath: WideString;
 		SettingsIniFilePath: WideString;
 		CryptProc: TCryptProcW;
@@ -124,19 +123,19 @@ begin
 	CASettings.use_tc_password_manager := UseTCPwdMngrCB.Checked;
 	CASettings.unlimited_filesize := UnlimitedFileSizeCB.Checked;
 	CASettings.split_large_files := SplitLargeFilesCB.Checked;
-  CASettings.twostep_auth := TwostepAuthCB.Checked;
-	if CASettings.use_tc_password_manager then // просим TC сохранить пароль
+	CASettings.twostep_auth := TwostepAuthCB.Checked;
+	if CASettings.use_tc_password_manager then //просим TC сохранить пароль
 	begin
 		case self.CryptProc(self.PluginNum, self.CryptoNum, FS_CRYPT_SAVE_PASSWORD, PWideChar(CASettings.name), PWideChar(CASettings.password), SizeOf(CASettings.password)) of
 			FS_FILE_OK:
-				begin // TC скушал пароль
+				begin //TC скушал пароль
 					CASettings.password := '';
 				end;
-			FS_FILE_NOTSUPPORTED: // нажали отмену на вводе мастер-пароля
-				begin // просто выйдем
+			FS_FILE_NOTSUPPORTED: //нажали отмену на вводе мастер-пароля
+				begin //просто выйдем
 					exit();
 				end;
-			FS_FILE_WRITEERROR: // Сохранение не получилось по другой причине. Сохранять не будем, выйдем
+			FS_FILE_WRITEERROR: //Сохранение не получилось по другой причине. Сохранять не будем, выйдем
 				begin
 					exit();
 				end;
@@ -202,19 +201,19 @@ begin
 	SetPluginSettingsValue(SettingsIniFilePath, 'ProxyPassword', ProxyPwd.Text);
 	SetPluginSettingsValue(SettingsIniFilePath, 'ProxyTCPwdMngr', ProxyTCPwdMngrCB.Checked);
 
-	if ProxyTCPwdMngrCB.Checked then // просим TC сохранить пароль
+	if ProxyTCPwdMngrCB.Checked then //просим TC сохранить пароль
 	begin
 		case self.CryptProc(self.PluginNum, self.CryptoNum, FS_CRYPT_SAVE_PASSWORD, PWideChar('proxy' + ProxyUserEdit.Text), PWideChar(ProxyPwd.Text), SizeOf(ProxyPwd.Text)) of
 			FS_FILE_OK:
-				begin // TC скушал пароль
+				begin //TC скушал пароль
 					ProxyPwd.Text := '';
 					SetPluginSettingsValue(SettingsIniFilePath, 'ProxyPassword', '');
 				end;
-			FS_FILE_NOTSUPPORTED: // нажали отмену на вводе мастер-пароля
-				begin // просто выйдем
+			FS_FILE_NOTSUPPORTED: //нажали отмену на вводе мастер-пароля
+				begin //просто выйдем
 					exit();
 				end;
-			FS_FILE_WRITEERROR: // Сохранение не получилось по другой причине. Сохранять не будем, выйдем
+			FS_FILE_WRITEERROR: //Сохранение не получилось по другой причине. Сохранять не будем, выйдем
 				begin
 					exit();
 				end;
@@ -241,7 +240,7 @@ begin
 		AccountsForm.PluginNum := PluginNum;
 		AccountsForm.CryptoNum := CryptoNum;
 		AccountsForm.SelectedAccount := '';
-		{ global settings }
+		{global settings}
 		AccountsForm.UseDLLFromPluginDir.Checked := GetPluginSettings(SettingsIniFilePath).LoadSSLDLLOnlyFromPluginDir;
 		AccountsForm.PreserveFileTimeCB.Checked := GetPluginSettings(SettingsIniFilePath).PreserveFileTime;
 		AccountsForm.DescriptionEnabledCB.Checked := GetPluginSettings(SettingsIniFilePath).DescriptionEnabled;
@@ -255,7 +254,7 @@ begin
 		AccountsForm.ProxyPwd.Text := GetPluginSettings(SettingsIniFilePath).Proxy.password;
 		AccountsForm.ProxyTCPwdMngrCB.Checked := GetPluginSettings(SettingsIniFilePath).Proxy.use_tc_password_manager;
 
-		{ global settings }
+		{global settings}
 		if RemoteName <> '' then AccountsForm.SelectedAccount := Copy(RemoteName, 2, length(RemoteName) - 1);
 		RegisterHotKey(AccountsForm.Handle, 1, 0, VK_ESCAPE);
 		AccountsForm.ShowModal;

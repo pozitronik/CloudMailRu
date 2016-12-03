@@ -1,5 +1,5 @@
 unit Settings;
-
+
 interface
 
 uses Classes, Windows, SysUtils, IniFiles, System.Variants, Plugin_Types, AskPassword, MRC_Helper, VCL.Controls;
@@ -13,6 +13,12 @@ const
 	SocksProxyTypes = [ProxySocks5, ProxySocks4];
 
 	CLOUD_MAX_FILESIZE_DEFAULT = 2147483392; //$80000000-256
+
+	ChunkOverwrite = 0;
+	ChunkOverwriteIgnore = 1;
+	ChunkOverwriteAbort = 2;
+
+	ChunkOverwriteModes = [ChunkOverwrite, ChunkOverwriteIgnore, ChunkOverwriteAbort];
 
 type
 
@@ -43,6 +49,7 @@ type
 		SocketTimeout: Integer;
 		Proxy: TProxySettings;
 		CloudMaxFileSize: Integer;
+		ChunkOverwriteMode: Integer;
 	end;
 
 function GetProxyPasswordNow(var ProxySettings: TProxySettings; MyLogProc: TLogProcW; MyCryptProc: TCryptProcW; PluginNum: Integer; CryptoNum: Integer): boolean;
@@ -142,6 +149,7 @@ begin
 	GetPluginSettings.AskOnErrors := IniFile.ReadBool('Main', 'AskOnErrors', false);
 	GetPluginSettings.SocketTimeout := IniFile.ReadInteger('Main', 'SocketTimeout', -1);
 	GetPluginSettings.CloudMaxFileSize := IniFile.ReadInteger('Main', 'CloudMaxFileSize', CLOUD_MAX_FILESIZE_DEFAULT);
+	GetPluginSettings.ChunkOverwriteMode := IniFile.ReadInteger('Main', 'ChunkOverwriteMode', 0);
 	GetPluginSettings.Proxy.ProxyType := IniFile.ReadInteger('Main', 'ProxyType', ProxyNone);
 	GetPluginSettings.Proxy.Server := IniFile.ReadString('Main', 'ProxyServer', '');
 	GetPluginSettings.Proxy.Port := IniFile.ReadInteger('Main', 'ProxyPort', 0);
@@ -243,3 +251,4 @@ begin
 end;
 
 end.
+

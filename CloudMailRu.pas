@@ -146,7 +146,7 @@ type
 		function getDescriptionFile(remotePath, localCopy: WideString): integer; //Если в каталоге remotePath есть descript.ion - скопировать его в файл localcopy
 		function getDir(path: WideString; var DirListing: TCloudMailRuDirListing): Boolean;
 		function getFile(remotePath, localPath: WideString; LogErrors: Boolean = true): integer; //LogErrors=false => не логируем результат копирования, нужно для запроса descript.ion (которого может не быть)
-		function putFile(localPath, remotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT): integer;
+		function putFile(localPath, remotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; ChunkOverwriteMode: integer = 0): integer;
 		function deleteFile(path: WideString): Boolean;
 		function createDir(path: WideString): Boolean;
 		function removeDir(path: WideString): Boolean;
@@ -942,7 +942,7 @@ begin
 	end;
 end;
 
-function TCloudMailRu.putFile(localPath, remotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT): integer;
+function TCloudMailRu.putFile(localPath, remotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; ChunkOverwriteMode: integer = 0): integer;
 var
 	PutResult: TStringList;
 	JSONAnswer, FileHash: WideString;
@@ -951,6 +951,7 @@ var
 	OperationResult, SplitResult, SplittedPartIndex: integer;
 	Splitter: TFileSplitter;
 	CRCFileName: WideString;
+	ChunkFileName: WideString;
 begin
 	if not(Assigned(self)) then exit(FS_FILE_WRITEERROR); //Проверка на вызов без инициализации
 	if (not(self.unlimited_filesize)) and (SizeOfFile(GetUNCFilePath(localPath)) > self.split_file_size) then
@@ -990,13 +991,47 @@ begin
 
 			for SplittedPartIndex := 0 to Length(Splitter.SplitResult.parts) - 1 do
 			begin
-				Result := self.putFile(Splitter.SplitResult.parts[SplittedPartIndex].filename, CopyExt(Splitter.SplitResult.parts[SplittedPartIndex].filename, remotePath), ConflictMode);
+				ChunkFileName:= CopyExt(Splitter.SplitResult.parts[SplittedPartIndex].filename, remotePath);
+				Result := self.putFile(Splitter.SplitResult.parts[SplittedPartIndex].filename, ChunkFileName, ConflictMode);
 				if Result <> FS_FILE_OK then
-				begin //Отваливаемся при ошибке
-					if Result <> FS_FILE_USERABORT then Log(MSGTYPE_IMPORTANTERROR, 'Partial upload aborted')
-					else Log(MSGTYPE_IMPORTANTERROR, 'Partial upload error');
-					Splitter.Destroy;
-					exit;
+				begin
+					case Result of
+						FS_FILE_USERABORT:
+							begin
+								Log(MSGTYPE_DETAILS, 'Partial upload aborted');
+								Splitter.Destroy;
+								exit(FS_FILE_USERABORT);
+							end;
+						FS_FILE_EXISTS:
+							begin
+								case ChunkOverwriteMode of
+									ChunkOverwrite: //silently overwrite chunk
+										begin
+											Log(MSGTYPE_DETAILS, 'Chunk ' + ChunkFileName + ' already exists, overwriting.');
+											self.deleteFile(remotePath);
+										end;
+									ChunkOverwriteIgnore: //ignore this chunk
+										begin
+											Log(MSGTYPE_DETAILS, 'Chunk ' + ChunkFileName + ' already exists, skipping.');
+											Continue;
+										end;
+									ChunkOverwriteAbort: //abort operation
+										begin
+											Log(MSGTYPE_DETAILS, 'Chunk ' + ChunkFileName + ' already exists, aborting.');
+											Splitter.Destroy;
+											exit(FS_FILE_NOTSUPPORTED);
+										end;
+								end;
+
+							end;
+						else
+							begin
+								Log(MSGTYPE_IMPORTANTERROR, 'Partial upload error, code: ' + Result.ToString);
+								Splitter.Destroy;
+								exit;
+							end;
+					end;
+
 				end;
 			end;
 			CRCFileName := Splitter.writeCRCFile;
