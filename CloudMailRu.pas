@@ -1008,7 +1008,17 @@ begin
 									ChunkOverwrite: //silently overwrite chunk
 										begin
 											Log(MSGTYPE_DETAILS, 'Chunk ' + ChunkFileName + ' already exists, overwriting.');
-											self.deleteFile(remotePath);
+											if not(self.deleteFile(ChunkFileName)) then
+											begin
+												Splitter.Destroy;
+												exit(FS_FILE_WRITEERROR);
+											end else begin
+												if (self.putFile(Splitter.SplitResult.parts[SplittedPartIndex].filename, ChunkFileName, ConflictMode) <> FS_FILE_OK) then
+												begin
+													Splitter.Destroy;
+													exit(FS_FILE_WRITEERROR);
+												end;
+											end;
 										end;
 									ChunkOverwriteIgnore: //ignore this chunk
 										begin
@@ -1048,7 +1058,17 @@ begin
 							ChunkOverwrite: //silently overwrite chunk
 								begin
 									Log(MSGTYPE_DETAILS, CRCFileName + ' checksum file already exists, overwriting.');
-									self.deleteFile(CopyExt(CRCFileName, remotePath));
+									if not(self.deleteFile(CopyExt(CRCFileName, remotePath))) then
+									begin
+										Splitter.Destroy;
+										exit(FS_FILE_WRITEERROR);
+									end else begin
+										if (self.putFile(CRCFileName, CopyExt(CRCFileName, remotePath), ConflictMode) <> FS_FILE_OK) then
+										begin
+											Splitter.Destroy;
+											exit(FS_FILE_WRITEERROR);
+										end;
+									end;
 								end;
 							ChunkOverwriteIgnore: //ignore this chunk
 								begin
