@@ -100,12 +100,14 @@ begin
 	self.ExternalProgressProc := ExternalProgressProc;
 	self.ExternalPluginNr := PluginNr;
 	self.totalPartsCount := self.Splitted.size div self.PartSize;
-	if (self.Splitted.size mod self.PartSize) <> 0 then inc(self.totalPartsCount);
+	if (self.Splitted.size mod self.PartSize) <> 0 then
+		inc(self.totalPartsCount);
 
 	self.Splitted.path := IncludeTrailingBackslash(GetTmpDir + GetCurrentProcessId.ToString());
 	if not DirectoryExists(self.Splitted.path) then
 	begin
-		if not CreateDir(self.Splitted.path) then Raise Exception.CreateFmt('Can''t create temp directory : ''%s''', [self.Splitted.path]);
+		if not CreateDir(self.Splitted.path) then
+			Raise Exception.CreateFmt('Can''t create temp directory : ''%s''', [self.Splitted.path]);
 	end;
 	//self.Splitted.crc32 := self.getCRC32File(filename);
 end;
@@ -116,9 +118,11 @@ var
 begin
 	for SplittedPartIndex := 0 to Length(self.SplitResult.parts) - 1 do
 	begin
-		if FileExists(self.SplitResult.parts[SplittedPartIndex].filename) then DeleteFileW(PWideChar(self.SplitResult.parts[SplittedPartIndex].filename));
+		if FileExists(self.SplitResult.parts[SplittedPartIndex].filename) then
+			DeleteFileW(PWideChar(self.SplitResult.parts[SplittedPartIndex].filename));
 	end;
-	if FileExists(self.Splitted.path + ChangeFileExt(ExtractFileName(self.Splitted.filename), '.crc')) then DeleteFileW(PWideChar(self.Splitted.path + ChangeFileExt(ExtractFileName(self.Splitted.filename), '.crc')));
+	if FileExists(self.Splitted.path + ChangeFileExt(ExtractFileName(self.Splitted.filename), '.crc')) then
+		DeleteFileW(PWideChar(self.Splitted.path + ChangeFileExt(ExtractFileName(self.Splitted.filename), '.crc')));
 	inherited;
 end;
 
@@ -152,7 +156,8 @@ begin
 	except
 		exit(FS_FILE_READERROR);
 	end;
-	if partNumber >= self.totalPartsCount then exit(FS_FILE_NOTSUPPORTED);
+	if partNumber >= self.totalPartsCount then
+		exit(FS_FILE_NOTSUPPORTED);
 
 	FStream.Position := self.PartSize * partNumber;
 
@@ -160,7 +165,8 @@ begin
 	begin
 		PartSize := self.Splitted.size - (self.PartSize * partNumber);
 	end
-	else PartSize := self.PartSize;
+	else
+		PartSize := self.PartSize;
 	partStream.CopyFrom(FStream, PartSize);
 	result := FS_FILE_OK;
 end;
@@ -188,7 +194,7 @@ begin
 		if Assigned(self.ExternalProgressProc) then
 		begin
 			Percent := 100 * partsCount div self.totalPartsCount;
-			if ExternalProgressProc(self.ExternalPluginNr, PWideChar('Splitting '+self.Splitted.filename), PWideChar((partsCount + 1).ToString + ' of ' + self.totalPartsCount.ToString), Percent) = 1 then
+			if ExternalProgressProc(self.ExternalPluginNr, PWideChar('Splitting ' + self.Splitted.filename), PWideChar((partsCount + 1).ToString + ' of ' + self.totalPartsCount.ToString), Percent) = 1 then
 			begin //отменили разбивку
 				FStream.Destroy;
 				exit(FS_FILE_USERABORT);
@@ -205,10 +211,12 @@ begin
 		begin
 			PartSize := self.Splitted.size - (self.PartSize * partsCount);
 		end
-		else PartSize := self.PartSize;
+		else
+			PartSize := self.PartSize;
 		try
 			WStream.CopyFrom(FStream, PartSize);
 		except
+			FStream.Destroy;
 			exit(FS_FILE_WRITEERROR);
 		end;
 		WStream.Destroy;
