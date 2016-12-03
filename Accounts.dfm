@@ -158,7 +158,7 @@ object AccountsForm: TAccountsForm
     Top = 0
     Width = 492
     Height = 405
-    ActivePage = AccountsTab
+    ActivePage = GlobalTab
     Align = alClient
     TabOrder = 0
     object AccountsTab: TTabSheet
@@ -377,14 +377,12 @@ object AccountsForm: TAccountsForm
           Width = 465
           Height = 22
           Style = csOwnerDrawFixed
-          ItemIndex = 0
           TabOrder = 0
-          Text = 'No proxy'
           Items.Strings = (
             'No proxy'
             'Socks5'
             'Socks4'
-            'HTTP')
+            'HTTP(S)')
         end
         object ProxyServerEdit: TEdit
           Left = 5
