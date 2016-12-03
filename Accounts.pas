@@ -277,7 +277,7 @@ end;
 
 procedure TAccountsForm.WMHotKey(var Message: TMessage);
 begin
-	if Message.LParamHi = VK_ESCAPE then Close;
+	if (Message.LParamHi = VK_ESCAPE) and (GetForegroundWindow=self.Handle) then Close;
 end;
 
 end.
