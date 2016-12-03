@@ -191,7 +191,8 @@ end;
 
 function GetUNCFilePath(FilePath: WideString): WideString;
 begin
-	Result := '\\?\' + FilePath;//TODO fix network unc path
+	Result := ExpandUNCFileName(FilePath);
+	if not(Pos(WideString('\\'), Result) = 1) then Result := '\\?\' + FilePath;
 end;
 
 function GetWord(command: WideString; WordIndex: Integer = 0): WideString;
@@ -210,7 +211,7 @@ const
 	pulicPrefix = 'https://cloud.mail.ru/public';
 begin
 	Result := URL;
-	if pos(WideString(pulicPrefix), URL) <> 0 then Result := Copy(URL, Length(pulicPrefix) + 1, Length(URL) - Length(pulicPrefix));
+	if Pos(WideString(pulicPrefix), URL) <> 0 then Result := Copy(URL, Length(pulicPrefix) + 1, Length(URL) - Length(pulicPrefix));
 end;
 
 function IsWriteable(const DirName: WideString; FileName: WideString = 'delete.me'; CleanFile: boolean = true): boolean;
