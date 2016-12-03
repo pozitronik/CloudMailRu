@@ -188,7 +188,7 @@ begin
 		if Assigned(self.ExternalProgressProc) then
 		begin
 			Percent := 100 * partsCount div self.totalPartsCount;
-			if ExternalProgressProc(self.ExternalPluginNr, PWideChar('Splitting '+self.Splitted.filename), PWideChar(partsCount.ToString + ' of ' + self.totalPartsCount.ToString), Percent) = 1 then
+			if ExternalProgressProc(self.ExternalPluginNr, PWideChar('Splitting '+self.Splitted.filename), PWideChar((partsCount + 1).ToString + ' of ' + (self.totalPartsCount +1).ToString), Percent) = 1 then
 			begin //отменили разбивку
 				FStream.Destroy;
 				exit(FS_FILE_USERABORT);
