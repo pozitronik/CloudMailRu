@@ -975,7 +975,7 @@ begin
 					end;
 				FS_FILE_USERABORT:
 					begin
-						Log(msgtype_details, 'File splitting aborted by user, uploading aborted');
+						Log(MSGTYPE_DETAILS, 'File splitting aborted by user, uploading aborted');
 						Splitter.Destroy;
 						exit(FS_FILE_USERABORT);
 					end;
@@ -1021,6 +1021,8 @@ begin
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
 	OperationResult := CLOUD_OPERATION_FAILED;
 	PutResult := TStringList.Create;
+	self.ExternalSourceName := PWideChar(localPath);
+	self.ExternalTargetName := PWideChar(remotePath);
 	try
 		OperationResult := self.putFileToCloud(localPath, PutResult);
 	Except
