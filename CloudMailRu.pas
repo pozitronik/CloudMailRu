@@ -953,7 +953,7 @@ var
 	CRCFileName: WideString;
 begin
 	if not(Assigned(self)) then exit(FS_FILE_WRITEERROR); //Проверка на вызов без инициализации
-	if (not(self.unlimited_filesize)) and (SizeOfFile(GetUNCFilePath(localPath)) >= self.split_file_size) then
+	if (not(self.unlimited_filesize)) and (SizeOfFile(GetUNCFilePath(localPath)) > self.split_file_size) then
 	begin
 		if self.split_large_files then
 		begin
@@ -981,7 +981,7 @@ begin
 					end;
 				else
 					begin
-						Log(MSGTYPE_IMPORTANTERROR, 'File splitting error: code: ' + SplitResult.ToString + ', ignored');
+						Log(MSGTYPE_IMPORTANTERROR, 'File splitting error, code: ' + SplitResult.ToString + ', ignored');
 						Splitter.Destroy;
 						exit(FS_FILE_NOTSUPPORTED);
 					end;
