@@ -1,5 +1,5 @@
 ﻿library MailRuCloud;
-
+
 {$R *.dres}
 
 uses
@@ -636,10 +636,8 @@ begin
 	If CheckFlag(FS_COPYFLAGS_RESUME, CopyFlags) then exit(FS_FILE_NOTSUPPORTED); {NEVER CALLED HERE}
 	RealPath := ExtractRealPath(RemoteName);
 
-	MyProgressProc(PluginNum, RemoteName, LocalName, 0);
-
 	if (FileExists(LocalName) and not(CheckFlag(FS_COPYFLAGS_OVERWRITE, CopyFlags))) then exit(FS_FILE_EXISTS);
-
+	MyProgressProc(PluginNum, RemoteName, LocalName, 0);
 	Result := ConnectionManager.get(RealPath.account, getResult).getFile(WideString(RealPath.path), WideString(LocalName)); //?WideString?
 
 	if Result = FS_FILE_OK then
@@ -988,3 +986,4 @@ begin
 	end;
 
 end.
+

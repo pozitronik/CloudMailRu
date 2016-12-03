@@ -1,5 +1,5 @@
 ﻿unit CloudMailRu;
-
+
 interface
 
 uses System.Classes, System.SysUtils, PLUGIN_Types, JSON, Winapi.Windows, IdStack, MRC_helper, Settings, IdCookieManager, IdIOHandler, IdIOHandlerSocket, IdIOHandlerStack, IdSSL, IdSSLOpenSSL, IdBaseComponent, IdComponent, IdTCPConnection, IdTCPClient, IdSocks, IdHTTP, IdAuthentication, IdIOHandlerStream, IdMultipartFormData, FileSplitter;
@@ -959,7 +959,7 @@ begin
 		begin
 			Log(MSGTYPE_DETAILS, 'File size > ' + self.split_file_size.ToString() + ' bytes, file will be splitted.');
 			try
-				Splitter := TFileSplitter.Create(localPath, self.split_file_size);
+				Splitter := TFileSplitter.Create(localPath, self.split_file_size, self.ExternalProgressProc, self.ExternalPluginNr);
 			except
 				on E: Exception do
 				begin
@@ -968,12 +968,26 @@ begin
 				end;
 			end;
 			SplitResult := Splitter.split();
-			if SplitResult <> FS_FILE_OK then
-			begin
-				Log(MSGTYPE_IMPORTANTERROR, 'File splitting error: code: ' + SplitResult.ToString + ', ignored');
-				Splitter.Destroy;
-				exit(FS_FILE_NOTSUPPORTED);
+			case SplitResult of
+				FS_FILE_OK:
+					begin
+						//all ok
+					end;
+				FS_FILE_USERABORT:
+					begin
+						Log(msgtype_details, 'File splitting aborted by user, uploading aborted');
+						Splitter.Destroy;
+						exit(FS_FILE_USERABORT);
+					end;
+				else
+					begin
+						Log(MSGTYPE_IMPORTANTERROR, 'File splitting error: code: ' + SplitResult.ToString + ', ignored');
+						Splitter.Destroy;
+						exit(FS_FILE_NOTSUPPORTED);
+					end;
+
 			end;
+
 			for SplittedPartIndex := 0 to Length(Splitter.SplitResult.parts) - 1 do
 			begin
 				Result := self.putFile(Splitter.SplitResult.parts[SplittedPartIndex].filename, CopyExt(Splitter.SplitResult.parts[SplittedPartIndex].filename, remotePath), ConflictMode);
@@ -1754,3 +1768,4 @@ begin
 end;
 
 end.
+
