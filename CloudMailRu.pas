@@ -1022,7 +1022,6 @@ begin
 											exit(FS_FILE_NOTSUPPORTED);
 										end;
 								end;
-
 							end;
 						else
 							begin
@@ -1036,12 +1035,39 @@ begin
 			end;
 			CRCFileName := Splitter.writeCRCFile;
 			Result := self.putFile(CRCFileName, CopyExt(CRCFileName, remotePath), ConflictMode);
-			if Result <> FS_FILE_OK then
-			begin //Отваливаемся при ошибке
-				if Result <> FS_FILE_USERABORT then Log(MSGTYPE_IMPORTANTERROR, 'Checksum upload aborted')
-				else Log(MSGTYPE_IMPORTANTERROR, 'Checksum upload error');
-				Splitter.Destroy;
-				exit;
+			case Result of
+				FS_FILE_USERABORT:
+					begin
+						Log(MSGTYPE_DETAILS, 'Partial upload aborted');
+						Splitter.Destroy;
+						exit(FS_FILE_USERABORT);
+					end;
+				FS_FILE_EXISTS:
+					begin
+						case ChunkOverwriteMode of
+							ChunkOverwrite: //silently overwrite chunk
+								begin
+									Log(MSGTYPE_DETAILS, CRCFileName + ' checksum file already exists, overwriting.');
+									self.deleteFile(CopyExt(CRCFileName, remotePath));
+								end;
+							ChunkOverwriteIgnore: //ignore this chunk
+								begin
+									Log(MSGTYPE_DETAILS, CRCFileName + ' checksum file already exists, skipping.');
+								end;
+							ChunkOverwriteAbort: //abort operation
+								begin
+									Log(MSGTYPE_DETAILS, CRCFileName + ' checksum file already exists, aborting.');
+									Splitter.Destroy;
+									exit(FS_FILE_NOTSUPPORTED);
+								end;
+						end;
+					end;
+				else
+					begin
+						Log(MSGTYPE_IMPORTANTERROR, 'Checksum file  upload error, code: ' + Result.ToString);
+						Splitter.Destroy;
+						exit;
+					end;
 			end;
 			Splitter.Destroy;
 			exit(FS_FILE_OK); //Файлик залит по частям, выходим
