@@ -37,8 +37,6 @@ const
 	CLOUD_CONFLICT_RENAME = 'rename'; //Переименуем новый файл
 	//CLOUD_CONFLICT_REPLACE = 'overwrite'; // хз, этот ключ не вскрыт
 
-	CLOUD_MAX_FILESIZE = 2147483392; //$80000000-256
-
 	CLOUD_MAX_NAME_LENGTH = 255;
 	CLOUD_PUBLISH = true;
 	CLOUD_UNPUBLISH = false;
@@ -89,6 +87,7 @@ type
 		password: WideString;
 		unlimited_filesize: Boolean;
 		split_large_files: Boolean;
+		split_file_size: integer;
 		token: WideString;
 		OAuthToken: TCloudMailRuOAuthInfo;
 		x_page_id: WideString;
@@ -139,7 +138,7 @@ type
 		ExternalPluginNr: integer;
 		ExternalSourceName: PWideChar;
 		ExternalTargetName: PWideChar;
-		constructor Create(user, domain, password: WideString; unlimited_filesize: Boolean; split_large_files: Boolean; Proxy: TProxySettings; ConnectTimeout: integer; ExternalProgressProc: TProgressProcW = nil; PluginNr: integer = -1; ExternalLogProc: TLogProcW = nil);
+		constructor Create(user, domain, password: WideString; unlimited_filesize: Boolean; split_large_files: Boolean; split_file_size: integer; Proxy: TProxySettings; ConnectTimeout: integer; ExternalProgressProc: TProgressProcW = nil; PluginNr: integer = -1; ExternalLogProc: TLogProcW = nil);
 		destructor Destroy; override;
 		function login(method: integer = CLOUD_AUTH_METHOD_WEB): Boolean;
 
@@ -168,7 +167,7 @@ implementation
 
 {CONSTRUCTOR/DESTRUCTOR}
 
-constructor TCloudMailRu.Create(user, domain, password: WideString; unlimited_filesize: Boolean; split_large_files: Boolean; Proxy: TProxySettings; ConnectTimeout: integer; ExternalProgressProc: TProgressProcW; PluginNr: integer; ExternalLogProc: TLogProcW);
+constructor TCloudMailRu.Create(user, domain, password: WideString; unlimited_filesize: Boolean; split_large_files: Boolean; split_file_size: integer; Proxy: TProxySettings; ConnectTimeout: integer; ExternalProgressProc: TProgressProcW; PluginNr: integer; ExternalLogProc: TLogProcW);
 begin
 	try
 		self.Cookie := TIdCookieManager.Create();
@@ -204,6 +203,7 @@ begin
 		self.domain := domain;
 		self.unlimited_filesize := unlimited_filesize;
 		self.split_large_files := split_large_files;
+		self.split_file_size := split_file_size;
 		self.ConnectTimeout := ConnectTimeout;
 		self.ExternalProgressProc := ExternalProgressProc;
 		self.ExternalLogProc := ExternalLogProc;
@@ -953,13 +953,13 @@ var
 	CRCFileName: WideString;
 begin
 	if not(Assigned(self)) then exit(FS_FILE_WRITEERROR); //Проверка на вызов без инициализации
-	if (not(self.unlimited_filesize)) and (SizeOfFile(GetUNCFilePath(localPath)) >= CLOUD_MAX_FILESIZE + 1) then
+	if (not(self.unlimited_filesize)) and (SizeOfFile(GetUNCFilePath(localPath)) >= self.split_file_size) then
 	begin
 		if self.split_large_files then
 		begin
-			Log(MSGTYPE_DETAILS, 'File size > ' + CLOUD_MAX_FILESIZE.ToString() + ' bytes, file will be splitted.');
+			Log(MSGTYPE_DETAILS, 'File size > ' + self.split_file_size.ToString() + ' bytes, file will be splitted.');
 			try
-				Splitter := TFileSplitter.Create(localPath, CLOUD_MAX_FILESIZE);
+				Splitter := TFileSplitter.Create(localPath, self.split_file_size);
 			except
 				on E: Exception do
 				begin
@@ -997,7 +997,7 @@ begin
 			Splitter.Destroy;
 			exit(FS_FILE_OK); //Файлик залит по частям, выходим
 		end else begin
-			Log(MSGTYPE_IMPORTANTERROR, 'File size > ' + CLOUD_MAX_FILESIZE.ToString() + ' bytes, ignored');
+			Log(MSGTYPE_IMPORTANTERROR, 'File size > ' + self.split_file_size.ToString() + ' bytes, ignored');
 			exit(FS_FILE_NOTSUPPORTED);
 		end;
 

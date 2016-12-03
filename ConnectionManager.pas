@@ -1,12 +1,11 @@
 ﻿unit ConnectionManager;
 
-{ Обеспечиваем управление множественными поключениями без необходимости постоянных переподключений. При первом обращении нужное подключение создаётся,
-	при последующих - отдаются уже созданные. }
+{Обеспечиваем управление множественными поключениями без необходимости постоянных переподключений. При первом обращении нужное подключение создаётся,
+ при последующих - отдаются уже созданные.}
 
 interface
 
-uses CloudMailRu, MRC_Helper, windows, Vcl.Controls, PLUGIN_Types, Settings,
-	AskPassword;
+uses CloudMailRu, MRC_Helper, windows, Vcl.Controls, PLUGIN_Types, Settings, AskPassword;
 
 type
 
@@ -21,34 +20,35 @@ type
 		IniFileName: WideString;
 		Proxy: TProxySettings;
 		Timeout: Integer;
+		CloudMaxFileSize: Integer;
 
 		PluginNum: Integer;
 
 		MyProgressProc: TProgressProcW;
 		MyLogProc: TLogProcW;
 
-		function ConnectionExists(connectionName: WideString): Integer; // проверяет существование подключение
-		function new(connectionName: WideString): Integer; // Добавляет подключение в пул
-		function GetMyPasswordNow(var AccountSettings: TAccountSettings): boolean; // Получает пароль из файла, из тоталовского менеджера или запрашивает прямой ввод
+		function ConnectionExists(connectionName: WideString): Integer; //проверяет существование подключение
+		function new(connectionName: WideString): Integer; //Добавляет подключение в пул
+		function GetMyPasswordNow(var AccountSettings: TAccountSettings): boolean; //Получает пароль из файла, из тоталовского менеджера или запрашивает прямой ввод
 
 	public
 		CryptoNum: Integer;
 		MyCryptProc: TCryptProcW;
-		constructor Create(IniFileName: WideString; PluginNum: Integer; MyProgressProc: TProgressProcW; MyLogProc: TLogProcW; ProxySettings: TProxySettings; Timeout: Integer);
+		constructor Create(IniFileName: WideString; PluginNum: Integer; MyProgressProc: TProgressProcW; MyLogProc: TLogProcW; ProxySettings: TProxySettings; Timeout, CloudMaxFileSize: Integer);
 		destructor Destroy(); override;
-		function get(connectionName: WideString; var OperationResult: Integer; doInit: boolean = true): TCloudMailRu; // возвращает готовое подклчение по имени
+		function get(connectionName: WideString; var OperationResult: Integer; doInit: boolean = true): TCloudMailRu; //возвращает готовое подклчение по имени
 		function set_(connectionName: WideString; cloud: TCloudMailRu): boolean;
-		function init(connectionName: WideString; ProxySettings: TProxySettings; Timeout: Integer): Integer; // инициализирует подключение по его имени, возвращает код состояния
-		function free(connectionName: WideString): Integer; // освобождает подключение по его имени, возвращает код состояния
-		function freeAll: Integer; // освобождает все подключения
-		function initialized(connectionName: WideString): boolean; // Проверяет, инициализировано ли подключение
+		function init(connectionName: WideString; ProxySettings: TProxySettings; Timeout: Integer): Integer; //инициализирует подключение по его имени, возвращает код состояния
+		function free(connectionName: WideString): Integer; //освобождает подключение по его имени, возвращает код состояния
+		function freeAll: Integer; //освобождает все подключения
+		function initialized(connectionName: WideString): boolean; //Проверяет, инициализировано ли подключение
 
 	end;
 
 implementation
 
-{ TConnectionManager }
-constructor TConnectionManager.Create(IniFileName: WideString; PluginNum: Integer; MyProgressProc: TProgressProcW; MyLogProc: TLogProcW; ProxySettings: TProxySettings; Timeout: Integer);
+{TConnectionManager}
+constructor TConnectionManager.Create(IniFileName: WideString; PluginNum: Integer; MyProgressProc: TProgressProcW; MyLogProc: TLogProcW; ProxySettings: TProxySettings; Timeout, CloudMaxFileSize: Integer);
 begin
 	SetLength(Connections, 0);
 	self.IniFileName := IniFileName;
@@ -57,6 +57,7 @@ begin
 	self.MyLogProc := MyLogProc;
 	self.Proxy := ProxySettings;
 	self.Timeout := Timeout;
+	self.CloudMaxFileSize := CloudMaxFileSize;
 end;
 
 destructor TConnectionManager.Destroy;
@@ -81,7 +82,7 @@ begin
 		if not initialized(connectionName) then OperationResult := init(connectionName, self.Proxy, self.Timeout);
 		if (OperationResult = CLOUD_OPERATION_OK) then result := get(connectionName, OperationResult, false);
 	end;
-	{ если подключиться не удалось, все функции облака будут возвращать негативный результат, но без AV }
+	{если подключиться не удалось, все функции облака будут возвращать негативный результат, но без AV}
 end;
 
 function TConnectionManager.set_(connectionName: WideString; cloud: TCloudMailRu): boolean;
@@ -102,12 +103,12 @@ begin
 	result := CLOUD_OPERATION_OK;
 	AccountSettings := GetAccountSettingsFromIniFile(IniFileName, connectionName);
 
-	if not GetMyPasswordNow(AccountSettings) then exit(CLOUD_OPERATION_ERROR_STATUS_UNKNOWN); // INVALID_HANDLE_VALUE
+	if not GetMyPasswordNow(AccountSettings) then exit(CLOUD_OPERATION_ERROR_STATUS_UNKNOWN); //INVALID_HANDLE_VALUE
 
 	MyLogProc(PluginNum, MSGTYPE_CONNECT, PWideChar('CONNECT ' + AccountSettings.email));
 
-	cloud := TCloudMailRu.Create(AccountSettings.user, AccountSettings.domain, AccountSettings.password, AccountSettings.unlimited_filesize, AccountSettings.split_large_files, self.Proxy, Timeout, MyProgressProc, PluginNum, MyLogProc);
-	if not set_(connectionName, cloud) then exit(CLOUD_OPERATION_ERROR_STATUS_UNKNOWN); // INVALID_HANDLE_VALUE
+	cloud := TCloudMailRu.Create(AccountSettings.user, AccountSettings.domain, AccountSettings.password, AccountSettings.unlimited_filesize, AccountSettings.split_large_files, self.CloudMaxFileSize, self.Proxy, Timeout, MyProgressProc, PluginNum, MyLogProc);
+	if not set_(connectionName, cloud) then exit(CLOUD_OPERATION_ERROR_STATUS_UNKNOWN); //INVALID_HANDLE_VALUE
 
 	if not(get(connectionName, result, false).login()) then
 	begin
@@ -115,7 +116,7 @@ begin
 		free(connectionName);
 	end;
 
-	// cloud.Destroy;
+	//cloud.Destroy;
 end;
 
 function TConnectionManager.initialized(connectionName: WideString): boolean;
@@ -177,20 +178,20 @@ var
 	buf: PWideChar;
 begin
 	if AccountSettings.use_tc_password_manager then
-	begin // пароль должен браться из TC
+	begin //пароль должен браться из TC
 		GetMem(buf, 1024);
-		CryptResult := MyCryptProc(PluginNum, CryptoNum, FS_CRYPT_LOAD_PASSWORD_NO_UI, PWideChar(AccountSettings.Name), buf, 1024); // Пытаемся взять пароль по-тихому
+		CryptResult := MyCryptProc(PluginNum, CryptoNum, FS_CRYPT_LOAD_PASSWORD_NO_UI, PWideChar(AccountSettings.Name), buf, 1024); //Пытаемся взять пароль по-тихому
 		if CryptResult = FS_FILE_NOTFOUND then
 		begin
 			MyLogProc(PluginNum, msgtype_details, PWideChar('No master password entered yet'));
 			CryptResult := MyCryptProc(PluginNum, CryptoNum, FS_CRYPT_LOAD_PASSWORD, PWideChar(AccountSettings.Name), buf, 1024);
 		end;
-		if CryptResult = FS_FILE_OK then // Успешно получили пароль
+		if CryptResult = FS_FILE_OK then //Успешно получили пароль
 		begin
 			AccountSettings.password := buf;
-			// Result := true;
+			//Result := true;
 		end;
-		if CryptResult = FS_FILE_NOTSUPPORTED then // пользователь отменил ввод главного пароля
+		if CryptResult = FS_FILE_NOTSUPPORTED then //пользователь отменил ввод главного пароля
 		begin
 			MyLogProc(PluginNum, msgtype_importanterror, PWideChar('CryptProc returns error: Decrypt failed'));
 		end;
@@ -199,45 +200,45 @@ begin
 			MyLogProc(PluginNum, msgtype_importanterror, PWideChar('CryptProc returns error: Password not found in password store'));
 		end;
 		FreeMemory(buf);
-	end; // else // ничего не делаем, пароль уже должен быть в настройках (взят в открытом виде из инишника)
+	end; //else // ничего не делаем, пароль уже должен быть в настройках (взят в открытом виде из инишника)
 
-	if AccountSettings.password = '' then // но пароля нет, не в инишнике, не в тотале
+	if AccountSettings.password = '' then //но пароля нет, не в инишнике, не в тотале
 	begin
 		AskResult := TAskPasswordForm.AskPassword(FindTCWindow, AccountSettings.Name, AccountSettings.password, AccountSettings.use_tc_password_manager);
 		if AskResult <> mrOK then
-		begin // не указали пароль в диалоге
-			exit(false); // отказались вводить пароль
+		begin //не указали пароль в диалоге
+			exit(false); //отказались вводить пароль
 		end else begin
 			if AccountSettings.use_tc_password_manager then
 			begin
 				case MyCryptProc(PluginNum, CryptoNum, FS_CRYPT_SAVE_PASSWORD, PWideChar(AccountSettings.Name), PWideChar(AccountSettings.password), SizeOf(AccountSettings.password)) of
 					FS_FILE_OK:
-						begin // TC скушал пароль, запомним в инишник галочку
+						begin //TC скушал пароль, запомним в инишник галочку
 							MyLogProc(PluginNum, msgtype_details, PWideChar('Password saved in TC password manager'));
 							TmpString := AccountSettings.password;
 							AccountSettings.password := '';
 							SetAccountSettingsToIniFile(IniFileName, AccountSettings);
 							AccountSettings.password := TmpString;
 						end;
-					FS_FILE_NOTSUPPORTED: // Сохранение не получилось
+					FS_FILE_NOTSUPPORTED: //Сохранение не получилось
 						begin
 							MyLogProc(PluginNum, msgtype_importanterror, PWideChar('CryptProc returns error: Encrypt failed'));
 						end;
-					FS_FILE_WRITEERROR: // Сохранение опять не получилось
+					FS_FILE_WRITEERROR: //Сохранение опять не получилось
 						begin
 							MyLogProc(PluginNum, msgtype_importanterror, PWideChar('Password NOT saved: Could not write password to password store'));
 						end;
-					FS_FILE_NOTFOUND: // Не указан мастер-пароль
+					FS_FILE_NOTFOUND: //Не указан мастер-пароль
 						begin
 							MyLogProc(PluginNum, msgtype_importanterror, PWideChar('Password NOT saved: No master password entered yet'));
 						end;
-					// Ошибки здесь не значат, что пароль мы не получили - он может быть введён в диалоге
+					//Ошибки здесь не значат, что пароль мы не получили - он может быть введён в диалоге
 				end;
 			end;
 			result := true;
 		end;
 	end
-	else result := true; // пароль взят из инишника напрямую
+	else result := true; //пароль взят из инишника напрямую
 end;
 
 end.

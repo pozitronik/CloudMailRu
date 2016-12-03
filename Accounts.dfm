@@ -158,7 +158,7 @@ object AccountsForm: TAccountsForm
     Top = 0
     Width = 492
     Height = 405
-    ActivePage = GlobalTab
+    ActivePage = AccountsTab
     Align = alClient
     TabOrder = 0
     object AccountsTab: TTabSheet

@@ -28,8 +28,8 @@ var
 	SettingsIniFilePath: WideString;
 	GlobalPath, PluginPath, AppDataDir, IniDir: WideString;
 	FileCounter: integer = 0;
-	ThreadSkipListDelete: TAssociativeArray;//Массив id потоков, для которых операции получения листинга должны быть пропущены (при удалении)
-//	ThreadSkipListRenMov: TAssociativeArray;//Массив id потоков, для которых операции получения листинга должны быть пропущены (при копировании/перемещении)
+	ThreadSkipListDelete: TAssociativeArray; //Массив id потоков, для которых операции получения листинга должны быть пропущены (при удалении)
+	//ThreadSkipListRenMov: TAssociativeArray;//Массив id потоков, для которых операции получения листинга должны быть пропущены (при копировании/перемещении)
 	{Callback data}
 	PluginNum: integer;
 	CryptoNum: integer;
@@ -355,7 +355,7 @@ begin
 				end;
 			FS_STATUS_OP_RENMOV_MULTI:
 				begin
-//					ThreadSkipListRenMov.Add(GetCurrentThreadID());
+					//ThreadSkipListRenMov.Add(GetCurrentThreadID());
 				end;
 			FS_STATUS_OP_DELETE:
 				begin
@@ -426,7 +426,7 @@ begin
 				end;
 			FS_STATUS_OP_RENMOV_MULTI:
 				begin
-//					ThreadSkipListRenMov.DeleteValue(GetCurrentThreadID());
+					//ThreadSkipListRenMov.DeleteValue(GetCurrentThreadID());
 					if RealPath.account <> '' then ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
 				end;
 			FS_STATUS_OP_DELETE:
@@ -805,6 +805,8 @@ begin
 end;
 
 procedure FsSetCryptCallbackW(PCryptProc: TCryptProcW; CryptoNr: integer; Flags: integer); stdcall;
+var
+	CloudMaxFileSize: integer;
 begin
 	MyCryptProc := PCryptProc;
 	CryptoNum := CryptoNr;
@@ -814,7 +816,8 @@ begin
 
 	if ProxySettings.use_tc_password_manager then SetPluginSettingsValue(SettingsIniFilePath, 'ProxyTCPwdMngr', true);
 
-	ConnectionManager := TConnectionManager.Create(AccountsIniFilePath, PluginNum, MyProgressProc, MyLogProc, ProxySettings, GetPluginSettings(SettingsIniFilePath).SocketTimeout);
+	CloudMaxFileSize:= GetPluginSettings(SettingsIniFilePath).CloudMaxFileSize;
+	ConnectionManager := TConnectionManager.Create(AccountsIniFilePath, PluginNum, MyProgressProc, MyLogProc, ProxySettings, GetPluginSettings(SettingsIniFilePath).SocketTimeout, CloudMaxFileSize);
 	ConnectionManager.CryptoNum := CryptoNum;
 	ConnectionManager.MyCryptProc := MyCryptProc;
 

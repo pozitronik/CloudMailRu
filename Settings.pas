@@ -12,12 +12,14 @@ const
 
 	SocksProxyTypes = [ProxySocks5, ProxySocks4];
 
+	CLOUD_MAX_FILESIZE_DEFAULT = 2147483392; //$80000000-256
+
 type
 
 	TAccountSettings = record
 		name, email, password: WideString;
 		use_tc_password_manager, twostep_auth: boolean;
-		user, domain: WideString; // parsed values from email
+		user, domain: WideString; //parsed values from email
 		unlimited_filesize: boolean;
 		split_large_files: boolean;
 	end;
@@ -40,6 +42,7 @@ type
 		AskOnErrors: boolean;
 		SocketTimeout: Integer;
 		Proxy: TProxySettings;
+		CloudMaxFileSize: Integer;
 	end;
 
 function GetProxyPasswordNow(var ProxySettings: TProxySettings; MyLogProc: TLogProcW; MyCryptProc: TCryptProcW; PluginNum: Integer; CryptoNum: Integer): boolean;
@@ -60,23 +63,23 @@ var
 	TmpString: WideString;
 	buf: PWideChar;
 begin
-	if (ProxySettings.ProxyType = ProxyNone) or (ProxySettings.user = '') then exit(true); // no username means no password required
+	if (ProxySettings.ProxyType = ProxyNone) or (ProxySettings.user = '') then exit(true); //no username means no password required
 
 	if ProxySettings.use_tc_password_manager then
-	begin // пароль должен браться из TC
+	begin //пароль должен браться из TC
 		GetMem(buf, 1024);
-		CryptResult := MyCryptProc(PluginNum, CryptoNum, FS_CRYPT_LOAD_PASSWORD_NO_UI, PWideChar('proxy' + ProxySettings.user), buf, 1024); // Пытаемся взять пароль по-тихому
+		CryptResult := MyCryptProc(PluginNum, CryptoNum, FS_CRYPT_LOAD_PASSWORD_NO_UI, PWideChar('proxy' + ProxySettings.user), buf, 1024); //Пытаемся взять пароль по-тихому
 		if CryptResult = FS_FILE_NOTFOUND then
 		begin
 			MyLogProc(PluginNum, msgtype_details, PWideChar('No master password entered yet'));
 			CryptResult := MyCryptProc(PluginNum, CryptoNum, FS_CRYPT_LOAD_PASSWORD, PWideChar('proxy' + ProxySettings.user), buf, 1024);
 		end;
-		if CryptResult = FS_FILE_OK then // Успешно получили пароль
+		if CryptResult = FS_FILE_OK then //Успешно получили пароль
 		begin
 			ProxySettings.password := buf;
-			// Result := true;
+			//Result := true;
 		end;
-		if CryptResult = FS_FILE_NOTSUPPORTED then // пользователь отменил ввод главного пароля
+		if CryptResult = FS_FILE_NOTSUPPORTED then //пользователь отменил ввод главного пароля
 		begin
 			MyLogProc(PluginNum, msgtype_importanterror, PWideChar('CryptProc returns error: Decrypt failed'));
 		end;
@@ -85,45 +88,45 @@ begin
 			MyLogProc(PluginNum, msgtype_importanterror, PWideChar('CryptProc returns error: Password not found in password store'));
 		end;
 		FreeMemory(buf);
-	end; // else // ничего не делаем, пароль уже должен быть в настройках (взят в открытом виде из инишника)
+	end; //else // ничего не делаем, пароль уже должен быть в настройках (взят в открытом виде из инишника)
 
-	if ProxySettings.password = '' then // но пароля нет, не в инишнике, не в тотале
+	if ProxySettings.password = '' then //но пароля нет, не в инишнике, не в тотале
 	begin
 		AskResult := TAskPasswordForm.AskPassword(FindTCWindow, 'User ' + ProxySettings.user + ' proxy', ProxySettings.password, ProxySettings.use_tc_password_manager);
 		if AskResult <> mrOK then
-		begin // не указали пароль в диалоге
-			exit(false); // отказались вводить пароль
+		begin //не указали пароль в диалоге
+			exit(false); //отказались вводить пароль
 		end else begin
 			if ProxySettings.use_tc_password_manager then
 			begin
 				case MyCryptProc(PluginNum, CryptoNum, FS_CRYPT_SAVE_PASSWORD, PWideChar('proxy' + ProxySettings.user), PWideChar(ProxySettings.password), SizeOf(ProxySettings.password)) of
 					FS_FILE_OK:
-						begin // TC скушал пароль, запомним в инишник галочку
+						begin //TC скушал пароль, запомним в инишник галочку
 							MyLogProc(PluginNum, msgtype_details, PWideChar('Password saved in TC password manager'));
 							TmpString := ProxySettings.password;
 							ProxySettings.password := '';
-							ProxySettings.use_tc_password_manager := true; // Не забыть сохранить!
+							ProxySettings.use_tc_password_manager := true; //Не забыть сохранить!
 							ProxySettings.password := TmpString;
 						end;
-					FS_FILE_NOTSUPPORTED: // Сохранение не получилось
+					FS_FILE_NOTSUPPORTED: //Сохранение не получилось
 						begin
 							MyLogProc(PluginNum, msgtype_importanterror, PWideChar('CryptProc returns error: Encrypt failed'));
 						end;
-					FS_FILE_WRITEERROR: // Сохранение опять не получилось
+					FS_FILE_WRITEERROR: //Сохранение опять не получилось
 						begin
 							MyLogProc(PluginNum, msgtype_importanterror, PWideChar('Password NOT saved: Could not write password to password store'));
 						end;
-					FS_FILE_NOTFOUND: // Не указан мастер-пароль
+					FS_FILE_NOTFOUND: //Не указан мастер-пароль
 						begin
 							MyLogProc(PluginNum, msgtype_importanterror, PWideChar('Password NOT saved: No master password entered yet'));
 						end;
-					// Ошибки здесь не значат, что пароль мы не получили - он может быть введён в диалоге
+					//Ошибки здесь не значат, что пароль мы не получили - он может быть введён в диалоге
 				end;
 			end;
 			result := true;
 		end;
 	end
-	else result := true; // пароль взят из инишника напрямую
+	else result := true; //пароль взят из инишника напрямую
 end;
 
 function GetPluginSettings(IniFilePath: WideString): TPluginSettings;
@@ -138,16 +141,18 @@ begin
 	GetPluginSettings.OperationsViaPublicLinkEnabled := IniFile.ReadBool('Main', 'OperationsViaPublicLinkEnabled', false);
 	GetPluginSettings.AskOnErrors := IniFile.ReadBool('Main', 'AskOnErrors', false);
 	GetPluginSettings.SocketTimeout := IniFile.ReadInteger('Main', 'SocketTimeout', -1);
+	GetPluginSettings.CloudMaxFileSize := IniFile.ReadInteger('Main', 'CloudMaxFileSize', CLOUD_MAX_FILESIZE_DEFAULT);
 	GetPluginSettings.Proxy.ProxyType := IniFile.ReadInteger('Main', 'ProxyType', ProxyNone);
 	GetPluginSettings.Proxy.Server := IniFile.ReadString('Main', 'ProxyServer', '');
 	GetPluginSettings.Proxy.Port := IniFile.ReadInteger('Main', 'ProxyPort', 0);
 	GetPluginSettings.Proxy.user := IniFile.ReadString('Main', 'ProxyUser', '');
 	GetPluginSettings.Proxy.use_tc_password_manager := IniFile.ReadBool('Main', 'ProxyTCPwdMngr', false);
 	GetPluginSettings.Proxy.password := IniFile.ReadString('Main', 'ProxyPassword', '');
+
 	IniFile.Destroy;
 end;
 
-procedure SetPluginSettings(IniFilePath: WideString; PluginSettings: TPluginSettings); { Не используется }
+procedure SetPluginSettings(IniFilePath: WideString; PluginSettings: TPluginSettings); {Не используется}
 var
 	IniFile: TIniFile;
 begin
