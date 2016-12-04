@@ -18,7 +18,8 @@ const
 	ChunkOverwriteIgnore = 1;
 	ChunkOverwriteAbort = 2;
 
-	ChunkOverwriteModes = [ChunkOverwrite, ChunkOverwriteIgnore, ChunkOverwriteAbort];
+	DeleteFailOnUploadIgnore = 1;
+	DeleteFailOnUploadAbort = 2;
 
 type
 
@@ -50,6 +51,7 @@ type
 		Proxy: TProxySettings;
 		CloudMaxFileSize: Integer;
 		ChunkOverwriteMode: Integer;
+		DeleteFailOnUploadMode: Integer;
 	end;
 
 function GetProxyPasswordNow(var ProxySettings: TProxySettings; MyLogProc: TLogProcW; MyCryptProc: TCryptProcW; PluginNum: Integer; CryptoNum: Integer): boolean;
@@ -150,6 +152,7 @@ begin
 	GetPluginSettings.SocketTimeout := IniFile.ReadInteger('Main', 'SocketTimeout', -1);
 	GetPluginSettings.CloudMaxFileSize := IniFile.ReadInteger('Main', 'CloudMaxFileSize', CLOUD_MAX_FILESIZE_DEFAULT);
 	GetPluginSettings.ChunkOverwriteMode := IniFile.ReadInteger('Main', 'ChunkOverwriteMode', 0);
+	GetPluginSettings.DeleteFailOnUploadMode := IniFile.ReadInteger('Main', 'DeleteFailOnUploadMode', 1);
 	GetPluginSettings.Proxy.ProxyType := IniFile.ReadInteger('Main', 'ProxyType', ProxyNone);
 	GetPluginSettings.Proxy.Server := IniFile.ReadString('Main', 'ProxyServer', '');
 	GetPluginSettings.Proxy.Port := IniFile.ReadInteger('Main', 'ProxyPort', 0);

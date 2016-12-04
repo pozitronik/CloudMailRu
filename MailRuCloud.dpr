@@ -688,7 +688,21 @@ begin
 		MyLogProc(PluginNum, MSGTYPE_TRANSFERCOMPLETE, PWideChar(LocalName + '->' + RemoteName));
 		if CheckFlag(FS_COPYFLAGS_MOVE, CopyFlags) then
 		begin
-			if not DeleteFileW(PWideChar(GetUNCFilePath(LocalName))) then exit(FS_FILE_NOTSUPPORTED);
+			if not DeleteFileW(PWideChar(GetUNCFilePath(LocalName))) then
+			begin
+				case GetPluginSettings(SettingsIniFilePath).DeleteFailOnUploadMode of
+					DeleteFailOnUploadAbort:
+						begin
+							MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, PWideChar('Can''t delete file ' + LocalName + ', aborted'));
+							exit(FS_FILE_NOTSUPPORTED);
+						end;
+					else
+						begin
+							MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, PWideChar('Can''t delete file ' + LocalName + ', ignored'));
+						end;
+				end;
+
+			end;
 		end;
 	end else begin
 		if GetPluginSettings(SettingsIniFilePath).AskOnErrors and not(Result = FS_FILE_USERABORT) then
