@@ -127,7 +127,7 @@ End;
 
 function FsGetBackgroundFlags: integer; stdcall;
 begin
-	Result := BG_DOWNLOAD + BG_UPLOAD; //+ BG_ASK_USER;
+	if GetPluginSettings(SettingsIniFilePath).DisableMultiThreading then Result:= 0 else Result := BG_DOWNLOAD + BG_UPLOAD; //+ BG_ASK_USER;
 end;
 
 {DIRTY ANSI PEASANTS}
@@ -947,7 +947,6 @@ end;
 exports FsGetDefRootName, FsInit, FsInitW, FsFindFirst, FsFindFirstW, FsFindNext, FsFindNextW, FsFindClose, FsGetFile, FsGetFileW, FsDisconnect, FsDisconnectW, FsStatusInfo, FsStatusInfoW, FsPutFile, FsPutFileW, FsDeleteFile, FsDeleteFileW, FsMkDir, FsMkDirW, FsRemoveDir, FsRemoveDirW, FsSetCryptCallback, FsSetCryptCallbackW, FsExecuteFileW, FsRenMovFile, FsRenMovFileW, FsGetBackgroundFlags, FsContentGetSupportedField, FsContentGetValue, FsContentGetValueW;
 
 begin
-	IsMultiThread := true;
 	GetMem(tmp, max_path);
 	GetModuleFilename(hInstance, tmp, max_path);
 	PluginPath := tmp;
@@ -996,8 +995,9 @@ begin
 		end else begin //else try to load it from plugin dir
 			IdOpenSSLSetLibPath(PluginPath);
 		end;
-
 	end;
+
+	IsMultiThread := not(GetPluginSettings(SettingsIniFilePath).DisableMultiThreading);
 
 end.
 
