@@ -1,5 +1,5 @@
 unit FileSplitter;
-
+
 interface
 
 uses
@@ -134,6 +134,7 @@ var
 	ReadBytes: Integer;
 begin
 	AssignFile(inFile, filename);
+	FileMode := fmOpenRead;
 	Reset(inFile, 1);
 	CRCValue := CRCSeed;
 	blockread(inFile, inbuffer, Sizeof(inbuffer), ReadBytes);
@@ -239,3 +240,4 @@ begin
 end;
 
 end.
+
