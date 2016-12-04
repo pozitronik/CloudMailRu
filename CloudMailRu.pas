@@ -877,6 +877,8 @@ begin
 	if (Assigned(FileStream)) then
 	begin
 		try
+			self.ExternalSourceName := PWideChar(remotePath);
+			self.ExternalTargetName := PWideChar(localPath);
 			Result := self.HTTPGetFile(self.Shard + remotePath, FileStream, LogErrors);
 		except
 			on E: Exception do
