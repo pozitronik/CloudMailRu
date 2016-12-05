@@ -29,6 +29,8 @@ type
 		user, domain: WideString; //parsed values from email
 		unlimited_filesize: boolean;
 		split_large_files: boolean;
+		public_account: boolean;
+		public_url: WideString;
 	end;
 
 	TProxySettings = record
@@ -210,6 +212,8 @@ begin
 	result.unlimited_filesize := IniFile.ReadBool(result.name, 'unlimited_filesize', false);
 	result.split_large_files := IniFile.ReadBool(result.name, 'split_large_files', false);
 	result.twostep_auth := IniFile.ReadBool(result.name, 'twostep_auth', false);
+	result.public_account := IniFile.ReadBool(result.name, 'public_account', false);
+	result.public_url := IniFile.ReadString(result.name, 'public_url', '');
 	AtPos := AnsiPos('@', result.email);
 	if AtPos <> 0 then
 	begin
@@ -232,6 +236,8 @@ begin
 	IniFile.WriteBool(AccountSettings.name, 'unlimited_filesize', AccountSettings.unlimited_filesize);
 	IniFile.WriteBool(AccountSettings.name, 'split_large_files', AccountSettings.split_large_files);
 	IniFile.WriteBool(AccountSettings.name, 'twostep_auth', AccountSettings.twostep_auth);
+	IniFile.WriteBool(AccountSettings.name, 'public_account', AccountSettings.public_account);
+	IniFile.WriteString(AccountSettings.name, 'public_url', AccountSettings.public_url);
 	IniFile.Destroy;
 end;
 
