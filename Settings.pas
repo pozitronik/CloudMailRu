@@ -20,6 +20,8 @@ const
 
 	DeleteFailOnUploadIgnore = 1;
 	DeleteFailOnUploadAbort = 2;
+	DeleteFailOnUploadDeleteIgnore = 3;
+	DeleteFailOnUploadDeleteAbort = 4;
 
 type
 

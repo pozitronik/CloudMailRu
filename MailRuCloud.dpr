@@ -127,7 +127,8 @@ End;
 
 function FsGetBackgroundFlags: integer; stdcall;
 begin
-	if GetPluginSettings(SettingsIniFilePath).DisableMultiThreading then Result:= 0 else Result := BG_DOWNLOAD + BG_UPLOAD; //+ BG_ASK_USER;
+	if GetPluginSettings(SettingsIniFilePath).DisableMultiThreading then Result:= 0
+	else Result := BG_DOWNLOAD + BG_UPLOAD; //+ BG_ASK_USER;
 end;
 
 {DIRTY ANSI PEASANTS}
@@ -666,6 +667,7 @@ function FsPutFileW(LocalName, RemoteName: PWideChar; CopyFlags: integer): integ
 var
 	RealPath: TRealPath;
 	getResult: integer;
+	UNCLocalName: WideString;
 begin
 	//Result := FS_FILE_NOTSUPPORTED;
 	RealPath := ExtractRealPath(RemoteName);
@@ -688,13 +690,30 @@ begin
 		MyLogProc(PluginNum, MSGTYPE_TRANSFERCOMPLETE, PWideChar(LocalName + '->' + RemoteName));
 		if CheckFlag(FS_COPYFLAGS_MOVE, CopyFlags) then
 		begin
-			if not DeleteFileW(PWideChar(GetUNCFilePath(LocalName))) then
+			UNCLocalName := GetUNCFilePath(LocalName);
+			if not DeleteFileW(PWideChar(UNCLocalName)) then
 			begin
 				case GetPluginSettings(SettingsIniFilePath).DeleteFailOnUploadMode of
 					DeleteFailOnUploadAbort:
 						begin
 							MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, PWideChar('Can''t delete file ' + LocalName + ', aborted'));
 							exit(FS_FILE_NOTSUPPORTED);
+						end;
+					DeleteFailOnUploadDeleteIgnore, DeleteFailOnUploadDeleteAbort:
+						begin
+							//check if file just have RO attr, then remove it. If user has lack of rights, then ignore or abort
+							if ((FileGetAttr(UNCLocalName) or faReadOnly) <> 0) and ((FileSetAttr(UNCLocalName, not faReadOnly) = 0) and (DeleteFileW(PWideChar(UNCLocalName)))) then
+							begin
+								MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, PWideChar('Read only file ' + LocalName + ' deleted'));
+							end else begin
+								if GetPluginSettings(SettingsIniFilePath).DeleteFailOnUploadMode = DeleteFailOnUploadDeleteIgnore then
+								begin
+									MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, PWideChar('Can''t delete file ' + LocalName + ', ignored'));
+								end else begin
+									MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, PWideChar('Can''t delete file ' + LocalName + ', aborted'));
+									exit(FS_FILE_NOTSUPPORTED);
+								end;
+							end;
 						end;
 					else
 						begin
