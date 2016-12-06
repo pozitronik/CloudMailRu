@@ -83,6 +83,19 @@ type
 
 	TCloudMailRu = class
 	private
+		domain: WideString;
+		user: WideString;
+		password: WideString;
+		unlimited_filesize: Boolean;
+		split_large_files: Boolean;
+		split_file_size: integer;
+		token: WideString;
+		OAuthToken: TCloudMailRuOAuthInfo;
+		x_page_id: WideString;
+		build: WideString;
+		upload_url: WideString;
+		login_method: integer;
+
 		function getToken(): Boolean;
 		function getOAuthToken(var OAuthToken: TCloudMailRuOAuthInfo): Boolean;
 		function getShard(var Shard: WideString): Boolean;
@@ -106,36 +119,25 @@ type
 		function getPublicLinkFromJSON(JSON: WideString): WideString;
 		function getOperationResultFromJSON(JSON: WideString; var OperationStatus: integer): integer;
 		procedure HttpProgress(ASender: TObject; AWorkMode: TWorkMode; AWorkCount: int64);
-		procedure Log(MsgType: integer; LogString: WideString);
+
 		function getErrorText(ErrorCode: integer): WideString;
 	protected
-		domain: WideString;
-		user: WideString;
-		password: WideString;
-		unlimited_filesize: Boolean;
-		split_large_files: Boolean;
-		split_file_size: integer;
-		token: WideString;
-		OAuthToken: TCloudMailRuOAuthInfo;
-		x_page_id: WideString;
-		build: WideString;
-		upload_url: WideString;
 		Cookie: TIdCookieManager;
 		Socks: TIdSocksInfo;
 		ExternalProgressProc: TProgressProcW;
 		ExternalLogProc: TLogProcW;
 		Shard: WideString;
-		login_method: integer;
 		Proxy: TProxySettings;
 		ConnectTimeout: integer;
 
+		procedure Log(MsgType: integer; LogString: WideString);
 		procedure HTTPInit(var HTTP: TIdHTTP; var SSL: TIdSSLIOHandlerSocketOpenSSL; var Socks: TIdSocksInfo; var Cookie: TIdCookieManager);
 		procedure HTTPDestroy(var HTTP: TIdHTTP; var SSL: TIdSSLIOHandlerSocketOpenSSL);
 	public
 		ExternalPluginNr: integer;
 		ExternalSourceName: PWideChar;
 		ExternalTargetName: PWideChar;
-		constructor Create(user, domain, password: WideString; unlimited_filesize: Boolean; split_large_files: Boolean; split_file_size: integer; Proxy: TProxySettings; ConnectTimeout: integer; ExternalProgressProc: TProgressProcW = nil; PluginNr: integer = -1; ExternalLogProc: TLogProcW = nil);
+		constructor Create(AccountSettings: TAccountSettings; split_file_size: integer; Proxy: TProxySettings; ConnectTimeout: integer; ExternalProgressProc: TProgressProcW = nil; PluginNr: integer = -1; ExternalLogProc: TLogProcW = nil);
 		destructor Destroy; override;
 		function login(method: integer = CLOUD_AUTH_METHOD_WEB): Boolean;
 
@@ -164,7 +166,7 @@ implementation
 
 {CONSTRUCTOR/DESTRUCTOR}
 
-constructor TCloudMailRu.Create(user, domain, password: WideString; unlimited_filesize: Boolean; split_large_files: Boolean; split_file_size: integer; Proxy: TProxySettings; ConnectTimeout: integer; ExternalProgressProc: TProgressProcW; PluginNr: integer; ExternalLogProc: TLogProcW);
+constructor TCloudMailRu.Create(AccountSettings: TAccountSettings; split_file_size: integer; Proxy: TProxySettings; ConnectTimeout: integer; ExternalProgressProc: TProgressProcW; PluginNr: integer; ExternalLogProc: TLogProcW);
 begin
 	try
 		self.Cookie := TIdCookieManager.Create();
@@ -195,11 +197,11 @@ begin
 			self.Socks.Enabled := true;
 		end;
 
-		self.user := user;
-		self.password := password;
-		self.domain := domain;
-		self.unlimited_filesize := unlimited_filesize;
-		self.split_large_files := split_large_files;
+		self.user := AccountSettings.user;
+		self.password := AccountSettings.password;
+		self.domain := AccountSettings.domain;
+		self.unlimited_filesize := AccountSettings.unlimited_filesize;
+		self.split_large_files := AccountSettings.split_large_files;
 		self.split_file_size := split_file_size;
 		self.ConnectTimeout := ConnectTimeout;
 		self.ExternalProgressProc := ExternalProgressProc;
