@@ -11,6 +11,8 @@ const
 {$IFDEF WIN32}
 	PlatformX = 'x32';
 {$ENDIF}
+	PUBLIC_PREFIX = 'https://cloud.mail.ru/public/';
+
 	TYPE_DIR = 'folder';
 	TYPE_FILE = 'file';
 	{Константы для обозначения ошибок, возвращаемых при парсинге ответов облака. Дополняем по мере обнаружения}
@@ -91,6 +93,7 @@ type
 		split_file_size: integer;
 		public_account: Boolean;
 		public_url: WideString;
+		public_link: WideString; //public url without adress prefix
 
 		token: WideString;
 		OAuthToken: TCloudMailRuOAuthInfo;
@@ -121,6 +124,9 @@ type
 		function getOAuthTokenInfoFromJson(JSON: WideString): TCloudMailRuOAuthInfo;
 		function getPublicLinkFromJSON(JSON: WideString): WideString;
 		function getOperationResultFromJSON(JSON: WideString; var OperationStatus: integer): integer;
+		function getJSONFromPublicFolder(PageContent, IdString: WideString): WideString;
+		function getDirListingFromPublicJSON(JSON: WideString): TCloudMailRuDirListing;
+
 		procedure HttpProgress(ASender: TObject; AWorkMode: TWorkMode; AWorkCount: int64);
 
 		function getErrorText(ErrorCode: integer): WideString;
@@ -138,6 +144,10 @@ type
 		procedure HTTPDestroy(var HTTP: TIdHTTP; var SSL: TIdSSLIOHandlerSocketOpenSSL);
 
 		function public_login(): Boolean;
+		function protected_login(method: integer = CLOUD_AUTH_METHOD_WEB): Boolean;
+
+		function public_getDir(path: WideString; var DirListing: TCloudMailRuDirListing): Boolean;
+		function protected_getDir(path: WideString; var DirListing: TCloudMailRuDirListing): Boolean;
 
 	public
 		ExternalPluginNr: integer;
@@ -145,11 +155,13 @@ type
 		ExternalTargetName: PWideChar;
 		constructor Create(AccountSettings: TAccountSettings; split_file_size: integer; Proxy: TProxySettings; ConnectTimeout: integer; ExternalProgressProc: TProgressProcW = nil; PluginNr: integer = -1; ExternalLogProc: TLogProcW = nil);
 		destructor Destroy; override;
+
 		function login(method: integer = CLOUD_AUTH_METHOD_WEB): Boolean;
+		function getDir(path: WideString; var DirListing: TCloudMailRuDirListing): Boolean;
 
 		procedure logUserSpaceInfo();
 		function getDescriptionFile(remotePath, localCopy: WideString): integer; //Если в каталоге remotePath есть descript.ion - скопировать его в файл localcopy
-		function getDir(path: WideString; var DirListing: TCloudMailRuDirListing): Boolean;
+
 		function getFile(remotePath, localPath: WideString; LogErrors: Boolean = true): integer; //LogErrors=false => не логируем результат копирования, нужно для запроса descript.ion (которого может не быть)
 		function putFile(localPath, remotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; ChunkOverwriteMode: integer = 0): integer;
 		function deleteFile(path: WideString): Boolean;
@@ -210,6 +222,11 @@ begin
 		self.split_large_files := AccountSettings.split_large_files;
 		self.public_account := AccountSettings.public_account;
 		self.public_url:=AccountSettings.public_url;
+		if self.public_account and (self.public_url <> '') then
+		begin
+			self.public_link := self.public_url;
+			Delete(self.public_link, 1, length(PUBLIC_PREFIX));
+		end;
 
 		self.split_file_size := split_file_size;
 		self.ConnectTimeout := ConnectTimeout;
@@ -358,7 +375,7 @@ begin
 	if (Result = CLOUD_OPERATION_OK) then
 	begin
 		ExtractStrings([';'], [], PWideChar(PostAnswer), Return);
-		if Length(Return.Strings[0]) <> 40 then //? добавить анализ ответа?
+		if length(Return.Strings[0]) <> 40 then //? добавить анализ ответа?
 		begin
 			Result := CLOUD_OPERATION_FAILED;
 		end
@@ -688,56 +705,13 @@ end;
 {PUBLIC METHODS}
 
 function TCloudMailRu.login(method: integer = CLOUD_AUTH_METHOD_WEB): Boolean;
-var
-	URL: WideString;
-	PostData: TStringStream;
-	PostAnswer: WideString; {Не используется}
 begin
 	Result := false;
 	self.login_method := method;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
 
-	if self.public_account then exit(self.public_login);
-
-	Log(MSGTYPE_DETAILS, 'Login to ' + self.user + '@' + self.domain);
-	case self.login_method of
-		CLOUD_AUTH_METHOD_WEB: //todo: вынести в отдельный метод
-			begin
-				URL := 'https://auth.mail.ru/cgi-bin/auth?lang=ru_RU&from=authpopup';
-				PostData := TStringStream.Create('page=https://cloud.mail.ru/?from=promo&new_auth_form=1&Domain=' + self.domain + '&Login=' + self.user + '&Password=' + UrlEncode(self.password) + '&FailPage=', TEncoding.UTF8);
-				try
-					Result := self.HTTPPost(URL, PostData, PostAnswer);
-				except
-					on E: Exception do
-					begin
-						Log(MSGTYPE_IMPORTANTERROR, 'Cloud login error: ' + E.Message);
-					end;
-				end;
-				PostData.free;
-				if (Result) then
-				begin
-					Log(MSGTYPE_DETAILS, 'Requesting auth token for ' + self.user + '@' + self.domain);
-					Result := self.getToken();
-					if (Result) then
-					begin
-						Log(MSGTYPE_DETAILS, 'Connected to ' + self.user + '@' + self.domain);
-						self.logUserSpaceInfo;
-					end else begin
-						Log(MSGTYPE_IMPORTANTERROR, 'error: getting auth token for ' + self.user + '@' + self.domain);
-						exit(false);
-					end;
-				end
-				else Log(MSGTYPE_IMPORTANTERROR, 'error: login to ' + self.user + '@' + self.domain);
-			end;
-		CLOUD_AUTH_METHOD_OAUTH:
-			begin
-				Result := self.getOAuthToken(self.OAuthToken);
-				if not Result then
-				begin
-					Log(MSGTYPE_IMPORTANTERROR, 'OAuth error: ' + self.OAuthToken.error + '(' + self.OAuthToken.error_description + ')');
-				end;
-			end;
-	end;
+	if self.public_account then exit(self.public_login)
+	else exit(self.protected_login(method));
 
 end;
 
@@ -812,46 +786,11 @@ begin
 end;
 
 function TCloudMailRu.getDir(path: WideString; var DirListing: TCloudMailRuDirListing): Boolean;
-var
-	URL: WideString;
-	JSON: WideString;
-	Progress: Boolean;
-	OperationStatus, OperationResult: integer;
 begin
 	Result := false;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
-	URL := 'https://cloud.mail.ru/api/v2/folder?sort={%22type%22%3A%22name%22%2C%22order%22%3A%22asc%22}&offset=0&limit=10000&home=' + UrlEncode(StringReplace(path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase])) + '&api=2&build=' + self.build + '&x-page-id=' + self.x_page_id + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&token=' + self.token + '&_=1433249148810';
-	try
-		Progress := false;
-		Result := self.HTTPGet(URL, JSON, Progress);
-	except
-		on E: Exception do
-		begin
-			Log(MSGTYPE_IMPORTANTERROR, 'Directory list receiving error: ' + E.Message);
-		end;
-	end;
-	if Result then
-	begin
-		OperationResult:= self.getOperationResultFromJSON(JSON, OperationStatus);
-		case OperationResult of
-			CLOUD_OPERATION_OK:
-				begin
-					DirListing := self.getDirListingFromJSON(JSON);
-					Result := true;
-				end;
-			CLOUD_ERROR_NOT_EXISTS:
-				begin
-					Log(MSGTYPE_IMPORTANTERROR, 'Path not exists: ' + path);
-					Result := false;
-				end
-			else
-				begin
-					Log(MSGTYPE_IMPORTANTERROR, 'Delete file error: ' + self.getErrorText(OperationResult) + ' Status: ' + OperationStatus.ToString());
-					Result := false;
-				end;
-		end;
-
-	end;
+	if self.public_account then Result:=self.public_getDir(path, DirListing)
+	else Result:=self.protected_getDir(path, DirListing);
 end;
 
 function TCloudMailRu.getFile(remotePath, localPath: WideString; LogErrors: Boolean = true): integer; //0 - ok, else error
@@ -901,6 +840,118 @@ begin
 	if Result <> FS_FILE_OK then
 	begin
 		System.SysUtils.deleteFile(GetUNCFilePath(localPath));
+	end;
+end;
+
+function TCloudMailRu.protected_getDir(path: WideString; var DirListing: TCloudMailRuDirListing): Boolean;
+var
+	URL: WideString;
+	JSON: WideString;
+	Progress: Boolean;
+	OperationStatus, OperationResult: integer;
+begin
+
+	URL := 'https://cloud.mail.ru/api/v2/folder?sort={%22type%22%3A%22name%22%2C%22order%22%3A%22asc%22}&offset=0&limit=10000&home=' + UrlEncode(StringReplace(path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase])) + '&api=2&build=' + self.build + '&x-page-id=' + self.x_page_id + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&token=' + self.token + '&_=1433249148810';
+	try
+		Progress := false;
+		Result := self.HTTPGet(URL, JSON, Progress);
+	except
+		on E: Exception do
+		begin
+			Log(MSGTYPE_IMPORTANTERROR, 'Directory list receiving error: ' + E.Message);
+		end;
+	end;
+	if Result then
+	begin
+		OperationResult:= self.getOperationResultFromJSON(JSON, OperationStatus);
+		case OperationResult of
+			CLOUD_OPERATION_OK:
+				begin
+					DirListing := self.getDirListingFromJSON(JSON);
+					Result := true;
+				end;
+			CLOUD_ERROR_NOT_EXISTS:
+				begin
+					Log(MSGTYPE_IMPORTANTERROR, 'Path not exists: ' + path);
+					Result := false;
+				end
+			else
+				begin
+					Log(MSGTYPE_IMPORTANTERROR, 'Delete file error: ' + self.getErrorText(OperationResult) + ' Status: ' + OperationStatus.ToString());
+					Result := false;
+				end;
+		end;
+	end;
+end;
+
+function TCloudMailRu.protected_login(method: integer): Boolean;
+var
+	URL: WideString;
+	PostData: TStringStream;
+	PostAnswer: WideString; {Не используется}
+begin
+	Log(MSGTYPE_DETAILS, 'Login to ' + self.user + '@' + self.domain);
+	case self.login_method of
+		CLOUD_AUTH_METHOD_WEB: //todo: вынести в отдельный метод
+			begin
+				URL := 'https://auth.mail.ru/cgi-bin/auth?lang=ru_RU&from=authpopup';
+				PostData := TStringStream.Create('page=https://cloud.mail.ru/?from=promo&new_auth_form=1&Domain=' + self.domain + '&Login=' + self.user + '&Password=' + UrlEncode(self.password) + '&FailPage=', TEncoding.UTF8);
+				try
+					Result := self.HTTPPost(URL, PostData, PostAnswer);
+				except
+					on E: Exception do
+					begin
+						Log(MSGTYPE_IMPORTANTERROR, 'Cloud login error: ' + E.Message);
+					end;
+				end;
+				PostData.free;
+				if (Result) then
+				begin
+					Log(MSGTYPE_DETAILS, 'Requesting auth token for ' + self.user + '@' + self.domain);
+					Result := self.getToken();
+					if (Result) then
+					begin
+						Log(MSGTYPE_DETAILS, 'Connected to ' + self.user + '@' + self.domain);
+						self.logUserSpaceInfo;
+					end else begin
+						Log(MSGTYPE_IMPORTANTERROR, 'error: getting auth token for ' + self.user + '@' + self.domain);
+						exit(false);
+					end;
+				end
+				else Log(MSGTYPE_IMPORTANTERROR, 'error: login to ' + self.user + '@' + self.domain);
+			end;
+		CLOUD_AUTH_METHOD_OAUTH:
+			begin
+				Result := self.getOAuthToken(self.OAuthToken);
+				if not Result then
+				begin
+					Log(MSGTYPE_IMPORTANTERROR, 'OAuth error: ' + self.OAuthToken.error + '(' + self.OAuthToken.error_description + ')');
+				end;
+			end;
+	end;
+end;
+
+function TCloudMailRu.public_getDir(path: WideString; var DirListing: TCloudMailRuDirListing): Boolean;
+var
+	URL: WideString;
+	JSON, PageContent: WideString;
+	Progress: Boolean;
+	OperationStatus, OperationResult: integer;
+begin
+	URL := self.public_url + UrlEncode(StringReplace(path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
+	try
+		Progress := false;
+		Result := self.HTTPGet(URL, PageContent, Progress);
+	except
+		on E: Exception do
+		begin
+			Log(MSGTYPE_IMPORTANTERROR, 'Directory list receiving error: ' + E.Message);
+		end;
+	end;
+	if Result then
+	begin
+		JSON := self.getJSONFromPublicFolder(PageContent, self.public_link);
+		Log(MSGTYPE_DETAILS, JSON);
 	end;
 end;
 
@@ -1007,7 +1058,7 @@ begin
 
 			end;
 
-			for SplittedPartIndex := 0 to Length(Splitter.SplitResult.parts) - 1 do
+			for SplittedPartIndex := 0 to length(Splitter.SplitResult.parts) - 1 do
 			begin
 				ChunkFileName:= CopyExt(Splitter.SplitResult.parts[SplittedPartIndex].filename, remotePath);
 				Result := self.putFile(Splitter.SplitResult.parts[SplittedPartIndex].filename, ChunkFileName, ConflictMode);
@@ -1674,7 +1725,7 @@ end;
 
 function TCloudMailRu.get_upload_url_FromText(Text: WideString): WideString;
 var
-	start, start1, start2, finish, Length: Cardinal;
+	start, start1, start2, finish, length: Cardinal;
 	temp: WideString;
 begin
 	start := Pos(WideString('mail.ru/upload/"'), Text);
@@ -1682,8 +1733,8 @@ begin
 	begin
 		start1 := start - 50;
 		finish := start + 15;
-		Length := finish - start1;
-		temp := Copy(Text, start1, Length);
+		length := finish - start1;
+		temp := Copy(Text, start1, length);
 		start2 := Pos(WideString('https://'), temp);
 		get_upload_url_FromText := Copy(temp, start2, StrLen(PWideChar(temp)) - start2);
 	end else begin
@@ -1746,7 +1797,6 @@ begin
 		if Assigned(Obj.values['total']) then total := Obj.values['total'].Value.ToInt64;
 		if Assigned(Obj.values['used']) then used := Obj.values['used'].Value.ToInt64;
 	end;
-
 end;
 
 function TCloudMailRu.getDirListingFromJSON(JSON: WideString): TCloudMailRuDirListing;
@@ -1788,6 +1838,11 @@ begin
 	Result := ResultItems;
 end;
 
+function TCloudMailRu.getDirListingFromPublicJSON(JSON: WideString): TCloudMailRuDirListing; //выковыриваем из JSON публичного каталога данные
+begin
+
+end;
+
 function TCloudMailRu.getFileStatusFromJSON(JSON: WideString): TCloudMailRuDirListingItem;
 var
 	Obj: TJSONObject;
@@ -1815,6 +1870,24 @@ begin
 			mtime := 0;
 		end;
 	end;
+end;
+
+function TCloudMailRu.getJSONFromPublicFolder(PageContent, IdString: WideString): WideString; //Выковыриваем с публичной страницы JSON с данными
+var
+	start, finish: integer;
+	temp: WideString;
+begin
+	PageContent := StringReplace(PageContent, #$A, '', [rfReplaceAll]);
+	PageContent := StringReplace(PageContent, #$D, '', [rfReplaceAll]);
+	PageContent := StringReplace(PageContent, #9, '', [rfReplaceAll]);
+	start := Pos(WideString('{"tree": ['), PageContent);
+	temp:='"id": "' + IdString + '"}}';
+	finish:= Pos(WideString(temp), PageContent)+length(temp);
+	if start > 0 then
+	begin
+		Result:= Copy(PageContent, start, finish - start);
+	end
+	else Result:='';
 end;
 
 function TCloudMailRu.getOperationResultFromJSON(JSON: WideString; var OperationStatus: integer): integer;
