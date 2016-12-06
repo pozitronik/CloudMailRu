@@ -83,31 +83,6 @@ type
 
 	TCloudMailRu = class
 	private
-		function getToken(): Boolean;
-		function getOAuthToken(var OAuthToken: TCloudMailRuOAuthInfo): Boolean;
-		function getShard(var Shard: WideString): Boolean;
-		function putFileToCloud(localPath: WideString; Return: TStringList): integer;
-		function addFileToCloud(hash: WideString; size: int64; remotePath: WideString; var JSONAnswer: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT): Boolean;
-		function getUserSpace(var SpaceInfo: TCloudMailRuSpaceInfo): Boolean;
-		function HTTPPost(URL: WideString; PostData: TStringStream; var Answer: WideString; ContentType: WideString = 'application/x-www-form-urlencoded'): Boolean; //Постинг данных с возможным получением ответа.
-
-		function HTTPPostFile(URL: WideString; PostData: TIdMultipartFormDataStream; var Answer: WideString): integer; //Постинг файла и получение ответа
-		function HTTPGetFile(URL: WideString; var FileStream: TFileStream; LogErrors: Boolean = true): integer;
-		function HTTPGet(URL: WideString; var Answer: WideString; var ProgressEnabled: Boolean): Boolean; //если ProgressEnabled - включаем обработчик onWork, возвращаем ProgressEnabled=false при отмене
-		function getTokenFromText(Text: WideString): WideString;
-		function get_x_page_id_FromText(Text: WideString): WideString;
-		function get_build_FromText(Text: WideString): WideString;
-		function get_upload_url_FromText(Text: WideString): WideString;
-		function getDirListingFromJSON(JSON: WideString): TCloudMailRuDirListing;
-		function getUserSpaceFromJSON(JSON: WideString): TCloudMailRuSpaceInfo;
-		function getFileStatusFromJSON(JSON: WideString): TCloudMailRuDirListingItem;
-		function getShardFromJSON(JSON: WideString): WideString;
-		function getOAuthTokenInfoFromJson(JSON: WideString): TCloudMailRuOAuthInfo;
-		function getPublicLinkFromJSON(JSON: WideString): WideString;
-		function getOperationResultFromJSON(JSON: WideString; var OperationStatus: integer): integer;
-		procedure HttpProgress(ASender: TObject; AWorkMode: TWorkMode; AWorkCount: int64);
-		function getErrorText(ErrorCode: integer): WideString;
-	protected
 		domain: WideString;
 		user: WideString;
 		password: WideString;
@@ -132,6 +107,32 @@ type
 
 		ConnectTimeout: integer;
 
+		function getToken(): Boolean;
+		function getOAuthToken(var OAuthToken: TCloudMailRuOAuthInfo): Boolean;
+		function getShard(var Shard: WideString): Boolean;
+		function putFileToCloud(localPath: WideString; Return: TStringList): integer;
+		function addFileToCloud(hash: WideString; size: int64; remotePath: WideString; var JSONAnswer: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT): Boolean;
+		function getUserSpace(var SpaceInfo: TCloudMailRuSpaceInfo): Boolean;
+		function HTTPPost(URL: WideString; PostData: TStringStream; var Answer: WideString; ContentType: WideString = 'application/x-www-form-urlencoded'): Boolean; //Постинг данных с возможным получением ответа.
+
+		function HTTPPostFile(URL: WideString; PostData: TIdMultipartFormDataStream; var Answer: WideString): integer; //Постинг файла и получение ответа
+		function HTTPGetFile(URL: WideString; var FileStream: TFileStream; LogErrors: Boolean = true): integer;
+		function HTTPGet(URL: WideString; var Answer: WideString; var ProgressEnabled: Boolean): Boolean; //если ProgressEnabled - включаем обработчик onWork, возвращаем ProgressEnabled=false при отмене
+		function getTokenFromText(Text: WideString): WideString;
+		function get_x_page_id_FromText(Text: WideString): WideString;
+		function get_build_FromText(Text: WideString): WideString;
+		function get_upload_url_FromText(Text: WideString): WideString;
+		function getDirListingFromJSON(JSON: WideString): TCloudMailRuDirListing;
+		function getUserSpaceFromJSON(JSON: WideString): TCloudMailRuSpaceInfo;
+		function getFileStatusFromJSON(JSON: WideString): TCloudMailRuDirListingItem;
+		function getShardFromJSON(JSON: WideString): WideString;
+		function getOAuthTokenInfoFromJson(JSON: WideString): TCloudMailRuOAuthInfo;
+		function getPublicLinkFromJSON(JSON: WideString): WideString;
+		function getOperationResultFromJSON(JSON: WideString; var OperationStatus: integer): integer;
+		procedure HttpProgress(ASender: TObject; AWorkMode: TWorkMode; AWorkCount: int64);
+		procedure Log(MsgType: integer; LogString: WideString);
+		function getErrorText(ErrorCode: integer): WideString;
+	protected
 		procedure HTTPInit(var HTTP: TIdHTTP; var SSL: TIdSSLIOHandlerSocketOpenSSL; var Socks: TIdSocksInfo; var Cookie: TIdCookieManager);
 		procedure HTTPDestroy(var HTTP: TIdHTTP; var SSL: TIdSSLIOHandlerSocketOpenSSL);
 	public
@@ -141,7 +142,7 @@ type
 		constructor Create(user, domain, password: WideString; unlimited_filesize: Boolean; split_large_files: Boolean; split_file_size: integer; Proxy: TProxySettings; ConnectTimeout: integer; ExternalProgressProc: TProgressProcW = nil; PluginNr: integer = -1; ExternalLogProc: TLogProcW = nil);
 		destructor Destroy; override;
 		function login(method: integer = CLOUD_AUTH_METHOD_WEB): Boolean;
-		procedure Log(MsgType: integer; LogString: WideString);
+
 		procedure logUserSpaceInfo();
 		function getDescriptionFile(remotePath, localCopy: WideString): integer; //Если в каталоге remotePath есть descript.ion - скопировать его в файл localcopy
 		function getDir(path: WideString; var DirListing: TCloudMailRuDirListing): Boolean;
@@ -216,7 +217,9 @@ begin
 		begin
 			Log(MSGTYPE_IMPORTANTERROR, 'Cloud initialization error: ' + E.Message);
 		end;
+
 	end;
+
 end;
 
 destructor TCloudMailRu.Destroy;

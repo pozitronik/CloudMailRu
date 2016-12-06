@@ -5,14 +5,13 @@
 
 interface
 
-uses CloudMailRu, CloudMailRuPublic, MRC_Helper, windows, Vcl.Controls, PLUGIN_Types, Settings, AskPassword;
+uses CloudMailRu, MRC_Helper, windows, Vcl.Controls, PLUGIN_Types, Settings, AskPassword;
 
 type
 
 	TNamedConnection = record
 		Name: WideString;
 		Connection: TCloudMailRu;
-		isPublic: boolean;
 	end;
 
 	TConnectionManager = class
@@ -73,8 +72,7 @@ begin
 	ConnectionIndex := ConnectionExists(connectionName);
 	if ConnectionIndex <> -1 then
 	begin
-		if (Connections[ConnectionIndex].isPublic) then result := Connections[ConnectionIndex].Connection as TCloudMailRuPublic
-		else result := Connections[ConnectionIndex].Connection as TCloudMailRu;
+		result := Connections[ConnectionIndex].Connection;
 	end else begin
 		result := Connections[new(connectionName)].Connection;
 	end;
@@ -94,7 +92,6 @@ begin
 	ConnectionIndex := ConnectionExists(connectionName);
 	if ConnectionIndex = -1 then exit(false);
 	Connections[ConnectionIndex].Connection := cloud;
-	Connections[ConnectionIndex].isPublic := (cloud is TCloudMailRuPublic);
 	result := true;
 end;
 
@@ -106,22 +103,20 @@ begin
 	result := CLOUD_OPERATION_OK;
 	AccountSettings := GetAccountSettingsFromIniFile(IniFileName, connectionName);
 
-	if AccountSettings.public_account then
-	begin
-		cloud := TCloudMailRuPublic.Create(AccountSettings.public_url, self.Proxy, Timeout, MyProgressProc, PluginNum, MyLogProc);
-	end else begin
-		if not GetMyPasswordNow(AccountSettings) then exit(CLOUD_OPERATION_ERROR_STATUS_UNKNOWN);
-		MyLogProc(PluginNum, MSGTYPE_CONNECT, PWideChar('CONNECT ' + AccountSettings.email));
-		cloud := TCloudMailRu.Create(AccountSettings.user, AccountSettings.domain, AccountSettings.password, AccountSettings.unlimited_filesize, AccountSettings.split_large_files, self.CloudMaxFileSize, self.Proxy, Timeout, MyProgressProc, PluginNum, MyLogProc);
-	end;
+	if not GetMyPasswordNow(AccountSettings) then exit(CLOUD_OPERATION_ERROR_STATUS_UNKNOWN); //INVALID_HANDLE_VALUE
 
-	if not set_(connectionName, cloud) then exit(CLOUD_OPERATION_ERROR_STATUS_UNKNOWN);
+	MyLogProc(PluginNum, MSGTYPE_CONNECT, PWideChar('CONNECT ' + AccountSettings.email));
+
+	cloud := TCloudMailRu.Create(AccountSettings.user, AccountSettings.domain, AccountSettings.password, AccountSettings.unlimited_filesize, AccountSettings.split_large_files, self.CloudMaxFileSize, self.Proxy, Timeout, MyProgressProc, PluginNum, MyLogProc);
+	if not set_(connectionName, cloud) then exit(CLOUD_OPERATION_ERROR_STATUS_UNKNOWN); //INVALID_HANDLE_VALUE
 
 	if not(get(connectionName, result, false).login()) then
 	begin
 		result := CLOUD_OPERATION_FAILED;
 		free(connectionName);
 	end;
+
+	//cloud.Destroy;
 end;
 
 function TConnectionManager.initialized(connectionName: WideString): boolean;
