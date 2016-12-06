@@ -850,7 +850,7 @@ var
 	Progress: Boolean;
 	OperationStatus, OperationResult: integer;
 begin
-
+	Result := false;
 	URL := 'https://cloud.mail.ru/api/v2/folder?sort={%22type%22%3A%22name%22%2C%22order%22%3A%22asc%22}&offset=0&limit=10000&home=' + UrlEncode(StringReplace(path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase])) + '&api=2&build=' + self.build + '&x-page-id=' + self.x_page_id + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&token=' + self.token + '&_=1433249148810';
 	try
 		Progress := false;
@@ -890,6 +890,7 @@ var
 	PostData: TStringStream;
 	PostAnswer: WideString; {Не используется}
 begin
+	Result:=false;
 	Log(MSGTYPE_DETAILS, 'Login to ' + self.user + '@' + self.domain);
 	case self.login_method of
 		CLOUD_AUTH_METHOD_WEB: //todo: вынести в отдельный метод
@@ -936,9 +937,9 @@ var
 	URL: WideString;
 	JSON, PageContent: WideString;
 	Progress: Boolean;
-	OperationStatus, OperationResult: integer;
 begin
-	URL := self.public_url + UrlEncode(StringReplace(path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
+	Result:=false;
+	URL := self.public_url + '/' + UrlEncode(StringReplace(path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
 	try
 		Progress := false;
 		Result := self.HTTPGet(URL, PageContent, Progress);
@@ -950,8 +951,9 @@ begin
 	end;
 	if Result then
 	begin
-		JSON := self.getJSONFromPublicFolder(PageContent, self.public_link);
-		Log(MSGTYPE_DETAILS, JSON);
+		if path <> '' then path := '/' + path;//todo error handling
+		JSON := self.getJSONFromPublicFolder(PageContent, self.public_link + UrlEncode(StringReplace(path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase])));
+		DirListing := self.getDirListingFromPublicJSON(JSON);
 	end;
 end;
 
@@ -1834,13 +1836,45 @@ begin
 			end;
 		end;
 	end;
-
 	Result := ResultItems;
 end;
 
 function TCloudMailRu.getDirListingFromPublicJSON(JSON: WideString): TCloudMailRuDirListing; //выковыриваем из JSON публичного каталога данные
+var
+	Obj: TJSONObject;
+	J: integer;
+	ResultItems: TCloudMailRuDirListing;
+	A: TJSONArray;
 begin
-
+	A := ((TJSONObject.ParseJSONValue(JSON) as TJSONObject).values['folder'] as TJSONObject).values['list'] as TJSONArray;
+	SetLength(ResultItems, A.count);
+	for J := 0 to A.count - 1 do
+	begin
+		Obj := A.Items[J] as TJSONObject;
+		with ResultItems[J] do
+		begin
+			if Assigned(Obj.values['size']) then size := Obj.values['size'].Value.ToInt64;
+			if Assigned(Obj.values['kind']) then kind := Obj.values['kind'].Value;
+			if Assigned(Obj.values['weblink']) then weblink := Obj.values['weblink'].Value;
+			if Assigned(Obj.values['type']) then type_ := Obj.values['type'].Value;
+			if Assigned(Obj.values['home']) then home := Obj.values['home'].Value;
+			if Assigned(Obj.values['name']) then name := Obj.values['name'].Value;
+			if (type_ = TYPE_FILE) then
+			begin
+				if Assigned(Obj.values['mtime']) then mtime := Obj.values['mtime'].Value.ToInt64;
+				if Assigned(Obj.values['virus_scan']) then virus_scan := Obj.values['virus_scan'].Value;
+				if Assigned(Obj.values['hash']) then hash := Obj.values['hash'].Value;
+			end else begin
+				if Assigned(Obj.values['tree']) then tree := Obj.values['tree'].Value;
+				if Assigned(Obj.values['grev']) then grev := Obj.values['grev'].Value.ToInteger;
+				if Assigned(Obj.values['rev']) then rev := Obj.values['rev'].Value.ToInteger;
+				if Assigned((Obj.values['count'] as TJSONObject).values['folders']) then folders_count := (Obj.values['count'] as TJSONObject).values['folders'].Value.ToInteger();
+				if Assigned((Obj.values['count'] as TJSONObject).values['files']) then files_count := (Obj.values['count'] as TJSONObject).values['files'].Value.ToInteger();
+				mtime := 0;
+			end;
+		end;
+	end;
+	Result := ResultItems;
 end;
 
 function TCloudMailRu.getFileStatusFromJSON(JSON: WideString): TCloudMailRuDirListingItem;
@@ -1877,12 +1911,14 @@ var
 	start, finish: integer;
 	temp: WideString;
 begin
+
 	PageContent := StringReplace(PageContent, #$A, '', [rfReplaceAll]);
 	PageContent := StringReplace(PageContent, #$D, '', [rfReplaceAll]);
 	PageContent := StringReplace(PageContent, #9, '', [rfReplaceAll]);
-	start := Pos(WideString('{"tree": ['), PageContent);
+
+	start := Pos(WideString('{"tree": ['), PageContent); //todo if not found raise error
 	temp:='"id": "' + IdString + '"}}';
-	finish:= Pos(WideString(temp), PageContent)+length(temp);
+	finish:= PosLast(temp, PageContent, start) + length(temp);
 	if start > 0 then
 	begin
 		Result:= Copy(PageContent, start, finish - start);
