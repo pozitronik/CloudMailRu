@@ -773,6 +773,13 @@ var
 
 begin
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
+
+	if self.public_account then
+	begin
+		Log(MSGTYPE_DETAILS, 'Space info unavailable for public shares');
+		exit;
+	end;
+
 	if self.getUserSpace(US) then
 	begin
 		if (US.overquota) then QuotaInfo := ' Warning: space quota exhausted!'
@@ -1471,7 +1478,11 @@ var
 begin
 	Result := false;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
+	//todo: temporary at this moment
+	if self.public_account then exit(true);
+
 	path := UrlEncode(StringReplace(path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
+
 	URL := 'https://cloud.mail.ru/api/v2/file?home=' + path + '&api=2&build=' + self.build + '&x-page-id=' + self.x_page_id + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&token=' + self.token + '&_=1433249148810';
 	try
 		Progress := false;
