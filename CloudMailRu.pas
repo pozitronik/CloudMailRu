@@ -706,12 +706,8 @@ end;
 
 function TCloudMailRu.login(method: integer = CLOUD_AUTH_METHOD_WEB): Boolean;
 begin
-	Result := false;
-	self.login_method := method;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
-
 	if self.public_account then exit(self.public_login)
-	else exit(self.protected_login(method));
 
 end;
 
@@ -787,7 +783,6 @@ end;
 
 function TCloudMailRu.getDir(path: WideString; var DirListing: TCloudMailRuDirListing): Boolean;
 begin
-	Result := false;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
 	if self.public_account then Result:=self.public_getDir(path, DirListing)
 	else Result:=self.protected_getDir(path, DirListing);
@@ -891,6 +886,7 @@ var
 	PostAnswer: WideString; {Не используется}
 begin
 	Result:=false;
+	self.login_method := method;
 	Log(MSGTYPE_DETAILS, 'Login to ' + self.user + '@' + self.domain);
 	case self.login_method of
 		CLOUD_AUTH_METHOD_WEB: //todo: вынести в отдельный метод
@@ -951,7 +947,7 @@ begin
 	end;
 	if Result then
 	begin
-		if path <> '' then path := '/' + path;//todo error handling
+		if path <> '' then path := '/' + path; //todo error handling
 		JSON := self.getJSONFromPublicFolder(PageContent, self.public_link + UrlEncode(StringReplace(path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase])));
 		DirListing := self.getDirListingFromPublicJSON(JSON);
 	end;
