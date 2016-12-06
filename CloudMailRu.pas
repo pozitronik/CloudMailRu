@@ -1,5 +1,6 @@
 ﻿unit CloudMailRu;
 
+//todo sort all
 interface
 
 uses System.Classes, System.SysUtils, PLUGIN_Types, JSON, Winapi.Windows, IdStack, MRC_helper, Settings, IdCookieManager, IdIOHandler, IdIOHandlerSocket, IdIOHandlerStack, IdSSL, IdSSLOpenSSL, IdBaseComponent, IdComponent, IdTCPConnection, IdTCPClient, IdSocks, IdHTTP, IdAuthentication, IdIOHandlerStream, IdMultipartFormData, FileSplitter;
@@ -94,6 +95,8 @@ type
 		public_account: Boolean;
 		public_url: WideString;
 		public_link: WideString; //public url without adress prefix
+		public_download_token: WideString;
+		public_shard: WideString;
 
 		token: WideString;
 		OAuthToken: TCloudMailRuOAuthInfo;
@@ -105,6 +108,7 @@ type
 		function getToken(): Boolean;
 		function getOAuthToken(var OAuthToken: TCloudMailRuOAuthInfo): Boolean;
 		function getShard(var Shard: WideString): Boolean;
+		function getPublicShard(Text: WideString; var Shard: WideString): Boolean;
 		function putFileToCloud(localPath: WideString; Return: TStringList): integer;
 		function addFileToCloud(hash: WideString; size: int64; remotePath: WideString; var JSONAnswer: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT): Boolean;
 		function getUserSpace(var SpaceInfo: TCloudMailRuSpaceInfo): Boolean;
@@ -114,6 +118,8 @@ type
 		function HTTPGetFile(URL: WideString; var FileStream: TFileStream; LogErrors: Boolean = true): integer;
 		function HTTPGet(URL: WideString; var Answer: WideString; var ProgressEnabled: Boolean): Boolean; //если ProgressEnabled - включаем обработчик onWork, возвращаем ProgressEnabled=false при отмене
 		function getTokenFromText(Text: WideString): WideString;
+		function getPublicTokenFromText(Text: WideString; var PublicToken: WideString): Boolean;
+
 		function get_x_page_id_FromText(Text: WideString): WideString;
 		function get_build_FromText(Text: WideString): WideString;
 		function get_upload_url_FromText(Text: WideString): WideString;
@@ -145,9 +151,11 @@ type
 
 		function public_login(): Boolean;
 		function protected_login(method: integer = CLOUD_AUTH_METHOD_WEB): Boolean;
+		function public_getFile(remotePath, localPath: WideString; LogErrors: Boolean = true): integer;
 
 		function public_getDir(path: WideString; var DirListing: TCloudMailRuDirListing): Boolean;
 		function protected_getDir(path: WideString; var DirListing: TCloudMailRuDirListing): Boolean;
+		function protected_getFile(remotePath, localPath: WideString; LogErrors: Boolean = true): integer;
 
 	public
 		ExternalPluginNr: integer;
@@ -158,11 +166,11 @@ type
 
 		function login(method: integer = CLOUD_AUTH_METHOD_WEB): Boolean;
 		function getDir(path: WideString; var DirListing: TCloudMailRuDirListing): Boolean;
+		function getFile(remotePath, localPath: WideString; LogErrors: Boolean = true): integer; //LogErrors=false => не логируем результат копирования, нужно для запроса descript.ion (которого может не быть)
 
 		procedure logUserSpaceInfo();
 		function getDescriptionFile(remotePath, localCopy: WideString): integer; //Если в каталоге remotePath есть descript.ion - скопировать его в файл localcopy
 
-		function getFile(remotePath, localPath: WideString; LogErrors: Boolean = true): integer; //LogErrors=false => не логируем результат копирования, нужно для запроса descript.ion (которого может не быть)
 		function putFile(localPath, remotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; ChunkOverwriteMode: integer = 0): integer;
 		function deleteFile(path: WideString): Boolean;
 		function createDir(path: WideString): Boolean;
@@ -706,9 +714,9 @@ end;
 
 function TCloudMailRu.login(method: integer = CLOUD_AUTH_METHOD_WEB): Boolean;
 begin
+	Result:= false;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
 	if self.public_account then exit(self.public_login)
-
 end;
 
 function TCloudMailRu.deleteFile(path: WideString): Boolean;
@@ -783,59 +791,19 @@ end;
 
 function TCloudMailRu.getDir(path: WideString; var DirListing: TCloudMailRuDirListing): Boolean;
 begin
+	Result:=false;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
 	if self.public_account then Result:=self.public_getDir(path, DirListing)
 	else Result:=self.protected_getDir(path, DirListing);
 end;
 
 function TCloudMailRu.getFile(remotePath, localPath: WideString; LogErrors: Boolean = true): integer; //0 - ok, else error
-var
-	FileStream: TFileStream;
 begin
 	Result := FS_FILE_NOTSUPPORTED;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
-	if self.Shard = '' then
-	begin
-		Log(MSGTYPE_DETAILS, 'Current shard is undefined, trying to get one');
-		if self.getShard(self.Shard) then
-		begin
-			Log(MSGTYPE_DETAILS, 'Current shard: ' + self.Shard);
-		end else begin //А вот теперь это критическая ошибка, тут уже не получится копировать
-			Log(MSGTYPE_IMPORTANTERROR, 'Sorry, downloading impossible');
-			exit(FS_FILE_NOTSUPPORTED);
-		end;
-	end;
+	if self.public_account then Result:=self.public_getFile(remotePath, localPath, LogErrors)
+	else Result:=self.protected_getFile(remotePath, localPath, LogErrors);
 
-	Result := FS_FILE_OK;
-	remotePath := UrlEncode(StringReplace(remotePath, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
-	try
-		FileStream := TFileStream.Create(GetUNCFilePath(localPath), fmCreate);
-	except
-		on E: Exception do
-		begin
-			Log(MSGTYPE_IMPORTANTERROR, E.Message);
-			exit(FS_FILE_WRITEERROR);
-		end;
-	end;
-
-	if (Assigned(FileStream)) then
-	begin
-		try
-			Result := self.HTTPGetFile(self.Shard + remotePath, FileStream, LogErrors);
-		except
-			on E: Exception do
-			begin
-				if LogErrors then Log(MSGTYPE_IMPORTANTERROR, 'File receiving error: ' + E.Message);
-			end;
-		end;
-		FlushFileBuffers(FileStream.Handle);
-		FileStream.free;
-	end;
-
-	if Result <> FS_FILE_OK then
-	begin
-		System.SysUtils.deleteFile(GetUNCFilePath(localPath));
-	end;
 end;
 
 function TCloudMailRu.protected_getDir(path: WideString; var DirListing: TCloudMailRuDirListing): Boolean;
@@ -876,6 +844,90 @@ begin
 					Result := false;
 				end;
 		end;
+	end;
+end;
+
+function TCloudMailRu.public_getFile(remotePath, localPath: WideString; LogErrors: Boolean): integer;
+var
+	FileStream: TFileStream;
+begin
+	Result := FS_FILE_NOTFOUND;
+	remotePath := UrlEncode(StringReplace(remotePath, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase])) + '?key=' + self.public_download_token;
+	try
+		FileStream := TFileStream.Create(GetUNCFilePath(localPath), fmCreate);
+	except
+		on E: Exception do
+		begin
+			Log(MSGTYPE_IMPORTANTERROR, E.Message);
+			exit(FS_FILE_WRITEERROR);
+		end;
+	end;
+
+	if (Assigned(FileStream)) then
+	begin
+		try
+			Result := self.HTTPGetFile(self.public_shard + '/' + self.public_link + '/' + remotePath, FileStream, LogErrors);
+		except
+			on E: Exception do
+			begin
+				if LogErrors then Log(MSGTYPE_IMPORTANTERROR, 'File receiving error: ' + E.Message);
+			end;
+		end;
+		FlushFileBuffers(FileStream.Handle);
+		FileStream.free;
+	end;
+
+	if Result <> FS_FILE_OK then
+	begin
+		System.SysUtils.deleteFile(GetUNCFilePath(localPath));
+	end;
+end;
+
+function TCloudMailRu.protected_getFile(remotePath, localPath: WideString; LogErrors: Boolean): integer;
+var
+	FileStream: TFileStream;
+begin
+
+	Result := FS_FILE_NOTSUPPORTED;
+	if self.Shard = '' then
+	begin
+		Log(MSGTYPE_DETAILS, 'Current shard is undefined, trying to get one');
+		if self.getShard(self.Shard) then
+		begin
+			Log(MSGTYPE_DETAILS, 'Current shard: ' + self.Shard);
+		end else begin //А вот теперь это критическая ошибка, тут уже не получится копировать
+			Log(MSGTYPE_IMPORTANTERROR, 'Sorry, downloading impossible');
+			exit;
+		end;
+	end;
+	remotePath := UrlEncode(StringReplace(remotePath, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
+	try
+		FileStream := TFileStream.Create(GetUNCFilePath(localPath), fmCreate);
+	except
+		on E: Exception do
+		begin
+			Log(MSGTYPE_IMPORTANTERROR, E.Message);
+			exit(FS_FILE_WRITEERROR);
+		end;
+	end;
+
+	if (Assigned(FileStream)) then
+	begin
+		try
+			Result := self.HTTPGetFile(self.Shard + remotePath, FileStream, LogErrors);
+		except
+			on E: Exception do
+			begin
+				if LogErrors then Log(MSGTYPE_IMPORTANTERROR, 'File receiving error: ' + E.Message);
+			end;
+		end;
+		FlushFileBuffers(FileStream.Handle);
+		FileStream.free;
+	end;
+
+	if Result <> FS_FILE_OK then
+	begin
+		System.SysUtils.deleteFile(GetUNCFilePath(localPath));
 	end;
 end;
 
@@ -948,8 +1000,24 @@ begin
 	if Result then
 	begin
 		if path <> '' then path := '/' + path; //todo error handling
+
+		PageContent := StringReplace(PageContent, #$A, '', [rfReplaceAll]); //так нам проще ковыряться в тексте
+		PageContent := StringReplace(PageContent, #$D, '', [rfReplaceAll]);
+		PageContent := StringReplace(PageContent, #9, '', [rfReplaceAll]);
+
 		JSON := self.getJSONFromPublicFolder(PageContent, self.public_link + UrlEncode(StringReplace(path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase])));
 		DirListing := self.getDirListingFromPublicJSON(JSON);
+		//refresh public download token
+		if not self.getPublicTokenFromText(PageContent, self.public_download_token) then
+		begin
+			//todo raise error
+		end;
+
+		if not self.getPublicShard(PageContent, self.public_shard) then
+		begin
+			//todo raise error
+		end;
+
 	end;
 end;
 
@@ -1692,7 +1760,7 @@ end;
 
 {PRIVATE STATIC METHODS (kinda)}
 
-function TCloudMailRu.getTokenFromText(Text: WideString): WideString;
+function TCloudMailRu.getTokenFromText(Text: WideString): WideString; //todo bool
 var
 	start: integer;
 begin
@@ -1703,6 +1771,32 @@ begin
 	end else begin
 		getTokenFromText := '';
 	end;
+end;
+
+function TCloudMailRu.getPublicTokenFromText(Text: WideString; var PublicToken: WideString): Boolean;
+var
+	start: integer;
+	finish: integer;
+begin
+	start := Pos(WideString('"tokens":{"download":'), Text);
+	Result:=start <> 0;
+	start:=start + 22;
+	finish := Pos(WideString('"}'), Text, start);
+	PublicToken := Copy(Text, start, finish - start);
+end;
+
+function TCloudMailRu.getPublicShard(Text: WideString; var Shard: WideString): Boolean;
+var
+	start: integer;
+	finish: integer;
+begin
+	start := Pos(WideString('"weblink_get":['), Text);
+	Result:=start <> 0;
+
+	start := Pos(WideString('"url":'), Text, start) + 7;
+	finish := Pos(WideString('"}]'), Text, start);
+	Shard := Copy(Text, start, finish - start);
+
 end;
 
 function TCloudMailRu.get_build_FromText(Text: WideString): WideString;
@@ -1907,11 +2001,6 @@ var
 	start, finish: integer;
 	temp: WideString;
 begin
-
-	PageContent := StringReplace(PageContent, #$A, '', [rfReplaceAll]);
-	PageContent := StringReplace(PageContent, #$D, '', [rfReplaceAll]);
-	PageContent := StringReplace(PageContent, #9, '', [rfReplaceAll]);
-
 	start := Pos(WideString('{"tree": ['), PageContent); //todo if not found raise error
 	temp:='"id": "' + IdString + '"}}';
 	finish:= PosLast(temp, PageContent, start) + length(temp);
