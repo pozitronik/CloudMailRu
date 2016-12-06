@@ -89,6 +89,9 @@ type
 		unlimited_filesize: Boolean;
 		split_large_files: Boolean;
 		split_file_size: integer;
+		public_account: Boolean;
+		public_url: WideString;
+
 		token: WideString;
 		OAuthToken: TCloudMailRuOAuthInfo;
 		x_page_id: WideString;
@@ -133,6 +136,9 @@ type
 		procedure Log(MsgType: integer; LogString: WideString);
 		procedure HTTPInit(var HTTP: TIdHTTP; var SSL: TIdSSLIOHandlerSocketOpenSSL; var Socks: TIdSocksInfo; var Cookie: TIdCookieManager);
 		procedure HTTPDestroy(var HTTP: TIdHTTP; var SSL: TIdSSLIOHandlerSocketOpenSSL);
+
+		function public_login(): Boolean;
+
 	public
 		ExternalPluginNr: integer;
 		ExternalSourceName: PWideChar;
@@ -202,6 +208,9 @@ begin
 		self.domain := AccountSettings.domain;
 		self.unlimited_filesize := AccountSettings.unlimited_filesize;
 		self.split_large_files := AccountSettings.split_large_files;
+		self.public_account := AccountSettings.public_account;
+		self.public_url:=AccountSettings.public_url;
+
 		self.split_file_size := split_file_size;
 		self.ConnectTimeout := ConnectTimeout;
 		self.ExternalProgressProc := ExternalProgressProc;
@@ -687,6 +696,9 @@ begin
 	Result := false;
 	self.login_method := method;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
+
+	if self.public_account then exit(self.public_login);
+
 	Log(MSGTYPE_DETAILS, 'Login to ' + self.user + '@' + self.domain);
 	case self.login_method of
 		CLOUD_AUTH_METHOD_WEB: //todo: вынести в отдельный метод
@@ -890,6 +902,12 @@ begin
 	begin
 		System.SysUtils.deleteFile(GetUNCFilePath(localPath));
 	end;
+end;
+
+function TCloudMailRu.public_login: Boolean;
+begin
+	Log(MSGTYPE_DETAILS, 'Open ' + self.public_url);
+	exit(true);
 end;
 
 function TCloudMailRu.publishFile(path: WideString; var PublicLink: WideString; publish: Boolean = CLOUD_PUBLISH): Boolean;
