@@ -31,6 +31,7 @@ function GetUNCFilePath(FilePath: WideString): WideString;
 function GetWord(command: WideString; WordIndex: Integer = 0): WideString; //Возвращает указанное значащее слово из строки с учётом кавычек (парсинг команд)
 function ExtractLinkFromUrl(URL: WideString): WideString; //При необходимости преобразует адрес публичной ссылки к нужному виду
 function IsWriteable(const DirName: WideString; FileName: WideString = 'delete.me'; CleanFile: boolean = true): boolean;
+function PosLast(Substring, S: WideString; Offset: Integer = 0): Integer;
 
 implementation
 
@@ -228,6 +229,17 @@ begin
 	end;
 	Result := H <> INVALID_HANDLE_VALUE;
 	if Result then CloseHandle(H);
+end;
+
+function PosLast(Substring, S: WideString; Offset: Integer = 0): Integer;
+var
+	tmp: Integer;
+begin
+	tmp:=Offset;
+	Repeat
+		Result:=tmp;
+		tmp := Pos(Substring, S, tmp + 1);
+	until tmp = 0;
 end;
 
 end.
