@@ -32,6 +32,7 @@ function GetWord(command: WideString; WordIndex: Integer = 0): WideString; //В�
 function ExtractLinkFromUrl(URL: WideString): WideString; //При необходимости преобразует адрес публичной ссылки к нужному виду
 function IsWriteable(const DirName: WideString; FileName: WideString = 'delete.me'; CleanFile: boolean = true): boolean;
 function PosLast(Substring, S: WideString; Offset: Integer = 0): Integer;
+Procedure FileLog(S: WideString);
 
 implementation
 
@@ -240,6 +241,16 @@ begin
 		Result:=tmp;
 		tmp := Pos(Substring, S, tmp + 1);
 	until tmp = 0;
+end;
+
+Procedure FileLog(S: WideString);
+var
+	f: textfile;
+begin
+	Assign(f, 'd:\DATA\WORKPLACE\WORKSPACE\CloudMailRu\log.txt');
+	Rewrite(f);
+	Write(f, S);
+	close(f);
 end;
 
 end.
