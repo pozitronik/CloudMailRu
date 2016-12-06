@@ -83,30 +83,6 @@ type
 
 	TCloudMailRu = class
 	private
-		domain: WideString;
-		user: WideString;
-		password: WideString;
-		unlimited_filesize: Boolean;
-		split_large_files: Boolean;
-		split_file_size: integer;
-		token: WideString;
-		OAuthToken: TCloudMailRuOAuthInfo;
-		x_page_id: WideString;
-		build: WideString;
-		upload_url: WideString;
-		Cookie: TIdCookieManager;
-		Socks: TIdSocksInfo;
-
-		ExternalProgressProc: TProgressProcW;
-		ExternalLogProc: TLogProcW;
-
-		Shard: WideString;
-		login_method: integer;
-
-		Proxy: TProxySettings;
-
-		ConnectTimeout: integer;
-
 		function getToken(): Boolean;
 		function getOAuthToken(var OAuthToken: TCloudMailRuOAuthInfo): Boolean;
 		function getShard(var Shard: WideString): Boolean;
@@ -133,6 +109,26 @@ type
 		procedure Log(MsgType: integer; LogString: WideString);
 		function getErrorText(ErrorCode: integer): WideString;
 	protected
+		domain: WideString;
+		user: WideString;
+		password: WideString;
+		unlimited_filesize: Boolean;
+		split_large_files: Boolean;
+		split_file_size: integer;
+		token: WideString;
+		OAuthToken: TCloudMailRuOAuthInfo;
+		x_page_id: WideString;
+		build: WideString;
+		upload_url: WideString;
+		Cookie: TIdCookieManager;
+		Socks: TIdSocksInfo;
+		ExternalProgressProc: TProgressProcW;
+		ExternalLogProc: TLogProcW;
+		Shard: WideString;
+		login_method: integer;
+		Proxy: TProxySettings;
+		ConnectTimeout: integer;
+
 		procedure HTTPInit(var HTTP: TIdHTTP; var SSL: TIdSSLIOHandlerSocketOpenSSL; var Socks: TIdSocksInfo; var Cookie: TIdCookieManager);
 		procedure HTTPDestroy(var HTTP: TIdHTTP; var SSL: TIdSSLIOHandlerSocketOpenSSL);
 	public
