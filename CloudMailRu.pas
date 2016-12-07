@@ -466,7 +466,7 @@ var
 	temp: WideString;
 begin
 	Result:=false;
-	start := Pos(WideString('{"tree": ['), Text); //todo if not found raise error
+	start := Pos(WideString('{"tree": ['), Text);
 	temp:='"id": "' + IdString + '"}}';
 	finish:= PosLast(temp, Text, start) + length(temp);
 	if start > 0 then
@@ -474,7 +474,6 @@ begin
 		JSON:= Copy(Text, start, finish - start);
 		Result:=true;
 	end;
-
 end;
 
 function TCloudMailRu.extractPublicShard(Text: WideString; var Shard: WideString): Boolean;
