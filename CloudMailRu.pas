@@ -834,8 +834,8 @@ function TCloudMailRu.getFile(remotePath, localPath: WideString; LogErrors: Bool
 begin
 	Result := FS_FILE_NOTSUPPORTED;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
-	if self.public_account then Result:=self.getFileRegular(remotePath, localPath, LogErrors)
-	else Result:=self.getFileShared(remotePath, localPath, LogErrors);
+	if self.public_account then Result:=self.getFileShared(remotePath, localPath, LogErrors)
+	else Result:=self.getFileRegular(remotePath, localPath, LogErrors);
 end;
 
 function TCloudMailRu.getFileRegular(remotePath, localPath: WideString; LogErrors: Boolean): integer;
@@ -1229,8 +1229,8 @@ function TCloudMailRu.login(method: integer): Boolean;
 begin
 	Result:= false;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
-	if self.public_account then exit(self.loginShared())
-	else exit(self.loginRegular(method));
+	if self.public_account then Result:=self.loginShared()
+	else Result:=self.loginRegular(method);
 end;
 
 function TCloudMailRu.loginRegular(method: integer): Boolean;
