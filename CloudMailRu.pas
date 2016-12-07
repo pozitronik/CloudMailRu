@@ -119,7 +119,7 @@ type
 		function HTTPGet(URL: WideString; var Answer: WideString; var ProgressEnabled: Boolean): Boolean; //если ProgressEnabled - включаем обработчик onWork, возвращаем ProgressEnabled=false при отмене
 		function HTTPGetFile(URL: WideString; var FileStream: TFileStream; LogErrors: Boolean = true): integer;
 		function HTTPPost(URL: WideString; PostDataString: WideString; var Answer: WideString; ContentType: WideString = 'application/x-www-form-urlencoded'): Boolean; //Постинг данных с возможным получением ответа.
-		function HTTPPostFile(URL: WideString; PostData: TIdMultipartFormDataStream; var Answer: WideString): integer; //Постинг файла и получение ответа
+		function HTTPPostFile(URL: WideString; FileName: WideString; var Answer: WideString): integer; //Постинг файла и получение ответа
 		procedure HTTPProgress(ASender: TObject; AWorkMode: TWorkMode; AWorkCount: int64);
 		{RAW TEXT PARSING}
 		function extractTokenFromText(Text: WideString; var token: WideString): Boolean;
@@ -1145,15 +1145,18 @@ begin
 	PostData.free;
 end;
 
-function TCloudMailRu.HTTPPostFile(URL: WideString; PostData: TIdMultipartFormDataStream; var Answer: WideString): integer;
+function TCloudMailRu.HTTPPostFile(URL: WideString; FileName: WideString; var Answer: WideString): integer;
 var
 	MemStream: TStringStream;
 	HTTP: TIdHTTP;
 	SSL: TIdSSLIOHandlerSocketOpenSSL;
 	Socks: TIdSocksInfo;
+	PostData: TIdMultipartFormDataStream;
 begin
 	Result := CLOUD_OPERATION_OK;
 	MemStream := TStringStream.Create;
+	PostData := TIdMultipartFormDataStream.Create;
+	PostData.AddFile('file', FileName, 'application/octet-stream');
 	try
 		self.HTTPInit(HTTP, SSL, Socks, self.Cookie);
 		HTTP.OnWork := self.HTTPProgress;
@@ -1163,6 +1166,8 @@ begin
 	except
 		on E: EAbort do
 		begin
+			MemStream.free;
+			PostData.free;
 			Result := CLOUD_OPERATION_CANCELLED;
 		end;
 		on E: EIdHTTPProtocolException do
@@ -1181,7 +1186,8 @@ begin
 			Result := CLOUD_OPERATION_FAILED;
 		end;
 	end;
-	MemStream.free
+	MemStream.free;
+	PostData.free;
 end;
 
 procedure TCloudMailRu.HTTPProgress(ASender: TObject; AWorkMode: TWorkMode; AWorkCount: int64);
@@ -1429,8 +1435,8 @@ begin
 			end;
 			for SplittedPartIndex := 0 to length(Splitter.SplitResult.parts) - 1 do
 			begin
-				ChunkFileName:= CopyExt(Splitter.SplitResult.parts[SplittedPartIndex].filename, remotePath);
-				Result := self.putFile(Splitter.SplitResult.parts[SplittedPartIndex].filename, ChunkFileName, ConflictMode);
+				ChunkFileName:= CopyExt(Splitter.SplitResult.parts[SplittedPartIndex].FileName, remotePath);
+				Result := self.putFile(Splitter.SplitResult.parts[SplittedPartIndex].FileName, ChunkFileName, ConflictMode);
 				if Result <> FS_FILE_OK then
 				begin
 					case Result of
@@ -1451,7 +1457,7 @@ begin
 												Splitter.Destroy;
 												exit(FS_FILE_WRITEERROR);
 											end else begin
-												if (self.putFile(Splitter.SplitResult.parts[SplittedPartIndex].filename, ChunkFileName, ConflictMode) <> FS_FILE_OK) then
+												if (self.putFile(Splitter.SplitResult.parts[SplittedPartIndex].FileName, ChunkFileName, ConflictMode) <> FS_FILE_OK) then
 												begin
 													Splitter.Destroy;
 													exit(FS_FILE_WRITEERROR);
@@ -1609,18 +1615,12 @@ end;
 function TCloudMailRu.putFileToCloud(localPath: WideString; Return: TStringList): integer; {Заливка на сервер состоит из двух шагов: заливаем файл на сервер в putFileToCloud и добавляем его в облако addFileToCloud}
 var
 	URL, PostAnswer: WideString;
-	PostData: TIdMultipartFormDataStream;
 begin
 	Result := CLOUD_OPERATION_FAILED;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
 	if self.public_account then exit;
-
 	URL := self.upload_url + '/?cloud_domain=1&x-email=' + self.user + '%40' + self.domain + '&fileapi' + DateTimeToUnix(now).ToString + '0246';
-
-	PostData := TIdMultipartFormDataStream.Create;
-	PostData.AddFile('file', GetUNCFilePath(localPath), 'application/octet-stream');
-	Result := self.HTTPPostFile(URL, PostData, PostAnswer);
-	PostData.free;
+	Result := self.HTTPPostFile(URL, GetUNCFilePath(localPath), PostAnswer);
 	if (Result = CLOUD_OPERATION_OK) then
 	begin
 		ExtractStrings([';'], [], PWideChar(PostAnswer), Return);
