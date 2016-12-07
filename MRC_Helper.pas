@@ -32,6 +32,7 @@ function GetWord(command: WideString; WordIndex: Integer = 0): WideString; //В�
 function ExtractLinkFromUrl(URL: WideString): WideString; //При необходимости преобразует адрес публичной ссылки к нужному виду
 function IsWriteable(const DirName: WideString; FileName: WideString = 'delete.me'; CleanFile: boolean = true): boolean;
 function PosLast(Substring, S: WideString; Offset: Integer = 0): Integer;
+function PathToUrl(path: WideString; RestrictEmptyUrl: boolean = true): WideString;
 Procedure FileLog(S: WideString);
 
 implementation
@@ -241,6 +242,12 @@ begin
 		Result:=tmp;
 		tmp := Pos(Substring, S, tmp + 1);
 	until tmp = 0;
+end;
+
+function PathToUrl(path: WideString;RestrictEmptyUrl: boolean = true): WideString;
+begin
+	Result:= UrlEncode(StringReplace(path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
+	if (Result = '') and RestrictEmptyUrl then Result := '/';
 end;
 
 Procedure FileLog(S: WideString);
