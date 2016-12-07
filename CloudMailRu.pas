@@ -192,19 +192,10 @@ var
 	URL: WideString;
 	PostData: TStringStream;
 begin
-	Result := false;
 	URL := 'https://cloud.mail.ru/api/v2/file/add';
 	PostData := TStringStream.Create('conflict=' + ConflictMode + '&home=/' + remotePath + '&hash=' + hash + '&size=' + size.ToString + '&token=' + self.token + '&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id + '&conflict', TEncoding.UTF8);
 	{Экспериментально выяснено, что параметры api, build, email, x-email, x-page-id в запросе не обязательны}
-	try
-		Result := self.HTTPPost(URL, PostData, JSONAnswer);
-	except
-		on E: Exception do
-		begin
-			Log(MSGTYPE_IMPORTANTERROR, 'Adding file error: ' + E.Message);
-			PostData.free;
-		end;
-	end;
+	Result := self.HTTPPost(URL, PostData, JSONAnswer);
 	PostData.free;
 end;
 
@@ -212,26 +203,15 @@ function TCloudMailRu.cloneWeblink(path, link, ConflictMode: WideString): intege
 var
 	URL: WideString;
 	JSON: WideString;
-	GetResult: Boolean;
 	OperationStatus, OperationResult: integer;
 	Progress: Boolean;
 begin
-	GetResult := false;
 	Result := FS_FILE_WRITEERROR;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
 	path := UrlEncode(StringReplace(path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
 	if (path = '') then path := '/'; //preventing error
 	URL := 'https://cloud.mail.ru/api/v2/clone?folder=' + path + '&weblink=' + link + '&conflict=' + ConflictMode + '&api=2&build=' + self.build + '&x-page-id=' + self.x_page_id + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&token=' + self.token + '&_=1433249148810';
-	try
-		Progress := true;
-		GetResult := self.HTTPGet(URL, JSON, Progress);
-	except
-		on E: Exception do
-		begin
-			Log(MSGTYPE_IMPORTANTERROR, 'Public link clone error: ' + E.Message);
-		end;
-	end;
-	if GetResult then
+	if self.HTTPGet(URL, JSON, Progress) then
 	begin //Парсим ответ
 		OperationResult := self.fromJSON_OperationResult(JSON, OperationStatus);
 		case OperationResult of
@@ -243,19 +223,7 @@ begin
 				begin
 					Result := FS_FILE_EXISTS;
 				end;
-			CLOUD_ERROR_REQUIRED:
-				begin
-					Result := FS_FILE_WRITEERROR;
-				end;
-			CLOUD_ERROR_INVALID:
-				begin
-					Result := FS_FILE_WRITEERROR;
-				end;
-			CLOUD_ERROR_READONLY:
-				begin
-					Result := FS_FILE_WRITEERROR;
-				end;
-			CLOUD_ERROR_NAME_LENGTH_EXCEEDED:
+			CLOUD_ERROR_REQUIRED, CLOUD_ERROR_INVALID, CLOUD_ERROR_READONLY, CLOUD_ERROR_NAME_LENGTH_EXCEEDED:
 				begin
 					Result := FS_FILE_WRITEERROR;
 				end;
@@ -285,7 +253,6 @@ var
 	URL: WideString;
 	PostData: TStringStream;
 	JSON: WideString;
-	PostResult: Boolean;
 	OperationStatus, OperationResult: integer;
 begin
 	Result := FS_FILE_WRITEERROR;
@@ -294,18 +261,8 @@ begin
 	ToPath := UrlEncode(StringReplace(ToPath, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
 	if (ToPath = '') then ToPath := '/'; //preventing error
 	URL := 'https://cloud.mail.ru/api/v2/file/copy';
-	PostResult := false;
 	PostData := TStringStream.Create('api=2&home=' + OldName + '&folder=' + ToPath + '&token=' + self.token + '&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id + '&conflict', TEncoding.UTF8);
-	try
-		PostResult := self.HTTPPost(URL, PostData, JSON);
-	except
-		on E: Exception do
-		begin
-			Log(MSGTYPE_IMPORTANTERROR, 'Copy file error: ' + E.Message);
-		end;
-	end;
-	PostData.free;
-	if PostResult then
+	if self.HTTPPost(URL, PostData, JSON) then
 	begin //Парсим ответ
 		OperationResult:=self.fromJSON_OperationResult(JSON, OperationStatus);
 		case OperationResult of
@@ -317,19 +274,7 @@ begin
 				begin
 					Result := FS_FILE_EXISTS;
 				end;
-			CLOUD_ERROR_REQUIRED:
-				begin
-					Result := FS_FILE_WRITEERROR;
-				end;
-			CLOUD_ERROR_INVALID:
-				begin
-					Result := FS_FILE_WRITEERROR;
-				end;
-			CLOUD_ERROR_READONLY:
-				begin
-					Result := FS_FILE_WRITEERROR;
-				end;
-			CLOUD_ERROR_NAME_LENGTH_EXCEEDED:
+			CLOUD_ERROR_REQUIRED, CLOUD_ERROR_INVALID, CLOUD_ERROR_READONLY, CLOUD_ERROR_NAME_LENGTH_EXCEEDED:
 				begin
 					Result := FS_FILE_WRITEERROR;
 				end;
@@ -339,11 +284,12 @@ begin
 				end;
 			else
 				begin //что-то неизвестное
-					Log(MSGTYPE_IMPORTANTERROR, 'File publish error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
+					Log(MSGTYPE_IMPORTANTERROR, 'File copy error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
 					Result := FS_FILE_WRITEERROR;
 				end;
 		end;
 	end;
+	PostData.free;
 end;
 
 function TCloudMailRu.cpFile(OldName, NewName: WideString): integer;
@@ -433,25 +379,15 @@ var
 	URL: WideString;
 	PostData: TStringStream;
 	PostAnswer: WideString;
-	SucessCreate: Boolean;
 	OperationStatus, OperationResult: integer;
 begin
 	Result := false;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
-	SucessCreate := false;
+	if self.public_account then exit;
 	path := UrlEncode(StringReplace(path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
 	URL := 'https://cloud.mail.ru/api/v2/folder/add';
 	PostData := TStringStream.Create('api=2&home=/' + path + '&token=' + self.token + '&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id + '&conflict', TEncoding.UTF8);
-	try
-		SucessCreate := self.HTTPPost(URL, PostData, PostAnswer);
-	except
-		on E: Exception do
-		begin
-			Log(MSGTYPE_IMPORTANTERROR, 'Directory creation error: ' + E.Message);
-		end;
-	end;
-	PostData.free;
-	if SucessCreate then
+	if self.HTTPPost(URL, PostData, PostAnswer) then
 	begin
 		OperationResult :=self.fromJSON_OperationResult(PostAnswer, OperationStatus);
 		case OperationResult of
@@ -466,6 +402,7 @@ begin
 				end;
 		end;
 	end;
+	PostData.free;
 end;
 
 function TCloudMailRu.deleteFile(path: WideString): Boolean;
@@ -480,15 +417,7 @@ begin
 	path := UrlEncode(StringReplace(path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
 	URL := 'https://cloud.mail.ru/api/v2/file/remove';
 	PostData := TStringStream.Create('api=2&home=/' + path + '&token=' + self.token + '&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id + '&conflict', TEncoding.UTF8);
-	try
-		Result := self.HTTPPost(URL, PostData, JSON);
-	except
-		on E: Exception do
-		begin
-			Log(MSGTYPE_IMPORTANTERROR, 'Delete file error: ' + E.Message);
-			Result := false;
-		end;
-	end;
+	Result := self.HTTPPost(URL, PostData, JSON);
 	PostData.free;
 	if Result then
 	begin
@@ -500,8 +429,8 @@ begin
 				end;
 			else
 				begin
-					Result := false;
 					Log(MSGTYPE_IMPORTANTERROR, 'Delete file error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
+					Result := false;
 				end;
 		end;
 	end;
@@ -851,17 +780,9 @@ var
 	Progress: Boolean;
 	OperationStatus, OperationResult: integer;
 begin
-	Result := false;
 	URL := 'https://cloud.mail.ru/api/v2/folder?sort={%22type%22%3A%22name%22%2C%22order%22%3A%22asc%22}&offset=0&limit=10000&home=' + UrlEncode(StringReplace(path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase])) + '&api=2&build=' + self.build + '&x-page-id=' + self.x_page_id + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&token=' + self.token + '&_=1433249148810';
-	try
-		Progress := false;
-		Result := self.HTTPGet(URL, JSON, Progress);
-	except
-		on E: Exception do
-		begin
-			Log(MSGTYPE_IMPORTANTERROR, 'Directory list receiving error: ' + E.Message);
-		end;
-	end;
+	Progress := false;
+	Result := self.HTTPGet(URL, JSON, Progress);
 	if Result then
 	begin
 		OperationResult:= self.fromJSON_OperationResult(JSON, OperationStatus);
@@ -891,38 +812,32 @@ var
 	JSON, PageContent: WideString;
 	Progress: Boolean;
 begin
-	Result:=false;
 	URL := self.public_url + '/' + UrlEncode(StringReplace(path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
-	try
-		Progress := false;
-		Result := self.HTTPGet(URL, PageContent, Progress);
-	except
-		on E: Exception do
-		begin
-			Log(MSGTYPE_IMPORTANTERROR, 'Directory list receiving error: ' + E.Message);
-		end;
-	end;
+	Progress := false;
+	Result :=self.HTTPGet(URL, PageContent, Progress);
 	if Result then
 	begin
 		if path <> '' then path := '/' + path; //todo error handling
-
 		PageContent := StringReplace(PageContent, #$A, '', [rfReplaceAll]); //так нам проще ковыряться в тексте
 		PageContent := StringReplace(PageContent, #$D, '', [rfReplaceAll]);
 		PageContent := StringReplace(PageContent, #9, '', [rfReplaceAll]);
 
-		self.extractJSONFromPublicFolder(PageContent, self.public_link + UrlEncode(StringReplace(path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase])), JSON);
-		DirListing := self.fromJSON_PublicDirListing(JSON);
-		//refresh public download token
-		if not self.extractPublicTokenFromText(PageContent, self.public_download_token) then
+		if not self.extractJSONFromPublicFolder(PageContent, self.public_link + UrlEncode(StringReplace(path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase])), JSON) then
 		begin
-			//todo raise error
+			Log(MSGTYPE_IMPORTANTERROR, 'Can''t get public share JSON data');
+			exit(false);
 		end;
-
+		DirListing := self.fromJSON_PublicDirListing(JSON);
+		if not self.extractPublicTokenFromText(PageContent, self.public_download_token) then //refresh public download token
+		begin
+			Log(MSGTYPE_IMPORTANTERROR, 'Can''t get public share download token');
+			exit(false);
+		end;
 		if not self.extractPublicShard(PageContent, self.public_shard) then
 		begin
-			//todo raise error
+			Log(MSGTYPE_IMPORTANTERROR, 'Can''t get public share download share');
+			exit(false);
 		end;
-
 	end;
 end;
 
@@ -935,6 +850,43 @@ begin
 end;
 
 function TCloudMailRu.getFileRegular(remotePath, localPath: WideString; LogErrors: Boolean): integer;
+var
+	FileStream: TFileStream;
+begin
+	Result := FS_FILE_NOTSUPPORTED;
+	if self.Shard = '' then
+	begin
+		Log(MSGTYPE_DETAILS, 'Current shard is undefined, trying to get one');
+		if self.getShard(self.Shard) then
+		begin
+			Log(MSGTYPE_DETAILS, 'Current shard: ' + self.Shard);
+		end else begin //А вот теперь это критическая ошибка, тут уже не получится копировать
+			Log(MSGTYPE_IMPORTANTERROR, 'Sorry, downloading impossible');
+			exit;
+		end;
+	end;
+	remotePath := UrlEncode(StringReplace(remotePath, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase])); //todo функция для этого
+	try
+		FileStream := TFileStream.Create(GetUNCFilePath(localPath), fmCreate);
+	except
+		on E: Exception do
+		begin
+			Log(MSGTYPE_IMPORTANTERROR, E.Message);
+			exit(FS_FILE_WRITEERROR);
+		end;
+	end;
+	if (Assigned(FileStream)) then
+	begin
+		self.ExternalSourceName := PWideChar(remotePath);
+		self.ExternalTargetName := PWideChar(localPath);
+		Result := self.HTTPGetFile(self.Shard + remotePath, FileStream, LogErrors);
+		FlushFileBuffers(FileStream.Handle);
+		FileStream.free;
+	end;
+	if Result <> FS_FILE_OK then System.SysUtils.deleteFile(GetUNCFilePath(localPath));
+end;
+
+function TCloudMailRu.getFileShared(remotePath, localPath: WideString; LogErrors: Boolean): integer;
 var
 	FileStream: TFileStream;
 begin
@@ -951,68 +903,11 @@ begin
 	end;
 	if (Assigned(FileStream)) then
 	begin
-		try
-			Result := self.HTTPGetFile(self.public_shard + '/' + self.public_link + '/' + remotePath, FileStream, LogErrors);
-		except
-			on E: Exception do
-			begin
-				if LogErrors then Log(MSGTYPE_IMPORTANTERROR, 'File receiving error: ' + E.Message);
-			end;
-		end;
+		Result := self.HTTPGetFile(self.public_shard + '/' + self.public_link + '/' + remotePath, FileStream, LogErrors);
 		FlushFileBuffers(FileStream.Handle);
 		FileStream.free;
 	end;
-	if Result <> FS_FILE_OK then
-	begin
-		System.SysUtils.deleteFile(GetUNCFilePath(localPath));
-	end;
-end;
-
-function TCloudMailRu.getFileShared(remotePath, localPath: WideString; LogErrors: Boolean): integer;
-var
-	FileStream: TFileStream;
-begin
-	Result := FS_FILE_NOTSUPPORTED;
-	if self.Shard = '' then
-	begin
-		Log(MSGTYPE_DETAILS, 'Current shard is undefined, trying to get one');
-		if self.getShard(self.Shard) then
-		begin
-			Log(MSGTYPE_DETAILS, 'Current shard: ' + self.Shard);
-		end else begin //А вот теперь это критическая ошибка, тут уже не получится копировать
-			Log(MSGTYPE_IMPORTANTERROR, 'Sorry, downloading impossible');
-			exit;
-		end;
-	end;
-	remotePath := UrlEncode(StringReplace(remotePath, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
-	try
-		FileStream := TFileStream.Create(GetUNCFilePath(localPath), fmCreate);
-	except
-		on E: Exception do
-		begin
-			Log(MSGTYPE_IMPORTANTERROR, E.Message);
-			exit(FS_FILE_WRITEERROR);
-		end;
-	end;
-	if (Assigned(FileStream)) then
-	begin
-		try
-			self.ExternalSourceName := PWideChar(remotePath);
-			self.ExternalTargetName := PWideChar(localPath);
-			Result := self.HTTPGetFile(self.Shard + remotePath, FileStream, LogErrors);
-		except
-			on E: Exception do
-			begin
-				if LogErrors then Log(MSGTYPE_IMPORTANTERROR, 'File receiving error: ' + E.Message);
-			end;
-		end;
-		FlushFileBuffers(FileStream.Handle);
-		FileStream.free;
-	end;
-	if Result <> FS_FILE_OK then
-	begin
-		System.SysUtils.deleteFile(GetUNCFilePath(localPath));
-	end;
+	if Result <> FS_FILE_OK then System.SysUtils.deleteFile(GetUNCFilePath(localPath));
 end;
 
 function TCloudMailRu.getOAuthToken(var OAuthToken: TCloudMailRuOAuthInfo): Boolean;
@@ -1020,22 +915,11 @@ var
 	URL: WideString;
 	Answer: WideString;
 	PostData: TStringStream;
-	SuccessPost: Boolean;
 begin
-	SuccessPost := false;
 	Result := false;
 	URL := 'https://o2.mail.ru/token';
 	PostData := TStringStream.Create('client_id=cloud-win&grant_type=password&username=' + self.user + '%40' + self.domain + '&password=' + UrlEncode(self.password), TEncoding.UTF8);
-	try
-		SuccessPost := self.HTTPPost(URL, PostData, Answer);
-	except
-		on E: Exception do
-		begin
-			Log(MSGTYPE_IMPORTANTERROR, 'Get OAuth token error: ' + E.Message);
-			PostData.free;
-		end;
-	end;
-	if SuccessPost then
+	if self.HTTPPost(URL, PostData, Answer) then
 	begin
 		OAuthToken := self.fromJSON_OAuthTokenInfo(Answer);
 		Result := OAuthToken.error_code = NOERROR;
@@ -1048,25 +932,13 @@ var
 	URL: WideString;
 	PostData: TStringStream;
 	JSON: WideString;
-	SuccessPost: Boolean;
 	OperationResult, OperationStatus: integer;
 begin
 	Result := false;
-	SuccessPost := false;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
 	URL := 'https://cloud.mail.ru/api/v2/dispatcher/';
 	PostData := TStringStream.Create('api=2&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&token=' + self.token + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id, TEncoding.UTF8);
-	try
-		SuccessPost := self.HTTPPost(URL, PostData, JSON);
-	except
-		on E: Exception do
-		begin
-			Log(MSGTYPE_IMPORTANTERROR, 'Get shard error: ' + E.Message);
-			PostData.free;
-		end;
-	end;
-	PostData.free;
-	if SuccessPost then
+	if self.HTTPPost(URL, PostData, JSON) then
 	begin
 		OperationResult := self.fromJSON_OperationResult(JSON, OperationStatus);
 		case OperationResult of
@@ -1082,6 +954,7 @@ begin
 				end;
 		end;
 	end;
+	PostData.free;
 end;
 
 function TCloudMailRu.getToken: Boolean;
@@ -1093,15 +966,8 @@ begin
 	URL := 'https://cloud.mail.ru/?from=promo&from=authpopup';
 	Result := false;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
-	try
-		Progress := false;
-		Result := self.HTTPGet(URL, JSON, Progress);
-	except
-		on E: Exception do
-		begin
-			Log(MSGTYPE_IMPORTANTERROR, 'Get token error: ' + E.Message);
-		end;
-	end;
+	Progress := false;
+	Result := self.HTTPGet(URL, JSON, Progress);
 	if Result then
 	begin
 		Result := self.extractTokenFromText(JSON, self.token) and self.extract_x_page_id_FromText(JSON, self.x_page_id) and self.extract_build_FromText(JSON, self.build) and self.extract_upload_url_FromText(JSON, self.upload_url);
@@ -1118,15 +984,8 @@ begin
 	Result := false;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
 	URL := 'https://cloud.mail.ru/api/v2/user/space?api=2&home=/&build=' + self.build + '&x-page-id=' + self.x_page_id + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&token=' + self.token + '&_=1433249148810';
-	try
-		Progress := false;
-		Result := self.HTTPGet(URL, JSON, Progress);
-	except
-		on E: Exception do
-		begin
-			Log(MSGTYPE_IMPORTANTERROR, 'User space receiving error: ' + E.Message);
-		end;
-	end;
+	Progress := false;
+	Result := self.HTTPGet(URL, JSON, Progress);
 	if Result then
 	begin
 		OperationResult := self.fromJSON_OperationResult(JSON, OperationStatus);
@@ -1400,14 +1259,7 @@ begin
 			begin
 				URL := 'https://auth.mail.ru/cgi-bin/auth?lang=ru_RU&from=authpopup';
 				PostData := TStringStream.Create('page=https://cloud.mail.ru/?from=promo&new_auth_form=1&Domain=' + self.domain + '&Login=' + self.user + '&Password=' + UrlEncode(self.password) + '&FailPage=', TEncoding.UTF8);
-				try
-					Result := self.HTTPPost(URL, PostData, PostAnswer);
-				except
-					on E: Exception do
-					begin
-						Log(MSGTYPE_IMPORTANTERROR, 'Cloud login error: ' + E.Message);
-					end;
-				end;
+				Result := self.HTTPPost(URL, PostData, PostAnswer);
 				PostData.free;
 				if (Result) then
 				begin
@@ -1427,10 +1279,7 @@ begin
 		CLOUD_AUTH_METHOD_OAUTH:
 			begin
 				Result := self.getOAuthToken(self.OAuthToken);
-				if not Result then
-				begin
-					Log(MSGTYPE_IMPORTANTERROR, 'OAuth error: ' + self.OAuthToken.error + '(' + self.OAuthToken.error_description + ')');
-				end;
+				if not Result then Log(MSGTYPE_IMPORTANTERROR, 'OAuth error: ' + self.OAuthToken.error + '(' + self.OAuthToken.error_description + ')');
 			end;
 	end;
 end;
@@ -1474,7 +1323,6 @@ var
 	URL: WideString;
 	PostData: TStringStream;
 	JSON: WideString;
-	PostResult: Boolean;
 	OperationStatus, OperationResult: integer;
 begin
 	Result := FS_FILE_WRITEERROR;
@@ -1483,18 +1331,9 @@ begin
 	ToPath := UrlEncode(StringReplace(ToPath, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
 	if (ToPath = '') then ToPath := '/'; //preventing error
 	URL := 'https://cloud.mail.ru/api/v2/file/move';
-	PostResult := false;
+	//todo функция для post/get
 	PostData := TStringStream.Create('api=2&home=' + OldName + '&folder=' + ToPath + '&token=' + self.token + '&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id + '&conflict', TEncoding.UTF8);
-	try
-		PostResult := self.HTTPPost(URL, PostData, JSON);
-	except
-		on E: Exception do
-		begin
-			Log(MSGTYPE_IMPORTANTERROR, 'Move file error: ' + E.Message);
-		end;
-	end;
-	PostData.free;
-	if PostResult then
+	if self.HTTPPost(URL, PostData, JSON) then
 	begin //Парсим ответ
 		OperationResult:=self.fromJSON_OperationResult(JSON, OperationStatus);
 		case OperationResult of
@@ -1506,19 +1345,7 @@ begin
 				begin
 					Result := FS_FILE_EXISTS;
 				end;
-			CLOUD_ERROR_REQUIRED:
-				begin
-					Result := FS_FILE_WRITEERROR;
-				end;
-			CLOUD_ERROR_INVALID:
-				begin
-					Result := FS_FILE_WRITEERROR;
-				end;
-			CLOUD_ERROR_READONLY:
-				begin
-					Result := FS_FILE_WRITEERROR;
-				end;
-			CLOUD_ERROR_NAME_LENGTH_EXCEEDED:
+			CLOUD_ERROR_REQUIRED,CLOUD_ERROR_INVALID,CLOUD_ERROR_READONLY,CLOUD_ERROR_NAME_LENGTH_EXCEEDED:
 				begin
 					Result := FS_FILE_WRITEERROR;
 				end;
@@ -1528,11 +1355,12 @@ begin
 				end;
 			else
 				begin //что-то неизвестное
-					Log(MSGTYPE_IMPORTANTERROR, 'File publish error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
+					Log(MSGTYPE_IMPORTANTERROR, 'File move error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
 					Result := FS_FILE_WRITEERROR;
 				end;
 		end;
 	end;
+	PostData.free;
 end;
 
 function TCloudMailRu.mvFile(OldName, NewName: WideString): integer;
@@ -1576,14 +1404,7 @@ begin
 		PostData := TStringStream.Create('api=2&weblink=' + PublicLink + '&token=' + self.token + '&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id + '&conflict', TEncoding.UTF8);
 	end;
 
-	try
-		Result := self.HTTPPost(URL, PostData, JSON);
-	except
-		on E: Exception do
-		begin
-			Log(MSGTYPE_IMPORTANTERROR, 'File publish error: ' + E.Message);
-		end;
-	end;
+	Result := self.HTTPPost(URL, PostData, JSON);
 	PostData.free;
 	if Result then
 	begin
@@ -1615,7 +1436,9 @@ var
 	ChunkFileName: WideString;
 begin
 	if not(Assigned(self)) then exit(FS_FILE_WRITEERROR); //Проверка на вызов без инициализации
-	if (not(self.unlimited_filesize)) and (SizeOfFile(GetUNCFilePath(localPath)) > self.split_file_size) then
+	if self.public_account then exit(FS_FILE_NOTSUPPORTED);
+
+	if (not(self.unlimited_filesize)) and (SizeOfFile(GetUNCFilePath(localPath)) > self.split_file_size) then //todo вынести в процiдурку
 	begin
 		if self.split_large_files then
 		begin
@@ -1799,19 +1622,7 @@ begin
 					begin
 						Result := FS_FILE_EXISTS;
 					end;
-				CLOUD_ERROR_REQUIRED:
-					begin
-						Result := FS_FILE_WRITEERROR;
-					end;
-				CLOUD_ERROR_INVALID:
-					begin
-						Result := FS_FILE_WRITEERROR;
-					end;
-				CLOUD_ERROR_READONLY:
-					begin
-						Result := FS_FILE_WRITEERROR;
-					end;
-				CLOUD_ERROR_NAME_LENGTH_EXCEEDED:
+				CLOUD_ERROR_REQUIRED, CLOUD_ERROR_INVALID, CLOUD_ERROR_READONLY, CLOUD_ERROR_NAME_LENGTH_EXCEEDED:
 					begin
 						Result := FS_FILE_WRITEERROR;
 					end;
@@ -1831,7 +1642,7 @@ begin
 					end;
 				else
 					begin //что-то неизвестное
-						Log(MSGTYPE_IMPORTANTERROR, 'Directory creation error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
+						Log(MSGTYPE_IMPORTANTERROR, 'File uploading error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
 						Result := FS_FILE_WRITEERROR;
 					end;
 			end;
@@ -1846,18 +1657,13 @@ var
 begin
 	Result := CLOUD_OPERATION_FAILED;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
+	if self.public_account then exit;
+
 	URL := self.upload_url + '/?cloud_domain=1&x-email=' + self.user + '%40' + self.domain + '&fileapi' + DateTimeToUnix(now).ToString + '0246';
-	//Log( MSGTYPE_DETAILS, 'Uploading to ' + URL);
+
 	PostData := TIdMultipartFormDataStream.Create;
-	try
-		PostData.AddFile('file', GetUNCFilePath(localPath), 'application/octet-stream');
-		Result := self.HTTPPostFile(URL, PostData, PostAnswer);
-	except
-		on E: Exception do //todo проверь, нужны ли эти исключения
-		begin
-			Log(MSGTYPE_IMPORTANTERROR, 'Posting file error: ' + E.Message);
-		end;
-	end;
+	PostData.AddFile('file', GetUNCFilePath(localPath), 'application/octet-stream');
+	Result := self.HTTPPostFile(URL, PostData, PostAnswer);
 	PostData.free;
 	if (Result = CLOUD_OPERATION_OK) then
 	begin
@@ -1878,18 +1684,11 @@ var
 begin
 	Result := false;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
+	if self.public_account then exit;
 	path := UrlEncode(StringReplace(path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
 	URL := 'https://cloud.mail.ru/api/v2/file/remove';
 	PostData := TStringStream.Create('api=2&home=/' + path + '/&token=' + self.token + '&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id + '&conflict', TEncoding.UTF8);
-	try
-		Result := self.HTTPPost(URL, PostData, JSON); //API всегда отвечает true, даже если путь не существует
-	except
-		on E: Exception do
-		begin
-			Log(MSGTYPE_IMPORTANTERROR, 'Delete directory error: ' + E.Message);
-			Result := false;
-		end;
-	end;
+	Result := self.HTTPPost(URL, PostData, JSON); //API всегда отвечает true, даже если путь не существует
 	PostData.free;
 	if Result then
 	begin
@@ -1918,25 +1717,19 @@ var
 begin
 	Result := FS_FILE_WRITEERROR;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
+	if self.public_account then exit;
 	OldName := UrlEncode(StringReplace(OldName, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
 	NewName := UrlEncode(StringReplace(NewName, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
 	URL := 'https://cloud.mail.ru/api/v2/file/rename';
 	PostResult := false;
 	PostData := TStringStream.Create('api=2&home=' + OldName + '&name=' + NewName + '&token=' + self.token + '&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id, TEncoding.UTF8);
-	try
-		PostResult := self.HTTPPost(URL, PostData, JSON);
-	except
-		on E: Exception do
-		begin
-			Log(MSGTYPE_IMPORTANTERROR, 'Rename file error: ' + E.Message);
-		end;
-	end;
+	PostResult := self.HTTPPost(URL, PostData, JSON);
 	PostData.free;
 	if PostResult then
 	begin //Парсим ответ
 		OperationResult :=self.fromJSON_OperationResult(JSON, OperationStatus);
 		case OperationResult of
-			CLOUD_OPERATION_OK: //todo через запятую
+			CLOUD_OPERATION_OK:
 				begin
 					Result := CLOUD_OPERATION_OK
 				end;
@@ -1944,19 +1737,7 @@ begin
 				begin
 					Result := FS_FILE_EXISTS;
 				end;
-			CLOUD_ERROR_REQUIRED:
-				begin
-					Result := FS_FILE_WRITEERROR;
-				end;
-			CLOUD_ERROR_INVALID:
-				begin
-					Result := FS_FILE_WRITEERROR;
-				end;
-			CLOUD_ERROR_READONLY:
-				begin
-					Result := FS_FILE_WRITEERROR;
-				end;
-			CLOUD_ERROR_NAME_LENGTH_EXCEEDED:
+			CLOUD_ERROR_REQUIRED, CLOUD_ERROR_INVALID, CLOUD_ERROR_READONLY, CLOUD_ERROR_NAME_LENGTH_EXCEEDED:
 				begin
 					Result := FS_FILE_WRITEERROR;
 				end;
@@ -1985,18 +1766,9 @@ begin
 	//todo: temporary at this moment
 	if self.public_account then exit(true);
 	path := UrlEncode(StringReplace(path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
-
 	URL := 'https://cloud.mail.ru/api/v2/file?home=' + path + '&api=2&build=' + self.build + '&x-page-id=' + self.x_page_id + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&token=' + self.token + '&_=1433249148810';
-	try
-		Progress := false;
-		Result := self.HTTPGet(URL, JSON, Progress);
-	except
-		on E: Exception do
-		begin
-			Log(MSGTYPE_IMPORTANTERROR, 'File status getting error: ' + E.Message);
-		end;
-	end;
-
+	Progress := false;
+	Result := self.HTTPGet(URL, JSON, Progress);
 	if Result then
 	begin
 		OperationResult := self.fromJSON_OperationResult(JSON, OperationStatus);
