@@ -208,9 +208,7 @@ var
 begin
 	Result := FS_FILE_WRITEERROR;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
-	path := UrlEncode(StringReplace(path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
-	if (path = '') then path := '/'; //preventing error
-	URL := 'https://cloud.mail.ru/api/v2/clone?folder=' + path + '&weblink=' + link + '&conflict=' + ConflictMode + '&api=2&build=' + self.build + '&x-page-id=' + self.x_page_id + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&token=' + self.token + '&_=1433249148810';
+	URL := 'https://cloud.mail.ru/api/v2/clone?folder=' + PathToUrl(path) + '&weblink=' + link + '&conflict=' + ConflictMode + '&api=2&build=' + self.build + '&x-page-id=' + self.x_page_id + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&token=' + self.token + '&_=1433249148810';
 	if self.HTTPGet(URL, JSON, Progress) then
 	begin //Парсим ответ
 		OperationResult := self.fromJSON_OperationResult(JSON, OperationStatus);
@@ -257,11 +255,8 @@ var
 begin
 	Result := FS_FILE_WRITEERROR;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
-	OldName := UrlEncode(StringReplace(OldName, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
-	ToPath := UrlEncode(StringReplace(ToPath, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
-	if (ToPath = '') then ToPath := '/'; //preventing error
 	URL := 'https://cloud.mail.ru/api/v2/file/copy';
-	PostData := TStringStream.Create('api=2&home=' + OldName + '&folder=' + ToPath + '&token=' + self.token + '&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id + '&conflict', TEncoding.UTF8);
+	PostData := TStringStream.Create('api=2&home=' + PathToUrl(OldName) + '&folder=' + PathToUrl(ToPath) + '&token=' + self.token + '&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id + '&conflict', TEncoding.UTF8);
 	if self.HTTPPost(URL, PostData, JSON) then
 	begin //Парсим ответ
 		OperationResult:=self.fromJSON_OperationResult(JSON, OperationStatus);
@@ -384,9 +379,8 @@ begin
 	Result := false;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
 	if self.public_account then exit;
-	path := UrlEncode(StringReplace(path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
 	URL := 'https://cloud.mail.ru/api/v2/folder/add';
-	PostData := TStringStream.Create('api=2&home=/' + path + '&token=' + self.token + '&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id + '&conflict', TEncoding.UTF8);
+	PostData := TStringStream.Create('api=2&home=/' + PathToUrl(path) + '&token=' + self.token + '&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id + '&conflict', TEncoding.UTF8);
 	if self.HTTPPost(URL, PostData, PostAnswer) then
 	begin
 		OperationResult :=self.fromJSON_OperationResult(PostAnswer, OperationStatus);
@@ -414,9 +408,8 @@ var
 begin
 	Result := false;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
-	path := UrlEncode(StringReplace(path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
 	URL := 'https://cloud.mail.ru/api/v2/file/remove';
-	PostData := TStringStream.Create('api=2&home=/' + path + '&token=' + self.token + '&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id + '&conflict', TEncoding.UTF8);
+	PostData := TStringStream.Create('api=2&home=/' + PathToUrl(path) + '&token=' + self.token + '&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id + '&conflict', TEncoding.UTF8);
 	Result := self.HTTPPost(URL, PostData, JSON);
 	PostData.free;
 	if Result then
@@ -779,7 +772,7 @@ var
 	Progress: Boolean;
 	OperationStatus, OperationResult: integer;
 begin
-	URL := 'https://cloud.mail.ru/api/v2/folder?sort={%22type%22%3A%22name%22%2C%22order%22%3A%22asc%22}&offset=0&limit=10000&home=' + UrlEncode(StringReplace(path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase])) + '&api=2&build=' + self.build + '&x-page-id=' + self.x_page_id + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&token=' + self.token + '&_=1433249148810';
+	URL := 'https://cloud.mail.ru/api/v2/folder?sort={%22type%22%3A%22name%22%2C%22order%22%3A%22asc%22}&offset=0&limit=10000&home=' + PathToUrl(path) + '&api=2&build=' + self.build + '&x-page-id=' + self.x_page_id + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&token=' + self.token + '&_=1433249148810';
 	Progress := false;
 	Result := self.HTTPGet(URL, JSON, Progress);
 	if Result then
@@ -811,17 +804,15 @@ var
 	JSON, PageContent: WideString;
 	Progress: Boolean;
 begin
-	URL := self.public_url + '/' + UrlEncode(StringReplace(path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
+	URL := self.public_url + '/' + PathToUrl(path, false);
 	Progress := false;
 	Result :=self.HTTPGet(URL, PageContent, Progress);
 	if Result then
 	begin
-		if path <> '' then path := '/' + path;
 		PageContent := StringReplace(PageContent, #$A, '', [rfReplaceAll]); //так нам проще ковыряться в тексте
 		PageContent := StringReplace(PageContent, #$D, '', [rfReplaceAll]);
 		PageContent := StringReplace(PageContent, #9, '', [rfReplaceAll]);
-
-		if not self.extractJSONFromPublicFolder(PageContent, self.public_link + UrlEncode(StringReplace(path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase])), JSON) then
+		if not self.extractJSONFromPublicFolder(PageContent, self.public_link + PathToUrl(path), JSON) then
 		begin
 			Log(MSGTYPE_IMPORTANTERROR, 'Can''t get public share JSON data');
 			exit(false);
@@ -864,7 +855,6 @@ begin
 			exit;
 		end;
 	end;
-	remotePath := UrlEncode(StringReplace(remotePath, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase])); //todo функция для этого
 	try
 		FileStream := TFileStream.Create(GetUNCFilePath(localPath), fmCreate);
 	except
@@ -878,7 +868,7 @@ begin
 	begin
 		self.ExternalSourceName := PWideChar(remotePath);
 		self.ExternalTargetName := PWideChar(localPath);
-		Result := self.HTTPGetFile(self.Shard + remotePath, FileStream, LogErrors);
+		Result := self.HTTPGetFile(self.Shard + PathToUrl(remotePath, false), FileStream, LogErrors);
 		FlushFileBuffers(FileStream.Handle);
 		FileStream.free;
 	end;
@@ -890,7 +880,7 @@ var
 	FileStream: TFileStream;
 begin
 	Result := FS_FILE_NOTFOUND;
-	remotePath := UrlEncode(StringReplace(remotePath, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase])) + '?key=' + self.public_download_token;
+	remotePath := PathToUrl(remotePath) + '?key=' + self.public_download_token;
 	try
 		FileStream := TFileStream.Create(GetUNCFilePath(localPath), fmCreate);
 	except
@@ -1326,12 +1316,9 @@ var
 begin
 	Result := FS_FILE_WRITEERROR;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
-	OldName := UrlEncode(StringReplace(OldName, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
-	ToPath := UrlEncode(StringReplace(ToPath, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
-	if (ToPath = '') then ToPath := '/'; //preventing error
 	URL := 'https://cloud.mail.ru/api/v2/file/move';
 	//todo функция для post/get
-	PostData := TStringStream.Create('api=2&home=' + OldName + '&folder=' + ToPath + '&token=' + self.token + '&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id + '&conflict', TEncoding.UTF8);
+	PostData := TStringStream.Create('api=2&home=' + PathToUrl(OldName) + '&folder=' + PathToUrl(ToPath) + '&token=' + self.token + '&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id + '&conflict', TEncoding.UTF8);
 	if self.HTTPPost(URL, PostData, JSON) then
 	begin //Парсим ответ
 		OperationResult:=self.fromJSON_OperationResult(JSON, OperationStatus);
@@ -1344,7 +1331,7 @@ begin
 				begin
 					Result := FS_FILE_EXISTS;
 				end;
-			CLOUD_ERROR_REQUIRED,CLOUD_ERROR_INVALID,CLOUD_ERROR_READONLY,CLOUD_ERROR_NAME_LENGTH_EXCEEDED:
+			CLOUD_ERROR_REQUIRED, CLOUD_ERROR_INVALID, CLOUD_ERROR_READONLY, CLOUD_ERROR_NAME_LENGTH_EXCEEDED:
 				begin
 					Result := FS_FILE_WRITEERROR;
 				end;
@@ -1392,12 +1379,10 @@ var
 begin
 	Result := false;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
-	path := UrlEncode(StringReplace(path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
-
 	if publish then
 	begin
 		URL := 'https://cloud.mail.ru/api/v2/file/publish';
-		PostData := TStringStream.Create('api=2&home=/' + path + '&token=' + self.token + '&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id + '&conflict', TEncoding.UTF8);
+		PostData := TStringStream.Create('api=2&home=/' + PathToUrl(path) + '&token=' + self.token + '&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id + '&conflict', TEncoding.UTF8);
 	end else begin
 		URL := 'https://cloud.mail.ru/api/v2/file/unpublish';
 		PostData := TStringStream.Create('api=2&weblink=' + PublicLink + '&token=' + self.token + '&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id + '&conflict', TEncoding.UTF8);
@@ -1609,7 +1594,7 @@ begin
 	if OperationResult = CLOUD_OPERATION_OK then
 	begin
 		//Log( MSGTYPE_DETAILS, 'putFileToCloud result: ' + PutResult.Text);
-		if self.addFileToCloud(FileHash, FileSize, UrlEncode(StringReplace(remotePath, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase])), JSONAnswer) then
+		if self.addFileToCloud(FileHash, FileSize, PathToUrl(remotePath), JSONAnswer) then
 		begin
 			OperationResult := self.fromJSON_OperationResult(JSONAnswer, OperationStatus);
 			case OperationResult of
@@ -1684,9 +1669,8 @@ begin
 	Result := false;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
 	if self.public_account then exit;
-	path := UrlEncode(StringReplace(path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
 	URL := 'https://cloud.mail.ru/api/v2/file/remove';
-	PostData := TStringStream.Create('api=2&home=/' + path + '/&token=' + self.token + '&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id + '&conflict', TEncoding.UTF8);
+	PostData := TStringStream.Create('api=2&home=/' + PathToUrl(path) + '/&token=' + self.token + '&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id + '&conflict', TEncoding.UTF8);
 	Result := self.HTTPPost(URL, PostData, JSON); //API всегда отвечает true, даже если путь не существует
 	PostData.free;
 	if Result then
@@ -1711,20 +1695,14 @@ var
 	URL: WideString;
 	PostData: TStringStream;
 	JSON: WideString;
-	PostResult: Boolean;
 	OperationStatus, OperationResult: integer;
 begin
 	Result := FS_FILE_WRITEERROR;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
 	if self.public_account then exit;
-	OldName := UrlEncode(StringReplace(OldName, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
-	NewName := UrlEncode(StringReplace(NewName, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
 	URL := 'https://cloud.mail.ru/api/v2/file/rename';
-	PostResult := false;
-	PostData := TStringStream.Create('api=2&home=' + OldName + '&name=' + NewName + '&token=' + self.token + '&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id, TEncoding.UTF8);
-	PostResult := self.HTTPPost(URL, PostData, JSON);
-	PostData.free;
-	if PostResult then
+	PostData := TStringStream.Create('api=2&home=' + PathToUrl(OldName) + '&name=' + PathToUrl(NewName) + '&token=' + self.token + '&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id, TEncoding.UTF8);
+	if self.HTTPPost(URL, PostData, JSON) then
 	begin //Парсим ответ
 		OperationResult :=self.fromJSON_OperationResult(JSON, OperationStatus);
 		case OperationResult of
@@ -1751,6 +1729,7 @@ begin
 				end;
 		end;
 	end;
+	PostData.free;
 end;
 
 function TCloudMailRu.statusFile(path: WideString; var FileInfo: TCloudMailRuDirListingItem): Boolean;
@@ -1764,8 +1743,7 @@ begin
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
 	//todo: temporary at this moment
 	if self.public_account then exit(true);
-	path := UrlEncode(StringReplace(path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
-	URL := 'https://cloud.mail.ru/api/v2/file?home=' + path + '&api=2&build=' + self.build + '&x-page-id=' + self.x_page_id + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&token=' + self.token + '&_=1433249148810';
+	URL := 'https://cloud.mail.ru/api/v2/file?home=' + PathToUrl(path) + '&api=2&build=' + self.build + '&x-page-id=' + self.x_page_id + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&token=' + self.token + '&_=1433249148810';
 	Progress := false;
 	Result := self.HTTPGet(URL, JSON, Progress);
 	if Result then
