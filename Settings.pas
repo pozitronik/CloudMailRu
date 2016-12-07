@@ -20,6 +20,8 @@ const
 
 	DeleteFailOnUploadIgnore = 1;
 	DeleteFailOnUploadAbort = 2;
+	DeleteFailOnUploadDeleteIgnore = 3;
+	DeleteFailOnUploadDeleteAbort = 4;
 
 type
 
@@ -54,6 +56,7 @@ type
 		CloudMaxFileSize: Integer;
 		ChunkOverwriteMode: Integer;
 		DeleteFailOnUploadMode: Integer;
+		DisableMultiThreading: boolean;
 	end;
 
 function GetProxyPasswordNow(var ProxySettings: TProxySettings; MyLogProc: TLogProcW; MyCryptProc: TCryptProcW; PluginNum: Integer; CryptoNum: Integer): boolean;
@@ -151,6 +154,7 @@ begin
 	GetPluginSettings.DescriptionEnabled := IniFile.ReadBool('Main', 'DescriptionEnabled', false);
 	GetPluginSettings.OperationsViaPublicLinkEnabled := IniFile.ReadBool('Main', 'OperationsViaPublicLinkEnabled', false);
 	GetPluginSettings.AskOnErrors := IniFile.ReadBool('Main', 'AskOnErrors', false);
+	GetPluginSettings.DisableMultiThreading := IniFile.ReadBool('Main', 'DisableMultiThreading', false);
 	GetPluginSettings.SocketTimeout := IniFile.ReadInteger('Main', 'SocketTimeout', -1);
 	GetPluginSettings.CloudMaxFileSize := IniFile.ReadInteger('Main', 'CloudMaxFileSize', CLOUD_MAX_FILESIZE_DEFAULT);
 	GetPluginSettings.ChunkOverwriteMode := IniFile.ReadInteger('Main', 'ChunkOverwriteMode', 0);
