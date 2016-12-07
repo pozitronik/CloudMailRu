@@ -816,7 +816,7 @@ begin
 	Result :=self.HTTPGet(URL, PageContent, Progress);
 	if Result then
 	begin
-		if path <> '' then path := '/' + path; //todo error handling
+		if path <> '' then path := '/' + path;
 		PageContent := StringReplace(PageContent, #$A, '', [rfReplaceAll]); //так нам проще ковыряться в тексте
 		PageContent := StringReplace(PageContent, #$D, '', [rfReplaceAll]);
 		PageContent := StringReplace(PageContent, #9, '', [rfReplaceAll]);
