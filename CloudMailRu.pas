@@ -1291,11 +1291,7 @@ var
 
 begin
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
-	if self.public_account then //todo
-	begin
-		Log(MSGTYPE_DETAILS, 'Space info unavailable for public shares');
-		exit;
-	end;
+	if self.public_account then exit;
 	if self.getUserSpace(US) then
 	begin
 		if (US.overquota) then QuotaInfo := ' Warning: space quota exhausted!'
