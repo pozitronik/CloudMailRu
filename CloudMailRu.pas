@@ -208,7 +208,7 @@ implementation
 function TCloudMailRu.addFileToCloud(hash: WideString; size: int64; remotePath: WideString; var JSONAnswer: WideString; ConflictMode: WideString): Boolean;
 begin
 	{Экспериментально выяснено, что параметры api, build, email, x-email, x-page-id в запросе не обязательны}
-	Result := self.HTTPPost(API_FILE_ADD, 'conflict=' + ConflictMode + '&home=/' + remotePath + '&hash=' + hash + '&size=' + size.ToString + self.united_params + '&conflict', JSONAnswer);
+	Result := self.HTTPPost(API_FILE_ADD, 'conflict=' + ConflictMode + '&home=/' + remotePath + '&hash=' + hash + '&size=' + size.ToString + self.united_params, JSONAnswer);
 end;
 
 function TCloudMailRu.cloneWeblink(path, link, ConflictMode: WideString): integer;
