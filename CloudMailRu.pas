@@ -223,22 +223,10 @@ begin
 	begin //Парсим ответ
 		OperationResult := self.fromJSON_OperationResult(JSON, OperationStatus);
 		case OperationResult of
-			CLOUD_OPERATION_OK:
-				begin
-					Result := CLOUD_OPERATION_OK
-				end;
-			CLOUD_ERROR_EXISTS:
-				begin
-					Result := FS_FILE_EXISTS;
-				end;
-			CLOUD_ERROR_REQUIRED, CLOUD_ERROR_INVALID, CLOUD_ERROR_READONLY, CLOUD_ERROR_NAME_LENGTH_EXCEEDED:
-				begin
-					Result := FS_FILE_WRITEERROR;
-				end;
-			CLOUD_ERROR_UNKNOWN:
-				begin
-					Result := FS_FILE_NOTSUPPORTED;
-				end;
+			CLOUD_OPERATION_OK: Result := CLOUD_OPERATION_OK;
+			CLOUD_ERROR_EXISTS: Result := FS_FILE_EXISTS;
+			CLOUD_ERROR_REQUIRED, CLOUD_ERROR_INVALID, CLOUD_ERROR_READONLY, CLOUD_ERROR_NAME_LENGTH_EXCEEDED: Result := FS_FILE_WRITEERROR;
+			CLOUD_ERROR_UNKNOWN: Result := FS_FILE_NOTSUPPORTED;
 			else
 				begin
 					Log(MSGTYPE_IMPORTANTERROR, 'File publish error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
@@ -267,22 +255,10 @@ begin
 	begin //Парсим ответ
 		OperationResult:=self.fromJSON_OperationResult(JSON, OperationStatus);
 		case OperationResult of
-			CLOUD_OPERATION_OK:
-				begin
-					Result := CLOUD_OPERATION_OK
-				end;
-			CLOUD_ERROR_EXISTS:
-				begin
-					Result := FS_FILE_EXISTS;
-				end;
-			CLOUD_ERROR_REQUIRED, CLOUD_ERROR_INVALID, CLOUD_ERROR_READONLY, CLOUD_ERROR_NAME_LENGTH_EXCEEDED:
-				begin
-					Result := FS_FILE_WRITEERROR;
-				end;
-			CLOUD_ERROR_UNKNOWN:
-				begin
-					Result := FS_FILE_NOTSUPPORTED;
-				end;
+			CLOUD_OPERATION_OK: Result := CLOUD_OPERATION_OK;
+			CLOUD_ERROR_EXISTS: Result := FS_FILE_EXISTS;
+			CLOUD_ERROR_REQUIRED, CLOUD_ERROR_INVALID, CLOUD_ERROR_READONLY, CLOUD_ERROR_NAME_LENGTH_EXCEEDED: Result := FS_FILE_WRITEERROR;
+			CLOUD_ERROR_UNKNOWN: Result := FS_FILE_NOTSUPPORTED;
 			else
 				begin //что-то неизвестное
 					Log(MSGTYPE_IMPORTANTERROR, 'File copy error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
@@ -333,14 +309,8 @@ begin
 			else self.Socks.Authentication := saNoAuthentication;
 
 			case Proxy.ProxyType of
-				ProxySocks5:
-					begin
-						Socks.Version := svSocks5;
-					end;
-				ProxySocks4:
-					begin
-						Socks.Version := svSocks4;
-					end;
+				ProxySocks5: Socks.Version := svSocks5;
+				ProxySocks4: Socks.Version := svSocks4;
 			end;
 			self.Socks.Enabled := true;
 		end;
@@ -386,10 +356,7 @@ begin
 	begin
 		OperationResult :=self.fromJSON_OperationResult(PostAnswer, OperationStatus);
 		case OperationResult of
-			CLOUD_OPERATION_OK:
-				begin
-					Result := true;
-				end;
+			CLOUD_OPERATION_OK: Result := true;
 			else
 				begin
 					Log(MSGTYPE_IMPORTANTERROR, 'Directory creation error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
@@ -412,10 +379,7 @@ begin
 	begin
 		OperationResult:= self.fromJSON_OperationResult(JSON, OperationStatus);
 		case OperationResult of
-			CLOUD_OPERATION_OK:
-				begin
-					Result := true;
-				end;
+			CLOUD_OPERATION_OK: Result := true;
 			else
 				begin
 					Log(MSGTYPE_IMPORTANTERROR, 'Delete file error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
@@ -472,7 +436,6 @@ var
 begin
 	start := Pos(WideString('"weblink_get":['), Text);
 	Result:=start <> 0;
-
 	start := Pos(WideString('"url":'), Text, start) + 7;
 	finish := Pos(WideString('"}]'), Text, start);
 	Shard := Copy(Text, start, finish - start);
@@ -986,12 +949,9 @@ var
 begin
 	try
 		self.HTTPInit(HTTP, SSL, Socks, self.Cookie);
-		if ProgressEnabled then //Вызов прогресса ведёт к возможности отменить получение списка каталогов и других операций, поэтому он нужен не всегда
-		begin
-			HTTP.OnWork := self.HTTPProgress;
-		end;
+		if ProgressEnabled then HTTP.OnWork := self.HTTPProgress; //Вызов прогресса ведёт к возможности отменить получение списка каталогов и других операций, поэтому он нужен не всегда
 		Answer := HTTP.Get(URL);
-		self.HTTPDestroy(HTTP, SSL);
+		self.HTTPDestroy(HTTP, SSL); {TODO -oOwner -cGeneral : При ошибке/отмене TIDHttp не уничтожится!}
 	Except
 		on E: EAbort do
 		begin
@@ -1046,7 +1006,7 @@ begin
 			Log(MSGTYPE_IMPORTANTERROR, 'Достигнуто максимальное количество перенаправлений при запросе файла с адреса ' + URL);
 			Result := FS_FILE_READERROR;
 		end;
-		self.HTTPDestroy(HTTP, SSL);
+		self.HTTPDestroy(HTTP, SSL); {TODO -oOwner -cGeneral : объект не уничтожается}
 	except
 		on E: EAbort do
 		begin
@@ -1108,7 +1068,7 @@ begin
 		self.HTTPInit(HTTP, SSL, Socks, self.Cookie);
 		if ContentType <> '' then HTTP.Request.ContentType := ContentType;
 		HTTP.Post(URL, PostData, MemStream);
-		self.HTTPDestroy(HTTP, SSL);
+		self.HTTPDestroy(HTTP, SSL); {TODO -oOwner -cGeneral : Объект не уничтожается}
 		Answer := MemStream.DataString;
 	except
 		on E: EAbort do
@@ -1160,7 +1120,7 @@ begin
 		HTTP.OnWork := self.HTTPProgress;
 		HTTP.Post(URL, PostData, MemStream);
 		Answer := MemStream.DataString;
-		self.HTTPDestroy(HTTP, SSL);
+		self.HTTPDestroy(HTTP, SSL); {TODO -oOwner -cGeneral : При ошибке объект не уничтожается}
 	except
 		on E: EAbort do
 		begin
@@ -1200,19 +1160,13 @@ begin
 	if (Pos('chunked', LowerCase(HTTP.Response.TransferEncoding)) = 0) and (ContentLength > 0) then
 	begin
 		Percent := 100 * AWorkCount div ContentLength;
-		if Assigned(ExternalProgressProc) then
-		begin
-			if ExternalProgressProc(self.ExternalPluginNr, self.ExternalSourceName, self.ExternalTargetName, Percent) = 1 then Abort;
-		end;
+		if Assigned(ExternalProgressProc) and (ExternalProgressProc(self.ExternalPluginNr, self.ExternalSourceName, self.ExternalTargetName, Percent) = 1) then abort;
 	end;
 end;
 
 procedure TCloudMailRu.Log(MsgType: integer; LogString: WideString);
 begin
-	if Assigned(ExternalLogProc) then
-	begin
-		ExternalLogProc(ExternalPluginNr, MsgType, PWideChar(LogString));
-	end;
+	if Assigned(ExternalLogProc) then ExternalLogProc(ExternalPluginNr, MsgType, PWideChar(LogString));
 end;
 
 function TCloudMailRu.login(method: integer): Boolean;
@@ -1297,23 +1251,11 @@ begin
 	if self.HTTPPost(API_FILE_MOVE, 'home=' + PathToUrl(OldName) + '&folder=' + PathToUrl(ToPath) + self.united_params + '&conflict', JSON) then
 	begin //Парсим ответ
 		OperationResult:=self.fromJSON_OperationResult(JSON, OperationStatus);
-		case OperationResult of
-			CLOUD_OPERATION_OK:
-				begin
-					Result := CLOUD_OPERATION_OK
-				end;
-			CLOUD_ERROR_EXISTS:
-				begin
-					Result := FS_FILE_EXISTS;
-				end;
-			CLOUD_ERROR_REQUIRED, CLOUD_ERROR_INVALID, CLOUD_ERROR_READONLY, CLOUD_ERROR_NAME_LENGTH_EXCEEDED:
-				begin
-					Result := FS_FILE_WRITEERROR;
-				end;
-			CLOUD_ERROR_UNKNOWN:
-				begin
-					Result := FS_FILE_NOTSUPPORTED;
-				end;
+		case OperationResult of  {TODO -oOwner -cGeneral : Это используется в куче мест, перетащить в функцию CloudResultToFsResult}
+			CLOUD_OPERATION_OK: Result := CLOUD_OPERATION_OK;
+			CLOUD_ERROR_EXISTS: Result := FS_FILE_EXISTS;
+			CLOUD_ERROR_REQUIRED, CLOUD_ERROR_INVALID, CLOUD_ERROR_READONLY, CLOUD_ERROR_NAME_LENGTH_EXCEEDED: Result := FS_FILE_WRITEERROR;
+			CLOUD_ERROR_UNKNOWN: Result := FS_FILE_NOTSUPPORTED;
 			else
 				begin //что-то неизвестное
 					Log(MSGTYPE_IMPORTANTERROR, 'File move error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
@@ -1566,18 +1508,9 @@ begin
 		begin
 			OperationResult := self.fromJSON_OperationResult(JSONAnswer, OperationStatus);
 			case OperationResult of
-				CLOUD_OPERATION_OK:
-					begin
-						Result := FS_FILE_OK;
-					end;
-				CLOUD_ERROR_EXISTS:
-					begin
-						Result := FS_FILE_EXISTS;
-					end;
-				CLOUD_ERROR_REQUIRED, CLOUD_ERROR_INVALID, CLOUD_ERROR_READONLY, CLOUD_ERROR_NAME_LENGTH_EXCEEDED:
-					begin
-						Result := FS_FILE_WRITEERROR;
-					end;
+				CLOUD_OPERATION_OK: Result := FS_FILE_OK;
+				CLOUD_ERROR_EXISTS: Result := FS_FILE_EXISTS;
+				CLOUD_ERROR_REQUIRED, CLOUD_ERROR_INVALID, CLOUD_ERROR_READONLY, CLOUD_ERROR_NAME_LENGTH_EXCEEDED: Result := FS_FILE_WRITEERROR;
 				CLOUD_ERROR_OVERQUOTA:
 					begin
 						Log(MSGTYPE_IMPORTANTERROR, 'Insufficient Storage');
@@ -1588,10 +1521,7 @@ begin
 						Log(MSGTYPE_IMPORTANTERROR, 'Name too long');
 						Result := FS_FILE_WRITEERROR;
 					end;
-				CLOUD_ERROR_UNKNOWN:
-					begin
-						Result := FS_FILE_NOTSUPPORTED;
-					end;
+				CLOUD_ERROR_UNKNOWN: Result := FS_FILE_NOTSUPPORTED;
 				else
 					begin //что-то неизвестное
 						Log(MSGTYPE_IMPORTANTERROR, 'File uploading error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
@@ -1633,10 +1563,7 @@ begin
 	begin
 		OperationResult:= self.fromJSON_OperationResult(JSON, OperationStatus);
 		case OperationResult of
-			CLOUD_OPERATION_OK:
-				begin
-					Result := true;
-				end;
+			CLOUD_OPERATION_OK: Result := true;
 			else
 				begin
 					Result := false;
@@ -1654,26 +1581,14 @@ begin
 	Result := FS_FILE_WRITEERROR;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
 	if self.public_account then exit;
-	if self.HTTPPost(API_FILE_RENAME, '&home=' + PathToUrl(OldName) + '&name=' + PathToUrl(NewName), self.united_params, JSON) then
+	if self.HTTPPost(API_FILE_RENAME, 'home=' + PathToUrl(OldName) + '&name=' + PathToUrl(NewName), self.united_params, JSON) then
 	begin //Парсим ответ
 		OperationResult :=self.fromJSON_OperationResult(JSON, OperationStatus);
 		case OperationResult of
-			CLOUD_OPERATION_OK:
-				begin
-					Result := CLOUD_OPERATION_OK
-				end;
-			CLOUD_ERROR_EXISTS:
-				begin
-					Result := FS_FILE_EXISTS;
-				end;
-			CLOUD_ERROR_REQUIRED, CLOUD_ERROR_INVALID, CLOUD_ERROR_READONLY, CLOUD_ERROR_NAME_LENGTH_EXCEEDED:
-				begin
-					Result := FS_FILE_WRITEERROR;
-				end;
-			CLOUD_ERROR_UNKNOWN:
-				begin
-					Result := FS_FILE_NOTSUPPORTED;
-				end;
+			CLOUD_OPERATION_OK: Result := CLOUD_OPERATION_OK;
+			CLOUD_ERROR_EXISTS: Result := FS_FILE_EXISTS;
+			CLOUD_ERROR_REQUIRED, CLOUD_ERROR_INVALID, CLOUD_ERROR_READONLY, CLOUD_ERROR_NAME_LENGTH_EXCEEDED: Result := FS_FILE_WRITEERROR;
+			CLOUD_ERROR_UNKNOWN: Result := FS_FILE_NOTSUPPORTED;
 			else
 				begin //что-то неизвестное
 					Log(MSGTYPE_IMPORTANTERROR, 'Rename file error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
