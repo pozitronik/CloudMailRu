@@ -11,7 +11,24 @@ const
 {$IFDEF WIN32}
 	PlatformX = 'x32';
 {$ENDIF}
-	PUBLIC_PREFIX = 'https://cloud.mail.ru/public/';
+	PUBLIC_URL = 'https://cloud.mail.ru/public/';
+	OAUTH_TOKEN_URL = 'https://o2.mail.ru/token';
+	TOKEN_URL = 'https://cloud.mail.ru/?from=promo&from=authpopup';
+	LOGIN_URL = 'https://auth.mail.ru/cgi-bin/auth?lang=ru_RU&from=authpopup';
+	{TODO -oOwner -cGeneral : remove URL vars}
+	API_FILE = 'https://cloud.mail.ru/api/v2/file';
+	API_FILE_MOVE = 'https://cloud.mail.ru/api/v2/file/move';
+	API_FILE_PUBLISH = 'https://cloud.mail.ru/api/v2/file/publish';
+	API_FILE_UNPUBLISH = 'https://cloud.mail.ru/api/v2/file/unpublish';
+	API_FILE_RENAME = 'https://cloud.mail.ru/api/v2/file/rename';
+	API_FILE_ADD = 'https://cloud.mail.ru/api/v2/file/add';
+	API_FILE_REMOVE = 'https://cloud.mail.ru/api/v2/file/remove';
+	API_FILE_COPY = 'https://cloud.mail.ru/api/v2/file/copy';
+	API_FOLDER = 'https://cloud.mail.ru/api/v2/folder?sort={%22type%22%3A%22name%22%2C%22order%22%3A%22asc%22}&offset=0&limit=10000';
+	API_FOLDER_ADD = 'https://cloud.mail.ru/api/v2/folder/add';
+	API_DISPATCHER = 'https://cloud.mail.ru/api/v2/dispatcher/';
+	API_USER_SPACE = 'https://cloud.mail.ru/api/v2/user/space';
+	API_CLONE = 'https://cloud.mail.ru/api/v2/clone';
 
 	TYPE_DIR = 'folder';
 	TYPE_FILE = 'file';
@@ -96,7 +113,7 @@ type
 		split_large_files: Boolean;
 		split_file_size: integer;
 		public_account: Boolean;
-		public_url: WideString;
+		PUBLIC_URL: WideString;
 		public_link: WideString; //public url without adress prefix
 		public_download_token: WideString;
 		public_shard: WideString;
@@ -189,25 +206,20 @@ implementation
 {TCloudMailRu}
 
 function TCloudMailRu.addFileToCloud(hash: WideString; size: int64; remotePath: WideString; var JSONAnswer: WideString; ConflictMode: WideString): Boolean;
-var
-	URL: WideString;
 begin
-	URL := 'https://cloud.mail.ru/api/v2/file/add';
 	{Экспериментально выяснено, что параметры api, build, email, x-email, x-page-id в запросе не обязательны}
-	Result := self.HTTPPost(URL, 'conflict=' + ConflictMode + '&home=/' + remotePath + '&hash=' + hash + '&size=' + size.ToString + self.united_params + '&conflict', JSONAnswer);
+	Result := self.HTTPPost(API_FILE_ADD, 'conflict=' + ConflictMode + '&home=/' + remotePath + '&hash=' + hash + '&size=' + size.ToString + self.united_params + '&conflict', JSONAnswer);
 end;
 
 function TCloudMailRu.cloneWeblink(path, link, ConflictMode: WideString): integer;
 var
-	URL: WideString;
 	JSON: WideString;
 	OperationStatus, OperationResult: integer;
 	Progress: Boolean;
 begin
 	Result := FS_FILE_WRITEERROR;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
-	URL := 'https://cloud.mail.ru/api/v2/clone?folder=' + PathToUrl(path) + '&weblink=' + link + '&conflict=' + ConflictMode + self.united_params;
-	if self.HTTPGet(URL, JSON, Progress) then
+	if self.HTTPGet(API_CLONE + '?folder=' + PathToUrl(path) + '&weblink=' + link + '&conflict=' + ConflictMode + self.united_params, JSON, Progress) then
 	begin //Парсим ответ
 		OperationResult := self.fromJSON_OperationResult(JSON, OperationStatus);
 		case OperationResult of
@@ -246,14 +258,12 @@ end;
 
 function TCloudMailRu.copyFile(OldName, ToPath: WideString): integer;
 var
-	URL: WideString;
 	JSON: WideString;
 	OperationStatus, OperationResult: integer;
 begin
 	Result := FS_FILE_WRITEERROR;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
-	URL := 'https://cloud.mail.ru/api/v2/file/copy';
-	if self.HTTPPost(URL, 'home=' + PathToUrl(OldName) + '&folder=' + PathToUrl(ToPath) + self.united_params + '&conflict', JSON) then
+	if self.HTTPPost(API_FILE_COPY, 'home=' + PathToUrl(OldName) + '&folder=' + PathToUrl(ToPath) + self.united_params + '&conflict', JSON) then
 	begin //Парсим ответ
 		OperationResult:=self.fromJSON_OperationResult(JSON, OperationStatus);
 		case OperationResult of
@@ -341,11 +351,11 @@ begin
 		self.unlimited_filesize := AccountSettings.unlimited_filesize;
 		self.split_large_files := AccountSettings.split_large_files;
 		self.public_account := AccountSettings.public_account;
-		self.public_url:=AccountSettings.public_url;
-		if self.public_account and (self.public_url <> '') then
+		self.PUBLIC_URL:=AccountSettings.PUBLIC_URL;
+		if self.public_account and (self.PUBLIC_URL <> '') then
 		begin
-			self.public_link := self.public_url;
-			Delete(self.public_link, 1, length(PUBLIC_PREFIX));
+			self.public_link := self.PUBLIC_URL;
+			Delete(self.public_link, 1, length(PUBLIC_URL));
 		end;
 
 		self.split_file_size := split_file_size;
@@ -366,15 +376,13 @@ end;
 
 function TCloudMailRu.createDir(path: WideString): Boolean;
 var
-	URL: WideString;
 	PostAnswer: WideString;
 	OperationStatus, OperationResult: integer;
 begin
 	Result := false;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
 	if self.public_account then exit;
-	URL := 'https://cloud.mail.ru/api/v2/folder/add'; //todo вынести все API-урлы в константы
-	if self.HTTPPost(URL, 'home=/' + PathToUrl(path) + self.united_params + '&conflict', PostAnswer) then
+	if self.HTTPPost(API_FOLDER_ADD, 'home=/' + PathToUrl(path) + self.united_params + '&conflict', PostAnswer) then
 	begin
 		OperationResult :=self.fromJSON_OperationResult(PostAnswer, OperationStatus);
 		case OperationResult of
@@ -393,14 +401,13 @@ end;
 
 function TCloudMailRu.deleteFile(path: WideString): Boolean;
 var
-	URL: WideString;
 	JSON: WideString;
 	OperationResult, OperationStatus: integer;
 begin
 	Result := false;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
-	URL := 'https://cloud.mail.ru/api/v2/file/remove';
-	Result := self.HTTPPost(URL, 'home=/' + PathToUrl(path) + self.united_params + '&conflict', JSON);
+
+	Result := self.HTTPPost(API_FILE_REMOVE, 'home=/' + PathToUrl(path) + self.united_params + '&conflict', JSON);
 	if Result then
 	begin
 		OperationResult:= self.fromJSON_OperationResult(JSON, OperationStatus);
@@ -756,14 +763,12 @@ end;
 
 function TCloudMailRu.getDirListingRegular(path: WideString; var DirListing: TCloudMailRuDirListing): Boolean;
 var
-	URL: WideString;
 	JSON: WideString;
 	Progress: Boolean;
 	OperationStatus, OperationResult: integer;
 begin
-	URL := 'https://cloud.mail.ru/api/v2/folder?sort={%22type%22%3A%22name%22%2C%22order%22%3A%22asc%22}&offset=0&limit=10000&home=' + PathToUrl(path) + self.united_params;
 	Progress := false;
-	Result := self.HTTPGet(URL, JSON, Progress);
+	Result := self.HTTPGet(API_FOLDER + '&home=' + PathToUrl(path) + self.united_params, JSON, Progress);
 	if Result then
 	begin
 		OperationResult:= self.fromJSON_OperationResult(JSON, OperationStatus);
@@ -789,13 +794,11 @@ end;
 
 function TCloudMailRu.getDirListingShared(path: WideString; var DirListing: TCloudMailRuDirListing): Boolean;
 var
-	URL: WideString;
 	JSON, PageContent: WideString;
 	Progress: Boolean;
 begin
-	URL := self.public_url + '/' + PathToUrl(path, false);
 	Progress := false;
-	Result :=self.HTTPGet(URL, PageContent, Progress);
+	Result :=self.HTTPGet(self.PUBLIC_URL + '/' + PathToUrl(path, false), PageContent, Progress);
 	if Result then
 	begin
 		PageContent := StringReplace(PageContent, #$A, '', [rfReplaceAll]); //так нам проще ковыряться в тексте
@@ -890,12 +893,10 @@ end;
 
 function TCloudMailRu.getOAuthToken(var OAuthToken: TCloudMailRuOAuthInfo): Boolean;
 var
-	URL: WideString;
 	Answer: WideString;
 begin
 	Result := false;
-	URL := 'https://o2.mail.ru/token';
-	if self.HTTPPost(URL, 'client_id=cloud-win&grant_type=password&username=' + self.user + '%40' + self.domain + '&password=' + UrlEncode(self.password), Answer) then
+	if self.HTTPPost(OAUTH_TOKEN_URL, 'client_id=cloud-win&grant_type=password&username=' + self.user + '%40' + self.domain + '&password=' + UrlEncode(self.password), Answer) then
 	begin
 		OAuthToken := self.fromJSON_OAuthTokenInfo(Answer);
 		Result := OAuthToken.error_code = NOERROR;
@@ -904,14 +905,12 @@ end;
 
 function TCloudMailRu.getShard(var Shard: WideString): Boolean;
 var
-	URL: WideString;
 	JSON: WideString;
 	OperationResult, OperationStatus: integer;
 begin
 	Result := false;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
-	URL := 'https://cloud.mail.ru/api/v2/dispatcher/';
-	if self.HTTPPost(URL, self.united_params, JSON) then //checkme
+	if self.HTTPPost(API_DISPATCHER, self.united_params, JSON) then //checkme
 	begin
 		OperationResult := self.fromJSON_OperationResult(JSON, OperationStatus);
 		case OperationResult of
@@ -931,15 +930,13 @@ end;
 
 function TCloudMailRu.getToken: Boolean;
 var
-	URL: WideString;
 	JSON: WideString;
 	Progress: Boolean;
 begin
-	URL := 'https://cloud.mail.ru/?from=promo&from=authpopup';
 	Result := false;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
 	Progress := false;
-	Result := self.HTTPGet(URL, JSON, Progress);
+	Result := self.HTTPGet(TOKEN_URL, JSON, Progress);
 	if Result then
 	begin
 		Result := self.extractTokenFromText(JSON, self.token) and self.extract_x_page_id_FromText(JSON, self.x_page_id) and self.extract_build_FromText(JSON, self.build) and self.extract_upload_url_FromText(JSON, self.upload_url);
@@ -949,16 +946,14 @@ end;
 
 function TCloudMailRu.getUserSpace(var SpaceInfo: TCloudMailRuSpaceInfo): Boolean;
 var
-	URL: WideString;
 	JSON: WideString;
 	Progress: Boolean;
 	OperationResult, OperationStatus: integer;
 begin
 	Result := false;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
-	URL := 'https://cloud.mail.ru/api/v2/user/space?home=/' + self.united_params;
 	Progress := false;
-	Result := self.HTTPGet(URL, JSON, Progress);
+	Result := self.HTTPGet(API_USER_SPACE + '?home=/' + self.united_params, JSON, Progress);
 	if Result then
 	begin
 		OperationResult := self.fromJSON_OperationResult(JSON, OperationStatus);
@@ -1230,7 +1225,6 @@ end;
 
 function TCloudMailRu.loginRegular(method: integer): Boolean;
 var
-	URL: WideString;
 	PostAnswer: WideString; {Не используется}
 begin
 	Result:=false;
@@ -1239,8 +1233,7 @@ begin
 	case self.login_method of
 		CLOUD_AUTH_METHOD_WEB: //todo: вынести в отдельный метод
 			begin
-				URL := 'https://auth.mail.ru/cgi-bin/auth?lang=ru_RU&from=authpopup';
-				Result := self.HTTPPost(URL, 'page=https://cloud.mail.ru/?from=promo&new_auth_form=1&Domain=' + self.domain + '&Login=' + self.user + '&Password=' + UrlEncode(self.password) + '&FailPage=', PostAnswer);
+				Result := self.HTTPPost(LOGIN_URL, 'page=https://cloud.mail.ru/?from=promo&new_auth_form=1&Domain=' + self.domain + '&Login=' + self.user + '&Password=' + UrlEncode(self.password) + '&FailPage=', PostAnswer);
 				if (Result) then
 				begin
 					Log(MSGTYPE_DETAILS, 'Requesting auth token for ' + self.user + '@' + self.domain);
@@ -1266,7 +1259,7 @@ end;
 
 function TCloudMailRu.loginShared(method: integer): Boolean;
 begin
-	Log(MSGTYPE_DETAILS, 'Open ' + self.public_url);
+	Log(MSGTYPE_DETAILS, 'Open ' + self.PUBLIC_URL);
 	exit(true);
 end;
 
@@ -1296,15 +1289,12 @@ end;
 
 function TCloudMailRu.moveFile(OldName, ToPath: WideString): integer;
 var
-	URL: WideString;
 	JSON: WideString;
 	OperationStatus, OperationResult: integer;
 begin
 	Result := FS_FILE_WRITEERROR;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
-	URL := 'https://cloud.mail.ru/api/v2/file/move';
-	//todo функция для post/get
-	if self.HTTPPost(URL, 'home=' + PathToUrl(OldName) + '&folder=' + PathToUrl(ToPath) + self.united_params + '&conflict', JSON) then
+	if self.HTTPPost(API_FILE_MOVE, 'home=' + PathToUrl(OldName) + '&folder=' + PathToUrl(ToPath) + self.united_params + '&conflict', JSON) then
 	begin //Парсим ответ
 		OperationResult:=self.fromJSON_OperationResult(JSON, OperationStatus);
 		case OperationResult of
@@ -1356,7 +1346,6 @@ end;
 
 function TCloudMailRu.publishFile(path: WideString; var PublicLink: WideString; publish: Boolean): Boolean;
 var
-	URL: WideString;
 	JSON: WideString;
 	OperationStatus, OperationResult: integer;
 begin
@@ -1364,11 +1353,9 @@ begin
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
 	if publish then
 	begin
-		URL := 'https://cloud.mail.ru/api/v2/file/publish';
-		Result := self.HTTPPost(URL, 'home=/' + PathToUrl(path) + self.united_params + '&conflict', JSON);
+		Result := self.HTTPPost(API_FILE_PUBLISH, 'home=/' + PathToUrl(path) + self.united_params + '&conflict', JSON);
 	end else begin
-		URL := 'https://cloud.mail.ru/api/v2/file/unpublish';
-		Result := self.HTTPPost(URL, 'weblink=' + PublicLink + self.united_params + '&conflict', JSON);
+		Result := self.HTTPPost(API_FILE_UNPUBLISH, 'weblink=' + PublicLink + self.united_params + '&conflict', JSON);
 	end;
 
 	if Result then
@@ -1617,13 +1604,12 @@ end;
 
 function TCloudMailRu.putFileToCloud(localPath: WideString; Return: TStringList): integer; {Заливка на сервер состоит из двух шагов: заливаем файл на сервер в putFileToCloud и добавляем его в облако addFileToCloud}
 var
-	URL, PostAnswer: WideString;
+	PostAnswer: WideString;
 begin
 	Result := CLOUD_OPERATION_FAILED;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
 	if self.public_account then exit;
-	URL := self.upload_url + '/?cloud_domain=1&x-email=' + self.user + '%40' + self.domain + '&fileapi' + DateTimeToUnix(now).ToString + '0246';
-	Result := self.HTTPPostFile(URL, GetUNCFilePath(localPath), PostAnswer);
+	Result := self.HTTPPostFile(self.upload_url + '/?cloud_domain=1&x-email=' + self.user + '%40' + self.domain + '&fileapi' + DateTimeToUnix(now).ToString + '0246', GetUNCFilePath(localPath), PostAnswer);
 	if (Result = CLOUD_OPERATION_OK) then
 	begin
 		ExtractStrings([';'], [], PWideChar(PostAnswer), Return);
@@ -1636,15 +1622,13 @@ end;
 
 function TCloudMailRu.removeDir(path: WideString): Boolean;
 var
-	URL: WideString;
 	JSON: WideString;
 	OperationResult, OperationStatus: integer;
 begin
 	Result := false;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
 	if self.public_account then exit;
-	URL := 'https://cloud.mail.ru/api/v2/file/remove';
-	Result := self.HTTPPost(URL, 'home=/' + PathToUrl(path) + '/' + self.united_params + '&conflict', JSON); //API всегда отвечает true, даже если путь не существует
+	Result := self.HTTPPost(API_FILE_REMOVE, 'home=/' + PathToUrl(path) + '/' + self.united_params + '&conflict', JSON); //API всегда отвечает true, даже если путь не существует
 	if Result then
 	begin
 		OperationResult:= self.fromJSON_OperationResult(JSON, OperationStatus);
@@ -1664,15 +1648,13 @@ end;
 
 function TCloudMailRu.renameFile(OldName, NewName: WideString): integer;
 var
-	URL: WideString;
 	JSON: WideString;
 	OperationStatus, OperationResult: integer;
 begin
 	Result := FS_FILE_WRITEERROR;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
 	if self.public_account then exit;
-	URL := 'https://cloud.mail.ru/api/v2/file/rename';
-	if self.HTTPPost(URL, '&home=' + PathToUrl(OldName) + '&name=' + PathToUrl(NewName), self.united_params, JSON) then
+	if self.HTTPPost(API_FILE_RENAME, '&home=' + PathToUrl(OldName) + '&name=' + PathToUrl(NewName), self.united_params, JSON) then
 	begin //Парсим ответ
 		OperationResult :=self.fromJSON_OperationResult(JSON, OperationStatus);
 		case OperationResult of
@@ -1703,7 +1685,6 @@ end;
 
 function TCloudMailRu.statusFile(path: WideString; var FileInfo: TCloudMailRuDirListingItem): Boolean;
 var
-	URL: WideString;
 	JSON: WideString;
 	Progress: Boolean;
 	OperationResult, OperationStatus: integer;
@@ -1712,9 +1693,8 @@ begin
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
 	//todo: temporary at this moment
 	if self.public_account then exit(true);
-	URL := 'https://cloud.mail.ru/api/v2/file?home=' + PathToUrl(path) + self.united_params;
 	Progress := false;
-	Result := self.HTTPGet(URL, JSON, Progress);
+	Result := self.HTTPGet(API_FILE + '?home=' + PathToUrl(path) + self.united_params, JSON, Progress);
 	if Result then
 	begin
 		OperationResult := self.fromJSON_OperationResult(JSON, OperationStatus);
