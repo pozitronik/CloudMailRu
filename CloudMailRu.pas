@@ -15,7 +15,7 @@ const
 	OAUTH_TOKEN_URL = 'https://o2.mail.ru/token';
 	TOKEN_URL = 'https://cloud.mail.ru/?from=promo&from=authpopup';
 	LOGIN_URL = 'https://auth.mail.ru/cgi-bin/auth?lang=ru_RU&from=authpopup';
-	{TODO -oOwner -cGeneral : remove URL vars}
+
 	API_FILE = 'https://cloud.mail.ru/api/v2/file';
 	API_FILE_MOVE = 'https://cloud.mail.ru/api/v2/file/move';
 	API_FILE_PUBLISH = 'https://cloud.mail.ru/api/v2/file/publish';
