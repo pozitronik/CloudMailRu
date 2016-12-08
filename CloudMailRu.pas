@@ -113,6 +113,8 @@ type
 		Shard: WideString;
 		Proxy: TProxySettings;
 		ConnectTimeout: integer;
+
+		united_params: WideString; //Объединённый набор авторизационных параметров для подстановки в URL
 		{BASE HTTP METHODS}
 		procedure HTTPInit(var HTTP: TIdHTTP; var SSL: TIdSSLIOHandlerSocketOpenSSL; var Socks: TIdSocksInfo; var Cookie: TIdCookieManager);
 		procedure HTTPDestroy(var HTTP: TIdHTTP; var SSL: TIdSSLIOHandlerSocketOpenSSL);
@@ -192,7 +194,7 @@ var
 begin
 	URL := 'https://cloud.mail.ru/api/v2/file/add';
 	{Экспериментально выяснено, что параметры api, build, email, x-email, x-page-id в запросе не обязательны}
-	Result := self.HTTPPost(URL, 'conflict=' + ConflictMode + '&home=/' + remotePath + '&hash=' + hash + '&size=' + size.ToString + '&token=' + self.token + '&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id + '&conflict', JSONAnswer);
+	Result := self.HTTPPost(URL, 'conflict=' + ConflictMode + '&home=/' + remotePath + '&hash=' + hash + '&size=' + size.ToString + self.united_params + '&conflict', JSONAnswer);
 end;
 
 function TCloudMailRu.cloneWeblink(path, link, ConflictMode: WideString): integer;
@@ -204,7 +206,7 @@ var
 begin
 	Result := FS_FILE_WRITEERROR;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
-	URL := 'https://cloud.mail.ru/api/v2/clone?folder=' + PathToUrl(path) + '&weblink=' + link + '&conflict=' + ConflictMode + '&api=2&build=' + self.build + '&x-page-id=' + self.x_page_id + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&token=' + self.token + '&_=1433249148810';
+	URL := 'https://cloud.mail.ru/api/v2/clone?folder=' + PathToUrl(path) + '&weblink=' + link + '&conflict=' + ConflictMode + self.united_params;
 	if self.HTTPGet(URL, JSON, Progress) then
 	begin //Парсим ответ
 		OperationResult := self.fromJSON_OperationResult(JSON, OperationStatus);
@@ -251,7 +253,7 @@ begin
 	Result := FS_FILE_WRITEERROR;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
 	URL := 'https://cloud.mail.ru/api/v2/file/copy';
-	if self.HTTPPost(URL, 'api=2&home=' + PathToUrl(OldName) + '&folder=' + PathToUrl(ToPath) + '&token=' + self.token + '&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id + '&conflict', JSON) then
+	if self.HTTPPost(URL, 'home=' + PathToUrl(OldName) + '&folder=' + PathToUrl(ToPath) + self.united_params + '&conflict', JSON) then
 	begin //Парсим ответ
 		OperationResult:=self.fromJSON_OperationResult(JSON, OperationStatus);
 		case OperationResult of
@@ -372,7 +374,7 @@ begin
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
 	if self.public_account then exit;
 	URL := 'https://cloud.mail.ru/api/v2/folder/add'; //todo вынести все API-урлы в константы
-	if self.HTTPPost(URL, 'api=2&home=/' + PathToUrl(path) + '&token=' + self.token + '&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id + '&conflict', PostAnswer) then
+	if self.HTTPPost(URL, 'home=/' + PathToUrl(path) + self.united_params + '&conflict', PostAnswer) then
 	begin
 		OperationResult :=self.fromJSON_OperationResult(PostAnswer, OperationStatus);
 		case OperationResult of
@@ -398,7 +400,7 @@ begin
 	Result := false;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
 	URL := 'https://cloud.mail.ru/api/v2/file/remove';
-	Result := self.HTTPPost(URL, 'api=2&home=/' + PathToUrl(path) + '&token=' + self.token + '&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id + '&conflict', JSON);
+	Result := self.HTTPPost(URL, 'home=/' + PathToUrl(path) + self.united_params + '&conflict', JSON);
 	if Result then
 	begin
 		OperationResult:= self.fromJSON_OperationResult(JSON, OperationStatus);
@@ -759,7 +761,7 @@ var
 	Progress: Boolean;
 	OperationStatus, OperationResult: integer;
 begin
-	URL := 'https://cloud.mail.ru/api/v2/folder?sort={%22type%22%3A%22name%22%2C%22order%22%3A%22asc%22}&offset=0&limit=10000&home=' + PathToUrl(path) + '&api=2&build=' + self.build + '&x-page-id=' + self.x_page_id + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&token=' + self.token + '&_=1433249148810';
+	URL := 'https://cloud.mail.ru/api/v2/folder?sort={%22type%22%3A%22name%22%2C%22order%22%3A%22asc%22}&offset=0&limit=10000&home=' + PathToUrl(path) + self.united_params;
 	Progress := false;
 	Result := self.HTTPGet(URL, JSON, Progress);
 	if Result then
@@ -909,7 +911,7 @@ begin
 	Result := false;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
 	URL := 'https://cloud.mail.ru/api/v2/dispatcher/';
-	if self.HTTPPost(URL, 'api=2&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&token=' + self.token + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id, JSON) then
+	if self.HTTPPost(URL, self.united_params, JSON) then //checkme
 	begin
 		OperationResult := self.fromJSON_OperationResult(JSON, OperationStatus);
 		case OperationResult of
@@ -941,6 +943,7 @@ begin
 	if Result then
 	begin
 		Result := self.extractTokenFromText(JSON, self.token) and self.extract_x_page_id_FromText(JSON, self.x_page_id) and self.extract_build_FromText(JSON, self.build) and self.extract_upload_url_FromText(JSON, self.upload_url);
+		self.united_params := '&api=2&build=' + self.build + '&x-page-id=' + self.x_page_id + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&token=' + self.token + '&_=1433249148810'; //todo insert timestamp
 	end;
 end;
 
@@ -953,7 +956,7 @@ var
 begin
 	Result := false;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
-	URL := 'https://cloud.mail.ru/api/v2/user/space?api=2&home=/&build=' + self.build + '&x-page-id=' + self.x_page_id + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&token=' + self.token + '&_=1433249148810';
+	URL := 'https://cloud.mail.ru/api/v2/user/space?home=/' + self.united_params;
 	Progress := false;
 	Result := self.HTTPGet(URL, JSON, Progress);
 	if Result then
@@ -1301,7 +1304,7 @@ begin
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
 	URL := 'https://cloud.mail.ru/api/v2/file/move';
 	//todo функция для post/get
-	if self.HTTPPost(URL, 'api=2&home=' + PathToUrl(OldName) + '&folder=' + PathToUrl(ToPath) + '&token=' + self.token + '&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id + '&conflict', JSON) then
+	if self.HTTPPost(URL, 'home=' + PathToUrl(OldName) + '&folder=' + PathToUrl(ToPath) + self.united_params + '&conflict', JSON) then
 	begin //Парсим ответ
 		OperationResult:=self.fromJSON_OperationResult(JSON, OperationStatus);
 		case OperationResult of
@@ -1362,10 +1365,10 @@ begin
 	if publish then
 	begin
 		URL := 'https://cloud.mail.ru/api/v2/file/publish';
-		Result := self.HTTPPost(URL, 'api=2&home=/' + PathToUrl(path) + '&token=' + self.token + '&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id + '&conflict', JSON);
+		Result := self.HTTPPost(URL, 'home=/' + PathToUrl(path) + self.united_params + '&conflict', JSON);
 	end else begin
 		URL := 'https://cloud.mail.ru/api/v2/file/unpublish';
-		Result := self.HTTPPost(URL, 'api=2&weblink=' + PublicLink + '&token=' + self.token + '&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id + '&conflict', JSON);
+		Result := self.HTTPPost(URL, 'weblink=' + PublicLink + self.united_params + '&conflict', JSON);
 	end;
 
 	if Result then
@@ -1641,7 +1644,7 @@ begin
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
 	if self.public_account then exit;
 	URL := 'https://cloud.mail.ru/api/v2/file/remove';
-	Result := self.HTTPPost(URL, 'api=2&home=/' + PathToUrl(path) + '/&token=' + self.token + '&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id + '&conflict', JSON); //API всегда отвечает true, даже если путь не существует
+	Result := self.HTTPPost(URL, 'home=/' + PathToUrl(path) + '/' + self.united_params + '&conflict', JSON); //API всегда отвечает true, даже если путь не существует
 	if Result then
 	begin
 		OperationResult:= self.fromJSON_OperationResult(JSON, OperationStatus);
@@ -1669,7 +1672,7 @@ begin
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
 	if self.public_account then exit;
 	URL := 'https://cloud.mail.ru/api/v2/file/rename';
-	if self.HTTPPost(URL, 'api=2&home=' + PathToUrl(OldName) + '&name=' + PathToUrl(NewName) + '&token=' + self.token + '&build=' + self.build + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&x-page-id=' + self.x_page_id, JSON) then
+	if self.HTTPPost(URL, '&home=' + PathToUrl(OldName) + '&name=' + PathToUrl(NewName), self.united_params, JSON) then
 	begin //Парсим ответ
 		OperationResult :=self.fromJSON_OperationResult(JSON, OperationStatus);
 		case OperationResult of
@@ -1709,7 +1712,7 @@ begin
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
 	//todo: temporary at this moment
 	if self.public_account then exit(true);
-	URL := 'https://cloud.mail.ru/api/v2/file?home=' + PathToUrl(path) + '&api=2&build=' + self.build + '&x-page-id=' + self.x_page_id + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&token=' + self.token + '&_=1433249148810';
+	URL := 'https://cloud.mail.ru/api/v2/file?home=' + PathToUrl(path) + self.united_params;
 	Progress := false;
 	Result := self.HTTPGet(URL, JSON, Progress);
 	if Result then
