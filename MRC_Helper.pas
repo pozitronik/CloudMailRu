@@ -244,7 +244,7 @@ begin
 	until tmp = 0;
 end;
 
-function PathToUrl(path: WideString;RestrictEmptyUrl: boolean = true): WideString;
+function PathToUrl(path: WideString; RestrictEmptyUrl: boolean = true): WideString;
 begin
 	Result:= UrlEncode(StringReplace(path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
 	if (Result = '') and RestrictEmptyUrl then Result := '/';
