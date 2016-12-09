@@ -33,7 +33,6 @@ function ExtractLinkFromUrl(URL: WideString): WideString; //При необхо�
 function IsWriteable(const DirName: WideString; FileName: WideString = 'delete.me'; CleanFile: boolean = true): boolean;
 function PosLast(Substring, S: WideString; Offset: Integer = 0): Integer;
 function PathToUrl(path: WideString; RestrictEmptyUrl: boolean = true): WideString;
-Procedure FileLog(S: WideString);
 
 implementation
 
@@ -71,7 +70,7 @@ begin
 		List.Delete(0);
 
 		Result.path := Implode(List, '\');
-		if Copy(Result.path, Length(Result.path) - 2, 3) = '\..' then  Result.path:=Copy(Result.path, 1, Length(Result.path) - 2);
+		if Copy(Result.path, Length(Result.path) - 2, 3) = '\..' then Result.path:=Copy(Result.path, 1, Length(Result.path) - 2);
 		if (Result.path = '') then ExtractRealPath.path := '\';
 	end;
 
@@ -251,16 +250,6 @@ function PathToUrl(path: WideString; RestrictEmptyUrl: boolean = true): WideStri
 begin
 	Result:= UrlEncode(StringReplace(path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
 	if (Result = '') and RestrictEmptyUrl then Result := '/';
-end;
-
-Procedure FileLog(S: WideString);
-var
-	f: textfile;
-begin
-	Assign(f, 'd:\DATA\WORKPLACE\WORKSPACE\CloudMailRu\log.txt');
-	Rewrite(f);
-	Write(f, S);
-	close(f);
 end;
 
 end.

@@ -343,7 +343,9 @@ begin
 		if self.public_account and (self.PUBLIC_URL <> '') then
 		begin
 			self.public_link := self.PUBLIC_URL;
+			if self.PUBLIC_URL[length(self.PUBLIC_URL)] <> '/' then self.PUBLIC_URL:=self.PUBLIC_URL + '/';
 			Delete(self.public_link, 1, length(PUBLIC_ACCESS_URL));
+			if self.public_link[length(self.public_link)] = '/' then Delete(self.public_link, length(self.public_link), 1);
 		end;
 
 		self.split_file_size := split_file_size;
@@ -442,7 +444,7 @@ begin
 	finish:= PosLast(temp, Text, start);
 	if (start > 0) and (finish <> start) then
 	begin
-		JSON:= Copy(Text, start, finish + length(temp) - start);
+		JSON:= copy(Text, start, finish + length(temp) - start);
 		Result:=true;
 	end;
 end;
@@ -456,7 +458,7 @@ begin
 	Result:=start <> 0;
 	start := Pos(WideString('"url":'), Text, start) + 7;
 	finish := Pos(WideString('"}]'), Text, start);
-	Shard := Copy(Text, start, finish - start);
+	Shard := copy(Text, start, finish - start);
 end;
 
 function TCloudMailRu.extractPublicTokenFromText(Text: WideString; var PublicToken: WideString): Boolean;
@@ -468,7 +470,7 @@ begin
 	Result:=start <> 0;
 	start:=start + 22;
 	finish := Pos(WideString('"}'), Text, start);
-	PublicToken := Copy(Text, start, finish - start);
+	PublicToken := copy(Text, start, finish - start);
 end;
 
 function TCloudMailRu.extractTokenFromText(Text: WideString; var token: WideString): Boolean;
@@ -479,7 +481,7 @@ begin
 	start := Pos(WideString('"csrf"'), Text);
 	if start > 0 then
 	begin
-		token := Copy(Text, start + 8, 32);
+		token := copy(Text, start + 8, 32);
 		Result:=true;
 	end;
 end;
@@ -493,9 +495,9 @@ begin
 	start := Pos(WideString('"BUILD"'), Text);
 	if start > 0 then
 	begin
-		temp := Copy(Text, start + 9, 100);
+		temp := copy(Text, start + 9, 100);
 		finish := Pos(WideString('"'), temp);
-		build := Copy(temp, 0, finish - 1);
+		build := copy(temp, 0, finish - 1);
 		Result:=true;
 	end;
 end;
@@ -512,9 +514,9 @@ begin
 		start1 := start - 50;
 		finish := start + 15;
 		length := finish - start1;
-		temp := Copy(Text, start1, length);
+		temp := copy(Text, start1, length);
 		start2 := Pos(WideString('https://'), temp);
-		UploadUrl := Copy(temp, start2, StrLen(PWideChar(temp)) - start2);
+		UploadUrl := copy(temp, start2, StrLen(PWideChar(temp)) - start2);
 		Result:=true;
 	end;
 end;
@@ -527,7 +529,7 @@ begin
 	start := Pos(WideString('"x-page-id"'), Text);
 	if start > 0 then
 	begin
-		PageId:= Copy(Text, start + 13, 10);
+		PageId:= copy(Text, start + 13, 10);
 		Result:=true;
 	end;
 end;
@@ -811,7 +813,7 @@ var
 
 begin
 	Progress := false;
-	Result :=self.HTTPGet(self.PUBLIC_URL + '/' + PathToUrl(path, false), PageContent, Progress);
+	Result :=self.HTTPGet(self.PUBLIC_URL + PathToUrl(path, false), PageContent, Progress);
 	if Result then
 	begin
 		PageContent := StringReplace(PageContent, #$A, '', [rfReplaceAll]); //так нам проще ковыряться в тексте
