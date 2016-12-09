@@ -57,6 +57,8 @@ end;
 function ExtractRealPath(VirtualPath: WideString): TRealPath;
 var
 	List: TStringList;
+	t: WideString;
+	x: Integer;
 begin
 	List := TStringList.Create;
 	ExtractStrings(['\'], [], PWideChar(VirtualPath), List);
@@ -69,7 +71,8 @@ begin
 		List.Delete(0);
 
 		Result.path := Implode(List, '\');
-		if Result.path = '' then ExtractRealPath.path := '\';
+		if Copy(Result.path, Length(Result.path) - 2, 3) = '\..' then  Result.path:=Copy(Result.path, 1, Length(Result.path) - 2);
+		if (Result.path = '') then ExtractRealPath.path := '\';
 	end;
 
 	List.Destroy;
