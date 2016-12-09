@@ -220,6 +220,7 @@ var
 begin
 	Result := FS_FILE_WRITEERROR;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
+  if self.public_account then exit(FS_FILE_NOTSUPPORTED);
 	if self.HTTPGet(API_CLONE + '?folder=' + PathToUrl(path) + '&weblink=' + link + '&conflict=' + ConflictMode + self.united_params, JSON, Progress) then
 	begin //Парсим ответ
 		OperationResult := self.fromJSON_OperationResult(JSON, OperationStatus);
@@ -277,6 +278,7 @@ var
 begin
 	Result := FS_FILE_WRITEERROR;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
+	if self.public_account then exit(FS_FILE_NOTSUPPORTED);
 	if self.HTTPPost(API_FILE_COPY, 'home=' + PathToUrl(OldName) + '&folder=' + PathToUrl(ToPath) + self.united_params + '&conflict', JSON) then
 	begin //Парсим ответ
 		OperationResult:=self.fromJSON_OperationResult(JSON, OperationStatus);
@@ -389,7 +391,7 @@ var
 begin
 	Result := false;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
-
+	if self.public_account then exit;
 	Result := self.HTTPPost(API_FILE_REMOVE, 'home=/' + PathToUrl(path) + self.united_params + '&conflict', JSON);
 	if Result then
 	begin
@@ -723,7 +725,7 @@ begin
 	Result := true;
 	try
 		PublicLink := (TJSONObject.ParseJSONValue(JSON) as TJSONObject).values['body'].Value;
-	finally
+	except
 		Result:=false;
 	end;
 end;
@@ -919,7 +921,7 @@ begin
 	begin
 		OperationResult := self.fromJSON_OperationResult(JSON, OperationStatus);
 		case OperationResult of
-			CLOUD_OPERATION_OK: Result:=self.fromJSON_Shard(JSON,Shard) and (Shard <> '');
+			CLOUD_OPERATION_OK: Result:=self.fromJSON_Shard(JSON, Shard) and (Shard <> '');
 			else
 				begin
 					Result := false;
@@ -959,7 +961,7 @@ begin
 	begin
 		OperationResult := self.fromJSON_OperationResult(JSON, OperationStatus);
 		case OperationResult of
-			CLOUD_OPERATION_OK:Result := self.fromJSON_UserSpace(JSON,SpaceInfo);
+			CLOUD_OPERATION_OK: Result := self.fromJSON_UserSpace(JSON, SpaceInfo);
 			else
 				begin
 					Result := false;
@@ -1297,6 +1299,7 @@ var
 begin
 	Result := FS_FILE_WRITEERROR;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
+	if self.public_account then exit(FS_FILE_NOTSUPPORTED);
 	if self.HTTPPost(API_FILE_MOVE, 'home=' + PathToUrl(OldName) + '&folder=' + PathToUrl(ToPath) + self.united_params + '&conflict', JSON) then
 	begin //Парсим ответ
 		OperationResult:=self.fromJSON_OperationResult(JSON, OperationStatus);
@@ -1332,6 +1335,7 @@ var
 begin
 	Result := false;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
+	if self.public_account then exit;
 	if publish then
 	begin
 		Result := self.HTTPPost(API_FILE_PUBLISH, 'home=/' + PathToUrl(path) + self.united_params + '&conflict', JSON);
@@ -1343,7 +1347,7 @@ begin
 	begin
 		OperationResult:= self.fromJSON_OperationResult(JSON, OperationStatus);
 		case OperationResult of
-			CLOUD_OPERATION_OK: if publish then Result :=  self.fromJSON_PublicLink(JSON,PublicLink);
+			CLOUD_OPERATION_OK: if publish then Result := self.fromJSON_PublicLink(JSON, PublicLink);
 			else
 				begin
 					Result := false;
@@ -1619,7 +1623,7 @@ begin
 	begin
 		OperationResult := self.fromJSON_OperationResult(JSON, OperationStatus);
 		case OperationResult of
-			CLOUD_OPERATION_OK: Result := fromJSON_FileStatus(JSON,FileInfo);
+			CLOUD_OPERATION_OK: Result := fromJSON_FileStatus(JSON, FileInfo);
 			else
 				begin
 					Log(MSGTYPE_IMPORTANTERROR, 'File publish error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
