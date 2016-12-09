@@ -220,7 +220,7 @@ var
 begin
 	Result := FS_FILE_WRITEERROR;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
-  if self.public_account then exit(FS_FILE_NOTSUPPORTED);
+	if self.public_account then exit(FS_FILE_NOTSUPPORTED);
 	if self.HTTPGet(API_CLONE + '?folder=' + PathToUrl(path) + '&weblink=' + link + '&conflict=' + ConflictMode + self.united_params, JSON, Progress) then
 	begin //Парсим ответ
 		OperationResult := self.fromJSON_OperationResult(JSON, OperationStatus);
@@ -439,10 +439,10 @@ begin
 	Result:=false;
 	start := Pos(WideString('{"tree": ['), Text);
 	temp:='"id": "' + IdString + '"}}';
-	finish:= PosLast(temp, Text, start) + length(temp);
-	if (start > 0) and (finish > 0) then
+	finish:= PosLast(temp, Text, start);
+	if (start > 0) and (finish <> start) then
 	begin
-		JSON:= Copy(Text, start, finish - start);
+		JSON:= Copy(Text, start, finish + length(temp) - start);
 		Result:=true;
 	end;
 end;
@@ -803,6 +803,12 @@ function TCloudMailRu.getDirListingShared(path: WideString; var DirListing: TClo
 var
 	JSON, PageContent: WideString;
 	Progress: Boolean;
+	function PathToJsonId(path: WideString): WideString;
+	begin
+		Result:= StringReplace(path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]);
+		if Result <> '' then Result:='/' + Result;
+	end;
+
 begin
 	Progress := false;
 	Result :=self.HTTPGet(self.PUBLIC_URL + '/' + PathToUrl(path, false), PageContent, Progress);
@@ -811,7 +817,8 @@ begin
 		PageContent := StringReplace(PageContent, #$A, '', [rfReplaceAll]); //так нам проще ковыряться в тексте
 		PageContent := StringReplace(PageContent, #$D, '', [rfReplaceAll]);
 		PageContent := StringReplace(PageContent, #9, '', [rfReplaceAll]);
-		if not self.extractJSONFromPublicFolder(PageContent, self.public_link + PathToUrl(path, false), JSON) then
+		path:=PathToJsonId(path);
+		if not self.extractJSONFromPublicFolder(PageContent, self.public_link + path, JSON) then
 		begin
 			Log(MSGTYPE_IMPORTANTERROR, 'Can''t get public share JSON data');
 			exit(false);
