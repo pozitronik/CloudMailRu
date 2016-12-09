@@ -241,11 +241,10 @@ object AccountsForm: TAccountsForm
         object UsernameLabel: TLabel
           Left = 3
           Top = 0
-          Width = 24
+          Width = 28
           Height = 13
           Anchors = [akLeft, akTop, akRight]
           Caption = 'Email:'
-          ExplicitWidth = 28
         end
         object TwostepAuthCB: TCheckBox
           Left = 3
@@ -314,7 +313,7 @@ object AccountsForm: TAccountsForm
         Top = 55
         Width = 253
         Height = 17
-        Caption = 'Public share account'
+        Caption = 'Public account'
         TabOrder = 5
         OnClick = PublicAccountCBClick
       end
@@ -331,9 +330,9 @@ object AccountsForm: TAccountsForm
         object PublicUrlLabel: TLabel
           Left = 3
           Top = 0
-          Width = 253
+          Width = 46
           Height = 13
-          Caption = 'Public share url:'
+          Caption = 'Public url:'
         end
         object PublicUrlEdit: TEdit
           Left = 3
