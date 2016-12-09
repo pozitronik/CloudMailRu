@@ -11,7 +11,7 @@ const
 {$IFDEF WIN32}
 	PlatformX = 'x32';
 {$ENDIF}
-	PUBLIC_URL = 'https://cloud.mail.ru/public/';
+	PUBLIC_ACCESS_URL = 'https://cloud.mail.ru/public/';
 	OAUTH_TOKEN_URL = 'https://o2.mail.ru/token';
 	TOKEN_URL = 'https://cloud.mail.ru/?from=promo&from=authpopup';
 	LOGIN_URL = 'https://auth.mail.ru/cgi-bin/auth?lang=ru_RU&from=authpopup';
@@ -149,7 +149,7 @@ type
 		function extractJSONFromPublicFolder(Text, IdString: WideString; var JSON: WideString): Boolean;
 		function extractPublicShard(Text: WideString; var Shard: WideString): Boolean;
 		{JSON MANIPULATION}
-		function fromJSON_DirListing(JSON: WideString): TCloudMailRuDirListing; //todo: возможно стоит превратить их в булёвые с возвратом через параметр
+		function fromJSON_DirListing(JSON: WideString): TCloudMailRuDirListing; //todo: нужно превратить их в булёвые с возвратом через параметр, внутрь добавить обработку ошибок парсинга для исключения AV
 		function fromJSON_UserSpace(JSON: WideString): TCloudMailRuSpaceInfo;
 		function fromJSON_FileStatus(JSON: WideString): TCloudMailRuDirListingItem;
 		function fromJSON_Shard(JSON: WideString): WideString;
@@ -341,7 +341,7 @@ begin
 		if self.public_account and (self.PUBLIC_URL <> '') then
 		begin
 			self.public_link := self.PUBLIC_URL;
-			Delete(self.public_link, 1, length(PUBLIC_URL));
+			Delete(self.public_link, 1, length(PUBLIC_ACCESS_URL));
 		end;
 
 		self.split_file_size := split_file_size;
@@ -438,7 +438,7 @@ begin
 	start := Pos(WideString('{"tree": ['), Text);
 	temp:='"id": "' + IdString + '"}}';
 	finish:= PosLast(temp, Text, start) + length(temp);
-	if start > 0 then
+	if (start > 0) and (finish > 0) then
 	begin
 		JSON:= Copy(Text, start, finish - start);
 		Result:=true;
@@ -783,7 +783,7 @@ begin
 		PageContent := StringReplace(PageContent, #$A, '', [rfReplaceAll]); //так нам проще ковыряться в тексте
 		PageContent := StringReplace(PageContent, #$D, '', [rfReplaceAll]);
 		PageContent := StringReplace(PageContent, #9, '', [rfReplaceAll]);
-		if not self.extractJSONFromPublicFolder(PageContent, self.public_link + PathToUrl(path), JSON) then
+		if not self.extractJSONFromPublicFolder(PageContent, self.public_link + PathToUrl(path, false), JSON) then
 		begin
 			Log(MSGTYPE_IMPORTANTERROR, 'Can''t get public share JSON data');
 			exit(false);
