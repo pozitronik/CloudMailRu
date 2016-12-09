@@ -56,8 +56,6 @@ end;
 function ExtractRealPath(VirtualPath: WideString): TRealPath;
 var
 	List: TStringList;
-	t: WideString;
-	x: Integer;
 begin
 	List := TStringList.Create;
 	ExtractStrings(['\'], [], PWideChar(VirtualPath), List);
