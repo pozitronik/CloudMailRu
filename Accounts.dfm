@@ -166,22 +166,6 @@ object AccountsForm: TAccountsForm
       DesignSize = (
         484
         377)
-      object PasswordLabel: TLabel
-        Left = 225
-        Top = 97
-        Width = 210
-        Height = 13
-        Anchors = [akLeft, akTop, akRight]
-        Caption = 'Password (stored as plaintext, see readme)'
-      end
-      object UsernameLabel: TLabel
-        Left = 225
-        Top = 54
-        Width = 28
-        Height = 13
-        Anchors = [akLeft, akTop, akRight]
-        Caption = 'Email:'
-      end
       object AccountNameLabel: TLabel
         Left = 225
         Top = 10
@@ -220,8 +204,8 @@ object AccountsForm: TAccountsForm
         Top = 347
         Width = 75
         Height = 27
-        Caption = 'Add'
-        TabOrder = 7
+        Caption = 'Add/Apply'
+        TabOrder = 1
         OnClick = ApplyButtonClick
       end
       object DeleteButton: TButton
@@ -230,44 +214,92 @@ object AccountsForm: TAccountsForm
         Width = 75
         Height = 27
         Caption = 'Delete'
-        TabOrder = 8
+        TabOrder = 2
         OnClick = DeleteButtonClick
       end
-      object UnlimitedFileSizeCB: TCheckBox
-        Left = 225
-        Top = 165
-        Width = 255
-        Height = 17
-        Anchors = [akLeft, akTop, akRight]
-        Caption = 'Ignore 2Gb limit (paid account)'
-        TabOrder = 5
-      end
-      object UseTCPwdMngrCB: TCheckBox
-        Left = 225
-        Top = 142
-        Width = 255
-        Height = 17
-        Anchors = [akLeft, akTop, akRight]
-        Caption = 'Store password in TC password manager'
-        TabOrder = 4
-      end
-      object PasswordEdit: TEdit
-        Left = 225
-        Top = 115
-        Width = 255
-        Height = 21
-        Anchors = [akLeft, akTop, akRight]
-        PasswordChar = '*'
+      object AccountsPanel: TPanel
+        Left = 222
+        Top = 78
+        Width = 262
+        Height = 227
+        BevelOuter = bvNone
+        Ctl3D = True
+        ParentCtl3D = False
+        ShowCaption = False
         TabOrder = 3
-      end
-      object EmailEdit: TEdit
-        Left = 225
-        Top = 69
-        Width = 255
-        Height = 21
-        Anchors = [akLeft, akTop, akRight]
-        TabOrder = 2
-        OnChange = EmailEditChange
+        DesignSize = (
+          262
+          227)
+        object PasswordLabel: TLabel
+          Left = 3
+          Top = 46
+          Width = 214
+          Height = 13
+          Anchors = [akLeft, akTop, akRight]
+          Caption = 'Password (stored as plaintext, see readme):'
+        end
+        object UsernameLabel: TLabel
+          Left = 3
+          Top = 0
+          Width = 24
+          Height = 13
+          Anchors = [akLeft, akTop, akRight]
+          Caption = 'Email:'
+          ExplicitWidth = 28
+        end
+        object TwostepAuthCB: TCheckBox
+          Left = 3
+          Top = 161
+          Width = 253
+          Height = 17
+          Caption = 'Two-step authentification'
+          TabOrder = 0
+          Visible = False
+        end
+        object SplitLargeFilesCB: TCheckBox
+          Left = 3
+          Top = 138
+          Width = 253
+          Height = 17
+          Anchors = [akLeft, akTop, akRight]
+          Caption = 'Split large files to 2Gb parts'
+          TabOrder = 1
+        end
+        object UnlimitedFileSizeCB: TCheckBox
+          Left = 3
+          Top = 115
+          Width = 253
+          Height = 17
+          Anchors = [akLeft, akTop, akRight]
+          Caption = 'Ignore 2Gb limit (paid account)'
+          TabOrder = 2
+        end
+        object UseTCPwdMngrCB: TCheckBox
+          Left = 3
+          Top = 92
+          Width = 253
+          Height = 17
+          Anchors = [akLeft, akTop, akRight]
+          Caption = 'Store password in TC password manager'
+          TabOrder = 3
+        end
+        object PasswordEdit: TEdit
+          Left = 3
+          Top = 65
+          Width = 253
+          Height = 21
+          Anchors = [akLeft, akTop, akRight]
+          PasswordChar = '*'
+          TabOrder = 4
+        end
+        object EmailEdit: TEdit
+          Left = 3
+          Top = 19
+          Width = 253
+          Height = 21
+          Anchors = [akLeft, akTop, akRight]
+          TabOrder = 5
+        end
       end
       object AccountNameEdit: TEdit
         Left = 225
@@ -275,26 +307,41 @@ object AccountsForm: TAccountsForm
         Width = 255
         Height = 21
         Anchors = [akLeft, akTop, akRight]
-        TabOrder = 1
-        OnChange = AccountNameEditChange
+        TabOrder = 4
       end
-      object SplitLargeFilesCB: TCheckBox
+      object PublicAccountCB: TCheckBox
         Left = 225
-        Top = 188
-        Width = 255
+        Top = 55
+        Width = 253
         Height = 17
-        Anchors = [akLeft, akTop, akRight]
-        Caption = 'Split large files to 2Gb parts'
-        TabOrder = 6
+        Caption = 'Public share account'
+        TabOrder = 5
+        OnClick = PublicAccountCBClick
       end
-      object TwostepAuthCB: TCheckBox
-        Left = 226
-        Top = 211
-        Width = 255
-        Height = 17
-        Caption = 'Two-step authentification'
-        TabOrder = 9
-        Visible = False
+      object SharesPanel: TPanel
+        Left = 222
+        Top = 78
+        Width = 262
+        Height = 45
+        BevelOuter = bvNone
+        Ctl3D = True
+        ParentCtl3D = False
+        ShowCaption = False
+        TabOrder = 6
+        object PublicUrlLabel: TLabel
+          Left = 3
+          Top = 0
+          Width = 253
+          Height = 13
+          Caption = 'Public share url:'
+        end
+        object PublicUrlEdit: TEdit
+          Left = 3
+          Top = 19
+          Width = 253
+          Height = 21
+          TabOrder = 0
+        end
       end
     end
     object GlobalTab: TTabSheet

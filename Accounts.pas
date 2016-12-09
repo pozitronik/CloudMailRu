@@ -3,7 +3,7 @@
 interface
 
 uses
-	Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics, Settings, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, IniFiles, MRC_Helper, PLUGIN_Types, Vcl.ComCtrls, Vcl.Mask;
+	Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics, Settings, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, IniFiles, MRC_Helper, PLUGIN_Types, Vcl.ComCtrls, Vcl.Mask, Vcl.ExtCtrls;
 
 type
 	TAccountsForm = class(TForm)
@@ -14,17 +14,8 @@ type
 		AccountsList: TListBox;
 		ApplyButton: TButton;
 		DeleteButton: TButton;
-		UnlimitedFileSizeCB: TCheckBox;
-		UseTCPwdMngrCB: TCheckBox;
-		PasswordEdit: TEdit;
-		PasswordLabel: TLabel;
-		EmailEdit: TEdit;
-		UsernameLabel: TLabel;
-		AccountNameEdit: TEdit;
-		AccountNameLabel: TLabel;
 		PreserveFileTimeCB: TCheckBox;
 		UseDLLFromPluginDir: TCheckBox;
-		SplitLargeFilesCB: TCheckBox;
 		ProxyGB: TGroupBox;
 		ProxyTypeLabel: TLabel;
 		ProxyCB: TComboBox;
@@ -44,7 +35,21 @@ type
 		AskOnErrorsCB: TCheckBox;
 		ProxyTCPwdMngrCB: TCheckBox;
 		GlobalSettingApplyBTN: TButton;
+		AccountsPanel: TPanel;
+		AccountNameEdit: TEdit;
+		AccountNameLabel: TLabel;
 		TwostepAuthCB: TCheckBox;
+		SplitLargeFilesCB: TCheckBox;
+		UnlimitedFileSizeCB: TCheckBox;
+		UseTCPwdMngrCB: TCheckBox;
+		PasswordEdit: TEdit;
+		PasswordLabel: TLabel;
+		EmailEdit: TEdit;
+		UsernameLabel: TLabel;
+		PublicAccountCB: TCheckBox;
+		SharesPanel: TPanel;
+		PublicUrlEdit: TEdit;
+		PublicUrlLabel: TLabel;
 		procedure FormShow(Sender: TObject);
 		procedure AccountsListClick(Sender: TObject);
 		procedure ApplyButtonClick(Sender: TObject);
@@ -52,11 +57,10 @@ type
 		procedure DeleteButtonClick(Sender: TObject);
 		procedure AccountsListKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
 		class procedure ShowAccounts(parentWindow: HWND; IniPath, SettingsIniFilePath: WideString; CryptProc: TCryptProcW; PluginNum, CryptoNum: Integer; RemoteName: WideString);
-		procedure AccountNameEditChange(Sender: TObject);
-		procedure EmailEditChange(Sender: TObject);
 		procedure FormActivate(Sender: TObject);
 		procedure ProxyUserEditChange(Sender: TObject);
 		procedure GlobalSettingApplyBTNClick(Sender: TObject);
+		procedure PublicAccountCBClick(Sender: TObject);
 	private
 		{Private declarations}
 		procedure WMHotKey(var Message: TMessage); message WM_HOTKEY;
@@ -78,17 +82,9 @@ implementation
 
 {$R *.dfm}
 
-procedure TAccountsForm.AccountNameEditChange(Sender: TObject);
-begin
-	if AccountsList.Items.IndexOf(AccountNameEdit.Text) = -1 then ApplyButton.Caption := 'Add'
-	else ApplyButton.Caption := 'Save';
-	ApplyButton.Enabled := (EmailEdit.Text <> '') and (AccountNameEdit.Text <> '');
-end;
-
 procedure TAccountsForm.AccountsListClick(Sender: TObject);
 var
 	CASettings: TAccountSettings;
-
 begin
 	if (AccountsList.Items.Count > 0) and (AccountsList.ItemIndex <> -1) then
 	begin
@@ -99,13 +95,15 @@ begin
 		UseTCPwdMngrCB.Checked := CASettings.use_tc_password_manager;
 		UnlimitedFileSizeCB.Checked := CASettings.unlimited_filesize;
 		SplitLargeFilesCB.Checked := CASettings.split_large_files;
+		PublicAccountCB.Checked:=CASettings.public_account;
+		PublicUrlEdit.Text:=CASettings.public_url;
 	end else begin
 		AccountNameEdit.Text := '';
 		EmailEdit.Text := '';
 		PasswordEdit.Text := '';
 		UseTCPwdMngrCB.Checked := false;
 	end;
-
+  PublicAccountCB.OnClick(nil);
 end;
 
 procedure TAccountsForm.AccountsListKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -124,6 +122,9 @@ begin
 	CASettings.unlimited_filesize := UnlimitedFileSizeCB.Checked;
 	CASettings.split_large_files := SplitLargeFilesCB.Checked;
 	CASettings.twostep_auth := TwostepAuthCB.Checked;
+	CASettings.public_account:=PublicAccountCB.Checked;
+	CASettings.public_url:=PublicUrlEdit.Text;
+
 	if CASettings.use_tc_password_manager then //просим TC сохранить пароль
 	begin
 		case self.CryptProc(self.PluginNum, self.CryptoNum, FS_CRYPT_SAVE_PASSWORD, PWideChar(CASettings.name), PWideChar(CASettings.password), SizeOf(CASettings.password)) of
@@ -157,11 +158,6 @@ begin
 	end;
 end;
 
-procedure TAccountsForm.EmailEditChange(Sender: TObject);
-begin
-	ApplyButton.Enabled := (EmailEdit.Text <> '') and (AccountNameEdit.Text <> '');
-end;
-
 procedure TAccountsForm.FormActivate(Sender: TObject);
 begin
 	ProxyTCPwdMngrCB.Enabled := ProxyUserEdit.Text <> '';
@@ -179,7 +175,6 @@ begin
 			AccountsList.Selected[AccountsList.Items.IndexOf(self.SelectedAccount)] := true;
 		end else begin
 			AccountsList.Selected[0] := true;
-
 		end;
 		AccountsList.OnClick(self);
 	end;
@@ -227,6 +222,12 @@ begin
 	ProxyTCPwdMngrCB.Enabled := ProxyUserEdit.Text <> '';
 end;
 
+procedure TAccountsForm.PublicAccountCBClick(Sender: TObject);
+begin
+	SharesPanel.Visible := PublicAccountCB.Checked;
+	AccountsPanel.Visible:=not PublicAccountCB.Checked;
+end;
+
 class procedure TAccountsForm.ShowAccounts(parentWindow: HWND; IniPath, SettingsIniFilePath: WideString; CryptProc: TCryptProcW; PluginNum, CryptoNum: Integer; RemoteName: WideString);
 var
 	AccountsForm: TAccountsForm;
@@ -272,12 +273,12 @@ begin
 	AccountsList.Items := TempList;
 	TempList.Destroy;
 	AccountsList.OnClick(self);
-	ApplyButton.Enabled := (EmailEdit.Text <> '') and (AccountNameEdit.Text <> '');
+
 end;
 
 procedure TAccountsForm.WMHotKey(var Message: TMessage);
 begin
-	if (Message.LParamHi = VK_ESCAPE) and (GetForegroundWindow=self.Handle) then Close;
+	if (Message.LParamHi = VK_ESCAPE) and (GetForegroundWindow = self.Handle) then Close;
 end;
 
 end.
