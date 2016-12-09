@@ -288,21 +288,18 @@ object AccountsForm: TAccountsForm
         TabOrder = 6
       end
       object TwostepAuthCB: TCheckBox
-        Left = 225
-        Top = 210
+        Left = 226
+        Top = 211
         Width = 255
         Height = 17
         Caption = 'Two-step authentification'
         TabOrder = 9
+        Visible = False
       end
     end
     object GlobalTab: TTabSheet
       Caption = 'Global settings'
       ImageIndex = 1
-      ExplicitLeft = 0
-      ExplicitTop = 0
-      ExplicitWidth = 0
-      ExplicitHeight = 0
       object SocketTimeoutLabel: TLabel
         Left = 5
         Top = 115
