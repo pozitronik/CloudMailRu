@@ -1006,19 +1006,22 @@ begin
 			Log(MSGTYPE_IMPORTANTERROR, 'Достигнуто максимальное количество перенаправлений при запросе файла с адреса ' + URL);
 			Result := FS_FILE_READERROR;
 		end;
-		self.HTTPDestroy(HTTP, SSL); {TODO -oOwner -cGeneral : объект не уничтожается}
+		self.HTTPDestroy(HTTP, SSL);
 	except
 		on E: EAbort do
 		begin
+			if Assigned(HTTP) then self.HTTPDestroy(HTTP, SSL);
 			Result := FS_FILE_USERABORT;
 		end;
 		on E: EIdSocketerror do
 		begin
+			if Assigned(HTTP) then self.HTTPDestroy(HTTP, SSL);
 			if LogErrors then Log(MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка сети: ' + E.Message + ' при копировании файла с адреса ' + URL);
 			Result := FS_FILE_READERROR;
 		end;
 		on E: Exception do
 		begin
+			if Assigned(HTTP) then self.HTTPDestroy(HTTP, SSL);
 			if LogErrors then Log(MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при копировании файла с адреса ' + URL);
 			Result := FS_FILE_READERROR;
 		end;
@@ -1068,11 +1071,12 @@ begin
 		self.HTTPInit(HTTP, SSL, Socks, self.Cookie);
 		if ContentType <> '' then HTTP.Request.ContentType := ContentType;
 		HTTP.Post(URL, PostData, MemStream);
-		self.HTTPDestroy(HTTP, SSL); {TODO -oOwner -cGeneral : Объект не уничтожается}
+		self.HTTPDestroy(HTTP, SSL);
 		Answer := MemStream.DataString;
 	except
 		on E: EAbort do
 		begin
+			if Assigned(HTTP) then self.HTTPDestroy(HTTP, SSL);
 			MemStream.free;
 			PostData.free;
 			exit(false);
@@ -1092,9 +1096,11 @@ begin
 				Log(MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при отправке данных на адрес ' + URL + ', ответ сервера: ' + E.ErrorMessage);
 				Result := false;
 			end;
+			if Assigned(HTTP) then self.HTTPDestroy(HTTP, SSL);
 		end;
 		on E: EIdSocketerror do
 		begin
+			if Assigned(HTTP) then self.HTTPDestroy(HTTP, SSL);
 			Log(MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка сети: ' + E.Message + ' при отправке данных на адрес ' + URL);
 			Result := false;
 		end;
@@ -1120,26 +1126,30 @@ begin
 		HTTP.OnWork := self.HTTPProgress;
 		HTTP.Post(URL, PostData, MemStream);
 		Answer := MemStream.DataString;
-		self.HTTPDestroy(HTTP, SSL); {TODO -oOwner -cGeneral : При ошибке объект не уничтожается}
+		self.HTTPDestroy(HTTP, SSL);
 	except
 		on E: EAbort do
 		begin
+			if Assigned(HTTP) then self.HTTPDestroy(HTTP, SSL);
 			MemStream.free;
 			PostData.free;
 			Result := CLOUD_OPERATION_CANCELLED;
 		end;
 		on E: EIdHTTPProtocolException do
 		begin
+			if Assigned(HTTP) then self.HTTPDestroy(HTTP, SSL);
 			Log(MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при отправке данных на адрес ' + URL + ', ответ сервера: ' + E.ErrorMessage);
 			Result := CLOUD_OPERATION_FAILED;
 		end;
 		on E: EIdSocketerror do
 		begin
+			if Assigned(HTTP) then self.HTTPDestroy(HTTP, SSL);
 			Log(MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка сети: ' + E.Message + ' при отправке данных на адрес ' + URL);
 			Result := CLOUD_OPERATION_FAILED;
 		end;
 		on E: Exception do
 		begin
+			if Assigned(HTTP) then self.HTTPDestroy(HTTP, SSL);
 			Log(MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при отправке данных на адрес ' + URL);
 			Result := CLOUD_OPERATION_FAILED;
 		end;
@@ -1251,7 +1261,7 @@ begin
 	if self.HTTPPost(API_FILE_MOVE, 'home=' + PathToUrl(OldName) + '&folder=' + PathToUrl(ToPath) + self.united_params + '&conflict', JSON) then
 	begin //Парсим ответ
 		OperationResult:=self.fromJSON_OperationResult(JSON, OperationStatus);
-		case OperationResult of  {TODO -oOwner -cGeneral : Это используется в куче мест, перетащить в функцию CloudResultToFsResult}
+		case OperationResult of {TODO -oOwner -cGeneral : Это используется в куче мест, перетащить в функцию CloudResultToFsResult}
 			CLOUD_OPERATION_OK: Result := CLOUD_OPERATION_OK;
 			CLOUD_ERROR_EXISTS: Result := FS_FILE_EXISTS;
 			CLOUD_ERROR_REQUIRED, CLOUD_ERROR_INVALID, CLOUD_ERROR_READONLY, CLOUD_ERROR_NAME_LENGTH_EXCEEDED: Result := FS_FILE_WRITEERROR;
