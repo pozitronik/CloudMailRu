@@ -149,14 +149,14 @@ type
 		function extractJSONFromPublicFolder(Text, IdString: WideString; var JSON: WideString): Boolean;
 		function extractPublicShard(Text: WideString; var Shard: WideString): Boolean;
 		{JSON MANIPULATION}
-		function fromJSON_DirListing(JSON: WideString): TCloudMailRuDirListing; //todo: нужно превратить их в булёвые с возвратом через параметр, внутрь добавить обработку ошибок парсинга для исключения AV
-		function fromJSON_UserSpace(JSON: WideString): TCloudMailRuSpaceInfo;
-		function fromJSON_FileStatus(JSON: WideString): TCloudMailRuDirListingItem;
-		function fromJSON_Shard(JSON: WideString): WideString;
-		function fromJSON_OAuthTokenInfo(JSON: WideString): TCloudMailRuOAuthInfo;
-		function fromJSON_PublicLink(JSON: WideString): WideString;
+		function fromJSON_DirListing(JSON: WideString; var CloudMailRuDirListing: TCloudMailRuDirListing): Boolean;
+		function fromJSON_UserSpace(JSON: WideString; var CloudMailRuSpaceInfo: TCloudMailRuSpaceInfo): Boolean;
+		function fromJSON_FileStatus(JSON: WideString; var CloudMailRuDirListingItem: TCloudMailRuDirListingItem): Boolean;
+		function fromJSON_Shard(JSON: WideString; var Shard: WideString): Boolean;
+		function fromJSON_OAuthTokenInfo(JSON: WideString; var CloudMailRuOAuthInfo: TCloudMailRuOAuthInfo): Boolean;
+		function fromJSON_PublicLink(JSON: WideString; var PublicLink: WideString): Boolean;
 		function fromJSON_OperationResult(JSON: WideString; var OperationStatus: integer): integer;
-		function fromJSON_PublicDirListing(JSON: WideString): TCloudMailRuDirListing;
+		function fromJSON_PublicDirListing(JSON: WideString; var CloudMailRuDirListing: TCloudMailRuDirListing): Boolean;
 		{HTTP REQUESTS WRAPPERS}
 		function getToken(): Boolean;
 		function getOAuthToken(var OAuthToken: TCloudMailRuOAuthInfo): Boolean;
@@ -530,19 +530,56 @@ begin
 	end;
 end;
 
-function TCloudMailRu.fromJSON_DirListing(JSON: WideString): TCloudMailRuDirListing;
+function TCloudMailRu.fromJSON_DirListing(JSON: WideString; var CloudMailRuDirListing: TCloudMailRuDirListing): Boolean;
 var
 	Obj: TJSONObject;
 	J: integer;
-	ResultItems: TCloudMailRuDirListing;
 	A: TJSONArray;
 begin
-	A := ((TJSONObject.ParseJSONValue(JSON) as TJSONObject).values['body'] as TJSONObject).values['list'] as TJSONArray;
-	SetLength(ResultItems, A.count);
-	for J := 0 to A.count - 1 do
-	begin
-		Obj := A.Items[J] as TJSONObject;
-		with ResultItems[J] do
+	Result:=false;
+	try
+		A := ((TJSONObject.ParseJSONValue(JSON) as TJSONObject).values['body'] as TJSONObject).values['list'] as TJSONArray;
+		SetLength(CloudMailRuDirListing, A.count);
+		for J := 0 to A.count - 1 do
+		begin
+			Obj := A.Items[J] as TJSONObject;
+			with CloudMailRuDirListing[J] do
+			begin
+				if Assigned(Obj.values['size']) then size := Obj.values['size'].Value.ToInt64;
+				if Assigned(Obj.values['kind']) then kind := Obj.values['kind'].Value;
+				if Assigned(Obj.values['weblink']) then weblink := Obj.values['weblink'].Value;
+				if Assigned(Obj.values['type']) then type_ := Obj.values['type'].Value;
+				if Assigned(Obj.values['home']) then home := Obj.values['home'].Value;
+				if Assigned(Obj.values['name']) then name := Obj.values['name'].Value;
+				if (type_ = TYPE_FILE) then
+				begin
+					if Assigned(Obj.values['mtime']) then mtime := Obj.values['mtime'].Value.ToInt64;
+					if Assigned(Obj.values['virus_scan']) then virus_scan := Obj.values['virus_scan'].Value;
+					if Assigned(Obj.values['hash']) then hash := Obj.values['hash'].Value;
+				end else begin
+					if Assigned(Obj.values['tree']) then tree := Obj.values['tree'].Value;
+					if Assigned(Obj.values['grev']) then grev := Obj.values['grev'].Value.ToInteger;
+					if Assigned(Obj.values['rev']) then rev := Obj.values['rev'].Value.ToInteger;
+					if Assigned((Obj.values['count'] as TJSONObject).values['folders']) then folders_count := (Obj.values['count'] as TJSONObject).values['folders'].Value.ToInteger();
+					if Assigned((Obj.values['count'] as TJSONObject).values['files']) then files_count := (Obj.values['count'] as TJSONObject).values['files'].Value.ToInteger();
+					mtime := 0;
+				end;
+			end;
+		end;
+	except
+		Result := false;
+	end;
+
+end;
+
+function TCloudMailRu.fromJSON_FileStatus(JSON: WideString; var CloudMailRuDirListingItem: TCloudMailRuDirListingItem): Boolean;
+var
+	Obj: TJSONObject;
+begin
+	Result:=true;
+	try
+		Obj := (TJSONObject.ParseJSONValue(JSON) as TJSONObject).values['body'] as TJSONObject;
+		with CloudMailRuDirListingItem do
 		begin
 			if Assigned(Obj.values['size']) then size := Obj.values['size'].Value.ToInt64;
 			if Assigned(Obj.values['kind']) then kind := Obj.values['kind'].Value;
@@ -552,7 +589,7 @@ begin
 			if Assigned(Obj.values['name']) then name := Obj.values['name'].Value;
 			if (type_ = TYPE_FILE) then
 			begin
-				if Assigned(Obj.values['mtime']) then mtime := Obj.values['mtime'].Value.ToInt64;
+				if Assigned(Obj.values['mtime']) then mtime := Obj.values['mtime'].Value.ToInteger;
 				if Assigned(Obj.values['virus_scan']) then virus_scan := Obj.values['virus_scan'].Value;
 				if Assigned(Obj.values['hash']) then hash := Obj.values['hash'].Value;
 			end else begin
@@ -564,46 +601,19 @@ begin
 				mtime := 0;
 			end;
 		end;
-	end;
-	Result := ResultItems;
-end;
-
-function TCloudMailRu.fromJSON_FileStatus(JSON: WideString): TCloudMailRuDirListingItem;
-var
-	Obj: TJSONObject;
-begin
-	Obj := (TJSONObject.ParseJSONValue(JSON) as TJSONObject).values['body'] as TJSONObject;
-	with Result do
-	begin
-		if Assigned(Obj.values['size']) then size := Obj.values['size'].Value.ToInt64;
-		if Assigned(Obj.values['kind']) then kind := Obj.values['kind'].Value;
-		if Assigned(Obj.values['weblink']) then weblink := Obj.values['weblink'].Value;
-		if Assigned(Obj.values['type']) then type_ := Obj.values['type'].Value;
-		if Assigned(Obj.values['home']) then home := Obj.values['home'].Value;
-		if Assigned(Obj.values['name']) then name := Obj.values['name'].Value;
-		if (type_ = TYPE_FILE) then
-		begin
-			if Assigned(Obj.values['mtime']) then mtime := Obj.values['mtime'].Value.ToInteger;
-			if Assigned(Obj.values['virus_scan']) then virus_scan := Obj.values['virus_scan'].Value;
-			if Assigned(Obj.values['hash']) then hash := Obj.values['hash'].Value;
-		end else begin
-			if Assigned(Obj.values['tree']) then tree := Obj.values['tree'].Value;
-			if Assigned(Obj.values['grev']) then grev := Obj.values['grev'].Value.ToInteger;
-			if Assigned(Obj.values['rev']) then rev := Obj.values['rev'].Value.ToInteger;
-			if Assigned((Obj.values['count'] as TJSONObject).values['folders']) then folders_count := (Obj.values['count'] as TJSONObject).values['folders'].Value.ToInteger();
-			if Assigned((Obj.values['count'] as TJSONObject).values['files']) then files_count := (Obj.values['count'] as TJSONObject).values['files'].Value.ToInteger();
-			mtime := 0;
-		end;
+	except
+		Result:=false;
 	end;
 end;
 
-function TCloudMailRu.fromJSON_OAuthTokenInfo(JSON: WideString): TCloudMailRuOAuthInfo;
+function TCloudMailRu.fromJSON_OAuthTokenInfo(JSON: WideString; var CloudMailRuOAuthInfo: TCloudMailRuOAuthInfo): Boolean;
 var
 	Obj: TJSONObject;
 begin
+	Result:=true;
 	try
 		Obj := (TJSONObject.ParseJSONValue(JSON) as TJSONObject);
-		with Result do
+		with CloudMailRuOAuthInfo do
 		begin
 			if Assigned(Obj.values['error']) then error := Obj.values['error'].Value;
 			if Assigned(Obj.values['error_code']) then error_code := Obj.values['error_code'].Value.ToInteger;
@@ -615,10 +625,11 @@ begin
 	except
 		on E: {EJSON}Exception do
 		begin
+			Result:=false;
 			Log(MSGTYPE_IMPORTANTERROR, 'Can''t parse server answer: ' + JSON);
-			Result.error_code := CLOUD_ERROR_UNKNOWN;
-			Result.error := 'Answer parsing';
-			Result.error_description := 'JSON parsing error: at ' + JSON;
+			CloudMailRuOAuthInfo.error_code := CLOUD_ERROR_UNKNOWN;
+			CloudMailRuOAuthInfo.error := 'Answer parsing';
+			CloudMailRuOAuthInfo.error_description := 'JSON parsing error: at ' + JSON;
 		end;
 	end;
 end;
@@ -666,64 +677,83 @@ begin
 	Result := CLOUD_OPERATION_OK;
 end;
 
-function TCloudMailRu.fromJSON_PublicDirListing(JSON: WideString): TCloudMailRuDirListing;
+function TCloudMailRu.fromJSON_PublicDirListing(JSON: WideString; var CloudMailRuDirListing: TCloudMailRuDirListing): Boolean;
 var
 	Obj: TJSONObject;
 	J: integer;
-	ResultItems: TCloudMailRuDirListing;
 	A: TJSONArray;
 begin
-	A := ((TJSONObject.ParseJSONValue(JSON) as TJSONObject).values['folder'] as TJSONObject).values['list'] as TJSONArray;
-	SetLength(ResultItems, A.count);
-	for J := 0 to A.count - 1 do
-	begin
-		Obj := A.Items[J] as TJSONObject;
-		with ResultItems[J] do
+	Result:=true;
+	try
+		A := ((TJSONObject.ParseJSONValue(JSON) as TJSONObject).values['folder'] as TJSONObject).values['list'] as TJSONArray;
+		SetLength(CloudMailRuDirListing, A.count);
+		for J := 0 to A.count - 1 do
 		begin
-			if Assigned(Obj.values['size']) then size := Obj.values['size'].Value.ToInt64;
-			if Assigned(Obj.values['kind']) then kind := Obj.values['kind'].Value;
-			if Assigned(Obj.values['weblink']) then weblink := Obj.values['weblink'].Value;
-			if Assigned(Obj.values['type']) then type_ := Obj.values['type'].Value;
-			if Assigned(Obj.values['home']) then home := Obj.values['home'].Value;
-			if Assigned(Obj.values['name']) then name := Obj.values['name'].Value;
-			if (type_ = TYPE_FILE) then
+			Obj := A.Items[J] as TJSONObject;
+			with CloudMailRuDirListing[J] do
 			begin
-				if Assigned(Obj.values['mtime']) then mtime := Obj.values['mtime'].Value.ToInt64;
-				if Assigned(Obj.values['virus_scan']) then virus_scan := Obj.values['virus_scan'].Value;
-				if Assigned(Obj.values['hash']) then hash := Obj.values['hash'].Value;
-			end else begin
-				if Assigned(Obj.values['tree']) then tree := Obj.values['tree'].Value;
-				if Assigned(Obj.values['grev']) then grev := Obj.values['grev'].Value.ToInteger;
-				if Assigned(Obj.values['rev']) then rev := Obj.values['rev'].Value.ToInteger;
-				if Assigned((Obj.values['count'] as TJSONObject).values['folders']) then folders_count := (Obj.values['count'] as TJSONObject).values['folders'].Value.ToInteger();
-				if Assigned((Obj.values['count'] as TJSONObject).values['files']) then files_count := (Obj.values['count'] as TJSONObject).values['files'].Value.ToInteger();
-				mtime := 0;
+				if Assigned(Obj.values['size']) then size := Obj.values['size'].Value.ToInt64;
+				if Assigned(Obj.values['kind']) then kind := Obj.values['kind'].Value;
+				if Assigned(Obj.values['weblink']) then weblink := Obj.values['weblink'].Value;
+				if Assigned(Obj.values['type']) then type_ := Obj.values['type'].Value;
+				if Assigned(Obj.values['home']) then home := Obj.values['home'].Value;
+				if Assigned(Obj.values['name']) then name := Obj.values['name'].Value;
+				if (type_ = TYPE_FILE) then
+				begin
+					if Assigned(Obj.values['mtime']) then mtime := Obj.values['mtime'].Value.ToInt64;
+					if Assigned(Obj.values['virus_scan']) then virus_scan := Obj.values['virus_scan'].Value;
+					if Assigned(Obj.values['hash']) then hash := Obj.values['hash'].Value;
+				end else begin
+					if Assigned(Obj.values['tree']) then tree := Obj.values['tree'].Value;
+					if Assigned(Obj.values['grev']) then grev := Obj.values['grev'].Value.ToInteger;
+					if Assigned(Obj.values['rev']) then rev := Obj.values['rev'].Value.ToInteger;
+					if Assigned((Obj.values['count'] as TJSONObject).values['folders']) then folders_count := (Obj.values['count'] as TJSONObject).values['folders'].Value.ToInteger();
+					if Assigned((Obj.values['count'] as TJSONObject).values['files']) then files_count := (Obj.values['count'] as TJSONObject).values['files'].Value.ToInteger();
+					mtime := 0;
+				end;
 			end;
 		end;
+	except
+		Result:=false;
 	end;
-	Result := ResultItems;
 end;
 
-function TCloudMailRu.fromJSON_PublicLink(JSON: WideString): WideString;
+function TCloudMailRu.fromJSON_PublicLink(JSON: WideString; var PublicLink: WideString): Boolean;
 begin
-	Result := (TJSONObject.ParseJSONValue(JSON) as TJSONObject).values['body'].Value;
+	Result := true;
+	try
+		PublicLink := (TJSONObject.ParseJSONValue(JSON) as TJSONObject).values['body'].Value;
+	finally
+		Result:=false;
+	end;
 end;
 
-function TCloudMailRu.fromJSON_Shard(JSON: WideString): WideString;
+function TCloudMailRu.fromJSON_Shard(JSON: WideString; var Shard: WideString): Boolean;
 begin
-	Result := ((((TJSONObject.ParseJSONValue(JSON) as TJSONObject).values['body'] as TJSONObject).values['get'] as TJSONArray).Items[0] as TJSONObject).values['url'].Value;
+	Result:=true;
+	try
+		Shard := ((((TJSONObject.ParseJSONValue(JSON) as TJSONObject).values['body'] as TJSONObject).values['get'] as TJSONArray).Items[0] as TJSONObject).values['url'].Value;
+	except
+		Result:=false;
+	end;
+
 end;
 
-function TCloudMailRu.fromJSON_UserSpace(JSON: WideString): TCloudMailRuSpaceInfo;
+function TCloudMailRu.fromJSON_UserSpace(JSON: WideString; var CloudMailRuSpaceInfo: TCloudMailRuSpaceInfo): Boolean;
 var
 	Obj: TJSONObject;
 begin
-	Obj := (TJSONObject.ParseJSONValue(JSON) as TJSONObject).values['body'] as TJSONObject;
-	with Result do
-	begin
-		if Assigned(Obj.values['overquota']) then overquota := Obj.values['overquota'].Value.ToBoolean;
-		if Assigned(Obj.values['total']) then total := Obj.values['total'].Value.ToInt64;
-		if Assigned(Obj.values['used']) then used := Obj.values['used'].Value.ToInt64;
+	Result:=true;
+	try
+		Obj := (TJSONObject.ParseJSONValue(JSON) as TJSONObject).values['body'] as TJSONObject;
+		with CloudMailRuSpaceInfo do
+		begin
+			if Assigned(Obj.values['overquota']) then overquota := Obj.values['overquota'].Value.ToBoolean;
+			if Assigned(Obj.values['total']) then total := Obj.values['total'].Value.ToInt64;
+			if Assigned(Obj.values['used']) then used := Obj.values['used'].Value.ToInt64;
+		end;
+	except
+		Result:=false;
 	end;
 end;
 
@@ -752,11 +782,7 @@ begin
 	begin
 		OperationResult:= self.fromJSON_OperationResult(JSON, OperationStatus);
 		case OperationResult of
-			CLOUD_OPERATION_OK:
-				begin
-					DirListing := self.fromJSON_DirListing(JSON);
-					Result := true;
-				end;
+			CLOUD_OPERATION_OK: Result := self.fromJSON_DirListing(JSON, DirListing);
 			CLOUD_ERROR_NOT_EXISTS:
 				begin
 					Log(MSGTYPE_IMPORTANTERROR, 'Path not exists: ' + path);
@@ -788,7 +814,7 @@ begin
 			Log(MSGTYPE_IMPORTANTERROR, 'Can''t get public share JSON data');
 			exit(false);
 		end;
-		DirListing := self.fromJSON_PublicDirListing(JSON);
+		if not self.fromJSON_PublicDirListing(JSON, DirListing) then exit(false);
 		if not self.extractPublicTokenFromText(PageContent, self.public_download_token) then //refresh public download token
 		begin
 			Log(MSGTYPE_IMPORTANTERROR, 'Can''t get public share download token');
@@ -877,7 +903,7 @@ begin
 	Result := false;
 	if self.HTTPPost(OAUTH_TOKEN_URL, 'client_id=cloud-win&grant_type=password&username=' + self.user + '%40' + self.domain + '&password=' + UrlEncode(self.password), Answer) then
 	begin
-		OAuthToken := self.fromJSON_OAuthTokenInfo(Answer);
+		if not self.fromJSON_OAuthTokenInfo(Answer, OAuthToken) then exit(false);
 		Result := OAuthToken.error_code = NOERROR;
 	end;
 end;
@@ -893,11 +919,7 @@ begin
 	begin
 		OperationResult := self.fromJSON_OperationResult(JSON, OperationStatus);
 		case OperationResult of
-			CLOUD_OPERATION_OK:
-				begin
-					Shard := self.fromJSON_Shard(JSON);
-					Result:=Shard <> '';
-				end;
+			CLOUD_OPERATION_OK: Result:=self.fromJSON_Shard(JSON,Shard) and (Shard <> '');
 			else
 				begin
 					Result := false;
@@ -937,11 +959,7 @@ begin
 	begin
 		OperationResult := self.fromJSON_OperationResult(JSON, OperationStatus);
 		case OperationResult of
-			CLOUD_OPERATION_OK:
-				begin
-					Result := true;
-					SpaceInfo := self.fromJSON_UserSpace(JSON);
-				end;
+			CLOUD_OPERATION_OK:Result := self.fromJSON_UserSpace(JSON,SpaceInfo);
 			else
 				begin
 					Result := false;
@@ -1325,11 +1343,7 @@ begin
 	begin
 		OperationResult:= self.fromJSON_OperationResult(JSON, OperationStatus);
 		case OperationResult of
-			CLOUD_OPERATION_OK:
-				begin
-					if publish then PublicLink := self.fromJSON_PublicLink(JSON);
-					Result := true;
-				end;
+			CLOUD_OPERATION_OK: if publish then Result :=  self.fromJSON_PublicLink(JSON,PublicLink);
 			else
 				begin
 					Result := false;
@@ -1605,11 +1619,7 @@ begin
 	begin
 		OperationResult := self.fromJSON_OperationResult(JSON, OperationStatus);
 		case OperationResult of
-			CLOUD_OPERATION_OK:
-				begin
-					Result := true;
-					FileInfo := fromJSON_FileStatus(JSON);
-				end;
+			CLOUD_OPERATION_OK: Result := fromJSON_FileStatus(JSON,FileInfo);
 			else
 				begin
 					Log(MSGTYPE_IMPORTANTERROR, 'File publish error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
