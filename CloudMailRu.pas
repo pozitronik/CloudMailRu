@@ -167,6 +167,7 @@ type
 		{OTHER ROUTINES}
 		function ErrorCodeText(ErrorCode: integer): WideString;
 		procedure Log(MsgType: integer; LogString: WideString);
+		function CloudResultToFsResult(CloudResult: integer; OperationStatus: integer; ErrorPrefix: WideString = ''): integer;
 	protected
 		{REGULAR CLOUD}
 		function loginRegular(method: integer = CLOUD_AUTH_METHOD_WEB): Boolean;
@@ -244,6 +245,31 @@ begin
 	end;
 end;
 
+function TCloudMailRu.CloudResultToFsResult(CloudResult: integer; OperationStatus: integer; ErrorPrefix: WideString): integer;
+begin
+	case CloudResult of
+		CLOUD_OPERATION_OK: exit(CLOUD_OPERATION_OK);
+		CLOUD_ERROR_EXISTS: exit(FS_FILE_EXISTS);
+		CLOUD_ERROR_REQUIRED, CLOUD_ERROR_INVALID, CLOUD_ERROR_READONLY, CLOUD_ERROR_NAME_LENGTH_EXCEEDED: exit(FS_FILE_WRITEERROR);
+		CLOUD_ERROR_UNKNOWN: exit(FS_FILE_NOTSUPPORTED);
+		CLOUD_ERROR_OVERQUOTA:
+			begin
+				Log(MSGTYPE_IMPORTANTERROR, 'Insufficient Storage');
+				exit(FS_FILE_WRITEERROR);
+			end;
+		CLOUD_ERROR_NAME_TOO_LONG:
+			begin
+				Log(MSGTYPE_IMPORTANTERROR, 'Name too long');
+				exit(FS_FILE_WRITEERROR);
+			end;
+		else
+			begin //что-то неизвестное
+				if (ErrorPrefix <> '') then Log(MSGTYPE_IMPORTANTERROR, ErrorPrefix + self.ErrorCodeText(CloudResult) + ' Status: ' + OperationStatus.ToString());
+				exit(FS_FILE_WRITEERROR);
+			end;
+	end;
+end;
+
 function TCloudMailRu.copyFile(OldName, ToPath: WideString): integer;
 var
 	JSON: WideString;
@@ -254,17 +280,7 @@ begin
 	if self.HTTPPost(API_FILE_COPY, 'home=' + PathToUrl(OldName) + '&folder=' + PathToUrl(ToPath) + self.united_params + '&conflict', JSON) then
 	begin //Парсим ответ
 		OperationResult:=self.fromJSON_OperationResult(JSON, OperationStatus);
-		case OperationResult of
-			CLOUD_OPERATION_OK: Result := CLOUD_OPERATION_OK;
-			CLOUD_ERROR_EXISTS: Result := FS_FILE_EXISTS;
-			CLOUD_ERROR_REQUIRED, CLOUD_ERROR_INVALID, CLOUD_ERROR_READONLY, CLOUD_ERROR_NAME_LENGTH_EXCEEDED: Result := FS_FILE_WRITEERROR;
-			CLOUD_ERROR_UNKNOWN: Result := FS_FILE_NOTSUPPORTED;
-			else
-				begin //что-то неизвестное
-					Log(MSGTYPE_IMPORTANTERROR, 'File copy error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
-					Result := FS_FILE_WRITEERROR;
-				end;
-		end;
+		Result:=CloudResultToFsResult(OperationResult, OperationStatus, 'File copy error: ');
 	end;
 end;
 
@@ -965,17 +981,17 @@ begin
 			if HTTP.ResponseCode = 400 then
 			begin {сервер вернёт 400, но нужно пропарсить результат для дальнейшего определения действий}
 				Answer := E.ErrorMessage;
-				result:=true;
+				Result:=true;
 			end else if HTTP.ResponseCode = 507 then //кончилось место
 			begin
 				Answer := E.ErrorMessage;
-				result:=true;
+				Result:=true;
 			end else begin
 				Log(MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при отправке данных на адрес ' + URL + ', ответ сервера: ' + E.ErrorMessage);
-				result:=false;
+				Result:=false;
 			end;
 			if Assigned(HTTP) then self.HTTPDestroy(HTTP, SSL);
-      exit;
+			exit;
 		end;
 		on E: EIdSocketerror do
 		begin
@@ -1266,17 +1282,7 @@ begin
 	if self.HTTPPost(API_FILE_MOVE, 'home=' + PathToUrl(OldName) + '&folder=' + PathToUrl(ToPath) + self.united_params + '&conflict', JSON) then
 	begin //Парсим ответ
 		OperationResult:=self.fromJSON_OperationResult(JSON, OperationStatus);
-		case OperationResult of {TODO -oOwner -cGeneral : Это используется в куче мест, перетащить в функцию CloudResultToFsResult}
-			CLOUD_OPERATION_OK: Result := CLOUD_OPERATION_OK;
-			CLOUD_ERROR_EXISTS: Result := FS_FILE_EXISTS;
-			CLOUD_ERROR_REQUIRED, CLOUD_ERROR_INVALID, CLOUD_ERROR_READONLY, CLOUD_ERROR_NAME_LENGTH_EXCEEDED: Result := FS_FILE_WRITEERROR;
-			CLOUD_ERROR_UNKNOWN: Result := FS_FILE_NOTSUPPORTED;
-			else
-				begin //что-то неизвестное
-					Log(MSGTYPE_IMPORTANTERROR, 'File move error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
-					Result := FS_FILE_WRITEERROR;
-				end;
-		end;
+		Result:=CloudResultToFsResult(OperationResult, OperationStatus, 'File move error: ');
 	end;
 end;
 
@@ -1522,27 +1528,7 @@ begin
 		if self.addFileToCloud(FileHash, FileSize, PathToUrl(remotePath), JSONAnswer) then
 		begin
 			OperationResult := self.fromJSON_OperationResult(JSONAnswer, OperationStatus);
-			case OperationResult of
-				CLOUD_OPERATION_OK: Result := FS_FILE_OK;
-				CLOUD_ERROR_EXISTS: Result := FS_FILE_EXISTS;
-				CLOUD_ERROR_REQUIRED, CLOUD_ERROR_INVALID, CLOUD_ERROR_READONLY, CLOUD_ERROR_NAME_LENGTH_EXCEEDED: Result := FS_FILE_WRITEERROR;
-				CLOUD_ERROR_OVERQUOTA:
-					begin
-						Log(MSGTYPE_IMPORTANTERROR, 'Insufficient Storage');
-						Result := FS_FILE_WRITEERROR;
-					end;
-				CLOUD_ERROR_NAME_TOO_LONG:
-					begin
-						Log(MSGTYPE_IMPORTANTERROR, 'Name too long');
-						Result := FS_FILE_WRITEERROR;
-					end;
-				CLOUD_ERROR_UNKNOWN: Result := FS_FILE_NOTSUPPORTED;
-				else
-					begin //что-то неизвестное
-						Log(MSGTYPE_IMPORTANTERROR, 'File uploading error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
-						Result := FS_FILE_WRITEERROR;
-					end;
-			end;
+			Result:=CloudResultToFsResult(OperationResult, OperationStatus, 'File uploading error: ');
 		end;
 	end;
 end;
@@ -1599,17 +1585,7 @@ begin
 	if self.HTTPPost(API_FILE_RENAME, 'home=' + PathToUrl(OldName) + '&name=' + PathToUrl(NewName), self.united_params, JSON) then
 	begin //Парсим ответ
 		OperationResult :=self.fromJSON_OperationResult(JSON, OperationStatus);
-		case OperationResult of
-			CLOUD_OPERATION_OK: Result := CLOUD_OPERATION_OK;
-			CLOUD_ERROR_EXISTS: Result := FS_FILE_EXISTS;
-			CLOUD_ERROR_REQUIRED, CLOUD_ERROR_INVALID, CLOUD_ERROR_READONLY, CLOUD_ERROR_NAME_LENGTH_EXCEEDED: Result := FS_FILE_WRITEERROR;
-			CLOUD_ERROR_UNKNOWN: Result := FS_FILE_NOTSUPPORTED;
-			else
-				begin //что-то неизвестное
-					Log(MSGTYPE_IMPORTANTERROR, 'Rename file error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
-					Result := FS_FILE_WRITEERROR;
-				end;
-		end;
+		Result:=CloudResultToFsResult(OperationResult, OperationStatus, 'Rename file error: ');
 	end;
 end;
 
