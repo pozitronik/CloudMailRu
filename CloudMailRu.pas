@@ -903,7 +903,7 @@ begin
 	if Result then
 	begin
 		Result := self.extractTokenFromText(JSON, self.token) and self.extract_x_page_id_FromText(JSON, self.x_page_id) and self.extract_build_FromText(JSON, self.build) and self.extract_upload_url_FromText(JSON, self.upload_url);
-		self.united_params := '&api=2&build=' + self.build + '&x-page-id=' + self.x_page_id + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&token=' + self.token + '&_='+DateTimeToUnix(now).ToString+'810';
+		self.united_params := '&api=2&build=' + self.build + '&x-page-id=' + self.x_page_id + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&token=' + self.token + '&_=' + DateTimeToUnix(now).ToString + '810';
 	end;
 end;
 
@@ -951,10 +951,11 @@ begin
 		self.HTTPInit(HTTP, SSL, Socks, self.Cookie);
 		if ProgressEnabled then HTTP.OnWork := self.HTTPProgress; //Вызов прогресса ведёт к возможности отменить получение списка каталогов и других операций, поэтому он нужен не всегда
 		Answer := HTTP.Get(URL);
-		self.HTTPDestroy(HTTP, SSL); {TODO -oOwner -cGeneral : При ошибке/отмене TIDHttp не уничтожится!}
+		self.HTTPDestroy(HTTP, SSL);
 	Except
 		on E: EAbort do
 		begin
+			if Assigned(HTTP) then self.HTTPDestroy(HTTP, SSL);
 			Answer := E.Message;
 			ProgressEnabled := false; //сообщаем об отмене
 			exit(false);
@@ -964,23 +965,27 @@ begin
 			if HTTP.ResponseCode = 400 then
 			begin {сервер вернёт 400, но нужно пропарсить результат для дальнейшего определения действий}
 				Answer := E.ErrorMessage;
-				exit(true);
+				result:=true;
 			end else if HTTP.ResponseCode = 507 then //кончилось место
 			begin
 				Answer := E.ErrorMessage;
-				exit(true);
+				result:=true;
 			end else begin
 				Log(MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при отправке данных на адрес ' + URL + ', ответ сервера: ' + E.ErrorMessage);
-				exit(false);
+				result:=false;
 			end;
+			if Assigned(HTTP) then self.HTTPDestroy(HTTP, SSL);
+      exit;
 		end;
 		on E: EIdSocketerror do
 		begin
+			if Assigned(HTTP) then self.HTTPDestroy(HTTP, SSL);
 			Log(MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка сети: ' + E.Message + ' при запросе данных с адреса ' + URL);
 			exit(false);
 		end;
 		on E: Exception do
 		begin
+			if Assigned(HTTP) then self.HTTPDestroy(HTTP, SSL);
 			Log(MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при запросе данных с адреса ' + URL);
 			exit(false);
 		end;
