@@ -313,7 +313,7 @@ object AccountsForm: TAccountsForm
         Top = 55
         Width = 253
         Height = 17
-        Caption = 'Public account'
+        Caption = 'Public account (experimental)'
         TabOrder = 5
         OnClick = PublicAccountCBClick
       end
