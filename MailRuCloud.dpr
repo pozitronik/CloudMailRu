@@ -30,7 +30,7 @@ var
 	GlobalPath, PluginPath, AppDataDir, IniDir: WideString;
 	FileCounter: integer = 0;
 	ThreadSkipListDelete: TAssociativeArray; //Массив id потоков, для которых операции получения листинга должны быть пропущены (при удалении)
-	//ThreadSkipListRenMov: TAssociativeArray;//Массив id потоков, для которых операции получения листинга должны быть пропущены (при копировании/перемещении)
+	ThreadSkipListRenMov: TAssociativeArray; //Массив id потоков, для которых операции получения листинга должны быть пропущены (при копировании/перемещении)
 	{Callback data}
 	PluginNum: integer;
 	CryptoNum: integer;
@@ -321,6 +321,7 @@ var
 	getResult: integer;
 	//DescriptionItem: TCloudMailRuDirListingItem;
 	TmpIon: WideString;
+	OldCloud: TCloudMailRu;
 begin
 	RealPath := ExtractRealPath(RemoteDir);
 	if RealPath.account = '' then RealPath.account := ExtractFileName(ExcludeTrailingBackslash(RemoteDir));
@@ -357,7 +358,13 @@ begin
 				end;
 			FS_STATUS_OP_RENMOV_MULTI:
 				begin
-					//ThreadSkipListRenMov.Add(GetCurrentThreadID());
+					OldCloud := ConnectionManager.get(RealPath.account, getResult);
+					if OldCloud.isPublicShare then
+					begin
+						MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, PWideChar('Direct copying from public accounts not supported'));
+						ThreadSkipListRenMov.Add(GetCurrentThreadID())
+					end;
+
 				end;
 			FS_STATUS_OP_DELETE:
 				begin
@@ -428,7 +435,7 @@ begin
 				end;
 			FS_STATUS_OP_RENMOV_MULTI:
 				begin
-					//ThreadSkipListRenMov.DeleteValue(GetCurrentThreadID());
+					ThreadSkipListRenMov.DeleteValue(GetCurrentThreadID());
 					if RealPath.account <> '' then ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
 				end;
 			FS_STATUS_OP_DELETE:
@@ -488,7 +495,7 @@ var //Получение первого файла в папке. Result тот�
 	RealPath: TRealPath;
 	getResult: integer;
 begin
-	if ThreadSkipListDelete.IndexOf(GetCurrentThreadID()) <> -1 then
+	if (ThreadSkipListDelete.IndexOf(GetCurrentThreadID()) <> -1) or (ThreadSkipListRenMov.IndexOf(GetCurrentThreadID()) <> -1) then
 	begin
 		SetLastError(ERROR_NO_MORE_FILES);
 		exit(INVALID_HANDLE_VALUE);
@@ -750,6 +757,8 @@ var
 	RealPath: TRealPath;
 	getResult: integer;
 Begin
+	if ThreadSkipListRenMov.IndexOf(GetCurrentThreadID()) <> -1 then exit(false); //skip create directory if this flag set on
+
 	RealPath := ExtractRealPath(WideString(path));
 	if RealPath.account = '' then exit(false);
 	Result := ConnectionManager.get(RealPath.account, getResult).createDir(RealPath.path);
@@ -786,6 +795,12 @@ Begin
 
 	if OldRealPath.account <> NewRealPath.account then //разные аккаунты
 	begin
+		if OldCloud.isPublicShare then
+		begin
+			MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, PWideChar('Direct operations from public accounts not supported'));
+			exit(FS_FILE_USERABORT);
+		end;
+
 		if (GetPluginSettings(SettingsIniFilePath).OperationsViaPublicLinkEnabled) then //разрешено копирование через публичные ссылки
 		begin
 
