@@ -321,7 +321,6 @@ var
 	getResult: integer;
 	//DescriptionItem: TCloudMailRuDirListingItem;
 	TmpIon: WideString;
-	OldCloud: TCloudMailRu;
 begin
 	RealPath := ExtractRealPath(RemoteDir);
 	if RealPath.account = '' then RealPath.account := ExtractFileName(ExcludeTrailingBackslash(RemoteDir));
@@ -358,8 +357,7 @@ begin
 				end;
 			FS_STATUS_OP_RENMOV_MULTI:
 				begin
-					OldCloud := ConnectionManager.get(RealPath.account, getResult);
-					if OldCloud.isPublicShare then
+					if ConnectionManager.get(RealPath.account, getResult).isPublicShare then
 					begin
 						MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, PWideChar('Direct copying from public accounts not supported'));
 						ThreadSkipListRenMov.Add(GetCurrentThreadID())
