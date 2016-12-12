@@ -1,5 +1,6 @@
 ﻿library MailRuCloud;
-{ TODO : Refactore: decrease cyclomatic complexity to 15 max }
+
+{TODO : Refactore: decrease cyclomatic complexity to 15 max}
 {$R *.dres}
 
 uses
