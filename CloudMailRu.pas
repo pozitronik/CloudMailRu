@@ -178,6 +178,7 @@ type
 		function getDirListingShared(path: WideString; var DirListing: TCloudMailRuDirListing): Boolean;
 		function getFileShared(remotePath, localPath: WideString; LogErrors: Boolean = true): integer; //LogErrors=false => не логируем результат копирования, нужно для запроса descript.ion (которого может не быть)
 	public
+		Property isPublicShare: Boolean read public_account;
 		{CONSTRUCTOR/DESTRUCTOR}
 		constructor Create(AccountSettings: TAccountSettings; split_file_size: integer; Proxy: TProxySettings; ConnectTimeout: integer; ExternalProgressProc: TProgressProcW = nil; PluginNr: integer = -1; ExternalLogProc: TLogProcW = nil);
 		destructor Destroy; override;
