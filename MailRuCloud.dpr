@@ -876,7 +876,15 @@ var
 begin
 	Result := ft_nosuchfield;
 	RealPath := ExtractRealPath(FileName);
-	if (RealPath.path = '') then exit(ft_nosuchfield);
+	if RealPath.path = '' then
+	begin
+		if FieldIndex = 14 then
+		begin
+			strpcopy(FieldValue, GetAccountSettingsFromIniFile(AccountsIniFilePath, ExtractFileName(FileName)).description);
+			exit(ft_stringw);
+		end
+		else exit(ft_nosuchfield);
+	end;
 
 	Item := GetListingItemByName(CurrentListing, RealPath);
 	if Item.home = '' then exit(ft_nosuchfield);
@@ -966,7 +974,6 @@ begin
 				//При включённой сортировке Запрос происходит при появлении в списке
 				if GetPluginSettings(SettingsIniFilePath).DescriptionEnabled then
 				begin
-
 					strpcopy(FieldValue, CurrentDescriptions.GetValue(Item.name));
 				end else begin
 					strpcopy(FieldValue, '<disabled>');
