@@ -1625,8 +1625,8 @@ var
 begin
 	Result := false;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
-	//todo: temporary at this moment
-	if self.public_account then exit(true);
+	if self.public_account then exit; //Не заморачиваемся с получением ссылок
+
 	Progress := false;
 	Result := self.HTTPGet(API_FILE + '?home=' + PathToUrl(path) + self.united_params, JSON, Progress);
 	if Result then
