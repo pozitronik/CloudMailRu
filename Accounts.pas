@@ -55,6 +55,8 @@ type
 		CloudMaxFileSizeValue: TEdit;
 		CloudMaxFileSizeLabelBytes: TLabel;
 		CloudMaxFileSizeCB: TCheckBox;
+		ChunkOverwriteModeLabel: TLabel;
+		ChunkOverwriteModeCombo: TComboBox;
 		procedure FormShow(Sender: TObject);
 		procedure AccountsListClick(Sender: TObject);
 		procedure ApplyButtonClick(Sender: TObject);
@@ -169,6 +171,9 @@ begin
 	end else begin
 		SetPluginSettingsValue(SettingsIniFilePath, 'CloudMaxFileSize', null);
 	end;
+
+	SetPluginSettingsValue(SettingsIniFilePath, 'ChunkOverwriteMode', ChunkOverwriteModeCombo.ItemIndex);
+
 	SetPluginSettingsValue(SettingsIniFilePath, 'SocketTimeout', SocketTimeoutEdit.Text);
 	SetPluginSettingsValue(SettingsIniFilePath, 'ProxyType', ProxyCB.ItemIndex);
 	SetPluginSettingsValue(SettingsIniFilePath, 'ProxyServer', ProxyServerEdit.Text);
@@ -280,10 +285,10 @@ begin
 		AccountsForm.CloudMaxFileSizeValue.Text:=GetPluginSettings(SettingsIniFilePath).CloudMaxFileSize.ToString;
 		if (GetPluginSettings(SettingsIniFilePath).CloudMaxFileSize <> CLOUD_MAX_FILESIZE_DEFAULT) then
 		begin
-
 			AccountsForm.CloudMaxFileSizeValue.Enabled:=true;
 			AccountsForm.CloudMaxFileSizeCB.Checked:=true;
 		end;
+		AccountsForm.ChunkOverwriteModeCombo.ItemIndex :=GetPluginSettings(SettingsIniFilePath).ChunkOverwriteMode;
 
 		{global settings}
 		if RemoteName <> '' then AccountsForm.SelectedAccount := Copy(RemoteName, 2, length(RemoteName) - 1);

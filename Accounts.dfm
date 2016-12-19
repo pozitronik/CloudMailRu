@@ -349,9 +349,16 @@ object AccountsForm: TAccountsForm
       object CloudMaxFileSizeLabelBytes: TLabel
         Left = 292
         Top = 115
-        Width = 27
+        Width = 188
         Height = 13
         Caption = 'bytes'
+      end
+      object ChunkOverwriteModeLabel: TLabel
+        Left = 5
+        Top = 137
+        Width = 149
+        Height = 13
+        Caption = 'Splitted chunk overwrite mode:'
       end
       object PreserveFileTimeCB: TCheckBox
         Left = 5
@@ -421,6 +428,20 @@ object AccountsForm: TAccountsForm
         Caption = 'Override split file size to'
         TabOrder = 7
         OnClick = CloudMaxFileSizeCBClick
+      end
+      object ChunkOverwriteModeCombo: TComboBox
+        Left = 159
+        Top = 134
+        Width = 145
+        Height = 21
+        Style = csDropDownList
+        ItemIndex = 0
+        TabOrder = 8
+        Text = 'Silently overwrite'
+        Items.Strings = (
+          'Silently overwrite'
+          'Ignore'
+          'Abort operation')
       end
     end
     object NetworkTab: TTabSheet
