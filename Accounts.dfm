@@ -355,10 +355,17 @@ object AccountsForm: TAccountsForm
       end
       object ChunkOverwriteModeLabel: TLabel
         Left = 5
-        Top = 137
+        Top = 140
         Width = 149
         Height = 13
         Caption = 'Splitted chunk overwrite mode:'
+      end
+      object DeleteFailOnUploadModeLabel: TLabel
+        Left = 5
+        Top = 164
+        Width = 143
+        Height = 13
+        Caption = 'Delete file after upload mode:'
       end
       object PreserveFileTimeCB: TCheckBox
         Left = 5
@@ -431,8 +438,8 @@ object AccountsForm: TAccountsForm
       end
       object ChunkOverwriteModeCombo: TComboBox
         Left = 159
-        Top = 134
-        Width = 145
+        Top = 137
+        Width = 321
         Height = 21
         Style = csDropDownList
         ItemIndex = 0
@@ -442,6 +449,19 @@ object AccountsForm: TAccountsForm
           'Silently overwrite'
           'Ignore'
           'Abort operation')
+      end
+      object DeleteFailOnUploadModeCombo: TComboBox
+        Left = 159
+        Top = 161
+        Width = 321
+        Height = 21
+        Style = csDropDownList
+        TabOrder = 9
+        Items.Strings = (
+          'Ignore file'
+          'Abort operation'
+          'Try to unset read only flag and delete, ignore file on error'
+          'Try to unset read only flag and delete, abort operation on error')
       end
     end
     object NetworkTab: TTabSheet

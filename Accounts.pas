@@ -57,6 +57,8 @@ type
 		CloudMaxFileSizeCB: TCheckBox;
 		ChunkOverwriteModeLabel: TLabel;
 		ChunkOverwriteModeCombo: TComboBox;
+    DeleteFailOnUploadModeLabel: TLabel;
+    DeleteFailOnUploadModeCombo: TComboBox;
 		procedure FormShow(Sender: TObject);
 		procedure AccountsListClick(Sender: TObject);
 		procedure ApplyButtonClick(Sender: TObject);
@@ -173,6 +175,7 @@ begin
 	end;
 
 	SetPluginSettingsValue(SettingsIniFilePath, 'ChunkOverwriteMode', ChunkOverwriteModeCombo.ItemIndex);
+	SetPluginSettingsValue(SettingsIniFilePath, 'DeleteFailOnUploadMode', DeleteFailOnUploadModeCombo.ItemIndex);
 
 	SetPluginSettingsValue(SettingsIniFilePath, 'SocketTimeout', SocketTimeoutEdit.Text);
 	SetPluginSettingsValue(SettingsIniFilePath, 'ProxyType', ProxyCB.ItemIndex);
@@ -289,6 +292,7 @@ begin
 			AccountsForm.CloudMaxFileSizeCB.Checked:=true;
 		end;
 		AccountsForm.ChunkOverwriteModeCombo.ItemIndex :=GetPluginSettings(SettingsIniFilePath).ChunkOverwriteMode;
+		AccountsForm.DeleteFailOnUploadModeCombo.ItemIndex :=GetPluginSettings(SettingsIniFilePath).DeleteFailOnUploadMode;
 
 		{global settings}
 		if RemoteName <> '' then AccountsForm.SelectedAccount := Copy(RemoteName, 2, length(RemoteName) - 1);
