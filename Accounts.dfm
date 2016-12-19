@@ -458,6 +458,7 @@ object AccountsForm: TAccountsForm
         Style = csDropDownList
         TabOrder = 9
         Items.Strings = (
+          'Ask user'
           'Ignore file'
           'Abort operation'
           'Try to unset read only flag and delete, ignore file on error'
