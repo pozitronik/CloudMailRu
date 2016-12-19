@@ -162,7 +162,7 @@ object AccountsForm: TAccountsForm
     Align = alClient
     TabOrder = 0
     object AccountsTab: TTabSheet
-      Caption = 'Accounts settings'
+      Caption = 'Accounts'
       DesignSize = (
         484
         377)
@@ -346,13 +346,6 @@ object AccountsForm: TAccountsForm
     object GlobalTab: TTabSheet
       Caption = 'Global settings'
       ImageIndex = 1
-      object SocketTimeoutLabel: TLabel
-        Left = 5
-        Top = 115
-        Width = 228
-        Height = 13
-        Caption = 'Network operations timeout, ms (-1 to default):'
-      end
       object PreserveFileTimeCB: TCheckBox
         Left = 5
         Top = 25
@@ -369,13 +362,59 @@ object AccountsForm: TAccountsForm
         Caption = 'Load SSL libraries only from plugin directory'
         TabOrder = 0
       end
+      object DescriptionEnabledCB: TCheckBox
+        Left = 6
+        Top = 46
+        Width = 475
+        Height = 17
+        Caption = 'Descript.ion files support'
+        TabOrder = 2
+      end
+      object OperationsViaPublicLinkEnabledCB: TCheckBox
+        Left = 5
+        Top = 69
+        Width = 475
+        Height = 17
+        Caption = 'Copying/moving between accouns via public link'
+        TabOrder = 3
+      end
+      object AskOnErrorsCB: TCheckBox
+        Left = 5
+        Top = 91
+        Width = 475
+        Height = 17
+        Caption = 'Ask to stop downloads/uploads on any error'
+        TabOrder = 4
+      end
+      object GlobalSettingApplyBTN: TButton
+        Left = 405
+        Top = 349
+        Width = 75
+        Height = 25
+        Caption = 'Apply'
+        ParentShowHint = False
+        ShowHint = False
+        TabOrder = 5
+        OnClick = GlobalSettingApplyBTNClick
+      end
+    end
+    object NetworkTab: TTabSheet
+      Caption = 'Network settings'
+      ImageIndex = 2
+      object SocketTimeoutLabel: TLabel
+        Left = 5
+        Top = 11
+        Width = 228
+        Height = 13
+        Caption = 'Network operations timeout, ms (-1 to default):'
+      end
       object ProxyGB: TGroupBox
         Left = 5
-        Top = 137
+        Top = 30
         Width = 475
         Height = 209
         Caption = 'Proxy settings'
-        TabOrder = 6
+        TabOrder = 0
         object ProxyTypeLabel: TLabel
           Left = 5
           Top = 18
@@ -472,47 +511,23 @@ object AccountsForm: TAccountsForm
           TabOrder = 5
         end
       end
-      object DescriptionEnabledCB: TCheckBox
-        Left = 6
-        Top = 46
-        Width = 475
-        Height = 17
-        Caption = 'Descript.ion files support'
-        TabOrder = 2
-      end
-      object OperationsViaPublicLinkEnabledCB: TCheckBox
-        Left = 5
-        Top = 69
-        Width = 475
-        Height = 17
-        Caption = 'Copying/moving between accouns via public link'
-        TabOrder = 3
-      end
       object SocketTimeoutEdit: TEdit
-        Left = 239
-        Top = 115
+        Left = 238
+        Top = 8
         Width = 121
         Height = 21
         NumbersOnly = True
-        TabOrder = 5
+        TabOrder = 1
       end
-      object AskOnErrorsCB: TCheckBox
-        Left = 5
-        Top = 91
-        Width = 475
-        Height = 17
-        Caption = 'Ask to stop downloads/uploads on any error'
-        TabOrder = 4
-      end
-      object GlobalSettingApplyBTN: TButton
-        Left = 405
+      object GlobalSettingApplyBTN2: TButton
+        Left = 406
         Top = 349
         Width = 75
         Height = 25
         Caption = 'Apply'
         ParentShowHint = False
         ShowHint = False
-        TabOrder = 7
+        TabOrder = 2
         OnClick = GlobalSettingApplyBTNClick
       end
     end

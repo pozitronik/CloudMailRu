@@ -16,24 +16,9 @@ type
 		DeleteButton: TButton;
 		PreserveFileTimeCB: TCheckBox;
 		UseDLLFromPluginDir: TCheckBox;
-		ProxyGB: TGroupBox;
-		ProxyTypeLabel: TLabel;
-		ProxyCB: TComboBox;
-		ProxyServerEdit: TEdit;
-		ProxyDivLabel: TLabel;
-		ProxyPortEdit: TEdit;
-		ProxyPortLabel: TLabel;
-		ProxyUserLabel: TLabel;
-		ProxyUserEdit: TEdit;
-		ProxyPWDLabel: TLabel;
-		ProxyServerLabel: TLabel;
 		DescriptionEnabledCB: TCheckBox;
-		ProxyPwd: TMaskEdit;
 		OperationsViaPublicLinkEnabledCB: TCheckBox;
-		SocketTimeoutLabel: TLabel;
-		SocketTimeoutEdit: TEdit;
 		AskOnErrorsCB: TCheckBox;
-		ProxyTCPwdMngrCB: TCheckBox;
 		GlobalSettingApplyBTN: TButton;
 		AccountsPanel: TPanel;
 		AccountNameEdit: TEdit;
@@ -50,6 +35,23 @@ type
 		SharesPanel: TPanel;
 		PublicUrlEdit: TEdit;
 		PublicUrlLabel: TLabel;
+		NetworkTab: TTabSheet;
+		ProxyGB: TGroupBox;
+		ProxyTypeLabel: TLabel;
+		ProxyDivLabel: TLabel;
+		ProxyPortLabel: TLabel;
+		ProxyUserLabel: TLabel;
+		ProxyPWDLabel: TLabel;
+		ProxyServerLabel: TLabel;
+		ProxyCB: TComboBox;
+		ProxyServerEdit: TEdit;
+		ProxyPortEdit: TEdit;
+		ProxyUserEdit: TEdit;
+		ProxyPwd: TMaskEdit;
+		ProxyTCPwdMngrCB: TCheckBox;
+		SocketTimeoutLabel: TLabel;
+		SocketTimeoutEdit: TEdit;
+    GlobalSettingApplyBTN2: TButton;
 		procedure FormShow(Sender: TObject);
 		procedure AccountsListClick(Sender: TObject);
 		procedure ApplyButtonClick(Sender: TObject);
@@ -64,6 +66,7 @@ type
 	private
 		{Private declarations}
 		procedure WMHotKey(var Message: TMessage); message WM_HOTKEY;
+		procedure ApplySettings();
 	public
 		{Public declarations}
 		IniPath: WideString;
@@ -103,7 +106,7 @@ begin
 		PasswordEdit.Text := '';
 		UseTCPwdMngrCB.Checked := false;
 	end;
-  PublicAccountCB.OnClick(nil);
+	PublicAccountCB.OnClick(nil);
 end;
 
 procedure TAccountsForm.AccountsListKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -149,38 +152,7 @@ begin
 
 end;
 
-procedure TAccountsForm.DeleteButtonClick(Sender: TObject);
-begin
-	if (AccountsList.Items.Count > 0) and (AccountsList.ItemIndex <> -1) then
-	begin
-		DeleteAccountFromIniFile(IniPath, AccountsList.Items[AccountsList.ItemIndex]);
-		UpdateAccountsList();
-	end;
-end;
-
-procedure TAccountsForm.FormActivate(Sender: TObject);
-begin
-	ProxyTCPwdMngrCB.Enabled := ProxyUserEdit.Text <> '';
-	CenterWindow(self.parentWindow, self.Handle);
-end;
-
-procedure TAccountsForm.FormShow(Sender: TObject);
-begin
-	UpdateAccountsList();
-	AccountsList.SetFocus;
-	if AccountsList.Items.Count > 0 then
-	begin
-		if (self.SelectedAccount <> '') and (AccountsList.Items.IndexOf(self.SelectedAccount) <> -1) then
-		begin
-			AccountsList.Selected[AccountsList.Items.IndexOf(self.SelectedAccount)] := true;
-		end else begin
-			AccountsList.Selected[0] := true;
-		end;
-		AccountsList.OnClick(self);
-	end;
-end;
-
-procedure TAccountsForm.GlobalSettingApplyBTNClick(Sender: TObject);
+procedure TAccountsForm.ApplySettings;
 begin
 	SetPluginSettingsValue(SettingsIniFilePath, 'LoadSSLDLLOnlyFromPluginDir', UseDLLFromPluginDir.Checked);
 	SetPluginSettingsValue(SettingsIniFilePath, 'PreserveFileTime', PreserveFileTimeCB.Checked);
@@ -214,6 +186,42 @@ begin
 				end;
 		end;
 	end;
+end;
+
+procedure TAccountsForm.DeleteButtonClick(Sender: TObject);
+begin
+	if (AccountsList.Items.Count > 0) and (AccountsList.ItemIndex <> -1) then
+	begin
+		DeleteAccountFromIniFile(IniPath, AccountsList.Items[AccountsList.ItemIndex]);
+		UpdateAccountsList();
+	end;
+end;
+
+procedure TAccountsForm.FormActivate(Sender: TObject);
+begin
+	ProxyTCPwdMngrCB.Enabled := ProxyUserEdit.Text <> '';
+	CenterWindow(self.parentWindow, self.Handle);
+end;
+
+procedure TAccountsForm.FormShow(Sender: TObject);
+begin
+	UpdateAccountsList();
+	AccountsList.SetFocus;
+	if AccountsList.Items.Count > 0 then
+	begin
+		if (self.SelectedAccount <> '') and (AccountsList.Items.IndexOf(self.SelectedAccount) <> -1) then
+		begin
+			AccountsList.Selected[AccountsList.Items.IndexOf(self.SelectedAccount)] := true;
+		end else begin
+			AccountsList.Selected[0] := true;
+		end;
+		AccountsList.OnClick(self);
+	end;
+end;
+
+procedure TAccountsForm.GlobalSettingApplyBTNClick(Sender: TObject);
+begin
+	ApplySettings;
 
 end;
 
