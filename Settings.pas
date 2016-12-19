@@ -185,23 +185,25 @@ var
 	IniFile: TIniFile;
 	basicType: Integer;
 begin
+	IniFile := TIniFile.Create(IniFilePath);
+
 	basicType := VarType(OptionValue);
 	try
-		IniFile := TIniFile.Create(IniFilePath);
 		case basicType of
+			varNull: IniFile.DeleteKey('Main', OptionName); //remove value in that case
 			varInteger: IniFile.WriteInteger('Main', OptionName, OptionValue);
 			varString, varUString: IniFile.WriteString('Main', OptionName, OptionValue);
 			varBoolean: IniFile.WriteBool('Main', OptionName, OptionValue);
 		end;
-		IniFile.Destroy;
 	except
 		On E: EIniFileException do
 		begin
 			MessageBoxW(0, PWideChar(E.Message), 'INI file error', MB_ICONERROR + MB_OK);
+			IniFile.Destroy;
 			exit;
 		end;
 	end;
-
+	IniFile.Destroy;
 end;
 
 function GetAccountSettingsFromIniFile(IniFilePath: WideString; AccountName: WideString): TAccountSettings;
