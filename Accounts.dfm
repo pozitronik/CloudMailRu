@@ -158,7 +158,7 @@ object AccountsForm: TAccountsForm
     Top = 0
     Width = 492
     Height = 405
-    ActivePage = GlobalTab
+    ActivePage = NetworkTab
     Align = alClient
     TabOrder = 0
     object AccountsTab: TTabSheet
@@ -422,7 +422,7 @@ object AccountsForm: TAccountsForm
         Caption = 'Apply'
         ParentShowHint = False
         ShowHint = False
-        TabOrder = 5
+        TabOrder = 10
         OnClick = GlobalSettingApplyBTNClick
       end
       object CloudMaxFileSizeValue: TEdit
@@ -440,7 +440,7 @@ object AccountsForm: TAccountsForm
         Width = 134
         Height = 17
         Caption = 'Override split file size to'
-        TabOrder = 7
+        TabOrder = 5
         OnClick = CloudMaxFileSizeCBClick
       end
       object ChunkOverwriteModeCombo: TComboBox
@@ -450,7 +450,7 @@ object AccountsForm: TAccountsForm
         Height = 21
         Style = csDropDownList
         ItemIndex = 0
-        TabOrder = 8
+        TabOrder = 7
         Text = 'Silently overwrite'
         Items.Strings = (
           'Silently overwrite'
@@ -464,7 +464,7 @@ object AccountsForm: TAccountsForm
         Height = 21
         Style = csDropDownList
         ItemIndex = 0
-        TabOrder = 9
+        TabOrder = 8
         Text = 'Ask user'
         Items.Strings = (
           'Ask user'
@@ -480,7 +480,7 @@ object AccountsForm: TAccountsForm
         Height = 21
         Style = csDropDownList
         ItemIndex = 0
-        TabOrder = 10
+        TabOrder = 9
         Text = 'Ask user'
         Items.Strings = (
           'Ask user'
@@ -504,7 +504,7 @@ object AccountsForm: TAccountsForm
         Width = 475
         Height = 209
         Caption = 'Proxy settings'
-        TabOrder = 0
+        TabOrder = 1
         object ProxyTypeLabel: TLabel
           Left = 5
           Top = 18
@@ -548,7 +548,7 @@ object AccountsForm: TAccountsForm
           Caption = 'Proxy server'
         end
         object ProxyCB: TComboBox
-          Left = 5
+          Left = 7
           Top = 37
           Width = 465
           Height = 22
@@ -589,7 +589,7 @@ object AccountsForm: TAccountsForm
           Width = 465
           Height = 21
           PasswordChar = '*'
-          TabOrder = 4
+          TabOrder = 5
           Text = ''
         end
         object ProxyTCPwdMngrCB: TCheckBox
@@ -598,7 +598,7 @@ object AccountsForm: TAccountsForm
           Width = 309
           Height = 17
           Caption = 'Store proxy password in TC password manager'
-          TabOrder = 5
+          TabOrder = 4
         end
       end
       object SocketTimeoutEdit: TEdit
@@ -607,7 +607,7 @@ object AccountsForm: TAccountsForm
         Width = 121
         Height = 21
         NumbersOnly = True
-        TabOrder = 1
+        TabOrder = 0
       end
       object GlobalSettingApplyBTN2: TButton
         Left = 406
