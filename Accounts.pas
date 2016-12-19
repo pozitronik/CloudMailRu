@@ -57,10 +57,11 @@ type
 		CloudMaxFileSizeCB: TCheckBox;
 		ChunkOverwriteModeLabel: TLabel;
 		ChunkOverwriteModeCombo: TComboBox;
-    DeleteFailOnUploadModeLabel: TLabel;
-    DeleteFailOnUploadModeCombo: TComboBox;
-    OverwriteLocalModeLabel: TLabel;
-    OverwriteLocalModeCombo: TComboBox;
+		DeleteFailOnUploadModeLabel: TLabel;
+		DeleteFailOnUploadModeCombo: TComboBox;
+		OverwriteLocalModeLabel: TLabel;
+		OverwriteLocalModeCombo: TComboBox;
+		DisableMultiThreadingCB: TCheckBox;
 		procedure FormShow(Sender: TObject);
 		procedure AccountsListClick(Sender: TObject);
 		procedure ApplyButtonClick(Sender: TObject);
@@ -180,6 +181,8 @@ begin
 	SetPluginSettingsValue(SettingsIniFilePath, 'DeleteFailOnUploadMode', DeleteFailOnUploadModeCombo.ItemIndex);
 	SetPluginSettingsValue(SettingsIniFilePath, 'OverwriteLocalMode', OverwriteLocalModeCombo.ItemIndex);
 
+	SetPluginSettingsValue(SettingsIniFilePath, 'DisableMultiThreading', DisableMultiThreadingCB.Checked);
+
 	SetPluginSettingsValue(SettingsIniFilePath, 'SocketTimeout', SocketTimeoutEdit.Text);
 	SetPluginSettingsValue(SettingsIniFilePath, 'ProxyType', ProxyCB.ItemIndex);
 	SetPluginSettingsValue(SettingsIniFilePath, 'ProxyServer', ProxyServerEdit.Text);
@@ -297,6 +300,8 @@ begin
 		AccountsForm.ChunkOverwriteModeCombo.ItemIndex :=GetPluginSettings(SettingsIniFilePath).ChunkOverwriteMode;
 		AccountsForm.DeleteFailOnUploadModeCombo.ItemIndex :=GetPluginSettings(SettingsIniFilePath).DeleteFailOnUploadMode;
 		AccountsForm.OverwriteLocalModeCombo.ItemIndex :=GetPluginSettings(SettingsIniFilePath).OverwriteLocalMode;
+
+		AccountsForm.DisableMultiThreadingCB.Checked:= GetPluginSettings(SettingsIniFilePath).DisableMultiThreading;
 
 		{global settings}
 		if RemoteName <> '' then AccountsForm.SelectedAccount := Copy(RemoteName, 2, length(RemoteName) - 1);

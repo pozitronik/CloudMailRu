@@ -655,7 +655,7 @@ begin
 					MyLogProc(PluginNum, MSGTYPE_DETAILS, PWideChar('Local file ' + LocalName + ' exists, ignored'));
 					exit(FS_FILE_OK);
 				end;
-			OverwriteLocalModeOverwrite: MyLogProc(PluginNum, MSGTYPE_DETAILS, PWideChar('Local file ' + LocalName + ' exists, and will be overwrited'));
+			OverwriteLocalModeOverwrite: MyLogProc(PluginNum, MSGTYPE_DETAILS, PWideChar('Local file ' + LocalName + ' exists, and will be overwritten'));
 		end;
 	end;
 

@@ -158,7 +158,7 @@ object AccountsForm: TAccountsForm
     Top = 0
     Width = 492
     Height = 405
-    ActivePage = NetworkTab
+    ActivePage = GlobalTab
     Align = alClient
     TabOrder = 0
     object AccountsTab: TTabSheet
@@ -391,7 +391,7 @@ object AccountsForm: TAccountsForm
         TabOrder = 0
       end
       object DescriptionEnabledCB: TCheckBox
-        Left = 6
+        Left = 5
         Top = 46
         Width = 475
         Height = 17
@@ -486,6 +486,14 @@ object AccountsForm: TAccountsForm
           'Ask user'
           'Ignore file'
           'Silently overwrite')
+      end
+      object DisableMultiThreadingCB: TCheckBox
+        Left = 5
+        Top = 218
+        Width = 475
+        Height = 17
+        Caption = 'Disable background operations support'
+        TabOrder = 11
       end
     end
     object NetworkTab: TTabSheet
