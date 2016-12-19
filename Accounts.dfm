@@ -356,16 +356,23 @@ object AccountsForm: TAccountsForm
       object ChunkOverwriteModeLabel: TLabel
         Left = 5
         Top = 140
-        Width = 149
+        Width = 150
         Height = 13
-        Caption = 'Splitted chunk overwrite mode:'
+        Caption = 'Overwrite splitted chunk mode:'
       end
       object DeleteFailOnUploadModeLabel: TLabel
         Left = 5
         Top = 164
-        Width = 143
+        Width = 150
         Height = 13
         Caption = 'Delete file after upload mode:'
+      end
+      object OverwriteLocalModeLabel: TLabel
+        Left = 5
+        Top = 191
+        Width = 150
+        Height = 13
+        Caption = 'Overwrite local files mode:'
       end
       object PreserveFileTimeCB: TCheckBox
         Left = 5
@@ -456,13 +463,29 @@ object AccountsForm: TAccountsForm
         Width = 321
         Height = 21
         Style = csDropDownList
+        ItemIndex = 0
         TabOrder = 9
+        Text = 'Ask user'
         Items.Strings = (
           'Ask user'
           'Ignore file'
           'Abort operation'
           'Try to unset read only flag and delete, ignore file on error'
           'Try to unset read only flag and delete, abort operation on error')
+      end
+      object OverwriteLocalModeCombo: TComboBox
+        Left = 159
+        Top = 188
+        Width = 321
+        Height = 21
+        Style = csDropDownList
+        ItemIndex = 0
+        TabOrder = 10
+        Text = 'Ask user'
+        Items.Strings = (
+          'Ask user'
+          'Ignore file'
+          'Silently overwrite')
       end
     end
     object NetworkTab: TTabSheet
