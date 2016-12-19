@@ -158,7 +158,7 @@ object AccountsForm: TAccountsForm
     Top = 0
     Width = 492
     Height = 405
-    ActivePage = AccountsTab
+    ActivePage = GlobalTab
     Align = alClient
     TabOrder = 0
     object AccountsTab: TTabSheet
@@ -346,6 +346,13 @@ object AccountsForm: TAccountsForm
     object GlobalTab: TTabSheet
       Caption = 'Global settings'
       ImageIndex = 1
+      object CloudMaxFileSizeLabelBytes: TLabel
+        Left = 292
+        Top = 115
+        Width = 27
+        Height = 13
+        Caption = 'bytes'
+      end
       object PreserveFileTimeCB: TCheckBox
         Left = 5
         Top = 25
@@ -396,6 +403,24 @@ object AccountsForm: TAccountsForm
         ShowHint = False
         TabOrder = 5
         OnClick = GlobalSettingApplyBTNClick
+      end
+      object CloudMaxFileSizeValue: TEdit
+        Left = 142
+        Top = 112
+        Width = 146
+        Height = 21
+        Enabled = False
+        NumbersOnly = True
+        TabOrder = 6
+      end
+      object CloudMaxFileSizeCB: TCheckBox
+        Left = 5
+        Top = 114
+        Width = 134
+        Height = 17
+        Caption = 'Override split file size to'
+        TabOrder = 7
+        OnClick = CloudMaxFileSizeCBClick
       end
     end
     object NetworkTab: TTabSheet

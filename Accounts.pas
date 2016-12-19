@@ -51,7 +51,10 @@ type
 		ProxyTCPwdMngrCB: TCheckBox;
 		SocketTimeoutLabel: TLabel;
 		SocketTimeoutEdit: TEdit;
-    GlobalSettingApplyBTN2: TButton;
+		GlobalSettingApplyBTN2: TButton;
+		CloudMaxFileSizeValue: TEdit;
+		CloudMaxFileSizeLabelBytes: TLabel;
+		CloudMaxFileSizeCB: TCheckBox;
 		procedure FormShow(Sender: TObject);
 		procedure AccountsListClick(Sender: TObject);
 		procedure ApplyButtonClick(Sender: TObject);
@@ -63,6 +66,7 @@ type
 		procedure ProxyUserEditChange(Sender: TObject);
 		procedure GlobalSettingApplyBTNClick(Sender: TObject);
 		procedure PublicAccountCBClick(Sender: TObject);
+		procedure CloudMaxFileSizeCBClick(Sender: TObject);
 	private
 		{Private declarations}
 		procedure WMHotKey(var Message: TMessage); message WM_HOTKEY;
@@ -159,6 +163,12 @@ begin
 	SetPluginSettingsValue(SettingsIniFilePath, 'DescriptionEnabled', DescriptionEnabledCB.Checked);
 	SetPluginSettingsValue(SettingsIniFilePath, 'OperationsViaPublicLinkEnabled', OperationsViaPublicLinkEnabledCB.Checked);
 	SetPluginSettingsValue(SettingsIniFilePath, 'AskOnErrors', AskOnErrorsCB.Checked);
+	if CloudMaxFileSizeCB.Checked then
+	begin
+		SetPluginSettingsValue(SettingsIniFilePath, 'CloudMaxFileSize', CloudMaxFileSizeValue.Text);
+	end else begin
+		SetPluginSettingsValue(SettingsIniFilePath, 'CloudMaxFileSize', null);
+	end;
 	SetPluginSettingsValue(SettingsIniFilePath, 'SocketTimeout', SocketTimeoutEdit.Text);
 	SetPluginSettingsValue(SettingsIniFilePath, 'ProxyType', ProxyCB.ItemIndex);
 	SetPluginSettingsValue(SettingsIniFilePath, 'ProxyServer', ProxyServerEdit.Text);
@@ -186,6 +196,11 @@ begin
 				end;
 		end;
 	end;
+end;
+
+procedure TAccountsForm.CloudMaxFileSizeCBClick(Sender: TObject);
+begin
+	CloudMaxFileSizeValue.Enabled:=CloudMaxFileSizeCB.Checked;
 end;
 
 procedure TAccountsForm.DeleteButtonClick(Sender: TObject);
@@ -217,12 +232,12 @@ begin
 		end;
 		AccountsList.OnClick(self);
 	end;
+
 end;
 
 procedure TAccountsForm.GlobalSettingApplyBTNClick(Sender: TObject);
 begin
 	ApplySettings;
-
 end;
 
 procedure TAccountsForm.ProxyUserEditChange(Sender: TObject);
@@ -262,10 +277,18 @@ begin
 		AccountsForm.ProxyUserEdit.Text := GetPluginSettings(SettingsIniFilePath).Proxy.User;
 		AccountsForm.ProxyPwd.Text := GetPluginSettings(SettingsIniFilePath).Proxy.password;
 		AccountsForm.ProxyTCPwdMngrCB.Checked := GetPluginSettings(SettingsIniFilePath).Proxy.use_tc_password_manager;
+		AccountsForm.CloudMaxFileSizeValue.Text:=GetPluginSettings(SettingsIniFilePath).CloudMaxFileSize.ToString;
+		if (GetPluginSettings(SettingsIniFilePath).CloudMaxFileSize <> CLOUD_MAX_FILESIZE_DEFAULT) then
+		begin
+
+			AccountsForm.CloudMaxFileSizeValue.Enabled:=true;
+			AccountsForm.CloudMaxFileSizeCB.Checked:=true;
+		end;
 
 		{global settings}
 		if RemoteName <> '' then AccountsForm.SelectedAccount := Copy(RemoteName, 2, length(RemoteName) - 1);
 		RegisterHotKey(AccountsForm.Handle, 1, 0, VK_ESCAPE);
+		AccountsForm.OptionPages.ActivePageIndex:=0;
 		AccountsForm.ShowModal;
 	finally
 		FreeAndNil(AccountsForm);
