@@ -33,6 +33,7 @@ type
 		split_large_files: boolean;
 		public_account: boolean;
 		public_url: WideString;
+		description: WideString;
 	end;
 
 	TProxySettings = record
@@ -218,6 +219,7 @@ begin
 	result.twostep_auth := IniFile.ReadBool(result.name, 'twostep_auth', false);
 	result.public_account := IniFile.ReadBool(result.name, 'public_account', false);
 	result.public_url := IniFile.ReadString(result.name, 'public_url', '');
+	result.description := IniFile.ReadString(result.name, 'description', '');
 	AtPos := AnsiPos('@', result.email);
 	if AtPos <> 0 then
 	begin
@@ -242,6 +244,7 @@ begin
 	IniFile.WriteBool(AccountSettings.name, 'twostep_auth', AccountSettings.twostep_auth);
 	IniFile.WriteBool(AccountSettings.name, 'public_account', AccountSettings.public_account);
 	IniFile.WriteString(AccountSettings.name, 'public_url', AccountSettings.public_url);
+	IniFile.WriteString(AccountSettings.description, 'description', AccountSettings.description);
 	IniFile.Destroy;
 end;
 
