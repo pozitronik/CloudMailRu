@@ -24,6 +24,10 @@ const
 	DeleteFailOnUploadDeleteIgnore = 3;
 	DeleteFailOnUploadDeleteAbort = 4;
 
+	OverwriteLocalModeAsk = 0; //default
+	OverwriteLocalModeIgnore = 1;
+	OverwriteLocalModeOverwrite = 2;
+
 type
 
 	TAccountSettings = record
@@ -58,6 +62,7 @@ type
 		CloudMaxFileSize: Integer;
 		ChunkOverwriteMode: Integer;
 		DeleteFailOnUploadMode: Integer;
+		OverwriteLocalMode: Integer;
 		DisableMultiThreading: boolean;
 	end;
 
@@ -160,7 +165,8 @@ begin
 	GetPluginSettings.SocketTimeout := IniFile.ReadInteger('Main', 'SocketTimeout', -1);
 	GetPluginSettings.CloudMaxFileSize := IniFile.ReadInteger('Main', 'CloudMaxFileSize', CLOUD_MAX_FILESIZE_DEFAULT);
 	GetPluginSettings.ChunkOverwriteMode := IniFile.ReadInteger('Main', 'ChunkOverwriteMode', 0);
-	GetPluginSettings.DeleteFailOnUploadMode := IniFile.ReadInteger('Main', 'DeleteFailOnUploadMode', 1);
+	GetPluginSettings.DeleteFailOnUploadMode := IniFile.ReadInteger('Main', 'DeleteFailOnUploadMode', 0);
+	GetPluginSettings.OverwriteLocalMode := IniFile.ReadInteger('Main', 'OverwriteLocalMode', 0);
 	GetPluginSettings.Proxy.ProxyType := IniFile.ReadInteger('Main', 'ProxyType', ProxyNone);
 	GetPluginSettings.Proxy.Server := IniFile.ReadString('Main', 'ProxyServer', '');
 	GetPluginSettings.Proxy.Port := IniFile.ReadInteger('Main', 'ProxyPort', 0);

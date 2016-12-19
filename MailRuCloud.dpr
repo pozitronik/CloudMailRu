@@ -638,13 +638,27 @@ var
 	RealPath: TRealPath;
 	getResult: integer;
 	Item: TCloudMailRuDirListingItem;
+	OverwriteLocalMode: integer;
 begin
 	//Result := FS_FILE_NOTSUPPORTED;
 	If CheckFlag(FS_COPYFLAGS_RESUME, CopyFlags) then exit(FS_FILE_NOTSUPPORTED); {NEVER CALLED HERE}
 	RealPath := ExtractRealPath(RemoteName);
-
-	if (FileExists(LocalName) and not(CheckFlag(FS_COPYFLAGS_OVERWRITE, CopyFlags))) then exit(FS_FILE_EXISTS);
 	MyProgressProc(PluginNum, RemoteName, LocalName, 0);
+
+	OverwriteLocalMode := GetPluginSettings(SettingsIniFilePath).OverwriteLocalMode;
+	if (FileExists(LocalName) and not(CheckFlag(FS_COPYFLAGS_OVERWRITE, CopyFlags))) then
+	begin
+		case OverwriteLocalMode of
+			OverwriteLocalModeAsk: exit(FS_FILE_EXISTS); //TC will ask user
+			OverwriteLocalModeIgnore:
+				begin
+					MyLogProc(PluginNum, MSGTYPE_DETAILS, PWideChar('Local file ' + LocalName + ' exists, ignored'));
+					exit(FS_FILE_OK);
+				end;
+			OverwriteLocalModeOverwrite: MyLogProc(PluginNum, MSGTYPE_DETAILS, PWideChar('Local file ' + LocalName + ' exists, and will be overwrited'));
+		end;
+	end;
+
 	Result := ConnectionManager.get(RealPath.account, getResult).getFile(WideString(RealPath.path), WideString(LocalName)); //?WideString?
 
 	if Result = FS_FILE_OK then
@@ -674,6 +688,7 @@ var
 	RealPath: TRealPath;
 	getResult: integer;
 	UNCLocalName: WideString;
+	DeleteFailOnUploadMode, DeleteFailOnUploadModeAsked: integer;
 begin
 	//Result := FS_FILE_NOTSUPPORTED;
 	RealPath := ExtractRealPath(RemoteName);
@@ -696,10 +711,23 @@ begin
 		MyLogProc(PluginNum, MSGTYPE_TRANSFERCOMPLETE, PWideChar(LocalName + '->' + RemoteName));
 		if CheckFlag(FS_COPYFLAGS_MOVE, CopyFlags) then
 		begin
+			DeleteFailOnUploadModeAsked:=IDRETRY;
 			UNCLocalName := GetUNCFilePath(LocalName);
-			if not DeleteFileW(PWideChar(UNCLocalName)) then
+
+			while (not DeleteFileW(PWideChar(UNCLocalName))) and (DeleteFailOnUploadModeAsked = IDRETRY) do
 			begin
-				case GetPluginSettings(SettingsIniFilePath).DeleteFailOnUploadMode of
+				DeleteFailOnUploadMode:= GetPluginSettings(SettingsIniFilePath).DeleteFailOnUploadMode;
+				if DeleteFailOnUploadMode = DeleteFailOnUploadAsk then
+				begin
+					DeleteFailOnUploadModeAsked := messagebox(FindTCWindow, PWideChar('Can''t delete file ' + LocalName + '. Continue operation?'), 'File deletion error', MB_ABORTRETRYIGNORE + MB_ICONQUESTION);
+					case DeleteFailOnUploadModeAsked of
+						IDRETRY: continue;
+						IDABORT: DeleteFailOnUploadMode:=DeleteFailOnUploadAbort;
+						IDIGNORE: DeleteFailOnUploadMode:=DeleteFailOnUploadIgnore;
+					end;
+				end;
+
+				case DeleteFailOnUploadMode of
 					DeleteFailOnUploadAbort:
 						begin
 							MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, PWideChar('Can''t delete file ' + LocalName + ', aborted'));
@@ -728,6 +756,7 @@ begin
 				end;
 
 			end;
+
 		end;
 	end else begin
 		if GetPluginSettings(SettingsIniFilePath).AskOnErrors and not(Result = FS_FILE_USERABORT) then
