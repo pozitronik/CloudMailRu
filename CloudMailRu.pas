@@ -1182,8 +1182,6 @@ begin
 		on E: EAbort do
 		begin
 			if Assigned(HTTP) then self.HTTPDestroy(HTTP, SSL);
-			MemStream.free;
-			PostData.free;
 			Result := CLOUD_OPERATION_CANCELLED;
 		end;
 		on E: EIdHTTPProtocolException do
