@@ -158,7 +158,7 @@ object AccountsForm: TAccountsForm
     Top = 0
     Width = 492
     Height = 405
-    ActivePage = GlobalTab
+    ActivePage = AccountsTab
     Align = alClient
     TabOrder = 0
     object AccountsTab: TTabSheet
@@ -349,7 +349,7 @@ object AccountsForm: TAccountsForm
       object CloudMaxFileSizeLabelBytes: TLabel
         Left = 292
         Top = 115
-        Width = 188
+        Width = 27
         Height = 13
         Caption = 'bytes'
       end
@@ -363,14 +363,14 @@ object AccountsForm: TAccountsForm
       object DeleteFailOnUploadModeLabel: TLabel
         Left = 5
         Top = 164
-        Width = 150
+        Width = 143
         Height = 13
         Caption = 'Delete file after upload mode:'
       end
       object OverwriteLocalModeLabel: TLabel
         Left = 5
         Top = 191
-        Width = 150
+        Width = 127
         Height = 13
         Caption = 'Overwrite local files mode:'
       end

@@ -129,6 +129,7 @@ procedure TAccountsForm.ApplyButtonClick(Sender: TObject);
 var
 	CASettings: TAccountSettings;
 begin
+	if (AccountNameEdit.Text = '') then exit();
 	CASettings.name := AccountNameEdit.Text;
 	CASettings.email := EmailEdit.Text;
 	CASettings.password := PasswordEdit.Text;
