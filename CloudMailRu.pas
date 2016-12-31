@@ -380,7 +380,7 @@ begin
 			CLOUD_OPERATION_OK: Result := true;
 			else
 				begin
-					Log(MSGTYPE_IMPORTANTERROR, 'Directory creation error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
+					//Log(MSGTYPE_IMPORTANTERROR, 'Directory creation error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
 					Result := false;
 				end;
 		end;
