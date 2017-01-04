@@ -165,7 +165,7 @@ end;
 
 procedure TPropertyForm.WMHotKey(var Message: TMessage);
 begin
-	if Message.LParamHi = VK_ESCAPE then close;
+	if (Message.LParamHi = VK_ESCAPE) and (GetForegroundWindow = Self.Handle) then Close;
 end;
 
 end.
