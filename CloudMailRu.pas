@@ -55,6 +55,7 @@ const
 	CLOUD_ERROR_OWN = 9; //"own": 'Невозможно клонировать собственную ссылку'
 	CLOUD_ERROR_NAME_TOO_LONG = 10; //"name_too_long": 'Превышен размер имени файла'
 	CLOUD_ERROR_VIRUS_SCAN_FAIL = 11; //"virus_scan_fail": 'Файл заражен вирусом'
+	CLOUD_ERROR_OWNER = 12; //Пользователь - владелец каталога
 
 	{Режимы работы при конфликтах копирования}
 	CLOUD_CONFLICT_STRICT = 'strict'; //возвращаем ошибку при существовании файла
@@ -451,6 +452,7 @@ begin
 		CLOUD_ERROR_OWN: exit('Невозможно клонировать собственную ссылку.');
 		CLOUD_ERROR_NAME_TOO_LONG: exit('Превышена длина имени файла.');
 		CLOUD_ERROR_VIRUS_SCAN_FAIL: exit('Файл заражен вирусом');
+		CLOUD_ERROR_OWNER: exit('Нельзя использовать собственный email');
 		else exit('Неизвестная ошибка (' + ErrorCode.ToString + ')');
 	end;
 end;
@@ -642,7 +644,7 @@ begin
 	Result:=true;
 	try
 		A := ((TJSONObject.ParseJSONValue(JSON) as TJSONObject).values['body'] as TJSONObject).values['invited'] as TJSONArray;
-		if not Assigned(A) then exit;//no invites
+		if not Assigned(A) then exit; //no invites
 		SetLength(InviteListing, A.count);
 		for J:=0 to A.count - 1 do
 		begin
@@ -705,12 +707,14 @@ begin
 		begin
 			if (Assigned((Obj.values['body'] as TJSONObject).values['home'])) then nodename := 'home'
 			else if (Assigned((Obj.values['body'] as TJSONObject).values['weblink'])) then nodename := 'weblink'
-			else
-			begin
+			else if (Assigned((Obj.values['body'] as TJSONObject).values['invite.email'])) then
+			begin //invite errors
+				error := (((Obj.values['body'] as TJSONObject).values['invite.email']) as TJSONObject).values['error'].Value;
+			end else begin
 				Log(MSGTYPE_IMPORTANTERROR, 'Can''t parse server answer: ' + JSON);
 				exit(CLOUD_ERROR_UNKNOWN);
 			end;
-			error := ((Obj.values['body'] as TJSONObject).values[nodename] as TJSONObject).values['error'].Value;
+			if error = '' then error := ((Obj.values['body'] as TJSONObject).values[nodename] as TJSONObject).values['error'].Value;
 			if error = 'exists' then exit(CLOUD_ERROR_EXISTS);
 			if error = 'required' then exit(CLOUD_ERROR_REQUIRED);
 			if error = 'readonly' then exit(CLOUD_ERROR_READONLY);
@@ -724,6 +728,8 @@ begin
 			if error = 'own' then exit(CLOUD_ERROR_OWN);
 			if error = 'name_too_long' then exit(CLOUD_ERROR_NAME_TOO_LONG);
 			if error = 'virus_scan_fail' then exit(CLOUD_ERROR_VIRUS_SCAN_FAIL);
+			if error = 'owner' then exit(CLOUD_ERROR_OWNER);
+
 			exit(CLOUD_ERROR_UNKNOWN); //Эту ошибку мы пока не встречали
 		end;
 	except
@@ -1450,7 +1456,10 @@ begin
 	if (Result) then
 	begin
 		OperationResult := self.fromJSON_OperationResult(JSON, OperationStatus);
+
 		Result:=OperationResult = CLOUD_OPERATION_OK;
+		if not Result then Log(MSGTYPE_IMPORTANTERROR, 'Invite member error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
+
 	end;
 end;
 
