@@ -642,8 +642,9 @@ begin
 	Result:=true;
 	try
 		A := ((TJSONObject.ParseJSONValue(JSON) as TJSONObject).values['body'] as TJSONObject).values['invited'] as TJSONArray;
+		if not Assigned(A) then exit;//no invites
 		SetLength(InviteListing, A.count);
-		for J:=0 to A.count-1 do
+		for J:=0 to A.count - 1 do
 		begin
 			Obj := A.Items[J] as TJSONObject;
 			with InviteListing[J] do
