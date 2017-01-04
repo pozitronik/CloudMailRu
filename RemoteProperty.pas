@@ -3,8 +3,7 @@
 interface
 
 uses
-	Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
-	Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, CloudMailRu, MRC_Helper;
+	Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, CloudMailRu, MRC_Helper, Vcl.Grids, Vcl.ValEdit;
 
 type
 	TPropertyForm = class(TForm)
@@ -12,6 +11,13 @@ type
 		WebLink: TEdit;
 		AccessCB: TCheckBox;
 		OkButton: TButton;
+		InvitesGB: TGroupBox;
+		InvitesLE: TValueListEditor;
+		InviteEmailEdit: TEdit;
+		InviteEmailLabel: TLabel;
+		InviteAcessCB: TComboBox;
+		Label1: TLabel;
+		InviteBtn: TButton;
 
 		procedure AccessCBClick(Sender: TObject);
 		procedure FormShow(Sender: TObject);
@@ -19,13 +25,14 @@ type
 		class function ShowProperty(parentWindow: HWND; RemoteProperty: TCloudMailRuDirListingItem; var Cloud: TCloudMailRu): integer;
 		procedure FormActivate(Sender: TObject);
 	private
-		{ Private declarations }
+		{Private declarations}
 		procedure WMHotKey(var Message: TMessage); message WM_HOTKEY;
 	protected
 		Props: TCloudMailRuDirListingItem;
+		InvitesListing: TCloudMailRuInviteInfoListing;
 		Cloud: TCloudMailRu;
 	public
-		{ Public declarations }
+		{Public declarations}
 
 	end;
 
@@ -35,14 +42,14 @@ var
 implementation
 
 {$R *.dfm}
-{ TPropertyForm }
+{TPropertyForm}
 
 procedure TPropertyForm.AccessCBClick(Sender: TObject);
 var
 	PublicLink: WideString;
 begin
 	WebLink.Text := 'Wait for it...';
-	AccessCB.Enabled := false; // блокируем во избежание повторных кликов
+	AccessCB.Enabled := false; //блокируем во избежание повторных кликов
 	if AccessCB.checked then
 	begin
 		if Self.Cloud.publishFile(Props.home, PublicLink) then
@@ -80,8 +87,9 @@ begin
 end;
 
 procedure TPropertyForm.FormShow(Sender: TObject);
+var
+	i, InvitesCount: integer;
 begin
-
 	if not(Props.WebLink = '') then
 	begin
 		WebLink.Text := 'https://cloud.mail.ru/public/' + Props.WebLink;
@@ -90,6 +98,18 @@ begin
 	end;
 	AccessCB.checked := not(Props.WebLink = '');
 	WebLink.Enabled := AccessCB.checked;
+	//folders only
+	if Cloud.getShareInfo(Props.home, Self.InvitesListing) then
+	begin
+		InvitesCount:=Length(Self.InvitesListing) - 1;
+		for i := 0 to InvitesCount do
+		begin
+			InvitesLE.InsertRow(Self.InvitesListing[i].email, Self.InvitesListing[i].access,true);
+		end;
+
+	end else begin
+		MessageBoxW(Self.Handle, PWideChar('Error while retrieving ' + Props.home + 'folder invites list, see main log'), 'Folder invite listing error', MB_OK + MB_ICONERROR);
+	end;
 end;
 
 class function TPropertyForm.ShowProperty(parentWindow: HWND; RemoteProperty: TCloudMailRuDirListingItem; var Cloud: TCloudMailRu): integer; //todo do we need cloud as var parameter?
