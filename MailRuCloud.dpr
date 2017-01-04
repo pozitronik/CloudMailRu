@@ -86,10 +86,7 @@ begin
 	HomePath := '/' + StringReplace(HomePath, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]);
 	for I := 0 to Length(DirListing) - 1 do
 	begin
-		if DirListing[I].home = HomePath then
-		begin
-			exit(DirListing[I]);
-		end;
+		if DirListing[I].home = HomePath then exit(DirListing[I]);
 	end;
 end;
 
@@ -622,7 +619,7 @@ Begin
 		begin
 			RealPath := ExtractRealPath(RemoteName);
 			param := ExtractLinkFromUrl(GetWord(Verb, 2));
-			if not (ConnectionManager.get(RealPath.account, getResult).shareFolder(RealPath.path, param, CLOUD_SHARE_ACCESS_READ_WRITE)) then Result := FS_EXEC_ERROR;
+			if not(ConnectionManager.get(RealPath.account, getResult).shareFolder(RealPath.path, param, CLOUD_SHARE_RW)) then Result := FS_EXEC_ERROR;
 		end else if command = 'clone' then
 		begin
 			RealPath := ExtractRealPath(RemoteName);
