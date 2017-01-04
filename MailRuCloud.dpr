@@ -618,6 +618,11 @@ Begin
 		begin
 			RealPath := ExtractRealPath(RemoteName + GetWord(Verb, 2));
 			if (ConnectionManager.get(RealPath.account, getResult).removeDir(RealPath.path) <> true) then Result := FS_EXEC_ERROR;
+		end else if command = 'share' then
+		begin
+			RealPath := ExtractRealPath(RemoteName);
+			param := ExtractLinkFromUrl(GetWord(Verb, 2));
+			if not (ConnectionManager.get(RealPath.account, getResult).shareFolder(RealPath.path, param, CLOUD_SHARE_ACCESS_READ_WRITE)) then Result := FS_EXEC_ERROR;
 		end else if command = 'clone' then
 		begin
 			RealPath := ExtractRealPath(RemoteName);

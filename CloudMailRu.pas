@@ -217,7 +217,7 @@ type
 		function deleteFile(path: WideString): Boolean;
 		function publishFile(path: WideString; var PublicLink: WideString; publish: Boolean = CLOUD_PUBLISH): Boolean;
 		function cloneWeblink(path, link: WideString; ConflictMode: WideString = CLOUD_CONFLICT_RENAME): integer; //клонировать публичную ссылку в текущий каталог
-		function getShareInfo(path: WideString; var InviteListing: TCloudMailRuInviteInfoListing): integer;
+		function getShareInfo(path: WideString; var InviteListing: TCloudMailRuInviteInfoListing): Boolean;
 		function shareFolder(path, email, access: WideString; share: Boolean = CLOUD_SHARE): Boolean;
 		{OTHER ROUTINES}
 		function getDescriptionFile(remotePath, localCopy: WideString): integer; //Если в каталоге remotePath есть descript.ion - скопировать его в файл localcopy
@@ -635,11 +635,25 @@ end;
 function TCloudMailRu.fromJSON_InviteListing(JSON: WideString; var InviteListing: TCloudMailRuInviteInfoListing): Boolean;
 var
 	Obj: TJSONObject;
+	J: integer;
+	A: TJSONArray;
+	CurrentInvite: TCloudMailRuInviteInfo;
 begin
 	Result:=true;
 	try
-		Obj := (TJSONObject.ParseJSONValue(JSON) as TJSONObject);
-
+		A := ((TJSONObject.ParseJSONValue(JSON) as TJSONObject).values['body'] as TJSONObject).values['invited'] as TJSONArray;
+		SetLength(InviteListing, A.count);
+		for J:=0 to A.count-1 do
+		begin
+			Obj := A.Items[J] as TJSONObject;
+			with InviteListing[J] do
+			begin
+				if Assigned(Obj.values['email']) then email := Obj.values['email'].Value;
+				if Assigned(Obj.values['status']) then status := Obj.values['status'].Value;
+				if Assigned(Obj.values['access']) then access := Obj.values['access'].Value;
+				if Assigned(Obj.values['name']) then name := Obj.values['email'].Value;
+			end;
+		end;
 	except
 		on E: {EJSON}Exception do
 		begin
@@ -1404,17 +1418,17 @@ begin
 	end;
 end;
 
-function TCloudMailRu.getShareInfo(path: WideString; var InviteListing: TCloudMailRuInviteInfoListing): integer;
+function TCloudMailRu.getShareInfo(path: WideString; var InviteListing: TCloudMailRuInviteInfoListing): Boolean;
 var
 	JSON: WideString;
 	Progress: Boolean;
 begin
-	Result := CLOUD_OPERATION_FAILED;
+	Result := false;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
 	Progress := false;
 	if self.HTTPGet(API_FOLDER_SHARED_INFO + '?home=' + PathToUrl(path) + self.united_params, JSON, Progress) then
 	begin
-		if self.fromJSON_InviteListing(JSON, InviteListing) then Result:=CLOUD_OPERATION_OK;
+		Result:= self.fromJSON_InviteListing(JSON, InviteListing);
 	end;
 
 end;
