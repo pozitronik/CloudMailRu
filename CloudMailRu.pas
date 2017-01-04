@@ -26,6 +26,11 @@ const
 	API_FILE_COPY = 'https://cloud.mail.ru/api/v2/file/copy';
 	API_FOLDER = 'https://cloud.mail.ru/api/v2/folder?sort={%22type%22%3A%22name%22%2C%22order%22%3A%22asc%22}&offset=0&limit=10000';
 	API_FOLDER_ADD = 'https://cloud.mail.ru/api/v2/folder/add';
+	API_FOLDER_SHARED_INFO = 'https://cloud.mail.ru/api/v2/folder/shared/info'; //get
+	API_FOLDER_INVITES = 'https://cloud.mail.ru/api/v2/folder/invites';
+	API_FOLDER_SHARE = 'https://cloud.mail.ru/api/v2/folder/share';
+	API_FOLDER_UNSHARE = 'https://cloud.mail.ru/api/v2/folder/unshare';
+	API_AB_CONTACTS = ''; //todo
 	API_DISPATCHER = 'https://cloud.mail.ru/api/v2/dispatcher/';
 	API_USER_SPACE = 'https://cloud.mail.ru/api/v2/user/space';
 	API_CLONE = 'https://cloud.mail.ru/api/v2/clone';
@@ -56,6 +61,9 @@ const
 	CLOUD_CONFLICT_IGNORE = 'ignore'; //В API, видимо, не реализовано
 	CLOUD_CONFLICT_RENAME = 'rename'; //Переименуем новый файл
 	//CLOUD_CONFLICT_REPLACE = 'overwrite'; // хз, этот ключ не вскрыт
+
+	CLOUD_SHARE_ACCESS_READ_ONLY = 'read_only';
+	CLOUD_SHARE_ACCESS_READ_WRITE = 'read_write';
 
 	CLOUD_MAX_NAME_LENGTH = 255;
 	CLOUD_PUBLISH = true;
@@ -98,7 +106,15 @@ type
 		used: int64;
 	End;
 
+	TCloudMailRuInviteInfo = record
+		email: WideString;
+		status: WideString;
+		access: WideString;
+		name: WideString;
+	end;
+
 	TCloudMailRuDirListing = array of TCloudMailRuDirListingItem;
+	TCloudMailRuInviteInfoListing = array of TCloudMailRuInviteInfo;
 
 	TCloudMailRu = class
 	private
@@ -157,6 +173,7 @@ type
 		function fromJSON_PublicLink(JSON: WideString; var PublicLink: WideString): Boolean;
 		function fromJSON_OperationResult(JSON: WideString; var OperationStatus: integer): integer;
 		function fromJSON_PublicDirListing(JSON: WideString; var CloudMailRuDirListing: TCloudMailRuDirListing): Boolean;
+		function fromJSON_InviteListing(JSON: WideString; var InviteListing: TCloudMailRuInviteInfoListing): Boolean;
 		{HTTP REQUESTS WRAPPERS}
 		function getToken(): Boolean;
 		function getOAuthToken(var OAuthToken: TCloudMailRuOAuthInfo): Boolean;
@@ -198,6 +215,9 @@ type
 		function deleteFile(path: WideString): Boolean;
 		function publishFile(path: WideString; var PublicLink: WideString; publish: Boolean = CLOUD_PUBLISH): Boolean;
 		function cloneWeblink(path, link: WideString; ConflictMode: WideString = CLOUD_CONFLICT_RENAME): integer; //клонировать публичную ссылку в текущий каталог
+		function getShareInfo(path: WideString; var InviteListing: TCloudMailRuInviteInfoListing): integer;
+		function shareFolder(path, email, access: WideString): integer;
+		function unshareFolder(path, email: WideString): integer;
 		{OTHER ROUTINES}
 		function getDescriptionFile(remotePath, localCopy: WideString): integer; //Если в каталоге remotePath есть descript.ion - скопировать его в файл localcopy
 		procedure logUserSpaceInfo();
@@ -609,6 +629,24 @@ begin
 	except
 		Result:=false;
 	end;
+end;
+
+function TCloudMailRu.fromJSON_InviteListing(JSON: WideString; var InviteListing: TCloudMailRuInviteInfoListing): Boolean;
+var
+	Obj: TJSONObject;
+begin
+	Result:=true;
+	try
+		Obj := (TJSONObject.ParseJSONValue(JSON) as TJSONObject);
+
+	except
+		on E: {EJSON}Exception do
+		begin
+			Result:=false;
+			Log(MSGTYPE_IMPORTANTERROR, 'Can''t parse server answer: ' + JSON);
+		end;
+	end;
+
 end;
 
 function TCloudMailRu.fromJSON_OAuthTokenInfo(JSON: WideString; var CloudMailRuOAuthInfo: TCloudMailRuOAuthInfo): Boolean;
@@ -1362,6 +1400,47 @@ begin
 					Log(MSGTYPE_IMPORTANTERROR, 'File publish error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
 				end;
 		end;
+	end;
+end;
+
+function TCloudMailRu.getShareInfo(path: WideString; var InviteListing: TCloudMailRuInviteInfoListing): integer;
+var
+	JSON: WideString;
+	Progress: Boolean;
+begin
+	Result := CLOUD_OPERATION_FAILED;
+	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
+	Progress := false;
+	if self.HTTPGet(API_FOLDER_SHARED_INFO + '?home=' + PathToUrl(path) + self.united_params, JSON, Progress) then
+	begin
+		if self.fromJSON_InviteListing(JSON, InviteListing) then Result:=CLOUD_OPERATION_OK;
+	end;
+
+end;
+
+function TCloudMailRu.shareFolder(path, email, access: WideString): integer;
+var
+	JSON: WideString;
+	OperationStatus, OperationResult: integer;
+begin
+	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
+	if (self.HTTPPost(API_FOLDER_SHARE, 'home=/' + PathToUrl(path) + self.united_params + '&invite={"email":"' + email + '","access":"' + access + '"}', JSON)) then
+	begin
+		OperationResult := self.fromJSON_OperationResult(JSON, OperationStatus);
+		Result:=OperationResult;
+	end;
+end;
+
+function TCloudMailRu.unshareFolder(path, email: WideString): integer;
+var
+	JSON: WideString;
+	OperationStatus, OperationResult: integer;
+begin
+	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
+	if (self.HTTPPost(API_FOLDER_UNSHARE, 'home=/' + PathToUrl(path) + self.united_params + '&invite={"email":"' + email + '"}', JSON)) then
+	begin
+		OperationResult := self.fromJSON_OperationResult(JSON, OperationStatus);
+		Result:=OperationResult;
 	end;
 end;
 
