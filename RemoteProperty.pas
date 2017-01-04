@@ -16,7 +16,7 @@ type
 		InviteEmailEdit: TEdit;
 		InviteEmailLabel: TLabel;
 		InviteAcessCB: TComboBox;
-		Label1: TLabel;
+		AccessLabel: TLabel;
 		InviteBtn: TButton;
 
 		procedure AccessCBClick(Sender: TObject);
@@ -98,18 +98,26 @@ begin
 	end;
 	AccessCB.checked := not(Props.WebLink = '');
 	WebLink.Enabled := AccessCB.checked;
-	//folders only
-	if Cloud.getShareInfo(Props.home, Self.InvitesListing) then
+	if Props.type_ = TYPE_DIR then
 	begin
-		InvitesCount:=Length(Self.InvitesListing) - 1;
-		for i := 0 to InvitesCount do
+		InvitesGB.Height :=210;
+		InvitesGB.Enabled:=true;
+		if Cloud.getShareInfo(Props.home, Self.InvitesListing) then
 		begin
-			InvitesLE.InsertRow(Self.InvitesListing[i].email, Self.InvitesListing[i].access,true);
-		end;
+			InvitesCount:=Length(Self.InvitesListing) - 1;
+			for i := 0 to InvitesCount do
+			begin
+				InvitesLE.InsertRow(Self.InvitesListing[i].name, Self.InvitesListing[i].access, true);
+			end;
 
+		end else begin
+			MessageBoxW(Self.Handle, PWideChar('Error while retrieving ' + Props.home + 'folder invites list, see main log'), 'Folder invite listing error', MB_OK + MB_ICONERROR);
+		end;
 	end else begin
-		MessageBoxW(Self.Handle, PWideChar('Error while retrieving ' + Props.home + 'folder invites list, see main log'), 'Folder invite listing error', MB_OK + MB_ICONERROR);
+		InvitesGB.Height :=0;
+		InvitesGB.Enabled:=false;
 	end;
+
 end;
 
 class function TPropertyForm.ShowProperty(parentWindow: HWND; RemoteProperty: TCloudMailRuDirListingItem; var Cloud: TCloudMailRu): integer; //todo do we need cloud as var parameter?

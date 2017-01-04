@@ -1,9 +1,11 @@
 object PropertyForm: TPropertyForm
   Left = 0
   Top = 0
+  AutoSize = True
   BorderStyle = bsDialog
-  ClientHeight = 303
-  ClientWidth = 438
+  BorderWidth = 5
+  ClientHeight = 287
+  ClientWidth = 422
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -17,20 +19,20 @@ object PropertyForm: TPropertyForm
   OnDestroy = FormDestroy
   OnShow = FormShow
   DesignSize = (
-    438
-    303)
+    422
+    287)
   PixelsPerInch = 96
   TextHeight = 13
   object PublicLinkLabel: TLabel
-    Left = 8
-    Top = 8
+    Left = 0
+    Top = 0
     Width = 131
     Height = 13
     Caption = 'Public link (Ctrl+C to copy):'
   end
   object WebLink: TEdit
-    Left = 8
-    Top = 27
+    Left = 0
+    Top = 19
     Width = 422
     Height = 21
     Anchors = [akLeft, akTop, akRight]
@@ -38,8 +40,8 @@ object PropertyForm: TPropertyForm
     TabOrder = 0
   end
   object AccessCB: TCheckBox
-    Left = 8
-    Top = 54
+    Left = 0
+    Top = 46
     Width = 131
     Height = 17
     Caption = 'Public access enabled'
@@ -47,8 +49,8 @@ object PropertyForm: TPropertyForm
     OnClick = AccessCBClick
   end
   object OkButton: TButton
-    Left = 342
-    Top = 54
+    Left = 334
+    Top = 46
     Width = 88
     Height = 25
     Anchors = [akTop, akRight]
@@ -57,8 +59,8 @@ object PropertyForm: TPropertyForm
     TabOrder = 2
   end
   object InvitesGB: TGroupBox
-    Left = 8
-    Top = 85
+    Left = 0
+    Top = 77
     Width = 422
     Height = 210
     Caption = 'Folder access'
@@ -70,7 +72,7 @@ object PropertyForm: TPropertyForm
       Height = 13
       Caption = 'New member email:'
     end
-    object Label1: TLabel
+    object AccessLabel: TLabel
       Left = 218
       Top = 16
       Width = 37
@@ -87,6 +89,7 @@ object PropertyForm: TPropertyForm
       BorderStyle = bsNone
       Color = clBtnFace
       Ctl3D = True
+      DrawingStyle = gdsClassic
       Options = [goRowSelect, goThumbTracking]
       ParentBiDiMode = False
       ParentCtl3D = False
@@ -123,7 +126,7 @@ object PropertyForm: TPropertyForm
       Left = 339
       Top = 35
       Width = 75
-      Height = 20
+      Height = 21
       Caption = 'Add'
       TabOrder = 3
     end
