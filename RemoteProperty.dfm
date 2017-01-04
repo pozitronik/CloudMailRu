@@ -93,6 +93,7 @@ object PropertyForm: TPropertyForm
       Options = [goRowSelect, goThumbTracking]
       ParentBiDiMode = False
       ParentCtl3D = False
+      PopupMenu = InvitesPopup
       ScrollBars = ssVertical
       TabOrder = 0
       TitleCaptions.Strings = (
@@ -130,6 +131,25 @@ object PropertyForm: TPropertyForm
       Caption = 'Add'
       TabOrder = 3
       OnClick = InviteBtnClick
+    end
+  end
+  object InvitesPopup: TPopupMenu
+    Left = 392
+    Top = 221
+    object ItemChangeAccess: TMenuItem
+      Caption = 'Change access'
+    end
+    object ItemDelete: TMenuItem
+      Caption = 'Drop access'
+      OnClick = ItemDeleteClick
+    end
+    object N1: TMenuItem
+      Break = mbBarBreak
+      Caption = '-'
+    end
+    object ItemRefresh: TMenuItem
+      Caption = 'Refresh'
+      OnClick = ItemRefreshClick
     end
   end
 end

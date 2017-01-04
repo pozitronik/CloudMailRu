@@ -69,8 +69,10 @@ const
 	CLOUD_MAX_NAME_LENGTH = 255;
 	CLOUD_PUBLISH = true;
 	CLOUD_UNPUBLISH = false;
-	CLOUD_SHARE = true;
-	CLOUD_UNSHARE = false;
+
+	CLOUD_SHARE_RW = 0;
+	CLOUD_SHARE_RO = 1;
+	CLOUD_SHARE_NO = 2;
 
 	{Поддерживаемые методы авторизации}
 	CLOUD_AUTH_METHOD_WEB = 0; //Через парсинг HTTP-страницы
@@ -219,7 +221,7 @@ type
 		function publishFile(path: WideString; var PublicLink: WideString; publish: Boolean = CLOUD_PUBLISH): Boolean;
 		function cloneWeblink(path, link: WideString; ConflictMode: WideString = CLOUD_CONFLICT_RENAME): integer; //клонировать публичную ссылку в текущий каталог
 		function getShareInfo(path: WideString; var InviteListing: TCloudMailRuInviteInfoListing): Boolean;
-		function shareFolder(path, email, access: WideString; share: Boolean = CLOUD_SHARE): Boolean;
+		function shareFolder(path, email: WideString; access: integer): Boolean;
 		{OTHER ROUTINES}
 		function getDescriptionFile(remotePath, localCopy: WideString): integer; //Если в каталоге remotePath есть descript.ion - скопировать его в файл localcopy
 		procedure logUserSpaceInfo();
@@ -642,6 +644,7 @@ var
 	CurrentInvite: TCloudMailRuInviteInfo;
 begin
 	Result:=true;
+	SetLength(InviteListing, 0);
 	try
 		A := ((TJSONObject.ParseJSONValue(JSON) as TJSONObject).values['body'] as TJSONObject).values['invited'] as TJSONArray;
 		if not Assigned(A) then exit; //no invites
@@ -1440,15 +1443,19 @@ begin
 
 end;
 
-function TCloudMailRu.shareFolder(path, email, access: WideString; share: Boolean = CLOUD_SHARE): Boolean;
+function TCloudMailRu.shareFolder(path, email: WideString; access: integer): Boolean;
 var
 	JSON: WideString;
 	OperationStatus, OperationResult: integer;
+	access_string: WideString;
 begin
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
-	if share then
+	if access in [CLOUD_SHARE_RW, CLOUD_SHARE_RO] then
 	begin
-		Result:= self.HTTPPost(API_FOLDER_SHARE, 'home=/' + PathToUrl(path) + self.united_params + '&invite={"email":"' + email + '","access":"' + access + '"}', JSON)
+		if access = CLOUD_SHARE_RW then access_string := CLOUD_SHARE_ACCESS_READ_WRITE
+		else access_string := CLOUD_SHARE_ACCESS_READ_ONLY;
+
+		Result:= self.HTTPPost(API_FOLDER_SHARE, 'home=/' + PathToUrl(path) + self.united_params + '&invite={"email":"' + email + '","access":"' + access_string + '"}', JSON)
 	end else begin
 		Result:=(self.HTTPPost(API_FOLDER_UNSHARE, 'home=/' + PathToUrl(path) + self.united_params + '&invite={"email":"' + email + '"}', JSON));
 	end;

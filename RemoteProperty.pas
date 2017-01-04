@@ -3,7 +3,7 @@
 interface
 
 uses
-	Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, CloudMailRu, MRC_Helper, Vcl.Grids, Vcl.ValEdit;
+	Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, CloudMailRu, MRC_Helper, Vcl.Grids, Vcl.ValEdit, Vcl.Menus;
 
 type
 	TPropertyForm = class(TForm)
@@ -18,6 +18,11 @@ type
 		InviteAcessCB: TComboBox;
 		AccessLabel: TLabel;
 		InviteBtn: TButton;
+		InvitesPopup: TPopupMenu;
+		ItemChangeAccess: TMenuItem;
+		ItemDelete: TMenuItem;
+		ItemRefresh: TMenuItem;
+    N1: TMenuItem;
 
 		procedure AccessCBClick(Sender: TObject);
 		procedure FormShow(Sender: TObject);
@@ -25,6 +30,9 @@ type
 		class function ShowProperty(parentWindow: HWND; RemoteProperty: TCloudMailRuDirListingItem; var Cloud: TCloudMailRu): integer;
 		procedure FormActivate(Sender: TObject);
 		procedure InviteBtnClick(Sender: TObject);
+		procedure ItemDeleteClick(Sender: TObject);
+		procedure ItemRefreshClick(Sender: TObject);
+		procedure Clean1Click(Sender: TObject);
 	private
 		{Private declarations}
 		procedure WMHotKey(var Message: TMessage); message WM_HOTKEY;
@@ -78,6 +86,11 @@ begin
 	AccessCB.Enabled := true;
 end;
 
+procedure TPropertyForm.Clean1Click(Sender: TObject);
+begin
+	while InvitesLE.Strings.Count > 0 do InvitesLE.DeleteRow(1);
+end;
+
 procedure TPropertyForm.FormActivate(Sender: TObject);
 begin
 	CenterWindow(Self.parentWindow, Self.Handle);
@@ -111,14 +124,8 @@ begin
 end;
 
 procedure TPropertyForm.InviteBtnClick(Sender: TObject);
-var
-	access: WideString;
 begin
-	case InviteAcessCB.ItemIndex of
-		0: access:= CLOUD_SHARE_ACCESS_READ_WRITE;
-		1: access:= CLOUD_SHARE_ACCESS_READ_ONLY;
-	end;
-	if (Cloud.shareFolder(Props.home, InviteEmailEdit.Text, access)) then
+	if (Cloud.shareFolder(Props.home, InviteEmailEdit.Text, InviteAcessCB.ItemIndex)) then
 	begin
 		RefreshInvites;
 	end else begin
@@ -126,11 +133,28 @@ begin
 	end;
 end;
 
+procedure TPropertyForm.ItemDeleteClick(Sender: TObject);
+begin
+	if Cloud.shareFolder(Props.home, InvitesLE.Keys[InvitesLE.Row], CLOUD_SHARE_NO) then
+	begin
+		RefreshInvites;
+	end else begin
+		MessageBoxW(Self.Handle, PWideChar('Error while removing access to ' + InviteEmailEdit.Text + ' from ' + Props.home + ' folder, see main log'), 'Folder unshare error', MB_OK + MB_ICONERROR);
+	end;
+
+end;
+
+procedure TPropertyForm.ItemRefreshClick(Sender: TObject);
+begin
+	RefreshInvites;
+end;
+
 procedure TPropertyForm.RefreshInvites;
 var
 	i, InvitesCount: integer;
 begin
-	InvitesLE.Strings.Text :='';
+	while InvitesLE.Strings.Count > 0 do InvitesLE.DeleteRow(1);
+
 	if Cloud.getShareInfo(Props.home, Self.InvitesListing) then
 	begin
 		InvitesCount:=Length(Self.InvitesListing) - 1;
