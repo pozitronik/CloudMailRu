@@ -24,9 +24,11 @@ type
 		procedure FormDestroy(Sender: TObject);
 		class function ShowProperty(parentWindow: HWND; RemoteProperty: TCloudMailRuDirListingItem; var Cloud: TCloudMailRu): integer;
 		procedure FormActivate(Sender: TObject);
+		procedure InviteBtnClick(Sender: TObject);
 	private
 		{Private declarations}
 		procedure WMHotKey(var Message: TMessage); message WM_HOTKEY;
+		procedure RefreshInvites();
 	protected
 		Props: TCloudMailRuDirListingItem;
 		InvitesListing: TCloudMailRuInviteInfoListing;
@@ -87,8 +89,6 @@ begin
 end;
 
 procedure TPropertyForm.FormShow(Sender: TObject);
-var
-	i, InvitesCount: integer;
 begin
 	if not(Props.WebLink = '') then
 	begin
@@ -102,22 +102,46 @@ begin
 	begin
 		InvitesGB.Height :=210;
 		InvitesGB.Enabled:=true;
-		if Cloud.getShareInfo(Props.home, Self.InvitesListing) then
-		begin
-			InvitesCount:=Length(Self.InvitesListing) - 1;
-			for i := 0 to InvitesCount do
-			begin
-				InvitesLE.InsertRow(Self.InvitesListing[i].name, Self.InvitesListing[i].access, true);
-			end;
-
-		end else begin
-			MessageBoxW(Self.Handle, PWideChar('Error while retrieving ' + Props.home + 'folder invites list, see main log'), 'Folder invite listing error', MB_OK + MB_ICONERROR);
-		end;
+		RefreshInvites;
 	end else begin
 		InvitesGB.Height :=0;
 		InvitesGB.Enabled:=false;
 	end;
 
+end;
+
+procedure TPropertyForm.InviteBtnClick(Sender: TObject);
+var
+	access: WideString;
+begin
+	case InviteAcessCB.ItemIndex of
+		0: access:= CLOUD_SHARE_ACCESS_READ_WRITE;
+		1: access:= CLOUD_SHARE_ACCESS_READ_ONLY;
+	end;
+	if (Cloud.shareFolder(Props.home, InviteEmailEdit.Text, access)) then
+	begin
+		RefreshInvites;
+	end else begin
+		MessageBoxW(Self.Handle, PWideChar('Error while inviting ' + InviteEmailEdit.Text + ' to ' + Props.home + ' folder, see main log'), 'Folder invite error', MB_OK + MB_ICONERROR);
+	end;
+end;
+
+procedure TPropertyForm.RefreshInvites;
+var
+	i, InvitesCount: integer;
+begin
+	InvitesLE.Strings.Text :='';
+	if Cloud.getShareInfo(Props.home, Self.InvitesListing) then
+	begin
+		InvitesCount:=Length(Self.InvitesListing) - 1;
+		for i := 0 to InvitesCount do
+		begin
+			InvitesLE.InsertRow(Self.InvitesListing[i].name, Self.InvitesListing[i].access, true);
+		end;
+
+	end else begin
+		MessageBoxW(Self.Handle, PWideChar('Error while retrieving ' + Props.home + ' folder invites list, see main log'), 'Folder invite listing error', MB_OK + MB_ICONERROR);
+	end;
 end;
 
 class function TPropertyForm.ShowProperty(parentWindow: HWND; RemoteProperty: TCloudMailRuDirListingItem; var Cloud: TCloudMailRu): integer; //todo do we need cloud as var parameter?

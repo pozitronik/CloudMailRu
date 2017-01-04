@@ -105,7 +105,7 @@ object PropertyForm: TPropertyForm
     object InviteEmailEdit: TEdit
       Left = 5
       Top = 35
-      Width = 220
+      Width = 212
       Height = 21
       TabOrder = 1
     end
@@ -129,6 +129,7 @@ object PropertyForm: TPropertyForm
       Height = 21
       Caption = 'Add'
       TabOrder = 3
+      OnClick = InviteBtnClick
     end
   end
 end
