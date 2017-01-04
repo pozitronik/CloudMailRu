@@ -68,6 +68,8 @@ const
 	CLOUD_MAX_NAME_LENGTH = 255;
 	CLOUD_PUBLISH = true;
 	CLOUD_UNPUBLISH = false;
+	CLOUD_SHARE = true;
+	CLOUD_UNSHARE = false;
 
 	{Поддерживаемые методы авторизации}
 	CLOUD_AUTH_METHOD_WEB = 0; //Через парсинг HTTP-страницы
@@ -216,8 +218,7 @@ type
 		function publishFile(path: WideString; var PublicLink: WideString; publish: Boolean = CLOUD_PUBLISH): Boolean;
 		function cloneWeblink(path, link: WideString; ConflictMode: WideString = CLOUD_CONFLICT_RENAME): integer; //клонировать публичную ссылку в текущий каталог
 		function getShareInfo(path: WideString; var InviteListing: TCloudMailRuInviteInfoListing): integer;
-		function shareFolder(path, email, access: WideString): integer;
-		function unshareFolder(path, email: WideString): integer;
+		function shareFolder(path, email, access: WideString; share: Boolean = CLOUD_SHARE): Boolean;
 		{OTHER ROUTINES}
 		function getDescriptionFile(remotePath, localCopy: WideString): integer; //Если в каталоге remotePath есть descript.ion - скопировать его в файл localcopy
 		procedure logUserSpaceInfo();
@@ -1418,29 +1419,23 @@ begin
 
 end;
 
-function TCloudMailRu.shareFolder(path, email, access: WideString): integer;
+function TCloudMailRu.shareFolder(path, email, access: WideString; share: Boolean = CLOUD_SHARE): Boolean;
 var
 	JSON: WideString;
 	OperationStatus, OperationResult: integer;
 begin
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
-	if (self.HTTPPost(API_FOLDER_SHARE, 'home=/' + PathToUrl(path) + self.united_params + '&invite={"email":"' + email + '","access":"' + access + '"}', JSON)) then
+	if share then
 	begin
-		OperationResult := self.fromJSON_OperationResult(JSON, OperationStatus);
-		Result:=OperationResult;
+		Result:= self.HTTPPost(API_FOLDER_SHARE, 'home=/' + PathToUrl(path) + self.united_params + '&invite={"email":"' + email + '","access":"' + access + '"}', JSON)
+	end else begin
+		Result:=(self.HTTPPost(API_FOLDER_UNSHARE, 'home=/' + PathToUrl(path) + self.united_params + '&invite={"email":"' + email + '"}', JSON));
 	end;
-end;
 
-function TCloudMailRu.unshareFolder(path, email: WideString): integer;
-var
-	JSON: WideString;
-	OperationStatus, OperationResult: integer;
-begin
-	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
-	if (self.HTTPPost(API_FOLDER_UNSHARE, 'home=/' + PathToUrl(path) + self.united_params + '&invite={"email":"' + email + '"}', JSON)) then
+	if (Result) then
 	begin
 		OperationResult := self.fromJSON_OperationResult(JSON, OperationStatus);
-		Result:=OperationResult;
+		Result:=OperationResult = CLOUD_OPERATION_OK;
 	end;
 end;
 
