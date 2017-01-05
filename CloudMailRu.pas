@@ -37,6 +37,7 @@ const
 
 	TYPE_DIR = 'folder';
 	TYPE_FILE = 'file';
+	KIND_SHARED = 'shared';
 	{Константы для обозначения ошибок, возвращаемых при парсинге ответов облака. Дополняем по мере обнаружения}
 	CLOUD_ERROR_UNKNOWN = -2; //unknown: 'Ошибка на сервере'
 	CLOUD_OPERATION_ERROR_STATUS_UNKNOWN = -1;
@@ -225,6 +226,9 @@ type
 		{OTHER ROUTINES}
 		function getDescriptionFile(remotePath, localCopy: WideString): integer; //Если в каталоге remotePath есть descript.ion - скопировать его в файл localcopy
 		procedure logUserSpaceInfo();
+		{STATIC ROUTINES}
+		class function CloudAccessToString(access: WideString; Invert: Boolean = false): WideString; static;
+		class function StringToCloudAccess(accessString: WideString; Invert: Boolean = false): integer; static;
 	end;
 
 implementation
@@ -1745,6 +1749,32 @@ begin
 		end;
 	end;
 	//if not Result then exit(false);
+end;
+
+class function TCloudMailRu.CloudAccessToString(access: WideString; Invert: Boolean): WideString;
+begin
+	if access = 'read only' then access := CLOUD_SHARE_ACCESS_READ_ONLY;
+	if access = 'read and write' then access := CLOUD_SHARE_ACCESS_READ_WRITE;
+	if Invert then
+	begin
+		if (access = CLOUD_SHARE_ACCESS_READ_ONLY) then access := CLOUD_SHARE_ACCESS_READ_WRITE
+		else access := CLOUD_SHARE_ACCESS_READ_ONLY;
+	end;
+	if access = CLOUD_SHARE_ACCESS_READ_ONLY then Result:='read only'
+	else Result:='read and write';
+end;
+
+class function TCloudMailRu.StringToCloudAccess(accessString: WideString; Invert: Boolean): integer;
+begin
+	if accessString = 'read only' then accessString := CLOUD_SHARE_ACCESS_READ_ONLY;
+	if accessString = 'read and write' then accessString := CLOUD_SHARE_ACCESS_READ_WRITE;
+	if Invert then
+	begin
+		if (accessString = CLOUD_SHARE_ACCESS_READ_ONLY) then accessString := CLOUD_SHARE_ACCESS_READ_WRITE
+		else accessString := CLOUD_SHARE_ACCESS_READ_ONLY;
+	end;
+	if accessString = CLOUD_SHARE_ACCESS_READ_ONLY then Result:=CLOUD_SHARE_RO
+	else Result:=CLOUD_SHARE_RW;
 end;
 
 end.

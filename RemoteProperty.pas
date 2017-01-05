@@ -22,7 +22,7 @@ type
 		ItemChangeAccess: TMenuItem;
 		ItemDelete: TMenuItem;
 		ItemRefresh: TMenuItem;
-    N1: TMenuItem;
+		N1: TMenuItem;
 
 		procedure AccessCBClick(Sender: TObject);
 		procedure FormShow(Sender: TObject);
@@ -33,6 +33,8 @@ type
 		procedure ItemDeleteClick(Sender: TObject);
 		procedure ItemRefreshClick(Sender: TObject);
 		procedure Clean1Click(Sender: TObject);
+		procedure InvitesPopupPopup(Sender: TObject);
+		procedure ItemChangeAccessClick(Sender: TObject);
 	private
 		{Private declarations}
 		procedure WMHotKey(var Message: TMessage); message WM_HOTKEY;
@@ -133,6 +135,41 @@ begin
 	end;
 end;
 
+procedure TPropertyForm.InvitesPopupPopup(Sender: TObject);
+var
+	email, access: WideString;
+begin
+	email := InvitesLE.Keys[InvitesLE.Row];
+	if email = '' then
+	begin
+		ItemChangeAccess.Visible:=false;
+		ItemDelete.Visible := false;
+		exit;
+	end else begin
+		ItemChangeAccess.Visible:=true;
+		ItemDelete.Visible:=true;
+	end;
+
+	access :=InvitesLE.Values[email];
+	access := TCloudMailRu.CloudAccessToString(access, true);
+
+	ItemChangeAccess.Caption:='Change access to ' + access;
+end;
+
+procedure TPropertyForm.ItemChangeAccessClick(Sender: TObject);
+var
+	email, access: WideString;
+begin
+	email := InvitesLE.Keys[InvitesLE.Row];
+	access :=InvitesLE.Values[email];
+	if Cloud.shareFolder(Props.home, InvitesLE.Keys[InvitesLE.Row], TCloudMailRu.StringToCloudAccess(access, true)) then
+	begin
+		RefreshInvites;
+	end else begin
+		MessageBoxW(Self.Handle, PWideChar('Error while removing access to ' + InviteEmailEdit.Text + ' from ' + Props.home + ' folder, see main log'), 'Folder unshare error', MB_OK + MB_ICONERROR);
+	end;
+end;
+
 procedure TPropertyForm.ItemDeleteClick(Sender: TObject);
 begin
 	if Cloud.shareFolder(Props.home, InvitesLE.Keys[InvitesLE.Row], CLOUD_SHARE_NO) then
@@ -160,7 +197,7 @@ begin
 		InvitesCount:=Length(Self.InvitesListing) - 1;
 		for i := 0 to InvitesCount do
 		begin
-			InvitesLE.InsertRow(Self.InvitesListing[i].name, Self.InvitesListing[i].access, true);
+			InvitesLE.InsertRow(Self.InvitesListing[i].name, TCloudMailRu.CloudAccessToString(Self.InvitesListing[i].access), true);
 		end;
 
 	end else begin

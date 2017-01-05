@@ -68,7 +68,7 @@ object PropertyForm: TPropertyForm
     object InviteEmailLabel: TLabel
       Left = 5
       Top = 16
-      Width = 126
+      Width = 93
       Height = 13
       Caption = 'New member email:'
     end
@@ -102,6 +102,9 @@ object PropertyForm: TPropertyForm
       ColWidths = (
         269
         147)
+      RowHeights = (
+        18
+        18)
     end
     object InviteEmailEdit: TEdit
       Left = 5
@@ -134,17 +137,18 @@ object PropertyForm: TPropertyForm
     end
   end
   object InvitesPopup: TPopupMenu
+    OnPopup = InvitesPopupPopup
     Left = 392
     Top = 221
     object ItemChangeAccess: TMenuItem
       Caption = 'Change access'
+      OnClick = ItemChangeAccessClick
     end
     object ItemDelete: TMenuItem
       Caption = 'Drop access'
       OnClick = ItemDeleteClick
     end
     object N1: TMenuItem
-      Break = mbBarBreak
       Caption = '-'
     end
     object ItemRefresh: TMenuItem
