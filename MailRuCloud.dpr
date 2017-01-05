@@ -1,10 +1,28 @@
 ﻿library MailRuCloud;
 
 {TODO : Refactore: decrease cyclomatic complexity to 15 max}
+
 {$R *.dres}
 
 uses
-	SysUtils, DateUtils, windows, Classes, PLUGIN_TYPES, IdSSLOpenSSLHeaders, messages, inifiles, Vcl.controls, AnsiStrings, CloudMailRu in 'CloudMailRu.pas', MRC_Helper in 'MRC_Helper.pas', Accounts in 'Accounts.pas'{AccountsForm}, RemoteProperty in 'RemoteProperty.pas'{PropertyForm}, Descriptions in 'Descriptions.pas', ConnectionManager in 'ConnectionManager.pas', Settings in 'Settings.pas', AssociativeArray in 'AssociativeArray.pas';
+  SysUtils,
+  DateUtils,
+  windows,
+  Classes,
+  PLUGIN_TYPES,
+  IdSSLOpenSSLHeaders,
+  messages,
+  inifiles,
+  Vcl.controls,
+  AnsiStrings,
+  CloudMailRu in 'CloudMailRu.pas',
+  MRC_Helper in 'MRC_Helper.pas',
+  Accounts in 'Accounts.pas' {AccountsForm},
+  RemoteProperty in 'RemoteProperty.pas' {PropertyForm},
+  Descriptions in 'Descriptions.pas',
+  ConnectionManager in 'ConnectionManager.pas',
+  Settings in 'Settings.pas',
+  AssociativeArray in 'AssociativeArray.pas';
 
 {$IFDEF WIN64}
 {$E wfx64}
@@ -298,6 +316,12 @@ function FsContentGetValue(FileName: PAnsiChar; FieldIndex: integer; UnitIndex: 
 begin
 	SetLastError(ERROR_INVALID_FUNCTION);
 	Result := ft_nosuchfield;
+end;
+
+function FsExtractCustomIcon(RemoteName: pchar; ExtractFlags: integer; var TheIcon: hicon): integer; stdcall;
+begin
+	SetLastError(ERROR_INVALID_FUNCTION);
+	Result := FS_FILE_NOTSUPPORTED; //Ansi-заглушка
 end;
 
 {GLORIOUS UNICODE MASTER RACE}
@@ -1012,10 +1036,44 @@ begin
 				Result := ft_stringw;
 			end;
 	end;
-
 end;
 
-exports FsGetDefRootName, FsInit, FsInitW, FsFindFirst, FsFindFirstW, FsFindNext, FsFindNextW, FsFindClose, FsGetFile, FsGetFileW, FsDisconnect, FsDisconnectW, FsStatusInfo, FsStatusInfoW, FsPutFile, FsPutFileW, FsDeleteFile, FsDeleteFileW, FsMkDir, FsMkDirW, FsRemoveDir, FsRemoveDirW, FsSetCryptCallback, FsSetCryptCallbackW, FsExecuteFileW, FsRenMovFile, FsRenMovFileW, FsGetBackgroundFlags, FsContentGetSupportedField, FsContentGetValue, FsContentGetValueW;
+function FsExtractCustomIconW(RemoteName: PWideChar; ExtractFlags: integer; var TheIcon: hicon): integer; stdcall;
+var
+	RealPath: TRealPath;
+	Item: TCloudMailRuDirListingItem;
+begin
+	Result:=FS_ICON_USEDEFAULT;
+	RealPath := ExtractRealPath(RemoteName);
+	if (RealPath.path = '..') or (RemoteName = '\..\') then exit;
+	//if (RealPath.path = '') and (RealPath.account = '') then exit;
+
+	if (RealPath.path = '') then
+	begin
+		strpcopy(RemoteName, 'cloud');
+		TheIcon:=LoadIconW(hInstance, 'cloud');
+		exit(FS_ICON_EXTRACTED);
+	end;
+
+	Item:=GetListingItemByName(CurrentListing, RealPath);
+	if Item.type_ = TYPE_DIR then
+	begin
+		Result:=FS_ICON_EXTRACTED;
+		if Item.kind = KIND_SHARED then
+		begin
+			strpcopy(RemoteName, Item.kind);
+
+			TheIcon:=LoadIconW(hInstance, PWideChar(Item.kind));
+		end else begin
+			strpcopy(RemoteName, Item.type_);
+
+			TheIcon:=LoadIconW(hInstance, PWideChar(Item.type_));
+		end;
+
+	end;
+end;
+
+exports FsGetDefRootName, FsInit, FsInitW, FsFindFirst, FsFindFirstW, FsFindNext, FsFindNextW, FsFindClose, FsGetFile, FsGetFileW, FsDisconnect, FsDisconnectW, FsStatusInfo, FsStatusInfoW, FsPutFile, FsPutFileW, FsDeleteFile, FsDeleteFileW, FsMkDir, FsMkDirW, FsRemoveDir, FsRemoveDirW, FsSetCryptCallback, FsSetCryptCallbackW, FsExecuteFileW, FsRenMovFile, FsRenMovFileW, FsGetBackgroundFlags, FsContentGetSupportedField, FsContentGetValue, FsContentGetValueW{, FsExtractCustomIcon, FsExtractCustomIconW};
 
 begin
 	GetMem(tmp, max_path);
