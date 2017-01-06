@@ -163,10 +163,6 @@ object AccountsForm: TAccountsForm
     TabOrder = 0
     object AccountsTab: TTabSheet
       Caption = 'Accounts'
-      ExplicitLeft = 0
-      ExplicitTop = 0
-      ExplicitWidth = 0
-      ExplicitHeight = 0
       DesignSize = (
         484
         377)
@@ -350,10 +346,6 @@ object AccountsForm: TAccountsForm
     object GlobalTab: TTabSheet
       Caption = 'Global settings'
       ImageIndex = 1
-      ExplicitLeft = 0
-      ExplicitTop = 0
-      ExplicitWidth = 0
-      ExplicitHeight = 0
       object CloudMaxFileSizeLabelBytes: TLabel
         Left = 292
         Top = 115
@@ -370,7 +362,7 @@ object AccountsForm: TAccountsForm
       end
       object DeleteFailOnUploadModeLabel: TLabel
         Left = 5
-        Top = 164
+        Top = 165
         Width = 143
         Height = 13
         Caption = 'Delete file after upload mode:'
@@ -400,7 +392,7 @@ object AccountsForm: TAccountsForm
       end
       object DescriptionEnabledCB: TCheckBox
         Left = 5
-        Top = 46
+        Top = 47
         Width = 475
         Height = 17
         Caption = 'Descript.ion files support'
@@ -452,9 +444,9 @@ object AccountsForm: TAccountsForm
         OnClick = CloudMaxFileSizeCBClick
       end
       object ChunkOverwriteModeCombo: TComboBox
-        Left = 159
-        Top = 137
-        Width = 321
+        Left = 160
+        Top = 136
+        Width = 320
         Height = 21
         Style = csDropDownList
         ItemIndex = 0
@@ -466,9 +458,9 @@ object AccountsForm: TAccountsForm
           'Abort operation')
       end
       object DeleteFailOnUploadModeCombo: TComboBox
-        Left = 159
-        Top = 161
-        Width = 321
+        Left = 160
+        Top = 162
+        Width = 320
         Height = 21
         Style = csDropDownList
         ItemIndex = 0
@@ -482,9 +474,9 @@ object AccountsForm: TAccountsForm
           'Try to unset read only flag and delete, abort operation on error')
       end
       object OverwriteLocalModeCombo: TComboBox
-        Left = 159
+        Left = 160
         Top = 188
-        Width = 321
+        Width = 320
         Height = 21
         Style = csDropDownList
         ItemIndex = 0
@@ -497,20 +489,24 @@ object AccountsForm: TAccountsForm
       end
       object DisableMultiThreadingCB: TCheckBox
         Left = 5
-        Top = 218
+        Top = 215
         Width = 475
         Height = 17
         Caption = 'Disable background operations support'
         TabOrder = 11
       end
+      object DisableIconsCB: TCheckBox
+        Left = 5
+        Top = 237
+        Width = 475
+        Height = 17
+        Caption = 'Disable internal icons'
+        TabOrder = 12
+      end
     end
     object NetworkTab: TTabSheet
       Caption = 'Network settings'
       ImageIndex = 2
-      ExplicitLeft = 0
-      ExplicitTop = 0
-      ExplicitWidth = 0
-      ExplicitHeight = 0
       object SocketTimeoutLabel: TLabel
         Left = 5
         Top = 11

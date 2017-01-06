@@ -1027,6 +1027,8 @@ var
 	Item: TCloudMailRuDirListingItem;
 begin
 	Result:=FS_ICON_USEDEFAULT;
+	if GetPluginSettings(SettingsIniFilePath).DisableIcons then exit;
+
 	RealPath := ExtractRealPath(RemoteName);
 	if (RealPath.path = '..') or (RemoteName = '\..\') then exit;
 	//if (RealPath.path = '') and (RealPath.account = '') then exit;

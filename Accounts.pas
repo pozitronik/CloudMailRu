@@ -62,6 +62,7 @@ type
 		OverwriteLocalModeLabel: TLabel;
 		OverwriteLocalModeCombo: TComboBox;
 		DisableMultiThreadingCB: TCheckBox;
+    DisableIconsCB: TCheckBox;
 		procedure FormShow(Sender: TObject);
 		procedure AccountsListClick(Sender: TObject);
 		procedure ApplyButtonClick(Sender: TObject);
@@ -183,6 +184,7 @@ begin
 	SetPluginSettingsValue(SettingsIniFilePath, 'OverwriteLocalMode', OverwriteLocalModeCombo.ItemIndex);
 
 	SetPluginSettingsValue(SettingsIniFilePath, 'DisableMultiThreading', DisableMultiThreadingCB.Checked);
+	SetPluginSettingsValue(SettingsIniFilePath, 'DisableIcons', DisableIconsCB.Checked);
 
 	SetPluginSettingsValue(SettingsIniFilePath, 'SocketTimeout', SocketTimeoutEdit.Text);
 	SetPluginSettingsValue(SettingsIniFilePath, 'ProxyType', ProxyCB.ItemIndex);
@@ -303,6 +305,7 @@ begin
 		AccountsForm.OverwriteLocalModeCombo.ItemIndex :=GetPluginSettings(SettingsIniFilePath).OverwriteLocalMode;
 
 		AccountsForm.DisableMultiThreadingCB.Checked:= GetPluginSettings(SettingsIniFilePath).DisableMultiThreading;
+		AccountsForm.DisableIconsCB.Checked:= GetPluginSettings(SettingsIniFilePath).DisableIcons;
 
 		{global settings}
 		if RemoteName <> '' then AccountsForm.SelectedAccount := Copy(RemoteName, 2, length(RemoteName) - 1);
