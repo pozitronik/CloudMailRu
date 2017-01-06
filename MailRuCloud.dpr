@@ -1033,8 +1033,15 @@ begin
 
 	if (RealPath.path = '') then
 	begin
-		strpcopy(RemoteName, 'cloud');
-		TheIcon:=LoadIconW(hInstance, 'cloud');
+		if (GetAccountSettingsFromIniFile(AccountsIniFilePath, copy(RemoteName, 2, StrLen(RemoteName) - 2)).public_account) then
+		begin
+			strpcopy(RemoteName, 'folder_cloud_shared');
+			TheIcon:=LoadIconW(hInstance, 'folder_cloud_shared');
+		end else begin
+			strpcopy(RemoteName, 'folder_cloud');
+			TheIcon:=LoadIconW(hInstance, 'folder_cloud');
+		end;
+
 		exit(FS_ICON_EXTRACTED);
 	end;
 
@@ -1044,19 +1051,22 @@ begin
 		Result:=FS_ICON_EXTRACTED;
 		if Item.kind = KIND_SHARED then
 		begin
-			strpcopy(RemoteName, Item.kind);
-
-			TheIcon:=LoadIconW(hInstance, PWideChar(Item.kind));
+			strpcopy(RemoteName, 'shared');
+			TheIcon:=LoadIconW(hInstance, PWideChar('shared'));
+		end else if Item.Weblink <> '' then
+		begin
+			strpcopy(RemoteName, 'shared_public');
+			TheIcon:=LoadIconW(hInstance, PWideChar('shared_public'));
 		end else begin
-			strpcopy(RemoteName, Item.type_);
+			strpcopy(RemoteName, 'folder');
 
-			TheIcon:=LoadIconW(hInstance, PWideChar(Item.type_));
+			TheIcon:=LoadIconW(hInstance, PWideChar('folder'));
 		end;
 
 	end;
 end;
 
-exports FsGetDefRootName, FsInit, FsInitW, FsFindFirst, FsFindFirstW, FsFindNext, FsFindNextW, FsFindClose, FsGetFile, FsGetFileW, FsDisconnect, FsDisconnectW, FsStatusInfo, FsStatusInfoW, FsPutFile, FsPutFileW, FsDeleteFile, FsDeleteFileW, FsMkDir, FsMkDirW, FsRemoveDir, FsRemoveDirW, FsSetCryptCallback, FsSetCryptCallbackW, FsExecuteFileW, FsRenMovFile, FsRenMovFileW, FsGetBackgroundFlags, FsContentGetSupportedField, FsContentGetValue, FsContentGetValueW{, FsExtractCustomIcon, FsExtractCustomIconW};
+exports FsGetDefRootName, FsInit, FsInitW, FsFindFirst, FsFindFirstW, FsFindNext, FsFindNextW, FsFindClose, FsGetFile, FsGetFileW, FsDisconnect, FsDisconnectW, FsStatusInfo, FsStatusInfoW, FsPutFile, FsPutFileW, FsDeleteFile, FsDeleteFileW, FsMkDir, FsMkDirW, FsRemoveDir, FsRemoveDirW, FsSetCryptCallback, FsSetCryptCallbackW, FsExecuteFileW, FsRenMovFile, FsRenMovFileW, FsGetBackgroundFlags, FsContentGetSupportedField, FsContentGetValue, FsContentGetValueW, FsExtractCustomIcon, FsExtractCustomIconW;
 
 begin
 	GetMem(tmp, max_path);
