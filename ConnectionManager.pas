@@ -105,7 +105,7 @@ begin
 
 	if not GetMyPasswordNow(AccountSettings) then exit(CLOUD_OPERATION_ERROR_STATUS_UNKNOWN); //INVALID_HANDLE_VALUE
 
-	MyLogProc(PluginNum, MSGTYPE_CONNECT, PWideChar('CONNECT ' + connectionName));
+	MyLogProc(PluginNum, MSGTYPE_CONNECT, PWideChar('CONNECT \' + connectionName));
 
 	cloud := TCloudMailRu.Create(AccountSettings, self.CloudMaxFileSize, self.Proxy, Timeout, MyProgressProc, PluginNum, MyLogProc);
 	if not set_(connectionName, cloud) then exit(CLOUD_OPERATION_ERROR_STATUS_UNKNOWN); //INVALID_HANDLE_VALUE
