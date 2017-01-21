@@ -748,10 +748,12 @@ begin
 							if ((FileGetAttr(UNCLocalName) or faReadOnly) <> 0) and ((FileSetAttr(UNCLocalName, not faReadOnly) = 0) and (DeleteFileW(PWideChar(UNCLocalName)))) then
 							begin
 								MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, PWideChar('Read only file ' + LocalName + ' deleted'));
+								exit(FS_FILE_OK);
 							end else begin
 								if GetPluginSettings(SettingsIniFilePath).DeleteFailOnUploadMode = DeleteFailOnUploadDeleteIgnore then
 								begin
 									MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, PWideChar('Can''t delete file ' + LocalName + ', ignored'));
+									exit(FS_FILE_OK);
 								end else begin
 									MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, PWideChar('Can''t delete file ' + LocalName + ', aborted'));
 									exit(FS_FILE_NOTSUPPORTED);
