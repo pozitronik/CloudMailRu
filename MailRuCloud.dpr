@@ -1115,10 +1115,11 @@ begin
 
 	if GetPluginSettings(SettingsIniFilePath).LoadSSLDLLOnlyFromPluginDir then
 	begin
-		if DirectoryExists(PluginPath + PlatformDllPath) then
+		if ((DirectoryExists(PluginPath + PlatformDllPath)) and (FileExists(PluginPath + PlatformDllPath + 'ssleay32.dll')) and (FileExists(PluginPath + PlatformDllPath + 'libeay32.dll'))) then
 		begin //try to load dll from platform subdir
 			IdOpenSSLSetLibPath(PluginPath + PlatformDllPath);
-		end else begin //else try to load it from plugin dir
+		end else if ((FileExists(PluginPath + 'ssleay32.dll')) and (FileExists(PluginPath + 'libeay32.dll'))) then
+		begin //else try to load it from plugin dir
 			IdOpenSSLSetLibPath(PluginPath);
 		end;
 	end;
