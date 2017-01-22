@@ -2,7 +2,7 @@
 
 interface
 
-uses Classes, Windows, SysUtils, MultiMon, Math;
+uses Classes, Windows, SysUtils, MultiMon, Math, ShellApi, ShlObj;
 
 const
 	MAX_UNC_PATH = 32767;
@@ -33,6 +33,7 @@ function ExtractLinkFromUrl(URL: WideString): WideString; //При необхо�
 function IsWriteable(const DirName: WideString; FileName: WideString = 'delete.me'; CleanFile: boolean = true): boolean;
 function PosLast(Substring, S: WideString; Offset: Integer = 0): Integer;
 function PathToUrl(path: WideString; RestrictEmptyUrl: boolean = true): WideString;
+function GetFolderIcon(): Hicon;
 
 implementation
 
@@ -248,6 +249,20 @@ function PathToUrl(path: WideString; RestrictEmptyUrl: boolean = true): WideStri
 begin
 	Result:= UrlEncode(StringReplace(path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
 	if (Result = '') and RestrictEmptyUrl then Result := '/';
+end;
+
+function GetFolderIcon(): Hicon;
+var
+	SYSIL: thandle;
+	SFI: TSHFileInfo;
+begin
+	FillChar(SFI, SizeOf(SFI), 0);
+	SYSIL := SHGetFileInfo('booya', FILE_ATTRIBUTE_DIRECTORY, SFI, SizeOf(SFI), SHGFI_ICON or SHGFI_SMALLICON or SHGFI_USEFILEATTRIBUTES);
+	if SYSIL <> 0 then
+	begin
+		exit(SFI.Hicon);
+	end
+	else RaiseLastOSError;
 end;
 
 end.
