@@ -374,6 +374,13 @@ object AccountsForm: TAccountsForm
         Height = 13
         Caption = 'Overwrite local files mode:'
       end
+      object IconsModeLabel: TLabel
+        Left = 5
+        Top = 217
+        Width = 59
+        Height = 13
+        Caption = 'Plugin icons:'
+      end
       object PreserveFileTimeCB: TCheckBox
         Left = 5
         Top = 25
@@ -422,7 +429,7 @@ object AccountsForm: TAccountsForm
         Caption = 'Apply'
         ParentShowHint = False
         ShowHint = False
-        TabOrder = 10
+        TabOrder = 12
         OnClick = GlobalSettingApplyBTNClick
       end
       object CloudMaxFileSizeValue: TEdit
@@ -489,19 +496,27 @@ object AccountsForm: TAccountsForm
       end
       object DisableMultiThreadingCB: TCheckBox
         Left = 5
-        Top = 215
+        Top = 245
         Width = 475
         Height = 17
         Caption = 'Disable background operations support'
         TabOrder = 11
       end
-      object DisableIconsCB: TCheckBox
-        Left = 5
-        Top = 237
-        Width = 475
-        Height = 17
-        Caption = 'Disable internal icons'
-        TabOrder = 12
+      object IconsModeCombo: TComboBox
+        Left = 160
+        Top = 214
+        Width = 320
+        Height = 21
+        Style = csDropDownList
+        ItemIndex = 0
+        TabOrder = 10
+        Text = 'System default'
+        Items.Strings = (
+          'System default'
+          'Internal icons'
+          'Internal icons overlay'
+          'External icons'
+          'External icons overlay')
       end
     end
     object NetworkTab: TTabSheet
