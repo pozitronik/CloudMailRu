@@ -28,6 +28,12 @@ const
 	OverwriteLocalModeIgnore = 1;
 	OverwriteLocalModeOverwrite = 2;
 
+	IconsModeDisabled = 0;
+	IconsModeInternal = 1;
+	IconsModeInternalOverlay = 2;
+	IconsModeExternal = 3;
+	IconsModeExternalOverlay = 4;
+
 type
 
 	TAccountSettings = record
@@ -64,7 +70,7 @@ type
 		DeleteFailOnUploadMode: Integer;
 		OverwriteLocalMode: Integer;
 		DisableMultiThreading: boolean;
-		DisableIcons: boolean;
+		IconsMode: Integer;
 	end;
 
 function GetProxyPasswordNow(var ProxySettings: TProxySettings; MyLogProc: TLogProcW; MyCryptProc: TCryptProcW; PluginNum: Integer; CryptoNum: Integer): boolean;
@@ -163,7 +169,7 @@ begin
 	GetPluginSettings.OperationsViaPublicLinkEnabled := IniFile.ReadBool('Main', 'OperationsViaPublicLinkEnabled', false);
 	GetPluginSettings.AskOnErrors := IniFile.ReadBool('Main', 'AskOnErrors', false);
 	GetPluginSettings.DisableMultiThreading := IniFile.ReadBool('Main', 'DisableMultiThreading', false);
-	GetPluginSettings.DisableIcons := IniFile.ReadBool('Main', 'DisableIcons', false);
+	GetPluginSettings.IconsMode := IniFile.ReadInteger('Main', 'IconsMode', 0);
 	GetPluginSettings.SocketTimeout := IniFile.ReadInteger('Main', 'SocketTimeout', -1);
 	GetPluginSettings.CloudMaxFileSize := IniFile.ReadInteger('Main', 'CloudMaxFileSize', CLOUD_MAX_FILESIZE_DEFAULT);
 	GetPluginSettings.ChunkOverwriteMode := IniFile.ReadInteger('Main', 'ChunkOverwriteMode', 0);
