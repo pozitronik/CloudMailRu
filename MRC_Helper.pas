@@ -2,7 +2,7 @@
 
 interface
 
-uses Classes, Windows, SysUtils, MultiMon, Math, ShellApi, ShlObj;
+uses Classes, Windows, SysUtils, MultiMon, Math, ShellApi, ShlObj, Vcl.Graphics;
 
 const
 	MAX_UNC_PATH = 32767;
@@ -35,10 +35,13 @@ function PosLast(Substring, S: WideString; Offset: Integer = 0): Integer;
 function PathToUrl(path: WideString; RestrictEmptyUrl: boolean = true): WideString;
 function GetFolderIcon(): Hicon;
 function CombineIcons(FrontIcon, BackIcon: Hicon): Hicon; //taken from http://www.swissdelphicenter.ch/en/showcode.php?id=1636
+function LoadIcon(const FileName: WideString): Hicon;
+function LoadPluginIcon(const path: WideString; identifier: WideString): Hicon;
 
 implementation
 
 function Implode(S: TStringList; Delimiter: WideString): WideString;
+
 var
 	iCount: Integer;
 begin
@@ -257,13 +260,14 @@ var
 	SYSIL: thandle;
 	SFI: TSHFileInfo;
 begin
+	Result:=INVALID_HANDLE_VALUE;
 	FillChar(SFI, SizeOf(SFI), 0);
 	SYSIL := SHGetFileInfo('booya', FILE_ATTRIBUTE_DIRECTORY, SFI, SizeOf(SFI), SHGFI_ICON or SHGFI_SMALLICON or SHGFI_USEFILEATTRIBUTES);
 	if SYSIL <> 0 then
 	begin
 		exit(SFI.Hicon);
-	end
-	else RaiseLastOSError;
+	end;
+	//else RaiseLastOSError;
 end;
 
 function CombineIcons(FrontIcon, BackIcon: Hicon): Hicon;
@@ -304,6 +308,27 @@ begin
 	DeleteObject(FrontInfo.hbmMask);
 	DeleteObject(BackInfo.hbmColor);
 	DeleteObject(BackInfo.hbmMask);
+end;
+
+function LoadIcon(const FileName: WideString): Hicon;
+var
+	Icon: TIcon;
+begin
+	LoadIcon:=INVALID_HANDLE_VALUE;
+	try
+		Icon := TIcon.Create;
+		Icon.LoadFromFile(FileName);//todo: это не работает
+		LoadIcon:=Icon.Handle;
+	finally
+		Icon.Free;
+	end;
+
+end;
+
+function LoadPluginIcon(const path: WideString; identifier: WideString): Hicon;
+begin
+	LoadPluginIcon:=INVALID_HANDLE_VALUE;
+	exit(LoadIcon(IncludeTrailingBackslash(path) + identifier + '.ico'));
 end;
 
 end.
