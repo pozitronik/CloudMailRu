@@ -1027,46 +1027,41 @@ function FsExtractCustomIconW(RemoteName: PWideChar; ExtractFlags: integer; var 
 var
 	RealPath: TRealPath;
 	Item: TCloudMailRuDirListingItem;
+
 begin
-	Result:=FS_ICON_USEDEFAULT;
-	if GetPluginSettings(SettingsIniFilePath).DisableIcons then exit;
+	Result:=FS_ICON_EXTRACTED;
 
 	RealPath := ExtractRealPath(RemoteName);
 	if (RealPath.path = '..') or (RemoteName = '\..\') then exit;
 	//if (RealPath.path = '') and (RealPath.account = '') then exit;
+	if GetPluginSettings(SettingsIniFilePath).IconsMode = IconsModeDisabled then exit(FS_ICON_USEDEFAULT);
 
-	if (RealPath.path = '') then
+	if (RealPath.path = '') then //connection list
 	begin
-		if (GetAccountSettingsFromIniFile(AccountsIniFilePath, copy(RemoteName, 2, StrLen(RemoteName) - 2)).public_account) then
+		if (GetAccountSettingsFromIniFile(AccountsIniFilePath, copy(RemoteName, 2, StrLen(RemoteName) - 2)).public_account) then strpcopy(RemoteName, 'cloud_public')
+		else strpcopy(RemoteName, 'cloud');
+	end else begin
+		//directories
+		Item:=GetListingItemByName(CurrentListing, RealPath);
+		if Item.type_ = TYPE_DIR then
 		begin
-			strpcopy(RemoteName, 'folder_cloud_shared');
-			TheIcon:=LoadIconW(hInstance, 'folder_cloud_shared');
-		end else begin
-			strpcopy(RemoteName, 'folder_cloud');
-			TheIcon:=LoadIconW(hInstance, 'folder_cloud');
-		end;
 
-		exit(FS_ICON_EXTRACTED);
+			if Item.kind = KIND_SHARED then
+			begin
+				strpcopy(RemoteName, 'shared');
+			end else if Item.Weblink <> '' then
+			begin
+				strpcopy(RemoteName, 'shared_public');
+			end else begin
+				exit(FS_ICON_USEDEFAULT);
+			end;
+		end else exit(FS_ICON_USEDEFAULT);
 	end;
-
-	Item:=GetListingItemByName(CurrentListing, RealPath);
-	if Item.type_ = TYPE_DIR then
-	begin
-		Result:=FS_ICON_EXTRACTED;
-		if Item.kind = KIND_SHARED then
-		begin
-			strpcopy(RemoteName, 'shared');
-			TheIcon:=LoadIconW(hInstance, PWideChar('shared'));
-		end else if Item.Weblink <> '' then
-		begin
-			strpcopy(RemoteName, 'shared_public');
-			TheIcon:=LoadIconW(hInstance, PWideChar('shared_public'));
-		end else begin
-			strpcopy(RemoteName, 'folder');
-
-			TheIcon:=LoadIconW(hInstance, PWideChar('folder'));
-		end;
-
+	case GetPluginSettings(SettingsIniFilePath).IconsMode of
+		IconsModeInternal: TheIcon:=LoadIconW(hInstance, RemoteName);
+		IconsModeInternalOverlay: TheIcon:= CombineIcons(LoadIconW(hInstance, RemoteName), GetFolderIcon);
+		IconsModeExternal: TheIcon := LoadPluginIcon(PluginPath + 'icons', RemoteName);
+		IconsModeExternalOverlay: TheIcon:= CombineIcons(LoadPluginIcon(PluginPath + 'icons', RemoteName), GetFolderIcon);
 	end;
 end;
 
