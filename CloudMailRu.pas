@@ -178,7 +178,7 @@ type
 		function fromJSON_OAuthTokenInfo(JSON: WideString; var CloudMailRuOAuthInfo: TCloudMailRuOAuthInfo): Boolean;
 		function fromJSON_PublicLink(JSON: WideString; var PublicLink: WideString): Boolean;
 		function fromJSON_OperationResult(JSON: WideString; var OperationStatus: integer): integer;
-		function fromJSON_PublicDirListing(JSON: WideString; var CloudMailRuDirListing: TCloudMailRuDirListing): Boolean;
+		function fromJSON_PublicDirListing(JSON, Path: WideString; var CloudMailRuDirListing: TCloudMailRuDirListing): Boolean;
 		function fromJSON_InviteListing(JSON: WideString; var InviteListing: TCloudMailRuInviteInfoListing): Boolean;
 		{HTTP REQUESTS WRAPPERS}
 		function getToken(): Boolean;
@@ -194,11 +194,11 @@ type
 	protected
 		{REGULAR CLOUD}
 		function loginRegular(method: integer = CLOUD_AUTH_METHOD_WEB): Boolean;
-		function getDirListingRegular(path: WideString; var DirListing: TCloudMailRuDirListing): Boolean;
+		function getDirListingRegular(Path: WideString; var DirListing: TCloudMailRuDirListing): Boolean;
 		function getFileRegular(remotePath, localPath: WideString; LogErrors: Boolean = true): integer; //LogErrors=false => не логируем результат копирования, нужно для запроса descript.ion (которого может не быть)
 		{SHARED WEBFOLDERS}
 		function loginShared(method: integer = CLOUD_AUTH_METHOD_WEB): Boolean;
-		function getDirListingShared(path: WideString; var DirListing: TCloudMailRuDirListing): Boolean;
+		function getDirListingShared(Path: WideString; var DirListing: TCloudMailRuDirListing): Boolean;
 		function getFileShared(remotePath, localPath: WideString; LogErrors: Boolean = true): integer; //LogErrors=false => не логируем результат копирования, нужно для запроса descript.ion (которого может не быть)
 	public
 		Property isPublicShare: Boolean read public_account;
@@ -207,10 +207,10 @@ type
 		destructor Destroy; override;
 		{CLOUD INTERFACE METHODS}
 		function login(method: integer = CLOUD_AUTH_METHOD_WEB): Boolean;
-		function getDirListing(path: WideString; var DirListing: TCloudMailRuDirListing): Boolean;
-		function createDir(path: WideString): Boolean;
-		function removeDir(path: WideString): Boolean;
-		function statusFile(path: WideString; var FileInfo: TCloudMailRuDirListingItem): Boolean;
+		function getDirListing(Path: WideString; var DirListing: TCloudMailRuDirListing): Boolean;
+		function createDir(Path: WideString): Boolean;
+		function removeDir(Path: WideString): Boolean;
+		function statusFile(Path: WideString; var FileInfo: TCloudMailRuDirListingItem): Boolean;
 		function getFile(remotePath, localPath: WideString; LogErrors: Boolean = true): integer; //LogErrors=false => не логируем результат копирования, нужно для запроса descript.ion (которого может не быть)
 		function putFile(localPath, remotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; ChunkOverwriteMode: integer = 0): integer;
 		function renameFile(OldName, NewName: WideString): integer; //смена имени без перемещения
@@ -218,11 +218,11 @@ type
 		function copyFile(OldName, ToPath: WideString): integer; //Копирование файла внутри одного каталога
 		function mvFile(OldName, NewName: WideString): integer; //объединяющая функция, определяет делать rename или move
 		function cpFile(OldName, NewName: WideString): integer; //Копирует файл, и переименует, если нужно
-		function deleteFile(path: WideString): Boolean;
-		function publishFile(path: WideString; var PublicLink: WideString; publish: Boolean = CLOUD_PUBLISH): Boolean;
-		function cloneWeblink(path, link: WideString; ConflictMode: WideString = CLOUD_CONFLICT_RENAME): integer; //клонировать публичную ссылку в текущий каталог
-		function getShareInfo(path: WideString; var InviteListing: TCloudMailRuInviteInfoListing): Boolean;
-		function shareFolder(path, email: WideString; access: integer): Boolean;
+		function deleteFile(Path: WideString): Boolean;
+		function publishFile(Path: WideString; var PublicLink: WideString; publish: Boolean = CLOUD_PUBLISH): Boolean;
+		function cloneWeblink(Path, link: WideString; ConflictMode: WideString = CLOUD_CONFLICT_RENAME): integer; //клонировать публичную ссылку в текущий каталог
+		function getShareInfo(Path: WideString; var InviteListing: TCloudMailRuInviteInfoListing): Boolean;
+		function shareFolder(Path, email: WideString; access: integer): Boolean;
 		{OTHER ROUTINES}
 		function getDescriptionFile(remotePath, localCopy: WideString): integer; //Если в каталоге remotePath есть descript.ion - скопировать его в файл localcopy
 		procedure logUserSpaceInfo();
@@ -241,7 +241,7 @@ begin
 	Result := self.HTTPPost(API_FILE_ADD, 'conflict=' + ConflictMode + '&home=/' + remotePath + '&hash=' + hash + '&size=' + size.ToString + self.united_params, JSONAnswer);
 end;
 
-function TCloudMailRu.cloneWeblink(path, link, ConflictMode: WideString): integer;
+function TCloudMailRu.cloneWeblink(Path, link, ConflictMode: WideString): integer;
 var
 	JSON: WideString;
 	OperationStatus, OperationResult: integer;
@@ -250,7 +250,7 @@ begin
 	Result := FS_FILE_WRITEERROR;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
 	if self.public_account then exit(FS_FILE_NOTSUPPORTED);
-	if self.HTTPGet(API_CLONE + '?folder=' + PathToUrl(path) + '&weblink=' + link + '&conflict=' + ConflictMode + self.united_params, JSON, Progress) then
+	if self.HTTPGet(API_CLONE + '?folder=' + PathToUrl(Path) + '&weblink=' + link + '&conflict=' + ConflictMode + self.united_params, JSON, Progress) then
 	begin //Парсим ответ
 		OperationResult := self.fromJSON_OperationResult(JSON, OperationStatus);
 		case OperationResult of
@@ -393,7 +393,7 @@ begin
 	end;
 end;
 
-function TCloudMailRu.createDir(path: WideString): Boolean;
+function TCloudMailRu.createDir(Path: WideString): Boolean;
 var
 	PostAnswer: WideString;
 	OperationStatus, OperationResult: integer;
@@ -401,7 +401,7 @@ begin
 	Result := false;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
 	if self.public_account then exit;
-	if self.HTTPPost(API_FOLDER_ADD, 'home=/' + PathToUrl(path) + self.united_params + '&conflict', PostAnswer) then
+	if self.HTTPPost(API_FOLDER_ADD, 'home=/' + PathToUrl(Path) + self.united_params + '&conflict', PostAnswer) then
 	begin
 		OperationResult :=self.fromJSON_OperationResult(PostAnswer, OperationStatus);
 		case OperationResult of
@@ -415,7 +415,7 @@ begin
 	end;
 end;
 
-function TCloudMailRu.deleteFile(path: WideString): Boolean;
+function TCloudMailRu.deleteFile(Path: WideString): Boolean;
 var
 	JSON: WideString;
 	OperationResult, OperationStatus: integer;
@@ -423,7 +423,7 @@ begin
 	Result := false;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
 	if self.public_account then exit;
-	Result := self.HTTPPost(API_FILE_REMOVE, 'home=/' + PathToUrl(path) + self.united_params + '&conflict', JSON);
+	Result := self.HTTPPost(API_FILE_REMOVE, 'home=/' + PathToUrl(Path) + self.united_params + '&conflict', JSON);
 	if Result then
 	begin
 		OperationResult:= self.fromJSON_OperationResult(JSON, OperationStatus);
@@ -749,7 +749,7 @@ begin
 	Result := CLOUD_OPERATION_OK;
 end;
 
-function TCloudMailRu.fromJSON_PublicDirListing(JSON: WideString; var CloudMailRuDirListing: TCloudMailRuDirListing): Boolean;
+function TCloudMailRu.fromJSON_PublicDirListing(JSON, Path: WideString; var CloudMailRuDirListing: TCloudMailRuDirListing): Boolean;
 var
 	Obj: TJSONObject;
 	J: integer;
@@ -766,10 +766,15 @@ begin
 			begin
 				if Assigned(Obj.values['size']) then size := Obj.values['size'].Value.ToInt64;
 				if Assigned(Obj.values['kind']) then kind := Obj.values['kind'].Value;
-				if Assigned(Obj.values['weblink']) then weblink := Obj.values['weblink'].Value;
+
 				if Assigned(Obj.values['type']) then type_ := Obj.values['type'].Value;
 				if Assigned(Obj.values['home']) then home := Obj.values['home'].Value;
 				if Assigned(Obj.values['name']) then name := Obj.values['name'].Value;
+				if Assigned(Obj.values['weblink']) then
+				begin
+					weblink := Obj.values['weblink'].Value;
+					if home = '' then home := Path + '/' + name; //Значение отстутствует в JSON, формируем его сами для совместимости с FindListingItemByHomePath
+				end;
 				if (type_ = TYPE_FILE) then
 				begin
 					if Assigned(Obj.values['mtime']) then mtime := Obj.values['mtime'].Value.ToInt64;
@@ -834,22 +839,22 @@ begin
 	Result := self.getFile(remotePath, localCopy, false);
 end;
 
-function TCloudMailRu.getDirListing(path: WideString; var DirListing: TCloudMailRuDirListing): Boolean;
+function TCloudMailRu.getDirListing(Path: WideString; var DirListing: TCloudMailRuDirListing): Boolean;
 begin
 	Result:=false;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
-	if self.public_account then Result:=self.getDirListingShared(path, DirListing)
-	else Result:= self.getDirListingRegular(path, DirListing)
+	if self.public_account then Result:=self.getDirListingShared(Path, DirListing)
+	else Result:= self.getDirListingRegular(Path, DirListing)
 end;
 
-function TCloudMailRu.getDirListingRegular(path: WideString; var DirListing: TCloudMailRuDirListing): Boolean;
+function TCloudMailRu.getDirListingRegular(Path: WideString; var DirListing: TCloudMailRuDirListing): Boolean;
 var
 	JSON: WideString;
 	Progress: Boolean;
 	OperationStatus, OperationResult: integer;
 begin
 	Progress := false;
-	Result := self.HTTPGet(API_FOLDER + '&home=' + PathToUrl(path) + self.united_params, JSON, Progress);
+	Result := self.HTTPGet(API_FOLDER + '&home=' + PathToUrl(Path) + self.united_params, JSON, Progress);
 	if Result then
 	begin
 		OperationResult:= self.fromJSON_OperationResult(JSON, OperationStatus);
@@ -857,7 +862,7 @@ begin
 			CLOUD_OPERATION_OK: Result := self.fromJSON_DirListing(JSON, DirListing);
 			CLOUD_ERROR_NOT_EXISTS:
 				begin
-					Log(MSGTYPE_IMPORTANTERROR, 'Path not exists: ' + path);
+					Log(MSGTYPE_IMPORTANTERROR, 'Path not exists: ' + Path);
 					Result := false;
 				end
 			else
@@ -869,31 +874,31 @@ begin
 	end;
 end;
 
-function TCloudMailRu.getDirListingShared(path: WideString; var DirListing: TCloudMailRuDirListing): Boolean;
+function TCloudMailRu.getDirListingShared(Path: WideString; var DirListing: TCloudMailRuDirListing): Boolean;
 var
 	JSON, PageContent: WideString;
 	Progress: Boolean;
-	function PathToJsonId(path: WideString): WideString;
+	function PathToJsonId(Path: WideString): WideString;
 	begin
-		Result:= StringReplace(path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]);
+		Result:= StringReplace(Path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]);
 		if Result <> '' then Result:='/' + Result;
 	end;
 
 begin
 	Progress := false;
-	Result :=self.HTTPGet(self.PUBLIC_URL + PathToUrl(path, false), PageContent, Progress);
+	Result :=self.HTTPGet(self.PUBLIC_URL + PathToUrl(Path, false), PageContent, Progress);
 	if Result then
 	begin
 		PageContent := StringReplace(PageContent, #$A, '', [rfReplaceAll]); //так нам проще ковыряться в тексте
 		PageContent := StringReplace(PageContent, #$D, '', [rfReplaceAll]);
 		PageContent := StringReplace(PageContent, #9, '', [rfReplaceAll]);
-		path:=PathToJsonId(path);
-		if not self.extractJSONFromPublicFolder(PageContent, self.public_link + path, JSON) then
+		Path:=PathToJsonId(Path);
+		if not self.extractJSONFromPublicFolder(PageContent, self.public_link + Path, JSON) then
 		begin
 			Log(MSGTYPE_IMPORTANTERROR, 'Can''t get public share JSON data');
 			exit(false);
 		end;
-		if not self.fromJSON_PublicDirListing(JSON, DirListing) then exit(false);
+		if not self.fromJSON_PublicDirListing(JSON, Path, DirListing) then exit(false);
 		if not self.extractPublicTokenFromText(PageContent, self.public_download_token) then //refresh public download token
 		begin
 			Log(MSGTYPE_IMPORTANTERROR, 'Can''t get public share download token');
@@ -1403,7 +1408,7 @@ begin //К сожалению, переименование и перемеще�
 	end;
 end;
 
-function TCloudMailRu.publishFile(path: WideString; var PublicLink: WideString; publish: Boolean): Boolean;
+function TCloudMailRu.publishFile(Path: WideString; var PublicLink: WideString; publish: Boolean): Boolean;
 var
 	JSON: WideString;
 	OperationStatus, OperationResult: integer;
@@ -1413,7 +1418,7 @@ begin
 	if self.public_account then exit;
 	if publish then
 	begin
-		Result := self.HTTPPost(API_FILE_PUBLISH, 'home=/' + PathToUrl(path) + self.united_params + '&conflict', JSON);
+		Result := self.HTTPPost(API_FILE_PUBLISH, 'home=/' + PathToUrl(Path) + self.united_params + '&conflict', JSON);
 	end else begin
 		Result := self.HTTPPost(API_FILE_UNPUBLISH, 'weblink=' + PublicLink + self.united_params + '&conflict', JSON);
 	end;
@@ -1432,7 +1437,7 @@ begin
 	end;
 end;
 
-function TCloudMailRu.getShareInfo(path: WideString; var InviteListing: TCloudMailRuInviteInfoListing): Boolean;
+function TCloudMailRu.getShareInfo(Path: WideString; var InviteListing: TCloudMailRuInviteInfoListing): Boolean;
 var
 	JSON: WideString;
 	Progress: Boolean;
@@ -1440,14 +1445,14 @@ begin
 	Result := false;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
 	Progress := false;
-	if self.HTTPGet(API_FOLDER_SHARED_INFO + '?home=' + PathToUrl(path) + self.united_params, JSON, Progress) then
+	if self.HTTPGet(API_FOLDER_SHARED_INFO + '?home=' + PathToUrl(Path) + self.united_params, JSON, Progress) then
 	begin
 		Result:= self.fromJSON_InviteListing(JSON, InviteListing);
 	end;
 
 end;
 
-function TCloudMailRu.shareFolder(path, email: WideString; access: integer): Boolean;
+function TCloudMailRu.shareFolder(Path, email: WideString; access: integer): Boolean;
 var
 	JSON: WideString;
 	OperationStatus, OperationResult: integer;
@@ -1459,9 +1464,9 @@ begin
 		if access = CLOUD_SHARE_RW then access_string := CLOUD_SHARE_ACCESS_READ_WRITE
 		else access_string := CLOUD_SHARE_ACCESS_READ_ONLY;
 
-		Result:= self.HTTPPost(API_FOLDER_SHARE, 'home=/' + PathToUrl(path) + self.united_params + '&invite={"email":"' + email + '","access":"' + access_string + '"}', JSON)
+		Result:= self.HTTPPost(API_FOLDER_SHARE, 'home=/' + PathToUrl(Path) + self.united_params + '&invite={"email":"' + email + '","access":"' + access_string + '"}', JSON)
 	end else begin
-		Result:=(self.HTTPPost(API_FOLDER_UNSHARE, 'home=/' + PathToUrl(path) + self.united_params + '&invite={"email":"' + email + '"}', JSON));
+		Result:=(self.HTTPPost(API_FOLDER_UNSHARE, 'home=/' + PathToUrl(Path) + self.united_params + '&invite={"email":"' + email + '"}', JSON));
 	end;
 
 	if (Result) then
@@ -1686,7 +1691,7 @@ begin
 	end;
 end;
 
-function TCloudMailRu.removeDir(path: WideString): Boolean;
+function TCloudMailRu.removeDir(Path: WideString): Boolean;
 var
 	JSON: WideString;
 	OperationResult, OperationStatus: integer;
@@ -1694,7 +1699,7 @@ begin
 	Result := false;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
 	if self.public_account then exit;
-	Result := self.HTTPPost(API_FILE_REMOVE, 'home=/' + PathToUrl(path) + '/' + self.united_params + '&conflict', JSON); //API всегда отвечает true, даже если путь не существует
+	Result := self.HTTPPost(API_FILE_REMOVE, 'home=/' + PathToUrl(Path) + '/' + self.united_params + '&conflict', JSON); //API всегда отвечает true, даже если путь не существует
 	if Result then
 	begin
 		OperationResult:= self.fromJSON_OperationResult(JSON, OperationStatus);
@@ -1724,7 +1729,7 @@ begin
 	end;
 end;
 
-function TCloudMailRu.statusFile(path: WideString; var FileInfo: TCloudMailRuDirListingItem): Boolean;
+function TCloudMailRu.statusFile(Path: WideString; var FileInfo: TCloudMailRuDirListingItem): Boolean;
 var
 	JSON: WideString;
 	Progress: Boolean;
@@ -1735,7 +1740,7 @@ begin
 	if self.public_account then exit; //Не заморачиваемся с получением ссылок
 
 	Progress := false;
-	Result := self.HTTPGet(API_FILE + '?home=' + PathToUrl(path) + self.united_params, JSON, Progress);
+	Result := self.HTTPGet(API_FILE + '?home=' + PathToUrl(Path) + self.united_params, JSON, Progress);
 	if Result then
 	begin
 		OperationResult := self.fromJSON_OperationResult(JSON, OperationStatus);
