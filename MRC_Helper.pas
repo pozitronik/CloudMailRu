@@ -315,13 +315,15 @@ var
 	Icon: TIcon;
 begin
 	LoadIcon:=INVALID_HANDLE_VALUE;
-	try
-		Icon := TIcon.Create;
-		Icon.LoadFromFile(FileName);
-		Result:=CopyIcon(Icon.Handle);
-	finally
-		Icon.Free;
-	end;
+	if not FileExists(FileName) then exit;
+
+		try
+			Icon := TIcon.Create;
+			Icon.LoadFromFile(FileName);
+			Result:=CopyIcon(Icon.Handle);
+		finally
+			Icon.Free;
+		end;
 
 end;
 
