@@ -645,7 +645,6 @@ var
 	Obj: TJSONObject;
 	J: integer;
 	A: TJSONArray;
-	CurrentInvite: TCloudMailRuInviteInfo;
 begin
 	Result:=true;
 	SetLength(InviteListing, 0);
@@ -1458,6 +1457,7 @@ var
 	OperationStatus, OperationResult: integer;
 	access_string: WideString;
 begin
+	Result:=false;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
 	if access in [CLOUD_SHARE_RW, CLOUD_SHARE_RO] then
 	begin

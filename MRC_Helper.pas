@@ -266,12 +266,14 @@ var
 	uFlags: uint;
 begin
 	Result:=INVALID_HANDLE_VALUE;
+	uFlags:=SHGFI_ICON;
 	FillChar(SFI, SizeOf(SFI), 0);
 	case size of
 		IconSizeSmall: uFlags:=SHGFI_ICON or SHGFI_SMALLICON;
 		IconSizeNormal: uFlags:=SHGFI_ICON;
-		IconSizeLarge: uFlags:=SHGFI_ICON or SHGFI_LARGEICON;
+		IconSizeLarge: uFlags:=SHGFI_ICON or SHGFI_LARGEICON; //not working with SHGetFileInfo
 	end;
+
 	SYSIL := SHGetFileInfo('booya', FILE_ATTRIBUTE_DIRECTORY, SFI, SizeOf(SFI), uFlags or SHGFI_USEFILEATTRIBUTES);
 	if SYSIL <> 0 then
 	begin
@@ -339,7 +341,6 @@ end;
 
 function LoadPluginIcon(const path: WideString; identifier: WideString): Hicon;
 begin
-	LoadPluginIcon:=INVALID_HANDLE_VALUE;
 	exit(LoadIcon(IncludeTrailingBackslash(path) + identifier + '.ico'));
 end;
 
