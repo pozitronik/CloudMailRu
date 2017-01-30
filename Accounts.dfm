@@ -377,9 +377,9 @@ object AccountsForm: TAccountsForm
       object IconsModeLabel: TLabel
         Left = 5
         Top = 217
-        Width = 59
+        Width = 88
         Height = 13
-        Caption = 'Plugin icons:'
+        Caption = 'Plugin icons mode:'
       end
       object PreserveFileTimeCB: TCheckBox
         Left = 5
