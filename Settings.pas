@@ -263,7 +263,7 @@ begin
 	IniFile.WriteBool(AccountSettings.name, 'twostep_auth', AccountSettings.twostep_auth);
 	IniFile.WriteBool(AccountSettings.name, 'public_account', AccountSettings.public_account);
 	IniFile.WriteString(AccountSettings.name, 'public_url', AccountSettings.public_url);
-	IniFile.WriteString(AccountSettings.description, 'description', AccountSettings.description);
+	IniFile.WriteString(AccountSettings.name, 'description', AccountSettings.description);
 	IniFile.Destroy;
 end;
 
