@@ -1060,7 +1060,7 @@ begin
 	end;
 	case GetPluginSettings(SettingsIniFilePath).IconsMode of
 		IconsModeInternal: TheIcon:=LoadImageW(hInstance, RemoteName, IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
-		IconsModeInternalOverlay: TheIcon:= CombineIcons(LoadImageW(hInstance, RemoteName, IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR), GetFolderIcon);
+		IconsModeInternalOverlay: TheIcon:= CombineIcons(LoadImageW(hInstance, RemoteName, IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR), GetFolderIcon(GetPluginSettings(SettingsIniFilePath).IconsSize));
 		IconsModeExternal:
 			begin
 				TheIcon := LoadPluginIcon(PluginPath + 'icons', RemoteName);
@@ -1070,7 +1070,7 @@ begin
 			begin
 				TheIcon := LoadPluginIcon(PluginPath + 'icons', RemoteName);
 				if TheIcon = INVALID_HANDLE_VALUE then exit(FS_ICON_USEDEFAULT);
-				TheIcon:= CombineIcons(TheIcon, GetFolderIcon);
+				TheIcon:= CombineIcons(TheIcon, GetFolderIcon(GetPluginSettings(SettingsIniFilePath).IconsSize));
 			end;
 
 	end;
