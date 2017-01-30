@@ -317,8 +317,8 @@ begin
 	LoadIcon:=INVALID_HANDLE_VALUE;
 	try
 		Icon := TIcon.Create;
-		Icon.LoadFromFile(FileName);//todo: это не работает
-		LoadIcon:=Icon.Handle;
+		Icon.LoadFromFile(FileName);
+		Result:=CopyIcon(Icon.Handle);
 	finally
 		Icon.Free;
 	end;
