@@ -1055,11 +1055,12 @@ begin
 			end else begin
 				exit(FS_ICON_USEDEFAULT);
 			end;
-		end else exit(FS_ICON_USEDEFAULT);
+		end
+		else exit(FS_ICON_USEDEFAULT);
 	end;
 	case GetPluginSettings(SettingsIniFilePath).IconsMode of
-		IconsModeInternal: TheIcon:=LoadIconW(hInstance, RemoteName);
-		IconsModeInternalOverlay: TheIcon:= CombineIcons(LoadIconW(hInstance, RemoteName), GetFolderIcon);
+		IconsModeInternal: TheIcon:=LoadImageW(hInstance, RemoteName, IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
+		IconsModeInternalOverlay: TheIcon:= CombineIcons(LoadImageW(hInstance, RemoteName, IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR), GetFolderIcon);
 		IconsModeExternal: TheIcon := LoadPluginIcon(PluginPath + 'icons', RemoteName);
 		IconsModeExternalOverlay: TheIcon:= CombineIcons(LoadPluginIcon(PluginPath + 'icons', RemoteName), GetFolderIcon);
 	end;
