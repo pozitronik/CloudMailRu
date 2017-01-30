@@ -71,6 +71,7 @@ type
 		OverwriteLocalMode: Integer;
 		DisableMultiThreading: boolean;
 		IconsMode: Integer;
+		IconsSize: Integer;
 	end;
 
 function GetProxyPasswordNow(var ProxySettings: TProxySettings; MyLogProc: TLogProcW; MyCryptProc: TCryptProcW; PluginNum: Integer; CryptoNum: Integer): boolean;
@@ -170,6 +171,7 @@ begin
 	GetPluginSettings.AskOnErrors := IniFile.ReadBool('Main', 'AskOnErrors', false);
 	GetPluginSettings.DisableMultiThreading := IniFile.ReadBool('Main', 'DisableMultiThreading', false);
 	GetPluginSettings.IconsMode := IniFile.ReadInteger('Main', 'IconsMode', 0);
+	GetPluginSettings.IconsSize := IniFile.ReadInteger('Main', 'IconsSize', 0);
 	GetPluginSettings.SocketTimeout := IniFile.ReadInteger('Main', 'SocketTimeout', -1);
 	GetPluginSettings.CloudMaxFileSize := IniFile.ReadInteger('Main', 'CloudMaxFileSize', CLOUD_MAX_FILESIZE_DEFAULT);
 	GetPluginSettings.ChunkOverwriteMode := IniFile.ReadInteger('Main', 'ChunkOverwriteMode', 0);
