@@ -7,6 +7,10 @@ uses Classes, Windows, SysUtils, MultiMon, Math, ShellApi, ShlObj, Vcl.Graphics;
 const
 	MAX_UNC_PATH = 32767;
 
+	IconSizeSmall = 0; //SHGFI_SMALLICON
+	IconSizeNormal = 1; //SHGFI_ICON
+	IconSizeLarge = 2; //SHGFI_LARGEICON
+
 type
 	TRealPath = record
 		account: WideString;
@@ -33,7 +37,7 @@ function ExtractLinkFromUrl(URL: WideString): WideString; //При необхо�
 function IsWriteable(const DirName: WideString; FileName: WideString = 'delete.me'; CleanFile: boolean = true): boolean;
 function PosLast(Substring, S: WideString; Offset: Integer = 0): Integer;
 function PathToUrl(path: WideString; RestrictEmptyUrl: boolean = true): WideString;
-function GetFolderIcon(): Hicon;
+function GetFolderIcon(const size: Integer = IconSizeSmall): Hicon;
 function CombineIcons(FrontIcon, BackIcon: Hicon): Hicon; //taken from http://www.swissdelphicenter.ch/en/showcode.php?id=1636
 function LoadIcon(const FileName: WideString): Hicon;
 function LoadPluginIcon(const path: WideString; identifier: WideString): Hicon;
@@ -255,14 +259,20 @@ begin
 	if (Result = '') and RestrictEmptyUrl then Result := '/';
 end;
 
-function GetFolderIcon(): Hicon;
+function GetFolderIcon(const size: Integer = IconSizeSmall): Hicon;
 var
 	SYSIL: thandle;
 	SFI: TSHFileInfo;
+	uFlags: uint;
 begin
 	Result:=INVALID_HANDLE_VALUE;
 	FillChar(SFI, SizeOf(SFI), 0);
-	SYSIL := SHGetFileInfo('booya', FILE_ATTRIBUTE_DIRECTORY, SFI, SizeOf(SFI), SHGFI_ICON or SHGFI_SMALLICON or SHGFI_USEFILEATTRIBUTES);
+	case size of
+		IconSizeSmall: uFlags:=SHGFI_ICON or SHGFI_SMALLICON;
+		IconSizeNormal: uFlags:=SHGFI_ICON;
+		IconSizeLarge: uFlags:=SHGFI_ICON or SHGFI_LARGEICON;
+	end;
+	SYSIL := SHGetFileInfo('booya', FILE_ATTRIBUTE_DIRECTORY, SFI, SizeOf(SFI), uFlags or SHGFI_USEFILEATTRIBUTES);
 	if SYSIL <> 0 then
 	begin
 		exit(SFI.Hicon);
@@ -317,13 +327,13 @@ begin
 	LoadIcon:=INVALID_HANDLE_VALUE;
 	if not FileExists(FileName) then exit;
 
-		try
-			Icon := TIcon.Create;
-			Icon.LoadFromFile(FileName);
-			Result:=CopyIcon(Icon.Handle);
-		finally
-			Icon.Free;
-		end;
+	try
+		Icon := TIcon.Create;
+		Icon.LoadFromFile(FileName);
+		Result:=CopyIcon(Icon.Handle);
+	finally
+		Icon.Free;
+	end;
 
 end;
 
