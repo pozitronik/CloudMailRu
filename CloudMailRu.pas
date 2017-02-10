@@ -960,6 +960,7 @@ var
 	FileStream: TFileStream;
 begin
 	Result := FS_FILE_NOTFOUND;
+	if (self.public_shard = '') or (self.public_download_token = '') then exit;
 	remotePath := PathToUrl(remotePath) + '?key=' + self.public_download_token;
 	try
 		FileStream := TFileStream.Create(GetUNCFilePath(localPath), fmCreate);
