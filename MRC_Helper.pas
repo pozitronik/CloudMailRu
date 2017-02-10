@@ -128,10 +128,15 @@ procedure SetAllFileTime(const FileName: string; const FileTime: TFileTime);
 var
 	Handle: thandle;
 begin
-	Handle := CreateFile(PChar(FileName), FILE_WRITE_ATTRIBUTES, FILE_SHARE_READ or FILE_SHARE_WRITE, nil, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
-	if Handle = INVALID_HANDLE_VALUE then RaiseLastOSError;
 	try
-		if not SetFileTime(Handle, @FileTime, @FileTime, @FileTime) then RaiseLastOSError;
+		Handle := CreateFileW(PWideChar(GetUNCFilePath(FileName)), FILE_WRITE_ATTRIBUTES, FILE_SHARE_READ or FILE_SHARE_WRITE, nil, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+		if Handle = INVALID_HANDLE_VALUE then
+		begin
+			CloseHandle(Handle);
+			exit;
+		end;
+
+		SetFileTime(Handle, @FileTime, @FileTime, @FileTime);
 	finally
 		CloseHandle(Handle);
 	end;
