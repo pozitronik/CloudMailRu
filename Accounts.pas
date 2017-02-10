@@ -64,6 +64,7 @@ type
 		DisableMultiThreadingCB: TCheckBox;
 		IconsModeCombo: TComboBox;
 		IconsModeLabel: TLabel;
+    SpaceInfoLoggingCB: TCheckBox;
 		procedure FormShow(Sender: TObject);
 		procedure AccountsListClick(Sender: TObject);
 		procedure ApplyButtonClick(Sender: TObject);
@@ -185,6 +186,7 @@ begin
 	SetPluginSettingsValue(SettingsIniFilePath, 'OverwriteLocalMode', OverwriteLocalModeCombo.ItemIndex);
 
 	SetPluginSettingsValue(SettingsIniFilePath, 'DisableMultiThreading', DisableMultiThreadingCB.Checked);
+	SetPluginSettingsValue(SettingsIniFilePath, 'LogUserSpace', SpaceInfoLoggingCB.Checked);
 	SetPluginSettingsValue(SettingsIniFilePath, 'IconsMode', IconsModeCombo.ItemIndex);
 
 	SetPluginSettingsValue(SettingsIniFilePath, 'SocketTimeout', SocketTimeoutEdit.Text);
@@ -306,6 +308,7 @@ begin
 		AccountsForm.OverwriteLocalModeCombo.ItemIndex :=GetPluginSettings(SettingsIniFilePath).OverwriteLocalMode;
 
 		AccountsForm.DisableMultiThreadingCB.Checked:= GetPluginSettings(SettingsIniFilePath).DisableMultiThreading;
+    AccountsForm.SpaceInfoLoggingCB.Checked:=GetPluginSettings(SettingsIniFilePath).LogUserSpace;
 		AccountsForm.IconsModeCombo.ItemIndex :=GetPluginSettings(SettingsIniFilePath).IconsMode;
 
 		{global settings}

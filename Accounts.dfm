@@ -158,7 +158,7 @@ object AccountsForm: TAccountsForm
     Top = 0
     Width = 492
     Height = 405
-    ActivePage = AccountsTab
+    ActivePage = GlobalTab
     Align = alClient
     TabOrder = 0
     object AccountsTab: TTabSheet
@@ -348,46 +348,46 @@ object AccountsForm: TAccountsForm
       ImageIndex = 1
       object CloudMaxFileSizeLabelBytes: TLabel
         Left = 292
-        Top = 115
+        Top = 137
         Width = 27
         Height = 13
         Caption = 'bytes'
       end
       object ChunkOverwriteModeLabel: TLabel
         Left = 5
-        Top = 140
+        Top = 162
         Width = 150
         Height = 13
         Caption = 'Overwrite splitted chunk mode:'
       end
       object DeleteFailOnUploadModeLabel: TLabel
         Left = 5
-        Top = 165
+        Top = 187
         Width = 143
         Height = 13
         Caption = 'Delete file after upload mode:'
       end
       object OverwriteLocalModeLabel: TLabel
         Left = 5
-        Top = 191
+        Top = 213
         Width = 127
         Height = 13
         Caption = 'Overwrite local files mode:'
       end
       object IconsModeLabel: TLabel
         Left = 5
-        Top = 217
+        Top = 239
         Width = 88
         Height = 13
         Caption = 'Plugin icons mode:'
       end
       object PreserveFileTimeCB: TCheckBox
         Left = 5
-        Top = 25
+        Top = 47
         Width = 475
         Height = 17
         Caption = 'Preserve file creation time'
-        TabOrder = 1
+        TabOrder = 2
       end
       object UseDLLFromPluginDir: TCheckBox
         Left = 5
@@ -399,27 +399,27 @@ object AccountsForm: TAccountsForm
       end
       object DescriptionEnabledCB: TCheckBox
         Left = 5
-        Top = 47
-        Width = 475
-        Height = 17
-        Caption = 'Descript.ion files support'
-        TabOrder = 2
-      end
-      object OperationsViaPublicLinkEnabledCB: TCheckBox
-        Left = 5
         Top = 69
         Width = 475
         Height = 17
-        Caption = 'Copying/moving between accouns via public link'
+        Caption = 'Descript.ion files support'
         TabOrder = 3
       end
-      object AskOnErrorsCB: TCheckBox
+      object OperationsViaPublicLinkEnabledCB: TCheckBox
         Left = 5
         Top = 91
         Width = 475
         Height = 17
-        Caption = 'Ask to stop downloads/uploads on any error'
+        Caption = 'Copying/moving between accouns via public link'
         TabOrder = 4
+      end
+      object AskOnErrorsCB: TCheckBox
+        Left = 5
+        Top = 113
+        Width = 475
+        Height = 17
+        Caption = 'Ask to stop downloads/uploads on any error'
+        TabOrder = 5
       end
       object GlobalSettingApplyBTN: TButton
         Left = 405
@@ -429,35 +429,35 @@ object AccountsForm: TAccountsForm
         Caption = 'Apply'
         ParentShowHint = False
         ShowHint = False
-        TabOrder = 12
+        TabOrder = 13
         OnClick = GlobalSettingApplyBTNClick
       end
       object CloudMaxFileSizeValue: TEdit
         Left = 142
-        Top = 112
+        Top = 134
         Width = 146
         Height = 21
         Enabled = False
         NumbersOnly = True
-        TabOrder = 6
+        TabOrder = 7
       end
       object CloudMaxFileSizeCB: TCheckBox
         Left = 5
-        Top = 114
+        Top = 136
         Width = 134
         Height = 17
         Caption = 'Override split file size to'
-        TabOrder = 5
+        TabOrder = 6
         OnClick = CloudMaxFileSizeCBClick
       end
       object ChunkOverwriteModeCombo: TComboBox
         Left = 160
-        Top = 136
+        Top = 158
         Width = 320
         Height = 21
         Style = csDropDownList
         ItemIndex = 0
-        TabOrder = 7
+        TabOrder = 8
         Text = 'Silently overwrite'
         Items.Strings = (
           'Silently overwrite'
@@ -466,12 +466,12 @@ object AccountsForm: TAccountsForm
       end
       object DeleteFailOnUploadModeCombo: TComboBox
         Left = 160
-        Top = 162
+        Top = 184
         Width = 320
         Height = 21
         Style = csDropDownList
         ItemIndex = 0
-        TabOrder = 8
+        TabOrder = 9
         Text = 'Ask user'
         Items.Strings = (
           'Ask user'
@@ -482,12 +482,12 @@ object AccountsForm: TAccountsForm
       end
       object OverwriteLocalModeCombo: TComboBox
         Left = 160
-        Top = 188
+        Top = 210
         Width = 320
         Height = 21
         Style = csDropDownList
         ItemIndex = 0
-        TabOrder = 9
+        TabOrder = 10
         Text = 'Ask user'
         Items.Strings = (
           'Ask user'
@@ -496,20 +496,20 @@ object AccountsForm: TAccountsForm
       end
       object DisableMultiThreadingCB: TCheckBox
         Left = 5
-        Top = 245
+        Top = 267
         Width = 475
         Height = 17
         Caption = 'Disable background operations support'
-        TabOrder = 11
+        TabOrder = 12
       end
       object IconsModeCombo: TComboBox
         Left = 160
-        Top = 214
+        Top = 236
         Width = 320
         Height = 21
         Style = csDropDownList
         ItemIndex = 0
-        TabOrder = 10
+        TabOrder = 11
         Text = 'System default'
         Items.Strings = (
           'System default'
@@ -517,6 +517,14 @@ object AccountsForm: TAccountsForm
           'Internal icons overlay'
           'External icons'
           'External icons overlay')
+      end
+      object SpaceInfoLoggingCB: TCheckBox
+        Left = 5
+        Top = 25
+        Width = 475
+        Height = 17
+        Caption = 'Enable space info logging'
+        TabOrder = 1
       end
     end
     object NetworkTab: TTabSheet
