@@ -425,25 +425,25 @@ begin
 				end;
 			FS_STATUS_OP_PUT_SINGLE:
 				begin
-					if RealPath.account <> '' then ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
+					if (RealPath.account <> '') and GetPluginSettings(SettingsIniFilePath).LogUserSpace then ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
 				end;
 			FS_STATUS_OP_PUT_MULTI:
 				begin
-					if RealPath.account <> '' then ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
+					if (RealPath.account <> '') and GetPluginSettings(SettingsIniFilePath).LogUserSpace then ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
 				end;
 			FS_STATUS_OP_RENMOV_SINGLE:
 				begin
-					if RealPath.account <> '' then ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
+					if (RealPath.account <> '') and GetPluginSettings(SettingsIniFilePath).LogUserSpace then ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
 				end;
 			FS_STATUS_OP_RENMOV_MULTI:
 				begin
 					ThreadSkipListRenMov.DeleteValue(GetCurrentThreadID());
-					if RealPath.account <> '' then ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
+					if (RealPath.account <> '') and GetPluginSettings(SettingsIniFilePath).LogUserSpace then ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
 				end;
 			FS_STATUS_OP_DELETE:
 				begin
 					ThreadSkipListDelete.DeleteValue(GetCurrentThreadID());
-					if RealPath.account <> '' then ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
+					if (RealPath.account <> '') and GetPluginSettings(SettingsIniFilePath).LogUserSpace then ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
 				end;
 			FS_STATUS_OP_ATTRIB:
 				begin
@@ -468,23 +468,23 @@ begin
 				end;
 			FS_STATUS_OP_SYNC_GET:
 				begin
-					if RealPath.account <> '' then ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
+					if (RealPath.account <> '') and GetPluginSettings(SettingsIniFilePath).LogUserSpace then ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
 				end;
 			FS_STATUS_OP_SYNC_PUT:
 				begin
-					if RealPath.account <> '' then ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
+					if (RealPath.account <> '') and GetPluginSettings(SettingsIniFilePath).LogUserSpace then ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
 				end;
 			FS_STATUS_OP_SYNC_DELETE:
 				begin
-					if RealPath.account <> '' then ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
+					if (RealPath.account <> '') and GetPluginSettings(SettingsIniFilePath).LogUserSpace then ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
 				end;
 			FS_STATUS_OP_GET_MULTI_THREAD:
 				begin
-					if RealPath.account <> '' then ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
+					if (RealPath.account <> '') and GetPluginSettings(SettingsIniFilePath).LogUserSpace then ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
 				end;
 			FS_STATUS_OP_PUT_MULTI_THREAD:
 				begin
-					if RealPath.account <> '' then ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
+					if (RealPath.account <> '') and GetPluginSettings(SettingsIniFilePath).LogUserSpace then ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
 				end;
 		end;
 		exit;

@@ -70,6 +70,7 @@ type
 		DeleteFailOnUploadMode: Integer;
 		OverwriteLocalMode: Integer;
 		DisableMultiThreading: boolean;
+		LogUserSpace: boolean;
 		IconsMode: Integer;
 		IconsSize: Integer;
 	end;
@@ -170,6 +171,7 @@ begin
 	GetPluginSettings.OperationsViaPublicLinkEnabled := IniFile.ReadBool('Main', 'OperationsViaPublicLinkEnabled', false);
 	GetPluginSettings.AskOnErrors := IniFile.ReadBool('Main', 'AskOnErrors', false);
 	GetPluginSettings.DisableMultiThreading := IniFile.ReadBool('Main', 'DisableMultiThreading', false);
+	GetPluginSettings.LogUserSpace := IniFile.ReadBool('Main', 'LogUserSpace', true);
 	GetPluginSettings.IconsMode := IniFile.ReadInteger('Main', 'IconsMode', 0);
 	GetPluginSettings.IconsSize := IniFile.ReadInteger('Main', 'IconsSize', 0);
 	GetPluginSettings.SocketTimeout := IniFile.ReadInteger('Main', 'SocketTimeout', -1);
