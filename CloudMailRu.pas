@@ -1193,7 +1193,20 @@ begin
 	try
 		self.HTTPInit(HTTP, SSL, Socks, self.Cookie);
 		if ContentType <> '' then HTTP.Request.ContentType := ContentType;
-		HTTP.Post(URL, PostData, MemStream);
+		try
+			HTTP.Post(URL, PostData, MemStream);
+		except
+			on E: EIdOSSLCouldNotLoadSSLLibrary do
+			begin
+				Log(MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при отправке данных на адрес ' + URL);
+				MemStream.free;
+				PostData.free;
+				self.HTTPDestroy(HTTP, SSL);
+				Answer := E.Message;
+				exit(false);
+			end;
+
+		end;
 		self.HTTPDestroy(HTTP, SSL);
 		Answer := MemStream.DataString;
 	except
