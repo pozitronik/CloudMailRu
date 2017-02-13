@@ -57,6 +57,7 @@ const
 	CLOUD_ERROR_NAME_TOO_LONG = 10; //"name_too_long": 'Превышен размер имени файла'
 	CLOUD_ERROR_VIRUS_SCAN_FAIL = 11; //"virus_scan_fail": 'Файл заражен вирусом'
 	CLOUD_ERROR_OWNER = 12; //Пользователь - владелец каталога
+	CLOUD_ERROR_FAHRENHEIT = 13; //Публикация контента заблокирована по требованию правообладателя или уполномоченного государственного ведомства.
 
 	{Режимы работы при конфликтах копирования}
 	CLOUD_CONFLICT_STRICT = 'strict'; //возвращаем ошибку при существовании файла
@@ -459,6 +460,7 @@ begin
 		CLOUD_ERROR_NAME_TOO_LONG: exit('Превышена длина имени файла.');
 		CLOUD_ERROR_VIRUS_SCAN_FAIL: exit('Файл заражен вирусом');
 		CLOUD_ERROR_OWNER: exit('Нельзя использовать собственный email');
+		CLOUD_ERROR_FAHRENHEIT: exit('Невозможно создать ссылку. Публикация контента заблокирована по требованию правообладателя или уполномоченного государственного ведомства.');
 		else exit('Неизвестная ошибка (' + ErrorCode.ToString + ')');
 	end;
 end;
@@ -711,6 +713,8 @@ begin
 		OperationStatus := Obj.values['status'].Value.ToInteger;
 		if OperationStatus <> 200 then
 		begin
+			if OperationStatus = 451 then exit(CLOUD_ERROR_FAHRENHEIT);
+
 			if (Assigned((Obj.values['body'] as TJSONObject).values['home'])) then nodename := 'home'
 			else if (Assigned((Obj.values['body'] as TJSONObject).values['weblink'])) then nodename := 'weblink'
 			else if (Assigned((Obj.values['body'] as TJSONObject).values['invite.email'])) then
