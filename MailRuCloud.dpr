@@ -635,7 +635,7 @@ Begin
 				RealPath.path := '\';
 			end;
 			param := ExtractLinkFromUrl(GetWord(Verb, 2));
-			if (ConnectionManager.get(RealPath.account, getResult).cloneWeblink(RealPath.path, param) = FS_FILE_OK) then
+			if (ConnectionManager.get(RealPath.account, getResult).cloneWeblink(RealPath.path, param) = CLOUD_OPERATION_OK) then
 			begin
 				if GetPluginSettings(SettingsIniFilePath).LogUserSpace then ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
 			end
@@ -862,7 +862,13 @@ Begin
 
 				if (NeedUnpublish) and not(OldCloud.publishFile(CurrentItem.home, CurrentItem.Weblink, CLOUD_UNPUBLISH)) then MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, PWideChar('Can''t remove temporary public link on ' + CurrentItem.home));
 
-				if Result <> CLOUD_OPERATION_OK then exit;
+				if (Result <> CLOUD_OPERATION_OK) and (GetPluginSettings(SettingsIniFilePath).AskOnErrors) then
+				begin
+					case messagebox(FindTCWindow, PWideChar('File publish error: ' + TCloudMailRu.ErrorCodeText(Result) + sLineBreak + 'Continue operation?'), PWideChar('Operation error'), MB_YESNO + MB_ICONERROR) of
+						IDYES: exit;
+						IDNO: exit(FS_FILE_USERABORT);
+					end;
+				end;
 
 				if Move and not(OldCloud.deleteFile(OldRealPath.path)) then MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, PWideChar('Can''t delete ' + CurrentItem.home)); //пишем в лог, но не отваливаемся
 			end;
