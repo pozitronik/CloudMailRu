@@ -863,7 +863,7 @@ Begin
 
 				if (NeedUnpublish) and not(OldCloud.publishFile(CurrentItem.home, CurrentItem.Weblink, CLOUD_UNPUBLISH)) then MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, PWideChar('Can''t remove temporary public link on ' + CurrentItem.home));
 
-				if Result <> CLOUD_OPERATION_OK then exit;
+				if Result <> CLOUD_OPERATION_OK then exit(FS_FILE_NOTSUPPORTED);
 
 				if Move and not(OldCloud.deleteFile(OldRealPath.path)) then MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, PWideChar('Can''t delete ' + CurrentItem.home)); //пишем в лог, но не отваливаемся
 			end;

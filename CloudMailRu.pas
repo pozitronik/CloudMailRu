@@ -257,14 +257,12 @@ begin
 		case OperationResult of
 			CLOUD_OPERATION_OK: Result := CLOUD_OPERATION_OK;
 			CLOUD_ERROR_EXISTS: Result := FS_FILE_EXISTS;
-			CLOUD_ERROR_REQUIRED, CLOUD_ERROR_INVALID, CLOUD_ERROR_READONLY, CLOUD_ERROR_NAME_LENGTH_EXCEEDED: Result := FS_FILE_WRITEERROR;
+			CLOUD_ERROR_REQUIRED, CLOUD_ERROR_INVALID, CLOUD_ERROR_READONLY, CLOUD_ERROR_NAME_LENGTH_EXCEEDED, CLOUD_ERROR_OVERQUOTA: Result := FS_FILE_WRITEERROR;
 			CLOUD_ERROR_UNKNOWN: Result := FS_FILE_NOTSUPPORTED;
-			else
-				begin
-					Log(MSGTYPE_IMPORTANTERROR, 'File publish error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
-					Result := FS_FILE_WRITEERROR;
-				end;
+			else Result := FS_FILE_WRITEERROR;
 		end;
+		if OperationResult <> CLOUD_OPERATION_OK then Log(MSGTYPE_IMPORTANTERROR, 'File publish error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
+
 	end else begin //посмотреть это
 		if not(Progress) then
 		begin //user cancelled
@@ -714,6 +712,7 @@ begin
 		if OperationStatus <> 200 then
 		begin
 			if OperationStatus = 451 then exit(CLOUD_ERROR_FAHRENHEIT);
+			if OperationStatus = 507 then exit(CLOUD_ERROR_OVERQUOTA);
 
 			if (Assigned((Obj.values['body'] as TJSONObject).values['home'])) then nodename := 'home'
 			else if (Assigned((Obj.values['body'] as TJSONObject).values['weblink'])) then nodename := 'weblink'
