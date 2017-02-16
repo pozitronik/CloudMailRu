@@ -189,7 +189,6 @@ type
 		function putFileToCloud(localPath: WideString; Return: TStringList): integer;
 		function addFileToCloud(hash: WideString; size: int64; remotePath: WideString; var JSONAnswer: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT): Boolean;
 		{OTHER ROUTINES}
-		function ErrorCodeText(ErrorCode: integer): WideString;
 		procedure Log(MsgType: integer; LogString: WideString);
 		function CloudResultToFsResult(CloudResult: integer; OperationStatus: integer; ErrorPrefix: WideString = ''): integer;
 	protected
@@ -230,6 +229,7 @@ type
 		{STATIC ROUTINES}
 		class function CloudAccessToString(access: WideString; Invert: Boolean = false): WideString; static;
 		class function StringToCloudAccess(accessString: WideString; Invert: Boolean = false): integer; static;
+		class function ErrorCodeText(ErrorCode: integer): WideString; static;
 	end;
 
 implementation
@@ -245,7 +245,7 @@ end;
 function TCloudMailRu.cloneWeblink(Path, link, ConflictMode: WideString): integer;
 var
 	JSON: WideString;
-	OperationStatus, OperationResult: integer;
+	OperationStatus: integer;
 	Progress: Boolean;
 begin
 	Result := FS_FILE_WRITEERROR;
@@ -253,15 +253,15 @@ begin
 	if self.public_account then exit(FS_FILE_NOTSUPPORTED);
 	if self.HTTPGet(API_CLONE + '?folder=' + PathToUrl(Path) + '&weblink=' + link + '&conflict=' + ConflictMode + self.united_params, JSON, Progress) then
 	begin //Парсим ответ
-		OperationResult := self.fromJSON_OperationResult(JSON, OperationStatus);
-		case OperationResult of
-			CLOUD_OPERATION_OK: Result := CLOUD_OPERATION_OK;
-			CLOUD_ERROR_EXISTS: Result := FS_FILE_EXISTS;
-			CLOUD_ERROR_REQUIRED, CLOUD_ERROR_INVALID, CLOUD_ERROR_READONLY, CLOUD_ERROR_NAME_LENGTH_EXCEEDED, CLOUD_ERROR_OVERQUOTA: Result := FS_FILE_WRITEERROR;
-			CLOUD_ERROR_UNKNOWN: Result := FS_FILE_NOTSUPPORTED;
-			else Result := FS_FILE_WRITEERROR;
-		end;
-		if OperationResult <> CLOUD_OPERATION_OK then Log(MSGTYPE_IMPORTANTERROR, 'File publish error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
+		Result := self.fromJSON_OperationResult(JSON, OperationStatus);
+		{*case OperationResult of
+		 CLOUD_OPERATION_OK: Result := CLOUD_OPERATION_OK;
+		 CLOUD_ERROR_EXISTS: Result := FS_FILE_EXISTS;
+		 CLOUD_ERROR_REQUIRED, CLOUD_ERROR_INVALID, CLOUD_ERROR_READONLY, CLOUD_ERROR_NAME_LENGTH_EXCEEDED, CLOUD_ERROR_OVERQUOTA: Result := FS_FILE_WRITEERROR;
+		 CLOUD_ERROR_UNKNOWN: Result := FS_FILE_NOTSUPPORTED;
+		 else Result := FS_FILE_WRITEERROR;
+		 end;  *}
+		if Result <> CLOUD_OPERATION_OK then Log(MSGTYPE_IMPORTANTERROR, 'File publish error: ' + self.ErrorCodeText(Result) + ' Status: ' + OperationStatus.ToString());
 
 	end else begin //посмотреть это
 		if not(Progress) then
@@ -444,7 +444,7 @@ begin
 	inherited;
 end;
 
-function TCloudMailRu.ErrorCodeText(ErrorCode: integer): WideString;
+class function TCloudMailRu.ErrorCodeText(ErrorCode: integer): WideString;
 begin
 	case ErrorCode of
 		CLOUD_ERROR_EXISTS: exit('Папка с таким названием уже существует. Попробуйте другое название.');
