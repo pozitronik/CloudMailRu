@@ -636,7 +636,11 @@ Begin
 				RealPath.path := '\';
 			end;
 			param := ExtractLinkFromUrl(GetWord(Verb, 2));
-			if (ConnectionManager.get(RealPath.account, getResult).cloneWeblink(RealPath.path, param) <> FS_FILE_OK) then Result := FS_EXEC_ERROR;
+			if (ConnectionManager.get(RealPath.account, getResult).cloneWeblink(RealPath.path, param) = FS_FILE_OK) then
+			begin
+				if GetPluginSettings(SettingsIniFilePath).LogUserSpace then ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
+			end
+			else Result := FS_EXEC_ERROR;
 		end;
 
 	end;
