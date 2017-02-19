@@ -870,7 +870,7 @@ Begin
 					end;
 				end;
 
-				if Move and not(OldCloud.deleteFile(OldRealPath.path)) then MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, PWideChar('Can''t delete ' + CurrentItem.home)); //пишем в лог, но не отваливаемся
+				if (Result=CLOUD_OPERATION_OK) and Move and not(OldCloud.deleteFile(OldRealPath.path)) then MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, PWideChar('Can''t delete ' + CurrentItem.home)); //пишем в лог, но не отваливаемся
 			end;
 		end else begin
 			MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, PWideChar('Direct operations between accounts not supported'));
