@@ -79,6 +79,12 @@ begin
 		Result.path := Implode(List, '\');
 		if Copy(Result.path, Length(Result.path) - 2, 3) = '\..' then Result.path:=Copy(Result.path, 1, Length(Result.path) - 2);
 		if (Result.path = '') then ExtractRealPath.path := '\';
+		if (Result.path = '..') then
+		begin
+			Result.account := '';
+			Result.path := '';
+		end;
+
 	end;
 
 	List.Destroy;
