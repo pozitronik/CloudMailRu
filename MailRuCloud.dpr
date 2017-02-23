@@ -25,7 +25,7 @@ const
 
 var
 	//PlatformDllPath: WideString;
-	tmp: pchar;
+	tmp: pWideChar;
 	AccountsIniFilePath: WideString;
 	SettingsIniFilePath: WideString;
 	GlobalPath, PluginPath, AppDataDir, IniDir: WideString;
