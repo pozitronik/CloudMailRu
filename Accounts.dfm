@@ -418,7 +418,7 @@ object AccountsForm: TAccountsForm
         Top = 113
         Width = 475
         Height = 17
-        Caption = 'Ask to stop downloads/uploads on any error'
+        Caption = 'Ask to abort/retry/ignore downloads/uploads on any error'
         TabOrder = 5
       end
       object GlobalSettingApplyBTN: TButton
