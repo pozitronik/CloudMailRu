@@ -58,6 +58,7 @@ const
 	CLOUD_ERROR_VIRUS_SCAN_FAIL = 11; //"virus_scan_fail": 'Файл заражен вирусом'
 	CLOUD_ERROR_OWNER = 12; //Пользователь - владелец каталога
 	CLOUD_ERROR_FAHRENHEIT = 13; //Публикация контента заблокирована по требованию правообладателя или уполномоченного государственного ведомства.
+	CLOUD_ERROR_BAD_REQUEST = 14; //
 
 	{Режимы работы при конфликтах копирования}
 	CLOUD_CONFLICT_STRICT = 'strict'; //возвращаем ошибку при существовании файла
@@ -460,6 +461,7 @@ begin
 		CLOUD_ERROR_VIRUS_SCAN_FAIL: exit('Файл заражен вирусом');
 		CLOUD_ERROR_OWNER: exit('Нельзя использовать собственный email');
 		CLOUD_ERROR_FAHRENHEIT: exit('Невозможно создать ссылку. Публикация контента заблокирована по требованию правообладателя или уполномоченного государственного ведомства.');
+		CLOUD_ERROR_BAD_REQUEST: exit('Ошибка запроса к серверу.');
 		else exit('Неизвестная ошибка (' + ErrorCode.ToString + ')');
 	end;
 end;
@@ -712,6 +714,7 @@ begin
 		OperationStatus := Obj.values['status'].Value.ToInteger;
 		if OperationStatus <> 200 then
 		begin
+			if OperationStatus = 400 then exit(CLOUD_ERROR_BAD_REQUEST);
 			if OperationStatus = 451 then exit(CLOUD_ERROR_FAHRENHEIT);
 			if OperationStatus = 507 then exit(CLOUD_ERROR_OVERQUOTA);
 
