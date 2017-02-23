@@ -226,6 +226,7 @@ type
 		{OTHER ROUTINES}
 		function getDescriptionFile(remotePath, localCopy: WideString): integer; //Если в каталоге remotePath есть descript.ion - скопировать его в файл localcopy
 		procedure logUserSpaceInfo();
+		function putFileSplit(localPath, remotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; ChunkOverwriteMode: integer = 0): integer;
 		{STATIC ROUTINES}
 		class function CloudAccessToString(access: WideString; Invert: Boolean = false): WideString; static;
 		class function StringToCloudAccess(accessString: WideString; Invert: Boolean = false): integer; static;
@@ -1496,108 +1497,47 @@ begin
 	end;
 end;
 
-function TCloudMailRu.putFile(localPath, remotePath, ConflictMode: WideString; ChunkOverwriteMode: integer): integer;
+function TCloudMailRu.putFileSplit(localPath, remotePath, ConflictMode: WideString; ChunkOverwriteMode: integer): integer;
 var
-	PutResult: TStringList;
-	JSONAnswer, FileHash: WideString;
-	FileSize: int64;
-	Code, OperationStatus: integer;
-	OperationResult, SplitResult, SplittedPartIndex: integer;
 	Splitter: TFileSplitter;
+	SplitResult, SplittedPartIndex: integer;
 	CRCFileName: WideString;
 	ChunkFileName: WideString;
 begin
-	if not(Assigned(self)) then exit(FS_FILE_WRITEERROR); //Проверка на вызов без инициализации
-	if self.public_account then exit(FS_FILE_NOTSUPPORTED);
-
-	if (not(self.unlimited_filesize)) and (SizeOfFile(GetUNCFilePath(localPath)) > self.split_file_size) then //todo вынести в процiдурку
-	begin
-		if self.split_large_files then
+	try
+		Splitter := TFileSplitter.Create(localPath, self.split_file_size, self.ExternalProgressProc, self.ExternalPluginNr);
+	except
+		on E: Exception do
 		begin
-			Log(MSGTYPE_DETAILS, 'File size > ' + self.split_file_size.ToString() + ' bytes, file will be splitted.');
-			try
-				Splitter := TFileSplitter.Create(localPath, self.split_file_size, self.ExternalProgressProc, self.ExternalPluginNr);
-			except
-				on E: Exception do
-				begin
-					Log(MSGTYPE_IMPORTANTERROR, 'File splitting error: ' + E.Message + ', ignored');
-					exit(FS_FILE_NOTSUPPORTED);
-				end;
-			end;
-			SplitResult := Splitter.split();
-			case SplitResult of
-				FS_FILE_OK:
-					begin
-						//all ok
-					end;
-				FS_FILE_USERABORT:
-					begin
-						Log(MSGTYPE_DETAILS, 'File splitting aborted by user, uploading aborted');
-						Splitter.Destroy;
-						exit(FS_FILE_USERABORT);
-					end;
-				else
-					begin
-						Log(MSGTYPE_IMPORTANTERROR, 'File splitting error, code: ' + SplitResult.ToString + ', ignored');
-						Splitter.Destroy;
-						exit(FS_FILE_NOTSUPPORTED);
-					end;
-			end;
-			for SplittedPartIndex := 0 to length(Splitter.SplitResult.parts) - 1 do
+			Log(MSGTYPE_IMPORTANTERROR, 'File splitting error: ' + E.Message + ', ignored');
+			exit(FS_FILE_NOTSUPPORTED);
+		end;
+	end;
+	SplitResult := Splitter.split();
+	case SplitResult of
+		FS_FILE_OK:
 			begin
-				ChunkFileName:= CopyExt(Splitter.SplitResult.parts[SplittedPartIndex].FileName, remotePath);
-				Result := self.putFile(Splitter.SplitResult.parts[SplittedPartIndex].FileName, ChunkFileName, ConflictMode);
-				if Result <> FS_FILE_OK then
-				begin
-					case Result of
-						FS_FILE_USERABORT:
-							begin
-								Log(MSGTYPE_DETAILS, 'Partial upload aborted');
-								Splitter.Destroy;
-								exit(FS_FILE_USERABORT);
-							end;
-						FS_FILE_EXISTS:
-							begin
-								case ChunkOverwriteMode of
-									ChunkOverwrite: //silently overwrite chunk
-										begin
-											Log(MSGTYPE_DETAILS, 'Chunk ' + ChunkFileName + ' already exists, overwriting.');
-											if not(self.deleteFile(ChunkFileName)) then
-											begin
-												Splitter.Destroy;
-												exit(FS_FILE_WRITEERROR);
-											end else begin
-												if (self.putFile(Splitter.SplitResult.parts[SplittedPartIndex].FileName, ChunkFileName, ConflictMode) <> FS_FILE_OK) then
-												begin
-													Splitter.Destroy;
-													exit(FS_FILE_WRITEERROR);
-												end;
-											end;
-										end;
-									ChunkOverwriteIgnore: //ignore this chunk
-										begin
-											Log(MSGTYPE_DETAILS, 'Chunk ' + ChunkFileName + ' already exists, skipping.');
-											Continue;
-										end;
-									ChunkOverwriteAbort: //abort operation
-										begin
-											Log(MSGTYPE_DETAILS, 'Chunk ' + ChunkFileName + ' already exists, aborting.');
-											Splitter.Destroy;
-											exit(FS_FILE_NOTSUPPORTED);
-										end;
-								end;
-							end;
-						else
-							begin
-								Log(MSGTYPE_IMPORTANTERROR, 'Partial upload error, code: ' + Result.ToString);
-								Splitter.Destroy;
-								exit;
-							end;
-					end;
-				end;
+				//all ok
 			end;
-			CRCFileName := Splitter.writeCRCFile;
-			Result := self.putFile(CRCFileName, CopyExt(CRCFileName, remotePath), ConflictMode);
+		FS_FILE_USERABORT:
+			begin
+				Log(MSGTYPE_DETAILS, 'File splitting aborted by user, uploading aborted');
+				Splitter.Destroy;
+				exit(FS_FILE_USERABORT);
+			end;
+		else
+			begin
+				Log(MSGTYPE_IMPORTANTERROR, 'File splitting error, code: ' + SplitResult.ToString + ', ignored');
+				Splitter.Destroy;
+				exit(FS_FILE_NOTSUPPORTED);
+			end;
+	end;
+	for SplittedPartIndex := 0 to length(Splitter.SplitResult.parts) - 1 do
+	begin
+		ChunkFileName:= CopyExt(Splitter.SplitResult.parts[SplittedPartIndex].FileName, remotePath);
+		Result := self.putFile(Splitter.SplitResult.parts[SplittedPartIndex].FileName, ChunkFileName, ConflictMode);
+		if Result <> FS_FILE_OK then
+		begin
 			case Result of
 				FS_FILE_USERABORT:
 					begin
@@ -1610,13 +1550,13 @@ begin
 						case ChunkOverwriteMode of
 							ChunkOverwrite: //silently overwrite chunk
 								begin
-									Log(MSGTYPE_DETAILS, CRCFileName + ' checksum file already exists, overwriting.');
-									if not(self.deleteFile(CopyExt(CRCFileName, remotePath))) then
+									Log(MSGTYPE_DETAILS, 'Chunk ' + ChunkFileName + ' already exists, overwriting.');
+									if not(self.deleteFile(ChunkFileName)) then
 									begin
 										Splitter.Destroy;
 										exit(FS_FILE_WRITEERROR);
 									end else begin
-										if (self.putFile(CRCFileName, CopyExt(CRCFileName, remotePath), ConflictMode) <> FS_FILE_OK) then
+										if (self.putFile(Splitter.SplitResult.parts[SplittedPartIndex].FileName, ChunkFileName, ConflictMode) <> FS_FILE_OK) then
 										begin
 											Splitter.Destroy;
 											exit(FS_FILE_WRITEERROR);
@@ -1625,11 +1565,12 @@ begin
 								end;
 							ChunkOverwriteIgnore: //ignore this chunk
 								begin
-									Log(MSGTYPE_DETAILS, CRCFileName + ' checksum file already exists, skipping.');
+									Log(MSGTYPE_DETAILS, 'Chunk ' + ChunkFileName + ' already exists, skipping.');
+									Continue;
 								end;
 							ChunkOverwriteAbort: //abort operation
 								begin
-									Log(MSGTYPE_DETAILS, CRCFileName + ' checksum file already exists, aborting.');
+									Log(MSGTYPE_DETAILS, 'Chunk ' + ChunkFileName + ' already exists, aborting.');
 									Splitter.Destroy;
 									exit(FS_FILE_NOTSUPPORTED);
 								end;
@@ -1637,13 +1578,80 @@ begin
 					end;
 				else
 					begin
-						Log(MSGTYPE_IMPORTANTERROR, 'Checksum file  upload error, code: ' + Result.ToString);
+						Log(MSGTYPE_IMPORTANTERROR, 'Partial upload error, code: ' + Result.ToString);
 						Splitter.Destroy;
 						exit;
 					end;
 			end;
-			Splitter.Destroy;
-			exit(FS_FILE_OK); //Файлик залит по частям, выходим
+		end;
+	end;
+	CRCFileName := Splitter.writeCRCFile;
+	Result := self.putFile(CRCFileName, CopyExt(CRCFileName, remotePath), ConflictMode);
+	case Result of
+		FS_FILE_USERABORT:
+			begin
+				Log(MSGTYPE_DETAILS, 'Partial upload aborted');
+				Splitter.Destroy;
+				exit(FS_FILE_USERABORT);
+			end;
+		FS_FILE_EXISTS:
+			begin
+				case ChunkOverwriteMode of
+					ChunkOverwrite: //silently overwrite chunk
+						begin
+							Log(MSGTYPE_DETAILS, CRCFileName + ' checksum file already exists, overwriting.');
+							if not(self.deleteFile(CopyExt(CRCFileName, remotePath))) then
+							begin
+								Splitter.Destroy;
+								exit(FS_FILE_WRITEERROR);
+							end else begin
+								if (self.putFile(CRCFileName, CopyExt(CRCFileName, remotePath), ConflictMode) <> FS_FILE_OK) then
+								begin
+									Splitter.Destroy;
+									exit(FS_FILE_WRITEERROR);
+								end;
+							end;
+						end;
+					ChunkOverwriteIgnore: //ignore this chunk
+						begin
+							Log(MSGTYPE_DETAILS, CRCFileName + ' checksum file already exists, skipping.');
+						end;
+					ChunkOverwriteAbort: //abort operation
+						begin
+							Log(MSGTYPE_DETAILS, CRCFileName + ' checksum file already exists, aborting.');
+							Splitter.Destroy;
+							exit(FS_FILE_NOTSUPPORTED);
+						end;
+				end;
+			end;
+		else
+			begin
+				Log(MSGTYPE_IMPORTANTERROR, 'Checksum file  upload error, code: ' + Result.ToString);
+				Splitter.Destroy;
+				exit;
+			end;
+	end;
+	Splitter.Destroy;
+	exit(FS_FILE_OK); //Файлик залит по частям, выходим
+end;
+
+function TCloudMailRu.putFile(localPath, remotePath, ConflictMode: WideString; ChunkOverwriteMode: integer): integer;
+var
+	PutResult: TStringList;
+	JSONAnswer, FileHash: WideString;
+	FileSize: int64;
+	Code, OperationStatus: integer;
+	OperationResult: integer;
+begin
+	if not(Assigned(self)) then exit(FS_FILE_WRITEERROR); //Проверка на вызов без инициализации
+	if self.public_account then exit(FS_FILE_NOTSUPPORTED);
+
+	if (not(self.unlimited_filesize)) and (SizeOfFile(GetUNCFilePath(localPath)) > self.split_file_size) then //todo вынести в процiдурку
+	begin
+		if self.split_large_files then
+		begin
+			Log(MSGTYPE_DETAILS, 'File size > ' + self.split_file_size.ToString() + ' bytes, file will be splitted.');
+			exit(putFileSplit(localPath, remotePath, ConflictMode, ChunkOverwriteMode));
 		end else begin
 			Log(MSGTYPE_IMPORTANTERROR, 'File size > ' + self.split_file_size.ToString() + ' bytes, ignored');
 			exit(FS_FILE_NOTSUPPORTED);
