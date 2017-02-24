@@ -42,6 +42,7 @@ function CombineIcons(FrontIcon, BackIcon: Hicon): Hicon; //taken from http://ww
 function LoadIcon(const FileName: WideString): Hicon;
 function LoadPluginIcon(const path: WideString; identifier: WideString): Hicon;
 function RetryAttemptsToString(Attempt: Integer): WideString;
+procedure ProcessMessages;
 
 implementation
 
@@ -362,10 +363,19 @@ begin
 	else exit(' of ' + Attempt.ToString);
 end;
 
-function FsMkDir(path: PAnsiChar): Bool; stdcall;
+procedure ProcessMessages;
+var
+	Msg: TMsg;
 begin
-	SetLastError(ERROR_INVALID_FUNCTION);
-	Result := false; //ansi-заглушка
+	while true do
+	begin
+		if not PeekMessage(Msg, 0, 0, 0, PM_REMOVE) then Break;
+		if Msg.Message <> $0012 then
+		begin
+			TranslateMessage(Msg);
+			DispatchMessage(Msg);
+		end;
+	end;
 end;
 
 end.
