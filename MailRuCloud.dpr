@@ -612,6 +612,7 @@ begin
 					if MyProgressProc(PluginNum, pWideChar(LocalName), RemoteName, 0) = 1 then Result := FS_FILE_USERABORT;
 					if (Result in [FS_FILE_OK, FS_FILE_USERABORT]) then ThreadRetryCountDownload.Items[GetCurrentThreadID()] := 0; //сбросим счётчик попыток
 					ProcessMessages;
+					Sleep(GetPluginSettings(SettingsIniFilePath).AttemptWait);
 				end;
 			end;
 	end;
@@ -681,6 +682,7 @@ begin
 					if MyProgressProc(PluginNum, pWideChar(LocalName), RemoteName, 0) = 1 then Result := FS_FILE_USERABORT;
 					if (Result in [FS_FILE_OK, FS_FILE_USERABORT]) then ThreadRetryCountUpload.Items[GetCurrentThreadID()] := 0; //сбросим счётчик попыток
 					ProcessMessages;
+					Sleep(GetPluginSettings(SettingsIniFilePath).AttemptWait);
 				end;
 			end;
 	end;
@@ -776,6 +778,7 @@ begin
 						if MyProgressProc(PluginNum, nil, nil, 0) = 1 then Result := FS_FILE_USERABORT;
 						if (Result in [FS_FILE_OK, FS_FILE_USERABORT]) then ThreadRetryCountRenMov.Items[GetCurrentThreadID()] := 0; //сбросим счётчик попыток
 						ProcessMessages;
+						Sleep(GetPluginSettings(SettingsIniFilePath).AttemptWait);
 					end;
 				end;
 		end;
