@@ -756,13 +756,13 @@ begin
 			OperationErrorModeAsk:
 				begin
 					case (messagebox(FindTCWindow, pWideChar('Error downloading file' + sLineBreak + RemoteName + sLineBreak + 'Continue operation?'), 'Download error', MB_ABORTRETRYIGNORE + MB_ICONERROR)) of
-						ID_ABORT: Result := FS_FILE_USERABORT;
-						ID_RETRY: Result := FsGetFileW(RemoteName, LocalName, CopyFlags, RemoteInfo);
-						//ID_IGNORE: exit;
+						ID_ABORT: exit(FS_FILE_USERABORT);
+						ID_RETRY: exit(FsGetFileW(RemoteName, LocalName, CopyFlags, RemoteInfo));
+						ID_IGNORE: exit;
 					end;
 				end;
-			//OperationErrorModeIgnore: exit;
-			OperationErrorModeAbort: Result := FS_FILE_USERABORT;
+			OperationErrorModeIgnore: exit;
+			OperationErrorModeAbort: exit(FS_FILE_USERABORT);
 			OperationErrorModeRetry:
 				begin;
 					RetryAttempts := GetPluginSettings(SettingsIniFilePath).RetryAttempts;
@@ -811,13 +811,13 @@ begin
 			OperationErrorModeAsk:
 				begin
 					case (messagebox(FindTCWindow, pWideChar('Error uploading file' + sLineBreak + LocalName + sLineBreak + 'Continue operation?'), 'Upload error', MB_ABORTRETRYIGNORE + MB_ICONERROR)) of
-						ID_ABORT: Result := FS_FILE_USERABORT;
-						ID_RETRY: Result := FsPutFileW(LocalName, RemoteName, CopyFlags);
-						//ID_IGNORE: exit;
+						ID_ABORT: exit(FS_FILE_USERABORT);
+						ID_RETRY: exit(FsPutFileW(LocalName, RemoteName, CopyFlags));
+						ID_IGNORE: exit;
 					end;
 				end;
-			//OperationErrorModeIgnore: exit;
-			OperationErrorModeAbort: Result := FS_FILE_USERABORT;
+			OperationErrorModeIgnore: exit;
+			OperationErrorModeAbort: exit(FS_FILE_USERABORT);
 			OperationErrorModeRetry:
 				begin;
 					RetryAttempts := GetPluginSettings(SettingsIniFilePath).RetryAttempts;
@@ -870,6 +870,7 @@ Function RenMoveFileViaPublicLink(OldCloud, NewCloud: TCloudMailRu; OldRealPath,
 var
 	NeedUnpublish: Boolean;
 	CurrentItem: TCloudMailRuDirListingItem;
+	RetryAttempts: integer;
 begin
 	Result := FS_FILE_NOTSUPPORTED;
 	NeedUnpublish := false;
@@ -890,11 +891,30 @@ begin
 
 		if (NeedUnpublish) and not(OldCloud.publishFile(CurrentItem.home, CurrentItem.Weblink, CLOUD_UNPUBLISH)) then MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, pWideChar('Can''t remove temporary public link on ' + CurrentItem.home));
 
-		if (Result <> CLOUD_OPERATION_OK) and (GetPluginSettings(SettingsIniFilePath).AskOnErrors) then
+		if Result <> CLOUD_OPERATION_OK then
 		begin
-			case messagebox(FindTCWindow, pWideChar('File publish error: ' + TCloudMailRu.ErrorCodeText(Result) + sLineBreak + 'Continue operation?'), pWideChar('Operation error'), MB_YESNO + MB_ICONERROR) of
-				IDYES: exit;
-				IDNO: exit(FS_FILE_USERABORT);
+			case GetPluginSettings(SettingsIniFilePath).OperationErrorMode of
+				OperationErrorModeAsk:
+					begin
+						case (messagebox(FindTCWindow, pWideChar('File publish error: ' + TCloudMailRu.ErrorCodeText(Result) + sLineBreak + 'Continue operation?'), 'Operation error', MB_ABORTRETRYIGNORE + MB_ICONERROR)) of
+							ID_ABORT: exit(FS_FILE_USERABORT);
+							ID_RETRY: exit(RenMoveFileViaPublicLink(OldCloud, NewCloud, OldRealPath, NewRealPath, Move, OverWrite));
+							ID_IGNORE: exit;
+						end;
+					end;
+				OperationErrorModeIgnore: exit;
+				OperationErrorModeAbort: exit(FS_FILE_USERABORT);
+				OperationErrorModeRetry:
+					begin;
+						RetryAttempts := GetPluginSettings(SettingsIniFilePath).RetryAttempts;
+						while (ThreadRetryCountUpload.Items[GetCurrentThreadID()] <> RetryAttempts) and (Result <> FS_FILE_OK) and (Result <> FS_FILE_USERABORT) do
+						begin
+							ThreadRetryCountUpload.Items[GetCurrentThreadID()] := ThreadRetryCountUpload.Items[GetCurrentThreadID()] + 1;
+							MyLogProc(PluginNum, MSGTYPE_DETAILS, pWideChar('File publish error: ' + TCloudMailRu.ErrorCodeText(Result) + ' Retry attempt ' + ThreadRetryCountUpload.Items[GetCurrentThreadID()].ToString + ' of ' + RetryAttempts.ToString));
+							Result := RenMoveFileViaPublicLink(OldCloud, NewCloud, OldRealPath, NewRealPath, Move, OverWrite);
+							if (Result = FS_FILE_OK) or (Result = FS_FILE_USERABORT) then ThreadRetryCountUpload.Items[GetCurrentThreadID()] := 0; //сбросим счётчик попыток
+						end;
+					end;
 			end;
 		end;
 
