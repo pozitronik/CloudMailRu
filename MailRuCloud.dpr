@@ -120,6 +120,60 @@ begin
 	end; //Не рапортуем, это будет уровнем выше
 end;
 
+function DeleteLocalFile(LocalName: WideString): integer;
+var
+	UNCLocalName: WideString;
+	DeleteFailOnUploadMode, DeleteFailOnUploadModeAsked: integer;
+begin
+	Result := FS_FILE_OK;
+	DeleteFailOnUploadModeAsked := IDRETRY;
+	UNCLocalName := GetUNCFilePath(LocalName);
+
+	while (not DeleteFileW(pWideChar(UNCLocalName))) and (DeleteFailOnUploadModeAsked = IDRETRY) do //todo proc
+	begin
+		DeleteFailOnUploadMode := GetPluginSettings(SettingsIniFilePath).DeleteFailOnUploadMode;
+		if DeleteFailOnUploadMode = DeleteFailOnUploadAsk then
+		begin
+			DeleteFailOnUploadModeAsked := messagebox(FindTCWindow, pWideChar('Can''t delete file ' + LocalName + '. Continue operation?'), 'File deletion error', MB_ABORTRETRYIGNORE + MB_ICONQUESTION);
+			case DeleteFailOnUploadModeAsked of
+				IDRETRY: continue;
+				IDABORT: DeleteFailOnUploadMode := DeleteFailOnUploadAbort;
+				IDIGNORE: DeleteFailOnUploadMode := DeleteFailOnUploadIgnore;
+			end;
+		end;
+
+		case DeleteFailOnUploadMode of
+			DeleteFailOnUploadAbort:
+				begin
+					MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, pWideChar('Can''t delete file ' + LocalName + ', aborted'));
+					exit(FS_FILE_NOTSUPPORTED);
+				end;
+			DeleteFailOnUploadDeleteIgnore, DeleteFailOnUploadDeleteAbort:
+				begin
+					//check if file just have RO attr, then remove it. If user has lack of rights, then ignore or abort
+					if ((FileGetAttr(UNCLocalName) or faReadOnly) <> 0) and ((FileSetAttr(UNCLocalName, not faReadOnly) = 0) and (DeleteFileW(pWideChar(UNCLocalName)))) then
+					begin
+						MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, pWideChar('Read only file ' + LocalName + ' deleted'));
+						exit(FS_FILE_OK);
+					end else begin
+						if GetPluginSettings(SettingsIniFilePath).DeleteFailOnUploadMode = DeleteFailOnUploadDeleteIgnore then
+						begin
+							MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, pWideChar('Can''t delete file ' + LocalName + ', ignored'));
+							exit(FS_FILE_OK);
+						end else begin
+							MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, pWideChar('Can''t delete file ' + LocalName + ', aborted'));
+							exit(FS_FILE_NOTSUPPORTED);
+						end;
+					end;
+				end;
+			else
+				begin
+					MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, pWideChar('Can''t delete file ' + LocalName + ', ignored'));
+				end;
+		end;
+	end;
+end;
+
 procedure FsGetDefRootName(DefRootName: PAnsiChar; maxlen: integer); stdcall; //Процедура вызывается один раз при установке плагина
 Begin
 	AnsiStrings.StrLCopy(DefRootName, PAnsiChar('CloudMailRu'), maxlen);
@@ -127,7 +181,7 @@ End;
 
 function FsGetBackgroundFlags: integer; stdcall;
 begin
-	if GetPluginSettings(SettingsIniFilePath).DisableMultiThreading then Result:= 0
+	if GetPluginSettings(SettingsIniFilePath).DisableMultiThreading then Result := 0
 	else Result := BG_DOWNLOAD + BG_UPLOAD; //+ BG_ASK_USER;
 end;
 
@@ -698,7 +752,7 @@ begin
 				begin
 					case (messagebox(FindTCWindow, pWideChar('Error downloading file' + sLineBreak + RemoteName + sLineBreak + 'Continue operation?'), 'Download error', MB_ABORTRETRYIGNORE + MB_ICONERROR)) of
 						ID_ABORT: Result := FS_FILE_USERABORT;
-						ID_RETRY: Result:=FsGetFileW(RemoteName, LocalName, CopyFlags, RemoteInfo);
+						ID_RETRY: Result := FsGetFileW(RemoteName, LocalName, CopyFlags, RemoteInfo);
 						//ID_IGNORE: exit;
 					end;
 				end;
@@ -706,13 +760,13 @@ begin
 			OperationErrorModeAbort: Result := FS_FILE_USERABORT;
 			OperationErrorModeRetry:
 				begin;
-					RetryAttempts:=GetPluginSettings(SettingsIniFilePath).RetryAttempts;
+					RetryAttempts := GetPluginSettings(SettingsIniFilePath).RetryAttempts;
 					while (ThreadRetryCountDownload.Items[GetCurrentThreadID()] <> RetryAttempts) and (Result <> FS_FILE_OK) and (Result <> FS_FILE_USERABORT) do
 					begin
-						ThreadRetryCountDownload.Items[GetCurrentThreadID()]:= ThreadRetryCountDownload.Items[GetCurrentThreadID()] + 1;
+						ThreadRetryCountDownload.Items[GetCurrentThreadID()] := ThreadRetryCountDownload.Items[GetCurrentThreadID()] + 1;
 						MyLogProc(PluginNum, MSGTYPE_DETAILS, pWideChar('Error downloading file ' + RemoteName + ' Retry attempt ' + ThreadRetryCountDownload.Items[GetCurrentThreadID()].ToString + ' of ' + RetryAttempts.ToString));
-						Result:=FsGetFileW(RemoteName, LocalName, CopyFlags, RemoteInfo);
-						if (Result = FS_FILE_OK) or (Result = FS_FILE_USERABORT) then ThreadRetryCountDownload.Items[GetCurrentThreadID()]:= 0; //сбросим счётчик попыток
+						Result := FsGetFileW(RemoteName, LocalName, CopyFlags, RemoteInfo);
+						if (Result = FS_FILE_OK) or (Result = FS_FILE_USERABORT) then ThreadRetryCountDownload.Items[GetCurrentThreadID()] := 0; //сбросим счётчик попыток
 					end;
 				end;
 		end;
@@ -723,8 +777,7 @@ function FsPutFileW(LocalName, RemoteName: pWideChar; CopyFlags: integer): integ
 var
 	RealPath: TRealPath;
 	getResult: integer;
-	UNCLocalName: WideString;
-	DeleteFailOnUploadMode, DeleteFailOnUploadModeAsked: integer;
+
 	RetryAttempts: integer;
 begin
 	//Result := FS_FILE_NOTSUPPORTED;
@@ -746,57 +799,7 @@ begin
 	begin
 		MyProgressProc(PluginNum, LocalName, pWideChar(RealPath.path), 100);
 		MyLogProc(PluginNum, MSGTYPE_TRANSFERCOMPLETE, pWideChar(LocalName + '->' + RemoteName));
-		if CheckFlag(FS_COPYFLAGS_MOVE, CopyFlags) then
-		begin
-			DeleteFailOnUploadModeAsked:=IDRETRY;
-			UNCLocalName := GetUNCFilePath(LocalName);
-
-			while (not DeleteFileW(pWideChar(UNCLocalName))) and (DeleteFailOnUploadModeAsked = IDRETRY) do //todo proc
-			begin
-				DeleteFailOnUploadMode:= GetPluginSettings(SettingsIniFilePath).DeleteFailOnUploadMode;
-				if DeleteFailOnUploadMode = DeleteFailOnUploadAsk then
-				begin
-					DeleteFailOnUploadModeAsked := messagebox(FindTCWindow, pWideChar('Can''t delete file ' + LocalName + '. Continue operation?'), 'File deletion error', MB_ABORTRETRYIGNORE + MB_ICONQUESTION);
-					case DeleteFailOnUploadModeAsked of
-						IDRETRY: continue;
-						IDABORT: DeleteFailOnUploadMode:=DeleteFailOnUploadAbort;
-						IDIGNORE: DeleteFailOnUploadMode:=DeleteFailOnUploadIgnore;
-					end;
-				end;
-
-				case DeleteFailOnUploadMode of
-					DeleteFailOnUploadAbort:
-						begin
-							MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, pWideChar('Can''t delete file ' + LocalName + ', aborted'));
-							exit(FS_FILE_NOTSUPPORTED);
-						end;
-					DeleteFailOnUploadDeleteIgnore, DeleteFailOnUploadDeleteAbort:
-						begin
-							//check if file just have RO attr, then remove it. If user has lack of rights, then ignore or abort
-							if ((FileGetAttr(UNCLocalName) or faReadOnly) <> 0) and ((FileSetAttr(UNCLocalName, not faReadOnly) = 0) and (DeleteFileW(pWideChar(UNCLocalName)))) then
-							begin
-								MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, pWideChar('Read only file ' + LocalName + ' deleted'));
-								exit(FS_FILE_OK);
-							end else begin
-								if GetPluginSettings(SettingsIniFilePath).DeleteFailOnUploadMode = DeleteFailOnUploadDeleteIgnore then
-								begin
-									MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, pWideChar('Can''t delete file ' + LocalName + ', ignored'));
-									exit(FS_FILE_OK);
-								end else begin
-									MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, pWideChar('Can''t delete file ' + LocalName + ', aborted'));
-									exit(FS_FILE_NOTSUPPORTED);
-								end;
-							end;
-						end;
-					else
-						begin
-							MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, pWideChar('Can''t delete file ' + LocalName + ', ignored'));
-						end;
-				end;
-
-			end;
-
-		end;
+		if CheckFlag(FS_COPYFLAGS_MOVE, CopyFlags) then Result := DeleteLocalFile(LocalName);
 	end else begin
 		if Result = FS_FILE_USERABORT then exit;
 		case GetPluginSettings(SettingsIniFilePath).OperationErrorMode of
@@ -812,13 +815,13 @@ begin
 			OperationErrorModeAbort: Result := FS_FILE_USERABORT;
 			OperationErrorModeRetry:
 				begin;
-					RetryAttempts:=GetPluginSettings(SettingsIniFilePath).RetryAttempts;
+					RetryAttempts := GetPluginSettings(SettingsIniFilePath).RetryAttempts;
 					while (ThreadRetryCountUpload.Items[GetCurrentThreadID()] <> RetryAttempts) and (Result <> FS_FILE_OK) and (Result <> FS_FILE_USERABORT) do
 					begin
-						ThreadRetryCountUpload.Items[GetCurrentThreadID()]:= ThreadRetryCountUpload.Items[GetCurrentThreadID()] + 1;
+						ThreadRetryCountUpload.Items[GetCurrentThreadID()] := ThreadRetryCountUpload.Items[GetCurrentThreadID()] + 1;
 						MyLogProc(PluginNum, MSGTYPE_DETAILS, pWideChar('Error uploading file ' + LocalName + ' Retry attempt ' + ThreadRetryCountUpload.Items[GetCurrentThreadID()].ToString + ' of ' + RetryAttempts.ToString));
-						Result:=FsPutFileW(LocalName, RemoteName, CopyFlags);
-						if (Result = FS_FILE_OK) or (Result = FS_FILE_USERABORT) then ThreadRetryCountUpload.Items[GetCurrentThreadID()]:= 0; //сбросим счётчик попыток
+						Result := FsPutFileW(LocalName, RemoteName, CopyFlags);
+						if (Result = FS_FILE_OK) or (Result = FS_FILE_USERABORT) then ThreadRetryCountUpload.Items[GetCurrentThreadID()] := 0; //сбросим счётчик попыток
 					end;
 				end;
 		end;
@@ -952,7 +955,7 @@ begin
 
 	if ProxySettings.use_tc_password_manager then SetPluginSettingsValue(SettingsIniFilePath, 'ProxyTCPwdMngr', true);
 
-	CloudMaxFileSize:= GetPluginSettings(SettingsIniFilePath).CloudMaxFileSize;
+	CloudMaxFileSize := GetPluginSettings(SettingsIniFilePath).CloudMaxFileSize;
 	ConnectionManager := TConnectionManager.Create(AccountsIniFilePath, PluginNum, MyProgressProc, MyLogProc, ProxySettings, GetPluginSettings(SettingsIniFilePath).SocketTimeout, CloudMaxFileSize);
 	ConnectionManager.CryptoNum := CryptoNum;
 	ConnectionManager.MyCryptProc := MyCryptProc;
@@ -1080,7 +1083,7 @@ var
 	Item: TCloudMailRuDirListingItem;
 
 begin
-	Result:=FS_ICON_EXTRACTED;
+	Result := FS_ICON_EXTRACTED;
 
 	RealPath := ExtractRealPath(RemoteName);
 	if (RealPath.path = '..') or (RemoteName = '\..\') then exit;
@@ -1093,7 +1096,7 @@ begin
 		else strpcopy(RemoteName, 'cloud');
 	end else begin
 		//directories
-		Item:=GetListingItemByName(CurrentListing, RealPath);
+		Item := GetListingItemByName(CurrentListing, RealPath);
 		if Item.type_ = TYPE_DIR then
 		begin
 
@@ -1110,8 +1113,8 @@ begin
 		else exit(FS_ICON_USEDEFAULT);
 	end;
 	case GetPluginSettings(SettingsIniFilePath).IconsMode of
-		IconsModeInternal: TheIcon:=LoadImageW(hInstance, RemoteName, IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
-		IconsModeInternalOverlay: TheIcon:= CombineIcons(LoadImageW(hInstance, RemoteName, IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR), GetFolderIcon(GetPluginSettings(SettingsIniFilePath).IconsSize));
+		IconsModeInternal: TheIcon := LoadImageW(hInstance, RemoteName, IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
+		IconsModeInternalOverlay: TheIcon := CombineIcons(LoadImageW(hInstance, RemoteName, IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR), GetFolderIcon(GetPluginSettings(SettingsIniFilePath).IconsSize));
 		IconsModeExternal:
 			begin
 				TheIcon := LoadPluginIcon(PluginPath + 'icons', RemoteName);
@@ -1121,7 +1124,7 @@ begin
 			begin
 				TheIcon := LoadPluginIcon(PluginPath + 'icons', RemoteName);
 				if TheIcon = INVALID_HANDLE_VALUE then exit(FS_ICON_USEDEFAULT);
-				TheIcon:= CombineIcons(TheIcon, GetFolderIcon(GetPluginSettings(SettingsIniFilePath).IconsSize));
+				TheIcon := CombineIcons(TheIcon, GetFolderIcon(GetPluginSettings(SettingsIniFilePath).IconsSize));
 			end;
 
 	end;
@@ -1182,8 +1185,8 @@ begin
 	end;
 
 	IsMultiThread := not(GetPluginSettings(SettingsIniFilePath).DisableMultiThreading);
-	ThreadRetryCountDownload:=TDictionary<DWORD, Int32>.Create;
-	ThreadRetryCountUpload:=TDictionary<DWORD, Int32>.Create;
+	ThreadRetryCountDownload := TDictionary<DWORD, Int32>.Create;
+	ThreadRetryCountUpload := TDictionary<DWORD, Int32>.Create;
 
 end.
 
