@@ -553,6 +553,8 @@ object AccountsForm: TAccountsForm
         Width = 62
         Height = 21
         NumbersOnly = True
+        ParentShowHint = False
+        ShowHint = False
         TabOrder = 8
       end
     end
