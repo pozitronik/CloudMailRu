@@ -5,7 +5,7 @@
 {$R *.dres}
 
 uses
-	SysUtils, System.Generics.Collections, DateUtils, windows, Classes, PLUGIN_TYPES, IdSSLOpenSSLHeaders, messages, inifiles, Vcl.controls, AnsiStrings, CloudMailRu in 'CloudMailRu.pas', MRC_Helper in 'MRC_Helper.pas', Accounts in 'Accounts.pas'{AccountsForm}, RemoteProperty in 'RemoteProperty.pas'{PropertyForm}, Descriptions in 'Descriptions.pas', ConnectionManager in 'ConnectionManager.pas', Settings in 'Settings.pas', AssociativeArray in 'AssociativeArray.pas';
+	SysUtils, System.Generics.Collections, DateUtils, windows, Classes, PLUGIN_TYPES, IdSSLOpenSSLHeaders, messages, inifiles, Vcl.controls, AnsiStrings, CloudMailRu in 'CloudMailRu.pas', MRC_Helper in 'MRC_Helper.pas', Accounts in 'Accounts.pas'{AccountsForm}, RemoteProperty in 'RemoteProperty.pas'{PropertyForm}, Descriptions in 'Descriptions.pas', ConnectionManager in 'ConnectionManager.pas', Settings in 'Settings.pas';
 
 {$IFDEF WIN64}
 {$E wfx64}
@@ -30,8 +30,9 @@ var
 	SettingsIniFilePath: WideString;
 	GlobalPath, PluginPath, AppDataDir, IniDir: WideString;
 	FileCounter: integer = 0;
-	ThreadSkipListDelete: TAssociativeArray; //Массив id потоков, для которых операции получения листинга должны быть пропущены (при удалении)
-	ThreadSkipListRenMov: TAssociativeArray; //Массив id потоков, для которых операции получения листинга должны быть пропущены (при копировании/перемещении)
+	//todo: избавиться от этого, тут вполне сгодятся хеши
+	ThreadSkipListDelete: TDictionary<DWORD, Bool>; //Массив id потоков, для которых операции получения листинга должны быть пропущены (при удалении)
+	ThreadSkipListRenMov: TDictionary<DWORD, Bool>; //Массив id потоков, для которых операции получения листинга должны быть пропущены (при копировании/перемещении)
 	ThreadRetryCountDownload: TDictionary<DWORD, Int32>; //массив [id потока => количество попыток] для подсчёта количества повторов скачивания файла
 	ThreadRetryCountUpload: TDictionary<DWORD, Int32>; //массив [id потока => количество попыток] для подсчёта количества повторов закачивания файла
 	{Callback data}
@@ -209,7 +210,7 @@ begin
 	Result := ERROR_INVALID_HANDLE; //Ansi-заглушка
 end;
 
-function FsFindNext(Hdl: THandle; var FindData: tWIN32FINDDATAA): bool; stdcall;
+function FsFindNext(Hdl: THandle; var FindData: tWIN32FINDDATAA): Bool; stdcall;
 begin
 	SetLastError(ERROR_INVALID_FUNCTION);
 	Result := false; //Ansi-заглушка
@@ -233,7 +234,7 @@ begin
 	Result := FS_FILE_NOTSUPPORTED; //Ansi-заглушка
 end;
 
-function FsDeleteFile(RemoteName: PAnsiChar): bool; stdcall; //Удаление файла из файловой ссистемы плагина
+function FsDeleteFile(RemoteName: PAnsiChar): Bool; stdcall; //Удаление файла из файловой ссистемы плагина
 Begin
 	SetLastError(ERROR_INVALID_FUNCTION); //Ansi-заглушка
 	Result := false;
@@ -245,19 +246,19 @@ begin
 	Result := FS_FILE_NOTSUPPORTED; //Ansi-заглушка
 end;
 
-function FsDisconnect(DisconnectRoot: PAnsiChar): bool; stdcall;
+function FsDisconnect(DisconnectRoot: PAnsiChar): Bool; stdcall;
 begin
 	SetLastError(ERROR_INVALID_FUNCTION);
 	Result := false; //ansi-заглушка
 end;
 
-function FsMkDir(path: PAnsiChar): bool; stdcall;
+function FsMkDir(path: PAnsiChar): Bool; stdcall;
 begin
 	SetLastError(ERROR_INVALID_FUNCTION);
 	Result := false; //ansi-заглушка
 end;
 
-function FsRemoveDir(RemoteName: PAnsiChar): bool; stdcall;
+function FsRemoveDir(RemoteName: PAnsiChar): Bool; stdcall;
 begin
 	SetLastError(ERROR_INVALID_FUNCTION);
 	Result := false; //ansi-заглушка
@@ -423,13 +424,14 @@ begin
 					if ConnectionManager.get(RealPath.account, getResult).isPublicShare then
 					begin
 						MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, pWideChar('Direct copying from public accounts not supported'));
-						ThreadSkipListRenMov.Add(GetCurrentThreadID())
+						ThreadSkipListRenMov.AddOrSetValue(GetCurrentThreadID, true);
 					end;
 
 				end;
 			FS_STATUS_OP_DELETE:
 				begin
-					ThreadSkipListDelete.Add(GetCurrentThreadID());
+					//ThreadSkipListDelete.Add(GetCurrentThreadID());
+					ThreadSkipListDelete.AddOrSetValue(GetCurrentThreadID, true);
 				end;
 			FS_STATUS_OP_ATTRIB:
 				begin
@@ -498,12 +500,12 @@ begin
 				end;
 			FS_STATUS_OP_RENMOV_MULTI:
 				begin
-					ThreadSkipListRenMov.DeleteValue(GetCurrentThreadID());
+					ThreadSkipListRenMov.AddOrSetValue(GetCurrentThreadID, false);
 					if (RealPath.account <> '') and GetPluginSettings(SettingsIniFilePath).LogUserSpace then ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
 				end;
 			FS_STATUS_OP_DELETE:
 				begin
-					ThreadSkipListDelete.DeleteValue(GetCurrentThreadID());
+					ThreadSkipListDelete.AddOrSetValue(GetCurrentThreadID(), false);
 					if (RealPath.account <> '') and GetPluginSettings(SettingsIniFilePath).LogUserSpace then ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
 				end;
 			FS_STATUS_OP_ATTRIB:
@@ -557,8 +559,11 @@ var //Получение первого файла в папке. Result тот�
 	Sections: TStringList;
 	RealPath: TRealPath;
 	getResult: integer;
+	SkipListDelete, SkipListRenMov: Bool;
 begin
-	if (ThreadSkipListDelete.IndexOf(GetCurrentThreadID()) <> -1) or (ThreadSkipListRenMov.IndexOf(GetCurrentThreadID()) <> -1) then
+	ThreadSkipListDelete.TryGetValue(GetCurrentThreadID(), SkipListDelete);
+	ThreadSkipListRenMov.TryGetValue(GetCurrentThreadID(), SkipListRenMov);
+	if SkipListDelete or SkipListRenMov then
 	begin
 		SetLastError(ERROR_NO_MORE_FILES);
 		exit(INVALID_HANDLE_VALUE);
@@ -606,7 +611,7 @@ begin
 	end;
 end;
 
-function FsFindNextW(Hdl: THandle; var FindData: tWIN32FINDDATAW): bool; stdcall;
+function FsFindNextW(Hdl: THandle; var FindData: tWIN32FINDDATAW): Bool; stdcall;
 var
 	Sections: TStringList;
 begin
@@ -828,7 +833,7 @@ begin
 	end;
 end;
 
-function FsDeleteFileW(RemoteName: pWideChar): bool; stdcall; //Удаление файла из файловой ссистемы плагина
+function FsDeleteFileW(RemoteName: pWideChar): Bool; stdcall; //Удаление файла из файловой ссистемы плагина
 var
 	RealPath: TRealPath;
 	getResult: integer;
@@ -838,19 +843,21 @@ Begin
 	Result := ConnectionManager.get(RealPath.account, getResult).deleteFile(RealPath.path);
 End;
 
-function FsMkDirW(path: pWideChar): bool; stdcall;
+function FsMkDirW(path: pWideChar): Bool; stdcall;
 var
 	RealPath: TRealPath;
 	getResult: integer;
+	SkipListRenMov: Bool;
 Begin
-	if ThreadSkipListRenMov.IndexOf(GetCurrentThreadID()) <> -1 then exit(false); //skip create directory if this flag set on
+	ThreadSkipListRenMov.TryGetValue(GetCurrentThreadID(), SkipListRenMov);
+	if SkipListRenMov then exit(false); //skip create directory if this flag set on
 
 	RealPath := ExtractRealPath(WideString(path));
 	if RealPath.account = '' then exit(false);
 	Result := ConnectionManager.get(RealPath.account, getResult).createDir(RealPath.path);
 end;
 
-function FsRemoveDirW(RemoteName: pWideChar): bool; stdcall;
+function FsRemoveDirW(RemoteName: pWideChar): Bool; stdcall;
 var
 	RealPath: TRealPath;
 	getResult: integer;
@@ -936,9 +943,15 @@ Begin
 	MyProgressProc(PluginNum, OldName, NewName, 100);
 end;
 
-function FsDisconnectW(DisconnectRoot: pWideChar): bool; stdcall;
+function FsDisconnectW(DisconnectRoot: pWideChar): Bool; stdcall;
 begin
 	ConnectionManager.freeAll;
+
+	ThreadRetryCountDownload.Free;
+	ThreadRetryCountUpload.Free;
+	ThreadSkipListDelete.Free;
+	ThreadSkipListRenMov.Free;
+
 	//CurrentDescriptions.Destroy;
 	Result := true;
 end;
@@ -1187,6 +1200,8 @@ begin
 	IsMultiThread := not(GetPluginSettings(SettingsIniFilePath).DisableMultiThreading);
 	ThreadRetryCountDownload := TDictionary<DWORD, Int32>.Create;
 	ThreadRetryCountUpload := TDictionary<DWORD, Int32>.Create;
+	ThreadSkipListDelete := TDictionary<DWORD, Bool>.Create;
+	ThreadSkipListRenMov := TDictionary<DWORD, Bool>.Create;
 
 end.
 
