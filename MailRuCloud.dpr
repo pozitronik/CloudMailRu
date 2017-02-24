@@ -536,16 +536,35 @@ Begin
 	end;
 End;
 
+function GetRemoteFile(RemotePath: TRealPath; LocalName, RemoteName: WideString; CopyFlags: integer): integer;
+var
+	getResult: integer;
+	Item: TCloudMailRuDirListingItem;
+begin
+	Result := ConnectionManager.get(RemotePath.account, getResult).getFile(WideString(RemotePath.path), LocalName);
+
+	if Result = FS_FILE_OK then
+	begin
+		if GetPluginSettings(SettingsIniFilePath).PreserveFileTime then
+		begin
+			Item := GetListingItemByName(CurrentListing, RemotePath);
+			if Item.mtime <> 0 then SetAllFileTime(ExpandUNCFileName(LocalName), DateTimeToFileTime(UnixToDateTime(Item.mtime)));
+		end;
+		if CheckFlag(FS_COPYFLAGS_MOVE, CopyFlags) then ConnectionManager.get(RemotePath.account, getResult).deleteFile(RemotePath.path);
+		MyProgressProc(PluginNum, pWideChar(LocalName), pWideChar(RemoteName), 100);
+		MyLogProc(PluginNum, MSGTYPE_TRANSFERCOMPLETE, pWideChar(RemoteName + '->' + LocalName));
+	end;
+end;
+
 function FsGetFileW(RemoteName, LocalName: pWideChar; CopyFlags: integer; RemoteInfo: pRemoteInfo): integer; stdcall; //Копирование файла из файловой системы плагина
 var
 	RealPath: TRealPath;
-	getResult: integer;
-	Item: TCloudMailRuDirListingItem;
+
 	OverwriteLocalMode: integer;
 	RetryAttempts: integer;
 begin
-	//Result := FS_FILE_NOTSUPPORTED;
-	If CheckFlag(FS_COPYFLAGS_RESUME, CopyFlags) then exit(FS_FILE_NOTSUPPORTED); {NEVER CALLED HERE}
+	Result := FS_FILE_NOTSUPPORTED;
+	If CheckFlag(FS_COPYFLAGS_RESUME, CopyFlags) then exit; {NEVER CALLED HERE}
 	RealPath := ExtractRealPath(RemoteName);
 	MyProgressProc(PluginNum, RemoteName, LocalName, 0);
 
@@ -563,45 +582,42 @@ begin
 		end;
 	end;
 
-	Result := ConnectionManager.get(RealPath.account, getResult).getFile(WideString(RealPath.path), WideString(LocalName)); //?WideString?
+	Result := GetRemoteFile(RealPath, LocalName, RemoteName, CopyFlags);
 
-	if Result = FS_FILE_OK then
-	begin
-		if GetPluginSettings(SettingsIniFilePath).PreserveFileTime then
-		begin
-			Item := GetListingItemByName(CurrentListing, RealPath);
-			if Item.mtime <> 0 then SetAllFileTime(ExpandUNCFileName(LocalName), DateTimeToFileTime(UnixToDateTime(Item.mtime)));
-		end;
-		if CheckFlag(FS_COPYFLAGS_MOVE, CopyFlags) then ConnectionManager.get(RealPath.account, getResult).deleteFile(RealPath.path);
-		MyProgressProc(PluginNum, LocalName, RemoteName, 100);
-		MyLogProc(PluginNum, MSGTYPE_TRANSFERCOMPLETE, pWideChar(RemoteName + '->' + LocalName));
-	end else begin
-		if Result = FS_FILE_USERABORT then exit;
-		case GetPluginSettings(SettingsIniFilePath).OperationErrorMode of
-			OperationErrorModeAsk:
+	if Result in [FS_FILE_OK, FS_FILE_USERABORT] then exit;
+
+	case GetPluginSettings(SettingsIniFilePath).OperationErrorMode of
+		OperationErrorModeAsk:
+			begin
+				while (not (Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
 				begin
 					case (messagebox(FindTCWindow, pWideChar('Error downloading file' + sLineBreak + RemoteName + sLineBreak + 'Continue operation?'), 'Download error', MB_ABORTRETRYIGNORE + MB_ICONERROR)) of
-						ID_ABORT: exit(FS_FILE_USERABORT);
-						ID_RETRY: exit(FsGetFileW(RemoteName, LocalName, CopyFlags, RemoteInfo));
-						ID_IGNORE: exit;
+						ID_ABORT: Result := FS_FILE_USERABORT;
+						ID_RETRY: Result := GetRemoteFile(RealPath, LocalName, RemoteName, CopyFlags);
+						ID_IGNORE: break;
 					end;
 				end;
-			OperationErrorModeIgnore: exit;
-			OperationErrorModeAbort: exit(FS_FILE_USERABORT);
-			OperationErrorModeRetry:
-				begin;
-					RetryAttempts := GetPluginSettings(SettingsIniFilePath).RetryAttempts;
-					while (ThreadRetryCountDownload.Items[GetCurrentThreadID()] <> RetryAttempts) and (Result <> FS_FILE_OK) and (Result <> FS_FILE_USERABORT) do
-					begin
-						ThreadRetryCountDownload.Items[GetCurrentThreadID()] := ThreadRetryCountDownload.Items[GetCurrentThreadID()] + 1;
-						MyLogProc(PluginNum, MSGTYPE_DETAILS, pWideChar('Error downloading file ' + RemoteName + ' Retry attempt ' + ThreadRetryCountDownload.Items[GetCurrentThreadID()].ToString + RetryAttemptsToString(RetryAttempts)));
-						Result := FsGetFileW(RemoteName, LocalName, CopyFlags, RemoteInfo);
-						if (Result = FS_FILE_OK) or (Result = FS_FILE_USERABORT) then ThreadRetryCountDownload.Items[GetCurrentThreadID()] := 0; //сбросим счётчик попыток
-					end;
+
+			end;
+		OperationErrorModeIgnore: exit;
+		OperationErrorModeAbort: exit(FS_FILE_USERABORT);
+		OperationErrorModeRetry:
+			begin;
+				RetryAttempts := GetPluginSettings(SettingsIniFilePath).RetryAttempts;
+				while (ThreadRetryCountDownload.Items[GetCurrentThreadID()] <> RetryAttempts) and (not (Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
+				begin
+					ThreadRetryCountDownload.Items[GetCurrentThreadID()] := ThreadRetryCountDownload.Items[GetCurrentThreadID()] + 1;
+					MyLogProc(PluginNum, MSGTYPE_DETAILS, pWideChar('Error downloading file ' + RemoteName + ' Retry attempt ' + ThreadRetryCountDownload.Items[GetCurrentThreadID()].ToString + RetryAttemptsToString(RetryAttempts)));
+					Result := GetRemoteFile(RealPath, LocalName, RemoteName, CopyFlags);
+					ProcessMessages;
+					if (Result in [FS_FILE_OK, FS_FILE_USERABORT]) then ThreadRetryCountDownload.Items[GetCurrentThreadID()] := 0; //сбросим счётчик попыток
 				end;
-		end;
+			end;
 	end;
+
 end;
+
+
 
 function FsPutFileW(LocalName, RemoteName: pWideChar; CopyFlags: integer): integer; stdcall;
 var
