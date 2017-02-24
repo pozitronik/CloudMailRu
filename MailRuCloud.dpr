@@ -32,7 +32,8 @@ var
 	FileCounter: integer = 0;
 	ThreadSkipListDelete: TAssociativeArray; //Массив id потоков, для которых операции получения листинга должны быть пропущены (при удалении)
 	ThreadSkipListRenMov: TAssociativeArray; //Массив id потоков, для которых операции получения листинга должны быть пропущены (при копировании/перемещении)
-	ThreadRetryCountDownload: TDictionary<DWORD, DWORD>; //массив [id потока => количество попыток] для подсчёта количества повторов скачивания файла
+	ThreadRetryCountDownload: TDictionary<DWORD, Int32>; //массив [id потока => количество попыток] для подсчёта количества повторов скачивания файла
+	ThreadRetryCountUpload: TDictionary<DWORD, Int32>; //массив [id потока => количество попыток] для подсчёта количества повторов закачивания файла
 	{Callback data}
 	PluginNum: integer;
 	CryptoNum: integer;
@@ -354,9 +355,11 @@ begin
 				end;
 			FS_STATUS_OP_PUT_SINGLE:
 				begin
+					ThreadRetryCountUpload.AddOrSetValue(GetCurrentThreadID(), 0);
 				end;
 			FS_STATUS_OP_PUT_MULTI:
 				begin
+					ThreadRetryCountUpload.AddOrSetValue(GetCurrentThreadID(), 0);
 				end;
 			FS_STATUS_OP_RENMOV_SINGLE:
 				begin
@@ -410,6 +413,7 @@ begin
 				end;
 			FS_STATUS_OP_PUT_MULTI_THREAD:
 				begin
+					ThreadRetryCountUpload.AddOrSetValue(GetCurrentThreadID(), 0);
 				end;
 		end;
 		exit;
@@ -614,7 +618,6 @@ Begin
 					MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, pWideChar('Cant find file under cursor!'));
 				end;
 			end; //Не рапортуем, это будет уровнем выше
-
 		end;
 	end else if copy(Verb, 1, 5) = 'chmod' then
 	begin
@@ -693,7 +696,7 @@ begin
 		case GetPluginSettings(SettingsIniFilePath).OperationErrorMode of
 			OperationErrorModeAsk:
 				begin
-					case (messagebox(FindTCWindow, pWideChar('Error downloading file ' + sLineBreak + RemoteName + sLineBreak + 'Continue operation?'), 'Download error', MB_ABORTRETRYIGNORE + MB_ICONERROR)) of
+					case (messagebox(FindTCWindow, pWideChar('Error downloading file' + sLineBreak + RemoteName + sLineBreak + 'Continue operation?'), 'Download error', MB_ABORTRETRYIGNORE + MB_ICONERROR)) of
 						ID_ABORT: Result := FS_FILE_USERABORT;
 						ID_RETRY: Result:=FsGetFileW(RemoteName, LocalName, CopyFlags, RemoteInfo);
 						//todo: проаерить реакцию на ID_IGNORE
@@ -722,6 +725,7 @@ var
 	getResult: integer;
 	UNCLocalName: WideString;
 	DeleteFailOnUploadMode, DeleteFailOnUploadModeAsked: integer;
+	RetryAttempts: integer;
 begin
 	//Result := FS_FILE_NOTSUPPORTED;
 	RealPath := ExtractRealPath(RemoteName);
@@ -747,7 +751,7 @@ begin
 			DeleteFailOnUploadModeAsked:=IDRETRY;
 			UNCLocalName := GetUNCFilePath(LocalName);
 
-			while (not DeleteFileW(pWideChar(UNCLocalName))) and (DeleteFailOnUploadModeAsked = IDRETRY) do
+			while (not DeleteFileW(pWideChar(UNCLocalName))) and (DeleteFailOnUploadModeAsked = IDRETRY) do //todo proc
 			begin
 				DeleteFailOnUploadMode:= GetPluginSettings(SettingsIniFilePath).DeleteFailOnUploadMode;
 				if DeleteFailOnUploadMode = DeleteFailOnUploadAsk then
@@ -794,12 +798,29 @@ begin
 
 		end;
 	end else begin
-		if GetPluginSettings(SettingsIniFilePath).AskOnErrors and not(Result = FS_FILE_USERABORT) then
-		begin
-			case (messagebox(FindTCWindow, pWideChar('Error uploading file' + sLineBreak + RemoteName + sLineBreak + 'Continue operation?'), 'Download error', MB_ABORTRETRYIGNORE + MB_ICONERROR)) of
-				ID_ABORT: Result := FS_FILE_USERABORT;
-				ID_RETRY: Result:= FsPutFileW(LocalName, RemoteName, CopyFlags);
-			end;
+		if Result = FS_FILE_USERABORT then exit;
+		case GetPluginSettings(SettingsIniFilePath).OperationErrorMode of
+			OperationErrorModeAsk:
+				begin
+					case (messagebox(FindTCWindow, pWideChar('Error uploading file' + sLineBreak + LocalName + sLineBreak + 'Continue operation?'), 'Upload error', MB_ABORTRETRYIGNORE + MB_ICONERROR)) of
+						ID_ABORT: Result := FS_FILE_USERABORT;
+						ID_RETRY: Result := FsPutFileW(LocalName, RemoteName, CopyFlags);
+						//todo: проаерить реакцию на ID_IGNORE
+					end;
+				end;
+			//OperationErrorModeIgnore: exit;
+			OperationErrorModeAbort: Result := FS_FILE_USERABORT;
+			OperationErrorModeRetry:
+				begin;
+					RetryAttempts:=GetPluginSettings(SettingsIniFilePath).RetryAttempts;
+					while (ThreadRetryCountUpload.Items[GetCurrentThreadID()] <> RetryAttempts) and (Result <> FS_FILE_OK) and (Result <> FS_FILE_USERABORT) do
+					begin
+						ThreadRetryCountUpload.Items[GetCurrentThreadID()]:= ThreadRetryCountUpload.Items[GetCurrentThreadID()] + 1;
+						MyLogProc(PluginNum, MSGTYPE_DETAILS, pWideChar('Error uploading file ' + LocalName + ' Retry attempt ' + ThreadRetryCountUpload.Items[GetCurrentThreadID()].ToString + ' of ' + RetryAttempts.ToString));
+						Result:=FsPutFileW(LocalName, RemoteName, CopyFlags);
+						if (Result = FS_FILE_OK) or (Result = FS_FILE_USERABORT) then ThreadRetryCountUpload.Items[GetCurrentThreadID()]:= 0; //сбросим счётчик попыток
+					end;
+				end;
 		end;
 	end;
 end;
@@ -1161,7 +1182,8 @@ begin
 	end;
 
 	IsMultiThread := not(GetPluginSettings(SettingsIniFilePath).DisableMultiThreading);
-	ThreadRetryCountDownload:=TDictionary<DWORD, DWORD>.Create;
+	ThreadRetryCountDownload:=TDictionary<DWORD, Int32>.Create;
+	ThreadRetryCountUpload:=TDictionary<DWORD, Int32>.Create;
 
 end.
 
