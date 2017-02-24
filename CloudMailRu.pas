@@ -311,8 +311,8 @@ begin
 	if self.public_account then exit(FS_FILE_NOTSUPPORTED);
 	if self.HTTPPost(API_FILE_COPY, 'home=' + PathToUrl(OldName) + '&folder=' + PathToUrl(ToPath) + self.united_params + '&conflict', JSON) then
 	begin //Парсим ответ
-		OperationResult:=self.fromJSON_OperationResult(JSON, OperationStatus);
-		Result:=CloudResultToFsResult(OperationResult, OperationStatus, 'File copy error: ');
+		OperationResult := self.fromJSON_OperationResult(JSON, OperationStatus);
+		Result := CloudResultToFsResult(OperationResult, OperationStatus, 'File copy error: ');
 	end;
 end;
 
@@ -369,11 +369,11 @@ begin
 		self.unlimited_filesize := AccountSettings.unlimited_filesize;
 		self.split_large_files := AccountSettings.split_large_files;
 		self.public_account := AccountSettings.public_account;
-		self.PUBLIC_URL:=AccountSettings.PUBLIC_URL;
+		self.PUBLIC_URL := AccountSettings.PUBLIC_URL;
 		if self.public_account and (self.PUBLIC_URL <> '') then
 		begin
 			self.public_link := self.PUBLIC_URL;
-			if self.PUBLIC_URL[length(self.PUBLIC_URL)] <> '/' then self.PUBLIC_URL:=self.PUBLIC_URL + '/';
+			if self.PUBLIC_URL[length(self.PUBLIC_URL)] <> '/' then self.PUBLIC_URL := self.PUBLIC_URL + '/';
 			Delete(self.public_link, 1, length(PUBLIC_ACCESS_URL));
 			if self.public_link[length(self.public_link)] = '/' then Delete(self.public_link, length(self.public_link), 1);
 		end;
@@ -404,7 +404,7 @@ begin
 	if self.public_account then exit;
 	if self.HTTPPost(API_FOLDER_ADD, 'home=/' + PathToUrl(Path) + self.united_params + '&conflict', PostAnswer) then
 	begin
-		OperationResult :=self.fromJSON_OperationResult(PostAnswer, OperationStatus);
+		OperationResult := self.fromJSON_OperationResult(PostAnswer, OperationStatus);
 		case OperationResult of
 			CLOUD_OPERATION_OK: Result := true;
 			else
@@ -427,7 +427,7 @@ begin
 	Result := self.HTTPPost(API_FILE_REMOVE, 'home=/' + PathToUrl(Path) + self.united_params + '&conflict', JSON);
 	if Result then
 	begin
-		OperationResult:= self.fromJSON_OperationResult(JSON, OperationStatus);
+		OperationResult := self.fromJSON_OperationResult(JSON, OperationStatus);
 		case OperationResult of
 			CLOUD_OPERATION_OK: Result := true;
 			else
@@ -471,14 +471,14 @@ var
 	start, finish: integer;
 	temp: WideString;
 begin
-	Result:=false;
+	Result := false;
 	start := Pos(WideString('{"tree": ['), Text);
-	temp:='"id": "' + IdString + '"}}';
-	finish:= PosLast(temp, Text, start);
+	temp := '"id": "' + IdString + '"}}';
+	finish := PosLast(temp, Text, start);
 	if (start > 0) and (finish <> start) then
 	begin
-		JSON:= copy(Text, start, finish + length(temp) - start);
-		Result:=true;
+		JSON := copy(Text, start, finish + length(temp) - start);
+		Result := true;
 	end;
 end;
 
@@ -488,7 +488,7 @@ var
 	finish: integer;
 begin
 	start := Pos(WideString('"weblink_get":['), Text);
-	Result:=start <> 0;
+	Result := start <> 0;
 	start := Pos(WideString('"url":'), Text, start) + 7;
 	finish := Pos(WideString('"}]'), Text, start);
 	Shard := copy(Text, start, finish - start);
@@ -500,8 +500,8 @@ var
 	finish: integer;
 begin
 	start := Pos(WideString('"tokens":{"download":'), Text);
-	Result:=start <> 0;
-	start:=start + 22;
+	Result := start <> 0;
+	start := start + 22;
 	finish := Pos(WideString('"}'), Text, start);
 	PublicToken := copy(Text, start, finish - start);
 end;
@@ -510,12 +510,12 @@ function TCloudMailRu.extractTokenFromText(Text: WideString; var token: WideStri
 var
 	start: integer;
 begin
-	Result:=false;
+	Result := false;
 	start := Pos(WideString('"csrf"'), Text);
 	if start > 0 then
 	begin
 		token := copy(Text, start + 8, 32);
-		Result:=true;
+		Result := true;
 	end;
 end;
 
@@ -524,14 +524,14 @@ var
 	start, finish: integer;
 	temp: WideString;
 begin
-	Result:=false;
+	Result := false;
 	start := Pos(WideString('"BUILD"'), Text);
 	if start > 0 then
 	begin
 		temp := copy(Text, start + 9, 100);
 		finish := Pos(WideString('"'), temp);
 		build := copy(temp, 0, finish - 1);
-		Result:=true;
+		Result := true;
 	end;
 end;
 
@@ -540,7 +540,7 @@ var
 	start, start1, start2, finish, length: Cardinal;
 	temp: WideString;
 begin
-	Result:=false;
+	Result := false;
 	start := Pos(WideString('mail.ru/upload/"'), Text);
 	if start > 0 then
 	begin
@@ -550,7 +550,7 @@ begin
 		temp := copy(Text, start1, length);
 		start2 := Pos(WideString('https://'), temp);
 		UploadUrl := copy(temp, start2, StrLen(PWideChar(temp)) - start2);
-		Result:=true;
+		Result := true;
 	end;
 end;
 
@@ -558,12 +558,12 @@ function TCloudMailRu.extract_x_page_id_FromText(Text: WideString; var PageId: W
 var
 	start: integer;
 begin
-	Result:=false;
+	Result := false;
 	start := Pos(WideString('"x-page-id"'), Text);
 	if start > 0 then
 	begin
-		PageId:= copy(Text, start + 13, 10);
-		Result:=true;
+		PageId := copy(Text, start + 13, 10);
+		Result := true;
 	end;
 end;
 
@@ -573,7 +573,7 @@ var
 	J: integer;
 	A: TJSONArray;
 begin
-	Result:=false;
+	Result := false;
 	try
 		A := ((TJSONObject.ParseJSONValue(JSON) as TJSONObject).values['body'] as TJSONObject).values['list'] as TJSONArray;
 		SetLength(CloudMailRuDirListing, A.count);
@@ -613,7 +613,7 @@ function TCloudMailRu.fromJSON_FileStatus(JSON: WideString; var CloudMailRuDirLi
 var
 	Obj: TJSONObject;
 begin
-	Result:=true;
+	Result := true;
 	try
 		Obj := (TJSONObject.ParseJSONValue(JSON) as TJSONObject).values['body'] as TJSONObject;
 		with CloudMailRuDirListingItem do
@@ -639,7 +639,7 @@ begin
 			end;
 		end;
 	except
-		Result:=false;
+		Result := false;
 	end;
 end;
 
@@ -649,13 +649,13 @@ var
 	J: integer;
 	A: TJSONArray;
 begin
-	Result:=true;
+	Result := true;
 	SetLength(InviteListing, 0);
 	try
 		A := ((TJSONObject.ParseJSONValue(JSON) as TJSONObject).values['body'] as TJSONObject).values['invited'] as TJSONArray;
 		if not Assigned(A) then exit; //no invites
 		SetLength(InviteListing, A.count);
-		for J:=0 to A.count - 1 do
+		for J := 0 to A.count - 1 do
 		begin
 			Obj := A.Items[J] as TJSONObject;
 			with InviteListing[J] do
@@ -669,7 +669,7 @@ begin
 	except
 		on E: {EJSON}Exception do
 		begin
-			Result:=false;
+			Result := false;
 			Log(MSGTYPE_IMPORTANTERROR, 'Can''t parse server answer: ' + JSON);
 		end;
 	end;
@@ -680,7 +680,7 @@ function TCloudMailRu.fromJSON_OAuthTokenInfo(JSON: WideString; var CloudMailRuO
 var
 	Obj: TJSONObject;
 begin
-	Result:=true;
+	Result := true;
 	try
 		Obj := (TJSONObject.ParseJSONValue(JSON) as TJSONObject);
 		with CloudMailRuOAuthInfo do
@@ -695,7 +695,7 @@ begin
 	except
 		on E: {EJSON}Exception do
 		begin
-			Result:=false;
+			Result := false;
 			Log(MSGTYPE_IMPORTANTERROR, 'Can''t parse server answer: ' + JSON);
 			CloudMailRuOAuthInfo.error_code := CLOUD_ERROR_UNKNOWN;
 			CloudMailRuOAuthInfo.error := 'Answer parsing';
@@ -761,7 +761,7 @@ var
 	J: integer;
 	A: TJSONArray;
 begin
-	Result:=true;
+	Result := true;
 	try
 		A := ((TJSONObject.ParseJSONValue(JSON) as TJSONObject).values['folder'] as TJSONObject).values['list'] as TJSONArray;
 		SetLength(CloudMailRuDirListing, A.count);
@@ -797,7 +797,7 @@ begin
 			end;
 		end;
 	except
-		Result:=false;
+		Result := false;
 	end;
 end;
 
@@ -807,17 +807,17 @@ begin
 	try
 		PublicLink := (TJSONObject.ParseJSONValue(JSON) as TJSONObject).values['body'].Value;
 	except
-		Result:=false;
+		Result := false;
 	end;
 end;
 
 function TCloudMailRu.fromJSON_Shard(JSON: WideString; var Shard: WideString): Boolean;
 begin
-	Result:=true;
+	Result := true;
 	try
 		Shard := ((((TJSONObject.ParseJSONValue(JSON) as TJSONObject).values['body'] as TJSONObject).values['get'] as TJSONArray).Items[0] as TJSONObject).values['url'].Value;
 	except
-		Result:=false;
+		Result := false;
 	end;
 
 end;
@@ -826,7 +826,7 @@ function TCloudMailRu.fromJSON_UserSpace(JSON: WideString; var CloudMailRuSpaceI
 var
 	Obj: TJSONObject;
 begin
-	Result:=true;
+	Result := true;
 	try
 		Obj := (TJSONObject.ParseJSONValue(JSON) as TJSONObject).values['body'] as TJSONObject;
 		with CloudMailRuSpaceInfo do
@@ -836,7 +836,7 @@ begin
 			if Assigned(Obj.values['used']) then used := Obj.values['used'].Value.ToInt64;
 		end;
 	except
-		Result:=false;
+		Result := false;
 	end;
 end;
 
@@ -847,10 +847,10 @@ end;
 
 function TCloudMailRu.getDirListing(Path: WideString; var DirListing: TCloudMailRuDirListing): Boolean;
 begin
-	Result:=false;
+	Result := false;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
-	if self.public_account then Result:=self.getDirListingShared(Path, DirListing)
-	else Result:= self.getDirListingRegular(Path, DirListing)
+	if self.public_account then Result := self.getDirListingShared(Path, DirListing)
+	else Result := self.getDirListingRegular(Path, DirListing)
 end;
 
 function TCloudMailRu.getDirListingRegular(Path: WideString; var DirListing: TCloudMailRuDirListing): Boolean;
@@ -863,7 +863,7 @@ begin
 	Result := self.HTTPGet(API_FOLDER + '&home=' + PathToUrl(Path) + self.united_params, JSON, Progress);
 	if Result then
 	begin
-		OperationResult:= self.fromJSON_OperationResult(JSON, OperationStatus);
+		OperationResult := self.fromJSON_OperationResult(JSON, OperationStatus);
 		case OperationResult of
 			CLOUD_OPERATION_OK: Result := self.fromJSON_DirListing(JSON, DirListing);
 			CLOUD_ERROR_NOT_EXISTS:
@@ -886,19 +886,19 @@ var
 	Progress: Boolean;
 	function PathToJsonId(Path: WideString): WideString;
 	begin
-		Result:= StringReplace(Path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]);
-		if Result <> '' then Result:='/' + Result;
+		Result := StringReplace(Path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]);
+		if Result <> '' then Result := '/' + Result;
 	end;
 
 begin
 	Progress := false;
-	Result :=self.HTTPGet(self.PUBLIC_URL + PathToUrl(Path, false), PageContent, Progress);
+	Result := self.HTTPGet(self.PUBLIC_URL + PathToUrl(Path, false), PageContent, Progress);
 	if Result then
 	begin
 		PageContent := StringReplace(PageContent, #$A, '', [rfReplaceAll]); //так нам проще ковыряться в тексте
 		PageContent := StringReplace(PageContent, #$D, '', [rfReplaceAll]);
 		PageContent := StringReplace(PageContent, #9, '', [rfReplaceAll]);
-		Path:=PathToJsonId(Path);
+		Path := PathToJsonId(Path);
 		if not self.extractJSONFromPublicFolder(PageContent, self.public_link + Path, JSON) then
 		begin
 			Log(MSGTYPE_IMPORTANTERROR, 'Can''t get public share JSON data');
@@ -922,8 +922,8 @@ function TCloudMailRu.getFile(remotePath, localPath: WideString; LogErrors: Bool
 begin
 	Result := FS_FILE_NOTSUPPORTED;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
-	if self.public_account then Result:=self.getFileShared(remotePath, localPath, LogErrors)
-	else Result:=self.getFileRegular(remotePath, localPath, LogErrors);
+	if self.public_account then Result := self.getFileShared(remotePath, localPath, LogErrors)
+	else Result := self.getFileRegular(remotePath, localPath, LogErrors);
 end;
 
 function TCloudMailRu.getFileRegular(remotePath, localPath: WideString; LogErrors: Boolean): integer;
@@ -1010,7 +1010,7 @@ begin
 	begin
 		OperationResult := self.fromJSON_OperationResult(JSON, OperationStatus);
 		case OperationResult of
-			CLOUD_OPERATION_OK: Result:=self.fromJSON_Shard(JSON, Shard) and (Shard <> '');
+			CLOUD_OPERATION_OK: Result := self.fromJSON_Shard(JSON, Shard) and (Shard <> '');
 			else
 				begin
 					Result := false;
@@ -1090,14 +1090,14 @@ begin
 			if HTTP.ResponseCode = 400 then
 			begin {сервер вернёт 400, но нужно пропарсить результат для дальнейшего определения действий}
 				Answer := E.ErrorMessage;
-				Result:=true;
+				Result := true;
 			end else if HTTP.ResponseCode = 507 then //кончилось место
 			begin
 				Answer := E.ErrorMessage;
-				Result:=true;
+				Result := true;
 			end else begin
 				Log(MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при отправке данных на адрес ' + URL + ', ответ сервера: ' + E.ErrorMessage);
-				Result:=false;
+				Result := false;
 			end;
 			if Assigned(HTTP) then self.HTTPDestroy(HTTP, SSL);
 			exit;
@@ -1322,17 +1322,17 @@ end;
 
 function TCloudMailRu.login(method: integer): Boolean;
 begin
-	Result:= false;
+	Result := false;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
-	if self.public_account then Result:=self.loginShared()
-	else Result:=self.loginRegular(method);
+	if self.public_account then Result := self.loginShared()
+	else Result := self.loginRegular(method);
 end;
 
 function TCloudMailRu.loginRegular(method: integer): Boolean;
 var
 	PostAnswer: WideString; {Не используется}
 begin
-	Result:=false;
+	Result := false;
 	self.login_method := method;
 	Log(MSGTYPE_DETAILS, 'Login to ' + self.user + '@' + self.domain);
 	case self.login_method of
@@ -1402,8 +1402,8 @@ begin
 	if self.public_account then exit(FS_FILE_NOTSUPPORTED);
 	if self.HTTPPost(API_FILE_MOVE, 'home=' + PathToUrl(OldName) + '&folder=' + PathToUrl(ToPath) + self.united_params + '&conflict', JSON) then
 	begin //Парсим ответ
-		OperationResult:=self.fromJSON_OperationResult(JSON, OperationStatus);
-		Result:=CloudResultToFsResult(OperationResult, OperationStatus, 'File move error: ');
+		OperationResult := self.fromJSON_OperationResult(JSON, OperationStatus);
+		Result := CloudResultToFsResult(OperationResult, OperationStatus, 'File move error: ');
 	end;
 end;
 
@@ -1445,7 +1445,7 @@ begin
 
 	if Result then
 	begin
-		OperationResult:= self.fromJSON_OperationResult(JSON, OperationStatus);
+		OperationResult := self.fromJSON_OperationResult(JSON, OperationStatus);
 		case OperationResult of
 			CLOUD_OPERATION_OK: if publish then Result := self.fromJSON_PublicLink(JSON, PublicLink);
 			else
@@ -1467,7 +1467,7 @@ begin
 	Progress := false;
 	if self.HTTPGet(API_FOLDER_SHARED_INFO + '?home=' + PathToUrl(Path) + self.united_params, JSON, Progress) then
 	begin
-		Result:= self.fromJSON_InviteListing(JSON, InviteListing);
+		Result := self.fromJSON_InviteListing(JSON, InviteListing);
 	end;
 
 end;
@@ -1478,23 +1478,23 @@ var
 	OperationStatus, OperationResult: integer;
 	access_string: WideString;
 begin
-	Result:=false;
+	Result := false;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
 	if access in [CLOUD_SHARE_RW, CLOUD_SHARE_RO] then
 	begin
 		if access = CLOUD_SHARE_RW then access_string := CLOUD_SHARE_ACCESS_READ_WRITE
 		else access_string := CLOUD_SHARE_ACCESS_READ_ONLY;
 
-		Result:= self.HTTPPost(API_FOLDER_SHARE, 'home=/' + PathToUrl(Path) + self.united_params + '&invite={"email":"' + email + '","access":"' + access_string + '"}', JSON)
+		Result := self.HTTPPost(API_FOLDER_SHARE, 'home=/' + PathToUrl(Path) + self.united_params + '&invite={"email":"' + email + '","access":"' + access_string + '"}', JSON)
 	end else begin
-		Result:=(self.HTTPPost(API_FOLDER_UNSHARE, 'home=/' + PathToUrl(Path) + self.united_params + '&invite={"email":"' + email + '"}', JSON));
+		Result := (self.HTTPPost(API_FOLDER_UNSHARE, 'home=/' + PathToUrl(Path) + self.united_params + '&invite={"email":"' + email + '"}', JSON));
 	end;
 
 	if (Result) then
 	begin
 		OperationResult := self.fromJSON_OperationResult(JSON, OperationStatus);
 
-		Result:=OperationResult = CLOUD_OPERATION_OK;
+		Result := OperationResult = CLOUD_OPERATION_OK;
 		if not Result then Log(MSGTYPE_IMPORTANTERROR, 'Invite member error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
 
 	end;
@@ -1537,7 +1537,7 @@ begin
 	end;
 	for SplittedPartIndex := 0 to length(Splitter.SplitResult.parts) - 1 do
 	begin
-		ChunkFileName:= CopyExt(Splitter.SplitResult.parts[SplittedPartIndex].FileName, remotePath);
+		ChunkFileName := CopyExt(Splitter.SplitResult.parts[SplittedPartIndex].FileName, remotePath);
 		Result := self.putFile(Splitter.SplitResult.parts[SplittedPartIndex].FileName, ChunkFileName, ConflictMode);
 		if Result <> FS_FILE_OK then
 		begin
@@ -1696,7 +1696,7 @@ begin
 		if self.addFileToCloud(FileHash, FileSize, PathToUrl(remotePath), JSONAnswer) then
 		begin
 			OperationResult := self.fromJSON_OperationResult(JSONAnswer, OperationStatus);
-			Result:=CloudResultToFsResult(OperationResult, OperationStatus, 'File uploading error: ');
+			Result := CloudResultToFsResult(OperationResult, OperationStatus, 'File uploading error: ');
 		end;
 	end;
 end;
@@ -1730,7 +1730,7 @@ begin
 	Result := self.HTTPPost(API_FILE_REMOVE, 'home=/' + PathToUrl(Path) + '/' + self.united_params + '&conflict', JSON); //API всегда отвечает true, даже если путь не существует
 	if Result then
 	begin
-		OperationResult:= self.fromJSON_OperationResult(JSON, OperationStatus);
+		OperationResult := self.fromJSON_OperationResult(JSON, OperationStatus);
 		case OperationResult of
 			CLOUD_OPERATION_OK: Result := true;
 			else
@@ -1752,8 +1752,8 @@ begin
 	if self.public_account then exit;
 	if self.HTTPPost(API_FILE_RENAME, 'home=' + PathToUrl(OldName) + '&name=' + PathToUrl(NewName) + self.united_params, JSON) then
 	begin //Парсим ответ
-		OperationResult :=self.fromJSON_OperationResult(JSON, OperationStatus);
-		Result:=CloudResultToFsResult(OperationResult, OperationStatus, 'Rename file error: ');
+		OperationResult := self.fromJSON_OperationResult(JSON, OperationStatus);
+		Result := CloudResultToFsResult(OperationResult, OperationStatus, 'Rename file error: ');
 	end;
 end;
 
@@ -1793,8 +1793,8 @@ begin
 		if (access = CLOUD_SHARE_ACCESS_READ_ONLY) then access := CLOUD_SHARE_ACCESS_READ_WRITE
 		else access := CLOUD_SHARE_ACCESS_READ_ONLY;
 	end;
-	if access = CLOUD_SHARE_ACCESS_READ_ONLY then Result:='read only'
-	else Result:='read and write';
+	if access = CLOUD_SHARE_ACCESS_READ_ONLY then Result := 'read only'
+	else Result := 'read and write';
 end;
 
 class function TCloudMailRu.StringToCloudAccess(accessString: WideString; Invert: Boolean): integer;
@@ -1806,8 +1806,8 @@ begin
 		if (accessString = CLOUD_SHARE_ACCESS_READ_ONLY) then accessString := CLOUD_SHARE_ACCESS_READ_WRITE
 		else accessString := CLOUD_SHARE_ACCESS_READ_ONLY;
 	end;
-	if accessString = CLOUD_SHARE_ACCESS_READ_ONLY then Result:=CLOUD_SHARE_RO
-	else Result:=CLOUD_SHARE_RW;
+	if accessString = CLOUD_SHARE_ACCESS_READ_ONLY then Result := CLOUD_SHARE_RO
+	else Result := CLOUD_SHARE_RW;
 end;
 
 end.

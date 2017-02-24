@@ -77,7 +77,7 @@ begin
 		List.Delete(0);
 
 		Result.path := Implode(List, '\');
-		if Copy(Result.path, Length(Result.path) - 2, 3) = '\..' then Result.path:=Copy(Result.path, 1, Length(Result.path) - 2);
+		if Copy(Result.path, Length(Result.path) - 2, 3) = '\..' then Result.path := Copy(Result.path, 1, Length(Result.path) - 2);
 		if (Result.path = '') then ExtractRealPath.path := '\';
 		if (Result.path = '..') then
 		begin
@@ -257,16 +257,16 @@ function PosLast(Substring, S: WideString; Offset: Integer = 0): Integer;
 var
 	tmp: Integer;
 begin
-	tmp:=Offset;
+	tmp := Offset;
 	Repeat
-		Result:=tmp;
+		Result := tmp;
 		tmp := Pos(Substring, S, tmp + 1);
 	until tmp = 0;
 end;
 
 function PathToUrl(path: WideString; RestrictEmptyUrl: boolean = true): WideString;
 begin
-	Result:= UrlEncode(StringReplace(path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
+	Result := UrlEncode(StringReplace(path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
 	if (Result = '') and RestrictEmptyUrl then Result := '/';
 end;
 
@@ -276,13 +276,13 @@ var
 	SFI: TSHFileInfo;
 	uFlags: uint;
 begin
-	Result:=INVALID_HANDLE_VALUE;
-	uFlags:=SHGFI_ICON;
+	Result := INVALID_HANDLE_VALUE;
+	uFlags := SHGFI_ICON;
 	FillChar(SFI, SizeOf(SFI), 0);
 	case size of
-		IconSizeSmall: uFlags:=SHGFI_ICON or SHGFI_SMALLICON;
-		IconSizeNormal: uFlags:=SHGFI_ICON;
-		IconSizeLarge: uFlags:=SHGFI_ICON or SHGFI_LARGEICON; //not working with SHGetFileInfo
+		IconSizeSmall: uFlags := SHGFI_ICON or SHGFI_SMALLICON;
+		IconSizeNormal: uFlags := SHGFI_ICON;
+		IconSizeLarge: uFlags := SHGFI_ICON or SHGFI_LARGEICON; //not working with SHGetFileInfo
 	end;
 
 	SYSIL := SHGetFileInfo('booya', FILE_ATTRIBUTE_DIRECTORY, SFI, SizeOf(SFI), uFlags or SHGFI_USEFILEATTRIBUTES);
@@ -337,13 +337,13 @@ function LoadIcon(const FileName: WideString): Hicon;
 var
 	Icon: TIcon;
 begin
-	LoadIcon:=INVALID_HANDLE_VALUE;
+	LoadIcon := INVALID_HANDLE_VALUE;
 	if not FileExists(FileName) then exit;
 
 	try
 		Icon := TIcon.Create;
 		Icon.LoadFromFile(FileName);
-		Result:=CopyIcon(Icon.Handle);
+		Result := CopyIcon(Icon.Handle);
 	finally
 		Icon.Free;
 	end;

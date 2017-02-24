@@ -116,8 +116,8 @@ begin
 		UseTCPwdMngrCB.Checked := CASettings.use_tc_password_manager;
 		UnlimitedFileSizeCB.Checked := CASettings.unlimited_filesize;
 		SplitLargeFilesCB.Checked := CASettings.split_large_files;
-		PublicAccountCB.Checked:=CASettings.public_account;
-		PublicUrlEdit.Text:=CASettings.public_url;
+		PublicAccountCB.Checked := CASettings.public_account;
+		PublicUrlEdit.Text := CASettings.public_url;
 	end else begin
 		AccountNameEdit.Text := '';
 		EmailEdit.Text := '';
@@ -144,8 +144,8 @@ begin
 	CASettings.unlimited_filesize := UnlimitedFileSizeCB.Checked;
 	CASettings.split_large_files := SplitLargeFilesCB.Checked;
 	CASettings.twostep_auth := TwostepAuthCB.Checked;
-	CASettings.public_account:=PublicAccountCB.Checked;
-	CASettings.public_url:=PublicUrlEdit.Text;
+	CASettings.public_account := PublicAccountCB.Checked;
+	CASettings.public_url := PublicUrlEdit.Text;
 
 	if CASettings.use_tc_password_manager then //просим TC сохранить пароль
 	begin
@@ -226,7 +226,7 @@ end;
 
 procedure TAccountsForm.CloudMaxFileSizeCBClick(Sender: TObject);
 begin
-	CloudMaxFileSizeValue.Enabled:=CloudMaxFileSizeCB.Checked;
+	CloudMaxFileSizeValue.Enabled := CloudMaxFileSizeCB.Checked;
 end;
 
 procedure TAccountsForm.DeleteButtonClick(Sender: TObject);
@@ -274,7 +274,7 @@ end;
 procedure TAccountsForm.PublicAccountCBClick(Sender: TObject);
 begin
 	SharesPanel.Visible := PublicAccountCB.Checked;
-	AccountsPanel.Visible:=not PublicAccountCB.Checked;
+	AccountsPanel.Visible := not PublicAccountCB.Checked;
 end;
 
 class procedure TAccountsForm.ShowAccounts(parentWindow: HWND; IniPath, SettingsIniFilePath: WideString; CryptProc: TCryptProcW; PluginNum, CryptoNum: Integer; RemoteName: WideString);
@@ -303,26 +303,26 @@ begin
 		AccountsForm.ProxyUserEdit.Text := GetPluginSettings(SettingsIniFilePath).Proxy.User;
 		AccountsForm.ProxyPwd.Text := GetPluginSettings(SettingsIniFilePath).Proxy.password;
 		AccountsForm.ProxyTCPwdMngrCB.Checked := GetPluginSettings(SettingsIniFilePath).Proxy.use_tc_password_manager;
-		AccountsForm.CloudMaxFileSizeValue.Text:=GetPluginSettings(SettingsIniFilePath).CloudMaxFileSize.ToString;
+		AccountsForm.CloudMaxFileSizeValue.Text := GetPluginSettings(SettingsIniFilePath).CloudMaxFileSize.ToString;
 		if (GetPluginSettings(SettingsIniFilePath).CloudMaxFileSize <> CLOUD_MAX_FILESIZE_DEFAULT) then
 		begin
-			AccountsForm.CloudMaxFileSizeValue.Enabled:=true;
-			AccountsForm.CloudMaxFileSizeCB.Checked:=true;
+			AccountsForm.CloudMaxFileSizeValue.Enabled := true;
+			AccountsForm.CloudMaxFileSizeCB.Checked := true;
 		end;
-		AccountsForm.ChunkOverwriteModeCombo.ItemIndex :=GetPluginSettings(SettingsIniFilePath).ChunkOverwriteMode;
-		AccountsForm.DeleteFailOnUploadModeCombo.ItemIndex :=GetPluginSettings(SettingsIniFilePath).DeleteFailOnUploadMode;
-		AccountsForm.OverwriteLocalModeCombo.ItemIndex :=GetPluginSettings(SettingsIniFilePath).OverwriteLocalMode;
-		AccountsForm.OperationErrorModeCombo.ItemIndex :=GetPluginSettings(SettingsIniFilePath).OperationErrorMode;
-		AccountsForm.RetryAttemptsValue.Text :=GetPluginSettings(SettingsIniFilePath).RetryAttempts.ToString;
+		AccountsForm.ChunkOverwriteModeCombo.ItemIndex := GetPluginSettings(SettingsIniFilePath).ChunkOverwriteMode;
+		AccountsForm.DeleteFailOnUploadModeCombo.ItemIndex := GetPluginSettings(SettingsIniFilePath).DeleteFailOnUploadMode;
+		AccountsForm.OverwriteLocalModeCombo.ItemIndex := GetPluginSettings(SettingsIniFilePath).OverwriteLocalMode;
+		AccountsForm.OperationErrorModeCombo.ItemIndex := GetPluginSettings(SettingsIniFilePath).OperationErrorMode;
+		AccountsForm.RetryAttemptsValue.Text := GetPluginSettings(SettingsIniFilePath).RetryAttempts.ToString;
 
-		AccountsForm.DisableMultiThreadingCB.Checked:= GetPluginSettings(SettingsIniFilePath).DisableMultiThreading;
-		AccountsForm.SpaceInfoLoggingCB.Checked:=GetPluginSettings(SettingsIniFilePath).LogUserSpace;
-		AccountsForm.IconsModeCombo.ItemIndex :=GetPluginSettings(SettingsIniFilePath).IconsMode;
+		AccountsForm.DisableMultiThreadingCB.Checked := GetPluginSettings(SettingsIniFilePath).DisableMultiThreading;
+		AccountsForm.SpaceInfoLoggingCB.Checked := GetPluginSettings(SettingsIniFilePath).LogUserSpace;
+		AccountsForm.IconsModeCombo.ItemIndex := GetPluginSettings(SettingsIniFilePath).IconsMode;
 
 		{global settings}
 		if RemoteName <> '' then AccountsForm.SelectedAccount := Copy(RemoteName, 2, length(RemoteName) - 1);
 		RegisterHotKey(AccountsForm.Handle, 1, 0, VK_ESCAPE);
-		AccountsForm.OptionPages.ActivePageIndex:=0;
+		AccountsForm.OptionPages.ActivePageIndex := 0;
 		AccountsForm.ShowModal;
 	finally
 		FreeAndNil(AccountsForm);
