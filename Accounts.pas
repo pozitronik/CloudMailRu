@@ -64,7 +64,11 @@ type
 		DisableMultiThreadingCB: TCheckBox;
 		IconsModeCombo: TComboBox;
 		IconsModeLabel: TLabel;
-    SpaceInfoLoggingCB: TCheckBox;
+		SpaceInfoLoggingCB: TCheckBox;
+		OperationErrorModeLabel: TLabel;
+		OperationErrorModeCombo: TComboBox;
+		RetryAttemptsLabel: TLabel;
+		RetryAttemptsValue: TEdit;
 		procedure FormShow(Sender: TObject);
 		procedure AccountsListClick(Sender: TObject);
 		procedure ApplyButtonClick(Sender: TObject);
@@ -184,6 +188,8 @@ begin
 	SetPluginSettingsValue(SettingsIniFilePath, 'ChunkOverwriteMode', ChunkOverwriteModeCombo.ItemIndex);
 	SetPluginSettingsValue(SettingsIniFilePath, 'DeleteFailOnUploadMode', DeleteFailOnUploadModeCombo.ItemIndex);
 	SetPluginSettingsValue(SettingsIniFilePath, 'OverwriteLocalMode', OverwriteLocalModeCombo.ItemIndex);
+	SetPluginSettingsValue(SettingsIniFilePath, 'OperationErrorMode', OperationErrorModeCombo.ItemIndex);
+	SetPluginSettingsValue(SettingsIniFilePath, 'RetryAttempts', RetryAttemptsValue.Text);
 
 	SetPluginSettingsValue(SettingsIniFilePath, 'DisableMultiThreading', DisableMultiThreadingCB.Checked);
 	SetPluginSettingsValue(SettingsIniFilePath, 'LogUserSpace', SpaceInfoLoggingCB.Checked);
@@ -306,9 +312,11 @@ begin
 		AccountsForm.ChunkOverwriteModeCombo.ItemIndex :=GetPluginSettings(SettingsIniFilePath).ChunkOverwriteMode;
 		AccountsForm.DeleteFailOnUploadModeCombo.ItemIndex :=GetPluginSettings(SettingsIniFilePath).DeleteFailOnUploadMode;
 		AccountsForm.OverwriteLocalModeCombo.ItemIndex :=GetPluginSettings(SettingsIniFilePath).OverwriteLocalMode;
+		AccountsForm.OperationErrorModeCombo.ItemIndex :=GetPluginSettings(SettingsIniFilePath).OperationErrorMode;
+		AccountsForm.RetryAttemptsValue.Text :=GetPluginSettings(SettingsIniFilePath).RetryAttempts.ToString;
 
 		AccountsForm.DisableMultiThreadingCB.Checked:= GetPluginSettings(SettingsIniFilePath).DisableMultiThreading;
-    AccountsForm.SpaceInfoLoggingCB.Checked:=GetPluginSettings(SettingsIniFilePath).LogUserSpace;
+		AccountsForm.SpaceInfoLoggingCB.Checked:=GetPluginSettings(SettingsIniFilePath).LogUserSpace;
 		AccountsForm.IconsModeCombo.ItemIndex :=GetPluginSettings(SettingsIniFilePath).IconsMode;
 
 		{global settings}

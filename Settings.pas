@@ -28,6 +28,11 @@ const
 	OverwriteLocalModeIgnore = 1;
 	OverwriteLocalModeOverwrite = 2;
 
+	OperationErrorModeAsk = 0;
+	OperationErrorModeIgnore = 1;
+	OperationErrorModeAbort = 2;
+	OperationErrorModeRetry = 3; //todo
+
 	IconsModeDisabled = 0;
 	IconsModeInternal = 1;
 	IconsModeInternalOverlay = 2;
@@ -62,12 +67,14 @@ type
 		PreserveFileTime: boolean;
 		DescriptionEnabled: boolean;
 		OperationsViaPublicLinkEnabled: boolean;
-		AskOnErrors: boolean;
+		AskOnErrors: boolean; //any errors except download/upload
 		SocketTimeout: Integer;
 		Proxy: TProxySettings;
 		CloudMaxFileSize: Integer;
 		ChunkOverwriteMode: Integer;
 		DeleteFailOnUploadMode: Integer;
+		OperationErrorMode: Integer;
+		RetryAttempts: Integer;
 		OverwriteLocalMode: Integer;
 		DisableMultiThreading: boolean;
 		LogUserSpace: boolean;
@@ -179,6 +186,8 @@ begin
 	GetPluginSettings.ChunkOverwriteMode := IniFile.ReadInteger('Main', 'ChunkOverwriteMode', 0);
 	GetPluginSettings.DeleteFailOnUploadMode := IniFile.ReadInteger('Main', 'DeleteFailOnUploadMode', 0);
 	GetPluginSettings.OverwriteLocalMode := IniFile.ReadInteger('Main', 'OverwriteLocalMode', 0);
+	GetPluginSettings.OperationErrorMode := IniFile.ReadInteger('Main', 'OperationErrorMode', 0);
+	GetPluginSettings.RetryAttempts := IniFile.ReadInteger('Main', 'RetryAttempts', 1);
 	GetPluginSettings.Proxy.ProxyType := IniFile.ReadInteger('Main', 'ProxyType', ProxyNone);
 	GetPluginSettings.Proxy.Server := IniFile.ReadString('Main', 'ProxyServer', '');
 	GetPluginSettings.Proxy.Port := IniFile.ReadInteger('Main', 'ProxyPort', 0);
