@@ -2,7 +2,6 @@
 
 {TODO : Refactore: decrease cyclomatic complexity to 15 max}
 {TODO: отрицательные значения должны вводиться корректно}
-{TODO корректно обрабатывать отмену операции при зацикливании}
 
 {$R *.dres}
 
@@ -610,8 +609,9 @@ begin
 					ThreadRetryCountDownload.Items[GetCurrentThreadID()] := ThreadRetryCountDownload.Items[GetCurrentThreadID()] + 1;
 					MyLogProc(PluginNum, MSGTYPE_DETAILS, pWideChar('Error downloading file ' + RemoteName + ' Retry attempt ' + ThreadRetryCountDownload.Items[GetCurrentThreadID()].ToString + RetryAttemptsToString(RetryAttempts)));
 					Result := GetRemoteFile(RealPath, LocalName, RemoteName, CopyFlags);
-					ProcessMessages;
+					if MyProgressProc(PluginNum, pWideChar(LocalName), RemoteName, 0) = 1 then Result := FS_FILE_USERABORT;
 					if (Result in [FS_FILE_OK, FS_FILE_USERABORT]) then ThreadRetryCountDownload.Items[GetCurrentThreadID()] := 0; //сбросим счётчик попыток
+					ProcessMessages;
 				end;
 			end;
 	end;
@@ -678,15 +678,16 @@ begin
 					ThreadRetryCountUpload.Items[GetCurrentThreadID()] := ThreadRetryCountUpload.Items[GetCurrentThreadID()] + 1;
 					MyLogProc(PluginNum, MSGTYPE_DETAILS, pWideChar('Error uploading file ' + LocalName + ' Retry attempt ' + ThreadRetryCountUpload.Items[GetCurrentThreadID()].ToString + RetryAttemptsToString(RetryAttempts)));
 					Result := PutRemoteFile(RealPath, LocalName, RemoteName, CopyFlags);
-					ProcessMessages;
+					if MyProgressProc(PluginNum, pWideChar(LocalName), RemoteName, 0) = 1 then Result := FS_FILE_USERABORT;
 					if (Result in [FS_FILE_OK, FS_FILE_USERABORT]) then ThreadRetryCountUpload.Items[GetCurrentThreadID()] := 0; //сбросим счётчик попыток
+					ProcessMessages;
 				end;
 			end;
 	end;
 
 end;
 
-function FsDeleteFileW(RemoteName: pWideChar): Bool; stdcall; //Удаление файла из файловой ссистемы плагина
+function FsDeleteFileW(RemoteName: pWideChar): Bool; stdcall; //Удаление файла из файловой системы плагина
 var
 	RealPath: TRealPath;
 	getResult: integer;
@@ -771,9 +772,10 @@ begin
 					begin
 						ThreadRetryCountRenMov.Items[GetCurrentThreadID()] := ThreadRetryCountRenMov.Items[GetCurrentThreadID()] + 1;
 						MyLogProc(PluginNum, MSGTYPE_DETAILS, pWideChar('File publish error: ' + TCloudMailRu.ErrorCodeText(Result) + ' Retry attempt ' + ThreadRetryCountRenMov.Items[GetCurrentThreadID()].ToString + RetryAttemptsToString(RetryAttempts)));
-						Result := cloneWeblink(NewCloud, OldCloud, NewRealPath.path, CurrentItem, NeedUnpublish);;
-						ProcessMessages;
+						Result := cloneWeblink(NewCloud, OldCloud, NewRealPath.path, CurrentItem, NeedUnpublish);
+						if MyProgressProc(PluginNum, nil, nil, 0) = 1 then Result := FS_FILE_USERABORT;
 						if (Result in [FS_FILE_OK, FS_FILE_USERABORT]) then ThreadRetryCountRenMov.Items[GetCurrentThreadID()] := 0; //сбросим счётчик попыток
+						ProcessMessages;
 					end;
 				end;
 		end;
