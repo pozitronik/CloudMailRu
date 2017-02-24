@@ -1,7 +1,6 @@
 ﻿library MailRuCloud;
 
 {TODO : Refactore: decrease cyclomatic complexity to 15 max}
-{TODO: отрицательные значения должны вводиться корректно}
 
 {$R *.dres}
 

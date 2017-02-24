@@ -158,7 +158,7 @@ object AccountsForm: TAccountsForm
     Top = 0
     Width = 490
     Height = 405
-    ActivePage = GlobalTab
+    ActivePage = NetworkTab
     Align = alClient
     TabOrder = 0
     ExplicitWidth = 492
@@ -403,7 +403,7 @@ object AccountsForm: TAccountsForm
         Caption = 'Retry attempts:'
       end
       object RetryWaitLabel: TLabel
-        Left = 343
+        Left = 339
         Top = 168
         Width = 20
         Height = 13
@@ -456,7 +456,7 @@ object AccountsForm: TAccountsForm
         Caption = 'Apply'
         ParentShowHint = False
         ShowHint = False
-        TabOrder = 15
+        TabOrder = 13
         OnClick = GlobalSettingApplyBTNClick
       end
       object CloudMaxFileSizeValue: TEdit
@@ -484,7 +484,7 @@ object AccountsForm: TAccountsForm
         Height = 21
         Style = csDropDownList
         ItemIndex = 0
-        TabOrder = 10
+        TabOrder = 8
         Text = 'Silently overwrite'
         Items.Strings = (
           'Silently overwrite'
@@ -498,7 +498,7 @@ object AccountsForm: TAccountsForm
         Height = 21
         Style = csDropDownList
         ItemIndex = 0
-        TabOrder = 11
+        TabOrder = 9
         Text = 'Ask user'
         Items.Strings = (
           'Ask user'
@@ -514,7 +514,7 @@ object AccountsForm: TAccountsForm
         Height = 21
         Style = csDropDownList
         ItemIndex = 0
-        TabOrder = 12
+        TabOrder = 10
         Text = 'Ask user'
         Items.Strings = (
           'Ask user'
@@ -527,7 +527,7 @@ object AccountsForm: TAccountsForm
         Width = 475
         Height = 17
         Caption = 'Disable background operations support'
-        TabOrder = 14
+        TabOrder = 12
       end
       object IconsModeCombo: TComboBox
         Left = 160
@@ -536,7 +536,7 @@ object AccountsForm: TAccountsForm
         Height = 21
         Style = csDropDownList
         ItemIndex = 0
-        TabOrder = 13
+        TabOrder = 11
         Text = 'System default'
         Items.Strings = (
           'System default'
@@ -568,25 +568,25 @@ object AccountsForm: TAccountsForm
           'Abort operation'
           'Retry with this file')
       end
-      object RetryAttemptsValue: TEdit
-        Left = 242
+      object AttemptWaitValue: TSpinEdit
+        Left = 365
         Top = 165
         Width = 95
-        Height = 21
-        NumbersOnly = True
-        ParentShowHint = False
-        ShowHint = False
-        TabOrder = 8
+        Height = 22
+        MaxValue = 2147483647
+        MinValue = 0
+        TabOrder = 14
+        Value = 0
       end
-      object AttemptWaitValue: TEdit
-        Left = 370
+      object RetryAttemptsValue: TSpinEdit
+        Left = 241
         Top = 165
-        Width = 90
-        Height = 21
-        NumbersOnly = True
-        ParentShowHint = False
-        ShowHint = False
-        TabOrder = 9
+        Width = 95
+        Height = 22
+        MaxValue = 2147483647
+        MinValue = -1
+        TabOrder = 15
+        Value = 0
       end
     end
     object NetworkTab: TTabSheet
@@ -606,7 +606,7 @@ object AccountsForm: TAccountsForm
         Width = 475
         Height = 209
         Caption = 'Proxy settings'
-        TabOrder = 1
+        TabOrder = 0
         object ProxyTypeLabel: TLabel
           Left = 5
           Top = 18
@@ -703,14 +703,6 @@ object AccountsForm: TAccountsForm
           TabOrder = 4
         end
       end
-      object SocketTimeoutEdit: TEdit
-        Left = 238
-        Top = 8
-        Width = 121
-        Height = 21
-        NumbersOnly = True
-        TabOrder = 0
-      end
       object GlobalSettingApplyBTN2: TButton
         Left = 406
         Top = 349
@@ -719,8 +711,18 @@ object AccountsForm: TAccountsForm
         Caption = 'Apply'
         ParentShowHint = False
         ShowHint = False
-        TabOrder = 2
+        TabOrder = 1
         OnClick = GlobalSettingApplyBTNClick
+      end
+      object SocketTimeoutEdit: TSpinEdit
+        Left = 239
+        Top = 8
+        Width = 121
+        Height = 22
+        MaxValue = 0
+        MinValue = -1
+        TabOrder = 2
+        Value = -1
       end
     end
   end

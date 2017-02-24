@@ -3,7 +3,7 @@
 interface
 
 uses
-	Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics, Settings, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, IniFiles, MRC_Helper, PLUGIN_Types, Vcl.ComCtrls, Vcl.Mask, Vcl.ExtCtrls;
+	Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics, Settings, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, IniFiles, MRC_Helper, PLUGIN_Types, Vcl.ComCtrls, Vcl.Mask, Vcl.ExtCtrls, Vcl.Samples.Spin;
 
 type
 	TAccountsForm = class(TForm)
@@ -49,7 +49,6 @@ type
 		ProxyPwd: TMaskEdit;
 		ProxyTCPwdMngrCB: TCheckBox;
 		SocketTimeoutLabel: TLabel;
-		SocketTimeoutEdit: TEdit;
 		GlobalSettingApplyBTN2: TButton;
 		CloudMaxFileSizeValue: TEdit;
 		CloudMaxFileSizeLabelBytes: TLabel;
@@ -67,10 +66,11 @@ type
 		OperationErrorModeLabel: TLabel;
 		OperationErrorModeCombo: TComboBox;
 		RetryAttemptsLabel: TLabel;
-		RetryAttemptsValue: TEdit;
-    RetryWaitLabel: TLabel;
-    AttemptWaitValue: TEdit;
-    msLabel: TLabel;
+		RetryWaitLabel: TLabel;
+		msLabel: TLabel;
+		AttemptWaitValue: TSpinEdit;
+		RetryAttemptsValue: TSpinEdit;
+		SocketTimeoutEdit: TSpinEdit;
 		procedure FormShow(Sender: TObject);
 		procedure AccountsListClick(Sender: TObject);
 		procedure ApplyButtonClick(Sender: TObject);
