@@ -866,19 +866,50 @@ Begin
 	Result := ConnectionManager.get(RealPath.account, getResult).removeDir(RealPath.path);
 end;
 
+Function RenMoveFileViaPublicLink(OldCloud, NewCloud: TCloudMailRu; OldRealPath, NewRealPath: TRealPath; Move, OverWrite: Boolean): integer;
+var
+	NeedUnpublish: Boolean;
+	CurrentItem: TCloudMailRuDirListingItem;
+begin
+	Result := FS_FILE_NOTSUPPORTED;
+	NeedUnpublish := false;
+	if OverWrite and not(NewCloud.deleteFile(NewRealPath.path)) then exit;
+
+	if OldCloud.statusFile(OldRealPath.path, CurrentItem) then
+	begin
+		if CurrentItem.Weblink = '' then //create temporary weblink
+		begin
+			NeedUnpublish := true;
+			if not(OldCloud.publishFile(CurrentItem.home, CurrentItem.Weblink)) then //problem publishing
+			begin
+				MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, pWideChar('Can''t get temporary public link on ' + CurrentItem.home));
+				exit(FS_FILE_READERROR);
+			end;
+		end;
+		Result := NewCloud.cloneWeblink(ExtractFileDir(NewRealPath.path), CurrentItem.Weblink, CLOUD_CONFLICT_STRICT);
+
+		if (NeedUnpublish) and not(OldCloud.publishFile(CurrentItem.home, CurrentItem.Weblink, CLOUD_UNPUBLISH)) then MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, pWideChar('Can''t remove temporary public link on ' + CurrentItem.home));
+
+		if (Result <> CLOUD_OPERATION_OK) and (GetPluginSettings(SettingsIniFilePath).AskOnErrors) then
+		begin
+			case messagebox(FindTCWindow, pWideChar('File publish error: ' + TCloudMailRu.ErrorCodeText(Result) + sLineBreak + 'Continue operation?'), pWideChar('Operation error'), MB_YESNO + MB_ICONERROR) of
+				IDYES: exit;
+				IDNO: exit(FS_FILE_USERABORT);
+			end;
+		end;
+
+		if (Result = CLOUD_OPERATION_OK) and Move and not(OldCloud.deleteFile(OldRealPath.path)) then MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, pWideChar('Can''t delete ' + CurrentItem.home)); //пишем в лог, но не отваливаемся
+	end;
+end;
+
 function FsRenMovFileW(OldName: pWideChar; NewName: pWideChar; Move: Boolean; OverWrite: Boolean; ri: pRemoteInfo): integer; stdcall;
 var
 	OldRealPath: TRealPath;
 	NewRealPath: TRealPath;
 	getResult: integer;
-	CurrentItem: TCloudMailRuDirListingItem;
 	OldCloud, NewCloud: TCloudMailRu;
-	NeedUnpublish: Boolean;
-	//CloneResult: integer;
 Begin
-	NeedUnpublish := false;
 	MyProgressProc(PluginNum, OldName, NewName, 0);
-	Result := FS_FILE_NOTSUPPORTED;
 
 	OldRealPath := ExtractRealPath(WideString(OldName));
 	NewRealPath := ExtractRealPath(WideString(NewName));
@@ -896,34 +927,7 @@ Begin
 
 		if (GetPluginSettings(SettingsIniFilePath).OperationsViaPublicLinkEnabled) then //разрешено копирование через публичные ссылки
 		begin
-
-			if OverWrite and not(NewCloud.deleteFile(NewRealPath.path)) then exit(FS_FILE_NOTSUPPORTED);
-
-			if OldCloud.statusFile(OldRealPath.path, CurrentItem) then
-			begin
-				if CurrentItem.Weblink = '' then //create temporary weblink
-				begin
-					NeedUnpublish := true;
-					if not(OldCloud.publishFile(CurrentItem.home, CurrentItem.Weblink)) then //problem publishing
-					begin
-						MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, pWideChar('Can''t get temporary public link on ' + CurrentItem.home));
-						exit(FS_FILE_READERROR);
-					end;
-				end;
-				Result := NewCloud.cloneWeblink(ExtractFileDir(NewRealPath.path), CurrentItem.Weblink, CLOUD_CONFLICT_STRICT);
-
-				if (NeedUnpublish) and not(OldCloud.publishFile(CurrentItem.home, CurrentItem.Weblink, CLOUD_UNPUBLISH)) then MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, pWideChar('Can''t remove temporary public link on ' + CurrentItem.home));
-
-				if (Result <> CLOUD_OPERATION_OK) and (GetPluginSettings(SettingsIniFilePath).AskOnErrors) then
-				begin
-					case messagebox(FindTCWindow, pWideChar('File publish error: ' + TCloudMailRu.ErrorCodeText(Result) + sLineBreak + 'Continue operation?'), pWideChar('Operation error'), MB_YESNO + MB_ICONERROR) of
-						IDYES: exit;
-						IDNO: exit(FS_FILE_USERABORT);
-					end;
-				end;
-
-				if (Result = CLOUD_OPERATION_OK) and Move and not(OldCloud.deleteFile(OldRealPath.path)) then MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, pWideChar('Can''t delete ' + CurrentItem.home)); //пишем в лог, но не отваливаемся
-			end;
+			Result := RenMoveFileViaPublicLink(OldCloud, NewCloud, OldRealPath, NewRealPath, Move, OverWrite);
 		end else begin
 			MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, pWideChar('Direct operations between accounts not supported'));
 			exit(FS_FILE_USERABORT);
