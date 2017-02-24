@@ -67,7 +67,6 @@ type
 		PreserveFileTime: boolean;
 		DescriptionEnabled: boolean;
 		OperationsViaPublicLinkEnabled: boolean;
-		AskOnErrors: boolean; //any errors except download/upload
 		SocketTimeout: Integer;
 		Proxy: TProxySettings;
 		CloudMaxFileSize: Integer;
@@ -176,7 +175,6 @@ begin
 	GetPluginSettings.PreserveFileTime := IniFile.ReadBool('Main', 'PreserveFileTime', false);
 	GetPluginSettings.DescriptionEnabled := IniFile.ReadBool('Main', 'DescriptionEnabled', false);
 	GetPluginSettings.OperationsViaPublicLinkEnabled := IniFile.ReadBool('Main', 'OperationsViaPublicLinkEnabled', false);
-	GetPluginSettings.AskOnErrors := IniFile.ReadBool('Main', 'AskOnErrors', false);
 	GetPluginSettings.DisableMultiThreading := IniFile.ReadBool('Main', 'DisableMultiThreading', false);
 	GetPluginSettings.LogUserSpace := IniFile.ReadBool('Main', 'LogUserSpace', true);
 	GetPluginSettings.IconsMode := IniFile.ReadInteger('Main', 'IconsMode', 0);

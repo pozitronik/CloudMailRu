@@ -18,7 +18,6 @@ type
 		UseDLLFromPluginDir: TCheckBox;
 		DescriptionEnabledCB: TCheckBox;
 		OperationsViaPublicLinkEnabledCB: TCheckBox;
-		AskOnErrorsCB: TCheckBox;
 		GlobalSettingApplyBTN: TButton;
 		AccountsPanel: TPanel;
 		AccountNameEdit: TEdit;
@@ -177,7 +176,6 @@ begin
 	SetPluginSettingsValue(SettingsIniFilePath, 'PreserveFileTime', PreserveFileTimeCB.Checked);
 	SetPluginSettingsValue(SettingsIniFilePath, 'DescriptionEnabled', DescriptionEnabledCB.Checked);
 	SetPluginSettingsValue(SettingsIniFilePath, 'OperationsViaPublicLinkEnabled', OperationsViaPublicLinkEnabledCB.Checked);
-	SetPluginSettingsValue(SettingsIniFilePath, 'AskOnErrors', AskOnErrorsCB.Checked);
 	if CloudMaxFileSizeCB.Checked then
 	begin
 		SetPluginSettingsValue(SettingsIniFilePath, 'CloudMaxFileSize', CloudMaxFileSizeValue.Text);
@@ -295,7 +293,6 @@ begin
 		AccountsForm.PreserveFileTimeCB.Checked := GetPluginSettings(SettingsIniFilePath).PreserveFileTime;
 		AccountsForm.DescriptionEnabledCB.Checked := GetPluginSettings(SettingsIniFilePath).DescriptionEnabled;
 		AccountsForm.OperationsViaPublicLinkEnabledCB.Checked := GetPluginSettings(SettingsIniFilePath).OperationsViaPublicLinkEnabled;
-		AccountsForm.AskOnErrorsCB.Checked := GetPluginSettings(SettingsIniFilePath).AskOnErrors;
 		AccountsForm.SocketTimeoutEdit.Text := GetPluginSettings(SettingsIniFilePath).SocketTimeout.ToString;
 		AccountsForm.ProxyCB.ItemIndex := GetPluginSettings(SettingsIniFilePath).Proxy.ProxyType;
 		AccountsForm.ProxyServerEdit.Text := GetPluginSettings(SettingsIniFilePath).Proxy.Server;

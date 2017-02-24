@@ -163,10 +163,6 @@ object AccountsForm: TAccountsForm
     TabOrder = 0
     object AccountsTab: TTabSheet
       Caption = 'Accounts'
-      ExplicitLeft = 0
-      ExplicitTop = 0
-      ExplicitWidth = 0
-      ExplicitHeight = 0
       DesignSize = (
         484
         377)
@@ -350,55 +346,51 @@ object AccountsForm: TAccountsForm
     object GlobalTab: TTabSheet
       Caption = 'Global settings'
       ImageIndex = 1
-      ExplicitLeft = 8
-      ExplicitTop = 0
-      ExplicitWidth = 0
-      ExplicitHeight = 0
       object CloudMaxFileSizeLabelBytes: TLabel
         Left = 292
-        Top = 137
+        Top = 114
         Width = 27
         Height = 13
         Caption = 'bytes'
       end
       object ChunkOverwriteModeLabel: TLabel
         Left = 5
-        Top = 188
+        Top = 165
         Width = 150
         Height = 13
         Caption = 'Overwrite splitted chunk mode:'
       end
       object DeleteFailOnUploadModeLabel: TLabel
         Left = 5
-        Top = 213
+        Top = 190
         Width = 143
         Height = 13
         Caption = 'Delete file after upload mode:'
       end
       object OverwriteLocalModeLabel: TLabel
         Left = 5
-        Top = 239
+        Top = 216
         Width = 127
         Height = 13
         Caption = 'Overwrite local files mode:'
       end
       object IconsModeLabel: TLabel
         Left = 5
-        Top = 265
+        Top = 242
         Width = 88
         Height = 13
         Caption = 'Plugin icons mode:'
       end
       object OperationErrorModeLabel: TLabel
         Left = 5
-        Top = 163
+        Top = 140
         Width = 140
         Height = 13
         Caption = 'On downloads/uploads error:'
       end
       object RetryAttemptsLabel: TLabel
         Left = 335
-        Top = 163
+        Top = 140
         Width = 77
         Height = 13
         Caption = 'Retry attempts:'
@@ -435,14 +427,6 @@ object AccountsForm: TAccountsForm
         Caption = 'Copying/moving between accouns via public link'
         TabOrder = 4
       end
-      object AskOnErrorsCB: TCheckBox
-        Left = 5
-        Top = 113
-        Width = 475
-        Height = 17
-        Caption = 'Ask user on any error'
-        TabOrder = 5
-      end
       object GlobalSettingApplyBTN: TButton
         Left = 405
         Top = 349
@@ -451,35 +435,35 @@ object AccountsForm: TAccountsForm
         Caption = 'Apply'
         ParentShowHint = False
         ShowHint = False
-        TabOrder = 15
+        TabOrder = 14
         OnClick = GlobalSettingApplyBTNClick
       end
       object CloudMaxFileSizeValue: TEdit
         Left = 142
-        Top = 134
+        Top = 111
         Width = 146
         Height = 21
         Enabled = False
         NumbersOnly = True
-        TabOrder = 7
+        TabOrder = 6
       end
       object CloudMaxFileSizeCB: TCheckBox
         Left = 5
-        Top = 136
+        Top = 113
         Width = 134
         Height = 17
         Caption = 'Override split file size to'
-        TabOrder = 6
+        TabOrder = 5
         OnClick = CloudMaxFileSizeCBClick
       end
       object ChunkOverwriteModeCombo: TComboBox
         Left = 160
-        Top = 184
+        Top = 161
         Width = 320
         Height = 21
         Style = csDropDownList
         ItemIndex = 0
-        TabOrder = 10
+        TabOrder = 9
         Text = 'Silently overwrite'
         Items.Strings = (
           'Silently overwrite'
@@ -488,12 +472,12 @@ object AccountsForm: TAccountsForm
       end
       object DeleteFailOnUploadModeCombo: TComboBox
         Left = 160
-        Top = 210
+        Top = 187
         Width = 320
         Height = 21
         Style = csDropDownList
         ItemIndex = 0
-        TabOrder = 11
+        TabOrder = 10
         Text = 'Ask user'
         Items.Strings = (
           'Ask user'
@@ -504,12 +488,12 @@ object AccountsForm: TAccountsForm
       end
       object OverwriteLocalModeCombo: TComboBox
         Left = 160
-        Top = 236
+        Top = 213
         Width = 320
         Height = 21
         Style = csDropDownList
         ItemIndex = 0
-        TabOrder = 12
+        TabOrder = 11
         Text = 'Ask user'
         Items.Strings = (
           'Ask user'
@@ -518,20 +502,20 @@ object AccountsForm: TAccountsForm
       end
       object DisableMultiThreadingCB: TCheckBox
         Left = 5
-        Top = 293
+        Top = 270
         Width = 475
         Height = 17
         Caption = 'Disable background operations support'
-        TabOrder = 14
+        TabOrder = 13
       end
       object IconsModeCombo: TComboBox
         Left = 160
-        Top = 262
+        Top = 239
         Width = 320
         Height = 21
         Style = csDropDownList
         ItemIndex = 0
-        TabOrder = 13
+        TabOrder = 12
         Text = 'System default'
         Items.Strings = (
           'System default'
@@ -550,12 +534,12 @@ object AccountsForm: TAccountsForm
       end
       object OperationErrorModeCombo: TComboBox
         Left = 160
-        Top = 159
+        Top = 136
         Width = 169
         Height = 21
         Style = csDropDownList
         ItemIndex = 0
-        TabOrder = 8
+        TabOrder = 7
         Text = 'Ask user'
         Items.Strings = (
           'Ask user'
@@ -565,20 +549,16 @@ object AccountsForm: TAccountsForm
       end
       object RetryAttemptsValue: TEdit
         Left = 418
-        Top = 159
+        Top = 136
         Width = 62
         Height = 21
         NumbersOnly = True
-        TabOrder = 9
+        TabOrder = 8
       end
     end
     object NetworkTab: TTabSheet
       Caption = 'Network settings'
       ImageIndex = 2
-      ExplicitLeft = 0
-      ExplicitTop = 0
-      ExplicitWidth = 0
-      ExplicitHeight = 0
       object SocketTimeoutLabel: TLabel
         Left = 5
         Top = 11
