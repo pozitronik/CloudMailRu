@@ -256,13 +256,6 @@ begin
 	if self.HTTPGet(API_CLONE + '?folder=' + PathToUrl(Path) + '&weblink=' + link + '&conflict=' + ConflictMode + self.united_params, JSON, Progress) then
 	begin //Парсим ответ
 		Result := self.fromJSON_OperationResult(JSON, OperationStatus);
-		{*case OperationResult of
-		 CLOUD_OPERATION_OK: Result := CLOUD_OPERATION_OK;
-		 CLOUD_ERROR_EXISTS: Result := FS_FILE_EXISTS;
-		 CLOUD_ERROR_REQUIRED, CLOUD_ERROR_INVALID, CLOUD_ERROR_READONLY, CLOUD_ERROR_NAME_LENGTH_EXCEEDED, CLOUD_ERROR_OVERQUOTA: Result := FS_FILE_WRITEERROR;
-		 CLOUD_ERROR_UNKNOWN: Result := FS_FILE_NOTSUPPORTED;
-		 else Result := FS_FILE_WRITEERROR;
-		 end;  *}
 		if Result <> CLOUD_OPERATION_OK then Log(MSGTYPE_IMPORTANTERROR, 'File publish error: ' + self.ErrorCodeText(Result) + ' Status: ' + OperationStatus.ToString());
 
 	end else begin //посмотреть это
