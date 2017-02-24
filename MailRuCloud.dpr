@@ -5,7 +5,7 @@
 {$R *.dres}
 
 uses
-	SysUtils, DateUtils, windows, Classes, PLUGIN_TYPES, IdSSLOpenSSLHeaders, messages, inifiles, Vcl.controls, AnsiStrings, CloudMailRu in 'CloudMailRu.pas', MRC_Helper in 'MRC_Helper.pas', Accounts in 'Accounts.pas'{AccountsForm}, RemoteProperty in 'RemoteProperty.pas'{PropertyForm}, Descriptions in 'Descriptions.pas', ConnectionManager in 'ConnectionManager.pas', Settings in 'Settings.pas', AssociativeArray in 'AssociativeArray.pas';
+	SysUtils, System.Generics.Collections, DateUtils, windows, Classes, PLUGIN_TYPES, IdSSLOpenSSLHeaders, messages, inifiles, Vcl.controls, AnsiStrings, CloudMailRu in 'CloudMailRu.pas', MRC_Helper in 'MRC_Helper.pas', Accounts in 'Accounts.pas'{AccountsForm}, RemoteProperty in 'RemoteProperty.pas'{PropertyForm}, Descriptions in 'Descriptions.pas', ConnectionManager in 'ConnectionManager.pas', Settings in 'Settings.pas', AssociativeArray in 'AssociativeArray.pas';
 
 {$IFDEF WIN64}
 {$E wfx64}
@@ -32,6 +32,7 @@ var
 	FileCounter: integer = 0;
 	ThreadSkipListDelete: TAssociativeArray; //Массив id потоков, для которых операции получения листинга должны быть пропущены (при удалении)
 	ThreadSkipListRenMov: TAssociativeArray; //Массив id потоков, для которых операции получения листинга должны быть пропущены (при копировании/перемещении)
+	ThreadRetryCountDownload: TDictionary<DWORD, DWORD>; //массив [id потока => количество попыток] для подсчёта количества повторов скачивания файла
 	{Callback data}
 	PluginNum: integer;
 	CryptoNum: integer;
@@ -345,9 +346,11 @@ begin
 				end;
 			FS_STATUS_OP_GET_SINGLE:
 				begin
+					ThreadRetryCountDownload.AddOrSetValue(GetCurrentThreadID(), 0);
 				end;
 			FS_STATUS_OP_GET_MULTI:
 				begin
+					ThreadRetryCountDownload.AddOrSetValue(GetCurrentThreadID(), 0);
 				end;
 			FS_STATUS_OP_PUT_SINGLE:
 				begin
@@ -403,6 +406,7 @@ begin
 				end;
 			FS_STATUS_OP_GET_MULTI_THREAD:
 				begin
+					ThreadRetryCountDownload.AddOrSetValue(GetCurrentThreadID(), 0);
 				end;
 			FS_STATUS_OP_PUT_MULTI_THREAD:
 				begin
@@ -651,6 +655,7 @@ var
 	getResult: integer;
 	Item: TCloudMailRuDirListingItem;
 	OverwriteLocalMode: integer;
+	RetryAttempts: integer;
 begin
 	//Result := FS_FILE_NOTSUPPORTED;
 	If CheckFlag(FS_COPYFLAGS_RESUME, CopyFlags) then exit(FS_FILE_NOTSUPPORTED); {NEVER CALLED HERE}
@@ -684,15 +689,31 @@ begin
 		MyProgressProc(PluginNum, LocalName, RemoteName, 100);
 		MyLogProc(PluginNum, MSGTYPE_TRANSFERCOMPLETE, pWideChar(RemoteName + '->' + LocalName));
 	end else begin
-		if GetPluginSettings(SettingsIniFilePath).AskOnErrors and not(Result = FS_FILE_USERABORT) then
-		begin
-			case (messagebox(FindTCWindow, pWideChar('Error downloading file ' + sLineBreak + RemoteName + sLineBreak + 'Continue operation?'), 'Download error', MB_ABORTRETRYIGNORE + MB_ICONERROR)) of
-				ID_ABORT: Result := FS_FILE_USERABORT;
-				ID_RETRY: Result:=FsGetFileW(RemoteName, LocalName, CopyFlags, RemoteInfo);
-			end;
+		if Result = FS_FILE_USERABORT then exit;
+		case GetPluginSettings(SettingsIniFilePath).OperationErrorMode of
+			OperationErrorModeAsk:
+				begin
+					case (messagebox(FindTCWindow, pWideChar('Error downloading file ' + sLineBreak + RemoteName + sLineBreak + 'Continue operation?'), 'Download error', MB_ABORTRETRYIGNORE + MB_ICONERROR)) of
+						ID_ABORT: Result := FS_FILE_USERABORT;
+						ID_RETRY: Result:=FsGetFileW(RemoteName, LocalName, CopyFlags, RemoteInfo);
+						//todo: проаерить реакцию на ID_IGNORE
+					end;
+				end;
+			//OperationErrorModeIgnore: exit;
+			OperationErrorModeAbort: Result := FS_FILE_USERABORT;
+			OperationErrorModeRetry:
+				begin;
+					RetryAttempts:=GetPluginSettings(SettingsIniFilePath).RetryAttempts;
+					while (ThreadRetryCountDownload.Items[GetCurrentThreadID()] <> RetryAttempts) and (Result <> FS_FILE_OK) and (Result <> FS_FILE_USERABORT) do
+					begin
+						ThreadRetryCountDownload.Items[GetCurrentThreadID()]:= ThreadRetryCountDownload.Items[GetCurrentThreadID()] + 1;
+						MyLogProc(PluginNum, MSGTYPE_DETAILS, pWideChar('Error downloading file ' + RemoteName + ' Retry attempt ' + ThreadRetryCountDownload.Items[GetCurrentThreadID()].ToString + ' of ' + RetryAttempts.ToString));
+						Result:=FsGetFileW(RemoteName, LocalName, CopyFlags, RemoteInfo);
+						if (Result = FS_FILE_OK) or (Result = FS_FILE_USERABORT) then ThreadRetryCountDownload.Items[GetCurrentThreadID()]:= 0; //сбросим счётчик попыток
+					end;
+				end;
 		end;
 	end;
-
 end;
 
 function FsPutFileW(LocalName, RemoteName: pWideChar; CopyFlags: integer): integer; stdcall;
@@ -1140,6 +1161,7 @@ begin
 	end;
 
 	IsMultiThread := not(GetPluginSettings(SettingsIniFilePath).DisableMultiThreading);
+	ThreadRetryCountDownload:=TDictionary<DWORD, DWORD>.Create;
 
 end.
 
