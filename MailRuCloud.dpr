@@ -2,7 +2,6 @@
 
 {TODO : Refactore: decrease cyclomatic complexity to 15 max}
 {TODO: отрицательные значения должны вводиться корректно}
-//todo: повторы операций не должны приводить к переполнению стека
 {TODO корректно обрабатывать отмену операции при зацикливании}
 
 {$R *.dres}
@@ -253,7 +252,7 @@ begin
 						MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, pWideChar('Direct copying from public accounts not supported'));
 						ThreadSkipListRenMov.AddOrSetValue(GetCurrentThreadID, true);
 					end;
-          ThreadRetryCountRenMov.AddOrSetValue(GetCurrentThreadID(), 0);
+					ThreadRetryCountRenMov.AddOrSetValue(GetCurrentThreadID(), 0);
 				end;
 			FS_STATUS_OP_DELETE:
 				begin
@@ -1070,7 +1069,6 @@ begin
 
 	AccountsIniFilePath := IniDir + 'MailRuCloud.ini';
 	SettingsIniFilePath := IniDir + 'MailRuCloud.global.ini';
-
 
 	if GetPluginSettings(SettingsIniFilePath).LoadSSLDLLOnlyFromPluginDir then
 	begin
