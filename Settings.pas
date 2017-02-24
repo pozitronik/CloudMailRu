@@ -31,7 +31,7 @@ const
 	OperationErrorModeAsk = 0;
 	OperationErrorModeIgnore = 1;
 	OperationErrorModeAbort = 2;
-	OperationErrorModeRetry = 3; //todo
+	OperationErrorModeRetry = 3;
 
 	IconsModeDisabled = 0;
 	IconsModeInternal = 1;
