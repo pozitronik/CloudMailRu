@@ -589,7 +589,7 @@ begin
 	case GetPluginSettings(SettingsIniFilePath).OperationErrorMode of
 		OperationErrorModeAsk:
 			begin
-				while (not (Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
+				while (not(Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
 				begin
 					case (messagebox(FindTCWindow, pWideChar('Error downloading file' + sLineBreak + RemoteName + sLineBreak + 'Continue operation?'), 'Download error', MB_ABORTRETRYIGNORE + MB_ICONERROR)) of
 						ID_ABORT: Result := FS_FILE_USERABORT;
@@ -604,7 +604,7 @@ begin
 		OperationErrorModeRetry:
 			begin;
 				RetryAttempts := GetPluginSettings(SettingsIniFilePath).RetryAttempts;
-				while (ThreadRetryCountDownload.Items[GetCurrentThreadID()] <> RetryAttempts) and (not (Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
+				while (ThreadRetryCountDownload.Items[GetCurrentThreadID()] <> RetryAttempts) and (not(Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
 				begin
 					ThreadRetryCountDownload.Items[GetCurrentThreadID()] := ThreadRetryCountDownload.Items[GetCurrentThreadID()] + 1;
 					MyLogProc(PluginNum, MSGTYPE_DETAILS, pWideChar('Error downloading file ' + RemoteName + ' Retry attempt ' + ThreadRetryCountDownload.Items[GetCurrentThreadID()].ToString + RetryAttemptsToString(RetryAttempts)));
@@ -617,14 +617,25 @@ begin
 
 end;
 
+function PutRemoteFile(RemotePath: TRealPath; LocalName, RemoteName: WideString; CopyFlags: integer): integer;
+var
+	getResult: integer;
+begin
+	Result := ConnectionManager.get(RemotePath.account, getResult).putFile(WideString(LocalName), RemotePath.path);
+	if Result = FS_FILE_OK then
+	begin
+		MyProgressProc(PluginNum, pWideChar(LocalName), pWideChar(RemotePath.path), 100);
+		MyLogProc(PluginNum, MSGTYPE_TRANSFERCOMPLETE, pWideChar(LocalName + '->' + RemoteName));
+		if CheckFlag(FS_COPYFLAGS_MOVE, CopyFlags) then Result := DeleteLocalFile(LocalName);
+	end;
 
+end;
 
 function FsPutFileW(LocalName, RemoteName: pWideChar; CopyFlags: integer): integer; stdcall;
 var
 	RealPath: TRealPath;
-	getResult: integer;
-
 	RetryAttempts: integer;
+	getResult: integer;
 begin
 	//Result := FS_FILE_NOTSUPPORTED;
 	RealPath := ExtractRealPath(RemoteName);
@@ -639,39 +650,39 @@ begin
 	begin
 		if not(ConnectionManager.get(RealPath.account, getResult).deleteFile(RealPath.path)) then exit(FS_FILE_NOTSUPPORTED); //Неизвестно, как перезаписать файл черз API, но мы можем его удалить
 	end;
+	Result := PutRemoteFile(RealPath, LocalName, RemoteName, CopyFlags);
 
-	Result := ConnectionManager.get(RealPath.account, getResult).putFile(WideString(LocalName), RealPath.path);
-	if Result = FS_FILE_OK then
-	begin
-		MyProgressProc(PluginNum, LocalName, pWideChar(RealPath.path), 100);
-		MyLogProc(PluginNum, MSGTYPE_TRANSFERCOMPLETE, pWideChar(LocalName + '->' + RemoteName));
-		if CheckFlag(FS_COPYFLAGS_MOVE, CopyFlags) then Result := DeleteLocalFile(LocalName);
-	end else begin
-		if Result = FS_FILE_USERABORT then exit;
-		case GetPluginSettings(SettingsIniFilePath).OperationErrorMode of
-			OperationErrorModeAsk:
+	if Result in [FS_FILE_OK, FS_FILE_USERABORT] then exit;
+
+	case GetPluginSettings(SettingsIniFilePath).OperationErrorMode of
+		OperationErrorModeAsk:
+			begin
+				while (not(Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
 				begin
 					case (messagebox(FindTCWindow, pWideChar('Error uploading file' + sLineBreak + LocalName + sLineBreak + 'Continue operation?'), 'Upload error', MB_ABORTRETRYIGNORE + MB_ICONERROR)) of
-						ID_ABORT: exit(FS_FILE_USERABORT);
-						ID_RETRY: exit(FsPutFileW(LocalName, RemoteName, CopyFlags));
-						ID_IGNORE: exit;
+						ID_ABORT: Result := FS_FILE_USERABORT;
+						ID_RETRY: Result := PutRemoteFile(RealPath, LocalName, RemoteName, CopyFlags);
+						ID_IGNORE: break;
 					end;
 				end;
-			OperationErrorModeIgnore: exit;
-			OperationErrorModeAbort: exit(FS_FILE_USERABORT);
-			OperationErrorModeRetry:
-				begin;
-					RetryAttempts := GetPluginSettings(SettingsIniFilePath).RetryAttempts;
-					while (ThreadRetryCountUpload.Items[GetCurrentThreadID()] <> RetryAttempts) and (Result <> FS_FILE_OK) and (Result <> FS_FILE_USERABORT) do
-					begin
-						ThreadRetryCountUpload.Items[GetCurrentThreadID()] := ThreadRetryCountUpload.Items[GetCurrentThreadID()] + 1;
-						MyLogProc(PluginNum, MSGTYPE_DETAILS, pWideChar('Error uploading file ' + LocalName + ' Retry attempt ' + ThreadRetryCountUpload.Items[GetCurrentThreadID()].ToString + RetryAttemptsToString(RetryAttempts)));
-						Result := FsPutFileW(LocalName, RemoteName, CopyFlags);
-						if (Result = FS_FILE_OK) or (Result = FS_FILE_USERABORT) then ThreadRetryCountUpload.Items[GetCurrentThreadID()] := 0; //сбросим счётчик попыток
-					end;
+
+			end;
+		OperationErrorModeIgnore: exit;
+		OperationErrorModeAbort: exit(FS_FILE_USERABORT);
+		OperationErrorModeRetry:
+			begin;
+				RetryAttempts := GetPluginSettings(SettingsIniFilePath).RetryAttempts;
+				while (ThreadRetryCountUpload.Items[GetCurrentThreadID()] <> RetryAttempts) and (not(Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
+				begin
+					ThreadRetryCountUpload.Items[GetCurrentThreadID()] := ThreadRetryCountUpload.Items[GetCurrentThreadID()] + 1;
+					MyLogProc(PluginNum, MSGTYPE_DETAILS, pWideChar('Error uploading file ' + LocalName + ' Retry attempt ' + ThreadRetryCountUpload.Items[GetCurrentThreadID()].ToString + RetryAttemptsToString(RetryAttempts)));
+					Result := PutRemoteFile(RealPath, LocalName, RemoteName, CopyFlags);
+					ProcessMessages;
+					if (Result in [FS_FILE_OK, FS_FILE_USERABORT]) then ThreadRetryCountUpload.Items[GetCurrentThreadID()] := 0; //сбросим счётчик попыток
 				end;
-		end;
+			end;
 	end;
+
 end;
 
 function FsDeleteFileW(RemoteName: pWideChar): Bool; stdcall; //Удаление файла из файловой ссистемы плагина
