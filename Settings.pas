@@ -74,6 +74,7 @@ type
 		DeleteFailOnUploadMode: Integer;
 		OperationErrorMode: Integer;
 		RetryAttempts: Integer;
+		AttemptWait: Integer;
 		OverwriteLocalMode: Integer;
 		DisableMultiThreading: boolean;
 		LogUserSpace: boolean;
@@ -186,6 +187,7 @@ begin
 	GetPluginSettings.OverwriteLocalMode := IniFile.ReadInteger('Main', 'OverwriteLocalMode', 0);
 	GetPluginSettings.OperationErrorMode := IniFile.ReadInteger('Main', 'OperationErrorMode', 0);
 	GetPluginSettings.RetryAttempts := IniFile.ReadInteger('Main', 'RetryAttempts', 1);
+	GetPluginSettings.AttemptWait := IniFile.ReadInteger('Main', 'AttemptWait', 1000);
 	GetPluginSettings.Proxy.ProxyType := IniFile.ReadInteger('Main', 'ProxyType', ProxyNone);
 	GetPluginSettings.Proxy.Server := IniFile.ReadString('Main', 'ProxyServer', '');
 	GetPluginSettings.Proxy.Port := IniFile.ReadInteger('Main', 'ProxyPort', 0);

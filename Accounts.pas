@@ -68,6 +68,9 @@ type
 		OperationErrorModeCombo: TComboBox;
 		RetryAttemptsLabel: TLabel;
 		RetryAttemptsValue: TEdit;
+    RetryWaitLabel: TLabel;
+    AttemptWaitValue: TEdit;
+    msLabel: TLabel;
 		procedure FormShow(Sender: TObject);
 		procedure AccountsListClick(Sender: TObject);
 		procedure ApplyButtonClick(Sender: TObject);
@@ -188,6 +191,7 @@ begin
 	SetPluginSettingsValue(SettingsIniFilePath, 'OverwriteLocalMode', OverwriteLocalModeCombo.ItemIndex);
 	SetPluginSettingsValue(SettingsIniFilePath, 'OperationErrorMode', OperationErrorModeCombo.ItemIndex);
 	SetPluginSettingsValue(SettingsIniFilePath, 'RetryAttempts', RetryAttemptsValue.Text);
+	SetPluginSettingsValue(SettingsIniFilePath, 'AttemptWait', AttemptWaitValue.Text);
 
 	SetPluginSettingsValue(SettingsIniFilePath, 'DisableMultiThreading', DisableMultiThreadingCB.Checked);
 	SetPluginSettingsValue(SettingsIniFilePath, 'LogUserSpace', SpaceInfoLoggingCB.Checked);
@@ -311,6 +315,7 @@ begin
 		AccountsForm.OverwriteLocalModeCombo.ItemIndex := GetPluginSettings(SettingsIniFilePath).OverwriteLocalMode;
 		AccountsForm.OperationErrorModeCombo.ItemIndex := GetPluginSettings(SettingsIniFilePath).OperationErrorMode;
 		AccountsForm.RetryAttemptsValue.Text := GetPluginSettings(SettingsIniFilePath).RetryAttempts.ToString;
+		AccountsForm.AttemptWaitValue.Text := GetPluginSettings(SettingsIniFilePath).AttemptWait.ToString;
 
 		AccountsForm.DisableMultiThreadingCB.Checked := GetPluginSettings(SettingsIniFilePath).DisableMultiThreading;
 		AccountsForm.SpaceInfoLoggingCB.Checked := GetPluginSettings(SettingsIniFilePath).LogUserSpace;

@@ -4,7 +4,7 @@ object AccountsForm: TAccountsForm
   BorderStyle = bsDialog
   Caption = 'Cloud Accounts'
   ClientHeight = 405
-  ClientWidth = 492
+  ClientWidth = 490
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -156,23 +156,26 @@ object AccountsForm: TAccountsForm
   object OptionPages: TPageControl
     Left = 0
     Top = 0
-    Width = 492
+    Width = 490
     Height = 405
     ActivePage = GlobalTab
     Align = alClient
     TabOrder = 0
+    ExplicitWidth = 492
     object AccountsTab: TTabSheet
       Caption = 'Accounts'
+      ExplicitWidth = 484
       DesignSize = (
-        484
+        482
         377)
       object AccountNameLabel: TLabel
         Left = 225
         Top = 10
-        Width = 68
+        Width = 66
         Height = 13
         Anchors = [akLeft, akTop, akRight]
         Caption = 'Account name'
+        ExplicitWidth = 68
       end
       object AccountsGroupBox: TGroupBox
         Left = -4
@@ -303,10 +306,11 @@ object AccountsForm: TAccountsForm
       object AccountNameEdit: TEdit
         Left = 225
         Top = 27
-        Width = 255
+        Width = 253
         Height = 21
         Anchors = [akLeft, akTop, akRight]
         TabOrder = 4
+        ExplicitWidth = 255
       end
       object PublicAccountCB: TCheckBox
         Left = 225
@@ -346,6 +350,9 @@ object AccountsForm: TAccountsForm
     object GlobalTab: TTabSheet
       Caption = 'Global settings'
       ImageIndex = 1
+      ExplicitLeft = -140
+      ExplicitTop = 240
+      ExplicitWidth = 484
       object CloudMaxFileSizeLabelBytes: TLabel
         Left = 292
         Top = 114
@@ -355,28 +362,28 @@ object AccountsForm: TAccountsForm
       end
       object ChunkOverwriteModeLabel: TLabel
         Left = 5
-        Top = 165
+        Top = 196
         Width = 150
         Height = 13
         Caption = 'Overwrite splitted chunk mode:'
       end
       object DeleteFailOnUploadModeLabel: TLabel
         Left = 5
-        Top = 190
+        Top = 221
         Width = 143
         Height = 13
         Caption = 'Delete file after upload mode:'
       end
       object OverwriteLocalModeLabel: TLabel
         Left = 5
-        Top = 216
+        Top = 247
         Width = 127
         Height = 13
         Caption = 'Overwrite local files mode:'
       end
       object IconsModeLabel: TLabel
         Left = 5
-        Top = 242
+        Top = 266
         Width = 88
         Height = 13
         Caption = 'Plugin icons mode:'
@@ -389,11 +396,25 @@ object AccountsForm: TAccountsForm
         Caption = 'On downloads/uploads error:'
       end
       object RetryAttemptsLabel: TLabel
-        Left = 335
-        Top = 140
+        Left = 160
+        Top = 168
         Width = 77
         Height = 13
         Caption = 'Retry attempts:'
+      end
+      object RetryWaitLabel: TLabel
+        Left = 343
+        Top = 168
+        Width = 20
+        Height = 13
+        Caption = 'wait'
+      end
+      object msLabel: TLabel
+        Left = 466
+        Top = 168
+        Width = 13
+        Height = 13
+        Caption = 'ms'
       end
       object PreserveFileTimeCB: TCheckBox
         Left = 5
@@ -435,7 +456,7 @@ object AccountsForm: TAccountsForm
         Caption = 'Apply'
         ParentShowHint = False
         ShowHint = False
-        TabOrder = 14
+        TabOrder = 15
         OnClick = GlobalSettingApplyBTNClick
       end
       object CloudMaxFileSizeValue: TEdit
@@ -458,12 +479,12 @@ object AccountsForm: TAccountsForm
       end
       object ChunkOverwriteModeCombo: TComboBox
         Left = 160
-        Top = 161
+        Top = 192
         Width = 320
         Height = 21
         Style = csDropDownList
         ItemIndex = 0
-        TabOrder = 9
+        TabOrder = 10
         Text = 'Silently overwrite'
         Items.Strings = (
           'Silently overwrite'
@@ -472,12 +493,12 @@ object AccountsForm: TAccountsForm
       end
       object DeleteFailOnUploadModeCombo: TComboBox
         Left = 160
-        Top = 187
+        Top = 218
         Width = 320
         Height = 21
         Style = csDropDownList
         ItemIndex = 0
-        TabOrder = 10
+        TabOrder = 11
         Text = 'Ask user'
         Items.Strings = (
           'Ask user'
@@ -488,12 +509,12 @@ object AccountsForm: TAccountsForm
       end
       object OverwriteLocalModeCombo: TComboBox
         Left = 160
-        Top = 213
+        Top = 244
         Width = 320
         Height = 21
         Style = csDropDownList
         ItemIndex = 0
-        TabOrder = 11
+        TabOrder = 12
         Text = 'Ask user'
         Items.Strings = (
           'Ask user'
@@ -502,20 +523,20 @@ object AccountsForm: TAccountsForm
       end
       object DisableMultiThreadingCB: TCheckBox
         Left = 5
-        Top = 270
+        Top = 301
         Width = 475
         Height = 17
         Caption = 'Disable background operations support'
-        TabOrder = 13
+        TabOrder = 14
       end
       object IconsModeCombo: TComboBox
         Left = 160
-        Top = 239
+        Top = 270
         Width = 320
         Height = 21
         Style = csDropDownList
         ItemIndex = 0
-        TabOrder = 12
+        TabOrder = 13
         Text = 'System default'
         Items.Strings = (
           'System default'
@@ -534,8 +555,8 @@ object AccountsForm: TAccountsForm
       end
       object OperationErrorModeCombo: TComboBox
         Left = 160
-        Top = 136
-        Width = 169
+        Top = 138
+        Width = 320
         Height = 21
         Style = csDropDownList
         ItemIndex = 0
@@ -548,19 +569,30 @@ object AccountsForm: TAccountsForm
           'Retry with this file')
       end
       object RetryAttemptsValue: TEdit
-        Left = 418
-        Top = 136
-        Width = 62
+        Left = 242
+        Top = 165
+        Width = 95
         Height = 21
         NumbersOnly = True
         ParentShowHint = False
         ShowHint = False
         TabOrder = 8
       end
+      object AttemptWaitValue: TEdit
+        Left = 370
+        Top = 165
+        Width = 90
+        Height = 21
+        NumbersOnly = True
+        ParentShowHint = False
+        ShowHint = False
+        TabOrder = 9
+      end
     end
     object NetworkTab: TTabSheet
       Caption = 'Network settings'
       ImageIndex = 2
+      ExplicitWidth = 484
       object SocketTimeoutLabel: TLabel
         Left = 5
         Top = 11
