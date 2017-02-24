@@ -37,6 +37,8 @@ var
 	ThreadSkipListRenMov: TDictionary<DWORD, Bool>; //Массив id потоков, для которых операции получения листинга должны быть пропущены (при копировании/перемещении)
 	ThreadRetryCountDownload: TDictionary<DWORD, Int32>; //массив [id потока => количество попыток] для подсчёта количества повторов скачивания файла
 	ThreadRetryCountUpload: TDictionary<DWORD, Int32>; //массив [id потока => количество попыток] для подсчёта количества повторов закачивания файла
+	ThreadRetryCountRenMov: TDictionary<DWORD, Int32>; //массив [id потока => количество попыток] для подсчёта количества повторов межсерверных операций с файлом
+
 	{Callback data}
 	PluginNum: integer;
 	CryptoNum: integer;
@@ -251,7 +253,7 @@ begin
 						MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, pWideChar('Direct copying from public accounts not supported'));
 						ThreadSkipListRenMov.AddOrSetValue(GetCurrentThreadID, true);
 					end;
-
+          ThreadRetryCountRenMov.AddOrSetValue(GetCurrentThreadID(), 0);
 				end;
 			FS_STATUS_OP_DELETE:
 				begin
@@ -718,6 +720,12 @@ Begin
 	Result := ConnectionManager.get(RealPath.account, getResult).removeDir(RealPath.path);
 end;
 
+Function cloneWeblink(NewCloud, OldCloud: TCloudMailRu; CloudPath: WideString; CurrentItem: TCloudMailRuDirListingItem; NeedUnpublish: Boolean): integer;
+begin
+	Result := NewCloud.cloneWeblink(ExtractFileDir(CloudPath), CurrentItem.Weblink, CLOUD_CONFLICT_STRICT);
+	if (NeedUnpublish) and not(OldCloud.publishFile(CurrentItem.home, CurrentItem.Weblink, CLOUD_UNPUBLISH)) then MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, pWideChar('Can''t remove temporary public link on ' + CurrentItem.home));
+end;
+
 Function RenMoveFileViaPublicLink(OldCloud, NewCloud: TCloudMailRu; OldRealPath, NewRealPath: TRealPath; Move, OverWrite: Boolean): integer;
 var
 	NeedUnpublish: Boolean;
@@ -739,36 +747,36 @@ begin
 				exit(FS_FILE_READERROR);
 			end;
 		end;
-		Result := NewCloud.cloneWeblink(ExtractFileDir(NewRealPath.path), CurrentItem.Weblink, CLOUD_CONFLICT_STRICT);
+		if cloneWeblink(NewCloud, OldCloud, NewRealPath.path, CurrentItem, NeedUnpublish) = CLOUD_OPERATION_OK then exit;
 
-		if (NeedUnpublish) and not(OldCloud.publishFile(CurrentItem.home, CurrentItem.Weblink, CLOUD_UNPUBLISH)) then MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, pWideChar('Can''t remove temporary public link on ' + CurrentItem.home));
+		case GetPluginSettings(SettingsIniFilePath).OperationErrorMode of
+			OperationErrorModeAsk:
+				begin
 
-		if Result <> CLOUD_OPERATION_OK then
-		begin
-			case GetPluginSettings(SettingsIniFilePath).OperationErrorMode of
-				OperationErrorModeAsk:
+					while (not(Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
 					begin
 						case (messagebox(FindTCWindow, pWideChar('File publish error: ' + TCloudMailRu.ErrorCodeText(Result) + sLineBreak + 'Continue operation?'), 'Operation error', MB_ABORTRETRYIGNORE + MB_ICONERROR)) of
-							ID_ABORT: exit(FS_FILE_USERABORT);
-							ID_RETRY: exit(RenMoveFileViaPublicLink(OldCloud, NewCloud, OldRealPath, NewRealPath, Move, OverWrite));
-							ID_IGNORE: exit;
+							ID_ABORT: Result := FS_FILE_USERABORT;
+							ID_RETRY: Result := cloneWeblink(NewCloud, OldCloud, NewRealPath.path, CurrentItem, NeedUnpublish);
+							ID_IGNORE: break;
 						end;
 					end;
-				OperationErrorModeIgnore: exit;
-				OperationErrorModeAbort: exit(FS_FILE_USERABORT);
-				OperationErrorModeRetry:
-					begin;
-						RetryAttempts := GetPluginSettings(SettingsIniFilePath).RetryAttempts;
 
-						while (ThreadRetryCountUpload.Items[GetCurrentThreadID()] <> RetryAttempts) and (Result <> FS_FILE_OK) and (Result <> FS_FILE_USERABORT) do
-						begin
-							ThreadRetryCountUpload.Items[GetCurrentThreadID()] := ThreadRetryCountUpload.Items[GetCurrentThreadID()] + 1;
-							MyLogProc(PluginNum, MSGTYPE_DETAILS, pWideChar('File publish error: ' + TCloudMailRu.ErrorCodeText(Result) + ' Retry attempt ' + ThreadRetryCountUpload.Items[GetCurrentThreadID()].ToString + RetryAttemptsToString(RetryAttempts)));
-							Result := RenMoveFileViaPublicLink(OldCloud, NewCloud, OldRealPath, NewRealPath, Move, OverWrite);
-							if (Result = FS_FILE_OK) or (Result = FS_FILE_USERABORT) then ThreadRetryCountUpload.Items[GetCurrentThreadID()] := 0; //сбросим счётчик попыток
-						end;
+				end;
+			OperationErrorModeIgnore: exit;
+			OperationErrorModeAbort: exit(FS_FILE_USERABORT);
+			OperationErrorModeRetry:
+				begin;
+					RetryAttempts := GetPluginSettings(SettingsIniFilePath).RetryAttempts;
+					while (ThreadRetryCountRenMov.Items[GetCurrentThreadID()] <> RetryAttempts) and (not(Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
+					begin
+						ThreadRetryCountRenMov.Items[GetCurrentThreadID()] := ThreadRetryCountRenMov.Items[GetCurrentThreadID()] + 1;
+						MyLogProc(PluginNum, MSGTYPE_DETAILS, pWideChar('File publish error: ' + TCloudMailRu.ErrorCodeText(Result) + ' Retry attempt ' + ThreadRetryCountRenMov.Items[GetCurrentThreadID()].ToString + RetryAttemptsToString(RetryAttempts)));
+						Result := cloneWeblink(NewCloud, OldCloud, NewRealPath.path, CurrentItem, NeedUnpublish);;
+						ProcessMessages;
+						if (Result in [FS_FILE_OK, FS_FILE_USERABORT]) then ThreadRetryCountRenMov.Items[GetCurrentThreadID()] := 0; //сбросим счётчик попыток
 					end;
-			end;
+				end;
 		end;
 
 		if (Result = CLOUD_OPERATION_OK) and Move and not(OldCloud.deleteFile(OldRealPath.path)) then MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, pWideChar('Can''t delete ' + CurrentItem.home)); //пишем в лог, но не отваливаемся
@@ -826,6 +834,7 @@ begin
 
 	ThreadRetryCountDownload.Free;
 	ThreadRetryCountUpload.Free;
+	ThreadRetryCountRenMov.Free;
 	ThreadSkipListDelete.Free;
 	ThreadSkipListRenMov.Free;
 
@@ -1061,7 +1070,7 @@ begin
 
 	AccountsIniFilePath := IniDir + 'MailRuCloud.ini';
 	SettingsIniFilePath := IniDir + 'MailRuCloud.global.ini';
-	//IsWriteable(PluginPath,)
+
 
 	if GetPluginSettings(SettingsIniFilePath).LoadSSLDLLOnlyFromPluginDir then
 	begin
@@ -1077,6 +1086,7 @@ begin
 	IsMultiThread := not(GetPluginSettings(SettingsIniFilePath).DisableMultiThreading);
 	ThreadRetryCountDownload := TDictionary<DWORD, Int32>.Create;
 	ThreadRetryCountUpload := TDictionary<DWORD, Int32>.Create;
+	ThreadRetryCountRenMov := TDictionary<DWORD, Int32>.Create;
 	ThreadSkipListDelete := TDictionary<DWORD, Bool>.Create;
 	ThreadSkipListRenMov := TDictionary<DWORD, Bool>.Create;
 
