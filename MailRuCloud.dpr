@@ -699,7 +699,7 @@ begin
 					case (messagebox(FindTCWindow, pWideChar('Error downloading file' + sLineBreak + RemoteName + sLineBreak + 'Continue operation?'), 'Download error', MB_ABORTRETRYIGNORE + MB_ICONERROR)) of
 						ID_ABORT: Result := FS_FILE_USERABORT;
 						ID_RETRY: Result:=FsGetFileW(RemoteName, LocalName, CopyFlags, RemoteInfo);
-						//todo: проаерить реакцию на ID_IGNORE
+						//ID_IGNORE: exit;
 					end;
 				end;
 			//OperationErrorModeIgnore: exit;
@@ -805,7 +805,7 @@ begin
 					case (messagebox(FindTCWindow, pWideChar('Error uploading file' + sLineBreak + LocalName + sLineBreak + 'Continue operation?'), 'Upload error', MB_ABORTRETRYIGNORE + MB_ICONERROR)) of
 						ID_ABORT: Result := FS_FILE_USERABORT;
 						ID_RETRY: Result := FsPutFileW(LocalName, RemoteName, CopyFlags);
-						//todo: проаерить реакцию на ID_IGNORE
+						//ID_IGNORE: exit;
 					end;
 				end;
 			//OperationErrorModeIgnore: exit;
