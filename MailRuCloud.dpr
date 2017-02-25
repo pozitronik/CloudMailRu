@@ -195,6 +195,7 @@ Begin
 	MyRequestProc := pRequestProc;
 	Result := 0;
 	CurrentDescriptions := TDescription.Create;
+
 end;
 
 procedure FsStatusInfoW(RemoteDir: pWideChar; InfoStartEnd, InfoOperation: integer); stdcall; //Начало и конец операций FS
@@ -833,11 +834,11 @@ function FsDisconnectW(DisconnectRoot: pWideChar): Bool; stdcall;
 begin
 	ConnectionManager.freeAll;
 
-	ThreadRetryCountDownload.Free;
-	ThreadRetryCountUpload.Free;
-	ThreadRetryCountRenMov.Free;
-	ThreadSkipListDelete.Free;
-	ThreadSkipListRenMov.Free;
+	//ThreadRetryCountDownload.Free;
+	//ThreadRetryCountUpload.Free;
+	//ThreadRetryCountRenMov.Free;
+	//ThreadSkipListDelete.Free;
+	//ThreadSkipListRenMov.Free;
 
 	//CurrentDescriptions.Destroy;
 	Result := true;
