@@ -26,6 +26,7 @@ type
 
 		MyProgressProc: TProgressProcW;
 		MyLogProc: TLogProcW;
+		MyRequestProc: TRequestProcW;
 
 		function ConnectionExists(connectionName: WideString): Integer; //проверяет существование подключение
 		function new(connectionName: WideString): Integer; //Добавляет подключение в пул
@@ -34,7 +35,7 @@ type
 	public
 		CryptoNum: Integer;
 		MyCryptProc: TCryptProcW;
-		constructor Create(IniFileName: WideString; PluginNum: Integer; MyProgressProc: TProgressProcW; MyLogProc: TLogProcW; ProxySettings: TProxySettings; Timeout, CloudMaxFileSize: Integer);
+		constructor Create(IniFileName: WideString; PluginNum: Integer; MyProgressProc: TProgressProcW; MyLogProc: TLogProcW; ProxySettings: TProxySettings; Timeout, CloudMaxFileSize: Integer; MyRequestProc: TRequestProcW);
 		destructor Destroy(); override;
 		function get(connectionName: WideString; var OperationResult: Integer; doInit: boolean = true): TCloudMailRu; //возвращает готовое подклчение по имени
 		function set_(connectionName: WideString; cloud: TCloudMailRu): boolean;
@@ -48,13 +49,14 @@ type
 implementation
 
 {TConnectionManager}
-constructor TConnectionManager.Create(IniFileName: WideString; PluginNum: Integer; MyProgressProc: TProgressProcW; MyLogProc: TLogProcW; ProxySettings: TProxySettings; Timeout, CloudMaxFileSize: Integer);
+constructor TConnectionManager.Create(IniFileName: WideString; PluginNum: Integer; MyProgressProc: TProgressProcW; MyLogProc: TLogProcW; ProxySettings: TProxySettings; Timeout, CloudMaxFileSize: Integer; MyRequestProc: TRequestProcW);
 begin
 	SetLength(Connections, 0);
 	self.IniFileName := IniFileName;
 	self.PluginNum := PluginNum;
 	self.MyProgressProc := MyProgressProc;
 	self.MyLogProc := MyLogProc;
+	self.MyRequestProc := MyRequestProc;
 	self.Proxy := ProxySettings;
 	self.Timeout := Timeout;
 	self.CloudMaxFileSize := CloudMaxFileSize;
@@ -99,6 +101,7 @@ function TConnectionManager.init(connectionName: WideString; ProxySettings: TPro
 var
 	cloud: TCloudMailRu;
 	AccountSettings: TAccountSettings;
+	LoginMethod: Integer;
 begin
 	result := CLOUD_OPERATION_OK;
 	AccountSettings := GetAccountSettingsFromIniFile(IniFileName, connectionName);
@@ -107,10 +110,13 @@ begin
 
 	MyLogProc(PluginNum, MSGTYPE_CONNECT, PWideChar('CONNECT \' + connectionName));
 
-	cloud := TCloudMailRu.Create(AccountSettings, self.CloudMaxFileSize, self.Proxy, Timeout, MyProgressProc, PluginNum, MyLogProc);
+	cloud := TCloudMailRu.Create(AccountSettings, self.CloudMaxFileSize, self.Proxy, Timeout, MyProgressProc, PluginNum, MyLogProc, MyRequestProc);
 	if not set_(connectionName, cloud) then exit(CLOUD_OPERATION_ERROR_STATUS_UNKNOWN); //INVALID_HANDLE_VALUE
 
-	if not(get(connectionName, result, false).login()) then
+	if (AccountSettings.twostep_auth) then LoginMethod := 1
+	else LoginMethod := 0;
+
+	if not(get(connectionName, result, false).login(LoginMethod)) then
 	begin
 		result := CLOUD_OPERATION_FAILED;
 		free(connectionName);
