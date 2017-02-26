@@ -43,8 +43,19 @@ function LoadIcon(const FileName: WideString): Hicon;
 function LoadPluginIcon(const path: WideString; identifier: WideString): Hicon;
 function RetryAttemptsToString(Attempt: Integer): WideString;
 procedure ProcessMessages;
+Procedure FileLog(S: WideString);
 
 implementation
+
+Procedure FileLog(S: WideString);
+var
+	f: textfile;
+begin
+	Assign(f, 'd:\WORK\CODE\CloudMailRu\log.txt');
+	Rewrite(f);
+	Write(f, S);
+	close(f);
+end;
 
 function Implode(S: TStringList; Delimiter: WideString): WideString;
 
