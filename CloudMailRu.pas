@@ -15,6 +15,7 @@ const
 	OAUTH_TOKEN_URL = 'https://o2.mail.ru/token';
 	TOKEN_URL = 'https://cloud.mail.ru/?from=promo&from=authpopup';
 	LOGIN_URL = 'https://auth.mail.ru/cgi-bin/auth';
+	SECSTEP_URL = 'https://auth.mail.ru/cgi-bin/secstep';
 
 	API_FILE = 'https://cloud.mail.ru/api/v2/file';
 	API_FILE_MOVE = 'https://cloud.mail.ru/api/v2/file/move';
@@ -79,7 +80,8 @@ const
 
 	{Поддерживаемые методы авторизации}
 	CLOUD_AUTH_METHOD_WEB = 0; //Через парсинг HTTP-страницы
-	CLOUD_AUTH_METHOD_OAUTH = 1; //Через сервер OAuth-авторизации
+	CLOUD_AUTH_METHOD_TWO_STEP = 1; //Через парсинг HTTP-страницы, двухфакторная
+	CLOUD_AUTH_METHOD_OAUTH = 2; //Через сервер OAuth-авторизации
 
 type
 	TCloudMailRuDirListingItem = Record
@@ -151,6 +153,7 @@ type
 		Socks: TIdSocksInfo;
 		ExternalProgressProc: TProgressProcW;
 		ExternalLogProc: TLogProcW;
+		ExternalRequestProc: TRequestProcW;
 		Shard: WideString;
 		Proxy: TProxySettings;
 		ConnectTimeout: integer;
@@ -204,7 +207,7 @@ type
 	public
 		Property isPublicShare: Boolean read public_account;
 		{CONSTRUCTOR/DESTRUCTOR}
-		constructor Create(AccountSettings: TAccountSettings; split_file_size: integer; Proxy: TProxySettings; ConnectTimeout: integer; ExternalProgressProc: TProgressProcW = nil; PluginNr: integer = -1; ExternalLogProc: TLogProcW = nil);
+		constructor Create(AccountSettings: TAccountSettings; split_file_size: integer; Proxy: TProxySettings; ConnectTimeout: integer; ExternalProgressProc: TProgressProcW = nil; PluginNr: integer = -1; ExternalLogProc: TLogProcW = nil; ExternalRequestProc: TRequestProcW = nil);
 		destructor Destroy; override;
 		{CLOUD INTERFACE METHODS}
 		function login(method: integer = CLOUD_AUTH_METHOD_WEB): Boolean;
@@ -331,7 +334,7 @@ begin //Облако умеет скопировать файл, но не см�
 	end;
 end;
 
-constructor TCloudMailRu.Create(AccountSettings: TAccountSettings; split_file_size: integer; Proxy: TProxySettings; ConnectTimeout: integer; ExternalProgressProc: TProgressProcW; PluginNr: integer; ExternalLogProc: TLogProcW);
+constructor TCloudMailRu.Create(AccountSettings: TAccountSettings; split_file_size: integer; Proxy: TProxySettings; ConnectTimeout: integer; ExternalProgressProc: TProgressProcW; PluginNr: integer; ExternalLogProc: TLogProcW; ExternalRequestProc: TRequestProcW);
 begin
 	try
 		self.Cookie := TIdCookieManager.Create();
@@ -375,6 +378,7 @@ begin
 		self.ConnectTimeout := ConnectTimeout;
 		self.ExternalProgressProc := ExternalProgressProc;
 		self.ExternalLogProc := ExternalLogProc;
+		self.ExternalRequestProc := ExternalRequestProc;
 
 		self.ExternalPluginNr := PluginNr;
 		self.ExternalSourceName := '';
@@ -1323,12 +1327,50 @@ end;
 
 function TCloudMailRu.loginRegular(method: integer): Boolean;
 var
-	PostAnswer: WideString; {Не используется}
+	PostAnswer: WideString;
+	FirstStepToken: WideString;
+	SecurityKey: PWideChar;
 begin
 	Result := false;
 	self.login_method := method;
 	Log(MSGTYPE_DETAILS, 'Login to ' + self.user + '@' + self.domain);
 	case self.login_method of
+		CLOUD_AUTH_METHOD_TWO_STEP:
+			begin
+				Result := self.HTTPPost(LOGIN_URL, 'page=https://cloud.mail.ru/?new_auth_form=1&Domain=' + self.domain + '&Login=' + self.user + '&Password=' + UrlEncode(self.password) + '&FailPage=', PostAnswer);
+				if Result then
+				begin
+					Log(MSGTYPE_DETAILS, 'Requesting auth token for ' + self.user + '@' + self.domain);
+					if (self.extractTokenFromText(PostAnswer, FirstStepToken)) then
+					begin
+						Log(MSGTYPE_DETAILS, 'Awaiting for security key... ');
+						if (ExternalRequestProc(self.ExternalPluginNr, RT_Other, 'Enter auth key', nil, SecurityKey, 32)) then
+						begin
+							Result := self.HTTPPost(SECSTEP_URL, 'Login=' + self.user + '@' + self.domain + '&csrf=' + FirstStepToken + '&AuthCode=' + SecurityKey, PostAnswer);
+							if Result then
+							begin
+								Result := self.getToken();
+								if (Result) then
+								begin
+									Log(MSGTYPE_DETAILS, 'Connected to ' + self.user + '@' + self.domain);
+									self.logUserSpaceInfo;
+								end else begin
+									Log(MSGTYPE_IMPORTANTERROR, 'error: twostep auth failed');
+									exit(false);
+								end;
+							end;
+						end else begin
+							Log(MSGTYPE_IMPORTANTERROR, 'error: security key not provided');
+							exit(false);
+						end;
+
+					end else begin
+						Log(MSGTYPE_IMPORTANTERROR, 'error: getting auth token for ' + self.user + '@' + self.domain);
+						exit(false);
+					end;
+
+				end;
+			end;
 		CLOUD_AUTH_METHOD_WEB: //todo: вынести в отдельный метод
 			begin
 				Result := self.HTTPPost(LOGIN_URL, 'page=https://cloud.mail.ru/?new_auth_form=1&Domain=' + self.domain + '&Login=' + self.user + '&Password=' + UrlEncode(self.password) + '&FailPage=', PostAnswer);
