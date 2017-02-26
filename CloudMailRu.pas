@@ -14,7 +14,7 @@ const
 	PUBLIC_ACCESS_URL = 'https://cloud.mail.ru/public/';
 	OAUTH_TOKEN_URL = 'https://o2.mail.ru/token';
 	TOKEN_URL = 'https://cloud.mail.ru/?from=promo&from=authpopup';
-	LOGIN_URL = 'https://auth.mail.ru/cgi-bin/auth?lang=ru_RU&from=authpopup';
+	LOGIN_URL = 'https://auth.mail.ru/cgi-bin/auth';
 
 	API_FILE = 'https://cloud.mail.ru/api/v2/file';
 	API_FILE_MOVE = 'https://cloud.mail.ru/api/v2/file/move';
@@ -1331,7 +1331,7 @@ begin
 	case self.login_method of
 		CLOUD_AUTH_METHOD_WEB: //todo: вынести в отдельный метод
 			begin
-				Result := self.HTTPPost(LOGIN_URL, 'page=https://cloud.mail.ru/?from=promo&new_auth_form=1&Domain=' + self.domain + '&Login=' + self.user + '&Password=' + UrlEncode(self.password) + '&FailPage=', PostAnswer);
+				Result := self.HTTPPost(LOGIN_URL, 'page=https://cloud.mail.ru/?new_auth_form=1&Domain=' + self.domain + '&Login=' + self.user + '&Password=' + UrlEncode(self.password) + '&FailPage=', PostAnswer);
 				if (Result) then
 				begin
 					Log(MSGTYPE_DETAILS, 'Requesting auth token for ' + self.user + '@' + self.domain);
