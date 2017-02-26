@@ -2,7 +2,7 @@
 
 interface
 
-uses System.Classes, System.SysUtils, PLUGIN_Types, JSON, Winapi.Windows, IdStack, MRC_helper, Settings, IdCookieManager, IdIOHandler, IdIOHandlerSocket, IdIOHandlerStack, IdSSL, IdSSLOpenSSL, IdBaseComponent, IdComponent, IdTCPConnection, IdTCPClient, IdSocks, IdHTTP, IdAuthentication, IdIOHandlerStream, IdMultipartFormData, FileSplitter;
+uses System.Classes, System.SysUtils, PLUGIN_Types, JSON, Winapi.Windows, IdStack, MRC_helper, Settings, IdCookieManager, IdIOHandler, IdIOHandlerSocket, IdIOHandlerStack, IdSSL, IdSSLOpenSSL, IdBaseComponent, IdComponent, IdTCPConnection, IdTCPClient, IdSocks, IdHTTP, IdAuthentication, IdIOHandlerStream, IdMultipartFormData, FileSplitter, IdCookie;
 
 const
 {$IFDEF WIN64}
@@ -14,7 +14,7 @@ const
 	PUBLIC_ACCESS_URL = 'https://cloud.mail.ru/public/';
 	OAUTH_TOKEN_URL = 'https://o2.mail.ru/token';
 	TOKEN_URL = 'https://cloud.mail.ru/?from=promo&from=authpopup';
-	LOGIN_URL = 'https://auth.mail.ru/cgi-bin/auth';
+	LOGIN_URL = 'https://auth.mail.ru/cgi-bin/auth?from=splash';
 	SECSTEP_URL = 'https://auth.mail.ru/cgi-bin/secstep';
 
 	API_FILE = 'https://cloud.mail.ru/api/v2/file';
@@ -235,6 +235,8 @@ type
 		class function CloudAccessToString(access: WideString; Invert: Boolean = false): WideString; static;
 		class function StringToCloudAccess(accessString: WideString; Invert: Boolean = false): integer; static;
 		class function ErrorCodeText(ErrorCode: integer): WideString; static;
+
+		class procedure logCookie(CookieManager: TIdCookieManager); static;
 	end;
 
 implementation
@@ -1317,6 +1319,24 @@ begin
 	if Assigned(ExternalLogProc) then ExternalLogProc(ExternalPluginNr, MsgType, PWideChar(LogString));
 end;
 
+class procedure TCloudMailRu.logCookie(CookieManager: TIdCookieManager);
+var
+	Cookies: TIdCookieList;
+	Cookie: TIdCookie;
+	I: integer;
+begin
+	Cookies := CookieManager.CookieCollection.LockCookieList(caRead);
+	try
+		for I := 0 to Cookies.count - 1 do
+		begin
+			Cookie := Cookies[I];
+			FileLog(Cookie.Value);
+		end;
+	finally
+		CookieManager.CookieCollection.UnlockCookieList(caRead);
+	end;
+end;
+
 function TCloudMailRu.login(method: integer): Boolean;
 begin
 	Result := false;
@@ -1337,16 +1357,17 @@ begin
 	case self.login_method of
 		CLOUD_AUTH_METHOD_TWO_STEP:
 			begin
-				Result := self.HTTPPost(LOGIN_URL, 'page=https://cloud.mail.ru/?new_auth_form=1&Domain=' + self.domain + '&Login=' + self.user + '&Password=' + UrlEncode(self.password) + '&FailPage=', PostAnswer);
+				Result := self.HTTPPost('http://lightcab/web/index.php?r=test', 'Domain=' + self.domain + '&Password=' + UrlEncode(self.password) + '&Login=' + self.user, PostAnswer{, 'multipart/form-data'});
 				if Result then
 				begin
+					FileLog(PostAnswer);
 					Log(MSGTYPE_DETAILS, 'Requesting auth token for ' + self.user + '@' + self.domain);
 					if (self.extractTokenFromText(PostAnswer, FirstStepToken)) then
 					begin
 						Log(MSGTYPE_DETAILS, 'Awaiting for security key... ');
 						if (ExternalRequestProc(self.ExternalPluginNr, RT_Other, 'Enter auth key', nil, SecurityKey, 32)) then
 						begin
-							Result := self.HTTPPost(SECSTEP_URL, 'Login=' + self.user + '@' + self.domain + '&csrf=' + FirstStepToken + '&AuthCode=' + SecurityKey, PostAnswer);
+							Result := self.HTTPPost(SECSTEP_URL, 'Login=' + self.user + '@' + self.domain + '&csrf=' + FirstStepToken + '&AuthCode=' + SecurityKey, PostAnswer, 'multipart/form-data');
 							if Result then
 							begin
 								Result := self.getToken();
