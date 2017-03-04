@@ -652,7 +652,7 @@ begin
 	end;
 	Result := PutRemoteFile(RealPath, LocalName, RemoteName, CopyFlags);
 
-	if Result in [FS_FILE_OK, FS_FILE_USERABORT] then exit;
+	if Result in [FS_FILE_OK, FS_FILE_USERABORT, FS_FILE_NOTSUPPORTED] then exit;
 
 	case GetPluginSettings(SettingsIniFilePath).OperationErrorMode of
 		OperationErrorModeAsk:
