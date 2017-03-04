@@ -1544,6 +1544,7 @@ var
 begin
 	try
 		Splitter := TFileSplitter.Create(localPath, self.split_file_size, self.ExternalProgressProc, self.ExternalPluginNr);
+		SplitResult := Splitter.split();
 	except
 		on E: Exception do
 		begin
@@ -1551,7 +1552,7 @@ begin
 			exit(FS_FILE_NOTSUPPORTED);
 		end;
 	end;
-	SplitResult := Splitter.split();
+
 	case SplitResult of
 		FS_FILE_OK:
 			begin
