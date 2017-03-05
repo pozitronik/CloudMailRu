@@ -197,7 +197,6 @@ type
 	protected
 		{REGULAR CLOUD}
 		function loginRegular(method: integer = CLOUD_AUTH_METHOD_WEB): Boolean;
-		function getDirListingRegular(Path: WideString; var DirListing: TCloudMailRuDirListing): Boolean;
 		function getFileRegular(remotePath, localPath: WideString; LogErrors: Boolean = true): integer; //LogErrors=false => не логируем результат копирования, нужно для запроса descript.ion (которого может не быть)
 		{SHARED WEBFOLDERS}
 		function loginShared(method: integer = CLOUD_AUTH_METHOD_WEB): Boolean;
@@ -778,20 +777,16 @@ begin
 	Result := self.getFile(remotePath, localCopy, false);
 end;
 
-function TCloudMailRu.getDirListing(Path: WideString; var DirListing: TCloudMailRuDirListing): Boolean;
-begin
-	Result := false;
-	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
-	//if (self.public_account and not self.getSharedToken(Path)) then exit; //для публичных каталогов для каждого обновления каталога надо перезапрашивать токен
-	Result := self.getDirListingRegular(Path, DirListing);
-end;
 
-function TCloudMailRu.getDirListingRegular(Path: WideString; var DirListing: TCloudMailRuDirListing): Boolean;
+function TCloudMailRu.getDirListing(Path: WideString; var DirListing: TCloudMailRuDirListing): Boolean;
 var
 	JSON: WideString;
 	Progress: Boolean;
 	OperationStatus, OperationResult: integer;
 begin
+	Result := false;
+	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
+
 	Progress := false;
 	if self.public_account then Result := self.HTTPGet(API_FOLDER + '&weblink=' + self.public_link + '/' + PathToUrl(Path, false) + self.united_params, JSON, Progress)
 	else Result := self.HTTPGet(API_FOLDER + '&home=' + PathToUrl(Path) + self.united_params, JSON, Progress);
