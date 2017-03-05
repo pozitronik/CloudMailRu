@@ -169,12 +169,11 @@ type
 		procedure HTTPProgress(ASender: TObject; AWorkMode: TWorkMode; AWorkCount: int64);
 		{RAW TEXT PARSING}
 		function extractTokenFromText(Text: WideString; var token: WideString): Boolean;
-		//function extractPublicTokenFromText(Text: WideString; var PublicToken: WideString): Boolean;
+		function extractPublicTokenFromText(Text: WideString; var PublicToken: WideString): Boolean;
 		function extract_x_page_id_FromText(Text: WideString; var PageId: WideString): Boolean;
 		function extract_build_FromText(Text: WideString; var build: WideString): Boolean;
 		function extract_upload_url_FromText(Text: WideString; var UploadUrl: WideString): Boolean;
-		//function extractJSONFromPublicFolder(Text, IdString: WideString; var JSON: WideString): Boolean;
-		//function extractPublicShard(Text: WideString; var Shard: WideString): Boolean;
+		function extractPublicShard(Text: WideString; var Shard: WideString): Boolean;
 		{JSON MANIPULATION}
 		function fromJSON_DirListing(JSON: WideString; var CloudMailRuDirListing: TCloudMailRuDirListing): Boolean;
 		function fromJSON_UserSpace(JSON: WideString; var CloudMailRuSpaceInfo: TCloudMailRuSpaceInfo): Boolean;
@@ -183,10 +182,10 @@ type
 		function fromJSON_OAuthTokenInfo(JSON: WideString; var CloudMailRuOAuthInfo: TCloudMailRuOAuthInfo): Boolean;
 		function fromJSON_PublicLink(JSON: WideString; var PublicLink: WideString): Boolean;
 		function fromJSON_OperationResult(JSON: WideString; var OperationStatus: integer): integer;
-//		function fromJSON_PublicDirListing(JSON, Path: WideString; var CloudMailRuDirListing: TCloudMailRuDirListing): Boolean;
 		function fromJSON_InviteListing(JSON: WideString; var InviteListing: TCloudMailRuInviteInfoListing): Boolean;
 		{HTTP REQUESTS WRAPPERS}
 		function getToken(): Boolean;
+		function getSharedToken(Path: WideString): Boolean;
 		function getOAuthToken(var OAuthToken: TCloudMailRuOAuthInfo): Boolean;
 		function getShard(var Shard: WideString): Boolean;
 		function getUserSpace(var SpaceInfo: TCloudMailRuSpaceInfo): Boolean;
@@ -202,7 +201,6 @@ type
 		function getFileRegular(remotePath, localPath: WideString; LogErrors: Boolean = true): integer; //LogErrors=false => не логируем результат копирования, нужно для запроса descript.ion (которого может не быть)
 		{SHARED WEBFOLDERS}
 		function loginShared(method: integer = CLOUD_AUTH_METHOD_WEB): Boolean;
-		//function getDirListingShared(Path: WideString; var DirListing: TCloudMailRuDirListing): Boolean;
 		function getFileShared(remotePath, localPath: WideString; LogErrors: Boolean = true): integer; //LogErrors=false => не логируем результат копирования, нужно для запроса descript.ion (которого может не быть)
 	public
 		Property isPublicShare: Boolean read public_account;
@@ -463,48 +461,6 @@ begin
 	end;
 end;
 
-(*
- function TCloudMailRu.extractJSONFromPublicFolder(Text, IdString: WideString; var JSON: WideString): Boolean;
- var
- start, finish: integer;
- temp: WideString;
- begin
- Result := false;
- start := Pos(WideString('{"tree": ['), Text);
- temp := '"id": "' + IdString + '"}}';
- finish := PosLast(temp, Text, start);
- if (start > 0) and (finish <> start) then
- begin
- JSON := copy(Text, start, finish + length(temp) - start);
- Result := true;
- end;
- end;*)
-(*
- function TCloudMailRu.extractPublicShard(Text: WideString; var Shard: WideString): Boolean;
- var
- start: integer;
- finish: integer;
- begin
- start := Pos(WideString('"weblink_get":['), Text);
- Result := start <> 0;
- start := Pos(WideString('"url":'), Text, start) + 7;
- finish := Pos(WideString('"}]'), Text, start);
- Shard := copy(Text, start, finish - start);
- end;
-*)
-(*
- function TCloudMailRu.extractPublicTokenFromText(Text: WideString; var PublicToken: WideString): Boolean;
- var
- start: integer;
- finish: integer;
- begin
- start := Pos(WideString('"tokens":{"download":'), Text);
- Result := start <> 0;
- start := start + 22;
- finish := Pos(WideString('"}'), Text, start);
- PublicToken := copy(Text, start, finish - start);
- end;
-*)
 function TCloudMailRu.extractTokenFromText(Text: WideString; var token: WideString): Boolean;
 var
 	start: integer;
@@ -753,53 +709,6 @@ begin
 	end;
 	Result := CLOUD_OPERATION_OK;
 end;
-(*
- function TCloudMailRu.fromJSON_PublicDirListing(JSON, Path: WideString; var CloudMailRuDirListing: TCloudMailRuDirListing): Boolean;
- var
- Obj: TJSONObject;
- J: integer;
- A: TJSONArray;
- begin
- Result := true;
- try
- A := ((TJSONObject.ParseJSONValue(JSON) as TJSONObject).values['folder'] as TJSONObject).values['list'] as TJSONArray;
- SetLength(CloudMailRuDirListing, A.count);
- for J := 0 to A.count - 1 do
- begin
- Obj := A.Items[J] as TJSONObject;
- with CloudMailRuDirListing[J] do
- begin
- if Assigned(Obj.values['size']) then size := Obj.values['size'].Value.ToInt64;
- if Assigned(Obj.values['kind']) then kind := Obj.values['kind'].Value;
-
- if Assigned(Obj.values['type']) then type_ := Obj.values['type'].Value;
- if Assigned(Obj.values['home']) then home := Obj.values['home'].Value;
- if Assigned(Obj.values['name']) then name := Obj.values['name'].Value;
- if Assigned(Obj.values['weblink']) then
- begin
- weblink := Obj.values['weblink'].Value;
- if home = '' then home := Path + '/' + name; //Значение отстутствует в JSON, формируем его сами для совместимости с FindListingItemByHomePath
- end;
- if (type_ = TYPE_FILE) then
- begin
- if Assigned(Obj.values['mtime']) then mtime := Obj.values['mtime'].Value.ToInt64;
- if Assigned(Obj.values['virus_scan']) then virus_scan := Obj.values['virus_scan'].Value;
- if Assigned(Obj.values['hash']) then hash := Obj.values['hash'].Value;
- end else begin
- if Assigned(Obj.values['tree']) then tree := Obj.values['tree'].Value;
- if Assigned(Obj.values['grev']) then grev := Obj.values['grev'].Value.ToInteger;
- if Assigned(Obj.values['rev']) then rev := Obj.values['rev'].Value.ToInteger;
- if Assigned((Obj.values['count'] as TJSONObject).values['folders']) then folders_count := (Obj.values['count'] as TJSONObject).values['folders'].Value.ToInteger();
- if Assigned((Obj.values['count'] as TJSONObject).values['files']) then files_count := (Obj.values['count'] as TJSONObject).values['files'].Value.ToInteger();
- mtime := 0;
- end;
- end;
- end;
- except
- Result := false;
- end;
- end;
-*)
 
 function TCloudMailRu.fromJSON_PublicLink(JSON: WideString; var PublicLink: WideString): Boolean;
 begin
@@ -840,6 +749,30 @@ begin
 	end;
 end;
 
+function TCloudMailRu.extractPublicShard(Text: WideString; var Shard: WideString): Boolean;
+var
+	start: integer;
+	finish: integer;
+begin
+	start := Pos(WideString('"weblink_get":['), Text);
+	Result := start <> 0;
+	start := Pos(WideString('"url":'), Text, start) + 7;
+	finish := Pos(WideString('"}]'), Text, start);
+	Shard := copy(Text, start, finish - start);
+end;
+
+function TCloudMailRu.extractPublicTokenFromText(Text: WideString; var PublicToken: WideString): Boolean;
+var
+	start: integer;
+	finish: integer;
+begin
+	start := Pos(WideString('"tokens":{"download":'), Text);
+	Result := start <> 0;
+	start := start + 22;
+	finish := Pos(WideString('"}'), Text, start);
+	PublicToken := copy(Text, start, finish - start);
+end;
+
 function TCloudMailRu.getDescriptionFile(remotePath, localCopy: WideString): integer; //0 - ok, else error
 begin
 	Result := self.getFile(remotePath, localCopy, false);
@@ -849,7 +782,8 @@ function TCloudMailRu.getDirListing(Path: WideString; var DirListing: TCloudMail
 begin
 	Result := false;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
-	Result := self.getDirListingRegular(Path, DirListing)
+	if (self.public_account and not self.getSharedToken(Path)) then exit; //для публичных каталогов для каждого обновления каталога надо перезапрашивать токен
+	Result := self.getDirListingRegular(Path, DirListing);
 end;
 
 function TCloudMailRu.getDirListingRegular(Path: WideString; var DirListing: TCloudMailRuDirListing): Boolean;
@@ -859,7 +793,7 @@ var
 	OperationStatus, OperationResult: integer;
 begin
 	Progress := false;
-	if self.public_account then Result := self.HTTPGet(API_FOLDER + '&weblink=' + self.public_link + '/' + PathToUrl(Path,false) + self.united_params, JSON, Progress)
+	if self.public_account then Result := self.HTTPGet(API_FOLDER + '&weblink=' + self.public_link + '/' + PathToUrl(Path, false) + self.united_params, JSON, Progress)
 	else Result := self.HTTPGet(API_FOLDER + '&home=' + PathToUrl(Path) + self.united_params, JSON, Progress);
 	if Result then
 	begin
@@ -880,46 +814,6 @@ begin
 	end;
 end;
 
-(*
- function TCloudMailRu.getDirListingShared(Path: WideString; var DirListing: TCloudMailRuDirListing): Boolean;
- var
- JSON, PageContent: WideString;
- Progress: Boolean;
- function PathToJsonId(Path: WideString): WideString;
- begin
- Result := StringReplace(Path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]);
- if Result <> '' then Result := '/' + Result;
- end;
-
- begin
- Progress := false;
- Result := self.HTTPGet(API_FOLDER + '&weblink=' + self.public_link + '/' + PathToUrl(Path) + self.united_params, JSON, Progress);
- //Result := self.HTTPGet(self.PUBLIC_URL + PathToUrl(Path, false) + '&limit=65535', PageContent, Progress);
- if Result then
- begin
- PageContent := StringReplace(PageContent, #$A, '', [rfReplaceAll]); //так нам проще ковыряться в тексте
- PageContent := StringReplace(PageContent, #$D, '', [rfReplaceAll]);
- PageContent := StringReplace(PageContent, #9, '', [rfReplaceAll]);
- Path := PathToJsonId(Path);
- if not self.extractJSONFromPublicFolder(PageContent, self.public_link + Path, JSON) then
- begin
- Log(MSGTYPE_IMPORTANTERROR, 'Can''t get public share JSON data');
- exit(false);
- end;
- if not self.fromJSON_PublicDirListing(JSON, Path, DirListing) then exit(false);
- if not self.extractPublicTokenFromText(PageContent, self.public_download_token) then //refresh public download token
- begin
- Log(MSGTYPE_IMPORTANTERROR, 'Can''t get public share download token');
- exit(false);
- end;
- if not self.extractPublicShard(PageContent, self.public_shard) then
- begin
- Log(MSGTYPE_IMPORTANTERROR, 'Can''t get public share download share');
- exit(false);
- end;
- end;
- end;
-*)
 function TCloudMailRu.getFile(remotePath, localPath: WideString; LogErrors: Boolean): integer;
 begin
 	Result := FS_FILE_NOTSUPPORTED;
@@ -1035,6 +929,40 @@ begin
 	begin
 		Result := self.extractTokenFromText(JSON, self.token) and self.extract_x_page_id_FromText(JSON, self.x_page_id) and self.extract_build_FromText(JSON, self.build) and self.extract_upload_url_FromText(JSON, self.upload_url);
 		self.united_params := '&api=2&build=' + self.build + '&x-page-id=' + self.x_page_id + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&token=' + self.token + '&_=' + DateTimeToUnix(now).ToString + '810';
+	end;
+end;
+
+function TCloudMailRu.getSharedToken(Path: WideString): Boolean;
+var
+	PageContent: WideString;
+	Progress: Boolean;
+	function PathToJsonId(Path: WideString): WideString;
+	begin
+		Result := StringReplace(Path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]);
+		if Result <> '' then Result := '/' + Result;
+	end;
+
+begin
+	Result := false;
+	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
+	Progress := false;
+	Result := self.HTTPGet(self.PUBLIC_URL + PathToUrl(Path, false), PageContent, Progress);
+	if Result then
+	begin
+		PageContent := StringReplace(PageContent, #$A, '', [rfReplaceAll]); //так нам проще ковыряться в тексте
+		PageContent := StringReplace(PageContent, #$D, '', [rfReplaceAll]);
+		PageContent := StringReplace(PageContent, #9, '', [rfReplaceAll]);
+		Path := PathToJsonId(Path);
+		if not self.extractPublicTokenFromText(PageContent, self.public_download_token) then //refresh public download token
+		begin
+			Log(MSGTYPE_IMPORTANTERROR, 'Can''t get public share download token');
+			exit(false);
+		end;
+		if not self.extractPublicShard(PageContent, self.public_shard) then
+		begin
+			Log(MSGTYPE_IMPORTANTERROR, 'Can''t get public share download share');
+			exit(false);
+		end;
 	end;
 end;
 
