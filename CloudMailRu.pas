@@ -185,7 +185,7 @@ type
 		function fromJSON_InviteListing(JSON: WideString; var InviteListing: TCloudMailRuInviteInfoListing): Boolean;
 		{HTTP REQUESTS WRAPPERS}
 		function getToken(): Boolean;
-		function getSharedToken(Path: WideString): Boolean;
+		function getSharedToken(): Boolean;
 		function getOAuthToken(var OAuthToken: TCloudMailRuOAuthInfo): Boolean;
 		function getShard(var Shard: WideString): Boolean;
 		function getUserSpace(var SpaceInfo: TCloudMailRuSpaceInfo): Boolean;
@@ -782,7 +782,7 @@ function TCloudMailRu.getDirListing(Path: WideString; var DirListing: TCloudMail
 begin
 	Result := false;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
-	if (self.public_account and not self.getSharedToken(Path)) then exit; //для публичных каталогов для каждого обновления каталога надо перезапрашивать токен
+	//if (self.public_account and not self.getSharedToken(Path)) then exit; //для публичных каталогов для каждого обновления каталога надо перезапрашивать токен
 	Result := self.getDirListingRegular(Path, DirListing);
 end;
 
@@ -932,27 +932,20 @@ begin
 	end;
 end;
 
-function TCloudMailRu.getSharedToken(Path: WideString): Boolean;
+function TCloudMailRu.getSharedToken(): Boolean;
 var
 	PageContent: WideString;
 	Progress: Boolean;
-	function PathToJsonId(Path: WideString): WideString;
-	begin
-		Result := StringReplace(Path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]);
-		if Result <> '' then Result := '/' + Result;
-	end;
-
 begin
 	Result := false;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
 	Progress := false;
-	Result := self.HTTPGet(self.PUBLIC_URL + PathToUrl(Path, false), PageContent, Progress);
+	Result := self.HTTPGet(self.PUBLIC_URL, PageContent, Progress);
 	if Result then
 	begin
 		PageContent := StringReplace(PageContent, #$A, '', [rfReplaceAll]); //так нам проще ковыряться в тексте
 		PageContent := StringReplace(PageContent, #$D, '', [rfReplaceAll]);
 		PageContent := StringReplace(PageContent, #9, '', [rfReplaceAll]);
-		Path := PathToJsonId(Path);
 		if not self.extractPublicTokenFromText(PageContent, self.public_download_token) then //refresh public download token
 		begin
 			Log(MSGTYPE_IMPORTANTERROR, 'Can''t get public share download token');
@@ -1333,7 +1326,8 @@ end;
 function TCloudMailRu.loginShared(method: integer): Boolean;
 begin
 	Log(MSGTYPE_DETAILS, 'Open ' + self.PUBLIC_URL);
-	exit(true);
+	Result := self.getSharedToken();
+	//exit(true);
 end;
 
 procedure TCloudMailRu.logUserSpaceInfo;
