@@ -77,6 +77,7 @@ var
 begin
 	result := 0; //not used
 	self.Clear;
+  fStream := nil;
 	try
 		fStream := TStreamReader.Create(ion_filename, DetermineEncoding(ion_filename), False);
 		while not fStream.EndOfStream do

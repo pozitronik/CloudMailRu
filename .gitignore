@@ -1,52 +1,92 @@
-/__history
-/Example.~dsk
-/CloudMailRu.dcu
-/PLUGIN_MAIN.dcu
-/PLUGIN_TYPES.dcu
-/Example.dsk
-/SAMPLE_WFX.dsk
+# Delphi local files (user-specific info)
+*.local
+*.identcache
+*.projdata
+*.tvsconfig
+*.dsk
+
+# Delphi history and backups
+__history/
+__recovery/
+_dcu/
+*.~*
+
+# Castalia statistics file (since XE7 Castalia is distributed with Delphi)
+*.stat
+
+# Diagram Portfolio file. Used by the diagram editor up to Delphi 7.
+# Uncomment this if you are not using diagrams or use newer Delphi version.
+*.ddp
+
+# Visual LiveBindings file. Added in Delphi XE2.
+# Uncomment this if you are not using LiveBindings Designer.
+*.vlb
+
+# Deployment Manager configuration file for your project. Added in Delphi XE2.
+# Uncomment this if it is not mobile development and you do not use remote debug feature.
+#*.deployproj
+
+# Delphi compiler-generated binaries (safe to delete)
+*.exe
+*.dll
+*.bpl
+*.bpi
+*.dcp
+*.so
+*.apk
+*.drc
+*.map
+*.dres
+*.rsm
+*.tds
+*.dcu
+*.lib
+*.a
+*.o
+*.ocx
+*.dex
+*.otares
+*.dres
+
+# LOG
+*.log
+
+# Windows
+# =========================
+
+# Windows image file caches
+Thumbs.db
+ehthumbs.db
+
+# Folder config file
+Desktop.ini
+
+# Recycle Bin used on file shares
+$RECYCLE.BIN/
+
+# Windows shortcuts
+*.lnk
+
+# CloudMailRu
 /FSPLUGIN.HLP
-/Example.identcache
-/SAMPLE_WFX.identcache
-/SAMPLE_WFX.stat
-/Example.stat
-/ExampleApp.vlb
 /fspluginhelp2.1se.zip
 /MailRuCloud.ini
-/MailRuCloud.dsk
-/MailRuCloud.~dsk
-/MailRuCloud.stat
-/MailRuCloud.dproj.local
-/MailRuCloud.identcache
 /Example.res
 /Example.dproj
 /ExampleApp.pas
 /ExampleApp.dfm
-/Example.dproj.local
 /Example.dpr
 /Win32
-/XSuperObject.dcu
-/XSuperJSON.dcu
-/MRC_Helper.dcu
 /ModelSupport_MailRuCloud
-/MailRuCloud_project.tvsconfig
 /MailRuCloud.dproj
-/Accounts.dcu
-/*.dcu
-/*.vlb
 /experiments
-/*.otares
-/*.dres
-/*.rc
-/*.res
+/MailRuCloud.dres
+/MailRuCloud.res
 /auth.page_files
 /auth.page.htm
 /dump.txt
-/*.rsm
 /MailRuCloud.global.ini
 /CloudMailRu.zip
 /pluginst.inf
 /debug.json
-/debug.log
 /Cloud.groupproj
-/Cloud.groupproj.local

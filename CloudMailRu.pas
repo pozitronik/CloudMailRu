@@ -1258,6 +1258,7 @@ var
 	SecurityKey: PWideChar;
 begin
 	Result := false;
+  SecurityKey := nil;
 	self.login_method := method;
 	Log(MSGTYPE_DETAILS, 'Login to ' + self.user + '@' + self.domain);
 	case self.login_method of
