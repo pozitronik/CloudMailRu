@@ -1,6 +1,8 @@
 ﻿library MailRuCloud;
 
-{$R *.dres}
+{.$R *.dres}
+{$R MailRuCloudResource.res}
+{$i app_linker.inc}
 
 uses
 	SysUtils, System.Generics.Collections, DateUtils, windows, Classes, PLUGIN_TYPES, IdSSLOpenSSLHeaders, messages, inifiles, Vcl.controls, CloudMailRu in 'CloudMailRu.pas', MRC_Helper in 'MRC_Helper.pas', Accounts in 'Accounts.pas'{AccountsForm}, RemoteProperty in 'RemoteProperty.pas'{PropertyForm}, Descriptions in 'Descriptions.pas', ConnectionManager in 'ConnectionManager.pas', Settings in 'Settings.pas', ANSIFunctions in 'ANSIFunctions.pas';
@@ -11,7 +13,7 @@ uses
 {$IFDEF WIN32}
 {$E wfx}
 {$ENDIF}
-{$R *.res}
+{.$R *.res}
 
 const
 {$IFDEF WIN64}

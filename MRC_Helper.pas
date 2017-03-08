@@ -136,8 +136,8 @@ procedure SetAllFileTime(const FileName: string; const FileTime: TFileTime);
 var
 	Handle: thandle;
 begin
-	try
 		Handle := CreateFileW(PWideChar(GetUNCFilePath(FileName)), FILE_WRITE_ATTRIBUTES, FILE_SHARE_READ or FILE_SHARE_WRITE, nil, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+  try
 		if Handle = INVALID_HANDLE_VALUE then
 		begin
 			CloseHandle(Handle);
@@ -342,8 +342,8 @@ begin
 	LoadIcon := INVALID_HANDLE_VALUE;
 	if not FileExists(FileName) then exit;
 
-	try
 		Icon := TIcon.Create;
+  try
 		Icon.LoadFromFile(FileName);
 		Result := CopyIcon(Icon.Handle);
 	finally
