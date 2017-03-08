@@ -158,24 +158,21 @@ object AccountsForm: TAccountsForm
     Top = 0
     Width = 490
     Height = 405
-    ActivePage = NetworkTab
+    ActivePage = AccountsTab
     Align = alClient
     TabOrder = 0
-    ExplicitWidth = 492
     object AccountsTab: TTabSheet
       Caption = 'Accounts'
-      ExplicitWidth = 484
       DesignSize = (
         482
         377)
       object AccountNameLabel: TLabel
         Left = 225
         Top = 10
-        Width = 66
+        Width = 68
         Height = 13
         Anchors = [akLeft, akTop, akRight]
         Caption = 'Account name'
-        ExplicitWidth = 68
       end
       object AccountsGroupBox: TGroupBox
         Left = -4
@@ -310,7 +307,6 @@ object AccountsForm: TAccountsForm
         Height = 21
         Anchors = [akLeft, akTop, akRight]
         TabOrder = 4
-        ExplicitWidth = 255
       end
       object PublicAccountCB: TCheckBox
         Left = 225
@@ -350,9 +346,6 @@ object AccountsForm: TAccountsForm
     object GlobalTab: TTabSheet
       Caption = 'Global settings'
       ImageIndex = 1
-      ExplicitLeft = -140
-      ExplicitTop = 240
-      ExplicitWidth = 484
       object CloudMaxFileSizeLabelBytes: TLabel
         Left = 292
         Top = 114
@@ -592,7 +585,6 @@ object AccountsForm: TAccountsForm
     object NetworkTab: TTabSheet
       Caption = 'Network settings'
       ImageIndex = 2
-      ExplicitWidth = 484
       object SocketTimeoutLabel: TLabel
         Left = 5
         Top = 11

@@ -105,6 +105,17 @@ implementation
 
 {$R *.dfm}
 
+procedure TAccountsForm.UpdateAccountsList();
+var
+	TempList: TStringList;
+begin
+	TempList := TStringList.Create;
+	GetAccountsListFromIniFile(IniPath, TempList);
+	AccountsList.Items := TempList;
+	TempList.Destroy;
+	AccountsList.OnClick(self);
+end;
+
 procedure TAccountsForm.AccountsListClick(Sender: TObject);
 var
 	CASettings: TAccountSettings;
@@ -329,18 +340,6 @@ begin
 	finally
 		FreeAndNil(AccountsForm);
 	end;
-end;
-
-procedure TAccountsForm.UpdateAccountsList;
-var
-	TempList: TStringList;
-begin
-	TempList := TStringList.Create;
-	GetAccountsListFromIniFile(IniPath, TempList);
-	AccountsList.Items := TempList;
-	TempList.Destroy;
-	AccountsList.OnClick(self);
-
 end;
 
 procedure TAccountsForm.WMHotKey(var Message: TMessage);
