@@ -210,7 +210,7 @@ type
 		destructor Destroy; override;
 		{CLOUD INTERFACE METHODS}
 		function login(method: integer = CLOUD_AUTH_METHOD_WEB): Boolean;
-		function getDirListing(Path: WideString; var DirListing: TCloudMailRuDirListing): Boolean;
+		function getDirListing(Path: WideString; var DirListing: TCloudMailRuDirListing; ShowProgress: boolean = false): Boolean;
 		function createDir(Path: WideString): Boolean;
 		function removeDir(Path: WideString): Boolean;
 		function statusFile(Path: WideString; var FileInfo: TCloudMailRuDirListingItem): Boolean;
@@ -779,18 +779,16 @@ begin
 	Result := self.getFile(remotePath, localCopy, false);
 end;
 
-function TCloudMailRu.getDirListing(Path: WideString; var DirListing: TCloudMailRuDirListing): Boolean;
+function TCloudMailRu.getDirListing(Path: WideString; var DirListing: TCloudMailRuDirListing; ShowProgress: boolean = false): Boolean;
 var
 	JSON: WideString;
-	Progress: Boolean;
 	OperationStatus, OperationResult: integer;
 begin
 	Result := false;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
 
-	Progress := false;
-	if self.public_account then Result := self.HTTPGet(API_FOLDER + '&weblink=' + self.public_link + '/' + PathToUrl(Path, false) + self.united_params, JSON, Progress)
-	else Result := self.HTTPGet(API_FOLDER + '&home=' + PathToUrl(Path) + self.united_params, JSON, Progress);
+	if self.public_account then Result := self.HTTPGet(API_FOLDER + '&weblink=' + self.public_link + '/' + PathToUrl(Path, false) + self.united_params, JSON, ShowProgress)
+	else Result := self.HTTPGet(API_FOLDER + '&home=' + PathToUrl(Path) + self.united_params, JSON, ShowProgress);
 	if Result then
 	begin
 		OperationResult := self.fromJSON_OperationResult(JSON, OperationStatus);
