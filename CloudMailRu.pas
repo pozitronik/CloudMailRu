@@ -200,6 +200,7 @@ type
 		function getFileRegular(remotePath, localPath: WideString; LogErrors: Boolean = true): integer; //LogErrors=false => не логируем результат копирования, нужно для запроса descript.ion (которого может не быть)
 		{SHARED WEBFOLDERS}
 		function loginShared(method: integer = CLOUD_AUTH_METHOD_WEB): Boolean;
+		function getSharedFileUrl(remotePath: WideString): WideString;
 		function getFileShared(remotePath, localPath: WideString; LogErrors: Boolean = true): integer; //LogErrors=false => не логируем результат копирования, нужно для запроса descript.ion (которого может не быть)
 	public
 		Property isPublicShare: Boolean read public_account;
@@ -777,7 +778,6 @@ begin
 	Result := self.getFile(remotePath, localCopy, false);
 end;
 
-
 function TCloudMailRu.getDirListing(Path: WideString; var DirListing: TCloudMailRuDirListing): Boolean;
 var
 	JSON: WideString;
@@ -853,13 +853,17 @@ begin
 	if Result <> FS_FILE_OK then System.SysUtils.deleteFile(GetUNCFilePath(localPath));
 end;
 
+function TCloudMailRu.getSharedFileUrl(remotePath: WideString): WideString;
+begin
+	Result := self.public_shard + '/' + self.public_link + '/' + PathToUrl(remotePath) + '?key=' + self.public_download_token
+end;
+
 function TCloudMailRu.getFileShared(remotePath, localPath: WideString; LogErrors: Boolean): integer;
 var
 	FileStream: TFileStream;
 begin
 	Result := FS_FILE_NOTFOUND;
 	if (self.public_shard = '') or (self.public_download_token = '') then exit;
-	remotePath := PathToUrl(remotePath) + '?key=' + self.public_download_token;
 	try
 		FileStream := TFileStream.Create(GetUNCFilePath(localPath), fmCreate);
 	except
@@ -871,7 +875,7 @@ begin
 	end;
 	if (Assigned(FileStream)) then
 	begin
-		Result := self.HTTPGetFile(self.public_shard + '/' + self.public_link + '/' + remotePath, FileStream, LogErrors);
+		Result := self.HTTPGetFile(getSharedFileUrl(remotePath), FileStream, LogErrors);
 		FlushFileBuffers(FileStream.Handle);
 		FileStream.free;
 	end;
@@ -1723,7 +1727,10 @@ var
 begin
 	Result := false;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
-	if self.public_account then exit; //Не заморачиваемся с получением ссылок
+	if self.public_account then
+	begin
+
+	end;
 
 	Progress := false;
 	Result := self.HTTPGet(API_FILE + '?home=' + PathToUrl(Path) + self.united_params, JSON, Progress);
