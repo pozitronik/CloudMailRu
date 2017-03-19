@@ -60,11 +60,13 @@ procedure TPropertyForm.AccessCBClick(Sender: TObject);
 var
 	PublicLink: WideString;
 begin
+	if self.Cloud.isPublicShare then exit;
+
 	WebLink.Text := 'Wait for it...';
 	AccessCB.Enabled := false; //блокируем во избежание повторных кликов
 	if AccessCB.checked then
 	begin
-		if Self.Cloud.publishFile(Props.home, PublicLink) then
+		if self.Cloud.publishFile(Props.home, PublicLink) then
 		begin
 			WebLink.Text := 'https://cloud.mail.ru/public/' + PublicLink;
 			Props.WebLink := PublicLink;
@@ -72,7 +74,7 @@ begin
 			WebLink.SetFocus;
 			WebLink.SelectAll;
 		end else begin
-			MessageBoxW(Self.Handle, PWideChar('Error while publishing file ' + Props.home + ', see main log'), 'File publishing error', MB_OK + MB_ICONERROR);
+			MessageBoxW(self.Handle, PWideChar('Error while publishing file ' + Props.home + ', see main log'), 'File publishing error', MB_OK + MB_ICONERROR);
 		end;
 
 	end else begin
@@ -82,7 +84,7 @@ begin
 			Props.WebLink := '';
 			WebLink.Enabled := false;
 		end else begin
-			MessageBoxW(Self.Handle, PWideChar('Error while unpublishing file ' + Props.home + ', see main log'), 'File unpublishing error', MB_OK + MB_ICONERROR);
+			MessageBoxW(self.Handle, PWideChar('Error while unpublishing file ' + Props.home + ', see main log'), 'File unpublishing error', MB_OK + MB_ICONERROR);
 		end;
 	end;
 	AccessCB.Enabled := true;
@@ -95,7 +97,7 @@ end;
 
 procedure TPropertyForm.FormActivate(Sender: TObject);
 begin
-	CenterWindow(Self.parentWindow, Self.Handle);
+	CenterWindow(self.parentWindow, self.Handle);
 end;
 
 procedure TPropertyForm.FormDestroy(Sender: TObject);
@@ -111,16 +113,21 @@ begin
 		WebLink.SetFocus;
 		WebLink.SelectAll;
 	end;
-	AccessCB.checked := not(Props.WebLink = '');
-	WebLink.Enabled := AccessCB.checked;
-	if Props.type_ = TYPE_DIR then
+	InvitesGB.Height := 0;
+	InvitesGB.Enabled := false;
+	if self.Cloud.isPublicShare then
 	begin
-		InvitesGB.Height :=210;
-		InvitesGB.Enabled:=true;
-		RefreshInvites;
+		AccessCB.Enabled := false;
+		AccessCB.checked := true;
 	end else begin
-		InvitesGB.Height :=0;
-		InvitesGB.Enabled:=false;
+		AccessCB.checked := not(Props.WebLink = '');
+		WebLink.Enabled := AccessCB.checked;
+		if Props.type_ = TYPE_DIR then
+		begin
+			InvitesGB.Height := 210;
+			InvitesGB.Enabled := true;
+			RefreshInvites;
+		end;
 	end;
 
 end;
@@ -131,7 +138,7 @@ begin
 	begin
 		RefreshInvites;
 	end else begin
-		MessageBoxW(Self.Handle, PWideChar('Error while inviting ' + InviteEmailEdit.Text + ' to ' + Props.home + ' folder, see main log'), 'Folder invite error', MB_OK + MB_ICONERROR);
+		MessageBoxW(self.Handle, PWideChar('Error while inviting ' + InviteEmailEdit.Text + ' to ' + Props.home + ' folder, see main log'), 'Folder invite error', MB_OK + MB_ICONERROR);
 	end;
 end;
 
@@ -142,18 +149,18 @@ begin
 	email := InvitesLE.Keys[InvitesLE.Row];
 	if email = '' then
 	begin
-		ItemChangeAccess.Visible:=false;
+		ItemChangeAccess.Visible := false;
 		ItemDelete.Visible := false;
 		exit;
 	end else begin
-		ItemChangeAccess.Visible:=true;
-		ItemDelete.Visible:=true;
+		ItemChangeAccess.Visible := true;
+		ItemDelete.Visible := true;
 	end;
 
-	access :=InvitesLE.Values[email];
+	access := InvitesLE.Values[email];
 	access := TCloudMailRu.CloudAccessToString(access, true);
 
-	ItemChangeAccess.Caption:='Change access to ' + access;
+	ItemChangeAccess.Caption := 'Change access to ' + access;
 end;
 
 procedure TPropertyForm.ItemChangeAccessClick(Sender: TObject);
@@ -161,12 +168,12 @@ var
 	email, access: WideString;
 begin
 	email := InvitesLE.Keys[InvitesLE.Row];
-	access :=InvitesLE.Values[email];
+	access := InvitesLE.Values[email];
 	if Cloud.shareFolder(Props.home, InvitesLE.Keys[InvitesLE.Row], TCloudMailRu.StringToCloudAccess(access, true)) then
 	begin
 		RefreshInvites;
 	end else begin
-		MessageBoxW(Self.Handle, PWideChar('Error while removing access to ' + InviteEmailEdit.Text + ' from ' + Props.home + ' folder, see main log'), 'Folder unshare error', MB_OK + MB_ICONERROR);
+		MessageBoxW(self.Handle, PWideChar('Error while removing access to ' + InviteEmailEdit.Text + ' from ' + Props.home + ' folder, see main log'), 'Folder unshare error', MB_OK + MB_ICONERROR);
 	end;
 end;
 
@@ -176,7 +183,7 @@ begin
 	begin
 		RefreshInvites;
 	end else begin
-		MessageBoxW(Self.Handle, PWideChar('Error while removing access to ' + InviteEmailEdit.Text + ' from ' + Props.home + ' folder, see main log'), 'Folder unshare error', MB_OK + MB_ICONERROR);
+		MessageBoxW(self.Handle, PWideChar('Error while removing access to ' + InviteEmailEdit.Text + ' from ' + Props.home + ' folder, see main log'), 'Folder unshare error', MB_OK + MB_ICONERROR);
 	end;
 
 end;
@@ -192,16 +199,16 @@ var
 begin
 	while InvitesLE.Strings.Count > 0 do InvitesLE.DeleteRow(1);
 
-	if Cloud.getShareInfo(Props.home, Self.InvitesListing) then
+	if Cloud.getShareInfo(Props.home, self.InvitesListing) then
 	begin
-		InvitesCount:=Length(Self.InvitesListing) - 1;
+		InvitesCount := Length(self.InvitesListing) - 1;
 		for i := 0 to InvitesCount do
 		begin
-			InvitesLE.InsertRow(Self.InvitesListing[i].name, TCloudMailRu.CloudAccessToString(Self.InvitesListing[i].access), true);
+			InvitesLE.InsertRow(self.InvitesListing[i].name, TCloudMailRu.CloudAccessToString(self.InvitesListing[i].access), true);
 		end;
 
 	end else begin
-		MessageBoxW(Self.Handle, PWideChar('Error while retrieving ' + Props.home + ' folder invites list, see main log'), 'Folder invite listing error', MB_OK + MB_ICONERROR);
+		MessageBoxW(self.Handle, PWideChar('Error while retrieving ' + Props.home + ' folder invites list, see main log'), 'Folder invite listing error', MB_OK + MB_ICONERROR);
 	end;
 end;
 
@@ -226,7 +233,7 @@ end;
 
 procedure TPropertyForm.WMHotKey(var Message: TMessage);
 begin
-	if (Message.LParamHi = VK_ESCAPE) and (GetForegroundWindow = Self.Handle) then Close;
+	if (Message.LParamHi = VK_ESCAPE) and (GetForegroundWindow = self.Handle) then Close;
 end;
 
 end.
