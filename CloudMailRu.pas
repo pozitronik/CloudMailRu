@@ -1727,13 +1727,10 @@ var
 begin
 	Result := false;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
-	if self.public_account then
-	begin
-
-	end;
-
 	Progress := false;
-	Result := self.HTTPGet(API_FILE + '?home=' + PathToUrl(Path) + self.united_params, JSON, Progress);
+	if self.public_account then Result := self.HTTPGet(API_FILE + '?weblink=' + self.public_link + '/' + PathToUrl(Path) + self.united_params, JSON, Progress)
+	else Result := self.HTTPGet(API_FILE + '?home=' + PathToUrl(Path) + self.united_params, JSON, Progress);
+
 	if Result then
 	begin
 		OperationResult := self.fromJSON_OperationResult(JSON, OperationStatus);
