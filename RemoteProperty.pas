@@ -35,7 +35,6 @@ type
 		procedure InviteBtnClick(Sender: TObject);
 		procedure ItemDeleteClick(Sender: TObject);
 		procedure ItemRefreshClick(Sender: TObject);
-		procedure Clean1Click(Sender: TObject);
 		procedure InvitesPopupPopup(Sender: TObject);
 		procedure ItemChangeAccessClick(Sender: TObject);
 	private
@@ -92,11 +91,6 @@ begin
 		end;
 	end;
 	AccessCB.Enabled := true;
-end;
-
-procedure TPropertyForm.Clean1Click(Sender: TObject);
-begin
-	while InvitesLE.Strings.Count > 0 do InvitesLE.DeleteRow(1);
 end;
 
 procedure TPropertyForm.FormActivate(Sender: TObject);
