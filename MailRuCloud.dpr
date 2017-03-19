@@ -109,13 +109,15 @@ end;
 function GetListingItemByName(CurrentListing: TCloudMailRuDirListing; path: TRealPath): TCloudMailRuDirListingItem;
 var
 	getResult: integer;
+	Cloud: TCloudMailRu;
 begin
 	Result := FindListingItemByHomePath(CurrentListing, path.path); //сначала попробуем найти поле в имеющемся списке
 	if Result.name = '' then //если там его нет (нажали пробел на папке, например), то запросим в облаке напрямую
 	begin
-		if ConnectionManager.get(path.account, getResult).statusFile(path.path, Result) then
+		Cloud := ConnectionManager.get(path.account, getResult);
+		if Cloud.statusFile(path.path, Result) then
 		begin
-			if Result.home = '' then MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, pWideChar('Cant find file ' + path.path)); {Такого быть не может, но...}
+			if (Result.home = '') and not Cloud.isPublicShare then MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, pWideChar('Cant find file ' + path.path)); {Такого быть не может, но...}
 		end;
 	end; //Не рапортуем, это будет уровнем выше
 end;
@@ -886,7 +888,7 @@ begin
 	end;
 
 	Item := GetListingItemByName(CurrentListing, RealPath);
-	if Item.home = '' then exit(ft_nosuchfield);
+	//if Item.home = '' then exit(ft_nosuchfield);
 
 	case FieldIndex of
 		0:
