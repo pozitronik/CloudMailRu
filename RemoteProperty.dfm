@@ -5,7 +5,7 @@ object PropertyForm: TPropertyForm
   BorderStyle = bsDialog
   BorderWidth = 5
   ClientHeight = 287
-  ClientWidth = 422
+  ClientWidth = 485
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -19,7 +19,7 @@ object PropertyForm: TPropertyForm
   OnDestroy = FormDestroy
   OnShow = FormShow
   DesignSize = (
-    422
+    485
     287)
   PixelsPerInch = 96
   TextHeight = 13
@@ -33,11 +33,12 @@ object PropertyForm: TPropertyForm
   object WebLink: TEdit
     Left = 0
     Top = 19
-    Width = 422
+    Width = 485
     Height = 21
     Anchors = [akLeft, akTop, akRight]
     ReadOnly = True
     TabOrder = 0
+    ExplicitWidth = 500
   end
   object AccessCB: TCheckBox
     Left = 0
@@ -49,22 +50,28 @@ object PropertyForm: TPropertyForm
     OnClick = AccessCBClick
   end
   object OkButton: TButton
-    Left = 334
+    Left = 391
     Top = 46
-    Width = 88
+    Width = 94
     Height = 25
     Anchors = [akTop, akRight]
     Caption = 'OK'
     ModalResult = 1
     TabOrder = 2
+    ExplicitLeft = 406
   end
   object InvitesGB: TGroupBox
     Left = 0
     Top = 77
-    Width = 422
+    Width = 485
     Height = 210
+    Anchors = [akLeft, akTop, akRight, akBottom]
     Caption = 'Folder access'
     TabOrder = 3
+    ExplicitWidth = 500
+    DesignSize = (
+      485
+      210)
     object InviteEmailLabel: TLabel
       Left = 5
       Top = 16
@@ -73,18 +80,21 @@ object PropertyForm: TPropertyForm
       Caption = 'New member email:'
     end
     object AccessLabel: TLabel
-      Left = 218
+      Left = 281
       Top = 16
       Width = 37
       Height = 13
+      Anchors = [akTop, akRight]
       Caption = 'Access:'
+      ExplicitLeft = 218
     end
     object InvitesLE: TValueListEditor
       Left = 2
       Top = 62
-      Width = 418
+      Width = 481
       Height = 146
       Align = alBottom
+      Anchors = [akLeft, akTop, akRight, akBottom]
       BiDiMode = bdLeftToRight
       BorderStyle = bsNone
       Color = clBtnFace
@@ -99,9 +109,10 @@ object PropertyForm: TPropertyForm
       TitleCaptions.Strings = (
         'Member'
         'Access')
+      ExplicitWidth = 418
       ColWidths = (
         269
-        147)
+        210)
       RowHeights = (
         18
         18)
@@ -109,31 +120,37 @@ object PropertyForm: TPropertyForm
     object InviteEmailEdit: TEdit
       Left = 5
       Top = 35
-      Width = 212
+      Width = 275
       Height = 21
+      Anchors = [akLeft, akTop, akRight]
       TabOrder = 1
+      ExplicitWidth = 212
     end
     object InviteAcessCB: TComboBox
-      Left = 218
+      Left = 281
       Top = 35
       Width = 115
       Height = 21
       Style = csDropDownList
+      Anchors = [akTop, akRight]
       ItemIndex = 0
       TabOrder = 2
       Text = 'Read and write'
       Items.Strings = (
         'Read and write'
         'Read only')
+      ExplicitLeft = 218
     end
     object InviteBtn: TButton
-      Left = 339
+      Left = 402
       Top = 35
       Width = 75
       Height = 21
+      Anchors = [akTop, akRight]
       Caption = 'Add'
       TabOrder = 3
       OnClick = InviteBtnClick
+      ExplicitLeft = 339
     end
   end
   object InvitesPopup: TPopupMenu
