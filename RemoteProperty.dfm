@@ -5,7 +5,7 @@ object PropertyForm: TPropertyForm
   BorderStyle = bsDialog
   BorderWidth = 5
   ClientHeight = 358
-  ClientWidth = 836
+  ClientWidth = 837
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -19,7 +19,7 @@ object PropertyForm: TPropertyForm
   OnDestroy = FormDestroy
   OnShow = FormShow
   DesignSize = (
-    836
+    837
     358)
   PixelsPerInch = 96
   TextHeight = 13
@@ -31,9 +31,9 @@ object PropertyForm: TPropertyForm
     Caption = 'Public link (Ctrl+C to copy):'
   end
   object WebLink: TEdit
-    Left = 2
+    Left = 0
     Top = 19
-    Width = 834
+    Width = 836
     Height = 21
     Anchors = [akLeft, akTop, akRight]
     ReadOnly = True
@@ -49,7 +49,7 @@ object PropertyForm: TPropertyForm
     OnClick = AccessCBClick
   end
   object OkButton: TButton
-    Left = 745
+    Left = 746
     Top = 46
     Width = 91
     Height = 25
@@ -63,7 +63,7 @@ object PropertyForm: TPropertyForm
     Top = 75
     Width = 836
     Height = 283
-    ActivePage = FolderAccessTS
+    ActivePage = DownloadLinksTS
     TabOrder = 3
     object FolderAccessTS: TTabSheet
       Caption = 'Folder Access'
@@ -150,12 +150,24 @@ object PropertyForm: TPropertyForm
     object DownloadLinksTS: TTabSheet
       Caption = 'Download Links'
       ImageIndex = 1
+      object DownloadLinksMemo: TMemo
+        Left = 0
+        Top = 0
+        Width = 828
+        Height = 255
+        Align = alClient
+        TabOrder = 0
+        ExplicitLeft = 296
+        ExplicitTop = 72
+        ExplicitWidth = 185
+        ExplicitHeight = 89
+      end
     end
   end
   object InvitesPopup: TPopupMenu
     OnPopup = InvitesPopupPopup
-    Left = 392
-    Top = 221
+    Left = 744
+    Top = 181
     object ItemChangeAccess: TMenuItem
       Caption = 'Change access'
       OnClick = ItemChangeAccessClick

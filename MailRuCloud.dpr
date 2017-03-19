@@ -496,9 +496,9 @@ Begin
 				Cloud := ConnectionManager.get(RealPath.account, getResult);
 				if Cloud.isPublicShare then
 				begin
-					TPropertyForm.ShowProperty(MainWin, CurrentItem, Cloud);
+					TPropertyForm.ShowProperty(MainWin, RealPath.path, CurrentItem, Cloud);
 				end else begin
-					if CurrentItem.home <> '' then TPropertyForm.ShowProperty(MainWin, CurrentItem, Cloud)
+					if CurrentItem.home <> '' then TPropertyForm.ShowProperty(MainWin, RealPath.path, CurrentItem, Cloud)
 					else MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, pWideChar('Cant find file under cursor!'));
 				end;
 

@@ -25,11 +25,12 @@ type
 		InviteAcessCB: TComboBox;
 		InviteBtn: TButton;
 		InvitesLE: TValueListEditor;
+		DownloadLinksMemo: TMemo;
 
 		procedure AccessCBClick(Sender: TObject);
 		procedure FormShow(Sender: TObject);
 		procedure FormDestroy(Sender: TObject);
-		class function ShowProperty(parentWindow: HWND; RemoteProperty: TCloudMailRuDirListingItem; var Cloud: TCloudMailRu): integer;
+		class function ShowProperty(parentWindow: HWND; RemoteName: WideString; RemoteProperty: TCloudMailRuDirListingItem; var Cloud: TCloudMailRu): integer;
 		procedure FormActivate(Sender: TObject);
 		procedure InviteBtnClick(Sender: TObject);
 		procedure ItemDeleteClick(Sender: TObject);
@@ -45,6 +46,7 @@ type
 		Props: TCloudMailRuDirListingItem;
 		InvitesListing: TCloudMailRuInviteInfoListing;
 		Cloud: TCloudMailRu;
+		RemoteName: WideString;
 	public
 		{Public declarations}
 
@@ -119,21 +121,23 @@ begin
 	ExtPropertiesPC.Visible := false;
 	FolderAccessTS.TabVisible := false;
 	DownloadLinksTS.TabVisible := false;
-
 	if self.Cloud.isPublicShare then
 	begin
 		AccessCB.Enabled := false;
 		AccessCB.checked := true;
-
 		ExtPropertiesPC.Visible := true;
 		DownloadLinksTS.TabVisible := true;
+		if Props.type_ = TYPE_DIR then
+		begin
 
+		end else begin
+			DownloadLinksMemo.Lines.Text := self.Cloud.getSharedFileUrl(self.RemoteName);
+		end;
 	end else begin
 		AccessCB.checked := not(Props.WebLink = '');
 		WebLink.Enabled := AccessCB.checked;
 		if Props.type_ = TYPE_DIR then
 		begin
-
 			ExtPropertiesPC.Visible := true;
 			FolderAccessTS.TabVisible := true;
 			RefreshInvites;
@@ -222,7 +226,7 @@ begin
 	end;
 end;
 
-class function TPropertyForm.ShowProperty(parentWindow: HWND; RemoteProperty: TCloudMailRuDirListingItem; var Cloud: TCloudMailRu): integer; //todo do we need cloud as var parameter?
+class function TPropertyForm.ShowProperty(parentWindow: HWND; RemoteName: WideString; RemoteProperty: TCloudMailRuDirListingItem; var Cloud: TCloudMailRu): integer; //todo do we need cloud as var parameter?
 var
 	PropertyForm: TPropertyForm;
 begin
@@ -230,6 +234,7 @@ begin
 		PropertyForm := TPropertyForm.Create(nil);
 		PropertyForm.parentWindow := parentWindow;
 
+		PropertyForm.RemoteName := RemoteName;
 		PropertyForm.Caption := RemoteProperty.name;
 		PropertyForm.Cloud := Cloud;
 		PropertyForm.Props := RemoteProperty;
