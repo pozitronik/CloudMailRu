@@ -41,6 +41,7 @@ type
 		{Private declarations}
 		procedure WMHotKey(var Message: TMessage); message WM_HOTKEY;
 		procedure RefreshInvites();
+		procedure FillRecursiveDownloadListing(const Path: WideString);
 	protected
 		Props: TCloudMailRuDirListingItem;
 		InvitesListing: TCloudMailRuInviteInfoListing;
@@ -93,6 +94,24 @@ begin
 	AccessCB.Enabled := true;
 end;
 
+procedure TPropertyForm.FillRecursiveDownloadListing(const Path: WideString);
+var
+	CurrentDirListing: TCloudMailRuDirListing;
+	CurrentDirItemsCounter: integer;
+begin
+	self.Cloud.getDirListing(Path, CurrentDirListing);
+	for CurrentDirItemsCounter := 0 to length(CurrentDirListing) - 1 do
+	begin
+		if CurrentDirListing[CurrentDirItemsCounter].type_ = TYPE_DIR then
+		begin
+			self.FillRecursiveDownloadListing(IncludeTrailingPathDelimiter(Path) + CurrentDirListing[CurrentDirItemsCounter].name);
+		end else begin
+			DownloadLinksMemo.Lines.Add(self.Cloud.getSharedFileUrl(IncludeTrailingPathDelimiter(Path) + CurrentDirListing[CurrentDirItemsCounter].name));
+		end;
+
+	end;
+end;
+
 procedure TPropertyForm.FormActivate(Sender: TObject);
 begin
 	CenterWindow(self.parentWindow, self.Handle);
@@ -122,8 +141,8 @@ begin
 		ExtPropertiesPC.Visible := true;
 		DownloadLinksTS.TabVisible := true;
 		if Props.type_ = TYPE_DIR then
-		begin
-
+		begin (*рекурсивно получаем все ссылки в каталоге*)
+			FillRecursiveDownloadListing(IncludeTrailingPathDelimiter(self.RemoteName))
 		end else begin
 			DownloadLinksMemo.Lines.Text := self.Cloud.getSharedFileUrl(self.RemoteName);
 		end;
@@ -137,7 +156,6 @@ begin
 			RefreshInvites;
 		end;
 	end;
-
 end;
 
 procedure TPropertyForm.InviteBtnClick(Sender: TObject);
@@ -209,7 +227,7 @@ begin
 
 	if Cloud.getShareInfo(Props.home, self.InvitesListing) then
 	begin
-		InvitesCount := Length(self.InvitesListing) - 1;
+		InvitesCount := length(self.InvitesListing) - 1;
 		for i := 0 to InvitesCount do
 		begin
 			InvitesLE.InsertRow(self.InvitesListing[i].name, TCloudMailRu.CloudAccessToString(self.InvitesListing[i].access), true);
