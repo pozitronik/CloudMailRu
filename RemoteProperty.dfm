@@ -156,11 +156,13 @@ object PropertyForm: TPropertyForm
         Width = 828
         Height = 255
         Align = alClient
+        BevelInner = bvNone
+        BevelOuter = bvNone
+        BorderStyle = bsNone
+        ReadOnly = True
+        ScrollBars = ssBoth
         TabOrder = 0
-        ExplicitLeft = 296
-        ExplicitTop = 72
-        ExplicitWidth = 185
-        ExplicitHeight = 89
+        WordWrap = False
       end
     end
   end

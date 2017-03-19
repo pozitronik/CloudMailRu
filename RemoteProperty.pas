@@ -135,7 +135,7 @@ begin
 		WebLink.SetFocus;
 		WebLink.SelectAll;
 	end;
-
+	DownloadLinksMemo.Lines.Clear;
 	ExtPropertiesPC.Visible := false;
 	FolderAccessTS.TabVisible := false;
 	DownloadLinksTS.TabVisible := false;
