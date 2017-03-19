@@ -3,7 +3,7 @@
 interface
 
 uses
-	Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, CloudMailRu, MRC_Helper, Vcl.Grids, Vcl.ValEdit, Vcl.Menus, Vcl.ComCtrls;
+	Plugin_types, Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, CloudMailRu, MRC_Helper, Vcl.Grids, Vcl.ValEdit, Vcl.Menus, Vcl.ComCtrls;
 
 type
 	TPropertyForm = class(TForm)
@@ -26,11 +26,10 @@ type
 		InviteBtn: TButton;
 		InvitesLE: TValueListEditor;
 		DownloadLinksMemo: TMemo;
-
 		procedure AccessCBClick(Sender: TObject);
 		procedure FormShow(Sender: TObject);
 		procedure FormDestroy(Sender: TObject);
-		class function ShowProperty(parentWindow: HWND; RemoteName: WideString; RemoteProperty: TCloudMailRuDirListingItem; var Cloud: TCloudMailRu): integer;
+		class function ShowProperty(parentWindow: HWND; RemoteName: WideString; RemoteProperty: TCloudMailRuDirListingItem; var Cloud: TCloudMailRu; LogProc: TLogProcW = nil; ProgressProc: TProgressProcW = nil; PluginNum: Integer = 0): Integer;
 		procedure FormActivate(Sender: TObject);
 		procedure InviteBtnClick(Sender: TObject);
 		procedure ItemDeleteClick(Sender: TObject);
@@ -47,6 +46,9 @@ type
 		InvitesListing: TCloudMailRuInviteInfoListing;
 		Cloud: TCloudMailRu;
 		RemoteName: WideString;
+		LogProc: TLogProcW;
+		ProgressProc: TProgressProcW;
+		PluginNum: Integer;
 	public
 		{Public declarations}
 
@@ -97,9 +99,12 @@ end;
 procedure TPropertyForm.FillRecursiveDownloadListing(const Path: WideString);
 var
 	CurrentDirListing: TCloudMailRuDirListing;
-	CurrentDirItemsCounter: integer;
+	CurrentDirItemsCounter: Integer;
 begin
+	self.LogProc(self.PluginNum, msgtype_details, PWideChar('Scanning ' + Path));
+	self.ProgressProc(self.PluginNum, 'Scanning...', PWideChar(Path), 0);
 	self.Cloud.getDirListing(Path, CurrentDirListing);
+	ProcessMessages;
 	for CurrentDirItemsCounter := 0 to length(CurrentDirListing) - 1 do
 	begin
 		if CurrentDirListing[CurrentDirItemsCounter].type_ = TYPE_DIR then
@@ -108,7 +113,7 @@ begin
 		end else begin
 			DownloadLinksMemo.Lines.Add(self.Cloud.getSharedFileUrl(IncludeTrailingPathDelimiter(Path) + CurrentDirListing[CurrentDirItemsCounter].name));
 		end;
-
+		self.ProgressProc(self.PluginNum, 'Scanning...', PWideChar(Path), 100);
 	end;
 end;
 
@@ -221,7 +226,7 @@ end;
 
 procedure TPropertyForm.RefreshInvites;
 var
-	i, InvitesCount: integer;
+	i, InvitesCount: Integer;
 begin
 	while InvitesLE.Strings.Count > 0 do InvitesLE.DeleteRow(1);
 
@@ -238,7 +243,7 @@ begin
 	end;
 end;
 
-class function TPropertyForm.ShowProperty(parentWindow: HWND; RemoteName: WideString; RemoteProperty: TCloudMailRuDirListingItem; var Cloud: TCloudMailRu): integer; //todo do we need cloud as var parameter?
+class function TPropertyForm.ShowProperty(parentWindow: HWND; RemoteName: WideString; RemoteProperty: TCloudMailRuDirListingItem; var Cloud: TCloudMailRu; LogProc: TLogProcW = nil; ProgressProc: TProgressProcW = nil; PluginNum: Integer = 0): Integer; //todo do we need cloud as var parameter?
 var
 	PropertyForm: TPropertyForm;
 begin
@@ -250,6 +255,9 @@ begin
 		PropertyForm.Caption := RemoteProperty.name;
 		PropertyForm.Cloud := Cloud;
 		PropertyForm.Props := RemoteProperty;
+		PropertyForm.LogProc := LogProc;
+		PropertyForm.ProgressProc := ProgressProc;
+		PropertyForm.PluginNum := PluginNum;
 		RegisterHotKey(PropertyForm.Handle, 1, 0, VK_ESCAPE);
 		result := PropertyForm.Showmodal;
 
