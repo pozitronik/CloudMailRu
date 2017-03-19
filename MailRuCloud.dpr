@@ -494,11 +494,14 @@ Begin
 			if ConnectionManager.get(RealPath.account, getResult).statusFile(RealPath.path, CurrentItem) then
 			begin
 				Cloud := ConnectionManager.get(RealPath.account, getResult);
-				if CurrentItem.home <> '' then TPropertyForm.ShowProperty(MainWin, CurrentItem, Cloud)
-				else
+				if Cloud.isPublicShare then
 				begin
-					MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, pWideChar('Cant find file under cursor!'));
+					TPropertyForm.ShowProperty(MainWin, CurrentItem, Cloud);
+				end else begin
+					if CurrentItem.home <> '' then TPropertyForm.ShowProperty(MainWin, CurrentItem, Cloud)
+					else MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, pWideChar('Cant find file under cursor!'));
 				end;
+
 			end; //Не рапортуем, это будет уровнем выше
 		end;
 	end else if copy(Verb, 1, 5) = 'chmod' then
