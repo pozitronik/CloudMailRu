@@ -3,7 +3,7 @@
 interface
 
 uses
-	Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, CloudMailRu, MRC_Helper, Vcl.Grids, Vcl.ValEdit, Vcl.Menus;
+	Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, CloudMailRu, MRC_Helper, Vcl.Grids, Vcl.ValEdit, Vcl.Menus, Vcl.ComCtrls;
 
 type
 	TPropertyForm = class(TForm)
@@ -11,18 +11,20 @@ type
 		WebLink: TEdit;
 		AccessCB: TCheckBox;
 		OkButton: TButton;
-		InvitesGB: TGroupBox;
-		InvitesLE: TValueListEditor;
-		InviteEmailEdit: TEdit;
-		InviteEmailLabel: TLabel;
-		InviteAcessCB: TComboBox;
-		AccessLabel: TLabel;
-		InviteBtn: TButton;
 		InvitesPopup: TPopupMenu;
 		ItemChangeAccess: TMenuItem;
 		ItemDelete: TMenuItem;
 		ItemRefresh: TMenuItem;
 		N1: TMenuItem;
+		ExtPropertiesPC: TPageControl;
+		FolderAccessTS: TTabSheet;
+		DownloadLinksTS: TTabSheet;
+		InviteEmailLabel: TLabel;
+		AccessLabel: TLabel;
+		InviteEmailEdit: TEdit;
+		InviteAcessCB: TComboBox;
+		InviteBtn: TButton;
+		InvitesLE: TValueListEditor;
 
 		procedure AccessCBClick(Sender: TObject);
 		procedure FormShow(Sender: TObject);
@@ -113,19 +115,27 @@ begin
 		WebLink.SetFocus;
 		WebLink.SelectAll;
 	end;
-	InvitesGB.Height := 0;
-	InvitesGB.Enabled := false;
+
+	ExtPropertiesPC.Visible := false;
+	FolderAccessTS.TabVisible := false;
+	DownloadLinksTS.TabVisible := false;
+
 	if self.Cloud.isPublicShare then
 	begin
 		AccessCB.Enabled := false;
 		AccessCB.checked := true;
+
+		ExtPropertiesPC.Visible := true;
+		DownloadLinksTS.TabVisible := true;
+
 	end else begin
 		AccessCB.checked := not(Props.WebLink = '');
 		WebLink.Enabled := AccessCB.checked;
 		if Props.type_ = TYPE_DIR then
 		begin
-			InvitesGB.Height := 210;
-			InvitesGB.Enabled := true;
+
+			ExtPropertiesPC.Visible := true;
+			FolderAccessTS.TabVisible := true;
 			RefreshInvites;
 		end;
 	end;

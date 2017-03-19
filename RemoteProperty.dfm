@@ -4,8 +4,8 @@ object PropertyForm: TPropertyForm
   AutoSize = True
   BorderStyle = bsDialog
   BorderWidth = 5
-  ClientHeight = 287
-  ClientWidth = 485
+  ClientHeight = 358
+  ClientWidth = 836
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -19,8 +19,8 @@ object PropertyForm: TPropertyForm
   OnDestroy = FormDestroy
   OnShow = FormShow
   DesignSize = (
-    485
-    287)
+    836
+    358)
   PixelsPerInch = 96
   TextHeight = 13
   object PublicLinkLabel: TLabel
@@ -31,14 +31,13 @@ object PropertyForm: TPropertyForm
     Caption = 'Public link (Ctrl+C to copy):'
   end
   object WebLink: TEdit
-    Left = 0
+    Left = 2
     Top = 19
-    Width = 485
+    Width = 834
     Height = 21
     Anchors = [akLeft, akTop, akRight]
     ReadOnly = True
     TabOrder = 0
-    ExplicitWidth = 500
   end
   object AccessCB: TCheckBox
     Left = 0
@@ -50,107 +49,107 @@ object PropertyForm: TPropertyForm
     OnClick = AccessCBClick
   end
   object OkButton: TButton
-    Left = 391
+    Left = 745
     Top = 46
-    Width = 94
+    Width = 91
     Height = 25
     Anchors = [akTop, akRight]
     Caption = 'OK'
     ModalResult = 1
     TabOrder = 2
-    ExplicitLeft = 406
   end
-  object InvitesGB: TGroupBox
+  object ExtPropertiesPC: TPageControl
     Left = 0
-    Top = 77
-    Width = 485
-    Height = 210
-    Anchors = [akLeft, akTop, akRight, akBottom]
-    Caption = 'Folder access'
+    Top = 75
+    Width = 836
+    Height = 283
+    ActivePage = FolderAccessTS
     TabOrder = 3
-    ExplicitWidth = 500
-    DesignSize = (
-      485
-      210)
-    object InviteEmailLabel: TLabel
-      Left = 5
-      Top = 16
-      Width = 93
-      Height = 13
-      Caption = 'New member email:'
+    object FolderAccessTS: TTabSheet
+      Caption = 'Folder Access'
+      DesignSize = (
+        828
+        255)
+      object InviteEmailLabel: TLabel
+        Left = 5
+        Top = 16
+        Width = 93
+        Height = 13
+        Caption = 'New member email:'
+      end
+      object AccessLabel: TLabel
+        Left = 632
+        Top = 16
+        Width = 37
+        Height = 13
+        Anchors = [akTop, akRight]
+        Caption = 'Access:'
+        ExplicitLeft = 218
+      end
+      object InviteEmailEdit: TEdit
+        Left = 5
+        Top = 35
+        Width = 626
+        Height = 21
+        Anchors = [akLeft, akTop, akRight]
+        TabOrder = 0
+      end
+      object InviteAcessCB: TComboBox
+        Left = 632
+        Top = 35
+        Width = 115
+        Height = 21
+        Style = csDropDownList
+        Anchors = [akTop, akRight]
+        ItemIndex = 0
+        TabOrder = 1
+        Text = 'Read and write'
+        Items.Strings = (
+          'Read and write'
+          'Read only')
+      end
+      object InviteBtn: TButton
+        Left = 753
+        Top = 35
+        Width = 75
+        Height = 21
+        Anchors = [akTop, akRight]
+        Caption = 'Add'
+        TabOrder = 2
+        OnClick = InviteBtnClick
+      end
+      object InvitesLE: TValueListEditor
+        Left = 0
+        Top = 62
+        Width = 828
+        Height = 193
+        Align = alBottom
+        Anchors = [akLeft, akTop, akRight, akBottom]
+        BiDiMode = bdLeftToRight
+        BorderStyle = bsNone
+        Color = clBtnFace
+        Ctl3D = True
+        DrawingStyle = gdsClassic
+        Options = [goRowSelect, goThumbTracking]
+        ParentBiDiMode = False
+        ParentCtl3D = False
+        PopupMenu = InvitesPopup
+        ScrollBars = ssVertical
+        TabOrder = 3
+        TitleCaptions.Strings = (
+          'Member'
+          'Access')
+        ColWidths = (
+          269
+          557)
+        RowHeights = (
+          18
+          18)
+      end
     end
-    object AccessLabel: TLabel
-      Left = 281
-      Top = 16
-      Width = 37
-      Height = 13
-      Anchors = [akTop, akRight]
-      Caption = 'Access:'
-      ExplicitLeft = 218
-    end
-    object InvitesLE: TValueListEditor
-      Left = 2
-      Top = 62
-      Width = 481
-      Height = 146
-      Align = alBottom
-      Anchors = [akLeft, akTop, akRight, akBottom]
-      BiDiMode = bdLeftToRight
-      BorderStyle = bsNone
-      Color = clBtnFace
-      Ctl3D = True
-      DrawingStyle = gdsClassic
-      Options = [goRowSelect, goThumbTracking]
-      ParentBiDiMode = False
-      ParentCtl3D = False
-      PopupMenu = InvitesPopup
-      ScrollBars = ssVertical
-      TabOrder = 0
-      TitleCaptions.Strings = (
-        'Member'
-        'Access')
-      ExplicitWidth = 418
-      ColWidths = (
-        269
-        210)
-      RowHeights = (
-        18
-        18)
-    end
-    object InviteEmailEdit: TEdit
-      Left = 5
-      Top = 35
-      Width = 275
-      Height = 21
-      Anchors = [akLeft, akTop, akRight]
-      TabOrder = 1
-      ExplicitWidth = 212
-    end
-    object InviteAcessCB: TComboBox
-      Left = 281
-      Top = 35
-      Width = 115
-      Height = 21
-      Style = csDropDownList
-      Anchors = [akTop, akRight]
-      ItemIndex = 0
-      TabOrder = 2
-      Text = 'Read and write'
-      Items.Strings = (
-        'Read and write'
-        'Read only')
-      ExplicitLeft = 218
-    end
-    object InviteBtn: TButton
-      Left = 402
-      Top = 35
-      Width = 75
-      Height = 21
-      Anchors = [akTop, akRight]
-      Caption = 'Add'
-      TabOrder = 3
-      OnClick = InviteBtnClick
-      ExplicitLeft = 339
+    object DownloadLinksTS: TTabSheet
+      Caption = 'Download Links'
+      ImageIndex = 1
     end
   end
   object InvitesPopup: TPopupMenu
