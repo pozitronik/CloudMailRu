@@ -161,23 +161,18 @@ object AccountsForm: TAccountsForm
     ActivePage = GlobalTab
     Align = alClient
     TabOrder = 0
-    ExplicitWidth = 490
-    ExplicitHeight = 405
     object AccountsTab: TTabSheet
       Caption = 'Accounts'
-      ExplicitWidth = 482
-      ExplicitHeight = 377
       DesignSize = (
         483
         413)
       object AccountNameLabel: TLabel
         Left = 225
         Top = 10
-        Width = 69
+        Width = 68
         Height = 13
         Anchors = [akLeft, akTop, akRight]
         Caption = 'Account name'
-        ExplicitWidth = 68
       end
       object AccountsGroupBox: TGroupBox
         Left = -4
@@ -187,7 +182,6 @@ object AccountsForm: TAccountsForm
         Anchors = [akLeft, akTop, akBottom]
         Caption = 'Accounts'
         TabOrder = 0
-        ExplicitHeight = 378
         DesignSize = (
           225
           414)
@@ -203,7 +197,6 @@ object AccountsForm: TAccountsForm
           TabOrder = 0
           OnClick = AccountsListClick
           OnKeyUp = AccountsListKeyUp
-          ExplicitHeight = 358
         end
       end
       object ApplyButton: TButton
@@ -314,7 +307,6 @@ object AccountsForm: TAccountsForm
         Height = 21
         Anchors = [akLeft, akTop, akRight]
         TabOrder = 4
-        ExplicitWidth = 253
       end
       object PublicAccountCB: TCheckBox
         Left = 225
@@ -354,8 +346,6 @@ object AccountsForm: TAccountsForm
     object GlobalTab: TTabSheet
       Caption = 'Global settings'
       ImageIndex = 1
-      ExplicitWidth = 482
-      ExplicitHeight = 377
       object CloudMaxFileSizeLabelBytes: TLabel
         Left = 292
         Top = 114
@@ -365,7 +355,7 @@ object AccountsForm: TAccountsForm
       end
       object ChunkOverwriteModeLabel: TLabel
         Left = 5
-        Top = 196
+        Top = 195
         Width = 150
         Height = 13
         Caption = 'Overwrite splitted chunk mode:'
@@ -386,7 +376,7 @@ object AccountsForm: TAccountsForm
       end
       object IconsModeLabel: TLabel
         Left = 5
-        Top = 266
+        Top = 273
         Width = 88
         Height = 13
         Caption = 'Plugin icons mode:'
@@ -611,8 +601,6 @@ object AccountsForm: TAccountsForm
     object NetworkTab: TTabSheet
       Caption = 'Network settings'
       ImageIndex = 2
-      ExplicitWidth = 482
-      ExplicitHeight = 377
       object SocketTimeoutLabel: TLabel
         Left = 5
         Top = 11
