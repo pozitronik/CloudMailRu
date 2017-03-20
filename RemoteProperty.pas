@@ -39,7 +39,7 @@ type
 		RefreshScanTB: TToolButton;
 		procedure AccessCBClick(Sender: TObject);
 		procedure FormDestroy(Sender: TObject);
-		class function ShowProperty(parentWindow: HWND; RemoteName: WideString; RemoteProperty: TCloudMailRuDirListingItem; var Cloud: TCloudMailRu; LogProc: TLogProcW = nil; ProgressProc: TProgressProcW = nil; PluginNum: Integer = 0; DoUrlEncode: Boolean = true): Integer;
+		class function ShowProperty(parentWindow: HWND; RemoteName: WideString; RemoteProperty: TCloudMailRuDirListingItem; var Cloud: TCloudMailRu; DoUrlEncode: Boolean = true): Integer;
 		procedure FormActivate(Sender: TObject);
 		procedure InviteBtnClick(Sender: TObject);
 		procedure ItemDeleteClick(Sender: TObject);
@@ -67,9 +67,6 @@ type
 		InvitesListing: TCloudMailRuInviteInfoListing;
 		Cloud: TCloudMailRu;
 		RemoteName: WideString;
-		//LogProc: TLogProcW;
-		ProgressProc: TProgressProcW;
-		PluginNum: Integer;
 		DoUrlEncode: Boolean;
 		LogCancelledFlag: Boolean;
 
@@ -304,7 +301,7 @@ begin
 	end;
 end;
 
-class function TPropertyForm.ShowProperty(parentWindow: HWND; RemoteName: WideString; RemoteProperty: TCloudMailRuDirListingItem; var Cloud: TCloudMailRu; LogProc: TLogProcW = nil; ProgressProc: TProgressProcW = nil; PluginNum: Integer = 0; DoUrlEncode: Boolean = true): Integer; //todo do we need cloud as var parameter?
+class function TPropertyForm.ShowProperty(parentWindow: HWND; RemoteName: WideString; RemoteProperty: TCloudMailRuDirListingItem; var Cloud: TCloudMailRu; DoUrlEncode: Boolean = true): Integer; //todo do we need cloud as var parameter?
 var
 	PropertyForm: TPropertyForm;
 begin
@@ -318,8 +315,6 @@ begin
 		PropertyForm.Props := RemoteProperty;
 		//PropertyForm.LogProc := LogProc;
 		PropertyForm.LogCancelledFlag := false;
-		PropertyForm.ProgressProc := ProgressProc;
-		PropertyForm.PluginNum := PluginNum;
 		PropertyForm.DoUrlEncode := DoUrlEncode;
 		RegisterHotKey(PropertyForm.Handle, 1, 0, VK_ESCAPE);
 		result := PropertyForm.Showmodal;
