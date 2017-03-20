@@ -155,7 +155,7 @@
 Некоторые файловые менеджеры поддерживают файлсистемные плагины от Total Commander, но работоспособность гарантируется только для Total Commander. В случае возникновения проблем при использовании с другими программами обращайтесь к их разработчикам.
 
 # Использование сторонних продуктов
-В плагине используются некоторые иконки набора [Snipicons](http://snipicons.com/) доступного под лицензией [Creative Commons Attribution-NoDerivatives 4.0 International License](https://creativecommons.org/licenses/by-nd/4.0/).
+В плагине используются некоторые иконки набора [Snipicons](http://snipicons.com/), доступного под лицензией [Creative Commons Attribution-NoDerivatives 4.0 International License](https://creativecommons.org/licenses/by-nd/4.0/).
 
 # Licence
 GNU GPL v3.0
