@@ -120,7 +120,8 @@ begin
 			Props.WebLink := '';
 			WebLink.Enabled := false;
 			DownloadLinksTS.TabVisible := false;
-			ExtPropertiesPC.Visible := false;
+			if ExtPropertiesPC.TabIndex = -1 then ExtPropertiesPC.Visible :=false;
+
 		end else begin
 			MessageBoxW(self.Handle, PWideChar('Error while unpublishing file ' + Props.home + ', see main log'), 'File unpublishing error', MB_OK + MB_ICONERROR);
 		end;
