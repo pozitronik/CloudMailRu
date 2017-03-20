@@ -187,11 +187,10 @@ object PropertyForm: TPropertyForm
           ImageIndex = 0
           OnClick = SaveBtnClick
         end
-        object ToolButton1: TToolButton
+        object DivisorTB: TToolButton
           Left = 27
           Top = 0
           Width = 8
-          Caption = 'ToolButton1'
           ImageIndex = 1
           Style = tbsSeparator
         end

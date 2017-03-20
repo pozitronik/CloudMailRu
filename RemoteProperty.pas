@@ -3,7 +3,7 @@
 interface
 
 uses
-	Plugin_types, Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, CloudMailRu, MRC_Helper, Vcl.Grids, Vcl.ValEdit, Vcl.Menus, Vcl.ComCtrls, Vcl.ToolWin, System.ImageList, Vcl.ImgList;
+	Plugin_types, Settings, Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, CloudMailRu, MRC_Helper, Vcl.Grids, Vcl.ValEdit, Vcl.Menus, Vcl.ComCtrls, Vcl.ToolWin, System.ImageList, Vcl.ImgList;
 
 type
 	TPropertyForm = class(TForm)
@@ -29,7 +29,7 @@ type
 		DownloadLinksTB: TToolBar;
 		SaveBtn: TToolButton;
 		DownloadLinksIL: TImageList;
-		ToolButton1: TToolButton;
+		DivisorTB: TToolButton;
 		WrapBTN: TToolButton;
 		DownloadLinksSD: TSaveDialog;
 		procedure AccessCBClick(Sender: TObject);
@@ -48,7 +48,8 @@ type
 		{Private declarations}
 		procedure WMHotKey(var Message: TMessage); message WM_HOTKEY;
 		procedure RefreshInvites();
-		procedure FillRecursiveDownloadListing(const Path: WideString);
+		procedure FillRecursiveDownloadListing(const Path: WideString; Cloud: TCloudMailRu = nil);
+		procedure TempPublicCloudInit(publicUrl: WideString);
 	protected
 		Props: TCloudMailRuDirListingItem;
 		InvitesListing: TCloudMailRuInviteInfoListing;
@@ -58,6 +59,8 @@ type
 		ProgressProc: TProgressProcW;
 		PluginNum: Integer;
 		DoUrlEncode: Boolean;
+
+		TempPublicCloud: TCloudMailRu; //Облако для получения прямых ссылок на опубликованные объекты
 	public
 		{Public declarations}
 
@@ -83,7 +86,7 @@ begin
 	begin
 		if self.Cloud.publishFile(Props.home, PublicLink) then
 		begin
-			WebLink.Text := 'https://cloud.mail.ru/public/' + PublicLink;
+			WebLink.Text := PUBLIC_ACCESS_URL + PublicLink;
 			Props.WebLink := PublicLink;
 			WebLink.Enabled := true;
 			WebLink.SetFocus;
@@ -105,22 +108,34 @@ begin
 	AccessCB.Enabled := true;
 end;
 
-procedure TPropertyForm.FillRecursiveDownloadListing(const Path: WideString);
+procedure TPropertyForm.TempPublicCloudInit(publicUrl: WideString);
+var
+	TempAccountSettings: TAccountSettings;
+begin
+	TempAccountSettings.public_account:=true;
+	TempAccountSettings.public_url := publicUrl;
+	self.TempPublicCloud:= TCloudMailRu.Create(TempAccountSettings, 0, self.Cloud.ProxySettings, self.Cloud.ConnectTimeoutValue);
+	self.TempPublicCloud.login;
+end;
+
+procedure TPropertyForm.FillRecursiveDownloadListing(const Path: WideString; Cloud: TCloudMailRu = nil);
 var
 	CurrentDirListing: TCloudMailRuDirListing;
 	CurrentDirItemsCounter: Integer;
 begin
+	if not(Assigned(Cloud)) then Cloud := self.Cloud;
+
 	self.LogProc(self.PluginNum, msgtype_details, PWideChar('Scanning ' + Path));
 	self.ProgressProc(self.PluginNum, 'Scanning...', PWideChar(Path), 0);
-	self.Cloud.getDirListing(Path, CurrentDirListing);
+	Cloud.getDirListing(Path, CurrentDirListing);
 	ProcessMessages;
 	for CurrentDirItemsCounter := 0 to length(CurrentDirListing) - 1 do
 	begin
 		if CurrentDirListing[CurrentDirItemsCounter].type_ = TYPE_DIR then
 		begin
-			self.FillRecursiveDownloadListing(IncludeTrailingPathDelimiter(Path) + CurrentDirListing[CurrentDirItemsCounter].name);
+			self.FillRecursiveDownloadListing(IncludeTrailingPathDelimiter(Path) + CurrentDirListing[CurrentDirItemsCounter].name, Cloud);
 		end else begin
-			DownloadLinksMemo.Lines.Add(self.Cloud.getSharedFileUrl(IncludeTrailingPathDelimiter(Path) + CurrentDirListing[CurrentDirItemsCounter].name, self.DoUrlEncode));
+			DownloadLinksMemo.Lines.Add(Cloud.getSharedFileUrl(IncludeTrailingPathDelimiter(Path) + CurrentDirListing[CurrentDirItemsCounter].name, self.DoUrlEncode));
 		end;
 		self.ProgressProc(self.PluginNum, 'Scanning...', PWideChar(Path), 100);
 	end;
@@ -140,7 +155,7 @@ procedure TPropertyForm.FormShow(Sender: TObject);
 begin
 	if not(Props.WebLink = '') then
 	begin
-		WebLink.Text := 'https://cloud.mail.ru/public/' + Props.WebLink;
+		WebLink.Text := PUBLIC_ACCESS_URL + Props.WebLink;
 		WebLink.SetFocus;
 		WebLink.SelectAll;
 	end;
@@ -168,6 +183,18 @@ begin
 			ExtPropertiesPC.Visible := true;
 			FolderAccessTS.TabVisible := true;
 			RefreshInvites;
+		end;
+		if (AccessCB.checked) then (*У объекта есть публичная ссылка, можно получить прямые ссылки на скачивание*)
+		begin
+			DownloadLinksTS.TabVisible := true;
+
+			if Props.type_ = TYPE_DIR then
+			begin (*рекурсивно получаем все ссылки в каталоге*)
+				TempPublicCloudInit(WebLink.Text);
+				FillRecursiveDownloadListing('', self.TempPublicCloud);
+			end else begin
+				DownloadLinksMemo.Lines.Text := self.Cloud.getSharedFileUrl(self.RemoteName, self.DoUrlEncode);
+			end;
 		end;
 	end;
 end;
