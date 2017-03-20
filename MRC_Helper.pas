@@ -137,6 +137,7 @@ procedure SetAllFileTime(const FileName: string; const FileTime: TFileTime);
 var
 	Handle: thandle;
 begin
+	Handle := INVALID_HANDLE_VALUE;
 	try
 		Handle := CreateFileW(PWideChar(GetUNCFilePath(FileName)), FILE_WRITE_ATTRIBUTES, FILE_SHARE_READ or FILE_SHARE_WRITE, nil, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
 		if Handle = INVALID_HANDLE_VALUE then
@@ -343,6 +344,7 @@ function LoadIcon(const FileName: WideString): Hicon;
 var
 	Icon: TIcon;
 begin
+	Icon:=nil;
 	LoadIcon := INVALID_HANDLE_VALUE;
 	if not FileExists(FileName) then exit;
 

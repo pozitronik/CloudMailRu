@@ -4,16 +4,11 @@ unit Descriptions;
 interface
 
 uses
-	System.Types,
-	System.Classes,
-	System.StrUtils,
-	Generics.Collections,
-	System.SysUtils,
-	System.WideStrUtils;
+	System.Types, System.Classes, System.StrUtils, Generics.Collections, System.SysUtils, System.WideStrUtils;
 
 type
 
-	TDescription=class
+	TDescription = class
 
 	private
 	var
@@ -50,15 +45,15 @@ end;
 function TDescription.DetermineEncoding(ion_filename: WideString): TEncoding;
 var
 	F: File;
-	Buffer: array [0..2] of byte;
+	Buffer: array [0 .. 2] of byte;
 begin
 	AssignFile(F, ion_filename);
 	Reset(F, 1);
 	BlockRead(F, Buffer, SizeOf(Buffer));
 	CloseFile(F);
-	if (Buffer[0]=$EF)and(Buffer[1]=$BB)and(Buffer[2]=$BF) then exit(TEncoding.UTF8);
-	if (Buffer[0]=$FE)and(Buffer[1]=$FF) then exit(TEncoding.BigEndianUnicode);
-	if (Buffer[0]=$FF)and(Buffer[1]=$FE) then exit(TEncoding.Unicode);
+	if (Buffer[0] = $EF) and (Buffer[1] = $BB) and (Buffer[2] = $BF) then exit(TEncoding.UTF8);
+	if (Buffer[0] = $FE) and (Buffer[1] = $FF) then exit(TEncoding.BigEndianUnicode);
+	if (Buffer[0] = $FF) and (Buffer[1] = $FE) then exit(TEncoding.Unicode);
 	exit(TEncoding.Default);
 end;
 
@@ -66,7 +61,7 @@ function TDescription.GetValue(item: WideString): WideString;
 begin
 	if not(items.TryGetValue(item, result)) then exit('');
 
-	result := WideStringReplace(WideStringReplace(result, '\n', '  ', [rfReplaceAll]), chr($04)+'Â', '', [rfReplaceAll]);
+	result := WideStringReplace(WideStringReplace(result, '\n', '  ', [rfReplaceAll]), chr($04) + 'Â', '', [rfReplaceAll]);
 end;
 
 function TDescription.Read(ion_filename: WideString): integer; //Loads desript.ion file
@@ -77,6 +72,7 @@ var
 begin
 	result := 0; //not used
 	self.Clear;
+	fStream:=nil;
 	try
 		fStream := TStreamReader.Create(ion_filename, DetermineEncoding(ion_filename), False);
 		while not fStream.EndOfStream do
@@ -85,12 +81,12 @@ begin
 			if StartsStr('"', line) then
 			begin
 				t := PosEx('" ', line);
-				value := copy(line, t+2, length(line));
-				key := copy(line, 2, t-2);
+				value := copy(line, t + 2, length(line));
+				key := copy(line, 2, t - 2);
 			end else begin
 				t := PosEx(' ', line);
-				value := copy(line, t+1, length(line));
-				key := copy(line, 0, t-1);
+				value := copy(line, t + 1, length(line));
+				key := copy(line, 0, t - 1);
 			end;
 
 			items.Add(key, value);
