@@ -5,6 +5,9 @@ interface
 uses
 	Plugin_types, Settings, Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, CloudMailRu, MRC_Helper, Vcl.Grids, Vcl.ValEdit, Vcl.Menus, Vcl.ComCtrls, Vcl.ToolWin, System.ImageList, Vcl.ImgList;
 
+const
+	WM_AFTER_SHOW = WM_USER + 300; //custom message
+
 type
 	TPropertyForm = class(TForm)
 		PublicLinkLabel: TLabel;
@@ -33,7 +36,6 @@ type
 		WrapBTN: TToolButton;
 		DownloadLinksSD: TSaveDialog;
 		procedure AccessCBClick(Sender: TObject);
-		procedure FormShow(Sender: TObject);
 		procedure FormDestroy(Sender: TObject);
 		class function ShowProperty(parentWindow: HWND; RemoteName: WideString; RemoteProperty: TCloudMailRuDirListingItem; var Cloud: TCloudMailRu; LogProc: TLogProcW = nil; ProgressProc: TProgressProcW = nil; PluginNum: Integer = 0; DoUrlEncode: Boolean = true): Integer;
 		procedure FormActivate(Sender: TObject);
@@ -44,9 +46,11 @@ type
 		procedure ItemChangeAccessClick(Sender: TObject);
 		procedure WrapBTNClick(Sender: TObject);
 		procedure SaveBtnClick(Sender: TObject);
+		procedure FormShow(Sender: TObject);
 	private
 		{Private declarations}
 		procedure WMHotKey(var Message: TMessage); message WM_HOTKEY;
+		procedure WMAfterShow(var Message: TMessage); message WM_AFTER_SHOW;
 		procedure RefreshInvites();
 		procedure RefreshPublicShare(const Publish: Boolean);
 		procedure FillRecursiveDownloadListing(const Path: WideString; Cloud: TCloudMailRu = nil);
@@ -145,8 +149,7 @@ var
 begin
 	if not(Assigned(Cloud)) then Cloud := self.Cloud;
 
-	self.LogProc(self.PluginNum, msgtype_details, PWideChar('Scanning ' + Path));
-	self.ProgressProc(self.PluginNum, 'Scanning...', PWideChar(Path), 0);
+	self.LogProc(self.PluginNum, msgtype_details, PWideChar('Scanning ' + IncludeTrailingPathDelimiter(Path)));
 	Cloud.getDirListing(Path, CurrentDirListing);
 	ProcessMessages;
 	for CurrentDirItemsCounter := 0 to length(CurrentDirListing) - 1 do
@@ -157,7 +160,6 @@ begin
 		end else begin
 			DownloadLinksMemo.Lines.Add(Cloud.getSharedFileUrl(IncludeTrailingPathDelimiter(Path) + CurrentDirListing[CurrentDirItemsCounter].name, self.DoUrlEncode));
 		end;
-		self.ProgressProc(self.PluginNum, 'Scanning...', PWideChar(Path), 100);
 	end;
 end;
 
@@ -173,38 +175,7 @@ end;
 
 procedure TPropertyForm.FormShow(Sender: TObject);
 begin
-	if not(Props.WebLink = '') then
-	begin
-		WebLink.Text := PUBLIC_ACCESS_URL + Props.WebLink;
-		WebLink.SetFocus;
-		WebLink.SelectAll;
-	end;
-	DownloadLinksMemo.Lines.Clear;
-	ExtPropertiesPC.Visible := false;
-	FolderAccessTS.TabVisible := false;
-	DownloadLinksTS.TabVisible := false;
-	if self.Cloud.isPublicShare then
-	begin
-		AccessCB.Enabled := false;
-		AccessCB.checked := true;
-		ExtPropertiesPC.Visible := true;
-		DownloadLinksTS.TabVisible := true;
-		if Props.type_ = TYPE_DIR then
-		begin (*рекурсивно получаем все ссылки в каталоге*)
-			FillRecursiveDownloadListing(IncludeTrailingPathDelimiter(self.RemoteName))
-		end else begin
-			DownloadLinksMemo.Lines.Text := self.Cloud.getSharedFileUrl(self.RemoteName, self.DoUrlEncode);
-		end;
-	end else begin
-		AccessCB.checked := not(Props.WebLink = '');
-		WebLink.Enabled := AccessCB.checked;
-		if Props.type_ = TYPE_DIR then
-		begin
-			ExtPropertiesPC.Visible := true;
-			FolderAccessTS.TabVisible := true;
-			RefreshInvites;
-		end;
-	end;
+	PostMessage(self.Handle, WM_AFTER_SHOW, 0, 0);
 end;
 
 procedure TPropertyForm.InviteBtnClick(Sender: TObject);
@@ -316,6 +287,42 @@ begin
 
 	finally
 		FreeAndNil(PropertyForm);
+	end;
+end;
+
+procedure TPropertyForm.WMAfterShow(var Message: TMessage);
+begin
+	if not(Props.WebLink = '') then
+	begin
+		WebLink.Text := PUBLIC_ACCESS_URL + Props.WebLink;
+		WebLink.SetFocus;
+		WebLink.SelectAll;
+	end;
+	DownloadLinksMemo.Lines.Clear;
+	ExtPropertiesPC.Visible := false;
+	FolderAccessTS.TabVisible := false;
+	DownloadLinksTS.TabVisible := false;
+	if self.Cloud.isPublicShare then
+	begin
+		AccessCB.Enabled := false;
+		AccessCB.checked := true;
+		ExtPropertiesPC.Visible := true;
+		DownloadLinksTS.TabVisible := true;
+		if Props.type_ = TYPE_DIR then
+		begin (*рекурсивно получаем все ссылки в каталоге*)
+			FillRecursiveDownloadListing(IncludeTrailingPathDelimiter(self.RemoteName))
+		end else begin
+			DownloadLinksMemo.Lines.Text := self.Cloud.getSharedFileUrl(self.RemoteName, self.DoUrlEncode);
+		end;
+	end else begin
+		AccessCB.checked := not(Props.WebLink = '');
+		WebLink.Enabled := AccessCB.checked;
+		if Props.type_ = TYPE_DIR then
+		begin
+			ExtPropertiesPC.Visible := true;
+			FolderAccessTS.TabVisible := true;
+			RefreshInvites;
+		end;
 	end;
 end;
 
