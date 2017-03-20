@@ -81,6 +81,7 @@ type
 		IconsMode: Integer;
 		IconsSize: Integer;
 		DownloadLinksEncode: boolean;
+		AutoUpdateDownloadListing: boolean;
 	end;
 
 function GetProxyPasswordNow(var ProxySettings: TProxySettings; MyLogProc: TLogProcW; MyCryptProc: TCryptProcW; PluginNum: Integer; CryptoNum: Integer): boolean;
@@ -196,6 +197,7 @@ begin
 	GetPluginSettings.Proxy.use_tc_password_manager := IniFile.ReadBool('Main', 'ProxyTCPwdMngr', false);
 	GetPluginSettings.Proxy.password := IniFile.ReadString('Main', 'ProxyPassword', '');
 	GetPluginSettings.DownloadLinksEncode := IniFile.ReadBool('Main', 'DownloadLinksEncode', true);
+	GetPluginSettings.AutoUpdateDownloadListing := IniFile.ReadBool('Main', 'AutoUpdateDownloadListing', true);
 	IniFile.Destroy;
 end;
 
