@@ -204,13 +204,15 @@ type
 		function getFileShared(remotePath, localPath: WideString; LogErrors: Boolean = true): integer; //LogErrors=false => не логируем результат копирования, нужно для запроса descript.ion (которого может не быть)
 	public
 		Property isPublicShare: Boolean read public_account;
-		function getSharedFileUrl(remotePath: WideString; DoUrlEncode: boolean = true): WideString;
+		Property ProxySettings: TProxySettings read Proxy;
+		Property ConnectTimeoutValue: integer read ConnectTimeout;
+		function getSharedFileUrl(remotePath: WideString; DoUrlEncode: Boolean = true): WideString;
 		{CONSTRUCTOR/DESTRUCTOR}
 		constructor Create(AccountSettings: TAccountSettings; split_file_size: integer; Proxy: TProxySettings; ConnectTimeout: integer; ExternalProgressProc: TProgressProcW = nil; PluginNr: integer = -1; ExternalLogProc: TLogProcW = nil; ExternalRequestProc: TRequestProcW = nil);
 		destructor Destroy; override;
 		{CLOUD INTERFACE METHODS}
 		function login(method: integer = CLOUD_AUTH_METHOD_WEB): Boolean;
-		function getDirListing(Path: WideString; var DirListing: TCloudMailRuDirListing; ShowProgress: boolean = false): Boolean;
+		function getDirListing(Path: WideString; var DirListing: TCloudMailRuDirListing; ShowProgress: Boolean = false): Boolean;
 		function createDir(Path: WideString): Boolean;
 		function removeDir(Path: WideString): Boolean;
 		function statusFile(Path: WideString; var FileInfo: TCloudMailRuDirListingItem): Boolean;
@@ -779,7 +781,7 @@ begin
 	Result := self.getFile(remotePath, localCopy, false);
 end;
 
-function TCloudMailRu.getDirListing(Path: WideString; var DirListing: TCloudMailRuDirListing; ShowProgress: boolean = false): Boolean;
+function TCloudMailRu.getDirListing(Path: WideString; var DirListing: TCloudMailRuDirListing; ShowProgress: Boolean = false): Boolean;
 var
 	JSON: WideString;
 	OperationStatus, OperationResult: integer;
@@ -852,7 +854,7 @@ begin
 	if Result <> FS_FILE_OK then System.SysUtils.deleteFile(GetUNCFilePath(localPath));
 end;
 
-function TCloudMailRu.getSharedFileUrl(remotePath: WideString; DoUrlEncode: boolean = true): WideString;
+function TCloudMailRu.getSharedFileUrl(remotePath: WideString; DoUrlEncode: Boolean = true): WideString;
 begin
 	Result := self.public_shard + '/' + self.public_link + '/' + PathToUrl(remotePath, true, DoUrlEncode) + '?key=' + self.public_download_token
 end;
