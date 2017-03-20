@@ -32,12 +32,11 @@ type
 		DownloadLinksTB: TToolBar;
 		SaveBtn: TToolButton;
 		DownloadLinksIL: TImageList;
-		DivisorTB: TToolButton;
 		WrapBTN: TToolButton;
 		DownloadLinksSD: TSaveDialog;
 		LogLabel: TLabel;
-		DivisorTB2: TToolButton;
 		CancelScanTB: TToolButton;
+		RefreshScanTB: TToolButton;
 		procedure AccessCBClick(Sender: TObject);
 		procedure FormDestroy(Sender: TObject);
 		class function ShowProperty(parentWindow: HWND; RemoteName: WideString; RemoteProperty: TCloudMailRuDirListingItem; var Cloud: TCloudMailRu; LogProc: TLogProcW = nil; ProgressProc: TProgressProcW = nil; PluginNum: Integer = 0; DoUrlEncode: Boolean = true): Integer;
@@ -58,6 +57,7 @@ type
 		procedure RefreshInvites();
 		procedure RefreshPublicShare(const Publish: Boolean);
 		function FillRecursiveDownloadListing(const Path: WideString; Cloud: TCloudMailRu = nil): Boolean; //break recursion if false - cancelled
+		procedure UpdateDownloadListing();
 		procedure TempPublicCloudInit(publicUrl: WideString);
 		function LogProc(LogText: WideString): Boolean;
 
@@ -86,14 +86,57 @@ implementation
 {$R *.dfm}
 {TPropertyForm}
 
-procedure TPropertyForm.AccessCBClick(Sender: TObject);
+(*Class methods*)
 
+procedure TPropertyForm.UpdateDownloadListing;
 begin
-	if self.Cloud.isPublicShare then exit;
-	AccessCB.Enabled := false; //блокируем во избежание повторных кликов
-	WebLink.Text := 'Wait for it...';
-	RefreshPublicShare(AccessCB.checked);
-	AccessCB.Enabled := true;
+	if self.Cloud.isPublicShare then
+	begin
+		if Props.type_ = TYPE_DIR then
+		begin (*рекурсивно получаем все ссылки в каталоге*)
+			FillRecursiveDownloadListing(IncludeTrailingPathDelimiter(self.RemoteName))
+		end else begin
+			DownloadLinksMemo.Lines.Text := self.Cloud.getSharedFileUrl(self.RemoteName, self.DoUrlEncode);
+		end;
+	end else begin
+		(*У объекта есть публичная ссылка, можно получить прямые ссылки на скачивание*)
+		TempPublicCloudInit(WebLink.Text);
+		if Props.type_ = TYPE_DIR then
+		begin (*рекурсивно получаем все ссылки в каталоге*)
+			FillRecursiveDownloadListing('', self.TempPublicCloud);
+		end else begin
+			DownloadLinksMemo.Lines.Text := TempPublicCloud.getSharedFileUrl('', self.DoUrlEncode);
+		end;
+		TempPublicCloud.Free;
+	end;
+end;
+
+function TPropertyForm.FillRecursiveDownloadListing(const Path: WideString; Cloud: TCloudMailRu = nil): Boolean;
+var
+	CurrentDirListing: TCloudMailRuDirListing;
+	CurrentDirItemsCounter: Integer;
+begin
+	CancelScanTB.Enabled:=true;
+	RefreshScanTB.Enabled:=false;
+	result:=true;
+	if not(Assigned(Cloud)) then Cloud := self.Cloud;
+
+	if not LogProc('Scanning ' + IncludeTrailingPathDelimiter(Path)) then exit(false);
+	Cloud.getDirListing(Path, CurrentDirListing);
+	ProcessMessages;
+	for CurrentDirItemsCounter := 0 to length(CurrentDirListing) - 1 do
+	begin
+		if CurrentDirListing[CurrentDirItemsCounter].type_ = TYPE_DIR then
+		begin
+			result:=FillRecursiveDownloadListing(IncludeTrailingPathDelimiter(Path) + CurrentDirListing[CurrentDirItemsCounter].name, Cloud);
+			if not result then break;
+
+		end else begin
+			DownloadLinksMemo.Lines.Add(Cloud.getSharedFileUrl(IncludeTrailingPathDelimiter(Path) + CurrentDirListing[CurrentDirItemsCounter].name, self.DoUrlEncode));
+		end;
+	end;
+	RefreshScanTB.Enabled:=true;
+	CancelScanTB.Enabled:=false;
 end;
 
 procedure TPropertyForm.RefreshPublicShare(const Publish: Boolean);
@@ -111,15 +154,7 @@ begin
 			WebLink.SelectAll;
 			ExtPropertiesPC.Visible := true;
 			DownloadLinksTS.TabVisible := true;
-			(*У объекта есть публичная ссылка, можно получить прямые ссылки на скачивание*)
-			TempPublicCloudInit(WebLink.Text);
-			if Props.type_ = TYPE_DIR then
-			begin (*рекурсивно получаем все ссылки в каталоге*)
-				FillRecursiveDownloadListing('', self.TempPublicCloud);
-			end else begin
-				DownloadLinksMemo.Lines.Text := TempPublicCloud.getSharedFileUrl('', self.DoUrlEncode);
-			end;
-			TempPublicCloud.Free;
+			UpdateDownloadListing;
 		end else begin
 			MessageBoxW(self.Handle, PWideChar('Error while publishing file ' + Props.home + ', see main log'), 'File publishing error', MB_OK + MB_ICONERROR);
 		end;
@@ -138,6 +173,20 @@ begin
 	end;
 end;
 
+procedure TPropertyForm.RefreshInvites;
+var
+	i, InvitesCount: Integer;
+begin
+	while InvitesLE.Strings.Count > 0 do InvitesLE.DeleteRow(1);
+	if Cloud.getShareInfo(Props.home, self.InvitesListing) then
+	begin
+		InvitesCount := length(self.InvitesListing) - 1;
+		for i := 0 to InvitesCount do InvitesLE.InsertRow(self.InvitesListing[i].name, TCloudMailRu.CloudAccessToString(self.InvitesListing[i].access), true);
+	end else begin
+		MessageBoxW(self.Handle, PWideChar('Error while retrieving ' + Props.home + ' folder invites list, see main log'), 'Folder invite listing error', MB_OK + MB_ICONERROR);
+	end;
+end;
+
 procedure TPropertyForm.TempPublicCloudInit(publicUrl: WideString);
 var
 	TempAccountSettings: TAccountSettings;
@@ -148,33 +197,19 @@ begin
 	self.TempPublicCloud.login;
 end;
 
+function TPropertyForm.LogProc(LogText: WideString): Boolean;
+begin
+	result:=not LogCancelledFlag;
+	if (result) then LogLabel.Caption:=LogText
+	else LogLabel.Caption:='';
+	LogCancelledFlag := false;
+end;
+
+(*Controls handlers*)
+
 procedure TPropertyForm.CancelScanTBClick(Sender: TObject);
 begin
 	LogCancelledFlag:=true;
-end;
-
-function TPropertyForm.FillRecursiveDownloadListing(const Path: WideString; Cloud: TCloudMailRu = nil): Boolean;
-var
-	CurrentDirListing: TCloudMailRuDirListing;
-	CurrentDirItemsCounter: Integer;
-begin
-	result:=true;
-	if not(Assigned(Cloud)) then Cloud := self.Cloud;
-
-	if not LogProc('Scanning ' + IncludeTrailingPathDelimiter(Path)) then exit(false);
-	Cloud.getDirListing(Path, CurrentDirListing);
-	ProcessMessages;
-	for CurrentDirItemsCounter := 0 to length(CurrentDirListing) - 1 do
-	begin
-		if CurrentDirListing[CurrentDirItemsCounter].type_ = TYPE_DIR then
-		begin
-			result:=FillRecursiveDownloadListing(IncludeTrailingPathDelimiter(Path) + CurrentDirListing[CurrentDirItemsCounter].name, Cloud);
-			if not result then break;
-
-		end else begin
-			DownloadLinksMemo.Lines.Add(Cloud.getSharedFileUrl(IncludeTrailingPathDelimiter(Path) + CurrentDirListing[CurrentDirItemsCounter].name, self.DoUrlEncode));
-		end;
-	end;
 end;
 
 procedure TPropertyForm.FormActivate(Sender: TObject);
@@ -253,33 +288,6 @@ begin
 	RefreshInvites;
 end;
 
-function TPropertyForm.LogProc(LogText: WideString): Boolean;
-begin
-	result:=not LogCancelledFlag;
-	if (result) then LogLabel.Caption:=LogText
-	else LogLabel.Caption:='';
-	LogCancelledFlag := false;
-end;
-
-procedure TPropertyForm.RefreshInvites;
-var
-	i, InvitesCount: Integer;
-begin
-	while InvitesLE.Strings.Count > 0 do InvitesLE.DeleteRow(1);
-
-	if Cloud.getShareInfo(Props.home, self.InvitesListing) then
-	begin
-		InvitesCount := length(self.InvitesListing) - 1;
-		for i := 0 to InvitesCount do
-		begin
-			InvitesLE.InsertRow(self.InvitesListing[i].name, TCloudMailRu.CloudAccessToString(self.InvitesListing[i].access), true);
-		end;
-
-	end else begin
-		MessageBoxW(self.Handle, PWideChar('Error while retrieving ' + Props.home + ' folder invites list, see main log'), 'Folder invite listing error', MB_OK + MB_ICONERROR);
-	end;
-end;
-
 procedure TPropertyForm.SaveBtnClick(Sender: TObject);
 begin
 	if (DownloadLinksSD.Execute(self.Handle)) then
@@ -331,12 +339,7 @@ begin
 		AccessCB.checked := true;
 		ExtPropertiesPC.Visible := true;
 		DownloadLinksTS.TabVisible := true;
-		if Props.type_ = TYPE_DIR then
-		begin (*рекурсивно получаем все ссылки в каталоге*)
-			FillRecursiveDownloadListing(IncludeTrailingPathDelimiter(self.RemoteName))
-		end else begin
-			DownloadLinksMemo.Lines.Text := self.Cloud.getSharedFileUrl(self.RemoteName, self.DoUrlEncode);
-		end;
+		UpdateDownloadListing;
 	end else begin
 		AccessCB.checked := not(Props.WebLink = '');
 		WebLink.Enabled := AccessCB.checked;
@@ -360,6 +363,15 @@ begin
 	else DownloadLinksMemo.ScrollBars := ssBoth;
 
 	DownloadLinksMemo.WordWrap := WrapBTN.Down;
+end;
+
+procedure TPropertyForm.AccessCBClick(Sender: TObject);
+begin
+	if self.Cloud.isPublicShare then exit;
+	AccessCB.Enabled := false; //блокируем во избежание повторных кликов
+	WebLink.Text := 'Wait for it...';
+	RefreshPublicShare(AccessCB.checked);
+	AccessCB.Enabled := true;
 end;
 
 end.
