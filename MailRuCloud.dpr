@@ -500,7 +500,7 @@ Begin
 				begin
 					TPropertyForm.ShowProperty(MainWin, RealPath.path, CurrentItem, Cloud, MyLogProc, MyProgressProc, PluginNum, GetPluginSettings(SettingsIniFilePath).DownloadLinksEncode);
 				end else begin
-					if CurrentItem.home <> '' then TPropertyForm.ShowProperty(MainWin, RealPath.path, CurrentItem, Cloud)
+					if CurrentItem.home <> '' then TPropertyForm.ShowProperty(MainWin, RealPath.path, CurrentItem, Cloud, MyLogProc, MyProgressProc, PluginNum, GetPluginSettings(SettingsIniFilePath).DownloadLinksEncode)
 					else MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, pWideChar('Cant find file under cursor!'));
 				end;
 
