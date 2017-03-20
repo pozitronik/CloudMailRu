@@ -3,8 +3,8 @@ object AccountsForm: TAccountsForm
   Top = 0
   BorderStyle = bsDialog
   Caption = 'Cloud Accounts'
-  ClientHeight = 405
-  ClientWidth = 490
+  ClientHeight = 441
+  ClientWidth = 491
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -156,40 +156,46 @@ object AccountsForm: TAccountsForm
   object OptionPages: TPageControl
     Left = 0
     Top = 0
-    Width = 490
-    Height = 405
+    Width = 491
+    Height = 441
     ActivePage = GlobalTab
     Align = alClient
     TabOrder = 0
+    ExplicitWidth = 490
+    ExplicitHeight = 405
     object AccountsTab: TTabSheet
       Caption = 'Accounts'
+      ExplicitWidth = 482
+      ExplicitHeight = 377
       DesignSize = (
-        482
-        377)
+        483
+        413)
       object AccountNameLabel: TLabel
         Left = 225
         Top = 10
-        Width = 68
+        Width = 69
         Height = 13
         Anchors = [akLeft, akTop, akRight]
         Caption = 'Account name'
+        ExplicitWidth = 68
       end
       object AccountsGroupBox: TGroupBox
         Left = -4
         Top = 0
         Width = 225
-        Height = 378
+        Height = 414
         Anchors = [akLeft, akTop, akBottom]
         Caption = 'Accounts'
         TabOrder = 0
+        ExplicitHeight = 378
         DesignSize = (
           225
-          378)
+          414)
         object AccountsList: TListBox
           Left = 4
           Top = 17
           Width = 218
-          Height = 358
+          Height = 394
           Style = lbVirtual
           Anchors = [akLeft, akTop, akRight, akBottom]
           ExtendedSelect = False
@@ -197,6 +203,7 @@ object AccountsForm: TAccountsForm
           TabOrder = 0
           OnClick = AccountsListClick
           OnKeyUp = AccountsListKeyUp
+          ExplicitHeight = 358
         end
       end
       object ApplyButton: TButton
@@ -303,10 +310,11 @@ object AccountsForm: TAccountsForm
       object AccountNameEdit: TEdit
         Left = 225
         Top = 27
-        Width = 253
+        Width = 254
         Height = 21
         Anchors = [akLeft, akTop, akRight]
         TabOrder = 4
+        ExplicitWidth = 253
       end
       object PublicAccountCB: TCheckBox
         Left = 225
@@ -346,6 +354,8 @@ object AccountsForm: TAccountsForm
     object GlobalTab: TTabSheet
       Caption = 'Global settings'
       ImageIndex = 1
+      ExplicitWidth = 482
+      ExplicitHeight = 377
       object CloudMaxFileSizeLabelBytes: TLabel
         Left = 292
         Top = 114
@@ -443,7 +453,7 @@ object AccountsForm: TAccountsForm
       end
       object GlobalSettingApplyBTN: TButton
         Left = 405
-        Top = 349
+        Top = 385
         Width = 75
         Height = 25
         Caption = 'Apply'
@@ -589,10 +599,20 @@ object AccountsForm: TAccountsForm
         Caption = 'URL encode public download links'
         TabOrder = 16
       end
+      object AutoUpdateDownloadListingCB: TCheckBox
+        Left = 5
+        Top = 345
+        Width = 475
+        Height = 17
+        Caption = 'Update public download links immediately'
+        TabOrder = 17
+      end
     end
     object NetworkTab: TTabSheet
       Caption = 'Network settings'
       ImageIndex = 2
+      ExplicitWidth = 482
+      ExplicitHeight = 377
       object SocketTimeoutLabel: TLabel
         Left = 5
         Top = 11
