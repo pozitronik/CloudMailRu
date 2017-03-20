@@ -204,7 +204,7 @@ type
 		function getFileShared(remotePath, localPath: WideString; LogErrors: Boolean = true): integer; //LogErrors=false => не логируем результат копирования, нужно для запроса descript.ion (которого может не быть)
 	public
 		Property isPublicShare: Boolean read public_account;
-		function getSharedFileUrl(remotePath: WideString): WideString;
+		function getSharedFileUrl(remotePath: WideString; DoUrlEncode: boolean = true): WideString;
 		{CONSTRUCTOR/DESTRUCTOR}
 		constructor Create(AccountSettings: TAccountSettings; split_file_size: integer; Proxy: TProxySettings; ConnectTimeout: integer; ExternalProgressProc: TProgressProcW = nil; PluginNr: integer = -1; ExternalLogProc: TLogProcW = nil; ExternalRequestProc: TRequestProcW = nil);
 		destructor Destroy; override;
@@ -852,9 +852,9 @@ begin
 	if Result <> FS_FILE_OK then System.SysUtils.deleteFile(GetUNCFilePath(localPath));
 end;
 
-function TCloudMailRu.getSharedFileUrl(remotePath: WideString): WideString;
+function TCloudMailRu.getSharedFileUrl(remotePath: WideString; DoUrlEncode: boolean = true): WideString;
 begin
-	Result := self.public_shard + '/' + self.public_link + '/' + PathToUrl(remotePath) + '?key=' + self.public_download_token
+	Result := self.public_shard + '/' + self.public_link + '/' + PathToUrl(remotePath, true, DoUrlEncode) + '?key=' + self.public_download_token
 end;
 
 function TCloudMailRu.getFileShared(remotePath, localPath: WideString; LogErrors: Boolean): integer;

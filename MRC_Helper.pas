@@ -36,7 +36,7 @@ function GetWord(command: WideString; WordIndex: Integer = 0): WideString; //В�
 function ExtractLinkFromUrl(URL: WideString): WideString; //При необходимости преобразует адрес публичной ссылки к нужному виду
 function IsWriteable(const DirName: WideString; FileName: WideString = 'delete.me'; CleanFile: boolean = true): boolean;
 function PosLast(Substring, S: WideString; Offset: Integer = 0): Integer;
-function PathToUrl(path: WideString; RestrictEmptyUrl: boolean = true): WideString;
+function PathToUrl(path: WideString; RestrictEmptyUrl: boolean = true; DoUrlEncode: boolean = true): WideString;
 function GetFolderIcon(const size: Integer = IconSizeSmall): Hicon;
 function CombineIcons(FrontIcon, BackIcon: Hicon): Hicon; //taken from http://www.swissdelphicenter.ch/en/showcode.php?id=1636
 function LoadIcon(const FileName: WideString): Hicon;
@@ -266,9 +266,12 @@ begin
 	until tmp = 0;
 end;
 
-function PathToUrl(path: WideString; RestrictEmptyUrl: boolean = true): WideString;
+function PathToUrl(path: WideString; RestrictEmptyUrl: boolean = true; DoUrlEncode: boolean = true): WideString;
 begin
-	Result := UrlEncode(StringReplace(path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]));
+
+	Result := StringReplace(path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]);
+	if DoUrlEncode then Result:=UrlEncode(Result);
+
 	if (Result = '') and RestrictEmptyUrl then Result := '/';
 end;
 
