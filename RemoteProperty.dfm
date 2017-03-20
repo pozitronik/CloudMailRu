@@ -202,6 +202,29 @@ object PropertyForm: TPropertyForm
           Style = tbsCheck
           OnClick = WrapBTNClick
         end
+        object DivisorTB2: TToolButton
+          Left = 62
+          Top = 0
+          Width = 8
+          ImageIndex = 2
+          Style = tbsSeparator
+        end
+        object LogLabel: TLabel
+          Left = 70
+          Top = 0
+          Width = 731
+          Height = 26
+          AutoSize = False
+          EllipsisPosition = epEndEllipsis
+          Layout = tlCenter
+        end
+        object CancelScanTB: TToolButton
+          Left = 801
+          Top = 0
+          Caption = 'CancelScanTB'
+          ImageIndex = 2
+          OnClick = CancelScanTBClick
+        end
       end
     end
   end

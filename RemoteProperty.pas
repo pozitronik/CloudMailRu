@@ -35,6 +35,9 @@ type
 		DivisorTB: TToolButton;
 		WrapBTN: TToolButton;
 		DownloadLinksSD: TSaveDialog;
+		LogLabel: TLabel;
+		DivisorTB2: TToolButton;
+		CancelScanTB: TToolButton;
 		procedure AccessCBClick(Sender: TObject);
 		procedure FormDestroy(Sender: TObject);
 		class function ShowProperty(parentWindow: HWND; RemoteName: WideString; RemoteProperty: TCloudMailRuDirListingItem; var Cloud: TCloudMailRu; LogProc: TLogProcW = nil; ProgressProc: TProgressProcW = nil; PluginNum: Integer = 0; DoUrlEncode: Boolean = true): Integer;
@@ -47,24 +50,27 @@ type
 		procedure WrapBTNClick(Sender: TObject);
 		procedure SaveBtnClick(Sender: TObject);
 		procedure FormShow(Sender: TObject);
+		procedure CancelScanTBClick(Sender: TObject);
 	private
 		{Private declarations}
 		procedure WMHotKey(var Message: TMessage); message WM_HOTKEY;
 		procedure WMAfterShow(var Message: TMessage); message WM_AFTER_SHOW;
 		procedure RefreshInvites();
 		procedure RefreshPublicShare(const Publish: Boolean);
-		procedure FillRecursiveDownloadListing(const Path: WideString; Cloud: TCloudMailRu = nil);
+		function FillRecursiveDownloadListing(const Path: WideString; Cloud: TCloudMailRu = nil): Boolean; //break recursion if false - cancelled
 		procedure TempPublicCloudInit(publicUrl: WideString);
+		function LogProc(LogText: WideString): Boolean;
 
 	protected
 		Props: TCloudMailRuDirListingItem;
 		InvitesListing: TCloudMailRuInviteInfoListing;
 		Cloud: TCloudMailRu;
 		RemoteName: WideString;
-		LogProc: TLogProcW;
+		//LogProc: TLogProcW;
 		ProgressProc: TProgressProcW;
 		PluginNum: Integer;
 		DoUrlEncode: Boolean;
+		LogCancelledFlag: Boolean;
 
 		TempPublicCloud: TCloudMailRu; //Облако для получения прямых ссылок на опубликованные объекты
 	public
@@ -142,21 +148,29 @@ begin
 	self.TempPublicCloud.login;
 end;
 
-procedure TPropertyForm.FillRecursiveDownloadListing(const Path: WideString; Cloud: TCloudMailRu = nil);
+procedure TPropertyForm.CancelScanTBClick(Sender: TObject);
+begin
+	LogCancelledFlag:=true;
+end;
+
+function TPropertyForm.FillRecursiveDownloadListing(const Path: WideString; Cloud: TCloudMailRu = nil): Boolean;
 var
 	CurrentDirListing: TCloudMailRuDirListing;
 	CurrentDirItemsCounter: Integer;
 begin
+	result:=true;
 	if not(Assigned(Cloud)) then Cloud := self.Cloud;
 
-	self.LogProc(self.PluginNum, msgtype_details, PWideChar('Scanning ' + IncludeTrailingPathDelimiter(Path)));
+	if not LogProc('Scanning ' + IncludeTrailingPathDelimiter(Path)) then exit(false);
 	Cloud.getDirListing(Path, CurrentDirListing);
 	ProcessMessages;
 	for CurrentDirItemsCounter := 0 to length(CurrentDirListing) - 1 do
 	begin
 		if CurrentDirListing[CurrentDirItemsCounter].type_ = TYPE_DIR then
 		begin
-			self.FillRecursiveDownloadListing(IncludeTrailingPathDelimiter(Path) + CurrentDirListing[CurrentDirItemsCounter].name, Cloud);
+			result:=FillRecursiveDownloadListing(IncludeTrailingPathDelimiter(Path) + CurrentDirListing[CurrentDirItemsCounter].name, Cloud);
+			if not result then break;
+
 		end else begin
 			DownloadLinksMemo.Lines.Add(Cloud.getSharedFileUrl(IncludeTrailingPathDelimiter(Path) + CurrentDirListing[CurrentDirItemsCounter].name, self.DoUrlEncode));
 		end;
@@ -239,6 +253,14 @@ begin
 	RefreshInvites;
 end;
 
+function TPropertyForm.LogProc(LogText: WideString): Boolean;
+begin
+	result:=not LogCancelledFlag;
+	if (result) then LogLabel.Caption:=LogText
+	else LogLabel.Caption:='';
+	LogCancelledFlag := false;
+end;
+
 procedure TPropertyForm.RefreshInvites;
 var
 	i, InvitesCount: Integer;
@@ -278,7 +300,8 @@ begin
 		PropertyForm.Caption := RemoteProperty.name;
 		PropertyForm.Cloud := Cloud;
 		PropertyForm.Props := RemoteProperty;
-		PropertyForm.LogProc := LogProc;
+		//PropertyForm.LogProc := LogProc;
+		PropertyForm.LogCancelledFlag := false;
 		PropertyForm.ProgressProc := ProgressProc;
 		PropertyForm.PluginNum := PluginNum;
 		PropertyForm.DoUrlEncode := DoUrlEncode;
