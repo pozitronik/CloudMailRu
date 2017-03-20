@@ -370,7 +370,7 @@ begin
 		if self.public_account and (self.PUBLIC_URL <> '') then
 		begin
 			self.public_link := self.PUBLIC_URL;
-			if self.PUBLIC_URL[length(self.PUBLIC_URL)] <> '/' then self.PUBLIC_URL := self.PUBLIC_URL + '/';
+			self.PUBLIC_URL:= IncludeSlash(self.PUBLIC_URL);
 			Delete(self.public_link, 1, length(PUBLIC_ACCESS_URL));
 			if self.public_link[length(self.public_link)] = '/' then Delete(self.public_link, length(self.public_link), 1);
 		end;
@@ -789,7 +789,7 @@ begin
 	Result := false;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
 
-	if self.public_account then Result := self.HTTPGet(API_FOLDER + '&weblink=' + self.public_link + '/' + PathToUrl(Path, false) + self.united_params, JSON, ShowProgress)
+	if self.public_account then Result := self.HTTPGet(API_FOLDER + '&weblink=' + IncludeSlash(self.public_link) + PathToUrl(Path, false) + self.united_params, JSON, ShowProgress)
 	else Result := self.HTTPGet(API_FOLDER + '&home=' + PathToUrl(Path) + self.united_params, JSON, ShowProgress);
 	if Result then
 	begin
@@ -856,7 +856,7 @@ end;
 
 function TCloudMailRu.getSharedFileUrl(remotePath: WideString; DoUrlEncode: Boolean = true): WideString;
 begin
-	Result := self.public_shard + '/' + self.public_link + '/' + PathToUrl(remotePath, true, DoUrlEncode) + '?key=' + self.public_download_token
+	Result := IncludeSlash(self.public_shard) + IncludeSlash(self.public_link) + PathToUrl(remotePath, true, DoUrlEncode) + '?key=' + self.public_download_token
 end;
 
 function TCloudMailRu.getFileShared(remotePath, localPath: WideString; LogErrors: Boolean): integer;
@@ -1690,7 +1690,7 @@ begin
 	Result := false;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
 	if self.public_account then exit;
-	Result := self.HTTPPost(API_FILE_REMOVE, 'home=/' + PathToUrl(Path) + '/' + self.united_params + '&conflict', JSON); //API всегда отвечает true, даже если путь не существует
+	Result := self.HTTPPost(API_FILE_REMOVE, 'home=/' + IncludeSlash(PathToUrl(Path)) + self.united_params + '&conflict', JSON); //API всегда отвечает true, даже если путь не существует
 	if Result then
 	begin
 		OperationResult := self.fromJSON_OperationResult(JSON, OperationStatus);
@@ -1729,7 +1729,7 @@ begin
 	Result := false;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
 	Progress := false;
-	if self.public_account then Result := self.HTTPGet(API_FILE + '?weblink=' + self.public_link + '/' + PathToUrl(Path) + self.united_params, JSON, Progress)
+	if self.public_account then Result := self.HTTPGet(API_FILE + '?weblink=' + IncludeSlash(self.public_link) + PathToUrl(Path) + self.united_params, JSON, Progress)
 	else Result := self.HTTPGet(API_FILE + '?home=' + PathToUrl(Path) + self.united_params, JSON, Progress);
 
 	if Result then
