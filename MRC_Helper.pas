@@ -43,6 +43,7 @@ function LoadIcon(const FileName: WideString): Hicon;
 function LoadPluginIcon(const path: WideString; identifier: WideString): Hicon;
 function RetryAttemptsToString(Attempt: Integer): WideString;
 procedure ProcessMessages;
+function IncludeSlash(const Str: WideString): WideString;
 
 implementation
 
@@ -379,6 +380,12 @@ begin
 			DispatchMessage(Msg);
 		end;
 	end;
+end;
+
+function IncludeSlash(const Str: WideString): WideString;
+begin
+	Result := Str;
+	if not (Result[High(Result)] = '/') then Result := Result + '/';
 end;
 
 end.
