@@ -80,6 +80,7 @@ type
 		LogUserSpace: boolean;
 		IconsMode: Integer;
 		IconsSize: Integer;
+		DownloadLinksEncode: boolean;
 	end;
 
 function GetProxyPasswordNow(var ProxySettings: TProxySettings; MyLogProc: TLogProcW; MyCryptProc: TCryptProcW; PluginNum: Integer; CryptoNum: Integer): boolean;
@@ -194,7 +195,7 @@ begin
 	GetPluginSettings.Proxy.user := IniFile.ReadString('Main', 'ProxyUser', '');
 	GetPluginSettings.Proxy.use_tc_password_manager := IniFile.ReadBool('Main', 'ProxyTCPwdMngr', false);
 	GetPluginSettings.Proxy.password := IniFile.ReadString('Main', 'ProxyPassword', '');
-
+	GetPluginSettings.DownloadLinksEncode := IniFile.ReadBool('Main', 'DownloadLinksEncode', true);
 	IniFile.Destroy;
 end;
 

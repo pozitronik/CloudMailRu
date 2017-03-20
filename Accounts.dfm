@@ -158,7 +158,7 @@ object AccountsForm: TAccountsForm
     Top = 0
     Width = 490
     Height = 405
-    ActivePage = AccountsTab
+    ActivePage = GlobalTab
     Align = alClient
     TabOrder = 0
     object AccountsTab: TTabSheet
@@ -580,6 +580,14 @@ object AccountsForm: TAccountsForm
         MinValue = -1
         TabOrder = 15
         Value = 0
+      end
+      object DownloadLinksEncodeCB: TCheckBox
+        Left = 5
+        Top = 323
+        Width = 475
+        Height = 17
+        Caption = 'URL encode public download links'
+        TabOrder = 16
       end
     end
     object NetworkTab: TTabSheet
