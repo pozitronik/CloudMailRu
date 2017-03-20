@@ -586,7 +586,7 @@ object AccountsForm: TAccountsForm
         Top = 323
         Width = 475
         Height = 17
-        Caption = 'URL encode public download links'
+        Caption = 'URL encode direct download links'
         TabOrder = 16
       end
       object AutoUpdateDownloadListingCB: TCheckBox
@@ -594,7 +594,7 @@ object AccountsForm: TAccountsForm
         Top = 345
         Width = 475
         Height = 17
-        Caption = 'Update public download links immediately'
+        Caption = 'Update direct download links immediately'
         TabOrder = 17
       end
     end

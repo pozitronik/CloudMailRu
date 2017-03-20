@@ -387,7 +387,7 @@ end;
 function IncludeSlash(const Str: WideString): WideString;
 begin
 	Result := Str;
-	if not (Result[High(Result)] = '/') then Result := Result + '/';
+	if not(Result[High(Result)] = '/') then Result := Result + '/';
 end;
 
 end.
