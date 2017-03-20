@@ -63,7 +63,7 @@ object PropertyForm: TPropertyForm
     Top = 75
     Width = 836
     Height = 283
-    ActivePage = DownloadLinksTS
+    ActivePage = FolderAccessTS
     TabOrder = 3
     object FolderAccessTS: TTabSheet
       Caption = 'Folder Access'
