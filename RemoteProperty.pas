@@ -99,17 +99,17 @@ begin
 			WebLink.Enabled := true;
 			WebLink.SetFocus;
 			WebLink.SelectAll;
-
+			ExtPropertiesPC.Visible := true;
 			DownloadLinksTS.TabVisible := true;
 			(*У объекта есть публичная ссылка, можно получить прямые ссылки на скачивание*)
+			TempPublicCloudInit(WebLink.Text);
 			if Props.type_ = TYPE_DIR then
 			begin (*рекурсивно получаем все ссылки в каталоге*)
-				TempPublicCloudInit(WebLink.Text);
 				FillRecursiveDownloadListing('', self.TempPublicCloud);
-				TempPublicCloud.Free;
 			end else begin
-				DownloadLinksMemo.Lines.Text := self.Cloud.getSharedFileUrl(self.RemoteName, self.DoUrlEncode);
+				DownloadLinksMemo.Lines.Text := TempPublicCloud.getSharedFileUrl('', self.DoUrlEncode);
 			end;
+			TempPublicCloud.Free;
 		end else begin
 			MessageBoxW(self.Handle, PWideChar('Error while publishing file ' + Props.home + ', see main log'), 'File publishing error', MB_OK + MB_ICONERROR);
 		end;
@@ -120,6 +120,7 @@ begin
 			Props.WebLink := '';
 			WebLink.Enabled := false;
 			DownloadLinksTS.TabVisible := false;
+			ExtPropertiesPC.Visible := false;
 		end else begin
 			MessageBoxW(self.Handle, PWideChar('Error while unpublishing file ' + Props.home + ', see main log'), 'File unpublishing error', MB_OK + MB_ICONERROR);
 		end;
