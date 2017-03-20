@@ -217,6 +217,7 @@ object PropertyForm: TPropertyForm
           Top = 0
           Caption = 'RefreshScanTB'
           ImageIndex = 3
+          OnClick = RefreshScanTBClick
         end
       end
     end

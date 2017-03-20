@@ -50,6 +50,7 @@ type
 		procedure SaveBtnClick(Sender: TObject);
 		procedure FormShow(Sender: TObject);
 		procedure CancelScanTBClick(Sender: TObject);
+		procedure RefreshScanTBClick(Sender: TObject);
 	private
 		{Private declarations}
 		procedure WMHotKey(var Message: TMessage); message WM_HOTKEY;
@@ -90,6 +91,7 @@ implementation
 
 procedure TPropertyForm.UpdateDownloadListing;
 begin
+	DownloadLinksMemo.Lines.Clear;
 	if self.Cloud.isPublicShare then
 	begin
 		if Props.type_ = TYPE_DIR then
@@ -171,6 +173,11 @@ begin
 			MessageBoxW(self.Handle, PWideChar('Error while unpublishing file ' + Props.home + ', see main log'), 'File unpublishing error', MB_OK + MB_ICONERROR);
 		end;
 	end;
+end;
+
+procedure TPropertyForm.RefreshScanTBClick(Sender: TObject);
+begin
+	UpdateDownloadListing;
 end;
 
 procedure TPropertyForm.RefreshInvites;
@@ -329,7 +336,6 @@ begin
 		WebLink.SetFocus;
 		WebLink.SelectAll;
 	end;
-	DownloadLinksMemo.Lines.Clear;
 	ExtPropertiesPC.Visible := false;
 	FolderAccessTS.TabVisible := false;
 	DownloadLinksTS.TabVisible := false;
