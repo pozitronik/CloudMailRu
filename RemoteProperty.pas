@@ -291,8 +291,8 @@ end;
 
 procedure TPropertyForm.WrapBTNClick(Sender: TObject);
 begin
-	if WrapBTN.Down then DownloadLinksMemo.ScrollBars := ssBoth
-	else DownloadLinksMemo.ScrollBars := ssVertical;
+	if WrapBTN.Down then DownloadLinksMemo.ScrollBars := ssVertical
+	else DownloadLinksMemo.ScrollBars := ssBoth;
 
 	DownloadLinksMemo.WordWrap := WrapBTN.Down;
 end;

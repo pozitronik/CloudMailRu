@@ -160,8 +160,9 @@ object PropertyForm: TPropertyForm
         BevelOuter = bvNone
         BorderStyle = bsNone
         ReadOnly = True
-        ScrollBars = ssVertical
+        ScrollBars = ssBoth
         TabOrder = 0
+        WordWrap = False
       end
       object DownloadLinksTB: TToolBar
         Left = 0
