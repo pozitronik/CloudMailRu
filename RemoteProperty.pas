@@ -48,8 +48,10 @@ type
 		{Private declarations}
 		procedure WMHotKey(var Message: TMessage); message WM_HOTKEY;
 		procedure RefreshInvites();
+		procedure RefreshPublicShare(const Publish: Boolean);
 		procedure FillRecursiveDownloadListing(const Path: WideString; Cloud: TCloudMailRu = nil);
 		procedure TempPublicCloudInit(publicUrl: WideString);
+
 	protected
 		Props: TCloudMailRuDirListingItem;
 		InvitesListing: TCloudMailRuInviteInfoListing;
@@ -75,14 +77,20 @@ implementation
 {TPropertyForm}
 
 procedure TPropertyForm.AccessCBClick(Sender: TObject);
+
+begin
+	if self.Cloud.isPublicShare then exit;
+	AccessCB.Enabled := false; //блокируем во избежание повторных кликов
+	WebLink.Text := 'Wait for it...';
+	RefreshPublicShare(AccessCB.checked);
+	AccessCB.Enabled := true;
+end;
+
+procedure TPropertyForm.RefreshPublicShare(const Publish: Boolean);
 var
 	PublicLink: WideString;
 begin
-	if self.Cloud.isPublicShare then exit;
-
-	WebLink.Text := 'Wait for it...';
-	AccessCB.Enabled := false; //блокируем во избежание повторных кликов
-	if AccessCB.checked then
+	if Publish then
 	begin
 		if self.Cloud.publishFile(Props.home, PublicLink) then
 		begin
@@ -91,21 +99,31 @@ begin
 			WebLink.Enabled := true;
 			WebLink.SetFocus;
 			WebLink.SelectAll;
+
+			DownloadLinksTS.TabVisible := true;
+			(*У объекта есть публичная ссылка, можно получить прямые ссылки на скачивание*)
+			if Props.type_ = TYPE_DIR then
+			begin (*рекурсивно получаем все ссылки в каталоге*)
+				TempPublicCloudInit(WebLink.Text);
+				FillRecursiveDownloadListing('', self.TempPublicCloud);
+				TempPublicCloud.Free;
+			end else begin
+				DownloadLinksMemo.Lines.Text := self.Cloud.getSharedFileUrl(self.RemoteName, self.DoUrlEncode);
+			end;
 		end else begin
 			MessageBoxW(self.Handle, PWideChar('Error while publishing file ' + Props.home + ', see main log'), 'File publishing error', MB_OK + MB_ICONERROR);
 		end;
-
 	end else begin
 		if Cloud.publishFile(Props.home, Props.WebLink, CLOUD_UNPUBLISH) then
 		begin
 			WebLink.Text := '';
 			Props.WebLink := '';
 			WebLink.Enabled := false;
+			DownloadLinksTS.TabVisible := false;
 		end else begin
 			MessageBoxW(self.Handle, PWideChar('Error while unpublishing file ' + Props.home + ', see main log'), 'File unpublishing error', MB_OK + MB_ICONERROR);
 		end;
 	end;
-	AccessCB.Enabled := true;
 end;
 
 procedure TPropertyForm.TempPublicCloudInit(publicUrl: WideString);
@@ -183,18 +201,6 @@ begin
 			ExtPropertiesPC.Visible := true;
 			FolderAccessTS.TabVisible := true;
 			RefreshInvites;
-		end;
-		if (AccessCB.checked) then (*У объекта есть публичная ссылка, можно получить прямые ссылки на скачивание*)
-		begin
-			DownloadLinksTS.TabVisible := true;
-
-			if Props.type_ = TYPE_DIR then
-			begin (*рекурсивно получаем все ссылки в каталоге*)
-				TempPublicCloudInit(WebLink.Text);
-				FillRecursiveDownloadListing('', self.TempPublicCloud);
-			end else begin
-				DownloadLinksMemo.Lines.Text := self.Cloud.getSharedFileUrl(self.RemoteName, self.DoUrlEncode);
-			end;
 		end;
 	end;
 end;
