@@ -163,8 +163,6 @@ object PropertyForm: TPropertyForm
         ScrollBars = ssBoth
         TabOrder = 0
         WordWrap = False
-        ExplicitTop = 28
-        ExplicitHeight = 227
       end
       object DownloadLinksTB: TToolBar
         Left = 0
@@ -178,6 +176,7 @@ object PropertyForm: TPropertyForm
         EdgeBorders = [ebBottom]
         Images = DownloadLinksIL
         TabOrder = 1
+        Transparent = False
         Wrapable = False
         object SaveBtn: TToolButton
           Left = 0
@@ -205,6 +204,7 @@ object PropertyForm: TPropertyForm
           Height = 38
           AutoSize = False
           EllipsisPosition = epEndEllipsis
+          Transparent = False
           Layout = tlCenter
         end
         object CancelScanTB: TToolButton
@@ -250,7 +250,7 @@ object PropertyForm: TPropertyForm
     Left = 740
     Top = 147
     Bitmap = {
-      494C010104008C00980020002000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010104008C009C0020002000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000800000004000000001002000000000000080
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000

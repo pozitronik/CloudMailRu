@@ -111,6 +111,7 @@ begin
 		end;
 		TempPublicCloud.Free;
 	end;
+	DownloadLinksMemo.Lines.Clear;
 end;
 
 function TPropertyForm.FillRecursiveDownloadListing(const Path: WideString; Cloud: TCloudMailRu = nil): Boolean;
