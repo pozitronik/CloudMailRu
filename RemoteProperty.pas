@@ -3,7 +3,7 @@
 interface
 
 uses
-	Plugin_types, Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, CloudMailRu, MRC_Helper, Vcl.Grids, Vcl.ValEdit, Vcl.Menus, Vcl.ComCtrls;
+	Plugin_types, Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, CloudMailRu, MRC_Helper, Vcl.Grids, Vcl.ValEdit, Vcl.Menus, Vcl.ComCtrls, Vcl.ToolWin, System.ImageList, Vcl.ImgList;
 
 type
 	TPropertyForm = class(TForm)
@@ -26,6 +26,12 @@ type
 		InviteBtn: TButton;
 		InvitesLE: TValueListEditor;
 		DownloadLinksMemo: TMemo;
+		DownloadLinksTB: TToolBar;
+		SaveBtn: TToolButton;
+		DownloadLinksIL: TImageList;
+		ToolButton1: TToolButton;
+		WrapBTN: TToolButton;
+		DownloadLinksSD: TSaveDialog;
 		procedure AccessCBClick(Sender: TObject);
 		procedure FormShow(Sender: TObject);
 		procedure FormDestroy(Sender: TObject);
@@ -36,6 +42,8 @@ type
 		procedure ItemRefreshClick(Sender: TObject);
 		procedure InvitesPopupPopup(Sender: TObject);
 		procedure ItemChangeAccessClick(Sender: TObject);
+		procedure WrapBTNClick(Sender: TObject);
+		procedure SaveBtnClick(Sender: TObject);
 	private
 		{Private declarations}
 		procedure WMHotKey(var Message: TMessage); message WM_HOTKEY;
@@ -243,6 +251,14 @@ begin
 	end;
 end;
 
+procedure TPropertyForm.SaveBtnClick(Sender: TObject);
+begin
+	if (DownloadLinksSD.Execute(self.Handle)) then
+	begin
+		DownloadLinksMemo.Lines.SaveToFile(DownloadLinksSD.FileName);
+	end;
+end;
+
 class function TPropertyForm.ShowProperty(parentWindow: HWND; RemoteName: WideString; RemoteProperty: TCloudMailRuDirListingItem; var Cloud: TCloudMailRu; LogProc: TLogProcW = nil; ProgressProc: TProgressProcW = nil; PluginNum: Integer = 0): Integer; //todo do we need cloud as var parameter?
 var
 	PropertyForm: TPropertyForm;
@@ -269,6 +285,14 @@ end;
 procedure TPropertyForm.WMHotKey(var Message: TMessage);
 begin
 	if (Message.LParamHi = VK_ESCAPE) and (GetForegroundWindow = self.Handle) then Close;
+end;
+
+procedure TPropertyForm.WrapBTNClick(Sender: TObject);
+begin
+	if WrapBTN.Down then DownloadLinksMemo.ScrollBars := ssBoth
+	else DownloadLinksMemo.ScrollBars := ssVertical;
+
+	DownloadLinksMemo.WordWrap := WrapBTN.Down;
 end;
 
 end.
