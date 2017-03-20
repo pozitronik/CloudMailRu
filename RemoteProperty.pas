@@ -39,7 +39,7 @@ type
 		RefreshScanTB: TToolButton;
 		procedure AccessCBClick(Sender: TObject);
 		procedure FormDestroy(Sender: TObject);
-		class function ShowProperty(parentWindow: HWND; RemoteName: WideString; RemoteProperty: TCloudMailRuDirListingItem; var Cloud: TCloudMailRu; DoUrlEncode: Boolean = true): Integer;
+		class function ShowProperty(parentWindow: HWND; RemoteName: WideString; RemoteProperty: TCloudMailRuDirListingItem; var Cloud: TCloudMailRu; DoUrlEncode: Boolean = true; AutoUpdateDownloadListing: Boolean = true): Integer;
 		procedure FormActivate(Sender: TObject);
 		procedure InviteBtnClick(Sender: TObject);
 		procedure ItemDeleteClick(Sender: TObject);
@@ -69,6 +69,7 @@ type
 		RemoteName: WideString;
 		DoUrlEncode: Boolean;
 		LogCancelledFlag: Boolean;
+		AutoUpdateDownloadListing: Boolean;
 
 		TempPublicCloud: TCloudMailRu; //Облако для получения прямых ссылок на опубликованные объекты
 	public
@@ -301,7 +302,7 @@ begin
 	end;
 end;
 
-class function TPropertyForm.ShowProperty(parentWindow: HWND; RemoteName: WideString; RemoteProperty: TCloudMailRuDirListingItem; var Cloud: TCloudMailRu; DoUrlEncode: Boolean = true): Integer; //todo do we need cloud as var parameter?
+class function TPropertyForm.ShowProperty(parentWindow: HWND; RemoteName: WideString; RemoteProperty: TCloudMailRuDirListingItem; var Cloud: TCloudMailRu; DoUrlEncode: Boolean = true; AutoUpdateDownloadListing: Boolean = true): Integer; //todo do we need cloud as var parameter?
 var
 	PropertyForm: TPropertyForm;
 begin
@@ -313,7 +314,7 @@ begin
 		PropertyForm.Caption := RemoteProperty.name;
 		PropertyForm.Cloud := Cloud;
 		PropertyForm.Props := RemoteProperty;
-		//PropertyForm.LogProc := LogProc;
+		PropertyForm.AutoUpdateDownloadListing :=AutoUpdateDownloadListing;
 		PropertyForm.LogCancelledFlag := false;
 		PropertyForm.DoUrlEncode := DoUrlEncode;
 		RegisterHotKey(PropertyForm.Handle, 1, 0, VK_ESCAPE);
@@ -341,7 +342,7 @@ begin
 		AccessCB.checked := true;
 		ExtPropertiesPC.Visible := true;
 		DownloadLinksTS.TabVisible := true;
-		UpdateDownloadListing;
+		if self.AutoUpdateDownloadListing then UpdateDownloadListing;
 	end else begin
 		AccessCB.checked := not(Props.WebLink = '');
 		WebLink.Enabled := AccessCB.checked;

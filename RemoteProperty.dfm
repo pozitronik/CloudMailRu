@@ -211,6 +211,7 @@ object PropertyForm: TPropertyForm
           Left = 750
           Top = 0
           Caption = 'CancelScanTB'
+          Enabled = False
           ImageIndex = 2
           OnClick = CancelScanTBClick
         end
