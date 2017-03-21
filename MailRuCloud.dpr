@@ -31,6 +31,7 @@ var
 	ThreadSkipListDelete: TDictionary<DWORD, Bool>; //Массив id потоков, для которых операции получения листинга должны быть пропущены (при удалении)
 	ThreadSkipListRenMov: TDictionary<DWORD, Bool>; //Массив id потоков, для которых операции получения листинга должны быть пропущены (при копировании/перемещении)
 	ThreadCanAbortRenMov: TDictionary<DWORD, Bool>; //Массив id потоков, для которых в операциях получения листинга должен быть выведен дополнительный диалог прогресса с возможностью отмены операции (fix issue #113)
+	ThreadListingAborted: TDictionary<DWORD, Bool>; //Массив id потоков, для которых в операциях получения листинга была нажата отмена
 
 	ThreadRetryCountDownload: TDictionary<DWORD, Int32>; //массив [id потока => количество попыток] для подсчёта количества повторов скачивания файла
 	ThreadRetryCountUpload: TDictionary<DWORD, Int32>; //массив [id потока => количество попыток] для подсчёта количества повторов закачивания файла
@@ -388,14 +389,21 @@ var //Получение первого файла в папке. Result тот�
 	Sections: TStringList;
 	RealPath: TRealPath;
 	getResult: integer;
-	SkipListDelete, SkipListRenMov, CanAbortRenMov: Bool;
+	SkipListDelete, SkipListRenMov, CanAbortRenMov, RenMovAborted: Bool;
 begin
 	ThreadSkipListDelete.TryGetValue(GetCurrentThreadID(), SkipListDelete);
 	ThreadSkipListRenMov.TryGetValue(GetCurrentThreadID(), SkipListRenMov);
 
 	ThreadCanAbortRenMov.TryGetValue(GetCurrentThreadID(), CanAbortRenMov);
 
-	if SkipListDelete or SkipListRenMov or (CanAbortRenMov and (MyProgressProc(PluginNum, path, nil, 0) = 1)) then
+	if (CanAbortRenMov and (MyProgressProc(PluginNum, path, nil, 0) = 1)) then
+	begin
+		ThreadListingAborted.AddOrSetValue(GetCurrentThreadID(), true);
+		RenMovAborted:=true;
+	end
+	else RenMovAborted:=false;
+
+	if SkipListDelete or SkipListRenMov or RenMovAborted then
 	begin
 		SetLastError(ERROR_NO_MORE_FILES);
 		exit(INVALID_HANDLE_VALUE);
@@ -728,7 +736,14 @@ function FsRemoveDirW(RemoteName: pWideChar): Bool; stdcall;
 var
 	RealPath: TRealPath;
 	getResult: integer;
+	ListingAborted: bool;
 Begin
+	ThreadListingAborted.TryGetValue(GetCurrentThreadID(), ListingAborted);
+	if ListingAborted then
+	begin
+		ThreadListingAborted.AddOrSetValue(GetCurrentThreadID(), false);
+		exit(false);
+	end;
 	RealPath := ExtractRealPath(WideString(RemoteName));
 	Result := ConnectionManager.get(RealPath.account, getResult).removeDir(RealPath.path);
 end;
@@ -1104,6 +1119,7 @@ begin
 	ThreadSkipListDelete := TDictionary<DWORD, Bool>.Create;
 	ThreadSkipListRenMov := TDictionary<DWORD, Bool>.Create;
 	ThreadCanAbortRenMov := TDictionary<DWORD, Bool>.Create;
+	ThreadListingAborted := TDictionary<DWORD, Bool>.Create;
 
 end.
 
