@@ -30,6 +30,8 @@ var
 	FileCounter: integer = 0;
 	ThreadSkipListDelete: TDictionary<DWORD, Bool>; //Массив id потоков, для которых операции получения листинга должны быть пропущены (при удалении)
 	ThreadSkipListRenMov: TDictionary<DWORD, Bool>; //Массив id потоков, для которых операции получения листинга должны быть пропущены (при копировании/перемещении)
+	ThreadCanAbortRenMov: TDictionary<DWORD, Bool>; //Массив id потоков, для которых в операциях получения листинга должен быть выведен дополнительный диалог прогресса с возможностью отмены операции (fix issue #113)
+
 	ThreadRetryCountDownload: TDictionary<DWORD, Int32>; //массив [id потока => количество попыток] для подсчёта количества повторов скачивания файла
 	ThreadRetryCountUpload: TDictionary<DWORD, Int32>; //массив [id потока => количество попыток] для подсчёта количества повторов закачивания файла
 	ThreadRetryCountRenMov: TDictionary<DWORD, Int32>; //массив [id потока => количество попыток] для подсчёта количества повторов межсерверных операций с файлом
@@ -252,6 +254,7 @@ begin
 						ThreadSkipListRenMov.AddOrSetValue(GetCurrentThreadID, true);
 					end;
 					ThreadRetryCountRenMov.AddOrSetValue(GetCurrentThreadID(), 0);
+					ThreadCanAbortRenMov.AddOrSetValue(GetCurrentThreadID, true);
 				end;
 			FS_STATUS_OP_DELETE:
 				begin
@@ -326,6 +329,7 @@ begin
 			FS_STATUS_OP_RENMOV_MULTI:
 				begin
 					ThreadSkipListRenMov.AddOrSetValue(GetCurrentThreadID, false);
+					ThreadCanAbortRenMov.AddOrSetValue(GetCurrentThreadID, false);
 					if (RealPath.account <> '') and GetPluginSettings(SettingsIniFilePath).LogUserSpace then ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
 				end;
 			FS_STATUS_OP_DELETE:
@@ -384,11 +388,14 @@ var //Получение первого файла в папке. Result тот�
 	Sections: TStringList;
 	RealPath: TRealPath;
 	getResult: integer;
-	SkipListDelete, SkipListRenMov: Bool;
+	SkipListDelete, SkipListRenMov, CanAbortRenMov: Bool;
 begin
 	ThreadSkipListDelete.TryGetValue(GetCurrentThreadID(), SkipListDelete);
 	ThreadSkipListRenMov.TryGetValue(GetCurrentThreadID(), SkipListRenMov);
-	if SkipListDelete or SkipListRenMov then
+
+	ThreadCanAbortRenMov.TryGetValue(GetCurrentThreadID(), CanAbortRenMov);
+
+	if SkipListDelete or SkipListRenMov or (CanAbortRenMov and (MyProgressProc(PluginNum, path, nil, 0) = 1)) then
 	begin
 		SetLastError(ERROR_NO_MORE_FILES);
 		exit(INVALID_HANDLE_VALUE);
@@ -726,15 +733,15 @@ Begin
 	Result := ConnectionManager.get(RealPath.account, getResult).removeDir(RealPath.path);
 end;
 
-Function cloneWeblink(NewCloud, OldCloud: TCloudMailRu; CloudPath: WideString; CurrentItem: TCloudMailRuDirListingItem; NeedUnpublish: Boolean): integer;
+Function cloneWeblink(NewCloud, OldCloud: TCloudMailRu; CloudPath: WideString; CurrentItem: TCloudMailRuDirListingItem; NeedUnpublish: boolean): integer;
 begin
 	Result := NewCloud.cloneWeblink(ExtractFileDir(CloudPath), CurrentItem.Weblink, CLOUD_CONFLICT_STRICT);
 	if (NeedUnpublish) and not(OldCloud.publishFile(CurrentItem.home, CurrentItem.Weblink, CLOUD_UNPUBLISH)) then MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, pWideChar('Can''t remove temporary public link on ' + CurrentItem.home));
 end;
 
-Function RenMoveFileViaPublicLink(OldCloud, NewCloud: TCloudMailRu; OldRealPath, NewRealPath: TRealPath; Move, OverWrite: Boolean): integer;
+Function RenMoveFileViaPublicLink(OldCloud, NewCloud: TCloudMailRu; OldRealPath, NewRealPath: TRealPath; Move, OverWrite: boolean): integer;
 var
-	NeedUnpublish: Boolean;
+	NeedUnpublish: boolean;
 	CurrentItem: TCloudMailRuDirListingItem;
 	RetryAttempts: integer;
 begin
@@ -791,7 +798,7 @@ begin
 	end;
 end;
 
-function FsRenMovFileW(OldName: pWideChar; NewName: pWideChar; Move: Boolean; OverWrite: Boolean; ri: pRemoteInfo): integer; stdcall;
+function FsRenMovFileW(OldName: pWideChar; NewName: pWideChar; Move: boolean; OverWrite: boolean; ri: pRemoteInfo): integer; stdcall;
 var
 	OldRealPath: TRealPath;
 	NewRealPath: TRealPath;
@@ -1096,6 +1103,7 @@ begin
 	ThreadRetryCountRenMov := TDictionary<DWORD, Int32>.Create;
 	ThreadSkipListDelete := TDictionary<DWORD, Bool>.Create;
 	ThreadSkipListRenMov := TDictionary<DWORD, Bool>.Create;
+	ThreadCanAbortRenMov := TDictionary<DWORD, Bool>.Create;
 
 end.
 
