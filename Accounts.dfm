@@ -438,7 +438,7 @@ object AccountsForm: TAccountsForm
         Top = 91
         Width = 475
         Height = 17
-        Caption = 'Copying/moving between accouns via public link'
+        Caption = 'Copying/moving between accounts via public link'
         TabOrder = 4
       end
       object GlobalSettingApplyBTN: TButton
