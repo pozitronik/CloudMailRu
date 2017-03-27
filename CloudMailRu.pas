@@ -447,7 +447,7 @@ end;
 class function TCloudMailRu.ErrorCodeText(ErrorCode: integer): WideString;
 begin
 	case ErrorCode of
-		CLOUD_ERROR_EXISTS: exit('Папка с таким названием уже существует. Попробуйте другое название.');
+		CLOUD_ERROR_EXISTS: exit('Объект с таким названием уже существует. Попробуйте другое название.');
 		CLOUD_ERROR_REQUIRED: exit('Название папки не может быть пустым.');
 		CLOUD_ERROR_INVALID: exit('Неправильное название папки. В названии папок нельзя использовать символы «" * / : < > ?  \\ |».');
 		CLOUD_ERROR_READONLY: exit('Невозможно создать. Доступ только для просмотра.');
@@ -667,12 +667,13 @@ var
 	Obj: TJSONObject;
 	error, nodename: WideString;
 begin
+	Result:=CLOUD_ERROR_BAD_REQUEST;
 	try
 		Obj := TJSONObject.ParseJSONValue(JSON) as TJSONObject;
 		OperationStatus := Obj.values['status'].Value.ToInteger;
 		if OperationStatus <> 200 then
 		begin
-			if OperationStatus = 400 then exit(CLOUD_ERROR_BAD_REQUEST);
+			//if OperationStatus = 400 then exit(CLOUD_ERROR_BAD_REQUEST);
 			if OperationStatus = 451 then exit(CLOUD_ERROR_FAHRENHEIT);
 			if OperationStatus = 507 then exit(CLOUD_ERROR_OVERQUOTA);
 
