@@ -736,7 +736,7 @@ function FsRemoveDirW(RemoteName: pWideChar): Bool; stdcall;
 var
 	RealPath: TRealPath;
 	getResult: integer;
-	ListingAborted: bool;
+	ListingAborted: Bool;
 Begin
 	ThreadListingAborted.TryGetValue(GetCurrentThreadID(), ListingAborted);
 	if ListingAborted then
@@ -751,6 +751,7 @@ end;
 Function cloneWeblink(NewCloud, OldCloud: TCloudMailRu; CloudPath: WideString; CurrentItem: TCloudMailRuDirListingItem; NeedUnpublish: boolean): integer;
 begin
 	Result := NewCloud.cloneWeblink(ExtractFileDir(CloudPath), CurrentItem.Weblink, CLOUD_CONFLICT_STRICT);
+	//todo if Result = 0
 	if (NeedUnpublish) and not(OldCloud.publishFile(CurrentItem.home, CurrentItem.Weblink, CLOUD_UNPUBLISH)) then MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, pWideChar('Can''t remove temporary public link on ' + CurrentItem.home));
 end;
 
@@ -775,7 +776,8 @@ begin
 				exit(FS_FILE_READERROR);
 			end;
 		end;
-		if cloneWeblink(NewCloud, OldCloud, NewRealPath.path, CurrentItem, NeedUnpublish) = CLOUD_OPERATION_OK then exit;
+		Result := cloneWeblink(NewCloud, OldCloud, NewRealPath.path, CurrentItem, NeedUnpublish);
+		if Result in [FS_FILE_OK, FS_FILE_EXISTS] then exit;
 
 		case GetPluginSettings(SettingsIniFilePath).OperationErrorMode of
 			OperationErrorModeAsk:
