@@ -751,7 +751,6 @@ end;
 Function cloneWeblink(NewCloud, OldCloud: TCloudMailRu; CloudPath: WideString; CurrentItem: TCloudMailRuDirListingItem; NeedUnpublish: boolean): integer;
 begin
 	Result := NewCloud.cloneWeblink(ExtractFileDir(CloudPath), CurrentItem.Weblink, CLOUD_CONFLICT_STRICT);
-	//todo if Result = 0
 	if (NeedUnpublish) and not(OldCloud.publishFile(CurrentItem.home, CurrentItem.Weblink, CLOUD_UNPUBLISH)) then MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, pWideChar('Can''t remove temporary public link on ' + CurrentItem.home));
 end;
 
@@ -777,38 +776,40 @@ begin
 			end;
 		end;
 		Result := cloneWeblink(NewCloud, OldCloud, NewRealPath.path, CurrentItem, NeedUnpublish);
-		if Result in [FS_FILE_OK, FS_FILE_EXISTS] then exit;
+		if not(Result in [FS_FILE_OK, FS_FILE_EXISTS]) then
+		begin
 
-		case GetPluginSettings(SettingsIniFilePath).OperationErrorMode of
-			OperationErrorModeAsk:
-				begin
-
-					while (not(Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
+			case GetPluginSettings(SettingsIniFilePath).OperationErrorMode of
+				OperationErrorModeAsk:
 					begin
-						case (messagebox(FindTCWindow, pWideChar('File publish error: ' + TCloudMailRu.ErrorCodeText(Result) + sLineBreak + 'Continue operation?'), 'Operation error', MB_ABORTRETRYIGNORE + MB_ICONERROR)) of
-							ID_ABORT: Result := FS_FILE_USERABORT;
-							ID_RETRY: Result := cloneWeblink(NewCloud, OldCloud, NewRealPath.path, CurrentItem, NeedUnpublish);
-							ID_IGNORE: break;
+
+						while (not(Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
+						begin
+							case (messagebox(FindTCWindow, pWideChar('File publish error: ' + TCloudMailRu.ErrorCodeText(Result) + sLineBreak + 'Continue operation?'), 'Operation error', MB_ABORTRETRYIGNORE + MB_ICONERROR)) of
+								ID_ABORT: Result := FS_FILE_USERABORT;
+								ID_RETRY: Result := cloneWeblink(NewCloud, OldCloud, NewRealPath.path, CurrentItem, NeedUnpublish);
+								ID_IGNORE: break;
+							end;
+						end;
+
+					end;
+				OperationErrorModeIgnore: exit;
+				OperationErrorModeAbort: exit(FS_FILE_USERABORT);
+				OperationErrorModeRetry:
+					begin;
+						RetryAttempts := GetPluginSettings(SettingsIniFilePath).RetryAttempts;
+						while (ThreadRetryCountRenMov.Items[GetCurrentThreadID()] <> RetryAttempts) and (not(Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
+						begin
+							ThreadRetryCountRenMov.Items[GetCurrentThreadID()] := ThreadRetryCountRenMov.Items[GetCurrentThreadID()] + 1;
+							MyLogProc(PluginNum, MSGTYPE_DETAILS, pWideChar('File publish error: ' + TCloudMailRu.ErrorCodeText(Result) + ' Retry attempt ' + ThreadRetryCountRenMov.Items[GetCurrentThreadID()].ToString + RetryAttemptsToString(RetryAttempts)));
+							Result := cloneWeblink(NewCloud, OldCloud, NewRealPath.path, CurrentItem, NeedUnpublish);
+							if MyProgressProc(PluginNum, nil, nil, 0) = 1 then Result := FS_FILE_USERABORT;
+							if (Result in [FS_FILE_OK, FS_FILE_USERABORT]) then ThreadRetryCountRenMov.Items[GetCurrentThreadID()] := 0; //сбросим счётчик попыток
+							ProcessMessages;
+							Sleep(GetPluginSettings(SettingsIniFilePath).AttemptWait);
 						end;
 					end;
-
-				end;
-			OperationErrorModeIgnore: exit;
-			OperationErrorModeAbort: exit(FS_FILE_USERABORT);
-			OperationErrorModeRetry:
-				begin;
-					RetryAttempts := GetPluginSettings(SettingsIniFilePath).RetryAttempts;
-					while (ThreadRetryCountRenMov.Items[GetCurrentThreadID()] <> RetryAttempts) and (not(Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
-					begin
-						ThreadRetryCountRenMov.Items[GetCurrentThreadID()] := ThreadRetryCountRenMov.Items[GetCurrentThreadID()] + 1;
-						MyLogProc(PluginNum, MSGTYPE_DETAILS, pWideChar('File publish error: ' + TCloudMailRu.ErrorCodeText(Result) + ' Retry attempt ' + ThreadRetryCountRenMov.Items[GetCurrentThreadID()].ToString + RetryAttemptsToString(RetryAttempts)));
-						Result := cloneWeblink(NewCloud, OldCloud, NewRealPath.path, CurrentItem, NeedUnpublish);
-						if MyProgressProc(PluginNum, nil, nil, 0) = 1 then Result := FS_FILE_USERABORT;
-						if (Result in [FS_FILE_OK, FS_FILE_USERABORT]) then ThreadRetryCountRenMov.Items[GetCurrentThreadID()] := 0; //сбросим счётчик попыток
-						ProcessMessages;
-						Sleep(GetPluginSettings(SettingsIniFilePath).AttemptWait);
-					end;
-				end;
+			end;
 		end;
 
 		if (Result = CLOUD_OPERATION_OK) and Move and not(OldCloud.deleteFile(OldRealPath.path)) then MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, pWideChar('Can''t delete ' + CurrentItem.home)); //пишем в лог, но не отваливаемся
