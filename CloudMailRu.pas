@@ -122,6 +122,11 @@ type
 		used: int64;
 	End;
 
+	TCloudMailRuOwnerInfo = record
+		email: WideString;
+		name: WideString;
+	end;
+
 	TCloudMailRuInviteInfo = record
 		email: WideString;
 		status: WideString;
@@ -129,8 +134,17 @@ type
 		name: WideString;
 	end;
 
+	TCloudMailRuIncomingInviteInfo = record
+		owner: TCloudMailRuOwnerInfo;
+		access: WideString;
+		name: WideString;
+		size: int64;
+		inviteToken: WideString;
+	end;
+
 	TCloudMailRuDirListing = array of TCloudMailRuDirListingItem;
 	TCloudMailRuInviteInfoListing = array of TCloudMailRuInviteInfo;
+	TCloudMailRuIncomingInviteInfoListing = array of TCloudMailRuIncomingInviteInfo;
 
 	TCloudMailRu = class
 	private
@@ -189,6 +203,7 @@ type
 		function fromJSON_PublicLink(JSON: WideString; var PublicLink: WideString): Boolean;
 		function fromJSON_OperationResult(JSON: WideString; var OperationStatus: integer): integer;
 		function fromJSON_InviteListing(JSON: WideString; var InviteListing: TCloudMailRuInviteInfoListing): Boolean;
+		function fromJSON_IncomingInviteListing(JSON: WideString; var IncomingInviteListing: TCloudMailRuIncomingInviteInfoListing): Boolean;
 		{HTTP REQUESTS WRAPPERS}
 		function getToken(): Boolean;
 		function getSharedToken(): Boolean;
@@ -220,7 +235,7 @@ type
 		function login(method: integer = CLOUD_AUTH_METHOD_WEB): Boolean;
 		function getDirListing(Path: WideString; var DirListing: TCloudMailRuDirListing; ShowProgress: Boolean = false): Boolean;
 		function getSharedLinksListing(var DirListing: TCloudMailRuDirListing; ShowProgress: Boolean = false): Boolean;
-		function getIncomingLinksListing(var DirListing: TCloudMailRuDirListing; ShowProgress: Boolean = false): Boolean;
+		function getIncomingLinksListing(var IncomingListing: TCloudMailRuIncomingInviteInfoListing; ShowProgress: Boolean = false): Boolean;
 		function getTrashbinListing(var DirListing: TCloudMailRuDirListing; ShowProgress: Boolean = false): Boolean;
 		function createDir(Path: WideString): Boolean;
 		function removeDir(Path: WideString): Boolean;
@@ -613,6 +628,7 @@ begin
 	end;
 end;
 
+{TODO Разобраться с полями TCloudMailRuInviteInfoListing - возможно ли объединение с TCloudMailRuINcomingInviteInfoListing}
 function TCloudMailRu.fromJSON_InviteListing(JSON: WideString; var InviteListing: TCloudMailRuInviteInfoListing): Boolean;
 var
 	Obj: TJSONObject;
@@ -633,7 +649,7 @@ begin
 				if Assigned(Obj.values['email']) then email := Obj.values['email'].Value;
 				if Assigned(Obj.values['status']) then status := Obj.values['status'].Value;
 				if Assigned(Obj.values['access']) then access := Obj.values['access'].Value;
-				if Assigned(Obj.values['name']) then name := Obj.values['email'].Value;
+				if Assigned(Obj.values['name']) then name := Obj.values['name'].Value;
 			end;
 		end;
 	except
@@ -643,7 +659,11 @@ begin
 			Log(MSGTYPE_IMPORTANTERROR, 'Can''t parse server answer: ' + JSON);
 		end;
 	end;
+end;
 
+function TCloudMailRu.fromJSON_IncomingInviteListing(JSON: WideString; var IncomingInviteListing: TCloudMailRuIncomingInviteInfoListing): Boolean;
+begin
+//todo
 end;
 
 function TCloudMailRu.fromJSON_OAuthTokenInfo(JSON: WideString; var CloudMailRuOAuthInfo: TCloudMailRuOAuthInfo): Boolean;
@@ -818,7 +838,7 @@ begin
 	end;
 end;
 
-function TCloudMailRu.getIncomingLinksListing(var DirListing: TCloudMailRuDirListing; ShowProgress: Boolean): Boolean;
+function TCloudMailRu.getIncomingLinksListing(var IncomingListing: TCloudMailRuIncomingInviteInfoListing; ShowProgress: Boolean): Boolean;
 var
 	JSON: WideString;
 	OperationStatus, OperationResult: integer;
@@ -832,7 +852,7 @@ begin
 	begin
 		OperationResult := self.fromJSON_OperationResult(JSON, OperationStatus);
 		case OperationResult of
-			CLOUD_OPERATION_OK: Result := self.fromJSON_DirListing(JSON, DirListing);
+			CLOUD_OPERATION_OK: Result := self.fromJSON_IncomingInviteListing(JSON, IncomingListing);
 			else
 				begin
 					Log(MSGTYPE_IMPORTANTERROR, 'Incoming requests listing error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString()); //?? WUT
