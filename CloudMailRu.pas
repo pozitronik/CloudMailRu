@@ -31,6 +31,7 @@ const
 	API_FOLDER_INVITES = 'https://cloud.mail.ru/api/v2/folder/invites';
 	API_FOLDER_SHARE = 'https://cloud.mail.ru/api/v2/folder/share';
 	API_FOLDER_UNSHARE = 'https://cloud.mail.ru/api/v2/folder/unshare';
+	API_FOLDER_SHARED_LINKS = 'https://cloud.mail.ru/api/v2/folder/shared/links';
 	API_AB_CONTACTS = ''; //todo
 	API_DISPATCHER = 'https://cloud.mail.ru/api/v2/dispatcher/';
 	API_USER_SPACE = 'https://cloud.mail.ru/api/v2/user/space';
@@ -213,6 +214,7 @@ type
 		{CLOUD INTERFACE METHODS}
 		function login(method: integer = CLOUD_AUTH_METHOD_WEB): Boolean;
 		function getDirListing(Path: WideString; var DirListing: TCloudMailRuDirListing; ShowProgress: Boolean = false): Boolean;
+		function getSharedLinksListing(var DirListing: TCloudMailRuDirListing; ShowProgress: Boolean = false): Boolean;
 		function createDir(Path: WideString): Boolean;
 		function removeDir(Path: WideString): Boolean;
 		function statusFile(Path: WideString; var FileInfo: TCloudMailRuDirListingItem): Boolean;
@@ -555,8 +557,8 @@ begin
 					if Assigned(Obj.values['tree']) then tree := Obj.values['tree'].Value;
 					if Assigned(Obj.values['grev']) then grev := Obj.values['grev'].Value.ToInteger;
 					if Assigned(Obj.values['rev']) then rev := Obj.values['rev'].Value.ToInteger;
-					if Assigned((Obj.values['count'] as TJSONObject).values['folders']) then folders_count := (Obj.values['count'] as TJSONObject).values['folders'].Value.ToInteger();
-					if Assigned((Obj.values['count'] as TJSONObject).values['files']) then files_count := (Obj.values['count'] as TJSONObject).values['files'].Value.ToInteger();
+					if Assigned(Obj.values['count']) then folders_count := (Obj.values['count'] as TJSONObject).values['folders'].Value.ToInteger();
+					if Assigned(Obj.values['count']) then files_count := (Obj.values['count'] as TJSONObject).values['files'].Value.ToInteger();
 					mtime := 0;
 				end;
 			end;
@@ -780,6 +782,30 @@ end;
 function TCloudMailRu.getDescriptionFile(remotePath, localCopy: WideString): integer; //0 - ok, else error
 begin
 	Result := self.getFile(remotePath, localCopy, false);
+end;
+
+function TCloudMailRu.getSharedLinksListing(var DirListing: TCloudMailRuDirListing; ShowProgress: Boolean = false): Boolean;
+var
+	JSON: WideString;
+	OperationStatus, OperationResult: integer;
+begin
+	Result := false;
+	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
+	if self.public_account then exit;
+	Result := self.HTTPGet(API_FOLDER_SHARED_LINKS+'?' + self.united_params, JSON, ShowProgress);
+
+	if Result then
+	begin
+		OperationResult := self.fromJSON_OperationResult(JSON, OperationStatus);
+		case OperationResult of
+			CLOUD_OPERATION_OK: Result := self.fromJSON_DirListing(JSON, DirListing);
+			else
+				begin
+					Log(MSGTYPE_IMPORTANTERROR, 'Delete file error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString()); //?? WUT
+					Result := false;
+				end;
+		end;
+	end;
 end;
 
 function TCloudMailRu.getDirListing(Path: WideString; var DirListing: TCloudMailRuDirListing; ShowProgress: Boolean = false): Boolean;
