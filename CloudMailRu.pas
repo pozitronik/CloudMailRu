@@ -32,6 +32,7 @@ const
 	API_FOLDER_SHARE = 'https://cloud.mail.ru/api/v2/folder/share';
 	API_FOLDER_UNSHARE = 'https://cloud.mail.ru/api/v2/folder/unshare';
 	API_FOLDER_SHARED_LINKS = 'https://cloud.mail.ru/api/v2/folder/shared/links';
+	API_FOLDER_SHARED_INCOMING = 'https://cloud.mail.ru/api/v2/folder/shared/incoming';
 	API_AB_CONTACTS = ''; //todo
 	API_DISPATCHER = 'https://cloud.mail.ru/api/v2/dispatcher/';
 	API_USER_SPACE = 'https://cloud.mail.ru/api/v2/user/space';
@@ -215,6 +216,7 @@ type
 		function login(method: integer = CLOUD_AUTH_METHOD_WEB): Boolean;
 		function getDirListing(Path: WideString; var DirListing: TCloudMailRuDirListing; ShowProgress: Boolean = false): Boolean;
 		function getSharedLinksListing(var DirListing: TCloudMailRuDirListing; ShowProgress: Boolean = false): Boolean;
+		function getIncomingLinksListing(var DirListing: TCloudMailRuDirListing; ShowProgress: Boolean = false): Boolean;
 		function createDir(Path: WideString): Boolean;
 		function removeDir(Path: WideString): Boolean;
 		function statusFile(Path: WideString; var FileInfo: TCloudMailRuDirListingItem): Boolean;
@@ -792,7 +794,7 @@ begin
 	Result := false;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
 	if self.public_account then exit;
-	Result := self.HTTPGet(API_FOLDER_SHARED_LINKS+'?' + self.united_params, JSON, ShowProgress);
+	Result := self.HTTPGet(API_FOLDER_SHARED_LINKS + '?' + self.united_params, JSON, ShowProgress);
 
 	if Result then
 	begin
@@ -801,7 +803,31 @@ begin
 			CLOUD_OPERATION_OK: Result := self.fromJSON_DirListing(JSON, DirListing);
 			else
 				begin
-					Log(MSGTYPE_IMPORTANTERROR, 'Delete file error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString()); //?? WUT
+					Log(MSGTYPE_IMPORTANTERROR, 'Shared links listing error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString()); //?? WUT
+					Result := false;
+				end;
+		end;
+	end;
+end;
+
+function TCloudMailRu.getIncomingLinksListing(var DirListing: TCloudMailRuDirListing; ShowProgress: Boolean): Boolean;
+var
+	JSON: WideString;
+	OperationStatus, OperationResult: integer;
+begin
+	Result := false;
+	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
+	if self.public_account then exit;
+	Result := self.HTTPGet(API_FOLDER_SHARED_INCOMING + '?' + self.united_params, JSON, ShowProgress);
+
+	if Result then
+	begin
+		OperationResult := self.fromJSON_OperationResult(JSON, OperationStatus);
+		case OperationResult of
+			CLOUD_OPERATION_OK: Result := self.fromJSON_DirListing(JSON, DirListing);
+			else
+				begin
+					Log(MSGTYPE_IMPORTANTERROR, 'Incoming requests listing error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString()); //?? WUT
 					Result := false;
 				end;
 		end;
@@ -830,7 +856,7 @@ begin
 				end
 			else
 				begin
-					Log(MSGTYPE_IMPORTANTERROR, 'Delete file error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString()); //?? WUT
+					Log(MSGTYPE_IMPORTANTERROR, 'Directory listing error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString()); //?? WUT
 					Result := false;
 				end;
 		end;
@@ -909,6 +935,8 @@ begin
 	end;
 	if Result <> FS_FILE_OK then System.SysUtils.deleteFile(GetUNCFilePath(localPath));
 end;
+
+
 
 function TCloudMailRu.getOAuthToken(var OAuthToken: TCloudMailRuOAuthInfo): Boolean;
 var
