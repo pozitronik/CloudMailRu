@@ -102,6 +102,9 @@ type
 		virus_scan: WideString;
 		folders_count: integer;
 		files_count: integer;
+		deleted_at: integer;
+		deleted_from: WideString;
+		deleted_by: integer;
 	End;
 
 	TCloudMailRuOAuthInfo = Record
@@ -552,6 +555,9 @@ begin
 				if Assigned(Obj.values['type']) then type_ := Obj.values['type'].Value;
 				if Assigned(Obj.values['home']) then home := Obj.values['home'].Value;
 				if Assigned(Obj.values['name']) then name := Obj.values['name'].Value;
+				if Assigned(Obj.values['deleted_at']) then deleted_at := Obj.values['deleted_at'].Value.ToInteger;
+				if Assigned(Obj.values['deleted_from']) then deleted_from := Obj.values['deleted_from'].Value;
+				if Assigned(Obj.values['deleted_by']) then deleted_by := Obj.values['deleted_by'].Value.ToInteger;
 				if (type_ = TYPE_FILE) then
 				begin
 					if Assigned(Obj.values['mtime']) then mtime := Obj.values['mtime'].Value.ToInt64;
@@ -1010,8 +1016,6 @@ begin
 		self.united_params := '&api=2&build=' + self.build + '&x-page-id=' + self.x_page_id + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&token=' + self.token + '&_=' + DateTimeToUnix(now).ToString + '810';
 	end;
 end;
-
-
 
 function TCloudMailRu.getSharedToken(): Boolean;
 var
