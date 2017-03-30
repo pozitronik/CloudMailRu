@@ -27,6 +27,7 @@ var
 	AccountsIniFilePath: WideString;
 	SettingsIniFilePath: WideString;
 	GlobalPath, PluginPath, AppDataDir, IniDir: WideString;
+	AccountsList: TStringList; //Global accounts list
 	FileCounter: integer = 0;
 	ThreadSkipListDelete: TDictionary<DWORD, Bool>; //Массив id потоков, для которых операции получения листинга должны быть пропущены (при удалении)
 	ThreadSkipListRenMov: TDictionary<DWORD, Bool>; //Массив id потоков, для которых операции получения листинга должны быть пропущены (при копировании/перемещении)
@@ -386,7 +387,6 @@ end;
 
 function FsFindFirstW(path: pWideChar; var FindData: tWIN32FINDDATAW): THandle; stdcall;
 var //Получение первого файла в папке. Result тоталом не используется (можно использовать для работы плагина).
-	Sections: TStringList;
 	RealPath: TRealPath;
 	getResult: integer;
 	SkipListDelete, SkipListRenMov, CanAbortRenMov, RenMovAborted: Bool;
@@ -410,22 +410,22 @@ begin
 	end;
 
 	SetLength(CurrentListing, 0);
-	Result := 0;
+	Result := FIND_NO_MORE_FILES;
 	GlobalPath := path;
 	if GlobalPath = '\' then
 	begin //список соединений
-		Sections := TStringList.Create;
-		GetAccountsListFromIniFile(AccountsIniFilePath, Sections);
+		AccountsList := TStringList.Create;
+		GetAccountsListFromIniFile(AccountsIniFilePath, AccountsList);
 
-		if (Sections.Count > 0) then
+		if (AccountsList.Count > 0) then
 		begin
-			FindData := FindData_emptyDir(Sections.Strings[0]);
+			FindData := FindData_emptyDir(AccountsList.Strings[0]);
 			FileCounter := 1;
+			Result:= FIND_ROOT_DIRECTORY;
 		end else begin
 			Result := INVALID_HANDLE_VALUE; //Нельзя использовать exit
 			SetLastError(ERROR_NO_MORE_FILES);
 		end;
-		Sections.Free;
 	end else begin
 		RealPath := ExtractRealPath(GlobalPath);
 
@@ -441,32 +441,28 @@ begin
 		if (Length(CurrentListing) = 0) then
 		begin
 			FindData := FindData_emptyDir(); //воркароунд бага с невозможностью входа в пустой каталог, см. http://www.ghisler.ch/board/viewtopic.php?t=42399
-			Result := 0;
+			Result := FIND_NO_MORE_FILES;
 			SetLastError(ERROR_NO_MORE_FILES);
 		end else begin
 			FindData := CloudMailRuDirListingItemToFindData(CurrentListing[0]);
 			FileCounter := 1;
-			Result := 1;
+			Result := FIND_OK;
 		end;
 	end;
 end;
 
 function FsFindNextW(Hdl: THandle; var FindData: tWIN32FINDDATAW): Bool; stdcall;
-var
-	Sections: TStringList;
 begin
 	if GlobalPath = '\' then
 	begin
-		Sections := TStringList.Create;
-		GetAccountsListFromIniFile(AccountsIniFilePath, Sections);
-		if (Sections.Count > FileCounter) then
+		if (AccountsList.Count > FileCounter) then
 		begin
-			FindData := FindData_emptyDir(Sections.Strings[FileCounter]);
+			FindData := FindData_emptyDir(AccountsList.Strings[FileCounter]);
 			inc(FileCounter);
 			Result := true;
 		end
 		else Result := false;
-		Sections.Free;
+
 	end else begin
 		//Получение последующих файлов в папке (вызывается до тех пор, пока не вернёт false).
 		if (Length(CurrentListing) > FileCounter) then
@@ -485,6 +481,8 @@ end;
 function FsFindClose(Hdl: THandle): integer; stdcall;
 Begin //Завершение получения списка файлов. Result тоталом не используется (всегда равен 0)
 	//SetLength(CurrentListing, 0); // Пусть будет
+	if Hdl = FIND_ROOT_DIRECTORY then AccountsList.Free;
+
 	Result := 0;
 	FileCounter := 0;
 end;
@@ -549,6 +547,10 @@ Begin
 				if GetPluginSettings(SettingsIniFilePath).LogUserSpace then ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
 			end
 			else Result := FS_EXEC_ERROR;
+		end else if command = 'links' then
+		begin
+			Cloud := ConnectionManager.get(RealPath.account, getResult);
+			Cloud.getTrashbinListing(CurrentListing, false);
 		end;
 
 	end;

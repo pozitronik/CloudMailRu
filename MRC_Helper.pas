@@ -6,6 +6,10 @@ uses Classes, Windows, SysUtils, MultiMon, Math, ShellApi, ShlObj, Vcl.Graphics;
 
 const
 	MAX_UNC_PATH = 32767;
+	//FsFindFirst* success return codes (INVALID_HANDLE_VALUE returns on error)
+	FIND_NO_MORE_FILES = 0;
+	FIND_OK = 1;
+	FIND_ROOT_DIRECTORY = 2;
 
 	IconSizeSmall = 0; //SHGFI_SMALLICON
 	IconSizeNormal = 1; //SHGFI_ICON
