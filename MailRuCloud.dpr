@@ -419,6 +419,7 @@ begin
 
 		if (AccountsList.Count > 0) then
 		begin
+			if GetPluginSettings(SettingsIniFilePath).ShowTrashFolders then AddTrashAccountsToAccountsList(AccountsIniFilePath, AccountsList);
 			FindData := FindData_emptyDir(AccountsList.Strings[0]);
 			FileCounter := 1;
 			Result:= FIND_ROOT_DIRECTORY;
