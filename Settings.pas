@@ -93,6 +93,7 @@ function GetAccountSettingsFromIniFile(IniFilePath: WideString; AccountName: Wid
 function SetAccountSettingsToIniFile(IniFilePath: WideString; AccountSettings: TAccountSettings): boolean;
 procedure GetAccountsListFromIniFile(IniFilePath: WideString; var AccountsList: TStringList);
 procedure DeleteAccountFromIniFile(IniFilePath: WideString; AccountName: WideString);
+procedure AddTrashAccountsToAccountsList(AccountsIniFilePath: WideString; var AccountsList: TStringList; const TrashPostfix: string = '.trash');
 
 implementation
 
@@ -299,6 +300,20 @@ begin
 	IniFile := TIniFile.Create(IniFilePath);
 	IniFile.EraseSection(AccountName);
 	IniFile.Destroy;
+end;
+
+procedure AddTrashAccountsToAccountsList(AccountsIniFilePath: WideString; var AccountsList: TStringList; const TrashPostfix: string = '.trash');
+var
+	TrashAccounts: TStringList;
+	account: WideString;
+begin
+	TrashAccounts := TStringList.Create;
+	for account in AccountsList do
+	begin
+		if not(GetAccountSettingsFromIniFile(AccountsIniFilePath, account).public_account) then TrashAccounts.Add(account + TrashPostfix);
+	end;
+	AccountsList.AddStrings(TrashAccounts);
+	TrashAccounts.Free;
 end;
 
 end.
