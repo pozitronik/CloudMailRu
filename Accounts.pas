@@ -72,7 +72,8 @@ type
 		RetryAttemptsValue: TSpinEdit;
 		SocketTimeoutEdit: TSpinEdit;
 		DownloadLinksEncodeCB: TCheckBox;
-    AutoUpdateDownloadListingCB: TCheckBox;
+		AutoUpdateDownloadListingCB: TCheckBox;
+    ShowTrashFoldersCB: TCheckBox;
 		procedure FormShow(Sender: TObject);
 		procedure AccountsListClick(Sender: TObject);
 		procedure ApplyButtonClick(Sender: TObject);
@@ -220,7 +221,6 @@ begin
 	SetPluginSettingsValue(SettingsIniFilePath, 'ProxyTCPwdMngr', ProxyTCPwdMngrCB.Checked);
 	SetPluginSettingsValue(SettingsIniFilePath, 'DownloadLinksEncode', DownloadLinksEncodeCB.Checked);
 	SetPluginSettingsValue(SettingsIniFilePath, 'AutoUpdateDownloadListing', AutoUpdateDownloadListingCB.Checked);
-
 
 	if ProxyTCPwdMngrCB.Checked then //просим TC сохранить пароль
 	begin
