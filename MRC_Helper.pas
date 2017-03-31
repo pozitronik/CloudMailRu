@@ -105,7 +105,7 @@ begin
 	if ExtractFileExt(Result.account) = TrashPostfix then
 	begin
 		Result.trashDir := true;
-		Result.account:=ExtractFileName(Result.account);
+		Result.account:=copy (Result.account,1,length(Result.account)-length(TrashPostfix));
 	end;
 
 end;
