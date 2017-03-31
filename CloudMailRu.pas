@@ -41,6 +41,7 @@ const
 
 	TYPE_DIR = 'folder';
 	TYPE_FILE = 'file';
+
 	KIND_SHARED = 'shared';
 	{Константы для обозначения ошибок, возвращаемых при парсинге ответов облака. Дополняем по мере обнаружения}
 	CLOUD_ERROR_UNKNOWN = -2; //unknown: 'Ошибка на сервере'
@@ -663,7 +664,7 @@ end;
 
 function TCloudMailRu.fromJSON_IncomingInviteListing(JSON: WideString; var IncomingInviteListing: TCloudMailRuIncomingInviteInfoListing): Boolean;
 begin
-//todo
+	//todo
 end;
 
 function TCloudMailRu.fromJSON_OAuthTokenInfo(JSON: WideString; var CloudMailRuOAuthInfo: TCloudMailRuOAuthInfo): Boolean;

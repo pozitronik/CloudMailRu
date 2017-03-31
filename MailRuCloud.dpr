@@ -53,16 +53,22 @@ var
 
 function CloudMailRuDirListingItemToFindData(DirListing: TCloudMailRuDirListingItem): tWIN32FINDDATAW;
 begin
-	if (DirListing.type_ = TYPE_DIR) then
+	if (DirListing.deleted_from <> '') then //items inside trash bin
+	begin
+		Result.ftCreationTime := DateTimeToFileTime(UnixToDateTime(DirListing.deleted_at));
+		Result.ftLastWriteTime := Result.ftCreationTime;
+		if (DirListing.type_ = TYPE_DIR) then Result.dwFileAttributes := FILE_ATTRIBUTE_DIRECTORY
+		else Result.dwFileAttributes := 0;
+	end else if (DirListing.type_ = TYPE_DIR) then
 	begin
 		Result.ftCreationTime.dwLowDateTime := 0;
 		Result.ftCreationTime.dwHighDateTime := 0;
 		Result.ftLastWriteTime.dwHighDateTime := 0;
 		Result.ftLastWriteTime.dwLowDateTime := 0;
-		Result.dwFileAttributes := FILE_ATTRIBUTE_DIRECTORY
+		Result.dwFileAttributes := FILE_ATTRIBUTE_DIRECTORY;
 	end else begin
 		Result.ftCreationTime := DateTimeToFileTime(UnixToDateTime(DirListing.mtime));
-		Result.ftLastWriteTime := DateTimeToFileTime(UnixToDateTime(DirListing.mtime));
+		Result.ftLastWriteTime := Result.ftCreationTime;
 
 		Result.dwFileAttributes := 0;
 	end;
@@ -71,7 +77,12 @@ begin
 	else Result.nFileSizeHigh := 0;
 	Result.nFileSizeLow := DirListing.size;
 
-	strpcopy(Result.cFileName, DirListing.name);
+	if (DirListing.deleted_from <> '') then
+	begin
+		Delete(DirListing.deleted_from, 1, 1);
+		strpcopy(Result.cFileName, DirListing.deleted_from + DirListing.name)
+	end
+	else strpcopy(Result.cFileName, DirListing.name);
 end;
 
 function FindData_emptyDir(DirName: WideString = '.'): tWIN32FINDDATAW;
@@ -428,7 +439,13 @@ begin
 	end else begin
 		RealPath := ExtractRealPath(GlobalPath);
 
-		if not ConnectionManager.get(RealPath.account, getResult).getDirListing(RealPath.path, CurrentListing) then SetLastError(ERROR_PATH_NOT_FOUND);
+		if RealPath.trashDir then
+		begin
+			if not ConnectionManager.get(RealPath.account, getResult).getTrashbinListing(CurrentListing) then SetLastError(ERROR_PATH_NOT_FOUND);
+		end else begin
+			if not ConnectionManager.get(RealPath.account, getResult).getDirListing(RealPath.path, CurrentListing) then SetLastError(ERROR_PATH_NOT_FOUND);
+		end;
+
 		if getResult <> CLOUD_OPERATION_OK then
 		begin
 			SetLastError(ERROR_ACCESS_DENIED);
