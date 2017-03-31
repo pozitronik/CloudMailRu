@@ -208,11 +208,9 @@ procedure FsStatusInfoW(RemoteDir: pWideChar; InfoStartEnd, InfoOperation: integ
 var
 	RealPath: TRealPath;
 	getResult: integer;
-	//DescriptionItem: TCloudMailRuDirListingItem;
 	TmpIon: WideString;
 begin
 	RealPath := ExtractRealPath(RemoteDir);
-	if RealPath.account = '' then RealPath.account := ExtractFileName(ExcludeTrailingBackslash(RemoteDir));
 	if (InfoStartEnd = FS_STATUS_START) then
 	begin
 		case InfoOperation of
@@ -430,8 +428,6 @@ begin
 	end else begin
 		RealPath := ExtractRealPath(GlobalPath);
 
-		if RealPath.account = '' then RealPath.account := ExtractFileName(ExcludeTrailingBackslash(GlobalPath));
-
 		if not ConnectionManager.get(RealPath.account, getResult).getDirListing(RealPath.path, CurrentListing) then SetLastError(ERROR_PATH_NOT_FOUND);
 		if getResult <> CLOUD_OPERATION_OK then
 		begin
@@ -529,7 +525,7 @@ Begin
 		begin
 			RealPath := ExtractRealPath(RemoteName + GetWord(Verb, 2));
 			if (ConnectionManager.get(RealPath.account, getResult).removeDir(RealPath.path) <> true) then Result := FS_EXEC_ERROR;
-		end else if command = 'share' then
+		end else if command = 'share' then //undocumented, share current folder to email param
 		begin
 			RealPath := ExtractRealPath(RemoteName);
 			param := ExtractLinkFromUrl(GetWord(Verb, 2));
@@ -537,11 +533,6 @@ Begin
 		end else if command = 'clone' then
 		begin
 			RealPath := ExtractRealPath(RemoteName);
-			if RealPath.account = '' then //Некрасивое решение, надо переделать
-			begin
-				RealPath.account := ExtractFileName(ExcludeTrailingBackslash(RemoteName));
-				RealPath.path := '\';
-			end;
 			param := ExtractLinkFromUrl(GetWord(Verb, 2));
 			if (ConnectionManager.get(RealPath.account, getResult).cloneWeblink(RealPath.path, param) = CLOUD_OPERATION_OK) then
 			begin
@@ -660,7 +651,7 @@ var
 	RetryAttempts: integer;
 	getResult: integer;
 begin
-	//Result := FS_FILE_NOTSUPPORTED;
+
 	RealPath := ExtractRealPath(RemoteName);
 	if RealPath.account = '' then exit(FS_FILE_NOTSUPPORTED);
 	MyProgressProc(PluginNum, LocalName, pWideChar(RealPath.path), 0);
@@ -1021,16 +1012,16 @@ begin
 	Result := FS_ICON_EXTRACTED;
 
 	RealPath := ExtractRealPath(RemoteName);
-	if (RealPath.path = '..') or (RemoteName = '\..\') then exit;
-	//if (RealPath.path = '') and (RealPath.account = '') then exit;
+
+	if RealPath.upDirItem then exit; //do not overlap updir icon
+
 	if GetPluginSettings(SettingsIniFilePath).IconsMode = IconsModeDisabled then exit(FS_ICON_USEDEFAULT);
 
 	if (RealPath.path = '') then //connection list
 	begin
 		if (GetAccountSettingsFromIniFile(AccountsIniFilePath, copy(RemoteName, 2, StrLen(RemoteName) - 2)).public_account) then strpcopy(RemoteName, 'cloud_public')
 		else strpcopy(RemoteName, 'cloud');
-	end else begin
-		//directories
+	end else begin //directories
 		Item := GetListingItemByName(CurrentListing, RealPath);
 		if Item.type_ = TYPE_DIR then
 		begin
