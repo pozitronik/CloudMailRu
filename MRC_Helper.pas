@@ -44,6 +44,7 @@ function IsWriteable(const DirName: WideString; FileName: WideString = 'delete.m
 function PosLast(Substring, S: WideString; Offset: Integer = 0): Integer;
 function PathToUrl(path: WideString; RestrictEmptyUrl: boolean = true; DoUrlEncode: boolean = true): WideString;
 function GetFolderIcon(const size: Integer = IconSizeSmall): Hicon;
+function GetSystemIcon(ItemType: Integer = CSIDL_BITBUCKET): Hicon;
 function CombineIcons(FrontIcon, BackIcon: Hicon): Hicon; //taken from http://www.swissdelphicenter.ch/en/showcode.php?id=1636
 function LoadIcon(const FileName: WideString): Hicon;
 function LoadPluginIcon(const path: WideString; identifier: WideString): Hicon;
@@ -298,12 +299,17 @@ begin
 		IconSizeLarge: uFlags := SHGFI_ICON or SHGFI_LARGEICON; //not working with SHGetFileInfo
 	end;
 
-	SYSIL := SHGetFileInfo('booya', FILE_ATTRIBUTE_DIRECTORY, SFI, SizeOf(SFI), uFlags or SHGFI_USEFILEATTRIBUTES);
-	if SYSIL <> 0 then
-	begin
-		exit(SFI.Hicon);
-	end;
-	//else RaiseLastOSError;
+	if SHGetFileInfo('booya', FILE_ATTRIBUTE_DIRECTORY, SFI, SizeOf(SFI), uFlags or SHGFI_USEFILEATTRIBUTES) <> 0 then Result := SFI.Hicon;
+
+end;
+
+function GetSystemIcon(ItemType: Integer = CSIDL_BITBUCKET): Hicon;
+var
+	SFI: TSHFileInfo;
+	PIDL: PItemIDList;
+begin
+	SHGetSpecialFolderLocation(FindTCWindow, ItemType, PIDL);
+	if SHGetFileInfo(PChar(PIDL), 0, SFI, SizeOf(SFI), SHGFI_PIDL or SHGFI_SYSICONINDEX) <> 0 then Result := SFI.iIcon;
 end;
 
 function CombineIcons(FrontIcon, BackIcon: Hicon): Hicon;
