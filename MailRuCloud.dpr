@@ -1019,13 +1019,18 @@ begin
 
 	if (RealPath.path = '') then //connection list
 	begin
+		if RealPath.trashDir then //always draw system trash icon
+		begin
+			strpcopy(RemoteName, 'cloud_trash');
+			TheIcon := GetSystemIcon(GetPluginSettings(SettingsIniFilePath).IconsSize);
+			exit;
+		end;
 		if (GetAccountSettingsFromIniFile(AccountsIniFilePath, copy(RemoteName, 2, StrLen(RemoteName) - 2)).public_account) then strpcopy(RemoteName, 'cloud_public')
 		else strpcopy(RemoteName, 'cloud');
 	end else begin //directories
 		Item := GetListingItemByName(CurrentListing, RealPath);
 		if Item.type_ = TYPE_DIR then
 		begin
-
 			if Item.kind = KIND_SHARED then
 			begin
 				strpcopy(RemoteName, 'shared');
