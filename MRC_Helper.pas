@@ -15,6 +15,8 @@ const
 	IconSizeNormal = 1; //SHGFI_ICON
 	IconSizeLarge = 2; //SHGFI_LARGEICON
 
+	TrashPostfix = '.trash';
+
 type
 	TRealPath = record
 		account: WideString;
@@ -44,7 +46,7 @@ function IsWriteable(const DirName: WideString; FileName: WideString = 'delete.m
 function PosLast(Substring, S: WideString; Offset: Integer = 0): Integer;
 function PathToUrl(path: WideString; RestrictEmptyUrl: boolean = true; DoUrlEncode: boolean = true): WideString;
 function GetFolderIcon(const size: Integer = IconSizeSmall): Hicon;
-function GetSystemIcon(ItemType: Integer = CSIDL_BITBUCKET): Hicon;
+function GetSystemIcon(const size: Integer = IconSizeSmall; ItemType: Integer = CSIDL_BITBUCKET): Hicon;
 function CombineIcons(FrontIcon, BackIcon: Hicon): Hicon; //taken from http://www.swissdelphicenter.ch/en/showcode.php?id=1636
 function LoadIcon(const FileName: WideString): Hicon;
 function LoadPluginIcon(const path: WideString; identifier: WideString): Hicon;
@@ -99,6 +101,13 @@ begin
 		Result.path := Implode(List, '\');
 	end;
 	List.Destroy;
+
+	if ExtractFileExt(Result.account) = TrashPostfix then
+	begin
+		Result.trashDir := true;
+		Result.account:=ExtractFileName(Result.account);
+	end;
+
 end;
 
 function DateTimeToUnix(ConvDate: TDateTime): Integer;
@@ -303,13 +312,20 @@ begin
 
 end;
 
-function GetSystemIcon(ItemType: Integer = CSIDL_BITBUCKET): Hicon;
+function GetSystemIcon(const size: Integer = IconSizeSmall; ItemType: Integer = CSIDL_BITBUCKET): Hicon;
 var
 	SFI: TSHFileInfo;
 	PIDL: PItemIDList;
+	uFlags: uint;
 begin
+	uFlags := SHGFI_ICON;
+	case size of
+		IconSizeSmall: uFlags := SHGFI_ICON or SHGFI_SMALLICON;
+		IconSizeNormal: uFlags := SHGFI_ICON;
+		IconSizeLarge: uFlags := SHGFI_ICON or SHGFI_LARGEICON; //not working with SHGetFileInfo
+	end;
 	SHGetSpecialFolderLocation(FindTCWindow, ItemType, PIDL);
-	if SHGetFileInfo(PChar(PIDL), 0, SFI, SizeOf(SFI), SHGFI_PIDL or SHGFI_SYSICONINDEX) <> 0 then Result := SFI.iIcon;
+	if SHGetFileInfo(PChar(PIDL), 0, SFI, SizeOf(SFI), SHGFI_PIDL or SHGFI_SYSICONINDEX or uFlags) <> 0 then Result := SFI.Hicon;
 end;
 
 function CombineIcons(FrontIcon, BackIcon: Hicon): Hicon;
