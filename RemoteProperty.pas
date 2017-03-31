@@ -109,7 +109,7 @@ begin
 		end;
 		TempPublicCloud.Free;
 	end;
-	//DownloadLinksMemo.Lines.Clear;
+	LogProc('Done');
 end;
 
 function TPropertyForm.FillRecursiveDownloadListing(const Path: WideString; Cloud: TCloudMailRu = nil): Boolean;
@@ -155,7 +155,7 @@ begin
 			WebLink.SelectAll;
 			ExtPropertiesPC.Visible := true;
 			DownloadLinksTS.TabVisible := true;
-//			UpdateDownloadListing;
+			//UpdateDownloadListing;
 		end else begin
 			MessageBoxW(self.Handle, PWideChar('Error while publishing file ' + Props.home + ', see main log'), 'File publishing error', MB_OK + MB_ICONERROR);
 		end;
@@ -346,7 +346,6 @@ begin
 	end else begin
 		AccessCB.checked := not(Props.WebLink = '');
 		WebLink.Enabled := AccessCB.checked;
-		if AccessCB.checked and self.AutoUpdateDownloadListing then UpdateDownloadListing;
 		if Props.type_ = TYPE_DIR then
 		begin
 			ExtPropertiesPC.Visible := true;
@@ -375,6 +374,7 @@ begin
 	AccessCB.Enabled := false; //блокируем во избежание повторных кликов
 	WebLink.Text := 'Wait for it...';
 	RefreshPublicShare(AccessCB.checked);
+	if AccessCB.checked and self.AutoUpdateDownloadListing then UpdateDownloadListing;
 
 	AccessCB.Enabled := true;
 end;
