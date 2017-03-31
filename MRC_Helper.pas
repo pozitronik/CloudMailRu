@@ -19,6 +19,8 @@ type
 	TRealPath = record
 		account: WideString;
 		path: WideString;
+		upDirItem: boolean; //path/../
+		trashDir: boolean;
 	end;
 
 function Implode(S: TStringList; Delimiter: WideString): WideString;
@@ -73,27 +75,28 @@ function ExtractRealPath(VirtualPath: WideString): TRealPath;
 var
 	List: TStringList;
 begin
+	Result.account := '';
+	Result.path := '';
+	Result.upDirItem := false;
+	Result.trashDir := false;
+
+	if VirtualPath = '' then exit; //root
+	VirtualPath := Copy(VirtualPath, 2, Length(VirtualPath) - 1);
+
 	List := TStringList.Create;
 	ExtractStrings(['\'], [], PWideChar(VirtualPath), List);
-	if List.Count < 2 then
-	begin //в виртуальной ФС это каталог первого уровня
-		Result.account := '';
-		Result.path := '';
-	end else begin
+
+	if (List.Count > 0) and (List.Strings[List.Count - 1] = '..') then Result.upDirItem := true;
+
+	if List.Count = 1 then
+	begin
+		Result.account := List.Strings[0];
+	end else if (List.Count > 1) then
+	begin
 		Result.account := List.Strings[0];
 		List.Delete(0);
-
 		Result.path := Implode(List, '\');
-		if Copy(Result.path, Length(Result.path) - 2, 3) = '\..' then Result.path := Copy(Result.path, 1, Length(Result.path) - 2);
-		if (Result.path = '') then ExtractRealPath.path := '\';
-		if (Result.path = '..') then
-		begin
-			Result.account := '';
-			Result.path := '';
-		end;
-
 	end;
-
 	List.Destroy;
 end;
 
@@ -101,7 +104,6 @@ function DateTimeToUnix(ConvDate: TDateTime): Integer;
 const
 	UnixStartDate: TDateTime = 25569.0;
 begin
-	//example: DateTimeToUnix(now);
 	Result := Round((ConvDate - UnixStartDate) * 86400);
 end;
 
