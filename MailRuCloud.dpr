@@ -1017,14 +1017,16 @@ begin
 
 	if GetPluginSettings(SettingsIniFilePath).IconsMode = IconsModeDisabled then exit(FS_ICON_USEDEFAULT);
 
+	if RealPath.trashDir and (RealPath.path = '') then //always draw system trash icon
+	begin
+		strpcopy(RemoteName, 'cloud_trash');
+		TheIcon := GetSystemIcon(GetPluginSettings(SettingsIniFilePath).IconsSize);
+		exit;
+	end;
+
 	if (RealPath.path = '') then //connection list
 	begin
-		if RealPath.trashDir then //always draw system trash icon
-		begin
-			strpcopy(RemoteName, 'cloud_trash');
-			TheIcon := GetSystemIcon(GetPluginSettings(SettingsIniFilePath).IconsSize);
-			exit;
-		end;
+
 		if (GetAccountSettingsFromIniFile(AccountsIniFilePath, copy(RemoteName, 2, StrLen(RemoteName) - 2)).public_account) then strpcopy(RemoteName, 'cloud_public')
 		else strpcopy(RemoteName, 'cloud');
 	end else begin //directories
