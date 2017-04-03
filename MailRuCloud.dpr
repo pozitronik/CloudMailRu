@@ -1043,14 +1043,14 @@ begin
 
 	if RealPath.upDirItem then exit; //do not overlap updir icon
 
-	if GetPluginSettings(SettingsIniFilePath).IconsMode = IconsModeDisabled then exit(FS_ICON_USEDEFAULT);
-
 	if RealPath.trashDir and (RealPath.path = '') then //always draw system trash icon
 	begin
 		strpcopy(RemoteName, 'cloud_trash');
 		TheIcon := GetSystemIcon(GetPluginSettings(SettingsIniFilePath).IconsSize);
 		exit;
 	end;
+
+	if GetPluginSettings(SettingsIniFilePath).IconsMode = IconsModeDisabled then exit(FS_ICON_USEDEFAULT);
 
 	if (RealPath.path = '') then //connection list
 	begin
