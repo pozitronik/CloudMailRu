@@ -73,7 +73,7 @@ type
 		SocketTimeoutEdit: TSpinEdit;
 		DownloadLinksEncodeCB: TCheckBox;
 		AutoUpdateDownloadListingCB: TCheckBox;
-    ShowTrashFoldersCB: TCheckBox;
+		ShowTrashFoldersCB: TCheckBox;
 		procedure FormShow(Sender: TObject);
 		procedure AccountsListClick(Sender: TObject);
 		procedure ApplyButtonClick(Sender: TObject);
@@ -100,9 +100,6 @@ type
 		SelectedAccount: WideString;
 
 	end;
-
-var
-	AccountsForm: TAccountsForm;
 
 implementation
 
@@ -222,7 +219,7 @@ begin
 	SetPluginSettingsValue(SettingsIniFilePath, 'DownloadLinksEncode', DownloadLinksEncodeCB.Checked);
 	SetPluginSettingsValue(SettingsIniFilePath, 'AutoUpdateDownloadListing', AutoUpdateDownloadListingCB.Checked);
 
-  SetPluginSettingsValue(SettingsIniFilePath, 'ShowTrashFolders', ShowTrashFoldersCB.Checked);
+	SetPluginSettingsValue(SettingsIniFilePath, 'ShowTrashFolders', ShowTrashFoldersCB.Checked);
 
 	if ProxyTCPwdMngrCB.Checked then //просим TC сохранить пароль
 	begin
@@ -342,8 +339,6 @@ begin
 		AccountsForm.DownloadLinksEncodeCB.Checked := GetPluginSettings(SettingsIniFilePath).DownloadLinksEncode;
 		AccountsForm.AutoUpdateDownloadListingCB.Checked := GetPluginSettings(SettingsIniFilePath).AutoUpdateDownloadListing;
 		AccountsForm.ShowTrashFoldersCB.Checked := GetPluginSettings(SettingsIniFilePath).ShowTrashFolders;
-
-
 
 		{global settings}
 		if RemoteName <> '' then AccountsForm.SelectedAccount := Copy(RemoteName, 2, length(RemoteName) - 1);
