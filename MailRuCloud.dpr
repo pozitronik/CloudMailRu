@@ -512,15 +512,16 @@ var
 Begin
 	RealPath := ExtractRealPath(RemoteName);
 	Result := FS_EXEC_OK;
-	if Verb = 'open' then
+
+	if RealPath.trashDir and ((Verb = 'open') or (Verb = 'properties') and (RealPath.path <> '')) then
 	begin
-		if RealPath.trashDir then
-		begin
-			CurrentItem:=FindListingItemByName(CurrentListing, RealPath.path);//todo: чекнуть поведение для одинаково именованных удалённых файлов
-			TDeletedPropertyForm.ShowProperties(MainWin, CurrentItem);
-		end
-		else exit(FS_EXEC_YOURSELF);
-	end else if Verb = 'properties' then
+		CurrentItem:=FindListingItemByName(CurrentListing, RealPath.path); //todo: чекнуть поведение для одинаково именованных удалённых файлов
+		TDeletedPropertyForm.ShowProperties(MainWin, CurrentItem);
+		exit;
+	end;
+
+	if Verb = 'open' then exit(FS_EXEC_YOURSELF)
+	else if Verb = 'properties' then
 	begin
 		if RealPath.path = '' then
 		begin
