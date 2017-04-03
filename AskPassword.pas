@@ -23,9 +23,6 @@ type
 		{ Public declarations }
 	end;
 
-var
-	AskPasswordForm: TAskPasswordForm;
-
 implementation
 
 {$R *.dfm}
