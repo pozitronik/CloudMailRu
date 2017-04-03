@@ -300,7 +300,6 @@ end;
 
 function GetFolderIcon(const size: Integer = IconSizeSmall): Hicon;
 var
-	SYSIL: thandle;
 	SFI: TSHFileInfo;
 	uFlags: uint;
 begin
@@ -323,6 +322,7 @@ var
 	PIDL: PItemIDList;
 	uFlags: uint;
 begin
+	Result := INVALID_HANDLE_VALUE;
 	uFlags := SHGFI_ICON;
 	case size of
 		IconSizeSmall: uFlags := SHGFI_ICON or SHGFI_SMALLICON;
