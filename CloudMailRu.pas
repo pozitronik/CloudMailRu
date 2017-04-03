@@ -1575,7 +1575,6 @@ function TCloudMailRu.trashbinRestore(Path: WideString; RestoreRevision: integer
 var
 	JSON: WideString;
 	OperationStatus, OperationResult: integer;
-	access_string: WideString;
 begin
 	Result := false;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
