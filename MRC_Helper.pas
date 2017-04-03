@@ -53,6 +53,7 @@ function LoadPluginIcon(const path: WideString; identifier: WideString): Hicon;
 function RetryAttemptsToString(Attempt: Integer): WideString;
 procedure ProcessMessages;
 function IncludeSlash(const Str: WideString): WideString;
+function FormatSize(Megabytes: Integer): WideString; //Форматируем размер в удобочитаемый вид
 
 implementation
 
@@ -105,7 +106,7 @@ begin
 	if ExtractFileExt(Result.account) = TrashPostfix then
 	begin
 		Result.trashDir := true;
-		Result.account:=copy (Result.account,1,length(Result.account)-length(TrashPostfix));
+		Result.account:=Copy(Result.account, 1, Length(Result.account) - Length(TrashPostfix));
 	end;
 
 end;
@@ -416,6 +417,13 @@ function IncludeSlash(const Str: WideString): WideString;
 begin
 	Result := Str;
 	if not(Result[High(Result)] = '/') then Result := Result + '/';
+end;
+
+function FormatSize(Megabytes: Integer): WideString; //Форматируем размер в удобочитаемый вид
+begin
+	if Megabytes > (1024 * 1023) then exit((Megabytes div (1024 * 1024)).ToString() + 'Tb');
+	if Megabytes > 1024 then exit((CurrToStrF((Megabytes / 1024), ffNumber, 2)) + 'Gb');
+	exit(Megabytes.ToString() + 'Mb');
 end;
 
 end.
