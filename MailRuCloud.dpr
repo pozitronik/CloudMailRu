@@ -610,13 +610,14 @@ end;
 function FsGetFileW(RemoteName, LocalName: pWideChar; CopyFlags: integer; RemoteInfo: pRemoteInfo): integer; stdcall; //Копирование файла из файловой системы плагина
 var
 	RealPath: TRealPath;
-
 	OverwriteLocalMode: integer;
 	RetryAttempts: integer;
 begin
 	Result := FS_FILE_NOTSUPPORTED;
 	If CheckFlag(FS_COPYFLAGS_RESUME, CopyFlags) then exit; {NEVER CALLED HERE}
 	RealPath := ExtractRealPath(RemoteName);
+	if RealPath.trashDir then exit;
+
 	MyProgressProc(PluginNum, RemoteName, LocalName, 0);
 
 	OverwriteLocalMode := GetPluginSettings(SettingsIniFilePath).OverwriteLocalMode;
@@ -692,7 +693,7 @@ var
 begin
 
 	RealPath := ExtractRealPath(RemoteName);
-	if RealPath.account = '' then exit(FS_FILE_NOTSUPPORTED);
+	if (RealPath.account = '') or RealPath.trashDir then exit(FS_FILE_NOTSUPPORTED);
 	MyProgressProc(PluginNum, LocalName, pWideChar(RealPath.path), 0);
 
 	if CheckFlag(FS_COPYFLAGS_RESUME, CopyFlags) then exit(FS_FILE_NOTSUPPORTED); //NOT SUPPORTED
@@ -747,7 +748,7 @@ var
 	getResult: integer;
 Begin
 	RealPath := ExtractRealPath(WideString(RemoteName));
-	if RealPath.account = '' then exit(false);
+	if (RealPath.account = '') or RealPath.trashDir then exit(false);
 	Result := ConnectionManager.get(RealPath.account, getResult).deleteFile(RealPath.path);
 End;
 
@@ -761,7 +762,7 @@ Begin
 	if SkipListRenMov then exit(false); //skip create directory if this flag set on
 
 	RealPath := ExtractRealPath(WideString(path));
-	if RealPath.account = '' then exit(false);
+	if (RealPath.account = '') or RealPath.trashDir then exit(false);
 	Result := ConnectionManager.get(RealPath.account, getResult).createDir(RealPath.path);
 end;
 
@@ -778,6 +779,7 @@ Begin
 		exit(false);
 	end;
 	RealPath := ExtractRealPath(WideString(RemoteName));
+	if RealPath.trashDir then exit(false);
 	Result := ConnectionManager.get(RealPath.account, getResult).removeDir(RealPath.path);
 end;
 
@@ -861,6 +863,8 @@ Begin
 	OldRealPath := ExtractRealPath(WideString(OldName));
 	NewRealPath := ExtractRealPath(WideString(NewName));
 
+	if OldRealPath.trashDir or NewRealPath.trashDir then exit(FS_FILE_NOTSUPPORTED);
+
 	OldCloud := ConnectionManager.get(OldRealPath.account, getResult);
 	NewCloud := ConnectionManager.get(NewRealPath.account, getResult);
 
@@ -927,6 +931,7 @@ begin
 
 end;
 
+//TODO: add values for deleted items
 function FsContentGetValueW(FileName: pWideChar; FieldIndex: integer; UnitIndex: integer; FieldValue: Pointer; maxlen: integer; Flags: integer): integer; stdcall;
 var
 	Item: TCloudMailRuDirListingItem;
