@@ -3,7 +3,7 @@
 {$R *.dres}
 
 uses
-	SysUtils, System.Generics.Collections, DateUtils, windows, Classes, PLUGIN_TYPES, IdSSLOpenSSLHeaders, messages, inifiles, Vcl.controls, CloudMailRu in 'CloudMailRu.pas', MRC_Helper in 'MRC_Helper.pas', Accounts in 'Accounts.pas'{AccountsForm}, RemoteProperty in 'RemoteProperty.pas'{PropertyForm}, Descriptions in 'Descriptions.pas', ConnectionManager in 'ConnectionManager.pas', Settings in 'Settings.pas', ANSIFunctions in 'ANSIFunctions.pas';
+	SysUtils, System.Generics.Collections, DateUtils, windows, Classes, PLUGIN_TYPES, IdSSLOpenSSLHeaders, messages, inifiles, Vcl.controls, CloudMailRu in 'CloudMailRu.pas', MRC_Helper in 'MRC_Helper.pas', Accounts in 'Accounts.pas'{AccountsForm}, RemoteProperty in 'RemoteProperty.pas'{PropertyForm}, Descriptions in 'Descriptions.pas', ConnectionManager in 'ConnectionManager.pas', Settings in 'Settings.pas', ANSIFunctions in 'ANSIFunctions.pas', DeletedProperty in 'DeletedProperty.pas'{DeletedPropertyForm};
 
 {$IFDEF WIN64}
 {$E wfx64}
@@ -77,12 +77,13 @@ begin
 	else Result.nFileSizeHigh := 0;
 	Result.nFileSizeLow := DirListing.size;
 
-	if (DirListing.deleted_from <> '') then
-	begin
-		Delete(DirListing.deleted_from, 1, 1);
-		strpcopy(Result.cFileName, DirListing.deleted_from + DirListing.name)
-	end
-	else strpcopy(Result.cFileName, DirListing.name);
+	{if (DirListing.deleted_from <> '') then
+	 begin
+	 Delete(DirListing.deleted_from, 1, 1);
+	 strpcopy(Result.cFileName, DirListing.deleted_from + DirListing.name)
+	 end
+	 else}
+	strpcopy(Result.cFileName, DirListing.name);
 end;
 
 function FindData_emptyDir(DirName: WideString = '.'): tWIN32FINDDATAW;
@@ -513,7 +514,12 @@ Begin
 	Result := FS_EXEC_OK;
 	if Verb = 'open' then
 	begin
-		exit(FS_EXEC_YOURSELF);
+		if RealPath.trashDir then
+		begin
+			CurrentItem:=FindListingItemByName(CurrentListing, RealPath.path);//todo: чекнуть поведение для одинаково именованных удалённых файлов
+			TDeletedPropertyForm.ShowProperties(MainWin, CurrentItem);
+		end
+		else exit(FS_EXEC_YOURSELF);
 	end else if Verb = 'properties' then
 	begin
 		if RealPath.path = '' then
@@ -604,10 +610,10 @@ begin
 			OverwriteLocalModeAsk: exit(FS_FILE_EXISTS); //TC will ask user
 			OverwriteLocalModeIgnore:
 				begin
-					MyLogProc(PluginNum, MSGTYPE_DETAILS, pWideChar('Local file ' + LocalName + ' exists, ignored'));
+					MyLogProc(PluginNum, msgtype_details, pWideChar('Local file ' + LocalName + ' exists, ignored'));
 					exit(FS_FILE_OK);
 				end;
-			OverwriteLocalModeOverwrite: MyLogProc(PluginNum, MSGTYPE_DETAILS, pWideChar('Local file ' + LocalName + ' exists, and will be overwritten'));
+			OverwriteLocalModeOverwrite: MyLogProc(PluginNum, msgtype_details, pWideChar('Local file ' + LocalName + ' exists, and will be overwritten'));
 		end;
 	end;
 
@@ -636,7 +642,7 @@ begin
 				while (ThreadRetryCountDownload.Items[GetCurrentThreadID()] <> RetryAttempts) and (not(Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
 				begin
 					ThreadRetryCountDownload.Items[GetCurrentThreadID()] := ThreadRetryCountDownload.Items[GetCurrentThreadID()] + 1;
-					MyLogProc(PluginNum, MSGTYPE_DETAILS, pWideChar('Error downloading file ' + RemoteName + ' Retry attempt ' + ThreadRetryCountDownload.Items[GetCurrentThreadID()].ToString + RetryAttemptsToString(RetryAttempts)));
+					MyLogProc(PluginNum, msgtype_details, pWideChar('Error downloading file ' + RemoteName + ' Retry attempt ' + ThreadRetryCountDownload.Items[GetCurrentThreadID()].ToString + RetryAttemptsToString(RetryAttempts)));
 					Result := GetRemoteFile(RealPath, LocalName, RemoteName, CopyFlags);
 					if MyProgressProc(PluginNum, pWideChar(LocalName), RemoteName, 0) = 1 then Result := FS_FILE_USERABORT;
 					if (Result in [FS_FILE_OK, FS_FILE_USERABORT]) then ThreadRetryCountDownload.Items[GetCurrentThreadID()] := 0; //сбросим счётчик попыток
@@ -707,7 +713,7 @@ begin
 				while (ThreadRetryCountUpload.Items[GetCurrentThreadID()] <> RetryAttempts) and (not(Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
 				begin
 					ThreadRetryCountUpload.Items[GetCurrentThreadID()] := ThreadRetryCountUpload.Items[GetCurrentThreadID()] + 1;
-					MyLogProc(PluginNum, MSGTYPE_DETAILS, pWideChar('Error uploading file ' + LocalName + ' Retry attempt ' + ThreadRetryCountUpload.Items[GetCurrentThreadID()].ToString + RetryAttemptsToString(RetryAttempts)));
+					MyLogProc(PluginNum, msgtype_details, pWideChar('Error uploading file ' + LocalName + ' Retry attempt ' + ThreadRetryCountUpload.Items[GetCurrentThreadID()].ToString + RetryAttemptsToString(RetryAttempts)));
 					Result := PutRemoteFile(RealPath, LocalName, RemoteName, CopyFlags);
 					if MyProgressProc(PluginNum, pWideChar(LocalName), RemoteName, 0) = 1 then Result := FS_FILE_USERABORT;
 					if (Result in [FS_FILE_OK, FS_FILE_USERABORT]) then ThreadRetryCountUpload.Items[GetCurrentThreadID()] := 0; //сбросим счётчик попыток
@@ -812,7 +818,7 @@ begin
 						while (ThreadRetryCountRenMov.Items[GetCurrentThreadID()] <> RetryAttempts) and (not(Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
 						begin
 							ThreadRetryCountRenMov.Items[GetCurrentThreadID()] := ThreadRetryCountRenMov.Items[GetCurrentThreadID()] + 1;
-							MyLogProc(PluginNum, MSGTYPE_DETAILS, pWideChar('File publish error: ' + TCloudMailRu.ErrorCodeText(Result) + ' Retry attempt ' + ThreadRetryCountRenMov.Items[GetCurrentThreadID()].ToString + RetryAttemptsToString(RetryAttempts)));
+							MyLogProc(PluginNum, msgtype_details, pWideChar('File publish error: ' + TCloudMailRu.ErrorCodeText(Result) + ' Retry attempt ' + ThreadRetryCountRenMov.Items[GetCurrentThreadID()].ToString + RetryAttemptsToString(RetryAttempts)));
 							Result := cloneWeblink(NewCloud, OldCloud, NewRealPath.path, CurrentItem, NeedUnpublish);
 							if MyProgressProc(PluginNum, nil, nil, 0) = 1 then Result := FS_FILE_USERABORT;
 							if (Result in [FS_FILE_OK, FS_FILE_USERABORT]) then ThreadRetryCountRenMov.Items[GetCurrentThreadID()] := 0; //сбросим счётчик попыток
