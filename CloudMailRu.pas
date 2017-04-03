@@ -583,8 +583,11 @@ begin
 					if Assigned(Obj.values['tree']) then tree := Obj.values['tree'].Value;
 					if Assigned(Obj.values['grev']) then grev := Obj.values['grev'].Value.ToInteger;
 					if Assigned(Obj.values['rev']) then rev := Obj.values['rev'].Value.ToInteger;
-					if Assigned(Obj.values['count']) then folders_count := (Obj.values['count'] as TJSONObject).values['folders'].Value.ToInteger();
-					if Assigned(Obj.values['count']) then files_count := (Obj.values['count'] as TJSONObject).values['files'].Value.ToInteger();
+					if Assigned(Obj.values['count']) then
+					begin
+						folders_count := (Obj.values['count'] as TJSONObject).values['folders'].Value.ToInteger();
+						files_count := (Obj.values['count'] as TJSONObject).values['files'].Value.ToInteger();
+					end;
 					mtime := 0;
 				end;
 			end;
