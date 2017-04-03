@@ -12,7 +12,6 @@ type
 		DelAtLB: TLabel;
 		DelByLB: TLabel;
 		DelSizeLB: TLabel;
-		DeleteBTN: TButton;
 		RestoreBTN: TButton;
 		CancelBTN: TButton;
 		NameLB: TLabel;

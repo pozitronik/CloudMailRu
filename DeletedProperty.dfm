@@ -4,7 +4,7 @@ object DeletedPropertyForm: TDeletedPropertyForm
   BorderStyle = bsDialog
   Caption = 'DeletedPropertyForm'
   ClientHeight = 144
-  ClientWidth = 645
+  ClientWidth = 522
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -85,31 +85,22 @@ object DeletedPropertyForm: TDeletedPropertyForm
     Height = 13
     Caption = 'Original size:'
   end
-  object DeleteBTN: TButton
+  object RestoreBTN: TButton
     Left = 8
     Top = 111
     Width = 75
     Height = 25
-    Caption = 'Delete'
+    Caption = 'Restore'
     ModalResult = 6
     TabOrder = 0
   end
-  object RestoreBTN: TButton
-    Left = 97
-    Top = 111
-    Width = 75
-    Height = 25
-    Caption = 'Restore'
-    ModalResult = 7
-    TabOrder = 1
-  end
   object CancelBTN: TButton
-    Left = 562
+    Left = 439
     Top = 111
     Width = 75
     Height = 25
     Caption = 'Cancel'
     ModalResult = 2
-    TabOrder = 2
+    TabOrder = 1
   end
 end
