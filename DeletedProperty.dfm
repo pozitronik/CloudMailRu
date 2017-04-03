@@ -16,39 +16,36 @@ object DeletedPropertyForm: TDeletedPropertyForm
   PixelsPerInch = 96
   TextHeight = 13
   object DelNameLB: TLabel
-    Left = 80
+    Left = 83
     Top = 8
-    Width = 53
+    Width = 431
     Height = 13
-    Caption = 'DelNameLB'
+    AutoSize = False
+    EllipsisPosition = epPathEllipsis
   end
   object DelFromLB: TLabel
-    Left = 80
+    Left = 83
     Top = 27
-    Width = 50
+    Width = 431
     Height = 13
-    Caption = 'DelFromLB'
+    AutoSize = False
+    EllipsisPosition = epPathEllipsis
   end
   object DelAtLB: TLabel
-    Left = 80
+    Left = 83
     Top = 46
-    Width = 37
+    Width = 431
     Height = 13
-    Caption = 'DelAtLB'
+    AutoSize = False
+    EllipsisPosition = epPathEllipsis
   end
   object DelByLB: TLabel
-    Left = 80
+    Left = 83
     Top = 65
-    Width = 38
+    Width = 431
     Height = 13
-    Caption = 'DelByLB'
-  end
-  object DelSizeLB: TLabel
-    Left = 80
-    Top = 84
-    Width = 45
-    Height = 13
-    Caption = 'DelSizeLB'
+    AutoSize = False
+    EllipsisPosition = epPathEllipsis
   end
   object NameLB: TLabel
     Left = 8
@@ -81,9 +78,17 @@ object DeletedPropertyForm: TDeletedPropertyForm
   object SizeLB: TLabel
     Left = 8
     Top = 84
-    Width = 61
+    Width = 69
     Height = 13
-    Caption = 'Original size:'
+    Caption = 'Summary size:'
+  end
+  object DelSizeLB: TLabel
+    Left = 83
+    Top = 84
+    Width = 431
+    Height = 13
+    AutoSize = False
+    EllipsisPosition = epPathEllipsis
   end
   object RestoreBTN: TButton
     Left = 8
@@ -102,5 +107,23 @@ object DeletedPropertyForm: TDeletedPropertyForm
     Caption = 'Cancel'
     ModalResult = 2
     TabOrder = 1
+  end
+  object RestoreAllBTN: TButton
+    Left = 89
+    Top = 111
+    Width = 75
+    Height = 25
+    Caption = 'Restore all'
+    ModalResult = 14
+    TabOrder = 2
+  end
+  object EmptyBTN: TButton
+    Left = 170
+    Top = 111
+    Width = 75
+    Height = 25
+    Caption = 'Clear trash'
+    ModalResult = 7
+    TabOrder = 3
   end
 end

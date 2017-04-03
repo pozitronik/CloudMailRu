@@ -3,7 +3,7 @@ unit DeletedProperty;
 interface
 
 uses
-	CloudMailRu, Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls;
+	MRC_Helper, CloudMailRu, Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls;
 
 type
 	TDeletedPropertyForm = class(TForm)
@@ -11,7 +11,6 @@ type
 		DelFromLB: TLabel;
 		DelAtLB: TLabel;
 		DelByLB: TLabel;
-		DelSizeLB: TLabel;
 		RestoreBTN: TButton;
 		CancelBTN: TButton;
 		NameLB: TLabel;
@@ -19,11 +18,14 @@ type
 		AtLB: TLabel;
 		ByLB: TLabel;
 		SizeLB: TLabel;
+		RestoreAllBTN: TButton;
+		EmptyBTN: TButton;
+		DelSizeLB: TLabel;
 	private
 		{Private declarations}
 	public
 		{Public declarations}
-		class function ShowProperties(parentWindow: HWND; Item: TCloudMailRuDirListingItem): integer;
+		class function ShowProperties(parentWindow: HWND; Items: TCloudMailRuDirListing; TrashDir: boolean = false; AccountName: WideString = ''): integer;
 	end;
 
 implementation
@@ -31,20 +33,67 @@ implementation
 {$R *.dfm}
 {TDeletedPropertyForm}
 
-class function TDeletedPropertyForm.ShowProperties(parentWindow: HWND; Item: TCloudMailRuDirListingItem): integer;
+class function TDeletedPropertyForm.ShowProperties(parentWindow: HWND; Items: TCloudMailRuDirListing; TrashDir: boolean = false; AccountName: WideString = ''): integer;
 var
 	DeletedPropertyForm: TDeletedPropertyForm;
+	FormCaption, NameCaption, FromCaption, AtCaption, ByCaption, SizeCaption: WideString;
+	function summary_size(Items: TCloudMailRuDirListing): integer;
+	var
+		Item: TCloudMailRuDirListingItem;
+	begin
+		for Item in Items do Result:=Result + Item.size;
+	end;
+
 begin
 	try
 		DeletedPropertyForm:=TDeletedPropertyForm.Create(nil);
 		DeletedPropertyForm.parentWindow := parentWindow;
-		DeletedPropertyForm.Caption := 'Deleted item property: ' + Item.name;
-		DeletedPropertyForm.DelNameLB.Caption := Item.name;
-		DeletedPropertyForm.DelFromLB.Caption := Item.deleted_from;
-		DeletedPropertyForm.DelAtLB.Caption := Item.deleted_at.ToString; //todo from unixtimestamp ?
-		DeletedPropertyForm.DelByLB.Caption := Item.deleted_by.ToString; //todo check api user to name
-		DeletedPropertyForm.DelSizeLB.Caption := Item.size.ToString;
-		result:=DeletedPropertyForm.ShowModal;
+
+		if Length(Items) = 0 then
+		begin
+			NameCaption := 'Empty';
+			FormCaption := AccountName + ' trash';
+			DeletedPropertyForm.RestoreBTN.Enabled:=false;
+			DeletedPropertyForm.RestoreAllBTN.Enabled:=false;
+			DeletedPropertyForm.EmptyBTN.Enabled:=false;
+		end else if Length(Items) = 1 then
+		begin
+			NameCaption := Items[0].name;
+			FromCaption := Items[0].deleted_from;
+			AtCaption := Items[0].deleted_at.ToString; //todo from unixtimestamp ?
+			ByCaption := Items[0].deleted_by.ToString; //todo check api user to name
+			SizeCaption := FormatSize(Items[0].size);
+			FormCaption := 'Deleted item: ' + NameCaption;
+			DeletedPropertyForm.RestoreAllBTN.Enabled:=false;
+		end else begin
+			NameCaption := '<Multiple items>';
+			FromCaption := '-';
+			AtCaption :='-';
+			ByCaption := '-';
+			SizeCaption := FormatSize(summary_size(Items));
+			FormCaption := 'Multiple deleted items';
+		end;
+
+		if TrashDir then //свойства для самой корзины, даём выбор Очистить/Восстановить все/Отмена
+		begin
+			FormCaption := AccountName + '.trash';
+			NameCaption := FormCaption;
+			FromCaption := '-';
+			AtCaption :='-';
+			ByCaption := '-';
+			DeletedPropertyForm.RestoreBTN.Enabled:=false;
+			DeletedPropertyForm.RestoreAllBTN.Enabled:=true;
+		end else begin //свойства для пачки файлов, даём выбор Восстановить/Отмена
+
+		end;
+
+		DeletedPropertyForm.Caption := FormCaption;
+		DeletedPropertyForm.DelNameLB.Caption := NameCaption;
+		DeletedPropertyForm.DelFromLB.Caption := FromCaption;
+		DeletedPropertyForm.DelAtLB.Caption := AtCaption;
+		DeletedPropertyForm.DelByLB.Caption := ByCaption;
+		DeletedPropertyForm.DelSizeLB.Caption := SizeCaption;
+		Result:=DeletedPropertyForm.ShowModal;
 	finally
 		FreeAndNil(DeletedPropertyForm);
 	end;
