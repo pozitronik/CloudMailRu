@@ -832,7 +832,7 @@ begin
 			CLOUD_OPERATION_OK: Result := self.fromJSON_DirListing(JSON, DirListing);
 			else
 				begin
-					Log(MSGTYPE_IMPORTANTERROR, 'Shared links listing error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString()); //?? WUT
+					Log(MSGTYPE_IMPORTANTERROR, 'Shared links listing error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
 					Result := false;
 				end;
 		end;
@@ -856,7 +856,7 @@ begin
 			CLOUD_OPERATION_OK: Result := self.fromJSON_IncomingInviteListing(JSON, IncomingListing);
 			else
 				begin
-					Log(MSGTYPE_IMPORTANTERROR, 'Incoming requests listing error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString()); //?? WUT
+					Log(MSGTYPE_IMPORTANTERROR, 'Incoming requests listing error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
 					Result := false;
 				end;
 		end;
@@ -880,7 +880,7 @@ begin
 			CLOUD_OPERATION_OK: Result := self.fromJSON_DirListing(JSON, DirListing);
 			else
 				begin
-					Log(MSGTYPE_IMPORTANTERROR, 'Incoming requests listing error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString()); //?? WUT
+					Log(MSGTYPE_IMPORTANTERROR, 'Incoming requests listing error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
 					Result := false;
 				end;
 		end;
