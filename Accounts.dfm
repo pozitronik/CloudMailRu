@@ -158,13 +158,11 @@ object AccountsForm: TAccountsForm
     Top = 0
     Width = 491
     Height = 475
-    ActivePage = GlobalTab
+    ActivePage = AccountsTab
     Align = alClient
     TabOrder = 0
-    ExplicitHeight = 441
     object AccountsTab: TTabSheet
       Caption = 'Accounts'
-      ExplicitHeight = 413
       DesignSize = (
         483
         447)
@@ -184,7 +182,6 @@ object AccountsForm: TAccountsForm
         Anchors = [akLeft, akTop, akBottom]
         Caption = 'Accounts'
         TabOrder = 0
-        ExplicitHeight = 414
         DesignSize = (
           225
           448)
@@ -200,12 +197,11 @@ object AccountsForm: TAccountsForm
           TabOrder = 0
           OnClick = AccountsListClick
           OnKeyUp = AccountsListKeyUp
-          ExplicitHeight = 394
         end
       end
       object ApplyButton: TButton
         Left = 225
-        Top = 347
+        Top = 415
         Width = 75
         Height = 27
         Caption = 'Add/Apply'
@@ -214,7 +210,7 @@ object AccountsForm: TAccountsForm
       end
       object DeleteButton: TButton
         Left = 405
-        Top = 347
+        Top = 417
         Width = 75
         Height = 27
         Caption = 'Delete'
@@ -350,7 +346,6 @@ object AccountsForm: TAccountsForm
     object GlobalTab: TTabSheet
       Caption = 'Global settings'
       ImageIndex = 1
-      ExplicitHeight = 413
       object CloudMaxFileSizeLabelBytes: TLabel
         Left = 292
         Top = 136
