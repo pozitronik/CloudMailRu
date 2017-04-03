@@ -513,15 +513,26 @@ Begin
 	RealPath := ExtractRealPath(RemoteName);
 	Result := FS_EXEC_OK;
 
-	if RealPath.trashDir and ((Verb = 'open') or (Verb = 'properties') and (RealPath.path <> '')) then
+	if RealPath.trashDir and ((Verb = 'open') or (Verb = 'properties')) then
 	begin
-		CurrentItem:=FindListingItemByName(CurrentListing, RealPath.path); //todo: чекнуть поведение для одинаково именованных удалённых файлов
-		if (TDeletedPropertyForm.ShowProperties(MainWin, CurrentItem) = mrYes) then
+		if RealPath.path = '' then //main trashbin folder properties
 		begin
-			if ConnectionManager.get(RealPath.account, getResult).trashbinRestore(CurrentItem.deleted_from + CurrentItem.name, CurrentItem.rev) then exit//TC do not refresh current panel anyway, so we should do it manually
-			else exit(FS_EXEC_ERROR);
-		end
-		else exit(FS_EXEC_ERROR);
+			Cloud:=ConnectionManager.get(RealPath.account, getResult);
+			if not Cloud.getTrashbinListing(CurrentListing) then exit(FS_EXEC_ERROR);
+			case (TDeletedPropertyForm.ShowProperties(MainWin, CurrentListing, true, RealPath.account)) of
+				mrNo: if not Cloud.trashbinEmpty then exit(FS_EXEC_ERROR);
+				mrYesToAll: for CurrentItem in CurrentListing do
+						if not Cloud.trashbinRestore(CurrentItem.deleted_from + CurrentItem.name, CurrentItem.rev) then exit(FS_EXEC_ERROR);
+			end;
+			exit;
+		end else begin //one item in trashbin
+			CurrentItem:=FindListingItemByName(CurrentListing, RealPath.path); //todo: чекнуть поведение для одинаково именованных удалённых файлов
+			if (TDeletedPropertyForm.ShowProperties(MainWin, [CurrentItem]) = mrYes) then
+			begin
+				if not ConnectionManager.get(RealPath.account, getResult).trashbinRestore(CurrentItem.deleted_from + CurrentItem.name, CurrentItem.rev) then exit(FS_EXEC_ERROR); //TC do not refresh current panel anyway, so we should do it manually
+			end;
+			exit;
+		end;
 	end;
 
 	if Verb = 'open' then exit(FS_EXEC_YOURSELF)
@@ -567,11 +578,11 @@ Begin
 				if GetPluginSettings(SettingsIniFilePath).LogUserSpace then ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
 			end
 			else Result := FS_EXEC_ERROR;
-		end else if command = 'links' then
-		begin
-			Cloud := ConnectionManager.get(RealPath.account, getResult);
-			Cloud.getTrashbinListing(CurrentListing, false);
-		end;
+		end; {else if command = 'links' then
+		 begin
+		 Cloud := ConnectionManager.get(RealPath.account, getResult);
+		 Cloud.getTrashbinListing(CurrentListing, false);
+		 end;}
 
 	end;
 End;
