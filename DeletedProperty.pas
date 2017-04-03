@@ -41,7 +41,8 @@ var
 	var
 		Item: TCloudMailRuDirListingItem;
 	begin
-		for Item in Items do Result:=Result + Item.size;
+		result:=0;
+		for Item in Items do result:=result + Item.size;
 	end;
 
 begin
@@ -62,7 +63,7 @@ begin
 			FromCaption := Items[0].deleted_from;
 			AtCaption := Items[0].deleted_at.ToString; //todo from unixtimestamp ?
 			ByCaption := Items[0].deleted_by.ToString; //todo check api user to name
-			SizeCaption := FormatSize(Items[0].size);
+			SizeCaption := FormatSize(Items[0].size, TYPE_BYTES);
 			FormCaption := 'Deleted item: ' + NameCaption;
 			DeletedPropertyForm.RestoreAllBTN.Enabled:=false;
 		end else begin
@@ -70,7 +71,7 @@ begin
 			FromCaption := '-';
 			AtCaption :='-';
 			ByCaption := '-';
-			SizeCaption := FormatSize(summary_size(Items));
+			SizeCaption := FormatSize(summary_size(Items), TYPE_BYTES);
 			FormCaption := 'Multiple deleted items';
 		end;
 
@@ -93,7 +94,7 @@ begin
 		DeletedPropertyForm.DelAtLB.Caption := AtCaption;
 		DeletedPropertyForm.DelByLB.Caption := ByCaption;
 		DeletedPropertyForm.DelSizeLB.Caption := SizeCaption;
-		Result:=DeletedPropertyForm.ShowModal;
+		result:=DeletedPropertyForm.ShowModal;
 	finally
 		FreeAndNil(DeletedPropertyForm);
 	end;
