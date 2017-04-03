@@ -516,8 +516,12 @@ Begin
 	if RealPath.trashDir and ((Verb = 'open') or (Verb = 'properties') and (RealPath.path <> '')) then
 	begin
 		CurrentItem:=FindListingItemByName(CurrentListing, RealPath.path); //todo: чекнуть поведение для одинаково именованных удалённых файлов
-		TDeletedPropertyForm.ShowProperties(MainWin, CurrentItem);
-		exit;
+		if (TDeletedPropertyForm.ShowProperties(MainWin, CurrentItem) = mrYes) then
+		begin
+			if ConnectionManager.get(RealPath.account, getResult).trashbinRestore(CurrentItem.deleted_from + CurrentItem.name, CurrentItem.rev) then exit//TC do not refresh current panel anyway, so we should do it manually
+			else exit(FS_EXEC_ERROR);
+		end
+		else exit(FS_EXEC_ERROR);
 	end;
 
 	if Verb = 'open' then exit(FS_EXEC_YOURSELF)
