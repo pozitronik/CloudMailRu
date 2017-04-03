@@ -17,6 +17,10 @@ const
 
 	TrashPostfix = '.trash';
 
+	TYPE_BYTES = 0;
+	TYPE_KYLOBYTES = 1;
+	TYPE_MEGABYTES = 2;
+
 type
 	TRealPath = record
 		account: WideString;
@@ -53,7 +57,7 @@ function LoadPluginIcon(const path: WideString; identifier: WideString): Hicon;
 function RetryAttemptsToString(Attempt: Integer): WideString;
 procedure ProcessMessages;
 function IncludeSlash(const Str: WideString): WideString;
-function FormatSize(Megabytes: Integer): WideString; //Форматируем размер в удобочитаемый вид
+function FormatSize(size: Int64; SizeType: Integer = TYPE_MEGABYTES): WideString; //Форматируем размер в удобочитаемый вид
 
 implementation
 
@@ -419,11 +423,19 @@ begin
 	if not(Result[High(Result)] = '/') then Result := Result + '/';
 end;
 
-function FormatSize(Megabytes: Integer): WideString; //Форматируем размер в удобочитаемый вид
+function FormatSize(size: Int64; SizeType: Integer = TYPE_MEGABYTES): WideString; //Форматируем размер в удобочитаемый вид
+const
+	postfixes: array [0 .. 6] of string = ('b', 'kb', 'Mb', 'Gb', 'Tb', 'Pb', 'Eb');
+var
+	iteration: Integer;
 begin
-	if Megabytes > (1024 * 1023) then exit((Megabytes div (1024 * 1024)).ToString() + 'Tb');
-	if Megabytes > 1024 then exit((CurrToStrF((Megabytes / 1024), ffNumber, 2)) + 'Gb');
-	exit(Megabytes.ToString() + 'Mb');
+	iteration :=0;
+	while size > 1024 do
+	begin
+		iteration := iteration + 1;
+		size := size div 1024;
+	end;
+	exit(size.ToString() + ' ' + postfixes[iteration + SizeType]);
 end;
 
 end.
