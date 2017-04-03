@@ -34,6 +34,7 @@ const
 	API_FOLDER_SHARED_LINKS = 'https://cloud.mail.ru/api/v2/folder/shared/links';
 	API_FOLDER_SHARED_INCOMING = 'https://cloud.mail.ru/api/v2/folder/shared/incoming';
 	API_TRASHBIN = 'https://cloud.mail.ru/api/v2/trashbin';
+	API_TRASHBIN_RESTORE = 'https://cloud.mail.ru/api/v2/trashbin/restore';
 	API_AB_CONTACTS = ''; //todo
 	API_DISPATCHER = 'https://cloud.mail.ru/api/v2/dispatcher/';
 	API_USER_SPACE = 'https://cloud.mail.ru/api/v2/user/space';
@@ -253,6 +254,7 @@ type
 		function cloneWeblink(Path, link: WideString; ConflictMode: WideString = CLOUD_CONFLICT_RENAME): integer; //клонировать публичную ссылку в текущий каталог
 		function getShareInfo(Path: WideString; var InviteListing: TCloudMailRuInviteInfoListing): Boolean;
 		function shareFolder(Path, email: WideString; access: integer): Boolean;
+		function trashbinRestore(Path: WideString; RestoreRevision: integer; ConflictMode: WideString = CLOUD_CONFLICT_RENAME): Boolean;
 		{OTHER ROUTINES}
 		function getDescriptionFile(remotePath, localCopy: WideString): integer; //Если в каталоге remotePath есть descript.ion - скопировать его в файл localcopy
 		procedure logUserSpaceInfo();
@@ -574,6 +576,8 @@ begin
 				if Assigned(Obj.values['deleted_at']) then deleted_at := Obj.values['deleted_at'].Value.ToInteger;
 				if Assigned(Obj.values['deleted_from']) then deleted_from := Obj.values['deleted_from'].Value;
 				if Assigned(Obj.values['deleted_by']) then deleted_by := Obj.values['deleted_by'].Value.ToInteger;
+				if Assigned(Obj.values['grev']) then grev := Obj.values['grev'].Value.ToInteger;
+				if Assigned(Obj.values['rev']) then rev := Obj.values['rev'].Value.ToInteger;
 				if (type_ = TYPE_FILE) then
 				begin
 					if Assigned(Obj.values['mtime']) then mtime := Obj.values['mtime'].Value.ToInt64;
@@ -581,8 +585,7 @@ begin
 					if Assigned(Obj.values['hash']) then hash := Obj.values['hash'].Value;
 				end else begin
 					if Assigned(Obj.values['tree']) then tree := Obj.values['tree'].Value;
-					if Assigned(Obj.values['grev']) then grev := Obj.values['grev'].Value.ToInteger;
-					if Assigned(Obj.values['rev']) then rev := Obj.values['rev'].Value.ToInteger;
+
 					if Assigned(Obj.values['count']) then
 					begin
 						folders_count := (Obj.values['count'] as TJSONObject).values['folders'].Value.ToInteger();
@@ -1569,6 +1572,32 @@ begin
 		Result := OperationResult = CLOUD_OPERATION_OK;
 		if not Result then Log(MSGTYPE_IMPORTANTERROR, 'Invite member error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
 
+	end;
+end;
+
+function TCloudMailRu.trashbinRestore(Path: WideString; RestoreRevision: integer; ConflictMode: WideString): Boolean;
+var
+	JSON: WideString;
+	OperationStatus, OperationResult: integer;
+	access_string: WideString;
+begin
+	Result := false;
+	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
+	if self.public_account then exit;
+
+	Result := self.HTTPPost(API_TRASHBIN_RESTORE, 'path=/' + PathToUrl(Path) + self.united_params + '&conflict=' + ConflictMode, JSON);
+
+	if Result then
+	begin
+		OperationResult := self.fromJSON_OperationResult(JSON, OperationStatus);
+		case OperationResult of
+			CLOUD_OPERATION_OK: Result:=false;
+			else
+				begin
+					Result := false;
+					Log(MSGTYPE_IMPORTANTERROR, 'File restore error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
+				end;
+		end;
 	end;
 end;
 
