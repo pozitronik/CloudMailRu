@@ -560,7 +560,7 @@ var
 	J: integer;
 	A: TJSONArray;
 begin
-	Result := false;
+	Result := true;
 	try
 		A := ((TJSONObject.ParseJSONValue(JSON) as TJSONObject).values['body'] as TJSONObject).values['list'] as TJSONArray;
 		SetLength(CloudMailRuDirListing, A.count);
