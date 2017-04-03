@@ -1591,7 +1591,7 @@ begin
 	begin
 		OperationResult := self.fromJSON_OperationResult(JSON, OperationStatus);
 		case OperationResult of
-			CLOUD_OPERATION_OK: Result:=false;
+			CLOUD_OPERATION_OK: Result := true;
 			else
 				begin
 					Result := false;
