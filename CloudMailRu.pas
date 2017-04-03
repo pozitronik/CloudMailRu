@@ -35,6 +35,7 @@ const
 	API_FOLDER_SHARED_INCOMING = 'https://cloud.mail.ru/api/v2/folder/shared/incoming';
 	API_TRASHBIN = 'https://cloud.mail.ru/api/v2/trashbin';
 	API_TRASHBIN_RESTORE = 'https://cloud.mail.ru/api/v2/trashbin/restore';
+	API_TRASHBIN_EMPTY = 'https://cloud.mail.ru/api/v2/trashbin/empty';
 	API_AB_CONTACTS = ''; //todo
 	API_DISPATCHER = 'https://cloud.mail.ru/api/v2/dispatcher/';
 	API_USER_SPACE = 'https://cloud.mail.ru/api/v2/user/space';
@@ -255,6 +256,7 @@ type
 		function getShareInfo(Path: WideString; var InviteListing: TCloudMailRuInviteInfoListing): Boolean;
 		function shareFolder(Path, email: WideString; access: integer): Boolean;
 		function trashbinRestore(Path: WideString; RestoreRevision: integer; ConflictMode: WideString = CLOUD_CONFLICT_RENAME): Boolean;
+		function trashbinEmpty(): Boolean;
 		{OTHER ROUTINES}
 		function getDescriptionFile(remotePath, localCopy: WideString): integer; //Если в каталоге remotePath есть descript.ion - скопировать его в файл localcopy
 		procedure logUserSpaceInfo();
@@ -1447,12 +1449,6 @@ procedure TCloudMailRu.logUserSpaceInfo;
 var
 	US: TCloudMailRuSpaceInfo;
 	QuotaInfo: WideString;
-	function FormatSize(Megabytes: integer): WideString; //Форматируем размер в удобочитаемый вид
-	begin
-		if Megabytes > (1024 * 1023) then exit((Megabytes div (1024 * 1024)).ToString() + 'Tb');
-		if Megabytes > 1024 then exit((CurrToStrF((Megabytes / 1024), ffNumber, 2)) + 'Gb');
-		exit(Megabytes.ToString() + 'Mb');
-	end;
 
 begin
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
@@ -1596,6 +1592,32 @@ begin
 				begin
 					Result := false;
 					Log(MSGTYPE_IMPORTANTERROR, 'File restore error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
+				end;
+		end;
+	end;
+end;
+
+function TCloudMailRu.trashbinEmpty(): Boolean;
+var
+	JSON: WideString;
+	OperationStatus, OperationResult: integer;
+	access_string: WideString;
+begin
+	Result := false;
+	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
+	if self.public_account then exit;
+
+	Result := self.HTTPPost(API_TRASHBIN_EMPTY, self.united_params, JSON);
+
+	if Result then
+	begin
+		OperationResult := self.fromJSON_OperationResult(JSON, OperationStatus);
+		case OperationResult of
+			CLOUD_OPERATION_OK: Result := true;
+			else
+				begin
+					Result := false;
+					Log(MSGTYPE_IMPORTANTERROR, 'Trashbin clearing error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
 				end;
 		end;
 	end;
