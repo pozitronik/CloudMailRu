@@ -1585,7 +1585,7 @@ begin
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
 	if self.public_account then exit;
 
-	Result := self.HTTPPost(API_TRASHBIN_RESTORE, 'path=/' + PathToUrl(Path) + self.united_params + '&conflict=' + ConflictMode, JSON);
+	Result := self.HTTPPost(API_TRASHBIN_RESTORE, 'path=' + PathToUrl(Path) + '&restore_revision=' + RestoreRevision.ToString + self.united_params + '&conflict=' + ConflictMode, JSON);
 
 	if Result then
 	begin
