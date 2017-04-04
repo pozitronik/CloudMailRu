@@ -3,7 +3,7 @@ unit DeletedProperty;
 interface
 
 uses
-	MRC_Helper, CloudMailRu, Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls;
+	MRC_Helper, CloudMailRu, DateUtils, Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls;
 
 type
 	TDeletedPropertyForm = class(TForm)
@@ -61,8 +61,9 @@ begin
 		begin
 			NameCaption := Items[0].name;
 			FromCaption := Items[0].deleted_from;
-			AtCaption := Items[0].deleted_at.ToString; //todo from unixtimestamp ?
-			ByCaption := Items[0].deleted_by.ToString; //todo check api user to name
+
+			AtCaption := DateTimeToStr(UnixToDateTime(Items[0].deleted_at));
+			ByCaption := Items[0].deleted_by.ToString; //display user id as is, because no conversation api method performed
 			SizeCaption := FormatSize(Items[0].size, TYPE_BYTES);
 			FormCaption := 'Deleted item: ' + NameCaption;
 			DeletedPropertyForm.RestoreAllBTN.Enabled:=false;
