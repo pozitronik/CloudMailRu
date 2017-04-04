@@ -103,14 +103,16 @@ var
 	I: integer;
 begin
 	HomePath := '/' + StringReplace(HomePath, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]);
-	for I := 0 to Length(DirListing) - 1 do if DirListing[I].home = HomePath then exit(DirListing[I]);
+	for I := 0 to Length(DirListing) - 1 do
+		if DirListing[I].home = HomePath then exit(DirListing[I]);
 end;
 
 function FindListingItemByName(DirListing: TCloudMailRuDirListing; ItemName: WideString): TCloudMailRuDirListingItem;
 var
 	I: integer;
 begin
-	for I := 0 to Length(DirListing) - 1 do if DirListing[I].name = ItemName then exit(DirListing[I]);
+	for I := 0 to Length(DirListing) - 1 do
+		if DirListing[I].name = ItemName then exit(DirListing[I]);
 end;
 
 function GetListingItemByName(CurrentListing: TCloudMailRuDirListing; path: TRealPath): TCloudMailRuDirListingItem;
@@ -433,10 +435,9 @@ begin
 
 		if RealPath.trashDir then
 		begin
-			if RealPath.path = '' then
+			if not ConnectionManager.get(RealPath.account, getResult).getTrashbinListing(CurrentListing) then SetLastError(ERROR_PATH_NOT_FOUND);
+			if RealPath.path <> '' then
 			begin
-				if not ConnectionManager.get(RealPath.account, getResult).getTrashbinListing(CurrentListing) then SetLastError(ERROR_PATH_NOT_FOUND);
-			end else begin
 				SetLastError(ERROR_ACCESS_DENIED);
 				exit(INVALID_HANDLE_VALUE);
 			end;
