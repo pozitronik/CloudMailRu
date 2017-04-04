@@ -27,6 +27,7 @@ type
 		path: WideString;
 		upDirItem: boolean; //path/../
 		trashDir: boolean;
+		//rev: Integer; //в корзине может находиться сколько угодно одноимённых объектов, различаться у них будет только rev
 	end;
 
 function Implode(S: TStringList; Delimiter: WideString): WideString;

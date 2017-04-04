@@ -178,6 +178,21 @@ begin
 				System.AnsiStrings.strpcopy(FieldName, 'description');
 				Result := ft_stringw;
 			end;
+		15:
+			begin
+				System.AnsiStrings.strpcopy(FieldName, 'deleted_at');
+				Result := ft_datetime;
+			end;
+		16:
+			begin
+				System.AnsiStrings.strpcopy(FieldName, 'deleted_from');
+				Result := ft_stringw;
+			end;
+		17:
+			begin
+				System.AnsiStrings.strpcopy(FieldName, 'deleted_by');
+				Result := ft_stringw;
+			end;
 	end;
 end;
 

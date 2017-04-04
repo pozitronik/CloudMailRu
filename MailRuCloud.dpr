@@ -113,15 +113,19 @@ var
 	getResult: integer;
 	Cloud: TCloudMailRu;
 begin
-	Result := FindListingItemByHomePath(CurrentListing, path.path); //сначала попробуем найти поле в имеющемся списке
-	if Result.name = '' then //если там его нет (нажали пробел на папке, например), то запросим в облаке напрямую
+	if path.trashDir then Result := FindListingItemByName(CurrentListing, path.path) //-__-
+	else
 	begin
-		Cloud := ConnectionManager.get(path.account, getResult);
-		if Cloud.statusFile(path.path, Result) then
+		Result := FindListingItemByHomePath(CurrentListing, path.path); //сначала попробуем найти поле в имеющемся списке
+		if Result.name = '' then //если там его нет (нажали пробел на папке, например), то запросим в облаке напрямую
 		begin
-			if (Result.home = '') and not Cloud.isPublicShare then MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, pWideChar('Cant find file ' + path.path)); {Такого быть не может, но...}
-		end;
-	end; //Не рапортуем, это будет уровнем выше
+			Cloud := ConnectionManager.get(path.account, getResult);
+			if Cloud.statusFile(path.path, Result) then
+			begin
+				if (Result.home = '') and not Cloud.isPublicShare then MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, pWideChar('Cant find file ' + path.path)); {Такого быть не может, но...}
+			end;
+		end; //Не рапортуем, это будет уровнем выше
+	end;
 end;
 
 function DeleteLocalFile(LocalName: WideString): integer;
@@ -947,7 +951,7 @@ begin
 	Item := GetListingItemByName(CurrentListing, RealPath);
 	//if Item.home = '' then exit(ft_nosuchfield);
 
-	case FieldIndex of
+	case FieldIndex of //todo: add deleted items checks
 		0:
 			begin
 				if Item.mtime <> 0 then exit(ft_nosuchfield);
@@ -1017,13 +1021,13 @@ begin
 			end;
 		12:
 			begin
-				if Item.mtime <> 0 then exit(ft_nosuchfield);
+				if Item.type_ = TYPE_FILE then exit(ft_nosuchfield);
 				Move(Item.folders_count, FieldValue^, SizeOf(Item.folders_count));
 				Result := ft_numeric_32;
 			end;
 		13:
 			begin
-				if Item.mtime <> 0 then exit(ft_nosuchfield);
+				if Item.type_ = TYPE_FILE then exit(ft_nosuchfield);
 				Move(Item.files_count, FieldValue^, SizeOf(Item.files_count));
 				Result := ft_numeric_32;
 			end;
@@ -1036,6 +1040,27 @@ begin
 				end else begin
 					strpcopy(FieldValue, '<disabled>');
 				end;
+				Result := ft_stringw;
+			end;
+		15:
+			begin
+				if Item.deleted_at = 0 then exit(ft_nosuchfield);
+				FileTime.dwHighDateTime := 0;
+				FileTime.dwLowDateTime := 0;
+				FileTime := DateTimeToFileTime(UnixToDateTime(Item.deleted_at));
+				Move(FileTime, FieldValue^, SizeOf(FileTime));
+				Result := ft_datetime;
+			end;
+		16:
+			begin
+				if Item.deleted_from = '' then exit(ft_nosuchfield);
+				strpcopy(FieldValue, Item.deleted_from);
+				Result := ft_stringw;
+			end;
+		17:
+			begin
+				if Item.deleted_by = 0 then exit(ft_nosuchfield);
+				strpcopy(FieldValue, Item.deleted_by.ToString); //todo
 				Result := ft_stringw;
 			end;
 	end;
