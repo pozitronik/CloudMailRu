@@ -419,7 +419,8 @@ begin
 
 		if (AccountsList.Count > 0) then
 		begin
-			if GetPluginSettings(SettingsIniFilePath).ShowTrashFolders then AddTrashAccountsToAccountsList(AccountsIniFilePath, AccountsList);
+			AddVirtualAccountsToAccountsList(AccountsIniFilePath, AccountsList, [GetPluginSettings(SettingsIniFilePath).ShowTrashFolders, GetPluginSettings(SettingsIniFilePath).ShowSharedFolders]);
+
 			FindData := FindData_emptyDir(AccountsList.Strings[0]);
 			FileCounter := 1;
 			Result:= FIND_ROOT_DIRECTORY;
@@ -438,9 +439,11 @@ begin
 				SetLastError(ERROR_ACCESS_DENIED);
 				exit(INVALID_HANDLE_VALUE);
 			end;
+		end else if not ConnectionManager.get(RealPath.account, getResult).getDirListing(RealPath.path, CurrentListing) then SetLastError(ERROR_PATH_NOT_FOUND);
 
-		end else begin
-			if not ConnectionManager.get(RealPath.account, getResult).getDirListing(RealPath.path, CurrentListing) then SetLastError(ERROR_PATH_NOT_FOUND);
+		if RealPath.sharedDir then
+		begin
+			if not ConnectionManager.get(RealPath.account, getResult).getSharedLinksListing(CurrentListing) then SetLastError(ERROR_PATH_NOT_FOUND); //that will be interpreted as symlinks later
 		end;
 
 		if getResult <> CLOUD_OPERATION_OK then
@@ -584,11 +587,11 @@ Begin
 				Result:=FS_EXEC_SYMLINK;
 			end;
 
-		end; {else if command = 'links' then
-		 begin
-		 Cloud := ConnectionManager.get(RealPath.account, getResult);
-		 Cloud.getTrashbinListing(CurrentListing, false);
-		 end;}
+		end else if command = 'links' then //TODO
+		begin
+			Cloud := ConnectionManager.get(RealPath.account, getResult);
+			Cloud.getSharedLinksListing(CurrentListing, false);
+		end;
 
 	end;
 End;

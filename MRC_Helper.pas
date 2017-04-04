@@ -16,7 +16,7 @@ const
 	IconSizeLarge = 2; //SHGFI_LARGEICON
 
 	TrashPostfix = '.trash';
-	SharesPostfix = '.shares';
+	SharedPostfix = '.shared';
 
 	TYPE_BYTES = 0;
 	TYPE_KYLOBYTES = 1;
@@ -89,6 +89,7 @@ begin
 	Result.path := '';
 	Result.upDirItem := false;
 	Result.trashDir := false;
+	Result.sharedDir:=false;
 
 	if VirtualPath = '' then exit; //root
 	VirtualPath := Copy(VirtualPath, 2, Length(VirtualPath) - 1);
@@ -113,6 +114,10 @@ begin
 	begin
 		Result.trashDir := true;
 		Result.account:=Copy(Result.account, 1, Length(Result.account) - Length(TrashPostfix));
+	end else if ExtractFileExt(Result.account) = SharedPostfix then
+	begin
+		Result.sharedDir := true;
+		Result.account:=Copy(Result.account, 1, Length(Result.account) - Length(SharedPostfix));
 	end;
 
 end;
