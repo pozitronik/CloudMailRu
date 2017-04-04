@@ -308,7 +308,7 @@ end;
 
 function UrlToPath(URL: WideString): WideString;
 begin
- Result := StringReplace(path, WideString('/'), WideString('\'), [rfReplaceAll, rfIgnoreCase]);
+	Result := StringReplace(URL, WideString('/'), WideString('\'), [rfReplaceAll, rfIgnoreCase]);
 end;
 
 function GetFolderIcon(const size: Integer = IconSizeSmall): Hicon;
