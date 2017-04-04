@@ -534,7 +534,7 @@ Begin
 			exit;
 		end;
 	end;
-
+	//todo: cd trash redir to current trashbin
 	if Verb = 'open' then exit(FS_EXEC_YOURSELF)
 	else if Verb = 'properties' then
 	begin
