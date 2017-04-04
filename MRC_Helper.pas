@@ -51,6 +51,7 @@ function ExtractLinkFromUrl(URL: WideString): WideString; //При необхо�
 function IsWriteable(const DirName: WideString; FileName: WideString = 'delete.me'; CleanFile: boolean = true): boolean;
 function PosLast(Substring, S: WideString; Offset: Integer = 0): Integer;
 function PathToUrl(path: WideString; RestrictEmptyUrl: boolean = true; DoUrlEncode: boolean = true): WideString;
+function UrlToPath(URL: WideString): WideString;
 function GetFolderIcon(const size: Integer = IconSizeSmall): Hicon;
 function GetSystemIcon(const size: Integer = IconSizeSmall; ItemType: Integer = CSIDL_BITBUCKET): Hicon;
 function CombineIcons(FrontIcon, BackIcon: Hicon): Hicon; //taken from http://www.swissdelphicenter.ch/en/showcode.php?id=1636
@@ -303,6 +304,11 @@ begin
 	if DoUrlEncode then Result:=UrlEncode(Result);
 
 	if (Result = '') and RestrictEmptyUrl then Result := '/';
+end;
+
+function UrlToPath(URL: WideString): WideString;
+begin
+ Result := StringReplace(path, WideString('/'), WideString('\'), [rfReplaceAll, rfIgnoreCase]);
 end;
 
 function GetFolderIcon(const size: Integer = IconSizeSmall): Hicon;
