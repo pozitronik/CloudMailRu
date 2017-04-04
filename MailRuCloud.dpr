@@ -76,13 +76,6 @@ begin
 	if (DirListing.size > MAXDWORD) then Result.nFileSizeHigh := DirListing.size div MAXDWORD
 	else Result.nFileSizeHigh := 0;
 	Result.nFileSizeLow := DirListing.size;
-
-	{if (DirListing.deleted_from <> '') then
-	 begin
-	 Delete(DirListing.deleted_from, 1, 1);
-	 strpcopy(Result.cFileName, DirListing.deleted_from + DirListing.name)
-	 end
-	 else}
 	strpcopy(Result.cFileName, DirListing.name);
 end;
 
@@ -525,7 +518,7 @@ Begin
 			end;
 			exit;
 		end else begin //one item in trashbin
-			CurrentItem:=FindListingItemByName(CurrentListing, RealPath.path); //todo: чекнуть поведение для одинаково именованных удалённых файлов
+			CurrentItem:=FindListingItemByName(CurrentListing, RealPath.path); //для одинаково именованных файлов в корзине будут показываться свойства первого, сорян
 			if (TDeletedPropertyForm.ShowProperties(MainWin, [CurrentItem]) = mrYes) then
 			begin
 				if not ConnectionManager.get(RealPath.account, getResult).trashbinRestore(CurrentItem.deleted_from + CurrentItem.name, CurrentItem.rev) then exit(FS_EXEC_ERROR); //TC do not refresh current panel anyway, so we should do it manually
@@ -533,7 +526,7 @@ Begin
 			exit;
 		end;
 	end;
-	//todo: cd trash redir to current trashbin
+
 	if Verb = 'open' then exit(FS_EXEC_YOURSELF)
 	else if Verb = 'properties' then
 	begin
@@ -577,6 +570,15 @@ Begin
 				if GetPluginSettings(SettingsIniFilePath).LogUserSpace then ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
 			end
 			else Result := FS_EXEC_ERROR;
+		end else if command = 'trash' then //go to current account trash directory
+		begin
+			RealPath := ExtractRealPath(RemoteName);
+			if RealPath.account <> '' then
+			begin
+				strpcopy(RemoteName, '\' + RealPath.account + TrashPostfix);
+				Result:=FS_EXEC_SYMLINK;
+			end;
+
 		end; {else if command = 'links' then
 		 begin
 		 Cloud := ConnectionManager.get(RealPath.account, getResult);
@@ -901,13 +903,6 @@ function FsDisconnectW(DisconnectRoot: pWideChar): Bool; stdcall;
 begin
 	ConnectionManager.freeAll;
 
-	//ThreadRetryCountDownload.Free;
-	//ThreadRetryCountUpload.Free;
-	//ThreadRetryCountRenMov.Free;
-	//ThreadSkipListDelete.Free;
-	//ThreadSkipListRenMov.Free;
-
-	//CurrentDescriptions.Destroy;
 	Result := true;
 end;
 
