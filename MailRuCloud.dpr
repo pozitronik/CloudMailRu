@@ -59,7 +59,7 @@ begin
 		Result.ftLastWriteTime := Result.ftCreationTime;
 		if (DirListing.type_ = TYPE_DIR) then Result.dwFileAttributes := FILE_ATTRIBUTE_DIRECTORY
 		else Result.dwFileAttributes := 0;
-	end else if (DirListing.type_ = TYPE_DIR) then
+	end else if (DirListing.type_ = TYPE_DIR) or (DirListing.kind = KIND_SHARED) then
 	begin
 		Result.ftCreationTime.dwLowDateTime := 0;
 		Result.ftCreationTime.dwHighDateTime := 0;
@@ -114,7 +114,7 @@ var
 	getResult: integer;
 	Cloud: TCloudMailRu;
 begin
-	if path.trashDir then Result := FindListingItemByName(CurrentListing, path.path)//-__-
+	if path.trashDir or path.sharedDir then Result := FindListingItemByName(CurrentListing, path.path)//-__-
 	else
 	begin
 		Result := FindListingItemByHomePath(CurrentListing, path.path); //сначала попробуем найти поле в имеющемся списке
@@ -1088,13 +1088,15 @@ function FsExtractCustomIconW(RemoteName: pWideChar; ExtractFlags: integer; var 
 var
 	RealPath: TRealPath;
 	Item: TCloudMailRuDirListingItem;
-
+	IconsMode: integer;
 begin
 	Result := FS_ICON_EXTRACTED;
 
 	RealPath := ExtractRealPath(RemoteName);
 
 	if RealPath.upDirItem then exit; //do not overlap updir icon
+
+	IconsMode := GetPluginSettings(SettingsIniFilePath).IconsMode;
 
 	if RealPath.trashDir and (RealPath.path = '') then //always draw system trash icon
 	begin
@@ -1103,7 +1105,20 @@ begin
 		exit;
 	end;
 
-	if GetPluginSettings(SettingsIniFilePath).IconsMode = IconsModeDisabled then exit(FS_ICON_USEDEFAULT);
+	if RealPath.sharedDir then
+	begin
+		if (RealPath.path = '') then
+		begin
+			strpcopy(RemoteName, 'shared');
+			TheIcon := CombineIcons(LoadImageW(hInstance, RemoteName, IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR), GetFolderIcon(GetPluginSettings(SettingsIniFilePath).IconsSize));
+			exit;
+		end else begin
+			if IconsMode = IconsModeDisabled then IconsMode := IconsModeInternalOverlay; //always draw icons in shared links directory
+		end;
+
+	end;
+
+	if IconsMode = IconsModeDisabled then exit(FS_ICON_USEDEFAULT);
 
 	if (RealPath.path = '') then //connection list
 	begin
@@ -1112,21 +1127,15 @@ begin
 		else strpcopy(RemoteName, 'cloud');
 	end else begin //directories
 		Item := GetListingItemByName(CurrentListing, RealPath);
-		if Item.type_ = TYPE_DIR then
+		if (Item.type_ = TYPE_DIR) or (Item.kind = KIND_SHARED) then
 		begin
-			if Item.kind = KIND_SHARED then
-			begin
-				strpcopy(RemoteName, 'shared');
-			end else if Item.Weblink <> '' then
-			begin
-				strpcopy(RemoteName, 'shared_public');
-			end else begin
-				exit(FS_ICON_USEDEFAULT);
-			end;
+			if Item.kind = KIND_SHARED then strpcopy(RemoteName, 'shared')
+			else if Item.Weblink <> '' then strpcopy(RemoteName, 'shared_public')
+			else exit(FS_ICON_USEDEFAULT);
 		end
 		else exit(FS_ICON_USEDEFAULT);
 	end;
-	case GetPluginSettings(SettingsIniFilePath).IconsMode of
+	case IconsMode of
 		IconsModeInternal: TheIcon := LoadImageW(hInstance, RemoteName, IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
 		IconsModeInternalOverlay: TheIcon := CombineIcons(LoadImageW(hInstance, RemoteName, IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR), GetFolderIcon(GetPluginSettings(SettingsIniFilePath).IconsSize));
 		IconsModeExternal:
