@@ -109,24 +109,29 @@ begin
 		if DirListing[I].name = ItemName then exit(DirListing[I]);
 end;
 
-function GetListingItemByName(CurrentListing: TCloudMailRuDirListing; path: TRealPath): TCloudMailRuDirListingItem;
+function GetListingItemByName(CurrentListing: TCloudMailRuDirListing; path: TRealPath): TCloudMailRuDirListingItem; //todo refactor and rename
 var
 	getResult: integer;
 	Cloud: TCloudMailRu;
 begin
 	if path.trashDir or path.sharedDir then Result := FindListingItemByName(CurrentListing, path.path)//-__-
-	else
+	else Result := FindListingItemByHomePath(CurrentListing, path.path); //сначала попробуем найти поле в имеющемся списке
+
+	if Result.name = '' then //если там его нет (нажали пробел на папке, например), то запросим в облаке напрямую, в зависимости от того, внутри чего мы находимся
 	begin
-		Result := FindListingItemByHomePath(CurrentListing, path.path); //сначала попробуем найти поле в имеющемся списке
-		if Result.name = '' then //если там его нет (нажали пробел на папке, например), то запросим в облаке напрямую
+		Cloud := ConnectionManager.get(path.account, getResult);
+		if path.trashDir then //корзина - обновим CurrentListing, поищем в нём
 		begin
-			Cloud := ConnectionManager.get(path.account, getResult);
-			if Cloud.statusFile(path.path, Result) then
-			begin
-				if (Result.home = '') and not Cloud.isPublicShare then MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, pWideChar('Cant find file ' + path.path)); {Такого быть не может, но...}
-			end;
-		end; //Не рапортуем, это будет уровнем выше
-	end;
+			if Cloud.getTrashbinListing(CurrentListing) then Result := FindListingItemByName(CurrentListing, path.path);
+		end else if path.sharedDir then //ссылки - обновим список
+		begin
+			if Cloud.getSharedLinksListing(CurrentListing) then Result := FindListingItemByName(CurrentListing, path.path);
+		end else if Cloud.statusFile(path.path, Result) then //Обычный каталог
+		begin
+			if (Result.home = '') and not Cloud.isPublicShare then MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, pWideChar('Cant find file ' + path.path)); {Такого быть не может, но...}
+		end;
+	end; //Не рапортуем, это будет уровнем выше
+
 end;
 
 function DeleteLocalFile(LocalName: WideString): integer;
@@ -524,27 +529,34 @@ Begin
 						if not Cloud.trashbinRestore(CurrentItem.deleted_from + CurrentItem.name, CurrentItem.rev) then exit(FS_EXEC_ERROR);
 			end;
 		end else begin //one item in trashbin
-			CurrentItem:=FindListingItemByName(CurrentListing, RealPath.path); //для одинаково именованных файлов в корзине будут показываться свойства первого, сорян
+
+			CurrentItem:=GetListingItemByName(CurrentListing, RealPath); //для одинаково именованных файлов в корзине будут показываться свойства первого, сорян
 			if (TDeletedPropertyForm.ShowProperties(MainWin, [CurrentItem]) = mrYes) then
 			begin
 				if not ConnectionManager.get(RealPath.account, getResult).trashbinRestore(CurrentItem.deleted_from + CurrentItem.name, CurrentItem.rev) then exit(FS_EXEC_ERROR); //TC do not refresh current panel anyway, so we should do it manually
 
 			end;
-			exit;
 		end;
+		exit;
 	end;
 
-	if RealPath.sharedDir and (Verb = 'open') then
+	if RealPath.sharedDir then
 	begin
-		if RealPath.path = '' then //main shared folder properties
+		if Verb = 'open' then
 		begin
-
-		end else begin //item inside
-			CurrentItem:=FindListingItemByName(CurrentListing, RealPath.path);
+			CurrentItem:=GetListingItemByName(CurrentListing, RealPath);
 			if CurrentItem.type_ = TYPE_FILE then strpcopy(RemoteName, '\' + RealPath.account + ExtractFilePath(UrlToPath(CurrentItem.home)))
 			else strpcopy(RemoteName, '\' + RealPath.account + UrlToPath(CurrentItem.home));
 			Result:=FS_EXEC_SYMLINK;
-
+		end else if (Verb = 'properties') and (RealPath.path <> '') then
+		begin
+			CurrentItem:=GetListingItemByName(CurrentListing, RealPath);
+			if ConnectionManager.get(RealPath.account, getResult).statusFile(CurrentItem.home, CurrentItem) then //всегда нужно обновлять статус на сервере, CurrentListing может быть изменён в другой панели
+			begin
+				Cloud := ConnectionManager.get(RealPath.account, getResult);
+				if CurrentItem.home <> '' then TPropertyForm.ShowProperty(MainWin, RealPath.path, CurrentItem, Cloud, GetPluginSettings(SettingsIniFilePath).DownloadLinksEncode, GetPluginSettings(SettingsIniFilePath).AutoUpdateDownloadListing)
+				else MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, pWideChar('Cant find file under cursor!'));
+			end;
 		end;
 		exit;
 	end;
@@ -554,9 +566,9 @@ Begin
 	begin
 		if RealPath.path = '' then
 		begin
-			TAccountsForm.ShowAccounts(MainWin, AccountsIniFilePath, SettingsIniFilePath, MyCryptProc, PluginNum, CryptoNum, RemoteName);
+			TAccountsForm.ShowAccounts(MainWin, AccountsIniFilePath, SettingsIniFilePath, MyCryptProc, PluginNum, CryptoNum, RealPath.account);
 		end else begin
-			if ConnectionManager.get(RealPath.account, getResult).statusFile(RealPath.path, CurrentItem) then
+			if ConnectionManager.get(RealPath.account, getResult).statusFile(RealPath.path, CurrentItem) then //всегда нужно обновлять статус на сервере, CurrentListing может быть изменён в другой панели
 			begin
 				Cloud := ConnectionManager.get(RealPath.account, getResult);
 				if Cloud.isPublicShare then
