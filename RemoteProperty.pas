@@ -346,7 +346,7 @@ begin
 	end else begin
 		AccessCB.checked := not(Props.WebLink = '');
 		WebLink.Enabled := AccessCB.checked;
-		if Props.type_ = TYPE_DIR then
+		if (Props.type_ = TYPE_DIR) or (Props.kind = KIND_SHARED) then
 		begin
 			ExtPropertiesPC.Visible := true;
 			FolderAccessTS.TabVisible := true;
