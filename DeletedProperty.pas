@@ -77,7 +77,7 @@ begin
 
 		if TrashDir then //свойства для самой корзины, даём выбор Очистить/Восстановить все/Отмена
 		begin
-			FormCaption := AccountName + '.trash';
+			FormCaption := AccountName + TrashPostfix;
 			NameCaption := FormCaption;
 			FromCaption := '-';
 			AtCaption :='-';
