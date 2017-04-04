@@ -113,7 +113,7 @@ var
 	getResult: integer;
 	Cloud: TCloudMailRu;
 begin
-	if path.trashDir then Result := FindListingItemByName(CurrentListing, path.path) //-__-
+	if path.trashDir then Result := FindListingItemByName(CurrentListing, path.path)//-__-
 	else
 	begin
 		Result := FindListingItemByHomePath(CurrentListing, path.path); //сначала попробуем найти поле в имеющемся списке
@@ -576,6 +576,7 @@ Begin
 			else Result := FS_EXEC_ERROR;
 		end else if command = 'trash' then //go to current account trash directory
 		begin
+			if ConnectionManager.get(RealPath.account, getResult).isPublicShare then exit(FS_EXEC_ERROR);
 			RealPath := ExtractRealPath(RemoteName);
 			if RealPath.account <> '' then
 			begin
