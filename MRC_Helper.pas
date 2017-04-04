@@ -16,6 +16,7 @@ const
 	IconSizeLarge = 2; //SHGFI_LARGEICON
 
 	TrashPostfix = '.trash';
+	SharesPostfix = '.shares';
 
 	TYPE_BYTES = 0;
 	TYPE_KYLOBYTES = 1;
@@ -26,8 +27,8 @@ type
 		account: WideString;
 		path: WideString;
 		upDirItem: boolean; //path/../
-		trashDir: boolean;
-		//rev: Integer; //в корзине может находиться сколько угодно одноимённых объектов, различаться у них будет только rev
+		trashDir: boolean; //item is inside trash bin dir
+		sharedDir: boolean; //item is inside shared links dir
 	end;
 
 function Implode(S: TStringList; Delimiter: WideString): WideString;
