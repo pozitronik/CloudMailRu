@@ -10,6 +10,7 @@ const
 	FIND_NO_MORE_FILES = 0;
 	FIND_OK = 1;
 	FIND_ROOT_DIRECTORY = 2;
+	FIND_SHARED_LINKS = 3; //.shared folder
 
 	IconSizeSmall = 0; //SHGFI_SMALLICON
 	IconSizeNormal = 1; //SHGFI_ICON
