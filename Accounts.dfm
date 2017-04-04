@@ -158,7 +158,7 @@ object AccountsForm: TAccountsForm
     Top = 0
     Width = 491
     Height = 475
-    ActivePage = GlobalTab
+    ActivePage = AccountsTab
     Align = alClient
     TabOrder = 0
     object AccountsTab: TTabSheet
@@ -201,9 +201,9 @@ object AccountsForm: TAccountsForm
       end
       object ApplyButton: TButton
         Left = 225
-        Top = 415
+        Top = 417
         Width = 75
-        Height = 27
+        Height = 25
         Caption = 'Add/Apply'
         TabOrder = 1
         OnClick = ApplyButtonClick
@@ -212,7 +212,7 @@ object AccountsForm: TAccountsForm
         Left = 405
         Top = 417
         Width = 75
-        Height = 27
+        Height = 25
         Caption = 'Delete'
         TabOrder = 2
         OnClick = DeleteButtonClick
@@ -720,8 +720,8 @@ object AccountsForm: TAccountsForm
         end
       end
       object GlobalSettingApplyBTN2: TButton
-        Left = 406
-        Top = 349
+        Left = 405
+        Top = 417
         Width = 75
         Height = 25
         Caption = 'Apply'
