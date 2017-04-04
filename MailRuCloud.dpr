@@ -51,7 +51,7 @@ var
 	CurrentDescriptions: TDescription;
 	ProxySettings: TProxySettings;
 
-function CloudMailRuDirListingItemToFindData(DirListing: TCloudMailRuDirListingItem): tWIN32FINDDATAW;
+function CloudMailRuDirListingItemToFindData(DirListing: TCloudMailRuDirListingItem; DirsAsSymlinks: Boolean = false): tWIN32FINDDATAW;
 begin
 	if (DirListing.deleted_from <> '') then //items inside trash bin
 	begin
@@ -65,7 +65,8 @@ begin
 		Result.ftCreationTime.dwHighDateTime := 0;
 		Result.ftLastWriteTime.dwHighDateTime := 0;
 		Result.ftLastWriteTime.dwLowDateTime := 0;
-		Result.dwFileAttributes := FILE_ATTRIBUTE_DIRECTORY;
+		if DirsAsSymlinks then Result.dwFileAttributes := 0
+		else Result.dwFileAttributes := FILE_ATTRIBUTE_DIRECTORY;
 	end else begin
 		Result.ftCreationTime := DateTimeToFileTime(UnixToDateTime(DirListing.mtime));
 		Result.ftLastWriteTime := Result.ftCreationTime;
@@ -410,7 +411,7 @@ begin
 	end;
 
 	SetLength(CurrentListing, 0);
-	Result := FIND_NO_MORE_FILES;
+	//Result := FIND_NO_MORE_FILES;
 	GlobalPath := path;
 	if GlobalPath = '\' then
 	begin //список соединений
@@ -439,12 +440,10 @@ begin
 				SetLastError(ERROR_ACCESS_DENIED);
 				exit(INVALID_HANDLE_VALUE);
 			end;
-		end else if not ConnectionManager.get(RealPath.account, getResult).getDirListing(RealPath.path, CurrentListing) then SetLastError(ERROR_PATH_NOT_FOUND);
-
-		if RealPath.sharedDir then
+		end else if RealPath.sharedDir then
 		begin
 			if not ConnectionManager.get(RealPath.account, getResult).getSharedLinksListing(CurrentListing) then SetLastError(ERROR_PATH_NOT_FOUND); //that will be interpreted as symlinks later
-		end;
+		end else if not ConnectionManager.get(RealPath.account, getResult).getDirListing(RealPath.path, CurrentListing) then SetLastError(ERROR_PATH_NOT_FOUND);
 
 		if getResult <> CLOUD_OPERATION_OK then
 		begin
@@ -458,9 +457,10 @@ begin
 			Result := FIND_NO_MORE_FILES;
 			SetLastError(ERROR_NO_MORE_FILES);
 		end else begin
-			FindData := CloudMailRuDirListingItemToFindData(CurrentListing[0]);
+			FindData := CloudMailRuDirListingItemToFindData(CurrentListing[0], RealPath.sharedDir); //folders inside shared links directory must be displayed as symlinks
 			FileCounter := 1;
-			Result := FIND_OK;
+			if RealPath.sharedDir then Result:=FIND_SHARED_LINKS
+			else Result := FIND_OK;
 		end;
 	end;
 end;
@@ -481,7 +481,7 @@ begin
 		//Получение последующих файлов в папке (вызывается до тех пор, пока не вернёт false).
 		if (Length(CurrentListing) > FileCounter) then
 		begin
-			FindData := CloudMailRuDirListingItemToFindData(CurrentListing[FileCounter]);
+			FindData := CloudMailRuDirListingItemToFindData(CurrentListing[FileCounter], Hdl = FIND_SHARED_LINKS);
 			Result := true;
 			inc(FileCounter);
 		end else begin
@@ -523,15 +523,30 @@ Begin
 				mrYesToAll: for CurrentItem in CurrentListing do
 						if not Cloud.trashbinRestore(CurrentItem.deleted_from + CurrentItem.name, CurrentItem.rev) then exit(FS_EXEC_ERROR);
 			end;
-			exit;
 		end else begin //one item in trashbin
 			CurrentItem:=FindListingItemByName(CurrentListing, RealPath.path); //для одинаково именованных файлов в корзине будут показываться свойства первого, сорян
 			if (TDeletedPropertyForm.ShowProperties(MainWin, [CurrentItem]) = mrYes) then
 			begin
 				if not ConnectionManager.get(RealPath.account, getResult).trashbinRestore(CurrentItem.deleted_from + CurrentItem.name, CurrentItem.rev) then exit(FS_EXEC_ERROR); //TC do not refresh current panel anyway, so we should do it manually
+
 			end;
 			exit;
 		end;
+	end;
+
+	if RealPath.sharedDir and (Verb = 'open') then
+	begin
+		if RealPath.path = '' then //main shared folder properties
+		begin
+
+		end else begin //item inside
+			CurrentItem:=FindListingItemByName(CurrentListing, RealPath.path);
+			if CurrentItem.type_ = TYPE_FILE then strpcopy(RemoteName, '\' + RealPath.account + ExtractFilePath(UrlToPath(CurrentItem.home)))
+			else strpcopy(RemoteName, '\' + RealPath.account + UrlToPath(CurrentItem.home));
+			Result:=FS_EXEC_SYMLINK;
+
+		end;
+		exit;
 	end;
 
 	if Verb = 'open' then exit(FS_EXEC_YOURSELF)
@@ -792,15 +807,15 @@ Begin
 	Result := ConnectionManager.get(RealPath.account, getResult).removeDir(RealPath.path);
 end;
 
-Function cloneWeblink(NewCloud, OldCloud: TCloudMailRu; CloudPath: WideString; CurrentItem: TCloudMailRuDirListingItem; NeedUnpublish: boolean): integer;
+Function cloneWeblink(NewCloud, OldCloud: TCloudMailRu; CloudPath: WideString; CurrentItem: TCloudMailRuDirListingItem; NeedUnpublish: Boolean): integer;
 begin
 	Result := NewCloud.cloneWeblink(ExtractFileDir(CloudPath), CurrentItem.Weblink, CLOUD_CONFLICT_STRICT);
 	if (NeedUnpublish) and not(OldCloud.publishFile(CurrentItem.home, CurrentItem.Weblink, CLOUD_UNPUBLISH)) then MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, pWideChar('Can''t remove temporary public link on ' + CurrentItem.home));
 end;
 
-Function RenMoveFileViaPublicLink(OldCloud, NewCloud: TCloudMailRu; OldRealPath, NewRealPath: TRealPath; Move, OverWrite: boolean): integer;
+Function RenMoveFileViaPublicLink(OldCloud, NewCloud: TCloudMailRu; OldRealPath, NewRealPath: TRealPath; Move, OverWrite: Boolean): integer;
 var
-	NeedUnpublish: boolean;
+	NeedUnpublish: Boolean;
 	CurrentItem: TCloudMailRuDirListingItem;
 	RetryAttempts: integer;
 begin
@@ -860,7 +875,7 @@ begin
 	end;
 end;
 
-function FsRenMovFileW(OldName: pWideChar; NewName: pWideChar; Move: boolean; OverWrite: boolean; ri: pRemoteInfo): integer; stdcall;
+function FsRenMovFileW(OldName: pWideChar; NewName: pWideChar; Move: Boolean; OverWrite: Boolean; ri: pRemoteInfo): integer; stdcall;
 var
 	OldRealPath: TRealPath;
 	NewRealPath: TRealPath;
