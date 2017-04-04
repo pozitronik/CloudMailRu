@@ -929,7 +929,6 @@ begin
 
 end;
 
-//TODO: add values for deleted items
 function FsContentGetValueW(FileName: pWideChar; FieldIndex: integer; UnitIndex: integer; FieldValue: Pointer; maxlen: integer; Flags: integer): integer; stdcall;
 var
 	Item: TCloudMailRuDirListingItem;
@@ -951,7 +950,7 @@ begin
 	Item := GetListingItemByName(CurrentListing, RealPath);
 	//if Item.home = '' then exit(ft_nosuchfield);
 
-	case FieldIndex of //todo: add deleted items checks
+	case FieldIndex of
 		0:
 			begin
 				if Item.mtime <> 0 then exit(ft_nosuchfield);
@@ -1060,7 +1059,7 @@ begin
 		17:
 			begin
 				if Item.deleted_by = 0 then exit(ft_nosuchfield);
-				strpcopy(FieldValue, Item.deleted_by.ToString); //todo
+				strpcopy(FieldValue, Item.deleted_by.ToString); //display user id as is, because no conversation api method performed
 				Result := ft_stringw;
 			end;
 	end;

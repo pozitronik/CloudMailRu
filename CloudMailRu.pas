@@ -708,7 +708,7 @@ var
 	Obj: TJSONObject;
 	error, nodename: WideString;
 begin
-	Result:=CLOUD_ERROR_BAD_REQUEST;
+	//Result:=CLOUD_ERROR_BAD_REQUEST;
 	try
 		Obj := TJSONObject.ParseJSONValue(JSON) as TJSONObject;
 		OperationStatus := Obj.values['status'].Value.ToInteger;
@@ -1600,7 +1600,6 @@ function TCloudMailRu.trashbinEmpty(): Boolean;
 var
 	JSON: WideString;
 	OperationStatus, OperationResult: integer;
-	access_string: WideString;
 begin
 	Result := false;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
