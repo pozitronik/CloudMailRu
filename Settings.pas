@@ -86,6 +86,8 @@ type
 		ShowSharedFolders: boolean;
 	end;
 
+ //	TVirtualAccounts = array [0 .. 1] of boolean;
+
 function GetProxyPasswordNow(var ProxySettings: TProxySettings; MyLogProc: TLogProcW; MyCryptProc: TCryptProcW; PluginNum: Integer; CryptoNum: Integer): boolean;
 function GetPluginSettings(IniFilePath: WideString): TPluginSettings;
 procedure SetPluginSettings(IniFilePath: WideString; PluginSettings: TPluginSettings);
@@ -94,7 +96,7 @@ function GetAccountSettingsFromIniFile(IniFilePath: WideString; AccountName: Wid
 function SetAccountSettingsToIniFile(IniFilePath: WideString; AccountSettings: TAccountSettings): boolean;
 procedure GetAccountsListFromIniFile(IniFilePath: WideString; var AccountsList: TStringList);
 procedure DeleteAccountFromIniFile(IniFilePath: WideString; AccountName: WideString);
-procedure AddTrashAccountsToAccountsList(AccountsIniFilePath: WideString; var AccountsList: TStringList; const TrashPostfix: string = '.trash');
+procedure AddVirtualAccountsToAccountsList(AccountsIniFilePath: WideString; var AccountsList: TStringList; VirtualAccountsEnabled: TArray<boolean>);
 
 implementation
 
@@ -304,18 +306,21 @@ begin
 	IniFile.Destroy;
 end;
 
-procedure AddTrashAccountsToAccountsList(AccountsIniFilePath: WideString; var AccountsList: TStringList; const TrashPostfix: string = '.trash');
+procedure AddVirtualAccountsToAccountsList(AccountsIniFilePath: WideString; var AccountsList: TStringList; VirtualAccountsEnabled: TArray<Boolean>);
 var
-	TrashAccounts: TStringList;
+	VFlag, isPublic: boolean;
+	VAccounts: TStringList;
 	account: WideString;
 begin
-	TrashAccounts := TStringList.Create;
+	VAccounts := TStringList.Create;
 	for account in AccountsList do
 	begin
-		if not(GetAccountSettingsFromIniFile(AccountsIniFilePath, account).public_account) then TrashAccounts.Add(account + TrashPostfix);
+		if GetAccountSettingsFromIniFile(AccountsIniFilePath, account).public_account then Continue; //public accounts ignored
+		if VirtualAccountsEnabled[0] then VAccounts.Add(account + TrashPostfix);
+		if VirtualAccountsEnabled[1] then VAccounts.Add(account + SharedPostfix);
 	end;
-	AccountsList.AddStrings(TrashAccounts);
-	TrashAccounts.Free;
+	AccountsList.AddStrings(VAccounts);
+	VAccounts.Free;
 end;
 
 end.
