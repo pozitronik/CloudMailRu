@@ -442,7 +442,14 @@ begin
 
 		if RealPath.trashDir then
 		begin
-			if not ConnectionManager.get(RealPath.account, getResult).getTrashbinListing(CurrentListing) then SetLastError(ERROR_PATH_NOT_FOUND);
+			if RealPath.path = '' then
+			begin
+				if not ConnectionManager.get(RealPath.account, getResult).getTrashbinListing(CurrentListing) then SetLastError(ERROR_PATH_NOT_FOUND);
+			end else begin
+				SetLastError(ERROR_ACCESS_DENIED);
+				exit(INVALID_HANDLE_VALUE);
+			end;
+
 		end else begin
 			if not ConnectionManager.get(RealPath.account, getResult).getDirListing(RealPath.path, CurrentListing) then SetLastError(ERROR_PATH_NOT_FOUND);
 		end;
