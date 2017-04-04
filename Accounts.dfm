@@ -348,63 +348,63 @@ object AccountsForm: TAccountsForm
       ImageIndex = 1
       object CloudMaxFileSizeLabelBytes: TLabel
         Left = 292
-        Top = 136
+        Top = 158
         Width = 27
         Height = 13
         Caption = 'bytes'
       end
       object ChunkOverwriteModeLabel: TLabel
         Left = 5
-        Top = 217
+        Top = 239
         Width = 150
         Height = 13
         Caption = 'Overwrite splitted chunk mode:'
       end
       object DeleteFailOnUploadModeLabel: TLabel
         Left = 5
-        Top = 243
+        Top = 265
         Width = 143
         Height = 13
         Caption = 'Delete file after upload mode:'
       end
       object OverwriteLocalModeLabel: TLabel
         Left = 5
-        Top = 269
+        Top = 291
         Width = 127
         Height = 13
         Caption = 'Overwrite local files mode:'
       end
       object IconsModeLabel: TLabel
         Left = 5
-        Top = 295
+        Top = 317
         Width = 88
         Height = 13
         Caption = 'Plugin icons mode:'
       end
       object OperationErrorModeLabel: TLabel
         Left = 5
-        Top = 162
+        Top = 184
         Width = 140
         Height = 13
         Caption = 'On downloads/uploads error:'
       end
       object RetryAttemptsLabel: TLabel
         Left = 160
-        Top = 190
+        Top = 212
         Width = 77
         Height = 13
         Caption = 'Retry attempts:'
       end
       object RetryWaitLabel: TLabel
         Left = 339
-        Top = 190
+        Top = 212
         Width = 20
         Height = 13
         Caption = 'wait'
       end
       object msLabel: TLabel
         Left = 466
-        Top = 190
+        Top = 212
         Width = 13
         Height = 13
         Caption = 'ms'
@@ -435,11 +435,11 @@ object AccountsForm: TAccountsForm
       end
       object OperationsViaPublicLinkEnabledCB: TCheckBox
         Left = 5
-        Top = 113
+        Top = 135
         Width = 475
         Height = 17
         Caption = 'Copying/moving between accounts via public link'
-        TabOrder = 5
+        TabOrder = 6
       end
       object GlobalSettingApplyBTN: TButton
         Left = 405
@@ -449,35 +449,35 @@ object AccountsForm: TAccountsForm
         Caption = 'Apply'
         ParentShowHint = False
         ShowHint = False
-        TabOrder = 18
+        TabOrder = 19
         OnClick = GlobalSettingApplyBTNClick
       end
       object CloudMaxFileSizeValue: TEdit
         Left = 142
-        Top = 133
+        Top = 155
         Width = 146
         Height = 21
         Enabled = False
         NumbersOnly = True
-        TabOrder = 7
+        TabOrder = 8
       end
       object CloudMaxFileSizeCB: TCheckBox
         Left = 5
-        Top = 135
+        Top = 157
         Width = 134
         Height = 17
         Caption = 'Override split file size to'
-        TabOrder = 6
+        TabOrder = 7
         OnClick = CloudMaxFileSizeCBClick
       end
       object ChunkOverwriteModeCombo: TComboBox
         Left = 160
-        Top = 214
+        Top = 236
         Width = 320
         Height = 21
         Style = csDropDownList
         ItemIndex = 0
-        TabOrder = 11
+        TabOrder = 12
         Text = 'Silently overwrite'
         Items.Strings = (
           'Silently overwrite'
@@ -486,12 +486,12 @@ object AccountsForm: TAccountsForm
       end
       object DeleteFailOnUploadModeCombo: TComboBox
         Left = 160
-        Top = 240
+        Top = 262
         Width = 320
         Height = 21
         Style = csDropDownList
         ItemIndex = 0
-        TabOrder = 12
+        TabOrder = 13
         Text = 'Ask user'
         Items.Strings = (
           'Ask user'
@@ -502,12 +502,12 @@ object AccountsForm: TAccountsForm
       end
       object OverwriteLocalModeCombo: TComboBox
         Left = 160
-        Top = 266
+        Top = 288
         Width = 320
         Height = 21
         Style = csDropDownList
         ItemIndex = 0
-        TabOrder = 13
+        TabOrder = 14
         Text = 'Ask user'
         Items.Strings = (
           'Ask user'
@@ -516,20 +516,20 @@ object AccountsForm: TAccountsForm
       end
       object DisableMultiThreadingCB: TCheckBox
         Left = 5
-        Top = 323
+        Top = 345
         Width = 475
         Height = 17
         Caption = 'Disable background operations support'
-        TabOrder = 15
+        TabOrder = 16
       end
       object IconsModeCombo: TComboBox
         Left = 160
-        Top = 292
+        Top = 314
         Width = 320
         Height = 21
         Style = csDropDownList
         ItemIndex = 0
-        TabOrder = 14
+        TabOrder = 15
         Text = 'System default'
         Items.Strings = (
           'System default'
@@ -548,12 +548,12 @@ object AccountsForm: TAccountsForm
       end
       object OperationErrorModeCombo: TComboBox
         Left = 160
-        Top = 160
+        Top = 182
         Width = 320
         Height = 21
         Style = csDropDownList
         ItemIndex = 0
-        TabOrder = 8
+        TabOrder = 9
         Text = 'Ask user'
         Items.Strings = (
           'Ask user'
@@ -563,39 +563,39 @@ object AccountsForm: TAccountsForm
       end
       object AttemptWaitValue: TSpinEdit
         Left = 365
-        Top = 187
+        Top = 209
         Width = 95
         Height = 22
         MaxValue = 2147483647
         MinValue = 0
-        TabOrder = 10
+        TabOrder = 11
         Value = 0
       end
       object RetryAttemptsValue: TSpinEdit
         Left = 241
-        Top = 187
+        Top = 209
         Width = 95
         Height = 22
         MaxValue = 2147483647
         MinValue = -1
-        TabOrder = 9
+        TabOrder = 10
         Value = 0
       end
       object DownloadLinksEncodeCB: TCheckBox
         Left = 5
-        Top = 345
-        Width = 475
-        Height = 17
-        Caption = 'URL encode direct download links'
-        TabOrder = 16
-      end
-      object AutoUpdateDownloadListingCB: TCheckBox
-        Left = 5
         Top = 367
         Width = 475
         Height = 17
-        Caption = 'Update direct download links immediately'
+        Caption = 'URL encode direct download links'
         TabOrder = 17
+      end
+      object AutoUpdateDownloadListingCB: TCheckBox
+        Left = 5
+        Top = 389
+        Width = 475
+        Height = 17
+        Caption = 'Update direct download links immediately'
+        TabOrder = 18
       end
       object ShowTrashFoldersCB: TCheckBox
         Left = 5
@@ -604,6 +604,14 @@ object AccountsForm: TAccountsForm
         Height = 17
         Caption = 'Show accounts trash folders'
         TabOrder = 4
+      end
+      object ShowSharedFoldersCB: TCheckBox
+        Left = 5
+        Top = 113
+        Width = 475
+        Height = 17
+        Caption = 'Show accounts shared links folders'
+        TabOrder = 5
       end
     end
     object NetworkTab: TTabSheet
