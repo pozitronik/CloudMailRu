@@ -103,23 +103,14 @@ var
 	I: integer;
 begin
 	HomePath := '/' + StringReplace(HomePath, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]);
-	for I := 0 to Length(DirListing) - 1 do
-	begin
-		if DirListing[I].home = HomePath then exit(DirListing[I]);
-	end;
+	for I := 0 to Length(DirListing) - 1 do if DirListing[I].home = HomePath then exit(DirListing[I]);
 end;
 
 function FindListingItemByName(DirListing: TCloudMailRuDirListing; ItemName: WideString): TCloudMailRuDirListingItem;
 var
 	I: integer;
 begin
-	for I := 0 to Length(DirListing) - 1 do
-	begin
-		if DirListing[I].name = ItemName then
-		begin
-			exit(DirListing[I]);
-		end;
-	end;
+	for I := 0 to Length(DirListing) - 1 do if DirListing[I].name = ItemName then exit(DirListing[I]);
 end;
 
 function GetListingItemByName(CurrentListing: TCloudMailRuDirListing; path: TRealPath): TCloudMailRuDirListingItem;
