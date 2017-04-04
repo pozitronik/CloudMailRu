@@ -158,7 +158,7 @@ object AccountsForm: TAccountsForm
     Top = 0
     Width = 491
     Height = 475
-    ActivePage = AccountsTab
+    ActivePage = GlobalTab
     Align = alClient
     TabOrder = 0
     object AccountsTab: TTabSheet
@@ -602,7 +602,7 @@ object AccountsForm: TAccountsForm
         Top = 91
         Width = 475
         Height = 17
-        Caption = 'Show accounts trash folder'
+        Caption = 'Show accounts trash folders'
         TabOrder = 4
       end
     end
