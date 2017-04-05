@@ -92,29 +92,31 @@ begin
 	Result.dwFileAttributes := FILE_ATTRIBUTE_DIRECTORY;
 end;
 
-function FindListingItemByHomePath(DirListing: TCloudMailRuDirListing; HomePath: WideString): TCloudMailRuDirListingItem;
-var
-	I: integer;
-begin
-	HomePath := '/' + StringReplace(HomePath, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]);
-	for I := 0 to Length(DirListing) - 1 do
-		if DirListing[I].home = HomePath then exit(DirListing[I]);
-end;
-
-function FindListingItemByName(DirListing: TCloudMailRuDirListing; ItemName: WideString): TCloudMailRuDirListingItem;
-var
-	I: integer;
-begin
-	for I := 0 to Length(DirListing) - 1 do
-		if DirListing[I].name = ItemName then exit(DirListing[I]);
-end;
-
-function GetListingItemByName(CurrentListing: TCloudMailRuDirListing; path: TRealPath): TCloudMailRuDirListingItem; //todo refactor and rename
+{Пытаемся найти объект в облаке по его пути, сначала в текущем списке, если нет - то ищем в облаке}
+function FindListingItemByPath(CurrentListing: TCloudMailRuDirListing; path: TRealPath): TCloudMailRuDirListingItem;
 var
 	getResult: integer;
 	Cloud: TCloudMailRu;
+
+	function FindListingItemByName(DirListing: TCloudMailRuDirListing; ItemName: WideString): TCloudMailRuDirListingItem;
+	var
+		CurrentItem: TCloudMailRuDirListingItem;
+	begin
+		for CurrentItem in DirListing do
+			if CurrentItem.name = ItemName then exit(CurrentItem);
+	end;
+
+	function FindListingItemByHomePath(DirListing: TCloudMailRuDirListing; HomePath: WideString): TCloudMailRuDirListingItem;
+	var
+		CurrentItem: TCloudMailRuDirListingItem;
+	begin
+		HomePath := '/' + StringReplace(HomePath, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]);
+		for CurrentItem in DirListing do
+			if CurrentItem.home = HomePath then exit(CurrentItem);
+	end;
+
 begin
-	if path.trashDir or path.sharedDir then Result := FindListingItemByName(CurrentListing, path.path)//-__-
+	if path.trashDir or path.sharedDir then Result := FindListingItemByName(CurrentListing, path.path)//Корзина и ссылки не возвращают HomePath
 	else Result := FindListingItemByHomePath(CurrentListing, path.path); //сначала попробуем найти поле в имеющемся списке
 
 	if Result.name = '' then //если там его нет (нажали пробел на папке, например), то запросим в облаке напрямую, в зависимости от того, внутри чего мы находимся
@@ -122,11 +124,13 @@ begin
 		Cloud := ConnectionManager.get(path.account, getResult);
 		if path.trashDir then //корзина - обновим CurrentListing, поищем в нём
 		begin
-			if Cloud.getTrashbinListing(CurrentListing) then Result := FindListingItemByName(CurrentListing, path.path);
-		end else if path.sharedDir then //ссылки - обновим список
+			if Cloud.getTrashbinListing(CurrentListing) then exit(FindListingItemByName(CurrentListing, path.path));
+		end;
+		if path.sharedDir then //ссылки - обновим список
 		begin
-			if Cloud.getSharedLinksListing(CurrentListing) then Result := FindListingItemByName(CurrentListing, path.path);
-		end else if Cloud.statusFile(path.path, Result) then //Обычный каталог
+			if Cloud.getSharedLinksListing(CurrentListing) then exit(FindListingItemByName(CurrentListing, path.path));
+		end;
+		if Cloud.statusFile(path.path, Result) then //Обычный каталог
 		begin
 			if (Result.home = '') and not Cloud.isPublicShare then MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, pWideChar('Cant find file ' + path.path)); {Такого быть не может, но...}
 		end;
@@ -519,7 +523,7 @@ begin
 		if not Cloud.getTrashbinListing(CurrentListing) then exit(FS_EXEC_ERROR);
 		getResult := TDeletedPropertyForm.ShowProperties(MainWin, CurrentListing, true, RealPath.account);
 	end else begin //one item in trashbin
-		CurrentItem:=GetListingItemByName(CurrentListing, RealPath); //для одинаково именованных файлов в корзине будут показываться свойства первого, сорян
+		CurrentItem:=FindListingItemByPath(CurrentListing, RealPath); //для одинаково именованных файлов в корзине будут показываться свойства первого, сорян
 		getResult :=TDeletedPropertyForm.ShowProperties(MainWin, [CurrentItem]);
 	end;
 	case (getResult) of
@@ -541,7 +545,7 @@ begin
 	Result := FS_EXEC_OK;
 	if ActionOpen then //open item, i.e. treat it as symlink to original location
 	begin
-		CurrentItem:=GetListingItemByName(CurrentListing, RealPath);
+		CurrentItem:=FindListingItemByPath(CurrentListing, RealPath);
 		if CurrentItem.type_ = TYPE_FILE then strpcopy(RemoteName, '\' + RealPath.account + ExtractFilePath(UrlToPath(CurrentItem.home)))
 		else strpcopy(RemoteName, '\' + RealPath.account + UrlToPath(CurrentItem.home));
 		Result:=FS_EXEC_SYMLINK;
@@ -550,7 +554,7 @@ begin
 		else
 		begin
 			Cloud:=ConnectionManager.get(RealPath.account, getResult);
-			CurrentItem:=GetListingItemByName(CurrentListing, RealPath);
+			CurrentItem:=FindListingItemByPath(CurrentListing, RealPath);
 			if Cloud.statusFile(CurrentItem.home, CurrentItem) then TPropertyForm.ShowProperty(MainWin, RealPath.path, CurrentItem, Cloud, GetPluginSettings(SettingsIniFilePath).DownloadLinksEncode, GetPluginSettings(SettingsIniFilePath).AutoUpdateDownloadListing)
 		end;
 	end;
@@ -658,7 +662,7 @@ begin
 	begin
 		if GetPluginSettings(SettingsIniFilePath).PreserveFileTime then
 		begin
-			Item := GetListingItemByName(CurrentListing, RemotePath);
+			Item := FindListingItemByPath(CurrentListing, RemotePath);
 			if Item.mtime <> 0 then SetAllFileTime(ExpandUNCFileName(LocalName), DateTimeToFileTime(UnixToDateTime(Item.mtime)));
 		end;
 		if CheckFlag(FS_COPYFLAGS_MOVE, CopyFlags) then ConnectionManager.get(RemotePath.account, getResult).deleteFile(RemotePath.path);
@@ -816,7 +820,7 @@ Begin
 	Cloud:=ConnectionManager.get(RealPath.account, getResult);
 	if RealPath.sharedDir then
 	begin
-		CurrentItem:=GetListingItemByName(CurrentListing, RealPath);
+		CurrentItem:=FindListingItemByPath(CurrentListing, RealPath);
 		Cloud.getShareInfo(CurrentItem.home, InvitesListing);
 		for Invite in InvitesListing do Cloud.shareFolder(CurrentItem.home, Invite.email, CLOUD_SHARE_NO); //no reporting here
 		if (CurrentItem.WebLink <> '') then Cloud.publishFile(CurrentItem.home, CurrentItem.WebLink, CLOUD_UNPUBLISH);
@@ -1015,7 +1019,7 @@ begin
 		else exit(ft_nosuchfield);
 	end;
 
-	Item := GetListingItemByName(CurrentListing, RealPath);
+	Item := FindListingItemByPath(CurrentListing, RealPath);
 	//if Item.home = '' then exit(ft_nosuchfield);
 
 	case FieldIndex of
@@ -1175,7 +1179,7 @@ begin
 		if (GetAccountSettingsFromIniFile(AccountsIniFilePath, copy(RemoteName, 2, StrLen(RemoteName) - 2)).public_account) then strpcopy(RemoteName, 'cloud_public')
 		else strpcopy(RemoteName, 'cloud');
 	end else begin //directories
-		Item := GetListingItemByName(CurrentListing, RealPath);
+		Item := FindListingItemByPath(CurrentListing, RealPath);
 		if (Item.type_ = TYPE_DIR) or (Item.kind = KIND_SHARED) then
 		begin
 			if Item.kind = KIND_SHARED then strpcopy(RemoteName, 'shared')
