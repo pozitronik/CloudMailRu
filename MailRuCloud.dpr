@@ -806,14 +806,23 @@ function FsDeleteFileW(RemoteName: pWideChar): Bool; stdcall; //Удаление
 var
 	RealPath: TRealPath;
 	getResult: integer;
+	CurrentItem: TCloudMailRuDirListingItem;
+	Cloud: TCloudMailRu;
+	InvitesListing: TCloudMailRuInviteInfoListing;
+	Invite: TCloudMailRuInviteInfo;
 Begin
 	RealPath := ExtractRealPath(WideString(RemoteName));
 	if (RealPath.account = '') or RealPath.trashDir then exit(false);
+	Cloud:=ConnectionManager.get(RealPath.account, getResult);
 	if RealPath.sharedDir then
-	begin //todo remove share
-
-	end;
-	Result := ConnectionManager.get(RealPath.account, getResult).deleteFile(RealPath.path);
+	begin
+		CurrentItem:=GetListingItemByName(CurrentListing, RealPath);
+		Cloud.getShareInfo(CurrentItem.home, InvitesListing);
+		for Invite in InvitesListing do Cloud.shareFolder(CurrentItem.home, Invite.email, CLOUD_SHARE_NO); //no reporting here
+		if (CurrentItem.WebLink <> '') then Cloud.publishFile(CurrentItem.home, CurrentItem.WebLink, CLOUD_UNPUBLISH);
+		Result:=true;
+	end
+	else Result := Cloud.deleteFile(RealPath.path);
 End;
 
 function FsMkDirW(path: pWideChar): Bool; stdcall;
@@ -849,8 +858,8 @@ end;
 
 Function cloneWeblink(NewCloud, OldCloud: TCloudMailRu; CloudPath: WideString; CurrentItem: TCloudMailRuDirListingItem; NeedUnpublish: Boolean): integer;
 begin
-	Result := NewCloud.cloneWeblink(ExtractFileDir(CloudPath), CurrentItem.Weblink, CLOUD_CONFLICT_STRICT);
-	if (NeedUnpublish) and not(OldCloud.publishFile(CurrentItem.home, CurrentItem.Weblink, CLOUD_UNPUBLISH)) then MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, pWideChar('Can''t remove temporary public link on ' + CurrentItem.home));
+	Result := NewCloud.cloneWeblink(ExtractFileDir(CloudPath), CurrentItem.WebLink, CLOUD_CONFLICT_STRICT);
+	if (NeedUnpublish) and not(OldCloud.publishFile(CurrentItem.home, CurrentItem.WebLink, CLOUD_UNPUBLISH)) then MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, pWideChar('Can''t remove temporary public link on ' + CurrentItem.home));
 end;
 
 Function RenMoveFileViaPublicLink(OldCloud, NewCloud: TCloudMailRu; OldRealPath, NewRealPath: TRealPath; Move, OverWrite: Boolean): integer;
@@ -865,10 +874,10 @@ begin
 
 	if OldCloud.statusFile(OldRealPath.path, CurrentItem) then
 	begin
-		if CurrentItem.Weblink = '' then //create temporary weblink
+		if CurrentItem.WebLink = '' then //create temporary weblink
 		begin
 			NeedUnpublish := true;
-			if not(OldCloud.publishFile(CurrentItem.home, CurrentItem.Weblink)) then //problem publishing
+			if not(OldCloud.publishFile(CurrentItem.home, CurrentItem.WebLink)) then //problem publishing
 			begin
 				MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, pWideChar('Can''t get temporary public link on ' + CurrentItem.home));
 				exit(FS_FILE_READERROR);
@@ -1039,7 +1048,7 @@ begin
 			end;
 		5:
 			begin
-				strpcopy(FieldValue, Item.Weblink);
+				strpcopy(FieldValue, Item.WebLink);
 				Result := ft_stringw;
 			end;
 		6:
@@ -1170,7 +1179,7 @@ begin
 		if (Item.type_ = TYPE_DIR) or (Item.kind = KIND_SHARED) then
 		begin
 			if Item.kind = KIND_SHARED then strpcopy(RemoteName, 'shared')
-			else if Item.Weblink <> '' then strpcopy(RemoteName, 'shared_public')
+			else if Item.WebLink <> '' then strpcopy(RemoteName, 'shared_public')
 			else exit(FS_ICON_USEDEFAULT);
 		end
 		else exit(FS_ICON_USEDEFAULT);
