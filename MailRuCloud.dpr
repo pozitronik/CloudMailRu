@@ -566,6 +566,7 @@ var
 	CurrentItem: TCloudMailRuDirListingItem;
 	getResult: integer;
 begin
+	Result:=FS_EXEC_OK;
 	if RealPath.path = '' then TAccountsForm.ShowAccounts(MainWin, AccountsIniFilePath, SettingsIniFilePath, MyCryptProc, PluginNum, CryptoNum, RealPath.account)//show account properties
 	else
 	begin
