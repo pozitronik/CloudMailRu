@@ -676,7 +676,7 @@ begin
 	Result := FS_FILE_NOTSUPPORTED;
 	If CheckFlag(FS_COPYFLAGS_RESUME, CopyFlags) then exit; {NEVER CALLED HERE}
 	RealPath := ExtractRealPath(RemoteName);
-	if RealPath.trashDir then exit;
+	if RealPath.trashDir or RealPath.sharedDir then exit;
 
 	MyProgressProc(PluginNum, RemoteName, LocalName, 0);
 
@@ -753,7 +753,7 @@ var
 begin
 
 	RealPath := ExtractRealPath(RemoteName);
-	if (RealPath.account = '') or RealPath.trashDir then exit(FS_FILE_NOTSUPPORTED);
+	if (RealPath.account = '') or RealPath.trashDir or RealPath.sharedDir then exit(FS_FILE_NOTSUPPORTED);
 	MyProgressProc(PluginNum, LocalName, pWideChar(RealPath.path), 0);
 
 	if CheckFlag(FS_COPYFLAGS_RESUME, CopyFlags) then exit(FS_FILE_NOTSUPPORTED); //NOT SUPPORTED
@@ -809,6 +809,10 @@ var
 Begin
 	RealPath := ExtractRealPath(WideString(RemoteName));
 	if (RealPath.account = '') or RealPath.trashDir then exit(false);
+	if RealPath.sharedDir then
+	begin //todo remove share
+
+	end;
 	Result := ConnectionManager.get(RealPath.account, getResult).deleteFile(RealPath.path);
 End;
 
@@ -822,7 +826,7 @@ Begin
 	if SkipListRenMov then exit(false); //skip create directory if this flag set on
 
 	RealPath := ExtractRealPath(WideString(path));
-	if (RealPath.account = '') or RealPath.trashDir then exit(false);
+	if (RealPath.account = '') or RealPath.trashDir or RealPath.sharedDir then exit(false);
 	Result := ConnectionManager.get(RealPath.account, getResult).createDir(RealPath.path);
 end;
 
@@ -839,7 +843,7 @@ Begin
 		exit(false);
 	end;
 	RealPath := ExtractRealPath(WideString(RemoteName));
-	if RealPath.trashDir then exit(false);
+	if RealPath.trashDir or RealPath.sharedDir then exit(false);
 	Result := ConnectionManager.get(RealPath.account, getResult).removeDir(RealPath.path);
 end;
 
@@ -923,7 +927,7 @@ Begin
 	OldRealPath := ExtractRealPath(WideString(OldName));
 	NewRealPath := ExtractRealPath(WideString(NewName));
 
-	if OldRealPath.trashDir or NewRealPath.trashDir then exit(FS_FILE_NOTSUPPORTED);
+	if OldRealPath.trashDir or NewRealPath.trashDir or OldRealPath.sharedDir or NewRealPath.sharedDir then exit(FS_FILE_NOTSUPPORTED);
 
 	OldCloud := ConnectionManager.get(OldRealPath.account, getResult);
 	NewCloud := ConnectionManager.get(NewRealPath.account, getResult);
