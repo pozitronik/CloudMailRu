@@ -513,9 +513,10 @@ var
 	CurrentItem: TCloudMailRuDirListingItem;
 begin
 	Result := FS_EXEC_OK;
+	Cloud:=ConnectionManager.get(RealPath.account, getResult);
 	if RealPath.path = '' then //main trashbin folder properties
 	begin
-		Cloud:=ConnectionManager.get(RealPath.account, getResult);
+
 		if not Cloud.getTrashbinListing(CurrentListing) then exit(FS_EXEC_ERROR);
 		getResult := TDeletedPropertyForm.ShowProperties(MainWin, CurrentListing, true, RealPath.account);
 	end else begin //one item in trashbin
@@ -524,10 +525,12 @@ begin
 	end;
 	case (getResult) of
 		mrNo: if not Cloud.trashbinEmpty then exit(FS_EXEC_ERROR);
-		mrYes: if not ConnectionManager.get(RealPath.account, getResult).trashbinRestore(CurrentItem.deleted_from + CurrentItem.name, CurrentItem.rev) then exit(FS_EXEC_ERROR); //TC do not refresh current panel anyway, so we should do it manually
+		mrYes: if not Cloud.trashbinRestore(CurrentItem.deleted_from + CurrentItem.name, CurrentItem.rev) then exit(FS_EXEC_ERROR);
 		mrYesToAll: for CurrentItem in CurrentListing do
 				if not Cloud.trashbinRestore(CurrentItem.deleted_from + CurrentItem.name, CurrentItem.rev) then exit(FS_EXEC_ERROR);
 	end;
+
+	PostMessage(MainWin, WM_USER + 51, 540, 0); //TC does not update current panel, so we should do it this way
 end;
 
 function FsExecuteFileW(MainWin: THandle; RemoteName, Verb: pWideChar): integer; stdcall; //Запуск файла
