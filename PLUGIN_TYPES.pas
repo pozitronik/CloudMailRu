@@ -1,6 +1,6 @@
 ﻿unit PLUGIN_Types;
 
-{ Типы и константы, используемые в плагине }
+{Типы и константы, используемые в плагине}
 interface
 
 uses windows;
@@ -83,19 +83,19 @@ const
 	FS_ICON_EXTRACTED_DESTROY = 2;
 	FS_ICON_DELAYED = 3;
 
-	{ Flags for crypto callback function }
+	{Flags for crypto callback function}
 	FS_CRYPT_SAVE_PASSWORD = 1;
 	FS_CRYPT_LOAD_PASSWORD = 2;
-	FS_CRYPT_LOAD_PASSWORD_NO_UI = 3; { Load password only if master password has already been entered! }
+	FS_CRYPT_LOAD_PASSWORD_NO_UI = 3; {Load password only if master password has already been entered!}
 	FS_CRYPT_COPY_PASSWORD = 4;
 	FS_CRYPT_MOVE_PASSWORD = 5;
 	FS_CRYPT_DELETE_PASSWORD = 6;
 
-	FS_CRYPTOPT_MASTERPASS_SET = 1; { The user already has a master password defined }
+	FS_CRYPTOPT_MASTERPASS_SET = 1; {The user already has a master password defined}
 
-	BG_DOWNLOAD = 1; { Plugin supports downloads in background }
-	BG_UPLOAD = 2; { Plugin supports uploads in background }
-	BG_ASK_USER = 4; { Plugin requires separate connection for background transfers -> ask user first }
+	BG_DOWNLOAD = 1; {Plugin supports downloads in background}
+	BG_UPLOAD = 2; {Plugin supports uploads in background}
+	BG_ASK_USER = 4; {Plugin requires separate connection for background transfers -> ask user first}
 
 const
 	ft_nomorefields = 0;
@@ -111,7 +111,7 @@ const
 	ft_datetime = 10;
 	ft_stringw = 11;
 
-	// for ContentGetValue
+	//for ContentGetValue
 	ft_nosuchfield = -1;
 	ft_fileerror = -2;
 
@@ -144,7 +144,7 @@ type
 	PCryptProcW = ^TCryptProcW;
 	TCryptProcW = function(PluginNr, CryptoNumber: integer; mode: integer; ConnectionName, Password: pwidechar; maxlen: integer): integer; stdcall;
 
-	{ ------------------------------------------------------------------------------ }
+	{------------------------------------------------------------------------------}
 
 implementation
 

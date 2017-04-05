@@ -117,9 +117,9 @@ var
 	CurrentDirListing: TCloudMailRuDirListing;
 	CurrentDirItemsCounter: Integer;
 begin
-	CancelScanTB.Enabled:=true;
-	RefreshScanTB.Enabled:=false;
-	result:=true;
+	CancelScanTB.Enabled := true;
+	RefreshScanTB.Enabled := false;
+	result := true;
 	if not(Assigned(Cloud)) then Cloud := self.Cloud;
 
 	if not LogProc('Scanning ' + IncludeTrailingPathDelimiter(Path)) then exit(false);
@@ -129,15 +129,15 @@ begin
 	begin
 		if CurrentDirListing[CurrentDirItemsCounter].type_ = TYPE_DIR then
 		begin
-			result:=FillRecursiveDownloadListing(IncludeTrailingPathDelimiter(Path) + CurrentDirListing[CurrentDirItemsCounter].name, Cloud);
+			result := FillRecursiveDownloadListing(IncludeTrailingPathDelimiter(Path) + CurrentDirListing[CurrentDirItemsCounter].name, Cloud);
 			if not result then break;
 
 		end else begin
 			DownloadLinksMemo.Lines.Add(Cloud.getSharedFileUrl(IncludeTrailingPathDelimiter(Path) + CurrentDirListing[CurrentDirItemsCounter].name, self.DoUrlEncode));
 		end;
 	end;
-	RefreshScanTB.Enabled:=true;
-	CancelScanTB.Enabled:=false;
+	RefreshScanTB.Enabled := true;
+	CancelScanTB.Enabled := false;
 end;
 
 procedure TPropertyForm.RefreshPublicShare(const Publish: Boolean);
@@ -166,7 +166,7 @@ begin
 			Props.WebLink := '';
 			WebLink.Enabled := false;
 			DownloadLinksTS.TabVisible := false;
-			if ExtPropertiesPC.TabIndex = -1 then ExtPropertiesPC.Visible :=false;
+			if ExtPropertiesPC.TabIndex = -1 then ExtPropertiesPC.Visible := false;
 
 		end else begin
 			MessageBoxW(self.Handle, PWideChar('Error while unpublishing file ' + Props.home + ', see main log'), 'File unpublishing error', MB_OK + MB_ICONERROR);
@@ -197,17 +197,17 @@ procedure TPropertyForm.TempPublicCloudInit(publicUrl: WideString);
 var
 	TempAccountSettings: TAccountSettings;
 begin
-	TempAccountSettings.public_account:=true;
+	TempAccountSettings.public_account := true;
 	TempAccountSettings.public_url := publicUrl;
-	self.TempPublicCloud:= TCloudMailRu.Create(TempAccountSettings, 0, self.Cloud.ProxySettings, self.Cloud.ConnectTimeoutValue);
+	self.TempPublicCloud := TCloudMailRu.Create(TempAccountSettings, 0, self.Cloud.ProxySettings, self.Cloud.ConnectTimeoutValue);
 	self.TempPublicCloud.login;
 end;
 
 function TPropertyForm.LogProc(LogText: WideString): Boolean;
 begin
-	result:=not LogCancelledFlag;
-	if (result) then LogLabel.Caption:=LogText
-	else LogLabel.Caption:='';
+	result := not LogCancelledFlag;
+	if (result) then LogLabel.Caption := LogText
+	else LogLabel.Caption := '';
 	LogCancelledFlag := false;
 end;
 
@@ -215,7 +215,7 @@ end;
 
 procedure TPropertyForm.CancelScanTBClick(Sender: TObject);
 begin
-	LogCancelledFlag:=true;
+	LogCancelledFlag := true;
 end;
 
 procedure TPropertyForm.FormActivate(Sender: TObject);
@@ -314,7 +314,7 @@ begin
 		PropertyForm.Caption := RemoteProperty.name;
 		PropertyForm.Cloud := Cloud;
 		PropertyForm.Props := RemoteProperty;
-		PropertyForm.AutoUpdateDownloadListing :=AutoUpdateDownloadListing;
+		PropertyForm.AutoUpdateDownloadListing := AutoUpdateDownloadListing;
 		PropertyForm.LogCancelledFlag := false;
 		PropertyForm.DoUrlEncode := DoUrlEncode;
 		RegisterHotKey(PropertyForm.Handle, 1, 0, VK_ESCAPE);

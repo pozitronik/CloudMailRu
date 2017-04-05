@@ -84,9 +84,8 @@ type
 		AutoUpdateDownloadListing: boolean;
 		ShowTrashFolders: boolean;
 		ShowSharedFolders: boolean;
+		ShowInvitesFolders: boolean;
 	end;
-
- //	TVirtualAccounts = array [0 .. 1] of boolean;
 
 function GetProxyPasswordNow(var ProxySettings: TProxySettings; MyLogProc: TLogProcW; MyCryptProc: TCryptProcW; PluginNum: Integer; CryptoNum: Integer): boolean;
 function GetPluginSettings(IniFilePath: WideString): TPluginSettings;
@@ -205,6 +204,7 @@ begin
 	GetPluginSettings.AutoUpdateDownloadListing := IniFile.ReadBool('Main', 'AutoUpdateDownloadListing', true);
 	GetPluginSettings.ShowTrashFolders := IniFile.ReadBool('Main', 'ShowTrashFolders', true);
 	GetPluginSettings.ShowSharedFolders := IniFile.ReadBool('Main', 'ShowSharedFolders', true);
+	GetPluginSettings.ShowInvitesFolders := IniFile.ReadBool('Main', 'ShowInvitesFolders', true);
 	IniFile.Destroy;
 end;
 
@@ -306,7 +306,7 @@ begin
 	IniFile.Destroy;
 end;
 
-procedure AddVirtualAccountsToAccountsList(AccountsIniFilePath: WideString; var AccountsList: TStringList; VirtualAccountsEnabled: TArray<Boolean>);
+procedure AddVirtualAccountsToAccountsList(AccountsIniFilePath: WideString; var AccountsList: TStringList; VirtualAccountsEnabled: TArray<boolean>);
 var
 	VAccounts: TStringList;
 	account: WideString;
@@ -317,6 +317,7 @@ begin
 		if GetAccountSettingsFromIniFile(AccountsIniFilePath, account).public_account then Continue; //public accounts ignored
 		if VirtualAccountsEnabled[0] then VAccounts.Add(account + TrashPostfix);
 		if VirtualAccountsEnabled[1] then VAccounts.Add(account + SharedPostfix);
+		if VirtualAccountsEnabled[2] then VAccounts.Add(account + InvitesPostfix);
 	end;
 	AccountsList.AddStrings(VAccounts);
 	VAccounts.Free;

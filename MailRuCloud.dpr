@@ -409,9 +409,9 @@ begin
 	if (CanAbortRenMov and (MyProgressProc(PluginNum, path, nil, 0) = 1)) then
 	begin
 		ThreadListingAborted.AddOrSetValue(GetCurrentThreadID(), true);
-		RenMovAborted:=true;
+		RenMovAborted := true;
 	end
-	else RenMovAborted:=false;
+	else RenMovAborted := false;
 
 	if SkipListDelete or SkipListRenMov or RenMovAborted then
 	begin
@@ -433,7 +433,7 @@ begin
 
 			FindData := FindData_emptyDir(AccountsList.Strings[0]);
 			FileCounter := 1;
-			Result:= FIND_ROOT_DIRECTORY;
+			Result := FIND_ROOT_DIRECTORY;
 		end else begin
 			Result := INVALID_HANDLE_VALUE; //Нельзя использовать exit
 			SetLastError(ERROR_NO_MORE_FILES);
@@ -468,7 +468,7 @@ begin
 		end else begin
 			FindData := CloudMailRuDirListingItemToFindData(CurrentListing[0], RealPath.sharedDir); //folders inside shared links directory must be displayed as symlinks
 			FileCounter := 1;
-			if RealPath.sharedDir then Result:=FIND_SHARED_LINKS
+			if RealPath.sharedDir then Result := FIND_SHARED_LINKS
 			else Result := FIND_OK;
 		end;
 	end;
@@ -517,14 +517,14 @@ var
 	CurrentItem: TCloudMailRuDirListingItem;
 begin
 	Result := FS_EXEC_OK;
-	Cloud:=ConnectionManager.get(RealPath.account, getResult);
+	Cloud := ConnectionManager.get(RealPath.account, getResult);
 	if RealPath.path = '' then //main trashbin folder properties
 	begin
 		if not Cloud.getTrashbinListing(CurrentListing) then exit(FS_EXEC_ERROR);
 		getResult := TDeletedPropertyForm.ShowProperties(MainWin, CurrentListing, true, RealPath.account);
 	end else begin //one item in trashbin
-		CurrentItem:=FindListingItemByPath(CurrentListing, RealPath); //для одинаково именованных файлов в корзине будут показываться свойства первого, сорян
-		getResult :=TDeletedPropertyForm.ShowProperties(MainWin, [CurrentItem]);
+		CurrentItem := FindListingItemByPath(CurrentListing, RealPath); //для одинаково именованных файлов в корзине будут показываться свойства первого, сорян
+		getResult := TDeletedPropertyForm.ShowProperties(MainWin, [CurrentItem]);
 	end;
 	case (getResult) of
 		mrNo: if not Cloud.trashbinEmpty then exit(FS_EXEC_ERROR);
@@ -545,16 +545,16 @@ begin
 	Result := FS_EXEC_OK;
 	if ActionOpen then //open item, i.e. treat it as symlink to original location
 	begin
-		CurrentItem:=FindListingItemByPath(CurrentListing, RealPath);
+		CurrentItem := FindListingItemByPath(CurrentListing, RealPath);
 		if CurrentItem.type_ = TYPE_FILE then strpcopy(RemoteName, '\' + RealPath.account + ExtractFilePath(UrlToPath(CurrentItem.home)))
 		else strpcopy(RemoteName, '\' + RealPath.account + UrlToPath(CurrentItem.home));
-		Result:=FS_EXEC_SYMLINK;
+		Result := FS_EXEC_SYMLINK;
 	end else begin
 		if RealPath.path = '' then TAccountsForm.ShowAccounts(MainWin, AccountsIniFilePath, SettingsIniFilePath, MyCryptProc, PluginNum, CryptoNum, RealPath.account)//main shared folder properties - open connection settings
 		else
 		begin
-			Cloud:=ConnectionManager.get(RealPath.account, getResult);
-			CurrentItem:=FindListingItemByPath(CurrentListing, RealPath);
+			Cloud := ConnectionManager.get(RealPath.account, getResult);
+			CurrentItem := FindListingItemByPath(CurrentListing, RealPath);
 			if Cloud.statusFile(CurrentItem.home, CurrentItem) then TPropertyForm.ShowProperty(MainWin, RealPath.path, CurrentItem, Cloud, GetPluginSettings(SettingsIniFilePath).DownloadLinksEncode, GetPluginSettings(SettingsIniFilePath).AutoUpdateDownloadListing)
 		end;
 	end;
@@ -566,7 +566,7 @@ var
 	CurrentItem: TCloudMailRuDirListingItem;
 	getResult: integer;
 begin
-	Result:=FS_EXEC_OK;
+	Result := FS_EXEC_OK;
 	if RealPath.path = '' then TAccountsForm.ShowAccounts(MainWin, AccountsIniFilePath, SettingsIniFilePath, MyCryptProc, PluginNum, CryptoNum, RealPath.account)//show account properties
 	else
 	begin
@@ -818,14 +818,14 @@ var
 Begin
 	RealPath := ExtractRealPath(WideString(RemoteName));
 	if (RealPath.account = '') or RealPath.trashDir then exit(false);
-	Cloud:=ConnectionManager.get(RealPath.account, getResult);
+	Cloud := ConnectionManager.get(RealPath.account, getResult);
 	if RealPath.sharedDir then
 	begin
-		CurrentItem:=FindListingItemByPath(CurrentListing, RealPath);
+		CurrentItem := FindListingItemByPath(CurrentListing, RealPath);
 		Cloud.getShareInfo(CurrentItem.home, InvitesListing);
 		for Invite in InvitesListing do Cloud.shareFolder(CurrentItem.home, Invite.email, CLOUD_SHARE_NO); //no reporting here
 		if (CurrentItem.WebLink <> '') then Cloud.publishFile(CurrentItem.home, CurrentItem.WebLink, CLOUD_UNPUBLISH);
-		Result:=true;
+		Result := true;
 	end
 	else Result := Cloud.deleteFile(RealPath.path);
 End;

@@ -399,7 +399,7 @@ begin
 		if self.public_account and (self.PUBLIC_URL <> '') then
 		begin
 			self.public_link := self.PUBLIC_URL;
-			self.PUBLIC_URL:= IncludeSlash(self.PUBLIC_URL);
+			self.PUBLIC_URL := IncludeSlash(self.PUBLIC_URL);
 			Delete(self.public_link, 1, length(PUBLIC_ACCESS_URL));
 			if self.public_link[length(self.public_link)] = '/' then Delete(self.public_link, length(self.public_link), 1);
 		end;

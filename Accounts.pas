@@ -74,7 +74,9 @@ type
 		DownloadLinksEncodeCB: TCheckBox;
 		AutoUpdateDownloadListingCB: TCheckBox;
 		ShowTrashFoldersCB: TCheckBox;
-    ShowSharedFoldersCB: TCheckBox;
+		ShowSharedFoldersCB: TCheckBox;
+		ShowInvitesFoldersCB: TCheckBox;
+		ShowAccountsLabel: TLabel;
 		procedure FormShow(Sender: TObject);
 		procedure AccountsListClick(Sender: TObject);
 		procedure ApplyButtonClick(Sender: TObject);
@@ -222,6 +224,7 @@ begin
 
 	SetPluginSettingsValue(SettingsIniFilePath, 'ShowTrashFolders', ShowTrashFoldersCB.Checked);
 	SetPluginSettingsValue(SettingsIniFilePath, 'ShowSharedFolders', ShowSharedFoldersCB.Checked);
+	SetPluginSettingsValue(SettingsIniFilePath, 'ShowInvitesFolders', ShowInvitesFoldersCB.Checked);
 
 	if ProxyTCPwdMngrCB.Checked then //просим TC сохранить пароль
 	begin
@@ -342,6 +345,7 @@ begin
 		AccountsForm.AutoUpdateDownloadListingCB.Checked := GetPluginSettings(SettingsIniFilePath).AutoUpdateDownloadListing;
 		AccountsForm.ShowTrashFoldersCB.Checked := GetPluginSettings(SettingsIniFilePath).ShowTrashFolders;
 		AccountsForm.ShowSharedFoldersCB.Checked := GetPluginSettings(SettingsIniFilePath).ShowSharedFolders;
+		AccountsForm.ShowInvitesFoldersCB.Checked := GetPluginSettings(SettingsIniFilePath).ShowInvitesFolders;
 
 		{global settings}
 		if Account <> '' then AccountsForm.SelectedAccount := Account;

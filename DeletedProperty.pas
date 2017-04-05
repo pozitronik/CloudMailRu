@@ -41,22 +41,22 @@ var
 	var
 		Item: TCloudMailRuDirListingItem;
 	begin
-		result:=0;
-		for Item in Items do result:=result + Item.size;
+		result := 0;
+		for Item in Items do result := result + Item.size;
 	end;
 
 begin
 	try
-		DeletedPropertyForm:=TDeletedPropertyForm.Create(nil);
+		DeletedPropertyForm := TDeletedPropertyForm.Create(nil);
 		DeletedPropertyForm.parentWindow := parentWindow;
 
 		if Length(Items) = 0 then
 		begin
 			NameCaption := 'Empty';
 			FormCaption := AccountName + ' trash';
-			DeletedPropertyForm.RestoreBTN.Enabled:=false;
-			DeletedPropertyForm.RestoreAllBTN.Enabled:=false;
-			DeletedPropertyForm.EmptyBTN.Enabled:=false;
+			DeletedPropertyForm.RestoreBTN.Enabled := false;
+			DeletedPropertyForm.RestoreAllBTN.Enabled := false;
+			DeletedPropertyForm.EmptyBTN.Enabled := false;
 		end else if Length(Items) = 1 then
 		begin
 			NameCaption := Items[0].name;
@@ -66,11 +66,11 @@ begin
 			ByCaption := Items[0].deleted_by.ToString; //display user id as is, because no conversation api method performed
 			SizeCaption := FormatSize(Items[0].size, TYPE_BYTES);
 			FormCaption := 'Deleted item: ' + NameCaption;
-			DeletedPropertyForm.RestoreAllBTN.Enabled:=false;
+			DeletedPropertyForm.RestoreAllBTN.Enabled := false;
 		end else begin
 			NameCaption := '<Multiple items>';
 			FromCaption := '-';
-			AtCaption :='-';
+			AtCaption := '-';
 			ByCaption := '-';
 			SizeCaption := FormatSize(summary_size(Items), TYPE_BYTES);
 			FormCaption := 'Multiple deleted items';
@@ -81,10 +81,10 @@ begin
 			FormCaption := AccountName + TrashPostfix;
 			NameCaption := FormCaption;
 			FromCaption := '-';
-			AtCaption :='-';
+			AtCaption := '-';
 			ByCaption := '-';
-			DeletedPropertyForm.RestoreBTN.Enabled:=false;
-			DeletedPropertyForm.RestoreAllBTN.Enabled:=true;
+			DeletedPropertyForm.RestoreBTN.Enabled := false;
+			DeletedPropertyForm.RestoreAllBTN.Enabled := true;
 		end else begin //свойства для пачки файлов, даём выбор Восстановить/Отмена
 
 		end;
@@ -95,7 +95,7 @@ begin
 		DeletedPropertyForm.DelAtLB.Caption := AtCaption;
 		DeletedPropertyForm.DelByLB.Caption := ByCaption;
 		DeletedPropertyForm.DelSizeLB.Caption := SizeCaption;
-		result:=DeletedPropertyForm.ShowModal;
+		result := DeletedPropertyForm.ShowModal;
 	finally
 		FreeAndNil(DeletedPropertyForm);
 	end;

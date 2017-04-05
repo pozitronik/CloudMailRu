@@ -18,6 +18,7 @@ const
 
 	TrashPostfix = '.trash';
 	SharedPostfix = '.shared';
+	InvitesPostfix = '.invites';
 
 	TYPE_BYTES = 0;
 	TYPE_KYLOBYTES = 1;
@@ -30,6 +31,7 @@ type
 		upDirItem: boolean; //path/../
 		trashDir: boolean; //item is inside trash bin dir
 		sharedDir: boolean; //item is inside shared links dir
+		invitesDir: boolean; //item is inside invites dir
 	end;
 
 function Implode(S: TStringList; Delimiter: WideString): WideString;
@@ -91,7 +93,8 @@ begin
 	Result.path := '';
 	Result.upDirItem := false;
 	Result.trashDir := false;
-	Result.sharedDir:=false;
+	Result.sharedDir := false;
+	Result.invitesDir := false;
 
 	if VirtualPath = '' then exit; //root
 	VirtualPath := Copy(VirtualPath, 2, Length(VirtualPath) - 1);
@@ -115,11 +118,15 @@ begin
 	if ExtractFileExt(Result.account) = TrashPostfix then
 	begin
 		Result.trashDir := true;
-		Result.account:=Copy(Result.account, 1, Length(Result.account) - Length(TrashPostfix));
+		Result.account := Copy(Result.account, 1, Length(Result.account) - Length(TrashPostfix));
 	end else if ExtractFileExt(Result.account) = SharedPostfix then
 	begin
 		Result.sharedDir := true;
-		Result.account:=Copy(Result.account, 1, Length(Result.account) - Length(SharedPostfix));
+		Result.account := Copy(Result.account, 1, Length(Result.account) - Length(SharedPostfix));
+	end else if ExtractFileExt(Result.account) = InvitesPostfix then
+	begin
+		Result.invitesDir := true;
+		Result.account := Copy(Result.account, 1, Length(Result.account) - Length(InvitesPostfix));
 	end;
 
 end;
@@ -302,7 +309,7 @@ function PathToUrl(path: WideString; RestrictEmptyUrl: boolean = true; DoUrlEnco
 begin
 
 	Result := StringReplace(path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]);
-	if DoUrlEncode then Result:=UrlEncode(Result);
+	if DoUrlEncode then Result := UrlEncode(Result);
 
 	if (Result = '') and RestrictEmptyUrl then Result := '/';
 end;
@@ -391,7 +398,7 @@ function LoadIcon(const FileName: WideString): Hicon;
 var
 	Icon: TIcon;
 begin
-	Icon:=nil;
+	Icon := nil;
 	LoadIcon := INVALID_HANDLE_VALUE;
 	if not FileExists(FileName) then exit;
 
@@ -443,7 +450,7 @@ const
 var
 	iteration: Integer;
 begin
-	iteration :=0;
+	iteration := 0;
 	while size > 1024 do
 	begin
 		iteration := iteration + 1;
