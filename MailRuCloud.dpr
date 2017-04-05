@@ -585,6 +585,8 @@ Begin
 	RealPath := ExtractRealPath(RemoteName);
 	Result := FS_EXEC_OK;
 
+	if RealPath.upDirItem then RealPath.path := ExtractFilePath(RealPath.path); //if somepath/.. item properties called
+
 	if RealPath.trashDir and ((Verb = 'open') or (Verb = 'properties')) then exit(ExecTrashbinProperties(MainWin, RealPath));
 
 	if RealPath.sharedDir then exit(ExecSharedAction(MainWin, RealPath, RemoteName, Verb = 'open'));
