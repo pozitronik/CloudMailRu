@@ -557,6 +557,27 @@ begin
 	end;
 end;
 
+function ExecProperties(MainWin: THandle; RealPath: TRealPath): integer;
+var
+	Cloud: TCloudMailRu;
+	CurrentItem: TCloudMailRuDirListingItem;
+	getResult: integer;
+begin
+	if RealPath.path = '' then TAccountsForm.ShowAccounts(MainWin, AccountsIniFilePath, SettingsIniFilePath, MyCryptProc, PluginNum, CryptoNum, RealPath.account)//show account properties
+	else
+	begin
+		Cloud := ConnectionManager.get(RealPath.account, getResult);
+		if Cloud.statusFile(RealPath.path, CurrentItem) then //всегда нужно обновлять статус на сервере, CurrentListing может быть изменён в другой панели
+		begin
+			if Cloud.isPublicShare then TPropertyForm.ShowProperty(MainWin, RealPath.path, CurrentItem, Cloud, GetPluginSettings(SettingsIniFilePath).DownloadLinksEncode, GetPluginSettings(SettingsIniFilePath).AutoUpdateDownloadListing)
+			else
+			begin
+				if CurrentItem.home <> '' then TPropertyForm.ShowProperty(MainWin, RealPath.path, CurrentItem, Cloud, GetPluginSettings(SettingsIniFilePath).DownloadLinksEncode, GetPluginSettings(SettingsIniFilePath).AutoUpdateDownloadListing);
+			end;
+		end;
+	end;
+end;
+
 function FsExecuteFileW(MainWin: THandle; RemoteName, Verb: pWideChar): integer; stdcall; //Запуск файла
 var
 	RealPath: TRealPath;
@@ -572,27 +593,11 @@ Begin
 
 	if RealPath.sharedDir then exit(ExecSharedAction(MainWin, RealPath, RemoteName, Verb = 'open'));
 
-	if Verb = 'open' then exit(FS_EXEC_YOURSELF)
-	else if Verb = 'properties' then
-	begin
-		if RealPath.path = '' then
-		begin
-			TAccountsForm.ShowAccounts(MainWin, AccountsIniFilePath, SettingsIniFilePath, MyCryptProc, PluginNum, CryptoNum, RealPath.account);
-		end else begin
-			if ConnectionManager.get(RealPath.account, getResult).statusFile(RealPath.path, CurrentItem) then //всегда нужно обновлять статус на сервере, CurrentListing может быть изменён в другой панели
-			begin
-				Cloud := ConnectionManager.get(RealPath.account, getResult);
-				if Cloud.isPublicShare then
-				begin
-					TPropertyForm.ShowProperty(MainWin, RealPath.path, CurrentItem, Cloud, GetPluginSettings(SettingsIniFilePath).DownloadLinksEncode, GetPluginSettings(SettingsIniFilePath).AutoUpdateDownloadListing);
-				end else begin
-					if CurrentItem.home <> '' then TPropertyForm.ShowProperty(MainWin, RealPath.path, CurrentItem, Cloud, GetPluginSettings(SettingsIniFilePath).DownloadLinksEncode, GetPluginSettings(SettingsIniFilePath).AutoUpdateDownloadListing)
-					else MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, pWideChar('Cant find file under cursor!'));
-				end;
+	if Verb = 'properties' then exit(ExecProperties(MainWin, RealPath));
 
-			end; //Не рапортуем, это будет уровнем выше
-		end;
-	end else if copy(Verb, 1, 5) = 'chmod' then
+	if Verb = 'open' then exit(FS_EXEC_YOURSELF);
+
+	if copy(Verb, 1, 5) = 'chmod' then
 	begin
 	end else if copy(Verb, 1, 5) = 'quote' then
 	begin //обработка внутренних команд плагина
