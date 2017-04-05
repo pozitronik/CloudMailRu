@@ -516,7 +516,6 @@ begin
 	Cloud:=ConnectionManager.get(RealPath.account, getResult);
 	if RealPath.path = '' then //main trashbin folder properties
 	begin
-
 		if not Cloud.getTrashbinListing(CurrentListing) then exit(FS_EXEC_ERROR);
 		getResult := TDeletedPropertyForm.ShowProperties(MainWin, CurrentListing, true, RealPath.account);
 	end else begin //one item in trashbin
@@ -533,6 +532,31 @@ begin
 	PostMessage(MainWin, WM_USER + 51, 540, 0); //TC does not update current panel, so we should do it this way
 end;
 
+function ExecSharedAction(MainWin: THandle; RealPath: TRealPath; RemoteName: pWideChar; ActionOpen: Boolean = true): integer;
+var
+	Cloud: TCloudMailRu;
+	CurrentItem: TCloudMailRuDirListingItem;
+	getResult: integer;
+begin
+	Result := FS_EXEC_OK;
+	if ActionOpen then //open item, i.e. treat it as symlink to original location
+	begin
+		CurrentItem:=GetListingItemByName(CurrentListing, RealPath);
+		if CurrentItem.type_ = TYPE_FILE then strpcopy(RemoteName, '\' + RealPath.account + ExtractFilePath(UrlToPath(CurrentItem.home)))
+		else strpcopy(RemoteName, '\' + RealPath.account + UrlToPath(CurrentItem.home));
+		Result:=FS_EXEC_SYMLINK;
+	end else begin
+		if RealPath.path = '' then TAccountsForm.ShowAccounts(MainWin, AccountsIniFilePath, SettingsIniFilePath, MyCryptProc, PluginNum, CryptoNum, RealPath.account)//main shared folder properties - open connection settings
+		else
+		begin
+			Cloud:=ConnectionManager.get(RealPath.account, getResult);
+			CurrentItem:=GetListingItemByName(CurrentListing, RealPath);
+			if Cloud.statusFile(CurrentItem.home, CurrentItem) then
+				if CurrentItem.home <> '' then TPropertyForm.ShowProperty(MainWin, RealPath.path, CurrentItem, Cloud, GetPluginSettings(SettingsIniFilePath).DownloadLinksEncode, GetPluginSettings(SettingsIniFilePath).AutoUpdateDownloadListing)
+		end;
+	end;
+end;
+
 function FsExecuteFileW(MainWin: THandle; RemoteName, Verb: pWideChar): integer; stdcall; //Запуск файла
 var
 	RealPath: TRealPath;
@@ -546,26 +570,7 @@ Begin
 
 	if RealPath.trashDir and ((Verb = 'open') or (Verb = 'properties')) then exit(ExecTrashbinProperties(MainWin, RealPath));
 
-	if RealPath.sharedDir then
-	begin
-		if Verb = 'open' then
-		begin
-			CurrentItem:=GetListingItemByName(CurrentListing, RealPath);
-			if CurrentItem.type_ = TYPE_FILE then strpcopy(RemoteName, '\' + RealPath.account + ExtractFilePath(UrlToPath(CurrentItem.home)))
-			else strpcopy(RemoteName, '\' + RealPath.account + UrlToPath(CurrentItem.home));
-			Result:=FS_EXEC_SYMLINK;
-		end else if (Verb = 'properties') and (RealPath.path <> '') then
-		begin
-			CurrentItem:=GetListingItemByName(CurrentListing, RealPath);
-			if ConnectionManager.get(RealPath.account, getResult).statusFile(CurrentItem.home, CurrentItem) then //всегда нужно обновлять статус на сервере, CurrentListing может быть изменён в другой панели
-			begin
-				Cloud := ConnectionManager.get(RealPath.account, getResult);
-				if CurrentItem.home <> '' then TPropertyForm.ShowProperty(MainWin, RealPath.path, CurrentItem, Cloud, GetPluginSettings(SettingsIniFilePath).DownloadLinksEncode, GetPluginSettings(SettingsIniFilePath).AutoUpdateDownloadListing)
-				else MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, pWideChar('Cant find file under cursor!'));
-			end;
-		end;
-		exit;
-	end;
+	if RealPath.sharedDir then exit(ExecSharedAction(MainWin, RealPath, RemoteName, Verb = 'open'));
 
 	if Verb = 'open' then exit(FS_EXEC_YOURSELF)
 	else if Verb = 'properties' then
