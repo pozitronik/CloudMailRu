@@ -1898,7 +1898,7 @@ begin
 			CLOUD_OPERATION_OK: Result := fromJSON_FileStatus(JSON, FileInfo);
 			else
 				begin
-					Log(MSGTYPE_IMPORTANTERROR, 'File publish error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
+					Log(MSGTYPE_IMPORTANTERROR, 'File status error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
 					Result := false;
 				end;
 		end;
