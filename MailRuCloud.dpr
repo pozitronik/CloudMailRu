@@ -617,7 +617,7 @@ begin
 		end;
 	end;
 
-	if command = 'links' then
+	if command = 'shared' then
 	begin
 		if Cloud.isPublicShare then exit(FS_EXEC_ERROR);
 		if RealPath.account <> '' then
