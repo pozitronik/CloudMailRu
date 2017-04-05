@@ -506,6 +506,30 @@ Begin //Завершение получения списка файлов. Resul
 	FileCounter := 0;
 end;
 
+function ExecTrashbinProperties(MainWin: THandle; RealPath: TRealPath): integer;
+var
+	Cloud: TCloudMailRu;
+	getResult: integer;
+	CurrentItem: TCloudMailRuDirListingItem;
+begin
+	Result := FS_EXEC_OK;
+	if RealPath.path = '' then //main trashbin folder properties
+	begin
+		Cloud:=ConnectionManager.get(RealPath.account, getResult);
+		if not Cloud.getTrashbinListing(CurrentListing) then exit(FS_EXEC_ERROR);
+		getResult := TDeletedPropertyForm.ShowProperties(MainWin, CurrentListing, true, RealPath.account);
+	end else begin //one item in trashbin
+		CurrentItem:=GetListingItemByName(CurrentListing, RealPath); //для одинаково именованных файлов в корзине будут показываться свойства первого, сорян
+		getResult :=TDeletedPropertyForm.ShowProperties(MainWin, [CurrentItem]);
+	end;
+	case (getResult) of
+		mrNo: if not Cloud.trashbinEmpty then exit(FS_EXEC_ERROR);
+		mrYes: if not ConnectionManager.get(RealPath.account, getResult).trashbinRestore(CurrentItem.deleted_from + CurrentItem.name, CurrentItem.rev) then exit(FS_EXEC_ERROR); //TC do not refresh current panel anyway, so we should do it manually
+		mrYesToAll: for CurrentItem in CurrentListing do
+				if not Cloud.trashbinRestore(CurrentItem.deleted_from + CurrentItem.name, CurrentItem.rev) then exit(FS_EXEC_ERROR);
+	end;
+end;
+
 function FsExecuteFileW(MainWin: THandle; RemoteName, Verb: pWideChar): integer; stdcall; //Запуск файла
 var
 	RealPath: TRealPath;
@@ -517,28 +541,7 @@ Begin
 	RealPath := ExtractRealPath(RemoteName);
 	Result := FS_EXEC_OK;
 
-	if RealPath.trashDir and ((Verb = 'open') or (Verb = 'properties')) then
-	begin
-		if RealPath.path = '' then //main trashbin folder properties
-		begin
-			Cloud:=ConnectionManager.get(RealPath.account, getResult);
-			if not Cloud.getTrashbinListing(CurrentListing) then exit(FS_EXEC_ERROR);
-			case (TDeletedPropertyForm.ShowProperties(MainWin, CurrentListing, true, RealPath.account)) of
-				mrNo: if not Cloud.trashbinEmpty then exit(FS_EXEC_ERROR);
-				mrYesToAll: for CurrentItem in CurrentListing do
-						if not Cloud.trashbinRestore(CurrentItem.deleted_from + CurrentItem.name, CurrentItem.rev) then exit(FS_EXEC_ERROR);
-			end;
-		end else begin //one item in trashbin
-
-			CurrentItem:=GetListingItemByName(CurrentListing, RealPath); //для одинаково именованных файлов в корзине будут показываться свойства первого, сорян
-			if (TDeletedPropertyForm.ShowProperties(MainWin, [CurrentItem]) = mrYes) then
-			begin
-				if not ConnectionManager.get(RealPath.account, getResult).trashbinRestore(CurrentItem.deleted_from + CurrentItem.name, CurrentItem.rev) then exit(FS_EXEC_ERROR); //TC do not refresh current panel anyway, so we should do it manually
-
-			end;
-		end;
-		exit;
-	end;
+	if RealPath.trashDir and ((Verb = 'open') or (Verb = 'properties')) then exit(ExecTrashbinProperties(MainWin, RealPath));
 
 	if RealPath.sharedDir then
 	begin
