@@ -574,13 +574,59 @@ begin
 	end;
 end;
 
+function ExecCommand(RemoteName: pWideChar; command: WideString; Parameter: WideString = ''): integer;
+var
+	RealPath: TRealPath;
+	getResult: integer;
+	Cloud: TCloudMailRu;
+begin
+	Result := FS_EXEC_OK;
+
+	if command = 'rmdir' then
+	begin
+		RealPath := ExtractRealPath(RemoteName + Parameter);
+		if (ConnectionManager.get(RealPath.account, getResult).removeDir(RealPath.path) <> true) then exit(FS_EXEC_ERROR);
+	end;
+
+	RealPath := ExtractRealPath(RemoteName); //default
+	Cloud := ConnectionManager.get(RealPath.account, getResult);
+
+	//undocumented, share current folder to email param
+	if command = 'share' then
+		if not(Cloud.shareFolder(RealPath.path, ExtractLinkFromUrl(Parameter), CLOUD_SHARE_RW)) then exit(FS_EXEC_ERROR);
+
+	if command = 'clone' then
+	begin
+		if (Cloud.cloneWeblink(RealPath.path, ExtractLinkFromUrl(Parameter)) = CLOUD_OPERATION_OK) then
+			if GetPluginSettings(SettingsIniFilePath).LogUserSpace then Cloud.logUserSpaceInfo
+			else exit(FS_EXEC_ERROR);
+	end;
+
+	if command = 'trash' then //go to current account trash directory
+	begin
+		if Cloud.isPublicShare then exit(FS_EXEC_ERROR);
+		if RealPath.account <> '' then
+		begin
+			strpcopy(RemoteName, '\' + RealPath.account + TrashPostfix);
+			exit(FS_EXEC_SYMLINK);
+		end;
+	end;
+
+	if command = 'links' then
+	begin
+		if Cloud.isPublicShare then exit(FS_EXEC_ERROR);
+		if RealPath.account <> '' then
+		begin
+			strpcopy(RemoteName, '\' + RealPath.account + SharedPostfix);
+			exit(FS_EXEC_SYMLINK);
+		end;
+	end;
+
+end;
+
 function FsExecuteFileW(MainWin: THandle; RemoteName, Verb: pWideChar): integer; stdcall; //Запуск файла
 var
 	RealPath: TRealPath;
-	CurrentItem: TCloudMailRuDirListingItem;
-	Cloud: TCloudMailRu;
-	getResult: integer;
-	command, param: WideString;
 Begin
 	RealPath := ExtractRealPath(RemoteName);
 	Result := FS_EXEC_OK;
@@ -595,46 +641,10 @@ Begin
 
 	if Verb = 'open' then exit(FS_EXEC_YOURSELF);
 
-	if copy(Verb, 1, 5) = 'chmod' then
-	begin
-	end else if copy(Verb, 1, 5) = 'quote' then
-	begin //обработка внутренних команд плагина
-		command := LowerCase(GetWord(Verb, 1));
-		if command = 'rmdir' then
-		begin
-			RealPath := ExtractRealPath(RemoteName + GetWord(Verb, 2));
-			if (ConnectionManager.get(RealPath.account, getResult).removeDir(RealPath.path) <> true) then Result := FS_EXEC_ERROR;
-		end else if command = 'share' then //undocumented, share current folder to email param
-		begin
-			RealPath := ExtractRealPath(RemoteName);
-			param := ExtractLinkFromUrl(GetWord(Verb, 2));
-			if not(ConnectionManager.get(RealPath.account, getResult).shareFolder(RealPath.path, param, CLOUD_SHARE_RW)) then Result := FS_EXEC_ERROR;
-		end else if command = 'clone' then
-		begin
-			RealPath := ExtractRealPath(RemoteName);
-			param := ExtractLinkFromUrl(GetWord(Verb, 2));
-			if (ConnectionManager.get(RealPath.account, getResult).cloneWeblink(RealPath.path, param) = CLOUD_OPERATION_OK) then
-			begin
-				if GetPluginSettings(SettingsIniFilePath).LogUserSpace then ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
-			end
-			else Result := FS_EXEC_ERROR;
-		end else if command = 'trash' then //go to current account trash directory
-		begin
-			if ConnectionManager.get(RealPath.account, getResult).isPublicShare then exit(FS_EXEC_ERROR);
-			RealPath := ExtractRealPath(RemoteName);
-			if RealPath.account <> '' then
-			begin
-				strpcopy(RemoteName, '\' + RealPath.account + TrashPostfix);
-				Result:=FS_EXEC_SYMLINK;
-			end;
+	if copy(Verb, 1, 5) = 'quote' then exit(ExecCommand(RemoteName, LowerCase(GetWord(Verb, 1)), GetWord(Verb, 2)));
 
-		end else if command = 'links' then //TODO
-		begin
-			Cloud := ConnectionManager.get(RealPath.account, getResult);
-			Cloud.getSharedLinksListing(CurrentListing, false);
-		end;
+	//if copy(Verb, 1, 5) = 'chmod' then exit; //future usage
 
-	end;
 End;
 
 function GetRemoteFile(RemotePath: TRealPath; LocalName, RemoteName: WideString; CopyFlags: integer): integer;
