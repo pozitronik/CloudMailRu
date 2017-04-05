@@ -308,7 +308,6 @@ end;
 
 procedure AddVirtualAccountsToAccountsList(AccountsIniFilePath: WideString; var AccountsList: TStringList; VirtualAccountsEnabled: TArray<Boolean>);
 var
-	VFlag, isPublic: boolean;
 	VAccounts: TStringList;
 	account: WideString;
 begin
