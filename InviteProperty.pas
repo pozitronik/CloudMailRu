@@ -19,7 +19,7 @@ type
 		InviteSizeLB: TLabel;
 		MountBTN: TButton;
 		CancelBTN: TButton;
-		DeclineBTN: TButton;
+		RejectBTN: TButton;
 		TokenLB: TLabel;
 		InviteTokenLB: TLabel;
 	private

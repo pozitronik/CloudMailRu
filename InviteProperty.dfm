@@ -12,7 +12,7 @@ object InvitePropertyForm: TInvitePropertyForm
   Font.Name = 'Tahoma'
   Font.Style = []
   OldCreateOrder = False
-  Position = poDesktopCenter
+  Position = poScreenCenter
   PixelsPerInch = 96
   TextHeight = 13
   object InviteNameLB: TLabel
@@ -124,12 +124,12 @@ object InvitePropertyForm: TInvitePropertyForm
     ModalResult = 2
     TabOrder = 1
   end
-  object DeclineBTN: TButton
+  object RejectBTN: TButton
     Left = 89
     Top = 131
     Width = 75
     Height = 25
-    Caption = 'Decline'
+    Caption = 'Reject'
     ModalResult = 7
     TabOrder = 2
   end
