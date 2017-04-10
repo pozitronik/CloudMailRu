@@ -47,6 +47,7 @@ var
 	MyCryptProc: TCryptProcW;
 
 	CurrentListing: TCloudMailRuDirListing;
+	CurrentIncomingInvitesListing: TCloudMailRuIncomingInviteInfoListing;
 	ConnectionManager: TConnectionManager;
 	CurrentDescriptions: TDescription;
 	ProxySettings: TProxySettings;
@@ -116,7 +117,7 @@ var
 	end;
 
 begin
-	if path.trashDir or path.sharedDir or path.invitesDir then Result := FindListingItemByName(CurrentListing, path.path)//Виртуальные каталоги не возвращают HomePath
+	if path.trashDir or path.sharedDir{or path.invitesDir} then Result := FindListingItemByName(CurrentListing, path.path)//Виртуальные каталоги не возвращают HomePath
 	else Result := FindListingItemByHomePath(CurrentListing, path.path); //сначала попробуем найти поле в имеющемся списке
 
 	if Result.name = '' then //если там его нет (нажали пробел на папке, например), то запросим в облаке напрямую, в зависимости от того, внутри чего мы находимся
@@ -132,7 +133,7 @@ begin
 		end;
 		if path.invitesDir then
 		begin
-			if Cloud.getIncomingLinksListing(CurrentListing) then exit(FindListingItemByName(CurrentListing, path.path));
+			//FindIncomingInviteItemByPath in that case!
 		end;
 		if Cloud.statusFile(path.path, Result) then //Обычный каталог
 		begin
@@ -143,13 +144,21 @@ end;
 
 function FindIncomingInviteItemByPath(InviteListing: TCloudMailRuIncomingInviteInfoListing; path: TRealPath): TCloudMailRuIncomingInviteInfo;
 var
-	CurrentItem: TCloudMailRuIncomingInviteInfo;
-begin
-	for CurrentItem in InviteListing do
-	begin
-		if CurrentItem.name = path.path then exit(CurrentItem);
+	getResult: integer;
 
+	function FindListingItemByName(InviteListing: TCloudMailRuIncomingInviteInfoListing; ItemName: WideString): TCloudMailRuIncomingInviteInfo;
+	var
+		CurrentItem: TCloudMailRuIncomingInviteInfo;
+	begin
+		for CurrentItem in InviteListing do
+			if CurrentItem.name = ItemName then exit(CurrentItem);
 	end;
+
+begin
+	Result := FindListingItemByName(InviteListing, path.path);
+	{item not found in current global listing, so refresh it}
+	if Result.name = '' then
+		if ConnectionManager.get(path.account, getResult).getIncomingLinksListing(CurrentIncomingInvitesListing) then exit(FindListingItemByName(CurrentIncomingInvitesListing, path.path));
 
 end;
 
@@ -469,7 +478,7 @@ begin
 			if not ConnectionManager.get(RealPath.account, getResult).getSharedLinksListing(CurrentListing) then SetLastError(ERROR_PATH_NOT_FOUND); //that will be interpreted as symlinks later
 		end else if RealPath.invitesDir then
 		begin
-			if not ConnectionManager.get(RealPath.account, getResult).getIncomingLinksListing(CurrentListing) then SetLastError(ERROR_PATH_NOT_FOUND);
+			if not ConnectionManager.get(RealPath.account, getResult).getIncomingLinksListing(CurrentListing, CurrentIncomingInvitesListing) then SetLastError(ERROR_PATH_NOT_FOUND); //одновременно получаем оба листинга, чтобы не перечитывать листинг инватов на каждый чих
 		end else if not ConnectionManager.get(RealPath.account, getResult).getDirListing(RealPath.path, CurrentListing) then SetLastError(ERROR_PATH_NOT_FOUND);
 
 		if getResult <> CLOUD_OPERATION_OK then
@@ -582,7 +591,6 @@ function ExecInvitesAction(MainWin: THandle; RealPath: TRealPath): integer;
 var
 	Cloud: TCloudMailRu;
 	getResult: integer;
-	IncomingListing: TCloudMailRuIncomingInviteInfoListing;
 	CurrentInvite: TCloudMailRuIncomingInviteInfo;
 begin
 	Result := FS_EXEC_OK;
@@ -591,9 +599,8 @@ begin
 	begin
 		TAccountsForm.ShowAccounts(MainWin, AccountsIniFilePath, SettingsIniFilePath, MyCryptProc, PluginNum, CryptoNum, RealPath.account)
 	end else begin //one invite item
-
-		if not Cloud.getIncomingLinksListing(IncomingListing) then exit(FS_EXEC_ERROR);
-		CurrentInvite := FindIncomingInviteItemByPath(IncomingListing, RealPath);
+		CurrentInvite := FindIncomingInviteItemByPath(CurrentIncomingInvitesListing, RealPath);
+		if CurrentInvite.name = '' then exit(FS_EXEC_ERROR);
 
 		getResult := TInvitePropertyForm.ShowProperties(MainWin, CurrentInvite);
 	end;
@@ -1193,8 +1200,6 @@ var
 	RealPath: TRealPath;
 	Item: TCloudMailRuDirListingItem;
 	IconsMode: integer;
-	getResult: integer;
-	IncomingListing: TCloudMailRuIncomingInviteInfoListing;
 	CurrentInviteItem: TCloudMailRuIncomingInviteInfo;
 begin
 	Result := FS_ICON_EXTRACTED;
@@ -1233,8 +1238,7 @@ begin
 			exit;
 		end else begin
 
-			if not ConnectionManager.get(RealPath.account, getResult).getIncomingLinksListing(IncomingListing) then exit(FS_ICON_USEDEFAULT);
-			CurrentInviteItem := FindIncomingInviteItemByPath(IncomingListing, RealPath);
+			CurrentInviteItem := FindIncomingInviteItemByPath(CurrentIncomingInvitesListing, RealPath);
 			if CurrentInviteItem.name = '' then exit(FS_ICON_USEDEFAULT);
 
 			if CurrentInviteItem.home <> '' then
