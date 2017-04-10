@@ -682,6 +682,16 @@ begin
 		end;
 	end;
 
+	if command = 'invites' then
+	begin
+		if Cloud.isPublicShare then exit(FS_EXEC_ERROR);
+		if RealPath.account <> '' then
+		begin
+			strpcopy(RemoteName, '\' + RealPath.account + InvitesPostfix);
+			exit(FS_EXEC_SYMLINK);
+		end;
+	end;
+
 end;
 
 function FsExecuteFileW(MainWin: THandle; RemoteName, Verb: pWideChar): integer; stdcall; //Запуск файла
