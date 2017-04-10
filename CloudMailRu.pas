@@ -31,6 +31,8 @@ const
 	API_FOLDER_INVITES = 'https://cloud.mail.ru/api/v2/folder/invites';
 	API_FOLDER_SHARE = 'https://cloud.mail.ru/api/v2/folder/share';
 	API_FOLDER_UNSHARE = 'https://cloud.mail.ru/api/v2/folder/unshare';
+	API_FOLDER_MOUNT = 'https://cloud.mail.ru/api/v2/folder/mount';
+	API_FOLDER_UNMOUNT = 'https://cloud.mail.ru/api/v2/folder/unmount';
 	API_FOLDER_SHARED_LINKS = 'https://cloud.mail.ru/api/v2/folder/shared/links';
 	API_FOLDER_SHARED_INCOMING = 'https://cloud.mail.ru/api/v2/folder/shared/incoming';
 	API_TRASHBIN = 'https://cloud.mail.ru/api/v2/trashbin';
@@ -40,6 +42,7 @@ const
 	API_DISPATCHER = 'https://cloud.mail.ru/api/v2/dispatcher/';
 	API_USER_SPACE = 'https://cloud.mail.ru/api/v2/user/space';
 	API_CLONE = 'https://cloud.mail.ru/api/v2/clone';
+	API_INVITE_REJECT = 'https://cloud.mail.ru/api/v2/folder/invites/reject';
 
 	TYPE_DIR = 'folder';
 	TYPE_FILE = 'file';
@@ -144,6 +147,7 @@ type
 		access: WideString;
 		name: WideString;
 		size: int64;
+		home: WideString; //only on already mounted items
 		invite_token: WideString;
 	end;
 
@@ -260,6 +264,9 @@ type
 		function shareFolder(Path, email: WideString; access: integer): Boolean;
 		function trashbinRestore(Path: WideString; RestoreRevision: integer; ConflictMode: WideString = CLOUD_CONFLICT_RENAME): Boolean;
 		function trashbinEmpty(): Boolean;
+		function mountFolder(home, invite_token: WideString; ConflictMode: WideString = CLOUD_CONFLICT_RENAME): Boolean;
+		function unmountFolder(home: WideString; clone_copy: Boolean): Boolean;
+		function rejectInvite(invite_token: WideString): Boolean;
 		{OTHER ROUTINES}
 		function getDescriptionFile(remotePath, localCopy: WideString): integer; //Если в каталоге remotePath есть descript.ion - скопировать его в файл localcopy
 		procedure logUserSpaceInfo();
@@ -700,6 +707,7 @@ begin
 				if Assigned(Obj.values['tree']) then tree := Obj.values['tree'].Value;
 				if Assigned(Obj.values['access']) then access := Obj.values['access'].Value;
 				if Assigned(Obj.values['name']) then name := Obj.values['name'].Value;
+				if Assigned(Obj.values['home']) then home := Obj.values['home'].Value;
 				if Assigned(Obj.values['size']) then size := Obj.values['size'].Value.ToInt64;
 				if Assigned(Obj.values['invite_token']) then invite_token := Obj.values['invite_token'].Value;
 			end;
@@ -912,7 +920,6 @@ end;
 function TCloudMailRu.getIncomingLinksListing(var IncomingListing: TCloudMailRuDirListing; ShowProgress: Boolean = false): Boolean;
 var
 	InvitesListing: TCloudMailRuIncomingInviteInfoListing;
-	CurrentInvite: TCloudMailRuIncomingInviteInfo;
 	i: integer;
 begin
 	Result := self.getIncomingLinksListing(InvitesListing, ShowProgress);
@@ -1676,6 +1683,84 @@ begin
 				begin
 					Result := false;
 					Log(MSGTYPE_IMPORTANTERROR, 'Trashbin clearing error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
+				end;
+		end;
+	end;
+end;
+
+function TCloudMailRu.mountFolder(home, invite_token, ConflictMode: WideString): Boolean;
+var
+	JSON: WideString;
+	OperationStatus, OperationResult: integer;
+begin
+	Result := false;
+	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
+	if self.public_account then exit;
+
+	Result := self.HTTPPost(API_FOLDER_MOUNT, 'home=' + UrlEncode(home) + '&invite_token=' + invite_token + self.united_params + '&conflict=' + ConflictMode, JSON);
+
+	if Result then
+	begin
+		OperationResult := self.fromJSON_OperationResult(JSON, OperationStatus);
+		case OperationResult of
+			CLOUD_OPERATION_OK: Result := true;
+			else
+				begin
+					Result := false;
+					Log(MSGTYPE_IMPORTANTERROR, 'Folder mount error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
+				end;
+		end;
+	end;
+end;
+
+function TCloudMailRu.unmountFolder(home: WideString; clone_copy: Boolean): Boolean;
+var
+	JSON: WideString;
+	OperationStatus, OperationResult: integer;
+	CopyStr: WideString;
+begin
+	Result := false;
+	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
+	if self.public_account then exit;
+	if clone_copy then CopyStr := 'true'
+	else CopyStr := 'false';
+
+	Result := self.HTTPPost(API_FOLDER_UNMOUNT, 'home=' + UrlEncode(home) + '&clone_copy=' + CopyStr + self.united_params, JSON);
+
+	if Result then
+	begin
+		OperationResult := self.fromJSON_OperationResult(JSON, OperationStatus);
+		case OperationResult of
+			CLOUD_OPERATION_OK: Result := true;
+			else
+				begin
+					Result := false;
+					Log(MSGTYPE_IMPORTANTERROR, 'Folder mount error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
+				end;
+		end;
+	end;
+end;
+
+function TCloudMailRu.rejectInvite(invite_token: WideString): Boolean;
+var
+	JSON: WideString;
+	OperationStatus, OperationResult: integer;
+begin
+	Result := false;
+	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
+	if self.public_account then exit;
+
+	Result := self.HTTPPost(API_INVITE_REJECT, 'invite_token=' + invite_token + self.united_params, JSON);
+
+	if Result then
+	begin
+		OperationResult := self.fromJSON_OperationResult(JSON, OperationStatus);
+		case OperationResult of
+			CLOUD_OPERATION_OK: Result := true;
+			else
+				begin
+					Result := false;
+					Log(MSGTYPE_IMPORTANTERROR, 'Folder mount error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
 				end;
 		end;
 	end;
