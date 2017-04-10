@@ -582,7 +582,6 @@ function ExecInvitesAction(MainWin: THandle; RealPath: TRealPath): integer;
 var
 	Cloud: TCloudMailRu;
 	getResult: integer;
-	CurrentItem: TCloudMailRuDirListingItem;
 	IncomingListing: TCloudMailRuIncomingInviteInfoListing;
 	CurrentInvite: TCloudMailRuIncomingInviteInfo;
 begin
@@ -592,10 +591,9 @@ begin
 	begin
 		TAccountsForm.ShowAccounts(MainWin, AccountsIniFilePath, SettingsIniFilePath, MyCryptProc, PluginNum, CryptoNum, RealPath.account)
 	end else begin //one invite item
-		CurrentItem := FindListingItemByPath(CurrentListing, RealPath); //для одинаково именованных объектов в папке будут показываться свойства первого
+
 		if not Cloud.getIncomingLinksListing(IncomingListing) then exit(FS_EXEC_ERROR);
-		for CurrentInvite in IncomingListing do
-			if (CurrentInvite.name = CurrentItem.name) then break; //если CurrentInvite тут нет, то отвалится ещё выше
+		CurrentInvite := FindIncomingInviteItemByPath(IncomingListing, RealPath);
 
 		getResult := TInvitePropertyForm.ShowProperties(MainWin, CurrentInvite);
 	end;
@@ -1196,7 +1194,6 @@ var
 	Item: TCloudMailRuDirListingItem;
 	IconsMode: integer;
 	getResult: integer;
-	CurrentItem: TCloudMailRuDirListingItem;
 	IncomingListing: TCloudMailRuIncomingInviteInfoListing;
 	CurrentInviteItem: TCloudMailRuIncomingInviteInfo;
 begin
@@ -1235,7 +1232,7 @@ begin
 			TheIcon := CombineIcons(LoadImageW(hInstance, RemoteName, IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR), GetFolderIcon(GetPluginSettings(SettingsIniFilePath).IconsSize));
 			exit;
 		end else begin
-			CurrentItem := FindListingItemByPath(CurrentListing, RealPath);
+
 			if not ConnectionManager.get(RealPath.account, getResult).getIncomingLinksListing(IncomingListing) then exit(FS_ICON_USEDEFAULT);
 			CurrentInviteItem := FindIncomingInviteItemByPath(IncomingListing, RealPath);
 			if CurrentInviteItem.name = '' then exit(FS_ICON_USEDEFAULT);
