@@ -245,7 +245,7 @@ type
 		function getDirListing(Path: WideString; var DirListing: TCloudMailRuDirListing; ShowProgress: Boolean = false): Boolean;
 		function getSharedLinksListing(var DirListing: TCloudMailRuDirListing; ShowProgress: Boolean = false): Boolean;
 		function getIncomingLinksListing(var IncomingListing: TCloudMailRuIncomingInviteInfoListing; ShowProgress: Boolean = false): Boolean; overload;
-		function getIncomingLinksListing(var IncomingListing: TCloudMailRuDirListing; ShowProgress: Boolean = false): Boolean; overload;
+		function getIncomingLinksListing(var IncomingListing: TCloudMailRuDirListing; var InvitesListing: TCloudMailRuIncomingInviteInfoListing; ShowProgress: Boolean = false): Boolean; overload;
 		function getTrashbinListing(var DirListing: TCloudMailRuDirListing; ShowProgress: Boolean = false): Boolean;
 		function createDir(Path: WideString): Boolean;
 		function removeDir(Path: WideString): Boolean;
@@ -917,9 +917,8 @@ begin
 	end;
 end;
 
-function TCloudMailRu.getIncomingLinksListing(var IncomingListing: TCloudMailRuDirListing; ShowProgress: Boolean = false): Boolean;
+function TCloudMailRu.getIncomingLinksListing(var IncomingListing: TCloudMailRuDirListing; var InvitesListing: TCloudMailRuIncomingInviteInfoListing; ShowProgress: Boolean = false): Boolean;
 var
-	InvitesListing: TCloudMailRuIncomingInviteInfoListing;
 	i: integer;
 begin
 	Result := self.getIncomingLinksListing(InvitesListing, ShowProgress);
