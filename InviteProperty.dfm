@@ -148,6 +148,7 @@ object InvitePropertyForm: TInvitePropertyForm
     Width = 120
     Height = 25
     Caption = 'Unmount and delete'
+    ModalResult = 8
     TabOrder = 4
   end
 end
