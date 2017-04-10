@@ -92,14 +92,14 @@ object InvitePropertyForm: TInvitePropertyForm
   end
   object TokenLB: TLabel
     Left = 8
-    Top = 106
+    Top = 104
     Width = 62
     Height = 13
     Caption = 'Invite token:'
   end
   object InviteTokenLB: TLabel
     Left = 83
-    Top = 106
+    Top = 104
     Width = 431
     Height = 13
     AutoSize = False
@@ -125,12 +125,29 @@ object InvitePropertyForm: TInvitePropertyForm
     TabOrder = 1
   end
   object RejectBTN: TButton
-    Left = 89
+    Left = 341
     Top = 131
     Width = 75
     Height = 25
     Caption = 'Reject'
     ModalResult = 7
     TabOrder = 2
+  end
+  object UnmountCopyBTN: TButton
+    Left = 89
+    Top = 131
+    Width = 120
+    Height = 25
+    Caption = 'Unmount (save copy)'
+    ModalResult = 3
+    TabOrder = 3
+  end
+  object UnmountDeleteBTN: TButton
+    Left = 215
+    Top = 131
+    Width = 120
+    Height = 25
+    Caption = 'Unmount and delete'
+    TabOrder = 4
   end
 end
