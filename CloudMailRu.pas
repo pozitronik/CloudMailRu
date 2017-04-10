@@ -135,14 +135,16 @@ type
 		status: WideString;
 		access: WideString;
 		name: WideString;
+
 	end;
 
 	TCloudMailRuIncomingInviteInfo = record
 		owner: TCloudMailRuOwnerInfo;
+		tree: WideString;
 		access: WideString;
 		name: WideString;
 		size: int64;
-		inviteToken: WideString;
+		invite_token: WideString;
 	end;
 
 	TCloudMailRuDirListing = array of TCloudMailRuDirListingItem;
@@ -238,7 +240,8 @@ type
 		function login(method: integer = CLOUD_AUTH_METHOD_WEB): Boolean;
 		function getDirListing(Path: WideString; var DirListing: TCloudMailRuDirListing; ShowProgress: Boolean = false): Boolean;
 		function getSharedLinksListing(var DirListing: TCloudMailRuDirListing; ShowProgress: Boolean = false): Boolean;
-		function getIncomingLinksListing(var IncomingListing: TCloudMailRuIncomingInviteInfoListing; ShowProgress: Boolean = false): Boolean;
+		function getIncomingLinksListing(var IncomingListing: TCloudMailRuIncomingInviteInfoListing; ShowProgress: Boolean = false): Boolean; overload;
+		function getIncomingLinksListing(var IncomingListing: TCloudMailRuDirListing; ShowProgress: Boolean = false): Boolean; overload;
 		function getTrashbinListing(var DirListing: TCloudMailRuDirListing; ShowProgress: Boolean = false): Boolean;
 		function createDir(Path: WideString): Boolean;
 		function removeDir(Path: WideString): Boolean;
@@ -671,8 +674,43 @@ begin
 end;
 
 function TCloudMailRu.fromJSON_IncomingInviteListing(JSON: WideString; var IncomingInviteListing: TCloudMailRuIncomingInviteInfoListing): Boolean;
+var
+	Obj, OwnerObj: TJSONObject;
+	J: integer;
+	A: TJSONArray;
 begin
-	//todo
+	Result := true;
+	SetLength(IncomingInviteListing, 0);
+	try
+		A := ((TJSONObject.ParseJSONValue(JSON) as TJSONObject).values['body'] as TJSONObject).values['list'] as TJSONArray;
+		if not Assigned(A) then exit; //no invites
+		SetLength(IncomingInviteListing, A.count);
+		for J := 0 to A.count - 1 do
+		begin
+			Obj := A.Items[J] as TJSONObject;
+			with IncomingInviteListing[J] do
+			begin
+				if Assigned(Obj.values['owner']) then
+				begin
+					OwnerObj := Obj.values['owner'] as TJSONObject;
+					if Assigned(OwnerObj.values['email']) then owner.email := OwnerObj.values['email'].Value;
+					if Assigned(OwnerObj.values['name']) then owner.name := OwnerObj.values['name'].Value;
+				end;
+
+				if Assigned(Obj.values['tree']) then tree := Obj.values['tree'].Value;
+				if Assigned(Obj.values['access']) then access := Obj.values['access'].Value;
+				if Assigned(Obj.values['name']) then name := Obj.values['name'].Value;
+				if Assigned(Obj.values['size']) then size := Obj.values['size'].Value.ToInt64;
+				if Assigned(Obj.values['invite_token']) then invite_token := Obj.values['invite_token'].Value;
+			end;
+		end;
+	except
+		on E: {EJSON}Exception do
+		begin
+			Result := false;
+			Log(MSGTYPE_IMPORTANTERROR, 'Can''t parse server answer: ' + JSON);
+		end;
+	end;
 end;
 
 function TCloudMailRu.fromJSON_OAuthTokenInfo(JSON: WideString; var CloudMailRuOAuthInfo: TCloudMailRuOAuthInfo): Boolean;
@@ -868,6 +906,28 @@ begin
 					Result := false;
 				end;
 		end;
+	end;
+end;
+
+function TCloudMailRu.getIncomingLinksListing(var IncomingListing: TCloudMailRuDirListing; ShowProgress: Boolean = false): Boolean;
+var
+	InvitesListing: TCloudMailRuIncomingInviteInfoListing;
+	CurrentInvite: TCloudMailRuIncomingInviteInfo;
+	i: integer;
+begin
+	Result := self.getIncomingLinksListing(InvitesListing, ShowProgress);
+	if Result then
+	begin
+		SetLength(IncomingListing, length(InvitesListing));
+		for i := 0 to length(InvitesListing) - 1 do
+		begin
+
+			IncomingListing[i].name := InvitesListing[i].name;
+			IncomingListing[i].size := InvitesListing[i].size;
+			IncomingListing[i].tree := InvitesListing[i].tree;
+			//IncomingListing[length(IncomingListing)].
+		end;
+
 	end;
 end;
 
