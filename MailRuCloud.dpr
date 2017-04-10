@@ -139,6 +139,17 @@ begin
 			if (Result.home = '') and not Cloud.isPublicShare then MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, pWideChar('Cant find file ' + path.path)); {Такого быть не может, но...}
 		end;
 	end; //Не рапортуем, это будет уровнем выше
+end;
+
+function FindIncomingInviteItemByPath(InviteListing: TCloudMailRuIncomingInviteInfoListing; path: TRealPath): TCloudMailRuIncomingInviteInfo;
+var
+	CurrentItem: TCloudMailRuIncomingInviteInfo;
+begin
+	for CurrentItem in InviteListing do
+	begin
+		if CurrentItem.name = path.path then exit(CurrentItem);
+
+	end;
 
 end;
 
@@ -1184,6 +1195,10 @@ var
 	RealPath: TRealPath;
 	Item: TCloudMailRuDirListingItem;
 	IconsMode: integer;
+	getResult: integer;
+	CurrentItem: TCloudMailRuDirListingItem;
+	IncomingListing: TCloudMailRuIncomingInviteInfoListing;
+	CurrentInviteItem: TCloudMailRuIncomingInviteInfo;
 begin
 	Result := FS_ICON_EXTRACTED;
 
@@ -1210,7 +1225,32 @@ begin
 		end else begin
 			if IconsMode = IconsModeDisabled then IconsMode := IconsModeInternalOverlay; //always draw icons in shared links directory
 		end;
+	end;
 
+	if RealPath.invitesDir then
+	begin
+		if (RealPath.path = '') then
+		begin
+			strpcopy(RemoteName, 'shared_public'); //todo mounted blue icon
+			TheIcon := CombineIcons(LoadImageW(hInstance, RemoteName, IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR), GetFolderIcon(GetPluginSettings(SettingsIniFilePath).IconsSize));
+			exit;
+		end else begin
+			CurrentItem := FindListingItemByPath(CurrentListing, RealPath);
+			if not ConnectionManager.get(RealPath.account, getResult).getIncomingLinksListing(IncomingListing) then exit(FS_ICON_USEDEFAULT);
+			CurrentInviteItem := FindIncomingInviteItemByPath(IncomingListing, RealPath);
+			if CurrentInviteItem.name = '' then exit(FS_ICON_USEDEFAULT);
+
+			if CurrentInviteItem.home <> '' then
+			begin
+				strpcopy(RemoteName, 'shared_public'); //todo mounted blue icon
+				TheIcon := CombineIcons(LoadImageW(hInstance, RemoteName, IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR), GetFolderIcon(GetPluginSettings(SettingsIniFilePath).IconsSize));
+			end else begin
+				strpcopy(RemoteName, 'shared');
+				TheIcon := CombineIcons(LoadImageW(hInstance, RemoteName, IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR), GetFolderIcon(GetPluginSettings(SettingsIniFilePath).IconsSize));
+			end;
+			exit;
+
+		end;
 	end;
 
 	if IconsMode = IconsModeDisabled then exit(FS_ICON_USEDEFAULT);
