@@ -3,7 +3,7 @@
 {$R *.dres}
 
 uses
-	SysUtils, System.Generics.Collections, DateUtils, windows, Classes, PLUGIN_TYPES, IdSSLOpenSSLHeaders, messages, inifiles, Vcl.controls, CloudMailRu in 'CloudMailRu.pas', MRC_Helper in 'MRC_Helper.pas', Accounts in 'Accounts.pas'{AccountsForm}, RemoteProperty in 'RemoteProperty.pas'{PropertyForm}, Descriptions in 'Descriptions.pas', ConnectionManager in 'ConnectionManager.pas', Settings in 'Settings.pas', ANSIFunctions in 'ANSIFunctions.pas', DeletedProperty in 'DeletedProperty.pas'{DeletedPropertyForm};
+	SysUtils, System.Generics.Collections, DateUtils, windows, Classes, PLUGIN_TYPES, IdSSLOpenSSLHeaders, messages, inifiles, Vcl.controls, CloudMailRu in 'CloudMailRu.pas', MRC_Helper in 'MRC_Helper.pas', Accounts in 'Accounts.pas'{AccountsForm}, RemoteProperty in 'RemoteProperty.pas'{PropertyForm}, Descriptions in 'Descriptions.pas', ConnectionManager in 'ConnectionManager.pas', Settings in 'Settings.pas', ANSIFunctions in 'ANSIFunctions.pas', DeletedProperty in 'DeletedProperty.pas'{DeletedPropertyForm}, InviteProperty in 'InviteProperty.pas'{InvitePropertyForm};
 
 {$IFDEF WIN64}
 {$E wfx64}
@@ -116,7 +116,7 @@ var
 	end;
 
 begin
-	if path.trashDir or path.sharedDir then Result := FindListingItemByName(CurrentListing, path.path)//Корзина и ссылки не возвращают HomePath
+	if path.trashDir or path.sharedDir or path.invitesDir then Result := FindListingItemByName(CurrentListing, path.path)//Виртуальные каталоги не возвращают HomePath
 	else Result := FindListingItemByHomePath(CurrentListing, path.path); //сначала попробуем найти поле в имеющемся списке
 
 	if Result.name = '' then //если там его нет (нажали пробел на папке, например), то запросим в облаке напрямую, в зависимости от того, внутри чего мы находимся
@@ -129,6 +129,10 @@ begin
 		if path.sharedDir then //ссылки - обновим список
 		begin
 			if Cloud.getSharedLinksListing(CurrentListing) then exit(FindListingItemByName(CurrentListing, path.path));
+		end;
+		if path.invitesDir then
+		begin
+			if Cloud.getIncomingLinksListing(CurrentListing) then exit(FindListingItemByName(CurrentListing, path.path));
 		end;
 		if Cloud.statusFile(path.path, Result) then //Обычный каталог
 		begin
@@ -429,7 +433,7 @@ begin
 
 		if (AccountsList.Count > 0) then
 		begin
-			AddVirtualAccountsToAccountsList(AccountsIniFilePath, AccountsList, [GetPluginSettings(SettingsIniFilePath).ShowTrashFolders, GetPluginSettings(SettingsIniFilePath).ShowSharedFolders]);
+			AddVirtualAccountsToAccountsList(AccountsIniFilePath, AccountsList, [GetPluginSettings(SettingsIniFilePath).ShowTrashFolders, GetPluginSettings(SettingsIniFilePath).ShowSharedFolders, GetPluginSettings(SettingsIniFilePath).ShowInvitesFolders]);
 
 			FindData := FindData_emptyDir(AccountsList.Strings[0]);
 			FileCounter := 1;
@@ -452,6 +456,9 @@ begin
 		end else if RealPath.sharedDir then
 		begin
 			if not ConnectionManager.get(RealPath.account, getResult).getSharedLinksListing(CurrentListing) then SetLastError(ERROR_PATH_NOT_FOUND); //that will be interpreted as symlinks later
+		end else if RealPath.invitesDir then
+		begin
+			if not ConnectionManager.get(RealPath.account, getResult).getIncomingLinksListing(CurrentListing) then SetLastError(ERROR_PATH_NOT_FOUND);
 		end else if not ConnectionManager.get(RealPath.account, getResult).getDirListing(RealPath.path, CurrentListing) then SetLastError(ERROR_PATH_NOT_FOUND);
 
 		if getResult <> CLOUD_OPERATION_OK then
@@ -560,6 +567,35 @@ begin
 	end;
 end;
 
+function ExecInvitesAction(MainWin: THandle; RealPath: TRealPath): integer;
+var
+	Cloud: TCloudMailRu;
+	getResult: integer;
+	CurrentItem: TCloudMailRuDirListingItem;
+	IncomingListing: TCloudMailRuIncomingInviteInfoListing;
+	CurrentInvite: TCloudMailRuIncomingInviteInfo;
+begin
+	Result := FS_EXEC_OK;
+	Cloud := ConnectionManager.get(RealPath.account, getResult);
+	if RealPath.path = '' then //main invites folder properties
+	begin
+		TAccountsForm.ShowAccounts(MainWin, AccountsIniFilePath, SettingsIniFilePath, MyCryptProc, PluginNum, CryptoNum, RealPath.account)
+	end else begin //one invite item
+		CurrentItem := FindListingItemByPath(CurrentListing, RealPath); //для одинаково именованных объектов в папке будут показываться свойства первого
+		if not Cloud.getIncomingLinksListing(IncomingListing) then exit(FS_EXEC_ERROR);
+		for CurrentInvite in IncomingListing do
+			if (CurrentInvite.name = CurrentItem.name) then break; //если CurrentInvite тут нет, то отвалится ещё выше
+
+		getResult := TInvitePropertyForm.ShowProperties(MainWin, CurrentInvite);
+	end;
+	case (getResult) of
+		mrNo: exit; //todo
+		mrYes: exit; //todo
+	end;
+
+	PostMessage(MainWin, WM_USER + 51, 540, 0); //TC does not update current panel, so we should do it this way
+end;
+
 function ExecProperties(MainWin: THandle; RealPath: TRealPath): integer;
 var
 	Cloud: TCloudMailRu;
@@ -641,6 +677,8 @@ Begin
 	if RealPath.trashDir and ((Verb = 'open') or (Verb = 'properties')) then exit(ExecTrashbinProperties(MainWin, RealPath));
 
 	if RealPath.sharedDir then exit(ExecSharedAction(MainWin, RealPath, RemoteName, Verb = 'open'));
+
+	if RealPath.invitesDir then exit(ExecInvitesAction(MainWin, RealPath));
 
 	if Verb = 'properties' then exit(ExecProperties(MainWin, RealPath));
 
