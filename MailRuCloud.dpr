@@ -589,8 +589,11 @@ begin
 		getResult := TInvitePropertyForm.ShowProperties(MainWin, CurrentInvite);
 	end;
 	case (getResult) of
-		mrNo: exit; //todo
-		mrYes: exit; //todo
+		mrAbort: Cloud.unmountFolder(CurrentInvite.name, true);
+		mrClose: Cloud.unmountFolder(CurrentInvite.name, false);
+		mrYes: Cloud.mountFolder(CurrentInvite.name, CurrentInvite.invite_token);
+		mrNo: Cloud.rejectInvite(CurrentInvite.invite_token);
+
 	end;
 
 	PostMessage(MainWin, WM_USER + 51, 540, 0); //TC does not update current panel, so we should do it this way
