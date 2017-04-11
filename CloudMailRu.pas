@@ -66,9 +66,14 @@ const
 	CLOUD_ERROR_OWN = 9; //"own": 'Невозможно клонировать собственную ссылку'
 	CLOUD_ERROR_NAME_TOO_LONG = 10; //"name_too_long": 'Превышен размер имени файла'
 	CLOUD_ERROR_VIRUS_SCAN_FAIL = 11; //"virus_scan_fail": 'Файл заражен вирусом'
-	CLOUD_ERROR_OWNER = 12; //Пользователь - владелец каталога
-	CLOUD_ERROR_FAHRENHEIT = 13; //Публикация контента заблокирована по требованию правообладателя или уполномоченного государственного ведомства.
-	CLOUD_ERROR_BAD_REQUEST = 14; //
+	CLOUD_ERROR_OWNER = 12; //Нельзя использовать собственный email
+	CLOUD_ERROR_FAHRENHEIT = 451; //Публикация контента заблокирована по требованию правообладателя или уполномоченного государственного ведомства.
+	CLOUD_ERROR_BAD_REQUEST = 400; //
+	CLOUD_ERROR_TREES_CONFLICT = 15; //Нельзя сделать папку общей, если она содержит другие общие папки или находится в общей папке
+	CLOUD_ERROR_UNPROCESSABLE_ENTRY = 16; //Нельзя открыть доступ к файлу
+	CLOUD_ERROR_USER_LIMIT_EXCEEDED = 17; //Невозможно добавить пользователя. Вы можете иметь не более 200 пользователей в одной общей папке
+	CLOUD_ERROR_EXPORT_LIMIT_EXCEEDED = 18; //Невозможно добавить пользователя. Вы можете создать не более 50 общих папок
+	CLOUD_ERROR_NOT_ACCEPTABLE = 406; //Нельзя добавить этого пользователя
 
 	{Режимы работы при конфликтах копирования}
 	CLOUD_CONFLICT_STRICT = 'strict'; //возвращаем ошибку при существовании файла
@@ -499,6 +504,11 @@ begin
 		CLOUD_ERROR_OWNER: exit('Нельзя использовать собственный email');
 		CLOUD_ERROR_FAHRENHEIT: exit('Невозможно создать ссылку. Публикация контента заблокирована по требованию правообладателя или уполномоченного государственного ведомства.');
 		CLOUD_ERROR_BAD_REQUEST: exit('Ошибка запроса к серверу.');
+		CLOUD_ERROR_TREES_CONFLICT: exit('Нельзя сделать папку общей, если она содержит другие общие папки или находится в общей папке');
+		CLOUD_ERROR_UNPROCESSABLE_ENTRY: exit('Нельзя открыть доступ к файлу');
+		CLOUD_ERROR_USER_LIMIT_EXCEEDED: exit('Невозможно добавить пользователя. Вы можете иметь не более 200 пользователей в одной общей папке ');
+		CLOUD_ERROR_EXPORT_LIMIT_EXCEEDED: exit('Невозможно добавить пользователя. Вы можете создать не более 50 общих папок');
+		CLOUD_ERROR_NOT_ACCEPTABLE: exit('Нельзя добавить этого пользователя');
 		else exit('Неизвестная ошибка (' + ErrorCode.ToString + ')');
 	end;
 end;
@@ -763,6 +773,7 @@ begin
 			//if OperationStatus = 400 then exit(CLOUD_ERROR_BAD_REQUEST);
 			if OperationStatus = 451 then exit(CLOUD_ERROR_FAHRENHEIT);
 			if OperationStatus = 507 then exit(CLOUD_ERROR_OVERQUOTA);
+			if OperationStatus = 406 then exit(CLOUD_ERROR_NOT_ACCEPTABLE);
 
 			if (Assigned((Obj.values['body'] as TJSONObject).values['home'])) then nodename := 'home'
 			else if (Assigned((Obj.values['body'] as TJSONObject).values['weblink'])) then nodename := 'weblink'
@@ -788,6 +799,10 @@ begin
 			if error = 'name_too_long' then exit(CLOUD_ERROR_NAME_TOO_LONG);
 			if error = 'virus_scan_fail' then exit(CLOUD_ERROR_VIRUS_SCAN_FAIL);
 			if error = 'owner' then exit(CLOUD_ERROR_OWNER);
+			if error = 'trees_conflict' then exit(CLOUD_ERROR_TREES_CONFLICT);
+			if error = 'user_limit_exceeded' then exit(CLOUD_ERROR_USER_LIMIT_EXCEEDED);
+			if error = 'export_limit_exceeded' then exit(CLOUD_ERROR_EXPORT_LIMIT_EXCEEDED);
+			if error = 'unprocessable_entry' then exit(CLOUD_ERROR_UNPROCESSABLE_ENTRY);
 
 			exit(CLOUD_ERROR_UNKNOWN); //Эту ошибку мы пока не встречали
 		end;
