@@ -79,7 +79,6 @@ type
 		DisableMultiThreading: boolean;
 		LogUserSpace: boolean;
 		IconsMode: Integer;
-		IconsSize: Integer;
 		DownloadLinksEncode: boolean;
 		AutoUpdateDownloadListing: boolean;
 		ShowTrashFolders: boolean;
@@ -185,7 +184,6 @@ begin
 	GetPluginSettings.DisableMultiThreading := IniFile.ReadBool('Main', 'DisableMultiThreading', false);
 	GetPluginSettings.LogUserSpace := IniFile.ReadBool('Main', 'LogUserSpace', true);
 	GetPluginSettings.IconsMode := IniFile.ReadInteger('Main', 'IconsMode', 0);
-	GetPluginSettings.IconsSize := IniFile.ReadInteger('Main', 'IconsSize', 0);
 	GetPluginSettings.SocketTimeout := IniFile.ReadInteger('Main', 'SocketTimeout', -1);
 	GetPluginSettings.CloudMaxFileSize := IniFile.ReadInteger('Main', 'CloudMaxFileSize', CLOUD_MAX_FILESIZE_DEFAULT);
 	GetPluginSettings.ChunkOverwriteMode := IniFile.ReadInteger('Main', 'ChunkOverwriteMode', 0);
