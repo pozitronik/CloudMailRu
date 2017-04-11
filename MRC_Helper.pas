@@ -256,10 +256,10 @@ begin
 			MonInfo.cbSize := SizeOf(MonInfo);
 			GetMonitorInfo(MonitorFromWindow(FindTCWindow, MONITOR_DEFAULTTONEAREST), @MonInfo);
 			IconsSizeSectionName := Format('%dx%d', [MonInfo.rcMonitor.Right - MonInfo.rcMonitor.Left, MonInfo.rcMonitor.Bottom - MonInfo.rcMonitor.Top]) + ' (8x16)'; //normal font section
-			if not TC_INI.SectionExists('IconsSizeSectionName') then
+			if not TC_INI.SectionExists(IconsSizeSectionName) then
 			begin
 				IconsSizeSectionName := Format('%dx%d', [MonInfo.rcMonitor.Right - MonInfo.rcMonitor.Left, MonInfo.rcMonitor.Bottom - MonInfo.rcMonitor.Top]) + ' (10x20)'; //large font section
-				if not TC_INI.SectionExists('IconsSizeSectionName') then IconsSizeSectionName := 'AllResolutions'; //fuck that shit
+				if not TC_INI.SectionExists(IconsSizeSectionName) then IconsSizeSectionName := 'AllResolutions'; //fuck that shit
 			end;
 		end
 		else IconsSizeSectionName := 'AllResolutions';
