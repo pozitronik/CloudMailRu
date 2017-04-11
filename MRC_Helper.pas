@@ -2,7 +2,7 @@
 
 interface
 
-uses Classes, Windows, SysUtils, MultiMon, Math, ShellApi, ShlObj, Vcl.Graphics;
+uses Classes, Windows, SysUtils, MultiMon, Math, ShellApi, ShlObj, Vcl.Graphics, Inifiles;
 
 const
 	MAX_UNC_PATH = 32767;
@@ -45,7 +45,8 @@ procedure SetAllFileTime(const FileName: string; const FileTime: TFileTime);
 procedure CenterWindow(WindowToStay, WindowToCenter: HWND);
 function UrlEncode(URL: WideString): WideString;
 function FindTCWindow: HWND;
-function FindTCIniPath(): WideString;
+function FindTCIniPath: WideString;
+function GetTCIconsSize: Integer;
 function GetTmpDir: WideString;
 function GetTmpFileName(Prefix: WideString = ''): WideString;
 function CopyExt(FromFilename, ToFilename: WideString): WideString;
@@ -233,9 +234,40 @@ begin
 	Result := FindWindow('TTOTAL_CMD', nil); {Хендл отдаётся корректно даже при нескольких запущенных тоталах}
 end;
 
-function FindTCIniPath(): WideString;
+function FindTCIniPath: WideString;
 begin
 	exit(GetEnvironmentVariable('COMMANDER_INI'));
+end;
+
+function GetTCIconsSize: Integer;
+var
+	TC_INI: TIniFile;
+	ResolutionSpecific: boolean;
+	IconsSizeSectionName: WideString;
+	MonInfo: TMonitorInfo;
+begin
+	Result := 16; //some default value
+	if FileExists(FindTCIniPath) then
+	begin
+		TC_INI := TIniFile.Create(FindTCIniPath);
+		ResolutionSpecific := TC_INI.ReadBool('Configuration', 'ResolutionSpecific', false);
+		if ResolutionSpecific then
+		begin
+			MonInfo.cbSize := SizeOf(MonInfo);
+			GetMonitorInfo(MonitorFromWindow(FindTCWindow, MONITOR_DEFAULTTONEAREST), @MonInfo);
+			IconsSizeSectionName := Format('%dx%d', [MonInfo.rcMonitor.Right - MonInfo.rcMonitor.Left, MonInfo.rcMonitor.Bottom - MonInfo.rcMonitor.Top]) + ' (8x16)'; //normal font section
+			if not TC_INI.SectionExists('IconsSizeSectionName') then
+			begin
+				IconsSizeSectionName := Format('%dx%d', [MonInfo.rcMonitor.Right - MonInfo.rcMonitor.Left, MonInfo.rcMonitor.Bottom - MonInfo.rcMonitor.Top]) + ' (10x20)'; //large font section
+				if not TC_INI.SectionExists('IconsSizeSectionName') then IconsSizeSectionName := 'AllResolutions'; //fuck that shit
+			end;
+		end
+		else IconsSizeSectionName := 'AllResolutions';
+
+		Result := TC_INI.ReadInteger(IconsSizeSectionName, 'Iconsize32', Result);
+
+	end;
+
 end;
 
 function GetTmpDir: WideString;
