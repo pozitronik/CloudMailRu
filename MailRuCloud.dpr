@@ -3,26 +3,7 @@
 {$R *.dres}
 
 uses
-  SysUtils,
-  System.Generics.Collections,
-  DateUtils,
-  windows,
-  Classes,
-  PLUGIN_TYPES,
-  IdSSLOpenSSLHeaders,
-  messages,
-  inifiles,
-  Vcl.controls,
-  CloudMailRu in 'CloudMailRu.pas',
-  MRC_Helper in 'MRC_Helper.pas',
-  Accounts in 'Accounts.pas' {AccountsForm},
-  RemoteProperty in 'RemoteProperty.pas' {PropertyForm},
-  Descriptions in 'Descriptions.pas',
-  ConnectionManager in 'ConnectionManager.pas',
-  Settings in 'Settings.pas',
-  ANSIFunctions in 'ANSIFunctions.pas',
-  DeletedProperty in 'DeletedProperty.pas' {DeletedPropertyForm},
-  InviteProperty in 'InviteProperty.pas' {InvitePropertyForm};
+	SysUtils, System.Generics.Collections, DateUtils, windows, Classes, PLUGIN_TYPES, IdSSLOpenSSLHeaders, messages, inifiles, Vcl.controls, CloudMailRu in 'CloudMailRu.pas', MRC_Helper in 'MRC_Helper.pas', Accounts in 'Accounts.pas'{AccountsForm}, RemoteProperty in 'RemoteProperty.pas'{PropertyForm}, Descriptions in 'Descriptions.pas', ConnectionManager in 'ConnectionManager.pas', Settings in 'Settings.pas', ANSIFunctions in 'ANSIFunctions.pas', DeletedProperty in 'DeletedProperty.pas'{DeletedPropertyForm}, InviteProperty in 'InviteProperty.pas'{InvitePropertyForm};
 
 {$IFDEF WIN64}
 {$E wfx64}
@@ -1230,6 +1211,15 @@ var
 	Item: TCloudMailRuDirListingItem;
 	IconsMode: integer;
 	CurrentInviteItem: TCloudMailRuIncomingInviteInfo;
+	IconsSize: integer;
+
+	function GetFolderIconSize(IconsSize: integer): integer;
+	begin
+		if IconsSize <= 16 then exit(IconSizeSmall);
+		if IconsSize <= 32 then exit(IconSizeNormal);
+		exit(IconSizeLarge);
+	end;
+
 begin
 	Result := FS_ICON_EXTRACTED;
 
@@ -1238,11 +1228,12 @@ begin
 	if RealPath.upDirItem then exit; //do not overlap updir icon
 
 	IconsMode := GetPluginSettings(SettingsIniFilePath).IconsMode;
+	IconsSize := GetTCIconsSize;
 
 	if RealPath.trashDir and (RealPath.path = '') then //always draw system trash icon
 	begin
 		strpcopy(RemoteName, 'cloud_trash');
-		TheIcon := GetSystemIcon(GetPluginSettings(SettingsIniFilePath).IconsSize);
+		TheIcon := GetSystemIcon(GetFolderIconSize(IconsSize));
 		exit;
 	end;
 
@@ -1251,7 +1242,7 @@ begin
 		if (RealPath.path = '') then
 		begin
 			strpcopy(RemoteName, 'shared');
-			TheIcon := CombineIcons(LoadImageW(hInstance, RemoteName, IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR), GetFolderIcon(GetPluginSettings(SettingsIniFilePath).IconsSize));
+			TheIcon := CombineIcons(LoadImageW(hInstance, RemoteName, IMAGE_ICON, IconsSize, IconsSize, LR_DEFAULTCOLOR), GetFolderIcon(GetFolderIconSize(IconsSize)));
 			exit;
 		end else begin
 			if IconsMode = IconsModeDisabled then IconsMode := IconsModeInternalOverlay; //always draw icons in shared links directory
@@ -1263,20 +1254,20 @@ begin
 		if (RealPath.path = '') then
 		begin
 			strpcopy(RemoteName, 'shared_incoming');
-			TheIcon := CombineIcons(LoadImageW(hInstance, RemoteName, IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR), GetFolderIcon(GetPluginSettings(SettingsIniFilePath).IconsSize));
+			TheIcon := CombineIcons(LoadImageW(hInstance, RemoteName, IMAGE_ICON, IconsSize, IconsSize, LR_DEFAULTCOLOR), GetFolderIcon(GetFolderIconSize(IconsSize)));
 			exit;
 		end else begin
 
 			CurrentInviteItem := FindIncomingInviteItemByPath(CurrentIncomingInvitesListing, RealPath);
 			if CurrentInviteItem.name = '' then exit(FS_ICON_USEDEFAULT);
 
-			if CurrentInviteItem.home <> '' then//mounted item
+			if CurrentInviteItem.home <> '' then //mounted item
 			begin
 				strpcopy(RemoteName, 'shared_incoming');
-				TheIcon := CombineIcons(LoadImageW(hInstance, RemoteName, IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR), GetFolderIcon(GetPluginSettings(SettingsIniFilePath).IconsSize));
+				TheIcon := CombineIcons(LoadImageW(hInstance, RemoteName, IMAGE_ICON, IconsSize, IconsSize, LR_DEFAULTCOLOR), GetFolderIcon(GetFolderIconSize(IconsSize)));
 			end else begin
 				strpcopy(RemoteName, 'shared');
-				TheIcon := CombineIcons(LoadImageW(hInstance, RemoteName, IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR), GetFolderIcon(GetPluginSettings(SettingsIniFilePath).IconsSize));
+				TheIcon := CombineIcons(LoadImageW(hInstance, RemoteName, IMAGE_ICON, IconsSize, IconsSize, LR_DEFAULTCOLOR), GetFolderIcon(GetFolderIconSize(IconsSize)));
 			end;
 			exit;
 
@@ -1301,8 +1292,8 @@ begin
 		else exit(FS_ICON_USEDEFAULT);
 	end;
 	case IconsMode of
-		IconsModeInternal: TheIcon := LoadImageW(hInstance, RemoteName, IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
-		IconsModeInternalOverlay: TheIcon := CombineIcons(LoadImageW(hInstance, RemoteName, IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR), GetFolderIcon(GetPluginSettings(SettingsIniFilePath).IconsSize));
+		IconsModeInternal: TheIcon := LoadImageW(hInstance, RemoteName, IMAGE_ICON, IconsSize, IconsSize, LR_DEFAULTCOLOR);
+		IconsModeInternalOverlay: TheIcon := CombineIcons(LoadImageW(hInstance, RemoteName, IMAGE_ICON, IconsSize, IconsSize, LR_DEFAULTCOLOR), GetFolderIcon(GetFolderIconSize(IconsSize)));
 		IconsModeExternal:
 			begin
 				TheIcon := LoadPluginIcon(PluginPath + 'icons', RemoteName);
@@ -1312,7 +1303,7 @@ begin
 			begin
 				TheIcon := LoadPluginIcon(PluginPath + 'icons', RemoteName);
 				if TheIcon = INVALID_HANDLE_VALUE then exit(FS_ICON_USEDEFAULT);
-				TheIcon := CombineIcons(TheIcon, GetFolderIcon(GetPluginSettings(SettingsIniFilePath).IconsSize));
+				TheIcon := CombineIcons(TheIcon, GetFolderIcon(GetFolderIconSize(IconsSize)));
 			end;
 
 	end;
