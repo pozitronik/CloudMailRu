@@ -250,7 +250,7 @@ begin
 	if FileExists(FindTCIniPath) then
 	begin
 		TC_INI := TIniFile.Create(FindTCIniPath);
-		ResolutionSpecific := TC_INI.ReadBool('Configuration', 'ResolutionSpecific', false);
+		ResolutionSpecific := TC_INI.ReadBool('Configuration', 'ResolutionSpecific', true);
 		if ResolutionSpecific then
 		begin
 			MonInfo.cbSize := SizeOf(MonInfo);
