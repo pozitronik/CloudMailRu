@@ -187,7 +187,7 @@ begin
 	if Cloud.getShareInfo(Props.home, self.InvitesListing) then
 	begin
 		InvitesCount := length(self.InvitesListing) - 1;
-		for i := 0 to InvitesCount do InvitesLE.InsertRow(self.InvitesListing[i].name, TCloudMailRu.CloudAccessToString(self.InvitesListing[i].access), true);
+		for i := 0 to InvitesCount do InvitesLE.InsertRow(self.InvitesListing[i].email, TCloudMailRu.CloudAccessToString(self.InvitesListing[i].access), true);
 	end else begin
 		MessageBoxW(self.Handle, PWideChar('Error while retrieving ' + Props.home + ' folder invites list, see main log'), 'Folder invite listing error', MB_OK + MB_ICONERROR);
 	end;
