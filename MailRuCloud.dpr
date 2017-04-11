@@ -3,7 +3,26 @@
 {$R *.dres}
 
 uses
-	SysUtils, System.Generics.Collections, DateUtils, windows, Classes, PLUGIN_TYPES, IdSSLOpenSSLHeaders, messages, inifiles, Vcl.controls, CloudMailRu in 'CloudMailRu.pas', MRC_Helper in 'MRC_Helper.pas', Accounts in 'Accounts.pas'{AccountsForm}, RemoteProperty in 'RemoteProperty.pas'{PropertyForm}, Descriptions in 'Descriptions.pas', ConnectionManager in 'ConnectionManager.pas', Settings in 'Settings.pas', ANSIFunctions in 'ANSIFunctions.pas', DeletedProperty in 'DeletedProperty.pas'{DeletedPropertyForm}, InviteProperty in 'InviteProperty.pas'{InvitePropertyForm};
+  SysUtils,
+  System.Generics.Collections,
+  DateUtils,
+  windows,
+  Classes,
+  PLUGIN_TYPES,
+  IdSSLOpenSSLHeaders,
+  messages,
+  inifiles,
+  Vcl.controls,
+  CloudMailRu in 'CloudMailRu.pas',
+  MRC_Helper in 'MRC_Helper.pas',
+  Accounts in 'Accounts.pas' {AccountsForm},
+  RemoteProperty in 'RemoteProperty.pas' {PropertyForm},
+  Descriptions in 'Descriptions.pas',
+  ConnectionManager in 'ConnectionManager.pas',
+  Settings in 'Settings.pas',
+  ANSIFunctions in 'ANSIFunctions.pas',
+  DeletedProperty in 'DeletedProperty.pas' {DeletedPropertyForm},
+  InviteProperty in 'InviteProperty.pas' {InvitePropertyForm};
 
 {$IFDEF WIN64}
 {$E wfx64}
@@ -1243,7 +1262,7 @@ begin
 	begin
 		if (RealPath.path = '') then
 		begin
-			strpcopy(RemoteName, 'shared_public'); //todo mounted blue icon
+			strpcopy(RemoteName, 'shared_incoming');
 			TheIcon := CombineIcons(LoadImageW(hInstance, RemoteName, IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR), GetFolderIcon(GetPluginSettings(SettingsIniFilePath).IconsSize));
 			exit;
 		end else begin
@@ -1251,9 +1270,9 @@ begin
 			CurrentInviteItem := FindIncomingInviteItemByPath(CurrentIncomingInvitesListing, RealPath);
 			if CurrentInviteItem.name = '' then exit(FS_ICON_USEDEFAULT);
 
-			if CurrentInviteItem.home <> '' then
+			if CurrentInviteItem.home <> '' then//mounted item
 			begin
-				strpcopy(RemoteName, 'shared_public'); //todo mounted blue icon
+				strpcopy(RemoteName, 'shared_incoming');
 				TheIcon := CombineIcons(LoadImageW(hInstance, RemoteName, IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR), GetFolderIcon(GetPluginSettings(SettingsIniFilePath).IconsSize));
 			end else begin
 				strpcopy(RemoteName, 'shared');
