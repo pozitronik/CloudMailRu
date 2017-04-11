@@ -45,6 +45,7 @@ procedure SetAllFileTime(const FileName: string; const FileTime: TFileTime);
 procedure CenterWindow(WindowToStay, WindowToCenter: HWND);
 function UrlEncode(URL: WideString): WideString;
 function FindTCWindow: HWND;
+function FindTCIniPath(): WideString;
 function GetTmpDir: WideString;
 function GetTmpFileName(Prefix: WideString = ''): WideString;
 function CopyExt(FromFilename, ToFilename: WideString): WideString;
@@ -230,6 +231,11 @@ end;
 function FindTCWindow: HWND;
 begin
 	Result := FindWindow('TTOTAL_CMD', nil); {Хендл отдаётся корректно даже при нескольких запущенных тоталах}
+end;
+
+function FindTCIniPath(): WideString;
+begin
+	exit(GetEnvironmentVariable('COMMANDER_INI'));
 end;
 
 function GetTmpDir: WideString;
