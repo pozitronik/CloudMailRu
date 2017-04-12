@@ -158,7 +158,7 @@ object AccountsForm: TAccountsForm
     Top = 0
     Width = 491
     Height = 475
-    ActivePage = GlobalTab
+    ActivePage = AccountsTab
     Align = alClient
     TabOrder = 0
     object AccountsTab: TTabSheet
@@ -313,7 +313,7 @@ object AccountsForm: TAccountsForm
         Top = 55
         Width = 253
         Height = 17
-        Caption = 'Public account (experimental)'
+        Caption = 'Public account'
         TabOrder = 5
         OnClick = PublicAccountCBClick
       end
