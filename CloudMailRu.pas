@@ -38,7 +38,7 @@ const
 	API_TRASHBIN = 'https://cloud.mail.ru/api/v2/trashbin';
 	API_TRASHBIN_RESTORE = 'https://cloud.mail.ru/api/v2/trashbin/restore';
 	API_TRASHBIN_EMPTY = 'https://cloud.mail.ru/api/v2/trashbin/empty';
-	API_AB_CONTACTS = ''; //todo
+	API_AB_CONTACTS = ''; //
 	API_DISPATCHER = 'https://cloud.mail.ru/api/v2/dispatcher/';
 	API_USER_SPACE = 'https://cloud.mail.ru/api/v2/user/space';
 	API_CLONE = 'https://cloud.mail.ru/api/v2/clone';
@@ -657,7 +657,6 @@ begin
 	end;
 end;
 
-{TODO Разобраться с полями TCloudMailRuInviteInfoListing - возможно ли объединение с TCloudMailRuINcomingInviteInfoListing}
 function TCloudMailRu.fromJSON_InviteListing(JSON: WideString; var InviteListing: TCloudMailRuInviteInfoListing): Boolean;
 var
 	Obj: TJSONObject;

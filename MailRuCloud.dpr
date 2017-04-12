@@ -171,7 +171,7 @@ begin
 	DeleteFailOnUploadModeAsked := IDRETRY;
 	UNCLocalName := GetUNCFilePath(LocalName);
 
-	while (not DeleteFileW(pWideChar(UNCLocalName))) and (DeleteFailOnUploadModeAsked = IDRETRY) do //todo proc
+	while (not DeleteFileW(pWideChar(UNCLocalName))) and (DeleteFailOnUploadModeAsked = IDRETRY) do
 	begin
 		DeleteFailOnUploadMode := GetPluginSettings(SettingsIniFilePath).DeleteFailOnUploadMode;
 		if DeleteFailOnUploadMode = DeleteFailOnUploadAsk then
