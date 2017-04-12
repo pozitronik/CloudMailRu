@@ -37,6 +37,7 @@ type
 function Implode(S: TStringList; Delimiter: WideString): WideString;
 function Explode(S: WideString; Delimiter: char): TStringList;
 function ExtractRealPath(VirtualPath: WideString): TRealPath;
+function inAccount(path: TRealPath; ignoreVirtual: boolean = true): boolean;
 function SizeOfFile(const FileName: String): Int64;
 function DateTimeToUnix(ConvDate: TDateTime): Integer;
 function CheckFlag(Check: Byte; Flags: Integer): boolean; //Определяет, установлен ли указанный бит
@@ -130,7 +131,12 @@ begin
 		Result.invitesDir := true;
 		Result.account := Copy(Result.account, 1, Length(Result.account) - Length(InvitesPostfix));
 	end;
-
+end;
+//проверка, находится ли путь внутри аккаунта. ignoreVirtual - не считать виртуальные каталоги облачными
+function inAccount(path: TRealPath; ignoreVirtual: boolean = true): boolean;
+begin
+	Result := path.account <> '';
+	if Result and ignoreVirtual then Result := not(path.trashDir or path.sharedDir or path.invitesDir);
 end;
 
 function DateTimeToUnix(ConvDate: TDateTime): Integer;
