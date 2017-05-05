@@ -71,13 +71,19 @@ type
 		AttemptWaitValue: TSpinEdit;
 		RetryAttemptsValue: TSpinEdit;
 		SocketTimeoutEdit: TSpinEdit;
+		DownloadLinksEncodeCB: TCheckBox;
+		AutoUpdateDownloadListingCB: TCheckBox;
+		ShowTrashFoldersCB: TCheckBox;
+		ShowSharedFoldersCB: TCheckBox;
+		ShowInvitesFoldersCB: TCheckBox;
+		ShowAccountsLabel: TLabel;
 		procedure FormShow(Sender: TObject);
 		procedure AccountsListClick(Sender: TObject);
 		procedure ApplyButtonClick(Sender: TObject);
 		procedure UpdateAccountsList();
 		procedure DeleteButtonClick(Sender: TObject);
 		procedure AccountsListKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
-		class procedure ShowAccounts(parentWindow: HWND; IniPath, SettingsIniFilePath: WideString; CryptProc: TCryptProcW; PluginNum, CryptoNum: Integer; RemoteName: WideString);
+		class procedure ShowAccounts(parentWindow: HWND; IniPath, SettingsIniFilePath: WideString; CryptProc: TCryptProcW; PluginNum, CryptoNum: Integer; Account: WideString);
 		procedure FormActivate(Sender: TObject);
 		procedure ProxyUserEditChange(Sender: TObject);
 		procedure GlobalSettingApplyBTNClick(Sender: TObject);
@@ -98,12 +104,20 @@ type
 
 	end;
 
-var
-	AccountsForm: TAccountsForm;
-
 implementation
 
 {$R *.dfm}
+
+procedure TAccountsForm.UpdateAccountsList();
+var
+	TempList: TStringList;
+begin
+	TempList := TStringList.Create;
+	GetAccountsListFromIniFile(IniPath, TempList);
+	AccountsList.Items := TempList;
+	TempList.Destroy;
+	AccountsList.OnClick(self);
+end;
 
 procedure TAccountsForm.AccountsListClick(Sender: TObject);
 var
@@ -205,6 +219,12 @@ begin
 	SetPluginSettingsValue(SettingsIniFilePath, 'ProxyUser', ProxyUserEdit.Text);
 	SetPluginSettingsValue(SettingsIniFilePath, 'ProxyPassword', ProxyPwd.Text);
 	SetPluginSettingsValue(SettingsIniFilePath, 'ProxyTCPwdMngr', ProxyTCPwdMngrCB.Checked);
+	SetPluginSettingsValue(SettingsIniFilePath, 'DownloadLinksEncode', DownloadLinksEncodeCB.Checked);
+	SetPluginSettingsValue(SettingsIniFilePath, 'AutoUpdateDownloadListing', AutoUpdateDownloadListingCB.Checked);
+
+	SetPluginSettingsValue(SettingsIniFilePath, 'ShowTrashFolders', ShowTrashFoldersCB.Checked);
+	SetPluginSettingsValue(SettingsIniFilePath, 'ShowSharedFolders', ShowSharedFoldersCB.Checked);
+	SetPluginSettingsValue(SettingsIniFilePath, 'ShowInvitesFolders', ShowInvitesFoldersCB.Checked);
 
 	if ProxyTCPwdMngrCB.Checked then //просим TC сохранить пароль
 	begin
@@ -279,7 +299,7 @@ begin
 	AccountsPanel.Visible := not PublicAccountCB.Checked;
 end;
 
-class procedure TAccountsForm.ShowAccounts(parentWindow: HWND; IniPath, SettingsIniFilePath: WideString; CryptProc: TCryptProcW; PluginNum, CryptoNum: Integer; RemoteName: WideString);
+class procedure TAccountsForm.ShowAccounts(parentWindow: HWND; IniPath, SettingsIniFilePath: WideString; CryptProc: TCryptProcW; PluginNum, CryptoNum: Integer; Account: WideString);
 var
 	AccountsForm: TAccountsForm;
 begin
@@ -321,26 +341,20 @@ begin
 		AccountsForm.SpaceInfoLoggingCB.Checked := GetPluginSettings(SettingsIniFilePath).LogUserSpace;
 		AccountsForm.IconsModeCombo.ItemIndex := GetPluginSettings(SettingsIniFilePath).IconsMode;
 
+		AccountsForm.DownloadLinksEncodeCB.Checked := GetPluginSettings(SettingsIniFilePath).DownloadLinksEncode;
+		AccountsForm.AutoUpdateDownloadListingCB.Checked := GetPluginSettings(SettingsIniFilePath).AutoUpdateDownloadListing;
+		AccountsForm.ShowTrashFoldersCB.Checked := GetPluginSettings(SettingsIniFilePath).ShowTrashFolders;
+		AccountsForm.ShowSharedFoldersCB.Checked := GetPluginSettings(SettingsIniFilePath).ShowSharedFolders;
+		AccountsForm.ShowInvitesFoldersCB.Checked := GetPluginSettings(SettingsIniFilePath).ShowInvitesFolders;
+
 		{global settings}
-		if RemoteName <> '' then AccountsForm.SelectedAccount := Copy(RemoteName, 2, length(RemoteName) - 1);
+		if Account <> '' then AccountsForm.SelectedAccount := Account;
 		RegisterHotKey(AccountsForm.Handle, 1, 0, VK_ESCAPE);
 		AccountsForm.OptionPages.ActivePageIndex := 0;
 		AccountsForm.ShowModal;
 	finally
 		FreeAndNil(AccountsForm);
 	end;
-end;
-
-procedure TAccountsForm.UpdateAccountsList;
-var
-	TempList: TStringList;
-begin
-	TempList := TStringList.Create;
-	GetAccountsListFromIniFile(IniPath, TempList);
-	AccountsList.Items := TempList;
-	TempList.Destroy;
-	AccountsList.OnClick(self);
-
 end;
 
 procedure TAccountsForm.WMHotKey(var Message: TMessage);

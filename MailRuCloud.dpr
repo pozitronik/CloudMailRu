@@ -3,7 +3,7 @@
 {$R *.dres}
 
 uses
-	SysUtils, System.Generics.Collections, DateUtils, windows, Classes, PLUGIN_TYPES, IdSSLOpenSSLHeaders, messages, inifiles, Vcl.controls, CloudMailRu in 'CloudMailRu.pas', MRC_Helper in 'MRC_Helper.pas', Accounts in 'Accounts.pas'{AccountsForm}, RemoteProperty in 'RemoteProperty.pas'{PropertyForm}, Descriptions in 'Descriptions.pas', ConnectionManager in 'ConnectionManager.pas', Settings in 'Settings.pas', ANSIFunctions in 'ANSIFunctions.pas';
+	SysUtils, System.Generics.Collections, DateUtils, windows, Classes, PLUGIN_TYPES, IdSSLOpenSSLHeaders, messages, inifiles, Vcl.controls, CloudMailRu in 'CloudMailRu.pas', MRC_Helper in 'MRC_Helper.pas', Accounts in 'Accounts.pas'{AccountsForm}, RemoteProperty in 'RemoteProperty.pas'{PropertyForm}, Descriptions in 'Descriptions.pas', ConnectionManager in 'ConnectionManager.pas', Settings in 'Settings.pas', ANSIFunctions in 'ANSIFunctions.pas', DeletedProperty in 'DeletedProperty.pas'{DeletedPropertyForm}, InviteProperty in 'InviteProperty.pas'{InvitePropertyForm};
 
 {$IFDEF WIN64}
 {$E wfx64}
@@ -27,9 +27,13 @@ var
 	AccountsIniFilePath: WideString;
 	SettingsIniFilePath: WideString;
 	GlobalPath, PluginPath, AppDataDir, IniDir: WideString;
+	AccountsList: TStringList; //Global accounts list
 	FileCounter: integer = 0;
 	ThreadSkipListDelete: TDictionary<DWORD, Bool>; //Массив id потоков, для которых операции получения листинга должны быть пропущены (при удалении)
 	ThreadSkipListRenMov: TDictionary<DWORD, Bool>; //Массив id потоков, для которых операции получения листинга должны быть пропущены (при копировании/перемещении)
+	ThreadCanAbortRenMov: TDictionary<DWORD, Bool>; //Массив id потоков, для которых в операциях получения листинга должен быть выведен дополнительный диалог прогресса с возможностью отмены операции (fix issue #113)
+	ThreadListingAborted: TDictionary<DWORD, Bool>; //Массив id потоков, для которых в операциях получения листинга была нажата отмена
+
 	ThreadRetryCountDownload: TDictionary<DWORD, Int32>; //массив [id потока => количество попыток] для подсчёта количества повторов скачивания файла
 	ThreadRetryCountUpload: TDictionary<DWORD, Int32>; //массив [id потока => количество попыток] для подсчёта количества повторов закачивания файла
 	ThreadRetryCountRenMov: TDictionary<DWORD, Int32>; //массив [id потока => количество попыток] для подсчёта количества повторов межсерверных операций с файлом
@@ -43,22 +47,30 @@ var
 	MyCryptProc: TCryptProcW;
 
 	CurrentListing: TCloudMailRuDirListing;
+	CurrentIncomingInvitesListing: TCloudMailRuIncomingInviteInfoListing;
 	ConnectionManager: TConnectionManager;
 	CurrentDescriptions: TDescription;
 	ProxySettings: TProxySettings;
 
-function CloudMailRuDirListingItemToFindData(DirListing: TCloudMailRuDirListingItem): tWIN32FINDDATAW;
+function CloudMailRuDirListingItemToFindData(DirListing: TCloudMailRuDirListingItem; DirsAsSymlinks: Boolean = false): tWIN32FINDDATAW;
 begin
-	if (DirListing.type_ = TYPE_DIR) then
+	if (DirListing.deleted_from <> '') then //items inside trash bin
+	begin
+		Result.ftCreationTime := DateTimeToFileTime(UnixToDateTime(DirListing.deleted_at));
+		Result.ftLastWriteTime := Result.ftCreationTime;
+		if (DirListing.type_ = TYPE_DIR) then Result.dwFileAttributes := FILE_ATTRIBUTE_DIRECTORY
+		else Result.dwFileAttributes := 0;
+	end else if (DirListing.type_ = TYPE_DIR) or (DirListing.kind = KIND_SHARED) then
 	begin
 		Result.ftCreationTime.dwLowDateTime := 0;
 		Result.ftCreationTime.dwHighDateTime := 0;
 		Result.ftLastWriteTime.dwHighDateTime := 0;
 		Result.ftLastWriteTime.dwLowDateTime := 0;
-		Result.dwFileAttributes := FILE_ATTRIBUTE_DIRECTORY
+		if DirsAsSymlinks then Result.dwFileAttributes := 0
+		else Result.dwFileAttributes := FILE_ATTRIBUTE_DIRECTORY;
 	end else begin
 		Result.ftCreationTime := DateTimeToFileTime(UnixToDateTime(DirListing.mtime));
-		Result.ftLastWriteTime := DateTimeToFileTime(UnixToDateTime(DirListing.mtime));
+		Result.ftLastWriteTime := Result.ftCreationTime;
 
 		Result.dwFileAttributes := 0;
 	end;
@@ -66,7 +78,6 @@ begin
 	if (DirListing.size > MAXDWORD) then Result.nFileSizeHigh := DirListing.size div MAXDWORD
 	else Result.nFileSizeHigh := 0;
 	Result.nFileSizeLow := DirListing.size;
-
 	strpcopy(Result.cFileName, DirListing.name);
 end;
 
@@ -82,42 +93,73 @@ begin
 	Result.dwFileAttributes := FILE_ATTRIBUTE_DIRECTORY;
 end;
 
-function FindListingItemByHomePath(DirListing: TCloudMailRuDirListing; HomePath: WideString): TCloudMailRuDirListingItem;
-var
-	I: integer;
-begin
-	HomePath := '/' + StringReplace(HomePath, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]);
-	for I := 0 to Length(DirListing) - 1 do
-	begin
-		if DirListing[I].home = HomePath then exit(DirListing[I]);
-	end;
-end;
-
-function FindListingItemByName(DirListing: TCloudMailRuDirListing; ItemName: WideString): TCloudMailRuDirListingItem;
-var
-	I: integer;
-begin
-	for I := 0 to Length(DirListing) - 1 do
-	begin
-		if DirListing[I].name = ItemName then
-		begin
-			exit(DirListing[I]);
-		end;
-	end;
-end;
-
-function GetListingItemByName(CurrentListing: TCloudMailRuDirListing; path: TRealPath): TCloudMailRuDirListingItem;
+{Пытаемся найти объект в облаке по его пути, сначала в текущем списке, если нет - то ищем в облаке}
+function FindListingItemByPath(CurrentListing: TCloudMailRuDirListing; path: TRealPath): TCloudMailRuDirListingItem;
 var
 	getResult: integer;
-begin
-	Result := FindListingItemByHomePath(CurrentListing, path.path); //сначала попробуем найти поле в имеющемся списке
-	if Result.name = '' then //если там его нет (нажали пробел на папке, например), то запросим в облаке напрямую
+	Cloud: TCloudMailRu;
+
+	function FindListingItemByName(DirListing: TCloudMailRuDirListing; ItemName: WideString): TCloudMailRuDirListingItem;
+	var
+		CurrentItem: TCloudMailRuDirListingItem;
 	begin
-		if ConnectionManager.get(path.account, getResult).statusFile(path.path, Result) then
+		for CurrentItem in DirListing do
+			if CurrentItem.name = ItemName then exit(CurrentItem);
+	end;
+
+	function FindListingItemByHomePath(DirListing: TCloudMailRuDirListing; HomePath: WideString): TCloudMailRuDirListingItem;
+	var
+		CurrentItem: TCloudMailRuDirListingItem;
+	begin
+		HomePath := '/' + StringReplace(HomePath, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]);
+		for CurrentItem in DirListing do
+			if CurrentItem.home = HomePath then exit(CurrentItem);
+	end;
+
+begin
+	if path.trashDir or path.sharedDir{or path.invitesDir} then Result := FindListingItemByName(CurrentListing, path.path)//Виртуальные каталоги не возвращают HomePath
+	else Result := FindListingItemByHomePath(CurrentListing, path.path); //сначала попробуем найти поле в имеющемся списке
+
+	if Result.name = '' then //если там его нет (нажали пробел на папке, например), то запросим в облаке напрямую, в зависимости от того, внутри чего мы находимся
+	begin
+		Cloud := ConnectionManager.get(path.account, getResult);
+		if path.trashDir then //корзина - обновим CurrentListing, поищем в нём
 		begin
-			if Result.home = '' then MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, pWideChar('Cant find file ' + path.path)); {Такого быть не может, но...}
+			if Cloud.getTrashbinListing(CurrentListing) then exit(FindListingItemByName(CurrentListing, path.path));
+		end;
+		if path.sharedDir then //ссылки - обновим список
+		begin
+			if Cloud.getSharedLinksListing(CurrentListing) then exit(FindListingItemByName(CurrentListing, path.path));
+		end;
+		if path.invitesDir then
+		begin
+			//FindIncomingInviteItemByPath in that case!
+		end;
+		if Cloud.statusFile(path.path, Result) then //Обычный каталог
+		begin
+			if (Result.home = '') and not Cloud.isPublicShare then MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, pWideChar('Cant find file ' + path.path)); {Такого быть не может, но...}
 		end;
 	end; //Не рапортуем, это будет уровнем выше
+end;
+
+function FindIncomingInviteItemByPath(InviteListing: TCloudMailRuIncomingInviteInfoListing; path: TRealPath): TCloudMailRuIncomingInviteInfo;
+var
+	getResult: integer;
+
+	function FindListingItemByName(InviteListing: TCloudMailRuIncomingInviteInfoListing; ItemName: WideString): TCloudMailRuIncomingInviteInfo;
+	var
+		CurrentItem: TCloudMailRuIncomingInviteInfo;
+	begin
+		for CurrentItem in InviteListing do
+			if CurrentItem.name = ItemName then exit(CurrentItem);
+	end;
+
+begin
+	Result := FindListingItemByName(InviteListing, path.path);
+	{item not found in current global listing, so refresh it}
+	if Result.name = '' then
+		if ConnectionManager.get(path.account, getResult).getIncomingLinksListing(CurrentIncomingInvitesListing) then exit(FindListingItemByName(CurrentIncomingInvitesListing, path.path));
+
 end;
 
 function DeleteLocalFile(LocalName: WideString): integer;
@@ -129,7 +171,7 @@ begin
 	DeleteFailOnUploadModeAsked := IDRETRY;
 	UNCLocalName := GetUNCFilePath(LocalName);
 
-	while (not DeleteFileW(pWideChar(UNCLocalName))) and (DeleteFailOnUploadModeAsked = IDRETRY) do //todo proc
+	while (not DeleteFileW(pWideChar(UNCLocalName))) and (DeleteFailOnUploadModeAsked = IDRETRY) do
 	begin
 		DeleteFailOnUploadMode := GetPluginSettings(SettingsIniFilePath).DeleteFailOnUploadMode;
 		if DeleteFailOnUploadMode = DeleteFailOnUploadAsk then
@@ -202,17 +244,15 @@ procedure FsStatusInfoW(RemoteDir: pWideChar; InfoStartEnd, InfoOperation: integ
 var
 	RealPath: TRealPath;
 	getResult: integer;
-	//DescriptionItem: TCloudMailRuDirListingItem;
 	TmpIon: WideString;
 begin
 	RealPath := ExtractRealPath(RemoteDir);
-	if RealPath.account = '' then RealPath.account := ExtractFileName(ExcludeTrailingBackslash(RemoteDir));
 	if (InfoStartEnd = FS_STATUS_START) then
 	begin
 		case InfoOperation of
 			FS_STATUS_OP_LIST:
 				begin
-					if (GetPluginSettings(SettingsIniFilePath).DescriptionEnabled) and (RealPath.account <> '') then
+					if (GetPluginSettings(SettingsIniFilePath).DescriptionEnabled) and inAccount(RealPath) then
 					begin
 						TmpIon := GetTmpFileName('ion');
 						if ConnectionManager.get(RealPath.account, getResult).getDescriptionFile(IncludeTrailingBackslash(RealPath.path) + 'descript.ion', TmpIon) = FS_FILE_OK then
@@ -250,6 +290,7 @@ begin
 						ThreadSkipListRenMov.AddOrSetValue(GetCurrentThreadID, true);
 					end;
 					ThreadRetryCountRenMov.AddOrSetValue(GetCurrentThreadID(), 0);
+					ThreadCanAbortRenMov.AddOrSetValue(GetCurrentThreadID, true);
 				end;
 			FS_STATUS_OP_DELETE:
 				begin
@@ -311,25 +352,26 @@ begin
 				end;
 			FS_STATUS_OP_PUT_SINGLE:
 				begin
-					if (RealPath.account <> '') and GetPluginSettings(SettingsIniFilePath).LogUserSpace then ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
+					if inAccount(RealPath) and GetPluginSettings(SettingsIniFilePath).LogUserSpace then ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
 				end;
 			FS_STATUS_OP_PUT_MULTI:
 				begin
-					if (RealPath.account <> '') and GetPluginSettings(SettingsIniFilePath).LogUserSpace then ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
+					if inAccount(RealPath) and GetPluginSettings(SettingsIniFilePath).LogUserSpace then ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
 				end;
 			FS_STATUS_OP_RENMOV_SINGLE:
 				begin
-					if (RealPath.account <> '') and GetPluginSettings(SettingsIniFilePath).LogUserSpace then ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
+					if inAccount(RealPath) and GetPluginSettings(SettingsIniFilePath).LogUserSpace then ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
 				end;
 			FS_STATUS_OP_RENMOV_MULTI:
 				begin
 					ThreadSkipListRenMov.AddOrSetValue(GetCurrentThreadID, false);
-					if (RealPath.account <> '') and GetPluginSettings(SettingsIniFilePath).LogUserSpace then ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
+					ThreadCanAbortRenMov.AddOrSetValue(GetCurrentThreadID, false);
+					if inAccount(RealPath) and GetPluginSettings(SettingsIniFilePath).LogUserSpace then ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
 				end;
 			FS_STATUS_OP_DELETE:
 				begin
 					ThreadSkipListDelete.AddOrSetValue(GetCurrentThreadID(), false);
-					if (RealPath.account <> '') and GetPluginSettings(SettingsIniFilePath).LogUserSpace then ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
+					if inAccount(RealPath) and GetPluginSettings(SettingsIniFilePath).LogUserSpace then ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
 				end;
 			FS_STATUS_OP_ATTRIB:
 				begin
@@ -354,23 +396,23 @@ begin
 				end;
 			FS_STATUS_OP_SYNC_GET:
 				begin
-					if (RealPath.account <> '') and GetPluginSettings(SettingsIniFilePath).LogUserSpace then ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
+					if inAccount(RealPath) and GetPluginSettings(SettingsIniFilePath).LogUserSpace then ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
 				end;
 			FS_STATUS_OP_SYNC_PUT:
 				begin
-					if (RealPath.account <> '') and GetPluginSettings(SettingsIniFilePath).LogUserSpace then ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
+					if inAccount(RealPath) and GetPluginSettings(SettingsIniFilePath).LogUserSpace then ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
 				end;
 			FS_STATUS_OP_SYNC_DELETE:
 				begin
-					if (RealPath.account <> '') and GetPluginSettings(SettingsIniFilePath).LogUserSpace then ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
+					if inAccount(RealPath) and GetPluginSettings(SettingsIniFilePath).LogUserSpace then ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
 				end;
 			FS_STATUS_OP_GET_MULTI_THREAD:
 				begin
-					if (RealPath.account <> '') and GetPluginSettings(SettingsIniFilePath).LogUserSpace then ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
+					if inAccount(RealPath) and GetPluginSettings(SettingsIniFilePath).LogUserSpace then ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
 				end;
 			FS_STATUS_OP_PUT_MULTI_THREAD:
 				begin
-					if (RealPath.account <> '') and GetPluginSettings(SettingsIniFilePath).LogUserSpace then ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
+					if inAccount(RealPath) and GetPluginSettings(SettingsIniFilePath).LogUserSpace then ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
 				end;
 		end;
 		exit;
@@ -379,42 +421,66 @@ end;
 
 function FsFindFirstW(path: pWideChar; var FindData: tWIN32FINDDATAW): THandle; stdcall;
 var //Получение первого файла в папке. Result тоталом не используется (можно использовать для работы плагина).
-	Sections: TStringList;
 	RealPath: TRealPath;
 	getResult: integer;
-	SkipListDelete, SkipListRenMov: Bool;
+	SkipListDelete, SkipListRenMov, CanAbortRenMov, RenMovAborted: Bool;
 begin
 	ThreadSkipListDelete.TryGetValue(GetCurrentThreadID(), SkipListDelete);
 	ThreadSkipListRenMov.TryGetValue(GetCurrentThreadID(), SkipListRenMov);
-	if SkipListDelete or SkipListRenMov then
+
+	ThreadCanAbortRenMov.TryGetValue(GetCurrentThreadID(), CanAbortRenMov);
+
+	if (CanAbortRenMov and (MyProgressProc(PluginNum, path, nil, 0) = 1)) then
+	begin
+		ThreadListingAborted.AddOrSetValue(GetCurrentThreadID(), true);
+		RenMovAborted := true;
+	end
+	else RenMovAborted := false;
+
+	if SkipListDelete or SkipListRenMov or RenMovAborted then
 	begin
 		SetLastError(ERROR_NO_MORE_FILES);
 		exit(INVALID_HANDLE_VALUE);
 	end;
 
 	SetLength(CurrentListing, 0);
-	Result := 0;
+	//Result := FIND_NO_MORE_FILES;
 	GlobalPath := path;
 	if GlobalPath = '\' then
 	begin //список соединений
-		Sections := TStringList.Create;
-		GetAccountsListFromIniFile(AccountsIniFilePath, Sections);
+		AccountsList := TStringList.Create;
+		GetAccountsListFromIniFile(AccountsIniFilePath, AccountsList);
 
-		if (Sections.Count > 0) then
+		if (AccountsList.Count > 0) then
 		begin
-			FindData := FindData_emptyDir(Sections.Strings[0]);
+			AddVirtualAccountsToAccountsList(AccountsIniFilePath, AccountsList, [GetPluginSettings(SettingsIniFilePath).ShowTrashFolders, GetPluginSettings(SettingsIniFilePath).ShowSharedFolders, GetPluginSettings(SettingsIniFilePath).ShowInvitesFolders]);
+
+			FindData := FindData_emptyDir(AccountsList.Strings[0]);
 			FileCounter := 1;
+			Result := FIND_ROOT_DIRECTORY;
 		end else begin
 			Result := INVALID_HANDLE_VALUE; //Нельзя использовать exit
 			SetLastError(ERROR_NO_MORE_FILES);
 		end;
-		Sections.Free;
 	end else begin
 		RealPath := ExtractRealPath(GlobalPath);
 
-		if RealPath.account = '' then RealPath.account := ExtractFileName(ExcludeTrailingBackslash(GlobalPath));
+		if RealPath.trashDir then
+		begin
+			if not ConnectionManager.get(RealPath.account, getResult).getTrashbinListing(CurrentListing) then SetLastError(ERROR_PATH_NOT_FOUND);
+			if RealPath.path <> '' then
+			begin
+				SetLastError(ERROR_ACCESS_DENIED);
+				exit(INVALID_HANDLE_VALUE);
+			end;
+		end else if RealPath.sharedDir then
+		begin
+			if not ConnectionManager.get(RealPath.account, getResult).getSharedLinksListing(CurrentListing) then SetLastError(ERROR_PATH_NOT_FOUND); //that will be interpreted as symlinks later
+		end else if RealPath.invitesDir then
+		begin
+			if not ConnectionManager.get(RealPath.account, getResult).getIncomingLinksListing(CurrentListing, CurrentIncomingInvitesListing) then SetLastError(ERROR_PATH_NOT_FOUND); //одновременно получаем оба листинга, чтобы не перечитывать листинг инватов на каждый чих
+		end else if not ConnectionManager.get(RealPath.account, getResult).getDirListing(RealPath.path, CurrentListing) then SetLastError(ERROR_PATH_NOT_FOUND);
 
-		if not ConnectionManager.get(RealPath.account, getResult).getDirListing(RealPath.path, CurrentListing) then SetLastError(ERROR_PATH_NOT_FOUND);
 		if getResult <> CLOUD_OPERATION_OK then
 		begin
 			SetLastError(ERROR_ACCESS_DENIED);
@@ -424,37 +490,34 @@ begin
 		if (Length(CurrentListing) = 0) then
 		begin
 			FindData := FindData_emptyDir(); //воркароунд бага с невозможностью входа в пустой каталог, см. http://www.ghisler.ch/board/viewtopic.php?t=42399
-			Result := 0;
+			Result := FIND_NO_MORE_FILES;
 			SetLastError(ERROR_NO_MORE_FILES);
 		end else begin
-			FindData := CloudMailRuDirListingItemToFindData(CurrentListing[0]);
+			FindData := CloudMailRuDirListingItemToFindData(CurrentListing[0], RealPath.sharedDir); //folders inside shared links directory must be displayed as symlinks
 			FileCounter := 1;
-			Result := 1;
+			if RealPath.sharedDir then Result := FIND_SHARED_LINKS
+			else Result := FIND_OK;
 		end;
 	end;
 end;
 
 function FsFindNextW(Hdl: THandle; var FindData: tWIN32FINDDATAW): Bool; stdcall;
-var
-	Sections: TStringList;
 begin
 	if GlobalPath = '\' then
 	begin
-		Sections := TStringList.Create;
-		GetAccountsListFromIniFile(AccountsIniFilePath, Sections);
-		if (Sections.Count > FileCounter) then
+		if (AccountsList.Count > FileCounter) then
 		begin
-			FindData := FindData_emptyDir(Sections.Strings[FileCounter]);
+			FindData := FindData_emptyDir(AccountsList.Strings[FileCounter]);
 			inc(FileCounter);
 			Result := true;
 		end
 		else Result := false;
-		Sections.Free;
+
 	end else begin
 		//Получение последующих файлов в папке (вызывается до тех пор, пока не вернёт false).
 		if (Length(CurrentListing) > FileCounter) then
 		begin
-			FindData := CloudMailRuDirListingItemToFindData(CurrentListing[FileCounter]);
+			FindData := CloudMailRuDirListingItemToFindData(CurrentListing[FileCounter], Hdl = FIND_SHARED_LINKS);
 			Result := true;
 			inc(FileCounter);
 		end else begin
@@ -468,70 +531,192 @@ end;
 function FsFindClose(Hdl: THandle): integer; stdcall;
 Begin //Завершение получения списка файлов. Result тоталом не используется (всегда равен 0)
 	//SetLength(CurrentListing, 0); // Пусть будет
+	if Hdl = FIND_ROOT_DIRECTORY then AccountsList.Free;
+
 	Result := 0;
 	FileCounter := 0;
+end;
+
+function ExecTrashbinProperties(MainWin: THandle; RealPath: TRealPath): integer;
+var
+	Cloud: TCloudMailRu;
+	getResult: integer;
+	CurrentItem: TCloudMailRuDirListingItem;
+begin
+	Result := FS_EXEC_OK;
+	Cloud := ConnectionManager.get(RealPath.account, getResult);
+	if RealPath.path = '' then //main trashbin folder properties
+	begin
+		if not Cloud.getTrashbinListing(CurrentListing) then exit(FS_EXEC_ERROR);
+		getResult := TDeletedPropertyForm.ShowProperties(MainWin, CurrentListing, true, RealPath.account);
+	end else begin //one item in trashbin
+		CurrentItem := FindListingItemByPath(CurrentListing, RealPath); //для одинаково именованных файлов в корзине будут показываться свойства первого, сорян
+		getResult := TDeletedPropertyForm.ShowProperties(MainWin, [CurrentItem]);
+	end;
+	case (getResult) of
+		mrNo: if not Cloud.trashbinEmpty then exit(FS_EXEC_ERROR);
+		mrYes: if not Cloud.trashbinRestore(CurrentItem.deleted_from + CurrentItem.name, CurrentItem.rev) then exit(FS_EXEC_ERROR);
+		mrYesToAll: for CurrentItem in CurrentListing do
+				if not Cloud.trashbinRestore(CurrentItem.deleted_from + CurrentItem.name, CurrentItem.rev) then exit(FS_EXEC_ERROR);
+	end;
+
+	PostMessage(MainWin, WM_USER + 51, 540, 0); //TC does not update current panel, so we should do it this way
+end;
+
+function ExecSharedAction(MainWin: THandle; RealPath: TRealPath; RemoteName: pWideChar; ActionOpen: Boolean = true): integer;
+var
+	Cloud: TCloudMailRu;
+	CurrentItem: TCloudMailRuDirListingItem;
+	getResult: integer;
+begin
+	Result := FS_EXEC_OK;
+	if ActionOpen then //open item, i.e. treat it as symlink to original location
+	begin
+		CurrentItem := FindListingItemByPath(CurrentListing, RealPath);
+		if CurrentItem.type_ = TYPE_FILE then strpcopy(RemoteName, '\' + RealPath.account + ExtractFilePath(UrlToPath(CurrentItem.home)))
+		else strpcopy(RemoteName, '\' + RealPath.account + UrlToPath(CurrentItem.home));
+		Result := FS_EXEC_SYMLINK;
+	end else begin
+		if RealPath.path = '' then TAccountsForm.ShowAccounts(MainWin, AccountsIniFilePath, SettingsIniFilePath, MyCryptProc, PluginNum, CryptoNum, RealPath.account)//main shared folder properties - open connection settings
+		else
+		begin
+			Cloud := ConnectionManager.get(RealPath.account, getResult);
+			CurrentItem := FindListingItemByPath(CurrentListing, RealPath);
+			if Cloud.statusFile(CurrentItem.home, CurrentItem) then TPropertyForm.ShowProperty(MainWin, RealPath.path, CurrentItem, Cloud, GetPluginSettings(SettingsIniFilePath).DownloadLinksEncode, GetPluginSettings(SettingsIniFilePath).AutoUpdateDownloadListing)
+		end;
+	end;
+end;
+
+function ExecInvitesAction(MainWin: THandle; RealPath: TRealPath): integer;
+var
+	Cloud: TCloudMailRu;
+	getResult: integer;
+	CurrentInvite: TCloudMailRuIncomingInviteInfo;
+begin
+	Result := FS_EXEC_OK;
+	Cloud := ConnectionManager.get(RealPath.account, getResult);
+	if RealPath.path = '' then //main invites folder properties
+	begin
+		TAccountsForm.ShowAccounts(MainWin, AccountsIniFilePath, SettingsIniFilePath, MyCryptProc, PluginNum, CryptoNum, RealPath.account)
+	end else begin //one invite item
+		CurrentInvite := FindIncomingInviteItemByPath(CurrentIncomingInvitesListing, RealPath);
+		if CurrentInvite.name = '' then exit(FS_EXEC_ERROR);
+
+		getResult := TInvitePropertyForm.ShowProperties(MainWin, CurrentInvite);
+	end;
+	case (getResult) of
+		mrAbort: Cloud.unmountFolder(CurrentInvite.name, true);
+		mrClose: Cloud.unmountFolder(CurrentInvite.name, false);
+		mrYes: Cloud.mountFolder(CurrentInvite.name, CurrentInvite.invite_token);
+		mrNo: Cloud.rejectInvite(CurrentInvite.invite_token);
+
+	end;
+
+	PostMessage(MainWin, WM_USER + 51, 540, 0); //TC does not update current panel, so we should do it this way
+end;
+
+function ExecProperties(MainWin: THandle; RealPath: TRealPath): integer;
+var
+	Cloud: TCloudMailRu;
+	CurrentItem: TCloudMailRuDirListingItem;
+	getResult: integer;
+begin
+	Result := FS_EXEC_OK;
+	if RealPath.path = '' then TAccountsForm.ShowAccounts(MainWin, AccountsIniFilePath, SettingsIniFilePath, MyCryptProc, PluginNum, CryptoNum, RealPath.account)//show account properties
+	else
+	begin
+		Cloud := ConnectionManager.get(RealPath.account, getResult);
+		if Cloud.statusFile(RealPath.path, CurrentItem) then //всегда нужно обновлять статус на сервере, CurrentListing может быть изменён в другой панели
+		begin
+			if Cloud.isPublicShare then TPropertyForm.ShowProperty(MainWin, RealPath.path, CurrentItem, Cloud, GetPluginSettings(SettingsIniFilePath).DownloadLinksEncode, GetPluginSettings(SettingsIniFilePath).AutoUpdateDownloadListing)
+			else TPropertyForm.ShowProperty(MainWin, RealPath.path, CurrentItem, Cloud, GetPluginSettings(SettingsIniFilePath).DownloadLinksEncode, GetPluginSettings(SettingsIniFilePath).AutoUpdateDownloadListing);
+		end;
+	end;
+end;
+
+function ExecCommand(RemoteName: pWideChar; command: WideString; Parameter: WideString = ''): integer;
+var
+	RealPath: TRealPath;
+	getResult: integer;
+	Cloud: TCloudMailRu;
+begin
+	Result := FS_EXEC_OK;
+
+	if command = 'rmdir' then
+	begin
+		RealPath := ExtractRealPath(RemoteName + Parameter);
+		if (ConnectionManager.get(RealPath.account, getResult).removeDir(RealPath.path) <> true) then exit(FS_EXEC_ERROR);
+	end;
+
+	RealPath := ExtractRealPath(RemoteName); //default
+	Cloud := ConnectionManager.get(RealPath.account, getResult);
+
+	//undocumented, share current folder to email param
+	if command = 'share' then
+		if not(Cloud.shareFolder(RealPath.path, ExtractLinkFromUrl(Parameter), CLOUD_SHARE_RW)) then exit(FS_EXEC_ERROR);
+
+	if command = 'clone' then
+	begin
+		if (Cloud.cloneWeblink(RealPath.path, ExtractLinkFromUrl(Parameter)) = CLOUD_OPERATION_OK) then
+			if GetPluginSettings(SettingsIniFilePath).LogUserSpace then Cloud.logUserSpaceInfo
+			else exit(FS_EXEC_ERROR);
+	end;
+
+	if command = 'trash' then //go to current account trash directory
+	begin
+		if Cloud.isPublicShare then exit(FS_EXEC_ERROR);
+		if inAccount(RealPath,false) then
+		begin
+			strpcopy(RemoteName, '\' + RealPath.account + TrashPostfix);
+			exit(FS_EXEC_SYMLINK);
+		end;
+	end;
+
+	if command = 'shared' then
+	begin
+		if Cloud.isPublicShare then exit(FS_EXEC_ERROR);
+		if inAccount(RealPath,false) then
+		begin
+			strpcopy(RemoteName, '\' + RealPath.account + SharedPostfix);
+			exit(FS_EXEC_SYMLINK);
+		end;
+	end;
+
+	if command = 'invites' then
+	begin
+		if Cloud.isPublicShare then exit(FS_EXEC_ERROR);
+		if inAccount(RealPath,false) then
+		begin
+			strpcopy(RemoteName, '\' + RealPath.account + InvitesPostfix);
+			exit(FS_EXEC_SYMLINK);
+		end;
+	end;
+
 end;
 
 function FsExecuteFileW(MainWin: THandle; RemoteName, Verb: pWideChar): integer; stdcall; //Запуск файла
 var
 	RealPath: TRealPath;
-	CurrentItem: TCloudMailRuDirListingItem;
-	Cloud: TCloudMailRu;
-	getResult: integer;
-	command, param: WideString;
 Begin
 	RealPath := ExtractRealPath(RemoteName);
 	Result := FS_EXEC_OK;
-	if Verb = 'open' then
-	begin
-		exit(FS_EXEC_YOURSELF);
-	end else if Verb = 'properties' then
-	begin
-		if RealPath.path = '' then
-		begin
-			TAccountsForm.ShowAccounts(MainWin, AccountsIniFilePath, SettingsIniFilePath, MyCryptProc, PluginNum, CryptoNum, RemoteName);
-		end else begin
-			if ConnectionManager.get(RealPath.account, getResult).statusFile(RealPath.path, CurrentItem) then
-			begin
-				Cloud := ConnectionManager.get(RealPath.account, getResult);
-				if CurrentItem.home <> '' then TPropertyForm.ShowProperty(MainWin, CurrentItem, Cloud)
-				else
-				begin
-					MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, pWideChar('Cant find file under cursor!'));
-				end;
-			end; //Не рапортуем, это будет уровнем выше
-		end;
-	end else if copy(Verb, 1, 5) = 'chmod' then
-	begin
-	end else if copy(Verb, 1, 5) = 'quote' then
-	begin //обработка внутренних команд плагина
-		command := LowerCase(GetWord(Verb, 1));
-		if command = 'rmdir' then
-		begin
-			RealPath := ExtractRealPath(RemoteName + GetWord(Verb, 2));
-			if (ConnectionManager.get(RealPath.account, getResult).removeDir(RealPath.path) <> true) then Result := FS_EXEC_ERROR;
-		end else if command = 'share' then
-		begin
-			RealPath := ExtractRealPath(RemoteName);
-			param := ExtractLinkFromUrl(GetWord(Verb, 2));
-			if not(ConnectionManager.get(RealPath.account, getResult).shareFolder(RealPath.path, param, CLOUD_SHARE_RW)) then Result := FS_EXEC_ERROR;
-		end else if command = 'clone' then
-		begin
-			RealPath := ExtractRealPath(RemoteName);
-			if RealPath.account = '' then //Некрасивое решение, надо переделать
-			begin
-				RealPath.account := ExtractFileName(ExcludeTrailingBackslash(RemoteName));
-				RealPath.path := '\';
-			end;
-			param := ExtractLinkFromUrl(GetWord(Verb, 2));
-			if (ConnectionManager.get(RealPath.account, getResult).cloneWeblink(RealPath.path, param) = CLOUD_OPERATION_OK) then
-			begin
-				if GetPluginSettings(SettingsIniFilePath).LogUserSpace then ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
-			end
-			else Result := FS_EXEC_ERROR;
-		end;
 
-	end;
+	if RealPath.upDirItem then RealPath.path := ExtractFilePath(RealPath.path); //if somepath/.. item properties called
+
+	if RealPath.trashDir and ((Verb = 'open') or (Verb = 'properties')) then exit(ExecTrashbinProperties(MainWin, RealPath));
+
+	if RealPath.sharedDir then exit(ExecSharedAction(MainWin, RealPath, RemoteName, Verb = 'open'));
+
+	if RealPath.invitesDir then exit(ExecInvitesAction(MainWin, RealPath));
+
+	if Verb = 'properties' then exit(ExecProperties(MainWin, RealPath));
+
+	if Verb = 'open' then exit(FS_EXEC_YOURSELF);
+
+	if copy(Verb, 1, 5) = 'quote' then exit(ExecCommand(RemoteName, LowerCase(GetWord(Verb, 1)), GetWord(Verb, 2)));
+
+	//if copy(Verb, 1, 5) = 'chmod' then exit; //future usage
+
 End;
 
 function GetRemoteFile(RemotePath: TRealPath; LocalName, RemoteName: WideString; CopyFlags: integer): integer;
@@ -545,7 +730,7 @@ begin
 	begin
 		if GetPluginSettings(SettingsIniFilePath).PreserveFileTime then
 		begin
-			Item := GetListingItemByName(CurrentListing, RemotePath);
+			Item := FindListingItemByPath(CurrentListing, RemotePath);
 			if Item.mtime <> 0 then SetAllFileTime(ExpandUNCFileName(LocalName), DateTimeToFileTime(UnixToDateTime(Item.mtime)));
 		end;
 		if CheckFlag(FS_COPYFLAGS_MOVE, CopyFlags) then ConnectionManager.get(RemotePath.account, getResult).deleteFile(RemotePath.path);
@@ -557,13 +742,14 @@ end;
 function FsGetFileW(RemoteName, LocalName: pWideChar; CopyFlags: integer; RemoteInfo: pRemoteInfo): integer; stdcall; //Копирование файла из файловой системы плагина
 var
 	RealPath: TRealPath;
-
 	OverwriteLocalMode: integer;
 	RetryAttempts: integer;
 begin
 	Result := FS_FILE_NOTSUPPORTED;
 	If CheckFlag(FS_COPYFLAGS_RESUME, CopyFlags) then exit; {NEVER CALLED HERE}
 	RealPath := ExtractRealPath(RemoteName);
+	if RealPath.trashDir or RealPath.sharedDir or RealPath.invitesDir then exit;
+
 	MyProgressProc(PluginNum, RemoteName, LocalName, 0);
 
 	OverwriteLocalMode := GetPluginSettings(SettingsIniFilePath).OverwriteLocalMode;
@@ -573,10 +759,10 @@ begin
 			OverwriteLocalModeAsk: exit(FS_FILE_EXISTS); //TC will ask user
 			OverwriteLocalModeIgnore:
 				begin
-					MyLogProc(PluginNum, MSGTYPE_DETAILS, pWideChar('Local file ' + LocalName + ' exists, ignored'));
+					MyLogProc(PluginNum, msgtype_details, pWideChar('Local file ' + LocalName + ' exists, ignored'));
 					exit(FS_FILE_OK);
 				end;
-			OverwriteLocalModeOverwrite: MyLogProc(PluginNum, MSGTYPE_DETAILS, pWideChar('Local file ' + LocalName + ' exists, and will be overwritten'));
+			OverwriteLocalModeOverwrite: MyLogProc(PluginNum, msgtype_details, pWideChar('Local file ' + LocalName + ' exists, and will be overwritten'));
 		end;
 	end;
 
@@ -605,7 +791,7 @@ begin
 				while (ThreadRetryCountDownload.Items[GetCurrentThreadID()] <> RetryAttempts) and (not(Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
 				begin
 					ThreadRetryCountDownload.Items[GetCurrentThreadID()] := ThreadRetryCountDownload.Items[GetCurrentThreadID()] + 1;
-					MyLogProc(PluginNum, MSGTYPE_DETAILS, pWideChar('Error downloading file ' + RemoteName + ' Retry attempt ' + ThreadRetryCountDownload.Items[GetCurrentThreadID()].ToString + RetryAttemptsToString(RetryAttempts)));
+					MyLogProc(PluginNum, msgtype_details, pWideChar('Error downloading file ' + RemoteName + ' Retry attempt ' + ThreadRetryCountDownload.Items[GetCurrentThreadID()].ToString + RetryAttemptsToString(RetryAttempts)));
 					Result := GetRemoteFile(RealPath, LocalName, RemoteName, CopyFlags);
 					if MyProgressProc(PluginNum, pWideChar(LocalName), RemoteName, 0) = 1 then Result := FS_FILE_USERABORT;
 					if (Result in [FS_FILE_OK, FS_FILE_USERABORT]) then ThreadRetryCountDownload.Items[GetCurrentThreadID()] := 0; //сбросим счётчик попыток
@@ -637,9 +823,9 @@ var
 	RetryAttempts: integer;
 	getResult: integer;
 begin
-	//Result := FS_FILE_NOTSUPPORTED;
+
 	RealPath := ExtractRealPath(RemoteName);
-	if RealPath.account = '' then exit(FS_FILE_NOTSUPPORTED);
+	if (RealPath.account = '') or RealPath.trashDir or RealPath.sharedDir or RealPath.invitesDir then exit(FS_FILE_NOTSUPPORTED);
 	MyProgressProc(PluginNum, LocalName, pWideChar(RealPath.path), 0);
 
 	if CheckFlag(FS_COPYFLAGS_RESUME, CopyFlags) then exit(FS_FILE_NOTSUPPORTED); //NOT SUPPORTED
@@ -676,7 +862,7 @@ begin
 				while (ThreadRetryCountUpload.Items[GetCurrentThreadID()] <> RetryAttempts) and (not(Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
 				begin
 					ThreadRetryCountUpload.Items[GetCurrentThreadID()] := ThreadRetryCountUpload.Items[GetCurrentThreadID()] + 1;
-					MyLogProc(PluginNum, MSGTYPE_DETAILS, pWideChar('Error uploading file ' + LocalName + ' Retry attempt ' + ThreadRetryCountUpload.Items[GetCurrentThreadID()].ToString + RetryAttemptsToString(RetryAttempts)));
+					MyLogProc(PluginNum, msgtype_details, pWideChar('Error uploading file ' + LocalName + ' Retry attempt ' + ThreadRetryCountUpload.Items[GetCurrentThreadID()].ToString + RetryAttemptsToString(RetryAttempts)));
 					Result := PutRemoteFile(RealPath, LocalName, RemoteName, CopyFlags);
 					if MyProgressProc(PluginNum, pWideChar(LocalName), RemoteName, 0) = 1 then Result := FS_FILE_USERABORT;
 					if (Result in [FS_FILE_OK, FS_FILE_USERABORT]) then ThreadRetryCountUpload.Items[GetCurrentThreadID()] := 0; //сбросим счётчик попыток
@@ -692,10 +878,23 @@ function FsDeleteFileW(RemoteName: pWideChar): Bool; stdcall; //Удаление
 var
 	RealPath: TRealPath;
 	getResult: integer;
+	CurrentItem: TCloudMailRuDirListingItem;
+	Cloud: TCloudMailRu;
+	InvitesListing: TCloudMailRuInviteInfoListing;
+	Invite: TCloudMailRuInviteInfo;
 Begin
 	RealPath := ExtractRealPath(WideString(RemoteName));
-	if RealPath.account = '' then exit(false);
-	Result := ConnectionManager.get(RealPath.account, getResult).deleteFile(RealPath.path);
+	if (RealPath.account = '') or RealPath.trashDir or RealPath.invitesDir then exit(false);
+	Cloud := ConnectionManager.get(RealPath.account, getResult);
+	if RealPath.sharedDir then
+	begin
+		CurrentItem := FindListingItemByPath(CurrentListing, RealPath);
+		Cloud.getShareInfo(CurrentItem.home, InvitesListing);
+		for Invite in InvitesListing do Cloud.shareFolder(CurrentItem.home, Invite.email, CLOUD_SHARE_NO); //no reporting here
+		if (CurrentItem.WebLink <> '') then Cloud.publishFile(CurrentItem.home, CurrentItem.WebLink, CLOUD_UNPUBLISH);
+		Result := true;
+	end
+	else Result := Cloud.deleteFile(RealPath.path);
 End;
 
 function FsMkDirW(path: pWideChar): Bool; stdcall;
@@ -708,7 +907,7 @@ Begin
 	if SkipListRenMov then exit(false); //skip create directory if this flag set on
 
 	RealPath := ExtractRealPath(WideString(path));
-	if RealPath.account = '' then exit(false);
+	if (RealPath.account = '') or RealPath.trashDir or RealPath.sharedDir or RealPath.invitesDir then exit(false);
 	Result := ConnectionManager.get(RealPath.account, getResult).createDir(RealPath.path);
 end;
 
@@ -716,15 +915,23 @@ function FsRemoveDirW(RemoteName: pWideChar): Bool; stdcall;
 var
 	RealPath: TRealPath;
 	getResult: integer;
+	ListingAborted: Bool;
 Begin
+	ThreadListingAborted.TryGetValue(GetCurrentThreadID(), ListingAborted);
+	if ListingAborted then
+	begin
+		ThreadListingAborted.AddOrSetValue(GetCurrentThreadID(), false);
+		exit(false);
+	end;
 	RealPath := ExtractRealPath(WideString(RemoteName));
+	if RealPath.trashDir or RealPath.sharedDir or RealPath.invitesDir then exit(false);
 	Result := ConnectionManager.get(RealPath.account, getResult).removeDir(RealPath.path);
 end;
 
 Function cloneWeblink(NewCloud, OldCloud: TCloudMailRu; CloudPath: WideString; CurrentItem: TCloudMailRuDirListingItem; NeedUnpublish: Boolean): integer;
 begin
-	Result := NewCloud.cloneWeblink(ExtractFileDir(CloudPath), CurrentItem.Weblink, CLOUD_CONFLICT_STRICT);
-	if (NeedUnpublish) and not(OldCloud.publishFile(CurrentItem.home, CurrentItem.Weblink, CLOUD_UNPUBLISH)) then MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, pWideChar('Can''t remove temporary public link on ' + CurrentItem.home));
+	Result := NewCloud.cloneWeblink(ExtractFileDir(CloudPath), CurrentItem.WebLink, CLOUD_CONFLICT_STRICT);
+	if (NeedUnpublish) and not(OldCloud.publishFile(CurrentItem.home, CurrentItem.WebLink, CLOUD_UNPUBLISH)) then MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, pWideChar('Can''t remove temporary public link on ' + CurrentItem.home));
 end;
 
 Function RenMoveFileViaPublicLink(OldCloud, NewCloud: TCloudMailRu; OldRealPath, NewRealPath: TRealPath; Move, OverWrite: Boolean): integer;
@@ -739,47 +946,50 @@ begin
 
 	if OldCloud.statusFile(OldRealPath.path, CurrentItem) then
 	begin
-		if CurrentItem.Weblink = '' then //create temporary weblink
+		if CurrentItem.WebLink = '' then //create temporary weblink
 		begin
 			NeedUnpublish := true;
-			if not(OldCloud.publishFile(CurrentItem.home, CurrentItem.Weblink)) then //problem publishing
+			if not(OldCloud.publishFile(CurrentItem.home, CurrentItem.WebLink)) then //problem publishing
 			begin
 				MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, pWideChar('Can''t get temporary public link on ' + CurrentItem.home));
 				exit(FS_FILE_READERROR);
 			end;
 		end;
-		if cloneWeblink(NewCloud, OldCloud, NewRealPath.path, CurrentItem, NeedUnpublish) = CLOUD_OPERATION_OK then exit;
+		Result := cloneWeblink(NewCloud, OldCloud, NewRealPath.path, CurrentItem, NeedUnpublish);
+		if not(Result in [FS_FILE_OK, FS_FILE_EXISTS]) then
+		begin
 
-		case GetPluginSettings(SettingsIniFilePath).OperationErrorMode of
-			OperationErrorModeAsk:
-				begin
-
-					while (not(Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
+			case GetPluginSettings(SettingsIniFilePath).OperationErrorMode of
+				OperationErrorModeAsk:
 					begin
-						case (messagebox(FindTCWindow, pWideChar('File publish error: ' + TCloudMailRu.ErrorCodeText(Result) + sLineBreak + 'Continue operation?'), 'Operation error', MB_ABORTRETRYIGNORE + MB_ICONERROR)) of
-							ID_ABORT: Result := FS_FILE_USERABORT;
-							ID_RETRY: Result := cloneWeblink(NewCloud, OldCloud, NewRealPath.path, CurrentItem, NeedUnpublish);
-							ID_IGNORE: break;
+
+						while (not(Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
+						begin
+							case (messagebox(FindTCWindow, pWideChar('File publish error: ' + TCloudMailRu.ErrorCodeText(Result) + sLineBreak + 'Continue operation?'), 'Operation error', MB_ABORTRETRYIGNORE + MB_ICONERROR)) of
+								ID_ABORT: Result := FS_FILE_USERABORT;
+								ID_RETRY: Result := cloneWeblink(NewCloud, OldCloud, NewRealPath.path, CurrentItem, NeedUnpublish);
+								ID_IGNORE: break;
+							end;
+						end;
+
+					end;
+				OperationErrorModeIgnore: exit;
+				OperationErrorModeAbort: exit(FS_FILE_USERABORT);
+				OperationErrorModeRetry:
+					begin;
+						RetryAttempts := GetPluginSettings(SettingsIniFilePath).RetryAttempts;
+						while (ThreadRetryCountRenMov.Items[GetCurrentThreadID()] <> RetryAttempts) and (not(Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
+						begin
+							ThreadRetryCountRenMov.Items[GetCurrentThreadID()] := ThreadRetryCountRenMov.Items[GetCurrentThreadID()] + 1;
+							MyLogProc(PluginNum, msgtype_details, pWideChar('File publish error: ' + TCloudMailRu.ErrorCodeText(Result) + ' Retry attempt ' + ThreadRetryCountRenMov.Items[GetCurrentThreadID()].ToString + RetryAttemptsToString(RetryAttempts)));
+							Result := cloneWeblink(NewCloud, OldCloud, NewRealPath.path, CurrentItem, NeedUnpublish);
+							if MyProgressProc(PluginNum, nil, nil, 0) = 1 then Result := FS_FILE_USERABORT;
+							if (Result in [FS_FILE_OK, FS_FILE_USERABORT]) then ThreadRetryCountRenMov.Items[GetCurrentThreadID()] := 0; //сбросим счётчик попыток
+							ProcessMessages;
+							Sleep(GetPluginSettings(SettingsIniFilePath).AttemptWait);
 						end;
 					end;
-
-				end;
-			OperationErrorModeIgnore: exit;
-			OperationErrorModeAbort: exit(FS_FILE_USERABORT);
-			OperationErrorModeRetry:
-				begin;
-					RetryAttempts := GetPluginSettings(SettingsIniFilePath).RetryAttempts;
-					while (ThreadRetryCountRenMov.Items[GetCurrentThreadID()] <> RetryAttempts) and (not(Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
-					begin
-						ThreadRetryCountRenMov.Items[GetCurrentThreadID()] := ThreadRetryCountRenMov.Items[GetCurrentThreadID()] + 1;
-						MyLogProc(PluginNum, MSGTYPE_DETAILS, pWideChar('File publish error: ' + TCloudMailRu.ErrorCodeText(Result) + ' Retry attempt ' + ThreadRetryCountRenMov.Items[GetCurrentThreadID()].ToString + RetryAttemptsToString(RetryAttempts)));
-						Result := cloneWeblink(NewCloud, OldCloud, NewRealPath.path, CurrentItem, NeedUnpublish);
-						if MyProgressProc(PluginNum, nil, nil, 0) = 1 then Result := FS_FILE_USERABORT;
-						if (Result in [FS_FILE_OK, FS_FILE_USERABORT]) then ThreadRetryCountRenMov.Items[GetCurrentThreadID()] := 0; //сбросим счётчик попыток
-						ProcessMessages;
-						Sleep(GetPluginSettings(SettingsIniFilePath).AttemptWait);
-					end;
-				end;
+			end;
 		end;
 
 		if (Result = CLOUD_OPERATION_OK) and Move and not(OldCloud.deleteFile(OldRealPath.path)) then MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, pWideChar('Can''t delete ' + CurrentItem.home)); //пишем в лог, но не отваливаемся
@@ -797,6 +1007,8 @@ Begin
 
 	OldRealPath := ExtractRealPath(WideString(OldName));
 	NewRealPath := ExtractRealPath(WideString(NewName));
+
+	if OldRealPath.trashDir or NewRealPath.trashDir or OldRealPath.sharedDir or NewRealPath.sharedDir then exit(FS_FILE_NOTSUPPORTED);
 
 	OldCloud := ConnectionManager.get(OldRealPath.account, getResult);
 	NewCloud := ConnectionManager.get(NewRealPath.account, getResult);
@@ -835,13 +1047,6 @@ function FsDisconnectW(DisconnectRoot: pWideChar): Bool; stdcall;
 begin
 	ConnectionManager.freeAll;
 
-	//ThreadRetryCountDownload.Free;
-	//ThreadRetryCountUpload.Free;
-	//ThreadRetryCountRenMov.Free;
-	//ThreadSkipListDelete.Free;
-	//ThreadSkipListRenMov.Free;
-
-	//CurrentDescriptions.Destroy;
 	Result := true;
 end;
 
@@ -882,8 +1087,8 @@ begin
 		else exit(ft_nosuchfield);
 	end;
 
-	Item := GetListingItemByName(CurrentListing, RealPath);
-	if Item.home = '' then exit(ft_nosuchfield);
+	Item := FindListingItemByPath(CurrentListing, RealPath);
+	//if Item.home = '' then exit(ft_nosuchfield);
 
 	case FieldIndex of
 		0:
@@ -915,7 +1120,7 @@ begin
 			end;
 		5:
 			begin
-				strpcopy(FieldValue, Item.Weblink);
+				strpcopy(FieldValue, Item.WebLink);
 				Result := ft_stringw;
 			end;
 		6:
@@ -955,13 +1160,13 @@ begin
 			end;
 		12:
 			begin
-				if Item.mtime <> 0 then exit(ft_nosuchfield);
+				if Item.type_ = TYPE_FILE then exit(ft_nosuchfield);
 				Move(Item.folders_count, FieldValue^, SizeOf(Item.folders_count));
 				Result := ft_numeric_32;
 			end;
 		13:
 			begin
-				if Item.mtime <> 0 then exit(ft_nosuchfield);
+				if Item.type_ = TYPE_FILE then exit(ft_nosuchfield);
 				Move(Item.files_count, FieldValue^, SizeOf(Item.files_count));
 				Result := ft_numeric_32;
 			end;
@@ -976,6 +1181,27 @@ begin
 				end;
 				Result := ft_stringw;
 			end;
+		15:
+			begin
+				if Item.deleted_at = 0 then exit(ft_nosuchfield);
+				FileTime.dwHighDateTime := 0;
+				FileTime.dwLowDateTime := 0;
+				FileTime := DateTimeToFileTime(UnixToDateTime(Item.deleted_at));
+				Move(FileTime, FieldValue^, SizeOf(FileTime));
+				Result := ft_datetime;
+			end;
+		16:
+			begin
+				if Item.deleted_from = '' then exit(ft_nosuchfield);
+				strpcopy(FieldValue, Item.deleted_from);
+				Result := ft_stringw;
+			end;
+		17:
+			begin
+				if Item.deleted_by = 0 then exit(ft_nosuchfield);
+				strpcopy(FieldValue, Item.deleted_by.ToString); //display user id as is, because no conversation api method performed
+				Result := ft_stringw;
+			end;
 	end;
 end;
 
@@ -983,40 +1209,91 @@ function FsExtractCustomIconW(RemoteName: pWideChar; ExtractFlags: integer; var 
 var
 	RealPath: TRealPath;
 	Item: TCloudMailRuDirListingItem;
+	IconsMode: integer;
+	CurrentInviteItem: TCloudMailRuIncomingInviteInfo;
+	IconsSize: integer;
+
+	function GetFolderIconSize(IconsSize: integer): integer;
+	begin
+		if IconsSize <= 16 then exit(IconSizeSmall);
+		if IconsSize <= 32 then exit(IconSizeNormal);
+		exit(IconSizeLarge);
+	end;
 
 begin
 	Result := FS_ICON_EXTRACTED;
 
 	RealPath := ExtractRealPath(RemoteName);
-	if (RealPath.path = '..') or (RemoteName = '\..\') then exit;
-	//if (RealPath.path = '') and (RealPath.account = '') then exit;
-	if GetPluginSettings(SettingsIniFilePath).IconsMode = IconsModeDisabled then exit(FS_ICON_USEDEFAULT);
+
+	if RealPath.upDirItem then exit; //do not overlap updir icon
+
+	IconsMode := GetPluginSettings(SettingsIniFilePath).IconsMode;
+	IconsSize := GetTCIconsSize;
+
+	if RealPath.trashDir and (RealPath.path = '') then //always draw system trash icon
+	begin
+		strpcopy(RemoteName, 'cloud_trash');
+		TheIcon := GetSystemIcon(GetFolderIconSize(IconsSize));
+		exit;
+	end;
+
+	if RealPath.sharedDir then
+	begin
+		if (RealPath.path = '') then
+		begin
+			strpcopy(RemoteName, 'shared');
+			TheIcon := CombineIcons(LoadImageW(hInstance, RemoteName, IMAGE_ICON, IconsSize, IconsSize, LR_DEFAULTCOLOR), GetFolderIcon(GetFolderIconSize(IconsSize)));
+			exit;
+		end else begin
+			if IconsMode = IconsModeDisabled then IconsMode := IconsModeInternalOverlay; //always draw icons in shared links directory
+		end;
+	end;
+
+	if RealPath.invitesDir then
+	begin
+		if (RealPath.path = '') then
+		begin
+			strpcopy(RemoteName, 'shared_incoming');
+			TheIcon := CombineIcons(LoadImageW(hInstance, RemoteName, IMAGE_ICON, IconsSize, IconsSize, LR_DEFAULTCOLOR), GetFolderIcon(GetFolderIconSize(IconsSize)));
+			exit;
+		end else begin
+
+			CurrentInviteItem := FindIncomingInviteItemByPath(CurrentIncomingInvitesListing, RealPath);
+			if CurrentInviteItem.name = '' then exit(FS_ICON_USEDEFAULT);
+
+			if CurrentInviteItem.home <> '' then //mounted item
+			begin
+				strpcopy(RemoteName, 'shared_incoming');
+				TheIcon := CombineIcons(LoadImageW(hInstance, RemoteName, IMAGE_ICON, IconsSize, IconsSize, LR_DEFAULTCOLOR), GetFolderIcon(GetFolderIconSize(IconsSize)));
+			end else begin
+				strpcopy(RemoteName, 'shared');
+				TheIcon := CombineIcons(LoadImageW(hInstance, RemoteName, IMAGE_ICON, IconsSize, IconsSize, LR_DEFAULTCOLOR), GetFolderIcon(GetFolderIconSize(IconsSize)));
+			end;
+			exit;
+
+		end;
+	end;
+
+	if IconsMode = IconsModeDisabled then exit(FS_ICON_USEDEFAULT);
 
 	if (RealPath.path = '') then //connection list
 	begin
+
 		if (GetAccountSettingsFromIniFile(AccountsIniFilePath, copy(RemoteName, 2, StrLen(RemoteName) - 2)).public_account) then strpcopy(RemoteName, 'cloud_public')
 		else strpcopy(RemoteName, 'cloud');
-	end else begin
-		//directories
-		Item := GetListingItemByName(CurrentListing, RealPath);
-		if Item.type_ = TYPE_DIR then
+	end else begin //directories
+		Item := FindListingItemByPath(CurrentListing, RealPath);
+		if (Item.type_ = TYPE_DIR) or (Item.kind = KIND_SHARED) then
 		begin
-
-			if Item.kind = KIND_SHARED then
-			begin
-				strpcopy(RemoteName, 'shared');
-			end else if Item.Weblink <> '' then
-			begin
-				strpcopy(RemoteName, 'shared_public');
-			end else begin
-				exit(FS_ICON_USEDEFAULT);
-			end;
+			if Item.kind = KIND_SHARED then strpcopy(RemoteName, 'shared')
+			else if Item.WebLink <> '' then strpcopy(RemoteName, 'shared_public')
+			else exit(FS_ICON_USEDEFAULT);
 		end
 		else exit(FS_ICON_USEDEFAULT);
 	end;
-	case GetPluginSettings(SettingsIniFilePath).IconsMode of
-		IconsModeInternal: TheIcon := LoadImageW(hInstance, RemoteName, IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
-		IconsModeInternalOverlay: TheIcon := CombineIcons(LoadImageW(hInstance, RemoteName, IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR), GetFolderIcon(GetPluginSettings(SettingsIniFilePath).IconsSize));
+	case IconsMode of
+		IconsModeInternal: TheIcon := LoadImageW(hInstance, RemoteName, IMAGE_ICON, IconsSize, IconsSize, LR_DEFAULTCOLOR);
+		IconsModeInternalOverlay: TheIcon := CombineIcons(LoadImageW(hInstance, RemoteName, IMAGE_ICON, IconsSize, IconsSize, LR_DEFAULTCOLOR), GetFolderIcon(GetFolderIconSize(IconsSize)));
 		IconsModeExternal:
 			begin
 				TheIcon := LoadPluginIcon(PluginPath + 'icons', RemoteName);
@@ -1026,7 +1303,7 @@ begin
 			begin
 				TheIcon := LoadPluginIcon(PluginPath + 'icons', RemoteName);
 				if TheIcon = INVALID_HANDLE_VALUE then exit(FS_ICON_USEDEFAULT);
-				TheIcon := CombineIcons(TheIcon, GetFolderIcon(GetPluginSettings(SettingsIniFilePath).IconsSize));
+				TheIcon := CombineIcons(TheIcon, GetFolderIcon(GetFolderIconSize(IconsSize)));
 			end;
 
 	end;
@@ -1091,6 +1368,8 @@ begin
 	ThreadRetryCountRenMov := TDictionary<DWORD, Int32>.Create;
 	ThreadSkipListDelete := TDictionary<DWORD, Bool>.Create;
 	ThreadSkipListRenMov := TDictionary<DWORD, Bool>.Create;
+	ThreadCanAbortRenMov := TDictionary<DWORD, Bool>.Create;
+	ThreadListingAborted := TDictionary<DWORD, Bool>.Create;
 
 end.
 

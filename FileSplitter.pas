@@ -211,7 +211,7 @@ begin
 			WStream.CopyFrom(FStream, PartSize);
 		except
 			FStream.Destroy;
-			Raise Exception.CreateFmt('Can''t write to temp file : ''%s''', [WStream.FileName]);
+			Raise Exception.CreateFmt('Can''t write to temp file : ''%s''', [WStream.filename]);
 			exit(FS_FILE_WRITEERROR);
 		end;
 		WStream.Destroy;

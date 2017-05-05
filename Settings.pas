@@ -79,7 +79,11 @@ type
 		DisableMultiThreading: boolean;
 		LogUserSpace: boolean;
 		IconsMode: Integer;
-		IconsSize: Integer;
+		DownloadLinksEncode: boolean;
+		AutoUpdateDownloadListing: boolean;
+		ShowTrashFolders: boolean;
+		ShowSharedFolders: boolean;
+		ShowInvitesFolders: boolean;
 	end;
 
 function GetProxyPasswordNow(var ProxySettings: TProxySettings; MyLogProc: TLogProcW; MyCryptProc: TCryptProcW; PluginNum: Integer; CryptoNum: Integer): boolean;
@@ -90,6 +94,7 @@ function GetAccountSettingsFromIniFile(IniFilePath: WideString; AccountName: Wid
 function SetAccountSettingsToIniFile(IniFilePath: WideString; AccountSettings: TAccountSettings): boolean;
 procedure GetAccountsListFromIniFile(IniFilePath: WideString; var AccountsList: TStringList);
 procedure DeleteAccountFromIniFile(IniFilePath: WideString; AccountName: WideString);
+procedure AddVirtualAccountsToAccountsList(AccountsIniFilePath: WideString; var AccountsList: TStringList; VirtualAccountsEnabled: TArray<boolean>);
 
 implementation
 
@@ -179,7 +184,6 @@ begin
 	GetPluginSettings.DisableMultiThreading := IniFile.ReadBool('Main', 'DisableMultiThreading', false);
 	GetPluginSettings.LogUserSpace := IniFile.ReadBool('Main', 'LogUserSpace', true);
 	GetPluginSettings.IconsMode := IniFile.ReadInteger('Main', 'IconsMode', 0);
-	GetPluginSettings.IconsSize := IniFile.ReadInteger('Main', 'IconsSize', 0);
 	GetPluginSettings.SocketTimeout := IniFile.ReadInteger('Main', 'SocketTimeout', -1);
 	GetPluginSettings.CloudMaxFileSize := IniFile.ReadInteger('Main', 'CloudMaxFileSize', CLOUD_MAX_FILESIZE_DEFAULT);
 	GetPluginSettings.ChunkOverwriteMode := IniFile.ReadInteger('Main', 'ChunkOverwriteMode', 0);
@@ -194,7 +198,11 @@ begin
 	GetPluginSettings.Proxy.user := IniFile.ReadString('Main', 'ProxyUser', '');
 	GetPluginSettings.Proxy.use_tc_password_manager := IniFile.ReadBool('Main', 'ProxyTCPwdMngr', false);
 	GetPluginSettings.Proxy.password := IniFile.ReadString('Main', 'ProxyPassword', '');
-
+	GetPluginSettings.DownloadLinksEncode := IniFile.ReadBool('Main', 'DownloadLinksEncode', true);
+	GetPluginSettings.AutoUpdateDownloadListing := IniFile.ReadBool('Main', 'AutoUpdateDownloadListing', true);
+	GetPluginSettings.ShowTrashFolders := IniFile.ReadBool('Main', 'ShowTrashFolders', true);
+	GetPluginSettings.ShowSharedFolders := IniFile.ReadBool('Main', 'ShowSharedFolders', true);
+	GetPluginSettings.ShowInvitesFolders := IniFile.ReadBool('Main', 'ShowInvitesFolders', true);
 	IniFile.Destroy;
 end;
 
@@ -294,6 +302,23 @@ begin
 	IniFile := TIniFile.Create(IniFilePath);
 	IniFile.EraseSection(AccountName);
 	IniFile.Destroy;
+end;
+
+procedure AddVirtualAccountsToAccountsList(AccountsIniFilePath: WideString; var AccountsList: TStringList; VirtualAccountsEnabled: TArray<boolean>);
+var
+	VAccounts: TStringList;
+	account: WideString;
+begin
+	VAccounts := TStringList.Create;
+	for account in AccountsList do
+	begin
+		if GetAccountSettingsFromIniFile(AccountsIniFilePath, account).public_account then Continue; //public accounts ignored
+		if VirtualAccountsEnabled[0] then VAccounts.Add(account + TrashPostfix);
+		if VirtualAccountsEnabled[1] then VAccounts.Add(account + SharedPostfix);
+		if VirtualAccountsEnabled[2] then VAccounts.Add(account + InvitesPostfix);
+	end;
+	AccountsList.AddStrings(VAccounts);
+	VAccounts.Free;
 end;
 
 end.

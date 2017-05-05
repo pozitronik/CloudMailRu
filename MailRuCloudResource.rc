@@ -1,5 +1,6 @@
-base_icon ICON "icons\\icon.ico"
 cloud ICON "icons\\cloud.ico"
 cloud_public ICON "icons\\cloud_public.ico"
+appicon ICON "icons\\icon.ico"
 shared ICON "icons\\shared.ico"
 shared_public ICON "icons\\shared_public.ico"
+shared_incoming ICON "icons\\shared_incoming.ico"

@@ -3,8 +3,7 @@ unit AskPassword;
 interface
 
 uses
-	Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
-	Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, MRC_Helper;
+	Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, MRC_Helper;
 
 type
 	TAskPasswordForm = class(TForm)
@@ -17,20 +16,17 @@ type
 		procedure FormShow(Sender: TObject);
 		procedure FormActivate(Sender: TObject);
 	private
-		{ Private declarations }
+		{Private declarations}
 		procedure WMHotKey(var Message: TMessage); message WM_HOTKEY;
 	public
-		{ Public declarations }
+		{Public declarations}
 	end;
-
-var
-	AskPasswordForm: TAskPasswordForm;
 
 implementation
 
 {$R *.dfm}
 
-{ TAskPasswordForm }
+{TAskPasswordForm}
 class function TAskPasswordForm.AskPassword(ParentWindow: HWND; AccountName: WideString; var Password: WideString; var UseTCPwdMngr: Boolean): integer;
 var
 	AskPasswordForm: TAskPasswordForm;

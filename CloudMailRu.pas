@@ -31,13 +31,22 @@ const
 	API_FOLDER_INVITES = 'https://cloud.mail.ru/api/v2/folder/invites';
 	API_FOLDER_SHARE = 'https://cloud.mail.ru/api/v2/folder/share';
 	API_FOLDER_UNSHARE = 'https://cloud.mail.ru/api/v2/folder/unshare';
-	API_AB_CONTACTS = ''; //todo
+	API_FOLDER_MOUNT = 'https://cloud.mail.ru/api/v2/folder/mount';
+	API_FOLDER_UNMOUNT = 'https://cloud.mail.ru/api/v2/folder/unmount';
+	API_FOLDER_SHARED_LINKS = 'https://cloud.mail.ru/api/v2/folder/shared/links';
+	API_FOLDER_SHARED_INCOMING = 'https://cloud.mail.ru/api/v2/folder/shared/incoming';
+	API_TRASHBIN = 'https://cloud.mail.ru/api/v2/trashbin';
+	API_TRASHBIN_RESTORE = 'https://cloud.mail.ru/api/v2/trashbin/restore';
+	API_TRASHBIN_EMPTY = 'https://cloud.mail.ru/api/v2/trashbin/empty';
+	API_AB_CONTACTS = ''; //
 	API_DISPATCHER = 'https://cloud.mail.ru/api/v2/dispatcher/';
 	API_USER_SPACE = 'https://cloud.mail.ru/api/v2/user/space';
 	API_CLONE = 'https://cloud.mail.ru/api/v2/clone';
+	API_INVITE_REJECT = 'https://cloud.mail.ru/api/v2/folder/invites/reject';
 
 	TYPE_DIR = 'folder';
 	TYPE_FILE = 'file';
+
 	KIND_SHARED = 'shared';
 	{Константы для обозначения ошибок, возвращаемых при парсинге ответов облака. Дополняем по мере обнаружения}
 	CLOUD_ERROR_UNKNOWN = -2; //unknown: 'Ошибка на сервере'
@@ -57,9 +66,14 @@ const
 	CLOUD_ERROR_OWN = 9; //"own": 'Невозможно клонировать собственную ссылку'
 	CLOUD_ERROR_NAME_TOO_LONG = 10; //"name_too_long": 'Превышен размер имени файла'
 	CLOUD_ERROR_VIRUS_SCAN_FAIL = 11; //"virus_scan_fail": 'Файл заражен вирусом'
-	CLOUD_ERROR_OWNER = 12; //Пользователь - владелец каталога
-	CLOUD_ERROR_FAHRENHEIT = 13; //Публикация контента заблокирована по требованию правообладателя или уполномоченного государственного ведомства.
-	CLOUD_ERROR_BAD_REQUEST = 14; //
+	CLOUD_ERROR_OWNER = 12; //Нельзя использовать собственный email
+	CLOUD_ERROR_FAHRENHEIT = 451; //Публикация контента заблокирована по требованию правообладателя или уполномоченного государственного ведомства.
+	CLOUD_ERROR_BAD_REQUEST = 400; //
+	CLOUD_ERROR_TREES_CONFLICT = 15; //Нельзя сделать папку общей, если она содержит другие общие папки или находится в общей папке
+	CLOUD_ERROR_UNPROCESSABLE_ENTRY = 16; //Нельзя открыть доступ к файлу
+	CLOUD_ERROR_USER_LIMIT_EXCEEDED = 17; //Невозможно добавить пользователя. Вы можете иметь не более 200 пользователей в одной общей папке
+	CLOUD_ERROR_EXPORT_LIMIT_EXCEEDED = 18; //Невозможно добавить пользователя. Вы можете создать не более 50 общих папок
+	CLOUD_ERROR_NOT_ACCEPTABLE = 406; //Нельзя добавить этого пользователя
 
 	{Режимы работы при конфликтах копирования}
 	CLOUD_CONFLICT_STRICT = 'strict'; //возвращаем ошибку при существовании файла
@@ -99,6 +113,9 @@ type
 		virus_scan: WideString;
 		folders_count: integer;
 		files_count: integer;
+		deleted_at: integer;
+		deleted_from: WideString;
+		deleted_by: integer;
 	End;
 
 	TCloudMailRuOAuthInfo = Record
@@ -116,15 +133,32 @@ type
 		used: int64;
 	End;
 
+	TCloudMailRuOwnerInfo = record
+		email: WideString;
+		name: WideString;
+	end;
+
 	TCloudMailRuInviteInfo = record
 		email: WideString;
 		status: WideString;
 		access: WideString;
 		name: WideString;
+
+	end;
+
+	TCloudMailRuIncomingInviteInfo = record
+		owner: TCloudMailRuOwnerInfo;
+		tree: WideString;
+		access: WideString;
+		name: WideString;
+		size: int64;
+		home: WideString; //only on already mounted items
+		invite_token: WideString;
 	end;
 
 	TCloudMailRuDirListing = array of TCloudMailRuDirListingItem;
 	TCloudMailRuInviteInfoListing = array of TCloudMailRuInviteInfo;
+	TCloudMailRuIncomingInviteInfoListing = array of TCloudMailRuIncomingInviteInfo;
 
 	TCloudMailRu = class
 	private
@@ -183,6 +217,7 @@ type
 		function fromJSON_PublicLink(JSON: WideString; var PublicLink: WideString): Boolean;
 		function fromJSON_OperationResult(JSON: WideString; var OperationStatus: integer): integer;
 		function fromJSON_InviteListing(JSON: WideString; var InviteListing: TCloudMailRuInviteInfoListing): Boolean;
+		function fromJSON_IncomingInviteListing(JSON: WideString; var IncomingInviteListing: TCloudMailRuIncomingInviteInfoListing): Boolean;
 		{HTTP REQUESTS WRAPPERS}
 		function getToken(): Boolean;
 		function getSharedToken(): Boolean;
@@ -197,19 +232,26 @@ type
 	protected
 		{REGULAR CLOUD}
 		function loginRegular(method: integer = CLOUD_AUTH_METHOD_WEB): Boolean;
-		function getDirListingRegular(Path: WideString; var DirListing: TCloudMailRuDirListing): Boolean;
 		function getFileRegular(remotePath, localPath: WideString; LogErrors: Boolean = true): integer; //LogErrors=false => не логируем результат копирования, нужно для запроса descript.ion (которого может не быть)
 		{SHARED WEBFOLDERS}
 		function loginShared(method: integer = CLOUD_AUTH_METHOD_WEB): Boolean;
+
 		function getFileShared(remotePath, localPath: WideString; LogErrors: Boolean = true): integer; //LogErrors=false => не логируем результат копирования, нужно для запроса descript.ion (которого может не быть)
 	public
 		Property isPublicShare: Boolean read public_account;
+		Property ProxySettings: TProxySettings read Proxy;
+		Property ConnectTimeoutValue: integer read ConnectTimeout;
+		function getSharedFileUrl(remotePath: WideString; DoUrlEncode: Boolean = true): WideString;
 		{CONSTRUCTOR/DESTRUCTOR}
 		constructor Create(AccountSettings: TAccountSettings; split_file_size: integer; Proxy: TProxySettings; ConnectTimeout: integer; ExternalProgressProc: TProgressProcW = nil; PluginNr: integer = -1; ExternalLogProc: TLogProcW = nil; ExternalRequestProc: TRequestProcW = nil);
 		destructor Destroy; override;
 		{CLOUD INTERFACE METHODS}
 		function login(method: integer = CLOUD_AUTH_METHOD_WEB): Boolean;
-		function getDirListing(Path: WideString; var DirListing: TCloudMailRuDirListing): Boolean;
+		function getDirListing(Path: WideString; var DirListing: TCloudMailRuDirListing; ShowProgress: Boolean = false): Boolean;
+		function getSharedLinksListing(var DirListing: TCloudMailRuDirListing; ShowProgress: Boolean = false): Boolean;
+		function getIncomingLinksListing(var IncomingListing: TCloudMailRuIncomingInviteInfoListing; ShowProgress: Boolean = false): Boolean; overload;
+		function getIncomingLinksListing(var IncomingListing: TCloudMailRuDirListing; var InvitesListing: TCloudMailRuIncomingInviteInfoListing; ShowProgress: Boolean = false): Boolean; overload;
+		function getTrashbinListing(var DirListing: TCloudMailRuDirListing; ShowProgress: Boolean = false): Boolean;
 		function createDir(Path: WideString): Boolean;
 		function removeDir(Path: WideString): Boolean;
 		function statusFile(Path: WideString; var FileInfo: TCloudMailRuDirListingItem): Boolean;
@@ -225,6 +267,11 @@ type
 		function cloneWeblink(Path, link: WideString; ConflictMode: WideString = CLOUD_CONFLICT_RENAME): integer; //клонировать публичную ссылку в текущий каталог
 		function getShareInfo(Path: WideString; var InviteListing: TCloudMailRuInviteInfoListing): Boolean;
 		function shareFolder(Path, email: WideString; access: integer): Boolean;
+		function trashbinRestore(Path: WideString; RestoreRevision: integer; ConflictMode: WideString = CLOUD_CONFLICT_RENAME): Boolean;
+		function trashbinEmpty(): Boolean;
+		function mountFolder(home, invite_token: WideString; ConflictMode: WideString = CLOUD_CONFLICT_RENAME): Boolean;
+		function unmountFolder(home: WideString; clone_copy: Boolean): Boolean;
+		function rejectInvite(invite_token: WideString): Boolean;
 		{OTHER ROUTINES}
 		function getDescriptionFile(remotePath, localCopy: WideString): integer; //Если в каталоге remotePath есть descript.ion - скопировать его в файл localcopy
 		procedure logUserSpaceInfo();
@@ -369,7 +416,7 @@ begin
 		if self.public_account and (self.PUBLIC_URL <> '') then
 		begin
 			self.public_link := self.PUBLIC_URL;
-			if self.PUBLIC_URL[length(self.PUBLIC_URL)] <> '/' then self.PUBLIC_URL := self.PUBLIC_URL + '/';
+			self.PUBLIC_URL := IncludeSlash(self.PUBLIC_URL);
 			Delete(self.public_link, 1, length(PUBLIC_ACCESS_URL));
 			if self.public_link[length(self.public_link)] = '/' then Delete(self.public_link, length(self.public_link), 1);
 		end;
@@ -446,7 +493,7 @@ end;
 class function TCloudMailRu.ErrorCodeText(ErrorCode: integer): WideString;
 begin
 	case ErrorCode of
-		CLOUD_ERROR_EXISTS: exit('Папка с таким названием уже существует. Попробуйте другое название.');
+		CLOUD_ERROR_EXISTS: exit('Объект с таким названием уже существует. Попробуйте другое название.');
 		CLOUD_ERROR_REQUIRED: exit('Название папки не может быть пустым.');
 		CLOUD_ERROR_INVALID: exit('Неправильное название папки. В названии папок нельзя использовать символы «" * / : < > ?  \\ |».');
 		CLOUD_ERROR_READONLY: exit('Невозможно создать. Доступ только для просмотра.');
@@ -459,6 +506,11 @@ begin
 		CLOUD_ERROR_OWNER: exit('Нельзя использовать собственный email');
 		CLOUD_ERROR_FAHRENHEIT: exit('Невозможно создать ссылку. Публикация контента заблокирована по требованию правообладателя или уполномоченного государственного ведомства.');
 		CLOUD_ERROR_BAD_REQUEST: exit('Ошибка запроса к серверу.');
+		CLOUD_ERROR_TREES_CONFLICT: exit('Нельзя сделать папку общей, если она содержит другие общие папки или находится в общей папке');
+		CLOUD_ERROR_UNPROCESSABLE_ENTRY: exit('Нельзя открыть доступ к файлу');
+		CLOUD_ERROR_USER_LIMIT_EXCEEDED: exit('Невозможно добавить пользователя. Вы можете иметь не более 200 пользователей в одной общей папке ');
+		CLOUD_ERROR_EXPORT_LIMIT_EXCEEDED: exit('Невозможно добавить пользователя. Вы можете создать не более 50 общих папок');
+		CLOUD_ERROR_NOT_ACCEPTABLE: exit('Нельзя добавить этого пользователя');
 		else exit('Неизвестная ошибка (' + ErrorCode.ToString + ')');
 	end;
 end;
@@ -530,7 +582,7 @@ var
 	J: integer;
 	A: TJSONArray;
 begin
-	Result := false;
+	Result := true;
 	try
 		A := ((TJSONObject.ParseJSONValue(JSON) as TJSONObject).values['body'] as TJSONObject).values['list'] as TJSONArray;
 		SetLength(CloudMailRuDirListing, A.count);
@@ -545,6 +597,11 @@ begin
 				if Assigned(Obj.values['type']) then type_ := Obj.values['type'].Value;
 				if Assigned(Obj.values['home']) then home := Obj.values['home'].Value;
 				if Assigned(Obj.values['name']) then name := Obj.values['name'].Value;
+				if Assigned(Obj.values['deleted_at']) then deleted_at := Obj.values['deleted_at'].Value.ToInteger;
+				if Assigned(Obj.values['deleted_from']) then deleted_from := Obj.values['deleted_from'].Value;
+				if Assigned(Obj.values['deleted_by']) then deleted_by := Obj.values['deleted_by'].Value.ToInteger;
+				if Assigned(Obj.values['grev']) then grev := Obj.values['grev'].Value.ToInteger;
+				if Assigned(Obj.values['rev']) then rev := Obj.values['rev'].Value.ToInteger;
 				if (type_ = TYPE_FILE) then
 				begin
 					if Assigned(Obj.values['mtime']) then mtime := Obj.values['mtime'].Value.ToInt64;
@@ -552,10 +609,12 @@ begin
 					if Assigned(Obj.values['hash']) then hash := Obj.values['hash'].Value;
 				end else begin
 					if Assigned(Obj.values['tree']) then tree := Obj.values['tree'].Value;
-					if Assigned(Obj.values['grev']) then grev := Obj.values['grev'].Value.ToInteger;
-					if Assigned(Obj.values['rev']) then rev := Obj.values['rev'].Value.ToInteger;
-					if Assigned((Obj.values['count'] as TJSONObject).values['folders']) then folders_count := (Obj.values['count'] as TJSONObject).values['folders'].Value.ToInteger();
-					if Assigned((Obj.values['count'] as TJSONObject).values['files']) then files_count := (Obj.values['count'] as TJSONObject).values['files'].Value.ToInteger();
+
+					if Assigned(Obj.values['count']) then
+					begin
+						folders_count := (Obj.values['count'] as TJSONObject).values['folders'].Value.ToInteger();
+						files_count := (Obj.values['count'] as TJSONObject).values['files'].Value.ToInteger();
+					end;
 					mtime := 0;
 				end;
 			end;
@@ -620,7 +679,7 @@ begin
 				if Assigned(Obj.values['email']) then email := Obj.values['email'].Value;
 				if Assigned(Obj.values['status']) then status := Obj.values['status'].Value;
 				if Assigned(Obj.values['access']) then access := Obj.values['access'].Value;
-				if Assigned(Obj.values['name']) then name := Obj.values['email'].Value;
+				if Assigned(Obj.values['name']) then name := Obj.values['name'].Value;
 			end;
 		end;
 	except
@@ -630,7 +689,47 @@ begin
 			Log(MSGTYPE_IMPORTANTERROR, 'Can''t parse server answer: ' + JSON);
 		end;
 	end;
+end;
 
+function TCloudMailRu.fromJSON_IncomingInviteListing(JSON: WideString; var IncomingInviteListing: TCloudMailRuIncomingInviteInfoListing): Boolean;
+var
+	Obj, OwnerObj: TJSONObject;
+	J: integer;
+	A: TJSONArray;
+begin
+	Result := true;
+	SetLength(IncomingInviteListing, 0);
+	try
+		A := ((TJSONObject.ParseJSONValue(JSON) as TJSONObject).values['body'] as TJSONObject).values['list'] as TJSONArray;
+		if not Assigned(A) then exit; //no invites
+		SetLength(IncomingInviteListing, A.count);
+		for J := 0 to A.count - 1 do
+		begin
+			Obj := A.Items[J] as TJSONObject;
+			with IncomingInviteListing[J] do
+			begin
+				if Assigned(Obj.values['owner']) then
+				begin
+					OwnerObj := Obj.values['owner'] as TJSONObject;
+					if Assigned(OwnerObj.values['email']) then owner.email := OwnerObj.values['email'].Value;
+					if Assigned(OwnerObj.values['name']) then owner.name := OwnerObj.values['name'].Value;
+				end;
+
+				if Assigned(Obj.values['tree']) then tree := Obj.values['tree'].Value;
+				if Assigned(Obj.values['access']) then access := Obj.values['access'].Value;
+				if Assigned(Obj.values['name']) then name := Obj.values['name'].Value;
+				if Assigned(Obj.values['home']) then home := Obj.values['home'].Value;
+				if Assigned(Obj.values['size']) then size := Obj.values['size'].Value.ToInt64;
+				if Assigned(Obj.values['invite_token']) then invite_token := Obj.values['invite_token'].Value;
+			end;
+		end;
+	except
+		on E: {EJSON}Exception do
+		begin
+			Result := false;
+			Log(MSGTYPE_IMPORTANTERROR, 'Can''t parse server answer: ' + JSON);
+		end;
+	end;
 end;
 
 function TCloudMailRu.fromJSON_OAuthTokenInfo(JSON: WideString; var CloudMailRuOAuthInfo: TCloudMailRuOAuthInfo): Boolean;
@@ -666,14 +765,16 @@ var
 	Obj: TJSONObject;
 	error, nodename: WideString;
 begin
+	//Result:=CLOUD_ERROR_BAD_REQUEST;
 	try
 		Obj := TJSONObject.ParseJSONValue(JSON) as TJSONObject;
 		OperationStatus := Obj.values['status'].Value.ToInteger;
 		if OperationStatus <> 200 then
 		begin
-			if OperationStatus = 400 then exit(CLOUD_ERROR_BAD_REQUEST);
+			//if OperationStatus = 400 then exit(CLOUD_ERROR_BAD_REQUEST);
 			if OperationStatus = 451 then exit(CLOUD_ERROR_FAHRENHEIT);
 			if OperationStatus = 507 then exit(CLOUD_ERROR_OVERQUOTA);
+			if OperationStatus = 406 then exit(CLOUD_ERROR_NOT_ACCEPTABLE);
 
 			if (Assigned((Obj.values['body'] as TJSONObject).values['home'])) then nodename := 'home'
 			else if (Assigned((Obj.values['body'] as TJSONObject).values['weblink'])) then nodename := 'weblink'
@@ -699,6 +800,10 @@ begin
 			if error = 'name_too_long' then exit(CLOUD_ERROR_NAME_TOO_LONG);
 			if error = 'virus_scan_fail' then exit(CLOUD_ERROR_VIRUS_SCAN_FAIL);
 			if error = 'owner' then exit(CLOUD_ERROR_OWNER);
+			if error = 'trees_conflict' then exit(CLOUD_ERROR_TREES_CONFLICT);
+			if error = 'user_limit_exceeded' then exit(CLOUD_ERROR_USER_LIMIT_EXCEEDED);
+			if error = 'export_limit_exceeded' then exit(CLOUD_ERROR_EXPORT_LIMIT_EXCEEDED);
+			if error = 'unprocessable_entry' then exit(CLOUD_ERROR_UNPROCESSABLE_ENTRY);
 
 			exit(CLOUD_ERROR_UNKNOWN); //Эту ошибку мы пока не встречали
 		end;
@@ -780,23 +885,108 @@ begin
 	Result := self.getFile(remotePath, localCopy, false);
 end;
 
-function TCloudMailRu.getDirListing(Path: WideString; var DirListing: TCloudMailRuDirListing): Boolean;
+function TCloudMailRu.getSharedLinksListing(var DirListing: TCloudMailRuDirListing; ShowProgress: Boolean = false): Boolean;
+var
+	JSON: WideString;
+	OperationStatus, OperationResult: integer;
 begin
 	Result := false;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
-	//if (self.public_account and not self.getSharedToken(Path)) then exit; //для публичных каталогов для каждого обновления каталога надо перезапрашивать токен
-	Result := self.getDirListingRegular(Path, DirListing);
+	if self.public_account then exit;
+	Result := self.HTTPGet(API_FOLDER_SHARED_LINKS + '?' + self.united_params, JSON, ShowProgress);
+
+	if Result then
+	begin
+		OperationResult := self.fromJSON_OperationResult(JSON, OperationStatus);
+		case OperationResult of
+			CLOUD_OPERATION_OK: Result := self.fromJSON_DirListing(JSON, DirListing);
+			else
+				begin
+					Log(MSGTYPE_IMPORTANTERROR, 'Shared links listing error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
+					Result := false;
+				end;
+		end;
+	end;
 end;
 
-function TCloudMailRu.getDirListingRegular(Path: WideString; var DirListing: TCloudMailRuDirListing): Boolean;
+function TCloudMailRu.getIncomingLinksListing(var IncomingListing: TCloudMailRuIncomingInviteInfoListing; ShowProgress: Boolean): Boolean;
 var
 	JSON: WideString;
-	Progress: Boolean;
 	OperationStatus, OperationResult: integer;
 begin
-	Progress := false;
-	if self.public_account then Result := self.HTTPGet(API_FOLDER + '&weblink=' + self.public_link + '/' + PathToUrl(Path, false) + self.united_params, JSON, Progress)
-	else Result := self.HTTPGet(API_FOLDER + '&home=' + PathToUrl(Path) + self.united_params, JSON, Progress);
+	Result := false;
+	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
+	if self.public_account then exit;
+	Result := self.HTTPGet(API_FOLDER_SHARED_INCOMING + '?' + self.united_params, JSON, ShowProgress);
+
+	if Result then
+	begin
+		OperationResult := self.fromJSON_OperationResult(JSON, OperationStatus);
+		case OperationResult of
+			CLOUD_OPERATION_OK: Result := self.fromJSON_IncomingInviteListing(JSON, IncomingListing);
+			else
+				begin
+					Log(MSGTYPE_IMPORTANTERROR, 'Incoming requests listing error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
+					Result := false;
+				end;
+		end;
+	end;
+end;
+
+function TCloudMailRu.getIncomingLinksListing(var IncomingListing: TCloudMailRuDirListing; var InvitesListing: TCloudMailRuIncomingInviteInfoListing; ShowProgress: Boolean = false): Boolean;
+var
+	i: integer;
+begin
+	Result := self.getIncomingLinksListing(InvitesListing, ShowProgress);
+	if Result then
+	begin
+		SetLength(IncomingListing, length(InvitesListing));
+		for i := 0 to length(InvitesListing) - 1 do
+		begin
+
+			IncomingListing[i].name := InvitesListing[i].name;
+			IncomingListing[i].size := InvitesListing[i].size;
+			IncomingListing[i].tree := InvitesListing[i].tree;
+			//IncomingListing[length(IncomingListing)].
+		end;
+
+	end;
+end;
+
+function TCloudMailRu.getTrashbinListing(var DirListing: TCloudMailRuDirListing; ShowProgress: Boolean): Boolean;
+var
+	JSON: WideString;
+	OperationStatus, OperationResult: integer;
+begin
+	Result := false;
+	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
+	if self.public_account then exit;
+	Result := self.HTTPGet(API_TRASHBIN + '?' + self.united_params, JSON, ShowProgress);
+
+	if Result then
+	begin
+		OperationResult := self.fromJSON_OperationResult(JSON, OperationStatus);
+		case OperationResult of
+			CLOUD_OPERATION_OK: Result := self.fromJSON_DirListing(JSON, DirListing);
+			else
+				begin
+					Log(MSGTYPE_IMPORTANTERROR, 'Incoming requests listing error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
+					Result := false;
+				end;
+		end;
+	end;
+end;
+
+function TCloudMailRu.getDirListing(Path: WideString; var DirListing: TCloudMailRuDirListing; ShowProgress: Boolean = false): Boolean;
+var
+	JSON: WideString;
+	OperationStatus, OperationResult: integer;
+begin
+	Result := false;
+	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
+
+	if self.public_account then Result := self.HTTPGet(API_FOLDER + '&weblink=' + IncludeSlash(self.public_link) + PathToUrl(Path, false) + self.united_params, JSON, ShowProgress)
+	else Result := self.HTTPGet(API_FOLDER + '&home=' + PathToUrl(Path) + self.united_params, JSON, ShowProgress);
 	if Result then
 	begin
 		OperationResult := self.fromJSON_OperationResult(JSON, OperationStatus);
@@ -809,7 +999,7 @@ begin
 				end
 			else
 				begin
-					Log(MSGTYPE_IMPORTANTERROR, 'Delete file error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString()); //?? WUT
+					Log(MSGTYPE_IMPORTANTERROR, 'Directory listing error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString()); //?? WUT
 					Result := false;
 				end;
 		end;
@@ -860,13 +1050,17 @@ begin
 	if Result <> FS_FILE_OK then System.SysUtils.deleteFile(GetUNCFilePath(localPath));
 end;
 
+function TCloudMailRu.getSharedFileUrl(remotePath: WideString; DoUrlEncode: Boolean = true): WideString;
+begin
+	Result := IncludeSlash(self.public_shard) + IncludeSlash(self.public_link) + PathToUrl(remotePath, true, DoUrlEncode) + '?key=' + self.public_download_token
+end;
+
 function TCloudMailRu.getFileShared(remotePath, localPath: WideString; LogErrors: Boolean): integer;
 var
 	FileStream: TFileStream;
 begin
 	Result := FS_FILE_NOTFOUND;
 	if (self.public_shard = '') or (self.public_download_token = '') then exit;
-	remotePath := PathToUrl(remotePath) + '?key=' + self.public_download_token;
 	try
 		FileStream := TFileStream.Create(GetUNCFilePath(localPath), fmCreate);
 	except
@@ -878,7 +1072,7 @@ begin
 	end;
 	if (Assigned(FileStream)) then
 	begin
-		Result := self.HTTPGetFile(self.public_shard + '/' + self.public_link + '/' + remotePath, FileStream, LogErrors);
+		Result := self.HTTPGetFile(getSharedFileUrl(remotePath), FileStream, LogErrors);
 		FlushFileBuffers(FileStream.Handle);
 		FileStream.free;
 	end;
@@ -1278,6 +1472,7 @@ var
 	SecurityKey: PWideChar;
 begin
 	Result := false;
+	SecurityKey := nil;
 	self.login_method := method;
 	Log(MSGTYPE_DETAILS, 'Login to ' + self.user + '@' + self.domain);
 	case self.login_method of
@@ -1355,12 +1550,6 @@ procedure TCloudMailRu.logUserSpaceInfo;
 var
 	US: TCloudMailRuSpaceInfo;
 	QuotaInfo: WideString;
-	function FormatSize(Megabytes: integer): WideString; //Форматируем размер в удобочитаемый вид
-	begin
-		if Megabytes > (1024 * 1023) then exit((Megabytes div (1024 * 1024)).ToString() + 'Tb');
-		if Megabytes > 1024 then exit((CurrToStrF((Megabytes / 1024), ffNumber, 2)) + 'Gb');
-		exit(Megabytes.ToString() + 'Mb');
-	end;
 
 begin
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
@@ -1480,6 +1669,134 @@ begin
 		Result := OperationResult = CLOUD_OPERATION_OK;
 		if not Result then Log(MSGTYPE_IMPORTANTERROR, 'Invite member error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
 
+	end;
+end;
+
+function TCloudMailRu.trashbinRestore(Path: WideString; RestoreRevision: integer; ConflictMode: WideString): Boolean;
+var
+	JSON: WideString;
+	OperationStatus, OperationResult: integer;
+begin
+	Result := false;
+	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
+	if self.public_account then exit;
+
+	Result := self.HTTPPost(API_TRASHBIN_RESTORE, 'path=' + PathToUrl(Path) + '&restore_revision=' + RestoreRevision.ToString + self.united_params + '&conflict=' + ConflictMode, JSON);
+
+	if Result then
+	begin
+		OperationResult := self.fromJSON_OperationResult(JSON, OperationStatus);
+		case OperationResult of
+			CLOUD_OPERATION_OK: Result := true;
+			else
+				begin
+					Result := false;
+					Log(MSGTYPE_IMPORTANTERROR, 'File restore error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
+				end;
+		end;
+	end;
+end;
+
+function TCloudMailRu.trashbinEmpty(): Boolean;
+var
+	JSON: WideString;
+	OperationStatus, OperationResult: integer;
+begin
+	Result := false;
+	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
+	if self.public_account then exit;
+
+	Result := self.HTTPPost(API_TRASHBIN_EMPTY, self.united_params, JSON);
+
+	if Result then
+	begin
+		OperationResult := self.fromJSON_OperationResult(JSON, OperationStatus);
+		case OperationResult of
+			CLOUD_OPERATION_OK: Result := true;
+			else
+				begin
+					Result := false;
+					Log(MSGTYPE_IMPORTANTERROR, 'Trashbin clearing error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
+				end;
+		end;
+	end;
+end;
+
+function TCloudMailRu.mountFolder(home, invite_token, ConflictMode: WideString): Boolean;
+var
+	JSON: WideString;
+	OperationStatus, OperationResult: integer;
+begin
+	Result := false;
+	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
+	if self.public_account then exit;
+
+	Result := self.HTTPPost(API_FOLDER_MOUNT, 'home=' + UrlEncode(home) + '&invite_token=' + invite_token + self.united_params + '&conflict=' + ConflictMode, JSON);
+
+	if Result then
+	begin
+		OperationResult := self.fromJSON_OperationResult(JSON, OperationStatus);
+		case OperationResult of
+			CLOUD_OPERATION_OK: Result := true;
+			else
+				begin
+					Result := false;
+					Log(MSGTYPE_IMPORTANTERROR, 'Folder mount error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
+				end;
+		end;
+	end;
+end;
+
+function TCloudMailRu.unmountFolder(home: WideString; clone_copy: Boolean): Boolean;
+var
+	JSON: WideString;
+	OperationStatus, OperationResult: integer;
+	CopyStr: WideString;
+begin
+	Result := false;
+	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
+	if self.public_account then exit;
+	if clone_copy then CopyStr := 'true'
+	else CopyStr := 'false';
+
+	Result := self.HTTPPost(API_FOLDER_UNMOUNT, 'home=' + UrlEncode(home) + '&clone_copy=' + CopyStr + self.united_params, JSON);
+
+	if Result then
+	begin
+		OperationResult := self.fromJSON_OperationResult(JSON, OperationStatus);
+		case OperationResult of
+			CLOUD_OPERATION_OK: Result := true;
+			else
+				begin
+					Result := false;
+					Log(MSGTYPE_IMPORTANTERROR, 'Folder mount error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
+				end;
+		end;
+	end;
+end;
+
+function TCloudMailRu.rejectInvite(invite_token: WideString): Boolean;
+var
+	JSON: WideString;
+	OperationStatus, OperationResult: integer;
+begin
+	Result := false;
+	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
+	if self.public_account then exit;
+
+	Result := self.HTTPPost(API_INVITE_REJECT, 'invite_token=' + invite_token + self.united_params, JSON);
+
+	if Result then
+	begin
+		OperationResult := self.fromJSON_OperationResult(JSON, OperationStatus);
+		case OperationResult of
+			CLOUD_OPERATION_OK: Result := true;
+			else
+				begin
+					Result := false;
+					Log(MSGTYPE_IMPORTANTERROR, 'Folder mount error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
+				end;
+		end;
 	end;
 end;
 
@@ -1711,7 +2028,7 @@ begin
 	Result := false;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
 	if self.public_account then exit;
-	Result := self.HTTPPost(API_FILE_REMOVE, 'home=/' + PathToUrl(Path) + '/' + self.united_params + '&conflict', JSON); //API всегда отвечает true, даже если путь не существует
+	Result := self.HTTPPost(API_FILE_REMOVE, 'home=/' + IncludeSlash(PathToUrl(Path)) + self.united_params + '&conflict', JSON); //API всегда отвечает true, даже если путь не существует
 	if Result then
 	begin
 		OperationResult := self.fromJSON_OperationResult(JSON, OperationStatus);
@@ -1749,10 +2066,10 @@ var
 begin
 	Result := false;
 	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
-	if self.public_account then exit; //Не заморачиваемся с получением ссылок
-
 	Progress := false;
-	Result := self.HTTPGet(API_FILE + '?home=' + PathToUrl(Path) + self.united_params, JSON, Progress);
+	if self.public_account then Result := self.HTTPGet(API_FILE + '?weblink=' + IncludeSlash(self.public_link) + PathToUrl(Path) + self.united_params, JSON, Progress)
+	else Result := self.HTTPGet(API_FILE + '?home=' + PathToUrl(Path) + self.united_params, JSON, Progress);
+
 	if Result then
 	begin
 		OperationResult := self.fromJSON_OperationResult(JSON, OperationStatus);
@@ -1760,7 +2077,7 @@ begin
 			CLOUD_OPERATION_OK: Result := fromJSON_FileStatus(JSON, FileInfo);
 			else
 				begin
-					Log(MSGTYPE_IMPORTANTERROR, 'File publish error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
+					Log(MSGTYPE_IMPORTANTERROR, 'File status error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
 					Result := false;
 				end;
 		end;
