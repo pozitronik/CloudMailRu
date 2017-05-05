@@ -253,7 +253,6 @@ object AccountsForm: TAccountsForm
           Height = 17
           Caption = 'Two-step authentification'
           TabOrder = 0
-          Visible = False
         end
         object SplitLargeFilesCB: TCheckBox
           Left = 3

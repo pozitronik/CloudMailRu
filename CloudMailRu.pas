@@ -199,6 +199,7 @@ type
 		function HTTPGet(URL: WideString; var Answer: WideString; var ProgressEnabled: Boolean): Boolean; //если ProgressEnabled - включаем обработчик onWork, возвращаем ProgressEnabled=false при отмене
 		function HTTPGetFile(URL: WideString; var FileStream: TFileStream; LogErrors: Boolean = true): integer;
 		function HTTPPost(URL: WideString; PostDataString: WideString; var Answer: WideString; ContentType: WideString = 'application/x-www-form-urlencoded'): Boolean; //Постинг данных с возможным получением ответа.
+		function HTTPPostMultipart(URL: WideString; var Answer: WideString): Boolean; //test
 		function HTTPPostFile(URL: WideString; FileName: WideString; var Answer: WideString): integer; //Постинг файла и получение ответа
 		procedure HTTPProgress(ASender: TObject; AWorkMode: TWorkMode; AWorkCount: int64);
 		{RAW TEXT PARSING}
@@ -1294,9 +1295,9 @@ begin
 		end
 	end;
 	HTTP.CookieManager := Cookie;
-	HTTP.IOHandler := SSL;
+	//HTTP.IOHandler := SSL;
 	HTTP.AllowCookies := true;
-	HTTP.HTTPOptions := [hoForceEncodeParams, hoNoParseMetaHTTPEquiv];
+	HTTP.HTTPOptions := [hoForceEncodeParams, hoNoParseMetaHTTPEquiv, hoKeepOrigProtocol];
 	HTTP.HandleRedirects := true;
 	if (self.ConnectTimeout < 0) then
 	begin
@@ -1304,6 +1305,7 @@ begin
 		HTTP.ReadTimeout := self.ConnectTimeout;
 	end;
 	HTTP.Request.UserAgent := 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.17 (KHTML, like Gecko) Chrome/24.0.1312.57 Safari/537.17/TCWFX(' + PlatformX + ')';
+	HTTP.Request.Connection := '';
 end;
 
 function TCloudMailRu.HTTPPost(URL: WideString; PostDataString: WideString; var Answer: WideString; ContentType: WideString): Boolean;
@@ -1316,6 +1318,7 @@ begin
 	Result := true;
 	MemStream := TStringStream.Create;
 	PostData := TStringStream.Create(PostDataString, TEncoding.UTF8);
+
 	try
 		self.HTTPInit(HTTP, SSL, Socks, self.Cookie);
 		if ContentType <> '' then HTTP.Request.ContentType := ContentType;
@@ -1369,6 +1372,103 @@ begin
 	end;
 	MemStream.free;
 	PostData.free;
+end;
+
+function TCloudMailRu.HTTPPostMultipart(URL: WideString; var Answer: WideString): Boolean; //test
+var
+	MemStream: TStringStream;
+	Params: TIdMultipartFormDataStream;
+	HTTP: TIdHTTP;
+	SSL: TIdSSLIOHandlerSocketOpenSSL;
+	Socks: TIdSocksInfo;
+	t: int64;
+	Field: TIdFormDataField;
+
+	function StreamToString(Stream: TStream): String;
+	begin
+		with TStringStream.Create('') do
+			try
+				CopyFrom(Stream, Stream.size - Stream.Position);
+				Result := DataString;
+			finally
+				free;
+			end;
+	end;
+
+	procedure AddFormField(const AFieldName, AFieldValue: string; var Form: TIdMultipartFormDataStream);
+	begin
+
+	end;
+
+begin
+	Result := true;
+	MemStream := TStringStream.Create;
+
+	Params := TIdMultipartFormDataStream.Create;
+	Field := Params.AddFormField('Domain', self.domain);
+	//Field.ContentType := ' ';
+	Field.ContentTransfer := '';
+
+	Field := Params.AddFormField('Login', self.user);
+
+	Field.ContentTransfer := '';
+	Field := Params.AddFormField('Password', self.password);
+	//Field.ContentType := ' ';
+	Field.ContentTransfer := '';
+
+	FileLog(StreamToString(TStream(Params)));
+	try
+		self.HTTPInit(HTTP, SSL, Socks, self.Cookie);
+		try
+			HTTP.Post(URL, Params, MemStream);
+		except
+			on E: EIdOSSLCouldNotLoadSSLLibrary do
+			begin
+				Log(MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при отправке данных на адрес ' + URL);
+				MemStream.free;
+				Params.free;
+				self.HTTPDestroy(HTTP, SSL);
+				Answer := E.Message;
+				exit(false);
+			end;
+
+		end;
+		self.HTTPDestroy(HTTP, SSL);
+		Answer := MemStream.DataString;
+	except
+		on E: EAbort do
+		begin
+			if Assigned(HTTP) then self.HTTPDestroy(HTTP, SSL);
+			MemStream.free;
+			Params.free;
+			exit(false);
+		end;
+		on E: EIdHTTPProtocolException do
+		begin
+			if HTTP.ResponseCode = 400 then
+			begin {сервер вернёт 400, но нужно пропарсить результат для дальнейшего определения действий}
+				Answer := E.ErrorMessage;
+				Result := true;
+			end else if HTTP.ResponseCode = 507 then //кончилось место
+			begin
+				Answer := E.ErrorMessage;
+				Result := true;
+				//end else if (HTTP.ResponseCode = 500) then // Внезапно, сервер так отвечает, если при перемещении файл уже существует, но полагаться на это мы не можем
+			end else begin
+				Log(MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при отправке данных на адрес ' + URL + ', ответ сервера: ' + E.ErrorMessage);
+				Result := false;
+			end;
+			if Assigned(HTTP) then self.HTTPDestroy(HTTP, SSL);
+		end;
+		on E: EIdSocketerror do
+		begin
+			if Assigned(HTTP) then self.HTTPDestroy(HTTP, SSL);
+			Log(MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка сети: ' + E.Message + ' при отправке данных на адрес ' + URL);
+			Result := false;
+		end;
+	end;
+	MemStream.free;
+	Params.free;
 end;
 
 function TCloudMailRu.HTTPPostFile(URL: WideString; FileName: WideString; var Answer: WideString): integer;
@@ -1443,13 +1543,13 @@ class procedure TCloudMailRu.logCookie(CookieManager: TIdCookieManager);
 var
 	Cookies: TIdCookieList;
 	Cookie: TIdCookie;
-	I: integer;
+	i: integer;
 begin
 	Cookies := CookieManager.CookieCollection.LockCookieList(caRead);
 	try
-		for I := 0 to Cookies.count - 1 do
+		for i := 0 to Cookies.count - 1 do
 		begin
-			Cookie := Cookies[I];
+			Cookie := Cookies[i];
 			FileLog(Cookie.Value);
 		end;
 	finally
@@ -1478,7 +1578,9 @@ begin
 	case self.login_method of
 		CLOUD_AUTH_METHOD_TWO_STEP:
 			begin
-				Result := self.HTTPPost('http://lightcab/web/index.php?r=test', 'Domain=' + self.domain + '&Password=' + UrlEncode(self.password) + '&Login=' + self.user, PostAnswer{, 'multipart/form-data'});
+				//Result := self.HTTPPost('http://lightcab/web/index.php?r=test/mailru', 'Domain=' + self.domain + '&Password=' + UrlEncode(self.password) + '&Login=' + self.user, PostAnswer, 'multipart/form-data; boundary=------------------------378e3b44db30fb10');
+				Result := self.HTTPPostMultipart('https://auth.mail.ru/cgi-bin/auth', PostAnswer);
+				//Result := self.HTTPPostMultipart('http://test.lightcab.ru/web/index.php?r=test/mailru', PostAnswer);
 				if Result then
 				begin
 					FileLog(PostAnswer);

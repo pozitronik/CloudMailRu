@@ -67,8 +67,19 @@ function RetryAttemptsToString(Attempt: Integer): WideString;
 procedure ProcessMessages;
 function IncludeSlash(const Str: WideString): WideString;
 function FormatSize(size: Int64; SizeType: Integer = TYPE_MEGABYTES): WideString; //Форматируем размер в удобочитаемый вид
+Procedure FileLog(S: WideString);
 
 implementation
+
+Procedure FileLog(S: WideString);
+var
+	f: textfile;
+begin
+	Assign(f, 'd:\DATA\WORKPLACE\WORKSPACE\CloudMailRu\log.txt');
+	Rewrite(f);
+	Write(f, S);
+	close(f);
+end;
 
 function Implode(S: TStringList; Delimiter: WideString): WideString;
 
@@ -132,6 +143,7 @@ begin
 		Result.account := Copy(Result.account, 1, Length(Result.account) - Length(InvitesPostfix));
 	end;
 end;
+
 //проверка, находится ли путь внутри аккаунта. ignoreVirtual - не считать виртуальные каталоги облачными
 function inAccount(path: TRealPath; ignoreVirtual: boolean = true): boolean;
 begin
