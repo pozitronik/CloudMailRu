@@ -555,7 +555,6 @@ end;
 function TCloudMailRu.extractTwostepJson(Text: WideString; var JSON: WideString): Boolean;
 var
 	start, finish: integer;
-	temp: WideString;
 begin
 	Result := false;
 	start := Pos(WideString('<script type="text/html" id="json">'), Text);
@@ -1619,7 +1618,6 @@ var
 	FormFields: TDictionary<WideString, WideString>;
 begin
 	Result := false;
-	SecurityKey := nil;
 	self.login_method := method;
 	Log(MSGTYPE_DETAILS, 'Login to ' + self.user + '@' + self.domain);
 	case self.login_method of
