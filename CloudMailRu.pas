@@ -1635,7 +1635,7 @@ begin
 					Log(MSGTYPE_DETAILS, 'Requesting auth token for ' + self.user + '@' + self.domain);
 					if self.extractTwostepJson(PostAnswer, TwoStepJson) and self.fromJSON_TwostepData(TwoStepJson, TwostepData) then
 					begin
-						if TwostepData.secstep_resend_fail = '1' then AuthMessage := 'SMS timeout to ' + TwostepData.secstep_phone + ' (' + TwostepData.secstep_timeout.ToString + ' seconds).' + CRLF + 'You can use one of reserve codes or code from mobile app.'
+						if TwostepData.secstep_resend_fail = '1' then AuthMessage := 'SMS timeout to ' + TwostepData.secstep_phone + ' (' + TwostepData.secstep_timeout.ToString + ' sec).' + CRLF + 'You can use one of reserve codes or code from mobile app.'
 						else AuthMessage := 'Security code sended to ' + TwostepData.secstep_phone + '.' + CRLF + 'You can also use one of reserve codes or code from mobile app.';
 
 						Log(MSGTYPE_DETAILS, 'Awaiting for security key... ');
