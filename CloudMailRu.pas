@@ -1613,6 +1613,7 @@ function TCloudMailRu.loginRegular(method: integer): Boolean;
 var
 	PostAnswer: WideString;
 	TwoStepJson: WideString;
+	AuthMessage: WideString;
 	TwostepData: TCloudMailRuTwostepData;
 	SecurityKey: PWideChar;
 	FormFields: TDictionary<WideString, WideString>;
@@ -1636,11 +1637,13 @@ begin
 					Log(MSGTYPE_DETAILS, 'Requesting auth token for ' + self.user + '@' + self.domain);
 					if self.extractTwostepJson(PostAnswer, TwoStepJson) and self.fromJSON_TwostepData(TwoStepJson, TwostepData) then
 					begin
+						if TwostepData.secstep_resend_fail = '1' then AuthMessage := 'SMS timeout to ' + TwostepData.secstep_phone + ' (' + TwostepData.secstep_timeout.ToString + ' seconds).' + CRLF + 'You can use one of reserve codes or code from mobile app.'
+						else AuthMessage := 'Security code sended to ' + TwostepData.secstep_phone + '.' + CRLF + 'You can also use one of reserve codes or code from mobile app.';
 
 						Log(MSGTYPE_DETAILS, 'Awaiting for security key... ');
 						GetMem(SecurityKey, 32);
 						ZeroMemory(SecurityKey, 32);
-						if (true = ExternalRequestProc(self.ExternalPluginNr, RT_Other, 'Enter auth key', nil, SecurityKey, 32)) then
+						if (true = ExternalRequestProc(self.ExternalPluginNr, RT_Other, 'Enter auth key', PWideChar(AuthMessage), SecurityKey, 32)) then
 						begin
 							FormFields.Clear;
 							FormFields.AddOrSetValue('Login', self.user + '@' + self.domain);
@@ -1648,7 +1651,7 @@ begin
 							FormFields.AddOrSetValue('AuthCode', SecurityKey);
 
 							Result := self.HTTPPostMultipart(SECSTEP_URL, FormFields, PostAnswer);
-
+							FormFields.free;
 							if Result then
 							begin
 								Result := self.getToken();
@@ -1658,21 +1661,22 @@ begin
 									self.logUserSpaceInfo;
 								end else begin
 									Log(MSGTYPE_IMPORTANTERROR, 'error: twostep auth failed');
-									//exit(false);
+									exit(false);
 								end;
 							end;
 						end else begin
 							Log(MSGTYPE_IMPORTANTERROR, 'error: security key not provided');
-							//exit(false);
+							exit(false);
 						end;
 
 					end else begin
 						Log(MSGTYPE_IMPORTANTERROR, 'error: getting auth token for ' + self.user + '@' + self.domain);
-						//exit(false);
+						exit(false);
 					end;
 
-				end;
-				FormFields.free;
+				end
+				else FormFields.free;
+
 			end;
 		CLOUD_AUTH_METHOD_WEB: //todo: вынести в отдельный метод
 			begin
