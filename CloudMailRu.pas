@@ -2,7 +2,7 @@
 
 interface
 
-uses System.Classes, System.SysUtils, PLUGIN_Types, JSON, Winapi.Windows, IdStack, MRC_helper, Settings, IdCookieManager, IdIOHandler, IdIOHandlerSocket, IdIOHandlerStack, IdSSL, IdSSLOpenSSL, IdBaseComponent, IdComponent, IdTCPConnection, IdTCPClient, IdSocks, IdHTTP, IdAuthentication, IdIOHandlerStream, IdMultipartFormData, FileSplitter, IdCookie;
+uses System.Classes, System.Generics.Collections, System.SysUtils, PLUGIN_Types, JSON, Winapi.Windows, IdStack, MRC_helper, Settings, IdCookieManager, IdIOHandler, IdIOHandlerSocket, IdIOHandlerStack, IdSSL, IdSSLOpenSSL, IdBaseComponent, IdComponent, IdTCPConnection, IdTCPClient, IdSocks, IdHTTP, IdAuthentication, IdIOHandlerStream, FileSplitter, IdCookie, IdMultipartFormData;
 
 const
 {$IFDEF WIN64}
@@ -199,7 +199,7 @@ type
 		function HTTPGet(URL: WideString; var Answer: WideString; var ProgressEnabled: Boolean): Boolean; //если ProgressEnabled - включаем обработчик onWork, возвращаем ProgressEnabled=false при отмене
 		function HTTPGetFile(URL: WideString; var FileStream: TFileStream; LogErrors: Boolean = true): integer;
 		function HTTPPost(URL: WideString; PostDataString: WideString; var Answer: WideString; ContentType: WideString = 'application/x-www-form-urlencoded'): Boolean; //Постинг данных с возможным получением ответа.
-		function HTTPPostMultipart(URL: WideString; var Answer: WideString): Boolean; //test
+		function HTTPPostMultipart(URL: WideString; Params: TDictionary<WideString, WideString>; var Answer: WideString): Boolean;
 		function HTTPPostFile(URL: WideString; FileName: WideString; var Answer: WideString): integer; //Постинг файла и получение ответа
 		procedure HTTPProgress(ASender: TObject; AWorkMode: TWorkMode; AWorkCount: int64);
 		{RAW TEXT PARSING}
@@ -1295,9 +1295,9 @@ begin
 		end
 	end;
 	HTTP.CookieManager := Cookie;
-	//HTTP.IOHandler := SSL;
+	HTTP.IOHandler := SSL;
 	HTTP.AllowCookies := true;
-	HTTP.HTTPOptions := [hoForceEncodeParams, hoNoParseMetaHTTPEquiv, hoKeepOrigProtocol];
+	HTTP.HTTPOptions := [hoForceEncodeParams, hoNoParseMetaHTTPEquiv, hoKeepOrigProtocol, hoTreat302Like303];
 	HTTP.HandleRedirects := true;
 	if (self.ConnectTimeout < 0) then
 	begin
@@ -1374,59 +1374,34 @@ begin
 	PostData.free;
 end;
 
-function TCloudMailRu.HTTPPostMultipart(URL: WideString; var Answer: WideString): Boolean; //test
+function TCloudMailRu.HTTPPostMultipart(URL: WideString; Params: TDictionary<WideString, WideString>; var Answer: WideString): Boolean; //test
 var
 	MemStream: TStringStream;
-	Params: TIdMultipartFormDataStream;
+	Fields: TIdMultipartFormDataStream;
 	HTTP: TIdHTTP;
 	SSL: TIdSSLIOHandlerSocketOpenSSL;
 	Socks: TIdSocksInfo;
-	t: int64;
-	Field: TIdFormDataField;
-
-	function StreamToString(Stream: TStream): String;
-	begin
-		with TStringStream.Create('') do
-			try
-				CopyFrom(Stream, Stream.size - Stream.Position);
-				Result := DataString;
-			finally
-				free;
-			end;
-	end;
-
-	procedure AddFormField(const AFieldName, AFieldValue: string; var Form: TIdMultipartFormDataStream);
-	begin
-
-	end;
-
+	ParamItem: TPair<WideString, WideString>;
 begin
 	Result := true;
 	MemStream := TStringStream.Create;
 
-	Params := TIdMultipartFormDataStream.Create;
-	Field := Params.AddFormField('Domain', self.domain);
-	//Field.ContentType := ' ';
-	Field.ContentTransfer := '';
+	Fields := TIdMultipartFormDataStream.Create;
+	for ParamItem in Params do
+	begin
+		Fields.AddFormField(ParamItem.Key, ParamItem.Value);
+	end;
 
-	Field := Params.AddFormField('Login', self.user);
-
-	Field.ContentTransfer := '';
-	Field := Params.AddFormField('Password', self.password);
-	//Field.ContentType := ' ';
-	Field.ContentTransfer := '';
-
-	FileLog(StreamToString(TStream(Params)));
 	try
 		self.HTTPInit(HTTP, SSL, Socks, self.Cookie);
 		try
-			HTTP.Post(URL, Params, MemStream);
+			HTTP.Post(URL, Fields, MemStream);
 		except
 			on E: EIdOSSLCouldNotLoadSSLLibrary do
 			begin
 				Log(MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при отправке данных на адрес ' + URL);
 				MemStream.free;
-				Params.free;
+				Fields.free;
 				self.HTTPDestroy(HTTP, SSL);
 				Answer := E.Message;
 				exit(false);
@@ -1435,12 +1410,13 @@ begin
 		end;
 		self.HTTPDestroy(HTTP, SSL);
 		Answer := MemStream.DataString;
+		FileLog(Answer);
 	except
 		on E: EAbort do
 		begin
 			if Assigned(HTTP) then self.HTTPDestroy(HTTP, SSL);
 			MemStream.free;
-			Params.free;
+			Fields.free;
 			exit(false);
 		end;
 		on E: EIdHTTPProtocolException do
@@ -1468,7 +1444,7 @@ begin
 		end;
 	end;
 	MemStream.free;
-	Params.free;
+	Fields.free;
 end;
 
 function TCloudMailRu.HTTPPostFile(URL: WideString; FileName: WideString; var Answer: WideString): integer;
@@ -1570,6 +1546,7 @@ var
 	PostAnswer: WideString;
 	FirstStepToken: WideString;
 	SecurityKey: PWideChar;
+	FormFields: TDictionary<WideString, WideString>;
 begin
 	Result := false;
 	SecurityKey := nil;
@@ -1578,9 +1555,12 @@ begin
 	case self.login_method of
 		CLOUD_AUTH_METHOD_TWO_STEP:
 			begin
-				//Result := self.HTTPPost('http://lightcab/web/index.php?r=test/mailru', 'Domain=' + self.domain + '&Password=' + UrlEncode(self.password) + '&Login=' + self.user, PostAnswer, 'multipart/form-data; boundary=------------------------378e3b44db30fb10');
-				Result := self.HTTPPostMultipart('https://auth.mail.ru/cgi-bin/auth', PostAnswer);
-				//Result := self.HTTPPostMultipart('http://test.lightcab.ru/web/index.php?r=test/mailru', PostAnswer);
+				FormFields := TDictionary<WideString, WideString>.Create();
+				FormFields.AddOrSetValue('Domain', self.domain);
+				FormFields.AddOrSetValue('Login', self.user);
+				FormFields.AddOrSetValue('Password', self.password);
+
+				Result := self.HTTPPostMultipart(LOGIN_URL, FormFields, PostAnswer);
 				if Result then
 				begin
 					FileLog(PostAnswer);
@@ -1588,9 +1568,17 @@ begin
 					if (self.extractTokenFromText(PostAnswer, FirstStepToken)) then
 					begin
 						Log(MSGTYPE_DETAILS, 'Awaiting for security key... ');
-						if (ExternalRequestProc(self.ExternalPluginNr, RT_Other, 'Enter auth key', nil, SecurityKey, 32)) then
+						GetMem(SecurityKey, 32);
+						ZeroMemory(SecurityKey, 32);
+						if (true = ExternalRequestProc(self.ExternalPluginNr, RT_Other, 'Enter auth key', nil, SecurityKey, 32)) then
 						begin
-							Result := self.HTTPPost(SECSTEP_URL, 'Login=' + self.user + '@' + self.domain + '&csrf=' + FirstStepToken + '&AuthCode=' + SecurityKey, PostAnswer, 'multipart/form-data');
+							FormFields.Clear;
+							FormFields.AddOrSetValue('Login', self.user + '@' + self.domain);
+							FormFields.AddOrSetValue('csrf', FirstStepToken);
+							FormFields.AddOrSetValue('AuthCode', SecurityKey);
+
+							Result := self.HTTPPostMultipart(SECSTEP_URL, FormFields, PostAnswer);
+
 							if Result then
 							begin
 								Result := self.getToken();
@@ -1600,20 +1588,21 @@ begin
 									self.logUserSpaceInfo;
 								end else begin
 									Log(MSGTYPE_IMPORTANTERROR, 'error: twostep auth failed');
-									exit(false);
+									//exit(false);
 								end;
 							end;
 						end else begin
 							Log(MSGTYPE_IMPORTANTERROR, 'error: security key not provided');
-							exit(false);
+							//exit(false);
 						end;
 
 					end else begin
 						Log(MSGTYPE_IMPORTANTERROR, 'error: getting auth token for ' + self.user + '@' + self.domain);
-						exit(false);
+						//exit(false);
 					end;
 
 				end;
+				FormFields.free;
 			end;
 		CLOUD_AUTH_METHOD_WEB: //todo: вынести в отдельный метод
 			begin
@@ -2046,7 +2035,7 @@ var
 	PutResult: TStringList;
 	JSONAnswer, FileHash: WideString;
 	FileSize: int64;
-	Code, OperationStatus: integer;
+	code, OperationStatus: integer;
 	OperationResult: integer;
 begin
 	if not(Assigned(self)) then exit(FS_FILE_WRITEERROR); //Проверка на вызов без инициализации
@@ -2087,7 +2076,7 @@ begin
 	if OperationResult = CLOUD_OPERATION_OK then
 	begin
 		FileHash := PutResult.Strings[0];
-		Val(PutResult.Strings[1], FileSize, Code); //Тут ошибка маловероятна
+		Val(PutResult.Strings[1], FileSize, code); //Тут ошибка маловероятна
 	end else if OperationResult = CLOUD_OPERATION_CANCELLED then
 	begin
 		Result := FS_FILE_USERABORT;
