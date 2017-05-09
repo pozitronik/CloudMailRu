@@ -75,7 +75,7 @@ Procedure FileLog(S: WideString);
 var
 	f: textfile;
 begin
-	Assign(f, 'd:\DATA\WORKPLACE\WORKSPACE\CloudMailRu\log.txt');
+	Assign(f, 'd:\WORK\CODE\CloudMailRu\log.txt');
 	Rewrite(f);
 	Write(f, S);
 	close(f);
