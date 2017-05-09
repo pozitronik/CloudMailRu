@@ -665,7 +665,7 @@ begin
 	if command = 'trash' then //go to current account trash directory
 	begin
 		if Cloud.isPublicShare then exit(FS_EXEC_ERROR);
-		if inAccount(RealPath,false) then
+		if inAccount(RealPath, false) then
 		begin
 			strpcopy(RemoteName, '\' + RealPath.account + TrashPostfix);
 			exit(FS_EXEC_SYMLINK);
@@ -675,7 +675,7 @@ begin
 	if command = 'shared' then
 	begin
 		if Cloud.isPublicShare then exit(FS_EXEC_ERROR);
-		if inAccount(RealPath,false) then
+		if inAccount(RealPath, false) then
 		begin
 			strpcopy(RemoteName, '\' + RealPath.account + SharedPostfix);
 			exit(FS_EXEC_SYMLINK);
@@ -685,7 +685,7 @@ begin
 	if command = 'invites' then
 	begin
 		if Cloud.isPublicShare then exit(FS_EXEC_ERROR);
-		if inAccount(RealPath,false) then
+		if inAccount(RealPath, false) then
 		begin
 			strpcopy(RemoteName, '\' + RealPath.account + InvitesPostfix);
 			exit(FS_EXEC_SYMLINK);
