@@ -156,6 +156,27 @@ type
 		invite_token: WideString;
 	end;
 
+	TCloudMailRuTwostepData = record
+		form_name: WideString;
+		auth_host: WideString;
+		secstep_phone: WideString;
+		secstep_page: WideString;
+		secstep_code_fail: WideString;
+		secstep_resend_fail: WideString;
+		secstep_resend_success: WideString;
+		secstep_timeout: int64;
+		secstep_login: WideString;
+		secstep_disposable_fail: WideString;
+		secstep_smsapi_error: WideString;
+		secstep_captcha: WideString;
+		totp_enabled: WideString;
+		locale: WideString;
+		client: WideString;
+		csrf: WideString;
+		device: WideString;
+		{some items skipped}
+	end;
+
 	TCloudMailRuDirListing = array of TCloudMailRuDirListingItem;
 	TCloudMailRuInviteInfoListing = array of TCloudMailRuInviteInfo;
 	TCloudMailRuIncomingInviteInfoListing = array of TCloudMailRuIncomingInviteInfo;
@@ -209,6 +230,7 @@ type
 		function extract_build_FromText(Text: WideString; var build: WideString): Boolean;
 		function extract_upload_url_FromText(Text: WideString; var UploadUrl: WideString): Boolean;
 		function extractPublicShard(Text: WideString; var Shard: WideString): Boolean;
+		function extractTwostepJson(Text: WideString; var JSON: WideString): Boolean;
 		{JSON MANIPULATION}
 		function fromJSON_DirListing(JSON: WideString; var CloudMailRuDirListing: TCloudMailRuDirListing): Boolean;
 		function fromJSON_UserSpace(JSON: WideString; var CloudMailRuSpaceInfo: TCloudMailRuSpaceInfo): Boolean;
@@ -219,6 +241,7 @@ type
 		function fromJSON_OperationResult(JSON: WideString; var OperationStatus: integer): integer;
 		function fromJSON_InviteListing(JSON: WideString; var InviteListing: TCloudMailRuInviteInfoListing): Boolean;
 		function fromJSON_IncomingInviteListing(JSON: WideString; var IncomingInviteListing: TCloudMailRuIncomingInviteInfoListing): Boolean;
+		function fromJSON_TwostepData(JSON: WideString; var TwostepData: TCloudMailRuTwostepData): Boolean;
 		{HTTP REQUESTS WRAPPERS}
 		function getToken(): Boolean;
 		function getSharedToken(): Boolean;
@@ -525,6 +548,22 @@ begin
 	if start > 0 then
 	begin
 		token := copy(Text, start + 8, 32);
+		Result := true;
+	end;
+end;
+
+function TCloudMailRu.extractTwostepJson(Text: WideString; var JSON: WideString): Boolean;
+var
+	start, finish: integer;
+	temp: WideString;
+begin
+	Result := false;
+	start := Pos(WideString('<script type="text/html" id="json">'), Text);
+	finish := Pos(WideString('</script>'), Text);
+	if (start > 0) and (finish > 0) then
+	begin
+		JSON := copy(Text, start + 35, finish - start - 35);
+
 		Result := true;
 	end;
 end;
@@ -837,6 +876,38 @@ begin
 		Result := false;
 	end;
 
+end;
+
+function TCloudMailRu.fromJSON_TwostepData(JSON: WideString; var TwostepData: TCloudMailRuTwostepData): Boolean;
+var
+	Obj: TJSONObject;
+begin
+	Result := true;
+	try
+		Obj := (TJSONObject.ParseJSONValue(JSON) as TJSONObject) as TJSONObject;
+		with TwostepData do
+		begin
+			if Assigned(Obj.values['form_name']) then form_name := Obj.values['form_name'].Value;
+			if Assigned(Obj.values['auth_host']) then auth_host := Obj.values['auth_host'].Value;;
+			if Assigned(Obj.values['secstep_phone']) then secstep_phone := Obj.values['secstep_phone'].Value;
+			if Assigned(Obj.values['secstep_page']) then secstep_page := Obj.values['secstep_page'].Value;
+			if Assigned(Obj.values['secstep_code_fail']) then secstep_code_fail := Obj.values['secstep_code_fail'].Value;
+			if Assigned(Obj.values['secstep_resend_fail']) then secstep_resend_fail := Obj.values['secstep_resend_fail'].Value;
+			if Assigned(Obj.values['secstep_resend_success']) then secstep_resend_success := Obj.values['secstep_resend_success'].Value;
+			if Assigned(Obj.values['secstep_timeout']) then secstep_timeout := Obj.values['secstep_timeout'].Value.ToInt64;
+			if Assigned(Obj.values['secstep_login']) then secstep_login := Obj.values['secstep_login'].Value;
+			if Assigned(Obj.values['secstep_disposable_fail']) then secstep_disposable_fail := Obj.values['secstep_disposable_fail'].Value;
+			if Assigned(Obj.values['secstep_smsapi_error']) then secstep_smsapi_error := Obj.values['secstep_smsapi_error'].Value;
+			if Assigned(Obj.values['secstep_captcha']) then secstep_captcha := Obj.values['secstep_captcha'].Value;
+			if Assigned(Obj.values['totp_enabled']) then totp_enabled := Obj.values['totp_enabled'].Value;
+			if Assigned(Obj.values['locale']) then locale := Obj.values['locale'].Value;
+			if Assigned(Obj.values['client']) then client := Obj.values['client'].Value;
+			if Assigned(Obj.values['csrf']) then csrf := Obj.values['csrf'].Value;
+			if Assigned(Obj.values['device']) then device := Obj.values['device'].Value;
+		end;
+	except
+		Result := false;
+	end;
 end;
 
 function TCloudMailRu.fromJSON_UserSpace(JSON: WideString; var CloudMailRuSpaceInfo: TCloudMailRuSpaceInfo): Boolean;
@@ -1387,10 +1458,7 @@ begin
 	MemStream := TStringStream.Create;
 
 	Fields := TIdMultipartFormDataStream.Create;
-	for ParamItem in Params do
-	begin
-		Fields.AddFormField(ParamItem.Key, ParamItem.Value);
-	end;
+	for ParamItem in Params do Fields.AddFormField(ParamItem.Key, ParamItem.Value);
 
 	try
 		self.HTTPInit(HTTP, SSL, Socks, self.Cookie);
@@ -1544,7 +1612,8 @@ end;
 function TCloudMailRu.loginRegular(method: integer): Boolean;
 var
 	PostAnswer: WideString;
-	FirstStepToken: WideString;
+	TwoStepJson: WideString;
+	TwostepData: TCloudMailRuTwostepData;
 	SecurityKey: PWideChar;
 	FormFields: TDictionary<WideString, WideString>;
 begin
@@ -1565,8 +1634,9 @@ begin
 				begin
 					FileLog(PostAnswer);
 					Log(MSGTYPE_DETAILS, 'Requesting auth token for ' + self.user + '@' + self.domain);
-					if (self.extractTokenFromText(PostAnswer, FirstStepToken)) then
+					if self.extractTwostepJson(PostAnswer, TwoStepJson) and self.fromJSON_TwostepData(TwoStepJson, TwostepData) then
 					begin
+
 						Log(MSGTYPE_DETAILS, 'Awaiting for security key... ');
 						GetMem(SecurityKey, 32);
 						ZeroMemory(SecurityKey, 32);
@@ -1574,7 +1644,7 @@ begin
 						begin
 							FormFields.Clear;
 							FormFields.AddOrSetValue('Login', self.user + '@' + self.domain);
-							FormFields.AddOrSetValue('csrf', FirstStepToken);
+							FormFields.AddOrSetValue('csrf', TwostepData.csrf);
 							FormFields.AddOrSetValue('AuthCode', SecurityKey);
 
 							Result := self.HTTPPostMultipart(SECSTEP_URL, FormFields, PostAnswer);
