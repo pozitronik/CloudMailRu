@@ -134,6 +134,7 @@ begin
 		SplitLargeFilesCB.Checked := CASettings.split_large_files;
 		PublicAccountCB.Checked := CASettings.public_account;
 		PublicUrlEdit.Text := CASettings.public_url;
+		TwostepAuthCB.Checked := CASettings.twostep_auth;
 	end else begin
 		AccountNameEdit.Text := '';
 		EmailEdit.Text := '';
