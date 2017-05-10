@@ -1684,7 +1684,7 @@ begin
 						exit(false);
 					end;
 				end
-				else LLog(MSGTYPE_IMPORTANTERROR, 'error: getting auth token for ' + self.user + '@' + self.domain);
+				else Log(MSGTYPE_IMPORTANTERROR, 'error: getting auth token for ' + self.user + '@' + self.domain);
 			end;
 		CLOUD_AUTH_METHOD_OAUTH:
 			begin
