@@ -304,8 +304,6 @@ type
 		class function CloudAccessToString(access: WideString; Invert: Boolean = false): WideString; static;
 		class function StringToCloudAccess(accessString: WideString; Invert: Boolean = false): integer; static;
 		class function ErrorCodeText(ErrorCode: integer): WideString; static;
-
-		class procedure logCookie(CookieManager: TIdCookieManager); static;
 	end;
 
 implementation
@@ -1477,7 +1475,6 @@ begin
 		end;
 		self.HTTPDestroy(HTTP, SSL);
 		Answer := MemStream.DataString;
-		FileLog(Answer);
 	except
 		on E: EAbort do
 		begin
@@ -1582,23 +1579,6 @@ begin
 	if Assigned(ExternalLogProc) then ExternalLogProc(ExternalPluginNr, MsgType, PWideChar(LogString));
 end;
 
-class procedure TCloudMailRu.logCookie(CookieManager: TIdCookieManager);
-var
-	Cookies: TIdCookieList;
-	Cookie: TIdCookie;
-	i: integer;
-begin
-	Cookies := CookieManager.CookieCollection.LockCookieList(caRead);
-	try
-		for i := 0 to Cookies.count - 1 do
-		begin
-			Cookie := Cookies[i];
-			FileLog(Cookie.Value);
-		end;
-	finally
-		CookieManager.CookieCollection.UnlockCookieList(caRead);
-	end;
-end;
 
 function TCloudMailRu.login(method: integer): Boolean;
 begin
@@ -1631,7 +1611,6 @@ begin
 				Result := self.HTTPPostMultipart(LOGIN_URL, FormFields, PostAnswer);
 				if Result then
 				begin
-					FileLog(PostAnswer);
 					Log(MSGTYPE_DETAILS, 'Requesting auth token for ' + self.user + '@' + self.domain);
 					if self.extractTwostepJson(PostAnswer, TwoStepJson) and self.fromJSON_TwostepData(TwoStepJson, TwostepData) then
 					begin
