@@ -1579,7 +1579,6 @@ begin
 	if Assigned(ExternalLogProc) then ExternalLogProc(ExternalPluginNr, MsgType, PWideChar(LogString));
 end;
 
-
 function TCloudMailRu.login(method: integer): Boolean;
 begin
 	Result := false;
@@ -1607,11 +1606,10 @@ begin
 				FormFields.AddOrSetValue('Domain', self.domain);
 				FormFields.AddOrSetValue('Login', self.user);
 				FormFields.AddOrSetValue('Password', self.password);
-
+				Log(MSGTYPE_DETAILS, 'Requesting first step auth token for ' + self.user + '@' + self.domain);
 				Result := self.HTTPPostMultipart(LOGIN_URL, FormFields, PostAnswer);
 				if Result then
 				begin
-					Log(MSGTYPE_DETAILS, 'Requesting auth token for ' + self.user + '@' + self.domain);
 					if self.extractTwostepJson(PostAnswer, TwoStepJson) and self.fromJSON_TwostepData(TwoStepJson, TwostepData) then
 					begin
 						if TwostepData.secstep_resend_fail = '1' then AuthMessage := 'SMS timeout to ' + TwostepData.secstep_phone + ' (' + TwostepData.secstep_timeout.ToString + ' seconds).' + CRLF + 'You can use one of reserve codes or code from mobile app.'
@@ -1626,7 +1624,7 @@ begin
 							FormFields.AddOrSetValue('Login', self.user + '@' + self.domain);
 							FormFields.AddOrSetValue('csrf', TwostepData.csrf);
 							FormFields.AddOrSetValue('AuthCode', SecurityKey);
-
+							Log(MSGTYPE_DETAILS, 'Performing second step auth...');
 							Result := self.HTTPPostMultipart(SECSTEP_URL, FormFields, PostAnswer);
 							FormFields.free;
 							if Result then
