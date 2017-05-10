@@ -1393,7 +1393,8 @@ begin
 		try
 			HTTP.Post(URL, PostData, MemStream);
 		except
-			on E: EIdOSSLCouldNotLoadSSLLibrary do
+			//on E: EIdOSSLCouldNotLoadSSLLibrary do
+			on E: Exception do
 			begin
 				Log(MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при отправке данных на адрес ' + URL);
 				MemStream.free;
@@ -1437,6 +1438,11 @@ begin
 			Log(MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка сети: ' + E.Message + ' при отправке данных на адрес ' + URL);
 			Result := false;
 		end;
+		on E: Exception do
+		begin
+			Log(MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при отправке данных на адрес ' + URL);
+			Result := false;
+		end;
 	end;
 	MemStream.free;
 	PostData.free;
@@ -1462,7 +1468,8 @@ begin
 		try
 			HTTP.Post(URL, Fields, MemStream);
 		except
-			on E: EIdOSSLCouldNotLoadSSLLibrary do
+			//on E: EIdOSSLCouldNotLoadSSLLibrary do
+			on E: Exception do
 			begin
 				Log(MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при отправке данных на адрес ' + URL);
 				MemStream.free;
@@ -1471,7 +1478,6 @@ begin
 				Answer := E.Message;
 				exit(false);
 			end;
-
 		end;
 		self.HTTPDestroy(HTTP, SSL);
 		Answer := MemStream.DataString;
@@ -1504,6 +1510,11 @@ begin
 		begin
 			if Assigned(HTTP) then self.HTTPDestroy(HTTP, SSL);
 			Log(MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка сети: ' + E.Message + ' при отправке данных на адрес ' + URL);
+			Result := false;
+		end;
+		on E: Exception do
+		begin
+			Log(MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при отправке данных на адрес ' + URL);
 			Result := false;
 		end;
 	end;
