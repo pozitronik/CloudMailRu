@@ -304,8 +304,6 @@ type
 		class function CloudAccessToString(access: WideString; Invert: Boolean = false): WideString; static;
 		class function StringToCloudAccess(accessString: WideString; Invert: Boolean = false): integer; static;
 		class function ErrorCodeText(ErrorCode: integer): WideString; static;
-
-		class procedure logCookie(CookieManager: TIdCookieManager); static;
 	end;
 
 implementation
@@ -1395,7 +1393,8 @@ begin
 		try
 			HTTP.Post(URL, PostData, MemStream);
 		except
-			on E: EIdOSSLCouldNotLoadSSLLibrary do
+			//on E: EIdOSSLCouldNotLoadSSLLibrary do
+			on E: Exception do
 			begin
 				Log(MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при отправке данных на адрес ' + URL);
 				MemStream.free;
@@ -1439,6 +1438,11 @@ begin
 			Log(MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка сети: ' + E.Message + ' при отправке данных на адрес ' + URL);
 			Result := false;
 		end;
+		on E: Exception do
+		begin
+			Log(MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при отправке данных на адрес ' + URL);
+			Result := false;
+		end;
 	end;
 	MemStream.free;
 	PostData.free;
@@ -1464,7 +1468,8 @@ begin
 		try
 			HTTP.Post(URL, Fields, MemStream);
 		except
-			on E: EIdOSSLCouldNotLoadSSLLibrary do
+			//on E: EIdOSSLCouldNotLoadSSLLibrary do
+			on E: Exception do
 			begin
 				Log(MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при отправке данных на адрес ' + URL);
 				MemStream.free;
@@ -1473,11 +1478,9 @@ begin
 				Answer := E.Message;
 				exit(false);
 			end;
-
 		end;
 		self.HTTPDestroy(HTTP, SSL);
 		Answer := MemStream.DataString;
-		FileLog(Answer);
 	except
 		on E: EAbort do
 		begin
@@ -1507,6 +1510,11 @@ begin
 		begin
 			if Assigned(HTTP) then self.HTTPDestroy(HTTP, SSL);
 			Log(MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка сети: ' + E.Message + ' при отправке данных на адрес ' + URL);
+			Result := false;
+		end;
+		on E: Exception do
+		begin
+			Log(MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при отправке данных на адрес ' + URL);
 			Result := false;
 		end;
 	end;
@@ -1582,24 +1590,6 @@ begin
 	if Assigned(ExternalLogProc) then ExternalLogProc(ExternalPluginNr, MsgType, PWideChar(LogString));
 end;
 
-class procedure TCloudMailRu.logCookie(CookieManager: TIdCookieManager);
-var
-	Cookies: TIdCookieList;
-	Cookie: TIdCookie;
-	i: integer;
-begin
-	Cookies := CookieManager.CookieCollection.LockCookieList(caRead);
-	try
-		for i := 0 to Cookies.count - 1 do
-		begin
-			Cookie := Cookies[i];
-			FileLog(Cookie.Value);
-		end;
-	finally
-		CookieManager.CookieCollection.UnlockCookieList(caRead);
-	end;
-end;
-
 function TCloudMailRu.login(method: integer): Boolean;
 begin
 	Result := false;
@@ -1627,12 +1617,11 @@ begin
 				FormFields.AddOrSetValue('Domain', self.domain);
 				FormFields.AddOrSetValue('Login', self.user);
 				FormFields.AddOrSetValue('Password', self.password);
-
+				Log(MSGTYPE_DETAILS, 'Requesting first step auth token for ' + self.user + '@' + self.domain);
 				Result := self.HTTPPostMultipart(LOGIN_URL, FormFields, PostAnswer);
 				if Result then
 				begin
-					FileLog(PostAnswer);
-					Log(MSGTYPE_DETAILS, 'Requesting auth token for ' + self.user + '@' + self.domain);
+					Log(MSGTYPE_DETAILS, 'Parsing authorization data...');
 					if self.extractTwostepJson(PostAnswer, TwoStepJson) and self.fromJSON_TwostepData(TwoStepJson, TwostepData) then
 					begin
 						if TwostepData.secstep_resend_fail = '1' then AuthMessage := 'SMS timeout to ' + TwostepData.secstep_phone + ' (' + TwostepData.secstep_timeout.ToString + ' sec).' + CRLF + 'You can use one of reserve codes or code from mobile app.'
@@ -1647,7 +1636,7 @@ begin
 							FormFields.AddOrSetValue('Login', self.user + '@' + self.domain);
 							FormFields.AddOrSetValue('csrf', TwostepData.csrf);
 							FormFields.AddOrSetValue('AuthCode', SecurityKey);
-
+							Log(MSGTYPE_DETAILS, 'Performing second step auth...');
 							Result := self.HTTPPostMultipart(SECSTEP_URL, FormFields, PostAnswer);
 							FormFields.free;
 							if Result then
@@ -1668,31 +1657,34 @@ begin
 						end;
 
 					end else begin
-						Log(MSGTYPE_IMPORTANTERROR, 'error: getting auth token for ' + self.user + '@' + self.domain);
+						Log(MSGTYPE_IMPORTANTERROR, 'error: parsing authorization data');
 						exit(false);
 					end;
 
-				end
-				else FormFields.free;
+				end else begin
+					Log(MSGTYPE_IMPORTANTERROR, 'error: getting first step auth token for ' + self.user + '@' + self.domain);
+					FormFields.free;
+				end;
 
 			end;
 		CLOUD_AUTH_METHOD_WEB: //todo: вынести в отдельный метод
 			begin
+				Log(MSGTYPE_DETAILS, 'Requesting auth token for ' + self.user + '@' + self.domain);
 				Result := self.HTTPPost(LOGIN_URL, 'page=https://cloud.mail.ru/?new_auth_form=1&Domain=' + self.domain + '&Login=' + self.user + '&Password=' + UrlEncode(self.password) + '&FailPage=', PostAnswer);
 				if (Result) then
 				begin
-					Log(MSGTYPE_DETAILS, 'Requesting auth token for ' + self.user + '@' + self.domain);
+					Log(MSGTYPE_DETAILS, 'Parsing token data...');
 					Result := self.getToken();
 					if (Result) then
 					begin
 						Log(MSGTYPE_DETAILS, 'Connected to ' + self.user + '@' + self.domain);
 						self.logUserSpaceInfo;
 					end else begin
-						Log(MSGTYPE_IMPORTANTERROR, 'error: getting auth token for ' + self.user + '@' + self.domain);
+						Log(MSGTYPE_IMPORTANTERROR, 'error: parsing auth token for ' + self.user + '@' + self.domain);
 						exit(false);
 					end;
 				end
-				else Log(MSGTYPE_IMPORTANTERROR, 'error: login to ' + self.user + '@' + self.domain);
+				else Log(MSGTYPE_IMPORTANTERROR, 'error: getting auth token for ' + self.user + '@' + self.domain);
 			end;
 		CLOUD_AUTH_METHOD_OAUTH:
 			begin

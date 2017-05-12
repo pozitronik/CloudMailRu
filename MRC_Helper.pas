@@ -67,10 +67,10 @@ function RetryAttemptsToString(Attempt: Integer): WideString;
 procedure ProcessMessages;
 function IncludeSlash(const Str: WideString): WideString;
 function FormatSize(size: Int64; SizeType: Integer = TYPE_MEGABYTES): WideString; //Форматируем размер в удобочитаемый вид
-Procedure FileLog(S: WideString);
+//Procedure FileLog(S: WideString);
 
 implementation
-
+{
 Procedure FileLog(S: WideString);
 var
 	f: textfile;
@@ -79,7 +79,7 @@ begin
 	Rewrite(f);
 	Write(f, S);
 	close(f);
-end;
+end;}
 
 function Implode(S: TStringList; Delimiter: WideString): WideString;
 
