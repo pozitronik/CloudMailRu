@@ -13,14 +13,19 @@ type
 	private
 	var
 		items: TDictionary<WideString, WideString>;
+		ion_filename: WideString;
+		function GetionFilename: WideString;
 
 	public
-		constructor Create();
+		constructor Create(ion_filename: WideString);
 		destructor Destroy; override;
-		function Read(ion_filename: WideString): integer;
+		function Read(): integer;
+		function Save(): integer;
 		function GetValue(item: WideString): WideString;
+		function SetOrUpdateValue(item, value: WideString): boolean;
 		procedure Clear;
-		function DetermineEncoding(ion_filename: WideString): TEncoding;
+		function DetermineEncoding(): TEncoding;
+		property ionFilename: WideString read GetionFilename;
 	end;
 
 implementation
@@ -32,9 +37,10 @@ begin
 	self.items.Clear;
 end;
 
-constructor TDescription.Create;
+constructor TDescription.Create(ion_filename: WideString);
 begin
 	self.items := TDictionary<WideString, WideString>.Create;
+	self.ion_filename := ion_filename;
 end;
 
 destructor TDescription.Destroy;
@@ -42,7 +48,7 @@ begin
 	self.items.Free;
 end;
 
-function TDescription.DetermineEncoding(ion_filename: WideString): TEncoding;
+function TDescription.DetermineEncoding(): TEncoding;
 var
 	F: File;
 	Buffer: array [0 .. 2] of byte;
@@ -57,6 +63,11 @@ begin
 	exit(TEncoding.Default);
 end;
 
+function TDescription.GetionFilename: WideString;
+begin
+	result := self.ion_filename;
+end;
+
 function TDescription.GetValue(item: WideString): WideString;
 begin
 	if not(items.TryGetValue(item, result)) then exit('');
@@ -64,7 +75,7 @@ begin
 	result := WideStringReplace(WideStringReplace(result, '\n', '  ', [rfReplaceAll]), chr($04) + 'Â', '', [rfReplaceAll]);
 end;
 
-function TDescription.Read(ion_filename: WideString): integer; //Loads desript.ion file
+function TDescription.Read(): integer;
 var
 	fStream: TStreamReader;
 	line, key, value: WideString;
@@ -72,9 +83,9 @@ var
 begin
 	result := 0; //not used
 	self.Clear;
-	fStream:=nil;
+	fStream := nil;
 	try
-		fStream := TStreamReader.Create(ion_filename, DetermineEncoding(ion_filename), False);
+		fStream := TStreamReader.Create(self.ion_filename, DetermineEncoding(), False);
 		while not fStream.EndOfStream do
 		begin
 			line := fStream.ReadLine;
@@ -96,6 +107,23 @@ begin
 		exit(-1);
 	end;
 	fStream.Free;
+end;
+
+function TDescription.SetOrUpdateValue(item, value: WideString): boolean;
+begin
+	//todo: some magic here
+	self.items.AddOrSetValue(item, value);
+	result := true;
+end;
+
+function TDescription.Save: integer;
+var
+	item: TPair<WideString, WideString>;
+begin
+	for item in self.items do
+	begin
+
+	end;
 end;
 
 end.
