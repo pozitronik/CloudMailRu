@@ -1663,7 +1663,7 @@ begin
 							Log(MSGTYPE_IMPORTANTERROR, 'error: security key not provided');
 							exit(false);
 						end;
-
+						FreeMem(SecurityKey);
 					end else begin
 						Log(MSGTYPE_IMPORTANTERROR, 'error: parsing authorization data');
 						exit(false);
