@@ -97,6 +97,9 @@ const
 	CLOUD_AUTH_METHOD_TWO_STEP = 1; //Через парсинг HTTP-страницы, двухфакторная
 	CLOUD_AUTH_METHOD_OAUTH = 2; //Через сервер OAuth-авторизации
 
+	{Константа использования мобильного аутентификатора для двухфакторной авторизации}
+	AUTH_APP_USED = -1;
+
 type
 	TCloudMailRuDirListingItem = Record
 		tree: WideString;
@@ -894,7 +897,7 @@ begin
 			if Assigned(Obj.values['secstep_timeout']) then
 			begin
 				if Obj.values['secstep_timeout'].Value <> '' then secstep_timeout := Obj.values['secstep_timeout'].Value.ToInt64
-				else secstep_timeout := 0;
+				else secstep_timeout := AUTH_APP_USED;
 			end;
 			if Assigned(Obj.values['secstep_login']) then secstep_login := Obj.values['secstep_login'].Value;
 			if Assigned(Obj.values['secstep_disposable_fail']) then secstep_disposable_fail := Obj.values['secstep_disposable_fail'].Value;
@@ -1628,8 +1631,9 @@ begin
 					Log(MSGTYPE_DETAILS, 'Parsing authorization data...');
 					if self.extractTwostepJson(PostAnswer, TwoStepJson) and self.fromJSON_TwostepData(TwoStepJson, TwostepData) then
 					begin
-						if TwostepData.secstep_resend_fail = '1' then AuthMessage := 'SMS timeout to ' + TwostepData.secstep_phone + ' (' + TwostepData.secstep_timeout.ToString + ' sec).' + CRLF + 'You can use one of reserve codes or code from mobile app.'
-						else AuthMessage := 'Security code sended to ' + TwostepData.secstep_phone + '.' + CRLF + 'You can also use one of reserve codes or code from mobile app.';
+						if TwostepData.secstep_timeout = AUTH_APP_USED then AuthMessage := 'Enter code from authentication app.'//mobile app used
+						else if TwostepData.secstep_resend_fail = '1' then AuthMessage := 'SMS timeout to ' + TwostepData.secstep_phone + ' (' + TwostepData.secstep_timeout.ToString + ' sec).'
+						else AuthMessage := 'Enter code sended to ' + TwostepData.secstep_phone + '.';
 
 						Log(MSGTYPE_DETAILS, 'Awaiting for security key... ');
 						GetMem(SecurityKey, 32);
