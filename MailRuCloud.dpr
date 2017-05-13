@@ -236,7 +236,7 @@ Begin
 	MyLogProc := pLogProc;
 	MyRequestProc := pRequestProc;
 	Result := 0;
-	CurrentDescriptions := TDescription.Create;
+	CurrentDescriptions := TDescription.Create(GetTmpFileName('ion'));
 
 end;
 
@@ -244,7 +244,7 @@ procedure FsStatusInfoW(RemoteDir: pWideChar; InfoStartEnd, InfoOperation: integ
 var
 	RealPath: TRealPath;
 	getResult: integer;
-	TmpIon: WideString;
+
 begin
 	RealPath := ExtractRealPath(RemoteDir);
 	if (InfoStartEnd = FS_STATUS_START) then
@@ -254,10 +254,9 @@ begin
 				begin
 					if (GetPluginSettings(SettingsIniFilePath).DescriptionEnabled) and inAccount(RealPath) then
 					begin
-						TmpIon := GetTmpFileName('ion');
-						if ConnectionManager.get(RealPath.account, getResult).getDescriptionFile(IncludeTrailingBackslash(RealPath.path) + 'descript.ion', TmpIon) = FS_FILE_OK then
+						if ConnectionManager.get(RealPath.account, getResult).getDescriptionFile(IncludeTrailingBackslash(RealPath.path) + 'descript.ion', CurrentDescriptions.ionFilename) = FS_FILE_OK then
 						begin
-							CurrentDescriptions.Read(TmpIon);
+							CurrentDescriptions.Read;
 						end else begin
 							CurrentDescriptions.Clear;
 						end;
