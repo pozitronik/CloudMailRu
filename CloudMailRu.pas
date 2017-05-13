@@ -891,7 +891,11 @@ begin
 			if Assigned(Obj.values['secstep_code_fail']) then secstep_code_fail := Obj.values['secstep_code_fail'].Value;
 			if Assigned(Obj.values['secstep_resend_fail']) then secstep_resend_fail := Obj.values['secstep_resend_fail'].Value;
 			if Assigned(Obj.values['secstep_resend_success']) then secstep_resend_success := Obj.values['secstep_resend_success'].Value;
-			if Assigned(Obj.values['secstep_timeout']) then secstep_timeout := Obj.values['secstep_timeout'].Value.ToInt64;
+			if Assigned(Obj.values['secstep_timeout']) then
+			begin
+				if Obj.values['secstep_timeout'].Value <> '' then secstep_timeout := Obj.values['secstep_timeout'].Value.ToInt64
+				else secstep_timeout := 0;
+			end;
 			if Assigned(Obj.values['secstep_login']) then secstep_login := Obj.values['secstep_login'].Value;
 			if Assigned(Obj.values['secstep_disposable_fail']) then secstep_disposable_fail := Obj.values['secstep_disposable_fail'].Value;
 			if Assigned(Obj.values['secstep_smsapi_error']) then secstep_smsapi_error := Obj.values['secstep_smsapi_error'].Value;
