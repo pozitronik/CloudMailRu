@@ -20,9 +20,7 @@ type
 		constructor Create(ion_filename: WideString);
 		destructor Destroy; override;
 		function Read(): integer;
-		function Save(): integer;
 		function GetValue(item: WideString): WideString;
-		function SetOrUpdateValue(item, value: WideString): boolean;
 		procedure Clear;
 		function DetermineEncoding(): TEncoding;
 		property ionFilename: WideString read GetionFilename;
@@ -109,21 +107,5 @@ begin
 	fStream.Free;
 end;
 
-function TDescription.SetOrUpdateValue(item, value: WideString): boolean;
-begin
-	//todo: some magic here
-	self.items.AddOrSetValue(item, value);
-	result := true;
-end;
-
-function TDescription.Save: integer;
-var
-	item: TPair<WideString, WideString>;
-begin
-	for item in self.items do
-	begin
-
-	end;
-end;
 
 end.
