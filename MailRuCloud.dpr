@@ -530,7 +530,7 @@ end;
 function FsFindClose(Hdl: THandle): integer; stdcall;
 Begin //Завершение получения списка файлов. Result тоталом не используется (всегда равен 0)
 	//SetLength(CurrentListing, 0); // Пусть будет
-	if Hdl = FIND_ROOT_DIRECTORY then AccountsList.Free;
+	if Hdl = FIND_ROOT_DIRECTORY then FreeAndNil(AccountsList);
 
 	Result := 0;
 	FileCounter := 0;
@@ -1308,13 +1308,9 @@ begin
 	end;
 end;
 
-exports FsGetDefRootName, FsInit, FsInitW, FsFindFirst, FsFindFirstW, FsFindNext, FsFindNextW, FsFindClose, FsGetFile, FsGetFileW, FsDisconnect, FsDisconnectW, FsStatusInfo, FsStatusInfoW, FsPutFile, FsPutFileW, FsDeleteFile, FsDeleteFileW, FsMkDir, FsMkDirW, FsRemoveDir, FsRemoveDirW, FsSetCryptCallback, FsSetCryptCallbackW, FsExecuteFileW, FsRenMovFile, FsRenMovFileW, FsGetBackgroundFlags, FsContentGetSupportedField, FsContentGetValue, FsContentGetValueW, FsExtractCustomIcon, FsExtractCustomIconW;
-
+procedure InitPluginData;
 begin
-	GetMem(tmp, max_path);
-	GetModuleFilename(hInstance, tmp, max_path);
-	PluginPath := tmp;
-	freemem(tmp);
+	PluginPath := GetModuleName(hInstance);
 	AppDataDir := IncludeTrailingBackslash(IncludeTrailingBackslash(SysUtils.GetEnvironmentVariable('APPDATA')) + 'MailRuCloud');
 	PluginPath := IncludeTrailingBackslash(ExtractFilePath(PluginPath));
 
@@ -1369,6 +1365,41 @@ begin
 	ThreadSkipListRenMov := TDictionary<DWORD, Bool>.Create;
 	ThreadCanAbortRenMov := TDictionary<DWORD, Bool>.Create;
 	ThreadListingAborted := TDictionary<DWORD, Bool>.Create;
+end;
+
+procedure FreePluginData;
+begin
+	FreeAndNil(ThreadRetryCountDownload);
+	FreeAndNil(ThreadRetryCountUpload);
+	FreeAndNil(ThreadRetryCountRenMov);
+	FreeAndNil(ThreadSkipListDelete);
+	FreeAndNil(ThreadSkipListRenMov);
+	FreeAndNil(ThreadCanAbortRenMov);
+	FreeAndNil(ThreadListingAborted);
+	FreeAndNil(ConnectionManager);
+	FreeAndNil(AccountsList); //уже сделано, но не страшно, к тому же в будущем может не разрушаться ранее
+end;
+
+procedure DllInit(Code: integer);
+begin
+	case Code of
+		DLL_PROCESS_ATTACH:
+			begin
+				InitPluginData;
+			end;
+		DLL_PROCESS_DETACH:
+			begin
+				FreePluginData;
+			end;
+	end; //case
+end;
+
+exports FsGetDefRootName, FsInit, FsInitW, FsFindFirst, FsFindFirstW, FsFindNext, FsFindNextW, FsFindClose, FsGetFile, FsGetFileW, FsDisconnect, FsDisconnectW, FsStatusInfo, FsStatusInfoW, FsPutFile, FsPutFileW, FsDeleteFile, FsDeleteFileW, FsMkDir, FsMkDirW, FsRemoveDir, FsRemoveDirW, FsSetCryptCallback, FsSetCryptCallbackW, FsExecuteFileW, FsRenMovFile, FsRenMovFileW, FsGetBackgroundFlags, FsContentGetSupportedField, FsContentGetValue, FsContentGetValueW, FsExtractCustomIcon, FsExtractCustomIconW;
+
+begin
+	ReportMemoryLeaksOnShutdown := true;
+	DllProc := @DllInit;
+	DllInit(DLL_PROCESS_ATTACH);
 
 end.
 
