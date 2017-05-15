@@ -22,8 +22,6 @@ const
 {$ENDIF}
 
 var
-	//PlatformDllPath: WideString;
-	tmp: pWideChar;
 	AccountsIniFilePath: WideString;
 	SettingsIniFilePath: WideString;
 	GlobalPath, PluginPath, AppDataDir, IniDir: WideString;
