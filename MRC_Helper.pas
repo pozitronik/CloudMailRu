@@ -70,16 +70,17 @@ function FormatSize(size: Int64; SizeType: Integer = TYPE_MEGABYTES): WideString
 //Procedure FileLog(S: WideString);
 
 implementation
+
 {
-Procedure FileLog(S: WideString);
-var
-	f: textfile;
-begin
-	Assign(f, 'd:\WORK\CODE\CloudMailRu\log.txt');
-	Rewrite(f);
-	Write(f, S);
-	close(f);
-end;}
+ Procedure FileLog(S: WideString);
+ var
+ f: textfile;
+ begin
+ Assign(f, 'd:\WORK\CODE\CloudMailRu\log.txt');
+ Rewrite(f);
+ Write(f, S);
+ close(f);
+ end;}
 
 function Implode(S: TStringList; Delimiter: WideString): WideString;
 
@@ -283,7 +284,7 @@ begin
 		else IconsSizeSectionName := 'AllResolutions';
 
 		Result := TC_INI.ReadInteger(IconsSizeSectionName, 'Iconsize32', Result);
-
+		TC_INI.Free;
 	end;
 
 end;
