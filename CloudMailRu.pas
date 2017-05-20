@@ -666,6 +666,7 @@ begin
 		end;
 		BodyVal.free;
 	except
+		BodyVal.free;
 		Result := false;
 	end;
 
@@ -704,6 +705,7 @@ begin
 		end;
 		BodyVal.free;
 	except
+		BodyVal.free;
 		Result := false;
 	end;
 end;
@@ -738,6 +740,7 @@ begin
 		on E: {EJSON}Exception do
 		begin
 			Result := false;
+			BodyVal.free;
 			Log(MSGTYPE_IMPORTANTERROR, 'Can''t parse server answer: ' + JSON);
 		end;
 	end;
@@ -783,6 +786,7 @@ begin
 		on E: {EJSON}Exception do
 		begin
 			Result := false;
+			BodyVal.free;
 			Log(MSGTYPE_IMPORTANTERROR, 'Can''t parse server answer: ' + JSON);
 		end;
 	end;
@@ -810,6 +814,7 @@ begin
 	except
 		on E: {EJSON}Exception do
 		begin
+			BodyVal.free;
 			Result := false;
 			Log(MSGTYPE_IMPORTANTERROR, 'Can''t parse server answer: ' + JSON);
 			CloudMailRuOAuthInfo.error_code := CLOUD_ERROR_UNKNOWN;
@@ -874,6 +879,7 @@ begin
 		on E: {EJSON}Exception do
 		begin
 			Log(MSGTYPE_IMPORTANTERROR, 'Can''t parse server answer: ' + JSON);
+			BodyVal.free;
 			exit(CLOUD_ERROR_UNKNOWN);
 		end;
 	end;
@@ -890,6 +896,7 @@ begin
 		PublicLink := (BodyVal as TJSONObject).Values['body'].Value;
 		BodyVal.free;
 	except
+		BodyVal.free;
 		Result := false;
 	end;
 end;
@@ -904,6 +911,7 @@ begin
 		Shard := ((((BodyVal as TJSONObject).Values['body'] as TJSONObject).Values['get'] as TJSONArray).Items[0] as TJSONObject).Values['url'].Value;
 		BodyVal.free;
 	except
+		BodyVal.free;
 		Result := false;
 	end;
 
@@ -944,6 +952,7 @@ begin
 		end;
 		BodyVal.free;
 	except
+		BodyVal.free;
 		Result := false;
 	end;
 end;
@@ -965,6 +974,7 @@ begin
 		end;
 		BodyVal.free;
 	except
+		BodyVal.free;
 		Result := false;
 	end;
 end;
