@@ -1231,7 +1231,7 @@ begin
 	begin
 		strpcopy(RemoteName, 'cloud_trash');
 		TheIcon := GetSystemIcon(GetFolderIconSize(IconsSize));
-		exit;
+		exit(FS_ICON_EXTRACTED_DESTROY);
 	end;
 
 	if RealPath.sharedDir then
@@ -1240,7 +1240,7 @@ begin
 		begin
 			strpcopy(RemoteName, 'shared');
 			TheIcon := CombineIcons(LoadImageW(hInstance, RemoteName, IMAGE_ICON, IconsSize, IconsSize, LR_DEFAULTCOLOR), GetFolderIcon(GetFolderIconSize(IconsSize)));
-			exit;
+			exit(FS_ICON_EXTRACTED_DESTROY);
 		end else begin
 			if IconsMode = IconsModeDisabled then IconsMode := IconsModeInternalOverlay; //always draw icons in shared links directory
 		end;
@@ -1252,7 +1252,7 @@ begin
 		begin
 			strpcopy(RemoteName, 'shared_incoming');
 			TheIcon := CombineIcons(LoadImageW(hInstance, RemoteName, IMAGE_ICON, IconsSize, IconsSize, LR_DEFAULTCOLOR), GetFolderIcon(GetFolderIconSize(IconsSize)));
-			exit;
+			exit(FS_ICON_EXTRACTED_DESTROY);
 		end else begin
 
 			CurrentInviteItem := FindIncomingInviteItemByPath(CurrentIncomingInvitesListing, RealPath);
@@ -1266,7 +1266,7 @@ begin
 				strpcopy(RemoteName, 'shared');
 				TheIcon := CombineIcons(LoadImageW(hInstance, RemoteName, IMAGE_ICON, IconsSize, IconsSize, LR_DEFAULTCOLOR), GetFolderIcon(GetFolderIconSize(IconsSize)));
 			end;
-			exit;
+			exit(FS_ICON_EXTRACTED_DESTROY);
 
 		end;
 	end;
@@ -1295,12 +1295,14 @@ begin
 			begin
 				TheIcon := LoadPluginIcon(PluginPath + 'icons', RemoteName);
 				if TheIcon = INVALID_HANDLE_VALUE then exit(FS_ICON_USEDEFAULT);
+				exit(FS_ICON_EXTRACTED_DESTROY);
 			end;
 		IconsModeExternalOverlay:
 			begin
 				TheIcon := LoadPluginIcon(PluginPath + 'icons', RemoteName);
 				if TheIcon = INVALID_HANDLE_VALUE then exit(FS_ICON_USEDEFAULT);
 				TheIcon := CombineIcons(TheIcon, GetFolderIcon(GetFolderIconSize(IconsSize)));
+				exit(FS_ICON_EXTRACTED_DESTROY);
 			end;
 
 	end;
