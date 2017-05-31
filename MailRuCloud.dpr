@@ -43,7 +43,6 @@ var
 	MyLogProc: TLogProcW;
 	MyRequestProc: TRequestProcW;
 	MyCryptProc: TCryptProcW;
-
 	CurrentListing: TCloudMailRuDirListing;
 	CurrentIncomingInvitesListing: TCloudMailRuIncomingInviteInfoListing;
 	ConnectionManager: TConnectionManager;
@@ -227,14 +226,14 @@ begin
 end;
 
 function FsInit(PluginNr: integer; pProgressProc: TProgressProc; pLogProc: TLogProc; pRequestProc: TRequestProc): integer; stdcall;
-Begin
+begin
 	Result := 0;
 end;
 
 {GLORIOUS UNICODE MASTER RACE}
 
 function FsInitW(PluginNr: integer; pProgressProc: TProgressProcW; pLogProc: TLogProcW; pRequestProc: TRequestProcW): integer; stdcall; //Вход в плагин.
-Begin
+begin
 	PluginNum := PluginNr;
 	MyProgressProc := pProgressProc;
 	MyLogProc := pLogProc;
@@ -248,7 +247,6 @@ procedure FsStatusInfoW(RemoteDir: PWideChar; InfoStartEnd, InfoOperation: integ
 var
 	RealPath: TRealPath;
 	getResult: integer;
-
 begin
 	RealPath := ExtractRealPath(RemoteDir);
 	if (InfoStartEnd = FS_STATUS_START) then
@@ -532,7 +530,7 @@ begin
 end;
 
 function FsFindClose(Hdl: THandle): integer; stdcall;
-Begin //Завершение получения списка файлов. Result тоталом не используется (всегда равен 0)
+begin //Завершение получения списка файлов. Result тоталом не используется (всегда равен 0)
 	//SetLength(CurrentListing, 0); // Пусть будет
 	if Hdl = FIND_ROOT_DIRECTORY then FreeAndNil(AccountsList);
 
@@ -700,7 +698,7 @@ end;
 function FsExecuteFileW(MainWin: THandle; RemoteName, Verb: PWideChar): integer; stdcall; //Запуск файла
 var
 	RealPath: TRealPath;
-Begin
+begin
 	RealPath := ExtractRealPath(RemoteName);
 	Result := FS_EXEC_OK;
 
@@ -720,7 +718,7 @@ Begin
 
 	//if copy(Verb, 1, 5) = 'chmod' then exit; //future usage
 
-End;
+end;
 
 function GetRemoteFile(RemotePath: TRealPath; LocalName, RemoteName: WideString; CopyFlags: integer): integer;
 var
@@ -749,7 +747,7 @@ var
 	RetryAttempts: integer;
 begin
 	Result := FS_FILE_NOTSUPPORTED;
-	If CheckFlag(FS_COPYFLAGS_RESUME, CopyFlags) then exit; {NEVER CALLED HERE}
+	if CheckFlag(FS_COPYFLAGS_RESUME, CopyFlags) then exit; {NEVER CALLED HERE}
 	RealPath := ExtractRealPath(RemoteName);
 	if RealPath.trashDir or RealPath.sharedDir or RealPath.invitesDir then exit;
 
@@ -885,7 +883,7 @@ var
 	Cloud: TCloudMailRu;
 	InvitesListing: TCloudMailRuInviteInfoListing;
 	Invite: TCloudMailRuInviteInfo;
-Begin
+begin
 	RealPath := ExtractRealPath(WideString(RemoteName));
 	if (RealPath.account = '') or RealPath.trashDir or RealPath.invitesDir then exit(false);
 	Cloud := ConnectionManager.get(RealPath.account, getResult);
@@ -898,14 +896,14 @@ Begin
 		Result := true;
 	end
 	else Result := Cloud.deleteFile(RealPath.path);
-End;
+end;
 
 function FsMkDirW(path: PWideChar): Bool; stdcall;
 var
 	RealPath: TRealPath;
 	getResult: integer;
 	SkipListRenMov: Bool;
-Begin
+begin
 	ThreadSkipListRenMov.TryGetValue(GetCurrentThreadID(), SkipListRenMov);
 	if SkipListRenMov then exit(false); //skip create directory if this flag set on
 
@@ -919,7 +917,7 @@ var
 	RealPath: TRealPath;
 	getResult: integer;
 	ListingAborted: Bool;
-Begin
+begin
 	ThreadListingAborted.TryGetValue(GetCurrentThreadID(), ListingAborted);
 	if ListingAborted then
 	begin
@@ -931,13 +929,13 @@ Begin
 	Result := ConnectionManager.get(RealPath.account, getResult).removeDir(RealPath.path);
 end;
 
-Function cloneWeblink(NewCloud, OldCloud: TCloudMailRu; CloudPath: WideString; CurrentItem: TCloudMailRuDirListingItem; NeedUnpublish: Boolean): integer;
+function cloneWeblink(NewCloud, OldCloud: TCloudMailRu; CloudPath: WideString; CurrentItem: TCloudMailRuDirListingItem; NeedUnpublish: Boolean): integer;
 begin
 	Result := NewCloud.cloneWeblink(ExtractFileDir(CloudPath), CurrentItem.WebLink, CLOUD_CONFLICT_STRICT);
 	if (NeedUnpublish) and not(OldCloud.publishFile(CurrentItem.home, CurrentItem.WebLink, CLOUD_UNPUBLISH)) then LogHandle(LogLevelError, MSGTYPE_IMPORTANTERROR, PWideChar('Can''t remove temporary public link on ' + CurrentItem.home));
 end;
 
-Function RenMoveFileViaPublicLink(OldCloud, NewCloud: TCloudMailRu; OldRealPath, NewRealPath: TRealPath; Move, OverWrite: Boolean): integer;
+function RenMoveFileViaPublicLink(OldCloud, NewCloud: TCloudMailRu; OldRealPath, NewRealPath: TRealPath; Move, OverWrite: Boolean): integer;
 var
 	NeedUnpublish: Boolean;
 	CurrentItem: TCloudMailRuDirListingItem;
@@ -1005,7 +1003,7 @@ var
 	NewRealPath: TRealPath;
 	getResult: integer;
 	OldCloud, NewCloud: TCloudMailRu;
-Begin
+begin
 	MyProgressProc(PluginNum, OldName, NewName, 0);
 
 	OldRealPath := ExtractRealPath(WideString(OldName));
@@ -1237,7 +1235,7 @@ begin
 	begin
 		strpcopy(RemoteName, 'cloud_trash');
 		TheIcon := GetSystemIcon(GetFolderIconSize(IconsSize));
-		exit;
+		exit(FS_ICON_EXTRACTED_DESTROY);
 	end;
 
 	if RealPath.sharedDir then
@@ -1246,7 +1244,7 @@ begin
 		begin
 			strpcopy(RemoteName, 'shared');
 			TheIcon := CombineIcons(LoadImageW(hInstance, RemoteName, IMAGE_ICON, IconsSize, IconsSize, LR_DEFAULTCOLOR), GetFolderIcon(GetFolderIconSize(IconsSize)));
-			exit;
+			exit(FS_ICON_EXTRACTED_DESTROY);
 		end else begin
 			if IconsMode = IconsModeDisabled then IconsMode := IconsModeInternalOverlay; //always draw icons in shared links directory
 		end;
@@ -1258,7 +1256,7 @@ begin
 		begin
 			strpcopy(RemoteName, 'shared_incoming');
 			TheIcon := CombineIcons(LoadImageW(hInstance, RemoteName, IMAGE_ICON, IconsSize, IconsSize, LR_DEFAULTCOLOR), GetFolderIcon(GetFolderIconSize(IconsSize)));
-			exit;
+			exit(FS_ICON_EXTRACTED_DESTROY);
 		end else begin
 
 			CurrentInviteItem := FindIncomingInviteItemByPath(CurrentIncomingInvitesListing, RealPath);
@@ -1272,7 +1270,7 @@ begin
 				strpcopy(RemoteName, 'shared');
 				TheIcon := CombineIcons(LoadImageW(hInstance, RemoteName, IMAGE_ICON, IconsSize, IconsSize, LR_DEFAULTCOLOR), GetFolderIcon(GetFolderIconSize(IconsSize)));
 			end;
-			exit;
+			exit(FS_ICON_EXTRACTED_DESTROY);
 
 		end;
 	end;
@@ -1301,12 +1299,14 @@ begin
 			begin
 				TheIcon := LoadPluginIcon(PluginPath + 'icons', RemoteName);
 				if TheIcon = INVALID_HANDLE_VALUE then exit(FS_ICON_USEDEFAULT);
+				exit(FS_ICON_EXTRACTED_DESTROY);
 			end;
 		IconsModeExternalOverlay:
 			begin
 				TheIcon := LoadPluginIcon(PluginPath + 'icons', RemoteName);
 				if TheIcon = INVALID_HANDLE_VALUE then exit(FS_ICON_USEDEFAULT);
 				TheIcon := CombineIcons(TheIcon, GetFolderIcon(GetFolderIconSize(IconsSize)));
+				exit(FS_ICON_EXTRACTED_DESTROY);
 			end;
 
 	end;
@@ -1320,7 +1320,7 @@ begin
 
 	if not FileExists(PluginPath + 'MailRuCloud.global.ini') then
 	begin
-		If IsWriteable(PluginPath) then
+		if IsWriteable(PluginPath) then
 		begin
 			IniDir := PluginPath;
 		end else begin
@@ -1382,7 +1382,7 @@ begin
 	FreeAndNil(ThreadListingAborted);
 	FreeAndNil(ConnectionManager);
 	FreeAndNil(AccountsList); //уже сделано, но не страшно, к тому же в будущем может не разрушаться ранее
-	CurrentDescriptions.Destroy;
+	CurrentDescriptions.Free;
 end;
 
 procedure DllInit(Code: integer);
@@ -1399,7 +1399,10 @@ begin
 	end; //case
 end;
 
-exports FsGetDefRootName, FsInit, FsInitW, FsFindFirst, FsFindFirstW, FsFindNext, FsFindNextW, FsFindClose, FsGetFile, FsGetFileW, FsDisconnect, FsDisconnectW, FsStatusInfo, FsStatusInfoW, FsPutFile, FsPutFileW, FsDeleteFile, FsDeleteFileW, FsMkDir, FsMkDirW, FsRemoveDir, FsRemoveDirW, FsSetCryptCallback, FsSetCryptCallbackW, FsExecuteFileW, FsRenMovFile, FsRenMovFileW, FsGetBackgroundFlags, FsContentGetSupportedField, FsContentGetValue, FsContentGetValueW, FsExtractCustomIcon, FsExtractCustomIconW;
+exports
+	FsGetDefRootName, FsInit, FsInitW, FsFindFirst, FsFindFirstW, FsFindNext, FsFindNextW, FsFindClose, FsGetFile, FsGetFileW, FsDisconnect, FsDisconnectW, FsStatusInfo,
+	FsStatusInfoW, FsPutFile, FsPutFileW, FsDeleteFile, FsDeleteFileW, FsMkDir, FsMkDirW, FsRemoveDir, FsRemoveDirW, FsSetCryptCallback, FsSetCryptCallbackW, FsExecuteFileW,
+	FsRenMovFile, FsRenMovFileW, FsGetBackgroundFlags, FsContentGetSupportedField, FsContentGetValue, FsContentGetValueW, FsExtractCustomIcon, FsExtractCustomIconW;
 
 begin
 	//ReportMemoryLeaksOnShutdown := true;

@@ -65,6 +65,7 @@ end;
 destructor TConnectionManager.Destroy;
 begin
 	freeAll();
+	inherited;
 end;
 
 function TConnectionManager.get(connectionName: WideString; var OperationResult: Integer; doInit: boolean = true): TCloudMailRu;

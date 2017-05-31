@@ -44,6 +44,7 @@ end;
 destructor TDescription.Destroy;
 begin
 	self.items.Free;
+	inherited;
 end;
 
 function TDescription.DetermineEncoding(): TEncoding;
@@ -106,6 +107,5 @@ begin
 	end;
 	fStream.Free;
 end;
-
 
 end.
