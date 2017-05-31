@@ -52,7 +52,8 @@ var
 
 procedure LogHandle(LogLevel, MsgType: integer; LogString: PWideChar); stdcall;
 begin
-	if (LogLevel >= GetPluginSettings(SettingsIniFilePath).LogLevel) and (Assigned(MyLogProc)) then MyLogProc(PluginNum, MsgType, LogString);
+//todo: включение значения
+	if {(LogLevel >= GetPluginSettings(SettingsIniFilePath).LogLevel) and} (Assigned(MyLogProc)) then MyLogProc(PluginNum, MsgType, LogString);
 end;
 
 function CloudMailRuDirListingItemToFindData(DirListing: TCloudMailRuDirListingItem; DirsAsSymlinks: Boolean = false): tWIN32FINDDATAW;
