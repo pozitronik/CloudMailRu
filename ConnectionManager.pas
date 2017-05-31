@@ -25,7 +25,7 @@ type
 		PluginNum: Integer;
 
 		MyProgressProc: TProgressProcW;
-		MyLogProc: TLogProcW;
+		LogHandleProc: TLogHandler;
 		MyRequestProc: TRequestProcW;
 
 		function ConnectionExists(connectionName: WideString): Integer; //проверяет существование подключение
@@ -35,7 +35,7 @@ type
 	public
 		CryptoNum: Integer;
 		MyCryptProc: TCryptProcW;
-		constructor Create(IniFileName: WideString; PluginNum: Integer; MyProgressProc: TProgressProcW; MyLogProc: TLogProcW; ProxySettings: TProxySettings; Timeout, CloudMaxFileSize: Integer; MyRequestProc: TRequestProcW);
+		constructor Create(IniFileName: WideString; PluginNum: Integer; MyProgressProc: TProgressProcW; LogHandleProc: TLogHandler; ProxySettings: TProxySettings; Timeout, CloudMaxFileSize: Integer; MyRequestProc: TRequestProcW);
 		destructor Destroy(); override;
 		function get(connectionName: WideString; var OperationResult: Integer; doInit: boolean = true): TCloudMailRu; //возвращает готовое подклчение по имени
 		function set_(connectionName: WideString; cloud: TCloudMailRu): boolean;
@@ -49,13 +49,13 @@ type
 implementation
 
 {TConnectionManager}
-constructor TConnectionManager.Create(IniFileName: WideString; PluginNum: Integer; MyProgressProc: TProgressProcW; MyLogProc: TLogProcW; ProxySettings: TProxySettings; Timeout, CloudMaxFileSize: Integer; MyRequestProc: TRequestProcW);
+constructor TConnectionManager.Create(IniFileName: WideString; PluginNum: Integer; MyProgressProc: TProgressProcW; LogHandleProc: TLogHandler; ProxySettings: TProxySettings; Timeout, CloudMaxFileSize: Integer; MyRequestProc: TRequestProcW);
 begin
 	SetLength(Connections, 0);
 	self.IniFileName := IniFileName;
 	self.PluginNum := PluginNum;
 	self.MyProgressProc := MyProgressProc;
-	self.MyLogProc := MyLogProc;
+	self.LogHandleProc := LogHandleProc;
 	self.MyRequestProc := MyRequestProc;
 	self.Proxy := ProxySettings;
 	self.Timeout := Timeout;
@@ -108,9 +108,9 @@ begin
 
 	if not GetMyPasswordNow(AccountSettings) then exit(CLOUD_OPERATION_ERROR_STATUS_UNKNOWN); //INVALID_HANDLE_VALUE
 
-	MyLogProc(PluginNum, MSGTYPE_CONNECT, PWideChar('CONNECT \' + connectionName));
+	LogHandleProc(LogLevelConnect, MSGTYPE_CONNECT, PWideChar('CONNECT \' + connectionName));
 
-	cloud := TCloudMailRu.Create(AccountSettings, self.CloudMaxFileSize, self.Proxy, Timeout, MyProgressProc, PluginNum, MyLogProc, MyRequestProc);
+	cloud := TCloudMailRu.Create(AccountSettings, self.CloudMaxFileSize, self.Proxy, Timeout, MyProgressProc, PluginNum, LogHandleProc, MyRequestProc);
 	if not set_(connectionName, cloud) then exit(CLOUD_OPERATION_ERROR_STATUS_UNKNOWN); //INVALID_HANDLE_VALUE
 
 	if (AccountSettings.twostep_auth) then LoginMethod := 1
@@ -191,7 +191,7 @@ begin
 		CryptResult := MyCryptProc(PluginNum, CryptoNum, FS_CRYPT_LOAD_PASSWORD_NO_UI, PWideChar(AccountSettings.Name), buf, 1024); //Пытаемся взять пароль по-тихому
 		if CryptResult = FS_FILE_NOTFOUND then
 		begin
-			MyLogProc(PluginNum, msgtype_details, PWideChar('No master password entered yet'));
+			LogHandleProc(LogLevelDetail, msgtype_details, PWideChar('No master password entered yet'));
 			CryptResult := MyCryptProc(PluginNum, CryptoNum, FS_CRYPT_LOAD_PASSWORD, PWideChar(AccountSettings.Name), buf, 1024);
 		end;
 		if CryptResult = FS_FILE_OK then //Успешно получили пароль
@@ -201,11 +201,11 @@ begin
 		end;
 		if CryptResult = FS_FILE_NOTSUPPORTED then //пользователь отменил ввод главного пароля
 		begin
-			MyLogProc(PluginNum, msgtype_importanterror, PWideChar('CryptProc returns error: Decrypt failed'));
+			LogHandleProc(LogLevelWarning, msgtype_importanterror, PWideChar('CryptProc returns error: Decrypt failed'));
 		end;
 		if CryptResult = FS_FILE_READERROR then
 		begin
-			MyLogProc(PluginNum, msgtype_importanterror, PWideChar('CryptProc returns error: Password not found in password store'));
+			LogHandleProc(LogLevelError, msgtype_importanterror, PWideChar('CryptProc returns error: Password not found in password store'));
 		end;
 		FreeMemory(buf);
 	end; //else // ничего не делаем, пароль уже должен быть в настройках (взят в открытом виде из инишника)
@@ -222,7 +222,7 @@ begin
 				case MyCryptProc(PluginNum, CryptoNum, FS_CRYPT_SAVE_PASSWORD, PWideChar(AccountSettings.Name), PWideChar(AccountSettings.password), SizeOf(AccountSettings.password)) of
 					FS_FILE_OK:
 						begin //TC скушал пароль, запомним в инишник галочку
-							MyLogProc(PluginNum, msgtype_details, PWideChar('Password saved in TC password manager'));
+							LogHandleProc(LogLevelDebug, msgtype_details, PWideChar('Password saved in TC password manager'));
 							TmpString := AccountSettings.password;
 							AccountSettings.password := '';
 							SetAccountSettingsToIniFile(IniFileName, AccountSettings);
@@ -230,15 +230,15 @@ begin
 						end;
 					FS_FILE_NOTSUPPORTED: //Сохранение не получилось
 						begin
-							MyLogProc(PluginNum, msgtype_importanterror, PWideChar('CryptProc returns error: Encrypt failed'));
+							LogHandleProc(LogLevelError, msgtype_importanterror, PWideChar('CryptProc returns error: Encrypt failed'));
 						end;
 					FS_FILE_WRITEERROR: //Сохранение опять не получилось
 						begin
-							MyLogProc(PluginNum, msgtype_importanterror, PWideChar('Password NOT saved: Could not write password to password store'));
+							LogHandleProc(LogLevelError, msgtype_importanterror, PWideChar('Password NOT saved: Could not write password to password store'));
 						end;
 					FS_FILE_NOTFOUND: //Не указан мастер-пароль
 						begin
-							MyLogProc(PluginNum, msgtype_importanterror, PWideChar('Password NOT saved: No master password entered yet'));
+							LogHandleProc(LogLevelError, msgtype_importanterror, PWideChar('Password NOT saved: No master password entered yet'));
 						end;
 					//Ошибки здесь не значат, что пароль мы не получили - он может быть введён в диалоге
 				end;

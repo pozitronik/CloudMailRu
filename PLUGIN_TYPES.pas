@@ -146,6 +146,8 @@ type
 
 	{------------------------------------------------------------------------------}
 
+	TLogHandler = procedure(LogLevel, MsgType: integer; LogString: pwidechar); stdcall;
+
 implementation
 
 end.

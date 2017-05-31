@@ -50,6 +50,11 @@ var
 	CurrentDescriptions: TDescription;
 	ProxySettings: TProxySettings;
 
+procedure LogHandle(LogLevel, MsgType: integer; LogString: PWideChar); stdcall;
+begin
+	if (LogLevel >= GetPluginSettings(SettingsIniFilePath).LogLevel) and (Assigned(MyLogProc)) then MyLogProc(PluginNum, MsgType, LogString);
+end;
+
 function CloudMailRuDirListingItemToFindData(DirListing: TCloudMailRuDirListingItem; DirsAsSymlinks: Boolean = false): tWIN32FINDDATAW;
 begin
 	if (DirListing.deleted_from <> '') then //items inside trash bin
@@ -135,7 +140,7 @@ begin
 		end;
 		if Cloud.statusFile(path.path, Result) then //Обычный каталог
 		begin
-			if (Result.home = '') and not Cloud.isPublicShare then MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, pWideChar('Cant find file ' + path.path)); {Такого быть не может, но...}
+			if (Result.home = '') and not Cloud.isPublicShare then LogHandle(LogLevelError, MSGTYPE_IMPORTANTERROR, PWideChar('Cant find file ' + path.path)); {Такого быть не может, но...}
 		end;
 	end; //Не рапортуем, это будет уровнем выше
 end;
@@ -169,12 +174,12 @@ begin
 	DeleteFailOnUploadModeAsked := IDRETRY;
 	UNCLocalName := GetUNCFilePath(LocalName);
 
-	while (not DeleteFileW(pWideChar(UNCLocalName))) and (DeleteFailOnUploadModeAsked = IDRETRY) do
+	while (not DeleteFileW(PWideChar(UNCLocalName))) and (DeleteFailOnUploadModeAsked = IDRETRY) do
 	begin
 		DeleteFailOnUploadMode := GetPluginSettings(SettingsIniFilePath).DeleteFailOnUploadMode;
 		if DeleteFailOnUploadMode = DeleteFailOnUploadAsk then
 		begin
-			DeleteFailOnUploadModeAsked := messagebox(FindTCWindow, pWideChar('Can''t delete file ' + LocalName + '. Continue operation?'), 'File deletion error', MB_ABORTRETRYIGNORE + MB_ICONQUESTION);
+			DeleteFailOnUploadModeAsked := messagebox(FindTCWindow, PWideChar('Can''t delete file ' + LocalName + '. Continue operation?'), 'File deletion error', MB_ABORTRETRYIGNORE + MB_ICONQUESTION);
 			case DeleteFailOnUploadModeAsked of
 				IDRETRY: continue;
 				IDABORT: DeleteFailOnUploadMode := DeleteFailOnUploadAbort;
@@ -185,30 +190,30 @@ begin
 		case DeleteFailOnUploadMode of
 			DeleteFailOnUploadAbort:
 				begin
-					MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, pWideChar('Can''t delete file ' + LocalName + ', aborted'));
+					LogHandle(LogLevelDetail, MSGTYPE_IMPORTANTERROR, PWideChar('Can''t delete file ' + LocalName + ', aborted'));
 					exit(FS_FILE_NOTSUPPORTED);
 				end;
 			DeleteFailOnUploadDeleteIgnore, DeleteFailOnUploadDeleteAbort:
 				begin
 					//check if file just have RO attr, then remove it. If user has lack of rights, then ignore or abort
-					if ((FileGetAttr(UNCLocalName) or faReadOnly) <> 0) and ((FileSetAttr(UNCLocalName, not faReadOnly) = 0) and (DeleteFileW(pWideChar(UNCLocalName)))) then
+					if ((FileGetAttr(UNCLocalName) or faReadOnly) <> 0) and ((FileSetAttr(UNCLocalName, not faReadOnly) = 0) and (DeleteFileW(PWideChar(UNCLocalName)))) then
 					begin
-						MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, pWideChar('Read only file ' + LocalName + ' deleted'));
+						LogHandle(LogLevelDetail, MSGTYPE_IMPORTANTERROR, PWideChar('Read only file ' + LocalName + ' deleted'));
 						exit(FS_FILE_OK);
 					end else begin
 						if GetPluginSettings(SettingsIniFilePath).DeleteFailOnUploadMode = DeleteFailOnUploadDeleteIgnore then
 						begin
-							MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, pWideChar('Can''t delete file ' + LocalName + ', ignored'));
+							LogHandle(LogLevelDetail, MSGTYPE_IMPORTANTERROR, PWideChar('Can''t delete file ' + LocalName + ', ignored'));
 							exit(FS_FILE_OK);
 						end else begin
-							MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, pWideChar('Can''t delete file ' + LocalName + ', aborted'));
+							LogHandle(LogLevelDetail, MSGTYPE_IMPORTANTERROR, PWideChar('Can''t delete file ' + LocalName + ', aborted'));
 							exit(FS_FILE_NOTSUPPORTED);
 						end;
 					end;
 				end;
 			else
 				begin
-					MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, pWideChar('Can''t delete file ' + LocalName + ', ignored'));
+					LogHandle(LogLevelDetail, MSGTYPE_IMPORTANTERROR, PWideChar('Can''t delete file ' + LocalName + ', ignored'));
 				end;
 		end;
 	end;
@@ -238,7 +243,7 @@ Begin
 
 end;
 
-procedure FsStatusInfoW(RemoteDir: pWideChar; InfoStartEnd, InfoOperation: integer); stdcall; //Начало и конец операций FS
+procedure FsStatusInfoW(RemoteDir: PWideChar; InfoStartEnd, InfoOperation: integer); stdcall; //Начало и конец операций FS
 var
 	RealPath: TRealPath;
 	getResult: integer;
@@ -283,7 +288,7 @@ begin
 				begin
 					if ConnectionManager.get(RealPath.account, getResult).isPublicShare then
 					begin
-						MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, pWideChar('Direct copying from public accounts not supported'));
+						LogHandle(LogLevelWarning, MSGTYPE_IMPORTANTERROR, PWideChar('Direct copying from public accounts not supported'));
 						ThreadSkipListRenMov.AddOrSetValue(GetCurrentThreadID, true);
 					end;
 					ThreadRetryCountRenMov.AddOrSetValue(GetCurrentThreadID(), 0);
@@ -416,7 +421,7 @@ begin
 	end;
 end;
 
-function FsFindFirstW(path: pWideChar; var FindData: tWIN32FINDDATAW): THandle; stdcall;
+function FsFindFirstW(path: PWideChar; var FindData: tWIN32FINDDATAW): THandle; stdcall;
 var //Получение первого файла в папке. Result тоталом не используется (можно использовать для работы плагина).
 	RealPath: TRealPath;
 	getResult: integer;
@@ -560,7 +565,7 @@ begin
 	PostMessage(MainWin, WM_USER + 51, 540, 0); //TC does not update current panel, so we should do it this way
 end;
 
-function ExecSharedAction(MainWin: THandle; RealPath: TRealPath; RemoteName: pWideChar; ActionOpen: Boolean = true): integer;
+function ExecSharedAction(MainWin: THandle; RealPath: TRealPath; RemoteName: PWideChar; ActionOpen: Boolean = true): integer;
 var
 	Cloud: TCloudMailRu;
 	CurrentItem: TCloudMailRuDirListingItem;
@@ -631,7 +636,7 @@ begin
 	end;
 end;
 
-function ExecCommand(RemoteName: pWideChar; command: WideString; Parameter: WideString = ''): integer;
+function ExecCommand(RemoteName: PWideChar; command: WideString; Parameter: WideString = ''): integer;
 var
 	RealPath: TRealPath;
 	getResult: integer;
@@ -691,7 +696,7 @@ begin
 
 end;
 
-function FsExecuteFileW(MainWin: THandle; RemoteName, Verb: pWideChar): integer; stdcall; //Запуск файла
+function FsExecuteFileW(MainWin: THandle; RemoteName, Verb: PWideChar): integer; stdcall; //Запуск файла
 var
 	RealPath: TRealPath;
 Begin
@@ -731,12 +736,12 @@ begin
 			if Item.mtime <> 0 then SetAllFileTime(ExpandUNCFileName(LocalName), DateTimeToFileTime(UnixToDateTime(Item.mtime)));
 		end;
 		if CheckFlag(FS_COPYFLAGS_MOVE, CopyFlags) then ConnectionManager.get(RemotePath.account, getResult).deleteFile(RemotePath.path);
-		MyProgressProc(PluginNum, pWideChar(LocalName), pWideChar(RemoteName), 100);
-		MyLogProc(PluginNum, MSGTYPE_TRANSFERCOMPLETE, pWideChar(RemoteName + '->' + LocalName));
+		MyProgressProc(PluginNum, PWideChar(LocalName), PWideChar(RemoteName), 100);
+		LogHandle(LogLevelFileOperation, MSGTYPE_TRANSFERCOMPLETE, PWideChar(RemoteName + '->' + LocalName));
 	end;
 end;
 
-function FsGetFileW(RemoteName, LocalName: pWideChar; CopyFlags: integer; RemoteInfo: pRemoteInfo): integer; stdcall; //Копирование файла из файловой системы плагина
+function FsGetFileW(RemoteName, LocalName: PWideChar; CopyFlags: integer; RemoteInfo: pRemoteInfo): integer; stdcall; //Копирование файла из файловой системы плагина
 var
 	RealPath: TRealPath;
 	OverwriteLocalMode: integer;
@@ -756,10 +761,10 @@ begin
 			OverwriteLocalModeAsk: exit(FS_FILE_EXISTS); //TC will ask user
 			OverwriteLocalModeIgnore:
 				begin
-					MyLogProc(PluginNum, msgtype_details, pWideChar('Local file ' + LocalName + ' exists, ignored'));
+					LogHandle(LogLevelDetail, msgtype_details, PWideChar('Local file ' + LocalName + ' exists, ignored'));
 					exit(FS_FILE_OK);
 				end;
-			OverwriteLocalModeOverwrite: MyLogProc(PluginNum, msgtype_details, pWideChar('Local file ' + LocalName + ' exists, and will be overwritten'));
+			OverwriteLocalModeOverwrite: LogHandle(LogLevelDetail, msgtype_details, PWideChar('Local file ' + LocalName + ' exists, and will be overwritten'));
 		end;
 	end;
 
@@ -772,7 +777,7 @@ begin
 			begin
 				while (not(Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
 				begin
-					case (messagebox(FindTCWindow, pWideChar('Error downloading file' + sLineBreak + RemoteName + sLineBreak + 'Continue operation?'), 'Download error', MB_ABORTRETRYIGNORE + MB_ICONERROR)) of
+					case (messagebox(FindTCWindow, PWideChar('Error downloading file' + sLineBreak + RemoteName + sLineBreak + 'Continue operation?'), 'Download error', MB_ABORTRETRYIGNORE + MB_ICONERROR)) of
 						ID_ABORT: Result := FS_FILE_USERABORT;
 						ID_RETRY: Result := GetRemoteFile(RealPath, LocalName, RemoteName, CopyFlags);
 						ID_IGNORE: break;
@@ -788,9 +793,9 @@ begin
 				while (ThreadRetryCountDownload.Items[GetCurrentThreadID()] <> RetryAttempts) and (not(Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
 				begin
 					ThreadRetryCountDownload.Items[GetCurrentThreadID()] := ThreadRetryCountDownload.Items[GetCurrentThreadID()] + 1;
-					MyLogProc(PluginNum, msgtype_details, pWideChar('Error downloading file ' + RemoteName + ' Retry attempt ' + ThreadRetryCountDownload.Items[GetCurrentThreadID()].ToString + RetryAttemptsToString(RetryAttempts)));
+					LogHandle(LogLevelDetail, msgtype_details, PWideChar('Error downloading file ' + RemoteName + ' Retry attempt ' + ThreadRetryCountDownload.Items[GetCurrentThreadID()].ToString + RetryAttemptsToString(RetryAttempts)));
 					Result := GetRemoteFile(RealPath, LocalName, RemoteName, CopyFlags);
-					if MyProgressProc(PluginNum, pWideChar(LocalName), RemoteName, 0) = 1 then Result := FS_FILE_USERABORT;
+					if MyProgressProc(PluginNum, PWideChar(LocalName), RemoteName, 0) = 1 then Result := FS_FILE_USERABORT;
 					if (Result in [FS_FILE_OK, FS_FILE_USERABORT]) then ThreadRetryCountDownload.Items[GetCurrentThreadID()] := 0; //сбросим счётчик попыток
 					ProcessMessages;
 					Sleep(GetPluginSettings(SettingsIniFilePath).AttemptWait);
@@ -807,14 +812,14 @@ begin
 	Result := ConnectionManager.get(RemotePath.account, getResult).putFile(WideString(LocalName), RemotePath.path);
 	if Result = FS_FILE_OK then
 	begin
-		MyProgressProc(PluginNum, pWideChar(LocalName), pWideChar(RemotePath.path), 100);
-		MyLogProc(PluginNum, MSGTYPE_TRANSFERCOMPLETE, pWideChar(LocalName + '->' + RemoteName));
+		MyProgressProc(PluginNum, PWideChar(LocalName), PWideChar(RemotePath.path), 100);
+		LogHandle(LogLevelFileOperation, MSGTYPE_TRANSFERCOMPLETE, PWideChar(LocalName + '->' + RemoteName));
 		if CheckFlag(FS_COPYFLAGS_MOVE, CopyFlags) then Result := DeleteLocalFile(LocalName);
 	end;
 
 end;
 
-function FsPutFileW(LocalName, RemoteName: pWideChar; CopyFlags: integer): integer; stdcall;
+function FsPutFileW(LocalName, RemoteName: PWideChar; CopyFlags: integer): integer; stdcall;
 var
 	RealPath: TRealPath;
 	RetryAttempts: integer;
@@ -823,7 +828,7 @@ begin
 
 	RealPath := ExtractRealPath(RemoteName);
 	if (RealPath.account = '') or RealPath.trashDir or RealPath.sharedDir or RealPath.invitesDir then exit(FS_FILE_NOTSUPPORTED);
-	MyProgressProc(PluginNum, LocalName, pWideChar(RealPath.path), 0);
+	MyProgressProc(PluginNum, LocalName, PWideChar(RealPath.path), 0);
 
 	if CheckFlag(FS_COPYFLAGS_RESUME, CopyFlags) then exit(FS_FILE_NOTSUPPORTED); //NOT SUPPORTED
 
@@ -843,7 +848,7 @@ begin
 			begin
 				while (not(Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
 				begin
-					case (messagebox(FindTCWindow, pWideChar('Error uploading file' + sLineBreak + LocalName + sLineBreak + 'Continue operation?'), 'Upload error', MB_ABORTRETRYIGNORE + MB_ICONERROR)) of
+					case (messagebox(FindTCWindow, PWideChar('Error uploading file' + sLineBreak + LocalName + sLineBreak + 'Continue operation?'), 'Upload error', MB_ABORTRETRYIGNORE + MB_ICONERROR)) of
 						ID_ABORT: Result := FS_FILE_USERABORT;
 						ID_RETRY: Result := PutRemoteFile(RealPath, LocalName, RemoteName, CopyFlags);
 						ID_IGNORE: break;
@@ -859,9 +864,9 @@ begin
 				while (ThreadRetryCountUpload.Items[GetCurrentThreadID()] <> RetryAttempts) and (not(Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
 				begin
 					ThreadRetryCountUpload.Items[GetCurrentThreadID()] := ThreadRetryCountUpload.Items[GetCurrentThreadID()] + 1;
-					MyLogProc(PluginNum, msgtype_details, pWideChar('Error uploading file ' + LocalName + ' Retry attempt ' + ThreadRetryCountUpload.Items[GetCurrentThreadID()].ToString + RetryAttemptsToString(RetryAttempts)));
+					LogHandle(LogLevelDetail, msgtype_details, PWideChar('Error uploading file ' + LocalName + ' Retry attempt ' + ThreadRetryCountUpload.Items[GetCurrentThreadID()].ToString + RetryAttemptsToString(RetryAttempts)));
 					Result := PutRemoteFile(RealPath, LocalName, RemoteName, CopyFlags);
-					if MyProgressProc(PluginNum, pWideChar(LocalName), RemoteName, 0) = 1 then Result := FS_FILE_USERABORT;
+					if MyProgressProc(PluginNum, PWideChar(LocalName), RemoteName, 0) = 1 then Result := FS_FILE_USERABORT;
 					if (Result in [FS_FILE_OK, FS_FILE_USERABORT]) then ThreadRetryCountUpload.Items[GetCurrentThreadID()] := 0; //сбросим счётчик попыток
 					ProcessMessages;
 					Sleep(GetPluginSettings(SettingsIniFilePath).AttemptWait);
@@ -871,7 +876,7 @@ begin
 
 end;
 
-function FsDeleteFileW(RemoteName: pWideChar): Bool; stdcall; //Удаление файла из файловой системы плагина
+function FsDeleteFileW(RemoteName: PWideChar): Bool; stdcall; //Удаление файла из файловой системы плагина
 var
 	RealPath: TRealPath;
 	getResult: integer;
@@ -894,7 +899,7 @@ Begin
 	else Result := Cloud.deleteFile(RealPath.path);
 End;
 
-function FsMkDirW(path: pWideChar): Bool; stdcall;
+function FsMkDirW(path: PWideChar): Bool; stdcall;
 var
 	RealPath: TRealPath;
 	getResult: integer;
@@ -908,7 +913,7 @@ Begin
 	Result := ConnectionManager.get(RealPath.account, getResult).createDir(RealPath.path);
 end;
 
-function FsRemoveDirW(RemoteName: pWideChar): Bool; stdcall;
+function FsRemoveDirW(RemoteName: PWideChar): Bool; stdcall;
 var
 	RealPath: TRealPath;
 	getResult: integer;
@@ -928,7 +933,7 @@ end;
 Function cloneWeblink(NewCloud, OldCloud: TCloudMailRu; CloudPath: WideString; CurrentItem: TCloudMailRuDirListingItem; NeedUnpublish: Boolean): integer;
 begin
 	Result := NewCloud.cloneWeblink(ExtractFileDir(CloudPath), CurrentItem.WebLink, CLOUD_CONFLICT_STRICT);
-	if (NeedUnpublish) and not(OldCloud.publishFile(CurrentItem.home, CurrentItem.WebLink, CLOUD_UNPUBLISH)) then MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, pWideChar('Can''t remove temporary public link on ' + CurrentItem.home));
+	if (NeedUnpublish) and not(OldCloud.publishFile(CurrentItem.home, CurrentItem.WebLink, CLOUD_UNPUBLISH)) then LogHandle(LogLevelError, MSGTYPE_IMPORTANTERROR, PWideChar('Can''t remove temporary public link on ' + CurrentItem.home));
 end;
 
 Function RenMoveFileViaPublicLink(OldCloud, NewCloud: TCloudMailRu; OldRealPath, NewRealPath: TRealPath; Move, OverWrite: Boolean): integer;
@@ -948,7 +953,7 @@ begin
 			NeedUnpublish := true;
 			if not(OldCloud.publishFile(CurrentItem.home, CurrentItem.WebLink)) then //problem publishing
 			begin
-				MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, pWideChar('Can''t get temporary public link on ' + CurrentItem.home));
+				LogHandle(LogLevelError, MSGTYPE_IMPORTANTERROR, PWideChar('Can''t get temporary public link on ' + CurrentItem.home));
 				exit(FS_FILE_READERROR);
 			end;
 		end;
@@ -962,7 +967,7 @@ begin
 
 						while (not(Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
 						begin
-							case (messagebox(FindTCWindow, pWideChar('File publish error: ' + TCloudMailRu.ErrorCodeText(Result) + sLineBreak + 'Continue operation?'), 'Operation error', MB_ABORTRETRYIGNORE + MB_ICONERROR)) of
+							case (messagebox(FindTCWindow, PWideChar('File publish error: ' + TCloudMailRu.ErrorCodeText(Result) + sLineBreak + 'Continue operation?'), 'Operation error', MB_ABORTRETRYIGNORE + MB_ICONERROR)) of
 								ID_ABORT: Result := FS_FILE_USERABORT;
 								ID_RETRY: Result := cloneWeblink(NewCloud, OldCloud, NewRealPath.path, CurrentItem, NeedUnpublish);
 								ID_IGNORE: break;
@@ -978,7 +983,7 @@ begin
 						while (ThreadRetryCountRenMov.Items[GetCurrentThreadID()] <> RetryAttempts) and (not(Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
 						begin
 							ThreadRetryCountRenMov.Items[GetCurrentThreadID()] := ThreadRetryCountRenMov.Items[GetCurrentThreadID()] + 1;
-							MyLogProc(PluginNum, msgtype_details, pWideChar('File publish error: ' + TCloudMailRu.ErrorCodeText(Result) + ' Retry attempt ' + ThreadRetryCountRenMov.Items[GetCurrentThreadID()].ToString + RetryAttemptsToString(RetryAttempts)));
+							LogHandle(LogLevelDetail, msgtype_details, PWideChar('File publish error: ' + TCloudMailRu.ErrorCodeText(Result) + ' Retry attempt ' + ThreadRetryCountRenMov.Items[GetCurrentThreadID()].ToString + RetryAttemptsToString(RetryAttempts)));
 							Result := cloneWeblink(NewCloud, OldCloud, NewRealPath.path, CurrentItem, NeedUnpublish);
 							if MyProgressProc(PluginNum, nil, nil, 0) = 1 then Result := FS_FILE_USERABORT;
 							if (Result in [FS_FILE_OK, FS_FILE_USERABORT]) then ThreadRetryCountRenMov.Items[GetCurrentThreadID()] := 0; //сбросим счётчик попыток
@@ -989,11 +994,11 @@ begin
 			end;
 		end;
 
-		if (Result = CLOUD_OPERATION_OK) and Move and not(OldCloud.deleteFile(OldRealPath.path)) then MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, pWideChar('Can''t delete ' + CurrentItem.home)); //пишем в лог, но не отваливаемся
+		if (Result = CLOUD_OPERATION_OK) and Move and not(OldCloud.deleteFile(OldRealPath.path)) then LogHandle(LogLevelError, MSGTYPE_IMPORTANTERROR, PWideChar('Can''t delete ' + CurrentItem.home)); //пишем в лог, но не отваливаемся
 	end;
 end;
 
-function FsRenMovFileW(OldName: pWideChar; NewName: pWideChar; Move: Boolean; OverWrite: Boolean; ri: pRemoteInfo): integer; stdcall;
+function FsRenMovFileW(OldName: PWideChar; NewName: PWideChar; Move: Boolean; OverWrite: Boolean; ri: pRemoteInfo): integer; stdcall;
 var
 	OldRealPath: TRealPath;
 	NewRealPath: TRealPath;
@@ -1014,7 +1019,7 @@ Begin
 	begin
 		if OldCloud.isPublicShare then
 		begin
-			MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, pWideChar('Direct operations from public accounts not supported'));
+			LogHandle(LogLevelWarning, MSGTYPE_IMPORTANTERROR, PWideChar('Direct operations from public accounts not supported'));
 			exit(FS_FILE_USERABORT);
 		end;
 
@@ -1022,7 +1027,7 @@ Begin
 		begin
 			Result := RenMoveFileViaPublicLink(OldCloud, NewCloud, OldRealPath, NewRealPath, Move, OverWrite);
 		end else begin
-			MyLogProc(PluginNum, MSGTYPE_IMPORTANTERROR, pWideChar('Direct operations between accounts not supported'));
+			LogHandle(LogLevelWarning, MSGTYPE_IMPORTANTERROR, PWideChar('Direct operations between accounts not supported'));
 			exit(FS_FILE_USERABORT);
 		end;
 
@@ -1040,7 +1045,7 @@ Begin
 	MyProgressProc(PluginNum, OldName, NewName, 100);
 end;
 
-function FsDisconnectW(DisconnectRoot: pWideChar): Bool; stdcall;
+function FsDisconnectW(DisconnectRoot: PWideChar): Bool; stdcall;
 begin
 	ConnectionManager.freeAll;
 
@@ -1055,18 +1060,18 @@ begin
 	CryptoNum := CryptoNr;
 
 	ProxySettings := GetPluginSettings(SettingsIniFilePath).Proxy;
-	GetProxyPasswordNow(ProxySettings, MyLogProc, MyCryptProc, PluginNum, CryptoNum);
+	GetProxyPasswordNow(ProxySettings, @LogHandle, MyCryptProc, PluginNum, CryptoNum); //todo plugin num unused
 
 	if ProxySettings.use_tc_password_manager then SetPluginSettingsValue(SettingsIniFilePath, 'ProxyTCPwdMngr', true);
 
 	CloudMaxFileSize := GetPluginSettings(SettingsIniFilePath).CloudMaxFileSize;
-	ConnectionManager := TConnectionManager.Create(AccountsIniFilePath, PluginNum, MyProgressProc, MyLogProc, ProxySettings, GetPluginSettings(SettingsIniFilePath).SocketTimeout, CloudMaxFileSize, MyRequestProc);
+	ConnectionManager := TConnectionManager.Create(AccountsIniFilePath, PluginNum, MyProgressProc, @LogHandle, ProxySettings, GetPluginSettings(SettingsIniFilePath).SocketTimeout, CloudMaxFileSize, MyRequestProc);
 	ConnectionManager.CryptoNum := CryptoNum;
 	ConnectionManager.MyCryptProc := MyCryptProc;
 
 end;
 
-function FsContentGetValueW(FileName: pWideChar; FieldIndex: integer; UnitIndex: integer; FieldValue: Pointer; maxlen: integer; Flags: integer): integer; stdcall;
+function FsContentGetValueW(FileName: PWideChar; FieldIndex: integer; UnitIndex: integer; FieldValue: Pointer; maxlen: integer; Flags: integer): integer; stdcall;
 var
 	Item: TCloudMailRuDirListingItem;
 	RealPath: TRealPath;
@@ -1202,7 +1207,7 @@ begin
 	end;
 end;
 
-function FsExtractCustomIconW(RemoteName: pWideChar; ExtractFlags: integer; var TheIcon: hicon): integer; stdcall;
+function FsExtractCustomIconW(RemoteName: PWideChar; ExtractFlags: integer; var TheIcon: hicon): integer; stdcall;
 var
 	RealPath: TRealPath;
 	Item: TCloudMailRuDirListingItem;

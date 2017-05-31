@@ -39,6 +39,14 @@ const
 	IconsModeExternal = 3;
 	IconsModeExternalOverlay = 4;
 
+	//Уровни логирования (по степеням двойки)
+	LogLevelConnect = 1; //connection
+	LogLevelFileOperation = 2; //file operations && free space
+	LogLevelDetail = 4; //some detailed info (i.e. retry data or smth)
+	LogLevelWarning = 8; //non-critical warnings
+	LogLevelError = 16; //error details
+	LogLevelDebug = 32; //also same internal debugging info
+
 type
 
 	TAccountSettings = record
@@ -84,9 +92,10 @@ type
 		ShowTrashFolders: boolean;
 		ShowSharedFolders: boolean;
 		ShowInvitesFolders: boolean;
+		LogLevel: Integer;
 	end;
 
-function GetProxyPasswordNow(var ProxySettings: TProxySettings; MyLogProc: TLogProcW; MyCryptProc: TCryptProcW; PluginNum: Integer; CryptoNum: Integer): boolean;
+function GetProxyPasswordNow(var ProxySettings: TProxySettings; LogHandleProc: TLogHandler; MyCryptProc: TCryptProcW; PluginNum: Integer; CryptoNum: Integer): boolean;
 function GetPluginSettings(IniFilePath: WideString): TPluginSettings;
 procedure SetPluginSettings(IniFilePath: WideString; PluginSettings: TPluginSettings);
 procedure SetPluginSettingsValue(IniFilePath: WideString; OptionName: WideString; OptionValue: Variant);
@@ -98,7 +107,7 @@ procedure AddVirtualAccountsToAccountsList(AccountsIniFilePath: WideString; var 
 
 implementation
 
-function GetProxyPasswordNow(var ProxySettings: TProxySettings; MyLogProc: TLogProcW; MyCryptProc: TCryptProcW; PluginNum: Integer; CryptoNum: Integer): boolean;
+function GetProxyPasswordNow(var ProxySettings: TProxySettings; LogHandleProc: TLogHandler; MyCryptProc: TCryptProcW; PluginNum: Integer; CryptoNum: Integer): boolean;
 var
 	CryptResult: Integer;
 	AskResult: Integer;
@@ -113,7 +122,7 @@ begin
 		CryptResult := MyCryptProc(PluginNum, CryptoNum, FS_CRYPT_LOAD_PASSWORD_NO_UI, PWideChar('proxy' + ProxySettings.user), buf, 1024); //Пытаемся взять пароль по-тихому
 		if CryptResult = FS_FILE_NOTFOUND then
 		begin
-			MyLogProc(PluginNum, msgtype_details, PWideChar('No master password entered yet'));
+			LogHandleProc(LogLevelDetail, msgtype_details, PWideChar('No master password entered yet'));
 			CryptResult := MyCryptProc(PluginNum, CryptoNum, FS_CRYPT_LOAD_PASSWORD, PWideChar('proxy' + ProxySettings.user), buf, 1024);
 		end;
 		if CryptResult = FS_FILE_OK then //Успешно получили пароль
@@ -123,11 +132,11 @@ begin
 		end;
 		if CryptResult = FS_FILE_NOTSUPPORTED then //пользователь отменил ввод главного пароля
 		begin
-			MyLogProc(PluginNum, msgtype_importanterror, PWideChar('CryptProc returns error: Decrypt failed'));
+			LogHandleProc(LogLevelError, msgtype_importanterror, PWideChar('CryptProc returns error: Decrypt failed'));
 		end;
 		if CryptResult = FS_FILE_READERROR then
 		begin
-			MyLogProc(PluginNum, msgtype_importanterror, PWideChar('CryptProc returns error: Password not found in password store'));
+			LogHandleProc(LogLevelError, msgtype_importanterror, PWideChar('CryptProc returns error: Password not found in password store'));
 		end;
 		FreeMemory(buf);
 	end; //else // ничего не делаем, пароль уже должен быть в настройках (взят в открытом виде из инишника)
@@ -144,7 +153,7 @@ begin
 				case MyCryptProc(PluginNum, CryptoNum, FS_CRYPT_SAVE_PASSWORD, PWideChar('proxy' + ProxySettings.user), PWideChar(ProxySettings.password), SizeOf(ProxySettings.password)) of
 					FS_FILE_OK:
 						begin //TC скушал пароль, запомним в инишник галочку
-							MyLogProc(PluginNum, msgtype_details, PWideChar('Password saved in TC password manager'));
+							LogHandleProc(LogLevelDebug, msgtype_details, PWideChar('Password saved in TC password manager'));
 							TmpString := ProxySettings.password;
 							ProxySettings.password := '';
 							ProxySettings.use_tc_password_manager := true; //Не забыть сохранить!
@@ -152,15 +161,15 @@ begin
 						end;
 					FS_FILE_NOTSUPPORTED: //Сохранение не получилось
 						begin
-							MyLogProc(PluginNum, msgtype_importanterror, PWideChar('CryptProc returns error: Encrypt failed'));
+							LogHandleProc(LogLevelError, msgtype_importanterror, PWideChar('CryptProc returns error: Encrypt failed'));
 						end;
 					FS_FILE_WRITEERROR: //Сохранение опять не получилось
 						begin
-							MyLogProc(PluginNum, msgtype_importanterror, PWideChar('Password NOT saved: Could not write password to password store'));
+							LogHandleProc(LogLevelError, msgtype_importanterror, PWideChar('Password NOT saved: Could not write password to password store'));
 						end;
 					FS_FILE_NOTFOUND: //Не указан мастер-пароль
 						begin
-							MyLogProc(PluginNum, msgtype_importanterror, PWideChar('Password NOT saved: No master password entered yet'));
+							LogHandleProc(LogLevelError, msgtype_importanterror, PWideChar('Password NOT saved: No master password entered yet'));
 						end;
 					//Ошибки здесь не значат, что пароль мы не получили - он может быть введён в диалоге
 				end;
@@ -203,6 +212,7 @@ begin
 	GetPluginSettings.ShowTrashFolders := IniFile.ReadBool('Main', 'ShowTrashFolders', true);
 	GetPluginSettings.ShowSharedFolders := IniFile.ReadBool('Main', 'ShowSharedFolders', true);
 	GetPluginSettings.ShowInvitesFolders := IniFile.ReadBool('Main', 'ShowInvitesFolders', true);
+	GetPluginSettings.LogLevel := IniFile.ReadInteger('Main', 'LogLevel', LogLevelConnect + LogLevelFileOperation + LogLevelDetail + LogLevelWarning + LogLevelError);
 	IniFile.Destroy;
 end;
 

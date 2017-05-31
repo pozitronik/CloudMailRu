@@ -25,6 +25,7 @@ const
 	TYPE_MEGABYTES = 2;
 
 type
+
 	TRealPath = record
 		account: WideString;
 		path: WideString;
@@ -39,34 +40,34 @@ function Explode(S: WideString; Delimiter: char): TStringList;
 function ExtractRealPath(VirtualPath: WideString): TRealPath;
 function inAccount(path: TRealPath; ignoreVirtual: boolean = true): boolean;
 function SizeOfFile(const FileName: String): Int64;
-function DateTimeToUnix(ConvDate: TDateTime): Integer;
-function CheckFlag(Check: Byte; Flags: Integer): boolean; //Определяет, установлен ли указанный бит
+function DateTimeToUnix(ConvDate: TDateTime): integer;
+function CheckFlag(Check: Byte; Flags: integer): boolean; //Определяет, установлен ли указанный бит
 function DateTimeToFileTime(FileTime: TDateTime): TFileTime;
 procedure SetAllFileTime(const FileName: string; const FileTime: TFileTime);
 procedure CenterWindow(WindowToStay, WindowToCenter: HWND);
 function UrlEncode(URL: WideString): WideString;
 function FindTCWindow: HWND;
 function FindTCIniPath: WideString;
-function GetTCIconsSize: Integer;
+function GetTCIconsSize: integer;
 function GetTmpDir: WideString;
 function GetTmpFileName(Prefix: WideString = ''): WideString;
 function CopyExt(FromFilename, ToFilename: WideString): WideString;
 function GetUNCFilePath(FilePath: WideString): WideString;
-function GetWord(command: WideString; WordIndex: Integer = 0): WideString; //Возвращает указанное значащее слово из строки с учётом кавычек (парсинг команд)
+function GetWord(command: WideString; WordIndex: integer = 0): WideString; //Возвращает указанное значащее слово из строки с учётом кавычек (парсинг команд)
 function ExtractLinkFromUrl(URL: WideString): WideString; //При необходимости преобразует адрес публичной ссылки к нужному виду
 function IsWriteable(const DirName: WideString; FileName: WideString = 'delete.me'; CleanFile: boolean = true): boolean;
-function PosLast(Substring, S: WideString; Offset: Integer = 0): Integer;
+function PosLast(Substring, S: WideString; Offset: integer = 0): integer;
 function PathToUrl(path: WideString; RestrictEmptyUrl: boolean = true; DoUrlEncode: boolean = true): WideString;
 function UrlToPath(URL: WideString): WideString;
-function GetFolderIcon(const size: Integer = IconSizeSmall): Hicon;
-function GetSystemIcon(const size: Integer = IconSizeSmall; ItemType: Integer = CSIDL_BITBUCKET): Hicon;
+function GetFolderIcon(const size: integer = IconSizeSmall): Hicon;
+function GetSystemIcon(const size: integer = IconSizeSmall; ItemType: integer = CSIDL_BITBUCKET): Hicon;
 function CombineIcons(FrontIcon, BackIcon: Hicon): Hicon; //taken from http://www.swissdelphicenter.ch/en/showcode.php?id=1636
 function LoadIcon(const FileName: WideString): Hicon;
 function LoadPluginIcon(const path: WideString; identifier: WideString): Hicon;
-function RetryAttemptsToString(Attempt: Integer): WideString;
+function RetryAttemptsToString(Attempt: integer): WideString;
 procedure ProcessMessages;
 function IncludeSlash(const Str: WideString): WideString;
-function FormatSize(size: Int64; SizeType: Integer = TYPE_MEGABYTES): WideString; //Форматируем размер в удобочитаемый вид
+function FormatSize(size: Int64; SizeType: integer = TYPE_MEGABYTES): WideString; //Форматируем размер в удобочитаемый вид
 //Procedure FileLog(S: WideString);
 
 implementation
@@ -85,7 +86,7 @@ implementation
 function Implode(S: TStringList; Delimiter: WideString): WideString;
 
 var
-	iCount: Integer;
+	iCount: integer;
 begin
 	Result := '';
 	if (S.Count = 0) then exit;
@@ -152,7 +153,7 @@ begin
 	if Result and ignoreVirtual then Result := not(path.trashDir or path.sharedDir or path.invitesDir);
 end;
 
-function DateTimeToUnix(ConvDate: TDateTime): Integer;
+function DateTimeToUnix(ConvDate: TDateTime): integer;
 const
 	UnixStartDate: TDateTime = 25569.0;
 begin
@@ -217,8 +218,8 @@ var
 	Monitor: HMonitor;
 	MonInfo: TMonitorInfo;
 	MonRect: TRect;
-	x: Integer;
-	Y: Integer;
+	x: integer;
+	Y: integer;
 begin
 	GetWindowRect(WindowToStay, R1);
 	GetWindowRect(WindowToCenter, R2);
@@ -238,7 +239,7 @@ end;
 
 function UrlEncode(URL: WideString): WideString;
 var
-	I: Integer;
+	I: integer;
 	UTF8: UTF8String;
 begin
 	UTF8 := UTF8String(URL);
@@ -258,7 +259,7 @@ begin
 	exit(GetEnvironmentVariable('COMMANDER_INI'));
 end;
 
-function GetTCIconsSize: Integer;
+function GetTCIconsSize: integer;
 var
 	TC_INI: TIniFile;
 	ResolutionSpecific: boolean;
@@ -316,7 +317,7 @@ begin
 	if not(Pos(WideString('\\'), Result) = 1) then Result := '\\?\' + FilePath;
 end;
 
-function GetWord(command: WideString; WordIndex: Integer = 0): WideString;
+function GetWord(command: WideString; WordIndex: integer = 0): WideString;
 var
 	Exploded: TStringList;
 begin
@@ -351,9 +352,9 @@ begin
 	if Result then CloseHandle(H);
 end;
 
-function PosLast(Substring, S: WideString; Offset: Integer = 0): Integer;
+function PosLast(Substring, S: WideString; Offset: integer = 0): integer;
 var
-	tmp: Integer;
+	tmp: integer;
 begin
 	tmp := Offset;
 	Repeat
@@ -376,7 +377,7 @@ begin
 	Result := StringReplace(URL, WideString('/'), WideString('\'), [rfReplaceAll, rfIgnoreCase]);
 end;
 
-function GetFolderIcon(const size: Integer = IconSizeSmall): Hicon;
+function GetFolderIcon(const size: integer = IconSizeSmall): Hicon;
 var
 	SFI: TSHFileInfo;
 	uFlags: uint;
@@ -394,7 +395,7 @@ begin
 
 end;
 
-function GetSystemIcon(const size: Integer = IconSizeSmall; ItemType: Integer = CSIDL_BITBUCKET): Hicon;
+function GetSystemIcon(const size: integer = IconSizeSmall; ItemType: integer = CSIDL_BITBUCKET): Hicon;
 var
 	SFI: TSHFileInfo;
 	PIDL: PItemIDList;
@@ -474,7 +475,7 @@ begin
 	exit(LoadIcon(IncludeTrailingBackslash(path) + identifier + '.ico'));
 end;
 
-function RetryAttemptsToString(Attempt: Integer): WideString;
+function RetryAttemptsToString(Attempt: integer): WideString;
 begin
 	if Attempt < 0 then exit('')
 	else exit(' of ' + Attempt.ToString);
@@ -501,11 +502,11 @@ begin
 	if not(Result[High(Result)] = '/') then Result := Result + '/';
 end;
 
-function FormatSize(size: Int64; SizeType: Integer = TYPE_MEGABYTES): WideString; //Форматируем размер в удобочитаемый вид
+function FormatSize(size: Int64; SizeType: integer = TYPE_MEGABYTES): WideString; //Форматируем размер в удобочитаемый вид
 const
 	postfixes: array [0 .. 6] of string = ('b', 'kb', 'Mb', 'Gb', 'Tb', 'Pb', 'Eb');
 var
-	iteration: Integer;
+	iteration: integer;
 begin
 	iteration := 0;
 	while size > 1024 do

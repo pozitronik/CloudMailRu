@@ -8,7 +8,7 @@ type
 	TCloudMailRu = class
 	private
 		{VARIABLES}
-		ExternalPluginNr: integer;
+		ExternalPluginNr: integer; //todo remove
 		ExternalSourceName: PWideChar;
 		ExternalTargetName: PWideChar;
 		domain: WideString;
@@ -31,7 +31,7 @@ type
 		Cookie: TIdCookieManager;
 		Socks: TIdSocksInfo;
 		ExternalProgressProc: TProgressProcW;
-		ExternalLogProc: TLogProcW;
+		ExternalLogProc: TLogHandler;
 		ExternalRequestProc: TRequestProcW;
 		Shard: WideString;
 		Proxy: TProxySettings;
@@ -67,7 +67,7 @@ type
 		function putFileToCloud(localPath: WideString; Return: TStringList): integer;
 		function addFileToCloud(hash: WideString; size: int64; remotePath: WideString; var JSONAnswer: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT): Boolean;
 		{OTHER ROUTINES}
-		procedure Log(MsgType: integer; LogString: WideString);
+		procedure Log(LogLevel, MsgType: integer; LogString: WideString);
 		function CloudResultToFsResult(CloudResult: integer; OperationStatus: integer; ErrorPrefix: WideString = ''): integer;
 	protected
 		{REGULAR CLOUD}
@@ -83,7 +83,7 @@ type
 		Property ConnectTimeoutValue: integer read ConnectTimeout;
 		function getSharedFileUrl(remotePath: WideString; DoUrlEncode: Boolean = true): WideString;
 		{CONSTRUCTOR/DESTRUCTOR}
-		constructor Create(AccountSettings: TAccountSettings; split_file_size: integer; Proxy: TProxySettings; ConnectTimeout: integer; ExternalProgressProc: TProgressProcW = nil; PluginNr: integer = -1; ExternalLogProc: TLogProcW = nil; ExternalRequestProc: TRequestProcW = nil);
+		constructor Create(AccountSettings: TAccountSettings; split_file_size: integer; Proxy: TProxySettings; ConnectTimeout: integer; ExternalProgressProc: TProgressProcW = nil; PluginNr: integer = -1; ExternalLogProc: TLogHandler = nil; ExternalRequestProc: TRequestProcW = nil);
 		destructor Destroy; override;
 		{CLOUD INTERFACE METHODS}
 		function login(method: integer = CLOUD_AUTH_METHOD_WEB): Boolean;
@@ -144,14 +144,14 @@ begin
 	if self.HTTPGet(API_CLONE + '?folder=' + PathToUrl(Path) + '&weblink=' + link + '&conflict=' + ConflictMode + self.united_params, JSON, Progress) then
 	begin //Парсим ответ
 		Result := fromJSON_OperationResult(JSON, OperationStatus);
-		if Result <> CLOUD_OPERATION_OK then Log(MSGTYPE_IMPORTANTERROR, 'File publish error: ' + self.ErrorCodeText(Result) + ' Status: ' + OperationStatus.ToString());
+		if Result <> CLOUD_OPERATION_OK then Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'File publish error: ' + self.ErrorCodeText(Result) + ' Status: ' + OperationStatus.ToString());
 
 	end else begin //посмотреть это
 		if not(Progress) then
 		begin //user cancelled
 			Result := FS_FILE_USERABORT;
 		end else begin //unknown error
-			Log(MSGTYPE_IMPORTANTERROR, 'Public link clone error: got ' + OperationStatus.ToString + ' status');
+			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Public link clone error: got ' + OperationStatus.ToString + ' status');
 			Result := FS_FILE_WRITEERROR;
 		end;
 	end;
@@ -166,17 +166,17 @@ begin
 		CLOUD_ERROR_UNKNOWN: exit(FS_FILE_NOTSUPPORTED);
 		CLOUD_ERROR_OVERQUOTA:
 			begin
-				Log(MSGTYPE_IMPORTANTERROR, 'Insufficient Storage');
+				Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Insufficient Storage');
 				exit(FS_FILE_WRITEERROR);
 			end;
 		CLOUD_ERROR_NAME_TOO_LONG:
 			begin
-				Log(MSGTYPE_IMPORTANTERROR, 'Name too long');
+				Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Name too long');
 				exit(FS_FILE_WRITEERROR);
 			end;
 		else
 			begin //что-то неизвестное
-				if (ErrorPrefix <> '') then Log(MSGTYPE_IMPORTANTERROR, ErrorPrefix + self.ErrorCodeText(CloudResult) + ' Status: ' + OperationStatus.ToString());
+				if (ErrorPrefix <> '') then Log(LogLevelError, MSGTYPE_IMPORTANTERROR, ErrorPrefix + self.ErrorCodeText(CloudResult) + ' Status: ' + OperationStatus.ToString());
 				exit(FS_FILE_WRITEERROR);
 			end;
 	end;
@@ -207,7 +207,7 @@ begin //Облако умеет скопировать файл, но не см�
 	SameName := ExtractFileName(OldName) = ExtractFileName(NewName);
 	if (SameDir) then //копирование в тот же каталог не поддерживается напрямую, а мудрить со временными каталогами я не хочу
 	begin
-		Log(MSGTYPE_IMPORTANTERROR, 'Copying in same dir not supported by cloud');
+		Log(LogLevelWarning, MSGTYPE_IMPORTANTERROR, 'Copying in same dir not supported by cloud');
 		exit(FS_FILE_NOTSUPPORTED);
 	end else begin
 		Result := self.copyFile(OldName, NewPath);
@@ -219,7 +219,7 @@ begin //Облако умеет скопировать файл, но не см�
 	end;
 end;
 
-constructor TCloudMailRu.Create(AccountSettings: TAccountSettings; split_file_size: integer; Proxy: TProxySettings; ConnectTimeout: integer; ExternalProgressProc: TProgressProcW; PluginNr: integer; ExternalLogProc: TLogProcW; ExternalRequestProc: TRequestProcW);
+constructor TCloudMailRu.Create(AccountSettings: TAccountSettings; split_file_size: integer; Proxy: TProxySettings; ConnectTimeout: integer; ExternalProgressProc: TProgressProcW; PluginNr: integer; ExternalLogProc: TLogHandler; ExternalRequestProc: TRequestProcW);
 begin
 	try
 		self.Cookie := TIdCookieManager.Create();
@@ -271,7 +271,7 @@ begin
 	except
 		on E: Exception do
 		begin
-			Log(MSGTYPE_IMPORTANTERROR, 'Cloud initialization error: ' + E.Message);
+			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Cloud initialization error: ' + E.Message);
 		end;
 	end;
 end;
@@ -314,7 +314,7 @@ begin
 			CLOUD_OPERATION_OK: Result := true;
 			else
 				begin
-					Log(MSGTYPE_IMPORTANTERROR, 'Delete file error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
+					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Delete file error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
 					Result := false;
 				end;
 		end;
@@ -476,7 +476,7 @@ begin
 			CLOUD_OPERATION_OK: Result := fromJSON_DirListing(JSON, DirListing);
 			else
 				begin
-					Log(MSGTYPE_IMPORTANTERROR, 'Shared links listing error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
+					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Shared links listing error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
 					Result := false;
 				end;
 		end;
@@ -500,7 +500,7 @@ begin
 			CLOUD_OPERATION_OK: Result := fromJSON_IncomingInviteListing(JSON, IncomingListing);
 			else
 				begin
-					Log(MSGTYPE_IMPORTANTERROR, 'Incoming requests listing error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
+					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Incoming requests listing error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
 					Result := false;
 				end;
 		end;
@@ -544,7 +544,7 @@ begin
 			CLOUD_OPERATION_OK: Result := fromJSON_DirListing(JSON, DirListing);
 			else
 				begin
-					Log(MSGTYPE_IMPORTANTERROR, 'Incoming requests listing error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
+					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Incoming requests listing error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
 					Result := false;
 				end;
 		end;
@@ -568,12 +568,12 @@ begin
 			CLOUD_OPERATION_OK: Result := fromJSON_DirListing(JSON, DirListing);
 			CLOUD_ERROR_NOT_EXISTS:
 				begin
-					Log(MSGTYPE_IMPORTANTERROR, 'Path not exists: ' + Path);
+					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Path not exists: ' + Path);
 					Result := false;
 				end
 			else
 				begin
-					Log(MSGTYPE_IMPORTANTERROR, 'Directory listing error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString()); //?? WUT
+					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Directory listing error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString()); //?? WUT
 					Result := false;
 				end;
 		end;
@@ -595,12 +595,12 @@ begin
 	Result := FS_FILE_NOTSUPPORTED;
 	if self.Shard = '' then
 	begin
-		Log(MSGTYPE_DETAILS, 'Current shard is undefined, trying to get one');
+		Log(LogLevelDetail, MSGTYPE_DETAILS, 'Current shard is undefined, trying to get one');
 		if self.getShard(self.Shard) then
 		begin
-			Log(MSGTYPE_DETAILS, 'Current shard: ' + self.Shard);
+			Log(LogLevelDetail, MSGTYPE_DETAILS, 'Current shard: ' + self.Shard);
 		end else begin //А вот теперь это критическая ошибка, тут уже не получится копировать
-			Log(MSGTYPE_IMPORTANTERROR, 'Sorry, downloading impossible');
+			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Sorry, downloading impossible');
 			exit;
 		end;
 	end;
@@ -609,7 +609,7 @@ begin
 	except
 		on E: Exception do
 		begin
-			Log(MSGTYPE_IMPORTANTERROR, E.Message);
+			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, E.Message);
 			exit(FS_FILE_WRITEERROR);
 		end;
 	end;
@@ -640,7 +640,7 @@ begin
 	except
 		on E: Exception do
 		begin
-			Log(MSGTYPE_IMPORTANTERROR, E.Message);
+			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, E.Message);
 			exit(FS_FILE_WRITEERROR);
 		end;
 	end;
@@ -680,7 +680,7 @@ begin
 			else
 				begin
 					Result := false;
-					Log(MSGTYPE_IMPORTANTERROR, 'Get shard error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
+					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Shard receive error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
 				end;
 		end;
 	end;
@@ -718,12 +718,12 @@ begin
 		PageContent := StringReplace(PageContent, #9, '', [rfReplaceAll]);
 		if not self.extractPublicTokenFromText(PageContent, self.public_download_token) then //refresh public download token
 		begin
-			Log(MSGTYPE_IMPORTANTERROR, 'Can''t get public share download token');
+			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Can''t get public share download token');
 			exit(false);
 		end;
 		if not self.extractPublicShard(PageContent, self.public_shard) then
 		begin
-			Log(MSGTYPE_IMPORTANTERROR, 'Can''t get public share download share');
+			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Can''t get public share download share');
 			exit(false);
 		end;
 	end;
@@ -747,7 +747,7 @@ begin
 			else
 				begin
 					Result := false;
-					Log(MSGTYPE_IMPORTANTERROR, 'User space receiving error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
+					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'User space receiving error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
 				end;
 		end;
 	end;
@@ -789,7 +789,7 @@ begin
 				Answer := E.ErrorMessage;
 				Result := true;
 			end else begin
-				Log(MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при отправке данных на адрес ' + URL + ', ответ сервера: ' + E.ErrorMessage);
+				Log(LogLevelError, MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при отправке данных на адрес ' + URL + ', ответ сервера: ' + E.ErrorMessage);
 				Result := false;
 			end;
 			if Assigned(HTTP) then self.HTTPDestroy(HTTP, SSL);
@@ -798,13 +798,13 @@ begin
 		on E: EIdSocketerror do
 		begin
 			if Assigned(HTTP) then self.HTTPDestroy(HTTP, SSL);
-			Log(MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка сети: ' + E.Message + ' при запросе данных с адреса ' + URL);
+			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка сети: ' + E.Message + ' при запросе данных с адреса ' + URL);
 			exit(false);
 		end;
 		on E: Exception do
 		begin
 			if Assigned(HTTP) then self.HTTPDestroy(HTTP, SSL);
-			Log(MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при запросе данных с адреса ' + URL);
+			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при запросе данных с адреса ' + URL);
 			exit(false);
 		end;
 	end;
@@ -826,7 +826,7 @@ begin
 		HTTP.Get(URL, FileStream);
 		if (HTTP.RedirectCount = HTTP.RedirectMaximum) and (FileStream.size = 0) then
 		begin
-			Log(MSGTYPE_IMPORTANTERROR, 'Достигнуто максимальное количество перенаправлений при запросе файла с адреса ' + URL);
+			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Достигнуто максимальное количество перенаправлений при запросе файла с адреса ' + URL);
 			Result := FS_FILE_READERROR;
 		end;
 		self.HTTPDestroy(HTTP, SSL);
@@ -839,13 +839,13 @@ begin
 		on E: EIdSocketerror do
 		begin
 			if Assigned(HTTP) then self.HTTPDestroy(HTTP, SSL);
-			if LogErrors then Log(MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка сети: ' + E.Message + ' при копировании файла с адреса ' + URL);
+			if LogErrors then Log(LogLevelError, MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка сети: ' + E.Message + ' при копировании файла с адреса ' + URL);
 			Result := FS_FILE_READERROR;
 		end;
 		on E: Exception do
 		begin
 			if Assigned(HTTP) then self.HTTPDestroy(HTTP, SSL);
-			if LogErrors then Log(MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при копировании файла с адреса ' + URL);
+			if LogErrors then Log(LogLevelError, MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при копировании файла с адреса ' + URL);
 			Result := FS_FILE_READERROR;
 		end;
 	end;
@@ -901,7 +901,7 @@ begin
 			//on E: EIdOSSLCouldNotLoadSSLLibrary do
 			on E: Exception do
 			begin
-				Log(MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при отправке данных на адрес ' + URL);
+				Log(LogLevelError, MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при отправке данных на адрес ' + URL);
 				MemStream.free;
 				PostData.free;
 				self.HTTPDestroy(HTTP, SSL);
@@ -932,7 +932,7 @@ begin
 				Result := true;
 				//end else if (HTTP.ResponseCode = 500) then // Внезапно, сервер так отвечает, если при перемещении файл уже существует, но полагаться на это мы не можем
 			end else begin
-				Log(MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при отправке данных на адрес ' + URL + ', ответ сервера: ' + E.ErrorMessage);
+				Log(LogLevelError, MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при отправке данных на адрес ' + URL + ', ответ сервера: ' + E.ErrorMessage);
 				Result := false;
 			end;
 			if Assigned(HTTP) then self.HTTPDestroy(HTTP, SSL);
@@ -940,12 +940,12 @@ begin
 		on E: EIdSocketerror do
 		begin
 			if Assigned(HTTP) then self.HTTPDestroy(HTTP, SSL);
-			Log(MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка сети: ' + E.Message + ' при отправке данных на адрес ' + URL);
+			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка сети: ' + E.Message + ' при отправке данных на адрес ' + URL);
 			Result := false;
 		end;
 		on E: Exception do
 		begin
-			Log(MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при отправке данных на адрес ' + URL);
+			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при отправке данных на адрес ' + URL);
 			Result := false;
 		end;
 	end;
@@ -976,7 +976,7 @@ begin
 			//on E: EIdOSSLCouldNotLoadSSLLibrary do
 			on E: Exception do
 			begin
-				Log(MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при отправке данных на адрес ' + URL);
+				Log(LogLevelError, MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при отправке данных на адрес ' + URL);
 				MemStream.free;
 				Fields.free;
 				self.HTTPDestroy(HTTP, SSL);
@@ -1006,7 +1006,7 @@ begin
 				Result := true;
 				//end else if (HTTP.ResponseCode = 500) then // Внезапно, сервер так отвечает, если при перемещении файл уже существует, но полагаться на это мы не можем
 			end else begin
-				Log(MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при отправке данных на адрес ' + URL + ', ответ сервера: ' + E.ErrorMessage);
+				Log(LogLevelError, MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при отправке данных на адрес ' + URL + ', ответ сервера: ' + E.ErrorMessage);
 				Result := false;
 			end;
 			if Assigned(HTTP) then self.HTTPDestroy(HTTP, SSL);
@@ -1014,12 +1014,12 @@ begin
 		on E: EIdSocketerror do
 		begin
 			if Assigned(HTTP) then self.HTTPDestroy(HTTP, SSL);
-			Log(MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка сети: ' + E.Message + ' при отправке данных на адрес ' + URL);
+			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка сети: ' + E.Message + ' при отправке данных на адрес ' + URL);
 			Result := false;
 		end;
 		on E: Exception do
 		begin
-			Log(MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при отправке данных на адрес ' + URL);
+			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при отправке данных на адрес ' + URL);
 			Result := false;
 		end;
 	end;
@@ -1054,19 +1054,19 @@ begin
 		on E: EIdHTTPProtocolException do
 		begin
 			if Assigned(HTTP) then self.HTTPDestroy(HTTP, SSL);
-			Log(MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при отправке данных на адрес ' + URL + ', ответ сервера: ' + E.ErrorMessage);
+			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при отправке данных на адрес ' + URL + ', ответ сервера: ' + E.ErrorMessage);
 			Result := CLOUD_OPERATION_FAILED;
 		end;
 		on E: EIdSocketerror do
 		begin
 			if Assigned(HTTP) then self.HTTPDestroy(HTTP, SSL);
-			Log(MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка сети: ' + E.Message + ' при отправке данных на адрес ' + URL);
+			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка сети: ' + E.Message + ' при отправке данных на адрес ' + URL);
 			Result := CLOUD_OPERATION_FAILED;
 		end;
 		on E: Exception do
 		begin
 			if Assigned(HTTP) then self.HTTPDestroy(HTTP, SSL);
-			Log(MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при отправке данных на адрес ' + URL);
+			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при отправке данных на адрес ' + URL);
 			Result := CLOUD_OPERATION_FAILED;
 		end;
 	end;
@@ -1090,9 +1090,9 @@ begin
 	end;
 end;
 
-procedure TCloudMailRu.Log(MsgType: integer; LogString: WideString);
+procedure TCloudMailRu.Log(LogLevel, MsgType: integer; LogString: WideString);
 begin
-	if Assigned(ExternalLogProc) then ExternalLogProc(ExternalPluginNr, MsgType, PWideChar(LogString));
+	if Assigned(ExternalLogProc) then ExternalLogProc(LogLevel, MsgType, PWideChar(LogString));
 end;
 
 function TCloudMailRu.login(method: integer): Boolean;
@@ -1114,7 +1114,7 @@ var
 begin
 	Result := false;
 	self.login_method := method;
-	Log(MSGTYPE_DETAILS, 'Login to ' + self.user + '@' + self.domain);
+	Log(LogLevelDetail, MSGTYPE_DETAILS, 'Login to ' + self.user + '@' + self.domain);
 	case self.login_method of
 		CLOUD_AUTH_METHOD_TWO_STEP:
 			begin
@@ -1122,18 +1122,18 @@ begin
 				FormFields.AddOrSetValue('Domain', self.domain);
 				FormFields.AddOrSetValue('Login', self.user);
 				FormFields.AddOrSetValue('Password', self.password);
-				Log(MSGTYPE_DETAILS, 'Requesting first step auth token for ' + self.user + '@' + self.domain);
+				Log(LogLevelDebug, MSGTYPE_DETAILS, 'Requesting first step auth token for ' + self.user + '@' + self.domain);
 				Result := self.HTTPPostMultipart(LOGIN_URL, FormFields, PostAnswer);
 				if Result then
 				begin
-					Log(MSGTYPE_DETAILS, 'Parsing authorization data...');
+					Log(LogLevelDebug, MSGTYPE_DETAILS, 'Parsing authorization data...');
 					if self.extractTwostepJson(PostAnswer, TwoStepJson) and fromJSON_TwostepData(TwoStepJson, TwostepData) then
 					begin
 						if TwostepData.secstep_timeout = AUTH_APP_USED then AuthMessage := 'Enter code from authentication app.'//mobile app used
 						else if TwostepData.secstep_resend_fail = '1' then AuthMessage := 'SMS timeout to ' + TwostepData.secstep_phone + ' (' + TwostepData.secstep_timeout.ToString + ' sec).'
 						else AuthMessage := 'Enter code sended to ' + TwostepData.secstep_phone + '.';
 
-						Log(MSGTYPE_DETAILS, 'Awaiting for security key... ');
+						Log(LogLevelDebug, MSGTYPE_DETAILS, 'Awaiting for security key... ');
 						GetMem(SecurityKey, 32);
 						ZeroMemory(SecurityKey, 32);
 						if (true = ExternalRequestProc(self.ExternalPluginNr, RT_Other, 'Enter auth key', PWideChar(AuthMessage), SecurityKey, 32)) then
@@ -1142,7 +1142,7 @@ begin
 							FormFields.AddOrSetValue('Login', self.user + '@' + self.domain);
 							FormFields.AddOrSetValue('csrf', TwostepData.csrf);
 							FormFields.AddOrSetValue('AuthCode', SecurityKey);
-							Log(MSGTYPE_DETAILS, 'Performing second step auth...');
+							Log(LogLevelDebug, MSGTYPE_DETAILS, 'Performing second step auth...');
 							Result := self.HTTPPostMultipart(SECSTEP_URL, FormFields, PostAnswer);
 							FormFields.free;
 							if Result then
@@ -1150,59 +1150,59 @@ begin
 								Result := self.getToken();
 								if (Result) then
 								begin
-									Log(MSGTYPE_DETAILS, 'Connected to ' + self.user + '@' + self.domain);
+									Log(LogLevelDetail, MSGTYPE_DETAILS, 'Connected to ' + self.user + '@' + self.domain);
 									self.logUserSpaceInfo;
 								end else begin
-									Log(MSGTYPE_IMPORTANTERROR, 'error: twostep auth failed');
+									Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'error: twostep auth failed');
 									exit(false);
 								end;
 							end;
 						end else begin
-							Log(MSGTYPE_IMPORTANTERROR, 'error: security key not provided');
+							Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'error: security key not provided');
 							exit(false);
 						end;
 						FreeMem(SecurityKey);
 					end else begin
-						Log(MSGTYPE_IMPORTANTERROR, 'error: parsing authorization data');
+						Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'error: parsing authorization data');
 						exit(false);
 					end;
 
 				end else begin
-					Log(MSGTYPE_IMPORTANTERROR, 'error: getting first step auth token for ' + self.user + '@' + self.domain);
+					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'error: getting first step auth token for ' + self.user + '@' + self.domain);
 					FormFields.free;
 				end;
 
 			end;
 		CLOUD_AUTH_METHOD_WEB: //todo: вынести в отдельный метод
 			begin
-				Log(MSGTYPE_DETAILS, 'Requesting auth token for ' + self.user + '@' + self.domain);
+				Log(LogLevelDebug, MSGTYPE_DETAILS, 'Requesting auth token for ' + self.user + '@' + self.domain);
 				Result := self.HTTPPost(LOGIN_URL, 'page=https://cloud.mail.ru/?new_auth_form=1&Domain=' + self.domain + '&Login=' + self.user + '&Password=' + UrlEncode(self.password) + '&FailPage=', PostAnswer);
 				if (Result) then
 				begin
-					Log(MSGTYPE_DETAILS, 'Parsing token data...');
+					Log(LogLevelDebug, MSGTYPE_DETAILS, 'Parsing token data...');
 					Result := self.getToken();
 					if (Result) then
 					begin
-						Log(MSGTYPE_DETAILS, 'Connected to ' + self.user + '@' + self.domain);
+						Log(LogLevelDetail, MSGTYPE_DETAILS, 'Connected to ' + self.user + '@' + self.domain);
 						self.logUserSpaceInfo;
 					end else begin
-						Log(MSGTYPE_IMPORTANTERROR, 'error: parsing auth token for ' + self.user + '@' + self.domain);
+						Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'error: parsing auth token for ' + self.user + '@' + self.domain);
 						exit(false);
 					end;
 				end
-				else Log(MSGTYPE_IMPORTANTERROR, 'error: getting auth token for ' + self.user + '@' + self.domain);
+				else Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'error: getting auth token for ' + self.user + '@' + self.domain);
 			end;
 		CLOUD_AUTH_METHOD_OAUTH:
 			begin
 				Result := self.getOAuthToken(self.OAuthToken);
-				if not Result then Log(MSGTYPE_IMPORTANTERROR, 'OAuth error: ' + self.OAuthToken.error + '(' + self.OAuthToken.error_description + ')');
+				if not Result then Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'OAuth error: ' + self.OAuthToken.error + '(' + self.OAuthToken.error_description + ')');
 			end;
 	end;
 end;
 
 function TCloudMailRu.loginShared(method: integer): Boolean;
 begin
-	Log(MSGTYPE_DETAILS, 'Open ' + self.PUBLIC_URL);
+	Log(LogLevelDetail, MSGTYPE_DETAILS, 'Open ' + self.PUBLIC_URL);
 	Result := self.getSharedToken();
 	//exit(true);
 end;
@@ -1219,9 +1219,9 @@ begin
 	begin
 		if (US.overquota) then QuotaInfo := ' Warning: space quota exhausted!'
 		else QuotaInfo := '';
-		Log(MSGTYPE_DETAILS, 'Total space: ' + FormatSize(US.total) + ', used: ' + FormatSize(US.used) + ', free: ' + FormatSize(US.total - US.used) + '.' + QuotaInfo);
+		Log(LogLevelFileOperation, MSGTYPE_DETAILS, 'Total space: ' + FormatSize(US.total) + ', used: ' + FormatSize(US.used) + ', free: ' + FormatSize(US.total - US.used) + '.' + QuotaInfo);
 	end else begin
-		Log(MSGTYPE_IMPORTANTERROR, 'error: getting user space information for ' + self.user + '@' + self.domain);
+		Log(LogLevelDebug, MSGTYPE_IMPORTANTERROR, 'error: getting user space information for ' + self.user + '@' + self.domain);
 	end;
 end;
 
@@ -1284,7 +1284,7 @@ begin
 			else
 				begin
 					Result := false;
-					Log(MSGTYPE_IMPORTANTERROR, 'File publish error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
+					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'File publish error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
 				end;
 		end;
 	end;
@@ -1328,7 +1328,7 @@ begin
 		OperationResult := fromJSON_OperationResult(JSON, OperationStatus);
 
 		Result := OperationResult = CLOUD_OPERATION_OK;
-		if not Result then Log(MSGTYPE_IMPORTANTERROR, 'Invite member error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
+		if not Result then Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Invite member error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
 
 	end;
 end;
@@ -1352,7 +1352,7 @@ begin
 			else
 				begin
 					Result := false;
-					Log(MSGTYPE_IMPORTANTERROR, 'File restore error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
+					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'File restore error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
 				end;
 		end;
 	end;
@@ -1377,7 +1377,7 @@ begin
 			else
 				begin
 					Result := false;
-					Log(MSGTYPE_IMPORTANTERROR, 'Trashbin clearing error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
+					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Trashbin clearing error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
 				end;
 		end;
 	end;
@@ -1402,7 +1402,7 @@ begin
 			else
 				begin
 					Result := false;
-					Log(MSGTYPE_IMPORTANTERROR, 'Folder mount error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
+					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Folder mount error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
 				end;
 		end;
 	end;
@@ -1430,7 +1430,7 @@ begin
 			else
 				begin
 					Result := false;
-					Log(MSGTYPE_IMPORTANTERROR, 'Folder mount error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
+					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Folder mount error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
 				end;
 		end;
 	end;
@@ -1455,7 +1455,7 @@ begin
 			else
 				begin
 					Result := false;
-					Log(MSGTYPE_IMPORTANTERROR, 'Folder mount error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
+					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Folder mount error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
 				end;
 		end;
 	end;
@@ -1469,12 +1469,12 @@ var
 	ChunkFileName: WideString;
 begin
 	try
-		Splitter := TFileSplitter.Create(localPath, self.split_file_size, self.ExternalProgressProc, self.ExternalPluginNr);
+		Splitter := TFileSplitter.Create(localPath, self.split_file_size, self.ExternalProgressProc, self.ExternalPluginNr); //memleak possible
 		SplitResult := Splitter.split();
 	except
 		on E: Exception do
 		begin
-			Log(MSGTYPE_IMPORTANTERROR, 'File splitting error: ' + E.Message + ', ignored');
+			Log(LogLevelWarning, MSGTYPE_IMPORTANTERROR, 'File splitting error: ' + E.Message + ', ignored');
 			exit(FS_FILE_NOTSUPPORTED);
 		end;
 	end;
@@ -1486,13 +1486,13 @@ begin
 			end;
 		FS_FILE_USERABORT:
 			begin
-				Log(MSGTYPE_DETAILS, 'File splitting aborted by user, uploading aborted');
+				Log(LogLevelWarning, MSGTYPE_DETAILS, 'File splitting aborted by user, uploading aborted');
 				Splitter.Destroy;
 				exit(FS_FILE_USERABORT);
 			end;
 		else
 			begin
-				Log(MSGTYPE_IMPORTANTERROR, 'File splitting error, code: ' + SplitResult.ToString + ', ignored');
+				Log(LogLevelWarning, MSGTYPE_IMPORTANTERROR, 'File splitting error, code: ' + SplitResult.ToString + ', ignored');
 				Splitter.Destroy;
 				exit(FS_FILE_NOTSUPPORTED);
 			end;
@@ -1506,7 +1506,7 @@ begin
 			case Result of
 				FS_FILE_USERABORT:
 					begin
-						Log(MSGTYPE_DETAILS, 'Partial upload aborted');
+						Log(LogLevelDetail, MSGTYPE_DETAILS, 'Partial upload aborted');
 						Splitter.Destroy;
 						exit(FS_FILE_USERABORT);
 					end;
@@ -1515,7 +1515,7 @@ begin
 						case ChunkOverwriteMode of
 							ChunkOverwrite: //silently overwrite chunk
 								begin
-									Log(MSGTYPE_DETAILS, 'Chunk ' + ChunkFileName + ' already exists, overwriting.');
+									Log(LogLevelWarning, MSGTYPE_DETAILS, 'Chunk ' + ChunkFileName + ' already exists, overwriting.');
 									if not(self.deleteFile(ChunkFileName)) then
 									begin
 										Splitter.Destroy;
@@ -1530,12 +1530,12 @@ begin
 								end;
 							ChunkOverwriteIgnore: //ignore this chunk
 								begin
-									Log(MSGTYPE_DETAILS, 'Chunk ' + ChunkFileName + ' already exists, skipping.');
+									Log(LogLevelWarning, MSGTYPE_DETAILS, 'Chunk ' + ChunkFileName + ' already exists, skipping.');
 									Continue;
 								end;
 							ChunkOverwriteAbort: //abort operation
 								begin
-									Log(MSGTYPE_DETAILS, 'Chunk ' + ChunkFileName + ' already exists, aborting.');
+									Log(LogLevelWarning, MSGTYPE_DETAILS, 'Chunk ' + ChunkFileName + ' already exists, aborting.');
 									Splitter.Destroy;
 									exit(FS_FILE_NOTSUPPORTED);
 								end;
@@ -1543,7 +1543,7 @@ begin
 					end;
 				else
 					begin
-						Log(MSGTYPE_IMPORTANTERROR, 'Partial upload error, code: ' + Result.ToString);
+						Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Partial upload error, code: ' + Result.ToString);
 						Splitter.Destroy;
 						exit;
 					end;
@@ -1555,7 +1555,7 @@ begin
 	case Result of
 		FS_FILE_USERABORT:
 			begin
-				Log(MSGTYPE_DETAILS, 'Partial upload aborted');
+				Log(LogLevelDetail, MSGTYPE_DETAILS, 'Partial upload aborted');
 				Splitter.Destroy;
 				exit(FS_FILE_USERABORT);
 			end;
@@ -1564,7 +1564,7 @@ begin
 				case ChunkOverwriteMode of
 					ChunkOverwrite: //silently overwrite chunk
 						begin
-							Log(MSGTYPE_DETAILS, CRCFileName + ' checksum file already exists, overwriting.');
+							Log(LogLevelDetail, MSGTYPE_DETAILS, CRCFileName + ' checksum file already exists, overwriting.');
 							if not(self.deleteFile(CopyExt(CRCFileName, remotePath))) then
 							begin
 								Splitter.Destroy;
@@ -1579,11 +1579,11 @@ begin
 						end;
 					ChunkOverwriteIgnore: //ignore this chunk
 						begin
-							Log(MSGTYPE_DETAILS, CRCFileName + ' checksum file already exists, skipping.');
+							Log(LogLevelDetail, MSGTYPE_DETAILS, CRCFileName + ' checksum file already exists, skipping.');
 						end;
 					ChunkOverwriteAbort: //abort operation
 						begin
-							Log(MSGTYPE_DETAILS, CRCFileName + ' checksum file already exists, aborting.');
+							Log(LogLevelWarning, MSGTYPE_DETAILS, CRCFileName + ' checksum file already exists, aborting.');
 							Splitter.Destroy;
 							exit(FS_FILE_NOTSUPPORTED);
 						end;
@@ -1591,7 +1591,7 @@ begin
 			end;
 		else
 			begin
-				Log(MSGTYPE_IMPORTANTERROR, 'Checksum file  upload error, code: ' + Result.ToString);
+				Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Checksum file upload error, code: ' + Result.ToString);
 				Splitter.Destroy;
 				exit;
 			end;
@@ -1615,10 +1615,10 @@ begin
 	begin
 		if self.split_large_files then
 		begin
-			Log(MSGTYPE_DETAILS, 'File size > ' + self.split_file_size.ToString() + ' bytes, file will be splitted.');
+			Log(LogLevelDetail, MSGTYPE_DETAILS, 'File size > ' + self.split_file_size.ToString() + ' bytes, file will be splitted.');
 			exit(putFileSplit(localPath, remotePath, ConflictMode, ChunkOverwriteMode));
 		end else begin
-			Log(MSGTYPE_IMPORTANTERROR, 'File size > ' + self.split_file_size.ToString() + ' bytes, ignored');
+			Log(LogLevelWarning, MSGTYPE_IMPORTANTERROR, 'File size > ' + self.split_file_size.ToString() + ' bytes, ignored');
 			exit(FS_FILE_NOTSUPPORTED);
 		end;
 	end;
@@ -1638,7 +1638,7 @@ begin
 			begin
 				Result := FS_FILE_USERABORT;
 			end else begin
-				Log(MSGTYPE_IMPORTANTERROR, 'error: uploading to cloud: ' + E.ClassName + ' ошибка с сообщением: ' + E.Message);
+				Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'error: uploading to cloud: ' + E.ClassName + ' ошибка с сообщением: ' + E.Message);
 				Result := FS_FILE_WRITEERROR;
 			end;
 		end;
@@ -1698,7 +1698,7 @@ begin
 			else
 				begin
 					Result := false;
-					Log(MSGTYPE_IMPORTANTERROR, 'Delete directory error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
+					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Delete directory error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
 				end;
 		end;
 	end;
@@ -1738,7 +1738,7 @@ begin
 			CLOUD_OPERATION_OK: Result := fromJSON_FileStatus(JSON, FileInfo);
 			else
 				begin
-					Log(MSGTYPE_IMPORTANTERROR, 'File status error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
+					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'File status error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
 					Result := false;
 				end;
 		end;
