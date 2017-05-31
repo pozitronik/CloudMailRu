@@ -3,7 +3,7 @@ unit DeletedProperty;
 interface
 
 uses
-	MRC_Helper, CloudMailRu, DateUtils, Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls;
+	MRC_Helper, CloudMailRu, CMLTypes, DateUtils, Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls;
 
 type
 	TDeletedPropertyForm = class(TForm)
