@@ -236,6 +236,7 @@ type
 		function extractPublicShard(Text: WideString; var Shard: WideString): Boolean;
 		function extractTwostepJson(Text: WideString; var JSON: WideString): Boolean;
 		{JSON MANIPULATION}
+		function initJSONValue(JSON: WideString; var JSONVal: TJSONValue): Boolean;
 		function fromJSON_DirListing(JSON: WideString; var CloudMailRuDirListing: TCloudMailRuDirListing): Boolean;
 		function fromJSON_UserSpace(JSON: WideString; var CloudMailRuSpaceInfo: TCloudMailRuSpaceInfo): Boolean;
 		function fromJSON_FileStatus(JSON: WideString; var CloudMailRuDirListingItem: TCloudMailRuDirListingItem): Boolean;
@@ -618,6 +619,18 @@ begin
 	end;
 end;
 
+function TCloudMailRu.initJSONValue(JSON: WideString; var JSONVal: TJSONValue): Boolean;
+begin
+	Result := false;
+	JSONVal := nil;
+	try
+		JSONVal := TJSONObject.ParseJSONValue(JSON);
+	except
+		exit;
+	end;
+	Result := true;
+end;
+
 function TCloudMailRu.fromJSON_DirListing(JSON: WideString; var CloudMailRuDirListing: TCloudMailRuDirListing): Boolean;
 var
 	JSONVal: TJSONValue;
@@ -625,10 +638,10 @@ var
 	J: integer;
 	A: TJSONArray;
 begin
-	Result := true;
-	try
-		JSONVal := TJSONObject.ParseJSONValue(JSON);
+	Result := false;
+	if not initJSONValue(JSON, JSONVal) then exit;
 
+	try
 		A := ((JSONVal as TJSONObject).Values['body'] as TJSONObject).Values['list'] as TJSONArray;
 		SetLength(CloudMailRuDirListing, A.count);
 		for J := 0 to A.count - 1 do
@@ -666,9 +679,9 @@ begin
 		end;
 		JSONVal.free;
 	except
-		Result := false;
+		exit;
 	end;
-
+	Result := true;
 end;
 
 function TCloudMailRu.fromJSON_FileStatus(JSON: WideString; var CloudMailRuDirListingItem: TCloudMailRuDirListingItem): Boolean;
@@ -676,9 +689,9 @@ var
 	ParserObj: TJSONObject;
 	JSONVal: TJSONValue;
 begin
-	Result := true;
+	Result := false;
+	if not initJSONValue(JSON, JSONVal) then exit;
 	try
-		JSONVal := TJSONObject.ParseJSONValue(JSON);
 		ParserObj := (JSONVal as TJSONObject).Values['body'] as TJSONObject;
 		with CloudMailRuDirListingItem do
 		begin
@@ -704,8 +717,9 @@ begin
 		end;
 		JSONVal.free;
 	except
-		Result := false;
+		exit;
 	end;
+	Result := true;
 end;
 
 function TCloudMailRu.fromJSON_InviteListing(JSON: WideString; var InviteListing: TCloudMailRuInviteInfoListing): Boolean;
@@ -715,10 +729,10 @@ var
 	ParserObj: TJSONObject;
 	JSONVal: TJSONValue;
 begin
-	Result := true;
+	Result := false;
 	SetLength(InviteListing, 0);
+	if not initJSONValue(JSON, JSONVal) then exit;
 	try
-		JSONVal := TJSONObject.ParseJSONValue(JSON);
 		A := ((JSONVal as TJSONObject).Values['body'] as TJSONObject).Values['invited'] as TJSONArray;
 		if not Assigned(A) then exit; //no invites
 		SetLength(InviteListing, A.count);
@@ -737,10 +751,11 @@ begin
 	except
 		on E: {EJSON}Exception do
 		begin
-			Result := false;
 			Log(MSGTYPE_IMPORTANTERROR, 'Can''t parse server answer: ' + JSON);
+			exit;
 		end;
 	end;
+	Result := true;
 end;
 
 function TCloudMailRu.fromJSON_IncomingInviteListing(JSON: WideString; var IncomingInviteListing: TCloudMailRuIncomingInviteInfoListing): Boolean;
@@ -751,10 +766,10 @@ var
 	J: integer;
 	A: TJSONArray;
 begin
-	Result := true;
+	Result := false;
 	SetLength(IncomingInviteListing, 0);
+	if not initJSONValue(JSON, JSONVal) then exit;
 	try
-		JSONVal := TJSONObject.ParseJSONValue(JSON);
 		A := ((JSONVal as TJSONObject).Values['body'] as TJSONObject).Values['list'] as TJSONArray;
 		if not Assigned(A) then exit; //no invites
 		SetLength(IncomingInviteListing, A.count);
@@ -782,10 +797,11 @@ begin
 	except
 		on E: {EJSON}Exception do
 		begin
-			Result := false;
 			Log(MSGTYPE_IMPORTANTERROR, 'Can''t parse server answer: ' + JSON);
+			exit;
 		end;
 	end;
+	Result := true;
 end;
 
 function TCloudMailRu.fromJSON_OAuthTokenInfo(JSON: WideString; var CloudMailRuOAuthInfo: TCloudMailRuOAuthInfo): Boolean;
@@ -793,9 +809,9 @@ var
 	JSONVal: TJSONValue;
 	ParserObj: TJSONObject;
 begin
-	Result := true;
+	Result := false;
+	if not initJSONValue(JSON, JSONVal) then exit;
 	try
-		JSONVal := TJSONObject.ParseJSONValue(JSON);
 		ParserObj := (JSONVal as TJSONObject);
 		with CloudMailRuOAuthInfo do
 		begin
@@ -810,13 +826,14 @@ begin
 	except
 		on E: {EJSON}Exception do
 		begin
-			Result := false;
 			Log(MSGTYPE_IMPORTANTERROR, 'Can''t parse server answer: ' + JSON);
 			CloudMailRuOAuthInfo.error_code := CLOUD_ERROR_UNKNOWN;
 			CloudMailRuOAuthInfo.error := 'Answer parsing';
 			CloudMailRuOAuthInfo.error_description := 'JSON parsing error: at ' + JSON;
+			exit;
 		end;
 	end;
+	Result := true;
 end;
 
 function TCloudMailRu.fromJSON_OperationResult(JSON: WideString; var OperationStatus: integer): integer;
@@ -826,8 +843,8 @@ var
 	JSONVal: TJSONValue;
 begin
 	//Result:=CLOUD_ERROR_BAD_REQUEST;
+	if not initJSONValue(JSON, JSONVal) then exit(CLOUD_ERROR_UNKNOWN);
 	try
-		JSONVal := TJSONObject.ParseJSONValue(JSON);
 		ParserObj := JSONVal as TJSONObject;
 		OperationStatus := ParserObj.Values['status'].Value.ToInteger;
 		if OperationStatus <> 200 then
@@ -884,29 +901,30 @@ function TCloudMailRu.fromJSON_PublicLink(JSON: WideString; var PublicLink: Wide
 var
 	JSONVal: TJSONValue;
 begin
-	Result := true;
+	Result := false;
+	if not initJSONValue(JSON, JSONVal) then exit;
 	try
-		JSONVal := TJSONObject.ParseJSONValue(JSON);
 		PublicLink := (JSONVal as TJSONObject).Values['body'].Value;
 		JSONVal.free;
 	except
-		Result := false;
+		exit;
 	end;
+	Result := true;
 end;
 
 function TCloudMailRu.fromJSON_Shard(JSON: WideString; var Shard: WideString): Boolean;
 var
 	JSONVal: TJSONValue;
 begin
-	Result := true;
+	Result := false;
+	if not initJSONValue(JSON, JSONVal) then exit;
 	try
-		JSONVal := TJSONObject.ParseJSONValue(JSON);
 		Shard := ((((JSONVal as TJSONObject).Values['body'] as TJSONObject).Values['get'] as TJSONArray).Items[0] as TJSONObject).Values['url'].Value;
 		JSONVal.free;
 	except
-		Result := false;
+		exit;
 	end;
-
+	Result := false;
 end;
 
 function TCloudMailRu.fromJSON_TwostepData(JSON: WideString; var TwostepData: TCloudMailRuTwostepData): Boolean;
@@ -914,9 +932,9 @@ var
 	ParserObj: TJSONObject;
 	JSONVal: TJSONValue;
 begin
-	Result := true;
+	Result := false;
+	if not initJSONValue(JSON, JSONVal) then exit;
 	try
-		JSONVal := TJSONObject.ParseJSONValue(JSON);
 		ParserObj := (JSONVal as TJSONObject) as TJSONObject;
 		with TwostepData do
 		begin
@@ -944,8 +962,9 @@ begin
 		end;
 		JSONVal.free;
 	except
-		Result := false;
+		exit;
 	end;
+	Result := true;
 end;
 
 function TCloudMailRu.fromJSON_UserSpace(JSON: WideString; var CloudMailRuSpaceInfo: TCloudMailRuSpaceInfo): Boolean;
@@ -953,9 +972,9 @@ var
 	ParserObj: TJSONObject;
 	JSONVal: TJSONValue;
 begin
-	Result := true;
+	Result := false;
+	if not initJSONValue(JSON, JSONVal) then exit;
 	try
-		JSONVal := TJSONObject.ParseJSONValue(JSON);
 		ParserObj := (JSONVal as TJSONObject).Values['body'] as TJSONObject;
 		with CloudMailRuSpaceInfo do
 		begin
@@ -965,8 +984,9 @@ begin
 		end;
 		JSONVal.free;
 	except
-		Result := false;
+		exit;
 	end;
+	Result := true;
 end;
 
 function TCloudMailRu.extractPublicShard(Text: WideString; var Shard: WideString): Boolean;
