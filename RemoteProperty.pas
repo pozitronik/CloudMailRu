@@ -41,7 +41,7 @@ type
 		DescriptionEditMemo: TMemo;
 		procedure AccessCBClick(Sender: TObject);
 		procedure FormDestroy(Sender: TObject);
-		class function ShowProperty(parentWindow: HWND; RemoteName: WideString; RemoteProperty: TCloudMailRuDirListingItem; Cloud: TCloudMailRu; DoUrlEncode: Boolean = true; AutoUpdateDownloadListing: Boolean = true): Integer;
+		class function ShowProperty(parentWindow: HWND; RemoteName: WideString; RemoteProperty: TCloudMailRuDirListingItem; Cloud: TCloudMailRu; DoUrlEncode: Boolean = true; AutoUpdateDownloadListing: Boolean = true; ShowDescriptions: Boolean = true): Integer;
 		procedure FormActivate(Sender: TObject);
 		procedure InviteBtnClick(Sender: TObject);
 		procedure ItemDeleteClick(Sender: TObject);
@@ -73,6 +73,7 @@ type
 		DoUrlEncode: Boolean;
 		LogCancelledFlag: Boolean;
 		AutoUpdateDownloadListing: Boolean;
+		ShowDescriptions: Boolean;
 
 		TempPublicCloud: TCloudMailRu; //Облако для получения прямых ссылок на опубликованные объекты
 	public
@@ -97,7 +98,7 @@ begin
 	if self.Cloud.getDescriptionFile(IncludeTrailingBackslash(ExtractFileDir(self.RemoteName)) + 'descript.ion', CurrentDescriptions.ionFilename) = FS_FILE_OK then
 	begin
 		CurrentDescriptions.Read;
-		DescriptionEditMemo.lines.Text := CurrentDescriptions.GetValue(ExtractFileName(self.RemoteName));
+		DescriptionEditMemo.lines.Text := CurrentDescriptions.GetValue(ExtractFileName(self.RemoteName), FORMAT_CLEAR);
 	end else begin
 		CurrentDescriptions.Clear;
 	end;
@@ -321,7 +322,7 @@ begin
 	end;
 end;
 
-class function TPropertyForm.ShowProperty(parentWindow: HWND; RemoteName: WideString; RemoteProperty: TCloudMailRuDirListingItem; Cloud: TCloudMailRu; DoUrlEncode: Boolean = true; AutoUpdateDownloadListing: Boolean = true): Integer;
+class function TPropertyForm.ShowProperty(parentWindow: HWND; RemoteName: WideString; RemoteProperty: TCloudMailRuDirListingItem; Cloud: TCloudMailRu; DoUrlEncode: Boolean = true; AutoUpdateDownloadListing: Boolean = true; ShowDescriptions: Boolean = true): Integer;
 var
 	PropertyForm: TPropertyForm;
 begin
@@ -336,6 +337,7 @@ begin
 		PropertyForm.AutoUpdateDownloadListing := AutoUpdateDownloadListing;
 		PropertyForm.LogCancelledFlag := false;
 		PropertyForm.DoUrlEncode := DoUrlEncode;
+		PropertyForm.ShowDescriptions := ShowDescriptions;
 		RegisterHotKey(PropertyForm.Handle, 1, 0, VK_ESCAPE);
 		result := PropertyForm.Showmodal;
 
@@ -355,6 +357,7 @@ begin
 	ExtPropertiesPC.Visible := false;
 	FolderAccessTS.TabVisible := false;
 	DownloadLinksTS.TabVisible := false;
+	DescriptionTS.TabVisible := false;
 	if self.Cloud.isPublicShare then
 	begin
 		AccessCB.Enabled := false;
@@ -372,7 +375,13 @@ begin
 			RefreshInvites;
 		end;
 	end;
-	RefreshItemDescription;
+	if self.ShowDescriptions then
+	begin
+		ExtPropertiesPC.Visible := true;
+		DescriptionTS.TabVisible := true;
+		RefreshItemDescription;
+	end;
+
 end;
 
 procedure TPropertyForm.WMHotKey(var Message: TMessage);
