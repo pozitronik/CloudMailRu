@@ -3,7 +3,7 @@
 interface
 
 uses
-	Plugin_types, CMLTypes, Settings, Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, CloudMailRu, MRC_Helper, Vcl.Grids, Vcl.ValEdit, Vcl.Menus, Vcl.ComCtrls, Vcl.ToolWin, System.ImageList, Vcl.ImgList;
+	Plugin_types, Descriptions, CMLTypes, Settings, Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, CloudMailRu, MRC_Helper, Vcl.Grids, Vcl.ValEdit, Vcl.Menus, Vcl.ComCtrls, Vcl.ToolWin, System.ImageList, Vcl.ImgList;
 
 const
 	WM_AFTER_SHOW = WM_USER + 300; //custom message
@@ -37,6 +37,8 @@ type
 		LogLabel: TLabel;
 		CancelScanTB: TToolButton;
 		RefreshScanTB: TToolButton;
+		DescriptionTS: TTabSheet;
+		DescriptionEditMemo: TMemo;
 		procedure AccessCBClick(Sender: TObject);
 		procedure FormDestroy(Sender: TObject);
 		class function ShowProperty(parentWindow: HWND; RemoteName: WideString; RemoteProperty: TCloudMailRuDirListingItem; Cloud: TCloudMailRu; DoUrlEncode: Boolean = true; AutoUpdateDownloadListing: Boolean = true): Integer;
@@ -59,6 +61,7 @@ type
 		procedure RefreshPublicShare(const Publish: Boolean);
 		function FillRecursiveDownloadListing(const Path: WideString; Cloud: TCloudMailRu = nil): Boolean; //break recursion if false - cancelled
 		procedure UpdateDownloadListing();
+		procedure RefreshItemDescription();
 		procedure TempPublicCloudInit(publicUrl: WideString);
 		function LogProc(LogText: WideString): Boolean;
 
@@ -85,18 +88,34 @@ implementation
 {$R *.dfm}
 {TPropertyForm}
 
-(*Class methods*)
+procedure TPropertyForm.RefreshItemDescription;
+var
+	CurrentDescriptions: TDescription;
+begin
+	DescriptionEditMemo.lines.Clear;
+	CurrentDescriptions := TDescription.Create(GetTmpFileName('ion'));
+	if self.Cloud.getDescriptionFile(IncludeTrailingBackslash(ExtractFileDir(self.RemoteName)) + 'descript.ion', CurrentDescriptions.ionFilename) = FS_FILE_OK then
+	begin
+		CurrentDescriptions.Read;
+		DescriptionEditMemo.lines.Text := CurrentDescriptions.GetValue(ExtractFileName(self.RemoteName));
+	end else begin
+		CurrentDescriptions.Clear;
+	end;
+
+	CurrentDescriptions.Destroy;
+
+end;
 
 procedure TPropertyForm.UpdateDownloadListing;
 begin
-	DownloadLinksMemo.Lines.Clear;
+	DownloadLinksMemo.lines.Clear;
 	if self.Cloud.isPublicShare then
 	begin
 		if Props.type_ = TYPE_DIR then
 		begin (*рекурсивно получаем все ссылки в каталоге*)
 			FillRecursiveDownloadListing(IncludeTrailingPathDelimiter(self.RemoteName))
 		end else begin
-			DownloadLinksMemo.Lines.Text := self.Cloud.getSharedFileUrl(self.RemoteName, self.DoUrlEncode);
+			DownloadLinksMemo.lines.Text := self.Cloud.getSharedFileUrl(self.RemoteName, self.DoUrlEncode);
 		end;
 	end else begin
 		(*У объекта есть публичная ссылка, можно получить прямые ссылки на скачивание*)
@@ -105,7 +124,7 @@ begin
 		begin (*рекурсивно получаем все ссылки в каталоге*)
 			FillRecursiveDownloadListing('', self.TempPublicCloud);
 		end else begin
-			DownloadLinksMemo.Lines.Text := TempPublicCloud.getSharedFileUrl('', self.DoUrlEncode);
+			DownloadLinksMemo.lines.Text := TempPublicCloud.getSharedFileUrl('', self.DoUrlEncode);
 		end;
 		TempPublicCloud.Free;
 	end;
@@ -133,7 +152,7 @@ begin
 			if not result then break;
 
 		end else begin
-			DownloadLinksMemo.Lines.Add(Cloud.getSharedFileUrl(IncludeTrailingPathDelimiter(Path) + CurrentDirListing[CurrentDirItemsCounter].name, self.DoUrlEncode));
+			DownloadLinksMemo.lines.Add(Cloud.getSharedFileUrl(IncludeTrailingPathDelimiter(Path) + CurrentDirListing[CurrentDirItemsCounter].name, self.DoUrlEncode));
 		end;
 	end;
 	RefreshScanTB.Enabled := true;
@@ -298,7 +317,7 @@ procedure TPropertyForm.SaveBtnClick(Sender: TObject);
 begin
 	if (DownloadLinksSD.Execute(self.Handle)) then
 	begin
-		DownloadLinksMemo.Lines.SaveToFile(DownloadLinksSD.FileName);
+		DownloadLinksMemo.lines.SaveToFile(DownloadLinksSD.FileName);
 	end;
 end;
 
@@ -353,6 +372,7 @@ begin
 			RefreshInvites;
 		end;
 	end;
+	RefreshItemDescription;
 end;
 
 procedure TPropertyForm.WMHotKey(var Message: TMessage);
