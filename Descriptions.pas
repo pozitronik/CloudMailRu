@@ -1,10 +1,18 @@
-unit Descriptions;
+﻿unit Descriptions;
 
 {Simple && read-only descript.ion files support}
 interface
 
 uses
 	System.Types, System.Classes, System.StrUtils, Generics.Collections, System.SysUtils, System.WideStrUtils;
+
+const
+	FORMAT_AS_IS = 0;
+	FORMAT_CLEAR = 1;
+	FORMAT_ONELINE = 2;
+
+	MULTILINE_DIVIDER = #$04#$C2; //multiline divider in ansii files
+	MULTILINE_DIVIDERW = chr($04) + chr($C2); //multiline divider in utf-8 and utf-16 formatted files (BE/LE)
 
 type
 
@@ -14,13 +22,16 @@ type
 	var
 		items: TDictionary<WideString, WideString>;
 		ion_filename: WideString;
+		encoding: TEncoding;
+
 		function GetionFilename: WideString;
+		function FormatValue(Value: WideString; FormatType: Integer): WideString;
 
 	public
 		constructor Create(ion_filename: WideString);
 		destructor Destroy; override;
-		function Read(): integer;
-		function GetValue(item: WideString): WideString;
+		function Read(): Integer;
+		function GetValue(item: WideString; FormatType: Integer = FORMAT_ONELINE): WideString;
 		procedure Clear;
 		function DetermineEncoding(): TEncoding;
 		property ionFilename: WideString read GetionFilename;
@@ -62,44 +73,60 @@ begin
 	exit(TEncoding.Default);
 end;
 
+function TDescription.FormatValue(Value: WideString; FormatType: Integer): WideString;
+var
+	Divider: WideString;
+begin
+	if (self.encoding = TEncoding.UTF8) or (self.encoding = TEncoding.BigEndianUnicode) or (self.encoding = TEncoding.Unicode) then Divider := MULTILINE_DIVIDERW
+	else Divider := MULTILINE_DIVIDER;
+
+	case FormatType of
+		FORMAT_AS_IS: Result := Value;
+		FORMAT_CLEAR: Result := WideStringReplace(WideStringReplace(Value, '\n', sLineBreak, [rfReplaceAll]), Divider, '', [rfReplaceAll]);
+		FORMAT_ONELINE: Result := WideStringReplace(WideStringReplace(Value, '\n', '  ', [rfReplaceAll]), Divider, '', [rfReplaceAll]);
+	end;
+
+end;
+
 function TDescription.GetionFilename: WideString;
 begin
-	result := self.ion_filename;
+	Result := self.ion_filename;
 end;
 
-function TDescription.GetValue(item: WideString): WideString;
+function TDescription.GetValue(item: WideString; FormatType: Integer): WideString;
 begin
-	if not(items.TryGetValue(item, result)) then exit('');
+	if not(items.TryGetValue(item, Result)) then exit('');
+	Result := self.FormatValue(Result, FormatType);
 
-	result := WideStringReplace(WideStringReplace(result, '\n', '  ', [rfReplaceAll]), chr($04) + 'В', '', [rfReplaceAll]);
 end;
 
-function TDescription.Read(): integer;
+function TDescription.Read(): Integer;
 var
 	fStream: TStreamReader;
-	line, key, value: WideString;
-	t: integer;
+	line, key, Value: WideString;
+	t: Integer;
 begin
-	result := 0; //not used
+	Result := 0; //not used
 	self.Clear;
 	fStream := nil;
 	try
-		fStream := TStreamReader.Create(self.ion_filename, DetermineEncoding(), False);
+		self.encoding := DetermineEncoding();
+		fStream := TStreamReader.Create(self.ion_filename, self.encoding, False);
 		while not fStream.EndOfStream do
 		begin
 			line := fStream.ReadLine;
 			if StartsStr('"', line) then
 			begin
 				t := PosEx('" ', line);
-				value := copy(line, t + 2, length(line));
+				Value := copy(line, t + 2, length(line));
 				key := copy(line, 2, t - 2);
 			end else begin
 				t := PosEx(' ', line);
-				value := copy(line, t + 1, length(line));
+				Value := copy(line, t + 1, length(line));
 				key := copy(line, 0, t - 1);
 			end;
 
-			items.Add(key, value);
+			items.Add(key, Value);
 		end;
 	except
 		fStream.Free;
