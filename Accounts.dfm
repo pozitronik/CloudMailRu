@@ -158,7 +158,7 @@ object AccountsForm: TAccountsForm
     Top = 0
     Width = 491
     Height = 475
-    ActivePage = AccountsTab
+    ActivePage = NetworkTab
     Align = alClient
     TabOrder = 0
     object AccountsTab: TTabSheet
@@ -688,7 +688,7 @@ object AccountsForm: TAccountsForm
           Caption = 'Proxy server'
         end
         object ProxyCB: TComboBox
-          Left = 7
+          Left = 5
           Top = 37
           Width = 465
           Height = 22
