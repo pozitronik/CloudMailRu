@@ -1,4 +1,4 @@
-unit CMLJSON;
+﻿unit CMLJSON;
 
 interface
 
@@ -133,7 +133,7 @@ begin
 	if not initJSONValue(JSON, JSONVal) then exit;
 	try
 		A := ((JSONVal as TJSONObject).Values['body'] as TJSONObject).Values['invited'] as TJSONArray;
-		if not Assigned(A) then exit; //no invites
+		if not Assigned(A) then exit(true); //no invites
 		SetLength(InviteListing, A.count);
 		for J := 0 to A.count - 1 do
 		begin
