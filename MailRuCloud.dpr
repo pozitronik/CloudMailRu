@@ -644,11 +644,9 @@ begin
 	else
 	begin
 		Cloud := ConnectionManager.get(RealPath.account, getResult);
-		if Cloud.statusFile(RealPath.path, CurrentItem) then //всегда нужно обновлять статус на сервере, CurrentListing может быть изменён в другой панели
-		begin
-			if Cloud.isPublicShare then TPropertyForm.ShowProperty(MainWin, RealPath.path, CurrentItem, Cloud, GetPluginSettings(SettingsIniFilePath).DownloadLinksEncode, GetPluginSettings(SettingsIniFilePath).AutoUpdateDownloadListing)
-			else TPropertyForm.ShowProperty(MainWin, RealPath.path, CurrentItem, Cloud, GetPluginSettings(SettingsIniFilePath).DownloadLinksEncode, GetPluginSettings(SettingsIniFilePath).AutoUpdateDownloadListing);
-		end;
+		//всегда нужно обновлять статус на сервере, CurrentListing может быть изменён в другой панели
+		if Cloud.statusFile(RealPath.path, CurrentItem) then TPropertyForm.ShowProperty(MainWin, RealPath.path, CurrentItem, Cloud, GetPluginSettings(SettingsIniFilePath).DownloadLinksEncode, GetPluginSettings(SettingsIniFilePath).AutoUpdateDownloadListing);
+
 	end;
 end;
 
