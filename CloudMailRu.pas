@@ -8,7 +8,6 @@ type
 	TCloudMailRu = class
 	private
 		{VARIABLES}
-		ExternalPluginNr: integer; //todo remove
 		ExternalSourceName: PWideChar;
 		ExternalTargetName: PWideChar;
 		domain: WideString;
@@ -30,9 +29,9 @@ type
 		login_method: integer;
 		Cookie: TIdCookieManager;
 		Socks: TIdSocksInfo;
-		ExternalProgressProc: TProgressProcW;
+		ExternalProgressProc: TProgressHandler;
 		ExternalLogProc: TLogHandler;
-		ExternalRequestProc: TRequestProcW;
+		ExternalRequestProc: TRequestHandler;
 		Shard: WideString;
 		Proxy: TProxySettings;
 		ConnectTimeout: integer;
@@ -83,7 +82,7 @@ type
 		Property ConnectTimeoutValue: integer read ConnectTimeout;
 		function getSharedFileUrl(remotePath: WideString; DoUrlEncode: Boolean = true): WideString;
 		{CONSTRUCTOR/DESTRUCTOR}
-		constructor Create(AccountSettings: TAccountSettings; split_file_size: integer; Proxy: TProxySettings; ConnectTimeout: integer; ExternalProgressProc: TProgressProcW = nil; PluginNr: integer = -1; ExternalLogProc: TLogHandler = nil; ExternalRequestProc: TRequestProcW = nil);
+		constructor Create(AccountSettings: TAccountSettings; split_file_size: integer; Proxy: TProxySettings; ConnectTimeout: integer; ExternalProgressProc: TProgressHandler = nil; ExternalLogProc: TLogHandler = nil; ExternalRequestProc: TRequestHandler = nil);
 		destructor Destroy; override;
 		{CLOUD INTERFACE METHODS}
 		function login(method: integer = CLOUD_AUTH_METHOD_WEB): Boolean;
@@ -219,7 +218,7 @@ begin //Облако умеет скопировать файл, но не см�
 	end;
 end;
 
-constructor TCloudMailRu.Create(AccountSettings: TAccountSettings; split_file_size: integer; Proxy: TProxySettings; ConnectTimeout: integer; ExternalProgressProc: TProgressProcW; PluginNr: integer; ExternalLogProc: TLogHandler; ExternalRequestProc: TRequestProcW);
+constructor TCloudMailRu.Create(AccountSettings: TAccountSettings; split_file_size: integer; Proxy: TProxySettings; ConnectTimeout: integer; ExternalProgressProc: TProgressHandler = nil; ExternalLogProc: TLogHandler = nil; ExternalRequestProc: TRequestHandler = nil);
 begin
 	try
 		self.Cookie := TIdCookieManager.Create();
@@ -265,7 +264,6 @@ begin
 		self.ExternalLogProc := ExternalLogProc;
 		self.ExternalRequestProc := ExternalRequestProc;
 
-		self.ExternalPluginNr := PluginNr;
 		self.ExternalSourceName := '';
 		self.ExternalTargetName := '';
 	except
@@ -1086,7 +1084,7 @@ begin
 	if (Pos('chunked', LowerCase(HTTP.Response.TransferEncoding)) = 0) and (ContentLength > 0) then
 	begin
 		Percent := 100 * AWorkCount div ContentLength;
-		if Assigned(ExternalProgressProc) and (ExternalProgressProc(self.ExternalPluginNr, self.ExternalSourceName, self.ExternalTargetName, Percent) = 1) then abort;
+		if Assigned(ExternalProgressProc) and (ExternalProgressProc(self.ExternalSourceName, self.ExternalTargetName, Percent) = 1) then abort;
 	end;
 end;
 
@@ -1136,7 +1134,7 @@ begin
 						Log(LogLevelDebug, MSGTYPE_DETAILS, 'Awaiting for security key... ');
 						GetMem(SecurityKey, 32);
 						ZeroMemory(SecurityKey, 32);
-						if (true = ExternalRequestProc(self.ExternalPluginNr, RT_Other, 'Enter auth key', PWideChar(AuthMessage), SecurityKey, 32)) then
+						if (true = ExternalRequestProc(RT_Other, 'Enter auth key', PWideChar(AuthMessage), SecurityKey, 32)) then
 						begin
 							FormFields.Clear;
 							FormFields.AddOrSetValue('Login', self.user + '@' + self.domain);
@@ -1469,7 +1467,7 @@ var
 	ChunkFileName: WideString;
 begin
 	try
-		Splitter := TFileSplitter.Create(localPath, self.split_file_size, self.ExternalProgressProc, self.ExternalPluginNr); //memleak possible
+		Splitter := TFileSplitter.Create(localPath, self.split_file_size, self.ExternalProgressProc); //memleak possible
 		SplitResult := Splitter.split();
 	except
 		on E: Exception do

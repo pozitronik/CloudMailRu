@@ -71,7 +71,7 @@ function TDescription.GetValue(item: WideString): WideString;
 begin
 	if not(items.TryGetValue(item, result)) then exit('');
 
-	result := WideStringReplace(WideStringReplace(result, '\n', '  ', [rfReplaceAll]), chr($04) + 'Â', '', [rfReplaceAll]);
+	result := WideStringReplace(WideStringReplace(result, '\n', '  ', [rfReplaceAll]), chr($04) + 'Ð’', '', [rfReplaceAll]);
 end;
 
 function TDescription.Read(): integer;

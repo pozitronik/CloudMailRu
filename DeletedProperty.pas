@@ -76,7 +76,7 @@ begin
 			FormCaption := 'Multiple deleted items';
 		end;
 
-		if TrashDir then //свойства для самой корзины, даём выбор Очистить/Восстановить все/Отмена
+		if TrashDir then //СЃРІРѕР№СЃС‚РІР° РґР»СЏ СЃР°РјРѕР№ РєРѕСЂР·РёРЅС‹, РґР°С‘Рј РІС‹Р±РѕСЂ РћС‡РёСЃС‚РёС‚СЊ/Р’РѕСЃСЃС‚Р°РЅРѕРІРёС‚СЊ РІСЃРµ/РћС‚РјРµРЅР°
 		begin
 			FormCaption := AccountName + TrashPostfix;
 			NameCaption := FormCaption;
@@ -85,7 +85,7 @@ begin
 			ByCaption := '-';
 			DeletedPropertyForm.RestoreBTN.Enabled := false;
 			DeletedPropertyForm.RestoreAllBTN.Enabled := true;
-		end else begin //свойства для пачки файлов, даём выбор Восстановить/Отмена
+		end else begin //СЃРІРѕР№СЃС‚РІР° РґР»СЏ РїР°С‡РєРё С„Р°Р№Р»РѕРІ, РґР°С‘Рј РІС‹Р±РѕСЂ Р’РѕСЃСЃС‚Р°РЅРѕРІРёС‚СЊ/РћС‚РјРµРЅР°
 
 		end;
 

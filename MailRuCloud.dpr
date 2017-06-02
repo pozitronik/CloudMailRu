@@ -54,6 +54,24 @@ begin
 	if (Assigned(MyLogProc)) and CheckFlag(LogLevel, GetPluginSettings(SettingsIniFilePath).LogLevel) then MyLogProc(PluginNum, MsgType, LogString);
 end;
 
+function RequestHandle(RequestType: integer; CustomTitle, CustomText, ReturnedText: PWideChar; maxlen: integer): Bool; stdcall;
+begin
+	Result := false;
+	if Assigned(MyRequestProc) then Result := MyRequestProc(PluginNum, RequestType, CustomTitle, CustomText, ReturnedText, maxlen);
+end;
+
+function ProgressHandle(SourceName, TargetName: PWideChar; PercentDone: integer): integer; stdcall;
+begin
+	Result := 0;
+	if Assigned(MyProgressProc) then Result := MyProgressProc(PluginNum, SourceName, TargetName, PercentDone);
+end;
+
+function CryptHandle(mode: integer; ConnectionName, Password: PWideChar; maxlen: integer): integer; stdcall;
+begin
+	Result := FS_FILE_NOTSUPPORTED;
+	if Assigned(MyCryptProc) then Result := MyCryptProc(PluginNum, CryptoNum, mode, ConnectionName, Password, maxlen);
+end;
+
 function CloudMailRuDirListingItemToFindData(DirListing: TCloudMailRuDirListingItem; DirsAsSymlinks: Boolean = false): tWIN32FINDDATAW;
 begin
 	if (DirListing.deleted_from <> '') then //items inside trash bin
@@ -1058,14 +1076,12 @@ begin
 	CryptoNum := CryptoNr;
 
 	ProxySettings := GetPluginSettings(SettingsIniFilePath).Proxy;
-	GetProxyPasswordNow(ProxySettings, @LogHandle, MyCryptProc, PluginNum, CryptoNum); //todo plugin num unused
+	GetProxyPasswordNow(ProxySettings, @LogHandle, @CryptHandle);
 
 	if ProxySettings.use_tc_password_manager then SetPluginSettingsValue(SettingsIniFilePath, 'ProxyTCPwdMngr', true);
 
 	CloudMaxFileSize := GetPluginSettings(SettingsIniFilePath).CloudMaxFileSize;
-	ConnectionManager := TConnectionManager.Create(AccountsIniFilePath, PluginNum, MyProgressProc, @LogHandle, ProxySettings, GetPluginSettings(SettingsIniFilePath).SocketTimeout, CloudMaxFileSize, MyRequestProc);
-	ConnectionManager.CryptoNum := CryptoNum;
-	ConnectionManager.MyCryptProc := MyCryptProc;
+	ConnectionManager := TConnectionManager.Create(AccountsIniFilePath, ProxySettings, GetPluginSettings(SettingsIniFilePath).SocketTimeout, CloudMaxFileSize, @ProgressHandle, @LogHandle, @RequestHandle, @CryptHandle);
 
 end;
 
@@ -1398,10 +1414,7 @@ begin
 	end; //case
 end;
 
-exports
-	FsGetDefRootName, FsInit, FsInitW, FsFindFirst, FsFindFirstW, FsFindNext, FsFindNextW, FsFindClose, FsGetFile, FsGetFileW, FsDisconnect, FsDisconnectW, FsStatusInfo,
-	FsStatusInfoW, FsPutFile, FsPutFileW, FsDeleteFile, FsDeleteFileW, FsMkDir, FsMkDirW, FsRemoveDir, FsRemoveDirW, FsSetCryptCallback, FsSetCryptCallbackW, FsExecuteFileW,
-	FsRenMovFile, FsRenMovFileW, FsGetBackgroundFlags, FsContentGetSupportedField, FsContentGetValue, FsContentGetValueW, FsExtractCustomIcon, FsExtractCustomIconW;
+exports FsGetDefRootName, FsInit, FsInitW, FsFindFirst, FsFindFirstW, FsFindNext, FsFindNextW, FsFindClose, FsGetFile, FsGetFileW, FsDisconnect, FsDisconnectW, FsStatusInfo, FsStatusInfoW, FsPutFile, FsPutFileW, FsDeleteFile, FsDeleteFileW, FsMkDir, FsMkDirW, FsRemoveDir, FsRemoveDirW, FsSetCryptCallback, FsSetCryptCallbackW, FsExecuteFileW, FsRenMovFile, FsRenMovFileW, FsGetBackgroundFlags, FsContentGetSupportedField, FsContentGetValue, FsContentGetValueW, FsExtractCustomIcon, FsExtractCustomIconW;
 
 begin
 	//ReportMemoryLeaksOnShutdown := true;

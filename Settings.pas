@@ -1,4 +1,4 @@
-unit Settings;
+п»їunit Settings;
 
 interface
 
@@ -39,7 +39,7 @@ const
 	IconsModeExternal = 3;
 	IconsModeExternalOverlay = 4;
 
-	//Уровни логирования (по степеням двойки)
+	//РЈСЂРѕРІРЅРё Р»РѕРіРёСЂРѕРІР°РЅРёСЏ (РїРѕ СЃС‚РµРїРµРЅСЏРј РґРІРѕР№РєРё)
 	LogLevelConnect = 1; //connection
 	LogLevelFileOperation = 2; //file operations && free space
 	LogLevelDetail = 4; //some detailed info (i.e. retry data or smth)
@@ -95,7 +95,7 @@ type
 		LogLevel: Integer;
 	end;
 
-function GetProxyPasswordNow(var ProxySettings: TProxySettings; LogHandleProc: TLogHandler; MyCryptProc: TCryptProcW; PluginNum: Integer; CryptoNum: Integer): boolean;
+function GetProxyPasswordNow(var ProxySettings: TProxySettings; LogHandleProc: TLogHandler; CryptHandleProc: TCryptHandler): boolean;
 function GetPluginSettings(IniFilePath: WideString): TPluginSettings;
 procedure SetPluginSettings(IniFilePath: WideString; PluginSettings: TPluginSettings);
 procedure SetPluginSettingsValue(IniFilePath: WideString; OptionName: WideString; OptionValue: Variant);
@@ -107,7 +107,7 @@ procedure AddVirtualAccountsToAccountsList(AccountsIniFilePath: WideString; var 
 
 implementation
 
-function GetProxyPasswordNow(var ProxySettings: TProxySettings; LogHandleProc: TLogHandler; MyCryptProc: TCryptProcW; PluginNum: Integer; CryptoNum: Integer): boolean;
+function GetProxyPasswordNow(var ProxySettings: TProxySettings; LogHandleProc: TLogHandler; CryptHandleProc: TCryptHandler): boolean;
 var
 	CryptResult: Integer;
 	AskResult: Integer;
@@ -117,20 +117,20 @@ begin
 	if (ProxySettings.ProxyType = ProxyNone) or (ProxySettings.user = '') then exit(true); //no username means no password required
 
 	if ProxySettings.use_tc_password_manager then
-	begin //пароль должен браться из TC
+	begin //РїР°СЂРѕР»СЊ РґРѕР»Р¶РµРЅ Р±СЂР°С‚СЊСЃСЏ РёР· TC
 		GetMem(buf, 1024);
-		CryptResult := MyCryptProc(PluginNum, CryptoNum, FS_CRYPT_LOAD_PASSWORD_NO_UI, PWideChar('proxy' + ProxySettings.user), buf, 1024); //Пытаемся взять пароль по-тихому
+		CryptResult := CryptHandleProc(FS_CRYPT_LOAD_PASSWORD_NO_UI, PWideChar('proxy' + ProxySettings.user), buf, 1024); //РџС‹С‚Р°РµРјСЃСЏ РІР·СЏС‚СЊ РїР°СЂРѕР»СЊ РїРѕ-С‚РёС…РѕРјСѓ
 		if CryptResult = FS_FILE_NOTFOUND then
 		begin
 			LogHandleProc(LogLevelDetail, msgtype_details, PWideChar('No master password entered yet'));
-			CryptResult := MyCryptProc(PluginNum, CryptoNum, FS_CRYPT_LOAD_PASSWORD, PWideChar('proxy' + ProxySettings.user), buf, 1024);
+			CryptResult := CryptHandleProc(FS_CRYPT_LOAD_PASSWORD, PWideChar('proxy' + ProxySettings.user), buf, 1024);
 		end;
-		if CryptResult = FS_FILE_OK then //Успешно получили пароль
+		if CryptResult = FS_FILE_OK then //РЈСЃРїРµС€РЅРѕ РїРѕР»СѓС‡РёР»Рё РїР°СЂРѕР»СЊ
 		begin
 			ProxySettings.password := buf;
 			//Result := true;
 		end;
-		if CryptResult = FS_FILE_NOTSUPPORTED then //пользователь отменил ввод главного пароля
+		if CryptResult = FS_FILE_NOTSUPPORTED then //РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ РѕС‚РјРµРЅРёР» РІРІРѕРґ РіР»Р°РІРЅРѕРіРѕ РїР°СЂРѕР»СЏ
 		begin
 			LogHandleProc(LogLevelError, msgtype_importanterror, PWideChar('CryptProc returns error: Decrypt failed'));
 		end;
@@ -139,45 +139,45 @@ begin
 			LogHandleProc(LogLevelError, msgtype_importanterror, PWideChar('CryptProc returns error: Password not found in password store'));
 		end;
 		FreeMemory(buf);
-	end; //else // ничего не делаем, пароль уже должен быть в настройках (взят в открытом виде из инишника)
+	end; //else // РЅРёС‡РµРіРѕ РЅРµ РґРµР»Р°РµРј, РїР°СЂРѕР»СЊ СѓР¶Рµ РґРѕР»Р¶РµРЅ Р±С‹С‚СЊ РІ РЅР°СЃС‚СЂРѕР№РєР°С… (РІР·СЏС‚ РІ РѕС‚РєСЂС‹С‚РѕРј РІРёРґРµ РёР· РёРЅРёС€РЅРёРєР°)
 
-	if ProxySettings.password = '' then //но пароля нет, не в инишнике, не в тотале
+	if ProxySettings.password = '' then //РЅРѕ РїР°СЂРѕР»СЏ РЅРµС‚, РЅРµ РІ РёРЅРёС€РЅРёРєРµ, РЅРµ РІ С‚РѕС‚Р°Р»Рµ
 	begin
 		AskResult := TAskPasswordForm.AskPassword(FindTCWindow, 'User ' + ProxySettings.user + ' proxy', ProxySettings.password, ProxySettings.use_tc_password_manager);
 		if AskResult <> mrOK then
-		begin //не указали пароль в диалоге
-			exit(false); //отказались вводить пароль
+		begin //РЅРµ СѓРєР°Р·Р°Р»Рё РїР°СЂРѕР»СЊ РІ РґРёР°Р»РѕРіРµ
+			exit(false); //РѕС‚РєР°Р·Р°Р»РёСЃСЊ РІРІРѕРґРёС‚СЊ РїР°СЂРѕР»СЊ
 		end else begin
 			if ProxySettings.use_tc_password_manager then
 			begin
-				case MyCryptProc(PluginNum, CryptoNum, FS_CRYPT_SAVE_PASSWORD, PWideChar('proxy' + ProxySettings.user), PWideChar(ProxySettings.password), SizeOf(ProxySettings.password)) of
+				case CryptHandleProc(FS_CRYPT_SAVE_PASSWORD, PWideChar('proxy' + ProxySettings.user), PWideChar(ProxySettings.password), SizeOf(ProxySettings.password)) of
 					FS_FILE_OK:
-						begin //TC скушал пароль, запомним в инишник галочку
+						begin //TC СЃРєСѓС€Р°Р» РїР°СЂРѕР»СЊ, Р·Р°РїРѕРјРЅРёРј РІ РёРЅРёС€РЅРёРє РіР°Р»РѕС‡РєСѓ
 							LogHandleProc(LogLevelDebug, msgtype_details, PWideChar('Password saved in TC password manager'));
 							TmpString := ProxySettings.password;
 							ProxySettings.password := '';
-							ProxySettings.use_tc_password_manager := true; //Не забыть сохранить!
+							ProxySettings.use_tc_password_manager := true; //РќРµ Р·Р°Р±С‹С‚СЊ СЃРѕС…СЂР°РЅРёС‚СЊ!
 							ProxySettings.password := TmpString;
 						end;
-					FS_FILE_NOTSUPPORTED: //Сохранение не получилось
+					FS_FILE_NOTSUPPORTED: //РЎРѕС…СЂР°РЅРµРЅРёРµ РЅРµ РїРѕР»СѓС‡РёР»РѕСЃСЊ
 						begin
 							LogHandleProc(LogLevelError, msgtype_importanterror, PWideChar('CryptProc returns error: Encrypt failed'));
 						end;
-					FS_FILE_WRITEERROR: //Сохранение опять не получилось
+					FS_FILE_WRITEERROR: //РЎРѕС…СЂР°РЅРµРЅРёРµ РѕРїСЏС‚СЊ РЅРµ РїРѕР»СѓС‡РёР»РѕСЃСЊ
 						begin
 							LogHandleProc(LogLevelError, msgtype_importanterror, PWideChar('Password NOT saved: Could not write password to password store'));
 						end;
-					FS_FILE_NOTFOUND: //Не указан мастер-пароль
+					FS_FILE_NOTFOUND: //РќРµ СѓРєР°Р·Р°РЅ РјР°СЃС‚РµСЂ-РїР°СЂРѕР»СЊ
 						begin
 							LogHandleProc(LogLevelError, msgtype_importanterror, PWideChar('Password NOT saved: No master password entered yet'));
 						end;
-					//Ошибки здесь не значат, что пароль мы не получили - он может быть введён в диалоге
+					//РћС€РёР±РєРё Р·РґРµСЃСЊ РЅРµ Р·РЅР°С‡Р°С‚, С‡С‚Рѕ РїР°СЂРѕР»СЊ РјС‹ РЅРµ РїРѕР»СѓС‡РёР»Рё - РѕРЅ РјРѕР¶РµС‚ Р±С‹С‚СЊ РІРІРµРґС‘РЅ РІ РґРёР°Р»РѕРіРµ
 				end;
 			end;
 			result := true;
 		end;
 	end
-	else result := true; //пароль взят из инишника напрямую
+	else result := true; //РїР°СЂРѕР»СЊ РІР·СЏС‚ РёР· РёРЅРёС€РЅРёРєР° РЅР°РїСЂСЏРјСѓСЋ
 end;
 
 function GetPluginSettings(IniFilePath: WideString): TPluginSettings;
@@ -216,7 +216,7 @@ begin
 	IniFile.Destroy;
 end;
 
-procedure SetPluginSettings(IniFilePath: WideString; PluginSettings: TPluginSettings); {Не используется}
+procedure SetPluginSettings(IniFilePath: WideString; PluginSettings: TPluginSettings); {РќРµ РёСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ}
 var
 	IniFile: TIniFile;
 begin

@@ -5,13 +5,13 @@ interface
 
 uses Windows, PLUGIN_TYPES, AnsiStrings;
 
-procedure FsGetDefRootName(DefRootName: PAnsiChar; maxlen: integer); stdcall; //Процедура вызывается один раз при установке плагина
+procedure FsGetDefRootName(DefRootName: PAnsiChar; maxlen: integer); stdcall; //РџСЂРѕС†РµРґСѓСЂР° РІС‹Р·С‹РІР°РµС‚СЃСЏ РѕРґРёРЅ СЂР°Р· РїСЂРё СѓСЃС‚Р°РЅРѕРІРєРµ РїР»Р°РіРёРЅР°
 procedure FsStatusInfo(RemoteDir: PAnsiChar; InfoStartEnd, InfoOperation: integer); stdcall;
 function FsFindFirst(path: PAnsiChar; var FindData: tWIN32FINDDATAA): THandle; stdcall;
 function FsFindNext(Hdl: THandle; var FindData: tWIN32FINDDATAA): Bool; stdcall;
-function FsExecuteFile(MainWin: THandle; RemoteName, Verb: PAnsiChar): integer; stdcall; //Запуск файла
-function FsGetFile(RemoteName, LocalName: PAnsiChar; CopyFlags: integer; RemoteInfo: pRemoteInfo): integer; stdcall; //Копирование файла из файловой системы плагина
-function FsPutFile(LocalName, RemoteName: PAnsiChar; CopyFlags: integer): integer; stdcall; //Копирование файла в файловую систему плагина
+function FsExecuteFile(MainWin: THandle; RemoteName, Verb: PAnsiChar): integer; stdcall; //Р—Р°РїСѓСЃРє С„Р°Р№Р»Р°
+function FsGetFile(RemoteName, LocalName: PAnsiChar; CopyFlags: integer; RemoteInfo: pRemoteInfo): integer; stdcall; //РљРѕРїРёСЂРѕРІР°РЅРёРµ С„Р°Р№Р»Р° РёР· С„Р°Р№Р»РѕРІРѕР№ СЃРёСЃС‚РµРјС‹ РїР»Р°РіРёРЅР°
+function FsPutFile(LocalName, RemoteName: PAnsiChar; CopyFlags: integer): integer; stdcall; //РљРѕРїРёСЂРѕРІР°РЅРёРµ С„Р°Р№Р»Р° РІ С„Р°Р№Р»РѕРІСѓСЋ СЃРёСЃС‚РµРјСѓ РїР»Р°РіРёРЅР°
 function FsDeleteFile(RemoteName: PAnsiChar): Bool; stdcall;
 function FsRenMovFile(OldName: PAnsiChar; NewName: PAnsiChar; Move: Boolean; OverWrite: Boolean; ri: pRemoteInfo): integer;
 function FsDisconnect(DisconnectRoot: PAnsiChar): Bool; stdcall;
@@ -24,7 +24,7 @@ function FsExtractCustomIcon(RemoteName: pchar; ExtractFlags: integer; var TheIc
 
 implementation
 
-procedure FsGetDefRootName(DefRootName: PAnsiChar; maxlen: integer); stdcall; //Процедура вызывается один раз при установке плагина
+procedure FsGetDefRootName(DefRootName: PAnsiChar; maxlen: integer); stdcall; //РџСЂРѕС†РµРґСѓСЂР° РІС‹Р·С‹РІР°РµС‚СЃСЏ РѕРґРёРЅ СЂР°Р· РїСЂРё СѓСЃС‚Р°РЅРѕРІРєРµ РїР»Р°РіРёРЅР°
 Begin
 	AnsiStrings.StrLCopy(DefRootName, PAnsiChar('CloudMailRu'), maxlen);
 End;
@@ -37,61 +37,61 @@ end;
 function FsFindFirst(path: PAnsiChar; var FindData: tWIN32FINDDATAA): THandle; stdcall;
 begin
 	SetLastError(ERROR_INVALID_FUNCTION);
-	Result := ERROR_INVALID_HANDLE; //Ansi-заглушка
+	Result := ERROR_INVALID_HANDLE; //Ansi-Р·Р°РіР»СѓС€РєР°
 end;
 
 function FsFindNext(Hdl: THandle; var FindData: tWIN32FINDDATAA): Bool; stdcall;
 begin
 	SetLastError(ERROR_INVALID_FUNCTION);
-	Result := false; //Ansi-заглушка
+	Result := false; //Ansi-Р·Р°РіР»СѓС€РєР°
 end;
 
-function FsExecuteFile(MainWin: THandle; RemoteName, Verb: PAnsiChar): integer; stdcall; //Запуск файла
+function FsExecuteFile(MainWin: THandle; RemoteName, Verb: PAnsiChar): integer; stdcall; //Р—Р°РїСѓСЃРє С„Р°Р№Р»Р°
 Begin
 	SetLastError(ERROR_INVALID_FUNCTION);
-	Result := FS_EXEC_ERROR; //Ansi-заглушка
+	Result := FS_EXEC_ERROR; //Ansi-Р·Р°РіР»СѓС€РєР°
 End;
 
-function FsGetFile(RemoteName, LocalName: PAnsiChar; CopyFlags: integer; RemoteInfo: pRemoteInfo): integer; stdcall; //Копирование файла из файловой системы плагина
+function FsGetFile(RemoteName, LocalName: PAnsiChar; CopyFlags: integer; RemoteInfo: pRemoteInfo): integer; stdcall; //РљРѕРїРёСЂРѕРІР°РЅРёРµ С„Р°Р№Р»Р° РёР· С„Р°Р№Р»РѕРІРѕР№ СЃРёСЃС‚РµРјС‹ РїР»Р°РіРёРЅР°
 begin
 	SetLastError(ERROR_INVALID_FUNCTION);
-	Result := FS_FILE_NOTSUPPORTED; //Ansi-заглушка
+	Result := FS_FILE_NOTSUPPORTED; //Ansi-Р·Р°РіР»СѓС€РєР°
 end;
 
-function FsPutFile(LocalName, RemoteName: PAnsiChar; CopyFlags: integer): integer; stdcall; //Копирование файла в файловую систему плагина
+function FsPutFile(LocalName, RemoteName: PAnsiChar; CopyFlags: integer): integer; stdcall; //РљРѕРїРёСЂРѕРІР°РЅРёРµ С„Р°Р№Р»Р° РІ С„Р°Р№Р»РѕРІСѓСЋ СЃРёСЃС‚РµРјСѓ РїР»Р°РіРёРЅР°
 begin
 	SetLastError(ERROR_INVALID_FUNCTION);
-	Result := FS_FILE_NOTSUPPORTED; //Ansi-заглушка
+	Result := FS_FILE_NOTSUPPORTED; //Ansi-Р·Р°РіР»СѓС€РєР°
 end;
 
-function FsDeleteFile(RemoteName: PAnsiChar): Bool; stdcall; //Удаление файла из файловой ссистемы плагина
+function FsDeleteFile(RemoteName: PAnsiChar): Bool; stdcall; //РЈРґР°Р»РµРЅРёРµ С„Р°Р№Р»Р° РёР· С„Р°Р№Р»РѕРІРѕР№ СЃСЃРёСЃС‚РµРјС‹ РїР»Р°РіРёРЅР°
 Begin
-	SetLastError(ERROR_INVALID_FUNCTION); //Ansi-заглушка
+	SetLastError(ERROR_INVALID_FUNCTION); //Ansi-Р·Р°РіР»СѓС€РєР°
 	Result := false;
 End;
 
 function FsRenMovFile(OldName: PAnsiChar; NewName: PAnsiChar; Move: Boolean; OverWrite: Boolean; ri: pRemoteInfo): integer;
 begin
 	SetLastError(ERROR_INVALID_FUNCTION);
-	Result := FS_FILE_NOTSUPPORTED; //Ansi-заглушка
+	Result := FS_FILE_NOTSUPPORTED; //Ansi-Р·Р°РіР»СѓС€РєР°
 end;
 
 function FsDisconnect(DisconnectRoot: PAnsiChar): Bool; stdcall;
 begin
 	SetLastError(ERROR_INVALID_FUNCTION);
-	Result := false; //ansi-заглушка
+	Result := false; //ansi-Р·Р°РіР»СѓС€РєР°
 end;
 
 function FsMkDir(path: PAnsiChar): Bool; stdcall;
 begin
 	SetLastError(ERROR_INVALID_FUNCTION);
-	Result := false; //ansi-заглушка
+	Result := false; //ansi-Р·Р°РіР»СѓС€РєР°
 end;
 
 function FsRemoveDir(RemoteName: PAnsiChar): Bool; stdcall;
 begin
 	SetLastError(ERROR_INVALID_FUNCTION);
-	Result := false; //ansi-заглушка
+	Result := false; //ansi-Р·Р°РіР»СѓС€РєР°
 end;
 
 procedure FsSetCryptCallback(PCryptProc: TCryptProcW; CryptoNr: integer; Flags: integer); stdcall;
@@ -205,7 +205,7 @@ end;
 function FsExtractCustomIcon(RemoteName: pchar; ExtractFlags: integer; var TheIcon: hicon): integer; stdcall;
 begin
 	SetLastError(ERROR_INVALID_FUNCTION);
-	Result := FS_FILE_NOTSUPPORTED; //Ansi-заглушка
+	Result := FS_FILE_NOTSUPPORTED; //Ansi-Р·Р°РіР»СѓС€РєР°
 end;
 
 end.

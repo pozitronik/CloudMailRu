@@ -282,7 +282,7 @@ begin
 			if error = 'export_limit_exceeded' then exit(CLOUD_ERROR_EXPORT_LIMIT_EXCEEDED);
 			if error = 'unprocessable_entry' then exit(CLOUD_ERROR_UNPROCESSABLE_ENTRY);
 
-			exit(CLOUD_ERROR_UNKNOWN); //Эту ошибку мы пока не встречали
+			exit(CLOUD_ERROR_UNKNOWN); //Р­С‚Сѓ РѕС€РёР±РєСѓ РјС‹ РїРѕРєР° РЅРµ РІСЃС‚СЂРµС‡Р°Р»Рё
 
 		end;
 		JSONVal.free;

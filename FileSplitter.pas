@@ -32,14 +32,13 @@ type
 		Splitted: TSplittedFile;
 		PartSize: Int64;
 		totalPartsCount: Int64;
-		ExternalProgressProc: TProgressProcW;
-		ExternalPluginNr: Integer;
+		ExternalProgressProc: TProgressHandler;
 
 		function AddLeadingZeroes(const aNumber, Length: Integer): string;
 		function crc32_update(inbuffer: pointer; buffersize, crc: DWord): DWord;
 		function CRCend(crc: DWord): DWord;
 	public
-		constructor Create(filename: WideString; SplitSize: Int64; ExternalProgressProc: TProgressProcW = nil; PluginNr: Integer = -1);
+		constructor Create(filename: WideString; SplitSize: Int64; ExternalProgressProc: TProgressHandler = nil);
 		destructor Destroy; override;
 		function split(): Integer;
 		function getSplittedPart(partNumber: Integer; var partStream: TFileStream): Integer; {Get nth part as tfilestream without splitting of all file}
@@ -91,14 +90,14 @@ begin
 	CRCend := (crc xor CRCSeed);
 end;
 
-constructor TFileSplitter.Create(filename: WideString; SplitSize: Int64; ExternalProgressProc: TProgressProcW = nil; PluginNr: Integer = -1);
+constructor TFileSplitter.Create(filename: WideString; SplitSize: Int64; ExternalProgressProc: TProgressHandler = nil);
 begin
-	//TODO проверка на существование
+	//TODO РїСЂРѕРІРµСЂРєР° РЅР° СЃСѓС‰РµСЃС‚РІРѕРІР°РЅРёРµ
 	self.PartSize := SplitSize;
 	self.Splitted.filename := filename;
 	self.Splitted.size := SizeOfFile(filename);
 	self.ExternalProgressProc := ExternalProgressProc;
-	self.ExternalPluginNr := PluginNr;
+
 	self.totalPartsCount := self.Splitted.size div self.PartSize;
 	if (self.Splitted.size mod self.PartSize) <> 0 then inc(self.totalPartsCount);
 
@@ -189,8 +188,8 @@ begin
 		if Assigned(self.ExternalProgressProc) then
 		begin
 			Percent := 100 * partsCount div self.totalPartsCount;
-			if ExternalProgressProc(self.ExternalPluginNr, PWideChar('Splitting ' + self.Splitted.filename), PWideChar((partsCount + 1).ToString + ' of ' + self.totalPartsCount.ToString), Percent) = 1 then
-			begin //отменили разбивку
+			if ExternalProgressProc(PWideChar('Splitting ' + self.Splitted.filename), PWideChar((partsCount + 1).ToString + ' of ' + self.totalPartsCount.ToString), Percent) = 1 then
+			begin //РѕС‚РјРµРЅРёР»Рё СЂР°Р·Р±РёРІРєСѓ
 				FStream.Destroy;
 				exit(FS_FILE_USERABORT);
 			end;

@@ -22,20 +22,18 @@ type
 		Timeout: Integer;
 		CloudMaxFileSize: Integer;
 
-		PluginNum: Integer;
-
-		MyProgressProc: TProgressProcW;
+		ProgressHandleProc: TProgressHandler;
 		LogHandleProc: TLogHandler;
-		MyRequestProc: TRequestProcW;
+		RequestHandleProc: TRequestHandler;
+		CryptHandleProc: TCryptHandler;
 
 		function ConnectionExists(connectionName: WideString): Integer; //проверяет существование подключение
 		function new(connectionName: WideString): Integer; //Добавляет подключение в пул
 		function GetMyPasswordNow(var AccountSettings: TAccountSettings): boolean; //Получает пароль из файла, из тоталовского менеджера или запрашивает прямой ввод
 
 	public
-		CryptoNum: Integer;
-		MyCryptProc: TCryptProcW;
-		constructor Create(IniFileName: WideString; PluginNum: Integer; MyProgressProc: TProgressProcW; LogHandleProc: TLogHandler; ProxySettings: TProxySettings; Timeout, CloudMaxFileSize: Integer; MyRequestProc: TRequestProcW);
+
+		constructor Create(IniFileName: WideString; ProxySettings: TProxySettings; Timeout, CloudMaxFileSize: Integer; ProgressHandleProc: TProgressHandler; LogHandleProc: TLogHandler; RequestHandleProc: TRequestHandler; CryptHandleProc: TCryptHandler);
 		destructor Destroy(); override;
 		function get(connectionName: WideString; var OperationResult: Integer; doInit: boolean = true): TCloudMailRu; //возвращает готовое подклчение по имени
 		function set_(connectionName: WideString; cloud: TCloudMailRu): boolean;
@@ -49,14 +47,15 @@ type
 implementation
 
 {TConnectionManager}
-constructor TConnectionManager.Create(IniFileName: WideString; PluginNum: Integer; MyProgressProc: TProgressProcW; LogHandleProc: TLogHandler; ProxySettings: TProxySettings; Timeout, CloudMaxFileSize: Integer; MyRequestProc: TRequestProcW);
+constructor TConnectionManager.Create(IniFileName: WideString; ProxySettings: TProxySettings; Timeout, CloudMaxFileSize: Integer; ProgressHandleProc: TProgressHandler; LogHandleProc: TLogHandler; RequestHandleProc: TRequestHandler; CryptHandleProc: TCryptHandler);
 begin
 	SetLength(Connections, 0);
 	self.IniFileName := IniFileName;
-	self.PluginNum := PluginNum;
-	self.MyProgressProc := MyProgressProc;
+
+	self.ProgressHandleProc := ProgressHandleProc;
 	self.LogHandleProc := LogHandleProc;
-	self.MyRequestProc := MyRequestProc;
+	self.RequestHandleProc := RequestHandleProc;
+	self.CryptHandleProc := CryptHandleProc;
 	self.Proxy := ProxySettings;
 	self.Timeout := Timeout;
 	self.CloudMaxFileSize := CloudMaxFileSize;
@@ -111,7 +110,7 @@ begin
 
 	LogHandleProc(LogLevelConnect, MSGTYPE_CONNECT, PWideChar('CONNECT \' + connectionName));
 
-	cloud := TCloudMailRu.Create(AccountSettings, self.CloudMaxFileSize, self.Proxy, Timeout, MyProgressProc, PluginNum, LogHandleProc, MyRequestProc);
+	cloud := TCloudMailRu.Create(AccountSettings, self.CloudMaxFileSize, self.Proxy, Timeout, ProgressHandleProc, LogHandleProc, RequestHandleProc);
 	if not set_(connectionName, cloud) then exit(CLOUD_OPERATION_ERROR_STATUS_UNKNOWN); //INVALID_HANDLE_VALUE
 
 	if (AccountSettings.twostep_auth) then LoginMethod := 1
@@ -189,11 +188,11 @@ begin
 	if AccountSettings.use_tc_password_manager then
 	begin //пароль должен браться из TC
 		GetMem(buf, 1024);
-		CryptResult := MyCryptProc(PluginNum, CryptoNum, FS_CRYPT_LOAD_PASSWORD_NO_UI, PWideChar(AccountSettings.Name), buf, 1024); //Пытаемся взять пароль по-тихому
+		CryptResult := CryptHandleProc(FS_CRYPT_LOAD_PASSWORD_NO_UI, PWideChar(AccountSettings.Name), buf, 1024); //Пытаемся взять пароль по-тихому
 		if CryptResult = FS_FILE_NOTFOUND then
 		begin
 			LogHandleProc(LogLevelDetail, msgtype_details, PWideChar('No master password entered yet'));
-			CryptResult := MyCryptProc(PluginNum, CryptoNum, FS_CRYPT_LOAD_PASSWORD, PWideChar(AccountSettings.Name), buf, 1024);
+			CryptResult := CryptHandleProc(FS_CRYPT_LOAD_PASSWORD, PWideChar(AccountSettings.Name), buf, 1024);
 		end;
 		if CryptResult = FS_FILE_OK then //Успешно получили пароль
 		begin
@@ -220,7 +219,7 @@ begin
 		end else begin
 			if AccountSettings.use_tc_password_manager then
 			begin
-				case MyCryptProc(PluginNum, CryptoNum, FS_CRYPT_SAVE_PASSWORD, PWideChar(AccountSettings.Name), PWideChar(AccountSettings.password), SizeOf(AccountSettings.password)) of
+				case CryptHandleProc(FS_CRYPT_SAVE_PASSWORD, PWideChar(AccountSettings.Name), PWideChar(AccountSettings.password), SizeOf(AccountSettings.password)) of
 					FS_FILE_OK:
 						begin //TC скушал пароль, запомним в инишник галочку
 							LogHandleProc(LogLevelDebug, msgtype_details, PWideChar('Password saved in TC password manager'));
