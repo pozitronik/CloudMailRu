@@ -39,6 +39,7 @@ type
 		RefreshScanTB: TToolButton;
 		DescriptionTS: TTabSheet;
 		DescriptionEditMemo: TMemo;
+		DescriptionSaveButton: TButton;
 		procedure AccessCBClick(Sender: TObject);
 		procedure FormDestroy(Sender: TObject);
 		class function ShowProperty(parentWindow: HWND; RemoteName: WideString; RemoteProperty: TCloudMailRuDirListingItem; Cloud: TCloudMailRu; DoUrlEncode: Boolean = true; AutoUpdateDownloadListing: Boolean = true; ShowDescriptions: Boolean = true): Integer;
@@ -53,6 +54,7 @@ type
 		procedure FormShow(Sender: TObject);
 		procedure CancelScanTBClick(Sender: TObject);
 		procedure RefreshScanTBClick(Sender: TObject);
+		procedure DescriptionSaveButtonClick(Sender: TObject);
 	private
 		{Private declarations}
 		procedure WMHotKey(var Message: TMessage); message WM_HOTKEY;
@@ -62,6 +64,7 @@ type
 		function FillRecursiveDownloadListing(const Path: WideString; Cloud: TCloudMailRu = nil): Boolean; //break recursion if false - cancelled
 		procedure UpdateDownloadListing();
 		procedure RefreshItemDescription();
+		procedure SaveItemDescription();
 		procedure TempPublicCloudInit(publicUrl: WideString);
 		function LogProc(LogText: WideString): Boolean;
 
@@ -102,9 +105,28 @@ begin
 	end else begin
 		CurrentDescriptions.Clear;
 	end;
-
 	CurrentDescriptions.Destroy;
+end;
 
+procedure TPropertyForm.SaveItemDescription;
+var
+	CurrentDescriptions: TDescription;
+	RemotePath: WideString;
+begin
+	CurrentDescriptions := TDescription.Create(GetTmpFileName('ion'));
+	if self.Cloud.getDescriptionFile(IncludeTrailingBackslash(ExtractFileDir(self.RemoteName)) + 'descript.ion', CurrentDescriptions.ionFilename) = FS_FILE_OK then
+	begin
+		CurrentDescriptions.Read;
+		CurrentDescriptions.SetValue(ExtractFileName(self.RemoteName), DescriptionEditMemo.lines.Text);
+		CurrentDescriptions.Write();
+		RemotePath := IncludeTrailingBackslash(ExtractFileDir(self.RemoteName)) + 'descript.ion';
+		while RemotePath[1] = PathDelim do RemotePath := Copy(RemotePath, 2, Length(RemotePath) - 1);
+
+		self.Cloud.deleteFile(RemotePath); //Приходится удалять, потому что не знаем, как переписать
+
+		self.Cloud.putDesriptionFile(RemotePath, CurrentDescriptions.ionFilename);
+	end;
+	CurrentDescriptions.Destroy;
 end;
 
 procedure TPropertyForm.UpdateDownloadListing;
@@ -145,7 +167,7 @@ begin
 	if not LogProc('Scanning ' + IncludeTrailingPathDelimiter(Path)) then exit(false);
 	Cloud.getDirListing(Path, CurrentDirListing);
 	ProcessMessages;
-	for CurrentDirItemsCounter := 0 to length(CurrentDirListing) - 1 do
+	for CurrentDirItemsCounter := 0 to Length(CurrentDirListing) - 1 do
 	begin
 		if CurrentDirListing[CurrentDirItemsCounter].type_ = TYPE_DIR then
 		begin
@@ -206,7 +228,7 @@ begin
 	while InvitesLE.Strings.Count > 0 do InvitesLE.DeleteRow(1);
 	if Cloud.getShareInfo(Props.home, self.InvitesListing) then
 	begin
-		InvitesCount := length(self.InvitesListing) - 1;
+		InvitesCount := Length(self.InvitesListing) - 1;
 		for i := 0 to InvitesCount do InvitesLE.InsertRow(self.InvitesListing[i].email, TCloudMailRu.CloudAccessToString(self.InvitesListing[i].access), true);
 	end else begin
 		MessageBoxW(self.Handle, PWideChar('Error while retrieving ' + Props.home + ' folder invites list, see main log'), 'Folder invite listing error', MB_OK + MB_ICONERROR);
@@ -236,6 +258,11 @@ end;
 procedure TPropertyForm.CancelScanTBClick(Sender: TObject);
 begin
 	LogCancelledFlag := true;
+end;
+
+procedure TPropertyForm.DescriptionSaveButtonClick(Sender: TObject);
+begin
+	SaveItemDescription;
 end;
 
 procedure TPropertyForm.FormActivate(Sender: TObject);

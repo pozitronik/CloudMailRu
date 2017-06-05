@@ -113,6 +113,7 @@ type
 		function rejectInvite(invite_token: WideString): Boolean;
 		{OTHER ROUTINES}
 		function getDescriptionFile(remotePath, localCopy: WideString): integer; //Если в каталоге remotePath есть descript.ion - скопировать его в файл localcopy
+		function putDesriptionFile(remotePath, localCopy: WideString): integer; //Скопировать descript.ion из временного файла на сервер
 		procedure logUserSpaceInfo();
 		function putFileSplit(localPath, remotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; ChunkOverwriteMode: integer = 0): integer;
 		{STATIC ROUTINES}
@@ -455,6 +456,11 @@ end;
 function TCloudMailRu.getDescriptionFile(remotePath, localCopy: WideString): integer; //0 - ok, else error
 begin
 	Result := self.getFile(remotePath, localCopy, false);
+end;
+
+function TCloudMailRu.putDesriptionFile(remotePath, localCopy: WideString): integer;
+begin
+	Result := self.putFile(localCopy, remotePath)
 end;
 
 function TCloudMailRu.getSharedLinksListing(var DirListing: TCloudMailRuDirListing; ShowProgress: Boolean = false): Boolean;

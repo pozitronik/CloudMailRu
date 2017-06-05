@@ -35,7 +35,7 @@ type
 		function Read(): Integer;
 		function Write(filename: WideString = NullChar): Integer;
 		function GetValue(item: WideString; FormatType: Integer = FORMAT_ONELINE): WideString;
-		function SetValue(item: WideString; Value: WideString): boolean;
+		function SetValue(item: WideString; Value: WideString): Boolean;
 		procedure Clear;
 		function DetermineEncoding(): TEncoding;
 		property ionFilename: WideString read GetionFilename;
@@ -103,7 +103,7 @@ begin
 	result := self.FormatValue(result, FormatType);
 end;
 
-function TDescription.SetValue(item, Value: WideString): boolean;
+function TDescription.SetValue(item, Value: WideString): Boolean;
 begin
 	result := true;
 	try

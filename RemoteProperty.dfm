@@ -227,16 +227,29 @@ object PropertyForm: TPropertyForm
     object DescriptionTS: TTabSheet
       Caption = 'Description'
       ImageIndex = 2
+      DesignSize = (
+        828
+        255)
       object DescriptionEditMemo: TMemo
         Left = 0
         Top = 0
         Width = 828
-        Height = 255
-        Align = alClient
-        Color = clBtnFace
-        ReadOnly = True
+        Height = 225
+        Align = alTop
+        BorderStyle = bsNone
         ScrollBars = ssVertical
         TabOrder = 0
+      end
+      object DescriptionSaveButton: TButton
+        Left = 3
+        Top = 227
+        Width = 91
+        Height = 25
+        Anchors = [akTop, akRight]
+        Caption = 'F2 OK'
+        ModalResult = 11
+        TabOrder = 1
+        OnClick = DescriptionSaveButtonClick
       end
     end
   end
@@ -266,7 +279,7 @@ object PropertyForm: TPropertyForm
     Left = 740
     Top = 147
     Bitmap = {
-      494C010104008C00BC0020002000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010104008C00C00020002000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000800000004000000001002000000000000080
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
