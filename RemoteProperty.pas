@@ -366,6 +366,7 @@ begin
 		PropertyForm.DoUrlEncode := DoUrlEncode;
 		PropertyForm.ShowDescriptions := ShowDescriptions;
 		RegisterHotKey(PropertyForm.Handle, 1, 0, VK_ESCAPE);
+		RegisterHotKey(PropertyForm.Handle, 1, 0, VK_F2);
 		result := PropertyForm.Showmodal;
 
 	finally
@@ -414,6 +415,13 @@ end;
 procedure TPropertyForm.WMHotKey(var Message: TMessage);
 begin
 	if (Message.LParamHi = VK_ESCAPE) and (GetForegroundWindow = self.Handle) then Close;
+	if (Message.LParamHi = VK_F2) and (GetForegroundWindow = self.Handle) then
+	begin
+		SaveItemDescription;
+
+		self.ModalResult := IDCONTINUE;
+		self.CloseModal;
+	end;
 end;
 
 procedure TPropertyForm.WrapBTNClick(Sender: TObject);

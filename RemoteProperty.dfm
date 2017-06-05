@@ -236,12 +236,14 @@ object PropertyForm: TPropertyForm
         Width = 828
         Height = 225
         Align = alTop
-        BorderStyle = bsNone
+        BevelEdges = [beLeft, beRight, beBottom]
+        BevelInner = bvNone
+        BevelOuter = bvNone
         ScrollBars = ssVertical
         TabOrder = 0
       end
       object DescriptionSaveButton: TButton
-        Left = 3
+        Left = 0
         Top = 227
         Width = 91
         Height = 25
