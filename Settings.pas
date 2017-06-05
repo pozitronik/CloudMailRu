@@ -74,6 +74,7 @@ type
 		LoadSSLDLLOnlyFromPluginDir: boolean;
 		PreserveFileTime: boolean;
 		DescriptionEnabled: boolean;
+		DescriptionEditorEnabled: boolean;
 		OperationsViaPublicLinkEnabled: boolean;
 		SocketTimeout: Integer;
 		Proxy: TProxySettings;
@@ -189,6 +190,7 @@ begin
 	GetPluginSettings.LoadSSLDLLOnlyFromPluginDir := IniFile.ReadBool('Main', 'LoadSSLDLLOnlyFromPluginDir', false);
 	GetPluginSettings.PreserveFileTime := IniFile.ReadBool('Main', 'PreserveFileTime', false);
 	GetPluginSettings.DescriptionEnabled := IniFile.ReadBool('Main', 'DescriptionEnabled', false);
+	GetPluginSettings.DescriptionEditorEnabled := IniFile.ReadBool('Main', 'DescriptionEditorEnabled', false);
 	GetPluginSettings.OperationsViaPublicLinkEnabled := IniFile.ReadBool('Main', 'OperationsViaPublicLinkEnabled', false);
 	GetPluginSettings.DisableMultiThreading := IniFile.ReadBool('Main', 'DisableMultiThreading', false);
 	GetPluginSettings.LogUserSpace := IniFile.ReadBool('Main', 'LogUserSpace', true);

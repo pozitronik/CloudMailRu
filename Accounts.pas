@@ -77,6 +77,7 @@ type
 		ShowSharedFoldersCB: TCheckBox;
 		ShowInvitesFoldersCB: TCheckBox;
 		ShowAccountsLabel: TLabel;
+		DescriptionEditorEnabledCB: TCheckBox;
 		procedure FormShow(Sender: TObject);
 		procedure AccountsListClick(Sender: TObject);
 		procedure ApplyButtonClick(Sender: TObject);
@@ -193,6 +194,7 @@ begin
 	SetPluginSettingsValue(SettingsIniFilePath, 'LoadSSLDLLOnlyFromPluginDir', UseDLLFromPluginDir.Checked);
 	SetPluginSettingsValue(SettingsIniFilePath, 'PreserveFileTime', PreserveFileTimeCB.Checked);
 	SetPluginSettingsValue(SettingsIniFilePath, 'DescriptionEnabled', DescriptionEnabledCB.Checked);
+	SetPluginSettingsValue(SettingsIniFilePath, 'DescriptionEditorEnabled', DescriptionEditorEnabledCB.Checked);
 	SetPluginSettingsValue(SettingsIniFilePath, 'OperationsViaPublicLinkEnabled', OperationsViaPublicLinkEnabledCB.Checked);
 	if CloudMaxFileSizeCB.Checked then
 	begin
@@ -317,6 +319,7 @@ begin
 		AccountsForm.UseDLLFromPluginDir.Checked := GetPluginSettings(SettingsIniFilePath).LoadSSLDLLOnlyFromPluginDir;
 		AccountsForm.PreserveFileTimeCB.Checked := GetPluginSettings(SettingsIniFilePath).PreserveFileTime;
 		AccountsForm.DescriptionEnabledCB.Checked := GetPluginSettings(SettingsIniFilePath).DescriptionEnabled;
+		AccountsForm.DescriptionEditorEnabledCB.Checked := GetPluginSettings(SettingsIniFilePath).DescriptionEditorEnabled;
 		AccountsForm.OperationsViaPublicLinkEnabledCB.Checked := GetPluginSettings(SettingsIniFilePath).OperationsViaPublicLinkEnabled;
 		AccountsForm.SocketTimeoutEdit.Text := GetPluginSettings(SettingsIniFilePath).SocketTimeout.ToString;
 		AccountsForm.ProxyCB.ItemIndex := GetPluginSettings(SettingsIniFilePath).Proxy.ProxyType;

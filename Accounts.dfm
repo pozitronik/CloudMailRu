@@ -158,7 +158,7 @@ object AccountsForm: TAccountsForm
     Top = 0
     Width = 491
     Height = 475
-    ActivePage = NetworkTab
+    ActivePage = AccountsTab
     Align = alClient
     TabOrder = 0
     object AccountsTab: TTabSheet
@@ -434,7 +434,7 @@ object AccountsForm: TAccountsForm
       object DescriptionEnabledCB: TCheckBox
         Left = 5
         Top = 69
-        Width = 475
+        Width = 150
         Height = 17
         Caption = 'Descript.ion files support'
         TabOrder = 3
@@ -445,7 +445,7 @@ object AccountsForm: TAccountsForm
         Width = 475
         Height = 17
         Caption = 'Copying/moving between accounts via public link'
-        TabOrder = 7
+        TabOrder = 8
       end
       object GlobalSettingApplyBTN: TButton
         Left = 405
@@ -455,7 +455,7 @@ object AccountsForm: TAccountsForm
         Caption = 'Apply'
         ParentShowHint = False
         ShowHint = False
-        TabOrder = 20
+        TabOrder = 21
         OnClick = GlobalSettingApplyBTNClick
       end
       object CloudMaxFileSizeValue: TEdit
@@ -465,7 +465,7 @@ object AccountsForm: TAccountsForm
         Height = 21
         Enabled = False
         NumbersOnly = True
-        TabOrder = 9
+        TabOrder = 10
       end
       object CloudMaxFileSizeCB: TCheckBox
         Left = 5
@@ -473,7 +473,7 @@ object AccountsForm: TAccountsForm
         Width = 134
         Height = 17
         Caption = 'Override split file size to'
-        TabOrder = 8
+        TabOrder = 9
         OnClick = CloudMaxFileSizeCBClick
       end
       object ChunkOverwriteModeCombo: TComboBox
@@ -483,7 +483,7 @@ object AccountsForm: TAccountsForm
         Height = 21
         Style = csDropDownList
         ItemIndex = 0
-        TabOrder = 13
+        TabOrder = 14
         Text = 'Silently overwrite'
         Items.Strings = (
           'Silently overwrite'
@@ -497,7 +497,7 @@ object AccountsForm: TAccountsForm
         Height = 21
         Style = csDropDownList
         ItemIndex = 0
-        TabOrder = 14
+        TabOrder = 15
         Text = 'Ask user'
         Items.Strings = (
           'Ask user'
@@ -513,7 +513,7 @@ object AccountsForm: TAccountsForm
         Height = 21
         Style = csDropDownList
         ItemIndex = 0
-        TabOrder = 15
+        TabOrder = 16
         Text = 'Ask user'
         Items.Strings = (
           'Ask user'
@@ -526,7 +526,7 @@ object AccountsForm: TAccountsForm
         Width = 475
         Height = 17
         Caption = 'Disable background operations support'
-        TabOrder = 17
+        TabOrder = 18
       end
       object IconsModeCombo: TComboBox
         Left = 160
@@ -535,7 +535,7 @@ object AccountsForm: TAccountsForm
         Height = 21
         Style = csDropDownList
         ItemIndex = 0
-        TabOrder = 16
+        TabOrder = 17
         Text = 'System default'
         Items.Strings = (
           'System default'
@@ -559,7 +559,7 @@ object AccountsForm: TAccountsForm
         Height = 21
         Style = csDropDownList
         ItemIndex = 0
-        TabOrder = 10
+        TabOrder = 11
         Text = 'Ask user'
         Items.Strings = (
           'Ask user'
@@ -574,7 +574,7 @@ object AccountsForm: TAccountsForm
         Height = 22
         MaxValue = 2147483647
         MinValue = 0
-        TabOrder = 12
+        TabOrder = 13
         Value = 0
       end
       object RetryAttemptsValue: TSpinEdit
@@ -584,7 +584,7 @@ object AccountsForm: TAccountsForm
         Height = 22
         MaxValue = 2147483647
         MinValue = -1
-        TabOrder = 11
+        TabOrder = 12
         Value = 0
       end
       object DownloadLinksEncodeCB: TCheckBox
@@ -593,7 +593,7 @@ object AccountsForm: TAccountsForm
         Width = 475
         Height = 17
         Caption = 'URL encode direct download links'
-        TabOrder = 18
+        TabOrder = 19
       end
       object AutoUpdateDownloadListingCB: TCheckBox
         Left = 5
@@ -601,7 +601,7 @@ object AccountsForm: TAccountsForm
         Width = 475
         Height = 17
         Caption = 'Update direct download links immediately'
-        TabOrder = 19
+        TabOrder = 20
       end
       object ShowTrashFoldersCB: TCheckBox
         Left = 87
@@ -609,7 +609,7 @@ object AccountsForm: TAccountsForm
         Width = 88
         Height = 17
         Caption = 'Trash folders'
-        TabOrder = 4
+        TabOrder = 5
       end
       object ShowSharedFoldersCB: TCheckBox
         Left = 181
@@ -617,7 +617,7 @@ object AccountsForm: TAccountsForm
         Width = 118
         Height = 17
         Caption = 'Shared links folders'
-        TabOrder = 5
+        TabOrder = 6
       end
       object ShowInvitesFoldersCB: TCheckBox
         Left = 305
@@ -625,7 +625,15 @@ object AccountsForm: TAccountsForm
         Width = 98
         Height = 17
         Caption = 'Invites folders'
-        TabOrder = 6
+        TabOrder = 7
+      end
+      object DescriptionEditorEnabledCB: TCheckBox
+        Left = 161
+        Top = 69
+        Width = 319
+        Height = 17
+        Caption = 'Descript.ion editing'
+        TabOrder = 4
       end
     end
     object NetworkTab: TTabSheet
