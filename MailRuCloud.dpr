@@ -645,8 +645,7 @@ begin
 	begin
 		Cloud := ConnectionManager.get(RealPath.account, getResult);
 		//всегда нужно обновлять статус на сервере, CurrentListing может быть изменён в другой панели
-		if Cloud.statusFile(RealPath.path, CurrentItem) then TPropertyForm.ShowProperty(MainWin, RealPath.path, CurrentItem, Cloud, GetPluginSettings(SettingsIniFilePath).DownloadLinksEncode, GetPluginSettings(SettingsIniFilePath).AutoUpdateDownloadListing, GetPluginSettings(SettingsIniFilePath).DescriptionEnabled);
-
+		if (Cloud.statusFile(RealPath.path, CurrentItem)) and (idContinue = TPropertyForm.ShowProperty(MainWin, RealPath.path, CurrentItem, Cloud, GetPluginSettings(SettingsIniFilePath).DownloadLinksEncode, GetPluginSettings(SettingsIniFilePath).AutoUpdateDownloadListing, GetPluginSettings(SettingsIniFilePath).DescriptionEnabled)) then PostMessage(MainWin, WM_USER + 51, 540, 0); //refresh tc panel if description edited
 	end;
 end;
 
