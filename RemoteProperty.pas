@@ -95,37 +95,37 @@ implementation
 procedure TPropertyForm.RefreshItemDescription;
 var
 	CurrentDescriptions: TDescription;
+	LocalPath: WideString;
 begin
 	DescriptionEditMemo.lines.Clear;
-	CurrentDescriptions := TDescription.Create(GetTmpFileName('ion'));
-	if self.Cloud.getDescriptionFile(IncludeTrailingBackslash(ExtractFileDir(self.RemoteName)) + 'descript.ion', CurrentDescriptions.ionFilename) = FS_FILE_OK then
-	begin
-		CurrentDescriptions.Read;
-		DescriptionEditMemo.lines.Text := CurrentDescriptions.GetValue(ExtractFileName(self.RemoteName), FORMAT_CLEAR);
-	end else begin
-		CurrentDescriptions.Clear;
-	end;
+	LocalPath := GetTmpFileName('ion');
+	if not self.Cloud.getDescriptionFile(IncludeTrailingBackslash(ExtractFileDir(self.RemoteName)) + 'descript.ion', LocalPath) = FS_FILE_OK then exit;
+	CurrentDescriptions := TDescription.Create(LocalPath);
+	CurrentDescriptions.Read;
+	DescriptionEditMemo.lines.Text := CurrentDescriptions.GetValue(ExtractFileName(self.RemoteName), FORMAT_CLEAR);
 	CurrentDescriptions.Destroy;
 end;
 
 procedure TPropertyForm.SaveItemDescription;
 var
 	CurrentDescriptions: TDescription;
-	RemotePath: WideString;
+	RemotePath, LocalPath: WideString;
+	RemoteFileExists: Boolean;
 begin
-	CurrentDescriptions := TDescription.Create(GetTmpFileName('ion'));
-	if self.Cloud.getDescriptionFile(IncludeTrailingBackslash(ExtractFileDir(self.RemoteName)) + 'descript.ion', CurrentDescriptions.ionFilename) = FS_FILE_OK then
+	RemotePath := IncludeTrailingBackslash(ExtractFileDir(self.RemoteName)) + 'descript.ion';
+	LocalPath := GetTmpFileName('ion');
+
+	RemoteFileExists := self.Cloud.getDescriptionFile(RemotePath, LocalPath) = FS_FILE_OK;
+	CurrentDescriptions := TDescription.Create(LocalPath);
+	if RemoteFileExists then //если был прежний файл - его надо перечитать и удалить с сервера
 	begin
 		CurrentDescriptions.Read;
-		CurrentDescriptions.SetValue(ExtractFileName(self.RemoteName), DescriptionEditMemo.lines.Text);
-		CurrentDescriptions.Write();
-		RemotePath := IncludeTrailingBackslash(ExtractFileDir(self.RemoteName)) + 'descript.ion';
-		while RemotePath[1] = PathDelim do RemotePath := Copy(RemotePath, 2, Length(RemotePath) - 1);
-
 		self.Cloud.deleteFile(RemotePath); //Приходится удалять, потому что не знаем, как переписать
-
-		self.Cloud.putDesriptionFile(RemotePath, CurrentDescriptions.ionFilename);
 	end;
+	CurrentDescriptions.SetValue(ExtractFileName(self.RemoteName), DescriptionEditMemo.lines.Text);
+	CurrentDescriptions.Write();
+	self.Cloud.putDesriptionFile(RemotePath, CurrentDescriptions.ionFilename);
+
 	CurrentDescriptions.Destroy;
 end;
 
