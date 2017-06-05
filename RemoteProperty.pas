@@ -77,6 +77,7 @@ type
 		LogCancelledFlag: Boolean;
 		AutoUpdateDownloadListing: Boolean;
 		ShowDescriptions: Boolean;
+		EditDescriptions: Boolean;
 
 		TempPublicCloud: TCloudMailRu; //Облако для получения прямых ссылок на опубликованные объекты
 	public
@@ -415,10 +416,9 @@ end;
 procedure TPropertyForm.WMHotKey(var Message: TMessage);
 begin
 	if (Message.LParamHi = VK_ESCAPE) and (GetForegroundWindow = self.Handle) then Close;
-	if (Message.LParamHi = VK_F2) and (GetForegroundWindow = self.Handle) then
+	if (Message.LParamHi = VK_F2) and (GetForegroundWindow = self.Handle) and (self.ShowDescriptions) and (self.EditDescriptions) then
 	begin
 		SaveItemDescription;
-
 		self.ModalResult := IDCONTINUE;
 		self.CloseModal;
 	end;
