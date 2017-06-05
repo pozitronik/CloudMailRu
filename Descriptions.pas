@@ -23,15 +23,19 @@ type
 		items: TDictionary<WideString, WideString>;
 		ion_filename: WideString;
 		encoding: TEncoding;
+		divider: WideString;
 
 		function GetionFilename: WideString;
 		function FormatValue(Value: WideString; FormatType: Integer): WideString;
+		function DetermineDivider(): WideString;
 
 	public
 		constructor Create(ion_filename: WideString);
 		destructor Destroy; override;
 		function Read(): Integer;
+		function Write(filename: WideString = NullChar): Integer;
 		function GetValue(item: WideString; FormatType: Integer = FORMAT_ONELINE): WideString;
+		function SetValue(item: WideString; Value: WideString): boolean;
 		procedure Clear;
 		function DetermineEncoding(): TEncoding;
 		property ionFilename: WideString read GetionFilename;
@@ -58,6 +62,12 @@ begin
 	inherited;
 end;
 
+function TDescription.DetermineDivider: WideString;
+begin
+	if (self.encoding = TEncoding.UTF8) or (self.encoding = TEncoding.BigEndianUnicode) or (self.encoding = TEncoding.Unicode) then result := MULTILINE_DIVIDERW
+	else result := MULTILINE_DIVIDER;
+end;
+
 function TDescription.DetermineEncoding(): TEncoding;
 var
 	F: File;
@@ -74,44 +84,82 @@ begin
 end;
 
 function TDescription.FormatValue(Value: WideString; FormatType: Integer): WideString;
-var
-	Divider: WideString;
 begin
-	if (self.encoding = TEncoding.UTF8) or (self.encoding = TEncoding.BigEndianUnicode) or (self.encoding = TEncoding.Unicode) then Divider := MULTILINE_DIVIDERW
-	else Divider := MULTILINE_DIVIDER;
-
 	case FormatType of
-		FORMAT_AS_IS: Result := Value;
-		FORMAT_CLEAR: Result := WideStringReplace(WideStringReplace(Value, '\n', sLineBreak, [rfReplaceAll]), Divider, '', [rfReplaceAll]);
-		FORMAT_ONELINE: Result := WideStringReplace(WideStringReplace(Value, '\n', '  ', [rfReplaceAll]), Divider, '', [rfReplaceAll]);
+		FORMAT_AS_IS: result := Value;
+		FORMAT_CLEAR: result := WideStringReplace(WideStringReplace(Value, '\n', sLineBreak, [rfReplaceAll]), self.divider, '', [rfReplaceAll]);
+		FORMAT_ONELINE: result := WideStringReplace(WideStringReplace(Value, '\n', '  ', [rfReplaceAll]), self.divider, '', [rfReplaceAll]);
 	end;
-
 end;
 
 function TDescription.GetionFilename: WideString;
 begin
-	Result := self.ion_filename;
+	result := self.ion_filename;
 end;
 
 function TDescription.GetValue(item: WideString; FormatType: Integer): WideString;
 begin
-	if not(items.TryGetValue(item, Result)) then exit('');
-	Result := self.FormatValue(Result, FormatType);
+	if not(items.TryGetValue(item, result)) then exit('');
+	result := self.FormatValue(result, FormatType);
+end;
 
+function TDescription.SetValue(item, Value: WideString): boolean;
+begin
+	result := true;
+	try
+		items.AddOrSetValue(item, Value);
+	except
+		result := false;
+	end;
+end;
+
+function TDescription.Write(filename: WideString = NullChar): Integer;
+var
+	fStream: TStreamWriter;
+	line, Key, tKey, Value, tValue: WideString;
+	t: Integer;
+begin
+	if filename = NullChar then filename := self.ion_filename;
+
+	result := 0; //not used
+	fStream := nil;
+
+	try
+		fStream := TStreamWriter.Create(filename, false, self.encoding);
+		for Key in items.Keys do
+		begin
+			items.TryGetValue(Key, Value);
+			if Pos(Space, Key) <> 0 then tKey := '"' + Key + '"'
+			else tKey := Key;
+
+			if Pos(sLineBreak, Value) <> 0 then Value := WideStringReplace(Value, '\n', sLineBreak, [rfReplaceAll]) + divider;
+
+			line := Key + Space + Value;
+			fStream.Write(line);
+
+		end;
+		fStream.Flush;
+
+	except
+		fStream.Destroy;
+		exit(-1);
+	end;
+	fStream.Destroy;
 end;
 
 function TDescription.Read(): Integer;
 var
 	fStream: TStreamReader;
-	line, key, Value: WideString;
+	line, Key, Value: WideString;
 	t: Integer;
 begin
-	Result := 0; //not used
+	result := 0; //not used
 	self.Clear;
 	fStream := nil;
 	try
 		self.encoding := DetermineEncoding();
-		fStream := TStreamReader.Create(self.ion_filename, self.encoding, False);
+		self.divider := DetermineDivider();
+		fStream := TStreamReader.Create(self.ion_filename, self.encoding, false);
 		while not fStream.EndOfStream do
 		begin
 			line := fStream.ReadLine;
@@ -119,20 +167,20 @@ begin
 			begin
 				t := PosEx('" ', line);
 				Value := copy(line, t + 2, length(line));
-				key := copy(line, 2, t - 2);
+				Key := copy(line, 2, t - 2);
 			end else begin
-				t := PosEx(' ', line);
+				t := PosEx(Space, line);
 				Value := copy(line, t + 1, length(line));
-				key := copy(line, 0, t - 1);
+				Key := copy(line, 0, t - 1);
 			end;
 
-			items.Add(key, Value);
+			items.Add(Key, Value);
 		end;
 	except
-		fStream.Free;
+		fStream.Destroy;
 		exit(-1);
 	end;
-	fStream.Free;
+	fStream.Destroy;
 end;
 
 end.
