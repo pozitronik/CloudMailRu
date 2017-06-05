@@ -14,6 +14,11 @@ const
 	MULTILINE_DIVIDER = #$04#$C2; //multiline divider in ansii files
 	MULTILINE_DIVIDERW = chr($04) + chr($C2); //multiline divider in utf-8 and utf-16 formatted files (BE/LE)
 
+	ENCODING_DEFAULT = 0;
+	ENCODING_UTF8 = 1;
+	ENCODING_UNICODE = 2;
+	ENCODING_UNCODE_BE = 3;
+
 type
 
 	TDescription = class
@@ -30,7 +35,7 @@ type
 		function DetermineDivider(): WideString;
 
 	public
-		constructor Create(ion_filename: WideString);
+		constructor Create(ion_filename: WideString; encoding: Integer = ENCODING_UTF8);
 		destructor Destroy; override;
 		function Read(): Integer;
 		function Write(filename: WideString = NullChar): Integer;
@@ -50,10 +55,16 @@ begin
 	self.items.Clear;
 end;
 
-constructor TDescription.Create(ion_filename: WideString);
+constructor TDescription.Create(ion_filename: WideString; encoding: Integer = ENCODING_UTF8);
 begin
 	self.items := TDictionary<WideString, WideString>.Create;
 	self.ion_filename := ion_filename;
+	case encoding of
+		ENCODING_DEFAULT: self.encoding := TEncoding.Default;
+		ENCODING_UTF8: self.encoding := TEncoding.UTF8;
+		ENCODING_UNICODE: self.encoding := TEncoding.Unicode;
+		ENCODING_UNCODE_BE: self.encoding := TEncoding.BigEndianUnicode;
+	end;
 end;
 
 destructor TDescription.Destroy;
@@ -132,7 +143,7 @@ begin
 			if Pos(Space, Key) <> 0 then tKey := '"' + Key + '"'
 			else tKey := Key;
 
-			if Pos(sLineBreak, Value) <> 0 then Value := WideStringReplace(Value, '\n', sLineBreak, [rfReplaceAll]) + divider;
+			if Pos(sLineBreak, Value) <> 0 then Value := WideStringReplace(Value, sLineBreak, '\n', [rfReplaceAll]) + divider;
 
 			line := Key + Space + Value;
 			fStream.Write(line);
