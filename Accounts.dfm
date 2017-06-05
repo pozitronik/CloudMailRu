@@ -629,10 +629,10 @@ object AccountsForm: TAccountsForm
       end
       object DescriptionEditorEnabledCB: TCheckBox
         Left = 161
-        Top = 69
+        Top = 70
         Width = 319
         Height = 17
-        Caption = 'Descript.ion editing'
+        Caption = 'Descript.ion editing (experimental)'
         TabOrder = 4
       end
     end
