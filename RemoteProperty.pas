@@ -42,7 +42,7 @@ type
 		DescriptionSaveButton: TButton;
 		procedure AccessCBClick(Sender: TObject);
 		procedure FormDestroy(Sender: TObject);
-		class function ShowProperty(parentWindow: HWND; RemoteName: WideString; RemoteProperty: TCloudMailRuDirListingItem; Cloud: TCloudMailRu; DoUrlEncode: Boolean = true; AutoUpdateDownloadListing: Boolean = true; ShowDescriptions: Boolean = true): Integer;
+		class function ShowProperty(parentWindow: HWND; RemoteName: WideString; RemoteProperty: TCloudMailRuDirListingItem; Cloud: TCloudMailRu; DoUrlEncode: Boolean = true; AutoUpdateDownloadListing: Boolean = true; ShowDescription: Boolean = true; EditDescription: Boolean = true): Integer;
 		procedure FormActivate(Sender: TObject);
 		procedure InviteBtnClick(Sender: TObject);
 		procedure ItemDeleteClick(Sender: TObject);
@@ -76,8 +76,8 @@ type
 		DoUrlEncode: Boolean;
 		LogCancelledFlag: Boolean;
 		AutoUpdateDownloadListing: Boolean;
-		ShowDescriptions: Boolean;
-		EditDescriptions: Boolean;
+		ShowDescription: Boolean;
+		EditDescription: Boolean;
 
 		TempPublicCloud: TCloudMailRu; //Облако для получения прямых ссылок на опубликованные объекты
 	public
@@ -350,7 +350,7 @@ begin
 	end;
 end;
 
-class function TPropertyForm.ShowProperty(parentWindow: HWND; RemoteName: WideString; RemoteProperty: TCloudMailRuDirListingItem; Cloud: TCloudMailRu; DoUrlEncode: Boolean = true; AutoUpdateDownloadListing: Boolean = true; ShowDescriptions: Boolean = true): Integer;
+class function TPropertyForm.ShowProperty(parentWindow: HWND; RemoteName: WideString; RemoteProperty: TCloudMailRuDirListingItem; Cloud: TCloudMailRu; DoUrlEncode: Boolean = true; AutoUpdateDownloadListing: Boolean = true; ShowDescription: Boolean = true; EditDescription: Boolean = true): Integer;
 var
 	PropertyForm: TPropertyForm;
 begin
@@ -365,7 +365,8 @@ begin
 		PropertyForm.AutoUpdateDownloadListing := AutoUpdateDownloadListing;
 		PropertyForm.LogCancelledFlag := false;
 		PropertyForm.DoUrlEncode := DoUrlEncode;
-		PropertyForm.ShowDescriptions := ShowDescriptions;
+		PropertyForm.ShowDescription := ShowDescription;
+		PropertyForm.EditDescription := EditDescription;
 		RegisterHotKey(PropertyForm.Handle, 1, 0, VK_ESCAPE);
 		RegisterHotKey(PropertyForm.Handle, 1, 0, VK_F2);
 		result := PropertyForm.Showmodal;
@@ -404,11 +405,14 @@ begin
 			RefreshInvites;
 		end;
 	end;
-	if self.ShowDescriptions then
+	if self.ShowDescription then
 	begin
 		ExtPropertiesPC.Visible := true;
 		DescriptionTS.TabVisible := true;
 		RefreshItemDescription;
+		DescriptionEditMemo.ReadOnly := not self.EditDescription;
+		DescriptionSaveButton.Enabled := self.EditDescription;
+
 	end;
 
 end;
@@ -416,7 +420,7 @@ end;
 procedure TPropertyForm.WMHotKey(var Message: TMessage);
 begin
 	if (Message.LParamHi = VK_ESCAPE) and (GetForegroundWindow = self.Handle) then Close;
-	if (Message.LParamHi = VK_F2) and (GetForegroundWindow = self.Handle) and (self.ShowDescriptions) and (self.EditDescriptions) then
+	if (Message.LParamHi = VK_F2) and (GetForegroundWindow = self.Handle) and (self.ShowDescription) and (self.EditDescription) then
 	begin
 		SaveItemDescription;
 		self.ModalResult := IDCONTINUE;
