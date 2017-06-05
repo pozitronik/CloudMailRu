@@ -144,10 +144,11 @@ begin
 			else tKey := Key;
 
 			if Pos(sLineBreak, Value) <> 0 then Value := WideStringReplace(Value, sLineBreak, '\n', [rfReplaceAll]) + divider;
-
-			line := Key + Space + Value;
-			fStream.Write(line);
-
+			if Length(Value) > 0 then
+			begin
+				line := Key + Space + Value;
+				fStream.Write(line);
+			end;
 		end;
 		fStream.Flush;
 
@@ -177,11 +178,11 @@ begin
 			if StartsStr('"', line) then
 			begin
 				t := PosEx('" ', line);
-				Value := copy(line, t + 2, length(line));
+				Value := copy(line, t + 2, Length(line));
 				Key := copy(line, 2, t - 2);
 			end else begin
 				t := PosEx(Space, line);
-				Value := copy(line, t + 1, length(line));
+				Value := copy(line, t + 1, Length(line));
 				Key := copy(line, 0, t - 1);
 			end;
 
