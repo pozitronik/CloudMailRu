@@ -1,15 +1,14 @@
 ﻿unit Descriptions;
 
-{Simple && read-only descript.ion files support}
 interface
 
 uses
 	System.Types, System.Classes, System.StrUtils, Generics.Collections, System.SysUtils, System.WideStrUtils;
 
 const
-	FORMAT_AS_IS = 0;
-	FORMAT_CLEAR = 1;
-	FORMAT_ONELINE = 2;
+	FORMAT_AS_IS = 0; //raw comment string, include all control chars
+	FORMAT_CLEAR = 1; //clear comment string without control chars
+	FORMAT_ONELINE = 2; //like FORMAT_CLEAR, but line breaks replaced to double space
 
 	MULTILINE_DIVIDER = #$04#$C2; //multiline divider in ansii files
 	MULTILINE_DIVIDERW = chr($04) + chr($C2); //multiline divider in utf-8 and utf-16 formatted files (BE/LE)
@@ -44,6 +43,7 @@ type
 		procedure Clear;
 		function DetermineEncoding(): TEncoding;
 		property ionFilename: WideString read GetionFilename;
+		class function CopyValue(from_filename, to_filename, item: WideString): Integer;
 	end;
 
 implementation
@@ -53,6 +53,25 @@ implementation
 procedure TDescription.Clear;
 begin
 	self.items.Clear;
+end;
+
+class function TDescription.CopyValue(from_filename, to_filename, item: WideString): Integer;
+var
+	ion_from, ion_to: TDescription;
+begin
+	try
+		ion_from := self.Create(from_filename);
+		ion_to := self.Create(to_filename);
+		ion_from.Read();
+		ion_to.Read();
+		ion_to.SetValue(item, ion_from.GetValue(item, FORMAT_CLEAR));
+		ion_to.Write();
+		ion_to.Destroy;
+		ion_from.Destroy;
+	except
+		exit(-1);
+	end;
+	exit(0);
 end;
 
 constructor TDescription.Create(ion_filename: WideString; encoding: Integer = ENCODING_UTF8);
@@ -127,8 +146,7 @@ end;
 function TDescription.Write(filename: WideString = NullChar): Integer;
 var
 	fStream: TStreamWriter;
-	line, Key, tKey, Value, tValue: WideString;
-	t: Integer;
+	line, Key, tKey, Value: WideString;
 begin
 	if filename = NullChar then filename := self.ion_filename;
 
