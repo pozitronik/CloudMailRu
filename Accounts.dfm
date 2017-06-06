@@ -158,7 +158,7 @@ object AccountsForm: TAccountsForm
     Top = 0
     Width = 491
     Height = 475
-    ActivePage = DescriptionTab
+    ActivePage = CommentsTab
     Align = alClient
     TabOrder = 0
     object AccountsTab: TTabSheet
@@ -347,70 +347,70 @@ object AccountsForm: TAccountsForm
       ImageIndex = 1
       object CloudMaxFileSizeLabelBytes: TLabel
         Left = 292
-        Top = 116
+        Top = 115
         Width = 27
         Height = 13
         Caption = 'bytes'
       end
       object ChunkOverwriteModeLabel: TLabel
         Left = 5
-        Top = 197
+        Top = 196
         Width = 150
         Height = 13
         Caption = 'Overwrite splitted chunk mode:'
       end
       object DeleteFailOnUploadModeLabel: TLabel
         Left = 5
-        Top = 223
+        Top = 222
         Width = 143
         Height = 13
         Caption = 'Delete file after upload mode:'
       end
       object OverwriteLocalModeLabel: TLabel
         Left = 5
-        Top = 249
+        Top = 248
         Width = 127
         Height = 13
         Caption = 'Overwrite local files mode:'
       end
       object IconsModeLabel: TLabel
         Left = 5
-        Top = 275
+        Top = 274
         Width = 88
         Height = 13
         Caption = 'Plugin icons mode:'
       end
       object OperationErrorModeLabel: TLabel
         Left = 5
-        Top = 142
+        Top = 141
         Width = 140
         Height = 13
         Caption = 'On downloads/uploads error:'
       end
       object RetryAttemptsLabel: TLabel
         Left = 160
-        Top = 170
+        Top = 169
         Width = 77
         Height = 13
         Caption = 'Retry attempts:'
       end
       object RetryWaitLabel: TLabel
         Left = 339
-        Top = 170
+        Top = 169
         Width = 20
         Height = 13
         Caption = 'wait'
       end
       object msLabel: TLabel
         Left = 466
-        Top = 170
+        Top = 169
         Width = 13
         Height = 13
         Caption = 'ms'
       end
       object ShowAccountsLabel: TLabel
         Left = 5
-        Top = 72
+        Top = 71
         Width = 76
         Height = 13
         Caption = 'Show accounts:'
@@ -433,7 +433,7 @@ object AccountsForm: TAccountsForm
       end
       object OperationsViaPublicLinkEnabledCB: TCheckBox
         Left = 5
-        Top = 93
+        Top = 92
         Width = 475
         Height = 17
         Caption = 'Copying/moving between accounts via public link'
@@ -452,7 +452,7 @@ object AccountsForm: TAccountsForm
       end
       object CloudMaxFileSizeValue: TEdit
         Left = 142
-        Top = 113
+        Top = 112
         Width = 146
         Height = 21
         Enabled = False
@@ -461,7 +461,7 @@ object AccountsForm: TAccountsForm
       end
       object CloudMaxFileSizeCB: TCheckBox
         Left = 5
-        Top = 115
+        Top = 114
         Width = 134
         Height = 17
         Caption = 'Override split file size to'
@@ -470,7 +470,7 @@ object AccountsForm: TAccountsForm
       end
       object ChunkOverwriteModeCombo: TComboBox
         Left = 160
-        Top = 194
+        Top = 193
         Width = 320
         Height = 21
         Style = csDropDownList
@@ -484,7 +484,7 @@ object AccountsForm: TAccountsForm
       end
       object DeleteFailOnUploadModeCombo: TComboBox
         Left = 160
-        Top = 220
+        Top = 219
         Width = 320
         Height = 21
         Style = csDropDownList
@@ -500,7 +500,7 @@ object AccountsForm: TAccountsForm
       end
       object OverwriteLocalModeCombo: TComboBox
         Left = 160
-        Top = 246
+        Top = 245
         Width = 320
         Height = 21
         Style = csDropDownList
@@ -514,7 +514,7 @@ object AccountsForm: TAccountsForm
       end
       object DisableMultiThreadingCB: TCheckBox
         Left = 5
-        Top = 303
+        Top = 302
         Width = 475
         Height = 17
         Caption = 'Disable background operations support'
@@ -522,7 +522,7 @@ object AccountsForm: TAccountsForm
       end
       object IconsModeCombo: TComboBox
         Left = 160
-        Top = 272
+        Top = 271
         Width = 320
         Height = 21
         Style = csDropDownList
@@ -546,7 +546,7 @@ object AccountsForm: TAccountsForm
       end
       object OperationErrorModeCombo: TComboBox
         Left = 160
-        Top = 140
+        Top = 139
         Width = 320
         Height = 21
         Style = csDropDownList
@@ -561,7 +561,7 @@ object AccountsForm: TAccountsForm
       end
       object AttemptWaitValue: TSpinEdit
         Left = 365
-        Top = 167
+        Top = 166
         Width = 95
         Height = 22
         MaxValue = 2147483647
@@ -571,7 +571,7 @@ object AccountsForm: TAccountsForm
       end
       object RetryAttemptsValue: TSpinEdit
         Left = 241
-        Top = 167
+        Top = 166
         Width = 95
         Height = 22
         MaxValue = 2147483647
@@ -581,14 +581,14 @@ object AccountsForm: TAccountsForm
       end
       object DownloadLinksEncodeCB: TCheckBox
         Left = 5
-        Top = 325
+        Top = 324
         Width = 475
         Height = 17
         Caption = 'URL encode direct download links'
         TabOrder = 17
       end
       object AutoUpdateDownloadListingCB: TCheckBox
-        Left = 5
+        Left = 3
         Top = 347
         Width = 475
         Height = 17
@@ -597,7 +597,7 @@ object AccountsForm: TAccountsForm
       end
       object ShowTrashFoldersCB: TCheckBox
         Left = 87
-        Top = 71
+        Top = 70
         Width = 88
         Height = 17
         Caption = 'Trash folders'
@@ -605,7 +605,7 @@ object AccountsForm: TAccountsForm
       end
       object ShowSharedFoldersCB: TCheckBox
         Left = 181
-        Top = 71
+        Top = 70
         Width = 118
         Height = 17
         Caption = 'Shared links folders'
@@ -613,7 +613,7 @@ object AccountsForm: TAccountsForm
       end
       object ShowInvitesFoldersCB: TCheckBox
         Left = 305
-        Top = 71
+        Top = 70
         Width = 98
         Height = 17
         Caption = 'Invites folders'
@@ -755,17 +755,24 @@ object AccountsForm: TAccountsForm
         Value = -1
       end
     end
-    object DescriptionTab: TTabSheet
-      Caption = 'Descript.ion support'
+    object CommentsTab: TTabSheet
+      Caption = 'File comments support'
       ImageIndex = 3
       ExplicitLeft = 0
       ExplicitTop = 28
+      object DescriptionFileNameLabel: TLabel
+        Left = 5
+        Top = 93
+        Width = 180
+        Height = 13
+        Caption = 'Override default comments file name:'
+      end
       object DescriptionEnabledCB: TCheckBox
         Left = 5
         Top = 3
         Width = 475
         Height = 17
-        Caption = 'Read descript.ion comments from Cloud'
+        Caption = 'Read descript.ion comments from cloud filesystem'
         TabOrder = 0
       end
       object DescriptionEditorEnabledCB: TCheckBox
@@ -786,6 +793,29 @@ object AccountsForm: TAccountsForm
         ShowHint = False
         TabOrder = 2
         OnClick = GlobalSettingApplyBTNClick
+      end
+      object DescriptionCopyToCloudCB: TCheckBox
+        Left = 5
+        Top = 47
+        Width = 475
+        Height = 17
+        Caption = 'Copy file comments from local filesystem (experimental)'
+        TabOrder = 3
+      end
+      object DescriptionCopyFromCloudCB: TCheckBox
+        Left = 5
+        Top = 70
+        Width = 475
+        Height = 17
+        Caption = 'Copy file comments from cloud filesystem (experimental)'
+        TabOrder = 4
+      end
+      object DescriptionFileNameEdit: TEdit
+        Left = 191
+        Top = 90
+        Width = 289
+        Height = 21
+        TabOrder = 5
       end
     end
   end

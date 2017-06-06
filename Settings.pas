@@ -75,6 +75,9 @@ type
 		PreserveFileTime: boolean;
 		DescriptionEnabled: boolean;
 		DescriptionEditorEnabled: boolean;
+		DescriptionCopyToCloud: boolean;
+		DescriptionCopyFromCloud: boolean;
+		DescriptionFileName: WideString;
 		OperationsViaPublicLinkEnabled: boolean;
 		SocketTimeout: Integer;
 		Proxy: TProxySettings;
@@ -191,6 +194,9 @@ begin
 	GetPluginSettings.PreserveFileTime := IniFile.ReadBool('Main', 'PreserveFileTime', false);
 	GetPluginSettings.DescriptionEnabled := IniFile.ReadBool('Main', 'DescriptionEnabled', false);
 	GetPluginSettings.DescriptionEditorEnabled := IniFile.ReadBool('Main', 'DescriptionEditorEnabled', false);
+	GetPluginSettings.DescriptionCopyToCloud := IniFile.ReadBool('Main', 'DescriptionCopyToCloud', false);
+	GetPluginSettings.DescriptionCopyFromCloud := IniFile.ReadBool('Main', 'DescriptionCopyFromCloud', false);
+	GetPluginSettings.DescriptionFileName := IniFile.ReadString('Main', 'DescriptionFileName', 'descript.ion');
 	GetPluginSettings.OperationsViaPublicLinkEnabled := IniFile.ReadBool('Main', 'OperationsViaPublicLinkEnabled', false);
 	GetPluginSettings.DisableMultiThreading := IniFile.ReadBool('Main', 'DisableMultiThreading', false);
 	GetPluginSettings.LogUserSpace := IniFile.ReadBool('Main', 'LogUserSpace', true);

@@ -76,10 +76,14 @@ type
 		ShowSharedFoldersCB: TCheckBox;
 		ShowInvitesFoldersCB: TCheckBox;
 		ShowAccountsLabel: TLabel;
-    DescriptionTab: TTabSheet;
-    DescriptionEnabledCB: TCheckBox;
-    DescriptionEditorEnabledCB: TCheckBox;
-    GlobalSettingApplyBTN3: TButton;
+		CommentsTab: TTabSheet;
+		DescriptionEnabledCB: TCheckBox;
+		DescriptionEditorEnabledCB: TCheckBox;
+		GlobalSettingApplyBTN3: TButton;
+		DescriptionCopyToCloudCB: TCheckBox;
+		DescriptionCopyFromCloudCB: TCheckBox;
+		DescriptionFileNameLabel: TLabel;
+		DescriptionFileNameEdit: TEdit;
 		procedure FormShow(Sender: TObject);
 		procedure AccountsListClick(Sender: TObject);
 		procedure ApplyButtonClick(Sender: TObject);
@@ -195,8 +199,13 @@ procedure TAccountsForm.ApplySettings;
 begin
 	SetPluginSettingsValue(SettingsIniFilePath, 'LoadSSLDLLOnlyFromPluginDir', UseDLLFromPluginDir.Checked);
 	SetPluginSettingsValue(SettingsIniFilePath, 'PreserveFileTime', PreserveFileTimeCB.Checked);
+
 	SetPluginSettingsValue(SettingsIniFilePath, 'DescriptionEnabled', DescriptionEnabledCB.Checked);
 	SetPluginSettingsValue(SettingsIniFilePath, 'DescriptionEditorEnabled', DescriptionEditorEnabledCB.Checked);
+	SetPluginSettingsValue(SettingsIniFilePath, 'DescriptionCopyToCloud', DescriptionCopyToCloudCB.Checked);
+	SetPluginSettingsValue(SettingsIniFilePath, 'DescriptionCopyFromCloud', DescriptionCopyFromCloudCB.Checked);
+	SetPluginSettingsValue(SettingsIniFilePath, 'DescriptionFileName', DescriptionFileNameEdit.Text);
+
 	SetPluginSettingsValue(SettingsIniFilePath, 'OperationsViaPublicLinkEnabled', OperationsViaPublicLinkEnabledCB.Checked);
 	if CloudMaxFileSizeCB.Checked then
 	begin
@@ -322,6 +331,10 @@ begin
 		AccountsForm.PreserveFileTimeCB.Checked := GetPluginSettings(SettingsIniFilePath).PreserveFileTime;
 		AccountsForm.DescriptionEnabledCB.Checked := GetPluginSettings(SettingsIniFilePath).DescriptionEnabled;
 		AccountsForm.DescriptionEditorEnabledCB.Checked := GetPluginSettings(SettingsIniFilePath).DescriptionEditorEnabled;
+		AccountsForm.DescriptionCopyToCloudCB.Checked := GetPluginSettings(SettingsIniFilePath).DescriptionCopyToCloud;
+		AccountsForm.DescriptionCopyFromCloudCB.Checked := GetPluginSettings(SettingsIniFilePath).DescriptionCopyFromCloud;
+		AccountsForm.DescriptionFileNameEdit.Text := GetPluginSettings(SettingsIniFilePath).DescriptionFileName;
+
 		AccountsForm.OperationsViaPublicLinkEnabledCB.Checked := GetPluginSettings(SettingsIniFilePath).OperationsViaPublicLinkEnabled;
 		AccountsForm.SocketTimeoutEdit.Text := GetPluginSettings(SettingsIniFilePath).SocketTimeout.ToString;
 		AccountsForm.ProxyCB.ItemIndex := GetPluginSettings(SettingsIniFilePath).Proxy.ProxyType;
