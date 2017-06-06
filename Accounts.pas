@@ -16,7 +16,6 @@ type
 		DeleteButton: TButton;
 		PreserveFileTimeCB: TCheckBox;
 		UseDLLFromPluginDir: TCheckBox;
-		DescriptionEnabledCB: TCheckBox;
 		OperationsViaPublicLinkEnabledCB: TCheckBox;
 		GlobalSettingApplyBTN: TButton;
 		AccountsPanel: TPanel;
@@ -77,7 +76,10 @@ type
 		ShowSharedFoldersCB: TCheckBox;
 		ShowInvitesFoldersCB: TCheckBox;
 		ShowAccountsLabel: TLabel;
-		DescriptionEditorEnabledCB: TCheckBox;
+    DescriptionTab: TTabSheet;
+    DescriptionEnabledCB: TCheckBox;
+    DescriptionEditorEnabledCB: TCheckBox;
+    GlobalSettingApplyBTN3: TButton;
 		procedure FormShow(Sender: TObject);
 		procedure AccountsListClick(Sender: TObject);
 		procedure ApplyButtonClick(Sender: TObject);

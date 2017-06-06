@@ -158,7 +158,7 @@ object AccountsForm: TAccountsForm
     Top = 0
     Width = 491
     Height = 475
-    ActivePage = AccountsTab
+    ActivePage = DescriptionTab
     Align = alClient
     TabOrder = 0
     object AccountsTab: TTabSheet
@@ -347,70 +347,70 @@ object AccountsForm: TAccountsForm
       ImageIndex = 1
       object CloudMaxFileSizeLabelBytes: TLabel
         Left = 292
-        Top = 136
+        Top = 116
         Width = 27
         Height = 13
         Caption = 'bytes'
       end
       object ChunkOverwriteModeLabel: TLabel
         Left = 5
-        Top = 217
+        Top = 197
         Width = 150
         Height = 13
         Caption = 'Overwrite splitted chunk mode:'
       end
       object DeleteFailOnUploadModeLabel: TLabel
         Left = 5
-        Top = 243
+        Top = 223
         Width = 143
         Height = 13
         Caption = 'Delete file after upload mode:'
       end
       object OverwriteLocalModeLabel: TLabel
         Left = 5
-        Top = 269
+        Top = 249
         Width = 127
         Height = 13
         Caption = 'Overwrite local files mode:'
       end
       object IconsModeLabel: TLabel
         Left = 5
-        Top = 295
+        Top = 275
         Width = 88
         Height = 13
         Caption = 'Plugin icons mode:'
       end
       object OperationErrorModeLabel: TLabel
         Left = 5
-        Top = 162
+        Top = 142
         Width = 140
         Height = 13
         Caption = 'On downloads/uploads error:'
       end
       object RetryAttemptsLabel: TLabel
         Left = 160
-        Top = 190
+        Top = 170
         Width = 77
         Height = 13
         Caption = 'Retry attempts:'
       end
       object RetryWaitLabel: TLabel
         Left = 339
-        Top = 190
+        Top = 170
         Width = 20
         Height = 13
         Caption = 'wait'
       end
       object msLabel: TLabel
         Left = 466
-        Top = 190
+        Top = 170
         Width = 13
         Height = 13
         Caption = 'ms'
       end
       object ShowAccountsLabel: TLabel
         Left = 5
-        Top = 92
+        Top = 72
         Width = 76
         Height = 13
         Caption = 'Show accounts:'
@@ -431,21 +431,13 @@ object AccountsForm: TAccountsForm
         Caption = 'Load SSL libraries only from plugin directory'
         TabOrder = 0
       end
-      object DescriptionEnabledCB: TCheckBox
-        Left = 5
-        Top = 69
-        Width = 150
-        Height = 17
-        Caption = 'Descript.ion files support'
-        TabOrder = 3
-      end
       object OperationsViaPublicLinkEnabledCB: TCheckBox
         Left = 5
-        Top = 113
+        Top = 93
         Width = 475
         Height = 17
         Caption = 'Copying/moving between accounts via public link'
-        TabOrder = 8
+        TabOrder = 6
       end
       object GlobalSettingApplyBTN: TButton
         Left = 405
@@ -455,35 +447,35 @@ object AccountsForm: TAccountsForm
         Caption = 'Apply'
         ParentShowHint = False
         ShowHint = False
-        TabOrder = 21
+        TabOrder = 19
         OnClick = GlobalSettingApplyBTNClick
       end
       object CloudMaxFileSizeValue: TEdit
         Left = 142
-        Top = 133
+        Top = 113
         Width = 146
         Height = 21
         Enabled = False
         NumbersOnly = True
-        TabOrder = 10
+        TabOrder = 8
       end
       object CloudMaxFileSizeCB: TCheckBox
         Left = 5
-        Top = 135
+        Top = 115
         Width = 134
         Height = 17
         Caption = 'Override split file size to'
-        TabOrder = 9
+        TabOrder = 7
         OnClick = CloudMaxFileSizeCBClick
       end
       object ChunkOverwriteModeCombo: TComboBox
         Left = 160
-        Top = 214
+        Top = 194
         Width = 320
         Height = 21
         Style = csDropDownList
         ItemIndex = 0
-        TabOrder = 14
+        TabOrder = 12
         Text = 'Silently overwrite'
         Items.Strings = (
           'Silently overwrite'
@@ -492,12 +484,12 @@ object AccountsForm: TAccountsForm
       end
       object DeleteFailOnUploadModeCombo: TComboBox
         Left = 160
-        Top = 240
+        Top = 220
         Width = 320
         Height = 21
         Style = csDropDownList
         ItemIndex = 0
-        TabOrder = 15
+        TabOrder = 13
         Text = 'Ask user'
         Items.Strings = (
           'Ask user'
@@ -508,12 +500,12 @@ object AccountsForm: TAccountsForm
       end
       object OverwriteLocalModeCombo: TComboBox
         Left = 160
-        Top = 266
+        Top = 246
         Width = 320
         Height = 21
         Style = csDropDownList
         ItemIndex = 0
-        TabOrder = 16
+        TabOrder = 14
         Text = 'Ask user'
         Items.Strings = (
           'Ask user'
@@ -522,20 +514,20 @@ object AccountsForm: TAccountsForm
       end
       object DisableMultiThreadingCB: TCheckBox
         Left = 5
-        Top = 323
+        Top = 303
         Width = 475
         Height = 17
         Caption = 'Disable background operations support'
-        TabOrder = 18
+        TabOrder = 16
       end
       object IconsModeCombo: TComboBox
         Left = 160
-        Top = 292
+        Top = 272
         Width = 320
         Height = 21
         Style = csDropDownList
         ItemIndex = 0
-        TabOrder = 17
+        TabOrder = 15
         Text = 'System default'
         Items.Strings = (
           'System default'
@@ -554,12 +546,12 @@ object AccountsForm: TAccountsForm
       end
       object OperationErrorModeCombo: TComboBox
         Left = 160
-        Top = 160
+        Top = 140
         Width = 320
         Height = 21
         Style = csDropDownList
         ItemIndex = 0
-        TabOrder = 11
+        TabOrder = 9
         Text = 'Ask user'
         Items.Strings = (
           'Ask user'
@@ -569,71 +561,63 @@ object AccountsForm: TAccountsForm
       end
       object AttemptWaitValue: TSpinEdit
         Left = 365
-        Top = 187
+        Top = 167
         Width = 95
         Height = 22
         MaxValue = 2147483647
         MinValue = 0
-        TabOrder = 13
+        TabOrder = 11
         Value = 0
       end
       object RetryAttemptsValue: TSpinEdit
         Left = 241
-        Top = 187
+        Top = 167
         Width = 95
         Height = 22
         MaxValue = 2147483647
         MinValue = -1
-        TabOrder = 12
+        TabOrder = 10
         Value = 0
       end
       object DownloadLinksEncodeCB: TCheckBox
         Left = 5
-        Top = 345
+        Top = 325
         Width = 475
         Height = 17
         Caption = 'URL encode direct download links'
-        TabOrder = 19
+        TabOrder = 17
       end
       object AutoUpdateDownloadListingCB: TCheckBox
         Left = 5
-        Top = 367
+        Top = 347
         Width = 475
         Height = 17
         Caption = 'Update direct download links immediately'
-        TabOrder = 20
+        TabOrder = 18
       end
       object ShowTrashFoldersCB: TCheckBox
         Left = 87
-        Top = 91
+        Top = 71
         Width = 88
         Height = 17
         Caption = 'Trash folders'
-        TabOrder = 5
+        TabOrder = 3
       end
       object ShowSharedFoldersCB: TCheckBox
         Left = 181
-        Top = 91
+        Top = 71
         Width = 118
         Height = 17
         Caption = 'Shared links folders'
-        TabOrder = 6
+        TabOrder = 4
       end
       object ShowInvitesFoldersCB: TCheckBox
         Left = 305
-        Top = 91
+        Top = 71
         Width = 98
         Height = 17
         Caption = 'Invites folders'
-        TabOrder = 7
-      end
-      object DescriptionEditorEnabledCB: TCheckBox
-        Left = 161
-        Top = 70
-        Width = 319
-        Height = 17
-        Caption = 'Descript.ion editing (experimental)'
-        TabOrder = 4
+        TabOrder = 5
       end
     end
     object NetworkTab: TTabSheet
@@ -769,6 +753,39 @@ object AccountsForm: TAccountsForm
         MinValue = -1
         TabOrder = 2
         Value = -1
+      end
+    end
+    object DescriptionTab: TTabSheet
+      Caption = 'Descript.ion support'
+      ImageIndex = 3
+      ExplicitLeft = 0
+      ExplicitTop = 28
+      object DescriptionEnabledCB: TCheckBox
+        Left = 5
+        Top = 3
+        Width = 475
+        Height = 17
+        Caption = 'Read descript.ion comments from Cloud'
+        TabOrder = 0
+      end
+      object DescriptionEditorEnabledCB: TCheckBox
+        Left = 5
+        Top = 25
+        Width = 475
+        Height = 17
+        Caption = 'Enable descript.ion editor (experimental)'
+        TabOrder = 1
+      end
+      object GlobalSettingApplyBTN3: TButton
+        Left = 405
+        Top = 417
+        Width = 75
+        Height = 25
+        Caption = 'Apply'
+        ParentShowHint = False
+        ShowHint = False
+        TabOrder = 2
+        OnClick = GlobalSettingApplyBTNClick
       end
     end
   end
