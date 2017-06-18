@@ -141,8 +141,7 @@ end;
 function TDescription.Write(filename: WideString = NullChar): Integer;
 var
 	fStream: TStreamWriter;
-	line, Key, tKey, Value, tValue: WideString;
-	t: Integer;
+	line, Key, tKey, Value: WideString;
 begin
 	if filename = NullChar then filename := self.ion_filename;
 
