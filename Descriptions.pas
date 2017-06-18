@@ -160,8 +160,8 @@ begin
 			if Pos(sLineBreak, Value) <> 0 then Value := WideStringReplace(Value, sLineBreak, '\n', [rfReplaceAll]) + divider;
 			if Length(Value) > 0 then
 			begin
-				line := Key + Space + Value;
-				fStream.Write(line);
+				line := tKey + Space + Value;
+				fStream.WriteLine(line);
 			end;
 		end;
 		fStream.Flush;
