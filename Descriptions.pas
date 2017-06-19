@@ -3,7 +3,7 @@
 interface
 
 uses
-	System.Types, System.Classes, System.StrUtils, Generics.Collections, System.SysUtils, System.WideStrUtils;
+	System.Types, System.Classes, System.StrUtils, Generics.Collections, System.SysUtils, System.WideStrUtils, Windows;
 
 const
 	FORMAT_AS_IS = 0; //raw comment string, include all control chars
@@ -78,6 +78,8 @@ constructor TDescription.Create(ion_filename: WideString; encoding: Integer = EN
 begin
 	self.items := TDictionary<WideString, WideString>.Create;
 	self.ion_filename := ion_filename;
+	if not FileExists(ion_filename) then CloseHandle(CreateFile(PChar(ion_filename), 0, 0, nil, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0));
+
 	case encoding of
 		ENCODING_DEFAULT: self.encoding := TEncoding.Default;
 		ENCODING_UTF8: self.encoding := TEncoding.UTF8;
@@ -103,14 +105,26 @@ var
 	F: File;
 	Buffer: array [0 .. 2] of byte;
 begin
+	result := self.encoding;
+
 	AssignFile(F, ion_filename);
 	Reset(F, 1);
-	BlockRead(F, Buffer, SizeOf(Buffer));
+	try
+		BlockRead(F, Buffer, SizeOf(Buffer));
+	except
+		on E: EInOutError do
+		begin
+			CloseFile(F);
+			exit;
+		end;
+
+	end;
+
 	CloseFile(F);
 	if (Buffer[0] = $EF) and (Buffer[1] = $BB) and (Buffer[2] = $BF) then exit(TEncoding.UTF8);
 	if (Buffer[0] = $FE) and (Buffer[1] = $FF) then exit(TEncoding.BigEndianUnicode);
 	if (Buffer[0] = $FF) and (Buffer[1] = $FE) then exit(TEncoding.Unicode);
-	exit(TEncoding.Default);
+
 end;
 
 function TDescription.FormatValue(Value: WideString; FormatType: Integer): WideString;
@@ -164,8 +178,8 @@ begin
 			if Pos(sLineBreak, Value) <> 0 then Value := WideStringReplace(Value, sLineBreak, '\n', [rfReplaceAll]) + divider;
 			if Length(Value) > 0 then
 			begin
-				line := Key + Space + Value;
-				fStream.Write(line);
+				line := tKey + Space + Value;
+				fStream.WriteLine(line);
 			end;
 		end;
 		fStream.Flush;
