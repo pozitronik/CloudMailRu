@@ -39,39 +39,35 @@ type
 		function Read(): Integer;
 		function Write(filename: WideString = NullChar): Integer;
 		function GetValue(item: WideString; FormatType: Integer = FORMAT_ONELINE): WideString;
-		function SetValue(item: WideString; Value: WideString): Boolean;
+		function SetValue(item: WideString; Value: WideString): boolean;
+		function DeleteValue(item: WideString): boolean;
+
 		procedure Clear;
 		function DetermineEncoding(): TEncoding;
 		property ionFilename: WideString read GetionFilename;
-		class function CopyValue(from_filename, to_filename, item: WideString): Integer;
+
+		function CopyFrom(from_description: TDescription; item: WideString; move: boolean = false): Integer;
 	end;
 
 implementation
 
 {TDescription}
 
+function TDescription.CopyFrom(from_description: TDescription; item: WideString; move: boolean): Integer;
+begin
+	if not assigned(from_description) then exit(1);
+	self.SetValue(item, from_description.GetValue(item, FORMAT_AS_IS));
+	if move then
+	begin
+		from_description.DeleteValue(item);
+		from_description.Write();
+	end;
+	exit(0);
+end;
+
 procedure TDescription.Clear;
 begin
 	self.items.Clear;
-end;
-
-class function TDescription.CopyValue(from_filename, to_filename, item: WideString): Integer;
-var
-	ion_from, ion_to: TDescription;
-begin
-	try
-		ion_from := self.Create(from_filename);
-		ion_to := self.Create(to_filename);
-		ion_from.Read();
-		ion_to.Read();
-		ion_to.SetValue(item, ion_from.GetValue(item, FORMAT_CLEAR));
-		ion_to.Write();
-		ion_to.Destroy;
-		ion_from.Destroy;
-	except
-		exit(-1);
-	end;
-	exit(0);
 end;
 
 constructor TDescription.Create(ion_filename: WideString; encoding: Integer = ENCODING_UTF8);
@@ -86,6 +82,12 @@ begin
 		ENCODING_UNICODE: self.encoding := TEncoding.Unicode;
 		ENCODING_UNCODE_BE: self.encoding := TEncoding.BigEndianUnicode;
 	end;
+end;
+
+function TDescription.DeleteValue(item: WideString): boolean;
+begin
+	self.items.Remove(item);
+	exit(true);
 end;
 
 destructor TDescription.Destroy;
@@ -147,7 +149,7 @@ begin
 	result := self.FormatValue(result, FormatType);
 end;
 
-function TDescription.SetValue(item, Value: WideString): Boolean;
+function TDescription.SetValue(item, Value: WideString): boolean;
 begin
 	result := true;
 	try
