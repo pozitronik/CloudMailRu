@@ -35,6 +35,7 @@ type
 
 	public
 		constructor Create(ion_filename: WideString; encoding: Integer = ENCODING_UTF8);
+
 		destructor Destroy; override;
 		function Read(): Integer;
 		function Write(filename: WideString = NullChar): Integer;
@@ -153,7 +154,8 @@ function TDescription.SetValue(item, Value: WideString): boolean;
 begin
 	result := true;
 	try
-		items.AddOrSetValue(item, Value);
+		if EmptyWideStr = Value then DeleteValue(item)
+		else items.AddOrSetValue(item, Value);
 	except
 		result := false;
 	end;
@@ -170,6 +172,9 @@ begin
 	fStream := nil;
 
 	try
+		DeleteFileW(PWideChar(filename));
+		if items.Count = 0 then exit;
+
 		fStream := TStreamWriter.Create(filename, false, self.encoding);
 		for Key in items.Keys do
 		begin
