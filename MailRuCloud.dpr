@@ -267,13 +267,13 @@ var
 begin
 	RealPath := ExtractRealPath(RemoteDir);
 	if (InfoStartEnd = FS_STATUS_START) then
-	begin
+	begin //todo: save operation info into thread-related dictionary, so we can determine it later
 		case InfoOperation of
 			FS_STATUS_OP_LIST:
 				begin
 					if (GetPluginSettings(SettingsIniFilePath).DescriptionEnabled) and inAccount(RealPath) then
 					begin
-						if ConnectionManager.get(RealPath.account, getResult).getDescriptionFile(IncludeTrailingBackslash(RealPath.path) + 'descript.ion', CurrentDescriptions.ionFilename) = FS_FILE_OK then
+						if ConnectionManager.get(RealPath.account, getResult).getDescriptionFile(IncludeTrailingBackslash(RealPath.path) + 'descript.ion', CurrentDescriptions.ionFilename) then
 						begin
 							CurrentDescriptions.Read;
 						end else begin
@@ -734,10 +734,22 @@ begin
 
 end;
 
+procedure UpdateFileDescription(FilePath: WideString);
+var
+	LocalDescription: TDescription;
+begin
+	LocalDescription := TDescription.Create(IncludeTrailingPathDelimiter(ExtractFileDir(FilePath)) + GetPluginSettings(SettingsIniFilePath).DescriptionFileName); //open local ion file
+	LocalDescription.Read;
+	LocalDescription.CopyFrom(CurrentDescriptions, ExtractFileName(FilePath));
+	LocalDescription.Write();
+	LocalDescription.Destroy;
+end;
+
 function GetRemoteFile(RemotePath: TRealPath; LocalName, RemoteName: WideString; CopyFlags: integer): integer;
 var
 	getResult: integer;
 	Item: TCloudMailRuDirListingItem;
+
 begin
 	Result := ConnectionManager.get(RemotePath.account, getResult).getFile(WideString(RemotePath.path), LocalName);
 
@@ -751,6 +763,9 @@ begin
 		if CheckFlag(FS_COPYFLAGS_MOVE, CopyFlags) then ConnectionManager.get(RemotePath.account, getResult).deleteFile(RemotePath.path);
 		MyProgressProc(PluginNum, PWideChar(LocalName), PWideChar(RemoteName), 100);
 		LogHandle(LogLevelFileOperation, MSGTYPE_TRANSFERCOMPLETE, PWideChar(RemoteName + '->' + LocalName));
+
+		if GetPluginSettings(SettingsIniFilePath).DescriptionCopyFromCloud then UpdateFileDescription(LocalName);
+
 	end;
 end;
 
@@ -1061,7 +1076,6 @@ end;
 function FsDisconnectW(DisconnectRoot: PWideChar): Bool; stdcall;
 begin
 	ConnectionManager.freeAll;
-
 	Result := true;
 end;
 
@@ -1094,7 +1108,7 @@ begin
 	begin
 		if FieldIndex = 14 then
 		begin
-			strpcopy(FieldValue, GetAccountSettingsFromIniFile(AccountsIniFilePath, ExtractFileName(FileName)).description);
+			strpcopy(FieldValue, GetAccountSettingsFromIniFile(AccountsIniFilePath, ExtractFileName(FileName)).Description);
 			exit(ft_stringw);
 		end
 		else exit(ft_nosuchfield);
