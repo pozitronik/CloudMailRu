@@ -1138,8 +1138,13 @@ begin
 						else AuthMessage := 'Enter code sended to ' + TwostepData.secstep_phone + '.';
 
 						Log(LogLevelDebug, MSGTYPE_DETAILS, 'Awaiting for security key... ');
-						GetMem(SecurityKey, 32);
-						ZeroMemory(SecurityKey, 32);
+						try
+							SecurityKey := AllocMem(32);
+						except
+							on E: EOutOfMemory do exit(false);
+
+						end;
+
 						if (true = ExternalRequestProc(RT_Other, 'Enter auth key', PWideChar(AuthMessage), SecurityKey, 32)) then
 						begin
 							FormFields.Clear;
