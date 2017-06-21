@@ -37,6 +37,7 @@ type
 
 function Implode(S: TStringList; Delimiter: WideString): WideString;
 function Explode(S: WideString; Delimiter: char): TStringList;
+function MyExtractStrings(Separators, WhiteSpace: TSysCharSet; Content: PWideChar; Strings: TStrings): integer;
 function ExtractRealPath(VirtualPath: WideString): TRealPath;
 function inAccount(path: TRealPath; ignoreVirtual: boolean = true): boolean;
 function SizeOfFile(const FileName: String): Int64;
@@ -101,22 +102,77 @@ begin
 	Result.Delimiter := Delimiter;
 end;
 
+function MyExtractStrings(Separators, WhiteSpace: TSysCharSet; Content: PWideChar; Strings: TStrings): integer;
+var
+	Head, Tail: PWideChar;
+	EOS, InQuote: boolean;
+	QuoteChar: WideChar;
+	Item: WideString;
+begin
+	Result := 0;
+	if (Content = nil) or (Content^ = #0) or (Strings = nil) then exit;
+	Tail := Content;
+	InQuote := False;
+	QuoteChar := #0;
+	Strings.BeginUpdate;
+	try
+		Include(WhiteSpace, #13);
+		Include(WhiteSpace, #10);
+
+		Include(Separators, #0);
+		Include(Separators, #13);
+		Include(Separators, #10);
+		//Include(Separators, '''');
+		Include(Separators, '"');
+		repeat
+			while CharInSet(Tail^, WhiteSpace) do Inc(Tail);
+
+			Head := Tail;
+			while true do
+			begin
+				while (InQuote and not((Tail^ = #0) or (Tail^ = QuoteChar))) or not(CharInSet(Tail^, Separators)) do Inc(Tail);
+				if CharInSet(Tail^, ['''', '"']) then
+				begin
+					if (QuoteChar <> #0) and (QuoteChar = Tail^) then QuoteChar := #0
+					else if QuoteChar = #0 then QuoteChar := Tail^;
+					InQuote := QuoteChar <> #0;
+					Inc(Tail);
+				end
+				else Break;
+			end;
+			EOS := Tail^ = #0;
+			if (Head <> Tail) and (Head^ <> #0) then
+			begin
+				if Strings <> nil then
+				begin
+					SetString(Item, Head, Tail - Head);
+					Strings.Add(Item);
+				end;
+				Inc(Result);
+			end;
+			Inc(Tail);
+		until EOS;
+	finally
+		Strings.EndUpdate;
+	end;
+end;
+
 function ExtractRealPath(VirtualPath: WideString): TRealPath;
 var
 	List: TStringList;
 begin
 	Result.account := '';
 	Result.path := '';
-	Result.upDirItem := false;
-	Result.trashDir := false;
-	Result.sharedDir := false;
-	Result.invitesDir := false;
+	Result.upDirItem := False;
+	Result.trashDir := False;
+	Result.sharedDir := False;
+	Result.invitesDir := False;
 
 	if VirtualPath = '' then exit; //root
 	VirtualPath := Copy(VirtualPath, 2, Length(VirtualPath) - 1);
 
 	List := TStringList.Create;
-	ExtractStrings(['\'], [], PWideChar(VirtualPath), List);
+	MyExtractStrings(['\'], [], PWideChar(VirtualPath), List);
 
 	if (List.Count > 0) and (List.Strings[List.Count - 1] = '..') then Result.upDirItem := true;
 
