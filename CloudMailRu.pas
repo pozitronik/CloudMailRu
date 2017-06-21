@@ -112,8 +112,8 @@ type
 		function unmountFolder(home: WideString; clone_copy: Boolean): Boolean;
 		function rejectInvite(invite_token: WideString): Boolean;
 		{OTHER ROUTINES}
-		function getDescriptionFile(remotePath, localCopy: WideString): integer; //Если в каталоге remotePath есть descript.ion - скопировать его в файл localcopy
-		function putDesriptionFile(remotePath, localCopy: WideString): integer; //Скопировать descript.ion из временного файла на сервер
+		function getDescriptionFile(remotePath, localCopy: WideString): Boolean; //Если в каталоге remotePath есть descript.ion - скопировать его в файл localcopy
+		function putDesriptionFile(remotePath, localCopy: WideString): Boolean; //Скопировать descript.ion из временного файла на сервер
 		procedure logUserSpaceInfo();
 		function putFileSplit(localPath, remotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; ChunkOverwriteMode: integer = 0): integer;
 		{STATIC ROUTINES}
@@ -453,14 +453,15 @@ begin
 	PublicToken := copy(Text, start, finish - start);
 end;
 
-function TCloudMailRu.getDescriptionFile(remotePath, localCopy: WideString): integer; //0 - ok, else error
+function TCloudMailRu.getDescriptionFile(remotePath, localCopy: WideString): Boolean;
 begin
-	Result := self.getFile(remotePath, localCopy, false);
+	Result := self.getFile(remotePath, localCopy, false) = FS_FILE_OK;
 end;
 
-function TCloudMailRu.putDesriptionFile(remotePath, localCopy: WideString): integer;
+function TCloudMailRu.putDesriptionFile(remotePath, localCopy: WideString): Boolean;
 begin
-	Result := self.putFile(localCopy, remotePath)
+	if FileExists(localCopy) then Result := self.putFile(localCopy, remotePath) = FS_FILE_OK
+	else Result := self.deleteFile(remotePath);
 end;
 
 function TCloudMailRu.getSharedLinksListing(var DirListing: TCloudMailRuDirListing; ShowProgress: Boolean = false): Boolean;
@@ -1142,7 +1143,6 @@ begin
 							SecurityKey := AllocMem(32);
 						except
 							on E: EOutOfMemory do exit(false);
-
 						end;
 
 						if (true = ExternalRequestProc(RT_Other, 'Enter auth key', PWideChar(AuthMessage), SecurityKey, 32)) then
