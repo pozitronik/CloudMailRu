@@ -100,7 +100,7 @@ var
 begin
 	DescriptionEditMemo.lines.Clear;
 	LocalPath := GetTmpFileName('ion');
-	if not self.Cloud.getDescriptionFile(IncludeTrailingBackslash(ExtractFileDir(self.RemoteName)) + 'descript.ion', LocalPath) = FS_FILE_OK then exit;
+	if not self.Cloud.getDescriptionFile(IncludeTrailingBackslash(ExtractFileDir(self.RemoteName)) + 'descript.ion', LocalPath) then exit;
 	CurrentDescriptions := TDescription.Create(LocalPath);
 	CurrentDescriptions.Read;
 	DescriptionEditMemo.lines.Text := CurrentDescriptions.GetValue(ExtractFileName(self.RemoteName), FORMAT_CLEAR);
@@ -116,7 +116,7 @@ begin
 	RemotePath := IncludeTrailingBackslash(ExtractFileDir(self.RemoteName)) + 'descript.ion';
 	LocalPath := GetTmpFileName('ion');
 
-	RemoteFileExists := self.Cloud.getDescriptionFile(RemotePath, LocalPath) = FS_FILE_OK;
+	RemoteFileExists := self.Cloud.getDescriptionFile(RemotePath, LocalPath);
 	CurrentDescriptions := TDescription.Create(LocalPath);
 	if RemoteFileExists then //если был прежний файл - его надо перечитать и удалить с сервера
 	begin
