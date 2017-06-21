@@ -1225,12 +1225,22 @@ var
 	IconsMode: integer;
 	CurrentInviteItem: TCloudMailRuIncomingInviteInfo;
 	IconsSize: integer;
+	FrontIcon, BackIcon: hicon;
 
 	function GetFolderIconSize(IconsSize: integer): integer;
 	begin
 		if IconsSize <= 16 then exit(IconSizeSmall);
 		if IconsSize <= 32 then exit(IconSizeNormal);
 		exit(IconSizeLarge);
+	end;
+
+	Procedure CombineMacro(var CombinedIcon: hicon);
+	begin
+		FrontIcon := LoadImageW(hInstance, RemoteName, IMAGE_ICON, IconsSize, IconsSize, LR_DEFAULTCOLOR);
+		BackIcon := GetFolderIcon(GetFolderIconSize(IconsSize));
+		CombinedIcon := CombineIcons(FrontIcon, BackIcon);
+		DeleteObject(FrontIcon);
+		DeleteObject(BackIcon);
 	end;
 
 begin
@@ -1255,7 +1265,8 @@ begin
 		if (RealPath.path = '') then
 		begin
 			strpcopy(RemoteName, 'shared');
-			TheIcon := CombineIcons(LoadImageW(hInstance, RemoteName, IMAGE_ICON, IconsSize, IconsSize, LR_DEFAULTCOLOR), GetFolderIcon(GetFolderIconSize(IconsSize)));
+			CombineMacro(TheIcon);
+
 			exit(FS_ICON_EXTRACTED_DESTROY);
 		end else begin
 			if IconsMode = IconsModeDisabled then IconsMode := IconsModeInternalOverlay; //always draw icons in shared links directory
@@ -1267,7 +1278,7 @@ begin
 		if (RealPath.path = '') then
 		begin
 			strpcopy(RemoteName, 'shared_incoming');
-			TheIcon := CombineIcons(LoadImageW(hInstance, RemoteName, IMAGE_ICON, IconsSize, IconsSize, LR_DEFAULTCOLOR), GetFolderIcon(GetFolderIconSize(IconsSize)));
+			CombineMacro(TheIcon);
 			exit(FS_ICON_EXTRACTED_DESTROY);
 		end else begin
 
@@ -1277,10 +1288,10 @@ begin
 			if CurrentInviteItem.home <> '' then //mounted item
 			begin
 				strpcopy(RemoteName, 'shared_incoming');
-				TheIcon := CombineIcons(LoadImageW(hInstance, RemoteName, IMAGE_ICON, IconsSize, IconsSize, LR_DEFAULTCOLOR), GetFolderIcon(GetFolderIconSize(IconsSize)));
+				CombineMacro(TheIcon);
 			end else begin
 				strpcopy(RemoteName, 'shared');
-				TheIcon := CombineIcons(LoadImageW(hInstance, RemoteName, IMAGE_ICON, IconsSize, IconsSize, LR_DEFAULTCOLOR), GetFolderIcon(GetFolderIconSize(IconsSize)));
+				CombineMacro(TheIcon);
 			end;
 			exit(FS_ICON_EXTRACTED_DESTROY);
 
@@ -1306,7 +1317,7 @@ begin
 	end;
 	case IconsMode of
 		IconsModeInternal: TheIcon := LoadImageW(hInstance, RemoteName, IMAGE_ICON, IconsSize, IconsSize, LR_DEFAULTCOLOR);
-		IconsModeInternalOverlay: TheIcon := CombineIcons(LoadImageW(hInstance, RemoteName, IMAGE_ICON, IconsSize, IconsSize, LR_DEFAULTCOLOR), GetFolderIcon(GetFolderIconSize(IconsSize)));
+		IconsModeInternalOverlay: CombineMacro(TheIcon);
 		IconsModeExternal:
 			begin
 				TheIcon := LoadPluginIcon(PluginPath + 'icons', RemoteName);
@@ -1317,7 +1328,9 @@ begin
 			begin
 				TheIcon := LoadPluginIcon(PluginPath + 'icons', RemoteName);
 				if TheIcon = INVALID_HANDLE_VALUE then exit(FS_ICON_USEDEFAULT);
-				TheIcon := CombineIcons(TheIcon, GetFolderIcon(GetFolderIconSize(IconsSize)));
+				BackIcon := GetFolderIcon(GetFolderIconSize(IconsSize));
+				TheIcon := CombineIcons(TheIcon, BackIcon);
+				DeleteObject(BackIcon);
 				exit(FS_ICON_EXTRACTED_DESTROY);
 			end;
 
