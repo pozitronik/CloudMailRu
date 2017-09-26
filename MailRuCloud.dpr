@@ -737,7 +737,7 @@ end;
 procedure UpdateFileDescription(RemotePath: TRealPath; LocalFilePath: WideString; var Cloud: TCloudMailRu);
 var
 	RemoteDescriptions, LocalDescriptions: TDescription;
-	RemoteIonPath, LocalIonPath, LocalTempPath: WideString;
+	RemoteIonPath, LocalTempPath: WideString;
 	RemoteIonExists: Boolean;
 begin
 	RemoteIonPath := IncludeTrailingBackslash(ExtractFileDir(RemotePath.path)) + GetPluginSettings(SettingsIniFilePath).DescriptionFileName;
