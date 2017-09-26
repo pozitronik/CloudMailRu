@@ -24,7 +24,6 @@ const
 var
 	AccountsIniFilePath: WideString;
 	SettingsIniFilePath: WideString;
-	PluginIonFileName: WideString; //Переопределённое (или нет) имя файла описаний, с которым будет работать плагин
 	GlobalPath, PluginPath, AppDataDir, IniDir: WideString;
 	AccountsList: TStringList; //Global accounts list
 	FileCounter: integer = 0;
@@ -274,7 +273,7 @@ begin
 				begin
 					if (GetPluginSettings(SettingsIniFilePath).DescriptionEnabled) and inAccount(RealPath) then
 					begin
-						if ConnectionManager.get(RealPath.account, getResult).getDescriptionFile(IncludeTrailingBackslash(RealPath.path) + PluginIonFileName, CurrentDescriptions.ionFilename) then
+						if ConnectionManager.get(RealPath.account, getResult).getDescriptionFile(IncludeTrailingBackslash(RealPath.path) + GetPluginSettings(SettingsIniFilePath).DescriptionFileName, CurrentDescriptions.ionFilename) then
 						begin
 							CurrentDescriptions.Read;
 						end else begin
@@ -601,7 +600,7 @@ begin
 		begin
 			Cloud := ConnectionManager.get(RealPath.account, getResult);
 			CurrentItem := FindListingItemByPath(CurrentListing, RealPath);
-			if Cloud.statusFile(CurrentItem.home, CurrentItem) then TPropertyForm.ShowProperty(MainWin, RealPath.path, CurrentItem, Cloud, GetPluginSettings(SettingsIniFilePath).DownloadLinksEncode, GetPluginSettings(SettingsIniFilePath).AutoUpdateDownloadListing, false, false, PluginIonFileName)
+			if Cloud.statusFile(CurrentItem.home, CurrentItem) then TPropertyForm.ShowProperty(MainWin, RealPath.path, CurrentItem, Cloud, GetPluginSettings(SettingsIniFilePath).DownloadLinksEncode, GetPluginSettings(SettingsIniFilePath).AutoUpdateDownloadListing, false, false, GetPluginSettings(SettingsIniFilePath).DescriptionFileName)
 		end;
 	end;
 end;
@@ -646,7 +645,7 @@ begin
 	begin
 		Cloud := ConnectionManager.get(RealPath.account, getResult);
 		//всегда нужно обновлять статус на сервере, CurrentListing может быть изменён в другой панели
-		if (Cloud.statusFile(RealPath.path, CurrentItem)) and (idContinue = TPropertyForm.ShowProperty(MainWin, RealPath.path, CurrentItem, Cloud, GetPluginSettings(SettingsIniFilePath).DownloadLinksEncode, GetPluginSettings(SettingsIniFilePath).AutoUpdateDownloadListing, GetPluginSettings(SettingsIniFilePath).DescriptionEnabled, GetPluginSettings(SettingsIniFilePath).DescriptionEditorEnabled, PluginIonFileName)) then PostMessage(MainWin, WM_USER + 51, 540, 0); //refresh tc panel if description edited
+		if (Cloud.statusFile(RealPath.path, CurrentItem)) and (idContinue = TPropertyForm.ShowProperty(MainWin, RealPath.path, CurrentItem, Cloud, GetPluginSettings(SettingsIniFilePath).DownloadLinksEncode, GetPluginSettings(SettingsIniFilePath).AutoUpdateDownloadListing, GetPluginSettings(SettingsIniFilePath).DescriptionEnabled, GetPluginSettings(SettingsIniFilePath).DescriptionEditorEnabled, GetPluginSettings(SettingsIniFilePath).DescriptionFileName)) then PostMessage(MainWin, WM_USER + 51, 540, 0); //refresh tc panel if description edited
 	end;
 end;
 
@@ -741,7 +740,7 @@ var
 	RemoteIonPath, LocalIonPath, LocalTempPath: WideString;
 	RemoteIonExists: Boolean;
 begin
-	RemoteIonPath := IncludeTrailingBackslash(ExtractFileDir(RemotePath.path)) + PluginIonFileName;
+	RemoteIonPath := IncludeTrailingBackslash(ExtractFileDir(RemotePath.path)) + GetPluginSettings(SettingsIniFilePath).DescriptionFileName;
 	LocalTempPath := GetTmpFileName('ion');
 
 	RemoteIonExists := Cloud.getDescriptionFile(RemoteIonPath, LocalTempPath);
@@ -749,7 +748,7 @@ begin
 
 	RemoteDescriptions := TDescription.Create(LocalTempPath);
 	RemoteDescriptions.Read;
-	LocalDescriptions := TDescription.Create(IncludeTrailingPathDelimiter(ExtractFileDir(LocalFilePath)) + PluginIonFileName); //open local ion file
+	LocalDescriptions := TDescription.Create(IncludeTrailingPathDelimiter(ExtractFileDir(LocalFilePath)) + GetPluginSettings(SettingsIniFilePath).DescriptionFileName); //open local ion file
 	LocalDescriptions.Read;
 	LocalDescriptions.CopyFrom(RemoteDescriptions, ExtractFileName(LocalFilePath));
 	LocalDescriptions.Write();
@@ -763,8 +762,8 @@ var
 	RemoteIonPath, LocalIonPath, LocalTempPath: WideString;
 	RemoteIonExists: Boolean;
 begin
-	RemoteIonPath := IncludeTrailingBackslash(ExtractFileDir(RemotePath.path)) + PluginIonFileName;
-	LocalIonPath := IncludeTrailingBackslash(ExtractFileDir(LocalFilePath)) + PluginIonFileName;
+	RemoteIonPath := IncludeTrailingBackslash(ExtractFileDir(RemotePath.path)) + GetPluginSettings(SettingsIniFilePath).DescriptionFileName;
+	LocalIonPath := IncludeTrailingBackslash(ExtractFileDir(LocalFilePath)) + GetPluginSettings(SettingsIniFilePath).DescriptionFileName;
 	LocalTempPath := GetTmpFileName('ion');
 
 	if not FileExists(LocalIonPath) then exit; //Файла описаний нет, не паримся
@@ -1446,7 +1445,6 @@ begin
 		end;
 	end;
 
-	PluginIonFileName := GetPluginSettings(SettingsIniFilePath).DescriptionFileName;
 	IsMultiThread := not(GetPluginSettings(SettingsIniFilePath).DisableMultiThreading);
 	ThreadRetryCountDownload := TDictionary<DWORD, Int32>.Create;
 	ThreadRetryCountUpload := TDictionary<DWORD, Int32>.Create;
