@@ -734,22 +734,33 @@ begin
 
 end;
 
-procedure UpdateFileDescription(FilePath: WideString); //todo проверь копирование описаний в подкаталогах (CurrentDescriptions существуют только для текущего каталога)
+procedure UpdateFileDescription(RemotePath: TRealPath; LocalFilePath: WideString; var Cloud: TCloudMailRu);
 var
-	LocalDescriptions: TDescription;
+	RemoteDescriptions, LocalDescriptions: TDescription;
+	RemoteIonPath, LocalIonPath, LocalTempPath: WideString;
+	RemoteIonExists: Boolean;
 begin
-	LocalDescriptions := TDescription.Create(IncludeTrailingPathDelimiter(ExtractFileDir(FilePath)) + GetPluginSettings(SettingsIniFilePath).DescriptionFileName); //open local ion file
+	RemoteIonPath := IncludeTrailingBackslash(ExtractFileDir(RemotePath.path)) + 'descript.ion';
+	LocalTempPath := GetTmpFileName('ion');
+
+	RemoteIonExists := Cloud.getDescriptionFile(RemoteIonPath, LocalTempPath);
+	if not RemoteIonExists then exit; //удалённого файла описаний нет
+
+	RemoteDescriptions := TDescription.Create(LocalTempPath);
+	RemoteDescriptions.Read;
+	LocalDescriptions := TDescription.Create(IncludeTrailingPathDelimiter(ExtractFileDir(LocalFilePath)) + 'descript.ion'); //open local ion file
 	LocalDescriptions.Read;
-	LocalDescriptions.CopyFrom(CurrentDescriptions, ExtractFileName(FilePath));
+	LocalDescriptions.CopyFrom(RemoteDescriptions, ExtractFileName(LocalFilePath));
 	LocalDescriptions.Write();
 	LocalDescriptions.Destroy;
+	RemoteDescriptions.Destroy
 end;
 
 procedure UpdateRemoteFileDescription(RemotePath: TRealPath; LocalFilePath: WideString; var Cloud: TCloudMailRu);
 var
 	RemoteDescriptions, LocalDescriptions: TDescription;
 	RemoteIonPath, LocalIonPath, LocalTempPath: WideString;
-	RemoteFileExists: Boolean;
+	RemoteIonExists: Boolean;
 begin
 	RemoteIonPath := IncludeTrailingBackslash(ExtractFileDir(RemotePath.path)) + 'descript.ion';
 	LocalIonPath := IncludeTrailingBackslash(ExtractFileDir(LocalFilePath)) + 'descript.ion';
@@ -760,9 +771,9 @@ begin
 	LocalDescriptions := TDescription.Create(LocalIonPath);
 	LocalDescriptions.Read;
 
-	RemoteFileExists := Cloud.getDescriptionFile(RemoteIonPath, LocalTempPath);
+	RemoteIonExists := Cloud.getDescriptionFile(RemoteIonPath, LocalTempPath);
 	RemoteDescriptions := TDescription.Create(LocalTempPath);
-	if RemoteFileExists then //если был прежний файл - его надо перечитать и удалить с сервера
+	if RemoteIonExists then //если был прежний файл - его надо перечитать и удалить с сервера
 	begin
 		RemoteDescriptions.Read;
 		Cloud.deleteFile(RemoteIonPath); //Приходится удалять, потому что не знаем, как переписать
@@ -779,9 +790,10 @@ function GetRemoteFile(RemotePath: TRealPath; LocalName, RemoteName: WideString;
 var
 	getResult: integer;
 	Item: TCloudMailRuDirListingItem;
-
+	Cloud: TCloudMailRu;
 begin
-	Result := ConnectionManager.get(RemotePath.account, getResult).getFile(WideString(RemotePath.path), LocalName);
+	Cloud := ConnectionManager.get(RemotePath.account, getResult);
+	Result := Cloud.getFile(WideString(RemotePath.path), LocalName);
 
 	if Result = FS_FILE_OK then
 	begin
@@ -790,11 +802,11 @@ begin
 			Item := FindListingItemByPath(CurrentListing, RemotePath);
 			if Item.mtime <> 0 then SetAllFileTime(ExpandUNCFileName(LocalName), DateTimeToFileTime(UnixToDateTime(Item.mtime)));
 		end;
-		if CheckFlag(FS_COPYFLAGS_MOVE, CopyFlags) then ConnectionManager.get(RemotePath.account, getResult).deleteFile(RemotePath.path);
+		if CheckFlag(FS_COPYFLAGS_MOVE, CopyFlags) then Cloud.deleteFile(RemotePath.path);
 		MyProgressProc(PluginNum, PWideChar(LocalName), PWideChar(RemoteName), 100);
 		LogHandle(LogLevelFileOperation, MSGTYPE_TRANSFERCOMPLETE, PWideChar(RemoteName + '->' + LocalName));
 
-		if GetPluginSettings(SettingsIniFilePath).DescriptionCopyFromCloud then UpdateFileDescription(LocalName);
+		if GetPluginSettings(SettingsIniFilePath).DescriptionCopyFromCloud then UpdateFileDescription(RemotePath, LocalName, Cloud);
 
 	end;
 end;
