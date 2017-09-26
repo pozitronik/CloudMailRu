@@ -758,8 +758,6 @@ object AccountsForm: TAccountsForm
     object CommentsTab: TTabSheet
       Caption = 'File comments support'
       ImageIndex = 3
-      ExplicitLeft = 0
-      ExplicitTop = 28
       object DescriptionFileNameLabel: TLabel
         Left = 5
         Top = 93

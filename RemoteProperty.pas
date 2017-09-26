@@ -42,7 +42,7 @@ type
 		DescriptionSaveButton: TButton;
 		procedure AccessCBClick(Sender: TObject);
 		procedure FormDestroy(Sender: TObject);
-		class function ShowProperty(parentWindow: HWND; RemoteName: WideString; RemoteProperty: TCloudMailRuDirListingItem; Cloud: TCloudMailRu; DoUrlEncode: Boolean = true; AutoUpdateDownloadListing: Boolean = true; ShowDescription: Boolean = true; EditDescription: Boolean = true): Integer;
+		class function ShowProperty(parentWindow: HWND; RemoteName: WideString; RemoteProperty: TCloudMailRuDirListingItem; Cloud: TCloudMailRu; DoUrlEncode: Boolean = true; AutoUpdateDownloadListing: Boolean = true; ShowDescription: Boolean = true; EditDescription: Boolean = true; PluginIonFileName: WideString = 'descript.ion'): Integer;
 		procedure FormActivate(Sender: TObject);
 		procedure InviteBtnClick(Sender: TObject);
 		procedure ItemDeleteClick(Sender: TObject);
@@ -78,6 +78,7 @@ type
 		AutoUpdateDownloadListing: Boolean;
 		ShowDescription: Boolean;
 		EditDescription: Boolean;
+		PluginIonFileName: WideString; //Переопределённое (или нет) имя файла описаний, с которым будет работать плагин
 
 		TempPublicCloud: TCloudMailRu; //Облако для получения прямых ссылок на опубликованные объекты
 	public
@@ -100,7 +101,7 @@ var
 begin
 	DescriptionEditMemo.lines.Clear;
 	LocalPath := GetTmpFileName('ion');
-	if not self.Cloud.getDescriptionFile(IncludeTrailingBackslash(ExtractFileDir(self.RemoteName)) + 'descript.ion', LocalPath) then exit;
+	if not self.Cloud.getDescriptionFile(IncludeTrailingBackslash(ExtractFileDir(self.RemoteName)) + self.PluginIonFileName, LocalPath) then exit;
 	CurrentDescriptions := TDescription.Create(LocalPath);
 	CurrentDescriptions.Read;
 	DescriptionEditMemo.lines.Text := CurrentDescriptions.GetValue(ExtractFileName(self.RemoteName), FORMAT_CLEAR);
@@ -113,7 +114,7 @@ var
 	RemotePath, LocalPath: WideString;
 	RemoteFileExists: Boolean;
 begin
-	RemotePath := IncludeTrailingBackslash(ExtractFileDir(self.RemoteName)) + 'descript.ion';
+	RemotePath := IncludeTrailingBackslash(ExtractFileDir(self.RemoteName)) + self.PluginIonFileName;
 	LocalPath := GetTmpFileName('ion');
 
 	RemoteFileExists := self.Cloud.getDescriptionFile(RemotePath, LocalPath);
@@ -350,7 +351,7 @@ begin
 	end;
 end;
 
-class function TPropertyForm.ShowProperty(parentWindow: HWND; RemoteName: WideString; RemoteProperty: TCloudMailRuDirListingItem; Cloud: TCloudMailRu; DoUrlEncode: Boolean = true; AutoUpdateDownloadListing: Boolean = true; ShowDescription: Boolean = true; EditDescription: Boolean = true): Integer;
+class function TPropertyForm.ShowProperty(parentWindow: HWND; RemoteName: WideString; RemoteProperty: TCloudMailRuDirListingItem; Cloud: TCloudMailRu; DoUrlEncode: Boolean = true; AutoUpdateDownloadListing: Boolean = true; ShowDescription: Boolean = true; EditDescription: Boolean = true; PluginIonFileName: WideString = 'descript.ion'): Integer;
 var
 	PropertyForm: TPropertyForm;
 begin
@@ -367,6 +368,7 @@ begin
 		PropertyForm.DoUrlEncode := DoUrlEncode;
 		PropertyForm.ShowDescription := ShowDescription;
 		PropertyForm.EditDescription := EditDescription;
+		PropertyForm.PluginIonFileName := PluginIonFileName;
 		RegisterHotKey(PropertyForm.Handle, 1, 0, VK_ESCAPE);
 		RegisterHotKey(PropertyForm.Handle, 1, 0, VK_F2);
 		result := PropertyForm.Showmodal;
