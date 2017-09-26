@@ -369,6 +369,8 @@ begin
 		PropertyForm.ShowDescription := ShowDescription;
 		PropertyForm.EditDescription := EditDescription;
 		PropertyForm.PluginIonFileName := PluginIonFileName;
+		if ('descript.ion' <> PluginIonFileName) then PropertyForm.DescriptionTS.Caption := 'Description from ' + PluginIonFileName;
+
 		RegisterHotKey(PropertyForm.Handle, 1, 0, VK_ESCAPE);
 		RegisterHotKey(PropertyForm.Handle, 1, 0, VK_F2);
 		result := PropertyForm.Showmodal;
