@@ -1,5 +1,7 @@
 # Плагин [Total Commander](http://www.ghisler.com/) для работы с [cloud.mail.ru](http://cloud.mail.ru)
 
+![Plugin screenshot](plugin.png)
+
 ### Описание
 Плагином поддерживаются:
 * Работа с несколькими аккаунтами
