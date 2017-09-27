@@ -738,7 +738,7 @@ procedure UpdateFileDescription(RemotePath: TRealPath; LocalFilePath: WideString
 var
 	RemoteDescriptions, LocalDescriptions: TDescription;
 	RemoteIonPath, LocalTempPath: WideString;
-	RemoteIonExists: Boolean;
+	RemoteIonExists: Boolean; //todo: optimize deletion
 begin
 	RemoteIonPath := IncludeTrailingBackslash(ExtractFileDir(RemotePath.path)) + GetDescriptionFileName(SettingsIniFilePath);
 	LocalTempPath := GetTmpFileName('ion');
@@ -776,7 +776,7 @@ begin
 	if RemoteIonExists then //если был прежний файл - его надо перечитать и удалить с сервера
 	begin
 		RemoteDescriptions.Read;
-		Cloud.deleteFile(RemoteIonPath); //Приходится удалять, потому что не знаем, как переписать
+		Cloud.deleteFile(RemoteIonPath); //Приходится удалять, потому что не знаем, как переписать     //todo move delete
 	end;
 	RemoteDescriptions.CopyFrom(LocalDescriptions, ExtractFileName(RemotePath.path));
 	RemoteDescriptions.Write();
@@ -786,16 +786,65 @@ begin
 	LocalDescriptions.Destroy;
 end;
 
+//Предполагается, что процедура происходит внутри одного облака - в плагине запрещены прямые операции между аккаунтами
+procedure RenameRemoteFileDescription(OldRemotePath, NewRemotePath: TRealPath; var Cloud: TCloudMailRu);
+var
+	OldDescriptions, NewDescriptions: TDescription;
+	OldRemoteIonPath, NewRemoteIonPath, OldLocalTempPath, NewLocalTempPath: WideString;
+	NewRemoteIonExists: Boolean;
+	OldItem, NewItem: WideString;
+begin
+	OldItem := ExtractFileName(OldRemotePath.path);
+	NewItem := ExtractFileName(NewRemotePath.path);
+	OldRemoteIonPath := IncludeTrailingBackslash(ExtractFileDir(OldRemotePath.path)) + GetDescriptionFileName(SettingsIniFilePath);
+	NewRemoteIonPath := IncludeTrailingBackslash(ExtractFileDir(OldRemotePath.path)) + GetDescriptionFileName(SettingsIniFilePath);
+	OldLocalTempPath := GetTmpFileName('ion');
+	NewLocalTempPath := GetTmpFileName('ion');
+
+	if ExtractFileDir(OldRemotePath.path) = ExtractFileDir(NewRemotePath.path) then //переименование внутри одного файла
+	begin
+		if not Cloud.getDescriptionFile(OldRemoteIonPath, OldLocalTempPath) then exit; //описания нет, переносить нечего
+		OldDescriptions := TDescription.Create(OldLocalTempPath);
+		OldDescriptions.Read;
+		if (OldDescriptions.RenameItem(OldItem, NewItem)) then //метод сам проверит существование описания
+		begin
+			OldDescriptions.Write();
+			Cloud.deleteFile(OldRemoteIonPath);
+			Cloud.putDesriptionFile(OldRemoteIonPath, OldDescriptions.ionFilename);
+		end;
+		OldDescriptions.Destroy;
+	end
+	else //перенос и переименование в разных файлах (например, перемещение в подкаталог)
+	begin
+		if not Cloud.getDescriptionFile(OldRemoteIonPath, OldLocalTempPath) then exit; //описания нет, не заморачиваемся
+		OldDescriptions := TDescription.Create(OldLocalTempPath);
+		OldDescriptions.Read;
+		NewRemoteIonExists := Cloud.getDescriptionFile(NewRemoteIonPath, NewLocalTempPath);
+		NewDescriptions := TDescription.Create(NewLocalTempPath);
+		if NewRemoteIonExists then NewDescriptions.Read; //прочитать существующий, если его нет - то и читать нечего
+
+		NewDescriptions.SetValue(ExtractFileName(NewRemotePath.path), OldDescriptions.GetValue(ExtractFileName(OldRemotePath.path)));
+		OldDescriptions.DeleteValue(ExtractFileName(OldRemotePath.path));
+		OldDescriptions.Write();
+		NewDescriptions.Write();
+		Cloud.deleteFile(OldRemoteIonPath);
+		Cloud.putDesriptionFile(OldRemoteIonPath, OldDescriptions.ionFilename);
+		if NewRemoteIonExists then Cloud.deleteFile(NewRemoteIonPath); //Если файл существовал ранее, его нужно удалить для последующей записи на его место
+		Cloud.putDesriptionFile(NewRemoteIonPath, NewDescriptions.ionFilename);
+		OldDescriptions.Destroy;
+		NewDescriptions.Destroy;
+	end;
+
+end;
+
 procedure DeleteRemoteFileDescription(RemotePath: TRealPath; var Cloud: TCloudMailRu);
 var
 	RemoteDescriptions: TDescription;
 	RemoteIonPath, LocalTempPath: WideString;
-	RemoteIonExists: Boolean;
 begin
 	RemoteIonPath := IncludeTrailingBackslash(ExtractFileDir(RemotePath.path)) + GetDescriptionFileName(SettingsIniFilePath);
 	LocalTempPath := GetTmpFileName('ion');
-	RemoteIonExists := Cloud.getDescriptionFile(RemoteIonPath, LocalTempPath);
-	if not RemoteIonExists then exit; //описания нет, не заморачиваемся
+	if not Cloud.getDescriptionFile(RemoteIonPath, LocalTempPath) then exit; //описания нет, не заморачиваемся
 	RemoteDescriptions := TDescription.Create(LocalTempPath);
 	RemoteDescriptions.Read;
 	RemoteDescriptions.DeleteValue(ExtractFileName(RemotePath.path));
@@ -1135,6 +1184,7 @@ begin
 		if Move then
 		begin
 			Result := OldCloud.mvFile(OldRealPath.path, NewRealPath.path);
+			if ((Result = FS_FILE_OK) and GetPluginSettings(SettingsIniFilePath).DescriptionTrackCloudFS) then RenameRemoteFileDescription(OldRealPath, NewRealPath, OldCloud);
 		end else begin
 			Result := OldCloud.cpFile(OldRealPath.path, NewRealPath.path);
 		end;
