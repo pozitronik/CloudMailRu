@@ -738,7 +738,7 @@ procedure UpdateFileDescription(RemotePath: TRealPath; LocalFilePath: WideString
 var
 	RemoteDescriptions, LocalDescriptions: TDescription;
 	RemoteIonPath, LocalTempPath: WideString;
-	RemoteIonExists: Boolean; //todo: optimize deletion
+	RemoteIonExists: Boolean;
 begin
 	RemoteIonPath := IncludeTrailingBackslash(ExtractFileDir(RemotePath.path)) + GetDescriptionFileName(SettingsIniFilePath);
 	LocalTempPath := GetTmpFileName('ion');
@@ -773,13 +773,12 @@ begin
 
 	RemoteIonExists := Cloud.getDescriptionFile(RemoteIonPath, LocalTempPath);
 	RemoteDescriptions := TDescription.Create(LocalTempPath);
-	if RemoteIonExists then //если был прежний файл - его надо перечитать и удалить с сервера
-	begin
-		RemoteDescriptions.Read;
-		Cloud.deleteFile(RemoteIonPath); //Приходится удалять, потому что не знаем, как переписать     //todo move delete
-	end;
+	if RemoteIonExists then RemoteDescriptions.Read; //если был прежний файл - его надо перечитать
+
 	RemoteDescriptions.CopyFrom(LocalDescriptions, ExtractFileName(RemotePath.path));
 	RemoteDescriptions.Write();
+	if RemoteIonExists then Cloud.deleteFile(RemoteIonPath); //Приходится удалять, потому что не знаем, как переписать
+
 	Cloud.putDesriptionFile(RemoteIonPath, RemoteDescriptions.ionFilename);
 
 	RemoteDescriptions.Destroy;
