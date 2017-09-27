@@ -760,7 +760,7 @@ object AccountsForm: TAccountsForm
       ImageIndex = 3
       object DescriptionFileNameLabel: TLabel
         Left = 5
-        Top = 93
+        Top = 118
         Width = 180
         Height = 13
         Caption = 'Override default comments file name:'
@@ -810,10 +810,20 @@ object AccountsForm: TAccountsForm
       end
       object DescriptionFileNameEdit: TEdit
         Left = 191
-        Top = 90
+        Top = 115
         Width = 289
         Height = 21
         TabOrder = 5
+      end
+      object DescriptionTrackCloudFSCB: TCheckBox
+        Left = 5
+        Top = 93
+        Width = 475
+        Height = 17
+        Caption = 
+          'Track cloud filesystem changes (file rename, delete, etc) (exper' +
+          'imental)'
+        TabOrder = 6
       end
     end
   end

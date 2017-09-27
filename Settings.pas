@@ -77,7 +77,9 @@ type
 		DescriptionEditorEnabled: boolean;
 		DescriptionCopyToCloud: boolean;
 		DescriptionCopyFromCloud: boolean;
+		DescriptionTrackCloudFS: boolean;
 		DescriptionFileName: WideString;
+
 		OperationsViaPublicLinkEnabled: boolean;
 		SocketTimeout: Integer;
 		Proxy: TProxySettings;
@@ -197,6 +199,7 @@ begin
 	GetPluginSettings.DescriptionEditorEnabled := IniFile.ReadBool('Main', 'DescriptionEditorEnabled', false);
 	GetPluginSettings.DescriptionCopyToCloud := IniFile.ReadBool('Main', 'DescriptionCopyToCloud', false);
 	GetPluginSettings.DescriptionCopyFromCloud := IniFile.ReadBool('Main', 'DescriptionCopyFromCloud', false);
+	GetPluginSettings.DescriptionTrackCloudFS := IniFile.ReadBool('Main', 'DescriptionTrackCloudFS', false);
 	GetPluginSettings.DescriptionFileName := IniFile.ReadString('Main', 'DescriptionFileName', 'descript.ion');
 	GetPluginSettings.OperationsViaPublicLinkEnabled := IniFile.ReadBool('Main', 'OperationsViaPublicLinkEnabled', false);
 	GetPluginSettings.DisableMultiThreading := IniFile.ReadBool('Main', 'DisableMultiThreading', false);

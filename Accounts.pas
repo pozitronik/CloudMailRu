@@ -84,6 +84,7 @@ type
 		DescriptionCopyFromCloudCB: TCheckBox;
 		DescriptionFileNameLabel: TLabel;
 		DescriptionFileNameEdit: TEdit;
+		DescriptionTrackCloudFSCB: TCheckBox;
 		procedure FormShow(Sender: TObject);
 		procedure AccountsListClick(Sender: TObject);
 		procedure ApplyButtonClick(Sender: TObject);
@@ -208,6 +209,7 @@ begin
 	SetPluginSettingsValue(SettingsIniFilePath, 'DescriptionEditorEnabled', DescriptionEditorEnabledCB.Checked);
 	SetPluginSettingsValue(SettingsIniFilePath, 'DescriptionCopyToCloud', DescriptionCopyToCloudCB.Checked);
 	SetPluginSettingsValue(SettingsIniFilePath, 'DescriptionCopyFromCloud', DescriptionCopyFromCloudCB.Checked);
+	SetPluginSettingsValue(SettingsIniFilePath, 'DescriptionTrackCloudFS', DescriptionTrackCloudFSCB.Checked);
 	SetPluginSettingsValue(SettingsIniFilePath, 'DescriptionFileName', DescriptionFileNameEdit.Text);
 
 	SetPluginSettingsValue(SettingsIniFilePath, 'OperationsViaPublicLinkEnabled', OperationsViaPublicLinkEnabledCB.Checked);
@@ -355,6 +357,7 @@ begin
 		AccountsForm.DescriptionEditorEnabledCB.Checked := GetPluginSettings(SettingsIniFilePath).DescriptionEditorEnabled;
 		AccountsForm.DescriptionCopyToCloudCB.Checked := GetPluginSettings(SettingsIniFilePath).DescriptionCopyToCloud;
 		AccountsForm.DescriptionCopyFromCloudCB.Checked := GetPluginSettings(SettingsIniFilePath).DescriptionCopyFromCloud;
+		AccountsForm.DescriptionTrackCloudFSCB.Checked := GetPluginSettings(SettingsIniFilePath).DescriptionTrackCloudFS;
 		AccountsForm.DescriptionFileNameEdit.Text := GetPluginSettings(SettingsIniFilePath).DescriptionFileName;
 
 		AccountsForm.OperationsViaPublicLinkEnabledCB.Checked := GetPluginSettings(SettingsIniFilePath).OperationsViaPublicLinkEnabled;
