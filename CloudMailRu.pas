@@ -1633,7 +1633,6 @@ begin
 	end;
 	FileSize := 0;
 	Result := FS_FILE_WRITEERROR;
-	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
 	OperationResult := CLOUD_OPERATION_FAILED;
 	PutResult := TStringList.Create;
 	self.ExternalSourceName := PWideChar(localPath);
