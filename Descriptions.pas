@@ -42,6 +42,7 @@ type
 		function GetValue(item: WideString; FormatType: Integer = FORMAT_ONELINE): WideString;
 		function SetValue(item: WideString; Value: WideString): boolean;
 		function DeleteValue(item: WideString): boolean;
+		function RenameItem(OldItem, NewItem: WideString): boolean;
 
 		procedure Clear;
 		function DetermineEncoding(): TEncoding;
@@ -97,6 +98,17 @@ begin
 	inherited;
 end;
 
+function TDescription.RenameItem(OldItem, NewItem: WideString): boolean;
+var
+	Value: WideString;
+begin
+	Value := self.GetValue(OldItem);
+	if EmptyWideStr = Value then exit(false);
+	self.SetValue(NewItem, Value);
+	self.DeleteValue(OldItem);
+	exit(true);
+end;
+
 function TDescription.DetermineDivider: WideString;
 begin
 	if (self.encoding = TEncoding.UTF8) or (self.encoding = TEncoding.BigEndianUnicode) or (self.encoding = TEncoding.Unicode) then result := MULTILINE_DIVIDERW
@@ -146,7 +158,7 @@ end;
 
 function TDescription.GetValue(item: WideString; FormatType: Integer): WideString;
 begin
-	if not(items.TryGetValue(item, result)) then exit('');
+	if not(items.TryGetValue(item, result)) then exit(EmptyWideStr);
 	result := self.FormatValue(result, FormatType);
 end;
 
