@@ -786,6 +786,25 @@ begin
 	LocalDescriptions.Destroy;
 end;
 
+procedure DeleteRemoteFileDescription(RemotePath: TRealPath; var Cloud: TCloudMailRu);
+var
+	RemoteDescriptions: TDescription;
+	RemoteIonPath, LocalTempPath: WideString;
+	RemoteIonExists: Boolean;
+begin
+	RemoteIonPath := IncludeTrailingBackslash(ExtractFileDir(RemotePath.path)) + GetDescriptionFileName(SettingsIniFilePath);
+	LocalTempPath := GetTmpFileName('ion');
+	RemoteIonExists := Cloud.getDescriptionFile(RemoteIonPath, LocalTempPath);
+	if not RemoteIonExists then exit; //описания нет, не заморачиваемся
+	RemoteDescriptions := TDescription.Create(LocalTempPath);
+	RemoteDescriptions.Read;
+	RemoteDescriptions.DeleteValue(ExtractFileName(RemotePath.path));
+	RemoteDescriptions.Write();
+	Cloud.deleteFile(RemoteIonPath); //Приходится удалять, потому что не знаем, как переписать
+	Cloud.putDesriptionFile(RemoteIonPath, RemoteDescriptions.ionFilename);
+	RemoteDescriptions.Destroy;
+end;
+
 function GetRemoteFile(RemotePath: TRealPath; LocalName, RemoteName: WideString; CopyFlags: integer): integer;
 var
 	getResult: integer;
@@ -970,6 +989,8 @@ begin
 		Result := true;
 	end
 	else Result := Cloud.deleteFile(RealPath.path);
+	if (Result and GetPluginSettings(SettingsIniFilePath).DescriptionTrackCloudFS) then DeleteRemoteFileDescription(RealPath, Cloud);
+
 end;
 
 function FsMkDirW(path: PWideChar): Bool; stdcall;
@@ -991,6 +1012,7 @@ var
 	RealPath: TRealPath;
 	getResult: integer;
 	ListingAborted: Bool;
+	Cloud: TCloudMailRu;
 begin
 	ThreadListingAborted.TryGetValue(GetCurrentThreadID(), ListingAborted);
 	if ListingAborted then
@@ -1000,7 +1022,10 @@ begin
 	end;
 	RealPath := ExtractRealPath(WideString(RemoteName));
 	if RealPath.trashDir or RealPath.sharedDir or RealPath.invitesDir then exit(false);
-	Result := ConnectionManager.get(RealPath.account, getResult).removeDir(RealPath.path);
+	Cloud := ConnectionManager.get(RealPath.account, getResult);
+	Result := Cloud.removeDir(RealPath.path);
+
+	if (Result and GetPluginSettings(SettingsIniFilePath).DescriptionTrackCloudFS) then DeleteRemoteFileDescription(RealPath, Cloud);
 end;
 
 function cloneWeblink(NewCloud, OldCloud: TCloudMailRu; CloudPath: WideString; CurrentItem: TCloudMailRuDirListingItem; NeedUnpublish: Boolean): integer;
