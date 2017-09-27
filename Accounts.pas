@@ -3,7 +3,7 @@
 interface
 
 uses
-	Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics, Settings, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, IniFiles, MRC_Helper, PLUGIN_Types, Vcl.ComCtrls, Vcl.Mask, Vcl.ExtCtrls, Vcl.Samples.Spin;
+	Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics, Settings, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, IniFiles, MRC_Helper, PLUGIN_Types, Vcl.ComCtrls, Vcl.Mask, Vcl.ExtCtrls, Vcl.Samples.Spin, System.IOUtils;
 
 type
 	TAccountsForm = class(TForm)
@@ -100,6 +100,8 @@ type
 		{Private declarations}
 		procedure WMHotKey(var Message: TMessage); message WM_HOTKEY;
 		procedure ApplySettings();
+		function CheckValidators(): boolean;
+
 	public
 		{Public declarations}
 		IniPath: WideString;
@@ -197,6 +199,8 @@ end;
 
 procedure TAccountsForm.ApplySettings;
 begin
+	if not CheckValidators() then exit;
+
 	SetPluginSettingsValue(SettingsIniFilePath, 'LoadSSLDLLOnlyFromPluginDir', UseDLLFromPluginDir.Checked);
 	SetPluginSettingsValue(SettingsIniFilePath, 'PreserveFileTime', PreserveFileTimeCB.Checked);
 
@@ -258,6 +262,24 @@ begin
 				end;
 		end;
 	end;
+end;
+
+function TAccountsForm.CheckValidators: boolean;
+var
+	MessageBaloon: TBalloonHint;
+begin
+	result := false;
+	if not TPath.HasValidFileNameChars(DescriptionFileNameEdit.Text, false) then
+	begin
+		CommentsTab.Show;
+		MessageBaloon := TBalloonHint.Create(self);
+		MessageBaloon.HideAfter := 5000;
+		MessageBaloon.Delay := 0;
+		MessageBaloon.Description := 'File name must contain only valid symbols';
+		MessageBaloon.ShowHint(DescriptionFileNameEdit);
+		exit;
+	end;
+	exit(true);
 end;
 
 procedure TAccountsForm.CloudMaxFileSizeCBClick(Sender: TObject);

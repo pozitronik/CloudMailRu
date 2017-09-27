@@ -2,7 +2,7 @@
 
 interface
 
-uses Classes, Windows, SysUtils, IniFiles, System.Variants, Plugin_Types, AskPassword, MRC_Helper, VCL.Controls;
+uses Classes, Windows, SysUtils, IniFiles, System.Variants, System.IOUtils, Plugin_Types, AskPassword, MRC_Helper, VCL.Controls;
 
 const
 	ProxyNone = 0;
@@ -108,6 +108,7 @@ function SetAccountSettingsToIniFile(IniFilePath: WideString; AccountSettings: T
 procedure GetAccountsListFromIniFile(IniFilePath: WideString; var AccountsList: TStringList);
 procedure DeleteAccountFromIniFile(IniFilePath: WideString; AccountName: WideString);
 procedure AddVirtualAccountsToAccountsList(AccountsIniFilePath: WideString; var AccountsList: TStringList; VirtualAccountsEnabled: TArray<boolean>);
+function GetDescriptionFileName(SettingsIniFilePath: WideString): WideString;
 
 implementation
 
@@ -337,6 +338,13 @@ begin
 	end;
 	AccountsList.AddStrings(VAccounts);
 	VAccounts.Free;
+end;
+
+function GetDescriptionFileName(SettingsIniFilePath: WideString): WideString;
+begin
+	GetDescriptionFileName := GetPluginSettings(SettingsIniFilePath).DescriptionFileName;
+	if TPath.HasValidFileNameChars(GetPluginSettings(SettingsIniFilePath).DescriptionFileName, false) then exit;
+	exit('descript.ion');
 end;
 
 end.
