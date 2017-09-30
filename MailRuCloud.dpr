@@ -35,6 +35,7 @@ var
 	ThreadRetryCountDownload: TDictionary<DWORD, Int32>; //массив [id потока => количество попыток] для подсчёта количества повторов скачивания файла
 	ThreadRetryCountUpload: TDictionary<DWORD, Int32>; //массив [id потока => количество попыток] для подсчёта количества повторов закачивания файла
 	ThreadRetryCountRenMov: TDictionary<DWORD, Int32>; //массив [id потока => количество попыток] для подсчёта количества повторов межсерверных операций с файлом
+	ThreadBackgroundJobs: TDictionary<WideString, Int32>; //массив [account root => количество потоков] для хранения количества текущих фоновых задач (предохраняемся от удаления объектов, которые могут быть использованы потоками)
 
 	{Callback data}
 	PluginNum: integer;
@@ -72,7 +73,7 @@ begin
 	if Assigned(MyCryptProc) then Result := MyCryptProc(PluginNum, CryptoNum, mode, ConnectionName, Password, maxlen);
 end;
 
-function CloudMailRuDirListingItemToFindData(DirListing: TCloudMailRuDirListingItem; DirsAsSymlinks: Boolean = false): tWIN32FINDDATAW;
+function CloudMailRuDirListingItemToFindData(DirListing: TCloudMailRuDirListingItem; DirsAsSymlinks: boolean = false): tWIN32FINDDATAW;
 begin
 	if (DirListing.deleted_from <> '') then //items inside trash bin
 	begin
@@ -264,6 +265,7 @@ procedure FsStatusInfoW(RemoteDir: PWideChar; InfoStartEnd, InfoOperation: integ
 var
 	RealPath: TRealPath;
 	getResult: integer;
+	BackgroundJobsCount: integer;
 begin
 	RealPath := ExtractRealPath(RemoteDir);
 	if (InfoStartEnd = FS_STATUS_START) then
@@ -348,10 +350,14 @@ begin
 			FS_STATUS_OP_GET_MULTI_THREAD:
 				begin
 					ThreadRetryCountDownload.AddOrSetValue(GetCurrentThreadID(), 0);
+					if not ThreadBackgroundJobs.TryGetValue(RealPath.account, BackgroundJobsCount) then BackgroundJobsCount := 0;
+					ThreadBackgroundJobs.AddOrSetValue(RealPath.account, BackgroundJobsCount + 1);
 				end;
 			FS_STATUS_OP_PUT_MULTI_THREAD:
 				begin
 					ThreadRetryCountUpload.AddOrSetValue(GetCurrentThreadID(), 0);
+					if not ThreadBackgroundJobs.TryGetValue(RealPath.account, BackgroundJobsCount) then BackgroundJobsCount := 0;
+					ThreadBackgroundJobs.AddOrSetValue(RealPath.account, BackgroundJobsCount + 1)
 				end;
 		end;
 		exit;
@@ -427,10 +433,15 @@ begin
 			FS_STATUS_OP_GET_MULTI_THREAD:
 				begin
 					if inAccount(RealPath) and GetPluginSettings(SettingsIniFilePath).LogUserSpace then ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
+					if not ThreadBackgroundJobs.TryGetValue(RealPath.account, BackgroundJobsCount) then BackgroundJobsCount := 0;
+					ThreadBackgroundJobs.AddOrSetValue(RealPath.account, BackgroundJobsCount - 1);
+
 				end;
 			FS_STATUS_OP_PUT_MULTI_THREAD:
 				begin
 					if inAccount(RealPath) and GetPluginSettings(SettingsIniFilePath).LogUserSpace then ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
+					if not ThreadBackgroundJobs.TryGetValue(RealPath.account, BackgroundJobsCount) then BackgroundJobsCount := 0;
+					ThreadBackgroundJobs.AddOrSetValue(RealPath.account, BackgroundJobsCount - 1);
 				end;
 		end;
 		exit;
@@ -581,7 +592,7 @@ begin
 	PostMessage(MainWin, WM_USER + 51, 540, 0); //TC does not update current panel, so we should do it this way
 end;
 
-function ExecSharedAction(MainWin: THandle; RealPath: TRealPath; RemoteName: PWideChar; ActionOpen: Boolean = true): integer;
+function ExecSharedAction(MainWin: THandle; RealPath: TRealPath; RemoteName: PWideChar; ActionOpen: boolean = true): integer;
 var
 	Cloud: TCloudMailRu;
 	CurrentItem: TCloudMailRuDirListingItem;
@@ -738,7 +749,7 @@ procedure UpdateFileDescription(RemotePath: TRealPath; LocalFilePath: WideString
 var
 	RemoteDescriptions, LocalDescriptions: TDescription;
 	RemoteIonPath, LocalTempPath: WideString;
-	RemoteIonExists: Boolean;
+	RemoteIonExists: boolean;
 begin
 	RemoteIonPath := IncludeTrailingBackslash(ExtractFileDir(RemotePath.path)) + GetDescriptionFileName(SettingsIniFilePath);
 	LocalTempPath := GetTmpFileName('ion');
@@ -760,7 +771,7 @@ procedure UpdateRemoteFileDescription(RemotePath: TRealPath; LocalFilePath: Wide
 var
 	RemoteDescriptions, LocalDescriptions: TDescription;
 	RemoteIonPath, LocalIonPath, LocalTempPath: WideString;
-	RemoteIonExists: Boolean;
+	RemoteIonExists: boolean;
 begin
 	RemoteIonPath := IncludeTrailingBackslash(ExtractFileDir(RemotePath.path)) + GetDescriptionFileName(SettingsIniFilePath);
 	LocalIonPath := IncludeTrailingBackslash(ExtractFileDir(LocalFilePath)) + GetDescriptionFileName(SettingsIniFilePath);
@@ -790,7 +801,7 @@ procedure RenameRemoteFileDescription(OldRemotePath, NewRemotePath: TRealPath; v
 var
 	OldDescriptions, NewDescriptions: TDescription;
 	OldRemoteIonPath, NewRemoteIonPath, OldLocalTempPath, NewLocalTempPath: WideString;
-	NewRemoteIonExists: Boolean;
+	NewRemoteIonExists: boolean;
 	OldItem, NewItem: WideString;
 begin
 	OldItem := ExtractFileName(OldRemotePath.path);
@@ -1076,15 +1087,15 @@ begin
 	if (Result and GetPluginSettings(SettingsIniFilePath).DescriptionTrackCloudFS) then DeleteRemoteFileDescription(RealPath, Cloud);
 end;
 
-function cloneWeblink(NewCloud, OldCloud: TCloudMailRu; CloudPath: WideString; CurrentItem: TCloudMailRuDirListingItem; NeedUnpublish: Boolean): integer;
+function cloneWeblink(NewCloud, OldCloud: TCloudMailRu; CloudPath: WideString; CurrentItem: TCloudMailRuDirListingItem; NeedUnpublish: boolean): integer;
 begin
 	Result := NewCloud.cloneWeblink(ExtractFileDir(CloudPath), CurrentItem.WebLink, CLOUD_CONFLICT_STRICT);
 	if (NeedUnpublish) and not(OldCloud.publishFile(CurrentItem.home, CurrentItem.WebLink, CLOUD_UNPUBLISH)) then LogHandle(LogLevelError, MSGTYPE_IMPORTANTERROR, PWideChar('Can''t remove temporary public link on ' + CurrentItem.home));
 end;
 
-function RenMoveFileViaPublicLink(OldCloud, NewCloud: TCloudMailRu; OldRealPath, NewRealPath: TRealPath; Move, OverWrite: Boolean): integer;
+function RenMoveFileViaPublicLink(OldCloud, NewCloud: TCloudMailRu; OldRealPath, NewRealPath: TRealPath; Move, OverWrite: boolean): integer;
 var
-	NeedUnpublish: Boolean;
+	NeedUnpublish: boolean;
 	CurrentItem: TCloudMailRuDirListingItem;
 	RetryAttempts: integer;
 begin
@@ -1144,7 +1155,7 @@ begin
 	end;
 end;
 
-function FsRenMovFileW(OldName: PWideChar; NewName: PWideChar; Move: Boolean; OverWrite: Boolean; ri: pRemoteInfo): integer; stdcall;
+function FsRenMovFileW(OldName: PWideChar; NewName: PWideChar; Move: boolean; OverWrite: boolean; ri: pRemoteInfo): integer; stdcall;
 var
 	OldRealPath: TRealPath;
 	NewRealPath: TRealPath;
@@ -1193,9 +1204,19 @@ begin
 end;
 
 function FsDisconnectW(DisconnectRoot: PWideChar): Bool; stdcall;
+var
+	BackgroundJobsCount: integer;
 begin
-	ConnectionManager.freeAll;
-	Result := true;
+	//ConnectionManager.freeAll;
+	BackgroundJobsCount := 0;
+	if ((not ThreadBackgroundJobs.TryGetValue(ExtractFileName(DisconnectRoot), BackgroundJobsCount)) or (BackgroundJobsCount = 0)) then
+	begin
+		ConnectionManager.free(ExtractFileName(DisconnectRoot));
+		Result := true;
+	end else begin //здесь можно добавить механизм ожидания завершения фоновой операции
+		Result := false;
+	end;
+
 end;
 
 procedure FsSetCryptCallbackW(PCryptProc: TCryptProcW; CryptoNr: integer; Flags: integer); stdcall;
@@ -1527,9 +1548,10 @@ begin
 	ThreadSkipListRenMov := TDictionary<DWORD, Bool>.Create;
 	ThreadCanAbortRenMov := TDictionary<DWORD, Bool>.Create;
 	ThreadListingAborted := TDictionary<DWORD, Bool>.Create;
+	ThreadBackgroundJobs := TDictionary<WideString, Int32>.Create;
 end;
 
-procedure FreePluginData;
+procedure FreePluginData();
 begin
 	FreeAndNil(ThreadRetryCountDownload);
 	FreeAndNil(ThreadRetryCountUpload);
@@ -1538,9 +1560,11 @@ begin
 	FreeAndNil(ThreadSkipListRenMov);
 	FreeAndNil(ThreadCanAbortRenMov);
 	FreeAndNil(ThreadListingAborted);
+	FreeAndNil(ThreadBackgroundJobs);
 	FreeAndNil(ConnectionManager);
 	FreeAndNil(AccountsList); //уже сделано, но не страшно, к тому же в будущем может не разрушаться ранее
-	CurrentDescriptions.Free;
+	CurrentDescriptions.free;
+
 end;
 
 procedure DllInit(Code: integer);
@@ -1548,11 +1572,21 @@ begin
 	case Code of
 		DLL_PROCESS_ATTACH:
 			begin
+
 				InitPluginData;
 			end;
 		DLL_PROCESS_DETACH:
 			begin
-				FreePluginData;
+
+				FreePluginData();
+			end;
+		DLL_THREAD_ATTACH:
+			begin
+
+			end;
+		DLL_THREAD_DETACH:
+			begin
+
 			end;
 	end; //case
 end;
