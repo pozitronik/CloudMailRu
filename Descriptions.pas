@@ -13,10 +13,10 @@ const
 	MULTILINE_DIVIDER = #$04#$C2; //multiline divider in ansii files
 	MULTILINE_DIVIDERW = chr($04) + chr($C2); //multiline divider in utf-8 and utf-16 formatted files (BE/LE)
 
-	ENCODING_DEFAULT = 1; //ANSI
-	ENCODING_UNICODE = 2;
-	ENCODING_UNCODE_BE = 3;
-	ENCODING_UTF8 = 4;
+	ENCODING_DEFAULT = 0; //ANSI
+	ENCODING_UNICODE = 1;
+	ENCODING_UNCODE_BE = 2;
+	ENCODING_UTF8 = 3;
 
 type
 
