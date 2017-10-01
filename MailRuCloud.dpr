@@ -36,6 +36,7 @@ var
 	ThreadRetryCountUpload: TDictionary<DWORD, Int32>; //массив [id потока => количество попыток] для подсчёта количества повторов закачивания файла
 	ThreadRetryCountRenMov: TDictionary<DWORD, Int32>; //массив [id потока => количество попыток] для подсчёта количества повторов межсерверных операций с файлом
 	ThreadBackgroundJobs: TDictionary<WideString, Int32>; //массив [account root => количество потоков] для хранения количества текущих фоновых задач (предохраняемся от удаления объектов, которые могут быть использованы потоками)
+	ThreadBackgroundThreads: TDictionary<DWORD, Int32>; //массив [id потока => статус операции] для хранения текущих фоновых потоков (предохраняемся от завершения работы плагина при закрытии TC)
 
 	{Callback data}
 	PluginNum: integer;
@@ -352,12 +353,14 @@ begin
 					ThreadRetryCountDownload.AddOrSetValue(GetCurrentThreadID(), 0);
 					if not ThreadBackgroundJobs.TryGetValue(RealPath.account, BackgroundJobsCount) then BackgroundJobsCount := 0;
 					ThreadBackgroundJobs.AddOrSetValue(RealPath.account, BackgroundJobsCount + 1);
+					ThreadBackgroundThreads.AddOrSetValue(GetCurrentThreadID(), FS_STATUS_OP_GET_MULTI_THREAD);
 				end;
 			FS_STATUS_OP_PUT_MULTI_THREAD:
 				begin
 					ThreadRetryCountUpload.AddOrSetValue(GetCurrentThreadID(), 0);
 					if not ThreadBackgroundJobs.TryGetValue(RealPath.account, BackgroundJobsCount) then BackgroundJobsCount := 0;
-					ThreadBackgroundJobs.AddOrSetValue(RealPath.account, BackgroundJobsCount + 1)
+					ThreadBackgroundJobs.AddOrSetValue(RealPath.account, BackgroundJobsCount + 1);
+					ThreadBackgroundThreads.AddOrSetValue(GetCurrentThreadID(), FS_STATUS_OP_PUT_MULTI_THREAD);
 				end;
 		end;
 		exit;
@@ -435,6 +438,7 @@ begin
 					if inAccount(RealPath) and GetPluginSettings(SettingsIniFilePath).LogUserSpace then ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
 					if not ThreadBackgroundJobs.TryGetValue(RealPath.account, BackgroundJobsCount) then BackgroundJobsCount := 0;
 					ThreadBackgroundJobs.AddOrSetValue(RealPath.account, BackgroundJobsCount - 1);
+					ThreadBackgroundThreads.Remove(GetCurrentThreadID());
 
 				end;
 			FS_STATUS_OP_PUT_MULTI_THREAD:
@@ -442,6 +446,7 @@ begin
 					if inAccount(RealPath) and GetPluginSettings(SettingsIniFilePath).LogUserSpace then ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
 					if not ThreadBackgroundJobs.TryGetValue(RealPath.account, BackgroundJobsCount) then BackgroundJobsCount := 0;
 					ThreadBackgroundJobs.AddOrSetValue(RealPath.account, BackgroundJobsCount - 1);
+					ThreadBackgroundThreads.Remove(GetCurrentThreadID());
 				end;
 		end;
 		exit;
@@ -1206,6 +1211,7 @@ end;
 function FsDisconnectW(DisconnectRoot: PWideChar): Bool; stdcall;
 var
 	BackgroundJobsCount: integer;
+	ThreadId: DWORD;
 begin
 	//ConnectionManager.freeAll;
 	BackgroundJobsCount := 0;
@@ -1214,6 +1220,35 @@ begin
 		ConnectionManager.free(ExtractFileName(DisconnectRoot));
 		Result := true;
 	end else begin //здесь можно добавить механизм ожидания завершения фоновой операции
+		{while ThreadBackgroundThreads.Count > 0 do
+		 begin
+		 for ThreadId in ThreadBackgroundThreads.Keys do
+
+		 case WaitForSingleObject(ThreadId, INFINITE) of
+		 WAIT_ABANDONED:
+		 begin
+		 Result := false;
+		 end;
+		 WAIT_FAILED:
+		 begin
+		 Result := false;
+		 RaiseLastOSError;
+		 end;
+		 WAIT_TIMEOUT:
+		 begin
+		 Result := false;
+		 end;
+		 WAIT_OBJECT_0:
+		 begin
+		 Result := false;
+		 end;
+		 WAIT_IO_COMPLETION:
+		 begin
+		 Result := false;
+		 end;
+
+		 end;
+		 end;}
 		Result := false;
 	end;
 
@@ -1549,6 +1584,7 @@ begin
 	ThreadCanAbortRenMov := TDictionary<DWORD, Bool>.Create;
 	ThreadListingAborted := TDictionary<DWORD, Bool>.Create;
 	ThreadBackgroundJobs := TDictionary<WideString, Int32>.Create;
+	ThreadBackgroundThreads := TDictionary<DWORD, Int32>.Create;
 end;
 
 procedure FreePluginData();
