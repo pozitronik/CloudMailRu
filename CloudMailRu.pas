@@ -626,7 +626,7 @@ begin
 		FlushFileBuffers(FileStream.Handle);
 		FileStream.free;
 	end;
-	if Result <> FS_FILE_OK then System.SysUtils.deleteFile(GetUNCFilePath(localPath));
+	if not Result in [FS_FILE_OK] then System.SysUtils.deleteFile(GetUNCFilePath(localPath));
 end;
 
 function TCloudMailRu.getSharedFileUrl(remotePath: WideString; DoUrlEncode: Boolean = true): WideString;
