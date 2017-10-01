@@ -134,12 +134,10 @@ begin
 		end;
 
 	end;
-
 	CloseFile(F);
 	if (Buffer[0] = $EF) and (Buffer[1] = $BB) and (Buffer[2] = $BF) then exit(TEncoding.UTF8);
 	if (Buffer[0] = $FE) and (Buffer[1] = $FF) then exit(TEncoding.BigEndianUnicode);
 	if (Buffer[0] = $FF) and (Buffer[1] = $FE) then exit(TEncoding.Unicode);
-	//result := TEncoding.Default;
 
 end;
 

@@ -258,7 +258,7 @@ begin
 	MyLogProc := pLogProc;
 	MyRequestProc := pRequestProc;
 	Result := 0;
-	CurrentDescriptions := TDescription.Create(GetTmpFileName('ion'));
+	CurrentDescriptions := TDescription.Create(GetTmpFileName('ion'),GetTCCommentPreferredFormat);
 
 end;
 
@@ -762,9 +762,9 @@ begin
 	RemoteIonExists := Cloud.getDescriptionFile(RemoteIonPath, LocalTempPath);
 	if not RemoteIonExists then exit; //удалённого файла описаний нет
 
-	RemoteDescriptions := TDescription.Create(LocalTempPath);
+	RemoteDescriptions := TDescription.Create(LocalTempPath,GetTCCommentPreferredFormat);
 	RemoteDescriptions.Read;
-	LocalDescriptions := TDescription.Create(IncludeTrailingPathDelimiter(ExtractFileDir(LocalFilePath)) + GetDescriptionFileName(SettingsIniFilePath)); //open local ion file
+	LocalDescriptions := TDescription.Create(IncludeTrailingPathDelimiter(ExtractFileDir(LocalFilePath)) + GetDescriptionFileName(SettingsIniFilePath),GetTCCommentPreferredFormat); //open local ion file
 	LocalDescriptions.Read;
 	LocalDescriptions.CopyFrom(RemoteDescriptions, ExtractFileName(LocalFilePath));
 	LocalDescriptions.Write();
@@ -784,11 +784,11 @@ begin
 
 	if not FileExists(LocalIonPath) then exit; //Файла описаний нет, не паримся
 
-	LocalDescriptions := TDescription.Create(LocalIonPath);
+	LocalDescriptions := TDescription.Create(LocalIonPath,GetTCCommentPreferredFormat);
 	LocalDescriptions.Read;
 
 	RemoteIonExists := Cloud.getDescriptionFile(RemoteIonPath, LocalTempPath);
-	RemoteDescriptions := TDescription.Create(LocalTempPath);
+	RemoteDescriptions := TDescription.Create(LocalTempPath,GetTCCommentPreferredFormat);
 	if RemoteIonExists then RemoteDescriptions.Read; //если был прежний файл - его надо перечитать
 
 	RemoteDescriptions.CopyFrom(LocalDescriptions, ExtractFileName(RemotePath.path));
@@ -819,7 +819,7 @@ begin
 	if ExtractFileDir(OldRemotePath.path) = ExtractFileDir(NewRemotePath.path) then //переименование внутри одного файла
 	begin
 		if not Cloud.getDescriptionFile(OldRemoteIonPath, OldLocalTempPath) then exit; //описания нет, переносить нечего
-		OldDescriptions := TDescription.Create(OldLocalTempPath);
+		OldDescriptions := TDescription.Create(OldLocalTempPath,GetTCCommentPreferredFormat);
 		OldDescriptions.Read;
 		if (OldDescriptions.RenameItem(OldItem, NewItem)) then //метод сам проверит существование описания
 		begin
@@ -832,10 +832,10 @@ begin
 	else //перенос и переименование в разных файлах (например, перемещение в подкаталог)
 	begin
 		if not Cloud.getDescriptionFile(OldRemoteIonPath, OldLocalTempPath) then exit; //описания нет, не заморачиваемся
-		OldDescriptions := TDescription.Create(OldLocalTempPath);
+		OldDescriptions := TDescription.Create(OldLocalTempPath,GetTCCommentPreferredFormat);
 		OldDescriptions.Read;
 		NewRemoteIonExists := Cloud.getDescriptionFile(NewRemoteIonPath, NewLocalTempPath);
-		NewDescriptions := TDescription.Create(NewLocalTempPath);
+		NewDescriptions := TDescription.Create(NewLocalTempPath,GetTCCommentPreferredFormat);
 		if NewRemoteIonExists then NewDescriptions.Read; //прочитать существующий, если его нет - то и читать нечего
 
 		NewDescriptions.SetValue(ExtractFileName(NewRemotePath.path), OldDescriptions.GetValue(ExtractFileName(OldRemotePath.path)));
@@ -860,7 +860,7 @@ begin
 	RemoteIonPath := IncludeTrailingBackslash(ExtractFileDir(RemotePath.path)) + GetDescriptionFileName(SettingsIniFilePath);
 	LocalTempPath := GetTmpFileName('ion');
 	if not Cloud.getDescriptionFile(RemoteIonPath, LocalTempPath) then exit; //описания нет, не заморачиваемся
-	RemoteDescriptions := TDescription.Create(LocalTempPath);
+	RemoteDescriptions := TDescription.Create(LocalTempPath,GetTCCommentPreferredFormat);
 	RemoteDescriptions.Read;
 	RemoteDescriptions.DeleteValue(ExtractFileName(RemotePath.path));
 	RemoteDescriptions.Write();
