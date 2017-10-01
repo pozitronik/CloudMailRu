@@ -102,7 +102,7 @@ begin
 	DescriptionEditMemo.lines.Clear;
 	LocalPath := GetTmpFileName('ion');
 	if not self.Cloud.getDescriptionFile(IncludeTrailingBackslash(ExtractFileDir(self.RemoteName)) + self.PluginIonFileName, LocalPath) then exit;
-	CurrentDescriptions := TDescription.Create(LocalPath);
+	CurrentDescriptions := TDescription.Create(LocalPath, GetTCCommentPreferredFormat);
 	CurrentDescriptions.Read;
 	DescriptionEditMemo.lines.Text := CurrentDescriptions.GetValue(ExtractFileName(self.RemoteName), FORMAT_CLEAR);
 	CurrentDescriptions.Destroy; //todo: clear tmp file
@@ -118,7 +118,7 @@ begin
 	LocalPath := GetTmpFileName('ion');
 
 	RemoteFileExists := self.Cloud.getDescriptionFile(RemotePath, LocalPath);
-	CurrentDescriptions := TDescription.Create(LocalPath);
+	CurrentDescriptions := TDescription.Create(LocalPath, GetTCCommentPreferredFormat);
 	if RemoteFileExists then //если был прежний файл - его надо перечитать и удалить с сервера
 	begin
 		CurrentDescriptions.Read;
