@@ -13,10 +13,10 @@ const
 	MULTILINE_DIVIDER = #$04#$C2; //multiline divider in ansii files
 	MULTILINE_DIVIDERW = chr($04) + chr($C2); //multiline divider in utf-8 and utf-16 formatted files (BE/LE)
 
-	ENCODING_DEFAULT = 0;
-	ENCODING_UTF8 = 1;
+	ENCODING_DEFAULT = 1; //ANSI
 	ENCODING_UNICODE = 2;
 	ENCODING_UNCODE_BE = 3;
+	ENCODING_UTF8 = 4;
 
 type
 
@@ -139,6 +139,7 @@ begin
 	if (Buffer[0] = $EF) and (Buffer[1] = $BB) and (Buffer[2] = $BF) then exit(TEncoding.UTF8);
 	if (Buffer[0] = $FE) and (Buffer[1] = $FF) then exit(TEncoding.BigEndianUnicode);
 	if (Buffer[0] = $FF) and (Buffer[1] = $FE) then exit(TEncoding.Unicode);
+	//result := TEncoding.Default;
 
 end;
 
