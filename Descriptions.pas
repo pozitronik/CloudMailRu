@@ -119,6 +119,7 @@ function TDescription.DetermineEncoding(): TEncoding;
 var
 	F: File;
 	Buffer: array [0 .. 2] of byte;
+	fStream: TStreamReader;
 begin
 	result := self.encoding;
 
@@ -138,7 +139,19 @@ begin
 	if (Buffer[0] = $EF) and (Buffer[1] = $BB) and (Buffer[2] = $BF) then exit(TEncoding.UTF8);
 	if (Buffer[0] = $FE) and (Buffer[1] = $FF) then exit(TEncoding.BigEndianUnicode);
 	if (Buffer[0] = $FF) and (Buffer[1] = $FE) then exit(TEncoding.Unicode);
-
+	//Кодировка всё ещё не определилась, идём на крайнюю меру: создадим поток с выбранной кодировкой, если будет ошибка EEncodingError - значит это галимый ANSI
+	fStream := nil;
+	fStream := TStreamReader.Create(self.ion_filename, self.encoding, false);
+	try
+		if fStream.ReadToEnd <> '' then result := fStream.CurrentEncoding;
+	except
+		on E: Exception do
+		begin
+			fStream.Destroy;
+			exit(TEncoding.Default);
+		end;
+	end;
+	fStream.Destroy;
 end;
 
 function TDescription.FormatValue(Value: WideString; FormatType: Integer): WideString;
