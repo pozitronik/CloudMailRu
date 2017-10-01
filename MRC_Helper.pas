@@ -2,7 +2,7 @@
 
 interface
 
-uses Classes, Windows, SysUtils, MultiMon, Math, ShellApi, ShlObj, Vcl.Graphics, Inifiles;
+uses Classes, Windows, SysUtils, MultiMon, Math, ShellApi, ShlObj, Vcl.Graphics, Inifiles, Descriptions;
 
 const
 	MAX_UNC_PATH = 32767;
@@ -50,6 +50,7 @@ function UrlEncode(URL: WideString): WideString;
 function FindTCWindow: HWND;
 function FindTCIniPath: WideString;
 function GetTCIconsSize: integer;
+function GetTCCommentPreferredFormat: integer;
 function GetTmpDir: WideString;
 function GetTmpFileName(Prefix: WideString = ''): WideString;
 function CopyExt(FromFilename, ToFilename: WideString): WideString;
@@ -343,7 +344,20 @@ begin
 		Result := TC_INI.ReadInteger(IconsSizeSectionName, 'Iconsize32', Result);
 		TC_INI.Free;
 	end;
+end;
 
+function GetTCCommentPreferredFormat: integer;
+var
+	TC_INI: TIniFile;
+begin
+	Result := ENCODING_UTF8; //UTF-8
+	if FileExists(FindTCIniPath) then
+	begin
+		TC_INI := TIniFile.Create(FindTCIniPath);
+		Result := TC_INI.ReadInteger('Configuration', 'CommentPreferredFormat', Result);
+		TC_INI.Free;
+	end;
+	if not Result in [ENCODING_DEFAULT, ENCODING_UNICODE, ENCODING_UNCODE_BE, ENCODING_UTF8] then Result := ENCODING_UTF8; //ignore "combined" TC encodings
 end;
 
 function GetTmpDir: WideString;
