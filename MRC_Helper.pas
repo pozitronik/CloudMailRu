@@ -357,7 +357,7 @@ begin
 		Result := TC_INI.ReadInteger('Configuration', 'CommentPreferredFormat', Result);
 		TC_INI.Free;
 	end;
-	if not Result in [ENCODING_DEFAULT, ENCODING_UNICODE, ENCODING_UNCODE_BE, ENCODING_UTF8] then Result := ENCODING_UTF8; //ignore "combined" TC encodings
+	if not(Result in [ENCODING_DEFAULT, ENCODING_UNICODE, ENCODING_UNCODE_BE, ENCODING_UTF8]) then Result := ENCODING_UTF8; //ignore "combined" TC encodings
 end;
 
 function GetTmpDir: WideString;
