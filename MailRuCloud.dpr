@@ -1211,7 +1211,7 @@ end;
 function FsDisconnectW(DisconnectRoot: PWideChar): Bool; stdcall;
 var
 	BackgroundJobsCount: integer;
-	ThreadId: DWORD;
+//	ThreadId: DWORD;
 begin
 	//ConnectionManager.freeAll;
 	BackgroundJobsCount := 0;
