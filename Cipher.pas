@@ -4,6 +4,10 @@ interface
 
 uses System.SysUtils, System.Classes, DCPcrypt2, DCPblockciphers, DCPrijndael, DCPSha1;
 
+const
+	CIPHER_OK = 0;
+	CIPHER_IO_ERROR = 1;
+
 type
 	TCipher = class
 	private
@@ -35,13 +39,26 @@ begin
 end;
 
 function TCipher.CryptFile(SourceFileName, DestinationFileName: WideString): integer;
+var
+	SourceFileStream, DestinationFileStream: TFileStream;
 begin
-
+	result := CIPHER_OK;
+	try
+		SourceFileStream := TFileStream.Create(SourceFileName, fmOpenRead);
+		DestinationFileStream := TFileStream.Create(DestinationFileName, fmCreate);
+		result := self.CryptFileStream(SourceFileStream, DestinationFileStream);
+		SourceFileStream.Free;
+		DestinationFileStream.Free;
+	except
+		result := CIPHER_IO_ERROR;
+	end;
 end;
 
 function TCipher.CryptFileStream(var SourceFileStream, DestinationFileStream: TFileStream): integer;
 begin
-
+	result := self.fileCipher.EncryptStream(SourceFileStream, DestinationFileStream, SourceFileStream.Size);
+	self.fileCipher.Burn;
+	self.fileCipher.Destroy;
 end;
 
 function TCipher.DecryptFile(SourceFileName, DestinationFileName: WideString): integer;
