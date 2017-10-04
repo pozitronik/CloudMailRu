@@ -58,6 +58,7 @@ type
 		public_account: boolean;
 		public_url: WideString;
 		description: WideString;
+		encrypted: boolean;
 	end;
 
 	TProxySettings = record
@@ -280,6 +281,7 @@ begin
 	result.public_account := IniFile.ReadBool(result.name, 'public_account', false);
 	result.public_url := IniFile.ReadString(result.name, 'public_url', '');
 	result.description := IniFile.ReadString(result.name, 'description', '');
+	result.encrypted := IniFile.ReadBool(result.name, 'encrypted', false);
 	AtPos := AnsiPos('@', result.email);
 	if AtPos <> 0 then
 	begin
@@ -305,6 +307,7 @@ begin
 	IniFile.WriteBool(AccountSettings.name, 'public_account', AccountSettings.public_account);
 	IniFile.WriteString(AccountSettings.name, 'public_url', AccountSettings.public_url);
 	IniFile.WriteString(AccountSettings.name, 'description', AccountSettings.description);
+	IniFile.WriteBool(AccountSettings.name, 'encrypted', AccountSettings.encrypted);
 	IniFile.Destroy;
 end;
 
