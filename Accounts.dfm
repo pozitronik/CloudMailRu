@@ -205,7 +205,7 @@ object AccountsForm: TAccountsForm
         Width = 75
         Height = 25
         Caption = 'Add/Apply'
-        TabOrder = 1
+        TabOrder = 5
         OnClick = ApplyButtonClick
       end
       object DeleteButton: TButton
@@ -214,7 +214,7 @@ object AccountsForm: TAccountsForm
         Width = 75
         Height = 25
         Caption = 'Delete'
-        TabOrder = 2
+        TabOrder = 6
         OnClick = DeleteButtonClick
       end
       object AccountsPanel: TPanel
@@ -252,7 +252,7 @@ object AccountsForm: TAccountsForm
           Width = 253
           Height = 17
           Caption = 'Two-step authentification'
-          TabOrder = 0
+          TabOrder = 5
         end
         object SplitLargeFilesCB: TCheckBox
           Left = 3
@@ -261,7 +261,7 @@ object AccountsForm: TAccountsForm
           Height = 17
           Anchors = [akLeft, akTop, akRight]
           Caption = 'Split large files to 2Gb parts'
-          TabOrder = 1
+          TabOrder = 4
         end
         object UnlimitedFileSizeCB: TCheckBox
           Left = 3
@@ -270,7 +270,7 @@ object AccountsForm: TAccountsForm
           Height = 17
           Anchors = [akLeft, akTop, akRight]
           Caption = 'Ignore 2Gb limit (paid account)'
-          TabOrder = 2
+          TabOrder = 3
         end
         object UseTCPwdMngrCB: TCheckBox
           Left = 3
@@ -279,7 +279,7 @@ object AccountsForm: TAccountsForm
           Height = 17
           Anchors = [akLeft, akTop, akRight]
           Caption = 'Store password in TC password manager'
-          TabOrder = 3
+          TabOrder = 2
         end
         object PasswordEdit: TEdit
           Left = 3
@@ -288,7 +288,7 @@ object AccountsForm: TAccountsForm
           Height = 21
           Anchors = [akLeft, akTop, akRight]
           PasswordChar = '*'
-          TabOrder = 4
+          TabOrder = 1
         end
         object EmailEdit: TEdit
           Left = 3
@@ -296,7 +296,7 @@ object AccountsForm: TAccountsForm
           Width = 253
           Height = 21
           Anchors = [akLeft, akTop, akRight]
-          TabOrder = 5
+          TabOrder = 0
         end
       end
       object AccountNameEdit: TEdit
@@ -305,7 +305,7 @@ object AccountsForm: TAccountsForm
         Width = 254
         Height = 21
         Anchors = [akLeft, akTop, akRight]
-        TabOrder = 4
+        TabOrder = 1
       end
       object PublicAccountCB: TCheckBox
         Left = 225
@@ -313,7 +313,7 @@ object AccountsForm: TAccountsForm
         Width = 253
         Height = 17
         Caption = 'Public account'
-        TabOrder = 5
+        TabOrder = 2
         OnClick = PublicAccountCBClick
       end
       object SharesPanel: TPanel
@@ -325,7 +325,7 @@ object AccountsForm: TAccountsForm
         Ctl3D = True
         ParentCtl3D = False
         ShowCaption = False
-        TabOrder = 6
+        TabOrder = 4
         object PublicUrlLabel: TLabel
           Left = 3
           Top = 0
@@ -636,7 +636,7 @@ object AccountsForm: TAccountsForm
         Width = 475
         Height = 209
         Caption = 'Proxy settings'
-        TabOrder = 0
+        TabOrder = 1
         object ProxyTypeLabel: TLabel
           Left = 5
           Top = 18
@@ -741,7 +741,7 @@ object AccountsForm: TAccountsForm
         Caption = 'Apply'
         ParentShowHint = False
         ShowHint = False
-        TabOrder = 1
+        TabOrder = 2
         OnClick = GlobalSettingApplyBTNClick
       end
       object SocketTimeoutEdit: TSpinEdit
@@ -751,7 +751,7 @@ object AccountsForm: TAccountsForm
         Height = 22
         MaxValue = 0
         MinValue = -1
-        TabOrder = 2
+        TabOrder = 0
         Value = -1
       end
     end
@@ -789,7 +789,7 @@ object AccountsForm: TAccountsForm
         Caption = 'Apply'
         ParentShowHint = False
         ShowHint = False
-        TabOrder = 2
+        TabOrder = 6
         OnClick = GlobalSettingApplyBTNClick
       end
       object DescriptionCopyToCloudCB: TCheckBox
@@ -798,7 +798,7 @@ object AccountsForm: TAccountsForm
         Width = 475
         Height = 17
         Caption = 'Copy file comments from local filesystem (experimental)'
-        TabOrder = 3
+        TabOrder = 2
       end
       object DescriptionCopyFromCloudCB: TCheckBox
         Left = 5
@@ -806,7 +806,7 @@ object AccountsForm: TAccountsForm
         Width = 475
         Height = 17
         Caption = 'Copy file comments from cloud filesystem (experimental)'
-        TabOrder = 4
+        TabOrder = 3
       end
       object DescriptionFileNameEdit: TEdit
         Left = 191
@@ -823,7 +823,7 @@ object AccountsForm: TAccountsForm
         Caption = 
           'Track cloud filesystem changes (file rename, delete, etc) (exper' +
           'imental)'
-        TabOrder = 6
+        TabOrder = 4
       end
     end
   end
