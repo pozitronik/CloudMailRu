@@ -967,7 +967,7 @@ var
 	TempFileName: WideString;
 begin
 	Cloud := ConnectionManager.get(RemotePath.account, getResult);
-	DoCipher := GetAccountSettingsFromIniFile(AccountsIniFilePath, RemotePath.account).encrypted ;
+	DoCipher := GetAccountSettingsFromIniFile(AccountsIniFilePath, RemotePath.account).encrypted;
 	if (DoCipher) then //условие немного усложнится todo
 	begin
 		Cipher := TCipher.Create('123');
