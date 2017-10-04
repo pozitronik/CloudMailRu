@@ -9,7 +9,7 @@ uses
 {$IFDEF WIN32}
 {$E wfx}
 {$ENDIF}
-{$R *.res}
+{$R *.dres}
 
 const
 {$IFDEF WIN64}
