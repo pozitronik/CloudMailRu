@@ -46,7 +46,7 @@ begin
 	try
 		SourceFileStream := TFileStream.Create(SourceFileName, fmOpenRead);
 		DestinationFileStream := TFileStream.Create(DestinationFileName, fmCreate);
-		result := self.CryptFileStream(SourceFileStream, DestinationFileStream);
+		self.CryptFileStream(SourceFileStream, DestinationFileStream);
 		SourceFileStream.Free;
 		DestinationFileStream.Free;
 	except
@@ -69,7 +69,7 @@ begin
 	try
 		SourceFileStream := TFileStream.Create(SourceFileName, fmOpenRead);
 		DestinationFileStream := TFileStream.Create(DestinationFileName, fmCreate);
-		result := self.DecryptFileStream(SourceFileStream, DestinationFileStream);
+		self.DecryptFileStream(SourceFileStream, DestinationFileStream);
 		SourceFileStream.Free;
 		DestinationFileStream.Free;
 	except

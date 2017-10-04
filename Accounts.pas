@@ -173,6 +173,7 @@ begin
 	CASettings.twostep_auth := TwostepAuthCB.Checked;
 	CASettings.public_account := PublicAccountCB.Checked;
 	CASettings.public_url := PublicUrlEdit.Text;
+	CASettings.encrypted := false;//temp
 
 	if CASettings.use_tc_password_manager then //просим TC сохранить пароль
 	begin

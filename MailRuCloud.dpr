@@ -962,8 +962,24 @@ function PutRemoteFile(RemotePath: TRealPath; LocalName, RemoteName: WideString;
 var
 	getResult: integer;
 	Cloud: TCloudMailRu;
+	DoCipher: boolean;
+	Cipher: TCipher;
+	TempFileName: WideString;
 begin
 	Cloud := ConnectionManager.get(RemotePath.account, getResult);
+	DoCipher := GetAccountSettingsFromIniFile(AccountsIniFilePath, RemotePath.account).encrypted ;
+	if (DoCipher) then //условие немного усложнится todo
+	begin
+		Cipher := TCipher.Create('123');
+		TempFileName := GetTmpFileName();
+		if CIPHER_OK = Cipher.CryptFile(LocalName, TempFileName) then
+		begin
+			LocalName := TempFileName;
+		end else begin
+			//raise error
+		end;
+	end;
+
 	Result := Cloud.putFile(WideString(LocalName), RemotePath.path);
 	if Result = FS_FILE_OK then
 	begin
@@ -971,6 +987,8 @@ begin
 		LogHandle(LogLevelFileOperation, MSGTYPE_TRANSFERCOMPLETE, PWideChar(LocalName + '->' + RemoteName));
 		if CheckFlag(FS_COPYFLAGS_MOVE, CopyFlags) then Result := DeleteLocalFile(LocalName);
 		if GetPluginSettings(SettingsIniFilePath).DescriptionCopyToCloud then UpdateRemoteFileDescription(RemotePath, LocalName, Cloud);
+		if DoCipher then DeleteLocalFile(TempFileName);
+
 	end;
 
 end;
