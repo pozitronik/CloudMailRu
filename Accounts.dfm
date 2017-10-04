@@ -789,7 +789,7 @@ object AccountsForm: TAccountsForm
         Caption = 'Apply'
         ParentShowHint = False
         ShowHint = False
-        TabOrder = 2
+        TabOrder = 6
         OnClick = GlobalSettingApplyBTNClick
       end
       object DescriptionCopyToCloudCB: TCheckBox
@@ -798,7 +798,7 @@ object AccountsForm: TAccountsForm
         Width = 475
         Height = 17
         Caption = 'Copy file comments from local filesystem (experimental)'
-        TabOrder = 3
+        TabOrder = 2
       end
       object DescriptionCopyFromCloudCB: TCheckBox
         Left = 5
@@ -806,7 +806,7 @@ object AccountsForm: TAccountsForm
         Width = 475
         Height = 17
         Caption = 'Copy file comments from cloud filesystem (experimental)'
-        TabOrder = 4
+        TabOrder = 3
       end
       object DescriptionFileNameEdit: TEdit
         Left = 191
@@ -823,7 +823,7 @@ object AccountsForm: TAccountsForm
         Caption = 
           'Track cloud filesystem changes (file rename, delete, etc) (exper' +
           'imental)'
-        TabOrder = 6
+        TabOrder = 4
       end
     end
   end
