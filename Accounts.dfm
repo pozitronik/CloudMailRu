@@ -636,7 +636,7 @@ object AccountsForm: TAccountsForm
         Width = 475
         Height = 209
         Caption = 'Proxy settings'
-        TabOrder = 0
+        TabOrder = 1
         object ProxyTypeLabel: TLabel
           Left = 5
           Top = 18
@@ -741,7 +741,7 @@ object AccountsForm: TAccountsForm
         Caption = 'Apply'
         ParentShowHint = False
         ShowHint = False
-        TabOrder = 1
+        TabOrder = 2
         OnClick = GlobalSettingApplyBTNClick
       end
       object SocketTimeoutEdit: TSpinEdit
@@ -751,7 +751,7 @@ object AccountsForm: TAccountsForm
         Height = 22
         MaxValue = 0
         MinValue = -1
-        TabOrder = 2
+        TabOrder = 0
         Value = -1
       end
     end
