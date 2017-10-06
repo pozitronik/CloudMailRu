@@ -265,8 +265,8 @@ begin
 		self.ExternalLogProc := ExternalLogProc;
 		self.ExternalRequestProc := ExternalRequestProc;
 
-		self.ExternalSourceName := '';
-		self.ExternalTargetName := '';
+		self.ExternalSourceName := nil;
+		self.ExternalTargetName := nil;
 	except
 		on E: Exception do
 		begin
@@ -625,6 +625,8 @@ begin
 		Result := self.HTTPGetFile(self.Shard + PathToUrl(remotePath, false), FileStream, LogErrors);
 		FlushFileBuffers(FileStream.Handle);
 		FileStream.free;
+		self.ExternalSourceName := nil;
+		self.ExternalTargetName := nil;
 	end;
 	if not Result in [FS_FILE_OK] then System.SysUtils.deleteFile(GetUNCFilePath(localPath));
 end;
@@ -1669,6 +1671,8 @@ begin
 			Result := CloudResultToFsResult(OperationResult, OperationStatus, 'File uploading error: ');
 		end;
 	end;
+	self.ExternalSourceName := nil;
+	self.ExternalTargetName := nil;
 end;
 
 function TCloudMailRu.putFileToCloud(localPath: WideString; Return: TStringList): integer; {Заливка на сервер состоит из двух шагов: заливаем файл на сервер в putFileToCloud и добавляем его в облако addFileToCloud}
