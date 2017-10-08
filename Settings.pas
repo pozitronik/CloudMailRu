@@ -210,7 +210,7 @@ begin
 		if CryptResult = FS_FILE_OK then //Успешно получили пароль
 		begin
 			password := buf;
-			//Result := true;
+			Result := true;
 		end;
 		if CryptResult = FS_FILE_NOTSUPPORTED then //пользователь отменил ввод главного пароля
 		begin
@@ -221,41 +221,6 @@ begin
 //			LogHandleProc(LogLevelError, msgtype_importanterror, PWideChar('CryptProc returns error: Password not found in password store'));
 		end;
 		FreeMemory(buf);
-	end;
-	//---
-	if password = '' then
-	begin
-		use_tc_password_manager := true;
-		AskResult := TAskPasswordForm.AskPassword(FindTCWindow, crypt_id, password, use_tc_password_manager);
-		if AskResult <> mrOK then
-		begin //не указали пароль в диалоге
-			exit(false); //отказались вводить пароль
-		end else begin
-			if use_tc_password_manager then
-			begin
-				case CryptHandleProc(FS_CRYPT_SAVE_PASSWORD, PWideChar(crypt_id), PWideChar(password), SizeOf(password)) of
-					FS_FILE_OK:
-						begin //TC скушал пароль
-							LogHandleProc(LogLevelDebug, msgtype_details, PWideChar('Crypt password saved in TC password manager'));
-
-						end;
-					FS_FILE_NOTSUPPORTED: //Сохранение не получилось
-						begin
-							LogHandleProc(LogLevelError, msgtype_importanterror, PWideChar('CryptProc returns error: Encrypt failed'));
-						end;
-					FS_FILE_WRITEERROR: //Сохранение опять не получилось
-						begin
-							LogHandleProc(LogLevelError, msgtype_importanterror, PWideChar('Password NOT saved: Could not write password to password store'));
-						end;
-					FS_FILE_NOTFOUND: //Не указан мастер-пароль
-						begin
-							LogHandleProc(LogLevelError, msgtype_importanterror, PWideChar('Password NOT saved: No master password entered yet'));
-						end;
-					//Ошибки здесь не значат, что пароль мы не получили - он может быть введён в диалоге
-				end;
-			end;
-			result := true;
-		end;
 	end;
 end;
 

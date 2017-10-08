@@ -308,10 +308,11 @@ end;
 procedure TAccountsForm.CryptFilesPasswordButtonClick(Sender: TObject);
 var
 	password: WideString;
-	pwdResult: boolean;
 begin
+	//Заменить пароль можно только подтвердив текущий МАСТЕР-ПАРОЛЬ
 	if (AccountNameEdit.Text = '') then exit();
-	pwdResult := GetCryptPassword((AccountNameEdit.Text + 'filecrypt'), password, nil, @self.CryptProc);
+	//if not GetCryptPassword((AccountNameEdit.Text + 'filecrypt'), password, nil, @self.CryptProc) then exit();//пользователь не знает мастер-пароля
+
 	case self.CryptProc(self.PluginNum, self.CryptoNum, FS_CRYPT_SAVE_PASSWORD, PWideChar(AccountNameEdit.Text + 'filecrypt'), PWideChar(password), SizeOf(password)) of
 		FS_FILE_OK:
 			begin //TC скушал пароль
