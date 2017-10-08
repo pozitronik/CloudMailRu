@@ -140,7 +140,7 @@ begin
 	if (Buffer[0] = $FE) and (Buffer[1] = $FF) then exit(TEncoding.BigEndianUnicode);
 	if (Buffer[0] = $FF) and (Buffer[1] = $FE) then exit(TEncoding.Unicode);
 	//Кодировка всё ещё не определилась, идём на крайнюю меру: создадим поток с выбранной кодировкой, если будет ошибка EEncodingError - значит это галимый ANSI
-	fStream := nil;
+//	fStream := nil;
 	fStream := TStreamReader.Create(self.ion_filename, self.encoding, false);
 	try
 		if fStream.ReadToEnd <> '' then result := fStream.CurrentEncoding;
