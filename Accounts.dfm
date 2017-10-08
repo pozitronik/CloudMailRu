@@ -298,6 +298,39 @@ object AccountsForm: TAccountsForm
           Anchors = [akLeft, akTop, akRight]
           TabOrder = 0
         end
+        object CryptFilesCB: TCheckBox
+          Left = 2
+          Top = 184
+          Width = 167
+          Height = 17
+          Caption = 'Crypt/decrypt files on the fly'
+          TabOrder = 6
+          OnClick = CryptFilesCBClick
+        end
+        object CryptFilenamesCB: TCheckBox
+          Left = 19
+          Top = 207
+          Width = 150
+          Height = 17
+          Caption = 'Also crypt filenames'
+          TabOrder = 7
+        end
+        object CryptFilesPasswordButton: TButton
+          Left = 175
+          Top = 184
+          Width = 82
+          Height = 17
+          Caption = 'Password'
+          TabOrder = 8
+        end
+        object CryptFilenamesPwdButton: TButton
+          Left = 175
+          Top = 207
+          Width = 82
+          Height = 17
+          Caption = 'Password'
+          TabOrder = 9
+        end
       end
       object AccountNameEdit: TEdit
         Left = 225
