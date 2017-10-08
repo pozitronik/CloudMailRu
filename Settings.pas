@@ -58,7 +58,8 @@ type
 		public_account: boolean;
 		public_url: WideString;
 		description: WideString;
-		encrypted: boolean;
+		crypt_files: boolean;
+		crypt_filenames: boolean;
 	end;
 
 	TProxySettings = record
@@ -281,7 +282,8 @@ begin
 	result.public_account := IniFile.ReadBool(result.name, 'public_account', false);
 	result.public_url := IniFile.ReadString(result.name, 'public_url', '');
 	result.description := IniFile.ReadString(result.name, 'description', '');
-	result.encrypted := IniFile.ReadBool(result.name, 'encrypted', false);
+	result.crypt_files := IniFile.ReadBool(result.name, 'crypt_files', false);
+	result.crypt_filenames := IniFile.ReadBool(result.name, 'crypt_filenames', false);
 	AtPos := AnsiPos('@', result.email);
 	if AtPos <> 0 then
 	begin
@@ -307,7 +309,8 @@ begin
 	IniFile.WriteBool(AccountSettings.name, 'public_account', AccountSettings.public_account);
 	IniFile.WriteString(AccountSettings.name, 'public_url', AccountSettings.public_url);
 	IniFile.WriteString(AccountSettings.name, 'description', AccountSettings.description);
-	IniFile.WriteBool(AccountSettings.name, 'encrypted', AccountSettings.encrypted);
+	IniFile.WriteBool(AccountSettings.name, 'crypt_files', AccountSettings.crypt_files);
+	IniFile.WriteBool(AccountSettings.name, 'crypt_filenames', AccountSettings.crypt_filenames);
 	IniFile.Destroy;
 end;
 
