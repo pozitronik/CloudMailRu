@@ -141,7 +141,7 @@ end;
 
 procedure TDCP_mars.InitKey(const Key; Size: longword);
 var
-  i: Integer;
+  i: Dword;
   j, m, u, w: DWord;
   t: array[-7..39] of DWord;
   KeyB: array[0..39] of DWord;
