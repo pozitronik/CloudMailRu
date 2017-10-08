@@ -322,6 +322,7 @@ object AccountsForm: TAccountsForm
           Height = 17
           Caption = 'Password'
           TabOrder = 8
+          OnClick = CryptFilesPasswordButtonClick
         end
         object CryptFilenamesPwdButton: TButton
           Left = 175

@@ -102,6 +102,7 @@ type
 		procedure PublicAccountCBClick(Sender: TObject);
 		procedure CloudMaxFileSizeCBClick(Sender: TObject);
 		procedure CryptFilesCBClick(Sender: TObject);
+		procedure CryptFilesPasswordButtonClick(Sender: TObject);
 	private
 		{Private declarations}
 		procedure WMHotKey(var Message: TMessage); message WM_HOTKEY;
@@ -302,6 +303,29 @@ end;
 procedure TAccountsForm.CryptFilesCBClick(Sender: TObject);
 begin
 	CryptFilenamesCB.Enabled := CryptFilesCB.Checked;
+end;
+
+procedure TAccountsForm.CryptFilesPasswordButtonClick(Sender: TObject);
+var
+	password: WideString;
+	pwdResult: boolean;
+begin
+	if (AccountNameEdit.Text = '') then exit();
+	pwdResult := GetCryptPassword((AccountNameEdit.Text + 'filecrypt'), password, nil, @self.CryptProc);
+	case self.CryptProc(self.PluginNum, self.CryptoNum, FS_CRYPT_SAVE_PASSWORD, PWideChar(AccountNameEdit.Text + 'filecrypt'), PWideChar(password), SizeOf(password)) of
+		FS_FILE_OK:
+			begin //TC скушал пароль
+				exit(); //Ничего не делаем
+			end;
+		FS_FILE_NOTSUPPORTED: //нажали отмену на вводе мастер-пароля
+			begin //просто выйдем
+				exit();
+			end;
+		FS_FILE_WRITEERROR: //Сохранение не получилось по другой причине. Сохранять не будем, выйдем
+			begin
+				exit();
+			end;
+	end;
 end;
 
 procedure TAccountsForm.DeleteButtonClick(Sender: TObject);
