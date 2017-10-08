@@ -104,6 +104,8 @@ type
 	end;
 
 function GetProxyPasswordNow(var ProxySettings: TProxySettings; LogHandleProc: TLogHandler; CryptHandleProc: TCryptHandler): boolean;
+function GetCryptPassword(crypt_id: WideString; var password: WideString; LogHandleProc: TLogHandler; CryptHandleProc: TCryptHandler): boolean;
+
 function GetPluginSettings(IniFilePath: WideString): TPluginSettings;
 procedure SetPluginSettings(IniFilePath: WideString; PluginSettings: TPluginSettings);
 procedure SetPluginSettingsValue(IniFilePath: WideString; OptionName: WideString; OptionValue: Variant);
@@ -187,6 +189,74 @@ begin
 		end;
 	end
 	else result := true; //пароль взят из инишника напрямую
+end;
+
+function GetCryptPassword(crypt_id: WideString; var password: WideString; LogHandleProc: TLogHandler; CryptHandleProc: TCryptHandler): boolean;
+var
+	CryptResult: Integer;
+	AskResult: Integer;
+	TmpString: WideString;
+	buf: PWideChar;
+	use_tc_password_manager: boolean;
+begin
+
+	begin //пароль должен браться из TC
+		GetMem(buf, 1024);
+		CryptResult := CryptHandleProc(FS_CRYPT_LOAD_PASSWORD_NO_UI, PWideChar(crypt_id), buf, 1024); //Пытаемся взять пароль по-тихому
+		if CryptResult = FS_FILE_NOTFOUND then
+		begin
+			LogHandleProc(LogLevelDetail, msgtype_details, PWideChar('No master password entered yet'));
+			CryptResult := CryptHandleProc(FS_CRYPT_LOAD_PASSWORD, PWideChar(crypt_id), buf, 1024);
+		end;
+		if CryptResult = FS_FILE_OK then //Успешно получили пароль
+		begin
+			password := buf;
+			//Result := true;
+		end;
+		if CryptResult = FS_FILE_NOTSUPPORTED then //пользователь отменил ввод главного пароля
+		begin
+			LogHandleProc(LogLevelWarning, msgtype_importanterror, PWideChar('CryptProc returns error: Decrypt failed'));
+		end;
+		if CryptResult = FS_FILE_READERROR then
+		begin
+			LogHandleProc(LogLevelError, msgtype_importanterror, PWideChar('CryptProc returns error: Password not found in password store'));
+		end;
+		FreeMemory(buf);
+	end;
+	//---
+	if password = '' then
+	begin
+		AskResult := TAskPasswordForm.AskPassword(FindTCWindow, crypt_id, password, use_tc_password_manager);
+		if AskResult <> mrOK then
+		begin //не указали пароль в диалоге
+			exit(false); //отказались вводить пароль
+		end else begin
+			if use_tc_password_manager then
+			begin
+				case CryptHandleProc(FS_CRYPT_SAVE_PASSWORD, PWideChar(crypt_id), PWideChar(password), SizeOf(password)) of
+					FS_FILE_OK:
+						begin //TC скушал пароль
+							LogHandleProc(LogLevelDebug, msgtype_details, PWideChar('Crypt password saved in TC password manager'));
+
+						end;
+					FS_FILE_NOTSUPPORTED: //Сохранение не получилось
+						begin
+							LogHandleProc(LogLevelError, msgtype_importanterror, PWideChar('CryptProc returns error: Encrypt failed'));
+						end;
+					FS_FILE_WRITEERROR: //Сохранение опять не получилось
+						begin
+							LogHandleProc(LogLevelError, msgtype_importanterror, PWideChar('Password NOT saved: Could not write password to password store'));
+						end;
+					FS_FILE_NOTFOUND: //Не указан мастер-пароль
+						begin
+							LogHandleProc(LogLevelError, msgtype_importanterror, PWideChar('Password NOT saved: No master password entered yet'));
+						end;
+					//Ошибки здесь не значат, что пароль мы не получили - он может быть введён в диалоге
+				end;
+			end;
+			result := true;
+		end;
+	end;
 end;
 
 function GetPluginSettings(IniFilePath: WideString): TPluginSettings;
