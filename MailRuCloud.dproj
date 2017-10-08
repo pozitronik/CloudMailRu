@@ -142,9 +142,7 @@
         </DCCReference>
         <DCCReference Include="CMLJSON.pas"/>
         <DCCReference Include="CMLTypes.pas"/>
-        <DCCReference Include="Cipher.pas">
-            <Form>$ENDIF</Form>
-        </DCCReference>
+        <DCCReference Include="Cipher.pas" />
         <DCCReference Include="DCPCrypt\DCPbase64.pas"/>
         <DCCReference Include="DCPCrypt\DCPblockciphers.pas"/>
         <DCCReference Include="DCPCrypt\DCPconst.pas"/>
