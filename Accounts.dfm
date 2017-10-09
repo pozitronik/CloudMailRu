@@ -308,9 +308,9 @@ object AccountsForm: TAccountsForm
           OnClick = CryptFilesCBClick
         end
         object CryptFilenamesCB: TCheckBox
-          Left = 19
+          Left = 51
           Top = 207
-          Width = 150
+          Width = 118
           Height = 17
           Caption = 'Also crypt filenames'
           TabOrder = 7

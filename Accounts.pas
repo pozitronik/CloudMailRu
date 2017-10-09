@@ -3,7 +3,7 @@
 interface
 
 uses
-	Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics, Settings, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, IniFiles, MRC_Helper, PLUGIN_Types, Vcl.ComCtrls, Vcl.Mask, Vcl.ExtCtrls, Vcl.Samples.Spin, System.IOUtils;
+	Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics, Settings, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, IniFiles, MRC_Helper, PLUGIN_Types, Vcl.ComCtrls, Vcl.Mask, Vcl.ExtCtrls, Vcl.Samples.Spin, System.IOUtils, AskPassword;
 
 type
 	TAccountsForm = class(TForm)
@@ -307,23 +307,45 @@ end;
 
 procedure TAccountsForm.CryptFilesPasswordButtonClick(Sender: TObject);
 var
+	buf: PWideChar;
 	password: WideString;
+	AskResult: Integer;
+	checkboxState: boolean;
 begin
 	//Заменить пароль можно только подтвердив текущий МАСТЕР-ПАРОЛЬ
 	if (AccountNameEdit.Text = '') then exit();
-	//if not GetCryptPassword((AccountNameEdit.Text + 'filecrypt'), password, nil, @self.CryptProc) then exit();//пользователь не знает мастер-пароля
-
-	case self.CryptProc(self.PluginNum, self.CryptoNum, FS_CRYPT_SAVE_PASSWORD, PWideChar(AccountNameEdit.Text + 'filecrypt'), PWideChar(password), SizeOf(password)) of
-		FS_FILE_OK:
-			begin //TC скушал пароль
-				exit(); //Ничего не делаем
-			end;
-		FS_FILE_NOTSUPPORTED: //нажали отмену на вводе мастер-пароля
-			begin //просто выйдем
-				exit();
-			end;
-		FS_FILE_WRITEERROR: //Сохранение не получилось по другой причине. Сохранять не будем, выйдем
+	//todo: simplify & use TCryptHandler
+	GetMem(buf, 1024);
+	case self.CryptProc(self.PluginNum, self.CryptoNum, FS_CRYPT_LOAD_PASSWORD, PWideChar(AccountNameEdit.Text + ' filecrypt'), buf, 1024) of
+		FS_FILE_OK, //Юзер знает мастер-пароль, и пароль уже задан
+		FS_FILE_READERROR: //юзер знает мастер-пароль, но криптопароля пока нет
 			begin
+				checkboxState := true;
+				AskResult := TAskPasswordForm.AskPassword(self.Handle, AccountNameEdit.Text + ' filecrypt', password, checkboxState, true,'Change file crypt password for '+AccountNameEdit.Text);
+				if AskResult <> mrOK then
+				begin //не указали пароль в диалоге
+					exit(); //отказались вводить пароль
+				end else begin
+					case self.CryptProc(self.PluginNum, self.CryptoNum, FS_CRYPT_SAVE_PASSWORD, PWideChar(AccountNameEdit.Text + ' filecrypt'), PWideChar(password), SizeOf(password)) of
+						FS_FILE_OK:
+							begin //TC скушал пароль,
+							end;
+						FS_FILE_NOTSUPPORTED: //Сохранение не получилось
+							begin
+							end;
+						FS_FILE_WRITEERROR: //Сохранение опять не получилось
+							begin
+							end;
+						FS_FILE_NOTFOUND: //Не указан мастер-пароль
+							begin
+							end;
+						//Ошибки здесь не значат, что пароль мы не получили - он может быть введён в диалоге
+					end;
+				end;
+			end;
+		FS_FILE_NOTSUPPORTED, //нажали отмену на вводе мастер-пароля
+		FS_FILE_NOTFOUND: //юзер не знает мастер-пароль
+			begin //просто выйдем
 				exit();
 			end;
 	end;
@@ -405,7 +427,7 @@ begin
 		AccountsForm.ProxyCB.ItemIndex := GetPluginSettings(SettingsIniFilePath).Proxy.ProxyType;
 		AccountsForm.ProxyServerEdit.Text := GetPluginSettings(SettingsIniFilePath).Proxy.Server;
 		AccountsForm.ProxyPortEdit.Text := GetPluginSettings(SettingsIniFilePath).Proxy.Port.ToString;
-		AccountsForm.ProxyUserEdit.Text := GetPluginSettings(SettingsIniFilePath).Proxy.User;
+		AccountsForm.ProxyUserEdit.Text := GetPluginSettings(SettingsIniFilePath).Proxy.user;
 		AccountsForm.ProxyPwd.Text := GetPluginSettings(SettingsIniFilePath).Proxy.password;
 		AccountsForm.ProxyTCPwdMngrCB.Checked := GetPluginSettings(SettingsIniFilePath).Proxy.use_tc_password_manager;
 		AccountsForm.CloudMaxFileSizeValue.Text := GetPluginSettings(SettingsIniFilePath).CloudMaxFileSize.ToString;
