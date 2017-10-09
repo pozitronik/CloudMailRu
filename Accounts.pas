@@ -321,10 +321,10 @@ begin
 		FS_FILE_READERROR: //юзер знает мастер-пароль, но криптопароля пока нет
 			begin
 				checkboxState := true;
-				AskResult := TAskPasswordForm.AskPassword(self.Handle, AccountNameEdit.Text + ' filecrypt', password, checkboxState, true,'Change file crypt password for '+AccountNameEdit.Text);
+				AskResult := TAskPasswordForm.AskPassword(self.Handle, AccountNameEdit.Text + ' filecrypt', password, checkboxState, true, 'Change file crypt password for ' + AccountNameEdit.Text);
 				if AskResult <> mrOK then
 				begin //не указали пароль в диалоге
-					exit(); //отказались вводить пароль
+					//exit(); //отказались вводить пароль
 				end else begin
 					case self.CryptProc(self.PluginNum, self.CryptoNum, FS_CRYPT_SAVE_PASSWORD, PWideChar(AccountNameEdit.Text + ' filecrypt'), PWideChar(password), SizeOf(password)) of
 						FS_FILE_OK:
@@ -346,9 +346,10 @@ begin
 		FS_FILE_NOTSUPPORTED, //нажали отмену на вводе мастер-пароля
 		FS_FILE_NOTFOUND: //юзер не знает мастер-пароль
 			begin //просто выйдем
-				exit();
+				//exit();
 			end;
 	end;
+	FreeMemory(buf);
 end;
 
 procedure TAccountsForm.DeleteButtonClick(Sender: TObject);
