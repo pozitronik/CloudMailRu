@@ -12,6 +12,7 @@ uses
 {$E wfx}
 {$ENDIF}
 {$R *.dres}
+{$R *.res}
 
 const
 {$IFDEF WIN64}
