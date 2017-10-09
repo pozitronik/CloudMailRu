@@ -34,6 +34,7 @@ begin
 	try
 		AskPasswordForm := TAskPasswordForm.Create(nil);
 		AskPasswordForm.ParentWindow := ParentWindow;
+		AskPasswordForm.PasswordEditLabel.Caption := HintLabelText;
 		AskPasswordForm.Caption := AccountName + ' password';
 		AskPasswordForm.UseTCPwdMngrCB.Enabled := not DisablePWDManagerCB;
 		AskPasswordForm.UseTCPwdMngrCB.Checked := UseTCPwdMngr;
