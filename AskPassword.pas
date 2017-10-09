@@ -11,7 +11,7 @@ type
 		PasswordEdit: TEdit;
 		OkButton: TButton;
 		UseTCPwdMngrCB: TCheckBox;
-		class function AskPassword(ParentWindow: HWND; AccountName: WideString; var Password: WideString; var UseTCPwdMngr: Boolean): integer;
+		class function AskPassword(ParentWindow: HWND; AccountName: WideString; var Password: WideString; var UseTCPwdMngr: Boolean; DisablePWDManagerCB: Boolean = false; HintLabelText: WideString = 'Enter account password:'): integer;
 		procedure PasswordEditChange(Sender: TObject);
 		procedure FormShow(Sender: TObject);
 		procedure FormActivate(Sender: TObject);
@@ -27,7 +27,7 @@ implementation
 {$R *.dfm}
 
 {TAskPasswordForm}
-class function TAskPasswordForm.AskPassword(ParentWindow: HWND; AccountName: WideString; var Password: WideString; var UseTCPwdMngr: Boolean): integer;
+class function TAskPasswordForm.AskPassword(ParentWindow: HWND; AccountName: WideString; var Password: WideString; var UseTCPwdMngr: Boolean; DisablePWDManagerCB: Boolean = false; HintLabelText: WideString = 'Enter account password:'): integer;
 var
 	AskPasswordForm: TAskPasswordForm;
 begin
@@ -35,7 +35,8 @@ begin
 		AskPasswordForm := TAskPasswordForm.Create(nil);
 		AskPasswordForm.ParentWindow := ParentWindow;
 		AskPasswordForm.Caption := AccountName + ' password';
-
+		AskPasswordForm.UseTCPwdMngrCB.Enabled := not DisablePWDManagerCB;
+		AskPasswordForm.UseTCPwdMngrCB.Checked := UseTCPwdMngr;
 		RegisterHotKey(AskPasswordForm.Handle, 1, 0, VK_ESCAPE);
 		RegisterHotKey(AskPasswordForm.Handle, 2, 0, VK_RETURN);
 
