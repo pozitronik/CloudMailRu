@@ -154,7 +154,7 @@ begin
 
 	if ProxySettings.password = '' then //но пароля нет, не в инишнике, не в тотале
 	begin
-		AskResult := TAskPasswordForm.AskPassword(FindTCWindow, 'User ' + ProxySettings.user + ' proxy', ProxySettings.password, ProxySettings.use_tc_password_manager);
+		AskResult := TAskPasswordForm.AskPassword(FindTCWindow, 'User ' + ProxySettings.user + ' proxy', ProxySettings.password, ProxySettings.use_tc_password_manager, false);
 		if AskResult <> mrOK then
 		begin //не указали пароль в диалоге
 			exit(false); //отказались вводить пароль
@@ -204,21 +204,21 @@ begin
 		CryptResult := CryptHandleProc(FS_CRYPT_LOAD_PASSWORD_NO_UI, PWideChar(crypt_id), buf, 1024); //Пытаемся взять пароль по-тихому
 		if CryptResult = FS_FILE_NOTFOUND then
 		begin
-//			LogHandleProc(LogLevelDetail, msgtype_details, PWideChar('No master password entered yet'));
+			//LogHandleProc(LogLevelDetail, msgtype_details, PWideChar('No master password entered yet'));
 			CryptResult := CryptHandleProc(FS_CRYPT_LOAD_PASSWORD, PWideChar(crypt_id), buf, 1024);
 		end;
 		if CryptResult = FS_FILE_OK then //Успешно получили пароль
 		begin
 			password := buf;
-			Result := true;
+			result := true;
 		end;
 		if CryptResult = FS_FILE_NOTSUPPORTED then //пользователь отменил ввод главного пароля
 		begin
-//			LogHandleProc(LogLevelWarning, msgtype_importanterror, PWideChar('CryptProc returns error: Decrypt failed'));
+			//LogHandleProc(LogLevelWarning, msgtype_importanterror, PWideChar('CryptProc returns error: Decrypt failed'));
 		end;
 		if CryptResult = FS_FILE_READERROR then
 		begin
-//			LogHandleProc(LogLevelError, msgtype_importanterror, PWideChar('CryptProc returns error: Password not found in password store'));
+			//LogHandleProc(LogLevelError, msgtype_importanterror, PWideChar('CryptProc returns error: Password not found in password store'));
 		end;
 		FreeMemory(buf);
 	end;

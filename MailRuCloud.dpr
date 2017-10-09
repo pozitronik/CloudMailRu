@@ -966,19 +966,35 @@ var
 	DoCipher: boolean;
 	Cipher: TCipher;
 	TempFileName: WideString;
+	Password: PWideChar;
+
 begin
 	Cloud := ConnectionManager.get(RemotePath.account, getResult);
 	DoCipher := GetAccountSettingsFromIniFile(AccountsIniFilePath, RemotePath.account).crypt_files;
 	if (DoCipher) then //условие немного усложнится todo
 	begin
-		Cipher := TCipher.Create('123');
-		TempFileName := GetTmpFileName();
-		if CIPHER_OK = Cipher.CryptFile(LocalName, TempFileName) then
-		begin
-			LocalName := TempFileName;
-		end else begin
-			//raise error
+		GetMem(Password, 1024);
+
+		case CryptHandle(FS_CRYPT_LOAD_PASSWORD, PWideChar(RemotePath.account + ' filecrypt'), Password, 1024) of
+			FS_FILE_OK:
+				begin
+					Cipher := TCipher.Create(Password);
+					TempFileName := GetTmpFileName();
+					if CIPHER_OK = Cipher.CryptFile(LocalName, TempFileName) then
+					begin
+						LocalName := TempFileName;
+					end else begin
+						//raise error
+					end;
+					FreeMemory(Password);
+				end
+			else
+				begin
+					FreeMemory(Password);
+					exit(FS_FILE_USERABORT);
+				end;
 		end;
+
 	end;
 
 	Result := Cloud.putFile(WideString(LocalName), RemotePath.path);
@@ -999,6 +1015,7 @@ var
 	RealPath: TRealPath;
 	RetryAttempts: integer;
 	getResult: integer;
+
 begin
 
 	RealPath := ExtractRealPath(RemoteName);
