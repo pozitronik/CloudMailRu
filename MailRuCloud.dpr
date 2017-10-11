@@ -878,9 +878,25 @@ var
 	getResult: integer;
 	Item: TCloudMailRuDirListingItem;
 	Cloud: TCloudMailRu;
+	DoCipher: boolean;
+	Cipher: TCipher;
+	TempFileName: WideString;
+	Password: WideString;
+	crypt_id: WideString;
+	ask_user: boolean;
 begin
+
 	Cloud := ConnectionManager.get(RemotePath.account, getResult);
-	Result := Cloud.getFile(WideString(RemotePath.path), LocalName);
+
+	{Расшифровка при установленном параметре}
+	DoCipher := GetAccountSettingsFromIniFile(AccountsIniFilePath, RemotePath.account).crypt_files;
+	if (DoCipher) then //загрузка во временный файл с последующей дешифровкой
+	begin
+		TempFileName := GetTmpFileName();
+		Result := Cloud.getFile(WideString(RemotePath.path), TempFileName);
+	end else begin
+		Result := Cloud.getFile(WideString(RemotePath.path), LocalName)
+	end;
 
 	if Result = FS_FILE_OK then
 	begin
@@ -894,6 +910,25 @@ begin
 		LogHandle(LogLevelFileOperation, MSGTYPE_TRANSFERCOMPLETE, PWideChar(RemoteName + '->' + LocalName));
 
 		if GetPluginSettings(SettingsIniFilePath).DescriptionCopyFromCloud then UpdateFileDescription(RemotePath, LocalName, Cloud);
+		{Расшифровка при установленном параметре}
+		if (DoCipher) then
+		begin
+			crypt_id := RemotePath.account + ' filecrypt';
+			ask_user := true;
+			if GetCryptPassword(crypt_id, Password, ask_user, nil, CryptHandle) then //нужно сохранять пароль до конца операции
+			begin
+				Cipher := TCipher.Create(Password);
+				if CIPHER_OK = Cipher.DecryptFile(TempFileName, LocalName) then
+				begin
+					Cipher.Destroy;
+				end else begin
+					//raise error
+					Cipher.Destroy;
+				end;
+			end else begin
+				exit(FS_FILE_USERABORT);
+			end;
+		end;
 
 	end;
 end;
@@ -978,7 +1013,7 @@ begin
 	if (DoCipher) then
 	begin
 		crypt_id := RemotePath.account + ' filecrypt';
-		ask_user := false;
+		ask_user := true;
 		if GetCryptPassword(crypt_id, Password, ask_user, nil, CryptHandle) then //нужно сохранять пароль до конца операции
 		begin
 			Cipher := TCipher.Create(Password);
