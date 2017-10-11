@@ -878,11 +878,11 @@ var
 	getResult: integer;
 	Item: TCloudMailRuDirListingItem;
 	Cloud: TCloudMailRu;
-	DoCipher: boolean;
+	DoCipher, DoCipherFileNames: boolean;
 	Cipher: TCipher;
-	TempFileName: WideString;
-	Password: WideString;
-	crypt_id: WideString;
+	TempFileName, DecryptedFileName: WideString;
+	Password, FilenamePassword: WideString;
+	crypt_id, crypt_filename_id: WideString;
 	ask_user: boolean;
 begin
 
@@ -890,6 +890,7 @@ begin
 
 	{Расшифровка при установленном параметре}
 	DoCipher := GetAccountSettingsFromIniFile(AccountsIniFilePath, RemotePath.account).crypt_files;
+	DoCipherFileNames := GetAccountSettingsFromIniFile(AccountsIniFilePath, RemotePath.account).crypt_filenames;
 	if (DoCipher) then //загрузка во временный файл с последующей дешифровкой
 	begin
 		TempFileName := GetTmpFileName();
@@ -914,11 +915,21 @@ begin
 		if (DoCipher) then
 		begin
 			crypt_id := RemotePath.account + ' filecrypt';
+			crypt_filename_id := RemotePath.account + ' filenamecrypt';
 			ask_user := true;
-			if GetCryptPassword(crypt_id, Password, ask_user, nil, CryptHandle) then //нужно сохранять пароль до конца операции
+			if GetCryptPassword(crypt_id, Password, ask_user, nil, CryptHandle) then //todo нужно сохранять пароль до конца операции
 			begin
-				Cipher := TCipher.Create(Password);
-				if CIPHER_OK = Cipher.DecryptFile(TempFileName, LocalName) then
+				if DoCipherFileNames then
+				begin //ask for filename password
+					ask_user := true;
+					DoCipherFileNames := GetCryptPassword(crypt_filename_id, FilenamePassword, ask_user, nil, CryptHandle)//todo нужно сохранять пароль до конца операции
+				end else begin //do not encrypt file name
+					FilenamePassword := '';
+				end;
+
+				Cipher := TCipher.Create(Password, FilenamePassword);
+				if DoCipherFileNames then DecryptedFileName := ExtractCryptedFileNameFromPath(RemotePath.path);
+				if CIPHER_OK = Cipher.DecryptFile(TempFileName, LocalName, DecryptedFileName) then
 				begin
 					Cipher.Destroy;
 				end else begin
@@ -1004,7 +1015,7 @@ var
 	DoCipher, DoCipherFileNames: boolean;
 	Cipher: TCipher;
 	TempFileName, CryptedFileName: WideString;
-	Password, FileNamePassword: WideString;
+	Password, FilenamePassword: WideString;
 	crypt_id, crypt_filename_id: WideString;
 	ask_user: boolean;
 begin
@@ -1021,12 +1032,12 @@ begin
 			if DoCipherFileNames then
 			begin //ask for filename password
 				ask_user := true;
-				DoCipherFileNames := GetCryptPassword(crypt_filename_id, FileNamePassword, ask_user, nil, CryptHandle)//todo нужно сохранять пароль до конца операции
+				DoCipherFileNames := GetCryptPassword(crypt_filename_id, FilenamePassword, ask_user, nil, CryptHandle)//todo нужно сохранять пароль до конца операции
 			end else begin //do not encrypt file name
-				FileNamePassword := '';
+				FilenamePassword := '';
 			end;
 
-			Cipher := TCipher.Create(Password, FileNamePassword);
+			Cipher := TCipher.Create(Password, FilenamePassword);
 			TempFileName := GetTmpFileName();
 			if CIPHER_OK = Cipher.CryptFile(LocalName, TempFileName, CryptedFileName) then
 			begin

@@ -19,7 +19,7 @@ type
 		destructor Destroy; override;
 		function CryptFile(SourceFileName, DestinationFilename: WideString; var CryptedFileName: WideString): integer;
 		function CryptFileStream(var SourceFileStream, DestinationFileStream: TFileStream): integer;
-		function DecryptFile(SourceFileName, DestinationFilename: WideString): integer;
+		function DecryptFile(SourceFileName, DestinationFilename: WideString; var DecryptedFileName: WideString): integer;
 		function DecryptFileStream(var SourceFileStream, DestinationFileStream: TFileStream): integer;
 	end;
 
@@ -67,18 +67,18 @@ begin
 	//self.fileCipher.Destroy;
 end;
 
-function TCipher.DecryptFile(SourceFileName, DestinationFilename: WideString): integer;
+function TCipher.DecryptFile(SourceFileName, DestinationFilename: WideString; var DecryptedFileName: WideString): integer;
 var
 	SourceFileStream, DestinationFileStream: TFileStream;
 begin
 	result := CIPHER_OK;
 	try
-		//if DoFilenameCiper then
-		//begin
-		//DestinationFileName := GetTmpDir() + self.filenameCipher.DecryptString(ExtractFileName(SourceFileName));
-		//end else begin
-		//DestinationFileName := GetTmpFileName();
-		//end;
+		if DoFilenameCipher then
+		begin
+			if DecryptedFileName = EmptyWideStr then DecryptedFileName := self.filenameCipher.DecryptString(ExtractFileName(SourceFileName))
+			else DecryptedFileName := self.filenameCipher.DecryptString(ExtractFileName(DecryptedFileName));
+      
+		end;
 
 		SourceFileStream := TFileStream.Create(SourceFileName, fmOpenRead);
 		DestinationFileStream := TFileStream.Create(DestinationFilename, fmCreate);
