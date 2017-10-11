@@ -2,7 +2,7 @@ unit Cipher;
 
 interface
 
-uses System.SysUtils, System.Classes, MRC_Helper, DCPcrypt2, DCPblockciphers, DCPrijndael, DCPSha1;
+uses System.SysUtils, System.Classes, DCPcrypt2, DCPblockciphers, DCPrijndael, DCPSha1;
 
 const
 	CIPHER_OK = 0;
@@ -12,14 +12,14 @@ type
 	TCipher = class
 	private
 		fileCipher, filenameCipher: TDCP_rijndael; //AES ciphers
-		DoFilenameCiper: boolean; //шифровать имена файлов
+		DoFilenameCipher: boolean; //шифровать имена файлов
 	protected
 	public
 		constructor Create(fileKey: WideString; filenameKey: WideString = '');
 		destructor Destroy; override;
-		function CryptFile(SourceFileName: WideString; var DestinationFileName: WideString): integer; {DestinationFileName устанавливается само в зависимости от того, шифруются ли имена}
+		function CryptFile(SourceFileName, DestinationFilename: WideString; var CryptedFileName: WideString): integer;
 		function CryptFileStream(var SourceFileStream, DestinationFileStream: TFileStream): integer;
-		function DecryptFile(SourceFileName, DestinationFileName: WideString): integer;
+		function DecryptFile(SourceFileName, DestinationFilename: WideString): integer;
 		function DecryptFileStream(var SourceFileStream, DestinationFileStream: TFileStream): integer;
 	end;
 
@@ -31,29 +31,27 @@ constructor TCipher.Create(fileKey: WideString; filenameKey: WideString = '');
 begin
 	self.fileCipher := TDCP_rijndael.Create(nil);
 	self.fileCipher.InitStr(fileKey, TDCP_sha1);
-	DoFilenameCiper := false;
+	DoFilenameCipher := false;
 	if EmptyWideStr <> filenameKey then
 	begin
 		self.filenameCipher := TDCP_rijndael.Create(nil);
 		self.filenameCipher.InitStr(filenameKey, TDCP_sha1);
-		DoFilenameCiper := true;
+		DoFilenameCipher := true;
 	end;
 end;
 
-function TCipher.CryptFile(SourceFileName: WideString; var DestinationFileName: WideString): integer;
+function TCipher.CryptFile(SourceFileName, DestinationFilename: WideString; var CryptedFileName: WideString): integer;
 var
 	SourceFileStream, DestinationFileStream: TFileStream;
 begin
 	result := CIPHER_OK;
 	try
-		if DoFilenameCiper then
+		if DoFilenameCipher then
 		begin
-			DestinationFileName := GetTmpDir() + self.filenameCipher.EncryptString(ExtractFileName(SourceFileName));
-		end else begin
-			DestinationFileName := GetTmpFileName();
+			CryptedFileName := self.filenameCipher.EncryptString(ExtractFileName(SourceFileName));
 		end;
 		SourceFileStream := TFileStream.Create(SourceFileName, fmOpenRead);
-		DestinationFileStream := TFileStream.Create(DestinationFileName, fmCreate);
+		DestinationFileStream := TFileStream.Create(DestinationFilename, fmCreate);
 		self.CryptFileStream(SourceFileStream, DestinationFileStream);
 		SourceFileStream.Free;
 		DestinationFileStream.Free;
@@ -69,21 +67,21 @@ begin
 	//self.fileCipher.Destroy;
 end;
 
-function TCipher.DecryptFile(SourceFileName, DestinationFileName: WideString): integer;
+function TCipher.DecryptFile(SourceFileName, DestinationFilename: WideString): integer;
 var
 	SourceFileStream, DestinationFileStream: TFileStream;
 begin
 	result := CIPHER_OK;
 	try
-//		if DoFilenameCiper then
-//		begin
-//			DestinationFileName := GetTmpDir() + self.filenameCipher.DecryptString(ExtractFileName(SourceFileName));
-//		end else begin
-//			DestinationFileName := GetTmpFileName();
-//		end;
+		//if DoFilenameCiper then
+		//begin
+		//DestinationFileName := GetTmpDir() + self.filenameCipher.DecryptString(ExtractFileName(SourceFileName));
+		//end else begin
+		//DestinationFileName := GetTmpFileName();
+		//end;
 
 		SourceFileStream := TFileStream.Create(SourceFileName, fmOpenRead);
-		DestinationFileStream := TFileStream.Create(DestinationFileName, fmCreate);
+		DestinationFileStream := TFileStream.Create(DestinationFilename, fmCreate);
 		self.DecryptFileStream(SourceFileStream, DestinationFileStream);
 		SourceFileStream.Free;
 		DestinationFileStream.Free;

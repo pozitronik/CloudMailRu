@@ -1003,7 +1003,7 @@ var
 	Cloud: TCloudMailRu;
 	DoCipher, DoCipherFileNames: boolean;
 	Cipher: TCipher;
-	TempFileName: WideString;
+	TempFileName, CryptedFileName: WideString;
 	Password, FileNamePassword: WideString;
 	crypt_id, crypt_filename_id: WideString;
 	ask_user: boolean;
@@ -1027,10 +1027,11 @@ begin
 			end;
 
 			Cipher := TCipher.Create(Password, FileNamePassword);
-			if CIPHER_OK = Cipher.CryptFile(LocalName, TempFileName) then
+			TempFileName := GetTmpFileName();
+			if CIPHER_OK = Cipher.CryptFile(LocalName, TempFileName, CryptedFileName) then
 			begin
 				LocalName := TempFileName;
-				if DoCipherFileNames then RemotePath.path := ChangePathFileName(RemotePath.path, ExtractFileName(TempFileName));
+				if DoCipherFileNames then RemotePath.path := ChangePathFileName(RemotePath.path, ExtractFileName(CryptedFileName));
 
 				Cipher.Destroy;
 			end else begin
