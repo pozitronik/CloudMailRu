@@ -53,6 +53,7 @@ function GetTCIconsSize: integer;
 function GetTCCommentPreferredFormat: integer;
 function GetTmpDir: WideString;
 function GetTmpFileName(Prefix: WideString = ''): WideString;
+function ChangePathFileName(const FilePath, NewFileName: WideString): WideString;
 function CopyExt(FromFilename, ToFilename: WideString): WideString;
 function GetUNCFilePath(FilePath: WideString): WideString;
 function GetWord(command: WideString; WordIndex: integer = 0): WideString; //Возвращает указанное значащее слово из строки с учётом кавычек (парсинг команд)
@@ -374,6 +375,11 @@ var
 begin
 	GetTempFileNameW(PWideChar(GetTmpDir), PWideChar(Prefix), 0, tempFile);
 	Result := StrPas(tempFile);
+end;
+
+function ChangePathFileName(const FilePath, NewFileName: WideString): WideString;
+begin
+	Result := ExtractFilePath(FilePath) + NewFileName;
 end;
 
 function CopyExt(FromFilename, ToFilename: WideString): WideString;
