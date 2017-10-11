@@ -105,7 +105,7 @@ type
 
 function GetProxyPasswordNow(var ProxySettings: TProxySettings; LogHandleProc: TLogHandler; CryptHandleProc: TCryptHandler): boolean;
 function GetCryptPassword(crypt_id: WideString; var password: WideString; var ask_user: boolean; LogHandleProc: TLogHandler; CryptHandleProc: TCryptHandler): boolean;
-function SetCryptPassword(crypt_id: WideString; password: WideString; LogHandleProc: TLogHandler; CryptHandleProc: TCryptHandler): boolean;
+function SetCryptPassword(crypt_id: WideString; password: WideString; ask_user: boolean; LogHandleProc: TLogHandler; CryptHandleProc: TCryptHandler; ParentWindow: HWND): boolean;
 
 function GetPluginSettings(IniFilePath: WideString): TPluginSettings;
 procedure SetPluginSettings(IniFilePath: WideString; PluginSettings: TPluginSettings);
@@ -245,15 +245,13 @@ begin
 	end;
 end;
 
-function SetCryptPassword(crypt_id: WideString; password: WideString; LogHandleProc: TLogHandler; CryptHandleProc: TCryptHandler): boolean;
+function SetCryptPassword(crypt_id: WideString; password: WideString; ask_user: boolean; LogHandleProc: TLogHandler; CryptHandleProc: TCryptHandler; ParentWindow: HWND): boolean;
 var
 	buf: PWideChar;
 	use_tc_password_manager: boolean;
-	ask_user: boolean;
 	AskResult: Integer;
 begin
 	result := false;
-	ask_user := false; //do not ask user for password
 	use_tc_password_manager := false;
 	GetMem(buf, 1024);
 	ZeroMemory(buf, 1024);
@@ -261,7 +259,7 @@ begin
 		FS_FILE_OK, //Юзер знает мастер-пароль, и пароль уже задан
 		FS_FILE_READERROR: //юзер знает мастер-пароль, но криптопароля пока нет
 			begin
-				AskResult := TAskPasswordForm.AskPassword(0{todo}, crypt_id, password, use_tc_password_manager, true, 'Change file crypt password for ' + crypt_id);
+				AskResult := TAskPasswordForm.AskPassword(ParentWindow, crypt_id, password, use_tc_password_manager, true, 'Change file crypt password for ' + crypt_id);
 				if AskResult <> mrOK then
 				begin //не указали пароль в диалоге
 					//exit(); //отказались вводить пароль

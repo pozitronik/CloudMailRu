@@ -989,6 +989,7 @@ begin
 				Cipher.Destroy;
 			end else begin
 				//raise error
+				Cipher.Destroy;
 			end;
 		end else begin
 			exit(FS_FILE_USERABORT);
