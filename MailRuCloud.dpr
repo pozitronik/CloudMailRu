@@ -975,7 +975,7 @@ var
 begin
 	Cloud := ConnectionManager.get(RemotePath.account, getResult);
 	DoCipher := GetAccountSettingsFromIniFile(AccountsIniFilePath, RemotePath.account).crypt_files;
-	if (DoCipher) then //условие немного усложнится todo
+	if (DoCipher) then
 	begin
 		crypt_id := RemotePath.account + ' filecrypt';
 		ask_user := false;
