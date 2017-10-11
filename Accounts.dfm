@@ -331,6 +331,7 @@ object AccountsForm: TAccountsForm
           Height = 17
           Caption = 'Password'
           TabOrder = 9
+          OnClick = CryptFilenamesPwdButtonClick
         end
       end
       object AccountNameEdit: TEdit

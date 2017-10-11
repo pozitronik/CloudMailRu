@@ -103,6 +103,7 @@ type
 		procedure CloudMaxFileSizeCBClick(Sender: TObject);
 		procedure CryptFilesCBClick(Sender: TObject);
 		procedure CryptFilesPasswordButtonClick(Sender: TObject);
+		procedure CryptFilenamesPwdButtonClick(Sender: TObject);
 	private
 		{Private declarations}
 		procedure WMHotKey(var Message: TMessage); message WM_HOTKEY;
@@ -298,6 +299,15 @@ begin
 	CloudMaxFileSizeValue.Enabled := CloudMaxFileSizeCB.Checked;
 end;
 
+procedure TAccountsForm.CryptFilenamesPwdButtonClick(Sender: TObject);
+var
+	password: WideString;
+begin
+	//Заменить пароль можно только подтвердив текущий МАСТЕР-ПАРОЛЬ
+	if (AccountNameEdit.Text = '') then exit();
+	SetCryptPassword(AccountNameEdit.Text + ' filenamecrypt', password, true, nil, self.CryptHandler, self.Handle);
+end;
+
 procedure TAccountsForm.CryptFilesCBClick(Sender: TObject);
 begin
 	CryptFilenamesCB.Enabled := CryptFilesCB.Checked;
@@ -305,10 +315,7 @@ end;
 
 procedure TAccountsForm.CryptFilesPasswordButtonClick(Sender: TObject);
 var
-	buf: PWideChar;
 	password: WideString;
-	AskResult: Integer;
-	checkboxState: boolean;
 begin
 	//Заменить пароль можно только подтвердив текущий МАСТЕР-ПАРОЛЬ
 	if (AccountNameEdit.Text = '') then exit();
