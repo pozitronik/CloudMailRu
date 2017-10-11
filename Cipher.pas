@@ -57,8 +57,8 @@ end;
 function TCipher.CryptFileStream(var SourceFileStream, DestinationFileStream: TFileStream): integer;
 begin
 	result := self.fileCipher.EncryptStream(SourceFileStream, DestinationFileStream, SourceFileStream.Size);
-	self.fileCipher.Burn;
-	self.fileCipher.Destroy;
+//	self.fileCipher.Burn;
+//	self.fileCipher.Destroy;
 end;
 
 function TCipher.DecryptFile(SourceFileName, DestinationFileName: WideString): integer;
@@ -80,8 +80,8 @@ end;
 function TCipher.DecryptFileStream(var SourceFileStream, DestinationFileStream: TFileStream): integer;
 begin
 	result := self.fileCipher.DecryptStream(SourceFileStream, DestinationFileStream, SourceFileStream.Size);
-	self.fileCipher.Burn;
-	self.fileCipher.Destroy;
+//	self.fileCipher.Burn;
+//	self.fileCipher.Destroy;
 end;
 
 destructor TCipher.Destroy;
