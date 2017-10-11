@@ -312,7 +312,6 @@ var
 begin
 	//Заменить пароль можно только подтвердив текущий МАСТЕР-ПАРОЛЬ
 	if (AccountNameEdit.Text = '') then exit();
-	//todo: simplify & use TCryptHandler
 	SetCryptPassword(AccountNameEdit.Text + ' filecrypt', password, true, nil, self.CryptHandler, self.Handle);
 end;
 
