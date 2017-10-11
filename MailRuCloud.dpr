@@ -970,11 +970,7 @@ var
 	Cipher: TCipher;
 	TempFileName: WideString;
 	Password: WideString;
-
-	CryptResult: integer;
-	AskResult: integer;
 	crypt_id: WideString;
-	UseTCPwdMngr: boolean;
 begin
 	Cloud := ConnectionManager.get(RemotePath.account, getResult);
 	DoCipher := GetAccountSettingsFromIniFile(AccountsIniFilePath, RemotePath.account).crypt_files;
@@ -988,6 +984,7 @@ begin
 			if CIPHER_OK = Cipher.CryptFile(LocalName, TempFileName) then
 			begin
 				LocalName := TempFileName;
+				Cipher.Destroy;
 			end else begin
 				//raise error
 			end;

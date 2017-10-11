@@ -193,7 +193,6 @@ end;
 
 function GetCryptPassword(crypt_id: WideString; var password: WideString; LogHandleProc: TLogHandler; CryptHandleProc: TCryptHandler): boolean;
 var
-	CryptResult: Integer;
 	AskResult: Integer;
 	buf: PWideChar;
 	use_tc_password_manager: boolean;
@@ -203,8 +202,7 @@ begin
 	begin //пароль должен браться из TC
 		GetMem(buf, 1024);
 		ZeroMemory(buf, 1024);
-		CryptResult := CryptHandleProc(FS_CRYPT_LOAD_PASSWORD_NO_UI, PWideChar(crypt_id), buf, 1024); //Пытаемся взять пароль по-тихому
-		case CryptResult of
+		case CryptHandleProc(FS_CRYPT_LOAD_PASSWORD_NO_UI, PWideChar(crypt_id), buf, 1024) of //Пытаемся взять пароль по-тихому
 			FS_FILE_OK: //all ok, we got password
 				begin
 					password := buf;
@@ -219,8 +217,7 @@ begin
 			FS_FILE_NOTFOUND: //no master password entered yet
 				begin
 					ZeroMemory(buf, 1024);
-					CryptResult := CryptHandleProc(FS_CRYPT_LOAD_PASSWORD, PWideChar(crypt_id), buf, 1024);
-					case CryptResult of
+					case CryptHandleProc(FS_CRYPT_LOAD_PASSWORD, PWideChar(crypt_id), buf, 1024) of
 						FS_FILE_OK: //all ok, we got password
 							begin
 								password := buf;
