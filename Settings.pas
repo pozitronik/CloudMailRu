@@ -199,28 +199,50 @@ var
 	use_tc_password_manager: boolean;
 begin
 	result := false;
+	use_tc_password_manager := false;
 	begin //пароль должен браться из TC
 		GetMem(buf, 1024);
+		ZeroMemory(buf, 1024);
 		CryptResult := CryptHandleProc(FS_CRYPT_LOAD_PASSWORD_NO_UI, PWideChar(crypt_id), buf, 1024); //Пытаемся взять пароль по-тихому
-		if CryptResult = FS_FILE_NOTFOUND then
-		begin
-			//LogHandleProc(LogLevelDetail, msgtype_details, PWideChar('No master password entered yet'));
-			CryptResult := CryptHandleProc(FS_CRYPT_LOAD_PASSWORD, PWideChar(crypt_id), buf, 1024);
+		case CryptResult of
+			FS_FILE_OK: //all ok, we got password
+				begin
+					password := buf;
+					FreeMemory(buf);
+					exit(true);
+				end;
+			FS_FILE_READERROR: //Password not found in password store, ask user for it
+				begin
+					FreeMemory(buf);
+					result := (TAskPasswordForm.AskPassword(FindTCWindow, crypt_id, password, use_tc_password_manager, true, 'Crypt password:') = mrOK);
+				end;
+			FS_FILE_NOTFOUND: //no master password entered yet
+				begin
+					ZeroMemory(buf, 1024);
+					CryptResult := CryptHandleProc(FS_CRYPT_LOAD_PASSWORD, PWideChar(crypt_id), buf, 1024);
+					case CryptResult of
+						FS_FILE_OK: //all ok, we got password
+							begin
+								password := buf;
+								FreeMemory(buf);
+								exit(true);
+							end;
+						FS_FILE_READERROR: //Password not found in password store, ask user for it
+							begin
+								FreeMemory(buf);
+								result := (TAskPasswordForm.AskPassword(FindTCWindow, crypt_id, password, use_tc_password_manager, true, 'Crypt password:') = mrOK);
+							end
+						else
+							begin
+								//something else happened log&exit
+							end;
+					end;
+				end
+			else
+				begin
+					//something else happened  log&exit
+				end;
 		end;
-		if CryptResult = FS_FILE_OK then //Успешно получили пароль
-		begin
-			password := buf;
-			result := true;
-		end;
-		if CryptResult = FS_FILE_NOTSUPPORTED then //пользователь отменил ввод главного пароля
-		begin
-			//LogHandleProc(LogLevelWarning, msgtype_importanterror, PWideChar('CryptProc returns error: Decrypt failed'));
-		end;
-		if CryptResult = FS_FILE_READERROR then
-		begin
-			//LogHandleProc(LogLevelError, msgtype_importanterror, PWideChar('CryptProc returns error: Password not found in password store'));
-		end;
-		FreeMemory(buf);
 	end;
 end;
 

@@ -1,7 +1,7 @@
 ﻿library MailRuCloud;
 
 uses
-	SysUtils, System.Generics.Collections, DateUtils, windows, Classes, PLUGIN_TYPES, IdSSLOpenSSLHeaders, messages, inifiles, Vcl.controls, CloudMailRu in 'CloudMailRu.pas', MRC_Helper in 'MRC_Helper.pas', Accounts in 'Accounts.pas'{AccountsForm}, RemoteProperty in 'RemoteProperty.pas'{PropertyForm}, Descriptions in 'Descriptions.pas', ConnectionManager in 'ConnectionManager.pas', Settings in 'Settings.pas', ANSIFunctions in 'ANSIFunctions.pas', DeletedProperty in 'DeletedProperty.pas'{DeletedPropertyForm}, InviteProperty in 'InviteProperty.pas'{InvitePropertyForm}, CMLJSON in 'CMLJSON.pas', CMLTypes in 'CMLTypes.pas', Cipher in 'Cipher.pas', DCPbase64 in 'DCPCrypt\DCPbase64.pas', DCPblockciphers in 'DCPCrypt\DCPblockciphers.pas', DCPconst in 'DCPCrypt\DCPconst.pas',
+	SysUtils, System.Generics.Collections, DateUtils, windows, Classes, PLUGIN_TYPES, IdSSLOpenSSLHeaders, messages, inifiles, Vcl.controls, CloudMailRu in 'CloudMailRu.pas', MRC_Helper in 'MRC_Helper.pas', Accounts in 'Accounts.pas'{AccountsForm}, RemoteProperty in 'RemoteProperty.pas'{PropertyForm}, Descriptions in 'Descriptions.pas', ConnectionManager in 'ConnectionManager.pas', Settings in 'Settings.pas', ANSIFunctions in 'ANSIFunctions.pas', DeletedProperty in 'DeletedProperty.pas'{DeletedPropertyForm}, InviteProperty in 'InviteProperty.pas'{InvitePropertyForm}, AskPassword, CMLJSON in 'CMLJSON.pas', CMLTypes in 'CMLTypes.pas', Cipher in 'Cipher.pas', DCPbase64 in 'DCPCrypt\DCPbase64.pas', DCPblockciphers in 'DCPCrypt\DCPblockciphers.pas', DCPconst in 'DCPCrypt\DCPconst.pas',
 	DCPcrypt2 in 'DCPCrypt\DCPcrypt2.pas', DCPreg in 'DCPCrypt\DCPreg.pas', DCPtypes in 'DCPCrypt\DCPtypes.pas', DCPblowfish in 'DCPCrypt\Ciphers\DCPblowfish.pas', DCPcast128 in 'DCPCrypt\Ciphers\DCPcast128.pas', DCPcast256 in 'DCPCrypt\Ciphers\DCPcast256.pas', DCPdes in 'DCPCrypt\Ciphers\DCPdes.pas', DCPgost in 'DCPCrypt\Ciphers\DCPgost.pas', DCPice in 'DCPCrypt\Ciphers\DCPice.pas', DCPidea in 'DCPCrypt\Ciphers\DCPidea.pas', DCPmars in 'DCPCrypt\Ciphers\DCPmars.pas', DCPmisty1 in 'DCPCrypt\Ciphers\DCPmisty1.pas', DCPrc2 in 'DCPCrypt\Ciphers\DCPrc2.pas', DCPrc4 in 'DCPCrypt\Ciphers\DCPrc4.pas', DCPrc5 in 'DCPCrypt\Ciphers\DCPrc5.pas', DCPrc6 in 'DCPCrypt\Ciphers\DCPrc6.pas', DCPrijndael in 'DCPCrypt\Ciphers\DCPrijndael.pas', DCPserpent in 'DCPCrypt\Ciphers\DCPserpent.pas',
 	DCPtea in 'DCPCrypt\Ciphers\DCPtea.pas', DCPtwofish in 'DCPCrypt\Ciphers\DCPtwofish.pas', DCPhaval in 'DCPCrypt\Hashes\DCPhaval.pas', DCPmd4 in 'DCPCrypt\Hashes\DCPmd4.pas', DCPmd5 in 'DCPCrypt\Hashes\DCPmd5.pas', DCPripemd128 in 'DCPCrypt\Hashes\DCPripemd128.pas', DCPripemd160 in 'DCPCrypt\Hashes\DCPripemd160.pas', DCPsha1 in 'DCPCrypt\Hashes\DCPsha1.pas', DCPsha256 in 'DCPCrypt\Hashes\DCPsha256.pas', DCPsha512 in 'DCPCrypt\Hashes\DCPsha512.pas', DCPtiger in 'DCPCrypt\Hashes\DCPtiger.pas';
 
@@ -72,7 +72,10 @@ end;
 function CryptHandle(mode: integer; ConnectionName, Password: PWideChar; maxlen: integer): integer; stdcall;
 begin
 	Result := FS_FILE_NOTSUPPORTED;
-	if Assigned(MyCryptProc) then Result := MyCryptProc(PluginNum, CryptoNum, mode, ConnectionName, Password, maxlen);
+	if Assigned(MyCryptProc) then
+	begin
+		Result := MyCryptProc(PluginNum, CryptoNum, mode, ConnectionName, Password, maxlen);
+	end;
 end;
 
 function CloudMailRuDirListingItemToFindData(DirListing: TCloudMailRuDirListingItem; DirsAsSymlinks: boolean = false): tWIN32FINDDATAW;
@@ -966,35 +969,31 @@ var
 	DoCipher: boolean;
 	Cipher: TCipher;
 	TempFileName: WideString;
-	Password: PWideChar;
+	Password: WideString;
 
+	CryptResult: integer;
+	AskResult: integer;
+	crypt_id: WideString;
+	UseTCPwdMngr: boolean;
 begin
 	Cloud := ConnectionManager.get(RemotePath.account, getResult);
 	DoCipher := GetAccountSettingsFromIniFile(AccountsIniFilePath, RemotePath.account).crypt_files;
 	if (DoCipher) then //условие немного усложнится todo
 	begin
-		GetMem(Password, 1024);
-
-		case CryptHandle(FS_CRYPT_LOAD_PASSWORD, PWideChar(RemotePath.account + ' filecrypt'), Password, 1024) of
-			FS_FILE_OK:
-				begin
-					Cipher := TCipher.Create(Password);
-					TempFileName := GetTmpFileName();
-					if CIPHER_OK = Cipher.CryptFile(LocalName, TempFileName) then
-					begin
-						LocalName := TempFileName;
-					end else begin
-						//raise error
-					end;
-					FreeMemory(Password);
-				end
-			else
-				begin
-					FreeMemory(Password);
-					exit(FS_FILE_USERABORT);
-				end;
+		crypt_id := RemotePath.account + ' filecrypt';
+		if GetCryptPassword(crypt_id, Password, nil, CryptHandle) then //нужно сохранять пароль до конца операции
+		begin
+			Cipher := TCipher.Create(Password);
+			TempFileName := GetTmpFileName();
+			if CIPHER_OK = Cipher.CryptFile(LocalName, TempFileName) then
+			begin
+				LocalName := TempFileName;
+			end else begin
+				//raise error
+			end;
+		end else begin
+			exit(FS_FILE_USERABORT);
 		end;
-
 	end;
 
 	Result := Cloud.putFile(WideString(LocalName), RemotePath.path);
