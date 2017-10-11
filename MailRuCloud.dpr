@@ -1001,30 +1001,42 @@ function PutRemoteFile(RemotePath: TRealPath; LocalName, RemoteName: WideString;
 var
 	getResult: integer;
 	Cloud: TCloudMailRu;
-	DoCipher: boolean;
+	DoCipher, DoCipherFileNames: boolean;
 	Cipher: TCipher;
 	TempFileName: WideString;
-	Password: WideString;
-	crypt_id: WideString;
+	Password, FileNamePassword: WideString;
+	crypt_id, crypt_filename_id: WideString;
 	ask_user: boolean;
 begin
 	Cloud := ConnectionManager.get(RemotePath.account, getResult);
 	DoCipher := GetAccountSettingsFromIniFile(AccountsIniFilePath, RemotePath.account).crypt_files;
+	DoCipherFileNames := GetAccountSettingsFromIniFile(AccountsIniFilePath, RemotePath.account).crypt_filenames;
 	if (DoCipher) then
 	begin
 		crypt_id := RemotePath.account + ' filecrypt';
+		crypt_filename_id := RemotePath.account + ' filenamecrypt';
 		ask_user := true;
-		if GetCryptPassword(crypt_id, Password, ask_user, nil, CryptHandle) then //нужно сохранять пароль до конца операции
+		if GetCryptPassword(crypt_id, Password, ask_user, nil, CryptHandle) then //todo нужно сохранять пароль до конца операции
 		begin
-			Cipher := TCipher.Create(Password);
-			TempFileName := GetTmpFileName();
+			if DoCipherFileNames then
+			begin //ask for filename password
+				ask_user := true;
+				DoCipherFileNames := GetCryptPassword(crypt_filename_id, FileNamePassword, ask_user, nil, CryptHandle)//todo нужно сохранять пароль до конца операции
+			end else begin //do not encrypt file name
+				FileNamePassword := '';
+			end;
+
+			Cipher := TCipher.Create(Password, FileNamePassword);
 			if CIPHER_OK = Cipher.CryptFile(LocalName, TempFileName) then
 			begin
 				LocalName := TempFileName;
+				if DoCipherFileNames then RemotePath.path := ChangePathFileName(RemotePath.path, ExtractFileName(TempFileName));
+
 				Cipher.Destroy;
 			end else begin
 				//raise error
 				Cipher.Destroy;
+				exit(FS_FILE_WRITEERROR);
 			end;
 		end else begin
 			exit(FS_FILE_USERABORT);
