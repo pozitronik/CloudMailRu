@@ -615,7 +615,7 @@ begin
 		else strpcopy(RemoteName, '\' + RealPath.account + UrlToPath(CurrentItem.home));
 		Result := FS_EXEC_SYMLINK;
 	end else begin
-		if RealPath.path = '' then TAccountsForm.ShowAccounts(MainWin, AccountsIniFilePath, SettingsIniFilePath, MyCryptProc, PluginNum, CryptoNum, RealPath.account)//main shared folder properties - open connection settings
+		if RealPath.path = '' then TAccountsForm.ShowAccounts(MainWin, AccountsIniFilePath, SettingsIniFilePath, CryptHandle, RealPath.account)//main shared folder properties - open connection settings
 		else
 		begin
 			Cloud := ConnectionManager.get(RealPath.account, getResult);
@@ -635,7 +635,7 @@ begin
 	Cloud := ConnectionManager.get(RealPath.account, getResult);
 	if RealPath.path = '' then //main invites folder properties
 	begin
-		TAccountsForm.ShowAccounts(MainWin, AccountsIniFilePath, SettingsIniFilePath, MyCryptProc, PluginNum, CryptoNum, RealPath.account)
+		TAccountsForm.ShowAccounts(MainWin, AccountsIniFilePath, SettingsIniFilePath, CryptHandle, RealPath.account)
 	end else begin //one invite item
 		CurrentInvite := FindIncomingInviteItemByPath(CurrentIncomingInvitesListing, RealPath);
 		if CurrentInvite.name = '' then exit(FS_EXEC_ERROR);
@@ -660,7 +660,7 @@ var
 	getResult: integer;
 begin
 	Result := FS_EXEC_OK;
-	if RealPath.path = '' then TAccountsForm.ShowAccounts(MainWin, AccountsIniFilePath, SettingsIniFilePath, MyCryptProc, PluginNum, CryptoNum, RealPath.account)//show account properties
+	if RealPath.path = '' then TAccountsForm.ShowAccounts(MainWin, AccountsIniFilePath, SettingsIniFilePath, CryptHandle, RealPath.account)//show account properties
 	else
 	begin
 		Cloud := ConnectionManager.get(RealPath.account, getResult);
@@ -971,13 +971,15 @@ var
 	TempFileName: WideString;
 	Password: WideString;
 	crypt_id: WideString;
+	ask_user: boolean;
 begin
 	Cloud := ConnectionManager.get(RemotePath.account, getResult);
 	DoCipher := GetAccountSettingsFromIniFile(AccountsIniFilePath, RemotePath.account).crypt_files;
 	if (DoCipher) then //условие немного усложнится todo
 	begin
 		crypt_id := RemotePath.account + ' filecrypt';
-		if GetCryptPassword(crypt_id, Password, nil, CryptHandle) then //нужно сохранять пароль до конца операции
+		ask_user := false;
+		if GetCryptPassword(crypt_id, Password, ask_user, nil, CryptHandle) then //нужно сохранять пароль до конца операции
 		begin
 			Cipher := TCipher.Create(Password);
 			TempFileName := GetTmpFileName();

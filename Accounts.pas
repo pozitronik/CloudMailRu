@@ -95,7 +95,7 @@ type
 		procedure UpdateAccountsList();
 		procedure DeleteButtonClick(Sender: TObject);
 		procedure AccountsListKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
-		class procedure ShowAccounts(parentWindow: HWND; IniPath, SettingsIniFilePath: WideString; CryptProc: TCryptProcW; PluginNum, CryptoNum: Integer; Account: WideString);
+		class procedure ShowAccounts(parentWindow: HWND; IniPath, SettingsIniFilePath: WideString; CryptHandler: TCryptHandler; Account: WideString);
 		procedure FormActivate(Sender: TObject);
 		procedure ProxyUserEditChange(Sender: TObject);
 		procedure GlobalSettingApplyBTNClick(Sender: TObject);
@@ -113,9 +113,7 @@ type
 		{Public declarations}
 		IniPath: WideString;
 		SettingsIniFilePath: WideString;
-		CryptProc: TCryptProcW;
-		PluginNum: Integer;
-		CryptoNum: Integer;
+		CryptHandler: TCryptHandler;
 		SelectedAccount: WideString;
 
 	end;
@@ -187,7 +185,7 @@ begin
 
 	if CASettings.use_tc_password_manager then //просим TC сохранить пароль
 	begin
-		case self.CryptProc(self.PluginNum, self.CryptoNum, FS_CRYPT_SAVE_PASSWORD, PWideChar(CASettings.name), PWideChar(CASettings.password), SizeOf(CASettings.password)) of
+		case self.CryptHandler(FS_CRYPT_SAVE_PASSWORD, PWideChar(CASettings.name), PWideChar(CASettings.password), SizeOf(CASettings.password)) of
 			FS_FILE_OK:
 				begin //TC скушал пароль
 					CASettings.password := '';
@@ -259,7 +257,7 @@ begin
 
 	if ProxyTCPwdMngrCB.Checked then //просим TC сохранить пароль
 	begin
-		case self.CryptProc(self.PluginNum, self.CryptoNum, FS_CRYPT_SAVE_PASSWORD, PWideChar('proxy' + ProxyUserEdit.Text), PWideChar(ProxyPwd.Text), SizeOf(ProxyPwd.Text)) of
+		case self.CryptHandler(FS_CRYPT_SAVE_PASSWORD, PWideChar('proxy' + ProxyUserEdit.Text), PWideChar(ProxyPwd.Text), SizeOf(ProxyPwd.Text)) of
 			FS_FILE_OK:
 				begin //TC скушал пароль
 					ProxyPwd.Text := '';
@@ -315,41 +313,7 @@ begin
 	//Заменить пароль можно только подтвердив текущий МАСТЕР-ПАРОЛЬ
 	if (AccountNameEdit.Text = '') then exit();
 	//todo: simplify & use TCryptHandler
-	GetMem(buf, 1024);
-	case self.CryptProc(self.PluginNum, self.CryptoNum, FS_CRYPT_LOAD_PASSWORD, PWideChar(AccountNameEdit.Text + ' filecrypt'), buf, 1024) of
-		FS_FILE_OK, //Юзер знает мастер-пароль, и пароль уже задан
-		FS_FILE_READERROR: //юзер знает мастер-пароль, но криптопароля пока нет
-			begin
-				checkboxState := true;
-				AskResult := TAskPasswordForm.AskPassword(self.Handle, AccountNameEdit.Text + ' filecrypt', password, checkboxState, true, 'Change file crypt password for ' + AccountNameEdit.Text);
-				if AskResult <> mrOK then
-				begin //не указали пароль в диалоге
-					//exit(); //отказались вводить пароль
-				end else begin
-					case self.CryptProc(self.PluginNum, self.CryptoNum, FS_CRYPT_SAVE_PASSWORD, PWideChar(AccountNameEdit.Text + ' filecrypt'), PWideChar(password), SizeOf(password)) of
-						FS_FILE_OK:
-							begin //TC скушал пароль,
-							end;
-						FS_FILE_NOTSUPPORTED: //Сохранение не получилось
-							begin
-							end;
-						FS_FILE_WRITEERROR: //Сохранение опять не получилось
-							begin
-							end;
-						FS_FILE_NOTFOUND: //Не указан мастер-пароль
-							begin
-							end;
-						//Ошибки здесь не значат, что пароль мы не получили - он может быть введён в диалоге
-					end;
-				end;
-			end;
-		FS_FILE_NOTSUPPORTED, //нажали отмену на вводе мастер-пароля
-		FS_FILE_NOTFOUND: //юзер не знает мастер-пароль
-			begin //просто выйдем
-				//exit();
-			end;
-	end;
-	FreeMemory(buf);
+	SetCryptPassword(AccountNameEdit.Text + ' filecrypt', password, nil, self.CryptHandler);
 end;
 
 procedure TAccountsForm.DeleteButtonClick(Sender: TObject);
@@ -400,7 +364,7 @@ begin
 	AccountsPanel.Visible := not PublicAccountCB.Checked;
 end;
 
-class procedure TAccountsForm.ShowAccounts(parentWindow: HWND; IniPath, SettingsIniFilePath: WideString; CryptProc: TCryptProcW; PluginNum, CryptoNum: Integer; Account: WideString);
+class procedure TAccountsForm.ShowAccounts(parentWindow: HWND; IniPath, SettingsIniFilePath: WideString; CryptHandler: TCryptHandler; Account: WideString);
 var
 	AccountsForm: TAccountsForm;
 begin
@@ -409,9 +373,7 @@ begin
 		AccountsForm.parentWindow := parentWindow;
 		AccountsForm.IniPath := IniPath;
 		AccountsForm.SettingsIniFilePath := SettingsIniFilePath;
-		AccountsForm.CryptProc := CryptProc;
-		AccountsForm.PluginNum := PluginNum;
-		AccountsForm.CryptoNum := CryptoNum;
+		AccountsForm.CryptHandler := CryptHandler;
 		AccountsForm.SelectedAccount := '';
 		{global settings}
 		AccountsForm.UseDLLFromPluginDir.Checked := GetPluginSettings(SettingsIniFilePath).LoadSSLDLLOnlyFromPluginDir;

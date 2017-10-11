@@ -104,7 +104,8 @@ type
 	end;
 
 function GetProxyPasswordNow(var ProxySettings: TProxySettings; LogHandleProc: TLogHandler; CryptHandleProc: TCryptHandler): boolean;
-function GetCryptPassword(crypt_id: WideString; var password: WideString; LogHandleProc: TLogHandler; CryptHandleProc: TCryptHandler): boolean;
+function GetCryptPassword(crypt_id: WideString; var password: WideString; var ask_user: boolean; LogHandleProc: TLogHandler; CryptHandleProc: TCryptHandler): boolean;
+function SetCryptPassword(crypt_id: WideString; password: WideString; LogHandleProc: TLogHandler; CryptHandleProc: TCryptHandler): boolean;
 
 function GetPluginSettings(IniFilePath: WideString): TPluginSettings;
 procedure SetPluginSettings(IniFilePath: WideString; PluginSettings: TPluginSettings);
@@ -191,9 +192,8 @@ begin
 	else result := true; //пароль взят из инишника напрямую
 end;
 
-function GetCryptPassword(crypt_id: WideString; var password: WideString; LogHandleProc: TLogHandler; CryptHandleProc: TCryptHandler): boolean;
+function GetCryptPassword(crypt_id: WideString; var password: WideString; var ask_user: boolean; LogHandleProc: TLogHandler; CryptHandleProc: TCryptHandler): boolean;
 var
-	AskResult: Integer;
 	buf: PWideChar;
 	use_tc_password_manager: boolean;
 begin
@@ -205,6 +205,7 @@ begin
 		case CryptHandleProc(FS_CRYPT_LOAD_PASSWORD_NO_UI, PWideChar(crypt_id), buf, 1024) of //Пытаемся взять пароль по-тихому
 			FS_FILE_OK: //all ok, we got password
 				begin
+					ask_user := false;
 					password := buf;
 					FreeMemory(buf);
 					exit(true);
@@ -212,7 +213,7 @@ begin
 			FS_FILE_READERROR: //Password not found in password store, ask user for it
 				begin
 					FreeMemory(buf);
-					result := (TAskPasswordForm.AskPassword(FindTCWindow, crypt_id, password, use_tc_password_manager, true, 'Crypt password:') = mrOK);
+					if ask_user then exit((TAskPasswordForm.AskPassword(FindTCWindow, crypt_id, password, use_tc_password_manager, true, 'Crypt password:') = mrOK)); //спрашиваем пользователя только если флаг ask_user установлен, в этом же флаге вернётся действительно ли пользователь был опрошен
 				end;
 			FS_FILE_NOTFOUND: //no master password entered yet
 				begin
@@ -220,6 +221,7 @@ begin
 					case CryptHandleProc(FS_CRYPT_LOAD_PASSWORD, PWideChar(crypt_id), buf, 1024) of
 						FS_FILE_OK: //all ok, we got password
 							begin
+								ask_user := false;
 								password := buf;
 								FreeMemory(buf);
 								exit(true);
@@ -227,7 +229,7 @@ begin
 						FS_FILE_READERROR: //Password not found in password store, ask user for it
 							begin
 								FreeMemory(buf);
-								result := (TAskPasswordForm.AskPassword(FindTCWindow, crypt_id, password, use_tc_password_manager, true, 'Crypt password:') = mrOK);
+								if ask_user then exit((TAskPasswordForm.AskPassword(FindTCWindow, crypt_id, password, use_tc_password_manager, true, 'Crypt password:') = mrOK)); //спрашиваем пользователя только если флаг ask_user установлен, в этом же флаге вернётся действительно ли пользователь был опрошен
 							end
 						else
 							begin
@@ -241,6 +243,53 @@ begin
 				end;
 		end;
 	end;
+end;
+
+function SetCryptPassword(crypt_id: WideString; password: WideString; LogHandleProc: TLogHandler; CryptHandleProc: TCryptHandler): boolean;
+var
+	buf: PWideChar;
+	use_tc_password_manager: boolean;
+	ask_user: boolean;
+	AskResult: Integer;
+begin
+	result := false;
+	ask_user := false; //do not ask user for password
+	use_tc_password_manager := false;
+	GetMem(buf, 1024);
+	ZeroMemory(buf, 1024);
+	case CryptHandleProc(FS_CRYPT_LOAD_PASSWORD, PWideChar(crypt_id), buf, 1024) of
+		FS_FILE_OK, //Юзер знает мастер-пароль, и пароль уже задан
+		FS_FILE_READERROR: //юзер знает мастер-пароль, но криптопароля пока нет
+			begin
+				AskResult := TAskPasswordForm.AskPassword(0{todo}, crypt_id, password, use_tc_password_manager, true, 'Change file crypt password for ' + crypt_id);
+				if AskResult <> mrOK then
+				begin //не указали пароль в диалоге
+					//exit(); //отказались вводить пароль
+				end else begin
+					case CryptHandleProc(FS_CRYPT_SAVE_PASSWORD, PWideChar(crypt_id), PWideChar(password), SizeOf(password)) of
+						FS_FILE_OK:
+							begin //TC скушал пароль,
+							end;
+						FS_FILE_NOTSUPPORTED: //Сохранение не получилось
+							begin
+							end;
+						FS_FILE_WRITEERROR: //Сохранение опять не получилось
+							begin
+							end;
+						FS_FILE_NOTFOUND: //Не указан мастер-пароль
+							begin
+							end;
+						//Ошибки здесь не значат, что пароль мы не получили - он может быть введён в диалоге
+					end;
+				end;
+			end;
+		FS_FILE_NOTSUPPORTED, //нажали отмену на вводе мастер-пароля
+		FS_FILE_NOTFOUND: //юзер не знает мастер-пароль
+			begin //просто выйдем
+				//exit();
+			end;
+	end;
+	FreeMemory(buf);
 end;
 
 function GetPluginSettings(IniFilePath: WideString): TPluginSettings;
