@@ -301,14 +301,14 @@ object AccountsForm: TAccountsForm
         object CryptFilesCB: TCheckBox
           Left = 2
           Top = 184
-          Width = 167
+          Width = 159
           Height = 17
           Caption = 'Crypt/decrypt files on the fly'
           TabOrder = 6
           OnClick = CryptFilesCBClick
         end
         object CryptFilenamesCB: TCheckBox
-          Left = 51
+          Left = 43
           Top = 207
           Width = 118
           Height = 17
@@ -316,18 +316,18 @@ object AccountsForm: TAccountsForm
           TabOrder = 7
         end
         object CryptFilesPasswordButton: TButton
-          Left = 175
+          Left = 167
           Top = 184
-          Width = 82
+          Width = 90
           Height = 17
           Caption = 'Password'
           TabOrder = 8
           OnClick = CryptFilesPasswordButtonClick
         end
         object CryptFilenamesPwdButton: TButton
-          Left = 175
+          Left = 167
           Top = 207
-          Width = 82
+          Width = 90
           Height = 17
           Caption = 'Password'
           TabOrder = 9
