@@ -929,7 +929,8 @@ begin
 
 				Cipher := TCipher.Create(Password, FilenamePassword);
 				if DoCipherFileNames then DecryptedFileName := ExtractCryptedFileNameFromPath(RemotePath.path);
-				if CIPHER_OK = Cipher.DecryptFile(TempFileName, LocalName, DecryptedFileName) then
+				LocalName := ChangeDecryptedPathFileName(LocalName, Cipher.DecryptFileName(DecryptedFileName));
+				if CIPHER_OK = Cipher.DecryptFile(TempFileName, LocalName) then
 				begin
 					Cipher.Destroy;
 				end else begin
@@ -1039,11 +1040,15 @@ begin
 
 			Cipher := TCipher.Create(Password, FilenamePassword);
 			TempFileName := GetTmpFileName();
-			if CIPHER_OK = Cipher.CryptFile(LocalName, TempFileName, CryptedFileName) then
+			if CIPHER_OK = Cipher.CryptFile(LocalName, TempFileName) then
 			begin
 				LocalName := TempFileName;
-				if DoCipherFileNames then RemotePath.path := ChangePathFileName(RemotePath.path, ExtractFileName(CryptedFileName));
+				if DoCipherFileNames then
+				begin
+					CryptedFileName := Cipher.CryptFileName(RemotePath.path);
+					RemotePath.path := ChangePathFileName(RemotePath.path, {ExtractFileName(}CryptedFileName{)});
 
+				end;
 				Cipher.Destroy;
 			end else begin
 				//raise error
