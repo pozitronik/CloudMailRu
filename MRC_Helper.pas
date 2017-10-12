@@ -55,6 +55,7 @@ function GetTmpDir: WideString;
 function GetTmpFileName(Prefix: WideString = ''): WideString;
 function ExtractCryptedFileNameFromPath(const FilePath: WideString): WideString;
 function ChangePathFileName(const FilePath, NewFileName: WideString): WideString;
+function ChangeDecryptedPathFileName(const FilePath, NewFileName: WideString): WideString;
 function CopyExt(FromFilename, ToFilename: WideString): WideString;
 function GetUNCFilePath(FilePath: WideString): WideString;
 function GetWord(command: WideString; WordIndex: integer = 0): WideString; //Возвращает указанное значащее слово из строки с учётом кавычек (парсинг команд)
@@ -383,13 +384,16 @@ begin
 	//get last 128 bytes from filename, replase backslashes to slashes
 	Result := Copy(FilePath, Length(FilePath) - 128, 128);
 	Result := StringReplace(Result, '\', '/', [rfReplaceAll]);
-
-	//Result := 'vdEnS4CRkzNDd6+f5jGV7eOXMqLi49X8LsmfdAldacv/OnaTofy8GzJbtxFYQkY1VaDcbdWYe5s8Eni8UXAWcZverfJYhnAOXx/OCDkSW9cCZVg2kAs247jp9QZAsg=='; //temp
 end;
 
 function ChangePathFileName(const FilePath, NewFileName: WideString): WideString;
 begin
 	Result := ExtractFilePath(FilePath) + NewFileName;
+end;
+
+function ChangeDecryptedPathFileName(const FilePath, NewFileName: WideString): WideString;
+begin
+	Result := Copy(FilePath, 0, Length(FilePath) - 128) + NewFileName;
 end;
 
 function CopyExt(FromFilename, ToFilename: WideString): WideString;
