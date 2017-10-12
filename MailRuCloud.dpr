@@ -1066,7 +1066,7 @@ begin
 		MyProgressProc(PluginNum, PWideChar(LocalName), PWideChar(RemotePath.path), 100);
 		LogHandle(LogLevelFileOperation, MSGTYPE_TRANSFERCOMPLETE, PWideChar(LocalName + '->' + RemoteName));
 		if CheckFlag(FS_COPYFLAGS_MOVE, CopyFlags) then Result := DeleteLocalFile(LocalName);
-		if GetPluginSettings(SettingsIniFilePath).DescriptionCopyToCloud then UpdateRemoteFileDescription(RemotePath, LocalName, Cloud);
+		if (GetPluginSettings(SettingsIniFilePath).DescriptionCopyToCloud and RemoteDescriptionsSupportEnabled(GetAccountSettingsFromIniFile(AccountsIniFilePath, RemotePath.account))) then UpdateRemoteFileDescription(RemotePath, LocalName, Cloud);
 		if DoCipher then DeleteLocalFile(TempFileName);
 
 	end;
@@ -1152,7 +1152,7 @@ begin
 		Result := true;
 	end
 	else Result := Cloud.deleteFile(RealPath.path);
-	if (Result and GetPluginSettings(SettingsIniFilePath).DescriptionTrackCloudFS) then DeleteRemoteFileDescription(RealPath, Cloud);
+	if (Result and GetPluginSettings(SettingsIniFilePath).DescriptionTrackCloudFS and RemoteDescriptionsSupportEnabled(GetAccountSettingsFromIniFile(AccountsIniFilePath, RealPath.account))) then DeleteRemoteFileDescription(RealPath, Cloud);
 
 end;
 
@@ -1188,7 +1188,7 @@ begin
 	Cloud := ConnectionManager.get(RealPath.account, getResult);
 	Result := Cloud.removeDir(RealPath.path);
 
-	if (Result and GetPluginSettings(SettingsIniFilePath).DescriptionTrackCloudFS) then DeleteRemoteFileDescription(RealPath, Cloud);
+	if (Result and GetPluginSettings(SettingsIniFilePath).DescriptionTrackCloudFS and RemoteDescriptionsSupportEnabled(GetAccountSettingsFromIniFile(AccountsIniFilePath, RealPath.account))) then DeleteRemoteFileDescription(RealPath, Cloud);
 end;
 
 function cloneWeblink(NewCloud, OldCloud: TCloudMailRu; CloudPath: WideString; CurrentItem: TCloudMailRuDirListingItem; NeedUnpublish: boolean): integer;
@@ -1298,7 +1298,7 @@ begin
 		if Move then
 		begin
 			Result := OldCloud.mvFile(OldRealPath.path, NewRealPath.path);
-			if ((Result = FS_FILE_OK) and GetPluginSettings(SettingsIniFilePath).DescriptionTrackCloudFS) then RenameRemoteFileDescription(OldRealPath, NewRealPath, OldCloud);
+			if ((Result = FS_FILE_OK) and GetPluginSettings(SettingsIniFilePath).DescriptionTrackCloudFS and RemoteDescriptionsSupportEnabled(GetAccountSettingsFromIniFile(AccountsIniFilePath, NewRealPath.account))) then RenameRemoteFileDescription(OldRealPath, NewRealPath, OldCloud);
 		end else begin
 			Result := OldCloud.cpFile(OldRealPath.path, NewRealPath.path);
 		end;

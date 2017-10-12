@@ -116,6 +116,7 @@ procedure GetAccountsListFromIniFile(IniFilePath: WideString; var AccountsList: 
 procedure DeleteAccountFromIniFile(IniFilePath: WideString; AccountName: WideString);
 procedure AddVirtualAccountsToAccountsList(AccountsIniFilePath: WideString; var AccountsList: TStringList; VirtualAccountsEnabled: TArray<boolean>);
 function GetDescriptionFileName(SettingsIniFilePath: WideString): WideString;
+function RemoteDescriptionsSupportEnabled(AccountSetting: TAccountSettings): boolean; //в случае включённого шифрования файловых имён поддержка движка файловых комментариев отключается (issue #5)
 
 implementation
 
@@ -455,6 +456,11 @@ begin
 	GetDescriptionFileName := GetPluginSettings(SettingsIniFilePath).DescriptionFileName;
 	if TPath.HasValidFileNameChars(GetPluginSettings(SettingsIniFilePath).DescriptionFileName, false) then exit;
 	exit('descript.ion');
+end;
+
+function RemoteDescriptionsSupportEnabled(AccountSetting: TAccountSettings): boolean; //в случае включённого шифрования файловых имён поддержка движка файловых комментариев отключается (issue #5)
+begin
+	result := not(AccountSetting.crypt_files and AccountSetting.crypt_filenames)
 end;
 
 end.
