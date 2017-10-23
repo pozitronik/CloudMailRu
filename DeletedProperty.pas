@@ -1,4 +1,4 @@
-unit DeletedProperty;
+﻿unit DeletedProperty;
 
 interface
 
@@ -42,7 +42,8 @@ var
 		Item: TCloudMailRuDirListingItem;
 	begin
 		result := 0;
-		for Item in Items do result := result + Item.size;
+		for Item in Items do
+			result := result + Item.size;
 	end;
 
 begin

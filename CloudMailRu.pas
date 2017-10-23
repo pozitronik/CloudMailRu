@@ -139,12 +139,15 @@ var
 	Progress: Boolean;
 begin
 	Result := FS_FILE_WRITEERROR;
-	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
-	if self.public_account then exit(FS_FILE_NOTSUPPORTED);
+	if not(Assigned(self)) then
+		exit; //Проверка на вызов без инициализации
+	if self.public_account then
+		exit(FS_FILE_NOTSUPPORTED);
 	if self.HTTPGet(API_CLONE + '?folder=' + PathToUrl(Path) + '&weblink=' + link + '&conflict=' + ConflictMode + self.united_params, JSON, Progress) then
 	begin //Парсим ответ
 		Result := fromJSON_OperationResult(JSON, OperationStatus);
-		if Result <> CLOUD_OPERATION_OK then Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'File publish error: ' + self.ErrorCodeText(Result) + ' Status: ' + OperationStatus.ToString());
+		if Result <> CLOUD_OPERATION_OK then
+			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'File publish error: ' + self.ErrorCodeText(Result) + ' Status: ' + OperationStatus.ToString());
 
 	end else begin //посмотреть это
 		if not(Progress) then
@@ -160,10 +163,14 @@ end;
 function TCloudMailRu.CloudResultToFsResult(CloudResult: integer; OperationStatus: integer; ErrorPrefix: WideString): integer;
 begin
 	case CloudResult of
-		CLOUD_OPERATION_OK: exit(CLOUD_OPERATION_OK);
-		CLOUD_ERROR_EXISTS: exit(FS_FILE_EXISTS);
-		CLOUD_ERROR_REQUIRED, CLOUD_ERROR_INVALID, CLOUD_ERROR_READONLY, CLOUD_ERROR_NAME_LENGTH_EXCEEDED: exit(FS_FILE_WRITEERROR);
-		CLOUD_ERROR_UNKNOWN: exit(FS_FILE_NOTSUPPORTED);
+		CLOUD_OPERATION_OK:
+			exit(CLOUD_OPERATION_OK);
+		CLOUD_ERROR_EXISTS:
+			exit(FS_FILE_EXISTS);
+		CLOUD_ERROR_REQUIRED, CLOUD_ERROR_INVALID, CLOUD_ERROR_READONLY, CLOUD_ERROR_NAME_LENGTH_EXCEEDED:
+			exit(FS_FILE_WRITEERROR);
+		CLOUD_ERROR_UNKNOWN:
+			exit(FS_FILE_NOTSUPPORTED);
 		CLOUD_ERROR_OVERQUOTA:
 			begin
 				Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Insufficient Storage');
@@ -176,7 +183,8 @@ begin
 			end;
 		else
 			begin //что-то неизвестное
-				if (ErrorPrefix <> '') then Log(LogLevelError, MSGTYPE_IMPORTANTERROR, ErrorPrefix + self.ErrorCodeText(CloudResult) + ' Status: ' + OperationStatus.ToString());
+				if (ErrorPrefix <> '') then
+					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, ErrorPrefix + self.ErrorCodeText(CloudResult) + ' Status: ' + OperationStatus.ToString());
 				exit(FS_FILE_WRITEERROR);
 			end;
 	end;
@@ -188,8 +196,10 @@ var
 	OperationStatus, OperationResult: integer;
 begin
 	Result := FS_FILE_WRITEERROR;
-	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
-	if self.public_account then exit(FS_FILE_NOTSUPPORTED);
+	if not(Assigned(self)) then
+		exit; //Проверка на вызов без инициализации
+	if self.public_account then
+		exit(FS_FILE_NOTSUPPORTED);
 	if self.HTTPPost(API_FILE_COPY, 'home=' + PathToUrl(OldName) + '&folder=' + PathToUrl(ToPath) + self.united_params + '&conflict', JSON) then
 	begin //Парсим ответ
 		OperationResult := fromJSON_OperationResult(JSON, OperationStatus);
@@ -211,7 +221,8 @@ begin //Облако умеет скопировать файл, но не см�
 		exit(FS_FILE_NOTSUPPORTED);
 	end else begin
 		Result := self.copyFile(OldName, NewPath);
-		if Result <> CLOUD_OPERATION_OK then exit;
+		if Result <> CLOUD_OPERATION_OK then
+			exit;
 	end;
 	if not(SameName) then
 	begin //скопированный файл лежит в новом каталоге со старым именем
@@ -235,11 +246,14 @@ begin
 				self.Socks.Username := Proxy.user;
 				self.Socks.password := Proxy.password;
 			end
-			else self.Socks.Authentication := saNoAuthentication;
+			else
+				self.Socks.Authentication := saNoAuthentication;
 
 			case Proxy.ProxyType of
-				ProxySocks5: Socks.Version := svSocks5;
-				ProxySocks4: Socks.Version := svSocks4;
+				ProxySocks5:
+					Socks.Version := svSocks5;
+				ProxySocks4:
+					Socks.Version := svSocks4;
 			end;
 			self.Socks.Enabled := true;
 		end;
@@ -256,7 +270,8 @@ begin
 			self.public_link := self.PUBLIC_URL;
 			self.PUBLIC_URL := IncludeSlash(self.PUBLIC_URL);
 			Delete(self.public_link, 1, length(PUBLIC_ACCESS_URL));
-			if self.public_link[length(self.public_link)] = '/' then Delete(self.public_link, length(self.public_link), 1);
+			if self.public_link[length(self.public_link)] = '/' then
+				Delete(self.public_link, length(self.public_link), 1);
 		end;
 
 		self.split_file_size := split_file_size;
@@ -281,13 +296,16 @@ var
 	OperationStatus, OperationResult: integer;
 begin
 	Result := false;
-	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
-	if self.public_account then exit;
+	if not(Assigned(self)) then
+		exit; //Проверка на вызов без инициализации
+	if self.public_account then
+		exit;
 	if self.HTTPPost(API_FOLDER_ADD, 'home=/' + PathToUrl(Path) + self.united_params + '&conflict', PostAnswer) then
 	begin
 		OperationResult := fromJSON_OperationResult(PostAnswer, OperationStatus);
 		case OperationResult of
-			CLOUD_OPERATION_OK: Result := true;
+			CLOUD_OPERATION_OK:
+				Result := true;
 			else
 				begin
 					//Log(MSGTYPE_IMPORTANTERROR, 'Directory creation error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
@@ -303,14 +321,17 @@ var
 	OperationResult, OperationStatus: integer;
 begin
 	Result := false;
-	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
-	if self.public_account then exit;
+	if not(Assigned(self)) then
+		exit; //Проверка на вызов без инициализации
+	if self.public_account then
+		exit;
 	Result := self.HTTPPost(API_FILE_REMOVE, 'home=/' + PathToUrl(Path) + self.united_params + '&conflict', JSON);
 	if Result then
 	begin
 		OperationResult := fromJSON_OperationResult(JSON, OperationStatus);
 		case OperationResult of
-			CLOUD_OPERATION_OK: Result := true;
+			CLOUD_OPERATION_OK:
+				Result := true;
 			else
 				begin
 					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Delete file error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
@@ -322,8 +343,10 @@ end;
 
 destructor TCloudMailRu.Destroy;
 begin
-	if Assigned(self.Cookie) then self.Cookie.free;
-	if Assigned(self.Socks) then self.Socks.free;
+	if Assigned(self.Cookie) then
+		self.Cookie.free;
+	if Assigned(self.Socks) then
+		self.Socks.free;
 
 	inherited;
 end;
@@ -331,25 +354,44 @@ end;
 class function TCloudMailRu.ErrorCodeText(ErrorCode: integer): WideString;
 begin
 	case ErrorCode of
-		CLOUD_ERROR_EXISTS: exit('Объект с таким названием уже существует. Попробуйте другое название.');
-		CLOUD_ERROR_REQUIRED: exit('Название папки не может быть пустым.');
-		CLOUD_ERROR_INVALID: exit('Неправильное название папки. В названии папок нельзя использовать символы «" * / : < > ?  \\ |».');
-		CLOUD_ERROR_READONLY: exit('Невозможно создать. Доступ только для просмотра.');
-		CLOUD_ERROR_NAME_LENGTH_EXCEEDED: exit('Превышена длина имени папки.');
-		CLOUD_ERROR_OVERQUOTA: exit('Невозможно скопировать, в вашем Облаке недостаточно места.');
-		CLOUD_ERROR_NOT_EXISTS: exit('Копируемая ссылка не существует.');
-		CLOUD_ERROR_OWN: exit('Невозможно клонировать собственную ссылку.');
-		CLOUD_ERROR_NAME_TOO_LONG: exit('Превышена длина имени файла.');
-		CLOUD_ERROR_VIRUS_SCAN_FAIL: exit('Файл заражен вирусом');
-		CLOUD_ERROR_OWNER: exit('Нельзя использовать собственный email');
-		CLOUD_ERROR_FAHRENHEIT: exit('Невозможно создать ссылку. Публикация контента заблокирована по требованию правообладателя или уполномоченного государственного ведомства.');
-		CLOUD_ERROR_BAD_REQUEST: exit('Ошибка запроса к серверу.');
-		CLOUD_ERROR_TREES_CONFLICT: exit('Нельзя сделать папку общей, если она содержит другие общие папки или находится в общей папке');
-		CLOUD_ERROR_UNPROCESSABLE_ENTRY: exit('Нельзя открыть доступ к файлу');
-		CLOUD_ERROR_USER_LIMIT_EXCEEDED: exit('Невозможно добавить пользователя. Вы можете иметь не более 200 пользователей в одной общей папке ');
-		CLOUD_ERROR_EXPORT_LIMIT_EXCEEDED: exit('Невозможно добавить пользователя. Вы можете создать не более 50 общих папок');
-		CLOUD_ERROR_NOT_ACCEPTABLE: exit('Нельзя добавить этого пользователя');
-		else exit('Неизвестная ошибка (' + ErrorCode.ToString + ')');
+		CLOUD_ERROR_EXISTS:
+			exit('Объект с таким названием уже существует. Попробуйте другое название.');
+		CLOUD_ERROR_REQUIRED:
+			exit('Название папки не может быть пустым.');
+		CLOUD_ERROR_INVALID:
+			exit('Неправильное название папки. В названии папок нельзя использовать символы «" * / : < > ?  \\ |».');
+		CLOUD_ERROR_READONLY:
+			exit('Невозможно создать. Доступ только для просмотра.');
+		CLOUD_ERROR_NAME_LENGTH_EXCEEDED:
+			exit('Превышена длина имени папки.');
+		CLOUD_ERROR_OVERQUOTA:
+			exit('Невозможно скопировать, в вашем Облаке недостаточно места.');
+		CLOUD_ERROR_NOT_EXISTS:
+			exit('Копируемая ссылка не существует.');
+		CLOUD_ERROR_OWN:
+			exit('Невозможно клонировать собственную ссылку.');
+		CLOUD_ERROR_NAME_TOO_LONG:
+			exit('Превышена длина имени файла.');
+		CLOUD_ERROR_VIRUS_SCAN_FAIL:
+			exit('Файл заражен вирусом');
+		CLOUD_ERROR_OWNER:
+			exit('Нельзя использовать собственный email');
+		CLOUD_ERROR_FAHRENHEIT:
+			exit('Невозможно создать ссылку. Публикация контента заблокирована по требованию правообладателя или уполномоченного государственного ведомства.');
+		CLOUD_ERROR_BAD_REQUEST:
+			exit('Ошибка запроса к серверу.');
+		CLOUD_ERROR_TREES_CONFLICT:
+			exit('Нельзя сделать папку общей, если она содержит другие общие папки или находится в общей папке');
+		CLOUD_ERROR_UNPROCESSABLE_ENTRY:
+			exit('Нельзя открыть доступ к файлу');
+		CLOUD_ERROR_USER_LIMIT_EXCEEDED:
+			exit('Невозможно добавить пользователя. Вы можете иметь не более 200 пользователей в одной общей папке ');
+		CLOUD_ERROR_EXPORT_LIMIT_EXCEEDED:
+			exit('Невозможно добавить пользователя. Вы можете создать не более 50 общих папок');
+		CLOUD_ERROR_NOT_ACCEPTABLE:
+			exit('Нельзя добавить этого пользователя');
+		else
+			exit('Неизвестная ошибка (' + ErrorCode.ToString + ')');
 	end;
 end;
 
@@ -460,8 +502,10 @@ end;
 
 function TCloudMailRu.putDesriptionFile(remotePath, localCopy: WideString): Boolean;
 begin
-	if FileExists(localCopy) then Result := self.putFile(localCopy, remotePath) = FS_FILE_OK
-	else Result := self.deleteFile(remotePath);
+	if FileExists(localCopy) then
+		Result := self.putFile(localCopy, remotePath) = FS_FILE_OK
+	else
+		Result := self.deleteFile(remotePath);
 end;
 
 function TCloudMailRu.getSharedLinksListing(var DirListing: TCloudMailRuDirListing; ShowProgress: Boolean = false): Boolean;
@@ -470,15 +514,18 @@ var
 	OperationStatus, OperationResult: integer;
 begin
 	Result := false;
-	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
-	if self.public_account then exit;
+	if not(Assigned(self)) then
+		exit; //Проверка на вызов без инициализации
+	if self.public_account then
+		exit;
 	Result := self.HTTPGet(API_FOLDER_SHARED_LINKS + '?' + self.united_params, JSON, ShowProgress);
 
 	if Result then
 	begin
 		OperationResult := fromJSON_OperationResult(JSON, OperationStatus);
 		case OperationResult of
-			CLOUD_OPERATION_OK: Result := fromJSON_DirListing(JSON, DirListing);
+			CLOUD_OPERATION_OK:
+				Result := fromJSON_DirListing(JSON, DirListing);
 			else
 				begin
 					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Shared links listing error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
@@ -494,15 +541,18 @@ var
 	OperationStatus, OperationResult: integer;
 begin
 	Result := false;
-	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
-	if self.public_account then exit;
+	if not(Assigned(self)) then
+		exit; //Проверка на вызов без инициализации
+	if self.public_account then
+		exit;
 	Result := self.HTTPGet(API_FOLDER_SHARED_INCOMING + '?' + self.united_params, JSON, ShowProgress);
 
 	if Result then
 	begin
 		OperationResult := fromJSON_OperationResult(JSON, OperationStatus);
 		case OperationResult of
-			CLOUD_OPERATION_OK: Result := fromJSON_IncomingInviteListing(JSON, IncomingListing);
+			CLOUD_OPERATION_OK:
+				Result := fromJSON_IncomingInviteListing(JSON, IncomingListing);
 			else
 				begin
 					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Incoming requests listing error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
@@ -538,15 +588,18 @@ var
 	OperationStatus, OperationResult: integer;
 begin
 	Result := false;
-	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
-	if self.public_account then exit;
+	if not(Assigned(self)) then
+		exit; //Проверка на вызов без инициализации
+	if self.public_account then
+		exit;
 	Result := self.HTTPGet(API_TRASHBIN + '?' + self.united_params, JSON, ShowProgress);
 
 	if Result then
 	begin
 		OperationResult := fromJSON_OperationResult(JSON, OperationStatus);
 		case OperationResult of
-			CLOUD_OPERATION_OK: Result := fromJSON_DirListing(JSON, DirListing);
+			CLOUD_OPERATION_OK:
+				Result := fromJSON_DirListing(JSON, DirListing);
 			else
 				begin
 					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Incoming requests listing error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
@@ -562,15 +615,19 @@ var
 	OperationStatus, OperationResult: integer;
 begin
 	Result := false;
-	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
+	if not(Assigned(self)) then
+		exit; //Проверка на вызов без инициализации
 
-	if self.public_account then Result := self.HTTPGet(API_FOLDER + '&weblink=' + IncludeSlash(self.public_link) + PathToUrl(Path, false) + self.united_params, JSON, ShowProgress)
-	else Result := self.HTTPGet(API_FOLDER + '&home=' + PathToUrl(Path) + self.united_params, JSON, ShowProgress);
+	if self.public_account then
+		Result := self.HTTPGet(API_FOLDER + '&weblink=' + IncludeSlash(self.public_link) + PathToUrl(Path, false) + self.united_params, JSON, ShowProgress)
+	else
+		Result := self.HTTPGet(API_FOLDER + '&home=' + PathToUrl(Path) + self.united_params, JSON, ShowProgress);
 	if Result then
 	begin
 		OperationResult := fromJSON_OperationResult(JSON, OperationStatus);
 		case OperationResult of
-			CLOUD_OPERATION_OK: Result := fromJSON_DirListing(JSON, DirListing);
+			CLOUD_OPERATION_OK:
+				Result := fromJSON_DirListing(JSON, DirListing);
 			CLOUD_ERROR_NOT_EXISTS:
 				begin
 					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Path not exists: ' + Path);
@@ -588,9 +645,12 @@ end;
 function TCloudMailRu.getFile(remotePath, localPath: WideString; LogErrors: Boolean): integer;
 begin
 	Result := FS_FILE_NOTSUPPORTED;
-	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
-	if self.public_account then Result := self.getFileShared(remotePath, localPath, LogErrors)
-	else Result := self.getFileRegular(remotePath, localPath, LogErrors);
+	if not(Assigned(self)) then
+		exit; //Проверка на вызов без инициализации
+	if self.public_account then
+		Result := self.getFileShared(remotePath, localPath, LogErrors)
+	else
+		Result := self.getFileRegular(remotePath, localPath, LogErrors);
 end;
 
 function TCloudMailRu.getFileRegular(remotePath, localPath: WideString; LogErrors: Boolean): integer;
@@ -628,7 +688,8 @@ begin
 		self.ExternalSourceName := nil;
 		self.ExternalTargetName := nil;
 	end;
-	if not Result in [FS_FILE_OK] then System.SysUtils.deleteFile(GetUNCFilePath(localPath));
+	if not Result in [FS_FILE_OK] then
+		System.SysUtils.deleteFile(GetUNCFilePath(localPath));
 end;
 
 function TCloudMailRu.getSharedFileUrl(remotePath: WideString; DoUrlEncode: Boolean = true): WideString;
@@ -641,7 +702,8 @@ var
 	FileStream: TFileStream;
 begin
 	Result := FS_FILE_NOTFOUND;
-	if (self.public_shard = '') or (self.public_download_token = '') then exit;
+	if (self.public_shard = '') or (self.public_download_token = '') then
+		exit;
 	try
 		FileStream := TFileStream.Create(GetUNCFilePath(localPath), fmCreate);
 	except
@@ -657,7 +719,8 @@ begin
 		FlushFileBuffers(FileStream.Handle);
 		FileStream.free;
 	end;
-	if Result <> FS_FILE_OK then System.SysUtils.deleteFile(GetUNCFilePath(localPath));
+	if Result <> FS_FILE_OK then
+		System.SysUtils.deleteFile(GetUNCFilePath(localPath));
 end;
 
 function TCloudMailRu.getOAuthToken(var OAuthToken: TCloudMailRuOAuthInfo): Boolean;
@@ -667,7 +730,8 @@ begin
 	Result := false;
 	if self.HTTPPost(OAUTH_TOKEN_URL, 'client_id=cloud-win&grant_type=password&username=' + self.user + '%40' + self.domain + '&password=' + UrlEncode(self.password), Answer) then
 	begin
-		if not fromJSON_OAuthTokenInfo(Answer, OAuthToken) then exit(false);
+		if not fromJSON_OAuthTokenInfo(Answer, OAuthToken) then
+			exit(false);
 		Result := OAuthToken.error_code = NOERROR;
 	end;
 end;
@@ -678,12 +742,14 @@ var
 	OperationResult, OperationStatus: integer;
 begin
 	Result := false;
-	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
+	if not(Assigned(self)) then
+		exit; //Проверка на вызов без инициализации
 	if self.HTTPPost(API_DISPATCHER, self.united_params, JSON) then //checkme
 	begin
 		OperationResult := fromJSON_OperationResult(JSON, OperationStatus);
 		case OperationResult of
-			CLOUD_OPERATION_OK: Result := fromJSON_Shard(JSON, Shard) and (Shard <> '');
+			CLOUD_OPERATION_OK:
+				Result := fromJSON_Shard(JSON, Shard) and (Shard <> '');
 			else
 				begin
 					Result := false;
@@ -699,7 +765,8 @@ var
 	Progress: Boolean;
 begin
 	Result := false;
-	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
+	if not(Assigned(self)) then
+		exit; //Проверка на вызов без инициализации
 	Progress := false;
 	Result := self.HTTPGet(TOKEN_URL, JSON, Progress);
 	if Result then
@@ -715,7 +782,8 @@ var
 	Progress: Boolean;
 begin
 	Result := false;
-	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
+	if not(Assigned(self)) then
+		exit; //Проверка на вызов без инициализации
 	Progress := false;
 	Result := self.HTTPGet(self.PUBLIC_URL, PageContent, Progress);
 	if Result then
@@ -743,14 +811,16 @@ var
 	OperationResult, OperationStatus: integer;
 begin
 	Result := false;
-	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
+	if not(Assigned(self)) then
+		exit; //Проверка на вызов без инициализации
 	Progress := false;
 	Result := self.HTTPGet(API_USER_SPACE + '?home=/' + self.united_params, JSON, Progress);
 	if Result then
 	begin
 		OperationResult := fromJSON_OperationResult(JSON, OperationStatus);
 		case OperationResult of
-			CLOUD_OPERATION_OK: Result := fromJSON_UserSpace(JSON, SpaceInfo);
+			CLOUD_OPERATION_OK:
+				Result := fromJSON_UserSpace(JSON, SpaceInfo);
 			else
 				begin
 					Result := false;
@@ -774,13 +844,15 @@ var
 begin
 	try
 		self.HTTPInit(HTTP, SSL, Socks, self.Cookie);
-		if ProgressEnabled then HTTP.OnWork := self.HTTPProgress; //Вызов прогресса ведёт к возможности отменить получение списка каталогов и других операций, поэтому он нужен не всегда
+		if ProgressEnabled then
+			HTTP.OnWork := self.HTTPProgress; //Вызов прогресса ведёт к возможности отменить получение списка каталогов и других операций, поэтому он нужен не всегда
 		Answer := HTTP.Get(URL);
 		self.HTTPDestroy(HTTP, SSL);
 	Except
 		on E: EAbort do
 		begin
-			if Assigned(HTTP) then self.HTTPDestroy(HTTP, SSL);
+			if Assigned(HTTP) then
+				self.HTTPDestroy(HTTP, SSL);
 			Answer := E.Message;
 			ProgressEnabled := false; //сообщаем об отмене
 			exit(false);
@@ -799,18 +871,21 @@ begin
 				Log(LogLevelError, MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при отправке данных на адрес ' + URL + ', ответ сервера: ' + E.ErrorMessage);
 				Result := false;
 			end;
-			if Assigned(HTTP) then self.HTTPDestroy(HTTP, SSL);
+			if Assigned(HTTP) then
+				self.HTTPDestroy(HTTP, SSL);
 			exit;
 		end;
 		on E: EIdSocketerror do
 		begin
-			if Assigned(HTTP) then self.HTTPDestroy(HTTP, SSL);
+			if Assigned(HTTP) then
+				self.HTTPDestroy(HTTP, SSL);
 			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка сети: ' + E.Message + ' при запросе данных с адреса ' + URL);
 			exit(false);
 		end;
 		on E: Exception do
 		begin
-			if Assigned(HTTP) then self.HTTPDestroy(HTTP, SSL);
+			if Assigned(HTTP) then
+				self.HTTPDestroy(HTTP, SSL);
 			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при запросе данных с адреса ' + URL);
 			exit(false);
 		end;
@@ -840,19 +915,24 @@ begin
 	except
 		on E: EAbort do
 		begin
-			if Assigned(HTTP) then self.HTTPDestroy(HTTP, SSL);
+			if Assigned(HTTP) then
+				self.HTTPDestroy(HTTP, SSL);
 			Result := FS_FILE_USERABORT;
 		end;
 		on E: EIdSocketerror do
 		begin
-			if Assigned(HTTP) then self.HTTPDestroy(HTTP, SSL);
-			if LogErrors then Log(LogLevelError, MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка сети: ' + E.Message + ' при копировании файла с адреса ' + URL);
+			if Assigned(HTTP) then
+				self.HTTPDestroy(HTTP, SSL);
+			if LogErrors then
+				Log(LogLevelError, MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка сети: ' + E.Message + ' при копировании файла с адреса ' + URL);
 			Result := FS_FILE_READERROR;
 		end;
 		on E: Exception do
 		begin
-			if Assigned(HTTP) then self.HTTPDestroy(HTTP, SSL);
-			if LogErrors then Log(LogLevelError, MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при копировании файла с адреса ' + URL);
+			if Assigned(HTTP) then
+				self.HTTPDestroy(HTTP, SSL);
+			if LogErrors then
+				Log(LogLevelError, MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при копировании файла с адреса ' + URL);
 			Result := FS_FILE_READERROR;
 		end;
 	end;
@@ -862,7 +942,8 @@ procedure TCloudMailRu.HTTPInit(var HTTP: TIdHTTP; var SSL: TIdSSLIOHandlerSocke
 begin
 	SSL := TIdSSLIOHandlerSocketOpenSSL.Create();
 	HTTP := TIdHTTP.Create();
-	if (self.Proxy.ProxyType in SocksProxyTypes) and (self.Socks.Enabled) then SSL.TransparentProxy := self.Socks;
+	if (self.Proxy.ProxyType in SocksProxyTypes) and (self.Socks.Enabled) then
+		SSL.TransparentProxy := self.Socks;
 	if self.Proxy.ProxyType = ProxyHTTP then
 	begin
 		HTTP.ProxyParams.ProxyServer := self.Proxy.Server;
@@ -901,7 +982,8 @@ begin
 
 	try
 		self.HTTPInit(HTTP, SSL, Socks, self.Cookie);
-		if ContentType <> '' then HTTP.Request.ContentType := ContentType;
+		if ContentType <> '' then
+			HTTP.Request.ContentType := ContentType;
 		try
 			HTTP.Post(URL, PostData, MemStream);
 		except
@@ -922,7 +1004,8 @@ begin
 	except
 		on E: EAbort do
 		begin
-			if Assigned(HTTP) then self.HTTPDestroy(HTTP, SSL);
+			if Assigned(HTTP) then
+				self.HTTPDestroy(HTTP, SSL);
 			MemStream.free;
 			PostData.free;
 			exit(false);
@@ -942,11 +1025,13 @@ begin
 				Log(LogLevelError, MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при отправке данных на адрес ' + URL + ', ответ сервера: ' + E.ErrorMessage);
 				Result := false;
 			end;
-			if Assigned(HTTP) then self.HTTPDestroy(HTTP, SSL);
+			if Assigned(HTTP) then
+				self.HTTPDestroy(HTTP, SSL);
 		end;
 		on E: EIdSocketerror do
 		begin
-			if Assigned(HTTP) then self.HTTPDestroy(HTTP, SSL);
+			if Assigned(HTTP) then
+				self.HTTPDestroy(HTTP, SSL);
 			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка сети: ' + E.Message + ' при отправке данных на адрес ' + URL);
 			Result := false;
 		end;
@@ -973,7 +1058,8 @@ begin
 	MemStream := TStringStream.Create;
 
 	Fields := TIdMultipartFormDataStream.Create;
-	for ParamItem in Params do Fields.AddFormField(ParamItem.Key, ParamItem.Value);
+	for ParamItem in Params do
+		Fields.AddFormField(ParamItem.Key, ParamItem.Value);
 
 	try
 		self.HTTPInit(HTTP, SSL, Socks, self.Cookie);
@@ -996,7 +1082,8 @@ begin
 	except
 		on E: EAbort do
 		begin
-			if Assigned(HTTP) then self.HTTPDestroy(HTTP, SSL);
+			if Assigned(HTTP) then
+				self.HTTPDestroy(HTTP, SSL);
 			MemStream.free;
 			Fields.free;
 			exit(false);
@@ -1016,11 +1103,13 @@ begin
 				Log(LogLevelError, MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при отправке данных на адрес ' + URL + ', ответ сервера: ' + E.ErrorMessage);
 				Result := false;
 			end;
-			if Assigned(HTTP) then self.HTTPDestroy(HTTP, SSL);
+			if Assigned(HTTP) then
+				self.HTTPDestroy(HTTP, SSL);
 		end;
 		on E: EIdSocketerror do
 		begin
-			if Assigned(HTTP) then self.HTTPDestroy(HTTP, SSL);
+			if Assigned(HTTP) then
+				self.HTTPDestroy(HTTP, SSL);
 			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка сети: ' + E.Message + ' при отправке данных на адрес ' + URL);
 			Result := false;
 		end;
@@ -1055,24 +1144,28 @@ begin
 	except
 		on E: EAbort do
 		begin
-			if Assigned(HTTP) then self.HTTPDestroy(HTTP, SSL);
+			if Assigned(HTTP) then
+				self.HTTPDestroy(HTTP, SSL);
 			Result := CLOUD_OPERATION_CANCELLED;
 		end;
 		on E: EIdHTTPProtocolException do
 		begin
-			if Assigned(HTTP) then self.HTTPDestroy(HTTP, SSL);
+			if Assigned(HTTP) then
+				self.HTTPDestroy(HTTP, SSL);
 			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при отправке данных на адрес ' + URL + ', ответ сервера: ' + E.ErrorMessage);
 			Result := CLOUD_OPERATION_FAILED;
 		end;
 		on E: EIdSocketerror do
 		begin
-			if Assigned(HTTP) then self.HTTPDestroy(HTTP, SSL);
+			if Assigned(HTTP) then
+				self.HTTPDestroy(HTTP, SSL);
 			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка сети: ' + E.Message + ' при отправке данных на адрес ' + URL);
 			Result := CLOUD_OPERATION_FAILED;
 		end;
 		on E: Exception do
 		begin
-			if Assigned(HTTP) then self.HTTPDestroy(HTTP, SSL);
+			if Assigned(HTTP) then
+				self.HTTPDestroy(HTTP, SSL);
 			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при отправке данных на адрес ' + URL);
 			Result := CLOUD_OPERATION_FAILED;
 		end;
@@ -1088,26 +1181,33 @@ var
 	Percent: integer;
 begin
 	HTTP := TIdHTTP(ASender);
-	if AWorkMode = wmRead then ContentLength := HTTP.Response.ContentLength
-	else ContentLength := HTTP.Request.ContentLength; //Считаем размер обработанных данных зависимости от того, скачивание это или загрузка
+	if AWorkMode = wmRead then
+		ContentLength := HTTP.Response.ContentLength
+	else
+		ContentLength := HTTP.Request.ContentLength; //Считаем размер обработанных данных зависимости от того, скачивание это или загрузка
 	if (Pos('chunked', LowerCase(HTTP.Response.TransferEncoding)) = 0) and (ContentLength > 0) then
 	begin
 		Percent := 100 * AWorkCount div ContentLength;
-		if Assigned(ExternalProgressProc) and (ExternalProgressProc(self.ExternalSourceName, self.ExternalTargetName, Percent) = 1) then abort;
+		if Assigned(ExternalProgressProc) and (ExternalProgressProc(self.ExternalSourceName, self.ExternalTargetName, Percent) = 1) then
+			abort;
 	end;
 end;
 
 procedure TCloudMailRu.Log(LogLevel, MsgType: integer; LogString: WideString);
 begin
-	if Assigned(ExternalLogProc) then ExternalLogProc(LogLevel, MsgType, PWideChar(LogString));
+	if Assigned(ExternalLogProc) then
+		ExternalLogProc(LogLevel, MsgType, PWideChar(LogString));
 end;
 
 function TCloudMailRu.login(method: integer): Boolean;
 begin
 	Result := false;
-	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
-	if self.public_account then Result := self.loginShared()
-	else Result := self.loginRegular(method);
+	if not(Assigned(self)) then
+		exit; //Проверка на вызов без инициализации
+	if self.public_account then
+		Result := self.loginShared()
+	else
+		Result := self.loginRegular(method);
 end;
 
 function TCloudMailRu.loginRegular(method: integer): Boolean;
@@ -1136,15 +1236,19 @@ begin
 					Log(LogLevelDebug, MSGTYPE_DETAILS, 'Parsing authorization data...');
 					if self.extractTwostepJson(PostAnswer, TwoStepJson) and fromJSON_TwostepData(TwoStepJson, TwostepData) then
 					begin
-						if TwostepData.secstep_timeout = AUTH_APP_USED then AuthMessage := 'Enter code from authentication app.'//mobile app used
-						else if TwostepData.secstep_resend_fail = '1' then AuthMessage := 'SMS timeout to ' + TwostepData.secstep_phone + ' (' + TwostepData.secstep_timeout.ToString + ' sec).'
-						else AuthMessage := 'Enter code sended to ' + TwostepData.secstep_phone + '.';
+						if TwostepData.secstep_timeout = AUTH_APP_USED then
+							AuthMessage := 'Enter code from authentication app.'//mobile app used
+						else if TwostepData.secstep_resend_fail = '1' then
+							AuthMessage := 'SMS timeout to ' + TwostepData.secstep_phone + ' (' + TwostepData.secstep_timeout.ToString + ' sec).'
+						else
+							AuthMessage := 'Enter code sended to ' + TwostepData.secstep_phone + '.';
 
 						Log(LogLevelDebug, MSGTYPE_DETAILS, 'Awaiting for security key... ');
 						try
 							SecurityKey := AllocMem(32);
 						except
-							on E: EOutOfMemory do exit(false);
+							on E: EOutOfMemory do
+								exit(false);
 						end;
 
 						if (true = ExternalRequestProc(RT_Other, 'Enter auth key', PWideChar(AuthMessage), SecurityKey, 32)) then
@@ -1201,12 +1305,14 @@ begin
 						exit(false);
 					end;
 				end
-				else Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'error: getting auth token for ' + self.user + '@' + self.domain);
+				else
+					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'error: getting auth token for ' + self.user + '@' + self.domain);
 			end;
 		CLOUD_AUTH_METHOD_OAUTH:
 			begin
 				Result := self.getOAuthToken(self.OAuthToken);
-				if not Result then Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'OAuth error: ' + self.OAuthToken.error + '(' + self.OAuthToken.error_description + ')');
+				if not Result then
+					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'OAuth error: ' + self.OAuthToken.error + '(' + self.OAuthToken.error_description + ')');
 			end;
 	end;
 end;
@@ -1224,12 +1330,16 @@ var
 	QuotaInfo: WideString;
 
 begin
-	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
-	if self.public_account then exit;
+	if not(Assigned(self)) then
+		exit; //Проверка на вызов без инициализации
+	if self.public_account then
+		exit;
 	if self.getUserSpace(US) then
 	begin
-		if (US.overquota) then QuotaInfo := ' Warning: space quota exhausted!'
-		else QuotaInfo := '';
+		if (US.overquota) then
+			QuotaInfo := ' Warning: space quota exhausted!'
+		else
+			QuotaInfo := '';
 		Log(LogLevelFileOperation, MSGTYPE_DETAILS, 'Total space: ' + FormatSize(US.total) + ', used: ' + FormatSize(US.used) + ', free: ' + FormatSize(US.total - US.used) + '.' + QuotaInfo);
 	end else begin
 		Log(LogLevelDebug, MSGTYPE_IMPORTANTERROR, 'error: getting user space information for ' + self.user + '@' + self.domain);
@@ -1242,8 +1352,10 @@ var
 	OperationStatus, OperationResult: integer;
 begin
 	Result := FS_FILE_WRITEERROR;
-	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
-	if self.public_account then exit(FS_FILE_NOTSUPPORTED);
+	if not(Assigned(self)) then
+		exit; //Проверка на вызов без инициализации
+	if self.public_account then
+		exit(FS_FILE_NOTSUPPORTED);
 	if self.HTTPPost(API_FILE_MOVE, 'home=' + PathToUrl(OldName) + '&folder=' + PathToUrl(ToPath) + self.united_params + '&conflict', JSON) then
 	begin //Парсим ответ
 		OperationResult := fromJSON_OperationResult(JSON, OperationStatus);
@@ -1264,7 +1376,8 @@ begin //К сожалению, переименование и перемеще�
 		Result := self.renameFile(OldName, ExtractFileName(NewName));
 	end else begin
 		Result := self.moveFile(OldName, ExtractFilePath(NewName)); //Если файл со старым именем лежит в новом каталоге, вернётся ошибка. Так реализовано в облаке, а мудрить со временными каталогами я не хочу
-		if Result <> CLOUD_OPERATION_OK then exit;
+		if Result <> CLOUD_OPERATION_OK then
+			exit;
 		if not(SameName) then
 		begin //скопированный файл лежит в новом каталоге со старым именем
 			Result := self.renameFile(NewPath + ExtractFileName(OldName), ExtractFileName(NewName));
@@ -1278,8 +1391,10 @@ var
 	OperationStatus, OperationResult: integer;
 begin
 	Result := false;
-	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
-	if self.public_account then exit;
+	if not(Assigned(self)) then
+		exit; //Проверка на вызов без инициализации
+	if self.public_account then
+		exit;
 	if publish then
 	begin
 		Result := self.HTTPPost(API_FILE_PUBLISH, 'home=/' + PathToUrl(Path) + self.united_params + '&conflict', JSON);
@@ -1291,7 +1406,9 @@ begin
 	begin
 		OperationResult := fromJSON_OperationResult(JSON, OperationStatus);
 		case OperationResult of
-			CLOUD_OPERATION_OK: if publish then Result := fromJSON_PublicLink(JSON, PublicLink);
+			CLOUD_OPERATION_OK:
+				if publish then
+					Result := fromJSON_PublicLink(JSON, PublicLink);
 			else
 				begin
 					Result := false;
@@ -1307,7 +1424,8 @@ var
 	Progress: Boolean;
 begin
 	Result := false;
-	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
+	if not(Assigned(self)) then
+		exit; //Проверка на вызов без инициализации
 	Progress := false;
 	if self.HTTPGet(API_FOLDER_SHARED_INFO + '?home=' + PathToUrl(Path) + self.united_params, JSON, Progress) then
 	begin
@@ -1323,11 +1441,14 @@ var
 	access_string: WideString;
 begin
 	Result := false;
-	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
+	if not(Assigned(self)) then
+		exit; //Проверка на вызов без инициализации
 	if access in [CLOUD_SHARE_RW, CLOUD_SHARE_RO] then
 	begin
-		if access = CLOUD_SHARE_RW then access_string := CLOUD_SHARE_ACCESS_READ_WRITE
-		else access_string := CLOUD_SHARE_ACCESS_READ_ONLY;
+		if access = CLOUD_SHARE_RW then
+			access_string := CLOUD_SHARE_ACCESS_READ_WRITE
+		else
+			access_string := CLOUD_SHARE_ACCESS_READ_ONLY;
 
 		Result := self.HTTPPost(API_FOLDER_SHARE, 'home=/' + PathToUrl(Path) + self.united_params + '&invite={"email":"' + email + '","access":"' + access_string + '"}', JSON)
 	end else begin
@@ -1339,7 +1460,8 @@ begin
 		OperationResult := fromJSON_OperationResult(JSON, OperationStatus);
 
 		Result := OperationResult = CLOUD_OPERATION_OK;
-		if not Result then Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Invite member error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
+		if not Result then
+			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Invite member error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
 
 	end;
 end;
@@ -1350,8 +1472,10 @@ var
 	OperationStatus, OperationResult: integer;
 begin
 	Result := false;
-	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
-	if self.public_account then exit;
+	if not(Assigned(self)) then
+		exit; //Проверка на вызов без инициализации
+	if self.public_account then
+		exit;
 
 	Result := self.HTTPPost(API_TRASHBIN_RESTORE, 'path=' + PathToUrl(Path) + '&restore_revision=' + RestoreRevision.ToString + self.united_params + '&conflict=' + ConflictMode, JSON);
 
@@ -1359,7 +1483,8 @@ begin
 	begin
 		OperationResult := fromJSON_OperationResult(JSON, OperationStatus);
 		case OperationResult of
-			CLOUD_OPERATION_OK: Result := true;
+			CLOUD_OPERATION_OK:
+				Result := true;
 			else
 				begin
 					Result := false;
@@ -1375,8 +1500,10 @@ var
 	OperationStatus, OperationResult: integer;
 begin
 	Result := false;
-	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
-	if self.public_account then exit;
+	if not(Assigned(self)) then
+		exit; //Проверка на вызов без инициализации
+	if self.public_account then
+		exit;
 
 	Result := self.HTTPPost(API_TRASHBIN_EMPTY, self.united_params, JSON);
 
@@ -1384,7 +1511,8 @@ begin
 	begin
 		OperationResult := fromJSON_OperationResult(JSON, OperationStatus);
 		case OperationResult of
-			CLOUD_OPERATION_OK: Result := true;
+			CLOUD_OPERATION_OK:
+				Result := true;
 			else
 				begin
 					Result := false;
@@ -1400,8 +1528,10 @@ var
 	OperationStatus, OperationResult: integer;
 begin
 	Result := false;
-	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
-	if self.public_account then exit;
+	if not(Assigned(self)) then
+		exit; //Проверка на вызов без инициализации
+	if self.public_account then
+		exit;
 
 	Result := self.HTTPPost(API_FOLDER_MOUNT, 'home=' + UrlEncode(home) + '&invite_token=' + invite_token + self.united_params + '&conflict=' + ConflictMode, JSON);
 
@@ -1409,7 +1539,8 @@ begin
 	begin
 		OperationResult := fromJSON_OperationResult(JSON, OperationStatus);
 		case OperationResult of
-			CLOUD_OPERATION_OK: Result := true;
+			CLOUD_OPERATION_OK:
+				Result := true;
 			else
 				begin
 					Result := false;
@@ -1426,10 +1557,14 @@ var
 	CopyStr: WideString;
 begin
 	Result := false;
-	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
-	if self.public_account then exit;
-	if clone_copy then CopyStr := 'true'
-	else CopyStr := 'false';
+	if not(Assigned(self)) then
+		exit; //Проверка на вызов без инициализации
+	if self.public_account then
+		exit;
+	if clone_copy then
+		CopyStr := 'true'
+	else
+		CopyStr := 'false';
 
 	Result := self.HTTPPost(API_FOLDER_UNMOUNT, 'home=' + UrlEncode(home) + '&clone_copy=' + CopyStr + self.united_params, JSON);
 
@@ -1437,7 +1572,8 @@ begin
 	begin
 		OperationResult := fromJSON_OperationResult(JSON, OperationStatus);
 		case OperationResult of
-			CLOUD_OPERATION_OK: Result := true;
+			CLOUD_OPERATION_OK:
+				Result := true;
 			else
 				begin
 					Result := false;
@@ -1453,8 +1589,10 @@ var
 	OperationStatus, OperationResult: integer;
 begin
 	Result := false;
-	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
-	if self.public_account then exit;
+	if not(Assigned(self)) then
+		exit; //Проверка на вызов без инициализации
+	if self.public_account then
+		exit;
 
 	Result := self.HTTPPost(API_INVITE_REJECT, 'invite_token=' + invite_token + self.united_params, JSON);
 
@@ -1462,7 +1600,8 @@ begin
 	begin
 		OperationResult := fromJSON_OperationResult(JSON, OperationStatus);
 		case OperationResult of
-			CLOUD_OPERATION_OK: Result := true;
+			CLOUD_OPERATION_OK:
+				Result := true;
 			else
 				begin
 					Result := false;
@@ -1619,8 +1758,10 @@ var
 	code, OperationStatus: integer;
 	OperationResult: integer;
 begin
-	if not(Assigned(self)) then exit(FS_FILE_WRITEERROR); //Проверка на вызов без инициализации
-	if self.public_account then exit(FS_FILE_NOTSUPPORTED);
+	if not(Assigned(self)) then
+		exit(FS_FILE_WRITEERROR); //Проверка на вызов без инициализации
+	if self.public_account then
+		exit(FS_FILE_NOTSUPPORTED);
 
 	if (not(self.unlimited_filesize)) and (SizeOfFile(GetUNCFilePath(localPath)) > self.split_file_size) then //todo вынести в процiдурку
 	begin
@@ -1680,8 +1821,10 @@ var
 	PostAnswer: WideString;
 begin
 	Result := CLOUD_OPERATION_FAILED;
-	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
-	if self.public_account then exit;
+	if not(Assigned(self)) then
+		exit; //Проверка на вызов без инициализации
+	if self.public_account then
+		exit;
 	Result := self.HTTPPostFile(self.upload_url + '/?cloud_domain=1&x-email=' + self.user + '%40' + self.domain + '&fileapi' + DateTimeToUnix(now).ToString + '0246', GetUNCFilePath(localPath), PostAnswer);
 	if (Result = CLOUD_OPERATION_OK) then
 	begin
@@ -1699,14 +1842,17 @@ var
 	OperationResult, OperationStatus: integer;
 begin
 	Result := false;
-	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
-	if self.public_account then exit;
+	if not(Assigned(self)) then
+		exit; //Проверка на вызов без инициализации
+	if self.public_account then
+		exit;
 	Result := self.HTTPPost(API_FILE_REMOVE, 'home=/' + IncludeSlash(PathToUrl(Path)) + self.united_params + '&conflict', JSON); //API всегда отвечает true, даже если путь не существует
 	if Result then
 	begin
 		OperationResult := fromJSON_OperationResult(JSON, OperationStatus);
 		case OperationResult of
-			CLOUD_OPERATION_OK: Result := true;
+			CLOUD_OPERATION_OK:
+				Result := true;
 			else
 				begin
 					Result := false;
@@ -1722,8 +1868,10 @@ var
 	OperationStatus, OperationResult: integer;
 begin
 	Result := FS_FILE_WRITEERROR;
-	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
-	if self.public_account then exit;
+	if not(Assigned(self)) then
+		exit; //Проверка на вызов без инициализации
+	if self.public_account then
+		exit;
 	if self.HTTPPost(API_FILE_RENAME, 'home=' + PathToUrl(OldName) + '&name=' + PathToUrl(NewName) + self.united_params, JSON) then
 	begin //Парсим ответ
 		OperationResult := fromJSON_OperationResult(JSON, OperationStatus);
@@ -1738,16 +1886,20 @@ var
 	OperationResult, OperationStatus: integer;
 begin
 	Result := false;
-	if not(Assigned(self)) then exit; //Проверка на вызов без инициализации
+	if not(Assigned(self)) then
+		exit; //Проверка на вызов без инициализации
 	Progress := false;
-	if self.public_account then Result := self.HTTPGet(API_FILE + '?weblink=' + IncludeSlash(self.public_link) + PathToUrl(Path) + self.united_params, JSON, Progress)
-	else Result := self.HTTPGet(API_FILE + '?home=' + PathToUrl(Path) + self.united_params, JSON, Progress);
+	if self.public_account then
+		Result := self.HTTPGet(API_FILE + '?weblink=' + IncludeSlash(self.public_link) + PathToUrl(Path) + self.united_params, JSON, Progress)
+	else
+		Result := self.HTTPGet(API_FILE + '?home=' + PathToUrl(Path) + self.united_params, JSON, Progress);
 
 	if Result then
 	begin
 		OperationResult := fromJSON_OperationResult(JSON, OperationStatus);
 		case OperationResult of
-			CLOUD_OPERATION_OK: Result := fromJSON_FileStatus(JSON, FileInfo);
+			CLOUD_OPERATION_OK:
+				Result := fromJSON_FileStatus(JSON, FileInfo);
 			else
 				begin
 					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'File status error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
@@ -1760,28 +1912,40 @@ end;
 
 class function TCloudMailRu.CloudAccessToString(access: WideString; Invert: Boolean): WideString;
 begin
-	if access = 'read only' then access := CLOUD_SHARE_ACCESS_READ_ONLY;
-	if access = 'read and write' then access := CLOUD_SHARE_ACCESS_READ_WRITE;
+	if access = 'read only' then
+		access := CLOUD_SHARE_ACCESS_READ_ONLY;
+	if access = 'read and write' then
+		access := CLOUD_SHARE_ACCESS_READ_WRITE;
 	if Invert then
 	begin
-		if (access = CLOUD_SHARE_ACCESS_READ_ONLY) then access := CLOUD_SHARE_ACCESS_READ_WRITE
-		else access := CLOUD_SHARE_ACCESS_READ_ONLY;
+		if (access = CLOUD_SHARE_ACCESS_READ_ONLY) then
+			access := CLOUD_SHARE_ACCESS_READ_WRITE
+		else
+			access := CLOUD_SHARE_ACCESS_READ_ONLY;
 	end;
-	if access = CLOUD_SHARE_ACCESS_READ_ONLY then Result := 'read only'
-	else Result := 'read and write';
+	if access = CLOUD_SHARE_ACCESS_READ_ONLY then
+		Result := 'read only'
+	else
+		Result := 'read and write';
 end;
 
 class function TCloudMailRu.StringToCloudAccess(accessString: WideString; Invert: Boolean): integer;
 begin
-	if accessString = 'read only' then accessString := CLOUD_SHARE_ACCESS_READ_ONLY;
-	if accessString = 'read and write' then accessString := CLOUD_SHARE_ACCESS_READ_WRITE;
+	if accessString = 'read only' then
+		accessString := CLOUD_SHARE_ACCESS_READ_ONLY;
+	if accessString = 'read and write' then
+		accessString := CLOUD_SHARE_ACCESS_READ_WRITE;
 	if Invert then
 	begin
-		if (accessString = CLOUD_SHARE_ACCESS_READ_ONLY) then accessString := CLOUD_SHARE_ACCESS_READ_WRITE
-		else accessString := CLOUD_SHARE_ACCESS_READ_ONLY;
+		if (accessString = CLOUD_SHARE_ACCESS_READ_ONLY) then
+			accessString := CLOUD_SHARE_ACCESS_READ_WRITE
+		else
+			accessString := CLOUD_SHARE_ACCESS_READ_ONLY;
 	end;
-	if accessString = CLOUD_SHARE_ACCESS_READ_ONLY then Result := CLOUD_SHARE_RO
-	else Result := CLOUD_SHARE_RW;
+	if accessString = CLOUD_SHARE_ACCESS_READ_ONLY then
+		Result := CLOUD_SHARE_RO
+	else
+		Result := CLOUD_SHARE_RW;
 end;
 
 end.

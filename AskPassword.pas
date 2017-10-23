@@ -69,8 +69,10 @@ end;
 
 procedure TAskPasswordForm.WMHotKey(var Message: TMessage);
 begin
-	if Message.LParamHi = VK_ESCAPE then Close;
-	if (Message.LParamHi = VK_RETURN) and OkButton.Enabled then OkButton.Click;
+	if Message.LParamHi = VK_ESCAPE then
+		Close;
+	if (Message.LParamHi = VK_RETURN) and OkButton.Enabled then
+		OkButton.Click;
 end;
 
 end.

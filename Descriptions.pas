@@ -57,7 +57,8 @@ implementation
 
 function TDescription.CopyFrom(from_description: TDescription; item: WideString; move: boolean): Integer;
 begin
-	if not assigned(from_description) then exit(1);
+	if not assigned(from_description) then
+		exit(1);
 	self.SetValue(item, from_description.GetValue(item, FORMAT_AS_IS));
 	if move then
 	begin
@@ -76,13 +77,18 @@ constructor TDescription.Create(ion_filename: WideString; encoding: Integer = EN
 begin
 	self.items := TDictionary<WideString, WideString>.Create;
 	self.ion_filename := ion_filename;
-	if not FileExists(ion_filename) then CloseHandle(CreateFile(PChar(ion_filename), 0, 0, nil, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0));
+	if not FileExists(ion_filename) then
+		CloseHandle(CreateFile(PChar(ion_filename), 0, 0, nil, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0));
 
 	case encoding of
-		ENCODING_DEFAULT: self.encoding := TEncoding.Default;
-		ENCODING_UTF8: self.encoding := TEncoding.UTF8;
-		ENCODING_UNICODE: self.encoding := TEncoding.Unicode;
-		ENCODING_UNCODE_BE: self.encoding := TEncoding.BigEndianUnicode;
+		ENCODING_DEFAULT:
+			self.encoding := TEncoding.Default;
+		ENCODING_UTF8:
+			self.encoding := TEncoding.UTF8;
+		ENCODING_UNICODE:
+			self.encoding := TEncoding.Unicode;
+		ENCODING_UNCODE_BE:
+			self.encoding := TEncoding.BigEndianUnicode;
 	end;
 end;
 
@@ -103,7 +109,8 @@ var
 	Value: WideString;
 begin
 	Value := self.GetValue(OldItem);
-	if EmptyWideStr = Value then exit(false);
+	if EmptyWideStr = Value then
+		exit(false);
 	self.SetValue(NewItem, Value);
 	self.DeleteValue(OldItem);
 	exit(true);
@@ -111,8 +118,10 @@ end;
 
 function TDescription.DetermineDivider: WideString;
 begin
-	if (self.encoding = TEncoding.UTF8) or (self.encoding = TEncoding.BigEndianUnicode) or (self.encoding = TEncoding.Unicode) then result := MULTILINE_DIVIDERW
-	else result := MULTILINE_DIVIDER;
+	if (self.encoding = TEncoding.UTF8) or (self.encoding = TEncoding.BigEndianUnicode) or (self.encoding = TEncoding.Unicode) then
+		result := MULTILINE_DIVIDERW
+	else
+		result := MULTILINE_DIVIDER;
 end;
 
 function TDescription.DetermineEncoding(): TEncoding;
@@ -136,14 +145,18 @@ begin
 
 	end;
 	CloseFile(F);
-	if (Buffer[0] = $EF) and (Buffer[1] = $BB) and (Buffer[2] = $BF) then exit(TEncoding.UTF8);
-	if (Buffer[0] = $FE) and (Buffer[1] = $FF) then exit(TEncoding.BigEndianUnicode);
-	if (Buffer[0] = $FF) and (Buffer[1] = $FE) then exit(TEncoding.Unicode);
+	if (Buffer[0] = $EF) and (Buffer[1] = $BB) and (Buffer[2] = $BF) then
+		exit(TEncoding.UTF8);
+	if (Buffer[0] = $FE) and (Buffer[1] = $FF) then
+		exit(TEncoding.BigEndianUnicode);
+	if (Buffer[0] = $FF) and (Buffer[1] = $FE) then
+		exit(TEncoding.Unicode);
 	//Кодировка всё ещё не определилась, идём на крайнюю меру: создадим поток с выбранной кодировкой, если будет ошибка EEncodingError - значит это галимый ANSI
-//	fStream := nil;
+	//fStream := nil;
 	fStream := TStreamReader.Create(self.ion_filename, self.encoding, false);
 	try
-		if fStream.ReadToEnd <> '' then result := fStream.CurrentEncoding;
+		if fStream.ReadToEnd <> '' then
+			result := fStream.CurrentEncoding;
 	except
 		on E: Exception do
 		begin
@@ -157,9 +170,12 @@ end;
 function TDescription.FormatValue(Value: WideString; FormatType: Integer): WideString;
 begin
 	case FormatType of
-		FORMAT_AS_IS: result := Value;
-		FORMAT_CLEAR: result := WideStringReplace(WideStringReplace(Value, '\n', sLineBreak, [rfReplaceAll]), self.divider, '', [rfReplaceAll]);
-		FORMAT_ONELINE: result := WideStringReplace(WideStringReplace(Value, '\n', '  ', [rfReplaceAll]), self.divider, '', [rfReplaceAll]);
+		FORMAT_AS_IS:
+			result := Value;
+		FORMAT_CLEAR:
+			result := WideStringReplace(WideStringReplace(Value, '\n', sLineBreak, [rfReplaceAll]), self.divider, '', [rfReplaceAll]);
+		FORMAT_ONELINE:
+			result := WideStringReplace(WideStringReplace(Value, '\n', '  ', [rfReplaceAll]), self.divider, '', [rfReplaceAll]);
 	end;
 end;
 
@@ -170,7 +186,8 @@ end;
 
 function TDescription.GetValue(item: WideString; FormatType: Integer): WideString;
 begin
-	if not(items.TryGetValue(item, result)) then exit(EmptyWideStr);
+	if not(items.TryGetValue(item, result)) then
+		exit(EmptyWideStr);
 	result := self.FormatValue(result, FormatType);
 end;
 
@@ -178,8 +195,10 @@ function TDescription.SetValue(item, Value: WideString): boolean;
 begin
 	result := true;
 	try
-		if EmptyWideStr = Value then DeleteValue(item)
-		else items.AddOrSetValue(item, Value);
+		if EmptyWideStr = Value then
+			DeleteValue(item)
+		else
+			items.AddOrSetValue(item, Value);
 	except
 		result := false;
 	end;
@@ -190,23 +209,28 @@ var
 	fStream: TStreamWriter;
 	line, Key, tKey, Value: WideString;
 begin
-	if filename = NullChar then filename := self.ion_filename;
+	if filename = NullChar then
+		filename := self.ion_filename;
 
 	result := 0; //not used
 	fStream := nil;
 
 	try
 		DeleteFileW(PWideChar(filename));
-		if items.Count = 0 then exit;
+		if items.Count = 0 then
+			exit;
 
 		fStream := TStreamWriter.Create(filename, false, self.encoding);
 		for Key in items.Keys do
 		begin
 			items.TryGetValue(Key, Value);
-			if Pos(Space, Key) <> 0 then tKey := '"' + Key + '"'
-			else tKey := Key;
+			if Pos(Space, Key) <> 0 then
+				tKey := '"' + Key + '"'
+			else
+				tKey := Key;
 
-			if Pos(sLineBreak, Value) <> 0 then Value := WideStringReplace(Value, sLineBreak, '\n', [rfReplaceAll]) + divider;
+			if Pos(sLineBreak, Value) <> 0 then
+				Value := WideStringReplace(Value, sLineBreak, '\n', [rfReplaceAll]) + divider;
 			if Length(Value) > 0 then
 			begin
 				line := tKey + Space + Value;

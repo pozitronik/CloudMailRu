@@ -1,4 +1,4 @@
-unit ANSIFunctions;
+﻿unit ANSIFunctions;
 {DIRTY ANSI PEASANTS}
 
 interface

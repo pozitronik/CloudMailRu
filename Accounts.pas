@@ -164,14 +164,16 @@ end;
 
 procedure TAccountsForm.AccountsListKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
 begin
-	if Key = VK_DELETE then DeleteButtonClick(nil);
+	if Key = VK_DELETE then
+		DeleteButtonClick(nil);
 end;
 
 procedure TAccountsForm.ApplyButtonClick(Sender: TObject);
 var
 	CASettings: TAccountSettings;
 begin
-	if (AccountNameEdit.Text = '') then exit();
+	if (AccountNameEdit.Text = '') then
+		exit();
 	CASettings.name := AccountNameEdit.Text;
 	CASettings.email := EmailEdit.Text;
 	CASettings.password := PasswordEdit.Text;
@@ -210,7 +212,8 @@ end;
 
 procedure TAccountsForm.ApplySettings;
 begin
-	if not CheckValidators() then exit;
+	if not CheckValidators() then
+		exit;
 
 	SetPluginSettingsValue(SettingsIniFilePath, 'LoadSSLDLLOnlyFromPluginDir', UseDLLFromPluginDir.Checked);
 	SetPluginSettingsValue(SettingsIniFilePath, 'PreserveFileTime', PreserveFileTimeCB.Checked);
@@ -304,7 +307,8 @@ var
 	password: WideString;
 begin
 	//Заменить пароль можно только подтвердив текущий МАСТЕР-ПАРОЛЬ
-	if (AccountNameEdit.Text = '') then exit();
+	if (AccountNameEdit.Text = '') then
+		exit();
 	SetCryptPassword(AccountNameEdit.Text + ' filenamecrypt', password, true, nil, self.CryptHandler, self.Handle);
 end;
 
@@ -318,7 +322,8 @@ var
 	password: WideString;
 begin
 	//Заменить пароль можно только подтвердив текущий МАСТЕР-ПАРОЛЬ
-	if (AccountNameEdit.Text = '') then exit();
+	if (AccountNameEdit.Text = '') then
+		exit();
 	SetCryptPassword(AccountNameEdit.Text + ' filecrypt', password, true, nil, self.CryptHandler, self.Handle);
 end;
 
@@ -423,7 +428,8 @@ begin
 		AccountsForm.ShowInvitesFoldersCB.Checked := GetPluginSettings(SettingsIniFilePath).ShowInvitesFolders;
 
 		{global settings}
-		if Account <> '' then AccountsForm.SelectedAccount := Account;
+		if Account <> '' then
+			AccountsForm.SelectedAccount := Account;
 		RegisterHotKey(AccountsForm.Handle, 1, 0, VK_ESCAPE);
 		AccountsForm.OptionPages.ActivePageIndex := 0;
 		AccountsForm.ShowModal;
@@ -434,7 +440,8 @@ end;
 
 procedure TAccountsForm.WMHotKey(var Message: TMessage);
 begin
-	if (Message.LParamHi = VK_ESCAPE) and (GetForegroundWindow = self.Handle) then Close;
+	if (Message.LParamHi = VK_ESCAPE) and (GetForegroundWindow = self.Handle) then
+		Close;
 end;
 
 end.

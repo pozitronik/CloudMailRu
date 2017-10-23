@@ -94,8 +94,10 @@ var
 	iCount: integer;
 begin
 	Result := '';
-	if (S.Count = 0) then exit;
-	for iCount := 0 to pred(S.Count) do Result := Result + S.Strings[iCount] + Delimiter;
+	if (S.Count = 0) then
+		exit;
+	for iCount := 0 to pred(S.Count) do
+		Result := Result + S.Strings[iCount] + Delimiter;
 	System.Delete(Result, Length(Result), 1);
 end;
 
@@ -114,7 +116,8 @@ var
 	Item: WideString;
 begin
 	Result := 0;
-	if (Content = nil) or (Content^ = #0) or (Strings = nil) then exit;
+	if (Content = nil) or (Content^ = #0) or (Strings = nil) then
+		exit;
 	Tail := Content;
 	InQuote := False;
 	QuoteChar := #0;
@@ -129,20 +132,25 @@ begin
 		//Include(Separators, '''');
 		Include(Separators, '"');
 		repeat
-			while CharInSet(Tail^, WhiteSpace) do Inc(Tail);
+			while CharInSet(Tail^, WhiteSpace) do
+				Inc(Tail);
 
 			Head := Tail;
 			while true do
 			begin
-				while (InQuote and not((Tail^ = #0) or (Tail^ = QuoteChar))) or not(CharInSet(Tail^, Separators)) do Inc(Tail);
+				while (InQuote and not((Tail^ = #0) or (Tail^ = QuoteChar))) or not(CharInSet(Tail^, Separators)) do
+					Inc(Tail);
 				if CharInSet(Tail^, ['''', '"']) then
 				begin
-					if (QuoteChar <> #0) and (QuoteChar = Tail^) then QuoteChar := #0
-					else if QuoteChar = #0 then QuoteChar := Tail^;
+					if (QuoteChar <> #0) and (QuoteChar = Tail^) then
+						QuoteChar := #0
+					else if QuoteChar = #0 then
+						QuoteChar := Tail^;
 					InQuote := QuoteChar <> #0;
 					Inc(Tail);
 				end
-				else Break;
+				else
+					Break;
 			end;
 			EOS := Tail^ = #0;
 			if (Head <> Tail) and (Head^ <> #0) then
@@ -172,13 +180,15 @@ begin
 	Result.sharedDir := False;
 	Result.invitesDir := False;
 
-	if VirtualPath = '' then exit; //root
+	if VirtualPath = '' then
+		exit; //root
 	VirtualPath := Copy(VirtualPath, 2, Length(VirtualPath) - 1);
 
 	List := TStringList.Create;
 	MyExtractStrings(['\'], [], PWideChar(VirtualPath), List);
 
-	if (List.Count > 0) and (List.Strings[List.Count - 1] = '..') then Result.upDirItem := true;
+	if (List.Count > 0) and (List.Strings[List.Count - 1] = '..') then
+		Result.upDirItem := true;
 
 	if List.Count = 1 then
 	begin
@@ -210,7 +220,8 @@ end;
 function inAccount(path: TRealPath; ignoreVirtual: boolean = true): boolean;
 begin
 	Result := path.account <> '';
-	if Result and ignoreVirtual then Result := not(path.trashDir or path.sharedDir or path.invitesDir);
+	if Result and ignoreVirtual then
+		Result := not(path.trashDir or path.sharedDir or path.invitesDir);
 end;
 
 function DateTimeToUnix(ConvDate: TDateTime): integer;
@@ -230,7 +241,8 @@ var
 	fHandle: DWORD;
 begin
 	fHandle := CreateFile(PChar(FileName), 0, 0, nil, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
-	if fHandle = INVALID_HANDLE_VALUE then Result := -1
+	if fHandle = INVALID_HANDLE_VALUE then
+		Result := -1
 	else
 		try
 			Int64Rec(Result).Lo := GetFileSize(fHandle, @Int64Rec(Result).Hi);
@@ -305,8 +317,10 @@ begin
 	UTF8 := UTF8String(URL);
 	Result := '';
 	for I := 1 to Length(UTF8) do
-		if UTF8[I] in ['a' .. 'z', 'A' .. 'Z', '/', '_', '-', '.', '0' .. '9'] then Result := Result + WideString(UTF8[I])
-		else Result := Result + '%' + IntToHex(Ord(UTF8[I]), 2);
+		if UTF8[I] in ['a' .. 'z', 'A' .. 'Z', '/', '_', '-', '.', '0' .. '9'] then
+			Result := Result + WideString(UTF8[I])
+		else
+			Result := Result + '%' + IntToHex(Ord(UTF8[I]), 2);
 end;
 
 function FindTCWindow: HWND;
@@ -339,10 +353,12 @@ begin
 			if not TC_INI.SectionExists(IconsSizeSectionName) then
 			begin
 				IconsSizeSectionName := Format('%dx%d', [MonInfo.rcMonitor.Right - MonInfo.rcMonitor.Left, MonInfo.rcMonitor.Bottom - MonInfo.rcMonitor.Top]) + ' (10x20)'; //large font section
-				if not TC_INI.SectionExists(IconsSizeSectionName) then IconsSizeSectionName := 'AllResolutions'; //fuck that shit
+				if not TC_INI.SectionExists(IconsSizeSectionName) then
+					IconsSizeSectionName := 'AllResolutions'; //fuck that shit
 			end;
 		end
-		else IconsSizeSectionName := 'AllResolutions';
+		else
+			IconsSizeSectionName := 'AllResolutions';
 
 		Result := TC_INI.ReadInteger(IconsSizeSectionName, 'Iconsize32', Result);
 		TC_INI.Free;
@@ -360,7 +376,8 @@ begin
 		Result := TC_INI.ReadInteger('Configuration', 'CommentPreferredFormat', Result);
 		TC_INI.Free;
 	end;
-	if not(Result in [ENCODING_DEFAULT, ENCODING_UNICODE, ENCODING_UNCODE_BE, ENCODING_UTF8]) then Result := ENCODING_UTF8; //ignore "combined" TC encodings
+	if not(Result in [ENCODING_DEFAULT, ENCODING_UNICODE, ENCODING_UNCODE_BE, ENCODING_UTF8]) then
+		Result := ENCODING_UTF8; //ignore "combined" TC encodings
 end;
 
 function GetTmpDir: WideString;
@@ -404,7 +421,8 @@ end;
 function GetUNCFilePath(FilePath: WideString): WideString;
 begin
 	Result := ExpandUNCFileName(FilePath);
-	if not(Pos(WideString('\\'), Result) = 1) then Result := '\\?\' + FilePath;
+	if not(Pos(WideString('\\'), Result) = 1) then
+		Result := '\\?\' + FilePath;
 end;
 
 function GetWord(command: WideString; WordIndex: integer = 0): WideString;
@@ -413,8 +431,10 @@ var
 begin
 	Result := '';
 	Exploded := Explode(command, ' ');
-	if Exploded.Count = 0 then exit;
-	if Exploded.Count <= WordIndex then exit;
+	if Exploded.Count = 0 then
+		exit;
+	if Exploded.Count <= WordIndex then
+		exit;
 	Result := Exploded.Strings[WordIndex];
 end;
 
@@ -423,7 +443,8 @@ const
 	pulicPrefix = 'https://cloud.mail.ru/public';
 begin
 	Result := URL;
-	if Pos(WideString(pulicPrefix), URL) <> 0 then Result := Copy(URL, Length(pulicPrefix) + 1, Length(URL) - Length(pulicPrefix));
+	if Pos(WideString(pulicPrefix), URL) <> 0 then
+		Result := Copy(URL, Length(pulicPrefix) + 1, Length(URL) - Length(pulicPrefix));
 end;
 
 function IsWriteable(const DirName: WideString; FileName: WideString = 'delete.me'; CleanFile: boolean = true): boolean;
@@ -439,7 +460,8 @@ begin
 		H := CreateFile(PChar(NewName), GENERIC_READ or GENERIC_WRITE, 0, nil, OPEN_EXISTING or CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
 	end;
 	Result := H <> INVALID_HANDLE_VALUE;
-	if Result then CloseHandle(H);
+	if Result then
+		CloseHandle(H);
 end;
 
 function PosLast(Substring, S: WideString; Offset: integer = 0): integer;
@@ -457,9 +479,11 @@ function PathToUrl(path: WideString; RestrictEmptyUrl: boolean = true; DoUrlEnco
 begin
 
 	Result := StringReplace(path, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]);
-	if DoUrlEncode then Result := UrlEncode(Result);
+	if DoUrlEncode then
+		Result := UrlEncode(Result);
 
-	if (Result = '') and RestrictEmptyUrl then Result := '/';
+	if (Result = '') and RestrictEmptyUrl then
+		Result := '/';
 end;
 
 function UrlToPath(URL: WideString): WideString;
@@ -476,12 +500,16 @@ begin
 	uFlags := SHGFI_ICON;
 	FillChar(SFI, SizeOf(SFI), 0);
 	case size of
-		IconSizeSmall: uFlags := SHGFI_ICON or SHGFI_SMALLICON;
-		IconSizeNormal: uFlags := SHGFI_ICON;
-		IconSizeLarge: uFlags := SHGFI_ICON or SHGFI_LARGEICON; //not working with SHGetFileInfo
+		IconSizeSmall:
+			uFlags := SHGFI_ICON or SHGFI_SMALLICON;
+		IconSizeNormal:
+			uFlags := SHGFI_ICON;
+		IconSizeLarge:
+			uFlags := SHGFI_ICON or SHGFI_LARGEICON; //not working with SHGetFileInfo
 	end;
 
-	if SHGetFileInfo('booya', FILE_ATTRIBUTE_DIRECTORY, SFI, SizeOf(SFI), uFlags or SHGFI_USEFILEATTRIBUTES) <> 0 then Result := SFI.Hicon;
+	if SHGetFileInfo('booya', FILE_ATTRIBUTE_DIRECTORY, SFI, SizeOf(SFI), uFlags or SHGFI_USEFILEATTRIBUTES) <> 0 then
+		Result := SFI.Hicon;
 
 end;
 
@@ -494,12 +522,16 @@ begin
 	Result := INVALID_HANDLE_VALUE;
 	uFlags := SHGFI_ICON;
 	case size of
-		IconSizeSmall: uFlags := SHGFI_ICON or SHGFI_SMALLICON;
-		IconSizeNormal: uFlags := SHGFI_ICON;
-		IconSizeLarge: uFlags := SHGFI_ICON or SHGFI_LARGEICON; //not working with SHGetFileInfo
+		IconSizeSmall:
+			uFlags := SHGFI_ICON or SHGFI_SMALLICON;
+		IconSizeNormal:
+			uFlags := SHGFI_ICON;
+		IconSizeLarge:
+			uFlags := SHGFI_ICON or SHGFI_LARGEICON; //not working with SHGetFileInfo
 	end;
 	SHGetSpecialFolderLocation(FindTCWindow, ItemType, PIDL);
-	if SHGetFileInfo(PChar(PIDL), 0, SFI, SizeOf(SFI), SHGFI_PIDL or SHGFI_SYSICONINDEX or uFlags) <> 0 then Result := SFI.Hicon;
+	if SHGetFileInfo(PChar(PIDL), 0, SFI, SizeOf(SFI), SHGFI_PIDL or SHGFI_SYSICONINDEX or uFlags) <> 0 then
+		Result := SFI.Hicon;
 end;
 
 function CombineIcons(FrontIcon, BackIcon: Hicon): Hicon;
@@ -548,7 +580,8 @@ var
 begin
 	Icon := nil;
 	LoadIcon := INVALID_HANDLE_VALUE;
-	if not FileExists(FileName) then exit;
+	if not FileExists(FileName) then
+		exit;
 
 	try
 		Icon := TIcon.Create;
@@ -567,8 +600,10 @@ end;
 
 function RetryAttemptsToString(Attempt: integer): WideString;
 begin
-	if Attempt < 0 then exit('')
-	else exit(' of ' + Attempt.ToString);
+	if Attempt < 0 then
+		exit('')
+	else
+		exit(' of ' + Attempt.ToString);
 end;
 
 procedure ProcessMessages;
@@ -577,7 +612,8 @@ var
 begin
 	while true do
 	begin
-		if not PeekMessage(Msg, 0, 0, 0, PM_REMOVE) then Break;
+		if not PeekMessage(Msg, 0, 0, 0, PM_REMOVE) then
+			Break;
 		if Msg.Message <> $0012 then
 		begin
 			TranslateMessage(Msg);
@@ -589,7 +625,8 @@ end;
 function IncludeSlash(const Str: WideString): WideString;
 begin
 	Result := Str;
-	if not(Result[High(Result)] = '/') then Result := Result + '/';
+	if not(Result[High(Result)] = '/') then
+		Result := Result + '/';
 end;
 
 function FormatSize(size: Int64; SizeType: integer = TYPE_MEGABYTES): WideString; //Форматируем размер в удобочитаемый вид

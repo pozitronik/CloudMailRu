@@ -127,7 +127,8 @@ var
 	TmpString: WideString;
 	buf: PWideChar;
 begin
-	if (ProxySettings.ProxyType = ProxyNone) or (ProxySettings.user = '') then exit(true); //no username means no password required
+	if (ProxySettings.ProxyType = ProxyNone) or (ProxySettings.user = '') then
+		exit(true); //no username means no password required
 
 	if ProxySettings.use_tc_password_manager then
 	begin //пароль должен браться из TC
@@ -190,7 +191,8 @@ begin
 			result := true;
 		end;
 	end
-	else result := true; //пароль взят из инишника напрямую
+	else
+		result := true; //пароль взят из инишника напрямую
 end;
 
 function GetCryptPassword(crypt_id: WideString; var password: WideString; var ask_user: boolean; LogHandleProc: TLogHandler; CryptHandleProc: TCryptHandler): boolean;
@@ -214,7 +216,8 @@ begin
 			FS_FILE_READERROR: //Password not found in password store, ask user for it
 				begin
 					FreeMemory(buf);
-					if ask_user then exit((TAskPasswordForm.AskPassword(FindTCWindow, crypt_id, password, use_tc_password_manager, true, 'Crypt password:') = mrOK)); //спрашиваем пользователя только если флаг ask_user установлен, в этом же флаге вернётся действительно ли пользователь был опрошен
+					if ask_user then
+						exit((TAskPasswordForm.AskPassword(FindTCWindow, crypt_id, password, use_tc_password_manager, true, 'Crypt password:') = mrOK)); //спрашиваем пользователя только если флаг ask_user установлен, в этом же флаге вернётся действительно ли пользователь был опрошен
 				end;
 			FS_FILE_NOTFOUND: //no master password entered yet
 				begin
@@ -230,7 +233,8 @@ begin
 						FS_FILE_READERROR: //Password not found in password store, ask user for it
 							begin
 								FreeMemory(buf);
-								if ask_user then exit((TAskPasswordForm.AskPassword(FindTCWindow, crypt_id, password, use_tc_password_manager, true, 'Crypt password:') = mrOK)); //спрашиваем пользователя только если флаг ask_user установлен, в этом же флаге вернётся действительно ли пользователь был опрошен
+								if ask_user then
+									exit((TAskPasswordForm.AskPassword(FindTCWindow, crypt_id, password, use_tc_password_manager, true, 'Crypt password:') = mrOK)); //спрашиваем пользователя только если флаг ask_user установлен, в этом же флаге вернётся действительно ли пользователь был опрошен
 							end
 						else
 							begin
@@ -352,10 +356,14 @@ begin
 	basicType := VarType(OptionValue);
 	try
 		case basicType of
-			varNull: IniFile.DeleteKey('Main', OptionName); //remove value in that case
-			varInteger: IniFile.WriteInteger('Main', OptionName, OptionValue);
-			varString, varUString: IniFile.WriteString('Main', OptionName, OptionValue);
-			varBoolean: IniFile.WriteBool('Main', OptionName, OptionValue);
+			varNull:
+				IniFile.DeleteKey('Main', OptionName); //remove value in that case
+			varInteger:
+				IniFile.WriteInteger('Main', OptionName, OptionValue);
+			varString, varUString:
+				IniFile.WriteString('Main', OptionName, OptionValue);
+			varBoolean:
+				IniFile.WriteBool('Main', OptionName, OptionValue);
 		end;
 	except
 		On E: EIniFileException do
@@ -400,7 +408,8 @@ var
 	IniFile: TIniFile;
 begin
 	result := false;
-	if AccountSettings.name <> '' then result := true;
+	if AccountSettings.name <> '' then
+		result := true;
 	IniFile := TIniFile.Create(IniFilePath);
 	IniFile.WriteString(AccountSettings.name, 'email', AccountSettings.email);
 	IniFile.WriteString(AccountSettings.name, 'password', AccountSettings.password);
@@ -442,10 +451,14 @@ begin
 	VAccounts := TStringList.Create;
 	for account in AccountsList do
 	begin
-		if GetAccountSettingsFromIniFile(AccountsIniFilePath, account).public_account then Continue; //public accounts ignored
-		if VirtualAccountsEnabled[0] then VAccounts.Add(account + TrashPostfix);
-		if VirtualAccountsEnabled[1] then VAccounts.Add(account + SharedPostfix);
-		if VirtualAccountsEnabled[2] then VAccounts.Add(account + InvitesPostfix);
+		if GetAccountSettingsFromIniFile(AccountsIniFilePath, account).public_account then
+			Continue; //public accounts ignored
+		if VirtualAccountsEnabled[0] then
+			VAccounts.Add(account + TrashPostfix);
+		if VirtualAccountsEnabled[1] then
+			VAccounts.Add(account + SharedPostfix);
+		if VirtualAccountsEnabled[2] then
+			VAccounts.Add(account + InvitesPostfix);
 	end;
 	AccountsList.AddStrings(VAccounts);
 	VAccounts.Free;
@@ -454,7 +467,8 @@ end;
 function GetDescriptionFileName(SettingsIniFilePath: WideString): WideString;
 begin
 	GetDescriptionFileName := GetPluginSettings(SettingsIniFilePath).DescriptionFileName;
-	if TPath.HasValidFileNameChars(GetPluginSettings(SettingsIniFilePath).DescriptionFileName, false) then exit;
+	if TPath.HasValidFileNameChars(GetPluginSettings(SettingsIniFilePath).DescriptionFileName, false) then
+		exit;
 	exit('descript.ion');
 end;
 

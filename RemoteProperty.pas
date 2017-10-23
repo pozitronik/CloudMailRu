@@ -101,7 +101,8 @@ var
 begin
 	DescriptionEditMemo.lines.Clear;
 	LocalPath := GetTmpFileName('ion');
-	if not self.Cloud.getDescriptionFile(IncludeTrailingBackslash(ExtractFileDir(self.RemoteName)) + self.PluginIonFileName, LocalPath) then exit;
+	if not self.Cloud.getDescriptionFile(IncludeTrailingBackslash(ExtractFileDir(self.RemoteName)) + self.PluginIonFileName, LocalPath) then
+		exit;
 	CurrentDescriptions := TDescription.Create(LocalPath, GetTCCommentPreferredFormat);
 	CurrentDescriptions.Read;
 	DescriptionEditMemo.lines.Text := CurrentDescriptions.GetValue(ExtractFileName(self.RemoteName), FORMAT_CLEAR);
@@ -164,9 +165,11 @@ begin
 	CancelScanTB.Enabled := true;
 	RefreshScanTB.Enabled := false;
 	result := true;
-	if not(Assigned(Cloud)) then Cloud := self.Cloud;
+	if not(Assigned(Cloud)) then
+		Cloud := self.Cloud;
 
-	if not LogProc('Scanning ' + IncludeTrailingPathDelimiter(Path)) then exit(false);
+	if not LogProc('Scanning ' + IncludeTrailingPathDelimiter(Path)) then
+		exit(false);
 	Cloud.getDirListing(Path, CurrentDirListing);
 	ProcessMessages;
 	for CurrentDirItemsCounter := 0 to Length(CurrentDirListing) - 1 do
@@ -174,7 +177,8 @@ begin
 		if CurrentDirListing[CurrentDirItemsCounter].type_ = TYPE_DIR then
 		begin
 			result := FillRecursiveDownloadListing(IncludeTrailingPathDelimiter(Path) + CurrentDirListing[CurrentDirItemsCounter].name, Cloud);
-			if not result then break;
+			if not result then
+				break;
 
 		end else begin
 			DownloadLinksMemo.lines.Add(Cloud.getSharedFileUrl(IncludeTrailingPathDelimiter(Path) + CurrentDirListing[CurrentDirItemsCounter].name, self.DoUrlEncode));
@@ -210,7 +214,8 @@ begin
 			Props.WebLink := '';
 			WebLink.Enabled := false;
 			DownloadLinksTS.TabVisible := false;
-			if ExtPropertiesPC.TabIndex = -1 then ExtPropertiesPC.Visible := false;
+			if ExtPropertiesPC.TabIndex = -1 then
+				ExtPropertiesPC.Visible := false;
 
 		end else begin
 			MessageBoxW(self.Handle, PWideChar('Error while unpublishing file ' + Props.home + ', see main log'), 'File unpublishing error', MB_OK + MB_ICONERROR);
@@ -227,11 +232,13 @@ procedure TPropertyForm.RefreshInvites;
 var
 	i, InvitesCount: Integer;
 begin
-	while InvitesLE.Strings.Count > 0 do InvitesLE.DeleteRow(1);
+	while InvitesLE.Strings.Count > 0 do
+		InvitesLE.DeleteRow(1);
 	if Cloud.getShareInfo(Props.home, self.InvitesListing) then
 	begin
 		InvitesCount := Length(self.InvitesListing) - 1;
-		for i := 0 to InvitesCount do InvitesLE.InsertRow(self.InvitesListing[i].email, TCloudMailRu.CloudAccessToString(self.InvitesListing[i].access), true);
+		for i := 0 to InvitesCount do
+			InvitesLE.InsertRow(self.InvitesListing[i].email, TCloudMailRu.CloudAccessToString(self.InvitesListing[i].access), true);
 	end else begin
 		MessageBoxW(self.Handle, PWideChar('Error while retrieving ' + Props.home + ' folder invites list, see main log'), 'Folder invite listing error', MB_OK + MB_ICONERROR);
 	end;
@@ -250,8 +257,10 @@ end;
 function TPropertyForm.LogProc(LogText: WideString): Boolean;
 begin
 	result := not LogCancelledFlag;
-	if (result) then LogLabel.Caption := LogText
-	else LogLabel.Caption := '';
+	if (result) then
+		LogLabel.Caption := LogText
+	else
+		LogLabel.Caption := '';
 	LogCancelledFlag := false;
 end;
 
@@ -369,7 +378,8 @@ begin
 		PropertyForm.ShowDescription := ShowDescription;
 		PropertyForm.EditDescription := EditDescription;
 		PropertyForm.PluginIonFileName := PluginIonFileName;
-		if ('descript.ion' <> PluginIonFileName) then PropertyForm.DescriptionTS.Caption := 'Description from ' + PluginIonFileName;
+		if ('descript.ion' <> PluginIonFileName) then
+			PropertyForm.DescriptionTS.Caption := 'Description from ' + PluginIonFileName;
 
 		RegisterHotKey(PropertyForm.Handle, 1, 0, VK_ESCAPE);
 		RegisterHotKey(PropertyForm.Handle, 1, 0, VK_F2);
@@ -398,7 +408,8 @@ begin
 		AccessCB.checked := true;
 		ExtPropertiesPC.Visible := true;
 		DownloadLinksTS.TabVisible := true;
-		if self.AutoUpdateDownloadListing then UpdateDownloadListing;
+		if self.AutoUpdateDownloadListing then
+			UpdateDownloadListing;
 	end else begin
 		AccessCB.checked := not(Props.WebLink = '');
 		WebLink.Enabled := AccessCB.checked;
@@ -423,7 +434,8 @@ end;
 
 procedure TPropertyForm.WMHotKey(var Message: TMessage);
 begin
-	if (Message.LParamHi = VK_ESCAPE) and (GetForegroundWindow = self.Handle) then Close;
+	if (Message.LParamHi = VK_ESCAPE) and (GetForegroundWindow = self.Handle) then
+		Close;
 	if (Message.LParamHi = VK_F2) and (GetForegroundWindow = self.Handle) and (self.ShowDescription) and (self.EditDescription) then
 	begin
 		SaveItemDescription;
@@ -434,19 +446,23 @@ end;
 
 procedure TPropertyForm.WrapBTNClick(Sender: TObject);
 begin
-	if WrapBTN.Down then DownloadLinksMemo.ScrollBars := ssVertical
-	else DownloadLinksMemo.ScrollBars := ssBoth;
+	if WrapBTN.Down then
+		DownloadLinksMemo.ScrollBars := ssVertical
+	else
+		DownloadLinksMemo.ScrollBars := ssBoth;
 
 	DownloadLinksMemo.WordWrap := WrapBTN.Down;
 end;
 
 procedure TPropertyForm.AccessCBClick(Sender: TObject);
 begin
-	if self.Cloud.isPublicShare then exit;
+	if self.Cloud.isPublicShare then
+		exit;
 	AccessCB.Enabled := false; //блокируем во избежание повторных кликов
 	WebLink.Text := 'Wait for it...';
 	RefreshPublicShare(AccessCB.checked);
-	if AccessCB.checked and self.AutoUpdateDownloadListing then UpdateDownloadListing;
+	if AccessCB.checked and self.AutoUpdateDownloadListing then
+		UpdateDownloadListing;
 
 	AccessCB.Enabled := true;
 end;

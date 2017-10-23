@@ -81,8 +81,10 @@ begin
 	if (doInit) then
 	begin
 		OperationResult := CLOUD_OPERATION_OK;
-		if not initialized(connectionName) then OperationResult := init(connectionName, self.Proxy, self.Timeout);
-		if (OperationResult = CLOUD_OPERATION_OK) then result := get(connectionName, OperationResult, false);
+		if not initialized(connectionName) then
+			OperationResult := init(connectionName, self.Proxy, self.Timeout);
+		if (OperationResult = CLOUD_OPERATION_OK) then
+			result := get(connectionName, OperationResult, false);
 	end;
 	{если подключиться не удалось, все функции облака будут возвращать негативный результат, но без AV}
 end;
@@ -92,7 +94,8 @@ var
 	ConnectionIndex: Integer;
 begin
 	ConnectionIndex := ConnectionExists(connectionName);
-	if ConnectionIndex = -1 then exit(false);
+	if ConnectionIndex = -1 then
+		exit(false);
 	Connections[ConnectionIndex].Connection := cloud;
 	result := true;
 end;
@@ -106,15 +109,19 @@ begin
 	result := CLOUD_OPERATION_OK;
 	AccountSettings := GetAccountSettingsFromIniFile(IniFileName, connectionName);
 
-	if not GetMyPasswordNow(AccountSettings) then exit(CLOUD_OPERATION_ERROR_STATUS_UNKNOWN); //INVALID_HANDLE_VALUE
+	if not GetMyPasswordNow(AccountSettings) then
+		exit(CLOUD_OPERATION_ERROR_STATUS_UNKNOWN); //INVALID_HANDLE_VALUE
 
 	LogHandleProc(LogLevelConnect, MSGTYPE_CONNECT, PWideChar('CONNECT \' + connectionName));
 
 	cloud := TCloudMailRu.Create(AccountSettings, self.CloudMaxFileSize, self.Proxy, Timeout, ProgressHandleProc, LogHandleProc, RequestHandleProc);
-	if not set_(connectionName, cloud) then exit(CLOUD_OPERATION_ERROR_STATUS_UNKNOWN); //INVALID_HANDLE_VALUE
+	if not set_(connectionName, cloud) then
+		exit(CLOUD_OPERATION_ERROR_STATUS_UNKNOWN); //INVALID_HANDLE_VALUE
 
-	if (AccountSettings.twostep_auth) then LoginMethod := 1
-	else LoginMethod := 0;
+	if (AccountSettings.twostep_auth) then
+		LoginMethod := 1
+	else
+		LoginMethod := 0;
 
 	if not(get(connectionName, result, false).login(LoginMethod)) then
 	begin
@@ -147,7 +154,8 @@ begin
 
 	for I := 0 to Length(Connections) - 1 do
 	begin
-		if Connections[I].Name = connectionName then exit(I);
+		if Connections[I].Name = connectionName then
+			exit(I);
 	end;
 end;
 
@@ -183,7 +191,8 @@ var
 	TmpString: WideString;
 	buf: PWideChar;
 begin
-	if AccountSettings.public_account then exit(true);
+	if AccountSettings.public_account then
+		exit(true);
 
 	if AccountSettings.use_tc_password_manager then
 	begin //пароль должен браться из TC
@@ -246,7 +255,8 @@ begin
 			result := true;
 		end;
 	end
-	else result := true; //пароль взят из инишника напрямую
+	else
+		result := true; //пароль взят из инишника напрямую
 end;
 
 end.
