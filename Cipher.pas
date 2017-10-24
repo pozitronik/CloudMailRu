@@ -52,7 +52,9 @@ begin
 
 		SourceStream := TFileStream.Create(SourceFileName, fmOpenRead);
 		DestinationStream := TFileStream.Create(DestinationFilename, fmCreate);
-		self.CryptStream(SourceStream, DestinationStream);
+		if SourceStream.Size > 0 then
+			self.CryptStream(SourceStream, DestinationStream);
+
 		SourceStream.Free;
 		DestinationStream.Free;
 	except
