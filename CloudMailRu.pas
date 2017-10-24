@@ -2,7 +2,7 @@
 
 interface
 
-uses CMLJSON, CMLTypes, System.Classes, System.Generics.Collections, System.SysUtils, PLUGIN_Types, Winapi.Windows, IdStack, MRC_helper, Settings, IdCookieManager, IdIOHandler, IdIOHandlerSocket, IdIOHandlerStack, IdSSL, IdSSLOpenSSL, IdBaseComponent, IdComponent, IdTCPConnection, IdTCPClient, IdSocks, IdHTTP, IdAuthentication, IdIOHandlerStream, FileSplitter, IdCookie, IdMultipartFormData;
+uses CMLJSON, CMLTypes, System.Classes, System.Generics.Collections, System.SysUtils, PLUGIN_Types, Winapi.Windows, IdStack, MRC_helper, Settings, IdCookieManager, IdIOHandler, IdIOHandlerSocket, IdIOHandlerStack, IdSSL, IdSSLOpenSSL, IdBaseComponent, IdComponent, IdTCPConnection, IdTCPClient, IdSocks, IdHTTP, IdAuthentication, IdIOHandlerStream, FileSplitter, IdCookie, IdMultipartFormData, Cipher;
 
 type
 	TCloudMailRu = class
@@ -35,6 +35,11 @@ type
 		Shard: WideString;
 		Proxy: TProxySettings;
 		ConnectTimeout: integer;
+
+		crypt_files: Boolean;
+		crypt_files_password: WideString;
+		crypt_filenames: Boolean;
+		crypt_filenames_password: WideString;
 
 		united_params: WideString; //Объединённый набор авторизационных параметров для подстановки в URL
 
@@ -80,6 +85,10 @@ type
 		Property isPublicShare: Boolean read public_account;
 		Property ProxySettings: TProxySettings read Proxy;
 		Property ConnectTimeoutValue: integer read ConnectTimeout;
+		Property CryptFilesPassword: WideString read crypt_files_password write crypt_files_password;
+		Property CryptFileNamesPassword: WideString read crypt_filenames_password write crypt_filenames_password;
+		function isCryptFilesPasswordRequired(): Boolean;
+		function isCryptFileNamesPasswordRequired(): Boolean;
 		function getSharedFileUrl(remotePath: WideString; DoUrlEncode: Boolean = true): WideString;
 		{CONSTRUCTOR/DESTRUCTOR}
 		constructor Create(AccountSettings: TAccountSettings; split_file_size: integer; Proxy: TProxySettings; ConnectTimeout: integer; ExternalProgressProc: TProgressHandler = nil; ExternalLogProc: TLogHandler = nil; ExternalRequestProc: TRequestHandler = nil);
@@ -265,6 +274,8 @@ begin
 		self.split_large_files := AccountSettings.split_large_files;
 		self.public_account := AccountSettings.public_account;
 		self.PUBLIC_URL := AccountSettings.PUBLIC_URL;
+		self.crypt_files := AccountSettings.crypt_files;
+		self.crypt_filenames := AccountSettings.crypt_filenames;
 		if self.public_account and (self.PUBLIC_URL <> '') then
 		begin
 			self.public_link := self.PUBLIC_URL;
@@ -898,6 +909,8 @@ var
 	HTTP: TIdHTTP;
 	SSL: TIdSSLIOHandlerSocketOpenSSL;
 	Socks: TIdSocksInfo;
+	Cipher: TCipher;
+	TmpStream: TMemoryStream;
 begin
 	Result := FS_FILE_OK;
 	try
@@ -905,24 +918,44 @@ begin
 		HTTP.Request.ContentType := 'application/octet-stream';
 		HTTP.Response.KeepAlive := true;
 		HTTP.OnWork := self.HTTPProgress;
-		HTTP.Get(URL, FileStream);
+
+		if self.crypt_files then
+		begin
+
+			TmpStream := TMemoryStream.Create;
+			HTTP.Get(URL, TmpStream);
+			TmpStream.Position := 0;
+			Cipher := TCipher.Create(self.crypt_files_password, self.crypt_filenames_password);
+			Cipher.DecryptStream(TmpStream, FileStream);
+			TmpStream.free;
+			Cipher.free;
+
+		end else begin
+			HTTP.Get(URL, FileStream);
+		end;
+
 		if (HTTP.RedirectCount = HTTP.RedirectMaximum) and (FileStream.size = 0) then
 		begin
 			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Достигнуто максимальное количество перенаправлений при запросе файла с адреса ' + URL);
 			Result := FS_FILE_READERROR;
 		end;
 		self.HTTPDestroy(HTTP, SSL);
+
 	except
 		on E: EAbort do
 		begin
 			if Assigned(HTTP) then
 				self.HTTPDestroy(HTTP, SSL);
+			if Assigned(TmpStream) then
+				TmpStream.free;
 			Result := FS_FILE_USERABORT;
 		end;
 		on E: EIdSocketerror do
 		begin
 			if Assigned(HTTP) then
 				self.HTTPDestroy(HTTP, SSL);
+			if Assigned(TmpStream) then
+				TmpStream.free;
 			if LogErrors then
 				Log(LogLevelError, MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка сети: ' + E.Message + ' при копировании файла с адреса ' + URL);
 			Result := FS_FILE_READERROR;
@@ -931,6 +964,8 @@ begin
 		begin
 			if Assigned(HTTP) then
 				self.HTTPDestroy(HTTP, SSL);
+			if Assigned(TmpStream) then
+				TmpStream.free;
 			if LogErrors then
 				Log(LogLevelError, MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при копировании файла с адреса ' + URL);
 			Result := FS_FILE_READERROR;
@@ -1130,14 +1165,31 @@ var
 	SSL: TIdSSLIOHandlerSocketOpenSSL;
 	Socks: TIdSocksInfo;
 	PostData: TIdMultipartFormDataStream;
+	Cipher: TCipher;
+	TmpFileName: WideString;
 begin
 	Result := CLOUD_OPERATION_OK;
 	MemStream := TStringStream.Create;
 	PostData := TIdMultipartFormDataStream.Create;
-	PostData.AddFile('file', FileName, 'application/octet-stream');
+
+	if self.crypt_files then
+	begin
+		//TIdMultipartFormDataStream does not support indirect stream operations, temp file used instead
+		Cipher := TCipher.Create(self.crypt_files_password, self.crypt_filenames_password);
+		TmpFileName := GetTmpFileName();
+		Cipher.CryptFile(FileName, TmpFileName);
+		PostData.AddFile('file', TmpFileName, 'application/octet-stream');
+		Cipher.free;
+		DeleteFileW(PWideChar(TmpFileName));
+	end else begin
+		PostData.AddFile('file', FileName, 'application/octet-stream');
+	end;
+
 	try
+
 		self.HTTPInit(HTTP, SSL, Socks, self.Cookie);
 		HTTP.OnWork := self.HTTPProgress;
+
 		HTTP.Post(URL, PostData, MemStream);
 		Answer := MemStream.DataString;
 		self.HTTPDestroy(HTTP, SSL);
@@ -1191,6 +1243,17 @@ begin
 		if Assigned(ExternalProgressProc) and (ExternalProgressProc(self.ExternalSourceName, self.ExternalTargetName, Percent) = 1) then
 			abort;
 	end;
+end;
+
+function TCloudMailRu.isCryptFileNamesPasswordRequired: Boolean;
+begin
+	Result := self.crypt_filenames and (EmptyWideStr = self.crypt_filenames_password);
+
+end;
+
+function TCloudMailRu.isCryptFilesPasswordRequired: Boolean;
+begin
+	Result := self.crypt_files and (EmptyWideStr = self.crypt_files_password);
 end;
 
 procedure TCloudMailRu.Log(LogLevel, MsgType: integer; LogString: WideString);
@@ -1750,7 +1813,7 @@ begin
 	exit(FS_FILE_OK); //Файлик залит по частям, выходим
 end;
 
-function TCloudMailRu.putFile(localPath, remotePath, ConflictMode: WideString; ChunkOverwriteMode: integer): integer;
+function TCloudMailRu.putFile(localPath, remotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; ChunkOverwriteMode: integer = 0): integer;
 var
 	PutResult: TStringList;
 	JSONAnswer, FileHash: WideString;

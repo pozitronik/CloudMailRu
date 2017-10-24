@@ -1,7 +1,7 @@
 ﻿library MailRuCloud;
 
 uses
-	SysUtils, System.Generics.Collections, DateUtils, windows, Classes, PLUGIN_TYPES, IdSSLOpenSSLHeaders, messages, inifiles, Vcl.controls, CloudMailRu in 'CloudMailRu.pas', MRC_Helper in 'MRC_Helper.pas', Accounts in 'Accounts.pas'{AccountsForm}, RemoteProperty in 'RemoteProperty.pas'{PropertyForm}, Descriptions in 'Descriptions.pas', ConnectionManager in 'ConnectionManager.pas', Settings in 'Settings.pas', ANSIFunctions in 'ANSIFunctions.pas', DeletedProperty in 'DeletedProperty.pas'{DeletedPropertyForm}, InviteProperty in 'InviteProperty.pas'{InvitePropertyForm}, AskPassword, CMLJSON in 'CMLJSON.pas', CMLTypes in 'CMLTypes.pas', Cipher in 'Cipher.pas', DCPbase64 in 'DCPCrypt\DCPbase64.pas', DCPblockciphers in 'DCPCrypt\DCPblockciphers.pas', DCPconst in 'DCPCrypt\DCPconst.pas',
+	SysUtils, System.Generics.Collections, DateUtils, windows, Classes, PLUGIN_TYPES, IdSSLOpenSSLHeaders, messages, inifiles, Vcl.controls, CloudMailRu in 'CloudMailRu.pas', MRC_Helper in 'MRC_Helper.pas', Accounts in 'Accounts.pas'{AccountsForm}, RemoteProperty in 'RemoteProperty.pas'{PropertyForm}, Descriptions in 'Descriptions.pas', ConnectionManager in 'ConnectionManager.pas', Settings in 'Settings.pas', ANSIFunctions in 'ANSIFunctions.pas', DeletedProperty in 'DeletedProperty.pas'{DeletedPropertyForm}, InviteProperty in 'InviteProperty.pas'{InvitePropertyForm}, AskPassword, CMLJSON in 'CMLJSON.pas', CMLTypes in 'CMLTypes.pas', DCPbase64 in 'DCPCrypt\DCPbase64.pas', DCPblockciphers in 'DCPCrypt\DCPblockciphers.pas', DCPconst in 'DCPCrypt\DCPconst.pas',
 	DCPcrypt2 in 'DCPCrypt\DCPcrypt2.pas', DCPreg in 'DCPCrypt\DCPreg.pas', DCPtypes in 'DCPCrypt\DCPtypes.pas', DCPblowfish in 'DCPCrypt\Ciphers\DCPblowfish.pas', DCPcast128 in 'DCPCrypt\Ciphers\DCPcast128.pas', DCPcast256 in 'DCPCrypt\Ciphers\DCPcast256.pas', DCPdes in 'DCPCrypt\Ciphers\DCPdes.pas', DCPgost in 'DCPCrypt\Ciphers\DCPgost.pas', DCPice in 'DCPCrypt\Ciphers\DCPice.pas', DCPidea in 'DCPCrypt\Ciphers\DCPidea.pas', DCPmars in 'DCPCrypt\Ciphers\DCPmars.pas', DCPmisty1 in 'DCPCrypt\Ciphers\DCPmisty1.pas', DCPrc2 in 'DCPCrypt\Ciphers\DCPrc2.pas', DCPrc4 in 'DCPCrypt\Ciphers\DCPrc4.pas', DCPrc5 in 'DCPCrypt\Ciphers\DCPrc5.pas', DCPrc6 in 'DCPCrypt\Ciphers\DCPrc6.pas', DCPrijndael in 'DCPCrypt\Ciphers\DCPrijndael.pas', DCPserpent in 'DCPCrypt\Ciphers\DCPserpent.pas',
 	DCPtea in 'DCPCrypt\Ciphers\DCPtea.pas', DCPtwofish in 'DCPCrypt\Ciphers\DCPtwofish.pas', DCPhaval in 'DCPCrypt\Hashes\DCPhaval.pas', DCPmd4 in 'DCPCrypt\Hashes\DCPmd4.pas', DCPmd5 in 'DCPCrypt\Hashes\DCPmd5.pas', DCPripemd128 in 'DCPCrypt\Hashes\DCPripemd128.pas', DCPripemd160 in 'DCPCrypt\Hashes\DCPripemd160.pas', DCPsha1 in 'DCPCrypt\Hashes\DCPsha1.pas', DCPsha256 in 'DCPCrypt\Hashes\DCPsha256.pas', DCPsha512 in 'DCPCrypt\Hashes\DCPsha512.pas', DCPtiger in 'DCPCrypt\Hashes\DCPtiger.pas';
 
@@ -965,9 +965,6 @@ var
 	getResult: integer;
 	Item: TCloudMailRuDirListingItem;
 	Cloud: TCloudMailRu;
-	DoCipher, DoCipherFileNames: boolean;
-	Cipher: TCipher;
-	TempFileName, DecryptedFileName: WideString;
 	Password, FilenamePassword: WideString;
 	crypt_id, crypt_filename_id: WideString;
 	ask_user: boolean;
@@ -975,16 +972,25 @@ begin
 
 	Cloud := ConnectionManager.get(RemotePath.account, getResult);
 
-	{Расшифровка при установленном параметре}
-	DoCipher := GetAccountSettingsFromIniFile(AccountsIniFilePath, RemotePath.account).crypt_files;
-	DoCipherFileNames := GetAccountSettingsFromIniFile(AccountsIniFilePath, RemotePath.account).crypt_filenames;
-	if (DoCipher) then //загрузка во временный файл с последующей дешифровкой
+	if Cloud.isCryptFilesPasswordRequired then
 	begin
-		TempFileName := GetTmpFileName();
-		Result := Cloud.getFile(WideString(RemotePath.path), TempFileName);
-	end else begin
-		Result := Cloud.getFile(WideString(RemotePath.path), LocalName)
+		crypt_id := RemotePath.account + ' filecrypt';
+		crypt_filename_id := RemotePath.account + ' filenamecrypt';
+		ask_user := true;
+		if GetCryptPassword(crypt_id, Password, ask_user, nil, CryptHandle) then
+		begin
+			Cloud.CryptFilesPassword := Password;
+			if Cloud.isCryptFileNamesPasswordRequired then
+			begin
+				if GetCryptPassword(crypt_filename_id, FilenamePassword, ask_user, nil, CryptHandle) then
+					Cloud.CryptFileNamesPassword := FilenamePassword;
+			end;
+		end
+		else
+			exit(FS_FILE_USERABORT);
 	end;
+
+	Result := Cloud.getFile(WideString(RemotePath.path), LocalName);
 
 	if Result = FS_FILE_OK then
 	begin
@@ -1001,37 +1007,6 @@ begin
 
 		if GetPluginSettings(SettingsIniFilePath).DescriptionCopyFromCloud then
 			UpdateFileDescription(RemotePath, LocalName, Cloud);
-		{Расшифровка при установленном параметре}
-		if (DoCipher) then
-		begin
-			crypt_id := RemotePath.account + ' filecrypt';
-			crypt_filename_id := RemotePath.account + ' filenamecrypt';
-			ask_user := true;
-			if GetCryptPassword(crypt_id, Password, ask_user, nil, CryptHandle) then //todo нужно сохранять пароль до конца операции
-			begin
-				if DoCipherFileNames then
-				begin //ask for filename password
-					ask_user := true;
-					DoCipherFileNames := GetCryptPassword(crypt_filename_id, FilenamePassword, ask_user, nil, CryptHandle)//todo нужно сохранять пароль до конца операции
-				end else begin //do not encrypt file name
-					FilenamePassword := '';
-				end;
-
-				Cipher := TCipher.Create(Password, FilenamePassword);
-				if DoCipherFileNames then
-					DecryptedFileName := ExtractCryptedFileNameFromPath(RemotePath.path);
-				LocalName := ChangeDecryptedPathFileName(LocalName, Cipher.DecryptFileName(DecryptedFileName));
-				if CIPHER_OK = Cipher.DecryptFile(TempFileName, LocalName) then
-				begin
-					Cipher.Destroy;
-				end else begin
-					//raise error
-					Cipher.Destroy;
-				end;
-			end else begin
-				exit(FS_FILE_USERABORT);
-			end;
-		end;
 
 	end;
 end;
@@ -1116,51 +1091,28 @@ function PutRemoteFile(RemotePath: TRealPath; LocalName, RemoteName: WideString;
 var
 	getResult: integer;
 	Cloud: TCloudMailRu;
-	DoCipher, DoCipherFileNames: boolean;
-	Cipher: TCipher;
-	TempFileName, CryptedFileName: WideString;
 	Password, FilenamePassword: WideString;
 	crypt_id, crypt_filename_id: WideString;
 	ask_user: boolean;
 begin
 	Cloud := ConnectionManager.get(RemotePath.account, getResult);
-	DoCipher := GetAccountSettingsFromIniFile(AccountsIniFilePath, RemotePath.account).crypt_files;
-	DoCipherFileNames := GetAccountSettingsFromIniFile(AccountsIniFilePath, RemotePath.account).crypt_filenames;
-	if (DoCipher) then
+
+	if Cloud.isCryptFilesPasswordRequired then
 	begin
 		crypt_id := RemotePath.account + ' filecrypt';
 		crypt_filename_id := RemotePath.account + ' filenamecrypt';
 		ask_user := true;
-		if GetCryptPassword(crypt_id, Password, ask_user, nil, CryptHandle) then //todo нужно сохранять пароль до конца операции
+		if GetCryptPassword(crypt_id, Password, ask_user, nil, CryptHandle) then
 		begin
-			if DoCipherFileNames then
-			begin //ask for filename password
-				ask_user := true;
-				DoCipherFileNames := GetCryptPassword(crypt_filename_id, FilenamePassword, ask_user, nil, CryptHandle)//todo нужно сохранять пароль до конца операции
-			end else begin //do not encrypt file name
-				FilenamePassword := '';
-			end;
-
-			Cipher := TCipher.Create(Password, FilenamePassword);
-			TempFileName := GetTmpFileName();
-			if CIPHER_OK = Cipher.CryptFile(LocalName, TempFileName) then
+			Cloud.CryptFilesPassword := Password;
+			if Cloud.isCryptFileNamesPasswordRequired then
 			begin
-				LocalName := TempFileName;
-				if DoCipherFileNames then
-				begin
-					CryptedFileName := Cipher.CryptFileName(RemotePath.path);
-					RemotePath.path := ChangePathFileName(RemotePath.path, {ExtractFileName(}CryptedFileName{)});
-
-				end;
-				Cipher.Destroy;
-			end else begin
-				//raise error
-				Cipher.Destroy;
-				exit(FS_FILE_WRITEERROR);
+				if GetCryptPassword(crypt_filename_id, FilenamePassword, ask_user, nil, CryptHandle) then
+					Cloud.CryptFileNamesPassword := FilenamePassword;
 			end;
-		end else begin
+		end
+		else
 			exit(FS_FILE_USERABORT);
-		end;
 	end;
 
 	Result := Cloud.putFile(WideString(LocalName), RemotePath.path);
@@ -1172,9 +1124,6 @@ begin
 			Result := DeleteLocalFile(LocalName);
 		if (GetPluginSettings(SettingsIniFilePath).DescriptionCopyToCloud and RemoteDescriptionsSupportEnabled(GetAccountSettingsFromIniFile(AccountsIniFilePath, RemotePath.account))) then
 			UpdateRemoteFileDescription(RemotePath, LocalName, Cloud);
-		if DoCipher then
-			DeleteLocalFile(TempFileName);
-
 	end;
 
 end;
