@@ -24,11 +24,27 @@ type
 		function DecryptFile(SourceFileName, DestinationFilename: WideString): integer;
 		function DecryptStream(SourceStream, DestinationStream: TStream): integer;
 		function DecryptFileName(const FileName: WideString): WideString;
+		class function Base64ToSafe(const Base64: WideString): WideString; //converts Base64-encoded string to URL and Filename safe (RFC 4648)
+		class function Base64FromSafe(const Safe: WideString): WideString;
 	end;
 
 implementation
 
 {TCipher}
+
+class function TCipher.Base64FromSafe(const Safe: WideString): WideString;
+begin
+	Result := Safe;
+	Result := StringReplace(Result, '-', '+', [rfReplaceAll]);
+	Result := StringReplace(Result, '_', '/', [rfReplaceAll]);
+end;
+
+class function TCipher.Base64ToSafe(const Base64: WideString): WideString;
+begin
+	Result := Base64;
+	Result := StringReplace(Result, '+', '-', [rfReplaceAll]);
+	Result := StringReplace(Result, '/', '_', [rfReplaceAll]);
+end;
 
 constructor TCipher.Create(fileKey: WideString; filenameKey: WideString = '');
 begin
@@ -47,7 +63,7 @@ function TCipher.CryptFile(SourceFileName, DestinationFilename: WideString): int
 var
 	SourceStream, DestinationStream: TFileStream;
 begin
-	result := CIPHER_OK;
+	Result := CIPHER_OK;
 	try
 
 		SourceStream := TFileStream.Create(SourceFileName, fmOpenRead);
@@ -58,20 +74,24 @@ begin
 		SourceStream.Free;
 		DestinationStream.Free;
 	except
-		result := CIPHER_IO_ERROR;
+		Result := CIPHER_IO_ERROR;
 	end;
 end;
 
 function TCipher.CryptFileName(const FileName: WideString): WideString;
 begin
-	result := ExtractFileName(FileName);
+	Result := ExtractFileName(FileName);
+	if EmptyWideStr = Result then
+		exit;
 	if DoFilenameCipher then
-		result := self.filenameCipher.EncryptString(result);
+		Result := Base64ToSafe(self.filenameCipher.EncryptString(Result));
 end;
 
 function TCipher.CryptStream(SourceStream, DestinationStream: TStream): integer;
 begin
-	result := self.fileCipher.EncryptStream(SourceStream, DestinationStream, SourceStream.Size);
+	if SourceStream.Size > 0 then
+
+		Result := self.fileCipher.EncryptStream(SourceStream, DestinationStream, SourceStream.Size);
 	//self.fileCipher.Burn;
 	//self.fileCipher.Destroy;
 end;
@@ -80,29 +100,34 @@ function TCipher.DecryptFile(SourceFileName, DestinationFilename: WideString): i
 var
 	SourceStream, DestinationStream: TFileStream;
 begin
-	result := CIPHER_OK;
+	Result := CIPHER_OK;
 	try
 
 		SourceStream := TFileStream.Create(SourceFileName, fmOpenRead);
 		DestinationStream := TFileStream.Create(DestinationFilename, fmCreate);
-		self.DecryptStream(SourceStream, DestinationStream);
+		if SourceStream.Size > 0 then
+			self.DecryptStream(SourceStream, DestinationStream);
 		SourceStream.Free;
 		DestinationStream.Free;
 	except
-		result := CIPHER_IO_ERROR;
+		Result := CIPHER_IO_ERROR;
 	end;
 end;
 
 function TCipher.DecryptFileName(const FileName: WideString): WideString;
 begin
-	result := ExtractFileName(FileName);
+	Result := ExtractFileName(FileName);
+	if EmptyWideStr = Result then
+		exit;
+
 	if DoFilenameCipher then
-		result := self.filenameCipher.DecryptString(FileName);
+		Result := self.filenameCipher.DecryptString(Base64FromSafe(FileName));
 end;
 
 function TCipher.DecryptStream(SourceStream, DestinationStream: TStream): integer;
 begin
-	result := self.fileCipher.DecryptStream(SourceStream, DestinationStream, SourceStream.Size);
+	if SourceStream.Size > 0 then
+		Result := self.fileCipher.DecryptStream(SourceStream, DestinationStream, SourceStream.Size);
 	//self.fileCipher.Burn;
 	//self.fileCipher.Destroy;
 end;
