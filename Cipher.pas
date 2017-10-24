@@ -89,6 +89,7 @@ end;
 
 function TCipher.CryptStream(SourceStream, DestinationStream: TStream): integer;
 begin
+	Result := 0;
 	if SourceStream.Size > 0 then
 
 		Result := self.fileCipher.EncryptStream(SourceStream, DestinationStream, SourceStream.Size);
@@ -126,6 +127,7 @@ end;
 
 function TCipher.DecryptStream(SourceStream, DestinationStream: TStream): integer;
 begin
+	Result := 0;
 	if SourceStream.Size > 0 then
 		Result := self.fileCipher.DecryptStream(SourceStream, DestinationStream, SourceStream.Size);
 	//self.fileCipher.Burn;
