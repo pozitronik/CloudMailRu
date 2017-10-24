@@ -2,7 +2,7 @@
 
 interface
 
-uses CMLJSON, CMLTypes, System.Classes, System.Generics.Collections, System.SysUtils, PLUGIN_Types, Winapi.Windows, IdStack, MRC_helper, Settings, IdCookieManager, IdIOHandler, IdIOHandlerSocket, IdIOHandlerStack, IdSSL, IdSSLOpenSSL, IdBaseComponent, IdComponent, IdTCPConnection, IdTCPClient, IdSocks, IdHTTP, IdAuthentication, IdIOHandlerStream, FileSplitter, IdCookie, IdMultipartFormData, Cipher, IdURI;
+uses CMLJSON, CMLTypes, System.Classes, System.Generics.Collections, System.SysUtils, PLUGIN_Types, Winapi.Windows, IdStack, MRC_helper, Settings, IdCookieManager, IdIOHandler, IdIOHandlerSocket, IdIOHandlerStack, IdSSL, IdSSLOpenSSL, IdBaseComponent, IdComponent, IdTCPConnection, IdTCPClient, IdSocks, IdHTTP, IdAuthentication, IdIOHandlerStream, FileSplitter, IdCookie, IdMultipartFormData, Cipher;
 
 type
 	TCloudMailRu = class
@@ -149,7 +149,7 @@ begin
 		remotePath := ChangePathFileName(remotePath, FileName);
 		Cipher.free;
 	end;
-	Result := self.HTTPPost(API_FILE_ADD, 'conflict=' + ConflictMode + '&home=/' + remotePath + '&hash=' + hash + '&size=' + size.ToString + self.united_params, JSONAnswer);
+	Result := self.HTTPPost(API_FILE_ADD, 'conflict=' + ConflictMode + '&home=/' + PathToUrl(remotePath) + '&hash=' + hash + '&size=' + size.ToString + self.united_params, JSONAnswer);
 
 end;
 
@@ -699,7 +699,6 @@ begin
 		Cipher := TCipher.Create(self.crypt_files_password, self.crypt_filenames_password);
 		FileName := ExtractUniversalFileName(remotePath);
 		FileName := Cipher.DecryptFileName(FileName);
-		FileName := TIdURI.UrlDecode(FileName);
 		localPath := ChangePathFileName(localPath, FileName);
 		Cipher.free;
 	end;
@@ -1893,7 +1892,7 @@ begin
 	if OperationResult = CLOUD_OPERATION_OK then
 	begin
 		//Log( MSGTYPE_DETAILS, 'putFileToCloud result: ' + PutResult.Text);
-		if self.addFileToCloud(FileHash, FileSize, PathToUrl(remotePath), JSONAnswer) then
+		if self.addFileToCloud(FileHash, FileSize, remotePath, JSONAnswer) then
 		begin
 			OperationResult := fromJSON_OperationResult(JSONAnswer, OperationStatus);
 			Result := CloudResultToFsResult(OperationResult, OperationStatus, 'File uploading error: ');
