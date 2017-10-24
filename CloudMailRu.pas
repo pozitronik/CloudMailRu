@@ -2,7 +2,7 @@
 
 interface
 
-uses CMLJSON, CMLTypes, System.Classes, System.Generics.Collections, System.SysUtils, PLUGIN_Types, Winapi.Windows, IdStack, MRC_helper, Settings, IdCookieManager, IdIOHandler, IdIOHandlerSocket, IdIOHandlerStack, IdSSL, IdSSLOpenSSL, IdBaseComponent, IdComponent, IdTCPConnection, IdTCPClient, IdSocks, IdHTTP, IdAuthentication, IdIOHandlerStream, FileSplitter, IdCookie, IdMultipartFormData, Cipher;
+uses CMLJSON, CMLTypes, System.Classes, System.Generics.Collections, System.SysUtils, PLUGIN_Types, Winapi.Windows, IdStack, MRC_helper, Settings, IdCookieManager, IdIOHandler, IdIOHandlerSocket, IdIOHandlerStack, IdSSL, IdSSLOpenSSL, IdBaseComponent, IdComponent, IdTCPConnection, IdTCPClient, IdSocks, IdHTTP, IdAuthentication, IdIOHandlerStream, FileSplitter, IdCookie, IdMultipartFormData, Cipher, IdURI;
 
 type
 	TCloudMailRu = class
@@ -699,6 +699,7 @@ begin
 		Cipher := TCipher.Create(self.crypt_files_password, self.crypt_filenames_password);
 		FileName := ExtractUniversalFileName(remotePath);
 		FileName := Cipher.DecryptFileName(FileName);
+		FileName := TIdURI.UrlDecode(FileName);
 		localPath := ChangePathFileName(localPath, FileName);
 		Cipher.free;
 	end;
