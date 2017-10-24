@@ -54,6 +54,9 @@ function GetTCCommentPreferredFormat: integer;
 function GetTmpDir: WideString;
 function GetTmpFileName(Prefix: WideString = ''): WideString;
 function ExtractCryptedFileNameFromPath(const FilePath: WideString): WideString;
+function ExtractUniversalFilePath(const FileName: string): string;
+function ExtractUniversalFileName(const FileName: string): string;
+function ExtractUniversalFileExt(const FileName: string): string;
 function ChangePathFileName(const FilePath, NewFileName: WideString): WideString;
 function ChangeDecryptedPathFileName(const FilePath, NewFileName: WideString): WideString;
 function CopyExt(FromFilename, ToFilename: WideString): WideString;
@@ -403,9 +406,36 @@ begin
 	Result := StringReplace(Result, '\', '/', [rfReplaceAll]);
 end;
 
+function ExtractUniversalFilePath(const FileName: string): string;
+var
+	I: integer;
+begin
+	I := FileName.LastDelimiter('/' + '\' + DriveDelim);
+	Result := FileName.Substring(0, I + 1);
+end;
+
+function ExtractUniversalFileName(const FileName: string): string;
+var
+	I: integer;
+begin
+	I := FileName.LastDelimiter('/' + '\' + DriveDelim);
+	Result := FileName.Substring(I + 1);
+end;
+
+function ExtractUniversalFileExt(const FileName: string): string;
+var
+	I: integer;
+begin
+	I := FileName.LastDelimiter('.' + '/' + '\' + DriveDelim);
+	if (I >= 0) and (FileName.Chars[I] = '.') then
+		Result := FileName.Substring(I)
+	else
+		Result := '';
+end;
+
 function ChangePathFileName(const FilePath, NewFileName: WideString): WideString;
 begin
-	Result := ExtractFilePath(FilePath) + NewFileName;
+	Result := ExtractUniversalFilePath(FilePath) + NewFileName;
 end;
 
 function ChangeDecryptedPathFileName(const FilePath, NewFileName: WideString): WideString;
