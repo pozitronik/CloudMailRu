@@ -679,6 +679,8 @@ end;
 function TCloudMailRu.getFileRegular(remotePath, localPath: WideString; LogErrors: Boolean): integer;
 var
 	FileStream: TFileStream;
+	Cipher: TCipher;
+	FileName: WideString;
 begin
 	Result := FS_FILE_NOTSUPPORTED;
 	if self.Shard = '' then
@@ -692,6 +694,15 @@ begin
 			exit;
 		end;
 	end;
+	if self.crypt_files and self.crypt_filenames then
+	begin
+		Cipher := TCipher.Create(self.crypt_files_password, self.crypt_filenames_password);
+		FileName := ExtractUniversalFileName(remotePath);
+		FileName := Cipher.DecryptFileName(FileName);
+		localPath := ChangePathFileName(localPath, FileName);
+		Cipher.free;
+	end;
+
 	try
 		FileStream := TFileStream.Create(GetUNCFilePath(localPath), fmCreate);
 	except
