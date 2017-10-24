@@ -136,9 +136,21 @@ implementation
 {TCloudMailRu}
 
 function TCloudMailRu.addFileToCloud(hash: WideString; size: int64; remotePath: WideString; var JSONAnswer: WideString; ConflictMode: WideString): Boolean;
+var
+	Cipher: TCipher;
+	FileName: WideString;
 begin
 	{Экспериментально выяснено, что параметры api, build, email, x-email, x-page-id в запросе не обязательны}
+	if self.crypt_files and self.crypt_filenames then
+	begin
+		Cipher := TCipher.Create(self.crypt_files_password, self.crypt_filenames_password);
+		FileName := ExtractUniversalFileName(remotePath);
+		FileName := Cipher.CryptFileName(FileName);
+		remotePath := ChangePathFileName(remotePath, FileName);
+		Cipher.free;
+	end;
 	Result := self.HTTPPost(API_FILE_ADD, 'conflict=' + ConflictMode + '&home=/' + remotePath + '&hash=' + hash + '&size=' + size.ToString + self.united_params, JSONAnswer);
+
 end;
 
 function TCloudMailRu.cloneWeblink(Path, link, ConflictMode: WideString): integer;
