@@ -305,22 +305,35 @@ object AccountsForm: TAccountsForm
           Height = 149
           Caption = 'Encryption'
           TabOrder = 6
-          object EncryptFilesCB: TCheckBox
-            Left = 8
-            Top = 16
-            Width = 240
-            Height = 17
-            Caption = 'Encrypt/decrypt files on the fly'
-            TabOrder = 0
-            OnClick = EncryptFilesCBClick
+          object EncryptFilesLabel: TLabel
+            Left = 7
+            Top = 20
+            Width = 243
+            Height = 13
+            Caption = 'Encrypt/decrypt files'
           end
           object EncryptFilenamesCB: TCheckBox
-            Left = 8
-            Top = 39
-            Width = 240
+            Left = 7
+            Top = 66
+            Width = 243
             Height = 17
             Caption = 'Also encrypt filenames'
+            TabOrder = 0
+          end
+          object EncryptFilesCombo: TComboBox
+            Left = 7
+            Top = 39
+            Width = 243
+            Height = 21
+            Style = csDropDownList
+            ItemIndex = 0
             TabOrder = 1
+            Text = 'No'
+            Items.Strings = (
+              'No'
+              'Always'
+              'Ask once'
+              'Ask every time')
           end
         end
       end
@@ -851,13 +864,5 @@ object AccountsForm: TAccountsForm
         TabOrder = 4
       end
     end
-  end
-  object ComboBox1: TComboBox
-    Left = 48
-    Top = 0
-    Width = 145
-    Height = 21
-    TabOrder = 1
-    Text = 'ComboBox1'
   end
 end

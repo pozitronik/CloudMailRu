@@ -85,10 +85,10 @@ type
 		DescriptionFileNameLabel: TLabel;
 		DescriptionFileNameEdit: TEdit;
 		DescriptionTrackCloudFSCB: TCheckBox;
-    EncryptGB: TGroupBox;
-    EncryptFilesCB: TCheckBox;
-    EncryptFilenamesCB: TCheckBox;
-    ComboBox1: TComboBox;
+		EncryptGB: TGroupBox;
+		EncryptFilenamesCB: TCheckBox;
+		EncryptFilesCombo: TComboBox;
+		EncryptFilesLabel: TLabel;
 		procedure FormShow(Sender: TObject);
 		procedure AccountsListClick(Sender: TObject);
 		procedure ApplyButtonClick(Sender: TObject);
@@ -101,7 +101,6 @@ type
 		procedure GlobalSettingApplyBTNClick(Sender: TObject);
 		procedure PublicAccountCBClick(Sender: TObject);
 		procedure CloudMaxFileSizeCBClick(Sender: TObject);
-		procedure EncryptFilesCBClick(Sender: TObject);
 		procedure CryptFilesPasswordButtonClick(Sender: TObject);
 		procedure CryptFilenamesPwdButtonClick(Sender: TObject);
 	private
@@ -150,8 +149,7 @@ begin
 		PublicAccountCB.Checked := CASettings.public_account;
 		PublicUrlEdit.Text := CASettings.public_url;
 		TwostepAuthCB.Checked := CASettings.twostep_auth;
-		EncryptFilesCB.Checked := CASettings.encrypt_files;
-		EncryptFilenamesCB.Enabled := EncryptFilesCB.Checked;
+		EncryptFilesCombo.ItemIndex := CASettings.encrypt_files_mode;
 		EncryptFilenamesCB.Checked := CASettings.encrypt_filenames;
 	end else begin
 		AccountNameEdit.Text := '';
@@ -183,7 +181,7 @@ begin
 	CASettings.twostep_auth := TwostepAuthCB.Checked;
 	CASettings.public_account := PublicAccountCB.Checked;
 	CASettings.public_url := PublicUrlEdit.Text;
-	CASettings.encrypt_files := EncryptFilesCB.Checked;
+	CASettings.encrypt_files_mode := EncryptFilesCombo.ItemIndex;
 	CASettings.encrypt_filenames := EncryptFilenamesCB.Checked;
 
 	if CASettings.use_tc_password_manager then //просим TC сохранить пароль
@@ -310,11 +308,6 @@ begin
 	if (AccountNameEdit.Text = '') then
 		exit();
 	SetCryptPassword(AccountNameEdit.Text + ' filenamecrypt', password, true, nil, self.CryptHandler, self.Handle);
-end;
-
-procedure TAccountsForm.EncryptFilesCBClick(Sender: TObject);
-begin
-	EncryptFilenamesCB.Enabled := EncryptFilesCB.Checked;
 end;
 
 procedure TAccountsForm.CryptFilesPasswordButtonClick(Sender: TObject);

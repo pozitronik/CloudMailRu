@@ -47,6 +47,11 @@ const
 	LogLevelError = 16; //error details
 	LogLevelDebug = 32; //also same internal debugging info
 
+	EncryptModeNone = 0;
+	EncryptModeAlways = 1;
+	EncryptModeAskOnce = 2;
+	EncryptModeAskAlways = 3;
+
 type
 
 	TAccountSettings = record
@@ -58,21 +63,21 @@ type
 		public_account: boolean;
 		public_url: WideString;
 		description: WideString;
-		encrypt_files: boolean;
+		encrypt_files_mode: integer;
 		encrypt_filenames: boolean;
 	end;
 
 	TProxySettings = record
-		ProxyType: Integer;
+		ProxyType: integer;
 		Server: WideString;
-		Port: Integer;
+		Port: integer;
 		user: WideString;
 		password: WideString;
 		use_tc_password_manager: boolean;
 	end;
 
 	TPluginSettings = record
-		IniPath: Integer;
+		IniPath: integer;
 		LoadSSLDLLOnlyFromPluginDir: boolean;
 		PreserveFileTime: boolean;
 		DescriptionEnabled: boolean;
@@ -83,24 +88,24 @@ type
 		DescriptionFileName: WideString;
 
 		OperationsViaPublicLinkEnabled: boolean;
-		SocketTimeout: Integer;
+		SocketTimeout: integer;
 		Proxy: TProxySettings;
-		CloudMaxFileSize: Integer;
-		ChunkOverwriteMode: Integer;
-		DeleteFailOnUploadMode: Integer;
-		OperationErrorMode: Integer;
-		RetryAttempts: Integer;
-		AttemptWait: Integer;
-		OverwriteLocalMode: Integer;
+		CloudMaxFileSize: integer;
+		ChunkOverwriteMode: integer;
+		DeleteFailOnUploadMode: integer;
+		OperationErrorMode: integer;
+		RetryAttempts: integer;
+		AttemptWait: integer;
+		OverwriteLocalMode: integer;
 		DisableMultiThreading: boolean;
 		LogUserSpace: boolean;
-		IconsMode: Integer;
+		IconsMode: integer;
 		DownloadLinksEncode: boolean;
 		AutoUpdateDownloadListing: boolean;
 		ShowTrashFolders: boolean;
 		ShowSharedFolders: boolean;
 		ShowInvitesFolders: boolean;
-		LogLevel: Integer;
+		LogLevel: integer;
 	end;
 
 function GetProxyPasswordNow(var ProxySettings: TProxySettings; LogHandleProc: TLogHandler; CryptHandleProc: TCryptHandler): boolean;
@@ -122,8 +127,8 @@ implementation
 
 function GetProxyPasswordNow(var ProxySettings: TProxySettings; LogHandleProc: TLogHandler; CryptHandleProc: TCryptHandler): boolean;
 var
-	CryptResult: Integer;
-	AskResult: Integer;
+	CryptResult: integer;
+	AskResult: integer;
 	TmpString: WideString;
 	buf: PWideChar;
 begin
@@ -254,7 +259,7 @@ function SetCryptPassword(crypt_id: WideString; password: WideString; ask_user: 
 var
 	buf: PWideChar;
 	use_tc_password_manager: boolean;
-	AskResult: Integer;
+	AskResult: integer;
 begin
 	result := false;
 	use_tc_password_manager := false;
@@ -349,7 +354,7 @@ end;
 procedure SetPluginSettingsValue(IniFilePath: WideString; OptionName: WideString; OptionValue: Variant);
 var
 	IniFile: TIniFile;
-	basicType: Integer;
+	basicType: integer;
 begin
 	IniFile := TIniFile.Create(IniFilePath);
 
@@ -379,7 +384,7 @@ end;
 function GetAccountSettingsFromIniFile(IniFilePath: WideString; AccountName: WideString): TAccountSettings;
 var
 	IniFile: TIniFile;
-	AtPos: Integer;
+	AtPos: integer;
 begin
 	IniFile := TIniFile.Create(IniFilePath);
 	result.name := AccountName;
@@ -392,7 +397,7 @@ begin
 	result.public_account := IniFile.ReadBool(result.name, 'public_account', false);
 	result.public_url := IniFile.ReadString(result.name, 'public_url', '');
 	result.description := IniFile.ReadString(result.name, 'description', '');
-	result.encrypt_files := IniFile.ReadBool(result.name, 'encrypt_files', false);
+	result.encrypt_files_mode := IniFile.ReadInteger(result.name, 'encrypt_files_mode', EncryptModeNone);
 	result.encrypt_filenames := IniFile.ReadBool(result.name, 'encrypt_filenames', false);
 	AtPos := AnsiPos('@', result.email);
 	if AtPos <> 0 then
@@ -420,7 +425,7 @@ begin
 	IniFile.WriteBool(AccountSettings.name, 'public_account', AccountSettings.public_account);
 	IniFile.WriteString(AccountSettings.name, 'public_url', AccountSettings.public_url);
 	IniFile.WriteString(AccountSettings.name, 'description', AccountSettings.description);
-	IniFile.WriteBool(AccountSettings.name, 'encrypt_files', AccountSettings.encrypt_files);
+	IniFile.WriteInteger(AccountSettings.name, 'encrypt_files', AccountSettings.encrypt_files_mode);
 	IniFile.WriteBool(AccountSettings.name, 'encrypt_filenames', AccountSettings.encrypt_filenames);
 	IniFile.Destroy;
 end;
@@ -474,7 +479,7 @@ end;
 
 function RemoteDescriptionsSupportEnabled(AccountSetting: TAccountSettings): boolean; //в случае включённого шифрования файловых имён поддержка движка файловых комментариев отключается (issue #5)
 begin
-	result := not(AccountSetting.encrypt_files and AccountSetting.encrypt_filenames)
+	result := not((AccountSetting.encrypt_files_mode <> EncryptModeNone) and AccountSetting.encrypt_filenames)
 end;
 
 end.
