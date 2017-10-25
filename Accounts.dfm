@@ -221,7 +221,7 @@ object AccountsForm: TAccountsForm
         Left = 222
         Top = 78
         Width = 262
-        Height = 227
+        Height = 333
         BevelOuter = bvNone
         Ctl3D = True
         ParentCtl3D = False
@@ -229,7 +229,7 @@ object AccountsForm: TAccountsForm
         TabOrder = 3
         DesignSize = (
           262
-          227)
+          333)
         object PasswordLabel: TLabel
           Left = 3
           Top = 46
@@ -298,40 +298,30 @@ object AccountsForm: TAccountsForm
           Anchors = [akLeft, akTop, akRight]
           TabOrder = 0
         end
-        object CryptFilesCB: TCheckBox
+        object EncryptGB: TGroupBox
           Left = 2
           Top = 184
-          Width = 159
-          Height = 17
-          Caption = 'Crypt/decrypt files on the fly'
+          Width = 256
+          Height = 149
+          Caption = 'Encryption'
           TabOrder = 6
-          OnClick = CryptFilesCBClick
-        end
-        object CryptFilenamesCB: TCheckBox
-          Left = 43
-          Top = 207
-          Width = 118
-          Height = 17
-          Caption = 'Also crypt filenames'
-          TabOrder = 7
-        end
-        object CryptFilesPasswordButton: TButton
-          Left = 167
-          Top = 184
-          Width = 90
-          Height = 17
-          Caption = 'Password'
-          TabOrder = 8
-          OnClick = CryptFilesPasswordButtonClick
-        end
-        object CryptFilenamesPwdButton: TButton
-          Left = 167
-          Top = 207
-          Width = 90
-          Height = 17
-          Caption = 'Password'
-          TabOrder = 9
-          OnClick = CryptFilenamesPwdButtonClick
+          object EncryptFilesCB: TCheckBox
+            Left = 8
+            Top = 16
+            Width = 240
+            Height = 17
+            Caption = 'Encrypt/decrypt files on the fly'
+            TabOrder = 0
+            OnClick = EncryptFilesCBClick
+          end
+          object EncryptFilenamesCB: TCheckBox
+            Left = 8
+            Top = 39
+            Width = 240
+            Height = 17
+            Caption = 'Also encrypt filenames'
+            TabOrder = 1
+          end
         end
       end
       object AccountNameEdit: TEdit
@@ -352,7 +342,7 @@ object AccountsForm: TAccountsForm
         OnClick = PublicAccountCBClick
       end
       object SharesPanel: TPanel
-        Left = 222
+        Left = 224
         Top = 78
         Width = 262
         Height = 45
@@ -793,10 +783,6 @@ object AccountsForm: TAccountsForm
     object CommentsTab: TTabSheet
       Caption = 'File comments support'
       ImageIndex = 3
-      ExplicitLeft = 0
-      ExplicitTop = 0
-      ExplicitWidth = 0
-      ExplicitHeight = 0
       object DescriptionFileNameLabel: TLabel
         Left = 5
         Top = 118
@@ -865,5 +851,13 @@ object AccountsForm: TAccountsForm
         TabOrder = 4
       end
     end
+  end
+  object ComboBox1: TComboBox
+    Left = 48
+    Top = 0
+    Width = 145
+    Height = 21
+    TabOrder = 1
+    Text = 'ComboBox1'
   end
 end

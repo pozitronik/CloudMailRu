@@ -85,10 +85,10 @@ type
 		DescriptionFileNameLabel: TLabel;
 		DescriptionFileNameEdit: TEdit;
 		DescriptionTrackCloudFSCB: TCheckBox;
-		CryptFilesCB: TCheckBox;
-		CryptFilenamesCB: TCheckBox;
-		CryptFilesPasswordButton: TButton;
-		CryptFilenamesPwdButton: TButton;
+    EncryptGB: TGroupBox;
+    EncryptFilesCB: TCheckBox;
+    EncryptFilenamesCB: TCheckBox;
+    ComboBox1: TComboBox;
 		procedure FormShow(Sender: TObject);
 		procedure AccountsListClick(Sender: TObject);
 		procedure ApplyButtonClick(Sender: TObject);
@@ -101,7 +101,7 @@ type
 		procedure GlobalSettingApplyBTNClick(Sender: TObject);
 		procedure PublicAccountCBClick(Sender: TObject);
 		procedure CloudMaxFileSizeCBClick(Sender: TObject);
-		procedure CryptFilesCBClick(Sender: TObject);
+		procedure EncryptFilesCBClick(Sender: TObject);
 		procedure CryptFilesPasswordButtonClick(Sender: TObject);
 		procedure CryptFilenamesPwdButtonClick(Sender: TObject);
 	private
@@ -150,9 +150,9 @@ begin
 		PublicAccountCB.Checked := CASettings.public_account;
 		PublicUrlEdit.Text := CASettings.public_url;
 		TwostepAuthCB.Checked := CASettings.twostep_auth;
-		CryptFilesCB.Checked := CASettings.crypt_files;
-		CryptFilenamesCB.Enabled := CryptFilesCB.Checked;
-		CryptFilenamesCB.Checked := CASettings.crypt_filenames;
+		EncryptFilesCB.Checked := CASettings.encrypt_files;
+		EncryptFilenamesCB.Enabled := EncryptFilesCB.Checked;
+		EncryptFilenamesCB.Checked := CASettings.encrypt_filenames;
 	end else begin
 		AccountNameEdit.Text := '';
 		EmailEdit.Text := '';
@@ -183,8 +183,8 @@ begin
 	CASettings.twostep_auth := TwostepAuthCB.Checked;
 	CASettings.public_account := PublicAccountCB.Checked;
 	CASettings.public_url := PublicUrlEdit.Text;
-	CASettings.crypt_files := CryptFilesCB.Checked;
-	CASettings.crypt_filenames := CryptFilenamesCB.Checked;
+	CASettings.encrypt_files := EncryptFilesCB.Checked;
+	CASettings.encrypt_filenames := EncryptFilenamesCB.Checked;
 
 	if CASettings.use_tc_password_manager then //просим TC сохранить пароль
 	begin
@@ -312,9 +312,9 @@ begin
 	SetCryptPassword(AccountNameEdit.Text + ' filenamecrypt', password, true, nil, self.CryptHandler, self.Handle);
 end;
 
-procedure TAccountsForm.CryptFilesCBClick(Sender: TObject);
+procedure TAccountsForm.EncryptFilesCBClick(Sender: TObject);
 begin
-	CryptFilenamesCB.Enabled := CryptFilesCB.Checked;
+	EncryptFilenamesCB.Enabled := EncryptFilesCB.Checked;
 end;
 
 procedure TAccountsForm.CryptFilesPasswordButtonClick(Sender: TObject);

@@ -286,8 +286,8 @@ begin
 		self.split_large_files := AccountSettings.split_large_files;
 		self.public_account := AccountSettings.public_account;
 		self.PUBLIC_URL := AccountSettings.PUBLIC_URL;
-		self.crypt_files := AccountSettings.crypt_files;
-		self.crypt_filenames := AccountSettings.crypt_filenames;
+		self.crypt_files := AccountSettings.encrypt_files;
+		self.crypt_filenames := AccountSettings.encrypt_filenames;
 		if self.public_account and (self.PUBLIC_URL <> '') then
 		begin
 			self.public_link := self.PUBLIC_URL;

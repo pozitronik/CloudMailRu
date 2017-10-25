@@ -58,8 +58,8 @@ type
 		public_account: boolean;
 		public_url: WideString;
 		description: WideString;
-		crypt_files: boolean;
-		crypt_filenames: boolean;
+		encrypt_files: boolean;
+		encrypt_filenames: boolean;
 	end;
 
 	TProxySettings = record
@@ -392,8 +392,8 @@ begin
 	result.public_account := IniFile.ReadBool(result.name, 'public_account', false);
 	result.public_url := IniFile.ReadString(result.name, 'public_url', '');
 	result.description := IniFile.ReadString(result.name, 'description', '');
-	result.crypt_files := IniFile.ReadBool(result.name, 'crypt_files', false);
-	result.crypt_filenames := IniFile.ReadBool(result.name, 'crypt_filenames', false);
+	result.encrypt_files := IniFile.ReadBool(result.name, 'encrypt_files', false);
+	result.encrypt_filenames := IniFile.ReadBool(result.name, 'encrypt_filenames', false);
 	AtPos := AnsiPos('@', result.email);
 	if AtPos <> 0 then
 	begin
@@ -420,8 +420,8 @@ begin
 	IniFile.WriteBool(AccountSettings.name, 'public_account', AccountSettings.public_account);
 	IniFile.WriteString(AccountSettings.name, 'public_url', AccountSettings.public_url);
 	IniFile.WriteString(AccountSettings.name, 'description', AccountSettings.description);
-	IniFile.WriteBool(AccountSettings.name, 'crypt_files', AccountSettings.crypt_files);
-	IniFile.WriteBool(AccountSettings.name, 'crypt_filenames', AccountSettings.crypt_filenames);
+	IniFile.WriteBool(AccountSettings.name, 'encrypt_files', AccountSettings.encrypt_files);
+	IniFile.WriteBool(AccountSettings.name, 'encrypt_filenames', AccountSettings.encrypt_filenames);
 	IniFile.Destroy;
 end;
 
@@ -474,7 +474,7 @@ end;
 
 function RemoteDescriptionsSupportEnabled(AccountSetting: TAccountSettings): boolean; //в случае включённого шифрования файловых имён поддержка движка файловых комментариев отключается (issue #5)
 begin
-	result := not(AccountSetting.crypt_files and AccountSetting.crypt_filenames)
+	result := not(AccountSetting.encrypt_files and AccountSetting.encrypt_filenames)
 end;
 
 end.
