@@ -36,11 +36,6 @@ type
 		Proxy: TProxySettings;
 		ConnectTimeout: integer;
 
-		crypt_files: Boolean;
-		crypt_files_password: WideString;
-		crypt_filenames: Boolean;
-		crypt_filenames_password: WideString;
-
 		united_params: WideString; //Объединённый набор авторизационных параметров для подстановки в URL
 
 		{BASE HTTP METHODS}
@@ -82,11 +77,16 @@ type
 
 		function getFileShared(remotePath, localPath: WideString; LogErrors: Boolean = true): integer; //LogErrors=false => не логируем результат копирования, нужно для запроса descript.ion (которого может не быть)
 	public
+		crypt_files: Boolean;
+		crypt_filenames: Boolean;
+		crypt_files_password: WideString;
+		crypt_filenames_password: WideString;
+
 		Property isPublicShare: Boolean read public_account;
 		Property ProxySettings: TProxySettings read Proxy;
 		Property ConnectTimeoutValue: integer read ConnectTimeout;
-		Property CryptFilesPassword: WideString read crypt_files_password write crypt_files_password;
-		Property CryptFileNamesPassword: WideString read crypt_filenames_password write crypt_filenames_password;
+		Property CryptFilesPassword: WideString read crypt_files_password write crypt_files_password; //deprecated
+		Property CryptFileNamesPassword: WideString read crypt_filenames_password write crypt_filenames_password; //deprecated
 		function isCryptFilesPasswordRequired(): Boolean;
 		function isCryptFileNamesPasswordRequired(): Boolean;
 		function getSharedFileUrl(remotePath: WideString; DoUrlEncode: Boolean = true): WideString;
@@ -286,7 +286,7 @@ begin
 		self.split_large_files := AccountSettings.split_large_files;
 		self.public_account := AccountSettings.public_account;
 		self.PUBLIC_URL := AccountSettings.PUBLIC_URL;
-		self.crypt_files := false; { AccountSettings.encrypt_files; TODO}
+		self.crypt_files := AccountSettings.encrypt_files_mode <> EncryptModeNone;
 		self.crypt_filenames := AccountSettings.encrypt_filenames;
 		if self.public_account and (self.PUBLIC_URL <> '') then
 		begin

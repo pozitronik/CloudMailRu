@@ -967,9 +967,8 @@ var
 	getResult: integer;
 	Item: TCloudMailRuDirListingItem;
 	Cloud: TCloudMailRu;
-	Password, FilenamePassword: WideString;
+	FilePassword, FilenamePassword: WideString;
 	crypt_id, crypt_filename_id: WideString;
-	ask_user: boolean;
 begin
 
 	Cloud := ConnectionManager.get(RemotePath.account, getResult);
@@ -978,13 +977,13 @@ begin
 	begin
 		crypt_id := RemotePath.account + ' filecrypt';
 		crypt_filename_id := RemotePath.account + ' filenamecrypt';
-		ask_user := true;
-		if GetCryptPassword(crypt_id, Password, ask_user, nil, CryptHandle) then
+
+		if GetCryptPassword(crypt_id, FilePassword, nil, CryptHandle) = FS_FILE_OK then
 		begin
-			Cloud.CryptFilesPassword := Password;
+			Cloud.CryptFilesPassword := FilePassword;
 			if Cloud.isCryptFileNamesPasswordRequired then
 			begin
-				if GetCryptPassword(crypt_filename_id, FilenamePassword, ask_user, nil, CryptHandle) then
+				if GetCryptPassword(crypt_filename_id, FilenamePassword, nil, CryptHandle) = FS_FILE_OK then
 					Cloud.CryptFileNamesPassword := FilenamePassword;
 			end;
 		end
@@ -1093,28 +1092,63 @@ function PutRemoteFile(RemotePath: TRealPath; LocalName, RemoteName: WideString;
 var
 	getResult: integer;
 	Cloud: TCloudMailRu;
-	Password, FilenamePassword: WideString;
 	crypt_id, crypt_filename_id: WideString;
-	ask_user: boolean;
+	AccountSettings: TAccountSettings;
+	UseTCPWDManager: boolean;
 begin
 	Cloud := ConnectionManager.get(RemotePath.account, getResult);
+	AccountSettings := GetAccountSettingsFromIniFile(AccountsIniFilePath, RemotePath.account);
+
+	crypt_id := RemotePath.account + ' filecrypt';
+	crypt_filename_id := RemotePath.account + ' filenamecrypt';
 
 	if Cloud.isCryptFilesPasswordRequired then
 	begin
-		crypt_id := RemotePath.account + ' filecrypt';
-		crypt_filename_id := RemotePath.account + ' filenamecrypt';
-		ask_user := true;
-		if GetCryptPassword(crypt_id, Password, ask_user, nil, CryptHandle) then
+		if EncryptModeAlways = AccountSettings.encrypt_files_mode then {password must be taken from tc storage, otherwise ask user and store password}
 		begin
-			Cloud.CryptFilesPassword := Password;
-			if Cloud.isCryptFileNamesPasswordRequired then
-			begin
-				if GetCryptPassword(crypt_filename_id, FilenamePassword, ask_user, nil, CryptHandle) then
-					Cloud.CryptFileNamesPassword := FilenamePassword;
+			case GetCryptPassword(crypt_id, Cloud.crypt_files_password, nil, CryptHandle) of
+				FS_FILE_OK:
+					begin
+						if Cloud.isCryptFileNamesPasswordRequired then
+							GetCryptPassword(crypt_filename_id, Cloud.crypt_filenames_password, nil, CryptHandle);
+					end;
+				FS_FILE_READERROR: //password not found in store, ask and store => act like EncryptModeAskOnce
+					begin
+						UseTCPWDManager := true;
+						AccountSettings.encrypt_files_mode := EncryptModeAskOnce;
+					end;
+				FS_FILE_NOTFOUND: //user doesn't know master password
+					begin
+						exit(FS_FILE_USERABORT);
+					end;
 			end;
-		end
-		else
-			exit(FS_FILE_USERABORT);
+		end;
+		if EncryptModeAskOnce = AccountSettings.encrypt_files_mode then
+		begin
+			case TAskEncryptionPasswordsForm.AskPassword(FindTCWindow, RemotePath.account, Cloud.crypt_files_password, Cloud.crypt_filenames_password, UseTCPWDManager) of
+				mrCancel: //abort operation
+					begin
+						exit(FS_FILE_USERABORT);
+					end;
+				mrOk:
+					begin
+						//store passwords if required
+						if AccountSettings.use_tc_password_manager then
+						begin
+							SetCryptPassword(crypt_id, Cloud.crypt_files_password, nil, CryptHandle);
+							SetCryptPassword(crypt_filename_id, Cloud.crypt_filenames_password, nil, CryptHandle);
+						end;
+					end;
+				mrIgnore: //skip at this time
+					begin
+						Cloud.crypt_files := false;
+					end;
+			end;
+		end;
+
+
+		//
+
 	end;
 
 	Result := Cloud.putFile(WideString(LocalName), RemotePath.path);
@@ -1124,7 +1158,7 @@ begin
 		LogHandle(LogLevelFileOperation, MSGTYPE_TRANSFERCOMPLETE, PWideChar(LocalName + '->' + RemoteName));
 		if CheckFlag(FS_COPYFLAGS_MOVE, CopyFlags) then
 			Result := DeleteLocalFile(LocalName);
-		if (GetPluginSettings(SettingsIniFilePath).DescriptionCopyToCloud and RemoteDescriptionsSupportEnabled(GetAccountSettingsFromIniFile(AccountsIniFilePath, RemotePath.account))) then
+		if (GetPluginSettings(SettingsIniFilePath).DescriptionCopyToCloud and RemoteDescriptionsSupportEnabled(AccountSettings)) then
 			UpdateRemoteFileDescription(RemotePath, LocalName, Cloud);
 	end;
 

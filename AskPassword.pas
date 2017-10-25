@@ -64,7 +64,7 @@ end;
 
 procedure TAskPasswordForm.PasswordEditChange(Sender: TObject);
 begin
-	OkButton.Enabled := PasswordEdit.Text <> '';
+	OkButton.Enabled := PasswordEdit.Text <> EmptyWideStr;
 end;
 
 procedure TAskPasswordForm.WMHotKey(var Message: TMessage);

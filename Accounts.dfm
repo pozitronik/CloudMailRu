@@ -332,8 +332,7 @@ object AccountsForm: TAccountsForm
             Items.Strings = (
               'No'
               'Always'
-              'Ask once'
-              'Ask every time')
+              'Ask once')
           end
         end
       end
