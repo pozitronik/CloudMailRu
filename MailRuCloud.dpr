@@ -77,6 +77,7 @@ begin
 	Result := FS_FILE_NOTSUPPORTED;
 	if Assigned(MyCryptProc) then
 	begin
+
 		Result := MyCryptProc(PluginNum, CryptoNum, mode, ConnectionName, Password, maxlen);
 	end;
 end;
@@ -1021,29 +1022,13 @@ var
 	getResult: integer;
 	Item: TCloudMailRuDirListingItem;
 	Cloud: TCloudMailRu;
-	FilePassword, FilenamePassword: WideString;
-	crypt_id, crypt_filename_id: WideString;
+	AccountSettings: TAccountSettings;
 begin
 
 	Cloud := ConnectionManager.get(RemotePath.account, getResult);
-
-	if Cloud.isCryptFilesPasswordRequired then
-	begin
-		crypt_id := RemotePath.account + ' filecrypt';
-		crypt_filename_id := RemotePath.account + ' filenamecrypt';
-
-		if GetCryptPassword(crypt_id, FilePassword, nil, CryptHandle) = FS_FILE_OK then
-		begin
-			Cloud.CryptFilesPassword := FilePassword;
-			if Cloud.isCryptFileNamesPasswordRequired then
-			begin
-				if GetCryptPassword(crypt_filename_id, FilenamePassword, nil, CryptHandle) = FS_FILE_OK then
-					Cloud.CryptFileNamesPassword := FilenamePassword;
-			end;
-		end
-		else
-			exit(FS_FILE_USERABORT);
-	end;
+	AccountSettings := GetAccountSettingsFromIniFile(AccountsIniFilePath, RemotePath.account);
+	if not InitCloudPasswords(Cloud, AccountSettings) then
+		exit(FS_FILE_USERABORT);
 
 	Result := Cloud.getFile(WideString(RemotePath.path), LocalName);
 
