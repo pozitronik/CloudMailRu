@@ -111,7 +111,7 @@ type
 	{TODO -oOwner -cGeneral : Использовать Get/SetCryptPassword во всех процедурах ообращения к менеджеру паролей TC}
 function GetProxyPasswordNow(var ProxySettings: TProxySettings; LogHandleProc: TLogHandler; CryptHandleProc: TCryptHandler): boolean;
 function GetCryptPassword(crypt_id: WideString; var password: WideString; LogHandleProc: TLogHandler; CryptHandleProc: TCryptHandler): integer;
-function SetCryptPassword(crypt_id: WideString; password: WideString; LogHandleProc: TLogHandler; CryptHandleProc: TCryptHandler): boolean;
+function SetCryptPassword(crypt_id: WideString; password: WideString; LogHandleProc: TLogHandler; CryptHandleProc: TCryptHandler): integer;
 
 function GetPluginSettings(IniFilePath: WideString): TPluginSettings;
 procedure SetPluginSettings(IniFilePath: WideString; PluginSettings: TPluginSettings);
@@ -201,7 +201,7 @@ begin
 		result := true; //пароль взят из инишника напрямую
 end;
 
-{TODO -oOwner -cGeneral : nused LogHandleProc}
+{TODO -oOwner -cGeneral : unused LogHandleProc}
 function GetCryptPassword(crypt_id: WideString; var password: WideString; LogHandleProc: TLogHandler; CryptHandleProc: TCryptHandler): integer;
 var
 	buf: PWideChar;
@@ -246,14 +246,11 @@ begin
 
 end;
 
-function SetCryptPassword(crypt_id: WideString; password: WideString; LogHandleProc: TLogHandler; CryptHandleProc: TCryptHandler): boolean;
-var
-	buf: PWideChar;
+function SetCryptPassword(crypt_id: WideString; password: WideString; LogHandleProc: TLogHandler; CryptHandleProc: TCryptHandler): integer;
 begin
-	result := false;
-	GetMem(buf, 1024);
-	ZeroMemory(buf, 1024);
-	case CryptHandleProc(FS_CRYPT_SAVE_PASSWORD, PWideChar(crypt_id), buf, 1024) of
+	result := CryptHandleProc(FS_CRYPT_SAVE_PASSWORD, PWideChar(crypt_id), PWideChar(password), SizeOf(password));
+
+	case result of
 		FS_FILE_OK:
 			begin //TC скушал пароль, запомним в инишник галочку
 				if Assigned(LogHandleProc) then
@@ -276,7 +273,7 @@ begin
 			end;
 		//Ошибки здесь не значат, что пароль мы не получили - он может быть введён в диалоге
 	end;
-	FreeMemory(buf);
+
 end;
 
 function GetPluginSettings(IniFilePath: WideString): TPluginSettings;
