@@ -1101,6 +1101,7 @@ begin
 
 	crypt_id := RemotePath.account + ' filecrypt';
 	crypt_filename_id := RemotePath.account + ' filenamecrypt';
+	Cloud.crypt_files := AccountSettings.encrypt_files_mode <> EncryptModeNone;
 
 	if Cloud.isCryptFilesPasswordRequired then
 	begin
@@ -1133,7 +1134,7 @@ begin
 				mrOk:
 					begin
 						//store passwords if required
-						if AccountSettings.use_tc_password_manager then
+						if UseTCPWDManager then
 						begin
 							SetCryptPassword(crypt_id, Cloud.crypt_files_password, nil, CryptHandle);
 							SetCryptPassword(crypt_filename_id, Cloud.crypt_filenames_password, nil, CryptHandle);
