@@ -46,7 +46,13 @@ begin
 		if result = mrOk then
 		begin
 			FilesPassword := AskEncryptionPasswordsForm.EncryptFilesPasswordEdit.Text;
-			FileNamesPassword := AskEncryptionPasswordsForm.EncryptFilenamesPasswordEdit.Text;
+			if AskEncryptionPasswordsForm.EncryptFilenamesCB.Checked then
+			begin
+				FileNamesPassword := AskEncryptionPasswordsForm.EncryptFilenamesPasswordEdit.Text;
+			end
+			else
+				FileNamesPassword := '';
+
 			UseTCPwdMngr := AskEncryptionPasswordsForm.UseTCPwdMngrCB.Checked;
 		end;
 	finally
