@@ -1,7 +1,5 @@
 ﻿library MailRuCloud;
 
-{$R *.dres}
-
 uses
 	SysUtils, System.Generics.Collections, DateUtils, windows, Classes, PLUGIN_TYPES, IdSSLOpenSSLHeaders, messages, inifiles, Vcl.controls, CloudMailRu in 'CloudMailRu.pas', MRC_Helper in 'MRC_Helper.pas', Accounts in 'Accounts.pas'{AccountsForm}, RemoteProperty in 'RemoteProperty.pas'{PropertyForm}, Descriptions in 'Descriptions.pas', ConnectionManager in 'ConnectionManager.pas', Settings in 'Settings.pas', ANSIFunctions in 'ANSIFunctions.pas', DeletedProperty in 'DeletedProperty.pas'{DeletedPropertyForm}, InviteProperty in 'InviteProperty.pas'{InvitePropertyForm}, AskPassword, CMLJSON in 'CMLJSON.pas', CMLTypes in 'CMLTypes.pas', DCPbase64 in 'DCPCrypt\DCPbase64.pas', DCPblockciphers in 'DCPCrypt\DCPblockciphers.pas', DCPconst in 'DCPCrypt\DCPconst.pas',
 	DCPcrypt2 in 'DCPCrypt\DCPcrypt2.pas', DCPreg in 'DCPCrypt\DCPreg.pas', DCPtypes in 'DCPCrypt\DCPtypes.pas', DCPblowfish in 'DCPCrypt\Ciphers\DCPblowfish.pas', DCPcast128 in 'DCPCrypt\Ciphers\DCPcast128.pas', DCPcast256 in 'DCPCrypt\Ciphers\DCPcast256.pas', DCPdes in 'DCPCrypt\Ciphers\DCPdes.pas', DCPgost in 'DCPCrypt\Ciphers\DCPgost.pas', DCPice in 'DCPCrypt\Ciphers\DCPice.pas', DCPidea in 'DCPCrypt\Ciphers\DCPidea.pas', DCPmars in 'DCPCrypt\Ciphers\DCPmars.pas', DCPmisty1 in 'DCPCrypt\Ciphers\DCPmisty1.pas', DCPrc2 in 'DCPCrypt\Ciphers\DCPrc2.pas', DCPrc4 in 'DCPCrypt\Ciphers\DCPrc4.pas', DCPrc5 in 'DCPCrypt\Ciphers\DCPrc5.pas', DCPrc6 in 'DCPCrypt\Ciphers\DCPrc6.pas', DCPrijndael in 'DCPCrypt\Ciphers\DCPrijndael.pas', DCPserpent in 'DCPCrypt\Ciphers\DCPserpent.pas',
@@ -261,6 +259,62 @@ begin
 				begin
 					LogHandle(LogLevelDetail, MSGTYPE_IMPORTANTERROR, PWideChar('Can''t delete file ' + LocalName + ', ignored'));
 				end;
+		end;
+	end;
+end;
+
+function InitCloudPasswords(var Cloud: TCloudMailRu; AccountSettings: TAccountSettings): boolean;
+var
+	crypt_id, crypt_filename_id: WideString;
+	UseTCPWDManager: boolean;
+begin
+	Result := true;
+	crypt_id := AccountSettings.name + ' filecrypt';
+	crypt_filename_id := AccountSettings.name + ' filenamecrypt';
+	Cloud.crypt_files := AccountSettings.encrypt_files_mode <> EncryptModeNone;
+
+	if Cloud.isCryptFilesPasswordRequired then
+	begin
+		if EncryptModeAlways = AccountSettings.encrypt_files_mode then {password must be taken from tc storage, otherwise ask user and store password}
+		begin
+			case GetCryptPassword(crypt_id, Cloud.crypt_files_password, nil, CryptHandle) of
+				FS_FILE_OK:
+					begin
+						if Cloud.isCryptFileNamesPasswordRequired then
+							GetCryptPassword(crypt_filename_id, Cloud.crypt_filenames_password, nil, CryptHandle);
+					end;
+				FS_FILE_READERROR: //password not found in store, ask and store => act like EncryptModeAskOnce
+					begin
+						UseTCPWDManager := true;
+						AccountSettings.encrypt_files_mode := EncryptModeAskOnce;
+					end;
+				FS_FILE_NOTFOUND: //user doesn't know master password
+					begin
+						exit(false);
+					end;
+			end;
+		end;
+		if EncryptModeAskOnce = AccountSettings.encrypt_files_mode then
+		begin
+			case TAskEncryptionPasswordsForm.AskPassword(FindTCWindow, AccountSettings.name, Cloud.crypt_files_password, Cloud.crypt_filenames_password, UseTCPWDManager) of
+				mrCancel: //abort operation
+					begin
+						exit(false);
+					end;
+				mrOk:
+					begin
+						//store passwords if required
+						if UseTCPWDManager then
+						begin
+							SetCryptPassword(crypt_id, Cloud.crypt_files_password, nil, CryptHandle);
+							SetCryptPassword(crypt_filename_id, Cloud.crypt_filenames_password, nil, CryptHandle);
+						end;
+					end;
+				mrIgnore: //skip at this time
+					begin
+						Cloud.crypt_files := false;
+					end;
+			end;
 		end;
 	end;
 end;
@@ -1092,65 +1146,13 @@ function PutRemoteFile(RemotePath: TRealPath; LocalName, RemoteName: WideString;
 var
 	getResult: integer;
 	Cloud: TCloudMailRu;
-	crypt_id, crypt_filename_id: WideString;
 	AccountSettings: TAccountSettings;
-	UseTCPWDManager: boolean;
 begin
 	Cloud := ConnectionManager.get(RemotePath.account, getResult);
 	AccountSettings := GetAccountSettingsFromIniFile(AccountsIniFilePath, RemotePath.account);
 
-	crypt_id := RemotePath.account + ' filecrypt';
-	crypt_filename_id := RemotePath.account + ' filenamecrypt';
-	Cloud.crypt_files := AccountSettings.encrypt_files_mode <> EncryptModeNone;
-
-	if Cloud.isCryptFilesPasswordRequired then
-	begin
-		if EncryptModeAlways = AccountSettings.encrypt_files_mode then {password must be taken from tc storage, otherwise ask user and store password}
-		begin
-			case GetCryptPassword(crypt_id, Cloud.crypt_files_password, nil, CryptHandle) of
-				FS_FILE_OK:
-					begin
-						if Cloud.isCryptFileNamesPasswordRequired then
-							GetCryptPassword(crypt_filename_id, Cloud.crypt_filenames_password, nil, CryptHandle);
-					end;
-				FS_FILE_READERROR: //password not found in store, ask and store => act like EncryptModeAskOnce
-					begin
-						UseTCPWDManager := true;
-						AccountSettings.encrypt_files_mode := EncryptModeAskOnce;
-					end;
-				FS_FILE_NOTFOUND: //user doesn't know master password
-					begin
-						exit(FS_FILE_USERABORT);
-					end;
-			end;
-		end;
-		if EncryptModeAskOnce = AccountSettings.encrypt_files_mode then
-		begin
-			case TAskEncryptionPasswordsForm.AskPassword(FindTCWindow, RemotePath.account, Cloud.crypt_files_password, Cloud.crypt_filenames_password, UseTCPWDManager) of
-				mrCancel: //abort operation
-					begin
-						exit(FS_FILE_USERABORT);
-					end;
-				mrOk:
-					begin
-						//store passwords if required
-						if UseTCPWDManager then
-						begin
-							SetCryptPassword(crypt_id, Cloud.crypt_files_password, nil, CryptHandle);
-							SetCryptPassword(crypt_filename_id, Cloud.crypt_filenames_password, nil, CryptHandle);
-						end;
-					end;
-				mrIgnore: //skip at this time
-					begin
-						Cloud.crypt_files := false;
-					end;
-			end;
-		end;
-
-
-		//
-
-	end;
+	if not InitCloudPasswords(Cloud, AccountSettings) then
+		exit(FS_FILE_USERABORT);
 
 	Result := Cloud.putFile(WideString(LocalName), RemotePath.path);
 	if Result = FS_FILE_OK then
