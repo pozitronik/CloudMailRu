@@ -205,15 +205,14 @@ end;
 function GetCryptPassword(crypt_id: WideString; var password: WideString; LogHandleProc: TLogHandler; CryptHandleProc: TCryptHandler): integer;
 var
 	buf: PWideChar;
-
 begin
 	GetMem(buf, 1024);
 	ZeroMemory(buf, 1024);
-	result := CryptHandleProc(FS_CRYPT_LOAD_PASSWORD_NO_UI, PWideChar(crypt_id), pchar(password), 1024);
+	result := CryptHandleProc(FS_CRYPT_LOAD_PASSWORD_NO_UI, PWideChar(crypt_id),buf, 1024);
 	case result of //Пытаемся взять пароль по-тихому
 		FS_FILE_OK: //all ok, we got password
 			begin
-				password := buf;
+			 	password := buf;
 			end;
 		FS_FILE_READERROR: //Password not found in password store, ask user for it
 			begin
@@ -221,12 +220,11 @@ begin
 		FS_FILE_NOTFOUND: //no master password entered yet
 			begin
 				ZeroMemory(buf, 1024);
-				result := CryptHandleProc(FS_CRYPT_LOAD_PASSWORD, PWideChar(crypt_id), pchar(password), 1024);
+				result := CryptHandleProc(FS_CRYPT_LOAD_PASSWORD, PWideChar(crypt_id), buf, 1024);
 				case result of
 					FS_FILE_OK: //all ok, we got password
 						begin
 							password := buf;
-
 						end;
 					FS_FILE_READERROR: //Password not found in password store, ask user for it
 						begin
