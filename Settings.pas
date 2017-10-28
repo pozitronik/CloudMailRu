@@ -65,6 +65,7 @@ type
 		description: WideString;
 		encrypt_files_mode: integer;
 		encrypt_filenames: boolean;
+		shard_override: WideString; //hidden option, allows to override working shard for account
 	end;
 
 	TProxySettings = record
@@ -133,8 +134,7 @@ var
 	TmpString: WideString;
 	buf: PWideChar;
 begin
-	if (ProxySettings.ProxyType = ProxyNone) or (ProxySettings.user = '') then
-		exit(true); //no username means no password required
+	if (ProxySettings.ProxyType = ProxyNone) or (ProxySettings.user = EmptyWideStr) then exit(true); //no username means no password required
 
 	if ProxySettings.use_tc_password_manager then
 	begin //пароль должен браться из TC
@@ -161,7 +161,7 @@ begin
 		FreeMemory(buf);
 	end; //else // ничего не делаем, пароль уже должен быть в настройках (взят в открытом виде из инишника)
 
-	if ProxySettings.password = '' then //но пароля нет, не в инишнике, не в тотале
+	if ProxySettings.password = EmptyWideStr then //но пароля нет, не в инишнике, не в тотале
 	begin
 		AskResult := TAskPasswordForm.AskPassword(FindTCWindow, 'User ' + ProxySettings.user + ' proxy', ProxySettings.password, ProxySettings.use_tc_password_manager, false);
 		if AskResult <> mrOK then
@@ -175,7 +175,7 @@ begin
 						begin //TC скушал пароль, запомним в инишник галочку
 							LogHandleProc(LogLevelDebug, msgtype_details, PWideChar('Password saved in TC password manager'));
 							TmpString := ProxySettings.password;
-							ProxySettings.password := '';
+							ProxySettings.password := EmptyWideStr;
 							ProxySettings.use_tc_password_manager := true; //Не забыть сохранить!
 							ProxySettings.password := TmpString;
 						end;
@@ -197,8 +197,7 @@ begin
 			result := true;
 		end;
 	end
-	else
-		result := true; //пароль взят из инишника напрямую
+	else result := true; //пароль взят из инишника напрямую
 end;
 
 {TODO -oOwner -cGeneral : unused LogHandleProc}
@@ -208,11 +207,11 @@ var
 begin
 	GetMem(buf, 1024);
 	ZeroMemory(buf, 1024);
-	result := CryptHandleProc(FS_CRYPT_LOAD_PASSWORD_NO_UI, PWideChar(crypt_id),buf, 1024);
+	result := CryptHandleProc(FS_CRYPT_LOAD_PASSWORD_NO_UI, PWideChar(crypt_id), buf, 1024);
 	case result of //Пытаемся взять пароль по-тихому
 		FS_FILE_OK: //all ok, we got password
 			begin
-			 	password := buf;
+				password := buf;
 			end;
 		FS_FILE_READERROR: //Password not found in password store, ask user for it
 			begin
@@ -251,23 +250,19 @@ begin
 	case result of
 		FS_FILE_OK:
 			begin //TC скушал пароль, запомним в инишник галочку
-				if Assigned(LogHandleProc) then
-					LogHandleProc(LogLevelDebug, msgtype_details, PWideChar(crypt_id + ': password saved in TC password manager'));
+				if Assigned(LogHandleProc) then LogHandleProc(LogLevelDebug, msgtype_details, PWideChar(crypt_id + ': password saved in TC password manager'));
 			end;
 		FS_FILE_NOTSUPPORTED: //Сохранение не получилось
 			begin
-				if Assigned(LogHandleProc) then
-					LogHandleProc(LogLevelError, msgtype_importanterror, PWideChar(crypt_id + ': CryptProc returns error: Encrypt failed'));
+				if Assigned(LogHandleProc) then LogHandleProc(LogLevelError, msgtype_importanterror, PWideChar(crypt_id + ': CryptProc returns error: Encrypt failed'));
 			end;
 		FS_FILE_WRITEERROR: //Сохранение опять не получилось
 			begin
-				if Assigned(LogHandleProc) then
-					LogHandleProc(LogLevelError, msgtype_importanterror, PWideChar(crypt_id + ': password NOT saved: Could not write password to password store'));
+				if Assigned(LogHandleProc) then LogHandleProc(LogLevelError, msgtype_importanterror, PWideChar(crypt_id + ': password NOT saved: Could not write password to password store'));
 			end;
 		FS_FILE_NOTFOUND: //Не указан мастер-пароль
 			begin
-				if Assigned(LogHandleProc) then
-					LogHandleProc(LogLevelError, msgtype_importanterror, PWideChar(crypt_id + ': password NOT saved: No master password entered yet'));
+				if Assigned(LogHandleProc) then LogHandleProc(LogLevelError, msgtype_importanterror, PWideChar(crypt_id + ': password NOT saved: No master password entered yet'));
 			end;
 		//Ошибки здесь не значат, что пароль мы не получили - он может быть введён в диалоге
 	end;
@@ -301,11 +296,11 @@ begin
 	GetPluginSettings.RetryAttempts := IniFile.ReadInteger('Main', 'RetryAttempts', 1);
 	GetPluginSettings.AttemptWait := IniFile.ReadInteger('Main', 'AttemptWait', 1000);
 	GetPluginSettings.Proxy.ProxyType := IniFile.ReadInteger('Main', 'ProxyType', ProxyNone);
-	GetPluginSettings.Proxy.Server := IniFile.ReadString('Main', 'ProxyServer', '');
+	GetPluginSettings.Proxy.Server := IniFile.ReadString('Main', 'ProxyServer', EmptyWideStr);
 	GetPluginSettings.Proxy.Port := IniFile.ReadInteger('Main', 'ProxyPort', 0);
-	GetPluginSettings.Proxy.user := IniFile.ReadString('Main', 'ProxyUser', '');
+	GetPluginSettings.Proxy.user := IniFile.ReadString('Main', 'ProxyUser', EmptyWideStr);
 	GetPluginSettings.Proxy.use_tc_password_manager := IniFile.ReadBool('Main', 'ProxyTCPwdMngr', false);
-	GetPluginSettings.Proxy.password := IniFile.ReadString('Main', 'ProxyPassword', '');
+	GetPluginSettings.Proxy.password := IniFile.ReadString('Main', 'ProxyPassword', EmptyWideStr);
 	GetPluginSettings.DownloadLinksEncode := IniFile.ReadBool('Main', 'DownloadLinksEncode', true);
 	GetPluginSettings.AutoUpdateDownloadListing := IniFile.ReadBool('Main', 'AutoUpdateDownloadListing', true);
 	GetPluginSettings.ShowTrashFolders := IniFile.ReadBool('Main', 'ShowTrashFolders', true);
@@ -335,14 +330,10 @@ begin
 	basicType := VarType(OptionValue);
 	try
 		case basicType of
-			varNull:
-				IniFile.DeleteKey('Main', OptionName); //remove value in that case
-			varInteger:
-				IniFile.WriteInteger('Main', OptionName, OptionValue);
-			varString, varUString:
-				IniFile.WriteString('Main', OptionName, OptionValue);
-			varBoolean:
-				IniFile.WriteBool('Main', OptionName, OptionValue);
+			varNull: IniFile.DeleteKey('Main', OptionName); //remove value in that case
+			varInteger: IniFile.WriteInteger('Main', OptionName, OptionValue);
+			varString, varUString: IniFile.WriteString('Main', OptionName, OptionValue);
+			varBoolean: IniFile.WriteBool('Main', OptionName, OptionValue);
 		end;
 	except
 		On E: EIniFileException do
@@ -362,17 +353,18 @@ var
 begin
 	IniFile := TIniFile.Create(IniFilePath);
 	result.name := AccountName;
-	result.email := IniFile.ReadString(result.name, 'email', '');
-	result.password := IniFile.ReadString(result.name, 'password', '');
+	result.email := IniFile.ReadString(result.name, 'email', EmptyWideStr);
+	result.password := IniFile.ReadString(result.name, 'password', EmptyWideStr);
 	result.use_tc_password_manager := IniFile.ReadBool(result.name, 'tc_pwd_mngr', false);
 	result.unlimited_filesize := IniFile.ReadBool(result.name, 'unlimited_filesize', false);
 	result.split_large_files := IniFile.ReadBool(result.name, 'split_large_files', false);
 	result.twostep_auth := IniFile.ReadBool(result.name, 'twostep_auth', false);
 	result.public_account := IniFile.ReadBool(result.name, 'public_account', false);
-	result.public_url := IniFile.ReadString(result.name, 'public_url', '');
-	result.description := IniFile.ReadString(result.name, 'description', '');
+	result.public_url := IniFile.ReadString(result.name, 'public_url', EmptyWideStr);
+	result.description := IniFile.ReadString(result.name, 'description', EmptyWideStr);
 	result.encrypt_files_mode := IniFile.ReadInteger(result.name, 'encrypt_files_mode', EncryptModeNone);
 	result.encrypt_filenames := IniFile.ReadBool(result.name, 'encrypt_filenames', false);
+	result.shard_override := IniFile.ReadString(result.name, 'shard_override', EmptyWideStr);
 	AtPos := AnsiPos('@', result.email);
 	if AtPos <> 0 then
 	begin
@@ -387,8 +379,7 @@ var
 	IniFile: TIniFile;
 begin
 	result := false;
-	if AccountSettings.name <> '' then
-		result := true;
+	if AccountSettings.name <> EmptyWideStr then result := true;
 	IniFile := TIniFile.Create(IniFilePath);
 	IniFile.WriteString(AccountSettings.name, 'email', AccountSettings.email);
 	IniFile.WriteString(AccountSettings.name, 'password', AccountSettings.password);
@@ -401,6 +392,7 @@ begin
 	IniFile.WriteString(AccountSettings.name, 'description', AccountSettings.description);
 	IniFile.WriteInteger(AccountSettings.name, 'encrypt_files_mode', AccountSettings.encrypt_files_mode);
 	IniFile.WriteBool(AccountSettings.name, 'encrypt_filenames', AccountSettings.encrypt_filenames);
+	IniFile.WriteString(AccountSettings.shard_override, 'shard_override', AccountSettings.public_url);
 	IniFile.Destroy;
 end;
 
@@ -430,14 +422,10 @@ begin
 	VAccounts := TStringList.Create;
 	for account in AccountsList do
 	begin
-		if GetAccountSettingsFromIniFile(AccountsIniFilePath, account).public_account then
-			Continue; //public accounts ignored
-		if VirtualAccountsEnabled[0] then
-			VAccounts.Add(account + TrashPostfix);
-		if VirtualAccountsEnabled[1] then
-			VAccounts.Add(account + SharedPostfix);
-		if VirtualAccountsEnabled[2] then
-			VAccounts.Add(account + InvitesPostfix);
+		if GetAccountSettingsFromIniFile(AccountsIniFilePath, account).public_account then Continue; //public accounts ignored
+		if VirtualAccountsEnabled[0] then VAccounts.Add(account + TrashPostfix);
+		if VirtualAccountsEnabled[1] then VAccounts.Add(account + SharedPostfix);
+		if VirtualAccountsEnabled[2] then VAccounts.Add(account + InvitesPostfix);
 	end;
 	AccountsList.AddStrings(VAccounts);
 	VAccounts.Free;
@@ -446,8 +434,7 @@ end;
 function GetDescriptionFileName(SettingsIniFilePath: WideString): WideString;
 begin
 	GetDescriptionFileName := GetPluginSettings(SettingsIniFilePath).DescriptionFileName;
-	if TPath.HasValidFileNameChars(GetPluginSettings(SettingsIniFilePath).DescriptionFileName, false) then
-		exit;
+	if TPath.HasValidFileNameChars(GetPluginSettings(SettingsIniFilePath).DescriptionFileName, false) then exit;
 	exit('descript.ion');
 end;
 
