@@ -48,7 +48,9 @@ type
 		function HTTPPostMultipart(URL: WideString; Params: TDictionary<WideString, WideString>; var Answer: WideString): Boolean;
 		function HTTPPostFile(URL: WideString; FileName: WideString; var Answer: WideString): integer; //Постинг файла и получение ответа
 
-		function HTTPPost(URL: WideString; PostData, ResultData: TStream): integer; //Постинг подготовленных данных, отлов ошибок
+		function HTTPPost(URL: WideString; PostData, ResultData: TStream; UnderstandResponseCode: Boolean = false; ContentType: WideString = ''): integer; overload; //Постинг подготовленных данных, отлов ошибок
+		function HTTPPost(URL: WideString; var PostData: TIdMultiPartFormDataStream; ResultData: TStream): integer; overload; //TIdMultiPartFormDataStream should be passed via var
+		function HTTPPostExceptionHandler(E: Exception; URL: WideString): integer;
 
 		procedure HTTPProgress(ASender: TObject; AWorkMode: TWorkMode; AWorkCount: int64);
 		{RAW TEXT PARSING}
@@ -1034,76 +1036,16 @@ end;
 
 function TCloudMailRu.HTTPPostForm(URL: WideString; PostDataString: WideString; var Answer: WideString; ContentType: WideString): Boolean;
 var
-	MemStream, PostData: TStringStream;
-	HTTP: TIdHTTP;
-	SSL: TIdSSLIOHandlerSocketOpenSSL;
-	Socks: TIdSocksInfo;
+	MemStream, PostData: TStringStream; //todo rename memstream to ResultStream or use memory stream instead
+	PostResult: integer;
 begin
-	Result := true;
 	MemStream := TStringStream.Create;
 	PostData := TStringStream.Create(PostDataString, TEncoding.UTF8);
 
-	try
-		self.HTTPInit(HTTP, SSL, Socks, self.Cookie);
-		if ContentType <> '' then
-			HTTP.Request.ContentType := ContentType;
-		try
-			HTTP.Post(URL, PostData, MemStream);
-		except
-			//on E: EIdOSSLCouldNotLoadSSLLibrary do
-			on E: Exception do
-			begin
-				Log(LogLevelError, MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при отправке данных на адрес ' + URL);
-				MemStream.free;
-				PostData.free;
-				self.HTTPDestroy(HTTP, SSL);
-				Answer := E.Message;
-				exit(false);
-			end;
+	PostResult := self.HTTPPost(URL, PostData, MemStream, true, ContentType);
+	Result := PostResult = CLOUD_OPERATION_OK;
+	Answer := MemStream.DataString;
 
-		end;
-		self.HTTPDestroy(HTTP, SSL);
-		Answer := MemStream.DataString;
-	except
-		on E: EAbort do
-		begin
-			if Assigned(HTTP) then
-				self.HTTPDestroy(HTTP, SSL);
-			MemStream.free;
-			PostData.free;
-			exit(false);
-		end;
-		on E: EIdHTTPProtocolException do
-		begin
-			if HTTP.ResponseCode = 400 then
-			begin {сервер вернёт 400, но нужно пропарсить результат для дальнейшего определения действий}
-				Answer := E.ErrorMessage;
-				Result := true;
-			end else if HTTP.ResponseCode = 507 then //кончилось место
-			begin
-				Answer := E.ErrorMessage;
-				Result := true;
-				//end else if (HTTP.ResponseCode = 500) then // Внезапно, сервер так отвечает, если при перемещении файл уже существует, но полагаться на это мы не можем
-			end else begin
-				Log(LogLevelError, MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при отправке данных на адрес ' + URL + ', ответ сервера: ' + E.ErrorMessage);
-				Result := false;
-			end;
-			if Assigned(HTTP) then
-				self.HTTPDestroy(HTTP, SSL);
-		end;
-		on E: EIdSocketerror do
-		begin
-			if Assigned(HTTP) then
-				self.HTTPDestroy(HTTP, SSL);
-			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка сети: ' + E.Message + ' при отправке данных на адрес ' + URL);
-			Result := false;
-		end;
-		on E: Exception do
-		begin
-			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при отправке данных на адрес ' + URL);
-			Result := false;
-		end;
-	end;
 	MemStream.free;
 	PostData.free;
 end;
@@ -1111,7 +1053,7 @@ end;
 function TCloudMailRu.HTTPPostMultipart(URL: WideString; Params: TDictionary<WideString, WideString>; var Answer: WideString): Boolean; //test
 var
 	MemStream: TStringStream;
-	Fields: TIdMultipartFormDataStream;
+	Fields: TIdMultiPartFormDataStream;
 	HTTP: TIdHTTP;
 	SSL: TIdSSLIOHandlerSocketOpenSSL;
 	Socks: TIdSocksInfo;
@@ -1120,7 +1062,7 @@ begin
 	Result := true;
 	MemStream := TStringStream.Create;
 
-	Fields := TIdMultipartFormDataStream.Create;
+	Fields := TIdMultiPartFormDataStream.Create;
 	for ParamItem in Params do
 		Fields.AddFormField(ParamItem.Key, ParamItem.Value);
 
@@ -1186,63 +1128,101 @@ begin
 	Fields.free;
 end;
 
-function TCloudMailRu.HTTPPost(URL: WideString; PostData, ResultData: TStream): integer;
+function TCloudMailRu.HTTPPost(URL: WideString; PostData, ResultData: TStream; UnderstandResponseCode: Boolean = false; ContentType: WideString = ''): integer;
 var
 	HTTP: TIdHTTP;
 	SSL: TIdSSLIOHandlerSocketOpenSSL;
 	Socks: TIdSocksInfo;
-
+	ClassName: WideString;
 begin
 	Result := CLOUD_OPERATION_OK;
+	ResultData.Position := 0;
+	ClassName := PostData.ClassName;
+	try
+		self.HTTPInit(HTTP, SSL, Socks, self.Cookie);
+		if ContentType <> EmptyWideStr then
+			HTTP.Request.ContentType := ContentType;
+		HTTP.OnWork := self.HTTPProgress;
+		HTTP.Post(URL, PostData, ResultData);
+		self.HTTPDestroy(HTTP, SSL);
+	except
+		on E: Exception do
+		begin
+			Result := self.HTTPPostExceptionHandler(E, URL);
+			if UnderstandResponseCode and (E is EIdHTTPProtocolException) then
+			begin
+				case HTTP.ResponseCode of
+					HTTP_ERROR_BAD_REQUEST, HTTP_ERROR_OVERQUOTA: //recoverable errors
+						begin
+							ResultData.Write((E as EIdHTTPProtocolException).ErrorMessage, length((E as EIdHTTPProtocolException).ErrorMessage)); //todo test this
+							Result := CLOUD_OPERATION_OK;
+						end;
+				end;
+				if Assigned(HTTP) then
+					self.HTTPDestroy(HTTP, SSL);
+			end;
+		end;
+	end;
+end;
+
+function TCloudMailRu.HTTPPost(URL: WideString; var PostData: TIdMultiPartFormDataStream; ResultData: TStream): integer;
+var
+	HTTP: TIdHTTP;
+	SSL: TIdSSLIOHandlerSocketOpenSSL;
+	Socks: TIdSocksInfo;
+	ClassName: WideString;
+begin
+	Result := CLOUD_OPERATION_OK;
+	ResultData.Position := 0;
+	ClassName := PostData.ClassName;
 	try
 		self.HTTPInit(HTTP, SSL, Socks, self.Cookie);
 		HTTP.OnWork := self.HTTPProgress;
 		HTTP.Post(URL, PostData, ResultData);
 		self.HTTPDestroy(HTTP, SSL);
 	except
-		on E: EAbort do
+		On E: Exception do
 		begin
+			Result := self.HTTPPostExceptionHandler(E, URL);
 			if Assigned(HTTP) then
 				self.HTTPDestroy(HTTP, SSL);
-			Result := CLOUD_OPERATION_CANCELLED;
 		end;
-		on E: EIdHTTPProtocolException do
+	end;
+end;
+
+function TCloudMailRu.HTTPPostExceptionHandler(E: Exception; URL: WideString): integer; //todo: make global exception handler
+begin
+	if E is EAbort then
+	begin
+		Result := CLOUD_OPERATION_CANCELLED;
+	end else if E is EIdHTTPProtocolException then
+	begin
 		begin
-			if Assigned(HTTP) then
-				self.HTTPDestroy(HTTP, SSL);
-			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при отправке данных на адрес ' + URL + ', ответ сервера: ' + E.ErrorMessage);
+			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при отправке данных на адрес ' + URL + ', ответ сервера: ' + (E as EIdHTTPProtocolException).ErrorMessage);
 			Result := CLOUD_OPERATION_FAILED;
 		end;
-		on E: EIdSocketerror do
-		begin
-			if Assigned(HTTP) then
-				self.HTTPDestroy(HTTP, SSL);
-			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка сети: ' + E.Message + ' при отправке данных на адрес ' + URL);
-			Result := CLOUD_OPERATION_FAILED;
-		end;
-		on E: Exception do
-		begin
-			if Assigned(HTTP) then
-				self.HTTPDestroy(HTTP, SSL);
-			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при отправке данных на адрес ' + URL);
-			Result := CLOUD_OPERATION_FAILED;
-		end;
+	end else if E is EIdSocketerror then
+	begin
+		Log(LogLevelError, MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка сети: ' + E.Message + ' при отправке данных на адрес ' + URL);
+		Result := CLOUD_OPERATION_FAILED;
+	end else begin
+		Log(LogLevelError, MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при отправке данных на адрес ' + URL);
+		Result := CLOUD_OPERATION_FAILED;
 	end;
 end;
 
 function TCloudMailRu.HTTPPostFile(URL: WideString; FileName: WideString; var Answer: WideString): integer;
 var
-
-	PostData: TIdMultipartFormDataStream;
+	PostData: TIdMultiPartFormDataStream;
 	Cipher: TCipher;
 	MemStream: TStringStream;
 	MemoryStream: TMemoryStream;
 	FileStream: TFileStream;
 begin
 	MemStream := TStringStream.Create;
-	PostData := TIdMultipartFormDataStream.Create;
+	PostData := TIdMultiPartFormDataStream.Create;
 
-	if self.crypt_files then
+	if not self.crypt_files then
 	begin
 		Cipher := TCipher.Create(self.crypt_files_password, self.crypt_filenames_password);
 		MemoryStream := TMemoryStream.Create;
@@ -1260,7 +1240,6 @@ begin
 	end;
 
 	Answer := MemStream.DataString;
-
 	MemStream.free;
 	PostData.free;
 
