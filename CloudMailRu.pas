@@ -44,9 +44,11 @@ type
 		procedure HTTPDestroy(var HTTP: TIdHTTP; var SSL: TIdSSLIOHandlerSocketOpenSSL);
 		function HTTPGet(URL: WideString; var Answer: WideString; var ProgressEnabled: Boolean): Boolean; //если ProgressEnabled - включаем обработчик onWork, возвращаем ProgressEnabled=false при отмене
 		function HTTPGetFile(URL: WideString; FileStream: TStream; LogErrors: Boolean = true): integer;
-		function HTTPPost(URL: WideString; PostDataString: WideString; var Answer: WideString; ContentType: WideString = 'application/x-www-form-urlencoded'): Boolean; //Постинг данных с возможным получением ответа.
+		function HTTPPostForm(URL: WideString; PostDataString: WideString; var Answer: WideString; ContentType: WideString = 'application/x-www-form-urlencoded'): Boolean; //Постинг данных с возможным получением ответа.
 		function HTTPPostMultipart(URL: WideString; Params: TDictionary<WideString, WideString>; var Answer: WideString): Boolean;
 		function HTTPPostFile(URL: WideString; FileName: WideString; var Answer: WideString): integer; //Постинг файла и получение ответа
+
+    
 		procedure HTTPProgress(ASender: TObject; AWorkMode: TWorkMode; AWorkCount: int64);
 		{RAW TEXT PARSING}
 		function extractTokenFromText(Text: WideString; var token: WideString): Boolean;
@@ -150,7 +152,7 @@ begin
 		remotePath := ChangePathFileName(remotePath, FileName);
 		Cipher.free;
 	end;
-	Result := self.HTTPPost(API_FILE_ADD, 'conflict=' + ConflictMode + '&home=/' + PathToUrl(remotePath) + '&hash=' + hash + '&size=' + size.ToString + self.united_params, JSONAnswer);
+	Result := self.HTTPPostForm(API_FILE_ADD, 'conflict=' + ConflictMode + '&home=/' + PathToUrl(remotePath) + '&hash=' + hash + '&size=' + size.ToString + self.united_params, JSONAnswer);
 
 end;
 
@@ -222,7 +224,7 @@ begin
 		exit; //Проверка на вызов без инициализации
 	if self.public_account then
 		exit(FS_FILE_NOTSUPPORTED);
-	if self.HTTPPost(API_FILE_COPY, 'home=' + PathToUrl(OldName) + '&folder=' + PathToUrl(ToPath) + self.united_params + '&conflict', JSON) then
+	if self.HTTPPostForm(API_FILE_COPY, 'home=' + PathToUrl(OldName) + '&folder=' + PathToUrl(ToPath) + self.united_params + '&conflict', JSON) then
 	begin //Парсим ответ
 		OperationResult := fromJSON_OperationResult(JSON, OperationStatus);
 		Result := CloudResultToFsResult(OperationResult, OperationStatus, 'File copy error: ');
@@ -325,7 +327,7 @@ begin
 		exit; //Проверка на вызов без инициализации
 	if self.public_account then
 		exit;
-	if self.HTTPPost(API_FOLDER_ADD, 'home=/' + PathToUrl(Path) + self.united_params + '&conflict', PostAnswer) then
+	if self.HTTPPostForm(API_FOLDER_ADD, 'home=/' + PathToUrl(Path) + self.united_params + '&conflict', PostAnswer) then
 	begin
 		OperationResult := fromJSON_OperationResult(PostAnswer, OperationStatus);
 		case OperationResult of
@@ -350,7 +352,7 @@ begin
 		exit; //Проверка на вызов без инициализации
 	if self.public_account then
 		exit;
-	Result := self.HTTPPost(API_FILE_REMOVE, 'home=/' + PathToUrl(Path) + self.united_params + '&conflict', JSON);
+	Result := self.HTTPPostForm(API_FILE_REMOVE, 'home=/' + PathToUrl(Path) + self.united_params + '&conflict', JSON);
 	if Result then
 	begin
 		OperationResult := fromJSON_OperationResult(JSON, OperationStatus);
@@ -780,7 +782,7 @@ var
 	Answer: WideString;
 begin
 	Result := false;
-	if self.HTTPPost(OAUTH_TOKEN_URL, 'client_id=cloud-win&grant_type=password&username=' + self.user + '%40' + self.domain + '&password=' + UrlEncode(self.password), Answer) then
+	if self.HTTPPostForm(OAUTH_TOKEN_URL, 'client_id=cloud-win&grant_type=password&username=' + self.user + '%40' + self.domain + '&password=' + UrlEncode(self.password), Answer) then
 	begin
 		if not fromJSON_OAuthTokenInfo(Answer, OAuthToken) then
 			exit(false);
@@ -803,7 +805,7 @@ begin
 		exit(true);
 	end;
 
-	if self.HTTPPost(API_DISPATCHER, self.united_params, JSON) then //checkme
+	if self.HTTPPostForm(API_DISPATCHER, self.united_params, JSON) then //checkme
 	begin
 		OperationResult := fromJSON_OperationResult(JSON, OperationStatus);
 		case OperationResult of
@@ -1029,7 +1031,7 @@ begin
 	HTTP.Request.Connection := '';
 end;
 
-function TCloudMailRu.HTTPPost(URL: WideString; PostDataString: WideString; var Answer: WideString; ContentType: WideString): Boolean;
+function TCloudMailRu.HTTPPostForm(URL: WideString; PostDataString: WideString; var Answer: WideString; ContentType: WideString): Boolean;
 var
 	MemStream, PostData: TStringStream;
 	HTTP: TIdHTTP;
@@ -1387,7 +1389,7 @@ begin
 		CLOUD_AUTH_METHOD_WEB: //todo: вынести в отдельный метод
 			begin
 				Log(LogLevelDebug, MSGTYPE_DETAILS, 'Requesting auth token for ' + self.user + '@' + self.domain);
-				Result := self.HTTPPost(LOGIN_URL, 'page=https://cloud.mail.ru/?new_auth_form=1&Domain=' + self.domain + '&Login=' + self.user + '&Password=' + UrlEncode(self.password) + '&FailPage=', PostAnswer);
+				Result := self.HTTPPostForm(LOGIN_URL, 'page=https://cloud.mail.ru/?new_auth_form=1&Domain=' + self.domain + '&Login=' + self.user + '&Password=' + UrlEncode(self.password) + '&FailPage=', PostAnswer);
 				if (Result) then
 				begin
 					Log(LogLevelDebug, MSGTYPE_DETAILS, 'Parsing token data...');
@@ -1452,7 +1454,7 @@ begin
 		exit; //Проверка на вызов без инициализации
 	if self.public_account then
 		exit(FS_FILE_NOTSUPPORTED);
-	if self.HTTPPost(API_FILE_MOVE, 'home=' + PathToUrl(OldName) + '&folder=' + PathToUrl(ToPath) + self.united_params + '&conflict', JSON) then
+	if self.HTTPPostForm(API_FILE_MOVE, 'home=' + PathToUrl(OldName) + '&folder=' + PathToUrl(ToPath) + self.united_params + '&conflict', JSON) then
 	begin //Парсим ответ
 		OperationResult := fromJSON_OperationResult(JSON, OperationStatus);
 		Result := CloudResultToFsResult(OperationResult, OperationStatus, 'File move error: ');
@@ -1493,9 +1495,9 @@ begin
 		exit;
 	if publish then
 	begin
-		Result := self.HTTPPost(API_FILE_PUBLISH, 'home=/' + PathToUrl(Path) + self.united_params + '&conflict', JSON);
+		Result := self.HTTPPostForm(API_FILE_PUBLISH, 'home=/' + PathToUrl(Path) + self.united_params + '&conflict', JSON);
 	end else begin
-		Result := self.HTTPPost(API_FILE_UNPUBLISH, 'weblink=' + PublicLink + self.united_params + '&conflict', JSON);
+		Result := self.HTTPPostForm(API_FILE_UNPUBLISH, 'weblink=' + PublicLink + self.united_params + '&conflict', JSON);
 	end;
 
 	if Result then
@@ -1546,9 +1548,9 @@ begin
 		else
 			access_string := CLOUD_SHARE_ACCESS_READ_ONLY;
 
-		Result := self.HTTPPost(API_FOLDER_SHARE, 'home=/' + PathToUrl(Path) + self.united_params + '&invite={"email":"' + email + '","access":"' + access_string + '"}', JSON)
+		Result := self.HTTPPostForm(API_FOLDER_SHARE, 'home=/' + PathToUrl(Path) + self.united_params + '&invite={"email":"' + email + '","access":"' + access_string + '"}', JSON)
 	end else begin
-		Result := (self.HTTPPost(API_FOLDER_UNSHARE, 'home=/' + PathToUrl(Path) + self.united_params + '&invite={"email":"' + email + '"}', JSON));
+		Result := (self.HTTPPostForm(API_FOLDER_UNSHARE, 'home=/' + PathToUrl(Path) + self.united_params + '&invite={"email":"' + email + '"}', JSON));
 	end;
 
 	if (Result) then
@@ -1573,7 +1575,7 @@ begin
 	if self.public_account then
 		exit;
 
-	Result := self.HTTPPost(API_TRASHBIN_RESTORE, 'path=' + PathToUrl(Path) + '&restore_revision=' + RestoreRevision.ToString + self.united_params + '&conflict=' + ConflictMode, JSON);
+	Result := self.HTTPPostForm(API_TRASHBIN_RESTORE, 'path=' + PathToUrl(Path) + '&restore_revision=' + RestoreRevision.ToString + self.united_params + '&conflict=' + ConflictMode, JSON);
 
 	if Result then
 	begin
@@ -1601,7 +1603,7 @@ begin
 	if self.public_account then
 		exit;
 
-	Result := self.HTTPPost(API_TRASHBIN_EMPTY, self.united_params, JSON);
+	Result := self.HTTPPostForm(API_TRASHBIN_EMPTY, self.united_params, JSON);
 
 	if Result then
 	begin
@@ -1629,7 +1631,7 @@ begin
 	if self.public_account then
 		exit;
 
-	Result := self.HTTPPost(API_FOLDER_MOUNT, 'home=' + UrlEncode(home) + '&invite_token=' + invite_token + self.united_params + '&conflict=' + ConflictMode, JSON);
+	Result := self.HTTPPostForm(API_FOLDER_MOUNT, 'home=' + UrlEncode(home) + '&invite_token=' + invite_token + self.united_params + '&conflict=' + ConflictMode, JSON);
 
 	if Result then
 	begin
@@ -1662,7 +1664,7 @@ begin
 	else
 		CopyStr := 'false';
 
-	Result := self.HTTPPost(API_FOLDER_UNMOUNT, 'home=' + UrlEncode(home) + '&clone_copy=' + CopyStr + self.united_params, JSON);
+	Result := self.HTTPPostForm(API_FOLDER_UNMOUNT, 'home=' + UrlEncode(home) + '&clone_copy=' + CopyStr + self.united_params, JSON);
 
 	if Result then
 	begin
@@ -1690,7 +1692,7 @@ begin
 	if self.public_account then
 		exit;
 
-	Result := self.HTTPPost(API_INVITE_REJECT, 'invite_token=' + invite_token + self.united_params, JSON);
+	Result := self.HTTPPostForm(API_INVITE_REJECT, 'invite_token=' + invite_token + self.united_params, JSON);
 
 	if Result then
 	begin
@@ -1942,7 +1944,7 @@ begin
 		exit; //Проверка на вызов без инициализации
 	if self.public_account then
 		exit;
-	Result := self.HTTPPost(API_FILE_REMOVE, 'home=/' + IncludeSlash(PathToUrl(Path)) + self.united_params + '&conflict', JSON); //API всегда отвечает true, даже если путь не существует
+	Result := self.HTTPPostForm(API_FILE_REMOVE, 'home=/' + IncludeSlash(PathToUrl(Path)) + self.united_params + '&conflict', JSON); //API всегда отвечает true, даже если путь не существует
 	if Result then
 	begin
 		OperationResult := fromJSON_OperationResult(JSON, OperationStatus);
@@ -1968,7 +1970,7 @@ begin
 		exit; //Проверка на вызов без инициализации
 	if self.public_account then
 		exit;
-	if self.HTTPPost(API_FILE_RENAME, 'home=' + PathToUrl(OldName) + '&name=' + PathToUrl(NewName) + self.united_params, JSON) then
+	if self.HTTPPostForm(API_FILE_RENAME, 'home=' + PathToUrl(OldName) + '&name=' + PathToUrl(NewName) + self.united_params, JSON) then
 	begin //Парсим ответ
 		OperationResult := fromJSON_OperationResult(JSON, OperationStatus);
 		Result := CloudResultToFsResult(OperationResult, OperationStatus, 'Rename file error: ');
