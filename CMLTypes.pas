@@ -98,6 +98,11 @@ const
 	{Константа использования мобильного аутентификатора для двухфакторной авторизации}
 	AUTH_APP_USED = -1;
 
+	{Коды HTTP-ошибок при постинге запросов}
+	HTTP_ERROR_BAD_REQUEST = 400;
+	HTTP_ERROR_OVERQUOTA = 507;
+	HTTP_ERROR_EXISTS = 500;
+
 type
 	TCloudMailRuDirListingItem = Record
 		tree: WideString;
