@@ -1191,7 +1191,9 @@ var
 	Socks: TIdSocksInfo;
 	PostData: TIdMultipartFormDataStream;
 	Cipher: TCipher;
-	TmpFileName: WideString;
+
+	MemoryStream: TMemoryStream;
+	FileStream: TFileStream;
 begin
 	Result := CLOUD_OPERATION_OK;
 	MemStream := TStringStream.Create;
@@ -1199,13 +1201,16 @@ begin
 
 	if self.crypt_files then
 	begin
-		//TIdMultipartFormDataStream does not support indirect stream operations, temp file used instead
 		Cipher := TCipher.Create(self.crypt_files_password, self.crypt_filenames_password);
-		TmpFileName := GetTmpFileName();
-		Cipher.CryptFile(FileName, TmpFileName);
-		PostData.AddFile('file', TmpFileName, 'application/octet-stream');
+		MemoryStream := TMemoryStream.Create;
+		FileStream := TFileStream.Create(FileName, fmOpenRead or fmShareDenyWrite);
+		Cipher.CryptStream(FileStream, MemoryStream);
+
+		MemoryStream.Position := 0;
+		PostData.AddFormField('file', 'application/octet-stream', '', MemoryStream, FileName);
 		Cipher.free;
-		DeleteFileW(PWideChar(TmpFileName));
+		FileStream.free;
+
 	end else begin
 		PostData.AddFile('file', FileName, 'application/octet-stream');
 	end;
@@ -1249,6 +1254,9 @@ begin
 	end;
 	MemStream.free;
 	PostData.free;
+	if self.crypt_files then
+		MemoryStream.free;
+
 end;
 
 procedure TCloudMailRu.HTTPProgress(ASender: TObject; AWorkMode: TWorkMode; AWorkCount: int64);
