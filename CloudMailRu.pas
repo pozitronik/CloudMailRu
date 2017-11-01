@@ -48,7 +48,8 @@ type
 		function HTTPPostMultipart(URL: WideString; Params: TDictionary<WideString, WideString>; var Answer: WideString): Boolean;
 		function HTTPPostFile(URL: WideString; FileName: WideString; var Answer: WideString): integer; //Постинг файла и получение ответа
 
-    
+		function HTTPPost(URL: WideString; PostData, ResultData: TStream): integer; //Постинг подготовленных данных, отлов ошибок
+
 		procedure HTTPProgress(ASender: TObject; AWorkMode: TWorkMode; AWorkCount: int64);
 		{RAW TEXT PARSING}
 		function extractTokenFromText(Text: WideString; var token: WideString): Boolean;
@@ -1185,45 +1186,18 @@ begin
 	Fields.free;
 end;
 
-function TCloudMailRu.HTTPPostFile(URL: WideString; FileName: WideString; var Answer: WideString): integer;
+function TCloudMailRu.HTTPPost(URL: WideString; PostData, ResultData: TStream): integer;
 var
-	MemStream: TStringStream;
 	HTTP: TIdHTTP;
 	SSL: TIdSSLIOHandlerSocketOpenSSL;
 	Socks: TIdSocksInfo;
-	PostData: TIdMultipartFormDataStream;
-	Cipher: TCipher;
 
-	MemoryStream: TMemoryStream;
-	FileStream: TFileStream;
 begin
 	Result := CLOUD_OPERATION_OK;
-	MemStream := TStringStream.Create;
-	PostData := TIdMultipartFormDataStream.Create;
-
-	if self.crypt_files then
-	begin
-		Cipher := TCipher.Create(self.crypt_files_password, self.crypt_filenames_password);
-		MemoryStream := TMemoryStream.Create;
-		FileStream := TFileStream.Create(FileName, fmOpenRead or fmShareDenyWrite);
-		Cipher.CryptStream(FileStream, MemoryStream);
-
-		MemoryStream.Position := 0;
-		PostData.AddFormField('file', 'application/octet-stream', '', MemoryStream, FileName);
-		Cipher.free;
-		FileStream.free;
-
-	end else begin
-		PostData.AddFile('file', FileName, 'application/octet-stream');
-	end;
-
 	try
-
 		self.HTTPInit(HTTP, SSL, Socks, self.Cookie);
 		HTTP.OnWork := self.HTTPProgress;
-
-		HTTP.Post(URL, PostData, MemStream);
-		Answer := MemStream.DataString;
+		HTTP.Post(URL, PostData, ResultData);
 		self.HTTPDestroy(HTTP, SSL);
 	except
 		on E: EAbort do
@@ -1254,10 +1228,41 @@ begin
 			Result := CLOUD_OPERATION_FAILED;
 		end;
 	end;
+end;
+
+function TCloudMailRu.HTTPPostFile(URL: WideString; FileName: WideString; var Answer: WideString): integer;
+var
+
+	PostData: TIdMultipartFormDataStream;
+	Cipher: TCipher;
+	MemStream: TStringStream;
+	MemoryStream: TMemoryStream;
+	FileStream: TFileStream;
+begin
+	MemStream := TStringStream.Create;
+	PostData := TIdMultipartFormDataStream.Create;
+
+	if self.crypt_files then
+	begin
+		Cipher := TCipher.Create(self.crypt_files_password, self.crypt_filenames_password);
+		MemoryStream := TMemoryStream.Create;
+		FileStream := TFileStream.Create(FileName, fmOpenRead or fmShareDenyWrite);
+		Cipher.CryptStream(FileStream, MemoryStream);
+		MemoryStream.Position := 0;
+		PostData.AddFormField('file', 'application/octet-stream', '', MemoryStream, FileName);
+		Result := self.HTTPPost(URL, PostData, MemStream);
+		MemoryStream.free;
+		Cipher.free;
+		FileStream.free;
+	end else begin
+		PostData.AddFile('file', FileName, 'application/octet-stream');
+		Result := self.HTTPPost(URL, PostData, MemStream);
+	end;
+
+	Answer := MemStream.DataString;
+
 	MemStream.free;
 	PostData.free;
-	if self.crypt_files then
-		MemoryStream.free;
 
 end;
 
