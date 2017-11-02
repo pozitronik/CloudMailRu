@@ -95,14 +95,13 @@ var
 	AskResult: integer;
 	TmpString: WideString;
 begin
-	result := false;
 	if AccountSettings.public_account then
 		exit(true);
 
-	if AccountSettings.use_tc_password_manager then
-	begin //пароль должен браться из TC
-		result := self.GetPassword(AccountSettings.name, AccountSettings.Password) = FS_FILE_OK;
-	end; //иначе предполагается, что пароль взят из конфига
+	if AccountSettings.use_tc_password_manager and (self.GetPassword(AccountSettings.name, AccountSettings.Password) = FS_FILE_OK) then //пароль должен браться из TC
+		exit(true);
+
+	//иначе предполагается, что пароль взят из конфига
 
 	if AccountSettings.Password = EmptyWideStr then //но пароля нет, не в инишнике, не в тотале
 	begin
@@ -124,7 +123,9 @@ begin
 				end;
 			end;
 		end;
-	end;
+	end
+	else
+		result := true;
 end;
 
 function TTCPasswordManager.GetProxyPassword(var ProxySettings: TProxySettings): boolean;
@@ -136,10 +137,10 @@ begin
 	if (ProxySettings.ProxyType = ProxyNone) or (ProxySettings.user = EmptyWideStr) then
 		exit(true); //no username means no password required
 
-	if ProxySettings.use_tc_password_manager then
-	begin //пароль должен браться из TC
-		result := self.GetPassword('proxy' + ProxySettings.user, ProxySettings.Password) = FS_FILE_OK;
-	end; //иначе предполагается, что пароль взят из конфига
+	if ProxySettings.use_tc_password_manager and (self.GetPassword('proxy' + ProxySettings.user, ProxySettings.Password) = FS_FILE_OK) then //пароль должен браться из TC
+		exit(true);
+
+	//иначе предполагается, что пароль взят из конфига
 
 	if ProxySettings.Password = EmptyWideStr then //но пароля нет, не в инишнике, не в тотале
 	begin
