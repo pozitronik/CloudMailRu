@@ -266,62 +266,6 @@ begin
 	end;
 end;
 
-function InitCloudPasswords(var Cloud: TCloudMailRu; AccountSettings: TAccountSettings): boolean;
-var
-	crypt_id, crypt_filename_id: WideString;
-	UseTCPWDManager: boolean;
-begin
-	Result := true;
-	crypt_id := AccountSettings.name + ' filecrypt';
-	crypt_filename_id := AccountSettings.name + ' filenamecrypt';
-	Cloud.crypt_files := AccountSettings.encrypt_files_mode <> EncryptModeNone;
-
-	if Cloud.isCryptFilesPasswordRequired then
-	begin
-		if EncryptModeAlways = AccountSettings.encrypt_files_mode then {password must be taken from tc storage, otherwise ask user and store password}
-		begin
-			case PasswordManager.GetPassword(crypt_id, Cloud.crypt_files_password) of
-				FS_FILE_OK:
-					begin
-						if Cloud.isCryptFileNamesPasswordRequired then
-							PasswordManager.GetPassword(crypt_id, Cloud.crypt_files_password);
-					end;
-				FS_FILE_READERROR: //password not found in store, ask and store => act like EncryptModeAskOnce
-					begin
-						UseTCPWDManager := true;
-						AccountSettings.encrypt_files_mode := EncryptModeAskOnce;
-					end;
-				FS_FILE_NOTFOUND: //user doesn't know master password
-					begin
-						exit(false);
-					end;
-			end;
-		end;
-		if EncryptModeAskOnce = AccountSettings.encrypt_files_mode then
-		begin
-			case TAskEncryptionPasswordsForm.AskPassword(FindTCWindow, AccountSettings.name, Cloud.crypt_files_password, Cloud.crypt_filenames_password, UseTCPWDManager) of
-				mrCancel: //abort operation
-					begin
-						exit(false);
-					end;
-				mrOk:
-					begin
-						//store passwords if required
-						if UseTCPWDManager then
-						begin
-							PasswordManager.SetPassword(crypt_id, Cloud.crypt_files_password);
-							PasswordManager.GetPassword(crypt_filename_id, Cloud.crypt_filenames_password);
-						end;
-					end;
-				mrIgnore: //skip at this time
-					begin
-						Cloud.crypt_files := false;
-					end;
-			end;
-		end;
-	end;
-end;
-
 function FsGetBackgroundFlags: integer; stdcall;
 begin
 	if GetPluginSettings(SettingsIniFilePath).DisableMultiThreading then
@@ -1029,7 +973,7 @@ begin
 
 	Cloud := ConnectionManager.get(RemotePath.account, getResult);
 	AccountSettings := GetAccountSettingsFromIniFile(AccountsIniFilePath, RemotePath.account);
-	if not InitCloudPasswords(Cloud, AccountSettings) then
+	if not PasswordManager.InitCloudCryptPasswords(Cloud, AccountSettings) then
 		exit(FS_FILE_USERABORT);
 
 	Result := Cloud.getFile(WideString(RemotePath.path), LocalName);
@@ -1138,7 +1082,7 @@ begin
 	Cloud := ConnectionManager.get(RemotePath.account, getResult);
 	AccountSettings := GetAccountSettingsFromIniFile(AccountsIniFilePath, RemotePath.account);
 
-	if not InitCloudPasswords(Cloud, AccountSettings) then
+	if not PasswordManager.InitCloudCryptPasswords(Cloud, AccountSettings) then
 		exit(FS_FILE_USERABORT);
 
 	Result := Cloud.putFile(WideString(LocalName), RemotePath.path);

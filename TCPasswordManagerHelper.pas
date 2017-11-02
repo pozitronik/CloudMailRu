@@ -3,7 +3,7 @@
 {Обертка над обращениями к менеджеру паролей Total Commander}
 interface
 
-Uses Plugin_Types, Settings, Windows, CloudMailRu, SysUtils, AskPassword, MRC_Helper, Controls;
+Uses Plugin_Types, Settings, Windows, CloudMailRu, SysUtils, AskPassword, AskEncryptionPasswords, MRC_Helper, Controls;
 
 type
 	TTCPasswordManager = class
@@ -119,7 +119,7 @@ begin
 					LogHandleProc(LogLevelDebug, msgtype_details, PWideChar('Password saved in TC password manager'));
 					TmpString := AccountSettings.Password;
 					AccountSettings.Password := '';
-					SetAccountSettingsToIniFile(AccountSettings); //todo
+					SetAccountSettingsToIniFile(AccountSettings);
 					AccountSettings.Password := TmpString;
 				end;
 			end;
@@ -156,7 +156,7 @@ begin
 					LogHandleProc(LogLevelDebug, msgtype_details, PWideChar('Password saved in TC password manager'));
 					TmpString := ProxySettings.Password;
 					ProxySettings.Password := EmptyWideStr;
-					ProxySettings.use_tc_password_manager := true; //todo
+					ProxySettings.use_tc_password_manager := true; //todo save proxy settings!
 					ProxySettings.Password := TmpString;
 				end; //Ошибки здесь не значат, что пароль мы не получили - он может быть введён в диалоге
 			end;
@@ -165,8 +165,59 @@ begin
 end;
 
 function TTCPasswordManager.InitCloudCryptPasswords(var Cloud: TCloudMailRu; AccountSettings: TAccountSettings): boolean;
+var
+	crypt_id, crypt_filename_id: WideString;
+	UseTCPWDManager: boolean;
 begin
+	result := true;
+	crypt_id := AccountSettings.name + ' filecrypt';
+	crypt_filename_id := AccountSettings.name + ' filenamecrypt';
+	Cloud.crypt_files := AccountSettings.encrypt_files_mode <> EncryptModeNone;
 
+	if Cloud.isCryptFilesPasswordRequired then
+	begin
+		if EncryptModeAlways = AccountSettings.encrypt_files_mode then {password must be taken from tc storage, otherwise ask user and store password}
+		begin
+			case self.GetPassword(crypt_id, Cloud.crypt_files_password) of
+				FS_FILE_OK:
+					begin
+						if Cloud.isCryptFileNamesPasswordRequired then
+							self.GetPassword(crypt_filename_id, Cloud.crypt_filenames_password);
+					end;
+				FS_FILE_READERROR: //password not found in store, ask and store => act like EncryptModeAskOnce
+					begin
+						UseTCPWDManager := true;
+						AccountSettings.encrypt_files_mode := EncryptModeAskOnce;
+					end;
+				FS_FILE_NOTSUPPORTED: //user doesn't know master password
+					begin
+						exit(false);
+					end;
+			end;
+		end;
+		if EncryptModeAskOnce = AccountSettings.encrypt_files_mode then
+		begin
+			case TAskEncryptionPasswordsForm.AskPassword(FindTCWindow, AccountSettings.name, Cloud.crypt_files_password, Cloud.crypt_filenames_password, UseTCPWDManager) of
+				mrCancel: //abort operation
+					begin
+						exit(false);
+					end;
+				mrOK:
+					begin
+						//store passwords if required
+						if UseTCPWDManager then
+						begin
+							self.SetPassword(crypt_id, Cloud.crypt_files_password);
+							self.SetPassword(crypt_filename_id, Cloud.crypt_filenames_password);
+						end;
+					end;
+				mrIgnore: //skip at this time
+					begin
+						Cloud.crypt_files := false;
+					end;
+			end;
+		end;
+	end;
 end;
 
 end.
