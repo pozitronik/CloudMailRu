@@ -1134,7 +1134,7 @@ begin
 	end;
 end;
 
-function TCloudMailRu.HTTPExceptionHandler(E: Exception; URL: WideString; HTTPMethod: integer = HTTP_METHOD_POST; LogErrors: Boolean = true): integer; //todo: make global exception handler
+function TCloudMailRu.HTTPExceptionHandler(E: Exception; URL: WideString; HTTPMethod: integer = HTTP_METHOD_POST; LogErrors: Boolean = true): integer;
 var
 	method_string: WideString; //в зависимости от метода исходного запроса меняется текст сообщения
 begin
