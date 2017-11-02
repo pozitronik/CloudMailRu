@@ -894,6 +894,37 @@ begin
 	end;
 end;
 
+procedure TCloudMailRu.HTTPInit(var HTTP: TIdHTTP; var SSL: TIdSSLIOHandlerSocketOpenSSL; var Socks: TIdSocksInfo; var Cookie: TIdCookieManager);
+begin
+	SSL := TIdSSLIOHandlerSocketOpenSSL.Create();
+	HTTP := TIdHTTP.Create();
+	if (self.Proxy.ProxyType in SocksProxyTypes) and (self.Socks.Enabled) then
+		SSL.TransparentProxy := self.Socks;
+	if self.Proxy.ProxyType = ProxyHTTP then
+	begin
+		HTTP.ProxyParams.ProxyServer := self.Proxy.Server;
+		HTTP.ProxyParams.ProxyPort := self.Proxy.Port;
+		if self.Proxy.user <> '' then
+		begin
+			HTTP.ProxyParams.BasicAuthentication := true;
+			HTTP.ProxyParams.ProxyUsername := self.Proxy.user;
+			HTTP.ProxyParams.ProxyPassword := self.Proxy.password;
+		end
+	end;
+	HTTP.CookieManager := Cookie;
+	HTTP.IOHandler := SSL;
+	HTTP.AllowCookies := true;
+	HTTP.HTTPOptions := [hoForceEncodeParams, hoNoParseMetaHTTPEquiv, hoKeepOrigProtocol, hoTreat302Like303];
+	HTTP.HandleRedirects := true;
+	if (self.ConnectTimeout < 0) then
+	begin
+		HTTP.ConnectTimeout := self.ConnectTimeout;
+		HTTP.ReadTimeout := self.ConnectTimeout;
+	end;
+	HTTP.Request.UserAgent := 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.17 (KHTML, like Gecko) Chrome/24.0.1312.57 Safari/537.17/TCWFX(' + PlatformX + ')';
+	HTTP.Request.Connection := '';
+end;
+
 procedure TCloudMailRu.HTTPDestroy(var HTTP: TIdHTTP; var SSL: TIdSSLIOHandlerSocketOpenSSL);
 begin
 	HTTP.free;
@@ -1001,37 +1032,6 @@ begin
 		end;
 
 	end;
-end;
-
-procedure TCloudMailRu.HTTPInit(var HTTP: TIdHTTP; var SSL: TIdSSLIOHandlerSocketOpenSSL; var Socks: TIdSocksInfo; var Cookie: TIdCookieManager);
-begin
-	SSL := TIdSSLIOHandlerSocketOpenSSL.Create();
-	HTTP := TIdHTTP.Create();
-	if (self.Proxy.ProxyType in SocksProxyTypes) and (self.Socks.Enabled) then
-		SSL.TransparentProxy := self.Socks;
-	if self.Proxy.ProxyType = ProxyHTTP then
-	begin
-		HTTP.ProxyParams.ProxyServer := self.Proxy.Server;
-		HTTP.ProxyParams.ProxyPort := self.Proxy.Port;
-		if self.Proxy.user <> '' then
-		begin
-			HTTP.ProxyParams.BasicAuthentication := true;
-			HTTP.ProxyParams.ProxyUsername := self.Proxy.user;
-			HTTP.ProxyParams.ProxyPassword := self.Proxy.password;
-		end
-	end;
-	HTTP.CookieManager := Cookie;
-	HTTP.IOHandler := SSL;
-	HTTP.AllowCookies := true;
-	HTTP.HTTPOptions := [hoForceEncodeParams, hoNoParseMetaHTTPEquiv, hoKeepOrigProtocol, hoTreat302Like303];
-	HTTP.HandleRedirects := true;
-	if (self.ConnectTimeout < 0) then
-	begin
-		HTTP.ConnectTimeout := self.ConnectTimeout;
-		HTTP.ReadTimeout := self.ConnectTimeout;
-	end;
-	HTTP.Request.UserAgent := 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.17 (KHTML, like Gecko) Chrome/24.0.1312.57 Safari/537.17/TCWFX(' + PlatformX + ')';
-	HTTP.Request.Connection := '';
 end;
 
 function TCloudMailRu.HTTPPostForm(URL: WideString; PostDataString: WideString; var Answer: WideString; ContentType: WideString): Boolean;
