@@ -49,8 +49,8 @@ type
 		function HTTPPostForm(URL: WideString; PostDataString: WideString; var Answer: WideString; ContentType: WideString = 'application/x-www-form-urlencoded'): Boolean; //Постинг данных с возможным получением ответа.
 		function HTTPPostMultipart(URL: WideString; Params: TDictionary<WideString, WideString>; var Answer: WideString): Boolean;
 		function HTTPPostFile(URL: WideString; FileName: WideString; var Answer: WideString): integer; //Постинг файла и получение ответа
-		function HTTPPost(URL: WideString; PostData, ResultData: TStream; UnderstandResponseCode: Boolean = false; ContentType: WideString = ''): integer; overload; //Постинг подготовленных данных, отлов ошибок
-		function HTTPPost(URL: WideString; var PostData: TIdMultiPartFormDataStream; ResultData: TStream): integer; overload; //TIdMultiPartFormDataStream should be passed via var
+		function HTTPPost(URL: WideString; PostData, ResultData: TStringStream; UnderstandResponseCode: Boolean = false; ContentType: WideString = ''): integer; overload; //Постинг подготовленных данных, отлов ошибок
+		function HTTPPost(URL: WideString; var PostData: TIdMultiPartFormDataStream; ResultData: TStringStream): integer; overload; //TIdMultiPartFormDataStream should be passed via var
 		function HTTPExceptionHandler(E: Exception; URL: WideString; HTTPMethod: integer = HTTP_METHOD_POST; LogErrors: Boolean = true): integer;
 
 		procedure HTTPProgress(ASender: TObject; AWorkMode: TWorkMode; AWorkCount: int64);
@@ -1002,39 +1002,39 @@ end;
 
 function TCloudMailRu.HTTPPostForm(URL: WideString; PostDataString: WideString; var Answer: WideString; ContentType: WideString): Boolean;
 var
-	MemStream, PostData: TStringStream; //todo rename memstream to ResultStream or use memory stream instead
+	ResultStream, PostData: TStringStream;
 	PostResult: integer;
 begin
-	MemStream := TStringStream.Create;
+	ResultStream := TStringStream.Create;
 	PostData := TStringStream.Create(PostDataString, TEncoding.UTF8);
 
-	PostResult := self.HTTPPost(URL, PostData, MemStream, true, ContentType);
+	PostResult := self.HTTPPost(URL, PostData, ResultStream, true, ContentType);
 	Result := PostResult = CLOUD_OPERATION_OK;
-	Answer := MemStream.DataString;
+	Answer := ResultStream.DataString;
 
-	MemStream.free;
+	ResultStream.free;
 	PostData.free;
 end;
 
 function TCloudMailRu.HTTPPostMultipart(URL: WideString; Params: TDictionary<WideString, WideString>; var Answer: WideString): Boolean; //test
 var
-	MemStream: TStringStream;
+	ResultStream: TStringStream;
 	PostData: TIdMultiPartFormDataStream;
 	ParamItem: TPair<WideString, WideString>;
 	PostResult: integer;
 begin
 
-	MemStream := TStringStream.Create;
+	ResultStream := TStringStream.Create;
 
 	PostData := TIdMultiPartFormDataStream.Create;
 	for ParamItem in Params do
 		PostData.AddFormField(ParamItem.Key, ParamItem.Value);
 
-	PostResult := self.HTTPPost(URL, PostData, MemStream);
+	PostResult := self.HTTPPost(URL, PostData, ResultStream);
 	Result := PostResult = CLOUD_OPERATION_OK;
-	Answer := MemStream.DataString;
+	Answer := ResultStream.DataString;
 
-	MemStream.free;
+	ResultStream.free;
 	PostData.free;
 end;
 
@@ -1042,11 +1042,11 @@ function TCloudMailRu.HTTPPostFile(URL: WideString; FileName: WideString; var An
 var
 	PostData: TIdMultiPartFormDataStream;
 	Cipher: TCipher;
-	MemStream: TStringStream;
+	ResultStream: TStringStream;
 	MemoryStream: TMemoryStream;
 	FileStream: TFileStream;
 begin
-	MemStream := TStringStream.Create;
+	ResultStream := TStringStream.Create;
 	PostData := TIdMultiPartFormDataStream.Create;
 
 	if not self.crypt_files then
@@ -1057,31 +1057,29 @@ begin
 		Cipher.CryptStream(FileStream, MemoryStream);
 		MemoryStream.Position := 0;
 		PostData.AddFormField('file', 'application/octet-stream', '', MemoryStream, FileName);
-		Result := self.HTTPPost(URL, PostData, MemStream);
+		Result := self.HTTPPost(URL, PostData, ResultStream);
 		MemoryStream.free;
 		Cipher.free;
 		FileStream.free;
 	end else begin
 		PostData.AddFile('file', FileName, 'application/octet-stream');
-		Result := self.HTTPPost(URL, PostData, MemStream);
+		Result := self.HTTPPost(URL, PostData, ResultStream);
 	end;
 
-	Answer := MemStream.DataString;
-	MemStream.free;
+	Answer := ResultStream.DataString;
+	ResultStream.free;
 	PostData.free;
 
 end;
 
-function TCloudMailRu.HTTPPost(URL: WideString; PostData, ResultData: TStream; UnderstandResponseCode: Boolean = false; ContentType: WideString = ''): integer;
+function TCloudMailRu.HTTPPost(URL: WideString; PostData, ResultData: TStringStream; UnderstandResponseCode: Boolean = false; ContentType: WideString = ''): integer;
 var
 	HTTP: TIdHTTP;
 	SSL: TIdSSLIOHandlerSocketOpenSSL;
 	Socks: TIdSocksInfo;
-	ClassName: WideString;
 begin
 	Result := CLOUD_OPERATION_OK;
 	ResultData.Position := 0;
-	ClassName := PostData.ClassName;
 	try
 		self.HTTPInit(HTTP, SSL, Socks, self.Cookie);
 		if ContentType <> EmptyWideStr then
@@ -1098,7 +1096,7 @@ begin
 				case HTTP.ResponseCode of
 					HTTP_ERROR_BAD_REQUEST, HTTP_ERROR_OVERQUOTA: //recoverable errors
 						begin
-							ResultData.Write((E as EIdHTTPProtocolException).ErrorMessage, length((E as EIdHTTPProtocolException).ErrorMessage)); //todo test this
+							ResultData.WriteString((E as EIdHTTPProtocolException).ErrorMessage);
 							Result := CLOUD_OPERATION_OK;
 						end;
 				end;
@@ -1109,16 +1107,14 @@ begin
 	end;
 end;
 
-function TCloudMailRu.HTTPPost(URL: WideString; var PostData: TIdMultiPartFormDataStream; ResultData: TStream): integer;
+function TCloudMailRu.HTTPPost(URL: WideString; var PostData: TIdMultiPartFormDataStream; ResultData: TStringStream): integer;
 var
 	HTTP: TIdHTTP;
 	SSL: TIdSSLIOHandlerSocketOpenSSL;
 	Socks: TIdSocksInfo;
-	ClassName: WideString;
 begin
 	Result := CLOUD_OPERATION_OK;
 	ResultData.Position := 0;
-	ClassName := PostData.ClassName;
 	try
 		self.HTTPInit(HTTP, SSL, Socks, self.Cookie);
 		HTTP.OnWork := self.HTTPProgress;
