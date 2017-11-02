@@ -5,7 +5,7 @@
 
 interface
 
-uses CloudMailRu, CMLTypes, MRC_Helper, windows, Vcl.Controls, PLUGIN_Types, Settings, AskPassword;
+uses CloudMailRu, CMLTypes, MRC_Helper, windows, Vcl.Controls, PLUGIN_Types, Settings, TCPasswordManagerHelper;
 
 type
 
@@ -25,15 +25,14 @@ type
 		ProgressHandleProc: TProgressHandler;
 		LogHandleProc: TLogHandler;
 		RequestHandleProc: TRequestHandler;
-		CryptHandleProc: TCryptHandler;
+
+		PasswordManager: TTCPasswordManager;
 
 		function ConnectionExists(connectionName: WideString): Integer; //проверяет существование подключение
 		function new(connectionName: WideString): Integer; //Добавляет подключение в пул
-		function GetMyPasswordNow(var AccountSettings: TAccountSettings): boolean; //Получает пароль из файла, из тоталовского менеджера или запрашивает прямой ввод
 
 	public
-
-		constructor Create(IniFileName: WideString; ProxySettings: TProxySettings; Timeout, CloudMaxFileSize: Integer; ProgressHandleProc: TProgressHandler; LogHandleProc: TLogHandler; RequestHandleProc: TRequestHandler; CryptHandleProc: TCryptHandler);
+		constructor Create(IniFileName: WideString; ProxySettings: TProxySettings; Timeout, CloudMaxFileSize: Integer; ProgressHandleProc: TProgressHandler; LogHandleProc: TLogHandler; RequestHandleProc: TRequestHandler; PasswordManager:TTCPasswordManager);
 		destructor Destroy(); override;
 		function get(connectionName: WideString; var OperationResult: Integer; doInit: boolean = true): TCloudMailRu; //возвращает готовое подклчение по имени
 		function set_(connectionName: WideString; cloud: TCloudMailRu): boolean;
@@ -47,7 +46,7 @@ type
 implementation
 
 {TConnectionManager}
-constructor TConnectionManager.Create(IniFileName: WideString; ProxySettings: TProxySettings; Timeout, CloudMaxFileSize: Integer; ProgressHandleProc: TProgressHandler; LogHandleProc: TLogHandler; RequestHandleProc: TRequestHandler; CryptHandleProc: TCryptHandler);
+constructor TConnectionManager.Create(IniFileName: WideString; ProxySettings: TProxySettings; Timeout, CloudMaxFileSize: Integer; ProgressHandleProc: TProgressHandler; LogHandleProc: TLogHandler; RequestHandleProc: TRequestHandler; PasswordManager:TTCPasswordManager);
 begin
 	SetLength(Connections, 0);
 	self.IniFileName := IniFileName;
@@ -55,10 +54,11 @@ begin
 	self.ProgressHandleProc := ProgressHandleProc;
 	self.LogHandleProc := LogHandleProc;
 	self.RequestHandleProc := RequestHandleProc;
-	self.CryptHandleProc := CryptHandleProc;
 	self.Proxy := ProxySettings;
 	self.Timeout := Timeout;
 	self.CloudMaxFileSize := CloudMaxFileSize;
+
+  self.PasswordManager := PasswordManager;
 end;
 
 destructor TConnectionManager.Destroy;
@@ -109,7 +109,7 @@ begin
 	result := CLOUD_OPERATION_OK;
 	AccountSettings := GetAccountSettingsFromIniFile(IniFileName, connectionName);
 
-	if not GetMyPasswordNow(AccountSettings) then
+	if not PasswordManager.GetAccountPassword (AccountSettings) then
 		exit(CLOUD_OPERATION_ERROR_STATUS_UNKNOWN); //INVALID_HANDLE_VALUE
 
 	LogHandleProc(LogLevelConnect, MSGTYPE_CONNECT, PWideChar('CONNECT \' + connectionName));
@@ -182,81 +182,6 @@ begin
 	end;
 	SetLength(Connections, 0);
 
-end;
-
-function TConnectionManager.GetMyPasswordNow(var AccountSettings: TAccountSettings): boolean;
-var
-	CryptResult: Integer;
-	AskResult: Integer;
-	TmpString: WideString;
-	buf: PWideChar;
-begin
-	if AccountSettings.public_account then
-		exit(true);
-
-	if AccountSettings.use_tc_password_manager then
-	begin //пароль должен браться из TC
-		GetMem(buf, 1024);
-		CryptResult := CryptHandleProc(FS_CRYPT_LOAD_PASSWORD_NO_UI, PWideChar(AccountSettings.Name), buf, 1024); //Пытаемся взять пароль по-тихому
-		if CryptResult = FS_FILE_NOTFOUND then
-		begin
-			LogHandleProc(LogLevelDetail, msgtype_details, PWideChar('No master password entered yet'));
-			CryptResult := CryptHandleProc(FS_CRYPT_LOAD_PASSWORD, PWideChar(AccountSettings.Name), buf, 1024);
-		end;
-		if CryptResult = FS_FILE_OK then //Успешно получили пароль
-		begin
-			AccountSettings.password := buf;
-			//Result := true;
-		end;
-		if CryptResult = FS_FILE_NOTSUPPORTED then //пользователь отменил ввод главного пароля
-		begin
-			LogHandleProc(LogLevelWarning, msgtype_importanterror, PWideChar('CryptProc returns error: Decrypt failed'));
-		end;
-		if CryptResult = FS_FILE_READERROR then
-		begin
-			LogHandleProc(LogLevelError, msgtype_importanterror, PWideChar('CryptProc returns error: Password not found in password store'));
-		end;
-		FreeMemory(buf);
-	end; //else // ничего не делаем, пароль уже должен быть в настройках (взят в открытом виде из инишника)
-
-	if AccountSettings.password = '' then //но пароля нет, не в инишнике, не в тотале
-	begin
-		AskResult := TAskPasswordForm.AskPassword(FindTCWindow, AccountSettings.Name, AccountSettings.password, AccountSettings.use_tc_password_manager);
-		if AskResult <> mrOK then
-		begin //не указали пароль в диалоге
-			exit(false); //отказались вводить пароль
-		end else begin
-			if AccountSettings.use_tc_password_manager then
-			begin
-				case CryptHandleProc(FS_CRYPT_SAVE_PASSWORD, PWideChar(AccountSettings.Name), PWideChar(AccountSettings.password), SizeOf(AccountSettings.password)) of
-					FS_FILE_OK:
-						begin //TC скушал пароль, запомним в инишник галочку
-							LogHandleProc(LogLevelDebug, msgtype_details, PWideChar('Password saved in TC password manager'));
-							TmpString := AccountSettings.password;
-							AccountSettings.password := '';
-							SetAccountSettingsToIniFile(IniFileName, AccountSettings);
-							AccountSettings.password := TmpString;
-						end;
-					FS_FILE_NOTSUPPORTED: //Сохранение не получилось
-						begin
-							LogHandleProc(LogLevelError, msgtype_importanterror, PWideChar('CryptProc returns error: Encrypt failed'));
-						end;
-					FS_FILE_WRITEERROR: //Сохранение опять не получилось
-						begin
-							LogHandleProc(LogLevelError, msgtype_importanterror, PWideChar('Password NOT saved: Could not write password to password store'));
-						end;
-					FS_FILE_NOTFOUND: //Не указан мастер-пароль
-						begin
-							LogHandleProc(LogLevelError, msgtype_importanterror, PWideChar('Password NOT saved: No master password entered yet'));
-						end;
-					//Ошибки здесь не значат, что пароль мы не получили - он может быть введён в диалоге
-				end;
-			end;
-			result := true;
-		end;
-	end
-	else
-		result := true; //пароль взят из инишника напрямую
 end;
 
 end.

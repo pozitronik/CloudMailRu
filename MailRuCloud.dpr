@@ -1476,13 +1476,15 @@ begin
 	CryptoNum := CryptoNr;
 
 	ProxySettings := GetPluginSettings(SettingsIniFilePath).Proxy;
-	GetProxyPasswordNow(ProxySettings, @LogHandle, @CryptHandle);
+
+	PasswordManager.GetProxyPassword(ProxySettings);
+	//GetProxyPasswordNow(ProxySettings, @LogHandle, @CryptHandle);
 
 	if ProxySettings.use_tc_password_manager then
 		SetPluginSettingsValue(SettingsIniFilePath, 'ProxyTCPwdMngr', true);
 
 	CloudMaxFileSize := GetPluginSettings(SettingsIniFilePath).CloudMaxFileSize;
-	ConnectionManager := TConnectionManager.Create(AccountsIniFilePath, ProxySettings, GetPluginSettings(SettingsIniFilePath).SocketTimeout, CloudMaxFileSize, @ProgressHandle, @LogHandle, @RequestHandle, @CryptHandle);
+	ConnectionManager := TConnectionManager.Create(AccountsIniFilePath, ProxySettings, GetPluginSettings(SettingsIniFilePath).SocketTimeout, CloudMaxFileSize, @ProgressHandle, @LogHandle, @RequestHandle, PasswordManager);
 
 end;
 
