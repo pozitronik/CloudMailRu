@@ -103,6 +103,12 @@ const
 	HTTP_ERROR_OVERQUOTA = 507;
 	HTTP_ERROR_EXISTS = 500;
 
+	{Методы HTTP}
+	HTTP_METHOD_GET = 0;
+	HTTP_METHOD_POST = 1;
+
+	HTTP_METHODS = [HTTP_METHOD_GET, HTTP_METHOD_POST];
+
 type
 	TCloudMailRuDirListingItem = Record
 		tree: WideString;
