@@ -3,7 +3,7 @@
 uses
 	SysUtils, System.Generics.Collections, DateUtils, windows, Classes, PLUGIN_TYPES, IdSSLOpenSSLHeaders, messages, inifiles, Vcl.controls, CloudMailRu in 'CloudMailRu.pas', MRC_Helper in 'MRC_Helper.pas', Accounts in 'Accounts.pas'{AccountsForm}, RemoteProperty in 'RemoteProperty.pas'{PropertyForm}, Descriptions in 'Descriptions.pas', ConnectionManager in 'ConnectionManager.pas', Settings in 'Settings.pas', ANSIFunctions in 'ANSIFunctions.pas', DeletedProperty in 'DeletedProperty.pas'{DeletedPropertyForm}, InviteProperty in 'InviteProperty.pas'{InvitePropertyForm}, AskPassword, CMLJSON in 'CMLJSON.pas', CMLTypes in 'CMLTypes.pas', DCPbase64 in 'DCPCrypt\DCPbase64.pas', DCPblockciphers in 'DCPCrypt\DCPblockciphers.pas', DCPconst in 'DCPCrypt\DCPconst.pas',
 	DCPcrypt2 in 'DCPCrypt\DCPcrypt2.pas', DCPreg in 'DCPCrypt\DCPreg.pas', DCPtypes in 'DCPCrypt\DCPtypes.pas', DCPblowfish in 'DCPCrypt\Ciphers\DCPblowfish.pas', DCPcast128 in 'DCPCrypt\Ciphers\DCPcast128.pas', DCPcast256 in 'DCPCrypt\Ciphers\DCPcast256.pas', DCPdes in 'DCPCrypt\Ciphers\DCPdes.pas', DCPgost in 'DCPCrypt\Ciphers\DCPgost.pas', DCPice in 'DCPCrypt\Ciphers\DCPice.pas', DCPidea in 'DCPCrypt\Ciphers\DCPidea.pas', DCPmars in 'DCPCrypt\Ciphers\DCPmars.pas', DCPmisty1 in 'DCPCrypt\Ciphers\DCPmisty1.pas', DCPrc2 in 'DCPCrypt\Ciphers\DCPrc2.pas', DCPrc4 in 'DCPCrypt\Ciphers\DCPrc4.pas', DCPrc5 in 'DCPCrypt\Ciphers\DCPrc5.pas', DCPrc6 in 'DCPCrypt\Ciphers\DCPrc6.pas', DCPrijndael in 'DCPCrypt\Ciphers\DCPrijndael.pas', DCPserpent in 'DCPCrypt\Ciphers\DCPserpent.pas',
-	DCPtea in 'DCPCrypt\Ciphers\DCPtea.pas', DCPtwofish in 'DCPCrypt\Ciphers\DCPtwofish.pas', DCPhaval in 'DCPCrypt\Hashes\DCPhaval.pas', DCPmd4 in 'DCPCrypt\Hashes\DCPmd4.pas', DCPmd5 in 'DCPCrypt\Hashes\DCPmd5.pas', DCPripemd128 in 'DCPCrypt\Hashes\DCPripemd128.pas', DCPripemd160 in 'DCPCrypt\Hashes\DCPripemd160.pas', DCPsha1 in 'DCPCrypt\Hashes\DCPsha1.pas', DCPsha256 in 'DCPCrypt\Hashes\DCPsha256.pas', DCPsha512 in 'DCPCrypt\Hashes\DCPsha512.pas', DCPtiger in 'DCPCrypt\Hashes\DCPtiger.pas', AskEncryptionPasswords in 'AskEncryptionPasswords.pas'{AskEncryptionPasswordsForm};
+	DCPtea in 'DCPCrypt\Ciphers\DCPtea.pas', DCPtwofish in 'DCPCrypt\Ciphers\DCPtwofish.pas', DCPhaval in 'DCPCrypt\Hashes\DCPhaval.pas', DCPmd4 in 'DCPCrypt\Hashes\DCPmd4.pas', DCPmd5 in 'DCPCrypt\Hashes\DCPmd5.pas', DCPripemd128 in 'DCPCrypt\Hashes\DCPripemd128.pas', DCPripemd160 in 'DCPCrypt\Hashes\DCPripemd160.pas', DCPsha1 in 'DCPCrypt\Hashes\DCPsha1.pas', DCPsha256 in 'DCPCrypt\Hashes\DCPsha256.pas', DCPsha512 in 'DCPCrypt\Hashes\DCPsha512.pas', DCPtiger in 'DCPCrypt\Hashes\DCPtiger.pas', AskEncryptionPasswords in 'AskEncryptionPasswords.pas'{AskEncryptionPasswordsForm}, TCPasswordManagerHelper in 'TCPasswordManagerHelper.pas';
 
 {$IFDEF WIN64}
 {$E wfx64}
@@ -38,6 +38,8 @@ var
 	ThreadRetryCountRenMov: TDictionary<DWORD, Int32>; //массив [id потока => количество попыток] для подсчёта количества повторов межсерверных операций с файлом
 	ThreadBackgroundJobs: TDictionary<WideString, Int32>; //массив [account root => количество потоков] для хранения количества текущих фоновых задач (предохраняемся от удаления объектов, которые могут быть использованы потоками)
 	ThreadBackgroundThreads: TDictionary<DWORD, Int32>; //массив [id потока => статус операции] для хранения текущих фоновых потоков (предохраняемся от завершения работы плагина при закрытии TC)
+
+	PasswordManager: TTCPasswordManager;
 
 	{Callback data}
 	PluginNum: integer;
@@ -278,11 +280,12 @@ begin
 	begin
 		if EncryptModeAlways = AccountSettings.encrypt_files_mode then {password must be taken from tc storage, otherwise ask user and store password}
 		begin
-			case GetCryptPassword(crypt_id, Cloud.crypt_files_password, nil, CryptHandle) of
+			case PasswordManager.GetPassword(crypt_id, Cloud.crypt_files_password){GetCryptPassword(crypt_id, Cloud.crypt_files_password, nil, CryptHandle)} of
 				FS_FILE_OK:
 					begin
 						if Cloud.isCryptFileNamesPasswordRequired then
-							GetCryptPassword(crypt_filename_id, Cloud.crypt_filenames_password, nil, CryptHandle);
+							{GetCryptPassword(crypt_filename_id, Cloud.crypt_filenames_password, nil, CryptHandle);}
+							PasswordManager.GetPassword(crypt_id, Cloud.crypt_files_password);
 					end;
 				FS_FILE_READERROR: //password not found in store, ask and store => act like EncryptModeAskOnce
 					begin
@@ -307,8 +310,10 @@ begin
 						//store passwords if required
 						if UseTCPWDManager then
 						begin
-							SetCryptPassword(crypt_id, Cloud.crypt_files_password, nil, CryptHandle);
-							SetCryptPassword(crypt_filename_id, Cloud.crypt_filenames_password, nil, CryptHandle);
+							PasswordManager.SetPassword(crypt_id, Cloud.crypt_files_password);
+							PasswordManager.GetPassword(crypt_filename_id, Cloud.crypt_filenames_password);
+							{SetCryptPassword(crypt_id, Cloud.crypt_files_password, nil, CryptHandle);
+							 SetCryptPassword(crypt_filename_id, Cloud.crypt_filenames_password, nil, CryptHandle);}
 						end;
 					end;
 				mrIgnore: //skip at this time
@@ -1827,6 +1832,8 @@ begin
 	ThreadListingAborted := TDictionary<DWORD, Bool>.Create;
 	ThreadBackgroundJobs := TDictionary<WideString, Int32>.Create;
 	ThreadBackgroundThreads := TDictionary<DWORD, Int32>.Create;
+
+	PasswordManager := TTCPasswordManager.Create(@LogHandle, @CryptHandle);
 end;
 
 procedure FreePluginData();
@@ -1843,6 +1850,8 @@ begin
 	FreeAndNil(AccountsList); //уже сделано, но не страшно, к тому же в будущем может не разрушаться ранее
 	CurrentDescriptions.free;
 
+	PasswordManager.Destroy;
+
 end;
 
 procedure DllInit(Code: integer);
@@ -1850,21 +1859,17 @@ begin
 	case Code of
 		DLL_PROCESS_ATTACH:
 			begin
-
 				InitPluginData;
 			end;
 		DLL_PROCESS_DETACH:
 			begin
-
 				FreePluginData();
 			end;
 		DLL_THREAD_ATTACH:
 			begin
-
 			end;
 		DLL_THREAD_DETACH:
 			begin
-
 			end;
 	end; //case
 end;
