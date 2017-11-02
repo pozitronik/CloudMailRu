@@ -43,6 +43,7 @@ type
 		procedure HTTPInit(var HTTP: TIdHTTP; var SSL: TIdSSLIOHandlerSocketOpenSSL; var Socks: TIdSocksInfo; var Cookie: TIdCookieManager);
 		procedure HTTPDestroy(var HTTP: TIdHTTP; var SSL: TIdSSLIOHandlerSocketOpenSSL);
 		function HTTPGet(URL: WideString; var Answer: WideString; var ProgressEnabled: Boolean): Boolean; //если ProgressEnabled - включаем обработчик onWork, возвращаем ProgressEnabled=false при отмене
+
 		function HTTPGetFile(URL: WideString; FileStream: TStream; LogErrors: Boolean = true): integer;
 		function HTTPPostForm(URL: WideString; PostDataString: WideString; var Answer: WideString; ContentType: WideString = 'application/x-www-form-urlencoded'): Boolean; //Постинг данных с возможным получением ответа.
 		function HTTPPostMultipart(URL: WideString; Params: TDictionary<WideString, WideString>; var Answer: WideString): Boolean;
@@ -50,7 +51,7 @@ type
 
 		function HTTPPost(URL: WideString; PostData, ResultData: TStream; UnderstandResponseCode: Boolean = false; ContentType: WideString = ''): integer; overload; //Постинг подготовленных данных, отлов ошибок
 		function HTTPPost(URL: WideString; var PostData: TIdMultiPartFormDataStream; ResultData: TStream): integer; overload; //TIdMultiPartFormDataStream should be passed via var
-		function HTTPPostExceptionHandler(E: Exception; URL: WideString): integer;
+		function HTTPExceptionHandler(E: Exception; URL: WideString): integer;
 
 		procedure HTTPProgress(ASender: TObject; AWorkMode: TWorkMode; AWorkCount: int64);
 		{RAW TEXT PARSING}
@@ -1126,7 +1127,7 @@ begin
 	except
 		on E: Exception do
 		begin
-			Result := self.HTTPPostExceptionHandler(E, URL);
+			Result := self.HTTPExceptionHandler(E, URL);
 			if UnderstandResponseCode and (E is EIdHTTPProtocolException) then
 			begin
 				case HTTP.ResponseCode of
@@ -1161,14 +1162,14 @@ begin
 	except
 		On E: Exception do
 		begin
-			Result := self.HTTPPostExceptionHandler(E, URL);
+			Result := self.HTTPExceptionHandler(E, URL);
 			if Assigned(HTTP) then
 				self.HTTPDestroy(HTTP, SSL);
 		end;
 	end;
 end;
 
-function TCloudMailRu.HTTPPostExceptionHandler(E: Exception; URL: WideString): integer; //todo: make global exception handler
+function TCloudMailRu.HTTPExceptionHandler(E: Exception; URL: WideString): integer; //todo: make global exception handler
 begin
 	if E is EAbort then
 	begin
