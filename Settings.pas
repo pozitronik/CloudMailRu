@@ -2,7 +2,7 @@
 
 interface
 
-uses Classes, Windows, SysUtils, IniFiles, System.Variants, System.IOUtils, Plugin_Types, AskPassword, MRC_Helper, VCL.Controls;
+uses Classes, Windows, SysUtils, IniFiles, System.Variants, System.IOUtils, Plugin_Types, MRC_Helper, VCL.Controls;
 
 const
 	ProxyNone = 0;
@@ -66,6 +66,7 @@ type
 		encrypt_files_mode: integer;
 		encrypt_filenames: boolean;
 		shard_override: WideString; //hidden option, allows to override working shard for account
+		self_ini_path: WideString; //runtime parameter, contains path to ini file, used for various manipulations
 	end;
 
 	TProxySettings = record
@@ -109,14 +110,11 @@ type
 		LogLevel: integer;
 	end;
 
-	{TODO -oOwner -cGeneral : Использовать Get/SetCryptPassword во всех процедурах ообращения к менеджеру паролей TC}
-function GetProxyPasswordNow(var ProxySettings: TProxySettings; LogHandleProc: TLogHandler; CryptHandleProc: TCryptHandler): boolean;
-
 function GetPluginSettings(IniFilePath: WideString): TPluginSettings;
 procedure SetPluginSettings(IniFilePath: WideString; PluginSettings: TPluginSettings);
 procedure SetPluginSettingsValue(IniFilePath: WideString; OptionName: WideString; OptionValue: Variant);
 function GetAccountSettingsFromIniFile(IniFilePath: WideString; AccountName: WideString): TAccountSettings;
-function SetAccountSettingsToIniFile(IniFilePath: WideString; AccountSettings: TAccountSettings): boolean;
+function SetAccountSettingsToIniFile(AccountSettings: TAccountSettings; IniFilePath: WideString = ''): boolean;
 procedure GetAccountsListFromIniFile(IniFilePath: WideString; var AccountsList: TStringList);
 procedure DeleteAccountFromIniFile(IniFilePath: WideString; AccountName: WideString);
 procedure AddVirtualAccountsToAccountsList(AccountsIniFilePath: WideString; var AccountsList: TStringList; VirtualAccountsEnabled: TArray<boolean>);
@@ -124,79 +122,6 @@ function GetDescriptionFileName(SettingsIniFilePath: WideString): WideString;
 function RemoteDescriptionsSupportEnabled(AccountSetting: TAccountSettings): boolean; //в случае включённого шифрования файловых имён поддержка движка файловых комментариев отключается (issue #5)
 
 implementation
-
-function GetProxyPasswordNow(var ProxySettings: TProxySettings; LogHandleProc: TLogHandler; CryptHandleProc: TCryptHandler): boolean;
-var
-	CryptResult: integer;
-	AskResult: integer;
-	TmpString: WideString;
-	buf: PWideChar;
-begin
-	if (ProxySettings.ProxyType = ProxyNone) or (ProxySettings.user = EmptyWideStr) then exit(true); //no username means no password required
-
-	if ProxySettings.use_tc_password_manager then
-	begin //пароль должен браться из TC
-		GetMem(buf, 1024);
-		CryptResult := CryptHandleProc(FS_CRYPT_LOAD_PASSWORD_NO_UI, PWideChar('proxy' + ProxySettings.user), buf, 1024); //Пытаемся взять пароль по-тихому
-		if CryptResult = FS_FILE_NOTFOUND then
-		begin
-			LogHandleProc(LogLevelDetail, msgtype_details, PWideChar('No master password entered yet'));
-			CryptResult := CryptHandleProc(FS_CRYPT_LOAD_PASSWORD, PWideChar('proxy' + ProxySettings.user), buf, 1024);
-		end;
-		if CryptResult = FS_FILE_OK then //Успешно получили пароль
-		begin
-			ProxySettings.password := buf;
-			//Result := true;
-		end;
-		if CryptResult = FS_FILE_NOTSUPPORTED then //пользователь отменил ввод главного пароля
-		begin
-			LogHandleProc(LogLevelError, msgtype_importanterror, PWideChar('CryptProc returns error: Decrypt failed'));
-		end;
-		if CryptResult = FS_FILE_READERROR then
-		begin
-			LogHandleProc(LogLevelError, msgtype_importanterror, PWideChar('CryptProc returns error: Password not found in password store'));
-		end;
-		FreeMemory(buf);
-	end; //else // ничего не делаем, пароль уже должен быть в настройках (взят в открытом виде из инишника)
-
-	if ProxySettings.password = EmptyWideStr then //но пароля нет, не в инишнике, не в тотале
-	begin
-		AskResult := TAskPasswordForm.AskPassword(FindTCWindow, 'User ' + ProxySettings.user + ' proxy', ProxySettings.password, ProxySettings.use_tc_password_manager, false);
-		if AskResult <> mrOK then
-		begin //не указали пароль в диалоге
-			exit(false); //отказались вводить пароль
-		end else begin
-			if ProxySettings.use_tc_password_manager then
-			begin
-				case CryptHandleProc(FS_CRYPT_SAVE_PASSWORD, PWideChar('proxy' + ProxySettings.user), PWideChar(ProxySettings.password), SizeOf(ProxySettings.password)) of
-					FS_FILE_OK:
-						begin //TC скушал пароль, запомним в инишник галочку
-							LogHandleProc(LogLevelDebug, msgtype_details, PWideChar('Password saved in TC password manager'));
-							TmpString := ProxySettings.password;
-							ProxySettings.password := EmptyWideStr;
-							ProxySettings.use_tc_password_manager := true; //Не забыть сохранить!
-							ProxySettings.password := TmpString;
-						end;
-					FS_FILE_NOTSUPPORTED: //Сохранение не получилось
-						begin
-							LogHandleProc(LogLevelError, msgtype_importanterror, PWideChar('CryptProc returns error: Encrypt failed'));
-						end;
-					FS_FILE_WRITEERROR: //Сохранение опять не получилось
-						begin
-							LogHandleProc(LogLevelError, msgtype_importanterror, PWideChar('Password NOT saved: Could not write password to password store'));
-						end;
-					FS_FILE_NOTFOUND: //Не указан мастер-пароль
-						begin
-							LogHandleProc(LogLevelError, msgtype_importanterror, PWideChar('Password NOT saved: No master password entered yet'));
-						end;
-					//Ошибки здесь не значат, что пароль мы не получили - он может быть введён в диалоге
-				end;
-			end;
-			result := true;
-		end;
-	end
-	else result := true; //пароль взят из инишника напрямую
-end;
 
 function GetPluginSettings(IniFilePath: WideString): TPluginSettings;
 var
@@ -259,10 +184,14 @@ begin
 	basicType := VarType(OptionValue);
 	try
 		case basicType of
-			varNull: IniFile.DeleteKey('Main', OptionName); //remove value in that case
-			varInteger: IniFile.WriteInteger('Main', OptionName, OptionValue);
-			varString, varUString: IniFile.WriteString('Main', OptionName, OptionValue);
-			varBoolean: IniFile.WriteBool('Main', OptionName, OptionValue);
+			varNull:
+				IniFile.DeleteKey('Main', OptionName); //remove value in that case
+			varInteger:
+				IniFile.WriteInteger('Main', OptionName, OptionValue);
+			varString, varUString:
+				IniFile.WriteString('Main', OptionName, OptionValue);
+			varBoolean:
+				IniFile.WriteBool('Main', OptionName, OptionValue);
 		end;
 	except
 		On E: EIniFileException do
@@ -300,15 +229,20 @@ begin
 		result.user := Copy(result.email, 0, AtPos - 1);
 		result.domain := Copy(result.email, AtPos + 1, Length(result.email) - Length(result.user) + 1);
 	end;
+	result.self_ini_path := IniFilePath;
 	IniFile.Destroy;
 end;
 
-function SetAccountSettingsToIniFile(IniFilePath: WideString; AccountSettings: TAccountSettings): boolean;
+function SetAccountSettingsToIniFile(AccountSettings: TAccountSettings; IniFilePath: WideString = ''): boolean;  //todo: проверить все вызовы, там, где второй параметр уже не нужен - прибить
 var
 	IniFile: TIniFile;
 begin
+	if IniFilePath = EmptyWideStr then
+		IniFilePath := AccountSettings.self_ini_path;
+
 	result := false;
-	if AccountSettings.name <> EmptyWideStr then result := true;
+	if AccountSettings.name <> EmptyWideStr then
+		result := true;
 	IniFile := TIniFile.Create(IniFilePath);
 	IniFile.WriteString(AccountSettings.name, 'email', AccountSettings.email);
 	IniFile.WriteString(AccountSettings.name, 'password', AccountSettings.password);
@@ -351,10 +285,14 @@ begin
 	VAccounts := TStringList.Create;
 	for account in AccountsList do
 	begin
-		if GetAccountSettingsFromIniFile(AccountsIniFilePath, account).public_account then Continue; //public accounts ignored
-		if VirtualAccountsEnabled[0] then VAccounts.Add(account + TrashPostfix);
-		if VirtualAccountsEnabled[1] then VAccounts.Add(account + SharedPostfix);
-		if VirtualAccountsEnabled[2] then VAccounts.Add(account + InvitesPostfix);
+		if GetAccountSettingsFromIniFile(AccountsIniFilePath, account).public_account then
+			Continue; //public accounts ignored
+		if VirtualAccountsEnabled[0] then
+			VAccounts.Add(account + TrashPostfix);
+		if VirtualAccountsEnabled[1] then
+			VAccounts.Add(account + SharedPostfix);
+		if VirtualAccountsEnabled[2] then
+			VAccounts.Add(account + InvitesPostfix);
 	end;
 	AccountsList.AddStrings(VAccounts);
 	VAccounts.Free;
@@ -363,7 +301,8 @@ end;
 function GetDescriptionFileName(SettingsIniFilePath: WideString): WideString;
 begin
 	GetDescriptionFileName := GetPluginSettings(SettingsIniFilePath).DescriptionFileName;
-	if TPath.HasValidFileNameChars(GetPluginSettings(SettingsIniFilePath).DescriptionFileName, false) then exit;
+	if TPath.HasValidFileNameChars(GetPluginSettings(SettingsIniFilePath).DescriptionFileName, false) then
+		exit;
 	exit('descript.ion');
 end;
 
