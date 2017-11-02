@@ -942,7 +942,7 @@ begin
 		self.HTTPInit(HTTP, SSL, Socks, self.Cookie);
 		if ProgressEnabled then
 			HTTP.OnWork := self.HTTPProgress; //Вызов прогресса ведёт к возможности отменить получение списка каталогов и других операций, поэтому он нужен не всегда
-		Answer := HTTP.Get(URL);
+		HTTP.Get(URL);
 		self.HTTPDestroy(HTTP, SSL);
 	Except
 		on E: EAbort do
