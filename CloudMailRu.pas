@@ -42,13 +42,13 @@ type
 		{BASE HTTP METHODS}
 		procedure HTTPInit(var HTTP: TIdHTTP; var SSL: TIdSSLIOHandlerSocketOpenSSL; var Socks: TIdSocksInfo; var Cookie: TIdCookieManager);
 		procedure HTTPDestroy(var HTTP: TIdHTTP; var SSL: TIdSSLIOHandlerSocketOpenSSL);
-		function HTTPGet(URL: WideString; var Answer: WideString; var ProgressEnabled: Boolean): Boolean; //если ProgressEnabled - включаем обработчик onWork, возвращаем ProgressEnabled=false при отмене
 
+		function HTTPGetPage(URL: WideString; var Answer: WideString; var ProgressEnabled: Boolean): Boolean; //если ProgressEnabled - включаем обработчик onWork, возвращаем ProgressEnabled=false при отмене
 		function HTTPGetFile(URL: WideString; FileStream: TStream; LogErrors: Boolean = true): integer;
+
 		function HTTPPostForm(URL: WideString; PostDataString: WideString; var Answer: WideString; ContentType: WideString = 'application/x-www-form-urlencoded'): Boolean; //Постинг данных с возможным получением ответа.
 		function HTTPPostMultipart(URL: WideString; Params: TDictionary<WideString, WideString>; var Answer: WideString): Boolean;
 		function HTTPPostFile(URL: WideString; FileName: WideString; var Answer: WideString): integer; //Постинг файла и получение ответа
-
 		function HTTPPost(URL: WideString; PostData, ResultData: TStream; UnderstandResponseCode: Boolean = false; ContentType: WideString = ''): integer; overload; //Постинг подготовленных данных, отлов ошибок
 		function HTTPPost(URL: WideString; var PostData: TIdMultiPartFormDataStream; ResultData: TStream): integer; overload; //TIdMultiPartFormDataStream should be passed via var
 		function HTTPExceptionHandler(E: Exception; URL: WideString): integer;
@@ -171,7 +171,7 @@ begin
 		exit; //Проверка на вызов без инициализации
 	if self.public_account then
 		exit(FS_FILE_NOTSUPPORTED);
-	if self.HTTPGet(API_CLONE + '?folder=' + PathToUrl(Path) + '&weblink=' + link + '&conflict=' + ConflictMode + self.united_params, JSON, Progress) then
+	if self.HTTPGetPage(API_CLONE + '?folder=' + PathToUrl(Path) + '&weblink=' + link + '&conflict=' + ConflictMode + self.united_params, JSON, Progress) then
 	begin //Парсим ответ
 		Result := fromJSON_OperationResult(JSON, OperationStatus);
 		if Result <> CLOUD_OPERATION_OK then
@@ -549,7 +549,7 @@ begin
 		exit; //Проверка на вызов без инициализации
 	if self.public_account then
 		exit;
-	Result := self.HTTPGet(API_FOLDER_SHARED_LINKS + '?' + self.united_params, JSON, ShowProgress);
+	Result := self.HTTPGetPage(API_FOLDER_SHARED_LINKS + '?' + self.united_params, JSON, ShowProgress);
 
 	if Result then
 	begin
@@ -576,7 +576,7 @@ begin
 		exit; //Проверка на вызов без инициализации
 	if self.public_account then
 		exit;
-	Result := self.HTTPGet(API_FOLDER_SHARED_INCOMING + '?' + self.united_params, JSON, ShowProgress);
+	Result := self.HTTPGetPage(API_FOLDER_SHARED_INCOMING + '?' + self.united_params, JSON, ShowProgress);
 
 	if Result then
 	begin
@@ -623,7 +623,7 @@ begin
 		exit; //Проверка на вызов без инициализации
 	if self.public_account then
 		exit;
-	Result := self.HTTPGet(API_TRASHBIN + '?' + self.united_params, JSON, ShowProgress);
+	Result := self.HTTPGetPage(API_TRASHBIN + '?' + self.united_params, JSON, ShowProgress);
 
 	if Result then
 	begin
@@ -650,9 +650,9 @@ begin
 		exit; //Проверка на вызов без инициализации
 
 	if self.public_account then
-		Result := self.HTTPGet(API_FOLDER + '&weblink=' + IncludeSlash(self.public_link) + PathToUrl(Path, false) + self.united_params, JSON, ShowProgress)
+		Result := self.HTTPGetPage(API_FOLDER + '&weblink=' + IncludeSlash(self.public_link) + PathToUrl(Path, false) + self.united_params, JSON, ShowProgress)
 	else
-		Result := self.HTTPGet(API_FOLDER + '&home=' + PathToUrl(Path) + self.united_params, JSON, ShowProgress);
+		Result := self.HTTPGetPage(API_FOLDER + '&home=' + PathToUrl(Path) + self.united_params, JSON, ShowProgress);
 	if Result then
 	begin
 		OperationResult := fromJSON_OperationResult(JSON, OperationStatus);
@@ -833,7 +833,7 @@ begin
 	if not(Assigned(self)) then
 		exit; //Проверка на вызов без инициализации
 	Progress := false;
-	Result := self.HTTPGet(TOKEN_URL, JSON, Progress);
+	Result := self.HTTPGetPage(TOKEN_URL, JSON, Progress);
 	if Result then
 	begin
 		Result := self.extractTokenFromText(JSON, self.token) and self.extract_x_page_id_FromText(JSON, self.x_page_id) and self.extract_build_FromText(JSON, self.build) and self.extract_upload_url_FromText(JSON, self.upload_url);
@@ -850,7 +850,7 @@ begin
 	if not(Assigned(self)) then
 		exit; //Проверка на вызов без инициализации
 	Progress := false;
-	Result := self.HTTPGet(self.PUBLIC_URL, PageContent, Progress);
+	Result := self.HTTPGetPage(self.PUBLIC_URL, PageContent, Progress);
 	if Result then
 	begin
 		PageContent := StringReplace(PageContent, #$A, '', [rfReplaceAll]); //так нам проще ковыряться в тексте
@@ -879,7 +879,7 @@ begin
 	if not(Assigned(self)) then
 		exit; //Проверка на вызов без инициализации
 	Progress := false;
-	Result := self.HTTPGet(API_USER_SPACE + '?home=/' + self.united_params, JSON, Progress);
+	Result := self.HTTPGetPage(API_USER_SPACE + '?home=/' + self.united_params, JSON, Progress);
 	if Result then
 	begin
 		OperationResult := fromJSON_OperationResult(JSON, OperationStatus);
@@ -932,7 +932,7 @@ begin
 	SSL.free;
 end;
 
-function TCloudMailRu.HTTPGet(URL: WideString; var Answer: WideString; var ProgressEnabled: Boolean): Boolean;
+function TCloudMailRu.HTTPGetPage(URL: WideString; var Answer: WideString; var ProgressEnabled: Boolean): Boolean;
 var
 	HTTP: TIdHTTP;
 	SSL: TIdSSLIOHandlerSocketOpenSSL;
@@ -1454,7 +1454,7 @@ begin
 	if not(Assigned(self)) then
 		exit; //Проверка на вызов без инициализации
 	Progress := false;
-	if self.HTTPGet(API_FOLDER_SHARED_INFO + '?home=' + PathToUrl(Path) + self.united_params, JSON, Progress) then
+	if self.HTTPGetPage(API_FOLDER_SHARED_INFO + '?home=' + PathToUrl(Path) + self.united_params, JSON, Progress) then
 	begin
 		Result := fromJSON_InviteListing(JSON, InviteListing);
 	end;
@@ -1917,9 +1917,9 @@ begin
 		exit; //Проверка на вызов без инициализации
 	Progress := false;
 	if self.public_account then
-		Result := self.HTTPGet(API_FILE + '?weblink=' + IncludeSlash(self.public_link) + PathToUrl(Path) + self.united_params, JSON, Progress)
+		Result := self.HTTPGetPage(API_FILE + '?weblink=' + IncludeSlash(self.public_link) + PathToUrl(Path) + self.united_params, JSON, Progress)
 	else
-		Result := self.HTTPGet(API_FILE + '?home=' + PathToUrl(Path) + self.united_params, JSON, Progress);
+		Result := self.HTTPGetPage(API_FILE + '?home=' + PathToUrl(Path) + self.united_params, JSON, Progress);
 
 	if Result then
 	begin
