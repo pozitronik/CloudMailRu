@@ -111,7 +111,6 @@ type
 	end;
 
 function GetPluginSettings(IniFilePath: WideString): TPluginSettings;
-procedure SetPluginSettings(IniFilePath: WideString; PluginSettings: TPluginSettings);
 procedure SetPluginSettingsValue(IniFilePath: WideString; OptionName: WideString; OptionValue: Variant);
 function GetAccountSettingsFromIniFile(IniFilePath: WideString; AccountName: WideString): TAccountSettings;
 function SetAccountSettingsToIniFile(AccountSettings: TAccountSettings; IniFilePath: WideString = ''): boolean;
@@ -161,16 +160,6 @@ begin
 	GetPluginSettings.ShowSharedFolders := IniFile.ReadBool('Main', 'ShowSharedFolders', true);
 	GetPluginSettings.ShowInvitesFolders := IniFile.ReadBool('Main', 'ShowInvitesFolders', true);
 	GetPluginSettings.LogLevel := IniFile.ReadInteger('Main', 'LogLevel', LogLevelConnect + LogLevelFileOperation + LogLevelDetail + LogLevelWarning + LogLevelError);
-	IniFile.Destroy;
-end;
-
-procedure SetPluginSettings(IniFilePath: WideString; PluginSettings: TPluginSettings); {Не используется}
-var
-	IniFile: TIniFile;
-begin
-	IniFile := TIniFile.Create(IniFilePath);
-	IniFile.WriteBool('Main', 'LoadSSLDLLOnlyFromPluginDir', PluginSettings.LoadSSLDLLOnlyFromPluginDir);
-	IniFile.WriteBool('Main', 'PreserveFileTime', PluginSettings.PreserveFileTime);
 	IniFile.Destroy;
 end;
 
