@@ -17,8 +17,8 @@ type
 		function GetPassword(Key: WideString; var Password: WideString): integer;
 		function SetPassword(Key, Password: WideString): integer;
 		{--------------------}
-		function GetProxyPassword(var ProxySettings: TProxySettings): boolean;
 		function GetAccountPassword(var AccountSettings: TAccountSettings): boolean;
+		function GetProxyPassword(var ProxySettings: TProxySettings): boolean;
 		function InitCloudCryptPasswords(var Cloud: TCloudMailRu; AccountSettings: TAccountSettings): boolean;
 
 	end;
@@ -38,23 +38,18 @@ begin
 	inherited;
 end;
 
-function TTCPasswordManager.GetAccountPassword(var AccountSettings: TAccountSettings): boolean;
-begin
-
-end;
-
 function TTCPasswordManager.GetPassword(Key: WideString; var Password: WideString): integer;
 var
-	buf: pwidechar;
+	buf: PWideChar;
 begin
 	GetMem(buf, 1024);
 	ZeroMemory(buf, 1024);
-	result := CryptHandleProc(FS_CRYPT_LOAD_PASSWORD_NO_UI, pwidechar(Key), buf, 1024);
+	result := CryptHandleProc(FS_CRYPT_LOAD_PASSWORD_NO_UI, PWideChar(Key), buf, 1024);
 	if FS_FILE_NOTFOUND = result then //no master password entered yet
 	begin
-		LogHandleProc(LogLevelDetail, msgtype_details, pwidechar('No master password entered yet'));
+		LogHandleProc(LogLevelDetail, msgtype_details, PWideChar('No master password entered yet'));
 		ZeroMemory(buf, 1024);
-		result := CryptHandleProc(FS_CRYPT_LOAD_PASSWORD, pwidechar(Key), buf, 1024); //ask with master password
+		result := CryptHandleProc(FS_CRYPT_LOAD_PASSWORD, PWideChar(Key), buf, 1024); //ask with master password
 	end;
 	if FS_FILE_OK = result then //all ok, we got password
 	begin
@@ -62,58 +57,89 @@ begin
 	end;
 	if FS_FILE_READERROR = result then
 	begin
-		LogHandleProc(LogLevelError, msgtype_importanterror, pwidechar('CryptProc returns error: Password not found in password store'));
+		LogHandleProc(LogLevelError, msgtype_importanterror, PWideChar('CryptProc returns error: Password not found in password store'));
 	end;
 	if FS_FILE_NOTSUPPORTED = result then //master password cancelled
 	begin
-		LogHandleProc(LogLevelError, msgtype_importanterror, pwidechar('CryptProc returns error: Decrypt failed'));
+		LogHandleProc(LogLevelError, msgtype_importanterror, PWideChar('CryptProc returns error: Decrypt failed'));
 	end;
 	FreeMemory(buf);
 end;
 
 function TTCPasswordManager.SetPassword(Key, Password: WideString): integer;
 begin
-	result := CryptHandleProc(FS_CRYPT_SAVE_PASSWORD, pwidechar(Key), pwidechar(Password), SizeOf(Password));
-
+	result := CryptHandleProc(FS_CRYPT_SAVE_PASSWORD, PWideChar(Key), PWideChar(Password), SizeOf(Password));
 	case result of
 		FS_FILE_OK:
 			begin //TC скушал пароль, запомним в инишник галочку
-				if Assigned(LogHandleProc) then
-					LogHandleProc(LogLevelDebug, msgtype_details, pwidechar(Key + ': password saved in TC password manager'));
+				LogHandleProc(LogLevelDebug, msgtype_details, PWideChar(Key + ': password saved in TC password manager'));
 			end;
 		FS_FILE_NOTSUPPORTED: //Сохранение не получилось
 			begin
-				if Assigned(LogHandleProc) then
-					LogHandleProc(LogLevelError, msgtype_importanterror, pwidechar(Key + ': CryptProc returns error: Encrypt failed'));
+				LogHandleProc(LogLevelError, msgtype_importanterror, PWideChar(Key + ': CryptProc returns error: Encrypt failed'));
 			end;
 		FS_FILE_WRITEERROR: //Сохранение опять не получилось
 			begin
-				if Assigned(LogHandleProc) then
-					LogHandleProc(LogLevelError, msgtype_importanterror, pwidechar(Key + ': password NOT saved: Could not write password to password store'));
+				LogHandleProc(LogLevelError, msgtype_importanterror, PWideChar(Key + ': password NOT saved: Could not write password to password store'));
 			end;
 		FS_FILE_NOTFOUND: //Не указан мастер-пароль
 			begin
-				if Assigned(LogHandleProc) then
-					LogHandleProc(LogLevelError, msgtype_importanterror, pwidechar(Key + ': password NOT saved: No master password entered yet'));
+				LogHandleProc(LogLevelError, msgtype_importanterror, PWideChar(Key + ': password NOT saved: No master password entered yet'));
 			end;
 		//Ошибки здесь не значат, что пароль мы не получили - он может быть введён в диалоге
 	end;
 end;
 
-function TTCPasswordManager.GetProxyPassword(var ProxySettings: TProxySettings): boolean;
+function TTCPasswordManager.GetAccountPassword(var AccountSettings: TAccountSettings): boolean;
 var
-	CryptResult: integer;
 	AskResult: integer;
 	TmpString: WideString;
-	buf: pwidechar;
 begin
+	result := false;
+	if AccountSettings.public_account then
+		exit(true);
+
+	if AccountSettings.use_tc_password_manager then
+	begin //пароль должен браться из TC
+		result := self.GetPassword(AccountSettings.name, AccountSettings.Password) = FS_FILE_OK;
+	end; //иначе предполагается, что пароль взят из конфига
+
+	if AccountSettings.Password = EmptyWideStr then //но пароля нет, не в инишнике, не в тотале
+	begin
+		AskResult := TAskPasswordForm.AskPassword(FindTCWindow, AccountSettings.name, AccountSettings.Password, AccountSettings.use_tc_password_manager);
+		if AskResult <> mrOK then
+		begin //не указали пароль в диалоге
+			exit(false); //отказались вводить пароль
+		end else begin
+			result := true;
+			if AccountSettings.use_tc_password_manager then
+			begin
+				if FS_FILE_OK = self.SetPassword(AccountSettings.name, AccountSettings.Password) then
+				begin //TC скушал пароль, запомним в инишник галочку
+					LogHandleProc(LogLevelDebug, msgtype_details, PWideChar('Password saved in TC password manager'));
+					TmpString := AccountSettings.Password;
+					AccountSettings.Password := '';
+					SetAccountSettingsToIniFile(AccountSettings); //todo
+					AccountSettings.Password := TmpString;
+				end;
+			end;
+		end;
+	end;
+end;
+
+function TTCPasswordManager.GetProxyPassword(var ProxySettings: TProxySettings): boolean;
+var
+	AskResult: integer;
+	TmpString: WideString;
+begin
+	result := false;
 	if (ProxySettings.ProxyType = ProxyNone) or (ProxySettings.user = EmptyWideStr) then
 		exit(true); //no username means no password required
 
 	if ProxySettings.use_tc_password_manager then
 	begin //пароль должен браться из TC
-		CryptResult := self.GetPassword('proxy' + ProxySettings.user, ProxySettings.Password);
-	end; //предполагается, что пароль взят из конфига
+		result := self.GetPassword('proxy' + ProxySettings.user, ProxySettings.Password) = FS_FILE_OK;
+	end; //иначе предполагается, что пароль взят из конфига
 
 	if ProxySettings.Password = EmptyWideStr then //но пароля нет, не в инишнике, не в тотале
 	begin
@@ -122,22 +148,20 @@ begin
 		begin //не указали пароль в диалоге
 			exit(false); //отказались вводить пароль
 		end else begin
+			result := true;
 			if ProxySettings.use_tc_password_manager then
 			begin
 				if FS_FILE_OK = self.SetPassword('proxy' + ProxySettings.user, ProxySettings.Password) then
 				begin //TC скушал пароль, запомним в инишник галочку
-					LogHandleProc(LogLevelDebug, msgtype_details, pwidechar('Password saved in TC password manager'));
+					LogHandleProc(LogLevelDebug, msgtype_details, PWideChar('Password saved in TC password manager'));
 					TmpString := ProxySettings.Password;
 					ProxySettings.Password := EmptyWideStr;
-					ProxySettings.use_tc_password_manager := true; //Не забыть сохранить!
+					ProxySettings.use_tc_password_manager := true; //todo
 					ProxySettings.Password := TmpString;
 				end; //Ошибки здесь не значат, что пароль мы не получили - он может быть введён в диалоге
 			end;
-			result := true;
 		end;
-	end
-	else
-		result := true; //пароль взят из инишника напрямую
+	end;
 end;
 
 function TTCPasswordManager.InitCloudCryptPasswords(var Cloud: TCloudMailRu; AccountSettings: TAccountSettings): boolean;
