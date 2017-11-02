@@ -280,11 +280,10 @@ begin
 	begin
 		if EncryptModeAlways = AccountSettings.encrypt_files_mode then {password must be taken from tc storage, otherwise ask user and store password}
 		begin
-			case PasswordManager.GetPassword(crypt_id, Cloud.crypt_files_password){GetCryptPassword(crypt_id, Cloud.crypt_files_password, nil, CryptHandle)} of
+			case PasswordManager.GetPassword(crypt_id, Cloud.crypt_files_password) of
 				FS_FILE_OK:
 					begin
 						if Cloud.isCryptFileNamesPasswordRequired then
-							{GetCryptPassword(crypt_filename_id, Cloud.crypt_filenames_password, nil, CryptHandle);}
 							PasswordManager.GetPassword(crypt_id, Cloud.crypt_files_password);
 					end;
 				FS_FILE_READERROR: //password not found in store, ask and store => act like EncryptModeAskOnce
@@ -312,8 +311,6 @@ begin
 						begin
 							PasswordManager.SetPassword(crypt_id, Cloud.crypt_files_password);
 							PasswordManager.GetPassword(crypt_filename_id, Cloud.crypt_filenames_password);
-							{SetCryptPassword(crypt_id, Cloud.crypt_files_password, nil, CryptHandle);
-							 SetCryptPassword(crypt_filename_id, Cloud.crypt_filenames_password, nil, CryptHandle);}
 						end;
 					end;
 				mrIgnore: //skip at this time
