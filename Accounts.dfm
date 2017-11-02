@@ -163,6 +163,10 @@ object AccountsForm: TAccountsForm
     TabOrder = 0
     object AccountsTab: TTabSheet
       Caption = 'Accounts'
+      ExplicitLeft = 0
+      ExplicitTop = 0
+      ExplicitWidth = 0
+      ExplicitHeight = 0
       DesignSize = (
         483
         447)
@@ -308,7 +312,7 @@ object AccountsForm: TAccountsForm
           object EncryptFilesLabel: TLabel
             Left = 7
             Top = 20
-            Width = 243
+            Width = 100
             Height = 13
             Caption = 'Encrypt/decrypt files'
           end
@@ -382,6 +386,10 @@ object AccountsForm: TAccountsForm
     object GlobalTab: TTabSheet
       Caption = 'Global settings'
       ImageIndex = 1
+      ExplicitLeft = 0
+      ExplicitTop = 0
+      ExplicitWidth = 0
+      ExplicitHeight = 0
       object CloudMaxFileSizeLabelBytes: TLabel
         Left = 292
         Top = 115
@@ -660,6 +668,10 @@ object AccountsForm: TAccountsForm
     object NetworkTab: TTabSheet
       Caption = 'Network settings'
       ImageIndex = 2
+      ExplicitLeft = 0
+      ExplicitTop = 0
+      ExplicitWidth = 0
+      ExplicitHeight = 0
       object SocketTimeoutLabel: TLabel
         Left = 5
         Top = 11
@@ -795,6 +807,10 @@ object AccountsForm: TAccountsForm
     object CommentsTab: TTabSheet
       Caption = 'File comments support'
       ImageIndex = 3
+      ExplicitLeft = 0
+      ExplicitTop = 0
+      ExplicitWidth = 0
+      ExplicitHeight = 0
       object DescriptionFileNameLabel: TLabel
         Left = 5
         Top = 118
