@@ -44,12 +44,12 @@ var
 begin
 	GetMem(buf, 1024);
 	ZeroMemory(buf, 1024);
-	result := CryptHandleProc(FS_CRYPT_LOAD_PASSWORD_NO_UI, PWideChar(Key), buf, 1024);
+	result := self.CryptHandleProc(FS_CRYPT_LOAD_PASSWORD_NO_UI, PWideChar(Key), buf, 1024);
 	if FS_FILE_NOTFOUND = result then //no master password entered yet
 	begin
 		LogHandleProc(LogLevelDetail, msgtype_details, PWideChar('No master password entered yet'));
 		ZeroMemory(buf, 1024);
-		result := CryptHandleProc(FS_CRYPT_LOAD_PASSWORD, PWideChar(Key), buf, 1024); //ask with master password
+		result := self.CryptHandleProc(FS_CRYPT_LOAD_PASSWORD, PWideChar(Key), buf, 1024); //ask with master password
 	end;
 	if FS_FILE_OK = result then //all ok, we got password
 	begin
@@ -68,7 +68,7 @@ end;
 
 function TTCPasswordManager.SetPassword(Key, Password: WideString): integer;
 begin
-	result := CryptHandleProc(FS_CRYPT_SAVE_PASSWORD, PWideChar(Key), PWideChar(Password), SizeOf(Password));
+	result := self.CryptHandleProc(FS_CRYPT_SAVE_PASSWORD, PWideChar(Key), PWideChar(Password), SizeOf(Password));
 	case result of
 		FS_FILE_OK:
 			begin //TC скушал пароль, запомним в инишник галочку
