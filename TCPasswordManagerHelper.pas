@@ -118,7 +118,7 @@ begin
 				begin //TC скушал пароль, запомним в инишник галочку
 					LogHandleProc(LogLevelDebug, msgtype_details, PWideChar('Password saved in TC password manager'));
 					TmpString := AccountSettings.Password;
-					AccountSettings.Password := '';
+					AccountSettings.Password := EmptyWideStr;
 					SetAccountSettingsToIniFile(AccountSettings);
 					AccountSettings.Password := TmpString;
 				end;

@@ -51,7 +51,7 @@ begin
 				FileNamesPassword := AskEncryptionPasswordsForm.EncryptFilenamesPasswordEdit.Text;
 			end
 			else
-				FileNamesPassword := '';
+				FileNamesPassword := EmptyWideStr;
 
 			UseTCPwdMngr := AskEncryptionPasswordsForm.UseTCPwdMngrCB.Checked;
 		end;

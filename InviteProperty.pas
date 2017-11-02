@@ -50,7 +50,7 @@ begin
 		InvitePropertyForm.InviteSizeLB.Caption := FormatSize(Item.size, TYPE_BYTES);
 		InvitePropertyForm.InviteTokenLB.Caption := Item.invite_token;
 		InvitePropertyForm.Caption := AccountName + ' invite: ' + Item.name;
-		if Item.home <> '' then //already mounted item
+		if Item.home <> EmptyWideStr then //already mounted item
 		begin
 			InvitePropertyForm.TokenLB.Caption := 'Mounted as:';
 			InvitePropertyForm.InviteTokenLB.Caption := Item.home;

@@ -211,7 +211,7 @@ begin
 			end;
 		else
 			begin //что-то неизвестное
-				if (ErrorPrefix <> '') then
+				if (ErrorPrefix <> EmptyWideStr) then
 					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, ErrorPrefix + self.ErrorCodeText(CloudResult) + ' Status: ' + OperationStatus.ToString());
 				exit(FS_FILE_WRITEERROR);
 			end;
@@ -268,7 +268,7 @@ begin
 			self.Socks := TIdSocksInfo.Create();
 			self.Socks.Host := Proxy.Server;
 			self.Socks.Port := Proxy.Port;
-			if Proxy.user <> '' then
+			if Proxy.user <> EmptyWideStr then
 			begin
 				self.Socks.Authentication := saUsernamePassword;
 				self.Socks.Username := Proxy.user;
@@ -296,7 +296,7 @@ begin
 		self.crypt_files := AccountSettings.encrypt_files_mode <> EncryptModeNone;
 		self.crypt_filenames := AccountSettings.encrypt_filenames;
 		self.shard_override := AccountSettings.shard_override;
-		if self.public_account and (self.PUBLIC_URL <> '') then
+		if self.public_account and (self.PUBLIC_URL <> EmptyWideStr) then
 		begin
 			self.public_link := self.PUBLIC_URL;
 			self.PUBLIC_URL := IncludeSlash(self.PUBLIC_URL);
@@ -692,7 +692,7 @@ var
 	MemoryStream: TMemoryStream;
 begin
 	Result := FS_FILE_NOTSUPPORTED;
-	if self.Shard = '' then
+	if self.Shard = EmptyWideStr then
 	begin
 		Log(LogLevelDetail, MSGTYPE_DETAILS, 'Current shard is undefined, trying to get one');
 		if self.getShard(self.Shard) then
@@ -760,7 +760,7 @@ var
 	FileStream: TFileStream;
 begin
 	Result := FS_FILE_NOTFOUND;
-	if (self.public_shard = '') or (self.public_download_token = '') then
+	if (self.public_shard = EmptyWideStr) or (self.public_download_token = EmptyWideStr) then
 		exit;
 	try
 		FileStream := TFileStream.Create(GetUNCFilePath(localPath), fmCreate);
@@ -814,7 +814,7 @@ begin
 		OperationResult := fromJSON_OperationResult(JSON, OperationStatus);
 		case OperationResult of
 			CLOUD_OPERATION_OK:
-				Result := fromJSON_Shard(JSON, Shard) and (Shard <> '');
+				Result := fromJSON_Shard(JSON, Shard) and (Shard <> EmptyWideStr);
 			else
 				begin
 					Result := false;
@@ -853,9 +853,9 @@ begin
 	Result := self.HTTPGetPage(self.PUBLIC_URL, PageContent, Progress);
 	if Result then
 	begin
-		PageContent := StringReplace(PageContent, #$A, '', [rfReplaceAll]); //так нам проще ковыряться в тексте
-		PageContent := StringReplace(PageContent, #$D, '', [rfReplaceAll]);
-		PageContent := StringReplace(PageContent, #9, '', [rfReplaceAll]);
+		PageContent := StringReplace(PageContent, #$A, EmptyWideStr, [rfReplaceAll]); //так нам проще ковыряться в тексте
+		PageContent := StringReplace(PageContent, #$D, EmptyWideStr, [rfReplaceAll]);
+		PageContent := StringReplace(PageContent, #9, EmptyWideStr, [rfReplaceAll]);
 		if not self.extractPublicTokenFromText(PageContent, self.public_download_token) then //refresh public download token
 		begin
 			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Can''t get public share download token');
@@ -905,7 +905,7 @@ begin
 	begin
 		HTTP.ProxyParams.ProxyServer := self.Proxy.Server;
 		HTTP.ProxyParams.ProxyPort := self.Proxy.Port;
-		if self.Proxy.user <> '' then
+		if self.Proxy.user <> EmptyWideStr then
 		begin
 			HTTP.ProxyParams.BasicAuthentication := true;
 			HTTP.ProxyParams.ProxyUsername := self.Proxy.user;
@@ -923,7 +923,7 @@ begin
 		HTTP.ReadTimeout := self.ConnectTimeout;
 	end;
 	HTTP.Request.UserAgent := 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.17 (KHTML, like Gecko) Chrome/24.0.1312.57 Safari/537.17/TCWFX(' + PlatformX + ')';
-	HTTP.Request.Connection := '';
+	HTTP.Request.Connection := EmptyWideStr;
 end;
 
 procedure TCloudMailRu.HTTPDestroy(var HTTP: TIdHTTP; var SSL: TIdSSLIOHandlerSocketOpenSSL);
@@ -968,7 +968,7 @@ begin
 		end;
 
 	end;
-	Result := Answer <> '';
+	Result := Answer <> EmptyWideStr;
 end;
 
 function TCloudMailRu.HTTPGetFile(URL: WideString; FileStream: TStream; LogErrors: Boolean): integer;
@@ -1056,7 +1056,7 @@ begin
 		FileStream := TFileStream.Create(FileName, fmOpenRead or fmShareDenyWrite);
 		Cipher.CryptStream(FileStream, MemoryStream);
 		MemoryStream.Position := 0;
-		PostData.AddFormField('file', 'application/octet-stream', '', MemoryStream, FileName);
+		PostData.AddFormField('file', 'application/octet-stream', EmptyWideStr, MemoryStream, FileName);
 		Result := self.HTTPPost(URL, PostData, ResultStream);
 		MemoryStream.free;
 		Cipher.free;
@@ -1335,7 +1335,7 @@ begin
 		if (US.overquota) then
 			QuotaInfo := ' Warning: space quota exhausted!'
 		else
-			QuotaInfo := '';
+			QuotaInfo := EmptyWideStr;
 		Log(LogLevelFileOperation, MSGTYPE_DETAILS, 'Total space: ' + FormatSize(US.total) + ', used: ' + FormatSize(US.used) + ', free: ' + FormatSize(US.total - US.used) + '.' + QuotaInfo);
 	end else begin
 		Log(LogLevelDebug, MSGTYPE_IMPORTANTERROR, 'error: getting user space information for ' + self.user + '@' + self.domain);

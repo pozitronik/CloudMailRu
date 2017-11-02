@@ -1422,7 +1422,6 @@ begin
 	ProxySettings := GetPluginSettings(SettingsIniFilePath).Proxy;
 
 	PasswordManager.GetProxyPassword(ProxySettings);
-	//GetProxyPasswordNow(ProxySettings, @LogHandle, @CryptHandle);
 
 	if ProxySettings.use_tc_password_manager then
 		SetPluginSettingsValue(SettingsIniFilePath, 'ProxyTCPwdMngr', true);

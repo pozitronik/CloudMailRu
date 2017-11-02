@@ -148,9 +148,9 @@ begin
 		TempPublicCloudInit(WebLink.Text);
 		if Props.type_ = TYPE_DIR then
 		begin (*рекурсивно получаем все ссылки в каталоге*)
-			FillRecursiveDownloadListing('', self.TempPublicCloud);
+			FillRecursiveDownloadListing(EmptyWideStr, self.TempPublicCloud);
 		end else begin
-			DownloadLinksMemo.lines.Text := TempPublicCloud.getSharedFileUrl('', self.DoUrlEncode);
+			DownloadLinksMemo.lines.Text := TempPublicCloud.getSharedFileUrl(EmptyWideStr, self.DoUrlEncode);
 		end;
 		TempPublicCloud.Free;
 	end;
@@ -210,8 +210,8 @@ begin
 	end else begin
 		if Cloud.publishFile(Props.home, Props.WebLink, CLOUD_UNPUBLISH) then
 		begin
-			WebLink.Text := '';
-			Props.WebLink := '';
+			WebLink.Text := EmptyWideStr;
+			Props.WebLink := EmptyWideStr;
 			WebLink.Enabled := false;
 			DownloadLinksTS.TabVisible := false;
 			if ExtPropertiesPC.TabIndex = -1 then
@@ -260,7 +260,7 @@ begin
 	if (result) then
 		LogLabel.Caption := LogText
 	else
-		LogLabel.Caption := '';
+		LogLabel.Caption := EmptyWideStr;
 	LogCancelledFlag := false;
 end;
 
@@ -306,7 +306,7 @@ var
 	email, access: WideString;
 begin
 	email := InvitesLE.Keys[InvitesLE.Row];
-	if email = '' then
+	if email = EmptyWideStr then
 	begin
 		ItemChangeAccess.Visible := false;
 		ItemDelete.Visible := false;
@@ -392,7 +392,7 @@ end;
 
 procedure TPropertyForm.WMAfterShow(var Message: TMessage);
 begin
-	if not(Props.WebLink = '') then
+	if not(Props.WebLink = EmptyWideStr) then
 	begin
 		WebLink.Text := PUBLIC_ACCESS_URL + Props.WebLink;
 		WebLink.SetFocus;
@@ -411,7 +411,7 @@ begin
 		if self.AutoUpdateDownloadListing then
 			UpdateDownloadListing;
 	end else begin
-		AccessCB.checked := not(Props.WebLink = '');
+		AccessCB.checked := not(Props.WebLink = EmptyWideStr);
 		WebLink.Enabled := AccessCB.checked;
 		if (Props.type_ = TYPE_DIR) or (Props.kind = KIND_SHARED) then
 		begin

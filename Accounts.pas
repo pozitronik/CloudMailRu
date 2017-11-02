@@ -150,9 +150,9 @@ begin
 		EncryptFilesCombo.ItemIndex := CASettings.encrypt_files_mode;
 		EncryptFilenamesCB.Checked := CASettings.encrypt_filenames;
 	end else begin
-		AccountNameEdit.Text := '';
-		EmailEdit.Text := '';
-		PasswordEdit.Text := '';
+		AccountNameEdit.Text := EmptyWideStr;
+		EmailEdit.Text := EmptyWideStr;
+		PasswordEdit.Text := EmptyWideStr;
 		UseTCPwdMngrCB.Checked := false;
 	end;
 	PublicAccountCB.OnClick(nil);
@@ -168,7 +168,7 @@ procedure TAccountsForm.ApplyButtonClick(Sender: TObject);
 var
 	CASettings: TAccountSettings;
 begin
-	if (AccountNameEdit.Text = '') then
+	if (AccountNameEdit.Text = EmptyWideStr) then
 		exit();
 	CASettings.name := AccountNameEdit.Text;
 	CASettings.email := EmailEdit.Text;
@@ -187,7 +187,7 @@ begin
 		case self.CryptHandler(FS_CRYPT_SAVE_PASSWORD, PWideChar(CASettings.name), PWideChar(CASettings.password), SizeOf(CASettings.password)) of
 			FS_FILE_OK:
 				begin //TC скушал пароль
-					CASettings.password := '';
+					CASettings.password := EmptyWideStr;
 				end;
 			FS_FILE_NOTSUPPORTED: //нажали отмену на вводе мастер-пароля
 				begin //просто выйдем
@@ -260,8 +260,8 @@ begin
 		case self.CryptHandler(FS_CRYPT_SAVE_PASSWORD, PWideChar('proxy' + ProxyUserEdit.Text), PWideChar(ProxyPwd.Text), SizeOf(ProxyPwd.Text)) of
 			FS_FILE_OK:
 				begin //TC скушал пароль
-					ProxyPwd.Text := '';
-					SetPluginSettingsValue(SettingsIniFilePath, 'ProxyPassword', '');
+					ProxyPwd.Text := EmptyWideStr;
+					SetPluginSettingsValue(SettingsIniFilePath, 'ProxyPassword', EmptyWideStr);
 				end;
 			FS_FILE_NOTSUPPORTED: //нажали отмену на вводе мастер-пароля
 				begin //просто выйдем
@@ -309,7 +309,7 @@ end;
 
 procedure TAccountsForm.FormActivate(Sender: TObject);
 begin
-	ProxyTCPwdMngrCB.Enabled := ProxyUserEdit.Text <> '';
+	ProxyTCPwdMngrCB.Enabled := ProxyUserEdit.Text <> EmptyWideStr;
 	CenterWindow(self.parentWindow, self.Handle);
 end;
 
@@ -319,7 +319,7 @@ begin
 	AccountsList.SetFocus;
 	if AccountsList.Items.Count > 0 then
 	begin
-		if (self.SelectedAccount <> '') and (AccountsList.Items.IndexOf(self.SelectedAccount) <> -1) then
+		if (self.SelectedAccount <> EmptyWideStr) and (AccountsList.Items.IndexOf(self.SelectedAccount) <> -1) then
 		begin
 			AccountsList.Selected[AccountsList.Items.IndexOf(self.SelectedAccount)] := true;
 		end else begin
@@ -337,7 +337,7 @@ end;
 
 procedure TAccountsForm.ProxyUserEditChange(Sender: TObject);
 begin
-	ProxyTCPwdMngrCB.Enabled := ProxyUserEdit.Text <> '';
+	ProxyTCPwdMngrCB.Enabled := ProxyUserEdit.Text <> EmptyWideStr;
 end;
 
 procedure TAccountsForm.PublicAccountCBClick(Sender: TObject);
@@ -356,7 +356,7 @@ begin
 		AccountsForm.IniPath := IniPath;
 		AccountsForm.SettingsIniFilePath := SettingsIniFilePath;
 		AccountsForm.CryptHandler := CryptHandler;
-		AccountsForm.SelectedAccount := '';
+		AccountsForm.SelectedAccount := EmptyWideStr;
 		{global settings}
 		AccountsForm.UseDLLFromPluginDir.Checked := GetPluginSettings(SettingsIniFilePath).LoadSSLDLLOnlyFromPluginDir;
 		AccountsForm.PreserveFileTimeCB.Checked := GetPluginSettings(SettingsIniFilePath).PreserveFileTime;
@@ -399,7 +399,7 @@ begin
 		AccountsForm.ShowInvitesFoldersCB.Checked := GetPluginSettings(SettingsIniFilePath).ShowInvitesFolders;
 
 		{global settings}
-		if Account <> '' then
+		if Account <> EmptyWideStr then
 			AccountsForm.SelectedAccount := Account;
 		RegisterHotKey(AccountsForm.Handle, 1, 0, VK_ESCAPE);
 		AccountsForm.OptionPages.ActivePageIndex := 0;

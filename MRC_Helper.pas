@@ -96,7 +96,7 @@ function Implode(S: TStringList; Delimiter: WideString): WideString;
 var
 	iCount: integer;
 begin
-	Result := '';
+	Result := EmptyWideStr;
 	if (S.Count = 0) then
 		exit;
 	for iCount := 0 to pred(S.Count) do
@@ -176,14 +176,14 @@ function ExtractRealPath(VirtualPath: WideString): TRealPath;
 var
 	List: TStringList;
 begin
-	Result.account := '';
-	Result.path := '';
+	Result.account := EmptyWideStr;
+	Result.path := EmptyWideStr;
 	Result.upDirItem := False;
 	Result.trashDir := False;
 	Result.sharedDir := False;
 	Result.invitesDir := False;
 
-	if VirtualPath = '' then
+	if VirtualPath = EmptyWideStr then
 		exit; //root
 	VirtualPath := Copy(VirtualPath, 2, Length(VirtualPath) - 1);
 
@@ -222,7 +222,7 @@ end;
 //проверка, находится ли путь внутри аккаунта. ignoreVirtual - не считать виртуальные каталоги облачными
 function inAccount(path: TRealPath; ignoreVirtual: boolean = true): boolean;
 begin
-	Result := path.account <> '';
+	Result := path.account <> EmptyWideStr;
 	if Result and ignoreVirtual then
 		Result := not(path.trashDir or path.sharedDir or path.invitesDir);
 end;
@@ -318,7 +318,7 @@ var
 	UTF8: UTF8String;
 begin
 	UTF8 := UTF8String(URL);
-	Result := '';
+	Result := EmptyWideStr;
 	for I := 1 to Length(UTF8) do
 		if UTF8[I] in ['a' .. 'z', 'A' .. 'Z', '/', '_', '-', '.', '0' .. '9'] then
 			Result := Result + WideString(UTF8[I])
@@ -430,7 +430,7 @@ begin
 	if (I >= 0) and (FileName.Chars[I] = '.') then
 		Result := FileName.Substring(I)
 	else
-		Result := '';
+		Result := EmptyWideStr;
 end;
 
 function ChangePathFileName(const FilePath, NewFileName: WideString): WideString;
@@ -459,7 +459,7 @@ function GetWord(command: WideString; WordIndex: integer = 0): WideString;
 var
 	Exploded: TStringList;
 begin
-	Result := '';
+	Result := EmptyWideStr;
 	Exploded := Explode(command, ' ');
 	if Exploded.Count = 0 then
 		exit;
@@ -512,7 +512,7 @@ begin
 	if DoUrlEncode then
 		Result := UrlEncode(Result);
 
-	if (Result = '') and RestrictEmptyUrl then
+	if (Result = EmptyWideStr) and RestrictEmptyUrl then
 		Result := '/';
 end;
 
@@ -631,7 +631,7 @@ end;
 function RetryAttemptsToString(Attempt: integer): WideString;
 begin
 	if Attempt < 0 then
-		exit('')
+		exit(EmptyWideStr)
 	else
 		exit(' of ' + Attempt.ToString);
 end;

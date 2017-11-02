@@ -322,7 +322,7 @@ begin
 				//Log(MSGTYPE_IMPORTANTERROR, 'Can''t parse server answer: ' + JSON); todo
 				exit(CLOUD_ERROR_UNKNOWN);
 			end;
-			if error = '' then
+			if error = EmptyWideStr then
 				error := ((ParserObj.Values['body'] as TJSONObject).Values[nodename] as TJSONObject).Values['error'].Value;
 			if error = 'exists' then
 				exit(CLOUD_ERROR_EXISTS);
