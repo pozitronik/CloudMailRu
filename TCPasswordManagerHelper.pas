@@ -156,7 +156,7 @@ begin
 					LogHandleProc(LogLevelDebug, msgtype_details, PWideChar('Password saved in TC password manager'));
 					TmpString := ProxySettings.Password;
 					ProxySettings.Password := EmptyWideStr;
-					ProxySettings.use_tc_password_manager := true; //todo save proxy settings!
+					ProxySettings.use_tc_password_manager := true; //чтобы не прокидывать сюда сохранение настроек прокси, галочка сохраняется в вызывающем коде
 					ProxySettings.Password := TmpString;
 				end; //Ошибки здесь не значат, что пароль мы не получили - он может быть введён в диалоге
 			end;
@@ -203,8 +203,7 @@ begin
 						exit(false);
 					end;
 				mrOK:
-					begin
-						//store passwords if required
+					begin //store passwords if required
 						if UseTCPWDManager then
 						begin
 							self.SetPassword(crypt_id, Cloud.crypt_files_password);
