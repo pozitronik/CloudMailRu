@@ -51,7 +51,7 @@ type
 		function HTTPPostFile(URL: WideString; FileName: WideString; var Answer: WideString): integer; //Постинг файла и получение ответа
 		function HTTPPost(URL: WideString; PostData, ResultData: TStream; UnderstandResponseCode: Boolean = false; ContentType: WideString = ''): integer; overload; //Постинг подготовленных данных, отлов ошибок
 		function HTTPPost(URL: WideString; var PostData: TIdMultiPartFormDataStream; ResultData: TStream): integer; overload; //TIdMultiPartFormDataStream should be passed via var
-		function HTTPExceptionHandler(E: Exception; URL: WideString): integer;
+		function HTTPExceptionHandler(E: Exception; URL: WideString; HTTPMethod: integer = HTTP_METHOD_POST; LogErrors: Boolean = true): integer;
 
 		procedure HTTPProgress(ASender: TObject; AWorkMode: TWorkMode; AWorkCount: int64);
 		{RAW TEXT PARSING}
@@ -942,49 +942,31 @@ begin
 		self.HTTPInit(HTTP, SSL, Socks, self.Cookie);
 		if ProgressEnabled then
 			HTTP.OnWork := self.HTTPProgress; //Вызов прогресса ведёт к возможности отменить получение списка каталогов и других операций, поэтому он нужен не всегда
-		HTTP.Get(URL);
+		Answer := HTTP.Get(URL); //todo test this
 		self.HTTPDestroy(HTTP, SSL);
 	Except
-		on E: EAbort do
+		on E: Exception do
 		begin
-			if Assigned(HTTP) then
-				self.HTTPDestroy(HTTP, SSL);
-			Answer := E.Message;
-			ProgressEnabled := false; //сообщаем об отмене
-			exit(false);
-		end;
-		on E: EIdHTTPProtocolException do
-		begin
-			if HTTP.ResponseCode = 400 then
-			begin {сервер вернёт 400, но нужно пропарсить результат для дальнейшего определения действий}
-				Answer := E.ErrorMessage;
-				Result := true;
-			end else if HTTP.ResponseCode = 507 then //кончилось место
+			self.HTTPExceptionHandler(E, URL);
+			if (E is EAbort) then
 			begin
-				Answer := E.ErrorMessage;
-				Result := true;
-			end else begin
-				Log(LogLevelError, MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при отправке данных на адрес ' + URL + ', ответ сервера: ' + E.ErrorMessage);
-				Result := false;
+				Answer := E.Message;
+				ProgressEnabled := false; //сообщаем об отмене
+			end;
+
+			if (E is EIdHTTPProtocolException) then
+			begin
+				case HTTP.ResponseCode of
+					HTTP_ERROR_BAD_REQUEST, HTTP_ERROR_OVERQUOTA: //recoverable errors
+						begin
+							Answer := (E as EIdHTTPProtocolException).ErrorMessage;
+						end;
+				end;
 			end;
 			if Assigned(HTTP) then
 				self.HTTPDestroy(HTTP, SSL);
-			exit;
 		end;
-		on E: EIdSocketerror do
-		begin
-			if Assigned(HTTP) then
-				self.HTTPDestroy(HTTP, SSL);
-			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка сети: ' + E.Message + ' при запросе данных с адреса ' + URL);
-			exit(false);
-		end;
-		on E: Exception do
-		begin
-			if Assigned(HTTP) then
-				self.HTTPDestroy(HTTP, SSL);
-			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при запросе данных с адреса ' + URL);
-			exit(false);
-		end;
+
 	end;
 	Result := Answer <> '';
 end;
@@ -1009,29 +991,12 @@ begin
 		end;
 		self.HTTPDestroy(HTTP, SSL);
 	except
-		on E: EAbort do
-		begin
-			if Assigned(HTTP) then
-				self.HTTPDestroy(HTTP, SSL);
-			Result := FS_FILE_USERABORT;
-		end;
-		on E: EIdSocketerror do
-		begin
-			if Assigned(HTTP) then
-				self.HTTPDestroy(HTTP, SSL);
-			if LogErrors then
-				Log(LogLevelError, MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка сети: ' + E.Message + ' при копировании файла с адреса ' + URL);
-			Result := FS_FILE_READERROR;
-		end;
 		on E: Exception do
 		begin
+			Result := self.HTTPExceptionHandler(E, URL, HTTP_METHOD_GET, LogErrors);
 			if Assigned(HTTP) then
 				self.HTTPDestroy(HTTP, SSL);
-			if LogErrors then
-				Log(LogLevelError, MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при копировании файла с адреса ' + URL);
-			Result := FS_FILE_READERROR;
 		end;
-
 	end;
 end;
 
@@ -1137,9 +1102,9 @@ begin
 							Result := CLOUD_OPERATION_OK;
 						end;
 				end;
-				if Assigned(HTTP) then
-					self.HTTPDestroy(HTTP, SSL);
 			end;
+			if Assigned(HTTP) then
+				self.HTTPDestroy(HTTP, SSL);
 		end;
 	end;
 end;
@@ -1169,25 +1134,33 @@ begin
 	end;
 end;
 
-function TCloudMailRu.HTTPExceptionHandler(E: Exception; URL: WideString): integer; //todo: make global exception handler
+function TCloudMailRu.HTTPExceptionHandler(E: Exception; URL: WideString; HTTPMethod: integer = HTTP_METHOD_POST; LogErrors: Boolean = true): integer; //todo: make global exception handler
+var
+	method_string: WideString; //в зависимости от метода исходного запроса меняется текст сообщения
 begin
+	if HTTPMethod = HTTP_METHOD_GET then
+	begin
+		method_string := 'получении данных с адреса ';
+		Result := FS_FILE_READERROR; //для HTTPGetFile, GetForm не интересует код ошибки
+	end else begin
+		method_string := 'отправке данных на адрес ';
+		Result := CLOUD_OPERATION_FAILED; //Для всех Post-запросов
+	end;
+
 	if E is EAbort then
 	begin
 		Result := CLOUD_OPERATION_CANCELLED;
-	end else if E is EIdHTTPProtocolException then
+	end else if LogErrors then //разбирать ошибку дальше имеет смысл только для логирования - что вернуть уже понятно
 	begin
-		begin
-			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при отправке данных на адрес ' + URL + ', ответ сервера: ' + (E as EIdHTTPProtocolException).ErrorMessage);
-			Result := CLOUD_OPERATION_FAILED;
-		end;
-	end else if E is EIdSocketerror then
-	begin
-		Log(LogLevelError, MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка сети: ' + E.Message + ' при отправке данных на адрес ' + URL);
-		Result := CLOUD_OPERATION_FAILED;
-	end else begin
-		Log(LogLevelError, MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при отправке данных на адрес ' + URL);
-		Result := CLOUD_OPERATION_FAILED;
+		if E is EIdHTTPProtocolException then
+			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при ' + method_string + URL + ', ответ сервера: ' + (E as EIdHTTPProtocolException).ErrorMessage)
+		else if E is EIdSocketerror then
+			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка сети: ' + E.Message + ' при ' + method_string + URL)
+		else
+			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при ' + method_string + URL);
+
 	end;
+
 end;
 
 procedure TCloudMailRu.HTTPProgress(ASender: TObject; AWorkMode: TWorkMode; AWorkCount: int64);
