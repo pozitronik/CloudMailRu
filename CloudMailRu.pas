@@ -1049,7 +1049,7 @@ begin
 	ResultStream := TStringStream.Create;
 	PostData := TIdMultiPartFormDataStream.Create;
 
-	if not self.crypt_files then
+	if self.crypt_files then
 	begin
 		Cipher := TCipher.Create(self.crypt_files_password, self.crypt_filenames_password);
 		MemoryStream := TMemoryStream.Create;
