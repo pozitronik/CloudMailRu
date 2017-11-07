@@ -3,7 +3,7 @@
 {Обертка над обращениями к менеджеру паролей Total Commander}
 interface
 
-Uses Plugin_Types, Settings, Windows, CloudMailRu, SysUtils, AskPassword, AskEncryptionPasswords, MRC_Helper, Controls;
+Uses Plugin_Types, Settings, Windows, CloudMailRu, SysUtils, AskPassword, AskEncryptionPasswords, MRC_Helper, Controls, Cipher;
 
 type
 
@@ -13,9 +13,10 @@ type
 		PluginNum: integer;
 		CryptoNum: integer;
 		LogHandleProc: TLogHandler;
+		RequestHandleProc: TRequestHandler;
 
 	public
-		constructor Create(CryptProc: TCryptProcW; PluginNum, CryptoNum: integer; LogHandleProc: TLogHandler);
+		constructor Create(CryptProc: TCryptProcW; PluginNum, CryptoNum: integer; LogHandleProc: TLogHandler; RequestHandleProc: TRequestHandler);
 		destructor Destroy(); override;
 		function GetPassword(Key: WideString; var Password: WideString): integer;
 		function SetPassword(Key, Password: WideString): integer;
@@ -23,6 +24,7 @@ type
 		function GetAccountPassword(var AccountSettings: TAccountSettings): Boolean;
 		function GetProxyPassword(var ProxySettings: TProxySettings): Boolean;
 		function InitCloudCryptPasswords(var Cloud: TCloudMailRu; AccountSettings: TAccountSettings): Boolean;
+		function StoreFileCryptPassword(AccountName: WideString): WideString;
 
 	end;
 
@@ -30,12 +32,13 @@ implementation
 
 {TTCPasswordManager}
 
-constructor TTCPasswordManager.Create(CryptProc: TCryptProcW; PluginNum, CryptoNum: integer; LogHandleProc: TLogHandler);
+constructor TTCPasswordManager.Create(CryptProc: TCryptProcW; PluginNum, CryptoNum: integer; LogHandleProc: TLogHandler; RequestHandleProc: TRequestHandler);
 begin
 	self.PluginNum := PluginNum;
 	self.CryptoNum := CryptoNum;
 	self.CryptProc := CryptProc;
 	self.LogHandleProc := LogHandleProc;
+	self.RequestHandleProc := RequestHandleProc;
 end;
 
 destructor TTCPasswordManager.Destroy;
@@ -222,6 +225,26 @@ begin
 					end;
 			end;
 		end;
+	end;
+end;
+
+function TTCPasswordManager.StoreFileCryptPassword(AccountName: WideString): WideString;
+var
+	CurrentPassword: WideString;
+	crypt_id: WideString;
+begin
+	result:=EmptyWideStr;
+	crypt_id := AccountName + ' filecrypt';
+	case self.GetPassword(crypt_id, CurrentPassword) of
+		FS_FILE_OK, //пользователь знает мастер-пароль, и пароль был сохранен
+		FS_FILE_READERROR: //Пользователь знает мастер-пароль, и пароль вводится впервые
+			begin
+				if self.RequestHandleProc(RT_Password, 'Set/update file encryption password', 'New password:', PWideChar(CurrentPassword), 1024) then
+				begin
+					self.SetPassword(crypt_id, CurrentPassword);
+					result := TCipher.CryptedGUID(CurrentPassword);
+				end;
+			end;
 	end;
 end;
 

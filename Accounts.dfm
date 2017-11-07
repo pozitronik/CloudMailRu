@@ -315,7 +315,7 @@ object AccountsForm: TAccountsForm
           object EncryptFilenamesCB: TCheckBox
             Left = 7
             Top = 66
-            Width = 243
+            Width = 146
             Height = 17
             Caption = 'Also encrypt filenames'
             TabOrder = 0
@@ -323,16 +323,26 @@ object AccountsForm: TAccountsForm
           object EncryptFilesCombo: TComboBox
             Left = 7
             Top = 39
-            Width = 243
+            Width = 152
             Height = 21
             Style = csDropDownList
             ItemIndex = 0
             TabOrder = 1
             Text = 'No'
+            OnChange = EncryptFilesComboChange
             Items.Strings = (
               'No'
               'Always'
               'Ask once')
+          end
+          object EncryptFilesPwdButton: TButton
+            Left = 164
+            Top = 39
+            Width = 86
+            Height = 21
+            Caption = 'Set password'
+            TabOrder = 2
+            OnClick = EncryptFilesPwdButtonClick
           end
         end
       end
@@ -795,10 +805,6 @@ object AccountsForm: TAccountsForm
     object CommentsTab: TTabSheet
       Caption = 'File comments support'
       ImageIndex = 3
-      ExplicitLeft = 0
-      ExplicitTop = 0
-      ExplicitWidth = 0
-      ExplicitHeight = 0
       object DescriptionFileNameLabel: TLabel
         Left = 5
         Top = 118

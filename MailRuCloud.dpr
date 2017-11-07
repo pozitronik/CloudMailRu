@@ -1407,7 +1407,7 @@ begin
 
 	ProxySettings := GetPluginSettings(SettingsIniFilePath).Proxy;
 
-	PasswordManager := TTCPasswordManager.Create(PCryptProc, PluginNum, CryptoNr, @LogHandle);
+	PasswordManager := TTCPasswordManager.Create(PCryptProc, PluginNum, CryptoNr, @LogHandle,@RequestHandle);
 
 	PasswordManager.GetProxyPassword(ProxySettings);
 

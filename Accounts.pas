@@ -89,6 +89,7 @@ type
 		EncryptFilenamesCB: TCheckBox;
 		EncryptFilesCombo: TComboBox;
 		EncryptFilesLabel: TLabel;
+		EncryptFilesPwdButton: TButton;
 		procedure FormShow(Sender: TObject);
 		procedure AccountsListClick(Sender: TObject);
 		procedure ApplyButtonClick(Sender: TObject);
@@ -101,6 +102,8 @@ type
 		procedure GlobalSettingApplyBTNClick(Sender: TObject);
 		procedure PublicAccountCBClick(Sender: TObject);
 		procedure CloudMaxFileSizeCBClick(Sender: TObject);
+		procedure EncryptFilesComboChange(Sender: TObject);
+		procedure EncryptFilesPwdButtonClick(Sender: TObject);
 	private
 		{Private declarations}
 		procedure WMHotKey(var Message: TMessage); message WM_HOTKEY;
@@ -306,6 +309,21 @@ begin
 		DeleteAccountFromIniFile(IniPath, AccountsList.Items[AccountsList.ItemIndex]);
 		UpdateAccountsList();
 	end;
+end;
+
+procedure TAccountsForm.EncryptFilesComboChange(Sender: TObject);
+begin
+	EncryptFilesPwdButton.Enabled := EncryptFilesCombo.ItemIndex = EncryptModeAlways;
+end;
+
+procedure TAccountsForm.EncryptFilesPwdButtonClick(Sender: TObject);
+var
+	CryptedGUID: WideString;
+begin
+	CryptedGUID := PasswordManager.StoreFileCryptPassword(self.SelectedAccount);
+	if CryptedGUID <> EmptyWideStr then
+		SetAccountSettingsValue(IniPath, self.SelectedAccount, 'CryptedGUID_files', CryptedGUID);
+
 end;
 
 procedure TAccountsForm.FormActivate(Sender: TObject);
