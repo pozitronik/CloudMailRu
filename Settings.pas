@@ -116,7 +116,7 @@ function GetPluginSettings(IniFilePath: WideString): TPluginSettings;
 procedure SetPluginSettingsValue(IniFilePath: WideString; OptionName: WideString; OptionValue: Variant);
 function GetAccountSettingsFromIniFile(IniFilePath: WideString; AccountName: WideString): TAccountSettings;
 function SetAccountSettingsToIniFile(AccountSettings: TAccountSettings; IniFilePath: WideString = ''): boolean;
-function SetAccountSettingsValue(IniFilePath: WideString; Account, OptionName: WideString; OptionValue: Variant);
+procedure SetAccountSettingsValue(IniFilePath: WideString; Account, OptionName: WideString; OptionValue: Variant);
 procedure GetAccountsListFromIniFile(IniFilePath: WideString; var AccountsList: TStringList);
 procedure DeleteAccountFromIniFile(IniFilePath: WideString; AccountName: WideString);
 procedure AddVirtualAccountsToAccountsList(AccountsIniFilePath: WideString; var AccountsList: TStringList; VirtualAccountsEnabled: TArray<boolean>);
@@ -251,9 +251,8 @@ begin
 	IniFile.Destroy;
 end;
 
-function SetAccountSettingsValue(IniFilePath: WideString; Account, OptionName: WideString; OptionValue: Variant);
-begin
- var
+procedure SetAccountSettingsValue(IniFilePath: WideString; Account, OptionName: WideString; OptionValue: Variant);
+var
 	IniFile: TIniFile;
 	basicType: integer;
 begin
@@ -303,19 +302,19 @@ end;
 procedure AddVirtualAccountsToAccountsList(AccountsIniFilePath: WideString; var AccountsList: TStringList; VirtualAccountsEnabled: TArray<boolean>);
 var
 	VAccounts: TStringList;
-	account: WideString;
+	Account: WideString;
 begin
 	VAccounts := TStringList.Create;
-	for account in AccountsList do
+	for Account in AccountsList do
 	begin
-		if GetAccountSettingsFromIniFile(AccountsIniFilePath, account).public_account then
+		if GetAccountSettingsFromIniFile(AccountsIniFilePath, Account).public_account then
 			Continue; //public accounts ignored
 		if VirtualAccountsEnabled[0] then
-			VAccounts.Add(account + TrashPostfix);
+			VAccounts.Add(Account + TrashPostfix);
 		if VirtualAccountsEnabled[1] then
-			VAccounts.Add(account + SharedPostfix);
+			VAccounts.Add(Account + SharedPostfix);
 		if VirtualAccountsEnabled[2] then
-			VAccounts.Add(account + InvitesPostfix);
+			VAccounts.Add(Account + InvitesPostfix);
 	end;
 	AccountsList.AddStrings(VAccounts);
 	VAccounts.Free;
