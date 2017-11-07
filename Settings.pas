@@ -67,6 +67,8 @@ type
 		encrypt_filenames: boolean;
 		shard_override: WideString; //hidden option, allows to override working shard for account
 		self_ini_path: WideString; //runtime parameter, contains path to ini file, used for various manipulations
+		CryptedGUID_files: WideString; //Шифрованная строка для проверки пароля шифрования файлов
+		CryptedGUID_filenames: WideString; //Шифрованная строка для проверки пароля шифрования имён файлов
 	end;
 
 	TProxySettings = record
@@ -114,6 +116,7 @@ function GetPluginSettings(IniFilePath: WideString): TPluginSettings;
 procedure SetPluginSettingsValue(IniFilePath: WideString; OptionName: WideString; OptionValue: Variant);
 function GetAccountSettingsFromIniFile(IniFilePath: WideString; AccountName: WideString): TAccountSettings;
 function SetAccountSettingsToIniFile(AccountSettings: TAccountSettings; IniFilePath: WideString = ''): boolean;
+function SetAccountSettingsValue(IniFilePath: WideString; Account, OptionName: WideString; OptionValue: Variant);
 procedure GetAccountsListFromIniFile(IniFilePath: WideString; var AccountsList: TStringList);
 procedure DeleteAccountFromIniFile(IniFilePath: WideString; AccountName: WideString);
 procedure AddVirtualAccountsToAccountsList(AccountsIniFilePath: WideString; var AccountsList: TStringList; VirtualAccountsEnabled: TArray<boolean>);
@@ -222,7 +225,7 @@ begin
 	IniFile.Destroy;
 end;
 
-function SetAccountSettingsToIniFile(AccountSettings: TAccountSettings; IniFilePath: WideString = ''): boolean;  //todo: проверить все вызовы, там, где второй параметр уже не нужен - прибить
+function SetAccountSettingsToIniFile(AccountSettings: TAccountSettings; IniFilePath: WideString = ''): boolean; //todo: проверить все вызовы, там, где второй параметр уже не нужен - прибить
 var
 	IniFile: TIniFile;
 begin
@@ -245,6 +248,37 @@ begin
 	IniFile.WriteInteger(AccountSettings.name, 'encrypt_files_mode', AccountSettings.encrypt_files_mode);
 	IniFile.WriteBool(AccountSettings.name, 'encrypt_filenames', AccountSettings.encrypt_filenames);
 	IniFile.WriteString(AccountSettings.shard_override, 'shard_override', AccountSettings.public_url);
+	IniFile.Destroy;
+end;
+
+function SetAccountSettingsValue(IniFilePath: WideString; Account, OptionName: WideString; OptionValue: Variant);
+begin
+ var
+	IniFile: TIniFile;
+	basicType: integer;
+begin
+	IniFile := TIniFile.Create(IniFilePath);
+
+	basicType := VarType(OptionValue);
+	try
+		case basicType of
+			varNull:
+				IniFile.DeleteKey('Account', OptionName); //remove value in that case
+			varInteger:
+				IniFile.WriteInteger('Account', OptionName, OptionValue);
+			varString, varUString:
+				IniFile.WriteString('Account', OptionName, OptionValue);
+			varBoolean:
+				IniFile.WriteBool('Account', OptionName, OptionValue);
+		end;
+	except
+		On E: EIniFileException do
+		begin
+			MessageBoxW(0, PWideChar(E.Message), 'INI file error', MB_ICONERROR + MB_OK);
+			IniFile.Destroy;
+			exit;
+		end;
+	end;
 	IniFile.Destroy;
 end;
 
