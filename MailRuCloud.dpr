@@ -43,7 +43,7 @@ var
 
 	{Callback data}
 	PluginNum: integer;
-	CryptoNum: integer;       // todo: move all crypto-related code to password manager, remove CryptHandle proc an so on
+	CryptoNum: integer; //todo: move all crypto-related code to password manager, remove CryptHandle proc an so on
 	MyProgressProc: TProgressProcW;
 	MyLogProc: TLogProcW;
 	MyRequestProc: TRequestProcW;
@@ -1421,6 +1421,8 @@ begin
 
 	ProxySettings := GetPluginSettings(SettingsIniFilePath).Proxy;
 
+	PasswordManager := TTCPasswordManager.Create(@CryptHandle, @LogHandle);
+
 	PasswordManager.GetProxyPassword(ProxySettings);
 
 	if ProxySettings.use_tc_password_manager then
@@ -1774,8 +1776,6 @@ begin
 	ThreadListingAborted := TDictionary<DWORD, Bool>.Create;
 	ThreadBackgroundJobs := TDictionary<WideString, Int32>.Create;
 	ThreadBackgroundThreads := TDictionary<DWORD, Int32>.Create;
-
-	PasswordManager := TTCPasswordManager.Create(@CryptHandle, @LogHandle);
 
 end;
 
