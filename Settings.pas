@@ -180,7 +180,7 @@ begin
 				IniFile.DeleteKey('Main', OptionName); //remove value in that case
 			varInteger:
 				IniFile.WriteInteger('Main', OptionName, OptionValue);
-			varString, varUString:
+			varString, varUString, varOleStr:
 				IniFile.WriteString('Main', OptionName, OptionValue);
 			varBoolean:
 				IniFile.WriteBool('Main', OptionName, OptionValue);
@@ -262,13 +262,13 @@ begin
 	try
 		case basicType of
 			varNull:
-				IniFile.DeleteKey('Account', OptionName); //remove value in that case
+				IniFile.DeleteKey(Account, OptionName); //remove value in that case
 			varInteger:
-				IniFile.WriteInteger('Account', OptionName, OptionValue);
-			varString, varUString:
-				IniFile.WriteString('Account', OptionName, OptionValue);
+				IniFile.WriteInteger(Account, OptionName, OptionValue);
+			varString, varUString, varOleStr:
+				IniFile.WriteString(Account, OptionName, OptionValue);
 			varBoolean:
-				IniFile.WriteBool('Account', OptionName, OptionValue);
+				IniFile.WriteBool(Account, OptionName, OptionValue);
 		end;
 	except
 		On E: EIniFileException do
