@@ -43,11 +43,9 @@ var
 
 	{Callback data}
 	PluginNum: integer;
-	CryptoNum: integer; //todo: move all crypto-related code to password manager, remove CryptHandle proc an so on
 	MyProgressProc: TProgressProcW;
 	MyLogProc: TLogProcW;
 	MyRequestProc: TRequestProcW;
-	MyCryptProc: TCryptProcW;
 	CurrentListing: TCloudMailRuDirListing;
 	CurrentIncomingInvitesListing: TCloudMailRuIncomingInviteInfoListing;
 	ConnectionManager: TConnectionManager;
@@ -72,16 +70,6 @@ begin
 	Result := 0;
 	if Assigned(MyProgressProc) then
 		Result := MyProgressProc(PluginNum, SourceName, TargetName, PercentDone);
-end;
-
-function CryptHandle(mode: integer; ConnectionName, Password: PWideChar; maxlen: integer): integer; stdcall;
-begin
-	Result := FS_FILE_NOTSUPPORTED;
-	if Assigned(MyCryptProc) then
-	begin
-
-		Result := MyCryptProc(PluginNum, CryptoNum, mode, ConnectionName, Password, maxlen);
-	end;
 end;
 
 function CloudMailRuDirListingItemToFindData(DirListing: TCloudMailRuDirListingItem; DirsAsSymlinks: boolean = false): tWIN32FINDDATAW;
@@ -674,7 +662,7 @@ begin
 		Result := FS_EXEC_SYMLINK;
 	end else begin
 		if RealPath.path = '' then
-			TAccountsForm.ShowAccounts(MainWin, AccountsIniFilePath, SettingsIniFilePath, CryptHandle, RealPath.account)//main shared folder properties - open connection settings
+			TAccountsForm.ShowAccounts(MainWin, AccountsIniFilePath, SettingsIniFilePath, PasswordManager, RealPath.account)//main shared folder properties - open connection settings
 		else
 		begin
 			Cloud := ConnectionManager.get(RealPath.account, getResult);
@@ -695,7 +683,7 @@ begin
 	Cloud := ConnectionManager.get(RealPath.account, getResult);
 	if RealPath.path = '' then //main invites folder properties
 	begin
-		TAccountsForm.ShowAccounts(MainWin, AccountsIniFilePath, SettingsIniFilePath, CryptHandle, RealPath.account)
+		TAccountsForm.ShowAccounts(MainWin, AccountsIniFilePath, SettingsIniFilePath, PasswordManager, RealPath.account)
 	end else begin //one invite item
 		CurrentInvite := FindIncomingInviteItemByPath(CurrentIncomingInvitesListing, RealPath);
 		if CurrentInvite.name = '' then
@@ -726,7 +714,7 @@ var
 begin
 	Result := FS_EXEC_OK;
 	if RealPath.path = '' then
-		TAccountsForm.ShowAccounts(MainWin, AccountsIniFilePath, SettingsIniFilePath, CryptHandle, RealPath.account)//show account properties
+		TAccountsForm.ShowAccounts(MainWin, AccountsIniFilePath, SettingsIniFilePath, PasswordManager, RealPath.account)//show account properties
 	else
 	begin
 		Cloud := ConnectionManager.get(RealPath.account, getResult);
@@ -1416,12 +1404,10 @@ procedure FsSetCryptCallbackW(PCryptProc: TCryptProcW; CryptoNr: integer; Flags:
 var
 	CloudMaxFileSize: integer;
 begin
-	MyCryptProc := PCryptProc;
-	CryptoNum := CryptoNr;
 
 	ProxySettings := GetPluginSettings(SettingsIniFilePath).Proxy;
 
-	PasswordManager := TTCPasswordManager.Create(@CryptHandle, @LogHandle);
+	PasswordManager := TTCPasswordManager.Create(PCryptProc, PluginNum, CryptoNr, @LogHandle);
 
 	PasswordManager.GetProxyPassword(ProxySettings);
 

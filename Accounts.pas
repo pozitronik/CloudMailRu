@@ -3,7 +3,7 @@
 interface
 
 uses
-	Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics, Settings, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, IniFiles, MRC_Helper, PLUGIN_Types, Vcl.ComCtrls, Vcl.Mask, Vcl.ExtCtrls, Vcl.Samples.Spin, System.IOUtils, AskPassword;
+	Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics, Settings, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, IniFiles, MRC_Helper, PLUGIN_Types, Vcl.ComCtrls, Vcl.Mask, Vcl.ExtCtrls, Vcl.Samples.Spin, System.IOUtils, AskPassword, TCPasswordManagerHelper;
 
 type
 	TAccountsForm = class(TForm)
@@ -95,7 +95,7 @@ type
 		procedure UpdateAccountsList();
 		procedure DeleteButtonClick(Sender: TObject);
 		procedure AccountsListKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
-		class procedure ShowAccounts(parentWindow: HWND; IniPath, SettingsIniFilePath: WideString; CryptHandler: TCryptHandler; Account: WideString);
+		class procedure ShowAccounts(parentWindow: HWND; IniPath, SettingsIniFilePath: WideString; PasswordManager: TTCPasswordManager; Account: WideString);
 		procedure FormActivate(Sender: TObject);
 		procedure ProxyUserEditChange(Sender: TObject);
 		procedure GlobalSettingApplyBTNClick(Sender: TObject);
@@ -111,7 +111,7 @@ type
 		{Public declarations}
 		IniPath: WideString;
 		SettingsIniFilePath: WideString;
-		CryptHandler: TCryptHandler;
+		PasswordManager: TTCPasswordManager;
 		SelectedAccount: WideString;
 
 	end;
@@ -184,7 +184,8 @@ begin
 
 	if CASettings.use_tc_password_manager then //просим TC сохранить пароль
 	begin
-		case self.CryptHandler(FS_CRYPT_SAVE_PASSWORD, PWideChar(CASettings.name), PWideChar(CASettings.password), SizeOf(CASettings.password)) of
+
+		case PasswordManager.SetPassword(CASettings.name, CASettings.password) of
 			FS_FILE_OK:
 				begin //TC скушал пароль
 					CASettings.password := EmptyWideStr;
@@ -257,7 +258,7 @@ begin
 
 	if ProxyTCPwdMngrCB.Checked then //просим TC сохранить пароль
 	begin
-		case self.CryptHandler(FS_CRYPT_SAVE_PASSWORD, PWideChar('proxy' + ProxyUserEdit.Text), PWideChar(ProxyPwd.Text), SizeOf(ProxyPwd.Text)) of
+		case PasswordManager.SetPassword('proxy' + ProxyUserEdit.Text, ProxyPwd.Text) of
 			FS_FILE_OK:
 				begin //TC скушал пароль
 					ProxyPwd.Text := EmptyWideStr;
@@ -346,7 +347,7 @@ begin
 	AccountsPanel.Visible := not PublicAccountCB.Checked;
 end;
 
-class procedure TAccountsForm.ShowAccounts(parentWindow: HWND; IniPath, SettingsIniFilePath: WideString; CryptHandler: TCryptHandler; Account: WideString);
+class procedure TAccountsForm.ShowAccounts(parentWindow: HWND; IniPath, SettingsIniFilePath: WideString; PasswordManager: TTCPasswordManager; Account: WideString);
 var
 	AccountsForm: TAccountsForm;
 begin
@@ -355,7 +356,7 @@ begin
 		AccountsForm.parentWindow := parentWindow;
 		AccountsForm.IniPath := IniPath;
 		AccountsForm.SettingsIniFilePath := SettingsIniFilePath;
-		AccountsForm.CryptHandler := CryptHandler;
+		AccountsForm.PasswordManager := PasswordManager;
 		AccountsForm.SelectedAccount := EmptyWideStr;
 		{global settings}
 		AccountsForm.UseDLLFromPluginDir.Checked := GetPluginSettings(SettingsIniFilePath).LoadSSLDLLOnlyFromPluginDir;

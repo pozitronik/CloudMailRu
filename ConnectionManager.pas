@@ -32,7 +32,7 @@ type
 		function new(connectionName: WideString): Integer; //Добавляет подключение в пул
 
 	public
-		constructor Create(IniFileName: WideString; ProxySettings: TProxySettings; Timeout, CloudMaxFileSize: Integer; ProgressHandleProc: TProgressHandler; LogHandleProc: TLogHandler; RequestHandleProc: TRequestHandler; PasswordManager:TTCPasswordManager);
+		constructor Create(IniFileName: WideString; ProxySettings: TProxySettings; Timeout, CloudMaxFileSize: Integer; ProgressHandleProc: TProgressHandler; LogHandleProc: TLogHandler; RequestHandleProc: TRequestHandler; PasswordManager: TTCPasswordManager);
 		destructor Destroy(); override;
 		function get(connectionName: WideString; var OperationResult: Integer; doInit: boolean = true): TCloudMailRu; //возвращает готовое подклчение по имени
 		function set_(connectionName: WideString; cloud: TCloudMailRu): boolean;
@@ -46,7 +46,7 @@ type
 implementation
 
 {TConnectionManager}
-constructor TConnectionManager.Create(IniFileName: WideString; ProxySettings: TProxySettings; Timeout, CloudMaxFileSize: Integer; ProgressHandleProc: TProgressHandler; LogHandleProc: TLogHandler; RequestHandleProc: TRequestHandler; PasswordManager:TTCPasswordManager);
+constructor TConnectionManager.Create(IniFileName: WideString; ProxySettings: TProxySettings; Timeout, CloudMaxFileSize: Integer; ProgressHandleProc: TProgressHandler; LogHandleProc: TLogHandler; RequestHandleProc: TRequestHandler; PasswordManager: TTCPasswordManager);
 begin
 	SetLength(Connections, 0);
 	self.IniFileName := IniFileName;
@@ -58,7 +58,7 @@ begin
 	self.Timeout := Timeout;
 	self.CloudMaxFileSize := CloudMaxFileSize;
 
-  self.PasswordManager := PasswordManager;
+	self.PasswordManager := PasswordManager;
 end;
 
 destructor TConnectionManager.Destroy;
@@ -109,7 +109,7 @@ begin
 	result := CLOUD_OPERATION_OK;
 	AccountSettings := GetAccountSettingsFromIniFile(IniFileName, connectionName);
 
-	if not PasswordManager.GetAccountPassword (AccountSettings) then
+	if not PasswordManager.GetAccountPassword(AccountSettings) then
 		exit(CLOUD_OPERATION_ERROR_STATUS_UNKNOWN); //INVALID_HANDLE_VALUE
 
 	LogHandleProc(LogLevelConnect, MSGTYPE_CONNECT, PWideChar('CONNECT \' + connectionName));

@@ -6,20 +6,23 @@ interface
 Uses Plugin_Types, Settings, Windows, CloudMailRu, SysUtils, AskPassword, AskEncryptionPasswords, MRC_Helper, Controls;
 
 type
+
 	TTCPasswordManager = class
 	private
-		CryptHandleProc: TCryptHandler;
+		CryptProc: TCryptProcW;
+		PluginNum: integer;
+		CryptoNum: integer;
 		LogHandleProc: TLogHandler;
 
 	public
-		constructor Create(CryptHandleProc: TCryptHandler; LogHandleProc: TLogHandler);
+		constructor Create(CryptProc: TCryptProcW; PluginNum, CryptoNum: integer; LogHandleProc: TLogHandler);
 		destructor Destroy(); override;
 		function GetPassword(Key: WideString; var Password: WideString): integer;
 		function SetPassword(Key, Password: WideString): integer;
 		{--------------------}
-		function GetAccountPassword(var AccountSettings: TAccountSettings): boolean;
-		function GetProxyPassword(var ProxySettings: TProxySettings): boolean;
-		function InitCloudCryptPasswords(var Cloud: TCloudMailRu; AccountSettings: TAccountSettings): boolean;
+		function GetAccountPassword(var AccountSettings: TAccountSettings): Boolean;
+		function GetProxyPassword(var ProxySettings: TProxySettings): Boolean;
+		function InitCloudCryptPasswords(var Cloud: TCloudMailRu; AccountSettings: TAccountSettings): Boolean;
 
 	end;
 
@@ -27,9 +30,11 @@ implementation
 
 {TTCPasswordManager}
 
-constructor TTCPasswordManager.Create(CryptHandleProc: TCryptHandler; LogHandleProc: TLogHandler);
+constructor TTCPasswordManager.Create(CryptProc: TCryptProcW; PluginNum, CryptoNum: integer; LogHandleProc: TLogHandler);
 begin
-	self.CryptHandleProc := CryptHandleProc;
+	self.PluginNum := PluginNum;
+	self.CryptoNum := CryptoNum;
+	self.CryptProc := CryptProc;
 	self.LogHandleProc := LogHandleProc;
 end;
 
@@ -44,12 +49,12 @@ var
 begin
 	GetMem(buf, 1024);
 	ZeroMemory(buf, 1024);
-	result := self.CryptHandleProc(FS_CRYPT_LOAD_PASSWORD_NO_UI, PWideChar(Key), buf, 1024);
+	result := self.CryptProc(PluginNum, CryptoNum, FS_CRYPT_LOAD_PASSWORD_NO_UI, PWideChar(Key), buf, 1024);
 	if FS_FILE_NOTFOUND = result then //no master password entered yet
 	begin
 		LogHandleProc(LogLevelDetail, msgtype_details, PWideChar('No master password entered yet'));
 		ZeroMemory(buf, 1024);
-		result := self.CryptHandleProc(FS_CRYPT_LOAD_PASSWORD, PWideChar(Key), buf, 1024); //ask with master password
+		result := self.CryptProc(PluginNum, CryptoNum, FS_CRYPT_LOAD_PASSWORD, PWideChar(Key), buf, 1024); //ask with master password
 	end;
 	if FS_FILE_OK = result then //all ok, we got password
 	begin
@@ -68,7 +73,7 @@ end;
 
 function TTCPasswordManager.SetPassword(Key, Password: WideString): integer;
 begin
-	result := self.CryptHandleProc(FS_CRYPT_SAVE_PASSWORD, PWideChar(Key), PWideChar(Password), SizeOf(Password));
+	result := self.CryptProc(PluginNum, CryptoNum, FS_CRYPT_SAVE_PASSWORD, PWideChar(Key), PWideChar(Password), SizeOf(Password));
 	case result of
 		FS_FILE_OK:
 			begin //TC скушал пароль, запомним в инишник галочку
@@ -90,7 +95,7 @@ begin
 	end;
 end;
 
-function TTCPasswordManager.GetAccountPassword(var AccountSettings: TAccountSettings): boolean;
+function TTCPasswordManager.GetAccountPassword(var AccountSettings: TAccountSettings): Boolean;
 var
 	AskResult: integer;
 	TmpString: WideString;
@@ -128,7 +133,7 @@ begin
 		result := true;
 end;
 
-function TTCPasswordManager.GetProxyPassword(var ProxySettings: TProxySettings): boolean;
+function TTCPasswordManager.GetProxyPassword(var ProxySettings: TProxySettings): Boolean;
 var
 	AskResult: integer;
 	TmpString: WideString;
@@ -165,10 +170,10 @@ begin
 	end;
 end;
 
-function TTCPasswordManager.InitCloudCryptPasswords(var Cloud: TCloudMailRu; AccountSettings: TAccountSettings): boolean;
+function TTCPasswordManager.InitCloudCryptPasswords(var Cloud: TCloudMailRu; AccountSettings: TAccountSettings): Boolean;
 var
 	crypt_id, crypt_filename_id: WideString;
-	UseTCPWDManager: boolean;
+	UseTCPWDManager: Boolean;
 begin
 	result := true;
 	crypt_id := AccountSettings.name + ' filecrypt';
