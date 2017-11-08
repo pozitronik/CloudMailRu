@@ -88,14 +88,10 @@ type
 	public
 		crypt_files: Boolean;
 		crypt_filenames: Boolean;
-		crypt_files_password: WideString;
-		crypt_filenames_password: WideString;
 
 		Property isPublicShare: Boolean read public_account;
 		Property ProxySettings: TProxySettings read Proxy;
 		Property ConnectTimeoutValue: integer read ConnectTimeout;
-		Property CryptFilesPassword: WideString read crypt_files_password write crypt_files_password; //deprecated
-		Property CryptFileNamesPassword: WideString read crypt_filenames_password write crypt_filenames_password; //deprecated
 		function getSharedFileUrl(remotePath: WideString; DoUrlEncode: Boolean = true): WideString;
 		{CONSTRUCTOR/DESTRUCTOR}
 		constructor Create(AccountSettings: TAccountSettings; split_file_size: integer; Proxy: TProxySettings; ConnectTimeout: integer; ExternalProgressProc: TProgressHandler = nil; ExternalLogProc: TLogHandler = nil; ExternalRequestProc: TRequestHandler = nil);
@@ -144,18 +140,15 @@ implementation
 
 function TCloudMailRu.addFileToCloud(hash: WideString; size: int64; remotePath: WideString; var JSONAnswer: WideString; ConflictMode: WideString): Boolean;
 var
-	//Cipher: TCipher;
 	FileName: WideString;
 begin
 	{Экспериментально выяснено, что параметры api, build, email, x-email, x-page-id в запросе не обязательны}
-	{if self.crypt_files and self.crypt_filenames then
-	 begin
-	 Cipher := TCipher.Create(self.crypt_files_password, self.crypt_filenames_password);
-	 FileName := ExtractUniversalFileName(remotePath);
-	 FileName := Cipher.CryptFileName(FileName);
-	 remotePath := ChangePathFileName(remotePath, FileName);
-	 Cipher.free;
-	 end;}
+	if self.crypt_filenames then
+	begin
+		FileName := ExtractUniversalFileName(remotePath);
+		FileName := FileCipher.CryptFileName(FileName);
+		remotePath := ChangePathFileName(remotePath, FileName);
+	end;
 	Result := self.HTTPPostForm(API_FILE_ADD, 'conflict=' + ConflictMode + '&home=/' + PathToUrl(remotePath) + '&hash=' + hash + '&size=' + size.ToString + self.united_params, JSONAnswer);
 
 end;
@@ -305,7 +298,7 @@ begin
 				Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Wrong encryption password, encryption support disabled');
 
 			self.crypt_files := not(self.FileCipher.WrongPassword);
-			self.crypt_filenames := AccountSettings.encrypt_filenames and not(self.FileCipher.WrongPassword);
+			self.crypt_filenames := self.crypt_files and AccountSettings.encrypt_filenames and not(self.FileCipher.WrongPassword);
 		end;
 
 		self.shard_override := AccountSettings.shard_override;
@@ -670,7 +663,11 @@ begin
 		OperationResult := fromJSON_OperationResult(JSON, OperationStatus);
 		case OperationResult of
 			CLOUD_OPERATION_OK:
-				Result := fromJSON_DirListing(JSON, DirListing);
+				begin
+					Result := fromJSON_DirListing(JSON, DirListing);
+					if Result and self.crypt_filenames then
+						self.FileCipher.DecryptDirListing(DirListing);
+				end;
 			CLOUD_ERROR_NOT_EXISTS:
 				begin
 					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Path not exists: ' + Path);
@@ -699,7 +696,6 @@ end;
 function TCloudMailRu.getFileRegular(remotePath, localPath: WideString; LogErrors: Boolean): integer;
 var
 	FileStream: TFileStream;
-	//Cipher: TCipher;
 	FileName: WideString;
 	MemoryStream: TMemoryStream;
 begin
@@ -715,14 +711,12 @@ begin
 			exit;
 		end;
 	end;
-	{if self.crypt_files and self.crypt_filenames then
-	 begin
-	 Cipher := TCipher.Create(self.crypt_files_password, self.crypt_filenames_password);
-	 FileName := ExtractUniversalFileName(remotePath);
-	 FileName := Cipher.DecryptFileName(FileName);
-	 localPath := ChangePathFileName(localPath, FileName);
-	 Cipher.free;
-	 end;}
+	if self.crypt_filenames then
+	begin
+		FileName := ExtractUniversalFileName(remotePath);
+		FileName := FileCipher.DecryptFileName(FileName);
+		localPath := ChangePathFileName(localPath, FileName);
+	end;
 
 	try
 		FileStream := TFileStream.Create(GetUNCFilePath(localPath), fmCreate);
