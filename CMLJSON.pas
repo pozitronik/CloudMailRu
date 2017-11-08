@@ -61,6 +61,7 @@ begin
 					home := ParserObj.Values['home'].Value;
 				if Assigned(ParserObj.Values['name']) then
 					name := ParserObj.Values['name'].Value;
+				visible_name := name;
 				if Assigned(ParserObj.Values['deleted_at']) then
 					deleted_at := ParserObj.Values['deleted_at'].Value.ToInteger;
 				if Assigned(ParserObj.Values['deleted_from']) then

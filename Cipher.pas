@@ -3,7 +3,7 @@
 interface
 
 {Сначала реализация, потом рефакторинг. Шифрование будет каким-нибудь интерфейсом описано, а это уедет в реализацию}
-uses System.SysUtils, System.Classes, DCPcrypt2, DCPblockciphers, DCPrijndael, DCPSha1, DCPbase64;
+uses System.SysUtils, System.Classes, CMLTypes, DCPcrypt2, DCPblockciphers, DCPrijndael, DCPSha1, DCPbase64;
 
 const
 	CIPHER_OK = 0;
@@ -38,6 +38,7 @@ type
 		function DecryptFile(SourceFileName, DestinationFilename: WideString): integer;
 		function DecryptStream(SourceStream, DestinationStream: TStream): integer;
 		function DecryptFileName(const FileName: WideString): WideString;
+		procedure DecryptDirListing(var CloudMailRuDirListing: TCloudMailRuDirListing);
 
 		class function Base64ToSafe(const Base64: WideString): WideString; //converts Base64-encoded string to URL and Filename safe (RFC 4648)
 		class function Base64FromSafe(const Safe: WideString): WideString;
@@ -151,6 +152,16 @@ begin
 	self.CiphersDestroy;
 end;
 
+procedure TFileCipher.DecryptDirListing(var CloudMailRuDirListing: TCloudMailRuDirListing);
+var
+	i: integer;
+begin
+	for i := 0 to Length(CloudMailRuDirListing) - 1 do
+	begin
+		CloudMailRuDirListing[i].visible_name := self.DecryptFileName(CloudMailRuDirListing[i].name);
+	end;
+end;
+
 function TFileCipher.DecryptFile(SourceFileName, DestinationFilename: WideString): integer;
 var
 	SourceStream, DestinationStream: TFileStream;
@@ -194,9 +205,9 @@ end;
 
 destructor TFileCipher.Destroy;
 begin
-{	self.fileCipher.Destroy;
-	if Assigned(self.filenameCipher) then
-		self.filenameCipher.Destroy;  }
+	{self.fileCipher.Destroy;
+	 if Assigned(self.filenameCipher) then
+	 self.filenameCipher.Destroy;}
 	inherited;
 end;
 

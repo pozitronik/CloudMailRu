@@ -113,6 +113,7 @@ type
 	TCloudMailRuDirListingItem = Record
 		tree: WideString;
 		name: WideString;
+		visible_name: WideString;
 		grev: integer;
 		size: int64;
 		kind: WideString;
