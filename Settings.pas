@@ -68,10 +68,9 @@ type
 		shard_override: WideString; //hidden option, allows to override working shard for account
 		self_ini_path: WideString; //runtime parameter, contains path to ini file, used for various manipulations
 		crypt_files_password: WideString; //runtime parameter
-		crypt_filenames_password: WideString; //runtime parameter
 
-		CryptedGUID_files: WideString; //Шифрованная строка для проверки пароля шифрования файлов
-		CryptedGUID_filenames: WideString; //Шифрованная строка для проверки пароля шифрования имён файлов
+		CryptedGUID_files: WideString; //Шифрованная строка для проверки пароля шифрования
+
 	end;
 
 	TProxySettings = record
@@ -219,7 +218,6 @@ begin
 	result.encrypt_filenames := IniFile.ReadBool(result.name, 'encrypt_filenames', false);
 	result.shard_override := IniFile.ReadString(result.name, 'shard_override', EmptyWideStr);
 	result.CryptedGUID_files := IniFile.ReadString(result.name, 'CryptedGUID_files', EmptyWideStr);
-	result.CryptedGUID_filenames := IniFile.ReadString(result.name, 'CryptedGUID_filenames', EmptyWideStr);
 	AtPos := AnsiPos('@', result.email);
 	if AtPos <> 0 then
 	begin
