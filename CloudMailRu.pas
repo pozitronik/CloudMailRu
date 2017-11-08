@@ -37,6 +37,8 @@ type
 		Proxy: TProxySettings;
 		ConnectTimeout: integer;
 
+		FileCipher: TFileCipher;
+
 		united_params: WideString; //Объединённый набор авторизационных параметров для подстановки в URL
 
 		{BASE HTTP METHODS}
@@ -94,8 +96,6 @@ type
 		Property ConnectTimeoutValue: integer read ConnectTimeout;
 		Property CryptFilesPassword: WideString read crypt_files_password write crypt_files_password; //deprecated
 		Property CryptFileNamesPassword: WideString read crypt_filenames_password write crypt_filenames_password; //deprecated
-		function isCryptFilesPasswordRequired(): Boolean;
-		function isCryptFileNamesPasswordRequired(): Boolean;
 		function getSharedFileUrl(remotePath: WideString; DoUrlEncode: Boolean = true): WideString;
 		{CONSTRUCTOR/DESTRUCTOR}
 		constructor Create(AccountSettings: TAccountSettings; split_file_size: integer; Proxy: TProxySettings; ConnectTimeout: integer; ExternalProgressProc: TProgressHandler = nil; ExternalLogProc: TLogHandler = nil; ExternalRequestProc: TRequestHandler = nil);
@@ -144,18 +144,18 @@ implementation
 
 function TCloudMailRu.addFileToCloud(hash: WideString; size: int64; remotePath: WideString; var JSONAnswer: WideString; ConflictMode: WideString): Boolean;
 var
-	Cipher: TCipher;
+	//Cipher: TCipher;
 	FileName: WideString;
 begin
 	{Экспериментально выяснено, что параметры api, build, email, x-email, x-page-id в запросе не обязательны}
-	if self.crypt_files and self.crypt_filenames then
-	begin
-		Cipher := TCipher.Create(self.crypt_files_password, self.crypt_filenames_password);
-		FileName := ExtractUniversalFileName(remotePath);
-		FileName := Cipher.CryptFileName(FileName);
-		remotePath := ChangePathFileName(remotePath, FileName);
-		Cipher.free;
-	end;
+	{if self.crypt_files and self.crypt_filenames then
+	 begin
+	 Cipher := TCipher.Create(self.crypt_files_password, self.crypt_filenames_password);
+	 FileName := ExtractUniversalFileName(remotePath);
+	 FileName := Cipher.CryptFileName(FileName);
+	 remotePath := ChangePathFileName(remotePath, FileName);
+	 Cipher.free;
+	 end;}
 	Result := self.HTTPPostForm(API_FILE_ADD, 'conflict=' + ConflictMode + '&home=/' + PathToUrl(remotePath) + '&hash=' + hash + '&size=' + size.ToString + self.united_params, JSONAnswer);
 
 end;
@@ -261,6 +261,10 @@ end;
 constructor TCloudMailRu.Create(AccountSettings: TAccountSettings; split_file_size: integer; Proxy: TProxySettings; ConnectTimeout: integer; ExternalProgressProc: TProgressHandler = nil; ExternalLogProc: TLogHandler = nil; ExternalRequestProc: TRequestHandler = nil);
 begin
 	try
+		self.ExternalProgressProc := ExternalProgressProc;
+		self.ExternalLogProc := ExternalLogProc;
+		self.ExternalRequestProc := ExternalRequestProc;
+
 		self.Cookie := TIdCookieManager.Create();
 		self.Proxy := Proxy;
 		if Proxy.ProxyType in SocksProxyTypes then //SOCKS proxy initialization
@@ -293,8 +297,17 @@ begin
 		self.split_large_files := AccountSettings.split_large_files;
 		self.public_account := AccountSettings.public_account;
 		self.PUBLIC_URL := AccountSettings.PUBLIC_URL;
-		self.crypt_files := AccountSettings.encrypt_files_mode <> EncryptModeNone;
-		self.crypt_filenames := AccountSettings.encrypt_filenames;
+
+		if AccountSettings.encrypt_files_mode <> EncryptModeNone then
+		begin
+			self.FileCipher := TFileCipher.Create(AccountSettings.crypt_files_password, AccountSettings.CryptedGUID_files, AccountSettings.encrypt_filenames);
+			if self.FileCipher.WrongPassword then
+				Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Wrong encryption password, encryption support disabled');
+
+			self.crypt_files := not(self.FileCipher.WrongPassword);
+			self.crypt_filenames := AccountSettings.encrypt_filenames and not(self.FileCipher.WrongPassword);
+		end;
+
 		self.shard_override := AccountSettings.shard_override;
 		if self.public_account and (self.PUBLIC_URL <> EmptyWideStr) then
 		begin
@@ -307,9 +320,6 @@ begin
 
 		self.split_file_size := split_file_size;
 		self.ConnectTimeout := ConnectTimeout;
-		self.ExternalProgressProc := ExternalProgressProc;
-		self.ExternalLogProc := ExternalLogProc;
-		self.ExternalRequestProc := ExternalRequestProc;
 
 		self.ExternalSourceName := nil;
 		self.ExternalTargetName := nil;
@@ -378,6 +388,8 @@ begin
 		self.Cookie.free;
 	if Assigned(self.Socks) then
 		self.Socks.free;
+	if Assigned(self.FileCipher) then
+		self.FileCipher.Destroy;
 
 	inherited;
 end;
@@ -687,7 +699,7 @@ end;
 function TCloudMailRu.getFileRegular(remotePath, localPath: WideString; LogErrors: Boolean): integer;
 var
 	FileStream: TFileStream;
-	Cipher: TCipher;
+	//Cipher: TCipher;
 	FileName: WideString;
 	MemoryStream: TMemoryStream;
 begin
@@ -703,14 +715,14 @@ begin
 			exit;
 		end;
 	end;
-	if self.crypt_files and self.crypt_filenames then
-	begin
-		Cipher := TCipher.Create(self.crypt_files_password, self.crypt_filenames_password);
-		FileName := ExtractUniversalFileName(remotePath);
-		FileName := Cipher.DecryptFileName(FileName);
-		localPath := ChangePathFileName(localPath, FileName);
-		Cipher.free;
-	end;
+	{if self.crypt_files and self.crypt_filenames then
+	 begin
+	 Cipher := TCipher.Create(self.crypt_files_password, self.crypt_filenames_password);
+	 FileName := ExtractUniversalFileName(remotePath);
+	 FileName := Cipher.DecryptFileName(FileName);
+	 localPath := ChangePathFileName(localPath, FileName);
+	 Cipher.free;
+	 end;}
 
 	try
 		FileStream := TFileStream.Create(GetUNCFilePath(localPath), fmCreate);
@@ -731,9 +743,7 @@ begin
 		if Result in [FS_FILE_OK] then
 		begin
 			MemoryStream.Position := 0;
-			Cipher := TCipher.Create(self.crypt_files_password, self.crypt_filenames_password);
-			Cipher.DecryptStream(MemoryStream, FileStream);
-			Cipher.free;
+			self.FileCipher.DecryptStream(MemoryStream, FileStream);
 		end;
 		MemoryStream.free;
 
@@ -1041,7 +1051,6 @@ end;
 function TCloudMailRu.HTTPPostFile(URL: WideString; FileName: WideString; var Answer: WideString): integer;
 var
 	PostData: TIdMultiPartFormDataStream;
-	Cipher: TCipher;
 	ResultStream: TStringStream;
 	MemoryStream: TMemoryStream;
 	FileStream: TFileStream;
@@ -1051,15 +1060,13 @@ begin
 
 	if self.crypt_files then
 	begin
-		Cipher := TCipher.Create(self.crypt_files_password, self.crypt_filenames_password);
 		MemoryStream := TMemoryStream.Create;
 		FileStream := TFileStream.Create(FileName, fmOpenRead or fmShareDenyWrite);
-		Cipher.CryptStream(FileStream, MemoryStream);
+		self.FileCipher.CryptStream(FileStream, MemoryStream);
 		MemoryStream.Position := 0;
 		PostData.AddFormField('file', 'application/octet-stream', EmptyWideStr, MemoryStream, FileName);
 		Result := self.HTTPPost(URL, PostData, ResultStream);
 		MemoryStream.free;
-		Cipher.free;
 		FileStream.free;
 	end else begin
 		PostData.AddFile('file', FileName, 'application/octet-stream');
@@ -1176,17 +1183,6 @@ begin
 		if Assigned(ExternalProgressProc) and (ExternalProgressProc(self.ExternalSourceName, self.ExternalTargetName, Percent) = 1) then
 			abort;
 	end;
-end;
-
-function TCloudMailRu.isCryptFileNamesPasswordRequired: Boolean;
-begin
-	Result := self.crypt_filenames and (EmptyWideStr = self.crypt_filenames_password);
-
-end;
-
-function TCloudMailRu.isCryptFilesPasswordRequired: Boolean;
-begin
-	Result := self.crypt_files and (EmptyWideStr = self.crypt_files_password);
 end;
 
 procedure TCloudMailRu.Log(LogLevel, MsgType: integer; LogString: WideString);

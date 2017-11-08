@@ -3,22 +3,33 @@
 interface
 
 {Сначала реализация, потом рефакторинг. Шифрование будет каким-нибудь интерфейсом описано, а это уедет в реализацию}
-uses System.SysUtils, System.Classes, DCPcrypt2, DCPblockciphers, DCPrijndael, DCPSha1;
+uses System.SysUtils, System.Classes, DCPcrypt2, DCPblockciphers, DCPrijndael, DCPSha1, DCPbase64;
 
 const
 	CIPHER_OK = 0;
 	CIPHER_IO_ERROR = 1;
+	CIPHER_WRONG_PASSWORD = 2;
 	CIPHER_CONTROL_GUID = '2b580ce6-e72f-433d-9788-3ecb6b0d9580';
 
 type
-	TCipher = class
+	TFileCipher = class
 	private
+		password: WideString;
 		fileCipher, filenameCipher: TDCP_rijndael; //AES ciphers
 		DoFilenameCipher: boolean; //шифровать имена файлов
+		PasswordWrong: boolean;
+
+		procedure CiphersInit();
+		procedure CiphersDestroy();
 
 	protected
 	public
-		constructor Create(fileKey: WideString; filenameKey: WideString = '');
+		property WrongPassword: boolean read PasswordWrong;
+
+		{filePassword: пароль для шифрования\дешифрации файлов
+		 filePasswordControl: контрольный код для проверки файлового пароля (только дешифрация), пустой - не проверять
+		}
+		constructor Create(password: WideString; PasswordControl: WideString = ''; DoFilenameCipher: boolean = false);
 		destructor Destroy; override;
 		function CryptFile(SourceFileName, DestinationFilename: WideString): integer;
 		function CryptStream(SourceStream, DestinationStream: TStream): integer;
@@ -28,109 +39,125 @@ type
 		function DecryptStream(SourceStream, DestinationStream: TStream): integer;
 		function DecryptFileName(const FileName: WideString): WideString;
 
-		function CheckCryptPassword(EncryptedControlWord: WideString): boolean; //Проверяет корректность введённого пароля, пытаясь дешифровать им предварительно сохранённую контрольную фразу
-
 		class function Base64ToSafe(const Base64: WideString): WideString; //converts Base64-encoded string to URL and Filename safe (RFC 4648)
 		class function Base64FromSafe(const Safe: WideString): WideString;
 
-		class function CryptedGUID(const Password: WideString): WideString;
+		class function CryptedGUID(const password: WideString): WideString;
 
 	end;
 
 implementation
 
-{TCipher}
+{TFileCipher}
 
-class function TCipher.Base64FromSafe(const Safe: WideString): WideString;
+class function TFileCipher.Base64FromSafe(const Safe: WideString): WideString;
 begin
 	Result := Safe;
 	Result := StringReplace(Result, '-', '+', [rfReplaceAll]);
 	Result := StringReplace(Result, '_', '/', [rfReplaceAll]);
 end;
 
-class function TCipher.Base64ToSafe(const Base64: WideString): WideString;
+class function TFileCipher.Base64ToSafe(const Base64: WideString): WideString;
 begin
 	Result := Base64;
 	Result := StringReplace(Result, '+', '-', [rfReplaceAll]);
 	Result := StringReplace(Result, '/', '_', [rfReplaceAll]);
 end;
 
-class function TCipher.CryptedGUID(const Password: WideString): WideString;
+class function TFileCipher.CryptedGUID(const password: WideString): WideString;
 var
 	tmpCipher: TDCP_rijndael;
 begin
 	tmpCipher := TDCP_rijndael.Create(nil);
-	tmpCipher.InitStr(Password, TDCP_sha1);
+	tmpCipher.InitStr(password, TDCP_sha1);
 	Result := tmpCipher.EncryptString(CIPHER_CONTROL_GUID);
+	tmpCipher.Burn;
 	tmpCipher.Destroy;
 end;
 
-function TCipher.CheckCryptPassword(EncryptedControlWord: WideString): boolean;
-var
-	DecryptedGUID: WideString;
+procedure TFileCipher.CiphersDestroy;
 begin
-	DecryptedGUID := self.fileCipher.DecryptString(EncryptedControlWord);
-	Result := CIPHER_CONTROL_GUID = DecryptedGUID;
+	self.fileCipher.Burn;
+	self.fileCipher.Destroy;
+
+	if self.DoFilenameCipher then
+	begin
+		self.filenameCipher.Burn;
+		self.filenameCipher.Destroy;
+	end;
+
 end;
 
-constructor TCipher.Create(fileKey: WideString; filenameKey: WideString = '');
+procedure TFileCipher.CiphersInit;
 begin
 	self.fileCipher := TDCP_rijndael.Create(nil);
-	self.fileCipher.InitStr(fileKey, TDCP_sha1);
-	DoFilenameCipher := false;
-	if EmptyWideStr <> filenameKey then
+	self.fileCipher.InitStr(self.password, TDCP_sha1);
+	if self.DoFilenameCipher then
 	begin
 		self.filenameCipher := TDCP_rijndael.Create(nil);
-		self.filenameCipher.InitStr(filenameKey, TDCP_sha1);
-		DoFilenameCipher := true;
+		self.filenameCipher.InitStr(self.password, TDCP_sha1);
 	end;
+
 end;
 
-function TCipher.CryptFile(SourceFileName, DestinationFilename: WideString): integer;
+constructor TFileCipher.Create(password: WideString; PasswordControl: WideString = ''; DoFilenameCipher: boolean = false);
+begin
+	self.password := password;
+	self.DoFilenameCipher := DoFilenameCipher;
+
+	self.CiphersInit();
+	if EmptyWideStr <> PasswordControl then
+		PasswordWrong := not(self.fileCipher.EncryptString(CIPHER_CONTROL_GUID) = PasswordControl); //признак неверного пароля
+	self.CiphersDestroy;
+end;
+
+function TFileCipher.CryptFile(SourceFileName, DestinationFilename: WideString): integer;
 var
 	SourceStream, DestinationStream: TFileStream;
 begin
 	Result := CIPHER_OK;
+	self.CiphersInit();
 	try
-
 		SourceStream := TFileStream.Create(SourceFileName, fmOpenRead);
 		DestinationStream := TFileStream.Create(DestinationFilename, fmCreate);
 		if SourceStream.Size > 0 then
 			self.CryptStream(SourceStream, DestinationStream);
-
 		SourceStream.Free;
 		DestinationStream.Free;
 	except
+		self.CiphersDestroy();
 		Result := CIPHER_IO_ERROR;
 	end;
+	self.CiphersDestroy();
 end;
 
-function TCipher.CryptFileName(const FileName: WideString): WideString;
+function TFileCipher.CryptFileName(const FileName: WideString): WideString;
 begin
+	self.CiphersInit();
 	Result := ExtractFileName(FileName);
 	if EmptyWideStr = Result then
 		exit;
 	if DoFilenameCipher then
 		Result := Base64ToSafe(self.filenameCipher.EncryptString(Result));
+	self.CiphersDestroy;
 end;
 
-function TCipher.CryptStream(SourceStream, DestinationStream: TStream): integer;
+function TFileCipher.CryptStream(SourceStream, DestinationStream: TStream): integer;
 begin
+	self.CiphersInit();
 	Result := 0;
 	if SourceStream.Size > 0 then
-
 		Result := self.fileCipher.EncryptStream(SourceStream, DestinationStream, SourceStream.Size);
-	//self.fileCipher.Burn;
-	//self.fileCipher.Destroy;
+	self.CiphersDestroy;
 end;
 
-function TCipher.DecryptFile(SourceFileName, DestinationFilename: WideString): integer;
+function TFileCipher.DecryptFile(SourceFileName, DestinationFilename: WideString): integer;
 var
 	SourceStream, DestinationStream: TFileStream;
 begin
+	self.CiphersInit();
 	Result := CIPHER_OK;
 	try
-
 		SourceStream := TFileStream.Create(SourceFileName, fmOpenRead);
 		DestinationStream := TFileStream.Create(DestinationFilename, fmCreate);
 		if SourceStream.Size > 0 then
@@ -138,34 +165,38 @@ begin
 		SourceStream.Free;
 		DestinationStream.Free;
 	except
+		self.CiphersDestroy;
 		Result := CIPHER_IO_ERROR;
 	end;
+	self.CiphersDestroy;
 end;
 
-function TCipher.DecryptFileName(const FileName: WideString): WideString;
+function TFileCipher.DecryptFileName(const FileName: WideString): WideString;
 begin
+	self.CiphersInit();
 	Result := ExtractFileName(FileName);
 	if EmptyWideStr = Result then
 		exit;
 
 	if DoFilenameCipher then
 		Result := self.filenameCipher.DecryptString(Base64FromSafe(FileName));
+	self.CiphersDestroy();
 end;
 
-function TCipher.DecryptStream(SourceStream, DestinationStream: TStream): integer;
+function TFileCipher.DecryptStream(SourceStream, DestinationStream: TStream): integer;
 begin
+	self.CiphersInit();
 	Result := 0;
 	if SourceStream.Size > 0 then
 		Result := self.fileCipher.DecryptStream(SourceStream, DestinationStream, SourceStream.Size);
-	//self.fileCipher.Burn;
-	//self.fileCipher.Destroy;
+	self.CiphersDestroy();
 end;
 
-destructor TCipher.Destroy;
+destructor TFileCipher.Destroy;
 begin
-	self.fileCipher.Destroy;
+{	self.fileCipher.Destroy;
 	if Assigned(self.filenameCipher) then
-		self.filenameCipher.Destroy;
+		self.filenameCipher.Destroy;  }
 	inherited;
 end;
 

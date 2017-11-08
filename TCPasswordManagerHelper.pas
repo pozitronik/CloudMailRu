@@ -3,7 +3,7 @@
 {Обертка над обращениями к менеджеру паролей Total Commander}
 interface
 
-Uses Plugin_Types, Settings, Windows, CloudMailRu, SysUtils, AskPassword, AskEncryptionPasswords, MRC_Helper, Controls, Cipher;
+Uses Plugin_Types, Settings, Windows, SysUtils, AskPassword, {AskEncryptionPasswords,}MRC_Helper, Controls, Cipher;
 
 type
 
@@ -23,7 +23,7 @@ type
 		{--------------------}
 		function GetAccountPassword(var AccountSettings: TAccountSettings): Boolean;
 		function GetProxyPassword(var ProxySettings: TProxySettings): Boolean;
-		function InitCloudCryptPasswords(var Cloud: TCloudMailRu; AccountSettings: TAccountSettings): Boolean;
+		function InitCloudCryptPasswords(var AccountSettings: TAccountSettings): Boolean;
 		function StoreFileCryptPassword(AccountName: WideString): WideString;
 
 	end;
@@ -173,58 +173,34 @@ begin
 	end;
 end;
 
-function TTCPasswordManager.InitCloudCryptPasswords(var Cloud: TCloudMailRu; AccountSettings: TAccountSettings): Boolean;
+function TTCPasswordManager.InitCloudCryptPasswords(var AccountSettings: TAccountSettings): Boolean; //Вносит в AccountSettings пароли из стораджа/введённые руками
 var
-	crypt_id, crypt_filename_id: WideString;
-	UseTCPWDManager: Boolean;
+	crypt_id: WideString;
 begin
 	result := true;
 	crypt_id := AccountSettings.name + ' filecrypt';
-	crypt_filename_id := AccountSettings.name + ' filenamecrypt';
-	Cloud.crypt_files := AccountSettings.encrypt_files_mode <> EncryptModeNone;
 
-	if Cloud.isCryptFilesPasswordRequired then
+	if EncryptModeAlways = AccountSettings.encrypt_files_mode then {password must be taken from tc storage, otherwise ask user and store password}
 	begin
-		if EncryptModeAlways = AccountSettings.encrypt_files_mode then {password must be taken from tc storage, otherwise ask user and store password}
-		begin
-			case self.GetPassword(crypt_id, Cloud.crypt_files_password) of
-				FS_FILE_OK:
-					begin
-						if Cloud.isCryptFileNamesPasswordRequired then
-							self.GetPassword(crypt_filename_id, Cloud.crypt_filenames_password);
-					end;
-				FS_FILE_READERROR: //password not found in store, ask and store => act like EncryptModeAskOnce
-					begin
-						UseTCPWDManager := true;
-						AccountSettings.encrypt_files_mode := EncryptModeAskOnce;
-					end;
-				FS_FILE_NOTSUPPORTED: //user doesn't know master password
-					begin
-						exit(false);
-					end;
-			end;
+		case self.GetPassword(crypt_id, AccountSettings.crypt_files_password) of
+			FS_FILE_OK:
+				begin
+					exit(true);
+				end;
+			FS_FILE_READERROR: //password not found in store => act like EncryptModeAskOnce
+				begin
+					AccountSettings.encrypt_files_mode := EncryptModeAskOnce;
+				end;
+			FS_FILE_NOTSUPPORTED: //user doesn't know master password
+				begin
+					exit(false);
+				end;
 		end;
-		if EncryptModeAskOnce = AccountSettings.encrypt_files_mode then
-		begin
-			case TAskEncryptionPasswordsForm.AskPassword(FindTCWindow, AccountSettings.name, Cloud.crypt_files_password, Cloud.crypt_filenames_password, UseTCPWDManager) of
-				mrCancel: //abort operation
-					begin
-						exit(false);
-					end;
-				mrOK:
-					begin //store passwords if required
-						if UseTCPWDManager then
-						begin
-							self.SetPassword(crypt_id, Cloud.crypt_files_password);
-							self.SetPassword(crypt_filename_id, Cloud.crypt_filenames_password);
-						end;
-					end;
-				mrIgnore: //skip at this time
-					begin
-						Cloud.crypt_files := false;
-					end;
-			end;
-		end;
+	end;
+	if EncryptModeAskOnce = AccountSettings.encrypt_files_mode then
+	begin
+		if not self.RequestHandleProc(RT_Password, PWideChar(AccountSettings.name + ' encryption password'), 'Enter encryption password:', PWideChar(AccountSettings.crypt_files_password), 1024) then
+			exit(false);
 	end;
 end;
 
@@ -232,19 +208,28 @@ function TTCPasswordManager.StoreFileCryptPassword(AccountName: WideString): Wid
 var
 	CurrentPassword: WideString;
 	crypt_id: WideString;
+	Verb: WideString;
 begin
-	result:=EmptyWideStr;
+	result := EmptyWideStr;
 	crypt_id := AccountName + ' filecrypt';
 	case self.GetPassword(crypt_id, CurrentPassword) of
-		FS_FILE_OK, //пользователь знает мастер-пароль, и пароль был сохранен
+		FS_FILE_OK: //пользователь знает мастер-пароль, и пароль был сохранен
+			begin
+				Verb := 'Update';
+			end;
 		FS_FILE_READERROR: //Пользователь знает мастер-пароль, и пароль вводится впервые
 			begin
-				if self.RequestHandleProc(RT_Password, 'Set/update file encryption password', 'New password:', PWideChar(CurrentPassword), 1024) then
-				begin
-					self.SetPassword(crypt_id, CurrentPassword);
-					result := TCipher.CryptedGUID(CurrentPassword);
-				end;
+				Verb := 'Set';
 			end;
+		else
+			begin
+				exit;
+			end;
+	end;
+	if self.RequestHandleProc(RT_Password, PWideChar(Verb + ' encryption password'), 'New password:', PWideChar(CurrentPassword), 1024) then
+	begin
+		self.SetPassword(crypt_id, CurrentPassword);
+		result := TFileCipher.CryptedGUID(CurrentPassword);
 	end;
 end;
 

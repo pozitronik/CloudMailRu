@@ -112,6 +112,12 @@ begin
 	if not PasswordManager.GetAccountPassword(AccountSettings) then
 		exit(CLOUD_OPERATION_ERROR_STATUS_UNKNOWN); //INVALID_HANDLE_VALUE
 
+	if AccountSettings.encrypt_files_mode <> EncryptModeNone then
+	begin
+		if not PasswordManager.InitCloudCryptPasswords(AccountSettings) then
+			exit(CLOUD_OPERATION_FAILED);
+	end;
+
 	LogHandleProc(LogLevelConnect, MSGTYPE_CONNECT, PWideChar('CONNECT \' + connectionName));
 
 	cloud := TCloudMailRu.Create(AccountSettings, self.CloudMaxFileSize, self.Proxy, Timeout, ProgressHandleProc, LogHandleProc, RequestHandleProc);

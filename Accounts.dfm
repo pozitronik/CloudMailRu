@@ -315,7 +315,7 @@ object AccountsForm: TAccountsForm
           object EncryptFilenamesCB: TCheckBox
             Left = 7
             Top = 66
-            Width = 146
+            Width = 244
             Height = 17
             Caption = 'Also encrypt filenames'
             TabOrder = 0

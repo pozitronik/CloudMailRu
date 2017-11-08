@@ -47,9 +47,9 @@ const
 	LogLevelError = 16; //error details
 	LogLevelDebug = 32; //also same internal debugging info
 
-	EncryptModeNone = 0;
-	EncryptModeAlways = 1;
-	EncryptModeAskOnce = 2;
+	EncryptModeNone = 0; //Без шифрования
+	EncryptModeAlways = 1; //С прозрачным шифрованием
+	EncryptModeAskOnce = 2; //С прозрачным шифрованием, без хранения пароля
 	//EncryptModeAskAlways = 3; //не буду поддерживать без необходимости
 
 type
@@ -67,6 +67,9 @@ type
 		encrypt_filenames: boolean;
 		shard_override: WideString; //hidden option, allows to override working shard for account
 		self_ini_path: WideString; //runtime parameter, contains path to ini file, used for various manipulations
+		crypt_files_password: WideString; //runtime parameter
+		crypt_filenames_password: WideString; //runtime parameter
+
 		CryptedGUID_files: WideString; //Шифрованная строка для проверки пароля шифрования файлов
 		CryptedGUID_filenames: WideString; //Шифрованная строка для проверки пароля шифрования имён файлов
 	end;
@@ -215,6 +218,8 @@ begin
 	result.encrypt_files_mode := IniFile.ReadInteger(result.name, 'encrypt_files_mode', EncryptModeNone);
 	result.encrypt_filenames := IniFile.ReadBool(result.name, 'encrypt_filenames', false);
 	result.shard_override := IniFile.ReadString(result.name, 'shard_override', EmptyWideStr);
+	result.CryptedGUID_files := IniFile.ReadString(result.name, 'CryptedGUID_files', EmptyWideStr);
+	result.CryptedGUID_filenames := IniFile.ReadString(result.name, 'CryptedGUID_filenames', EmptyWideStr);
 	AtPos := AnsiPos('@', result.email);
 	if AtPos <> 0 then
 	begin
