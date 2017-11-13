@@ -37,6 +37,7 @@ type
 		Proxy: TProxySettings;
 		ConnectTimeout: integer;
 		PrecalculateHash: Boolean;
+		CheckCRC: Boolean;
 
 		FileCipher: TFileCipher;
 
@@ -95,7 +96,7 @@ type
 		Property ConnectTimeoutValue: integer read ConnectTimeout;
 		function getSharedFileUrl(remotePath: WideString; DoUrlEncode: Boolean = true): WideString;
 		{CONSTRUCTOR/DESTRUCTOR}
-		constructor Create(AccountSettings: TAccountSettings; split_file_size: integer; Proxy: TProxySettings; ConnectTimeout: integer; PrecalculateHash: Boolean = true; ExternalProgressProc: TProgressHandler = nil; ExternalLogProc: TLogHandler = nil; ExternalRequestProc: TRequestHandler = nil);
+		constructor Create(AccountSettings: TAccountSettings; split_file_size: integer; Proxy: TProxySettings; ConnectTimeout: integer; PrecalculateHash: Boolean = true; CheckCRC: Boolean = true; ExternalProgressProc: TProgressHandler = nil; ExternalLogProc: TLogHandler = nil; ExternalRequestProc: TRequestHandler = nil);
 		destructor Destroy; override;
 		{CLOUD INTERFACE METHODS}
 		function login(method: integer = CLOUD_AUTH_METHOD_WEB): Boolean;
@@ -253,7 +254,7 @@ begin //Облако умеет скопировать файл, но не см�
 	end;
 end;
 
-constructor TCloudMailRu.Create(AccountSettings: TAccountSettings; split_file_size: integer; Proxy: TProxySettings; ConnectTimeout: integer; PrecalculateHash: Boolean = true; ExternalProgressProc: TProgressHandler = nil; ExternalLogProc: TLogHandler = nil; ExternalRequestProc: TRequestHandler = nil);
+constructor TCloudMailRu.Create(AccountSettings: TAccountSettings; split_file_size: integer; Proxy: TProxySettings; ConnectTimeout: integer; PrecalculateHash: Boolean = true; CheckCRC: Boolean = true; ExternalProgressProc: TProgressHandler = nil; ExternalLogProc: TLogHandler = nil; ExternalRequestProc: TRequestHandler = nil);
 begin
 	try
 		self.ExternalProgressProc := ExternalProgressProc;
@@ -316,6 +317,7 @@ begin
 		self.split_file_size := split_file_size;
 		self.ConnectTimeout := ConnectTimeout;
 		self.PrecalculateHash := PrecalculateHash;
+		self.CheckCRC := CheckCRC;
 
 		self.ExternalSourceName := nil;
 		self.ExternalTargetName := nil;
@@ -1743,8 +1745,9 @@ end;
 function TCloudMailRu.putFile(localPath, remotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; ChunkOverwriteMode: integer = 0): integer;
 var
 	PutResult: TStringList;
-	JSONAnswer, FileHash: WideString;
-	FileSize: int64;
+	JSONAnswer: WideString;
+	LocalFileHash, UploadedFileHash: WideString;
+	LocalFileSize, UploadedFileSize: int64;
 	code, OperationStatus: integer;
 	OperationResult: integer;
 begin
@@ -1764,18 +1767,22 @@ begin
 			exit(FS_FILE_NOTSUPPORTED);
 		end;
 	end;
-	FileSize := 0;
+	LocalFileSize := 0;
+	UploadedFileSize := 0;
 	Result := FS_FILE_WRITEERROR;
 	OperationResult := CLOUD_OPERATION_FAILED;
 	PutResult := TStringList.Create;
 	self.ExternalSourceName := PWideChar(localPath);
 	self.ExternalTargetName := PWideChar(remotePath);
 
+	if self.PrecalculateHash or self.CheckCRC then
+	begin
+		LocalFileHash := CloudHash(localPath);
+		LocalFileSize := SizeOfFile(localPath);
+	end;
 	if self.PrecalculateHash then {issue #135}
 	begin
-		FileHash := CloudHash(localPath);
-		FileSize := SizeOfFile(localPath);
-		if self.addFileToCloud(FileHash, FileSize, remotePath, JSONAnswer) then
+		if self.addFileToCloud(LocalFileHash, LocalFileSize, remotePath, JSONAnswer) then
 		begin
 			OperationResult := fromJSON_OperationResult(JSONAnswer, OperationStatus);
 			if OperationResult = CLOUD_OPERATION_OK then
@@ -1799,8 +1806,14 @@ begin
 	end;
 	if OperationResult = CLOUD_OPERATION_OK then
 	begin
-		FileHash := PutResult.Strings[0];
-		val(PutResult.Strings[1], FileSize, code); //Тут ошибка маловероятна
+		UploadedFileHash := PutResult.Strings[0];
+		val(PutResult.Strings[1], UploadedFileSize, code);
+		if self.CheckCRC then
+		begin
+			if (LocalFileSize <> UploadedFileSize) or (LocalFileHash <> UploadedFileHash) then {При включённой проверке CRC сравниваем хеши и размеры}
+				Result := CLOUD_OPERATION_FAILED;
+
+		end;
 	end else if OperationResult = CLOUD_OPERATION_CANCELLED then
 	begin
 		Result := FS_FILE_USERABORT;
@@ -1808,8 +1821,7 @@ begin
 	PutResult.free;
 	if OperationResult = CLOUD_OPERATION_OK then
 	begin
-		//Log( MSGTYPE_DETAILS, 'putFileToCloud result: ' + PutResult.Text);
-		if self.addFileToCloud(FileHash, FileSize, remotePath, JSONAnswer) then
+		if self.addFileToCloud(UploadedFileHash, UploadedFileSize, remotePath, JSONAnswer) then
 		begin
 			OperationResult := fromJSON_OperationResult(JSONAnswer, OperationStatus);
 			Result := CloudResultToFsResult(OperationResult, OperationStatus, 'File uploading error: ');
@@ -1959,16 +1971,17 @@ var
 	stream: TFileStream;
 	initBuffer, finalBuffer: TBytes;
 begin
-	FillChar(buffer, sizeof(buffer), 0);
+
 	stream := TFileStream.Create(Path, fmOpenRead);
 	if stream.size < 21 then
 	begin
-		stream.read(buffer, stream.size);
-		Result := TEncoding.ASCII.GetString(Bytes);
+		stream.read(initBuffer, stream.size);
+		Result := TEncoding.ASCII.GetString(initBuffer);
 		stream.free;
 		exit;
 	end;
 
+	FillChar(buffer, sizeof(buffer), 0);
 	initBuffer := TEncoding.UTF8.GetBytes('mrCloud');
 
 	sha1 := THashSHA1.Create;

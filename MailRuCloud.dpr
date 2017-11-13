@@ -1418,7 +1418,7 @@ begin
 		SetPluginSettingsValue(SettingsIniFilePath, 'ProxyTCPwdMngr', true);
 
 	CloudMaxFileSize := GetPluginSettings(SettingsIniFilePath).CloudMaxFileSize;
-	ConnectionManager := TConnectionManager.Create(AccountsIniFilePath, ProxySettings, GetPluginSettings(SettingsIniFilePath).SocketTimeout, CloudMaxFileSize, GetPluginSettings(SettingsIniFilePath).PrecalculateHash, @ProgressHandle, @LogHandle, @RequestHandle, PasswordManager);
+	ConnectionManager := TConnectionManager.Create(AccountsIniFilePath, ProxySettings, GetPluginSettings(SettingsIniFilePath).SocketTimeout, CloudMaxFileSize, GetPluginSettings(SettingsIniFilePath).PrecalculateHash, GetPluginSettings(SettingsIniFilePath).CheckCRC, @ProgressHandle, @LogHandle, @RequestHandle, PasswordManager);
 
 end;
 

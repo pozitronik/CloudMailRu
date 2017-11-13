@@ -22,6 +22,7 @@ type
 		Timeout: Integer;
 		CloudMaxFileSize: Integer;
 		PrecalculateHash: boolean;
+		CheckCRC: boolean;
 
 		ProgressHandleProc: TProgressHandler;
 		LogHandleProc: TLogHandler;
@@ -33,7 +34,7 @@ type
 		function new(connectionName: WideString): Integer; //Добавляет подключение в пул
 
 	public
-		constructor Create(IniFileName: WideString; ProxySettings: TProxySettings; Timeout, CloudMaxFileSize: Integer; PrecalculateHash: boolean; ProgressHandleProc: TProgressHandler; LogHandleProc: TLogHandler; RequestHandleProc: TRequestHandler; PasswordManager: TTCPasswordManager);
+		constructor Create(IniFileName: WideString; ProxySettings: TProxySettings; Timeout, CloudMaxFileSize: Integer; PrecalculateHash: boolean; CheckCRC: boolean; ProgressHandleProc: TProgressHandler; LogHandleProc: TLogHandler; RequestHandleProc: TRequestHandler; PasswordManager: TTCPasswordManager);
 		destructor Destroy(); override;
 		function get(connectionName: WideString; var OperationResult: Integer; doInit: boolean = true): TCloudMailRu; //возвращает готовое подклчение по имени
 		function set_(connectionName: WideString; cloud: TCloudMailRu): boolean;
@@ -47,7 +48,7 @@ type
 implementation
 
 {TConnectionManager}
-constructor TConnectionManager.Create(IniFileName: WideString; ProxySettings: TProxySettings; Timeout, CloudMaxFileSize: Integer; PrecalculateHash: boolean; ProgressHandleProc: TProgressHandler; LogHandleProc: TLogHandler; RequestHandleProc: TRequestHandler; PasswordManager: TTCPasswordManager);
+constructor TConnectionManager.Create(IniFileName: WideString; ProxySettings: TProxySettings; Timeout, CloudMaxFileSize: Integer; PrecalculateHash: boolean; CheckCRC: boolean; ProgressHandleProc: TProgressHandler; LogHandleProc: TLogHandler; RequestHandleProc: TRequestHandler; PasswordManager: TTCPasswordManager);
 begin
 	SetLength(Connections, 0);
 	self.IniFileName := IniFileName;
@@ -59,6 +60,7 @@ begin
 	self.Timeout := Timeout;
 	self.CloudMaxFileSize := CloudMaxFileSize;
 	self.PrecalculateHash := PrecalculateHash;
+	self.CheckCRC := CheckCRC;
 
 	self.PasswordManager := PasswordManager;
 end;
@@ -122,7 +124,7 @@ begin
 
 	LogHandleProc(LogLevelConnect, MSGTYPE_CONNECT, PWideChar('CONNECT \' + connectionName));
 
-	cloud := TCloudMailRu.Create(AccountSettings, self.CloudMaxFileSize, self.Proxy, Timeout, self.PrecalculateHash, ProgressHandleProc, LogHandleProc, RequestHandleProc);
+	cloud := TCloudMailRu.Create(AccountSettings, self.CloudMaxFileSize, self.Proxy, Timeout, self.PrecalculateHash, self.CheckCRC, ProgressHandleProc, LogHandleProc, RequestHandleProc);
 	if not set_(connectionName, cloud) then
 		exit(CLOUD_OPERATION_ERROR_STATUS_UNKNOWN); //INVALID_HANDLE_VALUE
 
