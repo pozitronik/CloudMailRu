@@ -303,7 +303,7 @@ object AccountsForm: TAccountsForm
           Top = 184
           Width = 256
           Height = 149
-          Caption = 'Encryption'
+          Caption = 'Encryption (UNDER HEAVY DEVELOPMENT)'
           TabOrder = 6
           object EncryptFilesLabel: TLabel
             Left = 7
