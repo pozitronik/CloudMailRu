@@ -966,9 +966,17 @@ begin
 
 	if Result = FS_FILE_OK then
 	begin
+		{Дополнительно проверим CRC скачанного файла}
+		Item := FindListingItemByPath(CurrentListing, RemotePath);
+
+		if GetPluginSettings(SettingsIniFilePath).CheckDownloadCRC then
+		begin
+			if Item.hash <> TCloudMailRu.CloudHash(ExpandUNCFileName(LocalName)) then
+				exit(FS_FILE_READERROR);
+		end;
+
 		if GetPluginSettings(SettingsIniFilePath).PreserveFileTime then
 		begin
-			Item := FindListingItemByPath(CurrentListing, RemotePath);
 			if Item.mtime <> 0 then
 				SetAllFileTime(ExpandUNCFileName(LocalName), DateTimeToFileTime(UnixToDateTime(Item.mtime)));
 		end;
@@ -1410,7 +1418,7 @@ begin
 		SetPluginSettingsValue(SettingsIniFilePath, 'ProxyTCPwdMngr', true);
 
 	CloudMaxFileSize := GetPluginSettings(SettingsIniFilePath).CloudMaxFileSize;
-	ConnectionManager := TConnectionManager.Create(AccountsIniFilePath, ProxySettings, GetPluginSettings(SettingsIniFilePath).SocketTimeout, CloudMaxFileSize, @ProgressHandle, @LogHandle, @RequestHandle, PasswordManager);
+	ConnectionManager := TConnectionManager.Create(AccountsIniFilePath, ProxySettings, GetPluginSettings(SettingsIniFilePath).SocketTimeout, CloudMaxFileSize, GetPluginSettings(SettingsIniFilePath).PrecalculateHash, @ProgressHandle, @LogHandle, @RequestHandle, PasswordManager);
 
 end;
 

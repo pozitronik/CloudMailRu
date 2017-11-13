@@ -158,7 +158,7 @@ object AccountsForm: TAccountsForm
     Top = 0
     Width = 491
     Height = 475
-    ActivePage = AccountsTab
+    ActivePage = GlobalTab
     Align = alClient
     TabOrder = 0
     object AccountsTab: TTabSheet
@@ -671,8 +671,16 @@ object AccountsForm: TAccountsForm
         Top = 370
         Width = 475
         Height = 17
-        Caption = 'Try to find files in cloud before uploading'
+        Caption = 'Try to find files by hash in cloud before uploading'
         TabOrder = 20
+      end
+      object CheckDownloadCRCCB: TCheckBox
+        Left = 5
+        Top = 393
+        Width = 474
+        Height = 17
+        Caption = 'Check downloads CRC'
+        TabOrder = 21
       end
     end
     object NetworkTab: TTabSheet
