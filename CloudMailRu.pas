@@ -1975,8 +1975,10 @@ begin
 	stream := TFileStream.Create(Path, fmOpenRead);
 	if stream.size < 21 then
 	begin
+		SetLength(initBuffer, 20);
 		stream.read(initBuffer, stream.size);
-		Result := TEncoding.ASCII.GetString(initBuffer);
+		Result := THash.DigestAsString(initBuffer);
+
 		stream.free;
 		exit;
 	end;
