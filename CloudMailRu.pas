@@ -95,7 +95,7 @@ type
 		Property ConnectTimeoutValue: integer read ConnectTimeout;
 		function getSharedFileUrl(remotePath: WideString; DoUrlEncode: Boolean = true): WideString;
 		{CONSTRUCTOR/DESTRUCTOR}
-		constructor Create(AccountSettings: TAccountSettings; split_file_size: integer; Proxy: TProxySettings; ConnectTimeout: integer; ExternalProgressProc: TProgressHandler = nil; ExternalLogProc: TLogHandler = nil; ExternalRequestProc: TRequestHandler = nil);
+		constructor Create(AccountSettings: TAccountSettings; split_file_size: integer; Proxy: TProxySettings; ConnectTimeout: integer; PrecalculateHash: Boolean = true; ExternalProgressProc: TProgressHandler = nil; ExternalLogProc: TLogHandler = nil; ExternalRequestProc: TRequestHandler = nil);
 		destructor Destroy; override;
 		{CLOUD INTERFACE METHODS}
 		function login(method: integer = CLOUD_AUTH_METHOD_WEB): Boolean;
@@ -253,7 +253,7 @@ begin //Облако умеет скопировать файл, но не см�
 	end;
 end;
 
-constructor TCloudMailRu.Create(AccountSettings: TAccountSettings; split_file_size: integer; Proxy: TProxySettings; ConnectTimeout: integer; ExternalProgressProc: TProgressHandler = nil; ExternalLogProc: TLogHandler = nil; ExternalRequestProc: TRequestHandler = nil);
+constructor TCloudMailRu.Create(AccountSettings: TAccountSettings; split_file_size: integer; Proxy: TProxySettings; ConnectTimeout: integer; PrecalculateHash: Boolean = true; ExternalProgressProc: TProgressHandler = nil; ExternalLogProc: TLogHandler = nil; ExternalRequestProc: TRequestHandler = nil);
 begin
 	try
 		self.ExternalProgressProc := ExternalProgressProc;
@@ -315,7 +315,7 @@ begin
 
 		self.split_file_size := split_file_size;
 		self.ConnectTimeout := ConnectTimeout;
-		self.PrecalculateHash := true; //todo
+		self.PrecalculateHash := PrecalculateHash;
 
 		self.ExternalSourceName := nil;
 		self.ExternalTargetName := nil;
@@ -755,6 +755,7 @@ begin
 
 	if not Result in [FS_FILE_OK] then
 		System.SysUtils.deleteFile(GetUNCFilePath(localPath));
+
 end;
 
 function TCloudMailRu.getSharedFileUrl(remotePath: WideString; DoUrlEncode: Boolean = true): WideString;
@@ -1971,7 +1972,7 @@ begin
 
 	finalBuffer := TEncoding.UTF8.GetBytes(stream.size.ToString);
 	sha1.Update(finalBuffer, length(finalBuffer));
-	Result := sha1.HashAsString;
+	Result := UpperCase(sha1.HashAsString);
 	sha1.Reset;
 	stream.free;
 end;
