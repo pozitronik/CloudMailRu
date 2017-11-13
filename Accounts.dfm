@@ -635,7 +635,7 @@ object AccountsForm: TAccountsForm
         TabOrder = 17
       end
       object AutoUpdateDownloadListingCB: TCheckBox
-        Left = 3
+        Left = 5
         Top = 347
         Width = 475
         Height = 17
@@ -665,6 +665,14 @@ object AccountsForm: TAccountsForm
         Height = 17
         Caption = 'Invites folders'
         TabOrder = 5
+      end
+      object PrecalculateHashCB: TCheckBox
+        Left = 5
+        Top = 370
+        Width = 475
+        Height = 17
+        Caption = 'Try to find files in cloud before uploading'
+        TabOrder = 20
       end
     end
     object NetworkTab: TTabSheet

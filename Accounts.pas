@@ -90,6 +90,7 @@ type
 		EncryptFilesCombo: TComboBox;
 		EncryptFilesLabel: TLabel;
 		EncryptFilesPwdButton: TButton;
+		PrecalculateHashCB: TCheckBox;
 		procedure FormShow(Sender: TObject);
 		procedure AccountsListClick(Sender: TObject);
 		procedure ApplyButtonClick(Sender: TObject);
@@ -258,6 +259,7 @@ begin
 	SetPluginSettingsValue(SettingsIniFilePath, 'ShowTrashFolders', ShowTrashFoldersCB.Checked);
 	SetPluginSettingsValue(SettingsIniFilePath, 'ShowSharedFolders', ShowSharedFoldersCB.Checked);
 	SetPluginSettingsValue(SettingsIniFilePath, 'ShowInvitesFolders', ShowInvitesFoldersCB.Checked);
+	SetPluginSettingsValue(SettingsIniFilePath, 'PrecalculateHash', PrecalculateHashCB.Checked);
 
 	if ProxyTCPwdMngrCB.Checked then //просим TC сохранить пароль
 	begin
@@ -416,6 +418,7 @@ begin
 		AccountsForm.ShowTrashFoldersCB.Checked := GetPluginSettings(SettingsIniFilePath).ShowTrashFolders;
 		AccountsForm.ShowSharedFoldersCB.Checked := GetPluginSettings(SettingsIniFilePath).ShowSharedFolders;
 		AccountsForm.ShowInvitesFoldersCB.Checked := GetPluginSettings(SettingsIniFilePath).ShowInvitesFolders;
+		AccountsForm.PrecalculateHashCB.Checked := GetPluginSettings(SettingsIniFilePath).PrecalculateHash;
 
 		{global settings}
 		if Account <> EmptyWideStr then
