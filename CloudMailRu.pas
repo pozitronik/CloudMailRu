@@ -2,7 +2,7 @@
 
 interface
 
-uses CMLJSON, CMLTypes, System.Classes, System.Generics.Collections, System.SysUtils, PLUGIN_Types, Winapi.Windows, IdStack, MRC_helper, Settings, IdCookieManager, IdIOHandler, IdIOHandlerSocket, IdIOHandlerStack, IdSSL, IdSSLOpenSSL, IdBaseComponent, IdComponent, IdTCPConnection, IdTCPClient, IdSocks, IdHTTP, IdAuthentication, IdIOHandlerStream, FileSplitter, IdCookie, IdMultipartFormData, Cipher;
+uses CMLJSON, CMLTypes, System.Hash, System.Classes, System.Generics.Collections, System.SysUtils, PLUGIN_Types, Winapi.Windows, IdStack, MRC_helper, Settings, IdCookieManager, IdIOHandler, IdIOHandlerSocket, IdIOHandlerStack, IdSSL, IdSSLOpenSSL, IdBaseComponent, IdComponent, IdTCPConnection, IdTCPClient, IdSocks, IdHTTP, IdAuthentication, IdIOHandlerStream, FileSplitter, IdCookie, IdMultipartFormData, Cipher;
 
 type
 	TCloudMailRu = class
@@ -73,7 +73,7 @@ type
 		function getShard(var Shard: WideString): Boolean;
 		function getUserSpace(var SpaceInfo: TCloudMailRuSpaceInfo): Boolean;
 		function putFileToCloud(localPath: WideString; Return: TStringList): integer;
-		function addFileToCloud(hash: WideString; size: int64; remotePath: WideString; var JSONAnswer: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT): Boolean;
+		function addFileToCloud(Hash: WideString; size: int64; remotePath: WideString; var JSONAnswer: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT): Boolean;
 		{OTHER ROUTINES}
 		procedure Log(LogLevel, MsgType: integer; LogString: WideString);
 		function CloudResultToFsResult(CloudResult: integer; OperationStatus: integer; ErrorPrefix: WideString = ''): integer;
@@ -132,13 +132,14 @@ type
 		class function CloudAccessToString(access: WideString; Invert: Boolean = false): WideString; static;
 		class function StringToCloudAccess(accessString: WideString; Invert: Boolean = false): integer; static;
 		class function ErrorCodeText(ErrorCode: integer): WideString; static;
+		class function CloudHash(Path: WideString): WideString;
 	end;
 
 implementation
 
 {TCloudMailRu}
 
-function TCloudMailRu.addFileToCloud(hash: WideString; size: int64; remotePath: WideString; var JSONAnswer: WideString; ConflictMode: WideString): Boolean;
+function TCloudMailRu.addFileToCloud(Hash: WideString; size: int64; remotePath: WideString; var JSONAnswer: WideString; ConflictMode: WideString): Boolean;
 var
 	FileName: WideString;
 begin
@@ -149,7 +150,7 @@ begin
 		FileName := FileCipher.CryptFileName(FileName);
 		remotePath := ChangePathFileName(remotePath, FileName);
 	end;
-	Result := self.HTTPPostForm(API_FILE_ADD, 'conflict=' + ConflictMode + '&home=/' + PathToUrl(remotePath) + '&hash=' + hash + '&size=' + size.ToString + self.united_params, JSONAnswer);
+	Result := self.HTTPPostForm(API_FILE_ADD, 'conflict=' + ConflictMode + '&home=/' + PathToUrl(remotePath) + '&hash=' + Hash + '&size=' + size.ToString + self.united_params, JSONAnswer);
 
 end;
 
@@ -1932,6 +1933,31 @@ begin
 		Result := CLOUD_SHARE_RO
 	else
 		Result := CLOUD_SHARE_RW;
+end;
+
+class function TCloudMailRu.CloudHash(Path: WideString): WideString;
+var
+	sha1: THashSHA1;
+	buffer: array [0 .. 8191] of byte;
+	read: LongInt;
+	stream: TFileStream;
+	initBuffer, finalBuffer: TBytes;
+begin
+	stream := TFileStream.Create(Path, fmOpenRead);
+	initBuffer := TEncoding.UTF8.GetBytes('mrCloud');
+
+	sha1 := THashSHA1.Create;
+	sha1.Update(initBuffer, length(initBuffer));
+	repeat
+		read := stream.read(buffer, Sizeof(buffer));
+		sha1.Update(buffer, read);
+	until read < Sizeof(buffer);
+
+	finalBuffer := TEncoding.UTF8.GetBytes(stream.size.ToString);
+	sha1.Update(finalBuffer, length(finalBuffer));
+	Result := sha1.HashAsString;
+
+	stream.free;
 end;
 
 end.
