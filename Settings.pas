@@ -112,6 +112,7 @@ type
 		ShowSharedFolders: boolean;
 		ShowInvitesFolders: boolean;
 		LogLevel: integer;
+		PrecalculateHash: boolean;
 	end;
 
 function GetPluginSettings(IniFilePath: WideString): TPluginSettings;
@@ -165,6 +166,7 @@ begin
 	GetPluginSettings.ShowSharedFolders := IniFile.ReadBool('Main', 'ShowSharedFolders', true);
 	GetPluginSettings.ShowInvitesFolders := IniFile.ReadBool('Main', 'ShowInvitesFolders', true);
 	GetPluginSettings.LogLevel := IniFile.ReadInteger('Main', 'LogLevel', LogLevelConnect + LogLevelFileOperation + LogLevelDetail + LogLevelWarning + LogLevelError);
+	GetPluginSettings.PrecalculateHash := IniFile.ReadBool('Main', 'PrecalculateHash', true);
 	IniFile.Destroy;
 end;
 
