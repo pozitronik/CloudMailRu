@@ -113,7 +113,7 @@ type
 		ShowInvitesFolders: boolean;
 		LogLevel: integer;
 		PrecalculateHash: boolean;
-		CheckDownloadCRC: boolean;
+		CheckCRC: boolean;
 	end;
 
 function GetPluginSettings(IniFilePath: WideString): TPluginSettings;
@@ -168,7 +168,7 @@ begin
 	GetPluginSettings.ShowInvitesFolders := IniFile.ReadBool('Main', 'ShowInvitesFolders', true);
 	GetPluginSettings.LogLevel := IniFile.ReadInteger('Main', 'LogLevel', LogLevelConnect + LogLevelFileOperation + LogLevelDetail + LogLevelWarning + LogLevelError);
 	GetPluginSettings.PrecalculateHash := IniFile.ReadBool('Main', 'PrecalculateHash', true);
-	GetPluginSettings.CheckDownloadCRC := IniFile.ReadBool('Main', 'CheckDownloadCRC', true);
+	GetPluginSettings.CheckCRC := IniFile.ReadBool('Main', 'CheckCRC', true);
 	IniFile.Destroy;
 end;
 

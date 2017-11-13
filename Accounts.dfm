@@ -674,12 +674,12 @@ object AccountsForm: TAccountsForm
         Caption = 'Try to find files by hash in cloud before uploading'
         TabOrder = 20
       end
-      object CheckDownloadCRCCB: TCheckBox
-        Left = 5
+      object CheckCRCCB: TCheckBox
+        Left = 6
         Top = 393
         Width = 474
         Height = 17
-        Caption = 'Check downloads CRC'
+        Caption = 'Check uploads\downloads CRC'
         TabOrder = 21
       end
     end

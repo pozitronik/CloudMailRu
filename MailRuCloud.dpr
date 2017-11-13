@@ -969,7 +969,7 @@ begin
 		{Дополнительно проверим CRC скачанного файла}
 		Item := FindListingItemByPath(CurrentListing, RemotePath);
 
-		if GetPluginSettings(SettingsIniFilePath).CheckDownloadCRC then
+		if GetPluginSettings(SettingsIniFilePath).CheckCRC then
 		begin
 			if Item.hash <> TCloudMailRu.CloudHash(ExpandUNCFileName(LocalName)) then
 				exit(FS_FILE_READERROR);

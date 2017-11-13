@@ -91,7 +91,7 @@ type
 		EncryptFilesLabel: TLabel;
 		EncryptFilesPwdButton: TButton;
 		PrecalculateHashCB: TCheckBox;
-		CheckDownloadCRCCB: TCheckBox;
+    CheckCRCCB: TCheckBox;
 		procedure FormShow(Sender: TObject);
 		procedure AccountsListClick(Sender: TObject);
 		procedure ApplyButtonClick(Sender: TObject);
@@ -261,7 +261,7 @@ begin
 	SetPluginSettingsValue(SettingsIniFilePath, 'ShowSharedFolders', ShowSharedFoldersCB.Checked);
 	SetPluginSettingsValue(SettingsIniFilePath, 'ShowInvitesFolders', ShowInvitesFoldersCB.Checked);
 	SetPluginSettingsValue(SettingsIniFilePath, 'PrecalculateHash', PrecalculateHashCB.Checked);
-	SetPluginSettingsValue(SettingsIniFilePath, 'CheckDownloadCRC', CheckDownloadCRCCB.Checked);
+	SetPluginSettingsValue(SettingsIniFilePath, 'CheckCRC', CheckCRCCB.Checked);
 
 	if ProxyTCPwdMngrCB.Checked then //просим TC сохранить пароль
 	begin
@@ -421,7 +421,7 @@ begin
 		AccountsForm.ShowSharedFoldersCB.Checked := GetPluginSettings(SettingsIniFilePath).ShowSharedFolders;
 		AccountsForm.ShowInvitesFoldersCB.Checked := GetPluginSettings(SettingsIniFilePath).ShowInvitesFolders;
 		AccountsForm.PrecalculateHashCB.Checked := GetPluginSettings(SettingsIniFilePath).PrecalculateHash;
-		AccountsForm.CheckDownloadCRCCB.Checked := GetPluginSettings(SettingsIniFilePath).CheckDownloadCRC;
+		AccountsForm.CheckCRCCB.Checked := GetPluginSettings(SettingsIniFilePath).CheckCRC;
 
 		{global settings}
 		if Account <> EmptyWideStr then
