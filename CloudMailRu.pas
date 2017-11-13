@@ -36,6 +36,7 @@ type
 		Shard: WideString;
 		Proxy: TProxySettings;
 		ConnectTimeout: integer;
+		PrecalculateHash: Boolean;
 
 		FileCipher: TFileCipher;
 
@@ -314,6 +315,7 @@ begin
 
 		self.split_file_size := split_file_size;
 		self.ConnectTimeout := ConnectTimeout;
+		self.PrecalculateHash := true; //todo
 
 		self.ExternalSourceName := nil;
 		self.ExternalTargetName := nil;
@@ -1767,6 +1769,19 @@ begin
 	PutResult := TStringList.Create;
 	self.ExternalSourceName := PWideChar(localPath);
 	self.ExternalTargetName := PWideChar(remotePath);
+
+	if self.PrecalculateHash then {issue #135}
+	begin
+		FileHash := CloudHash(localPath);
+		FileSize := SizeOfFile(localPath);
+		if self.addFileToCloud(FileHash, FileSize, remotePath, JSONAnswer) then
+		begin
+			OperationResult := fromJSON_OperationResult(JSONAnswer, OperationStatus);
+			if OperationResult = CLOUD_OPERATION_OK then
+				exit(CLOUD_OPERATION_OK);
+		end;
+	end;
+
 	try
 		OperationResult := self.putFileToCloud(localPath, PutResult);
 	Except
@@ -1945,18 +1960,19 @@ var
 begin
 	stream := TFileStream.Create(Path, fmOpenRead);
 	initBuffer := TEncoding.UTF8.GetBytes('mrCloud');
+	FillChar(buffer, sizeof(buffer), 0);
 
 	sha1 := THashSHA1.Create;
 	sha1.Update(initBuffer, length(initBuffer));
 	repeat
-		read := stream.read(buffer, Sizeof(buffer));
+		read := stream.read(buffer, sizeof(buffer));
 		sha1.Update(buffer, read);
-	until read < Sizeof(buffer);
+	until read < sizeof(buffer);
 
 	finalBuffer := TEncoding.UTF8.GetBytes(stream.size.ToString);
 	sha1.Update(finalBuffer, length(finalBuffer));
 	Result := sha1.HashAsString;
-
+	sha1.Reset;
 	stream.free;
 end;
 
