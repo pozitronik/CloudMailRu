@@ -1959,9 +1959,17 @@ var
 	stream: TFileStream;
 	initBuffer, finalBuffer: TBytes;
 begin
-	stream := TFileStream.Create(Path, fmOpenRead);
-	initBuffer := TEncoding.UTF8.GetBytes('mrCloud');
 	FillChar(buffer, sizeof(buffer), 0);
+	stream := TFileStream.Create(Path, fmOpenRead);
+	if stream.size < 21 then
+	begin
+		stream.read(buffer, stream.size);
+		Result := TEncoding.ASCII.GetString(Bytes);
+		stream.free;
+		exit;
+	end;
+
+	initBuffer := TEncoding.UTF8.GetBytes('mrCloud');
 
 	sha1 := THashSHA1.Create;
 	sha1.Update(initBuffer, length(initBuffer));
