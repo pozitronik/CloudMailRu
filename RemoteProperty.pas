@@ -106,7 +106,8 @@ begin
 	CurrentDescriptions := TDescription.Create(LocalPath, GetTCCommentPreferredFormat);
 	CurrentDescriptions.Read;
 	DescriptionEditMemo.lines.Text := CurrentDescriptions.GetValue(ExtractFileName(self.RemoteName), FORMAT_CLEAR);
-	CurrentDescriptions.Destroy; //todo: clear tmp file
+	CurrentDescriptions.Destroy;
+	DeleteFileW(PWideChar(LocalPath));
 end;
 
 procedure TPropertyForm.SaveItemDescription;
