@@ -1628,13 +1628,13 @@ begin
 			end;
 		FS_FILE_USERABORT:
 			begin
-				Log(LogLevelWarning, MSGTYPE_DETAILS, 'File splitting aborted by user, uploading aborted');
+				Log(LogLevelWarning, MSGTYPE_DETAILS, 'File splitting aborted by user, uploading aborted.');
 				Splitter.Destroy;
 				exit(FS_FILE_USERABORT);
 			end;
 		else
 			begin
-				Log(LogLevelWarning, MSGTYPE_IMPORTANTERROR, 'File splitting error, code: ' + SplitResult.ToString + ', ignored');
+				Log(LogLevelWarning, MSGTYPE_IMPORTANTERROR, 'File splitting error, code: ' + SplitResult.ToString + ', ignored.');
 				Splitter.Destroy;
 				exit(FS_FILE_NOTSUPPORTED);
 			end;
@@ -1648,7 +1648,7 @@ begin
 			case Result of
 				FS_FILE_USERABORT:
 					begin
-						Log(LogLevelDetail, MSGTYPE_DETAILS, 'Partial upload aborted');
+						Log(LogLevelDetail, MSGTYPE_DETAILS, 'Partial upload aborted.');
 						Splitter.Destroy;
 						exit(FS_FILE_USERABORT);
 					end;
@@ -1697,7 +1697,7 @@ begin
 	case Result of
 		FS_FILE_USERABORT:
 			begin
-				Log(LogLevelDetail, MSGTYPE_DETAILS, 'Partial upload aborted');
+				Log(LogLevelDetail, MSGTYPE_DETAILS, 'Partial upload aborted.');
 				Splitter.Destroy;
 				exit(FS_FILE_USERABORT);
 			end;
@@ -1763,7 +1763,7 @@ begin
 			Log(LogLevelDetail, MSGTYPE_DETAILS, 'File size > ' + self.split_file_size.ToString() + ' bytes, file will be splitted.');
 			exit(putFileSplit(localPath, remotePath, ConflictMode, ChunkOverwriteMode));
 		end else begin
-			Log(LogLevelWarning, MSGTYPE_IMPORTANTERROR, 'File size > ' + self.split_file_size.ToString() + ' bytes, ignored');
+			Log(LogLevelWarning, MSGTYPE_IMPORTANTERROR, 'File size > ' + self.split_file_size.ToString() + ' bytes, ignored.');
 			exit(FS_FILE_NOTSUPPORTED);
 		end;
 	end;
@@ -1786,7 +1786,10 @@ begin
 		begin
 			OperationResult := fromJSON_OperationResult(JSONAnswer, OperationStatus);
 			if OperationResult = CLOUD_OPERATION_OK then
+			begin
+				Log(LogLevelDetail, msgtype_details, 'File '+ localPath ' found by hash.');
 				exit(CLOUD_OPERATION_OK);
+			end;
 		end;
 	end;
 
@@ -1799,7 +1802,7 @@ begin
 			begin
 				Result := FS_FILE_USERABORT;
 			end else begin
-				Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'error: uploading to cloud: ' + E.ClassName + ' ошибка с сообщением: ' + E.Message);
+				Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'error: uploading to cloud: ' + E.ClassName + ' with message: ' + E.Message);
 				Result := FS_FILE_WRITEERROR;
 			end;
 		end;
