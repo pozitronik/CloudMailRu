@@ -671,7 +671,7 @@ object AccountsForm: TAccountsForm
         Top = 370
         Width = 475
         Height = 17
-        Caption = 'Try to find files by hash in cloud before uploading'
+        Caption = 'Try to find files by hash before uploading'
         TabOrder = 20
       end
       object CheckCRCCB: TCheckBox
@@ -679,7 +679,7 @@ object AccountsForm: TAccountsForm
         Top = 393
         Width = 474
         Height = 17
-        Caption = 'Check uploads\downloads CRC'
+        Caption = 'Check uploads/downloads CRC'
         TabOrder = 21
       end
     end
