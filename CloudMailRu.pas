@@ -50,10 +50,10 @@ type
 		function HTTPGetPage(URL: WideString; var Answer: WideString; var ProgressEnabled: Boolean): Boolean; //если ProgressEnabled - включаем обработчик onWork, возвращаем ProgressEnabled=false при отмене
 		function HTTPGetFile(URL: WideString; FileStream: TStream; LogErrors: Boolean = true): integer;
 
-		function HTTPPostForm(URL: WideString; PostDataString: WideString; var Answer: WideString; ContentType: WideString = 'application/x-www-form-urlencoded'): Boolean; //Постинг данных с возможным получением ответа.
+		function HTTPPostForm(URL: WideString; PostDataString: WideString; var Answer: WideString; ContentType: WideString = 'application/x-www-form-urlencoded'; LogErrors: Boolean = true): Boolean; //Постинг данных с возможным получением ответа.
 		function HTTPPostMultipart(URL: WideString; Params: TDictionary<WideString, WideString>; var Answer: WideString): Boolean;
 		function HTTPPostFile(URL: WideString; FileName: WideString; var Answer: WideString): integer; //Постинг файла и получение ответа
-		function HTTPPost(URL: WideString; PostData, ResultData: TStringStream; UnderstandResponseCode: Boolean = false; ContentType: WideString = ''): integer; overload; //Постинг подготовленных данных, отлов ошибок
+		function HTTPPost(URL: WideString; PostData, ResultData: TStringStream; UnderstandResponseCode: Boolean = false; ContentType: WideString = ''; LogErrors: Boolean = true): integer; overload; //Постинг подготовленных данных, отлов ошибок
 		function HTTPPost(URL: WideString; var PostData: TIdMultiPartFormDataStream; ResultData: TStringStream): integer; overload; //TIdMultiPartFormDataStream should be passed via var
 		function HTTPExceptionHandler(E: Exception; URL: WideString; HTTPMethod: integer = HTTP_METHOD_POST; LogErrors: Boolean = true): integer;
 
@@ -75,7 +75,7 @@ type
 		function getShard(var Shard: WideString): Boolean;
 		function getUserSpace(var SpaceInfo: TCloudMailRuSpaceInfo): Boolean;
 		function putFileToCloud(localPath: WideString; Return: TStringList): integer;
-		function addFileToCloud(Hash: WideString; size: int64; remotePath: WideString; var JSONAnswer: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT): Boolean;
+		function addFileToCloud(Hash: WideString; size: int64; remotePath: WideString; var JSONAnswer: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; LogErrors: Boolean = true): Boolean; //LogErrors=false => не логируем результат операции, нужно для поиска данных в облаке по хешу
 		{OTHER ROUTINES}
 		procedure Log(LogLevel, MsgType: integer; LogString: WideString);
 		function CloudResultToFsResult(CloudResult: integer; OperationStatus: integer; ErrorPrefix: WideString = ''): integer;
@@ -141,7 +141,7 @@ implementation
 
 {TCloudMailRu}
 
-function TCloudMailRu.addFileToCloud(Hash: WideString; size: int64; remotePath: WideString; var JSONAnswer: WideString; ConflictMode: WideString): Boolean;
+function TCloudMailRu.addFileToCloud(Hash: WideString; size: int64; remotePath: WideString; var JSONAnswer: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; LogErrors: Boolean = true): Boolean;
 var
 	FileName: WideString;
 begin
@@ -152,7 +152,7 @@ begin
 		FileName := FileCipher.CryptFileName(FileName);
 		remotePath := ChangePathFileName(remotePath, FileName);
 	end;
-	Result := self.HTTPPostForm(API_FILE_ADD, 'conflict=' + ConflictMode + '&home=/' + PathToUrl(remotePath) + '&hash=' + Hash + '&size=' + size.ToString + self.united_params, JSONAnswer);
+	Result := self.HTTPPostForm(API_FILE_ADD, 'conflict=' + ConflictMode + '&home=/' + PathToUrl(remotePath) + '&hash=' + Hash + '&size=' + size.ToString + self.united_params, JSONAnswer, 'application/x-www-form-urlencoded', LogErrors);
 
 end;
 
@@ -1010,7 +1010,7 @@ begin
 	end;
 end;
 
-function TCloudMailRu.HTTPPostForm(URL: WideString; PostDataString: WideString; var Answer: WideString; ContentType: WideString): Boolean;
+function TCloudMailRu.HTTPPostForm(URL: WideString; PostDataString: WideString; var Answer: WideString; ContentType: WideString = 'application/x-www-form-urlencoded'; LogErrors: Boolean = true): Boolean;
 var
 	ResultStream, PostData: TStringStream;
 	PostResult: integer;
@@ -1018,7 +1018,7 @@ begin
 	ResultStream := TStringStream.Create;
 	PostData := TStringStream.Create(PostDataString, TEncoding.UTF8);
 
-	PostResult := self.HTTPPost(URL, PostData, ResultStream, true, ContentType);
+	PostResult := self.HTTPPost(URL, PostData, ResultStream, true, ContentType, LogErrors);
 	Result := PostResult = CLOUD_OPERATION_OK;
 	Answer := ResultStream.DataString;
 
@@ -1079,7 +1079,7 @@ begin
 
 end;
 
-function TCloudMailRu.HTTPPost(URL: WideString; PostData, ResultData: TStringStream; UnderstandResponseCode: Boolean = false; ContentType: WideString = ''): integer;
+function TCloudMailRu.HTTPPost(URL: WideString; PostData, ResultData: TStringStream; UnderstandResponseCode: Boolean = false; ContentType: WideString = ''; LogErrors: Boolean = true): integer;
 var
 	HTTP: TIdHTTP;
 	SSL: TIdSSLIOHandlerSocketOpenSSL;
@@ -1097,7 +1097,7 @@ begin
 	except
 		on E: Exception do
 		begin
-			Result := self.HTTPExceptionHandler(E, URL);
+			Result := self.HTTPExceptionHandler(E, URL, HTTP_METHOD_POST, LogErrors);
 			if UnderstandResponseCode and (E is EIdHTTPProtocolException) then
 			begin
 				case HTTP.ResponseCode of
@@ -1782,7 +1782,7 @@ begin
 	end;
 	if self.PrecalculateHash then {issue #135}
 	begin
-		if self.addFileToCloud(LocalFileHash, LocalFileSize, remotePath, JSONAnswer) then
+		if self.addFileToCloud(LocalFileHash, LocalFileSize, remotePath, JSONAnswer, CLOUD_CONFLICT_STRICT, false) then
 		begin
 			OperationResult := fromJSON_OperationResult(JSONAnswer, OperationStatus);
 			if OperationResult = CLOUD_OPERATION_OK then
