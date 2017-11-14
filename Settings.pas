@@ -232,7 +232,7 @@ begin
 	IniFile.Destroy;
 end;
 
-function SetAccountSettingsToIniFile(AccountSettings: TAccountSettings; IniFilePath: WideString = ''): boolean; //todo: проверить все вызовы, там, где второй параметр уже не нужен - прибить
+function SetAccountSettingsToIniFile(AccountSettings: TAccountSettings; IniFilePath: WideString = ''): boolean;
 var
 	IniFile: TIniFile;
 begin
