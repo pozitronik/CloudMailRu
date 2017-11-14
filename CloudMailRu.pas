@@ -1787,7 +1787,7 @@ begin
 			OperationResult := fromJSON_OperationResult(JSONAnswer, OperationStatus);
 			if OperationResult = CLOUD_OPERATION_OK then
 			begin
-				Log(LogLevelDetail, msgtype_details, 'File '+ localPath ' found by hash.');
+				Log(LogLevelDetail, MSGTYPE_DETAILS, 'File ' + localPath + ' found by hash.');
 				exit(CLOUD_OPERATION_OK);
 			end;
 		end;
