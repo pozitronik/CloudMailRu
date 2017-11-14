@@ -91,7 +91,7 @@ type
 		EncryptFilesLabel: TLabel;
 		EncryptFilesPwdButton: TButton;
 		PrecalculateHashCB: TCheckBox;
-    CheckCRCCB: TCheckBox;
+		CheckCRCCB: TCheckBox;
 		procedure FormShow(Sender: TObject);
 		procedure AccountsListClick(Sender: TObject);
 		procedure ApplyButtonClick(Sender: TObject);
