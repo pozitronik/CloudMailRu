@@ -2,7 +2,35 @@
 
 interface
 
-uses CMLJSON, CMLTypes, System.Hash, System.Classes, System.Generics.Collections, System.SysUtils, PLUGIN_Types, Winapi.Windows, IdStack, MRC_helper, Settings, IdCookieManager, IdIOHandler, IdIOHandlerSocket, IdIOHandlerStack, IdSSL, IdSSLOpenSSL, IdBaseComponent, IdComponent, IdTCPConnection, IdTCPClient, IdSocks, IdHTTP, IdAuthentication, IdIOHandlerStream, FileSplitter, IdCookie, IdMultipartFormData, Cipher;
+uses CMLJSON,
+	CMLTypes,
+	System.Hash,
+	System.Classes,
+	System.Generics.Collections,
+	System.SysUtils,
+	PLUGIN_Types,
+	Winapi.Windows,
+	IdStack,
+	MRC_helper,
+	Settings,
+	IdCookieManager,
+	IdIOHandler,
+	IdIOHandlerSocket,
+	IdIOHandlerStack,
+	IdSSL,
+	IdSSLOpenSSL,
+	IdBaseComponent,
+	IdComponent,
+	IdTCPConnection,
+	IdTCPClient,
+	IdSocks,
+	IdHTTP,
+	IdAuthentication,
+	IdIOHandlerStream,
+	FileSplitter,
+	IdCookie,
+	IdMultipartFormData,
+	Cipher;
 
 type
 	TCloudMailRu = class
@@ -708,13 +736,8 @@ begin
 	if self.Shard = EmptyWideStr then
 	begin
 		Log(LogLevelDetail, MSGTYPE_DETAILS, 'Current shard is undefined, trying to get one');
-		if self.getShard(self.Shard) then
-		begin
-			Log(LogLevelDetail, MSGTYPE_DETAILS, 'Current shard: ' + self.Shard);
-		end else begin //А вот теперь это критическая ошибка, тут уже не получится копировать
-			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Sorry, downloading impossible');
+		if not self.getShard(self.Shard) then
 			exit;
-		end;
 	end;
 	if self.crypt_filenames then
 	begin
@@ -824,7 +847,10 @@ begin
 		OperationResult := fromJSON_OperationResult(JSON, OperationStatus);
 		case OperationResult of
 			CLOUD_OPERATION_OK:
-				Result := fromJSON_Shard(JSON, Shard) and (Shard <> EmptyWideStr);
+				begin
+					Result := fromJSON_Shard(JSON, Shard) and (Shard <> EmptyWideStr);
+					Log(LogLevelDetail, MSGTYPE_DETAILS, 'Shard received: ' + Shard);
+				end
 			else
 				begin
 					Result := false;
@@ -996,8 +1022,10 @@ begin
 		HTTP.Get(URL, FileStream);
 		if (HTTP.RedirectCount = HTTP.RedirectMaximum) and (FileStream.size = 0) then
 		begin
-			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Достигнуто максимальное количество перенаправлений при запросе файла с адреса ' + URL);
 			Result := FS_FILE_READERROR;
+			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Redirection limit reached when trying to download ' + URL);
+			if (ExternalRequestProc(RT_MsgYesNo, 'Redirection limit', 'Try with another shard?', '', 0)) and (self.getShard(self.Shard)) then
+				Result := self.HTTPGetFile(URL, FileStream, LogErrors);
 		end;
 		self.HTTPDestroy(HTTP, SSL);
 	except
