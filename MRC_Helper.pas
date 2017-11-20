@@ -29,6 +29,7 @@ type
 	TRealPath = record
 		account: WideString;
 		path: WideString;
+		isDir: boolean; //is directory
 		upDirItem: boolean; //path/../
 		trashDir: boolean; //item is inside trash bin dir
 		sharedDir: boolean; //item is inside shared links dir
@@ -178,6 +179,7 @@ var
 begin
 	Result.account := EmptyWideStr;
 	Result.path := EmptyWideStr;
+	Result.isDir := False;
 	Result.upDirItem := False;
 	Result.trashDir := False;
 	Result.sharedDir := False;
@@ -192,6 +194,9 @@ begin
 
 	if (List.Count > 0) and (List.Strings[List.Count - 1] = '..') then
 		Result.upDirItem := true;
+
+	if (List.Count > 0) and (List.Strings[List.Count - 1] = '\') then
+		Result.isDir := true;
 
 	if List.Count = 1 then
 	begin
