@@ -119,7 +119,7 @@ begin
 	Result := CIPHER_OK;
 	self.CiphersInit();
 	try
-		SourceStream := TFileStream.Create(SourceFileName, fmOpenRead);
+		SourceStream := TFileStream.Create(SourceFileName, fmOpenRead or fmShareDenyWrite);
 		DestinationStream := TFileStream.Create(DestinationFilename, fmCreate);
 		if SourceStream.Size > 0 then
 			self.CryptStream(SourceStream, DestinationStream);
@@ -169,7 +169,7 @@ begin
 	self.CiphersInit();
 	Result := CIPHER_OK;
 	try
-		SourceStream := TFileStream.Create(SourceFileName, fmOpenRead);
+		SourceStream := TFileStream.Create(SourceFileName, fmOpenRead or fmShareDenyWrite);
 		DestinationStream := TFileStream.Create(DestinationFilename, fmCreate);
 		if SourceStream.Size > 0 then
 			self.DecryptStream(SourceStream, DestinationStream);
