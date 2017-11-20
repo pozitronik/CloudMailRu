@@ -981,7 +981,11 @@ begin
 				SetAllFileTime(ExpandUNCFileName(LocalName), DateTimeToFileTime(UnixToDateTime(Item.mtime)));
 		end;
 		if CheckFlag(FS_COPYFLAGS_MOVE, CopyFlags) then
+		begin
 			Cloud.deleteFile(RemotePath.path);
+			if (GetPluginSettings(SettingsIniFilePath).DescriptionTrackCloudFS and RemoteDescriptionsSupportEnabled(GetAccountSettingsFromIniFile(AccountsIniFilePath, RemotePath.account))) then
+				DeleteRemoteFileDescription(RemotePath, Cloud);
+		end;
 		MyProgressProc(PluginNum, PWideChar(LocalName), PWideChar(RemoteName), 100);
 		LogHandle(LogLevelFileOperation, MSGTYPE_TRANSFERCOMPLETE, PWideChar(RemoteName + '->' + LocalName));
 
