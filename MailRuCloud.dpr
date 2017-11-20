@@ -889,7 +889,7 @@ begin
 	OldItem := ExtractFileName(OldRemotePath.path);
 	NewItem := ExtractFileName(NewRemotePath.path);
 	OldRemoteIonPath := IncludeTrailingBackslash(ExtractFileDir(OldRemotePath.path)) + GetDescriptionFileName(SettingsIniFilePath);
-	NewRemoteIonPath := IncludeTrailingBackslash(ExtractFileDir(OldRemotePath.path)) + GetDescriptionFileName(SettingsIniFilePath);
+	NewRemoteIonPath := IncludeTrailingBackslash(ExtractFileDir(NewRemotePath.path)) + GetDescriptionFileName(SettingsIniFilePath);
 	OldLocalTempPath := GetTmpFileName('ion');
 	NewLocalTempPath := GetTmpFileName('ion');
 
