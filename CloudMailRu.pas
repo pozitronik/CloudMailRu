@@ -2003,7 +2003,7 @@ var
 	initBuffer, finalBuffer: TBytes;
 begin
 
-	stream := TFileStream.Create(Path, fmOpenRead);
+	stream := TFileStream.Create(Path, fmOpenRead or fmShareDenyWrite);
 	if stream.size < 21 then
 	begin
 		SetLength(initBuffer, 20);
