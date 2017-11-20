@@ -131,7 +131,7 @@ var
 	CRCValue: DWord;
 	inbuffer: array [1 .. 32768] of Byte;
 	ReadBytes: Integer;
-begin
+begin //todo: change to TFileStream (just for code sameness
 	AssignFile(inFile, filename);
 	FileMode := fmOpenRead or fmShareDenyWrite;
 	Reset(inFile, 1);
