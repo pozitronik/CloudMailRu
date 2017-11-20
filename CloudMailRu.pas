@@ -2,35 +2,7 @@
 
 interface
 
-uses CMLJSON,
-	CMLTypes,
-	System.Hash,
-	System.Classes,
-	System.Generics.Collections,
-	System.SysUtils,
-	PLUGIN_Types,
-	Winapi.Windows,
-	IdStack,
-	MRC_helper,
-	Settings,
-	IdCookieManager,
-	IdIOHandler,
-	IdIOHandlerSocket,
-	IdIOHandlerStack,
-	IdSSL,
-	IdSSLOpenSSL,
-	IdBaseComponent,
-	IdComponent,
-	IdTCPConnection,
-	IdTCPClient,
-	IdSocks,
-	IdHTTP,
-	IdAuthentication,
-	IdIOHandlerStream,
-	FileSplitter,
-	IdCookie,
-	IdMultipartFormData,
-	Cipher;
+uses CMLJSON, CMLTypes, System.Hash, System.Classes, System.Generics.Collections, System.SysUtils, PLUGIN_Types, Winapi.Windows, IdStack, MRC_helper, Settings, IdCookieManager, IdIOHandler, IdIOHandlerSocket, IdIOHandlerStack, IdSSL, IdSSLOpenSSL, IdBaseComponent, IdComponent, IdTCPConnection, IdTCPClient, IdSocks, IdHTTP, IdAuthentication, IdIOHandlerStream, FileSplitter, IdCookie, IdMultipartFormData, Cipher;
 
 type
 	TCloudMailRu = class
