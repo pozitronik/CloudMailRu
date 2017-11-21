@@ -254,7 +254,7 @@ begin
 	IniFile.WriteString(AccountSettings.name, 'description', AccountSettings.description);
 	IniFile.WriteInteger(AccountSettings.name, 'encrypt_files_mode', AccountSettings.encrypt_files_mode);
 	IniFile.WriteBool(AccountSettings.name, 'encrypt_filenames', AccountSettings.encrypt_filenames);
-	IniFile.WriteString(AccountSettings.shard_override, 'shard_override', AccountSettings.public_url);
+//	IniFile.WriteString(AccountSettings.name, 'shard_override', AccountSettings.public_url);
 	IniFile.Destroy;
 end;
 
