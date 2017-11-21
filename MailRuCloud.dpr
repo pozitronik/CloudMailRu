@@ -28,6 +28,7 @@ var
 	GlobalPath, PluginPath, AppDataDir, IniDir: WideString;
 	AccountsList: TStringList; //Global accounts list
 	FileCounter: integer = 0;
+	CurrentlyMovedDir: TRealPath;
 	ThreadSkipListDelete: TDictionary<DWORD, Bool>; //Массив id потоков, для которых операции получения листинга должны быть пропущены (при удалении)
 	ThreadSkipListRenMov: TDictionary<DWORD, Bool>; //Массив id потоков, для которых операции получения листинга должны быть пропущены (при копировании/перемещении)
 	ThreadCanAbortRenMov: TDictionary<DWORD, Bool>; //Массив id потоков, для которых в операциях получения листинга должен быть выведен дополнительный диалог прогресса с возможностью отмены операции (fix issue #113)
@@ -40,18 +41,18 @@ var
 	ThreadBackgroundThreads: TDictionary<DWORD, Int32>; //массив [id потока => статус операции] для хранения текущих фоновых потоков (предохраняемся от завершения работы плагина при закрытии TC)
 	ThreadFsStatusInfo: TDictionary<DWORD, Int32>; //массив [id потока => текущая операция] для хранения контекста выполняемой операции (применяем для отлова перемещений каталогов)
 
-	PasswordManager: TTCPasswordManager;
-
 	{Callback data}
 	PluginNum: integer;
 	MyProgressProc: TProgressProcW;
 	MyLogProc: TLogProcW;
 	MyRequestProc: TRequestProcW;
+	{Global stuff}
 	CurrentListing: TCloudMailRuDirListing;
 	CurrentIncomingInvitesListing: TCloudMailRuIncomingInviteInfoListing;
 	ConnectionManager: TConnectionManager;
 	CurrentDescriptions: TDescription;
 	ProxySettings: TProxySettings;
+	PasswordManager: TTCPasswordManager;
 
 procedure LogHandle(LogLevel, MsgType: integer; LogString: PWideChar); stdcall;
 begin
@@ -859,7 +860,7 @@ begin
 	LocalIonPath := IncludeTrailingBackslash(ExtractFileDir(LocalFilePath)) + GetDescriptionFileName(SettingsIniFilePath);
 	LocalTempPath := GetTmpFileName('ion');
 
-	if not FileExists(LocalIonPath) then
+	if (not FileExists(LocalIonPath)) then
 		exit; //Файла описаний нет, не паримся
 
 	LocalDescriptions := TDescription.Create(LocalIonPath, GetTCCommentPreferredFormat);
@@ -1201,6 +1202,7 @@ var
 	RealPath: TRealPath;
 	getResult: integer;
 	SkipListRenMov: Bool;
+	OperationContextId: integer;
 begin
 	ThreadSkipListRenMov.TryGetValue(GetCurrentThreadID(), SkipListRenMov);
 	if SkipListRenMov then
@@ -1210,6 +1212,15 @@ begin
 	if (RealPath.account = '') or RealPath.trashDir or RealPath.sharedDir or RealPath.invitesDir then
 		exit(false);
 	Result := ConnectionManager.get(RealPath.account, getResult).createDir(RealPath.path);
+
+	if Result then //need to check operation context => directory can be moved
+	begin
+		ThreadFsStatusInfo.TryGetValue(GetCurrentThreadID, OperationContextId);
+		if OperationContextId = FS_STATUS_OP_RENMOV_MULTI then
+			CurrentlyMovedDir := RealPath;
+
+	end;
+
 end;
 
 function FsRemoveDirW(RemoteName: PWideChar): Bool; stdcall;
@@ -1218,6 +1229,7 @@ var
 	getResult: integer;
 	ListingAborted: Bool;
 	Cloud: TCloudMailRu;
+	OperationContextId: integer;
 begin
 	ThreadListingAborted.TryGetValue(GetCurrentThreadID(), ListingAborted);
 	if ListingAborted then
@@ -1230,6 +1242,13 @@ begin
 		exit(false);
 	Cloud := ConnectionManager.get(RealPath.account, getResult);
 	Result := Cloud.removeDir(RealPath.path);
+
+	if Result then //need to check operation context => directory can be moved
+	begin
+		ThreadFsStatusInfo.TryGetValue(GetCurrentThreadID, OperationContextId);
+		if OperationContextId = FS_STATUS_OP_RENMOV_MULTI then
+			RenameRemoteFileDescription(RealPath, CurrentlyMovedDir, Cloud);
+	end;
 
 	if (Result and GetPluginSettings(SettingsIniFilePath).DescriptionTrackCloudFS and RemoteDescriptionsSupportEnabled(GetAccountSettingsFromIniFile(AccountsIniFilePath, RealPath.account))) then
 		DeleteRemoteFileDescription(RealPath, Cloud);
@@ -1772,6 +1791,7 @@ begin
 	ThreadListingAborted := TDictionary<DWORD, Bool>.Create;
 	ThreadBackgroundJobs := TDictionary<WideString, Int32>.Create;
 	ThreadBackgroundThreads := TDictionary<DWORD, Int32>.Create;
+	ThreadFsStatusInfo := TDictionary<DWORD, Int32>.Create;
 
 end;
 
@@ -1785,7 +1805,9 @@ begin
 	FreeAndNil(ThreadCanAbortRenMov);
 	FreeAndNil(ThreadListingAborted);
 	FreeAndNil(ThreadBackgroundJobs);
+	FreeAndNil(ThreadFsStatusInfo);
 	FreeAndNil(ConnectionManager);
+
 	FreeAndNil(AccountsList); //уже сделано, но не страшно, к тому же в будущем может не разрушаться ранее
 	CurrentDescriptions.free;
 
