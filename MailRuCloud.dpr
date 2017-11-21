@@ -1243,15 +1243,17 @@ begin
 	Cloud := ConnectionManager.get(RealPath.account, getResult);
 	Result := Cloud.removeDir(RealPath.path);
 
-	if Result then //need to check operation context => directory can be moved
+	if (Result and GetPluginSettings(SettingsIniFilePath).DescriptionTrackCloudFS and RemoteDescriptionsSupportEnabled(GetAccountSettingsFromIniFile(AccountsIniFilePath, RealPath.account))) then
 	begin
-		ThreadFsStatusInfo.TryGetValue(GetCurrentThreadID, OperationContextId);
+		ThreadFsStatusInfo.TryGetValue(GetCurrentThreadID, OperationContextId); //need to check operation context => directory can be deleted after moving operation
 		if OperationContextId = FS_STATUS_OP_RENMOV_MULTI then
+		begin
 			RenameRemoteFileDescription(RealPath, CurrentlyMovedDir, Cloud);
+		end
+		else
+			DeleteRemoteFileDescription(RealPath, Cloud);
 	end;
 
-	if (Result and GetPluginSettings(SettingsIniFilePath).DescriptionTrackCloudFS and RemoteDescriptionsSupportEnabled(GetAccountSettingsFromIniFile(AccountsIniFilePath, RealPath.account))) then
-		DeleteRemoteFileDescription(RealPath, Cloud);
 end;
 
 function cloneWeblink(NewCloud, OldCloud: TCloudMailRu; CloudPath: WideString; CurrentItem: TCloudMailRuDirListingItem; NeedUnpublish: boolean): integer;
