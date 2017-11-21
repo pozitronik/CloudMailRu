@@ -38,6 +38,7 @@ var
 	ThreadRetryCountRenMov: TDictionary<DWORD, Int32>; //массив [id потока => количество попыток] для подсчёта количества повторов межсерверных операций с файлом
 	ThreadBackgroundJobs: TDictionary<WideString, Int32>; //массив [account root => количество потоков] для хранения количества текущих фоновых задач (предохраняемся от удаления объектов, которые могут быть использованы потоками)
 	ThreadBackgroundThreads: TDictionary<DWORD, Int32>; //массив [id потока => статус операции] для хранения текущих фоновых потоков (предохраняемся от завершения работы плагина при закрытии TC)
+	ThreadFsStatusInfo: TDictionary<DWORD, Int32>; //массив [id потока => текущая операция] для хранения контекста выполняемой операции (применяем для отлова перемещений каталогов)
 
 	PasswordManager: TTCPasswordManager;
 
@@ -289,6 +290,7 @@ begin
 	RealPath := ExtractRealPath(RemoteDir);
 	if (InfoStartEnd = FS_STATUS_START) then
 	begin //todo: save operation info into thread-related dictionary, so we can determine it later
+		ThreadFsStatusInfo.AddOrSetValue(GetCurrentThreadID(), InfoOperation);
 		case InfoOperation of
 			FS_STATUS_OP_LIST:
 				begin
@@ -387,6 +389,7 @@ begin
 	end;
 	if (InfoStartEnd = FS_STATUS_END) then
 	begin
+		ThreadFsStatusInfo.Remove(GetCurrentThreadID);
 		case InfoOperation of
 			FS_STATUS_OP_LIST:
 				begin
