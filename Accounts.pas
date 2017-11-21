@@ -206,7 +206,7 @@ begin
 		end;
 	end;
 
-	SetAccountSettingsToIniFile(CASettings);
+	SetAccountSettingsToIniFile(CASettings, IniPath);
 
 	UpdateAccountsList();
 
