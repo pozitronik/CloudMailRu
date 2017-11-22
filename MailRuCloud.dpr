@@ -1397,35 +1397,6 @@ begin
 		ConnectionManager.free(ExtractFileName(DisconnectRoot));
 		Result := true;
 	end else begin //здесь можно добавить механизм ожидания завершения фоновой операции
-		{while ThreadBackgroundThreads.Count > 0 do
-		 begin
-		 for ThreadId in ThreadBackgroundThreads.Keys do
-
-		 case WaitForSingleObject(ThreadId, INFINITE) of
-		 WAIT_ABANDONED:
-		 begin
-		 Result := false;
-		 end;
-		 WAIT_FAILED:
-		 begin
-		 Result := false;
-		 RaiseLastOSError;
-		 end;
-		 WAIT_TIMEOUT:
-		 begin
-		 Result := false;
-		 end;
-		 WAIT_OBJECT_0:
-		 begin
-		 Result := false;
-		 end;
-		 WAIT_IO_COMPLETION:
-		 begin
-		 Result := false;
-		 end;
-
-		 end;
-		 end;}
 		Result := false;
 	end;
 
