@@ -1789,11 +1789,6 @@ begin
 end;
 
 procedure DllInit(Code: integer);
-var
-	Item: TPair<DWORD, Int32>;
-	ItemCount: integer;
-	ThreadsHandles: TWOHandleArray;
-
 begin
 	case Code of
 		DLL_PROCESS_ATTACH:
