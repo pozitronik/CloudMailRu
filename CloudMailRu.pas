@@ -750,9 +750,8 @@ begin
 	self.ExternalSourceName := nil;
 	self.ExternalTargetName := nil;
 
-	if not Result in [FS_FILE_OK] then
+	if not (Result in [FS_FILE_OK]) then
 		System.SysUtils.deleteFile(GetUNCFilePath(localPath));
-
 end;
 
 function TCloudMailRu.getSharedFileUrl(remotePath: WideString; DoUrlEncode: Boolean = true): WideString;
