@@ -383,7 +383,7 @@ begin
 			PropertyForm.DescriptionTS.Caption := 'Description from ' + PluginIonFileName;
 
 		RegisterHotKey(PropertyForm.Handle, 1, 0, VK_ESCAPE);
-		RegisterHotKey(PropertyForm.Handle, 1, 0, VK_F2);
+		RegisterHotKey(PropertyForm.Handle, 2, 0, VK_F2);
 		result := PropertyForm.Showmodal;
 
 	finally
