@@ -750,7 +750,7 @@ begin
 	self.ExternalSourceName := nil;
 	self.ExternalTargetName := nil;
 
-	if not (Result in [FS_FILE_OK]) then
+	if not(Result in [FS_FILE_OK]) then
 		System.SysUtils.deleteFile(GetUNCFilePath(localPath));
 end;
 
@@ -1779,7 +1779,7 @@ begin
 		LocalFileHash := CloudHash(localPath);
 		LocalFileSize := SizeOfFile(localPath);
 	end;
-	if self.PrecalculateHash then {issue #135}
+	if self.PrecalculateHash and (LocalFileHash <> EmptyWideStr) then {issue #135}
 	begin
 		if self.addFileToCloud(LocalFileHash, LocalFileSize, remotePath, JSONAnswer, CLOUD_CONFLICT_STRICT, false) then
 		begin
@@ -1973,8 +1973,14 @@ var
 	stream: TFileStream;
 	initBuffer, finalBuffer: TBytes;
 begin
-
-	stream := TFileStream.Create(Path, fmOpenRead or fmShareDenyWrite);
+	Result := EmptyWideStr;
+	if not FileExists(Path) then
+	exit;
+	try
+		stream := TFileStream.Create(Path, fmOpenRead or fmShareDenyWrite);
+	except
+		exit;
+	end;
 	if stream.size < 21 then
 	begin
 		SetLength(initBuffer, 20);
@@ -2000,6 +2006,7 @@ begin
 	Result := UpperCase(sha1.HashAsString);
 	sha1.Reset;
 	stream.free;
+
 end;
 
 end.
