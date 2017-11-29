@@ -133,8 +133,6 @@ begin
 	else
 		LoginMethod := CLOUD_AUTH_METHOD_TWO_STEP;
 
-	LoginMethod := CLOUD_AUTH_METHOD_OAUTH;
-
 	if not(get(connectionName, result, false).login(LoginMethod)) then
 	begin
 		result := CLOUD_OPERATION_FAILED;
