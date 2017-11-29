@@ -129,9 +129,9 @@ begin
 		exit(CLOUD_OPERATION_ERROR_STATUS_UNKNOWN); //INVALID_HANDLE_VALUE
 
 	if (AccountSettings.twostep_auth) then
-		LoginMethod := CLOUD_AUTH_METHOD_WEB
+		LoginMethod := CLOUD_AUTH_METHOD_TWO_STEP
 	else
-		LoginMethod := CLOUD_AUTH_METHOD_TWO_STEP;
+		LoginMethod := CLOUD_AUTH_METHOD_WEB;
 
 	if not(get(connectionName, result, false).login(LoginMethod)) then
 	begin
