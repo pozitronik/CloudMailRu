@@ -176,6 +176,7 @@ end;
 function TTCPasswordManager.InitCloudCryptPasswords(var AccountSettings: TAccountSettings): Boolean; //Вносит в AccountSettings пароли из стораджа/введённые руками
 var
 	crypt_id: WideString;
+	buf: PWideChar;
 begin
 	result := true;
 	crypt_id := AccountSettings.name + ' filecrypt';
@@ -199,8 +200,13 @@ begin
 	end;
 	if EncryptModeAskOnce = AccountSettings.encrypt_files_mode then
 	begin
-		if not self.RequestHandleProc(RT_Password, PWideChar(AccountSettings.name + ' encryption password'), 'Enter encryption password:', PWideChar(AccountSettings.crypt_files_password), 1024) then
-			exit(false);
+		GetMem(buf, 1024);
+		ZeroMemory(buf, 1024);
+		if self.RequestHandleProc(RT_Password, PWideChar(AccountSettings.name + ' encryption password'), 'Enter encryption password:', buf, 1024) then
+			AccountSettings.crypt_files_password := buf
+		else
+			result := false;
+		FreeMem(buf);
 	end;
 end;
 
