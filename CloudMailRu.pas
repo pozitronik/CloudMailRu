@@ -1985,7 +1985,7 @@ begin
 	begin
 		SetLength(initBuffer, 20);
 		stream.read(initBuffer, stream.size);
-		Result := THash.DigestAsString(initBuffer);
+		Result := UpperCase(THash.DigestAsString(initBuffer));
 
 		stream.free;
 		exit;
