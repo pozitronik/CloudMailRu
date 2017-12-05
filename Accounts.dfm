@@ -675,7 +675,7 @@ object AccountsForm: TAccountsForm
         TabOrder = 20
       end
       object CheckCRCCB: TCheckBox
-        Left = 6
+        Left = 5
         Top = 393
         Width = 474
         Height = 17
