@@ -134,7 +134,8 @@ type
 		class function CloudAccessToString(access: WideString; Invert: Boolean = false): WideString; static;
 		class function StringToCloudAccess(accessString: WideString; Invert: Boolean = false): integer; static;
 		class function ErrorCodeText(ErrorCode: integer): WideString; static;
-		class function CloudHash(Path: WideString): WideString;
+		class function cloudHashFile(Path: WideString): WideString;
+		class function cloudHashStream(var Stream: TFileStream): WideString;
 	end;
 
 implementation
@@ -1776,7 +1777,7 @@ begin
 
 	if self.PrecalculateHash or self.CheckCRC then
 	begin
-		LocalFileHash := CloudHash(localPath);
+		LocalFileHash := cloudHashFile(localPath);
 		LocalFileSize := SizeOfFile(localPath);
 	end;
 	if self.PrecalculateHash and (LocalFileHash <> EmptyWideStr) then {issue #135}
@@ -1965,29 +1966,37 @@ begin
 		Result := CLOUD_SHARE_RW;
 end;
 
-class function TCloudMailRu.CloudHash(Path: WideString): WideString;
+class function TCloudMailRu.cloudHashFile(Path: WideString): WideString;
+var
+	Stream: TFileStream;
+begin
+	Result := EmptyWideStr;
+	if not FileExists(Path) then
+		exit;
+	try
+		Stream := TFileStream.Create(Path, fmOpenRead or fmShareDenyWrite);
+	except
+		exit;
+	end;
+	Result := cloudHashStream(Stream);
+	Stream.free;
+
+end;
+
+class function TCloudMailRu.cloudHashStream(var Stream: TFileStream): WideString;
 var
 	sha1: THashSHA1;
 	buffer: array [0 .. 8191] of byte;
 	read: LongInt;
-	stream: TFileStream;
 	initBuffer, finalBuffer: TBytes;
 begin
+	Stream.Position := 0;
 	Result := EmptyWideStr;
-	if not FileExists(Path) then
-	exit;
-	try
-		stream := TFileStream.Create(Path, fmOpenRead or fmShareDenyWrite);
-	except
-		exit;
-	end;
-	if stream.size < 21 then
+	if Stream.size < 21 then
 	begin
 		SetLength(initBuffer, 20);
-		stream.read(initBuffer, stream.size);
+		Stream.read(initBuffer, Stream.size);
 		Result := UpperCase(THash.DigestAsString(initBuffer));
-
-		stream.free;
 		exit;
 	end;
 
@@ -1997,16 +2006,14 @@ begin
 	sha1 := THashSHA1.Create;
 	sha1.Update(initBuffer, length(initBuffer));
 	repeat
-		read := stream.read(buffer, sizeof(buffer));
+		read := Stream.read(buffer, sizeof(buffer));
 		sha1.Update(buffer, read);
 	until read < sizeof(buffer);
 
-	finalBuffer := TEncoding.UTF8.GetBytes(stream.size.ToString);
+	finalBuffer := TEncoding.UTF8.GetBytes(Stream.size.ToString);
 	sha1.Update(finalBuffer, length(finalBuffer));
 	Result := UpperCase(sha1.HashAsString);
 	sha1.Reset;
-	stream.free;
-
 end;
 
 end.
