@@ -783,6 +783,7 @@ begin
 	if (Assigned(FileStream)) then
 	begin
 		Result := self.HTTPGetFile(getSharedFileUrl(remotePath), FileStream, LogErrors);
+		resultHash := cloudHash(FileStream);
 		FlushFileBuffers(FileStream.Handle);
 		FileStream.free;
 	end;
