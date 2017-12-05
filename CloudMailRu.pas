@@ -1785,7 +1785,7 @@ begin
 		LocalFileHash := cloudHash(localPath);
 		LocalFileSize := SizeOfFile(localPath);
 	end;
-	if self.PrecalculateHash and (LocalFileHash <> EmptyWideStr) then {issue #135}
+	if self.PrecalculateHash and (LocalFileHash <> EmptyWideStr) and (not self.crypt_files) then {issue #135}
 	begin
 		if self.addFileToCloud(LocalFileHash, LocalFileSize, remotePath, JSONAnswer, CLOUD_CONFLICT_STRICT, false) then
 		begin
