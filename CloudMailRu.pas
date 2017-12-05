@@ -79,14 +79,16 @@ type
 		{OTHER ROUTINES}
 		procedure Log(LogLevel, MsgType: integer; LogString: WideString);
 		function CloudResultToFsResult(CloudResult: integer; OperationStatus: integer; ErrorPrefix: WideString = ''): integer;
+		function cloudHash(Path: WideString): WideString; overload;
+		function cloudHash(Stream: TStream): WideString; overload;
 	protected
 		{REGULAR CLOUD}
 		function loginRegular(method: integer = CLOUD_AUTH_METHOD_WEB): Boolean;
-		function getFileRegular(remotePath, localPath: WideString; LogErrors: Boolean = true): integer; //LogErrors=false => не логируем результат копирования, нужно для запроса descript.ion (которого может не быть)
+		function getFileRegular(remotePath, localPath: WideString; var resultHash: WideString; LogErrors: Boolean = true): integer; //LogErrors=false => не логируем результат копирования, нужно для запроса descript.ion (которого может не быть)
 		{SHARED WEBFOLDERS}
 		function loginShared(method: integer = CLOUD_AUTH_METHOD_WEB): Boolean;
 
-		function getFileShared(remotePath, localPath: WideString; LogErrors: Boolean = true): integer; //LogErrors=false => не логируем результат копирования, нужно для запроса descript.ion (которого может не быть)
+		function getFileShared(remotePath, localPath: WideString; var resultHash: WideString; LogErrors: Boolean = true): integer; //LogErrors=false => не логируем результат копирования, нужно для запроса descript.ion (которого может не быть)
 	public
 		crypt_files: Boolean;
 		crypt_filenames: Boolean;
@@ -108,7 +110,7 @@ type
 		function createDir(Path: WideString): Boolean;
 		function removeDir(Path: WideString): Boolean;
 		function statusFile(Path: WideString; var FileInfo: TCloudMailRuDirListingItem): Boolean;
-		function getFile(remotePath, localPath: WideString; LogErrors: Boolean = true): integer; //LogErrors=false => не логируем результат копирования, нужно для запроса descript.ion (которого может не быть)
+		function getFile(remotePath, localPath: WideString; var resultHash: WideString; LogErrors: Boolean = true): integer; //LogErrors=false => не логируем результат копирования, нужно для запроса descript.ion (которого может не быть)
 		function putFile(localPath, remotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; ChunkOverwriteMode: integer = 0): integer;
 		function renameFile(OldName, NewName: WideString): integer; //смена имени без перемещения
 		function moveFile(OldName, ToPath: WideString): integer; //перемещение по дереву каталогов
@@ -134,8 +136,6 @@ type
 		class function CloudAccessToString(access: WideString; Invert: Boolean = false): WideString; static;
 		class function StringToCloudAccess(accessString: WideString; Invert: Boolean = false): integer; static;
 		class function ErrorCodeText(ErrorCode: integer): WideString; static;
-		class function cloudHashFile(Path: WideString): WideString;
-		class function cloudHashStream(var Stream: TFileStream): WideString;
 	end;
 
 implementation
@@ -538,8 +538,10 @@ begin
 end;
 
 function TCloudMailRu.getDescriptionFile(remotePath, localCopy: WideString): Boolean;
+var
+	resultHash: WideString;
 begin
-	Result := self.getFile(remotePath, localCopy, false) = FS_FILE_OK;
+	Result := self.getFile(remotePath, localCopy, resultHash, false) = FS_FILE_OK;
 end;
 
 function TCloudMailRu.putDesriptionFile(remotePath, localCopy: WideString): Boolean;
@@ -688,18 +690,18 @@ begin
 	end;
 end;
 
-function TCloudMailRu.getFile(remotePath, localPath: WideString; LogErrors: Boolean): integer;
+function TCloudMailRu.getFile(remotePath, localPath: WideString; var resultHash: WideString; LogErrors: Boolean): integer;
 begin
 	Result := FS_FILE_NOTSUPPORTED;
 	if not(Assigned(self)) then
 		exit; //Проверка на вызов без инициализации
 	if self.public_account then
-		Result := self.getFileShared(remotePath, localPath, LogErrors)
+		Result := self.getFileShared(remotePath, localPath, resultHash, LogErrors)
 	else
-		Result := self.getFileRegular(remotePath, localPath, LogErrors);
+		Result := self.getFileRegular(remotePath, localPath, resultHash, LogErrors);
 end;
 
-function TCloudMailRu.getFileRegular(remotePath, localPath: WideString; LogErrors: Boolean): integer;
+function TCloudMailRu.getFileRegular(remotePath, localPath: WideString; var resultHash: WideString; LogErrors: Boolean): integer;
 var
 	FileStream: TFileStream;
 	FileName: WideString;
@@ -737,6 +739,7 @@ begin
 		Result := self.HTTPGetFile(self.Shard + PathToUrl(remotePath, false), MemoryStream, LogErrors);
 		if Result in [FS_FILE_OK] then
 		begin
+			resultHash := cloudHash(MemoryStream);
 			MemoryStream.Position := 0;
 			self.FileCipher.DecryptStream(MemoryStream, FileStream);
 		end;
@@ -744,6 +747,7 @@ begin
 
 	end else begin
 		Result := self.HTTPGetFile(self.Shard + PathToUrl(remotePath, false), FileStream, LogErrors);
+		resultHash := cloudHash(FileStream);
 	end;
 
 	FlushFileBuffers(FileStream.Handle);
@@ -760,7 +764,7 @@ begin
 	Result := IncludeSlash(self.public_shard) + IncludeSlash(self.public_link) + PathToUrl(remotePath, true, DoUrlEncode) + '?key=' + self.public_download_token
 end;
 
-function TCloudMailRu.getFileShared(remotePath, localPath: WideString; LogErrors: Boolean): integer;
+function TCloudMailRu.getFileShared(remotePath, localPath: WideString; var resultHash: WideString; LogErrors: Boolean): integer;
 var
 	FileStream: TFileStream;
 begin
@@ -1777,7 +1781,7 @@ begin
 
 	if self.PrecalculateHash or self.CheckCRC then
 	begin
-		LocalFileHash := cloudHashFile(localPath);
+		LocalFileHash := cloudHash(localPath);
 		LocalFileSize := SizeOfFile(localPath);
 	end;
 	if self.PrecalculateHash and (LocalFileHash <> EmptyWideStr) then {issue #135}
@@ -1966,7 +1970,7 @@ begin
 		Result := CLOUD_SHARE_RW;
 end;
 
-class function TCloudMailRu.cloudHashFile(Path: WideString): WideString;
+function TCloudMailRu.cloudHash(Path: WideString): WideString;
 var
 	Stream: TFileStream;
 begin
@@ -1978,12 +1982,12 @@ begin
 	except
 		exit;
 	end;
-	Result := cloudHashStream(Stream);
+	Result := cloudHash(Stream);
 	Stream.free;
 
 end;
 
-class function TCloudMailRu.cloudHashStream(var Stream: TFileStream): WideString;
+function TCloudMailRu.cloudHash(Stream: TStream): WideString;
 var
 	sha1: THashSHA1;
 	buffer: array [0 .. 8191] of byte;

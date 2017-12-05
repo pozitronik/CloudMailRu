@@ -961,21 +961,23 @@ var
 	Item: TCloudMailRuDirListingItem;
 	Cloud: TCloudMailRu;
 	AccountSettings: TAccountSettings;
+	resultHash: WideString;
 begin
 
 	Cloud := ConnectionManager.get(RemotePath.account, getResult);
 	AccountSettings := GetAccountSettingsFromIniFile(AccountsIniFilePath, RemotePath.account);
 
-	Result := Cloud.getFile(WideString(RemotePath.path), LocalName);
+	Result := Cloud.getFile(WideString(RemotePath.path), LocalName, resultHash);
 
 	if Result = FS_FILE_OK then
 	begin
 		{Дополнительно проверим CRC скачанного файла}
+
 		Item := FindListingItemByPath(CurrentListing, RemotePath);
 
 		if GetPluginSettings(SettingsIniFilePath).CheckCRC then
 		begin
-			if Item.hash <> TCloudMailRu.CloudHash(ExpandUNCFileName(LocalName)) then
+			if Item.hash <> resultHash then
 				exit(FS_FILE_READERROR);
 		end;
 
