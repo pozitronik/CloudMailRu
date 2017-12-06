@@ -1786,7 +1786,7 @@ begin
 	FreeAndNil(AccountsList); //уже сделано, но не страшно, к тому же в будущем может не разрушаться ранее
 	CurrentDescriptions.free;
 
-	PasswordManager.Destroy;
+	PasswordManager.free;
 
 end;
 
