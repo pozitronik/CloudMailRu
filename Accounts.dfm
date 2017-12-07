@@ -804,7 +804,7 @@ object AccountsForm: TAccountsForm
         Caption = 'Apply'
         ParentShowHint = False
         ShowHint = False
-        TabOrder = 2
+        TabOrder = 3
         OnClick = GlobalSettingApplyBTNClick
       end
       object SocketTimeoutEdit: TSpinEdit
@@ -816,6 +816,48 @@ object AccountsForm: TAccountsForm
         MinValue = -1
         TabOrder = 0
         Value = -1
+      end
+      object SpeedLimitGB: TGroupBox
+        Left = 5
+        Top = 246
+        Width = 475
+        Height = 78
+        Caption = 'Speed limits'
+        TabOrder = 2
+        object UploadsBPSLabel: TLabel
+          Left = 5
+          Top = 21
+          Width = 206
+          Height = 13
+          Caption = 'Limit uploads bits per second (-1 for none):'
+        end
+        object DownloadsBPSLabel: TLabel
+          Left = 5
+          Top = 49
+          Width = 220
+          Height = 13
+          Caption = 'Limit downloads bits per second (-1 for none):'
+        end
+        object UploadBPSEdit: TSpinEdit
+          Left = 230
+          Top = 18
+          Width = 172
+          Height = 22
+          MaxValue = 0
+          MinValue = 0
+          TabOrder = 0
+          Value = 0
+        end
+        object DownloadBPSEdit: TSpinEdit
+          Left = 230
+          Top = 46
+          Width = 172
+          Height = 22
+          MaxValue = 0
+          MinValue = 0
+          TabOrder = 1
+          Value = 0
+        end
       end
     end
     object CommentsTab: TTabSheet

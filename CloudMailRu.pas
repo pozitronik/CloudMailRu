@@ -2,7 +2,7 @@
 
 interface
 
-uses CMLJSON, CMLTypes, System.Hash, System.Classes, System.Generics.Collections, System.SysUtils, PLUGIN_Types, Winapi.Windows, IdStack, MRC_helper, Settings, IdCookieManager, IdIOHandler, IdIOHandlerSocket, IdIOHandlerStack, IdSSL, IdSSLOpenSSL, IdBaseComponent, IdComponent, IdTCPConnection, IdTCPClient, IdSocks, IdHTTP, IdAuthentication, IdIOHandlerStream, FileSplitter, IdCookie, IdMultipartFormData, Cipher;
+uses CMLJSON, CMLTypes, System.Hash, System.Classes, System.Generics.Collections, System.SysUtils, PLUGIN_Types, Winapi.Windows, IdStack, MRC_helper, Settings, IdCookieManager, IdIOHandler, IdIOHandlerSocket, IdIOHandlerStack, IdSSL, IdSSLOpenSSL, IdBaseComponent, IdComponent, IdTCPConnection, IdTCPClient, IdSocks, IdHTTP, IdAuthentication, IdIOHandlerStream, IdInterceptThrottler, FileSplitter, IdCookie, IdMultipartFormData, Cipher;
 
 type
 	TCloudMailRu = class
@@ -30,12 +30,15 @@ type
 		login_method: integer;
 		Cookie: TIdCookieManager;
 		Socks: TIdSocksInfo;
+		Throttle: TIdInterceptThrottler;
 		ExternalProgressProc: TProgressHandler;
 		ExternalLogProc: TLogHandler;
 		ExternalRequestProc: TRequestHandler;
 		Shard: WideString;
 		Proxy: TProxySettings;
 		ConnectTimeout: integer;
+		UploadBPS: integer;
+		DownloadBPS: integer;
 		PrecalculateHash: Boolean;
 		CheckCRC: Boolean;
 
@@ -95,10 +98,13 @@ type
 
 		Property isPublicShare: Boolean read public_account;
 		Property ProxySettings: TProxySettings read Proxy;
+		Property UploadLimit: integer read UploadBPS;
+		Property DownloadLimit: integer read DownloadBPS;
+
 		Property ConnectTimeoutValue: integer read ConnectTimeout;
 		function getSharedFileUrl(remotePath: WideString; DoUrlEncode: Boolean = true): WideString;
 		{CONSTRUCTOR/DESTRUCTOR}
-		constructor Create(AccountSettings: TAccountSettings; split_file_size: integer; Proxy: TProxySettings; ConnectTimeout: integer; PrecalculateHash: Boolean = true; CheckCRC: Boolean = true; ExternalProgressProc: TProgressHandler = nil; ExternalLogProc: TLogHandler = nil; ExternalRequestProc: TRequestHandler = nil);
+		constructor Create(AccountSettings: TAccountSettings; split_file_size: integer; Proxy: TProxySettings; ConnectTimeout: integer; UploadBPS: integer; DownloadBPS: integer; PrecalculateHash: Boolean = true; CheckCRC: Boolean = true; ExternalProgressProc: TProgressHandler = nil; ExternalLogProc: TLogHandler = nil; ExternalRequestProc: TRequestHandler = nil);
 		destructor Destroy; override;
 		{CLOUD INTERFACE METHODS}
 		function login(method: integer = CLOUD_AUTH_METHOD_WEB): Boolean;
@@ -255,7 +261,7 @@ begin //Облако умеет скопировать файл, но не см�
 	end;
 end;
 
-constructor TCloudMailRu.Create(AccountSettings: TAccountSettings; split_file_size: integer; Proxy: TProxySettings; ConnectTimeout: integer; PrecalculateHash: Boolean = true; CheckCRC: Boolean = true; ExternalProgressProc: TProgressHandler = nil; ExternalLogProc: TLogHandler = nil; ExternalRequestProc: TRequestHandler = nil);
+constructor TCloudMailRu.Create(AccountSettings: TAccountSettings; split_file_size: integer; Proxy: TProxySettings; ConnectTimeout: integer; UploadBPS: integer; DownloadBPS: integer; PrecalculateHash: Boolean = true; CheckCRC: Boolean = true; ExternalProgressProc: TProgressHandler = nil; ExternalLogProc: TLogHandler = nil; ExternalRequestProc: TRequestHandler = nil);
 begin
 	try
 		self.ExternalProgressProc := ExternalProgressProc;
@@ -317,6 +323,8 @@ begin
 
 		self.split_file_size := split_file_size;
 		self.ConnectTimeout := ConnectTimeout;
+		self.UploadBPS := UploadBPS;
+		self.DownloadBPS := DownloadBPS;
 		self.PrecalculateHash := PrecalculateHash;
 		self.CheckCRC := CheckCRC;
 
@@ -912,6 +920,7 @@ procedure TCloudMailRu.HTTPInit(var HTTP: TIdHTTP; var SSL: TIdSSLIOHandlerSocke
 begin
 	SSL := TIdSSLIOHandlerSocketOpenSSL.Create();
 	HTTP := TIdHTTP.Create();
+	Throttle := TIdInterceptThrottler.Create();
 	if (self.Proxy.ProxyType in SocksProxyTypes) and (self.Socks.Enabled) then
 		SSL.TransparentProxy := self.Socks;
 	if self.Proxy.ProxyType = ProxyHTTP then
@@ -935,6 +944,13 @@ begin
 		HTTP.ConnectTimeout := self.ConnectTimeout;
 		HTTP.ReadTimeout := self.ConnectTimeout;
 	end;
+	if (self.UploadBPS > 0) or (self.DownloadBPS > 0) then
+	begin
+		Throttle.RecvBitsPerSec := self.DownloadBPS;
+		Throttle.SendBitsPerSec := self.UploadBPS;
+
+	end;
+
 	HTTP.Request.UserAgent := 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.17 (KHTML, like Gecko) Chrome/24.0.1312.57 Safari/537.17/TCWFX(' + PlatformX + ')';
 	HTTP.Request.Connection := EmptyWideStr;
 end;
@@ -943,6 +959,7 @@ procedure TCloudMailRu.HTTPDestroy(var HTTP: TIdHTTP; var SSL: TIdSSLIOHandlerSo
 begin
 	HTTP.free;
 	SSL.free;
+	Throttle.free;
 end;
 
 function TCloudMailRu.HTTPGetPage(URL: WideString; var Answer: WideString; var ProgressEnabled: Boolean): Boolean;
@@ -993,6 +1010,7 @@ begin
 	Result := FS_FILE_OK;
 	try
 		self.HTTPInit(HTTP, SSL, Socks, self.Cookie);
+		HTTP.Intercept := Throttle;
 		HTTP.Request.ContentType := 'application/octet-stream';
 		HTTP.Response.KeepAlive := true;
 		HTTP.OnWork := self.HTTPProgress;
@@ -1129,6 +1147,7 @@ begin
 	ResultData.Position := 0;
 	try
 		self.HTTPInit(HTTP, SSL, Socks, self.Cookie);
+		HTTP.Intercept := Throttle;
 		HTTP.OnWork := self.HTTPProgress;
 		HTTP.Post(URL, PostData, ResultData);
 		self.HTTPDestroy(HTTP, SSL);

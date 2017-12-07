@@ -96,6 +96,8 @@ type
 		OperationsViaPublicLinkEnabled: boolean;
 		SocketTimeout: integer;
 		Proxy: TProxySettings;
+		UploadBPS: integer;
+		DownloadBPS: integer;
 		CloudMaxFileSize: integer;
 		ChunkOverwriteMode: integer;
 		DeleteFailOnUploadMode: integer;
@@ -148,6 +150,8 @@ begin
 	GetPluginSettings.LogUserSpace := IniFile.ReadBool('Main', 'LogUserSpace', true);
 	GetPluginSettings.IconsMode := IniFile.ReadInteger('Main', 'IconsMode', 0);
 	GetPluginSettings.SocketTimeout := IniFile.ReadInteger('Main', 'SocketTimeout', -1);
+	GetPluginSettings.UploadBPS := IniFile.ReadInteger('Main', 'UploadBPS', -1);
+	GetPluginSettings.DownloadBPS := IniFile.ReadInteger('Main', 'DownloadBPS', -1);
 	GetPluginSettings.CloudMaxFileSize := IniFile.ReadInteger('Main', 'CloudMaxFileSize', CLOUD_MAX_FILESIZE_DEFAULT);
 	GetPluginSettings.ChunkOverwriteMode := IniFile.ReadInteger('Main', 'ChunkOverwriteMode', 0);
 	GetPluginSettings.DeleteFailOnUploadMode := IniFile.ReadInteger('Main', 'DeleteFailOnUploadMode', 0);
@@ -254,7 +258,7 @@ begin
 	IniFile.WriteString(AccountSettings.name, 'description', AccountSettings.description);
 	IniFile.WriteInteger(AccountSettings.name, 'encrypt_files_mode', AccountSettings.encrypt_files_mode);
 	IniFile.WriteBool(AccountSettings.name, 'encrypt_filenames', AccountSettings.encrypt_filenames);
-//	IniFile.WriteString(AccountSettings.name, 'shard_override', AccountSettings.public_url);
+	//IniFile.WriteString(AccountSettings.name, 'shard_override', AccountSettings.public_url);
 	IniFile.Destroy;
 end;
 

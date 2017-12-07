@@ -3,27 +3,7 @@
 interface
 
 uses
-	Winapi.Windows,
-	Winapi.Messages,
-	System.SysUtils,
-	System.Variants,
-	System.Classes,
-	Vcl.Graphics,
-	Settings,
-	Vcl.Controls,
-	Vcl.Forms,
-	Vcl.Dialogs,
-	Vcl.StdCtrls,
-	IniFiles,
-	MRC_Helper,
-	PLUGIN_Types,
-	Vcl.ComCtrls,
-	Vcl.Mask,
-	Vcl.ExtCtrls,
-	Vcl.Samples.Spin,
-	System.IOUtils,
-	AskPassword,
-	TCPasswordManagerHelper;
+	Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics, Settings, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, IniFiles, MRC_Helper, PLUGIN_Types, Vcl.ComCtrls, Vcl.Mask, Vcl.ExtCtrls, Vcl.Samples.Spin, System.IOUtils, AskPassword, TCPasswordManagerHelper;
 
 type
 	TAccountsForm = class(TForm)
@@ -112,6 +92,11 @@ type
 		EncryptFilesPwdButton: TButton;
 		PrecalculateHashCB: TCheckBox;
 		CheckCRCCB: TCheckBox;
+		SpeedLimitGB: TGroupBox;
+		UploadsBPSLabel: TLabel;
+		UploadBPSEdit: TSpinEdit;
+		DownloadsBPSLabel: TLabel;
+		DownloadBPSEdit: TSpinEdit;
 		procedure FormShow(Sender: TObject);
 		procedure AccountsListClick(Sender: TObject);
 		procedure ApplyButtonClick(Sender: TObject);
@@ -267,6 +252,8 @@ begin
 	SetPluginSettingsValue(SettingsIniFilePath, 'IconsMode', IconsModeCombo.ItemIndex);
 
 	SetPluginSettingsValue(SettingsIniFilePath, 'SocketTimeout', SocketTimeoutEdit.Text);
+	SetPluginSettingsValue(SettingsIniFilePath, 'UploadBPS', UploadBPSEdit.Text);
+	SetPluginSettingsValue(SettingsIniFilePath, 'DownloadBPS', DownloadBPSEdit.Text);
 	SetPluginSettingsValue(SettingsIniFilePath, 'ProxyType', ProxyCB.ItemIndex);
 	SetPluginSettingsValue(SettingsIniFilePath, 'ProxyServer', ProxyServerEdit.Text);
 	SetPluginSettingsValue(SettingsIniFilePath, 'ProxyPort', ProxyPortEdit.Text);
@@ -412,6 +399,9 @@ begin
 
 		AccountsForm.OperationsViaPublicLinkEnabledCB.Checked := GetPluginSettings(SettingsIniFilePath).OperationsViaPublicLinkEnabled;
 		AccountsForm.SocketTimeoutEdit.Text := GetPluginSettings(SettingsIniFilePath).SocketTimeout.ToString;
+		AccountsForm.UploadBPSEdit.Text := GetPluginSettings(SettingsIniFilePath).UploadBPS.ToString;
+		AccountsForm.DownloadBPSEdit.Text := GetPluginSettings(SettingsIniFilePath).DownloadBPS.ToString;
+
 		AccountsForm.ProxyCB.ItemIndex := GetPluginSettings(SettingsIniFilePath).Proxy.ProxyType;
 		AccountsForm.ProxyServerEdit.Text := GetPluginSettings(SettingsIniFilePath).Proxy.Server;
 		AccountsForm.ProxyPortEdit.Text := GetPluginSettings(SettingsIniFilePath).Proxy.Port.ToString;
