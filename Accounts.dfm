@@ -158,7 +158,7 @@ object AccountsForm: TAccountsForm
     Top = 0
     Width = 491
     Height = 475
-    ActivePage = AccountsTab
+    ActivePage = NetworkTab
     Align = alClient
     TabOrder = 0
     object AccountsTab: TTabSheet
@@ -844,7 +844,7 @@ object AccountsForm: TAccountsForm
           Width = 172
           Height = 22
           MaxValue = 0
-          MinValue = 0
+          MinValue = -1
           TabOrder = 0
           Value = 0
         end
@@ -854,7 +854,7 @@ object AccountsForm: TAccountsForm
           Width = 172
           Height = 22
           MaxValue = 0
-          MinValue = 0
+          MinValue = -1
           TabOrder = 1
           Value = 0
         end
