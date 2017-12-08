@@ -83,7 +83,7 @@ type
 		procedure Log(LogLevel, MsgType: integer; LogString: WideString);
 		function CloudResultToFsResult(CloudResult: integer; OperationStatus: integer; ErrorPrefix: WideString = ''): integer;
 		function cloudHash(Path: WideString): WideString; overload;
-		function cloudHash(Stream: TStream): WideString; overload;
+		function cloudHash(Stream: TStream; SourceName: WideString = ''): WideString; overload;
 	protected
 		{REGULAR CLOUD}
 		function loginRegular(method: integer = CLOUD_AUTH_METHOD_WEB): Boolean;
@@ -2002,17 +2002,20 @@ begin
 	except
 		exit;
 	end;
-	Result := cloudHash(Stream);
+	Result := cloudHash(Stream, ExtractFileName(Path));
 	Stream.free;
 
 end;
 
-function TCloudMailRu.cloudHash(Stream: TStream): WideString;
+function TCloudMailRu.cloudHash(Stream: TStream; SourceName: WideString = ''): WideString;
+const
+	bufSize = 8192;
 var
 	sha1: THashSHA1;
-	buffer: array [0 .. 8191] of byte;
+	buffer: array [0 .. bufSize - 1] of byte;
 	read: LongInt;
 	initBuffer, finalBuffer: TBytes;
+	Percent, iteration: integer;
 begin
 	Stream.Position := 0;
 	Result := EmptyWideStr;
@@ -2029,9 +2032,16 @@ begin
 
 	sha1 := THashSHA1.Create;
 	sha1.Update(initBuffer, length(initBuffer));
+	iteration := 0;
 	repeat
-		read := Stream.read(buffer, sizeof(buffer));
+		iteration := iteration + 1;
+		Percent := Round((8192 * iteration / Stream.size) * 100);
+		if Percent > 100 then
+			Percent := 100;
+
+		read := Stream.read(buffer, bufSize);
 		sha1.Update(buffer, read);
+		ExternalProgressProc(PWideChar(SourceName), 'Calculating cloud hash', Percent);
 	until read < sizeof(buffer);
 
 	finalBuffer := TEncoding.UTF8.GetBytes(Stream.size.ToString);
