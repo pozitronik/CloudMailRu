@@ -963,7 +963,7 @@ var
 	AccountSettings: TAccountSettings;
 	resultHash: WideString;
 begin
-
+	resultHash := EmptyWideStr;
 	Cloud := ConnectionManager.get(RemotePath.account, getResult);
 	AccountSettings := GetAccountSettingsFromIniFile(AccountsIniFilePath, RemotePath.account);
 
@@ -977,7 +977,7 @@ begin
 
 		if GetPluginSettings(SettingsIniFilePath).CheckCRC then
 		begin
-			if Item.hash <> resultHash then
+			if (resultHash <> EmptyWideStr) and (Item.hash <> resultHash) then
 				exit(FS_FILE_READERROR);
 		end;
 
