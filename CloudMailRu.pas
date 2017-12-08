@@ -747,7 +747,7 @@ begin
 		Result := self.HTTPGetFile(self.Shard + PathToUrl(remotePath, false), MemoryStream, LogErrors);
 		if Result in [FS_FILE_OK] then
 		begin
-			resultHash := cloudHash(MemoryStream, remotePath);
+			resultHash := cloudHash(MemoryStream, ExtractFileName(localPath));
 			MemoryStream.Position := 0;
 			self.FileCipher.DecryptStream(MemoryStream, FileStream);
 		end;
@@ -756,7 +756,7 @@ begin
 	end else begin
 		Result := self.HTTPGetFile(self.Shard + PathToUrl(remotePath, false), FileStream, LogErrors);
 		if (Result in [FS_FILE_OK]) then
-			resultHash := cloudHash(FileStream, remotePath);
+			resultHash := cloudHash(FileStream, ExtractFileName(localPath));
 	end;
 
 	FlushFileBuffers(FileStream.Handle);
@@ -2045,7 +2045,9 @@ begin
 		read := Stream.read(buffer, bufSize);
 		sha1.Update(buffer, read);
 		if (1 = ExternalProgressProc(PWideChar(SourceName), 'Calculating cloud hash', Percent)) then
+		begin
 			Aborted := true;
+		end;
 	until (read < sizeof(buffer)) or Aborted;
 
 	finalBuffer := TEncoding.UTF8.GetBytes(Stream.size.ToString);
