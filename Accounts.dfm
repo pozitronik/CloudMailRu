@@ -158,7 +158,7 @@ object AccountsForm: TAccountsForm
     Top = 0
     Width = 491
     Height = 475
-    ActivePage = NetworkTab
+    ActivePage = AccountsTab
     Align = alClient
     TabOrder = 0
     object AccountsTab: TTabSheet
@@ -813,7 +813,7 @@ object AccountsForm: TAccountsForm
         Width = 121
         Height = 22
         MaxValue = 0
-        MinValue = -1
+        MinValue = 0
         TabOrder = 0
         Value = -1
       end
@@ -844,9 +844,9 @@ object AccountsForm: TAccountsForm
           Width = 172
           Height = 22
           MaxValue = 0
-          MinValue = -1
+          MinValue = 0
           TabOrder = 0
-          Value = 0
+          Value = -1
         end
         object DownloadBPSEdit: TSpinEdit
           Left = 230
@@ -854,9 +854,9 @@ object AccountsForm: TAccountsForm
           Width = 172
           Height = 22
           MaxValue = 0
-          MinValue = -1
+          MinValue = 0
           TabOrder = 1
-          Value = 0
+          Value = -1
         end
       end
     end
