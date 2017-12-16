@@ -269,6 +269,8 @@ begin
 		self.ExternalRequestProc := ExternalRequestProc;
 
 		self.Cookie := TIdCookieManager.Create();
+		self.Throttle := TIdInterceptThrottler.Create();
+
 		self.Proxy := Proxy;
 		if Proxy.ProxyType in SocksProxyTypes then //SOCKS proxy initialization
 		begin
@@ -393,6 +395,8 @@ destructor TCloudMailRu.Destroy;
 begin
 	if Assigned(self.Cookie) then
 		self.Cookie.free;
+	if Assigned(self.Throttle) then
+		self.Throttle.free;
 	if Assigned(self.Socks) then
 		self.Socks.free;
 	if Assigned(self.FileCipher) then
@@ -921,7 +925,6 @@ procedure TCloudMailRu.HTTPInit(var HTTP: TIdHTTP; var SSL: TIdSSLIOHandlerSocke
 begin
 	SSL := TIdSSLIOHandlerSocketOpenSSL.Create();
 	HTTP := TIdHTTP.Create();
-	Throttle := TIdInterceptThrottler.Create();
 	if (self.Proxy.ProxyType in SocksProxyTypes) and (self.Socks.Enabled) then
 		SSL.TransparentProxy := self.Socks;
 	if self.Proxy.ProxyType = ProxyHTTP then
@@ -947,8 +950,8 @@ begin
 	end;
 	if (self.UploadBPS > 0) or (self.DownloadBPS > 0) then
 	begin
-		Throttle.RecvBitsPerSec := self.DownloadBPS;
-		Throttle.SendBitsPerSec := self.UploadBPS;
+		self.Throttle.RecvBitsPerSec := self.DownloadBPS;
+		self.Throttle.SendBitsPerSec := self.UploadBPS;
 
 	end;
 
@@ -960,7 +963,6 @@ procedure TCloudMailRu.HTTPDestroy(var HTTP: TIdHTTP; var SSL: TIdSSLIOHandlerSo
 begin
 	HTTP.free;
 	SSL.free;
-	Throttle.free;
 end;
 
 function TCloudMailRu.HTTPGetPage(URL: WideString; var Answer: WideString; var ProgressEnabled: Boolean): Boolean;
