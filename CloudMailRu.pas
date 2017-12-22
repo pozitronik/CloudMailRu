@@ -972,37 +972,38 @@ var
 	SSL: TIdSSLIOHandlerSocketOpenSSL;
 	Socks: TIdSocksInfo;
 begin
+	Result := false;
 	try
 		self.HTTPInit(HTTP, SSL, Socks, self.Cookie);
 		if ProgressEnabled then
 			HTTP.OnWork := self.HTTPProgress; //Вызов прогресса ведёт к возможности отменить получение списка каталогов и других операций, поэтому он нужен не всегда
 		Answer := HTTP.Get(URL);
 		self.HTTPDestroy(HTTP, SSL);
+		Result := Answer <> EmptyWideStr;
 	Except
 		on E: Exception do
 		begin
-			self.HTTPExceptionHandler(E, URL);
-			if (E is EAbort) then
-			begin
-				Answer := E.Message;
-				ProgressEnabled := false; //сообщаем об отмене
-			end;
-
-			if (E is EIdHTTPProtocolException) then
-			begin
-				case HTTP.ResponseCode of
-					HTTP_ERROR_BAD_REQUEST, HTTP_ERROR_OVERQUOTA: //recoverable errors
-						begin
-							Answer := (E as EIdHTTPProtocolException).ErrorMessage;
+			case self.HTTPExceptionHandler(E, URL) of
+				CLOUD_OPERATION_CANCELLED:
+					begin
+						ProgressEnabled := false; //сообщаем об отмене
+					end;
+				CLOUD_OPERATION_FAILED:
+					begin
+						case HTTP.ResponseCode of
+							HTTP_ERROR_BAD_REQUEST, HTTP_ERROR_OVERQUOTA: //recoverable errors
+								begin
+									//Answer := (E as EIdHTTPProtocolException).ErrorMessage; //TODO: нужно протестировать, наверняка тут не json
+								end;
 						end;
-				end;
+					end;
 			end;
 			if Assigned(HTTP) then
 				self.HTTPDestroy(HTTP, SSL);
 		end;
 
 	end;
-	Result := Answer <> EmptyWideStr;
+
 end;
 
 function TCloudMailRu.HTTPGetFile(URL: WideString; FileStream: TStream; LogErrors: Boolean): integer;
