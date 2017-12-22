@@ -53,10 +53,10 @@ type
 		function HTTPGetPage(URL: WideString; var Answer: WideString; var ProgressEnabled: Boolean): Boolean; //если ProgressEnabled - включаем обработчик onWork, возвращаем ProgressEnabled=false при отмене
 		function HTTPGetFile(URL: WideString; FileStream: TStream; LogErrors: Boolean = true): integer;
 
-		function HTTPPostForm(URL: WideString; PostDataString: WideString; var Answer: WideString; ContentType: WideString = 'application/x-www-form-urlencoded'; LogErrors: Boolean = true): Boolean; //Постинг данных с возможным получением ответа.
+		function HTTPPostForm(URL: WideString; PostDataString: WideString; var Answer: WideString; ContentType: WideString = 'application/x-www-form-urlencoded'; LogErrors: Boolean = true; ProgressEnabled: Boolean = true): Boolean; //Постинг данных с возможным получением ответа.
 		function HTTPPostMultipart(URL: WideString; Params: TDictionary<WideString, WideString>; var Answer: WideString): Boolean;
 		function HTTPPostFile(URL: WideString; FileName: WideString; var Answer: WideString): integer; //Постинг файла и получение ответа
-		function HTTPPost(URL: WideString; PostData, ResultData: TStringStream; UnderstandResponseCode: Boolean = false; ContentType: WideString = ''; LogErrors: Boolean = true): integer; overload; //Постинг подготовленных данных, отлов ошибок
+		function HTTPPost(URL: WideString; PostData, ResultData: TStringStream; UnderstandResponseCode: Boolean = false; ContentType: WideString = ''; LogErrors: Boolean = true; ProgressEnabled: Boolean = true): integer; overload; //Постинг подготовленных данных, отлов ошибок
 		function HTTPPost(URL: WideString; var PostData: TIdMultiPartFormDataStream; ResultData: TStringStream): integer; overload; //TIdMultiPartFormDataStream should be passed via var
 		function HTTPExceptionHandler(E: Exception; URL: WideString; HTTPMethod: integer = HTTP_METHOD_POST; LogErrors: Boolean = true): integer;
 
@@ -1038,7 +1038,7 @@ begin
 	end;
 end;
 
-function TCloudMailRu.HTTPPostForm(URL: WideString; PostDataString: WideString; var Answer: WideString; ContentType: WideString = 'application/x-www-form-urlencoded'; LogErrors: Boolean = true): Boolean;
+function TCloudMailRu.HTTPPostForm(URL: WideString; PostDataString: WideString; var Answer: WideString; ContentType: WideString = 'application/x-www-form-urlencoded'; LogErrors: Boolean = true; ProgressEnabled: Boolean = true): Boolean;
 var
 	ResultStream, PostData: TStringStream;
 	PostResult: integer;
@@ -1046,7 +1046,7 @@ begin
 	ResultStream := TStringStream.Create;
 	PostData := TStringStream.Create(PostDataString, TEncoding.UTF8);
 
-	PostResult := self.HTTPPost(URL, PostData, ResultStream, true, ContentType, LogErrors);
+	PostResult := self.HTTPPost(URL, PostData, ResultStream, true, ContentType, LogErrors, ProgressEnabled);
 	Result := PostResult = CLOUD_OPERATION_OK;
 	Answer := ResultStream.DataString;
 
@@ -1107,7 +1107,7 @@ begin
 
 end;
 
-function TCloudMailRu.HTTPPost(URL: WideString; PostData, ResultData: TStringStream; UnderstandResponseCode: Boolean = false; ContentType: WideString = ''; LogErrors: Boolean = true): integer;
+function TCloudMailRu.HTTPPost(URL: WideString; PostData, ResultData: TStringStream; UnderstandResponseCode: Boolean = false; ContentType: WideString = ''; LogErrors: Boolean = true; ProgressEnabled: Boolean = true): integer;
 var
 	HTTP: TIdHTTP;
 	SSL: TIdSSLIOHandlerSocketOpenSSL;
@@ -1119,7 +1119,8 @@ begin
 		self.HTTPInit(HTTP, SSL, Socks, self.Cookie);
 		if ContentType <> EmptyWideStr then
 			HTTP.Request.ContentType := ContentType;
-		HTTP.OnWork := self.HTTPProgress;
+		if ProgressEnabled then
+			HTTP.OnWork := self.HTTPProgress;
 		HTTP.Post(URL, PostData, ResultData);
 		self.HTTPDestroy(HTTP, SSL);
 	except
