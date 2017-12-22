@@ -1419,9 +1419,9 @@ begin
 		exit;
 	if publish then
 	begin
-		Result := self.HTTPPostForm(API_FILE_PUBLISH, 'home=/' + PathToUrl(Path) + self.united_params + '&conflict', JSON);
+		Result := self.HTTPPostForm(API_FILE_PUBLISH, 'home=/' + PathToUrl(Path) + self.united_params + '&conflict', JSON, 'application/x-www-form-urlencoded', true, false);
 	end else begin
-		Result := self.HTTPPostForm(API_FILE_UNPUBLISH, 'weblink=' + PublicLink + self.united_params + '&conflict', JSON);
+		Result := self.HTTPPostForm(API_FILE_UNPUBLISH, 'weblink=' + PublicLink + self.united_params + '&conflict', JSON, 'application/x-www-form-urlencoded', true, false);
 	end;
 
 	if Result then
