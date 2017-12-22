@@ -181,7 +181,7 @@ begin
 		if Result <> CLOUD_OPERATION_OK then
 			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'File publish error: ' + self.ErrorCodeText(Result) + ' Status: ' + OperationStatus.ToString());
 
-	end else begin //посмотреть это
+	end else begin
 		if not(Progress) then
 		begin //user cancelled
 			Result := FS_FILE_USERABORT;
