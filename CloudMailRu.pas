@@ -174,6 +174,7 @@ begin
 		exit; //Проверка на вызов без инициализации
 	if self.public_account then
 		exit(FS_FILE_NOTSUPPORTED);
+	Progress := true;
 	if self.HTTPGetPage(API_CLONE + '?folder=' + PathToUrl(Path) + '&weblink=' + link + '&conflict=' + ConflictMode + self.united_params, JSON, Progress) then
 	begin //Парсим ответ
 		Result := fromJSON_OperationResult(JSON, OperationStatus);
