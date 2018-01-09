@@ -27,9 +27,9 @@ object PropertyForm: TPropertyForm
   object PublicLinkLabel: TLabel
     Left = 0
     Top = 0
-    Width = 131
+    Width = 49
     Height = 13
-    Caption = 'Public link (Ctrl+C to copy):'
+    Caption = 'Public link:'
   end
   object WebLink: TEdit
     Left = 0
