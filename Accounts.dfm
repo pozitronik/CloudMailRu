@@ -150,6 +150,7 @@ object AccountsForm: TAccountsForm
   OldCreateOrder = False
   Position = poOwnerFormCenter
   OnActivate = FormActivate
+  OnKeyUp = FormKeyUp
   OnShow = FormShow
   PixelsPerInch = 96
   TextHeight = 13
@@ -863,6 +864,10 @@ object AccountsForm: TAccountsForm
     object CommentsTab: TTabSheet
       Caption = 'File comments support'
       ImageIndex = 3
+      ExplicitLeft = 0
+      ExplicitTop = 0
+      ExplicitWidth = 0
+      ExplicitHeight = 0
       object DescriptionFileNameLabel: TLabel
         Left = 5
         Top = 118

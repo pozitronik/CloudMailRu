@@ -111,9 +111,9 @@ type
 		procedure CloudMaxFileSizeCBClick(Sender: TObject);
 		procedure EncryptFilesComboChange(Sender: TObject);
 		procedure EncryptFilesPwdButtonClick(Sender: TObject);
+		procedure FormKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
 	private
 		{Private declarations}
-		procedure WMHotKey(var Message: TMessage); message WM_HOTKEY;
 		procedure ApplySettings();
 		function CheckValidators(): boolean;
 
@@ -343,6 +343,14 @@ begin
 	CenterWindow(self.parentWindow, self.Handle);
 end;
 
+procedure TAccountsForm.FormKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
+begin
+	case Key of
+		VK_ESCAPE:
+			Close;
+	end;
+end;
+
 procedure TAccountsForm.FormShow(Sender: TObject);
 begin
 	UpdateAccountsList();
@@ -436,18 +444,11 @@ begin
 		{global settings}
 		if Account <> EmptyWideStr then
 			AccountsForm.SelectedAccount := Account;
-		RegisterHotKey(AccountsForm.Handle, 1, 0, VK_ESCAPE);
 		AccountsForm.OptionPages.ActivePageIndex := 0;
 		AccountsForm.ShowModal;
 	finally
 		FreeAndNil(AccountsForm);
 	end;
-end;
-
-procedure TAccountsForm.WMHotKey(var Message: TMessage);
-begin
-	if (Message.LParamHi = VK_ESCAPE) and (GetForegroundWindow = self.Handle) then
-		Close;
 end;
 
 end.
