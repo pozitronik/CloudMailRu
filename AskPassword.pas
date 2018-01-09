@@ -15,9 +15,9 @@ type
 		procedure PasswordEditChange(Sender: TObject);
 		procedure FormShow(Sender: TObject);
 		procedure FormActivate(Sender: TObject);
+		procedure FormKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
 	private
 		{Private declarations}
-		procedure WMHotKey(var Message: TMessage); message WM_HOTKEY;
 	public
 		{Public declarations}
 	end;
@@ -57,6 +57,19 @@ begin
 	CenterWindow(Self.ParentWindow, Self.Handle);
 end;
 
+procedure TAskPasswordForm.FormKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
+begin
+	begin
+		case Key of
+			VK_ESCAPE:
+				Close;
+			VK_RETURN:
+				if OkButton.Enabled then
+					OkButton.Click;
+		end;
+	end;
+end;
+
 procedure TAskPasswordForm.FormShow(Sender: TObject);
 begin
 	(Sender as TAskPasswordForm).PasswordEdit.SetFocus;
@@ -65,14 +78,6 @@ end;
 procedure TAskPasswordForm.PasswordEditChange(Sender: TObject);
 begin
 	OkButton.Enabled := PasswordEdit.Text <> EmptyWideStr;
-end;
-
-procedure TAskPasswordForm.WMHotKey(var Message: TMessage);
-begin
-	if Message.LParamHi = VK_ESCAPE then
-		Close;
-	if (Message.LParamHi = VK_RETURN) and OkButton.Enabled then
-		OkButton.Click;
 end;
 
 end.

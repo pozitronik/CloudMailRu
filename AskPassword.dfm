@@ -14,6 +14,7 @@ object AskPasswordForm: TAskPasswordForm
   OldCreateOrder = False
   Position = poOwnerFormCenter
   OnActivate = FormActivate
+  OnKeyUp = FormKeyUp
   OnShow = FormShow
   PixelsPerInch = 96
   TextHeight = 13
