@@ -78,7 +78,7 @@ function CloudMailRuDirListingItemToFindData(DirListing: TCloudMailRuDirListingI
 begin
 	if (DirListing.deleted_from <> '') then //items inside trash bin
 	begin
-		Result.ftCreationTime := DateTimeToFileTime(UnixToDateTime(DirListing.deleted_at));
+		Result.ftCreationTime := DateTimeToFileTime(UnixToDateTime(DirListing.deleted_at, false));
 		Result.ftLastWriteTime := Result.ftCreationTime;
 		if (DirListing.type_ = TYPE_DIR) then
 			Result.dwFileAttributes := FILE_ATTRIBUTE_DIRECTORY
@@ -95,7 +95,7 @@ begin
 		else
 			Result.dwFileAttributes := FILE_ATTRIBUTE_DIRECTORY;
 	end else begin
-		Result.ftCreationTime := DateTimeToFileTime(UnixToDateTime(DirListing.mtime));
+		Result.ftCreationTime := DateTimeToFileTime(UnixToDateTime(DirListing.mtime, false));
 		Result.ftLastWriteTime := Result.ftCreationTime;
 
 		Result.dwFileAttributes := 0;
