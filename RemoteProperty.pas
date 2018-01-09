@@ -41,7 +41,6 @@ type
 		DescriptionEditMemo: TMemo;
 		DescriptionSaveButton: TButton;
 		procedure AccessCBClick(Sender: TObject);
-		procedure FormDestroy(Sender: TObject);
 		class function ShowProperty(parentWindow: HWND; RemoteName: WideString; RemoteProperty: TCloudMailRuDirListingItem; Cloud: TCloudMailRu; DoUrlEncode: Boolean = true; AutoUpdateDownloadListing: Boolean = true; ShowDescription: Boolean = true; EditDescription: Boolean = true; PluginIonFileName: WideString = 'descript.ion'): Integer;
 		procedure FormActivate(Sender: TObject);
 		procedure InviteBtnClick(Sender: TObject);
@@ -55,9 +54,9 @@ type
 		procedure CancelScanTBClick(Sender: TObject);
 		procedure RefreshScanTBClick(Sender: TObject);
 		procedure DescriptionSaveButtonClick(Sender: TObject);
+		procedure FormKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
 	private
 		{Private declarations}
-		procedure WMHotKey(var Message: TMessage); message WM_HOTKEY;
 		procedure WMAfterShow(var Message: TMessage); message WM_AFTER_SHOW;
 		procedure RefreshInvites();
 		procedure RefreshPublicShare(const Publish: Boolean);
@@ -282,9 +281,22 @@ begin
 	CenterWindow(self.parentWindow, self.Handle);
 end;
 
-procedure TPropertyForm.FormDestroy(Sender: TObject);
+procedure TPropertyForm.FormKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
 begin
-	UnregisterHotKey((Sender as TPropertyForm).Handle, 1)
+	case Key of
+		VK_ESCAPE:
+			Close;
+		VK_F2:
+			begin
+				if (self.ShowDescription) and (self.EditDescription) then
+				begin
+					SaveItemDescription;
+					self.ModalResult := IDCONTINUE;
+					self.CloseModal;
+				end;
+			end;
+	end;
+
 end;
 
 procedure TPropertyForm.FormShow(Sender: TObject);
@@ -382,8 +394,6 @@ begin
 		if ('descript.ion' <> PluginIonFileName) then
 			PropertyForm.DescriptionTS.Caption := 'Description from ' + PluginIonFileName;
 
-		RegisterHotKey(PropertyForm.Handle, 1, 0, VK_ESCAPE);
-		RegisterHotKey(PropertyForm.Handle, 2, 0, VK_F2);
 		result := PropertyForm.Showmodal;
 
 	finally
@@ -431,18 +441,6 @@ begin
 
 	end;
 
-end;
-
-procedure TPropertyForm.WMHotKey(var Message: TMessage);
-begin
-	if (Message.LParamHi = VK_ESCAPE) and (GetForegroundWindow = self.Handle) then
-		Close;
-	if (Message.LParamHi = VK_F2) and (GetForegroundWindow = self.Handle) and (self.ShowDescription) and (self.EditDescription) then
-	begin
-		SaveItemDescription;
-		self.ModalResult := IDCONTINUE;
-		self.CloseModal;
-	end;
 end;
 
 procedure TPropertyForm.WrapBTNClick(Sender: TObject);

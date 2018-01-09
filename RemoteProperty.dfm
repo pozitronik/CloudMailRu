@@ -13,10 +13,11 @@ object PropertyForm: TPropertyForm
   Font.Name = 'Tahoma'
   Font.Style = []
   FormStyle = fsStayOnTop
+  KeyPreview = True
   OldCreateOrder = False
   Position = poMainFormCenter
   OnActivate = FormActivate
-  OnDestroy = FormDestroy
+  OnKeyUp = FormKeyUp
   OnShow = FormShow
   DesignSize = (
     837
@@ -63,14 +64,10 @@ object PropertyForm: TPropertyForm
     Top = 75
     Width = 836
     Height = 283
-    ActivePage = DescriptionTS
+    ActivePage = FolderAccessTS
     TabOrder = 3
     object FolderAccessTS: TTabSheet
       Caption = 'Folder Access'
-      ExplicitLeft = 0
-      ExplicitTop = 0
-      ExplicitWidth = 0
-      ExplicitHeight = 0
       DesignSize = (
         828
         255)
@@ -154,10 +151,6 @@ object PropertyForm: TPropertyForm
     object DownloadLinksTS: TTabSheet
       Caption = 'Download Links'
       ImageIndex = 1
-      ExplicitLeft = 0
-      ExplicitTop = 0
-      ExplicitWidth = 0
-      ExplicitHeight = 0
       object DownloadLinksMemo: TMemo
         Left = 0
         Top = 40
@@ -235,10 +228,6 @@ object PropertyForm: TPropertyForm
     object DescriptionTS: TTabSheet
       Caption = 'Description'
       ImageIndex = 2
-      ExplicitLeft = 0
-      ExplicitTop = 0
-      ExplicitWidth = 0
-      ExplicitHeight = 0
       DesignSize = (
         828
         255)
@@ -293,7 +282,7 @@ object PropertyForm: TPropertyForm
     Left = 740
     Top = 147
     Bitmap = {
-      494C010104008C00E40020002000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010104008C00E80020002000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000800000004000000001002000000000000080
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
