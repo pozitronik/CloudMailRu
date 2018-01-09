@@ -146,6 +146,7 @@ object AccountsForm: TAccountsForm
     0000000000000000000000000000000000000000000000000000000000000000
     0000000000000000000000000000000000000000000000000000000000000000
     000000000000000000000000000000000000000000000000000000000000}
+  KeyPreview = True
   OldCreateOrder = False
   Position = poOwnerFormCenter
   OnActivate = FormActivate
@@ -392,6 +393,10 @@ object AccountsForm: TAccountsForm
     object GlobalTab: TTabSheet
       Caption = 'Global settings'
       ImageIndex = 1
+      ExplicitLeft = 0
+      ExplicitTop = 0
+      ExplicitWidth = 0
+      ExplicitHeight = 0
       object CloudMaxFileSizeLabelBytes: TLabel
         Left = 292
         Top = 115
@@ -686,6 +691,10 @@ object AccountsForm: TAccountsForm
     object NetworkTab: TTabSheet
       Caption = 'Network settings'
       ImageIndex = 2
+      ExplicitLeft = 0
+      ExplicitTop = 0
+      ExplicitWidth = 0
+      ExplicitHeight = 0
       object SocketTimeoutLabel: TLabel
         Left = 5
         Top = 11
@@ -863,6 +872,10 @@ object AccountsForm: TAccountsForm
     object CommentsTab: TTabSheet
       Caption = 'File comments support'
       ImageIndex = 3
+      ExplicitLeft = 0
+      ExplicitTop = 0
+      ExplicitWidth = 0
+      ExplicitHeight = 0
       object DescriptionFileNameLabel: TLabel
         Left = 5
         Top = 118
