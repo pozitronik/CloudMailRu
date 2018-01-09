@@ -12,7 +12,6 @@ object PropertyForm: TPropertyForm
   Font.Height = -11
   Font.Name = 'Tahoma'
   Font.Style = []
-  FormStyle = fsStayOnTop
   KeyPreview = True
   OldCreateOrder = False
   Position = poMainFormCenter

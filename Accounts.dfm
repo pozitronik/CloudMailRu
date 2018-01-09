@@ -11,7 +11,6 @@ object AccountsForm: TAccountsForm
   Font.Height = -11
   Font.Name = 'Tahoma'
   Font.Style = []
-  FormStyle = fsStayOnTop
   Icon.Data = {
     0000010001002020000020002000A81000001600000028000000200000004000
     0000010020000000000080100000000000000000000000000000000000000000
@@ -864,10 +863,6 @@ object AccountsForm: TAccountsForm
     object CommentsTab: TTabSheet
       Caption = 'File comments support'
       ImageIndex = 3
-      ExplicitLeft = 0
-      ExplicitTop = 0
-      ExplicitWidth = 0
-      ExplicitHeight = 0
       object DescriptionFileNameLabel: TLabel
         Left = 5
         Top = 118
