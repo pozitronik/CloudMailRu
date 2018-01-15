@@ -38,8 +38,6 @@ begin
 		AskPasswordForm.Caption := AccountName + ' password';
 		AskPasswordForm.UseTCPwdMngrCB.Enabled := not DisablePWDManagerCB;
 		AskPasswordForm.UseTCPwdMngrCB.Checked := UseTCPwdMngr;
-		RegisterHotKey(AskPasswordForm.Handle, 1, 0, VK_ESCAPE);
-		RegisterHotKey(AskPasswordForm.Handle, 2, 0, VK_RETURN);
 
 		result := AskPasswordForm.ShowModal;
 		if result = mrOk then
