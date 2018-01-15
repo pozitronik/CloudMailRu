@@ -11,6 +11,7 @@ object AskPasswordForm: TAskPasswordForm
   Font.Height = -11
   Font.Name = 'Tahoma'
   Font.Style = []
+  KeyPreview = True
   OldCreateOrder = False
   Position = poOwnerFormCenter
   OnActivate = FormActivate
