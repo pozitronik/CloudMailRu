@@ -1108,6 +1108,9 @@ var
 begin
 
 	RealPath := ExtractRealPath(RemoteName);
+	if not FileExists(LocalName) then
+		exit(FS_FILE_NOTFOUND);
+
 	if (RealPath.account = '') or RealPath.trashDir or RealPath.sharedDir or RealPath.invitesDir then
 		exit(FS_FILE_NOTSUPPORTED);
 	ProgressHandle(LocalName, PWideChar(RealPath.path), 0);
