@@ -40,6 +40,7 @@ var
 	ThreadBackgroundJobs: TDictionary<WideString, Int32>; //массив [account root => количество потоков] для хранения количества текущих фоновых задач (предохраняемся от удаления объектов, которые могут быть использованы потоками)
 	ThreadBackgroundThreads: TDictionary<DWORD, Int32>; //массив [id потока => статус операции] для хранения текущих фоновых потоков (предохраняемся от завершения работы плагина при закрытии TC)
 	ThreadFsStatusInfo: TDictionary<DWORD, Int32>; //массив [id потока => текущая операция] для хранения контекста выполняемой операции (применяем для отлова перемещений каталогов)
+	ThreadFsRemoveDirSkippedPath: TDictionary<Int32, TStringList>; //массив [id потока => путь] для хранения путей, пропускаемых при перемещении (см. issue #168).
 
 	{Callback data}
 	PluginNum: integer;
@@ -333,6 +334,7 @@ begin
 					end;
 					ThreadRetryCountRenMov.AddOrSetValue(GetCurrentThreadID(), 0);
 					ThreadCanAbortRenMov.AddOrSetValue(GetCurrentThreadID, true);
+					ThreadFsRemoveDirSkippedPath.AddOrSetValue(GetCurrentThreadID, TStringList.Create());
 				end;
 			FS_STATUS_OP_DELETE:
 				begin
@@ -420,6 +422,8 @@ begin
 				begin
 					ThreadSkipListRenMov.AddOrSetValue(GetCurrentThreadID, false);
 					ThreadCanAbortRenMov.AddOrSetValue(GetCurrentThreadID, false);
+
+					ThreadFsRemoveDirSkippedPath.Items[GetCurrentThreadID].Free;
 					if inAccount(RealPath) and GetPluginSettings(SettingsIniFilePath).LogUserSpace then
 						ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
 				end;
@@ -1236,6 +1240,8 @@ var
 	Cloud: TCloudMailRu;
 	OperationContextId: integer;
 begin
+	if (ThreadFsRemoveDirSkippedPath.Items[GetCurrentThreadID].Text.Contains(RemoteName)) then //файлы по удаляемому пути есть в блек-листе
+		exit(false);
 	ThreadListingAborted.TryGetValue(GetCurrentThreadID(), ListingAborted);
 	if ListingAborted then
 	begin
@@ -1344,7 +1350,7 @@ function FsRenMovFileW(OldName: PWideChar; NewName: PWideChar; Move: boolean; Ov
 var
 	OldRealPath: TRealPath;
 	NewRealPath: TRealPath;
-	getResult: integer;
+	getResult, SkippedFoundIndex: integer;
 	OldCloud, NewCloud: TCloudMailRu;
 begin
 	ProgressHandle(OldName, NewName, 0);
@@ -1381,7 +1387,16 @@ begin
 		if Move then
 		begin
 			Result := OldCloud.mvFile(OldRealPath.path, NewRealPath.path);
-			if ((Result = FS_FILE_OK) and GetPluginSettings(SettingsIniFilePath).DescriptionTrackCloudFS and RemoteDescriptionsSupportEnabled(GetAccountSettingsFromIniFile(AccountsIniFilePath, NewRealPath.account))) then
+			if (FS_FILE_EXISTS = Result) then //TC сразу же попытается удалить каталог, чтобы избежать этого - внесем путь в своеобразный блеклист
+			begin //TODO: нужно добавлять полные пути, а проверять при удалении - не все файлы могут быть пропущены
+				ThreadFsRemoveDirSkippedPath.Items[GetCurrentThreadID].Add(ExtractVirtualPath(OldRealPath));
+			end else if (FS_FILE_OK = Result) then
+			begin //Вытащим из блеклиста, если решили перезаписать
+				SkippedFoundIndex := ThreadFsRemoveDirSkippedPath.Items[GetCurrentThreadID].IndexOf(ExtractVirtualPath(OldRealPath));
+				if (-1 <> SkippedFoundIndex) then
+					ThreadFsRemoveDirSkippedPath.Items[GetCurrentThreadID].Delete(SkippedFoundIndex);
+			end;
+			if ((FS_FILE_OK = Result) and GetPluginSettings(SettingsIniFilePath).DescriptionTrackCloudFS and RemoteDescriptionsSupportEnabled(GetAccountSettingsFromIniFile(AccountsIniFilePath, NewRealPath.account))) then
 				RenameRemoteFileDescription(OldRealPath, NewRealPath, OldCloud);
 		end else begin
 			Result := OldCloud.cpFile(OldRealPath.path, NewRealPath.path);
@@ -1400,7 +1415,7 @@ begin
 	BackgroundJobsCount := 0;
 	if ((not ThreadBackgroundJobs.TryGetValue(ExtractFileName(DisconnectRoot), BackgroundJobsCount)) or (BackgroundJobsCount = 0)) then
 	begin
-		ConnectionManager.free(ExtractFileName(DisconnectRoot));
+		ConnectionManager.Free(ExtractFileName(DisconnectRoot));
 		Result := true;
 	end else begin //здесь можно добавить механизм ожидания завершения фоновой операции
 		Result := false;
@@ -1771,6 +1786,7 @@ begin
 	ThreadBackgroundJobs := TDictionary<WideString, Int32>.Create;
 	ThreadBackgroundThreads := TDictionary<DWORD, Int32>.Create;
 	ThreadFsStatusInfo := TDictionary<DWORD, Int32>.Create;
+	ThreadFsRemoveDirSkippedPath := TDictionary<Int32, TStringList>.Create;
 
 end;
 
@@ -1785,12 +1801,13 @@ begin
 	FreeAndNil(ThreadListingAborted);
 	FreeAndNil(ThreadBackgroundJobs);
 	FreeAndNil(ThreadFsStatusInfo);
+	FreeAndNil(ThreadFsRemoveDirSkippedPath);
 	FreeAndNil(ConnectionManager);
 
 	FreeAndNil(AccountsList); //уже сделано, но не страшно, к тому же в будущем может не разрушаться ранее
-	CurrentDescriptions.free;
+	CurrentDescriptions.Free;
 
-	PasswordManager.free;
+	PasswordManager.Free;
 
 end;
 
