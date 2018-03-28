@@ -1240,7 +1240,7 @@ var
 	Cloud: TCloudMailRu;
 	OperationContextId: integer;
 begin
-	if (ThreadFsRemoveDirSkippedPath.Items[GetCurrentThreadID].Text.Contains(RemoteName)) then //файлы по удаляемому пути есть в блек-листе
+	if (ThreadFsRemoveDirSkippedPath.ContainsKey(GetCurrentThreadID) and ThreadFsRemoveDirSkippedPath.Items[GetCurrentThreadID].Text.Contains(RemoteName)) then //файлы по удаляемому пути есть в блек-листе
 		exit(false);
 	ThreadListingAborted.TryGetValue(GetCurrentThreadID(), ListingAborted);
 	if ListingAborted then
