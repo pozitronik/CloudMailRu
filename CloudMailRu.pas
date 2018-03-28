@@ -62,6 +62,7 @@ type
 
 		procedure HTTPProgress(ASender: TObject; AWorkMode: TWorkMode; AWorkCount: int64);
 		{RAW TEXT PARSING}
+		function extractNearValue(Text, Anchor: WideString): WideString;
 		function extractTokenFromText(Text: WideString; var token: WideString): Boolean;
 		function extractPublicTokenFromText(Text: WideString; var PublicToken: WideString): Boolean;
 		function extract_x_page_id_FromText(Text: WideString; var PageId: WideString): Boolean;
@@ -450,17 +451,24 @@ begin
 	end;
 end;
 
-function TCloudMailRu.extractTokenFromText(Text: WideString; var token: WideString): Boolean;
+function TCloudMailRu.extractNearValue(Text, Anchor: WideString): WideString;
 var
-	start: integer;
+	start, end_: integer;
 begin
-	Result := false;
-	start := Pos(WideString('"csrf"'), Text);
+	Result := EmptyWideStr;
+	start := Pos(WideString(Anchor), Text);
 	if start > 0 then
 	begin
-		token := copy(Text, start + 8, 32);
-		Result := true;
+		start := Pos('"', Text, start + length(Anchor)) + 1;
+		end_ := Pos('"', Text, start);
+		Result := copy(Text, start, end_ - start);
 	end;
+end;
+
+function TCloudMailRu.extractTokenFromText(Text: WideString; var token: WideString): Boolean;
+begin
+	token := self.extractNearValue(Text, '"csrf"');
+	Result := token <> EmptyWideStr;
 end;
 
 function TCloudMailRu.extractTwostepJson(Text: WideString; var JSON: WideString): Boolean;
@@ -479,19 +487,9 @@ begin
 end;
 
 function TCloudMailRu.extract_build_FromText(Text: WideString; var build: WideString): Boolean;
-var
-	start, finish: integer;
-	temp: WideString;
 begin
-	Result := false;
-	start := Pos(WideString('"BUILD"'), Text);
-	if start > 0 then
-	begin
-		temp := copy(Text, start + 9, 100);
-		finish := Pos(WideString('"'), temp);
-		build := copy(temp, 0, finish - 1);
-		Result := true;
-	end;
+	build := self.extractNearValue(Text, '"BUILD"');
+	Result := build <> EmptyWideStr;
 end;
 
 function TCloudMailRu.extract_upload_url_FromText(Text: WideString; var UploadUrl: WideString): Boolean;
@@ -508,22 +506,15 @@ begin
 		length := finish - start1;
 		temp := copy(Text, start1, length);
 		start2 := Pos(WideString('https://'), temp);
-		UploadUrl := copy(temp, start2, StrLen(PWideChar(temp)) - start2);
+		UploadUrl := copy(temp, start2, Strlen(PWideChar(temp)) - start2);
 		Result := true;
 	end;
 end;
 
 function TCloudMailRu.extract_x_page_id_FromText(Text: WideString; var PageId: WideString): Boolean;
-var
-	start: integer;
 begin
-	Result := false;
-	start := Pos(WideString('"x-page-id"'), Text);
-	if start > 0 then
-	begin
-		PageId := copy(Text, start + 13, 10);
-		Result := true;
-	end;
+	PageId:= self.extractNearValue(Text, '"x-page-id"');
+	Result := PageId <> EmptyWideStr;
 end;
 
 function TCloudMailRu.extractPublicShard(Text: WideString; var Shard: WideString): Boolean;
