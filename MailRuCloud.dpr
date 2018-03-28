@@ -1387,10 +1387,10 @@ begin
 		if Move then
 		begin
 			Result := OldCloud.mvFile(OldRealPath.path, NewRealPath.path);
-			if (FS_FILE_EXISTS = Result) then //TC сразу же попытается удалить каталог, чтобы избежать этого - внесем путь в своеобразный блеклист
-			begin //TODO: нужно добавлять полные пути, а проверять при удалении - не все файлы могут быть пропущены
+			if (FS_FILE_EXISTS = Result) and (ThreadFsRemoveDirSkippedPath.ContainsKey(GetCurrentThreadID)) then //TC сразу же попытается удалить каталог, чтобы избежать этого - внесем путь в своеобразный блеклист
+			begin
 				ThreadFsRemoveDirSkippedPath.Items[GetCurrentThreadID].Add(ExtractVirtualPath(OldRealPath));
-			end else if (FS_FILE_OK = Result) then
+			end else if (FS_FILE_OK = Result) and (ThreadFsRemoveDirSkippedPath.ContainsKey(GetCurrentThreadID)) then
 			begin //Вытащим из блеклиста, если решили перезаписать
 				SkippedFoundIndex := ThreadFsRemoveDirSkippedPath.Items[GetCurrentThreadID].IndexOf(ExtractVirtualPath(OldRealPath));
 				if (-1 <> SkippedFoundIndex) then
