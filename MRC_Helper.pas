@@ -227,7 +227,7 @@ end;
 
 function ExtractVirtualPath(RealPath: TRealPath): WideString;
 begin
-	Result := ExcludeTrailingPathDelimiter('\' + ExtractUniversalFilePath(IncludeTrailingPathDelimiter(RealPath.account) + RealPath.path));
+	Result := ExcludeTrailingPathDelimiter('\' + IncludeTrailingPathDelimiter(RealPath.account) + RealPath.path);
 end;
 
 //проверка, находится ли путь внутри аккаунта. ignoreVirtual - не считать виртуальные каталоги облачными
