@@ -40,6 +40,7 @@ function Implode(S: TStringList; Delimiter: WideString): WideString;
 function Explode(S: WideString; Delimiter: char): TStringList;
 function MyExtractStrings(Separators, WhiteSpace: TSysCharSet; Content: PWideChar; Strings: TStrings): integer;
 function ExtractRealPath(VirtualPath: WideString): TRealPath;
+function ExtractVirtualPath(RealPath: TRealPath): WideString;
 function inAccount(path: TRealPath; ignoreVirtual: boolean = true): boolean;
 function SizeOfFile(const FileName: String): Int64;
 function DateTimeToUnix(ConvDate: TDateTime): integer;
@@ -222,6 +223,11 @@ begin
 		Result.invitesDir := true;
 		Result.account := Copy(Result.account, 1, Length(Result.account) - Length(InvitesPostfix));
 	end;
+end;
+
+function ExtractVirtualPath(RealPath: TRealPath): WideString;
+begin
+	Result := ExcludeTrailingPathDelimiter('\' + ExtractUniversalFilePath(IncludeTrailingPathDelimiter(RealPath.account) + RealPath.path));
 end;
 
 //проверка, находится ли путь внутри аккаунта. ignoreVirtual - не считать виртуальные каталоги облачными
