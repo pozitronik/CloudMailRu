@@ -916,6 +916,7 @@ end;
 procedure TCloudMailRu.HTTPInit(var HTTP: TIdHTTP; var SSL: TIdSSLIOHandlerSocketOpenSSL; var Socks: TIdSocksInfo; var Cookie: TIdCookieManager);
 begin
 	SSL := TIdSSLIOHandlerSocketOpenSSL.Create();
+	SSL.SSLOptions.SSLVersions := [sslvSSLv23];
 	HTTP := TIdHTTP.Create();
 	if (self.Proxy.ProxyType in SocksProxyTypes) and (self.Socks.Enabled) then
 		SSL.TransparentProxy := self.Socks;
