@@ -874,6 +874,7 @@ begin
 		PageContent := StringReplace(PageContent, #$A, EmptyWideStr, [rfReplaceAll]); //так нам проще ковыряться в тексте
 		PageContent := StringReplace(PageContent, #$D, EmptyWideStr, [rfReplaceAll]);
 		PageContent := StringReplace(PageContent, #9, EmptyWideStr, [rfReplaceAll]);
+		PageContent := StringReplace(PageContent, #$20, EmptyWideStr, [rfReplaceAll]);
 		if not self.extractPublicTokenFromText(PageContent, self.public_download_token) then //refresh public download token
 		begin
 			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Can''t get public share download token');
