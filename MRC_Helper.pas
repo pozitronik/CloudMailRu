@@ -180,6 +180,7 @@ var
 begin
 	Result.account := EmptyWideStr;
 	Result.path := EmptyWideStr;
+	//we can't rely on isDir property, cause it can't be clearly defined =(
 	Result.isDir := False;
 	Result.upDirItem := False;
 	Result.trashDir := False;
