@@ -424,6 +424,8 @@ begin
 					ThreadCanAbortRenMov.AddOrSetValue(GetCurrentThreadID, false);
 
 					ThreadFsRemoveDirSkippedPath.Items[GetCurrentThreadID].Free;
+					ThreadFsRemoveDirSkippedPath.AddOrSetValue(GetCurrentThreadID, nil);
+
 					if inAccount(RealPath) and GetPluginSettings(SettingsIniFilePath).LogUserSpace then
 						ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
 				end;
@@ -1392,9 +1394,15 @@ begin
 				ThreadFsRemoveDirSkippedPath.Items[GetCurrentThreadID].Add(ExtractVirtualPath(OldRealPath));
 			end else if (FS_FILE_OK = Result) and (ThreadFsRemoveDirSkippedPath.ContainsKey(GetCurrentThreadID)) then
 			begin //Вытащим из блеклиста, если решили перезаписать
-				SkippedFoundIndex := ThreadFsRemoveDirSkippedPath.Items[GetCurrentThreadID].IndexOf(ExtractVirtualPath(OldRealPath));
-				if (-1 <> SkippedFoundIndex) then
-					ThreadFsRemoveDirSkippedPath.Items[GetCurrentThreadID].Delete(SkippedFoundIndex);
+
+
+				if Assigned(ThreadFsRemoveDirSkippedPath.Items[GetCurrentThreadID]) then
+				begin
+					SkippedFoundIndex := ThreadFsRemoveDirSkippedPath.Items[GetCurrentThreadID].IndexOf(ExtractVirtualPath(OldRealPath));
+					if (-1 <> SkippedFoundIndex) then
+						ThreadFsRemoveDirSkippedPath.Items[GetCurrentThreadID].Delete(SkippedFoundIndex);
+				end;
+
 			end;
 			if ((FS_FILE_OK = Result) and GetPluginSettings(SettingsIniFilePath).DescriptionTrackCloudFS and RemoteDescriptionsSupportEnabled(GetAccountSettingsFromIniFile(AccountsIniFilePath, NewRealPath.account))) then
 				RenameRemoteFileDescription(OldRealPath, NewRealPath, OldCloud);
