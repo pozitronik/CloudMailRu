@@ -196,9 +196,6 @@ begin
 	if (List.Count > 0) and (List.Strings[List.Count - 1] = '..') then
 		Result.upDirItem := true;
 
-	if (List.Count > 0) and (List.Strings[List.Count - 1] = '\') then
-		Result.isDir := true;
-
 	if List.Count = 1 then
 	begin
 		Result.account := List.Strings[0];
@@ -208,6 +205,10 @@ begin
 		List.Delete(0);
 		Result.path := Implode(List, '\');
 	end;
+
+	if (List.Count > 0) and (List.Strings[List.Count - 1] = '\') or (Result.account = VirtualPath) then
+		Result.isDir := true;
+
 	List.Destroy;
 
 	if ExtractFileExt(Result.account) = TrashPostfix then
