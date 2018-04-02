@@ -62,7 +62,7 @@ type
 
 		procedure HTTPProgress(ASender: TObject; AWorkMode: TWorkMode; AWorkCount: int64);
 		{RAW TEXT PARSING}
-		function extractNearValue(Text, Anchor: WideString): WideString;
+		function extractNearValue(Text, Anchor: WideString; StartChar: WideChar = '"'; EndChar: WideChar = '"'): WideString;
 		function extractTokenFromText(Text: WideString; var token: WideString): Boolean;
 		function extractPublicTokenFromText(Text: WideString; var PublicToken: WideString): Boolean;
 		function extract_x_page_id_FromText(Text: WideString; var PageId: WideString): Boolean;
@@ -451,16 +451,21 @@ begin
 	end;
 end;
 
-function TCloudMailRu.extractNearValue(Text, Anchor: WideString): WideString;
+function TCloudMailRu.extractNearValue(Text, Anchor: WideString; StartChar: WideChar = '"'; EndChar: WideChar = '"'): WideString;
 var
 	start, end_: integer;
 begin
 	Result := EmptyWideStr;
+
+	Text := StringReplace(Text, #$A, EmptyWideStr, [rfReplaceAll]); //так нам проще ковыряться в тексте
+	Text := StringReplace(Text, #$D, EmptyWideStr, [rfReplaceAll]);
+	Text := StringReplace(Text, #9, EmptyWideStr, [rfReplaceAll]);
+	Text := StringReplace(Text, #$20, EmptyWideStr, [rfReplaceAll]);
 	start := Pos(WideString(Anchor), Text);
 	if start > 0 then
 	begin
-		start := Pos('"', Text, start + length(Anchor)) + 1;
-		end_ := Pos('"', Text, start);
+		start := Pos(StartChar, Text, start + length(Anchor)) + 1;
+		end_ := Pos(EndChar, Text, start);
 		Result := copy(Text, start, end_ - start);
 	end;
 end;
@@ -513,7 +518,7 @@ end;
 
 function TCloudMailRu.extract_x_page_id_FromText(Text: WideString; var PageId: WideString): Boolean;
 begin
-	PageId:= self.extractNearValue(Text, '"x-page-id"');
+	PageId := self.extractNearValue(Text, '"x-page-id"');
 	Result := PageId <> EmptyWideStr;
 end;
 
@@ -522,11 +527,9 @@ var
 	start: integer;
 	finish: integer;
 begin
-	start := Pos(WideString('"weblink_get":['), Text);
-	Result := start <> 0;
-	start := Pos(WideString('"url":'), Text, start) + 7;
-	finish := Pos(WideString('"}]'), Text, start);
-	Shard := copy(Text, start, finish - start);
+	Shard := extractNearValue(Text, '"weblink_get":', '[', ']');
+	Shard := extractNearValue(Shard, '"url":');
+	Result := EmptyWideStr <> Shard;
 end;
 
 function TCloudMailRu.extractPublicTokenFromText(Text: WideString; var PublicToken: WideString): Boolean;
@@ -534,11 +537,8 @@ var
 	start: integer;
 	finish: integer;
 begin
-	start := Pos(WideString('"tokens":{"download":'), Text);
-	Result := start <> 0;
-	start := start + 22;
-	finish := Pos(WideString('"}'), Text, start);
-	PublicToken := copy(Text, start, finish - start);
+	PublicToken := extractNearValue(Text, '"tokens":{"download":');
+	Result := EmptyWideStr <> PublicToken;
 end;
 
 function TCloudMailRu.getDescriptionFile(remotePath, localCopy: WideString): Boolean;
@@ -871,10 +871,6 @@ begin
 	Result := self.HTTPGetPage(self.PUBLIC_URL, PageContent, Progress);
 	if Result then
 	begin
-		PageContent := StringReplace(PageContent, #$A, EmptyWideStr, [rfReplaceAll]); //так нам проще ковыряться в тексте
-		PageContent := StringReplace(PageContent, #$D, EmptyWideStr, [rfReplaceAll]);
-		PageContent := StringReplace(PageContent, #9, EmptyWideStr, [rfReplaceAll]);
-		PageContent := StringReplace(PageContent, #$20, EmptyWideStr, [rfReplaceAll]);
 		if not self.extractPublicTokenFromText(PageContent, self.public_download_token) then //refresh public download token
 		begin
 			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Can''t get public share download token');
