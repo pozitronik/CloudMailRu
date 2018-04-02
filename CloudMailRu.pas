@@ -523,9 +523,6 @@ begin
 end;
 
 function TCloudMailRu.extractPublicShard(Text: WideString; var Shard: WideString): Boolean;
-var
-	start: integer;
-	finish: integer;
 begin
 	Shard := extractNearValue(Text, '"weblink_get":', '[', ']');
 	Shard := extractNearValue(Shard, '"url":');
@@ -533,9 +530,6 @@ begin
 end;
 
 function TCloudMailRu.extractPublicTokenFromText(Text: WideString; var PublicToken: WideString): Boolean;
-var
-	start: integer;
-	finish: integer;
 begin
 	PublicToken := extractNearValue(Text, '"tokens":{"download":');
 	Result := EmptyWideStr <> PublicToken;
