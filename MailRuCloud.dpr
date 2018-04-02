@@ -1242,7 +1242,7 @@ var
 	Cloud: TCloudMailRu;
 	OperationContextId: integer;
 begin
-	if (ThreadFsRemoveDirSkippedPath.ContainsKey(GetCurrentThreadID) and ThreadFsRemoveDirSkippedPath.Items[GetCurrentThreadID].Text.Contains(RemoteName)) then //файлы по удаляемому пути есть в блек-листе
+	if (ThreadFsRemoveDirSkippedPath.ContainsKey(GetCurrentThreadID) and Assigned(ThreadFsRemoveDirSkippedPath.Items[GetCurrentThreadID]) and ThreadFsRemoveDirSkippedPath.Items[GetCurrentThreadID].Text.Contains(RemoteName)) then //файлы по удаляемому пути есть в блек-листе
 		exit(false);
 	ThreadListingAborted.TryGetValue(GetCurrentThreadID(), ListingAborted);
 	if ListingAborted then
@@ -1394,7 +1394,6 @@ begin
 				ThreadFsRemoveDirSkippedPath.Items[GetCurrentThreadID].Add(ExtractVirtualPath(OldRealPath));
 			end else if (FS_FILE_OK = Result) and (ThreadFsRemoveDirSkippedPath.ContainsKey(GetCurrentThreadID)) then
 			begin //Вытащим из блеклиста, если решили перезаписать
-
 
 				if Assigned(ThreadFsRemoveDirSkippedPath.Items[GetCurrentThreadID]) then
 				begin
