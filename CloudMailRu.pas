@@ -558,6 +558,7 @@ begin
 	Result := false;
 	if not(Assigned(self)) then
 		exit; //Проверка на вызов без инициализации
+	SetLength(DirListing, 0);
 	if self.public_account then
 		exit;
 	Result := self.HTTPGetPage(API_FOLDER_SHARED_LINKS + '?' + self.united_params, JSON, ShowProgress);
@@ -585,6 +586,7 @@ begin
 	Result := false;
 	if not(Assigned(self)) then
 		exit; //Проверка на вызов без инициализации
+	SetLength(IncomingListing, 0);
 	if self.public_account then
 		exit;
 	Result := self.HTTPGetPage(API_FOLDER_SHARED_INCOMING + '?' + self.united_params, JSON, ShowProgress);
@@ -608,6 +610,10 @@ function TCloudMailRu.getIncomingLinksListing(var IncomingListing: TCloudMailRuD
 var
 	i: integer;
 begin
+	Result := false;
+	if not(Assigned(self)) then
+		exit; //Проверка на вызов без инициализации
+	SetLength(IncomingListing, 0);
 	Result := self.getIncomingLinksListing(InvitesListing, ShowProgress);
 	if Result then
 	begin
@@ -632,6 +638,7 @@ begin
 	Result := false;
 	if not(Assigned(self)) then
 		exit; //Проверка на вызов без инициализации
+	SetLength(DirListing, 0);
 	if self.public_account then
 		exit;
 	Result := self.HTTPGetPage(API_TRASHBIN + '?' + self.united_params, JSON, ShowProgress);
@@ -659,7 +666,7 @@ begin
 	Result := false;
 	if not(Assigned(self)) then
 		exit; //Проверка на вызов без инициализации
-
+	SetLength(DirListing, 0);
 	if self.public_account then
 		Result := self.HTTPGetPage(API_FOLDER + '&weblink=' + IncludeSlash(self.public_link) + PathToUrl(Path, false) + self.united_params, JSON, ShowProgress)
 	else
