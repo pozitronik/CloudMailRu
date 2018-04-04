@@ -29,10 +29,10 @@ var
 	AccountsList: TStringList; //Global accounts list
 	FileCounter: integer = 0;
 	CurrentlyMovedDir: TRealPath;
-	ThreadSkipListDelete: TDictionary<DWORD, Bool>; //Массив id потоков, для которых операции получения листинга должны быть пропущены (при удалении)
-	ThreadSkipListRenMov: TDictionary<DWORD, Bool>; //Массив id потоков, для которых операции получения листинга должны быть пропущены (при копировании/перемещении)
-	ThreadCanAbortRenMov: TDictionary<DWORD, Bool>; //Массив id потоков, для которых в операциях получения листинга должен быть выведен дополнительный диалог прогресса с возможностью отмены операции (fix issue #113)
-	ThreadListingAborted: TDictionary<DWORD, Bool>; //Массив id потоков, для которых в операциях получения листинга была нажата отмена
+	ThreadSkipListDelete: TDictionary<DWORD, Boolean>; //Массив id потоков, для которых операции получения листинга должны быть пропущены (при удалении)
+	ThreadSkipListRenMov: TDictionary<DWORD, Boolean>; //Массив id потоков, для которых операции получения листинга должны быть пропущены (при копировании/перемещении)
+	ThreadCanAbortRenMov: TDictionary<DWORD, Boolean>; //Массив id потоков, для которых в операциях получения листинга должен быть выведен дополнительный диалог прогресса с возможностью отмены операции (fix issue #113)
+	ThreadListingAborted: TDictionary<DWORD, Boolean>; //Массив id потоков, для которых в операциях получения листинга была нажата отмена
 
 	ThreadRetryCountDownload: TDictionary<DWORD, Int32>; //массив [id потока => количество попыток] для подсчёта количества повторов скачивания файла
 	ThreadRetryCountUpload: TDictionary<DWORD, Int32>; //массив [id потока => количество попыток] для подсчёта количества повторов закачивания файла
@@ -123,7 +123,7 @@ begin
 end;
 
 {Пытаемся найти объект в облаке по его пути, сначала в текущем списке, если нет - то ищем в облаке}
-function FindListingItemByPath(CurrentListing: TCloudMailRuDirListing; path: TRealPath): TCloudMailRuDirListingItem;
+function FindListingItemByPath(CurrentListing: TCloudMailRuDirListing; path: TRealPath; UpdateListing: boolean = true): TCloudMailRuDirListingItem;
 var
 	getResult: integer;
 	Cloud: TCloudMailRu;
@@ -153,7 +153,7 @@ begin
 	else
 		Result := FindListingItemByHomePath(CurrentListing, path.path); //сначала попробуем найти поле в имеющемся списке
 
-	if Result.name = '' then //если там его нет (нажали пробел на папке, например), то запросим в облаке напрямую, в зависимости от того, внутри чего мы находимся
+	if (Result.name = '') and UpdateListing then //если там его нет (нажали пробел на папке, например), то запросим в облаке напрямую, в зависимости от того, внутри чего мы находимся
 	begin
 		Cloud := ConnectionManager.get(path.account, getResult);
 		if path.trashDir then //корзина - обновим CurrentListing, поищем в нём
@@ -499,9 +499,10 @@ function FsFindFirstW(path: PWideChar; var FindData: tWIN32FINDDATAW): THandle; 
 var //Получение первого файла в папке. Result тоталом не используется (можно использовать для работы плагина).
 	RealPath: TRealPath;
 	getResult: integer;
-	SkipListDelete, SkipListRenMov, CanAbortRenMov, RenMovAborted: Bool;
+	SkipListDelete, SkipListRenMov, CanAbortRenMov, RenMovAborted: Boolean;
+	CurrentItem: TCloudMailRuDirListingItem;
 begin
-	ThreadSkipListDelete.TryGetValue(GetCurrentThreadID(), SkipListDelete);
+	ThreadSkipListDelete.TryGetValue(GetCurrentThreadID(), SkipListDelete );
 	ThreadSkipListRenMov.TryGetValue(GetCurrentThreadID(), SkipListRenMov);
 
 	ThreadCanAbortRenMov.TryGetValue(GetCurrentThreadID(), CanAbortRenMov);
@@ -520,7 +521,6 @@ begin
 		exit(INVALID_HANDLE_VALUE);
 	end;
 
-	SetLength(CurrentListing, 0);
 	//Result := FIND_NO_MORE_FILES;
 	GlobalPath := path;
 	if GlobalPath = '\' then
@@ -559,7 +559,15 @@ begin
 		begin
 			if not ConnectionManager.get(RealPath.account, getResult).getIncomingLinksListing(CurrentListing, CurrentIncomingInvitesListing) then
 				SetLastError(ERROR_PATH_NOT_FOUND); //одновременно получаем оба листинга, чтобы не перечитывать листинг инватов на каждый чих
-		end else if not ConnectionManager.get(RealPath.account, getResult).getDirListing(RealPath.path, CurrentListing) then
+		end else begin //Нужно проверить, является ли открываемый объект каталогом - для файлов API вернёт листинг вышестоящего каталога, см. issue #174
+			CurrentItem := FindListingItemByPath(CurrentListing, RealPath, false);
+			if (CurrentItem.name <> '') and (CurrentItem.type_ <> TYPE_DIR) then
+			begin
+				SetLastError(ERROR_PATH_NOT_FOUND);
+				exit(INVALID_HANDLE_VALUE);
+			end;
+		end;
+		if not ConnectionManager.get(RealPath.account, getResult).getDirListing(RealPath.path, CurrentListing) then
 			SetLastError(ERROR_PATH_NOT_FOUND);
 
 		if getResult <> CLOUD_OPERATION_OK then
@@ -1212,7 +1220,7 @@ function FsMkDirW(path: PWideChar): Bool; stdcall;
 var
 	RealPath: TRealPath;
 	getResult: integer;
-	SkipListRenMov: Bool;
+	SkipListRenMov: Boolean;
 	OperationContextId: integer;
 begin
 	ThreadSkipListRenMov.TryGetValue(GetCurrentThreadID(), SkipListRenMov);
@@ -1238,7 +1246,7 @@ function FsRemoveDirW(RemoteName: PWideChar): Bool; stdcall;
 var
 	RealPath: TRealPath;
 	getResult: integer;
-	ListingAborted: Bool;
+	ListingAborted: Boolean;
 	Cloud: TCloudMailRu;
 	OperationContextId: integer;
 begin
@@ -1786,10 +1794,10 @@ begin
 	ThreadRetryCountDownload := TDictionary<DWORD, Int32>.Create;
 	ThreadRetryCountUpload := TDictionary<DWORD, Int32>.Create;
 	ThreadRetryCountRenMov := TDictionary<DWORD, Int32>.Create;
-	ThreadSkipListDelete := TDictionary<DWORD, Bool>.Create;
-	ThreadSkipListRenMov := TDictionary<DWORD, Bool>.Create;
-	ThreadCanAbortRenMov := TDictionary<DWORD, Bool>.Create;
-	ThreadListingAborted := TDictionary<DWORD, Bool>.Create;
+	ThreadSkipListDelete := TDictionary<DWORD, Boolean>.Create;
+	ThreadSkipListRenMov := TDictionary<DWORD, Boolean>.Create;
+	ThreadCanAbortRenMov := TDictionary<DWORD, Boolean>.Create;
+	ThreadListingAborted := TDictionary<DWORD, Boolean>.Create;
 	ThreadBackgroundJobs := TDictionary<WideString, Int32>.Create;
 	ThreadBackgroundThreads := TDictionary<DWORD, Int32>.Create;
 	ThreadFsStatusInfo := TDictionary<DWORD, Int32>.Create;
