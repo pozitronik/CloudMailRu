@@ -75,7 +75,7 @@ begin
 		Result := MyProgressProc(PluginNum, SourceName, TargetName, PercentDone);
 end;
 
-function CloudMailRuDirListingItemToFindData(DirListing: TCloudMailRuDirListingItem; DirsAsSymlinks: boolean = false): tWIN32FINDDATAW;
+function CloudMailRuDirListingItemToFindData(DirListing: TCloudMailRuDirListingItem; DirsAsSymlinks: Boolean = false): tWIN32FINDDATAW;
 begin
 	if (DirListing.deleted_from <> '') then //items inside trash bin
 	begin
@@ -122,31 +122,30 @@ begin
 	Result.dwFileAttributes := FILE_ATTRIBUTE_DIRECTORY;
 end;
 
+function FindListingItemByName(DirListing: TCloudMailRuDirListing; ItemName: WideString): TCloudMailRuDirListingItem;
+var
+	CurrentItem: TCloudMailRuDirListingItem;
+begin
+	for CurrentItem in DirListing do
+		if CurrentItem.name = ItemName then
+			exit(CurrentItem);
+end;
+
+function FindListingItemByHomePath(DirListing: TCloudMailRuDirListing; HomePath: WideString): TCloudMailRuDirListingItem;
+var
+	CurrentItem: TCloudMailRuDirListingItem;
+begin
+	HomePath := '/' + StringReplace(HomePath, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]);
+	for CurrentItem in DirListing do
+		if CurrentItem.home = HomePath then
+			exit(CurrentItem);
+end;
+
 {Пытаемся найти объект в облаке по его пути, сначала в текущем списке, если нет - то ищем в облаке}
-function FindListingItemByPath(CurrentListing: TCloudMailRuDirListing; path: TRealPath; UpdateListing: boolean = true): TCloudMailRuDirListingItem;
+function FindListingItemByPath(CurrentListing: TCloudMailRuDirListing; path: TRealPath; UpdateListing: Boolean = true): TCloudMailRuDirListingItem;
 var
 	getResult: integer;
 	Cloud: TCloudMailRu;
-
-	function FindListingItemByName(DirListing: TCloudMailRuDirListing; ItemName: WideString): TCloudMailRuDirListingItem;
-	var
-		CurrentItem: TCloudMailRuDirListingItem;
-	begin
-		for CurrentItem in DirListing do
-			if CurrentItem.name = ItemName then
-				exit(CurrentItem);
-	end;
-
-	function FindListingItemByHomePath(DirListing: TCloudMailRuDirListing; HomePath: WideString): TCloudMailRuDirListingItem;
-	var
-		CurrentItem: TCloudMailRuDirListingItem;
-	begin
-		HomePath := '/' + StringReplace(HomePath, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]);
-		for CurrentItem in DirListing do
-			if CurrentItem.home = HomePath then
-				exit(CurrentItem);
-	end;
-
 begin
 	if path.trashDir or path.sharedDir{or path.invitesDir} then
 		Result := FindListingItemByName(CurrentListing, path.path)//Виртуальные каталоги не возвращают HomePath
@@ -502,7 +501,7 @@ var //Получение первого файла в папке. Result тот�
 	SkipListDelete, SkipListRenMov, CanAbortRenMov, RenMovAborted: Boolean;
 	CurrentItem: TCloudMailRuDirListingItem;
 begin
-	ThreadSkipListDelete.TryGetValue(GetCurrentThreadID(), SkipListDelete );
+	ThreadSkipListDelete.TryGetValue(GetCurrentThreadID(), SkipListDelete);
 	ThreadSkipListRenMov.TryGetValue(GetCurrentThreadID(), SkipListRenMov);
 
 	ThreadCanAbortRenMov.TryGetValue(GetCurrentThreadID(), CanAbortRenMov);
@@ -560,7 +559,11 @@ begin
 			if not ConnectionManager.get(RealPath.account, getResult).getIncomingLinksListing(CurrentListing, CurrentIncomingInvitesListing) then
 				SetLastError(ERROR_PATH_NOT_FOUND); //одновременно получаем оба листинга, чтобы не перечитывать листинг инватов на каждый чих
 		end else begin //Нужно проверить, является ли открываемый объект каталогом - для файлов API вернёт листинг вышестоящего каталога, см. issue #174
-			CurrentItem := FindListingItemByPath(CurrentListing, RealPath, false);
+			if ConnectionManager.get(RealPath.account, getResult).isPublicShare then
+				CurrentItem := FindListingItemByName(CurrentListing, ExtractUniversalFileName(RealPath.path))
+			else
+				CurrentItem := FindListingItemByHomePath(CurrentListing, RealPath.path);
+
 			if (CurrentItem.name <> '') and (CurrentItem.type_ <> TYPE_DIR) then
 			begin
 				SetLastError(ERROR_PATH_NOT_FOUND);
@@ -663,7 +666,7 @@ begin
 	PostMessage(MainWin, WM_USER + 51, 540, 0); //TC does not update current panel, so we should do it this way
 end;
 
-function ExecSharedAction(MainWin: THandle; RealPath: TRealPath; RemoteName: PWideChar; ActionOpen: boolean = true): integer;
+function ExecSharedAction(MainWin: THandle; RealPath: TRealPath; RemoteName: PWideChar; ActionOpen: Boolean = true): integer;
 var
 	Cloud: TCloudMailRu;
 	CurrentItem: TCloudMailRuDirListingItem;
@@ -845,7 +848,7 @@ procedure UpdateFileDescription(RemotePath: TRealPath; LocalFilePath: WideString
 var
 	RemoteDescriptions, LocalDescriptions: TDescription;
 	RemoteIonPath, LocalTempPath: WideString;
-	RemoteIonExists: boolean;
+	RemoteIonExists: Boolean;
 begin
 	RemoteIonPath := IncludeTrailingBackslash(ExtractFileDir(RemotePath.path)) + GetDescriptionFileName(SettingsIniFilePath);
 	LocalTempPath := GetTmpFileName('ion');
@@ -868,7 +871,7 @@ procedure UpdateRemoteFileDescription(RemotePath: TRealPath; LocalFilePath: Wide
 var
 	RemoteDescriptions, LocalDescriptions: TDescription;
 	RemoteIonPath, LocalIonPath, LocalTempPath: WideString;
-	RemoteIonExists: boolean;
+	RemoteIonExists: Boolean;
 begin
 	RemoteIonPath := IncludeTrailingBackslash(ExtractFileDir(RemotePath.path)) + GetDescriptionFileName(SettingsIniFilePath);
 	LocalIonPath := IncludeTrailingBackslash(ExtractFileDir(LocalFilePath)) + GetDescriptionFileName(SettingsIniFilePath);
@@ -901,7 +904,7 @@ procedure RenameRemoteFileDescription(OldRemotePath, NewRemotePath: TRealPath; v
 var
 	OldDescriptions, NewDescriptions: TDescription;
 	OldRemoteIonPath, NewRemoteIonPath, OldLocalTempPath, NewLocalTempPath: WideString;
-	NewRemoteIonExists: boolean;
+	NewRemoteIonExists: Boolean;
 	OldItem, NewItem: WideString;
 begin
 	OldItem := ExtractFileName(OldRemotePath.path);
@@ -1277,7 +1280,7 @@ begin
 
 end;
 
-function cloneWeblink(NewCloud, OldCloud: TCloudMailRu; CloudPath: WideString; CurrentItem: TCloudMailRuDirListingItem; NeedUnpublish: boolean): integer;
+function cloneWeblink(NewCloud, OldCloud: TCloudMailRu; CloudPath: WideString; CurrentItem: TCloudMailRuDirListingItem; NeedUnpublish: Boolean): integer;
 begin
 	Result := NewCloud.cloneWeblink(ExtractFileDir(CloudPath), CurrentItem.WebLink, CLOUD_CONFLICT_STRICT);
 
@@ -1285,9 +1288,9 @@ begin
 		LogHandle(LogLevelError, MSGTYPE_IMPORTANTERROR, PWideChar('Can''t remove temporary public link on ' + CurrentItem.home));
 end;
 
-function RenMoveFileViaPublicLink(OldCloud, NewCloud: TCloudMailRu; OldRealPath, NewRealPath: TRealPath; Move, OverWrite: boolean): integer;
+function RenMoveFileViaPublicLink(OldCloud, NewCloud: TCloudMailRu; OldRealPath, NewRealPath: TRealPath; Move, OverWrite: Boolean): integer;
 var
-	NeedUnpublish: boolean;
+	NeedUnpublish: Boolean;
 	CurrentItem: TCloudMailRuDirListingItem;
 	RetryAttempts: integer;
 begin
@@ -1356,7 +1359,7 @@ begin
 	end;
 end;
 
-function FsRenMovFileW(OldName: PWideChar; NewName: PWideChar; Move: boolean; OverWrite: boolean; ri: pRemoteInfo): integer; stdcall;
+function FsRenMovFileW(OldName: PWideChar; NewName: PWideChar; Move: Boolean; OverWrite: Boolean; ri: pRemoteInfo): integer; stdcall;
 var
 	OldRealPath: TRealPath;
 	NewRealPath: TRealPath;
