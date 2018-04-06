@@ -546,9 +546,8 @@ begin
 		CurrentCloud := ConnectionManager.get(RealPath.account, getResult);
 		if not Assigned(CurrentCloud) then
 		begin
-
-			SetLastError(ERROR_NO_MORE_FILES);
-			exit(INVALID_HANDLE_VALUE); //Нельзя использовать exit
+			SetLastError(ERROR_PATH_NOT_FOUND);
+			exit(INVALID_HANDLE_VALUE);
 		end;
 
 		if RealPath.trashDir then
@@ -580,6 +579,7 @@ begin
 				exit(INVALID_HANDLE_VALUE);
 			end;
 		end;
+
 		if not CurrentCloud.getDirListing(RealPath.path, CurrentListing) then
 			SetLastError(ERROR_PATH_NOT_FOUND);
 
