@@ -145,7 +145,7 @@ end;
 function FindListingItemByPath(CurrentListing: TCloudMailRuDirListing; path: TRealPath; UpdateListing: Boolean = true): TCloudMailRuDirListingItem;
 var
 	getResult: integer;
-	Cloud: TCloudMailRu;
+	CurrentCloud: TCloudMailRu;
 begin
 	if path.trashDir or path.sharedDir{or path.invitesDir} then
 		Result := FindListingItemByName(CurrentListing, path.path)//Виртуальные каталоги не возвращают HomePath
@@ -154,24 +154,27 @@ begin
 
 	if (Result.name = '') and UpdateListing then //если там его нет (нажали пробел на папке, например), то запросим в облаке напрямую, в зависимости от того, внутри чего мы находимся
 	begin
-		Cloud := ConnectionManager.get(path.account, getResult);
+		CurrentCloud := ConnectionManager.get(path.account, getResult);
+		if not Assigned(CurrentCloud) then
+			exit;
+
 		if path.trashDir then //корзина - обновим CurrentListing, поищем в нём
 		begin
-			if Cloud.getTrashbinListing(CurrentListing) then
+			if CurrentCloud.getTrashbinListing(CurrentListing) then
 				exit(FindListingItemByName(CurrentListing, path.path));
 		end;
 		if path.sharedDir then //ссылки - обновим список
 		begin
-			if Cloud.getSharedLinksListing(CurrentListing) then
+			if CurrentCloud.getSharedLinksListing(CurrentListing) then
 				exit(FindListingItemByName(CurrentListing, path.path));
 		end;
 		if path.invitesDir then
 		begin
 			//FindIncomingInviteItemByPath in that case!
 		end;
-		if Cloud.statusFile(path.path, Result) then //Обычный каталог
+		if CurrentCloud.statusFile(path.path, Result) then //Обычный каталог
 		begin
-			if (Result.home = '') and not Cloud.isPublicShare then
+			if (Result.home = '') and not CurrentCloud.isPublicShare then
 				LogHandle(LogLevelError, MSGTYPE_IMPORTANTERROR, PWideChar('Cant find file ' + path.path)); {Такого быть не может, но...}
 		end;
 	end; //Не рапортуем, это будет уровнем выше
@@ -180,7 +183,6 @@ end;
 function FindIncomingInviteItemByPath(InviteListing: TCloudMailRuIncomingInviteInfoListing; path: TRealPath): TCloudMailRuIncomingInviteInfo;
 var
 	getResult: integer;
-
 	function FindListingItemByName(InviteListing: TCloudMailRuIncomingInviteInfoListing; ItemName: WideString): TCloudMailRuIncomingInviteInfo;
 	var
 		CurrentItem: TCloudMailRuIncomingInviteInfo;
