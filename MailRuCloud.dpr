@@ -500,6 +500,7 @@ var //Получение первого файла в папке. Result тот�
 	getResult: integer;
 	SkipListDelete, SkipListRenMov, CanAbortRenMov, RenMovAborted: Boolean;
 	CurrentItem: TCloudMailRuDirListingItem;
+	CurrentCloud: TCloudMailRu;
 begin
 	ThreadSkipListDelete.TryGetValue(GetCurrentThreadID(), SkipListDelete);
 	ThreadSkipListRenMov.TryGetValue(GetCurrentThreadID(), SkipListRenMov);
@@ -540,10 +541,17 @@ begin
 		end;
 	end else begin
 		RealPath := ExtractRealPath(GlobalPath);
+		CurrentCloud := ConnectionManager.get(RealPath.account, getResult);
+		if not Assigned(CurrentCloud) then
+		begin
+
+			SetLastError(ERROR_NO_MORE_FILES);
+			exit(INVALID_HANDLE_VALUE); //Нельзя использовать exit
+		end;
 
 		if RealPath.trashDir then
 		begin
-			if not ConnectionManager.get(RealPath.account, getResult).getTrashbinListing(CurrentListing) then
+			if not CurrentCloud.getTrashbinListing(CurrentListing) then
 				SetLastError(ERROR_PATH_NOT_FOUND);
 			if RealPath.path <> '' then
 			begin
@@ -552,14 +560,14 @@ begin
 			end;
 		end else if RealPath.sharedDir then
 		begin
-			if not ConnectionManager.get(RealPath.account, getResult).getSharedLinksListing(CurrentListing) then
+			if not CurrentCloud.getSharedLinksListing(CurrentListing) then
 				SetLastError(ERROR_PATH_NOT_FOUND); //that will be interpreted as symlinks later
 		end else if RealPath.invitesDir then
 		begin
-			if not ConnectionManager.get(RealPath.account, getResult).getIncomingLinksListing(CurrentListing, CurrentIncomingInvitesListing) then
+			if not CurrentCloud.getIncomingLinksListing(CurrentListing, CurrentIncomingInvitesListing) then
 				SetLastError(ERROR_PATH_NOT_FOUND); //одновременно получаем оба листинга, чтобы не перечитывать листинг инватов на каждый чих
 		end else begin //Нужно проверить, является ли открываемый объект каталогом - для файлов API вернёт листинг вышестоящего каталога, см. issue #174
-			if ConnectionManager.get(RealPath.account, getResult).isPublicShare then
+			if CurrentCloud.isPublicShare then
 				CurrentItem := FindListingItemByName(CurrentListing, ExtractUniversalFileName(RealPath.path))
 			else
 				CurrentItem := FindListingItemByHomePath(CurrentListing, RealPath.path);
@@ -570,7 +578,7 @@ begin
 				exit(INVALID_HANDLE_VALUE);
 			end;
 		end;
-		if not ConnectionManager.get(RealPath.account, getResult).getDirListing(RealPath.path, CurrentListing) then
+		if not CurrentCloud.getDirListing(RealPath.path, CurrentListing) then
 			SetLastError(ERROR_PATH_NOT_FOUND);
 
 		if getResult <> CLOUD_OPERATION_OK then
