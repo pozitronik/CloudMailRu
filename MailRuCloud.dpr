@@ -1490,7 +1490,7 @@ begin
 			exit(ft_nosuchfield);
 	end;
 
-	Item := FindListingItemByPath(CurrentListing, RealPath);
+	Item := FindListingItemByPath(CurrentListing, RealPath, not RealPath.invitesDir);
 	//if Item.home = '' then exit(ft_nosuchfield);
 
 	case FieldIndex of
