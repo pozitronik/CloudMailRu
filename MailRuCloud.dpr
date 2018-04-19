@@ -544,6 +544,13 @@ begin
 	end else begin
 		RealPath := ExtractRealPath(GlobalPath);
 		CurrentCloud := ConnectionManager.get(RealPath.account, getResult);
+
+		if getResult <> CLOUD_OPERATION_OK then
+		begin
+			SetLastError(ERROR_ACCESS_DENIED);
+			exit(INVALID_HANDLE_VALUE);
+		end;
+
 		if not Assigned(CurrentCloud) then
 		begin
 			SetLastError(ERROR_PATH_NOT_FOUND);
@@ -568,6 +575,9 @@ begin
 			if not CurrentCloud.getIncomingLinksListing(CurrentListing, CurrentIncomingInvitesListing) then
 				SetLastError(ERROR_PATH_NOT_FOUND); //одновременно получаем оба листинга, чтобы не перечитывать листинг инватов на каждый чих
 		end else begin //Нужно проверить, является ли открываемый объект каталогом - для файлов API вернёт листинг вышестоящего каталога, см. issue #174
+			if not CurrentCloud.getDirListing(RealPath.path, CurrentListing) then
+				SetLastError(ERROR_PATH_NOT_FOUND);
+
 			if CurrentCloud.isPublicShare then
 				CurrentItem := FindListingItemByName(CurrentListing, ExtractUniversalFileName(RealPath.path))
 			else
@@ -578,15 +588,6 @@ begin
 				SetLastError(ERROR_PATH_NOT_FOUND);
 				exit(INVALID_HANDLE_VALUE);
 			end;
-		end;
-
-		if not CurrentCloud.getDirListing(RealPath.path, CurrentListing) then
-			SetLastError(ERROR_PATH_NOT_FOUND);
-
-		if getResult <> CLOUD_OPERATION_OK then
-		begin
-			SetLastError(ERROR_ACCESS_DENIED);
-			exit(INVALID_HANDLE_VALUE);
 		end;
 
 		if (Length(CurrentListing) = 0) then
