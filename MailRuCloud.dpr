@@ -561,11 +561,6 @@ begin
 		begin
 			if not CurrentCloud.getTrashbinListing(CurrentListing) then
 				SetLastError(ERROR_PATH_NOT_FOUND);
-			if RealPath.path <> '' then
-			begin
-				SetLastError(ERROR_ACCESS_DENIED);
-				exit(INVALID_HANDLE_VALUE);
-			end;
 		end else if RealPath.sharedDir then
 		begin
 			if not CurrentCloud.getSharedLinksListing(CurrentListing) then
@@ -579,7 +574,13 @@ begin
 				SetLastError(ERROR_PATH_NOT_FOUND);
 		end;
 
-		if CurrentCloud.isPublicShare or RealPath.sharedDir then
+		if (RealPath.invitesDir or RealPath.trashDir or RealPath.sharedDir) and (RealPath.path <> '') then //игнорим попытки получить листинги объектов вирутальных каталогов
+		begin
+			SetLastError(ERROR_ACCESS_DENIED);
+			exit(INVALID_HANDLE_VALUE);
+		end;
+
+		if CurrentCloud.isPublicShare then
 			CurrentItem := FindListingItemByName(CurrentListing, ExtractUniversalFileName(RealPath.path))
 		else
 			CurrentItem := FindListingItemByHomePath(CurrentListing, RealPath.path);
