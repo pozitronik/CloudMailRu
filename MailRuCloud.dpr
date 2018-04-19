@@ -577,17 +577,17 @@ begin
 		end else begin //Нужно проверить, является ли открываемый объект каталогом - для файлов API вернёт листинг вышестоящего каталога, см. issue #174
 			if not CurrentCloud.getDirListing(RealPath.path, CurrentListing) then
 				SetLastError(ERROR_PATH_NOT_FOUND);
+		end;
 
-			if CurrentCloud.isPublicShare then
-				CurrentItem := FindListingItemByName(CurrentListing, ExtractUniversalFileName(RealPath.path))
-			else
-				CurrentItem := FindListingItemByHomePath(CurrentListing, RealPath.path);
+		if CurrentCloud.isPublicShare or RealPath.sharedDir then
+			CurrentItem := FindListingItemByName(CurrentListing, ExtractUniversalFileName(RealPath.path))
+		else
+			CurrentItem := FindListingItemByHomePath(CurrentListing, RealPath.path);
 
-			if (CurrentItem.name <> '') and (CurrentItem.type_ <> TYPE_DIR) then
-			begin
-				SetLastError(ERROR_PATH_NOT_FOUND);
-				exit(INVALID_HANDLE_VALUE);
-			end;
+		if (CurrentItem.name <> '') and (CurrentItem.type_ <> TYPE_DIR) then
+		begin
+			SetLastError(ERROR_PATH_NOT_FOUND);
+			exit(INVALID_HANDLE_VALUE);
 		end;
 
 		if (Length(CurrentListing) = 0) then
