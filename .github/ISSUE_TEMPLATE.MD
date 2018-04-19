@@ -1,55 +1,19 @@
-- [ ] I was not able to find an [open](https://github.com/pozitronik/CloudMailRu/issues?q=is%3Aopen) or [closed](https://github.com/pozitronik/CloudMailRu/issues?q=is%3Aclosed) issue matching what I'm seeing/Я не нашёл [открытых](https://github.com/pozitronik/CloudMailRu/issues?q=is%3Aopen) или [закрытых](https://github.com/pozitronik/CloudMailRu/issues?q=is%3Aclosed) тикетов, описывающих мой запрос.
-- [ ] I have read project [documentation](https://github.com/pozitronik/CloudMailRu/blob/master/README.MD), including the Frequently Asked Questions section/Я прочёл [документацию](https://github.com/pozitronik/CloudMailRu/blob/master/README.MD), включая раздел FAQ.
+### Сообщаешь о проблеме?
 
-### Configuration
+Сначала прочти [FAQ](https://github.com/pozitronik/CloudMailRu#%D0%A7%D0%B0%D1%81%D1%82%D0%BE-%D0%B7%D0%B0%D0%B4%D0%B0%D0%B2%D0%B0%D0%B5%D0%BC%D1%8B%D0%B5-%D0%B2%D0%BE%D0%BF%D1%80%D0%BE%D1%81%D1%8B). Внимательно прочти.
 
-- Which version of Windows are you running? XP, Vista, 7, 8, 10? Is it 32-bit or 64-bit?
-- Какую версию Windows вы используете? XP, Vista, 7, 8, 10? Это 32- или 64-разрядная ОС? 
+Прочёл, но проблема ещё не решилась?
 
-** insert here **
+Тогда **обязательно** сообщи:
+- Версию и разрядность Total Commander, на которой воспроизводится проблема.
+- Версию и разрядность операционной системы, на которой воспроизводится проблема.
+- Номер сборки плагина, на которой воспроизводится проблема. **Обязательно** убедись, что проблема воспроизводится в самой свежей бинарной сборке ([x32](https://github.com/pozitronik/CloudMailRu/blob/master/MailRuCloud.wfx)/[x64](https://github.com/pozitronik/CloudMailRu/blob/master/MailRuCloud.wfx64).
+- Пошаговую последовательность действий, при которой воспроизводится проблема, даже если она кажется очевидной. Если однозначно выявить такую последовательность не получается - пиши, как есть, будем разбираться.
+- Как проявляется проблема? Опиши словами, скриншот я спрошу, если потребуется.
+- **Обязательно** - протокол соединения (не копируй его содержимое, приложи файл).
 
-- Which version of Total Commander are you using? Is it 32-bit or 64-bit?
-- Какую версию Total Commander вы используете? Это 32- или 64-разрядная версия? 
+Без этой информации найти и решить проблему будет трудно, не трать моё и своё время. Спасибо.
 
-** insert here **
+### Предлагаешь улучшение?
 
-- Which plugin version are you using? Stable release, last master build, other?
-- Какую версию плагина вы используете? Релиз, последнюю master-сборку, другое?
-
-** insert here **
-
-- Any other interesting things about your environment that might be related to the issue you're seeing?
-- Любая другая информация об системном окружении, которая может быть связана с вашим запросом.
-
-** insert here **
-
-- If you think, that your issue is settings related, then attach **MailRuCloud.global.ini** to the issue.
-- Если вы предполагаете, что ваш запрос связан с настройками, приложите файл **MailRuCloud.global.ini** к тикету.
-
-### Problem details
-
-- Describe actions sequence leading to the problem.
-- Последовательность действий, приводящих к проблеме.
-
-** insert here **
-
-- What did you expect to occur after running these actions?
-- Что ожидалось при выполнении этих действий?
- 
-** insert here **
-
-- What actually happened instead?
-- Что случилось вместо этого?
-
-** insert here **
-
-- If you have connection log file, screenshots and any other problem related files, then attach them to the issue.
-- Если у вас есть файл протокола соединения, снимки экрана, или любые другие файлы, связанные с запросом, приложите их к тикету.
-
-### Feature request
-
-- Describe your suggestion here. Why do you think it can be useful?
-- Опишите ваше предложение. Почему вы думаете, что оно будет полезно?
-
-** insert here **
-
+Проверь [существующие тикеты](https://github.com/pozitronik/CloudMailRu/issues?utf8=%E2%9C%93&q=label%3Aenhancement). Если идея ещё не предлагалась - пиши в свободной форме.
