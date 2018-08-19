@@ -159,6 +159,7 @@ begin
 		TwostepAuthCB.Checked := CASettings.twostep_auth;
 		EncryptFilesCombo.ItemIndex := CASettings.encrypt_files_mode;
 		EncryptFilenamesCB.Checked := CASettings.encrypt_filenames;
+		self.SelectedAccount := CASettings.name
 	end else begin
 		AccountNameEdit.Text := EmptyWideStr;
 		EmailEdit.Text := EmptyWideStr;
