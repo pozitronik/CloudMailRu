@@ -166,7 +166,7 @@ begin
 		EmailEdit.Text := EmptyWideStr;
 		PasswordEdit.Text := EmptyWideStr;
 		UseTCPwdMngrCB.Checked := false;
-    		EncryptFilesPwdButton.Enabled := false;
+		EncryptFilesPwdButton.Enabled := false;
 	end;
 	PublicAccountCB.OnClick(nil);
 end;
