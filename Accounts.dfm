@@ -342,6 +342,7 @@ object AccountsForm: TAccountsForm
             Width = 86
             Height = 21
             Caption = 'Set password'
+            Enabled = False
             TabOrder = 2
             OnClick = EncryptFilesPwdButtonClick
           end

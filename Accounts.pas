@@ -159,12 +159,14 @@ begin
 		TwostepAuthCB.Checked := CASettings.twostep_auth;
 		EncryptFilesCombo.ItemIndex := CASettings.encrypt_files_mode;
 		EncryptFilenamesCB.Checked := CASettings.encrypt_filenames;
-		self.SelectedAccount := CASettings.name
+		self.SelectedAccount := CASettings.name;
+		EncryptFilesPwdButton.Enabled := true;
 	end else begin
 		AccountNameEdit.Text := EmptyWideStr;
 		EmailEdit.Text := EmptyWideStr;
 		PasswordEdit.Text := EmptyWideStr;
 		UseTCPwdMngrCB.Checked := false;
+    		EncryptFilesPwdButton.Enabled := false;
 	end;
 	PublicAccountCB.OnClick(nil);
 end;
