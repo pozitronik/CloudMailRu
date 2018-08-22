@@ -215,6 +215,7 @@ var
 	CurrentPassword: WideString;
 	crypt_id: WideString;
 	Verb: WideString;
+	buf: PWideChar;
 begin
 	result := EmptyWideStr;
 	crypt_id := AccountName + ' filecrypt';
@@ -232,8 +233,12 @@ begin
 				exit;
 			end;
 	end;
-	if self.RequestHandleProc(RT_Password, PWideChar(Verb + ' encryption password'), 'New password:', PWideChar(CurrentPassword), 1024) then
+	GetMem(buf, 1024);
+	ZeroMemory(buf, 1024);
+	buf := Addr(CurrentPassword[1]);
+	if self.RequestHandleProc(RT_Password, PWideChar(Verb + ' encryption password'), 'New password:', buf, 1024) then
 	begin
+		CurrentPassword := buf;
 		self.SetPassword(crypt_id, CurrentPassword);
 		result := TFileCipher.CryptedGUID(CurrentPassword);
 	end;
