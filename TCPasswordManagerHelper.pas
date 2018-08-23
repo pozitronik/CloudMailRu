@@ -3,7 +3,7 @@
 {Обертка над обращениями к менеджеру паролей Total Commander}
 interface
 
-Uses Plugin_Types, Settings, Windows, SysUtils, AskPassword, {AskEncryptionPasswords,}MRC_Helper, Controls, Cipher;
+Uses Plugin_Types, Settings, Windows, SysUtils, AskPassword, {AskEncryptionPasswords,}MRC_Helper, Controls, Cipher, WideStrUtils;
 
 type
 
@@ -233,15 +233,20 @@ begin
 				exit;
 			end;
 	end;
+
 	GetMem(buf, 1024);
 	ZeroMemory(buf, 1024);
-	buf := Addr(CurrentPassword[1]);
+	WStrCopy(buf, PWideChar(CurrentPassword));
+
 	if self.RequestHandleProc(RT_Password, PWideChar(Verb + ' encryption password'), 'New password:', buf, 1024) then
 	begin
 		CurrentPassword := buf;
 		self.SetPassword(crypt_id, CurrentPassword);
 		result := TFileCipher.CryptedGUID(CurrentPassword);
 	end;
+
+	FreeMem(buf);
+
 end;
 
 end.
