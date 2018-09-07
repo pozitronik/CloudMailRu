@@ -20,6 +20,7 @@ const
 	SharedPostfix = '.shared';
 	InvitesPostfix = '.invites';
 
+	TYPE_AUTO = -1;
 	TYPE_BYTES = 0;
 	TYPE_KYLOBYTES = 1;
 	TYPE_MEGABYTES = 2;
@@ -77,7 +78,7 @@ function LoadPluginIcon(const path: WideString; identifier: WideString): Hicon;
 function RetryAttemptsToString(Attempt: integer): WideString;
 procedure ProcessMessages;
 function IncludeSlash(const Str: WideString): WideString;
-function FormatSize(size: Int64; SizeType: integer = TYPE_MEGABYTES): WideString; //Форматируем размер в удобочитаемый вид
+function FormatSize(size: Int64; SizeType: integer = TYPE_AUTO): WideString; //Форматируем размер в удобочитаемый вид
 //Procedure FileLog(S: WideString);
 
 implementation
@@ -675,19 +676,31 @@ begin
 		Result := Result + '/';
 end;
 
-function FormatSize(size: Int64; SizeType: integer = TYPE_MEGABYTES): WideString; //Форматируем размер в удобочитаемый вид
+function FormatSize(size: Int64; SizeType: integer = TYPE_AUTO): WideString; //Форматируем размер в удобочитаемый вид
 const
 	postfixes: array [0 .. 6] of string = ('b', 'kb', 'Mb', 'Gb', 'Tb', 'Pb', 'Eb');
 var
 	iteration: integer;
 begin
-	iteration := 0;
-	while size > 1024 do
+	if TYPE_AUTO = SizeType then
 	begin
-		iteration := iteration + 1;
-		size := size div 1024;
+		iteration := 0;
+		while size > 1024 do
+		begin
+			iteration := iteration + 1;
+			size := size div 1024;
+		end;
+		exit(size.ToString() + ' ' + postfixes[iteration]);
+	end else begin
+		iteration := 0;
+		while iteration < SizeType do
+		begin
+			iteration := iteration + 1;
+			size := size div 1024;
+		end;
+		exit(size.ToString() + ' ' + postfixes[iteration + SizeType]);
 	end;
-	exit(size.ToString() + ' ' + postfixes[iteration + SizeType]);
+
 end;
 
 end.
