@@ -4,6 +4,64 @@ interface
 
 uses JSON, CMLTypes, System.SysUtils;
 
+const
+	NAME_BODY = 'body';
+	NAME_LIST = 'list';
+	NAME_SIZE = 'size';
+	NAME_KIND = 'kind';
+	NAME_WEBLINK = 'weblink';
+	NAME_TYPE = 'type';
+	NAME_HOME = 'home';
+	NAME_NAME = 'name'; //funny
+	NAME_DELETED_AT = 'deleted_at';
+	NAME_DELETED_FROM = 'deleted_from';
+	NAME_DELETED_BY = 'deleted_by';
+	NAME_GREV = 'grev';
+	NAME_REV = 'rev';
+	NAME_MTIME = 'mtime';
+	NAME_VIRUS_SCAN = 'virus_scan';
+	NAME_HASH = 'hash';
+	NAME_TREE = 'tree';
+	NAME_COUNT = 'count';
+	NAME_EMAIL = 'email';
+	NAME_STATUS = 'status';
+	NAME_ACCESS = 'access';
+	NAME_OVERQUOTA = 'overquota';
+	NAME_TOTAL = 'total';
+	NAME_USED = 'used';
+	NAME_FOLDERS = 'folders';
+	NAME_FILES = 'files';
+	NAME_INVITED = 'invited';
+	NAME_OWNER = 'owner';
+	NAME_INVITE_TOKEN = 'invite_token';
+	NAME_ERROR = 'error';
+	NAME_ERROR_CODE = 'error_code';
+	NAME_ERROR_DESCRIPTION = 'error_description';
+	NAME_EXPIRES_IN = 'expires_in';
+	NAME_REFRESH_TOKEN = 'refresh_token';
+	NAME_ACCESS_TOKEN = 'access_token';
+	NAME_INVITE = 'invite';
+	NAME_INVITE_EMAIL = 'invite_email';
+	NAME_GET = 'get';
+	NAME_URL = 'url';
+	NAME_FORM_NAME = 'form_name';
+	NAME_AUTH_HOST = 'auth_host';
+	NAME_SECSTEP_PHONE = 'secstep_phone';
+	NAME_SECSTEP_PAGE = 'secstep_page';
+	NAME_SECSTEP_CODE_FAIL = 'secstep_code_fail';
+	NAME_SECSTEP_RESEND_FAIL = 'secstep_resend_fail';
+	NAME_SECSTEP_RESEND_SUCCESS = 'secstep_resend_success';
+	NAME_SECSTEP_TIMEOUT = 'secstep_timeout';
+	NAME_SECSTEP_LOGIN = 'secstep_login';
+	NAME_SECSTEP_DISPOSABLE_FAIL = 'secstep_disposable_fail';
+	NAME_SECSTEP_SMSAPI_ERROR = 'secstep_smsapi_error';
+	NAME_SECSTEP_CAPTCHA = 'secstep_captcha';
+	NAME_TOTP_ENABLED = 'totp_enabled';
+	NAME_LOCALE = 'locale';
+	NAME_CLIENT = 'client';
+	NAME_CSRF = 'csrf';
+	NAME_DEVICE = 'device';
+
 function initJSONValue(JSON: WideString; var JSONVal: TJSONValue): Boolean;
 function fromJSON_DirListing(JSON: WideString; var CloudMailRuDirListing: TCloudMailRuDirListing): Boolean;
 function fromJSON_UserSpace(JSON: WideString; var CloudMailRuSpaceInfo: TCloudMailRuSpaceInfo): Boolean;
@@ -15,6 +73,7 @@ function fromJSON_OperationResult(JSON: WideString; var OperationStatus: integer
 function fromJSON_InviteListing(JSON: WideString; var InviteListing: TCloudMailRuInviteInfoListing): Boolean;
 function fromJSON_IncomingInviteListing(JSON: WideString; var IncomingInviteListing: TCloudMailRuIncomingInviteInfoListing): Boolean;
 function fromJSON_TwostepData(JSON: WideString; var TwostepData: TCloudMailRuTwostepData): Boolean;
+//function assignFromName(var Item: Variant; Value: TJSONValue; Name: string): Boolean;
 
 implementation
 
@@ -42,52 +101,52 @@ begin
 		exit;
 
 	try
-		A := ((JSONVal as TJSONObject).Values['body'] as TJSONObject).Values['list'] as TJSONArray;
+		A := ((JSONVal as TJSONObject).Values[NAME_BODY] as TJSONObject).Values[NAME_LIST] as TJSONArray;
 		SetLength(CloudMailRuDirListing, A.count);
 		for J := 0 to A.count - 1 do
 		begin
 			ParserObj := A.Items[J] as TJSONObject;
 			with CloudMailRuDirListing[J] do
 			begin
-				if Assigned(ParserObj.Values['size']) then
-					size := ParserObj.Values['size'].Value.ToInt64;
-				if Assigned(ParserObj.Values['kind']) then
-					kind := ParserObj.Values['kind'].Value;
-				if Assigned(ParserObj.Values['weblink']) then
-					weblink := ParserObj.Values['weblink'].Value;
-				if Assigned(ParserObj.Values['type']) then
-					type_ := ParserObj.Values['type'].Value;
-				if Assigned(ParserObj.Values['home']) then
-					home := ParserObj.Values['home'].Value;
-				if Assigned(ParserObj.Values['name']) then
-					name := ParserObj.Values['name'].Value;
+				if Assigned(ParserObj.Values[NAME_SIZE]) then
+					size := ParserObj.Values[NAME_SIZE].Value.ToInt64;
+				if Assigned(ParserObj.Values[NAME_KIND]) then
+					kind := ParserObj.Values[NAME_KIND].Value;
+				if Assigned(ParserObj.Values[NAME_WEBLINK]) then
+					weblink := ParserObj.Values[NAME_WEBLINK].Value;
+				if Assigned(ParserObj.Values[NAME_TYPE]) then
+					type_ := ParserObj.Values[NAME_TYPE].Value;
+				if Assigned(ParserObj.Values[NAME_HOME]) then
+					home := ParserObj.Values[NAME_HOME].Value;
+				if Assigned(ParserObj.Values[NAME_NAME]) then
+					name := ParserObj.Values[NAME_NAME].Value;
 				visible_name := name;
-				if Assigned(ParserObj.Values['deleted_at']) then
-					deleted_at := ParserObj.Values['deleted_at'].Value.ToInteger;
-				if Assigned(ParserObj.Values['deleted_from']) then
-					deleted_from := ParserObj.Values['deleted_from'].Value;
-				if Assigned(ParserObj.Values['deleted_by']) then
-					deleted_by := ParserObj.Values['deleted_by'].Value.ToInteger;
-				if Assigned(ParserObj.Values['grev']) then
-					grev := ParserObj.Values['grev'].Value.ToInteger;
-				if Assigned(ParserObj.Values['rev']) then
-					rev := ParserObj.Values['rev'].Value.ToInteger;
+				if Assigned(ParserObj.Values[NAME_DELETED_AT]) then
+					deleted_at := ParserObj.Values[NAME_DELETED_AT].Value.ToInteger;
+				if Assigned(ParserObj.Values[NAME_DELETED_FROM]) then
+					deleted_from := ParserObj.Values[NAME_DELETED_FROM].Value;
+				if Assigned(ParserObj.Values[NAME_DELETED_BY]) then
+					deleted_by := ParserObj.Values[NAME_DELETED_BY].Value.ToInteger;
+				if Assigned(ParserObj.Values[NAME_GREV]) then
+					grev := ParserObj.Values[NAME_GREV].Value.ToInteger;
+				if Assigned(ParserObj.Values[NAME_REV]) then
+					rev := ParserObj.Values[NAME_REV].Value.ToInteger;
 				if (type_ = TYPE_FILE) then
 				begin
-					if Assigned(ParserObj.Values['mtime']) then
-						mtime := ParserObj.Values['mtime'].Value.ToInt64;
-					if Assigned(ParserObj.Values['virus_scan']) then
-						virus_scan := ParserObj.Values['virus_scan'].Value;
-					if Assigned(ParserObj.Values['hash']) then
-						hash := ParserObj.Values['hash'].Value;
+					if Assigned(ParserObj.Values[NAME_MTIME]) then
+						mtime := ParserObj.Values[NAME_MTIME].Value.ToInt64;
+					if Assigned(ParserObj.Values[NAME_VIRUS_SCAN]) then
+						virus_scan := ParserObj.Values[NAME_VIRUS_SCAN].Value;
+					if Assigned(ParserObj.Values[NAME_HASH]) then
+						hash := ParserObj.Values[NAME_HASH].Value;
 				end else begin
-					if Assigned(ParserObj.Values['tree']) then
-						tree := ParserObj.Values['tree'].Value;
+					if Assigned(ParserObj.Values[NAME_TREE]) then
+						tree := ParserObj.Values[NAME_TREE].Value;
 
-					if Assigned(ParserObj.Values['count']) then
+					if Assigned(ParserObj.Values[NAME_COUNT]) then
 					begin
-						folders_count := (ParserObj.Values['count'] as TJSONObject).Values['folders'].Value.ToInteger();
-						files_count := (ParserObj.Values['count'] as TJSONObject).Values['files'].Value.ToInteger();
+						folders_count := (ParserObj.Values[NAME_COUNT] as TJSONObject).Values[NAME_FOLDERS].Value.ToInteger();
+						files_count := (ParserObj.Values[NAME_COUNT] as TJSONObject).Values[NAME_FILES].Value.ToInteger();
 					end;
 					mtime := 0;
 				end;
@@ -109,40 +168,40 @@ begin
 	if not initJSONValue(JSON, JSONVal) then
 		exit;
 	try
-		ParserObj := (JSONVal as TJSONObject).Values['body'] as TJSONObject;
+		ParserObj := (JSONVal as TJSONObject).Values[NAME_BODY] as TJSONObject;
 		with CloudMailRuDirListingItem do
 		begin
-			if Assigned(ParserObj.Values['size']) then
-				size := ParserObj.Values['size'].Value.ToInt64;
-			if Assigned(ParserObj.Values['kind']) then
-				kind := ParserObj.Values['kind'].Value;
-			if Assigned(ParserObj.Values['weblink']) then
-				weblink := ParserObj.Values['weblink'].Value;
-			if Assigned(ParserObj.Values['type']) then
-				type_ := ParserObj.Values['type'].Value;
-			if Assigned(ParserObj.Values['home']) then
-				home := ParserObj.Values['home'].Value;
-			if Assigned(ParserObj.Values['name']) then
-				name := ParserObj.Values['name'].Value;
+			if Assigned(ParserObj.Values[NAME_SIZE]) then
+				size := ParserObj.Values[NAME_SIZE].Value.ToInt64;
+			if Assigned(ParserObj.Values[NAME_KIND]) then
+				kind := ParserObj.Values[NAME_KIND].Value;
+			if Assigned(ParserObj.Values[NAME_WEBLINK]) then
+				weblink := ParserObj.Values[NAME_WEBLINK].Value;
+			if Assigned(ParserObj.Values[NAME_TYPE]) then
+				type_ := ParserObj.Values[NAME_TYPE].Value;
+			if Assigned(ParserObj.Values[NAME_HOME]) then
+				home := ParserObj.Values[NAME_HOME].Value;
+			if Assigned(ParserObj.Values[NAME_NAME]) then
+				name := ParserObj.Values[NAME_NAME].Value;
 			if (type_ = TYPE_FILE) then
 			begin
-				if Assigned(ParserObj.Values['mtime']) then
-					mtime := ParserObj.Values['mtime'].Value.ToInteger;
-				if Assigned(ParserObj.Values['virus_scan']) then
-					virus_scan := ParserObj.Values['virus_scan'].Value;
-				if Assigned(ParserObj.Values['hash']) then
-					hash := ParserObj.Values['hash'].Value;
+				if Assigned(ParserObj.Values[NAME_MTIME]) then
+					mtime := ParserObj.Values[NAME_MTIME].Value.ToInteger;
+				if Assigned(ParserObj.Values[NAME_VIRUS_SCAN]) then
+					virus_scan := ParserObj.Values[NAME_VIRUS_SCAN].Value;
+				if Assigned(ParserObj.Values[NAME_HASH]) then
+					hash := ParserObj.Values[NAME_HASH].Value;
 			end else begin
-				if Assigned(ParserObj.Values['tree']) then
-					tree := ParserObj.Values['tree'].Value;
-				if Assigned(ParserObj.Values['grev']) then
-					grev := ParserObj.Values['grev'].Value.ToInteger;
-				if Assigned(ParserObj.Values['rev']) then
-					rev := ParserObj.Values['rev'].Value.ToInteger;
-				if Assigned((ParserObj.Values['count'] as TJSONObject).Values['folders']) then
-					folders_count := (ParserObj.Values['count'] as TJSONObject).Values['folders'].Value.ToInteger();
-				if Assigned((ParserObj.Values['count'] as TJSONObject).Values['files']) then
-					files_count := (ParserObj.Values['count'] as TJSONObject).Values['files'].Value.ToInteger();
+				if Assigned(ParserObj.Values[NAME_TREE]) then
+					tree := ParserObj.Values[NAME_TREE].Value;
+				if Assigned(ParserObj.Values[NAME_GREV]) then
+					grev := ParserObj.Values[NAME_GREV].Value.ToInteger;
+				if Assigned(ParserObj.Values[NAME_REV]) then
+					rev := ParserObj.Values[NAME_REV].Value.ToInteger;
+				if Assigned((ParserObj.Values[NAME_COUNT] as TJSONObject).Values[NAME_FOLDERS]) then
+					folders_count := (ParserObj.Values[NAME_COUNT] as TJSONObject).Values[NAME_FOLDERS].Value.ToInteger();
+				if Assigned((ParserObj.Values[NAME_COUNT] as TJSONObject).Values[NAME_FILES]) then
+					files_count := (ParserObj.Values[NAME_COUNT] as TJSONObject).Values[NAME_FILES].Value.ToInteger();
 				mtime := 0;
 			end;
 		end;
@@ -165,7 +224,7 @@ begin
 	if not initJSONValue(JSON, JSONVal) then
 		exit;
 	try
-		A := ((JSONVal as TJSONObject).Values['body'] as TJSONObject).Values['invited'] as TJSONArray;
+		A := ((JSONVal as TJSONObject).Values[NAME_BODY] as TJSONObject).Values[NAME_INVITED] as TJSONArray;
 		if not Assigned(A) then
 			exit(true); //no invites
 		SetLength(InviteListing, A.count);
@@ -174,14 +233,14 @@ begin
 			ParserObj := A.Items[J] as TJSONObject;
 			with InviteListing[J] do
 			begin
-				if Assigned(ParserObj.Values['email']) then
-					email := ParserObj.Values['email'].Value;
-				if Assigned(ParserObj.Values['status']) then
-					status := ParserObj.Values['status'].Value;
-				if Assigned(ParserObj.Values['access']) then
-					access := ParserObj.Values['access'].Value;
-				if Assigned(ParserObj.Values['name']) then
-					name := ParserObj.Values['name'].Value;
+				if Assigned(ParserObj.Values[NAME_EMAIL]) then
+					email := ParserObj.Values[NAME_EMAIL].Value;
+				if Assigned(ParserObj.Values[NAME_STATUS]) then
+					status := ParserObj.Values[NAME_STATUS].Value;
+				if Assigned(ParserObj.Values[NAME_ACCESS]) then
+					access := ParserObj.Values[NAME_ACCESS].Value;
+				if Assigned(ParserObj.Values[NAME_NAME]) then
+					name := ParserObj.Values[NAME_NAME].Value;
 			end;
 		end;
 		JSONVal.free;
@@ -208,7 +267,7 @@ begin
 	if not initJSONValue(JSON, JSONVal) then
 		exit;
 	try
-		A := ((JSONVal as TJSONObject).Values['body'] as TJSONObject).Values['list'] as TJSONArray;
+		A := ((JSONVal as TJSONObject).Values[NAME_BODY] as TJSONObject).Values[NAME_LIST] as TJSONArray;
 		if not Assigned(A) then
 			exit; //no invites
 		SetLength(IncomingInviteListing, A.count);
@@ -217,27 +276,27 @@ begin
 			ParserObj := A.Items[J] as TJSONObject;
 			with IncomingInviteListing[J] do
 			begin
-				if Assigned(ParserObj.Values['owner']) then
+				if Assigned(ParserObj.Values[NAME_OWNER]) then
 				begin
-					OwnerObj := ParserObj.Values['owner'] as TJSONObject;
-					if Assigned(OwnerObj.Values['email']) then
-						owner.email := OwnerObj.Values['email'].Value;
-					if Assigned(OwnerObj.Values['name']) then
-						owner.name := OwnerObj.Values['name'].Value;
+					OwnerObj := ParserObj.Values[NAME_OWNER] as TJSONObject;
+					if Assigned(OwnerObj.Values[NAME_EMAIL]) then
+						owner.email := OwnerObj.Values[NAME_EMAIL].Value;
+					if Assigned(OwnerObj.Values[NAME_NAME]) then
+						owner.Name := OwnerObj.Values[NAME_NAME].Value;
 				end;
 
-				if Assigned(ParserObj.Values['tree']) then
-					tree := ParserObj.Values['tree'].Value;
-				if Assigned(ParserObj.Values['access']) then
-					access := ParserObj.Values['access'].Value;
-				if Assigned(ParserObj.Values['name']) then
-					name := ParserObj.Values['name'].Value;
-				if Assigned(ParserObj.Values['home']) then
-					home := ParserObj.Values['home'].Value;
-				if Assigned(ParserObj.Values['size']) then
-					size := ParserObj.Values['size'].Value.ToInt64;
-				if Assigned(ParserObj.Values['invite_token']) then
-					invite_token := ParserObj.Values['invite_token'].Value;
+				if Assigned(ParserObj.Values[NAME_TREE]) then
+					tree := ParserObj.Values[NAME_TREE].Value;
+				if Assigned(ParserObj.Values[NAME_ACCESS]) then
+					access := ParserObj.Values[NAME_ACCESS].Value;
+				if Assigned(ParserObj.Values[NAME_NAME]) then
+					name := ParserObj.Values[NAME_NAME].Value;
+				if Assigned(ParserObj.Values[NAME_HOME]) then
+					home := ParserObj.Values[NAME_HOME].Value;
+				if Assigned(ParserObj.Values[NAME_SIZE]) then
+					size := ParserObj.Values[NAME_SIZE].Value.ToInt64;
+				if Assigned(ParserObj.Values[NAME_INVITE_TOKEN]) then
+					invite_token := ParserObj.Values[NAME_INVITE_TOKEN].Value;
 			end;
 		end;
 		JSONVal.free;
@@ -263,18 +322,18 @@ begin
 		ParserObj := (JSONVal as TJSONObject);
 		with CloudMailRuOAuthInfo do
 		begin
-			if Assigned(ParserObj.Values['error']) then
-				error := ParserObj.Values['error'].Value;
-			if Assigned(ParserObj.Values['error_code']) then
-				error_code := ParserObj.Values['error_code'].Value.ToInteger;
-			if Assigned(ParserObj.Values['error_description']) then
-				error_description := ParserObj.Values['error_description'].Value;
-			if Assigned(ParserObj.Values['expires_in']) then
-				expires_in := ParserObj.Values['expires_in'].Value.ToInteger;
-			if Assigned(ParserObj.Values['refresh_token']) then
-				refresh_token := ParserObj.Values['refresh_token'].Value;
-			if Assigned(ParserObj.Values['access_token']) then
-				access_token := ParserObj.Values['access_token'].Value;
+			if Assigned(ParserObj.Values[NAME_ERROR]) then
+				error := ParserObj.Values[NAME_ERROR].Value;
+			if Assigned(ParserObj.Values[NAME_ERROR_CODE]) then
+				error_code := ParserObj.Values[NAME_ERROR_CODE].Value.ToInteger;
+			if Assigned(ParserObj.Values[NAME_ERROR_DESCRIPTION]) then
+				error_description := ParserObj.Values[NAME_ERROR_DESCRIPTION].Value;
+			if Assigned(ParserObj.Values[NAME_EXPIRES_IN]) then
+				expires_in := ParserObj.Values[NAME_EXPIRES_IN].Value.ToInteger;
+			if Assigned(ParserObj.Values[NAME_REFRESH_TOKEN]) then
+				refresh_token := ParserObj.Values[NAME_REFRESH_TOKEN].Value;
+			if Assigned(ParserObj.Values[NAME_ACCESS_TOKEN]) then
+				access_token := ParserObj.Values[NAME_ACCESS_TOKEN].Value;
 		end;
 		JSONVal.free;
 	except
@@ -301,7 +360,7 @@ begin
 		exit(CLOUD_ERROR_UNKNOWN);
 	try
 		ParserObj := JSONVal as TJSONObject;
-		OperationStatus := ParserObj.Values['status'].Value.ToInteger;
+		OperationStatus := ParserObj.Values[NAME_STATUS].Value.ToInteger;
 		if OperationStatus <> 200 then
 		begin
 			//if OperationStatus = 400 then exit(CLOUD_ERROR_BAD_REQUEST);
@@ -312,19 +371,19 @@ begin
 			if OperationStatus = 406 then
 				exit(CLOUD_ERROR_NOT_ACCEPTABLE);
 
-			if (Assigned((ParserObj.Values['body'] as TJSONObject).Values['home'])) then
+			if (Assigned((ParserObj.Values[NAME_BODY] as TJSONObject).Values[NAME_HOME])) then
 				nodename := 'home'
-			else if (Assigned((ParserObj.Values['body'] as TJSONObject).Values['weblink'])) then
+			else if (Assigned((ParserObj.Values[NAME_BODY] as TJSONObject).Values[NAME_WEBLINK])) then
 				nodename := 'weblink'
-			else if (Assigned((ParserObj.Values['body'] as TJSONObject).Values['invite.email'])) then
+			else if (Assigned((ParserObj.Values[NAME_BODY] as TJSONObject).Values[NAME_INVITE_EMAIL])) then
 			begin //invite errors
-				error := (((ParserObj.Values['body'] as TJSONObject).Values['invite.email']) as TJSONObject).Values['error'].Value;
+				error := (((ParserObj.Values[NAME_BODY] as TJSONObject).Values[NAME_INVITE_EMAIL]) as TJSONObject).Values[NAME_ERROR].Value;
 			end else begin
 				//Log(MSGTYPE_IMPORTANTERROR, 'Can''t parse server answer: ' + JSON); todo
 				exit(CLOUD_ERROR_UNKNOWN);
 			end;
 			if error = EmptyWideStr then
-				error := ((ParserObj.Values['body'] as TJSONObject).Values[nodename] as TJSONObject).Values['error'].Value;
+				error := ((ParserObj.Values[NAME_BODY] as TJSONObject).Values[nodename] as TJSONObject).Values[NAME_ERROR].Value;
 			if error = 'exists' then
 				exit(CLOUD_ERROR_EXISTS);
 			if error = 'required' then
@@ -384,7 +443,7 @@ begin
 	if not initJSONValue(JSON, JSONVal) then
 		exit;
 	try
-		PublicLink := (JSONVal as TJSONObject).Values['body'].Value;
+		PublicLink := (JSONVal as TJSONObject).Values[NAME_BODY].Value;
 		JSONVal.free;
 	except
 		exit;
@@ -400,7 +459,7 @@ begin
 	if not initJSONValue(JSON, JSONVal) then
 		exit;
 	try
-		Shard := ((((JSONVal as TJSONObject).Values['body'] as TJSONObject).Values['get'] as TJSONArray).Items[0] as TJSONObject).Values['url'].Value;
+		Shard := ((((JSONVal as TJSONObject).Values[NAME_BODY] as TJSONObject).Values[NAME_GET] as TJSONArray).Items[0] as TJSONObject).Values[NAME_URL].Value;
 		JSONVal.free;
 	except
 		exit;
@@ -420,45 +479,45 @@ begin
 		ParserObj := (JSONVal as TJSONObject) as TJSONObject;
 		with TwostepData do
 		begin
-			if Assigned(ParserObj.Values['form_name']) then
-				form_name := ParserObj.Values['form_name'].Value;
-			if Assigned(ParserObj.Values['auth_host']) then
-				auth_host := ParserObj.Values['auth_host'].Value;
-			if Assigned(ParserObj.Values['secstep_phone']) then
-				secstep_phone := ParserObj.Values['secstep_phone'].Value;
-			if Assigned(ParserObj.Values['secstep_page']) then
-				secstep_page := ParserObj.Values['secstep_page'].Value;
-			if Assigned(ParserObj.Values['secstep_code_fail']) then
-				secstep_code_fail := ParserObj.Values['secstep_code_fail'].Value;
-			if Assigned(ParserObj.Values['secstep_resend_fail']) then
-				secstep_resend_fail := ParserObj.Values['secstep_resend_fail'].Value;
-			if Assigned(ParserObj.Values['secstep_resend_success']) then
-				secstep_resend_success := ParserObj.Values['secstep_resend_success'].Value;
-			if Assigned(ParserObj.Values['secstep_timeout']) then
+			if Assigned(ParserObj.Values[NAME_FORM_NAME]) then
+				form_name := ParserObj.Values[NAME_FORM_NAME].Value;
+			if Assigned(ParserObj.Values[NAME_AUTH_HOST]) then
+				auth_host := ParserObj.Values[NAME_AUTH_HOST].Value;
+			if Assigned(ParserObj.Values[NAME_SECSTEP_PHONE]) then
+				secstep_phone := ParserObj.Values[NAME_SECSTEP_PHONE].Value;
+			if Assigned(ParserObj.Values[NAME_SECSTEP_PAGE]) then
+				secstep_page := ParserObj.Values[NAME_SECSTEP_PAGE].Value;
+			if Assigned(ParserObj.Values[NAME_SECSTEP_CODE_FAIL]) then
+				secstep_code_fail := ParserObj.Values[NAME_SECSTEP_CODE_FAIL].Value;
+			if Assigned(ParserObj.Values[NAME_SECSTEP_RESEND_FAIL]) then
+				secstep_resend_fail := ParserObj.Values[NAME_SECSTEP_RESEND_FAIL].Value;
+			if Assigned(ParserObj.Values[NAME_SECSTEP_RESEND_SUCCESS]) then
+				secstep_resend_success := ParserObj.Values[NAME_SECSTEP_RESEND_SUCCESS].Value;
+			if Assigned(ParserObj.Values[NAME_SECSTEP_TIMEOUT]) then
 			begin
-				if ParserObj.Values['secstep_timeout'].Value <> '' then
-					secstep_timeout := ParserObj.Values['secstep_timeout'].Value.ToInt64
+				if ParserObj.Values[NAME_SECSTEP_TIMEOUT].Value <> '' then
+					secstep_timeout := ParserObj.Values[NAME_SECSTEP_TIMEOUT].Value.ToInt64
 				else
 					secstep_timeout := AUTH_APP_USED;
 			end;
-			if Assigned(ParserObj.Values['secstep_login']) then
-				secstep_login := ParserObj.Values['secstep_login'].Value;
-			if Assigned(ParserObj.Values['secstep_disposable_fail']) then
-				secstep_disposable_fail := ParserObj.Values['secstep_disposable_fail'].Value;
-			if Assigned(ParserObj.Values['secstep_smsapi_error']) then
-				secstep_smsapi_error := ParserObj.Values['secstep_smsapi_error'].Value;
-			if Assigned(ParserObj.Values['secstep_captcha']) then
-				secstep_captcha := ParserObj.Values['secstep_captcha'].Value;
-			if Assigned(ParserObj.Values['totp_enabled']) then
-				totp_enabled := ParserObj.Values['totp_enabled'].Value;
-			if Assigned(ParserObj.Values['locale']) then
-				locale := ParserObj.Values['locale'].Value;
-			if Assigned(ParserObj.Values['client']) then
-				client := ParserObj.Values['client'].Value;
-			if Assigned(ParserObj.Values['csrf']) then
-				csrf := ParserObj.Values['csrf'].Value;
-			if Assigned(ParserObj.Values['device']) then
-				device := ParserObj.Values['device'].Value;
+			if Assigned(ParserObj.Values[NAME_SECSTEP_LOGIN]) then
+				secstep_login := ParserObj.Values[NAME_SECSTEP_LOGIN].Value;
+			if Assigned(ParserObj.Values[NAME_SECSTEP_DISPOSABLE_FAIL]) then
+				secstep_disposable_fail := ParserObj.Values[NAME_SECSTEP_DISPOSABLE_FAIL].Value;
+			if Assigned(ParserObj.Values[NAME_SECSTEP_SMSAPI_ERROR]) then
+				secstep_smsapi_error := ParserObj.Values[NAME_SECSTEP_SMSAPI_ERROR].Value;
+			if Assigned(ParserObj.Values[NAME_SECSTEP_CAPTCHA]) then
+				secstep_captcha := ParserObj.Values[NAME_SECSTEP_CAPTCHA].Value;
+			if Assigned(ParserObj.Values[NAME_TOTP_ENABLED]) then
+				totp_enabled := ParserObj.Values[NAME_TOTP_ENABLED].Value;
+			if Assigned(ParserObj.Values[NAME_LOCALE]) then
+				locale := ParserObj.Values[NAME_LOCALE].Value;
+			if Assigned(ParserObj.Values[NAME_CLIENT]) then
+				client := ParserObj.Values[NAME_CLIENT].Value;
+			if Assigned(ParserObj.Values[NAME_CSRF]) then
+				csrf := ParserObj.Values[NAME_CSRF].Value;
+			if Assigned(ParserObj.Values[NAME_DEVICE]) then
+				device := ParserObj.Values[NAME_DEVICE].Value;
 		end;
 		JSONVal.free;
 	except
@@ -476,15 +535,15 @@ begin
 	if not initJSONValue(JSON, JSONVal) then
 		exit;
 	try
-		ParserObj := (JSONVal as TJSONObject).Values['body'] as TJSONObject;
+		ParserObj := (JSONVal as TJSONObject).Values[NAME_BODY] as TJSONObject;
 		with CloudMailRuSpaceInfo do
 		begin
-			if Assigned(ParserObj.Values['overquota']) then
-				overquota := ParserObj.Values['overquota'].Value.ToBoolean;
-			if Assigned(ParserObj.Values['total']) then
-				total := ParserObj.Values['total'].Value.ToInt64;
-			if Assigned(ParserObj.Values['used']) then
-				used := ParserObj.Values['used'].Value.ToInt64;
+			if Assigned(ParserObj.Values[NAME_OVERQUOTA]) then
+				overquota := ParserObj.Values[NAME_OVERQUOTA].Value.ToBoolean;
+			if Assigned(ParserObj.Values[NAME_TOTAL]) then
+				total := ParserObj.Values[NAME_TOTAL].Value.ToInt64;
+			if Assigned(ParserObj.Values[NAME_USED]) then
+				used := ParserObj.Values[NAME_USED].Value.ToInt64;
 		end;
 		JSONVal.free;
 	except
