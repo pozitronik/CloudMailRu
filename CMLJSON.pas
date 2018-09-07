@@ -27,8 +27,8 @@ const
 	NAME_STATUS = 'status';
 	NAME_ACCESS = 'access';
 	NAME_OVERQUOTA = 'overquota';
-	NAME_TOTAL = 'total';
-	NAME_USED = 'used';
+	NAME_TOTAL = 'bytes_total';
+	NAME_USED = 'bytes_used';
 	NAME_FOLDERS = 'folders';
 	NAME_FILES = 'files';
 	NAME_INVITED = 'invited';
