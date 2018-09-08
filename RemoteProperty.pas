@@ -426,7 +426,7 @@ begin
 	if (Props.type_ = TYPE_FILE) then
 	begin
 		QuickClone.Enabled := true;
-		QuickClone.Text := 'hash ' + Props.hash + ':' + Props.size.ToString + ':' + Props.name;
+		QuickClone.Text := 'hash "' + Props.hash + ':' + Props.size.ToString + ':' + Props.name+'"';
 	end;
 	if self.Cloud.isPublicShare then
 	begin
