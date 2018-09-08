@@ -127,6 +127,7 @@ type
 		function deleteFile(Path: WideString): Boolean;
 		function publishFile(Path: WideString; var PublicLink: WideString; publish: Boolean = CLOUD_PUBLISH): Boolean;
 		function cloneWeblink(Path, link: WideString; ConflictMode: WideString = CLOUD_CONFLICT_RENAME): integer; //клонировать публичную ссылку в текущий каталог
+		function cloneHash(Path, Hash: WideString; size: int64; FileName: WideString; ConflictMode: WideString = CLOUD_CONFLICT_RENAME): integer; //создать клон файла по известному хешу и размеру
 		function getShareInfo(Path: WideString; var InviteListing: TCloudMailRuInviteInfoListing): Boolean;
 		function shareFolder(Path, email: WideString; access: integer): Boolean;
 		function trashbinRestore(Path: WideString; RestoreRevision: integer; ConflictMode: WideString = CLOUD_CONFLICT_RENAME): Boolean;
@@ -162,6 +163,19 @@ begin
 	end;
 	Result := self.HTTPPostForm(API_FILE_ADD, 'conflict=' + ConflictMode + '&home=/' + PathToUrl(remotePath) + '&hash=' + Hash + '&size=' + size.ToString + self.united_params, JSONAnswer, 'application/x-www-form-urlencoded', LogErrors);
 
+end;
+
+function TCloudMailRu.cloneHash(Path, Hash: WideString; size: int64; FileName: WideString; ConflictMode: WideString = CLOUD_CONFLICT_RENAME): integer; //создать клон файла по известному хешу и размеру
+var
+	JSON: WideString;
+begin
+	Result := FS_FILE_WRITEERROR;
+	if not(Assigned(self)) then
+		exit; //Проверка на вызов без инициализации
+	if self.public_account then
+		exit(FS_FILE_NOTSUPPORTED);
+	if self.addFileToCloud(Hash, size, IncludeSlash(Path) + FileName, JSON, ConflictMode, true) then
+		Result := FS_FILE_OK;
 end;
 
 function TCloudMailRu.cloneWeblink(Path, link, ConflictMode: WideString): integer;
