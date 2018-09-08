@@ -6,7 +6,7 @@ uses system.sysutils;
 
 const
 	ERR_WRONG_FORMAT = 'Parameter should be in hash:size:name or hash:size format.';
-//	ERR_WRONG_HASH_LENGTH = 'Hash length shoud be exactly 20 symbols.';
+	ERR_WRONG_HASH_LENGTH = 'Hash length shoud be exactly 40 symbols.';
 	ERR_WRONG_SIZE_FORMAT = 'Size should be in numeric format.';
 
 type
@@ -41,7 +41,7 @@ begin
 	divisor_position := Pos(WideString(divisor), parameter);
 	if divisor_position = 0 then
 	begin
-		self.errorString := ERR_WRONG_FORMAT;;
+		self.errorString := ERR_WRONG_FORMAT;
 		exit;
 	end;
 	self.hash := Copy(parameter, 0, divisor_position - 1);
