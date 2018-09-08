@@ -174,7 +174,7 @@ begin
 		exit; //Проверка на вызов без инициализации
 	if self.public_account then
 		exit(FS_FILE_NOTSUPPORTED);
-	if self.addFileToCloud(Hash, size, IncludeSlash(Path) + FileName, JSON, ConflictMode, true) then
+	if self.addFileToCloud(Hash, size, IncludeTrailingBackslash(Path) + FileName, JSON, ConflictMode, true) then
 		Result := FS_FILE_OK;
 end;
 
