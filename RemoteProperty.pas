@@ -40,6 +40,8 @@ type
 		DescriptionTS: TTabSheet;
 		DescriptionEditMemo: TMemo;
 		DescriptionSaveButton: TButton;
+		QuickHashLabel: TLabel;
+		QuickClone: TEdit;
 		procedure AccessCBClick(Sender: TObject);
 		class function ShowProperty(parentWindow: HWND; RemoteName: WideString; RemoteProperty: TCloudMailRuDirListingItem; Cloud: TCloudMailRu; DoUrlEncode: Boolean = true; AutoUpdateDownloadListing: Boolean = true; ShowDescription: Boolean = true; EditDescription: Boolean = true; PluginIonFileName: WideString = 'descript.ion'): Integer;
 		procedure FormActivate(Sender: TObject);
@@ -55,6 +57,7 @@ type
 		procedure RefreshScanTBClick(Sender: TObject);
 		procedure DescriptionSaveButtonClick(Sender: TObject);
 		procedure FormKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
+		procedure OkButtonClick(Sender: TObject);
 	private
 		{Private declarations}
 		procedure WMAfterShow(var Message: TMessage); message WM_AFTER_SHOW;
@@ -264,6 +267,11 @@ begin
 	LogCancelledFlag := false;
 end;
 
+procedure TPropertyForm.OkButtonClick(Sender: TObject);
+begin
+
+end;
+
 (*Controls handlers*)
 
 procedure TPropertyForm.CancelScanTBClick(Sender: TObject);
@@ -409,16 +417,24 @@ begin
 		WebLink.SetFocus;
 		WebLink.SelectAll;
 	end;
+
 	ExtPropertiesPC.Visible := false;
 	FolderAccessTS.TabVisible := false;
 	DownloadLinksTS.TabVisible := false;
 	DescriptionTS.TabVisible := false;
+	QuickClone.Enabled := false;
+	if (Props.type_ = TYPE_FILE) then
+	begin
+		QuickClone.Enabled := true;
+		QuickClone.Text := 'hash ' + Props.hash + ':' + Props.size.ToString + ':' + Props.name;
+	end;
 	if self.Cloud.isPublicShare then
 	begin
 		AccessCB.Enabled := false;
 		AccessCB.checked := true;
 		ExtPropertiesPC.Visible := true;
 		DownloadLinksTS.TabVisible := true;
+
 		if self.AutoUpdateDownloadListing then
 			UpdateDownloadListing;
 	end else begin
@@ -430,6 +446,7 @@ begin
 			FolderAccessTS.TabVisible := true;
 			RefreshInvites;
 		end;
+
 	end;
 	if self.ShowDescription then
 	begin

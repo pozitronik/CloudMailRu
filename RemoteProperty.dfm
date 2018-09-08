@@ -4,8 +4,8 @@ object PropertyForm: TPropertyForm
   AutoSize = True
   BorderStyle = bsDialog
   BorderWidth = 5
-  ClientHeight = 358
-  ClientWidth = 837
+  ClientHeight = 360
+  ClientWidth = 836
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -19,52 +19,60 @@ object PropertyForm: TPropertyForm
   OnKeyUp = FormKeyUp
   OnShow = FormShow
   DesignSize = (
-    837
-    358)
+    836
+    360)
   PixelsPerInch = 96
   TextHeight = 13
   object PublicLinkLabel: TLabel
     Left = 0
-    Top = 0
+    Top = 23
     Width = 49
     Height = 13
     Caption = 'Public link:'
   end
-  object WebLink: TEdit
+  object QuickHashLabel: TLabel
     Left = 0
-    Top = 19
-    Width = 836
+    Top = 50
+    Width = 106
+    Height = 13
+    Caption = 'Quick clone command:'
+  end
+  object WebLink: TEdit
+    Left = 55
+    Top = 23
+    Width = 780
     Height = 21
     Anchors = [akLeft, akTop, akRight]
     ReadOnly = True
-    TabOrder = 0
+    TabOrder = 1
   end
   object AccessCB: TCheckBox
     Left = 0
-    Top = 46
+    Top = 0
     Width = 131
     Height = 17
     Caption = 'Public access enabled'
-    TabOrder = 1
+    TabOrder = 0
     OnClick = AccessCBClick
   end
   object OkButton: TButton
-    Left = 746
-    Top = 46
+    Left = 745
+    Top = 50
     Width = 91
-    Height = 25
+    Height = 21
     Anchors = [akTop, akRight]
     Caption = 'OK'
     ModalResult = 1
-    TabOrder = 2
+    TabOrder = 3
+    OnClick = OkButtonClick
   end
   object ExtPropertiesPC: TPageControl
     Left = 0
-    Top = 75
+    Top = 77
     Width = 836
     Height = 283
     ActivePage = FolderAccessTS
-    TabOrder = 3
+    TabOrder = 4
     object FolderAccessTS: TTabSheet
       Caption = 'Folder Access'
       DesignSize = (
@@ -255,6 +263,15 @@ object PropertyForm: TPropertyForm
       end
     end
   end
+  object QuickClone: TEdit
+    Left = 112
+    Top = 50
+    Width = 627
+    Height = 21
+    Anchors = [akLeft, akTop, akRight]
+    ReadOnly = True
+    TabOrder = 2
+  end
   object InvitesPopup: TPopupMenu
     OnPopup = InvitesPopupPopup
     Left = 744
@@ -281,7 +298,7 @@ object PropertyForm: TPropertyForm
     Left = 740
     Top = 147
     Bitmap = {
-      494C010104008C00E80020002000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010104008C00EC0020002000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000800000004000000001002000000000000080
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
