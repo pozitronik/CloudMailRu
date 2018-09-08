@@ -3,7 +3,7 @@
 uses
 	SysUtils, System.Generics.Collections, DateUtils, windows, Classes, PLUGIN_TYPES, IdSSLOpenSSLHeaders, messages, inifiles, Vcl.controls, CloudMailRu in 'CloudMailRu.pas', MRC_Helper in 'MRC_Helper.pas', Accounts in 'Accounts.pas'{AccountsForm}, RemoteProperty in 'RemoteProperty.pas'{PropertyForm}, Descriptions in 'Descriptions.pas', ConnectionManager in 'ConnectionManager.pas', Settings in 'Settings.pas', ANSIFunctions in 'ANSIFunctions.pas', DeletedProperty in 'DeletedProperty.pas'{DeletedPropertyForm}, InviteProperty in 'InviteProperty.pas'{InvitePropertyForm}, AskPassword, CMLJSON in 'CMLJSON.pas', CMLTypes in 'CMLTypes.pas', DCPbase64 in 'DCPCrypt\DCPbase64.pas', DCPblockciphers in 'DCPCrypt\DCPblockciphers.pas', DCPconst in 'DCPCrypt\DCPconst.pas',
 	DCPcrypt2 in 'DCPCrypt\DCPcrypt2.pas', DCPreg in 'DCPCrypt\DCPreg.pas', DCPtypes in 'DCPCrypt\DCPtypes.pas', DCPblowfish in 'DCPCrypt\Ciphers\DCPblowfish.pas', DCPcast128 in 'DCPCrypt\Ciphers\DCPcast128.pas', DCPcast256 in 'DCPCrypt\Ciphers\DCPcast256.pas', DCPdes in 'DCPCrypt\Ciphers\DCPdes.pas', DCPgost in 'DCPCrypt\Ciphers\DCPgost.pas', DCPice in 'DCPCrypt\Ciphers\DCPice.pas', DCPidea in 'DCPCrypt\Ciphers\DCPidea.pas', DCPmars in 'DCPCrypt\Ciphers\DCPmars.pas', DCPmisty1 in 'DCPCrypt\Ciphers\DCPmisty1.pas', DCPrc2 in 'DCPCrypt\Ciphers\DCPrc2.pas', DCPrc4 in 'DCPCrypt\Ciphers\DCPrc4.pas', DCPrc5 in 'DCPCrypt\Ciphers\DCPrc5.pas', DCPrc6 in 'DCPCrypt\Ciphers\DCPrc6.pas', DCPrijndael in 'DCPCrypt\Ciphers\DCPrijndael.pas', DCPserpent in 'DCPCrypt\Ciphers\DCPserpent.pas',
-	DCPtea in 'DCPCrypt\Ciphers\DCPtea.pas', DCPtwofish in 'DCPCrypt\Ciphers\DCPtwofish.pas', DCPhaval in 'DCPCrypt\Hashes\DCPhaval.pas', DCPmd4 in 'DCPCrypt\Hashes\DCPmd4.pas', DCPmd5 in 'DCPCrypt\Hashes\DCPmd5.pas', DCPripemd128 in 'DCPCrypt\Hashes\DCPripemd128.pas', DCPripemd160 in 'DCPCrypt\Hashes\DCPripemd160.pas', DCPsha1 in 'DCPCrypt\Hashes\DCPsha1.pas', DCPsha256 in 'DCPCrypt\Hashes\DCPsha256.pas', DCPsha512 in 'DCPCrypt\Hashes\DCPsha512.pas', DCPtiger in 'DCPCrypt\Hashes\DCPtiger.pas', TCPasswordManagerHelper in 'TCPasswordManagerHelper.pas';
+	DCPtea in 'DCPCrypt\Ciphers\DCPtea.pas', DCPtwofish in 'DCPCrypt\Ciphers\DCPtwofish.pas', DCPhaval in 'DCPCrypt\Hashes\DCPhaval.pas', DCPmd4 in 'DCPCrypt\Hashes\DCPmd4.pas', DCPmd5 in 'DCPCrypt\Hashes\DCPmd5.pas', DCPripemd128 in 'DCPCrypt\Hashes\DCPripemd128.pas', DCPripemd160 in 'DCPCrypt\Hashes\DCPripemd160.pas', DCPsha1 in 'DCPCrypt\Hashes\DCPsha1.pas', DCPsha256 in 'DCPCrypt\Hashes\DCPsha256.pas', DCPsha512 in 'DCPCrypt\Hashes\DCPsha512.pas', DCPtiger in 'DCPCrypt\Hashes\DCPtiger.pas', TCPasswordManagerHelper in 'TCPasswordManagerHelper.pas', HashInfo in 'HashInfo.pas';
 
 {$IFDEF WIN64}
 {$E wfx64}
@@ -762,6 +762,7 @@ var
 	RealPath: TRealPath;
 	getResult: integer;
 	Cloud: TCloudMailRu;
+	HashInfo: THashInfo;
 begin
 	Result := FS_EXEC_OK;
 
@@ -780,7 +781,21 @@ begin
 		if not(Cloud.shareFolder(RealPath.path, ExtractLinkFromUrl(Parameter), CLOUD_SHARE_RW)) then
 			exit(FS_EXEC_ERROR);
 
-	if command = 'clone' then
+	if command = 'hash' then //add file by hash & filesize
+	begin
+		HashInfo := THashInfo.Create(Parameter);
+		if HashInfo.valid then
+		begin
+			Cloud.cloneHash(RealPath.path, HashInfo.hash, HashInfo.size, HashInfo.name);
+			HashInfo.Destroy;
+		end else begin
+			LogHandle(LogLevelDebug, msgtype_details, PWideChar('Error cloning by hash: ' + HashInfo.errorString + ' Parameter: ' + Parameter));
+			HashInfo.Destroy;
+			exit(FS_EXEC_ERROR);
+		end;
+	end;
+
+	if command = 'clone' then //add file by weblink
 	begin
 		if (Cloud.cloneWeblink(RealPath.path, ExtractLinkFromUrl(Parameter)) = CLOUD_OPERATION_OK) then
 			if GetPluginSettings(SettingsIniFilePath).LogUserSpace then
