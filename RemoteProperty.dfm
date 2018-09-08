@@ -29,6 +29,7 @@ object PropertyForm: TPropertyForm
     Width = 49
     Height = 13
     Caption = 'Public link:'
+    OnClick = PublicLinkLabelClick
   end
   object QuickHashLabel: TLabel
     Left = 0
@@ -36,6 +37,7 @@ object PropertyForm: TPropertyForm
     Width = 106
     Height = 13
     Caption = 'Quick clone command:'
+    OnClick = QuickHashLabelClick
   end
   object WebLink: TEdit
     Left = 55
@@ -64,7 +66,6 @@ object PropertyForm: TPropertyForm
     Caption = 'OK'
     ModalResult = 1
     TabOrder = 3
-    OnClick = OkButtonClick
   end
   object ExtPropertiesPC: TPageControl
     Left = 0

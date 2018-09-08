@@ -3,7 +3,7 @@
 interface
 
 uses
-	Plugin_types, Descriptions, CMLTypes, Settings, Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, CloudMailRu, MRC_Helper, Vcl.Grids, Vcl.ValEdit, Vcl.Menus, Vcl.ComCtrls, Vcl.ToolWin, System.ImageList, Vcl.ImgList;
+	Plugin_types, Descriptions, CMLTypes, Settings, Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, CloudMailRu, MRC_Helper, Vcl.Grids, Vcl.ValEdit, Vcl.Menus, Vcl.ComCtrls, Vcl.ToolWin, System.ImageList, Vcl.ImgList, Clipbrd;
 
 const
 	WM_AFTER_SHOW = WM_USER + 300; //custom message
@@ -57,7 +57,8 @@ type
 		procedure RefreshScanTBClick(Sender: TObject);
 		procedure DescriptionSaveButtonClick(Sender: TObject);
 		procedure FormKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
-		procedure OkButtonClick(Sender: TObject);
+		procedure PublicLinkLabelClick(Sender: TObject);
+		procedure QuickHashLabelClick(Sender: TObject);
 	private
 		{Private declarations}
 		procedure WMAfterShow(var Message: TMessage); message WM_AFTER_SHOW;
@@ -267,9 +268,16 @@ begin
 	LogCancelledFlag := false;
 end;
 
-procedure TPropertyForm.OkButtonClick(Sender: TObject);
+procedure TPropertyForm.PublicLinkLabelClick(Sender: TObject);
 begin
+	if AccessCB.Checked then
+		Clipboard.AsText := WebLink.Text;
+end;
 
+procedure TPropertyForm.QuickHashLabelClick(Sender: TObject);
+begin
+	if QuickClone.Enabled then
+		Clipboard.AsText := QuickClone.Text;
 end;
 
 (*Controls handlers*)
@@ -426,20 +434,20 @@ begin
 	if (Props.type_ = TYPE_FILE) then
 	begin
 		QuickClone.Enabled := true;
-		QuickClone.Text := 'hash "' + Props.hash + ':' + Props.size.ToString + ':' + Props.name+'"';
+		QuickClone.Text := 'hash "' + Props.hash + ':' + Props.size.ToString + ':' + Props.name + '"';
 	end;
 	if self.Cloud.isPublicShare then
 	begin
 		AccessCB.Enabled := false;
-		AccessCB.checked := true;
+		AccessCB.Checked := true;
 		ExtPropertiesPC.Visible := true;
 		DownloadLinksTS.TabVisible := true;
 
 		if self.AutoUpdateDownloadListing then
 			UpdateDownloadListing;
 	end else begin
-		AccessCB.checked := not(Props.WebLink = EmptyWideStr);
-		WebLink.Enabled := AccessCB.checked;
+		AccessCB.Checked := not(Props.WebLink = EmptyWideStr);
+		WebLink.Enabled := AccessCB.Checked;
 		if (Props.type_ = TYPE_DIR) or (Props.kind = KIND_SHARED) then
 		begin
 			ExtPropertiesPC.Visible := true;
@@ -476,8 +484,8 @@ begin
 		exit;
 	AccessCB.Enabled := false; //блокируем во избежание повторных кликов
 	WebLink.Text := 'Wait for it...';
-	RefreshPublicShare(AccessCB.checked);
-	if AccessCB.checked and self.AutoUpdateDownloadListing then
+	RefreshPublicShare(AccessCB.Checked);
+	if AccessCB.Checked and self.AutoUpdateDownloadListing then
 		UpdateDownloadListing;
 
 	AccessCB.Enabled := true;
