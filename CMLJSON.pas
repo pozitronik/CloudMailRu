@@ -486,9 +486,6 @@ begin
 		begin
 			overquota := assignFromName(ParserObj, NAME_OVERQUOTA);
 			total := assignFromName(ParserObj, NAME_TOTAL);
-
-			overquota := assignFromName(ParserObj, NAME_OVERQUOTA);
-			total := assignFromName(ParserObj, NAME_TOTAL);
 			used := assignFromName(ParserObj, NAME_USED);
 		end;
 		JSONVal.free;
