@@ -78,7 +78,6 @@ implementation
 
 function assignFromName(ParserObject: TJSONObject; Name: WideString): Variant;
 begin
-	result := false; //correct result for any variable type => string(false) = false, int(false) = 0, etc.
 	if Assigned(ParserObject.Values[Name]) then
 		result := ParserObject.Values[Name].Value;
 end;
