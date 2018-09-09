@@ -396,63 +396,63 @@ object AccountsForm: TAccountsForm
       ImageIndex = 1
       object CloudMaxFileSizeLabelBytes: TLabel
         Left = 292
-        Top = 115
+        Top = 96
         Width = 27
         Height = 13
         Caption = 'bytes'
       end
       object ChunkOverwriteModeLabel: TLabel
         Left = 5
-        Top = 196
+        Top = 200
         Width = 150
         Height = 13
         Caption = 'Overwrite splitted chunk mode:'
       end
       object DeleteFailOnUploadModeLabel: TLabel
         Left = 5
-        Top = 222
+        Top = 226
         Width = 143
         Height = 13
         Caption = 'Delete file after upload mode:'
       end
       object OverwriteLocalModeLabel: TLabel
         Left = 5
-        Top = 248
+        Top = 252
         Width = 127
         Height = 13
         Caption = 'Overwrite local files mode:'
       end
       object IconsModeLabel: TLabel
         Left = 5
-        Top = 274
+        Top = 278
         Width = 88
         Height = 13
         Caption = 'Plugin icons mode:'
       end
       object OperationErrorModeLabel: TLabel
         Left = 5
-        Top = 141
+        Top = 120
         Width = 140
         Height = 13
         Caption = 'On downloads/uploads error:'
       end
       object RetryAttemptsLabel: TLabel
         Left = 160
-        Top = 169
+        Top = 148
         Width = 77
         Height = 13
         Caption = 'Retry attempts:'
       end
       object RetryWaitLabel: TLabel
         Left = 339
-        Top = 169
+        Top = 148
         Width = 20
         Height = 13
         Caption = 'wait'
       end
       object msLabel: TLabel
         Left = 466
-        Top = 169
+        Top = 148
         Width = 13
         Height = 13
         Caption = 'ms'
@@ -463,6 +463,13 @@ object AccountsForm: TAccountsForm
         Width = 76
         Height = 13
         Caption = 'Show accounts:'
+      end
+      object CopyBetweenAccountsModeLabel: TLabel
+        Left = 5
+        Top = 175
+        Width = 172
+        Height = 13
+        Caption = 'Copying/moving between accounts:'
       end
       object PreserveFileTimeCB: TCheckBox
         Left = 5
@@ -480,14 +487,6 @@ object AccountsForm: TAccountsForm
         Caption = 'Load SSL libraries only from plugin directory'
         TabOrder = 0
       end
-      object OperationsViaPublicLinkEnabledCB: TCheckBox
-        Left = 5
-        Top = 92
-        Width = 475
-        Height = 17
-        Caption = 'Copying/moving between accounts via public link'
-        TabOrder = 6
-      end
       object GlobalSettingApplyBTN: TButton
         Left = 405
         Top = 417
@@ -496,31 +495,31 @@ object AccountsForm: TAccountsForm
         Caption = 'Apply'
         ParentShowHint = False
         ShowHint = False
-        TabOrder = 19
+        TabOrder = 21
         OnClick = GlobalSettingApplyBTNClick
       end
       object CloudMaxFileSizeValue: TEdit
         Left = 142
-        Top = 112
+        Top = 93
         Width = 146
         Height = 21
         Enabled = False
         NumbersOnly = True
-        TabOrder = 8
+        TabOrder = 7
       end
       object CloudMaxFileSizeCB: TCheckBox
         Left = 5
-        Top = 114
+        Top = 95
         Width = 134
         Height = 17
         Caption = 'Override split file size to'
-        TabOrder = 7
+        TabOrder = 6
         OnClick = CloudMaxFileSizeCBClick
       end
       object ChunkOverwriteModeCombo: TComboBox
-        Left = 160
-        Top = 193
-        Width = 320
+        Left = 183
+        Top = 197
+        Width = 297
         Height = 21
         Style = csDropDownList
         ItemIndex = 0
@@ -532,9 +531,9 @@ object AccountsForm: TAccountsForm
           'Abort operation')
       end
       object DeleteFailOnUploadModeCombo: TComboBox
-        Left = 160
-        Top = 219
-        Width = 320
+        Left = 183
+        Top = 223
+        Width = 297
         Height = 21
         Style = csDropDownList
         ItemIndex = 0
@@ -548,9 +547,9 @@ object AccountsForm: TAccountsForm
           'Try to unset read only flag and delete, abort operation on error')
       end
       object OverwriteLocalModeCombo: TComboBox
-        Left = 160
-        Top = 245
-        Width = 320
+        Left = 183
+        Top = 249
+        Width = 297
         Height = 21
         Style = csDropDownList
         ItemIndex = 0
@@ -570,9 +569,9 @@ object AccountsForm: TAccountsForm
         TabOrder = 16
       end
       object IconsModeCombo: TComboBox
-        Left = 160
-        Top = 271
-        Width = 320
+        Left = 183
+        Top = 275
+        Width = 297
         Height = 21
         Style = csDropDownList
         ItemIndex = 0
@@ -595,12 +594,12 @@ object AccountsForm: TAccountsForm
       end
       object OperationErrorModeCombo: TComboBox
         Left = 160
-        Top = 139
+        Top = 118
         Width = 320
         Height = 21
         Style = csDropDownList
         ItemIndex = 0
-        TabOrder = 9
+        TabOrder = 8
         Text = 'Ask user'
         Items.Strings = (
           'Ask user'
@@ -610,22 +609,22 @@ object AccountsForm: TAccountsForm
       end
       object AttemptWaitValue: TSpinEdit
         Left = 365
-        Top = 166
+        Top = 145
         Width = 95
         Height = 22
         MaxValue = 2147483647
         MinValue = 0
-        TabOrder = 11
+        TabOrder = 10
         Value = 0
       end
       object RetryAttemptsValue: TSpinEdit
         Left = 241
-        Top = 166
+        Top = 145
         Width = 95
         Height = 22
         MaxValue = 2147483647
         MinValue = -1
-        TabOrder = 10
+        TabOrder = 9
         Value = 0
       end
       object DownloadLinksEncodeCB: TCheckBox
@@ -674,7 +673,7 @@ object AccountsForm: TAccountsForm
         Width = 475
         Height = 17
         Caption = 'Try to find files by hash before uploading'
-        TabOrder = 20
+        TabOrder = 19
       end
       object CheckCRCCB: TCheckBox
         Left = 5
@@ -682,7 +681,21 @@ object AccountsForm: TAccountsForm
         Width = 474
         Height = 17
         Caption = 'Check uploads/downloads CRC'
-        TabOrder = 21
+        TabOrder = 20
+      end
+      object CopyBetweenAccountsModeCombo: TComboBox
+        Left = 183
+        Top = 170
+        Width = 297
+        Height = 21
+        Style = csDropDownList
+        ItemIndex = 0
+        TabOrder = 11
+        Text = 'Disabled'
+        Items.Strings = (
+          'Disabled'
+          'Via hash (recommended)'
+          'Via public link')
       end
     end
     object NetworkTab: TTabSheet

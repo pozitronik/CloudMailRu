@@ -16,7 +16,6 @@ type
 		DeleteButton: TButton;
 		PreserveFileTimeCB: TCheckBox;
 		UseDLLFromPluginDir: TCheckBox;
-		OperationsViaPublicLinkEnabledCB: TCheckBox;
 		GlobalSettingApplyBTN: TButton;
 		AccountsPanel: TPanel;
 		AccountNameEdit: TEdit;
@@ -97,6 +96,8 @@ type
 		UploadBPSEdit: TSpinEdit;
 		DownloadsBPSLabel: TLabel;
 		DownloadBPSEdit: TSpinEdit;
+		CopyBetweenAccountsModeCombo: TComboBox;
+		CopyBetweenAccountsModeLabel: TLabel;
 		procedure FormShow(Sender: TObject);
 		procedure AccountsListClick(Sender: TObject);
 		procedure ApplyButtonClick(Sender: TObject);
@@ -235,7 +236,8 @@ begin
 	SetPluginSettingsValue(SettingsIniFilePath, 'DescriptionTrackCloudFS', DescriptionTrackCloudFSCB.Checked);
 	SetPluginSettingsValue(SettingsIniFilePath, 'DescriptionFileName', DescriptionFileNameEdit.Text);
 
-	SetPluginSettingsValue(SettingsIniFilePath, 'OperationsViaPublicLinkEnabled', OperationsViaPublicLinkEnabledCB.Checked);
+	SetPluginSettingsValue(SettingsIniFilePath, 'CopyBetweenAccountsMode', ChunkOverwriteModeCombo.ItemIndex);
+
 	if CloudMaxFileSizeCB.Checked then
 	begin
 		SetPluginSettingsValue(SettingsIniFilePath, 'CloudMaxFileSize', CloudMaxFileSizeValue.Text);
@@ -408,7 +410,7 @@ begin
 		AccountsForm.DescriptionTrackCloudFSCB.Checked := GetPluginSettings(SettingsIniFilePath).DescriptionTrackCloudFS;
 		AccountsForm.DescriptionFileNameEdit.Text := GetPluginSettings(SettingsIniFilePath).DescriptionFileName;
 
-		AccountsForm.OperationsViaPublicLinkEnabledCB.Checked := GetPluginSettings(SettingsIniFilePath).OperationsViaPublicLinkEnabled;
+		AccountsForm.CopyBetweenAccountsModeCombo.ItemIndex := GetPluginSettings(SettingsIniFilePath).CopyBetweenAccountsMode;
 		AccountsForm.SocketTimeoutEdit.Text := GetPluginSettings(SettingsIniFilePath).SocketTimeout.ToString;
 		AccountsForm.UploadBPSEdit.Text := GetPluginSettings(SettingsIniFilePath).UploadBPS.ToString;
 		AccountsForm.DownloadBPSEdit.Text := GetPluginSettings(SettingsIniFilePath).DownloadBPS.ToString;
