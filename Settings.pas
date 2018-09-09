@@ -28,6 +28,10 @@ const
 	OverwriteLocalModeIgnore = 1;
 	OverwriteLocalModeOverwrite = 2;
 
+	CopyBetweenAccountsModeDisabled = 0;
+	CopyBetweenAccountsModeViaHash = 1; //default
+	CopyBetweenAccountsModeViaPublicLink = 2; //old mode
+
 	OperationErrorModeAsk = 0;
 	OperationErrorModeIgnore = 1;
 	OperationErrorModeAbort = 2;
@@ -93,7 +97,7 @@ type
 		DescriptionTrackCloudFS: boolean;
 		DescriptionFileName: WideString;
 
-		OperationsViaPublicLinkEnabled: boolean;
+		CopyBetweenAccountsMode: integer;
 		SocketTimeout: integer;
 		Proxy: TProxySettings;
 		UploadBPS: integer;
@@ -145,7 +149,8 @@ begin
 	GetPluginSettings.DescriptionCopyFromCloud := IniFile.ReadBool('Main', 'DescriptionCopyFromCloud', false);
 	GetPluginSettings.DescriptionTrackCloudFS := IniFile.ReadBool('Main', 'DescriptionTrackCloudFS', false);
 	GetPluginSettings.DescriptionFileName := IniFile.ReadString('Main', 'DescriptionFileName', 'descript.ion');
-	GetPluginSettings.OperationsViaPublicLinkEnabled := IniFile.ReadBool('Main', 'OperationsViaPublicLinkEnabled', false);
+	GetPluginSettings.CopyBetweenAccountsMode := IniFile.ReadInteger('Main', 'CopyBetweenAccountsMode', CopyBetweenAccountsModeViaHash);
+
 	GetPluginSettings.DisableMultiThreading := IniFile.ReadBool('Main', 'DisableMultiThreading', false);
 	GetPluginSettings.LogUserSpace := IniFile.ReadBool('Main', 'LogUserSpace', true);
 	GetPluginSettings.IconsMode := IniFile.ReadInteger('Main', 'IconsMode', 0);
