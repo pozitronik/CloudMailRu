@@ -1480,13 +1480,11 @@ begin
 					exit(FS_FILE_USERABORT);
 				end;
 			CopyBetweenAccountsModeViaHash:
-				begin
-					Result := RenMoveFileViaHash(OldCloud, NewCloud, OldRealPath, NewRealPath, Move, OverWrite);
-				end;
+				Result := RenMoveFileViaHash(OldCloud, NewCloud, OldRealPath, NewRealPath, Move, OverWrite);
 			CopyBetweenAccountsModeViaPublicLink:
-				begin
-					Result := RenMoveFileViaPublicLink(OldCloud, NewCloud, OldRealPath, NewRealPath, Move, OverWrite);
-				end;
+				Result := RenMoveFileViaPublicLink(OldCloud, NewCloud, OldRealPath, NewRealPath, Move, OverWrite);
+			else
+				exit(FS_FILE_WRITEERROR);
 		end;
 
 	end else begin //один аккаунт
