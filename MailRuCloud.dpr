@@ -1315,6 +1315,67 @@ begin
 		LogHandle(LogLevelError, MSGTYPE_IMPORTANTERROR, PWideChar('Can''t remove temporary public link on ' + CurrentItem.home));
 end;
 
+function RenMoveFileViaHash(OldCloud, NewCloud: TCloudMailRu; OldRealPath, NewRealPath: TRealPath; Move, OverWrite: Boolean): integer;
+var
+	NeedUnpublish: Boolean;
+	CurrentItem: TCloudMailRuDirListingItem;
+	RetryAttempts: integer;
+begin
+	Result := FS_FILE_NOTSUPPORTED;
+	NeedUnpublish := false;
+	if OverWrite and not(NewCloud.deleteFile(NewRealPath.path)) then
+		exit;
+	if OldCloud.statusFile(OldRealPath.path, CurrentItem) then
+	begin
+		Result := NewCloud.cloneHash(ExtractFileDir(NewRealPath.path), CurrentItem.hash, CurrentItem.size, ExtractFileName(NewRealPath.path), CLOUD_CONFLICT_STRICT);
+		if not(Result in [FS_FILE_OK, FS_FILE_EXISTS]) then
+		begin
+
+			case GetPluginSettings(SettingsIniFilePath).OperationErrorMode of
+				OperationErrorModeAsk:
+					begin
+
+						while (not(Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
+						begin
+							case (messagebox(FindTCWindow, PWideChar('File cloning error: ' + TCloudMailRu.ErrorCodeText(Result) + sLineBreak + 'Continue operation?'), 'Operation error', MB_ABORTRETRYIGNORE + MB_ICONERROR)) of
+								ID_ABORT:
+									Result := FS_FILE_USERABORT;
+								ID_RETRY:
+									Result := NewCloud.cloneHash(ExtractFileDir(NewRealPath.path), CurrentItem.hash, CurrentItem.size, CurrentItem.name, CLOUD_CONFLICT_STRICT);
+								ID_IGNORE:
+									break;
+							end;
+						end;
+
+					end;
+				OperationErrorModeIgnore:
+					exit;
+				OperationErrorModeAbort:
+					exit(FS_FILE_USERABORT);
+				OperationErrorModeRetry:
+					begin;
+						RetryAttempts := GetPluginSettings(SettingsIniFilePath).RetryAttempts;
+						while (ThreadRetryCountRenMov.Items[GetCurrentThreadID()] <> RetryAttempts) and (not(Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
+						begin
+							ThreadRetryCountRenMov.Items[GetCurrentThreadID()] := ThreadRetryCountRenMov.Items[GetCurrentThreadID()] + 1;
+							LogHandle(LogLevelDetail, msgtype_details, PWideChar('File cloning error: ' + TCloudMailRu.ErrorCodeText(Result) + ' Retry attempt ' + ThreadRetryCountRenMov.Items[GetCurrentThreadID()].ToString + RetryAttemptsToString(RetryAttempts)));
+							Result := cloneWeblink(NewCloud, OldCloud, NewRealPath.path, CurrentItem, NeedUnpublish);
+							if ProgressHandle(nil, nil, 0) = 1 then
+								Result := FS_FILE_USERABORT;
+							if (Result in [FS_FILE_OK, FS_FILE_USERABORT]) then
+								ThreadRetryCountRenMov.Items[GetCurrentThreadID()] := 0; //сбросим счётчик попыток
+							ProcessMessages;
+							Sleep(GetPluginSettings(SettingsIniFilePath).AttemptWait);
+						end;
+					end;
+			end;
+		end;
+
+		if (Result = CLOUD_OPERATION_OK) and Move and not(OldCloud.deleteFile(OldRealPath.path)) then
+			LogHandle(LogLevelError, MSGTYPE_IMPORTANTERROR, PWideChar('Can''t delete ' + CurrentItem.home)); //пишем в лог, но не отваливаемся
+	end;
+end;
+
 function RenMoveFileViaPublicLink(OldCloud, NewCloud: TCloudMailRu; OldRealPath, NewRealPath: TRealPath; Move, OverWrite: Boolean): integer;
 var
 	NeedUnpublish: Boolean;
@@ -1412,12 +1473,20 @@ begin
 			exit(FS_FILE_USERABORT);
 		end;
 
-		if (GetPluginSettings(SettingsIniFilePath).OperationsViaPublicLinkEnabled) then //разрешено копирование через публичные ссылки
-		begin
-			Result := RenMoveFileViaPublicLink(OldCloud, NewCloud, OldRealPath, NewRealPath, Move, OverWrite);
-		end else begin
-			LogHandle(LogLevelWarning, MSGTYPE_IMPORTANTERROR, PWideChar('Direct operations between accounts not supported'));
-			exit(FS_FILE_USERABORT);
+		case GetPluginSettings(SettingsIniFilePath).CopyBetweenAccountsMode of
+			CopyBetweenAccountsModeDisabled:
+				begin
+					LogHandle(LogLevelWarning, MSGTYPE_IMPORTANTERROR, PWideChar('Direct operations between accounts disabled'));
+					exit(FS_FILE_USERABORT);
+				end;
+			CopyBetweenAccountsModeViaHash:
+				begin
+					Result := RenMoveFileViaHash(OldCloud, NewCloud, OldRealPath, NewRealPath, Move, OverWrite);
+				end;
+			CopyBetweenAccountsModeViaPublicLink:
+				begin
+					Result := RenMoveFileViaPublicLink(OldCloud, NewCloud, OldRealPath, NewRealPath, Move, OverWrite);
+				end;
 		end;
 
 	end else begin //один аккаунт
