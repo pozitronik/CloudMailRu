@@ -168,6 +168,7 @@ end;
 function TCloudMailRu.cloneHash(Path, Hash: WideString; size: int64; FileName: WideString; ConflictMode: WideString = CLOUD_CONFLICT_RENAME): integer; //создать клон файла по известному хешу и размеру
 var
 	JSON: WideString;
+	OperationStatus, OperationResult: integer;
 begin
 	Result := FS_FILE_WRITEERROR;
 	if not(Assigned(self)) then
@@ -175,7 +176,10 @@ begin
 	if self.public_account then
 		exit(FS_FILE_NOTSUPPORTED);
 	if self.addFileToCloud(Hash, size, IncludeTrailingBackslash(Path) + FileName, JSON, ConflictMode, true) then
-		Result := FS_FILE_OK;
+	begin
+		OperationResult := fromJSON_OperationResult(JSON, OperationStatus);
+		Result := CloudResultToFsResult(OperationResult, OperationStatus, 'File uploading error: ');
+	end;
 end;
 
 function TCloudMailRu.cloneWeblink(Path, link, ConflictMode: WideString): integer;
@@ -2066,4 +2070,4 @@ begin
 	sha1.Reset;
 end;
 
-end.
+end.ll
