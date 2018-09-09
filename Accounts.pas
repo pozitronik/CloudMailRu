@@ -236,7 +236,7 @@ begin
 	SetPluginSettingsValue(SettingsIniFilePath, 'DescriptionTrackCloudFS', DescriptionTrackCloudFSCB.Checked);
 	SetPluginSettingsValue(SettingsIniFilePath, 'DescriptionFileName', DescriptionFileNameEdit.Text);
 
-	SetPluginSettingsValue(SettingsIniFilePath, 'CopyBetweenAccountsMode', ChunkOverwriteModeCombo.ItemIndex);
+	SetPluginSettingsValue(SettingsIniFilePath, 'CopyBetweenAccountsMode', CopyBetweenAccountsModeCombo.ItemIndex);
 
 	if CloudMaxFileSizeCB.Checked then
 	begin
