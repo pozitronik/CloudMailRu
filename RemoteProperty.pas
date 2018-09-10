@@ -5,6 +5,7 @@ interface
 uses
 	Plugin_types, Descriptions, CMLTypes, Settings, Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, CloudMailRu, MRC_Helper, Vcl.Grids, Vcl.ValEdit, Vcl.Menus, Vcl.ComCtrls, Vcl.ToolWin, System.ImageList, Vcl.ImgList, Clipbrd;
 
+
 const
 	WM_AFTER_SHOW = WM_USER + 300; //custom message
 
@@ -30,18 +31,26 @@ type
 		InvitesLE: TValueListEditor;
 		DownloadLinksMemo: TMemo;
 		DownloadLinksTB: TToolBar;
-		SaveBtn: TToolButton;
+		SaveLinksTb: TToolButton;
 		DownloadLinksIL: TImageList;
-		WrapBTN: TToolButton;
+		WrapLinksTb: TToolButton;
 		DownloadLinksSD: TSaveDialog;
-		LogLabel: TLabel;
-		CancelScanTB: TToolButton;
-		RefreshScanTB: TToolButton;
+		LinksLogLabel: TLabel;
+		CancelLinksScanTb: TToolButton;
+		RefreshLinksScanTb: TToolButton;
 		DescriptionTS: TTabSheet;
 		DescriptionEditMemo: TMemo;
 		DescriptionSaveButton: TButton;
 		QuickHashLabel: TLabel;
 		QuickClone: TEdit;
+		HashesListTS: TTabSheet;
+		HashesListTB: TToolBar;
+		SaveHashesTb: TToolButton;
+		WrapHashesTb: TToolButton;
+		HashesLogLabel: TLabel;
+		CancelHashesScanTb: TToolButton;
+		RefreshHashesScanTb: TToolButton;
+		HashesMemo: TMemo;
 		procedure AccessCBClick(Sender: TObject);
 		class function ShowProperty(parentWindow: HWND; RemoteName: WideString; RemoteProperty: TCloudMailRuDirListingItem; Cloud: TCloudMailRu; DoUrlEncode: Boolean = true; AutoUpdateDownloadListing: Boolean = true; ShowDescription: Boolean = true; EditDescription: Boolean = true; PluginIonFileName: WideString = 'descript.ion'): Integer;
 		procedure FormActivate(Sender: TObject);
@@ -50,26 +59,33 @@ type
 		procedure ItemRefreshClick(Sender: TObject);
 		procedure InvitesPopupPopup(Sender: TObject);
 		procedure ItemChangeAccessClick(Sender: TObject);
-		procedure WrapBTNClick(Sender: TObject);
-		procedure SaveBtnClick(Sender: TObject);
+		procedure WrapLinksTbClick(Sender: TObject);
+		procedure SaveLinksTbClick(Sender: TObject);
 		procedure FormShow(Sender: TObject);
-		procedure CancelScanTBClick(Sender: TObject);
-		procedure RefreshScanTBClick(Sender: TObject);
+		procedure CancelLinksScanTbClick(Sender: TObject);
+		procedure RefreshLinksScanTbClick(Sender: TObject);
 		procedure DescriptionSaveButtonClick(Sender: TObject);
 		procedure FormKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
 		procedure PublicLinkLabelClick(Sender: TObject);
 		procedure QuickHashLabelClick(Sender: TObject);
+		procedure RefreshHashesScanTbClick(Sender: TObject);
+		procedure CancelHashesScanTbClick(Sender: TObject);
+		procedure WrapHashesTbClick(Sender: TObject);
 	private
 		{Private declarations}
 		procedure WMAfterShow(var Message: TMessage); message WM_AFTER_SHOW;
 		procedure RefreshInvites();
 		procedure RefreshPublicShare(const Publish: Boolean);
 		function FillRecursiveDownloadListing(const Path: WideString; Cloud: TCloudMailRu = nil): Boolean; //break recursion if false - cancelled
+		function FillRecursiveHashListing(const Path: WideString; Cloud: TCloudMailRu = nil; BaseDir: WideString = ''): Boolean; //break recursion if false - cancelled
 		procedure UpdateDownloadListing();
+		procedure UpdateHashesListing();
 		procedure RefreshItemDescription();
 		procedure SaveItemDescription();
 		procedure TempPublicCloudInit(publicUrl: WideString);
-		function LogProc(LogText: WideString): Boolean;
+		function LinksLogProc(LogText: WideString): Boolean;
+		function HashesLogProc(LogText: WideString): Boolean;
+		function GenerateHashCommand(ListingItem: TCloudMailRuDirListingItem; BaseDir: WideString = ''): WideString;
 
 	protected
 		Props: TCloudMailRuDirListingItem;
@@ -158,7 +174,21 @@ begin
 		end;
 		TempPublicCloud.Free;
 	end;
-	LogProc('Done');
+	LinksLogProc('Done');
+end;
+
+procedure TPropertyForm.UpdateHashesListing;
+begin
+	HashesMemo.lines.Clear; //todo check for public shares
+
+	if Props.type_ = TYPE_DIR then
+	begin (*рекурсивно получаем все ссылки в каталоге*)
+		FillRecursiveHashListing(IncludeTrailingPathDelimiter(self.RemoteName))
+	end else begin
+		HashesMemo.lines.Add(GenerateHashCommand(Props));
+	end;
+
+	LinksLogProc('Done');
 end;
 
 function TPropertyForm.FillRecursiveDownloadListing(const Path: WideString; Cloud: TCloudMailRu = nil): Boolean;
@@ -166,13 +196,13 @@ var
 	CurrentDirListing: TCloudMailRuDirListing;
 	CurrentDirItemsCounter: Integer;
 begin
-	CancelScanTB.Enabled := true;
-	RefreshScanTB.Enabled := false;
+	CancelLinksScanTb.Enabled := true;
+	RefreshLinksScanTb.Enabled := false;
 	result := true;
 	if not(Assigned(Cloud)) then
 		Cloud := self.Cloud;
 
-	if not LogProc('Scanning ' + IncludeTrailingPathDelimiter(Path)) then
+	if not LinksLogProc('Scanning ' + IncludeTrailingPathDelimiter(Path)) then
 		exit(false);
 	Cloud.getDirListing(Path, CurrentDirListing);
 	ProcessMessages;
@@ -188,8 +218,44 @@ begin
 			DownloadLinksMemo.lines.Add(Cloud.getSharedFileUrl(IncludeTrailingPathDelimiter(Path) + CurrentDirListing[CurrentDirItemsCounter].name, self.DoUrlEncode));
 		end;
 	end;
-	RefreshScanTB.Enabled := true;
-	CancelScanTB.Enabled := false;
+	RefreshLinksScanTb.Enabled := true;
+	CancelLinksScanTb.Enabled := false;
+end;
+
+function TPropertyForm.FillRecursiveHashListing(const Path: WideString; Cloud: TCloudMailRu = nil; BaseDir: WideString = ''): Boolean;
+var
+	CurrentDirListing: TCloudMailRuDirListing;
+	CurrentDirItemsCounter: Integer;
+	CurrentItem: TCloudMailRuDirListingItem;
+begin
+	CancelHashesScanTb.Enabled := true;
+	RefreshHashesScanTb.Enabled := false;
+	result := true;
+
+	if EmptyWideStr = BaseDir then
+		BaseDir := Path;
+
+	if not(Assigned(Cloud)) then
+		Cloud := self.Cloud;
+	if not HashesLogProc('Scanning ' + IncludeTrailingPathDelimiter(Path)) then
+		exit(false);
+	Cloud.getDirListing(Path, CurrentDirListing);
+	ProcessMessages;
+	for CurrentDirItemsCounter := 0 to Length(CurrentDirListing) - 1 do
+	begin
+		CurrentItem := CurrentDirListing[CurrentDirItemsCounter];
+		if CurrentItem.type_ = TYPE_DIR then
+		begin
+			result := FillRecursiveHashListing(IncludeTrailingPathDelimiter(Path) + CurrentItem.name, Cloud, BaseDir);
+			if not result then
+				break;
+
+		end else begin
+			HashesMemo.lines.Add(GenerateHashCommand(CurrentItem, BaseDir));
+		end;
+	end;
+	RefreshHashesScanTb.Enabled := true;
+	CancelHashesScanTb.Enabled := false;
 end;
 
 procedure TPropertyForm.RefreshPublicShare(const Publish: Boolean);
@@ -227,9 +293,14 @@ begin
 	end;
 end;
 
-procedure TPropertyForm.RefreshScanTBClick(Sender: TObject);
+procedure TPropertyForm.RefreshLinksScanTbClick(Sender: TObject);
 begin
 	UpdateDownloadListing;
+end;
+
+procedure TPropertyForm.RefreshHashesScanTbClick(Sender: TObject);
+begin
+	UpdateHashesListing();
 end;
 
 procedure TPropertyForm.RefreshInvites;
@@ -258,13 +329,13 @@ begin
 	self.TempPublicCloud.login;
 end;
 
-function TPropertyForm.LogProc(LogText: WideString): Boolean;
+function TPropertyForm.LinksLogProc(LogText: WideString): Boolean;
 begin
 	result := not LogCancelledFlag;
 	if (result) then
-		LogLabel.Caption := LogText
+		LinksLogLabel.Caption := LogText
 	else
-		LogLabel.Caption := EmptyWideStr;
+		LinksLogLabel.Caption := EmptyWideStr;
 	LogCancelledFlag := false;
 end;
 
@@ -282,7 +353,12 @@ end;
 
 (*Controls handlers*)
 
-procedure TPropertyForm.CancelScanTBClick(Sender: TObject);
+procedure TPropertyForm.CancelHashesScanTbClick(Sender: TObject);
+begin
+	LogCancelledFlag := true;
+end;
+
+procedure TPropertyForm.CancelLinksScanTbClick(Sender: TObject);
 begin
 	LogCancelledFlag := true;
 end;
@@ -318,6 +394,34 @@ end;
 procedure TPropertyForm.FormShow(Sender: TObject);
 begin
 	PostMessage(self.Handle, WM_AFTER_SHOW, 0, 0);
+end;
+
+function TPropertyForm.GenerateHashCommand(ListingItem: TCloudMailRuDirListingItem; BaseDir: WideString = ''): WideString;
+var
+	AppliedName: WideString;
+begin
+	(*Если задан базовый каталог, то имена отсчитываем от него*)
+	if EmptyWideStr = BaseDir then
+	begin
+		AppliedName := ListingItem.name;
+	end else begin
+		BaseDir := '/' + NormalizeSlashes(BaseDir);
+		if (Pos(BaseDir, ListingItem.home) = 1) then
+			AppliedName := StringReplace(ListingItem.home, BaseDir, '', [])
+		else
+			AppliedName := ListingItem.name;
+	end;
+	result := 'hash "' + ListingItem.hash + ':' + ListingItem.size.ToString + ':' + AppliedName + '"';
+end;
+
+function TPropertyForm.HashesLogProc(LogText: WideString): Boolean;
+begin
+	result := not LogCancelledFlag; //todo separate flags
+	if (result) then
+		HashesLogLabel.Caption := LogText
+	else
+		HashesLogLabel.Caption := EmptyWideStr;
+	LogCancelledFlag := false;
 end;
 
 procedure TPropertyForm.InviteBtnClick(Sender: TObject);
@@ -381,7 +485,7 @@ begin
 	RefreshInvites;
 end;
 
-procedure TPropertyForm.SaveBtnClick(Sender: TObject);
+procedure TPropertyForm.SaveLinksTbClick(Sender: TObject);
 begin
 	if (DownloadLinksSD.Execute(self.Handle)) then
 	begin
@@ -434,7 +538,7 @@ begin
 	if (Props.type_ = TYPE_FILE) then
 	begin
 		QuickClone.Enabled := true;
-		QuickClone.Text := 'hash "' + Props.hash + ':' + Props.size.ToString + ':' + Props.name + '"';
+		QuickClone.Text := GenerateHashCommand(Props);;
 	end;
 	if self.Cloud.isPublicShare then
 	begin
@@ -468,14 +572,24 @@ begin
 
 end;
 
-procedure TPropertyForm.WrapBTNClick(Sender: TObject);
+procedure TPropertyForm.WrapHashesTbClick(Sender: TObject);
 begin
-	if WrapBTN.Down then
+	if WrapHashesTb.Down then
+		HashesMemo.ScrollBars := ssVertical
+	else
+		HashesMemo.ScrollBars := ssBoth;
+
+	HashesMemo.WordWrap := WrapHashesTb.Down;
+end;
+
+procedure TPropertyForm.WrapLinksTbClick(Sender: TObject);
+begin
+	if WrapLinksTb.Down then
 		DownloadLinksMemo.ScrollBars := ssVertical
 	else
 		DownloadLinksMemo.ScrollBars := ssBoth;
 
-	DownloadLinksMemo.WordWrap := WrapBTN.Down;
+	DownloadLinksMemo.WordWrap := WrapLinksTb.Down;
 end;
 
 procedure TPropertyForm.AccessCBClick(Sender: TObject);

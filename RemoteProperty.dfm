@@ -42,7 +42,7 @@ object PropertyForm: TPropertyForm
   object WebLink: TEdit
     Left = 55
     Top = 23
-    Width = 780
+    Width = 781
     Height = 21
     Anchors = [akLeft, akTop, akRight]
     ReadOnly = True
@@ -65,7 +65,7 @@ object PropertyForm: TPropertyForm
     Anchors = [akTop, akRight]
     Caption = 'OK'
     ModalResult = 1
-    TabOrder = 3
+    TabOrder = 4
   end
   object ExtPropertiesPC: TPageControl
     Left = 0
@@ -73,7 +73,7 @@ object PropertyForm: TPropertyForm
     Width = 836
     Height = 283
     ActivePage = FolderAccessTS
-    TabOrder = 4
+    TabOrder = 3
     object FolderAccessTS: TTabSheet
       Caption = 'Folder Access'
       DesignSize = (
@@ -172,6 +172,7 @@ object PropertyForm: TPropertyForm
         ScrollBars = ssBoth
         TabOrder = 0
         WordWrap = False
+        ExplicitTop = 44
       end
       object DownloadLinksTB: TToolBar
         Left = 0
@@ -187,7 +188,7 @@ object PropertyForm: TPropertyForm
         TabOrder = 1
         Transparent = False
         Wrapable = False
-        object SaveBtn: TToolButton
+        object SaveLinksTb: TToolButton
           Left = 0
           Top = 0
           Margins.Left = 0
@@ -196,17 +197,17 @@ object PropertyForm: TPropertyForm
           Margins.Bottom = 0
           Caption = 'Save as'
           ImageIndex = 0
-          OnClick = SaveBtnClick
+          OnClick = SaveLinksTbClick
         end
-        object WrapBTN: TToolButton
+        object WrapLinksTb: TToolButton
           Left = 39
           Top = 0
           Caption = 'Wrap'
           ImageIndex = 1
           Style = tbsCheck
-          OnClick = WrapBTNClick
+          OnClick = WrapLinksTbClick
         end
-        object LogLabel: TLabel
+        object LinksLogLabel: TLabel
           Left = 78
           Top = 0
           Width = 672
@@ -216,21 +217,97 @@ object PropertyForm: TPropertyForm
           Transparent = False
           Layout = tlCenter
         end
-        object CancelScanTB: TToolButton
+        object CancelLinksScanTb: TToolButton
+          Left = 750
+          Top = 0
+          Caption = 'CancelLinksScanTb'
+          Enabled = False
+          ImageIndex = 2
+          OnClick = CancelLinksScanTbClick
+        end
+        object RefreshLinksScanTb: TToolButton
+          Left = 789
+          Top = 0
+          Caption = 'RefreshLinksScanTb'
+          ImageIndex = 3
+          OnClick = RefreshLinksScanTbClick
+        end
+      end
+    end
+    object HashesListTS: TTabSheet
+      Caption = 'Hashes list'
+      ImageIndex = 3
+      object HashesListTB: TToolBar
+        Left = 0
+        Top = 0
+        Width = 828
+        Height = 40
+        AutoSize = True
+        ButtonHeight = 38
+        ButtonWidth = 39
+        EdgeBorders = [ebBottom]
+        Images = DownloadLinksIL
+        TabOrder = 0
+        Transparent = False
+        Wrapable = False
+        object SaveHashesTb: TToolButton
+          Left = 0
+          Top = 0
+          Margins.Left = 0
+          Margins.Top = 0
+          Margins.Right = 0
+          Margins.Bottom = 0
+          Caption = 'Save as'
+          ImageIndex = 0
+        end
+        object WrapHashesTb: TToolButton
+          Left = 39
+          Top = 0
+          Caption = 'Wrap'
+          ImageIndex = 1
+          Style = tbsCheck
+          OnClick = WrapHashesTbClick
+        end
+        object HashesLogLabel: TLabel
+          Left = 78
+          Top = 0
+          Width = 672
+          Height = 38
+          AutoSize = False
+          EllipsisPosition = epEndEllipsis
+          Transparent = False
+          Layout = tlCenter
+        end
+        object CancelHashesScanTb: TToolButton
           Left = 750
           Top = 0
           Caption = 'CancelScanTB'
           Enabled = False
           ImageIndex = 2
-          OnClick = CancelScanTBClick
+          OnClick = CancelHashesScanTbClick
         end
-        object RefreshScanTB: TToolButton
+        object RefreshHashesScanTb: TToolButton
           Left = 789
           Top = 0
           Caption = 'RefreshScanTB'
           ImageIndex = 3
-          OnClick = RefreshScanTBClick
+          OnClick = RefreshHashesScanTbClick
         end
+      end
+      object HashesMemo: TMemo
+        Left = 0
+        Top = 40
+        Width = 828
+        Height = 215
+        Align = alClient
+        BevelInner = bvNone
+        BevelOuter = bvNone
+        BorderStyle = bsNone
+        ReadOnly = True
+        ScrollBars = ssBoth
+        TabOrder = 1
+        WordWrap = False
+        ExplicitTop = 44
       end
     end
     object DescriptionTS: TTabSheet
@@ -250,6 +327,7 @@ object PropertyForm: TPropertyForm
         BevelOuter = bvNone
         ScrollBars = ssVertical
         TabOrder = 0
+        ExplicitTop = -4
       end
       object DescriptionSaveButton: TButton
         Left = 0
@@ -299,7 +377,7 @@ object PropertyForm: TPropertyForm
     Left = 740
     Top = 147
     Bitmap = {
-      494C010104008C00EC0020002000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010104008C00F00020002000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000800000004000000001002000000000000080
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
