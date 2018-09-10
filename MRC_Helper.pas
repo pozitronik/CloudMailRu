@@ -78,6 +78,7 @@ function LoadPluginIcon(const path: WideString; identifier: WideString): Hicon;
 function RetryAttemptsToString(Attempt: integer): WideString;
 procedure ProcessMessages;
 function IncludeSlash(const Str: WideString): WideString;
+function NormalizeSlashes(const Str: WideString): WideString;
 function FormatSize(size: Int64; SizeType: integer = TYPE_AUTO): WideString; //Форматируем размер в удобочитаемый вид
 //Procedure FileLog(S: WideString);
 
@@ -674,6 +675,11 @@ begin
 	Result := Str;
 	if not(Result[High(Result)] = '/') then
 		Result := Result + '/';
+end;
+
+function NormalizeSlashes(const Str: WideString): WideString;
+begin
+	Result := StringReplace(Str, '\', '/', [rfReplaceAll]);
 end;
 
 function FormatSize(size: Int64; SizeType: integer = TYPE_AUTO): WideString; //Форматируем размер в удобочитаемый вид
