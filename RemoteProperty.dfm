@@ -261,8 +261,21 @@ object PropertyForm: TPropertyForm
           ImageIndex = 0
           OnClick = SaveHashesTbClick
         end
-        object WrapHashesTb: TToolButton
+        object LoadHashesTb: TToolButton
           Left = 39
+          Top = 0
+          Caption = 'Load from file'
+          ImageIndex = 4
+          OnClick = LoadHashesTbClick
+        end
+        object ToolButton1: TToolButton
+          Left = 78
+          Top = 0
+          Caption = 'ToolButton1'
+          ImageIndex = 5
+        end
+        object WrapHashesTb: TToolButton
+          Left = 117
           Top = 0
           Caption = 'Wrap'
           ImageIndex = 1
@@ -270,9 +283,9 @@ object PropertyForm: TPropertyForm
           OnClick = WrapHashesTbClick
         end
         object HashesLogLabel: TLabel
-          Left = 78
+          Left = 156
           Top = 0
-          Width = 672
+          Width = 597
           Height = 38
           AutoSize = False
           EllipsisPosition = epEndEllipsis
@@ -280,7 +293,7 @@ object PropertyForm: TPropertyForm
           Layout = tlCenter
         end
         object CancelHashesScanTb: TToolButton
-          Left = 750
+          Left = 753
           Top = 0
           Caption = 'CancelScanTB'
           Enabled = False
@@ -288,7 +301,7 @@ object PropertyForm: TPropertyForm
           OnClick = CancelHashesScanTbClick
         end
         object RefreshHashesScanTb: TToolButton
-          Left = 789
+          Left = 792
           Top = 0
           Caption = 'RefreshScanTB'
           ImageIndex = 3
@@ -1441,9 +1454,14 @@ object PropertyForm: TPropertyForm
       FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00000000000000000000000000000000
       000000000000}
   end
-  object DownloadLinksSD: TSaveDialog
+  object SaveDialogSD: TSaveDialog
     Title = 'Save as...'
     Left = 748
     Top = 227
+  end
+  object OpenDialogOD: TOpenDialog
+    Title = 'Load list'
+    Left = 744
+    Top = 280
   end
 end

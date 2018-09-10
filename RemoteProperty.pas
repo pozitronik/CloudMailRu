@@ -3,8 +3,7 @@
 interface
 
 uses
-	Plugin_types, Descriptions, CMLTypes, Settings, Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, CloudMailRu, MRC_Helper, Vcl.Grids, Vcl.ValEdit, Vcl.Menus, Vcl.ComCtrls, Vcl.ToolWin, System.ImageList, Vcl.ImgList, Clipbrd;
-
+	Plugin_types, Descriptions, CMLTypes, Settings, Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, CloudMailRu, MRC_Helper, Vcl.Grids, Vcl.ValEdit, Vcl.Menus, Vcl.ComCtrls, Vcl.ToolWin, System.ImageList, Vcl.ImgList, Clipbrd, HashInfo;
 
 const
 	WM_AFTER_SHOW = WM_USER + 300; //custom message
@@ -34,7 +33,7 @@ type
 		SaveLinksTb: TToolButton;
 		DownloadLinksIL: TImageList;
 		WrapLinksTb: TToolButton;
-		DownloadLinksSD: TSaveDialog;
+		SaveDialogSD: TSaveDialog;
 		LinksLogLabel: TLabel;
 		CancelLinksScanTb: TToolButton;
 		RefreshLinksScanTb: TToolButton;
@@ -51,6 +50,9 @@ type
 		CancelHashesScanTb: TToolButton;
 		RefreshHashesScanTb: TToolButton;
 		HashesMemo: TMemo;
+		LoadHashesTb: TToolButton;
+		OpenDialogOD: TOpenDialog;
+		ToolButton1: TToolButton;
 		procedure AccessCBClick(Sender: TObject);
 		class function ShowProperty(parentWindow: HWND; RemoteName: WideString; RemoteProperty: TCloudMailRuDirListingItem; Cloud: TCloudMailRu; DoUrlEncode: Boolean = true; AutoUpdateDownloadListing: Boolean = true; ShowDescription: Boolean = true; EditDescription: Boolean = true; PluginIonFileName: WideString = 'descript.ion'): Integer;
 		procedure FormActivate(Sender: TObject);
@@ -71,7 +73,8 @@ type
 		procedure RefreshHashesScanTbClick(Sender: TObject);
 		procedure CancelHashesScanTbClick(Sender: TObject);
 		procedure WrapHashesTbClick(Sender: TObject);
-    procedure SaveHashesTbClick(Sender: TObject);
+		procedure SaveHashesTbClick(Sender: TObject);
+		procedure LoadHashesTbClick(Sender: TObject);
 	private
 		{Private declarations}
 		procedure WMAfterShow(var Message: TMessage); message WM_AFTER_SHOW;
@@ -87,6 +90,7 @@ type
 		function LinksLogProc(LogText: WideString): Boolean;
 		function HashesLogProc(LogText: WideString): Boolean;
 		function GenerateHashCommand(ListingItem: TCloudMailRuDirListingItem; BaseDir: WideString = ''): WideString;
+		function ApplyHashCommandList(CommandList: TStringList): Boolean;
 
 	protected
 		Props: TCloudMailRuDirListingItem;
@@ -132,9 +136,9 @@ end;
 
 procedure TPropertyForm.SaveHashesTbClick(Sender: TObject);
 begin
-	if (DownloadLinksSD.Execute(self.Handle)) then
+	if (SaveDialogSD.Execute(self.Handle)) then
 	begin
-		HashesMemo.lines.SaveToFile(DownloadLinksSD.FileName);
+		HashesMemo.lines.SaveToFile(SaveDialogSD.FileName);
 	end;
 end;
 
@@ -348,6 +352,14 @@ begin
 	LogCancelledFlag := false;
 end;
 
+procedure TPropertyForm.LoadHashesTbClick(Sender: TObject);
+begin
+	if (OpenDialogOD.Execute(self.Handle)) then
+	begin
+		HashesMemo.lines.LoadFromFile(OpenDialogOD.FileName);
+	end;
+end;
+
 procedure TPropertyForm.PublicLinkLabelClick(Sender: TObject);
 begin
 	if AccessCB.Checked then
@@ -361,6 +373,22 @@ begin
 end;
 
 (*Controls handlers*)
+
+function TPropertyForm.ApplyHashCommandList(CommandList: TStringList): Boolean;
+var
+	ItemIndex: Integer;
+	CurrentCommand: THashInfo;
+begin
+	for ItemIndex := 0 to CommandList.Count do
+	begin
+		CurrentCommand := THashInfo.Create(CommandList.ValueFromIndex[ItemIndex]);
+		if CurrentCommand.valid then
+		begin
+			Cloud.cloneHash(IncludeTrailingPathDelimiter(self.RemoteName), CurrentCommand.hash, CurrentCommand.size, CurrentCommand.name);
+
+		end;
+	end;
+end;
 
 procedure TPropertyForm.CancelHashesScanTbClick(Sender: TObject);
 begin
@@ -496,9 +524,9 @@ end;
 
 procedure TPropertyForm.SaveLinksTbClick(Sender: TObject);
 begin
-	if (DownloadLinksSD.Execute(self.Handle)) then
+	if (SaveDialogSD.Execute(self.Handle)) then
 	begin
-		DownloadLinksMemo.lines.SaveToFile(DownloadLinksSD.FileName);
+		DownloadLinksMemo.lines.SaveToFile(SaveDialogSD.FileName);
 	end;
 end;
 
