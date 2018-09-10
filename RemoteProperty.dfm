@@ -72,7 +72,7 @@ object PropertyForm: TPropertyForm
     Top = 77
     Width = 836
     Height = 283
-    ActivePage = FolderAccessTS
+    ActivePage = HashesListTS
     TabOrder = 3
     object FolderAccessTS: TTabSheet
       Caption = 'Folder Access'
@@ -259,6 +259,7 @@ object PropertyForm: TPropertyForm
           Margins.Bottom = 0
           Caption = 'Save as'
           ImageIndex = 0
+          OnClick = SaveHashesTbClick
         end
         object WrapHashesTb: TToolButton
           Left = 39

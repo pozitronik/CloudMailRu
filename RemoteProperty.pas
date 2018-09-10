@@ -71,6 +71,7 @@ type
 		procedure RefreshHashesScanTbClick(Sender: TObject);
 		procedure CancelHashesScanTbClick(Sender: TObject);
 		procedure WrapHashesTbClick(Sender: TObject);
+    procedure SaveHashesTbClick(Sender: TObject);
 	private
 		{Private declarations}
 		procedure WMAfterShow(var Message: TMessage); message WM_AFTER_SHOW;
@@ -127,6 +128,14 @@ begin
 	DescriptionEditMemo.lines.Text := CurrentDescriptions.GetValue(ExtractFileName(self.RemoteName), FORMAT_CLEAR);
 	CurrentDescriptions.Destroy;
 	DeleteFileW(PWideChar(LocalPath));
+end;
+
+procedure TPropertyForm.SaveHashesTbClick(Sender: TObject);
+begin
+	if (DownloadLinksSD.Execute(self.Handle)) then
+	begin
+		HashesMemo.lines.SaveToFile(DownloadLinksSD.FileName);
+	end;
 end;
 
 procedure TPropertyForm.SaveItemDescription;
