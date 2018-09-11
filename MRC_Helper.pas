@@ -79,6 +79,7 @@ function RetryAttemptsToString(Attempt: integer): WideString;
 procedure ProcessMessages;
 function IncludeSlash(const Str: WideString): WideString;
 function NormalizeSlashes(const Str: WideString): WideString;
+function TrimEx(const Str: WideString; TrimChar: WideChar): WideString;
 function FormatSize(size: Int64; SizeType: integer = TYPE_AUTO): WideString; //Форматируем размер в удобочитаемый вид
 //Procedure FileLog(S: WideString);
 
@@ -680,6 +681,19 @@ end;
 function NormalizeSlashes(const Str: WideString): WideString;
 begin
 	Result := StringReplace(Str, '\', '/', [rfReplaceAll]);
+end;
+
+function TrimEx(const Str: WideString; TrimChar: WideChar): WideString;
+var
+	S, E: integer;
+begin
+	S := 1;
+	while (S <= Length(Str)) and (Str[S] = TrimChar) do
+		Inc(S);
+	E := Length(Str);
+	while (E >= 1) and (Str[E] = TrimChar) do
+		Dec(E);
+	SetString(Result, PChar(@Str[S]), E - S + 1);
 end;
 
 function FormatSize(size: Int64; SizeType: integer = TYPE_AUTO): WideString; //Форматируем размер в удобочитаемый вид
