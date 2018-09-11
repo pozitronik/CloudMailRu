@@ -38,7 +38,7 @@ object PropertyForm: TPropertyForm
     Height = 21
     Anchors = [akLeft, akTop, akRight]
     ReadOnly = True
-    TabOrder = 1
+    TabOrder = 2
   end
   object AccessCB: TCheckBox
     Left = 0
@@ -46,7 +46,7 @@ object PropertyForm: TPropertyForm
     Width = 131
     Height = 17
     Caption = 'Public access enabled'
-    TabOrder = 0
+    TabOrder = 1
     OnClick = AccessCBClick
   end
   object OkButton: TButton
@@ -57,7 +57,7 @@ object PropertyForm: TPropertyForm
     Anchors = [akTop, akRight]
     Caption = 'OK'
     ModalResult = 1
-    TabOrder = 3
+    TabOrder = 0
   end
   object ExtPropertiesPC: TPageControl
     Left = 0
@@ -65,7 +65,7 @@ object PropertyForm: TPropertyForm
     Width = 836
     Height = 283
     ActivePage = FolderAccessTS
-    TabOrder = 2
+    TabOrder = 3
     object FolderAccessTS: TTabSheet
       Caption = 'Folder Access'
       DesignSize = (
@@ -151,10 +151,6 @@ object PropertyForm: TPropertyForm
     object DownloadLinksTS: TTabSheet
       Caption = 'Download Links'
       ImageIndex = 1
-      ExplicitLeft = 0
-      ExplicitTop = 0
-      ExplicitWidth = 0
-      ExplicitHeight = 0
       object DownloadLinksMemo: TMemo
         Left = 0
         Top = 40
@@ -232,10 +228,6 @@ object PropertyForm: TPropertyForm
     object HashesListTS: TTabSheet
       Caption = 'Hashes list'
       ImageIndex = 3
-      ExplicitLeft = 0
-      ExplicitTop = 0
-      ExplicitWidth = 0
-      ExplicitHeight = 0
       object HashesListTB: TToolBar
         Left = 0
         Top = 0
@@ -322,8 +314,6 @@ object PropertyForm: TPropertyForm
         TabOrder = 1
         WordWrap = False
         OnChange = HashesMemoChange
-        ExplicitLeft = 24
-        ExplicitTop = 44
       end
     end
     object DescriptionTS: TTabSheet
@@ -383,7 +373,7 @@ object PropertyForm: TPropertyForm
     Left = 740
     Top = 147
     Bitmap = {
-      494C010106008C00040120002000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010106008C00080120002000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000800000004000000001002000000000000080
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
