@@ -52,7 +52,7 @@ type
 		HashesMemo: TMemo;
 		LoadHashesTb: TToolButton;
 		OpenDialogOD: TOpenDialog;
-		ToolButton1: TToolButton;
+		ApplyHashesTB: TToolButton;
 		procedure AccessCBClick(Sender: TObject);
 		class function ShowProperty(parentWindow: HWND; RemoteName: WideString; RemoteProperty: TCloudMailRuDirListingItem; Cloud: TCloudMailRu; DoUrlEncode: Boolean = true; AutoUpdateDownloadListing: Boolean = true; ShowDescription: Boolean = true; EditDescription: Boolean = true; PluginIonFileName: WideString = 'descript.ion'): Integer;
 		procedure FormActivate(Sender: TObject);
@@ -75,6 +75,8 @@ type
 		procedure WrapHashesTbClick(Sender: TObject);
 		procedure SaveHashesTbClick(Sender: TObject);
 		procedure LoadHashesTbClick(Sender: TObject);
+		procedure ApplyHashesTBClick(Sender: TObject);
+		procedure HashesMemoChange(Sender: TObject);
 	private
 		{Private declarations}
 		procedure WMAfterShow(var Message: TMessage); message WM_AFTER_SHOW;
@@ -90,7 +92,7 @@ type
 		function LinksLogProc(LogText: WideString): Boolean;
 		function HashesLogProc(LogText: WideString): Boolean;
 		function GenerateHashCommand(ListingItem: TCloudMailRuDirListingItem; BaseDir: WideString = ''): WideString;
-		function ApplyHashCommandList(CommandList: TStringList): Boolean;
+		function ApplyHashCommandList(CommandList: TStrings): Boolean;
 
 	protected
 		Props: TCloudMailRuDirListingItem;
@@ -342,6 +344,11 @@ begin
 	self.TempPublicCloud.login;
 end;
 
+procedure TPropertyForm.ApplyHashesTBClick(Sender: TObject);
+begin
+	ApplyHashCommandList(HashesMemo.lines);
+end;
+
 function TPropertyForm.LinksLogProc(LogText: WideString): Boolean;
 begin
 	result := not LogCancelledFlag;
@@ -374,18 +381,20 @@ end;
 
 (*Controls handlers*)
 
-function TPropertyForm.ApplyHashCommandList(CommandList: TStringList): Boolean;
+function TPropertyForm.ApplyHashCommandList(CommandList: TStrings): Boolean;
 var
 	ItemIndex: Integer;
 	CurrentCommand: THashInfo;
 begin
 	for ItemIndex := 0 to CommandList.Count do
 	begin
-		CurrentCommand := THashInfo.Create(CommandList.ValueFromIndex[ItemIndex]);
+		CurrentCommand := THashInfo.Create(CommandList.Strings[ItemIndex]);
 		if CurrentCommand.valid then
 		begin
-			Cloud.cloneHash(IncludeTrailingPathDelimiter(self.RemoteName), CurrentCommand.hash, CurrentCommand.size, CurrentCommand.name);
-
+			if Props.kind = TYPE_DIR then //клонируем в каталог
+				Cloud.cloneHash(IncludeTrailingPathDelimiter(self.RemoteName), CurrentCommand.hash, CurrentCommand.size, CurrentCommand.name)
+			else //клонируем рядом
+				Cloud.cloneHash(ExtractFilePath(self.RemoteName), CurrentCommand.hash, CurrentCommand.size, CurrentCommand.name)
 		end;
 	end;
 end;
@@ -459,6 +468,11 @@ begin
 	else
 		HashesLogLabel.Caption := EmptyWideStr;
 	LogCancelledFlag := false;
+end;
+
+procedure TPropertyForm.HashesMemoChange(Sender: TObject);
+begin
+	ApplyHashesTB.Enabled := EmptyWideStr <> HashesMemo.Text;
 end;
 
 procedure TPropertyForm.InviteBtnClick(Sender: TObject);

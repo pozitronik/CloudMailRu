@@ -267,11 +267,13 @@ object PropertyForm: TPropertyForm
           ImageIndex = 4
           OnClick = LoadHashesTbClick
         end
-        object ToolButton1: TToolButton
+        object ApplyHashesTB: TToolButton
           Left = 78
           Top = 0
-          Caption = 'ToolButton1'
+          Caption = 'ApplyHashesTB'
+          Enabled = False
           ImageIndex = 5
+          OnClick = ApplyHashesTBClick
         end
         object WrapHashesTb: TToolButton
           Left = 117
@@ -316,10 +318,12 @@ object PropertyForm: TPropertyForm
         BevelInner = bvNone
         BevelOuter = bvNone
         BorderStyle = bsNone
-        ReadOnly = True
         ScrollBars = ssBoth
         TabOrder = 1
         WordWrap = False
+        OnChange = HashesMemoChange
+        ExplicitLeft = 24
+        ExplicitTop = 44
       end
     end
     object DescriptionTS: TTabSheet
