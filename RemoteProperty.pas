@@ -580,6 +580,7 @@ begin
 	FolderAccessTS.TabVisible := false;
 	DownloadLinksTS.TabVisible := false;
 	DescriptionTS.TabVisible := false;
+	HashesListTS.TabVisible := false;
 
 	if self.Cloud.isPublicShare then
 	begin
@@ -587,6 +588,8 @@ begin
 		AccessCB.Checked := true;
 		ExtPropertiesPC.Visible := true;
 		DownloadLinksTS.TabVisible := true;
+		LoadHashesTb.Enabled := false;
+		HashesMemo.ReadOnly := true;
 
 		if self.AutoUpdateDownloadListing then
 			UpdateDownloadListing;
@@ -610,6 +613,7 @@ begin
 		DescriptionSaveButton.Enabled := self.EditDescription;
 
 	end;
+	HashesListTS.TabVisible := true;
 
 end;
 
