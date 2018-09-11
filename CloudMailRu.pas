@@ -22,6 +22,7 @@ type
 		public_download_token: WideString;
 		public_shard: WideString;
 		shard_override: WideString;
+		upload_url_override: WideString;
 		token: WideString;
 		OAuthToken: TCloudMailRuOAuthInfo;
 		x_page_id: WideString;
@@ -334,6 +335,7 @@ begin
 		end;
 
 		self.shard_override := AccountSettings.shard_override;
+		self.upload_url_override := AccountSettings.upload_url_override;
 		if self.public_account and (self.PUBLIC_URL <> EmptyWideStr) then
 		begin
 			self.public_link := self.PUBLIC_URL;
@@ -1237,7 +1239,16 @@ begin
 	if self.public_account then
 		Result := self.loginShared()
 	else
+	begin
 		Result := self.loginRegular(method);
+		if (Result and (EmptyWideStr <> self.upload_url_override)) then
+
+		begin
+			Log(LogLevelError, MSGTYPE_DETAILS, 'Upload url overriden via config!');
+			self.upload_url := self.upload_url_override;
+			exit(true);
+		end;
+	end;
 end;
 
 function TCloudMailRu.loginRegular(method: integer): Boolean;
