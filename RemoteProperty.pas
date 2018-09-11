@@ -67,7 +67,6 @@ type
 		procedure DescriptionSaveButtonClick(Sender: TObject);
 		procedure FormKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
 		procedure PublicLinkLabelClick(Sender: TObject);
-		procedure QuickHashLabelClick(Sender: TObject);
 		procedure RefreshHashesScanTbClick(Sender: TObject);
 		procedure CancelHashesScanTbClick(Sender: TObject);
 		procedure WrapHashesTbClick(Sender: TObject);
@@ -90,7 +89,7 @@ type
 		function LinksLogProc(LogText: WideString): Boolean;
 		function HashesLogProc(LogText: WideString): Boolean;
 		function GenerateHashCommand(ListingItem: TCloudMailRuDirListingItem; BaseDir: WideString = ''): WideString;
-		function ApplyHashCommandList(CommandList: TStrings): Boolean;
+		procedure ApplyHashCommandList(CommandList: TStrings);
 
 	protected
 		Props: TCloudMailRuDirListingItem;
@@ -371,14 +370,7 @@ begin
 		Clipboard.AsText := WebLink.Text;
 end;
 
-procedure TPropertyForm.QuickHashLabelClick(Sender: TObject);
-begin
-
-end;
-
-(*Controls handlers*)
-
-function TPropertyForm.ApplyHashCommandList(CommandList: TStrings): Boolean;
+procedure TPropertyForm.ApplyHashCommandList(CommandList: TStrings);
 var
 	ItemIndex: Integer;
 	CurrentCommand: THashInfo;
