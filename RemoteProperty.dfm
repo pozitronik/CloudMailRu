@@ -329,10 +329,6 @@ object PropertyForm: TPropertyForm
     object DescriptionTS: TTabSheet
       Caption = 'Description'
       ImageIndex = 2
-      ExplicitLeft = 0
-      ExplicitTop = 0
-      ExplicitWidth = 0
-      ExplicitHeight = 0
       DesignSize = (
         828
         255)

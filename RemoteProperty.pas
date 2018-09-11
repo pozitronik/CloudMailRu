@@ -385,7 +385,7 @@ begin
 			else //клонируем рядом
 				Cloud.cloneHash(ExtractFilePath(self.RemoteName), CurrentCommand.hash, CurrentCommand.size, CurrentCommand.name)
 		end else begin
-			HashesLogProc(CurrentCommand.errorString);
+			HashesLogProc('Line ' + ItemIndex.ToString + ': ' + CurrentCommand.errorString);
 		end;
 	end;
 	PostMessage(FindTCWindow, WM_USER + 51, 540, 0); //TC does not update current panel, so we should do it this way
