@@ -388,6 +388,7 @@ begin
 			HashesLogProc(CurrentCommand.errorString);
 		end;
 	end;
+	PostMessage(FindTCWindow, WM_USER + 51, 540, 0); //TC does not update current panel, so we should do it this way
 end;
 
 procedure TPropertyForm.CancelHashesScanTbClick(Sender: TObject);

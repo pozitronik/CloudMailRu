@@ -151,6 +151,10 @@ object PropertyForm: TPropertyForm
     object DownloadLinksTS: TTabSheet
       Caption = 'Download Links'
       ImageIndex = 1
+      ExplicitLeft = 0
+      ExplicitTop = 0
+      ExplicitWidth = 0
+      ExplicitHeight = 0
       object DownloadLinksMemo: TMemo
         Left = 0
         Top = 40
@@ -228,6 +232,10 @@ object PropertyForm: TPropertyForm
     object HashesListTS: TTabSheet
       Caption = 'Hashes list'
       ImageIndex = 3
+      ExplicitLeft = 0
+      ExplicitTop = 0
+      ExplicitWidth = 0
+      ExplicitHeight = 0
       object HashesListTB: TToolBar
         Left = 0
         Top = 0
@@ -321,6 +329,10 @@ object PropertyForm: TPropertyForm
     object DescriptionTS: TTabSheet
       Caption = 'Description'
       ImageIndex = 2
+      ExplicitLeft = 0
+      ExplicitTop = 0
+      ExplicitWidth = 0
+      ExplicitHeight = 0
       DesignSize = (
         828
         255)
@@ -375,7 +387,7 @@ object PropertyForm: TPropertyForm
     Left = 740
     Top = 147
     Bitmap = {
-      494C010106008C00000120002000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010106008C00040120002000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000800000004000000001002000000000000080
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
