@@ -40,8 +40,6 @@ type
 		DescriptionTS: TTabSheet;
 		DescriptionEditMemo: TMemo;
 		DescriptionSaveButton: TButton;
-		QuickHashLabel: TLabel;
-		QuickClone: TEdit;
 		HashesListTS: TTabSheet;
 		HashesListTB: TToolBar;
 		SaveHashesTb: TToolButton;
@@ -375,8 +373,7 @@ end;
 
 procedure TPropertyForm.QuickHashLabelClick(Sender: TObject);
 begin
-	if QuickClone.Enabled then
-		Clipboard.AsText := QuickClone.Text;
+
 end;
 
 (*Controls handlers*)
@@ -587,12 +584,7 @@ begin
 	FolderAccessTS.TabVisible := false;
 	DownloadLinksTS.TabVisible := false;
 	DescriptionTS.TabVisible := false;
-	QuickClone.Enabled := false;
-	if (Props.type_ = TYPE_FILE) then
-	begin
-		QuickClone.Enabled := true;
-		QuickClone.Text := GenerateHashCommand(Props);;
-	end;
+
 	if self.Cloud.isPublicShare then
 	begin
 		AccessCB.Enabled := false;

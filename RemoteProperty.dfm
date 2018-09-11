@@ -4,7 +4,7 @@ object PropertyForm: TPropertyForm
   AutoSize = True
   BorderStyle = bsDialog
   BorderWidth = 5
-  ClientHeight = 360
+  ClientHeight = 337
   ClientWidth = 836
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -20,28 +20,20 @@ object PropertyForm: TPropertyForm
   OnShow = FormShow
   DesignSize = (
     836
-    360)
+    337)
   PixelsPerInch = 96
   TextHeight = 13
   object PublicLinkLabel: TLabel
     Left = 0
-    Top = 23
+    Top = 27
     Width = 49
     Height = 13
     Caption = 'Public link:'
     OnClick = PublicLinkLabelClick
   end
-  object QuickHashLabel: TLabel
-    Left = 0
-    Top = 50
-    Width = 106
-    Height = 13
-    Caption = 'Quick clone command:'
-    OnClick = QuickHashLabelClick
-  end
   object WebLink: TEdit
     Left = 55
-    Top = 23
+    Top = 27
     Width = 781
     Height = 21
     Anchors = [akLeft, akTop, akRight]
@@ -50,7 +42,7 @@ object PropertyForm: TPropertyForm
   end
   object AccessCB: TCheckBox
     Left = 0
-    Top = 0
+    Top = 4
     Width = 131
     Height = 17
     Caption = 'Public access enabled'
@@ -59,21 +51,21 @@ object PropertyForm: TPropertyForm
   end
   object OkButton: TButton
     Left = 745
-    Top = 50
+    Top = 0
     Width = 91
     Height = 21
     Anchors = [akTop, akRight]
     Caption = 'OK'
     ModalResult = 1
-    TabOrder = 4
+    TabOrder = 3
   end
   object ExtPropertiesPC: TPageControl
     Left = 0
-    Top = 77
+    Top = 54
     Width = 836
     Height = 283
-    ActivePage = HashesListTS
-    TabOrder = 3
+    ActivePage = FolderAccessTS
+    TabOrder = 2
     object FolderAccessTS: TTabSheet
       Caption = 'Folder Access'
       DesignSize = (
@@ -356,15 +348,6 @@ object PropertyForm: TPropertyForm
         OnClick = DescriptionSaveButtonClick
       end
     end
-  end
-  object QuickClone: TEdit
-    Left = 112
-    Top = 50
-    Width = 627
-    Height = 21
-    Anchors = [akLeft, akTop, akRight]
-    ReadOnly = True
-    TabOrder = 2
   end
   object InvitesPopup: TPopupMenu
     OnPopup = InvitesPopupPopup
