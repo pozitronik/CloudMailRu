@@ -70,6 +70,7 @@ type
 		encrypt_files_mode: integer;
 		encrypt_filenames: boolean;
 		shard_override: WideString; //hidden option, allows to override working shard for account
+		upload_url_override: WideString; //hidden option, alows to override upload server for account
 		self_ini_path: WideString; //runtime parameter, contains path to ini file, used for various manipulations
 		crypt_files_password: WideString; //runtime parameter
 
@@ -230,6 +231,7 @@ begin
 	result.encrypt_files_mode := IniFile.ReadInteger(result.name, 'encrypt_files_mode', EncryptModeNone);
 	result.encrypt_filenames := IniFile.ReadBool(result.name, 'encrypt_filenames', false);
 	result.shard_override := IniFile.ReadString(result.name, 'shard_override', EmptyWideStr);
+	result.upload_url_override := IniFile.ReadString(result.name, 'upload_url_override', EmptyWideStr);
 	result.CryptedGUID_files := IniFile.ReadString(result.name, 'CryptedGUID_files', EmptyWideStr);
 	AtPos := AnsiPos('@', result.email);
 	if AtPos <> 0 then
