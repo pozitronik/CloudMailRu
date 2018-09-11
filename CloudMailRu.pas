@@ -1242,7 +1242,6 @@ begin
 	begin
 		Result := self.loginRegular(method);
 		if (Result and (EmptyWideStr <> self.upload_url_override)) then
-
 		begin
 			Log(LogLevelError, MSGTYPE_DETAILS, 'Upload url overriden via config!');
 			self.upload_url := self.upload_url_override;
