@@ -395,6 +395,8 @@ begin
 				Cloud.cloneHash(IncludeTrailingPathDelimiter(self.RemoteName), CurrentCommand.hash, CurrentCommand.size, CurrentCommand.name)
 			else //клонируем рядом
 				Cloud.cloneHash(ExtractFilePath(self.RemoteName), CurrentCommand.hash, CurrentCommand.size, CurrentCommand.name)
+		end else begin
+			HashesLogProc(CurrentCommand.errorString);
 		end;
 	end;
 end;
