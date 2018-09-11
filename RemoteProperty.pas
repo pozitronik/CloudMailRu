@@ -377,6 +377,7 @@ var
 begin
 	for ItemIndex := 0 to CommandList.Count do
 	begin
+		ProcessMessages;
 		CurrentCommand := THashInfo.Create(CommandList.Strings[ItemIndex]);
 		if CurrentCommand.valid then
 		begin
