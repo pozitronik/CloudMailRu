@@ -343,7 +343,9 @@ end;
 
 procedure TPropertyForm.ApplyHashesTBClick(Sender: TObject);
 begin
+	ApplyHashesTB.Enabled := false;
 	ApplyHashCommandList(HashesMemo.lines);
+	ApplyHashesTB.Enabled := true;
 end;
 
 function TPropertyForm.LinksLogProc(LogText: WideString): Boolean;
