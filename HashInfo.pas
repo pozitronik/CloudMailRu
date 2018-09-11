@@ -2,7 +2,7 @@ unit HashInfo;
 
 interface
 
-uses system.sysutils;
+uses system.sysutils, MRC_Helper;
 
 const
 	ERR_WRONG_FORMAT = 'Parameter should be in hash:size:name or hash:size format.';
@@ -18,7 +18,7 @@ type
 		name: WideString;
 		valid: boolean;
 		errorString: WideString;
-		constructor Create(parameter: WideString);
+		constructor Create(parameter: WideString; doClean: boolean = true);
 		destructor Destroy; override;
 
 	end;
@@ -30,13 +30,24 @@ implementation
  hash:size:name
  hash:size
 *)
-constructor THashInfo.Create(parameter: WideString);
+constructor THashInfo.Create(parameter: WideString; doClean: boolean = true);
 const
 	divisor = ':';
 var
 	divisor_position: integer;
 	sizeString: WideString;
+	t: integer;
 begin
+	if doClean then //команда может быть передана полностью, нужно определить и выпарсить параметр
+	begin
+		if (1 = Pos(WideString('hash '), parameter)) then //это команда, чистим
+		begin
+			parameter := copy(parameter, 6, length(parameter) - 5);
+			parameter := TrimEx(parameter, '"');
+		end;
+
+	end;
+
 	self.valid := false;
 	divisor_position := Pos(WideString(divisor), parameter);
 	if divisor_position = 0 then
@@ -44,21 +55,21 @@ begin
 		self.errorString := ERR_WRONG_FORMAT;
 		exit;
 	end;
-	self.hash := Copy(parameter, 0, divisor_position - 1);
-	if Length(hash) <> 40 then
+	self.hash := copy(parameter, 0, divisor_position - 1);
+	if length(hash) <> 40 then
 	begin
 		self.errorString := ERR_WRONG_HASH_LENGTH;
 		exit;
 	end;
 
-	parameter := Copy(parameter, divisor_position + 1);
+	parameter := copy(parameter, divisor_position + 1);
 	divisor_position := Pos(WideString(divisor), parameter);
 	if divisor_position = 0 then
 		sizeString := parameter
 	else
 	begin
-		sizeString := Copy(parameter, 0, divisor_position - 1);
-		parameter := Copy(parameter, divisor_position + 1);
+		sizeString := copy(parameter, 0, divisor_position - 1);
+		parameter := copy(parameter, divisor_position + 1);
 	end;
 
 	try
