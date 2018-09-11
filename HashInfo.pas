@@ -36,7 +36,6 @@ const
 var
 	divisor_position: integer;
 	sizeString: WideString;
-	t: integer;
 begin
 	if doClean then //команда может быть передана полностью, нужно определить и выпарсить параметр
 	begin
