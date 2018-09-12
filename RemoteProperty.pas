@@ -88,7 +88,7 @@ type
 		procedure TempPublicCloudInit(publicUrl: WideString);
 		function LinksLogProc(LogText: WideString): Boolean;
 		function HashesLogProc(LogText: WideString): Boolean;
-		function GenerateHashCommand(ListingItem: TCloudMailRuDirListingItem; BaseDir: WideString = ''): WideString;
+		function GenerateHashCommand(ListingItem: TCloudMailRuDirListingItem; BaseDir: WideString = ''; Path: WideString = ''): WideString;
 		procedure ApplyHashCommandList(CommandList: TStrings);
 
 	protected
@@ -191,7 +191,7 @@ end;
 
 procedure TPropertyForm.UpdateHashesListing;
 begin
-	HashesMemo.lines.Clear; //todo check for public shares
+	HashesMemo.lines.Clear;
 
 	if Props.type_ = TYPE_DIR then
 	begin (*рекурсивно получаем все ссылки в каталоге*)
@@ -263,7 +263,7 @@ begin
 				break;
 
 		end else begin
-			HashesMemo.lines.Add(GenerateHashCommand(CurrentItem, BaseDir));
+			HashesMemo.lines.Add(GenerateHashCommand(CurrentItem, BaseDir, Path));
 		end;
 	end;
 	RefreshHashesScanTb.Enabled := true;
@@ -440,20 +440,22 @@ begin
 	PostMessage(self.Handle, WM_AFTER_SHOW, 0, 0);
 end;
 
-function TPropertyForm.GenerateHashCommand(ListingItem: TCloudMailRuDirListingItem; BaseDir: WideString = ''): WideString;
+function TPropertyForm.GenerateHashCommand(ListingItem: TCloudMailRuDirListingItem; BaseDir: WideString = ''; Path: WideString = ''): WideString;
 var
 	AppliedName: WideString;
 begin
 	(*Если задан базовый каталог, то имена отсчитываем от него*)
-	if EmptyWideStr = BaseDir then //todo: в публичных шарах некорректно отсчитываются пути
+	if EmptyWideStr = BaseDir then
 	begin
 		AppliedName := ListingItem.name;
 	end else begin
-		BaseDir := '/' + NormalizeSlashes(BaseDir);
-		if (Pos(BaseDir, ListingItem.home) = 1) then
-			AppliedName := StringReplace(ListingItem.home, BaseDir, '', [])
-		else
-			AppliedName := ListingItem.name;
+		if (EmptyWideStr <> Path) then
+		begin
+			if (Pos(BaseDir, Path) = 1) and (BaseDir <> Path) then
+				AppliedName := IncludeTrailingPathDelimiter(StringReplace(Path, BaseDir, '', [])) + ListingItem.name
+			else
+				AppliedName := ListingItem.name;
+		end;
 	end;
 	result := 'hash "' + ListingItem.hash + ':' + ListingItem.size.ToString + ':' + AppliedName + '"';
 end;
