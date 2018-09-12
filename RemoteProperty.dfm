@@ -201,7 +201,7 @@ object PropertyForm: TPropertyForm
         object LinksLogLabel: TLabel
           Left = 78
           Top = 0
-          Width = 672
+          Width = 674
           Height = 38
           AutoSize = False
           EllipsisPosition = epEndEllipsis
@@ -209,7 +209,7 @@ object PropertyForm: TPropertyForm
           Layout = tlCenter
         end
         object CancelLinksScanTb: TToolButton
-          Left = 750
+          Left = 752
           Top = 0
           Caption = 'CancelLinksScanTb'
           Enabled = False
@@ -217,7 +217,7 @@ object PropertyForm: TPropertyForm
           OnClick = CancelLinksScanTbClick
         end
         object RefreshLinksScanTb: TToolButton
-          Left = 789
+          Left = 791
           Top = 0
           Caption = 'RefreshLinksScanTb'
           ImageIndex = 3
@@ -278,7 +278,7 @@ object PropertyForm: TPropertyForm
         object HashesLogLabel: TLabel
           Left = 156
           Top = 0
-          Width = 597
+          Width = 596
           Height = 38
           AutoSize = False
           EllipsisPosition = epEndEllipsis
@@ -286,7 +286,7 @@ object PropertyForm: TPropertyForm
           Layout = tlCenter
         end
         object CancelHashesScanTb: TToolButton
-          Left = 753
+          Left = 752
           Top = 0
           Caption = 'CancelScanTB'
           Enabled = False
@@ -294,7 +294,7 @@ object PropertyForm: TPropertyForm
           OnClick = CancelHashesScanTbClick
         end
         object RefreshHashesScanTb: TToolButton
-          Left = 792
+          Left = 791
           Top = 0
           Caption = 'RefreshScanTB'
           ImageIndex = 3
@@ -313,7 +313,7 @@ object PropertyForm: TPropertyForm
         ScrollBars = ssBoth
         TabOrder = 1
         WordWrap = False
-        OnChange = HashesMemoChange
+        OnExit = HashesMemoExit
       end
     end
     object DescriptionTS: TTabSheet
@@ -373,7 +373,7 @@ object PropertyForm: TPropertyForm
     Left = 740
     Top = 147
     Bitmap = {
-      494C010106008C00080120002000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010106008C000C0120002000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000800000004000000001002000000000000080
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
