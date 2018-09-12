@@ -99,6 +99,7 @@ type
 		RemoteName: WideString;
 		DoUrlEncode: Boolean;
 		LogCancelledFlag: Boolean;
+		HashCancelledFlag: Boolean;
 		AutoUpdateDownloadListing: Boolean;
 		ShowDescription: Boolean;
 		EditDescription: Boolean;
@@ -411,7 +412,7 @@ end;
 
 procedure TPropertyForm.CancelLinksScanTbClick(Sender: TObject);
 begin
-	LogCancelledFlag := true;
+	HashCancelledFlag := true;
 end;
 
 procedure TPropertyForm.DescriptionSaveButtonClick(Sender: TObject);
@@ -469,12 +470,12 @@ end;
 
 function TPropertyForm.HashesLogProc(LogText: WideString): Boolean;
 begin
-	result := not LogCancelledFlag; //todo separate flags
+	result := not HashCancelledFlag;
 	if (result) then
 		HashesLogLabel.Caption := LogText
 	else
 		HashesLogLabel.Caption := EmptyWideStr;
-	LogCancelledFlag := false;
+	HashCancelledFlag := false;
 end;
 
 procedure TPropertyForm.HashesMemoExit(Sender: TObject);
@@ -566,6 +567,7 @@ begin
 		PropertyForm.Props := RemoteProperty;
 		PropertyForm.AutoUpdateDownloadListing := AutoUpdateDownloadListing;
 		PropertyForm.LogCancelledFlag := false;
+		PropertyForm.HashCancelledFlag := false;
 		PropertyForm.DoUrlEncode := DoUrlEncode;
 		PropertyForm.ShowDescription := ShowDescription;
 		PropertyForm.EditDescription := EditDescription;
