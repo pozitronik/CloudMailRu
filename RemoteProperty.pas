@@ -90,6 +90,7 @@ type
 		function HashesLogProc(LogText: WideString): Boolean;
 		function GenerateHashCommand(ListingItem: TCloudMailRuDirListingItem; BaseDir: WideString = ''; Path: WideString = ''): WideString;
 		procedure ApplyHashCommandList(CommandList: TStrings);
+		function CanApplyHashes(): Boolean;
 
 	protected
 		Props: TCloudMailRuDirListingItem;
@@ -313,9 +314,10 @@ end;
 procedure TPropertyForm.RefreshHashesScanTbClick(Sender: TObject);
 begin
 	ApplyHashesTB.Enabled := false;
+	LoadHashesTb.Enabled := false;
 	UpdateHashesListing();
-	if not self.Cloud.isPublicShare then
-		ApplyHashesTB.Enabled := true;
+	ApplyHashesTB.Enabled := CanApplyHashes;
+	LoadHashesTb.Enabled := CanApplyHashes;
 end;
 
 procedure TPropertyForm.RefreshInvites;
@@ -397,6 +399,11 @@ begin
 	PostMessage(FindTCWindow, WM_USER + 51, 540, 0); //TC does not update current panel, so we should do it this way
 end;
 
+function TPropertyForm.CanApplyHashes: Boolean;
+begin
+	result := not self.Cloud.isPublicShare;
+end;
+
 procedure TPropertyForm.CancelHashesScanTbClick(Sender: TObject);
 begin
 	LogCancelledFlag := true;
@@ -472,7 +479,7 @@ end;
 
 procedure TPropertyForm.HashesMemoExit(Sender: TObject);
 begin
-	if not self.Cloud.isPublicShare then
+	if CanApplyHashes then
 		ApplyHashesTB.Enabled := EmptyWideStr <> HashesMemo.Text;
 end;
 
@@ -588,16 +595,16 @@ begin
 	DescriptionTS.TabVisible := false;
 	HashesListTS.TabVisible := false;
 
+	ApplyHashesTB.Enabled := CanApplyHashes;
+	LoadHashesTb.Enabled := CanApplyHashes;
+
 	if self.Cloud.isPublicShare then
 	begin
 		AccessCB.Enabled := false;
 		AccessCB.Checked := true;
 		ExtPropertiesPC.Visible := true;
 		DownloadLinksTS.TabVisible := true;
-		LoadHashesTb.Enabled := false;
 		HashesMemo.ReadOnly := true;
-		ApplyHashesTB.Enabled := false;
-		LoadHashesTb.Enabled := false;
 
 		if self.AutoUpdateDownloadListing then
 			UpdateDownloadListing;
