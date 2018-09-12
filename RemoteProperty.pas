@@ -73,7 +73,7 @@ type
 		procedure SaveHashesTbClick(Sender: TObject);
 		procedure LoadHashesTbClick(Sender: TObject);
 		procedure ApplyHashesTBClick(Sender: TObject);
-		procedure HashesMemoChange(Sender: TObject);
+		procedure HashesMemoExit(Sender: TObject);
 	private
 		{Private declarations}
 		procedure WMAfterShow(var Message: TMessage); message WM_AFTER_SHOW;
@@ -312,7 +312,10 @@ end;
 
 procedure TPropertyForm.RefreshHashesScanTbClick(Sender: TObject);
 begin
+	ApplyHashesTB.Enabled := false;
 	UpdateHashesListing();
+	if not self.Cloud.isPublicShare then
+		ApplyHashesTB.Enabled := true;
 end;
 
 procedure TPropertyForm.RefreshInvites;
@@ -442,7 +445,7 @@ var
 	AppliedName: WideString;
 begin
 	(*Если задан базовый каталог, то имена отсчитываем от него*)
-	if EmptyWideStr = BaseDir then
+	if EmptyWideStr = BaseDir then //todo: в публичных шарах некорректно отсчитываются пути
 	begin
 		AppliedName := ListingItem.name;
 	end else begin
@@ -465,7 +468,7 @@ begin
 	LogCancelledFlag := false;
 end;
 
-procedure TPropertyForm.HashesMemoChange(Sender: TObject);
+procedure TPropertyForm.HashesMemoExit(Sender: TObject);
 begin
 	if not self.Cloud.isPublicShare then
 		ApplyHashesTB.Enabled := EmptyWideStr <> HashesMemo.Text;
