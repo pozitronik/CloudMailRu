@@ -67,7 +67,7 @@ object PropertyForm: TPropertyForm
     ActivePage = FolderAccessTS
     TabOrder = 3
     object FolderAccessTS: TTabSheet
-      Caption = 'Folder Access'
+      Caption = 'Folder access'
       DesignSize = (
         828
         255)
@@ -149,7 +149,7 @@ object PropertyForm: TPropertyForm
       end
     end
     object DownloadLinksTS: TTabSheet
-      Caption = 'Download Links'
+      Caption = 'Download links'
       ImageIndex = 1
       object DownloadLinksMemo: TMemo
         Left = 0
