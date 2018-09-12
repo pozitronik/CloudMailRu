@@ -467,7 +467,8 @@ end;
 
 procedure TPropertyForm.HashesMemoChange(Sender: TObject);
 begin
-	ApplyHashesTB.Enabled := EmptyWideStr <> HashesMemo.Text;
+	if not self.Cloud.isPublicShare then
+		ApplyHashesTB.Enabled := EmptyWideStr <> HashesMemo.Text;
 end;
 
 procedure TPropertyForm.InviteBtnClick(Sender: TObject);
@@ -590,6 +591,8 @@ begin
 		DownloadLinksTS.TabVisible := true;
 		LoadHashesTb.Enabled := false;
 		HashesMemo.ReadOnly := true;
+		ApplyHashesTB.Enabled := false;
+		LoadHashesTb.Enabled := false;
 
 		if self.AutoUpdateDownloadListing then
 			UpdateDownloadListing;
