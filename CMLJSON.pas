@@ -76,10 +76,28 @@ function fromJSON_TwostepData(JSON: WideString; var TwostepData: TCloudMailRuTwo
 
 implementation
 
-function assignFromName(ParserObject: TJSONObject; Name: WideString): Variant;
+procedure assignFromName(ParserObject: TJSONObject; Name: WideString; var Item: WideString); overload;
 begin
 	if Assigned(ParserObject.Values[Name]) then
-		result := ParserObject.Values[Name].Value;
+		Item := ParserObject.Values[Name].Value;
+end;
+
+procedure assignFromName(ParserObject: TJSONObject; Name: WideString; var Item: Int64); overload;
+begin
+	if Assigned(ParserObject.Values[Name]) then
+		Item := ParserObject.Values[Name].Value.ToInt64;
+end;
+
+procedure assignFromName(ParserObject: TJSONObject; Name: WideString; var Item: integer); overload;
+begin
+	if Assigned(ParserObject.Values[Name]) then
+		Item := ParserObject.Values[Name].Value.ToInteger;
+end;
+
+procedure assignFromName(ParserObject: TJSONObject; Name: WideString; var Item: Boolean); overload;
+begin
+	if Assigned(ParserObject.Values[Name]) then
+		Item := ParserObject.Values[Name].Value.ToBoolean;
 end;
 
 function initJSONValue(JSON: WideString; var JSONVal: TJSONValue): Boolean;
@@ -113,25 +131,25 @@ begin
 			ParserObj := A.Items[J] as TJSONObject;
 			with CloudMailRuDirListing[J] do
 			begin
-				size := assignFromName(ParserObj, NAME_SIZE);
-				kind := assignFromName(ParserObj, NAME_KIND);
-				weblink := assignFromName(ParserObj, NAME_WEBLINK);
-				type_ := assignFromName(ParserObj, NAME_TYPE);
-				home := assignFromName(ParserObj, NAME_HOME);
-				name := assignFromName(ParserObj, NAME_NAME);
+				assignFromName(ParserObj, NAME_SIZE, size);
+				assignFromName(ParserObj, NAME_KIND, kind);
+				assignFromName(ParserObj, NAME_WEBLINK, weblink);
+				assignFromName(ParserObj, NAME_TYPE, type_);
+				assignFromName(ParserObj, NAME_HOME, home);
+				assignFromName(ParserObj, NAME_NAME, name);
 				visible_name := name;
-				deleted_at := assignFromName(ParserObj, NAME_DELETED_AT);
-				deleted_from := assignFromName(ParserObj, NAME_DELETED_FROM);
-				deleted_by := assignFromName(ParserObj, NAME_DELETED_BY);
-				grev := assignFromName(ParserObj, NAME_GREV);
-				rev := assignFromName(ParserObj, NAME_REV);
+				assignFromName(ParserObj, NAME_DELETED_AT, deleted_at);
+				assignFromName(ParserObj, NAME_DELETED_FROM, deleted_from);
+				assignFromName(ParserObj, NAME_DELETED_BY, deleted_by);
+				assignFromName(ParserObj, NAME_GREV, grev);
+				assignFromName(ParserObj, NAME_REV, rev);
 				if (type_ = TYPE_FILE) then
 				begin
-					mtime := assignFromName(ParserObj, NAME_MTIME);
-					virus_scan := assignFromName(ParserObj, NAME_VIRUS_SCAN);
-					hash := assignFromName(ParserObj, NAME_HASH);
+					assignFromName(ParserObj, NAME_MTIME, mtime);
+					assignFromName(ParserObj, NAME_VIRUS_SCAN, virus_scan);
+					assignFromName(ParserObj, NAME_HASH, hash);
 				end else begin
-					tree := assignFromName(ParserObj, NAME_TREE);
+					assignFromName(ParserObj, NAME_TREE, tree);
 
 					if Assigned(ParserObj.Values[NAME_COUNT]) then
 					begin
@@ -161,21 +179,21 @@ begin
 		ParserObj := (JSONVal as TJSONObject).Values[NAME_BODY] as TJSONObject;
 		with CloudMailRuDirListingItem do
 		begin
-			size := assignFromName(ParserObj, NAME_SIZE);
-			kind := assignFromName(ParserObj, NAME_KIND);
-			weblink := assignFromName(ParserObj, NAME_WEBLINK);
-			type_ := assignFromName(ParserObj, NAME_TYPE);
-			home := assignFromName(ParserObj, NAME_HOME);
-			name := assignFromName(ParserObj, NAME_NAME);
+			assignFromName(ParserObj, NAME_SIZE, size);
+			assignFromName(ParserObj, NAME_KIND, kind);
+			assignFromName(ParserObj, NAME_WEBLINK, weblink);
+			assignFromName(ParserObj, NAME_TYPE, type_);
+			assignFromName(ParserObj, NAME_HOME, home);
+			assignFromName(ParserObj, NAME_NAME, name);
 			if (type_ = TYPE_FILE) then
 			begin
-				mtime := assignFromName(ParserObj, NAME_MTIME);
-				virus_scan := assignFromName(ParserObj, NAME_VIRUS_SCAN);
-				hash := assignFromName(ParserObj, NAME_HASH);
+				assignFromName(ParserObj, NAME_MTIME, mtime);
+				assignFromName(ParserObj, NAME_VIRUS_SCAN, virus_scan);
+				assignFromName(ParserObj, NAME_HASH, hash);
 			end else begin
-				tree := assignFromName(ParserObj, NAME_TREE);
-				grev := assignFromName(ParserObj, NAME_GREV);
-				rev := assignFromName(ParserObj, NAME_REV);
+				assignFromName(ParserObj, NAME_TREE, tree);
+				assignFromName(ParserObj, NAME_GREV, grev);
+				assignFromName(ParserObj, NAME_REV, rev);
 				if Assigned((ParserObj.Values[NAME_COUNT] as TJSONObject).Values[NAME_FOLDERS]) then
 					folders_count := (ParserObj.Values[NAME_COUNT] as TJSONObject).Values[NAME_FOLDERS].Value.ToInteger();
 				if Assigned((ParserObj.Values[NAME_COUNT] as TJSONObject).Values[NAME_FILES]) then
@@ -211,10 +229,10 @@ begin
 			ParserObj := A.Items[J] as TJSONObject;
 			with InviteListing[J] do
 			begin
-				email := assignFromName(ParserObj, NAME_EMAIL);
-				status := assignFromName(ParserObj, NAME_STATUS);
-				access := assignFromName(ParserObj, NAME_ACCESS);
-				name := assignFromName(ParserObj, NAME_NAME);
+				assignFromName(ParserObj, NAME_EMAIL, email);
+				assignFromName(ParserObj, NAME_STATUS, status);
+				assignFromName(ParserObj, NAME_ACCESS, access);
+				assignFromName(ParserObj, NAME_NAME, name);
 			end;
 		end;
 		JSONVal.free;
@@ -259,12 +277,12 @@ begin
 						owner.Name := OwnerObj.Values[NAME_NAME].Value;
 				end;
 
-				tree := assignFromName(ParserObj, NAME_TREE);
-				access := assignFromName(ParserObj, NAME_ACCESS);
-				name := assignFromName(ParserObj, NAME_NAME);
-				home := assignFromName(ParserObj, NAME_HOME);
-				size := assignFromName(ParserObj, NAME_SIZE);
-				invite_token := assignFromName(ParserObj, NAME_INVITE_TOKEN);
+				assignFromName(ParserObj, NAME_TREE, tree);
+				assignFromName(ParserObj, NAME_ACCESS, access);
+				assignFromName(ParserObj, NAME_NAME, name);
+				assignFromName(ParserObj, NAME_HOME, home);
+				assignFromName(ParserObj, NAME_SIZE, size);
+				assignFromName(ParserObj, NAME_INVITE_TOKEN, invite_token);
 			end;
 		end;
 		JSONVal.free;
@@ -290,12 +308,12 @@ begin
 		ParserObj := (JSONVal as TJSONObject);
 		with CloudMailRuOAuthInfo do
 		begin
-			error := assignFromName(ParserObj, NAME_ERROR);
-			error_code := assignFromName(ParserObj, NAME_ERROR_CODE);
-			error_description := assignFromName(ParserObj, NAME_ERROR_DESCRIPTION);
-			expires_in := assignFromName(ParserObj, NAME_EXPIRES_IN);
-			refresh_token := assignFromName(ParserObj, NAME_REFRESH_TOKEN);
-			access_token := assignFromName(ParserObj, NAME_ACCESS_TOKEN);
+			assignFromName(ParserObj, NAME_ERROR, error);
+			assignFromName(ParserObj, NAME_ERROR_CODE, error_code);
+			assignFromName(ParserObj, NAME_ERROR_DESCRIPTION, error_description);
+			assignFromName(ParserObj, NAME_EXPIRES_IN, expires_in);
+			assignFromName(ParserObj, NAME_REFRESH_TOKEN, refresh_token);
+			assignFromName(ParserObj, NAME_ACCESS_TOKEN, access_token);
 		end;
 		JSONVal.free;
 	except
@@ -441,13 +459,13 @@ begin
 		ParserObj := (JSONVal as TJSONObject) as TJSONObject;
 		with TwostepData do
 		begin
-			form_name := assignFromName(ParserObj, NAME_FORM_NAME);
-			auth_host := assignFromName(ParserObj, NAME_AUTH_HOST);
-			secstep_phone := assignFromName(ParserObj, NAME_SECSTEP_PHONE);
-			secstep_page := assignFromName(ParserObj, NAME_SECSTEP_PAGE);
-			secstep_code_fail := assignFromName(ParserObj, NAME_SECSTEP_CODE_FAIL);
-			secstep_resend_fail := assignFromName(ParserObj, NAME_SECSTEP_RESEND_FAIL);
-			secstep_resend_success := assignFromName(ParserObj, NAME_SECSTEP_RESEND_SUCCESS);
+			assignFromName(ParserObj, NAME_FORM_NAME, form_name);
+			assignFromName(ParserObj, NAME_AUTH_HOST, auth_host);
+			assignFromName(ParserObj, NAME_SECSTEP_PHONE, secstep_phone);
+			assignFromName(ParserObj, NAME_SECSTEP_PAGE, secstep_page);
+			assignFromName(ParserObj, NAME_SECSTEP_CODE_FAIL, secstep_code_fail);
+			assignFromName(ParserObj, NAME_SECSTEP_RESEND_FAIL, secstep_resend_fail);
+			assignFromName(ParserObj, NAME_SECSTEP_RESEND_SUCCESS, secstep_resend_success);
 			if Assigned(ParserObj.Values[NAME_SECSTEP_TIMEOUT]) then
 			begin
 				if ParserObj.Values[NAME_SECSTEP_TIMEOUT].Value <> '' then
@@ -455,15 +473,15 @@ begin
 				else
 					secstep_timeout := AUTH_APP_USED;
 			end;
-			secstep_login := assignFromName(ParserObj, NAME_SECSTEP_LOGIN);
-			secstep_disposable_fail := assignFromName(ParserObj, NAME_SECSTEP_DISPOSABLE_FAIL);
-			secstep_smsapi_error := assignFromName(ParserObj, NAME_SECSTEP_SMSAPI_ERROR);
-			secstep_captcha := assignFromName(ParserObj, NAME_SECSTEP_CAPTCHA);
-			totp_enabled := assignFromName(ParserObj, NAME_TOTP_ENABLED);
-			locale := assignFromName(ParserObj, NAME_LOCALE);
-			client := assignFromName(ParserObj, NAME_CLIENT);
-			csrf := assignFromName(ParserObj, NAME_CSRF);
-			device := assignFromName(ParserObj, NAME_DEVICE);
+			assignFromName(ParserObj, NAME_SECSTEP_LOGIN, secstep_login);
+			assignFromName(ParserObj, NAME_SECSTEP_DISPOSABLE_FAIL, secstep_disposable_fail);
+			assignFromName(ParserObj, NAME_SECSTEP_SMSAPI_ERROR, secstep_smsapi_error);
+			assignFromName(ParserObj, NAME_SECSTEP_CAPTCHA, secstep_captcha);
+			assignFromName(ParserObj, NAME_TOTP_ENABLED, totp_enabled);
+			assignFromName(ParserObj, NAME_LOCALE, locale);
+			assignFromName(ParserObj, NAME_CLIENT, client);
+			assignFromName(ParserObj, NAME_CSRF, csrf);
+			assignFromName(ParserObj, NAME_DEVICE, device);
 		end;
 		JSONVal.free;
 	except
@@ -484,9 +502,9 @@ begin
 		ParserObj := (JSONVal as TJSONObject).Values[NAME_BODY] as TJSONObject;
 		with CloudMailRuSpaceInfo do
 		begin
-			overquota := assignFromName(ParserObj, NAME_OVERQUOTA);
-			total := assignFromName(ParserObj, NAME_TOTAL);
-			used := assignFromName(ParserObj, NAME_USED);
+			assignFromName(ParserObj, NAME_OVERQUOTA, overquota);
+			assignFromName(ParserObj, NAME_TOTAL, total);
+			assignFromName(ParserObj, NAME_USED, used);
 		end;
 		JSONVal.free;
 	except
