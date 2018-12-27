@@ -407,12 +407,13 @@ end;
 
 procedure TPropertyForm.CancelHashesScanTbClick(Sender: TObject);
 begin
-	LogCancelledFlag := true;
+	HashCancelledFlag := true;
+
 end;
 
 procedure TPropertyForm.CancelLinksScanTbClick(Sender: TObject);
 begin
-	HashCancelledFlag := true;
+	LogCancelledFlag := true;
 end;
 
 procedure TPropertyForm.DescriptionSaveButtonClick(Sender: TObject);
