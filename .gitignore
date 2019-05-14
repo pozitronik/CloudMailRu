@@ -31,7 +31,7 @@
 /ModelSupport_MailRuCloud
 /MailRuCloud_project.tvsconfig
 /Accounts.dcu
-/*.dcu
+*.dcu
 /*.vlb
 /experiments
 /*.otares
@@ -49,3 +49,4 @@
 /debug.log
 /Cloud.groupproj
 /Cloud.groupproj.local
+/ignore_me
