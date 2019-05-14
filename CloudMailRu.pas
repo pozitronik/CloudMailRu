@@ -2,7 +2,7 @@
 
 interface
 
-uses CMLJSON, CMLTypes, System.Hash, System.Classes, System.Generics.Collections, System.SysUtils, PLUGIN_Types, Winapi.Windows, IdStack, MRC_helper, Settings, IdCookieManager, IdIOHandler, IdIOHandlerSocket, IdIOHandlerStack, IdSSL, IdSSLOpenSSL, IdBaseComponent, IdComponent, IdTCPConnection, IdTCPClient, IdSocks, IdHTTP, IdAuthentication, IdIOHandlerStream, IdInterceptThrottler, IdCookie, IdMultipartFormData, Cipher;
+uses CMLJSON, CMLTypes, System.Hash, System.Classes, System.Generics.Collections, System.SysUtils, PLUGIN_Types, Winapi.Windows, IdStack, MRC_helper, Settings, IdCookieManager, IdIOHandler, IdIOHandlerSocket, IdIOHandlerStack, IdSSL, IdSSLOpenSSL, IdBaseComponent, IdComponent, IdTCPConnection, IdTCPClient, IdSocks, IdHTTP, IdAuthentication, IdIOHandlerStream, IdInterceptThrottler, IdCookie, IdMultipartFormData, Cipher, Splitfile, ChunkedFileStream;
 
 type
 	TCloudMailRu = class
@@ -56,7 +56,9 @@ type
 
 		function HTTPPostForm(URL: WideString; PostDataString: WideString; var Answer: WideString; ContentType: WideString = 'application/x-www-form-urlencoded'; LogErrors: Boolean = true; ProgressEnabled: Boolean = true): Boolean; //Постинг данных с возможным получением ответа.
 		function HTTPPostMultipart(URL: WideString; Params: TDictionary<WideString, WideString>; var Answer: WideString): Boolean;
-		function HTTPPostFile(URL: WideString; FileName: WideString; var Answer: WideString): integer; //Постинг файла и получение ответа
+		function HTTPPostFile(URL: WideString; FileName: WideString; var Answer: WideString): integer; overload; //Постинг файла и получение ответа
+		function HTTPPostFile(URL: WideString; FileName: WideString; var Answer: WideString; ChunkInfo: TFileChunkInfo): integer; overload; //Постинг файла и получение ответа
+
 		function HTTPPost(URL: WideString; PostData, ResultData: TStringStream; UnderstandResponseCode: Boolean = false; ContentType: WideString = ''; LogErrors: Boolean = true; ProgressEnabled: Boolean = true): integer; overload; //Постинг подготовленных данных, отлов ошибок
 		function HTTPPost(URL: WideString; var PostData: TIdMultiPartFormDataStream; ResultData: TStringStream): integer; overload; //TIdMultiPartFormDataStream should be passed via var
 		function HTTPExceptionHandler(E: Exception; URL: WideString; HTTPMethod: integer = HTTP_METHOD_POST; LogErrors: Boolean = true): integer;
@@ -79,7 +81,8 @@ type
 		function getOAuthToken(var OAuthToken: TCloudMailRuOAuthInfo): Boolean;
 		function getShard(var Shard: WideString): Boolean;
 		function getUserSpace(var SpaceInfo: TCloudMailRuSpaceInfo): Boolean;
-		function putFileToCloud(localPath: WideString; Return: TStringList): integer;
+		function putFileToCloud(localPath: WideString; Return: TStringList; ChunkInfo: PFileChunkInfo = nil): integer;
+
 		function addFileToCloud(Hash: WideString; size: int64; remotePath: WideString; var JSONAnswer: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; LogErrors: Boolean = true): Boolean; //LogErrors=false => не логируем результат операции, нужно для поиска данных в облаке по хешу
 		{OTHER ROUTINES}
 		procedure Log(LogLevel, MsgType: integer; LogString: WideString);
@@ -1114,7 +1117,25 @@ begin
 	Answer := ResultStream.DataString;
 	ResultStream.free;
 	PostData.free;
+end;
 
+function TCloudMailRu.HTTPPostFile(URL, FileName: WideString; var Answer: WideString; ChunkInfo: TFileChunkInfo): integer;
+var
+	PostData: TIdMultiPartFormDataStream;
+	ChunkStream: TChunkedFileStream;
+	ResultStream: TStringStream;
+begin
+	ResultStream := TStringStream.Create;
+	ChunkStream := TChunkedFileStream.Create(FileName, fmOpenRead or fmShareDenyWrite, ChunkInfo.start, ChunkInfo.size);
+	PostData := TIdMultiPartFormDataStream.Create;
+
+	PostData.AddFormField('file', 'application/octet-stream', EmptyWideStr, ChunkStream, ChunkInfo.name);
+	Result := self.HTTPPost(URL, PostData, ResultStream);
+
+	Answer := ResultStream.DataString;
+	ResultStream.free;
+	PostData.free;
+	ChunkStream.free;
 end;
 
 function TCloudMailRu.HTTPPost(URL: WideString; PostData, ResultData: TStringStream; UnderstandResponseCode: Boolean = false; ContentType: WideString = ''; LogErrors: Boolean = true; ProgressEnabled: Boolean = true): integer;
@@ -1653,51 +1674,67 @@ end;
 
 function TCloudMailRu.putFileSplit(localPath, remotePath, ConflictMode: WideString; ChunkOverwriteMode: integer): integer;
 var
-	Splitter: TFileSplitter;
-	SplitResult, SplittedPartIndex: integer;
-	CRCFileName: WideString;
+	SplitFileInfo: TFileSplitInfo;
+	SplitResult, SplittedPartIndex, OperationStatus: integer;
 	ChunkFileName: WideString;
+	PutResult: TStringList;
+	code, OperationResult: integer;
+	LocalChunkHash, UploadedChunkHash: WideString;
+	UploadedChunkSize: int64;
+	JSONAnswer: WideString;
 begin
-	try
-		Splitter := TFileSplitter.Create(localPath, self.split_file_size, self.ExternalProgressProc); //memleak possible
-		SplitResult := Splitter.split();
-	except
-		on E: Exception do
-		begin
-			Log(LogLevelWarning, MSGTYPE_IMPORTANTERROR, 'File splitting error: ' + E.Message + ', ignored');
-			exit(FS_FILE_NOTSUPPORTED);
-		end;
-	end;
+	OperationResult := CLOUD_OPERATION_FAILED;
+	UploadedChunkSize := 0;
+	SplitFileInfo := TFileSplitInfo.Create(localPath, self.split_file_size); //quickly get InheritsFrom(about file parts)
+	PutResult := TStringList.Create;
 
-	case SplitResult of
-		FS_FILE_OK:
-			begin
-				//all ok
-			end;
-		FS_FILE_USERABORT:
-			begin
-				Log(LogLevelWarning, MSGTYPE_DETAILS, 'File splitting aborted by user, uploading aborted.');
-				Splitter.Destroy;
-				exit(FS_FILE_USERABORT);
-			end;
-		else
-			begin
-				Log(LogLevelWarning, MSGTYPE_IMPORTANTERROR, 'File splitting error, code: ' + SplitResult.ToString + ', ignored.');
-				Splitter.Destroy;
-				exit(FS_FILE_NOTSUPPORTED);
-			end;
-	end;
-	for SplittedPartIndex := 0 to length(Splitter.SplitResult.parts) - 1 do
+	for SplittedPartIndex := 0 to SplitFileInfo.ChunksCount - 1 do
 	begin
-		ChunkFileName := CopyExt(Splitter.SplitResult.parts[SplittedPartIndex].FileName, remotePath);
-		Result := self.putFile(Splitter.SplitResult.parts[SplittedPartIndex].FileName, ChunkFileName, ConflictMode);
+		try
+			OperationResult := self.putFileToCloud(localPath, PutResult, @SplitFileInfo.GetChunks[SplittedPartIndex]);
+		except
+			on E: Exception do
+			begin
+				if E.ClassName = 'EAbort' then
+				begin
+					Result := FS_FILE_USERABORT;
+				end else begin
+					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'error: uploading to cloud: ' + E.ClassName + ' with message: ' + E.Message);
+					Result := FS_FILE_WRITEERROR;
+				end;
+			end;
+		end;
+
+		if OperationResult = CLOUD_OPERATION_OK then
+		begin
+			UploadedChunkHash := PutResult.Strings[0];
+			val(PutResult.Strings[1], UploadedChunkSize, code);
+			if self.CheckCRC then //todo
+			begin
+				if (SplitFileInfo.GetChunks[SplittedPartIndex].size <> UploadedChunkSize) or (LocalChunkHash <> UploadedChunkHash) then {При включённой проверке CRC сравниваем хеши и размеры}
+					Result := CLOUD_OPERATION_FAILED;
+			end;
+		end else if OperationResult = CLOUD_OPERATION_CANCELLED then
+		begin
+			Result := FS_FILE_USERABORT;
+		end;
+
+		if OperationResult = CLOUD_OPERATION_OK then
+		begin
+			if self.addFileToCloud(UploadedChunkHash, UploadedChunkSize, ExtractFilePath(remotePath) + SplitFileInfo.GetChunks[SplittedPartIndex].name, JSONAnswer) then
+			begin
+				OperationResult := fromJSON_OperationResult(JSONAnswer, OperationStatus);
+				Result := CloudResultToFsResult(OperationResult, OperationStatus, 'File uploading error: ');
+			end;
+		end;
+
 		if Result <> FS_FILE_OK then
 		begin
 			case Result of
 				FS_FILE_USERABORT:
 					begin
 						Log(LogLevelDetail, MSGTYPE_DETAILS, 'Partial upload aborted.');
-						Splitter.Destroy;
+						SplitFileInfo.Destroy;
 						exit(FS_FILE_USERABORT);
 					end;
 				FS_FILE_EXISTS:
@@ -1708,14 +1745,15 @@ begin
 									Log(LogLevelWarning, MSGTYPE_DETAILS, 'Chunk ' + ChunkFileName + ' already exists, overwriting.');
 									if not(self.deleteFile(ChunkFileName)) then
 									begin
-										Splitter.Destroy;
+										SplitFileInfo.Destroy;
 										exit(FS_FILE_WRITEERROR);
 									end else begin
-										if (self.putFile(Splitter.SplitResult.parts[SplittedPartIndex].FileName, ChunkFileName, ConflictMode) <> FS_FILE_OK) then
-										begin
-											Splitter.Destroy;
-											exit(FS_FILE_WRITEERROR);
-										end;
+										//todo: унифицировать и отрефакторить код, чтобы обращаться к файлам/чанкам прозрачно
+										//if (self.putFile(Splitter.SplitResult.parts[SplittedPartIndex].FileName, ChunkFileName, ConflictMode) <> FS_FILE_OK) then
+										//begin
+										//SplitFileInfo.Destroy;
+										//exit(FS_FILE_WRITEERROR);
+										//end;
 									end;
 								end;
 							ChunkOverwriteIgnore: //ignore this chunk
@@ -1726,7 +1764,7 @@ begin
 							ChunkOverwriteAbort: //abort operation
 								begin
 									Log(LogLevelWarning, MSGTYPE_DETAILS, 'Chunk ' + ChunkFileName + ' already exists, aborting.');
-									Splitter.Destroy;
+									SplitFileInfo.Destroy;
 									exit(FS_FILE_NOTSUPPORTED);
 								end;
 						end;
@@ -1734,59 +1772,23 @@ begin
 				else
 					begin
 						Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Partial upload error, code: ' + Result.ToString);
-						Splitter.Destroy;
+						SplitFileInfo.Destroy;
 						exit;
 					end;
 			end;
 		end;
 	end;
-	CRCFileName := Splitter.writeCRCFile;
-	Result := self.putFile(CRCFileName, CopyExt(CRCFileName, remotePath), ConflictMode);
-	case Result of
-		FS_FILE_USERABORT:
-			begin
-				Log(LogLevelDetail, MSGTYPE_DETAILS, 'Partial upload aborted.');
-				Splitter.Destroy;
-				exit(FS_FILE_USERABORT);
-			end;
-		FS_FILE_EXISTS:
-			begin
-				case ChunkOverwriteMode of
-					ChunkOverwrite: //silently overwrite chunk
-						begin
-							Log(LogLevelDetail, MSGTYPE_DETAILS, CRCFileName + ' checksum file already exists, overwriting.');
-							if not(self.deleteFile(CopyExt(CRCFileName, remotePath))) then
-							begin
-								Splitter.Destroy;
-								exit(FS_FILE_WRITEERROR);
-							end else begin
-								if (self.putFile(CRCFileName, CopyExt(CRCFileName, remotePath), ConflictMode) <> FS_FILE_OK) then
-								begin
-									Splitter.Destroy;
-									exit(FS_FILE_WRITEERROR);
-								end;
-							end;
-						end;
-					ChunkOverwriteIgnore: //ignore this chunk
-						begin
-							Log(LogLevelDetail, MSGTYPE_DETAILS, CRCFileName + ' checksum file already exists, skipping.');
-						end;
-					ChunkOverwriteAbort: //abort operation
-						begin
-							Log(LogLevelWarning, MSGTYPE_DETAILS, CRCFileName + ' checksum file already exists, aborting.');
-							Splitter.Destroy;
-							exit(FS_FILE_NOTSUPPORTED);
-						end;
-				end;
-			end;
-		else
-			begin
-				Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Checksum file upload error, code: ' + Result.ToString);
-				Splitter.Destroy;
-				exit;
-			end;
-	end;
-	Splitter.Destroy;
+	//todo: get CRC data and put to cloud as file  like
+	{
+
+	 CRCFileStream := TMemoryStream.Create;
+	 SplitFileInfo.GetCRCData(CRCFileStream);
+
+	 Result := self.putStreamToCloud(CRCFileStream, PutResult, SplitFileInfo.CRCFilename);
+
+	}
+
+	SplitFileInfo.Destroy;
 	exit(FS_FILE_OK); //Файлик залит по частям, выходим
 end;
 
@@ -1882,7 +1884,7 @@ begin
 	self.ExternalTargetName := nil;
 end;
 
-function TCloudMailRu.putFileToCloud(localPath: WideString; Return: TStringList): integer; {Заливка на сервер состоит из двух шагов: заливаем файл на сервер в putFileToCloud и добавляем его в облако addFileToCloud}
+function TCloudMailRu.putFileToCloud(localPath: WideString; Return: TStringList; ChunkInfo: PFileChunkInfo = nil): integer; {Заливка на сервер состоит из двух шагов: заливаем файл на сервер в putFileToCloud и добавляем его в облако addFileToCloud}
 var
 	PostAnswer: WideString;
 begin
@@ -1891,7 +1893,11 @@ begin
 		exit; //Проверка на вызов без инициализации
 	if self.public_account then
 		exit;
-	Result := self.HTTPPostFile(self.upload_url + '/?cloud_domain=1&x-email=' + self.user + '%40' + self.domain + '&fileapi' + DateTimeToUnix(now).ToString + '0246', GetUNCFilePath(localPath), PostAnswer);
+	if nil = ChunkInfo then
+
+		Result := self.HTTPPostFile(self.upload_url + '/?cloud_domain=1&x-email=' + self.user + '%40' + self.domain + '&fileapi' + DateTimeToUnix(now).ToString + '0246', GetUNCFilePath(localPath), PostAnswer)
+	else
+		Result := self.HTTPPostFile(self.upload_url + '/?cloud_domain=1&x-email=' + self.user + '%40' + self.domain + '&fileapi' + DateTimeToUnix(now).ToString + '0246', GetUNCFilePath(localPath), PostAnswer, ChunkInfo^);
 	if (Result = CLOUD_OPERATION_OK) then
 	begin
 		ExtractStrings([';'], [], PWideChar(PostAnswer), Return);
