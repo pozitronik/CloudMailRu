@@ -25,6 +25,7 @@
 unit DCPsha512;
 
 {$INCLUDE '..\jedi.inc'}
+{$WARN COMBINING_SIGNED_UNSIGNED64 OFF}
 
 interface
 uses
