@@ -1768,8 +1768,10 @@ begin
 
 	for SplittedPartIndex := 0 to SplitFileInfo.ChunksCount - 1 do
 	begin
+		ChunkFileName := ExtractFilePath(remotePath) + SplitFileInfo.GetChunks[SplittedPartIndex].name;
 		self.ExternalSourceName := PWideChar(localPath);
-		self.ExternalTargetName := PWideChar(SplitFileInfo.GetChunks[SplittedPartIndex].name);
+		self.ExternalTargetName := PWideChar(ChunkFileName);
+
 
 		if self.PrecalculateHash or self.CheckCRC then
 		begin
@@ -1819,7 +1821,7 @@ begin
 
 		if OperationResult = CLOUD_OPERATION_OK then
 		begin
-			if self.addFileToCloud(UploadedChunkHash, UploadedChunkSize, ExtractFilePath(remotePath) + SplitFileInfo.GetChunks[SplittedPartIndex].name, JSONAnswer) then
+			if self.addFileToCloud(UploadedChunkHash, UploadedChunkSize, ChunkFileName, JSONAnswer) then
 			begin
 				OperationResult := fromJSON_OperationResult(JSONAnswer, OperationStatus);
 				Result := CloudResultToFsResult(OperationResult, OperationStatus, 'File uploading error: ');
