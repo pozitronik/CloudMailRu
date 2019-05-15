@@ -143,7 +143,7 @@ type
 		function getDescriptionFile(remotePath, localCopy: WideString): Boolean; //Если в каталоге remotePath есть descript.ion - скопировать его в файл localcopy
 		function putDesriptionFile(remotePath, localCopy: WideString): Boolean; //Скопировать descript.ion из временного файла на сервер
 		procedure logUserSpaceInfo();
-    {TODO: make private}
+		{TODO: make private}
 		function putFileWhole(localPath, remotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT): integer; //Загрузка файла целиком
 		function putFileSplit(localPath, remotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; ChunkOverwriteMode: integer = 0): integer; //Загрузка файла по частям
 		{STATIC ROUTINES}
@@ -1675,8 +1675,79 @@ begin
 end;
 
 function TCloudMailRu.putFileWhole(localPath, remotePath, ConflictMode: WideString): integer;
+var
+	PutResult: TStringList;
+	JSONAnswer: WideString;
+	LocalFileHash, UploadedFileHash: WideString;
+	LocalFileSize, UploadedFileSize: int64;
+	code, OperationStatus: integer;
+	OperationResult: integer;
 begin
+	LocalFileSize := 0;
+	UploadedFileSize := 0;
+	Result := FS_FILE_WRITEERROR;
+	OperationResult := CLOUD_OPERATION_FAILED;
+	PutResult := TStringList.Create;
+	self.ExternalSourceName := PWideChar(localPath);
+	self.ExternalTargetName := PWideChar(remotePath);
 
+	if self.PrecalculateHash or self.CheckCRC then
+	begin
+		LocalFileHash := cloudHash(localPath);
+		LocalFileSize := SizeOfFile(localPath);
+	end;
+	if self.PrecalculateHash and (LocalFileHash <> EmptyWideStr) and (not self.crypt_files) then {issue #135}
+	begin
+		if self.addFileToCloud(LocalFileHash, LocalFileSize, remotePath, JSONAnswer, CLOUD_CONFLICT_STRICT, false) then
+		begin
+			OperationResult := fromJSON_OperationResult(JSONAnswer, OperationStatus);
+			if OperationResult = CLOUD_OPERATION_OK then
+			begin
+				Log(LogLevelDetail, MSGTYPE_DETAILS, 'File ' + localPath + ' found by hash.');
+				exit(CLOUD_OPERATION_OK);
+			end;
+		end;
+	end;
+
+	try
+		OperationResult := self.putFileToCloud(localPath, PutResult);
+	Except
+		on E: Exception do
+		begin
+			if E.ClassName = 'EAbort' then
+			begin
+				Result := FS_FILE_USERABORT;
+			end else begin
+				Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'error: uploading to cloud: ' + E.ClassName + ' with message: ' + E.Message);
+				Result := FS_FILE_WRITEERROR;
+			end;
+		end;
+	end;
+	if OperationResult = CLOUD_OPERATION_OK then
+	begin
+		UploadedFileHash := PutResult.Strings[0];
+		val(PutResult.Strings[1], UploadedFileSize, code);
+		if self.CheckCRC then
+		begin
+			if (LocalFileSize <> UploadedFileSize) or (LocalFileHash <> UploadedFileHash) then {При включённой проверке CRC сравниваем хеши и размеры}
+				Result := CLOUD_OPERATION_FAILED;
+
+		end;
+	end else if OperationResult = CLOUD_OPERATION_CANCELLED then
+	begin
+		Result := FS_FILE_USERABORT;
+	end;
+	PutResult.free;
+	if OperationResult = CLOUD_OPERATION_OK then
+	begin
+		if self.addFileToCloud(UploadedFileHash, UploadedFileSize, remotePath, JSONAnswer) then
+		begin
+			OperationResult := fromJSON_OperationResult(JSONAnswer, OperationStatus);
+			Result := CloudResultToFsResult(OperationResult, OperationStatus, 'File uploading error: ');
+		end;
+	end;
+	self.ExternalSourceName := nil;
+	self.ExternalTargetName := nil;
 end;
 
 function TCloudMailRu.putFileSplit(localPath, remotePath, ConflictMode: WideString; ChunkOverwriteMode: integer): integer;
@@ -1692,11 +1763,14 @@ var
 begin
 	OperationResult := CLOUD_OPERATION_FAILED;
 	UploadedChunkSize := 0;
-	SplitFileInfo := TFileSplitInfo.Create(localPath, self.split_file_size); //quickly get InheritsFrom(about file parts)
+	SplitFileInfo := TFileSplitInfo.Create(localPath, self.split_file_size); //quickly get information about file parts
 	PutResult := TStringList.Create;
 
 	for SplittedPartIndex := 0 to SplitFileInfo.ChunksCount - 1 do
 	begin
+		self.ExternalSourceName := PWideChar(localPath);
+		self.ExternalTargetName := PWideChar(SplitFileInfo.GetChunks[SplittedPartIndex].name);
+
 		try
 			OperationResult := self.putFileToCloud(localPath, PutResult, @SplitFileInfo.GetChunks[SplittedPartIndex]);
 		except
@@ -1796,18 +1870,13 @@ begin
 	}
 
 	SplitFileInfo.Destroy;
+	self.ExternalSourceName := nil;
+	self.ExternalTargetName := nil;
 	exit(FS_FILE_OK); //Файлик залит по частям, выходим
 end;
 
 {Wrapper for putFileWhole/putFileSplit}
 function TCloudMailRu.putFile(localPath, remotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; ChunkOverwriteMode: integer = 0): integer;
-var
-	PutResult: TStringList;
-	JSONAnswer: WideString;
-	LocalFileHash, UploadedFileHash: WideString;
-	LocalFileSize, UploadedFileSize: int64;
-	code, OperationStatus: integer;
-	OperationResult: integer;
 begin
 	if not(Assigned(self)) then
 		exit(FS_FILE_WRITEERROR); //Проверка на вызов без инициализации
@@ -1825,71 +1894,8 @@ begin
 			exit(FS_FILE_NOTSUPPORTED);
 		end;
 	end;
-	LocalFileSize := 0;
-	UploadedFileSize := 0;
-	Result := FS_FILE_WRITEERROR;
-	OperationResult := CLOUD_OPERATION_FAILED;
-	PutResult := TStringList.Create;
-	self.ExternalSourceName := PWideChar(localPath);
-	self.ExternalTargetName := PWideChar(remotePath);
+	exit(putFileWhole(localPath, remotePath, ConflictMode));
 
-	if self.PrecalculateHash or self.CheckCRC then
-	begin
-		LocalFileHash := cloudHash(localPath);
-		LocalFileSize := SizeOfFile(localPath);
-	end;
-	if self.PrecalculateHash and (LocalFileHash <> EmptyWideStr) and (not self.crypt_files) then {issue #135}
-	begin
-		if self.addFileToCloud(LocalFileHash, LocalFileSize, remotePath, JSONAnswer, CLOUD_CONFLICT_STRICT, false) then
-		begin
-			OperationResult := fromJSON_OperationResult(JSONAnswer, OperationStatus);
-			if OperationResult = CLOUD_OPERATION_OK then
-			begin
-				Log(LogLevelDetail, MSGTYPE_DETAILS, 'File ' + localPath + ' found by hash.');
-				exit(CLOUD_OPERATION_OK);
-			end;
-		end;
-	end;
-
-	try
-		OperationResult := self.putFileToCloud(localPath, PutResult);
-	Except
-		on E: Exception do
-		begin
-			if E.ClassName = 'EAbort' then
-			begin
-				Result := FS_FILE_USERABORT;
-			end else begin
-				Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'error: uploading to cloud: ' + E.ClassName + ' with message: ' + E.Message);
-				Result := FS_FILE_WRITEERROR;
-			end;
-		end;
-	end;
-	if OperationResult = CLOUD_OPERATION_OK then
-	begin
-		UploadedFileHash := PutResult.Strings[0];
-		val(PutResult.Strings[1], UploadedFileSize, code);
-		if self.CheckCRC then
-		begin
-			if (LocalFileSize <> UploadedFileSize) or (LocalFileHash <> UploadedFileHash) then {При включённой проверке CRC сравниваем хеши и размеры}
-				Result := CLOUD_OPERATION_FAILED;
-
-		end;
-	end else if OperationResult = CLOUD_OPERATION_CANCELLED then
-	begin
-		Result := FS_FILE_USERABORT;
-	end;
-	PutResult.free;
-	if OperationResult = CLOUD_OPERATION_OK then
-	begin
-		if self.addFileToCloud(UploadedFileHash, UploadedFileSize, remotePath, JSONAnswer) then
-		begin
-			OperationResult := fromJSON_OperationResult(JSONAnswer, OperationStatus);
-			Result := CloudResultToFsResult(OperationResult, OperationStatus, 'File uploading error: ');
-		end;
-	end;
-	self.ExternalSourceName := nil;
-	self.ExternalTargetName := nil;
 end;
 
 function TCloudMailRu.putFileToCloud(localPath: WideString; Return: TStringList; ChunkInfo: PFileChunkInfo = nil): integer; {Заливка на сервер состоит из двух шагов: заливаем файл на сервер в putFileToCloud и добавляем его в облако addFileToCloud}
