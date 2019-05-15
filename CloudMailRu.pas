@@ -1694,7 +1694,7 @@ begin
 	end;
 end;
 
-function TCloudMailRu.putFileWhole(localPath, remotePath, ConflictMode: WideString): integer; {TODO: ConflictMode is not used}
+function TCloudMailRu.putFileWhole(localPath, remotePath, ConflictMode: WideString): integer;
 var
 	PutResult: TStringList;
 	JSONAnswer: WideString;
@@ -1750,7 +1750,7 @@ begin
 	PutResult.free;
 	if OperationResult = CLOUD_OPERATION_OK then
 	begin
-		if self.addFileToCloud(UploadedFileHash, UploadedFileSize, remotePath, JSONAnswer) then
+		if self.addFileToCloud(UploadedFileHash, UploadedFileSize, remotePath, JSONAnswer, ConflictMode) then
 		begin
 			OperationResult := fromJSON_OperationResult(JSONAnswer, OperationStatus);
 			Result := CloudResultToFsResult(OperationResult, OperationStatus, 'File uploading error: ');
@@ -1813,7 +1813,7 @@ begin
 
 	if OperationResult = CLOUD_OPERATION_OK then
 	begin
-		if self.addFileToCloud(UploadedChunkHash, UploadedChunkSize, remotePath, JSONAnswer) then
+		if self.addFileToCloud(UploadedChunkHash, UploadedChunkSize, remotePath, JSONAnswer, ConflictMode) then
 		begin
 			OperationResult := fromJSON_OperationResult(JSONAnswer, OperationStatus);
 			Result := CloudResultToFsResult(OperationResult, OperationStatus, 'File uploading error: ');
@@ -1868,7 +1868,7 @@ begin
 	self.ExternalTargetName := nil;
 end;
 
-function TCloudMailRu.putFileSplit(localPath, remotePath, ConflictMode: WideString; ChunkOverwriteMode: integer): integer; {TODO: ConflictMode is not used}
+function TCloudMailRu.putFileSplit(localPath, remotePath, ConflictMode: WideString; ChunkOverwriteMode: integer): integer;
 var
 	SplitFileInfo: TFileSplitInfo;
 	SplittedPartIndex: integer;
