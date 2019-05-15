@@ -87,8 +87,8 @@ type
 		{OTHER ROUTINES}
 		procedure Log(LogLevel, MsgType: integer; LogString: WideString);
 		function CloudResultToFsResult(CloudResult: integer; OperationStatus: integer; ErrorPrefix: WideString = ''): integer;
-		function cloudHash(Path: WideString): WideString; overload;
-		function cloudHash(Stream: TStream; SourceName: WideString = ''): WideString; overload;
+		function cloudHash(Path: WideString; ChunkInfo: PFileChunkInfo = nil): WideString; overload; //get cloud hash for specified file/file part
+		function cloudHash(Stream: TStream; SourceName: WideString = ''): WideString; overload; //get cloud hash for data in stream
 	protected
 		{REGULAR CLOUD}
 		function loginRegular(method: integer = CLOUD_AUTH_METHOD_WEB): Boolean;
@@ -1771,6 +1771,23 @@ begin
 		self.ExternalSourceName := PWideChar(localPath);
 		self.ExternalTargetName := PWideChar(SplitFileInfo.GetChunks[SplittedPartIndex].name);
 
+		if self.PrecalculateHash or self.CheckCRC then
+		begin
+			LocalChunkHash := cloudHash(localPath, @SplitFileInfo.GetChunks[SplittedPartIndex]);
+		end;
+		if self.PrecalculateHash and (LocalChunkHash <> EmptyWideStr) and (not self.crypt_files) then {issue #135}
+		begin
+			if self.addFileToCloud(LocalChunkHash, SplitFileInfo.GetChunks[SplittedPartIndex].size, remotePath, JSONAnswer, CLOUD_CONFLICT_STRICT, false) then
+			begin
+				OperationResult := fromJSON_OperationResult(JSONAnswer, OperationStatus);
+				if OperationResult = CLOUD_OPERATION_OK then
+				begin
+					Log(LogLevelDetail, MSGTYPE_DETAILS, 'File ' + localPath + ' found by hash.');
+					exit(CLOUD_OPERATION_OK);
+				end;
+			end;
+		end;
+
 		try
 			OperationResult := self.putFileToCloud(localPath, PutResult, @SplitFileInfo.GetChunks[SplittedPartIndex]);
 		except
@@ -2034,15 +2051,21 @@ begin
 		Result := CLOUD_SHARE_RW;
 end;
 
-function TCloudMailRu.cloudHash(Path: WideString): WideString;
+function TCloudMailRu.cloudHash(Path: WideString; ChunkInfo: PFileChunkInfo = nil): WideString;
 var
-	Stream: TFileStream;
+	Stream: TStream;
 begin
 	Result := EmptyWideStr;
 	if not FileExists(Path) then
 		exit;
+
 	try
-		Stream := TFileStream.Create(Path, fmOpenRead or fmShareDenyWrite);
+		if (nil = ChunkInfo) then
+		begin
+			Stream := TFileStream.Create(Path, fmOpenRead or fmShareDenyWrite);
+		end else begin
+			Stream := TChunkedFileStream.Create(Path, fmOpenRead or fmShareDenyWrite, ChunkInfo^.start, ChunkInfo^.size);
+		end;
 	except
 		exit;
 	end;
