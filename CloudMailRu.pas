@@ -169,7 +169,7 @@ begin
 	begin
 		if fromJSON_OperationResult(JSONAnswer, OperationStatus) = CLOUD_OPERATION_OK then
 		begin
-			Log(LogLevelDetail, MSGTYPE_DETAILS, 'File ' + localPath + ' found by hash.');
+			Log(LogLevelDetail, MSGTYPE_DETAILS, 'File ' + remotePath + ' found by hash.');
 			exit(true);
 		end;
 	end;
