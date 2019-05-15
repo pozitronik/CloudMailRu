@@ -2156,7 +2156,7 @@ begin
 	except
 		exit;
 	end;
-	result := cloudHash(Stream, ExtractFileName(Path));
+	result := cloudHash(Stream, Path);
 	Stream.free;
 
 end;
