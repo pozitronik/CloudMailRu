@@ -1795,7 +1795,7 @@ begin
 		end;
 	end;
 
-	if OperationResult = CLOUD_OPERATION_OK then
+	if OperationResult = CLOUD_OPERATION_OK then {TODO: вытащить в функцию}
 	begin
 		UploadedChunkHash := PutResult.Strings[0];
 		val(PutResult.Strings[1], UploadedChunkSize, code);
@@ -1955,7 +1955,7 @@ begin
 				end;
 		end;
 	end;
-	putFileChunkCRC(remotePath, SplitFileInfo, ConflictMode);{Заливаем CRC-файл, обработка ошибок внутри функции}
+	putFileChunkCRC(remotePath, SplitFileInfo, ConflictMode); {Заливаем CRC-файл, обработка ошибок внутри функции}
 	exit(FS_FILE_OK); //Файлик залит по частям, выходим
 end;
 
