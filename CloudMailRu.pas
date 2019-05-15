@@ -94,7 +94,7 @@ type
 		function CloudResultToFsResult(CloudResult: integer; OperationStatus: integer; ErrorPrefix: WideString = ''): integer;
 		function cloudHash(Path: WideString; ChunkInfo: PFileChunkInfo = nil): WideString; overload; //get cloud hash for specified file/file part
 		function cloudHash(Stream: TStream; SourceName: WideString = ''): WideString; overload; //get cloud hash for data in stream
-		function addByHash(Hash: WideString; size: int64; localPath, remotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; LogErrors: Boolean = true): Boolean; //addFileToCloud function wrapper with result parsing
+		function addByHash(Hash: WideString; size: int64; localPath, remotePath: WideString): Boolean; //addFileToCloud function wrapper with result parsing
 	protected
 		{REGULAR CLOUD}
 		function loginRegular(method: integer = CLOUD_AUTH_METHOD_WEB): Boolean;
@@ -159,13 +159,13 @@ implementation
 
 {TCloudMailRu}
 
-function TCloudMailRu.addByHash(Hash: WideString; size: int64; localPath, remotePath: WideString; ConflictMode: WideString; LogErrors: Boolean): Boolean;
+function TCloudMailRu.addByHash(Hash: WideString; size: int64; localPath, remotePath: WideString): Boolean;
 var
 	JSONAnswer: WideString;
 	OperationStatus: integer;
 begin
 	OperationStatus := 0;
-	if self.addFileToCloud(Hash, size, remotePath, JSONAnswer, CLOUD_CONFLICT_STRICT, LogErrors) then
+	if self.addFileToCloud(Hash, size, remotePath, JSONAnswer, CLOUD_CONFLICT_STRICT, false) then
 	begin
 		if fromJSON_OperationResult(JSONAnswer, OperationStatus) = CLOUD_OPERATION_OK then
 		begin
@@ -1716,7 +1716,7 @@ begin
 		LocalFileHash := cloudHash(localPath);
 		LocalFileSize := SizeOfFile(localPath);
 	end;
-	if self.PrecalculateHash and (LocalFileHash <> EmptyWideStr) and (not self.crypt_files) and (self.addByHash(LocalFileHash, LocalFileSize, localPath, remotePath, CLOUD_CONFLICT_STRICT, false)) then {issue #135}
+	if self.PrecalculateHash and (LocalFileHash <> EmptyWideStr) and (not self.crypt_files) and (self.addByHash(LocalFileHash, LocalFileSize, localPath, remotePath)) then {issue #135}
 		exit(CLOUD_OPERATION_OK);
 
 	try
@@ -1777,7 +1777,7 @@ begin
 	begin
 		LocalChunkHash := cloudHash(localPath, @ChunkInfo);
 	end;
-	if self.PrecalculateHash and (LocalChunkHash <> EmptyWideStr) and (not self.crypt_files) and (self.addByHash(LocalChunkHash, ChunkInfo.size, localPath, remotePath, CLOUD_CONFLICT_STRICT, false)) then {issue #135}
+	if self.PrecalculateHash and (LocalChunkHash <> EmptyWideStr) and (not self.crypt_files) and (self.addByHash(LocalChunkHash, ChunkInfo.size, localPath, remotePath)) then {issue #135}
 		exit(CLOUD_OPERATION_OK);
 
 	PutResult := TStringList.Create;
@@ -1879,7 +1879,7 @@ begin
 	begin
 		LocalFileHash := cloudHash(localPath);
 	end;
-	if self.PrecalculateHash and (LocalFileHash <> EmptyWideStr) and (not self.crypt_files) and (self.addByHash(LocalFileHash, SizeOfFile(localPath), localPath, remotePath, CLOUD_CONFLICT_STRICT, false)) then {issue #135}
+	if self.PrecalculateHash and (LocalFileHash <> EmptyWideStr) and (not self.crypt_files) and (self.addByHash(LocalFileHash, SizeOfFile(localPath), localPath, remotePath)) then {issue #135}
 		exit(CLOUD_OPERATION_OK);
 
 	SplitFileInfo := TFileSplitInfo.Create(localPath, self.split_file_size); //quickly get information about file parts
