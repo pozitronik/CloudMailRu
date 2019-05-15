@@ -64,7 +64,7 @@ type
 		function HTTPExceptionHandler(E: Exception; URL: WideString; HTTPMethod: integer = HTTP_METHOD_POST; LogErrors: Boolean = true): integer;
 
 		procedure HTTPProgress(ASender: TObject; AWorkMode: TWorkMode; AWorkCount: int64);
-		{RAW TEXT PARSING}
+		{RAW TEXT PARSING}{TODO: Move to separate unit}
 		function extractNearValue(Text, Anchor: WideString; StartChar: WideChar = '"'; EndChar: WideChar = '"'): WideString;
 		function extractTokenFromText(Text: WideString; var token: WideString): Boolean;
 		function extractPublicTokenFromText(Text: WideString; var PublicToken: WideString): Boolean;
