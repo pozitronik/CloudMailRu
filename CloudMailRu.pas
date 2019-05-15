@@ -143,7 +143,9 @@ type
 		function getDescriptionFile(remotePath, localCopy: WideString): Boolean; //Если в каталоге remotePath есть descript.ion - скопировать его в файл localcopy
 		function putDesriptionFile(remotePath, localCopy: WideString): Boolean; //Скопировать descript.ion из временного файла на сервер
 		procedure logUserSpaceInfo();
-		function putFileSplit(localPath, remotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; ChunkOverwriteMode: integer = 0): integer;
+    {TODO: make private}
+		function putFileWhole(localPath, remotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT): integer; //Загрузка файла целиком
+		function putFileSplit(localPath, remotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; ChunkOverwriteMode: integer = 0): integer; //Загрузка файла по частям
 		{STATIC ROUTINES}
 		class function CloudAccessToString(access: WideString; Invert: Boolean = false): WideString; static;
 		class function StringToCloudAccess(accessString: WideString; Invert: Boolean = false): integer; static;
@@ -1672,6 +1674,11 @@ begin
 	end;
 end;
 
+function TCloudMailRu.putFileWhole(localPath, remotePath, ConflictMode: WideString): integer;
+begin
+
+end;
+
 function TCloudMailRu.putFileSplit(localPath, remotePath, ConflictMode: WideString; ChunkOverwriteMode: integer): integer;
 var
 	SplitFileInfo: TFileSplitInfo;
@@ -1792,6 +1799,7 @@ begin
 	exit(FS_FILE_OK); //Файлик залит по частям, выходим
 end;
 
+{Wrapper for putFileWhole/putFileSplit}
 function TCloudMailRu.putFile(localPath, remotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; ChunkOverwriteMode: integer = 0): integer;
 var
 	PutResult: TStringList;
@@ -1806,7 +1814,7 @@ begin
 	if self.public_account then
 		exit(FS_FILE_NOTSUPPORTED);
 
-	if (not(self.unlimited_filesize)) and (SizeOfFile(GetUNCFilePath(localPath)) > self.split_file_size) then //todo вынести в процiдурку
+	if (not(self.unlimited_filesize)) and (SizeOfFile(GetUNCFilePath(localPath)) > self.split_file_size) then
 	begin
 		if self.split_large_files then
 		begin
