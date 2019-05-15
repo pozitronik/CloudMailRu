@@ -147,6 +147,8 @@ type
 		function putFileWhole(localPath, remotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT): integer; //Загрузка файла целиком
 		function putFileSplit(localPath, remotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; ChunkOverwriteMode: integer = 0): integer; //Загрузка файла по частям
 		function putFileChunk(localPath, remotePath: WideString; ChunkInfo: TFileChunkInfo; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; ChunkOverwriteMode: integer = 0): integer; //Загрузка указанной части файла
+
+		function addByHash(Hash: WideString; size: int64; localPath, remotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; LogErrors: Boolean = true): Boolean; //wrapper of addFileToCloud function with result parsing
 		{STATIC ROUTINES}
 		class function CloudAccessToString(access: WideString; Invert: Boolean = false): WideString; static;
 		class function StringToCloudAccess(accessString: WideString; Invert: Boolean = false): integer; static;
@@ -156,6 +158,23 @@ type
 implementation
 
 {TCloudMailRu}
+
+function TCloudMailRu.addByHash(Hash: WideString; size: int64; localPath, remotePath: WideString; ConflictMode: WideString; LogErrors: Boolean): Boolean;
+var
+	JSONAnswer: WideString;
+	OperationStatus: integer;
+begin
+	OperationStatus := 0;
+	if self.addFileToCloud(Hash, size, remotePath, JSONAnswer, CLOUD_CONFLICT_STRICT, LogErrors) then
+	begin
+		if fromJSON_OperationResult(JSONAnswer, OperationStatus) = CLOUD_OPERATION_OK then
+		begin
+			Log(LogLevelDetail, MSGTYPE_DETAILS, 'File ' + localPath + ' found by hash.');
+			exit(true);
+		end;
+	end;
+	exit(false);
+end;
 
 function TCloudMailRu.addFileToCloud(Hash: WideString; size: int64; remotePath: WideString; var JSONAnswer: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; LogErrors: Boolean = true): Boolean;
 var
@@ -1697,18 +1716,8 @@ begin
 		LocalFileHash := cloudHash(localPath);
 		LocalFileSize := SizeOfFile(localPath);
 	end;
-	if self.PrecalculateHash and (LocalFileHash <> EmptyWideStr) and (not self.crypt_files) then {issue #135}
-	begin
-		if self.addFileToCloud(LocalFileHash, LocalFileSize, remotePath, JSONAnswer, CLOUD_CONFLICT_STRICT, false) then
-		begin
-			OperationResult := fromJSON_OperationResult(JSONAnswer, OperationStatus);
-			if OperationResult = CLOUD_OPERATION_OK then
-			begin
-				Log(LogLevelDetail, MSGTYPE_DETAILS, 'File ' + localPath + ' found by hash.');
-				exit(CLOUD_OPERATION_OK);
-			end;
-		end;
-	end;
+	if self.PrecalculateHash and (LocalFileHash <> EmptyWideStr) and (not self.crypt_files) and (self.addByHash(LocalFileHash, LocalFileSize, localPath, remotePath, CLOUD_CONFLICT_STRICT, false)) then {issue #135}
+		exit(CLOUD_OPERATION_OK);
 
 	try
 		OperationResult := self.putFileToCloud(localPath, PutResult);
@@ -1768,18 +1777,8 @@ begin
 	begin
 		LocalChunkHash := cloudHash(localPath, @ChunkInfo);
 	end;
-	if self.PrecalculateHash and (LocalChunkHash <> EmptyWideStr) and (not self.crypt_files) then {issue #135}
-	begin
-		if self.addFileToCloud(LocalChunkHash, ChunkInfo.size, remotePath, JSONAnswer, CLOUD_CONFLICT_STRICT, false) then
-		begin
-			OperationResult := fromJSON_OperationResult(JSONAnswer, OperationStatus);
-			if OperationResult = CLOUD_OPERATION_OK then
-			begin
-				Log(LogLevelDetail, MSGTYPE_DETAILS, 'File ' + localPath + ' found by hash.');
-				exit(CLOUD_OPERATION_OK);
-			end;
-		end;
-	end;
+	if self.PrecalculateHash and (LocalChunkHash <> EmptyWideStr) and (not self.crypt_files) and (self.addByHash(LocalChunkHash, ChunkInfo.size, localPath, remotePath, CLOUD_CONFLICT_STRICT, false)) then {issue #135}
+		exit(CLOUD_OPERATION_OK);
 
 	PutResult := TStringList.Create;
 	try
@@ -1872,8 +1871,7 @@ end;
 function TCloudMailRu.putFileSplit(localPath, remotePath, ConflictMode: WideString; ChunkOverwriteMode: integer): integer; {TODO: ConflictMode is not used}
 var
 	SplitFileInfo: TFileSplitInfo;
-	SplittedPartIndex, OperationStatus: integer;
-	JSONAnswer: WideString;
+	SplittedPartIndex: integer;
 	LocalFileHash: WideString;
 begin
 
@@ -1881,17 +1879,8 @@ begin
 	begin
 		LocalFileHash := cloudHash(localPath);
 	end;
-	if self.PrecalculateHash and (LocalFileHash <> EmptyWideStr) and (not self.crypt_files) then {issue #135}    {TODO: move to function}
-	begin
-		if self.addFileToCloud(LocalFileHash, SizeOfFile(localPath), remotePath, JSONAnswer, CLOUD_CONFLICT_STRICT, false) then
-		begin
-			if fromJSON_OperationResult(JSONAnswer, OperationStatus) = CLOUD_OPERATION_OK then
-			begin
-				Log(LogLevelDetail, MSGTYPE_DETAILS, 'File ' + localPath + ' found by hash.');
-				exit(CLOUD_OPERATION_OK);
-			end;
-		end;
-	end;
+	if self.PrecalculateHash and (LocalFileHash <> EmptyWideStr) and (not self.crypt_files) and (self.addByHash(LocalFileHash, SizeOfFile(localPath), localPath, remotePath, CLOUD_CONFLICT_STRICT, false)) then {issue #135}
+		exit(CLOUD_OPERATION_OK);
 
 	SplitFileInfo := TFileSplitInfo.Create(localPath, self.split_file_size); //quickly get information about file parts
 
