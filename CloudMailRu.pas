@@ -58,6 +58,7 @@ type
 		function HTTPPostMultipart(URL: WideString; Params: TDictionary<WideString, WideString>; var Answer: WideString): Boolean;
 		function HTTPPostFile(URL: WideString; FileName: WideString; var Answer: WideString): integer; overload; //Постинг файла и получение ответа
 		function HTTPPostFile(URL: WideString; FileName: WideString; var Answer: WideString; ChunkInfo: TFileChunkInfo): integer; overload; //Постинг файла и получение ответа
+		function HTTPPostFile(URL: WideString; FileName: WideString; FileStream: TStream; var Answer: WideString): integer; overload; //Постинг потока данных как файла
 
 		function HTTPPost(URL: WideString; PostData, ResultData: TStringStream; UnderstandResponseCode: Boolean = false; ContentType: WideString = ''; LogErrors: Boolean = true; ProgressEnabled: Boolean = true): integer; overload; //Постинг подготовленных данных, отлов ошибок
 		function HTTPPost(URL: WideString; var PostData: TIdMultiPartFormDataStream; ResultData: TStringStream): integer; overload; //TIdMultiPartFormDataStream should be passed via var
@@ -1113,51 +1114,46 @@ end;
 
 function TCloudMailRu.HTTPPostFile(URL: WideString; FileName: WideString; var Answer: WideString): integer;
 var
-	PostData: TIdMultiPartFormDataStream;
-	ResultStream: TStringStream;
-	MemoryStream: TMemoryStream;
 	FileStream: TFileStream;
 begin
-	ResultStream := TStringStream.Create;
-	PostData := TIdMultiPartFormDataStream.Create;
-
-	if self.crypt_files then
-	begin
-		MemoryStream := TMemoryStream.Create;
-		FileStream := TFileStream.Create(FileName, fmOpenRead or fmShareDenyWrite);
-		self.FileCipher.CryptStream(FileStream, MemoryStream);
-		MemoryStream.Position := 0;
-		PostData.AddFormField('file', 'application/octet-stream', EmptyWideStr, MemoryStream, FileName);
-		result := self.HTTPPost(URL, PostData, ResultStream);
-		MemoryStream.free;
-		FileStream.free;
-	end else begin
-		PostData.AddFile('file', FileName, 'application/octet-stream');
-		result := self.HTTPPost(URL, PostData, ResultStream);
-	end;
-
-	Answer := ResultStream.DataString;
-	ResultStream.free;
-	PostData.free;
+	FileStream := TFileStream.Create(FileName, fmOpenRead or fmShareDenyWrite);
+	result := self.HTTPPostFile(URL, FileName, FileStream, Answer);
+	FileStream.free;
 end;
 
 function TCloudMailRu.HTTPPostFile(URL, FileName: WideString; var Answer: WideString; ChunkInfo: TFileChunkInfo): integer;
 var
-	PostData: TIdMultiPartFormDataStream;
 	ChunkStream: TChunkedFileStream;
+begin
+	ChunkStream := TChunkedFileStream.Create(FileName, fmOpenRead or fmShareDenyWrite, ChunkInfo.start, ChunkInfo.size); {FIXME TODO: Bug here - TChunkedFileStream некорректно обрабатывает файлы больше какого-то лимита}
+	result := self.HTTPPostFile(URL, ChunkInfo.name, ChunkStream, Answer);
+	ChunkStream.free;
+end;
+
+function TCloudMailRu.HTTPPostFile(URL, FileName: WideString; FileStream: TStream; var Answer: WideString): integer;
+var
+	PostData: TIdMultiPartFormDataStream;
 	ResultStream: TStringStream;
+	MemoryStream: TMemoryStream;
 begin
 	ResultStream := TStringStream.Create;
-	ChunkStream := TChunkedFileStream.Create(FileName, fmOpenRead or fmShareDenyWrite, ChunkInfo.start, ChunkInfo.size);
 	PostData := TIdMultiPartFormDataStream.Create;
+	MemoryStream := TMemoryStream.Create;
 
-	PostData.AddFormField('file', 'application/octet-stream', EmptyWideStr, ChunkStream, ChunkInfo.name);
+	if self.crypt_files then {Will encrypt any type of data passed here}
+	begin
+		self.FileCipher.CryptStream(FileStream, MemoryStream);
+		MemoryStream.Position := 0;
+		PostData.AddFormField('file', 'application/octet-stream', EmptyWideStr, MemoryStream, FileName);
+	end else begin
+		PostData.AddFormField('file', 'application/octet-stream', EmptyWideStr, FileStream, FileName);
+	end;
+
 	result := self.HTTPPost(URL, PostData, ResultStream);
-
 	Answer := ResultStream.DataString;
+	MemoryStream.free;
 	ResultStream.free;
 	PostData.free;
-	ChunkStream.free;
 end;
 
 function TCloudMailRu.HTTPPost(URL: WideString; PostData, ResultData: TStringStream; UnderstandResponseCode: Boolean = false; ContentType: WideString = ''; LogErrors: Boolean = true; ProgressEnabled: Boolean = true): integer;
