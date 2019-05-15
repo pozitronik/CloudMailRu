@@ -1900,7 +1900,6 @@ begin
 		self.putFileChunk(localPath, ExtractFilePath(remotePath) + SplitFileInfo.GetChunks[SplittedPartIndex].name, SplitFileInfo.GetChunks[SplittedPartIndex], ConflictMode, ChunkOverwriteMode);
 	end;
 	SplitFileInfo.Destroy;
-	SplitFileInfo.Destroy;
 
 	exit(FS_FILE_OK); //Файлик залит по частям, выходим
 end;
