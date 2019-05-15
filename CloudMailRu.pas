@@ -146,6 +146,7 @@ type
 		{TODO: make private}
 		function putFileWhole(localPath, remotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT): integer; //Загрузка файла целиком
 		function putFileSplit(localPath, remotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; ChunkOverwriteMode: integer = 0): integer; //Загрузка файла по частям
+		function putFileChunk(localPath, remotePath: WideString; ChunkInfo: TFileChunkInfo; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; ChunkOverwriteMode: integer = 0): integer; //Загрузка указанной части файла
 		{STATIC ROUTINES}
 		class function CloudAccessToString(access: WideString; Invert: Boolean = false): WideString; static;
 		class function StringToCloudAccess(accessString: WideString; Invert: Boolean = false): integer; static;
@@ -1674,7 +1675,7 @@ begin
 	end;
 end;
 
-function TCloudMailRu.putFileWhole(localPath, remotePath, ConflictMode: WideString): integer;
+function TCloudMailRu.putFileWhole(localPath, remotePath, ConflictMode: WideString): integer; {TODO: ConflictMode is not used}
 var
 	PutResult: TStringList;
 	JSONAnswer: WideString;
@@ -1750,147 +1751,157 @@ begin
 	self.ExternalTargetName := nil;
 end;
 
-function TCloudMailRu.putFileSplit(localPath, remotePath, ConflictMode: WideString; ChunkOverwriteMode: integer): integer;
+function TCloudMailRu.putFileChunk(localPath, remotePath: WideString; ChunkInfo: TFileChunkInfo; ConflictMode: WideString; ChunkOverwriteMode: integer): integer;
 var
-	SplitFileInfo: TFileSplitInfo;
-	SplitResult, SplittedPartIndex, OperationStatus: integer;
-	ChunkFileName: WideString;
-	PutResult: TStringList;
-	code, OperationResult: integer;
-	LocalChunkHash, UploadedChunkHash: WideString;
-	UploadedChunkSize: int64;
 	JSONAnswer: WideString;
+	LocalChunkHash, UploadedChunkHash: WideString;
+	code, OperationResult, OperationStatus: integer;
+	PutResult: TStringList;
+	UploadedChunkSize: int64;
 begin
 	OperationResult := CLOUD_OPERATION_FAILED;
 	UploadedChunkSize := 0;
-	SplitFileInfo := TFileSplitInfo.Create(localPath, self.split_file_size); //quickly get information about file parts
-	PutResult := TStringList.Create;
+	self.ExternalSourceName := PWideChar(localPath);
+	self.ExternalTargetName := PWideChar(remotePath);
 
-	for SplittedPartIndex := 0 to SplitFileInfo.ChunksCount - 1 do
+	if self.PrecalculateHash or self.CheckCRC then
 	begin
-		ChunkFileName := ExtractFilePath(remotePath) + SplitFileInfo.GetChunks[SplittedPartIndex].name;
-		self.ExternalSourceName := PWideChar(localPath);
-		self.ExternalTargetName := PWideChar(ChunkFileName);
-
-
-		if self.PrecalculateHash or self.CheckCRC then
+		LocalChunkHash := cloudHash(localPath, @ChunkInfo);
+	end;
+	if self.PrecalculateHash and (LocalChunkHash <> EmptyWideStr) and (not self.crypt_files) then {issue #135}
+	begin
+		if self.addFileToCloud(LocalChunkHash, ChunkInfo.size, remotePath, JSONAnswer, CLOUD_CONFLICT_STRICT, false) then
 		begin
-			LocalChunkHash := cloudHash(localPath, @SplitFileInfo.GetChunks[SplittedPartIndex]);
-		end;
-		if self.PrecalculateHash and (LocalChunkHash <> EmptyWideStr) and (not self.crypt_files) then {issue #135}
-		begin
-			if self.addFileToCloud(LocalChunkHash, SplitFileInfo.GetChunks[SplittedPartIndex].size, remotePath, JSONAnswer, CLOUD_CONFLICT_STRICT, false) then
+			OperationResult := fromJSON_OperationResult(JSONAnswer, OperationStatus);
+			if OperationResult = CLOUD_OPERATION_OK then
 			begin
-				OperationResult := fromJSON_OperationResult(JSONAnswer, OperationStatus);
-				if OperationResult = CLOUD_OPERATION_OK then
-				begin
-					Log(LogLevelDetail, MSGTYPE_DETAILS, 'File ' + localPath + ' found by hash.');
-					exit(CLOUD_OPERATION_OK);
-				end;
-			end;
-		end;
-
-		try
-			OperationResult := self.putFileToCloud(localPath, PutResult, @SplitFileInfo.GetChunks[SplittedPartIndex]);
-		except
-			on E: Exception do
-			begin
-				if E.ClassName = 'EAbort' then
-				begin
-					Result := FS_FILE_USERABORT;
-				end else begin
-					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'error: uploading to cloud: ' + E.ClassName + ' with message: ' + E.Message);
-					Result := FS_FILE_WRITEERROR;
-				end;
-			end;
-		end;
-
-		if OperationResult = CLOUD_OPERATION_OK then
-		begin
-			UploadedChunkHash := PutResult.Strings[0];
-			val(PutResult.Strings[1], UploadedChunkSize, code);
-			if self.CheckCRC then
-			begin
-				if (SplitFileInfo.GetChunks[SplittedPartIndex].size <> UploadedChunkSize) or (LocalChunkHash <> UploadedChunkHash) then {При включённой проверке CRC сравниваем хеши и размеры}
-					Result := CLOUD_OPERATION_FAILED;
-			end;
-		end else if OperationResult = CLOUD_OPERATION_CANCELLED then
-		begin
-			Result := FS_FILE_USERABORT;
-		end;
-
-		if OperationResult = CLOUD_OPERATION_OK then
-		begin
-			if self.addFileToCloud(UploadedChunkHash, UploadedChunkSize, ChunkFileName, JSONAnswer) then
-			begin
-				OperationResult := fromJSON_OperationResult(JSONAnswer, OperationStatus);
-				Result := CloudResultToFsResult(OperationResult, OperationStatus, 'File uploading error: ');
-			end;
-		end;
-
-		if Result <> FS_FILE_OK then
-		begin
-			case Result of
-				FS_FILE_USERABORT:
-					begin
-						Log(LogLevelDetail, MSGTYPE_DETAILS, 'Partial upload aborted.');
-						SplitFileInfo.Destroy;
-						exit(FS_FILE_USERABORT);
-					end;
-				FS_FILE_EXISTS:
-					begin
-						case ChunkOverwriteMode of
-							ChunkOverwrite: //silently overwrite chunk
-								begin
-									Log(LogLevelWarning, MSGTYPE_DETAILS, 'Chunk ' + ChunkFileName + ' already exists, overwriting.');
-									if not(self.deleteFile(ChunkFileName)) then
-									begin
-										SplitFileInfo.Destroy;
-										exit(FS_FILE_WRITEERROR);
-									end else begin
-										//todo: унифицировать и отрефакторить код, чтобы обращаться к файлам/чанкам прозрачно
-										//if (self.putFile(Splitter.SplitResult.parts[SplittedPartIndex].FileName, ChunkFileName, ConflictMode) <> FS_FILE_OK) then
-										//begin
-										//SplitFileInfo.Destroy;
-										//exit(FS_FILE_WRITEERROR);
-										//end;
-									end;
-								end;
-							ChunkOverwriteIgnore: //ignore this chunk
-								begin
-									Log(LogLevelWarning, MSGTYPE_DETAILS, 'Chunk ' + ChunkFileName + ' already exists, skipping.');
-									Continue;
-								end;
-							ChunkOverwriteAbort: //abort operation
-								begin
-									Log(LogLevelWarning, MSGTYPE_DETAILS, 'Chunk ' + ChunkFileName + ' already exists, aborting.');
-									SplitFileInfo.Destroy;
-									exit(FS_FILE_NOTSUPPORTED);
-								end;
-						end;
-					end;
-				else
-					begin
-						Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Partial upload error, code: ' + Result.ToString);
-						SplitFileInfo.Destroy;
-						exit;
-					end;
+				Log(LogLevelDetail, MSGTYPE_DETAILS, 'File ' + localPath + ' found by hash.');
+				exit(CLOUD_OPERATION_OK);
 			end;
 		end;
 	end;
-	//todo: get CRC data and put to cloud as file  like
-	{
 
-	 CRCFileStream := TMemoryStream.Create;
-	 SplitFileInfo.GetCRCData(CRCFileStream);
+	PutResult := TStringList.Create;
+	try
+		OperationResult := self.putFileToCloud(localPath, PutResult, @ChunkInfo);
+	except
+		on E: Exception do
+		begin
+			if E.ClassName = 'EAbort' then
+			begin
+				Result := FS_FILE_USERABORT;
+			end else begin
+				Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'error: uploading to cloud: ' + E.ClassName + ' with message: ' + E.Message);
+				Result := FS_FILE_WRITEERROR;
+			end;
+		end;
+	end;
 
-	 Result := self.putStreamToCloud(CRCFileStream, PutResult, SplitFileInfo.CRCFilename);
+	if OperationResult = CLOUD_OPERATION_OK then
+	begin
+		UploadedChunkHash := PutResult.Strings[0];
+		val(PutResult.Strings[1], UploadedChunkSize, code);
+		if self.CheckCRC then
+		begin
+			if (ChunkInfo.size <> UploadedChunkSize) or (LocalChunkHash <> UploadedChunkHash) then {При включённой проверке CRC сравниваем хеши и размеры}
+				Result := CLOUD_OPERATION_FAILED;
+		end;
+	end else if OperationResult = CLOUD_OPERATION_CANCELLED then
+	begin
+		Result := FS_FILE_USERABORT;
+	end;
+	PutResult.Destroy;
 
-	}
+	if OperationResult = CLOUD_OPERATION_OK then
+	begin
+		if self.addFileToCloud(UploadedChunkHash, UploadedChunkSize, remotePath, JSONAnswer) then
+		begin
+			OperationResult := fromJSON_OperationResult(JSONAnswer, OperationStatus);
+			Result := CloudResultToFsResult(OperationResult, OperationStatus, 'File uploading error: ');
+		end;
+	end;
 
-	SplitFileInfo.Destroy;
+	if Result <> FS_FILE_OK then
+	begin
+		case Result of
+			FS_FILE_USERABORT:
+				begin
+					Log(LogLevelDetail, MSGTYPE_DETAILS, 'Partial upload aborted.');
+					exit(FS_FILE_USERABORT);
+				end;
+			FS_FILE_EXISTS:
+				begin
+					case ChunkOverwriteMode of
+						ChunkOverwrite: //silently overwrite chunk
+							begin
+								Log(LogLevelWarning, MSGTYPE_DETAILS, 'Chunk ' + remotePath + ' already exists, overwriting.');
+								if not(self.deleteFile(remotePath)) then
+								begin
+									exit(FS_FILE_WRITEERROR);
+								end else begin
+									if (self.putFileChunk(localPath, remotePath, ChunkInfo, ConflictMode, ChunkOverwriteMode) <> FS_FILE_OK) then
+									begin
+										exit(FS_FILE_WRITEERROR);
+									end;
+
+								end;
+							end;
+						ChunkOverwriteIgnore: //ignore this chunk
+							begin
+								Log(LogLevelWarning, MSGTYPE_DETAILS, 'Chunk ' + remotePath + ' already exists, skipping.');
+								exit(FS_FILE_OK); //ignore and continue
+							end;
+						ChunkOverwriteAbort: //abort operation
+							begin
+								Log(LogLevelWarning, MSGTYPE_DETAILS, 'Chunk ' + remotePath + ' already exists, aborting.');
+								exit(FS_FILE_NOTSUPPORTED);
+							end;
+					end;
+				end;
+			else
+				begin
+					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Partial upload error, code: ' + Result.ToString);
+					exit;
+				end;
+		end;
+	end;
 	self.ExternalSourceName := nil;
 	self.ExternalTargetName := nil;
+end;
+
+function TCloudMailRu.putFileSplit(localPath, remotePath, ConflictMode: WideString; ChunkOverwriteMode: integer): integer; {TODO: ConflictMode is not used}
+var
+	SplitFileInfo: TFileSplitInfo;
+	SplittedPartIndex, OperationStatus: integer;
+	JSONAnswer: WideString;
+	LocalFileHash: WideString;
+begin
+
+	if self.PrecalculateHash then //try to add whole file by hash at first.
+	begin
+		LocalFileHash := cloudHash(localPath);
+	end;
+	if self.PrecalculateHash and (LocalFileHash <> EmptyWideStr) and (not self.crypt_files) then {issue #135}    {TODO: move to function}
+	begin
+		if self.addFileToCloud(LocalFileHash, SizeOfFile(localPath), remotePath, JSONAnswer, CLOUD_CONFLICT_STRICT, false) then
+		begin
+			if fromJSON_OperationResult(JSONAnswer, OperationStatus) = CLOUD_OPERATION_OK then
+			begin
+				Log(LogLevelDetail, MSGTYPE_DETAILS, 'File ' + localPath + ' found by hash.');
+				exit(CLOUD_OPERATION_OK);
+			end;
+		end;
+	end;
+
+	SplitFileInfo := TFileSplitInfo.Create(localPath, self.split_file_size); //quickly get information about file parts
+
+	for SplittedPartIndex := 0 to SplitFileInfo.ChunksCount - 1 do
+	begin
+		self.putFileChunk(localPath, ExtractFilePath(remotePath) + SplitFileInfo.GetChunks[SplittedPartIndex].name, SplitFileInfo.GetChunks[SplittedPartIndex], ConflictMode, ChunkOverwriteMode);
+	end;
+	SplitFileInfo.Destroy;
+	SplitFileInfo.Destroy;
+
 	exit(FS_FILE_OK); //Файлик залит по частям, выходим
 end;
 
