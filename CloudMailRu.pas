@@ -733,7 +733,7 @@ end;
 
 function TCloudMailRu.getFileRegular(remotePath, localPath: WideString; var resultHash: WideString; LogErrors: Boolean): integer;
 var
-	FileStream: TFileStream;
+	FileStream: TFileStream; //TODO: use TBufferedFileStream instead
 	FileName: WideString;
 	MemoryStream: TMemoryStream;
 begin
@@ -1807,7 +1807,7 @@ begin
 		begin
 			UploadedChunkHash := PutResult.Strings[0];
 			val(PutResult.Strings[1], UploadedChunkSize, code);
-			if self.CheckCRC then //todo
+			if self.CheckCRC then
 			begin
 				if (SplitFileInfo.GetChunks[SplittedPartIndex].size <> UploadedChunkSize) or (LocalChunkHash <> UploadedChunkHash) then {При включённой проверке CRC сравниваем хеши и размеры}
 					Result := CLOUD_OPERATION_FAILED;
