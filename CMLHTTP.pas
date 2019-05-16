@@ -37,8 +37,6 @@ type
 
 		function PostForm(URL: WideString; PostDataString: WideString; var Answer: WideString; ContentType: WideString = 'application/x-www-form-urlencoded'; LogErrors: Boolean = true; ProgressEnabled: Boolean = true): Boolean; //Постинг данных с возможным получением ответа.
 		function PostMultipart(URL: WideString; Params: TDictionary<WideString, WideString>; var Answer: WideString): Boolean;
-		function PostFile(URL: WideString; FileName: WideString; var Answer: WideString): integer; overload; //Постинг файла и получение ответа
-		function PostFile(URL: WideString; FileName: WideString; var Answer: WideString; ChunkInfo: TFileChunkInfo): integer; overload; //Постинг файла и получение ответа
 		function PostFile(URL: WideString; FileName: WideString; FileStream: TStream; var Answer: WideString): integer; overload; //Постинг потока данных как файла
 
 		function Post(URL: WideString; PostData, ResultData: TStringStream; UnderstandResponseCode: Boolean = false; ContentType: WideString = ''; LogErrors: Boolean = true; ProgressEnabled: Boolean = true): integer; overload; //Постинг подготовленных данных, отлов ошибок
@@ -259,51 +257,23 @@ begin
 	end;
 end;
 
-function TCloudMailRuHTTP.PostFile(URL, FileName: WideString; var Answer: WideString): integer;
-var
-	FileStream: TFileStream;
-begin
-	FileStream := TFileStream.Create(FileName, fmOpenRead or fmShareDenyWrite);
-	result := self.PostFile(URL, FileName, FileStream, Answer);
-	FileStream.free;
-end;
-
 function TCloudMailRuHTTP.PostFile(URL, FileName: WideString; FileStream: TStream; var Answer: WideString): integer;
 var
 	PostData: TIdMultiPartFormDataStream;
 	ResultStream: TStringStream;
-	MemoryStream: TMemoryStream;
+
 begin
 	ResultStream := TStringStream.Create;
 	PostData := TIdMultiPartFormDataStream.Create;
-	MemoryStream := TMemoryStream.Create;
-	(*TODO: Шифрование потока должно обрабатываться базовым классом
-	 if self.crypt_files then {Will encrypt any type of data passed here}
-	 begin
-	 self.FileCipher.CryptStream(FileStream, MemoryStream);
-	 MemoryStream.Position := 0;
-	 PostData.AddFormField('file', 'application/octet-stream', EmptyWideStr, MemoryStream, FileName);
-	 end else begin
-	 PostData.AddFormField('file', 'application/octet-stream', EmptyWideStr, FileStream, FileName);
-	 end;*)
 
 	result := self.Post(URL, PostData, ResultStream);
 	Answer := ResultStream.DataString;
-	MemoryStream.free;
+
 	ResultStream.free;
 	PostData.free;
 end;
 
-function TCloudMailRuHTTP.PostFile(URL, FileName: WideString; var Answer: WideString; ChunkInfo: TFileChunkInfo): integer;
-var
-	ChunkStream: TChunkedFileStream;
-begin
-	ChunkStream := TChunkedFileStream.Create(FileName, fmOpenRead or fmShareDenyWrite, ChunkInfo.start, ChunkInfo.size); {FIXME TODO: Bug here - TChunkedFileStream некорректно обрабатывает файлы больше какого-то лимита}
-	result := self.PostFile(URL, ChunkInfo.name, ChunkStream, Answer);
-	ChunkStream.free;
-end;
-
-{TODO: Базовый метод постинга должен работать с потоком,}
+{TODO: Базовый метод постинга должен работать с потоком}
 function TCloudMailRuHTTP.PostForm(URL, PostDataString: WideString; var Answer: WideString; ContentType: WideString; LogErrors, ProgressEnabled: Boolean): Boolean;
 var
 	ResultStream, PostData: TStringStream;
