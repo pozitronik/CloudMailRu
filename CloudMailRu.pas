@@ -300,7 +300,7 @@ begin
 		HTTPSettings.UploadBPS := UploadBPS;
 		HTTPSettings.DownloadBPS := DownloadBPS;
 
-		self.HTTP := TCloudMailRuHTTP.Create(HTTPSettings, ExternalProgressProc, ExternalLogProc, ExternalRequestProc);
+		self.HTTP := TCloudMailRuHTTP.Create(HTTPSettings, ExternalProgressProc, ExternalLogProc);
 
 		self.user := AccountSettings.user;
 		self.password := AccountSettings.password;
@@ -399,6 +399,7 @@ end;
 
 destructor TCloudMailRu.Destroy;
 begin
+	self.HTTP.Destroy;
 	if Assigned(self.FileCipher) then
 		self.FileCipher.Destroy;
 
@@ -623,7 +624,7 @@ end;
 function TCloudMailRu.getFileRegular(remotePath, localPath: WideString; var resultHash: WideString; LogErrors: Boolean): integer;
 var
 	FileStream: TFileStream; //TODO: use TBufferedFileStream instead
-	FileName: WideString;
+	URL, FileName: WideString;
 	MemoryStream: TMemoryStream;
 begin
 	result := FS_FILE_NOTSUPPORTED;
@@ -655,7 +656,15 @@ begin
 	if self.crypt_files then //Загрузка файла в память, дешифрация в файл
 	begin
 		MemoryStream := TMemoryStream.Create;
-		result := self.HTTP.getFile(self.Shard + PathToUrl(remotePath, false), MemoryStream, LogErrors);
+		URL := self.Shard + PathToUrl(remotePath, false);
+		result := self.HTTP.getFile(URL, MemoryStream, LogErrors);
+		if result in [FS_FILE_NOTSUPPORTED] then //this code returned on shard connection error
+		begin
+			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Redirection limit reached when trying to download ' + URL);
+			if (self.ExternalRequestProc(RT_MsgYesNo, 'Redirection limit', 'Try with another shard?', '', 0)) and (self.getShard(self.Shard)) then
+				result := self.getFileRegular(remotePath, localPath, resultHash, LogErrors);
+		end;
+
 		if result in [FS_FILE_OK] then
 		begin
 			resultHash := cloudHash(MemoryStream, ExtractFileName(localPath));

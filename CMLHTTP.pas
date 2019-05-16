@@ -20,19 +20,18 @@ type
 
 		ExternalProgressProc: TProgressHandler;
 		ExternalLogProc: TLogHandler;
-		ExternalRequestProc: TRequestHandler;
 
 		{PROCEDURES}
 		procedure Log(LogLevel, MsgType: integer; LogString: WideString);
 	public
 		{PROPERTIES}
-		Property ProxySettings: TProxySettings read Settings.Proxy;      //all temporary
+		Property ProxySettings: TProxySettings read Settings.Proxy; //all temporary
 		Property UploadLimit: integer read Settings.UploadBPS;
 		Property DownloadLimit: integer read Settings.DownloadBPS;
 		Property ConnectTimeoutValue: integer read Settings.ConnectTimeout;
 
 		{CONSTRUCTOR/DESTRUCTOR}
-		constructor Create(Settings: TConnectionSettings; ExternalProgressProc: TProgressHandler = nil; ExternalLogProc: TLogHandler = nil; ExternalRequestProc: TRequestHandler = nil);
+		constructor Create(Settings: TConnectionSettings; ExternalProgressProc: TProgressHandler = nil; ExternalLogProc: TLogHandler = nil);
 		destructor Destroy; override;
 		{MAIN ROUTINES}
 		function GetPage(URL: WideString; var Answer: WideString; var ProgressEnabled: Boolean): Boolean; //если ProgressEnabled - включаем обработчик onWork, возвращаем ProgressEnabled=false при отмене
@@ -55,8 +54,10 @@ implementation
 
 {TCloudMailRuHTTP}
 
-constructor TCloudMailRuHTTP.Create(Settings: TConnectionSettings; ExternalProgressProc: TProgressHandler = nil; ExternalLogProc: TLogHandler = nil; ExternalRequestProc: TRequestHandler = nil);
+constructor TCloudMailRuHTTP.Create(Settings: TConnectionSettings; ExternalProgressProc: TProgressHandler = nil; ExternalLogProc: TLogHandler = nil);
 begin
+	self.ExternalProgressProc := ExternalProgressProc;
+	self.ExternalLogProc := ExternalLogProc;
 	self.Cookie := TIdCookieManager.Create();
 	self.Throttle := TIdInterceptThrottler.Create();
 	SSL := TIdSSLIOHandlerSocketOpenSSL.Create();
@@ -172,9 +173,7 @@ begin
 		HTTP.Get(URL, FileStream);
 		if (HTTP.RedirectCount = HTTP.RedirectMaximum) and (FileStream.size = 0) then
 		begin
-			result := FS_FILE_READERROR;
-			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Redirection limit reached when trying to download ' + URL);
-			//if (ExternalRequestProc(RT_MsgYesNo, 'Redirection limit', 'Try with another shard?', '', 0)) and (self.getShard(self.Shard)) then result := self.GetFile(URL, FileStream, LogErrors); {TODO: Should be moved to upper level}
+			result := FS_FILE_NOTSUPPORTED;
 		end;
 	except
 		on E: Exception do
