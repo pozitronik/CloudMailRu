@@ -49,8 +49,6 @@ type
 		function getShard(var Shard: WideString): Boolean;
 		function getUserSpace(var SpaceInfo: TCloudMailRuSpaceInfo): Boolean;
 		function putFileToCloud(FileName: WideString; FileStream: TStream; var FileIdentity: TCloudMailRuFileIdentity): integer; overload; //отправка на сервер данных из потока
-		function addFileToCloud(Hash: WideString; size: int64; remotePath: WideString; var JSONAnswer: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; LogErrors: Boolean = true): Boolean; //LogErrors=false => не логируем результат операции, нужно для поиска данных в облаке по хешу
-
 		{PRIVATE UPLOAD METHODS CHAIN (CALLED FROM putFile())}
 		function putFileWhole(localPath, remotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT): integer; //Загрузка файла целиком
 		function putFileSplit(localPath, remotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; ChunkOverwriteMode: integer = 0): integer; //Загрузка файла по частям
@@ -61,8 +59,6 @@ type
 		function CloudResultToFsResult(CloudResult: integer; OperationStatus: integer; ErrorPrefix: WideString = ''): integer;
 		function cloudHash(Path: WideString): WideString; overload; //get cloud hash for specified file
 		function cloudHash(Stream: TStream; SourceName: WideString = ''): WideString; overload; //get cloud hash for data in stream
-
-		function addByHash(Hash: WideString; size: int64; remotePath: WideString): Boolean; //addFileToCloud function wrapper with result parsing
 	protected
 		{REGULAR CLOUD}
 		function loginRegular(method: integer = CLOUD_AUTH_METHOD_WEB): Boolean;
@@ -102,7 +98,10 @@ type
 		function deleteFile(Path: WideString): Boolean;
 		function publishFile(Path: WideString; var PublicLink: WideString; publish: Boolean = CLOUD_PUBLISH): Boolean;
 		function cloneWeblink(Path, link: WideString; ConflictMode: WideString = CLOUD_CONFLICT_RENAME): integer; //клонировать публичную ссылку в текущий каталог
-		function cloneHash(Path, Hash: WideString; size: int64; FileName: WideString; ConflictMode: WideString = CLOUD_CONFLICT_RENAME): integer; //создать клон файла по известному хешу и размеру
+
+		function addFileByIdentity(FileIdentity: TCloudMailRuFileIdentity; remotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; LogErrors: Boolean = true; LogSuccess: Boolean = false): integer; overload;
+		function addFileByIdentity(FileIdentity: TCloudMailRuDirListingItem; remotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; LogErrors: Boolean = true; LogSuccess: Boolean = false): integer; overload;
+
 		function getShareInfo(Path: WideString; var InviteListing: TCloudMailRuInviteInfoListing): Boolean;
 		function shareFolder(Path, email: WideString; access: integer): Boolean;
 		function trashbinRestore(Path: WideString; RestoreRevision: integer; ConflictMode: WideString = CLOUD_CONFLICT_RENAME): Boolean;
@@ -118,50 +117,16 @@ type
 		class function CloudAccessToString(access: WideString; Invert: Boolean = false): WideString; static;
 		class function StringToCloudAccess(accessString: WideString; Invert: Boolean = false): integer; static;
 		class function ErrorCodeText(ErrorCode: integer): WideString; static;
+		class function IsSameIdentity(IdentityOne, IdentityTwo: TCloudMailRuFileIdentity): Boolean;
 	end;
 
 implementation
 
 {TCloudMailRu}
-{TODO: принимать TCloudMailRuFileIdentity}
-function TCloudMailRu.addByHash(Hash: WideString; size: int64; remotePath: WideString): Boolean;
-var
-	JSONAnswer: WideString;
-	OperationStatus: integer;
-begin
-	OperationStatus := 0;
-	if self.addFileToCloud(Hash, size, remotePath, JSONAnswer, CLOUD_CONFLICT_STRICT, false) then
-	begin
-		if fromJSON_OperationResult(JSONAnswer, OperationStatus) = CLOUD_OPERATION_OK then
-		begin
-			Log(LogLevelDetail, MSGTYPE_DETAILS, 'File ' + remotePath + ' found by hash.');
-			exit(true);
-		end;
-	end;
-	exit(false);
-end;
 
-{TODO: принимать TCloudMailRuFileIdentity}
-function TCloudMailRu.addFileToCloud(Hash: WideString; size: int64; remotePath: WideString; var JSONAnswer: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; LogErrors: Boolean = true): Boolean;
+function TCloudMailRu.addFileByIdentity(FileIdentity: TCloudMailRuFileIdentity; remotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; LogErrors: Boolean = true; LogSuccess: Boolean = false): integer;
 var
-	FileName: WideString;
-begin
-	{Экспериментально выяснено, что параметры api, build, email, x-email, x-page-id в запросе не обязательны}
-	if self.crypt_filenames then
-	begin
-		FileName := ExtractUniversalFileName(remotePath);
-		FileName := FileCipher.CryptFileName(FileName);
-		remotePath := ChangePathFileName(remotePath, FileName);
-	end;
-	result := self.HTTP.PostForm(API_FILE_ADD, 'conflict=' + ConflictMode + '&home=/' + PathToUrl(remotePath) + '&hash=' + Hash + '&size=' + size.ToString + self.united_params, JSONAnswer, 'application/x-www-form-urlencoded', LogErrors);
-
-end;
-
-{TODO: принимать TCloudMailRuFileIdentity}
-{TODO: Объединить код addByHash}
-function TCloudMailRu.cloneHash(Path, Hash: WideString; size: int64; FileName: WideString; ConflictMode: WideString = CLOUD_CONFLICT_RENAME): integer; //создать клон файла по известному хешу и размеру
-var
-	JSON: WideString;
+	JSON, FileName: WideString;
 	OperationStatus, OperationResult: integer;
 begin
 	result := FS_FILE_WRITEERROR;
@@ -169,11 +134,36 @@ begin
 		exit; //Проверка на вызов без инициализации
 	if self.public_account then
 		exit(FS_FILE_NOTSUPPORTED);
-	if self.addFileToCloud(Hash, size, IncludeTrailingBackslash(Path) + FileName, JSON, ConflictMode, true) then
+
+	if self.crypt_filenames then
+	begin
+		FileName := ExtractUniversalFileName(remotePath);
+		FileName := FileCipher.CryptFileName(FileName);
+		remotePath := ChangePathFileName(remotePath, FileName);
+	end;
+	{Экспериментально выяснено, что параметры api, build, email, x-email, x-page-id в запросе не обязательны}
+	if self.HTTP.PostForm(API_FILE_ADD, 'conflict=' + ConflictMode + '&home=/' + PathToUrl(remotePath) + '&hash=' + FileIdentity.Hash + '&size=' + FileIdentity.size.ToString + self.united_params, JSON, 'application/x-www-form-urlencoded', LogErrors) then
 	begin
 		OperationResult := fromJSON_OperationResult(JSON, OperationStatus);
-		result := CloudResultToFsResult(OperationResult, OperationStatus, 'File uploading error: ');
+		if CLOUD_OPERATION_OK = OperationResult then
+		begin
+			if LogSuccess then
+				Log(LogLevelDetail, MSGTYPE_DETAILS, 'File ' + remotePath + ' found by hash.');
+
+			exit(FS_FILE_OK);
+		end else begin
+			result := CloudResultToFsResult(OperationResult, OperationStatus, 'File uploading error: ');
+		end;
 	end;
+end;
+
+function TCloudMailRu.addFileByIdentity(FileIdentity: TCloudMailRuDirListingItem; remotePath, ConflictMode: WideString; LogErrors, LogSuccess: Boolean): integer;
+var
+	CloudFileIdentity: TCloudMailRuFileIdentity;
+begin
+	CloudFileIdentity.Hash := FileIdentity.Hash;
+	CloudFileIdentity.size := FileIdentity.size;
+	result := self.addFileByIdentity(CloudFileIdentity, remotePath, ConflictMode, LogErrors, LogSuccess)
 end;
 
 function TCloudMailRu.cloneWeblink(Path, link, ConflictMode: WideString): integer;
@@ -233,6 +223,11 @@ begin
 				exit(FS_FILE_WRITEERROR);
 			end;
 	end;
+end;
+
+class function TCloudMailRu.IsSameIdentity(IdentityOne, IdentityTwo: TCloudMailRuFileIdentity): Boolean;
+begin
+	result := (IdentityOne.size = IdentityTwo.size) and (IdentityOne.Hash = IdentityTwo.Hash);
 end;
 
 function TCloudMailRu.copyFile(OldName, ToPath: WideString): integer;
@@ -1252,10 +1247,7 @@ end;
 
 function TCloudMailRu.putFileStream(FileName, remotePath: WideString; FileStream: TStream; ConflictMode: WideString): integer;
 var
-	FileIdentity: TCloudMailRuFileIdentity;
-	JSONAnswer: WideString;
-	LocalFileHash: WideString;
-	OperationStatus: integer;
+	LocalFileIdentity, RemoteFileIdentity: TCloudMailRuFileIdentity;
 	OperationResult: integer;
 	MemoryStream: TMemoryStream;
 begin
@@ -1265,10 +1257,12 @@ begin
 
 	if self.PrecalculateHash or self.CheckCRC then
 	begin
-		LocalFileHash := cloudHash(FileStream);
+		LocalFileIdentity.Hash := cloudHash(FileStream);
+		LocalFileIdentity.size := FileStream.size;
 	end;
-	if self.PrecalculateHash and (LocalFileHash <> EmptyWideStr) and (not self.crypt_files) and (self.addByHash(LocalFileHash, FileStream.size, remotePath)) then {issue #135}
+	if self.PrecalculateHash and (LocalFileIdentity.Hash <> EmptyWideStr) and (not self.crypt_files) and (FS_FILE_OK = self.addFileByIdentity(LocalFileIdentity, remotePath, CLOUD_CONFLICT_STRICT, false, true)) then {issue #135}
 		exit(CLOUD_OPERATION_OK);
+
 	MemoryStream := TMemoryStream.Create;
 
 	try
@@ -1276,9 +1270,9 @@ begin
 		begin
 			self.FileCipher.CryptStream(FileStream, MemoryStream);
 			MemoryStream.Position := 0;
-			OperationResult := self.putFileToCloud(FileName, MemoryStream, FileIdentity)
+			OperationResult := self.putFileToCloud(FileName, MemoryStream, RemoteFileIdentity)
 		end else begin
-			OperationResult := self.putFileToCloud(FileName, FileStream, FileIdentity)
+			OperationResult := self.putFileToCloud(FileName, FileStream, RemoteFileIdentity)
 		end;
 	Except
 		on E: Exception do
@@ -1296,7 +1290,7 @@ begin
 	begin
 		if self.CheckCRC then
 		begin
-			if (FileStream.size <> FileIdentity.size) or (LocalFileHash <> FileIdentity.Hash) then {При включённой проверке CRC сравниваем хеши и размеры}
+			if not IsSameIdentity(LocalFileIdentity, RemoteFileIdentity) then {При включённой проверке CRC сравниваем хеши и размеры}
 				result := CLOUD_OPERATION_FAILED;
 
 		end;
@@ -1306,13 +1300,8 @@ begin
 	end;
 
 	if OperationResult = CLOUD_OPERATION_OK then
-	begin
-		if self.addFileToCloud(FileIdentity.Hash, FileIdentity.size, remotePath, JSONAnswer, ConflictMode) then
-		begin
-			OperationResult := fromJSON_OperationResult(JSONAnswer, OperationStatus);
-			result := CloudResultToFsResult(OperationResult, OperationStatus, 'File uploading error: ');
-		end;
-	end;
+		result := self.addFileByIdentity(RemoteFileIdentity, remotePath, ConflictMode);
+
 	MemoryStream.Destroy;
 end;
 
@@ -1331,18 +1320,20 @@ end;
 
 function TCloudMailRu.putFileSplit(localPath, remotePath, ConflictMode: WideString; ChunkOverwriteMode: integer): integer;
 var
+	LocalFileIdentity: TCloudMailRuFileIdentity;
 	SplitFileInfo: TFileSplitInfo;
 	SplittedPartIndex: integer;
-	ChunkRemotePath, LocalFileHash, CRCRemotePath: WideString;
+	ChunkRemotePath, CRCRemotePath: WideString;
 	ChunkStream: TChunkedFileStream;
 	CRCStream: TMemoryStream;
 begin
 
 	if self.PrecalculateHash then //try to add whole file by hash at first.
 	begin
-		LocalFileHash := cloudHash(localPath);
+		LocalFileIdentity.Hash := cloudHash(localPath);
+		LocalFileIdentity.size := SizeOfFile(localPath);
 	end;
-	if self.PrecalculateHash and (LocalFileHash <> EmptyWideStr) and (not self.crypt_files) and (self.addByHash(LocalFileHash, SizeOfFile(localPath), remotePath)) then {issue #135}
+	if self.PrecalculateHash and (LocalFileIdentity.Hash <> EmptyWideStr) and (not self.crypt_files) and (FS_FILE_OK = self.addFileByIdentity(LocalFileIdentity, remotePath, CLOUD_CONFLICT_STRICT, false, true)) then {issue #135}
 		exit(CLOUD_OPERATION_OK);
 
 	SplitFileInfo := TFileSplitInfo.Create(localPath, self.split_file_size); //quickly get information about file parts
