@@ -34,10 +34,6 @@ type
 		ExternalLogProc: TLogHandler;
 		ExternalRequestProc: TRequestHandler;
 		Shard: WideString;
-		//Proxy: TProxySettings;{DROPME -> moved to CMLHTTP}
-		//ConnectTimeout: integer; {DROPME -> moved to CMLHTTP}
-		//UploadBPS: integer;        {DROPME -> moved to CMLHTTP}
-		//DownloadBPS: integer;     {DROPME -> moved to CMLHTTP}
 		PrecalculateHash: Boolean;
 		CheckCRC: Boolean;
 
@@ -46,33 +42,27 @@ type
 
 		united_params: WideString; //Объединённый набор авторизационных параметров для подстановки в URL
 
-		{BASE HTTP METHODS}
-		//Moved to CMLHTTP
-		//Moved to CMLParsers
-		{JSON MANIPULATION}
-		//Moved to CMLJSON
 		{HTTP REQUESTS WRAPPERS}
 		function getToken(): Boolean;
 		function getSharedToken(): Boolean;
 		function getOAuthToken(var OAuthToken: TCloudMailRuOAuthInfo): Boolean;
 		function getShard(var Shard: WideString): Boolean;
 		function getUserSpace(var SpaceInfo: TCloudMailRuSpaceInfo): Boolean;
-		function putFileToCloud(localPath: WideString; Return: TStringList; ChunkInfo: PFileChunkInfo = nil): integer; overload; //Отправка на сервер файла или куска файла
-		function putFileToCloud(FileName: WideString; FileStream: TStream; Return: TStringList): integer; overload; //отправка на сервер данных из потока
+		function putFileToCloud(FileName: WideString; FileStream: TStream; var FileIdentity: TCloudMailRuFileIdentity): integer; overload; //отправка на сервер данных из потока
 		function addFileToCloud(Hash: WideString; size: int64; remotePath: WideString; var JSONAnswer: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; LogErrors: Boolean = true): Boolean; //LogErrors=false => не логируем результат операции, нужно для поиска данных в облаке по хешу
 
 		{PRIVATE UPLOAD METHODS CHAIN (CALLED FROM putFile())}
 		function putFileWhole(localPath, remotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT): integer; //Загрузка файла целиком
 		function putFileSplit(localPath, remotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; ChunkOverwriteMode: integer = 0): integer; //Загрузка файла по частям
-		function putFileChunk(localPath, remotePath: WideString; ChunkInfo: TFileChunkInfo; ConflictMode: WideString = CLOUD_CONFLICT_STRICT): integer; //Загрузка указанной части файла
-		function putFileChunkCRC(remotePath: WideString; SplitFileInfo: TFileSplitInfo; ConflictMode: WideString = CLOUD_CONFLICT_STRICT): integer; //Загрузка CRC-файла для разбитого файла
+		function putFileStream(FileName, remotePath: WideString; FileStream: TStream; ConflictMode: WideString = CLOUD_CONFLICT_STRICT): integer;
 
 		{OTHER ROUTINES}
 		procedure Log(LogLevel, MsgType: integer; LogString: WideString);
 		function CloudResultToFsResult(CloudResult: integer; OperationStatus: integer; ErrorPrefix: WideString = ''): integer;
-		function cloudHash(Path: WideString; ChunkInfo: PFileChunkInfo = nil): WideString; overload; //get cloud hash for specified file/file part
+		function cloudHash(Path: WideString): WideString; overload; //get cloud hash for specified file
 		function cloudHash(Stream: TStream; SourceName: WideString = ''): WideString; overload; //get cloud hash for data in stream
-		function addByHash(Hash: WideString; size: int64; localPath, remotePath: WideString): Boolean; //addFileToCloud function wrapper with result parsing
+
+		function addByHash(Hash: WideString; size: int64; remotePath: WideString): Boolean; //addFileToCloud function wrapper with result parsing
 	protected
 		{REGULAR CLOUD}
 		function loginRegular(method: integer = CLOUD_AUTH_METHOD_WEB): Boolean;
@@ -87,9 +77,6 @@ type
 
 		Property isPublicShare: Boolean read public_account;
 		Property Transport: TCloudMailRuHTTP read HTTP;
-		//Property ProxySettings: TProxySettings read HTTP.ProxySettings;
-		//Property UploadLimit: integer read UploadBPS;
-		//Property DownloadLimit: integer read DownloadBPS;
 
 		function getSharedFileUrl(remotePath: WideString; DoUrlEncode: Boolean = true): WideString;
 		{CONSTRUCTOR/DESTRUCTOR}
@@ -136,8 +123,8 @@ type
 implementation
 
 {TCloudMailRu}
-
-function TCloudMailRu.addByHash(Hash: WideString; size: int64; localPath, remotePath: WideString): Boolean;
+{TODO: принимать TCloudMailRuFileIdentity}
+function TCloudMailRu.addByHash(Hash: WideString; size: int64; remotePath: WideString): Boolean;
 var
 	JSONAnswer: WideString;
 	OperationStatus: integer;
@@ -154,6 +141,7 @@ begin
 	exit(false);
 end;
 
+{TODO: принимать TCloudMailRuFileIdentity}
 function TCloudMailRu.addFileToCloud(Hash: WideString; size: int64; remotePath: WideString; var JSONAnswer: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; LogErrors: Boolean = true): Boolean;
 var
 	FileName: WideString;
@@ -169,6 +157,8 @@ begin
 
 end;
 
+{TODO: принимать TCloudMailRuFileIdentity}
+{TODO: Объединить код addByHash}
 function TCloudMailRu.cloneHash(Path, Hash: WideString; size: int64; FileName: WideString; ConflictMode: WideString = CLOUD_CONFLICT_RENAME): integer; //создать клон файла по известному хешу и размеру
 var
 	JSON: WideString;
@@ -1260,33 +1250,36 @@ begin
 	end;
 end;
 
-function TCloudMailRu.putFileWhole(localPath, remotePath, ConflictMode: WideString): integer;
+function TCloudMailRu.putFileStream(FileName, remotePath: WideString; FileStream: TStream; ConflictMode: WideString): integer;
 var
-	PutResult: TStringList;
+	FileIdentity: TCloudMailRuFileIdentity;
 	JSONAnswer: WideString;
-	LocalFileHash, UploadedFileHash: WideString;
-	LocalFileSize, UploadedFileSize: int64;
-	code, OperationStatus: integer;
+	LocalFileHash: WideString;
+	OperationStatus: integer;
 	OperationResult: integer;
+	MemoryStream: TMemoryStream;
 begin
-	LocalFileSize := 0;
-	UploadedFileSize := 0;
+
 	result := FS_FILE_WRITEERROR;
 	OperationResult := CLOUD_OPERATION_FAILED;
-	PutResult := TStringList.Create;
-	self.ExternalSourceName := PWideChar(localPath);
-	self.ExternalTargetName := PWideChar(remotePath);
 
 	if self.PrecalculateHash or self.CheckCRC then
 	begin
-		LocalFileHash := cloudHash(localPath);
-		LocalFileSize := SizeOfFile(localPath);
+		LocalFileHash := cloudHash(FileStream);
 	end;
-	if self.PrecalculateHash and (LocalFileHash <> EmptyWideStr) and (not self.crypt_files) and (self.addByHash(LocalFileHash, LocalFileSize, localPath, remotePath)) then {issue #135}
+	if self.PrecalculateHash and (LocalFileHash <> EmptyWideStr) and (not self.crypt_files) and (self.addByHash(LocalFileHash, FileStream.size, remotePath)) then {issue #135}
 		exit(CLOUD_OPERATION_OK);
+	MemoryStream := TMemoryStream.Create;
 
 	try
-		OperationResult := self.putFileToCloud(localPath, PutResult);
+		if self.crypt_files then {Will encrypt any type of data passed here}
+		begin
+			self.FileCipher.CryptStream(FileStream, MemoryStream);
+			MemoryStream.Position := 0;
+			OperationResult := self.putFileToCloud(FileName, MemoryStream, FileIdentity)
+		end else begin
+			OperationResult := self.putFileToCloud(FileName, FileStream, FileIdentity)
+		end;
 	Except
 		on E: Exception do
 		begin
@@ -1301,11 +1294,9 @@ begin
 	end;
 	if OperationResult = CLOUD_OPERATION_OK then
 	begin
-		UploadedFileHash := PutResult.Strings[0];
-		val(PutResult.Strings[1], UploadedFileSize, code);
 		if self.CheckCRC then
 		begin
-			if (LocalFileSize <> UploadedFileSize) or (LocalFileHash <> UploadedFileHash) then {При включённой проверке CRC сравниваем хеши и размеры}
+			if (FileStream.size <> FileIdentity.size) or (LocalFileHash <> FileIdentity.Hash) then {При включённой проверке CRC сравниваем хеши и размеры}
 				result := CLOUD_OPERATION_FAILED;
 
 		end;
@@ -1313,160 +1304,45 @@ begin
 	begin
 		result := FS_FILE_USERABORT;
 	end;
-	PutResult.free;
+
 	if OperationResult = CLOUD_OPERATION_OK then
 	begin
-		if self.addFileToCloud(UploadedFileHash, UploadedFileSize, remotePath, JSONAnswer, ConflictMode) then
+		if self.addFileToCloud(FileIdentity.Hash, FileIdentity.size, remotePath, JSONAnswer, ConflictMode) then
 		begin
 			OperationResult := fromJSON_OperationResult(JSONAnswer, OperationStatus);
 			result := CloudResultToFsResult(OperationResult, OperationStatus, 'File uploading error: ');
 		end;
 	end;
-	self.ExternalSourceName := nil;
-	self.ExternalTargetName := nil;
+	MemoryStream.Destroy;
 end;
 
-function TCloudMailRu.putFileChunk(localPath, remotePath: WideString; ChunkInfo: TFileChunkInfo; ConflictMode: WideString): integer;
+function TCloudMailRu.putFileWhole(localPath, remotePath, ConflictMode: WideString): integer;
 var
-	JSONAnswer: WideString;
-	LocalChunkHash, UploadedChunkHash: WideString;
-	code, OperationResult, OperationStatus: integer;
-	PutResult: TStringList;
-	UploadedChunkSize: int64;
+	FileStream: TBufferedFileStream;
 begin
-	OperationResult := CLOUD_OPERATION_FAILED;
-	result := CLOUD_OPERATION_FAILED;
-	UploadedChunkSize := 0;
 	self.ExternalSourceName := PWideChar(localPath);
 	self.ExternalTargetName := PWideChar(remotePath);
-
-	if self.PrecalculateHash or self.CheckCRC then
-	begin
-		LocalChunkHash := cloudHash(localPath, @ChunkInfo);
-	end;
-	if self.PrecalculateHash and (LocalChunkHash <> EmptyWideStr) and (not self.crypt_files) and (self.addByHash(LocalChunkHash, ChunkInfo.size, localPath, remotePath)) then {issue #135}
-		exit(CLOUD_OPERATION_OK);
-
-	PutResult := TStringList.Create;
-	try
-		OperationResult := self.putFileToCloud(localPath, PutResult, @ChunkInfo);
-	except
-		on E: Exception do
-		begin
-			if E.ClassName = 'EAbort' then
-			begin
-				result := FS_FILE_USERABORT;
-			end else begin
-				Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'error: uploading to cloud: ' + E.ClassName + ' with message: ' + E.Message);
-				result := FS_FILE_WRITEERROR;
-			end;
-		end;
-	end;
-
-	if OperationResult = CLOUD_OPERATION_OK then {TODO: вытащить в функцию}
-	begin
-		UploadedChunkHash := PutResult.Strings[0];
-		val(PutResult.Strings[1], UploadedChunkSize, code);
-		if self.CheckCRC then
-		begin
-			if (ChunkInfo.size <> UploadedChunkSize) or (LocalChunkHash <> UploadedChunkHash) then {При включённой проверке CRC сравниваем хеши и размеры}
-				result := CLOUD_OPERATION_FAILED;
-		end;
-	end else if OperationResult = CLOUD_OPERATION_CANCELLED then
-	begin
-		result := FS_FILE_USERABORT;
-	end;
-	PutResult.Destroy;
-
-	if OperationResult = CLOUD_OPERATION_OK then
-	begin
-		if self.addFileToCloud(UploadedChunkHash, UploadedChunkSize, remotePath, JSONAnswer, ConflictMode) then
-		begin
-			OperationResult := fromJSON_OperationResult(JSONAnswer, OperationStatus);
-			result := CloudResultToFsResult(OperationResult, OperationStatus, 'File uploading error: ');
-		end;
-	end;
-
+	FileStream := TBufferedFileStream.Create(GetUNCFilePath(localPath), fmOpenRead or fmShareDenyWrite);
+	result := self.putFileStream(GetUNCFilePath(localPath), remotePath, FileStream, ConflictMode);
+	FileStream.free;
 	self.ExternalSourceName := nil;
 	self.ExternalTargetName := nil;
-end;
-
-function TCloudMailRu.putFileChunkCRC(remotePath: WideString; SplitFileInfo: TFileSplitInfo; ConflictMode: WideString): integer;
-var
-	CRCStream: TMemoryStream;
-	CRCRemotePath, UploadedCRCHash: WideString;
-	code, OperationResult, OperationStatus: integer;
-	UploadedCRCSize: int64;
-
-	PutResult: TStringList;
-	JSONAnswer: WideString;
-begin
-	OperationResult := CLOUD_OPERATION_FAILED;
-	result := CLOUD_OPERATION_FAILED;
-	UploadedCRCSize := 0;
-	CRCRemotePath := ExtractFilePath(remotePath) + SplitFileInfo.CRCFileName;
-	self.ExternalTargetName := PWideChar(CRCRemotePath);
-	CRCStream := TMemoryStream.Create;
-	SplitFileInfo.GetCRCData(CRCStream);
-	PutResult := TStringList.Create;
-	try
-		self.putFileToCloud(SplitFileInfo.CRCFileName, CRCStream, PutResult);
-	except
-		on E: Exception do
-		begin
-			if E.ClassName = 'EAbort' then
-			begin
-				result := FS_FILE_USERABORT;
-			end else begin
-				Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'error: uploading to cloud: ' + E.ClassName + ' with message: ' + E.Message);
-				result := FS_FILE_WRITEERROR;
-			end;
-		end;
-	end;
-
-	if OperationResult = CLOUD_OPERATION_OK then
-	begin
-		UploadedCRCHash := PutResult.Strings[0];
-		val(PutResult.Strings[1], UploadedCRCSize, code);
-		if self.CheckCRC then
-		begin
-			if (CRCStream.size <> UploadedCRCSize) or (self.cloudHash(CRCStream, CRCRemotePath) <> UploadedCRCHash) then {При включённой проверке CRC сравниваем хеши и размеры}
-				result := CLOUD_OPERATION_FAILED;
-		end;
-	end else if OperationResult = CLOUD_OPERATION_CANCELLED then
-	begin
-		result := FS_FILE_USERABORT;
-	end;
-	PutResult.Destroy;
-
-	if OperationResult = CLOUD_OPERATION_OK then
-	begin
-		if self.addFileToCloud(UploadedCRCHash, UploadedCRCSize, CRCRemotePath, JSONAnswer, ConflictMode) then
-		begin
-			OperationResult := fromJSON_OperationResult(JSONAnswer, OperationStatus);
-			result := CloudResultToFsResult(OperationResult, OperationStatus, 'File uploading error: ');
-		end;
-	end;
-
-	self.ExternalSourceName := nil;
-	self.ExternalTargetName := nil;
-
-	CRCStream.Destroy;
 end;
 
 function TCloudMailRu.putFileSplit(localPath, remotePath, ConflictMode: WideString; ChunkOverwriteMode: integer): integer;
 var
 	SplitFileInfo: TFileSplitInfo;
 	SplittedPartIndex: integer;
-	ChunkRemotePath, LocalFileHash: WideString;
-
+	ChunkRemotePath, LocalFileHash, CRCRemotePath: WideString;
+	ChunkStream: TChunkedFileStream;
+	CRCStream: TMemoryStream;
 begin
 
 	if self.PrecalculateHash then //try to add whole file by hash at first.
 	begin
 		LocalFileHash := cloudHash(localPath);
 	end;
-	if self.PrecalculateHash and (LocalFileHash <> EmptyWideStr) and (not self.crypt_files) and (self.addByHash(LocalFileHash, SizeOfFile(localPath), localPath, remotePath)) then {issue #135}
+	if self.PrecalculateHash and (LocalFileHash <> EmptyWideStr) and (not self.crypt_files) and (self.addByHash(LocalFileHash, SizeOfFile(localPath), remotePath)) then {issue #135}
 		exit(CLOUD_OPERATION_OK);
 
 	SplitFileInfo := TFileSplitInfo.Create(localPath, self.split_file_size); //quickly get information about file parts
@@ -1474,7 +1350,10 @@ begin
 	for SplittedPartIndex := 0 to SplitFileInfo.ChunksCount - 1 do
 	begin
 		ChunkRemotePath := ExtractFilePath(remotePath) + SplitFileInfo.GetChunks[SplittedPartIndex].name;
-		result := self.putFileChunk(localPath, ChunkRemotePath, SplitFileInfo.GetChunks[SplittedPartIndex], ConflictMode);
+		ChunkStream := TChunkedFileStream.Create(GetUNCFilePath(localPath), fmOpenRead or fmShareDenyWrite, SplitFileInfo.GetChunks[SplittedPartIndex].start, SplitFileInfo.GetChunks[SplittedPartIndex].size); {FIXME TODO: Bug here - TChunkedFileStream некорректно обрабатывает файлы больше какого-то лимита}
+		result := self.putFileStream(GetUNCFilePath(localPath), ChunkRemotePath, ChunkStream, ConflictMode);
+
+		ChunkStream.Destroy;
 
 		case result of
 			FS_FILE_OK:
@@ -1495,7 +1374,7 @@ begin
 								begin
 									SplitFileInfo.Destroy;
 									exit(FS_FILE_WRITEERROR);
-								end else if (self.putFileChunk(localPath, ChunkRemotePath, SplitFileInfo.GetChunks[SplittedPartIndex], ConflictMode) <> FS_FILE_OK) then
+								end else if (self.putFileStream(GetUNCFilePath(localPath), ChunkRemotePath, ChunkStream, ConflictMode) <> FS_FILE_OK) then {TODO: stream deleted at this moment}
 								begin
 									SplitFileInfo.Destroy;
 									exit(FS_FILE_WRITEERROR);
@@ -1523,7 +1402,14 @@ begin
 				end;
 		end;
 	end;
-	putFileChunkCRC(remotePath, SplitFileInfo, ConflictMode); {Заливаем CRC-файл, обработка ошибок внутри функции}
+
+	CRCRemotePath := ExtractFilePath(remotePath) + SplitFileInfo.CRCFileName;
+	self.ExternalTargetName := PWideChar(CRCRemotePath);
+	CRCStream := TMemoryStream.Create;
+	SplitFileInfo.GetCRCData(CRCStream);
+	self.putFileStream(GetUNCFilePath(localPath), CRCRemotePath, CRCStream, ConflictMode);
+	CRCStream.Destroy;
+
 	exit(FS_FILE_OK); //Файлик залит по частям, выходим
 end;
 
@@ -1550,39 +1436,20 @@ begin
 
 end;
 
-function TCloudMailRu.putFileToCloud(localPath: WideString; Return: TStringList; ChunkInfo: PFileChunkInfo = nil): integer; {Заливка на сервер состоит из двух шагов: заливаем файл на сервер в putFileToCloud и добавляем его в облако addFileToCloud}
+function TCloudMailRu.putFileToCloud(FileName: WideString; FileStream: TStream; var FileIdentity: TCloudMailRuFileIdentity): integer;
 var
 	PostAnswer: WideString;
+	Return: TStringList;
+	code: integer;
 begin
+	FileIdentity.Hash := EmptyWideStr;
+	FileIdentity.size := -1;
 	result := CLOUD_OPERATION_FAILED;
 	if not(Assigned(self)) then
 		exit; //Проверка на вызов без инициализации
 	if self.public_account then
 		exit;
-	if nil = ChunkInfo then
-
-		result := self.HTTP.PostFile(self.upload_url + '/?cloud_domain=1&x-email=' + self.user + '%40' + self.domain + '&fileapi' + DateTimeToUnix(now).ToString + '0246', GetUNCFilePath(localPath), PostAnswer)
-	else
-		result := self.HTTP.PostFile(self.upload_url + '/?cloud_domain=1&x-email=' + self.user + '%40' + self.domain + '&fileapi' + DateTimeToUnix(now).ToString + '0246', GetUNCFilePath(localPath), PostAnswer, ChunkInfo^);
-	if (result = CLOUD_OPERATION_OK) then
-	begin
-		ExtractStrings([';'], [], PWideChar(PostAnswer), Return);
-		if length(Return.Strings[0]) <> 40 then //? добавить анализ ответа?
-		begin
-			result := CLOUD_OPERATION_FAILED;
-		end
-	end;
-end;
-
-function TCloudMailRu.putFileToCloud(FileName: WideString; FileStream: TStream; Return: TStringList): integer;
-var
-	PostAnswer: WideString;
-begin
-	result := CLOUD_OPERATION_FAILED;
-	if not(Assigned(self)) then
-		exit; //Проверка на вызов без инициализации
-	if self.public_account then
-		exit;
+	Return := TStringList.Create;
 	result := self.HTTP.PostFile(self.upload_url + '/?cloud_domain=1&x-email=' + self.user + '%40' + self.domain + '&fileapi' + DateTimeToUnix(now).ToString + '0246', FileName, FileStream, PostAnswer);
 	if (result = CLOUD_OPERATION_OK) then
 	begin
@@ -1592,6 +1459,10 @@ begin
 			result := CLOUD_OPERATION_FAILED;
 		end
 	end;
+	FileIdentity.Hash := Return.Strings[0];
+	val(Return.Strings[1], FileIdentity.size, code);
+
+	Return.Destroy;
 end;
 
 function TCloudMailRu.removeDir(Path: WideString): Boolean;
@@ -1706,7 +1577,7 @@ begin
 		result := CLOUD_SHARE_RW;
 end;
 
-function TCloudMailRu.cloudHash(Path: WideString; ChunkInfo: PFileChunkInfo = nil): WideString;
+function TCloudMailRu.cloudHash(Path: WideString): WideString;
 var
 	Stream: TStream;
 begin
@@ -1715,12 +1586,7 @@ begin
 		exit;
 
 	try
-		if (nil = ChunkInfo) then
-		begin
-			Stream := TFileStream.Create(Path, fmOpenRead or fmShareDenyWrite);
-		end else begin
-			Stream := TChunkedFileStream.Create(Path, fmOpenRead or fmShareDenyWrite, ChunkInfo^.start, ChunkInfo^.size);
-		end;
+		Stream := TBufferedFileStream.Create(Path, fmOpenRead or fmShareDenyWrite);
 	except
 		exit;
 	end;
