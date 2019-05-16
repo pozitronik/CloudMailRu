@@ -2,7 +2,7 @@
 
 interface
 
-uses CMLJSON, CMLParsers, CMLTypes, System.Hash, System.Classes, System.Generics.Collections, System.SysUtils, PLUGIN_Types, Winapi.Windows, IdStack, MRC_helper, Settings, IdCookieManager, IdIOHandler, IdIOHandlerSocket, IdIOHandlerStack, IdSSL, IdSSLOpenSSL, IdBaseComponent, IdComponent, IdTCPConnection, IdTCPClient, IdSocks, IdHTTP, IdAuthentication, IdIOHandlerStream, IdInterceptThrottler, IdCookie, IdMultipartFormData, Cipher, Splitfile, ChunkedFileStream;
+uses CMLJSON, CMLParsers, CMLTypes, CMLHTTP, System.Hash, System.Classes, System.Generics.Collections, System.SysUtils, PLUGIN_Types, Winapi.Windows, MRC_helper, Settings, Cipher, Splitfile, ChunkedFileStream;
 
 type
 	TCloudMailRu = class
@@ -29,43 +29,25 @@ type
 		build: WideString;
 		upload_url: WideString;
 		login_method: integer;
-		Cookie: TIdCookieManager;
-		Socks: TIdSocksInfo;
-		Throttle: TIdInterceptThrottler;
+
 		ExternalProgressProc: TProgressHandler;
 		ExternalLogProc: TLogHandler;
 		ExternalRequestProc: TRequestHandler;
 		Shard: WideString;
-		Proxy: TProxySettings;
-		ConnectTimeout: integer;
-		UploadBPS: integer;
-		DownloadBPS: integer;
+		//Proxy: TProxySettings;{DROPME -> moved to CMLHTTP}
+		//ConnectTimeout: integer; {DROPME -> moved to CMLHTTP}
+		//UploadBPS: integer;        {DROPME -> moved to CMLHTTP}
+		//DownloadBPS: integer;     {DROPME -> moved to CMLHTTP}
 		PrecalculateHash: Boolean;
 		CheckCRC: Boolean;
 
+		HTTP: TCloudMailRuHTTP; //HTTP transport class
 		FileCipher: TFileCipher;
 
 		united_params: WideString; //Объединённый набор авторизационных параметров для подстановки в URL
 
 		{BASE HTTP METHODS}
-		procedure HTTPInit(var HTTP: TIdHTTP; var SSL: TIdSSLIOHandlerSocketOpenSSL; var Socks: TIdSocksInfo; var Cookie: TIdCookieManager);
-		procedure HTTPDestroy(var HTTP: TIdHTTP; var SSL: TIdSSLIOHandlerSocketOpenSSL);
-
-		function HTTPGetPage(URL: WideString; var Answer: WideString; var ProgressEnabled: Boolean): Boolean; //если ProgressEnabled - включаем обработчик onWork, возвращаем ProgressEnabled=false при отмене
-		function HTTPGetFile(URL: WideString; FileStream: TStream; LogErrors: Boolean = true): integer;
-
-		function HTTPPostForm(URL: WideString; PostDataString: WideString; var Answer: WideString; ContentType: WideString = 'application/x-www-form-urlencoded'; LogErrors: Boolean = true; ProgressEnabled: Boolean = true): Boolean; //Постинг данных с возможным получением ответа.
-		function HTTPPostMultipart(URL: WideString; Params: TDictionary<WideString, WideString>; var Answer: WideString): Boolean;
-		function HTTPPostFile(URL: WideString; FileName: WideString; var Answer: WideString): integer; overload; //Постинг файла и получение ответа
-		function HTTPPostFile(URL: WideString; FileName: WideString; var Answer: WideString; ChunkInfo: TFileChunkInfo): integer; overload; //Постинг файла и получение ответа
-		function HTTPPostFile(URL: WideString; FileName: WideString; FileStream: TStream; var Answer: WideString): integer; overload; //Постинг потока данных как файла
-
-		function HTTPPost(URL: WideString; PostData, ResultData: TStringStream; UnderstandResponseCode: Boolean = false; ContentType: WideString = ''; LogErrors: Boolean = true; ProgressEnabled: Boolean = true): integer; overload; //Постинг подготовленных данных, отлов ошибок
-		function HTTPPost(URL: WideString; var PostData: TIdMultiPartFormDataStream; ResultData: TStringStream): integer; overload; //TIdMultiPartFormDataStream should be passed via var
-		function HTTPExceptionHandler(E: Exception; URL: WideString; HTTPMethod: integer = HTTP_METHOD_POST; LogErrors: Boolean = true): integer;
-
-		procedure HTTPProgress(ASender: TObject; AWorkMode: TWorkMode; AWorkCount: int64);
-		{RAW TEXT PARSING}{TODO: Move to separate unit}
+		//Moved to CMLHTTP
 		//Moved to CMLParsers
 		{JSON MANIPULATION}
 		//Moved to CMLJSON
@@ -104,11 +86,11 @@ type
 		crypt_filenames: Boolean;
 
 		Property isPublicShare: Boolean read public_account;
-		Property ProxySettings: TProxySettings read Proxy;
-		Property UploadLimit: integer read UploadBPS;
-		Property DownloadLimit: integer read DownloadBPS;
+		Property Transport: TCloudMailRuHTTP read HTTP;
+		//Property ProxySettings: TProxySettings read HTTP.ProxySettings;
+		//Property UploadLimit: integer read UploadBPS;
+		//Property DownloadLimit: integer read DownloadBPS;
 
-		Property ConnectTimeoutValue: integer read ConnectTimeout;
 		function getSharedFileUrl(remotePath: WideString; DoUrlEncode: Boolean = true): WideString;
 		{CONSTRUCTOR/DESTRUCTOR}
 		constructor Create(AccountSettings: TAccountSettings; split_file_size: integer; Proxy: TProxySettings; ConnectTimeout: integer; UploadBPS: integer; DownloadBPS: integer; PrecalculateHash: Boolean = true; CheckCRC: Boolean = true; ExternalProgressProc: TProgressHandler = nil; ExternalLogProc: TLogHandler = nil; ExternalRequestProc: TRequestHandler = nil);
@@ -183,7 +165,7 @@ begin
 		FileName := FileCipher.CryptFileName(FileName);
 		remotePath := ChangePathFileName(remotePath, FileName);
 	end;
-	result := self.HTTPPostForm(API_FILE_ADD, 'conflict=' + ConflictMode + '&home=/' + PathToUrl(remotePath) + '&hash=' + Hash + '&size=' + size.ToString + self.united_params, JSONAnswer, 'application/x-www-form-urlencoded', LogErrors);
+	result := self.HTTP.PostForm(API_FILE_ADD, 'conflict=' + ConflictMode + '&home=/' + PathToUrl(remotePath) + '&hash=' + Hash + '&size=' + size.ToString + self.united_params, JSONAnswer, 'application/x-www-form-urlencoded', LogErrors);
 
 end;
 
@@ -216,7 +198,7 @@ begin
 	if self.public_account then
 		exit(FS_FILE_NOTSUPPORTED);
 	Progress := true;
-	if self.HTTPGetPage(API_CLONE + '?folder=' + PathToUrl(Path) + '&weblink=' + link + '&conflict=' + ConflictMode + self.united_params, JSON, Progress) then
+	if self.HTTP.GetPage(API_CLONE + '?folder=' + PathToUrl(Path) + '&weblink=' + link + '&conflict=' + ConflictMode + self.united_params, JSON, Progress) then
 	begin //Парсим ответ
 		result := fromJSON_OperationResult(JSON, OperationStatus);
 		if result <> CLOUD_OPERATION_OK then
@@ -273,7 +255,7 @@ begin
 		exit; //Проверка на вызов без инициализации
 	if self.public_account then
 		exit(FS_FILE_NOTSUPPORTED);
-	if self.HTTPPostForm(API_FILE_COPY, 'home=' + PathToUrl(OldName) + '&folder=' + PathToUrl(ToPath) + self.united_params + '&conflict', JSON) then
+	if self.HTTP.PostForm(API_FILE_COPY, 'home=' + PathToUrl(OldName) + '&folder=' + PathToUrl(ToPath) + self.united_params + '&conflict', JSON) then
 	begin //Парсим ответ
 		OperationResult := fromJSON_OperationResult(JSON, OperationStatus);
 		result := CloudResultToFsResult(OperationResult, OperationStatus, 'File copy error: ');
@@ -304,38 +286,21 @@ begin //Облако умеет скопировать файл, но не см�
 end;
 
 constructor TCloudMailRu.Create(AccountSettings: TAccountSettings; split_file_size: integer; Proxy: TProxySettings; ConnectTimeout: integer; UploadBPS: integer; DownloadBPS: integer; PrecalculateHash: Boolean = true; CheckCRC: Boolean = true; ExternalProgressProc: TProgressHandler = nil; ExternalLogProc: TLogHandler = nil; ExternalRequestProc: TRequestHandler = nil);
+var
+	HTTPSettings: TConnectionSettings;
 begin
 	try
 		self.ExternalProgressProc := ExternalProgressProc;
 		self.ExternalLogProc := ExternalLogProc;
 		self.ExternalRequestProc := ExternalRequestProc;
 
-		self.Cookie := TIdCookieManager.Create();
-		self.Throttle := TIdInterceptThrottler.Create();
+		HTTPSettings.Proxy := Proxy;
 
-		self.Proxy := Proxy;
-		if Proxy.ProxyType in SocksProxyTypes then //SOCKS proxy initialization
-		begin
-			self.Socks := TIdSocksInfo.Create();
-			self.Socks.Host := Proxy.Server;
-			self.Socks.Port := Proxy.Port;
-			if Proxy.user <> EmptyWideStr then
-			begin
-				self.Socks.Authentication := saUsernamePassword;
-				self.Socks.Username := Proxy.user;
-				self.Socks.password := Proxy.password;
-			end
-			else
-				self.Socks.Authentication := saNoAuthentication;
+		HTTPSettings.ConnectTimeout := ConnectTimeout;
+		HTTPSettings.UploadBPS := UploadBPS;
+		HTTPSettings.DownloadBPS := DownloadBPS;
 
-			case Proxy.ProxyType of
-				ProxySocks5:
-					Socks.Version := svSocks5;
-				ProxySocks4:
-					Socks.Version := svSocks4;
-			end;
-			self.Socks.Enabled := true;
-		end;
+		self.HTTP := TCloudMailRuHTTP.Create(HTTPSettings, ExternalProgressProc, ExternalLogProc, ExternalRequestProc);
 
 		self.user := AccountSettings.user;
 		self.password := AccountSettings.password;
@@ -367,9 +332,7 @@ begin
 		end;
 
 		self.split_file_size := split_file_size;
-		self.ConnectTimeout := ConnectTimeout;
-		self.UploadBPS := UploadBPS;
-		self.DownloadBPS := DownloadBPS;
+
 		self.PrecalculateHash := PrecalculateHash;
 		self.CheckCRC := CheckCRC;
 
@@ -393,7 +356,7 @@ begin
 		exit; //Проверка на вызов без инициализации
 	if self.public_account then
 		exit;
-	if self.HTTPPostForm(API_FOLDER_ADD, 'home=/' + PathToUrl(Path) + self.united_params + '&conflict', PostAnswer) then
+	if self.HTTP.PostForm(API_FOLDER_ADD, 'home=/' + PathToUrl(Path) + self.united_params + '&conflict', PostAnswer) then
 	begin
 		OperationResult := fromJSON_OperationResult(PostAnswer, OperationStatus);
 		case OperationResult of
@@ -418,7 +381,7 @@ begin
 		exit; //Проверка на вызов без инициализации
 	if self.public_account then
 		exit;
-	result := self.HTTPPostForm(API_FILE_REMOVE, 'home=/' + PathToUrl(Path) + self.united_params + '&conflict', JSON);
+	result := self.HTTP.PostForm(API_FILE_REMOVE, 'home=/' + PathToUrl(Path) + self.united_params + '&conflict', JSON);
 	if result then
 	begin
 		OperationResult := fromJSON_OperationResult(JSON, OperationStatus);
@@ -436,12 +399,6 @@ end;
 
 destructor TCloudMailRu.Destroy;
 begin
-	if Assigned(self.Cookie) then
-		self.Cookie.free;
-	if Assigned(self.Throttle) then
-		self.Throttle.free;
-	if Assigned(self.Socks) then
-		self.Socks.free;
 	if Assigned(self.FileCipher) then
 		self.FileCipher.Destroy;
 
@@ -492,16 +449,6 @@ begin
 	end;
 end;
 
-
-
-
-
-
-
-
-
-
-
 function TCloudMailRu.getDescriptionFile(remotePath, localCopy: WideString): Boolean;
 var
 	resultHash: WideString;
@@ -528,7 +475,7 @@ begin
 	SetLength(DirListing, 0);
 	if self.public_account then
 		exit;
-	result := self.HTTPGetPage(API_FOLDER_SHARED_LINKS + '?' + self.united_params, JSON, ShowProgress);
+	result := self.HTTP.GetPage(API_FOLDER_SHARED_LINKS + '?' + self.united_params, JSON, ShowProgress);
 
 	if result then
 	begin
@@ -556,7 +503,7 @@ begin
 	SetLength(IncomingListing, 0);
 	if self.public_account then
 		exit;
-	result := self.HTTPGetPage(API_FOLDER_SHARED_INCOMING + '?' + self.united_params, JSON, ShowProgress);
+	result := self.HTTP.GetPage(API_FOLDER_SHARED_INCOMING + '?' + self.united_params, JSON, ShowProgress);
 
 	if result then
 	begin
@@ -608,7 +555,7 @@ begin
 	SetLength(DirListing, 0);
 	if self.public_account then
 		exit;
-	result := self.HTTPGetPage(API_TRASHBIN + '?' + self.united_params, JSON, ShowProgress);
+	result := self.HTTP.GetPage(API_TRASHBIN + '?' + self.united_params, JSON, ShowProgress);
 
 	if result then
 	begin
@@ -635,9 +582,9 @@ begin
 		exit; //Проверка на вызов без инициализации
 	SetLength(DirListing, 0);
 	if self.public_account then
-		result := self.HTTPGetPage(API_FOLDER + '&weblink=' + IncludeSlash(self.public_link) + PathToUrl(Path, false) + self.united_params, JSON, ShowProgress)
+		result := self.HTTP.GetPage(API_FOLDER + '&weblink=' + IncludeSlash(self.public_link) + PathToUrl(Path, false) + self.united_params, JSON, ShowProgress)
 	else
-		result := self.HTTPGetPage(API_FOLDER + '&home=' + PathToUrl(Path) + self.united_params, JSON, ShowProgress);
+		result := self.HTTP.GetPage(API_FOLDER + '&home=' + PathToUrl(Path) + self.united_params, JSON, ShowProgress);
 	if result then
 	begin
 		OperationResult := fromJSON_OperationResult(JSON, OperationStatus);
@@ -708,7 +655,7 @@ begin
 	if self.crypt_files then //Загрузка файла в память, дешифрация в файл
 	begin
 		MemoryStream := TMemoryStream.Create;
-		result := self.HTTPGetFile(self.Shard + PathToUrl(remotePath, false), MemoryStream, LogErrors);
+		result := self.HTTP.getFile(self.Shard + PathToUrl(remotePath, false), MemoryStream, LogErrors);
 		if result in [FS_FILE_OK] then
 		begin
 			resultHash := cloudHash(MemoryStream, ExtractFileName(localPath));
@@ -718,7 +665,7 @@ begin
 		MemoryStream.free;
 
 	end else begin
-		result := self.HTTPGetFile(self.Shard + PathToUrl(remotePath, false), FileStream, LogErrors);
+		result := self.HTTP.getFile(self.Shard + PathToUrl(remotePath, false), FileStream, LogErrors);
 		if (result in [FS_FILE_OK]) then
 			resultHash := cloudHash(FileStream, ExtractFileName(localPath));
 	end;
@@ -755,7 +702,7 @@ begin
 	end;
 	if (Assigned(FileStream)) then
 	begin
-		result := self.HTTPGetFile(getSharedFileUrl(remotePath), FileStream, LogErrors);
+		result := self.HTTP.getFile(getSharedFileUrl(remotePath), FileStream, LogErrors);
 		resultHash := cloudHash(FileStream);
 		FlushFileBuffers(FileStream.Handle);
 		FileStream.free;
@@ -769,7 +716,7 @@ var
 	Answer: WideString;
 begin
 	result := false;
-	if self.HTTPPostForm(OAUTH_TOKEN_URL, 'client_id=cloud-win&grant_type=password&username=' + self.user + '%40' + self.domain + '&password=' + UrlEncode(self.password), Answer) then
+	if self.HTTP.PostForm(OAUTH_TOKEN_URL, 'client_id=cloud-win&grant_type=password&username=' + self.user + '%40' + self.domain + '&password=' + UrlEncode(self.password), Answer) then
 	begin
 		if not fromJSON_OAuthTokenInfo(Answer, OAuthToken) then
 			exit(false);
@@ -792,7 +739,7 @@ begin
 		exit(true);
 	end;
 
-	if self.HTTPPostForm(API_DISPATCHER, self.united_params, JSON) then //checkme
+	if self.HTTP.PostForm(API_DISPATCHER, self.united_params, JSON) then //checkme
 	begin
 		OperationResult := fromJSON_OperationResult(JSON, OperationStatus);
 		case OperationResult of
@@ -819,7 +766,7 @@ begin
 	if not(Assigned(self)) then
 		exit; //Проверка на вызов без инициализации
 	Progress := false;
-	result := self.HTTPGetPage(TOKEN_URL, JSON, Progress);
+	result := self.HTTP.GetPage(TOKEN_URL, JSON, Progress);
 	if result then
 	begin
 		result := extractTokenFromText(JSON, self.token) and extract_x_page_id_FromText(JSON, self.x_page_id) and extract_build_FromText(JSON, self.build) and extract_upload_url_FromText(JSON, self.upload_url);
@@ -836,7 +783,7 @@ begin
 	if not(Assigned(self)) then
 		exit; //Проверка на вызов без инициализации
 	Progress := false;
-	result := self.HTTPGetPage(self.PUBLIC_URL, PageContent, Progress);
+	result := self.HTTP.GetPage(self.PUBLIC_URL, PageContent, Progress);
 	if result then
 	begin
 		if not extractPublicTokenFromText(PageContent, self.public_download_token) then //refresh public download token
@@ -862,7 +809,7 @@ begin
 	if not(Assigned(self)) then
 		exit; //Проверка на вызов без инициализации
 	Progress := false;
-	result := self.HTTPGetPage(API_USER_SPACE + '?home=/' + self.united_params, JSON, Progress);
+	result := self.HTTP.GetPage(API_USER_SPACE + '?home=/' + self.united_params, JSON, Progress);
 	if result then
 	begin
 		OperationResult := fromJSON_OperationResult(JSON, OperationStatus);
@@ -875,313 +822,6 @@ begin
 					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'User space receiving error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
 				end;
 		end;
-	end;
-end;
-
-procedure TCloudMailRu.HTTPInit(var HTTP: TIdHTTP; var SSL: TIdSSLIOHandlerSocketOpenSSL; var Socks: TIdSocksInfo; var Cookie: TIdCookieManager);
-begin
-	SSL := TIdSSLIOHandlerSocketOpenSSL.Create();
-	SSL.SSLOptions.SSLVersions := [sslvSSLv23];
-	HTTP := TIdHTTP.Create();
-	if (self.Proxy.ProxyType in SocksProxyTypes) and (self.Socks.Enabled) then
-		SSL.TransparentProxy := self.Socks;
-	if self.Proxy.ProxyType = ProxyHTTP then
-	begin
-		HTTP.ProxyParams.ProxyServer := self.Proxy.Server;
-		HTTP.ProxyParams.ProxyPort := self.Proxy.Port;
-		if self.Proxy.user <> EmptyWideStr then
-		begin
-			HTTP.ProxyParams.BasicAuthentication := true;
-			HTTP.ProxyParams.ProxyUsername := self.Proxy.user;
-			HTTP.ProxyParams.ProxyPassword := self.Proxy.password;
-		end
-	end;
-	HTTP.CookieManager := Cookie;
-	HTTP.IOHandler := SSL;
-	HTTP.AllowCookies := true;
-	HTTP.HTTPOptions := [hoForceEncodeParams, hoNoParseMetaHTTPEquiv, hoKeepOrigProtocol, hoTreat302Like303];
-	HTTP.HandleRedirects := true;
-	if (self.ConnectTimeout < 0) then
-	begin
-		HTTP.ConnectTimeout := self.ConnectTimeout;
-		HTTP.ReadTimeout := self.ConnectTimeout;
-	end;
-	if (self.UploadBPS > 0) or (self.DownloadBPS > 0) then
-	begin
-		self.Throttle.RecvBitsPerSec := self.DownloadBPS;
-		self.Throttle.SendBitsPerSec := self.UploadBPS;
-
-	end;
-
-	HTTP.Request.UserAgent := 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.17 (KHTML, like Gecko) Chrome/24.0.1312.57 Safari/537.17/TCWFX(' + PlatformX + ')';
-	HTTP.Request.Connection := EmptyWideStr;
-end;
-
-procedure TCloudMailRu.HTTPDestroy(var HTTP: TIdHTTP; var SSL: TIdSSLIOHandlerSocketOpenSSL);
-begin
-	HTTP.free;
-	SSL.free;
-end;
-
-function TCloudMailRu.HTTPGetPage(URL: WideString; var Answer: WideString; var ProgressEnabled: Boolean): Boolean;
-var
-	HTTP: TIdHTTP;
-	SSL: TIdSSLIOHandlerSocketOpenSSL;
-	Socks: TIdSocksInfo;
-begin
-	result := false;
-	try
-		self.HTTPInit(HTTP, SSL, Socks, self.Cookie);
-		if ProgressEnabled then
-			HTTP.OnWork := self.HTTPProgress; //Вызов прогресса ведёт к возможности отменить получение списка каталогов и других операций, поэтому он нужен не всегда
-		Answer := HTTP.Get(URL);
-		self.HTTPDestroy(HTTP, SSL);
-		result := Answer <> EmptyWideStr;
-	Except
-		on E: Exception do
-		begin
-			case self.HTTPExceptionHandler(E, URL) of
-				CLOUD_OPERATION_CANCELLED:
-					begin
-						ProgressEnabled := false; //сообщаем об отмене
-					end;
-				CLOUD_OPERATION_FAILED:
-					begin
-						case HTTP.ResponseCode of
-							HTTP_ERROR_BAD_REQUEST, HTTP_ERROR_OVERQUOTA: //recoverable errors
-								begin
-									//Answer := (E as EIdHTTPProtocolException).ErrorMessage; //TODO: нужно протестировать, наверняка тут не json
-								end;
-						end;
-					end;
-			end;
-			if Assigned(HTTP) then
-				self.HTTPDestroy(HTTP, SSL);
-		end;
-
-	end;
-
-end;
-
-function TCloudMailRu.HTTPGetFile(URL: WideString; FileStream: TStream; LogErrors: Boolean): integer;
-var
-	HTTP: TIdHTTP;
-	SSL: TIdSSLIOHandlerSocketOpenSSL;
-	Socks: TIdSocksInfo;
-begin
-	result := FS_FILE_OK;
-	try
-		self.HTTPInit(HTTP, SSL, Socks, self.Cookie);
-		HTTP.Intercept := Throttle;
-		HTTP.Request.ContentType := 'application/octet-stream';
-		HTTP.Response.KeepAlive := true;
-		HTTP.OnWork := self.HTTPProgress;
-		HTTP.Get(URL, FileStream);
-		if (HTTP.RedirectCount = HTTP.RedirectMaximum) and (FileStream.size = 0) then
-		begin
-			result := FS_FILE_READERROR;
-			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Redirection limit reached when trying to download ' + URL);
-			if (ExternalRequestProc(RT_MsgYesNo, 'Redirection limit', 'Try with another shard?', '', 0)) and (self.getShard(self.Shard)) then
-				result := self.HTTPGetFile(URL, FileStream, LogErrors);
-		end;
-		self.HTTPDestroy(HTTP, SSL);
-	except
-		on E: Exception do
-		begin
-			result := self.HTTPExceptionHandler(E, URL, HTTP_METHOD_GET, LogErrors);
-			if Assigned(HTTP) then
-				self.HTTPDestroy(HTTP, SSL);
-		end;
-	end;
-end;
-
-function TCloudMailRu.HTTPPostForm(URL: WideString; PostDataString: WideString; var Answer: WideString; ContentType: WideString = 'application/x-www-form-urlencoded'; LogErrors: Boolean = true; ProgressEnabled: Boolean = true): Boolean;
-var
-	ResultStream, PostData: TStringStream;
-	PostResult: integer;
-begin
-	ResultStream := TStringStream.Create;
-	PostData := TStringStream.Create(PostDataString, TEncoding.UTF8);
-
-	PostResult := self.HTTPPost(URL, PostData, ResultStream, true, ContentType, LogErrors, ProgressEnabled);
-	result := PostResult = CLOUD_OPERATION_OK;
-	Answer := ResultStream.DataString;
-
-	ResultStream.free;
-	PostData.free;
-end;
-
-function TCloudMailRu.HTTPPostMultipart(URL: WideString; Params: TDictionary<WideString, WideString>; var Answer: WideString): Boolean; //test
-var
-	ResultStream: TStringStream;
-	PostData: TIdMultiPartFormDataStream;
-	ParamItem: TPair<WideString, WideString>;
-	PostResult: integer;
-begin
-
-	ResultStream := TStringStream.Create;
-
-	PostData := TIdMultiPartFormDataStream.Create;
-	for ParamItem in Params do
-		PostData.AddFormField(ParamItem.Key, ParamItem.Value);
-
-	PostResult := self.HTTPPost(URL, PostData, ResultStream);
-	result := PostResult = CLOUD_OPERATION_OK;
-	Answer := ResultStream.DataString;
-
-	ResultStream.free;
-	PostData.free;
-end;
-
-function TCloudMailRu.HTTPPostFile(URL: WideString; FileName: WideString; var Answer: WideString): integer;
-var
-	FileStream: TFileStream;
-begin
-	FileStream := TFileStream.Create(FileName, fmOpenRead or fmShareDenyWrite);
-	result := self.HTTPPostFile(URL, FileName, FileStream, Answer);
-	FileStream.free;
-end;
-
-function TCloudMailRu.HTTPPostFile(URL, FileName: WideString; var Answer: WideString; ChunkInfo: TFileChunkInfo): integer;
-var
-	ChunkStream: TChunkedFileStream;
-begin
-	ChunkStream := TChunkedFileStream.Create(FileName, fmOpenRead or fmShareDenyWrite, ChunkInfo.start, ChunkInfo.size); {FIXME TODO: Bug here - TChunkedFileStream некорректно обрабатывает файлы больше какого-то лимита}
-	result := self.HTTPPostFile(URL, ChunkInfo.name, ChunkStream, Answer);
-	ChunkStream.free;
-end;
-
-function TCloudMailRu.HTTPPostFile(URL, FileName: WideString; FileStream: TStream; var Answer: WideString): integer;
-var
-	PostData: TIdMultiPartFormDataStream;
-	ResultStream: TStringStream;
-	MemoryStream: TMemoryStream;
-begin
-	ResultStream := TStringStream.Create;
-	PostData := TIdMultiPartFormDataStream.Create;
-	MemoryStream := TMemoryStream.Create;
-
-	if self.crypt_files then {Will encrypt any type of data passed here}
-	begin
-		self.FileCipher.CryptStream(FileStream, MemoryStream);
-		MemoryStream.Position := 0;
-		PostData.AddFormField('file', 'application/octet-stream', EmptyWideStr, MemoryStream, FileName);
-	end else begin
-		PostData.AddFormField('file', 'application/octet-stream', EmptyWideStr, FileStream, FileName);
-	end;
-
-	result := self.HTTPPost(URL, PostData, ResultStream);
-	Answer := ResultStream.DataString;
-	MemoryStream.free;
-	ResultStream.free;
-	PostData.free;
-end;
-
-function TCloudMailRu.HTTPPost(URL: WideString; PostData, ResultData: TStringStream; UnderstandResponseCode: Boolean = false; ContentType: WideString = ''; LogErrors: Boolean = true; ProgressEnabled: Boolean = true): integer;
-var
-	HTTP: TIdHTTP;
-	SSL: TIdSSLIOHandlerSocketOpenSSL;
-	Socks: TIdSocksInfo;
-begin
-	result := CLOUD_OPERATION_OK;
-	ResultData.Position := 0;
-	try
-		self.HTTPInit(HTTP, SSL, Socks, self.Cookie);
-		if ContentType <> EmptyWideStr then
-			HTTP.Request.ContentType := ContentType;
-		if ProgressEnabled then
-			HTTP.OnWork := self.HTTPProgress;
-		HTTP.Post(URL, PostData, ResultData);
-		self.HTTPDestroy(HTTP, SSL);
-	except
-		on E: Exception do
-		begin
-			result := self.HTTPExceptionHandler(E, URL, HTTP_METHOD_POST, LogErrors);
-			if UnderstandResponseCode and (E is EIdHTTPProtocolException) then
-			begin
-				case HTTP.ResponseCode of
-					HTTP_ERROR_BAD_REQUEST, HTTP_ERROR_OVERQUOTA: //recoverable errors
-						begin
-							ResultData.WriteString((E as EIdHTTPProtocolException).ErrorMessage);
-							result := CLOUD_OPERATION_OK;
-						end;
-				end;
-			end;
-			if Assigned(HTTP) then
-				self.HTTPDestroy(HTTP, SSL);
-		end;
-	end;
-end;
-
-function TCloudMailRu.HTTPPost(URL: WideString; var PostData: TIdMultiPartFormDataStream; ResultData: TStringStream): integer;
-var
-	HTTP: TIdHTTP;
-	SSL: TIdSSLIOHandlerSocketOpenSSL;
-	Socks: TIdSocksInfo;
-begin
-	result := CLOUD_OPERATION_OK;
-	ResultData.Position := 0;
-	try
-		self.HTTPInit(HTTP, SSL, Socks, self.Cookie);
-		HTTP.Intercept := Throttle;
-		HTTP.OnWork := self.HTTPProgress;
-		HTTP.Post(URL, PostData, ResultData);
-		self.HTTPDestroy(HTTP, SSL);
-	except
-		On E: Exception do
-		begin
-			result := self.HTTPExceptionHandler(E, URL);
-			if Assigned(HTTP) then
-				self.HTTPDestroy(HTTP, SSL);
-		end;
-	end;
-end;
-
-function TCloudMailRu.HTTPExceptionHandler(E: Exception; URL: WideString; HTTPMethod: integer = HTTP_METHOD_POST; LogErrors: Boolean = true): integer;
-var
-	method_string: WideString; //в зависимости от метода исходного запроса меняется текст сообщения
-begin
-	if HTTPMethod = HTTP_METHOD_GET then
-	begin
-		method_string := 'получении данных с адреса ';
-		result := FS_FILE_READERROR; //для HTTPGetFile, GetForm не интересует код ошибки
-	end else begin
-		method_string := 'отправке данных на адрес ';
-		result := CLOUD_OPERATION_FAILED; //Для всех Post-запросов
-	end;
-
-	if E is EAbort then
-	begin
-		result := CLOUD_OPERATION_CANCELLED;
-	end else if LogErrors then //разбирать ошибку дальше имеет смысл только для логирования - что вернуть уже понятно
-	begin
-		if E is EIdHTTPProtocolException then
-			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при ' + method_string + URL + ', ответ сервера: ' + (E as EIdHTTPProtocolException).ErrorMessage)
-		else if E is EIdSocketerror then
-			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка сети: ' + E.Message + ' при ' + method_string + URL)
-		else
-			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при ' + method_string + URL);
-
-	end;
-
-end;
-
-procedure TCloudMailRu.HTTPProgress(ASender: TObject; AWorkMode: TWorkMode; AWorkCount: int64);
-var
-	HTTP: TIdHTTP;
-	ContentLength: int64;
-	Percent: integer;
-begin
-	HTTP := TIdHTTP(ASender);
-	if AWorkMode = wmRead then
-		ContentLength := HTTP.Response.ContentLength
-	else
-		ContentLength := HTTP.Request.ContentLength; //Считаем размер обработанных данных зависимости от того, скачивание это или загрузка
-	if (Pos('chunked', LowerCase(HTTP.Response.TransferEncoding)) = 0) and (ContentLength > 0) then
-	begin
-		Percent := 100 * AWorkCount div ContentLength;
-		if Assigned(ExternalProgressProc) and (ExternalProgressProc(self.ExternalSourceName, self.ExternalTargetName, Percent) = 1) then
-			abort;
 	end;
 end;
 
@@ -1230,7 +870,7 @@ begin
 				FormFields.AddOrSetValue('Login', self.user);
 				FormFields.AddOrSetValue('Password', self.password);
 				Log(LogLevelDebug, MSGTYPE_DETAILS, 'Requesting first step auth token for ' + self.user + '@' + self.domain);
-				result := self.HTTPPostMultipart(LOGIN_URL, FormFields, PostAnswer);
+				result := self.HTTP.PostMultipart(LOGIN_URL, FormFields, PostAnswer);
 				if result then
 				begin
 					Log(LogLevelDebug, MSGTYPE_DETAILS, 'Parsing authorization data...');
@@ -1258,7 +898,7 @@ begin
 							FormFields.AddOrSetValue('csrf', TwostepData.csrf);
 							FormFields.AddOrSetValue('AuthCode', SecurityKey);
 							Log(LogLevelDebug, MSGTYPE_DETAILS, 'Performing second step auth...');
-							result := self.HTTPPostMultipart(SECSTEP_URL, FormFields, PostAnswer);
+							result := self.HTTP.PostMultipart(SECSTEP_URL, FormFields, PostAnswer);
 							FormFields.free;
 							if result then
 							begin
@@ -1291,7 +931,7 @@ begin
 		CLOUD_AUTH_METHOD_WEB: //todo: вынести в отдельный метод
 			begin
 				Log(LogLevelDebug, MSGTYPE_DETAILS, 'Requesting auth token for ' + self.user + '@' + self.domain);
-				result := self.HTTPPostForm(LOGIN_URL, 'page=https://cloud.mail.ru/?new_auth_form=1&Domain=' + self.domain + '&Login=' + self.user + '&Password=' + UrlEncode(self.password) + '&FailPage=', PostAnswer);
+				result := self.HTTP.PostForm(LOGIN_URL, 'page=https://cloud.mail.ru/?new_auth_form=1&Domain=' + self.domain + '&Login=' + self.user + '&Password=' + UrlEncode(self.password) + '&FailPage=', PostAnswer);
 				if (result) then
 				begin
 					Log(LogLevelDebug, MSGTYPE_DETAILS, 'Parsing token data...');
@@ -1356,7 +996,7 @@ begin
 		exit; //Проверка на вызов без инициализации
 	if self.public_account then
 		exit(FS_FILE_NOTSUPPORTED);
-	if self.HTTPPostForm(API_FILE_MOVE, 'home=' + PathToUrl(OldName) + '&folder=' + PathToUrl(ToPath) + self.united_params + '&conflict', JSON) then
+	if self.HTTP.PostForm(API_FILE_MOVE, 'home=' + PathToUrl(OldName) + '&folder=' + PathToUrl(ToPath) + self.united_params + '&conflict', JSON) then
 	begin //Парсим ответ
 		OperationResult := fromJSON_OperationResult(JSON, OperationStatus);
 		result := CloudResultToFsResult(OperationResult, OperationStatus, 'File move error: ');
@@ -1397,9 +1037,9 @@ begin
 		exit;
 	if publish then
 	begin
-		result := self.HTTPPostForm(API_FILE_PUBLISH, 'home=/' + PathToUrl(Path) + self.united_params + '&conflict', JSON, 'application/x-www-form-urlencoded', true, false);
+		result := self.HTTP.PostForm(API_FILE_PUBLISH, 'home=/' + PathToUrl(Path) + self.united_params + '&conflict', JSON, 'application/x-www-form-urlencoded', true, false);
 	end else begin
-		result := self.HTTPPostForm(API_FILE_UNPUBLISH, 'weblink=' + PublicLink + self.united_params + '&conflict', JSON, 'application/x-www-form-urlencoded', true, false);
+		result := self.HTTP.PostForm(API_FILE_UNPUBLISH, 'weblink=' + PublicLink + self.united_params + '&conflict', JSON, 'application/x-www-form-urlencoded', true, false);
 	end;
 
 	if result then
@@ -1427,7 +1067,7 @@ begin
 	if not(Assigned(self)) then
 		exit; //Проверка на вызов без инициализации
 	Progress := false;
-	if self.HTTPGetPage(API_FOLDER_SHARED_INFO + '?home=' + PathToUrl(Path) + self.united_params, JSON, Progress) then
+	if self.HTTP.GetPage(API_FOLDER_SHARED_INFO + '?home=' + PathToUrl(Path) + self.united_params, JSON, Progress) then
 	begin
 		result := fromJSON_InviteListing(JSON, InviteListing);
 	end;
@@ -1450,9 +1090,9 @@ begin
 		else
 			access_string := CLOUD_SHARE_ACCESS_READ_ONLY;
 
-		result := self.HTTPPostForm(API_FOLDER_SHARE, 'home=/' + PathToUrl(Path) + self.united_params + '&invite={"email":"' + email + '","access":"' + access_string + '"}', JSON)
+		result := self.HTTP.PostForm(API_FOLDER_SHARE, 'home=/' + PathToUrl(Path) + self.united_params + '&invite={"email":"' + email + '","access":"' + access_string + '"}', JSON)
 	end else begin
-		result := (self.HTTPPostForm(API_FOLDER_UNSHARE, 'home=/' + PathToUrl(Path) + self.united_params + '&invite={"email":"' + email + '"}', JSON));
+		result := (self.HTTP.PostForm(API_FOLDER_UNSHARE, 'home=/' + PathToUrl(Path) + self.united_params + '&invite={"email":"' + email + '"}', JSON));
 	end;
 
 	if (result) then
@@ -1477,7 +1117,7 @@ begin
 	if self.public_account then
 		exit;
 
-	result := self.HTTPPostForm(API_TRASHBIN_RESTORE, 'path=' + PathToUrl(Path) + '&restore_revision=' + RestoreRevision.ToString + self.united_params + '&conflict=' + ConflictMode, JSON);
+	result := self.HTTP.PostForm(API_TRASHBIN_RESTORE, 'path=' + PathToUrl(Path) + '&restore_revision=' + RestoreRevision.ToString + self.united_params + '&conflict=' + ConflictMode, JSON);
 
 	if result then
 	begin
@@ -1505,7 +1145,7 @@ begin
 	if self.public_account then
 		exit;
 
-	result := self.HTTPPostForm(API_TRASHBIN_EMPTY, self.united_params, JSON);
+	result := self.HTTP.PostForm(API_TRASHBIN_EMPTY, self.united_params, JSON);
 
 	if result then
 	begin
@@ -1533,7 +1173,7 @@ begin
 	if self.public_account then
 		exit;
 
-	result := self.HTTPPostForm(API_FOLDER_MOUNT, 'home=' + UrlEncode(home) + '&invite_token=' + invite_token + self.united_params + '&conflict=' + ConflictMode, JSON);
+	result := self.HTTP.PostForm(API_FOLDER_MOUNT, 'home=' + UrlEncode(home) + '&invite_token=' + invite_token + self.united_params + '&conflict=' + ConflictMode, JSON);
 
 	if result then
 	begin
@@ -1566,7 +1206,7 @@ begin
 	else
 		CopyStr := 'false';
 
-	result := self.HTTPPostForm(API_FOLDER_UNMOUNT, 'home=' + UrlEncode(home) + '&clone_copy=' + CopyStr + self.united_params, JSON);
+	result := self.HTTP.PostForm(API_FOLDER_UNMOUNT, 'home=' + UrlEncode(home) + '&clone_copy=' + CopyStr + self.united_params, JSON);
 
 	if result then
 	begin
@@ -1594,7 +1234,7 @@ begin
 	if self.public_account then
 		exit;
 
-	result := self.HTTPPostForm(API_INVITE_REJECT, 'invite_token=' + invite_token + self.united_params, JSON);
+	result := self.HTTP.PostForm(API_INVITE_REJECT, 'invite_token=' + invite_token + self.united_params, JSON);
 
 	if result then
 	begin
@@ -1912,9 +1552,9 @@ begin
 		exit;
 	if nil = ChunkInfo then
 
-		result := self.HTTPPostFile(self.upload_url + '/?cloud_domain=1&x-email=' + self.user + '%40' + self.domain + '&fileapi' + DateTimeToUnix(now).ToString + '0246', GetUNCFilePath(localPath), PostAnswer)
+		result := self.HTTP.PostFile(self.upload_url + '/?cloud_domain=1&x-email=' + self.user + '%40' + self.domain + '&fileapi' + DateTimeToUnix(now).ToString + '0246', GetUNCFilePath(localPath), PostAnswer)
 	else
-		result := self.HTTPPostFile(self.upload_url + '/?cloud_domain=1&x-email=' + self.user + '%40' + self.domain + '&fileapi' + DateTimeToUnix(now).ToString + '0246', GetUNCFilePath(localPath), PostAnswer, ChunkInfo^);
+		result := self.HTTP.PostFile(self.upload_url + '/?cloud_domain=1&x-email=' + self.user + '%40' + self.domain + '&fileapi' + DateTimeToUnix(now).ToString + '0246', GetUNCFilePath(localPath), PostAnswer, ChunkInfo^);
 	if (result = CLOUD_OPERATION_OK) then
 	begin
 		ExtractStrings([';'], [], PWideChar(PostAnswer), Return);
@@ -1934,7 +1574,7 @@ begin
 		exit; //Проверка на вызов без инициализации
 	if self.public_account then
 		exit;
-	result := self.HTTPPostFile(self.upload_url + '/?cloud_domain=1&x-email=' + self.user + '%40' + self.domain + '&fileapi' + DateTimeToUnix(now).ToString + '0246', FileName, FileStream, PostAnswer);
+	result := self.HTTP.PostFile(self.upload_url + '/?cloud_domain=1&x-email=' + self.user + '%40' + self.domain + '&fileapi' + DateTimeToUnix(now).ToString + '0246', FileName, FileStream, PostAnswer);
 	if (result = CLOUD_OPERATION_OK) then
 	begin
 		ExtractStrings([';'], [], PWideChar(PostAnswer), Return);
@@ -1955,7 +1595,7 @@ begin
 		exit; //Проверка на вызов без инициализации
 	if self.public_account then
 		exit;
-	result := self.HTTPPostForm(API_FILE_REMOVE, 'home=/' + IncludeSlash(PathToUrl(Path)) + self.united_params + '&conflict', JSON); //API всегда отвечает true, даже если путь не существует
+	result := self.HTTP.PostForm(API_FILE_REMOVE, 'home=/' + IncludeSlash(PathToUrl(Path)) + self.united_params + '&conflict', JSON); //API всегда отвечает true, даже если путь не существует
 	if result then
 	begin
 		OperationResult := fromJSON_OperationResult(JSON, OperationStatus);
@@ -1981,7 +1621,7 @@ begin
 		exit; //Проверка на вызов без инициализации
 	if self.public_account then
 		exit;
-	if self.HTTPPostForm(API_FILE_RENAME, 'home=' + PathToUrl(OldName) + '&name=' + PathToUrl(NewName) + self.united_params, JSON) then
+	if self.HTTP.PostForm(API_FILE_RENAME, 'home=' + PathToUrl(OldName) + '&name=' + PathToUrl(NewName) + self.united_params, JSON) then
 	begin //Парсим ответ
 		OperationResult := fromJSON_OperationResult(JSON, OperationStatus);
 		result := CloudResultToFsResult(OperationResult, OperationStatus, 'Rename file error: ');
@@ -1999,9 +1639,9 @@ begin
 		exit; //Проверка на вызов без инициализации
 	Progress := false;
 	if self.public_account then
-		result := self.HTTPGetPage(API_FILE + '?weblink=' + IncludeSlash(self.public_link) + PathToUrl(Path) + self.united_params, JSON, Progress)
+		result := self.HTTP.GetPage(API_FILE + '?weblink=' + IncludeSlash(self.public_link) + PathToUrl(Path) + self.united_params, JSON, Progress)
 	else
-		result := self.HTTPGetPage(API_FILE + '?home=' + PathToUrl(Path) + self.united_params, JSON, Progress);
+		result := self.HTTP.GetPage(API_FILE + '?home=' + PathToUrl(Path) + self.united_params, JSON, Progress);
 
 	if result then
 	begin

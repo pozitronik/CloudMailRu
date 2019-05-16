@@ -192,6 +192,7 @@
         <DCCReference Include="SplitFile.pas"/>
         <DCCReference Include="ChunkedFileStream.pas"/>
         <DCCReference Include="CMLParsers.pas"/>
+        <DCCReference Include="CMLHTTP.pas"/>
         <RcItem Include="icons\icon.ico">
             <ResourceType>ICON</ResourceType>
             <ResourceId>base_icon</ResourceId>

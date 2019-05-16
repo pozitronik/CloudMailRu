@@ -87,6 +87,14 @@ type
 		use_tc_password_manager: boolean;
 	end;
 
+	{Settings for HTTP transport}
+	TConnectionSettings = record
+		Proxy: TProxySettings;
+		ConnectTimeout: integer;
+		UploadBPS: integer;
+		DownloadBPS: integer;
+	end;
+
 	TPluginSettings = record
 		IniPath: integer;
 		LoadSSLDLLOnlyFromPluginDir: boolean;
