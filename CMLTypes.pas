@@ -156,7 +156,6 @@ type
 		status: WideString;
 		access: WideString;
 		name: WideString;
-
 	end;
 
 	TCloudMailRuIncomingInviteInfo = record
@@ -188,6 +187,11 @@ type
 		csrf: WideString;
 		device: WideString;
 		{some items skipped}
+	end;
+
+	TCloudMailRuFileIdentity = record
+		hash: WideString;
+		size: int64;
 	end;
 
 	TCloudMailRuDirListing = array of TCloudMailRuDirListingItem;
