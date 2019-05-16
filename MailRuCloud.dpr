@@ -786,7 +786,7 @@ begin
 		HashInfo := THashInfo.Create(Parameter);
 		if HashInfo.valid then
 		begin
-			Cloud.cloneHash(RealPath.path, HashInfo.hash, HashInfo.size, HashInfo.name);
+			Cloud.addFileByIdentity(HashInfo.CloudFileIdentity, IncludeTrailingPathDelimiter(RealPath.path) + HashInfo.name, CLOUD_CONFLICT_RENAME);
 			HashInfo.Destroy;
 		end else begin
 			LogHandle(LogLevelDebug, msgtype_details, PWideChar('Error cloning by hash: ' + HashInfo.errorString + ' Parameter: ' + Parameter));
@@ -1310,7 +1310,6 @@ end;
 function cloneWeblink(NewCloud, OldCloud: TCloudMailRu; CloudPath: WideString; CurrentItem: TCloudMailRuDirListingItem; NeedUnpublish: Boolean): integer;
 begin
 	Result := NewCloud.cloneWeblink(ExtractFileDir(CloudPath), CurrentItem.WebLink, CLOUD_CONFLICT_STRICT);
-
 	if (NeedUnpublish) and (FS_FILE_USERABORT <> Result) and not(OldCloud.publishFile(CurrentItem.home, CurrentItem.WebLink, CLOUD_UNPUBLISH)) then
 		LogHandle(LogLevelError, MSGTYPE_IMPORTANTERROR, PWideChar('Can''t remove temporary public link on ' + CurrentItem.home));
 end;
@@ -1327,26 +1326,24 @@ begin
 		exit;
 	if OldCloud.statusFile(OldRealPath.path, CurrentItem) then
 	begin
-		Result := NewCloud.cloneHash(ExtractFileDir(NewRealPath.path), CurrentItem.hash, CurrentItem.size, ExtractFileName(NewRealPath.path), CLOUD_CONFLICT_STRICT);
+		Result := NewCloud.addFileByIdentity(CurrentItem, ExtractFileDir(NewRealPath.path) + ExtractFileName(NewRealPath.path));
 		if not(Result in [FS_FILE_OK, FS_FILE_EXISTS]) then
 		begin
 
 			case GetPluginSettings(SettingsIniFilePath).OperationErrorMode of
 				OperationErrorModeAsk:
 					begin
-
 						while (not(Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
 						begin
 							case (messagebox(FindTCWindow, PWideChar('File cloning error: ' + TCloudMailRu.ErrorCodeText(Result) + sLineBreak + 'Continue operation?'), 'Operation error', MB_ABORTRETRYIGNORE + MB_ICONERROR)) of
 								ID_ABORT:
 									Result := FS_FILE_USERABORT;
 								ID_RETRY:
-									Result := NewCloud.cloneHash(ExtractFileDir(NewRealPath.path), CurrentItem.hash, CurrentItem.size, CurrentItem.name, CLOUD_CONFLICT_STRICT);
+									Result := NewCloud.addFileByIdentity(CurrentItem, ExtractFileDir(NewRealPath.path) + CurrentItem.name);
 								ID_IGNORE:
 									break;
 							end;
 						end;
-
 					end;
 				OperationErrorModeIgnore:
 					exit;
