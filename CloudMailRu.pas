@@ -2,7 +2,7 @@
 
 interface
 
-uses CMLJSON, CMLTypes, System.Hash, System.Classes, System.Generics.Collections, System.SysUtils, PLUGIN_Types, Winapi.Windows, IdStack, MRC_helper, Settings, IdCookieManager, IdIOHandler, IdIOHandlerSocket, IdIOHandlerStack, IdSSL, IdSSLOpenSSL, IdBaseComponent, IdComponent, IdTCPConnection, IdTCPClient, IdSocks, IdHTTP, IdAuthentication, IdIOHandlerStream, IdInterceptThrottler, IdCookie, IdMultipartFormData, Cipher, Splitfile, ChunkedFileStream;
+uses CMLJSON, CMLParsers, CMLTypes, System.Hash, System.Classes, System.Generics.Collections, System.SysUtils, PLUGIN_Types, Winapi.Windows, IdStack, MRC_helper, Settings, IdCookieManager, IdIOHandler, IdIOHandlerSocket, IdIOHandlerStack, IdSSL, IdSSLOpenSSL, IdBaseComponent, IdComponent, IdTCPConnection, IdTCPClient, IdSocks, IdHTTP, IdAuthentication, IdIOHandlerStream, IdInterceptThrottler, IdCookie, IdMultipartFormData, Cipher, Splitfile, ChunkedFileStream;
 
 type
 	TCloudMailRu = class
@@ -66,14 +66,7 @@ type
 
 		procedure HTTPProgress(ASender: TObject; AWorkMode: TWorkMode; AWorkCount: int64);
 		{RAW TEXT PARSING}{TODO: Move to separate unit}
-		function extractNearValue(Text, Anchor: WideString; StartChar: WideChar = '"'; EndChar: WideChar = '"'): WideString;
-		function extractTokenFromText(Text: WideString; var token: WideString): Boolean;
-		function extractPublicTokenFromText(Text: WideString; var PublicToken: WideString): Boolean;
-		function extract_x_page_id_FromText(Text: WideString; var PageId: WideString): Boolean;
-		function extract_build_FromText(Text: WideString; var build: WideString): Boolean;
-		function extract_upload_url_FromText(Text: WideString; var UploadUrl: WideString): Boolean;
-		function extractPublicShard(Text: WideString; var Shard: WideString): Boolean;
-		function extractTwostepJson(Text: WideString; var JSON: WideString): Boolean;
+		//Moved to CMLParsers
 		{JSON MANIPULATION}
 		//Moved to CMLJSON
 		{HTTP REQUESTS WRAPPERS}
@@ -499,89 +492,15 @@ begin
 	end;
 end;
 
-function TCloudMailRu.extractNearValue(Text, Anchor: WideString; StartChar: WideChar = '"'; EndChar: WideChar = '"'): WideString;
-var
-	start, end_: integer;
-begin
-	result := EmptyWideStr;
 
-	Text := StringReplace(Text, #$A, EmptyWideStr, [rfReplaceAll]); //так нам проще ковыряться в тексте
-	Text := StringReplace(Text, #$D, EmptyWideStr, [rfReplaceAll]);
-	Text := StringReplace(Text, #9, EmptyWideStr, [rfReplaceAll]);
-	Text := StringReplace(Text, #$20, EmptyWideStr, [rfReplaceAll]);
-	start := Pos(WideString(Anchor), Text);
-	if start > 0 then
-	begin
-		start := Pos(StartChar, Text, start + length(Anchor)) + 1;
-		end_ := Pos(EndChar, Text, start);
-		result := copy(Text, start, end_ - start);
-	end;
-end;
 
-function TCloudMailRu.extractTokenFromText(Text: WideString; var token: WideString): Boolean;
-begin
-	token := self.extractNearValue(Text, '"csrf"');
-	result := token <> EmptyWideStr;
-end;
 
-function TCloudMailRu.extractTwostepJson(Text: WideString; var JSON: WideString): Boolean;
-var
-	start, finish: integer;
-begin
-	result := false;
-	start := Pos(WideString('<script type="text/html" id="json">'), Text);
-	finish := Pos(WideString('</script>'), Text);
-	if (start > 0) and (finish > 0) then
-	begin
-		JSON := copy(Text, start + 35, finish - start - 35);
 
-		result := true;
-	end;
-end;
 
-function TCloudMailRu.extract_build_FromText(Text: WideString; var build: WideString): Boolean;
-begin
-	build := self.extractNearValue(Text, '"BUILD"');
-	result := build <> EmptyWideStr;
-end;
 
-function TCloudMailRu.extract_upload_url_FromText(Text: WideString; var UploadUrl: WideString): Boolean;
-var
-	start, start1, start2, finish, length: Cardinal;
-	temp: WideString;
-begin
-	result := false;
-	start := Pos(WideString('mail.ru/upload/"'), Text);
-	if start > 0 then
-	begin
-		start1 := start - 50;
-		finish := start + 15;
-		length := finish - start1;
-		temp := copy(Text, start1, length);
-		start2 := Pos(WideString('https://'), temp);
-		UploadUrl := copy(temp, start2, Strlen(PWideChar(temp)) - start2);
-		result := true;
-	end;
-end;
 
-function TCloudMailRu.extract_x_page_id_FromText(Text: WideString; var PageId: WideString): Boolean;
-begin
-	PageId := self.extractNearValue(Text, '"x-page-id"');
-	result := PageId <> EmptyWideStr;
-end;
 
-function TCloudMailRu.extractPublicShard(Text: WideString; var Shard: WideString): Boolean;
-begin
-	Shard := extractNearValue(Text, '"weblink_get":', '[', ']');
-	Shard := extractNearValue(Shard, '"url":');
-	result := EmptyWideStr <> Shard;
-end;
 
-function TCloudMailRu.extractPublicTokenFromText(Text: WideString; var PublicToken: WideString): Boolean;
-begin
-	PublicToken := extractNearValue(Text, '"tokens":{"download":');
-	result := EmptyWideStr <> PublicToken;
-end;
 
 function TCloudMailRu.getDescriptionFile(remotePath, localCopy: WideString): Boolean;
 var
@@ -903,7 +822,7 @@ begin
 	result := self.HTTPGetPage(TOKEN_URL, JSON, Progress);
 	if result then
 	begin
-		result := self.extractTokenFromText(JSON, self.token) and self.extract_x_page_id_FromText(JSON, self.x_page_id) and self.extract_build_FromText(JSON, self.build) and self.extract_upload_url_FromText(JSON, self.upload_url);
+		result := extractTokenFromText(JSON, self.token) and extract_x_page_id_FromText(JSON, self.x_page_id) and extract_build_FromText(JSON, self.build) and extract_upload_url_FromText(JSON, self.upload_url);
 		self.united_params := '&api=2&build=' + self.build + '&x-page-id=' + self.x_page_id + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&token=' + self.token + '&_=' + DateTimeToUnix(now).ToString + '810';
 	end;
 end;
@@ -920,12 +839,12 @@ begin
 	result := self.HTTPGetPage(self.PUBLIC_URL, PageContent, Progress);
 	if result then
 	begin
-		if not self.extractPublicTokenFromText(PageContent, self.public_download_token) then //refresh public download token
+		if not extractPublicTokenFromText(PageContent, self.public_download_token) then //refresh public download token
 		begin
 			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Can''t get public share download token');
 			exit(false);
 		end;
-		if not self.extractPublicShard(PageContent, self.public_shard) then
+		if not extractPublicShard(PageContent, self.public_shard) then
 		begin
 			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Can''t get public share download share');
 			exit(false);
@@ -1315,7 +1234,7 @@ begin
 				if result then
 				begin
 					Log(LogLevelDebug, MSGTYPE_DETAILS, 'Parsing authorization data...');
-					if self.extractTwostepJson(PostAnswer, TwoStepJson) and fromJSON_TwostepData(TwoStepJson, TwostepData) then
+					if extractTwostepJson(PostAnswer, TwoStepJson) and fromJSON_TwostepData(TwoStepJson, TwostepData) then
 					begin
 						if TwostepData.secstep_timeout = AUTH_APP_USED then
 							AuthMessage := 'Enter code from authentication app.'//mobile app used
