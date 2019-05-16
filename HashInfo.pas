@@ -2,7 +2,7 @@ unit HashInfo;
 
 interface
 
-uses system.sysutils, MRC_Helper;
+uses system.sysutils, MRC_Helper, CMLTypes;
 
 const
 	ERR_WRONG_FORMAT = 'Parameter should be in hash:size:name or hash:size format.';
@@ -12,12 +12,17 @@ const
 type
 
 	THashInfo = class
+	private
+		function GetCloudMailRuFileIdentity: TCloudMailRuFileIdentity;
 	public
 		hash: WideString;
 		size: int64;
 		name: WideString;
 		valid: boolean;
 		errorString: WideString;
+
+		property CloudFileIdentity: TCloudMailRuFileIdentity read GetCloudMailRuFileIdentity;
+
 		constructor Create(parameter: WideString; doClean: boolean = true);
 		destructor Destroy; override;
 
@@ -91,6 +96,12 @@ end;
 destructor THashInfo.Destroy;
 begin
 	inherited;
+end;
+
+function THashInfo.GetCloudMailRuFileIdentity: TCloudMailRuFileIdentity;
+begin
+	result.hash := self.hash;
+	result.size := self.size;
 end;
 
 end.
