@@ -2,8 +2,7 @@
 
 interface
 
-uses
-	Plugin_types, Descriptions, CMLTypes, Settings, Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, CloudMailRu, MRC_Helper, Vcl.Grids, Vcl.ValEdit, Vcl.Menus, Vcl.ComCtrls, Vcl.ToolWin, System.ImageList, Vcl.ImgList, Clipbrd, HashInfo;
+uses Plugin_types, Descriptions, CMLTypes, Settings, Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, CloudMailRu, MRC_Helper, Vcl.Grids, Vcl.ValEdit, Vcl.Menus, Vcl.ComCtrls, Vcl.ToolWin, System.ImageList, Vcl.ImgList, Clipbrd, HashInfo;
 
 const
 	WM_AFTER_SHOW = WM_USER + 300; //custom message
@@ -390,12 +389,13 @@ begin
 		if CurrentCommand.valid then
 		begin
 			if Props.kind = TYPE_DIR then //клонируем в каталог
-				Cloud.cloneHash(IncludeTrailingPathDelimiter(self.RemoteName), CurrentCommand.hash, CurrentCommand.size, CurrentCommand.name)
+				Cloud.addFileByIdentity(CurrentCommand.CloudFileIdentity, IncludeTrailingPathDelimiter(self.RemoteName) + CurrentCommand.name, CLOUD_CONFLICT_RENAME)
 			else //клонируем рядом
-				Cloud.cloneHash(ExtractFilePath(self.RemoteName), CurrentCommand.hash, CurrentCommand.size, CurrentCommand.name)
+				Cloud.addFileByIdentity(CurrentCommand.CloudFileIdentity, ExtractFilePath(self.RemoteName) + CurrentCommand.name, CLOUD_CONFLICT_RENAME);
 		end else begin
 			HashesLogProc('Line ' + ItemIndex.ToString + '[' + CommandList.Strings[ItemIndex] + ']: ' + CurrentCommand.errorString);
 		end;
+
 	end;
 	PostMessage(FindTCWindow, WM_USER + 51, 540, 0); //TC does not update current panel, so we should do it this way
 end;
