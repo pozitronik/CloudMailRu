@@ -3,7 +3,7 @@
 interface
 
 uses JSON, CMLTypes, System.SysUtils;
-
+{TODO: переделать в класс, а функции вызывать статикой}
 const
 	NAME_BODY = 'body';
 	NAME_LIST = 'list';
