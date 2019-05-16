@@ -8,8 +8,6 @@ type
 
 	TCloudMailRuHTTP = class
 	private
-		ExternalSourceName: PWideChar; //temp
-		ExternalTargetName: PWideChar; //temp
 		{VARIABLES}
 		HTTP: TIdHTTP;
 		SSL: TIdSSLIOHandlerSocketOpenSSL;
@@ -353,12 +351,11 @@ begin
 	if AWorkMode = wmRead then
 		ContentLength := HTTP.Response.ContentLength
 	else
-		ContentLength := HTTP.Request.ContentLength; //Считаем размер обработанных данных зависимости от того, скачивание это или загрузка
+		ContentLength := HTTP.Request.ContentLength; //Считаем размер обработанных данных в зависимости от того, скачивание это или загрузка
 	if (Pos('chunked', LowerCase(HTTP.Response.TransferEncoding)) = 0) and (ContentLength > 0) then
 	begin
 		Percent := 100 * AWorkCount div ContentLength;
-		{TODO: подумать, как избавиться от знчений источника/получателя, чтобы модуль отвечал только за транспорт}
-		if Assigned(ExternalProgressProc) and (ExternalProgressProc(self.ExternalSourceName, self.ExternalTargetName, Percent) = 1) then
+		if Assigned(ExternalProgressProc) and (ExternalProgressProc(nil, nil, Percent) = 1) then {При передаче nil прогресс оставляет предыдущие значения}
 			abort;
 	end;
 end;
