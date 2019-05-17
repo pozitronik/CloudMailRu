@@ -8,8 +8,7 @@ type
 	TCloudMailRu = class
 	private
 		{VARIABLES}
-		ExternalSourceName: PWideChar;
-		ExternalTargetName: PWideChar;
+
 		domain: WideString;
 		user: WideString;
 		password: WideString;
@@ -320,9 +319,6 @@ begin
 
 		self.PrecalculateHash := PrecalculateHash;
 		self.CheckCRC := CheckCRC;
-
-		self.ExternalSourceName := nil;
-		self.ExternalTargetName := nil;
 	except
 		on E: Exception do
 		begin
@@ -600,10 +596,17 @@ begin
 	result := FS_FILE_NOTSUPPORTED;
 	if not(Assigned(self)) then
 		exit; //Проверка на вызов без инициализации
+
+	self.HTTP.ExternalSourceName := PWideChar(remotePath);
+	self.HTTP.ExternalTargetName := PWideChar(localPath);
+
 	if self.public_account then
 		result := self.getFileShared(remotePath, localPath, resultHash, LogErrors)
 	else
 		result := self.getFileRegular(remotePath, localPath, resultHash, LogErrors);
+
+	self.HTTP.ExternalSourceName := nil;
+	self.HTTP.ExternalTargetName := nil;
 end;
 
 function TCloudMailRu.getFileRegular(remotePath, localPath: WideString; var resultHash: WideString; LogErrors: Boolean): integer;
@@ -635,8 +638,6 @@ begin
 			exit(FS_FILE_WRITEERROR);
 		end;
 	end;
-	self.ExternalSourceName := PWideChar(remotePath);
-	self.ExternalTargetName := PWideChar(localPath);
 
 	if self.crypt_files then //Загрузка файла в память, дешифрация в файл
 	begin
@@ -666,8 +667,6 @@ begin
 
 	FlushFileBuffers(FileStream.Handle);
 	FileStream.free;
-	self.ExternalSourceName := nil;
-	self.ExternalTargetName := nil;
 
 	if not(result in [FS_FILE_OK]) then
 		System.SysUtils.deleteFile(GetUNCFilePath(localPath));
@@ -1308,13 +1307,9 @@ function TCloudMailRu.putFileWhole(localPath, remotePath, ConflictMode: WideStri
 var
 	FileStream: TBufferedFileStream;
 begin
-	//self.ExternalSourceName := PWideChar(localPath);  {Не нужно, прогресс обновляется родительской процедурой}
-	//self.ExternalTargetName := PWideChar(remotePath);
 	FileStream := TBufferedFileStream.Create(GetUNCFilePath(localPath), fmOpenRead or fmShareDenyWrite);
 	result := self.putFileStream(ExtractFileName(remotePath), remotePath, FileStream, ConflictMode); {putFileStream может обойтись без параметра имени - оно всегда берётся из remotePath}
 	FileStream.free;
-	//self.ExternalSourceName := nil;
-	//self.ExternalTargetName := nil;
 end;
 
 function TCloudMailRu.putFileSplit(localPath, remotePath, ConflictMode: WideString; ChunkOverwriteMode: integer): integer;
@@ -1326,26 +1321,23 @@ var
 	ChunkStream: TChunkedFileStream;
 	CRCStream: TMemoryStream;
 begin
-	localPath := GetUNCFilePath(localPath);
 	if self.PrecalculateHash then //try to add whole file by hash at first.
 	begin
-		LocalFileIdentity.Hash := cloudHash(localPath); {TODO: GetIdentityOfFile}
-		LocalFileIdentity.size := SizeOfFile(localPath);
+		LocalFileIdentity.Hash := cloudHash(GetUNCFilePath(localPath)); {TODO: GetIdentityOfFile}
+		LocalFileIdentity.size := SizeOfFile(GetUNCFilePath(localPath));
 	end;
 	if self.PrecalculateHash and (LocalFileIdentity.Hash <> EmptyWideStr) and (not self.crypt_files) and (FS_FILE_OK = self.addFileByIdentity(LocalFileIdentity, remotePath, CLOUD_CONFLICT_STRICT, false, true)) then {issue #135}
 		exit(CLOUD_OPERATION_OK);
 
-	SplitFileInfo := TFileSplitInfo.Create(localPath, self.split_file_size); //quickly get information about file parts
+	SplitFileInfo := TFileSplitInfo.Create(GetUNCFilePath(localPath), self.split_file_size); //quickly get information about file parts
 
 	for SplittedPartIndex := 0 to SplitFileInfo.ChunksCount - 1 do
 	begin
 		ChunkRemotePath := ExtractFilePath(remotePath) + SplitFileInfo.GetChunks[SplittedPartIndex].name;
-		self.ExternalSourceName := PWideChar(localPath);
-		self.ExternalTargetName := PWideChar(ChunkRemotePath);
-		ExternalProgressProc(self.ExternalSourceName, self.ExternalTargetName, 0);
+		self.HTTP.ExternalTargetName := PWideChar(ChunkRemotePath);
 		Log(LogLevelDebug, MSGTYPE_DETAILS, 'Partial upload of ' + localPath + ' part ' + (SplittedPartIndex + 1).ToString + ' of ' + SplitFileInfo.ChunksCount.ToString + ' => ' + ChunkRemotePath);
 
-		ChunkStream := TChunkedFileStream.Create(localPath, fmOpenRead or fmShareDenyWrite, SplitFileInfo.GetChunks[SplittedPartIndex].start, SplitFileInfo.GetChunks[SplittedPartIndex].size); {FIXME TODO: Bug here - TChunkedFileStream некорректно обрабатывает файлы больше какого-то лимита}
+		ChunkStream := TChunkedFileStream.Create(GetUNCFilePath(localPath), fmOpenRead or fmShareDenyWrite, SplitFileInfo.GetChunks[SplittedPartIndex].start, SplitFileInfo.GetChunks[SplittedPartIndex].size); {FIXME TODO: Bug here - TChunkedFileStream некорректно обрабатывает файлы больше какого-то лимита}
 		result := self.putFileStream(ExtractFileName(ChunkRemotePath), ChunkRemotePath, ChunkStream, ConflictMode);
 
 		ChunkStream.Destroy;
@@ -1399,13 +1391,12 @@ begin
 	end;
 
 	CRCRemotePath := ExtractFilePath(remotePath) + SplitFileInfo.CRCFileName;
-	self.ExternalTargetName := PWideChar(CRCRemotePath);
+	self.HTTP.ExternalTargetName := PWideChar(CRCRemotePath);
 	CRCStream := TMemoryStream.Create;
 	SplitFileInfo.GetCRCData(CRCStream);
-	self.putFileStream(GetUNCFilePath(localPath), CRCRemotePath, CRCStream, ConflictMode);
+	self.putFileStream(GetUNCFilePath(localPath), CRCRemotePath, CRCStream, ConflictMode); //TODO: пишет всякую херь вместо CRC
 	CRCStream.Destroy;
-	self.ExternalSourceName := nil;
-	self.ExternalTargetName := nil;
+
 	exit(FS_FILE_OK); //Файлик залит по частям, выходим
 end;
 
@@ -1416,7 +1407,8 @@ begin
 		exit(FS_FILE_WRITEERROR); //Проверка на вызов без инициализации
 	if self.public_account then
 		exit(FS_FILE_NOTSUPPORTED);
-
+	self.HTTP.ExternalSourceName := PWideChar(remotePath);
+	self.HTTP.ExternalTargetName := PWideChar(localPath);
 	if (not(self.unlimited_filesize)) and (SizeOfFile(GetUNCFilePath(localPath)) > self.split_file_size) then
 	begin
 		if self.split_large_files then
@@ -1428,7 +1420,10 @@ begin
 			exit(FS_FILE_NOTSUPPORTED);
 		end;
 	end;
-	exit(putFileWhole(localPath, remotePath, ConflictMode));
+
+	result := (putFileWhole(localPath, remotePath, ConflictMode));
+	self.HTTP.ExternalSourceName := nil;
+	self.HTTP.ExternalTargetName := nil;
 
 end;
 

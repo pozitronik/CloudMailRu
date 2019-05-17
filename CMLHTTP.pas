@@ -22,12 +22,14 @@ type
 		{PROCEDURES}
 		procedure Log(LogLevel, MsgType: integer; LogString: WideString);
 	public
+		{VARIABLES}
+		ExternalSourceName: PWideChar;
+		ExternalTargetName: PWideChar;
 		{PROPERTIES}
 		Property ProxySettings: TProxySettings read Settings.Proxy; //all temporary
 		Property UploadLimit: integer read Settings.UploadBPS;
 		Property DownloadLimit: integer read Settings.DownloadBPS;
 		Property ConnectTimeoutValue: integer read Settings.ConnectTimeout;
-
 		{CONSTRUCTOR/DESTRUCTOR}
 		constructor Create(Settings: TConnectionSettings; ExternalProgressProc: TProgressHandler = nil; ExternalLogProc: TLogHandler = nil);
 		destructor Destroy; override;
@@ -128,34 +130,6 @@ begin
 	if Assigned(self.Socks) then
 		self.Socks.free;
 	inherited;
-end;
-
-function TCloudMailRuHTTP.ExceptionHandler(E: Exception; URL: WideString; HTTPMethod: integer; LogErrors: Boolean): integer;
-var
-	method_string: WideString; //в зависимости от метода исходного запроса мен€етс€ текст сообщени€
-begin
-	if HTTPMethod = HTTP_METHOD_GET then
-	begin
-		method_string := 'получении данных с адреса ';
-		result := FS_FILE_READERROR; //дл€ GetFile, GetForm не интересует код ошибки
-	end else begin
-		method_string := 'отправке данных на адрес ';
-		result := CLOUD_OPERATION_FAILED; //ƒл€ всех Post-запросов
-	end;
-
-	if E is EAbort then
-	begin
-		result := CLOUD_OPERATION_CANCELLED;
-	end else if LogErrors then //разбирать ошибку дальше имеет смысл только дл€ логировани€ - что вернуть уже пон€тно
-	begin
-		if E is EIdHTTPProtocolException then
-			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при ' + method_string + URL + ', ответ сервера: ' + (E as EIdHTTPProtocolException).ErrorMessage)
-		else if E is EIdSocketerror then
-			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка сети: ' + E.Message + ' при ' + method_string + URL)
-		else
-			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при ' + method_string + URL);
-
-	end;
 end;
 
 function TCloudMailRuHTTP.GetFile(URL: WideString; FileStream: TStream; LogErrors: Boolean): integer;
@@ -325,7 +299,7 @@ begin
 	if (Pos('chunked', LowerCase(HTTP.Response.TransferEncoding)) = 0) and (ContentLength > 0) then
 	begin
 		Percent := 100 * AWorkCount div ContentLength;
-		if Assigned(ExternalProgressProc) and (ExternalProgressProc(nil, nil, Percent) = 1) then {ѕри передаче nil прогресс оставл€ет предыдущие значени€}
+		if Assigned(ExternalProgressProc) and (ExternalProgressProc(self.ExternalSourceName, self.ExternalTargetName, Percent) = 1) then {ѕри передаче nil прогресс оставл€ет предыдущие значени€}
 			abort;
 	end;
 end;
@@ -334,6 +308,34 @@ procedure TCloudMailRuHTTP.Log(LogLevel, MsgType: integer; LogString: WideString
 begin
 	if Assigned(ExternalLogProc) then
 		ExternalLogProc(LogLevel, MsgType, PWideChar(LogString));
+end;
+
+function TCloudMailRuHTTP.ExceptionHandler(E: Exception; URL: WideString; HTTPMethod: integer; LogErrors: Boolean): integer;
+var
+	method_string: WideString; //в зависимости от метода исходного запроса мен€етс€ текст сообщени€
+begin
+	if HTTPMethod = HTTP_METHOD_GET then
+	begin
+		method_string := 'получении данных с адреса ';
+		result := FS_FILE_READERROR; //дл€ GetFile, GetForm не интересует код ошибки
+	end else begin
+		method_string := 'отправке данных на адрес ';
+		result := CLOUD_OPERATION_FAILED; //ƒл€ всех Post-запросов
+	end;
+
+	if E is EAbort then
+	begin
+		result := CLOUD_OPERATION_CANCELLED;
+	end else if LogErrors then //разбирать ошибку дальше имеет смысл только дл€ логировани€ - что вернуть уже пон€тно
+	begin
+		if E is EIdHTTPProtocolException then
+			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при ' + method_string + URL + ', ответ сервера: ' + (E as EIdHTTPProtocolException).ErrorMessage)
+		else if E is EIdSocketerror then
+			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка сети: ' + E.Message + ' при ' + method_string + URL)
+		else
+			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при ' + method_string + URL);
+
+	end;
 end;
 
 end.
