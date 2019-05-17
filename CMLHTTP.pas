@@ -265,7 +265,7 @@ var
 begin
 	ResultStream := TStringStream.Create;
 	PostData := TIdMultiPartFormDataStream.Create;
-
+	PostData.AddFormField('file', 'application/octet-stream', EmptyWideStr, FileStream, FileName);
 	result := self.Post(URL, PostData, ResultStream);
 	Answer := ResultStream.DataString;
 
