@@ -114,13 +114,13 @@ end;
 
 function TFileCipher.CryptFile(SourceFileName, DestinationFilename: WideString): integer;
 var
-	SourceStream, DestinationStream: TFileStream;
+	SourceStream, DestinationStream: TBufferedFileStream;
 begin
 	Result := CIPHER_OK;
 	self.CiphersInit();
 	try
-		SourceStream := TFileStream.Create(SourceFileName, fmOpenRead or fmShareDenyWrite);
-		DestinationStream := TFileStream.Create(DestinationFilename, fmCreate);
+		SourceStream := TBufferedFileStream.Create(SourceFileName, fmOpenRead or fmShareDenyWrite);
+		DestinationStream := TBufferedFileStream.Create(DestinationFilename, fmCreate);
 		if SourceStream.Size > 0 then
 			self.CryptStream(SourceStream, DestinationStream);
 		SourceStream.Free;
@@ -164,13 +164,13 @@ end;
 
 function TFileCipher.DecryptFile(SourceFileName, DestinationFilename: WideString): integer;
 var
-	SourceStream, DestinationStream: TFileStream;
+	SourceStream, DestinationStream: TBufferedFileStream;
 begin
 	self.CiphersInit();
 	Result := CIPHER_OK;
 	try
-		SourceStream := TFileStream.Create(SourceFileName, fmOpenRead or fmShareDenyWrite);
-		DestinationStream := TFileStream.Create(DestinationFilename, fmCreate);
+		SourceStream := TBufferedFileStream.Create(SourceFileName, fmOpenRead or fmShareDenyWrite);
+		DestinationStream := TBufferedFileStream.Create(DestinationFilename, fmCreate);
 		if SourceStream.Size > 0 then
 			self.DecryptStream(SourceStream, DestinationStream);
 		SourceStream.Free;
