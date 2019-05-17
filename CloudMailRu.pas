@@ -608,7 +608,7 @@ end;
 
 function TCloudMailRu.getFileRegular(remotePath, localPath: WideString; var resultHash: WideString; LogErrors: Boolean): integer;
 var
-	FileStream: TBufferedFileStream; //TODO: use TBufferedFileStream instead
+	FileStream: TBufferedFileStream;
 	URL, FileName: WideString;
 	MemoryStream: TMemoryStream;
 begin
@@ -1308,13 +1308,13 @@ function TCloudMailRu.putFileWhole(localPath, remotePath, ConflictMode: WideStri
 var
 	FileStream: TBufferedFileStream;
 begin
-	self.ExternalSourceName := PWideChar(localPath);
-	self.ExternalTargetName := PWideChar(remotePath);
+	//self.ExternalSourceName := PWideChar(localPath);  {Не нужно, прогресс обновляется родительской процедурой}
+	//self.ExternalTargetName := PWideChar(remotePath);
 	FileStream := TBufferedFileStream.Create(GetUNCFilePath(localPath), fmOpenRead or fmShareDenyWrite);
 	result := self.putFileStream(ExtractFileName(remotePath), remotePath, FileStream, ConflictMode); {putFileStream может обойтись без параметра имени - оно всегда берётся из remotePath}
 	FileStream.free;
-	self.ExternalSourceName := nil;
-	self.ExternalTargetName := nil;
+	//self.ExternalSourceName := nil;
+	//self.ExternalTargetName := nil;
 end;
 
 function TCloudMailRu.putFileSplit(localPath, remotePath, ConflictMode: WideString; ChunkOverwriteMode: integer): integer;
@@ -1340,6 +1340,11 @@ begin
 	for SplittedPartIndex := 0 to SplitFileInfo.ChunksCount - 1 do
 	begin
 		ChunkRemotePath := ExtractFilePath(remotePath) + SplitFileInfo.GetChunks[SplittedPartIndex].name;
+		self.ExternalSourceName := PWideChar(localPath);
+		self.ExternalTargetName := PWideChar(ChunkRemotePath);
+		ExternalProgressProc(self.ExternalSourceName, self.ExternalTargetName, 0);
+		Log(LogLevelDebug, MSGTYPE_DETAILS, 'Partial upload of ' + localPath + ' part ' + (SplittedPartIndex + 1).ToString + ' of ' + SplitFileInfo.ChunksCount.ToString + ' => ' + ChunkRemotePath);
+
 		ChunkStream := TChunkedFileStream.Create(localPath, fmOpenRead or fmShareDenyWrite, SplitFileInfo.GetChunks[SplittedPartIndex].start, SplitFileInfo.GetChunks[SplittedPartIndex].size); {FIXME TODO: Bug here - TChunkedFileStream некорректно обрабатывает файлы больше какого-то лимита}
 		result := self.putFileStream(ExtractFileName(ChunkRemotePath), ChunkRemotePath, ChunkStream, ConflictMode);
 
@@ -1386,7 +1391,7 @@ begin
 				end;
 			else
 				begin
-					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Partial upload error, code: ' + result.ToString);
+					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Partial upload error, code: ' + result.ToString); {TODO: дальше ошибка будет обработана как ошибка ВСЕГО файла, а нам надо обработать кусочек}
 					SplitFileInfo.Destroy;
 					exit(CLOUD_OPERATION_FAILED);
 				end;
@@ -1399,7 +1404,8 @@ begin
 	SplitFileInfo.GetCRCData(CRCStream);
 	self.putFileStream(GetUNCFilePath(localPath), CRCRemotePath, CRCStream, ConflictMode);
 	CRCStream.Destroy;
-
+	self.ExternalSourceName := nil;
+	self.ExternalTargetName := nil;
 	exit(FS_FILE_OK); //Файлик залит по частям, выходим
 end;
 
