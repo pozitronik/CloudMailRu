@@ -608,7 +608,7 @@ end;
 
 function TCloudMailRu.getFileRegular(remotePath, localPath: WideString; var resultHash: WideString; LogErrors: Boolean): integer;
 var
-	FileStream: TFileStream; //TODO: use TBufferedFileStream instead
+	FileStream: TBufferedFileStream; //TODO: use TBufferedFileStream instead
 	URL, FileName: WideString;
 	MemoryStream: TMemoryStream;
 begin
@@ -627,7 +627,7 @@ begin
 	end;
 
 	try
-		FileStream := TFileStream.Create(GetUNCFilePath(localPath), fmCreate);
+		FileStream := TBufferedFileStream.Create(GetUNCFilePath(localPath), fmCreate);
 	except
 		on E: Exception do
 		begin
@@ -680,13 +680,13 @@ end;
 
 function TCloudMailRu.getFileShared(remotePath, localPath: WideString; var resultHash: WideString; LogErrors: Boolean): integer;
 var
-	FileStream: TFileStream;
+	FileStream: TBufferedFileStream;
 begin
 	result := FS_FILE_NOTFOUND;
 	if (self.public_shard = EmptyWideStr) or (self.public_download_token = EmptyWideStr) then
 		exit;
 	try
-		FileStream := TFileStream.Create(GetUNCFilePath(localPath), fmCreate);
+		FileStream := TBufferedFileStream.Create(GetUNCFilePath(localPath), fmCreate);
 	except
 		on E: Exception do
 		begin
