@@ -1263,14 +1263,14 @@ begin
 	if self.PrecalculateHash and (LocalFileIdentity.Hash <> EmptyWideStr) and (not self.crypt_files) and (FS_FILE_OK = self.addFileByIdentity(LocalFileIdentity, remotePath, CLOUD_CONFLICT_STRICT, false, true)) then {issue #135}
 		exit(CLOUD_OPERATION_OK);
 
-	MemoryStream := TMemoryStream.Create;
-
 	try
 		if self.crypt_files then {Will encrypt any type of data passed here}
 		begin
+			MemoryStream := TMemoryStream.Create;
 			self.FileCipher.CryptStream(FileStream, MemoryStream);
 			MemoryStream.Position := 0;
-			OperationResult := self.putFileToCloud(FileName, MemoryStream, RemoteFileIdentity)
+			OperationResult := self.putFileToCloud(FileName, MemoryStream, RemoteFileIdentity);
+			MemoryStream.Destroy;
 		end else begin
 			OperationResult := self.putFileToCloud(FileName, FileStream, RemoteFileIdentity)
 		end;
@@ -1302,7 +1302,6 @@ begin
 	if OperationResult = CLOUD_OPERATION_OK then
 		result := self.addFileByIdentity(RemoteFileIdentity, remotePath, ConflictMode);
 
-	MemoryStream.Destroy;
 end;
 
 function TCloudMailRu.putFileWhole(localPath, remotePath, ConflictMode: WideString): integer;
@@ -1312,7 +1311,7 @@ begin
 	self.ExternalSourceName := PWideChar(localPath);
 	self.ExternalTargetName := PWideChar(remotePath);
 	FileStream := TBufferedFileStream.Create(GetUNCFilePath(localPath), fmOpenRead or fmShareDenyWrite);
-	result := self.putFileStream(GetUNCFilePath(localPath), remotePath, FileStream, ConflictMode);
+	result := self.putFileStream(ExtractFileName(remotePath), remotePath, FileStream, ConflictMode); {putFileStream может обойтись без параметра имени - оно всегда берётся из remotePath}
 	FileStream.free;
 	self.ExternalSourceName := nil;
 	self.ExternalTargetName := nil;
@@ -1327,10 +1326,10 @@ var
 	ChunkStream: TChunkedFileStream;
 	CRCStream: TMemoryStream;
 begin
-
+	localPath := GetUNCFilePath(localPath);
 	if self.PrecalculateHash then //try to add whole file by hash at first.
 	begin
-		LocalFileIdentity.Hash := cloudHash(localPath);
+		LocalFileIdentity.Hash := cloudHash(localPath); {TODO: GetIdentityOfFile}
 		LocalFileIdentity.size := SizeOfFile(localPath);
 	end;
 	if self.PrecalculateHash and (LocalFileIdentity.Hash <> EmptyWideStr) and (not self.crypt_files) and (FS_FILE_OK = self.addFileByIdentity(LocalFileIdentity, remotePath, CLOUD_CONFLICT_STRICT, false, true)) then {issue #135}
@@ -1341,8 +1340,8 @@ begin
 	for SplittedPartIndex := 0 to SplitFileInfo.ChunksCount - 1 do
 	begin
 		ChunkRemotePath := ExtractFilePath(remotePath) + SplitFileInfo.GetChunks[SplittedPartIndex].name;
-		ChunkStream := TChunkedFileStream.Create(GetUNCFilePath(localPath), fmOpenRead or fmShareDenyWrite, SplitFileInfo.GetChunks[SplittedPartIndex].start, SplitFileInfo.GetChunks[SplittedPartIndex].size); {FIXME TODO: Bug here - TChunkedFileStream некорректно обрабатывает файлы больше какого-то лимита}
-		result := self.putFileStream(GetUNCFilePath(localPath), ChunkRemotePath, ChunkStream, ConflictMode);
+		ChunkStream := TChunkedFileStream.Create(localPath, fmOpenRead or fmShareDenyWrite, SplitFileInfo.GetChunks[SplittedPartIndex].start, SplitFileInfo.GetChunks[SplittedPartIndex].size); {FIXME TODO: Bug here - TChunkedFileStream некорректно обрабатывает файлы больше какого-то лимита}
+		result := self.putFileStream(ExtractFileName(ChunkRemotePath), ChunkRemotePath, ChunkStream, ConflictMode);
 
 		ChunkStream.Destroy;
 
@@ -1448,11 +1447,11 @@ begin
 		if length(Return.Strings[0]) <> 40 then //? добавить анализ ответа?
 		begin
 			result := CLOUD_OPERATION_FAILED;
-		end
+		end else begin
+			FileIdentity.Hash := Return.Strings[0];
+			val(Return.Strings[1], FileIdentity.size, code);
+		end;
 	end;
-	FileIdentity.Hash := Return.Strings[0];
-	val(Return.Strings[1], FileIdentity.size, code);
-
 	Return.Destroy;
 end;
 
@@ -1579,10 +1578,11 @@ begin
 	try
 		Stream := TBufferedFileStream.Create(Path, fmOpenRead or fmShareDenyWrite);
 	except
+		Stream.Destroy;
 		exit;
 	end;
 	result := cloudHash(Stream, Path);
-	Stream.free;
+	Stream.Destroy;
 
 end;
 
