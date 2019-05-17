@@ -1578,7 +1578,6 @@ begin
 	try
 		Stream := TBufferedFileStream.Create(Path, fmOpenRead or fmShareDenyWrite);
 	except
-		Stream.Destroy;
 		exit;
 	end;
 	result := cloudHash(Stream, Path);
