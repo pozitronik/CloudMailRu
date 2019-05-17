@@ -58,7 +58,7 @@ type
 		procedure Log(LogLevel, MsgType: integer; LogString: WideString);
 		function CloudResultToFsResult(CloudResult: integer; OperationStatus: integer; ErrorPrefix: WideString = ''): integer;
 		function cloudHash(Path: WideString): WideString; overload; //get cloud hash for specified file
-		function cloudHash(Stream: TStream; SourceName: WideString = ''): WideString; overload; //get cloud hash for data in stream
+		function cloudHash(Stream: TStream): WideString; overload; //get cloud hash for data in stream
 	protected
 		{REGULAR CLOUD}
 		function loginRegular(method: integer = CLOUD_AUTH_METHOD_WEB): Boolean;
@@ -652,7 +652,7 @@ begin
 
 		if result in [FS_FILE_OK] then
 		begin
-			resultHash := cloudHash(MemoryStream, ExtractFileName(localPath));
+			resultHash := cloudHash(MemoryStream);
 			MemoryStream.Position := 0;
 			self.FileCipher.DecryptStream(MemoryStream, FileStream);
 		end;
@@ -661,7 +661,7 @@ begin
 	end else begin
 		result := self.HTTP.getFile(self.Shard + PathToUrl(remotePath, false), FileStream, LogErrors);
 		if (result in [FS_FILE_OK]) then
-			resultHash := cloudHash(FileStream, ExtractFileName(localPath));
+			resultHash := cloudHash(FileStream);
 	end;
 
 	FlushFileBuffers(FileStream.Handle);
@@ -1580,12 +1580,12 @@ begin
 	except
 		exit;
 	end;
-	result := cloudHash(Stream, Path);
+	result := cloudHash(Stream);
 	Stream.Destroy;
 
 end;
 
-function TCloudMailRu.cloudHash(Stream: TStream; SourceName: WideString = ''): WideString;
+function TCloudMailRu.cloudHash(Stream: TStream): WideString;
 const
 	bufSize = 8192;
 var
@@ -1621,7 +1621,7 @@ begin
 
 		read := Stream.read(buffer, bufSize);
 		sha1.Update(buffer, read);
-		if (1 = ExternalProgressProc(PWideChar(SourceName), 'Calculating cloud hash', Percent)) then
+		if (1 = ExternalProgressProc(nil, 'Calculating cloud hash', Percent)) then
 		begin
 			Aborted := true;
 		end;
