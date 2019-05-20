@@ -9,7 +9,7 @@ type
 	TChunkedFileStream = class(TStream)
 	private
 		FStartPos, FSize: Int64;
-		FileStream: TFileStream;
+		FileStream: TBufferedFileStream;
 	protected
 		function GetSize(): Int64; override;
 	public
@@ -32,7 +32,7 @@ var
 	FileSize: Int64;
 begin
 	inherited Create;
-	self.FileStream := TFileStream.Create(AFileName, Mode);
+	self.FileStream := TBufferedFileStream.Create(AFileName, Mode);
 	FileSize := FileStream.Size;
 	if (ChunkSize < 0) or (ChunkSize > FileSize) or (ChunkStart < 0) or (ChunkStart > FileSize) or (FileStream.Seek(ChunkStart, soBeginning) <> ChunkStart) then
 		raise EReadError.Create('Can''t read from ' + AFileName + ' ' + ChunkSize.ToString + ' bytes at ' + ChunkStart.ToString);
