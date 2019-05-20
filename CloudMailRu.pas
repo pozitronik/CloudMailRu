@@ -17,6 +17,7 @@ type
 		HTTP: TCloudMailRuHTTP; //HTTP transport class
 		FileCipher: TFileCipher; //Encryption class
 
+		public_link: WideString; //
 		public_download_token: WideString; //token for public urls, refreshes on request
 		public_shard: WideString; //public downloads shard url
 		Shard: WideString; //download shard url
@@ -290,6 +291,8 @@ begin
 			self.crypt_filenames := self.crypt_files and CloudSettings.AccountSettings.encrypt_filenames and not(self.FileCipher.WrongPassword);
 		end;
 
+		self.public_link := getPublicLink;
+
 	except
 		on E: Exception do
 		begin
@@ -535,7 +538,7 @@ begin
 		exit; //Проверка на вызов без инициализации
 	SetLength(DirListing, 0);
 	if self.public_account then
-		result := self.HTTP.GetPage(API_FOLDER + '&weblink=' + IncludeSlash(self.getPublicLink) + PathToUrl(Path, false) + self.united_params, JSON, ShowProgress)
+		result := self.HTTP.GetPage(API_FOLDER + '&weblink=' + IncludeSlash(self.public_link) + PathToUrl(Path, false) + self.united_params, JSON, ShowProgress)
 	else
 		result := self.HTTP.GetPage(API_FOLDER + '&home=' + PathToUrl(Path) + self.united_params, JSON, ShowProgress);
 	if result then
@@ -645,7 +648,7 @@ end;
 
 function TCloudMailRu.getSharedFileUrl(remotePath: WideString; DoUrlEncode: Boolean = true): WideString;
 begin
-	result := IncludeSlash(self.public_shard) + IncludeSlash(self.getPublicLink) + PathToUrl(remotePath, true, DoUrlEncode) + '?key=' + self.public_download_token
+	result := IncludeSlash(self.public_shard) + IncludeSlash(self.public_link) + PathToUrl(remotePath, true, DoUrlEncode) + '?key=' + self.public_download_token
 end;
 
 function TCloudMailRu.getFileShared(remotePath, localPath: WideString; var resultHash: WideString; LogErrors: Boolean): integer;
@@ -688,7 +691,7 @@ begin
 	end;
 end;
 
-function TCloudMailRu.getPublicLink: WideString; {Todo variable instaed of getter?}
+function TCloudMailRu.getPublicLink: WideString;
 begin
 	result := EmptyWideStr;
 	if self.public_account and (self.OptionsSet.AccountSettings.public_url <> EmptyWideStr) then
@@ -1549,7 +1552,7 @@ begin
 		exit; //Проверка на вызов без инициализации
 	Progress := false;
 	if self.public_account then
-		result := self.HTTP.GetPage(API_FILE + '?weblink=' + IncludeSlash(self.getPublicLink) + PathToUrl(Path) + self.united_params, JSON, Progress)
+		result := self.HTTP.GetPage(API_FILE + '?weblink=' + IncludeSlash(self.public_link) + PathToUrl(Path) + self.united_params, JSON, Progress)
 	else
 		result := self.HTTP.GetPage(API_FILE + '?home=' + PathToUrl(Path) + self.united_params, JSON, Progress);
 
