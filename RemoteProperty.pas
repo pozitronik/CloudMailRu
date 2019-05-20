@@ -338,11 +338,11 @@ end;
 
 procedure TPropertyForm.TempPublicCloudInit(publicUrl: WideString);
 var
-	TempAccountSettings: TAccountSettings;
+	TempCloudSettings: TCloudSettings;
 begin
-	TempAccountSettings.public_account := true;
-	TempAccountSettings.public_url := publicUrl;
-	self.TempPublicCloud := TCloudMailRu.Create(TempAccountSettings, 0, self.Cloud.Transport.Options.ProxySettings, self.Cloud.Transport.Options.SocketTimeout, self.Cloud.Transport.Options.UploadBPS, self.Cloud.Transport.Options.DownloadBPS);
+	TempCloudSettings.AccountSettings.public_account := true;
+	TempCloudSettings.AccountSettings.public_url := publicUrl;
+	self.TempPublicCloud := TCloudMailRu.Create(TempCloudSettings);
 	self.TempPublicCloud.login;
 end;
 

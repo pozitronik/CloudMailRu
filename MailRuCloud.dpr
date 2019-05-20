@@ -52,7 +52,6 @@ var
 	CurrentIncomingInvitesListing: TCloudMailRuIncomingInviteInfoListing;
 	ConnectionManager: TConnectionManager;
 	CurrentDescriptions: TDescription;
-	ProxySettings: TProxySettings;
 	PasswordManager: TTCPasswordManager;
 
 procedure LogHandle(LogLevel, MsgType: integer; LogString: PWideChar); stdcall;

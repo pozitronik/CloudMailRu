@@ -8,20 +8,11 @@ type
 	TCloudMailRu = class
 	private
 		{VARIABLES}
+		OptionsSet: TCloudSettings;
 
-		domain: WideString;
-		user: WideString;
-		password: WideString;
-		unlimited_filesize: Boolean;
-		split_large_files: Boolean;
-		split_file_size: integer;
-		public_account: Boolean;
-		PUBLIC_URL: WideString;
-		public_link: WideString; //public url without adress prefix
 		public_download_token: WideString;
 		public_shard: WideString;
-		shard_override: WideString;
-		upload_url_override: WideString;
+
 		token: WideString;
 		OAuthToken: TCloudMailRuOAuthInfo;
 		x_page_id: WideString;
@@ -33,8 +24,7 @@ type
 		ExternalLogProc: TLogHandler;
 		ExternalRequestProc: TRequestHandler;
 		Shard: WideString;
-		PrecalculateHash: Boolean;
-		CheckCRC: Boolean;
+
 		OperationErrorMode: integer; {implementation in progress}
 		RetryAttempts: integer;
 		AttemptWait: integer;
@@ -70,17 +60,32 @@ type
 		function loginShared(method: integer = CLOUD_AUTH_METHOD_WEB): Boolean;
 
 		function getFileShared(remotePath, localPath: WideString; var resultHash: WideString; LogErrors: Boolean = true): integer; //LogErrors=false => не логируем результат копирования, нужно для запроса descript.ion (которого может не быть)
+
+		function getPublicLink(): WideString;
 	public
 		crypt_files: Boolean;
 		crypt_filenames: Boolean;
 
-		Property isPublicShare: Boolean read public_account;
+		Property isPublicShare: Boolean read OptionsSet.AccountSettings.public_account;
+
+		Property user: WideString read OptionsSet.AccountSettings.user;
+		Property domain: WideString read OptionsSet.AccountSettings.domain;
+
+		Property password: WideString read OptionsSet.AccountSettings.password;
+
+		Property split_file_size: integer read OptionsSet.CloudMaxFileSize;
+		Property PrecalculateHash: Boolean read OptionsSet.PrecalculateHash;
+		Property CheckCRC: Boolean read OptionsSet.CheckCRC;
+		Property shard_override: WideString read OptionsSet.AccountSettings.shard_override;
+		Property upload_url_override: WideString read OptionsSet.AccountSettings.upload_url_override;
+		Property unlimited_filesize: Boolean read OptionsSet.AccountSettings.unlimited_filesize;
+		Property split_large_files: Boolean read OptionsSet.AccountSettings.split_large_files;
+
 		Property Transport: TCloudMailRuHTTP read HTTP;
 
 		function getSharedFileUrl(remotePath: WideString; DoUrlEncode: Boolean = true): WideString;
 		{CONSTRUCTOR/DESTRUCTOR}
-		constructor Create(AccountSettings: TCloudSettings; ExternalProgressProc: TProgressHandler = nil; ExternalLogProc: TLogHandler = nil; ExternalRequestProc: TRequestHandler = nil); overload;
-		constructor Create(AccountSettings: TAccountSettings; split_file_size: integer; Proxy: TProxySettings; ConnectTimeout: integer; UploadBPS: integer; DownloadBPS: integer; PrecalculateHash: Boolean = true; CheckCRC: Boolean = true; ExternalProgressProc: TProgressHandler = nil; ExternalLogProc: TLogHandler = nil; ExternalRequestProc: TRequestHandler = nil); overload;
+		constructor Create(CloudSettings: TCloudSettings; ExternalProgressProc: TProgressHandler = nil; ExternalLogProc: TLogHandler = nil; ExternalRequestProc: TRequestHandler = nil);
 		destructor Destroy; override;
 		{CLOUD INTERFACE METHODS}
 		function login(method: integer = CLOUD_AUTH_METHOD_WEB): Boolean;
@@ -136,7 +141,7 @@ begin
 	result := FS_FILE_WRITEERROR;
 	if not(Assigned(self)) then
 		exit; //Проверка на вызов без инициализации
-	if self.public_account then
+	if self.isPublicShare then
 		exit(FS_FILE_NOTSUPPORTED);
 
 	if self.crypt_filenames then
@@ -179,7 +184,7 @@ begin
 	result := FS_FILE_WRITEERROR;
 	if not(Assigned(self)) then
 		exit; //Проверка на вызов без инициализации
-	if self.public_account then
+	if self.isPublicShare then
 		exit(FS_FILE_NOTSUPPORTED);
 	Progress := true;
 	if self.HTTP.GetPage(API_CLONE + '?folder=' + PathToUrl(Path) + '&weblink=' + link + '&conflict=' + ConflictMode + self.united_params, JSON, Progress) then
@@ -242,7 +247,7 @@ begin
 	result := FS_FILE_WRITEERROR;
 	if not(Assigned(self)) then
 		exit; //Проверка на вызов без инициализации
-	if self.public_account then
+	if self.isPublicShare then
 		exit(FS_FILE_NOTSUPPORTED);
 	if self.HTTP.PostForm(API_FILE_COPY, 'home=' + PathToUrl(OldName) + '&folder=' + PathToUrl(ToPath) + self.united_params + '&conflict', JSON) then
 	begin //Парсим ответ
@@ -274,61 +279,28 @@ begin //Облако умеет скопировать файл, но не см�
 	end;
 end;
 
-constructor TCloudMailRu.Create(AccountSettings: TCloudSettings; ExternalProgressProc: TProgressHandler; ExternalLogProc: TLogHandler; ExternalRequestProc: TRequestHandler);
-begin
-  {todo}
-end;
 
-constructor TCloudMailRu.Create(AccountSettings: TAccountSettings; split_file_size: integer; Proxy: TProxySettings; ConnectTimeout: integer; UploadBPS: integer; DownloadBPS: integer; PrecalculateHash: Boolean = true; CheckCRC: Boolean = true; ExternalProgressProc: TProgressHandler = nil; ExternalLogProc: TLogHandler = nil; ExternalRequestProc: TRequestHandler = nil);
-var
-	HTTPSettings: TConnectionSettings;
+constructor TCloudMailRu.Create(CloudSettings: TCloudSettings; ExternalProgressProc: TProgressHandler; ExternalLogProc: TLogHandler; ExternalRequestProc: TRequestHandler);
 begin
 	try
 		self.ExternalProgressProc := ExternalProgressProc;
 		self.ExternalLogProc := ExternalLogProc;
 		self.ExternalRequestProc := ExternalRequestProc;
 
-		HTTPSettings.ProxySettings := Proxy;
 
-		HTTPSettings.SocketTimeout := ConnectTimeout;
-		HTTPSettings.UploadBPS := UploadBPS;
-		HTTPSettings.DownloadBPS := DownloadBPS;
 
-		self.HTTP := TCloudMailRuHTTP.Create(HTTPSettings, ExternalProgressProc, ExternalLogProc);
+		self.HTTP := TCloudMailRuHTTP.Create(CloudSettings.ConnectionSettings, ExternalProgressProc, ExternalLogProc);
 
-		self.user := AccountSettings.user;
-		self.password := AccountSettings.password;
-		self.domain := AccountSettings.domain;
-		self.unlimited_filesize := AccountSettings.unlimited_filesize;
-		self.split_large_files := AccountSettings.split_large_files;
-		self.public_account := AccountSettings.public_account;
-		self.PUBLIC_URL := AccountSettings.PUBLIC_URL;
-
-		if AccountSettings.encrypt_files_mode <> EncryptModeNone then
+		if CloudSettings.AccountSettings.encrypt_files_mode <> EncryptModeNone then
 		begin
-			self.FileCipher := TFileCipher.Create(AccountSettings.crypt_files_password, AccountSettings.CryptedGUID_files, AccountSettings.encrypt_filenames);
+			self.FileCipher := TFileCipher.Create(CloudSettings.AccountSettings.crypt_files_password, CloudSettings.AccountSettings.CryptedGUID_files, CloudSettings.AccountSettings.encrypt_filenames);
 			if self.FileCipher.WrongPassword then
 				Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Wrong encryption password, encryption support disabled');
 
 			self.crypt_files := not(self.FileCipher.WrongPassword);
-			self.crypt_filenames := self.crypt_files and AccountSettings.encrypt_filenames and not(self.FileCipher.WrongPassword);
+			self.crypt_filenames := self.crypt_files and CloudSettings.AccountSettings.encrypt_filenames and not(self.FileCipher.WrongPassword);
 		end;
 
-		self.shard_override := AccountSettings.shard_override;
-		self.upload_url_override := AccountSettings.upload_url_override;
-		if self.public_account and (self.PUBLIC_URL <> EmptyWideStr) then
-		begin
-			self.public_link := self.PUBLIC_URL;
-			self.PUBLIC_URL := IncludeSlash(self.PUBLIC_URL);
-			Delete(self.public_link, 1, length(PUBLIC_ACCESS_URL));
-			if self.public_link[length(self.public_link)] = '/' then
-				Delete(self.public_link, length(self.public_link), 1);
-		end;
-
-		self.split_file_size := split_file_size;
-
-		self.PrecalculateHash := PrecalculateHash;
-		self.CheckCRC := CheckCRC;
 	except
 		on E: Exception do
 		begin
@@ -345,7 +317,7 @@ begin
 	result := false;
 	if not(Assigned(self)) then
 		exit; //Проверка на вызов без инициализации
-	if self.public_account then
+	if self.isPublicShare then
 		exit;
 	if self.HTTP.PostForm(API_FOLDER_ADD, 'home=/' + PathToUrl(Path) + self.united_params + '&conflict', PostAnswer) then
 	begin
@@ -370,7 +342,7 @@ begin
 	result := false;
 	if not(Assigned(self)) then
 		exit; //Проверка на вызов без инициализации
-	if self.public_account then
+	if self.isPublicShare then
 		exit;
 	result := self.HTTP.PostForm(API_FILE_REMOVE, 'home=/' + PathToUrl(Path) + self.united_params + '&conflict', JSON);
 	if result then
@@ -465,7 +437,7 @@ begin
 	if not(Assigned(self)) then
 		exit; //Проверка на вызов без инициализации
 	SetLength(DirListing, 0);
-	if self.public_account then
+	if self.isPublicShare then
 		exit;
 	result := self.HTTP.GetPage(API_FOLDER_SHARED_LINKS + '?' + self.united_params, JSON, ShowProgress);
 
@@ -493,7 +465,7 @@ begin
 	if not(Assigned(self)) then
 		exit; //Проверка на вызов без инициализации
 	SetLength(IncomingListing, 0);
-	if self.public_account then
+	if self.isPublicShare then
 		exit;
 	result := self.HTTP.GetPage(API_FOLDER_SHARED_INCOMING + '?' + self.united_params, JSON, ShowProgress);
 
@@ -545,7 +517,7 @@ begin
 	if not(Assigned(self)) then
 		exit; //Проверка на вызов без инициализации
 	SetLength(DirListing, 0);
-	if self.public_account then
+	if self.isPublicShare then
 		exit;
 	result := self.HTTP.GetPage(API_TRASHBIN + '?' + self.united_params, JSON, ShowProgress);
 
@@ -573,8 +545,8 @@ begin
 	if not(Assigned(self)) then
 		exit; //Проверка на вызов без инициализации
 	SetLength(DirListing, 0);
-	if self.public_account then
-		result := self.HTTP.GetPage(API_FOLDER + '&weblink=' + IncludeSlash(self.public_link) + PathToUrl(Path, false) + self.united_params, JSON, ShowProgress)
+	if self.isPublicShare then
+		result := self.HTTP.GetPage(API_FOLDER + '&weblink=' + IncludeSlash(self.getPublicLink) + PathToUrl(Path, false) + self.united_params, JSON, ShowProgress)
 	else
 		result := self.HTTP.GetPage(API_FOLDER + '&home=' + PathToUrl(Path) + self.united_params, JSON, ShowProgress);
 	if result then
@@ -610,7 +582,7 @@ begin
 	self.HTTP.ExternalSourceName := PWideChar(remotePath);
 	self.HTTP.ExternalTargetName := PWideChar(localPath);
 
-	if self.public_account then
+	if self.isPublicShare then
 		result := self.getFileShared(remotePath, localPath, resultHash, LogErrors)
 	else
 		result := self.getFileRegular(remotePath, localPath, resultHash, LogErrors);
@@ -684,7 +656,7 @@ end;
 
 function TCloudMailRu.getSharedFileUrl(remotePath: WideString; DoUrlEncode: Boolean = true): WideString;
 begin
-	result := IncludeSlash(self.public_shard) + IncludeSlash(self.public_link) + PathToUrl(remotePath, true, DoUrlEncode) + '?key=' + self.public_download_token
+	result := IncludeSlash(self.public_shard) + IncludeSlash(self.getPublicLink) + PathToUrl(remotePath, true, DoUrlEncode) + '?key=' + self.public_download_token
 end;
 
 function TCloudMailRu.getFileShared(remotePath, localPath: WideString; var resultHash: WideString; LogErrors: Boolean): integer;
@@ -724,6 +696,19 @@ begin
 		if not fromJSON_OAuthTokenInfo(Answer, OAuthToken) then
 			exit(false);
 		result := OAuthToken.error_code = NOERROR;
+	end;
+end;
+
+function TCloudMailRu.getPublicLink: WideString; {Todo variable instaed of getter?}
+begin
+	result := EmptyWideStr;
+	if self.isPublicShare and (self.OptionsSet.AccountSettings.public_url <> EmptyWideStr) then
+	begin
+		result := self.OptionsSet.AccountSettings.public_url;
+		self.OptionsSet.AccountSettings.public_url := IncludeSlash(self.OptionsSet.AccountSettings.public_url);
+		Delete(result, 1, length(PUBLIC_ACCESS_URL));
+		if result[length(result)] = '/' then
+			Delete(result, length(result), 1);
 	end;
 end;
 
@@ -786,7 +771,7 @@ begin
 	if not(Assigned(self)) then
 		exit; //Проверка на вызов без инициализации
 	Progress := false;
-	result := self.HTTP.GetPage(self.PUBLIC_URL, PageContent, Progress);
+	result := self.HTTP.GetPage(self.OptionsSet.AccountSettings.public_url, PageContent, Progress);
 	if result then
 	begin
 		if not extractPublicTokenFromText(PageContent, self.public_download_token) then //refresh public download token
@@ -839,7 +824,7 @@ begin
 	result := false;
 	if not(Assigned(self)) then
 		exit; //Проверка на вызов без инициализации
-	if self.public_account then
+	if self.isPublicShare then
 		result := self.loginShared()
 	else
 	begin
@@ -962,7 +947,7 @@ end;
 
 function TCloudMailRu.loginShared(method: integer): Boolean;
 begin
-	Log(LogLevelDetail, MSGTYPE_DETAILS, 'Open ' + self.PUBLIC_URL);
+	Log(LogLevelDetail, MSGTYPE_DETAILS, 'Open ' + self.OptionsSet.AccountSettings.public_url);
 	result := self.getSharedToken();
 	//exit(true);
 end;
@@ -975,7 +960,7 @@ var
 begin
 	if not(Assigned(self)) then
 		exit; //Проверка на вызов без инициализации
-	if self.public_account then
+	if self.isPublicShare then
 		exit;
 	if self.getUserSpace(US) then
 	begin
@@ -997,7 +982,7 @@ begin
 	result := FS_FILE_WRITEERROR;
 	if not(Assigned(self)) then
 		exit; //Проверка на вызов без инициализации
-	if self.public_account then
+	if self.isPublicShare then
 		exit(FS_FILE_NOTSUPPORTED);
 	if self.HTTP.PostForm(API_FILE_MOVE, 'home=' + PathToUrl(OldName) + '&folder=' + PathToUrl(ToPath) + self.united_params + '&conflict', JSON) then
 	begin //Парсим ответ
@@ -1036,7 +1021,7 @@ begin
 	result := false;
 	if not(Assigned(self)) then
 		exit; //Проверка на вызов без инициализации
-	if self.public_account then
+	if self.isPublicShare then
 		exit;
 	if publish then
 	begin
@@ -1117,7 +1102,7 @@ begin
 	result := false;
 	if not(Assigned(self)) then
 		exit; //Проверка на вызов без инициализации
-	if self.public_account then
+	if self.isPublicShare then
 		exit;
 
 	result := self.HTTP.PostForm(API_TRASHBIN_RESTORE, 'path=' + PathToUrl(Path) + '&restore_revision=' + RestoreRevision.ToString + self.united_params + '&conflict=' + ConflictMode, JSON);
@@ -1145,7 +1130,7 @@ begin
 	result := false;
 	if not(Assigned(self)) then
 		exit; //Проверка на вызов без инициализации
-	if self.public_account then
+	if self.isPublicShare then
 		exit;
 
 	result := self.HTTP.PostForm(API_TRASHBIN_EMPTY, self.united_params, JSON);
@@ -1173,7 +1158,7 @@ begin
 	result := false;
 	if not(Assigned(self)) then
 		exit; //Проверка на вызов без инициализации
-	if self.public_account then
+	if self.isPublicShare then
 		exit;
 
 	result := self.HTTP.PostForm(API_FOLDER_MOUNT, 'home=' + UrlEncode(home) + '&invite_token=' + invite_token + self.united_params + '&conflict=' + ConflictMode, JSON);
@@ -1202,7 +1187,7 @@ begin
 	result := false;
 	if not(Assigned(self)) then
 		exit; //Проверка на вызов без инициализации
-	if self.public_account then
+	if self.isPublicShare then
 		exit;
 	if clone_copy then
 		CopyStr := 'true'
@@ -1234,7 +1219,7 @@ begin
 	result := false;
 	if not(Assigned(self)) then
 		exit; //Проверка на вызов без инициализации
-	if self.public_account then
+	if self.isPublicShare then
 		exit;
 
 	result := self.HTTP.PostForm(API_INVITE_REJECT, 'invite_token=' + invite_token + self.united_params, JSON);
@@ -1469,7 +1454,7 @@ function TCloudMailRu.putFile(localPath, remotePath: WideString; ConflictMode: W
 begin
 	if not(Assigned(self)) then
 		exit(FS_FILE_WRITEERROR); //Проверка на вызов без инициализации
-	if self.public_account then
+	if self.isPublicShare then
 		exit(FS_FILE_NOTSUPPORTED);
 	self.HTTP.ExternalSourceName := PWideChar(remotePath);
 	self.HTTP.ExternalTargetName := PWideChar(localPath);
@@ -1502,7 +1487,7 @@ begin
 	result := CLOUD_OPERATION_FAILED;
 	if not(Assigned(self)) then
 		exit; //Проверка на вызов без инициализации
-	if self.public_account then
+	if self.isPublicShare then
 		exit;
 	Return := TStringList.Create;
 	result := self.HTTP.PostFile(self.upload_url + '/?cloud_domain=1&x-email=' + self.user + '%40' + self.domain + '&fileapi' + DateTimeToUnix(now).ToString + '0246', FileName, FileStream, PostAnswer);
@@ -1528,7 +1513,7 @@ begin
 	result := false;
 	if not(Assigned(self)) then
 		exit; //Проверка на вызов без инициализации
-	if self.public_account then
+	if self.isPublicShare then
 		exit;
 	result := self.HTTP.PostForm(API_FILE_REMOVE, 'home=/' + IncludeSlash(PathToUrl(Path)) + self.united_params + '&conflict', JSON); //API всегда отвечает true, даже если путь не существует
 	if result then
@@ -1554,7 +1539,7 @@ begin
 	result := FS_FILE_WRITEERROR;
 	if not(Assigned(self)) then
 		exit; //Проверка на вызов без инициализации
-	if self.public_account then
+	if self.isPublicShare then
 		exit;
 	if self.HTTP.PostForm(API_FILE_RENAME, 'home=' + PathToUrl(OldName) + '&name=' + PathToUrl(NewName) + self.united_params, JSON) then
 	begin //Парсим ответ
@@ -1573,8 +1558,8 @@ begin
 	if not(Assigned(self)) then
 		exit; //Проверка на вызов без инициализации
 	Progress := false;
-	if self.public_account then
-		result := self.HTTP.GetPage(API_FILE + '?weblink=' + IncludeSlash(self.public_link) + PathToUrl(Path) + self.united_params, JSON, Progress)
+	if self.isPublicShare then
+		result := self.HTTP.GetPage(API_FILE + '?weblink=' + IncludeSlash(self.getPublicLink) + PathToUrl(Path) + self.united_params, JSON, Progress)
 	else
 		result := self.HTTP.GetPage(API_FILE + '?home=' + PathToUrl(Path) + self.united_params, JSON, Progress);
 
