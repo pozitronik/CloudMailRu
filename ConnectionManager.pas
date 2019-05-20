@@ -115,6 +115,12 @@ begin
 
 	LogHandleProc(LogLevelConnect, MSGTYPE_CONNECT, PWideChar('CONNECT \' + connectionName));
 
+	{proxify plugin settings to cloud}
+	CloudSettings.ConnectionSettings := self.PluginSettings.ConnectionSettings;
+	CloudSettings.PrecalculateHash := self.PluginSettings.PrecalculateHash;
+	CloudSettings.CheckCRC := self.PluginSettings.CheckCRC;
+	CloudSettings.CloudMaxFileSize := self.PluginSettings.CloudMaxFileSize;
+
 	cloud := TCloudMailRu.Create(CloudSettings, ProgressHandleProc, LogHandleProc, RequestHandleProc);
 	if not set_(connectionName, cloud) then
 		exit(CLOUD_OPERATION_ERROR_STATUS_UNKNOWN); //INVALID_HANDLE_VALUE
