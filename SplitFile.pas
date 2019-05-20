@@ -44,7 +44,7 @@ type
 		constructor Create(filename: WideString; ChunkSize: Int64);
 		destructor Destroy; override;
 
-		procedure GetCRCData(DataStream: TStream);
+		procedure GetCRCData(DataStream: TStringStream);
 
 	end;
 
@@ -151,12 +151,9 @@ begin //todo: change to TFileStream (just for code sameness
 	exit(IntToHex(CRCValue, 8));
 end;
 
-procedure TFileSplitInfo.GetCRCData(DataStream: TStream);
-var
-	Content: WideString;
+procedure TFileSplitInfo.GetCRCData(DataStream: TStringStream);
 begin
-	Content := 'filename=' + ExtractFileName(self.filename) + sLineBreak + 'size=' + self.filesize.ToString + sLineBreak + 'crc32=' + self.GetCRC32File(self.filename);
-	DataStream.Write(Content, length(Content));
+	DataStream.WriteString('filename=' + ExtractFileName(self.filename) + sLineBreak + 'size=' + self.filesize.ToString + sLineBreak + 'crc32=' + self.GetCRC32File(self.filename));
 end;
 
 function TFileSplitInfo.GetCRCFileName: WideString;
