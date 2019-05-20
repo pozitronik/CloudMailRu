@@ -16,13 +16,11 @@ type
 
 		HTTP: TCloudMailRuHTTP; //HTTP transport class
 
-		public_download_token: WideString;
-		public_shard: WideString;
+		public_download_token: WideString; //token for public urls, refreshes on request
+		public_shard: WideString; //public downloads shard url
 
-		token: WideString;
 		OAuthToken: TCloudMailRuOAuthInfo;
-		x_page_id: WideString;
-		build: WideString;
+
 		upload_url: WideString;
 		login_method: integer;
 
@@ -744,6 +742,7 @@ function TCloudMailRu.getToken: Boolean;
 var
 	JSON: WideString;
 	Progress: Boolean;
+	token, x_page_id, build: WideString;
 begin
 	result := false;
 	if not(Assigned(self)) then
@@ -752,8 +751,8 @@ begin
 	result := self.HTTP.GetPage(TOKEN_URL, JSON, Progress);
 	if result then
 	begin
-		result := extractTokenFromText(JSON, self.token) and extract_x_page_id_FromText(JSON, self.x_page_id) and extract_build_FromText(JSON, self.build) and extract_upload_url_FromText(JSON, self.upload_url);
-		self.united_params := '&api=2&build=' + self.build + '&x-page-id=' + self.x_page_id + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&token=' + self.token + '&_=' + DateTimeToUnix(now).ToString + '810';
+		result := extractTokenFromText(JSON, token) and extract_x_page_id_FromText(JSON, x_page_id) and extract_build_FromText(JSON, build) and extract_upload_url_FromText(JSON, self.upload_url);
+		self.united_params := '&api=2&build=' + build + '&x-page-id=' + x_page_id + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&token=' + token + '&_=' + DateTimeToUnix(now).ToString + '810';
 	end;
 end;
 
