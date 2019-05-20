@@ -1320,7 +1320,7 @@ var
 	SplittedPartIndex: integer;
 	ChunkRemotePath, CRCRemotePath: WideString;
 	ChunkStream: TChunkedFileStream;
-	CRCStream: TMemoryStream;
+	CRCStream: TStringStream;
 begin
 	if self.PrecalculateHash then //try to add whole file by hash at first.
 	begin
@@ -1427,9 +1427,9 @@ begin
 	begin
 		CRCRemotePath := ExtractFilePath(remotePath) + SplitFileInfo.CRCFileName;
 		self.HTTP.ExternalTargetName := PWideChar(CRCRemotePath);
-		CRCStream := TMemoryStream.Create;
+		CRCStream := TStringStream.Create;
 		SplitFileInfo.GetCRCData(CRCStream);
-		self.putFileStream(GetUNCFilePath(localPath), CRCRemotePath, CRCStream, ConflictMode); //TODO: пишет всякую херь вместо CRC
+		self.putFileStream(SplitFileInfo.CRCFileName, CRCRemotePath, CRCStream, ConflictMode);
 		CRCStream.Destroy;
 	end;
 
