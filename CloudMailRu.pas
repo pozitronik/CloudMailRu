@@ -282,9 +282,9 @@ begin
 		self.ExternalLogProc := ExternalLogProc;
 		self.ExternalRequestProc := ExternalRequestProc;
 
-		HTTPSettings.Proxy := Proxy;
+		HTTPSettings.ProxySettings := Proxy;
 
-		HTTPSettings.ConnectTimeout := ConnectTimeout;
+		HTTPSettings.SocketTimeout := ConnectTimeout;
 		HTTPSettings.UploadBPS := UploadBPS;
 		HTTPSettings.DownloadBPS := DownloadBPS;
 
