@@ -173,7 +173,7 @@ begin
 		end;
 		if CurrentCloud.statusFile(path.path, Result) then //Обычный каталог
 		begin
-			if (Result.home = '') and not CurrentCloud.isPublicShare then
+			if (Result.home = '') and not CurrentCloud.public_account then
 				LogHandle(LogLevelError, MSGTYPE_IMPORTANTERROR, PWideChar('Cant find file ' + path.path)); {Такого быть не может, но...}
 		end;
 	end; //Не рапортуем, это будет уровнем выше
@@ -327,7 +327,7 @@ begin
 				end;
 			FS_STATUS_OP_RENMOV_MULTI:
 				begin
-					if ConnectionManager.get(RealPath.account, getResult).isPublicShare then
+					if ConnectionManager.get(RealPath.account, getResult).public_account then
 					begin
 						LogHandle(LogLevelWarning, MSGTYPE_IMPORTANTERROR, PWideChar('Direct copying from public accounts not supported'));
 						ThreadSkipListRenMov.AddOrSetValue(GetCurrentThreadID, true);
@@ -579,7 +579,7 @@ begin
 			exit(INVALID_HANDLE_VALUE);
 		end;
 
-		if CurrentCloud.isPublicShare then
+		if CurrentCloud.public_account then
 			CurrentItem := FindListingItemByName(CurrentListing, ExtractUniversalFileName(RealPath.path))
 		else
 			CurrentItem := FindListingItemByHomePath(CurrentListing, RealPath.path);
@@ -805,7 +805,7 @@ begin
 
 	if command = 'trash' then //go to current account trash directory
 	begin
-		if Cloud.isPublicShare then
+		if Cloud.public_account then
 			exit(FS_EXEC_ERROR);
 		if inAccount(RealPath, false) then
 		begin
@@ -816,7 +816,7 @@ begin
 
 	if command = 'shared' then
 	begin
-		if Cloud.isPublicShare then
+		if Cloud.public_account then
 			exit(FS_EXEC_ERROR);
 		if inAccount(RealPath, false) then
 		begin
@@ -827,7 +827,7 @@ begin
 
 	if command = 'invites' then
 	begin
-		if Cloud.isPublicShare then
+		if Cloud.public_account then
 			exit(FS_EXEC_ERROR);
 		if inAccount(RealPath, false) then
 		begin
@@ -1463,7 +1463,7 @@ begin
 
 	if OldRealPath.account <> NewRealPath.account then //разные аккаунты
 	begin
-		if OldCloud.isPublicShare then
+		if OldCloud.public_account then
 		begin
 			LogHandle(LogLevelWarning, MSGTYPE_IMPORTANTERROR, PWideChar('Direct operations from public accounts not supported'));
 			exit(FS_FILE_USERABORT);
