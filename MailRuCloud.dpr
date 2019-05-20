@@ -1534,20 +1534,15 @@ end;
 
 procedure FsSetCryptCallbackW(PCryptProc: TCryptProcW; CryptoNr: integer; Flags: integer); stdcall;
 var
-	CloudMaxFileSize: integer;
+	PluginSettings: TPluginSettings;
 begin
-
-	ProxySettings := GetPluginSettings(SettingsIniFilePath).ConnectionSettings.ProxySettings;
-
+	PluginSettings := GetPluginSettings(SettingsIniFilePath);
 	PasswordManager := TTCPasswordManager.Create(PCryptProc, PluginNum, CryptoNr, @LogHandle, @RequestHandle);
-
-	PasswordManager.GetProxyPassword(ProxySettings);
-
-	if ProxySettings.use_tc_password_manager then
+	PasswordManager.GetProxyPassword(PluginSettings.ConnectionSettings.ProxySettings);
+	if PluginSettings.ConnectionSettings.ProxySettings.use_tc_password_manager then
 		SetPluginSettingsValue(SettingsIniFilePath, 'ProxyTCPwdMngr', true);
 
-	CloudMaxFileSize := GetPluginSettings(SettingsIniFilePath).CloudMaxFileSize;
-	ConnectionManager := TConnectionManager.Create(AccountsIniFilePath, ProxySettings, GetPluginSettings(SettingsIniFilePath).ConnectionSettings.SocketTimeout, CloudMaxFileSize, GetPluginSettings(SettingsIniFilePath).ConnectionSettings.UploadBPS, GetPluginSettings(SettingsIniFilePath).ConnectionSettings.DownloadBPS, GetPluginSettings(SettingsIniFilePath).PrecalculateHash, GetPluginSettings(SettingsIniFilePath).CheckCRC, @ProgressHandle, @LogHandle, @RequestHandle, PasswordManager);
+	ConnectionManager := TConnectionManager.Create(AccountsIniFilePath, GetPluginSettings(SettingsIniFilePath), @ProgressHandle, @LogHandle, @RequestHandle, PasswordManager);
 
 end;
 
