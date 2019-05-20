@@ -125,7 +125,6 @@ type
 implementation
 
 {TCloudMailRu}
-{TODO: LogErrors unused}
 function TCloudMailRu.addFileByIdentity(FileIdentity: TCloudMailRuFileIdentity; remotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; LogErrors: Boolean = true; LogSuccess: Boolean = false): integer;
 var
 	JSON, FileName: WideString;
