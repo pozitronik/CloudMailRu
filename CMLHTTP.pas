@@ -26,11 +26,7 @@ type
 		ExternalSourceName: PWideChar;
 		ExternalTargetName: PWideChar;
 		{PROPERTIES}
-    	Property Options: TConnectionSettings read Settings;
-//		Property ProxySettings: TProxySettings read Settings.Proxy; //all temporary
-//		Property UploadLimit: integer read Settings.UploadBPS;
-//		Property DownloadLimit: integer read Settings.DownloadBPS;
-//		Property ConnectTimeoutValue: integer read Settings.ConnectTimeout;
+		Property Options: TConnectionSettings read Settings;
 		{CONSTRUCTOR/DESTRUCTOR}
 		constructor Create(Settings: TConnectionSettings; ExternalProgressProc: TProgressHandler = nil; ExternalLogProc: TLogHandler = nil);
 		destructor Destroy; override;
@@ -252,7 +248,6 @@ begin
 	PostData.free;
 end;
 
-{TODO: Базовый метод постинга должен работать с потоком}
 function TCloudMailRuHTTP.PostForm(URL, PostDataString: WideString; var Answer: WideString; ContentType: WideString; LogErrors, ProgressEnabled: Boolean): Boolean;
 var
 	ResultStream, PostData: TStringStream;
@@ -261,7 +256,7 @@ begin
 	ResultStream := TStringStream.Create;
 	PostData := TStringStream.Create(PostDataString, TEncoding.UTF8);
 
-	PostResult := self.Post(URL, PostData, ResultStream, true, ContentType, LogErrors, ProgressEnabled); {TODO: будут логироваться все ошибки, в т.ч. разбираемые уровнем выше => передавать обработку ошибок вышестоящему парсеру}
+	PostResult := self.Post(URL, PostData, ResultStream, true, ContentType, LogErrors, ProgressEnabled);
 	result := PostResult = CLOUD_OPERATION_OK;
 	Answer := ResultStream.DataString;
 
