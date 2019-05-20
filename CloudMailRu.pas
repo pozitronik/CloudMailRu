@@ -81,8 +81,6 @@ type
 		Property RetryAttempts: integer read OptionsSet.RetryAttempts;
 		Property AttemptWait: integer read OptionsSet.AttemptWait;
 
-		Property Transport: TCloudMailRuHTTP read HTTP;
-
 		function getSharedFileUrl(remotePath: WideString; DoUrlEncode: Boolean = true): WideString;
 		{CONSTRUCTOR/DESTRUCTOR}
 		constructor Create(CloudSettings: TCloudSettings; ExternalProgressProc: TProgressHandler = nil; ExternalLogProc: TLogHandler = nil; ExternalRequestProc: TRequestHandler = nil);
