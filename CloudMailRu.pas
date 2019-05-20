@@ -120,6 +120,7 @@ type
 		class function StringToCloudAccess(accessString: WideString; Invert: Boolean = false): integer; static;
 		class function ErrorCodeText(ErrorCode: integer): WideString; static;
 		class function IsSameIdentity(IdentityOne, IdentityTwo: TCloudMailRuFileIdentity): Boolean;
+		class function FileIdentity(localPath: WideString): TCloudMailRuFileIdentity;
 	end;
 
 implementation
@@ -402,6 +403,12 @@ begin
 		else
 			exit('Неизвестная ошибка (' + ErrorCode.ToString + ')');
 	end;
+end;
+
+class function TCloudMailRu.FileIdentity(localPath: WideString): TCloudMailRuFileIdentity;
+begin
+	result.Hash := cloudHash(localPath);
+	result.size := SizeOfFile(localPath);
 end;
 
 function TCloudMailRu.getDescriptionFile(remotePath, localCopy: WideString): Boolean;
@@ -1309,10 +1316,8 @@ var
 	RetryAttemptsCount: integer;
 begin
 	if self.PrecalculateHash then //try to add whole file by hash at first.
-	begin
-		LocalFileIdentity.Hash := cloudHash(GetUNCFilePath(localPath)); {TODO: GetIdentityOfFile}
-		LocalFileIdentity.size := SizeOfFile(GetUNCFilePath(localPath));
-	end;
+		LocalFileIdentity := FileIdentity(GetUNCFilePath(localPath));
+
 	if self.PrecalculateHash and (LocalFileIdentity.Hash <> EmptyWideStr) and (not self.crypt_files) and (FS_FILE_OK = self.addFileByIdentity(LocalFileIdentity, remotePath, CLOUD_CONFLICT_STRICT, false, true)) then {issue #135}
 		exit(CLOUD_OPERATION_OK);
 
