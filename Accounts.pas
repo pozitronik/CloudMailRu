@@ -410,16 +410,16 @@ begin
 		AccountsForm.DescriptionFileNameEdit.Text := GetPluginSettings(SettingsIniFilePath).DescriptionFileName;
 
 		AccountsForm.CopyBetweenAccountsModeCombo.ItemIndex := GetPluginSettings(SettingsIniFilePath).CopyBetweenAccountsMode;
-		AccountsForm.SocketTimeoutEdit.Text := GetPluginSettings(SettingsIniFilePath).SocketTimeout.ToString;
-		AccountsForm.UploadBPSEdit.Text := GetPluginSettings(SettingsIniFilePath).UploadBPS.ToString;
-		AccountsForm.DownloadBPSEdit.Text := GetPluginSettings(SettingsIniFilePath).DownloadBPS.ToString;
+		AccountsForm.SocketTimeoutEdit.Text := GetPluginSettings(SettingsIniFilePath).ConnectionSettings.SocketTimeout.ToString;
+		AccountsForm.UploadBPSEdit.Text := GetPluginSettings(SettingsIniFilePath).ConnectionSettings.UploadBPS.ToString;
+		AccountsForm.DownloadBPSEdit.Text := GetPluginSettings(SettingsIniFilePath).ConnectionSettings.DownloadBPS.ToString;
 
-		AccountsForm.ProxyCB.ItemIndex := GetPluginSettings(SettingsIniFilePath).Proxy.ProxyType;
-		AccountsForm.ProxyServerEdit.Text := GetPluginSettings(SettingsIniFilePath).Proxy.Server;
-		AccountsForm.ProxyPortEdit.Text := GetPluginSettings(SettingsIniFilePath).Proxy.Port.ToString;
-		AccountsForm.ProxyUserEdit.Text := GetPluginSettings(SettingsIniFilePath).Proxy.user;
-		AccountsForm.ProxyPwd.Text := GetPluginSettings(SettingsIniFilePath).Proxy.password;
-		AccountsForm.ProxyTCPwdMngrCB.Checked := GetPluginSettings(SettingsIniFilePath).Proxy.use_tc_password_manager;
+		AccountsForm.ProxyCB.ItemIndex := GetPluginSettings(SettingsIniFilePath).ConnectionSettings.ProxySettings.ProxyType;
+		AccountsForm.ProxyServerEdit.Text := GetPluginSettings(SettingsIniFilePath).ConnectionSettings.ProxySettings.Server;
+		AccountsForm.ProxyPortEdit.Text := GetPluginSettings(SettingsIniFilePath).ConnectionSettings.ProxySettings.Port.ToString;
+		AccountsForm.ProxyUserEdit.Text := GetPluginSettings(SettingsIniFilePath).ConnectionSettings.ProxySettings.user;
+		AccountsForm.ProxyPwd.Text := GetPluginSettings(SettingsIniFilePath).ConnectionSettings.ProxySettings.password;
+		AccountsForm.ProxyTCPwdMngrCB.Checked := GetPluginSettings(SettingsIniFilePath).ConnectionSettings.ProxySettings.use_tc_password_manager;
 		AccountsForm.CloudMaxFileSizeValue.Text := GetPluginSettings(SettingsIniFilePath).CloudMaxFileSize.ToString;
 		if (GetPluginSettings(SettingsIniFilePath).CloudMaxFileSize <> CLOUD_MAX_FILESIZE_DEFAULT) then
 		begin
