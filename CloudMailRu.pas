@@ -36,6 +36,8 @@ type
 		PrecalculateHash: Boolean;
 		CheckCRC: Boolean;
 		OperationErrorMode: integer; {implementation in progress}
+		RetryAttempts: integer;
+		AttemptWait: integer;
 		{todo: use plugin settings as is}
 
 		HTTP: TCloudMailRuHTTP; //HTTP transport class
@@ -1321,6 +1323,7 @@ var
 	ChunkRemotePath, CRCRemotePath: WideString;
 	ChunkStream: TChunkedFileStream;
 	CRCStream: TStringStream;
+	RetryAttemptsCount: integer;
 begin
 	if self.PrecalculateHash then //try to add whole file by hash at first.
 	begin
@@ -1331,7 +1334,9 @@ begin
 		exit(CLOUD_OPERATION_OK);
 
 	SplitFileInfo := TFileSplitInfo.Create(GetUNCFilePath(localPath), self.split_file_size); //quickly get information about file parts
+  RetryAttemptsCount:=0;
 	SplittedPartIndex := 0;
+
 	while SplittedPartIndex < SplitFileInfo.ChunksCount do {use while instead for..loop, need to modify loop counter sometimes}
 	begin
 		ChunkRemotePath := ExtractFilePath(remotePath) + SplitFileInfo.GetChunks[SplittedPartIndex].name;
@@ -1346,7 +1351,7 @@ begin
 		case result of
 			FS_FILE_OK:
 				begin
-					{all ok continue}
+					RetryAttemptsCount :=0;
 				end;
 			FS_FILE_USERABORT:
 				begin
@@ -1382,7 +1387,7 @@ begin
 			else {any other error}
 				begin
 					case OperationErrorMode of
-						OperationErrorModeAsk, OperationErrorModeRetry: {Для разбитых файлов всегда спрашиваем пользователя} {TODO: documentation}
+						OperationErrorModeAsk:
 							begin
 								case (messagebox(FindTCWindow, PWideChar('Partial upload error, code:' + result.ToString + sLineBreak + 'partname: ' + ChunkRemotePath + sLineBreak + 'Continue operation?'), 'Upload error', MB_ABORTRETRYIGNORE + MB_ICONERROR)) of
 									ID_ABORT:
@@ -1411,6 +1416,22 @@ begin
 								result := FS_FILE_USERABORT;
 								Break;
 							end;
+						OperationErrorModeRetry: {TODO: documentation}
+							begin
+								Inc(RetryAttemptsCount);
+								if RetryAttemptsCount <> RetryAttempts then
+								begin
+									Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Partial upload error, code: ' + result.ToString + ' Retry attempt ' + RetryAttemptsCount.ToString + RetryAttemptsToString(RetryAttempts));
+									Dec(SplittedPartIndex); //retry with this chunk
+									ProcessMessages;
+									Sleep(AttemptWait);
+								end else begin
+									Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Partial upload error, code: ' + result.ToString + ' Retry attempt limit exceed, aborted');
+									result := CLOUD_OPERATION_FAILED;
+									Break;
+								end;
+
+							end
 						else {unknown option value}
 							begin
 								result := CLOUD_OPERATION_FAILED;
