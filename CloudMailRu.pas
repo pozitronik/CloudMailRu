@@ -1332,7 +1332,7 @@ begin
 		self.HTTP.ExternalTargetName := PWideChar(ChunkRemotePath);
 		Log(LogLevelDebug, MSGTYPE_DETAILS, 'Partial upload of ' + localPath + ' part ' + (SplittedPartIndex + 1).ToString + ' of ' + SplitFileInfo.ChunksCount.ToString + ' => ' + ChunkRemotePath);
 
-		ChunkStream := TChunkedFileStream.Create(GetUNCFilePath(localPath), fmOpenRead or fmShareDenyWrite, SplitFileInfo.GetChunks[SplittedPartIndex].start, SplitFileInfo.GetChunks[SplittedPartIndex].size); {FIXME TODO: Bug here - TChunkedFileStream некорректно обрабатывает файлы больше какого-то лимита}
+		ChunkStream := TChunkedFileStream.Create(GetUNCFilePath(localPath), fmOpenRead or fmShareDenyWrite, SplitFileInfo.GetChunks[SplittedPartIndex].start, SplitFileInfo.GetChunks[SplittedPartIndex].size);
 		result := self.putFileStream(ExtractFileName(ChunkRemotePath), ChunkRemotePath, ChunkStream, ConflictMode);
 
 		ChunkStream.Destroy;
