@@ -26,10 +26,11 @@ type
 		ExternalSourceName: PWideChar;
 		ExternalTargetName: PWideChar;
 		{PROPERTIES}
-		Property ProxySettings: TProxySettings read Settings.Proxy; //all temporary
-		Property UploadLimit: integer read Settings.UploadBPS;
-		Property DownloadLimit: integer read Settings.DownloadBPS;
-		Property ConnectTimeoutValue: integer read Settings.ConnectTimeout;
+    	Property Options: TConnectionSettings read Settings;
+//		Property ProxySettings: TProxySettings read Settings.Proxy; //all temporary
+//		Property UploadLimit: integer read Settings.UploadBPS;
+//		Property DownloadLimit: integer read Settings.DownloadBPS;
+//		Property ConnectTimeoutValue: integer read Settings.ConnectTimeout;
 		{CONSTRUCTOR/DESTRUCTOR}
 		constructor Create(Settings: TConnectionSettings; ExternalProgressProc: TProgressHandler = nil; ExternalLogProc: TLogHandler = nil);
 		destructor Destroy; override;
@@ -62,21 +63,21 @@ begin
 	SSL.SSLOptions.SSLVersions := [sslvSSLv23];
 	HTTP := TIdHTTP.Create();
 
-	if Settings.Proxy.ProxyType in SocksProxyTypes then //SOCKS proxy initialization
+	if Settings.ProxySettings.ProxyType in SocksProxyTypes then //SOCKS proxy initialization
 	begin
 		self.Socks := TIdSocksInfo.Create();
-		self.Socks.Host := Settings.Proxy.Server;
-		self.Socks.Port := Settings.Proxy.Port;
-		if Settings.Proxy.user <> EmptyWideStr then
+		self.Socks.Host := Settings.ProxySettings.Server;
+		self.Socks.Port := Settings.ProxySettings.Port;
+		if Settings.ProxySettings.user <> EmptyWideStr then
 		begin
 			self.Socks.Authentication := saUsernamePassword;
-			self.Socks.Username := Settings.Proxy.user;
-			self.Socks.password := Settings.Proxy.password;
+			self.Socks.Username := Settings.ProxySettings.user;
+			self.Socks.password := Settings.ProxySettings.password;
 		end
 		else
 			self.Socks.Authentication := saNoAuthentication;
 
-		case Settings.Proxy.ProxyType of
+		case Settings.ProxySettings.ProxyType of
 			ProxySocks5:
 				Socks.Version := svSocks5;
 			ProxySocks4:
@@ -85,17 +86,17 @@ begin
 		self.Socks.Enabled := true;
 	end;
 
-	if (Settings.Proxy.ProxyType in SocksProxyTypes) and (self.Socks.Enabled) then
+	if (Settings.ProxySettings.ProxyType in SocksProxyTypes) and (self.Socks.Enabled) then
 		SSL.TransparentProxy := self.Socks;
-	if Settings.Proxy.ProxyType = ProxyHTTP then
+	if Settings.ProxySettings.ProxyType = ProxyHTTP then
 	begin
-		HTTP.ProxyParams.ProxyServer := Settings.Proxy.Server;
-		HTTP.ProxyParams.ProxyPort := Settings.Proxy.Port;
-		if Settings.Proxy.user <> EmptyWideStr then
+		HTTP.ProxyParams.ProxyServer := Settings.ProxySettings.Server;
+		HTTP.ProxyParams.ProxyPort := Settings.ProxySettings.Port;
+		if Settings.ProxySettings.user <> EmptyWideStr then
 		begin
 			HTTP.ProxyParams.BasicAuthentication := true;
-			HTTP.ProxyParams.ProxyUsername := Settings.Proxy.user;
-			HTTP.ProxyParams.ProxyPassword := Settings.Proxy.password;
+			HTTP.ProxyParams.ProxyUsername := Settings.ProxySettings.user;
+			HTTP.ProxyParams.ProxyPassword := Settings.ProxySettings.password;
 		end
 	end;
 	HTTP.CookieManager := Cookie;
@@ -103,10 +104,10 @@ begin
 	HTTP.AllowCookies := true;
 	HTTP.HTTPOptions := [hoForceEncodeParams, hoNoParseMetaHTTPEquiv, hoKeepOrigProtocol, hoTreat302Like303];
 	HTTP.HandleRedirects := true;
-	if (Settings.ConnectTimeout < 0) then
+	if (Settings.SocketTimeout < 0) then
 	begin
-		HTTP.ConnectTimeout := Settings.ConnectTimeout;
-		HTTP.ReadTimeout := Settings.ConnectTimeout;
+		HTTP.ConnectTimeout := Settings.SocketTimeout;
+		HTTP.ReadTimeout := Settings.SocketTimeout;
 	end;
 	if (Settings.UploadBPS > 0) or (Settings.DownloadBPS > 0) then
 	begin
