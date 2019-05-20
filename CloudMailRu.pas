@@ -120,7 +120,7 @@ type
 		class function StringToCloudAccess(accessString: WideString; Invert: Boolean = false): integer; static;
 		class function ErrorCodeText(ErrorCode: integer): WideString; static;
 		class function IsSameIdentity(IdentityOne, IdentityTwo: TCloudMailRuFileIdentity): Boolean;
-		class function FileIdentity(localPath: WideString): TCloudMailRuFileIdentity;
+		function FileIdentity(localPath: WideString): TCloudMailRuFileIdentity;
 	end;
 
 implementation
@@ -405,7 +405,7 @@ begin
 	end;
 end;
 
-class function TCloudMailRu.FileIdentity(localPath: WideString): TCloudMailRuFileIdentity;
+function TCloudMailRu.FileIdentity(localPath: WideString): TCloudMailRuFileIdentity;
 begin
 	result.Hash := cloudHash(localPath);
 	result.size := SizeOfFile(localPath);
