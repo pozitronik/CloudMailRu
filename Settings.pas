@@ -127,6 +127,18 @@ type
 		CheckCRC: boolean;
 	end;
 
+	{Прототипирую сюда все параметры, которые требуются классом облака}
+	TCloudSettings = record
+		{Параметры конкретного аккаунта}
+		AccountSettings: TAccountSettings;
+		{Параметры, наследуемые от глобальных настроек}
+		ConnectionSettings: TConnectionSettings;
+		PrecalculateHash: boolean;
+		CheckCRC: boolean;
+		CloudMaxFileSize: integer;
+
+	end;
+
 function GetPluginSettings(IniFilePath: WideString): TPluginSettings;
 procedure SetPluginSettingsValue(IniFilePath: WideString; OptionName: WideString; OptionValue: Variant);
 function GetAccountSettingsFromIniFile(IniFilePath: WideString; AccountName: WideString): TAccountSettings;
