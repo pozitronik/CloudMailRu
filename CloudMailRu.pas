@@ -35,6 +35,8 @@ type
 		Shard: WideString;
 		PrecalculateHash: Boolean;
 		CheckCRC: Boolean;
+		OperationErrorMode: integer; {implementation in progress}
+		{todo: use plugin settings as is}
 
 		HTTP: TCloudMailRuHTTP; //HTTP transport class
 		FileCipher: TFileCipher;
@@ -122,7 +124,7 @@ type
 implementation
 
 {TCloudMailRu}
-
+{TODO: LogErrors unused}
 function TCloudMailRu.addFileByIdentity(FileIdentity: TCloudMailRuFileIdentity; remotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; LogErrors: Boolean = true; LogSuccess: Boolean = false): integer;
 var
 	JSON, FileName: WideString;
@@ -141,7 +143,7 @@ begin
 		remotePath := ChangePathFileName(remotePath, FileName);
 	end;
 	{Экспериментально выяснено, что параметры api, build, email, x-email, x-page-id в запросе не обязательны}
-	if self.HTTP.PostForm(API_FILE_ADD, 'conflict=' + ConflictMode + '&home=/' + PathToUrl(remotePath) + '&hash=' + FileIdentity.Hash + '&size=' + FileIdentity.size.ToString + self.united_params, JSON, 'application/x-www-form-urlencoded', LogErrors) then
+	if self.HTTP.PostForm(API_FILE_ADD, 'conflict=' + ConflictMode + '&home=/' + PathToUrl(remotePath) + '&hash=' + FileIdentity.Hash + '&size=' + FileIdentity.size.ToString + self.united_params, JSON, 'application/x-www-form-urlencoded', LogErrors, false) then {Do not allow to cancel operation here}
 	begin
 		OperationResult := fromJSON_OperationResult(JSON, OperationStatus);
 		if CLOUD_OPERATION_OK = OperationResult then
@@ -198,7 +200,7 @@ function TCloudMailRu.CloudResultToFsResult(CloudResult: integer; OperationStatu
 begin
 	case CloudResult of
 		CLOUD_OPERATION_OK:
-			exit(CLOUD_OPERATION_OK);
+			exit(FS_FILE_OK);
 		CLOUD_ERROR_EXISTS:
 			exit(FS_FILE_EXISTS);
 		CLOUD_ERROR_REQUIRED, CLOUD_ERROR_INVALID, CLOUD_ERROR_READONLY, CLOUD_ERROR_NAME_LENGTH_EXCEEDED:
@@ -1300,7 +1302,6 @@ begin
 
 	if OperationResult = CLOUD_OPERATION_OK then
 		result := self.addFileByIdentity(RemoteFileIdentity, remotePath, ConflictMode);
-
 end;
 
 function TCloudMailRu.putFileWhole(localPath, remotePath, ConflictMode: WideString): integer;
@@ -1330,8 +1331,8 @@ begin
 		exit(CLOUD_OPERATION_OK);
 
 	SplitFileInfo := TFileSplitInfo.Create(GetUNCFilePath(localPath), self.split_file_size); //quickly get information about file parts
-
-	for SplittedPartIndex := 0 to SplitFileInfo.ChunksCount - 1 do
+	SplittedPartIndex := 0;
+	while SplittedPartIndex <= SplitFileInfo.ChunksCount do {use while instead for..loop, need to modify loop counter sometimes}
 	begin
 		ChunkRemotePath := ExtractFilePath(remotePath) + SplitFileInfo.GetChunks[SplittedPartIndex].name;
 		self.HTTP.ExternalTargetName := PWideChar(ChunkRemotePath);
@@ -1344,12 +1345,13 @@ begin
 
 		case result of
 			FS_FILE_OK:
-				Continue;
+				begin
+					{all ok continue}
+				end;
 			FS_FILE_USERABORT:
 				begin
 					Log(LogLevelDetail, MSGTYPE_DETAILS, 'Partial upload aborted.');
-					SplitFileInfo.Destroy;
-					exit(FS_FILE_USERABORT);
+					Break;
 				end;
 			FS_FILE_EXISTS:
 				begin
@@ -1359,44 +1361,79 @@ begin
 								Log(LogLevelWarning, MSGTYPE_DETAILS, 'Chunk ' + ChunkRemotePath + ' already exists, overwriting.');
 								if not(self.deleteFile(ChunkRemotePath)) then
 								begin
-									SplitFileInfo.Destroy;
-									exit(FS_FILE_WRITEERROR);
-								end else if (self.putFileStream(GetUNCFilePath(localPath), ChunkRemotePath, ChunkStream, ConflictMode) <> FS_FILE_OK) then {TODO: stream deleted at this moment}
-								begin
-									SplitFileInfo.Destroy;
-									exit(FS_FILE_WRITEERROR);
+									result := FS_FILE_WRITEERROR;
+									Break;
+								end else begin
+									Dec(SplittedPartIndex); //retry with this chunk
 								end;
-
 							end;
 						ChunkOverwriteIgnore: //ignore this chunk
 							begin
-								Log(LogLevelWarning, MSGTYPE_DETAILS, 'Chunk ' + ChunkRemotePath + ' already exists, skipping.');
-								Continue; //ignore and continue
+								Log(LogLevelWarning, MSGTYPE_DETAILS, 'Chunk ' + ChunkRemotePath + ' already exists, skipping.'); //ignore and continue
 							end;
 						ChunkOverwriteAbort: //abort operation
 							begin
 								Log(LogLevelWarning, MSGTYPE_DETAILS, 'Chunk ' + ChunkRemotePath + ' already exists, aborting.');
-								SplitFileInfo.Destroy;
-								exit(FS_FILE_NOTSUPPORTED);
+								result := FS_FILE_NOTSUPPORTED;
+								Break;
 							end;
 					end;
 				end;
-			else
+			else {any other error}
 				begin
-					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Partial upload error, code: ' + result.ToString); {TODO: дальше ошибка будет обработана как ошибка ВСЕГО файла, а нам надо обработать кусочек}
-					SplitFileInfo.Destroy;
-					exit(CLOUD_OPERATION_FAILED);
+					case OperationErrorMode of
+						OperationErrorModeAsk, OperationErrorModeRetry: {Для разбитых файлов всегда спрашиваем пользователя} {TODO: documentation}
+							begin
+								case (messagebox(FindTCWindow, PWideChar('Partial upload error, code:' + result.ToString + sLineBreak + 'partname: ' + ChunkRemotePath + sLineBreak + 'Continue operation?'), 'Download error', MB_ABORTRETRYIGNORE + MB_ICONERROR)) of
+									ID_ABORT:
+										begin
+											result := FS_FILE_USERABORT;
+											Break;
+										end;
+									ID_RETRY:
+										Dec(SplittedPartIndex); //retry with this chunk
+									ID_IGNORE:
+										begin
+											{do nothing && continue}
+										end;
+
+								end;
+							end;
+
+						OperationErrorModeIgnore:
+							begin
+								Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Partial upload error, code: ' + result.ToString + ', ignored');
+							end;
+
+						OperationErrorModeAbort:
+							begin
+								Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Partial upload error, code: ' + result.ToString + ', aborted');
+								result := FS_FILE_USERABORT;
+								Break;
+							end;
+						else {unknown option value}
+							begin
+								result := CLOUD_OPERATION_FAILED;
+								Break;
+							end;
+					end
+
 				end;
 		end;
+		Inc(SplittedPartIndex); //all ok, continue with next chunk
+	end; {end while}
+
+	if result = FS_FILE_OK then {Only after succesful upload}
+	begin
+		CRCRemotePath := ExtractFilePath(remotePath) + SplitFileInfo.CRCFileName;
+		self.HTTP.ExternalTargetName := PWideChar(CRCRemotePath);
+		CRCStream := TMemoryStream.Create;
+		SplitFileInfo.GetCRCData(CRCStream);
+		self.putFileStream(GetUNCFilePath(localPath), CRCRemotePath, CRCStream, ConflictMode); //TODO: пишет всякую херь вместо CRC
+		CRCStream.Destroy;
 	end;
 
-	CRCRemotePath := ExtractFilePath(remotePath) + SplitFileInfo.CRCFileName;
-	self.HTTP.ExternalTargetName := PWideChar(CRCRemotePath);
-	CRCStream := TMemoryStream.Create;
-	SplitFileInfo.GetCRCData(CRCStream);
-	self.putFileStream(GetUNCFilePath(localPath), CRCRemotePath, CRCStream, ConflictMode); //TODO: пишет всякую херь вместо CRC
-	CRCStream.Destroy;
-
+	SplitFileInfo.Destroy;
 	exit(FS_FILE_OK); //Файлик залит по частям, выходим
 end;
 
@@ -1421,7 +1458,7 @@ begin
 		end;
 	end;
 
-	result := (putFileWhole(localPath, remotePath, ConflictMode));
+	result := putFileWhole(localPath, remotePath, ConflictMode);
 	self.HTTP.ExternalSourceName := nil;
 	self.HTTP.ExternalTargetName := nil;
 
