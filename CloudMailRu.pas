@@ -10,6 +10,12 @@ type
 		{VARIABLES}
 		OptionsSet: TCloudSettings;
 
+		ExternalProgressProc: TProgressHandler;
+		ExternalLogProc: TLogHandler;
+		ExternalRequestProc: TRequestHandler;
+
+		HTTP: TCloudMailRuHTTP; //HTTP transport class
+
 		public_download_token: WideString;
 		public_shard: WideString;
 
@@ -20,17 +26,8 @@ type
 		upload_url: WideString;
 		login_method: integer;
 
-		ExternalProgressProc: TProgressHandler;
-		ExternalLogProc: TLogHandler;
-		ExternalRequestProc: TRequestHandler;
 		Shard: WideString;
 
-		OperationErrorMode: integer; {implementation in progress}
-		RetryAttempts: integer;
-		AttemptWait: integer;
-		{todo: use plugin settings as is}
-
-		HTTP: TCloudMailRuHTTP; //HTTP transport class
 		FileCipher: TFileCipher;
 
 		united_params: WideString; //Объединённый набор авторизационных параметров для подстановки в URL
@@ -80,6 +77,9 @@ type
 		Property upload_url_override: WideString read OptionsSet.AccountSettings.upload_url_override;
 		Property unlimited_filesize: Boolean read OptionsSet.AccountSettings.unlimited_filesize;
 		Property split_large_files: Boolean read OptionsSet.AccountSettings.split_large_files;
+		Property OperationErrorMode: integer read OptionsSet.OperationErrorMode;
+		Property RetryAttempts: integer read OptionsSet.RetryAttempts;
+		Property AttemptWait: integer read OptionsSet.AttemptWait;
 
 		Property Transport: TCloudMailRuHTTP read HTTP;
 
@@ -279,15 +279,12 @@ begin //Облако умеет скопировать файл, но не см�
 	end;
 end;
 
-
 constructor TCloudMailRu.Create(CloudSettings: TCloudSettings; ExternalProgressProc: TProgressHandler; ExternalLogProc: TLogHandler; ExternalRequestProc: TRequestHandler);
 begin
 	try
 		self.ExternalProgressProc := ExternalProgressProc;
 		self.ExternalLogProc := ExternalLogProc;
 		self.ExternalRequestProc := ExternalRequestProc;
-
-
 
 		self.HTTP := TCloudMailRuHTTP.Create(CloudSettings.ConnectionSettings, ExternalProgressProc, ExternalLogProc);
 

@@ -120,6 +120,9 @@ begin
 	CloudSettings.PrecalculateHash := self.PluginSettings.PrecalculateHash;
 	CloudSettings.CheckCRC := self.PluginSettings.CheckCRC;
 	CloudSettings.CloudMaxFileSize := self.PluginSettings.CloudMaxFileSize;
+	CloudSettings.OperationErrorMode := self.PluginSettings.OperationErrorMode;
+	CloudSettings.RetryAttempts := self.PluginSettings.RetryAttempts;
+	CloudSettings.AttemptWait := self.PluginSettings.AttemptWait;
 
 	cloud := TCloudMailRu.Create(CloudSettings, ProgressHandleProc, LogHandleProc, RequestHandleProc);
 	if not set_(connectionName, cloud) then
