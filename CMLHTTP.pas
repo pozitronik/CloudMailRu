@@ -158,7 +158,9 @@ begin
 	result := false;
 	try
 		if ProgressEnabled then
-			HTTP.OnWork := self.Progress; //Вызов прогресса ведёт к возможности отменить получение списка каталогов и других операций, поэтому он нужен не всегда
+			HTTP.OnWork := self.Progress//Вызов прогресса ведёт к возможности отменить получение списка каталогов и других операций, поэтому он нужен не всегда
+		else
+			HTTP.OnWork := nil;
 		Answer := HTTP.Get(URL);
 
 		result := Answer <> EmptyWideStr;
@@ -193,7 +195,9 @@ begin
 		if ContentType <> EmptyWideStr then
 			HTTP.Request.ContentType := ContentType;
 		if ProgressEnabled then
-			HTTP.OnWork := self.Progress;
+			HTTP.OnWork := self.Progress
+		else
+			HTTP.OnWork := nil;
 		HTTP.Post(URL, PostData, ResultData);
 
 	except
@@ -256,7 +260,7 @@ begin
 	ResultStream := TStringStream.Create;
 	PostData := TStringStream.Create(PostDataString, TEncoding.UTF8);
 
-	PostResult := self.Post(URL, PostData, ResultStream, true, ContentType, LogErrors, ProgressEnabled);
+	PostResult := self.Post(URL, PostData, ResultStream, true, ContentType, LogErrors, ProgressEnabled); {TODO: будут логироваться все ошибки, в т.ч. разбираемые уровнем выше => передавать обработку ошибок вышестоящему парсеру}
 	result := PostResult = CLOUD_OPERATION_OK;
 	Answer := ResultStream.DataString;
 
