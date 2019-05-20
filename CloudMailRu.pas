@@ -1332,7 +1332,7 @@ begin
 
 	SplitFileInfo := TFileSplitInfo.Create(GetUNCFilePath(localPath), self.split_file_size); //quickly get information about file parts
 	SplittedPartIndex := 0;
-	while SplittedPartIndex <= SplitFileInfo.ChunksCount do {use while instead for..loop, need to modify loop counter sometimes}
+	while SplittedPartIndex < SplitFileInfo.ChunksCount do {use while instead for..loop, need to modify loop counter sometimes}
 	begin
 		ChunkRemotePath := ExtractFilePath(remotePath) + SplitFileInfo.GetChunks[SplittedPartIndex].name;
 		self.HTTP.ExternalTargetName := PWideChar(ChunkRemotePath);
