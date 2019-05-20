@@ -342,7 +342,7 @@ var
 begin
 	TempAccountSettings.public_account := true;
 	TempAccountSettings.public_url := publicUrl;
-	self.TempPublicCloud := TCloudMailRu.Create(TempAccountSettings, 0, self.Cloud.Transport.ProxySettings, self.Cloud.Transport.ConnectTimeoutValue, self.Cloud.Transport.UploadLimit, self.Cloud.Transport.DownloadLimit);
+	self.TempPublicCloud := TCloudMailRu.Create(TempAccountSettings, 0, self.Cloud.Transport.Options.ProxySettings, self.Cloud.Transport.Options.SocketTimeout, self.Cloud.Transport.Options.UploadBPS, self.Cloud.Transport.Options.DownloadBPS);
 	self.TempPublicCloud.login;
 end;
 
