@@ -1405,7 +1405,7 @@ begin
 								result := FS_FILE_USERABORT;
 								Break;
 							end;
-						OperationErrorModeRetry: {TODO: documentation}
+						OperationErrorModeRetry:
 							begin
 								Inc(RetryAttemptsCount);
 								if RetryAttemptsCount <> RetryAttempts then
