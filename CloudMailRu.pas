@@ -1294,7 +1294,7 @@ begin
 	end;
 
 	if OperationResult = CLOUD_OPERATION_OK then
-		result := self.addFileByIdentity(RemoteFileIdentity, remotePath, ConflictMode);
+		result := self.addFileByIdentity(RemoteFileIdentity, remotePath, ConflictMode, false);//Не логируем HTTP-ошибку, она распарсится и обработается уровнем выше
 end;
 
 function TCloudMailRu.putFileWhole(localPath, remotePath, ConflictMode: WideString): integer;
@@ -1408,7 +1408,7 @@ begin
 						OperationErrorModeRetry:
 							begin
 								Inc(RetryAttemptsCount);
-								if RetryAttemptsCount <> RetryAttempts then
+								if RetryAttemptsCount <> RetryAttempts + 1 then
 								begin
 									Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Partial upload error, code: ' + result.ToString + ' Retry attempt ' + RetryAttemptsCount.ToString + RetryAttemptsToString(RetryAttempts));
 									Dec(SplittedPartIndex); //retry with this chunk
