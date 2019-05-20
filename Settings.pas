@@ -136,7 +136,7 @@ type
 		PrecalculateHash: boolean;
 		CheckCRC: boolean;
 		CloudMaxFileSize: integer;
-    OperationErrorMode: integer;
+		OperationErrorMode: integer;
 		RetryAttempts: integer;
 		AttemptWait: integer;
 

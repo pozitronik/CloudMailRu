@@ -15,19 +15,15 @@ type
 		ExternalRequestProc: TRequestHandler;
 
 		HTTP: TCloudMailRuHTTP; //HTTP transport class
+		FileCipher: TFileCipher; //Encryption class
 
 		public_download_token: WideString; //token for public urls, refreshes on request
 		public_shard: WideString; //public downloads shard url
+		Shard: WideString; //download shard url
 
-		OAuthToken: TCloudMailRuOAuthInfo;
+		OAuthToken: TCloudMailRuOAuthInfo; {unused at this moment}
 
-		upload_url: WideString;
-		login_method: integer;
-
-		Shard: WideString;
-
-		FileCipher: TFileCipher;
-
+		upload_url: WideString; //stored upload url, filled on getToken()
 		united_params: WideString; //Объединённый набор авторизационных параметров для подстановки в URL
 
 		{HTTP REQUESTS WRAPPERS}
@@ -842,9 +838,9 @@ var
 	FormFields: TDictionary<WideString, WideString>;
 begin
 	result := false;
-	self.login_method := method;
+
 	Log(LogLevelDetail, MSGTYPE_DETAILS, 'Login to ' + self.user + '@' + self.domain);
-	case self.login_method of
+	case method of
 		CLOUD_AUTH_METHOD_TWO_STEP:
 			begin
 				FormFields := TDictionary<WideString, WideString>.Create();
