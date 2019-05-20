@@ -1384,7 +1384,7 @@ begin
 					case OperationErrorMode of
 						OperationErrorModeAsk, OperationErrorModeRetry: {Для разбитых файлов всегда спрашиваем пользователя} {TODO: documentation}
 							begin
-								case (messagebox(FindTCWindow, PWideChar('Partial upload error, code:' + result.ToString + sLineBreak + 'partname: ' + ChunkRemotePath + sLineBreak + 'Continue operation?'), 'Download error', MB_ABORTRETRYIGNORE + MB_ICONERROR)) of
+								case (messagebox(FindTCWindow, PWideChar('Partial upload error, code:' + result.ToString + sLineBreak + 'partname: ' + ChunkRemotePath + sLineBreak + 'Continue operation?'), 'Upload error', MB_ABORTRETRYIGNORE + MB_ICONERROR)) of
 									ID_ABORT:
 										begin
 											result := FS_FILE_USERABORT;
