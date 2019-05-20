@@ -57,7 +57,7 @@ const
 	//EncryptModeAskAlways = 3; //не буду поддерживать без необходимости
 
 type
-
+	{Account-related options set}
 	TAccountSettings = record
 		name, email, password: WideString;
 		use_tc_password_manager, twostep_auth: boolean;
@@ -73,9 +73,7 @@ type
 		upload_url_override: WideString; //hidden option, alows to override upload server for account
 		self_ini_path: WideString; //runtime parameter, contains path to ini file, used for various manipulations
 		crypt_files_password: WideString; //runtime parameter
-
 		CryptedGUID_files: WideString; //Шифрованная строка для проверки пароля шифрования
-
 	end;
 
 	TProxySettings = record
@@ -89,13 +87,16 @@ type
 
 	{Settings for HTTP transport}
 	TConnectionSettings = record
-		Proxy: TProxySettings;
-		ConnectTimeout: integer;
+		ProxySettings: TProxySettings;
+		SocketTimeout: integer;
 		UploadBPS: integer;
 		DownloadBPS: integer;
 	end;
 
+	{Global plugin options}
 	TPluginSettings = record
+		ConnectionSettings: TConnectionSettings;
+
 		IniPath: integer;
 		LoadSSLDLLOnlyFromPluginDir: boolean;
 		PreserveFileTime: boolean;
@@ -105,12 +106,7 @@ type
 		DescriptionCopyFromCloud: boolean;
 		DescriptionTrackCloudFS: boolean;
 		DescriptionFileName: WideString;
-
 		CopyBetweenAccountsMode: integer;
-		SocketTimeout: integer;
-		Proxy: TProxySettings;
-		UploadBPS: integer;
-		DownloadBPS: integer;
 		CloudMaxFileSize: integer;
 		ChunkOverwriteMode: integer;
 		DeleteFailOnUploadMode: integer;
@@ -163,9 +159,9 @@ begin
 	GetPluginSettings.DisableMultiThreading := IniFile.ReadBool('Main', 'DisableMultiThreading', false);
 	GetPluginSettings.LogUserSpace := IniFile.ReadBool('Main', 'LogUserSpace', true);
 	GetPluginSettings.IconsMode := IniFile.ReadInteger('Main', 'IconsMode', 0);
-	GetPluginSettings.SocketTimeout := IniFile.ReadInteger('Main', 'SocketTimeout', -1);
-	GetPluginSettings.UploadBPS := IniFile.ReadInteger('Main', 'UploadBPS', -1);
-	GetPluginSettings.DownloadBPS := IniFile.ReadInteger('Main', 'DownloadBPS', -1);
+	GetPluginSettings.ConnectionSettings.SocketTimeout := IniFile.ReadInteger('Main', 'SocketTimeout', -1);
+	GetPluginSettings.ConnectionSettings.UploadBPS := IniFile.ReadInteger('Main', 'UploadBPS', -1);
+	GetPluginSettings.ConnectionSettings.DownloadBPS := IniFile.ReadInteger('Main', 'DownloadBPS', -1);
 	GetPluginSettings.CloudMaxFileSize := IniFile.ReadInteger('Main', 'CloudMaxFileSize', CLOUD_MAX_FILESIZE_DEFAULT);
 	GetPluginSettings.ChunkOverwriteMode := IniFile.ReadInteger('Main', 'ChunkOverwriteMode', 0);
 	GetPluginSettings.DeleteFailOnUploadMode := IniFile.ReadInteger('Main', 'DeleteFailOnUploadMode', 0);
@@ -173,12 +169,12 @@ begin
 	GetPluginSettings.OperationErrorMode := IniFile.ReadInteger('Main', 'OperationErrorMode', 0);
 	GetPluginSettings.RetryAttempts := IniFile.ReadInteger('Main', 'RetryAttempts', 1);
 	GetPluginSettings.AttemptWait := IniFile.ReadInteger('Main', 'AttemptWait', 1000);
-	GetPluginSettings.Proxy.ProxyType := IniFile.ReadInteger('Main', 'ProxyType', ProxyNone);
-	GetPluginSettings.Proxy.Server := IniFile.ReadString('Main', 'ProxyServer', EmptyWideStr);
-	GetPluginSettings.Proxy.Port := IniFile.ReadInteger('Main', 'ProxyPort', 0);
-	GetPluginSettings.Proxy.user := IniFile.ReadString('Main', 'ProxyUser', EmptyWideStr);
-	GetPluginSettings.Proxy.use_tc_password_manager := IniFile.ReadBool('Main', 'ProxyTCPwdMngr', false);
-	GetPluginSettings.Proxy.password := IniFile.ReadString('Main', 'ProxyPassword', EmptyWideStr);
+	GetPluginSettings.ConnectionSettings.ProxySettings.ProxyType := IniFile.ReadInteger('Main', 'ProxyType', ProxyNone);
+	GetPluginSettings.ConnectionSettings.ProxySettings.Server := IniFile.ReadString('Main', 'ProxyServer', EmptyWideStr);
+	GetPluginSettings.ConnectionSettings.ProxySettings.Port := IniFile.ReadInteger('Main', 'ProxyPort', 0);
+	GetPluginSettings.ConnectionSettings.ProxySettings.user := IniFile.ReadString('Main', 'ProxyUser', EmptyWideStr);
+	GetPluginSettings.ConnectionSettings.ProxySettings.use_tc_password_manager := IniFile.ReadBool('Main', 'ProxyTCPwdMngr', false);
+	GetPluginSettings.ConnectionSettings.ProxySettings.password := IniFile.ReadString('Main', 'ProxyPassword', EmptyWideStr);
 	GetPluginSettings.DownloadLinksEncode := IniFile.ReadBool('Main', 'DownloadLinksEncode', true);
 	GetPluginSettings.AutoUpdateDownloadListing := IniFile.ReadBool('Main', 'AutoUpdateDownloadListing', true);
 	GetPluginSettings.ShowTrashFolders := IniFile.ReadBool('Main', 'ShowTrashFolders', true);
