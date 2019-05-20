@@ -48,7 +48,7 @@ constructor TConnectionManager.Create(IniFileName: WideString; PluginSettings: T
 begin
 	SetLength(Connections, 0);
 	self.IniFileName := IniFileName;
-
+	self.PluginSettings := PluginSettings;
 	self.ProgressHandleProc := ProgressHandleProc;
 	self.LogHandleProc := LogHandleProc;
 	self.RequestHandleProc := RequestHandleProc;

@@ -275,6 +275,7 @@ end;
 constructor TCloudMailRu.Create(CloudSettings: TCloudSettings; ExternalProgressProc: TProgressHandler; ExternalLogProc: TLogHandler; ExternalRequestProc: TRequestHandler);
 begin
 	try
+		self.OptionsSet := CloudSettings;
 		self.ExternalProgressProc := ExternalProgressProc;
 		self.ExternalLogProc := ExternalLogProc;
 		self.ExternalRequestProc := ExternalRequestProc;
