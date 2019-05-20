@@ -79,7 +79,8 @@ type
 
 		function getSharedFileUrl(remotePath: WideString; DoUrlEncode: Boolean = true): WideString;
 		{CONSTRUCTOR/DESTRUCTOR}
-		constructor Create(AccountSettings: TAccountSettings; split_file_size: integer; Proxy: TProxySettings; ConnectTimeout: integer; UploadBPS: integer; DownloadBPS: integer; PrecalculateHash: Boolean = true; CheckCRC: Boolean = true; ExternalProgressProc: TProgressHandler = nil; ExternalLogProc: TLogHandler = nil; ExternalRequestProc: TRequestHandler = nil);
+		constructor Create(AccountSettings: TCloudSettings; ExternalProgressProc: TProgressHandler = nil; ExternalLogProc: TLogHandler = nil; ExternalRequestProc: TRequestHandler = nil); overload;
+		constructor Create(AccountSettings: TAccountSettings; split_file_size: integer; Proxy: TProxySettings; ConnectTimeout: integer; UploadBPS: integer; DownloadBPS: integer; PrecalculateHash: Boolean = true; CheckCRC: Boolean = true; ExternalProgressProc: TProgressHandler = nil; ExternalLogProc: TLogHandler = nil; ExternalRequestProc: TRequestHandler = nil); overload;
 		destructor Destroy; override;
 		{CLOUD INTERFACE METHODS}
 		function login(method: integer = CLOUD_AUTH_METHOD_WEB): Boolean;
@@ -271,6 +272,11 @@ begin //Облако умеет скопировать файл, но не см�
 	begin //скопированный файл лежит в новом каталоге со старым именем
 		result := self.renameFile(NewPath + ExtractFileName(OldName), ExtractFileName(NewName));
 	end;
+end;
+
+constructor TCloudMailRu.Create(AccountSettings: TCloudSettings; ExternalProgressProc: TProgressHandler; ExternalLogProc: TLogHandler; ExternalRequestProc: TRequestHandler);
+begin
+  {todo}
 end;
 
 constructor TCloudMailRu.Create(AccountSettings: TAccountSettings; split_file_size: integer; Proxy: TProxySettings; ConnectTimeout: integer; UploadBPS: integer; DownloadBPS: integer; PrecalculateHash: Boolean = true; CheckCRC: Boolean = true; ExternalProgressProc: TProgressHandler = nil; ExternalLogProc: TLogHandler = nil; ExternalRequestProc: TRequestHandler = nil);
@@ -1334,7 +1340,7 @@ begin
 		exit(CLOUD_OPERATION_OK);
 
 	SplitFileInfo := TFileSplitInfo.Create(GetUNCFilePath(localPath), self.split_file_size); //quickly get information about file parts
-  RetryAttemptsCount:=0;
+	RetryAttemptsCount := 0;
 	SplittedPartIndex := 0;
 
 	while SplittedPartIndex < SplitFileInfo.ChunksCount do {use while instead for..loop, need to modify loop counter sometimes}
@@ -1351,7 +1357,7 @@ begin
 		case result of
 			FS_FILE_OK:
 				begin
-					RetryAttemptsCount :=0;
+					RetryAttemptsCount := 0;
 				end;
 			FS_FILE_USERABORT:
 				begin
