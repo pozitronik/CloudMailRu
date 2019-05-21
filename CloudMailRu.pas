@@ -149,7 +149,6 @@ begin
 	{Экспериментально выяснено, что параметры api, build, email, x-email, x-page-id в запросе не обязательны}
 	if self.HTTP.PostForm(API_FILE_ADD, 'conflict=' + ConflictMode + '&home=/' + PathToUrl(remotePath) + '&hash=' + FileIdentity.Hash + '&size=' + FileIdentity.size.ToString + self.united_params, JSON, 'application/x-www-form-urlencoded', LogErrors, false) then {Do not allow to cancel operation here}
 	begin
-		{TODO: check this}
 		OperationResult := JSONParser.getOperationResult(JSON);
 		result := CloudResultToFsResult(OperationResult, 'File uploading error: ');
 		if (CLOUD_OPERATION_OK = OperationResult.OperationResult) and LogSuccess then
@@ -180,9 +179,8 @@ begin
 	Progress := true;
 	if self.HTTP.GetPage(API_CLONE + '?folder=' + PathToUrl(Path) + '&weblink=' + link + '&conflict=' + ConflictMode + self.united_params, JSON, Progress) then
 	begin //Парсим ответ
-		{TODO: check this}
 		result := CloudResultToFsResult(JSONParser.getOperationResult(JSON), 'File publish error: ');
-		if result <> FS_FILE_OK and not(PROGRESS_STOP) then
+		if (result <> FS_FILE_OK) and not(Progress) then
 			result := FS_FILE_USERABORT; //user cancelled
 	end;
 end;
