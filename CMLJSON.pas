@@ -2,7 +2,7 @@
 
 interface
 
-uses JSON, CMLTypes, System.SysUtils;
+uses JSON, CMLTypes, System.SysUtils, System.Generics.Collections;
 
 const
 	NAME_BODY = 'body';
