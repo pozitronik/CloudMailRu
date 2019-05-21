@@ -127,26 +127,24 @@ begin
 	inherited;
 end;
 
-function TFileSplitInfo.GetCRC32File(filename: WideString = ''): WideString;
+function TFileSplitInfo.GetCRC32File(filename: WideString): WideString;
 var
-	inFile: file;
 	CRCValue: DWord;
 	inbuffer: array [1 .. 32768] of Byte;
 	ReadBytes: Integer;
-begin //todo: change to TFileStream (just for code sameness
+	Stream: TBufferedFileStream;
+begin
 	if EmptyWideStr = filename then
 		filename := self.filename;
 
-	AssignFile(inFile, filename);
-	FileMode := fmOpenRead or fmShareDenyWrite;
-	Reset(inFile, 1);
+	Stream := TBufferedFileStream.Create(filename, fmOpenRead or fmShareDenyWrite);
 	CRCValue := CRCSeed;
-	blockread(inFile, inbuffer, Sizeof(inbuffer), ReadBytes);
+	ReadBytes := Stream.Read(inbuffer, Sizeof(inbuffer));
 	repeat
 		CRCValue := crc32_update(@inbuffer, ReadBytes, CRCValue);
-		blockread(inFile, inbuffer, Sizeof(inbuffer), ReadBytes);
+		ReadBytes := Stream.Read(inbuffer, Sizeof(inbuffer));
 	until ReadBytes = 0;
-	CloseFile(inFile);
+	Stream.Destroy;
 	CRCValue := CRCend(CRCValue);
 	exit(IntToHex(CRCValue, 8));
 end;
