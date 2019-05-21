@@ -4,7 +4,6 @@ interface
 
 uses JSON, CMLTypes, System.SysUtils;
 
-{TODO: переделать в класс, а функции вызывать статикой}
 const
 	NAME_BODY = 'body';
 	NAME_LIST = 'list';
@@ -88,8 +87,8 @@ type
 		function getIncomingInviteListing(JSON: WideString; var IncomingInviteListing: TCloudMailRuIncomingInviteInfoListing): Boolean; overload;
 		function getOAuthTokenInfo(var CloudMailRuOAuthInfo: TCloudMailRuOAuthInfo): Boolean; overload;
 		function getOAuthTokenInfo(JSON: WideString; var CloudMailRuOAuthInfo: TCloudMailRuOAuthInfo): Boolean; overload;
-		function getOperationResult(var OperationStatus: integer): integer; overload;
-		function getOperationResult(JSON: WideString; var OperationStatus: integer): integer; overload;
+		function getOperationResult(): TCloudMailRuOperationResult; overload;
+		function getOperationResult(JSON: WideString): TCloudMailRuOperationResult; overload;
 		function getPublicLink(var PublicLink: WideString): Boolean; overload;
 		function getPublicLink(JSON: WideString; var PublicLink: WideString): Boolean; overload;
 		function getShard(var Shard: WideString): Boolean; overload;
@@ -342,23 +341,22 @@ begin
 	result := true;
 end;
 
-function TCloudMailRuJSONParser.getOperationResult(var OperationStatus: integer): integer;
+function TCloudMailRuJSONParser.getOperationResult(): TCloudMailRuOperationResult;
 var
 	error, nodename: WideString;
 begin
-	//Result:=CLOUD_ERROR_BAD_REQUEST;
 	try
 		ParserObj := JSONVal as TJSONObject;
-		OperationStatus := ParserObj.Values[NAME_STATUS].Value.ToInteger;
-		if OperationStatus <> 200 then
+		result.OperationStatus := ParserObj.Values[NAME_STATUS].Value.ToInteger;
+		if result.OperationStatus <> 200 then
 		begin
 			//if OperationStatus = 400 then exit(CLOUD_ERROR_BAD_REQUEST);
-			if OperationStatus = 451 then
-				exit(CLOUD_ERROR_FAHRENHEIT);
-			if OperationStatus = 507 then
-				exit(CLOUD_ERROR_OVERQUOTA);
-			if OperationStatus = 406 then
-				exit(CLOUD_ERROR_NOT_ACCEPTABLE);
+			if result.OperationStatus = 451 then
+				result.OperationResult := CLOUD_ERROR_FAHRENHEIT;
+			if result.OperationStatus = 507 then
+				result.OperationResult := CLOUD_ERROR_OVERQUOTA;
+			if result.OperationStatus = 406 then
+				result.OperationResult := (CLOUD_ERROR_NOT_ACCEPTABLE);
 
 			if (Assigned((ParserObj.Values[NAME_BODY] as TJSONObject).Values[NAME_HOME])) then
 				nodename := 'home'
@@ -369,58 +367,58 @@ begin
 				error := (((ParserObj.Values[NAME_BODY] as TJSONObject).Values[NAME_INVITE_EMAIL]) as TJSONObject).Values[NAME_ERROR].Value;
 			end else begin
 				//Log(MSGTYPE_IMPORTANTERROR, 'Can''t parse server answer: ' + JSON); todo
-				exit(CLOUD_ERROR_UNKNOWN);
+				result.OperationResult := (CLOUD_ERROR_UNKNOWN);
 			end;
 			if error = EmptyWideStr then
-				error := ((ParserObj.Values[NAME_BODY] as TJSONObject).Values[nodename] as TJSONObject).Values[NAME_ERROR].Value;
-			if error = 'exists' then
-				exit(CLOUD_ERROR_EXISTS);
-			if error = 'required' then
-				exit(CLOUD_ERROR_REQUIRED);
-			if error = 'readonly' then
-				exit(CLOUD_ERROR_READONLY);
-			if error = 'read_only' then
-				exit(CLOUD_ERROR_READONLY);
-			if error = 'name_length_exceeded' then
-				exit(CLOUD_ERROR_NAME_LENGTH_EXCEEDED);
-			if error = 'unknown' then
-				exit(CLOUD_ERROR_UNKNOWN);
-			if error = 'overquota' then
-				exit(CLOUD_ERROR_OVERQUOTA);
-			if error = 'quota_exceeded' then
-				exit(CLOUD_ERROR_OVERQUOTA);
-			if error = 'invalid' then
-				exit(CLOUD_ERROR_INVALID);
-			if error = 'not_exists' then
-				exit(CLOUD_ERROR_NOT_EXISTS);
-			if error = 'own' then
-				exit(CLOUD_ERROR_OWN);
-			if error = 'name_too_long' then
-				exit(CLOUD_ERROR_NAME_TOO_LONG);
-			if error = 'virus_scan_fail' then
-				exit(CLOUD_ERROR_VIRUS_SCAN_FAIL);
-			if error = 'owner' then
-				exit(CLOUD_ERROR_OWNER);
-			if error = 'trees_conflict' then
-				exit(CLOUD_ERROR_TREES_CONFLICT);
-			if error = 'user_limit_exceeded' then
-				exit(CLOUD_ERROR_USER_LIMIT_EXCEEDED);
-			if error = 'export_limit_exceeded' then
-				exit(CLOUD_ERROR_EXPORT_LIMIT_EXCEEDED);
-			if error = 'unprocessable_entry' then
-				exit(CLOUD_ERROR_UNPROCESSABLE_ENTRY);
-
-			exit(CLOUD_ERROR_UNKNOWN); //Эту ошибку мы пока не встречали
+				error := ((ParserObj.Values[NAME_BODY] as TJSONObject).Values[nodename] as TJSONObject).Values[NAME_ERROR].Value
+			else if error = 'exists' then
+				result.OperationResult := CLOUD_ERROR_EXISTS
+			else if error = 'required' then
+				result.OperationResult := CLOUD_ERROR_REQUIRED
+			else if error = 'readonly' then
+				result.OperationResult := CLOUD_ERROR_READONLY
+			else if error = 'read_only' then
+				result.OperationResult := CLOUD_ERROR_READONLY
+			else if error = 'name_length_exceeded' then
+				result.OperationResult := CLOUD_ERROR_NAME_LENGTH_EXCEEDED
+			else if error = 'unknown' then
+				result.OperationResult := CLOUD_ERROR_UNKNOWN
+			else if error = 'overquota' then
+				result.OperationResult := CLOUD_ERROR_OVERQUOTA
+			else if error = 'quota_exceeded' then
+				result.OperationResult := CLOUD_ERROR_OVERQUOTA
+			else if error = 'invalid' then
+				result.OperationResult := CLOUD_ERROR_INVALID
+			else if error = 'not_exists' then
+				result.OperationResult := CLOUD_ERROR_NOT_EXISTS
+			else if error = 'own' then
+				result.OperationResult := CLOUD_ERROR_OWN
+			else if error = 'name_too_long' then
+				result.OperationResult := CLOUD_ERROR_NAME_TOO_LONG
+			else if error = 'virus_scan_fail' then
+				result.OperationResult := CLOUD_ERROR_VIRUS_SCAN_FAIL
+			else if error = 'owner' then
+				result.OperationResult := CLOUD_ERROR_OWNER
+			else if error = 'trees_conflict' then
+				result.OperationResult := CLOUD_ERROR_TREES_CONFLICT
+			else if error = 'user_limit_exceeded' then
+				result.OperationResult := CLOUD_ERROR_USER_LIMIT_EXCEEDED
+			else if error = 'export_limit_exceeded' then
+				result.OperationResult := CLOUD_ERROR_EXPORT_LIMIT_EXCEEDED
+			else if error = 'unprocessable_entry' then
+				result.OperationResult := CLOUD_ERROR_UNPROCESSABLE_ENTRY
+			else
+				result.OperationResult := CLOUD_ERROR_UNKNOWN; //Эту ошибку мы пока не встречали
 		end;
 
 	except
 		on E: {EJSON}Exception do
 		begin
 			//Log(MSGTYPE_IMPORTANTERROR, 'Can''t parse server answer: ' + JSON); todo
-			exit(CLOUD_ERROR_UNKNOWN);
+			result.OperationResult := CLOUD_ERROR_UNKNOWN;
 		end;
 	end;
-	result := CLOUD_OPERATION_OK;
+	result.OperationResult := CLOUD_OPERATION_OK;
 end;
 
 function TCloudMailRuJSONParser.getPublicLink(var PublicLink: WideString): Boolean;
@@ -529,10 +527,10 @@ begin
 	exit(getOAuthTokenInfo(CloudMailRuOAuthInfo));
 end;
 
-function TCloudMailRuJSONParser.getOperationResult(JSON: WideString; var OperationStatus: integer): integer;
+function TCloudMailRuJSONParser.getOperationResult(JSON: WideString): TCloudMailRuOperationResult;
 begin
 	init(JSON);
-	exit(getOperationResult(OperationStatus));
+	exit(getOperationResult());
 end;
 
 function TCloudMailRuJSONParser.getPublicLink(JSON: WideString; var PublicLink: WideString): Boolean;
