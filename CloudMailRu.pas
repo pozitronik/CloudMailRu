@@ -42,7 +42,8 @@ type
 
 		{OTHER ROUTINES}
 		procedure Log(LogLevel, MsgType: integer; LogString: WideString);
-		function CloudResultToFsResult(CloudResult: integer; OperationStatus: integer; ErrorPrefix: WideString = ''): integer;
+		function CloudResultToFsResult(CloudResult: TCloudMailRuOperationResult; ErrorPrefix: WideString = ''): integer;
+		function CloudResultToBoolean(CloudResult: TCloudMailRuOperationResult; ErrorPrefix: WideString = ''): Boolean;
 		function cloudHash(Path: WideString): WideString; overload; //get cloud hash for specified file
 		function cloudHash(Stream: TStream): WideString; overload; //get cloud hash for data in stream
 	protected
@@ -131,7 +132,7 @@ function TCloudMailRu.addFileByIdentity(FileIdentity: TCloudMailRuFileIdentity; 
 var
 	FileName: WideString;
 	JSON: WideString;
-	OperationStatus, OperationResult: integer;
+	OperationResult: TCloudMailRuOperationResult;
 begin
 	result := FS_FILE_WRITEERROR;
 	if not(Assigned(self)) then
@@ -148,16 +149,12 @@ begin
 	{Экспериментально выяснено, что параметры api, build, email, x-email, x-page-id в запросе не обязательны}
 	if self.HTTP.PostForm(API_FILE_ADD, 'conflict=' + ConflictMode + '&home=/' + PathToUrl(remotePath) + '&hash=' + FileIdentity.Hash + '&size=' + FileIdentity.size.ToString + self.united_params, JSON, 'application/x-www-form-urlencoded', LogErrors, false) then {Do not allow to cancel operation here}
 	begin
-		OperationResult := JSONParser.getOperationResult(JSON, OperationStatus);
-		if CLOUD_OPERATION_OK = OperationResult then
-		begin
-			if LogSuccess then
-				Log(LogLevelDetail, MSGTYPE_DETAILS, 'File ' + remotePath + ' found by hash.');
+		{TODO: check this}
+		OperationResult := JSONParser.getOperationResult(JSON);
+		result := CloudResultToFsResult(OperationResult, 'File uploading error: ');
+		if (CLOUD_OPERATION_OK = OperationResult.OperationResult) and LogSuccess then
+			Log(LogLevelDetail, MSGTYPE_DETAILS, 'File ' + remotePath + ' found by hash.')
 
-			exit(FS_FILE_OK);
-		end else begin
-			result := CloudResultToFsResult(OperationResult, OperationStatus, 'File uploading error: ');
-		end;
 	end;
 end;
 
@@ -173,7 +170,6 @@ end;
 function TCloudMailRu.cloneWeblink(Path, link, ConflictMode: WideString): integer;
 var
 	JSON: WideString;
-	OperationStatus: integer;
 	Progress: Boolean;
 begin
 	result := FS_FILE_WRITEERROR;
@@ -184,24 +180,23 @@ begin
 	Progress := true;
 	if self.HTTP.GetPage(API_CLONE + '?folder=' + PathToUrl(Path) + '&weblink=' + link + '&conflict=' + ConflictMode + self.united_params, JSON, Progress) then
 	begin //Парсим ответ
-		result := JSONParser.getOperationResult(JSON, OperationStatus);
-		if result <> CLOUD_OPERATION_OK then
-			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'File publish error: ' + self.ErrorCodeText(result) + ' Status: ' + OperationStatus.ToString());
-
-	end else begin
-		if not(Progress) then
-		begin //user cancelled
-			result := FS_FILE_USERABORT;
-		end else begin //unknown error
-			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Public link clone error: got ' + OperationStatus.ToString + ' status');
-			result := FS_FILE_WRITEERROR;
-		end;
+		{TODO: check this}
+		result := CloudResultToFsResult(JSONParser.getOperationResult(JSON), 'File publish error: ');
+		if result <> FS_FILE_OK and not(PROGRESS_STOP) then
+			result := FS_FILE_USERABORT; //user cancelled
 	end;
 end;
 
-function TCloudMailRu.CloudResultToFsResult(CloudResult: integer; OperationStatus: integer; ErrorPrefix: WideString): integer;
+function TCloudMailRu.CloudResultToBoolean(CloudResult: TCloudMailRuOperationResult; ErrorPrefix: WideString): Boolean;
 begin
-	case CloudResult of
+	result := CloudResult.OperationResult = CLOUD_OPERATION_OK;
+	if not(result) and (ErrorPrefix <> EmptyWideStr) then
+		Log(LogLevelError, MSGTYPE_IMPORTANTERROR, ErrorPrefix + self.ErrorCodeText(CloudResult.OperationResult) + ' Status: ' + CloudResult.OperationStatus.ToString());
+end;
+
+function TCloudMailRu.CloudResultToFsResult(CloudResult: TCloudMailRuOperationResult; ErrorPrefix: WideString): integer;
+begin
+	case CloudResult.OperationResult of
 		CLOUD_OPERATION_OK:
 			exit(FS_FILE_OK);
 		CLOUD_ERROR_EXISTS:
@@ -223,7 +218,7 @@ begin
 		else
 			begin //что-то неизвестное
 				if (ErrorPrefix <> EmptyWideStr) then
-					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, ErrorPrefix + self.ErrorCodeText(CloudResult) + ' Status: ' + OperationStatus.ToString());
+					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, ErrorPrefix + self.ErrorCodeText(CloudResult.OperationResult) + ' Status: ' + CloudResult.OperationStatus.ToString());
 				exit(FS_FILE_WRITEERROR);
 			end;
 	end;
@@ -237,7 +232,6 @@ end;
 function TCloudMailRu.copyFile(OldName, ToPath: WideString): integer;
 var
 	JSON: WideString;
-	OperationStatus, OperationResult: integer;
 begin
 	result := FS_FILE_WRITEERROR;
 	if not(Assigned(self)) then
@@ -246,8 +240,7 @@ begin
 		exit(FS_FILE_NOTSUPPORTED);
 	if self.HTTP.PostForm(API_FILE_COPY, 'home=' + PathToUrl(OldName) + '&folder=' + PathToUrl(ToPath) + self.united_params + '&conflict', JSON) then
 	begin //Парсим ответ
-		OperationResult := JSONParser.getOperationResult(JSON, OperationStatus);
-		result := CloudResultToFsResult(OperationResult, OperationStatus, 'File copy error: ');
+		result := CloudResultToFsResult(JSONParser.getOperationResult(JSON), 'File copy error: ');
 	end;
 end;
 
@@ -283,7 +276,7 @@ begin
 		self.ExternalRequestProc := ExternalRequestProc;
 
 		self.HTTP := TCloudMailRuHTTP.Create(CloudSettings.ConnectionSettings, ExternalProgressProc, ExternalLogProc);
-		self.JSONParser:= TCloudMailRuJSONParser.Create();
+		self.JSONParser := TCloudMailRuJSONParser.Create();
 
 		if CloudSettings.AccountSettings.encrypt_files_mode <> EncryptModeNone then
 		begin
@@ -307,53 +300,27 @@ end;
 
 function TCloudMailRu.createDir(Path: WideString): Boolean;
 var
-	PostAnswer: WideString;
-	OperationStatus, OperationResult: integer;
+	JSON: WideString;
 begin
 	result := false;
 	if not(Assigned(self)) then
 		exit; //Проверка на вызов без инициализации
 	if self.public_account then
 		exit;
-	if self.HTTP.PostForm(API_FOLDER_ADD, 'home=/' + PathToUrl(Path) + self.united_params + '&conflict', PostAnswer) then
-	begin
-		OperationResult := JSONParser.getOperationResult(PostAnswer, OperationStatus);
-		case OperationResult of
-			CLOUD_OPERATION_OK:
-				result := true;
-			else
-				begin
-					//Log(MSGTYPE_IMPORTANTERROR, 'Directory creation error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
-					result := false;
-				end;
-		end;
-	end;
+	result := self.HTTP.PostForm(API_FOLDER_ADD, 'home=/' + PathToUrl(Path) + self.united_params + '&conflict', JSON) and CloudResultToBoolean(JSONParser.getOperationResult(JSON))
+
 end;
 
 function TCloudMailRu.deleteFile(Path: WideString): Boolean;
 var
 	JSON: WideString;
-	OperationResult, OperationStatus: integer;
 begin
 	result := false;
 	if not(Assigned(self)) then
 		exit; //Проверка на вызов без инициализации
 	if self.public_account then
 		exit;
-	result := self.HTTP.PostForm(API_FILE_REMOVE, 'home=/' + PathToUrl(Path) + self.united_params + '&conflict', JSON);
-	if result then
-	begin
-		OperationResult := JSONParser.getOperationResult(JSON, OperationStatus);
-		case OperationResult of
-			CLOUD_OPERATION_OK:
-				result := true;
-			else
-				begin
-					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Delete file error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
-					result := false;
-				end;
-		end;
-	end;
+	result := self.HTTP.PostForm(API_FILE_REMOVE, 'home=/' + PathToUrl(Path) + self.united_params + '&conflict', JSON) and CloudResultToBoolean(JSONParser.getOperationResult(JSON), 'Delete file error: ');
 end;
 
 destructor TCloudMailRu.Destroy;
@@ -362,7 +329,6 @@ begin
 	self.JSONParser.Destroy;
 	if Assigned(self.FileCipher) then
 		self.FileCipher.Destroy;
-
 	inherited;
 end;
 
@@ -434,7 +400,6 @@ end;
 function TCloudMailRu.getSharedLinksListing(var DirListing: TCloudMailRuDirListing; ShowProgress: Boolean = false): Boolean;
 var
 	JSON: WideString;
-	OperationStatus, OperationResult: integer;
 begin
 	result := false;
 	if not(Assigned(self)) then
@@ -443,26 +408,13 @@ begin
 	if self.public_account then
 		exit;
 	result := self.HTTP.GetPage(API_FOLDER_SHARED_LINKS + '?' + self.united_params, JSON, ShowProgress);
-
 	if result then
-	begin
-		OperationResult := JSONParser.getOperationResult(JSON, OperationStatus);
-		case OperationResult of
-			CLOUD_OPERATION_OK:
-				result := JSONParser.getDirListing(JSON, DirListing);
-			else
-				begin
-					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Shared links listing error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
-					result := false;
-				end;
-		end;
-	end;
+		result := CloudResultToBoolean(JSONParser.getOperationResult(JSON), 'Shared links listing error: ');
 end;
 
 function TCloudMailRu.getIncomingLinksListing(var IncomingListing: TCloudMailRuIncomingInviteInfoListing; ShowProgress: Boolean): Boolean;
 var
 	JSON: WideString;
-	OperationStatus, OperationResult: integer;
 begin
 	result := false;
 	if not(Assigned(self)) then
@@ -470,21 +422,7 @@ begin
 	SetLength(IncomingListing, 0);
 	if self.public_account then
 		exit;
-	result := self.HTTP.GetPage(API_FOLDER_SHARED_INCOMING + '?' + self.united_params, JSON, ShowProgress);
-
-	if result then
-	begin
-		OperationResult := JSONParser.getOperationResult(JSON, OperationStatus);
-		case OperationResult of
-			CLOUD_OPERATION_OK:
-				result := JSONParser.getIncomingInviteListing(JSON, IncomingListing);
-			else
-				begin
-					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Incoming requests listing error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
-					result := false;
-				end;
-		end;
-	end;
+	result := self.HTTP.GetPage(API_FOLDER_SHARED_INCOMING + '?' + self.united_params, JSON, ShowProgress) and CloudResultToBoolean(JSONParser.getOperationResult(JSON), 'Incoming requests listing error: ');
 end;
 
 function TCloudMailRu.getIncomingLinksListing(var IncomingListing: TCloudMailRuDirListing; var InvitesListing: TCloudMailRuIncomingInviteInfoListing; ShowProgress: Boolean = false): Boolean;
@@ -514,7 +452,6 @@ end;
 function TCloudMailRu.getTrashbinListing(var DirListing: TCloudMailRuDirListing; ShowProgress: Boolean): Boolean;
 var
 	JSON: WideString;
-	OperationStatus, OperationResult: integer;
 begin
 	result := false;
 	if not(Assigned(self)) then
@@ -525,24 +462,17 @@ begin
 	result := self.HTTP.GetPage(API_TRASHBIN + '?' + self.united_params, JSON, ShowProgress);
 
 	if result then
-	begin
-		OperationResult := JSONParser.getOperationResult(JSON, OperationStatus);
-		case OperationResult of
-			CLOUD_OPERATION_OK:
-				result := JSONParser.getDirListing(JSON, DirListing);
-			else
-				begin
-					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Incoming requests listing error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
-					result := false;
-				end;
-		end;
-	end;
+		result := CloudResultToBoolean(JSONParser.getOperationResult(JSON), 'Trashbin listing error: ');
+
+	if result then
+		result := JSONParser.getDirListing(JSON, DirListing);
+
 end;
 
 function TCloudMailRu.getDirListing(Path: WideString; var DirListing: TCloudMailRuDirListing; ShowProgress: Boolean = false): Boolean;
 var
 	JSON: WideString;
-	OperationStatus, OperationResult: integer;
+	OperationResult: TCloudMailRuOperationResult;
 begin
 	result := false;
 	if not(Assigned(self)) then
@@ -554,26 +484,17 @@ begin
 		result := self.HTTP.GetPage(API_FOLDER + '&home=' + PathToUrl(Path) + self.united_params, JSON, ShowProgress);
 	if result then
 	begin
-		OperationResult := JSONParser.getOperationResult(JSON, OperationStatus);
-		case OperationResult of
-			CLOUD_OPERATION_OK:
-				begin
-					result := JSONParser.getDirListing(JSON, DirListing);
-					if result and self.crypt_filenames then
-						self.FileCipher.DecryptDirListing(DirListing);
-				end;
-			CLOUD_ERROR_NOT_EXISTS:
-				begin
-					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Path not exists: ' + Path);
-					result := false;
-				end
-			else
-				begin
-					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Directory listing error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString()); //?? WUT
-					result := false;
-				end;
-		end;
+		OperationResult := JSONParser.getOperationResult(JSON);
+		result := CloudResultToBoolean(OperationResult, 'Directory listing error: ');
+		if result then
+		begin
+			result := JSONParser.getDirListing(JSON, DirListing);
+			if result and self.crypt_filenames then
+				self.FileCipher.DecryptDirListing(DirListing);
+		end else if OperationResult.OperationResult = CLOUD_ERROR_NOT_EXISTS then
+			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Path not exists: ' + Path);
 	end;
+
 end;
 
 function TCloudMailRu.getFile(remotePath, localPath: WideString; var resultHash: WideString; LogErrors: Boolean): integer;
@@ -718,7 +639,6 @@ end;
 function TCloudMailRu.getShard(var Shard: WideString): Boolean;
 var
 	JSON: WideString;
-	OperationResult, OperationStatus: integer;
 begin
 	result := false;
 	if not(Assigned(self)) then
@@ -729,23 +649,13 @@ begin
 		Shard := self.shard_override;
 		exit(true);
 	end;
-
-	if self.HTTP.PostForm(API_DISPATCHER, self.united_params, JSON) then //checkme
+	result := self.HTTP.PostForm(API_DISPATCHER, self.united_params, JSON) and CloudResultToBoolean(JSONParser.getOperationResult(JSON), 'Shard receive error: ');
+	if result then
 	begin
-		OperationResult := JSONParser.getOperationResult(JSON, OperationStatus);
-		case OperationResult of
-			CLOUD_OPERATION_OK:
-				begin
-					result := JSONParser.getShard(JSON, Shard) and (Shard <> EmptyWideStr);
-					Log(LogLevelDetail, MSGTYPE_DETAILS, 'Shard received: ' + Shard);
-				end
-			else
-				begin
-					result := false;
-					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Shard receive error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
-				end;
-		end;
+		result := JSONParser.getShard(JSON, Shard) and (Shard <> EmptyWideStr);
+		Log(LogLevelDetail, MSGTYPE_DETAILS, 'Shard received: ' + Shard);
 	end;
+
 end;
 
 function TCloudMailRu.getToken: Boolean;
@@ -795,26 +705,12 @@ function TCloudMailRu.getUserSpace(var SpaceInfo: TCloudMailRuSpaceInfo): Boolea
 var
 	JSON: WideString;
 	Progress: Boolean;
-	OperationResult, OperationStatus: integer;
 begin
 	result := false;
 	if not(Assigned(self)) then
 		exit; //Проверка на вызов без инициализации
 	Progress := false;
-	result := self.HTTP.GetPage(API_USER_SPACE + '?home=/' + self.united_params, JSON, Progress);
-	if result then
-	begin
-		OperationResult := JSONParser.getOperationResult(JSON, OperationStatus);
-		case OperationResult of
-			CLOUD_OPERATION_OK:
-				result := JSONParser.getUserSpace(JSON, SpaceInfo);
-			else
-				begin
-					result := false;
-					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'User space receiving error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
-				end;
-		end;
-	end;
+	result := self.HTTP.GetPage(API_USER_SPACE + '?home=/' + self.united_params, JSON, Progress) and CloudResultToBoolean(JSONParser.getOperationResult(JSON), 'User space receiving error: ') and JSONParser.getUserSpace(JSON, SpaceInfo);
 end;
 
 procedure TCloudMailRu.Log(LogLevel, MsgType: integer; LogString: WideString);
@@ -981,7 +877,6 @@ end;
 function TCloudMailRu.moveFile(OldName, ToPath: WideString): integer;
 var
 	JSON: WideString;
-	OperationStatus, OperationResult: integer;
 begin
 	result := FS_FILE_WRITEERROR;
 	if not(Assigned(self)) then
@@ -989,10 +884,7 @@ begin
 	if self.public_account then
 		exit(FS_FILE_NOTSUPPORTED);
 	if self.HTTP.PostForm(API_FILE_MOVE, 'home=' + PathToUrl(OldName) + '&folder=' + PathToUrl(ToPath) + self.united_params + '&conflict', JSON) then
-	begin //Парсим ответ
-		OperationResult := JSONParser.getOperationResult(JSON, OperationStatus);
-		result := CloudResultToFsResult(OperationResult, OperationStatus, 'File move error: ');
-	end;
+		result := CloudResultToFsResult(JSONParser.getOperationResult(JSON), 'File move error: ');
 end;
 
 function TCloudMailRu.mvFile(OldName, NewName: WideString): integer;
@@ -1020,7 +912,6 @@ end;
 function TCloudMailRu.publishFile(Path: WideString; var PublicLink: WideString; publish: Boolean): Boolean;
 var
 	JSON: WideString;
-	OperationStatus, OperationResult: integer;
 begin
 	result := false;
 	if not(Assigned(self)) then
@@ -1035,19 +926,9 @@ begin
 	end;
 
 	if result then
-	begin
-		OperationResult := JSONParser.getOperationResult(JSON, OperationStatus);
-		case OperationResult of
-			CLOUD_OPERATION_OK:
-				if publish then
-					result := JSONParser.getPublicLink(JSON, PublicLink);
-			else
-				begin
-					result := false;
-					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'File publish error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
-				end;
-		end;
-	end;
+		result := CloudResultToBoolean(JSONParser.getOperationResult(JSON), 'File publish error: ');
+	if result and publish then
+		result := JSONParser.getPublicLink(JSON, PublicLink);
 end;
 
 function TCloudMailRu.getShareInfo(Path: WideString; var InviteListing: TCloudMailRuInviteInfoListing): Boolean;
@@ -1069,7 +950,6 @@ end;
 function TCloudMailRu.shareFolder(Path, email: WideString; access: integer): Boolean;
 var
 	JSON: WideString;
-	OperationStatus, OperationResult: integer;
 	access_string: WideString;
 begin
 	result := false;
@@ -1084,52 +964,27 @@ begin
 
 		result := self.HTTP.PostForm(API_FOLDER_SHARE, 'home=/' + PathToUrl(Path) + self.united_params + '&invite={"email":"' + email + '","access":"' + access_string + '"}', JSON)
 	end else begin
-		result := (self.HTTP.PostForm(API_FOLDER_UNSHARE, 'home=/' + PathToUrl(Path) + self.united_params + '&invite={"email":"' + email + '"}', JSON));
+		result := self.HTTP.PostForm(API_FOLDER_UNSHARE, 'home=/' + PathToUrl(Path) + self.united_params + '&invite={"email":"' + email + '"}', JSON);
 	end;
-
-	if (result) then
-	begin
-		OperationResult := JSONParser.getOperationResult(JSON, OperationStatus);
-
-		result := OperationResult = CLOUD_OPERATION_OK;
-		if not result then
-			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Invite member error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
-
-	end;
+	if result then
+		result := CloudResultToBoolean(JSONParser.getOperationResult(JSON), 'Invite member error: ')
 end;
 
 function TCloudMailRu.trashbinRestore(Path: WideString; RestoreRevision: integer; ConflictMode: WideString): Boolean;
 var
 	JSON: WideString;
-	OperationStatus, OperationResult: integer;
 begin
 	result := false;
 	if not(Assigned(self)) then
 		exit; //Проверка на вызов без инициализации
 	if self.public_account then
 		exit;
-
-	result := self.HTTP.PostForm(API_TRASHBIN_RESTORE, 'path=' + PathToUrl(Path) + '&restore_revision=' + RestoreRevision.ToString + self.united_params + '&conflict=' + ConflictMode, JSON);
-
-	if result then
-	begin
-		OperationResult := JSONParser.getOperationResult(JSON, OperationStatus);
-		case OperationResult of
-			CLOUD_OPERATION_OK:
-				result := true;
-			else
-				begin
-					result := false;
-					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'File restore error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
-				end;
-		end;
-	end;
+	result := self.HTTP.PostForm(API_TRASHBIN_RESTORE, 'path=' + PathToUrl(Path) + '&restore_revision=' + RestoreRevision.ToString + self.united_params + '&conflict=' + ConflictMode, JSON) and CloudResultToBoolean(JSONParser.getOperationResult(JSON), 'File restore error: ');
 end;
 
 function TCloudMailRu.trashbinEmpty(): Boolean;
 var
 	JSON: WideString;
-	OperationStatus, OperationResult: integer;
 begin
 	result := false;
 	if not(Assigned(self)) then
@@ -1137,55 +992,25 @@ begin
 	if self.public_account then
 		exit;
 
-	result := self.HTTP.PostForm(API_TRASHBIN_EMPTY, self.united_params, JSON);
+	result := self.HTTP.PostForm(API_TRASHBIN_EMPTY, self.united_params, JSON) and CloudResultToBoolean(JSONParser.getOperationResult(JSON), 'Trashbin clearing error: ');
 
-	if result then
-	begin
-		OperationResult := JSONParser.getOperationResult(JSON, OperationStatus);
-		case OperationResult of
-			CLOUD_OPERATION_OK:
-				result := true;
-			else
-				begin
-					result := false;
-					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Trashbin clearing error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
-				end;
-		end;
-	end;
 end;
 
 function TCloudMailRu.mountFolder(home, invite_token, ConflictMode: WideString): Boolean;
 var
 	JSON: WideString;
-	OperationStatus, OperationResult: integer;
 begin
 	result := false;
 	if not(Assigned(self)) then
 		exit; //Проверка на вызов без инициализации
 	if self.public_account then
 		exit;
-
-	result := self.HTTP.PostForm(API_FOLDER_MOUNT, 'home=' + UrlEncode(home) + '&invite_token=' + invite_token + self.united_params + '&conflict=' + ConflictMode, JSON);
-
-	if result then
-	begin
-		OperationResult := JSONParser.getOperationResult(JSON, OperationStatus);
-		case OperationResult of
-			CLOUD_OPERATION_OK:
-				result := true;
-			else
-				begin
-					result := false;
-					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Folder mount error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
-				end;
-		end;
-	end;
+	result := self.HTTP.PostForm(API_FOLDER_MOUNT, 'home=' + UrlEncode(home) + '&invite_token=' + invite_token + self.united_params + '&conflict=' + ConflictMode, JSON) and CloudResultToBoolean(JSONParser.getOperationResult(JSON), 'Folder mount error: ');
 end;
 
 function TCloudMailRu.unmountFolder(home: WideString; clone_copy: Boolean): Boolean;
 var
 	JSON: WideString;
-	OperationStatus, OperationResult: integer;
 	CopyStr: WideString;
 begin
 	result := false;
@@ -1197,50 +1022,19 @@ begin
 		CopyStr := 'true'
 	else
 		CopyStr := 'false';
-
-	result := self.HTTP.PostForm(API_FOLDER_UNMOUNT, 'home=' + UrlEncode(home) + '&clone_copy=' + CopyStr + self.united_params, JSON);
-
-	if result then
-	begin
-		OperationResult := JSONParser.getOperationResult(JSON, OperationStatus);
-		case OperationResult of
-			CLOUD_OPERATION_OK:
-				result := true;
-			else
-				begin
-					result := false;
-					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Folder mount error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
-				end;
-		end;
-	end;
+	result := self.HTTP.PostForm(API_FOLDER_UNMOUNT, 'home=' + UrlEncode(home) + '&clone_copy=' + CopyStr + self.united_params, JSON) and CloudResultToBoolean(JSONParser.getOperationResult(JSON), 'Folder unmount error: ');
 end;
 
 function TCloudMailRu.rejectInvite(invite_token: WideString): Boolean;
 var
 	JSON: WideString;
-	OperationStatus, OperationResult: integer;
 begin
 	result := false;
 	if not(Assigned(self)) then
 		exit; //Проверка на вызов без инициализации
 	if self.public_account then
 		exit;
-
-	result := self.HTTP.PostForm(API_INVITE_REJECT, 'invite_token=' + invite_token + self.united_params, JSON);
-
-	if result then
-	begin
-		OperationResult := JSONParser.getOperationResult(JSON, OperationStatus);
-		case OperationResult of
-			CLOUD_OPERATION_OK:
-				result := true;
-			else
-				begin
-					result := false;
-					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Folder mount error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
-				end;
-		end;
-	end;
+	result := self.HTTP.PostForm(API_INVITE_REJECT, 'invite_token=' + invite_token + self.united_params, JSON) and CloudResultToBoolean(JSONParser.getOperationResult(JSON), 'Invite rejection error: ');
 end;
 
 function TCloudMailRu.putFileStream(FileName, remotePath: WideString; FileStream: TStream; ConflictMode: WideString): integer;
@@ -1510,33 +1304,18 @@ end;
 function TCloudMailRu.removeDir(Path: WideString): Boolean;
 var
 	JSON: WideString;
-	OperationResult, OperationStatus: integer;
 begin
 	result := false;
 	if not(Assigned(self)) then
 		exit; //Проверка на вызов без инициализации
 	if self.public_account then
 		exit;
-	result := self.HTTP.PostForm(API_FILE_REMOVE, 'home=/' + IncludeSlash(PathToUrl(Path)) + self.united_params + '&conflict', JSON); //API всегда отвечает true, даже если путь не существует
-	if result then
-	begin
-		OperationResult := JSONParser.getOperationResult(JSON, OperationStatus);
-		case OperationResult of
-			CLOUD_OPERATION_OK:
-				result := true;
-			else
-				begin
-					result := false;
-					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Delete directory error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
-				end;
-		end;
-	end;
+	result := self.HTTP.PostForm(API_FILE_REMOVE, 'home=/' + IncludeSlash(PathToUrl(Path)) + self.united_params + '&conflict', JSON) and CloudResultToBoolean(JSONParser.getOperationResult(JSON), 'Directory deletion error: '); //API всегда отвечает true, даже если путь не существует
 end;
 
 function TCloudMailRu.renameFile(OldName, NewName: WideString): integer;
 var
 	JSON: WideString;
-	OperationStatus, OperationResult: integer;
 begin
 	result := FS_FILE_WRITEERROR;
 	if not(Assigned(self)) then
@@ -1544,17 +1323,13 @@ begin
 	if self.public_account then
 		exit;
 	if self.HTTP.PostForm(API_FILE_RENAME, 'home=' + PathToUrl(OldName) + '&name=' + PathToUrl(NewName) + self.united_params, JSON) then
-	begin //Парсим ответ
-		OperationResult := JSONParser.getOperationResult(JSON, OperationStatus);
-		result := CloudResultToFsResult(OperationResult, OperationStatus, 'Rename file error: ');
-	end;
+		result := CloudResultToFsResult(JSONParser.getOperationResult(JSON), 'File renaming error: ')
 end;
 
 function TCloudMailRu.statusFile(Path: WideString; var FileInfo: TCloudMailRuDirListingItem): Boolean;
 var
 	JSON: WideString;
 	Progress: Boolean;
-	OperationResult, OperationStatus: integer;
 begin
 	result := false;
 	if not(Assigned(self)) then
@@ -1564,21 +1339,8 @@ begin
 		result := self.HTTP.GetPage(API_FILE + '?weblink=' + IncludeSlash(self.public_link) + PathToUrl(Path) + self.united_params, JSON, Progress)
 	else
 		result := self.HTTP.GetPage(API_FILE + '?home=' + PathToUrl(Path) + self.united_params, JSON, Progress);
-
 	if result then
-	begin
-		OperationResult := JSONParser.getOperationResult(JSON, OperationStatus);
-		case OperationResult of
-			CLOUD_OPERATION_OK:
-				result := JSONParser.getFileStatus(JSON, FileInfo);
-			else
-				begin
-					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'File status error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
-					result := false;
-				end;
-		end;
-	end;
-	//if not Result then exit(false);
+		result := CloudResultToBoolean(JSONParser.getOperationResult(JSON), 'File status error: ') and JSONParser.getFileStatus(JSON, FileInfo);
 end;
 
 class function TCloudMailRu.CloudAccessToString(access: WideString; Invert: Boolean): WideString;
