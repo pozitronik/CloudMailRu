@@ -16,6 +16,7 @@ type
 
 		HTTP: TCloudMailRuHTTP; //HTTP transport class
 		FileCipher: TFileCipher; //Encryption class
+		JSONParser: TCloudMailRuJSONParser; //JSON parser
 
 		public_link: WideString; //
 		public_download_token: WideString; //token for public urls, refreshes on request
@@ -128,7 +129,8 @@ implementation
 {TCloudMailRu}
 function TCloudMailRu.addFileByIdentity(FileIdentity: TCloudMailRuFileIdentity; remotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; LogErrors: Boolean = true; LogSuccess: Boolean = false): integer;
 var
-	JSON, FileName: WideString;
+	FileName: WideString;
+	JSON: WideString;
 	OperationStatus, OperationResult: integer;
 begin
 	result := FS_FILE_WRITEERROR;
@@ -146,7 +148,7 @@ begin
 	{Экспериментально выяснено, что параметры api, build, email, x-email, x-page-id в запросе не обязательны}
 	if self.HTTP.PostForm(API_FILE_ADD, 'conflict=' + ConflictMode + '&home=/' + PathToUrl(remotePath) + '&hash=' + FileIdentity.Hash + '&size=' + FileIdentity.size.ToString + self.united_params, JSON, 'application/x-www-form-urlencoded', LogErrors, false) then {Do not allow to cancel operation here}
 	begin
-		OperationResult := fromJSON_OperationResult(JSON, OperationStatus);
+		OperationResult := JSONParser.getOperationResult(JSON, OperationStatus);
 		if CLOUD_OPERATION_OK = OperationResult then
 		begin
 			if LogSuccess then
@@ -182,7 +184,7 @@ begin
 	Progress := true;
 	if self.HTTP.GetPage(API_CLONE + '?folder=' + PathToUrl(Path) + '&weblink=' + link + '&conflict=' + ConflictMode + self.united_params, JSON, Progress) then
 	begin //Парсим ответ
-		result := fromJSON_OperationResult(JSON, OperationStatus);
+		result := JSONParser.getOperationResult(JSON, OperationStatus);
 		if result <> CLOUD_OPERATION_OK then
 			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'File publish error: ' + self.ErrorCodeText(result) + ' Status: ' + OperationStatus.ToString());
 
@@ -244,7 +246,7 @@ begin
 		exit(FS_FILE_NOTSUPPORTED);
 	if self.HTTP.PostForm(API_FILE_COPY, 'home=' + PathToUrl(OldName) + '&folder=' + PathToUrl(ToPath) + self.united_params + '&conflict', JSON) then
 	begin //Парсим ответ
-		OperationResult := fromJSON_OperationResult(JSON, OperationStatus);
+		OperationResult := JSONParser.getOperationResult(JSON, OperationStatus);
 		result := CloudResultToFsResult(OperationResult, OperationStatus, 'File copy error: ');
 	end;
 end;
@@ -281,6 +283,7 @@ begin
 		self.ExternalRequestProc := ExternalRequestProc;
 
 		self.HTTP := TCloudMailRuHTTP.Create(CloudSettings.ConnectionSettings, ExternalProgressProc, ExternalLogProc);
+		self.JSONParser:= TCloudMailRuJSONParser.Create();
 
 		if CloudSettings.AccountSettings.encrypt_files_mode <> EncryptModeNone then
 		begin
@@ -314,7 +317,7 @@ begin
 		exit;
 	if self.HTTP.PostForm(API_FOLDER_ADD, 'home=/' + PathToUrl(Path) + self.united_params + '&conflict', PostAnswer) then
 	begin
-		OperationResult := fromJSON_OperationResult(PostAnswer, OperationStatus);
+		OperationResult := JSONParser.getOperationResult(PostAnswer, OperationStatus);
 		case OperationResult of
 			CLOUD_OPERATION_OK:
 				result := true;
@@ -340,7 +343,7 @@ begin
 	result := self.HTTP.PostForm(API_FILE_REMOVE, 'home=/' + PathToUrl(Path) + self.united_params + '&conflict', JSON);
 	if result then
 	begin
-		OperationResult := fromJSON_OperationResult(JSON, OperationStatus);
+		OperationResult := JSONParser.getOperationResult(JSON, OperationStatus);
 		case OperationResult of
 			CLOUD_OPERATION_OK:
 				result := true;
@@ -356,6 +359,7 @@ end;
 destructor TCloudMailRu.Destroy;
 begin
 	self.HTTP.Destroy;
+	self.JSONParser.Destroy;
 	if Assigned(self.FileCipher) then
 		self.FileCipher.Destroy;
 
@@ -442,10 +446,10 @@ begin
 
 	if result then
 	begin
-		OperationResult := fromJSON_OperationResult(JSON, OperationStatus);
+		OperationResult := JSONParser.getOperationResult(JSON, OperationStatus);
 		case OperationResult of
 			CLOUD_OPERATION_OK:
-				result := fromJSON_DirListing(JSON, DirListing);
+				result := JSONParser.getDirListing(JSON, DirListing);
 			else
 				begin
 					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Shared links listing error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
@@ -470,10 +474,10 @@ begin
 
 	if result then
 	begin
-		OperationResult := fromJSON_OperationResult(JSON, OperationStatus);
+		OperationResult := JSONParser.getOperationResult(JSON, OperationStatus);
 		case OperationResult of
 			CLOUD_OPERATION_OK:
-				result := fromJSON_IncomingInviteListing(JSON, IncomingListing);
+				result := JSONParser.getIncomingInviteListing(JSON, IncomingListing);
 			else
 				begin
 					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Incoming requests listing error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
@@ -522,10 +526,10 @@ begin
 
 	if result then
 	begin
-		OperationResult := fromJSON_OperationResult(JSON, OperationStatus);
+		OperationResult := JSONParser.getOperationResult(JSON, OperationStatus);
 		case OperationResult of
 			CLOUD_OPERATION_OK:
-				result := fromJSON_DirListing(JSON, DirListing);
+				result := JSONParser.getDirListing(JSON, DirListing);
 			else
 				begin
 					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Incoming requests listing error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());
@@ -550,11 +554,11 @@ begin
 		result := self.HTTP.GetPage(API_FOLDER + '&home=' + PathToUrl(Path) + self.united_params, JSON, ShowProgress);
 	if result then
 	begin
-		OperationResult := fromJSON_OperationResult(JSON, OperationStatus);
+		OperationResult := JSONParser.getOperationResult(JSON, OperationStatus);
 		case OperationResult of
 			CLOUD_OPERATION_OK:
 				begin
-					result := fromJSON_DirListing(JSON, DirListing);
+					result := JSONParser.getDirListing(JSON, DirListing);
 					if result and self.crypt_filenames then
 						self.FileCipher.DecryptDirListing(DirListing);
 				end;
@@ -692,7 +696,7 @@ begin
 	result := false;
 	if self.HTTP.PostForm(OAUTH_TOKEN_URL, 'client_id=cloud-win&grant_type=password&username=' + self.user + '%40' + self.domain + '&password=' + UrlEncode(self.password), Answer) then
 	begin
-		if not fromJSON_OAuthTokenInfo(Answer, OAuthToken) then
+		if not JSONParser.getOAuthTokenInfo(Answer, OAuthToken) then
 			exit(false);
 		result := OAuthToken.error_code = NOERROR;
 	end;
@@ -728,11 +732,11 @@ begin
 
 	if self.HTTP.PostForm(API_DISPATCHER, self.united_params, JSON) then //checkme
 	begin
-		OperationResult := fromJSON_OperationResult(JSON, OperationStatus);
+		OperationResult := JSONParser.getOperationResult(JSON, OperationStatus);
 		case OperationResult of
 			CLOUD_OPERATION_OK:
 				begin
-					result := fromJSON_Shard(JSON, Shard) and (Shard <> EmptyWideStr);
+					result := JSONParser.getShard(JSON, Shard) and (Shard <> EmptyWideStr);
 					Log(LogLevelDetail, MSGTYPE_DETAILS, 'Shard received: ' + Shard);
 				end
 			else
@@ -800,10 +804,10 @@ begin
 	result := self.HTTP.GetPage(API_USER_SPACE + '?home=/' + self.united_params, JSON, Progress);
 	if result then
 	begin
-		OperationResult := fromJSON_OperationResult(JSON, OperationStatus);
+		OperationResult := JSONParser.getOperationResult(JSON, OperationStatus);
 		case OperationResult of
 			CLOUD_OPERATION_OK:
-				result := fromJSON_UserSpace(JSON, SpaceInfo);
+				result := JSONParser.getUserSpace(JSON, SpaceInfo);
 			else
 				begin
 					result := false;
@@ -862,7 +866,7 @@ begin
 				if result then
 				begin
 					Log(LogLevelDebug, MSGTYPE_DETAILS, 'Parsing authorization data...');
-					if extractTwostepJson(PostAnswer, TwoStepJson) and fromJSON_TwostepData(TwoStepJson, TwostepData) then
+					if extractTwostepJson(PostAnswer, TwoStepJson) and JSONParser.getTwostepData(TwoStepJson, TwostepData) then
 					begin
 						if TwostepData.secstep_timeout = AUTH_APP_USED then
 							AuthMessage := 'Enter code from authentication app.'//mobile app used
@@ -986,7 +990,7 @@ begin
 		exit(FS_FILE_NOTSUPPORTED);
 	if self.HTTP.PostForm(API_FILE_MOVE, 'home=' + PathToUrl(OldName) + '&folder=' + PathToUrl(ToPath) + self.united_params + '&conflict', JSON) then
 	begin //Парсим ответ
-		OperationResult := fromJSON_OperationResult(JSON, OperationStatus);
+		OperationResult := JSONParser.getOperationResult(JSON, OperationStatus);
 		result := CloudResultToFsResult(OperationResult, OperationStatus, 'File move error: ');
 	end;
 end;
@@ -1032,11 +1036,11 @@ begin
 
 	if result then
 	begin
-		OperationResult := fromJSON_OperationResult(JSON, OperationStatus);
+		OperationResult := JSONParser.getOperationResult(JSON, OperationStatus);
 		case OperationResult of
 			CLOUD_OPERATION_OK:
 				if publish then
-					result := fromJSON_PublicLink(JSON, PublicLink);
+					result := JSONParser.getPublicLink(JSON, PublicLink);
 			else
 				begin
 					result := false;
@@ -1057,7 +1061,7 @@ begin
 	Progress := false;
 	if self.HTTP.GetPage(API_FOLDER_SHARED_INFO + '?home=' + PathToUrl(Path) + self.united_params, JSON, Progress) then
 	begin
-		result := fromJSON_InviteListing(JSON, InviteListing);
+		result := JSONParser.getInviteListing(JSON, InviteListing);
 	end;
 
 end;
@@ -1085,7 +1089,7 @@ begin
 
 	if (result) then
 	begin
-		OperationResult := fromJSON_OperationResult(JSON, OperationStatus);
+		OperationResult := JSONParser.getOperationResult(JSON, OperationStatus);
 
 		result := OperationResult = CLOUD_OPERATION_OK;
 		if not result then
@@ -1109,7 +1113,7 @@ begin
 
 	if result then
 	begin
-		OperationResult := fromJSON_OperationResult(JSON, OperationStatus);
+		OperationResult := JSONParser.getOperationResult(JSON, OperationStatus);
 		case OperationResult of
 			CLOUD_OPERATION_OK:
 				result := true;
@@ -1137,7 +1141,7 @@ begin
 
 	if result then
 	begin
-		OperationResult := fromJSON_OperationResult(JSON, OperationStatus);
+		OperationResult := JSONParser.getOperationResult(JSON, OperationStatus);
 		case OperationResult of
 			CLOUD_OPERATION_OK:
 				result := true;
@@ -1165,7 +1169,7 @@ begin
 
 	if result then
 	begin
-		OperationResult := fromJSON_OperationResult(JSON, OperationStatus);
+		OperationResult := JSONParser.getOperationResult(JSON, OperationStatus);
 		case OperationResult of
 			CLOUD_OPERATION_OK:
 				result := true;
@@ -1198,7 +1202,7 @@ begin
 
 	if result then
 	begin
-		OperationResult := fromJSON_OperationResult(JSON, OperationStatus);
+		OperationResult := JSONParser.getOperationResult(JSON, OperationStatus);
 		case OperationResult of
 			CLOUD_OPERATION_OK:
 				result := true;
@@ -1226,7 +1230,7 @@ begin
 
 	if result then
 	begin
-		OperationResult := fromJSON_OperationResult(JSON, OperationStatus);
+		OperationResult := JSONParser.getOperationResult(JSON, OperationStatus);
 		case OperationResult of
 			CLOUD_OPERATION_OK:
 				result := true;
@@ -1294,7 +1298,7 @@ begin
 	end;
 
 	if OperationResult = CLOUD_OPERATION_OK then
-		result := self.addFileByIdentity(RemoteFileIdentity, remotePath, ConflictMode, false);//Не логируем HTTP-ошибку, она распарсится и обработается уровнем выше
+		result := self.addFileByIdentity(RemoteFileIdentity, remotePath, ConflictMode, false); //Не логируем HTTP-ошибку, она распарсится и обработается уровнем выше
 end;
 
 function TCloudMailRu.putFileWhole(localPath, remotePath, ConflictMode: WideString): integer;
@@ -1516,7 +1520,7 @@ begin
 	result := self.HTTP.PostForm(API_FILE_REMOVE, 'home=/' + IncludeSlash(PathToUrl(Path)) + self.united_params + '&conflict', JSON); //API всегда отвечает true, даже если путь не существует
 	if result then
 	begin
-		OperationResult := fromJSON_OperationResult(JSON, OperationStatus);
+		OperationResult := JSONParser.getOperationResult(JSON, OperationStatus);
 		case OperationResult of
 			CLOUD_OPERATION_OK:
 				result := true;
@@ -1541,7 +1545,7 @@ begin
 		exit;
 	if self.HTTP.PostForm(API_FILE_RENAME, 'home=' + PathToUrl(OldName) + '&name=' + PathToUrl(NewName) + self.united_params, JSON) then
 	begin //Парсим ответ
-		OperationResult := fromJSON_OperationResult(JSON, OperationStatus);
+		OperationResult := JSONParser.getOperationResult(JSON, OperationStatus);
 		result := CloudResultToFsResult(OperationResult, OperationStatus, 'Rename file error: ');
 	end;
 end;
@@ -1563,10 +1567,10 @@ begin
 
 	if result then
 	begin
-		OperationResult := fromJSON_OperationResult(JSON, OperationStatus);
+		OperationResult := JSONParser.getOperationResult(JSON, OperationStatus);
 		case OperationResult of
 			CLOUD_OPERATION_OK:
-				result := fromJSON_FileStatus(JSON, FileInfo);
+				result := JSONParser.getFileStatus(JSON, FileInfo);
 			else
 				begin
 					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'File status error: ' + self.ErrorCodeText(OperationResult) + ' Status: ' + OperationStatus.ToString());

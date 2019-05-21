@@ -3,6 +3,7 @@
 interface
 
 uses JSON, CMLTypes, System.SysUtils;
+
 {TODO: переделать в класс, а функции вызывать статикой}
 const
 	NAME_BODY = 'body';
@@ -62,67 +63,102 @@ const
 	NAME_CSRF = 'csrf';
 	NAME_DEVICE = 'device';
 
-function initJSONValue(JSON: WideString; var JSONVal: TJSONValue): Boolean;
-function fromJSON_DirListing(JSON: WideString; var CloudMailRuDirListing: TCloudMailRuDirListing): Boolean;
-function fromJSON_UserSpace(JSON: WideString; var CloudMailRuSpaceInfo: TCloudMailRuSpaceInfo): Boolean;
-function fromJSON_FileStatus(JSON: WideString; var CloudMailRuDirListingItem: TCloudMailRuDirListingItem): Boolean;
-function fromJSON_Shard(JSON: WideString; var Shard: WideString): Boolean;
-function fromJSON_OAuthTokenInfo(JSON: WideString; var CloudMailRuOAuthInfo: TCloudMailRuOAuthInfo): Boolean;
-function fromJSON_PublicLink(JSON: WideString; var PublicLink: WideString): Boolean;
-function fromJSON_OperationResult(JSON: WideString; var OperationStatus: integer): integer;
-function fromJSON_InviteListing(JSON: WideString; var InviteListing: TCloudMailRuInviteInfoListing): Boolean;
-function fromJSON_IncomingInviteListing(JSON: WideString; var IncomingInviteListing: TCloudMailRuIncomingInviteInfoListing): Boolean;
-function fromJSON_TwostepData(JSON: WideString; var TwostepData: TCloudMailRuTwostepData): Boolean;
+type
+	TCloudMailRuJSONParser = class
+	private
+		JSON: WideString; //initial JSON string
+		JSONVal: TJSONValue; //Main JSON
+		ParserObj: TJSONObject; //Currently parsed JSON branch
+		procedure assignFromName(Name: WideString; var Item: WideString); overload;
+		procedure assignFromName(Name: WideString; var Item: Int64); overload;
+		procedure assignFromName(Name: WideString; var Item: integer); overload;
+		procedure assignFromName(Name: WideString; var Item: Boolean); overload;
+	public
+		constructor Create(JSON: WideString = '');
+		destructor Destroy; override;
+		{parser functions}
+		function init(JSON: WideString): Boolean;
+		function getDirListing(var CloudMailRuDirListing: TCloudMailRuDirListing): Boolean; overload;
+		function getDirListing(JSON: WideString; var CloudMailRuDirListing: TCloudMailRuDirListing): Boolean; overload;
+		function getFileStatus(var CloudMailRuDirListingItem: TCloudMailRuDirListingItem): Boolean; overload;
+		function getFileStatus(JSON: WideString; var CloudMailRuDirListingItem: TCloudMailRuDirListingItem): Boolean; overload;
+		function getInviteListing(var InviteListing: TCloudMailRuInviteInfoListing): Boolean; overload;
+		function getInviteListing(JSON: WideString; var InviteListing: TCloudMailRuInviteInfoListing): Boolean; overload;
+		function getIncomingInviteListing(var IncomingInviteListing: TCloudMailRuIncomingInviteInfoListing): Boolean; overload;
+		function getIncomingInviteListing(JSON: WideString; var IncomingInviteListing: TCloudMailRuIncomingInviteInfoListing): Boolean; overload;
+		function getOAuthTokenInfo(var CloudMailRuOAuthInfo: TCloudMailRuOAuthInfo): Boolean; overload;
+		function getOAuthTokenInfo(JSON: WideString; var CloudMailRuOAuthInfo: TCloudMailRuOAuthInfo): Boolean; overload;
+		function getOperationResult(var OperationStatus: integer): integer; overload;
+		function getOperationResult(JSON: WideString; var OperationStatus: integer): integer; overload;
+		function getPublicLink(var PublicLink: WideString): Boolean; overload;
+		function getPublicLink(JSON: WideString; var PublicLink: WideString): Boolean; overload;
+		function getShard(var Shard: WideString): Boolean; overload;
+		function getShard(JSON: WideString; var Shard: WideString): Boolean; overload;
+		function getTwostepData(var TwostepData: TCloudMailRuTwostepData): Boolean; overload;
+		function getTwostepData(JSON: WideString; var TwostepData: TCloudMailRuTwostepData): Boolean; overload;
+		function getUserSpace(var CloudMailRuSpaceInfo: TCloudMailRuSpaceInfo): Boolean; overload;
+		function getUserSpace(JSON: WideString; var CloudMailRuSpaceInfo: TCloudMailRuSpaceInfo): Boolean; overload;
+
+	end;
 
 implementation
 
-procedure assignFromName(ParserObject: TJSONObject; Name: WideString; var Item: WideString); overload;
+{TCloudMailRuJSONParser}
+
+procedure TCloudMailRuJSONParser.assignFromName(Name: WideString; var Item: WideString);
 begin
-	if Assigned(ParserObject.Values[Name]) then
-		Item := ParserObject.Values[Name].Value;
+	if Assigned(self.ParserObj.Values[Name]) then
+		Item := self.ParserObj.Values[Name].Value;
 end;
 
-procedure assignFromName(ParserObject: TJSONObject; Name: WideString; var Item: Int64); overload;
+procedure TCloudMailRuJSONParser.assignFromName(Name: WideString; var Item: Int64);
 begin
-	if Assigned(ParserObject.Values[Name]) then
-		Item := ParserObject.Values[Name].Value.ToInt64;
+	if Assigned(self.ParserObj.Values[Name]) then
+		Item := self.ParserObj.Values[Name].Value.ToInt64;
 end;
 
-procedure assignFromName(ParserObject: TJSONObject; Name: WideString; var Item: integer); overload;
+procedure TCloudMailRuJSONParser.assignFromName(Name: WideString; var Item: integer);
 begin
-	if Assigned(ParserObject.Values[Name]) then
-		Item := ParserObject.Values[Name].Value.ToInteger;
+	if Assigned(self.ParserObj.Values[Name]) then
+		Item := self.ParserObj.Values[Name].Value.ToInteger;
 end;
 
-procedure assignFromName(ParserObject: TJSONObject; Name: WideString; var Item: Boolean); overload;
+procedure TCloudMailRuJSONParser.assignFromName(Name: WideString; var Item: Boolean);
 begin
-	if Assigned(ParserObject.Values[Name]) then
-		Item := ParserObject.Values[Name].Value.ToBoolean;
+	if Assigned(self.ParserObj.Values[Name]) then
+		Item := self.ParserObj.Values[Name].Value.ToBoolean;
 end;
 
-function initJSONValue(JSON: WideString; var JSONVal: TJSONValue): Boolean;
+function TCloudMailRuJSONParser.init(JSON: WideString): Boolean;
 begin
 	result := false;
-	JSONVal := nil;
+	self.JSON := JSON;
 	try
-		JSONVal := TJSONObject.ParseJSONValue(JSON);
+		self.JSONVal := TJSONObject.ParseJSONValue(self.JSON);
 	except
 		exit;
 	end;
 	result := true;
 end;
 
-function fromJSON_DirListing(JSON: WideString; var CloudMailRuDirListing: TCloudMailRuDirListing): Boolean;
+constructor TCloudMailRuJSONParser.Create(JSON: WideString = '');
+begin
+	if (EmptyWideStr <> JSON) then
+		self.init(JSON);
+
+end;
+
+destructor TCloudMailRuJSONParser.Destroy;
+begin
+	JSONVal.free;
+end;
+
+function TCloudMailRuJSONParser.getDirListing(var CloudMailRuDirListing: TCloudMailRuDirListing): Boolean;
 var
-	JSONVal: TJSONValue;
-	ParserObj: TJSONObject;
 	J: integer;
 	A: TJSONArray;
 begin
 	result := false;
-	if not initJSONValue(JSON, JSONVal) then
-		exit;
-
 	try
 		A := ((JSONVal as TJSONObject).Values[NAME_BODY] as TJSONObject).Values[NAME_LIST] as TJSONArray;
 		SetLength(CloudMailRuDirListing, A.count);
@@ -131,25 +167,25 @@ begin
 			ParserObj := A.Items[J] as TJSONObject;
 			with CloudMailRuDirListing[J] do
 			begin
-				assignFromName(ParserObj, NAME_SIZE, size);
-				assignFromName(ParserObj, NAME_KIND, kind);
-				assignFromName(ParserObj, NAME_WEBLINK, weblink);
-				assignFromName(ParserObj, NAME_TYPE, type_);
-				assignFromName(ParserObj, NAME_HOME, home);
-				assignFromName(ParserObj, NAME_NAME, name);
+				assignFromName(NAME_SIZE, size);
+				assignFromName(NAME_KIND, kind);
+				assignFromName(NAME_WEBLINK, weblink);
+				assignFromName(NAME_TYPE, type_);
+				assignFromName(NAME_HOME, home);
+				assignFromName(NAME_NAME, name);
 				visible_name := name;
-				assignFromName(ParserObj, NAME_DELETED_AT, deleted_at);
-				assignFromName(ParserObj, NAME_DELETED_FROM, deleted_from);
-				assignFromName(ParserObj, NAME_DELETED_BY, deleted_by);
-				assignFromName(ParserObj, NAME_GREV, grev);
-				assignFromName(ParserObj, NAME_REV, rev);
+				assignFromName(NAME_DELETED_AT, deleted_at);
+				assignFromName(NAME_DELETED_FROM, deleted_from);
+				assignFromName(NAME_DELETED_BY, deleted_by);
+				assignFromName(NAME_GREV, grev);
+				assignFromName(NAME_REV, rev);
 				if (type_ = TYPE_FILE) then
 				begin
-					assignFromName(ParserObj, NAME_MTIME, mtime);
-					assignFromName(ParserObj, NAME_VIRUS_SCAN, virus_scan);
-					assignFromName(ParserObj, NAME_HASH, hash);
+					assignFromName(NAME_MTIME, mtime);
+					assignFromName(NAME_VIRUS_SCAN, virus_scan);
+					assignFromName(NAME_HASH, hash);
 				end else begin
-					assignFromName(ParserObj, NAME_TREE, tree);
+					assignFromName(NAME_TREE, tree);
 
 					if Assigned(ParserObj.Values[NAME_COUNT]) then
 					begin
@@ -160,40 +196,34 @@ begin
 				end;
 			end;
 		end;
-		JSONVal.free;
 	except
 		exit;
 	end;
 	result := true;
 end;
 
-function fromJSON_FileStatus(JSON: WideString; var CloudMailRuDirListingItem: TCloudMailRuDirListingItem): Boolean;
-var
-	ParserObj: TJSONObject;
-	JSONVal: TJSONValue;
+function TCloudMailRuJSONParser.getFileStatus(var CloudMailRuDirListingItem: TCloudMailRuDirListingItem): Boolean;
 begin
 	result := false;
-	if not initJSONValue(JSON, JSONVal) then
-		exit;
 	try
 		ParserObj := (JSONVal as TJSONObject).Values[NAME_BODY] as TJSONObject;
 		with CloudMailRuDirListingItem do
 		begin
-			assignFromName(ParserObj, NAME_SIZE, size);
-			assignFromName(ParserObj, NAME_KIND, kind);
-			assignFromName(ParserObj, NAME_WEBLINK, weblink);
-			assignFromName(ParserObj, NAME_TYPE, type_);
-			assignFromName(ParserObj, NAME_HOME, home);
-			assignFromName(ParserObj, NAME_NAME, name);
+			assignFromName(NAME_SIZE, size);
+			assignFromName(NAME_KIND, kind);
+			assignFromName(NAME_WEBLINK, weblink);
+			assignFromName(NAME_TYPE, type_);
+			assignFromName(NAME_HOME, home);
+			assignFromName(NAME_NAME, name);
 			if (type_ = TYPE_FILE) then
 			begin
-				assignFromName(ParserObj, NAME_MTIME, mtime);
-				assignFromName(ParserObj, NAME_VIRUS_SCAN, virus_scan);
-				assignFromName(ParserObj, NAME_HASH, hash);
+				assignFromName(NAME_MTIME, mtime);
+				assignFromName(NAME_VIRUS_SCAN, virus_scan);
+				assignFromName(NAME_HASH, hash);
 			end else begin
-				assignFromName(ParserObj, NAME_TREE, tree);
-				assignFromName(ParserObj, NAME_GREV, grev);
-				assignFromName(ParserObj, NAME_REV, rev);
+				assignFromName(NAME_TREE, tree);
+				assignFromName(NAME_GREV, grev);
+				assignFromName(NAME_REV, rev);
 				if Assigned((ParserObj.Values[NAME_COUNT] as TJSONObject).Values[NAME_FOLDERS]) then
 					folders_count := (ParserObj.Values[NAME_COUNT] as TJSONObject).Values[NAME_FOLDERS].Value.ToInteger();
 				if Assigned((ParserObj.Values[NAME_COUNT] as TJSONObject).Values[NAME_FILES]) then
@@ -201,63 +231,20 @@ begin
 				mtime := 0;
 			end;
 		end;
-		JSONVal.free;
 	except
 		exit;
 	end;
 	result := true;
 end;
 
-function fromJSON_InviteListing(JSON: WideString; var InviteListing: TCloudMailRuInviteInfoListing): Boolean;
+function TCloudMailRuJSONParser.getIncomingInviteListing(var IncomingInviteListing: TCloudMailRuIncomingInviteInfoListing): Boolean;
 var
-	J: integer;
-	A: TJSONArray;
-	ParserObj: TJSONObject;
-	JSONVal: TJSONValue;
-begin
-	result := false;
-	SetLength(InviteListing, 0);
-	if not initJSONValue(JSON, JSONVal) then
-		exit;
-	try
-		A := ((JSONVal as TJSONObject).Values[NAME_BODY] as TJSONObject).Values[NAME_INVITED] as TJSONArray;
-		if not Assigned(A) then
-			exit(true); //no invites
-		SetLength(InviteListing, A.count);
-		for J := 0 to A.count - 1 do
-		begin
-			ParserObj := A.Items[J] as TJSONObject;
-			with InviteListing[J] do
-			begin
-				assignFromName(ParserObj, NAME_EMAIL, email);
-				assignFromName(ParserObj, NAME_STATUS, status);
-				assignFromName(ParserObj, NAME_ACCESS, access);
-				assignFromName(ParserObj, NAME_NAME, name);
-			end;
-		end;
-		JSONVal.free;
-	except
-		on E: {EJSON}Exception do
-		begin
-			//Log(MSGTYPE_IMPORTANTERROR, 'Can''t parse server answer: ' + JSON); todo
-			exit;
-		end;
-	end;
-	result := true;
-end;
-
-function fromJSON_IncomingInviteListing(JSON: WideString; var IncomingInviteListing: TCloudMailRuIncomingInviteInfoListing): Boolean;
-var
-	ParserObj: TJSONObject;
-	JSONVal: TJSONValue;
 	OwnerObj: TJSONObject;
 	J: integer;
 	A: TJSONArray;
 begin
 	result := false;
 	SetLength(IncomingInviteListing, 0);
-	if not initJSONValue(JSON, JSONVal) then
-		exit;
 	try
 		A := ((JSONVal as TJSONObject).Values[NAME_BODY] as TJSONObject).Values[NAME_LIST] as TJSONArray;
 		if not Assigned(A) then
@@ -277,15 +264,14 @@ begin
 						owner.Name := OwnerObj.Values[NAME_NAME].Value;
 				end;
 
-				assignFromName(ParserObj, NAME_TREE, tree);
-				assignFromName(ParserObj, NAME_ACCESS, access);
-				assignFromName(ParserObj, NAME_NAME, name);
-				assignFromName(ParserObj, NAME_HOME, home);
-				assignFromName(ParserObj, NAME_SIZE, size);
-				assignFromName(ParserObj, NAME_INVITE_TOKEN, invite_token);
+				assignFromName(NAME_TREE, tree);
+				assignFromName(NAME_ACCESS, access);
+				assignFromName(NAME_NAME, name);
+				assignFromName(NAME_HOME, home);
+				assignFromName(NAME_SIZE, size);
+				assignFromName(NAME_INVITE_TOKEN, invite_token);
 			end;
 		end;
-		JSONVal.free;
 	except
 		on E: {EJSON}Exception do
 		begin
@@ -296,26 +282,53 @@ begin
 	result := true;
 end;
 
-function fromJSON_OAuthTokenInfo(JSON: WideString; var CloudMailRuOAuthInfo: TCloudMailRuOAuthInfo): Boolean;
+function TCloudMailRuJSONParser.getInviteListing(var InviteListing: TCloudMailRuInviteInfoListing): Boolean;
 var
-	JSONVal: TJSONValue;
-	ParserObj: TJSONObject;
+	J: integer;
+	A: TJSONArray;
 begin
 	result := false;
-	if not initJSONValue(JSON, JSONVal) then
-		exit;
+	SetLength(InviteListing, 0);
+	try
+		A := ((JSONVal as TJSONObject).Values[NAME_BODY] as TJSONObject).Values[NAME_INVITED] as TJSONArray;
+		if not Assigned(A) then
+			exit(true); //no invites
+		SetLength(InviteListing, A.count);
+		for J := 0 to A.count - 1 do
+		begin
+			ParserObj := A.Items[J] as TJSONObject;
+			with InviteListing[J] do
+			begin
+				assignFromName(NAME_EMAIL, email);
+				assignFromName(NAME_STATUS, status);
+				assignFromName(NAME_ACCESS, access);
+				assignFromName(NAME_NAME, name);
+			end;
+		end;
+	except
+		on E: {EJSON}Exception do
+		begin
+			//Log(MSGTYPE_IMPORTANTERROR, 'Can''t parse server answer: ' + JSON); todo
+			exit;
+		end;
+	end;
+	result := true;
+end;
+
+function TCloudMailRuJSONParser.getOAuthTokenInfo(var CloudMailRuOAuthInfo: TCloudMailRuOAuthInfo): Boolean;
+begin
+	result := false;
 	try
 		ParserObj := (JSONVal as TJSONObject);
 		with CloudMailRuOAuthInfo do
 		begin
-			assignFromName(ParserObj, NAME_ERROR, error);
-			assignFromName(ParserObj, NAME_ERROR_CODE, error_code);
-			assignFromName(ParserObj, NAME_ERROR_DESCRIPTION, error_description);
-			assignFromName(ParserObj, NAME_EXPIRES_IN, expires_in);
-			assignFromName(ParserObj, NAME_REFRESH_TOKEN, refresh_token);
-			assignFromName(ParserObj, NAME_ACCESS_TOKEN, access_token);
+			assignFromName(NAME_ERROR, error);
+			assignFromName(NAME_ERROR_CODE, error_code);
+			assignFromName(NAME_ERROR_DESCRIPTION, error_description);
+			assignFromName(NAME_EXPIRES_IN, expires_in);
+			assignFromName(NAME_REFRESH_TOKEN, refresh_token);
+			assignFromName(NAME_ACCESS_TOKEN, access_token);
 		end;
-		JSONVal.free;
 	except
 		on E: {EJSON}Exception do
 		begin
@@ -329,15 +342,11 @@ begin
 	result := true;
 end;
 
-function fromJSON_OperationResult(JSON: WideString; var OperationStatus: integer): integer;
+function TCloudMailRuJSONParser.getOperationResult(var OperationStatus: integer): integer;
 var
 	error, nodename: WideString;
-	ParserObj: TJSONObject;
-	JSONVal: TJSONValue;
 begin
 	//Result:=CLOUD_ERROR_BAD_REQUEST;
-	if not initJSONValue(JSON, JSONVal) then
-		exit(CLOUD_ERROR_UNKNOWN);
 	try
 		ParserObj := JSONVal as TJSONObject;
 		OperationStatus := ParserObj.Values[NAME_STATUS].Value.ToInteger;
@@ -402,9 +411,8 @@ begin
 				exit(CLOUD_ERROR_UNPROCESSABLE_ENTRY);
 
 			exit(CLOUD_ERROR_UNKNOWN); //Эту ошибку мы пока не встречали
-
 		end;
-		JSONVal.free;
+
 	except
 		on E: {EJSON}Exception do
 		begin
@@ -415,57 +423,42 @@ begin
 	result := CLOUD_OPERATION_OK;
 end;
 
-function fromJSON_PublicLink(JSON: WideString; var PublicLink: WideString): Boolean;
-var
-	JSONVal: TJSONValue;
+function TCloudMailRuJSONParser.getPublicLink(var PublicLink: WideString): Boolean;
 begin
 	result := false;
-	if not initJSONValue(JSON, JSONVal) then
-		exit;
 	try
 		PublicLink := (JSONVal as TJSONObject).Values[NAME_BODY].Value;
-		JSONVal.free;
 	except
 		exit;
 	end;
 	result := true;
 end;
 
-function fromJSON_Shard(JSON: WideString; var Shard: WideString): Boolean;
-var
-	JSONVal: TJSONValue;
+function TCloudMailRuJSONParser.getShard(var Shard: WideString): Boolean;
 begin
 	result := false;
-	if not initJSONValue(JSON, JSONVal) then
-		exit;
 	try
 		Shard := ((((JSONVal as TJSONObject).Values[NAME_BODY] as TJSONObject).Values[NAME_GET] as TJSONArray).Items[0] as TJSONObject).Values[NAME_URL].Value;
-		JSONVal.free;
 	except
 		exit;
 	end;
 	result := true;
 end;
 
-function fromJSON_TwostepData(JSON: WideString; var TwostepData: TCloudMailRuTwostepData): Boolean;
-var
-	ParserObj: TJSONObject;
-	JSONVal: TJSONValue;
+function TCloudMailRuJSONParser.getTwostepData(var TwostepData: TCloudMailRuTwostepData): Boolean;
 begin
 	result := false;
-	if not initJSONValue(JSON, JSONVal) then
-		exit;
 	try
 		ParserObj := (JSONVal as TJSONObject) as TJSONObject;
 		with TwostepData do
 		begin
-			assignFromName(ParserObj, NAME_FORM_NAME, form_name);
-			assignFromName(ParserObj, NAME_AUTH_HOST, auth_host);
-			assignFromName(ParserObj, NAME_SECSTEP_PHONE, secstep_phone);
-			assignFromName(ParserObj, NAME_SECSTEP_PAGE, secstep_page);
-			assignFromName(ParserObj, NAME_SECSTEP_CODE_FAIL, secstep_code_fail);
-			assignFromName(ParserObj, NAME_SECSTEP_RESEND_FAIL, secstep_resend_fail);
-			assignFromName(ParserObj, NAME_SECSTEP_RESEND_SUCCESS, secstep_resend_success);
+			assignFromName(NAME_FORM_NAME, form_name);
+			assignFromName(NAME_AUTH_HOST, auth_host);
+			assignFromName(NAME_SECSTEP_PHONE, secstep_phone);
+			assignFromName(NAME_SECSTEP_PAGE, secstep_page);
+			assignFromName(NAME_SECSTEP_CODE_FAIL, secstep_code_fail);
+			assignFromName(NAME_SECSTEP_RESEND_FAIL, secstep_resend_fail);
+			assignFromName(NAME_SECSTEP_RESEND_SUCCESS, secstep_resend_success);
 			if Assigned(ParserObj.Values[NAME_SECSTEP_TIMEOUT]) then
 			begin
 				if ParserObj.Values[NAME_SECSTEP_TIMEOUT].Value <> '' then
@@ -473,44 +466,97 @@ begin
 				else
 					secstep_timeout := AUTH_APP_USED;
 			end;
-			assignFromName(ParserObj, NAME_SECSTEP_LOGIN, secstep_login);
-			assignFromName(ParserObj, NAME_SECSTEP_DISPOSABLE_FAIL, secstep_disposable_fail);
-			assignFromName(ParserObj, NAME_SECSTEP_SMSAPI_ERROR, secstep_smsapi_error);
-			assignFromName(ParserObj, NAME_SECSTEP_CAPTCHA, secstep_captcha);
-			assignFromName(ParserObj, NAME_TOTP_ENABLED, totp_enabled);
-			assignFromName(ParserObj, NAME_LOCALE, locale);
-			assignFromName(ParserObj, NAME_CLIENT, client);
-			assignFromName(ParserObj, NAME_CSRF, csrf);
-			assignFromName(ParserObj, NAME_DEVICE, device);
+			assignFromName(NAME_SECSTEP_LOGIN, secstep_login);
+			assignFromName(NAME_SECSTEP_DISPOSABLE_FAIL, secstep_disposable_fail);
+			assignFromName(NAME_SECSTEP_SMSAPI_ERROR, secstep_smsapi_error);
+			assignFromName(NAME_SECSTEP_CAPTCHA, secstep_captcha);
+			assignFromName(NAME_TOTP_ENABLED, totp_enabled);
+			assignFromName(NAME_LOCALE, locale);
+			assignFromName(NAME_CLIENT, client);
+			assignFromName(NAME_CSRF, csrf);
+			assignFromName(NAME_DEVICE, device);
 		end;
-		JSONVal.free;
 	except
 		exit;
 	end;
 	result := true;
 end;
 
-function fromJSON_UserSpace(JSON: WideString; var CloudMailRuSpaceInfo: TCloudMailRuSpaceInfo): Boolean;
-var
-	ParserObj: TJSONObject;
-	JSONVal: TJSONValue;
+function TCloudMailRuJSONParser.getUserSpace(var CloudMailRuSpaceInfo: TCloudMailRuSpaceInfo): Boolean;
 begin
 	result := false;
-	if not initJSONValue(JSON, JSONVal) then
-		exit;
 	try
 		ParserObj := (JSONVal as TJSONObject).Values[NAME_BODY] as TJSONObject;
 		with CloudMailRuSpaceInfo do
 		begin
-			assignFromName(ParserObj, NAME_OVERQUOTA, overquota);
-			assignFromName(ParserObj, NAME_TOTAL, total);
-			assignFromName(ParserObj, NAME_USED, used);
+			assignFromName(NAME_OVERQUOTA, overquota);
+			assignFromName(NAME_TOTAL, total);
+			assignFromName(NAME_USED, used);
 		end;
-		JSONVal.free;
 	except
 		exit;
 	end;
 	result := true;
+end;
+
+function TCloudMailRuJSONParser.getDirListing(JSON: WideString; var CloudMailRuDirListing: TCloudMailRuDirListing): Boolean;
+begin
+	init(JSON);
+	exit(getDirListing(CloudMailRuDirListing));
+end;
+
+function TCloudMailRuJSONParser.getFileStatus(JSON: WideString; var CloudMailRuDirListingItem: TCloudMailRuDirListingItem): Boolean;
+begin
+	init(JSON);
+	exit(getFileStatus(CloudMailRuDirListingItem));
+end;
+
+function TCloudMailRuJSONParser.getIncomingInviteListing(JSON: WideString; var IncomingInviteListing: TCloudMailRuIncomingInviteInfoListing): Boolean;
+begin
+	init(JSON);
+	exit(getIncomingInviteListing(IncomingInviteListing));
+end;
+
+function TCloudMailRuJSONParser.getInviteListing(JSON: WideString; var InviteListing: TCloudMailRuInviteInfoListing): Boolean;
+begin
+	init(JSON);
+	exit(getInviteListing(InviteListing));
+end;
+
+function TCloudMailRuJSONParser.getOAuthTokenInfo(JSON: WideString; var CloudMailRuOAuthInfo: TCloudMailRuOAuthInfo): Boolean;
+begin
+	init(JSON);
+	exit(getOAuthTokenInfo(CloudMailRuOAuthInfo));
+end;
+
+function TCloudMailRuJSONParser.getOperationResult(JSON: WideString; var OperationStatus: integer): integer;
+begin
+	init(JSON);
+	exit(getOperationResult(OperationStatus));
+end;
+
+function TCloudMailRuJSONParser.getPublicLink(JSON: WideString; var PublicLink: WideString): Boolean;
+begin
+	init(JSON);
+	exit(getPublicLink(PublicLink));
+end;
+
+function TCloudMailRuJSONParser.getShard(JSON: WideString; var Shard: WideString): Boolean;
+begin
+	init(JSON);
+	exit(getShard(Shard));
+end;
+
+function TCloudMailRuJSONParser.getTwostepData(JSON: WideString; var TwostepData: TCloudMailRuTwostepData): Boolean;
+begin
+	init(JSON);
+	exit(getTwostepData(TwostepData));
+end;
+
+function TCloudMailRuJSONParser.getUserSpace(JSON: WideString; var CloudMailRuSpaceInfo: TCloudMailRuSpaceInfo): Boolean;
+begin
+	init(JSON);
+	exit(getUserSpace(CloudMailRuSpaceInfo));
 end;
 
 end.
