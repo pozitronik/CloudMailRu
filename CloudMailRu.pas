@@ -61,10 +61,8 @@ type
 		crypt_filenames: Boolean;
 
 		Property public_account: Boolean read OptionsSet.AccountSettings.public_account;
-
 		Property user: WideString read OptionsSet.AccountSettings.user;
 		Property domain: WideString read OptionsSet.AccountSettings.domain;
-
 		Property password: WideString read OptionsSet.AccountSettings.password;
 
 		Property CloudMaxFileSize: integer read OptionsSet.CloudMaxFileSize;
@@ -1250,8 +1248,8 @@ begin
 		exit(FS_FILE_WRITEERROR); //Проверка на вызов без инициализации
 	if self.public_account then
 		exit(FS_FILE_NOTSUPPORTED);
-	self.HTTP.ExternalSourceName := PWideChar(remotePath);
-	self.HTTP.ExternalTargetName := PWideChar(localPath);
+	self.HTTP.ExternalSourceName := PWideChar(localPath);
+	self.HTTP.ExternalTargetName := PWideChar(remotePath);
 	if (not(self.unlimited_filesize)) and (SizeOfFile(GetUNCFilePath(localPath)) > self.CloudMaxFileSize) then
 	begin
 		if self.split_large_files then
