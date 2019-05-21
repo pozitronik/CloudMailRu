@@ -194,6 +194,11 @@ type
 		size: int64;
 	end;
 
+	TCloudMailRuOperationResult = record
+		OperationStatus: integer; //HTTP Code
+		OperationResult: integer; //error code (mostly)
+	end;
+
 	TCloudMailRuDirListing = array of TCloudMailRuDirListingItem;
 	TCloudMailRuInviteInfoListing = array of TCloudMailRuInviteInfo;
 	TCloudMailRuIncomingInviteInfoListing = array of TCloudMailRuIncomingInviteInfo;
