@@ -9,6 +9,8 @@ type
 	TCloudMailRuHTTP = class
 	private
 		{VARIABLES}
+		ExternalSourceName: PWideChar;
+		ExternalTargetName: PWideChar;
 		HTTP: TIdHTTP;
 		SSL: TIdSSLIOHandlerSocketOpenSSL;
 		Socks: TIdSocksInfo;
@@ -21,14 +23,15 @@ type
 		{PROCEDURES}
 		procedure Log(LogLevel, MsgType: integer; LogString: WideString);
 		procedure setCookie(const Value: TIdCookieManager);
+    procedure SetExternalSourceName(const Value: WideString);
+    procedure SetExternalTargetName(const Value: WideString);
 
 	public
-		{VARIABLES}
-		ExternalSourceName: PWideChar;
-		ExternalTargetName: PWideChar;
 		{PROPERTIES}
 		Property Options: TConnectionSettings read Settings;
 		Property AuthCookie: TIdCookieManager write setCookie; //Кука управляется снаружи - это нужно для передачи авторизации между подключениям
+		property SourceName: WideString write SetExternalSourceName;
+		property TargetName: WideString write SetExternalTargetName;
 		{CONSTRUCTOR/DESTRUCTOR}
 		constructor Create(Settings: TConnectionSettings; ExternalProgressProc: TProgressHandler = nil; ExternalLogProc: TLogHandler = nil);
 		destructor Destroy; override;
@@ -44,6 +47,7 @@ type
 		function Post(URL: WideString; var PostData: TIdMultiPartFormDataStream; ResultData: TStringStream): integer; overload; //TIdMultiPartFormDataStream should be passed via var
 		function ExceptionHandler(E: Exception; URL: WideString; HTTPMethod: integer = HTTP_METHOD_POST; LogErrors: Boolean = true): integer;
 
+		procedure SetProgressNames(SourceName, TargetName: WideString);
 		procedure Progress(ASender: TObject; AWorkMode: TWorkMode; AWorkCount: int64);
 	end;
 
@@ -305,6 +309,22 @@ end;
 procedure TCloudMailRuHTTP.setCookie(const Value: TIdCookieManager);
 begin
 	self.HTTP.CookieManager := Value;
+end;
+
+procedure TCloudMailRuHTTP.SetExternalSourceName(const Value: WideString);
+begin
+self.ExternalSourceName := PWideChar(Value);
+end;
+
+procedure TCloudMailRuHTTP.SetExternalTargetName(const Value: WideString);
+begin
+  Self.ExternalTargetName := PWideChar(Value);
+end;
+
+procedure TCloudMailRuHTTP.SetProgressNames(SourceName, TargetName: WideString);
+begin
+	self.ExternalSourceName := PWideChar(SourceName);
+	self.ExternalTargetName := PWideChar(TargetName);
 end;
 
 procedure TCloudMailRuHTTP.Log(LogLevel, MsgType: integer; LogString: WideString);
