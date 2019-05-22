@@ -23,8 +23,8 @@ type
 		{PROCEDURES}
 		procedure Log(LogLevel, MsgType: integer; LogString: WideString);
 		procedure setCookie(const Value: TIdCookieManager);
-    procedure SetExternalSourceName(const Value: WideString);
-    procedure SetExternalTargetName(const Value: WideString);
+		procedure SetExternalSourceName(const Value: WideString);
+		procedure SetExternalTargetName(const Value: WideString);
 
 	public
 		{PROPERTIES}
@@ -313,12 +313,12 @@ end;
 
 procedure TCloudMailRuHTTP.SetExternalSourceName(const Value: WideString);
 begin
-self.ExternalSourceName := PWideChar(Value);
+	self.ExternalSourceName := PWideChar(Value);
 end;
 
 procedure TCloudMailRuHTTP.SetExternalTargetName(const Value: WideString);
 begin
-  Self.ExternalTargetName := PWideChar(Value);
+	self.ExternalTargetName := PWideChar(Value);
 end;
 
 procedure TCloudMailRuHTTP.SetProgressNames(SourceName, TargetName: WideString);
