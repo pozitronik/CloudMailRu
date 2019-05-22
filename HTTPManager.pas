@@ -18,7 +18,7 @@ type
 		{ѕараметры, с которыми будут отдаватьс€ подключени€: создаЄм с ними экземпл€р класса, а дальше он сам рулит}
 		constructor Create(Settings: TConnectionSettings; ExternalProgressProc: TProgressHandler = nil; ExternalLogProc: TLogHandler = nil);
 		destructor Destroy; override;
-		function get(ThreadId: Cardinal; doInit: boolean = true): TCloudMailRuHTTP;
+		function get(ThreadId: Cardinal): TCloudMailRuHTTP;
 	end;
 
 implementation
@@ -44,9 +44,9 @@ begin
 	inherited;
 end;
 
-function THTTPManager.get(ThreadId: Cardinal; doInit: boolean = true): TCloudMailRuHTTP;
+function THTTPManager.get(ThreadId: Cardinal): TCloudMailRuHTTP;
 begin
-	if not Connections.TryGetValue(ThreadId, result) and doInit then
+	if not Connections.TryGetValue(ThreadId, result) then
 	begin
 		result := TCloudMailRuHTTP.Create(ConnectionSettings, ExternalProgressProc, ExternalLogProc);
 		Connections.AddOrSetValue(ThreadId, result);
