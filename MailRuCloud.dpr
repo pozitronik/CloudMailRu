@@ -1543,7 +1543,7 @@ begin
 		SetPluginSettingsValue(SettingsIniFilePath, 'ProxyTCPwdMngr', true);
 
 	HTTPManager := THTTPManager.Create(PluginSettings.ConnectionSettings, @ProgressHandle, @LogHandle);
-	ConnectionManager := TConnectionManager.Create(AccountsIniFilePath, PluginSettings , HTTPManager, @ProgressHandle, @LogHandle, @RequestHandle, PasswordManager);
+	ConnectionManager := TConnectionManager.Create(AccountsIniFilePath, PluginSettings, HTTPManager, @ProgressHandle, @LogHandle, @RequestHandle, PasswordManager);
 
 end;
 
