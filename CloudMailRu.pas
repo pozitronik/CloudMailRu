@@ -2,19 +2,22 @@
 
 interface
 
-uses CMLJSON, CMLParsers, CMLTypes, CMLHTTP, System.Hash, System.Classes, System.Generics.Collections, System.SysUtils, PLUGIN_Types, Winapi.Windows, MRC_helper, Settings, Cipher, Splitfile, ChunkedFileStream;
+uses CMLJSON, CMLParsers, CMLTypes, CMLHTTP, System.Hash, System.Classes, System.Generics.Collections, System.SysUtils, PLUGIN_Types, Winapi.Windows, MRC_helper, Settings, Cipher, Splitfile, ChunkedFileStream, HTTPManager, IdCookieManager;
 
 type
 	TCloudMailRu = class
 	private
 		{VARIABLES}
 		OptionsSet: TCloudSettings;
+		HTTPConnectionsManager: THTTPManager;
+		InternalHTTPConnection: TCloudMailRuHTTP; //Если не задан HTTPConnectionsManager, класс создаст своё атомарное соединение
+
+		AuthCookie: TIdCookieManager; //Авторизационная кука - должна храниться отдельно от HTTP-соединения, т.к. ассоциируется с облаком. Передаётся в менеджер HTTP-подключений внутри ConnetionManager
 
 		ExternalProgressProc: TProgressHandler;
 		ExternalLogProc: TLogHandler;
 		ExternalRequestProc: TRequestHandler;
 
-		HTTP: TCloudMailRuHTTP; //HTTP transport class
 		FileCipher: TFileCipher; //Encryption class
 		JSONParser: TCloudMailRuJSONParser; //JSON parser
 
@@ -46,6 +49,7 @@ type
 		function CloudResultToBoolean(CloudResult: TCloudMailRuOperationResult; ErrorPrefix: WideString = ''): Boolean;
 		function cloudHash(Path: WideString): WideString; overload; //get cloud hash for specified file
 		function cloudHash(Stream: TStream): WideString; overload; //get cloud hash for data in stream
+		function getHTTPConnection: TCloudMailRuHTTP;
 	protected
 		{REGULAR CLOUD}
 		function loginRegular(method: integer = CLOUD_AUTH_METHOD_WEB): Boolean;
@@ -60,10 +64,14 @@ type
 		crypt_files: Boolean;
 		crypt_filenames: Boolean;
 
+		Property Cookie: TIdCookieManager read AuthCookie;
+
 		Property public_account: Boolean read OptionsSet.AccountSettings.public_account;
 		Property user: WideString read OptionsSet.AccountSettings.user;
 		Property domain: WideString read OptionsSet.AccountSettings.domain;
 		Property password: WideString read OptionsSet.AccountSettings.password;
+
+		Property HTTP: TCloudMailRuHTTP read getHTTPConnection;
 
 		Property CloudMaxFileSize: integer read OptionsSet.CloudMaxFileSize;
 		Property PrecalculateHash: Boolean read OptionsSet.PrecalculateHash;
@@ -78,7 +86,7 @@ type
 
 		function getSharedFileUrl(remotePath: WideString; DoUrlEncode: Boolean = true): WideString;
 		{CONSTRUCTOR/DESTRUCTOR}
-		constructor Create(CloudSettings: TCloudSettings; ExternalProgressProc: TProgressHandler = nil; ExternalLogProc: TLogHandler = nil; ExternalRequestProc: TRequestHandler = nil);
+		constructor Create(CloudSettings: TCloudSettings; ConnectionManager: THTTPManager; ExternalProgressProc: TProgressHandler = nil; ExternalLogProc: TLogHandler = nil; ExternalRequestProc: TRequestHandler = nil);
 		destructor Destroy; override;
 		{CLOUD INTERFACE METHODS}
 		function login(method: integer = CLOUD_AUTH_METHOD_WEB): Boolean;
@@ -263,15 +271,20 @@ begin //Облако умеет скопировать файл, но не см�
 	end;
 end;
 
-constructor TCloudMailRu.Create(CloudSettings: TCloudSettings; ExternalProgressProc: TProgressHandler; ExternalLogProc: TLogHandler; ExternalRequestProc: TRequestHandler);
+constructor TCloudMailRu.Create(CloudSettings: TCloudSettings; ConnectionManager: THTTPManager; ExternalProgressProc: TProgressHandler; ExternalLogProc: TLogHandler; ExternalRequestProc: TRequestHandler);
 begin
 	try
 		self.OptionsSet := CloudSettings;
+
+		self.HTTPConnectionsManager := ConnectionManager;
+
 		self.ExternalProgressProc := ExternalProgressProc;
 		self.ExternalLogProc := ExternalLogProc;
 		self.ExternalRequestProc := ExternalRequestProc;
 
-		self.HTTP := TCloudMailRuHTTP.Create(CloudSettings.ConnectionSettings, ExternalProgressProc, ExternalLogProc);
+		self.AuthCookie := TIdCookieManager.Create();
+
+		//self.HTTP := TCloudMailRuHTTP.Create(CloudSettings.ConnectionSettings, ExternalProgressProc, ExternalLogProc);
 		self.JSONParser := TCloudMailRuJSONParser.Create();
 
 		if CloudSettings.AccountSettings.encrypt_files_mode <> EncryptModeNone then
@@ -321,8 +334,13 @@ end;
 
 destructor TCloudMailRu.Destroy;
 begin
-	self.HTTP.Destroy;
+	//self.HTTP.Destroy;
+
+	self.AuthCookie.Destroy;
 	self.JSONParser.Destroy;
+	if Assigned(InternalHTTPConnection) then
+		InternalHTTPConnection.Destroy;
+
 	if Assigned(self.FileCipher) then
 		self.FileCipher.Destroy;
 	inherited;
@@ -604,6 +622,21 @@ begin
 	end;
 	if result <> FS_FILE_OK then
 		System.SysUtils.deleteFile(GetUNCFilePath(localPath));
+end;
+
+function TCloudMailRu.getHTTPConnection: TCloudMailRuHTTP;
+begin
+	{TODO: if connection manager not set create own connection}
+	if (nil = self.HTTPConnectionsManager) then
+	begin
+		if not Assigned(InternalHTTPConnection) then
+			InternalHTTPConnection := TCloudMailRuHTTP.Create(OptionsSet.ConnectionSettings, ExternalProgressProc, ExternalLogProc);
+
+		result := InternalHTTPConnection;
+	end;
+
+	result := self.HTTPConnectionsManager.get(GetCurrentThreadID());
+	result.AuthCookie := self.AuthCookie;
 end;
 
 function TCloudMailRu.getOAuthToken(var OAuthToken: TCloudMailRuOAuthInfo): Boolean;
