@@ -517,16 +517,12 @@ begin
 	if not(Assigned(self)) then
 		exit; //Проверка на вызов без инициализации
 
-	self.HTTP.ExternalSourceName := PWideChar(remotePath);
-	self.HTTP.ExternalTargetName := PWideChar(localPath);
-
+	self.HTTP.SetProgressNames(remotePath, localPath);
 	if self.public_account then
 		result := self.getFileShared(remotePath, localPath, resultHash, LogErrors)
 	else
 		result := self.getFileRegular(remotePath, localPath, resultHash, LogErrors);
 
-	self.HTTP.ExternalSourceName := nil;
-	self.HTTP.ExternalTargetName := nil;
 end;
 
 function TCloudMailRu.getFileRegular(remotePath, localPath: WideString; var resultHash: WideString; LogErrors: Boolean): integer;
@@ -1156,7 +1152,7 @@ begin
 	while SplittedPartIndex < SplitFileInfo.ChunksCount do {use while instead for..loop, need to modify loop counter sometimes}
 	begin
 		ChunkRemotePath := ExtractFilePath(remotePath) + SplitFileInfo.GetChunks[SplittedPartIndex].name;
-		self.HTTP.ExternalTargetName := PWideChar(ChunkRemotePath);
+		self.HTTP.TargetName := ChunkRemotePath;
 		Log(LogLevelDebug, MSGTYPE_DETAILS, 'Partial upload of ' + localPath + ' part ' + (SplittedPartIndex + 1).ToString + ' of ' + SplitFileInfo.ChunksCount.ToString + ' => ' + ChunkRemotePath);
 
 		ChunkStream := TChunkedFileStream.Create(GetUNCFilePath(localPath), fmOpenRead or fmShareDenyWrite, SplitFileInfo.GetChunks[SplittedPartIndex].start, SplitFileInfo.GetChunks[SplittedPartIndex].size);
@@ -1263,7 +1259,7 @@ begin
 	if result = FS_FILE_OK then {Only after succesful upload}
 	begin
 		CRCRemotePath := ExtractFilePath(remotePath) + SplitFileInfo.CRCFileName;
-		self.HTTP.ExternalTargetName := PWideChar(CRCRemotePath);
+		self.HTTP.TargetName := CRCRemotePath;
 		CRCStream := TStringStream.Create;
 		SplitFileInfo.GetCRCData(CRCStream);
 		self.putFileStream(SplitFileInfo.CRCFileName, CRCRemotePath, CRCStream, ConflictMode);
@@ -1281,8 +1277,7 @@ begin
 		exit(FS_FILE_WRITEERROR); //Проверка на вызов без инициализации
 	if self.public_account then
 		exit(FS_FILE_NOTSUPPORTED);
-	self.HTTP.ExternalSourceName := PWideChar(localPath);
-	self.HTTP.ExternalTargetName := PWideChar(remotePath);
+	self.HTTP.SetProgressNames(remotePath, localPath);
 	if (not(self.unlimited_filesize)) and (SizeOfFile(GetUNCFilePath(localPath)) > self.CloudMaxFileSize) then
 	begin
 		if self.split_large_files then
@@ -1296,9 +1291,6 @@ begin
 	end;
 
 	result := putFileWhole(localPath, remotePath, ConflictMode);
-	self.HTTP.ExternalSourceName := nil;
-	self.HTTP.ExternalTargetName := nil;
-
 end;
 
 function TCloudMailRu.putFileToCloud(FileName: WideString; FileStream: TStream; var FileIdentity: TCloudMailRuFileIdentity): integer;
