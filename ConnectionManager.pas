@@ -5,7 +5,7 @@
 
 interface
 
-uses CloudMailRu, CMLTypes, MRC_Helper, windows, Vcl.Controls, PLUGIN_Types, Settings, TCPasswordManagerHelper;
+uses CloudMailRu, CMLTypes, MRC_Helper, windows, Vcl.Controls, PLUGIN_Types, Settings, TCPasswordManagerHelper, HTTPManager;
 
 type
 
@@ -16,7 +16,8 @@ type
 
 	TConnectionManager = class
 	private
-		Connections: array of TNamedConnection;
+		Connections: array of TNamedConnection; //todo: rewrite to TDictionary?
+		HTTPManager: THTTPManager;
 		IniFileName: WideString;
 		PluginSettings: TPluginSettings; //Сохраняем параметры плагина, чтобы проксировать параметры из них при инициализации конкретного облака
 
@@ -30,7 +31,7 @@ type
 		function new(connectionName: WideString): integer; //Добавляет подключение в пул
 
 	public
-		constructor Create(IniFileName: WideString; PluginSettings: TPluginSettings; ProgressHandleProc: TProgressHandler; LogHandleProc: TLogHandler; RequestHandleProc: TRequestHandler; PasswordManager: TTCPasswordManager);
+		constructor Create(IniFileName: WideString; PluginSettings: TPluginSettings; HTTPManager: THTTPManager; ProgressHandleProc: TProgressHandler; LogHandleProc: TLogHandler; RequestHandleProc: TRequestHandler; PasswordManager: TTCPasswordManager);
 		destructor Destroy(); override;
 		function get(connectionName: WideString; var OperationResult: integer; doInit: boolean = true): TCloudMailRu; //возвращает готовое подклчение по имени
 		function set_(connectionName: WideString; cloud: TCloudMailRu): boolean;
@@ -44,7 +45,7 @@ type
 implementation
 
 {TConnectionManager}
-constructor TConnectionManager.Create(IniFileName: WideString; PluginSettings: TPluginSettings; ProgressHandleProc: TProgressHandler; LogHandleProc: TLogHandler; RequestHandleProc: TRequestHandler; PasswordManager: TTCPasswordManager);
+constructor TConnectionManager.Create(IniFileName: WideString; PluginSettings: TPluginSettings; HTTPManager: THTTPManager; ProgressHandleProc: TProgressHandler; LogHandleProc: TLogHandler; RequestHandleProc: TRequestHandler; PasswordManager: TTCPasswordManager);
 begin
 	SetLength(Connections, 0);
 	self.IniFileName := IniFileName;
@@ -52,6 +53,7 @@ begin
 	self.ProgressHandleProc := ProgressHandleProc;
 	self.LogHandleProc := LogHandleProc;
 	self.RequestHandleProc := RequestHandleProc;
+	self.HTTPManager := HTTPManager;
 
 	self.PasswordManager := PasswordManager;
 end;
@@ -124,7 +126,7 @@ begin
 	CloudSettings.RetryAttempts := self.PluginSettings.RetryAttempts;
 	CloudSettings.AttemptWait := self.PluginSettings.AttemptWait;
 
-	cloud := TCloudMailRu.Create(CloudSettings, ProgressHandleProc, LogHandleProc, RequestHandleProc);
+	cloud := TCloudMailRu.Create(CloudSettings, HTTPManager, ProgressHandleProc, LogHandleProc, RequestHandleProc);
 	if not set_(connectionName, cloud) then
 		exit(CLOUD_OPERATION_ERROR_STATUS_UNKNOWN); //INVALID_HANDLE_VALUE
 
