@@ -342,7 +342,7 @@ var
 begin
 	TempCloudSettings.AccountSettings.public_account := true;
 	TempCloudSettings.AccountSettings.public_url := publicUrl;
-	self.TempPublicCloud := TCloudMailRu.Create(TempCloudSettings);
+	self.TempPublicCloud := TCloudMailRu.Create(TempCloudSettings, nil);
 	self.TempPublicCloud.login;
 end;
 
