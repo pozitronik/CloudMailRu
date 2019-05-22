@@ -9,7 +9,7 @@ uses CloudMailRu, CMLTypes, MRC_Helper, windows, Vcl.Controls, PLUGIN_Types, Set
 
 type
 
-	TConnectionManager = class//todo : Dictionary Mangement class
+	TConnectionManager = class//Можно сделать что-то вроде TDictionaryManager, и от него наследоваться.
 	private
 		Connections: TDictionary<WideString, TCloudMailRu>;
 		HTTPManager: THTTPManager;
