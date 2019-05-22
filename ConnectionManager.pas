@@ -5,18 +5,13 @@
 
 interface
 
-uses CloudMailRu, CMLTypes, MRC_Helper, windows, Vcl.Controls, PLUGIN_Types, Settings, TCPasswordManagerHelper, HTTPManager;
+uses CloudMailRu, CMLTypes, MRC_Helper, windows, Vcl.Controls, PLUGIN_Types, Settings, TCPasswordManagerHelper, HTTPManager, System.Generics.Collections, SysUtils;
 
 type
 
-	TNamedConnection = record
-		Name: WideString;
-		Connection: TCloudMailRu;
-	end;
-
-	TConnectionManager = class
+	TConnectionManager = class//todo : Dictionary Mangement class
 	private
-		Connections: array of TNamedConnection; //todo: rewrite to TDictionary?
+		Connections: TDictionary<WideString, TCloudMailRu>;
 		HTTPManager: THTTPManager;
 		IniFileName: WideString;
 		PluginSettings: TPluginSettings; //Сохраняем параметры плагина, чтобы проксировать параметры из них при инициализации конкретного облака
@@ -27,19 +22,12 @@ type
 
 		PasswordManager: TTCPasswordManager;
 
-		function ConnectionExists(connectionName: WideString): integer; //проверяет существование подключение
-		function new(connectionName: WideString): integer; //Добавляет подключение в пул
-
+		function init(connectionName: WideString; var Cloud: TCloudMailRu): integer; //инициализирует подключение по его имени, возвращает код состояния
 	public
 		constructor Create(IniFileName: WideString; PluginSettings: TPluginSettings; HTTPManager: THTTPManager; ProgressHandleProc: TProgressHandler; LogHandleProc: TLogHandler; RequestHandleProc: TRequestHandler; PasswordManager: TTCPasswordManager);
 		destructor Destroy(); override;
-		function get(connectionName: WideString; var OperationResult: integer; doInit: boolean = true): TCloudMailRu; //возвращает готовое подклчение по имени
-		function set_(connectionName: WideString; cloud: TCloudMailRu): boolean;
-		function init(connectionName: WideString): integer; //инициализирует подключение по его имени, возвращает код состояния
-		function free(connectionName: WideString): integer; //освобождает подключение по его имени, возвращает код состояния
-		function freeAll: integer; //освобождает все подключения
-		function initialized(connectionName: WideString): boolean; //Проверяет, инициализировано ли подключение
-
+		function get(connectionName: WideString; var OperationResult: integer): TCloudMailRu; //возвращает готовое подклчение по имени
+		procedure free(connectionName: WideString); //освобождает подключение по его имени, если оно существует
 	end;
 
 implementation
@@ -47,59 +35,50 @@ implementation
 {TConnectionManager}
 constructor TConnectionManager.Create(IniFileName: WideString; PluginSettings: TPluginSettings; HTTPManager: THTTPManager; ProgressHandleProc: TProgressHandler; LogHandleProc: TLogHandler; RequestHandleProc: TRequestHandler; PasswordManager: TTCPasswordManager);
 begin
-	SetLength(Connections, 0);
+	Connections := TDictionary<WideString, TCloudMailRu>.Create;
 	self.IniFileName := IniFileName;
 	self.PluginSettings := PluginSettings;
 	self.ProgressHandleProc := ProgressHandleProc;
 	self.LogHandleProc := LogHandleProc;
 	self.RequestHandleProc := RequestHandleProc;
 	self.HTTPManager := HTTPManager;
-
 	self.PasswordManager := PasswordManager;
 end;
 
 destructor TConnectionManager.Destroy;
+var
+	Item: TPair<WideString, TCloudMailRu>;
 begin
-	freeAll();
+	for Item in Connections do
+		Item.Value.Destroy;
+
+	FreeAndNil(Connections);
 	inherited;
 end;
 
-function TConnectionManager.get(connectionName: WideString; var OperationResult: integer; doInit: boolean = true): TCloudMailRu;
-var
-	ConnectionIndex: integer;
+procedure TConnectionManager.free(connectionName: WideString);
 begin
-	ConnectionIndex := ConnectionExists(connectionName);
-	if ConnectionIndex <> -1 then
+	if Connections.ContainsKey(connectionName) then
 	begin
-		result := Connections[ConnectionIndex].Connection;
-	end else begin
-		result := Connections[new(connectionName)].Connection;
+		Connections.Items[connectionName].free;
+		Connections.Remove(connectionName);
 	end;
-	if (doInit) then
+end;
+
+function TConnectionManager.get(connectionName: WideString; var OperationResult: integer): TCloudMailRu;
+begin
+	if not Connections.TryGetValue(connectionName, result) then
 	begin
-		OperationResult := CLOUD_OPERATION_OK;
-		if not initialized(connectionName) then
-			OperationResult := init(connectionName);
-		if (OperationResult = CLOUD_OPERATION_OK) then
-			result := get(connectionName, OperationResult, false);
+		OperationResult := init(connectionName, result);
+		if CLOUD_OPERATION_OK = OperationResult then
+			Connections.AddOrSetValue(connectionName, result);
 	end;
+
 	{если подключиться не удалось, все функции облака будут возвращать негативный результат, но без AV}
 end;
 
-function TConnectionManager.set_(connectionName: WideString; cloud: TCloudMailRu): boolean;
+function TConnectionManager.init(connectionName: WideString; var Cloud: TCloudMailRu): integer;
 var
-	ConnectionIndex: integer;
-begin
-	ConnectionIndex := ConnectionExists(connectionName);
-	if ConnectionIndex = -1 then
-		exit(false);
-	Connections[ConnectionIndex].Connection := cloud;
-	result := true;
-end;
-
-function TConnectionManager.init(connectionName: WideString): integer;
-var
-	cloud: TCloudMailRu;
 	CloudSettings: TCloudSettings;
 	LoginMethod: integer;
 begin
@@ -126,72 +105,18 @@ begin
 	CloudSettings.RetryAttempts := self.PluginSettings.RetryAttempts;
 	CloudSettings.AttemptWait := self.PluginSettings.AttemptWait;
 
-	cloud := TCloudMailRu.Create(CloudSettings, HTTPManager, ProgressHandleProc, LogHandleProc, RequestHandleProc);
-	if not set_(connectionName, cloud) then
-		exit(CLOUD_OPERATION_ERROR_STATUS_UNKNOWN); //INVALID_HANDLE_VALUE
+	Cloud := TCloudMailRu.Create(CloudSettings, HTTPManager, ProgressHandleProc, LogHandleProc, RequestHandleProc);
 
 	if (CloudSettings.AccountSettings.twostep_auth) then
 		LoginMethod := CLOUD_AUTH_METHOD_TWO_STEP
 	else
 		LoginMethod := CLOUD_AUTH_METHOD_WEB;
 
-	if not(get(connectionName, result, false).login(LoginMethod)) then
+	if not(Cloud.login(LoginMethod)) then
 	begin
 		result := CLOUD_OPERATION_FAILED;
-		free(connectionName);
+		Cloud.free;
 	end;
-end;
-
-function TConnectionManager.initialized(connectionName: WideString): boolean;
-var
-	dump: integer;
-begin
-	result := Assigned(get(connectionName, dump, false));
-end;
-
-function TConnectionManager.new(connectionName: WideString): integer;
-begin
-	SetLength(Connections, Length(Connections) + 1);
-	Connections[Length(Connections) - 1].Name := connectionName;
-	result := Length(Connections) - 1;
-end;
-
-function TConnectionManager.ConnectionExists(connectionName: WideString): integer;
-var
-	I: integer;
-begin
-	result := -1;
-
-	for I := 0 to Length(Connections) - 1 do
-	begin
-		if Connections[I].Name = connectionName then
-			exit(I);
-	end;
-end;
-
-function TConnectionManager.free(connectionName: WideString): integer;
-begin
-	result := CLOUD_OPERATION_OK;
-	get(connectionName, result, false).free;
-	set_(connectionName, nil);
-end;
-
-function TConnectionManager.freeAll: integer;
-var
-	I: integer;
-begin
-	result := CLOUD_OPERATION_OK;
-
-	for I := 0 to Length(Connections) - 1 do
-	begin
-		if initialized(Connections[I].Name) then
-		begin
-			Connections[I].Connection.free;
-			set_(Connections[I].Name, nil);
-		end;
-	end;
-	SetLength(Connections, 0);
-
 end;
 
 end.
