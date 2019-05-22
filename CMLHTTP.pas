@@ -11,7 +11,6 @@ type
 		{VARIABLES}
 		HTTP: TIdHTTP;
 		SSL: TIdSSLIOHandlerSocketOpenSSL;
-		Cookie: TIdCookieManager;
 		Socks: TIdSocksInfo;
 		Throttle: TIdInterceptThrottler;
 		Settings: TConnectionSettings;
@@ -21,12 +20,15 @@ type
 
 		{PROCEDURES}
 		procedure Log(LogLevel, MsgType: integer; LogString: WideString);
+		procedure setCookie(const Value: TIdCookieManager);
+
 	public
 		{VARIABLES}
 		ExternalSourceName: PWideChar;
 		ExternalTargetName: PWideChar;
 		{PROPERTIES}
 		Property Options: TConnectionSettings read Settings;
+		Property AuthCookie: TIdCookieManager write setCookie; //Кука управляется снаружи - это нужно для передачи авторизации между подключениям
 		{CONSTRUCTOR/DESTRUCTOR}
 		constructor Create(Settings: TConnectionSettings; ExternalProgressProc: TProgressHandler = nil; ExternalLogProc: TLogHandler = nil);
 		destructor Destroy; override;
@@ -53,7 +55,6 @@ constructor TCloudMailRuHTTP.Create(Settings: TConnectionSettings; ExternalProgr
 begin
 	self.ExternalProgressProc := ExternalProgressProc;
 	self.ExternalLogProc := ExternalLogProc;
-	self.Cookie := TIdCookieManager.Create();
 	self.Throttle := TIdInterceptThrottler.Create();
 	SSL := TIdSSLIOHandlerSocketOpenSSL.Create();
 	SSL.SSLOptions.SSLVersions := [sslvSSLv23];
@@ -95,7 +96,7 @@ begin
 			HTTP.ProxyParams.ProxyPassword := Settings.ProxySettings.password;
 		end
 	end;
-	HTTP.CookieManager := Cookie;
+
 	HTTP.IOHandler := SSL;
 	HTTP.AllowCookies := true;
 	HTTP.HTTPOptions := [hoForceEncodeParams, hoNoParseMetaHTTPEquiv, hoKeepOrigProtocol, hoTreat302Like303];
@@ -109,7 +110,6 @@ begin
 	begin
 		self.Throttle.RecvBitsPerSec := Settings.DownloadBPS;
 		self.Throttle.SendBitsPerSec := Settings.UploadBPS;
-
 	end;
 
 	HTTP.Request.UserAgent := 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.17 (KHTML, like Gecko) Chrome/24.0.1312.57 Safari/537.17/TCWFX(' + PlatformX + ')';
@@ -120,8 +120,6 @@ destructor TCloudMailRuHTTP.Destroy;
 begin
 	HTTP.free;
 	SSL.free;
-	if Assigned(self.Cookie) then
-		self.Cookie.free;
 	if Assigned(self.Throttle) then
 		self.Throttle.free;
 	if Assigned(self.Socks) then
@@ -302,6 +300,11 @@ begin
 		if Assigned(ExternalProgressProc) and (ExternalProgressProc(self.ExternalSourceName, self.ExternalTargetName, Percent) = 1) then {При передаче nil прогресс оставляет предыдущие значения}
 			abort;
 	end;
+end;
+
+procedure TCloudMailRuHTTP.setCookie(const Value: TIdCookieManager);
+begin
+	self.HTTP.CookieManager := Value;
 end;
 
 procedure TCloudMailRuHTTP.Log(LogLevel, MsgType: integer; LogString: WideString);
