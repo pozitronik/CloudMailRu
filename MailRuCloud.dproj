@@ -193,6 +193,7 @@
         <DCCReference Include="ChunkedFileStream.pas"/>
         <DCCReference Include="CMLParsers.pas"/>
         <DCCReference Include="CMLHTTP.pas"/>
+        <DCCReference Include="HTTPManager.pas"/>
         <RcItem Include="icons\icon.ico">
             <ResourceType>ICON</ResourceType>
             <ResourceId>base_icon</ResourceId>
