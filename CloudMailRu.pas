@@ -626,12 +626,12 @@ begin
 	if (nil = self.HTTPConnectionsManager) then
 	begin
 		if not Assigned(InternalHTTPConnection) then
-			InternalHTTPConnection := TCloudMailRuHTTP.Create(OptionsSet.ConnectionSettings, ExternalProgressProc, ExternalLogProc);
+			self.InternalHTTPConnection := TCloudMailRuHTTP.Create(OptionsSet.ConnectionSettings, ExternalProgressProc, ExternalLogProc);
 
-		result := InternalHTTPConnection;
-	end;
-
-	result := self.HTTPConnectionsManager.get(GetCurrentThreadID());
+		result := self.InternalHTTPConnection;
+	end
+	else
+		result := self.HTTPConnectionsManager.get(GetCurrentThreadID());
 	result.AuthCookie := self.AuthCookie;
 end;
 
