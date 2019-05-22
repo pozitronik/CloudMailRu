@@ -46,13 +46,10 @@ end;
 
 function THTTPManager.get(ThreadId: Cardinal; doInit: boolean = true): TCloudMailRuHTTP;
 begin
-	if not Connections.TryGetValue(ThreadId, result) then
+	if not Connections.TryGetValue(ThreadId, result) and doInit then
 	begin
-		if doInit then
-		begin
-			result := TCloudMailRuHTTP.Create(ConnectionSettings, ExternalProgressProc, ExternalLogProc);
-			Connections.AddOrSetValue(ThreadId, result);
-		end;
+		result := TCloudMailRuHTTP.Create(ConnectionSettings, ExternalProgressProc, ExternalLogProc);
+		Connections.AddOrSetValue(ThreadId, result);
 	end;
 end;
 
