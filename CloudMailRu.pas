@@ -622,7 +622,6 @@ end;
 
 function TCloudMailRu.getHTTPConnection: TCloudMailRuHTTP;
 begin
-	{TODO: if connection manager not set create own connection}
 	if (nil = self.HTTPConnectionsManager) then
 	begin
 		if not Assigned(InternalHTTPConnection) then
