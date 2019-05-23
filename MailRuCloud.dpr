@@ -40,7 +40,7 @@ var
 	ThreadBackgroundJobs: TDictionary<WideString, Int32>; //массив [account root => количество потоков] для хранения количества текущих фоновых задач (предохраняемся от удаления объектов, которые могут быть использованы потоками)
 	ThreadBackgroundThreads: TDictionary<DWORD, Int32>; //массив [id потока => статус операции] для хранения текущих фоновых потоков (предохраняемся от завершения работы плагина при закрытии TC)
 	ThreadFsStatusInfo: TDictionary<DWORD, Int32>; //массив [id потока => текущая операция] для хранения контекста выполняемой операции (применяем для отлова перемещений каталогов)
-	ThreadFsRemoveDirSkippedPath: TDictionary<Int32, TStringList>; //массив [id потока => путь] для хранения путей, пропускаемых при перемещении (см. issue #168).
+	ThreadFsRemoveDirSkippedPath: TDictionary<DWORD, TStringList>; //массив [id потока => путь] для хранения путей, пропускаемых при перемещении (см. issue #168).
 
 	{Callback data}
 	PluginNum: integer;
@@ -1891,7 +1891,7 @@ begin
 	ThreadBackgroundJobs := TDictionary<WideString, Int32>.Create;
 	ThreadBackgroundThreads := TDictionary<DWORD, Int32>.Create;
 	ThreadFsStatusInfo := TDictionary<DWORD, Int32>.Create;
-	ThreadFsRemoveDirSkippedPath := TDictionary<Int32, TStringList>.Create;
+	ThreadFsRemoveDirSkippedPath := TDictionary<DWORD, TStringList>.Create;
 
 end;
 
