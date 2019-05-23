@@ -292,7 +292,7 @@ var
 begin
 	RealPath := ExtractRealPath(RemoteDir);
 	if (InfoStartEnd = FS_STATUS_START) then
-	begin //todo: save operation info into thread-related dictionary, so we can determine it later
+	begin
 		ThreadFsStatusInfo.AddOrSetValue(GetCurrentThreadID(), InfoOperation);
 		case InfoOperation of
 			FS_STATUS_OP_LIST:
