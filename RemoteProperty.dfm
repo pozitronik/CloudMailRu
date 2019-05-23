@@ -68,10 +68,6 @@ object PropertyForm: TPropertyForm
     TabOrder = 3
     object FolderAccessTS: TTabSheet
       Caption = 'Folder access'
-      ExplicitLeft = 0
-      ExplicitTop = 0
-      ExplicitWidth = 0
-      ExplicitHeight = 0
       DesignSize = (
         828
         255)
@@ -155,10 +151,6 @@ object PropertyForm: TPropertyForm
     object DownloadLinksTS: TTabSheet
       Caption = 'Download links'
       ImageIndex = 1
-      ExplicitLeft = 0
-      ExplicitTop = 0
-      ExplicitWidth = 0
-      ExplicitHeight = 0
       object DownloadLinksMemo: TMemo
         Left = 0
         Top = 40
@@ -190,19 +182,25 @@ object PropertyForm: TPropertyForm
         object SaveLinksTb: TToolButton
           Left = 0
           Top = 0
+          Hint = 'Save as...'
           Margins.Left = 0
           Margins.Top = 0
           Margins.Right = 0
           Margins.Bottom = 0
           Caption = 'Save as'
           ImageIndex = 0
+          ParentShowHint = False
+          ShowHint = True
           OnClick = SaveLinksTbClick
         end
         object WrapLinksTb: TToolButton
           Left = 39
           Top = 0
+          Hint = 'Wrap text'
           Caption = 'Wrap'
           ImageIndex = 1
+          ParentShowHint = False
+          ShowHint = True
           Style = tbsCheck
           OnClick = WrapLinksTbClick
         end
@@ -219,16 +217,22 @@ object PropertyForm: TPropertyForm
         object CancelLinksScanTb: TToolButton
           Left = 752
           Top = 0
+          Hint = 'Cancel scan'
           Caption = 'CancelLinksScanTb'
           Enabled = False
           ImageIndex = 2
+          ParentShowHint = False
+          ShowHint = True
           OnClick = CancelLinksScanTbClick
         end
         object RefreshLinksScanTb: TToolButton
           Left = 791
           Top = 0
+          Hint = 'Rescan'
           Caption = 'RefreshLinksScanTb'
           ImageIndex = 3
+          ParentShowHint = False
+          ShowHint = True
           OnClick = RefreshLinksScanTbClick
         end
       end
@@ -236,10 +240,6 @@ object PropertyForm: TPropertyForm
     object HashesListTS: TTabSheet
       Caption = 'Hashes list'
       ImageIndex = 3
-      ExplicitLeft = 0
-      ExplicitTop = 0
-      ExplicitWidth = 0
-      ExplicitHeight = 0
       object HashesListTB: TToolBar
         Left = 0
         Top = 0
@@ -256,34 +256,46 @@ object PropertyForm: TPropertyForm
         object SaveHashesTb: TToolButton
           Left = 0
           Top = 0
+          Hint = 'Save as...'
           Margins.Left = 0
           Margins.Top = 0
           Margins.Right = 0
           Margins.Bottom = 0
           Caption = 'Save as'
           ImageIndex = 0
+          ParentShowHint = False
+          ShowHint = True
           OnClick = SaveHashesTbClick
         end
         object LoadHashesTb: TToolButton
           Left = 39
           Top = 0
+          Hint = 'Load from file'
           Caption = 'Load from file'
           ImageIndex = 4
+          ParentShowHint = False
+          ShowHint = True
           OnClick = LoadHashesTbClick
         end
         object ApplyHashesTB: TToolButton
           Left = 78
           Top = 0
+          Hint = 'Apply hashes'
           Caption = 'ApplyHashesTB'
           Enabled = False
           ImageIndex = 5
+          ParentShowHint = False
+          ShowHint = True
           OnClick = ApplyHashesTBClick
         end
         object WrapHashesTb: TToolButton
           Left = 117
           Top = 0
+          Hint = 'Wrap text'
           Caption = 'Wrap'
           ImageIndex = 1
+          ParentShowHint = False
+          ShowHint = True
           Style = tbsCheck
           OnClick = WrapHashesTbClick
         end
@@ -300,14 +312,18 @@ object PropertyForm: TPropertyForm
         object CancelHashesScanTb: TToolButton
           Left = 752
           Top = 0
+          Hint = 'Cancel scan'
           Caption = 'CancelScanTB'
           Enabled = False
           ImageIndex = 2
+          ParentShowHint = False
+          ShowHint = True
           OnClick = CancelHashesScanTbClick
         end
         object RefreshHashesScanTb: TToolButton
           Left = 791
           Top = 0
+          Hint = 'Rescan'
           Caption = 'RefreshScanTB'
           ImageIndex = 3
           OnClick = RefreshHashesScanTbClick
@@ -331,10 +347,6 @@ object PropertyForm: TPropertyForm
     object DescriptionTS: TTabSheet
       Caption = 'Description'
       ImageIndex = 2
-      ExplicitLeft = 0
-      ExplicitTop = 0
-      ExplicitWidth = 0
-      ExplicitHeight = 0
       DesignSize = (
         828
         255)
