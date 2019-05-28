@@ -67,7 +67,7 @@ begin
 	result := HTTPConnection.PostForm(MAILRU_REGISTRATION_CONFIRM, 'email=' + email + '&reg_anketa=' + '{"id":"' + Code + '","capcha":"' + captcha + '"}', JSON); //capcha, lol
 	if result then
 	begin
-		result := JSONParser.getCaptchaResponse(JSON).OperationResult = CLOUD_OPERATION_OK;
+		result := JSONParser.getRegistrationOperationResult(JSON).OperationResult = CLOUD_OPERATION_OK;
 		if not result then
 			MessageBox(Handle, PWideChar(JSON), 'Confirmation error', MB_ICONERROR + MB_OK);
 	end;
@@ -151,9 +151,9 @@ begin
 		RegistrationForm.parentWindow := parentWindow;
 		RegistrationForm.Account := Account;
 		RegistrationForm.ConnectionSettings := ConnectionSettings;
-
+		RegistrationForm.LoginEdit.Text := Account.user;
 		RegistrationForm.UseTCPwdMngrCB.Checked := Account.use_tc_password_manager;
-
+    RegistrationForm.ModalResult:=mrNone;
 		result := RegistrationForm.ShowModal;
 		if result = mrOk then
 		begin

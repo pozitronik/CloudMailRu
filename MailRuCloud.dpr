@@ -4,7 +4,8 @@
 
 uses SysUtils, System.Generics.Collections, DateUtils, windows, Classes, PLUGIN_TYPES, IdSSLOpenSSLHeaders, messages, inifiles, Vcl.controls, CloudMailRu in 'CloudMailRu.pas', MRC_Helper in 'MRC_Helper.pas', Accounts in 'Accounts.pas'{AccountsForm}, RemoteProperty in 'RemoteProperty.pas'{PropertyForm}, Descriptions in 'Descriptions.pas', ConnectionManager in 'ConnectionManager.pas', Settings in 'Settings.pas', ANSIFunctions in 'ANSIFunctions.pas', DeletedProperty in 'DeletedProperty.pas'{DeletedPropertyForm}, InviteProperty in 'InviteProperty.pas'{InvitePropertyForm}, AskPassword, CMLJSON in 'CMLJSON.pas', CMLTypes in 'CMLTypes.pas', DCPbase64 in 'DCPCrypt\DCPbase64.pas', DCPblockciphers in 'DCPCrypt\DCPblockciphers.pas', DCPconst in 'DCPCrypt\DCPconst.pas',
 	DCPcrypt2 in 'DCPCrypt\DCPcrypt2.pas', DCPreg in 'DCPCrypt\DCPreg.pas', DCPtypes in 'DCPCrypt\DCPtypes.pas', DCPblowfish in 'DCPCrypt\Ciphers\DCPblowfish.pas', DCPcast128 in 'DCPCrypt\Ciphers\DCPcast128.pas', DCPcast256 in 'DCPCrypt\Ciphers\DCPcast256.pas', DCPdes in 'DCPCrypt\Ciphers\DCPdes.pas', DCPgost in 'DCPCrypt\Ciphers\DCPgost.pas', DCPice in 'DCPCrypt\Ciphers\DCPice.pas', DCPidea in 'DCPCrypt\Ciphers\DCPidea.pas', DCPmars in 'DCPCrypt\Ciphers\DCPmars.pas', DCPmisty1 in 'DCPCrypt\Ciphers\DCPmisty1.pas', DCPrc2 in 'DCPCrypt\Ciphers\DCPrc2.pas', DCPrc4 in 'DCPCrypt\Ciphers\DCPrc4.pas', DCPrc5 in 'DCPCrypt\Ciphers\DCPrc5.pas', DCPrc6 in 'DCPCrypt\Ciphers\DCPrc6.pas', DCPrijndael in 'DCPCrypt\Ciphers\DCPrijndael.pas', DCPserpent in 'DCPCrypt\Ciphers\DCPserpent.pas',
-	DCPtea in 'DCPCrypt\Ciphers\DCPtea.pas', DCPtwofish in 'DCPCrypt\Ciphers\DCPtwofish.pas', DCPhaval in 'DCPCrypt\Hashes\DCPhaval.pas', DCPmd4 in 'DCPCrypt\Hashes\DCPmd4.pas', DCPmd5 in 'DCPCrypt\Hashes\DCPmd5.pas', DCPripemd128 in 'DCPCrypt\Hashes\DCPripemd128.pas', DCPripemd160 in 'DCPCrypt\Hashes\DCPripemd160.pas', DCPsha1 in 'DCPCrypt\Hashes\DCPsha1.pas', DCPsha256 in 'DCPCrypt\Hashes\DCPsha256.pas', DCPsha512 in 'DCPCrypt\Hashes\DCPsha512.pas', DCPtiger in 'DCPCrypt\Hashes\DCPtiger.pas', TCPasswordManagerHelper in 'TCPasswordManagerHelper.pas', HashInfo in 'HashInfo.pas', SplitFile in 'SplitFile.pas', ChunkedFileStream in 'ChunkedFileStream.pas', CMLParsers in 'CMLParsers.pas', CMLHTTP in 'CMLHTTP.pas', HTTPManager in 'HTTPManager.pas';
+	DCPtea in 'DCPCrypt\Ciphers\DCPtea.pas', DCPtwofish in 'DCPCrypt\Ciphers\DCPtwofish.pas', DCPhaval in 'DCPCrypt\Hashes\DCPhaval.pas', DCPmd4 in 'DCPCrypt\Hashes\DCPmd4.pas', DCPmd5 in 'DCPCrypt\Hashes\DCPmd5.pas', DCPripemd128 in 'DCPCrypt\Hashes\DCPripemd128.pas', DCPripemd160 in 'DCPCrypt\Hashes\DCPripemd160.pas', DCPsha1 in 'DCPCrypt\Hashes\DCPsha1.pas', DCPsha256 in 'DCPCrypt\Hashes\DCPsha256.pas', DCPsha512 in 'DCPCrypt\Hashes\DCPsha512.pas', DCPtiger in 'DCPCrypt\Hashes\DCPtiger.pas', TCPasswordManagerHelper in 'TCPasswordManagerHelper.pas', HashInfo in 'HashInfo.pas', SplitFile in 'SplitFile.pas', ChunkedFileStream in 'ChunkedFileStream.pas', CMLParsers in 'CMLParsers.pas', CMLHTTP in 'CMLHTTP.pas', HTTPManager in 'HTTPManager.pas',
+	Registration in 'Registration.pas'{RegistrationForm};
 
 {$IFDEF WIN64}
 {$E wfx64}
@@ -1252,13 +1253,39 @@ var
 	getResult: integer;
 	SkipListRenMov: Boolean;
 	OperationContextId: integer;
+	account: TAccountSettings;
 begin
 	ThreadSkipListRenMov.TryGetValue(GetCurrentThreadID(), SkipListRenMov);
 	if SkipListRenMov then
 		exit(false); //skip create directory if this flag set on
 
 	RealPath := ExtractRealPath(WideString(path));
-	if (RealPath.account = '') or RealPath.trashDir or RealPath.sharedDir or RealPath.invitesDir then
+	if (RealPath.path = EmptyWideStr) then //accounts list
+	begin
+		account.user := RealPath.account;
+		if mrOk = TRegistrationForm.ShowRegistration(FindTCWindow, GetPluginSettings(SettingsIniFilePath).ConnectionSettings, account) then
+		begin
+			if account.use_tc_password_manager then //просим TC сохранить пароль
+			begin
+
+				case PasswordManager.SetPassword(account.name, account.password) of
+					FS_FILE_OK:
+						begin //TC скушал пароль
+							account.password := EmptyWideStr;
+						end;
+					FS_FILE_NOTSUPPORTED: //нажали отмену на вводе мастер-пароля
+						begin //просто выйдем
+							exit();
+						end;
+					FS_FILE_WRITEERROR: //Сохранение не получилось по другой причине. Сохранять не будем, выйдем
+						begin
+							exit();
+						end;
+				end;
+			end;
+			SetAccountSettingsToIniFile(account, AccountsIniFilePath);
+		end;
+	end else if (RealPath.account = EmptyWideStr) or RealPath.trashDir or RealPath.sharedDir or RealPath.invitesDir then
 		exit(false);
 	Result := ConnectionManager.get(RealPath.account, getResult).createDir(RealPath.path);
 
