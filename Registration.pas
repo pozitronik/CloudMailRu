@@ -172,6 +172,7 @@ begin
 	Account.password := PasswordEdit.Text;
 	Account.Domain := DomainCombo.Text;
 	Account.public_account := false;
+	Account.twostep_auth := false;
 
 	self.Enabled := false;
 
