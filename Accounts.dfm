@@ -215,7 +215,7 @@ object AccountsForm: TAccountsForm
         Width = 75
         Height = 25
         Caption = 'Delete'
-        TabOrder = 6
+        TabOrder = 7
         OnClick = DeleteButtonClick
       end
       object AccountsPanel: TPanel
@@ -396,7 +396,7 @@ object AccountsForm: TAccountsForm
         Width = 77
         Height = 25
         Caption = 'Register new'
-        TabOrder = 7
+        TabOrder = 6
         OnClick = NewAccountBtnClick
       end
     end
@@ -887,10 +887,6 @@ object AccountsForm: TAccountsForm
     object CommentsTab: TTabSheet
       Caption = 'File comments support'
       ImageIndex = 3
-      ExplicitLeft = 0
-      ExplicitTop = 0
-      ExplicitWidth = 0
-      ExplicitHeight = 0
       object DescriptionFileNameLabel: TLabel
         Left = 5
         Top = 118
