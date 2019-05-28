@@ -67,14 +67,14 @@ end;
 
 function TConnectionManager.get(connectionName: WideString; var OperationResult: integer): TCloudMailRu;
 begin
-	if not Connections.TryGetValue(connectionName, result) then
+	if not Connections.TryGetValue(connectionName, Result) then
 	begin
-		OperationResult := init(connectionName, result);
+		OperationResult := init(connectionName, Result);
 		if CLOUD_OPERATION_OK = OperationResult then
-			Connections.AddOrSetValue(connectionName, result);
+			Connections.AddOrSetValue(connectionName, Result)
+		else
+			Result := nil; {если подключиться не удалось, все функции облака будут возвращать негативный результат, но без AV}
 	end;
-
-	{если подключиться не удалось, все функции облака будут возвращать негативный результат, но без AV}
 end;
 
 function TConnectionManager.init(connectionName: WideString; var Cloud: TCloudMailRu): integer;
@@ -82,7 +82,7 @@ var
 	CloudSettings: TCloudSettings;
 	LoginMethod: integer;
 begin
-	result := CLOUD_OPERATION_OK;
+	Result := CLOUD_OPERATION_OK;
 	CloudSettings.AccountSettings := GetAccountSettingsFromIniFile(IniFileName, connectionName);
 
 	if not PasswordManager.GetAccountPassword(CloudSettings.AccountSettings) then
@@ -114,7 +114,7 @@ begin
 
 	if not(Cloud.login(LoginMethod)) then
 	begin
-		result := CLOUD_OPERATION_FAILED;
+		Result := CLOUD_OPERATION_FAILED;
 		Cloud.free;
 	end;
 end;
