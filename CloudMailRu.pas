@@ -622,7 +622,7 @@ end;
 
 function TCloudMailRu.getHTTPConnection: TCloudMailRuHTTP;
 begin
-	if not(Assigned(self)) then
+	if not(Assigned(self)) then {TODO: ловим исключение при попытке работать с неавторизованным аккаунтом}
 		exit(nil); //Проверка на вызов без инициализации
 	if (nil = self.HTTPConnectionsManager) then
 	begin
@@ -750,6 +750,7 @@ begin
 	result := false;
 	if not(Assigned(self)) then
 		exit; //Проверка на вызов без инициализации
+	HTTP.SetProgressNames('Login to account...', '');
 	if self.public_account then
 		result := self.loginShared()
 	else
