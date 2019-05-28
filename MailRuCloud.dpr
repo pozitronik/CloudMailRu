@@ -1263,38 +1263,25 @@ begin
 	if (RealPath.path = EmptyWideStr) then //accounts list
 	begin
 		account.user := RealPath.account;
-		if mrOk = TRegistrationForm.ShowRegistration(FindTCWindow, GetPluginSettings(SettingsIniFilePath).ConnectionSettings, account) then
+		Result := (mrOk = TRegistrationForm.ShowRegistration(FindTCWindow, GetPluginSettings(SettingsIniFilePath).ConnectionSettings, account));
+		if Result then
 		begin
 			if account.use_tc_password_manager then //просим TC сохранить пароль
-			begin
-
-				case PasswordManager.SetPassword(account.name, account.password) of
-					FS_FILE_OK:
-						begin //TC скушал пароль
-							account.password := EmptyWideStr;
-						end;
-					FS_FILE_NOTSUPPORTED: //нажали отмену на вводе мастер-пароля
-						begin //просто выйдем
-							exit();
-						end;
-					FS_FILE_WRITEERROR: //Сохранение не получилось по другой причине. Сохранять не будем, выйдем
-						begin
-							exit();
-						end;
-				end;
-			end;
-			SetAccountSettingsToIniFile(account, AccountsIniFilePath);
+				Result := FS_FILE_OK = PasswordManager.SetPassword(account.name, account.password);
+			if Result then
+				Result := SetAccountSettingsToIniFile(account, AccountsIniFilePath);
 		end;
-	end else if (RealPath.account = EmptyWideStr) or RealPath.trashDir or RealPath.sharedDir or RealPath.invitesDir then
+		exit();
+	end;
+	if (RealPath.account = EmptyWideStr) or RealPath.trashDir or RealPath.sharedDir or RealPath.invitesDir then
 		exit(false);
-	Result := ConnectionManager.get(RealPath.account, getResult).createDir(RealPath.path);
 
+	Result := ConnectionManager.get(RealPath.account, getResult).createDir(RealPath.path);
 	if Result then //need to check operation context => directory can be moved
 	begin
 		ThreadFsStatusInfo.TryGetValue(GetCurrentThreadID, OperationContextId);
 		if OperationContextId = FS_STATUS_OP_RENMOV_MULTI then
 			CurrentlyMovedDir := RealPath;
-
 	end;
 
 end;
