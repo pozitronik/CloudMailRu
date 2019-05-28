@@ -32,7 +32,8 @@ type
 
 	private
 		{Private declarations}
-		Login, Domain, Code: WideString;
+		Account: TAccountSettings;
+		Code: WideString;
 		function RegistrationValid: boolean;
 	protected
 		HTTPConnection: TCloudMailRuHTTP;
@@ -45,7 +46,7 @@ type
 	public
 		property isRegistrationValid: boolean read RegistrationValid;
 		{Public declarations}
-		class function ShowRegistration(parentWindow: HWND; var UseTCPwdMngr: boolean): integer;
+		class function ShowRegistration(parentWindow: HWND; var Account: TAccountSettings): integer;
 	end;
 
 implementation
@@ -127,10 +128,13 @@ end;
 
 procedure TRegistrationForm.SendBtnClick(Sender: TObject);
 begin
-	confirmRegistration(Login + '@' + Domain, Code, CaptchaEdit.Text)
+	if confirmRegistration(Account.email, Code, CaptchaEdit.Text) then
+		SendBtn.ModalResult := mrOk
+	else
+		SendBtn.ModalResult := mrNone;
 end;
 
-class function TRegistrationForm.ShowRegistration(parentWindow: HWND; var UseTCPwdMngr: boolean): integer;
+class function TRegistrationForm.ShowRegistration(parentWindow: HWND; var Account: TAccountSettings): integer;
 var
 	RegistrationForm: TRegistrationForm;
 
@@ -138,16 +142,17 @@ begin
 	try
 		RegistrationForm := TRegistrationForm.Create(nil);
 		RegistrationForm.parentWindow := parentWindow;
+		RegistrationForm.Account := Account;
 
-		RegistrationForm.UseTCPwdMngrCB.Checked := UseTCPwdMngr;
+		RegistrationForm.UseTCPwdMngrCB.Checked := Account.use_tc_password_manager;
 
 		result := RegistrationForm.ShowModal;
-
 		if result = mrOk then
 		begin
-
-			UseTCPwdMngr := AskPasswordForm.UseTCPwdMngrCB.Checked;
+			Account := RegistrationForm.Account;
+			Account.use_tc_password_manager := RegistrationForm.UseTCPwdMngrCB.Checked;
 		end;
+
 	finally
 		FreeAndNil(RegistrationForm);
 	end;
@@ -160,11 +165,16 @@ var
 begin
 	CaptchaEdit.Enabled := false;
 	SendBtn.Enabled := false;
-	Login := self.LoginEdit.Text;
-	Domain := self.DomainCombo.Text;
+	Account.name := LoginEdit.Text;
+	Account.email := LoginEdit.Text + '@' + DomainCombo.Text;
+	Account.user := LoginEdit.Text;
+	Account.password := PasswordEdit.Text;
+	Account.Domain := DomainCombo.Text;
+	Account.public_account := false;
+
 	self.Enabled := false;
 
-	if (createAccount(self.FirstNameEdit.Text, self.LastNameEdit.Text, Login, self.PasswordEdit.Text, Domain, Code)) then
+	if (createAccount(FirstNameEdit.Text, LastNameEdit.Text, Account.user, Account.password, Account.Domain, Code)) then
 	begin
 		MemStream := TMemoryStream.Create();
 		if getRegisrationCaptcha(MemStream) then

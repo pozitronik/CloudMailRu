@@ -381,9 +381,12 @@ end;
 
 procedure TAccountsForm.NewAccountBtnClick(Sender: TObject);
 var
-	UseTCPwdMngr: boolean;
+	Account: TAccountSettings;
 begin
-	TRegistrationForm.ShowRegistration(self.parentWindow, UseTCPwdMngr);
+	if mrOk = TRegistrationForm.ShowRegistration(self.parentWindow, Account) then
+	begin
+
+	end;
 end;
 
 procedure TAccountsForm.ProxyUserEditChange(Sender: TObject);
