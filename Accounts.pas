@@ -382,10 +382,8 @@ end;
 procedure TAccountsForm.NewAccountBtnClick(Sender: TObject);
 var
 	Account: TAccountSettings;
-	PluginSettings: TPluginSettings;
 begin
-	PluginSettings := GetPluginSettings(SettingsIniFilePath);
-	if mrOk = TRegistrationForm.ShowRegistration(self.parentWindow, PluginSettings.ConnectionSettings, Account) then
+	if mrOk = TRegistrationForm.ShowRegistration(self.parentWindow, GetPluginSettings(SettingsIniFilePath).ConnectionSettings, Account) then
 	begin
 		if Account.use_tc_password_manager then //просим TC сохранить пароль
 		begin
