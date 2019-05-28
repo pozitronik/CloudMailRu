@@ -4,6 +4,11 @@ interface
 
 uses Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, CloudMailRu, Settings, Vcl.StdCtrls, Vcl.ExtCtrls, Jpeg, CMLHTTP, CMLJSON, CMLTypes, PLUGIN_Types;
 
+const
+	MAILRU_REGISTRATION_SIGNUP = 'https://account.mail.ru/api/v1/user/signup';
+	MAILRU_REGISTRATION_CONFIRM = 'https://account.mail.ru/api/v1/user/signup/confirm';
+	MAILRU_CAPTCHA = 'https://c.mail.ru/c/6';
+
 type
 	TRegistrationForm = class(TForm)
 		FirstNameLabel: TLabel;
@@ -56,26 +61,23 @@ implementation
 
 function TRegistrationForm.confirmRegistration(email, Code, captcha: WideString): boolean;
 var
-	JSON, confirmationJSON: WideString;
+	JSON: WideString;
 begin
-	confirmationJSON := '{"id":"' + Code + '","capcha":"' + captcha + '"}'; //capcha, lol
-	result := HTTPConnection.PostForm('https://account.mail.ru/api/v1/user/signup/confirm', 'email=' + email + '&reg_anketa=' + confirmationJSON, JSON);
+	result := HTTPConnection.PostForm(MAILRU_REGISTRATION_CONFIRM, 'email=' + email + '&reg_anketa=' + '{"id":"' + Code + '","capcha":"' + captcha + '"}', JSON); //capcha, lol
 end;
 
 function TRegistrationForm.createAccount(firstname, lastname, Login, password, Domain: WideString; var Code: WideString): boolean;
 var
 	JSON: WideString;
-	poststring: WideString;
 
 begin
 	HTTPConnection.HTTP.Request.UserAgent := 'curl/7.63.0'; //required by server
 	HTTPConnection.HTTP.Request.Connection := EmptyWideStr;
 	HTTPConnection.HTTP.Request.Accept := '*/*';
 
-	HTTPConnection.HTTP.Request.Referer := 'https://account.mail.ru/api/v1/user/signup';
+	HTTPConnection.HTTP.Request.Referer := MAILRU_REGISTRATION_SIGNUP;
 
-	poststring := 'name={"first":"' + firstname + '","last":"' + lastname + '"}&login=' + Login + '&domain=' + Domain + '&password=' + password;
-	result := HTTPConnection.PostForm('https://account.mail.ru/api/v1/user/signup', poststring, JSON);
+	result := HTTPConnection.PostForm(MAILRU_REGISTRATION_SIGNUP, 'name={"first":"' + firstname + '","last":"' + lastname + '"}&login=' + Login + '&domain=' + Domain + '&password=' + password, JSON);
 	if result then
 	begin
 		result := (CLOUD_OPERATION_OK = JSONParser.getRegistrationOperationResult(JSON).OperationResult);
@@ -109,7 +111,7 @@ end;
 
 function TRegistrationForm.getRegisrationCaptcha(CaptchaStream: TStream): boolean;
 begin
-	result := FS_FILE_OK = HTTPConnection.getFile('https://c.mail.ru/c/6', CaptchaStream);
+	result := FS_FILE_OK = HTTPConnection.getFile(MAILRU_CAPTCHA, CaptchaStream);
 end;
 
 procedure TRegistrationForm.InitComponents;
