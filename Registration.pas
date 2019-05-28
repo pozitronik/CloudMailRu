@@ -38,6 +38,7 @@ type
 	private
 		{Private declarations}
 		Account: TAccountSettings;
+		ConnectionSettings: TConnectionSettings;
 		Code: WideString;
 		function RegistrationValid: boolean;
 	protected
@@ -51,7 +52,7 @@ type
 	public
 		property isRegistrationValid: boolean read RegistrationValid;
 		{Public declarations}
-		class function ShowRegistration(parentWindow: HWND; var Account: TAccountSettings): integer;
+		class function ShowRegistration(parentWindow: HWND; ConnectionSettings: TConnectionSettings; var Account: TAccountSettings): integer;
 	end;
 
 implementation
@@ -115,10 +116,7 @@ begin
 end;
 
 procedure TRegistrationForm.InitComponents;
-var
-	ConnectionSettings: TConnectionSettings; //todo:load plugin settings
 begin
-
 	HTTPConnection := TCloudMailRuHTTP.Create(ConnectionSettings);
 	JSONParser := TCloudMailRuJSONParser.Create();;
 end;
@@ -136,7 +134,7 @@ begin
 		SendBtn.ModalResult := mrNone;
 end;
 
-class function TRegistrationForm.ShowRegistration(parentWindow: HWND; var Account: TAccountSettings): integer;
+class function TRegistrationForm.ShowRegistration(parentWindow: HWND; ConnectionSettings: TConnectionSettings; var Account: TAccountSettings): integer;
 var
 	RegistrationForm: TRegistrationForm;
 
@@ -145,6 +143,7 @@ begin
 		RegistrationForm := TRegistrationForm.Create(nil);
 		RegistrationForm.parentWindow := parentWindow;
 		RegistrationForm.Account := Account;
+		RegistrationForm.ConnectionSettings := ConnectionSettings;
 
 		RegistrationForm.UseTCPwdMngrCB.Checked := Account.use_tc_password_manager;
 

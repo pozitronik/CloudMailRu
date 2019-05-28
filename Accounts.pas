@@ -382,10 +382,33 @@ end;
 procedure TAccountsForm.NewAccountBtnClick(Sender: TObject);
 var
 	Account: TAccountSettings;
+	PluginSettings: TPluginSettings;
 begin
-	if mrOk = TRegistrationForm.ShowRegistration(self.parentWindow, Account) then
+	PluginSettings := GetPluginSettings(SettingsIniFilePath);
+	if mrOk = TRegistrationForm.ShowRegistration(self.parentWindow, PluginSettings.ConnectionSettings, Account) then
 	begin
+		if Account.use_tc_password_manager then //просим TC сохранить пароль
+		begin
 
+			case PasswordManager.SetPassword(Account.name, Account.password) of
+				FS_FILE_OK:
+					begin //TC скушал пароль
+						Account.password := EmptyWideStr;
+					end;
+				FS_FILE_NOTSUPPORTED: //нажали отмену на вводе мастер-пароля
+					begin //просто выйдем
+						exit();
+					end;
+				FS_FILE_WRITEERROR: //Сохранение не получилось по другой причине. Сохранять не будем, выйдем
+					begin
+						exit();
+					end;
+			end;
+		end;
+
+		SetAccountSettingsToIniFile(Account, IniPath);
+
+		UpdateAccountsList();
 	end;
 end;
 
