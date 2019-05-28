@@ -622,6 +622,8 @@ end;
 
 function TCloudMailRu.getHTTPConnection: TCloudMailRuHTTP;
 begin
+	if not(Assigned(self)) then
+		exit(nil); //Проверка на вызов без инициализации
 	if (nil = self.HTTPConnectionsManager) then
 	begin
 		if not Assigned(InternalHTTPConnection) then
