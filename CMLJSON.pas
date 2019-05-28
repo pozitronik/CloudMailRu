@@ -97,6 +97,10 @@ type
 		function getTwostepData(JSON: WideString; var TwostepData: TCloudMailRuTwostepData): Boolean; overload;
 		function getUserSpace(var CloudMailRuSpaceInfo: TCloudMailRuSpaceInfo): Boolean; overload;
 		function getUserSpace(JSON: WideString; var CloudMailRuSpaceInfo: TCloudMailRuSpaceInfo): Boolean; overload;
+		function getRegistrationBody(var Body: WideString): Boolean; overload;
+		function getRegistrationBody(JSON: WideString; var Body: WideString): Boolean; overload;
+		function getRegistrationOperationResult(): TCloudMailRuOperationResult; overload;
+		function getRegistrationOperationResult(JSON: WideString): TCloudMailRuOperationResult; overload;
 
 	end;
 
@@ -350,7 +354,8 @@ begin
 		result.OperationStatus := ParserObj.Values[NAME_STATUS].Value.ToInteger;
 		if result.OperationStatus <> 200 then
 		begin
-			//if OperationStatus = 400 then exit(CLOUD_ERROR_BAD_REQUEST);
+			//if result.OperationStatus = 400 then
+			//result.OperationResult := CLOUD_ERROR_BAD_REQUEST;
 			if result.OperationStatus = 451 then
 				result.OperationResult := CLOUD_ERROR_FAHRENHEIT;
 			if result.OperationStatus = 507 then
@@ -497,6 +502,17 @@ begin
 	result := true;
 end;
 
+function TCloudMailRuJSONParser.getRegistrationBody(var Body: WideString): Boolean;
+begin
+	result := false;
+	try
+		Body := (JSONVal as TJSONObject).Values[NAME_BODY].Value;
+	except
+		exit;
+	end;
+	result := true;
+end;
+
 function TCloudMailRuJSONParser.getDirListing(JSON: WideString; var CloudMailRuDirListing: TCloudMailRuDirListing): Boolean;
 begin
 	init(JSON);
@@ -555,6 +571,49 @@ function TCloudMailRuJSONParser.getUserSpace(JSON: WideString; var CloudMailRuSp
 begin
 	init(JSON);
 	exit(getUserSpace(CloudMailRuSpaceInfo));
+end;
+
+function TCloudMailRuJSONParser.getRegistrationBody(JSON: WideString; var Body: WideString): Boolean;
+begin
+	init(JSON);
+	exit(getRegistrationBody(Body));
+end;
+
+function TCloudMailRuJSONParser.getRegistrationOperationResult(JSON: WideString): TCloudMailRuOperationResult;
+begin
+	init(JSON);
+	exit(getRegistrationOperationResult());
+end;
+
+{registration api}
+function TCloudMailRuJSONParser.getRegistrationOperationResult(): TCloudMailRuOperationResult;
+begin
+	result.OperationResult := CLOUD_ERROR_UNKNOWN;
+	try
+		ParserObj := JSONVal as TJSONObject;
+		result.OperationStatus := ParserObj.Values[NAME_STATUS].Value.ToInteger;
+		case result.OperationStatus of
+			200:
+				begin
+					result.OperationResult := CLOUD_OPERATION_OK;
+				end;
+			400:
+				begin
+					result.OperationResult := CLOUD_ERROR_BAD_REQUEST;
+				end;
+			else
+				begin
+					result.OperationResult := CLOUD_ERROR_UNKNOWN; //Эту ошибку мы пока не встречали
+				end;
+		end;
+
+	except
+		on E: {EJSON}Exception do
+		begin
+			result.OperationResult := CLOUD_ERROR_UNKNOWN;
+		end;
+	end;
+
 end;
 
 end.
