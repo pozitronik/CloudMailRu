@@ -1,10 +1,12 @@
 object RegistrationForm: TRegistrationForm
   Left = 0
   Top = 0
+  AutoSize = True
   BorderStyle = bsDialog
-  Caption = 'Registration'
-  ClientHeight = 352
-  ClientWidth = 513
+  BorderWidth = 5
+  Caption = 'Mail.ru account registration'
+  ClientHeight = 337
+  ClientWidth = 500
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -12,47 +14,49 @@ object RegistrationForm: TRegistrationForm
   Font.Name = 'Tahoma'
   Font.Style = []
   OldCreateOrder = False
-  Position = poOwnerFormCenter
+  Position = poDesigned
+  OnCreate = FormCreate
+  OnDestroy = FormDestroy
   PixelsPerInch = 96
   TextHeight = 13
   object FirstNameLabel: TLabel
-    Left = 8
-    Top = 8
+    Left = 0
+    Top = 0
     Width = 54
     Height = 13
     Caption = 'First name:'
   end
   object LastNameLabel: TLabel
-    Left = 263
-    Top = 8
+    Left = 244
+    Top = 0
     Width = 53
     Height = 13
     Caption = 'Last name:'
   end
   object LoginLabel: TLabel
-    Left = 33
-    Top = 35
+    Left = 25
+    Top = 27
     Width = 29
     Height = 13
     Caption = 'Login:'
   end
   object AtLabel: TLabel
-    Left = 306
-    Top = 35
+    Left = 287
+    Top = 27
     Width = 10
     Height = 13
     Caption = '@'
   end
   object PasswordLabel: TLabel
-    Left = 12
-    Top = 64
+    Left = 4
+    Top = 56
     Width = 50
     Height = 13
     Caption = 'Password:'
   end
   object CaptchaImg: TImage
-    Left = 8
-    Top = 118
+    Left = 0
+    Top = 110
     Width = 500
     Height = 200
     AutoSize = True
@@ -61,40 +65,40 @@ object RegistrationForm: TRegistrationForm
     Stretch = True
   end
   object CaptchaLabel: TLabel
-    Left = 8
-    Top = 324
+    Left = 0
+    Top = 316
     Width = 44
     Height = 13
     Caption = 'Captcha:'
   end
   object FirstNameEdit: TEdit
-    Left = 68
-    Top = 8
+    Left = 60
+    Top = 0
     Width = 176
     Height = 21
     TabOrder = 0
-    Text = 'Nathan'
+    OnChange = FirstNameEditChange
   end
   object LastNameEdit: TEdit
-    Left = 322
-    Top = 8
-    Width = 186
+    Left = 303
+    Top = 0
+    Width = 197
     Height = 21
     TabOrder = 1
-    Text = 'Drake'
+    OnChange = FirstNameEditChange
   end
   object LoginEdit: TEdit
-    Left = 68
-    Top = 35
-    Width = 232
+    Left = 60
+    Top = 27
+    Width = 221
     Height = 21
     TabOrder = 2
-    Text = 'LoginEdit'
+    OnChange = FirstNameEditChange
   end
   object DomainCombo: TComboBox
-    Left = 322
-    Top = 35
-    Width = 186
+    Left = 303
+    Top = 27
+    Width = 197
     Height = 21
     Style = csDropDownList
     ItemIndex = 0
@@ -107,17 +111,18 @@ object RegistrationForm: TRegistrationForm
       'bk.ru')
   end
   object SignupBTN: TButton
-    Left = 450
-    Top = 87
+    Left = 442
+    Top = 79
     Width = 58
     Height = 25
     Caption = 'Sign up'
+    Enabled = False
     TabOrder = 4
     OnClick = SignupBTNClick
   end
   object UserAgreementLink: TLinkLabel
-    Left = 8
-    Top = 95
+    Left = 0
+    Top = 87
     Width = 436
     Height = 17
     Caption = 
@@ -127,35 +132,37 @@ object RegistrationForm: TRegistrationForm
     TabOrder = 5
   end
   object PasswordEdit: TEdit
-    Left = 68
-    Top = 64
+    Left = 60
+    Top = 56
     Width = 221
     Height = 21
     TabOrder = 6
-    Text = 'PasswordEdit'
+    OnChange = FirstNameEditChange
   end
   object UseTCPwdMngrCB: TCheckBox
-    Left = 295
-    Top = 64
+    Left = 287
+    Top = 56
     Width = 213
     Height = 17
     Caption = 'Store password in TC password manager'
     TabOrder = 7
   end
   object CaptchaEdit: TEdit
-    Left = 58
-    Top = 324
+    Left = 50
+    Top = 316
     Width = 369
     Height = 21
+    Enabled = False
     TabOrder = 8
-    Text = 'CaptchaEdit'
   end
   object SendBtn: TButton
-    Left = 433
-    Top = 324
+    Left = 425
+    Top = 316
     Width = 75
     Height = 21
-    Caption = 'SendBtn'
+    Caption = 'Confirm'
+    Enabled = False
     TabOrder = 9
+    OnClick = SendBtnClick
   end
 end

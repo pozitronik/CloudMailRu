@@ -25,20 +25,27 @@ type
 		SendBtn: TButton;
 
 		procedure SignupBTNClick(Sender: TObject);
+		procedure SendBtnClick(Sender: TObject);
+		procedure FirstNameEditChange(Sender: TObject);
+		procedure FormCreate(Sender: TObject);
+		procedure FormDestroy(Sender: TObject);
 
 	private
 		{Private declarations}
+		Login, Domain, Code: WideString;
+		function RegistrationValid: boolean;
 	protected
 		HTTPConnection: TCloudMailRuHTTP;
 		JSONParser: TCloudMailRuJSONParser;
-		procedure Init();
-		procedure Free();
-		function createAccount(firstname, lastname, login, password, domain: WideString; var Code: WideString): Boolean;
-		function getRegisrationCaptcha(CaptchaStream: TStream): Boolean;
-		function confirmRegistration(email, Code, captcha: WideString): Boolean;
+		procedure InitComponents();
+		procedure FreeComponents();
+		function createAccount(firstname, lastname, Login, password, Domain: WideString; var Code: WideString): boolean;
+		function getRegisrationCaptcha(CaptchaStream: TStream): boolean;
+		function confirmRegistration(email, Code, captcha: WideString): boolean;
 	public
+		property isRegistrationValid: boolean read RegistrationValid;
 		{Public declarations}
-		class function ShowRegistration(parentWindow: HWND; var UseTCPwdMngr: Boolean): integer;
+		class function ShowRegistration(parentWindow: HWND; var UseTCPwdMngr: boolean): integer;
 	end;
 
 implementation
@@ -46,15 +53,15 @@ implementation
 {$R *.dfm}
 {TRegistrationForm}
 
-function TRegistrationForm.confirmRegistration(email, Code, captcha: WideString): Boolean;
+function TRegistrationForm.confirmRegistration(email, Code, captcha: WideString): boolean;
 var
 	JSON, confirmationJSON: WideString;
 begin
-	confirmationJSON := '{"id":"' + Code + '","capcha":"' + captcha + '"}'; //todo
-	result := HTTPConnection.PostForm('https://account.mail.ru/api/v1/user/signup/confirm', 'email=' + email + 'mail.ru&reg_anketa=' + confirmationJSON, JSON);
+	confirmationJSON := '{"id":"' + Code + '","capcha":"' + captcha + '"}'; //capcha, lol
+	result := HTTPConnection.PostForm('https://account.mail.ru/api/v1/user/signup/confirm', 'email=' + email + '&reg_anketa=' + confirmationJSON, JSON);
 end;
 
-function TRegistrationForm.createAccount(firstname, lastname, login, password, domain: WideString; var Code: WideString): Boolean;
+function TRegistrationForm.createAccount(firstname, lastname, Login, password, Domain: WideString; var Code: WideString): boolean;
 var
 	JSON: WideString;
 	poststring: WideString;
@@ -66,7 +73,7 @@ begin
 
 	HTTPConnection.HTTP.Request.Referer := 'https://account.mail.ru/api/v1/user/signup';
 
-	poststring := 'name={"first":"' + firstname + '","last":"' + lastname + '"}&login=' + login + '&domain=' + domain + '&password=' + password;
+	poststring := 'name={"first":"' + firstname + '","last":"' + lastname + '"}&login=' + Login + '&domain=' + Domain + '&password=' + password;
 	result := HTTPConnection.PostForm('https://account.mail.ru/api/v1/user/signup', poststring, JSON);
 	if result then
 	begin
@@ -78,26 +85,52 @@ begin
 	end;
 end;
 
-procedure TRegistrationForm.Free;
+procedure TRegistrationForm.FirstNameEditChange(Sender: TObject);
+begin
+	SignupBTN.Enabled := isRegistrationValid;
+end;
+
+procedure TRegistrationForm.FormCreate(Sender: TObject);
+begin
+	self.InitComponents;
+end;
+
+procedure TRegistrationForm.FormDestroy(Sender: TObject);
+begin
+	self.FreeComponents;
+end;
+
+procedure TRegistrationForm.FreeComponents;
 begin
 	HTTPConnection.Free;
 	JSONParser.Free;
 end;
 
-function TRegistrationForm.getRegisrationCaptcha(CaptchaStream: TStream): Boolean;
+function TRegistrationForm.getRegisrationCaptcha(CaptchaStream: TStream): boolean;
 begin
 	result := FS_FILE_OK = HTTPConnection.getFile('https://c.mail.ru/c/6', CaptchaStream);
 end;
 
-procedure TRegistrationForm.Init;
+procedure TRegistrationForm.InitComponents;
 var
-	ConnectionSettings: TConnectionSettings; //anything goes
+	ConnectionSettings: TConnectionSettings; //todo:load plugin settings
 begin
+
 	HTTPConnection := TCloudMailRuHTTP.Create(ConnectionSettings);
 	JSONParser := TCloudMailRuJSONParser.Create();;
 end;
 
-class function TRegistrationForm.ShowRegistration(parentWindow: HWND; var UseTCPwdMngr: Boolean): integer;
+function TRegistrationForm.RegistrationValid: boolean;
+begin
+	result := (FirstNameEdit.Text <> EmptyWideStr) and (LastNameEdit.Text <> EmptyWideStr) and (LoginEdit.Text <> EmptyWideStr) and (PasswordEdit.Text <> EmptyWideStr);
+end;
+
+procedure TRegistrationForm.SendBtnClick(Sender: TObject);
+begin
+	confirmRegistration(Login + '@' + Domain, Code, CaptchaEdit.Text)
+end;
+
+class function TRegistrationForm.ShowRegistration(parentWindow: HWND; var UseTCPwdMngr: boolean): integer;
 var
 	RegistrationForm: TRegistrationForm;
 
@@ -106,14 +139,14 @@ begin
 		RegistrationForm := TRegistrationForm.Create(nil);
 		RegistrationForm.parentWindow := parentWindow;
 
-		//RegistrationForm.UseTCPwdMngrCB.Checked := UseTCPwdMngr;
+		RegistrationForm.UseTCPwdMngrCB.Checked := UseTCPwdMngr;
 
 		result := RegistrationForm.ShowModal;
 
 		if result = mrOk then
 		begin
-			//Password := AskPasswordForm.PasswordEdit.Text;
-			//UseTCPwdMngr := AskPasswordForm.UseTCPwdMngrCB.Checked;
+
+			UseTCPwdMngr := AskPasswordForm.UseTCPwdMngrCB.Checked;
 		end;
 	finally
 		FreeAndNil(RegistrationForm);
@@ -122,25 +155,33 @@ end;
 
 procedure TRegistrationForm.SignupBTNClick(Sender: TObject);
 var
-	Code: WideString;
 	MemStream: TMemoryStream;
 	JPEGImage: TJPEGImage;
 begin
-	self.Init;
+	CaptchaEdit.Enabled := false;
+	SendBtn.Enabled := false;
+	Login := self.LoginEdit.Text;
+	Domain := self.DomainCombo.Text;
+	self.Enabled := false;
 
-	if (createAccount(self.FirstNameEdit.Text, self.LastNameEdit.Text, self.LoginEdit.Text, self.PasswordEdit.Text, self.DomainCombo.Text, Code)) then
+	if (createAccount(self.FirstNameEdit.Text, self.LastNameEdit.Text, Login, self.PasswordEdit.Text, Domain, Code)) then
 	begin
 		MemStream := TMemoryStream.Create();
-		getRegisrationCaptcha(MemStream);
-		MemStream.Position := 0;
-		JPEGImage := TJPEGImage.Create;
-		JPEGImage.LoadFromStream(MemStream);
-		CaptchaImg.Picture.Assign(JPEGImage);
-		JPEGImage.Free;
+		if getRegisrationCaptcha(MemStream) then
+		begin
+			MemStream.Position := 0;
+			JPEGImage := TJPEGImage.Create;
+			JPEGImage.LoadFromStream(MemStream);
+			CaptchaImg.Picture.Assign(JPEGImage);
+			JPEGImage.Free;
+			CaptchaEdit.Enabled := true;
+			SendBtn.Enabled := true;
+		end
+		else
+			MessageBox(Handle, 'Can''t load captcha image!', 'Registration error', MB_ICONERROR + MB_OK);
 		MemStream.Free;
 	end;
-
-	self.Free;
+	self.Enabled := true;
 end;
 
 end.
