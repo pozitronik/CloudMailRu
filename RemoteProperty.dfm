@@ -68,6 +68,10 @@ object PropertyForm: TPropertyForm
     TabOrder = 3
     object FolderAccessTS: TTabSheet
       Caption = 'Folder access'
+      ExplicitLeft = 0
+      ExplicitTop = 0
+      ExplicitWidth = 0
+      ExplicitHeight = 0
       DesignSize = (
         828
         255)
@@ -151,6 +155,10 @@ object PropertyForm: TPropertyForm
     object DownloadLinksTS: TTabSheet
       Caption = 'Download links'
       ImageIndex = 1
+      ExplicitLeft = 0
+      ExplicitTop = 0
+      ExplicitWidth = 0
+      ExplicitHeight = 0
       object DownloadLinksMemo: TMemo
         Left = 0
         Top = 40
@@ -240,6 +248,10 @@ object PropertyForm: TPropertyForm
     object HashesListTS: TTabSheet
       Caption = 'Hashes list'
       ImageIndex = 3
+      ExplicitLeft = 0
+      ExplicitTop = 0
+      ExplicitWidth = 0
+      ExplicitHeight = 0
       object HashesListTB: TToolBar
         Left = 0
         Top = 0
@@ -347,6 +359,10 @@ object PropertyForm: TPropertyForm
     object DescriptionTS: TTabSheet
       Caption = 'Description'
       ImageIndex = 2
+      ExplicitLeft = 0
+      ExplicitTop = 0
+      ExplicitWidth = 0
+      ExplicitHeight = 0
       DesignSize = (
         828
         255)
