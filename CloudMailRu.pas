@@ -532,6 +532,8 @@ var
 	MemoryStream: TMemoryStream;
 begin
 	result := FS_FILE_NOTSUPPORTED;
+	if not(Assigned(self)) then
+		exit; //Проверка на вызов без инициализации
 	if self.Shard = EmptyWideStr then
 	begin
 		Log(LogLevelDetail, MSGTYPE_DETAILS, 'Current shard is undefined, trying to get one');
@@ -622,7 +624,7 @@ end;
 
 function TCloudMailRu.getHTTPConnection: TCloudMailRuHTTP;
 begin
-	if not(Assigned(self)) then {TODO: ловим исключение при попытке работать с неавторизованным аккаунтом}
+	if not(Assigned(self)) then
 		exit(nil); //Проверка на вызов без инициализации
 	if (nil = self.HTTPConnectionsManager) then
 	begin
