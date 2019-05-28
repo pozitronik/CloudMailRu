@@ -57,6 +57,17 @@
         <Cfg_2>true</Cfg_2>
         <Base>true</Base>
     </PropertyGroup>
+    <PropertyGroup Condition="'$(Config)'=='Debug DCU' or '$(Cfg_3)'!=''">
+        <Cfg_3>true</Cfg_3>
+        <CfgParent>Base</CfgParent>
+        <Base>true</Base>
+    </PropertyGroup>
+    <PropertyGroup Condition="('$(Platform)'=='Win32' and '$(Cfg_3)'=='true') or '$(Cfg_3_Win32)'!=''">
+        <Cfg_3_Win32>true</Cfg_3_Win32>
+        <CfgParent>Cfg_3</CfgParent>
+        <Cfg_3>true</Cfg_3>
+        <Base>true</Base>
+    </PropertyGroup>
     <PropertyGroup Condition="'$(Base)'!=''">
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
         <Manifest_File>None</Manifest_File>
@@ -131,6 +142,15 @@
         <Debugger_RunParams>/i=%commander_path%\debug.ini</Debugger_RunParams>
         <VerInfo_Keys>CompanyName=;FileDescription=Cloud.Mail.ru плагин x32/x64 для Total Commander;FileVersion=1.0.6086.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductVersion=1.0.0.0;Comments=;ProgramID=com.embarcadero.$(MSBuildProjectName);ProductName=$(MSBuildProjectName)</VerInfo_Keys>
     </PropertyGroup>
+    <PropertyGroup Condition="'$(Cfg_3)'!=''">
+        <DCC_DebugDCUs>true</DCC_DebugDCUs>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Cfg_3_Win32)'!=''">
+        <VerInfo_MinorVer>17</VerInfo_MinorVer>
+        <VerInfo_Release>12</VerInfo_Release>
+        <VerInfo_Build>5</VerInfo_Build>
+        <VerInfo_Keys>CompanyName=;FileDescription=Cloud.Mail.ru plugin x32/x64 for Total Commander;FileVersion=1.17.12.5;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductVersion=17.12.5;Comments=https://github.com/pozitronik/CloudMailRu/;ProgramID=com.pozitronik.CloudMailRu;ProductName=CloudMailRu</VerInfo_Keys>
+    </PropertyGroup>
     <ItemGroup>
         <DelphiCompile Include="$(MainSource)">
             <MainSource>MainSource</MainSource>
@@ -194,6 +214,10 @@
         <DCCReference Include="CMLParsers.pas"/>
         <DCCReference Include="CMLHTTP.pas"/>
         <DCCReference Include="HTTPManager.pas"/>
+        <DCCReference Include="Registration.pas">
+            <Form>RegistrationForm</Form>
+            <FormType>dfm</FormType>
+        </DCCReference>
         <RcItem Include="icons\icon.ico">
             <ResourceType>ICON</ResourceType>
             <ResourceId>base_icon</ResourceId>
@@ -218,15 +242,19 @@
             <ResourceType>ICON</ResourceType>
             <ResourceId>shared_incoming</ResourceId>
         </RcItem>
+        <BuildConfiguration Include="Base">
+            <Key>Base</Key>
+        </BuildConfiguration>
         <BuildConfiguration Include="Debug">
             <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>
         </BuildConfiguration>
-        <BuildConfiguration Include="Base">
-            <Key>Base</Key>
-        </BuildConfiguration>
         <BuildConfiguration Include="Release">
             <Key>Cfg_1</Key>
+            <CfgParent>Base</CfgParent>
+        </BuildConfiguration>
+        <BuildConfiguration Include="Debug DCU">
+            <Key>Cfg_3</Key>
             <CfgParent>Base</CfgParent>
         </BuildConfiguration>
     </ItemGroup>
