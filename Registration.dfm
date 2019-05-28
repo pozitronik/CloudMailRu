@@ -13,8 +13,9 @@ object RegistrationForm: TRegistrationForm
   Font.Height = -11
   Font.Name = 'Tahoma'
   Font.Style = []
+  FormStyle = fsStayOnTop
   OldCreateOrder = False
-  Position = poDesigned
+  Position = poOwnerFormCenter
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   PixelsPerInch = 96
@@ -162,6 +163,7 @@ object RegistrationForm: TRegistrationForm
     Height = 21
     Caption = 'Confirm'
     Enabled = False
+    ModalResult = 1
     TabOrder = 9
     OnClick = SendBtnClick
   end
