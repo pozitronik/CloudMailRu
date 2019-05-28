@@ -2,7 +2,7 @@
 
 interface
 
-uses Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics, Settings, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, IniFiles, MRC_Helper, PLUGIN_Types, Vcl.ComCtrls, Vcl.Mask, Vcl.ExtCtrls, Vcl.Samples.Spin, System.IOUtils, AskPassword, TCPasswordManagerHelper;
+uses Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics, Settings, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, IniFiles, MRC_Helper, PLUGIN_Types, Vcl.ComCtrls, Vcl.Mask, Vcl.ExtCtrls, Vcl.Samples.Spin, System.IOUtils, AskPassword, TCPasswordManagerHelper, Registration;
 
 type
 	TAccountsForm = class(TForm)
@@ -97,6 +97,7 @@ type
 		DownloadBPSEdit: TSpinEdit;
 		CopyBetweenAccountsModeCombo: TComboBox;
 		CopyBetweenAccountsModeLabel: TLabel;
+		NewAccountBtn: TButton;
 		procedure FormShow(Sender: TObject);
 		procedure AccountsListClick(Sender: TObject);
 		procedure ApplyButtonClick(Sender: TObject);
@@ -112,6 +113,7 @@ type
 		procedure EncryptFilesComboChange(Sender: TObject);
 		procedure EncryptFilesPwdButtonClick(Sender: TObject);
 		procedure FormKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
+		procedure NewAccountBtnClick(Sender: TObject);
 	private
 		{Private declarations}
 		procedure ApplySettings();
@@ -375,6 +377,13 @@ end;
 procedure TAccountsForm.GlobalSettingApplyBTNClick(Sender: TObject);
 begin
 	ApplySettings;
+end;
+
+procedure TAccountsForm.NewAccountBtnClick(Sender: TObject);
+var
+	UseTCPwdMngr: boolean;
+begin
+	TRegistrationForm.ShowRegistration(self.parentWindow, UseTCPwdMngr);
 end;
 
 procedure TAccountsForm.ProxyUserEditChange(Sender: TObject);

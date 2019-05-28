@@ -164,10 +164,6 @@ object AccountsForm: TAccountsForm
     TabOrder = 0
     object AccountsTab: TTabSheet
       Caption = 'Accounts'
-      ExplicitLeft = 0
-      ExplicitTop = 0
-      ExplicitWidth = 0
-      ExplicitHeight = 0
       DesignSize = (
         483
         447)
@@ -394,14 +390,19 @@ object AccountsForm: TAccountsForm
           TabOrder = 0
         end
       end
+      object NewAccountBtn: TButton
+        Left = 306
+        Top = 417
+        Width = 77
+        Height = 25
+        Caption = 'Register new'
+        TabOrder = 7
+        OnClick = NewAccountBtnClick
+      end
     end
     object GlobalTab: TTabSheet
       Caption = 'Global settings'
       ImageIndex = 1
-      ExplicitLeft = 0
-      ExplicitTop = 0
-      ExplicitWidth = 0
-      ExplicitHeight = 0
       object CloudMaxFileSizeLabelBytes: TLabel
         Left = 292
         Top = 96
@@ -709,10 +710,6 @@ object AccountsForm: TAccountsForm
     object NetworkTab: TTabSheet
       Caption = 'Network settings'
       ImageIndex = 2
-      ExplicitLeft = 0
-      ExplicitTop = 0
-      ExplicitWidth = 0
-      ExplicitHeight = 0
       object SocketTimeoutLabel: TLabel
         Left = 5
         Top = 11
