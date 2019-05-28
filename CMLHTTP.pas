@@ -11,7 +11,7 @@ type
 		{VARIABLES}
 		ExternalSourceName: PWideChar;
 		ExternalTargetName: PWideChar;
-		HTTP: TIdHTTP;
+
 		SSL: TIdSSLIOHandlerSocketOpenSSL;
 		Socks: TIdSocksInfo;
 		Throttle: TIdInterceptThrottler;
@@ -28,6 +28,7 @@ type
 
 	public
 		{PROPERTIES}
+		HTTP: TIdHTTP;
 		Property Options: TConnectionSettings read Settings;
 		Property AuthCookie: TIdCookieManager write setCookie; //Кука управляется снаружи - это нужно для передачи авторизации между подключениям
 		property SourceName: WideString write SetExternalSourceName;
@@ -36,6 +37,8 @@ type
 		constructor Create(Settings: TConnectionSettings; ExternalProgressProc: TProgressHandler = nil; ExternalLogProc: TLogHandler = nil);
 		destructor Destroy; override;
 		{MAIN ROUTINES}
+		procedure Head(URL: WideString);
+
 		function GetPage(URL: WideString; var Answer: WideString; var ProgressEnabled: Boolean): Boolean; //если ProgressEnabled - включаем обработчик onWork, возвращаем ProgressEnabled=false при отмене
 		function GetFile(URL: WideString; FileStream: TStream; LogErrors: Boolean = true): integer;
 
@@ -184,6 +187,12 @@ begin
 		end;
 
 	end;
+end;
+
+procedure TCloudMailRuHTTP.Head(URL: WideString);
+begin
+	HTTP.Head(URL);
+	HTTP.Request.Referer := URL;
 end;
 
 function TCloudMailRuHTTP.Post(URL: WideString; PostData, ResultData: TStringStream; UnderstandResponseCode: Boolean; ContentType: WideString; LogErrors, ProgressEnabled: Boolean): integer;
