@@ -148,7 +148,10 @@ begin
 	self.CiphersInit();
 	Result := 0;
 	if SourceStream.Size > 0 then
+	begin
+		SourceStream.Position := 0;
 		Result := self.fileCipher.EncryptStream(SourceStream, DestinationStream, SourceStream.Size);
+	end;
 	self.CiphersDestroy;
 end;
 
