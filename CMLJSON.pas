@@ -375,8 +375,9 @@ begin
 				result.OperationResult := (CLOUD_ERROR_UNKNOWN);
 			end;
 			if error = EmptyWideStr then
-				error := ((ParserObj.Values[NAME_BODY] as TJSONObject).Values[nodename] as TJSONObject).Values[NAME_ERROR].Value
-			else if error = 'exists' then
+			begin
+				error := ((ParserObj.Values[NAME_BODY] as TJSONObject).Values[nodename] as TJSONObject).Values[NAME_ERROR].Value;
+			end else if error = 'exists' then
 				result.OperationResult := CLOUD_ERROR_EXISTS
 			else if error = 'required' then
 				result.OperationResult := CLOUD_ERROR_REQUIRED
@@ -414,7 +415,9 @@ begin
 				result.OperationResult := CLOUD_ERROR_UNPROCESSABLE_ENTRY
 			else
 				result.OperationResult := CLOUD_ERROR_UNKNOWN; //Эту ошибку мы пока не встречали
-		end;
+		end
+		else
+			result.OperationResult := CLOUD_OPERATION_OK;
 
 	except
 		on E: {EJSON}Exception do
@@ -423,7 +426,7 @@ begin
 			result.OperationResult := CLOUD_ERROR_UNKNOWN;
 		end;
 	end;
-	result.OperationResult := CLOUD_OPERATION_OK;
+
 end;
 
 function TCloudMailRuJSONParser.getPublicLink(var PublicLink: WideString): Boolean;
