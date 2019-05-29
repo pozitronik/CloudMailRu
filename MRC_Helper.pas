@@ -81,6 +81,7 @@ function IncludeSlash(const Str: WideString): WideString;
 function NormalizeSlashes(const Str: WideString): WideString;
 function TrimEx(const Str: WideString; TrimChar: WideChar): WideString;
 function FormatSize(size: Int64; SizeType: integer = TYPE_AUTO): WideString; //Форматируем размер в удобочитаемый вид
+function Run(path, ParamString: WideString; SubstituteVariables: boolean = true): boolean;
 //Procedure FileLog(S: WideString);
 
 implementation
@@ -673,6 +674,8 @@ end;
 
 function IncludeSlash(const Str: WideString): WideString;
 begin
+	if Str = EmptyWideStr then exit('/');
+
 	Result := Str;
 	if not(Result[High(Result)] = '/') then
 		Result := Result + '/';
@@ -721,6 +724,24 @@ begin
 		exit(size.ToString() + ' ' + postfixes[iteration + SizeType]);
 	end;
 
+end;
+
+function Run(path, ParamString: WideString; SubstituteVariables: boolean = true): boolean;
+var
+	lpStartupInfo: TStartUpInfo;
+	lpProcessInformation: TProcessInformation;
+begin
+	lpStartupInfo := Default (TStartUpInfo);
+	lpStartupInfo.cb := SizeOf(lpStartupInfo);
+
+	Result := CreateProcessW(PWideChar(path), PWideChar(ParamString), nil, nil, False, NORMAL_PRIORITY_CLASS, nil, nil, lpStartupInfo, lpProcessInformation);
+	if Result then
+		with lpProcessInformation do
+		begin
+			WaitForInputIdle(hProcess, INFINITE); //ждем завершения инициализации
+			CloseHandle(hThread); //закрываем дескриптор процесса
+			CloseHandle(hProcess); //закрываем дескриптор потока
+		end
 end;
 
 end.
