@@ -34,6 +34,7 @@ type
 		procedure FirstNameEditChange(Sender: TObject);
 		procedure FormCreate(Sender: TObject);
 		procedure FormDestroy(Sender: TObject);
+    procedure CaptchaEditKeyPress(Sender: TObject; var Key: Char);
 
 	private
 		{Private declarations}
@@ -59,6 +60,14 @@ implementation
 
 {$R *.dfm}
 {TRegistrationForm}
+
+procedure TRegistrationForm.CaptchaEditKeyPress(Sender: TObject; var Key: Char);
+begin
+	case Key of
+		VK_RETURN:
+			SendBtn.OnClick;
+	end;
+end;
 
 function TRegistrationForm.confirmRegistration(email, Code, captcha: WideString): boolean;
 var

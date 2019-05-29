@@ -155,6 +155,7 @@ object RegistrationForm: TRegistrationForm
     Height = 21
     Enabled = False
     TabOrder = 8
+    OnKeyPress = CaptchaEditKeyPress
   end
   object SendBtn: TButton
     Left = 425
