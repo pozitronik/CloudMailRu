@@ -35,6 +35,7 @@ type
 		procedure FormCreate(Sender: TObject);
 		procedure FormDestroy(Sender: TObject);
 		procedure CaptchaEditKeyPress(Sender: TObject; var Key: Char);
+		procedure FormKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
 
 	private
 		{Private declarations}
@@ -65,7 +66,8 @@ procedure TRegistrationForm.CaptchaEditKeyPress(Sender: TObject; var Key: Char);
 begin
 	case Key of
 		VK_RETURN:
-		 if SendBtn.Enabled then	SendBtn.OnClick;
+			if SendBtn.Enabled then
+				SendBtn.OnClick;
 	end;
 end;
 
@@ -118,6 +120,14 @@ end;
 procedure TRegistrationForm.FormDestroy(Sender: TObject);
 begin
 	self.FreeComponents;
+end;
+
+procedure TRegistrationForm.FormKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
+begin
+	case Key of
+		VK_ESCAPE:
+			Close;
+	end;
 end;
 
 procedure TRegistrationForm.FreeComponents;

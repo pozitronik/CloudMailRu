@@ -18,6 +18,7 @@ object RegistrationForm: TRegistrationForm
   Position = poOwnerFormCenter
   OnCreate = FormCreate
   OnDestroy = FormDestroy
+  OnKeyUp = FormKeyUp
   PixelsPerInch = 96
   TextHeight = 13
   object FirstNameLabel: TLabel
