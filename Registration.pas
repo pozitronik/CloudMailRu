@@ -153,7 +153,7 @@ begin
 		RegistrationForm.ConnectionSettings := ConnectionSettings;
 		RegistrationForm.LoginEdit.Text := Account.user;
 		RegistrationForm.UseTCPwdMngrCB.Checked := Account.use_tc_password_manager;
-    RegistrationForm.ModalResult:=mrNone;
+		RegistrationForm.ModalResult := mrNone;
 		result := RegistrationForm.ShowModal;
 		if result = mrOk then
 		begin
@@ -179,6 +179,7 @@ begin
 	Account.password := PasswordEdit.Text;
 	Account.Domain := DomainCombo.Text;
 	Account.public_account := false;
+  Account.encrypt_files_mode := EncryptModeNone;
 	Account.twostep_auth := false;
 
 	self.Enabled := false;
