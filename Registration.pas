@@ -34,8 +34,8 @@ type
 		procedure FirstNameEditChange(Sender: TObject);
 		procedure FormCreate(Sender: TObject);
 		procedure FormDestroy(Sender: TObject);
-		procedure CaptchaEditKeyPress(Sender: TObject; var Key: Char);
 		procedure FormKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
+		procedure CaptchaEditKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
 
 	private
 		{Private declarations}
@@ -62,12 +62,12 @@ implementation
 {$R *.dfm}
 {TRegistrationForm}
 
-procedure TRegistrationForm.CaptchaEditKeyPress(Sender: TObject; var Key: Char);
+procedure TRegistrationForm.CaptchaEditKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
 begin
 	case Key of
 		VK_RETURN:
 			if SendBtn.Enabled then
-				SendBtn.OnClick;
+				SendBtn.Click;
 	end;
 end;
 
