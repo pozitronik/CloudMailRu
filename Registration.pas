@@ -34,7 +34,7 @@ type
 		procedure FirstNameEditChange(Sender: TObject);
 		procedure FormCreate(Sender: TObject);
 		procedure FormDestroy(Sender: TObject);
-    procedure CaptchaEditKeyPress(Sender: TObject; var Key: Char);
+		procedure CaptchaEditKeyPress(Sender: TObject; var Key: Char);
 
 	private
 		{Private declarations}
@@ -65,7 +65,7 @@ procedure TRegistrationForm.CaptchaEditKeyPress(Sender: TObject; var Key: Char);
 begin
 	case Key of
 		VK_RETURN:
-			SendBtn.OnClick;
+		 if SendBtn.Enabled then	SendBtn.OnClick;
 	end;
 end;
 
@@ -188,7 +188,7 @@ begin
 	Account.password := PasswordEdit.Text;
 	Account.Domain := DomainCombo.Text;
 	Account.public_account := false;
-  Account.encrypt_files_mode := EncryptModeNone;
+	Account.encrypt_files_mode := EncryptModeNone;
 	Account.twostep_auth := false;
 
 	self.Enabled := false;
