@@ -124,6 +124,7 @@ const
 	SHARD_TYPE_GET = 'get';
 	SHARD_TYPE_THUMBNAILS = 'thumbnails'; {todo: thumbnails mode for tc maybe?}
 
+	{JSON names}
 	NAME_BODY = 'body';
 	NAME_LIST = 'list';
 	NAME_SIZE = 'size';
