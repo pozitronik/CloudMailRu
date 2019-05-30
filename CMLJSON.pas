@@ -91,8 +91,8 @@ type
 		function getOperationResult(JSON: WideString): TCloudMailRuOperationResult; overload;
 		function getPublicLink(var PublicLink: WideString): Boolean; overload;
 		function getPublicLink(JSON: WideString; var PublicLink: WideString): Boolean; overload;
-		function getShard(var Shard: WideString): Boolean; overload;
-		function getShard(JSON: WideString; var Shard: WideString): Boolean; overload;
+		function getShard(var Shard: WideString; ShardType: WideString = SHARD_TYPE_GET): Boolean; overload;
+		function getShard_(JSON: WideString; var Shard: WideString; ShardType: WideString = SHARD_TYPE_GET): Boolean; overload;
 		function getTwostepData(var TwostepData: TCloudMailRuTwostepData): Boolean; overload;
 		function getTwostepData(JSON: WideString; var TwostepData: TCloudMailRuTwostepData): Boolean; overload;
 		function getUserSpace(var CloudMailRuSpaceInfo: TCloudMailRuSpaceInfo): Boolean; overload;
@@ -440,11 +440,11 @@ begin
 	result := true;
 end;
 
-function TCloudMailRuJSONParser.getShard(var Shard: WideString): Boolean;
+function TCloudMailRuJSONParser.getShard(var Shard: WideString; ShardType: WideString = SHARD_TYPE_GET): Boolean;
 begin
 	result := false;
 	try
-		Shard := ((((JSONVal as TJSONObject).Values[NAME_BODY] as TJSONObject).Values[NAME_GET] as TJSONArray).Items[0] as TJSONObject).Values[NAME_URL].Value;
+		Shard := ((((JSONVal as TJSONObject).Values[NAME_BODY] as TJSONObject).Values[ShardType] as TJSONArray).Items[0] as TJSONObject).Values[NAME_URL].Value;
 	except
 		exit;
 	end;
@@ -558,10 +558,10 @@ begin
 	exit(getPublicLink(PublicLink));
 end;
 
-function TCloudMailRuJSONParser.getShard(JSON: WideString; var Shard: WideString): Boolean;
+function TCloudMailRuJSONParser.getShard_(JSON: WideString; var Shard: WideString; ShardType: WideString = NAME_GET): Boolean;//Некрасиво получается, подумать над переделкой, например вызывать методы только статикой
 begin
 	init(JSON);
-	exit(getShard(Shard));
+	exit(getShard(Shard, ShardType));
 end;
 
 function TCloudMailRuJSONParser.getTwostepData(JSON: WideString; var TwostepData: TCloudMailRuTwostepData): Boolean;
