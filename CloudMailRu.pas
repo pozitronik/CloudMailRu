@@ -35,7 +35,7 @@ type
 		function getToken(): Boolean;
 		function getSharedToken(): Boolean;
 		function getOAuthToken(var OAuthToken: TCloudMailRuOAuthInfo): Boolean;
-		function getShard(var Shard: WideString): Boolean;
+		function getShard(var Shard: WideString; ShardType: WideString= SHARD_TYPE_GET): Boolean;
 		function getUserSpace(var SpaceInfo: TCloudMailRuSpaceInfo): Boolean;
 		function putFileToCloud(FileName: WideString; FileStream: TStream; var FileIdentity: TCloudMailRuFileIdentity): integer; overload; //отправка на сервер данных из потока
 		{PRIVATE UPLOAD METHODS CHAIN (CALLED FROM putFile())}
@@ -664,7 +664,7 @@ begin
 	end;
 end;
 
-function TCloudMailRu.getShard(var Shard: WideString): Boolean;
+function TCloudMailRu.getShard(var Shard: WideString; ShardType: WideString= SHARD_TYPE_GET): Boolean;
 var
 	JSON: WideString;
 begin
@@ -680,7 +680,7 @@ begin
 	result := self.HTTP.PostForm(API_DISPATCHER, self.united_params, JSON) and CloudResultToBoolean(JSONParser.getOperationResult(JSON), 'Shard receive error: ');
 	if result then
 	begin
-		result := JSONParser.getShard(JSON, Shard) and (Shard <> EmptyWideStr);
+		result := JSONParser.getShard_(JSON, Shard, ShardType) and (Shard <> EmptyWideStr);
 		Log(LogLevelDetail, MSGTYPE_DETAILS, 'Shard received: ' + Shard);
 	end;
 
