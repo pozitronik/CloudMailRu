@@ -2,7 +2,7 @@
 
 interface
 
-uses CMLJSON, CMLParsers, CMLTypes, CMLHTTP, System.Hash, System.Classes, System.Generics.Collections, System.SysUtils, PLUGIN_Types, Winapi.Windows, MRC_helper, Settings, Cipher, Splitfile, ChunkedFileStream, HTTPManager, IdCookieManager;
+uses CMLJSON, CMLParsers, CMLTypes, CMLHTTP, System.Hash, System.Classes, System.Generics.Collections, System.SysUtils, PLUGIN_Types, Winapi.Windows, MRC_helper, Settings, Cipher, Splitfile, ChunkedFileStream, HTTPManager, IdCookieManager, DCPbase64;
 
 type
 	TCloudMailRu = class
@@ -35,7 +35,7 @@ type
 		function getToken(): Boolean;
 		function getSharedToken(): Boolean;
 		function getOAuthToken(var OAuthToken: TCloudMailRuOAuthInfo): Boolean;
-		function getShard(var Shard: WideString; ShardType: WideString= SHARD_TYPE_GET): Boolean;
+		function getShard(var Shard: WideString; ShardType: WideString = SHARD_TYPE_GET): Boolean;
 		function getUserSpace(var SpaceInfo: TCloudMailRuSpaceInfo): Boolean;
 		function putFileToCloud(FileName: WideString; FileStream: TStream; var FileIdentity: TCloudMailRuFileIdentity): integer; overload; //отправка на сервер данных из потока
 		{PRIVATE UPLOAD METHODS CHAIN (CALLED FROM putFile())}
@@ -119,6 +119,7 @@ type
 		function mountFolder(home, invite_token: WideString; ConflictMode: WideString = CLOUD_CONFLICT_RENAME): Boolean;
 		function unmountFolder(home: WideString; clone_copy: Boolean): Boolean;
 		function rejectInvite(invite_token: WideString): Boolean;
+		function getPublishedFileStreamUrl(FileIdentity: TCloudMailRuDirListingItem; var StreamUrl: WideString; ShardType: WideString = SHARD_TYPE_WEBLINK_VIDEO; publish: Boolean = CLOUD_PUBLISH): Boolean;
 		{OTHER ROUTINES}
 		function getDescriptionFile(remotePath, localCopy: WideString): Boolean; //Если в каталоге remotePath есть descript.ion - скопировать его в файл localcopy
 		function putDesriptionFile(remotePath, localCopy: WideString): Boolean; //Скопировать descript.ion из временного файла на сервер
@@ -664,7 +665,25 @@ begin
 	end;
 end;
 
-function TCloudMailRu.getShard(var Shard: WideString; ShardType: WideString= SHARD_TYPE_GET): Boolean;
+function TCloudMailRu.getPublishedFileStreamUrl(FileIdentity: TCloudMailRuDirListingItem; var StreamUrl: WideString; ShardType: WideString = SHARD_TYPE_WEBLINK_VIDEO; publish: Boolean = CLOUD_PUBLISH): Boolean;
+var
+	shard_url: WideString;
+begin
+	result := false;
+	if (EmptyWideStr = FileIdentity.weblink) then //publish and fill weblink, if required
+	begin
+		if (not publish) or (not self.publishFile(FileIdentity.home, FileIdentity.weblink)) then
+			exit;
+	end;
+
+	if not self.getShard(shard_url, ShardType) then
+		exit;
+
+	StreamUrl := shard_url + '0p/' + DCPbase64.Base64EncodeStr(Utf8ToAnsi(FileIdentity.weblink)) + '.m3u8?double_encode=1'; //UTF2Ansi is required
+	result := true;
+end;
+
+function TCloudMailRu.getShard(var Shard: WideString; ShardType: WideString = SHARD_TYPE_GET): Boolean;
 var
 	JSON: WideString;
 begin
