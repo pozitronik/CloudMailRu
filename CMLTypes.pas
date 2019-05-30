@@ -109,6 +109,21 @@ const
 
 	HTTP_METHODS = [HTTP_METHOD_GET, HTTP_METHOD_POST];
 
+	{Типы шардов}
+	SHARD_TYPE_VIDEO = 'video';
+	SHARD_TYPE_VIEW_DIRECT = 'view_direct';
+	SHARD_TYPE_WEBLINK_VIEW = 'weblink_view';
+	SHARD_TYPE_WEBLINK_VIDEO = 'weblink_video';
+	SHARD_TYPE_WEBLINK_GET = 'weblink_get';
+	SHARD_TYPE_STOCK = 'stock';
+	SHARD_TYPE_WEBLINK_THUMBNAILS = 'weblink_thumbnails';
+	SHARD_TYPE_PUBLIC_UPLOAD = 'public_upload';
+	SHARD_TYPE_AUTH = 'auth';
+	SHARD_TYPE_WEB = 'web';
+	SHARD_TYPE_UPLOAD = 'upload';
+	SHARD_TYPE_GET = 'get';
+	SHARD_TYPE_THUMBNAILS = 'thumbnails'; {todo: thumbnails mode for tc maybe?}
+
 type
 	TCloudMailRuDirListingItem = Record
 		tree: WideString;
