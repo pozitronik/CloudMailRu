@@ -843,10 +843,12 @@ end;
 function FsExecuteFileW(MainWin: THandle; RemoteName, Verb: PWideChar): integer; stdcall; //Запуск файла
 var
 	RealPath: TRealPath;
+	StreamAppPath, StreamUrl: WideString;
+	getResult: integer;
+	TempCloud: TCloudMailRu;
+	CurrentItem: TCloudMailRuDirListingItem;
 begin
 	RealPath := ExtractRealPath(RemoteName);
-	Result := FS_EXEC_OK;
-
 	if RealPath.upDirItem then
 		RealPath.path := ExtractFilePath(RealPath.path); //if somepath/.. item properties called
 
@@ -863,7 +865,26 @@ begin
 		exit(ExecProperties(MainWin, RealPath));
 
 	if Verb = 'open' then
-		exit(FS_EXEC_YOURSELF);
+	begin
+		if not RealPath.isDir and GetStreamingOptions(RealPath.path, StreamAppPath) then //todo: m3u support
+		begin
+			CurrentItem := FindListingItemByPath(CurrentListing, RealPath);
+			TempCloud := ConnectionManager.get(RealPath.account, getResult);
+			if TempCloud.getPublishedFileStreamUrl(CurrentItem, StreamUrl) then
+			begin
+				//StreamUrl:=TempCloud
+				if (Run(StreamAppPath, StreamUrl)) then
+					exit(FS_EXEC_OK)
+				else
+					exit(FS_EXEC_ERROR);
+			end else begin
+				//todo: log error && exit
+			end;
+
+		end;
+
+	end;
+	exit(FS_EXEC_YOURSELF);
 
 	if copy(Verb, 1, 5) = 'quote' then
 		exit(ExecCommand(RemoteName, LowerCase(GetWord(Verb, 1)), GetWord(Verb, 2)));
