@@ -139,7 +139,14 @@ type
 		OperationErrorMode: integer;
 		RetryAttempts: integer;
 		AttemptWait: integer;
+	end;
 
+	{Параметры стриминга для расширения}
+	TStreamingOptions = record
+		Enabled: boolean; //Стриминг разрешён
+		Application: WideString; //Вызываемое приложение
+		Parameters: WideString; //параметры, передаваемые приложению
+		Format: integer;
 	end;
 
 function GetPluginSettings(IniFilePath: WideString): TPluginSettings;
@@ -152,6 +159,7 @@ procedure DeleteAccountFromIniFile(IniFilePath: WideString; AccountName: WideStr
 procedure AddVirtualAccountsToAccountsList(AccountsIniFilePath: WideString; var AccountsList: TStringList; VirtualAccountsEnabled: TArray<boolean>);
 function GetDescriptionFileName(SettingsIniFilePath: WideString): WideString;
 function RemoteDescriptionsSupportEnabled(AccountSetting: TAccountSettings): boolean; //в случае включённого шифрования файловых имён поддержка движка файловых комментариев отключается (issue #5)
+function GetStreamingOptions(IniFilePath, FileName: WideString): TStreamingOptions;
 
 implementation
 
@@ -353,7 +361,7 @@ begin
 		if VirtualAccountsEnabled[2] then
 			VAccounts.Add(Account + InvitesPostfix);
 	end;
-	AccountsList.AddStrings(VAccounts);
+	AccountsList.AddString(VAccounts);
 	VAccounts.Free;
 end;
 
@@ -368,6 +376,21 @@ end;
 function RemoteDescriptionsSupportEnabled(AccountSetting: TAccountSettings): boolean; //в случае включённого шифрования файловых имён поддержка движка файловых комментариев отключается (issue #5)
 begin
 	result := not((AccountSetting.encrypt_files_mode <> EncryptModeNone) and AccountSetting.encrypt_filenames)
+end;
+
+function GetStreamingOptions(IniFilePath, FileName: WideString): TStreamingOptions;
+begin
+
+end;
+
+function IsSectionExists(IniFile: TIniFile; SectionName: WideString): boolean;
+var
+	SectionsList: TStringList;
+begin
+	SectionsList := TStringList.Create();
+	IniFile.ReadSections(IniFile, SectionsList);
+	//result:=SectionsList.
+	SectionsList.Destroy;
 end;
 
 end.
