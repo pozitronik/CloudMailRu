@@ -149,7 +149,7 @@ var
 	CurrentCloud: TCloudMailRu;
 begin
 	if path.trashDir or path.sharedDir{or path.invitesDir} then
-		Result := FindListingItemByName(CurrentListing, path.path)//Виртуальные каталоги не возвращают HomePath
+		Result := FindListingItemByName(CurrentListing, path.path) //Виртуальные каталоги не возвращают HomePath
 	else
 		Result := FindListingItemByHomePath(CurrentListing, path.path); //сначала попробуем найти поле в имеющемся списке
 
@@ -696,7 +696,7 @@ begin
 		Result := FS_EXEC_SYMLINK;
 	end else begin
 		if RealPath.path = '' then
-			TAccountsForm.ShowAccounts(MainWin, AccountsIniFilePath, SettingsIniFilePath, PasswordManager, RealPath.account)//main shared folder properties - open connection settings
+			TAccountsForm.ShowAccounts(MainWin, AccountsIniFilePath, SettingsIniFilePath, PasswordManager, RealPath.account) //main shared folder properties - open connection settings
 		else
 		begin
 			Cloud := ConnectionManager.get(RealPath.account, getResult);
@@ -748,7 +748,7 @@ var
 begin
 	Result := FS_EXEC_OK;
 	if RealPath.path = '' then
-		TAccountsForm.ShowAccounts(MainWin, AccountsIniFilePath, SettingsIniFilePath, PasswordManager, RealPath.account)//show account properties
+		TAccountsForm.ShowAccounts(MainWin, AccountsIniFilePath, SettingsIniFilePath, PasswordManager, RealPath.account) //show account properties
 	else
 	begin
 		Cloud := ConnectionManager.get(RealPath.account, getResult);
