@@ -1,5 +1,8 @@
 ﻿library MailRuCloud;
-
+
+
+{$R *.dres}
+
 uses SysUtils, System.Generics.Collections, DateUtils, windows, Classes, PLUGIN_TYPES, IdSSLOpenSSLHeaders, messages, inifiles, Vcl.controls, CloudMailRu in 'CloudMailRu.pas', MRC_Helper in 'MRC_Helper.pas', Accounts in 'Accounts.pas'{AccountsForm}, RemoteProperty in 'RemoteProperty.pas'{PropertyForm}, Descriptions in 'Descriptions.pas', ConnectionManager in 'ConnectionManager.pas', Settings in 'Settings.pas', ANSIFunctions in 'ANSIFunctions.pas', DeletedProperty in 'DeletedProperty.pas'{DeletedPropertyForm}, InviteProperty in 'InviteProperty.pas'{InvitePropertyForm}, AskPassword, CMLJSON in 'CMLJSON.pas', CMLTypes in 'CMLTypes.pas', DCPbase64 in 'DCPCrypt\DCPbase64.pas', DCPblockciphers in 'DCPCrypt\DCPblockciphers.pas', DCPconst in 'DCPCrypt\DCPconst.pas',
 	DCPcrypt2 in 'DCPCrypt\DCPcrypt2.pas', DCPreg in 'DCPCrypt\DCPreg.pas', DCPtypes in 'DCPCrypt\DCPtypes.pas', DCPblowfish in 'DCPCrypt\Ciphers\DCPblowfish.pas', DCPcast128 in 'DCPCrypt\Ciphers\DCPcast128.pas', DCPcast256 in 'DCPCrypt\Ciphers\DCPcast256.pas', DCPdes in 'DCPCrypt\Ciphers\DCPdes.pas', DCPgost in 'DCPCrypt\Ciphers\DCPgost.pas', DCPice in 'DCPCrypt\Ciphers\DCPice.pas', DCPidea in 'DCPCrypt\Ciphers\DCPidea.pas', DCPmars in 'DCPCrypt\Ciphers\DCPmars.pas', DCPmisty1 in 'DCPCrypt\Ciphers\DCPmisty1.pas', DCPrc2 in 'DCPCrypt\Ciphers\DCPrc2.pas', DCPrc4 in 'DCPCrypt\Ciphers\DCPrc4.pas', DCPrc5 in 'DCPCrypt\Ciphers\DCPrc5.pas', DCPrc6 in 'DCPCrypt\Ciphers\DCPrc6.pas', DCPrijndael in 'DCPCrypt\Ciphers\DCPrijndael.pas', DCPserpent in 'DCPCrypt\Ciphers\DCPserpent.pas',
 	DCPtea in 'DCPCrypt\Ciphers\DCPtea.pas', DCPtwofish in 'DCPCrypt\Ciphers\DCPtwofish.pas', DCPhaval in 'DCPCrypt\Hashes\DCPhaval.pas', DCPmd4 in 'DCPCrypt\Hashes\DCPmd4.pas', DCPmd5 in 'DCPCrypt\Hashes\DCPmd5.pas', DCPripemd128 in 'DCPCrypt\Hashes\DCPripemd128.pas', DCPripemd160 in 'DCPCrypt\Hashes\DCPripemd160.pas', DCPsha1 in 'DCPCrypt\Hashes\DCPsha1.pas', DCPsha256 in 'DCPCrypt\Hashes\DCPsha256.pas', DCPsha512 in 'DCPCrypt\Hashes\DCPsha512.pas', DCPtiger in 'DCPCrypt\Hashes\DCPtiger.pas', TCPasswordManagerHelper in 'TCPasswordManagerHelper.pas', HashInfo in 'HashInfo.pas', SplitFile in 'SplitFile.pas', ChunkedFileStream in 'ChunkedFileStream.pas', CMLParsers in 'CMLParsers.pas', CMLHTTP in 'CMLHTTP.pas', HTTPManager in 'HTTPManager.pas',
@@ -147,7 +150,7 @@ var
 	CurrentCloud: TCloudMailRu;
 begin
 	if path.trashDir or path.sharedDir{or path.invitesDir} then
-		Result := FindListingItemByName(CurrentListing, path.path) //Виртуальные каталоги не возвращают HomePath
+		Result := FindListingItemByName(CurrentListing, path.path)//Виртуальные каталоги не возвращают HomePath
 	else
 		Result := FindListingItemByHomePath(CurrentListing, path.path); //сначала попробуем найти поле в имеющемся списке
 
@@ -694,7 +697,7 @@ begin
 		Result := FS_EXEC_SYMLINK;
 	end else begin
 		if RealPath.path = '' then
-			TAccountsForm.ShowAccounts(MainWin, AccountsIniFilePath, SettingsIniFilePath, PasswordManager, RealPath.account) //main shared folder properties - open connection settings
+			TAccountsForm.ShowAccounts(MainWin, AccountsIniFilePath, SettingsIniFilePath, PasswordManager, RealPath.account)//main shared folder properties - open connection settings
 		else
 		begin
 			Cloud := ConnectionManager.get(RealPath.account, getResult);
@@ -746,7 +749,7 @@ var
 begin
 	Result := FS_EXEC_OK;
 	if RealPath.path = '' then
-		TAccountsForm.ShowAccounts(MainWin, AccountsIniFilePath, SettingsIniFilePath, PasswordManager, RealPath.account) //show account properties
+		TAccountsForm.ShowAccounts(MainWin, AccountsIniFilePath, SettingsIniFilePath, PasswordManager, RealPath.account)//show account properties
 	else
 	begin
 		Cloud := ConnectionManager.get(RealPath.account, getResult);
@@ -841,12 +844,10 @@ end;
 function FsExecuteFileW(MainWin: THandle; RemoteName, Verb: PWideChar): integer; stdcall; //Запуск файла
 var
 	RealPath: TRealPath;
-	StreamAppPath, StreamUrl: WideString;
-	getResult: integer;
-	TempCloud: TCloudMailRu;
-	CurrentItem: TCloudMailRuDirListingItem;
 begin
 	RealPath := ExtractRealPath(RemoteName);
+	Result := FS_EXEC_OK;
+
 	if RealPath.upDirItem then
 		RealPath.path := ExtractFilePath(RealPath.path); //if somepath/.. item properties called
 
@@ -863,26 +864,7 @@ begin
 		exit(ExecProperties(MainWin, RealPath));
 
 	if Verb = 'open' then
-	begin
-		if not RealPath.isDir and GetStreamingOptions(RealPath.path, StreamAppPath).enabled then //todo: m3u support
-		begin
-			CurrentItem := FindListingItemByPath(CurrentListing, RealPath);
-			TempCloud := ConnectionManager.get(RealPath.account, getResult);
-			if TempCloud.getPublishedFileStreamUrl(CurrentItem, StreamUrl) then
-			begin
-				//StreamUrl:=TempCloud
-				if (Run(StreamAppPath, StreamUrl)) then
-					exit(FS_EXEC_OK)
-				else
-					exit(FS_EXEC_ERROR);
-			end else begin
-				//todo: log error && exit
-			end;
-
-		end;
-
-	end;
-	exit(FS_EXEC_YOURSELF);
+		exit(FS_EXEC_YOURSELF);
 
 	if copy(Verb, 1, 5) = 'quote' then
 		exit(ExecCommand(RemoteName, LowerCase(GetWord(Verb, 1)), GetWord(Verb, 2)));
@@ -1979,4 +1961,4 @@ begin
 	DllInit(DLL_PROCESS_ATTACH);
 
 end.
-
+

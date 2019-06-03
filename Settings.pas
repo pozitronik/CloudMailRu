@@ -1,5 +1,5 @@
 ﻿unit Settings;
-
+
 interface
 
 uses Classes, Windows, SysUtils, IniFiles, System.Variants, System.IOUtils, Plugin_Types, MRC_Helper, VCL.Controls;
@@ -361,7 +361,7 @@ begin
 		if VirtualAccountsEnabled[2] then
 			VAccounts.Add(Account + InvitesPostfix);
 	end;
-	AccountsList.AddString(VAccounts);
+	AccountsList.AddStrings(VAccounts);
 	VAccounts.Free;
 end;
 
@@ -394,4 +394,4 @@ begin
 end;
 
 end.
-
+
