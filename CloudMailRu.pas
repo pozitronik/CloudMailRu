@@ -593,6 +593,8 @@ end;
 
 function TCloudMailRu.getSharedFileUrl(remotePath: WideString; DoUrlEncode: Boolean = true): WideString;
 begin
+	if public_download_token = EmptyWideStr then
+		getSharedToken();
 	result := IncludeSlash(self.public_shard) + IncludeSlash(self.public_link) + PathToUrl(remotePath, true, DoUrlEncode) + '?key=' + self.public_download_token
 end;
 
@@ -813,7 +815,7 @@ begin
 					if extractTwostepJson(PostAnswer, TwoStepJson) and JSONParser.getTwostepData(TwoStepJson, TwostepData) then
 					begin
 						if TwostepData.secstep_timeout = AUTH_APP_USED then
-							AuthMessage := 'Enter code from authentication app.'//mobile app used
+							AuthMessage := 'Enter code from authentication app.' //mobile app used
 						else if TwostepData.secstep_resend_fail = '1' then
 							AuthMessage := 'SMS timeout to ' + TwostepData.secstep_phone + ' (' + TwostepData.secstep_timeout.ToString + ' sec).'
 						else
