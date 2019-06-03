@@ -56,6 +56,8 @@ const
 	EncryptModeAskOnce = 2; //С прозрачным шифрованием, без хранения пароля
 	//EncryptModeAskAlways = 3; //не буду поддерживать без необходимости
 
+	StreamingPrefix = 'Streaming:';
+
 type
 	{Account-related options set}
 	TAccountSettings = record
@@ -379,19 +381,22 @@ begin
 end;
 
 function GetStreamingOptions(IniFilePath, FileName: WideString): TStreamingOptions;
-begin
-
-end;
-
-function IsSectionExists(IniFile: TIniFile; SectionName: WideString): boolean;
 var
-	SectionsList: TStringList;
+	IniFile: TIniFile;
+	SectionName: WideString;
 begin
-	SectionsList := TStringList.Create();
-	IniFile.ReadSections(IniFile, SectionsList);
-	//result:=SectionsList.
-	SectionsList.Destroy;
+	result := default (TStreamingOptions);
+	IniFile := TIniFile.Create(IniFilePath);
+	SectionName := StreamingPrefix + ExtractFileExt(FileName);
+	if IniFile.SectionExists(SectionName) then
+	begin
+		result.Enabled := true;
+		result.Application := IniFile.ReadString(SectionName, 'Application', EmptyWideStr);
+		result.Parameters := IniFile.ReadString(SectionName, 'Parameters', EmptyWideStr);
+		result.Format := IniFile.ReadInteger(SectionName, 'Format', 0);
+	end;
+	IniFile.Destroy;
+
 end;
 
 end.
-
