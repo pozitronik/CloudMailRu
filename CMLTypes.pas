@@ -182,6 +182,10 @@ const
 	NAME_CSRF = 'csrf';
 	NAME_DEVICE = 'device';
 
+	{Streaming formats}
+	STREAMING_FORMAT_AS_IS = 0;
+	STREAMING_FORMAT_PLAYLIST = 1;
+
 type
 	TCloudMailRuDirListingItem = Record
 		tree: WideString;
