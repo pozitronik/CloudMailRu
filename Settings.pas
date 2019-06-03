@@ -1,5 +1,5 @@
 ﻿unit Settings;
-
+
 interface
 
 uses Classes, Windows, SysUtils, IniFiles, System.Variants, System.IOUtils, Plugin_Types, MRC_Helper, VCL.Controls;
@@ -371,4 +371,4 @@ begin
 end;
 
 end.
-
+
