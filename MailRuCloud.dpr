@@ -1,6 +1,5 @@
 ﻿library MailRuCloud;
 
-
 {$R *.dres}
 
 uses SysUtils, System.Generics.Collections, DateUtils, windows, Classes, PLUGIN_TYPES, IdSSLOpenSSLHeaders, messages, inifiles, Vcl.controls, CloudMailRu in 'CloudMailRu.pas', MRC_Helper in 'MRC_Helper.pas', Accounts in 'Accounts.pas'{AccountsForm}, RemoteProperty in 'RemoteProperty.pas'{PropertyForm}, Descriptions in 'Descriptions.pas', ConnectionManager in 'ConnectionManager.pas', Settings in 'Settings.pas', ANSIFunctions in 'ANSIFunctions.pas', DeletedProperty in 'DeletedProperty.pas'{DeletedPropertyForm}, InviteProperty in 'InviteProperty.pas'{InvitePropertyForm}, AskPassword, CMLJSON in 'CMLJSON.pas', CMLTypes in 'CMLTypes.pas', DCPbase64 in 'DCPCrypt\DCPbase64.pas', DCPblockciphers in 'DCPCrypt\DCPblockciphers.pas', DCPconst in 'DCPCrypt\DCPconst.pas',
@@ -150,7 +149,7 @@ var
 	CurrentCloud: TCloudMailRu;
 begin
 	if path.trashDir or path.sharedDir{or path.invitesDir} then
-		Result := FindListingItemByName(CurrentListing, path.path)//Виртуальные каталоги не возвращают HomePath
+		Result := FindListingItemByName(CurrentListing, path.path) //Виртуальные каталоги не возвращают HomePath
 	else
 		Result := FindListingItemByHomePath(CurrentListing, path.path); //сначала попробуем найти поле в имеющемся списке
 
@@ -697,7 +696,7 @@ begin
 		Result := FS_EXEC_SYMLINK;
 	end else begin
 		if RealPath.path = '' then
-			TAccountsForm.ShowAccounts(MainWin, AccountsIniFilePath, SettingsIniFilePath, PasswordManager, RealPath.account)//main shared folder properties - open connection settings
+			TAccountsForm.ShowAccounts(MainWin, AccountsIniFilePath, SettingsIniFilePath, PasswordManager, RealPath.account) //main shared folder properties - open connection settings
 		else
 		begin
 			Cloud := ConnectionManager.get(RealPath.account, getResult);
@@ -749,7 +748,7 @@ var
 begin
 	Result := FS_EXEC_OK;
 	if RealPath.path = '' then
-		TAccountsForm.ShowAccounts(MainWin, AccountsIniFilePath, SettingsIniFilePath, PasswordManager, RealPath.account)//show account properties
+		TAccountsForm.ShowAccounts(MainWin, AccountsIniFilePath, SettingsIniFilePath, PasswordManager, RealPath.account) //show account properties
 	else
 	begin
 		Cloud := ConnectionManager.get(RealPath.account, getResult);
@@ -844,6 +843,11 @@ end;
 function FsExecuteFileW(MainWin: THandle; RemoteName, Verb: PWideChar): integer; stdcall; //Запуск файла
 var
 	RealPath: TRealPath;
+	StreamUrl: WideString;
+	getResult: integer;
+	TempCloud: TCloudMailRu;
+	CurrentItem: TCloudMailRuDirListingItem;
+	StreamingOptions: TStreamingOptions;
 begin
 	RealPath := ExtractRealPath(RemoteName);
 	Result := FS_EXEC_OK;
@@ -864,7 +868,25 @@ begin
 		exit(ExecProperties(MainWin, RealPath));
 
 	if Verb = 'open' then
-		exit(FS_EXEC_YOURSELF);
+		if not RealPath.isDir and GetStreamingOptions(SettingsIniFilePath, RealPath.path, StreamingOptions) then //todo: m3u support
+		begin
+			CurrentItem := FindListingItemByPath(CurrentListing, RealPath);
+			TempCloud := ConnectionManager.get(RealPath.account, getResult);
+			case StreamingOptions.Format of
+				STREAMING_FORMAT_AS_IS:
+					StreamUrl := TempCloud.getSharedFileUrl(CurrentItem.home);
+				STREAMING_FORMAT_PLAYLIST:
+					if not TempCloud.getPublishedFileStreamUrl(CurrentItem, StreamUrl) then
+						exit(FS_EXEC_ERROR);
+			end;
+
+			if (Run(StreamingOptions.Application, StreamUrl)) then
+				exit(FS_EXEC_OK)
+			else
+				exit(FS_EXEC_ERROR);
+
+		end;
+	exit(FS_EXEC_YOURSELF);
 
 	if copy(Verb, 1, 5) = 'quote' then
 		exit(ExecCommand(RemoteName, LowerCase(GetWord(Verb, 1)), GetWord(Verb, 2)));
@@ -1961,4 +1983,3 @@ begin
 	DllInit(DLL_PROCESS_ATTACH);
 
 end.
-
