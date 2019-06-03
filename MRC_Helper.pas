@@ -59,7 +59,7 @@ function GetTmpFileName(Prefix: WideString = ''): WideString;
 function ExtractCryptedFileNameFromPath(const FilePath: WideString): WideString;
 function ExtractUniversalFilePath(const FileName: string): string;
 function ExtractUniversalFileName(const FileName: string): string;
-function ExtractUniversalFileExt(const FileName: string): string;
+function ExtractUniversalFileExt(const FileName: string; TrimDot: boolean = false): string;
 function ChangePathFileName(const FilePath, NewFileName: WideString): WideString;
 function ChangeDecryptedPathFileName(const FilePath, NewFileName: WideString): WideString;
 function CopyExt(FromFilename, ToFilename: WideString): WideString;
@@ -128,7 +128,7 @@ begin
 	if (Content = nil) or (Content^ = #0) or (Strings = nil) then
 		exit;
 	Tail := Content;
-	InQuote := False;
+	InQuote := false;
 	QuoteChar := #0;
 	Strings.BeginUpdate;
 	try
@@ -185,11 +185,11 @@ begin
 	Result.account := EmptyWideStr;
 	Result.path := EmptyWideStr;
 	//we can't rely on isDir property, cause it can't be clearly defined =(
-	Result.isDir := False;
-	Result.upDirItem := False;
-	Result.trashDir := False;
-	Result.sharedDir := False;
-	Result.invitesDir := False;
+	Result.isDir := false;
+	Result.upDirItem := false;
+	Result.trashDir := false;
+	Result.sharedDir := false;
+	Result.invitesDir := false;
 
 	if VirtualPath = EmptyWideStr then
 		exit; //root
@@ -442,13 +442,16 @@ begin
 	Result := FileName.Substring(I + 1);
 end;
 
-function ExtractUniversalFileExt(const FileName: string): string;
+function ExtractUniversalFileExt(const FileName: string; TrimDot: boolean = false): string;
 var
 	I: integer;
 begin
 	I := FileName.LastDelimiter('.' + '/' + '\' + DriveDelim);
 	if (I >= 0) and (FileName.Chars[I] = '.') then
-		Result := FileName.Substring(I)
+		if TrimDot then
+			Result := FileName.Substring(I + 1)
+		else
+			Result := FileName.Substring(I)
 	else
 		Result := EmptyWideStr;
 end;
@@ -734,8 +737,7 @@ var
 begin
 	lpStartupInfo := Default (TStartUpInfo);
 	lpStartupInfo.cb := SizeOf(lpStartupInfo);
-
-	Result := CreateProcessW(PWideChar(path), PWideChar(ParamString), nil, nil, False, NORMAL_PRIORITY_CLASS, nil, nil, lpStartupInfo, lpProcessInformation);
+	Result := CreateProcessW(PWideChar(path), PWideChar(ParamString), nil, nil, false, NORMAL_PRIORITY_CLASS, nil, nil, lpStartupInfo, lpProcessInformation);
 	if Result then
 		with lpProcessInformation do
 		begin
