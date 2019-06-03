@@ -161,7 +161,7 @@ procedure DeleteAccountFromIniFile(IniFilePath: WideString; AccountName: WideStr
 procedure AddVirtualAccountsToAccountsList(AccountsIniFilePath: WideString; var AccountsList: TStringList; VirtualAccountsEnabled: TArray<boolean>);
 function GetDescriptionFileName(SettingsIniFilePath: WideString): WideString;
 function RemoteDescriptionsSupportEnabled(AccountSetting: TAccountSettings): boolean; //в случае включённого шифрования файловых имён поддержка движка файловых комментариев отключается (issue #5)
-function GetStreamingOptions(IniFilePath, FileName: WideString): TStreamingOptions;
+function GetStreamingOptions(IniFilePath, FileName: WideString; var StreamingOptions: TStreamingOptions): boolean;
 
 implementation
 
@@ -380,20 +380,22 @@ begin
 	result := not((AccountSetting.encrypt_files_mode <> EncryptModeNone) and AccountSetting.encrypt_filenames)
 end;
 
-function GetStreamingOptions(IniFilePath, FileName: WideString): TStreamingOptions;
+function GetStreamingOptions(IniFilePath, FileName: WideString; var StreamingOptions: TStreamingOptions): boolean;
 var
 	IniFile: TIniFile;
 	SectionName: WideString;
 begin
-	result := default (TStreamingOptions);
+	result := false;
+	StreamingOptions := default (TStreamingOptions);
 	IniFile := TIniFile.Create(IniFilePath);
-	SectionName := StreamingPrefix + ExtractFileExt(FileName);
+	SectionName := StreamingPrefix + ExtractUniversalFileExt(FileName, true);
 	if IniFile.SectionExists(SectionName) then
 	begin
-		result.Enabled := true;
-		result.Application := IniFile.ReadString(SectionName, 'Application', EmptyWideStr);
-		result.Parameters := IniFile.ReadString(SectionName, 'Parameters', EmptyWideStr);
-		result.Format := IniFile.ReadInteger(SectionName, 'Format', 0);
+		result := true;
+		StreamingOptions.Enabled := true;
+		StreamingOptions.Application := IniFile.ReadString(SectionName, 'Application', EmptyWideStr);
+		StreamingOptions.Parameters := IniFile.ReadString(SectionName, 'Parameters', EmptyWideStr);
+		StreamingOptions.Format := IniFile.ReadInteger(SectionName, 'Format', 0);
 	end;
 	IniFile.Destroy;
 
