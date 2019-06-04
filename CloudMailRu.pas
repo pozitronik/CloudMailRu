@@ -592,8 +592,6 @@ begin
 end;
 
 function TCloudMailRu.getSharedFileUrl(remotePath: WideString; DoUrlEncode: Boolean = true): WideString;
-var
-	a, b, c: WideString;
 begin
 	result := IncludeSlash(self.public_shard) + IncludeSlash(self.public_link) + PathToUrl(remotePath, true, DoUrlEncode) + '?key=' + self.public_download_token
 end;
@@ -681,7 +679,7 @@ begin
 	if not self.getShard(shard_url, ShardType) then
 		exit;
 
-	StreamUrl := shard_url + '0p/' + DCPbase64.Base64EncodeStr(Utf8ToAnsi(FileIdentity.weblink)) + '.m3u8?double_encode=1'; //UTF2Ansi is required
+	StreamUrl := shard_url + '0p/' + DCPbase64.Base64EncodeStr(RawByteString(FileIdentity.weblink)) + '.m3u8?double_encode=1'; //UTF2Ansi is required
 	result := true;
 end;
 
