@@ -340,7 +340,8 @@ procedure TPropertyForm.TempPublicCloudInit(publicUrl: WideString);
 var
 	TempCloudSettings: TCloudSettings;
 begin
-	TempCloudSettings.AccountSettings.public_account := true;  {TODO: check parameters}
+	TempCloudSettings := default (TCloudSettings);
+	TempCloudSettings.AccountSettings.public_account := true;
 	TempCloudSettings.AccountSettings.public_url := publicUrl;
 	self.TempPublicCloud := TCloudMailRu.Create(TempCloudSettings, nil);
 	self.TempPublicCloud.login;
