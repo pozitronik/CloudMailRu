@@ -21,7 +21,7 @@ type
 		FileCipher: TFileCipher; //Encryption class
 		JSONParser: TCloudMailRuJSONParser; //JSON parser
 
-		public_link: WideString; //
+		public_link: WideString; //public_ params is active for public clouds only
 		public_download_token: WideString; //token for public urls, refreshes on request
 		public_shard: WideString; //public downloads shard url
 		Shard: WideString; //download shard url
@@ -592,9 +592,9 @@ begin
 end;
 
 function TCloudMailRu.getSharedFileUrl(remotePath: WideString; DoUrlEncode: Boolean = true): WideString;
+var
+	a, b, c: WideString;
 begin
-	if public_download_token = EmptyWideStr then
-		getSharedToken();
 	result := IncludeSlash(self.public_shard) + IncludeSlash(self.public_link) + PathToUrl(remotePath, true, DoUrlEncode) + '?key=' + self.public_download_token
 end;
 
