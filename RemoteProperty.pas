@@ -183,7 +183,7 @@ begin
 		begin (*рекурсивно получаем все ссылки в каталоге*)
 			FillRecursiveDownloadListing(EmptyWideStr, self.TempPublicCloud);
 		end else begin
-			DownloadLinksMemo.lines.Text := TempPublicCloud.getSharedFileUrl(EmptyWideStr, self.DoUrlEncode);
+			DownloadLinksMemo.lines.Text := TempPublicCloud.getSharedFileUrl(self.RemoteName, self.DoUrlEncode);
 		end;
 		TempPublicCloud.Free;
 	end;
