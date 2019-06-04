@@ -840,13 +840,46 @@ begin
 
 end;
 
+function ExecuteFileStream(RealPath: TRealPath; StreamingOptions: TStreamingOptions): integer; //todo: m3u support
+var
+	StreamUrl: WideString;
+	getResult: integer;
+	CurrentCloud, TempPublicCloud: TCloudMailRu;
+	CurrentItem: TCloudMailRuDirListingItem;
+	TempCloudSettings: TCloudSettings;
+begin
+	CurrentItem := FindListingItemByPath(CurrentListing, RealPath);
+	if EmptyWideStr = CurrentItem.weblink then
+	begin
+		CurrentCloud := ConnectionManager.get(RealPath.account, getResult);
+		if not CurrentCloud.publishFile(CurrentItem.home, CurrentItem.weblink) then
+			exit(FS_EXEC_ERROR);
+	end;
+	{todo: same as RemoteProperty.TempPublicCloudInit}
+	TempCloudSettings := default (TCloudSettings);
+	TempCloudSettings.AccountSettings.public_account := true;
+	TempCloudSettings.AccountSettings.public_url := PUBLIC_ACCESS_URL + CurrentItem.weblink;
+	TempPublicCloud := TCloudMailRu.Create(TempCloudSettings, nil);
+	TempPublicCloud.login;
+
+	case StreamingOptions.Format of
+		STREAMING_FORMAT_AS_IS:
+			StreamUrl := TempPublicCloud.getSharedFileUrl(EmptyWideStr); //Empty path for files
+		STREAMING_FORMAT_PLAYLIST:
+			if not TempPublicCloud.getPublishedFileStreamUrl(CurrentItem, StreamUrl) then
+				Result := FS_EXEC_ERROR;
+	end;
+
+	if (Run(StreamingOptions.Application, StreamUrl)) then
+		Result := FS_EXEC_OK
+	else
+		Result := FS_EXEC_ERROR;
+	TempPublicCloud.Free;
+end;
+
 function FsExecuteFileW(MainWin: THandle; RemoteName, Verb: PWideChar): integer; stdcall; //Запуск файла
 var
 	RealPath: TRealPath;
-	StreamUrl: WideString;
-	getResult: integer;
-	TempCloud: TCloudMailRu;
-	CurrentItem: TCloudMailRuDirListingItem;
 	StreamingOptions: TStreamingOptions;
 begin
 	RealPath := ExtractRealPath(RemoteName);
@@ -868,24 +901,8 @@ begin
 		exit(ExecProperties(MainWin, RealPath));
 
 	if Verb = 'open' then
-		if not RealPath.isDir and GetStreamingOptions(SettingsIniFilePath, RealPath.path, StreamingOptions) then //todo: m3u support
-		begin
-			CurrentItem := FindListingItemByPath(CurrentListing, RealPath);
-			TempCloud := ConnectionManager.get(RealPath.account, getResult);
-			case StreamingOptions.Format of
-				STREAMING_FORMAT_AS_IS:
-					StreamUrl := TempCloud.getSharedFileUrl(CurrentItem.home);
-				STREAMING_FORMAT_PLAYLIST:
-					if not TempCloud.getPublishedFileStreamUrl(CurrentItem, StreamUrl) then
-						exit(FS_EXEC_ERROR);
-			end;
-
-			if (Run(StreamingOptions.Application, StreamUrl)) then
-				exit(FS_EXEC_OK)
-			else
-				exit(FS_EXEC_ERROR);
-
-		end;
+		if not RealPath.isDir and GetStreamingOptions(SettingsIniFilePath, RealPath.path, StreamingOptions) then
+			exit(ExecuteFileStream(RealPath, StreamingOptions));
 	exit(FS_EXEC_YOURSELF);
 
 	if copy(Verb, 1, 5) = 'quote' then
@@ -1259,8 +1276,8 @@ begin
 		Cloud.getShareInfo(CurrentItem.home, InvitesListing);
 		for Invite in InvitesListing do
 			Cloud.shareFolder(CurrentItem.home, Invite.email, CLOUD_SHARE_NO); //no reporting here
-		if (CurrentItem.WebLink <> '') then
-			Cloud.publishFile(CurrentItem.home, CurrentItem.WebLink, CLOUD_UNPUBLISH);
+		if (CurrentItem.weblink <> '') then
+			Cloud.publishFile(CurrentItem.home, CurrentItem.weblink, CLOUD_UNPUBLISH);
 		Result := true;
 	end
 	else
@@ -1346,8 +1363,8 @@ end;
 
 function cloneWeblink(NewCloud, OldCloud: TCloudMailRu; CloudPath: WideString; CurrentItem: TCloudMailRuDirListingItem; NeedUnpublish: Boolean): integer;
 begin
-	Result := NewCloud.cloneWeblink(ExtractFileDir(CloudPath), CurrentItem.WebLink, CLOUD_CONFLICT_STRICT);
-	if (NeedUnpublish) and (FS_FILE_USERABORT <> Result) and not(OldCloud.publishFile(CurrentItem.home, CurrentItem.WebLink, CLOUD_UNPUBLISH)) then
+	Result := NewCloud.cloneWeblink(ExtractFileDir(CloudPath), CurrentItem.weblink, CLOUD_CONFLICT_STRICT);
+	if (NeedUnpublish) and (FS_FILE_USERABORT <> Result) and not(OldCloud.publishFile(CurrentItem.home, CurrentItem.weblink, CLOUD_UNPUBLISH)) then
 		LogHandle(LogLevelError, MSGTYPE_IMPORTANTERROR, PWideChar('Can''t remove temporary public link on ' + CurrentItem.home));
 end;
 
@@ -1423,10 +1440,10 @@ begin
 
 	if OldCloud.statusFile(OldRealPath.path, CurrentItem) then
 	begin
-		if CurrentItem.WebLink = '' then //create temporary weblink
+		if CurrentItem.weblink = '' then //create temporary weblink
 		begin
 			NeedUnpublish := true;
-			if not(OldCloud.publishFile(CurrentItem.home, CurrentItem.WebLink)) then //problem publishing
+			if not(OldCloud.publishFile(CurrentItem.home, CurrentItem.weblink)) then //problem publishing
 			begin
 				LogHandle(LogLevelError, MSGTYPE_IMPORTANTERROR, PWideChar('Can''t get temporary public link on ' + CurrentItem.home));
 				exit(FS_FILE_READERROR);
@@ -1638,7 +1655,7 @@ begin
 			end;
 		5:
 			begin
-				strpcopy(FieldValue, Item.WebLink);
+				strpcopy(FieldValue, Item.weblink);
 				Result := ft_stringw;
 			end;
 		6:
@@ -1831,7 +1848,7 @@ begin
 		begin
 			if Item.kind = KIND_SHARED then
 				strpcopy(RemoteName, 'shared')
-			else if Item.WebLink <> '' then
+			else if Item.weblink <> '' then
 				strpcopy(RemoteName, 'shared_public')
 			else
 				exit(FS_ICON_USEDEFAULT);
