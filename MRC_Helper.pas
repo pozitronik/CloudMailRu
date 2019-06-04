@@ -737,7 +737,7 @@ var
 begin
 	lpStartupInfo := Default (TStartUpInfo);
 	lpStartupInfo.cb := SizeOf(lpStartupInfo);
-	Result := CreateProcessW(PWideChar(path), PWideChar(ParamString), nil, nil, false, NORMAL_PRIORITY_CLASS, nil, nil, lpStartupInfo, lpProcessInformation);
+	Result := CreateProcessW(nil, PWideChar(path + ' "' + ParamString + '"'), nil, nil, false, NORMAL_PRIORITY_CLASS, nil, nil, lpStartupInfo, lpProcessInformation);
 	if Result then
 		with lpProcessInformation do
 		begin
