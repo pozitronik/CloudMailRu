@@ -9,8 +9,8 @@ type
 	TCloudMailRuHTTP = class
 	private
 		{VARIABLES}
-		ExternalSourceName: PWideChar;
-		ExternalTargetName: PWideChar;
+		ExternalSourceName: WideString;
+		ExternalTargetName: WideString;
 
 		SSL: TIdSSLIOHandlerSocketOpenSSL;
 		Socks: TIdSocksInfo;
@@ -160,7 +160,7 @@ begin
 	result := false;
 	try
 		if ProgressEnabled then
-			HTTP.OnWork := self.Progress//Вызов прогресса ведёт к возможности отменить получение списка каталогов и других операций, поэтому он нужен не всегда
+			HTTP.OnWork := self.Progress //Вызов прогресса ведёт к возможности отменить получение списка каталогов и других операций, поэтому он нужен не всегда
 		else
 			HTTP.OnWork := nil;
 		Answer := HTTP.Get(URL);
@@ -310,7 +310,7 @@ begin
 	if (Pos('chunked', LowerCase(HTTP.Response.TransferEncoding)) = 0) and (ContentLength > 0) then
 	begin
 		Percent := 100 * AWorkCount div ContentLength;
-		if Assigned(ExternalProgressProc) and (ExternalProgressProc(self.ExternalSourceName, self.ExternalTargetName, Percent) = 1) then {При передаче nil прогресс оставляет предыдущие значения}
+		if Assigned(ExternalProgressProc) and (ExternalProgressProc(PWideChar(self.ExternalSourceName), PWideChar(self.ExternalTargetName), Percent) = 1) then {При передаче nil прогресс оставляет предыдущие значения}
 			abort;
 	end;
 end;
@@ -322,18 +322,18 @@ end;
 
 procedure TCloudMailRuHTTP.SetExternalSourceName(const Value: WideString);
 begin
-	self.ExternalSourceName := PWideChar(Value);
+	self.ExternalSourceName := Value;
 end;
 
 procedure TCloudMailRuHTTP.SetExternalTargetName(const Value: WideString);
 begin
-	self.ExternalTargetName := PWideChar(Value);
+	self.ExternalTargetName := Value;
 end;
 
 procedure TCloudMailRuHTTP.SetProgressNames(SourceName, TargetName: WideString);
 begin
-	self.ExternalSourceName := PWideChar(SourceName);
-	self.ExternalTargetName := PWideChar(TargetName);
+	self.ExternalSourceName := SourceName;
+	self.ExternalTargetName := TargetName;
 end;
 
 procedure TCloudMailRuHTTP.Log(LogLevel, MsgType: integer; LogString: WideString);
