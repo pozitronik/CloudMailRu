@@ -848,13 +848,14 @@ var
 	CurrentItem: TCloudMailRuDirListingItem;
 	TempCloudSettings: TCloudSettings;
 begin
-	CurrentItem := FindListingItemByPath(CurrentListing, RealPath);
+	CurrentItem := FindListingItemByPath(CurrentListing, RealPath); //todo: проверить и доработать поведение для паблик-облаков
 	if EmptyWideStr = CurrentItem.weblink then
 	begin
 		CurrentCloud := ConnectionManager.get(RealPath.account, getResult);
 		if not CurrentCloud.publishFile(CurrentItem.home, CurrentItem.weblink) then
 			exit(FS_EXEC_ERROR);
 	end;
+
 	{todo: same as RemoteProperty.TempPublicCloudInit}
 	TempCloudSettings := default (TCloudSettings);
 	TempCloudSettings.AccountSettings.public_account := true;
