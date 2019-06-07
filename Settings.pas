@@ -107,7 +107,7 @@ type
 		DescriptionTrackCloudFS: boolean;
 		DescriptionFileName: WideString;
 		CopyBetweenAccountsMode: integer;
-		CloudMaxFileSize: integer;
+		CloudMaxFileSize: int64;
 		ChunkOverwriteMode: integer;
 		DeleteFailOnUploadMode: integer;
 		OperationErrorMode: integer;
