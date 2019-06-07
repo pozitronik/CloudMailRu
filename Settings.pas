@@ -109,7 +109,7 @@ type
 		DescriptionTrackCloudFS: boolean;
 		DescriptionFileName: WideString;
 		CopyBetweenAccountsMode: integer;
-		CloudMaxFileSize: integer;
+		CloudMaxFileSize: int64;
 		ChunkOverwriteMode: integer;
 		DeleteFailOnUploadMode: integer;
 		OperationErrorMode: integer;
@@ -151,6 +151,11 @@ type
 		Format: integer;
 	end;
 
+	TIniFilesHelper = class helper for TIniFile
+		function ReadInt64(const Section, Ident: string; Default: int64): int64;
+		procedure WriteInt64(const Section, Ident: string; Value: int64);
+	end;
+
 function GetPluginSettings(IniFilePath: WideString): TPluginSettings;
 procedure SetPluginSettingsValue(IniFilePath: WideString; OptionName: WideString; OptionValue: Variant);
 function GetAccountSettingsFromIniFile(IniFilePath: WideString; AccountName: WideString): TAccountSettings;
@@ -187,7 +192,7 @@ begin
 	GetPluginSettings.ConnectionSettings.SocketTimeout := IniFile.ReadInteger('Main', 'SocketTimeout', -1);
 	GetPluginSettings.ConnectionSettings.UploadBPS := IniFile.ReadInteger('Main', 'UploadBPS', -1);
 	GetPluginSettings.ConnectionSettings.DownloadBPS := IniFile.ReadInteger('Main', 'DownloadBPS', -1);
-	GetPluginSettings.CloudMaxFileSize := IniFile.ReadInteger('Main', 'CloudMaxFileSize', CLOUD_MAX_FILESIZE_DEFAULT);
+	GetPluginSettings.CloudMaxFileSize := IniFile.ReadInt64('Main', 'CloudMaxFileSize', CLOUD_MAX_FILESIZE_DEFAULT);
 	GetPluginSettings.ChunkOverwriteMode := IniFile.ReadInteger('Main', 'ChunkOverwriteMode', 0);
 	GetPluginSettings.DeleteFailOnUploadMode := IniFile.ReadInteger('Main', 'DeleteFailOnUploadMode', 0);
 	GetPluginSettings.OverwriteLocalMode := IniFile.ReadInteger('Main', 'OverwriteLocalMode', 0);
@@ -398,7 +403,23 @@ begin
 		StreamingOptions.Format := IniFile.ReadInteger(SectionName, 'Format', 0);
 	end;
 	IniFile.Destroy;
+end;
 
+{TIniFilesHelper}
+
+function TIniFilesHelper.ReadInt64(const Section, Ident: string; Default: int64): int64;
+var
+	IntStr: string;
+begin
+	IntStr := ReadString(Section, Ident, '');
+	if (IntStr.Length > 2) and (IntStr.StartsWith('0x', true)) then
+		IntStr := '$' + IntStr.Substring(2);
+	result := StrToInt64Def(IntStr, Default);
+end;
+
+procedure TIniFilesHelper.WriteInt64(const Section, Ident: string; Value: int64);
+begin
+	WriteString(Section, Ident, IntToStr(Value));
 end;
 
 end.
