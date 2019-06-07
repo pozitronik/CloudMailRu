@@ -139,7 +139,11 @@ type
 		OperationErrorMode: integer;
 		RetryAttempts: integer;
 		AttemptWait: integer;
+	end;
 
+	TIniFilesHelper = class helper for TIniFile
+		function ReadInt64(const Section, Ident: string; Default: Int64): Int64;
+		procedure WriteInt64(const Section, Ident: string; Value: Int64);
 	end;
 
 function GetPluginSettings(IniFilePath: WideString): TPluginSettings;
@@ -177,7 +181,7 @@ begin
 	GetPluginSettings.ConnectionSettings.SocketTimeout := IniFile.ReadInteger('Main', 'SocketTimeout', -1);
 	GetPluginSettings.ConnectionSettings.UploadBPS := IniFile.ReadInteger('Main', 'UploadBPS', -1);
 	GetPluginSettings.ConnectionSettings.DownloadBPS := IniFile.ReadInteger('Main', 'DownloadBPS', -1);
-	GetPluginSettings.CloudMaxFileSize := IniFile.ReadInteger('Main', 'CloudMaxFileSize', CLOUD_MAX_FILESIZE_DEFAULT);
+	GetPluginSettings.CloudMaxFileSize := IniFile.ReadInt64('Main', 'CloudMaxFileSize', CLOUD_MAX_FILESIZE_DEFAULT);
 	GetPluginSettings.ChunkOverwriteMode := IniFile.ReadInteger('Main', 'ChunkOverwriteMode', 0);
 	GetPluginSettings.DeleteFailOnUploadMode := IniFile.ReadInteger('Main', 'DeleteFailOnUploadMode', 0);
 	GetPluginSettings.OverwriteLocalMode := IniFile.ReadInteger('Main', 'OverwriteLocalMode', 0);
@@ -370,5 +374,21 @@ begin
 	result := not((AccountSetting.encrypt_files_mode <> EncryptModeNone) and AccountSetting.encrypt_filenames)
 end;
 
-end.
+{TIniFilesHelper}
 
+function TIniFilesHelper.ReadInt64(const Section, Ident: string; Default: Int64): Int64;
+var
+	IntStr: string;
+begin
+	IntStr := ReadString(Section, Ident, '');
+	if (IntStr.Length > 2) and (IntStr.StartsWith('0x', true)) then
+		IntStr := '$' + IntStr.Substring(2);
+	result := StrToInt64Def(IntStr, Default);
+end;
+
+procedure TIniFilesHelper.WriteInt64(const Section, Ident: string; Value: Int64);
+begin
+	WriteString(Section, Ident, IntToStr(Value));
+end;
+
+end.
