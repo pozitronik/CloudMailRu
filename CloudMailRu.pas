@@ -794,7 +794,7 @@ begin
 					if extractTwostepJson(PostAnswer, TwoStepJson) and JSONParser.getTwostepData(TwoStepJson, TwostepData) then
 					begin
 						if TwostepData.secstep_timeout = AUTH_APP_USED then
-							AuthMessage := 'Enter code from authentication app.'//mobile app used
+							AuthMessage := 'Enter code from authentication app.' //mobile app used
 						else if TwostepData.secstep_resend_fail = '1' then
 							AuthMessage := 'SMS timeout to ' + TwostepData.secstep_phone + ' (' + TwostepData.secstep_timeout.ToString + ' sec).'
 						else
@@ -1430,9 +1430,9 @@ const
 var
 	sha1: THashSHA1;
 	buffer: array [0 .. bufSize - 1] of byte;
-	read: LongInt;
+	read, iteration, processedBytes: int64;
 	initBuffer, finalBuffer: TBytes;
-	Percent, iteration: integer;
+	Percent: integer;
 	Aborted: Boolean;
 begin
 	Aborted := false;
@@ -1454,7 +1454,8 @@ begin
 	iteration := 0;
 	repeat
 		iteration := iteration + 1;
-		Percent := Round((8192 * iteration / Stream.size) * 100);
+		processedBytes := bufSize * iteration;
+		Percent := Round((processedBytes / Stream.size) * 100);
 		if Percent > 100 then
 			Percent := 100;
 
