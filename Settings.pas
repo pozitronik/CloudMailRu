@@ -135,7 +135,7 @@ type
 		ConnectionSettings: TConnectionSettings;
 		PrecalculateHash: boolean;
 		CheckCRC: boolean;
-		CloudMaxFileSize: integer;
+		CloudMaxFileSize: int64;
 		OperationErrorMode: integer;
 		RetryAttempts: integer;
 		AttemptWait: integer;

@@ -73,7 +73,7 @@ type
 
 		Property HTTP: TCloudMailRuHTTP read getHTTPConnection;
 
-		Property CloudMaxFileSize: integer read OptionsSet.CloudMaxFileSize;
+		Property CloudMaxFileSize: int64 read OptionsSet.CloudMaxFileSize;
 		Property PrecalculateHash: Boolean read OptionsSet.PrecalculateHash;
 		Property CheckCRC: Boolean read OptionsSet.CheckCRC;
 		Property shard_override: WideString read OptionsSet.AccountSettings.shard_override;
