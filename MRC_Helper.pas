@@ -64,6 +64,7 @@ function ChangePathFileName(const FilePath, NewFileName: WideString): WideString
 function ChangeDecryptedPathFileName(const FilePath, NewFileName: WideString): WideString;
 function CopyExt(FromFilename, ToFilename: WideString): WideString;
 function GetUNCFilePath(FilePath: WideString): WideString;
+function GetLFCFilePath(FilePath: WideString): WideString; //UNC => LFC
 function GetWord(command: WideString; WordIndex: integer = 0): WideString; //Возвращает указанное значащее слово из строки с учётом кавычек (парсинг команд)
 function ExtractLinkFromUrl(URL: WideString): WideString; //При необходимости преобразует адрес публичной ссылки к нужному виду
 function IsWriteable(const DirName: WideString; FileName: WideString = 'delete.me'; CleanFile: boolean = true): boolean;
@@ -472,6 +473,13 @@ begin
 	Result := ExpandUNCFileName(FilePath);
 	if not(Pos(WideString('\\'), Result) = 1) then
 		Result := '\\?\' + FilePath;
+end;
+
+function GetLFCFilePath(FilePath: WideString): WideString; //UNC => LFC
+begin
+	Result := FilePath;
+	if Pos(WideString('\\?\'), Result) = 1 then
+		Result := Copy(FilePath, 5, Length(FilePath) - 4);
 end;
 
 function GetWord(command: WideString; WordIndex: integer = 0): WideString;
