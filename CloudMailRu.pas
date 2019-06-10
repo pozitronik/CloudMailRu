@@ -48,7 +48,7 @@ type
 		function CloudResultToFsResult(CloudResult: TCloudMailRuOperationResult; ErrorPrefix: WideString = ''): integer;
 		function CloudResultToBoolean(CloudResult: TCloudMailRuOperationResult; ErrorPrefix: WideString = ''): Boolean;
 		function cloudHash(Path: WideString): WideString; overload; //get cloud hash for specified file
-		function cloudHash(Stream: TStream): WideString; overload; //get cloud hash for data in stream
+		function cloudHash(Stream: TStream; Path: WideString = 'Calculating cloud hash'): WideString; overload; //get cloud hash for data in stream
 		function getHTTPConnection: TCloudMailRuHTTP;
 	protected
 		{REGULAR CLOUD}
@@ -73,7 +73,7 @@ type
 
 		Property HTTP: TCloudMailRuHTTP read getHTTPConnection;
 
-		Property CloudMaxFileSize: integer read OptionsSet.CloudMaxFileSize;
+		Property CloudMaxFileSize: int64 read OptionsSet.CloudMaxFileSize;
 		Property PrecalculateHash: Boolean read OptionsSet.PrecalculateHash;
 		Property CheckCRC: Boolean read OptionsSet.CheckCRC;
 		Property shard_override: WideString read OptionsSet.AccountSettings.shard_override;
@@ -1164,7 +1164,7 @@ var
 begin
 	if self.PrecalculateHash then //try to add whole file by hash at first.
 		LocalFileIdentity := FileIdentity(GetUNCFilePath(localPath));
-
+	{Отмена расчёта хеша приведёт к отмене всей операции: TC запоминает нажатие отмены и ExternalProgressProc будет возвращать 1 до следующего вызова копирования}
 	if self.PrecalculateHash and (LocalFileIdentity.Hash <> EmptyWideStr) and (not self.crypt_files) and (FS_FILE_OK = self.addFileByIdentity(LocalFileIdentity, remotePath, CLOUD_CONFLICT_STRICT, false, true)) then {issue #135}
 		exit(CLOUD_OPERATION_OK);
 
@@ -1438,20 +1438,20 @@ begin
 	except
 		exit;
 	end;
-	result := cloudHash(Stream);
+	result := cloudHash(Stream, GetLFCFilePath(Path));
 	Stream.Destroy;
 
 end;
 
-function TCloudMailRu.cloudHash(Stream: TStream): WideString;
+function TCloudMailRu.cloudHash(Stream: TStream; Path: WideString = 'Calculating cloud hash'): WideString;
 const
 	bufSize = 8192;
 var
 	sha1: THashSHA1;
 	buffer: array [0 .. bufSize - 1] of byte;
-	read: LongInt;
+	read, iteration, processedBytes: int64;
 	initBuffer, finalBuffer: TBytes;
-	Percent, iteration: integer;
+	Percent: integer;
 	Aborted: Boolean;
 begin
 	Aborted := false;
@@ -1473,13 +1473,14 @@ begin
 	iteration := 0;
 	repeat
 		iteration := iteration + 1;
-		Percent := Round((8192 * iteration / Stream.size) * 100);
+		processedBytes := bufSize * iteration;
+		Percent := Round((processedBytes / Stream.size) * 100);
 		if Percent > 100 then
 			Percent := 100;
 
 		read := Stream.read(buffer, bufSize);
 		sha1.Update(buffer, read);
-		if (1 = ExternalProgressProc(nil, 'Calculating cloud hash', Percent)) then
+		if (1 = ExternalProgressProc(PWideChar(Path), 'Calculating cloud hash', Percent)) then
 		begin
 			Aborted := true;
 		end;
