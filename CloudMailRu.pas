@@ -48,7 +48,7 @@ type
 		function CloudResultToFsResult(CloudResult: TCloudMailRuOperationResult; ErrorPrefix: WideString = ''): integer;
 		function CloudResultToBoolean(CloudResult: TCloudMailRuOperationResult; ErrorPrefix: WideString = ''): Boolean;
 		function cloudHash(Path: WideString): WideString; overload; //get cloud hash for specified file
-		function cloudHash(Stream: TStream): WideString; overload; //get cloud hash for data in stream
+		function cloudHash(Stream: TStream; Path: WideString = 'Calculating cloud hash'): WideString; overload; //get cloud hash for data in stream
 		function getHTTPConnection: TCloudMailRuHTTP;
 	protected
 		{REGULAR CLOUD}
@@ -1145,7 +1145,7 @@ var
 begin
 	if self.PrecalculateHash then //try to add whole file by hash at first.
 		LocalFileIdentity := FileIdentity(GetUNCFilePath(localPath));
-
+	{TODO: проверить - отмена расчёта хеша ведёт к отмене всей операции}
 	if self.PrecalculateHash and (LocalFileIdentity.Hash <> EmptyWideStr) and (not self.crypt_files) and (FS_FILE_OK = self.addFileByIdentity(LocalFileIdentity, remotePath, CLOUD_CONFLICT_STRICT, false, true)) then {issue #135}
 		exit(CLOUD_OPERATION_OK);
 
@@ -1419,12 +1419,12 @@ begin
 	except
 		exit;
 	end;
-	result := cloudHash(Stream);
+	result := cloudHash(Stream, GetLFCFilePath(Path));
 	Stream.Destroy;
 
 end;
 
-function TCloudMailRu.cloudHash(Stream: TStream): WideString;
+function TCloudMailRu.cloudHash(Stream: TStream; Path: WideString = 'Calculating cloud hash'): WideString;
 const
 	bufSize = 8192;
 var
@@ -1461,7 +1461,7 @@ begin
 
 		read := Stream.read(buffer, bufSize);
 		sha1.Update(buffer, read);
-		if (1 = ExternalProgressProc(nil, 'Calculating cloud hash', Percent)) then
+		if (1 = ExternalProgressProc(PWideChar(Path), 'Calculating cloud hash', Percent)) then
 		begin
 			Aborted := true;
 		end;
