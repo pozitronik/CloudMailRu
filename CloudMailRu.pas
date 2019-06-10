@@ -1145,7 +1145,7 @@ var
 begin
 	if self.PrecalculateHash then //try to add whole file by hash at first.
 		LocalFileIdentity := FileIdentity(GetUNCFilePath(localPath));
-	{TODO: проверить - отмена расчёта хеша ведёт к отмене всей операции}
+	{Отмена расчёта хеша приведёт к отмене всей операции: TC запоминает нажатие отмены и ExternalProgressProc будет возвращать 1 до следующего вызова копирования}
 	if self.PrecalculateHash and (LocalFileIdentity.Hash <> EmptyWideStr) and (not self.crypt_files) and (FS_FILE_OK = self.addFileByIdentity(LocalFileIdentity, remotePath, CLOUD_CONFLICT_STRICT, false, true)) then {issue #135}
 		exit(CLOUD_OPERATION_OK);
 
