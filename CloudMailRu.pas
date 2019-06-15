@@ -1281,7 +1281,7 @@ begin
 		exit(FS_FILE_WRITEERROR); //Проверка на вызов без инициализации
 	if self.public_account then
 		exit(FS_FILE_NOTSUPPORTED);
-	self.HTTP.SetProgressNames(remotePath, localPath);
+	self.HTTP.SetProgressNames(localPath, remotePath);
 	if (not(self.unlimited_filesize)) and (SizeOfFile(GetUNCFilePath(localPath)) > self.CloudMaxFileSize) then
 	begin
 		if self.split_large_files then
