@@ -2,7 +2,7 @@
 
 interface
 
-uses Classes, Windows, SysUtils, IniFiles, System.Variants, System.IOUtils, Plugin_Types, MRC_Helper, VCL.Controls;
+uses Classes, Windows, SysUtils, IniFiles, System.Variants, System.IOUtils, Plugin_Types, MRC_Helper, VCL.Controls, System.RegularExpressions;
 
 const
 	ProxyNone = 0;
@@ -98,7 +98,6 @@ type
 	{Global plugin options}
 	TPluginSettings = record
 		ConnectionSettings: TConnectionSettings;
-
 		IniPath: integer;
 		LoadSSLDLLOnlyFromPluginDir: boolean;
 		PreserveFileTime: boolean;
@@ -154,6 +153,9 @@ type
 	TIniFilesHelper = class helper for TIniFile
 		function ReadInt64(const Section, Ident: string; Default: int64): int64;
 		procedure WriteInt64(const Section, Ident: string; Value: int64);
+		procedure WriteString(const Section, Ident, Value: String); //owerride default Write%Anything% metod
+		function ValidateSectionName(const Section: string): boolean;
+		function ValidateIdentName(const Ident: string): boolean;
 	end;
 
 function GetPluginSettings(IniFilePath: WideString): TPluginSettings;
@@ -417,9 +419,35 @@ begin
 	result := StrToInt64Def(IntStr, Default);
 end;
 
+function TIniFilesHelper.ValidateIdentName(const Ident: string): boolean;
+var
+	RegEx: TRegEx;
+begin
+	RegEx := TRegEx.Create('^([a-z]|[A-Z]|\.|\$|\:)([a-z]|[A-Z]|[0-9]|_|~|-|\.|:|\$|\s)+');
+	result := RegEx.Match(Ident).Success;
+end;
+
+function TIniFilesHelper.ValidateSectionName(const Section: string): boolean;
+var
+	RegEx: TRegEx;
+begin
+
+	RegEx := TRegEx.Create('\[|\]|\n');
+	result := not RegEx.Match(Section).Success;
+end;
+
 procedure TIniFilesHelper.WriteInt64(const Section, Ident: string; Value: int64);
 begin
 	WriteString(Section, Ident, IntToStr(Value));
+end;
+
+procedure TIniFilesHelper.WriteString(const Section, Ident, Value: String);
+begin
+	if not(self.ValidateSectionName(Section)) then
+		raise EIniFileException.CreateFmt('Invalid section name %s', [Section]);
+	if not(self.ValidateIdentName(Ident)) then
+		raise EIniFileException.CreateFmt('Invalid identifier name %s', [Ident]);
+	inherited WriteString(Section, Ident, Value);
 end;
 
 end.
