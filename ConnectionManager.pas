@@ -9,7 +9,7 @@ uses CloudMailRu, CMLTypes, MRC_Helper, windows, Vcl.Controls, PLUGIN_Types, Set
 
 type
 
-	TConnectionManager = class//Можно сделать что-то вроде TDictionaryManager, и от него наследоваться.
+	TConnectionManager = class //Можно сделать что-то вроде TDictionaryManager, и от него наследоваться.
 	private
 		Connections: TDictionary<WideString, TCloudMailRu>;
 		HTTPManager: THTTPManager;
@@ -67,6 +67,7 @@ end;
 
 function TConnectionManager.get(connectionName: WideString; var OperationResult: integer): TCloudMailRu;
 begin
+	OperationResult := CLOUD_OPERATION_OK;
 	if not Connections.TryGetValue(connectionName, Result) then
 	begin
 		OperationResult := init(connectionName, Result);
