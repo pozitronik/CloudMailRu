@@ -1922,6 +1922,7 @@ begin
 	FreeAndNil(ThreadBackgroundJobs);
 	FreeAndNil(ThreadFsStatusInfo);
 	FreeAndNil(ThreadFsRemoveDirSkippedPath);
+	FreeAndNil(ThreadBackgroundThreads);
 	FreeAndNil(ConnectionManager);
 	FreeAndNil(HTTPManager);
 
