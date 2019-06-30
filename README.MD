@@ -1,5 +1,8 @@
 # Плагин [Total Commander](http://www.ghisler.com/) для работы с [cloud.mail.ru](http://cloud.mail.ru)
 
+[![GitHub releases](https://img.shields.io/github/downloads/pozitronik/CloudMailRu/total.svg)](https://github.com/pozitronik/CloudMailRu/releases)
+[![License](https://img.shields.io/github/license/pozitronik/CloudMailRu.svg)](https://github.com/pozitronik/CloudMailRu/blob/master/LICENSE)
+
 ![Plugin screenshot](plugin.png)
 
 ### Описание
