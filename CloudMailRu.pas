@@ -502,7 +502,10 @@ begin
 	if self.public_account then
 		result := self.HTTP.GetPage(API_FOLDER + '&weblink=' + IncludeSlash(self.public_link) + PathToUrl(Path, false) + self.united_params, JSON, ShowProgress)
 	else
+		begin
+		self.HTTP.SetProgressNames('Directory listing:', Path);
 		result := self.HTTP.GetPage(API_FOLDER + '&home=' + PathToUrl(Path) + self.united_params, JSON, ShowProgress);
+		end;
 	if result then
 	begin
 		OperationResult := JSONParser.getOperationResult(JSON);
