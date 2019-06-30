@@ -323,6 +323,7 @@ begin
 		exit; //Проверка на вызов без инициализации
 	if self.public_account then
 		exit;
+	self.HTTP.SetProgressNames('Create directory', Path);
 	result := self.HTTP.PostForm(API_FOLDER_ADD, 'home=/' + PathToUrl(Path) + self.united_params + '&conflict', JSON) and CloudResultToBoolean(JSONParser.getOperationResult(JSON))
 
 end;
@@ -336,6 +337,7 @@ begin
 		exit; //Проверка на вызов без инициализации
 	if self.public_account then
 		exit;
+	self.HTTP.SetProgressNames('Delete file', Path);
 	result := self.HTTP.PostForm(API_FILE_REMOVE, 'home=/' + PathToUrl(Path) + self.united_params + '&conflict', JSON) and CloudResultToBoolean(JSONParser.getOperationResult(JSON), 'Delete file error: ');
 end;
 
@@ -1351,6 +1353,7 @@ begin
 		exit; //Проверка на вызов без инициализации
 	if self.public_account then
 		exit;
+	self.HTTP.SetProgressNames('Remove directory', Path);
 	result := self.HTTP.PostForm(API_FILE_REMOVE, 'home=/' + IncludeSlash(PathToUrl(Path)) + self.united_params + '&conflict', JSON) and CloudResultToBoolean(JSONParser.getOperationResult(JSON), 'Directory deletion error: '); //API всегда отвечает true, даже если путь не существует
 end;
 
