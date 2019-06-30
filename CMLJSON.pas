@@ -375,9 +375,8 @@ begin
 				result.OperationResult := (CLOUD_ERROR_UNKNOWN);
 			end;
 			if error = EmptyWideStr then
-			begin
 				error := ((ParserObj.Values[NAME_BODY] as TJSONObject).Values[nodename] as TJSONObject).Values[NAME_ERROR].Value;
-			end else if error = 'exists' then
+			if error = 'exists' then
 				result.OperationResult := CLOUD_ERROR_EXISTS
 			else if error = 'required' then
 				result.OperationResult := CLOUD_ERROR_REQUIRED
