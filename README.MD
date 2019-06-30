@@ -2,7 +2,7 @@
 
 [![GitHub releases](https://img.shields.io/github/downloads/pozitronik/CloudMailRu/total.svg)](https://github.com/pozitronik/CloudMailRu/releases)
 [![Issues open](https://img.shields.io/github/issues/pozitronik/CloudMailRu.svg)](https://github.com/pozitronik/CloudMailRu/issues)
-[![Issues closed](https://img.shields.io/github/issues-closed/pozitronik/CloudMailRu.svg](https://github.com/pozitronik/CloudMailRu/issues?q=is%3Aissue+is%3Aclosed)
+[![Issues closed](https://img.shields.io/github/issues-closed/pozitronik/CloudMailRu.svg)](https://github.com/pozitronik/CloudMailRu/issues?q=is%3Aissue+is%3Aclosed)
 [![License](https://img.shields.io/github/license/pozitronik/CloudMailRu.svg)](https://github.com/pozitronik/CloudMailRu/blob/master/LICENSE)
 
 ![Plugin screenshot](plugin.png)
