@@ -102,7 +102,7 @@ type
 		function putFile(localPath, remotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; ChunkOverwriteMode: integer = 0): integer;
 		function renameFile(OldName, NewName: WideString): integer; //смена имени без перемещения
 		function moveFile(OldName, ToPath: WideString): integer; //перемещение по дереву каталогов
-		function copyFile(OldName, ToPath: WideString): integer; //Копирование файла внутри одного каталога
+		function copyFile(OldName, ToPath: WideString): integer; //Копирование файла внутри одного аккаунта
 		function mvFile(OldName, NewName: WideString): integer; //объединяющая функция, определяет делать rename или move
 		function cpFile(OldName, NewName: WideString): integer; //Копирует файл, и переименует, если нужно
 		function deleteFile(Path: WideString): Boolean;
@@ -253,6 +253,7 @@ function TCloudMailRu.cpFile(OldName, NewName: WideString): integer;
 var
 	NewPath: WideString;
 	SameDir, SameName: Boolean;
+//  FileInfo:TCloudMailRuDirListingItem;
 begin //Облако умеет скопировать файл, но не сможет его переименовать, поэтому хитрим
 	NewPath := ExtractFilePath(NewName);
 	SameDir := ExtractFilePath(OldName) = ExtractFilePath(NewName);
@@ -262,6 +263,11 @@ begin //Облако умеет скопировать файл, но не см�
 		Log(LogLevelWarning, MSGTYPE_IMPORTANTERROR, 'Copying in same dir not supported by cloud');
 		exit(FS_FILE_NOTSUPPORTED);
 	end else begin
+  {TODO: issue #219}
+//		if (self.statusFile(NewName,FileInfo)) then //file already exists
+//			begin
+//
+//			end;
 		result := self.copyFile(OldName, NewPath);
 		if result <> CLOUD_OPERATION_OK then
 			exit;
