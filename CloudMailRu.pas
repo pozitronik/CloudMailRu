@@ -242,6 +242,7 @@ begin
 		exit; //Проверка на вызов без инициализации
 	if self.public_account then
 		exit(FS_FILE_NOTSUPPORTED);
+	self.HTTP.SetProgressNames(OldName,  IncludeTrailingPathDelimiter(ToPath) + ExtractFileName(OldName));
 	if self.HTTP.PostForm(API_FILE_COPY, 'home=' + PathToUrl(OldName) + '&folder=' + PathToUrl(ToPath) + self.united_params + '&conflict', JSON) then
 	begin //Парсим ответ
 		result := CloudResultToFsResult(JSONParser.getOperationResult(JSON), 'File copy error: ');
