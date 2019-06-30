@@ -1341,7 +1341,7 @@ begin
 		exit;
 	if OldCloud.statusFile(OldRealPath.path, CurrentItem) then
 	begin
-		Result := NewCloud.addFileByIdentity(CurrentItem, ExtractFileDir(NewRealPath.path) + ExtractFileName(NewRealPath.path));
+		Result := NewCloud.addFileByIdentity(CurrentItem, IncludeTrailingPathDelimiter(ExtractFileDir(NewRealPath.path)) + ExtractFileName(NewRealPath.path));
 		if not(Result in [FS_FILE_OK, FS_FILE_EXISTS]) then
 		begin
 
@@ -1354,7 +1354,7 @@ begin
 								ID_ABORT:
 									Result := FS_FILE_USERABORT;
 								ID_RETRY:
-									Result := NewCloud.addFileByIdentity(CurrentItem, ExtractFileDir(NewRealPath.path) + CurrentItem.name);
+									Result := NewCloud.addFileByIdentity(CurrentItem, IncludeTrailingPathDelimiter(ExtractFileDir(NewRealPath.path)) + CurrentItem.name);
 								ID_IGNORE:
 									break;
 							end;
