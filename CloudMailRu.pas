@@ -242,7 +242,7 @@ begin
 		exit; //Проверка на вызов без инициализации
 	if self.public_account then
 		exit(FS_FILE_NOTSUPPORTED);
-	self.HTTP.SetProgressNames(OldName,  IncludeTrailingPathDelimiter(ToPath) + ExtractFileName(OldName));
+	self.HTTP.SetProgressNames(OldName, IncludeTrailingPathDelimiter(ToPath) + ExtractFileName(OldName));
 	if self.HTTP.PostForm(API_FILE_COPY, 'home=' + PathToUrl(OldName) + '&folder=' + PathToUrl(ToPath) + self.united_params + '&conflict', JSON) then
 	begin //Парсим ответ
 		result := CloudResultToFsResult(JSONParser.getOperationResult(JSON), 'File copy error: ');
@@ -253,7 +253,7 @@ function TCloudMailRu.cpFile(OldName, NewName: WideString): integer;
 var
 	NewPath: WideString;
 	SameDir, SameName: Boolean;
-//  FileInfo:TCloudMailRuDirListingItem;
+	//FileInfo:TCloudMailRuDirListingItem;
 begin //Облако умеет скопировать файл, но не сможет его переименовать, поэтому хитрим
 	NewPath := ExtractFilePath(NewName);
 	SameDir := ExtractFilePath(OldName) = ExtractFilePath(NewName);
@@ -263,11 +263,11 @@ begin //Облако умеет скопировать файл, но не см�
 		Log(LogLevelWarning, MSGTYPE_IMPORTANTERROR, 'Copying in same dir not supported by cloud');
 		exit(FS_FILE_NOTSUPPORTED);
 	end else begin
-  {TODO: issue #219}
-//		if (self.statusFile(NewName,FileInfo)) then //file already exists
-//			begin
-//
-//			end;
+		{TODO: issue #219}
+		//if (self.statusFile(NewName,FileInfo)) then //file already exists
+		//begin
+		//
+		//end;
 		result := self.copyFile(OldName, NewPath);
 		if result <> CLOUD_OPERATION_OK then
 			exit;
@@ -502,10 +502,10 @@ begin
 	if self.public_account then
 		result := self.HTTP.GetPage(API_FOLDER + '&weblink=' + IncludeSlash(self.public_link) + PathToUrl(Path, false) + self.united_params, JSON, ShowProgress)
 	else
-		begin
+	begin
 		self.HTTP.SetProgressNames('Directory listing:', Path);
 		result := self.HTTP.GetPage(API_FOLDER + '&home=' + PathToUrl(Path) + self.united_params, JSON, ShowProgress);
-		end;
+	end;
 	if result then
 	begin
 		OperationResult := JSONParser.getOperationResult(JSON);
@@ -1224,8 +1224,7 @@ begin
 									ID_RETRY:
 										Dec(SplittedPartIndex); //retry with this chunk
 									ID_IGNORE:
-										begin
-											{do nothing && continue}
+										begin {do nothing && continue}
 										end;
 
 								end;
