@@ -428,6 +428,9 @@ begin
 	SetLength(DirListing, 0);
 	if self.public_account then
 		exit;
+	if (ShowProgress) then
+		self.HTTP.SetProgressNames('Shared links listing', '...');
+
 	result := self.HTTP.GetPage(API_FOLDER_SHARED_LINKS + '?' + self.united_params, JSON, ShowProgress);
 	if result then
 		result := CloudResultToBoolean(JSONParser.getOperationResult(JSON), 'Shared links listing error: ');
@@ -443,6 +446,8 @@ begin
 	SetLength(IncomingListing, 0);
 	if self.public_account then
 		exit;
+	if (ShowProgress) then
+		self.HTTP.SetProgressNames('Incoming links listing', '...');
 	result := self.HTTP.GetPage(API_FOLDER_SHARED_INCOMING + '?' + self.united_params, JSON, ShowProgress) and CloudResultToBoolean(JSONParser.getOperationResult(JSON), 'Incoming requests listing error: ');
 end;
 
@@ -480,6 +485,8 @@ begin
 	SetLength(DirListing, 0);
 	if self.public_account then
 		exit;
+	if (ShowProgress) then
+		self.HTTP.SetProgressNames('Trashbin listing', '...');
 	result := self.HTTP.GetPage(API_TRASHBIN + '?' + self.united_params, JSON, ShowProgress);
 
 	if result then
