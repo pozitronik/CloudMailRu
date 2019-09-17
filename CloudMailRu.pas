@@ -2,7 +2,7 @@
 
 interface
 
-uses CMLJSON, CMLParsers, CMLTypes, CMLHTTP, System.Hash, System.Classes, System.Generics.Collections, System.SysUtils, PLUGIN_Types, Winapi.Windows, MRC_helper, Settings, Cipher, Splitfile, ChunkedFileStream, HTTPManager, IdCookieManager;
+uses CMLJSON, CMLParsers, CMLTypes, CMLHTTP, System.Hash, System.Classes, System.Generics.Collections, System.SysUtils, PLUGIN_Types, Winapi.Windows, MRC_helper, Settings, Cipher, Splitfile, ChunkedFileStream, HTTPManager, IdCookieManager, DCPbase64;
 
 type
 	TCloudMailRu = class
@@ -21,7 +21,7 @@ type
 		FileCipher: TFileCipher; //Encryption class
 		JSONParser: TCloudMailRuJSONParser; //JSON parser
 
-		public_link: WideString; //
+		public_link: WideString; //public_ params is active for public clouds only
 		public_download_token: WideString; //token for public urls, refreshes on request
 		public_shard: WideString; //public downloads shard url
 		Shard: WideString; //download shard url
@@ -35,7 +35,7 @@ type
 		function getToken(): Boolean;
 		function getSharedToken(): Boolean;
 		function getOAuthToken(var OAuthToken: TCloudMailRuOAuthInfo): Boolean;
-		function getShard(var Shard: WideString): Boolean;
+		function getShard(var Shard: WideString; ShardType: WideString = SHARD_TYPE_GET): Boolean;
 		function getUserSpace(var SpaceInfo: TCloudMailRuSpaceInfo): Boolean;
 		function putFileToCloud(FileName: WideString; FileStream: TStream; var FileIdentity: TCloudMailRuFileIdentity): integer; overload; //отправка на сервер данных из потока
 		{PRIVATE UPLOAD METHODS CHAIN (CALLED FROM putFile())}
@@ -119,6 +119,7 @@ type
 		function mountFolder(home, invite_token: WideString; ConflictMode: WideString = CLOUD_CONFLICT_RENAME): Boolean;
 		function unmountFolder(home: WideString; clone_copy: Boolean): Boolean;
 		function rejectInvite(invite_token: WideString): Boolean;
+		function getPublishedFileStreamUrl(FileIdentity: TCloudMailRuDirListingItem; var StreamUrl: WideString; ShardType: WideString = SHARD_TYPE_WEBLINK_VIDEO; publish: Boolean = CLOUD_PUBLISH): Boolean;
 		{OTHER ROUTINES}
 		function getDescriptionFile(remotePath, localCopy: WideString): Boolean; //Если в каталоге remotePath есть descript.ion - скопировать его в файл localcopy
 		function putDesriptionFile(remotePath, localCopy: WideString): Boolean; //Скопировать descript.ion из временного файла на сервер
@@ -128,7 +129,7 @@ type
 		class function CloudAccessToString(access: WideString; Invert: Boolean = false): WideString; static;
 		class function StringToCloudAccess(accessString: WideString; Invert: Boolean = false): integer; static;
 		class function ErrorCodeText(ErrorCode: integer): WideString; static;
-		class function IsSameIdentity(IdentityOne, IdentityTwo: TCloudMailRuFileIdentity): Boolean;
+		class function IsSameIdentity(IdentityOne, IdentityTwo: TCloudMailRuFileIdentity): Boolean; static;
 	end;
 
 implementation
@@ -683,7 +684,25 @@ begin
 	end;
 end;
 
-function TCloudMailRu.getShard(var Shard: WideString): Boolean;
+function TCloudMailRu.getPublishedFileStreamUrl(FileIdentity: TCloudMailRuDirListingItem; var StreamUrl: WideString; ShardType: WideString = SHARD_TYPE_WEBLINK_VIDEO; publish: Boolean = CLOUD_PUBLISH): Boolean;
+var
+	shard_url: WideString;
+begin
+	result := false;
+	if (EmptyWideStr = FileIdentity.weblink) then //publish and fill weblink, if required
+	begin
+		if (not publish) or (not self.publishFile(FileIdentity.home, FileIdentity.weblink)) then
+			exit;
+	end;
+
+	if not self.getShard(shard_url, ShardType) then
+		exit;
+
+	StreamUrl := shard_url + '0p/' + DCPbase64.Base64EncodeStr(RawByteString(FileIdentity.weblink)) + '.m3u8?double_encode=1'; //UTF2Ansi is required
+	result := true;
+end;
+
+function TCloudMailRu.getShard(var Shard: WideString; ShardType: WideString = SHARD_TYPE_GET): Boolean;
 var
 	JSON: WideString;
 begin
@@ -699,7 +718,7 @@ begin
 	result := self.HTTP.PostForm(API_DISPATCHER, self.united_params, JSON) and CloudResultToBoolean(JSONParser.getOperationResult(JSON), 'Shard receive error: ');
 	if result then
 	begin
-		result := JSONParser.getShard(JSON, Shard) and (Shard <> EmptyWideStr);
+		result := JSONParser.getShard_(JSON, Shard, ShardType) and (Shard <> EmptyWideStr);
 		Log(LogLevelDetail, MSGTYPE_DETAILS, 'Shard received: ' + Shard);
 	end;
 

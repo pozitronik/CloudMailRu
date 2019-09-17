@@ -4,64 +4,6 @@ interface
 
 uses JSON, CMLTypes, System.SysUtils, System.Generics.Collections;
 
-const
-	NAME_BODY = 'body';
-	NAME_LIST = 'list';
-	NAME_SIZE = 'size';
-	NAME_KIND = 'kind';
-	NAME_WEBLINK = 'weblink';
-	NAME_TYPE = 'type';
-	NAME_HOME = 'home';
-	NAME_NAME = 'name'; //funny
-	NAME_DELETED_AT = 'deleted_at';
-	NAME_DELETED_FROM = 'deleted_from';
-	NAME_DELETED_BY = 'deleted_by';
-	NAME_GREV = 'grev';
-	NAME_REV = 'rev';
-	NAME_MTIME = 'mtime';
-	NAME_VIRUS_SCAN = 'virus_scan';
-	NAME_HASH = 'hash';
-	NAME_TREE = 'tree';
-	NAME_COUNT = 'count';
-	NAME_EMAIL = 'email';
-	NAME_STATUS = 'status';
-	NAME_ACCESS = 'access';
-	NAME_OVERQUOTA = 'overquota';
-	NAME_TOTAL = 'bytes_total';
-	NAME_USED = 'bytes_used';
-	NAME_FOLDERS = 'folders';
-	NAME_FILES = 'files';
-	NAME_INVITED = 'invited';
-	NAME_OWNER = 'owner';
-	NAME_INVITE_TOKEN = 'invite_token';
-	NAME_ERROR = 'error';
-	NAME_ERROR_CODE = 'error_code';
-	NAME_ERROR_DESCRIPTION = 'error_description';
-	NAME_EXPIRES_IN = 'expires_in';
-	NAME_REFRESH_TOKEN = 'refresh_token';
-	NAME_ACCESS_TOKEN = 'access_token';
-	NAME_INVITE = 'invite';
-	NAME_INVITE_EMAIL = 'invite_email';
-	NAME_GET = 'get';
-	NAME_URL = 'url';
-	NAME_FORM_NAME = 'form_name';
-	NAME_AUTH_HOST = 'auth_host';
-	NAME_SECSTEP_PHONE = 'secstep_phone';
-	NAME_SECSTEP_PAGE = 'secstep_page';
-	NAME_SECSTEP_CODE_FAIL = 'secstep_code_fail';
-	NAME_SECSTEP_RESEND_FAIL = 'secstep_resend_fail';
-	NAME_SECSTEP_RESEND_SUCCESS = 'secstep_resend_success';
-	NAME_SECSTEP_TIMEOUT = 'secstep_timeout';
-	NAME_SECSTEP_LOGIN = 'secstep_login';
-	NAME_SECSTEP_DISPOSABLE_FAIL = 'secstep_disposable_fail';
-	NAME_SECSTEP_SMSAPI_ERROR = 'secstep_smsapi_error';
-	NAME_SECSTEP_CAPTCHA = 'secstep_captcha';
-	NAME_TOTP_ENABLED = 'totp_enabled';
-	NAME_LOCALE = 'locale';
-	NAME_CLIENT = 'client';
-	NAME_CSRF = 'csrf';
-	NAME_DEVICE = 'device';
-
 type
 	TCloudMailRuJSONParser = class
 	private
@@ -91,8 +33,8 @@ type
 		function getOperationResult(JSON: WideString): TCloudMailRuOperationResult; overload;
 		function getPublicLink(var PublicLink: WideString): Boolean; overload;
 		function getPublicLink(JSON: WideString; var PublicLink: WideString): Boolean; overload;
-		function getShard(var Shard: WideString): Boolean; overload;
-		function getShard(JSON: WideString; var Shard: WideString): Boolean; overload;
+		function getShard(var Shard: WideString; ShardType: WideString = SHARD_TYPE_GET): Boolean; overload;
+		function getShard_(JSON: WideString; var Shard: WideString; ShardType: WideString = SHARD_TYPE_GET): Boolean; overload;
 		function getTwostepData(var TwostepData: TCloudMailRuTwostepData): Boolean; overload;
 		function getTwostepData(JSON: WideString; var TwostepData: TCloudMailRuTwostepData): Boolean; overload;
 		function getUserSpace(var CloudMailRuSpaceInfo: TCloudMailRuSpaceInfo): Boolean; overload;
@@ -439,11 +381,11 @@ begin
 	result := true;
 end;
 
-function TCloudMailRuJSONParser.getShard(var Shard: WideString): Boolean;
+function TCloudMailRuJSONParser.getShard(var Shard: WideString; ShardType: WideString = SHARD_TYPE_GET): Boolean;
 begin
 	result := false;
 	try
-		Shard := ((((JSONVal as TJSONObject).Values[NAME_BODY] as TJSONObject).Values[NAME_GET] as TJSONArray).Items[0] as TJSONObject).Values[NAME_URL].Value;
+		Shard := ((((JSONVal as TJSONObject).Values[NAME_BODY] as TJSONObject).Values[ShardType] as TJSONArray).Items[0] as TJSONObject).Values[NAME_URL].Value;
 	except
 		exit;
 	end;
@@ -557,10 +499,10 @@ begin
 	exit(getPublicLink(PublicLink));
 end;
 
-function TCloudMailRuJSONParser.getShard(JSON: WideString; var Shard: WideString): Boolean;
+function TCloudMailRuJSONParser.getShard_(JSON: WideString; var Shard: WideString; ShardType: WideString = NAME_GET): Boolean;//Некрасиво получается, подумать над переделкой, например вызывать методы только статикой
 begin
 	init(JSON);
-	exit(getShard(Shard));
+	exit(getShard(Shard, ShardType));
 end;
 
 function TCloudMailRuJSONParser.getTwostepData(JSON: WideString; var TwostepData: TCloudMailRuTwostepData): Boolean;

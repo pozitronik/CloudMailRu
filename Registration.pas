@@ -2,7 +2,7 @@ unit Registration;
 
 interface
 
-uses Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, CloudMailRu, Settings, Vcl.StdCtrls, Vcl.ExtCtrls, Jpeg, CMLHTTP, CMLJSON, CMLTypes, PLUGIN_Types;
+uses Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, CloudMailRu, Settings, Vcl.StdCtrls, Vcl.ExtCtrls, CMLHTTP, CMLJSON, CMLTypes, PLUGIN_Types, Vcl.Imaging.JPEG;
 
 const
 	MAILRU_REGISTRATION_SIGNUP = 'https://account.mail.ru/api/v1/user/signup';

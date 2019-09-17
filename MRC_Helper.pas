@@ -59,7 +59,7 @@ function GetTmpFileName(Prefix: WideString = ''): WideString;
 function ExtractCryptedFileNameFromPath(const FilePath: WideString): WideString;
 function ExtractUniversalFilePath(const FileName: string): string;
 function ExtractUniversalFileName(const FileName: string): string;
-function ExtractUniversalFileExt(const FileName: string): string;
+function ExtractUniversalFileExt(const FileName: string; TrimDot: boolean = false): string;
 function ChangePathFileName(const FilePath, NewFileName: WideString): WideString;
 function ChangeDecryptedPathFileName(const FilePath, NewFileName: WideString): WideString;
 function CopyExt(FromFilename, ToFilename: WideString): WideString;
@@ -82,6 +82,7 @@ function IncludeSlash(const Str: WideString): WideString;
 function NormalizeSlashes(const Str: WideString): WideString;
 function TrimEx(const Str: WideString; TrimChar: WideChar): WideString;
 function FormatSize(size: Int64; SizeType: integer = TYPE_AUTO): WideString; //Форматируем размер в удобочитаемый вид
+function Run(path, ParamString: WideString; SubstituteVariables: boolean = true): boolean;
 //Procedure FileLog(S: WideString);
 
 implementation
@@ -128,7 +129,7 @@ begin
 	if (Content = nil) or (Content^ = #0) or (Strings = nil) then
 		exit;
 	Tail := Content;
-	InQuote := False;
+	InQuote := false;
 	QuoteChar := #0;
 	Strings.BeginUpdate;
 	try
@@ -185,11 +186,11 @@ begin
 	Result.account := EmptyWideStr;
 	Result.path := EmptyWideStr;
 	//we can't rely on isDir property, cause it can't be clearly defined =(
-	Result.isDir := False;
-	Result.upDirItem := False;
-	Result.trashDir := False;
-	Result.sharedDir := False;
-	Result.invitesDir := False;
+	Result.isDir := false;
+	Result.upDirItem := false;
+	Result.trashDir := false;
+	Result.sharedDir := false;
+	Result.invitesDir := false;
 
 	if VirtualPath = EmptyWideStr then
 		exit; //root
@@ -442,13 +443,16 @@ begin
 	Result := FileName.Substring(I + 1);
 end;
 
-function ExtractUniversalFileExt(const FileName: string): string;
+function ExtractUniversalFileExt(const FileName: string; TrimDot: boolean = false): string;
 var
 	I: integer;
 begin
 	I := FileName.LastDelimiter('.' + '/' + '\' + DriveDelim);
 	if (I >= 0) and (FileName.Chars[I] = '.') then
-		Result := FileName.Substring(I)
+		if TrimDot then
+			Result := FileName.Substring(I + 1)
+		else
+			Result := FileName.Substring(I)
 	else
 		Result := EmptyWideStr;
 end;
@@ -681,6 +685,9 @@ end;
 
 function IncludeSlash(const Str: WideString): WideString;
 begin
+	if Str = EmptyWideStr then
+		exit('/');
+
 	Result := Str;
 	if not(Result[High(Result)] = '/') then
 		Result := Result + '/';
@@ -729,6 +736,23 @@ begin
 		exit(size.ToString() + ' ' + postfixes[iteration + SizeType]);
 	end;
 
+end;
+
+function Run(path, ParamString: WideString; SubstituteVariables: boolean = true): boolean;
+var
+	lpStartupInfo: TStartUpInfo;
+	lpProcessInformation: TProcessInformation;
+begin
+	lpStartupInfo := Default (TStartUpInfo);
+	lpStartupInfo.cb := SizeOf(lpStartupInfo);
+	Result := CreateProcessW(nil, PWideChar(path + ' "' + ParamString + '"'), nil, nil, false, NORMAL_PRIORITY_CLASS, nil, nil, lpStartupInfo, lpProcessInformation);
+	if Result then
+		with lpProcessInformation do
+		begin
+			WaitForInputIdle(hProcess, INFINITE); //ждем завершения инициализации
+			CloseHandle(hThread); //закрываем дескриптор процесса
+			CloseHandle(hProcess); //закрываем дескриптор потока
+		end
 end;
 
 end.

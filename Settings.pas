@@ -2,7 +2,7 @@
 
 interface
 
-uses Classes, Windows, SysUtils, IniFiles, System.Variants, System.IOUtils, Plugin_Types, MRC_Helper, VCL.Controls;
+uses Classes, Windows, SysUtils, IniFiles, System.Variants, System.IOUtils, Plugin_Types, MRC_Helper, VCL.Controls, System.RegularExpressions;
 
 const
 	ProxyNone = 0;
@@ -56,6 +56,8 @@ const
 	EncryptModeAskOnce = 2; //С прозрачным шифрованием, без хранения пароля
 	//EncryptModeAskAlways = 3; //не буду поддерживать без необходимости
 
+	StreamingPrefix = 'Streaming:';
+
 type
 	{Account-related options set}
 	TAccountSettings = record
@@ -96,7 +98,6 @@ type
 	{Global plugin options}
 	TPluginSettings = record
 		ConnectionSettings: TConnectionSettings;
-
 		IniPath: integer;
 		LoadSSLDLLOnlyFromPluginDir: boolean;
 		PreserveFileTime: boolean;
@@ -141,9 +142,20 @@ type
 		AttemptWait: integer;
 	end;
 
+	{Параметры стриминга для расширения}
+	TStreamingOptions = record
+		Enabled: boolean; //Стриминг разрешён
+		Application: WideString; //Вызываемое приложение
+		Parameters: WideString; //параметры, передаваемые приложению
+		Format: integer;
+	end;
+
 	TIniFilesHelper = class helper for TIniFile
-		function ReadInt64(const Section, Ident: string; Default: Int64): Int64;
-		procedure WriteInt64(const Section, Ident: string; Value: Int64);
+		function ReadInt64(const Section, Ident: string; Default: int64): int64;
+		procedure WriteInt64(const Section, Ident: string; Value: int64);
+		procedure WriteString(const Section, Ident, Value: String); //owerride default Write%Anything% metod
+		function ValidateSectionName(const Section: string): boolean;
+		function ValidateIdentName(const Ident: string): boolean;
 	end;
 
 function GetPluginSettings(IniFilePath: WideString): TPluginSettings;
@@ -156,6 +168,7 @@ procedure DeleteAccountFromIniFile(IniFilePath: WideString; AccountName: WideStr
 procedure AddVirtualAccountsToAccountsList(AccountsIniFilePath: WideString; var AccountsList: TStringList; VirtualAccountsEnabled: TArray<boolean>);
 function GetDescriptionFileName(SettingsIniFilePath: WideString): WideString;
 function RemoteDescriptionsSupportEnabled(AccountSetting: TAccountSettings): boolean; //в случае включённого шифрования файловых имён поддержка движка файловых комментариев отключается (issue #5)
+function GetStreamingOptions(IniFilePath, FileName: WideString; var StreamingOptions: TStreamingOptions): boolean;
 
 implementation
 
@@ -374,9 +387,29 @@ begin
 	result := not((AccountSetting.encrypt_files_mode <> EncryptModeNone) and AccountSetting.encrypt_filenames)
 end;
 
+function GetStreamingOptions(IniFilePath, FileName: WideString; var StreamingOptions: TStreamingOptions): boolean;
+var
+	IniFile: TIniFile;
+	SectionName: WideString;
+begin
+	result := false;
+	StreamingOptions := default (TStreamingOptions);
+	IniFile := TIniFile.Create(IniFilePath);
+	SectionName := StreamingPrefix + ExtractUniversalFileExt(FileName, true);
+	if IniFile.SectionExists(SectionName) then
+	begin
+		result := true;
+		StreamingOptions.Enabled := true;
+		StreamingOptions.Application := IniFile.ReadString(SectionName, 'Application', EmptyWideStr);
+		StreamingOptions.Parameters := IniFile.ReadString(SectionName, 'Parameters', EmptyWideStr);
+		StreamingOptions.Format := IniFile.ReadInteger(SectionName, 'Format', 0);
+	end;
+	IniFile.Destroy;
+end;
+
 {TIniFilesHelper}
 
-function TIniFilesHelper.ReadInt64(const Section, Ident: string; Default: Int64): Int64;
+function TIniFilesHelper.ReadInt64(const Section, Ident: string; Default: int64): int64;
 var
 	IntStr: string;
 begin
@@ -386,9 +419,35 @@ begin
 	result := StrToInt64Def(IntStr, Default);
 end;
 
-procedure TIniFilesHelper.WriteInt64(const Section, Ident: string; Value: Int64);
+function TIniFilesHelper.ValidateIdentName(const Ident: string): boolean;
+var
+	RegEx: TRegEx;
+begin
+	RegEx := TRegEx.Create('^([a-z]|[A-Z]|\.|\$|\:)([a-z]|[A-Z]|[0-9]|_|~|-|\.|:|\$|\s)+');
+	result := RegEx.Match(Ident).Success;
+end;
+
+function TIniFilesHelper.ValidateSectionName(const Section: string): boolean;
+var
+	RegEx: TRegEx;
+begin
+
+	RegEx := TRegEx.Create('\[|\]|\n');
+	result := not RegEx.Match(Section).Success;
+end;
+
+procedure TIniFilesHelper.WriteInt64(const Section, Ident: string; Value: int64);
 begin
 	WriteString(Section, Ident, IntToStr(Value));
+end;
+
+procedure TIniFilesHelper.WriteString(const Section, Ident, Value: String);
+begin
+	if not(self.ValidateSectionName(Section)) then
+		raise EIniFileException.CreateFmt('Invalid section name %s', [Section]);
+	if not(self.ValidateIdentName(Ident)) then
+		raise EIniFileException.CreateFmt('Invalid identifier name %s', [Ident]);
+	inherited WriteString(Section, Ident, Value);
 end;
 
 end.

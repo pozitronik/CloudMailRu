@@ -1,6 +1,5 @@
 ﻿library MailRuCloud;
 
-
 {$R *.dres}
 
 uses SysUtils, System.Generics.Collections, DateUtils, windows, Classes, PLUGIN_TYPES, IdSSLOpenSSLHeaders, messages, inifiles, Vcl.controls, CloudMailRu in 'CloudMailRu.pas', MRC_Helper in 'MRC_Helper.pas', Accounts in 'Accounts.pas'{AccountsForm}, RemoteProperty in 'RemoteProperty.pas'{PropertyForm}, Descriptions in 'Descriptions.pas', ConnectionManager in 'ConnectionManager.pas', Settings in 'Settings.pas', ANSIFunctions in 'ANSIFunctions.pas', DeletedProperty in 'DeletedProperty.pas'{DeletedPropertyForm}, InviteProperty in 'InviteProperty.pas'{InvitePropertyForm}, AskPassword, CMLJSON in 'CMLJSON.pas', CMLTypes in 'CMLTypes.pas', DCPbase64 in 'DCPCrypt\DCPbase64.pas', DCPblockciphers in 'DCPCrypt\DCPblockciphers.pas', DCPconst in 'DCPCrypt\DCPconst.pas',
@@ -150,7 +149,7 @@ var
 	CurrentCloud: TCloudMailRu;
 begin
 	if path.trashDir or path.sharedDir{or path.invitesDir} then
-		Result := FindListingItemByName(CurrentListing, path.path)//Виртуальные каталоги не возвращают HomePath
+		Result := FindListingItemByName(CurrentListing, path.path) //Виртуальные каталоги не возвращают HomePath
 	else
 		Result := FindListingItemByHomePath(CurrentListing, path.path); //сначала попробуем найти поле в имеющемся списке
 
@@ -697,7 +696,7 @@ begin
 		Result := FS_EXEC_SYMLINK;
 	end else begin
 		if RealPath.path = '' then
-			TAccountsForm.ShowAccounts(MainWin, AccountsIniFilePath, SettingsIniFilePath, PasswordManager, RealPath.account)//main shared folder properties - open connection settings
+			TAccountsForm.ShowAccounts(MainWin, AccountsIniFilePath, SettingsIniFilePath, PasswordManager, RealPath.account) //main shared folder properties - open connection settings
 		else
 		begin
 			Cloud := ConnectionManager.get(RealPath.account, getResult);
@@ -749,7 +748,7 @@ var
 begin
 	Result := FS_EXEC_OK;
 	if RealPath.path = '' then
-		TAccountsForm.ShowAccounts(MainWin, AccountsIniFilePath, SettingsIniFilePath, PasswordManager, RealPath.account)//show account properties
+		TAccountsForm.ShowAccounts(MainWin, AccountsIniFilePath, SettingsIniFilePath, PasswordManager, RealPath.account) //show account properties
 	else
 	begin
 		Cloud := ConnectionManager.get(RealPath.account, getResult);
@@ -841,9 +840,48 @@ begin
 
 end;
 
+function ExecuteFileStream(RealPath: TRealPath; StreamingOptions: TStreamingOptions): integer; //todo: m3u support
+var
+	StreamUrl: WideString;
+	getResult: integer;
+	CurrentCloud, TempPublicCloud: TCloudMailRu;
+	CurrentItem: TCloudMailRuDirListingItem;
+	TempCloudSettings: TCloudSettings;
+begin
+	CurrentItem := FindListingItemByPath(CurrentListing, RealPath); //todo: проверить и доработать поведение для паблик-облаков
+	if EmptyWideStr = CurrentItem.weblink then
+	begin
+		CurrentCloud := ConnectionManager.get(RealPath.account, getResult);
+		if not CurrentCloud.publishFile(CurrentItem.home, CurrentItem.weblink) then
+			exit(FS_EXEC_ERROR);
+	end;
+
+	{todo: same as RemoteProperty.TempPublicCloudInit}
+	TempCloudSettings := default (TCloudSettings);
+	TempCloudSettings.AccountSettings.public_account := true;
+	TempCloudSettings.AccountSettings.public_url := PUBLIC_ACCESS_URL + CurrentItem.weblink;
+	TempPublicCloud := TCloudMailRu.Create(TempCloudSettings, nil);
+	TempPublicCloud.login;
+
+	case StreamingOptions.Format of
+		STREAMING_FORMAT_AS_IS:
+			StreamUrl := TempPublicCloud.getSharedFileUrl(EmptyWideStr); //Empty path for files
+		STREAMING_FORMAT_PLAYLIST:
+			if not TempPublicCloud.getPublishedFileStreamUrl(CurrentItem, StreamUrl) then
+				Result := FS_EXEC_ERROR;
+	end;
+
+	if (Run(StreamingOptions.Application, StreamUrl)) then
+		Result := FS_EXEC_OK
+	else
+		Result := FS_EXEC_ERROR;
+	TempPublicCloud.Free;
+end;
+
 function FsExecuteFileW(MainWin: THandle; RemoteName, Verb: PWideChar): integer; stdcall; //Запуск файла
 var
 	RealPath: TRealPath;
+	StreamingOptions: TStreamingOptions;
 begin
 	RealPath := ExtractRealPath(RemoteName);
 	Result := FS_EXEC_OK;
@@ -864,7 +902,9 @@ begin
 		exit(ExecProperties(MainWin, RealPath));
 
 	if Verb = 'open' then
-		exit(FS_EXEC_YOURSELF);
+		if not RealPath.isDir and GetStreamingOptions(SettingsIniFilePath, RealPath.path, StreamingOptions) then
+			exit(ExecuteFileStream(RealPath, StreamingOptions));
+	exit(FS_EXEC_YOURSELF);
 
 	if copy(Verb, 1, 5) = 'quote' then
 		exit(ExecCommand(RemoteName, LowerCase(GetWord(Verb, 1)), GetWord(Verb, 2)));
@@ -906,7 +946,7 @@ begin
 	LocalIonPath := IncludeTrailingBackslash(ExtractFileDir(LocalFilePath)) + GetDescriptionFileName(SettingsIniFilePath);
 	LocalTempPath := GetTmpFileName('ion');
 
-	if (not FileExists(LocalIonPath)) then
+	if (not FileExists(GetUNCFilePath(LocalIonPath))) then
 		exit; //Файла описаний нет, не паримся
 
 	LocalDescriptions := TDescription.Create(LocalIonPath, GetTCCommentPreferredFormat);
@@ -1063,7 +1103,7 @@ begin
 	ProgressHandle(RemoteName, LocalName, 0);
 
 	OverwriteLocalMode := GetPluginSettings(SettingsIniFilePath).OverwriteLocalMode;
-	if (FileExists(LocalName) and not(CheckFlag(FS_COPYFLAGS_OVERWRITE, CopyFlags))) then
+	if (FileExists(GetUNCFilePath(LocalName)) and not(CheckFlag(FS_COPYFLAGS_OVERWRITE, CopyFlags))) then
 	begin
 		case OverwriteLocalMode of
 			OverwriteLocalModeAsk:
@@ -1154,7 +1194,7 @@ var
 begin
 
 	RealPath := ExtractRealPath(RemoteName);
-	if not FileExists(LocalName) then
+	if not FileExists(GetUNCFilePath(LocalName)) then
 		exit(FS_FILE_NOTFOUND);
 
 	if (RealPath.account = '') or RealPath.trashDir or RealPath.sharedDir or RealPath.invitesDir then
@@ -1237,8 +1277,8 @@ begin
 		Cloud.getShareInfo(CurrentItem.home, InvitesListing);
 		for Invite in InvitesListing do
 			Cloud.shareFolder(CurrentItem.home, Invite.email, CLOUD_SHARE_NO); //no reporting here
-		if (CurrentItem.WebLink <> '') then
-			Cloud.publishFile(CurrentItem.home, CurrentItem.WebLink, CLOUD_UNPUBLISH);
+		if (CurrentItem.weblink <> '') then
+			Cloud.publishFile(CurrentItem.home, CurrentItem.weblink, CLOUD_UNPUBLISH);
 		Result := true;
 	end
 	else
@@ -1324,8 +1364,8 @@ end;
 
 function cloneWeblink(NewCloud, OldCloud: TCloudMailRu; CloudPath: WideString; CurrentItem: TCloudMailRuDirListingItem; NeedUnpublish: Boolean): integer;
 begin
-	Result := NewCloud.cloneWeblink(ExtractFileDir(CloudPath), CurrentItem.WebLink, CLOUD_CONFLICT_STRICT);
-	if (NeedUnpublish) and (FS_FILE_USERABORT <> Result) and not(OldCloud.publishFile(CurrentItem.home, CurrentItem.WebLink, CLOUD_UNPUBLISH)) then
+	Result := NewCloud.cloneWeblink(ExtractFileDir(CloudPath), CurrentItem.weblink, CLOUD_CONFLICT_STRICT);
+	if (NeedUnpublish) and (FS_FILE_USERABORT <> Result) and not(OldCloud.publishFile(CurrentItem.home, CurrentItem.weblink, CLOUD_UNPUBLISH)) then
 		LogHandle(LogLevelError, MSGTYPE_IMPORTANTERROR, PWideChar('Can''t remove temporary public link on ' + CurrentItem.home));
 end;
 
@@ -1401,10 +1441,10 @@ begin
 
 	if OldCloud.statusFile(OldRealPath.path, CurrentItem) then
 	begin
-		if CurrentItem.WebLink = '' then //create temporary weblink
+		if CurrentItem.weblink = '' then //create temporary weblink
 		begin
 			NeedUnpublish := true;
-			if not(OldCloud.publishFile(CurrentItem.home, CurrentItem.WebLink)) then //problem publishing
+			if not(OldCloud.publishFile(CurrentItem.home, CurrentItem.weblink)) then //problem publishing
 			begin
 				LogHandle(LogLevelError, MSGTYPE_IMPORTANTERROR, PWideChar('Can''t get temporary public link on ' + CurrentItem.home));
 				exit(FS_FILE_READERROR);
@@ -1616,7 +1656,7 @@ begin
 			end;
 		5:
 			begin
-				strpcopy(FieldValue, Item.WebLink);
+				strpcopy(FieldValue, Item.weblink);
 				Result := ft_stringw;
 			end;
 		6:
@@ -1809,7 +1849,7 @@ begin
 		begin
 			if Item.kind = KIND_SHARED then
 				strpcopy(RemoteName, 'shared')
-			else if Item.WebLink <> '' then
+			else if Item.weblink <> '' then
 				strpcopy(RemoteName, 'shared_public')
 			else
 				exit(FS_ICON_USEDEFAULT);
@@ -1849,7 +1889,7 @@ begin
 	AppDataDir := IncludeTrailingBackslash(IncludeTrailingBackslash(SysUtils.GetEnvironmentVariable('APPDATA')) + 'MailRuCloud');
 	PluginPath := IncludeTrailingBackslash(ExtractFilePath(PluginPath));
 
-	if not FileExists(PluginPath + 'MailRuCloud.global.ini') then
+	if not FileExists(GetUNCFilePath(PluginPath + 'MailRuCloud.global.ini')) then
 	begin
 		if IsWriteable(PluginPath) then
 		begin
@@ -1878,8 +1918,8 @@ begin
 		end;
 	end;
 
-	if not FileExists(IniDir) then
-		createDir(IniDir); //assume this in appdata dir
+	if not FileExists(GetUNCFilePath(IniDir)) then
+		createDir(GetUNCFilePath(IniDir)); //assume this in appdata dir
 
 	AccountsIniFilePath := IniDir + 'MailRuCloud.ini';
 	SettingsIniFilePath := IniDir + 'MailRuCloud.global.ini';
@@ -1889,7 +1929,7 @@ begin
 		if ((DirectoryExists(PluginPath + PlatformDllPath)) and (FileExists(PluginPath + PlatformDllPath + '\ssleay32.dll')) and (FileExists(PluginPath + PlatformDllPath + '\libeay32.dll'))) then
 		begin //try to load dll from platform subdir
 			IdOpenSSLSetLibPath(PluginPath + PlatformDllPath);
-		end else if ((FileExists(PluginPath + 'ssleay32.dll')) and (FileExists(PluginPath + 'libeay32.dll'))) then
+		end else if ((FileExists(GetUNCFilePath(PluginPath + 'ssleay32.dll'))) and (FileExists(GetUNCFilePath(PluginPath + 'libeay32.dll')))) then
 		begin //else try to load it from plugin dir
 			IdOpenSSLSetLibPath(PluginPath);
 		end;
@@ -1962,4 +2002,3 @@ begin
 	DllInit(DLL_PROCESS_ATTACH);
 
 end.
-

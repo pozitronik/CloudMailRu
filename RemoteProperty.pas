@@ -183,7 +183,7 @@ begin
 		begin (*рекурсивно получаем все ссылки в каталоге*)
 			FillRecursiveDownloadListing(EmptyWideStr, self.TempPublicCloud);
 		end else begin
-			DownloadLinksMemo.lines.Text := TempPublicCloud.getSharedFileUrl(EmptyWideStr, self.DoUrlEncode);
+			DownloadLinksMemo.lines.Text := TempPublicCloud.getSharedFileUrl(self.RemoteName, self.DoUrlEncode);
 		end;
 		TempPublicCloud.Free;
 	end;
@@ -340,7 +340,8 @@ procedure TPropertyForm.TempPublicCloudInit(publicUrl: WideString);
 var
 	TempCloudSettings: TCloudSettings;
 begin
-	TempCloudSettings.AccountSettings.public_account := true;  {TODO: check parameters}
+	TempCloudSettings := default (TCloudSettings);
+	TempCloudSettings.AccountSettings.public_account := true;
 	TempCloudSettings.AccountSettings.public_url := publicUrl;
 	self.TempPublicCloud := TCloudMailRu.Create(TempCloudSettings, nil);
 	self.TempPublicCloud.login;
