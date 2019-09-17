@@ -4,7 +4,7 @@ object AccountsForm: TAccountsForm
   BorderStyle = bsDialog
   Caption = 'Cloud Accounts'
   ClientHeight = 475
-  ClientWidth = 491
+  ClientWidth = 492
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -157,23 +157,26 @@ object AccountsForm: TAccountsForm
   object OptionPages: TPageControl
     Left = 0
     Top = 0
-    Width = 491
+    Width = 492
     Height = 475
-    ActivePage = AccountsTab
+    ActivePage = StreamingTab
     Align = alClient
     TabOrder = 0
+    ExplicitWidth = 491
     object AccountsTab: TTabSheet
       Caption = 'Accounts'
+      ExplicitWidth = 483
       DesignSize = (
-        483
+        484
         447)
       object AccountNameLabel: TLabel
         Left = 225
         Top = 10
-        Width = 68
+        Width = 69
         Height = 13
         Anchors = [akLeft, akTop, akRight]
         Caption = 'Account name'
+        ExplicitWidth = 68
       end
       object AccountsGroupBox: TGroupBox
         Left = -4
@@ -351,10 +354,11 @@ object AccountsForm: TAccountsForm
       object AccountNameEdit: TEdit
         Left = 225
         Top = 27
-        Width = 254
+        Width = 255
         Height = 21
         Anchors = [akLeft, akTop, akRight]
         TabOrder = 1
+        ExplicitWidth = 254
       end
       object PublicAccountCB: TCheckBox
         Left = 225
@@ -403,10 +407,7 @@ object AccountsForm: TAccountsForm
     object GlobalTab: TTabSheet
       Caption = 'Global settings'
       ImageIndex = 1
-      ExplicitLeft = 0
-      ExplicitTop = 0
-      ExplicitWidth = 0
-      ExplicitHeight = 0
+      ExplicitWidth = 483
       object CloudMaxFileSizeLabelBytes: TLabel
         Left = 292
         Top = 96
@@ -714,10 +715,7 @@ object AccountsForm: TAccountsForm
     object NetworkTab: TTabSheet
       Caption = 'Network settings'
       ImageIndex = 2
-      ExplicitLeft = 0
-      ExplicitTop = 0
-      ExplicitWidth = 0
-      ExplicitHeight = 0
+      ExplicitWidth = 483
       object SocketTimeoutLabel: TLabel
         Left = 5
         Top = 11
@@ -895,10 +893,7 @@ object AccountsForm: TAccountsForm
     object CommentsTab: TTabSheet
       Caption = 'File comments support'
       ImageIndex = 3
-      ExplicitLeft = 0
-      ExplicitTop = 0
-      ExplicitWidth = 0
-      ExplicitHeight = 0
+      ExplicitWidth = 483
       object DescriptionFileNameLabel: TLabel
         Left = 5
         Top = 118
@@ -965,6 +960,152 @@ object AccountsForm: TAccountsForm
           'Track cloud filesystem changes (file rename, delete, etc) (exper' +
           'imental)'
         TabOrder = 4
+      end
+    end
+    object StreamingTab: TTabSheet
+      Caption = 'Streaming'
+      ImageIndex = 4
+      ExplicitWidth = 483
+      DesignSize = (
+        484
+        447)
+      object ExtLabel: TLabel
+        Left = 225
+        Top = 10
+        Width = 67
+        Height = 13
+        Anchors = [akLeft, akTop, akRight]
+        Caption = 'File extension'
+      end
+      object CommandLabel: TLabel
+        Left = 225
+        Top = 52
+        Width = 47
+        Height = 13
+        Anchors = [akLeft, akTop, akRight]
+        Caption = 'Command'
+      end
+      object ParametersLabel: TLabel
+        Left = 225
+        Top = 93
+        Width = 55
+        Height = 13
+        Anchors = [akLeft, akTop, akRight]
+        Caption = 'Parameters'
+      end
+      object StartPathLabel: TLabel
+        Left = 225
+        Top = 134
+        Width = 49
+        Height = 13
+        Anchors = [akLeft, akTop, akRight]
+        Caption = 'Start path'
+      end
+      object StreamingTypeLabel: TLabel
+        Left = 225
+        Top = 177
+        Width = 73
+        Height = 13
+        Anchors = [akLeft, akTop, akRight]
+        Caption = 'Streaming type'
+      end
+      object TExtensionsGroupBox: TGroupBox
+        Left = -4
+        Top = -1
+        Width = 225
+        Height = 448
+        Anchors = [akLeft, akTop, akBottom]
+        Caption = 'Registered extensions'
+        TabOrder = 0
+        DesignSize = (
+          225
+          448)
+        object ExtList: TListBox
+          Left = 4
+          Top = 17
+          Width = 218
+          Height = 428
+          Style = lbVirtual
+          Anchors = [akLeft, akTop, akRight, akBottom]
+          ExtendedSelect = False
+          ItemHeight = 13
+          TabOrder = 0
+          OnClick = AccountsListClick
+          OnKeyUp = AccountsListKeyUp
+        end
+      end
+      object ExtEdit: TEdit
+        Left = 225
+        Top = 27
+        Width = 255
+        Height = 21
+        Anchors = [akLeft, akTop, akRight]
+        TabOrder = 1
+      end
+      object CommandPathEdit: TEdit
+        Left = 225
+        Top = 69
+        Width = 234
+        Height = 21
+        Anchors = [akLeft, akTop, akRight]
+        TabOrder = 2
+      end
+      object CommandPathButton: TButton
+        Left = 459
+        Top = 69
+        Width = 21
+        Height = 21
+        Caption = '...'
+        Enabled = False
+        TabOrder = 3
+        OnClick = EncryptFilesPwdButtonClick
+      end
+      object ParametersEdit: TEdit
+        Left = 225
+        Top = 110
+        Width = 255
+        Height = 21
+        Anchors = [akLeft, akTop, akRight]
+        TabOrder = 4
+      end
+      object StartPathEdit: TEdit
+        Left = 225
+        Top = 151
+        Width = 255
+        Height = 21
+        Anchors = [akLeft, akTop, akRight]
+        TabOrder = 5
+      end
+      object StreamingTypeCombo: TComboBox
+        Left = 225
+        Top = 195
+        Width = 255
+        Height = 21
+        Style = csDropDownList
+        ItemIndex = 0
+        TabOrder = 6
+        Text = 'Temporary link to file'
+        Items.Strings = (
+          'Temporary link to file'
+          'M3U8 playlist')
+      end
+      object ApplyExtButton: TButton
+        Left = 225
+        Top = 222
+        Width = 75
+        Height = 25
+        Caption = 'Add/Apply'
+        TabOrder = 7
+        OnClick = ApplyButtonClick
+      end
+      object DeleteExtButton: TButton
+        Left = 405
+        Top = 222
+        Width = 75
+        Height = 25
+        Caption = 'Delete'
+        TabOrder = 8
+        OnClick = DeleteButtonClick
       end
     end
   end
