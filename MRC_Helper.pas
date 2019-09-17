@@ -99,7 +99,6 @@ implementation
  end;}
 
 function Implode(S: TStringList; Delimiter: WideString): WideString;
-
 var
 	iCount: integer;
 begin
