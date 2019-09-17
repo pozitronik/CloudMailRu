@@ -82,7 +82,7 @@ function IncludeSlash(const Str: WideString): WideString;
 function NormalizeSlashes(const Str: WideString): WideString;
 function TrimEx(const Str: WideString; TrimChar: WideChar): WideString;
 function FormatSize(size: Int64; SizeType: integer = TYPE_AUTO): WideString; //Форматируем размер в удобочитаемый вид
-function Run(path, ParamString: WideString; SubstituteVariables: boolean = true): boolean;
+function Run(path, ParamString, StartDir: WideString; SubstituteVariables: boolean = true): boolean;
 //Procedure FileLog(S: WideString);
 
 implementation
@@ -737,14 +737,20 @@ begin
 
 end;
 
-function Run(path, ParamString: WideString; SubstituteVariables: boolean = true): boolean;
+function Run(path, ParamString, StartDir: WideString; SubstituteVariables: boolean = true): boolean;
 var
 	lpStartupInfo: TStartUpInfo;
 	lpProcessInformation: TProcessInformation;
+	lpCurrentDirectory: PWideChar;
 begin
 	lpStartupInfo := Default (TStartUpInfo);
 	lpStartupInfo.cb := SizeOf(lpStartupInfo);
-	Result := CreateProcessW(nil, PWideChar(path + ' "' + ParamString + '"'), nil, nil, false, NORMAL_PRIORITY_CLASS, nil, nil, lpStartupInfo, lpProcessInformation);
+	if EmptyWideStr = StartDir then
+		lpCurrentDirectory := nil
+	else
+		lpCurrentDirectory := PWideChar(StartDir);
+
+	Result := CreateProcessW(nil, PWideChar(path + ' "' + ParamString + '"'), nil, nil, false, NORMAL_PRIORITY_CLASS, nil, lpCurrentDirectory, lpStartupInfo, lpProcessInformation);
 	if Result then
 		with lpProcessInformation do
 		begin
