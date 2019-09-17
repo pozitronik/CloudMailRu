@@ -183,8 +183,9 @@ const
 	NAME_DEVICE = 'device';
 
 	{Streaming formats}
-	STREAMING_FORMAT_AS_IS = 0;
-	STREAMING_FORMAT_PLAYLIST = 1;
+	STREAMING_FORMAT_DISABLED = 0;
+	STREAMING_FORMAT_AS_IS = 1;
+	STREAMING_FORMAT_PLAYLIST = 2;
 
 type
 	TCloudMailRuDirListingItem = Record
