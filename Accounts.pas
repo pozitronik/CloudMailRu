@@ -265,6 +265,7 @@ begin
 	StreamingOptions.Format := StreamingTypeCombo.ItemIndex;
 
 	SetStreamingOptionsToIniFile(SettingsIniFilePath, '.' + StreamingExtensionEdit.Text, StreamingOptions);
+	UpdateStreamingExtensionsList();
 end;
 
 procedure TAccountsForm.ApplySettings;
@@ -385,7 +386,11 @@ end;
 
 procedure TAccountsForm.DeleteExtButtonClick(Sender: TObject);
 begin
-	//todo
+	if (StreamingExtensionsList.Items.Count > 0) and (StreamingExtensionsList.ItemIndex <> -1) then
+	begin
+		DeleteStreamingExtensionsFromIniFile(SettingsIniFilePath, StreamingExtensionsList.Items[StreamingExtensionsList.ItemIndex]);
+		UpdateStreamingExtensionsList();
+	end;
 end;
 
 procedure TAccountsForm.EncryptFilesComboChange(Sender: TObject);

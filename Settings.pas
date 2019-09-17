@@ -453,7 +453,6 @@ end;
 procedure DeleteStreamingExtensionsFromIniFile(IniFilePath: WideString; StreamingExtension: WideString);
 var
 	IniFile: TIniFile;
-
 begin
 	IniFile := TIniFile.Create(IniFilePath);
 	IniFile.EraseSection(StreamingPrefix + StreamingExtension);
