@@ -145,8 +145,9 @@ type
 	{Параметры стриминга для расширения}
 	TStreamingOptions = record
 		Enabled: boolean; //Стриминг разрешён
-		Application: WideString; //Вызываемое приложение
+		Command: WideString; //Вызываемое приложение
 		Parameters: WideString; //параметры, передаваемые приложению
+		StartPath: WideString; //каталог запуска
 		Format: integer;
 	end;
 
@@ -169,6 +170,9 @@ procedure AddVirtualAccountsToAccountsList(AccountsIniFilePath: WideString; var 
 function GetDescriptionFileName(SettingsIniFilePath: WideString): WideString;
 function RemoteDescriptionsSupportEnabled(AccountSetting: TAccountSettings): boolean; //в случае включённого шифрования файловых имён поддержка движка файловых комментариев отключается (issue #5)
 function GetStreamingOptions(IniFilePath, FileName: WideString; var StreamingOptions: TStreamingOptions): boolean;
+
+procedure GetStreamingExtensionsFromIniFile(IniFilePath: WideString; var StreamingExtensions: TStringList);
+procedure DeleteStreamingExtensionsFromIniFile(IniFilePath: WideString; StreamingExtension: WideString);
 
 implementation
 
@@ -400,10 +404,40 @@ begin
 	begin
 		result := true;
 		StreamingOptions.Enabled := true;
-		StreamingOptions.Application := IniFile.ReadString(SectionName, 'Application', EmptyWideStr);
+		StreamingOptions.Command := IniFile.ReadString(SectionName, 'Command', EmptyWideStr);
 		StreamingOptions.Parameters := IniFile.ReadString(SectionName, 'Parameters', EmptyWideStr);
+		StreamingOptions.StartPath := IniFile.ReadString(SectionName, 'StartPath', EmptyWideStr);
 		StreamingOptions.Format := IniFile.ReadInteger(SectionName, 'Format', 0);
 	end;
+	IniFile.Destroy;
+end;
+
+//loads all streaming extensions list
+procedure GetStreamingExtensionsFromIniFile(IniFilePath: WideString; var StreamingExtensions: TStringList);
+var
+	IniFile: TIniFile;
+	TempList: TStringList;
+	line: String;
+begin
+	IniFile := TIniFile.Create(IniFilePath);
+	TempList := TStringList.Create;
+	IniFile.ReadSections(TempList);
+	for line in TempList do
+	begin
+		if line.StartsWith(StreamingPrefix) then
+			StreamingExtensions.Add(line.Substring(Length(StreamingPrefix)));
+	end;
+	TempList.Destroy;
+	IniFile.Destroy;
+end;
+
+procedure DeleteStreamingExtensionsFromIniFile(IniFilePath: WideString; StreamingExtension: WideString);
+var
+	IniFile: TIniFile;
+
+begin
+	IniFile := TIniFile.Create(IniFilePath);
+	IniFile.EraseSection(StreamingPrefix + StreamingExtension);
 	IniFile.Destroy;
 end;
 
