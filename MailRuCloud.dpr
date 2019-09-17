@@ -946,7 +946,7 @@ begin
 	LocalIonPath := IncludeTrailingBackslash(ExtractFileDir(LocalFilePath)) + GetDescriptionFileName(SettingsIniFilePath);
 	LocalTempPath := GetTmpFileName('ion');
 
-	if (not FileExists(LocalIonPath)) then
+	if (not FileExists(GetUNCFilePath(LocalIonPath))) then
 		exit; //Файла описаний нет, не паримся
 
 	LocalDescriptions := TDescription.Create(LocalIonPath, GetTCCommentPreferredFormat);
@@ -1103,7 +1103,7 @@ begin
 	ProgressHandle(RemoteName, LocalName, 0);
 
 	OverwriteLocalMode := GetPluginSettings(SettingsIniFilePath).OverwriteLocalMode;
-	if (FileExists(LocalName) and not(CheckFlag(FS_COPYFLAGS_OVERWRITE, CopyFlags))) then
+	if (FileExists(GetUNCFilePath(LocalName)) and not(CheckFlag(FS_COPYFLAGS_OVERWRITE, CopyFlags))) then
 	begin
 		case OverwriteLocalMode of
 			OverwriteLocalModeAsk:
@@ -1194,7 +1194,7 @@ var
 begin
 
 	RealPath := ExtractRealPath(RemoteName);
-	if not FileExists(LocalName) then
+	if not FileExists(GetUNCFilePath(LocalName)) then
 		exit(FS_FILE_NOTFOUND);
 
 	if (RealPath.account = '') or RealPath.trashDir or RealPath.sharedDir or RealPath.invitesDir then
@@ -1889,7 +1889,7 @@ begin
 	AppDataDir := IncludeTrailingBackslash(IncludeTrailingBackslash(SysUtils.GetEnvironmentVariable('APPDATA')) + 'MailRuCloud');
 	PluginPath := IncludeTrailingBackslash(ExtractFilePath(PluginPath));
 
-	if not FileExists(PluginPath + 'MailRuCloud.global.ini') then
+	if not FileExists(GetUNCFilePath(PluginPath + 'MailRuCloud.global.ini')) then
 	begin
 		if IsWriteable(PluginPath) then
 		begin
@@ -1918,8 +1918,8 @@ begin
 		end;
 	end;
 
-	if not FileExists(IniDir) then
-		createDir(IniDir); //assume this in appdata dir
+	if not FileExists(GetUNCFilePath(IniDir)) then
+		createDir(GetUNCFilePath(IniDir)); //assume this in appdata dir
 
 	AccountsIniFilePath := IniDir + 'MailRuCloud.ini';
 	SettingsIniFilePath := IniDir + 'MailRuCloud.global.ini';
@@ -1929,7 +1929,7 @@ begin
 		if ((DirectoryExists(PluginPath + PlatformDllPath)) and (FileExists(PluginPath + PlatformDllPath + '\ssleay32.dll')) and (FileExists(PluginPath + PlatformDllPath + '\libeay32.dll'))) then
 		begin //try to load dll from platform subdir
 			IdOpenSSLSetLibPath(PluginPath + PlatformDllPath);
-		end else if ((FileExists(PluginPath + 'ssleay32.dll')) and (FileExists(PluginPath + 'libeay32.dll'))) then
+		end else if ((FileExists(GetUNCFilePath(PluginPath + 'ssleay32.dll'))) and (FileExists(GetUNCFilePath(PluginPath + 'libeay32.dll')))) then
 		begin //else try to load it from plugin dir
 			IdOpenSSLSetLibPath(PluginPath);
 		end;
