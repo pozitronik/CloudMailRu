@@ -1411,7 +1411,7 @@ begin
 						begin
 							ThreadRetryCountRenMov.Items[GetCurrentThreadID()] := ThreadRetryCountRenMov.Items[GetCurrentThreadID()] + 1;
 							LogHandle(LogLevelDetail, msgtype_details, PWideChar('File cloning error: ' + TCloudMailRu.ErrorCodeText(Result) + ' Retry attempt ' + ThreadRetryCountRenMov.Items[GetCurrentThreadID()].ToString + RetryAttemptsToString(RetryAttempts)));
-							Result := cloneWeblink(NewCloud, OldCloud, NewRealPath.path, CurrentItem, NeedUnpublish);
+							Result := NewCloud.addFileByIdentity(CurrentItem, IncludeTrailingPathDelimiter(ExtractFileDir(NewRealPath.path)) + ExtractFileName(NewRealPath.path));
 							if ProgressHandle(nil, nil, 0) = 1 then
 								Result := FS_FILE_USERABORT;
 							if (Result in [FS_FILE_OK, FS_FILE_USERABORT]) then
