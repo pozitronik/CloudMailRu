@@ -1020,7 +1020,7 @@ object AccountsForm: TAccountsForm
         DesignSize = (
           225
           448)
-        object ExtList: TListBox
+        object StreamingExtensionsList: TListBox
           Left = 4
           Top = 17
           Width = 218
@@ -1030,11 +1030,11 @@ object AccountsForm: TAccountsForm
           ExtendedSelect = False
           ItemHeight = 13
           TabOrder = 0
-          OnClick = AccountsListClick
-          OnKeyUp = AccountsListKeyUp
+          OnClick = StreamingExtensionsListClick
+          OnKeyUp = StreamingExtensionsListKeyUp
         end
       end
-      object ExtEdit: TEdit
+      object StreamingExtensionEdit: TEdit
         Left = 225
         Top = 27
         Width = 255
@@ -1096,7 +1096,7 @@ object AccountsForm: TAccountsForm
         Height = 25
         Caption = 'Add/Apply'
         TabOrder = 7
-        OnClick = ApplyButtonClick
+        OnClick = ApplyExtButtonClick
       end
       object DeleteExtButton: TButton
         Left = 405
@@ -1105,7 +1105,7 @@ object AccountsForm: TAccountsForm
         Height = 25
         Caption = 'Delete'
         TabOrder = 8
-        OnClick = DeleteButtonClick
+        OnClick = DeleteExtButtonClick
       end
     end
   end

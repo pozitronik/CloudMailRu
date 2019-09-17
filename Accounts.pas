@@ -100,9 +100,9 @@ type
 		NewAccountBtn: TButton;
 		StreamingTab: TTabSheet;
 		TExtensionsGroupBox: TGroupBox;
-		ExtList: TListBox;
+		StreamingExtensionsList: TListBox;
 		ExtLabel: TLabel;
-		ExtEdit: TEdit;
+		StreamingExtensionEdit: TEdit;
 		CommandLabel: TLabel;
 		CommandPathEdit: TEdit;
 		CommandPathButton: TButton;
@@ -118,6 +118,7 @@ type
 		procedure AccountsListClick(Sender: TObject);
 		procedure ApplyButtonClick(Sender: TObject);
 		procedure UpdateAccountsList();
+		procedure UpdateStreamingExtensionsList();
 		procedure DeleteButtonClick(Sender: TObject);
 		procedure AccountsListKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
 		class procedure ShowAccounts(parentWindow: HWND; IniPath, SettingsIniFilePath: WideString; PasswordManager: TTCPasswordManager; Account: WideString);
@@ -130,6 +131,10 @@ type
 		procedure EncryptFilesPwdButtonClick(Sender: TObject);
 		procedure FormKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
 		procedure NewAccountBtnClick(Sender: TObject);
+		procedure StreamingExtensionsListClick(Sender: TObject);
+		procedure StreamingExtensionsListKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
+		procedure DeleteExtButtonClick(Sender: TObject);
+		procedure ApplyExtButtonClick(Sender: TObject);
 	private
 		{Private declarations}
 		procedure ApplySettings();
@@ -157,6 +162,16 @@ begin
 	AccountsList.Items := TempList;
 	TempList.Destroy;
 	AccountsList.OnClick(self);
+end;
+
+procedure TAccountsForm.UpdateStreamingExtensionsList();
+var
+	TempList: TStringList;
+begin
+	TempList := TStringList.Create;
+	GetStreamingExtensionsFromIniFile(SettingsIniFilePath, TempList);
+	StreamingExtensionsList.Items := TempList;
+	TempList.Destroy;
 end;
 
 procedure TAccountsForm.AccountsListClick(Sender: TObject);
@@ -236,6 +251,11 @@ begin
 
 	UpdateAccountsList();
 
+end;
+
+procedure TAccountsForm.ApplyExtButtonClick(Sender: TObject);
+begin
+	//todo
 end;
 
 procedure TAccountsForm.ApplySettings;
@@ -344,6 +364,11 @@ begin
 	end;
 end;
 
+procedure TAccountsForm.DeleteExtButtonClick(Sender: TObject);
+begin
+	//todo
+end;
+
 procedure TAccountsForm.EncryptFilesComboChange(Sender: TObject);
 begin
 	EncryptFilesPwdButton.Enabled := EncryptFilesCombo.ItemIndex = EncryptModeAlways;
@@ -376,6 +401,7 @@ end;
 procedure TAccountsForm.FormShow(Sender: TObject);
 begin
 	UpdateAccountsList();
+	UpdateStreamingExtensionsList();
 	AccountsList.SetFocus;
 	if AccountsList.Items.Count > 0 then
 	begin
@@ -486,6 +512,33 @@ begin
 	finally
 		FreeAndNil(AccountsForm);
 	end;
+end;
+
+procedure TAccountsForm.StreamingExtensionsListClick(Sender: TObject);
+var
+	StreamingOptions: TStreamingOptions;
+begin
+	if (StreamingExtensionsList.Items.Count > 0) and (StreamingExtensionsList.ItemIndex <> -1) then
+	begin
+		GetStreamingOptions(SettingsIniFilePath, StreamingExtensionsList.Items[StreamingExtensionsList.ItemIndex], StreamingOptions); //не проверяем результат, это настройки
+		StreamingExtensionEdit.Text := StreamingExtensionsList.Items[StreamingExtensionsList.ItemIndex];
+		CommandPathEdit.Text := StreamingOptions.Command;
+		ParametersEdit.Text := StreamingOptions.Parameters;
+		StartPathEdit.Text := StreamingOptions.StartPath;
+		StreamingTypeCombo.ItemIndex := StreamingOptions.Format;
+	end else begin
+		StreamingExtensionEdit.Text := EmptyWideStr;
+		CommandPathEdit.Text := EmptyWideStr;
+		ParametersEdit.Text := EmptyWideStr;
+		StartPathEdit.Text := EmptyWideStr;
+		StreamingTypeCombo.ItemIndex := 0
+	end;
+end;
+
+procedure TAccountsForm.StreamingExtensionsListKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
+begin
+	if Key = VK_DELETE then
+		DeleteExtButton.OnClick(nil);
 end;
 
 end.
