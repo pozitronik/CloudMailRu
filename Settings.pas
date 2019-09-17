@@ -169,7 +169,9 @@ procedure DeleteAccountFromIniFile(IniFilePath: WideString; AccountName: WideStr
 procedure AddVirtualAccountsToAccountsList(AccountsIniFilePath: WideString; var AccountsList: TStringList; VirtualAccountsEnabled: TArray<boolean>);
 function GetDescriptionFileName(SettingsIniFilePath: WideString): WideString;
 function RemoteDescriptionsSupportEnabled(AccountSetting: TAccountSettings): boolean; //в случае включённого шифрования файловых имён поддержка движка файловых комментариев отключается (issue #5)
-function GetStreamingOptions(IniFilePath, FileName: WideString; var StreamingOptions: TStreamingOptions): boolean;
+
+function GetStreamingOptionsFromIniFile(IniFilePath, FileName: WideString; var StreamingOptions: TStreamingOptions): boolean;
+function SetStreamingOptionsToIniFile(IniFilePath, FileName: WideString; StreamingOptions: TStreamingOptions): boolean;
 
 procedure GetStreamingExtensionsFromIniFile(IniFilePath: WideString; var StreamingExtensions: TStringList);
 procedure DeleteStreamingExtensionsFromIniFile(IniFilePath: WideString; StreamingExtension: WideString);
@@ -391,7 +393,7 @@ begin
 	result := not((AccountSetting.encrypt_files_mode <> EncryptModeNone) and AccountSetting.encrypt_filenames)
 end;
 
-function GetStreamingOptions(IniFilePath, FileName: WideString; var StreamingOptions: TStreamingOptions): boolean;
+function GetStreamingOptionsFromIniFile(IniFilePath, FileName: WideString; var StreamingOptions: TStreamingOptions): boolean;
 var
 	IniFile: TIniFile;
 	SectionName: WideString;
@@ -410,6 +412,25 @@ begin
 		StreamingOptions.Format := IniFile.ReadInteger(SectionName, 'Format', 0);
 	end;
 	IniFile.Destroy;
+end;
+
+function SetStreamingOptionsToIniFile(IniFilePath, FileName: WideString; StreamingOptions: TStreamingOptions): boolean;
+var
+	IniFile: TIniFile;
+	SectionName: WideString;
+begin
+	result := false;
+	if ExtractUniversalFileExt(FileName, true) <> EmptyWideStr then
+	begin
+		result := true;
+		SectionName := StreamingPrefix + ExtractUniversalFileExt(FileName, true);
+		IniFile := TIniFile.Create(IniFilePath);
+		IniFile.WriteString(SectionName, 'Command', StreamingOptions.Command);
+		IniFile.WriteString(SectionName, 'Parameters', StreamingOptions.Parameters);
+		IniFile.WriteString(SectionName, 'StartPath', StreamingOptions.StartPath);
+		IniFile.WriteInteger(SectionName, 'Format', StreamingOptions.Format);
+		IniFile.Destroy;
+	end;
 end;
 
 //loads all streaming extensions list
