@@ -254,8 +254,15 @@ begin
 end;
 
 procedure TAccountsForm.ApplyExtButtonClick(Sender: TObject);
+var
+	StreamingOptions: TStreamingOptions;
 begin
-	//todo
+	StreamingOptions.Command := CommandPathEdit.Text;
+	StreamingOptions.Parameters := ParametersEdit.Text;
+	StreamingOptions.StartPath := StartPathEdit.Text;
+	StreamingOptions.Format := StreamingTypeCombo.ItemIndex;
+
+	SetStreamingOptionsToIniFile(SettingsIniFilePath, '.' + StreamingExtensionEdit.Text, StreamingOptions);
 end;
 
 procedure TAccountsForm.ApplySettings;
