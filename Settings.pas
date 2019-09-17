@@ -144,7 +144,6 @@ type
 
 	{Параметры стриминга для расширения}
 	TStreamingOptions = record
-		Enabled: boolean; //Стриминг разрешён
 		Command: WideString; //Вызываемое приложение
 		Parameters: WideString; //параметры, передаваемые приложению
 		StartPath: WideString; //каталог запуска
@@ -405,7 +404,6 @@ begin
 	if IniFile.SectionExists(SectionName) then
 	begin
 		result := true;
-		StreamingOptions.Enabled := true;
 		StreamingOptions.Command := IniFile.ReadString(SectionName, 'Command', EmptyWideStr);
 		StreamingOptions.Parameters := IniFile.ReadString(SectionName, 'Parameters', EmptyWideStr);
 		StreamingOptions.StartPath := IniFile.ReadString(SectionName, 'StartPath', EmptyWideStr);
