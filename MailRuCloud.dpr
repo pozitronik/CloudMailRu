@@ -871,7 +871,7 @@ begin
 				Result := FS_EXEC_ERROR;
 	end;
 
-	if (Run(StreamingOptions.command, StreamUrl)) then
+	if (Run(StreamingOptions.command, StreamUrl, StreamingOptions.StartPath)) then
 		Result := FS_EXEC_OK
 	else
 		Result := FS_EXEC_ERROR;
