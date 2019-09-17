@@ -1056,9 +1056,8 @@ object AccountsForm: TAccountsForm
         Width = 21
         Height = 21
         Caption = '...'
-        Enabled = False
         TabOrder = 3
-        OnClick = EncryptFilesPwdButtonClick
+        OnClick = CommandPathButtonClick
       end
       object ParametersEdit: TEdit
         Left = 225
@@ -1084,8 +1083,9 @@ object AccountsForm: TAccountsForm
         Style = csDropDownList
         ItemIndex = 0
         TabOrder = 6
-        Text = 'Temporary link to file'
+        Text = 'Disabled'
         Items.Strings = (
+          'Disabled'
           'Temporary link to file'
           'M3U8 playlist')
       end
@@ -1108,5 +1108,13 @@ object AccountsForm: TAccountsForm
         OnClick = DeleteExtButtonClick
       end
     end
+  end
+  object CommandPathOpenDialog: TOpenDialog
+    DefaultExt = 'exe'
+    Filter = 'Executables|*.exe|Batch scripts|*.bat;*.cmd|Any files|*.*'
+    Options = [ofPathMustExist, ofFileMustExist, ofEnableSizing]
+    Title = 'Browse...'
+    Left = 436
+    Top = 88
   end
 end

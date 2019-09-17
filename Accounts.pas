@@ -114,6 +114,7 @@ type
 		StreamingTypeCombo: TComboBox;
 		ApplyExtButton: TButton;
 		DeleteExtButton: TButton;
+		CommandPathOpenDialog: TOpenDialog;
 		procedure FormShow(Sender: TObject);
 		procedure AccountsListClick(Sender: TObject);
 		procedure ApplyButtonClick(Sender: TObject);
@@ -135,6 +136,7 @@ type
 		procedure StreamingExtensionsListKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
 		procedure DeleteExtButtonClick(Sender: TObject);
 		procedure ApplyExtButtonClick(Sender: TObject);
+		procedure CommandPathButtonClick(Sender: TObject);
 	private
 		{Private declarations}
 		procedure ApplySettings();
@@ -360,6 +362,16 @@ end;
 procedure TAccountsForm.CloudMaxFileSizeCBClick(Sender: TObject);
 begin
 	CloudMaxFileSizeValue.Enabled := CloudMaxFileSizeCB.Checked;
+end;
+
+procedure TAccountsForm.CommandPathButtonClick(Sender: TObject);
+begin
+	CommandPathOpenDialog.InitialDir := ExtractUniversalFilePath(CommandPathEdit.Text);
+	if CommandPathOpenDialog.Execute(FindTCWindow) then
+	begin
+		CommandPathEdit.Text := CommandPathOpenDialog.FileName;
+	end;
+
 end;
 
 procedure TAccountsForm.DeleteButtonClick(Sender: TObject);
