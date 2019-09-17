@@ -520,7 +520,7 @@ var
 begin
 	if (StreamingExtensionsList.Items.Count > 0) and (StreamingExtensionsList.ItemIndex <> -1) then
 	begin
-		GetStreamingOptions(SettingsIniFilePath, '.' + StreamingExtensionsList.Items[StreamingExtensionsList.ItemIndex], StreamingOptions); //не проверяем результат, это настройки
+		GetStreamingOptionsFromIniFile(SettingsIniFilePath, '.' + StreamingExtensionsList.Items[StreamingExtensionsList.ItemIndex], StreamingOptions); //не проверяем результат, это настройки
 		StreamingExtensionEdit.Text := StreamingExtensionsList.Items[StreamingExtensionsList.ItemIndex];
 		CommandPathEdit.Text := StreamingOptions.Command;
 		ParametersEdit.Text := StreamingOptions.Parameters;

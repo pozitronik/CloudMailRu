@@ -871,7 +871,7 @@ begin
 				Result := FS_EXEC_ERROR;
 	end;
 
-	if (Run(StreamingOptions.Command, StreamUrl)) then
+	if (Run(StreamingOptions.command, StreamUrl)) then
 		Result := FS_EXEC_OK
 	else
 		Result := FS_EXEC_ERROR;
@@ -902,7 +902,7 @@ begin
 		exit(ExecProperties(MainWin, RealPath));
 
 	if Verb = 'open' then
-		if not RealPath.isDir and GetStreamingOptions(SettingsIniFilePath, RealPath.path, StreamingOptions) then
+		if not RealPath.isDir and GetStreamingOptionsFromIniFile(SettingsIniFilePath, RealPath.path, StreamingOptions) then
 			exit(ExecuteFileStream(RealPath, StreamingOptions));
 	exit(FS_EXEC_YOURSELF);
 
