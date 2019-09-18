@@ -884,7 +884,6 @@ var
 
 begin
 	RealPath := ExtractRealPath(RemoteName);
-	Result := FS_EXEC_OK;
 
 	if RealPath.upDirItem then
 		RealPath.path := ExtractFilePath(RealPath.path); //if somepath/.. item properties called
@@ -1371,12 +1370,10 @@ end;
 
 function RenMoveFileViaHash(OldCloud, NewCloud: TCloudMailRu; OldRealPath, NewRealPath: TRealPath; Move, OverWrite: Boolean): integer;
 var
-	NeedUnpublish: Boolean;
 	CurrentItem: TCloudMailRuDirListingItem;
 	RetryAttempts: integer;
 begin
 	Result := FS_FILE_NOTSUPPORTED;
-	NeedUnpublish := false;
 	if OverWrite and not(NewCloud.deleteFile(NewRealPath.path)) then
 		exit;
 	if OldCloud.statusFile(OldRealPath.path, CurrentItem) then
