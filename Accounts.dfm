@@ -956,7 +956,7 @@ object AccountsForm: TAccountsForm
       end
     end
     object StreamingTab: TTabSheet
-      Caption = 'Streaming'
+      Caption = 'Streaming settings'
       ImageIndex = 4
       DesignSize = (
         484
@@ -1108,7 +1108,7 @@ object AccountsForm: TAccountsForm
     Filter = 'Executables|*.exe|Batch scripts|*.bat;*.cmd|Any files|*.*'
     Options = [ofPathMustExist, ofFileMustExist, ofEnableSizing]
     Title = 'Browse...'
-    Left = 436
-    Top = 64
+    Left = 380
+    Top = 440
   end
 end
