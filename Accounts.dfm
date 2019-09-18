@@ -1075,14 +1075,15 @@ object AccountsForm: TAccountsForm
         Style = csDropDownList
         ItemIndex = 0
         TabOrder = 6
-        Text = 'Disabled'
+        Text = 'None (download and open file)'
         Items.Strings = (
-          'Disabled'
-          'Default link to file'
-          'View link to file'
-          'M3U8 playlist'
-          'Video link'
+          'None (download and open file)'
+          'Disabled (no action)'
+          'M3U8 playlist (useful for media files)'
+          'Default (get temporary link to file)'
           'Direct view'
+          'Weblink'
+          'Video'
           'Thumbnails'
           'Weblink thumbnails')
       end
