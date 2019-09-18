@@ -1073,13 +1073,15 @@ object AccountsForm: TAccountsForm
         Width = 255
         Height = 21
         Style = csDropDownList
+        ItemIndex = 0
         TabOrder = 6
+        Text = 'None (download and open file)'
         Items.Strings = (
           'None (download and open file)'
           'Disabled (no action)'
           'M3U8 playlist (useful for media files)'
-          'Default (get temporary link to file)'
-          'Weblink')
+          'Default (publish file & get download link)'
+          'Weblink (publish file & get web link)')
       end
       object ApplyExtButton: TButton
         Left = 225
