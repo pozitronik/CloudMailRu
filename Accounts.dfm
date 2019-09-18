@@ -1078,9 +1078,13 @@ object AccountsForm: TAccountsForm
         Text = 'Disabled'
         Items.Strings = (
           'Disabled'
-          'Temporary link to file'
+          'Default link to file'
           'View link to file'
-          'M3U8 playlist')
+          'M3U8 playlist'
+          'Video link'
+          'Direct view'
+          'Thumbnails'
+          'Weblink thumbnails')
       end
       object ApplyExtButton: TButton
         Left = 225
