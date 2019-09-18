@@ -846,18 +846,9 @@ var
 	getResult: integer;
 	CurrentCloud, TempPublicCloud: TCloudMailRu;
 	CurrentItem: TCloudMailRuDirListingItem;
-	TempCloudSettings: TCloudSettings;
 begin
 	//может быть разница в атрибутах настоящих и полученных из листинга (они не рефрешатся)
 	CurrentItem := FindListingItemByPath(CurrentListing, RealPath); //внутри публичного облака веблинк есть автоматически
-
-	{todo: same as RemoteProperty.TempPublicCloudInit}
-	TempCloudSettings := default (TCloudSettings);
-	TempCloudSettings.AccountSettings.public_account := true;
-	TempCloudSettings.AccountSettings.public_url := PUBLIC_ACCESS_URL + CurrentItem.weblink;
-	TempPublicCloud := TCloudMailRu.Create(TempCloudSettings, nil);
-	TempPublicCloud.login;
-
 	case StreamingOptions.Format of
 		STREAMING_FORMAT_DISABLED:
 			exit(FS_EXEC_OK);
@@ -873,6 +864,7 @@ begin
 						exit(FS_EXEC_ERROR);
 					//Здесь можно бы обновить листинг
 				end;
+				TCloudMailRu.TempPublicCloudInit(TempPublicCloud, PUBLIC_ACCESS_URL + CurrentItem.weblink);
 				StreamUrl := TempPublicCloud.getSharedFileUrl(EmptyWideStr, true, ShardTypeFromStreamingFormat(StreamingOptions.Format));
 			end;
 
