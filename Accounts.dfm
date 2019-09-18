@@ -162,21 +162,18 @@ object AccountsForm: TAccountsForm
     ActivePage = StreamingTab
     Align = alClient
     TabOrder = 0
-    ExplicitWidth = 491
     object AccountsTab: TTabSheet
       Caption = 'Accounts'
-      ExplicitWidth = 483
       DesignSize = (
         484
         447)
       object AccountNameLabel: TLabel
         Left = 225
         Top = 10
-        Width = 69
+        Width = 68
         Height = 13
         Anchors = [akLeft, akTop, akRight]
         Caption = 'Account name'
-        ExplicitWidth = 68
       end
       object AccountsGroupBox: TGroupBox
         Left = -4
@@ -358,7 +355,6 @@ object AccountsForm: TAccountsForm
         Height = 21
         Anchors = [akLeft, akTop, akRight]
         TabOrder = 1
-        ExplicitWidth = 254
       end
       object PublicAccountCB: TCheckBox
         Left = 225
@@ -407,7 +403,6 @@ object AccountsForm: TAccountsForm
     object GlobalTab: TTabSheet
       Caption = 'Global settings'
       ImageIndex = 1
-      ExplicitWidth = 483
       object CloudMaxFileSizeLabelBytes: TLabel
         Left = 292
         Top = 96
@@ -715,7 +710,6 @@ object AccountsForm: TAccountsForm
     object NetworkTab: TTabSheet
       Caption = 'Network settings'
       ImageIndex = 2
-      ExplicitWidth = 483
       object SocketTimeoutLabel: TLabel
         Left = 5
         Top = 11
@@ -893,7 +887,6 @@ object AccountsForm: TAccountsForm
     object CommentsTab: TTabSheet
       Caption = 'File comments support'
       ImageIndex = 3
-      ExplicitWidth = 483
       object DescriptionFileNameLabel: TLabel
         Left = 5
         Top = 118
@@ -965,14 +958,13 @@ object AccountsForm: TAccountsForm
     object StreamingTab: TTabSheet
       Caption = 'Streaming'
       ImageIndex = 4
-      ExplicitWidth = 483
       DesignSize = (
         484
         447)
       object ExtLabel: TLabel
         Left = 225
         Top = 10
-        Width = 67
+        Width = 66
         Height = 13
         Anchors = [akLeft, akTop, akRight]
         Caption = 'File extension'
@@ -1087,6 +1079,7 @@ object AccountsForm: TAccountsForm
         Items.Strings = (
           'Disabled'
           'Temporary link to file'
+          'View link to file'
           'M3U8 playlist')
       end
       object ApplyExtButton: TButton
