@@ -68,10 +68,6 @@ object PropertyForm: TPropertyForm
     TabOrder = 3
     object FolderAccessTS: TTabSheet
       Caption = 'Folder access'
-      ExplicitLeft = 0
-      ExplicitTop = 0
-      ExplicitWidth = 0
-      ExplicitHeight = 0
       DesignSize = (
         828
         255)
@@ -359,10 +355,6 @@ object PropertyForm: TPropertyForm
     object DescriptionTS: TTabSheet
       Caption = 'Description'
       ImageIndex = 2
-      ExplicitLeft = 0
-      ExplicitTop = 0
-      ExplicitWidth = 0
-      ExplicitHeight = 0
       DesignSize = (
         828
         255)
@@ -417,7 +409,7 @@ object PropertyForm: TPropertyForm
     Left = 740
     Top = 147
     Bitmap = {
-      494C010106008C00040020002000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010106008C00080020002000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000800000004000000001002000000000000080
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000

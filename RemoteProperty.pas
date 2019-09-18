@@ -84,7 +84,6 @@ type
 		procedure UpdateHashesListing();
 		procedure RefreshItemDescription();
 		procedure SaveItemDescription();
-		procedure TempPublicCloudInit(publicUrl: WideString);
 		function LinksLogProc(LogText: WideString): Boolean;
 		function HashesLogProc(LogText: WideString): Boolean;
 		function GenerateHashCommand(ListingItem: TCloudMailRuDirListingItem; BaseDir: WideString = ''; Path: WideString = ''): WideString;
@@ -178,7 +177,7 @@ begin
 		end;
 	end else begin
 		(*У объекта есть публичная ссылка, можно получить прямые ссылки на скачивание*)
-		TempPublicCloudInit(WebLink.Text);
+		TCloudMailRu.TempPublicCloudInit(self.TempPublicCloud, WebLink.Text);
 		if Props.type_ = TYPE_DIR then
 		begin (*рекурсивно получаем все ссылки в каталоге*)
 			FillRecursiveDownloadListing(EmptyWideStr, self.TempPublicCloud);
@@ -336,16 +335,6 @@ begin
 	end;
 end;
 
-procedure TPropertyForm.TempPublicCloudInit(publicUrl: WideString);
-var
-	TempCloudSettings: TCloudSettings;
-begin
-	TempCloudSettings := default (TCloudSettings);
-	TempCloudSettings.AccountSettings.public_account := true;
-	TempCloudSettings.AccountSettings.public_url := publicUrl;
-	self.TempPublicCloud := TCloudMailRu.Create(TempCloudSettings, nil);
-	self.TempPublicCloud.login;
-end;
 
 procedure TPropertyForm.ApplyHashesTBClick(Sender: TObject);
 begin
