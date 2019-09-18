@@ -848,13 +848,8 @@ var
 	CurrentItem: TCloudMailRuDirListingItem;
 	TempCloudSettings: TCloudSettings;
 begin
+	//может быть разница в атрибутах настоящих и полученных из листинга (они не рефрешатся)
 	CurrentItem := FindListingItemByPath(CurrentListing, RealPath); //внутри публичного облака веблинк есть автоматически
-	if EmptyWideStr = CurrentItem.weblink then
-	begin
-		CurrentCloud := ConnectionManager.get(RealPath.account, getResult);
-		if not CurrentCloud.publishFile(CurrentItem.home, CurrentItem.weblink) then
-			exit(FS_EXEC_ERROR);
-	end;
 
 	{todo: same as RemoteProperty.TempPublicCloudInit}
 	TempCloudSettings := default (TCloudSettings);
@@ -870,7 +865,16 @@ begin
 			if not TempPublicCloud.getPublishedFileStreamUrl(CurrentItem, StreamUrl) then
 				exit(FS_EXEC_ERROR);
 		else
-			StreamUrl := TempPublicCloud.getSharedFileUrl(EmptyWideStr, true, ShardTypeFromStreamingFormat(StreamingOptions.Format));
+			begin
+				if EmptyWideStr = CurrentItem.weblink then
+				begin
+					CurrentCloud := ConnectionManager.get(RealPath.account, getResult);
+					if not CurrentCloud.publishFile(CurrentItem.home, CurrentItem.weblink) then
+						exit(FS_EXEC_ERROR);
+					//Здесь можно бы обновить листинг
+				end;
+				StreamUrl := TempPublicCloud.getSharedFileUrl(EmptyWideStr, true, ShardTypeFromStreamingFormat(StreamingOptions.Format));
+			end;
 
 	end;
 
