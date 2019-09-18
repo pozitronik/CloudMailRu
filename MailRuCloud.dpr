@@ -840,7 +840,7 @@ begin
 
 end;
 
-function ExecuteFileStream(RealPath: TRealPath; StreamingOptions: TStreamingOptions): integer; //todo: m3u support
+function ExecuteFileStream(RealPath: TRealPath; StreamingOptions: TStreamingOptions): integer;
 var
 	StreamUrl: WideString;
 	getResult: integer;
