@@ -110,6 +110,7 @@ const
 	HTTP_METHODS = [HTTP_METHOD_GET, HTTP_METHOD_POST];
 
 	{Типы шардов}
+	SHARD_TYPE_DEFAULT = ''; //несистемный шард, в нашей логике означает использование того шарда, что получен при инициализации
 	SHARD_TYPE_VIDEO = 'video';
 	SHARD_TYPE_VIEW_DIRECT = 'view_direct';
 	SHARD_TYPE_WEBLINK_VIEW = 'weblink_view';
@@ -185,7 +186,8 @@ const
 	{Streaming formats}
 	STREAMING_FORMAT_DISABLED = 0;
 	STREAMING_FORMAT_AS_IS = 1;
-	STREAMING_FORMAT_PLAYLIST = 2;
+	STREAMING_FORMAT_WEBLINK_VIEW = 2;
+	STREAMING_FORMAT_PLAYLIST = 3;
 
 type
 	TCloudMailRuDirListingItem = Record
