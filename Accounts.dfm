@@ -159,7 +159,7 @@ object AccountsForm: TAccountsForm
     Top = 0
     Width = 492
     Height = 475
-    ActivePage = StreamingTab
+    ActivePage = AccountsTab
     Align = alClient
     TabOrder = 0
     object AccountsTab: TTabSheet
@@ -980,10 +980,10 @@ object AccountsForm: TAccountsForm
       object ParametersLabel: TLabel
         Left = 225
         Top = 93
-        Width = 55
+        Width = 227
         Height = 13
         Anchors = [akLeft, akTop, akRight]
-        Caption = 'Parameters'
+        Caption = 'Parameters (%url% for stream url substitution)'
       end
       object StartPathLabel: TLabel
         Left = 225
@@ -1109,6 +1109,6 @@ object AccountsForm: TAccountsForm
     Options = [ofPathMustExist, ofFileMustExist, ofEnableSizing]
     Title = 'Browse...'
     Left = 436
-    Top = 88
+    Top = 64
   end
 end

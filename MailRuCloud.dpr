@@ -867,8 +867,10 @@ begin
 				TCloudMailRu.TempPublicCloudInit(TempPublicCloud, PUBLIC_ACCESS_URL + CurrentItem.weblink);
 				StreamUrl := TempPublicCloud.getSharedFileUrl(EmptyWideStr, true, ShardTypeFromStreamingFormat(StreamingOptions.Format));
 			end;
-
 	end;
+	if EmptyWideStr = StreamingOptions.Parameters then
+		StreamingOptions.Parameters := '%url%';
+	StreamingOptions.Parameters := StringReplace(StreamingOptions.Parameters, '%url%', StreamUrl, [rfReplaceAll, rfIgnoreCase]);
 
 	if (Run(StreamingOptions.command, StreamUrl, StreamingOptions.StartPath)) then
 		Result := FS_EXEC_OK
