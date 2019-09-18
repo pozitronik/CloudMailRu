@@ -848,7 +848,7 @@ var
 	CurrentItem: TCloudMailRuDirListingItem;
 	TempCloudSettings: TCloudSettings;
 begin
-	CurrentItem := FindListingItemByPath(CurrentListing, RealPath); //todo: проверить и доработать поведение для паблик-облаков
+	CurrentItem := FindListingItemByPath(CurrentListing, RealPath); //внутри публичного облака веблинк есть автоматически
 	if EmptyWideStr = CurrentItem.weblink then
 	begin
 		CurrentCloud := ConnectionManager.get(RealPath.account, getResult);
