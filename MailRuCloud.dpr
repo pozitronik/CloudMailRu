@@ -864,13 +864,14 @@ begin
 	TempPublicCloud.login;
 
 	case StreamingOptions.Format of
-		STREAMING_FORMAT_AS_IS:
-			StreamUrl := TempPublicCloud.getSharedFileUrl(EmptyWideStr); //Empty path for files
-		STREAMING_FORMAT_WEBLINK_VIEW:
-			StreamUrl := TempPublicCloud.getSharedFileUrl(EmptyWideStr, true, SHARD_TYPE_WEBLINK_VIEW);
+		STREAMING_FORMAT_DISABLED:
+			exit(FS_EXEC_OK);
 		STREAMING_FORMAT_PLAYLIST:
 			if not TempPublicCloud.getPublishedFileStreamUrl(CurrentItem, StreamUrl) then
 				exit(FS_EXEC_ERROR);
+		else
+			StreamUrl := TempPublicCloud.getSharedFileUrl(EmptyWideStr, true, ShardTypeFromStreamingFormat(StreamingOptions.Format));
+
 	end;
 
 	if (Run(StreamingOptions.command, StreamUrl, StreamingOptions.StartPath)) then
