@@ -906,7 +906,7 @@ begin
 		exit(ExecProperties(MainWin, RealPath));
 
 	if Verb = 'open' then
-		if not RealPath.isDir and GetStreamingOptionsFromIniFile(SettingsIniFilePath, RealPath.path, StreamingOptions) then
+		if (not RealPath.isDir) and GetStreamingOptionsFromIniFile(SettingsIniFilePath, RealPath.path, StreamingOptions) and (STREAMING_FORMAT_NONE <> StreamingOptions.Format) then
 			exit(ExecuteFileStream(RealPath, StreamingOptions));
 	exit(FS_EXEC_YOURSELF);
 
