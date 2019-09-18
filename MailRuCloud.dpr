@@ -866,9 +866,11 @@ begin
 	case StreamingOptions.Format of
 		STREAMING_FORMAT_AS_IS:
 			StreamUrl := TempPublicCloud.getSharedFileUrl(EmptyWideStr); //Empty path for files
+		STREAMING_FORMAT_WEBLINK_VIEW:
+			StreamUrl := TempPublicCloud.getSharedFileUrl(EmptyWideStr, true, SHARD_TYPE_WEBLINK_VIEW);
 		STREAMING_FORMAT_PLAYLIST:
 			if not TempPublicCloud.getPublishedFileStreamUrl(CurrentItem, StreamUrl) then
-				Result := FS_EXEC_ERROR;
+				exit(FS_EXEC_ERROR);
 	end;
 
 	if (Run(StreamingOptions.command, StreamUrl, StreamingOptions.StartPath)) then
@@ -882,6 +884,7 @@ function FsExecuteFileW(MainWin: THandle; RemoteName, Verb: PWideChar): integer;
 var
 	RealPath: TRealPath;
 	StreamingOptions: TStreamingOptions;
+
 begin
 	RealPath := ExtractRealPath(RemoteName);
 	Result := FS_EXEC_OK;
