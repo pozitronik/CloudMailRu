@@ -84,7 +84,8 @@ type
 		Property RetryAttempts: integer read OptionsSet.RetryAttempts;
 		Property AttemptWait: integer read OptionsSet.AttemptWait;
 
-		function getSharedFileUrl(remotePath: WideString; DoUrlEncode: Boolean = true): WideString;
+		function getSharedFileUrl(remotePath: WideString; DoUrlEncode: Boolean = true; ShardType: WideString = SHARD_TYPE_DEFAULT): WideString;
+
 		{CONSTRUCTOR/DESTRUCTOR}
 		constructor Create(CloudSettings: TCloudSettings; ConnectionManager: THTTPManager; ExternalProgressProc: TProgressHandler = nil; ExternalLogProc: TLogHandler = nil; ExternalRequestProc: TRequestHandler = nil);
 		destructor Destroy; override;
@@ -610,9 +611,16 @@ begin
 		System.SysUtils.deleteFile(GetUNCFilePath(localPath));
 end;
 
-function TCloudMailRu.getSharedFileUrl(remotePath: WideString; DoUrlEncode: Boolean = true): WideString;
+function TCloudMailRu.getSharedFileUrl(remotePath: WideString; DoUrlEncode: Boolean = true; ShardType: WideString = SHARD_TYPE_DEFAULT): WideString;
+var
+	usedShard: WideString;
 begin
-	result := IncludeSlash(self.public_shard) + IncludeSlash(self.public_link) + PathToUrl(remotePath, true, DoUrlEncode) + '?key=' + self.public_download_token
+	if ShardType = SHARD_TYPE_DEFAULT then
+		usedShard := self.public_shard
+	else
+		self.getShard(usedShard, ShardType);
+
+	result := IncludeSlash(usedShard) + IncludeSlash(self.public_link) + PathToUrl(remotePath, true, DoUrlEncode) + '?key=' + self.public_download_token
 end;
 
 function TCloudMailRu.getFileShared(remotePath, localPath: WideString; var resultHash: WideString; LogErrors: Boolean): integer;
