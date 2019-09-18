@@ -185,9 +185,13 @@ const
 
 	{Streaming formats}
 	STREAMING_FORMAT_DISABLED = 0;
-	STREAMING_FORMAT_AS_IS = 1;
+	STREAMING_FORMAT_DEFAULT = 1;
 	STREAMING_FORMAT_WEBLINK_VIEW = 2;
 	STREAMING_FORMAT_PLAYLIST = 3;
+	STREAMING_FORMAT_VIDEO = 4;
+	STREAMING_FORMAT_VIEW_DIRECT = 5;
+	STREAMING_FORMAT_THUMBNAILS = 6;
+	STREAMING_FORMAT_WEBLINK_THUMBNAILS = 7;
 
 type
 	TCloudMailRuDirListingItem = Record
@@ -283,6 +287,25 @@ type
 	TCloudMailRuInviteInfoListing = array of TCloudMailRuInviteInfo;
 	TCloudMailRuIncomingInviteInfoListing = array of TCloudMailRuIncomingInviteInfo;
 
+function ShardTypeFromStreamingFormat(StreamingFormat: integer): string;
+
 implementation
 
-end.
+function ShardTypeFromStreamingFormat(StreamingFormat: integer): string;
+begin
+	case StreamingFormat of
+		STREAMING_FORMAT_WEBLINK_VIEW:
+			Result := SHARD_TYPE_WEBLINK_VIEW;
+		STREAMING_FORMAT_VIDEO:
+			Result := SHARD_TYPE_VIDEO;
+		STREAMING_FORMAT_VIEW_DIRECT:
+			Result := SHARD_TYPE_VIEW_DIRECT;
+		STREAMING_FORMAT_THUMBNAILS:
+			Result := SHARD_TYPE_THUMBNAILS;
+		STREAMING_FORMAT_WEBLINK_THUMBNAILS:
+			Result := SHARD_TYPE_WEBLINK_THUMBNAILS;
+		default := SHARD_TYPE_DEFAULT;
+		end;
+		end;
+
+		end.
