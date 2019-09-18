@@ -131,6 +131,7 @@ type
 		class function StringToCloudAccess(accessString: WideString; Invert: Boolean = false): integer; static;
 		class function ErrorCodeText(ErrorCode: integer): WideString; static;
 		class function IsSameIdentity(IdentityOne, IdentityTwo: TCloudMailRuFileIdentity): Boolean; static;
+		class function TempPublicCloudInit(var TempCloud: TCloudMailRu; publicUrl: WideString): Boolean; static;
 	end;
 
 implementation
@@ -687,7 +688,7 @@ begin
 		result := self.OptionsSet.AccountSettings.public_url;
 		self.OptionsSet.AccountSettings.public_url := IncludeSlash(self.OptionsSet.AccountSettings.public_url);
 		Delete(result, 1, length(PUBLIC_ACCESS_URL));
-		if result[length(result)] = '/' then
+		if (result <> EmptyWideStr) and (result[length(result)] = '/') then
 			Delete(result, length(result), 1);
 	end;
 end;
@@ -1450,6 +1451,17 @@ begin
 		result := CLOUD_SHARE_RO
 	else
 		result := CLOUD_SHARE_RW;
+end;
+
+class function TCloudMailRu.TempPublicCloudInit(var TempCloud: TCloudMailRu; publicUrl: WideString): Boolean;
+var
+	TempCloudSettings: TCloudSettings;
+begin
+	TempCloudSettings := default (TCloudSettings);
+	TempCloudSettings.AccountSettings.public_account := true;
+	TempCloudSettings.AccountSettings.public_url := publicUrl;
+	TempCloud := TCloudMailRu.Create(TempCloudSettings, nil);
+	result := TempCloud.login;
 end;
 
 function TCloudMailRu.cloudHash(Path: WideString): WideString;
