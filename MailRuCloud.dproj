@@ -155,6 +155,8 @@
         <DelphiCompile Include="$(MainSource)">
             <MainSource>MainSource</MainSource>
         </DelphiCompile>
+        <DCCReference Include="FastMM\FastMM4.pas"/>
+        <DCCReference Include="FastMM\FastMM4Messages.pas"/>
         <DCCReference Include="CloudMailRu.pas"/>
         <DCCReference Include="MRC_Helper.pas"/>
         <DCCReference Include="Accounts.pas">
@@ -216,7 +218,6 @@
         <DCCReference Include="HTTPManager.pas"/>
         <DCCReference Include="Registration.pas">
             <Form>RegistrationForm</Form>
-            <FormType>dfm</FormType>
         </DCCReference>
         <RcItem Include="icons\icon.ico">
             <ResourceType>ICON</ResourceType>
