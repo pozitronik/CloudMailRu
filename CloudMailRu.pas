@@ -601,7 +601,7 @@ begin
 
 	end else begin
 		result := self.HTTP.getFile(self.Shard + PathToUrl(remotePath, false), FileStream, LogErrors);
-		if (result in [FS_FILE_OK]) then
+		if ((result in [FS_FILE_OK]) and (EmptyWideStr = resultHash)) then
 			resultHash := cloudHash(FileStream);
 	end;
 

@@ -1050,7 +1050,10 @@ var
 	AccountSettings: TAccountSettings;
 	resultHash: WideString;
 begin
-	resultHash := EmptyWideStr;
+	if (GetPluginSettings(SettingsIniFilePath).CheckCRC) then
+		resultHash := EmptyWideStr
+	else
+		resultHash := 'dummy'; //calculations will be ignored if variable not empty
 	Cloud := ConnectionManager.get(RemotePath.account, getResult);
 	AccountSettings := GetAccountSettingsFromIniFile(AccountsIniFilePath, RemotePath.account);
 
@@ -1058,10 +1061,9 @@ begin
 
 	if Result = FS_FILE_OK then
 	begin
-		{Дополнительно проверим CRC скачанного файла}
 
 		Item := FindListingItemByPath(CurrentListing, RemotePath);
-
+		{Дополнительно проверим CRC скачанного файла}
 		if GetPluginSettings(SettingsIniFilePath).CheckCRC then
 		begin
 			if (resultHash <> EmptyWideStr) and (Item.hash <> resultHash) then
