@@ -3,8 +3,10 @@
 {$R *.dres}
 
 uses
+{$IFDEF DEBUG}
 	FastMM4 in 'FastMM\FastMM4.pas',
 	FastMM4Messages in 'FastMM\FastMM4Messages.pas',
+{$ENDIF}
 	SysUtils,
 	System.Generics.Collections,
 	DateUtils,
@@ -2060,7 +2062,9 @@ end;
 exports FsGetDefRootName, FsInit, FsInitW, FsFindFirst, FsFindFirstW, FsFindNext, FsFindNextW, FsFindClose, FsGetFile, FsGetFileW, FsDisconnect, FsDisconnectW, FsStatusInfo, FsStatusInfoW, FsPutFile, FsPutFileW, FsDeleteFile, FsDeleteFileW, FsMkDir, FsMkDirW, FsRemoveDir, FsRemoveDirW, FsSetCryptCallback, FsSetCryptCallbackW, FsExecuteFileW, FsRenMovFile, FsRenMovFileW, FsGetBackgroundFlags, FsContentGetSupportedField, FsContentGetValue, FsContentGetValueW, FsExtractCustomIcon, FsExtractCustomIconW;
 
 begin
+{$IFDEF DEBUG}
 	ReportMemoryLeaksOnShutdown := true;
+{$ENDIF}
 	DllProc := @DllInit;
 	DllInit(DLL_PROCESS_ATTACH);
 
