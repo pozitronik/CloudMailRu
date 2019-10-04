@@ -45,7 +45,7 @@ type
 		function RegistrationValid: boolean;
 	protected
 		HTTPConnection: TCloudMailRuHTTP;
-		JSONParser: TCloudMailRuJSONParser;
+//		JSONParser: TCloudMailRuJSONParser;
 		procedure InitComponents();
 		procedure FreeComponents();
 		function createAccount(firstname, lastname, Login, password, Domain: WideString; var Code: WideString): boolean;
@@ -78,7 +78,7 @@ begin
 	result := HTTPConnection.PostForm(MAILRU_REGISTRATION_CONFIRM, 'email=' + email + '&reg_anketa=' + '{"id":"' + Code + '","capcha":"' + captcha + '"}', JSON); //capcha, lol
 	if result then
 	begin
-		result := JSONParser.getRegistrationOperationResult(JSON).OperationResult = CLOUD_OPERATION_OK;
+		result := CMLJSONParser.getRegistrationOperationResult(JSON).OperationResult = CLOUD_OPERATION_OK;
 		if not result then
 			MessageBox(Handle, PWideChar(JSON), 'Confirmation error', MB_ICONERROR + MB_OK);
 	end;
@@ -99,9 +99,9 @@ begin
 	result := HTTPConnection.PostForm(MAILRU_REGISTRATION_SIGNUP, 'name={"first":"' + firstname + '","last":"' + lastname + '"}&login=' + Login + '&domain=' + Domain + '&password=' + password, JSON);
 	if result then
 	begin
-		result := (CLOUD_OPERATION_OK = JSONParser.getRegistrationOperationResult(JSON).OperationResult);
+		result := (CLOUD_OPERATION_OK = CMLJSONParser.getRegistrationOperationResult(JSON).OperationResult);
 		if result then
-			result := JSONParser.getRegistrationBody(JSON, Code)
+			result := CMLJSONParser.getRegistrationBody(JSON, Code)
 		else
 			MessageBox(Handle, PWideChar(JSON), 'Registration error', MB_ICONERROR + MB_OK);
 	end;
@@ -133,7 +133,7 @@ end;
 procedure TRegistrationForm.FreeComponents;
 begin
 	HTTPConnection.Free;
-	JSONParser.Free;
+//	JSONParser.Free;
 end;
 
 function TRegistrationForm.getRegisrationCaptcha(CaptchaStream: TStream): boolean;
@@ -144,7 +144,7 @@ end;
 procedure TRegistrationForm.InitComponents;
 begin
 	HTTPConnection := TCloudMailRuHTTP.Create(ConnectionSettings);
-	JSONParser := TCloudMailRuJSONParser.Create();;
+//	JSONParser := TCloudMailRuJSONParser.Create();
 end;
 
 function TRegistrationForm.RegistrationValid: boolean;
