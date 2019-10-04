@@ -2,18 +2,12 @@
 
 {$R *.dres}
 
-{$DEFINE OWNJSON}
-{See Readme.md 'Development' section}
 uses
 {$IFDEF DEBUG}
 	FastMM4 in 'FastMM\FastMM4.pas',
 	FastMM4Messages in 'FastMM\FastMM4Messages.pas',
 {$ENDIF}
-{$IFDEF OWNJSON}
-	JSON in 'System.JSON\System.JSON.pas',
-{$ELSE}
 	JSON,
-{$ENDIF}
 	SysUtils,
 	System.Generics.Collections,
 	DateUtils,
