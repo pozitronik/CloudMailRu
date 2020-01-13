@@ -13,6 +13,7 @@ const
 	SocksProxyTypes = [ProxySocks5, ProxySocks4];
 
 	CLOUD_MAX_FILESIZE_DEFAULT = 2147483392; //$80000000-256
+	CLOUD_PRECALCULATE_LIMIT_DEFAULT = 20; //issue #231
 
 	ChunkOverwrite = 0;
 	ChunkOverwriteIgnore = 1;
@@ -125,6 +126,7 @@ type
 		ShowInvitesFolders: boolean;
 		LogLevel: integer;
 		PrecalculateHash: boolean;
+		ForcePrecalculateSize: int64;
 		CheckCRC: boolean;
 	end;
 
@@ -135,6 +137,7 @@ type
 		{Параметры, наследуемые от глобальных настроек}
 		ConnectionSettings: TConnectionSettings;
 		PrecalculateHash: boolean;
+		ForcePrecalculateSize: int64;
 		CheckCRC: boolean;
 		CloudMaxFileSize: int64;
 		OperationErrorMode: integer;
@@ -219,6 +222,7 @@ begin
 	GetPluginSettings.ShowInvitesFolders := IniFile.ReadBool('Main', 'ShowInvitesFolders', true);
 	GetPluginSettings.LogLevel := IniFile.ReadInteger('Main', 'LogLevel', LogLevelConnect + LogLevelFileOperation + LogLevelDetail + LogLevelWarning + LogLevelError);
 	GetPluginSettings.PrecalculateHash := IniFile.ReadBool('Main', 'PrecalculateHash', true);
+	GetPluginSettings.ForcePrecalculateSize := IniFile.ReadInt64('Main', 'ForcePrecalculateSize', CLOUD_PRECALCULATE_LIMIT_DEFAULT);
 	GetPluginSettings.CheckCRC := IniFile.ReadBool('Main', 'CheckCRC', true);
 	IniFile.Destroy;
 end;

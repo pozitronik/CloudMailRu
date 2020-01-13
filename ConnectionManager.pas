@@ -100,6 +100,7 @@ begin
 	{proxify plugin settings to cloud}
 	CloudSettings.ConnectionSettings := self.PluginSettings.ConnectionSettings;
 	CloudSettings.PrecalculateHash := self.PluginSettings.PrecalculateHash;
+	CloudSettings.ForcePrecalculateSize := self.PluginSettings.ForcePrecalculateSize;
 	CloudSettings.CheckCRC := self.PluginSettings.CheckCRC;
 	CloudSettings.CloudMaxFileSize := self.PluginSettings.CloudMaxFileSize;
 	CloudSettings.OperationErrorMode := self.PluginSettings.OperationErrorMode;
