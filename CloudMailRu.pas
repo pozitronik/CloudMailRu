@@ -19,7 +19,7 @@ type
 		ExternalRequestProc: TRequestHandler;
 
 		FileCipher: TFileCipher; //Encryption class
-//		JSONParser: TCloudMailRuJSONParser; //JSON parser
+		//JSONParser: TCloudMailRuJSONParser; //JSON parser
 
 		public_link: WideString; //public_ params is active for public clouds only
 		public_download_token: WideString; //token for public urls, refreshes on request
@@ -75,6 +75,7 @@ type
 
 		Property CloudMaxFileSize: int64 read OptionsSet.CloudMaxFileSize;
 		Property PrecalculateHash: Boolean read OptionsSet.PrecalculateHash;
+		property ForcePrecalculateSize: int64 read OptionsSet.ForcePrecalculateSize;
 		Property CheckCRC: Boolean read OptionsSet.CheckCRC;
 		Property shard_override: WideString read OptionsSet.AccountSettings.shard_override;
 		Property upload_url_override: WideString read OptionsSet.AccountSettings.upload_url_override;
@@ -295,7 +296,7 @@ begin
 		self.AuthCookie := TIdCookieManager.Create();
 
 		//self.HTTP := TCloudMailRuHTTP.Create(CloudSettings.ConnectionSettings, ExternalProgressProc, ExternalLogProc);
-//		self.JSONParser := TCloudMailRuJSONParser.Create();
+		//self.JSONParser := TCloudMailRuJSONParser.Create();
 
 		if CloudSettings.AccountSettings.encrypt_files_mode <> EncryptModeNone then
 		begin
@@ -349,7 +350,7 @@ begin
 	//self.HTTP.Destroy;
 
 	self.AuthCookie.Destroy;
-//	self.TCloudMailRuJSONParser.Destroy;
+	//self.TCloudMailRuJSONParser.Destroy;
 	if Assigned(InternalHTTPConnection) then
 		InternalHTTPConnection.Destroy;
 
@@ -1118,17 +1119,20 @@ var
 	LocalFileIdentity, RemoteFileIdentity: TCloudMailRuFileIdentity;
 	OperationResult: integer;
 	MemoryStream: TMemoryStream;
+	UseHash: Boolean;
 begin
 
 	result := FS_FILE_WRITEERROR;
 	OperationResult := CLOUD_OPERATION_FAILED;
 
-	if self.PrecalculateHash or self.CheckCRC then
+	UseHash := self.PrecalculateHash or (self.ForcePrecalculateSize >= FileStream.size); //issue #231
+
+	if UseHash or self.CheckCRC then
 	begin
 		LocalFileIdentity.Hash := cloudHash(FileStream);
 		LocalFileIdentity.size := FileStream.size;
 	end;
-	if self.PrecalculateHash and (LocalFileIdentity.Hash <> EmptyWideStr) and (not self.crypt_files) and (FS_FILE_OK = self.addFileByIdentity(LocalFileIdentity, remotePath, CLOUD_CONFLICT_STRICT, false, true)) then {issue #135}
+	if UseHash and (LocalFileIdentity.Hash <> EmptyWideStr) and (not self.crypt_files) and (FS_FILE_OK = self.addFileByIdentity(LocalFileIdentity, remotePath, CLOUD_CONFLICT_STRICT, false, true)) then {issue #135}
 		exit(CLOUD_OPERATION_OK);
 
 	try
@@ -1189,11 +1193,13 @@ var
 	ChunkStream: TChunkedFileStream;
 	CRCStream: TStringStream;
 	RetryAttemptsCount: integer;
+	UseHash: Boolean;
 begin
-	if self.PrecalculateHash then //try to add whole file by hash at first.
+	UseHash := self.PrecalculateHash or (self.ForcePrecalculateSize >= SizeOfFile(localPath)); //issue #231
+	if UseHash then //try to add whole file by hash at first.
 		LocalFileIdentity := FileIdentity(GetUNCFilePath(localPath));
 	{Отмена расчёта хеша приведёт к отмене всей операции: TC запоминает нажатие отмены и ExternalProgressProc будет возвращать 1 до следующего вызова копирования}
-	if self.PrecalculateHash and (LocalFileIdentity.Hash <> EmptyWideStr) and (not self.crypt_files) and (FS_FILE_OK = self.addFileByIdentity(LocalFileIdentity, remotePath, CLOUD_CONFLICT_STRICT, false, true)) then {issue #135}
+	if UseHash and (LocalFileIdentity.Hash <> EmptyWideStr) and (not self.crypt_files) and (FS_FILE_OK = self.addFileByIdentity(LocalFileIdentity, remotePath, CLOUD_CONFLICT_STRICT, false, true)) then {issue #135}
 		exit(CLOUD_OPERATION_OK);
 
 	SplitFileInfo := TFileSplitInfo.Create(GetUNCFilePath(localPath), self.CloudMaxFileSize); //quickly get information about file parts
