@@ -747,8 +747,9 @@ begin
 	result := self.HTTP.GetPage(TOKEN_URL, JSON, Progress);
 	if result then
 	begin
-		result := extractTokenFromText(JSON, token) and extract_x_page_id_FromText(JSON, x_page_id) and extract_build_FromText(JSON, build) and extract_upload_url_FromText(JSON, self.upload_url);
+		result := extractTokenFromText(JSON, token) and extract_x_page_id_FromText(JSON, x_page_id) and extract_build_FromText(JSON, build); //and extract_upload_url_FromText(JSON, self.upload_url);
 		self.united_params := '&api=2&build=' + build + '&x-page-id=' + x_page_id + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&token=' + token + '&_=' + DateTimeToUnix(now).ToString + '810';
+		result := result and self.getShard(self.upload_url, SHARD_TYPE_UPLOAD); //todo временное решение
 	end;
 end;
 
@@ -1363,7 +1364,7 @@ begin
 	if self.public_account then
 		exit;
 	Return := TStringList.Create;
-	result := self.HTTP.PostFile(self.upload_url + '/?cloud_domain=1&x-email=' + self.user + '%40' + self.domain + '&fileapi' + DateTimeToUnix(now).ToString + '0246', FileName, FileStream, PostAnswer);
+	result := self.HTTP.PostFile(self.upload_url + '?cloud_domain=2&x-email=' + self.user + '%40' + self.domain (*+ '&fileapi' + DateTimeToUnix(now).ToString + '0246'*), FileName, FileStream, PostAnswer);
 	if (result = CLOUD_OPERATION_OK) then
 	begin
 		ExtractStrings([';'], [], PWideChar(PostAnswer), Return);
