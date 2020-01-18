@@ -729,7 +729,7 @@ begin
 	if result then
 	begin
 		result := CMLJSONParser.getShard(JSON, Shard, ShardType) and (Shard <> EmptyWideStr);
-		Log(LogLevelDetail, MSGTYPE_DETAILS, 'Shard received: ' + Shard);
+		Log(LogLevelDetail, MSGTYPE_DETAILS, 'Shard received: ' + Shard + ', type: ' + ShardType);
 	end;
 
 end;
@@ -1364,7 +1364,7 @@ begin
 	if self.public_account then
 		exit;
 	Return := TStringList.Create;
-	result := self.HTTP.PostFile(self.upload_url + '?cloud_domain=2&x-email=' + self.user + '%40' + self.domain (*+ '&fileapi' + DateTimeToUnix(now).ToString + '0246'*), FileName, FileStream, PostAnswer);
+	result := self.HTTP.PostFile(self.upload_url + '?cloud_domain=2&x-email=' + self.user + '%40' + self.domain(*+ '&fileapi' + DateTimeToUnix(now).ToString + '0246'*), FileName, FileStream, PostAnswer);
 	if (result = CLOUD_OPERATION_OK) then
 	begin
 		ExtractStrings([';'], [], PWideChar(PostAnswer), Return);
