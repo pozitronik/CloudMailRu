@@ -559,7 +559,7 @@ begin
 		exit; //Проверка на вызов без инициализации
 	if self.Shard = EmptyWideStr then
 	begin
-		Log(LogLevelDetail, MSGTYPE_DETAILS, 'Current shard is undefined, trying to get one');
+		Log(LogLevelDetail, MSGTYPE_DETAILS, 'Current download shard is undefined, trying to get one');
 		if not self.getShard(self.Shard) then
 			exit;
 	end;
@@ -749,6 +749,7 @@ begin
 	begin
 		result := extractTokenFromText(JSON, token) and extract_x_page_id_FromText(JSON, x_page_id) and extract_build_FromText(JSON, build); //and extract_upload_url_FromText(JSON, self.upload_url);
 		self.united_params := '&api=2&build=' + build + '&x-page-id=' + x_page_id + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&token=' + token + '&_=' + DateTimeToUnix(now).ToString + '810';
+		Log(LogLevelDetail, MSGTYPE_DETAILS, 'Current upload shard is undefined, trying to get one');
 		result := result and self.getShard(self.upload_url, SHARD_TYPE_UPLOAD); //todo временное решение
 	end;
 end;
