@@ -1356,6 +1356,8 @@ var
 	PostAnswer: WideString;
 	Return: TStringList;
 	code: integer;
+	UploadUrl: WideString;
+	ProgressEnabled: Boolean;
 begin
 	FileIdentity.Hash := EmptyWideStr;
 	FileIdentity.size := -1;
@@ -1364,8 +1366,10 @@ begin
 		exit; //Проверка на вызов без инициализации
 	if self.public_account then
 		exit;
+	UploadUrl := self.upload_url + '?cloud_domain=2&x-email=' + self.user + '%40' + self.domain(*+ '&fileapi' + DateTimeToUnix(now).ToString + '0246'*);
 	Return := TStringList.Create;
-	result := self.HTTP.PostFile(self.upload_url + '?cloud_domain=2&x-email=' + self.user + '%40' + self.domain(*+ '&fileapi' + DateTimeToUnix(now).ToString + '0246'*), FileName, FileStream, PostAnswer);
+	self.HTTP.OptionsMethod(UploadUrl, PostAnswer, ProgressEnabled);
+	result := self.HTTP.PutFile(UploadUrl, FileName, FileStream, PostAnswer);
 	if (result = CLOUD_OPERATION_OK) then
 	begin
 		ExtractStrings([';'], [], PWideChar(PostAnswer), Return);
