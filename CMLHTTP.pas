@@ -48,6 +48,11 @@ type
 
 		function Post(URL: WideString; PostData, ResultData: TStringStream; UnderstandResponseCode: Boolean = false; ContentType: WideString = ''; LogErrors: Boolean = true; ProgressEnabled: Boolean = true): integer; overload; //ѕостинг подготовленных данных, отлов ошибок
 		function Post(URL: WideString; var PostData: TIdMultiPartFormDataStream; ResultData: TStringStream): integer; overload; //TIdMultiPartFormDataStream should be passed via var
+
+		function OptionsMethod(URL: WideString; var Answer: WideString; var ProgressEnabled: Boolean): Boolean;
+		function PutFile(URL: WideString; FileName: WideString; FileStream: TStream; var Answer: WideString): integer;
+		function Put(URL: WideString; var PostData: TIdMultiPartFormDataStream; ResultData: TStringStream): integer;
+
 		function ExceptionHandler(E: Exception; URL: WideString; HTTPMethod: integer = HTTP_METHOD_POST; LogErrors: Boolean = true): integer;
 
 		procedure SetProgressNames(SourceName, TargetName: WideString);
@@ -297,6 +302,27 @@ begin
 	PostData.free;
 end;
 
+function TCloudMailRuHTTP.OptionsMethod(URL: WideString; var Answer: WideString; var ProgressEnabled: Boolean): Boolean;
+var
+	ResultStream: TStringStream;
+begin
+	result := true;
+	try
+		HTTP.Intercept := Throttle;
+		HTTP.OnWork := self.Progress;
+		ResultStream := TStringStream.Create;
+		HTTP.Options(URL, ResultStream);
+	except
+		On E: Exception do
+		begin
+			result := false; //todo: add self.ExceptionHandler()
+		end;
+	end;
+	Answer := ResultStream.DataString;
+
+	ResultStream.free;
+end;
+
 procedure TCloudMailRuHTTP.Progress(ASender: TObject; AWorkMode: TWorkMode; AWorkCount: int64);
 var
 	ContentLength: int64;
@@ -313,6 +339,39 @@ begin
 		if Assigned(ExternalProgressProc) and (ExternalProgressProc(PWideChar(self.ExternalSourceName), PWideChar(self.ExternalTargetName), Percent) = 1) then {ѕри передаче nil прогресс оставл€ет предыдущие значени€}
 			abort;
 	end;
+end;
+
+function TCloudMailRuHTTP.Put(URL: WideString; var PostData: TIdMultiPartFormDataStream; ResultData: TStringStream): integer;
+begin
+	result := CLOUD_OPERATION_OK;
+	ResultData.Position := 0;
+	try
+		HTTP.Intercept := Throttle;
+		HTTP.OnWork := self.Progress;
+		ResultData.WriteString(HTTP.Put(URL, PostData));
+
+	except
+		On E: Exception do
+		begin
+			result := self.ExceptionHandler(E, URL);
+		end;
+	end;
+end;
+
+function TCloudMailRuHTTP.PutFile(URL, FileName: WideString; FileStream: TStream; var Answer: WideString): integer;
+var
+	PostData: TIdMultiPartFormDataStream;
+	ResultStream: TStringStream;
+
+begin
+	ResultStream := TStringStream.Create;
+	PostData := TIdMultiPartFormDataStream.Create;
+	PostData.AddFormField('file', 'application/octet-stream', EmptyWideStr, FileStream, FileName);
+	result := self.Put(URL, PostData, ResultStream);
+	Answer := ResultStream.DataString;
+
+	ResultStream.free;
+	PostData.free;
 end;
 
 procedure TCloudMailRuHTTP.setCookie(const Value: TIdCookieManager);
@@ -342,7 +401,7 @@ begin
 		ExternalLogProc(LogLevel, MsgType, PWideChar(LogString));
 end;
 
-function TCloudMailRuHTTP.ExceptionHandler(E: Exception; URL: WideString; HTTPMethod: integer; LogErrors: Boolean): integer;
+function TCloudMailRuHTTP.ExceptionHandler(E: Exception; URL: WideString; HTTPMethod: integer; LogErrors: Boolean): integer; //todo: handle OPTIONS method
 var
 	method_string: WideString; //в зависимости от метода исходного запроса мен€етс€ текст сообщени€
 begin
