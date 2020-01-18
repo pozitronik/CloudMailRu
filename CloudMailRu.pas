@@ -1370,15 +1370,15 @@ begin
 	Return := TStringList.Create;
 	self.HTTP.OptionsMethod(UploadUrl, PostAnswer, ProgressEnabled);
 	result := self.HTTP.PutFile(UploadUrl, FileName, FileStream, PostAnswer);
+
 	if (result = CLOUD_OPERATION_OK) then
 	begin
-		ExtractStrings([';'], [], PWideChar(PostAnswer), Return);
-		if length(Return.Strings[0]) <> 40 then //? добавить анализ ответа?
+	if length(PostAnswer)<>40 then
 		begin
 			result := CLOUD_OPERATION_FAILED;
 		end else begin
-			FileIdentity.Hash := Return.Strings[0];
-			val(Return.Strings[1], FileIdentity.size, code);
+			FileIdentity.Hash := PostAnswer;
+			FileIdentity.size := FileStream.Size;
 		end;
 	end;
 	Return.Destroy;
