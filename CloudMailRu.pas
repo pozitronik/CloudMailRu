@@ -157,7 +157,7 @@ begin
 		remotePath := ChangePathFileName(remotePath, FileName);
 	end;
 	{Экспериментально выяснено, что параметры api, build, email, x-email, x-page-id в запросе не обязательны}
-	if self.HTTP.PostForm(API_FILE_ADD, 'conflict=' + ConflictMode + '&home=/' + PathToUrl(remotePath) + '&hash=' + FileIdentity.Hash + '&size=' + FileIdentity.size.ToString + self.united_params, JSON, 'application/x-www-form-urlencoded', LogErrors, false) then {Do not allow to cancel operation here}
+	if self.HTTP.PostForm(API_FILE_ADD, 'api=2&conflict=' + ConflictMode + '&home=/' + PathToUrl(remotePath) + '&hash=' + FileIdentity.Hash + '&size=' + FileIdentity.size.ToString + self.united_params, JSON, 'application/x-www-form-urlencoded', LogErrors, false) then {Do not allow to cancel operation here}
 	begin
 		OperationResult := CMLJSONParser.getOperationResult(JSON);
 		result := CloudResultToFsResult(OperationResult, 'File uploading error: ');
@@ -1355,7 +1355,6 @@ function TCloudMailRu.putFileToCloud(FileName: WideString; FileStream: TStream; 
 var
 	PostAnswer: WideString;
 	Return: TStringList;
-	code: integer;
 	UploadUrl: WideString;
 	ProgressEnabled: Boolean;
 begin
