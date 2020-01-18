@@ -51,7 +51,7 @@ type
 
 		function OptionsMethod(URL: WideString; var Answer: WideString; var ProgressEnabled: Boolean): Boolean;
 		function PutFile(URL: WideString; FileName: WideString; FileStream: TStream; var Answer: WideString): integer;
-		function Put(URL: WideString; var PostData: TIdMultiPartFormDataStream; ResultData: TStringStream): integer;
+		function Put(URL: WideString; var PostData: TStream; ResultData: TStringStream): integer;
 
 		function ExceptionHandler(E: Exception; URL: WideString; HTTPMethod: integer = HTTP_METHOD_POST; LogErrors: Boolean = true): integer;
 
@@ -307,18 +307,20 @@ var
 	ResultStream: TStringStream;
 begin
 	result := true;
+	ResultStream := TStringStream.Create;
 	try
 		HTTP.Intercept := Throttle;
 		HTTP.OnWork := self.Progress;
-		ResultStream := TStringStream.Create;
+
 		HTTP.Options(URL, ResultStream);
+		Answer := ResultStream.DataString;
 	except
 		On E: Exception do
 		begin
 			result := false; //todo: add self.ExceptionHandler()
 		end;
 	end;
-	Answer := ResultStream.DataString;
+
 
 	ResultStream.free;
 end;
@@ -341,14 +343,17 @@ begin
 	end;
 end;
 
-function TCloudMailRuHTTP.Put(URL: WideString; var PostData: TIdMultiPartFormDataStream; ResultData: TStringStream): integer;
+function TCloudMailRuHTTP.Put(URL: WideString; var PostData: TStream; ResultData: TStringStream): integer;
+var
+	PutAnswer:WideString;
 begin
 	result := CLOUD_OPERATION_OK;
 	ResultData.Position := 0;
 	try
 		HTTP.Intercept := Throttle;
 		HTTP.OnWork := self.Progress;
-		ResultData.WriteString(HTTP.Put(URL, PostData));
+		PutAnswer:=HTTP.Put(URL, PostData);
+		ResultData.WriteString(PutAnswer);
 
 	except
 		On E: Exception do
@@ -360,18 +365,12 @@ end;
 
 function TCloudMailRuHTTP.PutFile(URL, FileName: WideString; FileStream: TStream; var Answer: WideString): integer;
 var
-	PostData: TIdMultiPartFormDataStream;
 	ResultStream: TStringStream;
-
 begin
 	ResultStream := TStringStream.Create;
-	PostData := TIdMultiPartFormDataStream.Create;
-	PostData.AddFormField('file', 'application/octet-stream', EmptyWideStr, FileStream, FileName);
-	result := self.Put(URL, PostData, ResultStream);
+	result := self.Put(URL, FileStream, ResultStream);
 	Answer := ResultStream.DataString;
-
 	ResultStream.free;
-	PostData.free;
 end;
 
 procedure TCloudMailRuHTTP.setCookie(const Value: TIdCookieManager);
