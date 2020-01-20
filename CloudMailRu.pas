@@ -458,6 +458,9 @@ begin
 	if (ShowProgress) then
 		self.HTTP.SetProgressNames('Incoming links listing', '...');
 	result := self.HTTP.GetPage(API_FOLDER_SHARED_INCOMING + '?' + self.united_params, JSON, ShowProgress) and CloudResultToBoolean(CMLJSONParser.getOperationResult(JSON), 'Incoming requests listing error: ');
+
+	if result then
+		result := CMLJSONParser.getIncomingInviteListing(JSON, IncomingListing);
 end;
 
 function TCloudMailRu.getIncomingLinksListing(var IncomingListing: TCloudMailRuDirListing; var InvitesListing: TCloudMailRuIncomingInviteInfoListing; ShowProgress: Boolean = false): Boolean;
