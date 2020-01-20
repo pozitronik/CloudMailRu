@@ -1372,7 +1372,7 @@ begin
 
 	UploadUrl := self.upload_url + '?cloud_domain=2&x-email=' + self.user + '%40' + self.domain(*+ '&fileapi' + DateTimeToUnix(now).ToString + '0246'*);
 	Return := TStringList.Create;
-	self.HTTP.OptionsMethod(UploadUrl, PostAnswer, ProgressEnabled);
+	//self.HTTP.OptionsMethod(UploadUrl, PostAnswer, ProgressEnabled); //not required at current moment, see issue #232
 	result := self.HTTP.putFile(UploadUrl, FileName, FileStream, PostAnswer);
 
 	if (result = CLOUD_OPERATION_OK) then
