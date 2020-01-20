@@ -440,6 +440,9 @@ begin
 	result := self.HTTP.GetPage(API_FOLDER_SHARED_LINKS + '?' + self.united_params, JSON, ShowProgress);
 	if result then
 		result := CloudResultToBoolean(CMLJSONParser.getOperationResult(JSON), 'Shared links listing error: ');
+
+	if result then
+		result := CMLJSONParser.getDirListing(JSON, DirListing);
 end;
 
 function TCloudMailRu.getIncomingLinksListing(var IncomingListing: TCloudMailRuIncomingInviteInfoListing; ShowProgress: Boolean): Boolean;
