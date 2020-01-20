@@ -311,16 +311,15 @@ begin
 	try
 		HTTP.Intercept := Throttle;
 		HTTP.OnWork := self.Progress;
-
 		HTTP.Options(URL, ResultStream);
 		Answer := ResultStream.DataString;
 	except
 		On E: Exception do
 		begin
-			result := false; //todo: add self.ExceptionHandler()
+			self.ExceptionHandler(E, URL, HTTP_METHOD_OPTIONS);
+			result := false;
 		end;
 	end;
-
 
 	ResultStream.free;
 end;
@@ -345,20 +344,20 @@ end;
 
 function TCloudMailRuHTTP.Put(URL: WideString; var PostData: TStream; ResultData: TStringStream): integer;
 var
-	PutAnswer:WideString;
+	PutAnswer: WideString;
 begin
 	result := CLOUD_OPERATION_OK;
 	ResultData.Position := 0;
 	try
 		HTTP.Intercept := Throttle;
 		HTTP.OnWork := self.Progress;
-		PutAnswer:=HTTP.Put(URL, PostData);
+		PutAnswer := HTTP.Put(URL, PostData);
 		ResultData.WriteString(PutAnswer);
 
 	except
 		On E: Exception do
 		begin
-			result := self.ExceptionHandler(E, URL);
+			result := self.ExceptionHandler(E, URL, HTTP_METHOD_PUT);
 		end;
 	end;
 end;
@@ -404,13 +403,22 @@ function TCloudMailRuHTTP.ExceptionHandler(E: Exception; URL: WideString; HTTPMe
 var
 	method_string: WideString; //в зависимости от метода исходного запроса меняется текст сообщения
 begin
-	if HTTPMethod = HTTP_METHOD_GET then
-	begin
-		method_string := 'получении данных с адреса ';
-		result := FS_FILE_READERROR; //для GetFile, GetForm не интересует код ошибки
-	end else begin
-		method_string := 'отправке данных на адрес ';
-		result := CLOUD_OPERATION_FAILED; //Для всех Post-запросов
+	case HTTPMethod of
+		HTTP_METHOD_GET:
+			begin
+				method_string := 'получении данных с адреса ';
+				result := FS_FILE_READERROR; //для GetFile, GetForm не интересует код ошибки
+			end;
+		HTTP_METHOD_POST, HTTP_METHOD_PUT:
+			begin
+				method_string := 'отправке данных на адрес ';
+				result := CLOUD_OPERATION_FAILED; //Для всех Post-запросов
+			end;
+		HTTP_METHOD_OPTIONS:
+			begin
+				method_string := 'запросте параметров ';
+				result := CLOUD_OPERATION_FAILED; //Для всех Post-запросов
+			end;
 	end;
 
 	if E is EAbort then
