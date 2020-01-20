@@ -106,8 +106,10 @@ const
 	{Методы HTTP}
 	HTTP_METHOD_GET = 0;
 	HTTP_METHOD_POST = 1;
+	HTTP_METHOD_PUT = 2;
+	HTTP_METHOD_OPTIONS = 3;
 
-	HTTP_METHODS = [HTTP_METHOD_GET, HTTP_METHOD_POST];
+	HTTP_METHODS = [HTTP_METHOD_GET, HTTP_METHOD_POST, HTTP_METHOD_PUT, HTTP_METHOD_OPTIONS];
 
 	{Типы шардов}
 	SHARD_TYPE_DEFAULT = ''; //несистемный шард, в нашей логике означает использование того шарда, что получен при инициализации
