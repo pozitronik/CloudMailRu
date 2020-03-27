@@ -22,7 +22,8 @@ type
 		//JSONParser: TCloudMailRuJSONParser; //JSON parser
 
 		public_link: WideString; //public_ params is active for public clouds only
-		public_download_token: WideString; //token for public urls, refreshes on request
+    (*seems to be not used since 25.03.2020 - shared downloads do not require token anymore*)
+		//public_download_token: WideString; //token for public urls, refreshes on request
 		public_shard: WideString; //public downloads shard url
 		Shard: WideString; //download shard url
 
@@ -628,7 +629,7 @@ begin
 	else
 		self.getShard(usedShard, ShardType);
 
-	result := IncludeSlash(usedShard) + IncludeSlash(self.public_link) + PathToUrl(remotePath, true, DoUrlEncode) + '?key=' + self.public_download_token
+	result := IncludeSlash(usedShard) + IncludeSlash(self.public_link) + PathToUrl(remotePath, true, DoUrlEncode);
 end;
 
 function TCloudMailRu.getFileShared(remotePath, localPath: WideString; var resultHash: WideString; LogErrors: Boolean): integer;
@@ -636,7 +637,7 @@ var
 	FileStream: TBufferedFileStream;
 begin
 	result := FS_FILE_NOTFOUND;
-	if (self.public_shard = EmptyWideStr) or (self.public_download_token = EmptyWideStr) then
+	if (self.public_shard = EmptyWideStr) then
 		exit;
 	try
 		FileStream := TBufferedFileStream.Create(GetUNCFilePath(localPath), fmCreate);
@@ -771,11 +772,6 @@ begin
 	result := self.HTTP.GetPage(self.OptionsSet.AccountSettings.public_url, PageContent, Progress);
 	if result then
 	begin
-		if not extractPublicTokenFromText(PageContent, self.public_download_token) then //refresh public download token
-		begin
-			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Can''t get public share download token');
-			exit(false);
-		end;
 		if not extractPublicShard(PageContent, self.public_shard) then
 		begin
 			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Can''t get public share download share');
