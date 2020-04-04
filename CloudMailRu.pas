@@ -1368,16 +1368,16 @@ begin
 	UploadUrl := self.upload_url + '?cloud_domain=2&x-email=' + self.user + '%40' + self.domain(*+ '&fileapi' + DateTimeToUnix(now).ToString + '0246'*);
 	Return := TStringList.Create;
 	self.HTTP.OptionsMethod(UploadUrl, PostAnswer, ProgressEnabled);
-	result := self.HTTP.PutFile(UploadUrl, FileName, FileStream, PostAnswer);
+	result := self.HTTP.putFile(UploadUrl, FileName, FileStream, PostAnswer);
 
 	if (result = CLOUD_OPERATION_OK) then
 	begin
-	if length(PostAnswer)<>40 then
+		if length(PostAnswer) <> 40 then
 		begin
 			result := CLOUD_OPERATION_FAILED;
 		end else begin
 			FileIdentity.Hash := PostAnswer;
-			FileIdentity.size := FileStream.Size;
+			FileIdentity.size := FileStream.size;
 		end;
 	end;
 	Return.Destroy;
