@@ -3,12 +3,6 @@
 interface
 
 const
-{$IFDEF WIN64}
-	PlatformX = 'x64';
-{$ENDIF}
-{$IFDEF WIN32}
-	PlatformX = 'x32';
-{$ENDIF}
 	PUBLIC_ACCESS_URL = 'https://cloud.mail.ru/public/';
 	OAUTH_TOKEN_URL = 'https://o2.mail.ru/token';
 	TOKEN_URL = 'https://cloud.mail.ru/?from=promo&from=authpopup';

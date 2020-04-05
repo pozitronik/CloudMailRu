@@ -5,6 +5,12 @@ interface
 uses Classes, Windows, SysUtils, IniFiles, System.Variants, System.IOUtils, Plugin_Types, MRC_Helper, VCL.Controls, System.RegularExpressions;
 
 const
+{$IFDEF WIN64}
+	PlatformX = 'x64';
+{$ENDIF}
+{$IFDEF WIN32}
+	PlatformX = 'x32';
+{$ENDIF}
 	ProxyNone = 0;
 	ProxySocks5 = 1;
 	ProxySocks4 = 2;
@@ -59,6 +65,8 @@ const
 
 	StreamingPrefix = 'Streaming:';
 
+	DEFAULT_USERAGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.162 Safari/537.36/TCWFX(' + PlatformX + ')';
+
 type
 	{Account-related options set}
 	TAccountSettings = record
@@ -94,6 +102,7 @@ type
 		SocketTimeout: integer;
 		UploadBPS: integer;
 		DownloadBPS: integer;
+		UserAgent: WideString;
 	end;
 
 	{Global plugin options}
@@ -215,6 +224,7 @@ begin
 	GetPluginSettings.ConnectionSettings.ProxySettings.user := IniFile.ReadString('Main', 'ProxyUser', EmptyWideStr);
 	GetPluginSettings.ConnectionSettings.ProxySettings.use_tc_password_manager := IniFile.ReadBool('Main', 'ProxyTCPwdMngr', false);
 	GetPluginSettings.ConnectionSettings.ProxySettings.password := IniFile.ReadString('Main', 'ProxyPassword', EmptyWideStr);
+	GetPluginSettings.ConnectionSettings.UserAgent := IniFile.ReadString('Main', 'UserAgent', DEFAULT_USERAGENT);
 	GetPluginSettings.DownloadLinksEncode := IniFile.ReadBool('Main', 'DownloadLinksEncode', true);
 	GetPluginSettings.AutoUpdateDownloadListing := IniFile.ReadBool('Main', 'AutoUpdateDownloadListing', true);
 	GetPluginSettings.ShowTrashFolders := IniFile.ReadBool('Main', 'ShowTrashFolders', true);

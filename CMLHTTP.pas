@@ -124,7 +124,7 @@ begin
 		self.Throttle.SendBitsPerSec := Settings.UploadBPS;
 	end;
 
-	HTTP.Request.UserAgent := 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.162 Safari/537.36/TCWFX(' + PlatformX + ')';
+	HTTP.Request.UserAgent := Settings.UserAgent;
 	HTTP.Request.Connection := EmptyWideStr;
 end;
 
