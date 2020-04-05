@@ -22,7 +22,8 @@ type
 		//JSONParser: TCloudMailRuJSONParser; //JSON parser
 
 		public_link: WideString; //public_ params is active for public clouds only
-		public_download_token: WideString; //token for public urls, refreshes on request
+    (*seems to be not used since 25.03.2020 - shared downloads do not require token anymore*)
+		//public_download_token: WideString; //token for public urls, refreshes on request
 		public_shard: WideString; //public downloads shard url
 		Shard: WideString; //download shard url
 
@@ -440,6 +441,9 @@ begin
 	result := self.HTTP.GetPage(API_FOLDER_SHARED_LINKS + '?' + self.united_params, JSON, ShowProgress);
 	if result then
 		result := CloudResultToBoolean(CMLJSONParser.getOperationResult(JSON), 'Shared links listing error: ');
+
+	if result then
+		result := CMLJSONParser.getDirListing(JSON, DirListing);
 end;
 
 function TCloudMailRu.getIncomingLinksListing(var IncomingListing: TCloudMailRuIncomingInviteInfoListing; ShowProgress: Boolean): Boolean;
@@ -455,6 +459,9 @@ begin
 	if (ShowProgress) then
 		self.HTTP.SetProgressNames('Incoming links listing', '...');
 	result := self.HTTP.GetPage(API_FOLDER_SHARED_INCOMING + '?' + self.united_params, JSON, ShowProgress) and CloudResultToBoolean(CMLJSONParser.getOperationResult(JSON), 'Incoming requests listing error: ');
+
+	if result then
+		result := CMLJSONParser.getIncomingInviteListing(JSON, IncomingListing);
 end;
 
 function TCloudMailRu.getIncomingLinksListing(var IncomingListing: TCloudMailRuDirListing; var InvitesListing: TCloudMailRuIncomingInviteInfoListing; ShowProgress: Boolean = false): Boolean;
@@ -622,7 +629,7 @@ begin
 	else
 		self.getShard(usedShard, ShardType);
 
-	result := IncludeSlash(usedShard) + IncludeSlash(self.public_link) + PathToUrl(remotePath, true, DoUrlEncode) + '?key=' + self.public_download_token
+	result := IncludeSlash(usedShard) + IncludeSlash(self.public_link) + PathToUrl(remotePath, true, DoUrlEncode);
 end;
 
 function TCloudMailRu.getFileShared(remotePath, localPath: WideString; var resultHash: WideString; LogErrors: Boolean): integer;
@@ -630,7 +637,7 @@ var
 	FileStream: TBufferedFileStream;
 begin
 	result := FS_FILE_NOTFOUND;
-	if (self.public_shard = EmptyWideStr) or (self.public_download_token = EmptyWideStr) then
+	if (self.public_shard = EmptyWideStr) then
 		exit;
 	try
 		FileStream := TBufferedFileStream.Create(GetUNCFilePath(localPath), fmCreate);
@@ -750,7 +757,6 @@ begin
 		result := extractTokenFromText(JSON, token) and extract_x_page_id_FromText(JSON, x_page_id) and extract_build_FromText(JSON, build); //and extract_upload_url_FromText(JSON, self.upload_url);
 		self.united_params := '&api=2&build=' + build + '&x-page-id=' + x_page_id + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&token=' + token + '&_=' + DateTimeToUnix(now).ToString + '810';
 		Log(LogLevelDetail, MSGTYPE_DETAILS, 'Current upload shard is undefined, trying to get one');
-		result := result and self.getShard(self.upload_url, SHARD_TYPE_UPLOAD); //todo временное решение
 	end;
 end;
 
@@ -766,11 +772,6 @@ begin
 	result := self.HTTP.GetPage(self.OptionsSet.AccountSettings.public_url, PageContent, Progress);
 	if result then
 	begin
-		if not extractPublicTokenFromText(PageContent, self.public_download_token) then //refresh public download token
-		begin
-			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Can''t get public share download token');
-			exit(false);
-		end;
 		if not extractPublicShard(PageContent, self.public_shard) then
 		begin
 			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Can''t get public share download share');
@@ -1365,9 +1366,15 @@ begin
 		exit; //Проверка на вызов без инициализации
 	if self.public_account then
 		exit;
+	if (EmptyWideStr = self.upload_url) then
+	begin
+		Log(LogLevelDetail, MSGTYPE_DETAILS, 'Current upload shard is undefined, trying to get one');
+		self.getShard(self.upload_url, SHARD_TYPE_UPLOAD);
+	end;
+
 	UploadUrl := self.upload_url + '?cloud_domain=2&x-email=' + self.user + '%40' + self.domain(*+ '&fileapi' + DateTimeToUnix(now).ToString + '0246'*);
 	Return := TStringList.Create;
-	self.HTTP.OptionsMethod(UploadUrl, PostAnswer, ProgressEnabled);
+	//self.HTTP.OptionsMethod(UploadUrl, PostAnswer, ProgressEnabled); //not required at current moment, see issue #232
 	result := self.HTTP.putFile(UploadUrl, FileName, FileStream, PostAnswer);
 
 	if (result = CLOUD_OPERATION_OK) then
