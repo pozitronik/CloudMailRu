@@ -124,7 +124,7 @@ begin
 		self.Throttle.SendBitsPerSec := Settings.UploadBPS;
 	end;
 
-	HTTP.Request.UserAgent := 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.17 (KHTML, like Gecko) Chrome/24.0.1312.57 Safari/537.17/TCWFX(' + PlatformX + ')';
+	HTTP.Request.UserAgent := 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.162 Safari/537.36/TCWFX(' + PlatformX + ')';
 	HTTP.Request.Connection := EmptyWideStr;
 end;
 
@@ -321,7 +321,6 @@ begin
 		end;
 	end;
 
-
 	ResultStream.free;
 end;
 
@@ -345,14 +344,14 @@ end;
 
 function TCloudMailRuHTTP.Put(URL: WideString; var PostData: TStream; ResultData: TStringStream): integer;
 var
-	PutAnswer:WideString;
+	PutAnswer: WideString;
 begin
 	result := CLOUD_OPERATION_OK;
 	ResultData.Position := 0;
 	try
 		HTTP.Intercept := Throttle;
 		HTTP.OnWork := self.Progress;
-		PutAnswer:=HTTP.Put(URL, PostData);
+		PutAnswer := HTTP.Put(URL, PostData);
 		ResultData.WriteString(PutAnswer);
 
 	except
