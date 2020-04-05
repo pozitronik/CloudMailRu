@@ -83,20 +83,24 @@ function NormalizeSlashes(const Str: WideString): WideString;
 function TrimEx(const Str: WideString; TrimChar: WideChar): WideString;
 function FormatSize(size: Int64; SizeType: integer = TYPE_AUTO): WideString; //Форматируем размер в удобочитаемый вид
 function Run(path, ParamString, StartDir: WideString; SubstituteVariables: boolean = true): boolean;
-//Procedure FileLog(S: WideString);
+{$IFDEF DEBUG}
+Procedure FileLog(S: WideString);
+{$ENDIF}
 
 implementation
 
-{
- Procedure FileLog(S: WideString);
- var
- f: textfile;
- begin
- Assign(f, 'd:\WORK\CODE\CloudMailRu\log.txt');
- Rewrite(f);
- Write(f, S);
- close(f);
- end;}
+{$IFDEF DEBUG}
+
+Procedure FileLog(S: WideString);
+var
+	f: textfile;
+begin
+	Assign(f, IncludeTrailingBackslash(ExtractFilePath(GetModuleName(hInstance))) + 'debug.log');
+	Rewrite(f);
+	Write(f, S);
+	close(f);
+end;
+{$ENDIF}
 
 function Implode(S: TStringList; Delimiter: WideString): WideString;
 var
