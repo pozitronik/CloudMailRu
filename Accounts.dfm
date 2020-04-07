@@ -828,7 +828,7 @@ object AccountsForm: TAccountsForm
         Caption = 'Apply'
         ParentShowHint = False
         ShowHint = False
-        TabOrder = 3
+        TabOrder = 5
         OnClick = GlobalSettingApplyBTNClick
       end
       object SocketTimeoutEdit: TSpinEdit
@@ -882,6 +882,22 @@ object AccountsForm: TAccountsForm
           TabOrder = 1
           Value = -1
         end
+      end
+      object UserAgentEdit: TEdit
+        Left = 5
+        Top = 349
+        Width = 475
+        Height = 21
+        TabOrder = 4
+      end
+      object ChangeUserAgentCB: TCheckBox
+        Left = 5
+        Top = 326
+        Width = 475
+        Height = 17
+        Caption = 'Change plugin UserAgent'
+        TabOrder = 3
+        OnClick = ChangeUserAgentCBClick
       end
     end
     object CommentsTab: TTabSheet

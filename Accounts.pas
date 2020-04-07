@@ -115,6 +115,8 @@ type
 		ApplyExtButton: TButton;
 		DeleteExtButton: TButton;
 		CommandPathOpenDialog: TOpenDialog;
+		UserAgentEdit: TEdit;
+		ChangeUserAgentCB: TCheckBox;
 		procedure FormShow(Sender: TObject);
 		procedure AccountsListClick(Sender: TObject);
 		procedure ApplyButtonClick(Sender: TObject);
@@ -137,6 +139,7 @@ type
 		procedure DeleteExtButtonClick(Sender: TObject);
 		procedure ApplyExtButtonClick(Sender: TObject);
 		procedure CommandPathButtonClick(Sender: TObject);
+		procedure ChangeUserAgentCBClick(Sender: TObject);
 	private
 		{Private declarations}
 		procedure ApplySettings();
@@ -313,6 +316,10 @@ begin
 	SetPluginSettingsValue(SettingsIniFilePath, 'ProxyUser', ProxyUserEdit.Text);
 	SetPluginSettingsValue(SettingsIniFilePath, 'ProxyPassword', ProxyPwd.Text);
 	SetPluginSettingsValue(SettingsIniFilePath, 'ProxyTCPwdMngr', ProxyTCPwdMngrCB.Checked);
+
+	if ChangeUserAgentCB.Checked then
+		SetPluginSettingsValue(SettingsIniFilePath, 'UserAgent', UserAgentEdit.Text);
+
 	SetPluginSettingsValue(SettingsIniFilePath, 'DownloadLinksEncode', DownloadLinksEncodeCB.Checked);
 	SetPluginSettingsValue(SettingsIniFilePath, 'AutoUpdateDownloadListing', AutoUpdateDownloadListingCB.Checked);
 
@@ -340,6 +347,11 @@ begin
 				end;
 		end;
 	end;
+end;
+
+procedure TAccountsForm.ChangeUserAgentCBClick(Sender: TObject);
+begin
+	UserAgentEdit.ReadOnly := not ChangeUserAgentCB.Checked;
 end;
 
 function TAccountsForm.CheckValidators: boolean;
@@ -503,7 +515,13 @@ begin
 		AccountsForm.ProxyUserEdit.Text := GetPluginSettings(SettingsIniFilePath).ConnectionSettings.ProxySettings.user;
 		AccountsForm.ProxyPwd.Text := GetPluginSettings(SettingsIniFilePath).ConnectionSettings.ProxySettings.password;
 		AccountsForm.ProxyTCPwdMngrCB.Checked := GetPluginSettings(SettingsIniFilePath).ConnectionSettings.ProxySettings.use_tc_password_manager;
+
+		AccountsForm.UserAgentEdit.Text := GetPluginSettings(SettingsIniFilePath).ConnectionSettings.UserAgent;
+		AccountsForm.ChangeUserAgentCB.Checked := DEFAULT_USERAGENT <> AccountsForm.UserAgentEdit.Text;
+		AccountsForm.UserAgentEdit.ReadOnly := not AccountsForm.ChangeUserAgentCB.Checked;
+
 		AccountsForm.CloudMaxFileSizeValue.Text := GetPluginSettings(SettingsIniFilePath).CloudMaxFileSize.ToString;
+
 		if (GetPluginSettings(SettingsIniFilePath).CloudMaxFileSize <> CLOUD_MAX_FILESIZE_DEFAULT) then
 		begin
 			AccountsForm.CloudMaxFileSizeValue.Enabled := true;
