@@ -1357,7 +1357,6 @@ var
 	PostAnswer: WideString;
 	Return: TStringList;
 	UploadUrl: WideString;
-	ProgressEnabled: Boolean;
 begin
 	FileIdentity.Hash := EmptyWideStr;
 	FileIdentity.size := -1;
