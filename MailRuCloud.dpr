@@ -70,7 +70,8 @@ uses
 	CMLParsers in 'CMLParsers.pas',
 	CMLHTTP in 'CMLHTTP.pas',
 	HTTPManager in 'HTTPManager.pas',
-	Registration in 'Registration.pas'{RegistrationForm};
+	Registration in 'Registration.pas'{RegistrationForm},
+	RequestDialog in 'RequestDialog.pas'{RequestDialogForm};
 
 {$IFDEF WIN64}
 {$E wfx64}
@@ -127,11 +128,12 @@ begin
 		MyLogProc(PluginNum, MsgType, LogString);
 end;
 
-function RequestHandle(RequestType: integer; CustomTitle, CustomText, ReturnedText: PWideChar; maxlen: integer): Bool; stdcall;
+function RequestHandle(RequestType: integer; CustomTitle, CustomText, ReturnedText: PWideChar; maxlen: integer; AOwner: TComponent = nil): Bool; stdcall;
 begin
 	Result := false;
 	if Assigned(MyRequestProc) then
 		Result := MyRequestProc(PluginNum, RequestType, CustomTitle, CustomText, ReturnedText, maxlen);
+
 end;
 
 function ProgressHandle(SourceName, TargetName: PWideChar; PercentDone: integer): integer; stdcall;
@@ -1658,7 +1660,7 @@ var
 	PluginSettings: TPluginSettings;
 begin
 	PluginSettings := GetPluginSettings(SettingsIniFilePath);
-	PasswordManager := TTCPasswordManager.Create(PCryptProc, PluginNum, CryptoNr, @LogHandle, @RequestHandle);
+	PasswordManager := TTCPasswordManager.Create(PCryptProc, PluginNum, CryptoNr, @LogHandle, TRequestDialogForm.RequestHandle); //issue #241
 	PasswordManager.GetProxyPassword(PluginSettings.ConnectionSettings.ProxySettings);
 	if PluginSettings.ConnectionSettings.ProxySettings.use_tc_password_manager then
 		SetPluginSettingsValue(SettingsIniFilePath, 'ProxyTCPwdMngr', true);
