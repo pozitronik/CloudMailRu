@@ -3,7 +3,7 @@
 {Типы и константы, используемые в плагине}
 interface
 
-uses windows;
+uses windows, System.Classes;
 
 const
 	FS_FILE_OK = 0;
@@ -147,7 +147,7 @@ type
 	{------------------------------------------------------------------------------}
 
 	TLogHandler = procedure(LogLevel, MsgType: integer; LogString: pwidechar); stdcall;
-	TRequestHandler = function(RequestType: integer; CustomTitle, CustomText, ReturnedText: pwidechar; maxlen: integer): bool; stdcall;
+	TRequestHandler = function(RequestType: integer; CustomTitle, CustomText, ReturnedText: pwidechar; maxlen: integer; AOwner: TComponent = nil): bool; stdcall;
 	TProgressHandler = function(SourceName, TargetName: pwidechar; PercentDone: integer): integer; stdcall;
 	TCryptHandler = function(mode: integer; ConnectionName, Password: pwidechar; maxlen: integer): integer; stdcall;
 
