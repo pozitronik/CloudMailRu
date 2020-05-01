@@ -3,7 +3,7 @@
 {Обертка над обращениями к менеджеру паролей Total Commander}
 interface
 
-Uses Plugin_Types, Settings, Windows, SysUtils, AskPassword, {AskEncryptionPasswords,}MRC_Helper, Controls, Cipher, WideStrUtils;
+Uses Plugin_Types, Settings, Windows, SysUtils, AskPassword, {AskEncryptionPasswords,}MRC_Helper, Controls, Cipher, WideStrUtils, System.Classes;
 
 type
 
@@ -14,9 +14,9 @@ type
 		CryptoNum: integer;
 		LogHandleProc: TLogHandler;
 		RequestHandleProc: TRequestHandler;
-
 	public
-		constructor Create(CryptProc: TCryptProcW; PluginNum, CryptoNum: integer; LogHandleProc: TLogHandler; RequestHandleProc: TRequestHandler);
+		AOwner: TComponent;
+		constructor Create(CryptProc: TCryptProcW; PluginNum, CryptoNum: integer; LogHandleProc: TLogHandler; RequestHandleProc: TRequestHandler; AOwner: TComponent = nil);
 		destructor Destroy(); override;
 		function GetPassword(Key: WideString; var Password: WideString): integer;
 		function SetPassword(Key, Password: WideString): integer;
@@ -32,13 +32,14 @@ implementation
 
 {TTCPasswordManager}
 
-constructor TTCPasswordManager.Create(CryptProc: TCryptProcW; PluginNum, CryptoNum: integer; LogHandleProc: TLogHandler; RequestHandleProc: TRequestHandler);
+constructor TTCPasswordManager.Create(CryptProc: TCryptProcW; PluginNum, CryptoNum: integer; LogHandleProc: TLogHandler; RequestHandleProc: TRequestHandler; AOwner: TComponent = nil);
 begin
 	self.PluginNum := PluginNum;
 	self.CryptoNum := CryptoNum;
 	self.CryptProc := CryptProc;
 	self.LogHandleProc := LogHandleProc;
 	self.RequestHandleProc := RequestHandleProc;
+	self.AOwner := AOwner;
 end;
 
 destructor TTCPasswordManager.Destroy;
@@ -202,7 +203,7 @@ begin
 	begin
 		GetMem(buf, 1024);
 		ZeroMemory(buf, 1024);
-		if self.RequestHandleProc(RT_Password, PWideChar(AccountSettings.name + ' encryption password'), 'Enter encryption password:', buf, 1024) then
+		if self.RequestHandleProc(RT_Password, PWideChar(AccountSettings.name + ' encryption password'), 'Enter encryption password:', buf, 1024, self.AOwner) then
 			AccountSettings.crypt_files_password := buf
 		else
 			result := false;
@@ -238,7 +239,7 @@ begin
 	ZeroMemory(buf, 1024);
 	WStrCopy(buf, PWideChar(CurrentPassword));
 
-	if self.RequestHandleProc(RT_Password, PWideChar(Verb + ' encryption password'), 'New password:', buf, 1024) then
+	if self.RequestHandleProc(RT_Password, PWideChar(Verb + ' encryption password'), 'New password:', buf, 1024, self.AOwner) then
 	begin
 		CurrentPassword := buf;
 		self.SetPassword(crypt_id, CurrentPassword);
