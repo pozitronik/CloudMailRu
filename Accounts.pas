@@ -414,10 +414,11 @@ procedure TAccountsForm.EncryptFilesPwdButtonClick(Sender: TObject);
 var
 	CryptedGUID: WideString;
 begin
+	self.Visible := false;
 	CryptedGUID := PasswordManager.StoreFileCryptPassword(self.SelectedAccount);
 	if CryptedGUID <> EmptyWideStr then
 		SetAccountSettingsValue(IniPath, self.SelectedAccount, 'CryptedGUID_files', CryptedGUID);
-
+	self.Visible := true;
 end;
 
 procedure TAccountsForm.FormActivate(Sender: TObject);
