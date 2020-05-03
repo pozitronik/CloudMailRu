@@ -417,7 +417,7 @@ var
 begin
 	PasswordManager.parentWindow := self.Handle;
 	CryptedGUID := PasswordManager.StoreFileCryptPassword(self.SelectedAccount);
-	PasswordManager.parentWindow := 0;
+	PasswordManager.parentWindow := FindTCWindow;
 	if CryptedGUID <> EmptyWideStr then
 		SetAccountSettingsValue(IniPath, self.SelectedAccount, 'CryptedGUID_files', CryptedGUID);
 end;
