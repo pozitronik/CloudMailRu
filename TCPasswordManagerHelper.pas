@@ -31,13 +31,16 @@ implementation
 
 {TTCPasswordManager}
 
-constructor TTCPasswordManager.Create(CryptProc: TCryptProcW; PluginNum, CryptoNum: integer; LogHandleProc: TLogHandler;  ParentWindow: HWND = 0);
+constructor TTCPasswordManager.Create(CryptProc: TCryptProcW; PluginNum, CryptoNum: integer; LogHandleProc: TLogHandler; ParentWindow: HWND = 0);
 begin
 	self.PluginNum := PluginNum;
 	self.CryptoNum := CryptoNum;
 	self.CryptProc := CryptProc;
 	self.LogHandleProc := LogHandleProc;
-	self.ParentWindow := ParentWindow;
+	if (0 = ParentWindow) then
+		self.ParentWindow := FindTCWindow
+	else
+		self.ParentWindow := ParentWindow;
 end;
 
 destructor TTCPasswordManager.Destroy;

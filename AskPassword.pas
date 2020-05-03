@@ -33,7 +33,10 @@ var
 begin
 	try
 		AskPasswordForm := TAskPasswordForm.Create(nil);
-		AskPasswordForm.ParentWindow := ParentWindow;
+		if (0 = ParentWindow) then
+			AskPasswordForm.ParentWindow := ParentWindow
+		else
+			AskPasswordForm.ParentWindow := ParentWindow;
 		AskPasswordForm.PasswordEditLabel.Caption := CustomText;
 		AskPasswordForm.Caption := CustomTitle;
 		AskPasswordForm.UseTCPwdMngrCB.Enabled := not DisablePWDManagerCB;
