@@ -6,7 +6,7 @@ uses
 {$IFDEF DEBUG}
 	FastMM4 in 'FastMM\FastMM4.pas',
 	FastMM4Messages in 'FastMM\FastMM4Messages.pas',
-{$ENDIF}
+{$ENDIF }
 	JSON,
 	SysUtils,
 	System.Generics.Collections,
@@ -28,7 +28,7 @@ uses
 	ANSIFunctions in 'ANSIFunctions.pas',
 	DeletedProperty in 'DeletedProperty.pas'{DeletedPropertyForm},
 	InviteProperty in 'InviteProperty.pas'{InvitePropertyForm},
-	AskPassword in 'AskPassword.pas' {AskPasswordForm},
+	AskPassword in 'AskPassword.pas'{AskPasswordForm},
 	CMLJSON in 'CMLJSON.pas',
 	CMLTypes in 'CMLTypes.pas',
 	DCPbase64 in 'DCPCrypt\DCPbase64.pas',
