@@ -414,9 +414,9 @@ procedure TAccountsForm.EncryptFilesPwdButtonClick(Sender: TObject);
 var
 	CryptedGUID: WideString;
 begin
-	PasswordManager.AOwner := self;
+	PasswordManager.parentWindow := self.Handle;
 	CryptedGUID := PasswordManager.StoreFileCryptPassword(self.SelectedAccount);
-	PasswordManager.AOwner := nil;
+	PasswordManager.parentWindow := 0;
 	if CryptedGUID <> EmptyWideStr then
 		SetAccountSettingsValue(IniPath, self.SelectedAccount, 'CryptedGUID_files', CryptedGUID);
 end;
