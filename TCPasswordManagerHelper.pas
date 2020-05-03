@@ -13,10 +13,9 @@ type
 		PluginNum: integer;
 		CryptoNum: integer;
 		LogHandleProc: TLogHandler;
-		RequestHandleProc: TRequestHandler;
 	public
-		AOwner: TComponent;
-		constructor Create(CryptProc: TCryptProcW; PluginNum, CryptoNum: integer; LogHandleProc: TLogHandler; RequestHandleProc: TRequestHandler; AOwner: TComponent = nil);
+		ParentWindow: HWND;
+		constructor Create(CryptProc: TCryptProcW; PluginNum, CryptoNum: integer; LogHandleProc: TLogHandler; ParentWindow: HWND = 0);
 		destructor Destroy(); override;
 		function GetPassword(Key: WideString; var Password: WideString): integer;
 		function SetPassword(Key, Password: WideString): integer;
@@ -32,14 +31,13 @@ implementation
 
 {TTCPasswordManager}
 
-constructor TTCPasswordManager.Create(CryptProc: TCryptProcW; PluginNum, CryptoNum: integer; LogHandleProc: TLogHandler; RequestHandleProc: TRequestHandler; AOwner: TComponent = nil);
+constructor TTCPasswordManager.Create(CryptProc: TCryptProcW; PluginNum, CryptoNum: integer; LogHandleProc: TLogHandler;  ParentWindow: HWND = 0);
 begin
 	self.PluginNum := PluginNum;
 	self.CryptoNum := CryptoNum;
 	self.CryptProc := CryptProc;
 	self.LogHandleProc := LogHandleProc;
-	self.RequestHandleProc := RequestHandleProc;
-	self.AOwner := AOwner;
+	self.ParentWindow := ParentWindow;
 end;
 
 destructor TTCPasswordManager.Destroy;
@@ -101,7 +99,6 @@ end;
 
 function TTCPasswordManager.GetAccountPassword(var AccountSettings: TAccountSettings): Boolean;
 var
-	AskResult: integer;
 	TmpString: WideString;
 begin
 	if AccountSettings.public_account then
@@ -114,8 +111,7 @@ begin
 
 	if AccountSettings.Password = EmptyWideStr then //но пароля нет, не в инишнике, не в тотале
 	begin
-		AskResult := TAskPasswordForm.AskPassword(AccountSettings.name + ' password', 'Enter account password:', AccountSettings.Password, AccountSettings.use_tc_password_manager, false, FindTCWindow);
-		if AskResult <> mrOK then
+		if mrOK <> TAskPasswordForm.AskPassword(AccountSettings.name + ' password', 'Enter account password:', AccountSettings.Password, AccountSettings.use_tc_password_manager, false, FindTCWindow) then
 		begin //не указали пароль в диалоге
 			exit(false); //отказались вводить пароль
 		end else begin
@@ -139,7 +135,6 @@ end;
 
 function TTCPasswordManager.GetProxyPassword(var ProxySettings: TProxySettings): Boolean;
 var
-	AskResult: integer;
 	TmpString: WideString;
 begin
 	result := false;
@@ -153,8 +148,7 @@ begin
 
 	if ProxySettings.Password = EmptyWideStr then //но пароля нет, не в инишнике, не в тотале
 	begin
-		AskResult := TAskPasswordForm.AskPassword('User ' + ProxySettings.user + ' proxy password', 'Enter proxy password', ProxySettings.Password, ProxySettings.use_tc_password_manager, false, FindTCWindow);
-		if AskResult <> mrOK then
+		if mrOK <> TAskPasswordForm.AskPassword('User ' + ProxySettings.user + ' proxy password', 'Enter proxy password:', ProxySettings.Password, ProxySettings.use_tc_password_manager, false, FindTCWindow) then
 		begin //не указали пароль в диалоге
 			exit(false); //отказались вводить пароль
 		end else begin
@@ -177,9 +171,10 @@ end;
 function TTCPasswordManager.InitCloudCryptPasswords(var AccountSettings: TAccountSettings): Boolean; //Вносит в AccountSettings пароли из стораджа/введённые руками
 var
 	crypt_id: WideString;
-	buf: PWideChar;
+	StorePassword: Boolean;
 begin
 	result := true;
+	StorePassword := false;
 	crypt_id := AccountSettings.name + ' filecrypt';
 
 	if EncryptModeAlways = AccountSettings.encrypt_files_mode then {password must be taken from tc storage, otherwise ask user and store password}
@@ -201,13 +196,8 @@ begin
 	end;
 	if EncryptModeAskOnce = AccountSettings.encrypt_files_mode then
 	begin
-		GetMem(buf, 1024);
-		ZeroMemory(buf, 1024);
-		if self.RequestHandleProc(RT_Password, PWideChar(AccountSettings.name + ' encryption password'), 'Enter encryption password:', buf, 1024, self.AOwner) then
-			AccountSettings.crypt_files_password := buf
-		else
-			result := false;
-		FreeMem(buf);
+		if mrOK <> TAskPasswordForm.AskPassword(AccountSettings.name + ' encryption password', 'Enter encryption password for current session:', AccountSettings.crypt_files_password, StorePassword, true, self.ParentWindow) then
+			result := false
 	end;
 end;
 
@@ -216,8 +206,9 @@ var
 	CurrentPassword: WideString;
 	crypt_id: WideString;
 	Verb: WideString;
-	buf: PWideChar;
+	StorePassword: Boolean;
 begin
+	StorePassword := true;
 	result := EmptyWideStr;
 	crypt_id := AccountName + ' filecrypt';
 	case self.GetPassword(crypt_id, CurrentPassword) of
@@ -234,19 +225,11 @@ begin
 				exit;
 			end;
 	end;
-
-	GetMem(buf, 1024);
-	ZeroMemory(buf, 1024);
-	WStrCopy(buf, PWideChar(CurrentPassword));
-
-	if self.RequestHandleProc(RT_Password, PWideChar(Verb + ' encryption password'), 'New password:', buf, 1024, self.AOwner) then
+	if mrOK = TAskPasswordForm.AskPassword(Verb + ' encryption password', 'New password:', CurrentPassword, StorePassword, true, self.ParentWindow) then
 	begin
-		CurrentPassword := buf;
 		self.SetPassword(crypt_id, CurrentPassword);
 		result := TFileCipher.CryptedGUID(CurrentPassword);
-	end;
-
-	FreeMem(buf);
+	end
 
 end;
 
