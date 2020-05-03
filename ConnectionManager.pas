@@ -5,7 +5,7 @@
 
 interface
 
-uses CloudMailRu, CMLTypes, MRC_Helper, windows, Vcl.Controls, PLUGIN_Types, Settings, TCPasswordManagerHelper, HTTPManager, System.Generics.Collections, SysUtils;
+uses CloudMailRu, CMLTypes, MRC_Helper, windows, Vcl.Controls, PLUGIN_Types, Settings, TCPasswordManagerHelper, HTTPManager, System.Generics.Collections, SysUtils, AskPassword, Cipher;
 
 type
 
@@ -82,6 +82,8 @@ function TConnectionManager.init(connectionName: WideString; var Cloud: TCloudMa
 var
 	CloudSettings: TCloudSettings;
 	LoginMethod: integer;
+	ActionsList: TDictionary<Int32, WideString>;
+	PasswordActionRetry: Boolean;
 begin
 	Result := CLOUD_OPERATION_OK;
 	CloudSettings.AccountSettings := GetAccountSettingsFromIniFile(IniFileName, connectionName);
@@ -89,10 +91,36 @@ begin
 	if not PasswordManager.GetAccountPassword(CloudSettings.AccountSettings) then
 		exit(CLOUD_OPERATION_ERROR_STATUS_UNKNOWN); //INVALID_HANDLE_VALUE
 
+	PasswordActionRetry := false;
 	if CloudSettings.AccountSettings.encrypt_files_mode <> EncryptModeNone then
 	begin
-		if not PasswordManager.InitCloudCryptPasswords(CloudSettings.AccountSettings) then
-			exit(CLOUD_OPERATION_FAILED);
+		repeat //пока не будет разрешающего действия
+			if not PasswordManager.InitCloudCryptPasswords(CloudSettings.AccountSettings) then
+				exit(CLOUD_OPERATION_FAILED);
+			if not TFileCipher.CheckPasswordGUID(CloudSettings.AccountSettings.crypt_files_password, CloudSettings.AccountSettings.CryptedGUID_files) then
+			begin
+				ActionsList := TDictionary<Int32, WideString>.Create;
+				ActionsList.AddOrSetValue(mrYes, 'Update and proceed');
+				ActionsList.AddOrSetValue(mrNo, 'Proceed without enctyption');
+				ActionsList.AddOrSetValue(mrRetry, 'Retype password');
+				case TAskPasswordForm.AskAction('Password doesn''t match!', 'It seems that the entered password does not match the password you previously specified. Password update may make previously encrypted files inaccessible.', ActionsList) of
+					mrYes: //store and use updated password
+						begin
+							CloudSettings.AccountSettings.CryptedGUID_files := TFileCipher.CryptedGUID(CloudSettings.AccountSettings.crypt_files_password);
+							SetAccountSettingsValue(IniFileName, connectionName, 'CryptedGUID_files', CloudSettings.AccountSettings.CryptedGUID_files);
+						end;
+					mrNo:
+						begin
+							//continue without password
+						end;
+					mrRetry:
+						begin
+							PasswordActionRetry := true;
+						end;
+				end; FreeAndNil(ActionsList);
+			end;
+
+		until not PasswordActionRetry;
 	end;
 
 	LogHandleProc(LogLevelConnect, MSGTYPE_CONNECT, PWideChar('CONNECT \' + connectionName));
