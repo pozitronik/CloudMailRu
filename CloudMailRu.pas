@@ -22,7 +22,7 @@ type
 		//JSONParser: TCloudMailRuJSONParser; //JSON parser
 
 		public_link: WideString; //public_ params is active for public clouds only
-    (*seems to be not used since 25.03.2020 - shared downloads do not require token anymore*)
+		(*seems to be not used since 25.03.2020 - shared downloads do not require token anymore*)
 		//public_download_token: WideString; //token for public urls, refreshes on request
 		public_shard: WideString; //public downloads shard url
 		Shard: WideString; //download shard url
