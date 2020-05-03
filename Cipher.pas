@@ -44,6 +44,7 @@ type
 		class function Base64FromSafe(const Safe: WideString): WideString;
 
 		class function CryptedGUID(const password: WideString): WideString;
+		class function CheckPasswordGUID(const password, controlGUID: WideString): boolean;
 
 	end;
 
@@ -74,6 +75,11 @@ begin
 	Result := tmpCipher.EncryptString(CIPHER_CONTROL_GUID);
 	tmpCipher.Burn;
 	tmpCipher.Destroy;
+end;
+
+class function TFileCipher.CheckPasswordGUID(const password, controlGUID: WideString): boolean;
+begin
+	Result := self.CryptedGUID(password) = controlGUID;
 end;
 
 procedure TFileCipher.CiphersDestroy;
