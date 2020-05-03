@@ -114,7 +114,7 @@ begin
 
 	if AccountSettings.Password = EmptyWideStr then //но пароля нет, не в инишнике, не в тотале
 	begin
-		AskResult := TAskPasswordForm.AskPassword(FindTCWindow, AccountSettings.name, AccountSettings.Password, AccountSettings.use_tc_password_manager);
+		AskResult := TAskPasswordForm.AskPassword(AccountSettings.name + ' password', 'Enter account password:', AccountSettings.Password, AccountSettings.use_tc_password_manager, false, FindTCWindow);
 		if AskResult <> mrOK then
 		begin //не указали пароль в диалоге
 			exit(false); //отказались вводить пароль
@@ -153,7 +153,7 @@ begin
 
 	if ProxySettings.Password = EmptyWideStr then //но пароля нет, не в инишнике, не в тотале
 	begin
-		AskResult := TAskPasswordForm.AskPassword(FindTCWindow, 'User ' + ProxySettings.user + ' proxy', ProxySettings.Password, ProxySettings.use_tc_password_manager, false);
+		AskResult := TAskPasswordForm.AskPassword('User ' + ProxySettings.user + ' proxy password', 'Enter proxy password', ProxySettings.Password, ProxySettings.use_tc_password_manager, false, FindTCWindow);
 		if AskResult <> mrOK then
 		begin //не указали пароль в диалоге
 			exit(false); //отказались вводить пароль
