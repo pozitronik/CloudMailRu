@@ -147,7 +147,7 @@ type
 	{------------------------------------------------------------------------------}
 
 	TLogHandler = procedure(LogLevel, MsgType: integer; LogString: pwidechar); stdcall;
-	TRequestHandler = function(RequestType: integer; CustomTitle, CustomText, ReturnedText: pwidechar; maxlen: integer; AOwner: TComponent = nil): bool; stdcall;
+	TRequestHandler = function(RequestType: integer; CustomTitle, CustomText, ReturnedText: pwidechar; maxlen: integer): bool; stdcall;
 	TProgressHandler = function(SourceName, TargetName: pwidechar; PercentDone: integer): integer; stdcall;
 	TCryptHandler = function(mode: integer; ConnectionName, Password: pwidechar; maxlen: integer): integer; stdcall;
 
