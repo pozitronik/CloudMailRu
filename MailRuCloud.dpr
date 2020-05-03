@@ -28,7 +28,7 @@ uses
 	ANSIFunctions in 'ANSIFunctions.pas',
 	DeletedProperty in 'DeletedProperty.pas'{DeletedPropertyForm},
 	InviteProperty in 'InviteProperty.pas'{InvitePropertyForm},
-	AskPassword,
+	AskPassword in 'AskPassword.pas' {AskPasswordForm},
 	CMLJSON in 'CMLJSON.pas',
 	CMLTypes in 'CMLTypes.pas',
 	DCPbase64 in 'DCPCrypt\DCPbase64.pas',
