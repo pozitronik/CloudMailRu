@@ -70,8 +70,7 @@ uses
 	CMLParsers in 'CMLParsers.pas',
 	CMLHTTP in 'CMLHTTP.pas',
 	HTTPManager in 'HTTPManager.pas',
-	Registration in 'Registration.pas'{RegistrationForm},
-	RequestDialog in 'RequestDialog.pas'{RequestDialogForm};
+	Registration in 'Registration.pas'{RegistrationForm};
 
 {$IFDEF WIN64}
 {$E wfx64}
@@ -1660,7 +1659,7 @@ var
 	PluginSettings: TPluginSettings;
 begin
 	PluginSettings := GetPluginSettings(SettingsIniFilePath);
-	PasswordManager := TTCPasswordManager.Create(PCryptProc, PluginNum, CryptoNr, @LogHandle, TRequestDialogForm.RequestHandle); //issue #241
+	PasswordManager := TTCPasswordManager.Create(PCryptProc, PluginNum, CryptoNr, @LogHandle);
 	PasswordManager.GetProxyPassword(PluginSettings.ConnectionSettings.ProxySettings);
 	if PluginSettings.ConnectionSettings.ProxySettings.use_tc_password_manager then
 		SetPluginSettingsValue(SettingsIniFilePath, 'ProxyTCPwdMngr', true);
