@@ -22,9 +22,11 @@ object AskPasswordForm: TAskPasswordForm
   object PasswordEditLabel: TLabel
     Left = 7
     Top = 8
-    Width = 120
-    Height = 13
+    Width = 420
+    Height = 40
+    AutoSize = False
     Caption = 'Enter account password:'
+    WordWrap = True
   end
   object PasswordEdit: TEdit
     Left = 7
