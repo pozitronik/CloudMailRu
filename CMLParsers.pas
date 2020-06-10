@@ -2,7 +2,7 @@ unit CMLParsers;
 
 interface
 
-uses CMLTypes, System.SysUtils;
+uses CMLTypes, System.SysUtils, System.StrUtils;
 
 function extractNearValue(Text, Anchor: WideString; StartChar: WideChar = '"'; EndChar: WideChar = '"'): WideString;
 function extractTokenFromText(Text: WideString; var token: WideString): Boolean;
@@ -90,7 +90,7 @@ var
 begin
 	result := false;
 	start := Pos(WideString('<script type="text/html" id="json">'), Text);
-	finish := Pos(WideString('</script>'), Text);
+	finish := PosEx(WideString('</script>'), Text, start);
 	if (start > 0) and (finish > 0) then
 	begin
 		JSON := copy(Text, start + 35, finish - start - 35);
