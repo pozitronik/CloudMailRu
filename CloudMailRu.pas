@@ -2,7 +2,7 @@
 
 interface
 
-uses CMLJSON, CMLParsers, CMLTypes, CMLHTTP, System.Hash, System.Classes, System.Generics.Collections, System.SysUtils, PLUGIN_Types, Winapi.Windows, MRC_helper, Settings, Cipher, Splitfile, ChunkedFileStream, HTTPManager, IdCookieManager, DCPbase64;
+uses CMLJSON, CMLParsers, CMLTypes, CMLHTTP, System.Hash, System.Classes, System.Generics.Collections, System.SysUtils, PLUGIN_Types, Winapi.Windows, MRC_helper, Settings, Cipher, Splitfile, ChunkedFileStream, HTTPManager, IdCookieManager, DCPbase64, AskPassword;
 
 type
 	TCloudMailRu = class
@@ -824,7 +824,7 @@ var
 	TwoStepJson: WideString;
 	AuthMessage: WideString;
 	TwostepData: TCloudMailRuTwostepData;
-	SecurityKey: PWideChar;
+	SecurityKey: WideString;
 	FormFields: TDictionary<WideString, WideString>;
 begin
 	result := false;
@@ -852,14 +852,8 @@ begin
 							AuthMessage := 'Enter code sended to ' + TwostepData.secstep_phone + '.';
 
 						Log(LogLevelDebug, MSGTYPE_DETAILS, 'Awaiting for security key... ');
-						try
-							SecurityKey := AllocMem(32);
-						except
-							on E: EOutOfMemory do
-								exit(false);
-						end;
 
-						if (true = ExternalRequestProc(RT_Other, 'Enter auth key', PWideChar(AuthMessage), SecurityKey, 32)) then
+						if (true = TAskPasswordForm.AskText('Enter auth key', AuthMessage, SecurityKey)) then
 						begin
 							FormFields.Clear;
 							FormFields.AddOrSetValue('Login', self.user + '@' + self.domain);
@@ -877,14 +871,13 @@ begin
 									self.logUserSpaceInfo;
 								end else begin
 									Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'error: twostep auth failed');
-									exit(false);
 								end;
 							end;
 						end else begin
 							Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'error: security key not provided');
 							exit(false);
 						end;
-						FreeMem(SecurityKey);
+
 					end else begin
 						Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'error: parsing authorization data');
 						exit(false);
@@ -894,7 +887,6 @@ begin
 					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'error: getting first step auth token for ' + self.user + '@' + self.domain);
 					FormFields.free;
 				end;
-
 			end;
 		CLOUD_AUTH_METHOD_WEB: //todo: вынести в отдельный метод
 			begin
@@ -1355,7 +1347,7 @@ end;
 function TCloudMailRu.putFileToCloud(FileName: WideString; FileStream: TStream; var FileIdentity: TCloudMailRuFileIdentity): integer;
 var
 	PostAnswer: WideString;
-	Return: TStringList;
+	return: TStringList;
 	UploadUrl: WideString;
 begin
 	FileIdentity.Hash := EmptyWideStr;
@@ -1372,7 +1364,7 @@ begin
 	end;
 
 	UploadUrl := self.upload_url + '?cloud_domain=2&x-email=' + self.user + '%40' + self.domain(*+ '&fileapi' + DateTimeToUnix(now).ToString + '0246'*);
-	Return := TStringList.Create;
+	return := TStringList.Create;
 	//self.HTTP.OptionsMethod(UploadUrl, PostAnswer, ProgressEnabled); //not required at current moment, see issue #232
 	result := self.HTTP.putFile(UploadUrl, FileName, FileStream, PostAnswer);
 
@@ -1386,7 +1378,7 @@ begin
 			FileIdentity.size := FileStream.size;
 		end;
 	end;
-	Return.Destroy;
+	return.Destroy;
 end;
 
 function TCloudMailRu.removeDir(Path: WideString): Boolean;
