@@ -117,7 +117,8 @@ begin
 						begin
 							PasswordActionRetry := true;
 						end;
-				end; FreeAndNil(ActionsList);
+				end;
+				FreeAndNil(ActionsList);
 			end;
 
 		until not PasswordActionRetry;
