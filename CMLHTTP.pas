@@ -403,6 +403,7 @@ function TCloudMailRuHTTP.ExceptionHandler(E: Exception; URL: WideString; HTTPMe
 var
 	method_string: WideString; //в зависимости от метода исходного запроса меняется текст сообщения
 begin
+	result := FS_FILE_OK; //just for avoiding compiler warning
 	case HTTPMethod of
 		HTTP_METHOD_GET:
 			begin
