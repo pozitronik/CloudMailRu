@@ -22,6 +22,7 @@ type
 		{Public declarations}
 		class function AskPassword(CustomTitle, CustomText: WideString; var Password: WideString; var UseTCPwdMngr: Boolean; DisablePWDManagerCB: Boolean = false; ParentWindow: HWND = 0): integer;
 		class function AskAction(CustomTitle, CustomText: WideString; ActionsList: TDictionary<Int32, WideString>; ParentWindow: HWND = 0): integer;
+		class function AskText(CustomTitle, CustomText: WideString; var Text: WideString; ParentWindow: HWND = 0): Boolean;
 		function AddButton(BtnTitle: WideString; BtnResultCode: integer; BtnLeft: integer): TButton;
 	end;
 
@@ -94,6 +95,47 @@ begin
 	finally
 		FreeAndNil(AskPasswordForm);
 	end;
+end;
+
+class function TAskPasswordForm.AskText(CustomTitle, CustomText: WideString; var Text: WideString; ParentWindow: HWND = 0): Boolean;
+var
+	AskPasswordForm: TAskPasswordForm;
+	ActionsList: TDictionary<Int32, WideString>;
+	ButtonCode, CurrentLeft: integer;
+begin
+	Result := false;
+	try
+		AskPasswordForm := TAskPasswordForm.Create(nil);
+		if (0 = ParentWindow) then
+			AskPasswordForm.ParentWindow := FindTCWindow
+		else
+			AskPasswordForm.ParentWindow := ParentWindow;
+		AskPasswordForm.PasswordEditLabel.Caption := CustomText;
+		AskPasswordForm.Caption := CustomTitle;
+		AskPasswordForm.UseTCPwdMngrCB.Visible := false;
+		AskPasswordForm.PasswordEdit.PasswordChar := #0;
+
+		AskPasswordForm.OkButton.Visible := false;
+
+		ActionsList := TDictionary<Int32, WideString>.Create;
+		ActionsList.AddOrSetValue(mrOk, 'OK');
+		ActionsList.AddOrSetValue(mrCancel, 'Cancel');
+
+		CurrentLeft := 7;
+		for ButtonCode in ActionsList.Keys do
+		begin
+			CurrentLeft := CurrentLeft + AskPasswordForm.AddButton(ActionsList.Items[ButtonCode], ButtonCode, CurrentLeft).Width + 7;
+		end;
+
+		if mrOk = AskPasswordForm.ShowModal then
+		begin
+			Text := AskPasswordForm.PasswordEdit.Text;
+			Result := True;
+		end;
+	finally
+		FreeAndNil(AskPasswordForm);
+	end;
+
 end;
 
 procedure TAskPasswordForm.FormActivate(Sender: TObject);
