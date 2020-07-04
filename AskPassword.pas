@@ -85,6 +85,7 @@ begin
 		AskPasswordForm.Caption := CustomTitle;
 		AskPasswordForm.UseTCPwdMngrCB.Enabled := not DisablePWDManagerCB;
 		AskPasswordForm.UseTCPwdMngrCB.Checked := UseTCPwdMngr;
+		AskPasswordForm.PasswordEdit.PasswordChar := '*';
 
 		Result := AskPasswordForm.ShowModal;
 		if Result = mrOk then
