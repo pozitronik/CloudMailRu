@@ -52,7 +52,6 @@ type
 		function cloudHash(Path: WideString): WideString; overload; //get cloud hash for specified file
 		function cloudHash(Stream: TStream; Path: WideString = 'Calculating cloud hash'): WideString; overload; //get cloud hash for data in stream
 		function getHTTPConnection: TCloudMailRuHTTP;
-		function getAuthToken: WideString;
 	protected
 		{REGULAR CLOUD}
 		function loginRegular(method: integer = CLOUD_AUTH_METHOD_WEB): Boolean;
@@ -675,6 +674,8 @@ begin
 	else
 		result := self.HTTPConnectionsManager.get(GetCurrentThreadID());
 	result.AuthCookie := self.AuthCookie;
+	if EmptyWideStr <> AuthToken then
+		result.HTTP.Request.CustomHeaders.Values['X-CSRF-Token'] := AuthToken;
 end;
 
 function TCloudMailRu.getOAuthToken(var OAuthToken: TCloudMailRuOAuthInfo): Boolean;
