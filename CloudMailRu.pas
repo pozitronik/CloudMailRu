@@ -738,7 +738,7 @@ begin
 
 	if not self.getShard(shard_url, ShardType) then
 		exit;
-	StreamUrl := shard_url + '0p/' + DCPbase64.Base64EncodeStr(RawByteString(FileIdentity.weblink)) + '.m3u8?double_encode=1'; //UTF2Ansi is required
+	StreamUrl := shard_url + '0p/' + DCPbase64.Base64EncodeStr(String(RawByteString(FileIdentity.weblink))) + '.m3u8?double_encode=1'; //UTF2Ansi is required
 	result := true;
 end;
 
