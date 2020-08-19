@@ -2,7 +2,7 @@ unit CMLHTTP;
 
 interface
 
-uses System.SysUtils, System.Classes, System.Generics.Collections, ChunkedFileStream, SplitFile, Settings, PLUGIN_Types, CMLTypes, IdStack, IdCookieManager, IdIOHandler, IdIOHandlerSocket, IdIOHandlerStack, IdSSL, IdSSLOpenSSL, IdBaseComponent, IdComponent, IdTCPConnection, IdTCPClient, IdSocks, IdHTTP, IdAuthentication, IdIOHandlerStream, IdInterceptThrottler, IdCookie, IdMultipartFormData;
+uses System.SysUtils, System.Classes, System.Generics.Collections, ChunkedFileStream, SplitFile, Settings, PLUGIN_Types, CMLTypes, CMLParsers, CMLJSON, IdStack, IdCookieManager, IdIOHandler, IdIOHandlerSocket, IdIOHandlerStack, IdSSL, IdSSLOpenSSL, IdBaseComponent, IdComponent, IdTCPConnection, IdTCPClient, IdSocks, IdHTTP, IdAuthentication, IdIOHandlerStream, IdInterceptThrottler, IdCookie, IdMultipartFormData;
 
 type
 
@@ -175,6 +175,10 @@ begin
 		on E: Exception do
 		begin
 			case self.ExceptionHandler(E, URL) of
+				CLOUD_ERROR_TOKEN_OUTDATED:
+					begin
+						//do nothing
+					end;
 				CLOUD_OPERATION_CANCELLED:
 					begin
 						ProgressEnabled := false; //сообщаем об отмене
@@ -417,9 +421,14 @@ begin
 			end;
 		HTTP_METHOD_OPTIONS:
 			begin
-				method_string := 'запросте параметров ';
+				method_string := 'запросе параметров ';
 				result := CLOUD_OPERATION_FAILED; //Для всех Post-запросов
 			end;
+	end;
+	if (E is EIdHTTPProtocolException and (NAME_TOKEN = CMLJSONParser.getBodyError((E as EIdHTTPProtocolException).ErrorMessage))) then
+	begin
+		Log(LogLevelDetail, MSGTYPE_DETAILS, 'Требуется обновить CSRF-токен при ' + method_string);
+		exit(CLOUD_ERROR_TOKEN_OUTDATED);
 	end;
 
 	if E is EAbort then
