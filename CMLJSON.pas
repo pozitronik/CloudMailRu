@@ -28,6 +28,7 @@ type
 		class function getRegistrationBody(JSON: WideString; var Body: WideString): Boolean; overload;
 		class function getRegistrationOperationResult(JSON: WideString): TCloudMailRuOperationResult; overload;
 		class function getBodyError(JSON: WideString): WideString;
+		class function getBodyToken(JSON: WideString; var Token: WideString): Boolean;
 	end;
 
 implementation
@@ -476,7 +477,22 @@ begin
 	except
 		Exit;
 	end;
+	JSONVal.free;
+end;
 
+class function CMLJSONParser.getBodyToken(JSON: WideString; var Token: WideString): Boolean;
+var
+	JSONVal: TJSONObject;
+begin
+	result := False;
+	try
+		if (not init(JSON, JSONVal)) then
+			Exit;
+		Token := (JSONVal.Values[NAME_BODY] as TJSONObject).Values[NAME_TOKEN].Value;
+	except
+		Exit;
+	end;
+	result := true;
 	JSONVal.free;
 end;
 
