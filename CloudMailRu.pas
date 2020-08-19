@@ -52,6 +52,7 @@ type
 		function cloudHash(Path: WideString): WideString; overload; //get cloud hash for specified file
 		function cloudHash(Stream: TStream; Path: WideString = 'Calculating cloud hash'): WideString; overload; //get cloud hash for data in stream
 		function getHTTPConnection: TCloudMailRuHTTP;
+		function RefreshCSRFToken: Boolean;
 	protected
 		{REGULAR CLOUD}
 		function loginRegular(method: integer = CLOUD_AUTH_METHOD_WEB): Boolean;
@@ -67,7 +68,6 @@ type
 		crypt_filenames: Boolean;
 
 		Property Cookie: TIdCookieManager read AuthCookie;
-
 		Property public_account: Boolean read OptionsSet.AccountSettings.public_account;
 		Property user: WideString read OptionsSet.AccountSettings.user;
 		Property domain: WideString read OptionsSet.AccountSettings.domain;
@@ -194,6 +194,9 @@ begin
 		result := CloudResultToFsResult(CMLJSONParser.getOperationResult(JSON), 'File publish error: ');
 		if (result <> FS_FILE_OK) and not(Progress) then
 			result := FS_FILE_USERABORT; //user cancelled
+	end else begin
+		if (NAME_TOKEN = CMLJSONParser.getBodyError(JSON)) and RefreshCSRFToken() then
+			result := cloneWeblink(Path, link, ConflictMode);
 	end;
 end;
 
@@ -441,10 +444,13 @@ begin
 
 	result := self.HTTP.GetPage(API_FOLDER_SHARED_LINKS + '?' + self.united_params, JSON, ShowProgress);
 	if result then
-		result := CloudResultToBoolean(CMLJSONParser.getOperationResult(JSON), 'Shared links listing error: ');
+		result := CloudResultToBoolean(CMLJSONParser.getOperationResult(JSON), 'Shared links listing error: ') and CMLJSONParser.getDirListing(JSON, DirListing)
+	else
+	begin
+		if (NAME_TOKEN = CMLJSONParser.getBodyError(JSON)) and RefreshCSRFToken() then
+			result := getSharedLinksListing(DirListing, ShowProgress);
+	end;
 
-	if result then
-		result := CMLJSONParser.getDirListing(JSON, DirListing);
 end;
 
 function TCloudMailRu.getIncomingLinksListing(var IncomingListing: TCloudMailRuIncomingInviteInfoListing; ShowProgress: Boolean): Boolean;
@@ -459,10 +465,15 @@ begin
 		exit;
 	if (ShowProgress) then
 		self.HTTP.SetProgressNames('Incoming links listing', '...');
-	result := self.HTTP.GetPage(API_FOLDER_SHARED_INCOMING + '?' + self.united_params, JSON, ShowProgress) and CloudResultToBoolean(CMLJSONParser.getOperationResult(JSON), 'Incoming requests listing error: ');
+	result := self.HTTP.GetPage(API_FOLDER_SHARED_INCOMING + '?' + self.united_params, JSON, ShowProgress);
 
 	if result then
-		result := CMLJSONParser.getIncomingInviteListing(JSON, IncomingListing);
+		result := CloudResultToBoolean(CMLJSONParser.getOperationResult(JSON), 'Incoming requests listing error: ') and CMLJSONParser.getIncomingInviteListing(JSON, IncomingListing)
+	else
+	begin
+		if (NAME_TOKEN = CMLJSONParser.getBodyError(JSON)) and RefreshCSRFToken() then
+			result := getIncomingLinksListing(IncomingListing, ShowProgress);
+	end;
 end;
 
 function TCloudMailRu.getIncomingLinksListing(var IncomingListing: TCloudMailRuDirListing; var InvitesListing: TCloudMailRuIncomingInviteInfoListing; ShowProgress: Boolean = false): Boolean;
@@ -504,10 +515,12 @@ begin
 	result := self.HTTP.GetPage(API_TRASHBIN + '?' + self.united_params, JSON, ShowProgress);
 
 	if result then
-		result := CloudResultToBoolean(CMLJSONParser.getOperationResult(JSON), 'Trashbin listing error: ');
-
-	if result then
-		result := CMLJSONParser.getDirListing(JSON, DirListing);
+		result := CloudResultToBoolean(CMLJSONParser.getOperationResult(JSON), 'Trashbin listing error: ') and CMLJSONParser.getDirListing(JSON, DirListing)
+	else
+	begin
+		if (NAME_TOKEN = CMLJSONParser.getBodyError(JSON)) and RefreshCSRFToken() then
+			result := getTrashbinListing(DirListing, ShowProgress);
+	end;
 
 end;
 
@@ -538,6 +551,9 @@ begin
 				self.FileCipher.DecryptDirListing(DirListing);
 		end else if OperationResult.OperationResult = CLOUD_ERROR_NOT_EXISTS then
 			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Path not exists: ' + Path);
+	end else begin
+		if (NAME_TOKEN = CMLJSONParser.getBodyError(JSON)) and RefreshCSRFToken() then
+			result := getDirListing(Path, DirListing, ShowProgress);
 	end;
 
 end;
@@ -593,6 +609,9 @@ begin
 		MemoryStream := TMemoryStream.Create;
 		URL := self.Shard + PathToUrl(remotePath, false);
 		result := self.HTTP.getFile(URL, MemoryStream, LogErrors);
+		if (CLOUD_ERROR_TOKEN_OUTDATED = result) and RefreshCSRFToken() then
+			result := self.getFileRegular(remotePath, localPath, resultHash, LogErrors);
+
 		if result in [FS_FILE_NOTSUPPORTED] then //this code returned on shard connection error
 		begin
 			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Redirection limit reached when trying to download ' + URL);
@@ -610,6 +629,8 @@ begin
 
 	end else begin
 		result := self.HTTP.getFile(self.Shard + PathToUrl(remotePath, false), FileStream, LogErrors);
+		if (CLOUD_ERROR_TOKEN_OUTDATED = result) and RefreshCSRFToken() then
+			result := self.getFileRegular(remotePath, localPath, resultHash, LogErrors);
 		if ((result in [FS_FILE_OK]) and (EmptyWideStr = resultHash)) then
 			resultHash := cloudHash(FileStream);
 	end;
@@ -717,7 +738,6 @@ begin
 
 	if not self.getShard(shard_url, ShardType) then
 		exit;
-
 	StreamUrl := shard_url + '0p/' + DCPbase64.Base64EncodeStr(RawByteString(FileIdentity.weblink)) + '.m3u8?double_encode=1'; //UTF2Ansi is required
 	result := true;
 end;
@@ -741,7 +761,6 @@ begin
 		result := CMLJSONParser.getShard(JSON, Shard, ShardType) and (Shard <> EmptyWideStr);
 		Log(LogLevelDetail, MSGTYPE_DETAILS, 'Shard received: ' + Shard + ', type: ' + ShardType);
 	end;
-
 end;
 
 function TCloudMailRu.initConnectionParameters: Boolean;
@@ -759,8 +778,21 @@ begin
 	begin
 		{При первоначальной инициализации получаем токен из страницы ответа, затем он обновляется по необходимости}
 		result := extractTokenFromText(JSON, AuthToken) and extract_x_page_id_FromText(JSON, x_page_id) and extract_build_FromText(JSON, build); //and extract_upload_url_FromText(JSON, self.upload_url);
-		self.united_params := '&api=2&build=' + build + '&x-page-id=' + x_page_id + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&token=' + AuthToken + '&_=' + DateTimeToUnix(now).ToString + '810';
+		self.united_params := '&api=2&build=' + build + '&x-page-id=' + x_page_id + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&_=' + DateTimeToUnix(now).ToString + '810';
 	end;
+end;
+
+function TCloudMailRu.RefreshCSRFToken: Boolean;
+var
+	JSON: WideString;
+	Progress: Boolean;
+begin
+	self.HTTP.GetPage(API_CSRF, JSON, Progress);
+	result := CMLJSONParser.getBodyToken(JSON, AuthToken);
+	if result then
+		Log(LogLevelDetail, MSGTYPE_DETAILS, 'Token updated')
+	else
+		Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Token update error!')
 end;
 
 function TCloudMailRu.initSharedConnectionParameters(): Boolean;
@@ -792,7 +824,14 @@ begin
 	if not(Assigned(self)) then
 		exit; //Проверка на вызов без инициализации
 	Progress := false;
-	result := self.HTTP.GetPage(API_USER_SPACE + '?home=/' + self.united_params, JSON, Progress) and CloudResultToBoolean(CMLJSONParser.getOperationResult(JSON), 'User space receiving error: ') and CMLJSONParser.getUserSpace(JSON, SpaceInfo);
+	result := self.HTTP.GetPage(API_USER_SPACE + '?home=/' + self.united_params, JSON, Progress);
+	if result then
+	begin
+		result := CloudResultToBoolean(CMLJSONParser.getOperationResult(JSON), 'User space receiving error: ') and CMLJSONParser.getUserSpace(JSON, SpaceInfo);
+	end else begin
+		if (NAME_TOKEN = CMLJSONParser.getBodyError(JSON)) and RefreshCSRFToken() then
+			result := getUserSpace(SpaceInfo)
+	end;
 end;
 
 procedure TCloudMailRu.Log(LogLevel, MsgType: integer; LogString: WideString);
@@ -1017,8 +1056,10 @@ begin
 	if self.HTTP.GetPage(API_FOLDER_SHARED_INFO + '?home=' + PathToUrl(Path) + self.united_params, JSON, Progress) then
 	begin
 		result := CMLJSONParser.getInviteListing(JSON, InviteListing);
+	end else begin
+		if (NAME_TOKEN = CMLJSONParser.getBodyError(JSON)) and RefreshCSRFToken() then
+			result := getShareInfo(Path, InviteListing);
 	end;
-
 end;
 
 function TCloudMailRu.shareFolder(Path, email: WideString; access: integer): Boolean;
@@ -1369,7 +1410,8 @@ begin
 	return := TStringList.Create;
 	//self.HTTP.OptionsMethod(UploadUrl, PostAnswer, ProgressEnabled); //not required at current moment, see issue #232
 	result := self.HTTP.putFile(UploadUrl, FileName, FileStream, PostAnswer);
-
+	if (CLOUD_ERROR_TOKEN_OUTDATED = result) and RefreshCSRFToken() then
+		result := putFileToCloud(FileName, FileStream, FileIdentity);
 	if (result = CLOUD_OPERATION_OK) then
 	begin
 		if length(PostAnswer) <> 40 then
@@ -1423,7 +1465,13 @@ begin
 	else
 		result := self.HTTP.GetPage(API_FILE + '?home=' + PathToUrl(Path) + self.united_params, JSON, Progress);
 	if result then
+	begin
 		result := CloudResultToBoolean(CMLJSONParser.getOperationResult(JSON), 'File status error: ') and CMLJSONParser.getFileStatus(JSON, FileInfo);
+	end else begin
+		if (NAME_TOKEN = CMLJSONParser.getBodyError(JSON)) and RefreshCSRFToken() then
+			result := statusFile(Path, FileInfo);
+	end;
+
 end;
 
 class function TCloudMailRu.CloudAccessToString(access: WideString; Invert: Boolean): WideString;
