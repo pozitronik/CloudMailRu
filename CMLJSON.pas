@@ -27,6 +27,7 @@ type
 		class function getUserSpace(JSON: WideString; var CloudMailRuSpaceInfo: TCloudMailRuSpaceInfo): Boolean; overload;
 		class function getRegistrationBody(JSON: WideString; var Body: WideString): Boolean; overload;
 		class function getRegistrationOperationResult(JSON: WideString): TCloudMailRuOperationResult; overload;
+		class function getBodyError(JSON: WideString): WideString;
 	end;
 
 implementation
@@ -460,6 +461,22 @@ begin
 		Exit;
 	end;
 	result := true;
+	JSONVal.free;
+end;
+
+class function CMLJSONParser.getBodyError(JSON: WideString): WideString;
+var
+	JSONVal: TJSONObject;
+begin
+	result := '';
+	try
+		if (not init(JSON, JSONVal)) then
+			Exit;
+		result := JSONVal.Values[NAME_BODY].Value;
+	except
+		Exit;
+	end;
+
 	JSONVal.free;
 end;
 
