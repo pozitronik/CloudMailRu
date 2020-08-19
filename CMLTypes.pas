@@ -5,10 +5,12 @@ interface
 const
 	PUBLIC_ACCESS_URL = 'https://cloud.mail.ru/public/';
 	OAUTH_TOKEN_URL = 'https://o2.mail.ru/token';
+	TOKEN_HOME_URL = 'https://cloud.mail.ru/home';
 	TOKEN_URL = 'https://cloud.mail.ru/?from=promo&from=authpopup';
 	LOGIN_URL = 'https://auth.mail.ru/cgi-bin/auth?from=splash';
 	SECSTEP_URL = 'https://auth.mail.ru/cgi-bin/secstep';
 
+	API_CSRF = 'https://cloud.mail.ru/api/v2/tokens/csrf';
 	API_FILE = 'https://cloud.mail.ru/api/v2/file';
 	API_FILE_MOVE = 'https://cloud.mail.ru/api/v2/file/move';
 	API_FILE_PUBLISH = 'https://cloud.mail.ru/api/v2/file/publish';
@@ -41,6 +43,7 @@ const
 
 	KIND_SHARED = 'shared';
 	{Константы для обозначения ошибок, возвращаемых при парсинге ответов облака. Дополняем по мере обнаружения}
+	CLOUD_ERROR_TOKEN_OUTDATED = -3; //протух токен (ввел самостоятельно)
 	CLOUD_ERROR_UNKNOWN = -2; //unknown: 'Ошибка на сервере'
 	CLOUD_OPERATION_ERROR_STATUS_UNKNOWN = -1;
 	CLOUD_OPERATION_OK = 0;
@@ -123,6 +126,7 @@ const
 	SHARD_TYPE_THUMBNAILS = 'thumbnails'; {todo: thumbnails mode for tc maybe?}
 
 	{JSON names}
+	NAME_TOKEN = 'token';
 	NAME_BODY = 'body';
 	NAME_LIST = 'list';
 	NAME_SIZE = 'size';
