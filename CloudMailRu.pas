@@ -27,13 +27,15 @@ type
 		public_shard: WideString; //public downloads shard url
 		Shard: WideString; //download shard url
 
+		AuthToken: WideString; {Текущий (постоянно обновляемый) токен соединения}
 		OAuthToken: TCloudMailRuOAuthInfo; {unused at this moment}
 
-		upload_url: WideString; //stored upload url, filled on getToken()
+		upload_url: WideString; //stored upload url, filled on initConnectionParameters()
 		united_params: WideString; //Объединённый набор авторизационных параметров для подстановки в URL
 
 		{HTTP REQUESTS WRAPPERS}
-		function getToken(): Boolean;
+		function initConnectionParameters(): Boolean;
+
 		function getSharedToken(): Boolean;
 		function getOAuthToken(var OAuthToken: TCloudMailRuOAuthInfo): Boolean;
 		function getShard(var Shard: WideString; ShardType: WideString = SHARD_TYPE_GET): Boolean;
@@ -51,6 +53,7 @@ type
 		function cloudHash(Path: WideString): WideString; overload; //get cloud hash for specified file
 		function cloudHash(Stream: TStream; Path: WideString = 'Calculating cloud hash'): WideString; overload; //get cloud hash for data in stream
 		function getHTTPConnection: TCloudMailRuHTTP;
+		function getAuthToken: WideString;
 	protected
 		{REGULAR CLOUD}
 		function loginRegular(method: integer = CLOUD_AUTH_METHOD_WEB): Boolean;
@@ -741,22 +744,22 @@ begin
 
 end;
 
-function TCloudMailRu.getToken: Boolean;
+function TCloudMailRu.initConnectionParameters: Boolean;
 var
 	JSON: WideString;
 	Progress: Boolean;
-	token, x_page_id, build: WideString;
+	x_page_id, build: WideString;
 begin
 	result := false;
 	if not(Assigned(self)) then
 		exit; //Проверка на вызов без инициализации
 	Progress := false;
-	result := self.HTTP.GetPage(TOKEN_URL, JSON, Progress);
+	result := self.HTTP.GetPage(TOKEN_HOME_URL, JSON, Progress);
 	if result then
 	begin
-		result := extractTokenFromText(JSON, token) and extract_x_page_id_FromText(JSON, x_page_id) and extract_build_FromText(JSON, build); //and extract_upload_url_FromText(JSON, self.upload_url);
-		self.united_params := '&api=2&build=' + build + '&x-page-id=' + x_page_id + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&token=' + token + '&_=' + DateTimeToUnix(now).ToString + '810';
-		Log(LogLevelDetail, MSGTYPE_DETAILS, 'Current upload shard is undefined, trying to get one');
+		{При первоначальной инициализации получаем токен из страницы ответа, затем он обновляется по необходимости}
+		result := extractTokenFromText(JSON, AuthToken) and extract_x_page_id_FromText(JSON, x_page_id) and extract_build_FromText(JSON, build); //and extract_upload_url_FromText(JSON, self.upload_url);
+		self.united_params := '&api=2&build=' + build + '&x-page-id=' + x_page_id + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&token=' + AuthToken + '&_=' + DateTimeToUnix(now).ToString + '810';
 	end;
 end;
 
@@ -864,7 +867,7 @@ begin
 							FormFields.free;
 							if result then
 							begin
-								result := self.getToken();
+								result := self.initConnectionParameters();
 								if (result) then
 								begin
 									Log(LogLevelDetail, MSGTYPE_DETAILS, 'Connected to ' + self.user + '@' + self.domain);
@@ -895,7 +898,7 @@ begin
 				if (result) then
 				begin
 					Log(LogLevelDebug, MSGTYPE_DETAILS, 'Parsing token data...');
-					result := self.getToken();
+					result := self.initConnectionParameters();
 					if (result) then
 					begin
 						Log(LogLevelDetail, MSGTYPE_DETAILS, 'Connected to ' + self.user + '@' + self.domain);
@@ -928,7 +931,6 @@ procedure TCloudMailRu.logUserSpaceInfo;
 var
 	US: TCloudMailRuSpaceInfo;
 	QuotaInfo: WideString;
-
 begin
 	if not(Assigned(self)) then
 		exit; //Проверка на вызов без инициализации
