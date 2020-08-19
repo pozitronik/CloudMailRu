@@ -35,8 +35,7 @@ type
 
 		{HTTP REQUESTS WRAPPERS}
 		function initConnectionParameters(): Boolean;
-
-		function getSharedToken(): Boolean;
+		function initSharedConnectionParameters(): Boolean;
 		function getOAuthToken(var OAuthToken: TCloudMailRuOAuthInfo): Boolean;
 		function getShard(var Shard: WideString; ShardType: WideString = SHARD_TYPE_GET): Boolean;
 		function getUserSpace(var SpaceInfo: TCloudMailRuSpaceInfo): Boolean;
@@ -763,7 +762,7 @@ begin
 	end;
 end;
 
-function TCloudMailRu.getSharedToken(): Boolean;
+function TCloudMailRu.initSharedConnectionParameters(): Boolean;
 var
 	PageContent: WideString;
 	Progress: Boolean;
@@ -923,7 +922,7 @@ end;
 function TCloudMailRu.loginShared(method: integer): Boolean;
 begin
 	Log(LogLevelDetail, MSGTYPE_DETAILS, 'Open ' + self.OptionsSet.AccountSettings.public_url);
-	result := self.getSharedToken();
+	result := self.initSharedConnectionParameters();
 	//exit(true);
 end;
 
