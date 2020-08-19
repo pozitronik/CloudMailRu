@@ -169,7 +169,6 @@ begin
 		else
 			HTTP.OnWork := nil;
 		Answer := HTTP.Get(URL);
-
 		result := Answer <> EmptyWideStr;
 	Except
 		on E: Exception do
@@ -177,7 +176,7 @@ begin
 			case self.ExceptionHandler(E, URL) of
 				CLOUD_ERROR_TOKEN_OUTDATED:
 					begin
-						//do nothing
+						Answer := (E as EIdHTTPProtocolException).ErrorMessage;//на протухание токена возвращаем JSON ответа дл€ дальнейшего парсинга в базовом классе
 					end;
 				CLOUD_OPERATION_CANCELLED:
 					begin
@@ -194,7 +193,6 @@ begin
 					end;
 			end;
 		end;
-
 	end;
 end;
 
@@ -427,7 +425,7 @@ begin
 	end;
 	if (E is EIdHTTPProtocolException and (NAME_TOKEN = CMLJSONParser.getBodyError((E as EIdHTTPProtocolException).ErrorMessage))) then
 	begin
-		Log(LogLevelDetail, MSGTYPE_DETAILS, '“ребуетс€ обновить CSRF-токен при ' + method_string);
+		Log(LogLevelDetail, MSGTYPE_DETAILS, '“ребуетс€ обновить CSRF-токен при ' + method_string + URL);
 		exit(CLOUD_ERROR_TOKEN_OUTDATED);
 	end;
 
