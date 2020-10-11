@@ -164,8 +164,9 @@ begin
 		OperationResult := CMLJSONParser.getOperationResult(JSON);
 		result := CloudResultToFsResult(OperationResult, 'File uploading error: ');
 		if (CLOUD_OPERATION_OK = OperationResult.OperationResult) and LogSuccess then
-			Log(LogLevelDetail, MSGTYPE_DETAILS, 'File ' + remotePath + ' found by hash.')
-
+			Log(LogLevelDetail, MSGTYPE_DETAILS, 'File ' + remotePath + ' found by hash.');
+		if (NAME_TOKEN = CMLJSONParser.getBodyError(JSON)) and RefreshCSRFToken() then
+			result := self.addFileByIdentity(FileIdentity, remotePath, ConflictMode, LogErrors, LogSuccess);
 	end;
 end;
 
@@ -256,6 +257,8 @@ begin
 	begin //Парсим ответ
 		result := CloudResultToFsResult(CMLJSONParser.getOperationResult(JSON), 'File copy error: ');
 	end;
+	if (NAME_TOKEN = CMLJSONParser.getBodyError(JSON)) and RefreshCSRFToken() then
+		result := self.copyFile(OldName, ToPath);
 end;
 
 function TCloudMailRu.cpFile(OldName, NewName: WideString): integer;
@@ -333,8 +336,9 @@ begin
 	if self.public_account then
 		exit;
 	self.HTTP.SetProgressNames('Create directory', Path);
-	result := self.HTTP.PostForm(API_FOLDER_ADD, 'home=/' + PathToUrl(Path) + self.united_params + '&conflict', JSON) and CloudResultToBoolean(CMLJSONParser.getOperationResult(JSON))
-
+	result := self.HTTP.PostForm(API_FOLDER_ADD, 'home=/' + PathToUrl(Path) + self.united_params + '&conflict', JSON) and CloudResultToBoolean(CMLJSONParser.getOperationResult(JSON));
+	if (not result and (NAME_TOKEN = CMLJSONParser.getBodyError(JSON))) and RefreshCSRFToken() then
+		result := self.createDir(Path);
 end;
 
 function TCloudMailRu.deleteFile(Path: WideString): Boolean;
@@ -348,6 +352,8 @@ begin
 		exit;
 	self.HTTP.SetProgressNames('Delete file', Path);
 	result := self.HTTP.PostForm(API_FILE_REMOVE, 'home=/' + PathToUrl(Path) + self.united_params + '&conflict', JSON) and CloudResultToBoolean(CMLJSONParser.getOperationResult(JSON), 'Delete file error: ');
+	if (not result and (NAME_TOKEN = CMLJSONParser.getBodyError(JSON))) and RefreshCSRFToken() then
+		result := self.deleteFile(Path);
 end;
 
 destructor TCloudMailRu.Destroy;
@@ -998,6 +1004,8 @@ begin
 		exit(FS_FILE_NOTSUPPORTED);
 	if self.HTTP.PostForm(API_FILE_MOVE, 'home=' + PathToUrl(OldName) + '&folder=' + PathToUrl(ToPath) + self.united_params + '&conflict', JSON) then
 		result := CloudResultToFsResult(CMLJSONParser.getOperationResult(JSON), 'File move error: ');
+	if (NAME_TOKEN = CMLJSONParser.getBodyError(JSON)) and RefreshCSRFToken() then
+		result := self.moveFile(OldName, ToPath);
 end;
 
 function TCloudMailRu.mvFile(OldName, NewName: WideString): integer;
@@ -1040,8 +1048,11 @@ begin
 
 	if result then
 		result := CloudResultToBoolean(CMLJSONParser.getOperationResult(JSON), 'File publish error: ');
+
 	if result and publish then
 		result := CMLJSONParser.getPublicLink(JSON, PublicLink);
+	if (not result and (NAME_TOKEN = CMLJSONParser.getBodyError(JSON))) and RefreshCSRFToken() then
+		result := self.publishFile(Path, PublicLink, publish);
 end;
 
 function TCloudMailRu.getShareInfo(Path: WideString; var InviteListing: TCloudMailRuInviteInfoListing): Boolean;
@@ -1082,7 +1093,9 @@ begin
 		result := self.HTTP.PostForm(API_FOLDER_UNSHARE, 'home=/' + PathToUrl(Path) + self.united_params + '&invite={"email":"' + email + '"}', JSON);
 	end;
 	if result then
-		result := CloudResultToBoolean(CMLJSONParser.getOperationResult(JSON), 'Invite member error: ')
+		result := CloudResultToBoolean(CMLJSONParser.getOperationResult(JSON), 'Invite member error: ');
+	if (not result and (NAME_TOKEN = CMLJSONParser.getBodyError(JSON))) and RefreshCSRFToken() then
+		result := self.shareFolder(Path, email, access);
 end;
 
 function TCloudMailRu.trashbinRestore(Path: WideString; RestoreRevision: integer; ConflictMode: WideString): Boolean;
@@ -1095,6 +1108,8 @@ begin
 	if self.public_account then
 		exit;
 	result := self.HTTP.PostForm(API_TRASHBIN_RESTORE, 'path=' + PathToUrl(Path) + '&restore_revision=' + RestoreRevision.ToString + self.united_params + '&conflict=' + ConflictMode, JSON) and CloudResultToBoolean(CMLJSONParser.getOperationResult(JSON), 'File restore error: ');
+	if (not result and (NAME_TOKEN = CMLJSONParser.getBodyError(JSON))) and RefreshCSRFToken() then
+		result := self.trashbinRestore(Path, RestoreRevision, ConflictMode);
 end;
 
 function TCloudMailRu.trashbinEmpty(): Boolean;
@@ -1108,7 +1123,8 @@ begin
 		exit;
 
 	result := self.HTTP.PostForm(API_TRASHBIN_EMPTY, self.united_params, JSON) and CloudResultToBoolean(CMLJSONParser.getOperationResult(JSON), 'Trashbin clearing error: ');
-
+	if (not result and (NAME_TOKEN = CMLJSONParser.getBodyError(JSON))) and RefreshCSRFToken() then
+		result := self.trashbinEmpty();
 end;
 
 function TCloudMailRu.mountFolder(home, invite_token, ConflictMode: WideString): Boolean;
@@ -1121,6 +1137,8 @@ begin
 	if self.public_account then
 		exit;
 	result := self.HTTP.PostForm(API_FOLDER_MOUNT, 'home=' + UrlEncode(home) + '&invite_token=' + invite_token + self.united_params + '&conflict=' + ConflictMode, JSON) and CloudResultToBoolean(CMLJSONParser.getOperationResult(JSON), 'Folder mount error: ');
+	if (not result and (NAME_TOKEN = CMLJSONParser.getBodyError(JSON))) and RefreshCSRFToken() then
+		result := self.mountFolder(home, invite_token, ConflictMode);
 end;
 
 function TCloudMailRu.unmountFolder(home: WideString; clone_copy: Boolean): Boolean;
@@ -1138,6 +1156,8 @@ begin
 	else
 		CopyStr := 'false';
 	result := self.HTTP.PostForm(API_FOLDER_UNMOUNT, 'home=' + UrlEncode(home) + '&clone_copy=' + CopyStr + self.united_params, JSON) and CloudResultToBoolean(CMLJSONParser.getOperationResult(JSON), 'Folder unmount error: ');
+	if (not result and (NAME_TOKEN = CMLJSONParser.getBodyError(JSON))) and RefreshCSRFToken() then
+		result := self.unmountFolder(home, clone_copy);
 end;
 
 function TCloudMailRu.rejectInvite(invite_token: WideString): Boolean;
@@ -1150,6 +1170,8 @@ begin
 	if self.public_account then
 		exit;
 	result := self.HTTP.PostForm(API_INVITE_REJECT, 'invite_token=' + invite_token + self.united_params, JSON) and CloudResultToBoolean(CMLJSONParser.getOperationResult(JSON), 'Invite rejection error: ');
+  	if (not result and (NAME_TOKEN = CMLJSONParser.getBodyError(JSON))) and RefreshCSRFToken() then
+		result := self.rejectInvite(invite_token);
 end;
 
 function TCloudMailRu.putFileStream(FileName, remotePath: WideString; FileStream: TStream; ConflictMode: WideString): integer;
@@ -1436,6 +1458,8 @@ begin
 		exit;
 	self.HTTP.SetProgressNames('Remove directory', Path);
 	result := self.HTTP.PostForm(API_FILE_REMOVE, 'home=/' + IncludeSlash(PathToUrl(Path)) + self.united_params + '&conflict', JSON) and CloudResultToBoolean(CMLJSONParser.getOperationResult(JSON), 'Directory deletion error: '); //API всегда отвечает true, даже если путь не существует
+	if (not result and (NAME_TOKEN = CMLJSONParser.getBodyError(JSON))) and RefreshCSRFToken() then
+		result := self.removeDir(Path);
 end;
 
 function TCloudMailRu.renameFile(OldName, NewName: WideString): integer;
@@ -1448,7 +1472,9 @@ begin
 	if self.public_account then
 		exit;
 	if self.HTTP.PostForm(API_FILE_RENAME, 'home=' + PathToUrl(OldName) + '&name=' + PathToUrl(NewName) + self.united_params, JSON) then
-		result := CloudResultToFsResult(CMLJSONParser.getOperationResult(JSON), 'File renaming error: ')
+		result := CloudResultToFsResult(CMLJSONParser.getOperationResult(JSON), 'File renaming error: ');
+	if (NAME_TOKEN = CMLJSONParser.getBodyError(JSON)) and RefreshCSRFToken() then
+		result := self.renameFile(OldName, NewName);
 end;
 
 function TCloudMailRu.statusFile(Path: WideString; var FileInfo: TCloudMailRuDirListingItem): Boolean;
