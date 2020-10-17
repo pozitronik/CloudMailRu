@@ -969,9 +969,11 @@ begin
 		exit(ExecProperties(MainWin, RealPath));
 
 	if Verb = 'open' then
+	begin
 		if (not RealPath.isDir) and GetStreamingOptionsFromIniFile(SettingsIniFilePath, RealPath.path, StreamingOptions) and (STREAMING_FORMAT_NONE <> StreamingOptions.Format) then
 			exit(ExecuteFileStream(RealPath, StreamingOptions));
-	exit(FS_EXEC_YOURSELF);
+		exit(FS_EXEC_YOURSELF);
+	end;
 
 	if copy(Verb, 1, 5) = 'quote' then
 		exit(ExecCommand(RemoteName, LowerCase(GetWord(Verb, 1)), GetWord(Verb, 2)));
