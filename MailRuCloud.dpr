@@ -250,6 +250,7 @@ end;
 function FindIncomingInviteItemByPath(InviteListing: TCloudMailRuIncomingInviteInfoListing; path: TRealPath): TCloudMailRuIncomingInviteInfo;
 var
 	getResult: integer;
+
 	function FindListingItemByName(InviteListing: TCloudMailRuIncomingInviteInfoListing; ItemName: WideString): TCloudMailRuIncomingInviteInfo;
 	var
 		CurrentItem: TCloudMailRuIncomingInviteInfo;
@@ -949,7 +950,6 @@ function FsExecuteFileW(MainWin: THandle; RemoteName, Verb: PWideChar): integer;
 var
 	RealPath: TRealPath;
 	StreamingOptions: TStreamingOptions;
-
 begin
 	RealPath := ExtractRealPath(RemoteName);
 
@@ -1261,7 +1261,6 @@ var
 	RealPath: TRealPath;
 	RetryAttempts: integer;
 	getResult: integer;
-
 begin
 
 	RealPath := ExtractRealPath(RemoteName);
@@ -1835,7 +1834,7 @@ var
 		exit(IconSizeLarge);
 	end;
 
-	Procedure CombineMacro(var CombinedIcon: hicon);
+	procedure CombineMacro(var CombinedIcon: hicon);
 	begin
 		FrontIcon := LoadImageW(hInstance, RemoteName, IMAGE_ICON, IconsSize, IconsSize, LR_DEFAULTCOLOR);
 		BackIcon := GetFolderIcon(GetFolderIconSize(IconsSize));
@@ -2063,7 +2062,40 @@ begin
 	end; //case
 end;
 
-exports FsGetDefRootName, FsInit, FsInitW, FsFindFirst, FsFindFirstW, FsFindNext, FsFindNextW, FsFindClose, FsGetFile, FsGetFileW, FsDisconnect, FsDisconnectW, FsStatusInfo, FsStatusInfoW, FsPutFile, FsPutFileW, FsDeleteFile, FsDeleteFileW, FsMkDir, FsMkDirW, FsRemoveDir, FsRemoveDirW, FsSetCryptCallback, FsSetCryptCallbackW, FsExecuteFileW, FsRenMovFile, FsRenMovFileW, FsGetBackgroundFlags, FsContentGetSupportedField, FsContentGetValue, FsContentGetValueW, FsExtractCustomIcon, FsExtractCustomIconW;
+exports
+	FsGetDefRootName,
+	FsInit,
+	FsInitW,
+	FsFindFirst,
+	FsFindFirstW,
+	FsFindNext,
+	FsFindNextW,
+	FsFindClose,
+	FsGetFile,
+	FsGetFileW,
+	FsDisconnect,
+	FsDisconnectW,
+	FsStatusInfo,
+	FsStatusInfoW,
+	FsPutFile,
+	FsPutFileW,
+	FsDeleteFile,
+	FsDeleteFileW,
+	FsMkDir,
+	FsMkDirW,
+	FsRemoveDir,
+	FsRemoveDirW,
+	FsSetCryptCallback,
+	FsSetCryptCallbackW,
+	FsExecuteFileW,
+	FsRenMovFile,
+	FsRenMovFileW,
+	FsGetBackgroundFlags,
+	FsContentGetSupportedField,
+	FsContentGetValue,
+	FsContentGetValueW,
+	FsExtractCustomIcon,
+	FsExtractCustomIconW;
 
 begin
 {$IFDEF DEBUG}
