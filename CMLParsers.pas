@@ -73,7 +73,7 @@ end;
 
 function extractPublicShard(Text: WideString; var Shard: WideString): Boolean;
 begin
-	Shard := extractNearValue(Text, '"weblink_get":', '[', ']');
+	Shard := extractNearValue(Text, '"weblink_get":', '{', '}');
 	Shard := extractNearValue(Shard, '"url":');
 	result := EmptyWideStr <> Shard;
 end;
