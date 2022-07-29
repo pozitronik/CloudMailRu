@@ -932,7 +932,7 @@ begin
 					//Здесь можно бы обновить листинг
 				end;
 				TCloudMailRu.TempPublicCloudInit(TempPublicCloud, PUBLIC_ACCESS_URL + CurrentItem.weblink);
-				StreamUrl := TempPublicCloud.getSharedFileUrl(EmptyWideStr, true, ShardTypeFromStreamingFormat(StreamingOptions.Format));
+				StreamUrl := TempPublicCloud.getSharedFileUrl(EmptyWideStr, ShardTypeFromStreamingFormat(StreamingOptions.Format));
 			end;
 	end;
 	if EmptyWideStr = StreamingOptions.Parameters then
