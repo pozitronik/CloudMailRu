@@ -1,4 +1,4 @@
-unit CMLHTTP;
+п»їunit CMLHTTP;
 
 interface
 
@@ -30,7 +30,7 @@ type
 		{PROPERTIES}
 		HTTP: TIdHTTP;
 		Property Options: TConnectionSettings read Settings;
-		Property AuthCookie: TIdCookieManager write setCookie; //Кука управляется снаружи - это нужно для передачи авторизации между подключениям
+		Property AuthCookie: TIdCookieManager write setCookie; //РљСѓРєР° СѓРїСЂР°РІР»СЏРµС‚СЃСЏ СЃРЅР°СЂСѓР¶Рё - СЌС‚Рѕ РЅСѓР¶РЅРѕ РґР»СЏ РїРµСЂРµРґР°С‡Рё Р°РІС‚РѕСЂРёР·Р°С†РёРё РјРµР¶РґСѓ РїРѕРґРєР»СЋС‡РµРЅРёСЏРј
 		property SourceName: WideString write SetExternalSourceName;
 		property TargetName: WideString write SetExternalTargetName;
 		{CONSTRUCTOR/DESTRUCTOR}
@@ -39,14 +39,15 @@ type
 		{MAIN ROUTINES}
 		procedure Head(URL: WideString);
 
-		function GetPage(URL: WideString; var Answer: WideString; var ProgressEnabled: Boolean): Boolean; //если ProgressEnabled - включаем обработчик onWork, возвращаем ProgressEnabled=false при отмене
+		function GetPage(URL: WideString; var Answer: WideString; var ProgressEnabled: Boolean): Boolean; //РµСЃР»Рё ProgressEnabled - РІРєР»СЋС‡Р°РµРј РѕР±СЂР°Р±РѕС‚С‡РёРє onWork, РІРѕР·РІСЂР°С‰Р°РµРј ProgressEnabled=false РїСЂРё РѕС‚РјРµРЅРµ
 		function GetFile(URL: WideString; FileStream: TStream; LogErrors: Boolean = true): integer;
+		function GetRedirection(URL: WideString; var RedirectionURL: WideString; var ProgressEnabled: Boolean): Boolean;
 
-		function PostForm(URL: WideString; PostDataString: WideString; var Answer: WideString; ContentType: WideString = 'application/x-www-form-urlencoded'; LogErrors: Boolean = true; ProgressEnabled: Boolean = true): Boolean; //Постинг данных с возможным получением ответа.
+		function PostForm(URL: WideString; PostDataString: WideString; var Answer: WideString; ContentType: WideString = 'application/x-www-form-urlencoded'; LogErrors: Boolean = true; ProgressEnabled: Boolean = true): Boolean; //РџРѕСЃС‚РёРЅРі РґР°РЅРЅС‹С… СЃ РІРѕР·РјРѕР¶РЅС‹Рј РїРѕР»СѓС‡РµРЅРёРµРј РѕС‚РІРµС‚Р°.
 		function PostMultipart(URL: WideString; Params: TDictionary<WideString, WideString>; var Answer: WideString): Boolean;
-		function PostFile(URL: WideString; FileName: WideString; FileStream: TStream; var Answer: WideString): integer; overload; //Постинг потока данных как файла
+		function PostFile(URL: WideString; FileName: WideString; FileStream: TStream; var Answer: WideString): integer; overload; //РџРѕСЃС‚РёРЅРі РїРѕС‚РѕРєР° РґР°РЅРЅС‹С… РєР°Рє С„Р°Р№Р»Р°
 
-		function Post(URL: WideString; PostData, ResultData: TStringStream; UnderstandResponseCode: Boolean = false; ContentType: WideString = ''; LogErrors: Boolean = true; ProgressEnabled: Boolean = true): integer; overload; //Постинг подготовленных данных, отлов ошибок
+		function Post(URL: WideString; PostData, ResultData: TStringStream; UnderstandResponseCode: Boolean = false; ContentType: WideString = ''; LogErrors: Boolean = true; ProgressEnabled: Boolean = true): integer; overload; //РџРѕСЃС‚РёРЅРі РїРѕРґРіРѕС‚РѕРІР»РµРЅРЅС‹С… РґР°РЅРЅС‹С…, РѕС‚Р»РѕРІ РѕС€РёР±РѕРє
 		function Post(URL: WideString; var PostData: TIdMultiPartFormDataStream; ResultData: TStringStream): integer; overload; //TIdMultiPartFormDataStream should be passed via var
 
 		function OptionsMethod(URL: WideString; var Answer: WideString; var ProgressEnabled: Boolean): Boolean;
@@ -165,7 +166,7 @@ begin
 	result := false;
 	try
 		if ProgressEnabled then
-			HTTP.OnWork := self.Progress //Вызов прогресса ведёт к возможности отменить получение списка каталогов и других операций, поэтому он нужен не всегда
+			HTTP.OnWork := self.Progress //Р’С‹Р·РѕРІ РїСЂРѕРіСЂРµСЃСЃР° РІРµРґС‘С‚ Рє РІРѕР·РјРѕР¶РЅРѕСЃС‚Рё РѕС‚РјРµРЅРёС‚СЊ РїРѕР»СѓС‡РµРЅРёРµ СЃРїРёСЃРєР° РєР°С‚Р°Р»РѕРіРѕРІ Рё РґСЂСѓРіРёС… РѕРїРµСЂР°С†РёР№, РїРѕСЌС‚РѕРјСѓ РѕРЅ РЅСѓР¶РµРЅ РЅРµ РІСЃРµРіРґР°
 		else
 			HTTP.OnWork := nil;
 		Answer := HTTP.Get(URL);
@@ -176,22 +177,47 @@ begin
 			case self.ExceptionHandler(E, URL) of
 				CLOUD_ERROR_TOKEN_OUTDATED:
 					begin
-						Answer := (E as EIdHTTPProtocolException).ErrorMessage;//на протухание токена возвращаем JSON ответа для дальнейшего парсинга в базовом классе
+						Answer := (E as EIdHTTPProtocolException).ErrorMessage; //РЅР° РїСЂРѕС‚СѓС…Р°РЅРёРµ С‚РѕРєРµРЅР° РІРѕР·РІСЂР°С‰Р°РµРј JSON РѕС‚РІРµС‚Р° РґР»СЏ РґР°Р»СЊРЅРµР№С€РµРіРѕ РїР°СЂСЃРёРЅРіР° РІ Р±Р°Р·РѕРІРѕРј РєР»Р°СЃСЃРµ
 					end;
 				CLOUD_OPERATION_CANCELLED:
 					begin
-						ProgressEnabled := false; //сообщаем об отмене
+						ProgressEnabled := false; //СЃРѕРѕР±С‰Р°РµРј РѕР± РѕС‚РјРµРЅРµ
 					end;
 				CLOUD_OPERATION_FAILED:
 					begin
 						case HTTP.ResponseCode of
 							HTTP_ERROR_BAD_REQUEST, HTTP_ERROR_OVERQUOTA: //recoverable errors
 								begin
-									//Answer := (E as EIdHTTPProtocolException).ErrorMessage; //TODO: нужно протестировать, наверняка тут не json
+									//Answer := (E as EIdHTTPProtocolException).ErrorMessage; //TODO: РЅСѓР¶РЅРѕ РїСЂРѕС‚РµСЃС‚РёСЂРѕРІР°С‚СЊ, РЅР°РІРµСЂРЅСЏРєР° С‚СѓС‚ РЅРµ json
 								end;
 						end;
 					end;
 			end;
+		end;
+	end;
+end;
+
+{РџСЂРѕРІРµСЂСЏРµС‚ СЂРµРґРёСЂРµРєС‚ СЃ СѓРєР°Р·Р°РЅРЅРѕРіРѕ Р°РґСЂРµСЃР°}
+function TCloudMailRuHTTP.GetRedirection(URL: WideString; var RedirectionURL: WideString; var ProgressEnabled: Boolean): Boolean;
+var
+	Answer: WideString;
+begin
+	result := false;
+	try
+		HTTP.HandleRedirects := false;
+		Answer := HTTP.Get(URL);
+	except
+		on E: Exception do
+		begin
+			if (HTTP_FOUND_REDIRECT = HTTP.ResponseCode) then
+			begin
+				RedirectionURL := HTTP.Response.Location;
+				HTTP.HandleRedirects := true;
+				exit(true)
+			end else begin
+				self.ExceptionHandler(E, URL, HTTP_METHOD_GET); HTTP.Request
+			end;
+			HTTP.HandleRedirects := true;
 		end;
 	end;
 end;
@@ -335,11 +361,11 @@ begin
 	if AWorkMode = wmRead then
 		ContentLength := HTTP.Response.ContentLength
 	else
-		ContentLength := HTTP.Request.ContentLength; //Считаем размер обработанных данных в зависимости от того, скачивание это или загрузка
+		ContentLength := HTTP.Request.ContentLength; //РЎС‡РёС‚Р°РµРј СЂР°Р·РјРµСЂ РѕР±СЂР°Р±РѕС‚Р°РЅРЅС‹С… РґР°РЅРЅС‹С… РІ Р·Р°РІРёСЃРёРјРѕСЃС‚Рё РѕС‚ С‚РѕРіРѕ, СЃРєР°С‡РёРІР°РЅРёРµ СЌС‚Рѕ РёР»Рё Р·Р°РіСЂСѓР·РєР°
 	if (Pos('chunked', LowerCase(HTTP.Response.TransferEncoding)) = 0) and (ContentLength > 0) then
 	begin
 		Percent := 100 * AWorkCount div ContentLength;
-		if Assigned(ExternalProgressProc) and (ExternalProgressProc(PWideChar(self.ExternalSourceName), PWideChar(self.ExternalTargetName), Percent) = 1) then {При передаче nil прогресс оставляет предыдущие значения}
+		if Assigned(ExternalProgressProc) and (ExternalProgressProc(PWideChar(self.ExternalSourceName), PWideChar(self.ExternalTargetName), Percent) = 1) then {РџСЂРё РїРµСЂРµРґР°С‡Рµ nil РїСЂРѕРіСЂРµСЃСЃ РѕСЃС‚Р°РІР»СЏРµС‚ РїСЂРµРґС‹РґСѓС‰РёРµ Р·РЅР°С‡РµРЅРёСЏ}
 			abort;
 	end;
 end;
@@ -403,43 +429,43 @@ end;
 
 function TCloudMailRuHTTP.ExceptionHandler(E: Exception; URL: WideString; HTTPMethod: integer; LogErrors: Boolean): integer; //todo: handle OPTIONS method
 var
-	method_string: WideString; //в зависимости от метода исходного запроса меняется текст сообщения
+	method_string: WideString; //РІ Р·Р°РІРёСЃРёРјРѕСЃС‚Рё РѕС‚ РјРµС‚РѕРґР° РёСЃС…РѕРґРЅРѕРіРѕ Р·Р°РїСЂРѕСЃР° РјРµРЅСЏРµС‚СЃСЏ С‚РµРєСЃС‚ СЃРѕРѕР±С‰РµРЅРёСЏ
 begin
 	result := FS_FILE_OK; //just for avoiding compiler warning
 	case HTTPMethod of
 		HTTP_METHOD_GET:
 			begin
-				method_string := 'получении данных с адреса ';
-				result := FS_FILE_READERROR; //для GetFile, GetForm не интересует код ошибки
+				method_string := 'РїРѕР»СѓС‡РµРЅРёРё РґР°РЅРЅС‹С… СЃ Р°РґСЂРµСЃР° ';
+				result := FS_FILE_READERROR; //РґР»СЏ GetFile, GetForm РЅРµ РёРЅС‚РµСЂРµСЃСѓРµС‚ РєРѕРґ РѕС€РёР±РєРё
 			end;
 		HTTP_METHOD_POST, HTTP_METHOD_PUT:
 			begin
-				method_string := 'отправке данных на адрес ';
-				result := CLOUD_OPERATION_FAILED; //Для всех Post-запросов
+				method_string := 'РѕС‚РїСЂР°РІРєРµ РґР°РЅРЅС‹С… РЅР° Р°РґСЂРµСЃ ';
+				result := CLOUD_OPERATION_FAILED; //Р”Р»СЏ РІСЃРµС… Post-Р·Р°РїСЂРѕСЃРѕРІ
 			end;
 		HTTP_METHOD_OPTIONS:
 			begin
-				method_string := 'запросе параметров ';
-				result := CLOUD_OPERATION_FAILED; //Для всех Post-запросов
+				method_string := 'Р·Р°РїСЂРѕСЃРµ РїР°СЂР°РјРµС‚СЂРѕРІ ';
+				result := CLOUD_OPERATION_FAILED; //Р”Р»СЏ РІСЃРµС… Post-Р·Р°РїСЂРѕСЃРѕРІ
 			end;
 	end;
 	if (E is EIdHTTPProtocolException and (NAME_TOKEN = CMLJSONParser.getBodyError((E as EIdHTTPProtocolException).ErrorMessage))) then
 	begin
-		Log(LogLevelDetail, MSGTYPE_DETAILS, 'Требуется обновить CSRF-токен при ' + method_string + URL);
+		Log(LogLevelDetail, MSGTYPE_DETAILS, 'РўСЂРµР±СѓРµС‚СЃСЏ РѕР±РЅРѕРІРёС‚СЊ CSRF-С‚РѕРєРµРЅ РїСЂРё ' + method_string + URL);
 		exit(CLOUD_ERROR_TOKEN_OUTDATED);
 	end;
 
 	if E is EAbort then
 	begin
 		result := CLOUD_OPERATION_CANCELLED;
-	end else if LogErrors then //разбирать ошибку дальше имеет смысл только для логирования - что вернуть уже понятно
+	end else if LogErrors then //СЂР°Р·Р±РёСЂР°С‚СЊ РѕС€РёР±РєСѓ РґР°Р»СЊС€Рµ РёРјРµРµС‚ СЃРјС‹СЃР» С‚РѕР»СЊРєРѕ РґР»СЏ Р»РѕРіРёСЂРѕРІР°РЅРёСЏ - С‡С‚Рѕ РІРµСЂРЅСѓС‚СЊ СѓР¶Рµ РїРѕРЅСЏС‚РЅРѕ
 	begin
 		if E is EIdHTTPProtocolException then
-			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при ' + method_string + URL + ', ответ сервера: ' + (E as EIdHTTPProtocolException).ErrorMessage)
+			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, E.ClassName + ' РѕС€РёР±РєР° СЃ СЃРѕРѕР±С‰РµРЅРёРµРј: ' + E.Message + ' РїСЂРё ' + method_string + URL + ', РѕС‚РІРµС‚ СЃРµСЂРІРµСЂР°: ' + (E as EIdHTTPProtocolException).ErrorMessage)
 		else if E is EIdSocketerror then
-			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка сети: ' + E.Message + ' при ' + method_string + URL)
+			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, E.ClassName + ' РѕС€РёР±РєР° СЃРµС‚Рё: ' + E.Message + ' РїСЂРё ' + method_string + URL)
 		else
-			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при ' + method_string + URL);
+			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, E.ClassName + ' РѕС€РёР±РєР° СЃ СЃРѕРѕР±С‰РµРЅРёРµРј: ' + E.Message + ' РїСЂРё ' + method_string + URL);
 
 	end;
 end;
