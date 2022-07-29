@@ -96,6 +96,8 @@ const
 	{Константа использования мобильного аутентификатора для двухфакторной авторизации}
 	AUTH_APP_USED = -1;
 
+	HTTP_FOUND_REDIRECT = 302;
+	HTTP_ERROR_NOT_FOUND = 404;
 	{Коды HTTP-ошибок при постинге запросов}
 	HTTP_ERROR_BAD_REQUEST = 400;
 	HTTP_ERROR_OVERQUOTA = 507;
