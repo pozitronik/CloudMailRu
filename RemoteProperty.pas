@@ -173,7 +173,7 @@ begin
 		begin (*рекурсивно получаем все ссылки в каталоге*)
 			FillRecursiveDownloadListing(IncludeTrailingPathDelimiter(self.RemoteName))
 		end else begin
-			DownloadLinksMemo.lines.Text := self.Cloud.getSharedFileUrl(self.RemoteName, self.DoUrlEncode);
+			DownloadLinksMemo.lines.Text := self.Cloud.getSharedFileUrl(self.RemoteName);
 		end;
 	end else begin
 		(*У объекта есть публичная ссылка, можно получить прямые ссылки на скачивание*)
@@ -182,7 +182,7 @@ begin
 		begin (*рекурсивно получаем все ссылки в каталоге*)
 			FillRecursiveDownloadListing(EmptyWideStr, self.TempPublicCloud);
 		end else begin
-			DownloadLinksMemo.lines.Text := TempPublicCloud.getSharedFileUrl(self.RemoteName, self.DoUrlEncode);
+			DownloadLinksMemo.lines.Text := TempPublicCloud.getSharedFileUrl(self.RemoteName);
 		end;
 		TempPublicCloud.Free;
 	end;
@@ -227,7 +227,7 @@ begin
 				break;
 
 		end else begin
-			DownloadLinksMemo.lines.Add(Cloud.getSharedFileUrl(IncludeTrailingPathDelimiter(Path) + CurrentDirListing[CurrentDirItemsCounter].name, self.DoUrlEncode));
+			DownloadLinksMemo.lines.Add(Cloud.getSharedFileUrl(IncludeTrailingPathDelimiter(Path) + CurrentDirListing[CurrentDirItemsCounter].name));
 		end;
 	end;
 	RefreshLinksScanTb.Enabled := true;
@@ -334,7 +334,6 @@ begin
 		MessageBoxW(self.Handle, PWideChar('Error while retrieving ' + Props.home + ' folder invites list, see main log'), 'Folder invite listing error', MB_OK + MB_ICONERROR);
 	end;
 end;
-
 
 procedure TPropertyForm.ApplyHashesTBClick(Sender: TObject);
 begin
