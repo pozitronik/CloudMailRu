@@ -87,7 +87,7 @@ type
 		Property RetryAttempts: integer read OptionsSet.RetryAttempts;
 		Property AttemptWait: integer read OptionsSet.AttemptWait;
 
-		function getSharedFileUrl(remotePath: WideString; DoUrlEncode: Boolean = true; ShardType: WideString = SHARD_TYPE_DEFAULT): WideString;
+		function getSharedFileUrl(remotePath: WideString; ShardType: WideString = SHARD_TYPE_DEFAULT): WideString;
 
 		{CONSTRUCTOR/DESTRUCTOR}
 		constructor Create(CloudSettings: TCloudSettings; ConnectionManager: THTTPManager; ExternalProgressProc: TProgressHandler = nil; ExternalLogProc: TLogHandler = nil; ExternalRequestProc: TRequestHandler = nil);
@@ -648,16 +648,26 @@ begin
 		System.SysUtils.deleteFile(GetUNCFilePath(localPath));
 end;
 
-function TCloudMailRu.getSharedFileUrl(remotePath: WideString; DoUrlEncode: Boolean = true; ShardType: WideString = SHARD_TYPE_DEFAULT): WideString;
+{since 29.07.2022: изменена логика получения ссылок, см. issue #285. URL теперь всегда должны быть кодированы, иначе в некоторых случаях приходит 400}
+function TCloudMailRu.getSharedFileUrl(remotePath: WideString; ShardType: WideString = SHARD_TYPE_DEFAULT): WideString;
 var
 	usedShard: WideString;
+	ProgressEnabled: Boolean;
 begin
 	if ShardType = SHARD_TYPE_DEFAULT then
 		usedShard := self.public_shard
 	else
 		self.getShard(usedShard, ShardType);
+	if (ExtractRealPath(remotePath).isDir) then {для ссылок внутри каталогов перебираются файлы внутри «публичной ссылки» на каталог}
+	begin
+		result := IncludeSlash(usedShard) + self.public_link + PathToUrl(remotePath, true, true);
+	end else begin {для прямых ссылок берутся публичные ссылки файлов}
+		result := IncludeSlash(usedShard) + self.public_link;
+	end;
 
-	result := IncludeSlash(usedShard) + IncludeSlash(self.public_link) + PathToUrl(remotePath, true, DoUrlEncode);
+	ProgressEnabled := false;
+	InternalHTTPConnection.GetRedirection(result, result, ProgressEnabled);
+
 end;
 
 function TCloudMailRu.getFileShared(remotePath, localPath: WideString; var resultHash: WideString; LogErrors: Boolean): integer;
@@ -1170,7 +1180,7 @@ begin
 	if self.public_account then
 		exit;
 	result := self.HTTP.PostForm(API_INVITE_REJECT, 'invite_token=' + invite_token + self.united_params, JSON) and CloudResultToBoolean(CMLJSONParser.getOperationResult(JSON), 'Invite rejection error: ');
-  	if (not result and (NAME_TOKEN = CMLJSONParser.getBodyError(JSON))) and RefreshCSRFToken() then
+	if (not result and (NAME_TOKEN = CMLJSONParser.getBodyError(JSON))) and RefreshCSRFToken() then
 		result := self.rejectInvite(invite_token);
 end;
 
