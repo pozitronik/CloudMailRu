@@ -658,6 +658,9 @@ begin
 		usedShard := self.public_shard
 	else
 		self.getShard(usedShard, ShardType);
+	if (self.public_account) then {для}
+		exit(IncludeSlash(usedShard) + IncludeSlash(self.public_link) + PathToUrl(remotePath, true, true));
+
 	if (ExtractRealPath(remotePath).isDir) then {для ссылок внутри каталогов перебираются файлы внутри «публичной ссылки» на каталог}
 	begin
 		result := IncludeSlash(usedShard) + self.public_link + PathToUrl(remotePath, true, true);
