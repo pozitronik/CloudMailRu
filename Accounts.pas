@@ -2,7 +2,7 @@
 
 interface
 
-uses Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics, Settings, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, IniFiles, MRC_Helper, PLUGIN_Types, Vcl.ComCtrls, Vcl.Mask, Vcl.ExtCtrls, Vcl.Samples.Spin, System.IOUtils, AskPassword, TCPasswordManagerHelper, Registration;
+uses Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics, Settings, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, IniFiles, MRC_Helper, PLUGIN_Types, Vcl.ComCtrls, Vcl.Mask, Vcl.ExtCtrls, Vcl.Samples.Spin, System.IOUtils, AskPassword, TCPasswordManagerHelper, Registration, CMLStrings;
 
 type
 	TAccountsForm = class(TForm)
@@ -366,7 +366,7 @@ begin
 		MessageBaloon := TBalloonHint.Create(self);
 		MessageBaloon.HideAfter := 5000;
 		MessageBaloon.Delay := 0;
-		MessageBaloon.Description := 'File name must contain only valid symbols';
+		MessageBaloon.Description := ERR_ACCOUNT_HAS_INVALID_SYMBOL;
 		MessageBaloon.ShowHint(DescriptionFileNameEdit);
 		exit;
 	end;

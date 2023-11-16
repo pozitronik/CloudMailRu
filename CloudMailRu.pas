@@ -2,7 +2,7 @@
 
 interface
 
-uses CMLJSON, CMLParsers, CMLTypes, CMLHTTP, System.Hash, System.Classes, System.Generics.Collections, System.SysUtils, PLUGIN_Types, Winapi.Windows, MRC_helper, Settings, Cipher, Splitfile, ChunkedFileStream, HTTPManager, IdCookieManager, DCPbase64, AskPassword;
+uses CMLJSON, CMLParsers, CMLTypes, CMLHTTP, CMLStrings, System.Hash, System.Classes, System.Generics.Collections, System.SysUtils, PLUGIN_Types, Winapi.Windows, MRC_helper, Settings, Cipher, Splitfile, ChunkedFileStream, HTTPManager, IdCookieManager, DCPbase64, AskPassword;
 
 type
 	TCloudMailRu = class
@@ -50,7 +50,7 @@ type
 		function CloudResultToFsResult(CloudResult: TCloudMailRuOperationResult; ErrorPrefix: WideString = ''): integer;
 		function CloudResultToBoolean(CloudResult: TCloudMailRuOperationResult; ErrorPrefix: WideString = ''): Boolean;
 		function cloudHash(Path: WideString): WideString; overload; //get cloud hash for specified file
-		function cloudHash(Stream: TStream; Path: WideString = 'Calculating cloud hash'): WideString; overload; //get cloud hash for data in stream
+		function cloudHash(Stream: TStream; Path: WideString = CALCULATING_HASH): WideString; overload; //get cloud hash for data in stream
 		function getHTTPConnection: TCloudMailRuHTTP;
 		function RefreshCSRFToken: Boolean;
 	protected
@@ -162,7 +162,7 @@ begin
 	if self.HTTP.PostForm(API_FILE_ADD, 'api=2&conflict=' + ConflictMode + '&home=/' + PathToUrl(remotePath) + '&hash=' + FileIdentity.Hash + '&size=' + FileIdentity.size.ToString + self.united_params, JSON, 'application/x-www-form-urlencoded', LogErrors, false) then {Do not allow to cancel operation here}
 	begin
 		OperationResult := CMLJSONParser.getOperationResult(JSON);
-		result := CloudResultToFsResult(OperationResult, 'File uploading error: ');
+		result := CloudResultToFsResult(OperationResult, PREFIX_ERR_FILE_UPLOADING);
 		if (CLOUD_OPERATION_OK = OperationResult.OperationResult) and LogSuccess then
 			Log(LogLevelDetail, MSGTYPE_DETAILS, 'File ' + remotePath + ' found by hash.');
 		if (NAME_TOKEN = CMLJSONParser.getBodyError(JSON)) and RefreshCSRFToken() then
@@ -192,7 +192,7 @@ begin
 	Progress := true;
 	if self.HTTP.GetPage(API_CLONE + '?folder=' + PathToUrl(Path) + '&weblink=' + link + '&conflict=' + ConflictMode + self.united_params, JSON, Progress) then
 	begin //Парсим ответ
-		result := CloudResultToFsResult(CMLJSONParser.getOperationResult(JSON), 'File publish error: ');
+		result := CloudResultToFsResult(CMLJSONParser.getOperationResult(JSON), PREFIX_ERR_FILE_PUBLISH);
 		if (result <> FS_FILE_OK) and not(Progress) then
 			result := FS_FILE_USERABORT; //user cancelled
 	end else begin
@@ -205,7 +205,7 @@ function TCloudMailRu.CloudResultToBoolean(CloudResult: TCloudMailRuOperationRes
 begin
 	result := CloudResult.OperationResult = CLOUD_OPERATION_OK;
 	if not(result) and (ErrorPrefix <> EmptyWideStr) then
-		Log(LogLevelError, MSGTYPE_IMPORTANTERROR, ErrorPrefix + self.ErrorCodeText(CloudResult.OperationResult) + ' Status: ' + CloudResult.OperationStatus.ToString());
+		Log(LogLevelError, MSGTYPE_IMPORTANTERROR, ErrorPrefix + self.ErrorCodeText(CloudResult.OperationResult) + PREFIX_STATUS + CloudResult.OperationStatus.ToString());
 end;
 
 function TCloudMailRu.CloudResultToFsResult(CloudResult: TCloudMailRuOperationResult; ErrorPrefix: WideString): integer;
@@ -221,18 +221,18 @@ begin
 			exit(FS_FILE_NOTSUPPORTED);
 		CLOUD_ERROR_OVERQUOTA:
 			begin
-				Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Insufficient Storage');
+				Log(LogLevelError, MSGTYPE_IMPORTANTERROR, ERR_INSUFFICIENT_STORAGE);
 				exit(FS_FILE_WRITEERROR);
 			end;
 		CLOUD_ERROR_NAME_TOO_LONG:
 			begin
-				Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Name too long');
+				Log(LogLevelError, MSGTYPE_IMPORTANTERROR, ERR_NAME_TOO_LONG);
 				exit(FS_FILE_WRITEERROR);
 			end;
 		else
 			begin //что-то неизвестное
 				if (ErrorPrefix <> EmptyWideStr) then
-					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, ErrorPrefix + self.ErrorCodeText(CloudResult.OperationResult) + ' Status: ' + CloudResult.OperationStatus.ToString());
+					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, ErrorPrefix + self.ErrorCodeText(CloudResult.OperationResult) + PREFIX_STATUS + CloudResult.OperationStatus.ToString());
 				exit(FS_FILE_WRITEERROR);
 			end;
 	end;
@@ -255,7 +255,7 @@ begin
 	self.HTTP.SetProgressNames(OldName, IncludeTrailingPathDelimiter(ToPath) + ExtractFileName(OldName));
 	if self.HTTP.PostForm(API_FILE_COPY, 'home=' + PathToUrl(OldName) + '&folder=' + PathToUrl(ToPath) + self.united_params + '&conflict', JSON) then
 	begin //Парсим ответ
-		result := CloudResultToFsResult(CMLJSONParser.getOperationResult(JSON), 'File copy error: ');
+		result := CloudResultToFsResult(CMLJSONParser.getOperationResult(JSON), PREFIX_ERR_FILE_COPY);
 	end;
 	if (NAME_TOKEN = CMLJSONParser.getBodyError(JSON)) and RefreshCSRFToken() then
 		result := self.copyFile(OldName, ToPath);
@@ -272,7 +272,7 @@ begin //Облако умеет скопировать файл, но не см�
 	SameName := ExtractFileName(OldName) = ExtractFileName(NewName);
 	if (SameDir) then //копирование в тот же каталог не поддерживается напрямую, а мудрить со временными каталогами я не хочу
 	begin
-		Log(LogLevelWarning, MSGTYPE_IMPORTANTERROR, 'Copying in same dir not supported by cloud');
+		Log(LogLevelWarning, MSGTYPE_IMPORTANTERROR, ERR_COPY_SAME_DIR);
 		exit(FS_FILE_NOTSUPPORTED);
 	end else begin
 		{TODO: issue #219}
@@ -310,7 +310,7 @@ begin
 		begin
 			self.FileCipher := TFileCipher.Create(CloudSettings.AccountSettings.crypt_files_password, CloudSettings.AccountSettings.CryptedGUID_files, CloudSettings.AccountSettings.encrypt_filenames);
 			if self.FileCipher.WrongPassword then
-				Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Wrong encryption password, encryption support disabled');
+				Log(LogLevelError, MSGTYPE_IMPORTANTERROR, ERR_WRONG_ENCRYPT_PASSWORD);
 
 			self.crypt_files := not(self.FileCipher.WrongPassword);
 			self.crypt_filenames := self.crypt_files and CloudSettings.AccountSettings.encrypt_filenames and not(self.FileCipher.WrongPassword);
@@ -321,7 +321,7 @@ begin
 	except
 		on E: Exception do
 		begin
-			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Cloud initialization error: ' + E.Message);
+			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, PREFIX_ERR_FILE_UPLOADING + E.Message);
 		end;
 	end;
 end;
@@ -335,7 +335,7 @@ begin
 		exit; //Проверка на вызов без инициализации
 	if self.public_account then
 		exit;
-	self.HTTP.SetProgressNames('Create directory', Path);
+	self.HTTP.SetProgressNames(CREATE_DIRECTORY, Path);
 	result := self.HTTP.PostForm(API_FOLDER_ADD, 'home=/' + PathToUrl(Path) + self.united_params + '&conflict', JSON) and CloudResultToBoolean(CMLJSONParser.getOperationResult(JSON));
 	if (not result and (NAME_TOKEN = CMLJSONParser.getBodyError(JSON))) and RefreshCSRFToken() then
 		result := self.createDir(Path);
@@ -350,8 +350,8 @@ begin
 		exit; //Проверка на вызов без инициализации
 	if self.public_account then
 		exit;
-	self.HTTP.SetProgressNames('Delete file', Path);
-	result := self.HTTP.PostForm(API_FILE_REMOVE, 'home=/' + PathToUrl(Path) + self.united_params + '&conflict', JSON) and CloudResultToBoolean(CMLJSONParser.getOperationResult(JSON), 'Delete file error: ');
+	self.HTTP.SetProgressNames(DELETE_FILE, Path);
+	result := self.HTTP.PostForm(API_FILE_REMOVE, 'home=/' + PathToUrl(Path) + self.united_params + '&conflict', JSON) and CloudResultToBoolean(CMLJSONParser.getOperationResult(JSON), PREFIX_ERR_DELETE_FILE);
 	if (not result and (NAME_TOKEN = CMLJSONParser.getBodyError(JSON))) and RefreshCSRFToken() then
 		result := self.deleteFile(Path);
 end;
@@ -374,43 +374,43 @@ class function TCloudMailRu.ErrorCodeText(ErrorCode: integer): WideString;
 begin
 	case ErrorCode of
 		CLOUD_ERROR_EXISTS:
-			exit('Объект с таким названием уже существует. Попробуйте другое название.');
+			exit(ERR_CLOUD_ERROR_EXISTS);
 		CLOUD_ERROR_REQUIRED:
-			exit('Название папки не может быть пустым.');
+			exit(ERR_CLOUD_ERROR_REQUIRED);
 		CLOUD_ERROR_INVALID:
-			exit('Неправильное название папки. В названии папок нельзя использовать символы «" * / : < > ?  \\ |».');
+			exit(ERR_CLOUD_ERROR_INVALID);
 		CLOUD_ERROR_READONLY:
-			exit('Невозможно создать. Доступ только для просмотра.');
+			exit(ERR_CLOUD_ERROR_READONLY);
 		CLOUD_ERROR_NAME_LENGTH_EXCEEDED:
-			exit('Превышена длина имени папки.');
+			exit(ERR_CLOUD_ERROR_NAME_LENGTH_EXCEEDED);
 		CLOUD_ERROR_OVERQUOTA:
-			exit('Невозможно скопировать, в вашем Облаке недостаточно места.');
+			exit(ERR_CLOUD_ERROR_OVERQUOTA);
 		CLOUD_ERROR_NOT_EXISTS:
-			exit('Копируемая ссылка не существует.');
+			exit(ERR_CLOUD_ERROR_NOT_EXISTS);
 		CLOUD_ERROR_OWN:
-			exit('Невозможно клонировать собственную ссылку.');
+			exit(ERR_CLOUD_ERROR_OWN);
 		CLOUD_ERROR_NAME_TOO_LONG:
-			exit('Превышена длина имени файла.');
+			exit(ERR_CLOUD_ERROR_NAME_TOO_LONG);
 		CLOUD_ERROR_VIRUS_SCAN_FAIL:
-			exit('Файл заражен вирусом');
+			exit(ERR_CLOUD_ERROR_VIRUS_SCAN_FAIL);
 		CLOUD_ERROR_OWNER:
-			exit('Нельзя использовать собственный email');
+			exit(ERR_CLOUD_ERROR_OWNER);
 		CLOUD_ERROR_FAHRENHEIT:
-			exit('Невозможно создать ссылку. Публикация контента заблокирована по требованию правообладателя или уполномоченного государственного ведомства.');
+			exit(ERR_CLOUD_ERROR_FAHRENHEIT);
 		CLOUD_ERROR_BAD_REQUEST:
-			exit('Ошибка запроса к серверу.');
+			exit(ERR_CLOUD_ERROR_BAD_REQUEST);
 		CLOUD_ERROR_TREES_CONFLICT:
-			exit('Нельзя сделать папку общей, если она содержит другие общие папки или находится в общей папке');
+			exit(ERR_CLOUD_ERROR_TREES_CONFLICT);
 		CLOUD_ERROR_UNPROCESSABLE_ENTRY:
-			exit('Нельзя открыть доступ к файлу');
+			exit(ERR_CLOUD_ERROR_UNPROCESSABLE_ENTRY);
 		CLOUD_ERROR_USER_LIMIT_EXCEEDED:
-			exit('Невозможно добавить пользователя. Вы можете иметь не более 200 пользователей в одной общей папке ');
+			exit(ERR_CLOUD_ERROR_USER_LIMIT_EXCEEDED);
 		CLOUD_ERROR_EXPORT_LIMIT_EXCEEDED:
-			exit('Невозможно добавить пользователя. Вы можете создать не более 50 общих папок');
+			exit(ERR_CLOUD_ERROR_EXPORT_LIMIT_EXCEEDED);
 		CLOUD_ERROR_NOT_ACCEPTABLE:
-			exit('Нельзя добавить этого пользователя');
+			exit(ERR_CLOUD_ERROR_NOT_ACCEPTABLE);
 		else
-			exit('Неизвестная ошибка (' + ErrorCode.ToString + ')');
+			exit(Format(ERR_CLOUD_ERROR_UNKNOWN, [ErrorCode]));
 	end;
 end;
 
@@ -446,11 +446,11 @@ begin
 	if self.public_account then
 		exit;
 	if (ShowProgress) then
-		self.HTTP.SetProgressNames('Shared links listing', '...');
+		self.HTTP.SetProgressNames(SHARED_LINKS_LISTING, UNKNOWN_ITEM);
 
 	result := self.HTTP.GetPage(API_FOLDER_SHARED_LINKS + '?' + self.united_params, JSON, ShowProgress);
 	if result then
-		result := CloudResultToBoolean(CMLJSONParser.getOperationResult(JSON), 'Shared links listing error: ') and CMLJSONParser.getDirListing(JSON, DirListing)
+		result := CloudResultToBoolean(CMLJSONParser.getOperationResult(JSON), PREFIX_ERR_SHARED_LINKS_LISTING) and CMLJSONParser.getDirListing(JSON, DirListing)
 	else
 	begin
 		if (NAME_TOKEN = CMLJSONParser.getBodyError(JSON)) and RefreshCSRFToken() then
@@ -470,11 +470,11 @@ begin
 	if self.public_account then
 		exit;
 	if (ShowProgress) then
-		self.HTTP.SetProgressNames('Incoming links listing', '...');
+		self.HTTP.SetProgressNames(INCOMING_LINKS_LISTING, UNKNOWN_ITEM);
 	result := self.HTTP.GetPage(API_FOLDER_SHARED_INCOMING + '?' + self.united_params, JSON, ShowProgress);
 
 	if result then
-		result := CloudResultToBoolean(CMLJSONParser.getOperationResult(JSON), 'Incoming requests listing error: ') and CMLJSONParser.getIncomingInviteListing(JSON, IncomingListing)
+		result := CloudResultToBoolean(CMLJSONParser.getOperationResult(JSON), PREFIX_ERR_INCOMING_REQUESTS_LISTING) and CMLJSONParser.getIncomingInviteListing(JSON, IncomingListing)
 	else
 	begin
 		if (NAME_TOKEN = CMLJSONParser.getBodyError(JSON)) and RefreshCSRFToken() then
@@ -517,11 +517,11 @@ begin
 	if self.public_account then
 		exit;
 	if (ShowProgress) then
-		self.HTTP.SetProgressNames('Trashbin listing', '...');
+		self.HTTP.SetProgressNames(TRASH_LISTING, UNKNOWN_ITEM);
 	result := self.HTTP.GetPage(API_TRASHBIN + '?' + self.united_params, JSON, ShowProgress);
 
 	if result then
-		result := CloudResultToBoolean(CMLJSONParser.getOperationResult(JSON), 'Trashbin listing error: ') and CMLJSONParser.getDirListing(JSON, DirListing)
+		result := CloudResultToBoolean(CMLJSONParser.getOperationResult(JSON), PREFIX_ERR_TRASH_LISTING) and CMLJSONParser.getDirListing(JSON, DirListing)
 	else
 	begin
 		if (NAME_TOKEN = CMLJSONParser.getBodyError(JSON)) and RefreshCSRFToken() then
@@ -543,20 +543,20 @@ begin
 		result := self.HTTP.GetPage(API_FOLDER + '&weblink=' + IncludeSlash(self.public_link) + PathToUrl(Path, false) + self.united_params, JSON, ShowProgress)
 	else
 	begin
-		self.HTTP.SetProgressNames('Directory listing:', Path);
+		self.HTTP.SetProgressNames(DIR_LISTING, Path);
 		result := self.HTTP.GetPage(API_FOLDER + '&home=' + PathToUrl(Path) + self.united_params, JSON, ShowProgress);
 	end;
 	if result then
 	begin
 		OperationResult := CMLJSONParser.getOperationResult(JSON);
-		result := CloudResultToBoolean(OperationResult, 'Directory listing error: ');
+		result := CloudResultToBoolean(OperationResult, PREFIX_ERR_DIR_LISTING);
 		if result then
 		begin
 			result := CMLJSONParser.getDirListing(JSON, DirListing);
 			if result and self.crypt_filenames then
 				self.FileCipher.DecryptDirListing(DirListing);
 		end else if OperationResult.OperationResult = CLOUD_ERROR_NOT_EXISTS then
-			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Path not exists: ' + Path);
+			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, PREFIX_ERR_PATH_NOT_EXISTS + Path);
 	end else begin
 		if (NAME_TOKEN = CMLJSONParser.getBodyError(JSON)) and RefreshCSRFToken() then
 			result := getDirListing(Path, DirListing, ShowProgress);
@@ -589,7 +589,7 @@ begin
 		exit; //Проверка на вызов без инициализации
 	if self.Shard = EmptyWideStr then
 	begin
-		Log(LogLevelDetail, MSGTYPE_DETAILS, 'Current download shard is undefined, trying to get one');
+		Log(LogLevelDetail, MSGTYPE_DETAILS, UNDEFINED_SHARD);
 		if not self.getShard(self.Shard) then
 			exit;
 	end;
@@ -620,8 +620,8 @@ begin
 
 		if result in [FS_FILE_NOTSUPPORTED] then //this code returned on shard connection error
 		begin
-			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Redirection limit reached when trying to download ' + URL);
-			if (self.ExternalRequestProc(RT_MsgYesNo, 'Redirection limit', 'Try with another shard?', '', 0)) and (self.getShard(self.Shard)) then
+			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, PREFIX_REDIRECTION_LIMIT + URL);
+			if (self.ExternalRequestProc(RT_MsgYesNo, REDIRECTION_LIMIT, TRY_ANOTHER_SHARD, EMPTY_STR, 0)) and (self.getShard(self.Shard)) then
 				result := self.getFileRegular(remotePath, localPath, resultHash, LogErrors);
 		end;
 
@@ -770,15 +770,15 @@ begin
 		exit; //Проверка на вызов без инициализации
 	if self.shard_override <> EmptyWideStr then
 	begin
-		Log(LogLevelError, MSGTYPE_DETAILS, 'Shard overriden via config!');
+		Log(LogLevelError, MSGTYPE_DETAILS, SHARD_OVERRIDEN);
 		Shard := self.shard_override;
 		exit(true);
 	end;
-	result := self.HTTP.PostForm(API_DISPATCHER, self.united_params, JSON) and CloudResultToBoolean(CMLJSONParser.getOperationResult(JSON), 'Shard receive error: ');
+	result := self.HTTP.PostForm(API_DISPATCHER, self.united_params, JSON) and CloudResultToBoolean(CMLJSONParser.getOperationResult(JSON), PREFIX_ERR_SHARD_RECEIVE);
 	if result then
 	begin
 		result := CMLJSONParser.getShard(JSON, Shard, ShardType) and (Shard <> EmptyWideStr);
-		Log(LogLevelDetail, MSGTYPE_DETAILS, 'Shard received: ' + Shard + ', type: ' + ShardType);
+		Log(LogLevelDetail, MSGTYPE_DETAILS, Format(PREFIX_SHARD_RECEIVED, [Shard, ShardType]));
 	end;
 end;
 
@@ -809,9 +809,9 @@ begin
 	self.HTTP.GetPage(API_CSRF, JSON, Progress);
 	result := CMLJSONParser.getBodyToken(JSON, AuthToken);
 	if result then
-		Log(LogLevelDetail, MSGTYPE_DETAILS, 'Token updated')
+		Log(LogLevelDetail, MSGTYPE_DETAILS, TOKEN_UPDATED)
 	else
-		Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Token update error!')
+		Log(LogLevelError, MSGTYPE_IMPORTANTERROR, ERR_TOKEN_UPDATE)
 end;
 
 function TCloudMailRu.initSharedConnectionParameters(): Boolean;
@@ -828,7 +828,7 @@ begin
 	begin
 		if not extractPublicShard(PageContent, self.public_shard) then
 		begin
-			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Can''t get public share download share');
+			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, ERR_GET_PUBLIC_SHARE);
 			exit(false);
 		end;
 	end;
@@ -846,7 +846,7 @@ begin
 	result := self.HTTP.GetPage(API_USER_SPACE + '?home=/' + self.united_params, JSON, Progress);
 	if result then
 	begin
-		result := CloudResultToBoolean(CMLJSONParser.getOperationResult(JSON), 'User space receiving error: ') and CMLJSONParser.getUserSpace(JSON, SpaceInfo);
+		result := CloudResultToBoolean(CMLJSONParser.getOperationResult(JSON), PREFIX_ERR_GET_USER_SPACE) and CMLJSONParser.getUserSpace(JSON, SpaceInfo);
 	end else begin
 		if (NAME_TOKEN = CMLJSONParser.getBodyError(JSON)) and RefreshCSRFToken() then
 			result := getUserSpace(SpaceInfo)
@@ -864,7 +864,7 @@ begin
 	result := false;
 	if not(Assigned(self)) then
 		exit; //Проверка на вызов без инициализации
-	HTTP.SetProgressNames('Login to account...', '');
+	HTTP.SetProgressNames(LOGIN_IN_PROGRESS, EMPTY_STR);
 	if self.public_account then
 		result := self.loginShared()
 	else
@@ -872,7 +872,7 @@ begin
 		result := self.loginRegular(method);
 		if (result and (EmptyWideStr <> self.upload_url_override)) then
 		begin
-			Log(LogLevelError, MSGTYPE_DETAILS, 'Upload url overriden via config!');
+			Log(LogLevelError, MSGTYPE_DETAILS, UPLOAD_URL_OVERRIDEN);
 			self.upload_url := self.upload_url_override;
 			exit(true);
 		end;
@@ -890,7 +890,7 @@ var
 begin
 	result := false;
 
-	Log(LogLevelDetail, MSGTYPE_DETAILS, 'Login to ' + self.user + '@' + self.domain);
+	Log(LogLevelDetail, MSGTYPE_DETAILS, Format(LOGIN_TO, [self.user, self.domain]));
 	case method of
 		CLOUD_AUTH_METHOD_TWO_STEP:
 			begin
@@ -898,29 +898,29 @@ begin
 				FormFields.AddOrSetValue('Domain', self.domain);
 				FormFields.AddOrSetValue('Login', self.user);
 				FormFields.AddOrSetValue('Password', self.password);
-				Log(LogLevelDebug, MSGTYPE_DETAILS, 'Requesting first step auth token for ' + self.user + '@' + self.domain);
+				Log(LogLevelDebug, MSGTYPE_DETAILS, Format(REQUESTING_FIRST_STEP_AUTH_TOKEN, [self.user, self.domain]));
 				result := self.HTTP.PostMultipart(LOGIN_URL, FormFields, PostAnswer);
 				if result then
 				begin
-					Log(LogLevelDebug, MSGTYPE_DETAILS, 'Parsing authorization data...');
+					Log(LogLevelDebug, MSGTYPE_DETAILS, PARSING_AUTH_DATA);
 					if extractTwostepJson(PostAnswer, TwoStepJson) and CMLJSONParser.getTwostepData(TwoStepJson, TwostepData) then
 					begin
 						if TwostepData.secstep_timeout = AUTH_APP_USED then
-							AuthMessage := 'Enter code from authentication app.' //mobile app used
+							AuthMessage := ASK_AUTH_APP_CODE //mobile app used
 						else if TwostepData.secstep_resend_fail = '1' then
-							AuthMessage := 'SMS timeout to ' + TwostepData.secstep_phone + ' (' + TwostepData.secstep_timeout.ToString + ' sec).'
+							AuthMessage := Format(SMS_TIMEOUT, [TwostepData.secstep_phone, TwostepData.secstep_timeout])
 						else
-							AuthMessage := 'Enter code sended to ' + TwostepData.secstep_phone + '.';
+							AuthMessage := Format(ASK_SENT_CODE, [TwostepData.secstep_phone]);
 
-						Log(LogLevelDebug, MSGTYPE_DETAILS, 'Awaiting for security key... ');
+						Log(LogLevelDebug, MSGTYPE_DETAILS, AWAIT_SECURITY_KEY);
 
-						if (true = TAskPasswordForm.AskText('Enter auth key', AuthMessage, SecurityKey)) then
+						if (true = TAskPasswordForm.AskText(ASK_AUTH_KEY, AuthMessage, SecurityKey)) then
 						begin
 							FormFields.Clear;
-							FormFields.AddOrSetValue('Login', self.user + '@' + self.domain);
+							FormFields.AddOrSetValue('Login', self.user + '@' + self.domain); //todo: make a property
 							FormFields.AddOrSetValue('csrf', TwostepData.csrf);
 							FormFields.AddOrSetValue('AuthCode', SecurityKey);
-							Log(LogLevelDebug, MSGTYPE_DETAILS, 'Performing second step auth...');
+							Log(LogLevelDebug, MSGTYPE_DETAILS, SECOND_STEP_AUTH);
 							result := self.HTTP.PostMultipart(SECSTEP_URL, FormFields, PostAnswer);
 							FormFields.free;
 							if result then
@@ -928,34 +928,34 @@ begin
 								result := self.initConnectionParameters();
 								if (result) then
 								begin
-									Log(LogLevelDetail, MSGTYPE_DETAILS, 'Connected to ' + self.user + '@' + self.domain);
+									Log(LogLevelDetail, MSGTYPE_DETAILS, Format(CONNECTED_TO, [self.user, self.domain]));
 									self.logUserSpaceInfo;
 								end else begin
-									Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'error: twostep auth failed');
+									Log(LogLevelError, MSGTYPE_IMPORTANTERROR, ERR_TWOSTEP_AUTH);
 								end;
 							end;
 						end else begin
-							Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'error: security key not provided');
+							Log(LogLevelError, MSGTYPE_IMPORTANTERROR, ERR_SECURITY_KEY);
 							exit(false);
 						end;
 
 					end else begin
-						Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'error: parsing authorization data');
+						Log(LogLevelError, MSGTYPE_IMPORTANTERROR, ERR_PARSE_AUTH_DATA);
 						exit(false);
 					end;
 
 				end else begin
-					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'error: getting first step auth token for ' + self.user + '@' + self.domain);
+					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, Format(ERR_GET_AUTH_TOKEN, [self.user, self.domain]));
 					FormFields.free;
 				end;
 			end;
 		CLOUD_AUTH_METHOD_WEB: //todo: вынести в отдельный метод
 			begin
-				Log(LogLevelDebug, MSGTYPE_DETAILS, 'Requesting auth token for ' + self.user + '@' + self.domain);
+				Log(LogLevelDebug, MSGTYPE_DETAILS, Format(REQUESTING_AUTH_TOKEN, [self.user, self.domain]));
 				result := self.HTTP.PostForm(LOGIN_URL, 'page=https://cloud.mail.ru/?new_auth_form=1&Domain=' + self.domain + '&Login=' + self.user + '&Password=' + UrlEncode(self.password) + '&FailPage=', PostAnswer);
 				if (result) then
 				begin
-					Log(LogLevelDebug, MSGTYPE_DETAILS, 'Parsing token data...');
+					Log(LogLevelDebug, MSGTYPE_DETAILS, PARSING_TOKEN_DATA);
 					result := self.initConnectionParameters();
 					if (result) then
 					begin
@@ -1580,7 +1580,7 @@ begin
 
 end;
 
-function TCloudMailRu.cloudHash(Stream: TStream; Path: WideString = 'Calculating cloud hash'): WideString;
+function TCloudMailRu.cloudHash(Stream: TStream; Path: WideString = CALCULATING_HASH): WideString;
 const
 	bufSize = 8192;
 var
