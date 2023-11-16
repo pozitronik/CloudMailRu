@@ -946,7 +946,7 @@ begin
 					end;
 
 				end else begin
-					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, Format(ERR_GET_AUTH_TOKEN, [self.email]));
+					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, Format(ERR_GET_FIRST_STEP_AUTH_TOKEN, [self.email]));
 					FormFields.free;
 				end;
 			end;
@@ -960,28 +960,28 @@ begin
 					result := self.initConnectionParameters();
 					if (result) then
 					begin
-						Log(LogLevelDetail, MSGTYPE_DETAILS, 'Connected to ' + self.email);
+						Log(LogLevelDetail, MSGTYPE_DETAILS, Format(CONNECTED_TO, [self.email]));
 						self.logUserSpaceInfo;
 					end else begin
-						Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'error: parsing auth token for ' + self.email);
+						Log(LogLevelError, MSGTYPE_IMPORTANTERROR, Format(ERR_PARSING_AUTH_TOKEN, [self.email]));
 						exit(false);
 					end;
 				end
 				else
-					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'error: getting auth token for ' + self.email);
+					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, Format(ERR_GET_AUTH_TOKEN, [self.email]));
 			end;
 		CLOUD_AUTH_METHOD_OAUTH:
 			begin
 				result := self.getOAuthToken(self.OAuthToken);
 				if not result then
-					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'OAuth error: ' + self.OAuthToken.error + '(' + self.OAuthToken.error_description + ')');
+					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, Format(PREFIX_ERR_OAUTH, [self.OAuthToken.error, self.OAuthToken.error_description]));
 			end;
 	end;
 end;
 
 function TCloudMailRu.loginShared(method: integer): Boolean;
 begin
-	Log(LogLevelDetail, MSGTYPE_DETAILS, 'Open ' + self.OptionsSet.AccountSettings.public_url);
+	Log(LogLevelDetail, MSGTYPE_DETAILS, Format(URL_OPEN, [self.OptionsSet.AccountSettings.public_url]));
 	result := self.initSharedConnectionParameters();
 	//exit(true);
 end;
@@ -998,12 +998,12 @@ begin
 	if self.getUserSpace(US) then
 	begin
 		if (US.overquota) then
-			QuotaInfo := ' Warning: space quota exhausted!'
+			QuotaInfo := WARN_QUOTA_EXAUSTED
 		else
 			QuotaInfo := EmptyWideStr;
-		Log(LogLevelFileOperation, MSGTYPE_DETAILS, 'Total space: ' + FormatSize(US.total) + ', used: ' + FormatSize(US.used) + ', free: ' + FormatSize(US.total - US.used) + '.' + QuotaInfo);
+		Log(LogLevelFileOperation, MSGTYPE_DETAILS, Format(USER_SPACE_INFO, [FormatSize(US.total), FormatSize(US.used), FormatSize(US.total - US.used), QuotaInfo]));
 	end else begin
-		Log(LogLevelDebug, MSGTYPE_IMPORTANTERROR, 'error: getting user space information for ' + self.email);
+		Log(LogLevelDebug, MSGTYPE_IMPORTANTERROR, Format(ERR_GET_USER_SPACE, [self.email]));
 	end;
 end;
 

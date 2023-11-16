@@ -32,7 +32,10 @@ const
 	ERR_TWOSTEP_AUTH = 'error: twostep auth failed';
 	ERR_SECURITY_KEY = 'error: security key not provided';
 	ERR_PARSE_AUTH_DATA = 'error: parsing authorization data';
-	ERR_GET_AUTH_TOKEN = 'error: getting first step auth token for %s';
+	ERR_GET_FIRST_STEP_AUTH_TOKEN = 'error: getting first step auth token for %s';
+	ERR_PARSING_AUTH_TOKEN = 'error: parsing auth token for %s';
+	ERR_GET_AUTH_TOKEN = 'error: getting auth token for %s';
+  ERR_GET_USER_SPACE = 'error: getting user space information for %s';
 
 	PREFIX_ERR_CLOUD_INIT = 'Cloud initialization error: ';
 	PREFIX_ERR_FILE_UPLOADING = 'File uploading error: ';
@@ -47,6 +50,7 @@ const
 	PREFIX_ERR_SHARD_RECEIVE = 'Shard receive error: ';
 	PREFIX_ERR_REMOVE_TEMP_PUBLIC_LINK = 'Can''t remove temporary public link on ';
 	PREFIX_ERR_GET_USER_SPACE = 'User space receiving error: ';
+	PREFIX_ERR_OAUTH = 'OAuth error: %s (%s).';
 
 	PREFIX_STATUS = 'Status: ';
 	PREFIX_REDIRECTION_LIMIT = 'Redirection limit reached when trying to download ';
@@ -80,7 +84,11 @@ const
 	ASK_AUTH_KEY = 'Enter auth key';
 	CONNECTED_TO = 'Connected to %s';
 	REQUESTING_AUTH_TOKEN = 'Requesting auth token for %s';
-  PARSING_TOKEN_DATA = 'Parsing token data...';
+	PARSING_TOKEN_DATA = 'Parsing token data...';
+	URL_OPEN = 'Open %s';
+  USER_SPACE_INFO =  'Total space: %s, used: %s, free: %s.%s';
+
+  WARN_QUOTA_EXAUSTED = ' Warning: space quota exhausted!';
 
 	UNKNOWN_ITEM = '...';
 	EMPTY_STR = '';
