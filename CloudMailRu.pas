@@ -72,6 +72,7 @@ type
 		Property user: WideString read OptionsSet.AccountSettings.user;
 		Property domain: WideString read OptionsSet.AccountSettings.domain;
 		Property password: WideString read OptionsSet.AccountSettings.password;
+		Property email: WideString read OptionsSet.AccountSettings.email;
 
 		Property HTTP: TCloudMailRuHTTP read getHTTPConnection;
 
@@ -890,7 +891,7 @@ var
 begin
 	result := false;
 
-	Log(LogLevelDetail, MSGTYPE_DETAILS, Format(LOGIN_TO, [self.user, self.domain]));
+	Log(LogLevelDetail, MSGTYPE_DETAILS, Format(LOGIN_TO, [self.email]));
 	case method of
 		CLOUD_AUTH_METHOD_TWO_STEP:
 			begin
@@ -898,7 +899,7 @@ begin
 				FormFields.AddOrSetValue('Domain', self.domain);
 				FormFields.AddOrSetValue('Login', self.user);
 				FormFields.AddOrSetValue('Password', self.password);
-				Log(LogLevelDebug, MSGTYPE_DETAILS, Format(REQUESTING_FIRST_STEP_AUTH_TOKEN, [self.user, self.domain]));
+				Log(LogLevelDebug, MSGTYPE_DETAILS, Format(REQUESTING_FIRST_STEP_AUTH_TOKEN, [self.email]));
 				result := self.HTTP.PostMultipart(LOGIN_URL, FormFields, PostAnswer);
 				if result then
 				begin
@@ -917,7 +918,7 @@ begin
 						if (true = TAskPasswordForm.AskText(ASK_AUTH_KEY, AuthMessage, SecurityKey)) then
 						begin
 							FormFields.Clear;
-							FormFields.AddOrSetValue('Login', self.user + '@' + self.domain); //todo: make a property
+							FormFields.AddOrSetValue('Login', self.email);
 							FormFields.AddOrSetValue('csrf', TwostepData.csrf);
 							FormFields.AddOrSetValue('AuthCode', SecurityKey);
 							Log(LogLevelDebug, MSGTYPE_DETAILS, SECOND_STEP_AUTH);
@@ -928,7 +929,7 @@ begin
 								result := self.initConnectionParameters();
 								if (result) then
 								begin
-									Log(LogLevelDetail, MSGTYPE_DETAILS, Format(CONNECTED_TO, [self.user, self.domain]));
+									Log(LogLevelDetail, MSGTYPE_DETAILS, Format(CONNECTED_TO, [self.email]));
 									self.logUserSpaceInfo;
 								end else begin
 									Log(LogLevelError, MSGTYPE_IMPORTANTERROR, ERR_TWOSTEP_AUTH);
@@ -945,13 +946,13 @@ begin
 					end;
 
 				end else begin
-					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, Format(ERR_GET_AUTH_TOKEN, [self.user, self.domain]));
+					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, Format(ERR_GET_AUTH_TOKEN, [self.email]));
 					FormFields.free;
 				end;
 			end;
 		CLOUD_AUTH_METHOD_WEB: //todo: вынести в отдельный метод
 			begin
-				Log(LogLevelDebug, MSGTYPE_DETAILS, Format(REQUESTING_AUTH_TOKEN, [self.user, self.domain]));
+				Log(LogLevelDebug, MSGTYPE_DETAILS, Format(REQUESTING_AUTH_TOKEN, [self.email]));
 				result := self.HTTP.PostForm(LOGIN_URL, 'page=https://cloud.mail.ru/?new_auth_form=1&Domain=' + self.domain + '&Login=' + self.user + '&Password=' + UrlEncode(self.password) + '&FailPage=', PostAnswer);
 				if (result) then
 				begin
@@ -959,15 +960,15 @@ begin
 					result := self.initConnectionParameters();
 					if (result) then
 					begin
-						Log(LogLevelDetail, MSGTYPE_DETAILS, 'Connected to ' + self.user + '@' + self.domain);
+						Log(LogLevelDetail, MSGTYPE_DETAILS, 'Connected to ' + self.email);
 						self.logUserSpaceInfo;
 					end else begin
-						Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'error: parsing auth token for ' + self.user + '@' + self.domain);
+						Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'error: parsing auth token for ' + self.email);
 						exit(false);
 					end;
 				end
 				else
-					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'error: getting auth token for ' + self.user + '@' + self.domain);
+					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'error: getting auth token for ' + self.email);
 			end;
 		CLOUD_AUTH_METHOD_OAUTH:
 			begin
@@ -1002,7 +1003,7 @@ begin
 			QuotaInfo := EmptyWideStr;
 		Log(LogLevelFileOperation, MSGTYPE_DETAILS, 'Total space: ' + FormatSize(US.total) + ', used: ' + FormatSize(US.used) + ', free: ' + FormatSize(US.total - US.used) + '.' + QuotaInfo);
 	end else begin
-		Log(LogLevelDebug, MSGTYPE_IMPORTANTERROR, 'error: getting user space information for ' + self.user + '@' + self.domain);
+		Log(LogLevelDebug, MSGTYPE_IMPORTANTERROR, 'error: getting user space information for ' + self.email);
 	end;
 end;
 

@@ -32,7 +32,7 @@ const
 	ERR_TWOSTEP_AUTH = 'error: twostep auth failed';
 	ERR_SECURITY_KEY = 'error: security key not provided';
 	ERR_PARSE_AUTH_DATA = 'error: parsing authorization data';
-	ERR_GET_AUTH_TOKEN = 'error: getting first step auth token for %s@%s';
+	ERR_GET_AUTH_TOKEN = 'error: getting first step auth token for %s';
 
 	PREFIX_ERR_CLOUD_INIT = 'Cloud initialization error: ';
 	PREFIX_ERR_FILE_UPLOADING = 'File uploading error: ';
@@ -66,11 +66,11 @@ const
 	UPLOAD_URL_OVERRIDEN = 'Upload url overriden via config!';
 	TOKEN_UPDATED = 'Token updated';
 	LOGIN_IN_PROGRESS = 'Login to account...';
-	LOGIN_TO = 'Login to %s@%s';
+	LOGIN_TO = 'Login to %s';
 	//	DOMAIN = 'Domain';
 	//	LOGIN_STR = 'Login';
 	//	PASSWORD = 'Password';
-	REQUESTING_FIRST_STEP_AUTH_TOKEN = 'Requesting first step auth token for %s@%s';
+	REQUESTING_FIRST_STEP_AUTH_TOKEN = 'Requesting first step auth token for %s';
 	SECOND_STEP_AUTH = 'Performing second step auth...';
 	PARSING_AUTH_DATA = 'Parsing authorization data...';
 	ASK_AUTH_APP_CODE = 'Enter code from authentication app.';
@@ -78,8 +78,8 @@ const
 	ASK_SENT_CODE = 'Enter code sent to %s.';
 	AWAIT_SECURITY_KEY = 'Awaiting for security key...';
 	ASK_AUTH_KEY = 'Enter auth key';
-	CONNECTED_TO = 'Connected to %s@%s';
-	REQUESTING_AUTH_TOKEN = 'Requesting auth token for ';
+	CONNECTED_TO = 'Connected to %s';
+	REQUESTING_AUTH_TOKEN = 'Requesting auth token for %s';
   PARSING_TOKEN_DATA = 'Parsing token data...';
 
 	UNKNOWN_ITEM = '...';
