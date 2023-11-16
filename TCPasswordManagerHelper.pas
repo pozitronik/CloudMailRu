@@ -67,11 +67,11 @@ begin
 	end;
 	if FS_FILE_READERROR = result then
 	begin
-		LogHandleProc(LogLevelError, msgtype_importanterror, PWideChar('CryptProc returns error: Password not found in password store'));
+		LogHandleProc(LogLevelError, msgtype_importanterror, PWideChar('CryptProc returns an error: No password found in the password store'));
 	end;
 	if FS_FILE_NOTSUPPORTED = result then //master password cancelled
 	begin
-		LogHandleProc(LogLevelError, msgtype_importanterror, PWideChar('CryptProc returns error: Decrypt failed'));
+		LogHandleProc(LogLevelError, msgtype_importanterror, PWideChar('CryptProc returns an error: Decrypt failed'));
 	end;
 	FreeMemory(buf);
 end;
@@ -82,15 +82,15 @@ begin
 	case result of
 		FS_FILE_OK:
 			begin //TC скушал пароль, запомним в инишник галочку
-				LogHandleProc(LogLevelDebug, msgtype_details, PWideChar(Key + ': password saved in TC password manager'));
+				LogHandleProc(LogLevelDebug, msgtype_details, PWideChar(Key + ': the password saved in the TC password manager'));
 			end;
 		FS_FILE_NOTSUPPORTED: //Сохранение не получилось
 			begin
-				LogHandleProc(LogLevelError, msgtype_importanterror, PWideChar(Key + ': CryptProc returns error: Encrypt failed'));
+				LogHandleProc(LogLevelError, msgtype_importanterror, PWideChar(Key + ': CryptProc returns an error: Encrypt failed'));
 			end;
 		FS_FILE_WRITEERROR: //Сохранение опять не получилось
 			begin
-				LogHandleProc(LogLevelError, msgtype_importanterror, PWideChar(Key + ': password NOT saved: Could not write password to password store'));
+				LogHandleProc(LogLevelError, msgtype_importanterror, PWideChar(Key + ': password NOT saved: Can not write the password to the password store'));
 			end;
 		FS_FILE_NOTFOUND: //Не указан мастер-пароль
 			begin
@@ -123,7 +123,7 @@ begin
 			begin
 				if FS_FILE_OK = self.SetPassword(AccountSettings.name, AccountSettings.Password) then
 				begin //TC скушал пароль, запомним в инишник галочку
-					LogHandleProc(LogLevelDebug, msgtype_details, PWideChar('Password saved in TC password manager'));
+					LogHandleProc(LogLevelDebug, msgtype_details, PWideChar('Password saved in the TC password manager'));
 					TmpString := AccountSettings.Password;
 					AccountSettings.Password := EmptyWideStr;
 					SetAccountSettingsToIniFile(AccountSettings);
