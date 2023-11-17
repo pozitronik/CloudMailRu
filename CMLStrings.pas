@@ -113,6 +113,14 @@ const
 	USER_SPACE_INFO = 'Total space: %s, used: %s, free: %s.%s';
 	WARN_QUOTA_EXHAUSTED = ' Warning: space quota exhausted!';
 
+	METHOD_STR_RECEIVE = 'получении данных с';
+	METHOD_STR_POST = 'отправке данных на';
+	METHOD_STR_OPTIONS = 'запросе параметров с';
+	CSRF_UPDATE_REQUIRED = 'Требуется обновить CSRF-токен при %s %s';
+	ERR_HTTP_GENERAL = '%s ошибка с сообщением: %s при %s %s, ответ сервера: %s';
+	ERR_SOCKET_GENERAL = '%s ошибка сети: %s при %s %s';
+	ERR_OTHER_GENERAL = '%s ошибка с сообщением: %s при %s %s';
+
 implementation
 
 end.

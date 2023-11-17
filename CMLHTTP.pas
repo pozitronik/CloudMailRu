@@ -2,7 +2,7 @@
 
 interface
 
-uses System.SysUtils, System.Classes, System.Generics.Collections, ChunkedFileStream, SplitFile, Settings, PLUGIN_Types, CMLTypes, CMLParsers, CMLJSON, IdStack, IdCookieManager, IdIOHandler, IdIOHandlerSocket, IdIOHandlerStack, IdSSL, IdSSLOpenSSL, IdBaseComponent, IdComponent, IdTCPConnection, IdTCPClient, IdSocks, IdHTTP, IdAuthentication, IdIOHandlerStream, IdInterceptThrottler, IdCookie, IdMultipartFormData;
+uses System.SysUtils, System.Classes, System.Generics.Collections, ChunkedFileStream, SplitFile, Settings, PLUGIN_Types, CMLTypes, CMLStrings, CMLParsers, CMLJSON, IdStack, IdCookieManager, IdIOHandler, IdIOHandlerSocket, IdIOHandlerStack, IdSSL, IdSSLOpenSSL, IdBaseComponent, IdComponent, IdTCPConnection, IdTCPClient, IdSocks, IdHTTP, IdAuthentication, IdIOHandlerStream, IdInterceptThrottler, IdCookie, IdMultipartFormData;
 
 type
 
@@ -216,7 +216,8 @@ begin
 				HTTP.HandleRedirects := true;
 				exit(true)
 			end else begin
-				self.ExceptionHandler(E, URL, HTTP_METHOD_GET); HTTP.Request
+				self.ExceptionHandler(E, URL, HTTP_METHOD_GET);
+				HTTP.Request
 			end;
 			HTTP.HandleRedirects := true;
 		end;
@@ -441,23 +442,23 @@ begin
 	case HTTPMethod of
 		HTTP_METHOD_GET:
 			begin
-				method_string := 'получении данных с адреса ';
+				method_string := METHOD_STR_RECEIVE;
 				result := FS_FILE_READERROR; //для GetFile, GetForm не интересует код ошибки
 			end;
 		HTTP_METHOD_POST, HTTP_METHOD_PUT:
 			begin
-				method_string := 'отправке данных на адрес ';
+				method_string := METHOD_STR_POST;
 				result := CLOUD_OPERATION_FAILED; //Для всех Post-запросов
 			end;
 		HTTP_METHOD_OPTIONS:
 			begin
-				method_string := 'запросе параметров ';
+				method_string := METHOD_STR_OPTIONS;
 				result := CLOUD_OPERATION_FAILED; //Для всех Post-запросов
 			end;
 	end;
 	if (E is EIdHTTPProtocolException and (NAME_TOKEN = CMLJSONParser.getBodyError((E as EIdHTTPProtocolException).ErrorMessage))) then
 	begin
-		Log(LogLevelDetail, MSGTYPE_DETAILS, 'Требуется обновить CSRF-токен при ' + method_string + URL);
+		Log(LogLevelDetail, MSGTYPE_DETAILS, CSRF_UPDATE_REQUIRED, [method_string, URL]);
 		exit(CLOUD_ERROR_TOKEN_OUTDATED);
 	end;
 
@@ -467,12 +468,11 @@ begin
 	end else if LogErrors then //разбирать ошибку дальше имеет смысл только для логирования - что вернуть уже понятно
 	begin
 		if E is EIdHTTPProtocolException then
-			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при ' + method_string + URL + ', ответ сервера: ' + (E as EIdHTTPProtocolException).ErrorMessage)
+			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, ERR_HTTP_GENERAL, [E.ClassName, E.Message, method_string, URL, (E as EIdHTTPProtocolException).ErrorMessage])
 		else if E is EIdSocketerror then
-			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка сети: ' + E.Message + ' при ' + method_string + URL)
+			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, ERR_SOCKET_GENERAL, [E.ClassName, E.Message, method_string, URL])
 		else
-			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, E.ClassName + ' ошибка с сообщением: ' + E.Message + ' при ' + method_string + URL);
-
+			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, ERR_OTHER_GENERAL, [E.ClassName, E.Message, method_string, URL]);;
 	end;
 end;
 
