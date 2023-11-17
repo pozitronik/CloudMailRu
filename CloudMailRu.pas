@@ -1285,10 +1285,8 @@ begin
 		ChunkRemotePath := ExtractFilePath(remotePath) + SplitFileInfo.GetChunks[SplittedPartIndex].name;
 		self.HTTP.SetProgressNames(localPath, ChunkRemotePath);
 		Log(LogLevelDebug, MSGTYPE_DETAILS, Format(PARTIAL_UPLOAD_INFO, [localPath, (SplittedPartIndex + 1), SplitFileInfo.ChunksCount, ChunkRemotePath]));
-
 		ChunkStream := TChunkedFileStream.Create(GetUNCFilePath(localPath), fmOpenRead or fmShareDenyWrite, SplitFileInfo.GetChunks[SplittedPartIndex].start, SplitFileInfo.GetChunks[SplittedPartIndex].size);
 		result := self.putFileStream(ExtractFileName(ChunkRemotePath), ChunkRemotePath, ChunkStream, ConflictMode);
-
 		ChunkStream.Destroy;
 
 		case result of
@@ -1343,15 +1341,12 @@ begin
 									ID_IGNORE:
 										begin {do nothing && continue}
 										end;
-
 								end;
 							end;
-
 						OperationErrorModeIgnore:
 							begin
 								Log(LogLevelError, MSGTYPE_IMPORTANTERROR, Format(ERR_PARTIAL_UPLOAD_IGNORE, [result]));
 							end;
-
 						OperationErrorModeAbort:
 							begin
 								Log(LogLevelError, MSGTYPE_IMPORTANTERROR, Format(ERR_PARTIAL_UPLOAD_ABORT, [result]));
@@ -1372,7 +1367,6 @@ begin
 									result := CLOUD_OPERATION_FAILED;
 									Break;
 								end;
-
 							end
 						else {unknown option value}
 							begin
@@ -1380,7 +1374,6 @@ begin
 								Break;
 							end;
 					end
-
 				end;
 		end;
 		Inc(SplittedPartIndex); //all ok, continue with next chunk
