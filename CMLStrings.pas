@@ -140,6 +140,25 @@ const
 	ERR_INI_GENERAL = 'INI file error';
 	ERR_INVALID_SECTION_NAME = 'Invalid section name %s';
 	ERR_INVALID_IDENTIFIER_NAME = 'Invalid identifier name %s';
+	PREFIX_SCAN = 'Scanning %s';
+	DONE = 'Done';
+	ERR_PUBLISH_FILE = 'File publishing error';
+	ERR_UNPUBLISH_FILE = 'File unpublishing error';
+	ERR_PUBLISH_MSG = 'Error while publishing file %s, see the main log';
+	ERR_UNPUBLISH_MSG = 'Error while unpublishing file %s, see the main log';
+	PREFIX_ERR_INVITES_LISTING = 'Invite listing error';
+	ERR_LIST_INVITES_MSG = 'Error while retrieving file %s invites list, see the main log';
+	ERR_LINE_HASH = 'Line %d[%s]: %s';
+	PREFIX_ERR_INVITE = 'Folder invite error';
+	ERR_INVITE_MSG = 'Error while inviting %s to %s folder, see the main log';
+	PREFIX_ACCESS_CHANGE = 'Change access to %s';
+	PREFIX_ERR_SHARE_FOLDER = 'Folder share error';
+	PREFIX_ERR_UNSHARE_FOLDER = 'Folder unshare error';
+
+	ERR_SHARE_FOLDER_MSG = 'Error while share access to %s from %s folder, see the main log';
+	ERR_UNSHARE_FOLDER_MSG = 'Error while remove access to %s to %s folder, see the main log';
+	DESCRIPTION_FROM = 'Description from %s';
+	WAIT = 'Wait for it...';
 
 implementation
 

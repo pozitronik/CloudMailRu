@@ -2,7 +2,7 @@
 
 interface
 
-uses Plugin_types, Descriptions, CMLTypes, Settings, Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, CloudMailRu, MRC_Helper, Vcl.Grids, Vcl.ValEdit, Vcl.Menus, Vcl.ComCtrls, Vcl.ToolWin, System.ImageList, Vcl.ImgList, Clipbrd, HashInfo;
+uses Plugin_types, Descriptions, CMLTypes, CMLStrings, Settings, Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, CloudMailRu, MRC_Helper, Vcl.Grids, Vcl.ValEdit, Vcl.Menus, Vcl.ComCtrls, Vcl.ToolWin, System.ImageList, Vcl.ImgList, Clipbrd, HashInfo;
 
 const
 	WM_AFTER_SHOW = WM_USER + 300; //custom message
@@ -186,7 +186,7 @@ begin
 		end;
 		TempPublicCloud.Free;
 	end;
-	LinksLogProc('Done');
+	LinksLogProc(DONE);
 end;
 
 procedure TPropertyForm.UpdateHashesListing;
@@ -200,7 +200,7 @@ begin
 		HashesMemo.lines.Add(GenerateHashCommand(Props));
 	end;
 
-	LinksLogProc('Done');
+	LinksLogProc(DONE);
 end;
 
 function TPropertyForm.FillRecursiveDownloadListing(const Path: WideString; Cloud: TCloudMailRu = nil): Boolean;
@@ -214,7 +214,7 @@ begin
 	if not(Assigned(Cloud)) then
 		Cloud := self.Cloud;
 
-	if not LinksLogProc('Scanning ' + IncludeTrailingPathDelimiter(Path)) then
+	if not LinksLogProc(Format(PREFIX_SCAN, [IncludeTrailingPathDelimiter(Path)])) then
 		exit(false);
 	Cloud.getDirListing(Path, CurrentDirListing);
 	ProcessMessages;
@@ -249,7 +249,7 @@ begin
 
 	if not(Assigned(Cloud)) then
 		Cloud := self.Cloud;
-	if not HashesLogProc('Scanning ' + IncludeTrailingPathDelimiter(Path)) then
+	if not HashesLogProc(Format(PREFIX_SCAN, [IncludeTrailingPathDelimiter(Path)])) then
 		exit(false);
 	Cloud.getDirListing(Path, CurrentDirListing);
 	ProcessMessages;
@@ -287,7 +287,7 @@ begin
 			DownloadLinksTS.TabVisible := true;
 			//UpdateDownloadListing;
 		end else begin
-			MessageBoxW(self.Handle, PWideChar('Error while publishing file ' + Props.home + ', see main log'), 'File publishing error', MB_OK + MB_ICONERROR);
+			MessageBoxW(self.Handle, PWideChar(Format(ERR_PUBLISH_MSG, [Props.home])), ERR_PUBLISH_FILE, MB_OK + MB_ICONERROR);
 		end;
 	end else begin
 		if Cloud.publishFile(Props.home, Props.WebLink, CLOUD_UNPUBLISH) then
@@ -300,7 +300,7 @@ begin
 				ExtPropertiesPC.Visible := false;
 
 		end else begin
-			MessageBoxW(self.Handle, PWideChar('Error while unpublishing file ' + Props.home + ', see main log'), 'File unpublishing error', MB_OK + MB_ICONERROR);
+			MessageBoxW(self.Handle, PWideChar(Format(ERR_PUBLISH_MSG, [Props.home])), ERR_UNPUBLISH_FILE, MB_OK + MB_ICONERROR);
 		end;
 	end;
 end;
@@ -331,7 +331,7 @@ begin
 		for i := 0 to InvitesCount do
 			InvitesLE.InsertRow(self.InvitesListing[i].email, TCloudMailRu.CloudAccessToString(self.InvitesListing[i].access), true);
 	end else begin
-		MessageBoxW(self.Handle, PWideChar('Error while retrieving ' + Props.home + ' folder invites list, see main log'), 'Folder invite listing error', MB_OK + MB_ICONERROR);
+		MessageBoxW(self.Handle, PWideChar(Format(ERR_LIST_INVITES_MSG, [Props.home])), PREFIX_ERR_INVITES_LISTING, MB_OK + MB_ICONERROR);
 	end;
 end;
 
@@ -382,7 +382,7 @@ begin
 			else //клонируем рядом
 				Cloud.addFileByIdentity(CurrentCommand.CloudFileIdentity, ExtractFilePath(self.RemoteName) + CurrentCommand.name, CLOUD_CONFLICT_RENAME);
 		end else begin
-			HashesLogProc('Line ' + ItemIndex.ToString + '[' + CommandList.Strings[ItemIndex] + ']: ' + CurrentCommand.errorString);
+			HashesLogProc(Format(ERR_LINE_HASH, [ItemIndex, CommandList.Strings[ItemIndex], CurrentCommand.errorString]));
 		end;
 
 	end;
@@ -455,7 +455,7 @@ begin
 				AppliedName := ListingItem.name;
 		end;
 	end;
-	result := 'hash "' + ListingItem.hash + ':' + ListingItem.size.ToString + ':' + AppliedName + '"';
+	result := Format('hash "%s:%d:%s"', [ListingItem.hash, ListingItem.size, AppliedName]);
 end;
 
 function TPropertyForm.HashesLogProc(LogText: WideString): Boolean;
@@ -480,7 +480,7 @@ begin
 	begin
 		RefreshInvites;
 	end else begin
-		MessageBoxW(self.Handle, PWideChar('Error while inviting ' + InviteEmailEdit.Text + ' to ' + Props.home + ' folder, see main log'), 'Folder invite error', MB_OK + MB_ICONERROR);
+		MessageBoxW(self.Handle, PWideChar(Format(ERR_INVITE_MSG, [InviteEmailEdit.Text, Props.home])), PREFIX_ERR_INVITE, MB_OK + MB_ICONERROR);
 	end;
 end;
 
@@ -502,7 +502,7 @@ begin
 	access := InvitesLE.Values[email];
 	access := TCloudMailRu.CloudAccessToString(access, true);
 
-	ItemChangeAccess.Caption := 'Change access to ' + access;
+	ItemChangeAccess.Caption := Format(PREFIX_ACCESS_CHANGE, [access]);
 end;
 
 procedure TPropertyForm.ItemChangeAccessClick(Sender: TObject);
@@ -515,7 +515,7 @@ begin
 	begin
 		RefreshInvites;
 	end else begin
-		MessageBoxW(self.Handle, PWideChar('Error while removing access to ' + InviteEmailEdit.Text + ' from ' + Props.home + ' folder, see main log'), 'Folder unshare error', MB_OK + MB_ICONERROR);
+		MessageBoxW(self.Handle, PWideChar(Format(ERR_SHARE_FOLDER_MSG, [InviteEmailEdit.Text, Props.home])), PREFIX_ERR_SHARE_FOLDER, MB_OK + MB_ICONERROR);
 	end;
 end;
 
@@ -525,7 +525,7 @@ begin
 	begin
 		RefreshInvites;
 	end else begin
-		MessageBoxW(self.Handle, PWideChar('Error while removing access to ' + InviteEmailEdit.Text + ' from ' + Props.home + ' folder, see main log'), 'Folder unshare error', MB_OK + MB_ICONERROR);
+		MessageBoxW(self.Handle, PWideChar(Format(ERR_UNSHARE_FOLDER_MSG, [InviteEmailEdit.Text, Props.home])), PREFIX_ERR_UNSHARE_FOLDER, MB_OK + MB_ICONERROR);
 	end;
 
 end;
@@ -563,7 +563,7 @@ begin
 		PropertyForm.EditDescription := EditDescription;
 		PropertyForm.PluginIonFileName := PluginIonFileName;
 		if ('descript.ion' <> PluginIonFileName) then
-			PropertyForm.DescriptionTS.Caption := 'Description from ' + PluginIonFileName;
+			PropertyForm.DescriptionTS.Caption := Format(DESCRIPTION_FROM, [PluginIonFileName]);
 
 		result := PropertyForm.Showmodal;
 
@@ -649,7 +649,7 @@ begin
 	if self.Cloud.public_account then
 		exit;
 	AccessCB.Enabled := false; //блокируем во избежание повторных кликов
-	WebLink.Text := 'Wait for it...';
+	WebLink.Text := WAIT;
 	RefreshPublicShare(AccessCB.Checked);
 	if AccessCB.Checked and self.AutoUpdateDownloadListing then
 		UpdateDownloadListing;
