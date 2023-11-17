@@ -162,6 +162,11 @@ const
 	ERR_CONFIRMATION = 'Confirmation error';
 	ERR_REGISTRATION = 'Registration error';
 	ERR_LOAD_CAPTCHA = 'Can''t load captcha image!';
+	INVITE_FORM_TITLE = '%s invite: %s';
+	MOUNTED_AS = 'Mounted as:';
+	ERR_WRONG_FORMAT = 'Parameter should be in hash:size:name or hash:size format.';
+	ERR_WRONG_HASH_LENGTH = 'Hash length should be exactly 40 symbols.';
+	ERR_WRONG_SIZE_FORMAT = 'Size should be in numeric format.';
 
 implementation
 
