@@ -2,12 +2,7 @@ unit HashInfo;
 
 interface
 
-uses system.sysutils, MRC_Helper, CMLTypes;
-
-const
-	ERR_WRONG_FORMAT = 'Parameter should be in hash:size:name or hash:size format.';
-	ERR_WRONG_HASH_LENGTH = 'Hash length shoud be exactly 40 symbols.';
-	ERR_WRONG_SIZE_FORMAT = 'Size should be in numeric format.';
+uses system.sysutils, MRC_Helper, CMLTypes, CMLStrings;
 
 type
 

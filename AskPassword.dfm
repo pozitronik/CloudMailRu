@@ -12,12 +12,10 @@ object AskPasswordForm: TAskPasswordForm
   Font.Name = 'Tahoma'
   Font.Style = []
   KeyPreview = True
-  OldCreateOrder = False
   Position = poOwnerFormCenter
   OnActivate = FormActivate
   OnKeyUp = FormKeyUp
   OnShow = FormShow
-  PixelsPerInch = 96
   TextHeight = 13
   object PasswordEditLabel: TLabel
     Left = 7

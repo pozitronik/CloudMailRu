@@ -70,7 +70,8 @@ uses
 	CMLParsers in 'CMLParsers.pas',
 	CMLHTTP in 'CMLHTTP.pas',
 	HTTPManager in 'HTTPManager.pas',
-	Registration in 'Registration.pas'{RegistrationForm};
+	Registration in 'Registration.pas'{RegistrationForm},
+	CMLStrings in 'CMLStrings.pas';
 
 {$IFDEF WIN64}
 {$E wfx64}
@@ -979,6 +980,7 @@ begin
 		exit(ExecCommand(RemoteName, LowerCase(GetWord(Verb, 1)), GetWord(Verb, 2)));
 
 	//if copy(Verb, 1, 5) = 'chmod' then exit; //future usage
+	exit(FS_EXEC_OK)
 
 end;
 
@@ -1436,7 +1438,7 @@ function cloneWeblink(NewCloud, OldCloud: TCloudMailRu; CloudPath: WideString; C
 begin
 	Result := NewCloud.cloneWeblink(ExtractFileDir(CloudPath), CurrentItem.weblink, CLOUD_CONFLICT_STRICT);
 	if (NeedUnpublish) and (FS_FILE_USERABORT <> Result) and not(OldCloud.publishFile(CurrentItem.home, CurrentItem.weblink, CLOUD_UNPUBLISH)) then
-		LogHandle(LogLevelError, MSGTYPE_IMPORTANTERROR, PWideChar('Can''t remove temporary public link on ' + CurrentItem.home));
+		LogHandle(LogLevelError, MSGTYPE_IMPORTANTERROR, PWideChar(PREFIX_ERR_REMOVE_TEMP_PUBLIC_LINK + CurrentItem.home));
 end;
 
 function RenMoveFileViaHash(OldCloud, NewCloud: TCloudMailRu; OldRealPath, NewRealPath: TRealPath; Move, OverWrite: Boolean): integer;

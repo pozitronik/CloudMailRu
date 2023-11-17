@@ -3,7 +3,7 @@
 {Обертка над обращениями к менеджеру паролей Total Commander}
 interface
 
-Uses Plugin_Types, Settings, Windows, SysUtils, AskPassword, {AskEncryptionPasswords,}MRC_Helper, Controls, Cipher, WideStrUtils, System.Classes;
+Uses Plugin_Types, Settings, Windows, SysUtils, AskPassword, {AskEncryptionPasswords,}MRC_Helper, Controls, Cipher, WideStrUtils, System.Classes, CMLStrings;
 
 type
 
@@ -13,6 +13,10 @@ type
 		PluginNum: integer;
 		CryptoNum: integer;
 		LogHandleProc: TLogHandler;
+
+		{PROCEDURES}
+		procedure Log(LogLevel, MsgType: integer; LogString: WideString); overload;
+		procedure Log(LogLevel, MsgType: integer; Msg: WideString; const Args: array of const); overload;
 	public
 		ParentWindow: HWND;
 		constructor Create(CryptProc: TCryptProcW; PluginNum, CryptoNum: integer; LogHandleProc: TLogHandler; ParentWindow: HWND = 0);
@@ -48,6 +52,17 @@ begin
 	inherited;
 end;
 
+procedure TTCPasswordManager.Log(LogLevel, MsgType: integer; LogString: WideString);
+begin
+	if Assigned(LogHandleProc) then
+		LogHandleProc(LogLevel, MsgType, PWideChar(LogString));
+end;
+
+procedure TTCPasswordManager.Log(LogLevel, MsgType: integer; Msg: WideString; const Args: array of const);
+begin
+	Log(LogLevel, MsgType, Format(Msg, Args))
+end;
+
 function TTCPasswordManager.GetPassword(Key: WideString; var Password: WideString): integer;
 var
 	buf: PWideChar;
@@ -57,7 +72,7 @@ begin
 	result := self.CryptProc(PluginNum, CryptoNum, FS_CRYPT_LOAD_PASSWORD_NO_UI, PWideChar(Key), buf, 1024);
 	if FS_FILE_NOTFOUND = result then //no master password entered yet
 	begin
-		LogHandleProc(LogLevelDetail, msgtype_details, PWideChar('No master password entered yet'));
+		Log(LogLevelDetail, MSGTYPE_DETAILS, ERR_NO_MASTER_PASSWORD);
 		ZeroMemory(buf, 1024);
 		result := self.CryptProc(PluginNum, CryptoNum, FS_CRYPT_LOAD_PASSWORD, PWideChar(Key), buf, 1024); //ask with master password
 	end;
@@ -67,11 +82,11 @@ begin
 	end;
 	if FS_FILE_READERROR = result then
 	begin
-		LogHandleProc(LogLevelError, msgtype_importanterror, PWideChar('CryptProc returns error: Password not found in password store'));
+		Log(LogLevelError, MSGTYPE_IMPORTANTERROR, ERR_NO_PASSWORDS_STORED);
 	end;
 	if FS_FILE_NOTSUPPORTED = result then //master password cancelled
 	begin
-		LogHandleProc(LogLevelError, msgtype_importanterror, PWideChar('CryptProc returns error: Decrypt failed'));
+		Log(LogLevelError, MSGTYPE_IMPORTANTERROR, ERR_DECRYPT_FAILED);
 	end;
 	FreeMemory(buf);
 end;
@@ -82,19 +97,19 @@ begin
 	case result of
 		FS_FILE_OK:
 			begin //TC скушал пароль, запомним в инишник галочку
-				LogHandleProc(LogLevelDebug, msgtype_details, PWideChar(Key + ': password saved in TC password manager'));
+				Log(LogLevelDebug, MSGTYPE_DETAILS, PASSWORD_SAVED, [Key]);
 			end;
 		FS_FILE_NOTSUPPORTED: //Сохранение не получилось
 			begin
-				LogHandleProc(LogLevelError, msgtype_importanterror, PWideChar(Key + ': CryptProc returns error: Encrypt failed'));
+				Log(LogLevelError, MSGTYPE_IMPORTANTERROR, ERR_ENCRYPT_FAILED, [Key]);
 			end;
 		FS_FILE_WRITEERROR: //Сохранение опять не получилось
 			begin
-				LogHandleProc(LogLevelError, msgtype_importanterror, PWideChar(Key + ': password NOT saved: Could not write password to password store'));
+				Log(LogLevelError, MSGTYPE_IMPORTANTERROR, ERR_WRITE_FAILED, [Key]);
 			end;
 		FS_FILE_NOTFOUND: //Не указан мастер-пароль
 			begin
-				LogHandleProc(LogLevelError, msgtype_importanterror, PWideChar(Key + ': password NOT saved: No master password entered yet'));
+				Log(LogLevelError, MSGTYPE_IMPORTANTERROR, ERR_WRITE_NO_MASTER_PASSWORD, [Key]);
 			end;
 		//Ошибки здесь не значат, что пароль мы не получили - он может быть введён в диалоге
 	end;
@@ -114,7 +129,7 @@ begin
 
 	if AccountSettings.Password = EmptyWideStr then //но пароля нет, не в инишнике, не в тотале
 	begin
-		if mrOK <> TAskPasswordForm.AskPassword(AccountSettings.name + ' password', 'Enter account password:', AccountSettings.Password, AccountSettings.use_tc_password_manager, false, FindTCWindow) then
+		if mrOK <> TAskPasswordForm.AskPassword(Format(ASK_PASSWORD, [AccountSettings.name]), PREFIX_ASK_PASSWORD, AccountSettings.Password, AccountSettings.use_tc_password_manager, false, FindTCWindow) then
 		begin //не указали пароль в диалоге
 			exit(false); //отказались вводить пароль
 		end else begin
@@ -123,7 +138,7 @@ begin
 			begin
 				if FS_FILE_OK = self.SetPassword(AccountSettings.name, AccountSettings.Password) then
 				begin //TC скушал пароль, запомним в инишник галочку
-					LogHandleProc(LogLevelDebug, msgtype_details, PWideChar('Password saved in TC password manager'));
+					Log(LogLevelDebug, MSGTYPE_DETAILS, PASSWORD_SAVED, [AccountSettings.name]);
 					TmpString := AccountSettings.Password;
 					AccountSettings.Password := EmptyWideStr;
 					SetAccountSettingsToIniFile(AccountSettings);
@@ -151,7 +166,7 @@ begin
 
 	if ProxySettings.Password = EmptyWideStr then //но пароля нет, не в инишнике, не в тотале
 	begin
-		if mrOK <> TAskPasswordForm.AskPassword('User ' + ProxySettings.user + ' proxy password', 'Enter proxy password:', ProxySettings.Password, ProxySettings.use_tc_password_manager, false, FindTCWindow) then
+		if mrOK <> TAskPasswordForm.AskPassword(Format(ASK_PROXY_PASSWORD, [ProxySettings.user]), PREFIX_ASK_PROXY_PASSWORD, ProxySettings.Password, ProxySettings.use_tc_password_manager, false, FindTCWindow) then
 		begin //не указали пароль в диалоге
 			exit(false); //отказались вводить пароль
 		end else begin
@@ -160,7 +175,7 @@ begin
 			begin
 				if FS_FILE_OK = self.SetPassword('proxy' + ProxySettings.user, ProxySettings.Password) then
 				begin //TC скушал пароль, запомним в инишник галочку
-					LogHandleProc(LogLevelDebug, msgtype_details, PWideChar('Password saved in TC password manager'));
+					Log(LogLevelDebug, MSGTYPE_DETAILS, PASSWORD_SAVED, [ProxySettings.user]);
 					TmpString := ProxySettings.Password;
 					ProxySettings.Password := EmptyWideStr;
 					ProxySettings.use_tc_password_manager := true; //чтобы не прокидывать сюда сохранение настроек прокси, галочка сохраняется в вызывающем коде
@@ -199,7 +214,7 @@ begin
 	end;
 	if EncryptModeAskOnce = AccountSettings.encrypt_files_mode then
 	begin
-		if mrOK <> TAskPasswordForm.AskPassword(AccountSettings.name + ' encryption password', 'Enter encryption password for current session:', AccountSettings.crypt_files_password, StorePassword, true, self.ParentWindow) then
+		if mrOK <> TAskPasswordForm.AskPassword(Format(ASK_ENCRYPTION_PASSWORD, [AccountSettings.name]), PREFIX_ASK_ENCRYPTION_PASSWORD, AccountSettings.crypt_files_password, StorePassword, true, self.ParentWindow) then
 			result := false
 	end;
 end;
@@ -217,18 +232,18 @@ begin
 	case self.GetPassword(crypt_id, CurrentPassword) of
 		FS_FILE_OK: //пользователь знает мастер-пароль, и пароль был сохранен
 			begin
-				Verb := 'Update';
+				Verb := VERB_UPDATE;
 			end;
 		FS_FILE_READERROR: //Пользователь знает мастер-пароль, и пароль вводится впервые
 			begin
-				Verb := 'Set';
+				Verb := VERB_SET;
 			end;
 		else
 			begin
 				exit;
 			end;
 	end;
-	if mrOK = TAskPasswordForm.AskPassword(Verb + ' encryption password', 'New password:', CurrentPassword, StorePassword, true, self.ParentWindow) then
+	if mrOK = TAskPasswordForm.AskPassword(Format(ASK_ENCRYPTION_PASSWORD, [Verb]), PREFIX_ASK_NEW_PASSWORD, CurrentPassword, StorePassword, true, self.ParentWindow) then
 	begin
 		self.SetPassword(crypt_id, CurrentPassword);
 		result := TFileCipher.CryptedGUID(CurrentPassword);

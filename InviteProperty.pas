@@ -3,7 +3,7 @@ unit InviteProperty;
 interface
 
 uses
-	Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, CloudMailRu, CMLTypes, MRC_Helper;
+	Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, CloudMailRu, CMLTypes, MRC_Helper, CMLStrings;
 
 type
 	TInvitePropertyForm = class(TForm)
@@ -49,10 +49,10 @@ begin
 		InvitePropertyForm.InviteAccessLB.Caption := TCloudMailRu.CloudAccessToString(Item.access);
 		InvitePropertyForm.InviteSizeLB.Caption := FormatSize(Item.size, TYPE_BYTES);
 		InvitePropertyForm.InviteTokenLB.Caption := Item.invite_token;
-		InvitePropertyForm.Caption := AccountName + ' invite: ' + Item.name;
+		InvitePropertyForm.Caption := Format(INVITE_FORM_TITLE, [AccountName, Item.name]);
 		if Item.home <> EmptyWideStr then //already mounted item
 		begin
-			InvitePropertyForm.TokenLB.Caption := 'Mounted as:';
+			InvitePropertyForm.TokenLB.Caption := MOUNTED_AS;
 			InvitePropertyForm.InviteTokenLB.Caption := Item.home;
 			InvitePropertyForm.RejectBTN.Enabled := false;
 		end else begin
