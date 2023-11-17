@@ -151,7 +151,7 @@ end;
 
 procedure TFileSplitInfo.GetCRCData(DataStream: TStringStream);
 begin
-	DataStream.WriteString('filename=' + ExtractFileName(self.filename) + sLineBreak + 'size=' + self.filesize.ToString + sLineBreak + 'crc32=' + self.GetCRC32File(self.filename));
+	DataStream.WriteString(Format('filename=%s%ssize=%d%scrc32=%s', [ExtractFileName(self.filename), sLineBreak, self.filesize, sLineBreak, self.GetCRC32File(self.filename)]));
 end;
 
 function TFileSplitInfo.GetCRCFileName: WideString;
