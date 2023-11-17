@@ -13,7 +13,6 @@ object PropertyForm: TPropertyForm
   Font.Name = 'Tahoma'
   Font.Style = []
   KeyPreview = True
-  OldCreateOrder = False
   Position = poMainFormCenter
   OnActivate = FormActivate
   OnKeyUp = FormKeyUp
@@ -21,7 +20,6 @@ object PropertyForm: TPropertyForm
   DesignSize = (
     836
     337)
-  PixelsPerInch = 96
   TextHeight = 13
   object PublicLinkLabel: TLabel
     Left = 0
@@ -151,10 +149,6 @@ object PropertyForm: TPropertyForm
     object DownloadLinksTS: TTabSheet
       Caption = 'Download links'
       ImageIndex = 1
-      ExplicitLeft = 0
-      ExplicitTop = 0
-      ExplicitWidth = 0
-      ExplicitHeight = 0
       object DownloadLinksMemo: TMemo
         Left = 0
         Top = 40
@@ -244,10 +238,6 @@ object PropertyForm: TPropertyForm
     object HashesListTS: TTabSheet
       Caption = 'Hashes list'
       ImageIndex = 3
-      ExplicitLeft = 0
-      ExplicitTop = 0
-      ExplicitWidth = 0
-      ExplicitHeight = 0
       object HashesListTB: TToolBar
         Left = 0
         Top = 0
@@ -409,7 +399,7 @@ object PropertyForm: TPropertyForm
     Left = 740
     Top = 147
     Bitmap = {
-      494C010106008C00080020002000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010106008C00040020002000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000800000004000000001002000000000000080
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000

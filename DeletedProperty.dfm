@@ -11,9 +11,7 @@ object DeletedPropertyForm: TDeletedPropertyForm
   Font.Height = -11
   Font.Name = 'Tahoma'
   Font.Style = []
-  OldCreateOrder = False
   Position = poOwnerFormCenter
-  PixelsPerInch = 96
   TextHeight = 13
   object DelNameLB: TLabel
     Left = 83

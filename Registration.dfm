@@ -14,12 +14,10 @@ object RegistrationForm: TRegistrationForm
   Font.Name = 'Tahoma'
   Font.Style = []
   FormStyle = fsStayOnTop
-  OldCreateOrder = False
   Position = poOwnerFormCenter
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   OnKeyUp = FormKeyUp
-  PixelsPerInch = 96
   TextHeight = 13
   object FirstNameLabel: TLabel
     Left = 0

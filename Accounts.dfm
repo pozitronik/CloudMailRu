@@ -147,12 +147,10 @@ object AccountsForm: TAccountsForm
     0000000000000000000000000000000000000000000000000000000000000000
     000000000000000000000000000000000000000000000000000000000000}
   KeyPreview = True
-  OldCreateOrder = False
   Position = poOwnerFormCenter
   OnActivate = FormActivate
   OnKeyUp = FormKeyUp
   OnShow = FormShow
-  PixelsPerInch = 96
   TextHeight = 13
   object OptionPages: TPageControl
     Left = 0
@@ -170,10 +168,11 @@ object AccountsForm: TAccountsForm
       object AccountNameLabel: TLabel
         Left = 225
         Top = 10
-        Width = 68
+        Width = 62
         Height = 13
         Anchors = [akLeft, akTop, akRight]
         Caption = 'Account name'
+        ExplicitWidth = 68
       end
       object AccountsGroupBox: TGroupBox
         Left = -4
@@ -351,7 +350,7 @@ object AccountsForm: TAccountsForm
       object AccountNameEdit: TEdit
         Left = 225
         Top = 27
-        Width = 255
+        Width = 249
         Height = 21
         Anchors = [akLeft, akTop, akRight]
         TabOrder = 1
@@ -980,42 +979,47 @@ object AccountsForm: TAccountsForm
       object ExtLabel: TLabel
         Left = 225
         Top = 10
-        Width = 66
+        Width = 60
         Height = 13
         Anchors = [akLeft, akTop, akRight]
         Caption = 'File extension'
+        ExplicitWidth = 66
       end
       object CommandLabel: TLabel
         Left = 225
         Top = 52
-        Width = 47
+        Width = 41
         Height = 13
         Anchors = [akLeft, akTop, akRight]
         Caption = 'Command'
+        ExplicitWidth = 47
       end
       object ParametersLabel: TLabel
         Left = 225
         Top = 93
-        Width = 227
+        Width = 221
         Height = 13
         Anchors = [akLeft, akTop, akRight]
         Caption = 'Parameters (%url% for stream url substitution)'
+        ExplicitWidth = 227
       end
       object StartPathLabel: TLabel
         Left = 225
         Top = 134
-        Width = 49
+        Width = 43
         Height = 13
         Anchors = [akLeft, akTop, akRight]
         Caption = 'Start path'
+        ExplicitWidth = 49
       end
       object StreamingTypeLabel: TLabel
         Left = 225
         Top = 177
-        Width = 73
+        Width = 67
         Height = 13
         Anchors = [akLeft, akTop, akRight]
         Caption = 'Streaming type'
+        ExplicitWidth = 73
       end
       object TExtensionsGroupBox: TGroupBox
         Left = -4
@@ -1045,18 +1049,20 @@ object AccountsForm: TAccountsForm
       object StreamingExtensionEdit: TEdit
         Left = 225
         Top = 27
-        Width = 255
+        Width = 249
         Height = 21
         Anchors = [akLeft, akTop, akRight]
         TabOrder = 1
+        ExplicitWidth = 255
       end
       object CommandPathEdit: TEdit
         Left = 225
         Top = 69
-        Width = 234
+        Width = 228
         Height = 21
         Anchors = [akLeft, akTop, akRight]
         TabOrder = 2
+        ExplicitWidth = 234
       end
       object CommandPathButton: TButton
         Left = 459
@@ -1070,18 +1076,20 @@ object AccountsForm: TAccountsForm
       object ParametersEdit: TEdit
         Left = 225
         Top = 110
-        Width = 255
+        Width = 249
         Height = 21
         Anchors = [akLeft, akTop, akRight]
         TabOrder = 4
+        ExplicitWidth = 255
       end
       object StartPathEdit: TEdit
         Left = 225
         Top = 151
-        Width = 255
+        Width = 249
         Height = 21
         Anchors = [akLeft, akTop, akRight]
         TabOrder = 5
+        ExplicitWidth = 255
       end
       object StreamingTypeCombo: TComboBox
         Left = 225
