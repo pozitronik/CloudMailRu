@@ -166,7 +166,7 @@ begin
 		OperationResult := CMLJSONParser.getOperationResult(JSON);
 		result := CloudResultToFsResult(OperationResult, PREFIX_ERR_FILE_UPLOADING);
 		if (CLOUD_OPERATION_OK = OperationResult.OperationResult) and LogSuccess then
-			Log(LogLevelDetail, MSGTYPE_DETAILS, Format(FILE_FOUND_BY_HASH, [remotePath]));
+			Log(LogLevelDetail, MSGTYPE_DETAILS, FILE_FOUND_BY_HASH, [remotePath]);
 		if (NAME_TOKEN = CMLJSONParser.getBodyError(JSON)) and RefreshCSRFToken() then
 			result := self.addFileByIdentity(FileIdentity, remotePath, ConflictMode, LogErrors, LogSuccess);
 	end;
@@ -207,7 +207,7 @@ function TCloudMailRu.CloudResultToBoolean(CloudResult: TCloudMailRuOperationRes
 begin
 	result := CloudResult.OperationResult = CLOUD_OPERATION_OK;
 	if not(result) and (ErrorPrefix <> EmptyWideStr) then
-		Log(LogLevelError, MSGTYPE_IMPORTANTERROR, Format('%s%s%s%s', [ErrorPrefix, self.ErrorCodeText(CloudResult.OperationResult), PREFIX_STATUS, CloudResult.OperationStatus]));
+		Log(LogLevelError, MSGTYPE_IMPORTANTERROR, '%s%s%s%s', [ErrorPrefix, self.ErrorCodeText(CloudResult.OperationResult), PREFIX_STATUS, CloudResult.OperationStatus]);
 end;
 
 function TCloudMailRu.CloudResultToFsResult(CloudResult: TCloudMailRuOperationResult; ErrorPrefix: WideString): integer;
@@ -234,7 +234,7 @@ begin
 		else
 			begin //что-то неизвестное
 				if (ErrorPrefix <> EmptyWideStr) then
-					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, Format('%s%s%s%s', [ErrorPrefix, self.ErrorCodeText(CloudResult.OperationResult), PREFIX_STATUS, CloudResult.OperationStatus.ToString]));
+					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, '%s%s%s%s', [ErrorPrefix, self.ErrorCodeText(CloudResult.OperationResult), PREFIX_STATUS, CloudResult.OperationStatus.ToString]);
 				exit(FS_FILE_WRITEERROR);
 			end;
 	end;
@@ -323,7 +323,7 @@ begin
 	except
 		on E: Exception do
 		begin
-			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, Format('%s%s', [PREFIX_ERR_FILE_UPLOADING, E.Message]));
+			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, '%s%s', [PREFIX_ERR_FILE_UPLOADING, E.Message]);
 		end;
 	end;
 end;
@@ -558,7 +558,7 @@ begin
 			if result and self.crypt_filenames then
 				self.FileCipher.DecryptDirListing(DirListing);
 		end else if OperationResult.OperationResult = CLOUD_ERROR_NOT_EXISTS then
-			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, Format('%s%s', [PREFIX_ERR_PATH_NOT_EXISTS, Path]));
+			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, '%s%s', [PREFIX_ERR_PATH_NOT_EXISTS, Path]);
 	end else begin
 		if (NAME_TOKEN = CMLJSONParser.getBodyError(JSON)) and RefreshCSRFToken() then
 			result := getDirListing(Path, DirListing, ShowProgress);
@@ -622,7 +622,7 @@ begin
 
 		if result in [FS_FILE_NOTSUPPORTED] then //this code returned on shard connection error
 		begin
-			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, Format('%s%s', [PREFIX_REDIRECTION_LIMIT, URL]));
+			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, '%s%s', [PREFIX_REDIRECTION_LIMIT, URL]);
 			if (self.ExternalRequestProc(RT_MsgYesNo, REDIRECTION_LIMIT, TRY_ANOTHER_SHARD, EMPTY_STR, 0)) and (self.getShard(self.Shard)) then
 				result := self.getFileRegular(remotePath, localPath, resultHash, LogErrors);
 		end;
@@ -779,7 +779,7 @@ begin
 	if result then
 	begin
 		result := CMLJSONParser.getShard(JSON, Shard, ShardType) and (Shard <> EmptyWideStr);
-		Log(LogLevelDetail, MSGTYPE_DETAILS, Format(PREFIX_SHARD_RECEIVED, [Shard, ShardType]));
+		Log(LogLevelDetail, MSGTYPE_DETAILS, PREFIX_SHARD_RECEIVED, [Shard, ShardType]);
 	end;
 end;
 
@@ -904,7 +904,7 @@ begin
 				FormFields.AddOrSetValue('Domain', self.domain);
 				FormFields.AddOrSetValue('Login', self.user);
 				FormFields.AddOrSetValue('Password', self.password);
-				Log(LogLevelDebug, MSGTYPE_DETAILS, Format(REQUESTING_FIRST_STEP_AUTH_TOKEN, [self.email]));
+				Log(LogLevelDebug, MSGTYPE_DETAILS, REQUESTING_FIRST_STEP_AUTH_TOKEN, [self.email]);
 				result := self.HTTP.PostMultipart(LOGIN_URL, FormFields, PostAnswer);
 				if result then
 				begin
@@ -934,7 +934,7 @@ begin
 								result := self.initConnectionParameters();
 								if (result) then
 								begin
-									Log(LogLevelDetail, MSGTYPE_DETAILS, Format(CONNECTED_TO, [self.email]));
+									Log(LogLevelDetail, MSGTYPE_DETAILS, CONNECTED_TO, [self.email]);
 									self.logUserSpaceInfo;
 								end else begin
 									Log(LogLevelError, MSGTYPE_IMPORTANTERROR, ERR_TWOSTEP_AUTH);
@@ -951,13 +951,13 @@ begin
 					end;
 
 				end else begin
-					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, Format(ERR_GET_FIRST_STEP_AUTH_TOKEN, [self.email]));
+					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, ERR_GET_FIRST_STEP_AUTH_TOKEN, [self.email]);
 					FormFields.free;
 				end;
 			end;
 		CLOUD_AUTH_METHOD_WEB: //todo: вынести в отдельный метод
 			begin
-				Log(LogLevelDebug, MSGTYPE_DETAILS, Format(REQUESTING_AUTH_TOKEN, [self.email]));
+				Log(LogLevelDebug, MSGTYPE_DETAILS, REQUESTING_AUTH_TOKEN, [self.email]);
 				result := self.HTTP.PostForm(LOGIN_URL, Format('page=https://cloud.mail.ru/?new_auth_form=1&Domain=%s&Login=%s&Password=%s&FailPage=', [self.domain, self.user, UrlEncode(self.password)]), PostAnswer);
 				if (result) then
 				begin
@@ -965,28 +965,28 @@ begin
 					result := self.initConnectionParameters();
 					if (result) then
 					begin
-						Log(LogLevelDetail, MSGTYPE_DETAILS, Format(CONNECTED_TO, [self.email]));
+						Log(LogLevelDetail, MSGTYPE_DETAILS, CONNECTED_TO, [self.email]);
 						self.logUserSpaceInfo;
 					end else begin
-						Log(LogLevelError, MSGTYPE_IMPORTANTERROR, Format(ERR_PARSING_AUTH_TOKEN, [self.email]));
+						Log(LogLevelError, MSGTYPE_IMPORTANTERROR, ERR_PARSING_AUTH_TOKEN, [self.email]);
 						exit(false);
 					end;
 				end
 				else
-					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, Format(ERR_GET_AUTH_TOKEN, [self.email]));
+					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, ERR_GET_AUTH_TOKEN, [self.email]);
 			end;
 		CLOUD_AUTH_METHOD_OAUTH:
 			begin
 				result := self.getOAuthToken(self.OAuthToken);
 				if not result then
-					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, Format(PREFIX_ERR_OAUTH, [self.OAuthToken.error, self.OAuthToken.error_description]));
+					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, PREFIX_ERR_OAUTH, [self.OAuthToken.error, self.OAuthToken.error_description]);
 			end;
 	end;
 end;
 
 function TCloudMailRu.loginShared(method: integer): Boolean;
 begin
-	Log(LogLevelDetail, MSGTYPE_DETAILS, Format(URL_OPEN, [self.OptionsSet.AccountSettings.public_url]));
+	Log(LogLevelDetail, MSGTYPE_DETAILS, URL_OPEN, [self.OptionsSet.AccountSettings.public_url]);
 	result := self.initSharedConnectionParameters();
 	//exit(true);
 end;
@@ -1006,9 +1006,9 @@ begin
 			QuotaInfo := WARN_QUOTA_EXAUSTED
 		else
 			QuotaInfo := EmptyWideStr;
-		Log(LogLevelFileOperation, MSGTYPE_DETAILS, Format(USER_SPACE_INFO, [FormatSize(US.total), FormatSize(US.used), FormatSize(US.total - US.used), QuotaInfo]));
+		Log(LogLevelFileOperation, MSGTYPE_DETAILS, USER_SPACE_INFO, [FormatSize(US.total), FormatSize(US.used), FormatSize(US.total - US.used), QuotaInfo]);
 	end else begin
-		Log(LogLevelDebug, MSGTYPE_IMPORTANTERROR, Format(ERR_GET_USER_SPACE, [self.email]));
+		Log(LogLevelDebug, MSGTYPE_IMPORTANTERROR, ERR_GET_USER_SPACE, [self.email]);
 	end;
 end;
 
@@ -1232,7 +1232,7 @@ begin
 			begin
 				result := FS_FILE_USERABORT;
 			end else begin
-				Log(LogLevelError, MSGTYPE_IMPORTANTERROR, Format(ERR_UPLOAD_INFO, [E.ClassName, E.Message]));
+				Log(LogLevelError, MSGTYPE_IMPORTANTERROR, ERR_UPLOAD_INFO, [E.ClassName, E.Message]);
 				result := FS_FILE_WRITEERROR;
 			end;
 		end;
@@ -1295,7 +1295,7 @@ begin
 	begin
 		ChunkRemotePath := Format('%s%s', [ExtractFilePath(remotePath), SplitFileInfo.GetChunks[SplittedPartIndex].name]);
 		self.HTTP.SetProgressNames(localPath, ChunkRemotePath);
-		Log(LogLevelDebug, MSGTYPE_DETAILS, Format(PARTIAL_UPLOAD_INFO, [localPath, (SplittedPartIndex + 1), SplitFileInfo.ChunksCount, ChunkRemotePath]));
+		Log(LogLevelDebug, MSGTYPE_DETAILS, PARTIAL_UPLOAD_INFO, [localPath, (SplittedPartIndex + 1), SplitFileInfo.ChunksCount, ChunkRemotePath]);
 		ChunkStream := TChunkedFileStream.Create(GetUNCFilePath(localPath), fmOpenRead or fmShareDenyWrite, SplitFileInfo.GetChunks[SplittedPartIndex].start, SplitFileInfo.GetChunks[SplittedPartIndex].size);
 		result := self.putFileStream(ExtractFileName(ChunkRemotePath), ChunkRemotePath, ChunkStream, ConflictMode);
 		ChunkStream.Destroy;
@@ -1315,7 +1315,7 @@ begin
 					case ChunkOverwriteMode of
 						ChunkOverwrite: //silently overwrite chunk
 							begin
-								Log(LogLevelWarning, MSGTYPE_DETAILS, Format(CHUNK_OWERWRITE, [ChunkRemotePath]));
+								Log(LogLevelWarning, MSGTYPE_DETAILS, CHUNK_OWERWRITE, [ChunkRemotePath]);
 								if not(self.deleteFile(ChunkRemotePath)) then
 								begin
 									result := FS_FILE_WRITEERROR;
@@ -1326,11 +1326,11 @@ begin
 							end;
 						ChunkOverwriteIgnore: //ignore this chunk
 							begin
-								Log(LogLevelWarning, MSGTYPE_DETAILS, Format(CHUNK_SKIP, [ChunkRemotePath])); //ignore and continue
+								Log(LogLevelWarning, MSGTYPE_DETAILS, CHUNK_SKIP, [ChunkRemotePath]); //ignore and continue
 							end;
 						ChunkOverwriteAbort: //abort operation
 							begin
-								Log(LogLevelWarning, MSGTYPE_DETAILS, Format(CHUNK_ABORT, [ChunkRemotePath]));
+								Log(LogLevelWarning, MSGTYPE_DETAILS, CHUNK_ABORT, [ChunkRemotePath]);
 								result := FS_FILE_NOTSUPPORTED;
 								Break;
 							end;
@@ -1356,11 +1356,11 @@ begin
 							end;
 						OperationErrorModeIgnore:
 							begin
-								Log(LogLevelError, MSGTYPE_IMPORTANTERROR, Format(ERR_PARTIAL_UPLOAD_IGNORE, [result]));
+								Log(LogLevelError, MSGTYPE_IMPORTANTERROR, ERR_PARTIAL_UPLOAD_IGNORE, [result]);
 							end;
 						OperationErrorModeAbort:
 							begin
-								Log(LogLevelError, MSGTYPE_IMPORTANTERROR, Format(ERR_PARTIAL_UPLOAD_ABORT, [result]));
+								Log(LogLevelError, MSGTYPE_IMPORTANTERROR, ERR_PARTIAL_UPLOAD_ABORT, [result]);
 								result := FS_FILE_USERABORT;
 								Break;
 							end;
@@ -1369,12 +1369,12 @@ begin
 								Inc(RetryAttemptsCount);
 								if RetryAttemptsCount <> RetryAttempts + 1 then
 								begin
-									Log(LogLevelError, MSGTYPE_IMPORTANTERROR, Format(ERR_PARTIAL_UPLOAD_RETRY, [result, RetryAttemptsCount, RetryAttemptsToString(RetryAttempts)]));
+									Log(LogLevelError, MSGTYPE_IMPORTANTERROR, ERR_PARTIAL_UPLOAD_RETRY, [result, RetryAttemptsCount, RetryAttemptsToString(RetryAttempts)]);
 									Dec(SplittedPartIndex); //retry with this chunk
 									ProcessMessages;
 									Sleep(AttemptWait);
 								end else begin
-									Log(LogLevelError, MSGTYPE_IMPORTANTERROR, Format(ERR_PARTIAL_UPLOAD_RETRY_EXCEED, [result]));
+									Log(LogLevelError, MSGTYPE_IMPORTANTERROR, ERR_PARTIAL_UPLOAD_RETRY_EXCEED, [result]);
 									result := CLOUD_OPERATION_FAILED;
 									Break;
 								end;
@@ -1417,10 +1417,10 @@ begin
 	begin
 		if self.split_large_files then
 		begin
-			Log(LogLevelDetail, MSGTYPE_DETAILS, Format(SPLIT_LARGE_FILE, [self.CloudMaxFileSize]));
+			Log(LogLevelDetail, MSGTYPE_DETAILS, SPLIT_LARGE_FILE, [self.CloudMaxFileSize]);
 			exit(putFileSplit(localPath, remotePath, ConflictMode, ChunkOverwriteMode));
 		end else begin
-			Log(LogLevelWarning, MSGTYPE_IMPORTANTERROR, Format(SPLIT_LARGE_FILE_IGNORE, [self.CloudMaxFileSize]));
+			Log(LogLevelWarning, MSGTYPE_IMPORTANTERROR, SPLIT_LARGE_FILE_IGNORE, [self.CloudMaxFileSize]);
 			exit(FS_FILE_NOTSUPPORTED);
 		end;
 	end;
