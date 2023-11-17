@@ -542,7 +542,7 @@ begin
 		exit; //Проверка на вызов без инициализации
 	SetLength(DirListing, 0);
 	if self.public_account then
-		result := self.HTTP.GetPage(Format('%s&weblink=%s%s%s%s', [API_FOLDER, IncludeSlash(self.public_link), PathToUrl(Path, false), self.united_params]), JSON, ShowProgress)
+		result := self.HTTP.GetPage(Format('%s&weblink=%s%s%s', [API_FOLDER, IncludeSlash(self.public_link), PathToUrl(Path, false), self.united_params]), JSON, ShowProgress)
 	else
 	begin
 		self.HTTP.SetProgressNames(DIR_LISTING, Path);
