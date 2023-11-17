@@ -980,6 +980,7 @@ begin
 		exit(ExecCommand(RemoteName, LowerCase(GetWord(Verb, 1)), GetWord(Verb, 2)));
 
 	//if copy(Verb, 1, 5) = 'chmod' then exit; //future usage
+	exit(FS_EXEC_OK)
 
 end;
 
