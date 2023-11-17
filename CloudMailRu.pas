@@ -1386,7 +1386,7 @@ begin
 		Inc(SplittedPartIndex); //all ok, continue with next chunk
 	end; {end while}
 
-	if result = FS_FILE_OK then {Only after succesful upload}
+	if result = FS_FILE_OK then {Only after successful upload}
 	begin
 		CRCRemotePath := ExtractFilePath(remotePath) + SplitFileInfo.CRCFileName;
 		self.HTTP.TargetName := CRCRemotePath;
