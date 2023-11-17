@@ -46,7 +46,8 @@ type
 		function putFileStream(FileName, remotePath: WideString; FileStream: TStream; ConflictMode: WideString = CLOUD_CONFLICT_STRICT): integer;
 
 		{OTHER ROUTINES}
-		procedure Log(LogLevel, MsgType: integer; LogString: WideString);
+		procedure Log(LogLevel, MsgType: integer; LogString: WideString); overload;
+		procedure Log(LogLevel, MsgType: integer; Msg: WideString; const Args: array of const); overload;
 		function CloudResultToFsResult(CloudResult: TCloudMailRuOperationResult; ErrorPrefix: WideString = ''): integer;
 		function CloudResultToBoolean(CloudResult: TCloudMailRuOperationResult; ErrorPrefix: WideString = ''): Boolean;
 		function cloudHash(Path: WideString): WideString; overload; //get cloud hash for specified file
@@ -857,6 +858,11 @@ procedure TCloudMailRu.Log(LogLevel, MsgType: integer; LogString: WideString);
 begin
 	if Assigned(ExternalLogProc) then
 		ExternalLogProc(LogLevel, MsgType, PWideChar(LogString));
+end;
+
+procedure TCloudMailRu.Log(LogLevel, MsgType: integer; Msg: WideString; const Args: array of const);
+begin
+	Log(LogLevel, MsgType, Format(Msg, Args))
 end;
 
 function TCloudMailRu.login(method: integer): Boolean;
