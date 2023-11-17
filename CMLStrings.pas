@@ -3,6 +3,8 @@
 interface
 
 const
+	ASK_CONTINUE = 'Continue operation?';
+
 	ERR_ACCOUNT_HAS_INVALID_SYMBOL = 'File name must contain only valid symbols';
 	ERR_INSUFFICIENT_STORAGE = 'Insufficient Storage';
 	ERR_NAME_TOO_LONG = 'Name too long';
@@ -35,7 +37,14 @@ const
 	ERR_GET_FIRST_STEP_AUTH_TOKEN = 'error: getting first step auth token for %s';
 	ERR_PARSING_AUTH_TOKEN = 'error: parsing auth token for %s';
 	ERR_GET_AUTH_TOKEN = 'error: getting auth token for %s';
-  ERR_GET_USER_SPACE = 'error: getting user space information for %s';
+	ERR_GET_USER_SPACE = 'error: getting user space information for %s';
+	ERR_UPLOAD_INFO = 'error: uploading to cloud: %s with message: %s';
+	ERR_UPLOAD = 'Upload error';
+	ERR_PARTIAL_UPLOAD_ASK = 'Partial upload error, code: %d' + sLineBreak + 'partname: %s' + sLineBreak + ASK_CONTINUE;
+	ERR_PARTIAL_UPLOAD_IGNORE = 'Partial upload error, code: %d, ignored';
+	ERR_PARTIAL_UPLOAD_ABORT = 'Partial upload error, code: %d, aborted';
+	ERR_PARTIAL_UPLOAD_RETRY = 'Partial upload error, code: %d, retry attempt %d %s';
+	ERR_PARTIAL_UPLOAD_RETRY_EXCEED = 'Partial upload error, code: %d, retry attempt limit exceed, aborted';
 
 	PREFIX_ERR_CLOUD_INIT = 'Cloud initialization error: ';
 	PREFIX_ERR_FILE_UPLOADING = 'File uploading error: ';
@@ -45,12 +54,22 @@ const
 	PREFIX_ERR_SHARED_LINKS_LISTING = 'Shared links listing error: ';
 	PREFIX_ERR_INCOMING_REQUESTS_LISTING = 'Incoming requests listing error: ';
 	PREFIX_ERR_TRASH_LISTING = 'Trashbin listing error: ';
+	PREFIX_ERR_TRASH_CLEAN = 'Trashbin clearing error: ';
 	PREFIX_ERR_DIR_LISTING = 'Directory listing error: ';
 	PREFIX_ERR_PATH_NOT_EXISTS = 'Path not exists: ';
 	PREFIX_ERR_SHARD_RECEIVE = 'Shard receive error: ';
 	PREFIX_ERR_REMOVE_TEMP_PUBLIC_LINK = 'Can''t remove temporary public link on ';
 	PREFIX_ERR_GET_USER_SPACE = 'User space receiving error: ';
 	PREFIX_ERR_OAUTH = 'OAuth error: %s (%s).';
+	PREFIX_ERR_FILE_MOVE = 'File move error: ';
+	PREFIX_ERR_INVITE_MEMBER = 'Invite member error: ';
+	PREFIX_ERR_FILE_RESTORE = 'File restore error: ';
+	PREFIX_ERR_FOLDER_MOUNT = 'Folder mount error: ';
+	PREFIX_ERR_FOLDER_UNMOUNT = 'Folder unmount error: ';
+	PREFIX_ERR_INVITE_REJECT = 'Invite rejection error: ';
+	PREFIX_ERR_DELETE_DIR = 'Directory deletion error: ';
+	PREFIX_ERR_FILE_RENAME = 'File renaming error: ';
+	PREFIX_ERR_FILE_STATUS = 'File status error: ';
 
 	PREFIX_STATUS = 'Status: ';
 	PREFIX_REDIRECTION_LIMIT = 'Redirection limit reached when trying to download ';
@@ -63,7 +82,8 @@ const
 	INCOMING_LINKS_LISTING = 'Incoming links listing';
 	TRASH_LISTING = 'Trashbin listing';
 	DIR_LISTING = 'Directory listing';
-	UNDEFINED_SHARD = 'Current download shard is undefined, trying to get one';
+	UNDEFINED_DOWNLOAD_SHARD = 'Current download shard is undefined, trying to get one';
+	UNDEFINED_UPLOAD_SHARD = 'Current upload shard is undefined, trying to get one';
 	REDIRECTION_LIMIT = 'Redirection limit';
 	TRY_ANOTHER_SHARD = 'Try with another shard?';
 	SHARD_OVERRIDEN = 'Shard overriden via config!';
@@ -86,9 +106,18 @@ const
 	REQUESTING_AUTH_TOKEN = 'Requesting auth token for %s';
 	PARSING_TOKEN_DATA = 'Parsing token data...';
 	URL_OPEN = 'Open %s';
-  USER_SPACE_INFO =  'Total space: %s, used: %s, free: %s.%s';
+	USER_SPACE_INFO = 'Total space: %s, used: %s, free: %s.%s';
+	PARTIAL_UPLOAD_INFO = 'Partial upload of %s part %d of %d => %s';
+	PARTIAL_UPLOAD_ABORTED = 'Partial upload aborted';
+	CHUNK_OWERWRITE = 'Chunk %s already exists, overwriting';
+	CHUNK_SKIP = 'Chunk %s already exists, skipping';
+	CHUNK_ABORT = 'Chunk %s already exists, aborting';
+	SPLIT_LARGE_FILE = 'File size > %d bytes, file will be splitted';
+	SPLIT_LARGE_FILE_IGNORE = 'File size > %d bytes, ignored';
+	DELETE_DIR = 'Remove directory';
+	CALC_HASH = 'Calculating cloud hash';
 
-  WARN_QUOTA_EXAUSTED = ' Warning: space quota exhausted!';
+	WARN_QUOTA_EXAUSTED = ' Warning: space quota exhausted!';
 
 	UNKNOWN_ITEM = '...';
 	EMPTY_STR = '';

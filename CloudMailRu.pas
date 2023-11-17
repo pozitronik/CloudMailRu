@@ -590,7 +590,7 @@ begin
 		exit; //Проверка на вызов без инициализации
 	if self.Shard = EmptyWideStr then
 	begin
-		Log(LogLevelDetail, MSGTYPE_DETAILS, UNDEFINED_SHARD);
+		Log(LogLevelDetail, MSGTYPE_DETAILS, UNDEFINED_DOWNLOAD_SHARD);
 		if not self.getShard(self.Shard) then
 			exit;
 	end;
@@ -1017,7 +1017,7 @@ begin
 	if self.public_account then
 		exit(FS_FILE_NOTSUPPORTED);
 	if self.HTTP.PostForm(API_FILE_MOVE, 'home=' + PathToUrl(OldName) + '&folder=' + PathToUrl(ToPath) + self.united_params + '&conflict', JSON) then
-		result := CloudResultToFsResult(CMLJSONParser.getOperationResult(JSON), 'File move error: ');
+		result := CloudResultToFsResult(CMLJSONParser.getOperationResult(JSON), PREFIX_ERR_FILE_MOVE);
 	if (NAME_TOKEN = CMLJSONParser.getBodyError(JSON)) and RefreshCSRFToken() then
 		result := self.moveFile(OldName, ToPath);
 end;
@@ -1061,7 +1061,7 @@ begin
 	end;
 
 	if result then
-		result := CloudResultToBoolean(CMLJSONParser.getOperationResult(JSON), 'File publish error: ');
+		result := CloudResultToBoolean(CMLJSONParser.getOperationResult(JSON), PREFIX_ERR_FILE_PUBLISH);
 
 	if result and publish then
 		result := CMLJSONParser.getPublicLink(JSON, PublicLink);
@@ -1107,7 +1107,7 @@ begin
 		result := self.HTTP.PostForm(API_FOLDER_UNSHARE, 'home=/' + PathToUrl(Path) + self.united_params + '&invite={"email":"' + email + '"}', JSON);
 	end;
 	if result then
-		result := CloudResultToBoolean(CMLJSONParser.getOperationResult(JSON), 'Invite member error: ');
+		result := CloudResultToBoolean(CMLJSONParser.getOperationResult(JSON), PREFIX_ERR_INVITE_MEMBER);
 	if (not result and (NAME_TOKEN = CMLJSONParser.getBodyError(JSON))) and RefreshCSRFToken() then
 		result := self.shareFolder(Path, email, access);
 end;
@@ -1121,7 +1121,7 @@ begin
 		exit; //Проверка на вызов без инициализации
 	if self.public_account then
 		exit;
-	result := self.HTTP.PostForm(API_TRASHBIN_RESTORE, 'path=' + PathToUrl(Path) + '&restore_revision=' + RestoreRevision.ToString + self.united_params + '&conflict=' + ConflictMode, JSON) and CloudResultToBoolean(CMLJSONParser.getOperationResult(JSON), 'File restore error: ');
+	result := self.HTTP.PostForm(API_TRASHBIN_RESTORE, 'path=' + PathToUrl(Path) + '&restore_revision=' + RestoreRevision.ToString + self.united_params + '&conflict=' + ConflictMode, JSON) and CloudResultToBoolean(CMLJSONParser.getOperationResult(JSON), PREFIX_ERR_FILE_RESTORE);
 	if (not result and (NAME_TOKEN = CMLJSONParser.getBodyError(JSON))) and RefreshCSRFToken() then
 		result := self.trashbinRestore(Path, RestoreRevision, ConflictMode);
 end;
@@ -1136,7 +1136,7 @@ begin
 	if self.public_account then
 		exit;
 
-	result := self.HTTP.PostForm(API_TRASHBIN_EMPTY, self.united_params, JSON) and CloudResultToBoolean(CMLJSONParser.getOperationResult(JSON), 'Trashbin clearing error: ');
+	result := self.HTTP.PostForm(API_TRASHBIN_EMPTY, self.united_params, JSON) and CloudResultToBoolean(CMLJSONParser.getOperationResult(JSON), PREFIX_ERR_TRASH_CLEAN);
 	if (not result and (NAME_TOKEN = CMLJSONParser.getBodyError(JSON))) and RefreshCSRFToken() then
 		result := self.trashbinEmpty();
 end;
@@ -1150,7 +1150,7 @@ begin
 		exit; //Проверка на вызов без инициализации
 	if self.public_account then
 		exit;
-	result := self.HTTP.PostForm(API_FOLDER_MOUNT, 'home=' + UrlEncode(home) + '&invite_token=' + invite_token + self.united_params + '&conflict=' + ConflictMode, JSON) and CloudResultToBoolean(CMLJSONParser.getOperationResult(JSON), 'Folder mount error: ');
+	result := self.HTTP.PostForm(API_FOLDER_MOUNT, 'home=' + UrlEncode(home) + '&invite_token=' + invite_token + self.united_params + '&conflict=' + ConflictMode, JSON) and CloudResultToBoolean(CMLJSONParser.getOperationResult(JSON), PREFIX_ERR_FOLDER_MOUNT);
 	if (not result and (NAME_TOKEN = CMLJSONParser.getBodyError(JSON))) and RefreshCSRFToken() then
 		result := self.mountFolder(home, invite_token, ConflictMode);
 end;
@@ -1169,7 +1169,7 @@ begin
 		CopyStr := 'true'
 	else
 		CopyStr := 'false';
-	result := self.HTTP.PostForm(API_FOLDER_UNMOUNT, 'home=' + UrlEncode(home) + '&clone_copy=' + CopyStr + self.united_params, JSON) and CloudResultToBoolean(CMLJSONParser.getOperationResult(JSON), 'Folder unmount error: ');
+	result := self.HTTP.PostForm(API_FOLDER_UNMOUNT, 'home=' + UrlEncode(home) + '&clone_copy=' + CopyStr + self.united_params, JSON) and CloudResultToBoolean(CMLJSONParser.getOperationResult(JSON), PREFIX_ERR_FOLDER_UNMOUNT);
 	if (not result and (NAME_TOKEN = CMLJSONParser.getBodyError(JSON))) and RefreshCSRFToken() then
 		result := self.unmountFolder(home, clone_copy);
 end;
@@ -1183,7 +1183,7 @@ begin
 		exit; //Проверка на вызов без инициализации
 	if self.public_account then
 		exit;
-	result := self.HTTP.PostForm(API_INVITE_REJECT, 'invite_token=' + invite_token + self.united_params, JSON) and CloudResultToBoolean(CMLJSONParser.getOperationResult(JSON), 'Invite rejection error: ');
+	result := self.HTTP.PostForm(API_INVITE_REJECT, 'invite_token=' + invite_token + self.united_params, JSON) and CloudResultToBoolean(CMLJSONParser.getOperationResult(JSON), PREFIX_ERR_INVITE_REJECT);
 	if (not result and (NAME_TOKEN = CMLJSONParser.getBodyError(JSON))) and RefreshCSRFToken() then
 		result := self.rejectInvite(invite_token);
 end;
@@ -1227,7 +1227,7 @@ begin
 			begin
 				result := FS_FILE_USERABORT;
 			end else begin
-				Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'error: uploading to cloud: ' + E.ClassName + ' with message: ' + E.Message);
+				Log(LogLevelError, MSGTYPE_IMPORTANTERROR, Format(ERR_UPLOAD_INFO, [E.ClassName, E.Message]));
 				result := FS_FILE_WRITEERROR;
 			end;
 		end;
@@ -1284,7 +1284,7 @@ begin
 	begin
 		ChunkRemotePath := ExtractFilePath(remotePath) + SplitFileInfo.GetChunks[SplittedPartIndex].name;
 		self.HTTP.SetProgressNames(localPath, ChunkRemotePath);
-		Log(LogLevelDebug, MSGTYPE_DETAILS, 'Partial upload of ' + localPath + ' part ' + (SplittedPartIndex + 1).ToString + ' of ' + SplitFileInfo.ChunksCount.ToString + ' => ' + ChunkRemotePath);
+		Log(LogLevelDebug, MSGTYPE_DETAILS, Format(PARTIAL_UPLOAD_INFO, [localPath, (SplittedPartIndex + 1), SplitFileInfo.ChunksCount, ChunkRemotePath]));
 
 		ChunkStream := TChunkedFileStream.Create(GetUNCFilePath(localPath), fmOpenRead or fmShareDenyWrite, SplitFileInfo.GetChunks[SplittedPartIndex].start, SplitFileInfo.GetChunks[SplittedPartIndex].size);
 		result := self.putFileStream(ExtractFileName(ChunkRemotePath), ChunkRemotePath, ChunkStream, ConflictMode);
@@ -1298,7 +1298,7 @@ begin
 				end;
 			FS_FILE_USERABORT:
 				begin
-					Log(LogLevelDetail, MSGTYPE_DETAILS, 'Partial upload aborted.');
+					Log(LogLevelDetail, MSGTYPE_DETAILS, PARTIAL_UPLOAD_ABORTED);
 					Break;
 				end;
 			FS_FILE_EXISTS:
@@ -1306,7 +1306,7 @@ begin
 					case ChunkOverwriteMode of
 						ChunkOverwrite: //silently overwrite chunk
 							begin
-								Log(LogLevelWarning, MSGTYPE_DETAILS, 'Chunk ' + ChunkRemotePath + ' already exists, overwriting.');
+								Log(LogLevelWarning, MSGTYPE_DETAILS, Format(CHUNK_OWERWRITE, [ChunkRemotePath]));
 								if not(self.deleteFile(ChunkRemotePath)) then
 								begin
 									result := FS_FILE_WRITEERROR;
@@ -1317,11 +1317,11 @@ begin
 							end;
 						ChunkOverwriteIgnore: //ignore this chunk
 							begin
-								Log(LogLevelWarning, MSGTYPE_DETAILS, 'Chunk ' + ChunkRemotePath + ' already exists, skipping.'); //ignore and continue
+								Log(LogLevelWarning, MSGTYPE_DETAILS, Format(CHUNK_SKIP, [ChunkRemotePath])); //ignore and continue
 							end;
 						ChunkOverwriteAbort: //abort operation
 							begin
-								Log(LogLevelWarning, MSGTYPE_DETAILS, 'Chunk ' + ChunkRemotePath + ' already exists, aborting.');
+								Log(LogLevelWarning, MSGTYPE_DETAILS, Format(CHUNK_ABORT, [ChunkRemotePath]));
 								result := FS_FILE_NOTSUPPORTED;
 								Break;
 							end;
@@ -1332,7 +1332,7 @@ begin
 					case OperationErrorMode of
 						OperationErrorModeAsk:
 							begin
-								case (messagebox(FindTCWindow, PWideChar('Partial upload error, code:' + result.ToString + sLineBreak + 'partname: ' + ChunkRemotePath + sLineBreak + 'Continue operation?'), 'Upload error', MB_ABORTRETRYIGNORE + MB_ICONERROR)) of
+								case (messagebox(FindTCWindow, PWideChar(Format(ERR_PARTIAL_UPLOAD_ASK, [result, ChunkRemotePath])), ERR_UPLOAD, MB_ABORTRETRYIGNORE + MB_ICONERROR)) of
 									ID_ABORT:
 										begin
 											result := FS_FILE_USERABORT;
@@ -1349,12 +1349,12 @@ begin
 
 						OperationErrorModeIgnore:
 							begin
-								Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Partial upload error, code: ' + result.ToString + ', ignored');
+								Log(LogLevelError, MSGTYPE_IMPORTANTERROR, Format(ERR_PARTIAL_UPLOAD_IGNORE, [result]));
 							end;
 
 						OperationErrorModeAbort:
 							begin
-								Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Partial upload error, code: ' + result.ToString + ', aborted');
+								Log(LogLevelError, MSGTYPE_IMPORTANTERROR, Format(ERR_PARTIAL_UPLOAD_ABORT, [result]));
 								result := FS_FILE_USERABORT;
 								Break;
 							end;
@@ -1363,12 +1363,12 @@ begin
 								Inc(RetryAttemptsCount);
 								if RetryAttemptsCount <> RetryAttempts + 1 then
 								begin
-									Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Partial upload error, code: ' + result.ToString + ' Retry attempt ' + RetryAttemptsCount.ToString + RetryAttemptsToString(RetryAttempts));
+									Log(LogLevelError, MSGTYPE_IMPORTANTERROR, Format(ERR_PARTIAL_UPLOAD_RETRY, [result, RetryAttemptsCount, RetryAttemptsToString(RetryAttempts)]));
 									Dec(SplittedPartIndex); //retry with this chunk
 									ProcessMessages;
 									Sleep(AttemptWait);
 								end else begin
-									Log(LogLevelError, MSGTYPE_IMPORTANTERROR, 'Partial upload error, code: ' + result.ToString + ' Retry attempt limit exceed, aborted');
+									Log(LogLevelError, MSGTYPE_IMPORTANTERROR, Format(ERR_PARTIAL_UPLOAD_RETRY_EXCEED, [result]));
 									result := CLOUD_OPERATION_FAILED;
 									Break;
 								end;
@@ -1412,10 +1412,10 @@ begin
 	begin
 		if self.split_large_files then
 		begin
-			Log(LogLevelDetail, MSGTYPE_DETAILS, 'File size > ' + self.CloudMaxFileSize.ToString() + ' bytes, file will be splitted.');
+			Log(LogLevelDetail, MSGTYPE_DETAILS, Format(SPLIT_LARGE_FILE, [self.CloudMaxFileSize]));
 			exit(putFileSplit(localPath, remotePath, ConflictMode, ChunkOverwriteMode));
 		end else begin
-			Log(LogLevelWarning, MSGTYPE_IMPORTANTERROR, 'File size > ' + self.CloudMaxFileSize.ToString() + ' bytes, ignored.');
+			Log(LogLevelWarning, MSGTYPE_IMPORTANTERROR, Format(SPLIT_LARGE_FILE_IGNORE, [self.CloudMaxFileSize]));
 			exit(FS_FILE_NOTSUPPORTED);
 		end;
 	end;
@@ -1438,7 +1438,7 @@ begin
 		exit;
 	if (EmptyWideStr = self.upload_url) then
 	begin
-		Log(LogLevelDetail, MSGTYPE_DETAILS, 'Current upload shard is undefined, trying to get one');
+		Log(LogLevelDetail, MSGTYPE_DETAILS, UNDEFINED_UPLOAD_SHARD);
 		self.getShard(self.upload_url, SHARD_TYPE_UPLOAD);
 	end;
 
@@ -1470,8 +1470,8 @@ begin
 		exit; //Проверка на вызов без инициализации
 	if self.public_account then
 		exit;
-	self.HTTP.SetProgressNames('Remove directory', Path);
-	result := self.HTTP.PostForm(API_FILE_REMOVE, 'home=/' + IncludeSlash(PathToUrl(Path)) + self.united_params + '&conflict', JSON) and CloudResultToBoolean(CMLJSONParser.getOperationResult(JSON), 'Directory deletion error: '); //API всегда отвечает true, даже если путь не существует
+	self.HTTP.SetProgressNames(DELETE_DIR, Path);
+	result := self.HTTP.PostForm(API_FILE_REMOVE, 'home=/' + IncludeSlash(PathToUrl(Path)) + self.united_params + '&conflict', JSON) and CloudResultToBoolean(CMLJSONParser.getOperationResult(JSON), PREFIX_ERR_DELETE_DIR); //API всегда отвечает true, даже если путь не существует
 	if (not result and (NAME_TOKEN = CMLJSONParser.getBodyError(JSON))) and RefreshCSRFToken() then
 		result := self.removeDir(Path);
 end;
@@ -1486,7 +1486,7 @@ begin
 	if self.public_account then
 		exit;
 	if self.HTTP.PostForm(API_FILE_RENAME, 'home=' + PathToUrl(OldName) + '&name=' + PathToUrl(NewName) + self.united_params, JSON) then
-		result := CloudResultToFsResult(CMLJSONParser.getOperationResult(JSON), 'File renaming error: ');
+		result := CloudResultToFsResult(CMLJSONParser.getOperationResult(JSON), PREFIX_ERR_FILE_RENAME);
 	if (NAME_TOKEN = CMLJSONParser.getBodyError(JSON)) and RefreshCSRFToken() then
 		result := self.renameFile(OldName, NewName);
 end;
@@ -1506,7 +1506,7 @@ begin
 		result := self.HTTP.GetPage(API_FILE + '?home=' + PathToUrl(Path) + self.united_params, JSON, Progress);
 	if result then
 	begin
-		result := CloudResultToBoolean(CMLJSONParser.getOperationResult(JSON), 'File status error: ') and CMLJSONParser.getFileStatus(JSON, FileInfo);
+		result := CloudResultToBoolean(CMLJSONParser.getOperationResult(JSON), PREFIX_ERR_FILE_STATUS) and CMLJSONParser.getFileStatus(JSON, FileInfo);
 	end else begin
 		if (NAME_TOKEN = CMLJSONParser.getBodyError(JSON)) and RefreshCSRFToken() then
 			result := statusFile(Path, FileInfo);
@@ -1618,7 +1618,7 @@ begin
 
 		read := Stream.read(buffer, bufSize);
 		sha1.Update(buffer, read);
-		if (1 = ExternalProgressProc(PWideChar(Path), 'Calculating cloud hash', Percent)) then
+		if (1 = ExternalProgressProc(PWideChar(Path), CALC_HASH, Percent)) then
 		begin
 			Aborted := true;
 		end;
