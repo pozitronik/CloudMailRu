@@ -48,7 +48,7 @@ const
 	ERR_PARSE_AUTH_DATA = 'error: parsing authorization data';
 	ERR_PARSING_AUTH_TOKEN = 'error: parsing auth token for %s';
 	ERR_PARTIAL_UPLOAD_ABORT = 'Partial upload error, code: %d, aborted';
-	ERR_PARTIAL_UPLOAD_ASK = 'Partial upload error, code: %d' + sLineBreak + 'partname: %s' + sLineBreak + ASK_CONTINUE;
+	ERR_PARTIAL_UPLOAD_ASK = 'Partial upload error, code: %d' + sLineBreak + 'part name: %s' + sLineBreak + ASK_CONTINUE;
 	ERR_PARTIAL_UPLOAD_IGNORE = 'Partial upload error, code: %d, ignored';
 	ERR_PARTIAL_UPLOAD_RETRY = 'Partial upload error, code: %d, retry attempt %d %s';
 	ERR_PARTIAL_UPLOAD_RETRY_EXCEED = 'Partial upload error, code: %d, retry attempt limit exceed, aborted';
@@ -57,8 +57,8 @@ const
 	ERR_TWOSTEP_AUTH = 'error: two-step auth failed';
 	ERR_UPLOAD = 'Upload error';
 	ERR_UPLOAD_INFO = 'error: uploading to cloud: %s with message: %s';
-	ERR_WRONG_ENCRYPT_PASSWORD = 'Wrong encryption password, encryption support disabled';
-	FILE_FOUND_BY_HASH = 'File %s found by hash';
+	ERR_WRONG_ENCRYPT_PASSWORD = 'Incorrect encryption password, encryption support disabled';
+	FILE_FOUND_BY_HASH = 'File "%s" found by hash';
 	INCOMING_LINKS_LISTING = 'Incoming links listing';
 	LOGIN_IN_PROGRESS = 'Login to account...';
 	LOGIN_TO = 'Login to %s';
@@ -88,8 +88,8 @@ const
 	PREFIX_ERR_REMOVE_TEMP_PUBLIC_LINK = 'Can''t remove temporary public link on ';
 	PREFIX_ERR_SHARD_RECEIVE = 'Shard receive error: ';
 	PREFIX_ERR_SHARED_LINKS_LISTING = 'Shared links listing error: ';
-	PREFIX_ERR_TRASH_CLEAN = 'Trashbin clear error: ';
-	PREFIX_ERR_TRASH_LISTING = 'Trashbin listing error: ';
+	PREFIX_ERR_TRASH_CLEAN = 'Trash bin clear error: ';
+	PREFIX_ERR_TRASH_LISTING = 'Trash bin listing error: ';
 	PREFIX_REDIRECTION_LIMIT = 'Redirection limit reached when trying to download ';
 	PREFIX_SHARD_RECEIVED = 'Shard received: %s, type: %s';
 	PREFIX_STATUS = 'Status: ';
@@ -100,10 +100,10 @@ const
 	SHARD_OVERRIDDEN = 'Shard is overridden via config!';
 	SHARED_LINKS_LISTING = 'Shared links listing';
 	SMS_TIMEOUT = 'SMS timeout to %s (%d sec).';
-	SPLIT_LARGE_FILE = 'File size > %d bytes, file will be splitted';
+	SPLIT_LARGE_FILE = 'File size > %d bytes, file will be split';
 	SPLIT_LARGE_FILE_IGNORE = 'File size > %d bytes, ignored';
 	TOKEN_UPDATED = 'Token updated';
-	TRASH_LISTING = 'Trashbin listing';
+	TRASH_LISTING = 'Trash bin listing';
 	TRY_ANOTHER_SHARD = 'Try with another shard?';
 	UNDEFINED_DOWNLOAD_SHARD = 'Current download shard is undefined, trying to get one';
 	UNDEFINED_UPLOAD_SHARD = 'Current upload shard is undefined, trying to get one';
