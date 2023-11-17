@@ -13,6 +13,10 @@ type
 		PluginNum: integer;
 		CryptoNum: integer;
 		LogHandleProc: TLogHandler;
+
+		{PROCEDURES}
+		procedure Log(LogLevel, MsgType: integer; LogString: WideString); overload;
+		procedure Log(LogLevel, MsgType: integer; Msg: WideString; const Args: array of const); overload;
 	public
 		ParentWindow: HWND;
 		constructor Create(CryptProc: TCryptProcW; PluginNum, CryptoNum: integer; LogHandleProc: TLogHandler; ParentWindow: HWND = 0);
@@ -46,6 +50,17 @@ end;
 destructor TTCPasswordManager.Destroy;
 begin
 	inherited;
+end;
+
+procedure TTCPasswordManager.Log(LogLevel, MsgType: integer; LogString: WideString);
+begin
+	if Assigned(LogHandleProc) then
+		LogHandleProc(LogLevel, MsgType, PWideChar(LogString));
+end;
+
+procedure TTCPasswordManager.Log(LogLevel, MsgType: integer; Msg: WideString; const Args: array of const);
+begin
+	Log(LogLevel, MsgType, Format(Msg, Args))
 end;
 
 function TTCPasswordManager.GetPassword(Key: WideString; var Password: WideString): integer;
