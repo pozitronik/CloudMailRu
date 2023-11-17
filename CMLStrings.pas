@@ -159,6 +159,9 @@ const
 	ERR_UNSHARE_FOLDER_MSG = 'Error while remove access to %s to %s folder, see the main log';
 	DESCRIPTION_FROM = 'Description from %s';
 	WAIT = 'Wait for it...';
+	ERR_CONFIRMATION = 'Confirmation error';
+	ERR_REGISTRATION = 'Registration error';
+	ERR_LOAD_CAPTCHA = 'Can''t load captcha image!';
 
 implementation
 

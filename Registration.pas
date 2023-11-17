@@ -2,7 +2,7 @@ unit Registration;
 
 interface
 
-uses Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, CloudMailRu, Settings, Vcl.StdCtrls, Vcl.ExtCtrls, CMLHTTP, CMLJSON, CMLTypes, PLUGIN_Types, Vcl.Imaging.JPEG;
+uses Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, CloudMailRu, Settings, Vcl.StdCtrls, Vcl.ExtCtrls, CMLHTTP, CMLJSON, CMLTypes, CMLStrings, PLUGIN_Types, Vcl.Imaging.JPEG;
 
 const
 	MAILRU_REGISTRATION_SIGNUP = 'https://account.mail.ru/api/v1/user/signup';
@@ -45,7 +45,7 @@ type
 		function RegistrationValid: boolean;
 	protected
 		HTTPConnection: TCloudMailRuHTTP;
-//		JSONParser: TCloudMailRuJSONParser;
+		//		JSONParser: TCloudMailRuJSONParser;
 		procedure InitComponents();
 		procedure FreeComponents();
 		function createAccount(firstname, lastname, Login, password, Domain: WideString; var Code: WideString): boolean;
@@ -75,12 +75,12 @@ function TRegistrationForm.confirmRegistration(email, Code, captcha: WideString)
 var
 	JSON: WideString;
 begin
-	result := HTTPConnection.PostForm(MAILRU_REGISTRATION_CONFIRM, 'email=' + email + '&reg_anketa=' + '{"id":"' + Code + '","capcha":"' + captcha + '"}', JSON); //capcha, lol
+	result := HTTPConnection.PostForm(MAILRU_REGISTRATION_CONFIRM, Format('email=%s&reg_anketa={"id":"%s","capcha":"%s"}', [email, Code, captcha]), JSON);
 	if result then
 	begin
 		result := CMLJSONParser.getRegistrationOperationResult(JSON).OperationResult = CLOUD_OPERATION_OK;
 		if not result then
-			MessageBox(Handle, PWideChar(JSON), 'Confirmation error', MB_ICONERROR + MB_OK);
+			MessageBox(Handle, PWideChar(JSON), ERR_CONFIRMATION, MB_ICONERROR + MB_OK);
 	end;
 
 end;
@@ -90,20 +90,20 @@ var
 	JSON: WideString;
 
 begin
-	HTTPConnection.HTTP.Request.UserAgent := 'curl/7.63.0'; //required by server
+	HTTPConnection.HTTP.Request.UserAgent := 'curl/7.63.0'; //required by the server
 	HTTPConnection.HTTP.Request.Connection := EmptyWideStr;
 	HTTPConnection.HTTP.Request.Accept := '*/*';
 
 	HTTPConnection.HTTP.Request.Referer := MAILRU_REGISTRATION_SIGNUP;
 
-	result := HTTPConnection.PostForm(MAILRU_REGISTRATION_SIGNUP, 'name={"first":"' + firstname + '","last":"' + lastname + '"}&login=' + Login + '&domain=' + Domain + '&password=' + password, JSON);
+	result := HTTPConnection.PostForm(MAILRU_REGISTRATION_SIGNUP, Format('name={"first":"%s","last":"%s"}&login=%s&domain=%s&password=%s', [firstname, lastname, Login, Domain, password]), JSON);
 	if result then
 	begin
 		result := (CLOUD_OPERATION_OK = CMLJSONParser.getRegistrationOperationResult(JSON).OperationResult);
 		if result then
 			result := CMLJSONParser.getRegistrationBody(JSON, Code)
 		else
-			MessageBox(Handle, PWideChar(JSON), 'Registration error', MB_ICONERROR + MB_OK);
+			MessageBox(Handle, PWideChar(JSON), ERR_REGISTRATION, MB_ICONERROR + MB_OK);
 	end;
 end;
 
@@ -133,7 +133,7 @@ end;
 procedure TRegistrationForm.FreeComponents;
 begin
 	HTTPConnection.Free;
-//	JSONParser.Free;
+	//	JSONParser.Free;
 end;
 
 function TRegistrationForm.getRegisrationCaptcha(CaptchaStream: TStream): boolean;
@@ -144,7 +144,7 @@ end;
 procedure TRegistrationForm.InitComponents;
 begin
 	HTTPConnection := TCloudMailRuHTTP.Create(ConnectionSettings);
-//	JSONParser := TCloudMailRuJSONParser.Create();
+	//	JSONParser := TCloudMailRuJSONParser.Create();
 end;
 
 function TRegistrationForm.RegistrationValid: boolean;
@@ -193,7 +193,7 @@ begin
 	CaptchaEdit.Enabled := false;
 	SendBtn.Enabled := false;
 	Account.name := LoginEdit.Text;
-	Account.email := LoginEdit.Text + '@' + DomainCombo.Text;
+	Account.email := Format('%s@%s', [LoginEdit.Text, DomainCombo.Text]);
 	Account.user := LoginEdit.Text;
 	Account.password := PasswordEdit.Text;
 	Account.Domain := DomainCombo.Text;
@@ -217,7 +217,7 @@ begin
 			SendBtn.Enabled := true;
 		end
 		else
-			MessageBox(Handle, 'Can''t load captcha image!', 'Registration error', MB_ICONERROR + MB_OK);
+			MessageBox(Handle, ERR_LOAD_CAPTCHA, ERR_REGISTRATION, MB_ICONERROR + MB_OK);
 		MemStream.Free;
 	end;
 	self.Enabled := true;
