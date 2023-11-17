@@ -162,12 +162,8 @@ begin
 
 		Result.dwFileAttributes := 0;
 	end;
-
-	if (DirListing.size > MAXDWORD) then
-		Result.nFileSizeHigh := DirListing.size div MAXDWORD
-	else
-		Result.nFileSizeHigh := 0;
-	Result.nFileSizeLow := DirListing.size;
+	Result.nFileSizeHigh := DWORD((DirListing.size shr 32) and $FFFFFFFF);
+	Result.nFileSizeLow := DWORD(DirListing.size and $FFFFFFFF);
 	strpcopy(Result.cFileName, DirListing.name);
 end;
 
