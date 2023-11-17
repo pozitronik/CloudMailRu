@@ -145,23 +145,16 @@ end;
 
 function CloudMailRuDirListingItemToFindData(DirListing: TCloudMailRuDirListingItem; DirsAsSymlinks: Boolean = false): tWIN32FINDDATAW;
 begin
+	FillChar(Result, sizeof(WIN32_FIND_DATA), 0);
 	if (DirListing.deleted_from <> '') then //items inside trash bin
 	begin
 		Result.ftCreationTime := DateTimeToFileTime(UnixToDateTime(DirListing.deleted_at, false));
 		Result.ftLastWriteTime := Result.ftCreationTime;
 		if (DirListing.type_ = TYPE_DIR) then
 			Result.dwFileAttributes := FILE_ATTRIBUTE_DIRECTORY
-		else
-			Result.dwFileAttributes := 0;
 	end else if (DirListing.type_ = TYPE_DIR) or (DirListing.kind = KIND_SHARED) then
 	begin
-		Result.ftCreationTime.dwLowDateTime := 0;
-		Result.ftCreationTime.dwHighDateTime := 0;
-		Result.ftLastWriteTime.dwHighDateTime := 0;
-		Result.ftLastWriteTime.dwLowDateTime := 0;
-		if DirsAsSymlinks then
-			Result.dwFileAttributes := 0
-		else
+		if not DirsAsSymlinks then
 			Result.dwFileAttributes := FILE_ATTRIBUTE_DIRECTORY;
 	end else begin
 		Result.ftCreationTime := DateTimeToFileTime(UnixToDateTime(DirListing.mtime, false));
@@ -180,13 +173,8 @@ end;
 
 function FindData_emptyDir(DirName: WideString = '.'): tWIN32FINDDATAW;
 begin
+	FillChar(Result, sizeof(WIN32_FIND_DATA), 0);
 	strpcopy(Result.cFileName, DirName);
-	Result.ftCreationTime.dwLowDateTime := 0;
-	Result.ftCreationTime.dwHighDateTime := 0;
-	Result.ftLastWriteTime.dwHighDateTime := 0;
-	Result.ftLastWriteTime.dwLowDateTime := 0;
-	Result.nFileSizeHigh := 0;
-	Result.nFileSizeLow := 0;
 	Result.dwFileAttributes := FILE_ATTRIBUTE_DIRECTORY;
 end;
 
@@ -697,7 +685,7 @@ begin
 			Result := true;
 			inc(FileCounter);
 		end else begin
-			FillChar(FindData, SizeOf(WIN32_FIND_DATA), 0);
+			FillChar(FindData, sizeof(WIN32_FIND_DATA), 0);
 			FileCounter := 0;
 			Result := false;
 		end;
@@ -1711,12 +1699,12 @@ begin
 			begin
 				if Item.mtime <> 0 then
 					exit(ft_nosuchfield);
-				Move(Item.grev, FieldValue^, SizeOf(Item.grev));
+				Move(Item.grev, FieldValue^, sizeof(Item.grev));
 				Result := ft_numeric_32;
 			end;
 		3:
 			begin
-				Move(Item.size, FieldValue^, SizeOf(Item.size));
+				Move(Item.size, FieldValue^, sizeof(Item.size));
 				Result := ft_numeric_64;
 			end;
 		4:
@@ -1733,7 +1721,7 @@ begin
 			begin
 				if Item.mtime <> 0 then
 					exit(ft_nosuchfield);
-				Move(Item.rev, FieldValue^, SizeOf(Item.rev));
+				Move(Item.rev, FieldValue^, sizeof(Item.rev));
 				Result := ft_numeric_32;
 			end;
 		7:
@@ -1753,7 +1741,7 @@ begin
 				FileTime.dwHighDateTime := 0;
 				FileTime.dwLowDateTime := 0;
 				FileTime := DateTimeToFileTime(UnixToDateTime(Item.mtime));
-				Move(FileTime, FieldValue^, SizeOf(FileTime));
+				Move(FileTime, FieldValue^, sizeof(FileTime));
 				Result := ft_datetime;
 			end;
 		10:
@@ -1770,14 +1758,14 @@ begin
 			begin
 				if Item.type_ = TYPE_FILE then
 					exit(ft_nosuchfield);
-				Move(Item.folders_count, FieldValue^, SizeOf(Item.folders_count));
+				Move(Item.folders_count, FieldValue^, sizeof(Item.folders_count));
 				Result := ft_numeric_32;
 			end;
 		13:
 			begin
 				if Item.type_ = TYPE_FILE then
 					exit(ft_nosuchfield);
-				Move(Item.files_count, FieldValue^, SizeOf(Item.files_count));
+				Move(Item.files_count, FieldValue^, sizeof(Item.files_count));
 				Result := ft_numeric_32;
 			end;
 		14:
@@ -1798,7 +1786,7 @@ begin
 				FileTime.dwHighDateTime := 0;
 				FileTime.dwLowDateTime := 0;
 				FileTime := DateTimeToFileTime(UnixToDateTime(Item.deleted_at));
-				Move(FileTime, FieldValue^, SizeOf(FileTime));
+				Move(FileTime, FieldValue^, sizeof(FileTime));
 				Result := ft_datetime;
 			end;
 		16:
