@@ -120,6 +120,23 @@ const
 	ERR_HTTP_GENERAL = '%s ошибка с сообщением: %s при %s %s, ответ сервера: %s';
 	ERR_SOCKET_GENERAL = '%s ошибка сети: %s при %s %s';
 	ERR_OTHER_GENERAL = '%s ошибка с сообщением: %s при %s %s';
+	ERR_NO_MASTER_PASSWORD = 'No master password entered yet';
+	ERR_NO_PASSWORDS_STORED = 'CryptProc returns an error: No password found in the password store';
+	ERR_DECRYPT_FAILED = 'CryptProc returns an error: Decrypt failed';
+	PASSWORD_SAVED = '%s: the password saved in the TC password manager';
+	ERR_ENCRYPT_FAILED = '%s: CryptProc returns an error: Encrypt failed';
+	ERR_WRITE_FAILED = '%s: password is not saved: Can''t write the password to the password store';
+	ERR_WRITE_NO_MASTER_PASSWORD = '%s: password is not saved: ' + ERR_NO_MASTER_PASSWORD;
+	PREFIX_ASK_PASSWORD = 'Enter account password:';
+	ASK_PASSWORD = '%s password';
+	ASK_PROXY_PASSWORD = 'User %s proxy password';
+	PREFIX_ASK_PROXY_PASSWORD = 'Enter proxy password:';
+	ASK_ENCRYPTION_PASSWORD =  '%s encryption password';
+	PREFIX_ASK_ENCRYPTION_PASSWORD = 'Enter encryption password for current session:';
+	VERB_UPDATE = 'Update';
+	VERB_SET = 'Set';
+	PREFIX_ASK_NEW_PASSWORD = 'New password:';
+
 
 implementation
 
