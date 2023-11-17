@@ -173,6 +173,7 @@ const
 	MULTIPLE_ITEMS = '<Multiple items>';
   MULTIPLE_ITEMS_DELETED = 'Multiple deleted items';
   UNSET_ITEM = '-';
+  ERR_READ_BYTES_FROM = 'Can''t read from %s %d bytes at %d';
 
 implementation
 

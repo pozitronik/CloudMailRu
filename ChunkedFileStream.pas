@@ -2,7 +2,7 @@ unit ChunkedFileStream;
 
 interface
 
-uses System.Classes, System.SysUtils;
+uses System.Classes, System.SysUtils, CMLStrings;
 
 type
 
@@ -35,7 +35,7 @@ begin
 	self.FileStream := TBufferedFileStream.Create(AFileName, Mode);
 	FileSize := FileStream.Size;
 	if (ChunkSize < 0) or (ChunkSize > FileSize) or (ChunkStart < 0) or (ChunkStart > FileSize) or (FileStream.Seek(ChunkStart, soBeginning) <> ChunkStart) then
-		raise EReadError.Create('Can''t read from ' + AFileName + ' ' + ChunkSize.ToString + ' bytes at ' + ChunkStart.ToString);
+		raise EReadError.Create(Format(ERR_READ_BYTES_FROM, [AFileName, ChunkSize, ChunkStart]));
 	self.FStartPos := ChunkStart;
 	if ChunkSize = 0 then
 		self.FSize := FileSize - ChunkStart
