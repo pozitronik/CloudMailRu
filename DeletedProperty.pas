@@ -3,7 +3,7 @@
 interface
 
 uses
-	MRC_Helper, CloudMailRu, CMLTypes, DateUtils, Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls;
+	MRC_Helper, CloudMailRu, CMLTypes, CMLStrings, DateUtils, Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls;
 
 type
 	TDeletedPropertyForm = class(TForm)
@@ -53,8 +53,8 @@ begin
 
 		if Length(Items) = 0 then
 		begin
-			NameCaption := 'Empty';
-			FormCaption := AccountName + ' trash';
+			NameCaption := EMPTY;
+			FormCaption := Format(ACCOUNT_TRASH, [AccountName]);
 			DeletedPropertyForm.RestoreBTN.Enabled := false;
 			DeletedPropertyForm.RestoreAllBTN.Enabled := false;
 			DeletedPropertyForm.EmptyBTN.Enabled := false;
@@ -66,24 +66,24 @@ begin
 			AtCaption := DateTimeToStr(UnixToDateTime(Items[0].deleted_at));
 			ByCaption := Items[0].deleted_by.ToString; //display user id as is, because no conversation api method performed
 			SizeCaption := FormatSize(Items[0].size, TYPE_BYTES);
-			FormCaption := 'Deleted item: ' + NameCaption;
+			FormCaption := Format(DELETED_ITEM, [NameCaption]);
 			DeletedPropertyForm.RestoreAllBTN.Enabled := false;
 		end else begin
-			NameCaption := '<Multiple items>';
-			FromCaption := '-';
-			AtCaption := '-';
-			ByCaption := '-';
+			NameCaption := MULTIPLE_ITEMS;
+			FromCaption := UNSET_ITEM;
+			AtCaption := UNSET_ITEM;
+			ByCaption := UNSET_ITEM;
 			SizeCaption := FormatSize(summary_size(Items), TYPE_BYTES);
-			FormCaption := 'Multiple deleted items';
+			FormCaption := MULTIPLE_ITEMS_DELETED;
 		end;
 
 		if TrashDir then //свойства для самой корзины, даём выбор Очистить/Восстановить все/Отмена
 		begin
 			FormCaption := AccountName + TrashPostfix;
 			NameCaption := FormCaption;
-			FromCaption := '-';
-			AtCaption := '-';
-			ByCaption := '-';
+			FromCaption := UNSET_ITEM;
+			AtCaption := UNSET_ITEM;
+			ByCaption := UNSET_ITEM;
 			DeletedPropertyForm.RestoreBTN.Enabled := false;
 			DeletedPropertyForm.RestoreAllBTN.Enabled := true;
 		end else begin //свойства для пачки файлов, даём выбор Восстановить/Отмена

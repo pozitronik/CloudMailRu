@@ -167,6 +167,12 @@ const
 	ERR_WRONG_FORMAT = 'Parameter should be in hash:size:name or hash:size format.';
 	ERR_WRONG_HASH_LENGTH = 'Hash length should be exactly 40 symbols.';
 	ERR_WRONG_SIZE_FORMAT = 'Size should be in numeric format.';
+	EMPTY = 'Empty';
+	ACCOUNT_TRASH = '%s trash';
+	DELETED_ITEM = 'Deleted item: %s';
+	MULTIPLE_ITEMS = '<Multiple items>';
+  MULTIPLE_ITEMS_DELETED = 'Multiple deleted items';
+  UNSET_ITEM = '-';
 
 implementation
 
