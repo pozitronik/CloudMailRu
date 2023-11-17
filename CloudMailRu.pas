@@ -1258,6 +1258,12 @@ begin
 	FileStream.free;
 end;
 
+{$WARN NO_RETVAL OFF}
+(*
+ The W1035 compiler warning could be a false positive in this case
+ BUT this code needs to be covered with tests and perhaps refactored due its length and complexity.
+*)
+
 function TCloudMailRu.putFileSplit(localPath, remotePath, ConflictMode: WideString; ChunkOverwriteMode: integer): integer;
 var
 	LocalFileIdentity: TCloudMailRuFileIdentity;
@@ -1392,6 +1398,7 @@ begin
 	SplitFileInfo.Destroy;
 	exit(FS_FILE_OK); //Файлик залит по частям, выходим
 end;
+{$WARN NO_RETVAL ON}
 
 {Wrapper for putFileWhole/putFileSplit}
 function TCloudMailRu.putFile(localPath, remotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; ChunkOverwriteMode: integer = 0): integer;
