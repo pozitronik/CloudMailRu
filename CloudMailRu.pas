@@ -771,7 +771,7 @@ begin
 		exit; //Проверка на вызов без инициализации
 	if self.shard_override <> EmptyWideStr then
 	begin
-		Log(LogLevelError, MSGTYPE_DETAILS, SHARD_OVERRIDEN);
+		Log(LogLevelError, MSGTYPE_DETAILS, SHARD_OVERRIDDEN);
 		Shard := self.shard_override;
 		exit(true);
 	end;
@@ -878,7 +878,7 @@ begin
 		result := self.loginRegular(method);
 		if (result and (EmptyWideStr <> self.upload_url_override)) then
 		begin
-			Log(LogLevelError, MSGTYPE_DETAILS, UPLOAD_URL_OVERRIDEN);
+			Log(LogLevelError, MSGTYPE_DETAILS, UPLOAD_URL_OVERRIDDEN);
 			self.upload_url := self.upload_url_override;
 			exit(true);
 		end;
@@ -1003,7 +1003,7 @@ begin
 	if self.getUserSpace(US) then
 	begin
 		if (US.overquota) then
-			QuotaInfo := WARN_QUOTA_EXAUSTED
+			QuotaInfo := WARN_QUOTA_EXHAUSTED
 		else
 			QuotaInfo := EmptyWideStr;
 		Log(LogLevelFileOperation, MSGTYPE_DETAILS, USER_SPACE_INFO, [FormatSize(US.total), FormatSize(US.used), FormatSize(US.total - US.used), QuotaInfo]);
@@ -1315,7 +1315,7 @@ begin
 					case ChunkOverwriteMode of
 						ChunkOverwrite: //silently overwrite chunk
 							begin
-								Log(LogLevelWarning, MSGTYPE_DETAILS, CHUNK_OWERWRITE, [ChunkRemotePath]);
+								Log(LogLevelWarning, MSGTYPE_DETAILS, CHUNK_OVERWRITE, [ChunkRemotePath]);
 								if not(self.deleteFile(ChunkRemotePath)) then
 								begin
 									result := FS_FILE_WRITEERROR;
@@ -1623,7 +1623,7 @@ begin
 
 		read := Stream.read(buffer, bufSize);
 		sha1.Update(buffer, read);
-		if (1 = ExternalProgressProc(PWideChar(Path), CALC_HASH, Percent)) then
+		if (1 = ExternalProgressProc(PWideChar(Path), CALCULATING_HASH, Percent)) then
 		begin
 			Aborted := true;
 		end;
