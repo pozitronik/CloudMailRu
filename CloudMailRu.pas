@@ -160,12 +160,12 @@ begin
 		remotePath := ChangePathFileName(remotePath, FileName);
 	end;
 	{Экспериментально выяснено, что параметры api, build, email, x-email, x-page-id в запросе не обязательны}
-	if self.HTTP.PostForm(API_FILE_ADD, 'api=2&conflict=' + ConflictMode + '&home=/' + PathToUrl(remotePath) + '&hash=' + FileIdentity.Hash + '&size=' + FileIdentity.size.ToString + self.united_params, JSON, 'application/x-www-form-urlencoded', LogErrors, false) then {Do not allow to cancel operation here}
+	if self.HTTP.PostForm(API_FILE_ADD, Format('api=2&conflict=%s&home=/%s&hash=%s&size=%d%s', [ConflictMode, PathToUrl(remotePath), FileIdentity.Hash, FileIdentity.size, self.united_params]), JSON, 'application/x-www-form-urlencoded', LogErrors, false) then {Do not allow to cancel operation here}
 	begin
 		OperationResult := CMLJSONParser.getOperationResult(JSON);
 		result := CloudResultToFsResult(OperationResult, PREFIX_ERR_FILE_UPLOADING);
 		if (CLOUD_OPERATION_OK = OperationResult.OperationResult) and LogSuccess then
-			Log(LogLevelDetail, MSGTYPE_DETAILS, 'File ' + remotePath + ' found by hash.');
+			Log(LogLevelDetail, MSGTYPE_DETAILS, Format(FILE_FOUND_BY_HASH, [remotePath]));
 		if (NAME_TOKEN = CMLJSONParser.getBodyError(JSON)) and RefreshCSRFToken() then
 			result := self.addFileByIdentity(FileIdentity, remotePath, ConflictMode, LogErrors, LogSuccess);
 	end;
@@ -191,7 +191,7 @@ begin
 	if self.public_account then
 		exit(FS_FILE_NOTSUPPORTED);
 	Progress := true;
-	if self.HTTP.GetPage(API_CLONE + '?folder=' + PathToUrl(Path) + '&weblink=' + link + '&conflict=' + ConflictMode + self.united_params, JSON, Progress) then
+	if self.HTTP.GetPage(Format('%s?folder=/%s&weblink=%s&conflict=%s%s', [API_CLONE, PathToUrl(Path), link, ConflictMode, self.united_params]), JSON, Progress) then
 	begin //Парсим ответ
 		result := CloudResultToFsResult(CMLJSONParser.getOperationResult(JSON), PREFIX_ERR_FILE_PUBLISH);
 		if (result <> FS_FILE_OK) and not(Progress) then
@@ -254,7 +254,7 @@ begin
 	if self.public_account then
 		exit(FS_FILE_NOTSUPPORTED);
 	self.HTTP.SetProgressNames(OldName, IncludeTrailingPathDelimiter(ToPath) + ExtractFileName(OldName));
-	if self.HTTP.PostForm(API_FILE_COPY, 'home=' + PathToUrl(OldName) + '&folder=' + PathToUrl(ToPath) + self.united_params + '&conflict', JSON) then
+	if self.HTTP.PostForm(API_FILE_COPY, Format('home=/%s&folder=/%s%s&conflict', [PathToUrl(OldName), PathToUrl(ToPath), self.united_params]), JSON) then
 	begin //Парсим ответ
 		result := CloudResultToFsResult(CMLJSONParser.getOperationResult(JSON), PREFIX_ERR_FILE_COPY);
 	end;
@@ -337,7 +337,7 @@ begin
 	if self.public_account then
 		exit;
 	self.HTTP.SetProgressNames(CREATE_DIRECTORY, Path);
-	result := self.HTTP.PostForm(API_FOLDER_ADD, 'home=/' + PathToUrl(Path) + self.united_params + '&conflict', JSON) and CloudResultToBoolean(CMLJSONParser.getOperationResult(JSON));
+	result := self.HTTP.PostForm(API_FOLDER_ADD, Format('home=/%s%s&conflict', [PathToUrl(Path), self.united_params]), JSON) and CloudResultToBoolean(CMLJSONParser.getOperationResult(JSON));
 	if (not result and (NAME_TOKEN = CMLJSONParser.getBodyError(JSON))) and RefreshCSRFToken() then
 		result := self.createDir(Path);
 end;
@@ -352,7 +352,7 @@ begin
 	if self.public_account then
 		exit;
 	self.HTTP.SetProgressNames(DELETE_FILE, Path);
-	result := self.HTTP.PostForm(API_FILE_REMOVE, 'home=/' + PathToUrl(Path) + self.united_params + '&conflict', JSON) and CloudResultToBoolean(CMLJSONParser.getOperationResult(JSON), PREFIX_ERR_DELETE_FILE);
+	result := self.HTTP.PostForm(API_FILE_REMOVE, Format('home=/%s%s&conflict', [PathToUrl(Path), self.united_params]), JSON) and CloudResultToBoolean(CMLJSONParser.getOperationResult(JSON), PREFIX_ERR_DELETE_FILE);
 	if (not result and (NAME_TOKEN = CMLJSONParser.getBodyError(JSON))) and RefreshCSRFToken() then
 		result := self.deleteFile(Path);
 end;
@@ -449,7 +449,7 @@ begin
 	if (ShowProgress) then
 		self.HTTP.SetProgressNames(SHARED_LINKS_LISTING, UNKNOWN_ITEM);
 
-	result := self.HTTP.GetPage(API_FOLDER_SHARED_LINKS + '?' + self.united_params, JSON, ShowProgress);
+	result := self.HTTP.GetPage(Format('%s?%s', [API_FOLDER_SHARED_LINKS, self.united_params]), JSON, ShowProgress);
 	if result then
 		result := CloudResultToBoolean(CMLJSONParser.getOperationResult(JSON), PREFIX_ERR_SHARED_LINKS_LISTING) and CMLJSONParser.getDirListing(JSON, DirListing)
 	else
@@ -472,7 +472,7 @@ begin
 		exit;
 	if (ShowProgress) then
 		self.HTTP.SetProgressNames(INCOMING_LINKS_LISTING, UNKNOWN_ITEM);
-	result := self.HTTP.GetPage(API_FOLDER_SHARED_INCOMING + '?' + self.united_params, JSON, ShowProgress);
+	result := self.HTTP.GetPage(Format('%s?%s', [API_FOLDER_SHARED_INCOMING, self.united_params]), JSON, ShowProgress);
 
 	if result then
 		result := CloudResultToBoolean(CMLJSONParser.getOperationResult(JSON), PREFIX_ERR_INCOMING_REQUESTS_LISTING) and CMLJSONParser.getIncomingInviteListing(JSON, IncomingListing)
@@ -519,7 +519,7 @@ begin
 		exit;
 	if (ShowProgress) then
 		self.HTTP.SetProgressNames(TRASH_LISTING, UNKNOWN_ITEM);
-	result := self.HTTP.GetPage(API_TRASHBIN + '?' + self.united_params, JSON, ShowProgress);
+	result := self.HTTP.GetPage(Format('%s?%s', [API_TRASHBIN, self.united_params]), JSON, ShowProgress);
 
 	if result then
 		result := CloudResultToBoolean(CMLJSONParser.getOperationResult(JSON), PREFIX_ERR_TRASH_LISTING) and CMLJSONParser.getDirListing(JSON, DirListing)
@@ -541,11 +541,11 @@ begin
 		exit; //Проверка на вызов без инициализации
 	SetLength(DirListing, 0);
 	if self.public_account then
-		result := self.HTTP.GetPage(API_FOLDER + '&weblink=' + IncludeSlash(self.public_link) + PathToUrl(Path, false) + self.united_params, JSON, ShowProgress)
+		result := self.HTTP.GetPage(Format('%s&weblink=%s%s%s%s', [API_FOLDER, IncludeSlash(self.public_link), PathToUrl(Path, false), self.united_params]), JSON, ShowProgress)
 	else
 	begin
 		self.HTTP.SetProgressNames(DIR_LISTING, Path);
-		result := self.HTTP.GetPage(API_FOLDER + '&home=' + PathToUrl(Path) + self.united_params, JSON, ShowProgress);
+		result := self.HTTP.GetPage(Format('%s&home=%s%s', [API_FOLDER, PathToUrl(Path), self.united_params]), JSON, ShowProgress);
 	end;
 	if result then
 	begin
@@ -659,14 +659,13 @@ begin
 		usedShard := self.public_shard
 	else
 		self.getShard(usedShard, ShardType);
-	if (self.public_account) then {для}
-		exit(IncludeSlash(usedShard) + IncludeSlash(self.public_link) + PathToUrl(remotePath, true, true));
-
+	if (self.public_account) then
+		exit(Format('%s%s%s', [IncludeSlash(usedShard), IncludeSlash(self.public_link), PathToUrl(remotePath, true, true)]));
 	if (ExtractRealPath(remotePath).isDir) then {для ссылок внутри каталогов перебираются файлы внутри «публичной ссылки» на каталог}
 	begin
-		result := IncludeSlash(usedShard) + self.public_link + PathToUrl(remotePath, true, true);
+		result := Format('%s%s%s', [IncludeSlash(usedShard), self.public_link, PathToUrl(remotePath, true, true)]);
 	end else begin {для прямых ссылок берутся публичные ссылки файлов}
-		result := IncludeSlash(usedShard) + self.public_link;
+		result := Format('%s%s%s', [IncludeSlash(usedShard), self.public_link])
 	end;
 
 	ProgressEnabled := false;
@@ -724,7 +723,7 @@ var
 	Answer: WideString;
 begin
 	result := false;
-	if self.HTTP.PostForm(OAUTH_TOKEN_URL, 'client_id=cloud-win&grant_type=password&username=' + self.user + '%40' + self.domain + '&password=' + UrlEncode(self.password), Answer) then
+	if self.HTTP.PostForm(OAUTH_TOKEN_URL, Format('client_id=cloud-win&grant_type=password&username=%s@%s&password=%s', [self.user, self.domain, UrlEncode(self.password)]), Answer) then
 	begin
 		if not CMLJSONParser.getOAuthTokenInfo(Answer, OAuthToken) then
 			exit(false);
@@ -758,7 +757,7 @@ begin
 
 	if not self.getShard(shard_url, ShardType) then
 		exit;
-	StreamUrl := shard_url + '0p/' + DCPbase64.Base64EncodeStr(String(RawByteString(FileIdentity.weblink))) + '.m3u8?double_encode=1'; //UTF2Ansi is required
+	StreamUrl := Format('%s0p/%s.m3u8?double_encode=1', [shard_url, DCPbase64.Base64EncodeStr(String(RawByteString(FileIdentity.weblink)))]); //UTF2Ansi is required
 	result := true;
 end;
 
@@ -798,7 +797,7 @@ begin
 	begin
 		{При первоначальной инициализации получаем токен из страницы ответа, затем он обновляется по необходимости}
 		result := extractTokenFromText(JSON, AuthToken) and extract_x_page_id_FromText(JSON, x_page_id) and extract_build_FromText(JSON, build); //and extract_upload_url_FromText(JSON, self.upload_url);
-		self.united_params := '&api=2&build=' + build + '&x-page-id=' + x_page_id + '&email=' + self.user + '%40' + self.domain + '&x-email=' + self.user + '%40' + self.domain + '&_=' + DateTimeToUnix(now).ToString + '810';
+		self.united_params := Format('&api=2&build=%s&x-page-id=%s&email=%s@%s&x-email=%s@%s&_=%d810', [build, x_page_id, self.user, self.domain, self.user, self.domain, DateTimeToUnix(now)]);
 	end;
 end;
 
@@ -844,7 +843,7 @@ begin
 	if not(Assigned(self)) then
 		exit; //Проверка на вызов без инициализации
 	Progress := false;
-	result := self.HTTP.GetPage(API_USER_SPACE + '?home=/' + self.united_params, JSON, Progress);
+	result := self.HTTP.GetPage(Format('%s?home=/%s', [API_USER_SPACE, self.united_params]), JSON, Progress);
 	if result then
 	begin
 		result := CloudResultToBoolean(CMLJSONParser.getOperationResult(JSON), PREFIX_ERR_GET_USER_SPACE) and CMLJSONParser.getUserSpace(JSON, SpaceInfo);
@@ -953,7 +952,7 @@ begin
 		CLOUD_AUTH_METHOD_WEB: //todo: вынести в отдельный метод
 			begin
 				Log(LogLevelDebug, MSGTYPE_DETAILS, Format(REQUESTING_AUTH_TOKEN, [self.email]));
-				result := self.HTTP.PostForm(LOGIN_URL, 'page=https://cloud.mail.ru/?new_auth_form=1&Domain=' + self.domain + '&Login=' + self.user + '&Password=' + UrlEncode(self.password) + '&FailPage=', PostAnswer);
+				result := self.HTTP.PostForm(LOGIN_URL, Format('page=https://cloud.mail.ru/?new_auth_form=1&Domain=%s&Login=%s&Password=%s&FailPage=', [self.domain, self.user, UrlEncode(self.password)]), PostAnswer);
 				if (result) then
 				begin
 					Log(LogLevelDebug, MSGTYPE_DETAILS, PARSING_TOKEN_DATA);
@@ -1016,7 +1015,7 @@ begin
 		exit; //Проверка на вызов без инициализации
 	if self.public_account then
 		exit(FS_FILE_NOTSUPPORTED);
-	if self.HTTP.PostForm(API_FILE_MOVE, 'home=' + PathToUrl(OldName) + '&folder=' + PathToUrl(ToPath) + self.united_params + '&conflict', JSON) then
+	if self.HTTP.PostForm(API_FILE_MOVE, Format('home=%s&folder=%s%s&conflict', [PathToUrl(OldName), PathToUrl(ToPath), self.united_params]), JSON) then
 		result := CloudResultToFsResult(CMLJSONParser.getOperationResult(JSON), PREFIX_ERR_FILE_MOVE);
 	if (NAME_TOKEN = CMLJSONParser.getBodyError(JSON)) and RefreshCSRFToken() then
 		result := self.moveFile(OldName, ToPath);
@@ -1055,9 +1054,9 @@ begin
 		exit;
 	if publish then
 	begin
-		result := self.HTTP.PostForm(API_FILE_PUBLISH, 'home=/' + PathToUrl(Path) + self.united_params + '&conflict', JSON, 'application/x-www-form-urlencoded', true, false);
+		result := self.HTTP.PostForm(API_FILE_PUBLISH, Format('home=/%s%s&conflict', [PathToUrl(Path), self.united_params]), JSON, 'application/x-www-form-urlencoded', true, false);
 	end else begin
-		result := self.HTTP.PostForm(API_FILE_UNPUBLISH, 'weblink=' + PublicLink + self.united_params + '&conflict', JSON, 'application/x-www-form-urlencoded', true, false);
+		result := self.HTTP.PostForm(API_FILE_UNPUBLISH, Format('weblink=%s%s&conflict', [PublicLink, self.united_params]), JSON, 'application/x-www-form-urlencoded', true, false);
 	end;
 
 	if result then
@@ -1078,7 +1077,7 @@ begin
 	if not(Assigned(self)) then
 		exit; //Проверка на вызов без инициализации
 	Progress := false;
-	if self.HTTP.GetPage(API_FOLDER_SHARED_INFO + '?home=' + PathToUrl(Path) + self.united_params, JSON, Progress) then
+	if self.HTTP.GetPage(Format('%s?home=%s%s', [API_FOLDER_SHARED_INFO, PathToUrl(Path), self.united_params]), JSON, Progress) then
 	begin
 		result := CMLJSONParser.getInviteListing(JSON, InviteListing);
 	end else begin
@@ -1102,9 +1101,9 @@ begin
 		else
 			access_string := CLOUD_SHARE_ACCESS_READ_ONLY;
 
-		result := self.HTTP.PostForm(API_FOLDER_SHARE, 'home=/' + PathToUrl(Path) + self.united_params + '&invite={"email":"' + email + '","access":"' + access_string + '"}', JSON)
+		result := self.HTTP.PostForm(API_FOLDER_SHARE, Format('home=/%s%s&invite={"email":"%s","access":"%s"}', [PathToUrl(Path), self.united_params, email, access_string]), JSON)
 	end else begin
-		result := self.HTTP.PostForm(API_FOLDER_UNSHARE, 'home=/' + PathToUrl(Path) + self.united_params + '&invite={"email":"' + email + '"}', JSON);
+		result := self.HTTP.PostForm(API_FOLDER_UNSHARE, Format('home=/%s%s&invite={"email":"%s"}', [PathToUrl(Path), self.united_params, email]), JSON);
 	end;
 	if result then
 		result := CloudResultToBoolean(CMLJSONParser.getOperationResult(JSON), PREFIX_ERR_INVITE_MEMBER);
@@ -1121,7 +1120,7 @@ begin
 		exit; //Проверка на вызов без инициализации
 	if self.public_account then
 		exit;
-	result := self.HTTP.PostForm(API_TRASHBIN_RESTORE, 'path=' + PathToUrl(Path) + '&restore_revision=' + RestoreRevision.ToString + self.united_params + '&conflict=' + ConflictMode, JSON) and CloudResultToBoolean(CMLJSONParser.getOperationResult(JSON), PREFIX_ERR_FILE_RESTORE);
+	result := self.HTTP.PostForm(API_TRASHBIN_RESTORE, Format('path=%s&restore_revision=%d%s&conflict=%s', [PathToUrl(Path), RestoreRevision, self.united_params, ConflictMode]), JSON) and CloudResultToBoolean(CMLJSONParser.getOperationResult(JSON), PREFIX_ERR_FILE_RESTORE);
 	if (not result and (NAME_TOKEN = CMLJSONParser.getBodyError(JSON))) and RefreshCSRFToken() then
 		result := self.trashbinRestore(Path, RestoreRevision, ConflictMode);
 end;
@@ -1150,7 +1149,7 @@ begin
 		exit; //Проверка на вызов без инициализации
 	if self.public_account then
 		exit;
-	result := self.HTTP.PostForm(API_FOLDER_MOUNT, 'home=' + UrlEncode(home) + '&invite_token=' + invite_token + self.united_params + '&conflict=' + ConflictMode, JSON) and CloudResultToBoolean(CMLJSONParser.getOperationResult(JSON), PREFIX_ERR_FOLDER_MOUNT);
+	result := self.HTTP.PostForm(API_FOLDER_MOUNT, Format('home=%s&invite_token=%s%s&conflict=%s', [UrlEncode(home), invite_token, self.united_params, ConflictMode]), JSON) and CloudResultToBoolean(CMLJSONParser.getOperationResult(JSON), PREFIX_ERR_FOLDER_MOUNT);
 	if (not result and (NAME_TOKEN = CMLJSONParser.getBodyError(JSON))) and RefreshCSRFToken() then
 		result := self.mountFolder(home, invite_token, ConflictMode);
 end;
@@ -1169,7 +1168,7 @@ begin
 		CopyStr := 'true'
 	else
 		CopyStr := 'false';
-	result := self.HTTP.PostForm(API_FOLDER_UNMOUNT, 'home=' + UrlEncode(home) + '&clone_copy=' + CopyStr + self.united_params, JSON) and CloudResultToBoolean(CMLJSONParser.getOperationResult(JSON), PREFIX_ERR_FOLDER_UNMOUNT);
+	result := self.HTTP.PostForm(API_FOLDER_UNMOUNT, Format('home=%s&clone_copy=%s%s', [UrlEncode(home), CopyStr, self.united_params]), JSON) and CloudResultToBoolean(CMLJSONParser.getOperationResult(JSON), PREFIX_ERR_FOLDER_UNMOUNT);
 	if (not result and (NAME_TOKEN = CMLJSONParser.getBodyError(JSON))) and RefreshCSRFToken() then
 		result := self.unmountFolder(home, clone_copy);
 end;
@@ -1183,7 +1182,7 @@ begin
 		exit; //Проверка на вызов без инициализации
 	if self.public_account then
 		exit;
-	result := self.HTTP.PostForm(API_INVITE_REJECT, 'invite_token=' + invite_token + self.united_params, JSON) and CloudResultToBoolean(CMLJSONParser.getOperationResult(JSON), PREFIX_ERR_INVITE_REJECT);
+	result := self.HTTP.PostForm(API_INVITE_REJECT, Format('invite_token=%s%s', [invite_token, self.united_params]), JSON) and CloudResultToBoolean(CMLJSONParser.getOperationResult(JSON), PREFIX_ERR_INVITE_REJECT);
 	if (not result and (NAME_TOKEN = CMLJSONParser.getBodyError(JSON))) and RefreshCSRFToken() then
 		result := self.rejectInvite(invite_token);
 end;
@@ -1442,7 +1441,7 @@ begin
 		self.getShard(self.upload_url, SHARD_TYPE_UPLOAD);
 	end;
 
-	UploadUrl := self.upload_url + '?cloud_domain=2&x-email=' + self.user + '%40' + self.domain(*+ '&fileapi' + DateTimeToUnix(now).ToString + '0246'*);
+	UploadUrl := Format('%s?cloud_domain=2&x-email=%s@%s', [self.upload_url, self.user, self.domain])(*+ '&fileapi' + DateTimeToUnix(now).ToString + '0246'*);
 	return := TStringList.Create;
 	//self.HTTP.OptionsMethod(UploadUrl, PostAnswer, ProgressEnabled); //not required at current moment, see issue #232
 	result := self.HTTP.putFile(UploadUrl, FileName, FileStream, PostAnswer);
@@ -1471,7 +1470,7 @@ begin
 	if self.public_account then
 		exit;
 	self.HTTP.SetProgressNames(DELETE_DIR, Path);
-	result := self.HTTP.PostForm(API_FILE_REMOVE, 'home=/' + IncludeSlash(PathToUrl(Path)) + self.united_params + '&conflict', JSON) and CloudResultToBoolean(CMLJSONParser.getOperationResult(JSON), PREFIX_ERR_DELETE_DIR); //API всегда отвечает true, даже если путь не существует
+	result := self.HTTP.PostForm(API_FILE_REMOVE, Format('home=/%s%s&conflict', [IncludeSlash(PathToUrl(Path)), self.united_params]), JSON) and CloudResultToBoolean(CMLJSONParser.getOperationResult(JSON), PREFIX_ERR_DELETE_DIR); //API всегда отвечает true, даже если путь не существует
 	if (not result and (NAME_TOKEN = CMLJSONParser.getBodyError(JSON))) and RefreshCSRFToken() then
 		result := self.removeDir(Path);
 end;
@@ -1485,7 +1484,7 @@ begin
 		exit; //Проверка на вызов без инициализации
 	if self.public_account then
 		exit;
-	if self.HTTP.PostForm(API_FILE_RENAME, 'home=' + PathToUrl(OldName) + '&name=' + PathToUrl(NewName) + self.united_params, JSON) then
+	if self.HTTP.PostForm(API_FILE_RENAME, Format('home=%s&name=%s%s', [PathToUrl(OldName), PathToUrl(NewName), self.united_params]), JSON) then
 		result := CloudResultToFsResult(CMLJSONParser.getOperationResult(JSON), PREFIX_ERR_FILE_RENAME);
 	if (NAME_TOKEN = CMLJSONParser.getBodyError(JSON)) and RefreshCSRFToken() then
 		result := self.renameFile(OldName, NewName);
@@ -1501,9 +1500,9 @@ begin
 		exit; //Проверка на вызов без инициализации
 	Progress := false;
 	if self.public_account then
-		result := self.HTTP.GetPage(API_FILE + '?weblink=' + IncludeSlash(self.public_link) + PathToUrl(Path) + self.united_params, JSON, Progress)
+		result := self.HTTP.GetPage(Format('%s?weblink=%s%s%s', [API_FILE, IncludeSlash(self.public_link), PathToUrl(Path), self.united_params]), JSON, Progress)
 	else
-		result := self.HTTP.GetPage(API_FILE + '?home=' + PathToUrl(Path) + self.united_params, JSON, Progress);
+		result := self.HTTP.GetPage(Format('%s?home=%s%s', [API_FILE, PathToUrl(Path), self.united_params]), JSON, Progress);
 	if result then
 	begin
 		result := CloudResultToBoolean(CMLJSONParser.getOperationResult(JSON), PREFIX_ERR_FILE_STATUS) and CMLJSONParser.getFileStatus(JSON, FileInfo);

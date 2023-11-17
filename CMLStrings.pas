@@ -116,7 +116,7 @@ const
 	SPLIT_LARGE_FILE_IGNORE = 'File size > %d bytes, ignored';
 	DELETE_DIR = 'Remove directory';
 	CALC_HASH = 'Calculating cloud hash';
-
+	FILE_FOUND_BY_HASH = 'File %s found by hash';
 	WARN_QUOTA_EXAUSTED = ' Warning: space quota exhausted!';
 
 	UNKNOWN_ITEM = '...';
