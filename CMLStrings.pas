@@ -131,13 +131,15 @@ const
 	ASK_PASSWORD = '%s password';
 	ASK_PROXY_PASSWORD = 'User %s proxy password';
 	PREFIX_ASK_PROXY_PASSWORD = 'Enter proxy password:';
-	ASK_ENCRYPTION_PASSWORD =  '%s encryption password';
+	ASK_ENCRYPTION_PASSWORD = '%s encryption password';
 	PREFIX_ASK_ENCRYPTION_PASSWORD = 'Enter encryption password for current session:';
 	VERB_UPDATE = 'Update';
 	VERB_SET = 'Set';
 	PREFIX_ASK_NEW_PASSWORD = 'New password:';
 	ERR_FILE_NOT_EXISTS = 'File not exists';
-
+	ERR_INI_GENERAL = 'INI file error';
+	ERR_INVALID_SECTION_NAME = 'Invalid section name %s';
+	ERR_INVALID_IDENTIFIER_NAME = 'Invalid identifier name %s';
 
 implementation
 

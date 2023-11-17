@@ -2,7 +2,7 @@
 
 interface
 
-uses Classes, Windows, SysUtils, IniFiles, System.Variants, System.IOUtils, Plugin_Types, MRC_Helper, VCL.Controls, System.RegularExpressions;
+uses Classes, Windows, SysUtils, IniFiles, System.Variants, System.IOUtils, Plugin_Types, MRC_Helper, CMLStrings, VCL.Controls, System.RegularExpressions;
 
 const
 {$IFDEF WIN64}
@@ -259,7 +259,7 @@ begin
 	except
 		On E: EIniFileException do
 		begin
-			MessageBoxW(0, PWideChar(E.Message), 'INI file error', MB_ICONERROR + MB_OK);
+			MessageBoxW(0, PWideChar(E.Message), ERR_INI_GENERAL, MB_ICONERROR + MB_OK);
 			IniFile.Destroy;
 			exit;
 		end;
@@ -346,7 +346,7 @@ begin
 	except
 		On E: EIniFileException do
 		begin
-			MessageBoxW(0, PWideChar(E.Message), 'INI file error', MB_ICONERROR + MB_OK);
+			MessageBoxW(0, PWideChar(E.Message), ERR_INI_GENERAL, MB_ICONERROR + MB_OK);
 			IniFile.Destroy;
 			exit;
 		end;
@@ -510,9 +510,9 @@ end;
 procedure TIniFilesHelper.WriteString(const Section, Ident, Value: String);
 begin
 	if not(self.ValidateSectionName(Section)) then
-		raise EIniFileException.CreateFmt('Invalid section name %s', [Section]);
+		raise EIniFileException.CreateFmt(ERR_INVALID_SECTION_NAME, [Section]);
 	if not(self.ValidateIdentName(Ident)) then
-		raise EIniFileException.CreateFmt('Invalid identifier name %s', [Ident]);
+		raise EIniFileException.CreateFmt(ERR_INVALID_IDENTIFIER_NAME, [Ident]);
 	inherited WriteString(Section, Ident, Value);
 end;
 
