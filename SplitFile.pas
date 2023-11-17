@@ -2,7 +2,7 @@ unit SplitFile;
 
 interface
 
-uses System.SysUtils, System.Classes, MRC_Helper, Winapi.Windows;
+uses System.SysUtils, System.Classes, MRC_Helper, CMLStrings, Winapi.Windows;
 
 Const
 	CRCSeed = $FFFFFFFF;
@@ -57,7 +57,7 @@ var
 	partCount: Integer;
 begin
 	if not(FileExists(filename)) then
-		raise Exception.Create('File not exits');
+		raise Exception.Create(ERR_FILE_NOT_EXISTS);
 
 	self.ChunkSize := ChunkSize;
 	self.filename := filename;
@@ -86,7 +86,7 @@ end;
 
 function TFileSplitInfo.AddLeadingZeroes(const aNumber, length: Integer): string;
 begin
-	result := System.SysUtils.Format('%.*d', [length, aNumber]);
+	result := Format('%.*d', [length, aNumber]);
 end;
 
 function TFileSplitInfo.crc32_update(inbuffer: pointer; buffersize, crc: DWord): DWord;

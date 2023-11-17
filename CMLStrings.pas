@@ -136,6 +136,7 @@ const
 	VERB_UPDATE = 'Update';
 	VERB_SET = 'Set';
 	PREFIX_ASK_NEW_PASSWORD = 'New password:';
+	ERR_FILE_NOT_EXISTS = 'File not exists';
 
 
 implementation
