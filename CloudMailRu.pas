@@ -207,7 +207,7 @@ function TCloudMailRu.CloudResultToBoolean(CloudResult: TCloudMailRuOperationRes
 begin
 	result := CloudResult.OperationResult = CLOUD_OPERATION_OK;
 	if not(result) and (ErrorPrefix <> EmptyWideStr) then
-		Log(LogLevelError, MSGTYPE_IMPORTANTERROR, ErrorPrefix + self.ErrorCodeText(CloudResult.OperationResult) + PREFIX_STATUS + CloudResult.OperationStatus.ToString());
+		Log(LogLevelError, MSGTYPE_IMPORTANTERROR, Format('%s%s%s%s', [ErrorPrefix, self.ErrorCodeText(CloudResult.OperationResult), PREFIX_STATUS, CloudResult.OperationStatus]));
 end;
 
 function TCloudMailRu.CloudResultToFsResult(CloudResult: TCloudMailRuOperationResult; ErrorPrefix: WideString): integer;
@@ -234,7 +234,7 @@ begin
 		else
 			begin //что-то неизвестное
 				if (ErrorPrefix <> EmptyWideStr) then
-					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, ErrorPrefix + self.ErrorCodeText(CloudResult.OperationResult) + PREFIX_STATUS + CloudResult.OperationStatus.ToString());
+					Log(LogLevelError, MSGTYPE_IMPORTANTERROR, Format('%s%s%s%s', [ErrorPrefix, self.ErrorCodeText(CloudResult.OperationResult), PREFIX_STATUS, CloudResult.OperationStatus.ToString]));
 				exit(FS_FILE_WRITEERROR);
 			end;
 	end;
@@ -254,7 +254,7 @@ begin
 		exit; //Проверка на вызов без инициализации
 	if self.public_account then
 		exit(FS_FILE_NOTSUPPORTED);
-	self.HTTP.SetProgressNames(OldName, IncludeTrailingPathDelimiter(ToPath) + ExtractFileName(OldName));
+	self.HTTP.SetProgressNames(OldName, Format('%s%s', [IncludeTrailingPathDelimiter(ToPath), ExtractFileName(OldName)]));
 	if self.HTTP.PostForm(API_FILE_COPY, Format('home=/%s&folder=/%s%s&conflict', [PathToUrl(OldName), PathToUrl(ToPath), self.united_params]), JSON) then
 	begin //Парсим ответ
 		result := CloudResultToFsResult(CMLJSONParser.getOperationResult(JSON), PREFIX_ERR_FILE_COPY);
@@ -288,7 +288,7 @@ begin //Облако умеет скопировать файл, но не см�
 	end;
 	if not(SameName) then
 	begin //скопированный файл лежит в новом каталоге со старым именем
-		result := self.renameFile(NewPath + ExtractFileName(OldName), ExtractFileName(NewName));
+		result := self.renameFile(Format('%s%s', [NewPath, ExtractFileName(OldName)]), ExtractFileName(NewName));
 	end;
 end;
 
@@ -323,7 +323,7 @@ begin
 	except
 		on E: Exception do
 		begin
-			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, PREFIX_ERR_FILE_UPLOADING + E.Message);
+			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, Format('%s%s', [PREFIX_ERR_FILE_UPLOADING, E.Message]));
 		end;
 	end;
 end;
@@ -558,7 +558,7 @@ begin
 			if result and self.crypt_filenames then
 				self.FileCipher.DecryptDirListing(DirListing);
 		end else if OperationResult.OperationResult = CLOUD_ERROR_NOT_EXISTS then
-			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, PREFIX_ERR_PATH_NOT_EXISTS + Path);
+			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, Format('%s%s', [PREFIX_ERR_PATH_NOT_EXISTS, Path]));
 	end else begin
 		if (NAME_TOKEN = CMLJSONParser.getBodyError(JSON)) and RefreshCSRFToken() then
 			result := getDirListing(Path, DirListing, ShowProgress);
@@ -615,14 +615,14 @@ begin
 	if self.crypt_files then //Загрузка файла в память, дешифрация в файл
 	begin
 		MemoryStream := TMemoryStream.Create;
-		URL := self.Shard + PathToUrl(remotePath, false);
+		URL := Format('%s%s', [self.Shard, PathToUrl(remotePath, false)]);
 		result := self.HTTP.getFile(URL, MemoryStream, LogErrors);
 		if (CLOUD_ERROR_TOKEN_OUTDATED = result) and RefreshCSRFToken() then
 			result := self.getFileRegular(remotePath, localPath, resultHash, LogErrors);
 
 		if result in [FS_FILE_NOTSUPPORTED] then //this code returned on shard connection error
 		begin
-			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, PREFIX_REDIRECTION_LIMIT + URL);
+			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, Format('%s%s', [PREFIX_REDIRECTION_LIMIT, URL]));
 			if (self.ExternalRequestProc(RT_MsgYesNo, REDIRECTION_LIMIT, TRY_ANOTHER_SHARD, EMPTY_STR, 0)) and (self.getShard(self.Shard)) then
 				result := self.getFileRegular(remotePath, localPath, resultHash, LogErrors);
 		end;
@@ -636,7 +636,7 @@ begin
 		MemoryStream.free;
 
 	end else begin
-		result := self.HTTP.getFile(self.Shard + PathToUrl(remotePath, false), FileStream, LogErrors);
+		result := self.HTTP.getFile(Format('%s%s', [self.Shard, PathToUrl(remotePath, false)]), FileStream, LogErrors);
 		if (CLOUD_ERROR_TOKEN_OUTDATED = result) and RefreshCSRFToken() then
 			result := self.getFileRegular(remotePath, localPath, resultHash, LogErrors);
 		if ((result in [FS_FILE_OK]) and (EmptyWideStr = resultHash)) then
@@ -1044,7 +1044,7 @@ begin //К сожалению, переименование и перемеще�
 			exit;
 		if not(SameName) then
 		begin //скопированный файл лежит в новом каталоге со старым именем
-			result := self.renameFile(NewPath + ExtractFileName(OldName), ExtractFileName(NewName));
+			result := self.renameFile(Format('%s%s', [NewPath, ExtractFileName(OldName)]), ExtractFileName(NewName));
 		end;
 	end;
 end;
@@ -1293,7 +1293,7 @@ begin
 
 	while SplittedPartIndex < SplitFileInfo.ChunksCount do {use while instead for..loop, need to modify loop counter sometimes}
 	begin
-		ChunkRemotePath := ExtractFilePath(remotePath) + SplitFileInfo.GetChunks[SplittedPartIndex].name;
+		ChunkRemotePath := Format('%s%s', [ExtractFilePath(remotePath), SplitFileInfo.GetChunks[SplittedPartIndex].name]);
 		self.HTTP.SetProgressNames(localPath, ChunkRemotePath);
 		Log(LogLevelDebug, MSGTYPE_DETAILS, Format(PARTIAL_UPLOAD_INFO, [localPath, (SplittedPartIndex + 1), SplitFileInfo.ChunksCount, ChunkRemotePath]));
 		ChunkStream := TChunkedFileStream.Create(GetUNCFilePath(localPath), fmOpenRead or fmShareDenyWrite, SplitFileInfo.GetChunks[SplittedPartIndex].start, SplitFileInfo.GetChunks[SplittedPartIndex].size);
