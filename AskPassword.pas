@@ -2,7 +2,7 @@ unit AskPassword;
 
 interface
 
-uses Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, MRC_Helper, System.Generics.Collections;
+uses Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, MRC_Helper, System.Generics.Collections, CMLStrings;
 
 type
 
@@ -119,8 +119,8 @@ begin
 		AskPasswordForm.OkButton.Visible := false;
 
 		ActionsList := TDictionary<Int32, WideString>.Create;
-		ActionsList.AddOrSetValue(mrOk, 'OK');
-		ActionsList.AddOrSetValue(mrCancel, 'Cancel');
+		ActionsList.AddOrSetValue(mrOk, OK);
+		ActionsList.AddOrSetValue(mrCancel, CANCEL);
 
 		CurrentLeft := 7;
 		for ButtonCode in ActionsList.Keys do

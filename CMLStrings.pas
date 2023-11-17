@@ -171,9 +171,11 @@ const
 	ACCOUNT_TRASH = '%s trash';
 	DELETED_ITEM = 'Deleted item: %s';
 	MULTIPLE_ITEMS = '<Multiple items>';
-  MULTIPLE_ITEMS_DELETED = 'Multiple deleted items';
-  UNSET_ITEM = '-';
-  ERR_READ_BYTES_FROM = 'Can''t read from %s %d bytes at %d';
+	MULTIPLE_ITEMS_DELETED = 'Multiple deleted items';
+	UNSET_ITEM = '-';
+	ERR_READ_BYTES_FROM = 'Can''t read from %s %d bytes at %d';
+	OK = 'Ok';
+	CANCEL = 'Cancel';
 
 implementation
 
