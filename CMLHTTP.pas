@@ -21,7 +21,8 @@ type
 		ExternalLogProc: TLogHandler;
 
 		{PROCEDURES}
-		procedure Log(LogLevel, MsgType: integer; LogString: WideString);
+		procedure Log(LogLevel, MsgType: integer; LogString: WideString); overload;
+		procedure Log(LogLevel, MsgType: integer; Msg: WideString; const Args: array of const); overload;
 		procedure setCookie(const Value: TIdCookieManager);
 		procedure SetExternalSourceName(const Value: WideString);
 		procedure SetExternalTargetName(const Value: WideString);
@@ -425,6 +426,11 @@ procedure TCloudMailRuHTTP.Log(LogLevel, MsgType: integer; LogString: WideString
 begin
 	if Assigned(ExternalLogProc) then
 		ExternalLogProc(LogLevel, MsgType, PWideChar(LogString));
+end;
+
+procedure TCloudMailRuHTTP.Log(LogLevel, MsgType: integer; Msg: WideString; const Args: array of const);
+begin
+	Log(LogLevel, MsgType, Format(Msg, Args))
 end;
 
 function TCloudMailRuHTTP.ExceptionHandler(E: Exception; URL: WideString; HTTPMethod: integer; LogErrors: Boolean): integer; //todo: handle OPTIONS method
