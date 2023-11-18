@@ -191,6 +191,8 @@ begin
 	for CurrentItem in DirListing do
 		if CurrentItem.name = ItemName then
 			exit(CurrentItem);
+	FillChar(CurrentItem, sizeof(CurrentItem), 0);
+	exit(CurrentItem); // nothing found
 end;
 
 function FindListingItemByHomePath(DirListing: TCloudMailRuDirListing; HomePath: WideString): TCloudMailRuDirListingItem;
