@@ -122,7 +122,7 @@ var
 	CurrentDescriptions: TDescription;
 	PasswordManager: TTCPasswordManager;
 
-procedure LogHandle(LogLevel, MsgType: integer; LogString: PWideChar); stdcall;
+procedure LogHandle(LogLevel, MsgType: integer; LogString: PWideChar); stdcall; overload;
 begin
 	if (Assigned(MyLogProc)) and CheckFlag(LogLevel, GetPluginSettings(SettingsIniFilePath).LogLevel) then
 		MyLogProc(PluginNum, MsgType, LogString);
@@ -165,6 +165,7 @@ begin
 	Result.nFileSizeHigh := DWORD((DirListing.size shr 32) and $FFFFFFFF);
 	Result.nFileSizeLow := DWORD(DirListing.size and $FFFFFFFF);
 	strpcopy(Result.cFileName, DirListing.name);
+	LogHandle(LogLevelDebug, msgtype_details, PWideChar(Format('Name: %s, Size: %d, HI: %d, LOW: %d', [DirListing.name, DirListing.size, Result.nFileSizeHigh, Result.nFileSizeLow])));
 end;
 
 function FindData_emptyDir(DirName: WideString = '.'): tWIN32FINDDATAW;
@@ -343,7 +344,7 @@ var
 	getResult: integer;
 	BackgroundJobsCount: integer;
 begin
-	RealPath := ExtractRealPath(RemoteDir);
+	RealPath := ExtractRealPath(RemoteDir, ID_Yes); // RemoteDir always a directory
 	if (InfoStartEnd = FS_STATUS_START) then
 	begin
 		ThreadFsStatusInfo.AddOrSetValue(GetCurrentThreadID(), InfoOperation);
@@ -842,7 +843,7 @@ begin
 			Cloud.addFileByIdentity(HashInfo.CloudFileIdentity, IncludeTrailingPathDelimiter(RealPath.path) + HashInfo.name, CLOUD_CONFLICT_RENAME);
 			HashInfo.Destroy;
 		end else begin
-			LogHandle(LogLevelDebug, MSGTYPE_DETAILS, PWideChar(Format(ERR_CLONE_BY_HASH, [HashInfo.errorString, Parameter])));
+			LogHandle(LogLevelDebug, msgtype_details, PWideChar(Format(ERR_CLONE_BY_HASH, [HashInfo.errorString, Parameter])));
 			HashInfo.Destroy;
 			exit(FS_EXEC_ERROR);
 		end;
@@ -955,7 +956,7 @@ begin
 
 	if Verb = 'open' then
 	begin
-		if (not RealPath.isDir) and GetStreamingOptionsFromIniFile(SettingsIniFilePath, RealPath.path, StreamingOptions) and (STREAMING_FORMAT_NONE <> StreamingOptions.Format) then
+		if (not(RealPath.isDir = ID_Yes)) and GetStreamingOptionsFromIniFile(SettingsIniFilePath, RealPath.path, StreamingOptions) and (STREAMING_FORMAT_NONE <> StreamingOptions.Format) then
 			exit(ExecuteFileStream(RealPath, StreamingOptions));
 		exit(FS_EXEC_YOURSELF);
 	end;
@@ -1167,11 +1168,11 @@ begin
 				exit(FS_FILE_EXISTS); //TC will ask user
 			OverwriteLocalModeIgnore:
 				begin
-					LogHandle(LogLevelDetail, MSGTYPE_DETAILS, PWideChar(Format(FILE_EXISTS_IGNORE, [LocalName])));
+					LogHandle(LogLevelDetail, msgtype_details, PWideChar(Format(FILE_EXISTS_IGNORE, [LocalName])));
 					exit(FS_FILE_OK);
 				end;
 			OverwriteLocalModeOverwrite:
-				LogHandle(LogLevelDetail, MSGTYPE_DETAILS, PWideChar(Format(FILE_EXISTS_OVERWRITE, [LocalName])));
+				LogHandle(LogLevelDetail, msgtype_details, PWideChar(Format(FILE_EXISTS_OVERWRITE, [LocalName])));
 		end;
 	end;
 
@@ -1206,7 +1207,7 @@ begin
 				while (ThreadRetryCountDownload.Items[GetCurrentThreadID()] <> RetryAttempts) and (not(Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
 				begin
 					ThreadRetryCountDownload.Items[GetCurrentThreadID()] := ThreadRetryCountDownload.Items[GetCurrentThreadID()] + 1;
-					LogHandle(LogLevelDetail, MSGTYPE_DETAILS, PWideChar(Format(DOWNLOAD_FILE_RETRY, [RemoteName, ThreadRetryCountDownload.Items[GetCurrentThreadID()], RetryAttempts])));
+					LogHandle(LogLevelDetail, msgtype_details, PWideChar(Format(DOWNLOAD_FILE_RETRY, [RemoteName, ThreadRetryCountDownload.Items[GetCurrentThreadID()], RetryAttempts])));
 					Result := GetRemoteFile(RealPath, LocalName, RemoteName, CopyFlags);
 					if ProgressHandle(PWideChar(LocalName), RemoteName, 0) = 1 then
 						Result := FS_FILE_USERABORT;
@@ -1300,7 +1301,7 @@ begin
 				while (ThreadRetryCountUpload.Items[GetCurrentThreadID()] <> RetryAttempts) and (not(Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
 				begin
 					ThreadRetryCountUpload.Items[GetCurrentThreadID()] := ThreadRetryCountUpload.Items[GetCurrentThreadID()] + 1;
-					LogHandle(LogLevelDetail, MSGTYPE_DETAILS, PWideChar(Format(UPLOAD_FILE_RETRY, [LocalName, ThreadRetryCountUpload.Items[GetCurrentThreadID()], RetryAttempts])));
+					LogHandle(LogLevelDetail, msgtype_details, PWideChar(Format(UPLOAD_FILE_RETRY, [LocalName, ThreadRetryCountUpload.Items[GetCurrentThreadID()], RetryAttempts])));
 					Result := PutRemoteFile(RealPath, LocalName, RemoteName, CopyFlags);
 					if ProgressHandle(PWideChar(LocalName), RemoteName, 0) = 1 then
 						Result := FS_FILE_USERABORT;
@@ -1464,7 +1465,7 @@ begin
 						while (ThreadRetryCountRenMov.Items[GetCurrentThreadID()] <> RetryAttempts) and (not(Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
 						begin
 							ThreadRetryCountRenMov.Items[GetCurrentThreadID()] := ThreadRetryCountRenMov.Items[GetCurrentThreadID()] + 1;
-							LogHandle(LogLevelDetail, MSGTYPE_DETAILS, PWideChar(Format(CLONE_FILE_RETRY, [TCloudMailRu.ErrorCodeText(Result), ThreadRetryCountRenMov.Items[GetCurrentThreadID()], RetryAttempts])));
+							LogHandle(LogLevelDetail, msgtype_details, PWideChar(Format(CLONE_FILE_RETRY, [TCloudMailRu.ErrorCodeText(Result), ThreadRetryCountRenMov.Items[GetCurrentThreadID()], RetryAttempts])));
 							Result := NewCloud.addFileByIdentity(CurrentItem, IncludeTrailingPathDelimiter(ExtractFileDir(NewRealPath.path)) + ExtractFileName(NewRealPath.path));
 							if ProgressHandle(nil, nil, 0) = 1 then
 								Result := FS_FILE_USERABORT;
@@ -1535,7 +1536,7 @@ begin
 						while (ThreadRetryCountRenMov.Items[GetCurrentThreadID()] <> RetryAttempts) and (not(Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
 						begin
 							ThreadRetryCountRenMov.Items[GetCurrentThreadID()] := ThreadRetryCountRenMov.Items[GetCurrentThreadID()] + 1;
-							LogHandle(LogLevelDetail, MSGTYPE_DETAILS, PWideChar(Format(PUBLISH_FILE_RETRY, [TCloudMailRu.ErrorCodeText(Result), ThreadRetryCountRenMov.Items[GetCurrentThreadID()], RetryAttempts])));
+							LogHandle(LogLevelDetail, msgtype_details, PWideChar(Format(PUBLISH_FILE_RETRY, [TCloudMailRu.ErrorCodeText(Result), ThreadRetryCountRenMov.Items[GetCurrentThreadID()], RetryAttempts])));
 							Result := cloneWeblink(NewCloud, OldCloud, NewRealPath.path, CurrentItem, NeedUnpublish);
 							if ProgressHandle(nil, nil, 0) = 1 then
 								Result := FS_FILE_USERABORT;
