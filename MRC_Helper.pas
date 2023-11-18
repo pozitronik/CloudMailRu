@@ -27,25 +27,27 @@ const
 
 type
 
+	TIsDir = (ID_Yes, ID_No, ID_Unset);
+
 	TRealPath = record
 		account: WideString;
 		path: WideString;
-		isDir: boolean; //is directory
+		isDir: TIsDir; //is it a directory
 		upDirItem: boolean; //path/../
-		trashDir: boolean; //item is inside trash bin dir
-		sharedDir: boolean; //item is inside shared links dir
-		invitesDir: boolean; //item is inside invites dir
+		trashDir: boolean; //item is inside of a trash bin dir
+		sharedDir: boolean; //item is inside of a shared links dir
+		invitesDir: boolean; //item is inside of an invites dir
 	end;
 
 function Implode(S: TStringList; Delimiter: WideString): WideString;
 function Explode(S: WideString; Delimiter: char): TStringList;
 function MyExtractStrings(Separators, WhiteSpace: TSysCharSet; Content: PWideChar; Strings: TStrings): integer;
-function ExtractRealPath(VirtualPath: WideString): TRealPath;
+function ExtractRealPath(VirtualPath: WideString; isDir: TIsDir = ID_Unset): TRealPath;
 function ExtractVirtualPath(RealPath: TRealPath): WideString;
 function inAccount(path: TRealPath; ignoreVirtual: boolean = true): boolean;
 function SizeOfFile(const FileName: String): Int64;
 function DateTimeToUnix(ConvDate: TDateTime): integer;
-function CheckFlag(Check: Byte; Flags: integer): boolean; //Определяет, установлен ли указанный бит
+function CheckFlag(Check: byte; Flags: integer): boolean; //Определяет, установлен ли указанный бит
 function DateTimeToFileTime(FileTime: TDateTime): TFileTime;
 procedure SetAllFileTime(const FileName: string; const FileTime: TFileTime);
 procedure CenterWindow(WindowToStay, WindowToCenter: HWND);
@@ -59,7 +61,7 @@ function GetTmpFileName(Prefix: WideString = ''): WideString;
 function ExtractCryptedFileNameFromPath(const FilePath: WideString): WideString;
 function ExtractUniversalFilePath(const FileName: string): string;
 function ExtractUniversalFileName(const FileName: string): string;
-function ExtractUniversalFileExt(const FileName: string; TrimDot: boolean = false): string;
+function ExtractUniversalFileExt(const FileName: string; TrimDot: boolean = False): string;
 function ChangePathFileName(const FilePath, NewFileName: WideString): WideString;
 function ChangeDecryptedPathFileName(const FilePath, NewFileName: WideString): WideString;
 function CopyExt(FromFilename, ToFilename: WideString): WideString;
@@ -131,7 +133,7 @@ begin
 	if (Content = nil) or (Content^ = #0) or (Strings = nil) then
 		exit;
 	Tail := Content;
-	InQuote := false;
+	InQuote := False;
 	QuoteChar := #0;
 	Strings.BeginUpdate;
 	try
@@ -181,18 +183,21 @@ begin
 	end;
 end;
 
-function ExtractRealPath(VirtualPath: WideString): TRealPath;
+function ExtractRealPath(VirtualPath: WideString; isDir: TIsDir = ID_Unset): TRealPath;
 var
 	List: TStringList;
 begin
 	Result.account := EmptyWideStr;
 	Result.path := EmptyWideStr;
-	//we can't rely on isDir property, cause it can't be clearly defined =(
-	Result.isDir := false;
-	Result.upDirItem := false;
-	Result.trashDir := false;
-	Result.sharedDir := false;
-	Result.invitesDir := false;
+	(*
+	 we can't rely on isDir property, cause it can't be clearly determined from the path
+	 therefore the property value can be passed as the parameter, when it is known.
+	*)
+	Result.isDir := isDir;
+	Result.upDirItem := False;
+	Result.trashDir := False;
+	Result.sharedDir := False;
+	Result.invitesDir := False;
 
 	if VirtualPath = EmptyWideStr then
 		exit; //root
@@ -205,13 +210,13 @@ begin
 		Result.upDirItem := true;
 
 	if (List.Count > 0) and (List.Strings[List.Count - 1] = '\') then
-		Result.isDir := true;
+		Result.isDir := ID_Yes; // it newer happens, actually
 
 	if List.Count = 1 then
 	begin
 		Result.account := List.Strings[0];
 		if (Result.account = VirtualPath) then
-			Result.isDir := true;
+			Result.isDir := ID_Yes;
 
 	end else if (List.Count > 1) then
 	begin
@@ -257,7 +262,7 @@ begin
 	Result := Round((ConvDate - UnixStartDate) * 86400);
 end;
 
-function CheckFlag(Check: Byte; Flags: LongInt): boolean; //Определяет, установлен ли указанный бит
+function CheckFlag(Check: byte; Flags: LongInt): boolean; //Определяет, установлен ли указанный бит
 begin
 	Result := (Flags and Check) <> 0;
 end;
@@ -445,7 +450,7 @@ begin
 	Result := FileName.Substring(I + 1);
 end;
 
-function ExtractUniversalFileExt(const FileName: string; TrimDot: boolean = false): string;
+function ExtractUniversalFileExt(const FileName: string; TrimDot: boolean = False): string;
 var
 	I: integer;
 begin
@@ -745,7 +750,7 @@ begin
 	else
 		lpCurrentDirectory := PWideChar(StartDir);
 
-	Result := CreateProcessW(nil, PWideChar(path + ' "' + ParamString + '"'), nil, nil, false, NORMAL_PRIORITY_CLASS, nil, lpCurrentDirectory, lpStartupInfo, lpProcessInformation);
+	Result := CreateProcessW(nil, PWideChar(path + ' "' + ParamString + '"'), nil, nil, False, NORMAL_PRIORITY_CLASS, nil, lpCurrentDirectory, lpStartupInfo, lpProcessInformation);
 	if Result then
 		with lpProcessInformation do
 		begin

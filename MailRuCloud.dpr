@@ -122,10 +122,19 @@ var
 	CurrentDescriptions: TDescription;
 	PasswordManager: TTCPasswordManager;
 
-procedure LogHandle(LogLevel, MsgType: integer; LogString: PWideChar); stdcall;
+procedure LogHandle(LogLevel, MsgType: integer; LogString: WideString); stdcall; overload;
 begin
 	if (Assigned(MyLogProc)) and CheckFlag(LogLevel, GetPluginSettings(SettingsIniFilePath).LogLevel) then
-		MyLogProc(PluginNum, MsgType, LogString);
+		MyLogProc(PluginNum, MsgType, PWideChar(LogString));
+end;
+
+procedure LogHandle(LogLevel, MsgType: integer; LogString: WideString; const Args: array of const); stdcall; overload;
+begin
+	if (Assigned(MyLogProc)) and CheckFlag(LogLevel, GetPluginSettings(SettingsIniFilePath).LogLevel) then
+	begin
+		LogString := Format(LogString, Args);
+		LogHandle(LogLevel, MsgType, LogString);
+	end;
 end;
 
 function RequestHandle(RequestType: integer; CustomTitle, CustomText, ReturnedText: PWideChar; maxlen: integer; AOwner: TComponent = nil): Bool; stdcall;
@@ -165,6 +174,7 @@ begin
 	Result.nFileSizeHigh := DWORD((DirListing.size shr 32) and $FFFFFFFF);
 	Result.nFileSizeLow := DWORD(DirListing.size and $FFFFFFFF);
 	strpcopy(Result.cFileName, DirListing.name);
+	LogHandle(LogLevelDebug, msgtype_details, 'Name: %s, Size: %d, HI: %d, LOW: %d', [DirListing.name, DirListing.size, Result.nFileSizeHigh, Result.nFileSizeLow]);
 end;
 
 function FindData_emptyDir(DirName: WideString = '.'): tWIN32FINDDATAW;
@@ -181,6 +191,8 @@ begin
 	for CurrentItem in DirListing do
 		if CurrentItem.name = ItemName then
 			exit(CurrentItem);
+	FillChar(CurrentItem, sizeof(CurrentItem), 0);
+	exit(CurrentItem); // nothing found
 end;
 
 function FindListingItemByHomePath(DirListing: TCloudMailRuDirListing; HomePath: WideString): TCloudMailRuDirListingItem;
@@ -191,6 +203,8 @@ begin
 	for CurrentItem in DirListing do
 		if CurrentItem.home = HomePath then
 			exit(CurrentItem);
+	FillChar(CurrentItem, sizeof(CurrentItem), 0);
+	exit(CurrentItem); // nothing found
 end;
 
 {Пытаемся найти объект в облаке по его пути, сначала в текущем списке, если нет - то ищем в облаке}
@@ -199,8 +213,9 @@ var
 	getResult: integer;
 	CurrentCloud: TCloudMailRu;
 begin
-	if path.trashDir or path.sharedDir{or path.invitesDir} then
-		Result := FindListingItemByName(CurrentListing, path.path) //Виртуальные каталоги не возвращают HomePath
+	if path.trashDir or path.sharedDir or (path.isDir = ID_Unset){or path.invitesDir} then
+		{Виртуальные каталоги не имеют HomePath.}
+		Result := FindListingItemByName(CurrentListing, path.path)
 	else
 		Result := FindListingItemByHomePath(CurrentListing, path.path); //сначала попробуем найти поле в имеющемся списке
 
@@ -227,7 +242,7 @@ begin
 		if CurrentCloud.statusFile(path.path, Result) then //Обычный каталог
 		begin
 			if (Result.home = EMPTY_STR) and not CurrentCloud.public_account then
-				LogHandle(LogLevelError, MSGTYPE_IMPORTANTERROR, PWideChar(Format(ERR_WHERE_IS_THE_FILE, [path.path]))); {Такого быть не может, но...}
+				LogHandle(LogLevelError, MSGTYPE_IMPORTANTERROR, ERR_WHERE_IS_THE_FILE, [path.path]); {Такого быть не может, но...}
 		end;
 	end; //Не рапортуем, это будет уровнем выше
 end;
@@ -282,7 +297,7 @@ begin
 		case DeleteFailOnUploadMode of
 			DeleteFailOnUploadAbort:
 				begin
-					LogHandle(LogLevelDetail, MSGTYPE_IMPORTANTERROR, PWideChar(Format(ERR_DELETE_FILE_ABORT, [LocalName])));
+					LogHandle(LogLevelDetail, MSGTYPE_IMPORTANTERROR, ERR_DELETE_FILE_ABORT, [LocalName]);
 					exit(FS_FILE_NOTSUPPORTED);
 				end;
 			DeleteFailOnUploadDeleteIgnore, DeleteFailOnUploadDeleteAbort:
@@ -290,22 +305,22 @@ begin
 					//check if file just have RO attr, then remove it. If user has lack of rights, then ignore or abort
 					if ((FileGetAttr(UNCLocalName) or faReadOnly) <> 0) and ((FileSetAttr(UNCLocalName, not faReadOnly) = 0) and (DeleteFileW(PWideChar(UNCLocalName)))) then
 					begin
-						LogHandle(LogLevelDetail, MSGTYPE_IMPORTANTERROR, PWideChar(Format(ERR_DELETE_FILE_DELETE, [LocalName])));
+						LogHandle(LogLevelDetail, MSGTYPE_IMPORTANTERROR, ERR_DELETE_FILE_DELETE, [LocalName]);
 						exit(FS_FILE_OK);
 					end else begin
 						if GetPluginSettings(SettingsIniFilePath).DeleteFailOnUploadMode = DeleteFailOnUploadDeleteIgnore then
 						begin
-							LogHandle(LogLevelDetail, MSGTYPE_IMPORTANTERROR, PWideChar(Format(ERR_DELETE_FILE_IGNORE, [LocalName])));
+							LogHandle(LogLevelDetail, MSGTYPE_IMPORTANTERROR, ERR_DELETE_FILE_IGNORE, [LocalName]);
 							exit(FS_FILE_OK);
 						end else begin
-							LogHandle(LogLevelDetail, MSGTYPE_IMPORTANTERROR, PWideChar(Format(ERR_DELETE_FILE_ABORT, [LocalName])));
+							LogHandle(LogLevelDetail, MSGTYPE_IMPORTANTERROR, ERR_DELETE_FILE_ABORT, [LocalName]);
 							exit(FS_FILE_NOTSUPPORTED);
 						end;
 					end;
 				end;
 			else
 				begin
-					LogHandle(LogLevelDetail, MSGTYPE_IMPORTANTERROR, PWideChar(Format(ERR_DELETE_FILE_IGNORE, [LocalName])));
+					LogHandle(LogLevelDetail, MSGTYPE_IMPORTANTERROR, ERR_DELETE_FILE_IGNORE, [LocalName]);
 				end;
 		end;
 	end;
@@ -343,7 +358,7 @@ var
 	getResult: integer;
 	BackgroundJobsCount: integer;
 begin
-	RealPath := ExtractRealPath(RemoteDir);
+	RealPath := ExtractRealPath(RemoteDir, ID_Yes); // RemoteDir always a directory
 	if (InfoStartEnd = FS_STATUS_START) then
 	begin
 		ThreadFsStatusInfo.AddOrSetValue(GetCurrentThreadID(), InfoOperation);
@@ -383,7 +398,7 @@ begin
 				begin
 					if ConnectionManager.get(RealPath.account, getResult).public_account then
 					begin
-						LogHandle(LogLevelWarning, MSGTYPE_IMPORTANTERROR, PWideChar(ERR_DIRECT_COPY_SUPPORT));
+						LogHandle(LogLevelWarning, MSGTYPE_IMPORTANTERROR, ERR_DIRECT_COPY_SUPPORT);
 						ThreadSkipListRenMov.AddOrSetValue(GetCurrentThreadID, true);
 					end;
 					ThreadRetryCountRenMov.AddOrSetValue(GetCurrentThreadID(), 0);
@@ -842,7 +857,7 @@ begin
 			Cloud.addFileByIdentity(HashInfo.CloudFileIdentity, IncludeTrailingPathDelimiter(RealPath.path) + HashInfo.name, CLOUD_CONFLICT_RENAME);
 			HashInfo.Destroy;
 		end else begin
-			LogHandle(LogLevelDebug, MSGTYPE_DETAILS, PWideChar(Format(ERR_CLONE_BY_HASH, [HashInfo.errorString, Parameter])));
+			LogHandle(LogLevelDebug, msgtype_details, ERR_CLONE_BY_HASH, [HashInfo.errorString, Parameter]);
 			HashInfo.Destroy;
 			exit(FS_EXEC_ERROR);
 		end;
@@ -955,7 +970,7 @@ begin
 
 	if Verb = 'open' then
 	begin
-		if (not RealPath.isDir) and GetStreamingOptionsFromIniFile(SettingsIniFilePath, RealPath.path, StreamingOptions) and (STREAMING_FORMAT_NONE <> StreamingOptions.Format) then
+		if (not(RealPath.isDir = ID_Yes)) and GetStreamingOptionsFromIniFile(SettingsIniFilePath, RealPath.path, StreamingOptions) and (STREAMING_FORMAT_NONE <> StreamingOptions.Format) then
 			exit(ExecuteFileStream(RealPath, StreamingOptions));
 		exit(FS_EXEC_YOURSELF);
 	end;
@@ -1136,7 +1151,7 @@ begin
 				DeleteRemoteFileDescription(RemotePath, Cloud);
 		end;
 		ProgressHandle(PWideChar(LocalName), PWideChar(RemoteName), 100);
-		LogHandle(LogLevelFileOperation, MSGTYPE_TRANSFERCOMPLETE, PWideChar(RemoteName + '->' + LocalName));
+		LogHandle(LogLevelFileOperation, MSGTYPE_TRANSFERCOMPLETE, '%s -> %s', [RemoteName, LocalName]);
 
 		if GetPluginSettings(SettingsIniFilePath).DescriptionCopyFromCloud then
 			UpdateFileDescription(RemotePath, LocalName, Cloud);
@@ -1167,11 +1182,11 @@ begin
 				exit(FS_FILE_EXISTS); //TC will ask user
 			OverwriteLocalModeIgnore:
 				begin
-					LogHandle(LogLevelDetail, MSGTYPE_DETAILS, PWideChar(Format(FILE_EXISTS_IGNORE, [LocalName])));
+					LogHandle(LogLevelDetail, msgtype_details, FILE_EXISTS_IGNORE, [LocalName]);
 					exit(FS_FILE_OK);
 				end;
 			OverwriteLocalModeOverwrite:
-				LogHandle(LogLevelDetail, MSGTYPE_DETAILS, PWideChar(Format(FILE_EXISTS_OVERWRITE, [LocalName])));
+				LogHandle(LogLevelDetail, msgtype_details, FILE_EXISTS_OVERWRITE, [LocalName]);
 		end;
 	end;
 
@@ -1206,7 +1221,7 @@ begin
 				while (ThreadRetryCountDownload.Items[GetCurrentThreadID()] <> RetryAttempts) and (not(Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
 				begin
 					ThreadRetryCountDownload.Items[GetCurrentThreadID()] := ThreadRetryCountDownload.Items[GetCurrentThreadID()] + 1;
-					LogHandle(LogLevelDetail, MSGTYPE_DETAILS, PWideChar(Format(DOWNLOAD_FILE_RETRY, [RemoteName, ThreadRetryCountDownload.Items[GetCurrentThreadID()], RetryAttempts])));
+					LogHandle(LogLevelDetail, msgtype_details, DOWNLOAD_FILE_RETRY, [RemoteName, ThreadRetryCountDownload.Items[GetCurrentThreadID()], RetryAttempts]);
 					Result := GetRemoteFile(RealPath, LocalName, RemoteName, CopyFlags);
 					if ProgressHandle(PWideChar(LocalName), RemoteName, 0) = 1 then
 						Result := FS_FILE_USERABORT;
@@ -1233,7 +1248,7 @@ begin
 	if Result = FS_FILE_OK then
 	begin
 		ProgressHandle(PWideChar(LocalName), PWideChar(RemotePath.path), 100);
-		LogHandle(LogLevelFileOperation, MSGTYPE_TRANSFERCOMPLETE, PWideChar(LocalName + '->' + RemoteName));
+		LogHandle(LogLevelFileOperation, MSGTYPE_TRANSFERCOMPLETE, '%s -> %s', [LocalName, RemoteName]);
 		if CheckFlag(FS_COPYFLAGS_MOVE, CopyFlags) then
 			Result := DeleteLocalFile(LocalName);
 		if (GetPluginSettings(SettingsIniFilePath).DescriptionCopyToCloud and RemoteDescriptionsSupportEnabled(AccountSettings)) then
@@ -1300,7 +1315,7 @@ begin
 				while (ThreadRetryCountUpload.Items[GetCurrentThreadID()] <> RetryAttempts) and (not(Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
 				begin
 					ThreadRetryCountUpload.Items[GetCurrentThreadID()] := ThreadRetryCountUpload.Items[GetCurrentThreadID()] + 1;
-					LogHandle(LogLevelDetail, MSGTYPE_DETAILS, PWideChar(Format(UPLOAD_FILE_RETRY, [LocalName, ThreadRetryCountUpload.Items[GetCurrentThreadID()], RetryAttempts])));
+					LogHandle(LogLevelDetail, msgtype_details, UPLOAD_FILE_RETRY, [LocalName, ThreadRetryCountUpload.Items[GetCurrentThreadID()], RetryAttempts]);
 					Result := PutRemoteFile(RealPath, LocalName, RemoteName, CopyFlags);
 					if ProgressHandle(PWideChar(LocalName), RemoteName, 0) = 1 then
 						Result := FS_FILE_USERABORT;
@@ -1422,7 +1437,7 @@ function cloneWeblink(NewCloud, OldCloud: TCloudMailRu; CloudPath: WideString; C
 begin
 	Result := NewCloud.cloneWeblink(ExtractFileDir(CloudPath), CurrentItem.weblink, CLOUD_CONFLICT_STRICT);
 	if (NeedUnpublish) and (FS_FILE_USERABORT <> Result) and not(OldCloud.publishFile(CurrentItem.home, CurrentItem.weblink, CLOUD_UNPUBLISH)) then
-		LogHandle(LogLevelError, MSGTYPE_IMPORTANTERROR, PWideChar(PREFIX_ERR_REMOVE_TEMP_PUBLIC_LINK + CurrentItem.home));
+		LogHandle(LogLevelError, MSGTYPE_IMPORTANTERROR, PREFIX_ERR_REMOVE_TEMP_PUBLIC_LINK + CurrentItem.home);
 end;
 
 function RenMoveFileViaHash(OldCloud, NewCloud: TCloudMailRu; OldRealPath, NewRealPath: TRealPath; Move, OverWrite: Boolean): integer;
@@ -1464,7 +1479,7 @@ begin
 						while (ThreadRetryCountRenMov.Items[GetCurrentThreadID()] <> RetryAttempts) and (not(Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
 						begin
 							ThreadRetryCountRenMov.Items[GetCurrentThreadID()] := ThreadRetryCountRenMov.Items[GetCurrentThreadID()] + 1;
-							LogHandle(LogLevelDetail, MSGTYPE_DETAILS, PWideChar(Format(CLONE_FILE_RETRY, [TCloudMailRu.ErrorCodeText(Result), ThreadRetryCountRenMov.Items[GetCurrentThreadID()], RetryAttempts])));
+							LogHandle(LogLevelDetail, msgtype_details, CLONE_FILE_RETRY, [TCloudMailRu.ErrorCodeText(Result), ThreadRetryCountRenMov.Items[GetCurrentThreadID()], RetryAttempts]);
 							Result := NewCloud.addFileByIdentity(CurrentItem, IncludeTrailingPathDelimiter(ExtractFileDir(NewRealPath.path)) + ExtractFileName(NewRealPath.path));
 							if ProgressHandle(nil, nil, 0) = 1 then
 								Result := FS_FILE_USERABORT;
@@ -1478,7 +1493,7 @@ begin
 		end;
 
 		if (Result = CLOUD_OPERATION_OK) and Move and not(OldCloud.deleteFile(OldRealPath.path)) then
-			LogHandle(LogLevelError, MSGTYPE_IMPORTANTERROR, PWideChar(Format(ERR_DELETE, [CurrentItem.home]))); //пишем в лог, но не отваливаемся
+			LogHandle(LogLevelError, MSGTYPE_IMPORTANTERROR, ERR_DELETE, [CurrentItem.home]); //пишем в лог, но не отваливаемся
 	end;
 end;
 
@@ -1500,7 +1515,7 @@ begin
 			NeedUnpublish := true;
 			if not(OldCloud.publishFile(CurrentItem.home, CurrentItem.weblink)) then //problem publishing
 			begin
-				LogHandle(LogLevelError, MSGTYPE_IMPORTANTERROR, PWideChar(Format(ERR_GET_TEMP_PUBLIC_LINK, [CurrentItem.home])));
+				LogHandle(LogLevelError, MSGTYPE_IMPORTANTERROR, ERR_GET_TEMP_PUBLIC_LINK, [CurrentItem.home]);
 				exit(FS_FILE_READERROR);
 			end;
 		end;
@@ -1535,7 +1550,7 @@ begin
 						while (ThreadRetryCountRenMov.Items[GetCurrentThreadID()] <> RetryAttempts) and (not(Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
 						begin
 							ThreadRetryCountRenMov.Items[GetCurrentThreadID()] := ThreadRetryCountRenMov.Items[GetCurrentThreadID()] + 1;
-							LogHandle(LogLevelDetail, MSGTYPE_DETAILS, PWideChar(Format(PUBLISH_FILE_RETRY, [TCloudMailRu.ErrorCodeText(Result), ThreadRetryCountRenMov.Items[GetCurrentThreadID()], RetryAttempts])));
+							LogHandle(LogLevelDetail, msgtype_details, PUBLISH_FILE_RETRY, [TCloudMailRu.ErrorCodeText(Result), ThreadRetryCountRenMov.Items[GetCurrentThreadID()], RetryAttempts]);
 							Result := cloneWeblink(NewCloud, OldCloud, NewRealPath.path, CurrentItem, NeedUnpublish);
 							if ProgressHandle(nil, nil, 0) = 1 then
 								Result := FS_FILE_USERABORT;
@@ -1549,7 +1564,7 @@ begin
 		end;
 
 		if (Result = CLOUD_OPERATION_OK) and Move and not(OldCloud.deleteFile(OldRealPath.path)) then
-			LogHandle(LogLevelError, MSGTYPE_IMPORTANTERROR, PWideChar(Format(ERR_DELETE, [CurrentItem.home]))); //пишем в лог, но не отваливаемся
+			LogHandle(LogLevelError, MSGTYPE_IMPORTANTERROR, ERR_DELETE, [CurrentItem.home]); //пишем в лог, но не отваливаемся
 	end;
 end;
 
@@ -1575,14 +1590,14 @@ begin
 	begin
 		if OldCloud.public_account then
 		begin
-			LogHandle(LogLevelWarning, MSGTYPE_IMPORTANTERROR, PWideChar(ERR_DIRECT_OPERATIONS_NOT_SUPPORTED));
+			LogHandle(LogLevelWarning, MSGTYPE_IMPORTANTERROR, ERR_DIRECT_OPERATIONS_NOT_SUPPORTED);
 			exit(FS_FILE_USERABORT);
 		end;
 
 		case GetPluginSettings(SettingsIniFilePath).CopyBetweenAccountsMode of
 			CopyBetweenAccountsModeDisabled:
 				begin
-					LogHandle(LogLevelWarning, MSGTYPE_IMPORTANTERROR, PWideChar(ERR_DIRECT_OPERATIONS_DISABLED));
+					LogHandle(LogLevelWarning, MSGTYPE_IMPORTANTERROR, ERR_DIRECT_OPERATIONS_DISABLED);
 					exit(FS_FILE_USERABORT);
 				end;
 			CopyBetweenAccountsModeViaHash:
@@ -1668,7 +1683,7 @@ begin
 	begin
 		if FieldIndex = 14 then
 		begin
-			strpcopy(FieldValue, GetAccountSettingsFromIniFile(AccountsIniFilePath, ExtractFileName(FileName)).Description);
+			strpcopy(FieldValue, GetAccountSettingsFromIniFile(AccountsIniFilePath, RealPath.account).Description);
 			exit(ft_stringw);
 		end
 		else
