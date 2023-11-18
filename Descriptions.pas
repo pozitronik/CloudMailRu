@@ -155,7 +155,7 @@ begin
 	//fStream := nil;
 	fStream := TStreamReader.Create(self.ion_filename, self.encoding, false);
 	try
-		if fStream.ReadToEnd <> '' then
+		if fStream.ReadToEnd <> EmptyWideStr then
 			result := fStream.CurrentEncoding;
 	except
 		on E: Exception do
