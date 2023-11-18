@@ -122,6 +122,8 @@
         <VerInfo_Locale>1033</VerInfo_Locale>
         <Manifest_File>(None)</Manifest_File>
         <AppDPIAwarenessMode>none</AppDPIAwarenessMode>
+        <Debugger_HostApplication>D:\dshell\TOTALCMD.EXE</Debugger_HostApplication>
+        <Debugger_RunParams>/i=%commander_path%\debug.ini</Debugger_RunParams>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_2_Win64)'!=''">
         <Debugger_HostApplication>D:\dshell\TOTALCMD64.EXE</Debugger_HostApplication>
