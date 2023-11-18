@@ -719,7 +719,7 @@ begin
 			iteration := iteration + 1;
 			size := size div 1024;
 		end;
-		exit(size.ToString() + ' ' + postfixes[iteration]);
+		exit(Format('%d %s', [size, postfixes[iteration]]));
 	end else begin
 		iteration := 0;
 		while iteration < SizeType do
@@ -727,7 +727,7 @@ begin
 			iteration := iteration + 1;
 			size := size div 1024;
 		end;
-		exit(size.ToString() + ' ' + postfixes[iteration + SizeType]);
+		exit(Format('%d %s', [size, postfixes[iteration + SizeType]]));
 	end;
 
 end;
