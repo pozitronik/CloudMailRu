@@ -34,9 +34,9 @@ type
 		path: WideString;
 		isDir: TIsDir; //is it a directory
 		upDirItem: boolean; //path/../
-		trashDir: boolean; //item is inside trash bin dir
-		sharedDir: boolean; //item is inside shared links dir
-		invitesDir: boolean; //item is inside invites dir
+		trashDir: boolean; //item is inside of a trash bin dir
+		sharedDir: boolean; //item is inside of a shared links dir
+		invitesDir: boolean; //item is inside of an invites dir
 	end;
 
 function Implode(S: TStringList; Delimiter: WideString): WideString;
