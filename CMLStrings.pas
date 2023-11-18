@@ -199,8 +199,6 @@ const
 	VERB_UPDATE = 'Update';
 	WAIT = 'Wait for it...';
 	WARN_QUOTA_EXHAUSTED = 'Warning: space quota exhausted!';
-
-	// todo: search all ToString
 implementation
 
 end.
