@@ -146,7 +146,7 @@ end;
 function CloudMailRuDirListingItemToFindData(DirListing: TCloudMailRuDirListingItem; DirsAsSymlinks: Boolean = false): tWIN32FINDDATAW;
 begin
 	FillChar(Result, sizeof(WIN32_FIND_DATA), 0);
-	if (DirListing.deleted_from <> '') then //items inside trash bin
+	if (DirListing.deleted_from <> EMPTY_STR) then //items inside trash bin
 	begin
 		Result.ftCreationTime := DateTimeToFileTime(UnixToDateTime(DirListing.deleted_at, false));
 		Result.ftLastWriteTime := Result.ftCreationTime;
@@ -204,7 +204,7 @@ begin
 	else
 		Result := FindListingItemByHomePath(CurrentListing, path.path); //сначала попробуем найти поле в имеющемся списке
 
-	if (Result.name = '') and UpdateListing then //если там его нет (нажали пробел на папке, например), то запросим в облаке напрямую, в зависимости от того, внутри чего мы находимся
+	if (Result.name = EMPTY_STR) and UpdateListing then //если там его нет (нажали пробел на папке, например), то запросим в облаке напрямую, в зависимости от того, внутри чего мы находимся
 	begin
 		CurrentCloud := ConnectionManager.get(path.account, getResult);
 		if not Assigned(CurrentCloud) then
@@ -226,7 +226,7 @@ begin
 		end;
 		if CurrentCloud.statusFile(path.path, Result) then //Обычный каталог
 		begin
-			if (Result.home = '') and not CurrentCloud.public_account then
+			if (Result.home = EMPTY_STR) and not CurrentCloud.public_account then
 				LogHandle(LogLevelError, MSGTYPE_IMPORTANTERROR, PWideChar(Format(ERR_WHERE_IS_THE_FILE, [path.path]))); {Такого быть не может, но...}
 		end;
 	end; //Не рапортуем, это будет уровнем выше
@@ -248,7 +248,7 @@ var
 begin
 	Result := FindListingItemByName(InviteListing, path.path);
 	{item not found in current global listing, so refresh it}
-	if Result.name = '' then
+	if Result.name = EMPTY_STR then
 		if ConnectionManager.get(path.account, getResult).getIncomingLinksListing(CurrentIncomingInvitesListing) then
 			exit(FindListingItemByName(CurrentIncomingInvitesListing, path.path));
 
@@ -627,7 +627,7 @@ begin
 				SetLastError(ERROR_PATH_NOT_FOUND);
 		end;
 
-		if (RealPath.invitesDir or RealPath.trashDir or RealPath.sharedDir) and (RealPath.path <> '') then //игнорим попытки получить листинги объектов вирутальных каталогов
+		if (RealPath.invitesDir or RealPath.trashDir or RealPath.sharedDir) and (RealPath.path <> EMPTY_STR) then //игнорим попытки получить листинги объектов вирутальных каталогов
 		begin
 			SetLastError(ERROR_ACCESS_DENIED);
 			exit(INVALID_HANDLE_VALUE);
@@ -638,7 +638,7 @@ begin
 		else
 			CurrentItem := FindListingItemByHomePath(CurrentListing, RealPath.path);
 
-		if (CurrentItem.name <> '') and (CurrentItem.type_ <> TYPE_DIR) then
+		if (CurrentItem.name <> EMPTY_STR) and (CurrentItem.type_ <> TYPE_DIR) then
 		begin
 			SetLastError(ERROR_PATH_NOT_FOUND);
 			exit(INVALID_HANDLE_VALUE);
@@ -706,7 +706,7 @@ var
 begin
 	Result := FS_EXEC_OK;
 	Cloud := ConnectionManager.get(RealPath.account, getResult);
-	if RealPath.path = '' then //main trashbin folder properties
+	if RealPath.path = EMPTY_STR then //main trashbin folder properties
 	begin
 		if not Cloud.getTrashbinListing(CurrentListing) then
 			exit(FS_EXEC_ERROR);
@@ -747,7 +747,7 @@ begin
 			strpcopy(RemoteName, '\' + RealPath.account + UrlToPath(CurrentItem.home));
 		Result := FS_EXEC_SYMLINK;
 	end else begin
-		if RealPath.path = '' then
+		if RealPath.path = EMPTY_STR then
 			TAccountsForm.ShowAccounts(MainWin, AccountsIniFilePath, SettingsIniFilePath, PasswordManager, RealPath.account) //main shared folder properties - open connection settings
 		else
 		begin
@@ -767,7 +767,7 @@ var
 begin
 	Result := FS_EXEC_OK;
 	Cloud := ConnectionManager.get(RealPath.account, getResult);
-	if RealPath.path = '' then //main invites folder properties
+	if RealPath.path = EMPTY_STR then //main invites folder properties
 	begin
 		TAccountsForm.ShowAccounts(MainWin, AccountsIniFilePath, SettingsIniFilePath, PasswordManager, RealPath.account)
 	end else begin //one invite item
@@ -799,7 +799,7 @@ var
 	getResult: integer;
 begin
 	Result := FS_EXEC_OK;
-	if RealPath.path = '' then
+	if RealPath.path = EMPTY_STR then
 		TAccountsForm.ShowAccounts(MainWin, AccountsIniFilePath, SettingsIniFilePath, PasswordManager, RealPath.account) //show account properties
 	else
 	begin
@@ -810,7 +810,7 @@ begin
 	end;
 end;
 
-function ExecCommand(RemoteName: PWideChar; command: WideString; Parameter: WideString = ''): integer;
+function ExecCommand(RemoteName: PWideChar; command: WideString; Parameter: WideString = EMPTY_STR): integer;
 var
 	RealPath: TRealPath;
 	getResult: integer;
@@ -1253,7 +1253,7 @@ begin
 	if not FileExists(GetUNCFilePath(LocalName)) then
 		exit(FS_FILE_NOTFOUND);
 
-	if (RealPath.account = '') or RealPath.trashDir or RealPath.sharedDir or RealPath.invitesDir then
+	if (RealPath.account = EMPTY_STR) or RealPath.trashDir or RealPath.sharedDir or RealPath.invitesDir then
 		exit(FS_FILE_NOTSUPPORTED);
 	ProgressHandle(LocalName, PWideChar(RealPath.path), 0);
 
@@ -1279,7 +1279,7 @@ begin
 			begin
 				while (not(Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
 				begin
-					case (messagebox(FindTCWindow, PWideChar('Error uploading file' + sLineBreak + LocalName + sLineBreak + 'Continue operation?'), 'Upload error', MB_ABORTRETRYIGNORE + MB_ICONERROR)) of
+					case (messagebox(FindTCWindow, PWideChar(Format(ERR_UPLOAD_FILE_ASK, [LocalName])), ERR_UPLOAD, MB_ABORTRETRYIGNORE + MB_ICONERROR)) of
 						ID_ABORT:
 							Result := FS_FILE_USERABORT;
 						ID_RETRY:
@@ -1300,7 +1300,7 @@ begin
 				while (ThreadRetryCountUpload.Items[GetCurrentThreadID()] <> RetryAttempts) and (not(Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
 				begin
 					ThreadRetryCountUpload.Items[GetCurrentThreadID()] := ThreadRetryCountUpload.Items[GetCurrentThreadID()] + 1;
-					LogHandle(LogLevelDetail, MSGTYPE_DETAILS, PWideChar('Error uploading file ' + LocalName + ' Retry attempt ' + ThreadRetryCountUpload.Items[GetCurrentThreadID()].ToString + RetryAttemptsToString(RetryAttempts)));
+					LogHandle(LogLevelDetail, MSGTYPE_DETAILS, PWideChar(Format(UPLOAD_FILE_RETRY, [LocalName, ThreadRetryCountUpload.Items[GetCurrentThreadID()], RetryAttempts])));
 					Result := PutRemoteFile(RealPath, LocalName, RemoteName, CopyFlags);
 					if ProgressHandle(PWideChar(LocalName), RemoteName, 0) = 1 then
 						Result := FS_FILE_USERABORT;
@@ -1324,7 +1324,7 @@ var
 	Invite: TCloudMailRuInviteInfo;
 begin
 	RealPath := ExtractRealPath(WideString(RemoteName));
-	if (RealPath.account = '') or RealPath.trashDir or RealPath.invitesDir then
+	if (RealPath.account = EMPTY_STR) or RealPath.trashDir or RealPath.invitesDir then
 		exit(false);
 	Cloud := ConnectionManager.get(RealPath.account, getResult);
 	if RealPath.sharedDir then
@@ -1333,7 +1333,7 @@ begin
 		Cloud.getShareInfo(CurrentItem.home, InvitesListing);
 		for Invite in InvitesListing do
 			Cloud.shareFolder(CurrentItem.home, Invite.email, CLOUD_SHARE_NO); //no reporting here
-		if (CurrentItem.weblink <> '') then
+		if (CurrentItem.weblink <> EMPTY_STR) then
 			Cloud.publishFile(CurrentItem.home, CurrentItem.weblink, CLOUD_UNPUBLISH);
 		Result := true;
 	end
@@ -1444,7 +1444,7 @@ begin
 					begin
 						while (not(Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
 						begin
-							case (messagebox(FindTCWindow, PWideChar('File cloning error: ' + TCloudMailRu.ErrorCodeText(Result) + sLineBreak + 'Continue operation?'), 'Operation error', MB_ABORTRETRYIGNORE + MB_ICONERROR)) of
+							case (messagebox(FindTCWindow, PWideChar(Format(ERR_CLONE_FILE_ASK, [TCloudMailRu.ErrorCodeText(Result)])), ERR_OPERATION, MB_ABORTRETRYIGNORE + MB_ICONERROR)) of
 								ID_ABORT:
 									Result := FS_FILE_USERABORT;
 								ID_RETRY:
@@ -1464,7 +1464,7 @@ begin
 						while (ThreadRetryCountRenMov.Items[GetCurrentThreadID()] <> RetryAttempts) and (not(Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
 						begin
 							ThreadRetryCountRenMov.Items[GetCurrentThreadID()] := ThreadRetryCountRenMov.Items[GetCurrentThreadID()] + 1;
-							LogHandle(LogLevelDetail, MSGTYPE_DETAILS, PWideChar('File cloning error: ' + TCloudMailRu.ErrorCodeText(Result) + ' Retry attempt ' + ThreadRetryCountRenMov.Items[GetCurrentThreadID()].ToString + RetryAttemptsToString(RetryAttempts)));
+							LogHandle(LogLevelDetail, MSGTYPE_DETAILS, PWideChar(Format(CLONE_FILE_RETRY, [TCloudMailRu.ErrorCodeText(Result), ThreadRetryCountRenMov.Items[GetCurrentThreadID()], RetryAttempts])));
 							Result := NewCloud.addFileByIdentity(CurrentItem, IncludeTrailingPathDelimiter(ExtractFileDir(NewRealPath.path)) + ExtractFileName(NewRealPath.path));
 							if ProgressHandle(nil, nil, 0) = 1 then
 								Result := FS_FILE_USERABORT;
@@ -1478,7 +1478,7 @@ begin
 		end;
 
 		if (Result = CLOUD_OPERATION_OK) and Move and not(OldCloud.deleteFile(OldRealPath.path)) then
-			LogHandle(LogLevelError, MSGTYPE_IMPORTANTERROR, PWideChar('Can''t delete ' + CurrentItem.home)); //пишем в лог, но не отваливаемся
+			LogHandle(LogLevelError, MSGTYPE_IMPORTANTERROR, PWideChar(Format(ERR_DELETE, [CurrentItem.home]))); //пишем в лог, но не отваливаемся
 	end;
 end;
 
@@ -1495,12 +1495,12 @@ begin
 
 	if OldCloud.statusFile(OldRealPath.path, CurrentItem) then
 	begin
-		if CurrentItem.weblink = '' then //create temporary weblink
+		if CurrentItem.weblink = EMPTY_STR then //create temporary weblink
 		begin
 			NeedUnpublish := true;
 			if not(OldCloud.publishFile(CurrentItem.home, CurrentItem.weblink)) then //problem publishing
 			begin
-				LogHandle(LogLevelError, MSGTYPE_IMPORTANTERROR, PWideChar('Can''t get temporary public link on ' + CurrentItem.home));
+				LogHandle(LogLevelError, MSGTYPE_IMPORTANTERROR, PWideChar(Format(ERR_GET_TEMP_PUBLIC_LINK, [CurrentItem.home])));
 				exit(FS_FILE_READERROR);
 			end;
 		end;
@@ -1514,7 +1514,7 @@ begin
 
 						while (not(Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
 						begin
-							case (messagebox(FindTCWindow, PWideChar('File publish error: ' + TCloudMailRu.ErrorCodeText(Result) + sLineBreak + 'Continue operation?'), 'Operation error', MB_ABORTRETRYIGNORE + MB_ICONERROR)) of
+							case (messagebox(FindTCWindow, PWideChar(Format(ERR_PUBLISH_FILE_ASK, [TCloudMailRu.ErrorCodeText(Result)])), ERR_PUBLISH_FILE, MB_ABORTRETRYIGNORE + MB_ICONERROR)) of
 								ID_ABORT:
 									Result := FS_FILE_USERABORT;
 								ID_RETRY:
@@ -1535,7 +1535,7 @@ begin
 						while (ThreadRetryCountRenMov.Items[GetCurrentThreadID()] <> RetryAttempts) and (not(Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
 						begin
 							ThreadRetryCountRenMov.Items[GetCurrentThreadID()] := ThreadRetryCountRenMov.Items[GetCurrentThreadID()] + 1;
-							LogHandle(LogLevelDetail, MSGTYPE_DETAILS, PWideChar('File publish error: ' + TCloudMailRu.ErrorCodeText(Result) + ' Retry attempt ' + ThreadRetryCountRenMov.Items[GetCurrentThreadID()].ToString + RetryAttemptsToString(RetryAttempts)));
+							LogHandle(LogLevelDetail, MSGTYPE_DETAILS, PWideChar(Format(PUBLISH_FILE_RETRY, [TCloudMailRu.ErrorCodeText(Result), ThreadRetryCountRenMov.Items[GetCurrentThreadID()], RetryAttempts])));
 							Result := cloneWeblink(NewCloud, OldCloud, NewRealPath.path, CurrentItem, NeedUnpublish);
 							if ProgressHandle(nil, nil, 0) = 1 then
 								Result := FS_FILE_USERABORT;
@@ -1549,7 +1549,7 @@ begin
 		end;
 
 		if (Result = CLOUD_OPERATION_OK) and Move and not(OldCloud.deleteFile(OldRealPath.path)) then
-			LogHandle(LogLevelError, MSGTYPE_IMPORTANTERROR, PWideChar('Can''t delete ' + CurrentItem.home)); //пишем в лог, но не отваливаемся
+			LogHandle(LogLevelError, MSGTYPE_IMPORTANTERROR, PWideChar(Format(ERR_DELETE, [CurrentItem.home]))); //пишем в лог, но не отваливаемся
 	end;
 end;
 
@@ -1575,14 +1575,14 @@ begin
 	begin
 		if OldCloud.public_account then
 		begin
-			LogHandle(LogLevelWarning, MSGTYPE_IMPORTANTERROR, PWideChar('Direct operations from public accounts not supported'));
+			LogHandle(LogLevelWarning, MSGTYPE_IMPORTANTERROR, PWideChar(ERR_DIRECT_OPERATIONS_NOT_SUPPORTED));
 			exit(FS_FILE_USERABORT);
 		end;
 
 		case GetPluginSettings(SettingsIniFilePath).CopyBetweenAccountsMode of
 			CopyBetweenAccountsModeDisabled:
 				begin
-					LogHandle(LogLevelWarning, MSGTYPE_IMPORTANTERROR, PWideChar('Direct operations between accounts disabled'));
+					LogHandle(LogLevelWarning, MSGTYPE_IMPORTANTERROR, PWideChar(ERR_DIRECT_OPERATIONS_DISABLED));
 					exit(FS_FILE_USERABORT);
 				end;
 			CopyBetweenAccountsModeViaHash:
@@ -1664,7 +1664,7 @@ var
 begin
 	Result := ft_nosuchfield;
 	RealPath := ExtractRealPath(FileName);
-	if RealPath.path = '' then
+	if RealPath.path = EMPTY_STR then
 	begin
 		if FieldIndex = 14 then
 		begin
@@ -1787,7 +1787,7 @@ begin
 			end;
 		16:
 			begin
-				if Item.deleted_from = '' then
+				if Item.deleted_from = EMPTY_STR then
 					exit(ft_nosuchfield);
 				strpcopy(FieldValue, Item.deleted_from);
 				Result := ft_stringw;
@@ -1840,7 +1840,7 @@ begin
 	IconsMode := GetPluginSettings(SettingsIniFilePath).IconsMode;
 	IconsSize := GetTCIconsSize;
 
-	if RealPath.trashDir and (RealPath.path = '') then //always draw system trash icon
+	if RealPath.trashDir and (RealPath.path = EMPTY_STR) then //always draw system trash icon
 	begin
 		strpcopy(RemoteName, 'cloud_trash');
 		TheIcon := GetSystemIcon(GetFolderIconSize(IconsSize));
@@ -1849,7 +1849,7 @@ begin
 
 	if RealPath.sharedDir then
 	begin
-		if (RealPath.path = '') then
+		if (RealPath.path = EMPTY_STR) then
 		begin
 			strpcopy(RemoteName, 'shared');
 			CombineMacro(TheIcon);
@@ -1863,7 +1863,7 @@ begin
 
 	if RealPath.invitesDir then
 	begin
-		if (RealPath.path = '') then
+		if (RealPath.path = EMPTY_STR) then
 		begin
 			strpcopy(RemoteName, 'shared_incoming');
 			CombineMacro(TheIcon);
@@ -1871,10 +1871,10 @@ begin
 		end else begin
 
 			CurrentInviteItem := FindIncomingInviteItemByPath(CurrentIncomingInvitesListing, RealPath);
-			if CurrentInviteItem.name = '' then
+			if CurrentInviteItem.name = EMPTY_STR then
 				exit(FS_ICON_USEDEFAULT);
 
-			if CurrentInviteItem.home <> '' then //mounted item
+			if CurrentInviteItem.home <> EMPTY_STR then //mounted item
 			begin
 				strpcopy(RemoteName, 'shared_incoming');
 				CombineMacro(TheIcon);
@@ -1890,7 +1890,7 @@ begin
 	if IconsMode = IconsModeDisabled then
 		exit(FS_ICON_USEDEFAULT);
 
-	if (RealPath.path = '') then //connection list
+	if (RealPath.path = EMPTY_STR) then //connection list
 	begin
 
 		if (GetAccountSettingsFromIniFile(AccountsIniFilePath, copy(RemoteName, 2, StrLen(RemoteName) - 2)).public_account) then
@@ -1903,7 +1903,7 @@ begin
 		begin
 			if Item.kind = KIND_SHARED then
 				strpcopy(RemoteName, 'shared')
-			else if Item.weblink <> '' then
+			else if Item.weblink <> EMPTY_STR then
 				strpcopy(RemoteName, 'shared_public')
 			else
 				exit(FS_ICON_USEDEFAULT);

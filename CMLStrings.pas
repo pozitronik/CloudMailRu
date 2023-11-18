@@ -3,7 +3,6 @@
 interface
 
 const
-
 	ACCOUNT_TRASH = '%s trash';
 	ASK_AUTH_APP_CODE = 'Enter code from authentication app.';
 	ASK_AUTH_KEY = 'Enter auth key';
@@ -18,7 +17,9 @@ const
 	CHUNK_ABORT = 'Chunk %s already exists, aborting';
 	CHUNK_OVERWRITE = 'Chunk %s already exists, overwriting';
 	CHUNK_SKIP = 'Chunk %s already exists, skipping';
+	CLONE_FILE_RETRY = 'File cloning error: %s, retry attempt %d of %d';
 	CONNECTED_TO = 'Connected to %s';
+	CONTINUE_ASK = 'Continue operation?';
 	CREATE_DIRECTORY = 'Create directory';
 	CSRF_UPDATE_REQUIRED = 'CSRF token update required during %s %s';
 	DELETED_ITEM = 'Deleted item: %s';
@@ -27,9 +28,12 @@ const
 	DESCRIPTION_FROM = 'Description from %s';
 	DIR_LISTING = 'Directory listing';
 	DONE = 'Done';
+	DOWNLOAD_FILE_RETRY = 'Error downloading file %s, retry attempt %d of %d';
 	EMPTY = 'Empty';
 	EMPTY_STR = '';
 	ERR_ACCOUNT_HAS_INVALID_SYMBOL = 'File name must contain only valid symbols';
+	ERR_CLONE_BY_HASH = 'Error clone by hash: %s, parameter: %s';
+	ERR_CLONE_FILE_ASK = 'File cloning error: %s' + sLineBreak + CONTINUE_ASK;
 	ERR_CLOUD_ERROR_BAD_REQUEST = 'Request to the server failed.';
 	ERR_CLOUD_ERROR_EXISTS = 'An object with this name already exists. Please try another name.';
 	ERR_CLOUD_ERROR_EXPORT_LIMIT_EXCEEDED = 'Unable to add user. You can create a maximum of 50 shared folders.';
@@ -50,13 +54,25 @@ const
 	ERR_CLOUD_ERROR_USER_LIMIT_EXCEEDED = 'Unable to add user. You can have a maximum of 200 users in one shared folder.';
 	ERR_CLOUD_ERROR_VIRUS_SCAN_FAIL = 'File is infected with a virus.';
 	ERR_CONFIRMATION = 'Confirmation error';
-	ERR_COPY_SAME_DIR = 'Copying to the same dir is not supported';
+	ERR_COPY_SAME_DIR_NOT_SUPPORTED = 'Copying to the same dir is not supported';
 	ERR_DECRYPT_FAILED = 'CryptProc returns an error: Decrypt failed';
+	ERR_DELETE = 'Can''t delete %s';
+	ERR_DELETE_FILE = 'File deletion error';
+	ERR_DELETE_FILE_ABORT = 'Can''t delete file %s, aborted';
+	ERR_DELETE_FILE_ASK = 'Can''t delete file %s. Continue operation?';
+	ERR_DELETE_FILE_DELETE = 'Read only file %s deleted';
+	ERR_DELETE_FILE_IGNORE = 'Can''t delete file %s, ignore';
+	ERR_DIRECT_COPY_SUPPORT = 'Direct copying from public accounts is not supported';
+	ERR_DIRECT_OPERATIONS_DISABLED = 'Direct operations between accounts are disabled';
+	ERR_DIRECT_OPERATIONS_NOT_SUPPORTED = 'Direct operations from public accounts are not supported';
+	ERR_DOWNLOAD = 'Download error';
+	ERR_DOWNLOAD_FILE_ASK = 'Error downloading file' + sLineBreak + '%s' + sLineBreak + CONTINUE_ASK;
 	ERR_ENCRYPT_FAILED = '%s: CryptProc returns an error: Encrypt failed';
 	ERR_FILE_NOT_EXISTS = 'File not exists';
 	ERR_GET_AUTH_TOKEN = 'error: getting auth token for %s';
 	ERR_GET_FIRST_STEP_AUTH_TOKEN = 'error: getting first step auth token for %s';
 	ERR_GET_PUBLIC_SHARE = 'Can''t get public share download share';
+	ERR_GET_TEMP_PUBLIC_LINK = 'Can''t get temporary public link on %s';
 	ERR_GET_USER_SPACE = 'error: getting user space information for %s';
 	ERR_HTTP_GENERAL = '%s error with message: %s at %s %s, server response: %s';
 	ERR_INI_GENERAL = 'INI file error';
@@ -70,15 +86,17 @@ const
 	ERR_NAME_TOO_LONG = 'Name too long';
 	ERR_NO_MASTER_PASSWORD = 'No master password entered yet';
 	ERR_NO_PASSWORDS_STORED = 'CryptProc returns an error: No password found in the password store';
+	ERR_OPERATION = 'Operation error';
 	ERR_OTHER_GENERAL = '%s error with message: %s at %s %s';
 	ERR_PARSE_AUTH_DATA = 'error: parsing authorization data';
 	ERR_PARSING_AUTH_TOKEN = 'error: parsing auth token for %s';
 	ERR_PARTIAL_UPLOAD_ABORT = 'Partial upload error, code: %d, aborted';
 	ERR_PARTIAL_UPLOAD_ASK = 'Partial upload error, code: %d' + sLineBreak + 'part name: %s' + sLineBreak + ASK_CONTINUE;
 	ERR_PARTIAL_UPLOAD_IGNORE = 'Partial upload error, code: %d, ignored';
-	ERR_PARTIAL_UPLOAD_RETRY = 'Partial upload error, code: %d, retry attempt %d %s';
+	ERR_PARTIAL_UPLOAD_RETRY = 'Partial upload error, code: %d, retry attempt %d of %d';
 	ERR_PARTIAL_UPLOAD_RETRY_EXCEED = 'Partial upload error, code: %d, retry attempt limit exceed, aborted';
 	ERR_PUBLISH_FILE = 'File publishing error';
+	ERR_PUBLISH_FILE_ASK = 'File publish error: %s' + sLineBreak + CONTINUE_ASK;
 	ERR_PUBLISH_MSG = 'Error while publishing file %s, see the main log';
 	ERR_READ_BYTES_FROM = 'Can''t read from %s %d bytes at %d';
 	ERR_REGISTRATION = 'Registration error';
@@ -91,6 +109,7 @@ const
 	ERR_UNPUBLISH_MSG = 'Error while unpublishing file %s, see the main log';
 	ERR_UNSHARE_FOLDER_MSG = 'Error while remove access to %s to %s folder, see the main log';
 	ERR_UPLOAD = 'Upload error';
+	ERR_UPLOAD_FILE_ASK = 'Error uploading file' + sLineBreak + '%s' + sLineBreak + CONTINUE_ASK;
 	ERR_UPLOAD_INFO = 'error: uploading to cloud: %s with message: %s';
 	ERR_WHERE_IS_THE_FILE = 'Can''t find the file %s';
 	ERR_WRITE_FAILED = '%s: password is not saved: Can''t write the password to the password store';
@@ -99,6 +118,8 @@ const
 	ERR_WRONG_FORMAT = 'Parameter should be in hash:size:name or hash:size format.';
 	ERR_WRONG_HASH_LENGTH = 'Hash length should be exactly 40 symbols.';
 	ERR_WRONG_SIZE_FORMAT = 'Size should be in numeric format.';
+	FILE_EXISTS_IGNORE = 'Local file %s exists, ignored';
+	FILE_EXISTS_OVERWRITE = 'Local file %s exists, and will be overwritten';
 	FILE_FOUND_BY_HASH = 'File "%s" found by hash';
 	INCOMING_LINKS_LISTING = 'Incoming links listing';
 	INVITE_FORM_TITLE = '%s invite: %s';
@@ -153,6 +174,7 @@ const
 	PREFIX_SCAN = 'Scanning %s';
 	PREFIX_SHARD_RECEIVED = 'Shard received: %s, type: %s';
 	PREFIX_STATUS = 'Status: ';
+	PUBLISH_FILE_RETRY = 'File publish error: %s, retry attempt %d of %d';
 	REDIRECTION_LIMIT = 'Redirection limit';
 	REQUESTING_AUTH_TOKEN = 'Requesting auth token for %s';
 	REQUESTING_FIRST_STEP_AUTH_TOKEN = 'Requesting first step auth token for %s';
@@ -169,6 +191,7 @@ const
 	UNDEFINED_UPLOAD_SHARD = 'Current upload shard is undefined, trying to get one';
 	UNKNOWN_ITEM = '...';
 	UNSET_ITEM = '-';
+	UPLOAD_FILE_RETRY = 'Error uploading file %s, retry attempt %d of %d';
 	UPLOAD_URL_OVERRIDDEN = 'Upload url is overridden via config!';
 	URL_OPEN = 'Open %s';
 	USER_SPACE_INFO = 'Total space: %s, used: %s, free: %s.%s';
@@ -176,21 +199,8 @@ const
 	VERB_UPDATE = 'Update';
 	WAIT = 'Wait for it...';
 	WARN_QUOTA_EXHAUSTED = 'Warning: space quota exhausted!';
-	ERR_DELETE_FILE = 'File deletion error';
-	ERR_DELETE_FILE_ASK = 'Can''t delete file %s. Continue operation?';
-	ERR_DELETE_FILE_ABORT = 'Can''t delete file %s, aborted';
-	ERR_DELETE_FILE_IGNORE = 'Can''t delete file %s, ignore';
-	ERR_DELETE_FILE_DELETE = 'Read only file %s deleted';
-	ERR_DIRECT_COPY_SUPPORT = 'Direct copying from public accounts is not supported';
-	ERR_CLONE_BY_HASH = 'Error clone by hash: %s, parameter: %s';
-	FILE_EXISTS_IGNORE = 'Local file %s exists, ignored';
-	FILE_EXISTS_OVERWRITE = 'Local file %s exists, and will be overwritten';
-	ERR_DOWNLOAD = 'Download error';
-	ERR_DOWNLOAD_FILE_ASK = 'Error downloading file' + sLineBreak + '%s' + sLineBreak + 'Continue operation?';
-	DOWNLOAD_FILE_RETRY = 'Error downloading file %s, retry attempt %i of %i';
 
-
-// todo: search all ToString
+	// todo: search all ToString
 implementation
 
 end.

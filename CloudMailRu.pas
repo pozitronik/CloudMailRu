@@ -274,7 +274,7 @@ begin //Облако умеет скопировать файл, но не см�
 	SameName := ExtractFileName(OldName) = ExtractFileName(NewName);
 	if (SameDir) then //копирование в тот же каталог не поддерживается напрямую, а мудрить со временными каталогами я не хочу
 	begin
-		Log(LogLevelWarning, MSGTYPE_IMPORTANTERROR, ERR_COPY_SAME_DIR);
+		Log(LogLevelWarning, MSGTYPE_IMPORTANTERROR, ERR_COPY_SAME_DIR_NOT_SUPPORTED);
 		exit(FS_FILE_NOTSUPPORTED);
 	end else begin
 		{TODO: issue #219}
@@ -1369,7 +1369,7 @@ begin
 								Inc(RetryAttemptsCount);
 								if RetryAttemptsCount <> RetryAttempts + 1 then
 								begin
-									Log(LogLevelError, MSGTYPE_IMPORTANTERROR, ERR_PARTIAL_UPLOAD_RETRY, [result, RetryAttemptsCount, RetryAttemptsToString(RetryAttempts)]);
+									Log(LogLevelError, MSGTYPE_IMPORTANTERROR, ERR_PARTIAL_UPLOAD_RETRY, [result, RetryAttemptsCount, RetryAttempts]);
 									Dec(SplittedPartIndex); //retry with this chunk
 									ProcessMessages;
 									Sleep(AttemptWait);
