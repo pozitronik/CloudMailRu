@@ -76,7 +76,6 @@ function GetSystemIcon(const size: integer = IconSizeSmall; ItemType: integer = 
 function CombineIcons(FrontIcon, BackIcon: Hicon): Hicon; //taken from http://www.swissdelphicenter.ch/en/showcode.php?id=1636
 function LoadIcon(const FileName: WideString): Hicon;
 function LoadPluginIcon(const path: WideString; identifier: WideString): Hicon;
-function RetryAttemptsToString(Attempt: integer): WideString;
 procedure ProcessMessages;
 function IncludeSlash(const Str: WideString): WideString;
 function NormalizeSlashes(const Str: WideString): WideString;
@@ -660,14 +659,6 @@ end;
 function LoadPluginIcon(const path: WideString; identifier: WideString): Hicon;
 begin
 	exit(LoadIcon(IncludeTrailingBackslash(path) + identifier + '.ico'));
-end;
-
-function RetryAttemptsToString(Attempt: integer): WideString;
-begin
-	if Attempt < 0 then
-		exit(EmptyWideStr)
-	else
-		exit(' of ' + Attempt.ToString);
 end;
 
 procedure ProcessMessages;
