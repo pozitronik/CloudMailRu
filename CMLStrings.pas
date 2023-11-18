@@ -2,6 +2,7 @@
 
 interface
 
+(* NOTE: Those can be converted to resourcestrings  when i18n applied *)
 const
 	ACCOUNT_TRASH = '%s trash';
 	ASK_AUTH_APP_CODE = 'Enter code from authentication app.';
