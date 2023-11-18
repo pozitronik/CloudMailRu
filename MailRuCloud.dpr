@@ -201,6 +201,8 @@ begin
 	for CurrentItem in DirListing do
 		if CurrentItem.home = HomePath then
 			exit(CurrentItem);
+	FillChar(CurrentItem, sizeof(CurrentItem), 0);
+	exit(CurrentItem); // nothing found
 end;
 
 {Пытаемся найти объект в облаке по его пути, сначала в текущем списке, если нет - то ищем в облаке}
