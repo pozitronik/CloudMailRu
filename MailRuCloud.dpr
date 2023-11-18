@@ -1682,7 +1682,7 @@ begin
 	begin
 		if FieldIndex = 14 then
 		begin
-			strpcopy(FieldValue, GetAccountSettingsFromIniFile(AccountsIniFilePath, ExtractFileName(FileName)).Description);
+			strpcopy(FieldValue, GetAccountSettingsFromIniFile(AccountsIniFilePath, RealPath.account).Description);
 			exit(ft_stringw);
 		end
 		else
