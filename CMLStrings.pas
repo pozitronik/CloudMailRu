@@ -92,6 +92,7 @@ const
 	ERR_UNSHARE_FOLDER_MSG = 'Error while remove access to %s to %s folder, see the main log';
 	ERR_UPLOAD = 'Upload error';
 	ERR_UPLOAD_INFO = 'error: uploading to cloud: %s with message: %s';
+	ERR_WHERE_IS_THE_FILE = 'Can''t find the file %s';
 	ERR_WRITE_FAILED = '%s: password is not saved: Can''t write the password to the password store';
 	ERR_WRITE_NO_MASTER_PASSWORD = '%s: password is not saved: ' + ERR_NO_MASTER_PASSWORD;
 	ERR_WRONG_ENCRYPT_PASSWORD = 'Incorrect encryption password, encryption support disabled';
@@ -174,8 +175,22 @@ const
 	VERB_SET = 'Set';
 	VERB_UPDATE = 'Update';
 	WAIT = 'Wait for it...';
-	WARN_QUOTA_EXHAUSTED = ' Warning: space quota exhausted!';
+	WARN_QUOTA_EXHAUSTED = 'Warning: space quota exhausted!';
+	ERR_DELETE_FILE = 'File deletion error';
+	ERR_DELETE_FILE_ASK = 'Can''t delete file %s. Continue operation?';
+	ERR_DELETE_FILE_ABORT = 'Can''t delete file %s, aborted';
+	ERR_DELETE_FILE_IGNORE = 'Can''t delete file %s, ignore';
+	ERR_DELETE_FILE_DELETE = 'Read only file %s deleted';
+	ERR_DIRECT_COPY_SUPPORT = 'Direct copying from public accounts is not supported';
+	ERR_CLONE_BY_HASH = 'Error clone by hash: %s, parameter: %s';
+	FILE_EXISTS_IGNORE = 'Local file %s exists, ignored';
+	FILE_EXISTS_OVERWRITE = 'Local file %s exists, and will be overwritten';
+	ERR_DOWNLOAD = 'Download error';
+	ERR_DOWNLOAD_FILE_ASK = 'Error downloading file' + sLineBreak + '%s' + sLineBreak + 'Continue operation?';
+	DOWNLOAD_FILE_RETRY = 'Error downloading file %s, retry attempt %i of %i';
 
+
+// todo: search all ToString
 implementation
 
 end.

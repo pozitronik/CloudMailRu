@@ -227,7 +227,7 @@ begin
 		if CurrentCloud.statusFile(path.path, Result) then //Обычный каталог
 		begin
 			if (Result.home = '') and not CurrentCloud.public_account then
-				LogHandle(LogLevelError, MSGTYPE_IMPORTANTERROR, PWideChar('Cant find file ' + path.path)); {Такого быть не может, но...}
+				LogHandle(LogLevelError, MSGTYPE_IMPORTANTERROR, PWideChar(Format(ERR_WHERE_IS_THE_FILE, [path.path]))); {Такого быть не может, но...}
 		end;
 	end; //Не рапортуем, это будет уровнем выше
 end;
@@ -268,7 +268,7 @@ begin
 		DeleteFailOnUploadMode := GetPluginSettings(SettingsIniFilePath).DeleteFailOnUploadMode;
 		if DeleteFailOnUploadMode = DeleteFailOnUploadAsk then
 		begin
-			DeleteFailOnUploadModeAsked := messagebox(FindTCWindow, PWideChar('Can''t delete file ' + LocalName + '. Continue operation?'), 'File deletion error', MB_ABORTRETRYIGNORE + MB_ICONQUESTION);
+			DeleteFailOnUploadModeAsked := messagebox(FindTCWindow, PWideChar(Format(ERR_DELETE_FILE_ASK, [LocalName])), ERR_DELETE_FILE, MB_ABORTRETRYIGNORE + MB_ICONQUESTION);
 			case DeleteFailOnUploadModeAsked of
 				IDRETRY:
 					continue;
@@ -282,7 +282,7 @@ begin
 		case DeleteFailOnUploadMode of
 			DeleteFailOnUploadAbort:
 				begin
-					LogHandle(LogLevelDetail, MSGTYPE_IMPORTANTERROR, PWideChar('Can''t delete file ' + LocalName + ', aborted'));
+					LogHandle(LogLevelDetail, MSGTYPE_IMPORTANTERROR, PWideChar(Format(ERR_DELETE_FILE_ABORT, [LocalName])));
 					exit(FS_FILE_NOTSUPPORTED);
 				end;
 			DeleteFailOnUploadDeleteIgnore, DeleteFailOnUploadDeleteAbort:
@@ -290,22 +290,22 @@ begin
 					//check if file just have RO attr, then remove it. If user has lack of rights, then ignore or abort
 					if ((FileGetAttr(UNCLocalName) or faReadOnly) <> 0) and ((FileSetAttr(UNCLocalName, not faReadOnly) = 0) and (DeleteFileW(PWideChar(UNCLocalName)))) then
 					begin
-						LogHandle(LogLevelDetail, MSGTYPE_IMPORTANTERROR, PWideChar('Read only file ' + LocalName + ' deleted'));
+						LogHandle(LogLevelDetail, MSGTYPE_IMPORTANTERROR, PWideChar(Format(ERR_DELETE_FILE_DELETE, [LocalName])));
 						exit(FS_FILE_OK);
 					end else begin
 						if GetPluginSettings(SettingsIniFilePath).DeleteFailOnUploadMode = DeleteFailOnUploadDeleteIgnore then
 						begin
-							LogHandle(LogLevelDetail, MSGTYPE_IMPORTANTERROR, PWideChar('Can''t delete file ' + LocalName + ', ignored'));
+							LogHandle(LogLevelDetail, MSGTYPE_IMPORTANTERROR, PWideChar(Format(ERR_DELETE_FILE_IGNORE, [LocalName])));
 							exit(FS_FILE_OK);
 						end else begin
-							LogHandle(LogLevelDetail, MSGTYPE_IMPORTANTERROR, PWideChar('Can''t delete file ' + LocalName + ', aborted'));
+							LogHandle(LogLevelDetail, MSGTYPE_IMPORTANTERROR, PWideChar(Format(ERR_DELETE_FILE_ABORT, [LocalName])));
 							exit(FS_FILE_NOTSUPPORTED);
 						end;
 					end;
 				end;
 			else
 				begin
-					LogHandle(LogLevelDetail, MSGTYPE_IMPORTANTERROR, PWideChar('Can''t delete file ' + LocalName + ', ignored'));
+					LogHandle(LogLevelDetail, MSGTYPE_IMPORTANTERROR, PWideChar(Format(ERR_DELETE_FILE_IGNORE, [LocalName])));
 				end;
 		end;
 	end;
@@ -383,7 +383,7 @@ begin
 				begin
 					if ConnectionManager.get(RealPath.account, getResult).public_account then
 					begin
-						LogHandle(LogLevelWarning, MSGTYPE_IMPORTANTERROR, PWideChar('Direct copying from public accounts not supported'));
+						LogHandle(LogLevelWarning, MSGTYPE_IMPORTANTERROR, PWideChar(ERR_DIRECT_COPY_SUPPORT));
 						ThreadSkipListRenMov.AddOrSetValue(GetCurrentThreadID, true);
 					end;
 					ThreadRetryCountRenMov.AddOrSetValue(GetCurrentThreadID(), 0);
@@ -772,7 +772,7 @@ begin
 		TAccountsForm.ShowAccounts(MainWin, AccountsIniFilePath, SettingsIniFilePath, PasswordManager, RealPath.account)
 	end else begin //one invite item
 		CurrentInvite := FindIncomingInviteItemByPath(CurrentIncomingInvitesListing, RealPath);
-		if CurrentInvite.name = '' then
+		if CurrentInvite.name = EMPTY_STR then
 			exit(FS_EXEC_ERROR);
 
 		getResult := TInvitePropertyForm.ShowProperties(MainWin, CurrentInvite);
@@ -842,7 +842,7 @@ begin
 			Cloud.addFileByIdentity(HashInfo.CloudFileIdentity, IncludeTrailingPathDelimiter(RealPath.path) + HashInfo.name, CLOUD_CONFLICT_RENAME);
 			HashInfo.Destroy;
 		end else begin
-			LogHandle(LogLevelDebug, msgtype_details, PWideChar('Error cloning by hash: ' + HashInfo.errorString + ' Parameter: ' + Parameter));
+			LogHandle(LogLevelDebug, MSGTYPE_DETAILS, PWideChar(Format(ERR_CLONE_BY_HASH, [HashInfo.errorString, Parameter])));
 			HashInfo.Destroy;
 			exit(FS_EXEC_ERROR);
 		end;
@@ -1167,11 +1167,11 @@ begin
 				exit(FS_FILE_EXISTS); //TC will ask user
 			OverwriteLocalModeIgnore:
 				begin
-					LogHandle(LogLevelDetail, msgtype_details, PWideChar('Local file ' + LocalName + ' exists, ignored'));
+					LogHandle(LogLevelDetail, MSGTYPE_DETAILS, PWideChar(Format(FILE_EXISTS_IGNORE, [LocalName])));
 					exit(FS_FILE_OK);
 				end;
 			OverwriteLocalModeOverwrite:
-				LogHandle(LogLevelDetail, msgtype_details, PWideChar('Local file ' + LocalName + ' exists, and will be overwritten'));
+				LogHandle(LogLevelDetail, MSGTYPE_DETAILS, PWideChar(Format(FILE_EXISTS_OVERWRITE, [LocalName])));
 		end;
 	end;
 
@@ -1185,7 +1185,7 @@ begin
 			begin
 				while (not(Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
 				begin
-					case (messagebox(FindTCWindow, PWideChar('Error downloading file' + sLineBreak + RemoteName + sLineBreak + 'Continue operation?'), 'Download error', MB_ABORTRETRYIGNORE + MB_ICONERROR)) of
+					case (messagebox(FindTCWindow, PWideChar(Format(ERR_DOWNLOAD_FILE_ASK, [RemoteName])), ERR_DOWNLOAD, MB_ABORTRETRYIGNORE + MB_ICONERROR)) of
 						ID_ABORT:
 							Result := FS_FILE_USERABORT;
 						ID_RETRY:
@@ -1206,7 +1206,7 @@ begin
 				while (ThreadRetryCountDownload.Items[GetCurrentThreadID()] <> RetryAttempts) and (not(Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
 				begin
 					ThreadRetryCountDownload.Items[GetCurrentThreadID()] := ThreadRetryCountDownload.Items[GetCurrentThreadID()] + 1;
-					LogHandle(LogLevelDetail, msgtype_details, PWideChar('Error downloading file ' + RemoteName + ' Retry attempt ' + ThreadRetryCountDownload.Items[GetCurrentThreadID()].ToString + RetryAttemptsToString(RetryAttempts)));
+					LogHandle(LogLevelDetail, MSGTYPE_DETAILS, PWideChar(Format(DOWNLOAD_FILE_RETRY, [RemoteName, ThreadRetryCountDownload.Items[GetCurrentThreadID()], RetryAttempts])));
 					Result := GetRemoteFile(RealPath, LocalName, RemoteName, CopyFlags);
 					if ProgressHandle(PWideChar(LocalName), RemoteName, 0) = 1 then
 						Result := FS_FILE_USERABORT;
@@ -1300,7 +1300,7 @@ begin
 				while (ThreadRetryCountUpload.Items[GetCurrentThreadID()] <> RetryAttempts) and (not(Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
 				begin
 					ThreadRetryCountUpload.Items[GetCurrentThreadID()] := ThreadRetryCountUpload.Items[GetCurrentThreadID()] + 1;
-					LogHandle(LogLevelDetail, msgtype_details, PWideChar('Error uploading file ' + LocalName + ' Retry attempt ' + ThreadRetryCountUpload.Items[GetCurrentThreadID()].ToString + RetryAttemptsToString(RetryAttempts)));
+					LogHandle(LogLevelDetail, MSGTYPE_DETAILS, PWideChar('Error uploading file ' + LocalName + ' Retry attempt ' + ThreadRetryCountUpload.Items[GetCurrentThreadID()].ToString + RetryAttemptsToString(RetryAttempts)));
 					Result := PutRemoteFile(RealPath, LocalName, RemoteName, CopyFlags);
 					if ProgressHandle(PWideChar(LocalName), RemoteName, 0) = 1 then
 						Result := FS_FILE_USERABORT;
@@ -1464,7 +1464,7 @@ begin
 						while (ThreadRetryCountRenMov.Items[GetCurrentThreadID()] <> RetryAttempts) and (not(Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
 						begin
 							ThreadRetryCountRenMov.Items[GetCurrentThreadID()] := ThreadRetryCountRenMov.Items[GetCurrentThreadID()] + 1;
-							LogHandle(LogLevelDetail, msgtype_details, PWideChar('File cloning error: ' + TCloudMailRu.ErrorCodeText(Result) + ' Retry attempt ' + ThreadRetryCountRenMov.Items[GetCurrentThreadID()].ToString + RetryAttemptsToString(RetryAttempts)));
+							LogHandle(LogLevelDetail, MSGTYPE_DETAILS, PWideChar('File cloning error: ' + TCloudMailRu.ErrorCodeText(Result) + ' Retry attempt ' + ThreadRetryCountRenMov.Items[GetCurrentThreadID()].ToString + RetryAttemptsToString(RetryAttempts)));
 							Result := NewCloud.addFileByIdentity(CurrentItem, IncludeTrailingPathDelimiter(ExtractFileDir(NewRealPath.path)) + ExtractFileName(NewRealPath.path));
 							if ProgressHandle(nil, nil, 0) = 1 then
 								Result := FS_FILE_USERABORT;
@@ -1535,7 +1535,7 @@ begin
 						while (ThreadRetryCountRenMov.Items[GetCurrentThreadID()] <> RetryAttempts) and (not(Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
 						begin
 							ThreadRetryCountRenMov.Items[GetCurrentThreadID()] := ThreadRetryCountRenMov.Items[GetCurrentThreadID()] + 1;
-							LogHandle(LogLevelDetail, msgtype_details, PWideChar('File publish error: ' + TCloudMailRu.ErrorCodeText(Result) + ' Retry attempt ' + ThreadRetryCountRenMov.Items[GetCurrentThreadID()].ToString + RetryAttemptsToString(RetryAttempts)));
+							LogHandle(LogLevelDetail, MSGTYPE_DETAILS, PWideChar('File publish error: ' + TCloudMailRu.ErrorCodeText(Result) + ' Retry attempt ' + ThreadRetryCountRenMov.Items[GetCurrentThreadID()].ToString + RetryAttemptsToString(RetryAttempts)));
 							Result := cloneWeblink(NewCloud, OldCloud, NewRealPath.path, CurrentItem, NeedUnpublish);
 							if ProgressHandle(nil, nil, 0) = 1 then
 								Result := FS_FILE_USERABORT;
