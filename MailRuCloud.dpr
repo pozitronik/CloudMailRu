@@ -213,8 +213,9 @@ var
 	getResult: integer;
 	CurrentCloud: TCloudMailRu;
 begin
-	if path.trashDir or path.sharedDir{or path.invitesDir} then
-		Result := FindListingItemByName(CurrentListing, path.path) //Виртуальные каталоги не возвращают HomePath
+	if path.trashDir or path.sharedDir or (path.isDir = ID_Unset){or path.invitesDir} then
+		{Виртуальные каталоги не имеют HomePath.}
+		Result := FindListingItemByName(CurrentListing, path.path)
 	else
 		Result := FindListingItemByHomePath(CurrentListing, path.path); //сначала попробуем найти поле в имеющемся списке
 
