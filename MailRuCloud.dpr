@@ -174,7 +174,6 @@ begin
 	Result.nFileSizeHigh := DWORD((DirListing.size shr 32) and $FFFFFFFF);
 	Result.nFileSizeLow := DWORD(DirListing.size and $FFFFFFFF);
 	strpcopy(Result.cFileName, DirListing.name);
-	LogHandle(LogLevelDebug, msgtype_details, 'Name: %s, Size: %d, HI: %d, LOW: %d', [DirListing.name, DirListing.size, Result.nFileSizeHigh, Result.nFileSizeLow]);
 end;
 
 function FindData_emptyDir(DirName: WideString = '.'): tWIN32FINDDATAW;
