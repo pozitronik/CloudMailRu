@@ -151,23 +151,23 @@
         <DCCReference Include="FastMM\FastMM4Messages.pas"/>
         <DCCReference Include="CloudMailRu.pas"/>
         <DCCReference Include="MRC_Helper.pas"/>
-        <DCCReference Include="Accounts.pas">
+        <DCCReference Include="forms\Accounts.pas">
             <Form>AccountsForm</Form>
         </DCCReference>
-        <DCCReference Include="RemoteProperty.pas">
+        <DCCReference Include="forms\RemoteProperty.pas">
             <Form>PropertyForm</Form>
         </DCCReference>
         <DCCReference Include="Descriptions.pas"/>
         <DCCReference Include="ConnectionManager.pas"/>
         <DCCReference Include="Settings.pas"/>
         <DCCReference Include="ANSIFunctions.pas"/>
-        <DCCReference Include="DeletedProperty.pas">
+        <DCCReference Include="forms\DeletedProperty.pas">
             <Form>DeletedPropertyForm</Form>
         </DCCReference>
-        <DCCReference Include="InviteProperty.pas">
+        <DCCReference Include="forms\InviteProperty.pas">
             <Form>InvitePropertyForm</Form>
         </DCCReference>
-        <DCCReference Include="AskPassword.pas">
+        <DCCReference Include="forms\AskPassword.pas">
             <Form>AskPasswordForm</Form>
         </DCCReference>
         <DCCReference Include="CMLJSON.pas"/>
@@ -211,7 +211,7 @@
         <DCCReference Include="CMLParsers.pas"/>
         <DCCReference Include="CMLHTTP.pas"/>
         <DCCReference Include="HTTPManager.pas"/>
-        <DCCReference Include="Registration.pas">
+        <DCCReference Include="forms\Registration.pas">
             <Form>RegistrationForm</Form>
         </DCCReference>
         <DCCReference Include="CMLStrings.pas"/>
