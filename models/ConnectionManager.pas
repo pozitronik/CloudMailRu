@@ -13,12 +13,12 @@ uses
 	Vcl.Controls,
 	PLUGIN_Types,
 	Settings,
-	TCPasswordManagerHelper,
+	TCPasswordManager,
 	HTTPManager,
 	System.Generics.Collections,
 	SysUtils,
 	AskPassword,
-	Cipher;
+	FileCipher;
 
 type
 

@@ -16,7 +16,7 @@ uses
 	Settings,
 	Vcl.StdCtrls,
 	Vcl.ExtCtrls,
-	CMLHTTP,
+	CloudMailRuHTTP,
 	JSONHelper,
 	CMLTypes,
 	CMLStrings,

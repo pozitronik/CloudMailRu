@@ -1,4 +1,4 @@
-﻿unit Cipher;
+﻿unit FileCipher;
 
 interface
 

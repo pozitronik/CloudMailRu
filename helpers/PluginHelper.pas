@@ -12,7 +12,7 @@ uses
 	ShlObj,
 	Vcl.Graphics,
 	Inifiles,
-	Descriptions;
+	Description;
 
 const
 	MAX_UNC_PATH = 32767;

@@ -1,4 +1,4 @@
-﻿unit TCPasswordManagerHelper;
+﻿unit TCPasswordManager;
 
 {Обертка над обращениями к менеджеру паролей Total Commander}
 interface
@@ -11,7 +11,7 @@ Uses
 	AskPassword, {AskEncryptionPasswords,}
 	PluginHelper,
 	Controls,
-	Cipher,
+	FileCipher,
 	WideStrUtils,
 	System.Classes,
 	CMLStrings;

@@ -31,7 +31,7 @@ type
 implementation
 
 {THashInfo}
-(*Парсер параметров команды hash. Корректный формат параметра:
+(*РџР°СЂСЃРµСЂ РїР°СЂР°РјРµС‚СЂРѕРІ РєРѕРјР°РЅРґС‹ hash. РљРѕСЂСЂРµРєС‚РЅС‹Р№ С„РѕСЂРјР°С‚ РїР°СЂР°РјРµС‚СЂР°:
  hash:size:name
  hash:size
 *)
@@ -42,9 +42,9 @@ var
 	divisor_position: integer;
 	sizeString: WideString;
 begin
-	if doClean then //команда может быть передана полностью, нужно определить и выпарсить параметр
+	if doClean then //РєРѕРјР°РЅРґР° РјРѕР¶РµС‚ Р±С‹С‚СЊ РїРµСЂРµРґР°РЅР° РїРѕР»РЅРѕСЃС‚СЊСЋ, РЅСѓР¶РЅРѕ РѕРїСЂРµРґРµР»РёС‚СЊ Рё РІС‹РїР°СЂСЃРёС‚СЊ РїР°СЂР°РјРµС‚СЂ
 	begin
-		if (1 = Pos(WideString('hash '), parameter)) then //это команда, чистим
+		if (1 = Pos(WideString('hash '), parameter)) then //СЌС‚Рѕ РєРѕРјР°РЅРґР°, С‡РёСЃС‚РёРј
 		begin
 			parameter := copy(parameter, 6, length(parameter) - 5);
 			parameter := TrimEx(parameter, '"');

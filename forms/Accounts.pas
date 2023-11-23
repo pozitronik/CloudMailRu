@@ -23,7 +23,7 @@ uses
 	Vcl.Samples.Spin,
 	System.IOUtils,
 	AskPassword,
-	TCPasswordManagerHelper,
+	TCPasswordManager,
 	Registration,
 	CMLStrings;
 

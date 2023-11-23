@@ -6,7 +6,7 @@
         <Config Condition="'$(Config)'==''">Debug</Config>
         <TargetedPlatforms>3</TargetedPlatforms>
         <AppType>Library</AppType>
-        <FrameworkType>None</FrameworkType>
+        <FrameworkType>VCL</FrameworkType>
         <ProjectVersion>20.1</ProjectVersion>
         <Platform Condition="'$(Platform)'==''">Win64</Platform>
     </PropertyGroup>
@@ -68,7 +68,7 @@
         <SanitizedProjectName>MailRuCloud</SanitizedProjectName>
         <VerInfo_Locale>1049</VerInfo_Locale>
         <VerInfo_Keys>CompanyName=;FileDescription=Cloud.Mail.ru плагин x32/x64 для Total Commander;FileVersion=1.20.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=18.11.23;Comments=https://github.com/pozitronik/CloudMailRu/;CFBundleName=</VerInfo_Keys>
-        <DCC_Namespace>System;Xml;Data;Datasnap;Web;Soap;DUnitX.MemoryLeakMonitor;Winapi;FireDAC.Stan;Vcl;$(DCC_Namespace)</DCC_Namespace>
+        <DCC_Namespace>System;Xml;Data;Datasnap;Web;Soap;DUnitX.MemoryLeakMonitor;Winapi;FireDAC.Stan;Vcl;Vcl.Imaging;Vcl.Touch;Vcl.Samples;Vcl.Shell;$(DCC_Namespace)</DCC_Namespace>
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
         <VerInfo_MinorVer>20</VerInfo_MinorVer>
         <VerInfo_AutoGenVersion>true</VerInfo_AutoGenVersion>
@@ -156,10 +156,6 @@
         <DCCReference Include="forms\RemoteProperty.pas">
             <Form>PropertyForm</Form>
         </DCCReference>
-        <DCCReference Include="Descriptions.pas"/>
-        <DCCReference Include="ConnectionManager.pas"/>
-        <DCCReference Include="Settings.pas"/>
-        <DCCReference Include="ANSIFunctions.pas"/>
         <DCCReference Include="forms\DeletedProperty.pas">
             <Form>DeletedPropertyForm</Form>
         </DCCReference>
@@ -167,6 +163,9 @@
             <Form>InvitePropertyForm</Form>
         </DCCReference>
         <DCCReference Include="forms\AskPassword.pas">
+            <Form>AskPasswordForm</Form>
+        </DCCReference>
+        <DCCReference Include="forms\Registration.pas">
             <Form>AskPasswordForm</Form>
         </DCCReference>
         <DCCReference Include="CMLTypes.pas"/>
@@ -202,31 +201,30 @@
         <DCCReference Include="DCPCrypt\Hashes\DCPsha256.pas"/>
         <DCCReference Include="DCPCrypt\Hashes\DCPsha512.pas"/>
         <DCCReference Include="DCPCrypt\Hashes\DCPtiger.pas"/>
-        <DCCReference Include="TCPasswordManagerHelper.pas"/>
-        <DCCReference Include="HashInfo.pas"/>
-        <DCCReference Include="SplitFile.pas"/>
-        <DCCReference Include="ChunkedFileStream.pas"/>
-        <DCCReference Include="CMLParsers.pas"/>
-        <DCCReference Include="CMLHTTP.pas"/>
-        <DCCReference Include="HTTPManager.pas"/>
-        <DCCReference Include="forms\Registration.pas">
-            <Form>RegistrationForm</Form>
-        </DCCReference>
-        <DCCReference Include="CMLStrings.pas"/>
-        <DCCReference Include="models\CloudMailRuDirListingItem.pas"/>
-        <DCCReference Include="models\CloudMailRuDirListing.pas"/>
-        <DCCReference Include="models\CloudMailRuInviteInfo.pas"/>
-        <DCCReference Include="models\CloudMailRuInviteInfoListing.pas"/>
-        <DCCReference Include="models\CloudMailRuIncomingInviteInfo.pas"/>
-        <DCCReference Include="models\CloudMailRuOwnerInfo.pas"/>
-        <DCCReference Include="models\CloudMailRuIncomingInviteInfoListing.pas"/>
-        <DCCReference Include="models\CloudMailRuOAuthInfo.pas"/>
-        <DCCReference Include="models\CloudMailRuSpaceInfo.pas"/>
-        <DCCReference Include="models\CloudMailRuTwostepData.pas"/>
-        <DCCReference Include="models\CloudMailRuFileIdentity.pas"/>
-        <DCCReference Include="models\CloudMailRuOperationResult.pas"/>
         <DCCReference Include="helpers\JSONHelper.pas"/>
         <DCCReference Include="helpers\PluginHelper.pas"/>
+        <DCCReference Include="models\ChunkedFileStream.pas"/>
+        <DCCReference Include="models\ConnectionManager.pas"/>
+        <DCCReference Include="models\Description.pas"/>
+        <DCCReference Include="models\FileSplitInfo.pas"/>
+        <DCCReference Include="models\HashInfo.pas"/>
+        <DCCReference Include="models\TCPasswordManager.pas"/>
+        <DCCReference Include="models\settings\Settings.pas"/>
+        <DCCReference Include="models\http\CloudMailRuHTTP.pas"/>
+        <DCCReference Include="models\http\HTTPManager.pas"/>
+        <DCCReference Include="models\dto\CloudMailRuDirListing.pas"/>
+        <DCCReference Include="models\dto\CloudMailRuDirListingItem.pas"/>
+        <DCCReference Include="models\dto\CloudMailRuFileIdentity.pas"/>
+        <DCCReference Include="models\dto\CloudMailRuIncomingInviteInfo.pas"/>
+        <DCCReference Include="models\dto\CloudMailRuIncomingInviteInfoListing.pas"/>
+        <DCCReference Include="models\dto\CloudMailRuInviteInfo.pas"/>
+        <DCCReference Include="models\dto\CloudMailRuInviteInfoListing.pas"/>
+        <DCCReference Include="models\dto\CloudMailRuOAuthInfo.pas"/>
+        <DCCReference Include="models\dto\CloudMailRuOperationResult.pas"/>
+        <DCCReference Include="models\dto\CloudMailRuOwnerInfo.pas"/>
+        <DCCReference Include="models\dto\CloudMailRuSpaceInfo.pas"/>
+        <DCCReference Include="models\dto\CloudMailRuTwostepData.pas"/>
+        <DCCReference Include="models\cipher\FileCipher.pas"/>
         <RcItem Include="icons\icon.ico">
             <ResourceType>ICON</ResourceType>
             <ResourceId>base_icon</ResourceId>

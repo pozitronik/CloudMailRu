@@ -3,7 +3,7 @@ unit HTTPManager;
 interface
 
 uses
-	CMLHTTP,
+	CloudMailRuHTTP,
 	CMLTypes,
 	PLUGIN_TYPES,
 	Settings,
@@ -22,7 +22,7 @@ type
 		Connections: TDictionary<Cardinal, TCloudMailRuHTTP>; //<ThreadId, HTTP>
 
 	public
-		{Параметры, с которыми будут отдаваться подключения: создаём с ними экземпляр класса, а дальше он сам рулит}
+		{РџР°СЂР°РјРµС‚СЂС‹, СЃ РєРѕС‚РѕСЂС‹РјРё Р±СѓРґСѓС‚ РѕС‚РґР°РІР°С‚СЊСЃСЏ РїРѕРґРєР»СЋС‡РµРЅРёСЏ: СЃРѕР·РґР°С‘Рј СЃ РЅРёРјРё СЌРєР·РµРјРїР»СЏСЂ РєР»Р°СЃСЃР°, Р° РґР°Р»СЊС€Рµ РѕРЅ СЃР°Рј СЂСѓР»РёС‚}
 		constructor Create(Settings: TConnectionSettings; ExternalProgressProc: TProgressHandler = nil; ExternalLogProc: TLogHandler = nil);
 		destructor Destroy; override;
 		function get(ThreadId: Cardinal): TCloudMailRuHTTP;

@@ -1,4 +1,4 @@
-﻿unit CMLHTTP;
+﻿unit CloudMailRuHTTP;
 
 interface
 
@@ -7,7 +7,7 @@ uses
 	System.Classes,
 	System.Generics.Collections,
 	ChunkedFileStream,
-	SplitFile,
+	FileSplitInfo,
 	Settings,
 	PLUGIN_Types,
 	CMLTypes,

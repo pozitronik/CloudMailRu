@@ -1,4 +1,4 @@
-unit SplitFile;
+unit FileSplitInfo;
 
 interface
 

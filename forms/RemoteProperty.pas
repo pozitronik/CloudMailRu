@@ -7,7 +7,7 @@ uses
 	CloudMailRuDirListingItem,
 	CloudMailRuInviteInfoListing,
 	Plugin_types,
-	Descriptions,
+	Description,
 	CMLTypes,
 	CMLStrings,
 	Settings,
