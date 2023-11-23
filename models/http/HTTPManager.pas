@@ -1,4 +1,4 @@
-unit HTTPManager;
+﻿unit HTTPManager;
 
 interface
 

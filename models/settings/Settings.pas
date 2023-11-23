@@ -9,8 +9,9 @@ uses
 	IniFiles,
 	System.Variants,
 	System.IOUtils,
-	Plugin_Types,
+	PLUGIN_TYPES,
 	PluginHelper,
+	PathHelper,
 	CMRStrings,
 	VCL.Controls,
 	System.RegularExpressions;

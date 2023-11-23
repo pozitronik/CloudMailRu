@@ -8,7 +8,7 @@ interface
 uses
 	CloudMailRu,
 	CMRConstants,
-	PluginHelper,
+
 	windows,
 	Vcl.Controls,
 	PLUGIN_Types,

@@ -9,7 +9,7 @@ Uses
 	Windows,
 	SysUtils,
 	AskPassword, {AskEncryptionPasswords,}
-	PluginHelper,
+	TCHelper,
 	Controls,
 	FileCipher,
 	WideStrUtils,

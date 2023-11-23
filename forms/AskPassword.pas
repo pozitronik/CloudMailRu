@@ -13,7 +13,8 @@ uses
 	Vcl.Forms,
 	Vcl.Dialogs,
 	Vcl.StdCtrls,
-	PluginHelper,
+	TCHelper,
+	WindowsHelper,
 	System.Generics.Collections,
 	CMRStrings;
 

@@ -225,6 +225,15 @@
         <DCCReference Include="models\dto\CloudMailRuTwostepData.pas"/>
         <DCCReference Include="models\cipher\FileCipher.pas"/>
         <DCCReference Include="helpers\ParsingHelper.pas"/>
+        <DCCReference Include="helpers\TCHelper.pas"/>
+        <DCCReference Include="helpers\WindowsHelper.pas"/>
+        <DCCReference Include="helpers\IconHelper.pas"/>
+        <DCCReference Include="helpers\SystemHelper.pas"/>
+        <DCCReference Include="helpers\StringHelper.pas"/>
+        <DCCReference Include="helpers\FileHelper.pas"/>
+        <DCCReference Include="helpers\PathHelper.pas"/>
+        <DCCReference Include="helpers\DebugHelper.pas"/>
+        <DCCReference Include="models\dto\RealPath.pas"/>
         <RcItem Include="icons\icon.ico">
             <ResourceType>ICON</ResourceType>
             <ResourceId>base_icon</ResourceId>

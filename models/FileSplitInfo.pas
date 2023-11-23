@@ -5,7 +5,7 @@ interface
 uses
 	System.SysUtils,
 	System.Classes,
-	PluginHelper,
+	FileHelper,
 	CMRStrings,
 	Winapi.Windows;
 
