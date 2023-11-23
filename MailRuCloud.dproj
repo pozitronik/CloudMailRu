@@ -222,6 +222,11 @@
         <DCCReference Include="models\CloudMailRuIncomingInviteInfo.pas"/>
         <DCCReference Include="models\CloudMailRuOwnerInfo.pas"/>
         <DCCReference Include="models\CloudMailRuIncomingInviteInfoListing.pas"/>
+        <DCCReference Include="models\CloudMailRuOAuthInfo.pas"/>
+        <DCCReference Include="models\CloudMailRuSpaceInfo.pas"/>
+        <DCCReference Include="models\CloudMailRuTwostepData.pas"/>
+        <DCCReference Include="models\CloudMailRuFileIdentity.pas"/>
+        <DCCReference Include="models\CloudMailRuOperationResult.pas"/>
         <RcItem Include="icons\icon.ico">
             <ResourceType>ICON</ResourceType>
             <ResourceId>base_icon</ResourceId>

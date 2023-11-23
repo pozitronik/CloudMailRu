@@ -78,7 +78,12 @@ uses
 	CloudMailRuInviteInfoListing in 'models\CloudMailRuInviteInfoListing.pas',
 	CloudMailRuIncomingInviteInfo in 'models\CloudMailRuIncomingInviteInfo.pas',
 	CloudMailRuOwnerInfo in 'models\CloudMailRuOwnerInfo.pas',
-	CloudMailRuIncomingInviteInfoListing in 'models\CloudMailRuIncomingInviteInfoListing.pas';
+	CloudMailRuIncomingInviteInfoListing in 'models\CloudMailRuIncomingInviteInfoListing.pas',
+	CloudMailRuOAuthInfo in 'models\CloudMailRuOAuthInfo.pas',
+	CloudMailRuSpaceInfo in 'models\CloudMailRuSpaceInfo.pas',
+	CloudMailRuTwostepData in 'models\CloudMailRuTwostepData.pas',
+	CloudMailRuFileIdentity in 'models\CloudMailRuFileIdentity.pas',
+	CloudMailRuOperationResult in 'models\CloudMailRuOperationResult.pas';
 
 {$IFDEF WIN64}
 {$E wfx64}

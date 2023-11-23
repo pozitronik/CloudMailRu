@@ -9,6 +9,10 @@ uses
 	CloudMailRuDirListing,
 	CloudMailRuInviteInfoListing,
 	CloudMailRuIncomingInviteInfoListing,
+	CloudMailRuOAuthInfo,
+	CloudMailRuOperationResult,
+	CloudMailRuTwostepData,
+	CloudMailRuSpaceInfo,
 	System.SysUtils,
 	System.Generics.Collections;
 

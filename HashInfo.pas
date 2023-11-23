@@ -3,6 +3,7 @@ unit HashInfo;
 interface
 
 uses
+	CloudMailRuFileIdentity,
 	system.sysutils,
 	MRC_Helper,
 	CMLTypes,

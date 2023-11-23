@@ -198,56 +198,6 @@ const
 	STREAMING_FORMAT_THUMBNAILS = 7;
 	STREAMING_FORMAT_WEBLINK_THUMBNAILS = 8;
 
-type
-
-	TCloudMailRuOAuthInfo = Record
-		error: WideString;
-		error_code: integer;
-		error_description: WideString;
-		expires_in: integer;
-		refresh_token: WideString;
-		access_token: WideString;
-	end;
-
-	TCloudMailRuSpaceInfo = record
-		overquota: Boolean;
-		total: int64;
-		used: int64;
-	End;
-
-	TCloudMailRuTwostepData = record
-		form_name: WideString;
-		auth_host: WideString;
-		secstep_phone: WideString;
-		secstep_page: WideString;
-		secstep_code_fail: WideString;
-		secstep_resend_fail: WideString;
-		secstep_resend_success: WideString;
-		secstep_timeout: int64;
-		secstep_login: WideString;
-		secstep_disposable_fail: WideString;
-		secstep_smsapi_error: WideString;
-		secstep_captcha: WideString;
-		totp_enabled: WideString;
-		locale: WideString;
-		client: WideString;
-		csrf: WideString;
-		device: WideString;
-		{some items skipped}
-	end;
-
-	TCloudMailRuFileIdentity = record
-		hash: WideString;
-		size: int64;
-	end;
-
-	TCloudMailRuOperationResult = record
-		OperationStatus: integer; //HTTP Code
-		OperationResult: integer; //error code (mostly)
-	end;
-
-
-
 function ShardTypeFromStreamingFormat(StreamingFormat: integer): string;
 
 implementation
