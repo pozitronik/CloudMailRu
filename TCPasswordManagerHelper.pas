@@ -3,7 +3,18 @@
 {Обертка над обращениями к менеджеру паролей Total Commander}
 interface
 
-Uses Plugin_Types, Settings, Windows, SysUtils, AskPassword, {AskEncryptionPasswords,}MRC_Helper, Controls, Cipher, WideStrUtils, System.Classes, CMLStrings;
+Uses
+	Plugin_Types,
+	Settings,
+	Windows,
+	SysUtils,
+	AskPassword, {AskEncryptionPasswords,}
+	MRC_Helper,
+	Controls,
+	Cipher,
+	WideStrUtils,
+	System.Classes,
+	CMLStrings;
 
 type
 

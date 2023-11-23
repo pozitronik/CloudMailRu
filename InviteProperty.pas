@@ -3,7 +3,20 @@ unit InviteProperty;
 interface
 
 uses
-	Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, CloudMailRu, CMLTypes, MRC_Helper, CMLStrings;
+	Winapi.Windows,
+	Winapi.Messages,
+	System.SysUtils,
+	System.Variants,
+	System.Classes,
+	Vcl.Graphics,
+	Vcl.Controls,
+	Vcl.Forms,
+	Vcl.Dialogs,
+	Vcl.StdCtrls,
+	CloudMailRu,
+	CMLTypes,
+	MRC_Helper,
+	CMLStrings;
 
 type
 	TInvitePropertyForm = class(TForm)

@@ -2,7 +2,11 @@ unit HashInfo;
 
 interface
 
-uses system.sysutils, MRC_Helper, CMLTypes, CMLStrings;
+uses
+	system.sysutils,
+	MRC_Helper,
+	CMLTypes,
+	CMLStrings;
 
 type
 

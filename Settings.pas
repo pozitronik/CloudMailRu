@@ -2,7 +2,18 @@
 
 interface
 
-uses Classes, Windows, SysUtils, IniFiles, System.Variants, System.IOUtils, Plugin_Types, MRC_Helper, CMLStrings, VCL.Controls, System.RegularExpressions;
+uses
+	Classes,
+	Windows,
+	SysUtils,
+	IniFiles,
+	System.Variants,
+	System.IOUtils,
+	Plugin_Types,
+	MRC_Helper,
+	CMLStrings,
+	VCL.Controls,
+	System.RegularExpressions;
 
 const
 {$IFDEF WIN64}

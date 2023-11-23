@@ -3,7 +3,10 @@
 interface
 
 uses
-	JSON, CMLTypes, System.SysUtils, System.Generics.Collections;
+	JSON,
+	CMLTypes,
+	System.SysUtils,
+	System.Generics.Collections;
 
 type
 	CMLJSONParser = class

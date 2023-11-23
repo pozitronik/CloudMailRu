@@ -5,7 +5,20 @@
 
 interface
 
-uses CloudMailRu, CMLTypes, MRC_Helper, windows, Vcl.Controls, PLUGIN_Types, Settings, TCPasswordManagerHelper, HTTPManager, System.Generics.Collections, SysUtils, AskPassword, Cipher;
+uses
+	CloudMailRu,
+	CMLTypes,
+	MRC_Helper,
+	windows,
+	Vcl.Controls,
+	PLUGIN_Types,
+	Settings,
+	TCPasswordManagerHelper,
+	HTTPManager,
+	System.Generics.Collections,
+	SysUtils,
+	AskPassword,
+	Cipher;
 
 type
 

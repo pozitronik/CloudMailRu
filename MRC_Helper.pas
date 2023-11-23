@@ -2,7 +2,17 @@
 
 interface
 
-uses Classes, Windows, SysUtils, MultiMon, Math, ShellApi, ShlObj, Vcl.Graphics, Inifiles, Descriptions;
+uses
+	Classes,
+	Windows,
+	SysUtils,
+	MultiMon,
+	Math,
+	ShellApi,
+	ShlObj,
+	Vcl.Graphics,
+	Inifiles,
+	Descriptions;
 
 const
 	MAX_UNC_PATH = 32767;

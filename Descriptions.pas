@@ -3,7 +3,13 @@
 interface
 
 uses
-	System.Types, System.Classes, System.StrUtils, Generics.Collections, System.SysUtils, System.WideStrUtils, Windows;
+	System.Types,
+	System.Classes,
+	System.StrUtils,
+	Generics.Collections,
+	System.SysUtils,
+	System.WideStrUtils,
+	Windows;
 
 const
 	FORMAT_AS_IS = 0; //raw comment string, include all control chars

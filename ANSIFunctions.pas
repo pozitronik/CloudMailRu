@@ -3,7 +3,10 @@
 
 interface
 
-uses Windows, PLUGIN_TYPES, AnsiStrings;
+uses
+	Windows,
+	PLUGIN_TYPES,
+	AnsiStrings;
 
 procedure FsGetDefRootName(DefRootName: PAnsiChar; maxlen: integer); stdcall; //Процедура вызывается один раз при установке плагина
 procedure FsStatusInfo(RemoteDir: PAnsiChar; InfoStartEnd, InfoOperation: integer); stdcall;

@@ -2,7 +2,27 @@
 
 interface
 
-uses CMLJSON, CMLParsers, CMLTypes, CMLHTTP, CMLStrings, System.Hash, System.Classes, System.Generics.Collections, System.SysUtils, PLUGIN_Types, Winapi.Windows, MRC_helper, Settings, Cipher, Splitfile, ChunkedFileStream, HTTPManager, IdCookieManager, DCPbase64, AskPassword;
+uses
+	CMLJSON,
+	CMLParsers,
+	CMLTypes,
+	CMLHTTP,
+	CMLStrings,
+	System.Hash,
+	System.Classes,
+	System.Generics.Collections,
+	System.SysUtils,
+	PLUGIN_Types,
+	Winapi.Windows,
+	MRC_helper,
+	Settings,
+	Cipher,
+	Splitfile,
+	ChunkedFileStream,
+	HTTPManager,
+	IdCookieManager,
+	DCPbase64,
+	AskPassword;
 
 type
 	TCloudMailRu = class
@@ -693,7 +713,8 @@ begin
 	if (Assigned(FileStream)) then
 	begin
 		result := self.HTTP.getFile(getSharedFileUrl(remotePath), FileStream, LogErrors);
-		resultHash := cloudHash(FileStream);
+		if ((result in [FS_FILE_OK]) and (EmptyWideStr = resultHash)) then
+			resultHash := cloudHash(FileStream);
 		FlushFileBuffers(FileStream.Handle);
 		FileStream.free;
 	end;

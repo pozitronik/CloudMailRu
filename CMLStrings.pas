@@ -2,7 +2,7 @@
 
 interface
 
-(* NOTE: Those can be converted to resourcestrings  when i18n applied *)
+(*NOTE: Those can be converted to resourcestrings  when i18n applied*)
 const
 	ACCOUNT_TRASH = '%s trash';
 	ASK_AUTH_APP_CODE = 'Enter code from authentication app.';
@@ -200,6 +200,7 @@ const
 	VERB_UPDATE = 'Update';
 	WAIT = 'Wait for it...';
 	WARN_QUOTA_EXHAUSTED = 'Warning: space quota exhausted!';
+
 implementation
 
 end.

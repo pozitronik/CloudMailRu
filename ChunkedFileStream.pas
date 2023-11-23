@@ -2,7 +2,10 @@ unit ChunkedFileStream;
 
 interface
 
-uses System.Classes, System.SysUtils, CMLStrings;
+uses
+	System.Classes,
+	System.SysUtils,
+	CMLStrings;
 
 type
 

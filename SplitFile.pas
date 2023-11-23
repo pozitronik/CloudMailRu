@@ -2,7 +2,12 @@ unit SplitFile;
 
 interface
 
-uses System.SysUtils, System.Classes, MRC_Helper, CMLStrings, Winapi.Windows;
+uses
+	System.SysUtils,
+	System.Classes,
+	MRC_Helper,
+	CMLStrings,
+	Winapi.Windows;
 
 Const
 	CRCSeed = $FFFFFFFF;

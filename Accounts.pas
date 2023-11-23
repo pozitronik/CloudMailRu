@@ -2,7 +2,30 @@
 
 interface
 
-uses Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics, Settings, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, IniFiles, MRC_Helper, PLUGIN_Types, Vcl.ComCtrls, Vcl.Mask, Vcl.ExtCtrls, Vcl.Samples.Spin, System.IOUtils, AskPassword, TCPasswordManagerHelper, Registration, CMLStrings;
+uses
+	Winapi.Windows,
+	Winapi.Messages,
+	System.SysUtils,
+	System.Variants,
+	System.Classes,
+	Vcl.Graphics,
+	Settings,
+	Vcl.Controls,
+	Vcl.Forms,
+	Vcl.Dialogs,
+	Vcl.StdCtrls,
+	IniFiles,
+	MRC_Helper,
+	PLUGIN_Types,
+	Vcl.ComCtrls,
+	Vcl.Mask,
+	Vcl.ExtCtrls,
+	Vcl.Samples.Spin,
+	System.IOUtils,
+	AskPassword,
+	TCPasswordManagerHelper,
+	Registration,
+	CMLStrings;
 
 type
 	TAccountsForm = class(TForm)

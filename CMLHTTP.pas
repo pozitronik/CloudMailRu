@@ -2,7 +2,36 @@
 
 interface
 
-uses System.SysUtils, System.Classes, System.Generics.Collections, ChunkedFileStream, SplitFile, Settings, PLUGIN_Types, CMLTypes, CMLStrings, CMLParsers, CMLJSON, IdStack, IdCookieManager, IdIOHandler, IdIOHandlerSocket, IdIOHandlerStack, IdSSL, IdSSLOpenSSL, IdBaseComponent, IdComponent, IdTCPConnection, IdTCPClient, IdSocks, IdHTTP, IdAuthentication, IdIOHandlerStream, IdInterceptThrottler, IdCookie, IdMultipartFormData;
+uses
+	System.SysUtils,
+	System.Classes,
+	System.Generics.Collections,
+	ChunkedFileStream,
+	SplitFile,
+	Settings,
+	PLUGIN_Types,
+	CMLTypes,
+	CMLStrings,
+	CMLParsers,
+	CMLJSON,
+	IdStack,
+	IdCookieManager,
+	IdIOHandler,
+	IdIOHandlerSocket,
+	IdIOHandlerStack,
+	IdSSL,
+	IdSSLOpenSSL,
+	IdBaseComponent,
+	IdComponent,
+	IdTCPConnection,
+	IdTCPClient,
+	IdSocks,
+	IdHTTP,
+	IdAuthentication,
+	IdIOHandlerStream,
+	IdInterceptThrottler,
+	IdCookie,
+	IdMultipartFormData;
 
 type
 

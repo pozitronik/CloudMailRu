@@ -2,7 +2,10 @@ unit CMLParsers;
 
 interface
 
-uses CMLTypes, System.SysUtils, System.StrUtils;
+uses
+	CMLTypes,
+	System.SysUtils,
+	System.StrUtils;
 
 function extractNearValue(Text, Anchor: WideString; StartChar: WideChar = '"'; EndChar: WideChar = '"'): WideString;
 function extractTokenFromText(Text: WideString; var token: WideString): Boolean;

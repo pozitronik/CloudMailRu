@@ -2,7 +2,20 @@ unit AskPassword;
 
 interface
 
-uses Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, MRC_Helper, System.Generics.Collections, CMLStrings;
+uses
+	Winapi.Windows,
+	Winapi.Messages,
+	System.SysUtils,
+	System.Variants,
+	System.Classes,
+	Vcl.Graphics,
+	Vcl.Controls,
+	Vcl.Forms,
+	Vcl.Dialogs,
+	Vcl.StdCtrls,
+	MRC_Helper,
+	System.Generics.Collections,
+	CMLStrings;
 
 type
 

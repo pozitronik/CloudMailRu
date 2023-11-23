@@ -2,7 +2,14 @@ unit HTTPManager;
 
 interface
 
-uses CMLHTTP, CMLTypes, PLUGIN_TYPES, Settings, System.Generics.Collections, SysUtils, IdCookieManager;
+uses
+	CMLHTTP,
+	CMLTypes,
+	PLUGIN_TYPES,
+	Settings,
+	System.Generics.Collections,
+	SysUtils,
+	IdCookieManager;
 
 type
 
