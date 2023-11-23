@@ -248,21 +248,12 @@ function FindIncomingInviteItemByPath(InviteListing: TCloudMailRuIncomingInviteI
 var
 	getResult: integer;
 
-	function FindListingItemByName(InviteListing: TCloudMailRuIncomingInviteInfoListing; ItemName: WideString): TCloudMailRuIncomingInviteInfo;
-	var
-		CurrentItem: TCloudMailRuIncomingInviteInfo;
-	begin
-		for CurrentItem in InviteListing do
-			if CurrentItem.name = ItemName then
-				exit(CurrentItem);
-	end;
-
 begin
-	Result := FindListingItemByName(InviteListing, path.path);
+	Result := CloudMailRuIncomingInviteInfoListing.FindByName(InviteListing, path.path);
 	{item not found in current global listing, so refresh it}
 	if Result.name = EMPTY_STR then
 		if ConnectionManager.get(path.account, getResult).getIncomingLinksListing(CurrentIncomingInvitesListing) then
-			exit(FindListingItemByName(CurrentIncomingInvitesListing, path.path));
+			exit(CloudMailRuIncomingInviteInfoListing.FindByName(CurrentIncomingInvitesListing, path.path));
 
 end;
 
