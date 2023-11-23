@@ -103,12 +103,15 @@
         <VerInfo_Keys>CompanyName=;FileDescription=Cloud.Mail.ru плагин x32/x64 для Total Commander;FileVersion=1.20.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=21.11.23;Comments=https://github.com/pozitronik/CloudMailRu/;CFBundleName=</VerInfo_Keys>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_1_Win32)'!=''">
-        <VerInfo_Keys>CompanyName=;FileDescription=Cloud.Mail.ru плагин x32/x64 для Total Commander;FileVersion=1.20.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=21.11.23;Comments=https://github.com/pozitronik/CloudMailRu/;ProgramID=</VerInfo_Keys>
+        <VerInfo_Keys>CompanyName=;FileDescription=Cloud.Mail.ru плагин x32/x64 для Total Commander;FileVersion=1.20.1.1;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=23.11.23;Comments=https://github.com/pozitronik/CloudMailRu/;ProgramID=</VerInfo_Keys>
         <VerInfo_Locale>1033</VerInfo_Locale>
+        <VerInfo_Build>1</VerInfo_Build>
+        <VerInfo_Release>1</VerInfo_Release>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_1_Win64)'!=''">
-        <VerInfo_Keys>CompanyName=;FileDescription=Cloud.Mail.ru плагин x32/x64 для Total Commander;FileVersion=1.20.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProgramID=;ProductName=;ProductVersion=21.11.23;Comments=https://github.com/pozitronik/CloudMailRu/</VerInfo_Keys>
+        <VerInfo_Keys>CompanyName=;FileDescription=Cloud.Mail.ru плагин x32/x64 для Total Commander;FileVersion=1.20.1.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProgramID=;ProductName=;ProductVersion=23.11.23;Comments=https://github.com/pozitronik/CloudMailRu/</VerInfo_Keys>
         <VerInfo_Locale>1033</VerInfo_Locale>
+        <VerInfo_Release>1</VerInfo_Release>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_2)'!=''">
         <DCC_Define>DEBUG;$(DCC_Define)</DCC_Define>
