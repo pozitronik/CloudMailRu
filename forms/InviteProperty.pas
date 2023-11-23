@@ -15,9 +15,9 @@ uses
 	Vcl.Dialogs,
 	Vcl.StdCtrls,
 	CloudMailRu,
-	CMLTypes,
+	CMRConstants,
 	PluginHelper,
-	CMLStrings;
+	CMRStrings;
 
 type
 	TInvitePropertyForm = class(TForm)

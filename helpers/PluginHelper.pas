@@ -3,6 +3,7 @@
 interface
 
 uses
+	CMRConstants,
 	Classes,
 	Windows,
 	SysUtils,
@@ -770,7 +771,6 @@ begin
 			CloseHandle(hProcess); //закрываем дескриптор потока
 		end
 end;
-
 
 function ShardTypeFromStreamingFormat(StreamingFormat: integer): string;
 begin

@@ -1,9 +1,9 @@
-unit CMLParsers;
+unit ParsingHelper;
 
 interface
 
 uses
-	CMLTypes,
+	CMRConstants,
 	System.SysUtils,
 	System.StrUtils;
 
@@ -24,7 +24,7 @@ var
 begin
 	result := EmptyWideStr;
 
-	Text := StringReplace(Text, #$A, EmptyWideStr, [rfReplaceAll]); //так нам проще ковыряться в тексте
+	Text := StringReplace(Text, #$A, EmptyWideStr, [rfReplaceAll]); //пїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 	Text := StringReplace(Text, #$D, EmptyWideStr, [rfReplaceAll]);
 	Text := StringReplace(Text, #9, EmptyWideStr, [rfReplaceAll]);
 	Text := StringReplace(Text, #$20, EmptyWideStr, [rfReplaceAll]);

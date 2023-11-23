@@ -1,4 +1,4 @@
-﻿unit CMLTypes;
+﻿unit CMRConstants;
 
 interface
 
@@ -197,5 +197,7 @@ const
 	STREAMING_FORMAT_VIDEO = 6;
 	STREAMING_FORMAT_THUMBNAILS = 7;
 	STREAMING_FORMAT_WEBLINK_THUMBNAILS = 8;
+
+implementation
 
 end.

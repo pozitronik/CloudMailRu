@@ -4,7 +4,7 @@ interface
 
 uses
 	JSON,
-	CMLTypes,
+	CMRConstants,
 	CloudMailRuDirListingItem,
 	CloudMailRuDirListing,
 	CloudMailRuInviteInfoListing,

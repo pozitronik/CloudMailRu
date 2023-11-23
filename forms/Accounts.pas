@@ -25,7 +25,7 @@ uses
 	AskPassword,
 	TCPasswordManager,
 	Registration,
-	CMLStrings;
+	CMRStrings;
 
 type
 	TAccountsForm = class(TForm)

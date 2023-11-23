@@ -18,8 +18,8 @@ uses
 	Vcl.ExtCtrls,
 	CloudMailRuHTTP,
 	JSONHelper,
-	CMLTypes,
-	CMLStrings,
+	CMRConstants,
+	CMRStrings,
 	PLUGIN_Types,
 	Vcl.Imaging.JPEG;
 

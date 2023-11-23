@@ -168,7 +168,6 @@
         <DCCReference Include="forms\Registration.pas">
             <Form>AskPasswordForm</Form>
         </DCCReference>
-        <DCCReference Include="CMLTypes.pas"/>
         <DCCReference Include="DCPCrypt\DCPbase64.pas"/>
         <DCCReference Include="DCPCrypt\DCPblockciphers.pas"/>
         <DCCReference Include="DCPCrypt\DCPconst.pas"/>
@@ -225,6 +224,7 @@
         <DCCReference Include="models\dto\CloudMailRuSpaceInfo.pas"/>
         <DCCReference Include="models\dto\CloudMailRuTwostepData.pas"/>
         <DCCReference Include="models\cipher\FileCipher.pas"/>
+        <DCCReference Include="helpers\ParsingHelper.pas"/>
         <RcItem Include="icons\icon.ico">
             <ResourceType>ICON</ResourceType>
             <ResourceId>base_icon</ResourceId>

@@ -1,4 +1,4 @@
-﻿unit CMLStrings;
+﻿unit CMRStrings;
 
 interface
 

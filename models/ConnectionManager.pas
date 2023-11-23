@@ -7,7 +7,7 @@ interface
 
 uses
 	CloudMailRu,
-	CMLTypes,
+	CMRConstants,
 	PluginHelper,
 	windows,
 	Vcl.Controls,

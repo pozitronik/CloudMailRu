@@ -3,8 +3,8 @@
 interface
 
 uses
-	CMLStrings,
-	CMLTypes,
+	CMRConstants,
+	CMRStrings,
 	PluginHelper,
 	DateUtils,
 	SysUtils,

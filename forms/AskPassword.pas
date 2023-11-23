@@ -15,7 +15,7 @@ uses
 	Vcl.StdCtrls,
 	PluginHelper,
 	System.Generics.Collections,
-	CMLStrings;
+	CMRStrings;
 
 type
 

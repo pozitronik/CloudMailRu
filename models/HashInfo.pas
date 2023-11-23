@@ -6,8 +6,8 @@ uses
 	CloudMailRuFileIdentity,
 	system.sysutils,
 	PluginHelper,
-	CMLTypes,
-	CMLStrings;
+	CMRConstants,
+	CMRStrings;
 
 type
 

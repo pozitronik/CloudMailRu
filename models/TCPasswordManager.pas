@@ -14,7 +14,7 @@ Uses
 	FileCipher,
 	WideStrUtils,
 	System.Classes,
-	CMLStrings;
+	CMRStrings;
 
 type
 

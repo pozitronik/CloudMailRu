@@ -4,7 +4,7 @@ interface
 
 uses
 	CloudMailRuHTTP,
-	CMLTypes,
+	CMRConstants,
 	PLUGIN_TYPES,
 	Settings,
 	System.Generics.Collections,

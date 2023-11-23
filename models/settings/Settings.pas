@@ -11,7 +11,7 @@ uses
 	System.IOUtils,
 	Plugin_Types,
 	PluginHelper,
-	CMLStrings,
+	CMRStrings,
 	VCL.Controls,
 	System.RegularExpressions;
 

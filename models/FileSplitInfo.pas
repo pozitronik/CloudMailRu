@@ -6,7 +6,7 @@ uses
 	System.SysUtils,
 	System.Classes,
 	PluginHelper,
-	CMLStrings,
+	CMRStrings,
 	Winapi.Windows;
 
 Const

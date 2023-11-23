@@ -7,7 +7,7 @@ uses
 	CloudMailRuDirListing,
 	System.SysUtils,
 	System.Classes,
-	CMLTypes,
+	CMRConstants,
 	DCPcrypt2,
 	DCPblockciphers,
 	DCPrijndael,
