@@ -1121,7 +1121,7 @@ begin
 	if (GetPluginSettings(SettingsIniFilePath).CheckCRC) then
 		resultHash := EmptyWideStr
 	else
-		resultHash := 'dummy'; //calculations will be ignored if variable not empty
+		resultHash := 'dummy'; //calculations will be ignored if variable is not empty
 	Cloud := ConnectionManager.get(RemotePath.account, getResult);
 	AccountSettings := GetAccountSettingsFromIniFile(AccountsIniFilePath, RemotePath.account);
 
