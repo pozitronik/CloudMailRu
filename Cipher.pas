@@ -3,7 +3,16 @@
 interface
 
 {Сначала реализация, потом рефакторинг. Шифрование будет каким-нибудь интерфейсом описано, а это уедет в реализацию}
-uses System.SysUtils, System.Classes, CMLTypes, DCPcrypt2, DCPblockciphers, DCPrijndael, DCPSha1, DCPbase64;
+uses
+	CloudMailRuDirListing,
+	System.SysUtils,
+	System.Classes,
+	CMLTypes,
+	DCPcrypt2,
+	DCPblockciphers,
+	DCPrijndael,
+	DCPSha1,
+	DCPbase64;
 
 const
 	CIPHER_OK = 0;

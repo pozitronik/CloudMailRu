@@ -3,6 +3,8 @@
 interface
 
 uses
+	CloudMailRuDirListing,
+  CloudMailRuDirListingItem,
 	MRC_Helper,
 	CloudMailRu,
 	CMLTypes,

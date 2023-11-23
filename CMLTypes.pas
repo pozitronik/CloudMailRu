@@ -199,26 +199,6 @@ const
 	STREAMING_FORMAT_WEBLINK_THUMBNAILS = 8;
 
 type
-	TCloudMailRuDirListingItem = Record
-		tree: WideString;
-		name: WideString;
-		visible_name: WideString;
-		grev: integer;
-		size: int64;
-		kind: WideString;
-		weblink: WideString;
-		rev: integer;
-		type_: WideString;
-		home: WideString;
-		mtime: int64;
-		hash: WideString;
-		virus_scan: WideString;
-		folders_count: integer;
-		files_count: integer;
-		deleted_at: integer;
-		deleted_from: WideString;
-		deleted_by: integer;
-	End;
 
 	TCloudMailRuOAuthInfo = Record
 		error: WideString;
@@ -288,7 +268,7 @@ type
 		OperationResult: integer; //error code (mostly)
 	end;
 
-	TCloudMailRuDirListing = array of TCloudMailRuDirListingItem;
+
 	TCloudMailRuInviteInfoListing = array of TCloudMailRuInviteInfo;
 	TCloudMailRuIncomingInviteInfoListing = array of TCloudMailRuIncomingInviteInfo;
 

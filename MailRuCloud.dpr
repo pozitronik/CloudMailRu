@@ -71,7 +71,9 @@ uses
 	CMLHTTP in 'CMLHTTP.pas',
 	HTTPManager in 'HTTPManager.pas',
 	Registration in 'Registration.pas'{RegistrationForm},
-	CMLStrings in 'CMLStrings.pas';
+	CMLStrings in 'CMLStrings.pas',
+	CloudMailRuDirListingItem in 'models\CloudMailRuDirListingItem.pas',
+	CloudMailRuDirListing in 'models\CloudMailRuDirListing.pas';
 
 {$IFDEF WIN64}
 {$E wfx64}
@@ -150,30 +152,6 @@ begin
 	Result := 0;
 	if Assigned(MyProgressProc) then
 		Result := MyProgressProc(PluginNum, SourceName, TargetName, PercentDone);
-end;
-
-function CloudMailRuDirListingItemToFindData(DirListing: TCloudMailRuDirListingItem; DirsAsSymlinks: Boolean = false): tWIN32FINDDATAW;
-begin
-	FillChar(Result, sizeof(WIN32_FIND_DATA), 0);
-	if (DirListing.deleted_from <> EMPTY_STR) then //items inside trash bin
-	begin
-		Result.ftCreationTime := DateTimeToFileTime(UnixToDateTime(DirListing.deleted_at, false));
-		Result.ftLastWriteTime := Result.ftCreationTime;
-		if (DirListing.type_ = TYPE_DIR) then
-			Result.dwFileAttributes := FILE_ATTRIBUTE_DIRECTORY
-	end else if (DirListing.type_ = TYPE_DIR) or (DirListing.kind = KIND_SHARED) then
-	begin
-		if not DirsAsSymlinks then
-			Result.dwFileAttributes := FILE_ATTRIBUTE_DIRECTORY;
-	end else begin
-		Result.ftCreationTime := DateTimeToFileTime(UnixToDateTime(DirListing.mtime, false));
-		Result.ftLastWriteTime := Result.ftCreationTime;
-
-		Result.dwFileAttributes := 0;
-	end;
-	Result.nFileSizeHigh := DWORD((DirListing.size shr 32) and $FFFFFFFF);
-	Result.nFileSizeLow := DWORD(DirListing.size and $FFFFFFFF);
-	strpcopy(Result.cFileName, DirListing.name);
 end;
 
 function FindData_emptyDir(DirName: WideString = '.'): tWIN32FINDDATAW;

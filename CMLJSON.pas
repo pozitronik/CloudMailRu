@@ -5,6 +5,8 @@ interface
 uses
 	JSON,
 	CMLTypes,
+	CloudMailRuDirListingItem,
+	CloudMailRuDirListing,
 	System.SysUtils,
 	System.Generics.Collections;
 
