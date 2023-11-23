@@ -44,7 +44,6 @@ type
 
 implementation
 
-
 class procedure TJSONHelper.assignFromName(Name: WideString; var ParserObj: TJSONObject; var Item: WideString);
 begin
 	if Assigned(ParserObj.Values[Name]) then
