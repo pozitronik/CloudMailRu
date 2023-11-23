@@ -94,6 +94,7 @@ function NormalizeSlashes(const Str: WideString): WideString;
 function TrimEx(const Str: WideString; TrimChar: WideChar): WideString;
 function FormatSize(size: Int64; SizeType: integer = TYPE_AUTO): WideString; //Форматируем размер в удобочитаемый вид
 function Run(path, ParamString, StartDir: WideString; SubstituteVariables: boolean = true): boolean;
+function ShardTypeFromStreamingFormat(StreamingFormat: integer): string;
 {$IFDEF DEBUG}
 Procedure FileLog(S: WideString);
 {$ENDIF}
@@ -768,6 +769,25 @@ begin
 			CloseHandle(hThread); //закрываем дескриптор процесса
 			CloseHandle(hProcess); //закрываем дескриптор потока
 		end
+end;
+
+
+function ShardTypeFromStreamingFormat(StreamingFormat: integer): string;
+begin
+	case StreamingFormat of
+		STREAMING_FORMAT_WEBLINK_VIEW:
+			Result := SHARD_TYPE_WEBLINK_VIEW;
+		STREAMING_FORMAT_VIDEO:
+			Result := SHARD_TYPE_VIDEO;
+		STREAMING_FORMAT_VIEW_DIRECT:
+			Result := SHARD_TYPE_VIEW_DIRECT;
+		STREAMING_FORMAT_THUMBNAILS:
+			Result := SHARD_TYPE_THUMBNAILS;
+		STREAMING_FORMAT_WEBLINK_THUMBNAILS:
+			Result := SHARD_TYPE_WEBLINK_THUMBNAILS;
+		else
+			Result := SHARD_TYPE_DEFAULT;
+	end;
 end;
 
 end.

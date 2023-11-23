@@ -198,26 +198,4 @@ const
 	STREAMING_FORMAT_THUMBNAILS = 7;
 	STREAMING_FORMAT_WEBLINK_THUMBNAILS = 8;
 
-function ShardTypeFromStreamingFormat(StreamingFormat: integer): string;
-
-implementation
-
-function ShardTypeFromStreamingFormat(StreamingFormat: integer): string;
-begin
-	case StreamingFormat of
-		STREAMING_FORMAT_WEBLINK_VIEW:
-			Result := SHARD_TYPE_WEBLINK_VIEW;
-		STREAMING_FORMAT_VIDEO:
-			Result := SHARD_TYPE_VIDEO;
-		STREAMING_FORMAT_VIEW_DIRECT:
-			Result := SHARD_TYPE_VIEW_DIRECT;
-		STREAMING_FORMAT_THUMBNAILS:
-			Result := SHARD_TYPE_THUMBNAILS;
-		STREAMING_FORMAT_WEBLINK_THUMBNAILS:
-			Result := SHARD_TYPE_WEBLINK_THUMBNAILS;
-		else
-			Result := SHARD_TYPE_DEFAULT;
-	end;
-end;
-
 end.
