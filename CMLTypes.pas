@@ -220,13 +220,6 @@ type
 		name: WideString;
 	end;
 
-	TCloudMailRuInviteInfo = record
-		email: WideString;
-		status: WideString;
-		access: WideString;
-		name: WideString;
-	end;
-
 	TCloudMailRuIncomingInviteInfo = record
 		owner: TCloudMailRuOwnerInfo;
 		tree: WideString;
@@ -269,7 +262,6 @@ type
 	end;
 
 
-	TCloudMailRuInviteInfoListing = array of TCloudMailRuInviteInfo;
 	TCloudMailRuIncomingInviteInfoListing = array of TCloudMailRuIncomingInviteInfo;
 
 function ShardTypeFromStreamingFormat(StreamingFormat: integer): string;

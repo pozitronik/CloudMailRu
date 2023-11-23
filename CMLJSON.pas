@@ -7,6 +7,7 @@ uses
 	CMLTypes,
 	CloudMailRuDirListingItem,
 	CloudMailRuDirListing,
+	CloudMailRuInviteInfoListing,
 	System.SysUtils,
 	System.Generics.Collections;
 

@@ -5,6 +5,7 @@ interface
 uses
 	CloudMailRuDirListing,
 	CloudMailRuDirListingItem,
+	CloudMailRuInviteInfoListing,
 	Plugin_types,
 	Descriptions,
 	CMLTypes,
