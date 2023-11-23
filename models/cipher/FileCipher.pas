@@ -24,7 +24,7 @@ type
 	TFileCipher = class
 	private
 		password: WideString;
-		fileCipher, filenameCipher: TDCP_rijndael; //AES ciphers
+		FileCipher, filenameCipher: TDCP_rijndael; //AES ciphers
 		DoFilenameCipher: boolean; //шифровать имена файлов
 		PasswordWrong: boolean;
 
@@ -93,8 +93,8 @@ end;
 
 procedure TFileCipher.CiphersDestroy;
 begin
-	self.fileCipher.Burn;
-	self.fileCipher.Destroy;
+	self.FileCipher.Burn;
+	self.FileCipher.Destroy;
 
 	if self.DoFilenameCipher then
 	begin
@@ -106,8 +106,8 @@ end;
 
 procedure TFileCipher.CiphersInit;
 begin
-	self.fileCipher := TDCP_rijndael.Create(nil);
-	self.fileCipher.InitStr(self.password, TDCP_sha1);
+	self.FileCipher := TDCP_rijndael.Create(nil);
+	self.FileCipher.InitStr(self.password, TDCP_sha1);
 	if self.DoFilenameCipher then
 	begin
 		self.filenameCipher := TDCP_rijndael.Create(nil);
@@ -123,7 +123,7 @@ begin
 
 	self.CiphersInit();
 	if EmptyWideStr <> PasswordControl then
-		PasswordWrong := not(self.fileCipher.EncryptString(CIPHER_CONTROL_GUID) = PasswordControl); //признак неверного пароля
+		PasswordWrong := not(self.FileCipher.EncryptString(CIPHER_CONTROL_GUID) = PasswordControl); //признак неверного пароля
 	self.CiphersDestroy;
 end;
 
@@ -165,7 +165,7 @@ begin
 	if SourceStream.Size > 0 then
 	begin
 		SourceStream.Position := 0;
-		Result := self.fileCipher.EncryptStream(SourceStream, DestinationStream, SourceStream.Size);
+		Result := self.FileCipher.EncryptStream(SourceStream, DestinationStream, SourceStream.Size);
 	end;
 	self.CiphersDestroy;
 end;
@@ -217,7 +217,7 @@ begin
 	self.CiphersInit();
 	Result := 0;
 	if SourceStream.Size > 0 then
-		Result := self.fileCipher.DecryptStream(SourceStream, DestinationStream, SourceStream.Size);
+		Result := self.FileCipher.DecryptStream(SourceStream, DestinationStream, SourceStream.Size);
 	self.CiphersDestroy();
 end;
 

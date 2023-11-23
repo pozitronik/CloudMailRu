@@ -1,4 +1,4 @@
-unit ParsingHelper;
+﻿unit ParsingHelper;
 
 interface
 

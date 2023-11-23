@@ -5,7 +5,7 @@ interface
 uses
 	CMRConstants,
 	CMRStrings,
-	PluginHelper,
+	SystemHelper,
 	DateUtils,
 	SysUtils,
 	Windows;

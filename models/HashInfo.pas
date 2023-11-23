@@ -1,11 +1,11 @@
-unit HashInfo;
+﻿unit HashInfo;
 
 interface
 
 uses
 	CloudMailRuFileIdentity,
 	system.sysutils,
-	PluginHelper,
+	StringHelper,
 	CMRConstants,
 	CMRStrings;
 
