@@ -25,6 +25,7 @@ function GetFolderIcon(const size: integer = IconSizeSmall): Hicon;
 function GetSystemIcon(const size: integer = IconSizeSmall; ItemType: integer = CSIDL_BITBUCKET): Hicon;
 function GetTmpDir: WideString;
 function GetTmpFileName(Prefix: WideString = ''): WideString;
+function GetFindDataEmptyDir(DirName: WideString = '.'): tWIN32FINDDATAW;
 
 implementation
 
@@ -134,6 +135,13 @@ var
 begin
 	GetTempFileNameW(PWideChar(GetTmpDir), PWideChar(Prefix), 0, tempFile);
 	Result := StrPas(tempFile);
+end;
+
+function GetFindDataEmptyDir(DirName: WideString = '.'): tWIN32FINDDATAW;
+begin
+	FillChar(Result, sizeof(WIN32_FIND_DATA), 0);
+	strpcopy(Result.cFileName, DirName);
+	Result.dwFileAttributes := FILE_ATTRIBUTE_DIRECTORY;
 end;
 
 end.

@@ -174,13 +174,6 @@ begin
 		Result := MyProgressProc(PluginNum, SourceName, TargetName, PercentDone);
 end;
 
-function FindData_emptyDir(DirName: WideString = '.'): tWIN32FINDDATAW;
-begin
-	FillChar(Result, sizeof(WIN32_FIND_DATA), 0);
-	strpcopy(Result.cFileName, DirName);
-	Result.dwFileAttributes := FILE_ATTRIBUTE_DIRECTORY;
-end;
-
 {Пытаемся найти объект в облаке по его пути, сначала в текущем списке, если нет - то ищем в облаке}
 function FindListingItemByPath(CurrentListing: TCloudMailRuDirListing; path: TRealPath; UpdateListing: Boolean = true): TCloudMailRuDirListingItem;
 var
@@ -567,7 +560,7 @@ begin
 		begin
 			AddVirtualAccountsToAccountsList(AccountsIniFilePath, AccountsList, [GetPluginSettings(SettingsIniFilePath).ShowTrashFolders, GetPluginSettings(SettingsIniFilePath).ShowSharedFolders, GetPluginSettings(SettingsIniFilePath).ShowInvitesFolders]);
 
-			FindData := FindData_emptyDir(AccountsList.Strings[0]);
+			FindData := GetFindDataEmptyDir(AccountsList.Strings[0]);
 			FileCounter := 1;
 			Result := FIND_ROOT_DIRECTORY;
 		end else begin
@@ -626,7 +619,7 @@ begin
 
 		if (Length(CurrentListing) = 0) then
 		begin
-			FindData := FindData_emptyDir(); //воркароунд бага с невозможностью входа в пустой каталог, см. http://www.ghisler.ch/board/viewtopic.php?t=42399
+			FindData := GetFindDataEmptyDir(); //воркароунд бага с невозможностью входа в пустой каталог, см. http://www.ghisler.ch/board/viewtopic.php?t=42399
 			Result := FIND_NO_MORE_FILES;
 			SetLastError(ERROR_NO_MORE_FILES);
 		end else begin
@@ -646,7 +639,7 @@ begin
 	begin
 		if (AccountsList.Count > FileCounter) then
 		begin
-			FindData := FindData_emptyDir(AccountsList.Strings[FileCounter]);
+			FindData := GetFindDataEmptyDir(AccountsList.Strings[FileCounter]);
 			inc(FileCounter);
 			Result := true;
 		end
