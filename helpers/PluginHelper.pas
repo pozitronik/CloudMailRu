@@ -1,4 +1,4 @@
-﻿unit MRC_Helper;
+﻿unit PluginHelper;
 
 interface
 

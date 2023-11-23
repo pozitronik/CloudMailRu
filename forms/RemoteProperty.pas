@@ -22,7 +22,7 @@ uses
 	Vcl.Dialogs,
 	Vcl.StdCtrls,
 	CloudMailRu,
-	MRC_Helper,
+	PluginHelper,
 	Vcl.Grids,
 	Vcl.ValEdit,
 	Vcl.Menus,

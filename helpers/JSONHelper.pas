@@ -1,4 +1,4 @@
-﻿unit CMLJSON;
+﻿unit JSONHelper;
 
 interface
 
@@ -17,7 +17,7 @@ uses
 	System.Generics.Collections;
 
 type
-	CMLJSONParser = class
+	TJSONHelper = class
 	private
 		class procedure assignFromName(Name: WideString; var ParserObj: TJSONObject; var Item: WideString); overload;
 		class procedure assignFromName(Name: WideString; var ParserObj: TJSONObject; var Item: Int64); overload;
@@ -44,33 +44,32 @@ type
 
 implementation
 
-{TCloudMailRuJSONParser}
 
-class procedure CMLJSONParser.assignFromName(Name: WideString; var ParserObj: TJSONObject; var Item: WideString);
+class procedure TJSONHelper.assignFromName(Name: WideString; var ParserObj: TJSONObject; var Item: WideString);
 begin
 	if Assigned(ParserObj.Values[Name]) then
 		Item := ParserObj.Values[Name].Value;
 end;
 
-class procedure CMLJSONParser.assignFromName(Name: WideString; var ParserObj: TJSONObject; var Item: Int64);
+class procedure TJSONHelper.assignFromName(Name: WideString; var ParserObj: TJSONObject; var Item: Int64);
 begin
 	if Assigned(ParserObj.Values[Name]) then
 		Item := ParserObj.Values[Name].Value.ToInt64;
 end;
 
-class procedure CMLJSONParser.assignFromName(Name: WideString; var ParserObj: TJSONObject; var Item: integer);
+class procedure TJSONHelper.assignFromName(Name: WideString; var ParserObj: TJSONObject; var Item: integer);
 begin
 	if Assigned(ParserObj.Values[Name]) then
 		Item := ParserObj.Values[Name].Value.ToInteger;
 end;
 
-class procedure CMLJSONParser.assignFromName(Name: WideString; var ParserObj: TJSONObject; var Item: Boolean);
+class procedure TJSONHelper.assignFromName(Name: WideString; var ParserObj: TJSONObject; var Item: Boolean);
 begin
 	if Assigned(ParserObj.Values[Name]) then
 		Item := ParserObj.Values[Name].Value.ToBoolean;
 end;
 
-class function CMLJSONParser.init(JSON: WideString; var JSONVal: TJSONObject): Boolean;
+class function TJSONHelper.init(JSON: WideString; var JSONVal: TJSONObject): Boolean;
 begin
 	result := False;
 	try
@@ -82,7 +81,7 @@ begin
 	result := true;
 end;
 
-class function CMLJSONParser.getDirListing(JSON: WideString; var CloudMailRuDirListing: TCloudMailRuDirListing): Boolean;
+class function TJSONHelper.getDirListing(JSON: WideString; var CloudMailRuDirListing: TCloudMailRuDirListing): Boolean;
 var
 	J: integer;
 	A: TJSONArray;
@@ -136,7 +135,7 @@ begin
 	JSONVal.free;
 end;
 
-class function CMLJSONParser.getFileStatus(JSON: WideString; var CloudMailRuDirListingItem: TCloudMailRuDirListingItem): Boolean;
+class function TJSONHelper.getFileStatus(JSON: WideString; var CloudMailRuDirListingItem: TCloudMailRuDirListingItem): Boolean;
 var
 	ParserObj, JSONVal: TJSONObject;
 begin
@@ -176,7 +175,7 @@ begin
 	JSONVal.free;
 end;
 
-class function CMLJSONParser.getIncomingInviteListing(JSON: WideString; var IncomingInviteListing: TCloudMailRuIncomingInviteInfoListing): Boolean;
+class function TJSONHelper.getIncomingInviteListing(JSON: WideString; var IncomingInviteListing: TCloudMailRuIncomingInviteInfoListing): Boolean;
 var
 	JSONVal: TJSONObject;
 	OwnerObj: TJSONObject;
@@ -227,7 +226,7 @@ begin
 	JSONVal.free;
 end;
 
-class function CMLJSONParser.getInviteListing(JSON: WideString; var InviteListing: TCloudMailRuInviteInfoListing): Boolean;
+class function TJSONHelper.getInviteListing(JSON: WideString; var InviteListing: TCloudMailRuInviteInfoListing): Boolean;
 var
 	ParserObj, JSONVal: TJSONObject;
 	J: integer;
@@ -264,7 +263,7 @@ begin
 	JSONVal.free;
 end;
 
-class function CMLJSONParser.getOAuthTokenInfo(JSON: WideString; var CloudMailRuOAuthInfo: TCloudMailRuOAuthInfo): Boolean;
+class function TJSONHelper.getOAuthTokenInfo(JSON: WideString; var CloudMailRuOAuthInfo: TCloudMailRuOAuthInfo): Boolean;
 var
 	JSONVal: TJSONObject;
 begin
@@ -295,7 +294,7 @@ begin
 	JSONVal.free;
 end;
 
-class function CMLJSONParser.getOperationResult(JSON: WideString): TCloudMailRuOperationResult;
+class function TJSONHelper.getOperationResult(JSON: WideString): TCloudMailRuOperationResult;
 var
 	JSONVal: TJSONObject;
 	error, nodename: WideString;
@@ -380,7 +379,7 @@ begin
 	JSONVal.free;
 end;
 
-class function CMLJSONParser.getPublicLink(JSON: WideString; var PublicLink: WideString): Boolean;
+class function TJSONHelper.getPublicLink(JSON: WideString; var PublicLink: WideString): Boolean;
 var
 	JSONVal: TJSONObject;
 begin
@@ -396,7 +395,7 @@ begin
 	JSONVal.free;
 end;
 
-class function CMLJSONParser.getShard(JSON: WideString; var Shard: WideString; ShardType: WideString = NAME_GET): Boolean; //Некрасиво получается, подумать над переделкой, например вызывать методы только статикой
+class function TJSONHelper.getShard(JSON: WideString; var Shard: WideString; ShardType: WideString = NAME_GET): Boolean; //Некрасиво получается, подумать над переделкой, например вызывать методы только статикой
 var
 	JSONVal: TJSONObject;
 begin
@@ -412,7 +411,7 @@ begin
 	JSONVal.free;
 end;
 
-class function CMLJSONParser.getTwostepData(JSON: WideString; var TwostepData: TCloudMailRuTwostepData): Boolean;
+class function TJSONHelper.getTwostepData(JSON: WideString; var TwostepData: TCloudMailRuTwostepData): Boolean;
 var
 	ParserObj, JSONVal: TJSONObject;
 begin
@@ -454,7 +453,7 @@ begin
 	JSONVal.free;
 end;
 
-class function CMLJSONParser.getUserSpace(JSON: WideString; var CloudMailRuSpaceInfo: TCloudMailRuSpaceInfo): Boolean;
+class function TJSONHelper.getUserSpace(JSON: WideString; var CloudMailRuSpaceInfo: TCloudMailRuSpaceInfo): Boolean;
 var
 	ParserObj, JSONVal: TJSONObject;
 begin
@@ -476,7 +475,7 @@ begin
 	JSONVal.free;
 end;
 
-class function CMLJSONParser.getBodyError(JSON: WideString): WideString;
+class function TJSONHelper.getBodyError(JSON: WideString): WideString;
 var
 	JSONVal: TJSONObject;
 begin
@@ -491,7 +490,7 @@ begin
 	JSONVal.free;
 end;
 
-class function CMLJSONParser.getBodyToken(JSON: WideString; var Token: WideString): Boolean;
+class function TJSONHelper.getBodyToken(JSON: WideString; var Token: WideString): Boolean;
 var
 	JSONVal: TJSONObject;
 begin
@@ -507,7 +506,7 @@ begin
 	JSONVal.free;
 end;
 
-class function CMLJSONParser.getRegistrationBody(JSON: WideString; var Body: WideString): Boolean;
+class function TJSONHelper.getRegistrationBody(JSON: WideString; var Body: WideString): Boolean;
 var
 	JSONVal: TJSONObject;
 begin
@@ -523,7 +522,7 @@ begin
 	JSONVal.free;
 end;
 
-class function CMLJSONParser.getRegistrationOperationResult(JSON: WideString): TCloudMailRuOperationResult;
+class function TJSONHelper.getRegistrationOperationResult(JSON: WideString): TCloudMailRuOperationResult;
 var
 	JSONVal: TJSONObject;
 begin

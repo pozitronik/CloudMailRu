@@ -9,7 +9,7 @@ Uses
 	Windows,
 	SysUtils,
 	AskPassword, {AskEncryptionPasswords,}
-	MRC_Helper,
+	PluginHelper,
 	Controls,
 	Cipher,
 	WideStrUtils,

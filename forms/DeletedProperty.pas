@@ -5,7 +5,7 @@ interface
 uses
 	CloudMailRuDirListing,
   CloudMailRuDirListingItem,
-	MRC_Helper,
+	PluginHelper,
 	CloudMailRu,
 	CMLTypes,
 	CMLStrings,

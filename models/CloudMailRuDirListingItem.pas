@@ -5,7 +5,7 @@ interface
 uses
 	CMLStrings,
 	CMLTypes,
-	MRC_Helper,
+	PluginHelper,
 	DateUtils,
 	SysUtils,
 	Windows;

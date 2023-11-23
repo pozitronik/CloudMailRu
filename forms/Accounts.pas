@@ -15,7 +15,7 @@ uses
 	Vcl.Dialogs,
 	Vcl.StdCtrls,
 	IniFiles,
-	MRC_Helper,
+	PluginHelper,
 	PLUGIN_Types,
 	Vcl.ComCtrls,
 	Vcl.Mask,

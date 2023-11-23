@@ -5,7 +5,7 @@ interface
 uses
 	System.SysUtils,
 	System.Classes,
-	MRC_Helper,
+	PluginHelper,
 	CMLStrings,
 	Winapi.Windows;
 

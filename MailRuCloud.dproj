@@ -150,7 +150,6 @@
         <DCCReference Include="FastMM\FastMM4.pas"/>
         <DCCReference Include="FastMM\FastMM4Messages.pas"/>
         <DCCReference Include="CloudMailRu.pas"/>
-        <DCCReference Include="MRC_Helper.pas"/>
         <DCCReference Include="forms\Accounts.pas">
             <Form>AccountsForm</Form>
         </DCCReference>
@@ -170,7 +169,6 @@
         <DCCReference Include="forms\AskPassword.pas">
             <Form>AskPasswordForm</Form>
         </DCCReference>
-        <DCCReference Include="CMLJSON.pas"/>
         <DCCReference Include="CMLTypes.pas"/>
         <DCCReference Include="DCPCrypt\DCPbase64.pas"/>
         <DCCReference Include="DCPCrypt\DCPblockciphers.pas"/>
@@ -227,6 +225,8 @@
         <DCCReference Include="models\CloudMailRuTwostepData.pas"/>
         <DCCReference Include="models\CloudMailRuFileIdentity.pas"/>
         <DCCReference Include="models\CloudMailRuOperationResult.pas"/>
+        <DCCReference Include="helpers\JSONHelper.pas"/>
+        <DCCReference Include="helpers\PluginHelper.pas"/>
         <RcItem Include="icons\icon.ico">
             <ResourceType>ICON</ResourceType>
             <ResourceId>base_icon</ResourceId>

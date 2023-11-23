@@ -16,7 +16,7 @@ uses
 	Vcl.StdCtrls,
 	CloudMailRu,
 	CMLTypes,
-	MRC_Helper,
+	PluginHelper,
 	CMLStrings;
 
 type

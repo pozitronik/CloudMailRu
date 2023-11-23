@@ -13,7 +13,7 @@ uses
 	CMLTypes,
 	CMLStrings,
 	CMLParsers,
-	CMLJSON,
+	JSONHelper,
 	IdStack,
 	IdCookieManager,
 	IdIOHandler,
@@ -485,7 +485,7 @@ begin
 				result := CLOUD_OPERATION_FAILED; //Для всех Post-запросов
 			end;
 	end;
-	if (E is EIdHTTPProtocolException and (NAME_TOKEN = CMLJSONParser.getBodyError((E as EIdHTTPProtocolException).ErrorMessage))) then
+	if (E is EIdHTTPProtocolException and (NAME_TOKEN = TJSONHelper.getBodyError((E as EIdHTTPProtocolException).ErrorMessage))) then
 	begin
 		Log(LogLevelDetail, MSGTYPE_DETAILS, CSRF_UPDATE_REQUIRED, [method_string, URL]);
 		exit(CLOUD_ERROR_TOKEN_OUTDATED);

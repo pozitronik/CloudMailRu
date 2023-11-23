@@ -5,7 +5,7 @@ interface
 uses
 	CloudMailRuFileIdentity,
 	system.sysutils,
-	MRC_Helper,
+	PluginHelper,
 	CMLTypes,
 	CMLStrings;
 

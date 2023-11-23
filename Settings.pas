@@ -10,7 +10,7 @@ uses
 	System.Variants,
 	System.IOUtils,
 	Plugin_Types,
-	MRC_Helper,
+	PluginHelper,
 	CMLStrings,
 	VCL.Controls,
 	System.RegularExpressions;
