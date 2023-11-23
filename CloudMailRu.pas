@@ -6,6 +6,7 @@ uses
 	CloudMailRuDirListing,
 	CloudMailRuDirListingItem,
 	CloudMailRuInviteInfoListing,
+	CloudMailRuIncomingInviteInfoListing,
 	CMLJSON,
 	CMLParsers,
 	CMLTypes,

@@ -215,21 +215,6 @@ type
 		used: int64;
 	End;
 
-	TCloudMailRuOwnerInfo = record
-		email: WideString;
-		name: WideString;
-	end;
-
-	TCloudMailRuIncomingInviteInfo = record
-		owner: TCloudMailRuOwnerInfo;
-		tree: WideString;
-		access: WideString;
-		name: WideString;
-		size: int64;
-		home: WideString; //only on already mounted items
-		invite_token: WideString;
-	end;
-
 	TCloudMailRuTwostepData = record
 		form_name: WideString;
 		auth_host: WideString;
@@ -262,7 +247,6 @@ type
 	end;
 
 
-	TCloudMailRuIncomingInviteInfoListing = array of TCloudMailRuIncomingInviteInfo;
 
 function ShardTypeFromStreamingFormat(StreamingFormat: integer): string;
 

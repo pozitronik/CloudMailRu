@@ -219,6 +219,9 @@
         <DCCReference Include="models\CloudMailRuDirListing.pas"/>
         <DCCReference Include="models\CloudMailRuInviteInfo.pas"/>
         <DCCReference Include="models\CloudMailRuInviteInfoListing.pas"/>
+        <DCCReference Include="models\CloudMailRuIncomingInviteInfo.pas"/>
+        <DCCReference Include="models\CloudMailRuOwnerInfo.pas"/>
+        <DCCReference Include="models\CloudMailRuIncomingInviteInfoListing.pas"/>
         <RcItem Include="icons\icon.ico">
             <ResourceType>ICON</ResourceType>
             <ResourceId>base_icon</ResourceId>

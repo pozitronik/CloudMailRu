@@ -8,6 +8,7 @@ uses
 	CloudMailRuDirListingItem,
 	CloudMailRuDirListing,
 	CloudMailRuInviteInfoListing,
+	CloudMailRuIncomingInviteInfoListing,
 	System.SysUtils,
 	System.Generics.Collections;
 
