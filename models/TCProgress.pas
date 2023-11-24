@@ -18,6 +18,7 @@ type
 		function Progress(SourceName, TargetName: WideString; PercentDone: Integer = 0): Integer; overload; //todo: check if result can be boolean
 		function Progress(SourceName: WideString; PercentDone: Integer = 0): Integer; overload;
 		function Progress(PercentDone: Integer = 0): Integer; overload;
+		function Aborted(): Boolean; //call without any parameters is used to check if the operation cancelled or not
 	end;
 
 implementation
@@ -28,6 +29,13 @@ constructor TTCProgress.Create;
 begin
 	self.ProgressProc := nil;
 	self.PluginNum := -1;
+end;
+
+function TTCProgress.Aborted: Boolean;
+begin
+ 	Result := False;
+	if Assigned(ProgressProc) then
+		Result := ProgressProc(PluginNum, nil, nil, 0) = 1;
 end;
 
 constructor TTCProgress.Create(ProgressProc: TProgressProcW; PluginNum: Integer);
