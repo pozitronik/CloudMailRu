@@ -234,6 +234,7 @@
         <DCCReference Include="helpers\PathHelper.pas"/>
         <DCCReference Include="helpers\DebugHelper.pas"/>
         <DCCReference Include="models\dto\RealPath.pas"/>
+        <DCCReference Include="models\TCLogger.pas"/>
         <RcItem Include="icons\icon.ico">
             <ResourceType>ICON</ResourceType>
             <ResourceId>base_icon</ResourceId>

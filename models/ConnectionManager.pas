@@ -8,7 +8,7 @@ interface
 uses
 	CloudMailRu,
 	CMRConstants,
-
+	TCLogger,
 	windows,
 	Vcl.Controls,
 	PLUGIN_Types,
@@ -30,14 +30,14 @@ type
 		PluginSettings: TPluginSettings; //Сохраняем параметры плагина, чтобы проксировать параметры из них при инициализации конкретного облака
 
 		ProgressHandleProc: TProgressHandler;
-		LogHandleProc: TLogHandler;
+		Logger: TTCLogger;
 		RequestHandleProc: TRequestHandler;
 
 		PasswordManager: TTCPasswordManager;
 
 		function init(connectionName: WideString; var Cloud: TCloudMailRu): integer; //инициализирует подключение по его имени, возвращает код состояния
 	public
-		constructor Create(IniFileName: WideString; PluginSettings: TPluginSettings; HTTPManager: THTTPManager; ProgressHandleProc: TProgressHandler; LogHandleProc: TLogHandler; RequestHandleProc: TRequestHandler; PasswordManager: TTCPasswordManager);
+		constructor Create(IniFileName: WideString; PluginSettings: TPluginSettings; HTTPManager: THTTPManager; ProgressHandleProc: TProgressHandler; Logger: TTCLogger; RequestHandleProc: TRequestHandler; PasswordManager: TTCPasswordManager);
 		destructor Destroy(); override;
 		function get(connectionName: WideString; var OperationResult: integer): TCloudMailRu; //возвращает готовое подклчение по имени
 		procedure free(connectionName: WideString); //освобождает подключение по его имени, если оно существует
@@ -46,13 +46,13 @@ type
 implementation
 
 {TConnectionManager}
-constructor TConnectionManager.Create(IniFileName: WideString; PluginSettings: TPluginSettings; HTTPManager: THTTPManager; ProgressHandleProc: TProgressHandler; LogHandleProc: TLogHandler; RequestHandleProc: TRequestHandler; PasswordManager: TTCPasswordManager);
+constructor TConnectionManager.Create(IniFileName: WideString; PluginSettings: TPluginSettings; HTTPManager: THTTPManager; ProgressHandleProc: TProgressHandler; Logger: TTCLogger; RequestHandleProc: TRequestHandler; PasswordManager: TTCPasswordManager);
 begin
 	Connections := TDictionary<WideString, TCloudMailRu>.Create;
 	self.IniFileName := IniFileName;
 	self.PluginSettings := PluginSettings;
 	self.ProgressHandleProc := ProgressHandleProc;
-	self.LogHandleProc := LogHandleProc;
+	self.Logger := Logger;
 	self.RequestHandleProc := RequestHandleProc;
 	self.HTTPManager := HTTPManager;
 	self.PasswordManager := PasswordManager;
@@ -137,7 +137,7 @@ begin
 		until not PasswordActionRetry;
 	end;
 
-	LogHandleProc(LogLevelConnect, MSGTYPE_CONNECT, PWideChar('CONNECT \' + connectionName));
+	Logger.Log(LogLevelConnect, MSGTYPE_CONNECT, 'CONNECT \%s', [connectionName]);
 
 	{proxify plugin settings to cloud}
 	CloudSettings.ConnectionSettings := self.PluginSettings.ConnectionSettings;
@@ -149,7 +149,7 @@ begin
 	CloudSettings.RetryAttempts := self.PluginSettings.RetryAttempts;
 	CloudSettings.AttemptWait := self.PluginSettings.AttemptWait;
 
-	Cloud := TCloudMailRu.Create(CloudSettings, HTTPManager, ProgressHandleProc, LogHandleProc, RequestHandleProc);
+	Cloud := TCloudMailRu.Create(CloudSettings, HTTPManager, ProgressHandleProc, Logger, RequestHandleProc);
 
 	if (CloudSettings.AccountSettings.twostep_auth) then
 		LoginMethod := CLOUD_AUTH_METHOD_TWO_STEP

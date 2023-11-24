@@ -9,6 +9,7 @@ uses
 	ChunkedFileStream,
 	FileSplitInfo,
 	Settings,
+	TCLogger,
 	PLUGIN_Types,
 	CMRConstants,
 	CMRStrings,
@@ -47,11 +48,9 @@ type
 		Settings: TConnectionSettings;
 
 		ExternalProgressProc: TProgressHandler;
-		ExternalLogProc: TLogHandler;
+		Logger: TTCLogger;
 
 		{PROCEDURES}
-		procedure Log(LogLevel, MsgType: integer; LogString: WideString); overload;
-		procedure Log(LogLevel, MsgType: integer; Msg: WideString; const Args: array of const); overload;
 		procedure setCookie(const Value: TIdCookieManager);
 		procedure SetExternalSourceName(const Value: WideString);
 		procedure SetExternalTargetName(const Value: WideString);
@@ -64,7 +63,7 @@ type
 		property SourceName: WideString write SetExternalSourceName;
 		property TargetName: WideString write SetExternalTargetName;
 		{CONSTRUCTOR/DESTRUCTOR}
-		constructor Create(Settings: TConnectionSettings; ExternalProgressProc: TProgressHandler = nil; ExternalLogProc: TLogHandler = nil);
+		constructor Create(Settings: TConnectionSettings; ExternalProgressProc: TProgressHandler = nil; Logger: TTCLogger = nil);
 		destructor Destroy; override;
 		{MAIN ROUTINES}
 		procedure Head(URL: WideString);
@@ -94,10 +93,12 @@ implementation
 
 {TCloudMailRuHTTP}
 
-constructor TCloudMailRuHTTP.Create(Settings: TConnectionSettings; ExternalProgressProc: TProgressHandler = nil; ExternalLogProc: TLogHandler = nil);
+constructor TCloudMailRuHTTP.Create(Settings: TConnectionSettings; ExternalProgressProc: TProgressHandler = nil; Logger: TTCLogger = nil);
 begin
 	self.ExternalProgressProc := ExternalProgressProc;
-	self.ExternalLogProc := ExternalLogProc;
+	self.Logger := Logger;
+	if not Assigned(Logger) then
+		self.Logger := TTCLogger.Create();
 	self.Throttle := TIdInterceptThrottler.Create();
 	SSL := TIdSSLIOHandlerSocketOpenSSL.Create();
 	SSL.SSLOptions.SSLVersions := [sslvSSLv23];
@@ -452,17 +453,6 @@ begin
 	self.ExternalTargetName := TargetName;
 end;
 
-procedure TCloudMailRuHTTP.Log(LogLevel, MsgType: integer; LogString: WideString);
-begin
-	if Assigned(ExternalLogProc) then
-		ExternalLogProc(LogLevel, MsgType, PWideChar(LogString));
-end;
-
-procedure TCloudMailRuHTTP.Log(LogLevel, MsgType: integer; Msg: WideString; const Args: array of const);
-begin
-	Log(LogLevel, MsgType, Format(Msg, Args))
-end;
-
 function TCloudMailRuHTTP.ExceptionHandler(E: Exception; URL: WideString; HTTPMethod: integer; LogErrors: Boolean): integer; //todo: handle OPTIONS method
 var
 	method_string: WideString; //в зависимости от метода исходного запроса меняется текст сообщения
@@ -487,7 +477,7 @@ begin
 	end;
 	if (E is EIdHTTPProtocolException and (NAME_TOKEN = JSONHelper.getBodyError((E as EIdHTTPProtocolException).ErrorMessage))) then
 	begin
-		Log(LogLevelDetail, MSGTYPE_DETAILS, CSRF_UPDATE_REQUIRED, [method_string, URL]);
+		Logger.Log(LogLevelDetail, MSGTYPE_DETAILS, CSRF_UPDATE_REQUIRED, [method_string, URL]);
 		exit(CLOUD_ERROR_TOKEN_OUTDATED);
 	end;
 
@@ -497,11 +487,11 @@ begin
 	end else if LogErrors then //разбирать ошибку дальше имеет смысл только для логирования - что вернуть уже понятно
 	begin
 		if E is EIdHTTPProtocolException then
-			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, ERR_HTTP_GENERAL, [E.ClassName, E.Message, method_string, URL, (E as EIdHTTPProtocolException).ErrorMessage])
+			Logger.Log(LogLevelError, MSGTYPE_IMPORTANTERROR, ERR_HTTP_GENERAL, [E.ClassName, E.Message, method_string, URL, (E as EIdHTTPProtocolException).ErrorMessage])
 		else if E is EIdSocketerror then
-			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, ERR_SOCKET_GENERAL, [E.ClassName, E.Message, method_string, URL])
+			Logger.Log(LogLevelError, MSGTYPE_IMPORTANTERROR, ERR_SOCKET_GENERAL, [E.ClassName, E.Message, method_string, URL])
 		else
-			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, ERR_OTHER_GENERAL, [E.ClassName, E.Message, method_string, URL]);;
+			Logger.Log(LogLevelError, MSGTYPE_IMPORTANTERROR, ERR_OTHER_GENERAL, [E.ClassName, E.Message, method_string, URL]);;
 	end;
 end;
 

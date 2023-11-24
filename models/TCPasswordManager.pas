@@ -14,7 +14,8 @@ Uses
 	FileCipher,
 	WideStrUtils,
 	System.Classes,
-	CMRStrings;
+	CMRStrings,
+	TCLogger;
 
 type
 
@@ -23,14 +24,11 @@ type
 		CryptProc: TCryptProcW;
 		PluginNum: integer;
 		CryptoNum: integer;
-		LogHandleProc: TLogHandler;
+		Logger: TTCLogger;
 
-		{PROCEDURES}
-		procedure Log(LogLevel, MsgType: integer; LogString: WideString); overload;
-		procedure Log(LogLevel, MsgType: integer; Msg: WideString; const Args: array of const); overload;
 	public
 		ParentWindow: HWND;
-		constructor Create(CryptProc: TCryptProcW; PluginNum, CryptoNum: integer; LogHandleProc: TLogHandler; ParentWindow: HWND = 0);
+		constructor Create(CryptProc: TCryptProcW; PluginNum, CryptoNum: integer; Logger: TTCLogger; ParentWindow: HWND = 0);
 		destructor Destroy(); override;
 		function GetPassword(Key: WideString; var Password: WideString): integer;
 		function SetPassword(Key, Password: WideString): integer;
@@ -46,12 +44,12 @@ implementation
 
 {TTCPasswordManager}
 
-constructor TTCPasswordManager.Create(CryptProc: TCryptProcW; PluginNum, CryptoNum: integer; LogHandleProc: TLogHandler; ParentWindow: HWND = 0);
+constructor TTCPasswordManager.Create(CryptProc: TCryptProcW; PluginNum, CryptoNum: integer; Logger: TTCLogger; ParentWindow: HWND = 0);
 begin
 	self.PluginNum := PluginNum;
 	self.CryptoNum := CryptoNum;
 	self.CryptProc := CryptProc;
-	self.LogHandleProc := LogHandleProc;
+	self.Logger := Logger;
 	if (0 = ParentWindow) then
 		self.ParentWindow := FindTCWindow
 	else
@@ -63,17 +61,6 @@ begin
 	inherited;
 end;
 
-procedure TTCPasswordManager.Log(LogLevel, MsgType: integer; LogString: WideString);
-begin
-	if Assigned(LogHandleProc) then
-		LogHandleProc(LogLevel, MsgType, PWideChar(LogString));
-end;
-
-procedure TTCPasswordManager.Log(LogLevel, MsgType: integer; Msg: WideString; const Args: array of const);
-begin
-	Log(LogLevel, MsgType, Format(Msg, Args))
-end;
-
 function TTCPasswordManager.GetPassword(Key: WideString; var Password: WideString): integer;
 var
 	buf: PWideChar;
@@ -83,7 +70,7 @@ begin
 	result := self.CryptProc(PluginNum, CryptoNum, FS_CRYPT_LOAD_PASSWORD_NO_UI, PWideChar(Key), buf, 1024);
 	if FS_FILE_NOTFOUND = result then //no master password entered yet
 	begin
-		Log(LogLevelDetail, MSGTYPE_DETAILS, ERR_NO_MASTER_PASSWORD);
+		Logger.Log(LogLevelDetail, MSGTYPE_DETAILS, ERR_NO_MASTER_PASSWORD);
 		ZeroMemory(buf, 1024);
 		result := self.CryptProc(PluginNum, CryptoNum, FS_CRYPT_LOAD_PASSWORD, PWideChar(Key), buf, 1024); //ask with master password
 	end;
@@ -93,11 +80,11 @@ begin
 	end;
 	if FS_FILE_READERROR = result then
 	begin
-		Log(LogLevelError, MSGTYPE_IMPORTANTERROR, ERR_NO_PASSWORDS_STORED);
+		Logger.Log(LogLevelError, MSGTYPE_IMPORTANTERROR, ERR_NO_PASSWORDS_STORED);
 	end;
 	if FS_FILE_NOTSUPPORTED = result then //master password cancelled
 	begin
-		Log(LogLevelError, MSGTYPE_IMPORTANTERROR, ERR_DECRYPT_FAILED);
+		Logger.Log(LogLevelError, MSGTYPE_IMPORTANTERROR, ERR_DECRYPT_FAILED);
 	end;
 	FreeMemory(buf);
 end;
@@ -108,19 +95,19 @@ begin
 	case result of
 		FS_FILE_OK:
 			begin //TC скушал пароль, запомним в инишник галочку
-				Log(LogLevelDebug, MSGTYPE_DETAILS, PASSWORD_SAVED, [Key]);
+				Logger.Log(LogLevelDebug, MSGTYPE_DETAILS, PASSWORD_SAVED, [Key]);
 			end;
 		FS_FILE_NOTSUPPORTED: //Сохранение не получилось
 			begin
-				Log(LogLevelError, MSGTYPE_IMPORTANTERROR, ERR_ENCRYPT_FAILED, [Key]);
+				Logger.Log(LogLevelError, MSGTYPE_IMPORTANTERROR, ERR_ENCRYPT_FAILED, [Key]);
 			end;
 		FS_FILE_WRITEERROR: //Сохранение опять не получилось
 			begin
-				Log(LogLevelError, MSGTYPE_IMPORTANTERROR, ERR_WRITE_FAILED, [Key]);
+				Logger.Log(LogLevelError, MSGTYPE_IMPORTANTERROR, ERR_WRITE_FAILED, [Key]);
 			end;
 		FS_FILE_NOTFOUND: //Не указан мастер-пароль
 			begin
-				Log(LogLevelError, MSGTYPE_IMPORTANTERROR, ERR_WRITE_NO_MASTER_PASSWORD, [Key]);
+				Logger.Log(LogLevelError, MSGTYPE_IMPORTANTERROR, ERR_WRITE_NO_MASTER_PASSWORD, [Key]);
 			end;
 		//Ошибки здесь не значат, что пароль мы не получили - он может быть введён в диалоге
 	end;
@@ -149,7 +136,7 @@ begin
 			begin
 				if FS_FILE_OK = self.SetPassword(AccountSettings.name, AccountSettings.Password) then
 				begin //TC скушал пароль, запомним в инишник галочку
-					Log(LogLevelDebug, MSGTYPE_DETAILS, PASSWORD_SAVED, [AccountSettings.name]);
+					Logger.Log(LogLevelDebug, MSGTYPE_DETAILS, PASSWORD_SAVED, [AccountSettings.name]);
 					TmpString := AccountSettings.Password;
 					AccountSettings.Password := EmptyWideStr;
 					SetAccountSettingsToIniFile(AccountSettings);
@@ -186,7 +173,7 @@ begin
 			begin
 				if FS_FILE_OK = self.SetPassword('proxy' + ProxySettings.user, ProxySettings.Password) then
 				begin //TC скушал пароль, запомним в инишник галочку
-					Log(LogLevelDebug, MSGTYPE_DETAILS, PASSWORD_SAVED, [ProxySettings.user]);
+					Logger.Log(LogLevelDebug, MSGTYPE_DETAILS, PASSWORD_SAVED, [ProxySettings.user]);
 					TmpString := ProxySettings.Password;
 					ProxySettings.Password := EmptyWideStr;
 					ProxySettings.use_tc_password_manager := true; //чтобы не прокидывать сюда сохранение настроек прокси, галочка сохраняется в вызывающем коде
