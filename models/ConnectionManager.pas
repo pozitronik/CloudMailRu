@@ -10,7 +10,8 @@ uses
 	CMRConstants,
 	TCLogger,
 	TCProgress,
-	windows,
+	TCRequest,
+	Windows,
 	Vcl.Controls,
 	PLUGIN_Types,
 	Settings,
@@ -32,13 +33,13 @@ type
 
 		Logger: TTCLogger;
 		Progress: TTCProgress;
-		RequestHandleProc: TRequestHandler;
+		Request: TTCRequest;
 
 		PasswordManager: TTCPasswordManager;
 
 		function init(connectionName: WideString; var Cloud: TCloudMailRu): integer; //инициализирует подключение по его имени, возвращает код состояния
 	public
-		constructor Create(IniFileName: WideString; PluginSettings: TPluginSettings; HTTPManager: THTTPManager; Progress: TTCProgress; Logger: TTCLogger; RequestHandleProc: TRequestHandler; PasswordManager: TTCPasswordManager);
+		constructor Create(IniFileName: WideString; PluginSettings: TPluginSettings; HTTPManager: THTTPManager; Progress: TTCProgress; Logger: TTCLogger; Request: TTCRequest; PasswordManager: TTCPasswordManager);
 		destructor Destroy(); override;
 		function get(connectionName: WideString; var OperationResult: integer): TCloudMailRu; //возвращает готовое подклчение по имени
 		procedure free(connectionName: WideString); //освобождает подключение по его имени, если оно существует
@@ -47,14 +48,14 @@ type
 implementation
 
 {TConnectionManager}
-constructor TConnectionManager.Create(IniFileName: WideString; PluginSettings: TPluginSettings; HTTPManager: THTTPManager; Progress: TTCProgress; Logger: TTCLogger; RequestHandleProc: TRequestHandler; PasswordManager: TTCPasswordManager);
+constructor TConnectionManager.Create(IniFileName: WideString; PluginSettings: TPluginSettings; HTTPManager: THTTPManager; Progress: TTCProgress; Logger: TTCLogger; Request: TTCRequest; PasswordManager: TTCPasswordManager);
 begin
 	Connections := TDictionary<WideString, TCloudMailRu>.Create;
 	self.IniFileName := IniFileName;
 	self.PluginSettings := PluginSettings;
 	self.Progress := Progress;
 	self.Logger := Logger;
-	self.RequestHandleProc := RequestHandleProc;
+	self.Request := Request;
 	self.HTTPManager := HTTPManager;
 	self.PasswordManager := PasswordManager;
 end;
@@ -150,7 +151,7 @@ begin
 	CloudSettings.RetryAttempts := self.PluginSettings.RetryAttempts;
 	CloudSettings.AttemptWait := self.PluginSettings.AttemptWait;
 
-	Cloud := TCloudMailRu.Create(CloudSettings, HTTPManager, Progress, Logger, RequestHandleProc);
+	Cloud := TCloudMailRu.Create(CloudSettings, HTTPManager, Progress, Logger, Request);
 
 	if (CloudSettings.AccountSettings.twostep_auth) then
 		LoginMethod := CLOUD_AUTH_METHOD_TWO_STEP

@@ -31,6 +31,7 @@ uses
 	TCHelper,
 	TCLogger,
 	TCProgress,
+	TCRequest,
 	RealPath,
 	Settings,
 	FileCipher,
@@ -53,7 +54,7 @@ type
 
 		Logger: TTCLogger;
 		Progress: TTCProgress;
-		ExternalRequestProc: TRequestHandler;
+		Request: TTCRequest;
 
 		FileCipher: TFileCipher; //Encryption class
 		//JSONParser: TCloudMailRuJSONParser; //JSON parser
@@ -127,7 +128,7 @@ type
 		function getSharedFileUrl(remotePath: WideString; ShardType: WideString = SHARD_TYPE_DEFAULT): WideString;
 
 		{CONSTRUCTOR/DESTRUCTOR}
-		constructor Create(CloudSettings: TCloudSettings; ConnectionManager: THTTPManager; Progress: TTCProgress = nil; Logger: TTCLogger = nil; ExternalRequestProc: TRequestHandler = nil);
+		constructor Create(CloudSettings: TCloudSettings; ConnectionManager: THTTPManager; Progress: TTCProgress = nil; Logger: TTCLogger = nil; Request: TTCRequest = nil);
 		destructor Destroy; override;
 		{CLOUD INTERFACE METHODS}
 		function login(method: integer = CLOUD_AUTH_METHOD_WEB): Boolean;
@@ -327,7 +328,7 @@ begin //Облако умеет скопировать файл, но не см�
 	end;
 end;
 
-constructor TCloudMailRu.Create(CloudSettings: TCloudSettings; ConnectionManager: THTTPManager; Progress: TTCProgress; Logger: TTCLogger; ExternalRequestProc: TRequestHandler);
+constructor TCloudMailRu.Create(CloudSettings: TCloudSettings; ConnectionManager: THTTPManager; Progress: TTCProgress; Logger: TTCLogger; Request: TTCRequest);
 begin
 	try
 		self.OptionsSet := CloudSettings;
@@ -338,9 +339,11 @@ begin
 		if not Assigned(self.Progress) then
 			self.Progress := TTCProgress.Create();
 		self.Logger := Logger;
-		if not Assigned(Logger) then
+		if not Assigned(self.Logger) then
 			self.Logger := TTCLogger.Create();
-		self.ExternalRequestProc := ExternalRequestProc;
+		self.Request := Request;
+		if not Assigned(self.Request) then
+			self.Request := TTCRequest.Create();
 
 		self.AuthCookie := TIdCookieManager.Create();
 
@@ -662,7 +665,7 @@ begin
 		if result in [FS_FILE_NOTSUPPORTED] then //this code returned on shard connection error
 		begin
 			Logger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, '%s%s', [PREFIX_REDIRECTION_LIMIT, URL]);
-			if (self.ExternalRequestProc(RT_MsgYesNo, REDIRECTION_LIMIT, TRY_ANOTHER_SHARD, EMPTY_STR, 0)) and (self.getShard(self.Shard)) then
+			if (Request.Request(RT_MsgYesNo, REDIRECTION_LIMIT, TRY_ANOTHER_SHARD, EmptyWideStr, 0)) and (self.getShard(self.Shard)) then
 				result := self.getFileRegular(remotePath, localPath, resultHash, LogErrors);
 		end;
 

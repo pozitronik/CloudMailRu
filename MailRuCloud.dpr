@@ -134,11 +134,7 @@ var
 	ThreadFsStatusInfo: TDictionary<DWORD, Int32>; //массив [id потока => текущая операция] для хранения контекста выполняемой операции (применяем для отлова перемещений каталогов)
 	ThreadFsRemoveDirSkippedPath: TDictionary<DWORD, TStringList>; //массив [id потока => путь] для хранения путей, пропускаемых при перемещении (см. issue #168).
 
-	{Callback data}
 	PluginNum: integer;
-
-	MyRequestProc: TRequestProcW;
-	{Global stuff}
 
 	CurrentListing: TCloudMailRuDirListing;
 	CurrentIncomingInvitesListing: TCloudMailRuIncomingInviteInfoListing;
@@ -148,14 +144,7 @@ var
 	PasswordManager: TTCPasswordManager;
 	TCLogger: TTCLogger;
 	TCProgress: TTCProgress;
-
-function RequestHandle(RequestType: integer; CustomTitle, CustomText, ReturnedText: PWideChar; maxlen: integer; AOwner: TComponent = nil): Bool; stdcall;
-begin
-	Result := false;
-	if Assigned(MyRequestProc) then
-		Result := MyRequestProc(PluginNum, RequestType, CustomTitle, CustomText, ReturnedText, maxlen);
-
-end;
+	TCRequest: TTCRequest;
 
 {Пытаемся найти объект в облаке по его пути, сначала в текущем списке, если нет - то ищем в облаке}
 function FindListingItemByPath(CurrentListing: TCloudMailRuDirListing; path: TRealPath; UpdateListing: Boolean = true): TCloudMailRuDirListingItem;
@@ -285,12 +274,11 @@ end;
 function FsInitW(PluginNr: integer; pProgressProc: TProgressProcW; pLogProc: TLogProcW; pRequestProc: TRequestProcW): integer; stdcall; //Вход в плагин.
 begin
 	PluginNum := PluginNr;
-	MyRequestProc := pRequestProc;
 	Result := 0;
 	TCLogger := TTCLogger.Create(pLogProc, PluginNr, GetPluginSettings(SettingsIniFilePath).LogLevel);
 	TCProgress := TTCProgress.Create(pProgressProc, PluginNr);
+	TCRequest := TTCRequest.Create(pRequestProc, PluginNr);
 	CurrentDescriptions := TDescription.Create(GetTmpFileName('ion'), GetTCCommentPreferredFormat);
-
 end;
 
 procedure FsStatusInfoW(RemoteDir: PWideChar; InfoStartEnd, InfoOperation: integer); stdcall; //Начало и конец операций FS
@@ -1608,7 +1596,7 @@ begin
 		SetPluginSettingsValue(SettingsIniFilePath, 'ProxyTCPwdMngr', true);
 
 	HTTPManager := THTTPManager.Create(PluginSettings.ConnectionSettings, TCProgress, TCLogger);
-	ConnectionManager := TConnectionManager.Create(AccountsIniFilePath, PluginSettings, HTTPManager, TCProgress, TCLogger, @RequestHandle, PasswordManager);
+	ConnectionManager := TConnectionManager.Create(AccountsIniFilePath, PluginSettings, HTTPManager, TCProgress, TCLogger, TCRequest, PasswordManager);
 
 end;
 
