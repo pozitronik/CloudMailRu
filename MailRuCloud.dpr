@@ -95,7 +95,8 @@ uses
 	DebugHelper in 'helpers\DebugHelper.pas',
 	RealPath in 'models\dto\RealPath.pas',
 	TCLogger in 'models\TCLogger.pas',
-	TCProgress in 'models\TCProgress.pas';
+	TCProgress in 'models\TCProgress.pas',
+	TCRequest in 'models\TCRequest.pas';
 
 {$IFDEF WIN64}
 {$E wfx64}
