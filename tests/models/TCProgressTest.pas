@@ -26,6 +26,8 @@ type
 		[Test]
 		procedure TestProgressNoSourceTarget;
 		[Test]
+		procedure TestProgressNoParams;
+		[Test]
 		procedure TestCreateDummy;
 	end;
 
@@ -115,6 +117,30 @@ begin
 	Assert.AreEqual(RandomProgress, PercentDone);
 	Assert.AreEqual(RandomSourceName, SourceName);
 	Assert.AreEqual(RandomTargetName, TargetName);
+
+end;
+
+procedure TTCProgressTest.TestProgressNoParams;
+var
+	TestTCProgress: TTCProgress;
+	randomPN: Integer;
+begin
+	PercentDone := 50;
+	Assert.AreEqual(0, PluginNr);
+	Assert.AreEqual(50, PercentDone);
+	Assert.AreEqual('', SourceName);
+	Assert.AreEqual('', TargetName);
+
+	randomPN := Random(100);
+
+	TestTCProgress := TTCProgress.Create(TestProgressProc, randomPN);
+
+	Assert.AreEqual(0, TestTCProgress.Progress());
+
+	Assert.AreEqual(randomPN, PluginNr);
+	Assert.AreEqual(0, PercentDone); //should be reset to the default value
+	Assert.AreEqual('', SourceName);
+	Assert.AreEqual('', TargetName);
 
 end;
 
