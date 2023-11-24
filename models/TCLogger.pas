@@ -25,8 +25,8 @@ type
 	public
 		constructor Create(); overload; //creates a dummy logger
 		constructor Create(LogProc: TLogProcW; PluginNum: Integer; LogLevel: Integer); overload;
-		procedure Log(LogLevel, MsgType: Integer; LogString: WideString); overload; stdcall;
-		procedure Log(LogLevel, MsgType: Integer; LogString: WideString; const Args: array of const); overload; stdcall;
+		procedure Log(LogLevel, MsgType: Integer; LogString: WideString); overload;
+		procedure Log(LogLevel, MsgType: Integer; LogString: WideString; const Args: array of const); overload;
 	end;
 
 implementation
