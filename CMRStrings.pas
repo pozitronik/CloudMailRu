@@ -31,7 +31,6 @@ const
 	DONE = 'Done';
 	DOWNLOAD_FILE_RETRY = 'Error downloading file %s, retry attempt %d of %d';
 	EMPTY = 'Empty';
-	EMPTY_STR = '';
 	ERR_ACCOUNT_HAS_INVALID_SYMBOL = 'File name must contain only valid symbols';
 	ERR_CLONE_BY_HASH = 'Error clone by hash: %s, parameter: %s';
 	ERR_CLONE_FILE_ASK = 'File cloning error: %s' + sLineBreak + CONTINUE_ASK;

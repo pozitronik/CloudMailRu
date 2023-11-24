@@ -42,7 +42,7 @@ implementation
 function CloudMailRuDirListingItemToFindData(DirListing: TCloudMailRuDirListingItem; DirsAsSymlinks: Boolean = false): tWIN32FINDDATAW;
 begin
 	FillChar(Result, sizeof(WIN32_FIND_DATA), 0);
-	if (DirListing.deleted_from <> EMPTY_STR) then //items inside trash bin
+	if (DirListing.deleted_from <> EmptyWideStr) then //items inside trash bin
 	begin
 		Result.ftCreationTime := DateTimeToFileTime(UnixToDateTime(DirListing.deleted_at, false));
 		Result.ftLastWriteTime := Result.ftCreationTime;

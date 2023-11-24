@@ -902,7 +902,7 @@ begin
 	result := false;
 	if not(Assigned(self)) then
 		exit; //Проверка на вызов без инициализации
-	HTTP.SetProgressNames(LOGIN_IN_PROGRESS, EMPTY_STR);
+	HTTP.SetProgressNames(LOGIN_IN_PROGRESS, EmptyWideStr);
 	if self.public_account then
 		result := self.loginShared()
 	else

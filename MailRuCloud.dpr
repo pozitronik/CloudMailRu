@@ -158,7 +158,7 @@ begin
 	else
 		Result := GetItemByHomePath(CurrentListing, path.path); //сначала попробуем найти поле в имеющемся списке
 
-	if (Result.name = EMPTY_STR) and UpdateListing then //если там его нет (нажали пробел на папке, например), то запросим в облаке напрямую, в зависимости от того, внутри чего мы находимся
+	if (Result.name = EmptyWideStr) and UpdateListing then //если там его нет (нажали пробел на папке, например), то запросим в облаке напрямую, в зависимости от того, внутри чего мы находимся
 	begin
 		CurrentCloud := ConnectionManager.get(path.account, getResult);
 		if not Assigned(CurrentCloud) then
@@ -180,7 +180,7 @@ begin
 		end;
 		if CurrentCloud.statusFile(path.path, Result) then //Обычный каталог
 		begin
-			if (Result.home = EMPTY_STR) and not CurrentCloud.public_account then
+			if (Result.home = EmptyWideStr) and not CurrentCloud.public_account then
 				TCLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_WHERE_IS_THE_FILE, [path.path]); {Такого быть не может, но...}
 		end;
 	end; //Не рапортуем, это будет уровнем выше
@@ -193,7 +193,7 @@ var
 begin
 	Result := CloudMailRuIncomingInviteInfoListing.FindByName(InviteListing, path.path);
 	{item not found in current global listing, so refresh it}
-	if Result.name = EMPTY_STR then
+	if Result.name = EmptyWideStr then
 		if ConnectionManager.get(path.account, getResult).getIncomingLinksListing(CurrentIncomingInvitesListing) then
 			exit(CloudMailRuIncomingInviteInfoListing.FindByName(CurrentIncomingInvitesListing, path.path));
 
@@ -571,7 +571,7 @@ begin
 				SetLastError(ERROR_PATH_NOT_FOUND);
 		end;
 
-		if (RealPath.invitesDir or RealPath.trashDir or RealPath.sharedDir) and (RealPath.path <> EMPTY_STR) then //игнорим попытки получить листинги объектов вирутальных каталогов
+		if (RealPath.invitesDir or RealPath.trashDir or RealPath.sharedDir) and (RealPath.path <> EmptyWideStr) then //игнорим попытки получить листинги объектов вирутальных каталогов
 		begin
 			SetLastError(ERROR_ACCESS_DENIED);
 			exit(INVALID_HANDLE_VALUE);
@@ -582,7 +582,7 @@ begin
 		else
 			CurrentItem := GetItemByHomePath(CurrentListing, RealPath.path);
 
-		if (CurrentItem.name <> EMPTY_STR) and (CurrentItem.type_ <> TYPE_DIR) then
+		if (CurrentItem.name <> EmptyWideStr) and (CurrentItem.type_ <> TYPE_DIR) then
 		begin
 			SetLastError(ERROR_PATH_NOT_FOUND);
 			exit(INVALID_HANDLE_VALUE);
@@ -650,7 +650,7 @@ var
 begin
 	Result := FS_EXEC_OK;
 	Cloud := ConnectionManager.get(RealPath.account, getResult);
-	if RealPath.path = EMPTY_STR then //main trashbin folder properties
+	if RealPath.path = EmptyWideStr then //main trashbin folder properties
 	begin
 		if not Cloud.getTrashbinListing(CurrentListing) then
 			exit(FS_EXEC_ERROR);
@@ -691,7 +691,7 @@ begin
 			strpcopy(RemoteName, '\' + RealPath.account + UrlToPath(CurrentItem.home));
 		Result := FS_EXEC_SYMLINK;
 	end else begin
-		if RealPath.path = EMPTY_STR then
+		if RealPath.path = EmptyWideStr then
 			TAccountsForm.ShowAccounts(MainWin, AccountsIniFilePath, SettingsIniFilePath, PasswordManager, RealPath.account) //main shared folder properties - open connection settings
 		else
 		begin
@@ -711,12 +711,12 @@ var
 begin
 	Result := FS_EXEC_OK;
 	Cloud := ConnectionManager.get(RealPath.account, getResult);
-	if RealPath.path = EMPTY_STR then //main invites folder properties
+	if RealPath.path = EmptyWideStr then //main invites folder properties
 	begin
 		TAccountsForm.ShowAccounts(MainWin, AccountsIniFilePath, SettingsIniFilePath, PasswordManager, RealPath.account)
 	end else begin //one invite item
 		CurrentInvite := FindIncomingInviteItemByPath(CurrentIncomingInvitesListing, RealPath);
-		if CurrentInvite.name = EMPTY_STR then
+		if CurrentInvite.name = EmptyWideStr then
 			exit(FS_EXEC_ERROR);
 
 		getResult := TInvitePropertyForm.ShowProperties(MainWin, CurrentInvite);
@@ -743,7 +743,7 @@ var
 	getResult: integer;
 begin
 	Result := FS_EXEC_OK;
-	if RealPath.path = EMPTY_STR then
+	if RealPath.path = EmptyWideStr then
 		TAccountsForm.ShowAccounts(MainWin, AccountsIniFilePath, SettingsIniFilePath, PasswordManager, RealPath.account) //show account properties
 	else
 	begin
@@ -754,7 +754,7 @@ begin
 	end;
 end;
 
-function ExecCommand(RemoteName: PWideChar; command: WideString; Parameter: WideString = EMPTY_STR): integer;
+function ExecCommand(RemoteName: PWideChar; command: WideString; Parameter: WideString = ''): integer;
 var
 	RealPath: TRealPath;
 	getResult: integer;
@@ -1197,7 +1197,7 @@ begin
 	if not FileExists(GetUNCFilePath(LocalName)) then
 		exit(FS_FILE_NOTFOUND);
 
-	if (RealPath.account = EMPTY_STR) or RealPath.trashDir or RealPath.sharedDir or RealPath.invitesDir then
+	if (RealPath.account = EmptyWideStr) or RealPath.trashDir or RealPath.sharedDir or RealPath.invitesDir then
 		exit(FS_FILE_NOTSUPPORTED);
 	TCProgress.Progress(LocalName, PWideChar(RealPath.path), 0);
 
@@ -1268,7 +1268,7 @@ var
 	Invite: TCloudMailRuInviteInfo;
 begin
 	RealPath := ExtractRealPath(WideString(RemoteName));
-	if (RealPath.account = EMPTY_STR) or RealPath.trashDir or RealPath.invitesDir then
+	if (RealPath.account = EmptyWideStr) or RealPath.trashDir or RealPath.invitesDir then
 		exit(false);
 	Cloud := ConnectionManager.get(RealPath.account, getResult);
 	if RealPath.sharedDir then
@@ -1277,7 +1277,7 @@ begin
 		Cloud.getShareInfo(CurrentItem.home, InvitesListing);
 		for Invite in InvitesListing do
 			Cloud.shareFolder(CurrentItem.home, Invite.email, CLOUD_SHARE_NO); //no reporting here
-		if (CurrentItem.weblink <> EMPTY_STR) then
+		if (CurrentItem.weblink <> EmptyWideStr) then
 			Cloud.publishFile(CurrentItem.home, CurrentItem.weblink, CLOUD_UNPUBLISH);
 		Result := true;
 	end
@@ -1439,7 +1439,7 @@ begin
 
 	if OldCloud.statusFile(OldRealPath.path, CurrentItem) then
 	begin
-		if CurrentItem.weblink = EMPTY_STR then //create temporary weblink
+		if CurrentItem.weblink = EmptyWideStr then //create temporary weblink
 		begin
 			NeedUnpublish := true;
 			if not(OldCloud.publishFile(CurrentItem.home, CurrentItem.weblink)) then //problem publishing
@@ -1608,7 +1608,7 @@ var
 begin
 	Result := ft_nosuchfield;
 	RealPath := ExtractRealPath(FileName);
-	if RealPath.path = EMPTY_STR then
+	if RealPath.path = EmptyWideStr then
 	begin
 		if FieldIndex = 14 then
 		begin
@@ -1731,7 +1731,7 @@ begin
 			end;
 		16:
 			begin
-				if Item.deleted_from = EMPTY_STR then
+				if Item.deleted_from = EmptyWideStr then
 					exit(ft_nosuchfield);
 				strpcopy(FieldValue, Item.deleted_from);
 				Result := ft_stringw;
@@ -1784,7 +1784,7 @@ begin
 	IconsMode := GetPluginSettings(SettingsIniFilePath).IconsMode;
 	IconsSize := GetTCIconsSize;
 
-	if RealPath.trashDir and (RealPath.path = EMPTY_STR) then //always draw system trash icon
+	if RealPath.trashDir and (RealPath.path = EmptyWideStr) then //always draw system trash icon
 	begin
 		strpcopy(RemoteName, 'cloud_trash');
 		TheIcon := GetSystemIcon(GetFolderIconSize(IconsSize));
@@ -1793,7 +1793,7 @@ begin
 
 	if RealPath.sharedDir then
 	begin
-		if (RealPath.path = EMPTY_STR) then
+		if (RealPath.path = EmptyWideStr) then
 		begin
 			strpcopy(RemoteName, 'shared');
 			CombineMacro(TheIcon);
@@ -1807,7 +1807,7 @@ begin
 
 	if RealPath.invitesDir then
 	begin
-		if (RealPath.path = EMPTY_STR) then
+		if (RealPath.path = EmptyWideStr) then
 		begin
 			strpcopy(RemoteName, 'shared_incoming');
 			CombineMacro(TheIcon);
@@ -1815,10 +1815,10 @@ begin
 		end else begin
 
 			CurrentInviteItem := FindIncomingInviteItemByPath(CurrentIncomingInvitesListing, RealPath);
-			if CurrentInviteItem.name = EMPTY_STR then
+			if CurrentInviteItem.name = EmptyWideStr then
 				exit(FS_ICON_USEDEFAULT);
 
-			if CurrentInviteItem.home <> EMPTY_STR then //mounted item
+			if CurrentInviteItem.home <> EmptyWideStr then //mounted item
 			begin
 				strpcopy(RemoteName, 'shared_incoming');
 				CombineMacro(TheIcon);
@@ -1834,7 +1834,7 @@ begin
 	if IconsMode = IconsModeDisabled then
 		exit(FS_ICON_USEDEFAULT);
 
-	if (RealPath.path = EMPTY_STR) then //connection list
+	if (RealPath.path = EmptyWideStr) then //connection list
 	begin
 
 		if (GetAccountSettingsFromIniFile(AccountsIniFilePath, copy(RemoteName, 2, StrLen(RemoteName) - 2)).public_account) then
@@ -1847,7 +1847,7 @@ begin
 		begin
 			if Item.kind = KIND_SHARED then
 				strpcopy(RemoteName, 'shared')
-			else if Item.weblink <> EMPTY_STR then
+			else if Item.weblink <> EmptyWideStr then
 				strpcopy(RemoteName, 'shared_public')
 			else
 				exit(FS_ICON_USEDEFAULT);
