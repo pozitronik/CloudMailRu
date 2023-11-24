@@ -477,7 +477,7 @@ begin
 	end;
 	if (E is EIdHTTPProtocolException and (NAME_TOKEN = JSONHelper.getBodyError((E as EIdHTTPProtocolException).ErrorMessage))) then
 	begin
-		Logger.Log(LogLevelDetail, MSGTYPE_DETAILS, CSRF_UPDATE_REQUIRED, [method_string, URL]);
+		Logger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, CSRF_UPDATE_REQUIRED, [method_string, URL]);
 		exit(CLOUD_ERROR_TOKEN_OUTDATED);
 	end;
 
@@ -487,11 +487,11 @@ begin
 	end else if LogErrors then //разбирать ошибку дальше имеет смысл только для логирования - что вернуть уже понятно
 	begin
 		if E is EIdHTTPProtocolException then
-			Logger.Log(LogLevelError, MSGTYPE_IMPORTANTERROR, ERR_HTTP_GENERAL, [E.ClassName, E.Message, method_string, URL, (E as EIdHTTPProtocolException).ErrorMessage])
+			Logger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_HTTP_GENERAL, [E.ClassName, E.Message, method_string, URL, (E as EIdHTTPProtocolException).ErrorMessage])
 		else if E is EIdSocketerror then
-			Logger.Log(LogLevelError, MSGTYPE_IMPORTANTERROR, ERR_SOCKET_GENERAL, [E.ClassName, E.Message, method_string, URL])
+			Logger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_SOCKET_GENERAL, [E.ClassName, E.Message, method_string, URL])
 		else
-			Logger.Log(LogLevelError, MSGTYPE_IMPORTANTERROR, ERR_OTHER_GENERAL, [E.ClassName, E.Message, method_string, URL]);;
+			Logger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_OTHER_GENERAL, [E.ClassName, E.Message, method_string, URL]);;
 	end;
 end;
 

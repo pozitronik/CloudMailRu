@@ -196,7 +196,7 @@ begin
 		if CurrentCloud.statusFile(path.path, Result) then //Обычный каталог
 		begin
 			if (Result.home = EMPTY_STR) and not CurrentCloud.public_account then
-				TCLogger.Log(LogLevelError, MSGTYPE_IMPORTANTERROR, ERR_WHERE_IS_THE_FILE, [path.path]); {Такого быть не может, но...}
+				TCLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_WHERE_IS_THE_FILE, [path.path]); {Такого быть не может, но...}
 		end;
 	end; //Не рапортуем, это будет уровнем выше
 end;
@@ -242,7 +242,7 @@ begin
 		case DeleteFailOnUploadMode of
 			DeleteFailOnUploadAbort:
 				begin
-					TCLogger.Log(LogLevelDetail, MSGTYPE_IMPORTANTERROR, ERR_DELETE_FILE_ABORT, [LocalName]);
+					TCLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_IMPORTANTERROR, ERR_DELETE_FILE_ABORT, [LocalName]);
 					exit(FS_FILE_NOTSUPPORTED);
 				end;
 			DeleteFailOnUploadDeleteIgnore, DeleteFailOnUploadDeleteAbort:
@@ -250,22 +250,22 @@ begin
 					//check if file just have RO attr, then remove it. If user has lack of rights, then ignore or abort
 					if ((FileGetAttr(UNCLocalName) or faReadOnly) <> 0) and ((FileSetAttr(UNCLocalName, not faReadOnly) = 0) and (DeleteFileW(PWideChar(UNCLocalName)))) then
 					begin
-						TCLogger.Log(LogLevelDetail, MSGTYPE_IMPORTANTERROR, ERR_DELETE_FILE_DELETE, [LocalName]);
+						TCLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_IMPORTANTERROR, ERR_DELETE_FILE_DELETE, [LocalName]);
 						exit(FS_FILE_OK);
 					end else begin
 						if GetPluginSettings(SettingsIniFilePath).DeleteFailOnUploadMode = DeleteFailOnUploadDeleteIgnore then
 						begin
-							TCLogger.Log(LogLevelDetail, MSGTYPE_IMPORTANTERROR, ERR_DELETE_FILE_IGNORE, [LocalName]);
+							TCLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_IMPORTANTERROR, ERR_DELETE_FILE_IGNORE, [LocalName]);
 							exit(FS_FILE_OK);
 						end else begin
-							TCLogger.Log(LogLevelDetail, MSGTYPE_IMPORTANTERROR, ERR_DELETE_FILE_ABORT, [LocalName]);
+							TCLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_IMPORTANTERROR, ERR_DELETE_FILE_ABORT, [LocalName]);
 							exit(FS_FILE_NOTSUPPORTED);
 						end;
 					end;
 				end;
 			else
 				begin
-					TCLogger.Log(LogLevelDetail, MSGTYPE_IMPORTANTERROR, ERR_DELETE_FILE_IGNORE, [LocalName]);
+					TCLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_IMPORTANTERROR, ERR_DELETE_FILE_IGNORE, [LocalName]);
 				end;
 		end;
 	end;
@@ -343,7 +343,7 @@ begin
 				begin
 					if ConnectionManager.get(RealPath.account, getResult).public_account then
 					begin
-						TCLogger.Log(LogLevelWarning, MSGTYPE_IMPORTANTERROR, ERR_DIRECT_COPY_SUPPORT);
+						TCLogger.Log(LOG_LEVEL_WARNING, MSGTYPE_IMPORTANTERROR, ERR_DIRECT_COPY_SUPPORT);
 						ThreadSkipListRenMov.AddOrSetValue(GetCurrentThreadID, true);
 					end;
 					ThreadRetryCountRenMov.AddOrSetValue(GetCurrentThreadID(), 0);
@@ -802,7 +802,7 @@ begin
 			Cloud.addFileByIdentity(HashInfo.CloudFileIdentity, IncludeTrailingPathDelimiter(RealPath.path) + HashInfo.name, CLOUD_CONFLICT_RENAME);
 			HashInfo.Destroy;
 		end else begin
-			TCLogger.Log(LogLevelDebug, msgtype_details, ERR_CLONE_BY_HASH, [HashInfo.errorString, Parameter]);
+			TCLogger.Log(LOG_LEVEL_DEBUG, msgtype_details, ERR_CLONE_BY_HASH, [HashInfo.errorString, Parameter]);
 			HashInfo.Destroy;
 			exit(FS_EXEC_ERROR);
 		end;
@@ -1096,7 +1096,7 @@ begin
 				DeleteRemoteFileDescription(RemotePath, Cloud);
 		end;
 		ProgressHandle(PWideChar(LocalName), PWideChar(RemoteName), 100);
-		TCLogger.Log(LogLevelFileOperation, MSGTYPE_TRANSFERCOMPLETE, '%s -> %s', [RemoteName, LocalName]);
+		TCLogger.Log(LOG_LEVEL_FILE_OPERATION, MSGTYPE_TRANSFERCOMPLETE, '%s -> %s', [RemoteName, LocalName]);
 
 		if GetPluginSettings(SettingsIniFilePath).DescriptionCopyFromCloud then
 			UpdateFileDescription(RemotePath, LocalName, Cloud);
@@ -1127,11 +1127,11 @@ begin
 				exit(FS_FILE_EXISTS); //TC will ask user
 			OverwriteLocalModeIgnore:
 				begin
-					TCLogger.Log(LogLevelDetail, msgtype_details, FILE_EXISTS_IGNORE, [LocalName]);
+					TCLogger.Log(LOG_LEVEL_DETAIL, msgtype_details, FILE_EXISTS_IGNORE, [LocalName]);
 					exit(FS_FILE_OK);
 				end;
 			OverwriteLocalModeOverwrite:
-				TCLogger.Log(LogLevelDetail, msgtype_details, FILE_EXISTS_OVERWRITE, [LocalName]);
+				TCLogger.Log(LOG_LEVEL_DETAIL, msgtype_details, FILE_EXISTS_OVERWRITE, [LocalName]);
 		end;
 	end;
 
@@ -1166,7 +1166,7 @@ begin
 				while (ThreadRetryCountDownload.Items[GetCurrentThreadID()] <> RetryAttempts) and (not(Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
 				begin
 					ThreadRetryCountDownload.Items[GetCurrentThreadID()] := ThreadRetryCountDownload.Items[GetCurrentThreadID()] + 1;
-					TCLogger.Log(LogLevelDetail, msgtype_details, DOWNLOAD_FILE_RETRY, [RemoteName, ThreadRetryCountDownload.Items[GetCurrentThreadID()], RetryAttempts]);
+					TCLogger.Log(LOG_LEVEL_DETAIL, msgtype_details, DOWNLOAD_FILE_RETRY, [RemoteName, ThreadRetryCountDownload.Items[GetCurrentThreadID()], RetryAttempts]);
 					Result := GetRemoteFile(RealPath, LocalName, RemoteName, CopyFlags);
 					if ProgressHandle(PWideChar(LocalName), RemoteName, 0) = 1 then
 						Result := FS_FILE_USERABORT;
@@ -1193,7 +1193,7 @@ begin
 	if Result = FS_FILE_OK then
 	begin
 		ProgressHandle(PWideChar(LocalName), PWideChar(RemotePath.path), 100);
-		TCLogger.Log(LogLevelFileOperation, MSGTYPE_TRANSFERCOMPLETE, '%s -> %s', [LocalName, RemoteName]);
+		TCLogger.Log(LOG_LEVEL_FILE_OPERATION, MSGTYPE_TRANSFERCOMPLETE, '%s -> %s', [LocalName, RemoteName]);
 		if CheckFlag(FS_COPYFLAGS_MOVE, CopyFlags) then
 			Result := DeleteLocalFile(LocalName);
 		if (GetPluginSettings(SettingsIniFilePath).DescriptionCopyToCloud and RemoteDescriptionsSupportEnabled(AccountSettings)) then
@@ -1260,7 +1260,7 @@ begin
 				while (ThreadRetryCountUpload.Items[GetCurrentThreadID()] <> RetryAttempts) and (not(Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
 				begin
 					ThreadRetryCountUpload.Items[GetCurrentThreadID()] := ThreadRetryCountUpload.Items[GetCurrentThreadID()] + 1;
-					TCLogger.Log(LogLevelDetail, msgtype_details, UPLOAD_FILE_RETRY, [LocalName, ThreadRetryCountUpload.Items[GetCurrentThreadID()], RetryAttempts]);
+					TCLogger.Log(LOG_LEVEL_DETAIL, msgtype_details, UPLOAD_FILE_RETRY, [LocalName, ThreadRetryCountUpload.Items[GetCurrentThreadID()], RetryAttempts]);
 					Result := PutRemoteFile(RealPath, LocalName, RemoteName, CopyFlags);
 					if ProgressHandle(PWideChar(LocalName), RemoteName, 0) = 1 then
 						Result := FS_FILE_USERABORT;
@@ -1382,7 +1382,7 @@ function cloneWeblink(NewCloud, OldCloud: TCloudMailRu; CloudPath: WideString; C
 begin
 	Result := NewCloud.cloneWeblink(ExtractFileDir(CloudPath), CurrentItem.weblink, CLOUD_CONFLICT_STRICT);
 	if (NeedUnpublish) and (FS_FILE_USERABORT <> Result) and not(OldCloud.publishFile(CurrentItem.home, CurrentItem.weblink, CLOUD_UNPUBLISH)) then
-		TCLogger.Log(LogLevelError, MSGTYPE_IMPORTANTERROR, PREFIX_ERR_REMOVE_TEMP_PUBLIC_LINK + CurrentItem.home);
+		TCLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, PREFIX_ERR_REMOVE_TEMP_PUBLIC_LINK + CurrentItem.home);
 end;
 
 function RenMoveFileViaHash(OldCloud, NewCloud: TCloudMailRu; OldRealPath, NewRealPath: TRealPath; Move, OverWrite: Boolean): integer;
@@ -1424,7 +1424,7 @@ begin
 						while (ThreadRetryCountRenMov.Items[GetCurrentThreadID()] <> RetryAttempts) and (not(Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
 						begin
 							ThreadRetryCountRenMov.Items[GetCurrentThreadID()] := ThreadRetryCountRenMov.Items[GetCurrentThreadID()] + 1;
-							TCLogger.Log(LogLevelDetail, msgtype_details, CLONE_FILE_RETRY, [TCloudMailRu.ErrorCodeText(Result), ThreadRetryCountRenMov.Items[GetCurrentThreadID()], RetryAttempts]);
+							TCLogger.Log(LOG_LEVEL_DETAIL, msgtype_details, CLONE_FILE_RETRY, [TCloudMailRu.ErrorCodeText(Result), ThreadRetryCountRenMov.Items[GetCurrentThreadID()], RetryAttempts]);
 							Result := NewCloud.addFileByIdentity(CurrentItem, IncludeTrailingPathDelimiter(ExtractFileDir(NewRealPath.path)) + ExtractFileName(NewRealPath.path));
 							if ProgressHandle(nil, nil, 0) = 1 then
 								Result := FS_FILE_USERABORT;
@@ -1438,7 +1438,7 @@ begin
 		end;
 
 		if (Result = CLOUD_OPERATION_OK) and Move and not(OldCloud.deleteFile(OldRealPath.path)) then
-			TCLogger.Log(LogLevelError, MSGTYPE_IMPORTANTERROR, ERR_DELETE, [CurrentItem.home]); //пишем в лог, но не отваливаемся
+			TCLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_DELETE, [CurrentItem.home]); //пишем в лог, но не отваливаемся
 	end;
 end;
 
@@ -1460,7 +1460,7 @@ begin
 			NeedUnpublish := true;
 			if not(OldCloud.publishFile(CurrentItem.home, CurrentItem.weblink)) then //problem publishing
 			begin
-				TCLogger.Log(LogLevelError, MSGTYPE_IMPORTANTERROR, ERR_GET_TEMP_PUBLIC_LINK, [CurrentItem.home]);
+				TCLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_GET_TEMP_PUBLIC_LINK, [CurrentItem.home]);
 				exit(FS_FILE_READERROR);
 			end;
 		end;
@@ -1495,7 +1495,7 @@ begin
 						while (ThreadRetryCountRenMov.Items[GetCurrentThreadID()] <> RetryAttempts) and (not(Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
 						begin
 							ThreadRetryCountRenMov.Items[GetCurrentThreadID()] := ThreadRetryCountRenMov.Items[GetCurrentThreadID()] + 1;
-							TCLogger.Log(LogLevelDetail, msgtype_details, PUBLISH_FILE_RETRY, [TCloudMailRu.ErrorCodeText(Result), ThreadRetryCountRenMov.Items[GetCurrentThreadID()], RetryAttempts]);
+							TCLogger.Log(LOG_LEVEL_DETAIL, msgtype_details, PUBLISH_FILE_RETRY, [TCloudMailRu.ErrorCodeText(Result), ThreadRetryCountRenMov.Items[GetCurrentThreadID()], RetryAttempts]);
 							Result := cloneWeblink(NewCloud, OldCloud, NewRealPath.path, CurrentItem, NeedUnpublish);
 							if ProgressHandle(nil, nil, 0) = 1 then
 								Result := FS_FILE_USERABORT;
@@ -1509,7 +1509,7 @@ begin
 		end;
 
 		if (Result = CLOUD_OPERATION_OK) and Move and not(OldCloud.deleteFile(OldRealPath.path)) then
-			TCLogger.Log(LogLevelError, MSGTYPE_IMPORTANTERROR, ERR_DELETE, [CurrentItem.home]); //пишем в лог, но не отваливаемся
+			TCLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_DELETE, [CurrentItem.home]); //пишем в лог, но не отваливаемся
 	end;
 end;
 
@@ -1535,14 +1535,14 @@ begin
 	begin
 		if OldCloud.public_account then
 		begin
-			TCLogger.Log(LogLevelWarning, MSGTYPE_IMPORTANTERROR, ERR_DIRECT_OPERATIONS_NOT_SUPPORTED);
+			TCLogger.Log(LOG_LEVEL_WARNING, MSGTYPE_IMPORTANTERROR, ERR_DIRECT_OPERATIONS_NOT_SUPPORTED);
 			exit(FS_FILE_USERABORT);
 		end;
 
 		case GetPluginSettings(SettingsIniFilePath).CopyBetweenAccountsMode of
 			CopyBetweenAccountsModeDisabled:
 				begin
-					TCLogger.Log(LogLevelWarning, MSGTYPE_IMPORTANTERROR, ERR_DIRECT_OPERATIONS_DISABLED);
+					TCLogger.Log(LOG_LEVEL_WARNING, MSGTYPE_IMPORTANTERROR, ERR_DIRECT_OPERATIONS_DISABLED);
 					exit(FS_FILE_USERABORT);
 				end;
 			CopyBetweenAccountsModeViaHash:

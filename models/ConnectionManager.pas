@@ -137,7 +137,7 @@ begin
 		until not PasswordActionRetry;
 	end;
 
-	Logger.Log(LogLevelConnect, MSGTYPE_CONNECT, 'CONNECT \%s', [connectionName]);
+	Logger.Log(LOG_LEVEL_CONNECT, MSGTYPE_CONNECT, 'CONNECT \%s', [connectionName]);
 
 	{proxify plugin settings to cloud}
 	CloudSettings.ConnectionSettings := self.PluginSettings.ConnectionSettings;

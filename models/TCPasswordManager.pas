@@ -70,7 +70,7 @@ begin
 	result := self.CryptProc(PluginNum, CryptoNum, FS_CRYPT_LOAD_PASSWORD_NO_UI, PWideChar(Key), buf, 1024);
 	if FS_FILE_NOTFOUND = result then //no master password entered yet
 	begin
-		Logger.Log(LogLevelDetail, MSGTYPE_DETAILS, ERR_NO_MASTER_PASSWORD);
+		Logger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, ERR_NO_MASTER_PASSWORD);
 		ZeroMemory(buf, 1024);
 		result := self.CryptProc(PluginNum, CryptoNum, FS_CRYPT_LOAD_PASSWORD, PWideChar(Key), buf, 1024); //ask with master password
 	end;
@@ -80,11 +80,11 @@ begin
 	end;
 	if FS_FILE_READERROR = result then
 	begin
-		Logger.Log(LogLevelError, MSGTYPE_IMPORTANTERROR, ERR_NO_PASSWORDS_STORED);
+		Logger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_NO_PASSWORDS_STORED);
 	end;
 	if FS_FILE_NOTSUPPORTED = result then //master password cancelled
 	begin
-		Logger.Log(LogLevelError, MSGTYPE_IMPORTANTERROR, ERR_DECRYPT_FAILED);
+		Logger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_DECRYPT_FAILED);
 	end;
 	FreeMemory(buf);
 end;
@@ -95,19 +95,19 @@ begin
 	case result of
 		FS_FILE_OK:
 			begin //TC скушал пароль, запомним в инишник галочку
-				Logger.Log(LogLevelDebug, MSGTYPE_DETAILS, PASSWORD_SAVED, [Key]);
+				Logger.Log(LOG_LEVEL_DEBUG, MSGTYPE_DETAILS, PASSWORD_SAVED, [Key]);
 			end;
 		FS_FILE_NOTSUPPORTED: //Сохранение не получилось
 			begin
-				Logger.Log(LogLevelError, MSGTYPE_IMPORTANTERROR, ERR_ENCRYPT_FAILED, [Key]);
+				Logger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_ENCRYPT_FAILED, [Key]);
 			end;
 		FS_FILE_WRITEERROR: //Сохранение опять не получилось
 			begin
-				Logger.Log(LogLevelError, MSGTYPE_IMPORTANTERROR, ERR_WRITE_FAILED, [Key]);
+				Logger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_WRITE_FAILED, [Key]);
 			end;
 		FS_FILE_NOTFOUND: //Не указан мастер-пароль
 			begin
-				Logger.Log(LogLevelError, MSGTYPE_IMPORTANTERROR, ERR_WRITE_NO_MASTER_PASSWORD, [Key]);
+				Logger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_WRITE_NO_MASTER_PASSWORD, [Key]);
 			end;
 		//Ошибки здесь не значат, что пароль мы не получили - он может быть введён в диалоге
 	end;
@@ -136,7 +136,7 @@ begin
 			begin
 				if FS_FILE_OK = self.SetPassword(AccountSettings.name, AccountSettings.Password) then
 				begin //TC скушал пароль, запомним в инишник галочку
-					Logger.Log(LogLevelDebug, MSGTYPE_DETAILS, PASSWORD_SAVED, [AccountSettings.name]);
+					Logger.Log(LOG_LEVEL_DEBUG, MSGTYPE_DETAILS, PASSWORD_SAVED, [AccountSettings.name]);
 					TmpString := AccountSettings.Password;
 					AccountSettings.Password := EmptyWideStr;
 					SetAccountSettingsToIniFile(AccountSettings);
@@ -173,7 +173,7 @@ begin
 			begin
 				if FS_FILE_OK = self.SetPassword('proxy' + ProxySettings.user, ProxySettings.Password) then
 				begin //TC скушал пароль, запомним в инишник галочку
-					Logger.Log(LogLevelDebug, MSGTYPE_DETAILS, PASSWORD_SAVED, [ProxySettings.user]);
+					Logger.Log(LOG_LEVEL_DEBUG, MSGTYPE_DETAILS, PASSWORD_SAVED, [ProxySettings.user]);
 					TmpString := ProxySettings.Password;
 					ProxySettings.Password := EmptyWideStr;
 					ProxySettings.use_tc_password_manager := true; //чтобы не прокидывать сюда сохранение настроек прокси, галочка сохраняется в вызывающем коде

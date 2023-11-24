@@ -10,6 +10,7 @@ uses
 	System.Variants,
 	System.IOUtils,
 	PLUGIN_TYPES,
+	TCLogger,
 	PluginHelper,
 	PathHelper,
 	CMRStrings,
@@ -61,14 +62,6 @@ const
 	IconsModeInternalOverlay = 2;
 	IconsModeExternal = 3;
 	IconsModeExternalOverlay = 4;
-
-	//Уровни логирования (по степеням двойки)
-	LogLevelConnect = 1; //connection
-	LogLevelFileOperation = 2; //file operations && free space
-	LogLevelDetail = 4; //some detailed info (i.e. retry data or smth)
-	LogLevelWarning = 8; //non-critical warnings
-	LogLevelError = 16; //error details
-	LogLevelDebug = 32; //also same internal debugging info
 
 	EncryptModeNone = 0; //Без шифрования
 	EncryptModeAlways = 1; //С прозрачным шифрованием
@@ -242,7 +235,7 @@ begin
 	GetPluginSettings.ShowTrashFolders := IniFile.ReadBool('Main', 'ShowTrashFolders', true);
 	GetPluginSettings.ShowSharedFolders := IniFile.ReadBool('Main', 'ShowSharedFolders', true);
 	GetPluginSettings.ShowInvitesFolders := IniFile.ReadBool('Main', 'ShowInvitesFolders', true);
-	GetPluginSettings.LogLevel := IniFile.ReadInteger('Main', 'LogLevel', LogLevelConnect + LogLevelFileOperation + LogLevelDetail + LogLevelWarning + LogLevelError);
+	GetPluginSettings.LogLevel := IniFile.ReadInteger('Main', 'LogLevel', LOG_LEVEL_CONNECT + LOG_LEVEL_FILE_OPERATION + LOG_LEVEL_DETAIL + LOG_LEVEL_WARNING + LOG_LEVEL_ERROR);
 	GetPluginSettings.PrecalculateHash := IniFile.ReadBool('Main', 'PrecalculateHash', true);
 	GetPluginSettings.ForcePrecalculateSize := IniFile.ReadInt64('Main', 'ForcePrecalculateSize', CLOUD_PRECALCULATE_LIMIT_DEFAULT);
 	GetPluginSettings.CheckCRC := IniFile.ReadBool('Main', 'CheckCRC', true);
