@@ -84,7 +84,7 @@ begin
 
 	TestTCProgress := TTCProgress.Create();
 
-	Assert.AreEqual(-1, TestTCProgress.Progress(RandomSourceName, RandomTargetName, RandomProgress));
+	Assert.IsFalse(TestTCProgress.Progress(RandomSourceName, RandomTargetName, RandomProgress));
 	Assert.AreEqual(0, PluginNr);
 	Assert.AreEqual(0, PercentDone);
 	Assert.AreEqual('', SourceName);
@@ -111,7 +111,7 @@ begin
 
 	TestTCProgress := TTCProgress.Create(TestProgressProc, randomPN);
 
-	Assert.AreEqual(0, TestTCProgress.Progress(RandomSourceName, RandomTargetName, RandomProgress));
+	Assert.IsFalse(TestTCProgress.Progress(RandomSourceName, RandomTargetName, RandomProgress));
 
 	Assert.AreEqual(randomPN, PluginNr);
 	Assert.AreEqual(RandomProgress, PercentDone);
@@ -135,7 +135,7 @@ begin
 
 	TestTCProgress := TTCProgress.Create(TestProgressProc, randomPN);
 
-	Assert.AreEqual(0, TestTCProgress.Progress());
+	Assert.IsFalse(TestTCProgress.Progress());
 
 	Assert.AreEqual(randomPN, PluginNr);
 	Assert.AreEqual(0, PercentDone); //should be reset to the default value
@@ -159,7 +159,7 @@ begin
 	RandomProgress := Random(100);
 
 	TestTCProgress := TTCProgress.Create(TestProgressProc, randomPN);
-	Assert.AreEqual(0, TestTCProgress.Progress(RandomProgress));
+	Assert.IsFalse(TestTCProgress.Progress(RandomProgress));
 
 	Assert.AreEqual(randomPN, PluginNr);
 	Assert.AreEqual(RandomProgress, PercentDone);
@@ -186,7 +186,7 @@ begin
 
 	TestTCProgress := TTCProgress.Create(TestProgressProc, randomPN);
 
-	Assert.AreEqual(0, TestTCProgress.Progress(RandomSourceName, RandomProgress));
+	Assert.IsFalse(TestTCProgress.Progress(RandomSourceName, RandomProgress));
 
 	Assert.AreEqual(randomPN, PluginNr);
 	Assert.AreEqual(RandomProgress, PercentDone);
