@@ -15,9 +15,10 @@ type
 	public
 		constructor Create(); overload; //creates a dummy progress
 		constructor Create(ProgressProc: TProgressProcW; PluginNum: Integer); overload;
-		function Progress(SourceName, TargetName: WideString; PercentDone: Integer = 0): Integer; overload; //todo: check if result can be boolean
-		function Progress(SourceName: WideString; PercentDone: Integer = 0): Integer; overload;
-		function Progress(PercentDone: Integer = 0): Integer; overload;
+		{Progress() methods return True when current operation is cancelled}
+		function Progress(SourceName, TargetName: WideString; PercentDone: Integer = 0): Boolean; overload;
+		function Progress(SourceName: WideString; PercentDone: Integer = 0): Boolean; overload;
+		function Progress(PercentDone: Integer = 0): Boolean; overload;
 		function Aborted(): Boolean; //call without any parameters is used to check if the operation cancelled or not
 	end;
 
@@ -33,8 +34,9 @@ end;
 
 function TTCProgress.Aborted: Boolean;
 begin
- 	Result := False;
+	Result := False;
 	if Assigned(ProgressProc) then
+		{When nil passed as a parameter, TC won't change it}
 		Result := ProgressProc(PluginNum, nil, nil, 0) = 1;
 end;
 
@@ -44,25 +46,25 @@ begin
 	self.PluginNum := PluginNum;
 end;
 
-function TTCProgress.Progress(PercentDone: Integer): Integer;
+function TTCProgress.Progress(PercentDone: Integer): Boolean;
 begin
-	Result := -1;
+	Result := False;
 	if Assigned(ProgressProc) then
-		Result := ProgressProc(PluginNum, nil, nil, PercentDone);
+		Result := ProgressProc(PluginNum, nil, nil, PercentDone) = 1;
 end;
 
-function TTCProgress.Progress(SourceName: WideString; PercentDone: Integer): Integer;
+function TTCProgress.Progress(SourceName: WideString; PercentDone: Integer): Boolean;
 begin
-	Result := -1;
+	Result := False;
 	if Assigned(ProgressProc) then
-		Result := ProgressProc(PluginNum, PWideChar(SourceName), nil, PercentDone);
+		Result := ProgressProc(PluginNum, PWideChar(SourceName), nil, PercentDone) = 1;
 end;
 
-function TTCProgress.Progress(SourceName, TargetName: WideString; PercentDone: Integer): Integer;
+function TTCProgress.Progress(SourceName, TargetName: WideString; PercentDone: Integer): Boolean;
 begin
-	Result := -1;
+	Result := False;
 	if Assigned(ProgressProc) then
-		Result := ProgressProc(PluginNum, PWideChar(SourceName), PWideChar(TargetName), PercentDone);
+		Result := ProgressProc(PluginNum, PWideChar(SourceName), PWideChar(TargetName), PercentDone) = 1;
 end;
 
 end.

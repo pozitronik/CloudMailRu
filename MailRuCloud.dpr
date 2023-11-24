@@ -517,7 +517,7 @@ begin
 
 	ThreadCanAbortRenMov.TryGetValue(GetCurrentThreadID(), CanAbortRenMov);
 
-	if (CanAbortRenMov and (TCProgress.Progress(path) = 1)) then
+	if (CanAbortRenMov and TCProgress.Progress(path)) then
 	begin
 		ThreadListingAborted.AddOrSetValue(GetCurrentThreadID(), true);
 		RenMovAborted := true;
@@ -1163,7 +1163,7 @@ begin
 					ThreadRetryCountDownload.Items[GetCurrentThreadID()] := ThreadRetryCountDownload.Items[GetCurrentThreadID()] + 1;
 					TCLogger.Log(LOG_LEVEL_DETAIL, msgtype_details, DOWNLOAD_FILE_RETRY, [RemoteName, ThreadRetryCountDownload.Items[GetCurrentThreadID()], RetryAttempts]);
 					Result := GetRemoteFile(RealPath, LocalName, RemoteName, CopyFlags);
-					if TCProgress.Progress(PWideChar(LocalName), RemoteName, 0) = 1 then
+					if TCProgress.Progress(PWideChar(LocalName), RemoteName, 0) then
 						Result := FS_FILE_USERABORT;
 					if (Result in [FS_FILE_OK, FS_FILE_USERABORT]) then
 						ThreadRetryCountDownload.Items[GetCurrentThreadID()] := 0; //сбросим счётчик попыток
@@ -1257,7 +1257,7 @@ begin
 					ThreadRetryCountUpload.Items[GetCurrentThreadID()] := ThreadRetryCountUpload.Items[GetCurrentThreadID()] + 1;
 					TCLogger.Log(LOG_LEVEL_DETAIL, msgtype_details, UPLOAD_FILE_RETRY, [LocalName, ThreadRetryCountUpload.Items[GetCurrentThreadID()], RetryAttempts]);
 					Result := PutRemoteFile(RealPath, LocalName, RemoteName, CopyFlags);
-					if TCProgress.Progress(PWideChar(LocalName), RemoteName, 0) = 1 then
+					if TCProgress.Progress(PWideChar(LocalName), RemoteName, 0) then
 						Result := FS_FILE_USERABORT;
 					if (Result in [FS_FILE_OK, FS_FILE_USERABORT]) then
 						ThreadRetryCountUpload.Items[GetCurrentThreadID()] := 0; //сбросим счётчик попыток

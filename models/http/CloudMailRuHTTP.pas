@@ -400,7 +400,7 @@ begin
 	if (Pos('chunked', LowerCase(HTTP.Response.TransferEncoding)) = 0) and (ContentLength > 0) then
 	begin
 		Percent := 100 * AWorkCount div ContentLength;
-		if self.Progress.Progress(self.ExternalSourceName, self.ExternalTargetName, Percent) = 1 then {При передаче nil прогресс оставляет предыдущие значения}
+		if self.Progress.Progress(self.ExternalSourceName, self.ExternalTargetName, Percent) then {При передаче nil прогресс оставляет предыдущие значения}
 			abort;
 	end;
 end;

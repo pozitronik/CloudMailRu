@@ -1626,7 +1626,6 @@ var
 	Percent: integer;
 	Aborted: Boolean;
 begin
-	Aborted := false;
 	Stream.Position := 0;
 	result := EmptyWideStr;
 	if Stream.size < 21 then
@@ -1652,8 +1651,7 @@ begin
 
 		read := Stream.read(buffer, bufSize);
 		sha1.Update(buffer, read);
-		if (1 = Progress.Progress(Path, CALCULATING_HASH, Percent)) then
-			Aborted := true;
+		Aborted := Progress.Progress(Path, CALCULATING_HASH, Percent);
 	until (read < sizeof(buffer)) or Aborted;
 
 	finalBuffer := TEncoding.UTF8.GetBytes(Stream.size.ToString);
