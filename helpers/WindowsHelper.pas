@@ -139,7 +139,7 @@ end;
 
 function GetFindDataEmptyDir(DirName: WideString = '.'): tWIN32FINDDATAW;
 begin
-	FillChar(Result, sizeof(WIN32_FIND_DATA), 0);
+	FillChar(Result, SizeOf(WIN32_FIND_DATA), 0);
 	strpcopy(Result.cFileName, DirName);
 	Result.dwFileAttributes := FILE_ATTRIBUTE_DIRECTORY;
 end;
