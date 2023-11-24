@@ -589,7 +589,7 @@ begin
 		result := CloudResultToBoolean(OperationResult, PREFIX_ERR_DIR_LISTING);
 		if result then
 		begin
-			result := getDirListing(JSON, DirListing);
+			result := CloudMailRuDirListing.getDirListing(JSON, DirListing);
 			if result and self.crypt_filenames then
 				self.FileCipher.DecryptDirListing(DirListing);
 		end else if OperationResult.OperationResult = CLOUD_ERROR_NOT_EXISTS then
