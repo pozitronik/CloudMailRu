@@ -30,6 +30,7 @@ uses
 	SystemHelper,
 	TCHelper,
 	TCLogger,
+	TCProgress,
 	RealPath,
 	Settings,
 	FileCipher,
@@ -50,8 +51,8 @@ type
 
 		AuthCookie: TIdCookieManager; //Авторизационная кука - должна храниться отдельно от HTTP-соединения, т.к. ассоциируется с облаком. Передаётся в менеджер HTTP-подключений внутри ConnetionManager
 
-		ExternalProgressProc: TProgressHandler;
 		Logger: TTCLogger;
+		Progress: TTCProgress;
 		ExternalRequestProc: TRequestHandler;
 
 		FileCipher: TFileCipher; //Encryption class
@@ -126,7 +127,7 @@ type
 		function getSharedFileUrl(remotePath: WideString; ShardType: WideString = SHARD_TYPE_DEFAULT): WideString;
 
 		{CONSTRUCTOR/DESTRUCTOR}
-		constructor Create(CloudSettings: TCloudSettings; ConnectionManager: THTTPManager; ExternalProgressProc: TProgressHandler = nil; Logger: TTCLogger = nil; ExternalRequestProc: TRequestHandler = nil);
+		constructor Create(CloudSettings: TCloudSettings; ConnectionManager: THTTPManager; Progress: TTCProgress = nil; Logger: TTCLogger = nil; ExternalRequestProc: TRequestHandler = nil);
 		destructor Destroy; override;
 		{CLOUD INTERFACE METHODS}
 		function login(method: integer = CLOUD_AUTH_METHOD_WEB): Boolean;
@@ -326,14 +327,16 @@ begin //Облако умеет скопировать файл, но не см�
 	end;
 end;
 
-constructor TCloudMailRu.Create(CloudSettings: TCloudSettings; ConnectionManager: THTTPManager; ExternalProgressProc: TProgressHandler; Logger: TTCLogger; ExternalRequestProc: TRequestHandler);
+constructor TCloudMailRu.Create(CloudSettings: TCloudSettings; ConnectionManager: THTTPManager; Progress: TTCProgress; Logger: TTCLogger; ExternalRequestProc: TRequestHandler);
 begin
 	try
 		self.OptionsSet := CloudSettings;
 
 		self.HTTPConnectionsManager := ConnectionManager;
 
-		self.ExternalProgressProc := ExternalProgressProc;
+		self.Progress := Progress;
+		if not Assigned(self.Progress) then
+			self.Progress := TTCProgress.Create();
 		self.Logger := Logger;
 		if not Assigned(Logger) then
 			self.Logger := TTCLogger.Create();
@@ -745,7 +748,7 @@ begin
 	if (nil = self.HTTPConnectionsManager) then
 	begin
 		if not Assigned(InternalHTTPConnection) then
-			self.InternalHTTPConnection := TCloudMailRuHTTP.Create(OptionsSet.ConnectionSettings, ExternalProgressProc, Logger);
+			self.InternalHTTPConnection := TCloudMailRuHTTP.Create(OptionsSet.ConnectionSettings, Progress, Logger);
 
 		result := self.InternalHTTPConnection;
 	end
@@ -1649,10 +1652,8 @@ begin
 
 		read := Stream.read(buffer, bufSize);
 		sha1.Update(buffer, read);
-		if (1 = ExternalProgressProc(PWideChar(Path), CALCULATING_HASH, Percent)) then
-		begin
+		if (1 = Progress.Progress(Path, CALCULATING_HASH, Percent)) then
 			Aborted := true;
-		end;
 	until (read < sizeof(buffer)) or Aborted;
 
 	finalBuffer := TEncoding.UTF8.GetBytes(Stream.size.ToString);

@@ -3,99 +3,99 @@
 {$R *.dres}
 
 uses
-  {$IFDEF DEBUG}
-  FastMM4 in 'FastMM\FastMM4.pas',
-  FastMM4Messages in 'FastMM\FastMM4Messages.pas',
-  {$ENDIF }
-  JSON,
-  SysUtils,
-  System.Generics.Collections,
-  DateUtils,
-  windows,
-  Classes,
-  ANSIFunctions,
-  PLUGIN_TYPES,
-  CMRStrings,
-  IdSSLOpenSSLHeaders,
-  messages,
-  inifiles,
-  Vcl.controls,
-  CloudMailRu in 'CloudMailRu.pas',
-  Accounts in 'forms\Accounts.pas' {AccountsForm},
-  RemoteProperty in 'forms\RemoteProperty.pas' {PropertyForm},
-  DeletedProperty in 'forms\DeletedProperty.pas' {DeletedPropertyForm},
-  InviteProperty in 'forms\InviteProperty.pas' {InvitePropertyForm},
-  AskPassword in 'forms\AskPassword.pas' {AskPasswordForm},
-  Registration in 'forms\Registration.pas' {AskPasswordForm},
-  CMRConstants,
-  DCPbase64 in 'DCPCrypt\DCPbase64.pas',
-  DCPblockciphers in 'DCPCrypt\DCPblockciphers.pas',
-  DCPconst in 'DCPCrypt\DCPconst.pas',
-  DCPcrypt2 in 'DCPCrypt\DCPcrypt2.pas',
-  DCPreg in 'DCPCrypt\DCPreg.pas',
-  DCPtypes in 'DCPCrypt\DCPtypes.pas',
-  DCPblowfish in 'DCPCrypt\Ciphers\DCPblowfish.pas',
-  DCPcast128 in 'DCPCrypt\Ciphers\DCPcast128.pas',
-  DCPcast256 in 'DCPCrypt\Ciphers\DCPcast256.pas',
-  DCPdes in 'DCPCrypt\Ciphers\DCPdes.pas',
-  DCPgost in 'DCPCrypt\Ciphers\DCPgost.pas',
-  DCPice in 'DCPCrypt\Ciphers\DCPice.pas',
-  DCPidea in 'DCPCrypt\Ciphers\DCPidea.pas',
-  DCPmars in 'DCPCrypt\Ciphers\DCPmars.pas',
-  DCPmisty1 in 'DCPCrypt\Ciphers\DCPmisty1.pas',
-  DCPrc2 in 'DCPCrypt\Ciphers\DCPrc2.pas',
-  DCPrc4 in 'DCPCrypt\Ciphers\DCPrc4.pas',
-  DCPrc5 in 'DCPCrypt\Ciphers\DCPrc5.pas',
-  DCPrc6 in 'DCPCrypt\Ciphers\DCPrc6.pas',
-  DCPrijndael in 'DCPCrypt\Ciphers\DCPrijndael.pas',
-  DCPserpent in 'DCPCrypt\Ciphers\DCPserpent.pas',
-  DCPtea in 'DCPCrypt\Ciphers\DCPtea.pas',
-  DCPtwofish in 'DCPCrypt\Ciphers\DCPtwofish.pas',
-  DCPhaval in 'DCPCrypt\Hashes\DCPhaval.pas',
-  DCPmd4 in 'DCPCrypt\Hashes\DCPmd4.pas',
-  DCPmd5 in 'DCPCrypt\Hashes\DCPmd5.pas',
-  DCPripemd128 in 'DCPCrypt\Hashes\DCPripemd128.pas',
-  DCPripemd160 in 'DCPCrypt\Hashes\DCPripemd160.pas',
-  DCPsha1 in 'DCPCrypt\Hashes\DCPsha1.pas',
-  DCPsha256 in 'DCPCrypt\Hashes\DCPsha256.pas',
-  DCPsha512 in 'DCPCrypt\Hashes\DCPsha512.pas',
-  DCPtiger in 'DCPCrypt\Hashes\DCPtiger.pas',
-  JSONHelper in 'helpers\JSONHelper.pas',
-  PluginHelper in 'helpers\PluginHelper.pas',
-  ChunkedFileStream in 'models\ChunkedFileStream.pas',
-  ConnectionManager in 'models\ConnectionManager.pas',
-  Description in 'models\Description.pas',
-  FileSplitInfo in 'models\FileSplitInfo.pas',
-  HashInfo in 'models\HashInfo.pas',
-  TCPasswordManager in 'models\TCPasswordManager.pas',
-  Settings in 'models\settings\Settings.pas',
-  CloudMailRuHTTP in 'models\http\CloudMailRuHTTP.pas',
-  HTTPManager in 'models\http\HTTPManager.pas',
-  CloudMailRuDirListing in 'models\dto\CloudMailRuDirListing.pas',
-  CloudMailRuDirListingItem in 'models\dto\CloudMailRuDirListingItem.pas',
-  CloudMailRuFileIdentity in 'models\dto\CloudMailRuFileIdentity.pas',
-  CloudMailRuIncomingInviteInfo in 'models\dto\CloudMailRuIncomingInviteInfo.pas',
-  CloudMailRuIncomingInviteInfoListing in 'models\dto\CloudMailRuIncomingInviteInfoListing.pas',
-  CloudMailRuInviteInfo in 'models\dto\CloudMailRuInviteInfo.pas',
-  CloudMailRuInviteInfoListing in 'models\dto\CloudMailRuInviteInfoListing.pas',
-  CloudMailRuOAuthInfo in 'models\dto\CloudMailRuOAuthInfo.pas',
-  CloudMailRuOperationResult in 'models\dto\CloudMailRuOperationResult.pas',
-  CloudMailRuOwnerInfo in 'models\dto\CloudMailRuOwnerInfo.pas',
-  CloudMailRuSpaceInfo in 'models\dto\CloudMailRuSpaceInfo.pas',
-  CloudMailRuTwostepData in 'models\dto\CloudMailRuTwostepData.pas',
-  FileCipher in 'models\cipher\FileCipher.pas',
-  ParsingHelper in 'helpers\ParsingHelper.pas',
-  TCHelper in 'helpers\TCHelper.pas',
-  WindowsHelper in 'helpers\WindowsHelper.pas',
-  IconHelper in 'helpers\IconHelper.pas',
-  SystemHelper in 'helpers\SystemHelper.pas',
-  StringHelper in 'helpers\StringHelper.pas',
-  FileHelper in 'helpers\FileHelper.pas',
-  PathHelper in 'helpers\PathHelper.pas',
-  DebugHelper in 'helpers\DebugHelper.pas',
-  RealPath in 'models\dto\RealPath.pas',
-  TCLogger in 'models\TCLogger.pas',
-  TCProgress in 'models\TCProgress.pas';
+{$IFDEF DEBUG}
+	FastMM4 in 'FastMM\FastMM4.pas',
+	FastMM4Messages in 'FastMM\FastMM4Messages.pas',
+{$ENDIF }
+	JSON,
+	SysUtils,
+	System.Generics.Collections,
+	DateUtils,
+	windows,
+	Classes,
+	ANSIFunctions,
+	PLUGIN_TYPES,
+	CMRStrings,
+	IdSSLOpenSSLHeaders,
+	messages,
+	inifiles,
+	Vcl.controls,
+	CloudMailRu in 'CloudMailRu.pas',
+	Accounts in 'forms\Accounts.pas'{AccountsForm},
+	RemoteProperty in 'forms\RemoteProperty.pas'{PropertyForm},
+	DeletedProperty in 'forms\DeletedProperty.pas'{DeletedPropertyForm},
+	InviteProperty in 'forms\InviteProperty.pas'{InvitePropertyForm},
+	AskPassword in 'forms\AskPassword.pas'{AskPasswordForm},
+	Registration in 'forms\Registration.pas'{AskPasswordForm},
+	CMRConstants,
+	DCPbase64 in 'DCPCrypt\DCPbase64.pas',
+	DCPblockciphers in 'DCPCrypt\DCPblockciphers.pas',
+	DCPconst in 'DCPCrypt\DCPconst.pas',
+	DCPcrypt2 in 'DCPCrypt\DCPcrypt2.pas',
+	DCPreg in 'DCPCrypt\DCPreg.pas',
+	DCPtypes in 'DCPCrypt\DCPtypes.pas',
+	DCPblowfish in 'DCPCrypt\Ciphers\DCPblowfish.pas',
+	DCPcast128 in 'DCPCrypt\Ciphers\DCPcast128.pas',
+	DCPcast256 in 'DCPCrypt\Ciphers\DCPcast256.pas',
+	DCPdes in 'DCPCrypt\Ciphers\DCPdes.pas',
+	DCPgost in 'DCPCrypt\Ciphers\DCPgost.pas',
+	DCPice in 'DCPCrypt\Ciphers\DCPice.pas',
+	DCPidea in 'DCPCrypt\Ciphers\DCPidea.pas',
+	DCPmars in 'DCPCrypt\Ciphers\DCPmars.pas',
+	DCPmisty1 in 'DCPCrypt\Ciphers\DCPmisty1.pas',
+	DCPrc2 in 'DCPCrypt\Ciphers\DCPrc2.pas',
+	DCPrc4 in 'DCPCrypt\Ciphers\DCPrc4.pas',
+	DCPrc5 in 'DCPCrypt\Ciphers\DCPrc5.pas',
+	DCPrc6 in 'DCPCrypt\Ciphers\DCPrc6.pas',
+	DCPrijndael in 'DCPCrypt\Ciphers\DCPrijndael.pas',
+	DCPserpent in 'DCPCrypt\Ciphers\DCPserpent.pas',
+	DCPtea in 'DCPCrypt\Ciphers\DCPtea.pas',
+	DCPtwofish in 'DCPCrypt\Ciphers\DCPtwofish.pas',
+	DCPhaval in 'DCPCrypt\Hashes\DCPhaval.pas',
+	DCPmd4 in 'DCPCrypt\Hashes\DCPmd4.pas',
+	DCPmd5 in 'DCPCrypt\Hashes\DCPmd5.pas',
+	DCPripemd128 in 'DCPCrypt\Hashes\DCPripemd128.pas',
+	DCPripemd160 in 'DCPCrypt\Hashes\DCPripemd160.pas',
+	DCPsha1 in 'DCPCrypt\Hashes\DCPsha1.pas',
+	DCPsha256 in 'DCPCrypt\Hashes\DCPsha256.pas',
+	DCPsha512 in 'DCPCrypt\Hashes\DCPsha512.pas',
+	DCPtiger in 'DCPCrypt\Hashes\DCPtiger.pas',
+	JSONHelper in 'helpers\JSONHelper.pas',
+	PluginHelper in 'helpers\PluginHelper.pas',
+	ChunkedFileStream in 'models\ChunkedFileStream.pas',
+	ConnectionManager in 'models\ConnectionManager.pas',
+	Description in 'models\Description.pas',
+	FileSplitInfo in 'models\FileSplitInfo.pas',
+	HashInfo in 'models\HashInfo.pas',
+	TCPasswordManager in 'models\TCPasswordManager.pas',
+	Settings in 'models\settings\Settings.pas',
+	CloudMailRuHTTP in 'models\http\CloudMailRuHTTP.pas',
+	HTTPManager in 'models\http\HTTPManager.pas',
+	CloudMailRuDirListing in 'models\dto\CloudMailRuDirListing.pas',
+	CloudMailRuDirListingItem in 'models\dto\CloudMailRuDirListingItem.pas',
+	CloudMailRuFileIdentity in 'models\dto\CloudMailRuFileIdentity.pas',
+	CloudMailRuIncomingInviteInfo in 'models\dto\CloudMailRuIncomingInviteInfo.pas',
+	CloudMailRuIncomingInviteInfoListing in 'models\dto\CloudMailRuIncomingInviteInfoListing.pas',
+	CloudMailRuInviteInfo in 'models\dto\CloudMailRuInviteInfo.pas',
+	CloudMailRuInviteInfoListing in 'models\dto\CloudMailRuInviteInfoListing.pas',
+	CloudMailRuOAuthInfo in 'models\dto\CloudMailRuOAuthInfo.pas',
+	CloudMailRuOperationResult in 'models\dto\CloudMailRuOperationResult.pas',
+	CloudMailRuOwnerInfo in 'models\dto\CloudMailRuOwnerInfo.pas',
+	CloudMailRuSpaceInfo in 'models\dto\CloudMailRuSpaceInfo.pas',
+	CloudMailRuTwostepData in 'models\dto\CloudMailRuTwostepData.pas',
+	FileCipher in 'models\cipher\FileCipher.pas',
+	ParsingHelper in 'helpers\ParsingHelper.pas',
+	TCHelper in 'helpers\TCHelper.pas',
+	WindowsHelper in 'helpers\WindowsHelper.pas',
+	IconHelper in 'helpers\IconHelper.pas',
+	SystemHelper in 'helpers\SystemHelper.pas',
+	StringHelper in 'helpers\StringHelper.pas',
+	FileHelper in 'helpers\FileHelper.pas',
+	PathHelper in 'helpers\PathHelper.pas',
+	DebugHelper in 'helpers\DebugHelper.pas',
+	RealPath in 'models\dto\RealPath.pas',
+	TCLogger in 'models\TCLogger.pas',
+	TCProgress in 'models\TCProgress.pas';
 
 {$IFDEF WIN64}
 {$E wfx64}
@@ -135,7 +135,7 @@ var
 
 	{Callback data}
 	PluginNum: integer;
-	MyProgressProc: TProgressProcW;
+
 	MyRequestProc: TRequestProcW;
 	{Global stuff}
 
@@ -146,6 +146,7 @@ var
 	CurrentDescriptions: TDescription;
 	PasswordManager: TTCPasswordManager;
 	TCLogger: TTCLogger;
+	TCProgress: TTCProgress;
 
 function RequestHandle(RequestType: integer; CustomTitle, CustomText, ReturnedText: PWideChar; maxlen: integer; AOwner: TComponent = nil): Bool; stdcall;
 begin
@@ -153,13 +154,6 @@ begin
 	if Assigned(MyRequestProc) then
 		Result := MyRequestProc(PluginNum, RequestType, CustomTitle, CustomText, ReturnedText, maxlen);
 
-end;
-
-function ProgressHandle(SourceName, TargetName: PWideChar; PercentDone: integer): integer; stdcall;
-begin
-	Result := 0;
-	if Assigned(MyProgressProc) then
-		Result := MyProgressProc(PluginNum, SourceName, TargetName, PercentDone);
 end;
 
 {Пытаемся найти объект в облаке по его пути, сначала в текущем списке, если нет - то ищем в облаке}
@@ -290,10 +284,10 @@ end;
 function FsInitW(PluginNr: integer; pProgressProc: TProgressProcW; pLogProc: TLogProcW; pRequestProc: TRequestProcW): integer; stdcall; //Вход в плагин.
 begin
 	PluginNum := PluginNr;
-	MyProgressProc := pProgressProc;
 	MyRequestProc := pRequestProc;
 	Result := 0;
 	TCLogger := TTCLogger.Create(pLogProc, PluginNr, GetPluginSettings(SettingsIniFilePath).LogLevel);
+	TCProgress := TTCProgress.Create(pProgressProc, PluginNr);
 	CurrentDescriptions := TDescription.Create(GetTmpFileName('ion'), GetTCCommentPreferredFormat);
 
 end;
@@ -523,7 +517,7 @@ begin
 
 	ThreadCanAbortRenMov.TryGetValue(GetCurrentThreadID(), CanAbortRenMov);
 
-	if (CanAbortRenMov and (ProgressHandle(path, nil, 0) = 1)) then
+	if (CanAbortRenMov and (TCProgress.Progress(path) = 1)) then
 	begin
 		ThreadListingAborted.AddOrSetValue(GetCurrentThreadID(), true);
 		RenMovAborted := true;
@@ -1096,7 +1090,7 @@ begin
 			if (GetPluginSettings(SettingsIniFilePath).DescriptionTrackCloudFS and RemoteDescriptionsSupportEnabled(GetAccountSettingsFromIniFile(AccountsIniFilePath, RemotePath.account))) then
 				DeleteRemoteFileDescription(RemotePath, Cloud);
 		end;
-		ProgressHandle(PWideChar(LocalName), PWideChar(RemoteName), 100);
+		TCProgress.Progress(PWideChar(LocalName), PWideChar(RemoteName), 100);
 		TCLogger.Log(LOG_LEVEL_FILE_OPERATION, MSGTYPE_TRANSFERCOMPLETE, '%s -> %s', [RemoteName, LocalName]);
 
 		if GetPluginSettings(SettingsIniFilePath).DescriptionCopyFromCloud then
@@ -1118,7 +1112,7 @@ begin
 	if RealPath.trashDir or RealPath.sharedDir or RealPath.invitesDir then
 		exit;
 
-	ProgressHandle(RemoteName, LocalName, 0);
+	TCProgress.Progress(RemoteName, LocalName, 0);
 
 	OverwriteLocalMode := GetPluginSettings(SettingsIniFilePath).OverwriteLocalMode;
 	if (FileExists(GetUNCFilePath(LocalName)) and not(CheckFlag(FS_COPYFLAGS_OVERWRITE, CopyFlags))) then
@@ -1169,7 +1163,7 @@ begin
 					ThreadRetryCountDownload.Items[GetCurrentThreadID()] := ThreadRetryCountDownload.Items[GetCurrentThreadID()] + 1;
 					TCLogger.Log(LOG_LEVEL_DETAIL, msgtype_details, DOWNLOAD_FILE_RETRY, [RemoteName, ThreadRetryCountDownload.Items[GetCurrentThreadID()], RetryAttempts]);
 					Result := GetRemoteFile(RealPath, LocalName, RemoteName, CopyFlags);
-					if ProgressHandle(PWideChar(LocalName), RemoteName, 0) = 1 then
+					if TCProgress.Progress(PWideChar(LocalName), RemoteName, 0) = 1 then
 						Result := FS_FILE_USERABORT;
 					if (Result in [FS_FILE_OK, FS_FILE_USERABORT]) then
 						ThreadRetryCountDownload.Items[GetCurrentThreadID()] := 0; //сбросим счётчик попыток
@@ -1193,7 +1187,7 @@ begin
 	Result := Cloud.putFile(WideString(LocalName), RemotePath.path);
 	if Result = FS_FILE_OK then
 	begin
-		ProgressHandle(PWideChar(LocalName), PWideChar(RemotePath.path), 100);
+		TCProgress.Progress(PWideChar(LocalName), PWideChar(RemotePath.path), 100);
 		TCLogger.Log(LOG_LEVEL_FILE_OPERATION, MSGTYPE_TRANSFERCOMPLETE, '%s -> %s', [LocalName, RemoteName]);
 		if CheckFlag(FS_COPYFLAGS_MOVE, CopyFlags) then
 			Result := DeleteLocalFile(LocalName);
@@ -1216,7 +1210,7 @@ begin
 
 	if (RealPath.account = EMPTY_STR) or RealPath.trashDir or RealPath.sharedDir or RealPath.invitesDir then
 		exit(FS_FILE_NOTSUPPORTED);
-	ProgressHandle(LocalName, PWideChar(RealPath.path), 0);
+	TCProgress.Progress(LocalName, PWideChar(RealPath.path), 0);
 
 	if CheckFlag(FS_COPYFLAGS_RESUME, CopyFlags) then
 		exit(FS_FILE_NOTSUPPORTED); //NOT SUPPORTED
@@ -1263,7 +1257,7 @@ begin
 					ThreadRetryCountUpload.Items[GetCurrentThreadID()] := ThreadRetryCountUpload.Items[GetCurrentThreadID()] + 1;
 					TCLogger.Log(LOG_LEVEL_DETAIL, msgtype_details, UPLOAD_FILE_RETRY, [LocalName, ThreadRetryCountUpload.Items[GetCurrentThreadID()], RetryAttempts]);
 					Result := PutRemoteFile(RealPath, LocalName, RemoteName, CopyFlags);
-					if ProgressHandle(PWideChar(LocalName), RemoteName, 0) = 1 then
+					if TCProgress.Progress(PWideChar(LocalName), RemoteName, 0) = 1 then
 						Result := FS_FILE_USERABORT;
 					if (Result in [FS_FILE_OK, FS_FILE_USERABORT]) then
 						ThreadRetryCountUpload.Items[GetCurrentThreadID()] := 0; //сбросим счётчик попыток
@@ -1427,7 +1421,7 @@ begin
 							ThreadRetryCountRenMov.Items[GetCurrentThreadID()] := ThreadRetryCountRenMov.Items[GetCurrentThreadID()] + 1;
 							TCLogger.Log(LOG_LEVEL_DETAIL, msgtype_details, CLONE_FILE_RETRY, [TCloudMailRu.ErrorCodeText(Result), ThreadRetryCountRenMov.Items[GetCurrentThreadID()], RetryAttempts]);
 							Result := NewCloud.addFileByIdentity(CurrentItem, IncludeTrailingPathDelimiter(ExtractFileDir(NewRealPath.path)) + ExtractFileName(NewRealPath.path));
-							if ProgressHandle(nil, nil, 0) = 1 then
+							if TCProgress.Aborted() then
 								Result := FS_FILE_USERABORT;
 							if (Result in [FS_FILE_OK, FS_FILE_USERABORT]) then
 								ThreadRetryCountRenMov.Items[GetCurrentThreadID()] := 0; //сбросим счётчик попыток
@@ -1498,7 +1492,7 @@ begin
 							ThreadRetryCountRenMov.Items[GetCurrentThreadID()] := ThreadRetryCountRenMov.Items[GetCurrentThreadID()] + 1;
 							TCLogger.Log(LOG_LEVEL_DETAIL, msgtype_details, PUBLISH_FILE_RETRY, [TCloudMailRu.ErrorCodeText(Result), ThreadRetryCountRenMov.Items[GetCurrentThreadID()], RetryAttempts]);
 							Result := cloneWeblink(NewCloud, OldCloud, NewRealPath.path, CurrentItem, NeedUnpublish);
-							if ProgressHandle(nil, nil, 0) = 1 then
+							if TCProgress.Aborted() then
 								Result := FS_FILE_USERABORT;
 							if (Result in [FS_FILE_OK, FS_FILE_USERABORT]) then
 								ThreadRetryCountRenMov.Items[GetCurrentThreadID()] := 0; //сбросим счётчик попыток
@@ -1521,7 +1515,7 @@ var
 	getResult, SkippedFoundIndex: integer;
 	OldCloud, NewCloud: TCloudMailRu;
 begin
-	ProgressHandle(OldName, NewName, 0);
+	TCProgress.Progress(OldName, NewName, 0);
 
 	OldRealPath := ExtractRealPath(WideString(OldName));
 	NewRealPath := ExtractRealPath(WideString(NewName));
@@ -1582,7 +1576,7 @@ begin
 		end;
 
 	end;
-	ProgressHandle(OldName, NewName, 100);
+	TCProgress.Progress(OldName, NewName, 100);
 end;
 
 function FsDisconnectW(DisconnectRoot: PWideChar): Bool; stdcall;
@@ -1612,8 +1606,8 @@ begin
 	if PluginSettings.ConnectionSettings.ProxySettings.use_tc_password_manager then
 		SetPluginSettingsValue(SettingsIniFilePath, 'ProxyTCPwdMngr', true);
 
-	HTTPManager := THTTPManager.Create(PluginSettings.ConnectionSettings, @ProgressHandle, TCLogger);
-	ConnectionManager := TConnectionManager.Create(AccountsIniFilePath, PluginSettings, HTTPManager, @ProgressHandle, TCLogger, @RequestHandle, PasswordManager);
+	HTTPManager := THTTPManager.Create(PluginSettings.ConnectionSettings, TCProgress, TCLogger);
+	ConnectionManager := TConnectionManager.Create(AccountsIniFilePath, PluginSettings, HTTPManager, TCProgress, TCLogger, @RequestHandle, PasswordManager);
 
 end;
 

@@ -10,6 +10,7 @@ uses
 	FileSplitInfo,
 	Settings,
 	TCLogger,
+	TCProgress,
 	PLUGIN_Types,
 	CMRConstants,
 	CMRStrings,
@@ -47,8 +48,8 @@ type
 		Throttle: TIdInterceptThrottler;
 		Settings: TConnectionSettings;
 
-		ExternalProgressProc: TProgressHandler;
 		Logger: TTCLogger;
+		Progress: TTCProgress;
 
 		{PROCEDURES}
 		procedure setCookie(const Value: TIdCookieManager);
@@ -63,7 +64,7 @@ type
 		property SourceName: WideString write SetExternalSourceName;
 		property TargetName: WideString write SetExternalTargetName;
 		{CONSTRUCTOR/DESTRUCTOR}
-		constructor Create(Settings: TConnectionSettings; ExternalProgressProc: TProgressHandler = nil; Logger: TTCLogger = nil);
+		constructor Create(Settings: TConnectionSettings; Progress: TTCProgress = nil; Logger: TTCLogger = nil);
 		destructor Destroy; override;
 		{MAIN ROUTINES}
 		procedure Head(URL: WideString);
@@ -86,16 +87,18 @@ type
 		function ExceptionHandler(E: Exception; URL: WideString; HTTPMethod: integer = HTTP_METHOD_POST; LogErrors: Boolean = true): integer;
 
 		procedure SetProgressNames(SourceName, TargetName: WideString);
-		procedure Progress(ASender: TObject; AWorkMode: TWorkMode; AWorkCount: int64);
+		procedure HTTPProgress(ASender: TObject; AWorkMode: TWorkMode; AWorkCount: int64);
 	end;
 
 implementation
 
 {TCloudMailRuHTTP}
 
-constructor TCloudMailRuHTTP.Create(Settings: TConnectionSettings; ExternalProgressProc: TProgressHandler = nil; Logger: TTCLogger = nil);
+constructor TCloudMailRuHTTP.Create(Settings: TConnectionSettings; Progress: TTCProgress = nil; Logger: TTCLogger = nil);
 begin
-	self.ExternalProgressProc := ExternalProgressProc;
+	self.Progress := Progress;
+	if not Assigned(Progress) then
+		self.Progress := TTCProgress.Create();
 	self.Logger := Logger;
 	if not Assigned(Logger) then
 		self.Logger := TTCLogger.Create();
@@ -178,7 +181,7 @@ begin
 		HTTP.Intercept := Throttle;
 		HTTP.Request.ContentType := 'application/octet-stream';
 		HTTP.Response.KeepAlive := true;
-		HTTP.OnWork := self.Progress;
+		HTTP.OnWork := self.HTTPProgress;
 		HTTP.Get(URL, FileStream);
 		if (HTTP.RedirectCount = HTTP.RedirectMaximum) and (FileStream.size = 0) then
 		begin
@@ -197,7 +200,7 @@ begin
 	result := false;
 	try
 		if ProgressEnabled then
-			HTTP.OnWork := self.Progress //Вызов прогресса ведёт к возможности отменить получение списка каталогов и других операций, поэтому он нужен не всегда
+			HTTP.OnWork := self.HTTPProgress //Вызов прогресса ведёт к возможности отменить получение списка каталогов и других операций, поэтому он нужен не всегда
 		else
 			HTTP.OnWork := nil;
 		Answer := HTTP.Get(URL);
@@ -268,7 +271,7 @@ begin
 		if ContentType <> EmptyWideStr then
 			HTTP.Request.ContentType := ContentType;
 		if ProgressEnabled then
-			HTTP.OnWork := self.Progress
+			HTTP.OnWork := self.HTTPProgress
 		else
 			HTTP.OnWork := nil;
 		HTTP.Post(URL, PostData, ResultData);
@@ -298,7 +301,7 @@ begin
 	ResultData.Position := 0;
 	try
 		HTTP.Intercept := Throttle;
-		HTTP.OnWork := self.Progress;
+		HTTP.OnWork := self.HTTPProgress;
 		HTTP.Post(URL, PostData, ResultData);
 	except
 		On E: Exception do
@@ -370,7 +373,7 @@ begin
 	ResultStream := TStringStream.Create;
 	try
 		HTTP.Intercept := Throttle;
-		HTTP.OnWork := self.Progress;
+		HTTP.OnWork := self.HTTPProgress;
 		HTTP.Options(URL, ResultStream);
 		Answer := ResultStream.DataString;
 	except
@@ -384,7 +387,7 @@ begin
 	ResultStream.free;
 end;
 
-procedure TCloudMailRuHTTP.Progress(ASender: TObject; AWorkMode: TWorkMode; AWorkCount: int64);
+procedure TCloudMailRuHTTP.HTTPProgress(ASender: TObject; AWorkMode: TWorkMode; AWorkCount: int64);
 var
 	ContentLength: int64;
 	Percent: integer;
@@ -397,7 +400,7 @@ begin
 	if (Pos('chunked', LowerCase(HTTP.Response.TransferEncoding)) = 0) and (ContentLength > 0) then
 	begin
 		Percent := 100 * AWorkCount div ContentLength;
-		if Assigned(ExternalProgressProc) and (ExternalProgressProc(PWideChar(self.ExternalSourceName), PWideChar(self.ExternalTargetName), Percent) = 1) then {При передаче nil прогресс оставляет предыдущие значения}
+		if self.Progress.Progress(self.ExternalSourceName, self.ExternalTargetName, Percent) = 1 then {При передаче nil прогресс оставляет предыдущие значения}
 			abort;
 	end;
 end;
@@ -410,7 +413,7 @@ begin
 	ResultData.Position := 0;
 	try
 		HTTP.Intercept := Throttle;
-		HTTP.OnWork := self.Progress;
+		HTTP.OnWork := self.HTTPProgress;
 		PutAnswer := HTTP.Put(URL, PostData);
 		ResultData.WriteString(PutAnswer);
 
