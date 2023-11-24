@@ -15,7 +15,9 @@ type
 	public
 		constructor Create(); overload; //creates a dummy progress
 		constructor Create(ProgressProc: TProgressProcW; PluginNum: Integer); overload;
-		function Progress(SourceName, TargetName: WideString; PercentDone: Integer): Integer; //todo: check if result can be boolean
+		function Progress(SourceName, TargetName: WideString; PercentDone: Integer = 0): Integer; overload; //todo: check if result can be boolean
+		function Progress(SourceName: WideString; PercentDone: Integer = 0): Integer; overload;
+		function Progress(PercentDone: Integer = 0): Integer; overload;
 	end;
 
 implementation
@@ -32,6 +34,20 @@ constructor TTCProgress.Create(ProgressProc: TProgressProcW; PluginNum: Integer)
 begin
 	self.ProgressProc := ProgressProc;
 	self.PluginNum := PluginNum;
+end;
+
+function TTCProgress.Progress(PercentDone: Integer): Integer;
+begin
+	Result := -1;
+	if Assigned(ProgressProc) then
+		Result := ProgressProc(PluginNum, nil, nil, PercentDone);
+end;
+
+function TTCProgress.Progress(SourceName: WideString; PercentDone: Integer): Integer;
+begin
+	Result := -1;
+	if Assigned(ProgressProc) then
+		Result := ProgressProc(PluginNum, PWideChar(SourceName), nil, PercentDone);
 end;
 
 function TTCProgress.Progress(SourceName, TargetName: WideString; PercentDone: Integer): Integer;
