@@ -26,8 +26,7 @@ begin
 	for CurrentItem in DirListing do
 		if CurrentItem.name = ItemName then
 			exit(CurrentItem);
-	FillChar(CurrentItem, sizeof(CurrentItem), 0);
-	exit(CurrentItem); // nothing found
+	FillChar(result, sizeof(TCloudMailRuDirListingItem), 0); // nothing found
 end;
 
 function GetItemByHomePath(DirListing: TCloudMailRuDirListing; HomePath: WideString): TCloudMailRuDirListingItem;
@@ -38,8 +37,7 @@ begin
 	for CurrentItem in DirListing do
 		if CurrentItem.home = HomePath then
 			exit(CurrentItem);
-	FillChar(CurrentItem, sizeof(CurrentItem), 0);
-	exit(CurrentItem); // nothing found
+	FillChar(result, sizeof(TCloudMailRuDirListingItem), 0); // nothing found
 end;
 
 function FromJSON(JSON: WideString; var CloudMailRuDirListing: TCloudMailRuDirListing): Boolean;
