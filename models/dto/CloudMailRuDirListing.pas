@@ -15,7 +15,7 @@ type
 
 function GetItemByName(DirListing: TCloudMailRuDirListing; ItemName: WideString): TCloudMailRuDirListingItem;
 function GetItemByHomePath(DirListing: TCloudMailRuDirListing; HomePath: WideString): TCloudMailRuDirListingItem;
-function getDirListing(JSON: WideString; var CloudMailRuDirListing: TCloudMailRuDirListing): Boolean;
+function FromJSON(JSON: WideString; var CloudMailRuDirListing: TCloudMailRuDirListing): Boolean;
 
 implementation
 
@@ -42,7 +42,7 @@ begin
 	exit(CurrentItem); // nothing found
 end;
 
-function getDirListing(JSON: WideString; var CloudMailRuDirListing: TCloudMailRuDirListing): Boolean;
+function FromJSON(JSON: WideString; var CloudMailRuDirListing: TCloudMailRuDirListing): Boolean;
 var
 	J: integer;
 	A: TJSONArray;
