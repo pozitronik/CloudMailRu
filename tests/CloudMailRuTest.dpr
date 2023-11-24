@@ -14,13 +14,15 @@ uses
 	DUnitX.Loggers.Xml.NUnit,
 {$ENDIF }
 	DUnitX.TestFramework,
+	TestHelper in 'TestHelper.pas',
 	TCLoggerTest in 'models\TCLoggerTest.pas',
 	TCLogger in '..\models\TCLogger.pas',
 	PLUGIN_TYPES in '..\PLUGIN_TYPES.pas',
 	SystemHelper in '..\helpers\SystemHelper.pas',
 	TCProgress in '..\models\TCProgress.pas',
 	TCProgressTest in 'models\TCProgressTest.pas',
-	TestHelper in 'TestHelper.pas';
+	TCRequest in '..\models\TCRequest.pas',
+	TCRequestTest in 'models\TCRequestTest.pas';
 
 {keep comment here to protect the following conditional from being removed by the IDE when adding a unit}
 {$IFNDEF TESTINSIGHT}

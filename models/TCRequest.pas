@@ -14,7 +14,7 @@ type
 	public
 		constructor Create(); overload; //creates a dummy progress
 		constructor Create(RequestProc: TRequestProcW; PluginNum: Integer); overload;
-		function Request(RequestType: Integer; CustomTitle, CustomText, ReturnedText: WideString; maxlen: Integer): Boolean;
+		function Request(RequestType: Integer; CustomTitle, CustomText: WideString; var ReturnedText: WideString; maxlen: Integer): Boolean;
 	end;
 
 implementation
@@ -33,11 +33,18 @@ begin
 	self.PluginNum := PluginNum;
 end;
 
-function TTCRequest.Request(RequestType: Integer; CustomTitle, CustomText, ReturnedText: WideString; maxlen: Integer): Boolean;
+function TTCRequest.Request(RequestType: Integer; CustomTitle, CustomText: WideString; var ReturnedText: WideString; maxlen: Integer): Boolean;
+var
+	pReturnedText: PWideChar;
 begin
 	Result := false;
 	if Assigned(RequestProc) then
-		Result := RequestProc(PluginNum, RequestType, PWideChar(CustomTitle), PWideChar(CustomText), PWideChar(ReturnedText), maxlen);
+	begin
+		SetLength(ReturnedText, maxlen);
+		pReturnedText := PWideChar(ReturnedText);
+		Result := RequestProc(PluginNum, RequestType, PWideChar(CustomTitle), PWideChar(CustomText), pReturnedText, maxlen);
+		ReturnedText := pReturnedText; // not tested!
+	end;
 end;
 
 end.
