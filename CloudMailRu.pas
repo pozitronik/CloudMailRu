@@ -198,11 +198,11 @@ begin
 	{Экспериментально выяснено, что параметры api, build, email, x-email, x-page-id в запросе не обязательны}
 	if self.HTTP.PostForm(API_FILE_ADD, Format('api=2&conflict=%s&home=/%s&hash=%s&size=%d%s', [ConflictMode, PathToUrl(remotePath), FileIdentity.Hash, FileIdentity.size, self.united_params]), JSON, 'application/x-www-form-urlencoded', LogErrors, false) then {Do not allow to cancel operation here}
 	begin
-		OperationResult := TJSONHelper.getOperationResult(JSON);
+		OperationResult := getOperationResult(JSON);
 		result := CloudResultToFsResult(OperationResult, PREFIX_ERR_FILE_UPLOADING);
 		if (CLOUD_OPERATION_OK = OperationResult.OperationResult) and LogSuccess then
 			Log(LogLevelDetail, MSGTYPE_DETAILS, FILE_FOUND_BY_HASH, [remotePath]);
-		if (NAME_TOKEN = TJSONHelper.getBodyError(JSON)) and RefreshCSRFToken() then
+		if (NAME_TOKEN = getBodyError(JSON)) and RefreshCSRFToken() then
 			result := self.addFileByIdentity(FileIdentity, remotePath, ConflictMode, LogErrors, LogSuccess);
 	end;
 end;
@@ -229,11 +229,11 @@ begin
 	Progress := true;
 	if self.HTTP.GetPage(Format('%s?folder=/%s&weblink=%s&conflict=%s%s', [API_CLONE, PathToUrl(Path), link, ConflictMode, self.united_params]), JSON, Progress) then
 	begin //Парсим ответ
-		result := CloudResultToFsResult(TJSONHelper.getOperationResult(JSON), PREFIX_ERR_FILE_PUBLISH);
+		result := CloudResultToFsResult(getOperationResult(JSON), PREFIX_ERR_FILE_PUBLISH);
 		if (result <> FS_FILE_OK) and not(Progress) then
 			result := FS_FILE_USERABORT; //user cancelled
 	end else begin
-		if (NAME_TOKEN = TJSONHelper.getBodyError(JSON)) and RefreshCSRFToken() then
+		if (NAME_TOKEN = getBodyError(JSON)) and RefreshCSRFToken() then
 			result := cloneWeblink(Path, link, ConflictMode);
 	end;
 end;
@@ -292,9 +292,9 @@ begin
 	self.HTTP.SetProgressNames(OldName, Format('%s%s', [IncludeTrailingPathDelimiter(ToPath), ExtractFileName(OldName)]));
 	if self.HTTP.PostForm(API_FILE_COPY, Format('home=/%s&folder=/%s%s&conflict', [PathToUrl(OldName), PathToUrl(ToPath), self.united_params]), JSON) then
 	begin //Парсим ответ
-		result := CloudResultToFsResult(TJSONHelper.getOperationResult(JSON), PREFIX_ERR_FILE_COPY);
+		result := CloudResultToFsResult(getOperationResult(JSON), PREFIX_ERR_FILE_COPY);
 	end;
-	if (NAME_TOKEN = TJSONHelper.getBodyError(JSON)) and RefreshCSRFToken() then
+	if (NAME_TOKEN = getBodyError(JSON)) and RefreshCSRFToken() then
 		result := self.copyFile(OldName, ToPath);
 end;
 
@@ -373,8 +373,8 @@ begin
 	if self.public_account then
 		exit;
 	self.HTTP.SetProgressNames(CREATE_DIRECTORY, Path);
-	result := self.HTTP.PostForm(API_FOLDER_ADD, Format('home=/%s%s&conflict', [PathToUrl(Path), self.united_params]), JSON) and CloudResultToBoolean(TJSONHelper.getOperationResult(JSON));
-	if (not result and (NAME_TOKEN = TJSONHelper.getBodyError(JSON))) and RefreshCSRFToken() then
+	result := self.HTTP.PostForm(API_FOLDER_ADD, Format('home=/%s%s&conflict', [PathToUrl(Path), self.united_params]), JSON) and CloudResultToBoolean(getOperationResult(JSON));
+	if (not result and (NAME_TOKEN = getBodyError(JSON))) and RefreshCSRFToken() then
 		result := self.createDir(Path);
 end;
 
@@ -388,8 +388,8 @@ begin
 	if self.public_account then
 		exit;
 	self.HTTP.SetProgressNames(DELETE_FILE, Path);
-	result := self.HTTP.PostForm(API_FILE_REMOVE, Format('home=/%s%s&conflict', [PathToUrl(Path), self.united_params]), JSON) and CloudResultToBoolean(TJSONHelper.getOperationResult(JSON), PREFIX_ERR_DELETE_FILE);
-	if (not result and (NAME_TOKEN = TJSONHelper.getBodyError(JSON))) and RefreshCSRFToken() then
+	result := self.HTTP.PostForm(API_FILE_REMOVE, Format('home=/%s%s&conflict', [PathToUrl(Path), self.united_params]), JSON) and CloudResultToBoolean(getOperationResult(JSON), PREFIX_ERR_DELETE_FILE);
+	if (not result and (NAME_TOKEN = getBodyError(JSON))) and RefreshCSRFToken() then
 		result := self.deleteFile(Path);
 end;
 
@@ -487,10 +487,10 @@ begin
 
 	result := self.HTTP.GetPage(Format('%s?%s', [API_FOLDER_SHARED_LINKS, self.united_params]), JSON, ShowProgress);
 	if result then
-		result := CloudResultToBoolean(TJSONHelper.getOperationResult(JSON), PREFIX_ERR_SHARED_LINKS_LISTING) and TJSONHelper.getDirListing(JSON, DirListing)
+		result := CloudResultToBoolean(getOperationResult(JSON), PREFIX_ERR_SHARED_LINKS_LISTING) and getDirListing(JSON, DirListing)
 	else
 	begin
-		if (NAME_TOKEN = TJSONHelper.getBodyError(JSON)) and RefreshCSRFToken() then
+		if (NAME_TOKEN = getBodyError(JSON)) and RefreshCSRFToken() then
 			result := getSharedLinksListing(DirListing, ShowProgress);
 	end;
 
@@ -511,10 +511,10 @@ begin
 	result := self.HTTP.GetPage(Format('%s?%s', [API_FOLDER_SHARED_INCOMING, self.united_params]), JSON, ShowProgress);
 
 	if result then
-		result := CloudResultToBoolean(TJSONHelper.getOperationResult(JSON), PREFIX_ERR_INCOMING_REQUESTS_LISTING) and TJSONHelper.getIncomingInviteListing(JSON, IncomingListing)
+		result := CloudResultToBoolean(getOperationResult(JSON), PREFIX_ERR_INCOMING_REQUESTS_LISTING) and getIncomingInviteListing(JSON, IncomingListing)
 	else
 	begin
-		if (NAME_TOKEN = TJSONHelper.getBodyError(JSON)) and RefreshCSRFToken() then
+		if (NAME_TOKEN = getBodyError(JSON)) and RefreshCSRFToken() then
 			result := getIncomingLinksListing(IncomingListing, ShowProgress);
 	end;
 end;
@@ -558,10 +558,10 @@ begin
 	result := self.HTTP.GetPage(Format('%s?%s', [API_TRASHBIN, self.united_params]), JSON, ShowProgress);
 
 	if result then
-		result := CloudResultToBoolean(TJSONHelper.getOperationResult(JSON), PREFIX_ERR_TRASH_LISTING) and TJSONHelper.getDirListing(JSON, DirListing)
+		result := CloudResultToBoolean(getOperationResult(JSON), PREFIX_ERR_TRASH_LISTING) and getDirListing(JSON, DirListing)
 	else
 	begin
-		if (NAME_TOKEN = TJSONHelper.getBodyError(JSON)) and RefreshCSRFToken() then
+		if (NAME_TOKEN = getBodyError(JSON)) and RefreshCSRFToken() then
 			result := getTrashbinListing(DirListing, ShowProgress);
 	end;
 
@@ -585,17 +585,17 @@ begin
 	end;
 	if result then
 	begin
-		OperationResult := TJSONHelper.getOperationResult(JSON);
+		OperationResult := getOperationResult(JSON);
 		result := CloudResultToBoolean(OperationResult, PREFIX_ERR_DIR_LISTING);
 		if result then
 		begin
-			result := TJSONHelper.getDirListing(JSON, DirListing);
+			result := getDirListing(JSON, DirListing);
 			if result and self.crypt_filenames then
 				self.FileCipher.DecryptDirListing(DirListing);
 		end else if OperationResult.OperationResult = CLOUD_ERROR_NOT_EXISTS then
 			Log(LogLevelError, MSGTYPE_IMPORTANTERROR, '%s%s', [PREFIX_ERR_PATH_NOT_EXISTS, Path]);
 	end else begin
-		if (NAME_TOKEN = TJSONHelper.getBodyError(JSON)) and RefreshCSRFToken() then
+		if (NAME_TOKEN = getBodyError(JSON)) and RefreshCSRFToken() then
 			result := getDirListing(Path, DirListing, ShowProgress);
 	end;
 
@@ -762,7 +762,7 @@ begin
 	result := false;
 	if self.HTTP.PostForm(OAUTH_TOKEN_URL, Format('client_id=cloud-win&grant_type=password&username=%s@%s&password=%s', [self.user, self.domain, UrlEncode(self.password)]), Answer) then
 	begin
-		if not TJSONHelper.getOAuthTokenInfo(Answer, OAuthToken) then
+		if not getOAuthTokenInfo(Answer, OAuthToken) then
 			exit(false);
 		result := OAuthToken.error_code = NOERROR;
 	end;
@@ -811,10 +811,10 @@ begin
 		Shard := self.shard_override;
 		exit(true);
 	end;
-	result := self.HTTP.PostForm(API_DISPATCHER, self.united_params, JSON) and CloudResultToBoolean(TJSONHelper.getOperationResult(JSON), PREFIX_ERR_SHARD_RECEIVE);
+	result := self.HTTP.PostForm(API_DISPATCHER, self.united_params, JSON) and CloudResultToBoolean(getOperationResult(JSON), PREFIX_ERR_SHARD_RECEIVE);
 	if result then
 	begin
-		result := TJSONHelper.getShard(JSON, Shard, ShardType) and (Shard <> EmptyWideStr);
+		result := JSONHelper.getShard(JSON, Shard, ShardType) and (Shard <> EmptyWideStr);
 		Log(LogLevelDetail, MSGTYPE_DETAILS, PREFIX_SHARD_RECEIVED, [Shard, ShardType]);
 	end;
 end;
@@ -844,7 +844,7 @@ var
 	Progress: Boolean;
 begin
 	self.HTTP.GetPage(API_CSRF, JSON, Progress);
-	result := TJSONHelper.getBodyToken(JSON, AuthToken);
+	result := getBodyToken(JSON, AuthToken);
 	if result then
 		Log(LogLevelDetail, MSGTYPE_DETAILS, TOKEN_UPDATED)
 	else
@@ -883,9 +883,9 @@ begin
 	result := self.HTTP.GetPage(Format('%s?home=/%s', [API_USER_SPACE, self.united_params]), JSON, Progress);
 	if result then
 	begin
-		result := CloudResultToBoolean(TJSONHelper.getOperationResult(JSON), PREFIX_ERR_GET_USER_SPACE) and TJSONHelper.getUserSpace(JSON, SpaceInfo);
+		result := CloudResultToBoolean(getOperationResult(JSON), PREFIX_ERR_GET_USER_SPACE) and CloudMailRuSpaceInfo.getUserSpace(JSON, SpaceInfo);
 	end else begin
-		if (NAME_TOKEN = TJSONHelper.getBodyError(JSON)) and RefreshCSRFToken() then
+		if (NAME_TOKEN = getBodyError(JSON)) and RefreshCSRFToken() then
 			result := getUserSpace(SpaceInfo)
 	end;
 end;
@@ -945,7 +945,7 @@ begin
 				if result then
 				begin
 					Log(LogLevelDebug, MSGTYPE_DETAILS, PARSING_AUTH_DATA);
-					if extractTwostepJson(PostAnswer, TwoStepJson) and TJSONHelper.getTwostepData(TwoStepJson, TwostepData) then
+					if extractTwostepJson(PostAnswer, TwoStepJson) and getTwostepData(TwoStepJson, TwostepData) then
 					begin
 						if TwostepData.secstep_timeout = AUTH_APP_USED then
 							AuthMessage := ASK_AUTH_APP_CODE //mobile app used
@@ -1058,8 +1058,8 @@ begin
 	if self.public_account then
 		exit(FS_FILE_NOTSUPPORTED);
 	if self.HTTP.PostForm(API_FILE_MOVE, Format('home=%s&folder=%s%s&conflict', [PathToUrl(OldName), PathToUrl(ToPath), self.united_params]), JSON) then
-		result := CloudResultToFsResult(TJSONHelper.getOperationResult(JSON), PREFIX_ERR_FILE_MOVE);
-	if (NAME_TOKEN = TJSONHelper.getBodyError(JSON)) and RefreshCSRFToken() then
+		result := CloudResultToFsResult(getOperationResult(JSON), PREFIX_ERR_FILE_MOVE);
+	if (NAME_TOKEN = getBodyError(JSON)) and RefreshCSRFToken() then
 		result := self.moveFile(OldName, ToPath);
 end;
 
@@ -1102,11 +1102,11 @@ begin
 	end;
 
 	if result then
-		result := CloudResultToBoolean(TJSONHelper.getOperationResult(JSON), PREFIX_ERR_FILE_PUBLISH);
+		result := CloudResultToBoolean(getOperationResult(JSON), PREFIX_ERR_FILE_PUBLISH);
 
 	if result and publish then
-		result := TJSONHelper.getPublicLink(JSON, PublicLink);
-	if (not result and (NAME_TOKEN = TJSONHelper.getBodyError(JSON))) and RefreshCSRFToken() then
+		result := JSONHelper.getPublicLink(JSON, PublicLink);
+	if (not result and (NAME_TOKEN = getBodyError(JSON))) and RefreshCSRFToken() then
 		result := self.publishFile(Path, PublicLink, publish);
 end;
 
@@ -1121,9 +1121,9 @@ begin
 	Progress := false;
 	if self.HTTP.GetPage(Format('%s?home=%s%s', [API_FOLDER_SHARED_INFO, PathToUrl(Path), self.united_params]), JSON, Progress) then
 	begin
-		result := TJSONHelper.getInviteListing(JSON, InviteListing);
+		result := getInviteListing(JSON, InviteListing);
 	end else begin
-		if (NAME_TOKEN = TJSONHelper.getBodyError(JSON)) and RefreshCSRFToken() then
+		if (NAME_TOKEN = getBodyError(JSON)) and RefreshCSRFToken() then
 			result := getShareInfo(Path, InviteListing);
 	end;
 end;
@@ -1148,8 +1148,8 @@ begin
 		result := self.HTTP.PostForm(API_FOLDER_UNSHARE, Format('home=/%s%s&invite={"email":"%s"}', [PathToUrl(Path), self.united_params, email]), JSON);
 	end;
 	if result then
-		result := CloudResultToBoolean(TJSONHelper.getOperationResult(JSON), PREFIX_ERR_INVITE_MEMBER);
-	if (not result and (NAME_TOKEN = TJSONHelper.getBodyError(JSON))) and RefreshCSRFToken() then
+		result := CloudResultToBoolean(getOperationResult(JSON), PREFIX_ERR_INVITE_MEMBER);
+	if (not result and (NAME_TOKEN = getBodyError(JSON))) and RefreshCSRFToken() then
 		result := self.shareFolder(Path, email, access);
 end;
 
@@ -1162,8 +1162,8 @@ begin
 		exit; //Проверка на вызов без инициализации
 	if self.public_account then
 		exit;
-	result := self.HTTP.PostForm(API_TRASHBIN_RESTORE, Format('path=%s&restore_revision=%d%s&conflict=%s', [PathToUrl(Path), RestoreRevision, self.united_params, ConflictMode]), JSON) and CloudResultToBoolean(TJSONHelper.getOperationResult(JSON), PREFIX_ERR_FILE_RESTORE);
-	if (not result and (NAME_TOKEN = TJSONHelper.getBodyError(JSON))) and RefreshCSRFToken() then
+	result := self.HTTP.PostForm(API_TRASHBIN_RESTORE, Format('path=%s&restore_revision=%d%s&conflict=%s', [PathToUrl(Path), RestoreRevision, self.united_params, ConflictMode]), JSON) and CloudResultToBoolean(getOperationResult(JSON), PREFIX_ERR_FILE_RESTORE);
+	if (not result and (NAME_TOKEN = getBodyError(JSON))) and RefreshCSRFToken() then
 		result := self.trashbinRestore(Path, RestoreRevision, ConflictMode);
 end;
 
@@ -1177,8 +1177,8 @@ begin
 	if self.public_account then
 		exit;
 
-	result := self.HTTP.PostForm(API_TRASHBIN_EMPTY, self.united_params, JSON) and CloudResultToBoolean(TJSONHelper.getOperationResult(JSON), PREFIX_ERR_TRASH_CLEAN);
-	if (not result and (NAME_TOKEN = TJSONHelper.getBodyError(JSON))) and RefreshCSRFToken() then
+	result := self.HTTP.PostForm(API_TRASHBIN_EMPTY, self.united_params, JSON) and CloudResultToBoolean(getOperationResult(JSON), PREFIX_ERR_TRASH_CLEAN);
+	if (not result and (NAME_TOKEN = getBodyError(JSON))) and RefreshCSRFToken() then
 		result := self.trashbinEmpty();
 end;
 
@@ -1191,8 +1191,8 @@ begin
 		exit; //Проверка на вызов без инициализации
 	if self.public_account then
 		exit;
-	result := self.HTTP.PostForm(API_FOLDER_MOUNT, Format('home=%s&invite_token=%s%s&conflict=%s', [UrlEncode(home), invite_token, self.united_params, ConflictMode]), JSON) and CloudResultToBoolean(TJSONHelper.getOperationResult(JSON), PREFIX_ERR_FOLDER_MOUNT);
-	if (not result and (NAME_TOKEN = TJSONHelper.getBodyError(JSON))) and RefreshCSRFToken() then
+	result := self.HTTP.PostForm(API_FOLDER_MOUNT, Format('home=%s&invite_token=%s%s&conflict=%s', [UrlEncode(home), invite_token, self.united_params, ConflictMode]), JSON) and CloudResultToBoolean(getOperationResult(JSON), PREFIX_ERR_FOLDER_MOUNT);
+	if (not result and (NAME_TOKEN = getBodyError(JSON))) and RefreshCSRFToken() then
 		result := self.mountFolder(home, invite_token, ConflictMode);
 end;
 
@@ -1210,8 +1210,8 @@ begin
 		CopyStr := 'true'
 	else
 		CopyStr := 'false';
-	result := self.HTTP.PostForm(API_FOLDER_UNMOUNT, Format('home=%s&clone_copy=%s%s', [UrlEncode(home), CopyStr, self.united_params]), JSON) and CloudResultToBoolean(TJSONHelper.getOperationResult(JSON), PREFIX_ERR_FOLDER_UNMOUNT);
-	if (not result and (NAME_TOKEN = TJSONHelper.getBodyError(JSON))) and RefreshCSRFToken() then
+	result := self.HTTP.PostForm(API_FOLDER_UNMOUNT, Format('home=%s&clone_copy=%s%s', [UrlEncode(home), CopyStr, self.united_params]), JSON) and CloudResultToBoolean(getOperationResult(JSON), PREFIX_ERR_FOLDER_UNMOUNT);
+	if (not result and (NAME_TOKEN = getBodyError(JSON))) and RefreshCSRFToken() then
 		result := self.unmountFolder(home, clone_copy);
 end;
 
@@ -1224,8 +1224,8 @@ begin
 		exit; //Проверка на вызов без инициализации
 	if self.public_account then
 		exit;
-	result := self.HTTP.PostForm(API_INVITE_REJECT, Format('invite_token=%s%s', [invite_token, self.united_params]), JSON) and CloudResultToBoolean(TJSONHelper.getOperationResult(JSON), PREFIX_ERR_INVITE_REJECT);
-	if (not result and (NAME_TOKEN = TJSONHelper.getBodyError(JSON))) and RefreshCSRFToken() then
+	result := self.HTTP.PostForm(API_INVITE_REJECT, Format('invite_token=%s%s', [invite_token, self.united_params]), JSON) and CloudResultToBoolean(getOperationResult(JSON), PREFIX_ERR_INVITE_REJECT);
+	if (not result and (NAME_TOKEN = getBodyError(JSON))) and RefreshCSRFToken() then
 		result := self.rejectInvite(invite_token);
 end;
 
@@ -1512,8 +1512,8 @@ begin
 	if self.public_account then
 		exit;
 	self.HTTP.SetProgressNames(DELETE_DIR, Path);
-	result := self.HTTP.PostForm(API_FILE_REMOVE, Format('home=/%s%s&conflict', [IncludeSlash(PathToUrl(Path)), self.united_params]), JSON) and CloudResultToBoolean(TJSONHelper.getOperationResult(JSON), PREFIX_ERR_DELETE_DIR); //API всегда отвечает true, даже если путь не существует
-	if (not result and (NAME_TOKEN = TJSONHelper.getBodyError(JSON))) and RefreshCSRFToken() then
+	result := self.HTTP.PostForm(API_FILE_REMOVE, Format('home=/%s%s&conflict', [IncludeSlash(PathToUrl(Path)), self.united_params]), JSON) and CloudResultToBoolean(getOperationResult(JSON), PREFIX_ERR_DELETE_DIR); //API всегда отвечает true, даже если путь не существует
+	if (not result and (NAME_TOKEN = getBodyError(JSON))) and RefreshCSRFToken() then
 		result := self.removeDir(Path);
 end;
 
@@ -1527,8 +1527,8 @@ begin
 	if self.public_account then
 		exit;
 	if self.HTTP.PostForm(API_FILE_RENAME, Format('home=%s&name=%s%s', [PathToUrl(OldName), PathToUrl(NewName), self.united_params]), JSON) then
-		result := CloudResultToFsResult(TJSONHelper.getOperationResult(JSON), PREFIX_ERR_FILE_RENAME);
-	if (NAME_TOKEN = TJSONHelper.getBodyError(JSON)) and RefreshCSRFToken() then
+		result := CloudResultToFsResult(getOperationResult(JSON), PREFIX_ERR_FILE_RENAME);
+	if (NAME_TOKEN = getBodyError(JSON)) and RefreshCSRFToken() then
 		result := self.renameFile(OldName, NewName);
 end;
 
@@ -1547,9 +1547,9 @@ begin
 		result := self.HTTP.GetPage(Format('%s?home=%s%s', [API_FILE, PathToUrl(Path), self.united_params]), JSON, Progress);
 	if result then
 	begin
-		result := CloudResultToBoolean(TJSONHelper.getOperationResult(JSON), PREFIX_ERR_FILE_STATUS) and TJSONHelper.getFileStatus(JSON, FileInfo);
+		result := CloudResultToBoolean(getOperationResult(JSON), PREFIX_ERR_FILE_STATUS) and getFileStatus(JSON, FileInfo);
 	end else begin
-		if (NAME_TOKEN = TJSONHelper.getBodyError(JSON)) and RefreshCSRFToken() then
+		if (NAME_TOKEN = getBodyError(JSON)) and RefreshCSRFToken() then
 			result := statusFile(Path, FileInfo);
 	end;
 

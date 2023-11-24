@@ -8,7 +8,9 @@ uses
 	SystemHelper,
 	DateUtils,
 	SysUtils,
-	Windows;
+	Windows,
+	JSONHelper,
+	JSON;
 
 type
 	TCloudMailRuDirListingItem = Record
@@ -33,6 +35,7 @@ type
 	End;
 
 function CloudMailRuDirListingItemToFindData(DirListing: TCloudMailRuDirListingItem; DirsAsSymlinks: Boolean = false): tWIN32FINDDATAW;
+function getFileStatus(JSON: WideString; var CloudMailRuDirListingItem: TCloudMailRuDirListingItem): Boolean;
 
 implementation
 
@@ -58,6 +61,46 @@ begin
 	Result.nFileSizeHigh := DWORD((DirListing.size shr 32) and $FFFFFFFF);
 	Result.nFileSizeLow := DWORD(DirListing.size and $FFFFFFFF);
 	strpcopy(Result.cFileName, DirListing.name);
+end;
+
+function getFileStatus(JSON: WideString; var CloudMailRuDirListingItem: TCloudMailRuDirListingItem): Boolean;
+var
+	ParserObj, JSONVal: TJSONObject;
+begin
+	Result := false;
+	try
+		if (not init(JSON, JSONVal)) then
+			Exit;
+		ParserObj := JSONVal.Values[NAME_BODY] as TJSONObject;
+		with CloudMailRuDirListingItem do
+		begin
+			assignFromName(NAME_SIZE, ParserObj, size);
+			assignFromName(NAME_KIND, ParserObj, kind);
+			assignFromName(NAME_WEBLINK, ParserObj, weblink);
+			assignFromName(NAME_TYPE, ParserObj, type_);
+			assignFromName(NAME_HOME, ParserObj, home);
+			assignFromName(NAME_NAME, ParserObj, name);
+			if (type_ = TYPE_FILE) then
+			begin
+				assignFromName(NAME_MTIME, ParserObj, mtime);
+				assignFromName(NAME_VIRUS_SCAN, ParserObj, virus_scan);
+				assignFromName(NAME_HASH, ParserObj, hash);
+			end else begin
+				assignFromName(NAME_TREE, ParserObj, tree);
+				assignFromName(NAME_GREV, ParserObj, grev);
+				assignFromName(NAME_REV, ParserObj, rev);
+				if Assigned((ParserObj.Values[NAME_COUNT] as TJSONObject).Values[NAME_FOLDERS]) then
+					folders_count := (ParserObj.Values[NAME_COUNT] as TJSONObject).Values[NAME_FOLDERS].Value.ToInteger();
+				if Assigned((ParserObj.Values[NAME_COUNT] as TJSONObject).Values[NAME_FILES]) then
+					files_count := (ParserObj.Values[NAME_COUNT] as TJSONObject).Values[NAME_FILES].Value.ToInteger();
+				mtime := 0;
+			end;
+		end;
+	except
+		Exit;
+	end;
+	Result := true;
+	JSONVal.free;
 end;
 
 end.
