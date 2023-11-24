@@ -22,6 +22,8 @@ type
 		procedure TearDown;
 		[Test]
 		procedure TestRequest;
+		[Test]
+		procedure TestCreateDummy;
 
 	end;
 
@@ -64,6 +66,40 @@ procedure TTCRequestTest.TearDown;
 begin
 end;
 
+procedure TTCRequestTest.TestCreateDummy;
+var
+	TestTCRequest: TTCRequest;
+	RandomRT: Integer;
+	RandomTitle: WideString;
+	RandomText: WideString;
+	RandomReturnedText: WideString;
+	RandomReturnedTextOrig: WideString;
+begin
+	Assert.AreEqual(0, PluginNr);
+	Assert.AreEqual(RT_Other, RequestType);
+	Assert.AreEqual('', CustomTitle);
+	Assert.AreEqual('', CustomText);
+	Assert.AreEqual('', ReturnedText);
+	Assert.AreEqual(0, MaxLen);
+
+	RandomRT := Random(RT_MsgOKCancel);
+	RandomTitle := RandomString(32);
+	RandomText := RandomString(64);
+	RandomReturnedText := 'ABC'; // RandomString(128);
+	RandomReturnedTextOrig := RandomReturnedText;
+
+	TestTCRequest := TTCRequest.Create();
+
+	Assert.IsFalse(TestTCRequest.Request(RandomRT, RandomTitle, RandomText, RandomReturnedText, Length(RandomReturnedText)));
+
+	Assert.AreEqual(0, PluginNr);
+	Assert.AreEqual(RT_Other, RequestType);
+	Assert.AreEqual('', CustomTitle);
+	Assert.AreEqual('', CustomText);
+	Assert.AreEqual('', ReturnedText);
+	Assert.AreEqual(0, MaxLen);
+end;
+
 procedure TTCRequestTest.TestRequest;
 var
 	TestTCRequest: TTCRequest;
@@ -98,7 +134,7 @@ begin
 	Assert.AreEqual(CustomText, RandomText);
 	Assert.AreEqual(ReturnedText, RandomReturnedTextOrig);
 	Assert.AreEqual(MaxLen, Length(RandomReturnedText));
-	{Ckip assertion, because I can't reproduce desired behavior. Hope to return to this issue later.}
+	{Skip assertion, because I can't reproduce desired behavior. Hope to return to this issue later.}
 	//	Assert.AreEqual(RandomReturnedText, ReverseString(RandomReturnedTextOrig));
 end;
 
