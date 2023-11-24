@@ -27,7 +27,7 @@ type
 		size: Int64; //part size
 	end;
 
-	AFileChunkInfo = array of TFileChunkInfo;
+	AFileChunkInfo = TArray<TFileChunkInfo>;
 
 	TFileSplitInfo = class
 	private
