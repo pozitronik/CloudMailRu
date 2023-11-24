@@ -91,6 +91,9 @@
         <DCCReference Include="..\models\TCLogger.pas"/>
         <DCCReference Include="..\PLUGIN_TYPES.pas"/>
         <DCCReference Include="..\helpers\SystemHelper.pas"/>
+        <DCCReference Include="..\models\TCProgress.pas"/>
+        <DCCReference Include="models\TCProgressTest.pas"/>
+        <DCCReference Include="TestHelper.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>
