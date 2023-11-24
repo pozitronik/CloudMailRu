@@ -3,12 +3,12 @@
         <ProjectGuid>{331FEEB4-0D9D-4F0B-B88C-2A76C7983324}</ProjectGuid>
         <MainSource>MailRuCloud.dpr</MainSource>
         <Base>True</Base>
-        <Config Condition="'$(Config)'==''">Release</Config>
+        <Config Condition="'$(Config)'==''">Debug</Config>
         <TargetedPlatforms>3</TargetedPlatforms>
         <AppType>Library</AppType>
-        <FrameworkType>None</FrameworkType>
+        <FrameworkType>VCL</FrameworkType>
         <ProjectVersion>20.1</ProjectVersion>
-        <Platform Condition="'$(Platform)'==''">Win32</Platform>
+        <Platform Condition="'$(Platform)'==''">Win64</Platform>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Config)'=='Base' or '$(Base)'!=''">
         <Base>true</Base>
@@ -68,7 +68,7 @@
         <SanitizedProjectName>MailRuCloud</SanitizedProjectName>
         <VerInfo_Locale>1049</VerInfo_Locale>
         <VerInfo_Keys>CompanyName=;FileDescription=Cloud.Mail.ru плагин x32/x64 для Total Commander;FileVersion=1.20.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=18.11.23;Comments=https://github.com/pozitronik/CloudMailRu/;CFBundleName=</VerInfo_Keys>
-        <DCC_Namespace>System;Xml;Data;Datasnap;Web;Soap;DUnitX.MemoryLeakMonitor;Winapi;FireDAC.Stan;Vcl;$(DCC_Namespace)</DCC_Namespace>
+        <DCC_Namespace>System;Xml;Data;Datasnap;Web;Soap;DUnitX.MemoryLeakMonitor;Winapi;FireDAC.Stan;Vcl;Vcl.Imaging;Vcl.Touch;Vcl.Samples;Vcl.Shell;$(DCC_Namespace)</DCC_Namespace>
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
         <VerInfo_MinorVer>20</VerInfo_MinorVer>
         <VerInfo_AutoGenVersion>true</VerInfo_AutoGenVersion>
@@ -141,35 +141,33 @@
         <Manifest_File>$(BDS)\bin\default_app.manifest</Manifest_File>
         <VerInfo_MinorVer>0</VerInfo_MinorVer>
         <AppEnableRuntimeThemes>false</AppEnableRuntimeThemes>
+        <DCC_DebugInfoInExe>true</DCC_DebugInfoInExe>
     </PropertyGroup>
     <ItemGroup>
         <DelphiCompile Include="$(MainSource)">
             <MainSource>MainSource</MainSource>
         </DelphiCompile>
         <DCCReference Include="FastMM\FastMM4.pas"/>
+        <DCCReference Include="FastMM\FastMM4Messages.pas"/>
         <DCCReference Include="CloudMailRu.pas"/>
-        <DCCReference Include="MRC_Helper.pas"/>
-        <DCCReference Include="Accounts.pas">
+        <DCCReference Include="forms\Accounts.pas">
             <Form>AccountsForm</Form>
         </DCCReference>
-        <DCCReference Include="RemoteProperty.pas">
+        <DCCReference Include="forms\RemoteProperty.pas">
             <Form>PropertyForm</Form>
         </DCCReference>
-        <DCCReference Include="Descriptions.pas"/>
-        <DCCReference Include="ConnectionManager.pas"/>
-        <DCCReference Include="Settings.pas"/>
-        <DCCReference Include="ANSIFunctions.pas"/>
-        <DCCReference Include="DeletedProperty.pas">
+        <DCCReference Include="forms\DeletedProperty.pas">
             <Form>DeletedPropertyForm</Form>
         </DCCReference>
-        <DCCReference Include="InviteProperty.pas">
+        <DCCReference Include="forms\InviteProperty.pas">
             <Form>InvitePropertyForm</Form>
         </DCCReference>
-        <DCCReference Include="AskPassword.pas">
+        <DCCReference Include="forms\AskPassword.pas">
             <Form>AskPasswordForm</Form>
         </DCCReference>
-        <DCCReference Include="CMLJSON.pas"/>
-        <DCCReference Include="CMLTypes.pas"/>
+        <DCCReference Include="forms\Registration.pas">
+            <Form>AskPasswordForm</Form>
+        </DCCReference>
         <DCCReference Include="DCPCrypt\DCPbase64.pas"/>
         <DCCReference Include="DCPCrypt\DCPblockciphers.pas"/>
         <DCCReference Include="DCPCrypt\DCPconst.pas"/>
@@ -202,17 +200,40 @@
         <DCCReference Include="DCPCrypt\Hashes\DCPsha256.pas"/>
         <DCCReference Include="DCPCrypt\Hashes\DCPsha512.pas"/>
         <DCCReference Include="DCPCrypt\Hashes\DCPtiger.pas"/>
-        <DCCReference Include="TCPasswordManagerHelper.pas"/>
-        <DCCReference Include="HashInfo.pas"/>
-        <DCCReference Include="SplitFile.pas"/>
-        <DCCReference Include="ChunkedFileStream.pas"/>
-        <DCCReference Include="CMLParsers.pas"/>
-        <DCCReference Include="CMLHTTP.pas"/>
-        <DCCReference Include="HTTPManager.pas"/>
-        <DCCReference Include="Registration.pas">
-            <Form>RegistrationForm</Form>
-        </DCCReference>
-        <DCCReference Include="CMLStrings.pas"/>
+        <DCCReference Include="helpers\JSONHelper.pas"/>
+        <DCCReference Include="helpers\PluginHelper.pas"/>
+        <DCCReference Include="models\ChunkedFileStream.pas"/>
+        <DCCReference Include="models\ConnectionManager.pas"/>
+        <DCCReference Include="models\Description.pas"/>
+        <DCCReference Include="models\FileSplitInfo.pas"/>
+        <DCCReference Include="models\HashInfo.pas"/>
+        <DCCReference Include="models\TCPasswordManager.pas"/>
+        <DCCReference Include="models\settings\Settings.pas"/>
+        <DCCReference Include="models\http\CloudMailRuHTTP.pas"/>
+        <DCCReference Include="models\http\HTTPManager.pas"/>
+        <DCCReference Include="models\dto\CloudMailRuDirListing.pas"/>
+        <DCCReference Include="models\dto\CloudMailRuDirListingItem.pas"/>
+        <DCCReference Include="models\dto\CloudMailRuFileIdentity.pas"/>
+        <DCCReference Include="models\dto\CloudMailRuIncomingInviteInfo.pas"/>
+        <DCCReference Include="models\dto\CloudMailRuIncomingInviteInfoListing.pas"/>
+        <DCCReference Include="models\dto\CloudMailRuInviteInfo.pas"/>
+        <DCCReference Include="models\dto\CloudMailRuInviteInfoListing.pas"/>
+        <DCCReference Include="models\dto\CloudMailRuOAuthInfo.pas"/>
+        <DCCReference Include="models\dto\CloudMailRuOperationResult.pas"/>
+        <DCCReference Include="models\dto\CloudMailRuOwnerInfo.pas"/>
+        <DCCReference Include="models\dto\CloudMailRuSpaceInfo.pas"/>
+        <DCCReference Include="models\dto\CloudMailRuTwostepData.pas"/>
+        <DCCReference Include="models\cipher\FileCipher.pas"/>
+        <DCCReference Include="helpers\ParsingHelper.pas"/>
+        <DCCReference Include="helpers\TCHelper.pas"/>
+        <DCCReference Include="helpers\WindowsHelper.pas"/>
+        <DCCReference Include="helpers\IconHelper.pas"/>
+        <DCCReference Include="helpers\SystemHelper.pas"/>
+        <DCCReference Include="helpers\StringHelper.pas"/>
+        <DCCReference Include="helpers\FileHelper.pas"/>
+        <DCCReference Include="helpers\PathHelper.pas"/>
+        <DCCReference Include="helpers\DebugHelper.pas"/>
+        <DCCReference Include="models\dto\RealPath.pas"/>
         <RcItem Include="icons\icon.ico">
             <ResourceType>ICON</ResourceType>
             <ResourceId>base_icon</ResourceId>

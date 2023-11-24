@@ -13,24 +13,21 @@ uses
 	DateUtils,
 	windows,
 	Classes,
+	ANSIFunctions,
 	PLUGIN_TYPES,
+	CMRStrings,
 	IdSSLOpenSSLHeaders,
 	messages,
 	inifiles,
 	Vcl.controls,
 	CloudMailRu in 'CloudMailRu.pas',
-	MRC_Helper in 'MRC_Helper.pas',
-	Accounts in 'Accounts.pas'{AccountsForm},
-	RemoteProperty in 'RemoteProperty.pas'{PropertyForm},
-	Descriptions in 'Descriptions.pas',
-	ConnectionManager in 'ConnectionManager.pas',
-	Settings in 'Settings.pas',
-	ANSIFunctions in 'ANSIFunctions.pas',
-	DeletedProperty in 'DeletedProperty.pas'{DeletedPropertyForm},
-	InviteProperty in 'InviteProperty.pas'{InvitePropertyForm},
-	AskPassword in 'AskPassword.pas'{AskPasswordForm},
-	CMLJSON in 'CMLJSON.pas',
-	CMLTypes in 'CMLTypes.pas',
+	Accounts in 'forms\Accounts.pas'{AccountsForm},
+	RemoteProperty in 'forms\RemoteProperty.pas'{PropertyForm},
+	DeletedProperty in 'forms\DeletedProperty.pas'{DeletedPropertyForm},
+	InviteProperty in 'forms\InviteProperty.pas'{InvitePropertyForm},
+	AskPassword in 'forms\AskPassword.pas'{AskPasswordForm},
+	Registration in 'forms\Registration.pas'{AskPasswordForm},
+	CMRConstants,
 	DCPbase64 in 'DCPCrypt\DCPbase64.pas',
 	DCPblockciphers in 'DCPCrypt\DCPblockciphers.pas',
 	DCPconst in 'DCPCrypt\DCPconst.pas',
@@ -63,15 +60,40 @@ uses
 	DCPsha256 in 'DCPCrypt\Hashes\DCPsha256.pas',
 	DCPsha512 in 'DCPCrypt\Hashes\DCPsha512.pas',
 	DCPtiger in 'DCPCrypt\Hashes\DCPtiger.pas',
-	TCPasswordManagerHelper in 'TCPasswordManagerHelper.pas',
-	HashInfo in 'HashInfo.pas',
-	SplitFile in 'SplitFile.pas',
-	ChunkedFileStream in 'ChunkedFileStream.pas',
-	CMLParsers in 'CMLParsers.pas',
-	CMLHTTP in 'CMLHTTP.pas',
-	HTTPManager in 'HTTPManager.pas',
-	Registration in 'Registration.pas'{RegistrationForm},
-	CMLStrings in 'CMLStrings.pas';
+	JSONHelper in 'helpers\JSONHelper.pas',
+	PluginHelper in 'helpers\PluginHelper.pas',
+	ChunkedFileStream in 'models\ChunkedFileStream.pas',
+	ConnectionManager in 'models\ConnectionManager.pas',
+	Description in 'models\Description.pas',
+	FileSplitInfo in 'models\FileSplitInfo.pas',
+	HashInfo in 'models\HashInfo.pas',
+	TCPasswordManager in 'models\TCPasswordManager.pas',
+	Settings in 'models\settings\Settings.pas',
+	CloudMailRuHTTP in 'models\http\CloudMailRuHTTP.pas',
+	HTTPManager in 'models\http\HTTPManager.pas',
+	CloudMailRuDirListing in 'models\dto\CloudMailRuDirListing.pas',
+	CloudMailRuDirListingItem in 'models\dto\CloudMailRuDirListingItem.pas',
+	CloudMailRuFileIdentity in 'models\dto\CloudMailRuFileIdentity.pas',
+	CloudMailRuIncomingInviteInfo in 'models\dto\CloudMailRuIncomingInviteInfo.pas',
+	CloudMailRuIncomingInviteInfoListing in 'models\dto\CloudMailRuIncomingInviteInfoListing.pas',
+	CloudMailRuInviteInfo in 'models\dto\CloudMailRuInviteInfo.pas',
+	CloudMailRuInviteInfoListing in 'models\dto\CloudMailRuInviteInfoListing.pas',
+	CloudMailRuOAuthInfo in 'models\dto\CloudMailRuOAuthInfo.pas',
+	CloudMailRuOperationResult in 'models\dto\CloudMailRuOperationResult.pas',
+	CloudMailRuOwnerInfo in 'models\dto\CloudMailRuOwnerInfo.pas',
+	CloudMailRuSpaceInfo in 'models\dto\CloudMailRuSpaceInfo.pas',
+	CloudMailRuTwostepData in 'models\dto\CloudMailRuTwostepData.pas',
+	FileCipher in 'models\cipher\FileCipher.pas',
+	ParsingHelper in 'helpers\ParsingHelper.pas',
+	TCHelper in 'helpers\TCHelper.pas',
+	WindowsHelper in 'helpers\WindowsHelper.pas',
+	IconHelper in 'helpers\IconHelper.pas',
+	SystemHelper in 'helpers\SystemHelper.pas',
+	StringHelper in 'helpers\StringHelper.pas',
+	FileHelper in 'helpers\FileHelper.pas',
+	PathHelper in 'helpers\PathHelper.pas',
+	DebugHelper in 'helpers\DebugHelper.pas',
+	RealPath in 'models\dto\RealPath.pas';
 
 {$IFDEF WIN64}
 {$E wfx64}
@@ -152,60 +174,6 @@ begin
 		Result := MyProgressProc(PluginNum, SourceName, TargetName, PercentDone);
 end;
 
-function CloudMailRuDirListingItemToFindData(DirListing: TCloudMailRuDirListingItem; DirsAsSymlinks: Boolean = false): tWIN32FINDDATAW;
-begin
-	FillChar(Result, sizeof(WIN32_FIND_DATA), 0);
-	if (DirListing.deleted_from <> EMPTY_STR) then //items inside trash bin
-	begin
-		Result.ftCreationTime := DateTimeToFileTime(UnixToDateTime(DirListing.deleted_at, false));
-		Result.ftLastWriteTime := Result.ftCreationTime;
-		if (DirListing.type_ = TYPE_DIR) then
-			Result.dwFileAttributes := FILE_ATTRIBUTE_DIRECTORY
-	end else if (DirListing.type_ = TYPE_DIR) or (DirListing.kind = KIND_SHARED) then
-	begin
-		if not DirsAsSymlinks then
-			Result.dwFileAttributes := FILE_ATTRIBUTE_DIRECTORY;
-	end else begin
-		Result.ftCreationTime := DateTimeToFileTime(UnixToDateTime(DirListing.mtime, false));
-		Result.ftLastWriteTime := Result.ftCreationTime;
-
-		Result.dwFileAttributes := 0;
-	end;
-	Result.nFileSizeHigh := DWORD((DirListing.size shr 32) and $FFFFFFFF);
-	Result.nFileSizeLow := DWORD(DirListing.size and $FFFFFFFF);
-	strpcopy(Result.cFileName, DirListing.name);
-end;
-
-function FindData_emptyDir(DirName: WideString = '.'): tWIN32FINDDATAW;
-begin
-	FillChar(Result, sizeof(WIN32_FIND_DATA), 0);
-	strpcopy(Result.cFileName, DirName);
-	Result.dwFileAttributes := FILE_ATTRIBUTE_DIRECTORY;
-end;
-
-function FindListingItemByName(DirListing: TCloudMailRuDirListing; ItemName: WideString): TCloudMailRuDirListingItem;
-var
-	CurrentItem: TCloudMailRuDirListingItem;
-begin
-	for CurrentItem in DirListing do
-		if CurrentItem.name = ItemName then
-			exit(CurrentItem);
-	FillChar(CurrentItem, sizeof(CurrentItem), 0);
-	exit(CurrentItem); // nothing found
-end;
-
-function FindListingItemByHomePath(DirListing: TCloudMailRuDirListing; HomePath: WideString): TCloudMailRuDirListingItem;
-var
-	CurrentItem: TCloudMailRuDirListingItem;
-begin
-	HomePath := '/' + StringReplace(HomePath, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]);
-	for CurrentItem in DirListing do
-		if CurrentItem.home = HomePath then
-			exit(CurrentItem);
-	FillChar(CurrentItem, sizeof(CurrentItem), 0);
-	exit(CurrentItem); // nothing found
-end;
-
 {Пытаемся найти объект в облаке по его пути, сначала в текущем списке, если нет - то ищем в облаке}
 function FindListingItemByPath(CurrentListing: TCloudMailRuDirListing; path: TRealPath; UpdateListing: Boolean = true): TCloudMailRuDirListingItem;
 var
@@ -250,21 +218,12 @@ function FindIncomingInviteItemByPath(InviteListing: TCloudMailRuIncomingInviteI
 var
 	getResult: integer;
 
-	function FindListingItemByName(InviteListing: TCloudMailRuIncomingInviteInfoListing; ItemName: WideString): TCloudMailRuIncomingInviteInfo;
-	var
-		CurrentItem: TCloudMailRuIncomingInviteInfo;
-	begin
-		for CurrentItem in InviteListing do
-			if CurrentItem.name = ItemName then
-				exit(CurrentItem);
-	end;
-
 begin
-	Result := FindListingItemByName(InviteListing, path.path);
+	Result := CloudMailRuIncomingInviteInfoListing.FindByName(InviteListing, path.path);
 	{item not found in current global listing, so refresh it}
 	if Result.name = EMPTY_STR then
 		if ConnectionManager.get(path.account, getResult).getIncomingLinksListing(CurrentIncomingInvitesListing) then
-			exit(FindListingItemByName(CurrentIncomingInvitesListing, path.path));
+			exit(CloudMailRuIncomingInviteInfoListing.FindByName(CurrentIncomingInvitesListing, path.path));
 
 end;
 
@@ -601,7 +560,7 @@ begin
 		begin
 			AddVirtualAccountsToAccountsList(AccountsIniFilePath, AccountsList, [GetPluginSettings(SettingsIniFilePath).ShowTrashFolders, GetPluginSettings(SettingsIniFilePath).ShowSharedFolders, GetPluginSettings(SettingsIniFilePath).ShowInvitesFolders]);
 
-			FindData := FindData_emptyDir(AccountsList.Strings[0]);
+			FindData := GetFindDataEmptyDir(AccountsList.Strings[0]);
 			FileCounter := 1;
 			Result := FIND_ROOT_DIRECTORY;
 		end else begin
@@ -660,7 +619,7 @@ begin
 
 		if (Length(CurrentListing) = 0) then
 		begin
-			FindData := FindData_emptyDir(); //воркароунд бага с невозможностью входа в пустой каталог, см. http://www.ghisler.ch/board/viewtopic.php?t=42399
+			FindData := GetFindDataEmptyDir(); //воркароунд бага с невозможностью входа в пустой каталог, см. http://www.ghisler.ch/board/viewtopic.php?t=42399
 			Result := FIND_NO_MORE_FILES;
 			SetLastError(ERROR_NO_MORE_FILES);
 		end else begin
@@ -680,7 +639,7 @@ begin
 	begin
 		if (AccountsList.Count > FileCounter) then
 		begin
-			FindData := FindData_emptyDir(AccountsList.Strings[FileCounter]);
+			FindData := GetFindDataEmptyDir(AccountsList.Strings[FileCounter]);
 			inc(FileCounter);
 			Result := true;
 		end
