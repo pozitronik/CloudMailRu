@@ -182,9 +182,9 @@ var
 begin
 	if path.trashDir or path.sharedDir or (path.isDir = ID_Unset){or path.invitesDir} then
 		{Виртуальные каталоги не имеют HomePath.}
-		Result := FindListingItemByName(CurrentListing, path.path)
+		Result := GetItemByName(CurrentListing, path.path)
 	else
-		Result := FindListingItemByHomePath(CurrentListing, path.path); //сначала попробуем найти поле в имеющемся списке
+		Result := GetItemByHomePath(CurrentListing, path.path); //сначала попробуем найти поле в имеющемся списке
 
 	if (Result.name = EMPTY_STR) and UpdateListing then //если там его нет (нажали пробел на папке, например), то запросим в облаке напрямую, в зависимости от того, внутри чего мы находимся
 	begin
@@ -195,12 +195,12 @@ begin
 		if path.trashDir then //корзина - обновим CurrentListing, поищем в нём
 		begin
 			if CurrentCloud.getTrashbinListing(CurrentListing) then
-				exit(FindListingItemByName(CurrentListing, path.path));
+				exit(GetItemByName(CurrentListing, path.path));
 		end;
 		if path.sharedDir then //ссылки - обновим список
 		begin
 			if CurrentCloud.getSharedLinksListing(CurrentListing) then
-				exit(FindListingItemByName(CurrentListing, path.path));
+				exit(GetItemByName(CurrentListing, path.path));
 		end;
 		if path.invitesDir then
 		begin
@@ -607,9 +607,9 @@ begin
 		end;
 
 		if CurrentCloud.public_account then
-			CurrentItem := FindListingItemByName(CurrentListing, ExtractUniversalFileName(RealPath.path))
+			CurrentItem := GetItemByName(CurrentListing, ExtractUniversalFileName(RealPath.path))
 		else
-			CurrentItem := FindListingItemByHomePath(CurrentListing, RealPath.path);
+			CurrentItem := GetItemByHomePath(CurrentListing, RealPath.path);
 
 		if (CurrentItem.name <> EMPTY_STR) and (CurrentItem.type_ <> TYPE_DIR) then
 		begin
