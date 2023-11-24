@@ -5,7 +5,7 @@ interface
 uses
 	TCLogger,
 	Plugin_TYPES,
-	StrUtils,
+	TestHelper,
 	SysUtils,
 	DUnitX.TestFramework;
 
@@ -13,8 +13,6 @@ type
 
 	[TestFixture]
 	TTCLoggerTest = class
-	private
-
 	public
 		[Setup]
 		procedure Setup;
@@ -29,9 +27,9 @@ type
 	end;
 
 var
-	PluginNr: integer = 0;
-	MsgType: integer = 0;
-	LogString: WideString = '';
+	PluginNr: integer;
+	MsgType: integer;
+	LogString: WideString;
 
 procedure TestLoggerProc(Plugin_Num, Msg_Type: integer; Log_String: PWideChar); stdcall;
 
@@ -67,7 +65,7 @@ var
 	randomStr: WideString;
 begin
 	randomPN := Random(100);
-	randomStr := StrUtils.RandomFrom(['A', 'B', 'C', 'D', 'X']);
+	randomStr := RandomString(32);
 
 	Assert.AreEqual(0, PluginNr);
 	Assert.AreEqual(0, MsgType);
@@ -90,7 +88,7 @@ var
 	randomStr: WideString;
 begin
 	randomPN := Random(100);
-	randomStr := StrUtils.RandomFrom(['A', 'B', 'C', 'D', 'X']);
+	randomStr := RandomString(32);
 
 	Assert.AreEqual(0, PluginNr);
 	Assert.AreEqual(0, MsgType);
