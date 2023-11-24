@@ -13,24 +13,23 @@ uses
 type
 	TCloudMailRuDirListing = TArray<TCloudMailRuDirListingItem>;
 
-function FindListingItemByName(DirListing: TCloudMailRuDirListing; ItemName: WideString): TCloudMailRuDirListingItem;
-function FindListingItemByHomePath(DirListing: TCloudMailRuDirListing; HomePath: WideString): TCloudMailRuDirListingItem;
-function getDirListing(JSON: WideString; var CloudMailRuDirListing: TCloudMailRuDirListing): Boolean;
+function GetItemByName(DirListing: TCloudMailRuDirListing; ItemName: WideString): TCloudMailRuDirListingItem;
+function GetItemByHomePath(DirListing: TCloudMailRuDirListing; HomePath: WideString): TCloudMailRuDirListingItem;
+function FromJSON(JSON: WideString; var CloudMailRuDirListing: TCloudMailRuDirListing): Boolean;
 
 implementation
 
-function FindListingItemByName(DirListing: TCloudMailRuDirListing; ItemName: WideString): TCloudMailRuDirListingItem;
+function GetItemByName(DirListing: TCloudMailRuDirListing; ItemName: WideString): TCloudMailRuDirListingItem;
 var
 	CurrentItem: TCloudMailRuDirListingItem;
 begin
 	for CurrentItem in DirListing do
 		if CurrentItem.name = ItemName then
 			exit(CurrentItem);
-	FillChar(CurrentItem, sizeof(CurrentItem), 0);
-	exit(CurrentItem); // nothing found
+	FillChar(result, sizeof(TCloudMailRuDirListingItem), 0); // nothing found
 end;
 
-function FindListingItemByHomePath(DirListing: TCloudMailRuDirListing; HomePath: WideString): TCloudMailRuDirListingItem;
+function GetItemByHomePath(DirListing: TCloudMailRuDirListing; HomePath: WideString): TCloudMailRuDirListingItem;
 var
 	CurrentItem: TCloudMailRuDirListingItem;
 begin
@@ -38,11 +37,10 @@ begin
 	for CurrentItem in DirListing do
 		if CurrentItem.home = HomePath then
 			exit(CurrentItem);
-	FillChar(CurrentItem, sizeof(CurrentItem), 0);
-	exit(CurrentItem); // nothing found
+	FillChar(result, sizeof(TCloudMailRuDirListingItem), 0); // nothing found
 end;
 
-function getDirListing(JSON: WideString; var CloudMailRuDirListing: TCloudMailRuDirListing): Boolean;
+function FromJSON(JSON: WideString; var CloudMailRuDirListing: TCloudMailRuDirListing): Boolean;
 var
 	J: integer;
 	A: TJSONArray;
