@@ -22,6 +22,10 @@ type
 		[Test]
 		procedure TestProgress;
 		[Test]
+		procedure TestProgressNoTarget;
+		[Test]
+		procedure TestProgressNoSourceTarget;
+		[Test]
 		procedure TestCreateDummy;
 	end;
 
@@ -111,6 +115,57 @@ begin
 	Assert.AreEqual(RandomProgress, PercentDone);
 	Assert.AreEqual(RandomSourceName, SourceName);
 	Assert.AreEqual(RandomTargetName, TargetName);
+
+end;
+
+procedure TTCProgressTest.TestProgressNoSourceTarget;
+var
+	TestTCProgress: TTCProgress;
+	randomPN: Integer;
+	RandomProgress: Integer;
+begin
+	Assert.AreEqual(0, PluginNr);
+	Assert.AreEqual(0, PercentDone);
+	Assert.AreEqual('', SourceName);
+	Assert.AreEqual('', TargetName);
+
+	randomPN := Random(100);
+	RandomProgress := Random(100);
+
+	TestTCProgress := TTCProgress.Create(TestProgressProc, randomPN);
+	Assert.AreEqual(0, TestTCProgress.Progress(RandomProgress));
+
+	Assert.AreEqual(randomPN, PluginNr);
+	Assert.AreEqual(RandomProgress, PercentDone);
+	Assert.AreEqual('', SourceName);
+	Assert.AreEqual('', TargetName);
+end;
+
+procedure TTCProgressTest.TestProgressNoTarget;
+var
+	TestTCProgress: TTCProgress;
+	randomPN: Integer;
+	RandomSourceName: WideString;
+
+	RandomProgress: Integer;
+begin
+	Assert.AreEqual(0, PluginNr);
+	Assert.AreEqual(0, PercentDone);
+	Assert.AreEqual('', SourceName);
+	Assert.AreEqual('', TargetName);
+
+	randomPN := Random(100);
+	RandomProgress := Random(100);
+	RandomSourceName := RandomString(32);
+
+	TestTCProgress := TTCProgress.Create(TestProgressProc, randomPN);
+
+	Assert.AreEqual(0, TestTCProgress.Progress(RandomSourceName, RandomProgress));
+
+	Assert.AreEqual(randomPN, PluginNr);
+	Assert.AreEqual(RandomProgress, PercentDone);
+	Assert.AreEqual(RandomSourceName, SourceName);
+	Assert.AreEqual('', TargetName);
 
 end;
 
