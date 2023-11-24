@@ -6,7 +6,6 @@ uses
 	TCProgress,
 	TestHelper,
 	Plugin_TYPES,
-	StrUtils,
 	SysUtils,
 	DUnitX.TestFramework;
 
