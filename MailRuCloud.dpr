@@ -213,7 +213,7 @@ begin
 		DeleteFailOnUploadMode := GetPluginSettings(SettingsIniFilePath).DeleteFailOnUploadMode;
 		if DeleteFailOnUploadMode = DeleteFailOnUploadAsk then
 		begin
-			DeleteFailOnUploadModeAsked := messagebox(FindTCWindow, PWideChar(Format(ERR_DELETE_FILE_ASK, [LocalName])), ERR_DELETE_FILE, MB_ABORTRETRYIGNORE + MB_ICONQUESTION);
+			DeleteFailOnUploadModeAsked := MsgBox(ERR_DELETE_FILE_ASK, [LocalName], ERR_DELETE_FILE, MB_ABORTRETRYIGNORE + MB_ICONQUESTION);
 			case DeleteFailOnUploadModeAsked of
 				IDRETRY:
 					continue;
@@ -1129,7 +1129,7 @@ begin
 			begin
 				while (not(Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
 				begin
-					case (messagebox(FindTCWindow, PWideChar(Format(ERR_DOWNLOAD_FILE_ASK, [RemoteName])), ERR_DOWNLOAD, MB_ABORTRETRYIGNORE + MB_ICONERROR)) of
+					case (MsgBox( ERR_DOWNLOAD_FILE_ASK, [RemoteName], ERR_DOWNLOAD, MB_ABORTRETRYIGNORE + MB_ICONERROR)) of
 						ID_ABORT:
 							Result := FS_FILE_USERABORT;
 						ID_RETRY:
@@ -1223,7 +1223,7 @@ begin
 			begin
 				while (not(Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
 				begin
-					case (messagebox(FindTCWindow, PWideChar(Format(ERR_UPLOAD_FILE_ASK, [LocalName])), ERR_UPLOAD, MB_ABORTRETRYIGNORE + MB_ICONERROR)) of
+					case (MsgBox(ERR_UPLOAD_FILE_ASK, [LocalName], ERR_UPLOAD, MB_ABORTRETRYIGNORE + MB_ICONERROR)) of
 						ID_ABORT:
 							Result := FS_FILE_USERABORT;
 						ID_RETRY:
@@ -1388,7 +1388,7 @@ begin
 					begin
 						while (not(Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
 						begin
-							case (messagebox(FindTCWindow, PWideChar(Format(ERR_CLONE_FILE_ASK, [TCloudMailRu.ErrorCodeText(Result)])), ERR_OPERATION, MB_ABORTRETRYIGNORE + MB_ICONERROR)) of
+							case (MsgBox(ERR_CLONE_FILE_ASK, [TCloudMailRu.ErrorCodeText(Result)], ERR_OPERATION, MB_ABORTRETRYIGNORE + MB_ICONERROR)) of
 								ID_ABORT:
 									Result := FS_FILE_USERABORT;
 								ID_RETRY:
@@ -1458,7 +1458,7 @@ begin
 
 						while (not(Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
 						begin
-							case (messagebox(FindTCWindow, PWideChar(Format(ERR_PUBLISH_FILE_ASK, [TCloudMailRu.ErrorCodeText(Result)])), ERR_PUBLISH_FILE, MB_ABORTRETRYIGNORE + MB_ICONERROR)) of
+							case (MsgBox(ERR_PUBLISH_FILE_ASK, [TCloudMailRu.ErrorCodeText(Result)], ERR_PUBLISH_FILE, MB_ABORTRETRYIGNORE + MB_ICONERROR)) of
 								ID_ABORT:
 									Result := FS_FILE_USERABORT;
 								ID_RETRY:

@@ -26,6 +26,9 @@ function GetSystemIcon(const size: integer = IconSizeSmall; ItemType: integer = 
 function GetTmpDir: WideString;
 function GetTmpFileName(Prefix: WideString = ''): WideString;
 function GetFindDataEmptyDir(DirName: WideString = '.'): tWIN32FINDDATAW;
+function MsgBox(Window: HWND; Text, Caption: WideString; MsgType: integer): integer; overload;
+function MsgBox(Window: HWND; Text: WideString; const TextArgs: array of const; Caption: WideString; MsgType: integer): integer; overload;
+function MsgBox(Text: WideString; const TextArgs: array of const; Caption: WideString; MsgType: integer): integer; overload;
 
 implementation
 
@@ -142,6 +145,21 @@ begin
 	FillChar(Result, SizeOf(WIN32_FIND_DATA), 0);
 	strpcopy(Result.cFileName, DirName);
 	Result.dwFileAttributes := FILE_ATTRIBUTE_DIRECTORY;
+end;
+
+function MsgBox(Window: HWND; Text, Caption: WideString; MsgType: integer): integer; overload;
+begin
+	Result := MessageBox(Window, PWideChar(Text), PWideChar(Caption), MsgType);
+end;
+
+function MsgBox(Window: HWND; Text: WideString; const TextArgs: array of const; Caption: WideString; MsgType: integer): integer; overload;
+begin
+	Result := MsgBox(Window, Format(Text, TextArgs), Caption, MsgType);
+end;
+
+function MsgBox(Text: WideString; const TextArgs: array of const; Caption: WideString; MsgType: integer): integer; overload;
+begin
+	Result := MsgBox(FindTCWindow, Text, TextArgs, Caption, MsgType);
 end;
 
 end.

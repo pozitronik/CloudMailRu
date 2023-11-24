@@ -28,7 +28,7 @@ uses
 	FileHelper,
 	StringHelper,
 	SystemHelper,
-	TCHelper,
+	WindowsHelper,
 	TCLogger,
 	TCProgress,
 	TCRequest,
@@ -1373,7 +1373,7 @@ begin
 					case OperationErrorMode of
 						OperationErrorModeAsk:
 							begin
-								case (messagebox(FindTCWindow, PWideChar(Format(ERR_PARTIAL_UPLOAD_ASK, [result, ChunkRemotePath])), ERR_UPLOAD, MB_ABORTRETRYIGNORE + MB_ICONERROR)) of
+								case (MsgBox(ERR_PARTIAL_UPLOAD_ASK, [result, ChunkRemotePath], ERR_UPLOAD, MB_ABORTRETRYIGNORE + MB_ICONERROR)) of
 									ID_ABORT:
 										begin
 											result := FS_FILE_USERABORT;
