@@ -4,8 +4,7 @@ interface
 
 uses
 	SysUtils,
-	PLUGIN_TYPES,
-	SystemHelper;
+	PLUGIN_TYPES;
 
 type
 	TTCProgress = class
