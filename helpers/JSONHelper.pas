@@ -18,6 +18,7 @@ function getPublicLink(JSON: WideString; var PublicLink: WideString): Boolean;
 function getShard(JSON: WideString; var Shard: WideString; ShardType: WideString = SHARD_TYPE_GET): Boolean;
 function getBodyError(JSON: WideString): WideString;
 function getBodyToken(JSON: WideString; var Token: WideString): Boolean;
+function getRegistrationBody(JSON: WideString; var Body: WideString): Boolean;
 
 implementation
 
@@ -113,6 +114,22 @@ begin
 		if (not init(JSON, JSONVal)) then
 			Exit;
 		Token := (JSONVal.Values[NAME_BODY] as TJSONObject).Values[NAME_TOKEN].Value;
+	except
+		Exit;
+	end;
+	result := true;
+	JSONVal.free;
+end;
+
+function getRegistrationBody(JSON: WideString; var Body: WideString): Boolean;
+var
+	JSONVal: TJSONObject;
+begin
+	result := False;
+	try
+		if (not init(JSON, JSONVal)) then
+			Exit;
+		Body := JSONVal.Values[NAME_BODY].Value;
 	except
 		Exit;
 	end;

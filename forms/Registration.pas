@@ -16,8 +16,9 @@ uses
 	Settings,
 	Vcl.StdCtrls,
 	Vcl.ExtCtrls,
+	JSONHelper,
 	CloudMailRuHTTP,
-	CloudMailRuOperationResult,
+	CMROperationResult,
 	CMRConstants,
 	CMRStrings,
 	PLUGIN_Types,
@@ -97,7 +98,7 @@ begin
 	result := HTTPConnection.PostForm(MAILRU_REGISTRATION_CONFIRM, Format('email=%s&reg_anketa={"id":"%s","capcha":"%s"}', [email, Code, captcha]), JSON);
 	if result then
 	begin
-		result := getRegistrationOperationResult(JSON).OperationResult = CLOUD_OPERATION_OK;
+		result := TCMROperationResult.GetRegistrationOperationResult(JSON).OperationResult = CLOUD_OPERATION_OK;
 		if not result then
 			MessageBox(Handle, PWideChar(JSON), ERR_CONFIRMATION, MB_ICONERROR + MB_OK);
 	end;
@@ -118,7 +119,7 @@ begin
 	result := HTTPConnection.PostForm(MAILRU_REGISTRATION_SIGNUP, Format('name={"first":"%s","last":"%s"}&login=%s&domain=%s&password=%s', [firstname, lastname, Login, Domain, password]), JSON);
 	if result then
 	begin
-		result := (CLOUD_OPERATION_OK = getRegistrationOperationResult(JSON).OperationResult);
+		result := TCMROperationResult.GetRegistrationOperationResult(JSON).OperationResult = CLOUD_OPERATION_OK;
 		if result then
 			result := getRegistrationBody(JSON, Code)
 		else

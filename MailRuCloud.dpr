@@ -79,7 +79,7 @@ uses
 	CMRInvite in 'models\dto\CMRInvite.pas',
 	CloudMailRuInviteInfoListing in 'models\dto\CloudMailRuInviteInfoListing.pas',
 	CMROAuth in 'models\dto\CMROAuth.pas',
-	CloudMailRuOperationResult in 'models\dto\CloudMailRuOperationResult.pas',
+	CMROperationResult in 'models\dto\CMROperationResult.pas',
 	CMROwner in 'models\dto\CMROwner.pas',
 	CMRSpace in 'models\dto\CMRSpace.pas',
 	CMRTwostep in 'models\dto\CMRTwostep.pas',

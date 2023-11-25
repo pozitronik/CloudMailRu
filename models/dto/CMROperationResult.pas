@@ -1,79 +1,34 @@
-﻿unit CloudMailRuOperationResult;
+﻿unit CMROperationResult;
 
 interface
 
 uses
 	SysUtils,
 	CMRConstants,
+	CMRStrings,
+	TCLogger,
+	PLUGIN_TYPES,
 	JSONHelper,
 	JSON;
 
 type
-	TCloudMailRuOperationResult = record
-		OperationStatus: integer; //HTTP Code
-		OperationResult: integer; //error code (mostly)
+	TCMROperationResult = record
+		OperationStatus: Integer; //HTTP Code
+		OperationResult: Integer; //error code (mostly)
 
 		procedure FromJSON(JSON: WideString); //this always prepare a record, even if JSON is not valid
-		class function GetOperationResult(JSON: WideString): TCloudMailRuOperationResult; static;
-	end;
+		function ToBoolean: Boolean; overload;
+		class function GetOperationResult(JSON: WideString): TCMROperationResult; static;
+		class function GetRegistrationOperationResult(JSON: WideString): TCMROperationResult; static;
+		class function ToBoolean(JSON: WideString): Boolean; overload; static;
 
-function getRegistrationOperationResult(JSON: WideString): TCloudMailRuOperationResult;
-function getRegistrationBody(JSON: WideString; var Body: WideString): boolean;
+	end;
 
 implementation
 
-function getRegistrationOperationResult(JSON: WideString): TCloudMailRuOperationResult;
-var
-	JSONVal: TJSONObject;
-begin
-	result.OperationResult := CLOUD_ERROR_UNKNOWN;
-	try
-		if (not init(JSON, JSONVal)) then
-			Exit;
-		result.OperationStatus := JSONVal.Values[NAME_STATUS].Value.ToInteger;
-		case result.OperationStatus of
-			200:
-				begin
-					result.OperationResult := CLOUD_OPERATION_OK;
-				end;
-			400:
-				begin
-					result.OperationResult := CLOUD_ERROR_BAD_REQUEST;
-				end;
-			else
-				begin
-					result.OperationResult := CLOUD_ERROR_UNKNOWN; //Эту ошибку мы пока не встречали
-				end;
-		end;
-
-	except
-		on E: {EJSON}Exception do
-		begin
-			result.OperationResult := CLOUD_ERROR_UNKNOWN;
-		end;
-	end;
-	JSONVal.free;
-end;
-
-function getRegistrationBody(JSON: WideString; var Body: WideString): boolean;
-var
-	JSONVal: TJSONObject;
-begin
-	result := False;
-	try
-		if (not init(JSON, JSONVal)) then
-			Exit;
-		Body := JSONVal.Values[NAME_BODY].Value;
-	except
-		Exit;
-	end;
-	result := true;
-	JSONVal.free;
-end;
-
 {TCloudMailRuOperationResult}
 
-procedure TCloudMailRuOperationResult.FromJSON(JSON: WideString);
+procedure TCMROperationResult.FromJSON(JSON: WideString);
 var
 	JSONVal: TJSONObject;
 	error, nodename: WideString;
@@ -158,9 +113,52 @@ begin
 	JSONVal.free;
 end;
 
-class function TCloudMailRuOperationResult.GetOperationResult(JSON: WideString): TCloudMailRuOperationResult;
+class function TCMROperationResult.GetOperationResult(JSON: WideString): TCMROperationResult;
 begin
 	result.FromJSON(JSON);
+end;
+
+class function TCMROperationResult.GetRegistrationOperationResult(JSON: WideString): TCMROperationResult;
+var
+	JSONVal: TJSONObject;
+begin
+	result.OperationResult := CLOUD_ERROR_UNKNOWN;
+	try
+		if (not init(JSON, JSONVal)) then
+			Exit;
+		result.OperationStatus := JSONVal.Values[NAME_STATUS].Value.ToInteger;
+		case result.OperationStatus of
+			200:
+				begin
+					result.OperationResult := CLOUD_OPERATION_OK;
+				end;
+			400:
+				begin
+					result.OperationResult := CLOUD_ERROR_BAD_REQUEST;
+				end;
+			else
+				begin
+					result.OperationResult := CLOUD_ERROR_UNKNOWN; //Эту ошибку мы пока не встречали
+				end;
+		end;
+
+	except
+		on E: {EJSON}Exception do
+		begin
+			result.OperationResult := CLOUD_ERROR_UNKNOWN;
+		end;
+	end;
+	JSONVal.free;
+end;
+
+function TCMROperationResult.ToBoolean: Boolean;
+begin
+	result := self.OperationResult = CLOUD_OPERATION_OK
+end;
+
+class function TCMROperationResult.ToBoolean(JSON: WideString): Boolean;
+begin
+	result := TCMROperationResult.GetOperationResult(JSON).ToBoolean;
 end;
 
 end.
