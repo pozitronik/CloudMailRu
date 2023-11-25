@@ -42,7 +42,7 @@ type
 		{Private declarations}
 	public
 		{Public declarations}
-		class function ShowProperties(parentWindow: HWND; Item: TCloudMailRuIncomingInviteInfo; AccountName: WideString = ''): integer;
+		class function ShowProperties(parentWindow: HWND; Item: TCMRIncomingInvite; AccountName: WideString = ''): integer;
 	end;
 
 implementation
@@ -50,7 +50,7 @@ implementation
 {$R *.dfm}
 {TInvitePropertyForm}
 
-class function TInvitePropertyForm.ShowProperties(parentWindow: HWND; Item: TCloudMailRuIncomingInviteInfo; AccountName: WideString): integer;
+class function TInvitePropertyForm.ShowProperties(parentWindow: HWND; Item: TCMRIncomingInvite; AccountName: WideString): integer;
 var
 	InvitePropertyForm: TInvitePropertyForm;
 begin

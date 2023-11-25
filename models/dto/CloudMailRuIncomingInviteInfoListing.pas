@@ -12,16 +12,16 @@ uses
 	JSON;
 
 type
-	TCloudMailRuIncomingInviteInfoListing = TArray<TCloudMailRuIncomingInviteInfo>;
+	TCloudMailRuIncomingInviteInfoListing = TArray<TCMRIncomingInvite>;
 
-function FindByName(InviteListing: TCloudMailRuIncomingInviteInfoListing; ItemName: WideString): TCloudMailRuIncomingInviteInfo;
+function FindByName(InviteListing: TCloudMailRuIncomingInviteInfoListing; ItemName: WideString): TCMRIncomingInvite;
 function getIncomingInviteListing(JSON: WideString; var IncomingInviteListing: TCloudMailRuIncomingInviteInfoListing): Boolean;
 
 implementation
 
-function FindByName(InviteListing: TCloudMailRuIncomingInviteInfoListing; ItemName: WideString): TCloudMailRuIncomingInviteInfo;
+function FindByName(InviteListing: TCloudMailRuIncomingInviteInfoListing; ItemName: WideString): TCMRIncomingInvite;
 var
-	CurrentItem: TCloudMailRuIncomingInviteInfo;
+	CurrentItem: TCMRIncomingInvite;
 begin
 	for CurrentItem in InviteListing do
 		if CurrentItem.name = ItemName then

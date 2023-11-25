@@ -186,7 +186,7 @@ begin
 	end; //Не рапортуем, это будет уровнем выше
 end;
 
-function FindIncomingInviteItemByPath(InviteListing: TCloudMailRuIncomingInviteInfoListing; path: TRealPath): TCloudMailRuIncomingInviteInfo;
+function FindIncomingInviteItemByPath(InviteListing: TCloudMailRuIncomingInviteInfoListing; path: TRealPath): TCMRIncomingInvite;
 var
 	getResult: integer;
 
@@ -708,7 +708,7 @@ function ExecInvitesAction(MainWin: THandle; RealPath: TRealPath): integer;
 var
 	Cloud: TCloudMailRu;
 	getResult: integer;
-	CurrentInvite: TCloudMailRuIncomingInviteInfo;
+	CurrentInvite: TCMRIncomingInvite;
 begin
 	Result := FS_EXEC_OK;
 	Cloud := ConnectionManager.get(RealPath.account, getResult);
@@ -1752,7 +1752,7 @@ var
 	RealPath: TRealPath;
 	Item: TCMRDirItem;
 	IconsMode: integer;
-	CurrentInviteItem: TCloudMailRuIncomingInviteInfo;
+	CurrentInviteItem: TCMRIncomingInvite;
 	IconsSize: integer;
 	FrontIcon, BackIcon: hicon;
 

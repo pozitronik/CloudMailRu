@@ -6,7 +6,7 @@ uses
 	CMROwner;
 
 type
-	TCloudMailRuIncomingInviteInfo = record
+	TCMRIncomingInvite = record
 		owner: TCMROwner;
 		tree: WideString;
 		access: WideString;
