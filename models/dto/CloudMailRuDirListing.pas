@@ -5,39 +5,39 @@ interface
 uses
 	System.Generics.Collections,
 	SysUtils,
-	CMRDirListingItem,
+	CMRDirItem,
 	CMRConstants,
 	JSONHelper,
 	JSON;
 
 type
-	TCloudMailRuDirListing = TArray<TCMRDirListingItem>;
+	TCloudMailRuDirListing = TArray<TCMRDirItem>;
 
-function GetItemByName(DirListing: TCloudMailRuDirListing; ItemName: WideString): TCMRDirListingItem;
-function GetItemByHomePath(DirListing: TCloudMailRuDirListing; HomePath: WideString): TCMRDirListingItem;
+function GetItemByName(DirListing: TCloudMailRuDirListing; ItemName: WideString): TCMRDirItem;
+function GetItemByHomePath(DirListing: TCloudMailRuDirListing; HomePath: WideString): TCMRDirItem;
 function FromJSON(JSON: WideString; var CloudMailRuDirListing: TCloudMailRuDirListing): Boolean;
 
 implementation
 
-function GetItemByName(DirListing: TCloudMailRuDirListing; ItemName: WideString): TCMRDirListingItem;
+function GetItemByName(DirListing: TCloudMailRuDirListing; ItemName: WideString): TCMRDirItem;
 var
-	CurrentItem: TCMRDirListingItem;
+	CurrentItem: TCMRDirItem;
 begin
 	for CurrentItem in DirListing do
 		if CurrentItem.name = ItemName then
 			exit(CurrentItem);
-	FillChar(result, sizeof(TCMRDirListingItem), 0); // nothing found
+	FillChar(result, sizeof(TCMRDirItem), 0); // nothing found
 end;
 
-function GetItemByHomePath(DirListing: TCloudMailRuDirListing; HomePath: WideString): TCMRDirListingItem;
+function GetItemByHomePath(DirListing: TCloudMailRuDirListing; HomePath: WideString): TCMRDirItem;
 var
-	CurrentItem: TCMRDirListingItem;
+	CurrentItem: TCMRDirItem;
 begin
 	HomePath := '/' + StringReplace(HomePath, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]);
 	for CurrentItem in DirListing do
 		if CurrentItem.home = HomePath then
 			exit(CurrentItem);
-	FillChar(result, sizeof(TCMRDirListingItem), 0); // nothing found
+	FillChar(result, sizeof(TCMRDirItem), 0); // nothing found
 end;
 
 function FromJSON(JSON: WideString; var CloudMailRuDirListing: TCloudMailRuDirListing): Boolean;

@@ -4,7 +4,7 @@ interface
 
 uses
 	CloudMailRuDirListing,
-	CMRDirListingItem,
+	CMRDirItem,
 	CloudMailRu,
 	CMRConstants,
 	CMRStrings,
@@ -55,7 +55,7 @@ var
 	FormCaption, NameCaption, FromCaption, AtCaption, ByCaption, SizeCaption: WideString;
 	function summary_size(Items: TCloudMailRuDirListing): integer;
 	var
-		Item: TCMRDirListingItem;
+		Item: TCMRDirItem;
 	begin
 		result := 0;
 		for Item in Items do

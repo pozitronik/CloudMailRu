@@ -1,4 +1,4 @@
-﻿unit CMRDirListingItem;
+﻿unit CMRDirItem;
 
 interface
 
@@ -13,7 +13,7 @@ uses
 	JSON;
 
 type
-	TCMRDirListingItem = Record
+	TCMRDirItem = Record
 		tree: WideString;
 		name: WideString;
 		visible_name: WideString;
@@ -41,7 +41,7 @@ implementation
 
 {TCMRDirListingItem}
 
-function TCMRDirListingItem.FromJSON(StatusJSON: WideString): Boolean;
+function TCMRDirItem.FromJSON(StatusJSON: WideString): Boolean;
 var
 	ParserObj, JSONVal: TJSONObject;
 begin
@@ -81,7 +81,7 @@ begin
 	JSONVal.free;
 end;
 
-function TCMRDirListingItem.ToFindData(DirsAsSymlinks: Boolean): tWIN32FINDDATAW;
+function TCMRDirItem.ToFindData(DirsAsSymlinks: Boolean): tWIN32FINDDATAW;
 begin
 	FillChar(Result, sizeof(WIN32_FIND_DATA), 0);
 	if (self.deleted_from <> EmptyWideStr) then //items inside trash bin

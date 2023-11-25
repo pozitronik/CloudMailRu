@@ -4,7 +4,7 @@ interface
 
 uses
 	CloudMailRuDirListing,
-	CMRDirListingItem,
+	CMRDirItem,
 	CloudMailRuInviteInfoListing,
 	CloudMailRuIncomingInviteInfoListing,
 	CMROAuth,
@@ -141,7 +141,7 @@ type
 		function getTrashbinListing(var DirListing: TCloudMailRuDirListing; ShowProgress: Boolean = false): Boolean;
 		function createDir(Path: WideString): Boolean;
 		function removeDir(Path: WideString): Boolean;
-		function statusFile(Path: WideString; var FileInfo: TCMRDirListingItem): Boolean;
+		function statusFile(Path: WideString; var FileInfo: TCMRDirItem): Boolean;
 		function getFile(remotePath, localPath: WideString; var resultHash: WideString; LogErrors: Boolean = true): integer; //LogErrors=false => не логируем результат копирования, нужно для запроса descript.ion (которого может не быть)
 		function putFile(localPath, remotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; ChunkOverwriteMode: integer = 0): integer;
 		function renameFile(OldName, NewName: WideString): integer; //смена имени без перемещения
@@ -154,7 +154,7 @@ type
 		function cloneWeblink(Path, link: WideString; ConflictMode: WideString = CLOUD_CONFLICT_RENAME): integer; //клонировать публичную ссылку в текущий каталог
 
 		function addFileByIdentity(FileIdentity: TCMRFileIdentity; remotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; LogErrors: Boolean = true; LogSuccess: Boolean = false): integer; overload;
-		function addFileByIdentity(FileIdentity: TCMRDirListingItem; remotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; LogErrors: Boolean = true; LogSuccess: Boolean = false): integer; overload;
+		function addFileByIdentity(FileIdentity: TCMRDirItem; remotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; LogErrors: Boolean = true; LogSuccess: Boolean = false): integer; overload;
 
 		function getShareInfo(Path: WideString; var InviteListing: TCloudMailRuInviteInfoListing): Boolean;
 		function shareFolder(Path, email: WideString; access: integer): Boolean;
@@ -163,7 +163,7 @@ type
 		function mountFolder(home, invite_token: WideString; ConflictMode: WideString = CLOUD_CONFLICT_RENAME): Boolean;
 		function unmountFolder(home: WideString; clone_copy: Boolean): Boolean;
 		function rejectInvite(invite_token: WideString): Boolean;
-		function getPublishedFileStreamUrl(FileIdentity: TCMRDirListingItem; var StreamUrl: WideString; ShardType: WideString = SHARD_TYPE_WEBLINK_VIDEO; publish: Boolean = CLOUD_PUBLISH): Boolean;
+		function getPublishedFileStreamUrl(FileIdentity: TCMRDirItem; var StreamUrl: WideString; ShardType: WideString = SHARD_TYPE_WEBLINK_VIDEO; publish: Boolean = CLOUD_PUBLISH): Boolean;
 		{OTHER ROUTINES}
 		function getDescriptionFile(remotePath, localCopy: WideString): Boolean; //Если в каталоге remotePath есть descript.ion - скопировать его в файл localcopy
 		function putDesriptionFile(remotePath, localCopy: WideString): Boolean; //Скопировать descript.ion из временного файла на сервер
@@ -210,7 +210,7 @@ begin
 	end;
 end;
 
-function TCloudMailRu.addFileByIdentity(FileIdentity: TCMRDirListingItem; remotePath, ConflictMode: WideString; LogErrors, LogSuccess: Boolean): integer;
+function TCloudMailRu.addFileByIdentity(FileIdentity: TCMRDirItem; remotePath, ConflictMode: WideString; LogErrors, LogSuccess: Boolean): integer;
 var
 	CloudFileIdentity: TCMRFileIdentity;
 begin
@@ -800,7 +800,7 @@ begin
 	end;
 end;
 
-function TCloudMailRu.getPublishedFileStreamUrl(FileIdentity: TCMRDirListingItem; var StreamUrl: WideString; ShardType: WideString = SHARD_TYPE_WEBLINK_VIDEO; publish: Boolean = CLOUD_PUBLISH): Boolean;
+function TCloudMailRu.getPublishedFileStreamUrl(FileIdentity: TCMRDirItem; var StreamUrl: WideString; ShardType: WideString = SHARD_TYPE_WEBLINK_VIDEO; publish: Boolean = CLOUD_PUBLISH): Boolean;
 var
 	shard_url: WideString;
 begin
@@ -1540,7 +1540,7 @@ begin
 		result := self.renameFile(OldName, NewName);
 end;
 
-function TCloudMailRu.statusFile(Path: WideString; var FileInfo: TCMRDirListingItem): Boolean;
+function TCloudMailRu.statusFile(Path: WideString; var FileInfo: TCMRDirItem): Boolean;
 var
 	JSON: WideString;
 	Progress: Boolean;
