@@ -146,7 +146,7 @@ var
 	TCProgress: TTCProgress;
 	TCRequest: TTCRequest;
 
-{Пытаемся найти объект в облаке по его пути, сначала в текущем списке, если нет - то ищем в облаке}
+	{Пытаемся найти объект в облаке по его пути, сначала в текущем списке, если нет - то ищем в облаке}
 function FindListingItemByPath(CurrentListing: TCloudMailRuDirListing; path: TRealPath; UpdateListing: Boolean = true): TCloudMailRuDirListingItem;
 var
 	getResult: integer;
@@ -594,7 +594,8 @@ begin
 			Result := FIND_NO_MORE_FILES;
 			SetLastError(ERROR_NO_MORE_FILES);
 		end else begin
-			FindData := CloudMailRuDirListingItemToFindData(CurrentListing[0], RealPath.sharedDir); //folders inside shared links directory must be displayed as symlinks
+
+			FindData := CurrentListing[0].ToFindData(RealPath.sharedDir); //folders inside shared links directory must be displayed as symlinks
 			FileCounter := 1;
 			if RealPath.sharedDir then
 				Result := FIND_SHARED_LINKS
@@ -621,7 +622,7 @@ begin
 		//Получение последующих файлов в папке (вызывается до тех пор, пока не вернёт false).
 		if (Length(CurrentListing) > FileCounter) then
 		begin
-			FindData := CloudMailRuDirListingItemToFindData(CurrentListing[FileCounter], Hdl = FIND_SHARED_LINKS);
+			FindData := CurrentListing[FileCounter].ToFindData(Hdl = FIND_SHARED_LINKS);
 			Result := true;
 			inc(FileCounter);
 		end else begin
@@ -1129,7 +1130,7 @@ begin
 			begin
 				while (not(Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
 				begin
-					case (MsgBox( ERR_DOWNLOAD_FILE_ASK, [RemoteName], ERR_DOWNLOAD, MB_ABORTRETRYIGNORE + MB_ICONERROR)) of
+					case (MsgBox(ERR_DOWNLOAD_FILE_ASK, [RemoteName], ERR_DOWNLOAD, MB_ABORTRETRYIGNORE + MB_ICONERROR)) of
 						ID_ABORT:
 							Result := FS_FILE_USERABORT;
 						ID_RETRY:

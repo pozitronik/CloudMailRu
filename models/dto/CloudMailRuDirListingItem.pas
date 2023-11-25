@@ -32,35 +32,38 @@ type
 		deleted_at: integer;
 		deleted_from: WideString;
 		deleted_by: integer;
+	public
+		function ToFindData(DirsAsSymlinks: Boolean = false): tWIN32FINDDATAW;
 	End;
 
-function CloudMailRuDirListingItemToFindData(DirListing: TCloudMailRuDirListingItem; DirsAsSymlinks: Boolean = false): tWIN32FINDDATAW;
 function getFileStatus(JSON: WideString; var CloudMailRuDirListingItem: TCloudMailRuDirListingItem): Boolean;
 
 implementation
 
-function CloudMailRuDirListingItemToFindData(DirListing: TCloudMailRuDirListingItem; DirsAsSymlinks: Boolean = false): tWIN32FINDDATAW;
+{TCloudMailRuDirListingItem}
+
+function TCloudMailRuDirListingItem.ToFindData(DirsAsSymlinks: Boolean): tWIN32FINDDATAW;
 begin
 	FillChar(Result, sizeof(WIN32_FIND_DATA), 0);
-	if (DirListing.deleted_from <> EmptyWideStr) then //items inside trash bin
+	if (self.deleted_from <> EmptyWideStr) then //items inside trash bin
 	begin
-		Result.ftCreationTime := DateTimeToFileTime(UnixToDateTime(DirListing.deleted_at, false));
+		Result.ftCreationTime := DateTimeToFileTime(UnixToDateTime(self.deleted_at, false));
 		Result.ftLastWriteTime := Result.ftCreationTime;
-		if (DirListing.type_ = TYPE_DIR) then
+		if (self.type_ = TYPE_DIR) then
 			Result.dwFileAttributes := FILE_ATTRIBUTE_DIRECTORY
-	end else if (DirListing.type_ = TYPE_DIR) or (DirListing.kind = KIND_SHARED) then
+	end else if (self.type_ = TYPE_DIR) or (self.kind = KIND_SHARED) then
 	begin
 		if not DirsAsSymlinks then
 			Result.dwFileAttributes := FILE_ATTRIBUTE_DIRECTORY;
 	end else begin
-		Result.ftCreationTime := DateTimeToFileTime(UnixToDateTime(DirListing.mtime, false));
+		Result.ftCreationTime := DateTimeToFileTime(UnixToDateTime(self.mtime, false));
 		Result.ftLastWriteTime := Result.ftCreationTime;
 
 		Result.dwFileAttributes := 0;
 	end;
-	Result.nFileSizeHigh := DWORD((DirListing.size shr 32) and $FFFFFFFF);
-	Result.nFileSizeLow := DWORD(DirListing.size and $FFFFFFFF);
-	strpcopy(Result.cFileName, DirListing.name);
+	Result.nFileSizeHigh := DWORD((self.size shr 32) and $FFFFFFFF);
+	Result.nFileSizeLow := DWORD(self.size and $FFFFFFFF);
+	strpcopy(Result.cFileName, self.name);
 end;
 
 function getFileStatus(JSON: WideString; var CloudMailRuDirListingItem: TCloudMailRuDirListingItem): Boolean;
