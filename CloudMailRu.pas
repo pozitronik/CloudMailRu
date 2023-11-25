@@ -9,7 +9,7 @@ uses
 	CloudMailRuIncomingInviteInfoListing,
 	CMROAuth,
 	CMRSpace,
-	CloudMailRuFileIdentity,
+	CMRFileIdentity,
 	CloudMailRuOperationResult,
 	CMRTwostep,
 	JSONHelper,
@@ -77,7 +77,7 @@ type
 		function getOAuthToken(var OAuthToken: TCMROAuth): Boolean;
 		function getShard(var Shard: WideString; ShardType: WideString = SHARD_TYPE_GET): Boolean;
 		function getUserSpace(var SpaceInfo: TCMRSpace): Boolean;
-		function putFileToCloud(FileName: WideString; FileStream: TStream; var FileIdentity: TCloudMailRuFileIdentity): integer; overload; //отправка на сервер данных из потока
+		function putFileToCloud(FileName: WideString; FileStream: TStream; var FileIdentity: TCMRFileIdentity): integer; overload; //отправка на сервер данных из потока
 		{PRIVATE UPLOAD METHODS CHAIN (CALLED FROM putFile())}
 		function putFileWhole(localPath, remotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT): integer; //Загрузка файла целиком
 		function putFileSplit(localPath, remotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; ChunkOverwriteMode: integer = 0): integer; //Загрузка файла по частям
@@ -151,7 +151,7 @@ type
 		function publishFile(Path: WideString; var PublicLink: WideString; publish: Boolean = CLOUD_PUBLISH): Boolean;
 		function cloneWeblink(Path, link: WideString; ConflictMode: WideString = CLOUD_CONFLICT_RENAME): integer; //клонировать публичную ссылку в текущий каталог
 
-		function addFileByIdentity(FileIdentity: TCloudMailRuFileIdentity; remotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; LogErrors: Boolean = true; LogSuccess: Boolean = false): integer; overload;
+		function addFileByIdentity(FileIdentity: TCMRFileIdentity; remotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; LogErrors: Boolean = true; LogSuccess: Boolean = false): integer; overload;
 		function addFileByIdentity(FileIdentity: TCMRDirListingItem; remotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; LogErrors: Boolean = true; LogSuccess: Boolean = false): integer; overload;
 
 		function getShareInfo(Path: WideString; var InviteListing: TCloudMailRuInviteInfoListing): Boolean;
@@ -166,19 +166,19 @@ type
 		function getDescriptionFile(remotePath, localCopy: WideString): Boolean; //Если в каталоге remotePath есть descript.ion - скопировать его в файл localcopy
 		function putDesriptionFile(remotePath, localCopy: WideString): Boolean; //Скопировать descript.ion из временного файла на сервер
 		procedure logUserSpaceInfo();
-		function FileIdentity(localPath: WideString): TCloudMailRuFileIdentity;
+		function FileIdentity(localPath: WideString): TCMRFileIdentity;
 		{STATIC ROUTINES}
 		class function CloudAccessToString(access: WideString; Invert: Boolean = false): WideString; static;
 		class function StringToCloudAccess(accessString: WideString; Invert: Boolean = false): integer; static;
 		class function ErrorCodeText(ErrorCode: integer): WideString; static;
-		class function IsSameIdentity(IdentityOne, IdentityTwo: TCloudMailRuFileIdentity): Boolean; static;
+		class function IsSameIdentity(IdentityOne, IdentityTwo: TCMRFileIdentity): Boolean; static;
 		class function TempPublicCloudInit(var TempCloud: TCloudMailRu; publicUrl: WideString): Boolean; static;
 	end;
 
 implementation
 
 {TCloudMailRu}
-function TCloudMailRu.addFileByIdentity(FileIdentity: TCloudMailRuFileIdentity; remotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; LogErrors: Boolean = true; LogSuccess: Boolean = false): integer;
+function TCloudMailRu.addFileByIdentity(FileIdentity: TCMRFileIdentity; remotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; LogErrors: Boolean = true; LogSuccess: Boolean = false): integer;
 var
 	FileName: WideString;
 	JSON: WideString;
@@ -210,7 +210,7 @@ end;
 
 function TCloudMailRu.addFileByIdentity(FileIdentity: TCMRDirListingItem; remotePath, ConflictMode: WideString; LogErrors, LogSuccess: Boolean): integer;
 var
-	CloudFileIdentity: TCloudMailRuFileIdentity;
+	CloudFileIdentity: TCMRFileIdentity;
 begin
 	CloudFileIdentity.Hash := FileIdentity.Hash;
 	CloudFileIdentity.size := FileIdentity.size;
@@ -276,7 +276,7 @@ begin
 	end;
 end;
 
-class function TCloudMailRu.IsSameIdentity(IdentityOne, IdentityTwo: TCloudMailRuFileIdentity): Boolean;
+class function TCloudMailRu.IsSameIdentity(IdentityOne, IdentityTwo: TCMRFileIdentity): Boolean;
 begin
 	result := (IdentityOne.size = IdentityTwo.size) and (IdentityOne.Hash = IdentityTwo.Hash);
 end;
@@ -457,7 +457,7 @@ begin
 	end;
 end;
 
-function TCloudMailRu.FileIdentity(localPath: WideString): TCloudMailRuFileIdentity;
+function TCloudMailRu.FileIdentity(localPath: WideString): TCMRFileIdentity;
 begin
 	result.Hash := cloudHash(localPath);
 	result.size := SizeOfFile(localPath);
@@ -1227,7 +1227,7 @@ end;
 
 function TCloudMailRu.putFileStream(FileName, remotePath: WideString; FileStream: TStream; ConflictMode: WideString): integer;
 var
-	LocalFileIdentity, RemoteFileIdentity: TCloudMailRuFileIdentity;
+	LocalFileIdentity, RemoteFileIdentity: TCMRFileIdentity;
 	OperationResult: integer;
 	MemoryStream: TMemoryStream;
 	UseHash: Boolean;
@@ -1303,7 +1303,7 @@ end;
 
 function TCloudMailRu.putFileSplit(localPath, remotePath, ConflictMode: WideString; ChunkOverwriteMode: integer): integer;
 var
-	LocalFileIdentity: TCloudMailRuFileIdentity;
+	LocalFileIdentity: TCMRFileIdentity;
 	SplitFileInfo: TFileSplitInfo;
 	SplittedPartIndex: integer;
 	ChunkRemotePath, CRCRemotePath: WideString;
@@ -1460,7 +1460,7 @@ begin
 	result := putFileWhole(localPath, remotePath, ConflictMode);
 end;
 
-function TCloudMailRu.putFileToCloud(FileName: WideString; FileStream: TStream; var FileIdentity: TCloudMailRuFileIdentity): integer;
+function TCloudMailRu.putFileToCloud(FileName: WideString; FileStream: TStream; var FileIdentity: TCMRFileIdentity): integer;
 var
 	PostAnswer: WideString;
 	return: TStringList;

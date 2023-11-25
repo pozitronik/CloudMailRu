@@ -73,7 +73,7 @@ uses
 	HTTPManager in 'models\http\HTTPManager.pas',
 	CloudMailRuDirListing in 'models\dto\CloudMailRuDirListing.pas',
 	CMRDirListingItem in 'models\dto\CMRDirListingItem.pas',
-	CloudMailRuFileIdentity in 'models\dto\CloudMailRuFileIdentity.pas',
+	CMRFileIdentity in 'models\dto\CMRFileIdentity.pas',
 	CMRIncomingInvite in 'models\dto\CMRIncomingInvite.pas',
 	CloudMailRuIncomingInviteInfoListing in 'models\dto\CloudMailRuIncomingInviteInfoListing.pas',
 	CMRInvite in 'models\dto\CMRInvite.pas',

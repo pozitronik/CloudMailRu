@@ -1,9 +1,9 @@
-﻿unit CloudMailRuFileIdentity;
+﻿unit CMRFileIdentity;
 
 interface
 
 type
-	TCloudMailRuFileIdentity = record
+	TCMRFileIdentity = record
 		hash: WideString;
 		size: int64;
 	end;

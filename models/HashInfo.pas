@@ -3,7 +3,7 @@
 interface
 
 uses
-	CloudMailRuFileIdentity,
+	CMRFileIdentity,
 	system.sysutils,
 	StringHelper,
 	CMRConstants,
@@ -13,7 +13,7 @@ type
 
 	THashInfo = class
 	private
-		function GetCloudMailRuFileIdentity: TCloudMailRuFileIdentity;
+		function GetCloudMailRuFileIdentity: TCMRFileIdentity;
 	public
 		hash: WideString;
 		size: int64;
@@ -21,7 +21,7 @@ type
 		valid: boolean;
 		errorString: WideString;
 
-		property CloudFileIdentity: TCloudMailRuFileIdentity read GetCloudMailRuFileIdentity;
+		property CloudFileIdentity: TCMRFileIdentity read GetCloudMailRuFileIdentity;
 
 		constructor Create(parameter: WideString; doClean: boolean = true);
 		destructor Destroy; override;
@@ -98,7 +98,7 @@ begin
 	inherited;
 end;
 
-function THashInfo.GetCloudMailRuFileIdentity: TCloudMailRuFileIdentity;
+function THashInfo.GetCloudMailRuFileIdentity: TCMRFileIdentity;
 begin
 	result.hash := self.hash;
 	result.size := self.size;
