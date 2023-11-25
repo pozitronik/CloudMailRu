@@ -72,7 +72,7 @@ uses
 	CloudMailRuHTTP in 'models\http\CloudMailRuHTTP.pas',
 	HTTPManager in 'models\http\HTTPManager.pas',
 	CloudMailRuDirListing in 'models\dto\CloudMailRuDirListing.pas',
-	CloudMailRuDirListingItem in 'models\dto\CloudMailRuDirListingItem.pas',
+	CMRDirListingItem in 'models\dto\CMRDirListingItem.pas',
 	CloudMailRuFileIdentity in 'models\dto\CloudMailRuFileIdentity.pas',
 	CloudMailRuIncomingInviteInfo in 'models\dto\CloudMailRuIncomingInviteInfo.pas',
 	CloudMailRuIncomingInviteInfoListing in 'models\dto\CloudMailRuIncomingInviteInfoListing.pas',
@@ -147,7 +147,7 @@ var
 	TCRequest: TTCRequest;
 
 	{Пытаемся найти объект в облаке по его пути, сначала в текущем списке, если нет - то ищем в облаке}
-function FindListingItemByPath(CurrentListing: TCloudMailRuDirListing; path: TRealPath; UpdateListing: Boolean = true): TCloudMailRuDirListingItem;
+function FindListingItemByPath(CurrentListing: TCloudMailRuDirListing; path: TRealPath; UpdateListing: Boolean = true): TCMRDirListingItem;
 var
 	getResult: integer;
 	CurrentCloud: TCloudMailRu;
@@ -498,7 +498,7 @@ var //Получение первого файла в папке. Result тот�
 	RealPath: TRealPath;
 	getResult: integer;
 	SkipListDelete, SkipListRenMov, CanAbortRenMov, RenMovAborted: Boolean;
-	CurrentItem: TCloudMailRuDirListingItem;
+	CurrentItem: TCMRDirListingItem;
 	CurrentCloud: TCloudMailRu;
 begin
 	ThreadSkipListDelete.TryGetValue(GetCurrentThreadID(), SkipListDelete);
@@ -647,7 +647,7 @@ function ExecTrashbinProperties(MainWin: THandle; RealPath: TRealPath): integer;
 var
 	Cloud: TCloudMailRu;
 	getResult: integer;
-	CurrentItem: TCloudMailRuDirListingItem;
+	CurrentItem: TCMRDirListingItem;
 begin
 	Result := FS_EXEC_OK;
 	Cloud := ConnectionManager.get(RealPath.account, getResult);
@@ -679,7 +679,7 @@ end;
 function ExecSharedAction(MainWin: THandle; RealPath: TRealPath; RemoteName: PWideChar; ActionOpen: Boolean = true): integer;
 var
 	Cloud: TCloudMailRu;
-	CurrentItem: TCloudMailRuDirListingItem;
+	CurrentItem: TCMRDirListingItem;
 	getResult: integer;
 begin
 	Result := FS_EXEC_OK;
@@ -740,7 +740,7 @@ end;
 function ExecProperties(MainWin: THandle; RealPath: TRealPath): integer;
 var
 	Cloud: TCloudMailRu;
-	CurrentItem: TCloudMailRuDirListingItem;
+	CurrentItem: TCMRDirListingItem;
 	getResult: integer;
 begin
 	Result := FS_EXEC_OK;
@@ -842,7 +842,7 @@ var
 	StreamUrl: WideString;
 	getResult: integer;
 	CurrentCloud, TempPublicCloud: TCloudMailRu;
-	CurrentItem: TCloudMailRuDirListingItem;
+	CurrentItem: TCMRDirListingItem;
 begin
 	//может быть разница в атрибутах настоящих и полученных из листинга (они не рефрешатся)
 	CurrentItem := FindListingItemByPath(CurrentListing, RealPath); //внутри публичного облака веблинк есть автоматически
@@ -1044,7 +1044,7 @@ end;
 function GetRemoteFile(RemotePath: TRealPath; LocalName, RemoteName: WideString; CopyFlags: integer): integer;
 var
 	getResult: integer;
-	Item: TCloudMailRuDirListingItem;
+	Item: TCMRDirListingItem;
 	Cloud: TCloudMailRu;
 	AccountSettings: TAccountSettings;
 	resultHash: WideString;
@@ -1263,7 +1263,7 @@ function FsDeleteFileW(RemoteName: PWideChar): Bool; stdcall; //Удаление
 var
 	RealPath: TRealPath;
 	getResult: integer;
-	CurrentItem: TCloudMailRuDirListingItem;
+	CurrentItem: TCMRDirListingItem;
 	Cloud: TCloudMailRu;
 	InvitesListing: TCloudMailRuInviteInfoListing;
 	Invite: TCloudMailRuInviteInfo;
@@ -1363,7 +1363,7 @@ begin
 
 end;
 
-function cloneWeblink(NewCloud, OldCloud: TCloudMailRu; CloudPath: WideString; CurrentItem: TCloudMailRuDirListingItem; NeedUnpublish: Boolean): integer;
+function cloneWeblink(NewCloud, OldCloud: TCloudMailRu; CloudPath: WideString; CurrentItem: TCMRDirListingItem; NeedUnpublish: Boolean): integer;
 begin
 	Result := NewCloud.cloneWeblink(ExtractFileDir(CloudPath), CurrentItem.weblink, CLOUD_CONFLICT_STRICT);
 	if (NeedUnpublish) and (FS_FILE_USERABORT <> Result) and not(OldCloud.publishFile(CurrentItem.home, CurrentItem.weblink, CLOUD_UNPUBLISH)) then
@@ -1372,7 +1372,7 @@ end;
 
 function RenMoveFileViaHash(OldCloud, NewCloud: TCloudMailRu; OldRealPath, NewRealPath: TRealPath; Move, OverWrite: Boolean): integer;
 var
-	CurrentItem: TCloudMailRuDirListingItem;
+	CurrentItem: TCMRDirListingItem;
 	RetryAttempts: integer;
 begin
 	Result := FS_FILE_NOTSUPPORTED;
@@ -1430,7 +1430,7 @@ end;
 function RenMoveFileViaPublicLink(OldCloud, NewCloud: TCloudMailRu; OldRealPath, NewRealPath: TRealPath; Move, OverWrite: Boolean): integer;
 var
 	NeedUnpublish: Boolean;
-	CurrentItem: TCloudMailRuDirListingItem;
+	CurrentItem: TCMRDirListingItem;
 	RetryAttempts: integer;
 begin
 	Result := FS_FILE_NOTSUPPORTED;
@@ -1603,7 +1603,7 @@ end;
 
 function FsContentGetValueW(FileName: PWideChar; FieldIndex: integer; UnitIndex: integer; FieldValue: Pointer; maxlen: integer; Flags: integer): integer; stdcall;
 var
-	Item: TCloudMailRuDirListingItem;
+	Item: TCMRDirListingItem;
 	RealPath: TRealPath;
 	FileTime: TFileTime;
 begin
@@ -1750,7 +1750,7 @@ end;
 function FsExtractCustomIconW(RemoteName: PWideChar; ExtractFlags: integer; var TheIcon: hicon): integer; stdcall;
 var
 	RealPath: TRealPath;
-	Item: TCloudMailRuDirListingItem;
+	Item: TCMRDirListingItem;
 	IconsMode: integer;
 	CurrentInviteItem: TCloudMailRuIncomingInviteInfo;
 	IconsSize: integer;

@@ -1,4 +1,4 @@
-﻿unit CloudMailRuDirListingItem;
+﻿unit CMRDirListingItem;
 
 interface
 
@@ -13,7 +13,7 @@ uses
 	JSON;
 
 type
-	TCloudMailRuDirListingItem = Record
+	TCMRDirListingItem = Record
 		tree: WideString;
 		name: WideString;
 		visible_name: WideString;
@@ -34,48 +34,23 @@ type
 		deleted_by: integer;
 	public
 		function ToFindData(DirsAsSymlinks: Boolean = false): tWIN32FINDDATAW;
+		function FromJSONStatus(StatusJSON: WideString): Boolean;
 	End;
-
-function getFileStatus(JSON: WideString; var CloudMailRuDirListingItem: TCloudMailRuDirListingItem): Boolean;
 
 implementation
 
-{TCloudMailRuDirListingItem}
+{TCMRDirListingItem}
 
-function TCloudMailRuDirListingItem.ToFindData(DirsAsSymlinks: Boolean): tWIN32FINDDATAW;
-begin
-	FillChar(Result, sizeof(WIN32_FIND_DATA), 0);
-	if (self.deleted_from <> EmptyWideStr) then //items inside trash bin
-	begin
-		Result.ftCreationTime := DateTimeToFileTime(UnixToDateTime(self.deleted_at, false));
-		Result.ftLastWriteTime := Result.ftCreationTime;
-		if (self.type_ = TYPE_DIR) then
-			Result.dwFileAttributes := FILE_ATTRIBUTE_DIRECTORY
-	end else if (self.type_ = TYPE_DIR) or (self.kind = KIND_SHARED) then
-	begin
-		if not DirsAsSymlinks then
-			Result.dwFileAttributes := FILE_ATTRIBUTE_DIRECTORY;
-	end else begin
-		Result.ftCreationTime := DateTimeToFileTime(UnixToDateTime(self.mtime, false));
-		Result.ftLastWriteTime := Result.ftCreationTime;
-
-		Result.dwFileAttributes := 0;
-	end;
-	Result.nFileSizeHigh := DWORD((self.size shr 32) and $FFFFFFFF);
-	Result.nFileSizeLow := DWORD(self.size and $FFFFFFFF);
-	strpcopy(Result.cFileName, self.name);
-end;
-
-function getFileStatus(JSON: WideString; var CloudMailRuDirListingItem: TCloudMailRuDirListingItem): Boolean;
+function TCMRDirListingItem.FromJSONStatus(StatusJSON: WideString): Boolean;
 var
 	ParserObj, JSONVal: TJSONObject;
 begin
 	Result := false;
 	try
-		if (not init(JSON, JSONVal)) then
+		if (not init(StatusJSON, JSONVal)) then
 			Exit;
 		ParserObj := JSONVal.Values[NAME_BODY] as TJSONObject;
-		with CloudMailRuDirListingItem do
+		with self do
 		begin
 			assignFromName(NAME_SIZE, ParserObj, size);
 			assignFromName(NAME_KIND, ParserObj, kind);
@@ -104,6 +79,30 @@ begin
 	end;
 	Result := true;
 	JSONVal.free;
+end;
+
+function TCMRDirListingItem.ToFindData(DirsAsSymlinks: Boolean): tWIN32FINDDATAW;
+begin
+	FillChar(Result, sizeof(WIN32_FIND_DATA), 0);
+	if (self.deleted_from <> EmptyWideStr) then //items inside trash bin
+	begin
+		Result.ftCreationTime := DateTimeToFileTime(UnixToDateTime(self.deleted_at, false));
+		Result.ftLastWriteTime := Result.ftCreationTime;
+		if (self.type_ = TYPE_DIR) then
+			Result.dwFileAttributes := FILE_ATTRIBUTE_DIRECTORY
+	end else if (self.type_ = TYPE_DIR) or (self.kind = KIND_SHARED) then
+	begin
+		if not DirsAsSymlinks then
+			Result.dwFileAttributes := FILE_ATTRIBUTE_DIRECTORY;
+	end else begin
+		Result.ftCreationTime := DateTimeToFileTime(UnixToDateTime(self.mtime, false));
+		Result.ftLastWriteTime := Result.ftCreationTime;
+
+		Result.dwFileAttributes := 0;
+	end;
+	Result.nFileSizeHigh := DWORD((self.size shr 32) and $FFFFFFFF);
+	Result.nFileSizeLow := DWORD(self.size and $FFFFFFFF);
+	strpcopy(Result.cFileName, self.name);
 end;
 
 end.

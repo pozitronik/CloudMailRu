@@ -4,7 +4,7 @@ interface
 
 uses
 	CloudMailRuDirListing,
-	CloudMailRuDirListingItem,
+	CMRDirListingItem,
 	CloudMailRuInviteInfoListing,
 	Plugin_types,
 	Description,
@@ -82,7 +82,7 @@ type
 		OpenDialogOD: TOpenDialog;
 		ApplyHashesTB: TToolButton;
 		procedure AccessCBClick(Sender: TObject);
-		class function ShowProperty(parentWindow: HWND; RemoteName: WideString; RemoteProperty: TCloudMailRuDirListingItem; Cloud: TCloudMailRu; DoUrlEncode: Boolean = true; AutoUpdateDownloadListing: Boolean = true; ShowDescription: Boolean = true; EditDescription: Boolean = true; PluginIonFileName: WideString = 'descript.ion'): Integer;
+		class function ShowProperty(parentWindow: HWND; RemoteName: WideString; RemoteProperty: TCMRDirListingItem; Cloud: TCloudMailRu; DoUrlEncode: Boolean = true; AutoUpdateDownloadListing: Boolean = true; ShowDescription: Boolean = true; EditDescription: Boolean = true; PluginIonFileName: WideString = 'descript.ion'): Integer;
 		procedure FormActivate(Sender: TObject);
 		procedure InviteBtnClick(Sender: TObject);
 		procedure ItemDeleteClick(Sender: TObject);
@@ -117,12 +117,12 @@ type
 		procedure SaveItemDescription();
 		function LinksLogProc(LogText: WideString): Boolean;
 		function HashesLogProc(LogText: WideString): Boolean;
-		function GenerateHashCommand(ListingItem: TCloudMailRuDirListingItem; BaseDir: WideString = ''; Path: WideString = ''): WideString;
+		function GenerateHashCommand(ListingItem: TCMRDirListingItem; BaseDir: WideString = ''; Path: WideString = ''): WideString;
 		procedure ApplyHashCommandList(CommandList: TStrings);
 		function CanApplyHashes(): Boolean;
 
 	protected
-		Props: TCloudMailRuDirListingItem;
+		Props: TCMRDirListingItem;
 		InvitesListing: TCloudMailRuInviteInfoListing;
 		Cloud: TCloudMailRu;
 		RemoteName: WideString;
@@ -269,7 +269,7 @@ function TPropertyForm.FillRecursiveHashListing(const Path: WideString; Cloud: T
 var
 	CurrentDirListing: TCloudMailRuDirListing;
 	CurrentDirItemsCounter: Integer;
-	CurrentItem: TCloudMailRuDirListingItem;
+	CurrentItem: TCMRDirListingItem;
 begin
 	CancelHashesScanTb.Enabled := true;
 	RefreshHashesScanTb.Enabled := false;
@@ -469,7 +469,7 @@ begin
 	PostMessage(self.Handle, WM_AFTER_SHOW, 0, 0);
 end;
 
-function TPropertyForm.GenerateHashCommand(ListingItem: TCloudMailRuDirListingItem; BaseDir: WideString = ''; Path: WideString = ''): WideString;
+function TPropertyForm.GenerateHashCommand(ListingItem: TCMRDirListingItem; BaseDir: WideString = ''; Path: WideString = ''): WideString;
 var
 	AppliedName: WideString;
 begin
@@ -574,7 +574,7 @@ begin
 	end;
 end;
 
-class function TPropertyForm.ShowProperty(parentWindow: HWND; RemoteName: WideString; RemoteProperty: TCloudMailRuDirListingItem; Cloud: TCloudMailRu; DoUrlEncode: Boolean = true; AutoUpdateDownloadListing: Boolean = true; ShowDescription: Boolean = true; EditDescription: Boolean = true; PluginIonFileName: WideString = 'descript.ion'): Integer;
+class function TPropertyForm.ShowProperty(parentWindow: HWND; RemoteName: WideString; RemoteProperty: TCMRDirListingItem; Cloud: TCloudMailRu; DoUrlEncode: Boolean = true; AutoUpdateDownloadListing: Boolean = true; ShowDescription: Boolean = true; EditDescription: Boolean = true; PluginIonFileName: WideString = 'descript.ion'): Integer;
 var
 	PropertyForm: TPropertyForm;
 begin

@@ -5,39 +5,39 @@ interface
 uses
 	System.Generics.Collections,
 	SysUtils,
-	CloudMailRuDirListingItem,
+	CMRDirListingItem,
 	CMRConstants,
 	JSONHelper,
 	JSON;
 
 type
-	TCloudMailRuDirListing = TArray<TCloudMailRuDirListingItem>;
+	TCloudMailRuDirListing = TArray<TCMRDirListingItem>;
 
-function GetItemByName(DirListing: TCloudMailRuDirListing; ItemName: WideString): TCloudMailRuDirListingItem;
-function GetItemByHomePath(DirListing: TCloudMailRuDirListing; HomePath: WideString): TCloudMailRuDirListingItem;
+function GetItemByName(DirListing: TCloudMailRuDirListing; ItemName: WideString): TCMRDirListingItem;
+function GetItemByHomePath(DirListing: TCloudMailRuDirListing; HomePath: WideString): TCMRDirListingItem;
 function FromJSON(JSON: WideString; var CloudMailRuDirListing: TCloudMailRuDirListing): Boolean;
 
 implementation
 
-function GetItemByName(DirListing: TCloudMailRuDirListing; ItemName: WideString): TCloudMailRuDirListingItem;
+function GetItemByName(DirListing: TCloudMailRuDirListing; ItemName: WideString): TCMRDirListingItem;
 var
-	CurrentItem: TCloudMailRuDirListingItem;
+	CurrentItem: TCMRDirListingItem;
 begin
 	for CurrentItem in DirListing do
 		if CurrentItem.name = ItemName then
 			exit(CurrentItem);
-	FillChar(result, sizeof(TCloudMailRuDirListingItem), 0); // nothing found
+	FillChar(result, sizeof(TCMRDirListingItem), 0); // nothing found
 end;
 
-function GetItemByHomePath(DirListing: TCloudMailRuDirListing; HomePath: WideString): TCloudMailRuDirListingItem;
+function GetItemByHomePath(DirListing: TCloudMailRuDirListing; HomePath: WideString): TCMRDirListingItem;
 var
-	CurrentItem: TCloudMailRuDirListingItem;
+	CurrentItem: TCMRDirListingItem;
 begin
 	HomePath := '/' + StringReplace(HomePath, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]);
 	for CurrentItem in DirListing do
 		if CurrentItem.home = HomePath then
 			exit(CurrentItem);
-	FillChar(result, sizeof(TCloudMailRuDirListingItem), 0); // nothing found
+	FillChar(result, sizeof(TCMRDirListingItem), 0); // nothing found
 end;
 
 function FromJSON(JSON: WideString; var CloudMailRuDirListing: TCloudMailRuDirListing): Boolean;

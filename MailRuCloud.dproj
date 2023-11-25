@@ -212,7 +212,7 @@
         <DCCReference Include="models\http\CloudMailRuHTTP.pas"/>
         <DCCReference Include="models\http\HTTPManager.pas"/>
         <DCCReference Include="models\dto\CloudMailRuDirListing.pas"/>
-        <DCCReference Include="models\dto\CloudMailRuDirListingItem.pas"/>
+        <DCCReference Include="models\dto\CMRDirListingItem.pas"/>
         <DCCReference Include="models\dto\CloudMailRuFileIdentity.pas"/>
         <DCCReference Include="models\dto\CloudMailRuIncomingInviteInfo.pas"/>
         <DCCReference Include="models\dto\CloudMailRuIncomingInviteInfoListing.pas"/>
