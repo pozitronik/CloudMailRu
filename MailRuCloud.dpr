@@ -152,13 +152,12 @@ var
 	getResult: integer;
 	CurrentCloud: TCloudMailRu;
 begin
-	if path.trashDir or path.sharedDir or (path.isDir = ID_Unset){or path.invitesDir} then
-		{Виртуальные каталоги не имеют HomePath.}
+	if path.HasHomePath then
 		Result := CurrentListing.FindByName(path.path)
 	else
 		Result := CurrentListing.FindByHomePath(path.path); //сначала попробуем найти поле в имеющемся списке
 
-	if (Result.IsNone) and UpdateListing then //если там его нет (нажали пробел на папке, например), то запросим в облаке напрямую, в зависимости от того, внутри чего мы находимся
+	if Result.isNone and UpdateListing then //если там его нет (нажали пробел на папке, например), то запросим в облаке напрямую, в зависимости от того, внутри чего мы находимся
 	begin
 		CurrentCloud := ConnectionManager.get(path.account, getResult);
 		if not Assigned(CurrentCloud) then
@@ -192,7 +191,7 @@ var
 begin
 	Result := InviteListing.FindByName(path.path);
 	{item not found in current global listing, so refresh it}
-	if Result.IsNone then
+	if Result.isNone then
 		if ConnectionManager.get(path.account, getResult).getIncomingLinksListing(CurrentIncomingInvitesListing) then
 			exit(CurrentIncomingInvitesListing.FindByName(path.path));
 end;
@@ -569,7 +568,7 @@ begin
 				SetLastError(ERROR_PATH_NOT_FOUND);
 		end;
 
-		if (RealPath.invitesDir or RealPath.trashDir or RealPath.sharedDir) and (RealPath.path <> EmptyWideStr) then //игнорим попытки получить листинги объектов вирутальных каталогов
+		if (RealPath.isVirtual) and (RealPath.path <> EmptyWideStr) then //игнорим попытки получить листинги объектов вирутальных каталогов
 		begin
 			SetLastError(ERROR_ACCESS_DENIED);
 			exit(INVALID_HANDLE_VALUE);
@@ -580,7 +579,7 @@ begin
 		else
 			CurrentItem := CurrentListing.FindByHomePath(RealPath.path);
 
-		if not(CurrentItem.IsNone or CurrentItem.isDir) then
+		if not(CurrentItem.isNone or CurrentItem.isDir) then
 		begin
 			SetLastError(ERROR_PATH_NOT_FOUND);
 			exit(INVALID_HANDLE_VALUE);
@@ -649,7 +648,7 @@ var
 begin
 	Result := FS_EXEC_OK;
 	Cloud := ConnectionManager.get(RealPath.account, getResult);
-	if RealPath.path = EmptyWideStr then //main trashbin folder properties
+	if RealPath.isInAccountsList then //main trashbin folder properties
 	begin
 		if not Cloud.getTrashbinListing(CurrentListing) then
 			exit(FS_EXEC_ERROR);
@@ -690,7 +689,7 @@ begin
 			strpcopy(RemoteName, '\' + RealPath.account + UrlToPath(CurrentItem.home));
 		Result := FS_EXEC_SYMLINK;
 	end else begin
-		if RealPath.path = EmptyWideStr then
+		if RealPath.isInAccountsList then
 			TAccountsForm.ShowAccounts(MainWin, AccountsIniFilePath, SettingsIniFilePath, PasswordManager, RealPath.account) //main shared folder properties - open connection settings
 		else
 		begin
@@ -710,7 +709,7 @@ var
 begin
 	Result := FS_EXEC_OK;
 	Cloud := ConnectionManager.get(RealPath.account, getResult);
-	if RealPath.path = EmptyWideStr then //main invites folder properties
+	if RealPath.isInAccountsList then //main invites folder properties
 	begin
 		TAccountsForm.ShowAccounts(MainWin, AccountsIniFilePath, SettingsIniFilePath, PasswordManager, RealPath.account)
 	end else begin //one invite item
@@ -742,7 +741,7 @@ var
 	getResult: integer;
 begin
 	Result := FS_EXEC_OK;
-	if RealPath.path = EmptyWideStr then
+	if RealPath.isInAccountsList then
 		TAccountsForm.ShowAccounts(MainWin, AccountsIniFilePath, SettingsIniFilePath, PasswordManager, RealPath.account) //show account properties
 	else
 	begin
@@ -1097,7 +1096,7 @@ begin
 	if CheckFlag(FS_COPYFLAGS_RESUME, CopyFlags) then
 		exit; {NEVER CALLED HERE}
 	RealPath.FromPath(RemoteName);
-	if RealPath.trashDir or RealPath.sharedDir or RealPath.invitesDir then
+	if RealPath.isVirtual then
 		exit;
 
 	TCProgress.Progress(RemoteName, LocalName, 0);
@@ -1196,7 +1195,7 @@ begin
 	if not FileExists(GetUNCFilePath(LocalName)) then
 		exit(FS_FILE_NOTFOUND);
 
-	if (RealPath.account = EmptyWideStr) or RealPath.trashDir or RealPath.sharedDir or RealPath.invitesDir then
+	if (RealPath.account = EmptyWideStr) or RealPath.isVirtual then
 		exit(FS_FILE_NOTSUPPORTED);
 	TCProgress.Progress(LocalName, PWideChar(RealPath.path), 0);
 
@@ -1300,7 +1299,7 @@ begin
 		exit(false); //skip create directory if this flag set on
 
 	RealPath.FromPath(WideString(path));
-	if (RealPath.path = EmptyWideStr) then //accounts list
+	if RealPath.isInAccountsList then //accounts list
 	begin
 		account.user := RealPath.account;
 		Result := (mrOk = TRegistrationForm.ShowRegistration(FindTCWindow, GetPluginSettings(SettingsIniFilePath).ConnectionSettings, account));
@@ -1313,7 +1312,7 @@ begin
 		end;
 		exit();
 	end;
-	if (RealPath.account = EmptyWideStr) or RealPath.trashDir or RealPath.sharedDir or RealPath.invitesDir then
+	if (RealPath.account = EmptyWideStr) or RealPath.isVirtual then
 		exit(false);
 
 	Result := ConnectionManager.get(RealPath.account, getResult).createDir(RealPath.path);
@@ -1343,7 +1342,7 @@ begin
 		exit(false);
 	end;
 	RealPath.FromPath(WideString(RemoteName));
-	if RealPath.trashDir or RealPath.sharedDir or RealPath.invitesDir then
+	if RealPath.isVirtual then
 		exit(false);
 	Cloud := ConnectionManager.get(RealPath.account, getResult);
 	Result := Cloud.removeDir(RealPath.path);
@@ -1508,6 +1507,7 @@ begin
 	OldRealPath.FromPath(WideString(OldName));
 	NewRealPath.FromPath(WideString(NewName));
 
+	{TODO: Check the behavior inside virtual directories}
 	if OldRealPath.trashDir or NewRealPath.trashDir or OldRealPath.sharedDir or NewRealPath.sharedDir then
 		exit(FS_FILE_NOTSUPPORTED);
 
@@ -1607,7 +1607,7 @@ var
 begin
 	Result := ft_nosuchfield;
 	RealPath.FromPath(FileName);
-	if RealPath.path = EmptyWideStr then
+	if RealPath.isInAccountsList then
 	begin
 		if FieldIndex = 14 then
 		begin
@@ -1783,7 +1783,7 @@ begin
 	IconsMode := GetPluginSettings(SettingsIniFilePath).IconsMode;
 	IconsSize := GetTCIconsSize;
 
-	if RealPath.trashDir and (RealPath.path = EmptyWideStr) then //always draw system trash icon
+	if RealPath.trashDir and RealPath.isInAccountsList then //always draw system trash icon
 	begin
 		strpcopy(RemoteName, 'cloud_trash');
 		TheIcon := GetSystemIcon(GetFolderIconSize(IconsSize));
@@ -1792,7 +1792,7 @@ begin
 
 	if RealPath.sharedDir then
 	begin
-		if (RealPath.path = EmptyWideStr) then
+		if RealPath.isInAccountsList then
 		begin
 			strpcopy(RemoteName, 'shared');
 			CombineMacro(TheIcon);
@@ -1806,7 +1806,7 @@ begin
 
 	if RealPath.invitesDir then
 	begin
-		if (RealPath.path = EmptyWideStr) then
+		if RealPath.isInAccountsList then
 		begin
 			strpcopy(RemoteName, 'shared_incoming');
 			CombineMacro(TheIcon);
@@ -1833,7 +1833,7 @@ begin
 	if IconsMode = IconsModeDisabled then
 		exit(FS_ICON_USEDEFAULT);
 
-	if (RealPath.path = EmptyWideStr) then //connection list
+	if RealPath.isInAccountsList then //connection list
 	begin
 
 		if (GetAccountSettingsFromIniFile(AccountsIniFilePath, copy(RemoteName, 2, StrLen(RemoteName) - 2)).public_account) then
@@ -1992,39 +1992,7 @@ begin
 end;
 
 exports
-	FsGetDefRootName,
-	FsInit,
-	FsInitW,
-	FsFindFirst,
-	FsFindFirstW,
-	FsFindNext,
-	FsFindNextW,
-	FsFindClose,
-	FsGetFile,
-	FsGetFileW,
-	FsDisconnect,
-	FsDisconnectW,
-	FsStatusInfo,
-	FsStatusInfoW,
-	FsPutFile,
-	FsPutFileW,
-	FsDeleteFile,
-	FsDeleteFileW,
-	FsMkDir,
-	FsMkDirW,
-	FsRemoveDir,
-	FsRemoveDirW,
-	FsSetCryptCallback,
-	FsSetCryptCallbackW,
-	FsExecuteFileW,
-	FsRenMovFile,
-	FsRenMovFileW,
-	FsGetBackgroundFlags,
-	FsContentGetSupportedField,
-	FsContentGetValue,
-	FsContentGetValueW,
-	FsExtractCustomIcon,
-	FsExtractCustomIconW;
+	FsGetDefRootName, FsInit, FsInitW, FsFindFirst, FsFindFirstW, FsFindNext, FsFindNextW, FsFindClose, FsGetFile, FsGetFileW, FsDisconnect, FsDisconnectW, FsStatusInfo, FsStatusInfoW, FsPutFile, FsPutFileW, FsDeleteFile, FsDeleteFileW, FsMkDir, FsMkDirW, FsRemoveDir, FsRemoveDirW, FsSetCryptCallback, FsSetCryptCallbackW, FsExecuteFileW, FsRenMovFile, FsRenMovFileW, FsGetBackgroundFlags, FsContentGetSupportedField, FsContentGetValue, FsContentGetValueW, FsExtractCustomIcon, FsExtractCustomIconW;
 
 begin
 {$IFDEF DEBUG}

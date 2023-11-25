@@ -12,6 +12,11 @@ type
 	TIsDir = (ID_Yes, ID_No, ID_Unset);
 
 	TRealPath = record
+	private
+		function GetIsVirtual: boolean;
+		function GetHasHomePath: boolean;
+		function GetIsInAccountsList: boolean;
+	public
 		account: WideString;
 		path: WideString;
 		isDir: TIsDir; //is it a directory
@@ -19,10 +24,14 @@ type
 		trashDir: boolean; //item is inside of a trash bin dir
 		sharedDir: boolean; //item is inside of a shared links dir
 		invitesDir: boolean; //item is inside of an invites dir
+		property isVirtual: boolean read GetIsVirtual;
+		property hasHomePath: boolean read GetHasHomePath;
+		property isInAccountsList: boolean read GetIsInAccountsList;
 		procedure FromPath(VirtualPath: WideString; isDir: TIsDir = ID_Unset);
 		class function GetRealPath(VirtualPath: WideString; isDir: TIsDir = ID_Unset): TRealPath; static;
 		function ToPath: WideString;
 		function IsInAccount(ignoreVirtual: boolean = true): boolean; //проверка, находится ли путь внутри аккаунта. ignoreVirtual - не считать виртуальные каталоги облачными
+
 	end;
 
 implementation
@@ -88,16 +97,34 @@ begin
 	end;
 end;
 
+{Returns True if current path is in the main accounts list.
+Note: account attribute can not be used for this check because it contains the currently listed item name}
+function TRealPath.GetIsInAccountsList: boolean;
+begin
+	result := self.path = EmptyWideStr;
+end;
+
+function TRealPath.GetIsVirtual: boolean;
+begin
+	result := self.trashDir or self.sharedDir or self.invitesDir;
+end;
+
 class function TRealPath.GetRealPath(VirtualPath: WideString; isDir: TIsDir): TRealPath;
 begin
 	result.FromPath(VirtualPath, isDir);
+end;
+
+function TRealPath.GetHasHomePath: boolean;
+begin
+	{Виртуальные каталоги не имеют HomePath. Почему тут не включается invitesDir - я не помню}
+	result := self.trashDir or self.sharedDir or (self.isDir = ID_Unset);
 end;
 
 function TRealPath.IsInAccount(ignoreVirtual: boolean): boolean;
 begin
 	result := self.account <> EmptyWideStr;
 	if result and ignoreVirtual then
-		result := not(self.trashDir or self.sharedDir or self.invitesDir);
+		result := not(self.isVirtual);
 end;
 
 function TRealPath.ToPath: WideString;
