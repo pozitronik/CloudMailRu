@@ -217,7 +217,7 @@
         <DCCReference Include="models\dto\CMRIncomingInvite.pas"/>
         <DCCReference Include="models\dto\CMRIncomingInviteList.pas"/>
         <DCCReference Include="models\dto\CMRInvite.pas"/>
-        <DCCReference Include="models\dto\CloudMailRuInviteInfoListing.pas"/>
+        <DCCReference Include="models\dto\CMRInviteList.pas"/>
         <DCCReference Include="models\dto\CMROAuth.pas"/>
         <DCCReference Include="models\dto\CMROperationResult.pas"/>
         <DCCReference Include="models\dto\CMROwner.pas"/>

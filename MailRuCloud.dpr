@@ -77,7 +77,7 @@ uses
 	CMRIncomingInvite in 'models\dto\CMRIncomingInvite.pas',
 	CMRIncomingInviteList in 'models\dto\CMRIncomingInviteList.pas',
 	CMRInvite in 'models\dto\CMRInvite.pas',
-	CloudMailRuInviteInfoListing in 'models\dto\CloudMailRuInviteInfoListing.pas',
+	CMRInviteList in 'models\dto\CMRInviteList.pas',
 	CMROAuth in 'models\dto\CMROAuth.pas',
 	CMROperationResult in 'models\dto\CMROperationResult.pas',
 	CMROwner in 'models\dto\CMROwner.pas',
@@ -1263,7 +1263,7 @@ var
 	getResult: integer;
 	CurrentItem: TCMRDirItem;
 	Cloud: TCloudMailRu;
-	InvitesListing: TCloudMailRuInviteInfoListing;
+	InvitesListing: TCMRInviteList;
 	Invite: TCMRInvite;
 begin
 	RealPath.FromPath(WideString(RemoteName));

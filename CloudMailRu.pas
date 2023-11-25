@@ -5,7 +5,7 @@ interface
 uses
 	CMRDirItemList,
 	CMRDirItem,
-	CloudMailRuInviteInfoListing,
+	CMRInviteList,
 	CMRIncomingInviteList,
 	CMROAuth,
 	CMRSpace,
@@ -156,7 +156,7 @@ type
 		function addFileByIdentity(FileIdentity: TCMRFileIdentity; remotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; LogErrors: Boolean = true; LogSuccess: Boolean = false): integer; overload;
 		function addFileByIdentity(FileIdentity: TCMRDirItem; remotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; LogErrors: Boolean = true; LogSuccess: Boolean = false): integer; overload;
 
-		function getShareInfo(Path: WideString; var InviteListing: TCloudMailRuInviteInfoListing): Boolean;
+		function getShareInfo(Path: WideString; var InviteListing: TCMRInviteList): Boolean;
 		function shareFolder(Path, email: WideString; access: integer): Boolean;
 		function trashbinRestore(Path: WideString; RestoreRevision: integer; ConflictMode: WideString = CLOUD_CONFLICT_RENAME): Boolean;
 		function trashbinEmpty(): Boolean;
@@ -1118,7 +1118,7 @@ begin
 		result := self.publishFile(Path, PublicLink, publish);
 end;
 
-function TCloudMailRu.getShareInfo(Path: WideString; var InviteListing: TCloudMailRuInviteInfoListing): Boolean;
+function TCloudMailRu.getShareInfo(Path: WideString; var InviteListing: TCMRInviteList): Boolean;
 var
 	JSON: WideString;
 	Progress: Boolean;
@@ -1129,7 +1129,7 @@ begin
 	Progress := false;
 	if self.HTTP.GetPage(Format('%s?home=%s%s', [API_FOLDER_SHARED_INFO, PathToUrl(Path), self.united_params]), JSON, Progress) then
 	begin
-		result := getInviteListing(JSON, InviteListing);
+		result := InviteListing.FromJSON(JSON);
 	end else begin
 		if (NAME_TOKEN = getBodyError(JSON)) and RefreshCSRFToken() then
 			result := getShareInfo(Path, InviteListing);

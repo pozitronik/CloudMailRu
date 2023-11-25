@@ -5,7 +5,7 @@ interface
 uses
 	CMRDirItemList,
 	CMRDirItem,
-	CloudMailRuInviteInfoListing,
+	CMRInviteList,
 	Plugin_types,
 	Description,
 	CMRConstants,
@@ -123,7 +123,7 @@ type
 
 	protected
 		Props: TCMRDirItem;
-		InvitesListing: TCloudMailRuInviteInfoListing;
+		InvitesListing: TCMRInviteList;
 		Cloud: TCloudMailRu;
 		RemoteName: WideString;
 		DoUrlEncode: Boolean;
