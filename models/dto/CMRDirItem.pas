@@ -35,6 +35,8 @@ type
 	public
 		function None: TCMRDirItem; // Creates a special record, which indicate that Item is not found/not applicable.
 		function IsNone: Boolean; //Check, if it is a special record which can't be used
+		function IsDir: Boolean;
+		function IsFile: Boolean;
 		function ToFindData(DirsAsSymlinks: Boolean = false): tWIN32FINDDATAW;
 		function FromJSON(StatusJSON: WideString): Boolean;
 	End;
@@ -81,6 +83,16 @@ begin
 	end;
 	Result := true;
 	JSONVal.free;
+end;
+
+function TCMRDirItem.IsDir: Boolean;
+begin
+	Result := self.type_ = TYPE_DIR
+end;
+
+function TCMRDirItem.IsFile: Boolean;
+begin
+	Result := type_ <> TYPE_DIR
 end;
 
 function TCMRDirItem.IsNone: Boolean;

@@ -582,7 +582,7 @@ begin
 		else
 			CurrentItem := CurrentListing.FindByHomePath(RealPath.path);
 
-		if (not CurrentItem.IsNone) and (CurrentItem.type_ <> TYPE_DIR) then
+		if not (CurrentItem.IsNone or CurrentItem.IsDir) then
 		begin
 			SetLastError(ERROR_PATH_NOT_FOUND);
 			exit(INVALID_HANDLE_VALUE);
