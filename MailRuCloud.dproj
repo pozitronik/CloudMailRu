@@ -214,13 +214,13 @@
         <DCCReference Include="models\dto\CloudMailRuDirListing.pas"/>
         <DCCReference Include="models\dto\CMRDirListingItem.pas"/>
         <DCCReference Include="models\dto\CloudMailRuFileIdentity.pas"/>
-        <DCCReference Include="models\dto\CloudMailRuIncomingInviteInfo.pas"/>
+        <DCCReference Include="models\dto\CMRIncomingInvite.pas"/>
         <DCCReference Include="models\dto\CloudMailRuIncomingInviteInfoListing.pas"/>
         <DCCReference Include="models\dto\CloudMailRuInviteInfo.pas"/>
         <DCCReference Include="models\dto\CloudMailRuInviteInfoListing.pas"/>
         <DCCReference Include="models\dto\CloudMailRuOAuthInfo.pas"/>
         <DCCReference Include="models\dto\CloudMailRuOperationResult.pas"/>
-        <DCCReference Include="models\dto\CMROwnerInfo.pas"/>
+        <DCCReference Include="models\dto\CMROwner.pas"/>
         <DCCReference Include="models\dto\CloudMailRuSpaceInfo.pas"/>
         <DCCReference Include="models\dto\CloudMailRuTwostepData.pas"/>
         <DCCReference Include="models\cipher\FileCipher.pas"/>

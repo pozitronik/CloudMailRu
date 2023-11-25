@@ -1,13 +1,13 @@
-﻿unit CloudMailRuIncomingInviteInfo;
+﻿unit CMRIncomingInvite;
 
 interface
 
 uses
-	CMROwnerInfo;
+	CMROwner;
 
 type
 	TCloudMailRuIncomingInviteInfo = record
-		owner: TCMROwnerInfo;
+		owner: TCMROwner;
 		tree: WideString;
 		access: WideString;
 		name: WideString;

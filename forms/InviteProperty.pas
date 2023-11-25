@@ -3,7 +3,7 @@ unit InviteProperty;
 interface
 
 uses
-	CloudMailRuIncomingInviteInfo,
+	CMRIncomingInvite,
 	Winapi.Windows,
 	Winapi.Messages,
 	System.SysUtils,

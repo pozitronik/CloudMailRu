@@ -1,9 +1,9 @@
-﻿unit CMROwnerInfo;
+﻿unit CMROwner;
 
 interface
 
 type
-	TCMROwnerInfo = record
+	TCMROwner = record
 		email: WideString;
 		name: WideString;
 	end;

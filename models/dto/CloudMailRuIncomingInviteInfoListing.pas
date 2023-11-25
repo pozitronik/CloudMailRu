@@ -6,7 +6,7 @@ uses
 	System.Generics.Collections,
 	SysUtils,
 	RealPath,
-	CloudMailRuIncomingInviteInfo,
+	CMRIncomingInvite,
 	CMRConstants,
 	JSONHelper,
 	JSON;
