@@ -851,7 +851,7 @@ begin
 				exit(FS_EXEC_ERROR);
 		else
 			begin
-				if EmptyWideStr = CurrentItem.weblink then
+				if not CurrentItem.isPublished then
 				begin
 					CurrentCloud := ConnectionManager.get(RealPath.account, getResult);
 					if not CurrentCloud.publishFile(CurrentItem.home, CurrentItem.weblink) then
@@ -1275,7 +1275,7 @@ begin
 		Cloud.getShareInfo(CurrentItem.home, InvitesListing);
 		for Invite in InvitesListing do
 			Cloud.shareFolder(CurrentItem.home, Invite.email, CLOUD_SHARE_NO); //no reporting here
-		if (CurrentItem.weblink <> EmptyWideStr) then
+		if CurrentItem.isPublished then
 			Cloud.publishFile(CurrentItem.home, CurrentItem.weblink, CLOUD_UNPUBLISH);
 		Result := true;
 	end
@@ -1436,7 +1436,7 @@ begin
 
 	if OldCloud.statusFile(OldRealPath.path, CurrentItem) then
 	begin
-		if CurrentItem.weblink = EmptyWideStr then //create temporary weblink
+		if not CurrentItem.isPublished then //create temporary weblink
 		begin
 			NeedUnpublish := true;
 			if not(OldCloud.publishFile(CurrentItem.home, CurrentItem.weblink)) then //problem publishing
@@ -1845,7 +1845,7 @@ begin
 		begin
 			if Item.kind = KIND_SHARED then
 				strpcopy(RemoteName, 'shared')
-			else if Item.weblink <> EmptyWideStr then
+			else if Item.isPublished then
 				strpcopy(RemoteName, 'shared_public')
 			else
 				exit(FS_ICON_USEDEFAULT);

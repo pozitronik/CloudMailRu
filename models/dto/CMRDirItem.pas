@@ -36,10 +36,12 @@ type
 		function GetIsNone: Boolean; //Check, if it is a special record which can't be used
 		function GetIsDir: Boolean;
 		function GetIsFile: Boolean;
+		function GetIsPublished: Boolean;
 	public
 		property isNone: Boolean read GetIsNone;
 		property isDir: Boolean read GetIsDir;
 		property isFile: Boolean read GetIsFile;
+		property isPublished: Boolean read GetIsPublished;
 		function None: TCMRDirItem; // Creates a special record, which indicate that Item is not found/not applicable.
 		function ToFindData(DirsAsSymlinks: Boolean = false): tWIN32FINDDATAW;
 		function FromJSON(StatusJSON: WideString): Boolean;
@@ -102,6 +104,11 @@ end;
 function TCMRDirItem.GetIsNone: Boolean;
 begin
 	Result := self.name = EmptyWideStr;
+end;
+
+function TCMRDirItem.GetIsPublished: Boolean;
+begin
+	Result := self.weblink <> EmptyWideStr;
 end;
 
 function TCMRDirItem.None: TCMRDirItem;
