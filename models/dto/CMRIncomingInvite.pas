@@ -15,15 +15,18 @@ type
 		size: int64;
 		home: WideString; //only on already mounted items
 		invite_token: WideString;
+	private
+		function GetIsNone: Boolean; //Check, if it is a special record which can't be used
+	public
+		property isNone: Boolean read GetIsNone;
 		function None: TCMRIncomingInvite; // Creates a special record, which indicate that Item is not found/not applicable.
-		function IsNone: Boolean; //Check, if it is a special record which can't be used
 	end;
 
 implementation
 
 {TCMRIncomingInvite}
 
-function TCMRIncomingInvite.IsNone: Boolean;
+function TCMRIncomingInvite.GetIsNone: Boolean;
 begin
 	Result := self.name = EmptyWideStr;
 end;
