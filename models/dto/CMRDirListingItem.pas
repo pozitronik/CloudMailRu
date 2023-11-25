@@ -34,14 +34,14 @@ type
 		deleted_by: integer;
 	public
 		function ToFindData(DirsAsSymlinks: Boolean = false): tWIN32FINDDATAW;
-		function FromJSONStatus(StatusJSON: WideString): Boolean;
+		function FromJSON(StatusJSON: WideString): Boolean;
 	End;
 
 implementation
 
 {TCMRDirListingItem}
 
-function TCMRDirListingItem.FromJSONStatus(StatusJSON: WideString): Boolean;
+function TCMRDirListingItem.FromJSON(StatusJSON: WideString): Boolean;
 var
 	ParserObj, JSONVal: TJSONObject;
 begin

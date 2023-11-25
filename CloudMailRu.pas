@@ -1543,7 +1543,7 @@ begin
 		result := self.HTTP.GetPage(Format('%s?home=%s%s', [API_FILE, PathToUrl(Path), self.united_params]), JSON, Progress);
 	if result then
 	begin
-		result := CloudResultToBoolean(getOperationResult(JSON), PREFIX_ERR_FILE_STATUS) and FileInfo.FromJSONStatus(JSON);
+		result := CloudResultToBoolean(getOperationResult(JSON), PREFIX_ERR_FILE_STATUS) and FileInfo.FromJSON(JSON);
 	end else begin
 		if (NAME_TOKEN = getBodyError(JSON)) and RefreshCSRFToken() then
 			result := statusFile(Path, FileInfo);
