@@ -1195,7 +1195,7 @@ begin
 	if not FileExists(GetUNCFilePath(LocalName)) then
 		exit(FS_FILE_NOTFOUND);
 
-	if (RealPath.account = EmptyWideStr) or RealPath.isVirtual then
+	if RealPath.isAccountEmpty or RealPath.isVirtual then
 		exit(FS_FILE_NOTSUPPORTED);
 	TCProgress.Progress(LocalName, PWideChar(RealPath.path), 0);
 
@@ -1266,7 +1266,7 @@ var
 	Invite: TCMRInvite;
 begin
 	RealPath.FromPath(WideString(RemoteName));
-	if (RealPath.account = EmptyWideStr) or RealPath.trashDir or RealPath.invitesDir then
+	if RealPath.isAccountEmpty or RealPath.trashDir or RealPath.invitesDir then
 		exit(false);
 	Cloud := ConnectionManager.get(RealPath.account, getResult);
 	if RealPath.sharedDir then
@@ -1283,7 +1283,6 @@ begin
 		Result := Cloud.deleteFile(RealPath.path);
 	if (Result and GetPluginSettings(SettingsIniFilePath).DescriptionTrackCloudFS and RemoteDescriptionsSupportEnabled(GetAccountSettingsFromIniFile(AccountsIniFilePath, RealPath.account))) then
 		DeleteRemoteFileDescription(RealPath, Cloud);
-
 end;
 
 function FsMkDirW(path: PWideChar): Bool; stdcall;
@@ -1312,7 +1311,7 @@ begin
 		end;
 		exit();
 	end;
-	if (RealPath.account = EmptyWideStr) or RealPath.isVirtual then
+	if (RealPath.isAccountEmpty) or RealPath.isVirtual then
 		exit(false);
 
 	Result := ConnectionManager.get(RealPath.account, getResult).createDir(RealPath.path);

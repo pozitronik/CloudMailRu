@@ -16,6 +16,7 @@ type
 		function GetIsVirtual: boolean;
 		function GetHasHomePath: boolean;
 		function GetIsInAccountsList: boolean;
+		function GetIsAccountEmpty: boolean;
 	public
 		account: WideString;
 		path: WideString;
@@ -27,6 +28,7 @@ type
 		property isVirtual: boolean read GetIsVirtual;
 		property hasHomePath: boolean read GetHasHomePath;
 		property isInAccountsList: boolean read GetIsInAccountsList;
+		property isAccountEmpty: boolean read GetIsAccountEmpty;
 		procedure FromPath(VirtualPath: WideString; isDir: TIsDir = ID_Unset);
 		class function GetRealPath(VirtualPath: WideString; isDir: TIsDir = ID_Unset): TRealPath; static;
 		function ToPath: WideString;
@@ -98,7 +100,12 @@ begin
 end;
 
 {Returns True if current path is in the main accounts list.
-Note: account attribute can not be used for this check because it contains the currently listed item name}
+ Note: account attribute can not be used for this check because it contains the currently listed item name}
+function TRealPath.GetIsAccountEmpty: boolean;
+begin
+	result := self.account = EmptyWideStr;
+end;
+
 function TRealPath.GetIsInAccountsList: boolean;
 begin
 	result := self.path = EmptyWideStr;
@@ -122,7 +129,7 @@ end;
 
 function TRealPath.IsInAccount(ignoreVirtual: boolean): boolean;
 begin
-	result := self.account <> EmptyWideStr;
+	result := not self.isAccountEmpty;
 	if result and ignoreVirtual then
 		result := not(self.isVirtual);
 end;
