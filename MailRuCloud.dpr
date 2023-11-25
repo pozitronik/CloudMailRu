@@ -71,7 +71,7 @@ uses
 	Settings in 'models\settings\Settings.pas',
 	CloudMailRuHTTP in 'models\http\CloudMailRuHTTP.pas',
 	HTTPManager in 'models\http\HTTPManager.pas',
-	CloudMailRuDirListing in 'models\dto\CloudMailRuDirListing.pas',
+	CMRDirItemList in 'models\dto\CMRDirItemList.pas',
 	CMRDirItem in 'models\dto\CMRDirItem.pas',
 	CMRFileIdentity in 'models\dto\CMRFileIdentity.pas',
 	CMRIncomingInvite in 'models\dto\CMRIncomingInvite.pas',

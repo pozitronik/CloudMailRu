@@ -3,7 +3,7 @@
 interface
 
 uses
-	CloudMailRuDirListing,
+	CMRDirItemList,
 	CMRDirItem,
 	CloudMailRuInviteInfoListing,
 	CloudMailRuIncomingInviteInfoListing,

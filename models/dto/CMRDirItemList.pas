@@ -1,4 +1,4 @@
-﻿unit CloudMailRuDirListing;
+﻿unit CMRDirItemList;
 
 interface
 

@@ -4,7 +4,7 @@ interface
 
 {Сначала реализация, потом рефакторинг. Шифрование будет каким-нибудь интерфейсом описано, а это уедет в реализацию}
 uses
-	CloudMailRuDirListing,
+	CMRDirItemList,
 	System.SysUtils,
 	System.Classes,
 	CMRConstants,
