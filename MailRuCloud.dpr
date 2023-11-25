@@ -1966,6 +1966,9 @@ begin
 	CurrentDescriptions.Free;
 
 	PasswordManager.Free;
+	TCLogger.Free;
+	TCProgress.Free;
+	TCRequest.Free;
 
 end;
 
