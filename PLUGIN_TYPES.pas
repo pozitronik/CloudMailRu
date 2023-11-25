@@ -3,7 +3,9 @@
 {Типы и константы, используемые в плагине}
 interface
 
-uses windows, System.Classes;
+uses
+	windows,
+	System.Classes;
 
 const
 	FS_FILE_OK = 0;
@@ -114,6 +116,11 @@ const
 	//for ContentGetValue
 	ft_nosuchfield = -1;
 	ft_fileerror = -2;
+
+const
+	VERB_OPEN = 'open';
+	VERB_PROPERTIES = 'properties';
+	VERB_QUOTE = 'quote';
 
 type
 	tRemoteInfo = record

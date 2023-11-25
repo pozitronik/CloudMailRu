@@ -883,26 +883,26 @@ begin
 	if RealPath.upDirItem then
 		RealPath.path := ExtractFilePath(RealPath.path); //if somepath/.. item properties called
 
-	if RealPath.trashDir and ((Verb = 'open') or (Verb = 'properties')) then
+	if RealPath.trashDir and ((Verb = VERB_OPEN) or (Verb = VERB_PROPERTIES)) then
 		exit(ExecTrashbinProperties(MainWin, RealPath));
 
 	if RealPath.sharedDir then
-		exit(ExecSharedAction(MainWin, RealPath, RemoteName, Verb = 'open'));
+		exit(ExecSharedAction(MainWin, RealPath, RemoteName, Verb = VERB_OPEN));
 
 	if RealPath.invitesDir then
 		exit(ExecInvitesAction(MainWin, RealPath));
 
-	if Verb = 'properties' then
+	if Verb = VERB_PROPERTIES then
 		exit(ExecProperties(MainWin, RealPath));
 
-	if Verb = 'open' then
+	if Verb = VERB_OPEN then
 	begin
 		if (not(RealPath.isDir = ID_Yes)) and GetStreamingOptionsFromIniFile(SettingsIniFilePath, RealPath.path, StreamingOptions) and (STREAMING_FORMAT_NONE <> StreamingOptions.Format) then
 			exit(ExecuteFileStream(RealPath, StreamingOptions));
 		exit(FS_EXEC_YOURSELF);
 	end;
 
-	if copy(Verb, 1, 5) = 'quote' then
+	if copy(Verb, 1, 5) = VERB_QUOTE then
 		exit(ExecCommand(RemoteName, LowerCase(GetWord(Verb, 1)), GetWord(Verb, 2)));
 
 	//if copy(Verb, 1, 5) = 'chmod' then exit; //future usage
