@@ -7,7 +7,7 @@ uses
 	CMRDirListingItem,
 	CloudMailRuInviteInfoListing,
 	CloudMailRuIncomingInviteInfoListing,
-	CloudMailRuOAuthInfo,
+	CMROAuth,
 	CloudMailRuSpaceInfo,
 	CloudMailRuFileIdentity,
 	CloudMailRuOperationResult,
@@ -66,7 +66,7 @@ type
 		Shard: WideString; //download shard url
 
 		AuthToken: WideString; {Текущий (постоянно обновляемый) токен соединения}
-		OAuthToken: TCloudMailRuOAuthInfo; {unused at this moment}
+		OAuthToken: TCMROAuth; {unused at this moment}
 
 		upload_url: WideString; //stored upload url, filled on initConnectionParameters()
 		united_params: WideString; //Объединённый набор авторизационных параметров для подстановки в URL
@@ -74,7 +74,7 @@ type
 		{HTTP REQUESTS WRAPPERS}
 		function initConnectionParameters(): Boolean;
 		function initSharedConnectionParameters(): Boolean;
-		function getOAuthToken(var OAuthToken: TCloudMailRuOAuthInfo): Boolean;
+		function getOAuthToken(var OAuthToken: TCMROAuth): Boolean;
 		function getShard(var Shard: WideString; ShardType: WideString = SHARD_TYPE_GET): Boolean;
 		function getUserSpace(var SpaceInfo: TCloudMailRuSpaceInfo): Boolean;
 		function putFileToCloud(FileName: WideString; FileStream: TStream; var FileIdentity: TCloudMailRuFileIdentity): integer; overload; //отправка на сервер данных из потока
@@ -762,14 +762,14 @@ begin
 		result.HTTP.Request.CustomHeaders.Values['X-CSRF-Token'] := AuthToken;
 end;
 
-function TCloudMailRu.getOAuthToken(var OAuthToken: TCloudMailRuOAuthInfo): Boolean;
+function TCloudMailRu.getOAuthToken(var OAuthToken: TCMROAuth): Boolean;
 var
 	Answer: WideString;
 begin
 	result := false;
 	if self.HTTP.PostForm(OAUTH_TOKEN_URL, Format('client_id=cloud-win&grant_type=password&username=%s@%s&password=%s', [self.user, self.domain, UrlEncode(self.password)]), Answer) then
 	begin
-		if not OAuthToken.fromJSON(Answer) then
+		if not OAuthToken.FromJSON(Answer) then
 			exit(false);
 		result := OAuthToken.error_code = NOERROR;
 	end;

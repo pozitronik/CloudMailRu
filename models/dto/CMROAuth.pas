@@ -1,4 +1,4 @@
-﻿unit CloudMailRuOAuthInfo;
+﻿unit CMROAuth;
 
 interface
 
@@ -10,7 +10,7 @@ uses
 	JSON;
 
 type
-	TCloudMailRuOAuthInfo = Record
+	TCMROAuth = Record
 		error: WideString;
 		error_code: integer;
 		error_description: WideString;
@@ -24,7 +24,7 @@ implementation
 
 {TCloudMailRuOAuthInfo}
 
-function TCloudMailRuOAuthInfo.fromJSON(JSON: WideString): Boolean;
+function TCMROAuth.fromJSON(JSON: WideString): Boolean;
 var
 	JSONVal: TJSONObject;
 begin

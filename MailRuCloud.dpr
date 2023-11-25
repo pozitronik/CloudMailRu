@@ -78,7 +78,7 @@ uses
 	CloudMailRuIncomingInviteInfoListing in 'models\dto\CloudMailRuIncomingInviteInfoListing.pas',
 	CMRInvite in 'models\dto\CMRInvite.pas',
 	CloudMailRuInviteInfoListing in 'models\dto\CloudMailRuInviteInfoListing.pas',
-	CloudMailRuOAuthInfo in 'models\dto\CloudMailRuOAuthInfo.pas',
+	CMROAuth in 'models\dto\CMROAuth.pas',
 	CloudMailRuOperationResult in 'models\dto\CloudMailRuOperationResult.pas',
 	CMROwner in 'models\dto\CMROwner.pas',
 	CloudMailRuSpaceInfo in 'models\dto\CloudMailRuSpaceInfo.pas',
