@@ -8,7 +8,7 @@ uses
 	CloudMailRuInviteInfoListing,
 	CloudMailRuIncomingInviteInfoListing,
 	CMROAuth,
-	CloudMailRuSpaceInfo,
+	CMRSpace,
 	CloudMailRuFileIdentity,
 	CloudMailRuOperationResult,
 	CloudMailRuTwostepData,
@@ -76,7 +76,7 @@ type
 		function initSharedConnectionParameters(): Boolean;
 		function getOAuthToken(var OAuthToken: TCMROAuth): Boolean;
 		function getShard(var Shard: WideString; ShardType: WideString = SHARD_TYPE_GET): Boolean;
-		function getUserSpace(var SpaceInfo: TCloudMailRuSpaceInfo): Boolean;
+		function getUserSpace(var SpaceInfo: TCMRSpace): Boolean;
 		function putFileToCloud(FileName: WideString; FileStream: TStream; var FileIdentity: TCloudMailRuFileIdentity): integer; overload; //отправка на сервер данных из потока
 		{PRIVATE UPLOAD METHODS CHAIN (CALLED FROM putFile())}
 		function putFileWhole(localPath, remotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT): integer; //Загрузка файла целиком
@@ -878,7 +878,7 @@ begin
 	end;
 end;
 
-function TCloudMailRu.getUserSpace(var SpaceInfo: TCloudMailRuSpaceInfo): Boolean;
+function TCloudMailRu.getUserSpace(var SpaceInfo: TCMRSpace): Boolean;
 var
 	JSON: WideString;
 	Progress: Boolean;
@@ -890,7 +890,7 @@ begin
 	result := self.HTTP.GetPage(Format('%s?home=/%s', [API_USER_SPACE, self.united_params]), JSON, Progress);
 	if result then
 	begin
-		result := CloudResultToBoolean(getOperationResult(JSON), PREFIX_ERR_GET_USER_SPACE) and CloudMailRuSpaceInfo.getUserSpace(JSON, SpaceInfo);
+		result := CloudResultToBoolean(getOperationResult(JSON), PREFIX_ERR_GET_USER_SPACE) and SpaceInfo.FromJSON(JSON);
 	end else begin
 		if (NAME_TOKEN = getBodyError(JSON)) and RefreshCSRFToken() then
 			result := getUserSpace(SpaceInfo)
@@ -1025,7 +1025,7 @@ end;
 
 procedure TCloudMailRu.logUserSpaceInfo;
 var
-	US: TCloudMailRuSpaceInfo;
+	US: TCMRSpace;
 	QuotaInfo: WideString;
 begin
 	if not(Assigned(self)) then

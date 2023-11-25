@@ -81,7 +81,7 @@ uses
 	CMROAuth in 'models\dto\CMROAuth.pas',
 	CloudMailRuOperationResult in 'models\dto\CloudMailRuOperationResult.pas',
 	CMROwner in 'models\dto\CMROwner.pas',
-	CloudMailRuSpaceInfo in 'models\dto\CloudMailRuSpaceInfo.pas',
+	CMRSpace in 'models\dto\CMRSpace.pas',
 	CloudMailRuTwostepData in 'models\dto\CloudMailRuTwostepData.pas',
 	FileCipher in 'models\cipher\FileCipher.pas',
 	ParsingHelper in 'helpers\ParsingHelper.pas',

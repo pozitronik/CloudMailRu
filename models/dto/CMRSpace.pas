@@ -1,4 +1,4 @@
-﻿unit CloudMailRuSpaceInfo;
+﻿unit CMRSpace;
 
 interface
 
@@ -9,17 +9,19 @@ uses
 
 type
 
-	TCloudMailRuSpaceInfo = record
+	TCMRSpace = record
 		overquota: Boolean;
 		total: int64;
 		used: int64;
-	End;
 
-function getUserSpace(JSON: WideString; var CloudMailRuSpaceInfo: TCloudMailRuSpaceInfo): Boolean;
+		function fromJSON(JSON: WideString): Boolean;
+	End;
 
 implementation
 
-function getUserSpace(JSON: WideString; var CloudMailRuSpaceInfo: TCloudMailRuSpaceInfo): Boolean;
+{TCloudMailRuSpaceInfo}
+
+function TCMRSpace.fromJSON(JSON: WideString): Boolean;
 var
 	ParserObj, JSONVal: TJSONObject;
 begin
@@ -28,7 +30,7 @@ begin
 		if (not init(JSON, JSONVal)) then
 			Exit;
 		ParserObj := JSONVal.Values[NAME_BODY] as TJSONObject;
-		with CloudMailRuSpaceInfo do
+		with self do
 		begin
 			assignFromName(NAME_OVERQUOTA, ParserObj, overquota);
 			assignFromName(NAME_TOTAL, ParserObj, total);
