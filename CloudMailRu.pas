@@ -769,7 +769,7 @@ begin
 	result := false;
 	if self.HTTP.PostForm(OAUTH_TOKEN_URL, Format('client_id=cloud-win&grant_type=password&username=%s@%s&password=%s', [self.user, self.domain, UrlEncode(self.password)]), Answer) then
 	begin
-		if not getOAuthTokenInfo(Answer, OAuthToken) then
+		if not OAuthToken.fromJSON(Answer) then
 			exit(false);
 		result := OAuthToken.error_code = NOERROR;
 	end;

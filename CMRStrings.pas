@@ -200,6 +200,9 @@ const
 	WAIT = 'Wait for it...';
 	WARN_QUOTA_EXHAUSTED = 'Warning: space quota exhausted!';
 
+	ERR_PARSING_ANSWER = 'Parsing answer';
+	ERR_JSON_PARSING = 'JSON parsing error: %s';
+
 implementation
 
 end.

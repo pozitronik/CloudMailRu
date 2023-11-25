@@ -5,6 +5,7 @@ interface
 uses
 	SysUtils,
 	CMRConstants,
+	CMRStrings,
 	JSONHelper,
 	JSON;
 
@@ -16,13 +17,14 @@ type
 		expires_in: integer;
 		refresh_token: WideString;
 		access_token: WideString;
+		function fromJSON(JSON: WideString): Boolean;
 	end;
-
-function getOAuthTokenInfo(JSON: WideString; var CloudMailRuOAuthInfo: TCloudMailRuOAuthInfo): Boolean;
 
 implementation
 
-function getOAuthTokenInfo(JSON: WideString; var CloudMailRuOAuthInfo: TCloudMailRuOAuthInfo): Boolean;
+{TCloudMailRuOAuthInfo}
+
+function TCloudMailRuOAuthInfo.fromJSON(JSON: WideString): Boolean;
 var
 	JSONVal: TJSONObject;
 begin
@@ -30,7 +32,7 @@ begin
 	try
 		if (not init(JSON, JSONVal)) then
 			Exit;
-		with CloudMailRuOAuthInfo do
+		with self do
 		begin
 			assignFromName(NAME_ERROR, JSONVal, error);
 			assignFromName(NAME_ERROR_CODE, JSONVal, error_code);
@@ -43,9 +45,9 @@ begin
 		on E: {EJSON}Exception do
 		begin
 			//Log(MSGTYPE_IMPORTANTERROR, 'Can''t parse server answer: ' + JSON); todo
-			CloudMailRuOAuthInfo.error_code := CLOUD_ERROR_UNKNOWN;
-			CloudMailRuOAuthInfo.error := 'Answer parsing';
-			CloudMailRuOAuthInfo.error_description := 'JSON parsing error: at ' + JSON;
+			self.error_code := CLOUD_ERROR_UNKNOWN;
+			self.error := ERR_PARSING_ANSWER;
+			self.error_description := Format(ERR_JSON_PARSING, [JSON]);
 			Exit;
 		end;
 	end;
