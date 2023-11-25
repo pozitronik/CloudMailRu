@@ -220,7 +220,7 @@
         <DCCReference Include="models\dto\CloudMailRuInviteInfoListing.pas"/>
         <DCCReference Include="models\dto\CloudMailRuOAuthInfo.pas"/>
         <DCCReference Include="models\dto\CloudMailRuOperationResult.pas"/>
-        <DCCReference Include="models\dto\CloudMailRuOwnerInfo.pas"/>
+        <DCCReference Include="models\dto\CMROwnerInfo.pas"/>
         <DCCReference Include="models\dto\CloudMailRuSpaceInfo.pas"/>
         <DCCReference Include="models\dto\CloudMailRuTwostepData.pas"/>
         <DCCReference Include="models\cipher\FileCipher.pas"/>

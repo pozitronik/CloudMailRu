@@ -3,11 +3,11 @@
 interface
 
 uses
-	CloudMailRuOwnerInfo;
+	CMROwnerInfo;
 
 type
 	TCloudMailRuIncomingInviteInfo = record
-		owner: TCloudMailRuOwnerInfo;
+		owner: TCMROwnerInfo;
 		tree: WideString;
 		access: WideString;
 		name: WideString;

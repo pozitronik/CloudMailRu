@@ -1,9 +1,9 @@
-﻿unit CloudMailRuOwnerInfo;
+﻿unit CMROwnerInfo;
 
 interface
 
 type
-	TCloudMailRuOwnerInfo = record
+	TCMROwnerInfo = record
 		email: WideString;
 		name: WideString;
 	end;
