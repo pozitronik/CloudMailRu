@@ -568,7 +568,7 @@ begin
 				SetLastError(ERROR_PATH_NOT_FOUND);
 		end;
 
-		if (RealPath.isVirtual) and (RealPath.path <> EmptyWideStr) then //игнорим попытки получить листинги объектов вирутальных каталогов
+		if RealPath.isVirtual and not RealPath.isInAccountsList then //игнорим попытки получить листинги объектов вирутальных каталогов
 		begin
 			SetLastError(ERROR_ACCESS_DENIED);
 			exit(INVALID_HANDLE_VALUE);
@@ -1817,7 +1817,7 @@ begin
 			if CurrentInviteItem.name = EmptyWideStr then
 				exit(FS_ICON_USEDEFAULT);
 
-			if CurrentInviteItem.home <> EmptyWideStr then //mounted item
+			if CurrentInviteItem.isMounted then //mounted item
 			begin
 				strpcopy(RemoteName, 'shared_incoming');
 				CombineMacro(TheIcon);
