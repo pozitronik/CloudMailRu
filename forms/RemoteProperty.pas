@@ -236,7 +236,7 @@ end;
 
 function TPropertyForm.FillRecursiveDownloadListing(const Path: WideString; Cloud: TCloudMailRu = nil): Boolean;
 var
-	CurrentDirListing: TCloudMailRuDirListing;
+	CurrentDirListing: TCMRDirItemList;
 	CurrentDirItemsCounter: Integer;
 begin
 	CancelLinksScanTb.Enabled := true;
@@ -267,7 +267,7 @@ end;
 
 function TPropertyForm.FillRecursiveHashListing(const Path: WideString; Cloud: TCloudMailRu = nil; BaseDir: WideString = ''): Boolean;
 var
-	CurrentDirListing: TCloudMailRuDirListing;
+	CurrentDirListing: TCMRDirItemList;
 	CurrentDirItemsCounter: Integer;
 	CurrentItem: TCMRDirItem;
 begin

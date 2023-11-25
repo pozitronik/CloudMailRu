@@ -11,36 +11,41 @@ uses
 	JSON;
 
 type
-	TCloudMailRuDirListing = TArray<TCMRDirItem>;
+	TCMRDirItemList = TArray<TCMRDirItem>;
 
-function GetItemByName(DirListing: TCloudMailRuDirListing; ItemName: WideString): TCMRDirItem;
-function GetItemByHomePath(DirListing: TCloudMailRuDirListing; HomePath: WideString): TCMRDirItem;
-function FromJSON(JSON: WideString; var CloudMailRuDirListing: TCloudMailRuDirListing): Boolean;
+	TCMRDirItemListHelper = record helper for TCMRDirItemList
+	public
+		function FromJSON(JSON: WideString): Boolean;
+		function FindByName(ItemName: WideString): TCMRDirItem;
+		function FindByHomePath(HomePath: WideString): TCMRDirItem;
+	end;
 
 implementation
 
-function GetItemByName(DirListing: TCloudMailRuDirListing; ItemName: WideString): TCMRDirItem;
-var
-	CurrentItem: TCMRDirItem;
-begin
-	for CurrentItem in DirListing do
-		if CurrentItem.name = ItemName then
-			exit(CurrentItem);
-	FillChar(result, sizeof(TCMRDirItem), 0); // nothing found
-end;
+{TCMRDirItemList}
 
-function GetItemByHomePath(DirListing: TCloudMailRuDirListing; HomePath: WideString): TCMRDirItem;
+function TCMRDirItemListHelper.FindByHomePath(HomePath: WideString): TCMRDirItem;
 var
 	CurrentItem: TCMRDirItem;
 begin
 	HomePath := '/' + StringReplace(HomePath, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]);
-	for CurrentItem in DirListing do
+	for CurrentItem in self do
 		if CurrentItem.home = HomePath then
 			exit(CurrentItem);
-	FillChar(result, sizeof(TCMRDirItem), 0); // nothing found
+	exit(CurrentItem.None);
 end;
 
-function FromJSON(JSON: WideString; var CloudMailRuDirListing: TCloudMailRuDirListing): Boolean;
+function TCMRDirItemListHelper.FindByName(ItemName: WideString): TCMRDirItem;
+var
+	CurrentItem: TCMRDirItem;
+begin
+	for CurrentItem in self do
+		if CurrentItem.name = ItemName then
+			exit(CurrentItem);
+	exit(CurrentItem.None);
+end;
+
+function TCMRDirItemListHelper.FromJSON(JSON: WideString): Boolean;
 var
 	J: integer;
 	A: TJSONArray;
@@ -52,11 +57,11 @@ begin
 		if (not init(JSON, JSONVal)) then
 			exit;
 		A := (JSONVal.Values[NAME_BODY] as TJSONObject).Values[NAME_LIST] as TJSONArray;
-		SetLength(CloudMailRuDirListing, A.count);
+		SetLength(self, A.count);
 		for J := 0 to A.count - 1 do
 		begin
 			ParserObj := A.Items[J] as TJSONObject;
-			with CloudMailRuDirListing[J] do
+			with self[J] do
 			begin
 				assignFromName(NAME_SIZE, ParserObj, size);
 				assignFromName(NAME_KIND, ParserObj, kind);

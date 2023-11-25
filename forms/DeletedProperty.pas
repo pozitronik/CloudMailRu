@@ -41,7 +41,7 @@ type
 		{Private declarations}
 	public
 		{Public declarations}
-		class function ShowProperties(parentWindow: HWND; Items: TCloudMailRuDirListing; TrashDir: boolean = false; AccountName: WideString = ''): integer;
+		class function ShowProperties(parentWindow: HWND; Items: TCMRDirItemList; TrashDir: boolean = false; AccountName: WideString = ''): integer;
 	end;
 
 implementation
@@ -49,11 +49,11 @@ implementation
 {$R *.dfm}
 {TDeletedPropertyForm}
 
-class function TDeletedPropertyForm.ShowProperties(parentWindow: HWND; Items: TCloudMailRuDirListing; TrashDir: boolean = false; AccountName: WideString = ''): integer;
+class function TDeletedPropertyForm.ShowProperties(parentWindow: HWND; Items: TCMRDirItemList; TrashDir: boolean = false; AccountName: WideString = ''): integer;
 var
 	DeletedPropertyForm: TDeletedPropertyForm;
 	FormCaption, NameCaption, FromCaption, AtCaption, ByCaption, SizeCaption: WideString;
-	function summary_size(Items: TCloudMailRuDirListing): integer;
+	function summary_size(Items: TCMRDirItemList): integer;
 	var
 		Item: TCMRDirItem;
 	begin

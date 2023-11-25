@@ -33,6 +33,8 @@ type
 		deleted_from: WideString;
 		deleted_by: integer;
 	public
+		function None: TCMRDirItem; // Creates a special record, which indicate that Item is not found/not applicable.
+		function IsNone: Boolean; //Check, if it is a special record which can't be used
 		function ToFindData(DirsAsSymlinks: Boolean = false): tWIN32FINDDATAW;
 		function FromJSON(StatusJSON: WideString): Boolean;
 	End;
@@ -79,6 +81,17 @@ begin
 	end;
 	Result := true;
 	JSONVal.free;
+end;
+
+function TCMRDirItem.IsNone: Boolean;
+begin
+	Result := self.name = EmptyWideStr;
+end;
+
+function TCMRDirItem.None: TCMRDirItem;
+begin
+	FillChar(self, sizeof(TCMRDirItem), 0);
+	Result := self;
 end;
 
 function TCMRDirItem.ToFindData(DirsAsSymlinks: Boolean): tWIN32FINDDATAW;

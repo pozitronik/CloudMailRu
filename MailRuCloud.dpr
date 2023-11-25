@@ -136,7 +136,7 @@ var
 
 	PluginNum: integer;
 
-	CurrentListing: TCloudMailRuDirListing;
+	CurrentListing: TCMRDirItemList;
 	CurrentIncomingInvitesListing: TCloudMailRuIncomingInviteInfoListing;
 	ConnectionManager: TConnectionManager;
 	HTTPManager: THTTPManager;
@@ -147,18 +147,18 @@ var
 	TCRequest: TTCRequest;
 
 	{Пытаемся найти объект в облаке по его пути, сначала в текущем списке, если нет - то ищем в облаке}
-function FindListingItemByPath(CurrentListing: TCloudMailRuDirListing; path: TRealPath; UpdateListing: Boolean = true): TCMRDirItem;
+function FindListingItemByPath(CurrentListing: TCMRDirItemList; path: TRealPath; UpdateListing: Boolean = true): TCMRDirItem;
 var
 	getResult: integer;
 	CurrentCloud: TCloudMailRu;
 begin
 	if path.trashDir or path.sharedDir or (path.isDir = ID_Unset){or path.invitesDir} then
 		{Виртуальные каталоги не имеют HomePath.}
-		Result := GetItemByName(CurrentListing, path.path)
+		Result := CurrentListing.FindByName(path.path)
 	else
-		Result := GetItemByHomePath(CurrentListing, path.path); //сначала попробуем найти поле в имеющемся списке
+		Result := CurrentListing.FindByHomePath(path.path); //сначала попробуем найти поле в имеющемся списке
 
-	if (Result.name = EmptyWideStr) and UpdateListing then //если там его нет (нажали пробел на папке, например), то запросим в облаке напрямую, в зависимости от того, внутри чего мы находимся
+	if (Result.IsNone) and UpdateListing then //если там его нет (нажали пробел на папке, например), то запросим в облаке напрямую, в зависимости от того, внутри чего мы находимся
 	begin
 		CurrentCloud := ConnectionManager.get(path.account, getResult);
 		if not Assigned(CurrentCloud) then
@@ -167,12 +167,12 @@ begin
 		if path.trashDir then //корзина - обновим CurrentListing, поищем в нём
 		begin
 			if CurrentCloud.getTrashbinListing(CurrentListing) then
-				exit(GetItemByName(CurrentListing, path.path));
+				exit(CurrentListing.FindByName(path.path));
 		end;
 		if path.sharedDir then //ссылки - обновим список
 		begin
 			if CurrentCloud.getSharedLinksListing(CurrentListing) then
-				exit(GetItemByName(CurrentListing, path.path));
+				exit(CurrentListing.FindByName(path.path));
 		end;
 		if path.invitesDir then
 		begin
@@ -578,11 +578,11 @@ begin
 		end;
 
 		if CurrentCloud.public_account then
-			CurrentItem := GetItemByName(CurrentListing, ExtractUniversalFileName(RealPath.path))
+			CurrentItem := CurrentListing.FindByName(ExtractUniversalFileName(RealPath.path))
 		else
-			CurrentItem := GetItemByHomePath(CurrentListing, RealPath.path);
+			CurrentItem := CurrentListing.FindByHomePath(RealPath.path);
 
-		if (CurrentItem.name <> EmptyWideStr) and (CurrentItem.type_ <> TYPE_DIR) then
+		if (not CurrentItem.IsNone) and (CurrentItem.type_ <> TYPE_DIR) then
 		begin
 			SetLastError(ERROR_PATH_NOT_FOUND);
 			exit(INVALID_HANDLE_VALUE);

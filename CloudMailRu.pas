@@ -134,11 +134,11 @@ type
 		destructor Destroy; override;
 		{CLOUD INTERFACE METHODS}
 		function login(method: integer = CLOUD_AUTH_METHOD_WEB): Boolean;
-		function getDirListing(Path: WideString; var DirListing: TCloudMailRuDirListing; ShowProgress: Boolean = false): Boolean;
-		function getSharedLinksListing(var DirListing: TCloudMailRuDirListing; ShowProgress: Boolean = false): Boolean;
+		function getDirListing(Path: WideString; var DirListing: TCMRDirItemList; ShowProgress: Boolean = false): Boolean;
+		function getSharedLinksListing(var DirListing: TCMRDirItemList; ShowProgress: Boolean = false): Boolean;
 		function getIncomingLinksListing(var IncomingListing: TCloudMailRuIncomingInviteInfoListing; ShowProgress: Boolean = false): Boolean; overload;
-		function getIncomingLinksListing(var IncomingListing: TCloudMailRuDirListing; var InvitesListing: TCloudMailRuIncomingInviteInfoListing; ShowProgress: Boolean = false): Boolean; overload;
-		function getTrashbinListing(var DirListing: TCloudMailRuDirListing; ShowProgress: Boolean = false): Boolean;
+		function getIncomingLinksListing(var IncomingListing: TCMRDirItemList; var InvitesListing: TCloudMailRuIncomingInviteInfoListing; ShowProgress: Boolean = false): Boolean; overload;
+		function getTrashbinListing(var DirListing: TCMRDirItemList; ShowProgress: Boolean = false): Boolean;
 		function createDir(Path: WideString): Boolean;
 		function removeDir(Path: WideString): Boolean;
 		function statusFile(Path: WideString; var FileInfo: TCMRDirItem): Boolean;
@@ -490,7 +490,7 @@ begin
 		result := self.deleteFile(remotePath);
 end;
 
-function TCloudMailRu.getSharedLinksListing(var DirListing: TCloudMailRuDirListing; ShowProgress: Boolean = false): Boolean;
+function TCloudMailRu.getSharedLinksListing(var DirListing: TCMRDirItemList; ShowProgress: Boolean = false): Boolean;
 var
 	JSON: WideString;
 begin
@@ -537,7 +537,7 @@ begin
 	end;
 end;
 
-function TCloudMailRu.getIncomingLinksListing(var IncomingListing: TCloudMailRuDirListing; var InvitesListing: TCloudMailRuIncomingInviteInfoListing; ShowProgress: Boolean = false): Boolean;
+function TCloudMailRu.getIncomingLinksListing(var IncomingListing: TCMRDirItemList; var InvitesListing: TCloudMailRuIncomingInviteInfoListing; ShowProgress: Boolean = false): Boolean;
 var
 	i: integer;
 begin
@@ -561,7 +561,7 @@ begin
 	end;
 end;
 
-function TCloudMailRu.getTrashbinListing(var DirListing: TCloudMailRuDirListing; ShowProgress: Boolean): Boolean;
+function TCloudMailRu.getTrashbinListing(var DirListing: TCMRDirItemList; ShowProgress: Boolean): Boolean;
 var
 	JSON: WideString;
 begin
@@ -585,7 +585,7 @@ begin
 
 end;
 
-function TCloudMailRu.getDirListing(Path: WideString; var DirListing: TCloudMailRuDirListing; ShowProgress: Boolean = false): Boolean;
+function TCloudMailRu.getDirListing(Path: WideString; var DirListing: TCMRDirItemList; ShowProgress: Boolean = false): Boolean;
 var
 	JSON: WideString;
 	OperationResult: TCMROperationResult;
@@ -607,7 +607,7 @@ begin
 		result := CloudResultToBoolean(OperationResult, PREFIX_ERR_DIR_LISTING);
 		if result then
 		begin
-			result := CloudMailRuDirListing.FromJSON(JSON, DirListing);
+			result := DirListing.FromJSON(JSON);
 			if result and self.crypt_filenames then
 				self.FileCipher.DecryptDirListing(DirListing);
 		end else if OperationResult.OperationResult = CLOUD_ERROR_NOT_EXISTS then
