@@ -1,10 +1,10 @@
-﻿unit CloudMailRuInviteInfo;
+﻿unit CMRInvite;
 
 interface
 
 type
 
-	TCloudMailRuInviteInfo = record
+	TCMRInvite = record
 		email: WideString;
 		status: WideString;
 		access: WideString;

@@ -5,14 +5,14 @@ interface
 uses
 	System.Generics.Collections,
 	SysUtils,
-	CloudMailRuInviteInfo,
+	CMRInvite,
 	CMRConstants,
 	JSONHelper,
 	JSON;
 
 type
 
-	TCloudMailRuInviteInfoListing = TArray<TCloudMailRuInviteInfo>;
+	TCloudMailRuInviteInfoListing = TArray<TCMRInvite>;
 function getInviteListing(JSON: WideString; var InviteListing: TCloudMailRuInviteInfoListing): Boolean;
 
 implementation
