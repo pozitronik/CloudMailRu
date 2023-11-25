@@ -75,7 +75,7 @@ uses
 	CMRDirItem in 'models\dto\CMRDirItem.pas',
 	CMRFileIdentity in 'models\dto\CMRFileIdentity.pas',
 	CMRIncomingInvite in 'models\dto\CMRIncomingInvite.pas',
-	CloudMailRuIncomingInviteInfoListing in 'models\dto\CloudMailRuIncomingInviteInfoListing.pas',
+	CMRIncomingInviteList in 'models\dto\CMRIncomingInviteList.pas',
 	CMRInvite in 'models\dto\CMRInvite.pas',
 	CloudMailRuInviteInfoListing in 'models\dto\CloudMailRuInviteInfoListing.pas',
 	CMROAuth in 'models\dto\CMROAuth.pas',
@@ -137,7 +137,7 @@ var
 	PluginNum: integer;
 
 	CurrentListing: TCMRDirItemList;
-	CurrentIncomingInvitesListing: TCloudMailRuIncomingInviteInfoListing;
+	CurrentIncomingInvitesListing: TCMRIncomingInviteList;
 	ConnectionManager: TConnectionManager;
 	HTTPManager: THTTPManager;
 	CurrentDescriptions: TDescription;
@@ -186,17 +186,15 @@ begin
 	end; //Не рапортуем, это будет уровнем выше
 end;
 
-function FindIncomingInviteItemByPath(InviteListing: TCloudMailRuIncomingInviteInfoListing; path: TRealPath): TCMRIncomingInvite;
+function FindIncomingInviteItemByPath(InviteListing: TCMRIncomingInviteList; path: TRealPath): TCMRIncomingInvite;
 var
 	getResult: integer;
-
 begin
-	Result := CloudMailRuIncomingInviteInfoListing.FindByName(InviteListing, path.path);
+	Result := InviteListing.FindByName(path.path);
 	{item not found in current global listing, so refresh it}
-	if Result.name = EmptyWideStr then
+	if Result.IsNone then
 		if ConnectionManager.get(path.account, getResult).getIncomingLinksListing(CurrentIncomingInvitesListing) then
-			exit(CloudMailRuIncomingInviteInfoListing.FindByName(CurrentIncomingInvitesListing, path.path));
-
+			exit(CurrentIncomingInvitesListing.FindByName(path.path));
 end;
 
 function DeleteLocalFile(LocalName: WideString): integer;
@@ -582,7 +580,7 @@ begin
 		else
 			CurrentItem := CurrentListing.FindByHomePath(RealPath.path);
 
-		if not (CurrentItem.IsNone or CurrentItem.IsDir) then
+		if not(CurrentItem.IsNone or CurrentItem.isDir) then
 		begin
 			SetLastError(ERROR_PATH_NOT_FOUND);
 			exit(INVALID_HANDLE_VALUE);

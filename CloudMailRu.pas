@@ -6,7 +6,7 @@ uses
 	CMRDirItemList,
 	CMRDirItem,
 	CloudMailRuInviteInfoListing,
-	CloudMailRuIncomingInviteInfoListing,
+	CMRIncomingInviteList,
 	CMROAuth,
 	CMRSpace,
 	CMRFileIdentity,
@@ -136,8 +136,8 @@ type
 		function login(method: integer = CLOUD_AUTH_METHOD_WEB): Boolean;
 		function getDirListing(Path: WideString; var DirListing: TCMRDirItemList; ShowProgress: Boolean = false): Boolean;
 		function getSharedLinksListing(var DirListing: TCMRDirItemList; ShowProgress: Boolean = false): Boolean;
-		function getIncomingLinksListing(var IncomingListing: TCloudMailRuIncomingInviteInfoListing; ShowProgress: Boolean = false): Boolean; overload;
-		function getIncomingLinksListing(var IncomingListing: TCMRDirItemList; var InvitesListing: TCloudMailRuIncomingInviteInfoListing; ShowProgress: Boolean = false): Boolean; overload;
+		function getIncomingLinksListing(var IncomingListing: TCMRIncomingInviteList; ShowProgress: Boolean = false): Boolean; overload;
+		function getIncomingLinksListing(var IncomingListing: TCMRDirItemList; var InvitesListing: TCMRIncomingInviteList; ShowProgress: Boolean = false): Boolean; overload;
 		function getTrashbinListing(var DirListing: TCMRDirItemList; ShowProgress: Boolean = false): Boolean;
 		function createDir(Path: WideString): Boolean;
 		function removeDir(Path: WideString): Boolean;
@@ -514,7 +514,7 @@ begin
 
 end;
 
-function TCloudMailRu.getIncomingLinksListing(var IncomingListing: TCloudMailRuIncomingInviteInfoListing; ShowProgress: Boolean): Boolean;
+function TCloudMailRu.getIncomingLinksListing(var IncomingListing: TCMRIncomingInviteList; ShowProgress: Boolean): Boolean;
 var
 	JSON: WideString;
 begin
@@ -529,7 +529,7 @@ begin
 	result := self.HTTP.GetPage(Format('%s?%s', [API_FOLDER_SHARED_INCOMING, self.united_params]), JSON, ShowProgress);
 
 	if result then
-		result := CloudResultToBoolean(JSON, PREFIX_ERR_INCOMING_REQUESTS_LISTING) and getIncomingInviteListing(JSON, IncomingListing)
+		result := CloudResultToBoolean(JSON, PREFIX_ERR_INCOMING_REQUESTS_LISTING) and IncomingListing.FromJSON(JSON)
 	else
 	begin
 		if (NAME_TOKEN = getBodyError(JSON)) and RefreshCSRFToken() then
@@ -537,7 +537,7 @@ begin
 	end;
 end;
 
-function TCloudMailRu.getIncomingLinksListing(var IncomingListing: TCMRDirItemList; var InvitesListing: TCloudMailRuIncomingInviteInfoListing; ShowProgress: Boolean = false): Boolean;
+function TCloudMailRu.getIncomingLinksListing(var IncomingListing: TCMRDirItemList; var InvitesListing: TCMRIncomingInviteList; ShowProgress: Boolean = false): Boolean;
 var
 	i: integer;
 begin

@@ -102,7 +102,7 @@ end;
 
 function TCMRDirItem.None: TCMRDirItem;
 begin
-	FillChar(self, sizeof(TCMRDirItem), 0);
+	FillChar(self, sizeof(self), 0);
 	Result := self;
 end;
 

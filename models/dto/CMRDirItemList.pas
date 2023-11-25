@@ -53,6 +53,7 @@ var
 	ParserObj: TJSONObject;
 begin
 	result := False;
+	SetLength(self, 0);
 	try
 		if (not init(JSON, JSONVal)) then
 			exit;

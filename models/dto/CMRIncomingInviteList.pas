@@ -1,34 +1,38 @@
-﻿unit CloudMailRuIncomingInviteInfoListing;
+﻿unit CMRIncomingInviteList;
 
 interface
 
 uses
 	System.Generics.Collections,
 	SysUtils,
-	RealPath,
 	CMRIncomingInvite,
 	CMRConstants,
 	JSONHelper,
 	JSON;
 
 type
-	TCloudMailRuIncomingInviteInfoListing = TArray<TCMRIncomingInvite>;
+	TCMRIncomingInviteList = TArray<TCMRIncomingInvite>;
 
-function FindByName(InviteListing: TCloudMailRuIncomingInviteInfoListing; ItemName: WideString): TCMRIncomingInvite;
-function getIncomingInviteListing(JSON: WideString; var IncomingInviteListing: TCloudMailRuIncomingInviteInfoListing): Boolean;
+	TCMRIncomingInviteListHelper = record helper for TCMRIncomingInviteList
+		function FromJSON(JSON: WideString): Boolean;
+		function FindByName(ItemName: WideString): TCMRIncomingInvite;
+	end;
 
 implementation
 
-function FindByName(InviteListing: TCloudMailRuIncomingInviteInfoListing; ItemName: WideString): TCMRIncomingInvite;
+{TCMRIncomingInviteListHelper}
+
+function TCMRIncomingInviteListHelper.FindByName(ItemName: WideString): TCMRIncomingInvite;
 var
 	CurrentItem: TCMRIncomingInvite;
 begin
-	for CurrentItem in InviteListing do
+	for CurrentItem in self do
 		if CurrentItem.name = ItemName then
 			exit(CurrentItem);
+	exit(CurrentItem.None)
 end;
 
-function getIncomingInviteListing(JSON: WideString; var IncomingInviteListing: TCloudMailRuIncomingInviteInfoListing): Boolean;
+function TCMRIncomingInviteListHelper.FromJSON(JSON: WideString): Boolean;
 var
 	JSONVal: TJSONObject;
 	OwnerObj: TJSONObject;
@@ -38,18 +42,18 @@ var
 begin
 	result := False;
 
-	SetLength(IncomingInviteListing, 0);
+	SetLength(self, 0);
 	try
 		if (not init(JSON, JSONVal)) then
 			exit;
 		A := (JSONVal.Values[NAME_BODY] as TJSONObject).Values[NAME_LIST] as TJSONArray;
 		if not Assigned(A) then
 			exit; //no invites
-		SetLength(IncomingInviteListing, A.count);
+		SetLength(self, A.count);
 		for J := 0 to A.count - 1 do
 		begin
 			ParserObj := A.Items[J] as TJSONObject;
-			with IncomingInviteListing[J] do
+			with self[J] do
 			begin
 				if Assigned(ParserObj.Values[NAME_OWNER]) then
 				begin
@@ -71,7 +75,6 @@ begin
 	except
 		on E: {EJSON}Exception do
 		begin
-			//Log(MSGTYPE_IMPORTANTERROR, 'Can''t parse server answer: ' + JSON); todo
 			exit;
 		end;
 	end;
