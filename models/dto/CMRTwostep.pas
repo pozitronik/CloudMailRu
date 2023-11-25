@@ -1,4 +1,4 @@
-﻿unit CloudMailRuTwostepData;
+﻿unit CMRTwostep;
 
 interface
 
@@ -10,7 +10,7 @@ uses
 
 type
 
-	TCloudMailRuTwostepData = record
+	TCMRTwostep = record
 		form_name: WideString;
 		auth_host: WideString;
 		secstep_phone: WideString;
@@ -29,13 +29,14 @@ type
 		csrf: WideString;
 		device: WideString;
 		{some items skipped}
+		function fromJSON(JSON: WideString): Boolean;
 	end;
-
-function getTwostepData(JSON: WideString; var TwostepData: TCloudMailRuTwostepData): Boolean;
 
 implementation
 
-function getTwostepData(JSON: WideString; var TwostepData: TCloudMailRuTwostepData): Boolean;
+{TCloudMailRuTwostepData}
+
+function TCMRTwostep.fromJSON(JSON: WideString): Boolean;
 var
 	ParserObj, JSONVal: TJSONObject;
 begin
@@ -44,7 +45,7 @@ begin
 		if (not init(JSON, JSONVal)) then
 			Exit;
 		ParserObj := JSONVal as TJSONObject; //не менять
-		with TwostepData do
+		with self do
 		begin
 			assignFromName(NAME_FORM_NAME, ParserObj, form_name);
 			assignFromName(NAME_AUTH_HOST, ParserObj, auth_host);

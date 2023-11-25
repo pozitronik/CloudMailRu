@@ -82,7 +82,7 @@ uses
 	CloudMailRuOperationResult in 'models\dto\CloudMailRuOperationResult.pas',
 	CMROwner in 'models\dto\CMROwner.pas',
 	CMRSpace in 'models\dto\CMRSpace.pas',
-	CloudMailRuTwostepData in 'models\dto\CloudMailRuTwostepData.pas',
+	CMRTwostep in 'models\dto\CMRTwostep.pas',
 	FileCipher in 'models\cipher\FileCipher.pas',
 	ParsingHelper in 'helpers\ParsingHelper.pas',
 	TCHelper in 'helpers\TCHelper.pas',

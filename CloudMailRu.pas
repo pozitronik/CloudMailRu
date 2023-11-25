@@ -11,7 +11,7 @@ uses
 	CMRSpace,
 	CloudMailRuFileIdentity,
 	CloudMailRuOperationResult,
-	CloudMailRuTwostepData,
+	CMRTwostep,
 	JSONHelper,
 	ParsingHelper,
 	CMRConstants,
@@ -922,7 +922,7 @@ var
 	PostAnswer: WideString;
 	TwoStepJson: WideString;
 	AuthMessage: WideString;
-	TwostepData: TCloudMailRuTwostepData;
+	TwostepData: TCMRTwostep;
 	SecurityKey: WideString;
 	FormFields: TDictionary<WideString, WideString>;
 begin
@@ -941,7 +941,7 @@ begin
 				if result then
 				begin
 					Logger.Log(LOG_LEVEL_DEBUG, MSGTYPE_DETAILS, PARSING_AUTH_DATA);
-					if extractTwostepJson(PostAnswer, TwoStepJson) and getTwostepData(TwoStepJson, TwostepData) then
+					if extractTwostepJson(PostAnswer, TwoStepJson) and TwostepData.fromJSON(TwoStepJson) then
 					begin
 						if TwostepData.secstep_timeout = AUTH_APP_USED then
 							AuthMessage := ASK_AUTH_APP_CODE //mobile app used

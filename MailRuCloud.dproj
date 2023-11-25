@@ -222,7 +222,7 @@
         <DCCReference Include="models\dto\CloudMailRuOperationResult.pas"/>
         <DCCReference Include="models\dto\CMROwner.pas"/>
         <DCCReference Include="models\dto\CMRSpace.pas"/>
-        <DCCReference Include="models\dto\CloudMailRuTwostepData.pas"/>
+        <DCCReference Include="models\dto\CMRTwostep.pas"/>
         <DCCReference Include="models\cipher\FileCipher.pas"/>
         <DCCReference Include="helpers\ParsingHelper.pas"/>
         <DCCReference Include="helpers\TCHelper.pas"/>
