@@ -19,29 +19,31 @@ type
 		trashDir: boolean; //item is inside of a trash bin dir
 		sharedDir: boolean; //item is inside of a shared links dir
 		invitesDir: boolean; //item is inside of an invites dir
+		procedure FromPath(VirtualPath: WideString; isDir: TIsDir = ID_Unset);
+		class function GetRealPath(VirtualPath: WideString; isDir: TIsDir = ID_Unset): TRealPath; static;
+		function ToPath: WideString;
+		function IsInAccount(ignoreVirtual: boolean = true): boolean; //проверка, находится ли путь внутри аккаунта. ignoreVirtual - не считать виртуальные каталоги облачными
 	end;
-
-function ExtractRealPath(VirtualPath: WideString; isDir: TIsDir = ID_Unset): TRealPath;
-function ExtractVirtualPath(RealPath: TRealPath): WideString;
-function inAccount(path: TRealPath; ignoreVirtual: boolean = true): boolean;
 
 implementation
 
-function ExtractRealPath(VirtualPath: WideString; isDir: TIsDir = ID_Unset): TRealPath;
+{TRealPath}
+
+procedure TRealPath.FromPath(VirtualPath: WideString; isDir: TIsDir);
 var
 	List: TStringList;
 begin
-	Result.account := EmptyWideStr;
-	Result.path := EmptyWideStr;
+	self.account := EmptyWideStr;
+	self.path := EmptyWideStr;
 	(*
 	 we can't rely on isDir property, cause it can't be clearly determined from the path
 	 therefore the property value can be passed as the parameter, when it is known.
 	*)
-	Result.isDir := isDir;
-	Result.upDirItem := False;
-	Result.trashDir := False;
-	Result.sharedDir := False;
-	Result.invitesDir := False;
+	self.isDir := isDir;
+	self.upDirItem := False;
+	self.trashDir := False;
+	self.sharedDir := False;
+	self.invitesDir := False;
 
 	if VirtualPath = EmptyWideStr then
 		exit; //root
@@ -51,52 +53,56 @@ begin
 	MyExtractStrings(['\'], [], PWideChar(VirtualPath), List);
 
 	if (List.Count > 0) and (List.Strings[List.Count - 1] = '..') then
-		Result.upDirItem := true;
+		self.upDirItem := true;
 
 	if (List.Count > 0) and (List.Strings[List.Count - 1] = '\') then
-		Result.isDir := ID_Yes; // it newer happens, actually
+		self.isDir := ID_Yes; // it newer happens, actually
 
 	if List.Count = 1 then
 	begin
-		Result.account := List.Strings[0];
-		if (Result.account = VirtualPath) then
-			Result.isDir := ID_Yes;
+		self.account := List.Strings[0];
+		if (self.account = VirtualPath) then
+			self.isDir := ID_Yes;
 
 	end else if (List.Count > 1) then
 	begin
-		Result.account := List.Strings[0];
+		self.account := List.Strings[0];
 		List.Delete(0);
-		Result.path := Implode(List, '\');
+		self.path := Implode(List, '\');
 	end;
 
 	List.Destroy;
 
-	if ExtractFileExt(Result.account) = TrashPostfix then
+	if ExtractFileExt(self.account) = TrashPostfix then
 	begin
-		Result.trashDir := true;
-		Result.account := Copy(Result.account, 1, Length(Result.account) - Length(TrashPostfix));
-	end else if ExtractFileExt(Result.account) = SharedPostfix then
+		self.trashDir := true;
+		self.account := Copy(self.account, 1, Length(self.account) - Length(TrashPostfix));
+	end else if ExtractFileExt(self.account) = SharedPostfix then
 	begin
-		Result.sharedDir := true;
-		Result.account := Copy(Result.account, 1, Length(Result.account) - Length(SharedPostfix));
-	end else if ExtractFileExt(Result.account) = InvitesPostfix then
+		self.sharedDir := true;
+		self.account := Copy(self.account, 1, Length(self.account) - Length(SharedPostfix));
+	end else if ExtractFileExt(self.account) = InvitesPostfix then
 	begin
-		Result.invitesDir := true;
-		Result.account := Copy(Result.account, 1, Length(Result.account) - Length(InvitesPostfix));
+		self.invitesDir := true;
+		self.account := Copy(self.account, 1, Length(self.account) - Length(InvitesPostfix));
 	end;
 end;
 
-function ExtractVirtualPath(RealPath: TRealPath): WideString;
+class function TRealPath.GetRealPath(VirtualPath: WideString; isDir: TIsDir): TRealPath;
 begin
-	Result := ExcludeTrailingPathDelimiter('\' + IncludeTrailingPathDelimiter(RealPath.account) + RealPath.path);
+	result.FromPath(VirtualPath, isDir);
 end;
 
-//проверка, находится ли путь внутри аккаунта. ignoreVirtual - не считать виртуальные каталоги облачными
-function inAccount(path: TRealPath; ignoreVirtual: boolean = true): boolean;
+function TRealPath.IsInAccount(ignoreVirtual: boolean): boolean;
 begin
-	Result := path.account <> EmptyWideStr;
-	if Result and ignoreVirtual then
-		Result := not(path.trashDir or path.sharedDir or path.invitesDir);
+	result := self.account <> EmptyWideStr;
+	if result and ignoreVirtual then
+		result := not(self.trashDir or self.sharedDir or self.invitesDir);
+end;
+
+function TRealPath.ToPath: WideString;
+begin
+	result := ExcludeTrailingPathDelimiter('\' + IncludeTrailingPathDelimiter(self.account) + self.path);
 end;
 
 end.

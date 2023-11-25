@@ -703,7 +703,8 @@ begin
 		self.getShard(usedShard, ShardType);
 	if (self.public_account) then
 		exit(Format('%s%s%s', [IncludeSlash(usedShard), IncludeSlash(self.public_link), PathToUrl(remotePath, true, true)]));
-	if (ExtractRealPath(remotePath).isDir = ID_Yes) then {для ссылок внутри каталогов перебираются файлы внутри «публичной ссылки» на каталог}
+
+	if (TRealPath.GetRealPath(remotePath).isDir = ID_Yes) then {для ссылок внутри каталогов перебираются файлы внутри «публичной ссылки» на каталог}
 	begin
 		result := Format('%s%s%s', [IncludeSlash(usedShard), self.public_link, PathToUrl(remotePath, true, true)]);
 	end else begin {для прямых ссылок берутся публичные ссылки файлов}

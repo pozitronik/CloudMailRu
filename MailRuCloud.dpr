@@ -287,14 +287,14 @@ var
 	getResult: integer;
 	BackgroundJobsCount: integer;
 begin
-	RealPath := ExtractRealPath(RemoteDir, ID_Yes); // RemoteDir always a directory
+	RealPath.FromPath(RemoteDir, ID_Yes); // RemoteDir always a directory
 	if (InfoStartEnd = FS_STATUS_START) then
 	begin
 		ThreadFsStatusInfo.AddOrSetValue(GetCurrentThreadID(), InfoOperation);
 		case InfoOperation of
 			FS_STATUS_OP_LIST:
 				begin
-					if (GetPluginSettings(SettingsIniFilePath).DescriptionEnabled) and inAccount(RealPath) then
+					if (GetPluginSettings(SettingsIniFilePath).DescriptionEnabled) and RealPath.IsInAccount() then
 					begin
 						if ConnectionManager.get(RealPath.account, getResult).getDescriptionFile(IncludeTrailingBackslash(RealPath.path) + GetDescriptionFileName(SettingsIniFilePath), CurrentDescriptions.ionFilename) then
 						begin
@@ -403,17 +403,17 @@ begin
 				end;
 			FS_STATUS_OP_PUT_SINGLE:
 				begin
-					if inAccount(RealPath) and GetPluginSettings(SettingsIniFilePath).LogUserSpace then
+					if RealPath.IsInAccount() and GetPluginSettings(SettingsIniFilePath).LogUserSpace then
 						ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
 				end;
 			FS_STATUS_OP_PUT_MULTI:
 				begin
-					if inAccount(RealPath) and GetPluginSettings(SettingsIniFilePath).LogUserSpace then
+					if RealPath.IsInAccount() and GetPluginSettings(SettingsIniFilePath).LogUserSpace then
 						ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
 				end;
 			FS_STATUS_OP_RENMOV_SINGLE:
 				begin
-					if inAccount(RealPath) and GetPluginSettings(SettingsIniFilePath).LogUserSpace then
+					if RealPath.IsInAccount() and GetPluginSettings(SettingsIniFilePath).LogUserSpace then
 						ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
 				end;
 			FS_STATUS_OP_RENMOV_MULTI:
@@ -424,13 +424,13 @@ begin
 					ThreadFsRemoveDirSkippedPath.Items[GetCurrentThreadID].Free;
 					ThreadFsRemoveDirSkippedPath.AddOrSetValue(GetCurrentThreadID, nil);
 
-					if inAccount(RealPath) and GetPluginSettings(SettingsIniFilePath).LogUserSpace then
+					if RealPath.IsInAccount() and GetPluginSettings(SettingsIniFilePath).LogUserSpace then
 						ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
 				end;
 			FS_STATUS_OP_DELETE:
 				begin
 					ThreadSkipListDelete.AddOrSetValue(GetCurrentThreadID(), false);
-					if inAccount(RealPath) and GetPluginSettings(SettingsIniFilePath).LogUserSpace then
+					if RealPath.IsInAccount() and GetPluginSettings(SettingsIniFilePath).LogUserSpace then
 						ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
 				end;
 			FS_STATUS_OP_ATTRIB:
@@ -456,22 +456,22 @@ begin
 				end;
 			FS_STATUS_OP_SYNC_GET:
 				begin
-					if inAccount(RealPath) and GetPluginSettings(SettingsIniFilePath).LogUserSpace then
+					if RealPath.IsInAccount() and GetPluginSettings(SettingsIniFilePath).LogUserSpace then
 						ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
 				end;
 			FS_STATUS_OP_SYNC_PUT:
 				begin
-					if inAccount(RealPath) and GetPluginSettings(SettingsIniFilePath).LogUserSpace then
+					if RealPath.IsInAccount() and GetPluginSettings(SettingsIniFilePath).LogUserSpace then
 						ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
 				end;
 			FS_STATUS_OP_SYNC_DELETE:
 				begin
-					if inAccount(RealPath) and GetPluginSettings(SettingsIniFilePath).LogUserSpace then
+					if RealPath.IsInAccount() and GetPluginSettings(SettingsIniFilePath).LogUserSpace then
 						ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
 				end;
 			FS_STATUS_OP_GET_MULTI_THREAD:
 				begin
-					if inAccount(RealPath) and GetPluginSettings(SettingsIniFilePath).LogUserSpace then
+					if RealPath.IsInAccount() and GetPluginSettings(SettingsIniFilePath).LogUserSpace then
 						ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
 					if not ThreadBackgroundJobs.TryGetValue(RealPath.account, BackgroundJobsCount) then
 						BackgroundJobsCount := 0;
@@ -481,7 +481,7 @@ begin
 				end;
 			FS_STATUS_OP_PUT_MULTI_THREAD:
 				begin
-					if inAccount(RealPath) and GetPluginSettings(SettingsIniFilePath).LogUserSpace then
+					if RealPath.IsInAccount() and GetPluginSettings(SettingsIniFilePath).LogUserSpace then
 						ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
 					if not ThreadBackgroundJobs.TryGetValue(RealPath.account, BackgroundJobsCount) then
 						BackgroundJobsCount := 0;
@@ -539,7 +539,7 @@ begin
 			SetLastError(ERROR_NO_MORE_FILES);
 		end;
 	end else begin
-		RealPath := ExtractRealPath(GlobalPath);
+		RealPath.FromPath(GlobalPath);
 		CurrentCloud := ConnectionManager.get(RealPath.account, getResult);
 
 		if getResult <> CLOUD_OPERATION_OK then
@@ -766,12 +766,12 @@ begin
 
 	if command = 'rmdir' then
 	begin
-		RealPath := ExtractRealPath(RemoteName + Parameter);
+		RealPath.FromPath(RemoteName + Parameter);
 		if (ConnectionManager.get(RealPath.account, getResult).removeDir(RealPath.path) <> true) then
 			exit(FS_EXEC_ERROR);
 	end;
 
-	RealPath := ExtractRealPath(RemoteName); //default
+	RealPath.FromPath(RemoteName); //default
 	Cloud := ConnectionManager.get(RealPath.account, getResult);
 
 	//undocumented, share current folder to email param
@@ -806,7 +806,7 @@ begin
 	begin
 		if Cloud.public_account then
 			exit(FS_EXEC_ERROR);
-		if inAccount(RealPath, false) then
+		if RealPath.IsInAccount(false) then
 		begin
 			strpcopy(RemoteName, '\' + RealPath.account + TrashPostfix);
 			exit(FS_EXEC_SYMLINK);
@@ -817,7 +817,7 @@ begin
 	begin
 		if Cloud.public_account then
 			exit(FS_EXEC_ERROR);
-		if inAccount(RealPath, false) then
+		if RealPath.IsInAccount(false) then
 		begin
 			strpcopy(RemoteName, '\' + RealPath.account + SharedPostfix);
 			exit(FS_EXEC_SYMLINK);
@@ -828,7 +828,7 @@ begin
 	begin
 		if Cloud.public_account then
 			exit(FS_EXEC_ERROR);
-		if inAccount(RealPath, false) then
+		if RealPath.IsInAccount(false) then
 		begin
 			strpcopy(RemoteName, '\' + RealPath.account + InvitesPostfix);
 			exit(FS_EXEC_SYMLINK);
@@ -881,7 +881,7 @@ var
 	RealPath: TRealPath;
 	StreamingOptions: TStreamingOptions;
 begin
-	RealPath := ExtractRealPath(RemoteName);
+	RealPath.FromPath(RemoteName);
 
 	if RealPath.upDirItem then
 		RealPath.path := ExtractFilePath(RealPath.path); //if somepath/.. item properties called
@@ -1098,7 +1098,7 @@ begin
 	Result := FS_FILE_NOTSUPPORTED;
 	if CheckFlag(FS_COPYFLAGS_RESUME, CopyFlags) then
 		exit; {NEVER CALLED HERE}
-	RealPath := ExtractRealPath(RemoteName);
+	RealPath.FromPath(RemoteName);
 	if RealPath.trashDir or RealPath.sharedDir or RealPath.invitesDir then
 		exit;
 
@@ -1194,7 +1194,7 @@ var
 	getResult: integer;
 begin
 
-	RealPath := ExtractRealPath(RemoteName);
+	RealPath.FromPath(RemoteName);
 	if not FileExists(GetUNCFilePath(LocalName)) then
 		exit(FS_FILE_NOTFOUND);
 
@@ -1268,7 +1268,7 @@ var
 	InvitesListing: TCloudMailRuInviteInfoListing;
 	Invite: TCloudMailRuInviteInfo;
 begin
-	RealPath := ExtractRealPath(WideString(RemoteName));
+	RealPath.FromPath(WideString(RemoteName));
 	if (RealPath.account = EmptyWideStr) or RealPath.trashDir or RealPath.invitesDir then
 		exit(false);
 	Cloud := ConnectionManager.get(RealPath.account, getResult);
@@ -1301,7 +1301,7 @@ begin
 	if SkipListRenMov then
 		exit(false); //skip create directory if this flag set on
 
-	RealPath := ExtractRealPath(WideString(path));
+	RealPath.FromPath(WideString(path));
 	if (RealPath.path = EmptyWideStr) then //accounts list
 	begin
 		account.user := RealPath.account;
@@ -1344,7 +1344,7 @@ begin
 		ThreadListingAborted.AddOrSetValue(GetCurrentThreadID(), false);
 		exit(false);
 	end;
-	RealPath := ExtractRealPath(WideString(RemoteName));
+	RealPath.FromPath(WideString(RemoteName));
 	if RealPath.trashDir or RealPath.sharedDir or RealPath.invitesDir then
 		exit(false);
 	Cloud := ConnectionManager.get(RealPath.account, getResult);
@@ -1507,8 +1507,8 @@ var
 begin
 	TCProgress.Progress(OldName, NewName, 0);
 
-	OldRealPath := ExtractRealPath(WideString(OldName));
-	NewRealPath := ExtractRealPath(WideString(NewName));
+	OldRealPath.FromPath(WideString(OldName));
+	NewRealPath.FromPath(WideString(NewName));
 
 	if OldRealPath.trashDir or NewRealPath.trashDir or OldRealPath.sharedDir or NewRealPath.sharedDir then
 		exit(FS_FILE_NOTSUPPORTED);
@@ -1547,13 +1547,13 @@ begin
 			Result := OldCloud.mvFile(OldRealPath.path, NewRealPath.path);
 			if (FS_FILE_EXISTS = Result) and (ThreadFsRemoveDirSkippedPath.ContainsKey(GetCurrentThreadID)) then //TC сразу же попытается удалить каталог, чтобы избежать этого - внесем путь в своеобразный блеклист
 			begin
-				ThreadFsRemoveDirSkippedPath.Items[GetCurrentThreadID].Add(ExtractVirtualPath(OldRealPath));
+				ThreadFsRemoveDirSkippedPath.Items[GetCurrentThreadID].Add(OldRealPath.ToPath);
 			end else if (FS_FILE_OK = Result) and (ThreadFsRemoveDirSkippedPath.ContainsKey(GetCurrentThreadID)) then
 			begin //Вытащим из блеклиста, если решили перезаписать
 
 				if Assigned(ThreadFsRemoveDirSkippedPath.Items[GetCurrentThreadID]) then
 				begin
-					SkippedFoundIndex := ThreadFsRemoveDirSkippedPath.Items[GetCurrentThreadID].IndexOf(ExtractVirtualPath(OldRealPath));
+					SkippedFoundIndex := ThreadFsRemoveDirSkippedPath.Items[GetCurrentThreadID].IndexOf(OldRealPath.ToPath);
 					if (-1 <> SkippedFoundIndex) then
 						ThreadFsRemoveDirSkippedPath.Items[GetCurrentThreadID].Delete(SkippedFoundIndex);
 				end;
@@ -1608,7 +1608,7 @@ var
 	FileTime: TFileTime;
 begin
 	Result := ft_nosuchfield;
-	RealPath := ExtractRealPath(FileName);
+	RealPath.FromPath(FileName);
 	if RealPath.path = EmptyWideStr then
 	begin
 		if FieldIndex = 14 then
@@ -1777,7 +1777,7 @@ var
 begin
 	Result := FS_ICON_EXTRACTED;
 
-	RealPath := ExtractRealPath(RemoteName);
+	RealPath.FromPath(RemoteName);
 
 	if RealPath.upDirItem then
 		exit; //do not overlap updir icon
