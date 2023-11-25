@@ -27,7 +27,7 @@ implementation
 function TCMRDirItemListHelper.FindByHomePath(HomePath: WideString): TCMRDirItem;
 var
 	CurrentItem: TCMRDirItem;
-begin
+begin //todo: try to implement Filter method
 	HomePath := '/' + StringReplace(HomePath, WideString('\'), WideString('/'), [rfReplaceAll, rfIgnoreCase]);
 	for CurrentItem in self do
 		if CurrentItem.home = HomePath then
