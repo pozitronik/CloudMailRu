@@ -23,6 +23,7 @@ uses
 	CMRStrings,
 	PLUGIN_Types,
 	AccountSettings,
+	ConnectionSettings,
 	Vcl.Imaging.JPEG;
 
 const

@@ -7,6 +7,7 @@ uses
 	CMRConstants,
 	PLUGIN_TYPES,
 	Settings,
+  ConnectionSettings,
 	TCLogger,
 	TCProgress,
 	System.Generics.Collections,

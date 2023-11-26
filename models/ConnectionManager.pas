@@ -15,6 +15,7 @@ uses
 	Vcl.Controls,
 	PLUGIN_Types,
 	Settings,
+	PluginSettings,
 	TCPasswordManager,
 	HTTPManager,
 	System.Generics.Collections,
@@ -29,7 +30,7 @@ type
 		Connections: TDictionary<WideString, TCloudMailRu>;
 		HTTPManager: THTTPManager;
 		IniFileName: WideString;
-		PluginSettings: TPluginSettings; //Сохраняем параметры плагина, чтобы проксировать параметры из них при инициализации конкретного облака
+		Settings: TPluginSettings; //Сохраняем параметры плагина, чтобы проксировать параметры из них при инициализации конкретного облака
 
 		Logger: TTCLogger;
 		Progress: TTCProgress;
@@ -39,7 +40,7 @@ type
 
 		function init(connectionName: WideString; var Cloud: TCloudMailRu): integer; //инициализирует подключение по его имени, возвращает код состояния
 	public
-		constructor Create(IniFileName: WideString; PluginSettings: TPluginSettings; HTTPManager: THTTPManager; Progress: TTCProgress; Logger: TTCLogger; Request: TTCRequest; PasswordManager: TTCPasswordManager);
+		constructor Create(IniFileName: WideString; Settings: TPluginSettings; HTTPManager: THTTPManager; Progress: TTCProgress; Logger: TTCLogger; Request: TTCRequest; PasswordManager: TTCPasswordManager);
 		destructor Destroy(); override;
 		function get(connectionName: WideString; var OperationResult: integer): TCloudMailRu; //возвращает готовое подклчение по имени
 		procedure free(connectionName: WideString); //освобождает подключение по его имени, если оно существует
@@ -48,11 +49,11 @@ type
 implementation
 
 {TConnectionManager}
-constructor TConnectionManager.Create(IniFileName: WideString; PluginSettings: TPluginSettings; HTTPManager: THTTPManager; Progress: TTCProgress; Logger: TTCLogger; Request: TTCRequest; PasswordManager: TTCPasswordManager);
+constructor TConnectionManager.Create(IniFileName: WideString; Settings: TPluginSettings; HTTPManager: THTTPManager; Progress: TTCProgress; Logger: TTCLogger; Request: TTCRequest; PasswordManager: TTCPasswordManager);
 begin
 	Connections := TDictionary<WideString, TCloudMailRu>.Create;
 	self.IniFileName := IniFileName;
-	self.PluginSettings := PluginSettings;
+	self.Settings := Settings;
 	self.Progress := Progress;
 	self.Logger := Logger;
 	self.Request := Request;
@@ -142,14 +143,14 @@ begin
 	Logger.Log(LOG_LEVEL_CONNECT, MSGTYPE_CONNECT, 'CONNECT \%s', [connectionName]);
 
 	{proxify plugin settings to cloud}
-	CloudSettings.ConnectionSettings := self.PluginSettings.ConnectionSettings;
-	CloudSettings.PrecalculateHash := self.PluginSettings.PrecalculateHash;
-	CloudSettings.ForcePrecalculateSize := self.PluginSettings.ForcePrecalculateSize;
-	CloudSettings.CheckCRC := self.PluginSettings.CheckCRC;
-	CloudSettings.CloudMaxFileSize := self.PluginSettings.CloudMaxFileSize;
-	CloudSettings.OperationErrorMode := self.PluginSettings.OperationErrorMode;
-	CloudSettings.RetryAttempts := self.PluginSettings.RetryAttempts;
-	CloudSettings.AttemptWait := self.PluginSettings.AttemptWait;
+	CloudSettings.ConnectionSettings := self.Settings.ConnectionSettings;
+	CloudSettings.PrecalculateHash := self.Settings.PrecalculateHash;
+	CloudSettings.ForcePrecalculateSize := self.Settings.ForcePrecalculateSize;
+	CloudSettings.CheckCRC := self.Settings.CheckCRC;
+	CloudSettings.CloudMaxFileSize := self.Settings.CloudMaxFileSize;
+	CloudSettings.OperationErrorMode := self.Settings.OperationErrorMode;
+	CloudSettings.RetryAttempts := self.Settings.RetryAttempts;
+	CloudSettings.AttemptWait := self.Settings.AttemptWait;
 
 	Cloud := TCloudMailRu.Create(CloudSettings, HTTPManager, Progress, Logger, Request);
 

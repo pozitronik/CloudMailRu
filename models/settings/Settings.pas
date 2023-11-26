@@ -17,6 +17,8 @@ uses
 	VCL.Controls,
 	AccountSettings,
 	ProxySettings,
+	ConnectionSettings,
+  PluginSettings,
 	System.RegularExpressions;
 
 const
@@ -75,49 +77,6 @@ const
 	DEFAULT_USERAGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.150 Safari/537.36/TCWFX(' + PlatformX + ')';
 
 type
-
-	{Settings for HTTP transport}
-	TConnectionSettings = record
-		ProxySettings: TProxySettings;
-		SocketTimeout: integer;
-		UploadBPS: integer;
-		DownloadBPS: integer;
-		UserAgent: WideString;
-	end;
-
-	{Global plugin options}
-	TPluginSettings = record
-		ConnectionSettings: TConnectionSettings;
-		IniPath: integer;
-		LoadSSLDLLOnlyFromPluginDir: boolean;
-		PreserveFileTime: boolean;
-		DescriptionEnabled: boolean;
-		DescriptionEditorEnabled: boolean;
-		DescriptionCopyToCloud: boolean;
-		DescriptionCopyFromCloud: boolean;
-		DescriptionTrackCloudFS: boolean;
-		DescriptionFileName: WideString;
-		CopyBetweenAccountsMode: integer;
-		CloudMaxFileSize: int64;
-		ChunkOverwriteMode: integer;
-		DeleteFailOnUploadMode: integer;
-		OperationErrorMode: integer;
-		RetryAttempts: integer;
-		AttemptWait: integer;
-		OverwriteLocalMode: integer;
-		DisableMultiThreading: boolean;
-		LogUserSpace: boolean;
-		IconsMode: integer;
-		DownloadLinksEncode: boolean;
-		AutoUpdateDownloadListing: boolean;
-		ShowTrashFolders: boolean;
-		ShowSharedFolders: boolean;
-		ShowInvitesFolders: boolean;
-		LogLevel: integer;
-		PrecalculateHash: boolean;
-		ForcePrecalculateSize: int64;
-		CheckCRC: boolean;
-	end;
 
 	{Прототипирую сюда все параметры, которые требуются классом облака}
 	TCloudSettings = record

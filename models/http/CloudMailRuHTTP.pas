@@ -33,7 +33,8 @@ uses
 	IdIOHandlerStream,
 	IdInterceptThrottler,
 	IdCookie,
-	IdMultipartFormData;
+	IdMultipartFormData,
+	ConnectionSettings;
 
 type
 
