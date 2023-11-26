@@ -34,6 +34,7 @@ uses
 	TCRequest,
 	RealPath,
 	Settings,
+  CloudSettings,
 	FileCipher,
 	FileSplitInfo,
 	ChunkedFileStream,

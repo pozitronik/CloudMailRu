@@ -16,6 +16,7 @@ uses
 	PLUGIN_Types,
 	Settings,
 	PluginSettings,
+	CloudSettings,
 	TCPasswordManager,
 	HTTPManager,
 	System.Generics.Collections,

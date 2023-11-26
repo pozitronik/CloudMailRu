@@ -271,6 +271,7 @@
         <DCCReference Include="models\settings\ProxySettings.pas"/>
         <DCCReference Include="models\settings\ConnectionSettings.pas"/>
         <DCCReference Include="models\settings\PluginSettings.pas"/>
+        <DCCReference Include="models\settings\CloudSettings.pas"/>
         <RcItem Include="icons\icon.ico">
             <ResourceType>ICON</ResourceType>
             <ResourceId>base_icon</ResourceId>
