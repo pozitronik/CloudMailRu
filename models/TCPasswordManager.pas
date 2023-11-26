@@ -15,6 +15,7 @@ Uses
 	WideStrUtils,
 	System.Classes,
 	CMRStrings,
+	AccountSettings,
 	TCLogger;
 
 type

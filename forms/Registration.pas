@@ -22,6 +22,7 @@ uses
 	CMRConstants,
 	CMRStrings,
 	PLUGIN_Types,
+	AccountSettings,
 	Vcl.Imaging.JPEG;
 
 const

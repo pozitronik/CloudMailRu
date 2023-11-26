@@ -267,6 +267,7 @@
         <DCCReference Include="models\TCLogger.pas"/>
         <DCCReference Include="models\TCProgress.pas"/>
         <DCCReference Include="models\TCRequest.pas"/>
+        <DCCReference Include="models\settings\AccountSettings.pas"/>
         <RcItem Include="icons\icon.ico">
             <ResourceType>ICON</ResourceType>
             <ResourceId>base_icon</ResourceId>
@@ -337,6 +338,12 @@
                 </DeployFile>
                 <DeployFile LocalName="$(BDS)\Redist\osx32\libcgunwind.1.0.dylib" Class="DependencyModule">
                     <Platform Name="OSX32">
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
+                <DeployFile LocalName="MailRuCloud.dll" Configuration="Canary" Class="ProjectOutput">
+                    <Platform Name="Win32">
+                        <RemoteName>MailRuCloud.dll</RemoteName>
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>

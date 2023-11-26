@@ -5,7 +5,6 @@
 uses
 {$IFDEF DEBUG}
 	FastMM4 in 'FastMM\FastMM4.pas',
-	FastMM4Messages in 'FastMM\FastMM4Messages.pas',
 {$ENDIF }
 	JSON,
 	SysUtils,
@@ -96,7 +95,8 @@ uses
 	RealPath in 'models\dto\RealPath.pas',
 	TCLogger in 'models\TCLogger.pas',
 	TCProgress in 'models\TCProgress.pas',
-	TCRequest in 'models\TCRequest.pas';
+	TCRequest in 'models\TCRequest.pas',
+	AccountSettings in 'models\settings\AccountSettings.pas';
 
 {$IFDEF WIN64}
 {$E wfx64}
@@ -115,6 +115,8 @@ const
 {$ENDIF}
 
 var
+	CurrentSettings: TPluginSettings;
+
 	AccountsIniFilePath: WideString;
 	SettingsIniFilePath: WideString;
 	GlobalPath, PluginPath, AppDataDir, IniDir: WideString;
@@ -207,7 +209,7 @@ begin
 
 	while (not DeleteFileW(PWideChar(UNCLocalName))) and (DeleteFailOnUploadModeAsked = IDRETRY) do
 	begin
-		DeleteFailOnUploadMode := GetPluginSettings(SettingsIniFilePath).DeleteFailOnUploadMode;
+		DeleteFailOnUploadMode := CurrentSettings.DeleteFailOnUploadMode;
 		if DeleteFailOnUploadMode = DeleteFailOnUploadAsk then
 		begin
 			DeleteFailOnUploadModeAsked := MsgBox(ERR_DELETE_FILE_ASK, [LocalName], ERR_DELETE_FILE, MB_ABORTRETRYIGNORE + MB_ICONQUESTION);
@@ -235,7 +237,7 @@ begin
 						TCLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_IMPORTANTERROR, ERR_DELETE_FILE_DELETE, [LocalName]);
 						exit(FS_FILE_OK);
 					end else begin
-						if GetPluginSettings(SettingsIniFilePath).DeleteFailOnUploadMode = DeleteFailOnUploadDeleteIgnore then
+						if CurrentSettings.DeleteFailOnUploadMode = DeleteFailOnUploadDeleteIgnore then
 						begin
 							TCLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_IMPORTANTERROR, ERR_DELETE_FILE_IGNORE, [LocalName]);
 							exit(FS_FILE_OK);
@@ -255,7 +257,7 @@ end;
 
 function FsGetBackgroundFlags: integer; stdcall;
 begin
-	if GetPluginSettings(SettingsIniFilePath).DisableMultiThreading then
+	if CurrentSettings.DisableMultiThreading then
 		Result := 0
 	else
 		Result := BG_DOWNLOAD + BG_UPLOAD; //+ BG_ASK_USER;
@@ -272,7 +274,7 @@ function FsInitW(PluginNr: integer; pProgressProc: TProgressProcW; pLogProc: TLo
 begin
 	PluginNum := PluginNr;
 	Result := 0;
-	TCLogger := TTCLogger.Create(pLogProc, PluginNr, GetPluginSettings(SettingsIniFilePath).LogLevel);
+	TCLogger := TTCLogger.Create(pLogProc, PluginNr, CurrentSettings.LogLevel);
 	TCProgress := TTCProgress.Create(pProgressProc, PluginNr);
 	TCRequest := TTCRequest.Create(pRequestProc, PluginNr);
 	CurrentDescriptions := TDescription.Create(GetTmpFileName('ion'), GetTCCommentPreferredFormat);
@@ -291,7 +293,7 @@ begin
 		case InfoOperation of
 			FS_STATUS_OP_LIST:
 				begin
-					if (GetPluginSettings(SettingsIniFilePath).DescriptionEnabled) and RealPath.IsInAccount() then
+					if (CurrentSettings.DescriptionEnabled) and RealPath.IsInAccount() then
 					begin
 						if ConnectionManager.get(RealPath.account, getResult).getDescriptionFile(IncludeTrailingBackslash(RealPath.path) + GetDescriptionFileName(SettingsIniFilePath), CurrentDescriptions.ionFilename) then
 						begin
@@ -400,17 +402,17 @@ begin
 				end;
 			FS_STATUS_OP_PUT_SINGLE:
 				begin
-					if RealPath.IsInAccount() and GetPluginSettings(SettingsIniFilePath).LogUserSpace then
+					if RealPath.IsInAccount() and CurrentSettings.LogUserSpace then
 						ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
 				end;
 			FS_STATUS_OP_PUT_MULTI:
 				begin
-					if RealPath.IsInAccount() and GetPluginSettings(SettingsIniFilePath).LogUserSpace then
+					if RealPath.IsInAccount() and CurrentSettings.LogUserSpace then
 						ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
 				end;
 			FS_STATUS_OP_RENMOV_SINGLE:
 				begin
-					if RealPath.IsInAccount() and GetPluginSettings(SettingsIniFilePath).LogUserSpace then
+					if RealPath.IsInAccount() and CurrentSettings.LogUserSpace then
 						ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
 				end;
 			FS_STATUS_OP_RENMOV_MULTI:
@@ -421,13 +423,13 @@ begin
 					ThreadFsRemoveDirSkippedPath.Items[GetCurrentThreadID].Free;
 					ThreadFsRemoveDirSkippedPath.AddOrSetValue(GetCurrentThreadID, nil);
 
-					if RealPath.IsInAccount() and GetPluginSettings(SettingsIniFilePath).LogUserSpace then
+					if RealPath.IsInAccount() and CurrentSettings.LogUserSpace then
 						ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
 				end;
 			FS_STATUS_OP_DELETE:
 				begin
 					ThreadSkipListDelete.AddOrSetValue(GetCurrentThreadID(), false);
-					if RealPath.IsInAccount() and GetPluginSettings(SettingsIniFilePath).LogUserSpace then
+					if RealPath.IsInAccount() and CurrentSettings.LogUserSpace then
 						ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
 				end;
 			FS_STATUS_OP_ATTRIB:
@@ -453,22 +455,22 @@ begin
 				end;
 			FS_STATUS_OP_SYNC_GET:
 				begin
-					if RealPath.IsInAccount() and GetPluginSettings(SettingsIniFilePath).LogUserSpace then
+					if RealPath.IsInAccount() and CurrentSettings.LogUserSpace then
 						ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
 				end;
 			FS_STATUS_OP_SYNC_PUT:
 				begin
-					if RealPath.IsInAccount() and GetPluginSettings(SettingsIniFilePath).LogUserSpace then
+					if RealPath.IsInAccount() and CurrentSettings.LogUserSpace then
 						ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
 				end;
 			FS_STATUS_OP_SYNC_DELETE:
 				begin
-					if RealPath.IsInAccount() and GetPluginSettings(SettingsIniFilePath).LogUserSpace then
+					if RealPath.IsInAccount() and CurrentSettings.LogUserSpace then
 						ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
 				end;
 			FS_STATUS_OP_GET_MULTI_THREAD:
 				begin
-					if RealPath.IsInAccount() and GetPluginSettings(SettingsIniFilePath).LogUserSpace then
+					if RealPath.IsInAccount() and CurrentSettings.LogUserSpace then
 						ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
 					if not ThreadBackgroundJobs.TryGetValue(RealPath.account, BackgroundJobsCount) then
 						BackgroundJobsCount := 0;
@@ -478,7 +480,7 @@ begin
 				end;
 			FS_STATUS_OP_PUT_MULTI_THREAD:
 				begin
-					if RealPath.IsInAccount() and GetPluginSettings(SettingsIniFilePath).LogUserSpace then
+					if RealPath.IsInAccount() and CurrentSettings.LogUserSpace then
 						ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
 					if not ThreadBackgroundJobs.TryGetValue(RealPath.account, BackgroundJobsCount) then
 						BackgroundJobsCount := 0;
@@ -526,7 +528,7 @@ begin
 
 		if (AccountsList.Count > 0) then
 		begin
-			AddVirtualAccountsToAccountsList(AccountsIniFilePath, AccountsList, [GetPluginSettings(SettingsIniFilePath).ShowTrashFolders, GetPluginSettings(SettingsIniFilePath).ShowSharedFolders, GetPluginSettings(SettingsIniFilePath).ShowInvitesFolders]);
+			AddVirtualAccountsToAccountsList(AccountsIniFilePath, AccountsList, [CurrentSettings.ShowTrashFolders, CurrentSettings.ShowSharedFolders, CurrentSettings.ShowInvitesFolders]);
 
 			FindData := GetFindDataEmptyDir(AccountsList.Strings[0]);
 			FileCounter := 1;
@@ -696,7 +698,7 @@ begin
 			Cloud := ConnectionManager.get(RealPath.account, getResult);
 			CurrentItem := FindListingItemByPath(CurrentListing, RealPath);
 			if Cloud.statusFile(CurrentItem.home, CurrentItem) then
-				TPropertyForm.ShowProperty(MainWin, RealPath.path, CurrentItem, Cloud, GetPluginSettings(SettingsIniFilePath).DownloadLinksEncode, GetPluginSettings(SettingsIniFilePath).AutoUpdateDownloadListing, false, false, GetDescriptionFileName(SettingsIniFilePath))
+				TPropertyForm.ShowProperty(MainWin, RealPath.path, CurrentItem, Cloud, CurrentSettings.DownloadLinksEncode, CurrentSettings.AutoUpdateDownloadListing, false, false, GetDescriptionFileName(SettingsIniFilePath))
 		end;
 	end;
 end;
@@ -747,7 +749,7 @@ begin
 	begin
 		Cloud := ConnectionManager.get(RealPath.account, getResult);
 		//всегда нужно обновлять статус на сервере, CurrentListing может быть изменён в другой панели
-		if (Cloud.statusFile(RealPath.path, CurrentItem)) and (idContinue = TPropertyForm.ShowProperty(MainWin, RealPath.path, CurrentItem, Cloud, GetPluginSettings(SettingsIniFilePath).DownloadLinksEncode, GetPluginSettings(SettingsIniFilePath).AutoUpdateDownloadListing, GetPluginSettings(SettingsIniFilePath).DescriptionEnabled, GetPluginSettings(SettingsIniFilePath).DescriptionEditorEnabled, GetDescriptionFileName(SettingsIniFilePath))) then
+		if (Cloud.statusFile(RealPath.path, CurrentItem)) and (idContinue = TPropertyForm.ShowProperty(MainWin, RealPath.path, CurrentItem, Cloud, CurrentSettings.DownloadLinksEncode, CurrentSettings.AutoUpdateDownloadListing, CurrentSettings.DescriptionEnabled, CurrentSettings.DescriptionEditorEnabled, GetDescriptionFileName(SettingsIniFilePath))) then
 			PostMessage(MainWin, WM_USER + 51, 540, 0); //refresh tc panel if description edited
 	end;
 end;
@@ -793,7 +795,7 @@ begin
 	if command = 'clone' then //add file by weblink
 	begin
 		if (Cloud.cloneWeblink(RealPath.path, ExtractLinkFromUrl(Parameter)) = CLOUD_OPERATION_OK) then
-			if GetPluginSettings(SettingsIniFilePath).LogUserSpace then
+			if CurrentSettings.LogUserSpace then
 				Cloud.logUserSpaceInfo
 			else
 				exit(FS_EXEC_ERROR);
@@ -1046,7 +1048,7 @@ var
 	AccountSettings: TAccountSettings;
 	resultHash: WideString;
 begin
-	if (GetPluginSettings(SettingsIniFilePath).CheckCRC) then
+	if (CurrentSettings.CheckCRC) then
 		resultHash := EmptyWideStr
 	else
 		resultHash := 'dummy'; //calculations will be ignored if variable is not empty
@@ -1060,13 +1062,13 @@ begin
 
 		Item := FindListingItemByPath(CurrentListing, RemotePath);
 		{Дополнительно проверим CRC скачанного файла}
-		if GetPluginSettings(SettingsIniFilePath).CheckCRC then
+		if CurrentSettings.CheckCRC then
 		begin
 			if (resultHash <> EmptyWideStr) and (Item.hash <> resultHash) then
 				exit(FS_FILE_READERROR);
 		end;
 
-		if GetPluginSettings(SettingsIniFilePath).PreserveFileTime then
+		if CurrentSettings.PreserveFileTime then
 		begin
 			if Item.mtime <> 0 then
 				SetAllFileTime(ExpandUNCFileName(LocalName), DateTimeToFileTime(UnixToDateTime(Item.mtime)));
@@ -1074,13 +1076,13 @@ begin
 		if CheckFlag(FS_COPYFLAGS_MOVE, CopyFlags) then
 		begin
 			Cloud.deleteFile(RemotePath.path);
-			if (GetPluginSettings(SettingsIniFilePath).DescriptionTrackCloudFS and RemoteDescriptionsSupportEnabled(GetAccountSettingsFromIniFile(AccountsIniFilePath, RemotePath.account))) then
+			if (CurrentSettings.DescriptionTrackCloudFS and RemoteDescriptionsSupportEnabled(GetAccountSettingsFromIniFile(AccountsIniFilePath, RemotePath.account))) then
 				DeleteRemoteFileDescription(RemotePath, Cloud);
 		end;
 		TCProgress.Progress(PWideChar(LocalName), PWideChar(RemoteName), 100);
 		TCLogger.Log(LOG_LEVEL_FILE_OPERATION, MSGTYPE_TRANSFERCOMPLETE, '%s -> %s', [RemoteName, LocalName]);
 
-		if GetPluginSettings(SettingsIniFilePath).DescriptionCopyFromCloud then
+		if CurrentSettings.DescriptionCopyFromCloud then
 			UpdateFileDescription(RemotePath, LocalName, Cloud);
 
 	end;
@@ -1101,7 +1103,7 @@ begin
 
 	TCProgress.Progress(RemoteName, LocalName, 0);
 
-	OverwriteLocalMode := GetPluginSettings(SettingsIniFilePath).OverwriteLocalMode;
+	OverwriteLocalMode := CurrentSettings.OverwriteLocalMode;
 	if (FileExists(GetUNCFilePath(LocalName)) and not(CheckFlag(FS_COPYFLAGS_OVERWRITE, CopyFlags))) then
 	begin
 		case OverwriteLocalMode of
@@ -1122,7 +1124,7 @@ begin
 	if Result <> FS_FILE_READERROR then
 		exit;
 
-	case GetPluginSettings(SettingsIniFilePath).OperationErrorMode of
+	case CurrentSettings.OperationErrorMode of
 		OperationErrorModeAsk:
 			begin
 				while (not(Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
@@ -1144,7 +1146,7 @@ begin
 			exit(FS_FILE_USERABORT);
 		OperationErrorModeRetry:
 			begin;
-				RetryAttempts := GetPluginSettings(SettingsIniFilePath).RetryAttempts;
+				RetryAttempts := CurrentSettings.RetryAttempts;
 				while (ThreadRetryCountDownload.Items[GetCurrentThreadID()] <> RetryAttempts) and (not(Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
 				begin
 					ThreadRetryCountDownload.Items[GetCurrentThreadID()] := ThreadRetryCountDownload.Items[GetCurrentThreadID()] + 1;
@@ -1155,7 +1157,7 @@ begin
 					if (Result in [FS_FILE_OK, FS_FILE_USERABORT]) then
 						ThreadRetryCountDownload.Items[GetCurrentThreadID()] := 0; //сбросим счётчик попыток
 					ProcessMessages;
-					Sleep(GetPluginSettings(SettingsIniFilePath).AttemptWait);
+					Sleep(CurrentSettings.AttemptWait);
 				end;
 			end;
 	end;
@@ -1178,7 +1180,7 @@ begin
 		TCLogger.Log(LOG_LEVEL_FILE_OPERATION, MSGTYPE_TRANSFERCOMPLETE, '%s -> %s', [LocalName, RemoteName]);
 		if CheckFlag(FS_COPYFLAGS_MOVE, CopyFlags) then
 			Result := DeleteLocalFile(LocalName);
-		if (GetPluginSettings(SettingsIniFilePath).DescriptionCopyToCloud and RemoteDescriptionsSupportEnabled(AccountSettings)) then
+		if (CurrentSettings.DescriptionCopyToCloud and RemoteDescriptionsSupportEnabled(AccountSettings)) then
 			UpdateRemoteFileDescription(RemotePath, LocalName, Cloud);
 	end;
 
@@ -1216,7 +1218,7 @@ begin
 	if Result <> FS_FILE_WRITEERROR then
 		exit;
 
-	case GetPluginSettings(SettingsIniFilePath).OperationErrorMode of
+	case CurrentSettings.OperationErrorMode of
 		OperationErrorModeAsk:
 			begin
 				while (not(Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
@@ -1238,7 +1240,7 @@ begin
 			exit(FS_FILE_USERABORT);
 		OperationErrorModeRetry:
 			begin;
-				RetryAttempts := GetPluginSettings(SettingsIniFilePath).RetryAttempts;
+				RetryAttempts := CurrentSettings.RetryAttempts;
 				while (ThreadRetryCountUpload.Items[GetCurrentThreadID()] <> RetryAttempts) and (not(Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
 				begin
 					ThreadRetryCountUpload.Items[GetCurrentThreadID()] := ThreadRetryCountUpload.Items[GetCurrentThreadID()] + 1;
@@ -1249,7 +1251,7 @@ begin
 					if (Result in [FS_FILE_OK, FS_FILE_USERABORT]) then
 						ThreadRetryCountUpload.Items[GetCurrentThreadID()] := 0; //сбросим счётчик попыток
 					ProcessMessages;
-					Sleep(GetPluginSettings(SettingsIniFilePath).AttemptWait);
+					Sleep(CurrentSettings.AttemptWait);
 				end;
 			end;
 	end;
@@ -1281,7 +1283,7 @@ begin
 	end
 	else
 		Result := Cloud.deleteFile(RealPath.path);
-	if (Result and GetPluginSettings(SettingsIniFilePath).DescriptionTrackCloudFS and RemoteDescriptionsSupportEnabled(GetAccountSettingsFromIniFile(AccountsIniFilePath, RealPath.account))) then
+	if (Result and CurrentSettings.DescriptionTrackCloudFS and RemoteDescriptionsSupportEnabled(GetAccountSettingsFromIniFile(AccountsIniFilePath, RealPath.account))) then
 		DeleteRemoteFileDescription(RealPath, Cloud);
 end;
 
@@ -1301,7 +1303,7 @@ begin
 	if RealPath.isInAccountsList then //accounts list
 	begin
 		account.user := RealPath.account;
-		Result := (mrOk = TRegistrationForm.ShowRegistration(FindTCWindow, GetPluginSettings(SettingsIniFilePath).ConnectionSettings, account));
+		Result := (mrOk = TRegistrationForm.ShowRegistration(FindTCWindow, CurrentSettings.ConnectionSettings, account));
 		if Result then
 		begin
 			if account.use_tc_password_manager then //просим TC сохранить пароль
@@ -1346,7 +1348,7 @@ begin
 	Cloud := ConnectionManager.get(RealPath.account, getResult);
 	Result := Cloud.removeDir(RealPath.path);
 
-	if (Result and GetPluginSettings(SettingsIniFilePath).DescriptionTrackCloudFS and RemoteDescriptionsSupportEnabled(GetAccountSettingsFromIniFile(AccountsIniFilePath, RealPath.account))) then
+	if (Result and CurrentSettings.DescriptionTrackCloudFS and RemoteDescriptionsSupportEnabled(GetAccountSettingsFromIniFile(AccountsIniFilePath, RealPath.account))) then
 	begin
 		ThreadFsStatusInfo.TryGetValue(GetCurrentThreadID, OperationContextId); //need to check operation context => directory can be deleted after moving operation
 		if OperationContextId = FS_STATUS_OP_RENMOV_MULTI then
@@ -1380,7 +1382,7 @@ begin
 		if not(Result in [FS_FILE_OK, FS_FILE_EXISTS]) then
 		begin
 
-			case GetPluginSettings(SettingsIniFilePath).OperationErrorMode of
+			case CurrentSettings.OperationErrorMode of
 				OperationErrorModeAsk:
 					begin
 						while (not(Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
@@ -1401,7 +1403,7 @@ begin
 					exit(FS_FILE_USERABORT);
 				OperationErrorModeRetry:
 					begin;
-						RetryAttempts := GetPluginSettings(SettingsIniFilePath).RetryAttempts;
+						RetryAttempts := CurrentSettings.RetryAttempts;
 						while (ThreadRetryCountRenMov.Items[GetCurrentThreadID()] <> RetryAttempts) and (not(Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
 						begin
 							ThreadRetryCountRenMov.Items[GetCurrentThreadID()] := ThreadRetryCountRenMov.Items[GetCurrentThreadID()] + 1;
@@ -1412,7 +1414,7 @@ begin
 							if (Result in [FS_FILE_OK, FS_FILE_USERABORT]) then
 								ThreadRetryCountRenMov.Items[GetCurrentThreadID()] := 0; //сбросим счётчик попыток
 							ProcessMessages;
-							Sleep(GetPluginSettings(SettingsIniFilePath).AttemptWait);
+							Sleep(CurrentSettings.AttemptWait);
 						end;
 					end;
 			end;
@@ -1449,7 +1451,7 @@ begin
 		if not(Result in [FS_FILE_OK, FS_FILE_EXISTS]) then
 		begin
 
-			case GetPluginSettings(SettingsIniFilePath).OperationErrorMode of
+			case CurrentSettings.OperationErrorMode of
 				OperationErrorModeAsk:
 					begin
 
@@ -1472,7 +1474,7 @@ begin
 					exit(FS_FILE_USERABORT);
 				OperationErrorModeRetry:
 					begin;
-						RetryAttempts := GetPluginSettings(SettingsIniFilePath).RetryAttempts;
+						RetryAttempts := CurrentSettings.RetryAttempts;
 						while (ThreadRetryCountRenMov.Items[GetCurrentThreadID()] <> RetryAttempts) and (not(Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
 						begin
 							ThreadRetryCountRenMov.Items[GetCurrentThreadID()] := ThreadRetryCountRenMov.Items[GetCurrentThreadID()] + 1;
@@ -1483,7 +1485,7 @@ begin
 							if (Result in [FS_FILE_OK, FS_FILE_USERABORT]) then
 								ThreadRetryCountRenMov.Items[GetCurrentThreadID()] := 0; //сбросим счётчик попыток
 							ProcessMessages;
-							Sleep(GetPluginSettings(SettingsIniFilePath).AttemptWait);
+							Sleep(CurrentSettings.AttemptWait);
 						end;
 					end;
 			end;
@@ -1521,7 +1523,7 @@ begin
 			exit(FS_FILE_USERABORT);
 		end;
 
-		case GetPluginSettings(SettingsIniFilePath).CopyBetweenAccountsMode of
+		case CurrentSettings.CopyBetweenAccountsMode of
 			CopyBetweenAccountsModeDisabled:
 				begin
 					TCLogger.Log(LOG_LEVEL_WARNING, MSGTYPE_IMPORTANTERROR, ERR_DIRECT_OPERATIONS_DISABLED);
@@ -1556,7 +1558,7 @@ begin
 				end;
 
 			end;
-			if ((FS_FILE_OK = Result) and GetPluginSettings(SettingsIniFilePath).DescriptionTrackCloudFS and RemoteDescriptionsSupportEnabled(GetAccountSettingsFromIniFile(AccountsIniFilePath, NewRealPath.account))) then
+			if ((FS_FILE_OK = Result) and CurrentSettings.DescriptionTrackCloudFS and RemoteDescriptionsSupportEnabled(GetAccountSettingsFromIniFile(AccountsIniFilePath, NewRealPath.account))) then
 				RenameRemoteFileDescription(OldRealPath, NewRealPath, OldCloud);
 		end else begin
 			Result := OldCloud.cpFile(OldRealPath.path, NewRealPath.path);
@@ -1587,7 +1589,7 @@ procedure FsSetCryptCallbackW(PCryptProc: TCryptProcW; CryptoNr: integer; Flags:
 var
 	PluginSettings: TPluginSettings;
 begin
-	PluginSettings := GetPluginSettings(SettingsIniFilePath);
+	PluginSettings := CurrentSettings;
 	PasswordManager := TTCPasswordManager.Create(PCryptProc, PluginNum, CryptoNr, TCLogger);
 	PasswordManager.GetProxyPassword(PluginSettings.ConnectionSettings.ProxySettings);
 	if PluginSettings.ConnectionSettings.ProxySettings.use_tc_password_manager then
@@ -1709,7 +1711,7 @@ begin
 		14:
 			begin
 				//При включённой сортировке Запрос происходит при появлении в списке
-				if GetPluginSettings(SettingsIniFilePath).DescriptionEnabled then
+				if CurrentSettings.DescriptionEnabled then
 				begin
 					strpcopy(FieldValue, CurrentDescriptions.GetValue(Item.name));
 				end else begin
@@ -1779,7 +1781,7 @@ begin
 	if RealPath.upDirItem then
 		exit; //do not overlap updir icon
 
-	IconsMode := GetPluginSettings(SettingsIniFilePath).IconsMode;
+	IconsMode := CurrentSettings.IconsMode;
 	IconsSize := GetTCIconsSize;
 
 	if RealPath.trashDir and RealPath.isInAccountsList then //always draw system trash icon
@@ -1919,8 +1921,9 @@ begin
 
 	AccountsIniFilePath := IniDir + 'MailRuCloud.ini';
 	SettingsIniFilePath := IniDir + 'MailRuCloud.global.ini';
+	CurrentSettings := GetPluginSettings(SettingsIniFilePath);
 
-	if GetPluginSettings(SettingsIniFilePath).LoadSSLDLLOnlyFromPluginDir then
+	if CurrentSettings.LoadSSLDLLOnlyFromPluginDir then
 	begin
 		if ((DirectoryExists(PluginPath + PlatformDllPath)) and (FileExists(PluginPath + PlatformDllPath + '\ssleay32.dll')) and (FileExists(PluginPath + PlatformDllPath + '\libeay32.dll'))) then
 		begin //try to load dll from platform subdir
@@ -1931,7 +1934,7 @@ begin
 		end;
 	end;
 
-	IsMultiThread := not(GetPluginSettings(SettingsIniFilePath).DisableMultiThreading);
+	IsMultiThread := not(CurrentSettings.DisableMultiThreading);
 	ThreadRetryCountDownload := TDictionary<DWORD, Int32>.Create;
 	ThreadRetryCountUpload := TDictionary<DWORD, Int32>.Create;
 	ThreadRetryCountRenMov := TDictionary<DWORD, Int32>.Create;
