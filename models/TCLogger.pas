@@ -7,15 +7,6 @@ uses
 	PLUGIN_TYPES,
 	SystemHelper;
 
-const
-	//Уровни логирования (по степеням двойки)
-	LOG_LEVEL_CONNECT = 1; //connection
-	LOG_LEVEL_FILE_OPERATION = 2; //file operations && free space
-	LOG_LEVEL_DETAIL = 4; //some detailed info (i.e. retry data or smth)
-	LOG_LEVEL_WARNING = 8; //non-critical warnings
-	LOG_LEVEL_ERROR = 16; //error details
-	LOG_LEVEL_DEBUG = 32; //also same internal debugging info
-
 type
 	TTCLogger = class
 	private
