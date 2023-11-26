@@ -23,7 +23,19 @@ uses
 	TCProgressTest in 'models\TCProgressTest.pas',
 	TCRequest in '..\models\TCRequest.pas',
 	TCRequestTest in 'models\TCRequestTest.pas',
-	CMRConstants in '..\CMRConstants.pas';
+	MRCSettings in '..\models\settings\MRCSettings.pas',
+	FileHelper in '..\helpers\FileHelper.pas',
+	PathHelper in '..\helpers\PathHelper.pas',
+	WindowsHelper in '..\helpers\WindowsHelper.pas',
+	ConnectionSettings in '..\models\settings\ConnectionSettings.pas',
+	SETTINGS_CONSTANTS in '..\models\settings\SETTINGS_CONSTANTS.pas',
+	CMRConstants in '..\CMRConstants.pas',
+	ProxySettings in '..\models\settings\ProxySettings.pas',
+	StringHelper in '..\helpers\StringHelper.pas',
+	TCHelper in '..\helpers\TCHelper.pas',
+	Description in '..\models\Description.pas',
+	CMRStrings in '..\CMRStrings.pas',
+	MRCSettingsTest in 'models\settings\MRCSettingsTest.pas';
 
 {keep comment here to protect the following conditional from being removed by the IDE when adding a unit}
 {$IFNDEF TESTINSIGHT}

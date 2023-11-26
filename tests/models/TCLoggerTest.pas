@@ -5,7 +5,7 @@ interface
 uses
 	TCLogger,
 	PLUGIN_TYPES,
-  CMRCOnstants,
+	CMRCOnstants,
 	TestHelper,
 	SysUtils,
 	DUnitX.TestFramework;
