@@ -20,17 +20,10 @@ uses
 	ProxySettings,
 	ConnectionSettings,
 	PluginSettings,
+	StreamingOptions,
 	System.RegularExpressions;
 
 type
-
-	{Параметры стриминга для расширения}
-	TStreamingOptions = record
-		Command: WideString; //Вызываемое приложение
-		Parameters: WideString; //параметры, передаваемые приложению
-		StartPath: WideString; //каталог запуска
-		Format: integer;
-	end;
 
 	TIniFilesHelper = class helper for TIniFile
 		function ReadInt64(const Section, Ident: string; Default: int64): int64;

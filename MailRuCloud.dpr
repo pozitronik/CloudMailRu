@@ -101,7 +101,8 @@ uses
 	ConnectionSettings in 'models\settings\ConnectionSettings.pas',
 	PluginSettings in 'models\settings\PluginSettings.pas',
 	CloudSettings in 'models\settings\CloudSettings.pas',
-	SETTINGS_CONSTANTS in 'models\settings\SETTINGS_CONSTANTS.pas';
+	SETTINGS_CONSTANTS in 'models\settings\SETTINGS_CONSTANTS.pas',
+	StreamingOptions in 'models\settings\StreamingOptions.pas';
 
 {$IFDEF WIN64}
 {$E wfx64}

@@ -29,6 +29,7 @@ uses
 	TCPasswordManager,
 	Registration,
 	CMRStrings,
+	StreamingOptions,
 	AccountSettings;
 
 type
