@@ -31,7 +31,7 @@ uses
 	StreamingOptions,
 	Settings,
 	AccountSettings,
-  PluginSettings;
+	PluginSettings;
 
 type
 	TAccountsForm = class(TForm)

@@ -5,6 +5,7 @@
 uses
 {$IFDEF DEBUG}
 	FastMM4 in 'FastMM\FastMM4.pas',
+	FastMM4Messages in 'FastMM\FastMM4Messages.pas',
 {$ENDIF }
 	JSON,
 	SysUtils,
@@ -99,11 +100,12 @@ uses
 	AccountSettings in 'models\settings\AccountSettings.pas',
 	ProxySettings in 'models\settings\ProxySettings.pas',
 	ConnectionSettings in 'models\settings\ConnectionSettings.pas',
-	PluginSettings in 'models\settings\PluginSettings.pas',
 	CloudSettings in 'models\settings\CloudSettings.pas',
 	SETTINGS_CONSTANTS in 'models\settings\SETTINGS_CONSTANTS.pas',
 	StreamingOptions in 'models\settings\StreamingOptions.pas',
-	IniFilesHelper in 'helpers\IniFilesHelper.pas';
+	IniFilesHelper in 'helpers\IniFilesHelper.pas',
+	MRCSettings in 'models\settings\MRCSettings.pas',
+	PluginSettings in 'models\settings\PluginSettings.pas';
 
 {$IFDEF WIN64}
 {$E wfx64}
