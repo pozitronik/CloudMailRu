@@ -272,6 +272,7 @@
         <DCCReference Include="models\settings\ConnectionSettings.pas"/>
         <DCCReference Include="models\settings\PluginSettings.pas"/>
         <DCCReference Include="models\settings\CloudSettings.pas"/>
+        <DCCReference Include="models\settings\SETTINGS_CONSTANTS.pas"/>
         <RcItem Include="icons\icon.ico">
             <ResourceType>ICON</ResourceType>
             <ResourceId>base_icon</ResourceId>

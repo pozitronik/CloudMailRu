@@ -21,7 +21,8 @@ uses
 	CMROperationResult,
 	CMRConstants,
 	CMRStrings,
-	PLUGIN_Types,
+	SETTINGS_CONSTANTS,
+	PLUGIN_TYPES,
 	AccountSettings,
 	ConnectionSettings,
 	Vcl.Imaging.JPEG;

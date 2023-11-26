@@ -15,6 +15,7 @@ Uses
 	WideStrUtils,
 	System.Classes,
 	CMRStrings,
+	SETTINGS_CONSTANTS,
 	AccountSettings,
 	ProxySettings,
 	TCLogger;
