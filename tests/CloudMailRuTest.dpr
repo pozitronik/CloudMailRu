@@ -22,7 +22,8 @@ uses
 	TCProgress in '..\models\TCProgress.pas',
 	TCProgressTest in 'models\TCProgressTest.pas',
 	TCRequest in '..\models\TCRequest.pas',
-	TCRequestTest in 'models\TCRequestTest.pas';
+	TCRequestTest in 'models\TCRequestTest.pas',
+	CMRConstants in '..\CMRConstants.pas';
 
 {keep comment here to protect the following conditional from being removed by the IDE when adding a unit}
 {$IFNDEF TESTINSIGHT}

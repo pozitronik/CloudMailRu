@@ -101,6 +101,7 @@
         <DCCReference Include="models\TCProgressTest.pas"/>
         <DCCReference Include="..\models\TCRequest.pas"/>
         <DCCReference Include="models\TCRequestTest.pas"/>
+        <DCCReference Include="..\CMRConstants.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>
