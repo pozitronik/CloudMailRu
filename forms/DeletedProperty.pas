@@ -6,6 +6,7 @@ uses
 	CMRDirItemList,
 	CMRDirItem,
 	CloudMailRu,
+	SETTINGS_CONSTANTS,
 	CMRConstants,
 	CMRStrings,
 	PluginHelper,

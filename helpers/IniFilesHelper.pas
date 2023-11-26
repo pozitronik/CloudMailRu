@@ -6,6 +6,8 @@ uses
 	IniFiles,
 	System.RegularExpressions,
 	SysUtils,
+	Windows,
+	IOUtils,
 	CMRStrings;
 
 type

@@ -15,7 +15,7 @@ uses
 	Vcl.Controls,
 	SETTINGS_CONSTANTS,
 	PLUGIN_TYPES,
-	Settings,
+	AccountSettings,
 	PluginSettings,
 	CloudSettings,
 	TCPasswordManager,

@@ -9,7 +9,6 @@ uses
 	System.Variants,
 	System.Classes,
 	Vcl.Graphics,
-	Settings,
 	Vcl.Controls,
 	Vcl.Forms,
 	Vcl.Dialogs,
@@ -30,7 +29,9 @@ uses
 	Registration,
 	CMRStrings,
 	StreamingOptions,
-	AccountSettings;
+	Settings,
+	AccountSettings,
+  PluginSettings;
 
 type
 	TAccountsForm = class(TForm)
