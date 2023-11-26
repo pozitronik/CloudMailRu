@@ -102,7 +102,8 @@ uses
 	PluginSettings in 'models\settings\PluginSettings.pas',
 	CloudSettings in 'models\settings\CloudSettings.pas',
 	SETTINGS_CONSTANTS in 'models\settings\SETTINGS_CONSTANTS.pas',
-	StreamingOptions in 'models\settings\StreamingOptions.pas';
+	StreamingOptions in 'models\settings\StreamingOptions.pas',
+	IniFilesHelper in 'helpers\IniFilesHelper.pas';
 
 {$IFDEF WIN64}
 {$E wfx64}

@@ -274,6 +274,7 @@
         <DCCReference Include="models\settings\CloudSettings.pas"/>
         <DCCReference Include="models\settings\SETTINGS_CONSTANTS.pas"/>
         <DCCReference Include="models\settings\StreamingOptions.pas"/>
+        <DCCReference Include="helpers\IniFilesHelper.pas"/>
         <RcItem Include="icons\icon.ico">
             <ResourceType>ICON</ResourceType>
             <ResourceId>base_icon</ResourceId>
