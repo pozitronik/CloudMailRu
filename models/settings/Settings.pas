@@ -16,6 +16,7 @@ uses
 	CMRStrings,
 	VCL.Controls,
 	AccountSettings,
+	ProxySettings,
 	System.RegularExpressions;
 
 const
@@ -74,15 +75,6 @@ const
 	DEFAULT_USERAGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.150 Safari/537.36/TCWFX(' + PlatformX + ')';
 
 type
-
-	TProxySettings = record
-		ProxyType: integer;
-		Server: WideString;
-		Port: integer;
-		user: WideString;
-		password: WideString;
-		use_tc_password_manager: boolean;
-	end;
 
 	{Settings for HTTP transport}
 	TConnectionSettings = record

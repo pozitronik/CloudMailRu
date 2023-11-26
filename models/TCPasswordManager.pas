@@ -16,6 +16,7 @@ Uses
 	System.Classes,
 	CMRStrings,
 	AccountSettings,
+	ProxySettings,
 	TCLogger;
 
 type
