@@ -48,6 +48,10 @@ const
 	IconsModeExternal = 3;
 	IconsModeExternalOverlay = 4;
 
+	INI_PATH_PLUGIN_DIR = 0; //use ini files only from the plugin dir
+	INI_PATH_APPDATA = 1; //use ini files only from %AppData%
+	INI_PATH_AUTO = 2; // plugin dir, if writeable, else %AppData%
+
 	EncryptModeNone = 0; //Без шифрования
 	EncryptModeAlways = 1; //С прозрачным шифрованием
 	EncryptModeAskOnce = 2; //С прозрачным шифрованием, без хранения пароля
@@ -58,6 +62,10 @@ const
 	InvitesPostfix = '.invites';
 
 	StreamingPrefix = 'Streaming:';
+
+	APPDATA_DIR_NAME = 'MailRuCloud'; //the name of %AppData% subdirectory to use for config search
+	PLUGIN_CONFIG_FILE_NAME = 'MailRuCloud.global.ini'; //default filenames should be changes to avoid confusions (current names are bad design)
+	ACCOUNTS_CONFIG_FILE_NAME = 'MailRuCloud.ini';
 
 	DEFAULT_USERAGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.150 Safari/537.36/TCWFX(' + PlatformX + ')';
 

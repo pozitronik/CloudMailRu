@@ -12,6 +12,7 @@ uses
 	Windows,
 	IOUtils,
 	CMRStrings,
+	CMRConstants,
 	ConnectionSettings;
 
 type

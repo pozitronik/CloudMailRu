@@ -15,6 +15,7 @@ Uses
 	WideStrUtils,
 	System.Classes,
 	CMRStrings,
+	CMRConstants,
 	SETTINGS_CONSTANTS,
 	AccountSettings,
 	ProxySettings,
