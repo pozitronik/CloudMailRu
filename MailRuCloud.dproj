@@ -3,12 +3,12 @@
         <ProjectGuid>{331FEEB4-0D9D-4F0B-B88C-2A76C7983324}</ProjectGuid>
         <MainSource>MailRuCloud.dpr</MainSource>
         <Base>True</Base>
-        <Config Condition="'$(Config)'==''">Debug</Config>
+        <Config Condition="'$(Config)'==''">Canary</Config>
         <TargetedPlatforms>3</TargetedPlatforms>
         <AppType>Library</AppType>
         <FrameworkType>VCL</FrameworkType>
         <ProjectVersion>20.1</ProjectVersion>
-        <Platform Condition="'$(Platform)'==''">Win64</Platform>
+        <Platform Condition="'$(Platform)'==''">Win32</Platform>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Config)'=='Base' or '$(Base)'!=''">
         <Base>true</Base>
@@ -55,6 +55,17 @@
         <Cfg_2_Win64>true</Cfg_2_Win64>
         <CfgParent>Cfg_2</CfgParent>
         <Cfg_2>true</Cfg_2>
+        <Base>true</Base>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Config)'=='Canary' or '$(Cfg_3)'!=''">
+        <Cfg_3>true</Cfg_3>
+        <CfgParent>Base</CfgParent>
+        <Base>true</Base>
+    </PropertyGroup>
+    <PropertyGroup Condition="('$(Platform)'=='Win64' and '$(Cfg_3)'=='true') or '$(Cfg_3_Win64)'!=''">
+        <Cfg_3_Win64>true</Cfg_3_Win64>
+        <CfgParent>Cfg_3</CfgParent>
+        <Cfg_3>true</Cfg_3>
         <Base>true</Base>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base)'!=''">
@@ -107,6 +118,7 @@
         <VerInfo_Locale>1033</VerInfo_Locale>
         <VerInfo_Build>1</VerInfo_Build>
         <VerInfo_Release>1</VerInfo_Release>
+        <VerInfo_AutoGenVersion>false</VerInfo_AutoGenVersion>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_1_Win64)'!=''">
         <VerInfo_Keys>CompanyName=;FileDescription=Cloud.Mail.ru плагин x32/x64 для Total Commander;FileVersion=1.20.1.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProgramID=;ProductName=;ProductVersion=23.11.23;Comments=https://github.com/pozitronik/CloudMailRu/</VerInfo_Keys>
@@ -143,12 +155,30 @@
         <AppEnableRuntimeThemes>false</AppEnableRuntimeThemes>
         <DCC_DebugInfoInExe>true</DCC_DebugInfoInExe>
     </PropertyGroup>
+    <PropertyGroup Condition="'$(Cfg_3)'!=''">
+        <VerInfo_MinorVer>30</VerInfo_MinorVer>
+        <VerInfo_PreRelease>true</VerInfo_PreRelease>
+        <VerInfo_Special>true</VerInfo_Special>
+        <VerInfo_DLL>true</VerInfo_DLL>
+        <VerInfo_AutoGenVersion>false</VerInfo_AutoGenVersion>
+        <VerInfo_Keys>CompanyName=;FileDescription=Cloud.Mail.ru плагин x32/x64 для Total Commander;FileVersion=1.30.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=CloudMailRu for Total Commander;ProductVersion=26.11.23;Comments=https://github.com/pozitronik/CloudMailRu/;CFBundleName=;SpecialBuild=Canary build</VerInfo_Keys>
+        <DCC_DebugInformation>0</DCC_DebugInformation>
+        <DCC_SymbolReferenceInfo>0</DCC_SymbolReferenceInfo>
+        <DCC_LocalDebugSymbols>false</DCC_LocalDebugSymbols>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Cfg_3_Win64)'!=''">
+        <VerInfo_MinorVer>30</VerInfo_MinorVer>
+        <VerInfo_PreRelease>true</VerInfo_PreRelease>
+        <VerInfo_Special>true</VerInfo_Special>
+        <VerInfo_DLL>true</VerInfo_DLL>
+        <VerInfo_Locale>1033</VerInfo_Locale>
+        <VerInfo_Keys>CompanyName=;FileDescription=$(MSBuildProjectName);FileVersion=1.30.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProgramID=com.embarcadero.$(MSBuildProjectName);ProductName=$(MSBuildProjectName);ProductVersion=1.0.0.0;Comments=;SpecialBuild=</VerInfo_Keys>
+    </PropertyGroup>
     <ItemGroup>
         <DelphiCompile Include="$(MainSource)">
             <MainSource>MainSource</MainSource>
         </DelphiCompile>
         <DCCReference Include="FastMM\FastMM4.pas"/>
-        <DCCReference Include="FastMM\FastMM4Messages.pas"/>
         <DCCReference Include="CloudMailRu.pas"/>
         <DCCReference Include="forms\Accounts.pas">
             <Form>AccountsForm</Form>
@@ -270,6 +300,10 @@
         </BuildConfiguration>
         <BuildConfiguration Include="Debug">
             <Key>Cfg_2</Key>
+            <CfgParent>Base</CfgParent>
+        </BuildConfiguration>
+        <BuildConfiguration Include="Canary">
+            <Key>Cfg_3</Key>
             <CfgParent>Base</CfgParent>
         </BuildConfiguration>
     </ItemGroup>
