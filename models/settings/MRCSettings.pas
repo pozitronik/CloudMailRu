@@ -52,11 +52,11 @@ type
 	private
 		ApplicationPath: WideString; // the directory of the current binary file
 		IniFilePath: WideString;
-		IniDir: WideString; // the direcotory where the currently used ini files (global+accounts) are
+		IniFileDir: WideString; // the directory where the currently used ini files (global+accounts) are
 		function GetDescriptionFileName: WideString;
 		function GetAccountsIniFileName: WideString;
 	public
-
+		property IniDir: WideString read IniFileDir;
 		property DescriptionFileName: WideString read GetDescriptionFileName write DescriptionFileName_;
 		property PluginPath: WideString read ApplicationPath;
 		property AccountsIniFileName: WideString read GetAccountsIniFileName; //Path to the accounts config file
@@ -88,43 +88,44 @@ begin
 	AppDataDir := IncludeTrailingBackslash(IncludeTrailingBackslash(SysUtils.GetEnvironmentVariable('APPDATA')) + APPDATA_DIR_NAME);
 	ApplicationPath := IncludeTrailingBackslash(ExtractFilePath(GetModuleName(hInstance)));
 
-	if not FileExists(GetUNCFilePath(ApplicationPath + PLUGIN_CONFIG_FILE_NAME)) then
+	if FileExists(GetUNCFilePath(ApplicationPath + PLUGIN_CONFIG_FILE_NAME)) then
 	begin
-		if IsWriteable(ApplicationPath) then
-		begin
-			IniDir := ApplicationPath;
-		end else begin
-			IniDir := AppDataDir;
-		end;
-
-	end else begin
-		TempSettings := TMRCSettings.Create(ApplicationPath + PLUGIN_CONFIG_FILE_NAME);
+		TempSettings := TMRCSettings.Create(GetUNCFilePath(ApplicationPath + PLUGIN_CONFIG_FILE_NAME));
 
 		case TempSettings.IniPath of
 			INI_PATH_PLUGIN_DIR:
 				begin
-					IniDir := PluginPath;
+					self.IniFileDir := PluginPath;
 				end;
 			INI_PATH_APPDATA: //use appdata path
 				begin
-					IniDir := AppDataDir;
+					self.IniFileDir := AppDataDir;
 				end;
 			INI_PATH_AUTO: //use plugin dir if writeable
 				begin
 					if IsWriteable(PluginPath) then
-						IniDir := PluginPath
+						self.IniFileDir := PluginPath
 					else
-						IniDir := AppDataDir;
+						self.IniFileDir := AppDataDir;
 				end;
 		end;
 		TempSettings.Free;
+
+	end else begin
+		if IsWriteable(ApplicationPath) then
+		begin
+			self.IniFileDir := ApplicationPath;
+		end else begin
+			self.IniFileDir := AppDataDir;
+		end;
 	end;
 
-	if not FileExists(GetUNCFilePath(IniDir)) then
-		createDir(GetUNCFilePath(IniDir)); //assume this in appdata dir
+	if not DirectoryExists(GetUNCFilePath(self.IniFileDir)) then
+		createDir(GetUNCFilePath(self.IniFileDir)); //assuming this is inside the appdata dir
 
-	self.IniFilePath := IniDir + PLUGIN_CONFIG_FILE_NAME;
+	self.IniFilePath := GetUNCFilePath(self.IniFileDir + PLUGIN_CONFIG_FILE_NAME);
 	Refresh();
+
 end;
 
 destructor TMRCSettings.Destroy;
@@ -135,7 +136,7 @@ end;
 
 function TMRCSettings.GetAccountsIniFileName: WideString;
 begin
-	result := IniDir + ACCOUNTS_CONFIG_FILE_NAME;
+	result := self.IniDir + ACCOUNTS_CONFIG_FILE_NAME;
 end;
 
 function TMRCSettings.GetDescriptionFileName: WideString;
