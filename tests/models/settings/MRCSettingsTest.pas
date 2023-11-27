@@ -8,6 +8,7 @@ uses
 	TestHelper,
 	SysUtils,
 	IOUtils,
+	ConnectionSettings,
 	DUnitX.TestFramework;
 
 type
@@ -36,6 +37,12 @@ type
 
 		[Test]
 		procedure TestSetValue;
+
+		[Test]
+		procedure TestSaveOnChange;
+
+		[Test]
+		procedure TestSaveOnChangeDisabled;
 	end;
 
 implementation
@@ -64,7 +71,7 @@ begin
 	{peek some randoms of different data types}
 	Assert.IsFalse(MRCSetting.DescriptionEnabled); //boolean
 	Assert.AreEqual(1000, MRCSetting.AttemptWait); //integer
-	Assert.AreEqual('descript.ion', MRCSetting.DescriptionFileName_); //string
+	Assert.AreEqual('descript.ion', MRCSetting.DescriptionFileName); //string
 	Assert.IsFalse(MRCSetting.ConnectionSettings.ProxySettings.use_tc_password_manager); //subrecord boolean
 	Assert.AreEqual(DEFAULT_USERAGENT, MRCSetting.ConnectionSettings.UserAgent); //subrecord string
 	Assert.AreEqual(0, MRCSetting.ConnectionSettings.ProxySettings.Port); //subrecord string
@@ -107,12 +114,69 @@ begin
 	{peek some randoms of different data types}
 	Assert.IsTrue(MRCSetting.DescriptionEnabled); //boolean
 	Assert.AreEqual(1000, MRCSetting.AttemptWait); //integer
-	Assert.AreEqual('descript.ed', MRCSetting.DescriptionFileName_); //string
+	Assert.AreEqual('descript.ed', MRCSetting.DescriptionFileName); //string
 	Assert.IsFalse(MRCSetting.ConnectionSettings.ProxySettings.use_tc_password_manager); //subrecord boolean
 	Assert.AreEqual('There''s no spoon', MRCSetting.ConnectionSettings.UserAgent); //subrecord string
 	Assert.AreEqual(5000, MRCSetting.ConnectionSettings.ProxySettings.Port); //subrecord string
 	MRCSetting.Free;
 
+end;
+
+procedure TMRCSettingsTest.TestSaveOnChange;
+var
+	MRCSetting: TMRCSettings;
+	ConnectionSettings: TConnectionSettings;
+begin
+	MRCSetting := TMRCSettings.Create(); //creates a file in the test exe dir
+
+	Assert.IsTrue(MRCSetting.SaveOnChange);
+	Assert.IsFalse(MRCSetting.DescriptionEnabled);
+	Assert.AreEqual(DEFAULT_USERAGENT, MRCSetting.ConnectionSettings.UserAgent);
+
+	MRCSetting.DescriptionEnabled := True;
+
+	ConnectionSettings := MRCSetting.ConnectionSettings;
+	ConnectionSettings.UserAgent := 'BugZilla 100/500';
+	MRCSetting.ConnectionSettings := ConnectionSettings;
+
+	MRCSetting.Free;
+
+	MRCSetting := TMRCSettings.Create();
+
+	Assert.IsTrue(MRCSetting.DescriptionEnabled);
+	Assert.AreEqual('BugZilla 100/500', MRCSetting.ConnectionSettings.UserAgent);
+
+	MRCSetting.Free;
+end;
+
+procedure TMRCSettingsTest.TestSaveOnChangeDisabled;
+var
+	MRCSetting: TMRCSettings;
+	ConnectionSettings: TConnectionSettings;
+begin
+	MRCSetting := TMRCSettings.Create();
+
+	MRCSetting.SaveOnChange := False;
+
+	Assert.IsFalse(MRCSetting.SaveOnChange);
+	Assert.IsFalse(MRCSetting.DescriptionEnabled);
+	Assert.AreEqual(DEFAULT_USERAGENT, MRCSetting.ConnectionSettings.UserAgent);
+
+	MRCSetting.DescriptionEnabled := True;
+
+	ConnectionSettings := MRCSetting.ConnectionSettings;
+	ConnectionSettings.UserAgent := 'BugZilla 100/500';
+	MRCSetting.ConnectionSettings := ConnectionSettings;
+
+	MRCSetting.Free;
+
+	MRCSetting := TMRCSettings.Create();
+
+	{See that nothing changed, cause SaveOnChange is disabled}
+	Assert.IsFalse(MRCSetting.DescriptionEnabled);
+	Assert.AreEqual(DEFAULT_USERAGENT, MRCSetting.ConnectionSettings.UserAgent);
+
+	MRCSetting.Free;
 end;
 
 procedure TMRCSettingsTest.TestSetValue;
@@ -121,15 +185,14 @@ var
 begin
 	MRCSetting := TMRCSettings.Create(); //creates a file in the test exe dir
 
-	Assert.IsFalse(MRCSetting.DescriptionEnabled); //boolean
-	MRCSetting.SetSettingValue('DescriptionEnabled', true);
+	Assert.IsFalse(MRCSetting.DescriptionEnabled);
+	MRCSetting.SetSettingValue('DescriptionEnabled', True);
 
 	MRCSetting.Free;
 
 	MRCSetting := TMRCSettings.Create(); //creates a file in the test exe dir
 
-	Assert.IsTrue(MRCSetting.DescriptionEnabled); //boolean
-
+	Assert.IsTrue(MRCSetting.DescriptionEnabled);
 	MRCSetting.Free;
 end;
 

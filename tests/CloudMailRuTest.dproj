@@ -129,6 +129,7 @@
         <DCCReference Include="..\models\Description.pas"/>
         <DCCReference Include="..\CMRStrings.pas"/>
         <DCCReference Include="models\settings\MRCSettingsTest.pas"/>
+        <DCCReference Include="..\models\settings\AbstractMRCSettings.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>
@@ -173,6 +174,18 @@
                 <DeployFile LocalName="Win32\Debug\CloudMailRuTest.exe" Configuration="Debug" Class="ProjectOutput">
                     <Platform Name="Win32">
                         <RemoteName>CloudMailRuTest.exe</RemoteName>
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
+                <DeployFile LocalName="Win64\Debug\CloudMailRuTest.exe" Configuration="Debug" Class="ProjectOutput">
+                    <Platform Name="Win64">
+                        <RemoteName>CloudMailRuTest.exe</RemoteName>
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
+                <DeployFile LocalName="Win64\Debug\CloudMailRuTest.rsm" Configuration="Debug" Class="DebugSymbols">
+                    <Platform Name="Win64">
+                        <RemoteName>CloudMailRuTest.rsm</RemoteName>
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>

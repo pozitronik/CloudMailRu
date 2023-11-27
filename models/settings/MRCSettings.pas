@@ -6,7 +6,6 @@ uses
 	IniFiles,
 	SysUtils,
 	Variants,
-	IOUtils,
 	FileHelper,
 	PathHelper,
 	WindowsHelper,
@@ -14,59 +13,29 @@ uses
 	SETTINGS_CONSTANTS,
 	CMRStrings,
 	CMRConstants,
-	ConnectionSettings;
+	ConnectionSettings,
+	AbstractMRCSettings;
 
 type
-
-	TMRCSettings = class
-		ConnectionSettings: TConnectionSettings;
-		IniPath: integer;
-		LoadSSLDLLOnlyFromPluginDir: boolean;
-		PreserveFileTime: boolean;
-		DescriptionEnabled: boolean;
-		DescriptionEditorEnabled: boolean;
-		DescriptionCopyToCloud: boolean;
-		DescriptionCopyFromCloud: boolean;
-		DescriptionTrackCloudFS: boolean;
-		DescriptionFileName_: WideString; //contains the raw string, real filename can be received via DescriptionFileName property
-		CopyBetweenAccountsMode: integer;
-		CloudMaxFileSize: int64;
-		ChunkOverwriteMode: integer;
-		DeleteFailOnUploadMode: integer;
-		OperationErrorMode: integer;
-		RetryAttempts: integer;
-		AttemptWait: integer;
-		OverwriteLocalMode: integer;
-		DisableMultiThreading: boolean;
-		LogUserSpace: boolean;
-		IconsMode: integer;
-		DownloadLinksEncode: boolean;
-		AutoUpdateDownloadListing: boolean;
-		ShowTrashFolders: boolean;
-		ShowSharedFolders: boolean;
-		ShowInvitesFolders: boolean;
-		LogLevel: integer;
-		PrecalculateHash: boolean;
-		ForcePrecalculateSize: int64;
-		CheckCRC: boolean;
+	TMRCSettings = class(TAbstractMRCSettings)
 	private
 		ApplicationPath: WideString; // the directory of the current binary file
 		IniFilePath: WideString;
 		IniFileDir: WideString; // the directory where the currently used ini files (global+accounts) are
-		function GetDescriptionFileName: WideString;
+
 		function GetAccountsIniFileName: WideString;
 	public
+
 		property IniDir: WideString read IniFileDir;
-		property DescriptionFileName: WideString read GetDescriptionFileName write DescriptionFileName_;
 		property PluginPath: WideString read ApplicationPath;
 		property AccountsIniFileName: WideString read GetAccountsIniFileName; //Path to the accounts config file
 
 		constructor Create(); overload; //finds the settings file by itself
 		constructor Create(IniFilePath: WideString); overload;
-		destructor Destroy; override;
 		procedure Refresh();
 
-		procedure SetSettingValue(OptionName: WideString; OptionValue: Variant);
+		procedure SetSettingValue(OptionName: WideString; OptionValue: Variant); override;
+		procedure Save(); override; //save current options set into the file
 
 	end;
 
@@ -77,6 +46,7 @@ implementation
 constructor TMRCSettings.Create(IniFilePath: WideString);
 begin
 	self.IniFilePath := IniFilePath;
+	self.FSaveOnChange := True;
 	Refresh();
 end;
 
@@ -124,14 +94,9 @@ begin
 		createDir(GetUNCFilePath(self.IniFileDir)); //assuming this is inside the appdata dir
 
 	self.IniFilePath := GetUNCFilePath(self.IniFileDir + PLUGIN_CONFIG_FILE_NAME);
+	self.FSaveOnChange := True;
 	Refresh();
 
-end;
-
-destructor TMRCSettings.Destroy;
-begin
-
-	inherited;
 end;
 
 function TMRCSettings.GetAccountsIniFileName: WideString;
@@ -139,59 +104,97 @@ begin
 	result := self.IniDir + ACCOUNTS_CONFIG_FILE_NAME;
 end;
 
-function TMRCSettings.GetDescriptionFileName: WideString;
-begin
-	result := self.DescriptionFileName_;
-	if TPath.HasValidFileNameChars(result, false) then
-		exit;
-	exit('descript.ion');
-end;
-
 procedure TMRCSettings.Refresh;
 var
 	IniFile: TIniFile;
 begin
 	IniFile := TIniFile.Create(IniFilePath);
-	self.IniPath := IniFile.ReadInteger('Main', 'IniPath', 0);
-	self.LoadSSLDLLOnlyFromPluginDir := IniFile.ReadBool('Main', 'LoadSSLDLLOnlyFromPluginDir', false);
-	self.PreserveFileTime := IniFile.ReadBool('Main', 'PreserveFileTime', false);
-	self.DescriptionEnabled := IniFile.ReadBool('Main', 'DescriptionEnabled', false);
-	self.DescriptionEditorEnabled := IniFile.ReadBool('Main', 'DescriptionEditorEnabled', false);
-	self.DescriptionCopyToCloud := IniFile.ReadBool('Main', 'DescriptionCopyToCloud', false);
-	self.DescriptionCopyFromCloud := IniFile.ReadBool('Main', 'DescriptionCopyFromCloud', false);
-	self.DescriptionTrackCloudFS := IniFile.ReadBool('Main', 'DescriptionTrackCloudFS', false);
-	self.DescriptionFileName := IniFile.ReadString('Main', 'DescriptionFileName', 'descript.ion');
-	self.CopyBetweenAccountsMode := IniFile.ReadInteger('Main', 'CopyBetweenAccountsMode', CopyBetweenAccountsModeDisabled);
+	FIniPath := IniFile.ReadInteger('Main', 'IniPath', 0);
+	FLoadSSLDLLOnlyFromPluginDir := IniFile.ReadBool('Main', 'LoadSSLDLLOnlyFromPluginDir', false);
+	FPreserveFileTime := IniFile.ReadBool('Main', 'PreserveFileTime', false);
+	FDescriptionEnabled := IniFile.ReadBool('Main', 'DescriptionEnabled', false);
+	FDescriptionEditorEnabled := IniFile.ReadBool('Main', 'DescriptionEditorEnabled', false);
+	FDescriptionCopyToCloud := IniFile.ReadBool('Main', 'DescriptionCopyToCloud', false);
+	FDescriptionCopyFromCloud := IniFile.ReadBool('Main', 'DescriptionCopyFromCloud', false);
+	FDescriptionTrackCloudFS := IniFile.ReadBool('Main', 'DescriptionTrackCloudFS', false);
+	FDescriptionFileName := IniFile.ReadString('Main', 'DescriptionFileName', 'descript.ion');
+	FCopyBetweenAccountsMode := IniFile.ReadInteger('Main', 'CopyBetweenAccountsMode', CopyBetweenAccountsModeDisabled);
+	FDisableMultiThreading := IniFile.ReadBool('Main', 'DisableMultiThreading', false);
+	FLogUserSpace := IniFile.ReadBool('Main', 'LogUserSpace', True);
+	FIconsMode := IniFile.ReadInteger('Main', 'IconsMode', 0);
+	FConnectionSettings.SocketTimeout := IniFile.ReadInteger('Main', 'SocketTimeout', -1);
+	FConnectionSettings.UploadBPS := IniFile.ReadInteger('Main', 'UploadBPS', -1);
+	FConnectionSettings.DownloadBPS := IniFile.ReadInteger('Main', 'DownloadBPS', -1);
+	FCloudMaxFileSize := IniFile.ReadInt64('Main', 'CloudMaxFileSize', CLOUD_MAX_FILESIZE_DEFAULT);
+	FChunkOverwriteMode := IniFile.ReadInteger('Main', 'ChunkOverwriteMode', 0);
+	FDeleteFailOnUploadMode := IniFile.ReadInteger('Main', 'DeleteFailOnUploadMode', 0);
+	FOverwriteLocalMode := IniFile.ReadInteger('Main', 'OverwriteLocalMode', 0);
+	FOperationErrorMode := IniFile.ReadInteger('Main', 'OperationErrorMode', 0);
+	FRetryAttempts := IniFile.ReadInteger('Main', 'RetryAttempts', 1);
+	FAttemptWait := IniFile.ReadInteger('Main', 'AttemptWait', 1000);
+	FConnectionSettings.ProxySettings.ProxyType := IniFile.ReadInteger('Main', 'ProxyType', ProxyNone);
+	FConnectionSettings.ProxySettings.Server := IniFile.ReadString('Main', 'ProxyServer', EmptyWideStr);
+	FConnectionSettings.ProxySettings.Port := IniFile.ReadInteger('Main', 'ProxyPort', 0);
+	FConnectionSettings.ProxySettings.user := IniFile.ReadString('Main', 'ProxyUser', EmptyWideStr);
+	FConnectionSettings.ProxySettings.use_tc_password_manager := IniFile.ReadBool('Main', 'ProxyTCPwdMngr', false);
+	FConnectionSettings.ProxySettings.password := IniFile.ReadString('Main', 'ProxyPassword', EmptyWideStr);
+	FConnectionSettings.UserAgent := IniFile.ReadString('Main', 'UserAgent', DEFAULT_USERAGENT);
+	FDownloadLinksEncode := IniFile.ReadBool('Main', 'DownloadLinksEncode', True);
+	FAutoUpdateDownloadListing := IniFile.ReadBool('Main', 'AutoUpdateDownloadListing', True);
+	FShowTrashFolders := IniFile.ReadBool('Main', 'ShowTrashFolders', True);
+	FShowSharedFolders := IniFile.ReadBool('Main', 'ShowSharedFolders', True);
+	FShowInvitesFolders := IniFile.ReadBool('Main', 'ShowInvitesFolders', True);
+	FLogLevel := IniFile.ReadInteger('Main', 'LogLevel', LOG_LEVEL_CONNECT + LOG_LEVEL_FILE_OPERATION + LOG_LEVEL_DETAIL + LOG_LEVEL_WARNING + LOG_LEVEL_ERROR);
+	FPrecalculateHash := IniFile.ReadBool('Main', 'PrecalculateHash', True);
+	FForcePrecalculateSize := IniFile.ReadInt64('Main', 'ForcePrecalculateSize', CLOUD_PRECALCULATE_LIMIT_DEFAULT);
+	FCheckCRC := IniFile.ReadBool('Main', 'CheckCRC', True);
+	IniFile.Destroy;
+end;
 
-	self.DisableMultiThreading := IniFile.ReadBool('Main', 'DisableMultiThreading', false);
-	self.LogUserSpace := IniFile.ReadBool('Main', 'LogUserSpace', true);
-	self.IconsMode := IniFile.ReadInteger('Main', 'IconsMode', 0);
-	self.ConnectionSettings.SocketTimeout := IniFile.ReadInteger('Main', 'SocketTimeout', -1);
-	self.ConnectionSettings.UploadBPS := IniFile.ReadInteger('Main', 'UploadBPS', -1);
-	self.ConnectionSettings.DownloadBPS := IniFile.ReadInteger('Main', 'DownloadBPS', -1);
-	self.CloudMaxFileSize := IniFile.ReadInt64('Main', 'CloudMaxFileSize', CLOUD_MAX_FILESIZE_DEFAULT);
-	self.ChunkOverwriteMode := IniFile.ReadInteger('Main', 'ChunkOverwriteMode', 0);
-	self.DeleteFailOnUploadMode := IniFile.ReadInteger('Main', 'DeleteFailOnUploadMode', 0);
-	self.OverwriteLocalMode := IniFile.ReadInteger('Main', 'OverwriteLocalMode', 0);
-	self.OperationErrorMode := IniFile.ReadInteger('Main', 'OperationErrorMode', 0);
-	self.RetryAttempts := IniFile.ReadInteger('Main', 'RetryAttempts', 1);
-	self.AttemptWait := IniFile.ReadInteger('Main', 'AttemptWait', 1000);
-	self.ConnectionSettings.ProxySettings.ProxyType := IniFile.ReadInteger('Main', 'ProxyType', ProxyNone);
-	self.ConnectionSettings.ProxySettings.Server := IniFile.ReadString('Main', 'ProxyServer', EmptyWideStr);
-	self.ConnectionSettings.ProxySettings.Port := IniFile.ReadInteger('Main', 'ProxyPort', 0);
-	self.ConnectionSettings.ProxySettings.user := IniFile.ReadString('Main', 'ProxyUser', EmptyWideStr);
-	self.ConnectionSettings.ProxySettings.use_tc_password_manager := IniFile.ReadBool('Main', 'ProxyTCPwdMngr', false);
-	self.ConnectionSettings.ProxySettings.password := IniFile.ReadString('Main', 'ProxyPassword', EmptyWideStr);
-	self.ConnectionSettings.UserAgent := IniFile.ReadString('Main', 'UserAgent', DEFAULT_USERAGENT);
-	self.DownloadLinksEncode := IniFile.ReadBool('Main', 'DownloadLinksEncode', true);
-	self.AutoUpdateDownloadListing := IniFile.ReadBool('Main', 'AutoUpdateDownloadListing', true);
-	self.ShowTrashFolders := IniFile.ReadBool('Main', 'ShowTrashFolders', true);
-	self.ShowSharedFolders := IniFile.ReadBool('Main', 'ShowSharedFolders', true);
-	self.ShowInvitesFolders := IniFile.ReadBool('Main', 'ShowInvitesFolders', true);
-	self.LogLevel := IniFile.ReadInteger('Main', 'LogLevel', LOG_LEVEL_CONNECT + LOG_LEVEL_FILE_OPERATION + LOG_LEVEL_DETAIL + LOG_LEVEL_WARNING + LOG_LEVEL_ERROR);
-	self.PrecalculateHash := IniFile.ReadBool('Main', 'PrecalculateHash', true);
-	self.ForcePrecalculateSize := IniFile.ReadInt64('Main', 'ForcePrecalculateSize', CLOUD_PRECALCULATE_LIMIT_DEFAULT);
-	self.CheckCRC := IniFile.ReadBool('Main', 'CheckCRC', true);
+procedure TMRCSettings.Save;
+var
+	IniFile: TIniFile;
+begin
+	IniFile := TIniFile.Create(IniFilePath);
+	IniFile.WriteInteger('Main', 'IniPath', IniPath);
+	IniFile.WriteBool('Main', 'LoadSSLDLLOnlyFromPluginDir', FLoadSSLDLLOnlyFromPluginDir);
+	IniFile.WriteBool('Main', 'PreserveFileTime', FPreserveFileTime);
+	IniFile.WriteBool('Main', 'DescriptionEnabled', FDescriptionEnabled);
+	IniFile.WriteBool('Main', 'DescriptionEditorEnabled', FDescriptionEditorEnabled);
+	IniFile.WriteBool('Main', 'DescriptionCopyToCloud', FDescriptionCopyToCloud);
+	IniFile.WriteBool('Main', 'DescriptionCopyFromCloud', FDescriptionCopyFromCloud);
+	IniFile.WriteBool('Main', 'DescriptionTrackCloudFS', FDescriptionTrackCloudFS);
+	IniFile.WriteString('Main', 'DescriptionFileName', FDescriptionFileName);
+	IniFile.WriteInteger('Main', 'CopyBetweenAccountsMode', FCopyBetweenAccountsMode);
+	IniFile.WriteBool('Main', 'DisableMultiThreading', FDisableMultiThreading);
+	IniFile.WriteBool('Main', 'LogUserSpace', FLogUserSpace);
+	IniFile.WriteInteger('Main', 'IconsMode', FIconsMode);
+	IniFile.WriteInteger('Main', 'SocketTimeout', FConnectionSettings.SocketTimeout);
+	IniFile.WriteInteger('Main', 'UploadBPS', FConnectionSettings.UploadBPS);
+	IniFile.WriteInteger('Main', 'DownloadBPS', FConnectionSettings.DownloadBPS);
+	IniFile.WriteInt64('Main', 'CloudMaxFileSize', FCloudMaxFileSize);
+	IniFile.WriteInteger('Main', 'ChunkOverwriteMode', FChunkOverwriteMode);
+	IniFile.WriteInteger('Main', 'DeleteFailOnUploadMode', FDeleteFailOnUploadMode);
+	IniFile.WriteInteger('Main', 'OverwriteLocalMode', FOverwriteLocalMode);
+	IniFile.WriteInteger('Main', 'OperationErrorMode', FOperationErrorMode);
+	IniFile.WriteInteger('Main', 'RetryAttempts', FRetryAttempts);
+	IniFile.WriteInteger('Main', 'AttemptWait', FAttemptWait);
+	IniFile.WriteInteger('Main', 'ProxyType', FConnectionSettings.ProxySettings.ProxyType);
+	IniFile.WriteString('Main', 'ProxyServer', FConnectionSettings.ProxySettings.Server);
+	IniFile.WriteInteger('Main', 'ProxyPort', FConnectionSettings.ProxySettings.Port);
+	IniFile.WriteString('Main', 'ProxyUser', FConnectionSettings.ProxySettings.user);
+	IniFile.WriteBool('Main', 'ProxyTCPwdMngr', FConnectionSettings.ProxySettings.use_tc_password_manager);
+	IniFile.WriteString('Main', 'ProxyPassword', FConnectionSettings.ProxySettings.password);
+	IniFile.WriteString('Main', 'UserAgent', FConnectionSettings.UserAgent);
+	IniFile.WriteBool('Main', 'DownloadLinksEncode', FDownloadLinksEncode);
+	IniFile.WriteBool('Main', 'AutoUpdateDownloadListing', FAutoUpdateDownloadListing);
+	IniFile.WriteBool('Main', 'ShowTrashFolders', FShowTrashFolders);
+	IniFile.WriteBool('Main', 'ShowSharedFolders', FShowSharedFolders);
+	IniFile.WriteBool('Main', 'ShowInvitesFolders', FShowInvitesFolders);
+	IniFile.WriteInteger('Main', 'LogLevel', FLogLevel);
+	IniFile.WriteBool('Main', 'PrecalculateHash', FPrecalculateHash);
+	IniFile.WriteInt64('Main', 'ForcePrecalculateSize', FForcePrecalculateSize);
+	IniFile.WriteBool('Main', 'CheckCRC', FCheckCRC);
 	IniFile.Destroy;
 end;
 

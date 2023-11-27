@@ -35,7 +35,8 @@ uses
 	TCHelper in '..\helpers\TCHelper.pas',
 	Description in '..\models\Description.pas',
 	CMRStrings in '..\CMRStrings.pas',
-	MRCSettingsTest in 'models\settings\MRCSettingsTest.pas';
+	MRCSettingsTest in 'models\settings\MRCSettingsTest.pas',
+	AbstractMRCSettings in '..\models\settings\AbstractMRCSettings.pas';
 
 {keep comment here to protect the following conditional from being removed by the IDE when adding a unit}
 {$IFNDEF TESTINSIGHT}
