@@ -16,7 +16,7 @@ uses
 	SETTINGS_CONSTANTS,
 	PLUGIN_TYPES,
 	AccountSettings,
-	MRCSettings,
+	PluginSettings,
 	CloudSettings,
 	TCPasswordManager,
 	HTTPManager,
@@ -32,7 +32,7 @@ type
 		Connections: TDictionary<WideString, TCloudMailRu>;
 		HTTPManager: THTTPManager;
 		IniFileName: WideString;
-		Settings: TMRCSettings; //Сохраняем параметры плагина, чтобы проксировать параметры из них при инициализации конкретного облака
+		Settings: TPluginSettings; //Сохраняем параметры плагина, чтобы проксировать параметры из них при инициализации конкретного облака
 
 		Logger: TTCLogger;
 		Progress: TTCProgress;
@@ -42,7 +42,7 @@ type
 
 		function init(connectionName: WideString; var Cloud: TCloudMailRu): integer; //инициализирует подключение по его имени, возвращает код состояния
 	public
-		constructor Create(IniFileName: WideString; Settings: TMRCSettings; HTTPManager: THTTPManager; Progress: TTCProgress; Logger: TTCLogger; Request: TTCRequest; PasswordManager: TTCPasswordManager);
+		constructor Create(IniFileName: WideString; Settings: TPluginSettings; HTTPManager: THTTPManager; Progress: TTCProgress; Logger: TTCLogger; Request: TTCRequest; PasswordManager: TTCPasswordManager);
 		destructor Destroy(); override;
 		function get(connectionName: WideString; var OperationResult: integer): TCloudMailRu; //возвращает готовое подклчение по имени
 		procedure free(connectionName: WideString); //освобождает подключение по его имени, если оно существует
@@ -51,7 +51,7 @@ type
 implementation
 
 {TConnectionManager}
-constructor TConnectionManager.Create(IniFileName: WideString; Settings: TMRCSettings; HTTPManager: THTTPManager; Progress: TTCProgress; Logger: TTCLogger; Request: TTCRequest; PasswordManager: TTCPasswordManager);
+constructor TConnectionManager.Create(IniFileName: WideString; Settings: TPluginSettings; HTTPManager: THTTPManager; Progress: TTCProgress; Logger: TTCLogger; Request: TTCRequest; PasswordManager: TTCPasswordManager);
 begin
 	Connections := TDictionary<WideString, TCloudMailRu>.Create;
 	self.IniFileName := IniFileName;

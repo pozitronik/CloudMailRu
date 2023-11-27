@@ -104,7 +104,7 @@ uses
 	SETTINGS_CONSTANTS in 'models\settings\SETTINGS_CONSTANTS.pas',
 	StreamingOptions in 'models\settings\StreamingOptions.pas',
 	IniFilesHelper in 'helpers\IniFilesHelper.pas',
-	MRCSettings in 'models\settings\MRCSettings.pas',
+	PluginSettings in 'models\settings\PluginSettings.pas',
 	AbstractPluginSettings in 'models\settings\AbstractPluginSettings.pas';
 
 {$IFDEF WIN64}
@@ -146,7 +146,7 @@ var
 
 	PluginNum: integer;
 
-	CurrentSettings: TMRCSettings;
+	CurrentSettings: TPluginSettings;
 	CurrentListing: TCMRDirItemList;
 	CurrentIncomingInvitesListing: TCMRIncomingInviteList;
 	ConnectionManager: TConnectionManager;
@@ -1895,7 +1895,7 @@ begin
 	PluginPath := GetModuleName(hInstance);
 	PluginPath := IncludeTrailingBackslash(ExtractFilePath(PluginPath));
 
-	CurrentSettings := TMRCSettings.Create();
+	CurrentSettings := TPluginSettings.Create();
 
 	if CurrentSettings.LoadSSLDLLOnlyFromPluginDir then
 	begin

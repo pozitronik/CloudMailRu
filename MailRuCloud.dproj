@@ -275,7 +275,7 @@
         <DCCReference Include="models\settings\SETTINGS_CONSTANTS.pas"/>
         <DCCReference Include="models\settings\StreamingOptions.pas"/>
         <DCCReference Include="helpers\IniFilesHelper.pas"/>
-        <DCCReference Include="models\settings\MRCSettings.pas"/>
+        <DCCReference Include="models\settings\PluginSettings.pas"/>
         <DCCReference Include="models\settings\AbstractPluginSettings.pas"/>
         <RcItem Include="icons\icon.ico">
             <ResourceType>ICON</ResourceType>

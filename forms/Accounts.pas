@@ -30,7 +30,7 @@ uses
 	CMRStrings,
 	StreamingOptions,
 	Settings,
-	MRCSettings,
+	PluginSettings,
 	AccountSettings;
 
 type
@@ -153,7 +153,7 @@ type
 		procedure UpdateStreamingExtensionsList();
 		procedure DeleteButtonClick(Sender: TObject);
 		procedure AccountsListKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
-		class procedure ShowAccounts(parentWindow: HWND; IniPath: WideString; Settings: TMRCSettings; PasswordManager: TTCPasswordManager; Account: WideString);
+		class procedure ShowAccounts(parentWindow: HWND; IniPath: WideString; Settings: TPluginSettings; PasswordManager: TTCPasswordManager; Account: WideString);
 		procedure FormActivate(Sender: TObject);
 		procedure ProxyUserEditChange(Sender: TObject);
 		procedure GlobalSettingApplyBTNClick(Sender: TObject);
@@ -177,7 +177,7 @@ type
 	public
 		{Public declarations}
 		IniPath: WideString;
-		PluginSettings: TMRCSettings;
+		PluginSettings: TPluginSettings;
 		PasswordManager: TTCPasswordManager;
 		SelectedAccount: WideString;
 
@@ -514,7 +514,7 @@ begin
 	AccountsPanel.Visible := not PublicAccountCB.Checked;
 end;
 
-class procedure TAccountsForm.ShowAccounts(parentWindow: HWND; IniPath: WideString; Settings: TMRCSettings; PasswordManager: TTCPasswordManager; Account: WideString);
+class procedure TAccountsForm.ShowAccounts(parentWindow: HWND; IniPath: WideString; Settings: TPluginSettings; PasswordManager: TTCPasswordManager; Account: WideString);
 var
 	AccountsForm: TAccountsForm;
 begin

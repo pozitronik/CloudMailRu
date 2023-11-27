@@ -1,4 +1,4 @@
-﻿unit MRCSettings;
+﻿unit PluginSettings;
 
 interface
 
@@ -17,7 +17,7 @@ uses
 	AbstractPluginSettings;
 
 type
-	TMRCSettings = class(TAbstractPluginSettings)
+	TPluginSettings = class(TAbstractPluginSettings)
 	private
 		ApplicationPath: WideString; // the directory of the current binary file
 		IniFilePath: WideString;
@@ -43,24 +43,24 @@ implementation
 
 {TMRCSettings}
 
-constructor TMRCSettings.Create(IniFilePath: WideString);
+constructor TPluginSettings.Create(IniFilePath: WideString);
 begin
 	self.IniFilePath := IniFilePath;
 	self.FSaveOnChange := True;
 	Refresh();
 end;
 
-constructor TMRCSettings.Create;
+constructor TPluginSettings.Create;
 var
 	AppDataDir: WideString;
-	TempSettings: TMRCSettings;
+	TempSettings: TPluginSettings;
 begin
 	AppDataDir := IncludeTrailingBackslash(IncludeTrailingBackslash(SysUtils.GetEnvironmentVariable('APPDATA')) + APPDATA_DIR_NAME);
 	ApplicationPath := IncludeTrailingBackslash(ExtractFilePath(GetModuleName(hInstance)));
 
 	if FileExists(GetUNCFilePath(ApplicationPath + PLUGIN_CONFIG_FILE_NAME)) then
 	begin
-		TempSettings := TMRCSettings.Create(GetUNCFilePath(ApplicationPath + PLUGIN_CONFIG_FILE_NAME));
+		TempSettings := TPluginSettings.Create(GetUNCFilePath(ApplicationPath + PLUGIN_CONFIG_FILE_NAME));
 
 		case TempSettings.IniPath of
 			INI_PATH_PLUGIN_DIR:
@@ -99,12 +99,12 @@ begin
 
 end;
 
-function TMRCSettings.GetAccountsIniFileName: WideString;
+function TPluginSettings.GetAccountsIniFileName: WideString;
 begin
 	result := self.IniDir + ACCOUNTS_CONFIG_FILE_NAME;
 end;
 
-procedure TMRCSettings.Refresh;
+procedure TPluginSettings.Refresh;
 var
 	IniFile: TIniFile;
 begin
@@ -151,7 +151,7 @@ begin
 	IniFile.Destroy;
 end;
 
-procedure TMRCSettings.Save;
+procedure TPluginSettings.Save;
 var
 	IniFile: TIniFile;
 begin
@@ -198,7 +198,7 @@ begin
 	IniFile.Destroy;
 end;
 
-procedure TMRCSettings.SetSettingValue(OptionName: WideString; OptionValue: Variant);
+procedure TPluginSettings.SetSettingValue(OptionName: WideString; OptionValue: Variant);
 var
 	IniFile: TIniFile;
 	basicType: integer;
