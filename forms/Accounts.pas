@@ -30,8 +30,8 @@ uses
 	CMRStrings,
 	StreamingOptions,
 	Settings,
-	AccountSettings,
-	PluginSettings;
+	MRCSettings,
+	AccountSettings;
 
 type
 	TAccountsForm = class(TForm)
@@ -153,7 +153,7 @@ type
 		procedure UpdateStreamingExtensionsList();
 		procedure DeleteButtonClick(Sender: TObject);
 		procedure AccountsListKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
-		class procedure ShowAccounts(parentWindow: HWND; IniPath, SettingsIniFilePath: WideString; PasswordManager: TTCPasswordManager; Account: WideString);
+		class procedure ShowAccounts(parentWindow: HWND; IniPath: WideString; Settings: TMRCSettings; PasswordManager: TTCPasswordManager; Account: WideString);
 		procedure FormActivate(Sender: TObject);
 		procedure ProxyUserEditChange(Sender: TObject);
 		procedure GlobalSettingApplyBTNClick(Sender: TObject);
@@ -177,7 +177,7 @@ type
 	public
 		{Public declarations}
 		IniPath: WideString;
-		SettingsIniFilePath: WideString;
+		PluginSettings: TMRCSettings;
 		PasswordManager: TTCPasswordManager;
 		SelectedAccount: WideString;
 
@@ -203,7 +203,7 @@ var
 	TempList: TStringList;
 begin
 	TempList := TStringList.Create;
-	GetStreamingExtensionsFromIniFile(SettingsIniFilePath, TempList);
+	GetStreamingExtensionsFromIniFile(self.PluginSettings.IniFileName, TempList); //todo: it is temporary solution while Settings unit isn't refactored
 	StreamingExtensionsList.Items := TempList;
 	TempList.Destroy;
 end;
@@ -297,7 +297,7 @@ begin
 	StreamingOptions.StartPath := StartPathEdit.Text;
 	StreamingOptions.Format := StreamingTypeCombo.ItemIndex;
 
-	SetStreamingOptionsToIniFile(SettingsIniFilePath, '.' + StreamingExtensionEdit.Text, StreamingOptions);
+	SetStreamingOptionsToIniFile(self.PluginSettings.IniFileName, '.' + StreamingExtensionEdit.Text, StreamingOptions);
 	UpdateStreamingExtensionsList();
 end;
 
@@ -306,58 +306,58 @@ begin
 	if not CheckValidators() then
 		exit;
 
-	SetPluginSettingsValue(SettingsIniFilePath, 'LoadSSLDLLOnlyFromPluginDir', UseDLLFromPluginDir.Checked);
-	SetPluginSettingsValue(SettingsIniFilePath, 'PreserveFileTime', PreserveFileTimeCB.Checked);
+	self.PluginSettings.SetSettingValue('LoadSSLDLLOnlyFromPluginDir', UseDLLFromPluginDir.Checked);
+	self.PluginSettings.SetSettingValue('PreserveFileTime', PreserveFileTimeCB.Checked);
 
-	SetPluginSettingsValue(SettingsIniFilePath, 'DescriptionEnabled', DescriptionEnabledCB.Checked);
-	SetPluginSettingsValue(SettingsIniFilePath, 'DescriptionEditorEnabled', DescriptionEditorEnabledCB.Checked);
-	SetPluginSettingsValue(SettingsIniFilePath, 'DescriptionCopyToCloud', DescriptionCopyToCloudCB.Checked);
-	SetPluginSettingsValue(SettingsIniFilePath, 'DescriptionCopyFromCloud', DescriptionCopyFromCloudCB.Checked);
-	SetPluginSettingsValue(SettingsIniFilePath, 'DescriptionTrackCloudFS', DescriptionTrackCloudFSCB.Checked);
-	SetPluginSettingsValue(SettingsIniFilePath, 'DescriptionFileName', DescriptionFileNameEdit.Text);
+	self.PluginSettings.SetSettingValue('DescriptionEnabled', DescriptionEnabledCB.Checked);
+	self.PluginSettings.SetSettingValue('DescriptionEditorEnabled', DescriptionEditorEnabledCB.Checked);
+	self.PluginSettings.SetSettingValue('DescriptionCopyToCloud', DescriptionCopyToCloudCB.Checked);
+	self.PluginSettings.SetSettingValue('DescriptionCopyFromCloud', DescriptionCopyFromCloudCB.Checked);
+	self.PluginSettings.SetSettingValue('DescriptionTrackCloudFS', DescriptionTrackCloudFSCB.Checked);
+	self.PluginSettings.SetSettingValue('DescriptionFileName', DescriptionFileNameEdit.Text);
 
-	SetPluginSettingsValue(SettingsIniFilePath, 'CopyBetweenAccountsMode', CopyBetweenAccountsModeCombo.ItemIndex);
+	self.PluginSettings.SetSettingValue('CopyBetweenAccountsMode', CopyBetweenAccountsModeCombo.ItemIndex);
 
 	if CloudMaxFileSizeCB.Checked then
 	begin
-		SetPluginSettingsValue(SettingsIniFilePath, 'CloudMaxFileSize', CloudMaxFileSizeValue.Text);
+		self.PluginSettings.SetSettingValue('CloudMaxFileSize', CloudMaxFileSizeValue.Text);
 	end else begin
-		SetPluginSettingsValue(SettingsIniFilePath, 'CloudMaxFileSize', null);
+		self.PluginSettings.SetSettingValue('CloudMaxFileSize', null);
 	end;
 
-	SetPluginSettingsValue(SettingsIniFilePath, 'ChunkOverwriteMode', ChunkOverwriteModeCombo.ItemIndex);
-	SetPluginSettingsValue(SettingsIniFilePath, 'DeleteFailOnUploadMode', DeleteFailOnUploadModeCombo.ItemIndex);
-	SetPluginSettingsValue(SettingsIniFilePath, 'OverwriteLocalMode', OverwriteLocalModeCombo.ItemIndex);
-	SetPluginSettingsValue(SettingsIniFilePath, 'OperationErrorMode', OperationErrorModeCombo.ItemIndex);
-	SetPluginSettingsValue(SettingsIniFilePath, 'RetryAttempts', RetryAttemptsValue.Text);
-	SetPluginSettingsValue(SettingsIniFilePath, 'AttemptWait', AttemptWaitValue.Text);
+	self.PluginSettings.SetSettingValue('ChunkOverwriteMode', ChunkOverwriteModeCombo.ItemIndex);
+	self.PluginSettings.SetSettingValue('DeleteFailOnUploadMode', DeleteFailOnUploadModeCombo.ItemIndex);
+	self.PluginSettings.SetSettingValue('OverwriteLocalMode', OverwriteLocalModeCombo.ItemIndex);
+	self.PluginSettings.SetSettingValue('OperationErrorMode', OperationErrorModeCombo.ItemIndex);
+	self.PluginSettings.SetSettingValue('RetryAttempts', RetryAttemptsValue.Text);
+	self.PluginSettings.SetSettingValue('AttemptWait', AttemptWaitValue.Text);
 
-	SetPluginSettingsValue(SettingsIniFilePath, 'DisableMultiThreading', DisableMultiThreadingCB.Checked);
-	SetPluginSettingsValue(SettingsIniFilePath, 'LogUserSpace', SpaceInfoLoggingCB.Checked);
-	SetPluginSettingsValue(SettingsIniFilePath, 'IconsMode', IconsModeCombo.ItemIndex);
+	self.PluginSettings.SetSettingValue('DisableMultiThreading', DisableMultiThreadingCB.Checked);
+	self.PluginSettings.SetSettingValue('LogUserSpace', SpaceInfoLoggingCB.Checked);
+	self.PluginSettings.SetSettingValue('IconsMode', IconsModeCombo.ItemIndex);
 
-	SetPluginSettingsValue(SettingsIniFilePath, 'SocketTimeout', SocketTimeoutEdit.Text);
-	SetPluginSettingsValue(SettingsIniFilePath, 'UploadBPS', UploadBPSEdit.Text);
-	SetPluginSettingsValue(SettingsIniFilePath, 'DownloadBPS', DownloadBPSEdit.Text);
-	SetPluginSettingsValue(SettingsIniFilePath, 'ProxyType', ProxyCB.ItemIndex);
-	SetPluginSettingsValue(SettingsIniFilePath, 'ProxyServer', ProxyServerEdit.Text);
-	SetPluginSettingsValue(SettingsIniFilePath, 'ProxyPort', ProxyPortEdit.Text);
+	self.PluginSettings.SetSettingValue('SocketTimeout', SocketTimeoutEdit.Text);
+	self.PluginSettings.SetSettingValue('UploadBPS', UploadBPSEdit.Text);
+	self.PluginSettings.SetSettingValue('DownloadBPS', DownloadBPSEdit.Text);
+	self.PluginSettings.SetSettingValue('ProxyType', ProxyCB.ItemIndex);
+	self.PluginSettings.SetSettingValue('ProxyServer', ProxyServerEdit.Text);
+	self.PluginSettings.SetSettingValue('ProxyPort', ProxyPortEdit.Text);
 
-	SetPluginSettingsValue(SettingsIniFilePath, 'ProxyUser', ProxyUserEdit.Text);
-	SetPluginSettingsValue(SettingsIniFilePath, 'ProxyPassword', ProxyPwd.Text);
-	SetPluginSettingsValue(SettingsIniFilePath, 'ProxyTCPwdMngr', ProxyTCPwdMngrCB.Checked);
+	self.PluginSettings.SetSettingValue('ProxyUser', ProxyUserEdit.Text);
+	self.PluginSettings.SetSettingValue('ProxyPassword', ProxyPwd.Text);
+	self.PluginSettings.SetSettingValue('ProxyTCPwdMngr', ProxyTCPwdMngrCB.Checked);
 
 	if ChangeUserAgentCB.Checked then
-		SetPluginSettingsValue(SettingsIniFilePath, 'UserAgent', UserAgentEdit.Text);
+		self.PluginSettings.SetSettingValue('UserAgent', UserAgentEdit.Text);
 
-	SetPluginSettingsValue(SettingsIniFilePath, 'DownloadLinksEncode', DownloadLinksEncodeCB.Checked);
-	SetPluginSettingsValue(SettingsIniFilePath, 'AutoUpdateDownloadListing', AutoUpdateDownloadListingCB.Checked);
+	self.PluginSettings.SetSettingValue('DownloadLinksEncode', DownloadLinksEncodeCB.Checked);
+	self.PluginSettings.SetSettingValue('AutoUpdateDownloadListing', AutoUpdateDownloadListingCB.Checked);
 
-	SetPluginSettingsValue(SettingsIniFilePath, 'ShowTrashFolders', ShowTrashFoldersCB.Checked);
-	SetPluginSettingsValue(SettingsIniFilePath, 'ShowSharedFolders', ShowSharedFoldersCB.Checked);
-	SetPluginSettingsValue(SettingsIniFilePath, 'ShowInvitesFolders', ShowInvitesFoldersCB.Checked);
-	SetPluginSettingsValue(SettingsIniFilePath, 'PrecalculateHash', PrecalculateHashCB.Checked);
-	SetPluginSettingsValue(SettingsIniFilePath, 'CheckCRC', CheckCRCCB.Checked);
+	self.PluginSettings.SetSettingValue('ShowTrashFolders', ShowTrashFoldersCB.Checked);
+	self.PluginSettings.SetSettingValue('ShowSharedFolders', ShowSharedFoldersCB.Checked);
+	self.PluginSettings.SetSettingValue('ShowInvitesFolders', ShowInvitesFoldersCB.Checked);
+	self.PluginSettings.SetSettingValue('PrecalculateHash', PrecalculateHashCB.Checked);
+	self.PluginSettings.SetSettingValue('CheckCRC', CheckCRCCB.Checked);
 
 	if ProxyTCPwdMngrCB.Checked then //просим TC сохранить пароль
 	begin
@@ -365,7 +365,7 @@ begin
 			FS_FILE_OK:
 				begin //TC скушал пароль
 					ProxyPwd.Text := EmptyWideStr;
-					SetPluginSettingsValue(SettingsIniFilePath, 'ProxyPassword', EmptyWideStr);
+					self.PluginSettings.SetSettingValue('ProxyPassword', EmptyWideStr);
 				end;
 			FS_FILE_NOTSUPPORTED: //нажали отмену на вводе мастер-пароля
 				begin //просто выйдем
@@ -430,7 +430,7 @@ procedure TAccountsForm.DeleteExtButtonClick(Sender: TObject);
 begin
 	if (StreamingExtensionsList.Items.Count > 0) and (StreamingExtensionsList.ItemIndex <> -1) then
 	begin
-		DeleteStreamingExtensionsFromIniFile(SettingsIniFilePath, StreamingExtensionsList.Items[StreamingExtensionsList.ItemIndex]);
+		DeleteStreamingExtensionsFromIniFile(self.PluginSettings.IniFileName, StreamingExtensionsList.Items[StreamingExtensionsList.ItemIndex]);
 		UpdateStreamingExtensionsList();
 	end;
 end;
@@ -492,7 +492,7 @@ procedure TAccountsForm.NewAccountBtnClick(Sender: TObject);
 var
 	Account: TAccountSettings;
 begin
-	if mrOk = TRegistrationForm.ShowRegistration(self.parentWindow, GetPluginSettings(SettingsIniFilePath).ConnectionSettings, Account) then
+	if mrOk = TRegistrationForm.ShowRegistration(self.parentWindow, PluginSettings.ConnectionSettings, Account) then
 	begin
 		if Account.use_tc_password_manager then //просим TC сохранить пароль
 			if FS_FILE_OK <> PasswordManager.SetPassword(Account.name, Account.password) then
@@ -514,7 +514,7 @@ begin
 	AccountsPanel.Visible := not PublicAccountCB.Checked;
 end;
 
-class procedure TAccountsForm.ShowAccounts(parentWindow: HWND; IniPath, SettingsIniFilePath: WideString; PasswordManager: TTCPasswordManager; Account: WideString);
+class procedure TAccountsForm.ShowAccounts(parentWindow: HWND; IniPath: WideString; Settings: TMRCSettings; PasswordManager: TTCPasswordManager; Account: WideString);
 var
 	AccountsForm: TAccountsForm;
 begin
@@ -522,60 +522,60 @@ begin
 		AccountsForm := TAccountsForm.Create(nil);
 		AccountsForm.parentWindow := parentWindow;
 		AccountsForm.IniPath := IniPath;
-		AccountsForm.SettingsIniFilePath := SettingsIniFilePath;
+		AccountsForm.PluginSettings := Settings;
 		AccountsForm.PasswordManager := PasswordManager;
 		AccountsForm.SelectedAccount := EmptyWideStr;
 		{global settings}
-		AccountsForm.UseDLLFromPluginDir.Checked := GetPluginSettings(SettingsIniFilePath).LoadSSLDLLOnlyFromPluginDir;
-		AccountsForm.PreserveFileTimeCB.Checked := GetPluginSettings(SettingsIniFilePath).PreserveFileTime;
-		AccountsForm.DescriptionEnabledCB.Checked := GetPluginSettings(SettingsIniFilePath).DescriptionEnabled;
-		AccountsForm.DescriptionEditorEnabledCB.Checked := GetPluginSettings(SettingsIniFilePath).DescriptionEditorEnabled;
-		AccountsForm.DescriptionCopyToCloudCB.Checked := GetPluginSettings(SettingsIniFilePath).DescriptionCopyToCloud;
-		AccountsForm.DescriptionCopyFromCloudCB.Checked := GetPluginSettings(SettingsIniFilePath).DescriptionCopyFromCloud;
-		AccountsForm.DescriptionTrackCloudFSCB.Checked := GetPluginSettings(SettingsIniFilePath).DescriptionTrackCloudFS;
-		AccountsForm.DescriptionFileNameEdit.Text := GetPluginSettings(SettingsIniFilePath).DescriptionFileName;
+		AccountsForm.UseDLLFromPluginDir.Checked := AccountsForm.PluginSettings.LoadSSLDLLOnlyFromPluginDir;
+		AccountsForm.PreserveFileTimeCB.Checked := AccountsForm.PluginSettings.PreserveFileTime;
+		AccountsForm.DescriptionEnabledCB.Checked := AccountsForm.PluginSettings.DescriptionEnabled;
+		AccountsForm.DescriptionEditorEnabledCB.Checked := AccountsForm.PluginSettings.DescriptionEditorEnabled;
+		AccountsForm.DescriptionCopyToCloudCB.Checked := AccountsForm.PluginSettings.DescriptionCopyToCloud;
+		AccountsForm.DescriptionCopyFromCloudCB.Checked := AccountsForm.PluginSettings.DescriptionCopyFromCloud;
+		AccountsForm.DescriptionTrackCloudFSCB.Checked := AccountsForm.PluginSettings.DescriptionTrackCloudFS;
+		AccountsForm.DescriptionFileNameEdit.Text := AccountsForm.PluginSettings.DescriptionFileName;
 
-		AccountsForm.CopyBetweenAccountsModeCombo.ItemIndex := GetPluginSettings(SettingsIniFilePath).CopyBetweenAccountsMode;
-		AccountsForm.SocketTimeoutEdit.Text := GetPluginSettings(SettingsIniFilePath).ConnectionSettings.SocketTimeout.ToString;
-		AccountsForm.UploadBPSEdit.Text := GetPluginSettings(SettingsIniFilePath).ConnectionSettings.UploadBPS.ToString;
-		AccountsForm.DownloadBPSEdit.Text := GetPluginSettings(SettingsIniFilePath).ConnectionSettings.DownloadBPS.ToString;
+		AccountsForm.CopyBetweenAccountsModeCombo.ItemIndex := AccountsForm.PluginSettings.CopyBetweenAccountsMode;
+		AccountsForm.SocketTimeoutEdit.Text := AccountsForm.PluginSettings.ConnectionSettings.SocketTimeout.ToString;
+		AccountsForm.UploadBPSEdit.Text := AccountsForm.PluginSettings.ConnectionSettings.UploadBPS.ToString;
+		AccountsForm.DownloadBPSEdit.Text := AccountsForm.PluginSettings.ConnectionSettings.DownloadBPS.ToString;
 
-		AccountsForm.ProxyCB.ItemIndex := GetPluginSettings(SettingsIniFilePath).ConnectionSettings.ProxySettings.ProxyType;
-		AccountsForm.ProxyServerEdit.Text := GetPluginSettings(SettingsIniFilePath).ConnectionSettings.ProxySettings.Server;
-		AccountsForm.ProxyPortEdit.Text := GetPluginSettings(SettingsIniFilePath).ConnectionSettings.ProxySettings.Port.ToString;
-		AccountsForm.ProxyUserEdit.Text := GetPluginSettings(SettingsIniFilePath).ConnectionSettings.ProxySettings.user;
-		AccountsForm.ProxyPwd.Text := GetPluginSettings(SettingsIniFilePath).ConnectionSettings.ProxySettings.password;
-		AccountsForm.ProxyTCPwdMngrCB.Checked := GetPluginSettings(SettingsIniFilePath).ConnectionSettings.ProxySettings.use_tc_password_manager;
+		AccountsForm.ProxyCB.ItemIndex := AccountsForm.PluginSettings.ConnectionSettings.ProxySettings.ProxyType;
+		AccountsForm.ProxyServerEdit.Text := AccountsForm.PluginSettings.ConnectionSettings.ProxySettings.Server;
+		AccountsForm.ProxyPortEdit.Text := AccountsForm.PluginSettings.ConnectionSettings.ProxySettings.Port.ToString;
+		AccountsForm.ProxyUserEdit.Text := AccountsForm.PluginSettings.ConnectionSettings.ProxySettings.user;
+		AccountsForm.ProxyPwd.Text := AccountsForm.PluginSettings.ConnectionSettings.ProxySettings.password;
+		AccountsForm.ProxyTCPwdMngrCB.Checked := AccountsForm.PluginSettings.ConnectionSettings.ProxySettings.use_tc_password_manager;
 
-		AccountsForm.UserAgentEdit.Text := GetPluginSettings(SettingsIniFilePath).ConnectionSettings.UserAgent;
+		AccountsForm.UserAgentEdit.Text := AccountsForm.PluginSettings.ConnectionSettings.UserAgent;
 		AccountsForm.ChangeUserAgentCB.Checked := DEFAULT_USERAGENT <> AccountsForm.UserAgentEdit.Text;
 		AccountsForm.UserAgentEdit.ReadOnly := not AccountsForm.ChangeUserAgentCB.Checked;
 
-		AccountsForm.CloudMaxFileSizeValue.Text := GetPluginSettings(SettingsIniFilePath).CloudMaxFileSize.ToString;
+		AccountsForm.CloudMaxFileSizeValue.Text := AccountsForm.PluginSettings.CloudMaxFileSize.ToString;
 
-		if (GetPluginSettings(SettingsIniFilePath).CloudMaxFileSize <> CLOUD_MAX_FILESIZE_DEFAULT) then
+		if (AccountsForm.PluginSettings.CloudMaxFileSize <> CLOUD_MAX_FILESIZE_DEFAULT) then
 		begin
 			AccountsForm.CloudMaxFileSizeValue.Enabled := true;
 			AccountsForm.CloudMaxFileSizeCB.Checked := true;
 		end;
-		AccountsForm.ChunkOverwriteModeCombo.ItemIndex := GetPluginSettings(SettingsIniFilePath).ChunkOverwriteMode;
-		AccountsForm.DeleteFailOnUploadModeCombo.ItemIndex := GetPluginSettings(SettingsIniFilePath).DeleteFailOnUploadMode;
-		AccountsForm.OverwriteLocalModeCombo.ItemIndex := GetPluginSettings(SettingsIniFilePath).OverwriteLocalMode;
-		AccountsForm.OperationErrorModeCombo.ItemIndex := GetPluginSettings(SettingsIniFilePath).OperationErrorMode;
-		AccountsForm.RetryAttemptsValue.Text := GetPluginSettings(SettingsIniFilePath).RetryAttempts.ToString;
-		AccountsForm.AttemptWaitValue.Text := GetPluginSettings(SettingsIniFilePath).AttemptWait.ToString;
+		AccountsForm.ChunkOverwriteModeCombo.ItemIndex := AccountsForm.PluginSettings.ChunkOverwriteMode;
+		AccountsForm.DeleteFailOnUploadModeCombo.ItemIndex := AccountsForm.PluginSettings.DeleteFailOnUploadMode;
+		AccountsForm.OverwriteLocalModeCombo.ItemIndex := AccountsForm.PluginSettings.OverwriteLocalMode;
+		AccountsForm.OperationErrorModeCombo.ItemIndex := AccountsForm.PluginSettings.OperationErrorMode;
+		AccountsForm.RetryAttemptsValue.Text := AccountsForm.PluginSettings.RetryAttempts.ToString;
+		AccountsForm.AttemptWaitValue.Text := AccountsForm.PluginSettings.AttemptWait.ToString;
 
-		AccountsForm.DisableMultiThreadingCB.Checked := GetPluginSettings(SettingsIniFilePath).DisableMultiThreading;
-		AccountsForm.SpaceInfoLoggingCB.Checked := GetPluginSettings(SettingsIniFilePath).LogUserSpace;
-		AccountsForm.IconsModeCombo.ItemIndex := GetPluginSettings(SettingsIniFilePath).IconsMode;
+		AccountsForm.DisableMultiThreadingCB.Checked := AccountsForm.PluginSettings.DisableMultiThreading;
+		AccountsForm.SpaceInfoLoggingCB.Checked := AccountsForm.PluginSettings.LogUserSpace;
+		AccountsForm.IconsModeCombo.ItemIndex := AccountsForm.PluginSettings.IconsMode;
 
-		AccountsForm.DownloadLinksEncodeCB.Checked := GetPluginSettings(SettingsIniFilePath).DownloadLinksEncode;
-		AccountsForm.AutoUpdateDownloadListingCB.Checked := GetPluginSettings(SettingsIniFilePath).AutoUpdateDownloadListing;
-		AccountsForm.ShowTrashFoldersCB.Checked := GetPluginSettings(SettingsIniFilePath).ShowTrashFolders;
-		AccountsForm.ShowSharedFoldersCB.Checked := GetPluginSettings(SettingsIniFilePath).ShowSharedFolders;
-		AccountsForm.ShowInvitesFoldersCB.Checked := GetPluginSettings(SettingsIniFilePath).ShowInvitesFolders;
-		AccountsForm.PrecalculateHashCB.Checked := GetPluginSettings(SettingsIniFilePath).PrecalculateHash;
-		AccountsForm.CheckCRCCB.Checked := GetPluginSettings(SettingsIniFilePath).CheckCRC;
+		AccountsForm.DownloadLinksEncodeCB.Checked := AccountsForm.PluginSettings.DownloadLinksEncode;
+		AccountsForm.AutoUpdateDownloadListingCB.Checked := AccountsForm.PluginSettings.AutoUpdateDownloadListing;
+		AccountsForm.ShowTrashFoldersCB.Checked := AccountsForm.PluginSettings.ShowTrashFolders;
+		AccountsForm.ShowSharedFoldersCB.Checked := AccountsForm.PluginSettings.ShowSharedFolders;
+		AccountsForm.ShowInvitesFoldersCB.Checked := AccountsForm.PluginSettings.ShowInvitesFolders;
+		AccountsForm.PrecalculateHashCB.Checked := AccountsForm.PluginSettings.PrecalculateHash;
+		AccountsForm.CheckCRCCB.Checked := AccountsForm.PluginSettings.CheckCRC;
 
 		{global settings}
 		if Account <> EmptyWideStr then
@@ -593,7 +593,7 @@ var
 begin
 	if (StreamingExtensionsList.Items.Count > 0) and (StreamingExtensionsList.ItemIndex <> -1) then
 	begin
-		GetStreamingOptionsFromIniFile(SettingsIniFilePath, '.' + StreamingExtensionsList.Items[StreamingExtensionsList.ItemIndex], StreamingOptions); //не проверяем результат, это настройки
+		GetStreamingOptionsFromIniFile(PluginSettings.IniFileName, '.' + StreamingExtensionsList.Items[StreamingExtensionsList.ItemIndex], StreamingOptions); //не проверяем результат, это настройки
 		StreamingExtensionEdit.Text := StreamingExtensionsList.Items[StreamingExtensionsList.ItemIndex];
 		CommandPathEdit.Text := StreamingOptions.Command;
 		ParametersEdit.Text := StreamingOptions.Parameters;

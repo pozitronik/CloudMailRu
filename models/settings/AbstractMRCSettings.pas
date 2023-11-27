@@ -10,6 +10,7 @@ uses
 type
 
 	TAbstractMRCSettings = class abstract
+	protected
 		{Parameters}
 		FConnectionSettings: TConnectionSettings;
 		FIniPath: integer;
@@ -41,7 +42,6 @@ type
 		FPrecalculateHash: boolean;
 		FForcePrecalculateSize: int64;
 		FCheckCRC: boolean;
-	protected
 		FSaveOnChange: boolean; // save options to the file when any option changes
 	private
 		function GetDescriptionFileName: WideString;

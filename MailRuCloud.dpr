@@ -105,7 +105,6 @@ uses
 	StreamingOptions in 'models\settings\StreamingOptions.pas',
 	IniFilesHelper in 'helpers\IniFilesHelper.pas',
 	MRCSettings in 'models\settings\MRCSettings.pas',
-	PluginSettings in 'models\settings\PluginSettings.pas',
 	AbstractMRCSettings in 'models\settings\AbstractMRCSettings.pas';
 
 {$IFDEF WIN64}
@@ -125,11 +124,10 @@ const
 {$ENDIF}
 
 var
-	CurrentSettings: TPluginSettings;
 
 	AccountsIniFilePath: WideString;
-	SettingsIniFilePath: WideString;
-	GlobalPath, PluginPath, AppDataDir, IniDir: WideString;
+
+	GlobalPath, PluginPath: WideString;
 	AccountsList: TStringList; //Global accounts list
 	FileCounter: integer = 0;
 	CurrentlyMovedDir: TRealPath;
@@ -148,6 +146,7 @@ var
 
 	PluginNum: integer;
 
+	CurrentSettings: TMRCSettings;
 	CurrentListing: TCMRDirItemList;
 	CurrentIncomingInvitesListing: TCMRIncomingInviteList;
 	ConnectionManager: TConnectionManager;
@@ -305,7 +304,7 @@ begin
 				begin
 					if (CurrentSettings.DescriptionEnabled) and RealPath.IsInAccount() then
 					begin
-						if ConnectionManager.get(RealPath.account, getResult).getDescriptionFile(IncludeTrailingBackslash(RealPath.path) + GetDescriptionFileName(SettingsIniFilePath), CurrentDescriptions.ionFilename) then
+						if ConnectionManager.get(RealPath.account, getResult).getDescriptionFile(IncludeTrailingBackslash(RealPath.path) + CurrentSettings.DescriptionFileName, CurrentDescriptions.ionFilename) then
 						begin
 							CurrentDescriptions.Read;
 						end else begin
@@ -702,13 +701,13 @@ begin
 		Result := FS_EXEC_SYMLINK;
 	end else begin
 		if RealPath.isInAccountsList then
-			TAccountsForm.ShowAccounts(MainWin, AccountsIniFilePath, SettingsIniFilePath, PasswordManager, RealPath.account) //main shared folder properties - open connection settings
+			TAccountsForm.ShowAccounts(MainWin, AccountsIniFilePath, CurrentSettings, PasswordManager, RealPath.account) //main shared folder properties - open connection settings
 		else
 		begin
 			Cloud := ConnectionManager.get(RealPath.account, getResult);
 			CurrentItem := FindListingItemByPath(CurrentListing, RealPath);
 			if Cloud.statusFile(CurrentItem.home, CurrentItem) then
-				TPropertyForm.ShowProperty(MainWin, RealPath.path, CurrentItem, Cloud, CurrentSettings.DownloadLinksEncode, CurrentSettings.AutoUpdateDownloadListing, false, false, GetDescriptionFileName(SettingsIniFilePath))
+				TPropertyForm.ShowProperty(MainWin, RealPath.path, CurrentItem, Cloud, CurrentSettings.DownloadLinksEncode, CurrentSettings.AutoUpdateDownloadListing, false, false, CurrentSettings.DescriptionFileName)
 		end;
 	end;
 end;
@@ -723,7 +722,7 @@ begin
 	Cloud := ConnectionManager.get(RealPath.account, getResult);
 	if RealPath.isInAccountsList then //main invites folder properties
 	begin
-		TAccountsForm.ShowAccounts(MainWin, AccountsIniFilePath, SettingsIniFilePath, PasswordManager, RealPath.account)
+		TAccountsForm.ShowAccounts(MainWin, AccountsIniFilePath, CurrentSettings, PasswordManager, RealPath.account)
 	end else begin //one invite item
 		CurrentInvite := FindIncomingInviteItemByPath(CurrentIncomingInvitesListing, RealPath);
 		if CurrentInvite.name = EmptyWideStr then
@@ -754,12 +753,12 @@ var
 begin
 	Result := FS_EXEC_OK;
 	if RealPath.isInAccountsList then
-		TAccountsForm.ShowAccounts(MainWin, AccountsIniFilePath, SettingsIniFilePath, PasswordManager, RealPath.account) //show account properties
+		TAccountsForm.ShowAccounts(MainWin, AccountsIniFilePath, CurrentSettings, PasswordManager, RealPath.account) //show account properties
 	else
 	begin
 		Cloud := ConnectionManager.get(RealPath.account, getResult);
 		//всегда нужно обновлять статус на сервере, CurrentListing может быть изменён в другой панели
-		if (Cloud.statusFile(RealPath.path, CurrentItem)) and (idContinue = TPropertyForm.ShowProperty(MainWin, RealPath.path, CurrentItem, Cloud, CurrentSettings.DownloadLinksEncode, CurrentSettings.AutoUpdateDownloadListing, CurrentSettings.DescriptionEnabled, CurrentSettings.DescriptionEditorEnabled, GetDescriptionFileName(SettingsIniFilePath))) then
+		if (Cloud.statusFile(RealPath.path, CurrentItem)) and (idContinue = TPropertyForm.ShowProperty(MainWin, RealPath.path, CurrentItem, Cloud, CurrentSettings.DownloadLinksEncode, CurrentSettings.AutoUpdateDownloadListing, CurrentSettings.DescriptionEnabled, CurrentSettings.DescriptionEditorEnabled, CurrentSettings.DescriptionFileName)) then
 			PostMessage(MainWin, WM_USER + 51, 540, 0); //refresh tc panel if description edited
 	end;
 end;
@@ -909,7 +908,7 @@ begin
 
 	if Verb = VERB_OPEN then
 	begin
-		if (not(RealPath.isDir = ID_Yes)) and GetStreamingOptionsFromIniFile(SettingsIniFilePath, RealPath.path, StreamingOptions) and (STREAMING_FORMAT_NONE <> StreamingOptions.Format) then
+		if (not(RealPath.isDir = ID_Yes)) and GetStreamingOptionsFromIniFile(CurrentSettings.IniFileName, RealPath.path, StreamingOptions) and (STREAMING_FORMAT_NONE <> StreamingOptions.Format) then
 			exit(ExecuteFileStream(RealPath, StreamingOptions));
 		exit(FS_EXEC_YOURSELF);
 	end;
@@ -928,7 +927,7 @@ var
 	RemoteIonPath, LocalTempPath: WideString;
 	RemoteIonExists: Boolean;
 begin
-	RemoteIonPath := IncludeTrailingBackslash(ExtractFileDir(RemotePath.path)) + GetDescriptionFileName(SettingsIniFilePath);
+	RemoteIonPath := IncludeTrailingBackslash(ExtractFileDir(RemotePath.path)) + CurrentSettings.DescriptionFileName;
 	LocalTempPath := GetTmpFileName('ion');
 
 	RemoteIonExists := Cloud.getDescriptionFile(RemoteIonPath, LocalTempPath);
@@ -937,7 +936,7 @@ begin
 
 	RemoteDescriptions := TDescription.Create(LocalTempPath, GetTCCommentPreferredFormat);
 	RemoteDescriptions.Read;
-	LocalDescriptions := TDescription.Create(IncludeTrailingPathDelimiter(ExtractFileDir(LocalFilePath)) + GetDescriptionFileName(SettingsIniFilePath), GetTCCommentPreferredFormat); //open local ion file
+	LocalDescriptions := TDescription.Create(IncludeTrailingPathDelimiter(ExtractFileDir(LocalFilePath)) + CurrentSettings.DescriptionFileName, GetTCCommentPreferredFormat); //open local ion file
 	LocalDescriptions.Read;
 	LocalDescriptions.CopyFrom(RemoteDescriptions, ExtractFileName(LocalFilePath));
 	LocalDescriptions.Write();
@@ -951,8 +950,8 @@ var
 	RemoteIonPath, LocalIonPath, LocalTempPath: WideString;
 	RemoteIonExists: Boolean;
 begin
-	RemoteIonPath := IncludeTrailingBackslash(ExtractFileDir(RemotePath.path)) + GetDescriptionFileName(SettingsIniFilePath);
-	LocalIonPath := IncludeTrailingBackslash(ExtractFileDir(LocalFilePath)) + GetDescriptionFileName(SettingsIniFilePath);
+	RemoteIonPath := IncludeTrailingBackslash(ExtractFileDir(RemotePath.path)) + CurrentSettings.DescriptionFileName;
+	LocalIonPath := IncludeTrailingBackslash(ExtractFileDir(LocalFilePath)) + CurrentSettings.DescriptionFileName;
 	LocalTempPath := GetTmpFileName('ion');
 
 	if (not FileExists(GetUNCFilePath(LocalIonPath))) then
@@ -987,8 +986,8 @@ var
 begin
 	OldItem := ExtractFileName(OldRemotePath.path);
 	NewItem := ExtractFileName(NewRemotePath.path);
-	OldRemoteIonPath := IncludeTrailingBackslash(ExtractFileDir(OldRemotePath.path)) + GetDescriptionFileName(SettingsIniFilePath);
-	NewRemoteIonPath := IncludeTrailingBackslash(ExtractFileDir(NewRemotePath.path)) + GetDescriptionFileName(SettingsIniFilePath);
+	OldRemoteIonPath := IncludeTrailingBackslash(ExtractFileDir(OldRemotePath.path)) + CurrentSettings.DescriptionFileName;
+	NewRemoteIonPath := IncludeTrailingBackslash(ExtractFileDir(NewRemotePath.path)) + CurrentSettings.DescriptionFileName;
 	OldLocalTempPath := GetTmpFileName('ion');
 	NewLocalTempPath := GetTmpFileName('ion');
 
@@ -1037,7 +1036,7 @@ var
 	RemoteDescriptions: TDescription;
 	RemoteIonPath, LocalTempPath: WideString;
 begin
-	RemoteIonPath := IncludeTrailingBackslash(ExtractFileDir(RemotePath.path)) + GetDescriptionFileName(SettingsIniFilePath);
+	RemoteIonPath := IncludeTrailingBackslash(ExtractFileDir(RemotePath.path)) + CurrentSettings.DescriptionFileName;
 	LocalTempPath := GetTmpFileName('ion');
 	if not Cloud.getDescriptionFile(RemoteIonPath, LocalTempPath) then
 		exit; //описания нет, не заморачиваемся
@@ -1597,16 +1596,16 @@ end;
 
 procedure FsSetCryptCallbackW(PCryptProc: TCryptProcW; CryptoNr: integer; Flags: integer); stdcall;
 var
-	Settings: TPluginSettings;
+	ProxySettings: TProxySettings;
 begin
-	Settings := CurrentSettings;
+	ProxySettings := CurrentSettings.ConnectionSettings.ProxySettings;
 	PasswordManager := TTCPasswordManager.Create(PCryptProc, PluginNum, CryptoNr, TCLogger);
-	PasswordManager.GetProxyPassword(Settings.ConnectionSettings.ProxySettings);
-	if Settings.ConnectionSettings.ProxySettings.use_tc_password_manager then
-		SetPluginSettingsValue(SettingsIniFilePath, 'ProxyTCPwdMngr', true);
+	PasswordManager.GetProxyPassword(ProxySettings);
+	if ProxySettings.use_tc_password_manager then
+		CurrentSettings.SetSettingValue('ProxyTCPwdMngr', true);
 
-	HTTPManager := THTTPManager.Create(Settings.ConnectionSettings, TCProgress, TCLogger);
-	ConnectionManager := TConnectionManager.Create(AccountsIniFilePath, Settings, HTTPManager, TCProgress, TCLogger, TCRequest, PasswordManager);
+	HTTPManager := THTTPManager.Create(CurrentSettings.ConnectionSettings, TCProgress, TCLogger);
+	ConnectionManager := TConnectionManager.Create(AccountsIniFilePath, CurrentSettings, HTTPManager, TCProgress, TCLogger, TCRequest, PasswordManager);
 
 end;
 
@@ -1894,44 +1893,9 @@ end;
 procedure InitPluginData;
 begin
 	PluginPath := GetModuleName(hInstance);
-	AppDataDir := IncludeTrailingBackslash(IncludeTrailingBackslash(SysUtils.GetEnvironmentVariable('APPDATA')) + 'MailRuCloud');
 	PluginPath := IncludeTrailingBackslash(ExtractFilePath(PluginPath));
 
-	if not FileExists(GetUNCFilePath(PluginPath + 'MailRuCloud.global.ini')) then
-	begin
-		if IsWriteable(PluginPath) then
-		begin
-			IniDir := PluginPath;
-		end else begin
-			IniDir := AppDataDir;
-		end;
-
-	end else begin
-		case GetPluginSettings(PluginPath + 'MailRuCloud.global.ini').IniPath of
-			0: //use default path
-				begin
-					IniDir := PluginPath;
-				end;
-			1: //use appdata path
-				begin
-					IniDir := AppDataDir;
-				end;
-			2: //use plugin dir if writeable
-				begin
-					if IsWriteable(PluginPath) then
-						IniDir := PluginPath
-					else
-						IniDir := AppDataDir;
-				end;
-		end;
-	end;
-
-	if not FileExists(GetUNCFilePath(IniDir)) then
-		createDir(GetUNCFilePath(IniDir)); //assume this in appdata dir
-
-	AccountsIniFilePath := IniDir + 'MailRuCloud.ini';
-	SettingsIniFilePath := IniDir + 'MailRuCloud.global.ini';
-	CurrentSettings := GetPluginSettings(SettingsIniFilePath);
+	CurrentSettings := TMRCSettings.Create();
 
 	if CurrentSettings.LoadSSLDLLOnlyFromPluginDir then
 	begin
@@ -1978,6 +1942,7 @@ begin
 	FreeAndNil(AccountsList); //уже сделано, но не страшно, к тому же в будущем может не разрушаться ранее
 	CurrentDescriptions.Free;
 
+	CurrentSettings.Free;
 	PasswordManager.Free;
 	TCLogger.Free;
 	TCProgress.Free;
