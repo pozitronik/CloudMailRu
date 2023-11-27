@@ -14,10 +14,10 @@ uses
 	CMRStrings,
 	CMRConstants,
 	ConnectionSettings,
-	AbstractMRCSettings;
+	AbstractPluginSettings;
 
 type
-	TMRCSettings = class(TAbstractMRCSettings)
+	TMRCSettings = class(TAbstractPluginSettings)
 	private
 		ApplicationPath: WideString; // the directory of the current binary file
 		IniFilePath: WideString;
