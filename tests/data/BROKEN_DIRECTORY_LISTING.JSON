@@ -1,0 +1,49 @@
+{
+	it is not a valid JSON
+	"body": {
+		"count": {
+			"folders": 1,
+			"files": 1
+		},
+		"tree": "316234396237373230303030",
+		"name": "TEST_DIR",
+		"grev": 13501,
+		"size": 44629,
+		"sort": {
+			"order": "asc",
+			"type": "name"
+		},
+		"kind": "folder",
+		"rev": 13499,
+		"type": "folder",
+		"home": "/TEST_DIR",
+		"list": [
+			{
+				"count": {
+					"folders": 1,
+					"files": 0
+				},
+				"tree": "316234396237373230303030",
+				"name": "subdir",
+				"grev": 13501,
+				"size": 668,
+				"kind": "folder",
+				"rev": 13500,
+				"type": "folder",
+				"home": "/TEST_DIR/subdir"
+			},
+			{
+				"mtime": 1700490201,
+				"virus_scan": "pass",
+				"name": "sign.png",
+				"size": 43961,
+				"hash": "C172C6E2FF47284FF33F348FEA7EECE532F6C051",
+				"kind": "file",
+				"type": "file",
+				"home": "/TEST_DIR/sign.png"
+			}
+		]
+	},
+	"time": 1700490243535,
+	"status": 200
+}
