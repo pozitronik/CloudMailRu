@@ -46,7 +46,7 @@ implementation
 constructor TPluginSettings.Create(IniFilePath: WideString);
 begin
 	self.IniFilePath := IniFilePath;
-	self.FSaveOnChange := True;
+	self.FSaveOnChange := False;
 	Refresh();
 end;
 
@@ -94,7 +94,7 @@ begin
 		createDir(GetUNCFilePath(self.IniFileDir)); //assuming this is inside the appdata dir
 
 	self.IniFilePath := GetUNCFilePath(self.IniFileDir + PLUGIN_CONFIG_FILE_NAME);
-	self.FSaveOnChange := True;
+	self.FSaveOnChange := False;
 	Refresh();
 
 end;
