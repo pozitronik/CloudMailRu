@@ -105,7 +105,8 @@ uses
 	StreamingOptions in 'models\settings\StreamingOptions.pas',
 	IniFilesHelper in 'helpers\IniFilesHelper.pas',
 	MRCSettings in 'models\settings\MRCSettings.pas',
-	PluginSettings in 'models\settings\PluginSettings.pas';
+	PluginSettings in 'models\settings\PluginSettings.pas',
+	AbstractMRCSettings in 'models\settings\AbstractMRCSettings.pas';
 
 {$IFDEF WIN64}
 {$E wfx64}
