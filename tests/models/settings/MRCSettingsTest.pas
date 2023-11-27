@@ -33,6 +33,9 @@ type
 
 		[Test]
 		procedure TestCreateFindFile; {When the ini file name isn't known, constructor looks for it in the application directory and appdata folder}
+
+		[Test]
+		procedure TestSetValue;
 	end;
 
 implementation
@@ -110,6 +113,24 @@ begin
 	Assert.AreEqual(5000, MRCSetting.ConnectionSettings.ProxySettings.Port); //subrecord string
 	MRCSetting.Free;
 
+end;
+
+procedure TMRCSettingsTest.TestSetValue;
+var
+	MRCSetting: TMRCSettings;
+begin
+	MRCSetting := TMRCSettings.Create(); //creates a file in the test exe dir
+
+	Assert.IsFalse(MRCSetting.DescriptionEnabled); //boolean
+	MRCSetting.SetSettingValue('DescriptionEnabled', true);
+
+	MRCSetting.Free;
+
+	MRCSetting := TMRCSettings.Create(); //creates a file in the test exe dir
+
+	Assert.IsTrue(MRCSetting.DescriptionEnabled); //boolean
+
+	MRCSetting.Free;
 end;
 
 initialization
