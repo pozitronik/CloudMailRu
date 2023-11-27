@@ -29,7 +29,7 @@ type
 		property IniDir: WideString read IniFileDir;
 		property PluginPath: WideString read ApplicationPath;
 		property AccountsIniFileName: WideString read GetAccountsIniFileName; //Path to the accounts config file
-
+    property IniFileName: WideString read IniFilePath;
 		constructor Create(); overload; //finds the settings file by itself
 		constructor Create(IniFilePath: WideString); overload;
 		procedure Refresh();
