@@ -130,6 +130,10 @@
         <DCCReference Include="models\settings\PluginSettingsTest.pas"/>
         <DCCReference Include="..\models\settings\AbstractPluginSettings.pas"/>
         <DCCReference Include="..\models\settings\PluginSettings.pas"/>
+        <DCCReference Include="..\models\settings\AbstractAccountSettings.pas"/>
+        <DCCReference Include="..\models\settings\NewAccountSettings.pas"/>
+        <DCCReference Include="models\settings\AccountSettingsTest.pas"/>
+        <DCCReference Include="..\helpers\ParsingHelper.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>
