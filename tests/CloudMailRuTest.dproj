@@ -116,7 +116,6 @@
         <DCCReference Include="models\TCProgressTest.pas"/>
         <DCCReference Include="..\models\TCRequest.pas"/>
         <DCCReference Include="models\TCRequestTest.pas"/>
-        <DCCReference Include="..\models\settings\MRCSettings.pas"/>
         <DCCReference Include="..\helpers\FileHelper.pas"/>
         <DCCReference Include="..\helpers\PathHelper.pas"/>
         <DCCReference Include="..\helpers\WindowsHelper.pas"/>
@@ -128,8 +127,9 @@
         <DCCReference Include="..\helpers\TCHelper.pas"/>
         <DCCReference Include="..\models\Description.pas"/>
         <DCCReference Include="..\CMRStrings.pas"/>
-        <DCCReference Include="models\settings\MRCSettingsTest.pas"/>
-        <DCCReference Include="..\models\settings\AbstractMRCSettings.pas"/>
+        <DCCReference Include="models\settings\PluginSettingsTest.pas"/>
+        <DCCReference Include="..\models\settings\AbstractPluginSettings.pas"/>
+        <DCCReference Include="..\models\settings\PluginSettings.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

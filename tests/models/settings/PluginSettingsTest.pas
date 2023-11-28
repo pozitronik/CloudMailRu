@@ -1,9 +1,9 @@
-﻿unit MRCSettingsTest;
+﻿unit PluginSettingsTest;
 
 interface
 
 uses
-	MRCSettings,
+	PluginSettings,
 	SETTINGS_CONSTANTS,
 	TestHelper,
 	SysUtils,
@@ -14,7 +14,7 @@ uses
 type
 
 	[TestFixture]
-	TMRCSettingsTest = class
+	TPluginSettingsTest = class
 		AppDir: WideString; //the current test binary directory
 		AppDataSubDir: WideString; //the subdirectory in AppData
 	private const
@@ -47,7 +47,7 @@ type
 
 implementation
 
-procedure TMRCSettingsTest.Setup;
+procedure TPluginSettingsTest.Setup;
 begin
 	AppDir := IncludeTrailingBackslash(ExtractFilePath(GetModuleName(hInstance)));
 	AppDataSubDir := IncludeTrailingBackslash(IncludeTrailingBackslash(SysUtils.GetEnvironmentVariable('APPDATA')) + APPDATA_DIR_NAME);
@@ -58,15 +58,15 @@ begin
 
 end;
 
-procedure TMRCSettingsTest.TearDown;
+procedure TPluginSettingsTest.TearDown;
 begin
 end;
 
-procedure TMRCSettingsTest.TestCreateDefaults;
+procedure TPluginSettingsTest.TestCreateDefaults;
 var
-	MRCSetting: TMRCSettings;
+	MRCSetting: TPluginSettings;
 begin
-	MRCSetting := TMRCSettings.Create('');
+	MRCSetting := TPluginSettings.Create('');
 
 	{peek some randoms of different data types}
 	Assert.IsFalse(MRCSetting.DescriptionEnabled); //boolean
@@ -78,11 +78,11 @@ begin
 	MRCSetting.Free;
 end;
 
-procedure TMRCSettingsTest.TestCreateFindFile;
+procedure TPluginSettingsTest.TestCreateFindFile;
 var
-	MRCSetting: TMRCSettings;
+	MRCSetting: TPluginSettings;
 begin
-	MRCSetting := TMRCSettings.Create();
+	MRCSetting := TPluginSettings.Create();
 
 	{It finds no config, but writeable application directory, and uses it}
 	Assert.AreEqual(self.AppDir, MRCSetting.PluginPath);
@@ -93,7 +93,7 @@ begin
 	{Copies the ini with only one directive (redirect to the appdata) to the application dir}
 	TFile.Copy(DataPath(FP_SETTINGS_REDIRECT_INI), self.AppDir + PLUGIN_CONFIG_FILE_NAME);
 
-	MRCSetting := TMRCSettings.Create(); //use a open class to acces the private properties
+	MRCSetting := TPluginSettings.Create(); //use a open class to acces the private properties
 
 	{It finds a config, where IniPath is set to one, and interprets it as a redirection to the AppData}
 	Assert.AreEqual(self.AppDataSubDir, MRCSetting.IniDir);
@@ -105,11 +105,11 @@ begin
 
 end;
 
-procedure TMRCSettingsTest.TestCreateFromKnownFile;
+procedure TPluginSettingsTest.TestCreateFromKnownFile;
 var
-	MRCSetting: TMRCSettings;
+	MRCSetting: TPluginSettings;
 begin
-	MRCSetting := TMRCSettings.Create(DataPath(FP_SETTINGS_INI));
+	MRCSetting := TPluginSettings.Create(DataPath(FP_SETTINGS_INI));
 
 	{peek some randoms of different data types}
 	Assert.IsTrue(MRCSetting.DescriptionEnabled); //boolean
@@ -122,13 +122,13 @@ begin
 
 end;
 
-procedure TMRCSettingsTest.TestSaveOnChange;
+procedure TPluginSettingsTest.TestSaveOnChange;
 var
-	MRCSetting: TMRCSettings;
+	MRCSetting: TPluginSettings;
 	ConnectionSettings: TConnectionSettings;
 begin
-	MRCSetting := TMRCSettings.Create(); //creates a file in the test exe dir
-
+	MRCSetting := TPluginSettings.Create(); //creates a file in the test exe dir
+	MRCSetting.SaveOnChange := True;
 	Assert.IsTrue(MRCSetting.SaveOnChange);
 	Assert.IsFalse(MRCSetting.DescriptionEnabled);
 	Assert.AreEqual(DEFAULT_USERAGENT, MRCSetting.ConnectionSettings.UserAgent);
@@ -141,7 +141,7 @@ begin
 
 	MRCSetting.Free;
 
-	MRCSetting := TMRCSettings.Create();
+	MRCSetting := TPluginSettings.Create();
 
 	Assert.IsTrue(MRCSetting.DescriptionEnabled);
 	Assert.AreEqual('BugZilla 100/500', MRCSetting.ConnectionSettings.UserAgent);
@@ -149,14 +149,12 @@ begin
 	MRCSetting.Free;
 end;
 
-procedure TMRCSettingsTest.TestSaveOnChangeDisabled;
+procedure TPluginSettingsTest.TestSaveOnChangeDisabled;
 var
-	MRCSetting: TMRCSettings;
+	MRCSetting: TPluginSettings;
 	ConnectionSettings: TConnectionSettings;
 begin
-	MRCSetting := TMRCSettings.Create();
-
-	MRCSetting.SaveOnChange := False;
+	MRCSetting := TPluginSettings.Create();
 
 	Assert.IsFalse(MRCSetting.SaveOnChange);
 	Assert.IsFalse(MRCSetting.DescriptionEnabled);
@@ -170,7 +168,7 @@ begin
 
 	MRCSetting.Free;
 
-	MRCSetting := TMRCSettings.Create();
+	MRCSetting := TPluginSettings.Create();
 
 	{See that nothing changed, cause SaveOnChange is disabled}
 	Assert.IsFalse(MRCSetting.DescriptionEnabled);
@@ -179,18 +177,18 @@ begin
 	MRCSetting.Free;
 end;
 
-procedure TMRCSettingsTest.TestSetValue;
+procedure TPluginSettingsTest.TestSetValue;
 var
-	MRCSetting: TMRCSettings;
+	MRCSetting: TPluginSettings;
 begin
-	MRCSetting := TMRCSettings.Create(); //creates a file in the test exe dir
+	MRCSetting := TPluginSettings.Create(); //creates a file in the test exe dir
 
 	Assert.IsFalse(MRCSetting.DescriptionEnabled);
 	MRCSetting.SetSettingValue('DescriptionEnabled', True);
 
 	MRCSetting.Free;
 
-	MRCSetting := TMRCSettings.Create(); //creates a file in the test exe dir
+	MRCSetting := TPluginSettings.Create(); //creates a file in the test exe dir
 
 	Assert.IsTrue(MRCSetting.DescriptionEnabled);
 	MRCSetting.Free;
@@ -198,6 +196,6 @@ end;
 
 initialization
 
-TDUnitX.RegisterTestFixture(TMRCSettingsTest);
+TDUnitX.RegisterTestFixture(TPluginSettingsTest);
 
 end.

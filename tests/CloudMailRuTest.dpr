@@ -23,7 +23,6 @@ uses
 	TCProgressTest in 'models\TCProgressTest.pas',
 	TCRequest in '..\models\TCRequest.pas',
 	TCRequestTest in 'models\TCRequestTest.pas',
-	MRCSettings in '..\models\settings\MRCSettings.pas',
 	FileHelper in '..\helpers\FileHelper.pas',
 	PathHelper in '..\helpers\PathHelper.pas',
 	WindowsHelper in '..\helpers\WindowsHelper.pas',
@@ -35,8 +34,9 @@ uses
 	TCHelper in '..\helpers\TCHelper.pas',
 	Description in '..\models\Description.pas',
 	CMRStrings in '..\CMRStrings.pas',
-	MRCSettingsTest in 'models\settings\MRCSettingsTest.pas',
-	AbstractMRCSettings in '..\models\settings\AbstractMRCSettings.pas';
+	PluginSettingsTest in 'models\settings\PluginSettingsTest.pas',
+	AbstractPluginSettings in '..\models\settings\AbstractPluginSettings.pas',
+	PluginSettings in '..\models\settings\PluginSettings.pas';
 
 {keep comment here to protect the following conditional from being removed by the IDE when adding a unit}
 {$IFNDEF TESTINSIGHT}
