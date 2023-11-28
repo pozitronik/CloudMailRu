@@ -105,7 +105,9 @@ uses
 	StreamingOptions in 'models\settings\StreamingOptions.pas',
 	IniFilesHelper in 'helpers\IniFilesHelper.pas',
 	PluginSettings in 'models\settings\PluginSettings.pas',
-	AbstractPluginSettings in 'models\settings\AbstractPluginSettings.pas';
+	AbstractPluginSettings in 'models\settings\AbstractPluginSettings.pas',
+	AbstractAccountSettings in 'models\settings\AbstractAccountSettings.pas',
+	NewAccountSettings in 'models\settings\NewAccountSettings.pas';
 
 {$IFDEF WIN64}
 {$E wfx64}
