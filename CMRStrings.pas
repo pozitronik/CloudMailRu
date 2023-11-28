@@ -1,4 +1,4 @@
-﻿unit CMRStrings;
+﻿unit CMRStrings;  //todo: rename to language strings
 
 interface
 
