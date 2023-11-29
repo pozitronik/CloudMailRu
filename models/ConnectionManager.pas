@@ -8,6 +8,7 @@ interface
 uses
 	CloudMailRu,
 	CMRConstants,
+	CMRStrings,
 	TCLogger,
 	TCProgress,
 	TCRequest,
@@ -32,7 +33,6 @@ type
 		Connections: TDictionary<WideString, TCloudMailRu>;
 		HTTPManager: THTTPManager;
 
-		AccountSettings: TNewAccountSettings;
 		Settings: TPluginSettings; //Сохраняем параметры плагина, чтобы проксировать параметры из них при инициализации конкретного облака
 
 		Logger: TTCLogger;
@@ -41,21 +41,20 @@ type
 
 		PasswordManager: TTCPasswordManager;
 
-		function init(connectionName: WideString; var Cloud: TCloudMailRu): integer; //инициализирует подключение по его имени, возвращает код состояния
+		function init(ConnectionName: WideString; out Cloud: TCloudMailRu): integer; //инициализирует подключение по его имени, возвращает код состояния
 	public
-		constructor Create(AccountSettings: TNewAccountSettings; Settings: TPluginSettings; HTTPManager: THTTPManager; Progress: TTCProgress; Logger: TTCLogger; Request: TTCRequest; PasswordManager: TTCPasswordManager);
+		constructor Create(Settings: TPluginSettings; HTTPManager: THTTPManager; Progress: TTCProgress; Logger: TTCLogger; Request: TTCRequest; PasswordManager: TTCPasswordManager);
 		destructor Destroy(); override;
-		function get(connectionName: WideString; var OperationResult: integer): TCloudMailRu; //возвращает готовое подклчение по имени
-		procedure free(connectionName: WideString); //освобождает подключение по его имени, если оно существует
+		function get(ConnectionName: WideString; var OperationResult: integer): TCloudMailRu; //возвращает готовое подклчение по имени
+		procedure free(ConnectionName: WideString); //освобождает подключение по его имени, если оно существует
 	end;
 
 implementation
 
 {TConnectionManager}
-constructor TConnectionManager.Create(AccountSettings: TNewAccountSettings; Settings: TPluginSettings; HTTPManager: THTTPManager; Progress: TTCProgress; Logger: TTCLogger; Request: TTCRequest; PasswordManager: TTCPasswordManager);
+constructor TConnectionManager.Create(Settings: TPluginSettings; HTTPManager: THTTPManager; Progress: TTCProgress; Logger: TTCLogger; Request: TTCRequest; PasswordManager: TTCPasswordManager);
 begin
 	Connections := TDictionary<WideString, TCloudMailRu>.Create;
-	self.AccountSettings := AccountSettings;
 	self.Settings := Settings;
 	self.Progress := Progress;
 	self.Logger := Logger;
@@ -75,58 +74,77 @@ begin
 	inherited;
 end;
 
-procedure TConnectionManager.free(connectionName: WideString);
+procedure TConnectionManager.free(ConnectionName: WideString);
 begin
-	if Connections.ContainsKey(connectionName) then
+	if Connections.ContainsKey(ConnectionName) then
 	begin
-		Connections.Items[connectionName].free;
-		Connections.Remove(connectionName);
+		Connections.Items[ConnectionName].free;
+		Connections.Remove(ConnectionName);
 	end;
 end;
 
-function TConnectionManager.get(connectionName: WideString; var OperationResult: integer): TCloudMailRu;
+function TConnectionManager.get(ConnectionName: WideString; var OperationResult: integer): TCloudMailRu;
 begin
 	OperationResult := CLOUD_OPERATION_OK;
-	if not Connections.TryGetValue(connectionName, Result) then
+	if not Connections.TryGetValue(ConnectionName, Result) then
 	begin
-		OperationResult := init(connectionName, Result);
+		OperationResult := init(ConnectionName, Result);
 		if CLOUD_OPERATION_OK = OperationResult then
-			Connections.AddOrSetValue(connectionName, Result)
+			Connections.AddOrSetValue(ConnectionName, Result)
 		else
 			Result := nil; {если подключиться не удалось, все функции облака будут возвращать негативный результат, но без AV}
 	end;
 end;
 
-function TConnectionManager.init(connectionName: WideString; var Cloud: TCloudMailRu): integer;
+function TConnectionManager.init(ConnectionName: WideString; out Cloud: TCloudMailRu): integer;
 var
 	CloudSettings: TCloudSettings;
 	LoginMethod: integer;
 	ActionsList: TDictionary<Int32, WideString>;
 	PasswordActionRetry: Boolean;
+	UseTCPasswordManager: Boolean;
+	Password: WideString;
+	EncryptFilesMode: integer;
+	FilePassword: WideString;
+
+	AccountSettings: TNewAccountSettings;
 begin
 	Result := CLOUD_OPERATION_OK;
-	CloudSettings.AccountSettings := TNewAccountSettings.Create(self.AccountSettings, connectionName);
 
-	if not PasswordManager.GetAccountPassword(CloudSettings.AccountSettings) then
+	{TODO: This block of code should be refactored to exclude the TAccountSettings entirely}
+	if not PasswordManager.GetAccountPassword(ConnectionName, UseTCPasswordManager, Password) then
+	begin
 		exit(CLOUD_OPERATION_ERROR_STATUS_UNKNOWN); //INVALID_HANDLE_VALUE
+		if UseTCPasswordManager then
+			TNewAccountSettings.ClearPassword(self.Settings.AccountsIniFileName, ConnectionName);
+	end;
+
+	AccountSettings := TNewAccountSettings.Create(self.Settings.AccountsIniFileName, ConnectionName);
+	AccountSettings.UseTCPasswordManager := UseTCPasswordManager;
+	AccountSettings.Password := Password;
 
 	PasswordActionRetry := false;
-	if CloudSettings.AccountSettings.EncryptFilesMode <> EncryptModeNone then
+	if AccountSettings.EncryptFilesMode <> EncryptModeNone then
 	begin
+		EncryptFilesMode := AccountSettings.EncryptFilesMode;
 		repeat //пока не будет разрешающего действия
-			if not PasswordManager.InitCloudCryptPasswords(CloudSettings.AccountSettings) then
+			if not PasswordManager.InitCloudCryptPasswords(AccountSettings.Account, EncryptFilesMode, FilePassword) then
+			begin
+				AccountSettings.free;
 				exit(CLOUD_OPERATION_FAILED);
-			if not TFileCipher.CheckPasswordGUID(CloudSettings.AccountSettings.crypt_files_password, CloudSettings.AccountSettings.CryptedGUIDFiles) then
+			end;
+			AccountSettings.EncryptFilesMode := EncryptFilesMode;
+			if not TFileCipher.CheckPasswordGUID(FilePassword, AccountSettings.CryptedGUIDFiles) then
 			begin
 				ActionsList := TDictionary<Int32, WideString>.Create;
-				ActionsList.AddOrSetValue(mrYes, 'Update and proceed'); //todo: move to language strings
-				ActionsList.AddOrSetValue(mrNo, 'Proceed without enctyption');
-				ActionsList.AddOrSetValue(mrRetry, 'Retype password');
-				case TAskPasswordForm.AskAction('Password doesn''t match!', 'It seems that the entered password does not match the password you previously specified. Password update may make previously encrypted files inaccessible.', ActionsList) of
+				ActionsList.AddOrSetValue(mrYes, PROCEED_UPDATE);
+				ActionsList.AddOrSetValue(mrNo, PROCEED_IGNORE);
+				ActionsList.AddOrSetValue(mrRetry, PROCEED_RETYPE);
+				case TAskPasswordForm.AskAction(PREFIX_ERR_PASSWORD_MATCH, ERR_PASSWORD_MATCH, ActionsList) of
 					mrYes: //store and use updated password
 						begin
-							CloudSettings.AccountSettings.CryptedGUIDFiles := TFileCipher.CryptedGUID(CloudSettings.AccountSettings.crypt_files_password);
-							CloudSettings.AccountSettings.SetSettingValue('CryptedGUID_files', CloudSettings.AccountSettings.CryptedGUIDFiles);
+							AccountSettings.CryptedGUIDFiles := TFileCipher.CryptedGUID(FilePassword);
+							AccountSettings.SetSettingValue('CryptedGUID_files', AccountSettings.CryptedGUIDFiles);
 						end;
 					mrNo:
 						begin
@@ -143,21 +161,40 @@ begin
 		until not PasswordActionRetry;
 	end;
 
-	Logger.Log(LOG_LEVEL_CONNECT, MSGTYPE_CONNECT, 'CONNECT \%s', [connectionName]);
+	Logger.Log(LOG_LEVEL_CONNECT, MSGTYPE_CONNECT, 'CONNECT \%s', [ConnectionName]);
 
-	{proxify plugin settings to cloud}
-	CloudSettings.ConnectionSettings := self.Settings.ConnectionSettings;
-	CloudSettings.PrecalculateHash := self.Settings.PrecalculateHash;
-	CloudSettings.ForcePrecalculateSize := self.Settings.ForcePrecalculateSize;
-	CloudSettings.CheckCRC := self.Settings.CheckCRC;
-	CloudSettings.CloudMaxFileSize := self.Settings.CloudMaxFileSize;
-	CloudSettings.OperationErrorMode := self.Settings.OperationErrorMode;
-	CloudSettings.RetryAttempts := self.Settings.RetryAttempts;
-	CloudSettings.AttemptWait := self.Settings.AttemptWait;
+	with CloudSettings do
+	begin
+		{proxify plugin settings to the cloud settings}
+		ConnectionSettings := self.Settings.ConnectionSettings;
+		PrecalculateHash := self.Settings.PrecalculateHash;
+		ForcePrecalculateSize := self.Settings.ForcePrecalculateSize;
+		CheckCRC := self.Settings.CheckCRC;
+		CloudMaxFileSize := self.Settings.CloudMaxFileSize;
+		OperationErrorMode := self.Settings.OperationErrorMode;
+		RetryAttempts := self.Settings.RetryAttempts;
+		AttemptWait := self.Settings.AttemptWait;
+		{proxify account settings to the cloud settings}
+		Email := AccountSettings.Email;
+		Password := AccountSettings.Password;
+		UseTCPasswordManager := AccountSettings.UseTCPasswordManager;
+		TwostepAuth := AccountSettings.TwostepAuth;
+		UnlimitedFilesize := AccountSettings.UnlimitedFilesize;
+		SplitLargeFiles := AccountSettings.SplitLargeFiles;
+		PublicAccount := AccountSettings.PublicAccount;
+		PublicUrl := AccountSettings.PublicUrl;
+		Description := AccountSettings.Description;
+		EncryptFilesMode := AccountSettings.EncryptFilesMode;
+		EncryptFilenames := AccountSettings.EncryptFilenames;
+		ShardOverride := AccountSettings.ShardOverride;
+		UploadUrlOverride := AccountSettings.UploadUrlOverride;
+		CryptedGUIDFiles := AccountSettings.CryptedGUIDFiles;
+		CryptFilesPassword := FilePassword;
 
+	end;
 	Cloud := TCloudMailRu.Create(CloudSettings, HTTPManager, Progress, Logger, Request);
 
-	if (CloudSettings.AccountSettings.TwostepAuth) then
+	if (CloudSettings.TwostepAuth) then
 		LoginMethod := CLOUD_AUTH_METHOD_TWO_STEP
 	else
 		LoginMethod := CLOUD_AUTH_METHOD_WEB;
@@ -167,6 +204,8 @@ begin
 		Result := CLOUD_OPERATION_FAILED;
 		Cloud.free;
 	end;
+
+	AccountSettings.free;
 end;
 
 end.
