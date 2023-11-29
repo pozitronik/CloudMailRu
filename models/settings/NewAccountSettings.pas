@@ -49,7 +49,7 @@ type
 		property AccountType: EAccountType read GetAccountType;
 
 		procedure DeleteAccount(Account: WideString);
-		function GetAccountsList(const AccountTypes: EAccountType = [ATPrivate, ATPublic]; const VirtualTypes: EVirtualType = [VTTrash, VTShared, VTInvites]): TWSList;
+		function GetAccountsList(const AccountTypes: EAccountType = [ATPrivate, ATPublic]; const VirtualTypes: EVirtualType = []): TWSList;
 		procedure SetSettingValue(OptionName: WideString; OptionValue: Variant); override;
 		procedure Save(); override;
 
@@ -101,11 +101,12 @@ begin
 	Result := FAccount;
 end;
 
-function TNewAccountSettings.GetAccountsList(const AccountTypes: EAccountType = [ATPrivate, ATPublic]; const VirtualTypes: EVirtualType = [VTTrash, VTShared, VTInvites]): TWSList;
+function TNewAccountSettings.GetAccountsList(const AccountTypes: EAccountType = [ATPrivate, ATPublic]; const VirtualTypes: EVirtualType = []): TWSList;
 var
 	CurrentAccount: WideString;
 	TempAccountSettings: TNewAccountSettings;
 begin
+	Result.Clear;
 	TempAccountSettings := TNewAccountSettings.Create(self.FIniFilePath);
 	for CurrentAccount in self.Accounts do
 	begin
@@ -128,7 +129,9 @@ end;
 
 function TNewAccountSettings.GetAccountType: EAccountType;
 begin
-
+	if self.PublicAccount then
+		exit([ATPublic]);
+	exit([ATPrivate]);
 end;
 
 function TNewAccountSettings.GetIsInAccount: Boolean;
