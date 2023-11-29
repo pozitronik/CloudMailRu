@@ -17,9 +17,8 @@ Uses
 	CMRStrings,
 	CMRConstants,
 	SETTINGS_CONSTANTS,
-	AccountSettings,
-	ProxySettings,
-	TCLogger;
+	ProxySettings, //TODO: Класс не должен знать ничего о этой модели
+	TCLogger; //TODO: Класс не должен знать ничего о этой модели
 
 type
 
@@ -37,9 +36,10 @@ type
 		function GetPassword(Key: WideString; var Password: WideString): integer;
 		function SetPassword(Key, Password: WideString): integer;
 		{--------------------}
-		function GetAccountPassword(var AccountSettings: TAccountSettings): Boolean;
+		{TODO: Need to refactor these methods as violating the single responsibilty principle}
+		function GetAccountPassword(const Account: WideString; var UseTCPasswordManager: Boolean; out Password: WideString): Boolean;
 		function GetProxyPassword(var ProxySettings: TProxySettings): Boolean;
-		function InitCloudCryptPasswords(var AccountSettings: TAccountSettings): Boolean;
+		function InitCloudCryptPasswords(const Account: WideString; var EncryptFilesMode: integer; out Password: WideString): Boolean;
 		function StoreFileCryptPassword(AccountName: WideString): WideString;
 
 	end;
@@ -117,34 +117,25 @@ begin
 	end;
 end;
 
-function TTCPasswordManager.GetAccountPassword(var AccountSettings: TAccountSettings): Boolean;
-var
-	TmpString: WideString;
+function TTCPasswordManager.GetAccountPassword(const Account: WideString; var UseTCPasswordManager: Boolean; out Password: WideString): Boolean;
 begin
-	if AccountSettings.public_account then
-		exit(true);
-
-	if AccountSettings.use_tc_password_manager and (self.GetPassword(AccountSettings.name, AccountSettings.Password) = FS_FILE_OK) then //пароль должен браться из TC
+	if UseTCPasswordManager and (self.GetPassword(Account, Password) = FS_FILE_OK) then //пароль должен браться из TC
 		exit(true);
 
 	//иначе предполагается, что пароль взят из конфига
 
-	if AccountSettings.Password = EmptyWideStr then //но пароля нет, не в инишнике, не в тотале
+	if Password = EmptyWideStr then //но пароля нет, не в инишнике, не в тотале
 	begin
-		if mrOK <> TAskPasswordForm.AskPassword(Format(ASK_PASSWORD, [AccountSettings.name]), PREFIX_ASK_PASSWORD, AccountSettings.Password, AccountSettings.use_tc_password_manager, false, FindTCWindow) then
+		if mrOK <> TAskPasswordForm.AskPassword(Format(ASK_PASSWORD, [Account]), PREFIX_ASK_PASSWORD, Password, UseTCPasswordManager, false, FindTCWindow) then
 		begin //не указали пароль в диалоге
 			exit(false); //отказались вводить пароль
 		end else begin
 			result := true;
-			if AccountSettings.use_tc_password_manager then
+			if UseTCPasswordManager then
 			begin
-				if FS_FILE_OK = self.SetPassword(AccountSettings.name, AccountSettings.Password) then
+				if FS_FILE_OK = self.SetPassword(Account, Password) then
 				begin //TC скушал пароль, запомним в инишник галочку
-					Logger.Log(LOG_LEVEL_DEBUG, MSGTYPE_DETAILS, PASSWORD_SAVED, [AccountSettings.name]);
-					TmpString := AccountSettings.Password;
-					AccountSettings.Password := EmptyWideStr;
-					SetAccountSettingsToIniFile(AccountSettings);
-					AccountSettings.Password := TmpString;
+					Logger.Log(LOG_LEVEL_DEBUG, MSGTYPE_DETAILS, PASSWORD_SAVED, [Account]);
 				end;
 			end;
 		end;
@@ -188,25 +179,26 @@ begin
 	end;
 end;
 
-function TTCPasswordManager.InitCloudCryptPasswords(var AccountSettings: TAccountSettings): Boolean; //Вносит в AccountSettings пароли из стораджа/введённые руками
+{Retrieves file encryption password from storage or user input}
+function TTCPasswordManager.InitCloudCryptPasswords(const Account: WideString; var EncryptFilesMode: integer; out Password: WideString): Boolean;
 var
 	crypt_id: WideString;
 	StorePassword: Boolean;
 begin
 	result := true;
 	StorePassword := false;
-	crypt_id := AccountSettings.name + ' filecrypt';
+	crypt_id := Account + ' filecrypt';
 
-	if EncryptModeAlways = AccountSettings.encrypt_files_mode then {password must be taken from tc storage, otherwise ask user and store password}
+	if EncryptModeAlways = EncryptFilesMode then {password must be taken from tc storage, otherwise ask user and store password}
 	begin
-		case self.GetPassword(crypt_id, AccountSettings.crypt_files_password) of
+		case self.GetPassword(crypt_id, Password) of
 			FS_FILE_OK:
 				begin
 					exit(true);
 				end;
 			FS_FILE_READERROR: //password not found in store => act like EncryptModeAskOnce
 				begin
-					AccountSettings.encrypt_files_mode := EncryptModeAskOnce;
+					EncryptFilesMode := EncryptModeAskOnce;
 				end;
 			FS_FILE_NOTSUPPORTED: //user doesn't know master password
 				begin
@@ -214,9 +206,9 @@ begin
 				end;
 		end;
 	end;
-	if EncryptModeAskOnce = AccountSettings.encrypt_files_mode then
+	if EncryptModeAskOnce = EncryptFilesMode then
 	begin
-		if mrOK <> TAskPasswordForm.AskPassword(Format(ASK_ENCRYPTION_PASSWORD, [AccountSettings.name]), PREFIX_ASK_ENCRYPTION_PASSWORD, AccountSettings.crypt_files_password, StorePassword, true, self.ParentWindow) then
+		if mrOK <> TAskPasswordForm.AskPassword(Format(ASK_ENCRYPTION_PASSWORD, [Account]), PREFIX_ASK_ENCRYPTION_PASSWORD, Password, StorePassword, true, self.ParentWindow) then
 			result := false
 	end;
 end;
