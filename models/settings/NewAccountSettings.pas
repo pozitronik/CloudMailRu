@@ -36,8 +36,6 @@ type
 		function GetAccountType: EAccountType;
 	public
 
-		crypt_files_password: WideString; //todo: check usage
-
 		constructor Create(IniFilePath: WideString; Account: WideString); overload;
 		constructor Create(IniFilePath: WideString); overload;
 		constructor Create(AccountSettings: TNewAccountSettings; Account: WideString); overload;
@@ -55,8 +53,13 @@ type
 		procedure SetSettingValue(OptionName: WideString; OptionValue: Variant); override;
 		procedure Save(); override;
 
+		{TODO: TEMP STUB methods}
+
 		function GetIsRemoteDescriptionsSupported(Account: WideString): Boolean; overload;
 		function GetDescription(Account: WideString): WideString;
+		function GetIsPublic(Account: WideString): Boolean;
+		class procedure ClearPassword(IniFilePath: WideString; Account: WideString); //clears the account password from INI for account
+
 	end;
 
 implementation
@@ -98,6 +101,16 @@ begin
 	self.FSaveOnChange := False;
 	self.Account := Account;
 	Refresh();
+end;
+
+class procedure TNewAccountSettings.ClearPassword(IniFilePath: WideString; Account: WideString);
+var
+	TempAccountSettings: TNewAccountSettings;
+begin
+	TempAccountSettings := TNewAccountSettings.Create(IniFilePath, Account);
+	TempAccountSettings.SetSettingValue('password', null);
+	TempAccountSettings.Free;
+
 end;
 
 constructor TNewAccountSettings.Create(AccountSettings: TNewAccountSettings);
@@ -166,6 +179,15 @@ end;
 function TNewAccountSettings.GetIsInAccount: Boolean;
 begin
 	Result := FAccount <> EmptyWideStr;
+end;
+
+function TNewAccountSettings.GetIsPublic(Account: WideString): Boolean;
+var
+	TempAccountSettings: TNewAccountSettings;
+begin
+	TempAccountSettings := TNewAccountSettings.Create(self);
+	Result := TempAccountSettings.PublicAccount;
+	TempAccountSettings.Free;
 end;
 
 function TNewAccountSettings.GetIsRemoteDescriptionsSupported: Boolean;
