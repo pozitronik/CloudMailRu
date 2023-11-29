@@ -160,6 +160,8 @@ object AccountsForm: TAccountsForm
     ActivePage = AccountsTab
     Align = alClient
     TabOrder = 0
+    ExplicitWidth = 486
+    ExplicitHeight = 458
     object AccountsTab: TTabSheet
       Caption = 'Accounts'
       DesignSize = (
@@ -181,6 +183,7 @@ object AccountsForm: TAccountsForm
         Anchors = [akLeft, akTop, akBottom]
         Caption = 'Accounts'
         TabOrder = 0
+        ExplicitHeight = 431
         DesignSize = (
           225
           448)
@@ -196,6 +199,7 @@ object AccountsForm: TAccountsForm
           TabOrder = 0
           OnClick = AccountsListClick
           OnKeyUp = AccountsListKeyUp
+          ExplicitHeight = 411
         end
       end
       object ApplyButton: TButton
@@ -353,6 +357,7 @@ object AccountsForm: TAccountsForm
         Height = 21
         Anchors = [akLeft, akTop, akRight]
         TabOrder = 1
+        ExplicitWidth = 243
       end
       object PublicAccountCB: TCheckBox
         Left = 225
@@ -1047,7 +1052,6 @@ object AccountsForm: TAccountsForm
         Height = 21
         Anchors = [akLeft, akTop, akRight]
         TabOrder = 1
-        ExplicitWidth = 255
       end
       object CommandPathEdit: TEdit
         Left = 225
@@ -1056,7 +1060,6 @@ object AccountsForm: TAccountsForm
         Height = 21
         Anchors = [akLeft, akTop, akRight]
         TabOrder = 2
-        ExplicitWidth = 234
       end
       object CommandPathButton: TButton
         Left = 459
@@ -1074,7 +1077,6 @@ object AccountsForm: TAccountsForm
         Height = 21
         Anchors = [akLeft, akTop, akRight]
         TabOrder = 4
-        ExplicitWidth = 255
       end
       object StartPathEdit: TEdit
         Left = 225
@@ -1083,7 +1085,6 @@ object AccountsForm: TAccountsForm
         Height = 21
         Anchors = [akLeft, akTop, akRight]
         TabOrder = 5
-        ExplicitWidth = 255
       end
       object StreamingTypeCombo: TComboBox
         Left = 225

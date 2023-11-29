@@ -31,7 +31,8 @@ uses
 	StreamingOptions,
 	Settings,
 	PluginSettings,
-	AccountSettings;
+	WSList,
+	NewAccountSettings;
 
 type
 	TAccountsForm = class(TForm)
@@ -153,7 +154,7 @@ type
 		procedure UpdateStreamingExtensionsList();
 		procedure DeleteButtonClick(Sender: TObject);
 		procedure AccountsListKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
-		class procedure ShowAccounts(parentWindow: HWND; IniPath: WideString; Settings: TPluginSettings; PasswordManager: TTCPasswordManager; Account: WideString);
+		class procedure ShowAccounts(parentWindow: HWND; AccountSettings: TNewAccountSettings; Settings: TPluginSettings; PasswordManager: TTCPasswordManager; Account: WideString);
 		procedure FormActivate(Sender: TObject);
 		procedure ProxyUserEditChange(Sender: TObject);
 		procedure GlobalSettingApplyBTNClick(Sender: TObject);
@@ -176,7 +177,7 @@ type
 
 	public
 		{Public declarations}
-		IniPath: WideString;
+		CurrentAccountSettings: TNewAccountSettings;
 		PluginSettings: TPluginSettings;
 		PasswordManager: TTCPasswordManager;
 		SelectedAccount: WideString;
@@ -188,13 +189,10 @@ implementation
 {$R *.dfm}
 
 procedure TAccountsForm.UpdateAccountsList();
-var
-	TempList: TStringList;
 begin
-	TempList := TStringList.Create;
-	GetAccountsListFromIniFile(IniPath, TempList);
-	AccountsList.Items := TempList;
-	TempList.Destroy;
+
+	AccountsList.Items.AddStrings(self.CurrentAccountSettings.GetAccountsList());
+
 	AccountsList.OnClick(self);
 end;
 
@@ -209,25 +207,23 @@ begin
 end;
 
 procedure TAccountsForm.AccountsListClick(Sender: TObject);
-var
-	CASettings: TAccountSettings;
 begin
 	if (AccountsList.Items.Count > 0) and (AccountsList.ItemIndex <> -1) then
 	begin
-		CASettings := GetAccountSettingsFromIniFile(IniPath, AccountsList.Items[AccountsList.ItemIndex]);
-		AccountNameEdit.Text := CASettings.name;
-		EmailEdit.Text := CASettings.email;
-		PasswordEdit.Text := CASettings.password;
-		UseTCPwdMngrCB.Checked := CASettings.use_tc_password_manager;
-		UnlimitedFileSizeCB.Checked := CASettings.unlimited_filesize;
-		SplitLargeFilesCB.Checked := CASettings.split_large_files;
-		PublicAccountCB.Checked := CASettings.public_account;
-		PublicUrlEdit.Text := CASettings.public_url;
-		TwostepAuthCB.Checked := CASettings.twostep_auth;
-		EncryptFilesCombo.ItemIndex := CASettings.encrypt_files_mode;
 
-		EncryptFilenamesCB.Checked := CASettings.encrypt_filenames;
-		self.SelectedAccount := CASettings.name;
+		CurrentAccountSettings.Account := AccountsList.Items[AccountsList.ItemIndex];
+		AccountNameEdit.Text := CurrentAccountSettings.Account;
+		EmailEdit.Text := CurrentAccountSettings.Email;
+		PasswordEdit.Text := CurrentAccountSettings.Password;
+		UseTCPwdMngrCB.Checked := CurrentAccountSettings.UseTCPasswordManager;
+		UnlimitedFileSizeCB.Checked := CurrentAccountSettings.UnlimitedFilesize;
+		SplitLargeFilesCB.Checked := CurrentAccountSettings.SplitLargeFiles;
+		PublicAccountCB.Checked := CurrentAccountSettings.PublicAccount;
+		PublicUrlEdit.Text := CurrentAccountSettings.PublicUrl;
+		TwostepAuthCB.Checked := CurrentAccountSettings.TwostepAuth;
+		EncryptFilesCombo.ItemIndex := CurrentAccountSettings.EncryptFilesMode;
+		EncryptFilenamesCB.Checked := CurrentAccountSettings.EncryptFilenames;
+		self.SelectedAccount := CurrentAccountSettings.Account;
 		EncryptFilesComboChange(nil);
 	end else begin
 		AccountNameEdit.Text := EmptyWideStr;
@@ -246,30 +242,28 @@ begin
 end;
 
 procedure TAccountsForm.ApplyButtonClick(Sender: TObject);
-var
-	CASettings: TAccountSettings;
 begin
 	if (AccountNameEdit.Text = EmptyWideStr) then
 		exit();
-	CASettings.name := AccountNameEdit.Text;
-	CASettings.email := EmailEdit.Text;
-	CASettings.password := PasswordEdit.Text;
-	CASettings.use_tc_password_manager := UseTCPwdMngrCB.Checked;
-	CASettings.unlimited_filesize := UnlimitedFileSizeCB.Checked;
-	CASettings.split_large_files := SplitLargeFilesCB.Checked;
-	CASettings.twostep_auth := TwostepAuthCB.Checked;
-	CASettings.public_account := PublicAccountCB.Checked;
-	CASettings.public_url := PublicUrlEdit.Text;
-	CASettings.encrypt_files_mode := EncryptFilesCombo.ItemIndex;
-	CASettings.encrypt_filenames := EncryptFilenamesCB.Checked;
+	CurrentAccountSettings.Account := AccountNameEdit.Text;
+	CurrentAccountSettings.Email := EmailEdit.Text;
+	CurrentAccountSettings.Password := PasswordEdit.Text;
+	CurrentAccountSettings.UseTCPasswordManager := UseTCPwdMngrCB.Checked;
+	CurrentAccountSettings.UnlimitedFilesize := UnlimitedFileSizeCB.Checked;
+	CurrentAccountSettings.SplitLargeFiles := SplitLargeFilesCB.Checked;
+	CurrentAccountSettings.TwostepAuth := TwostepAuthCB.Checked;
+	CurrentAccountSettings.PublicAccount := PublicAccountCB.Checked;
+	CurrentAccountSettings.PublicUrl := PublicUrlEdit.Text;
+	CurrentAccountSettings.EncryptFilesMode := EncryptFilesCombo.ItemIndex;
+	CurrentAccountSettings.EncryptFilenames := EncryptFilenamesCB.Checked;
 
-	if CASettings.use_tc_password_manager then //просим TC сохранить пароль
+	if CurrentAccountSettings.UseTCPasswordManager then //просим TC сохранить пароль
 	begin
 
-		case PasswordManager.SetPassword(CASettings.name, CASettings.password) of
+		case PasswordManager.SetPassword(CurrentAccountSettings.Account, CurrentAccountSettings.Password) of
 			FS_FILE_OK:
 				begin //TC скушал пароль
-					CASettings.password := EmptyWideStr;
+					CurrentAccountSettings.Password := EmptyWideStr;
 				end;
 			FS_FILE_NOTSUPPORTED: //нажали отмену на вводе мастер-пароля
 				begin //просто выйдем
@@ -282,7 +276,7 @@ begin
 		end;
 	end;
 
-	SetAccountSettingsToIniFile(CASettings, IniPath);
+	CurrentAccountSettings.Save;
 
 	UpdateAccountsList();
 
@@ -421,7 +415,7 @@ procedure TAccountsForm.DeleteButtonClick(Sender: TObject);
 begin
 	if (AccountsList.Items.Count > 0) and (AccountsList.ItemIndex <> -1) then
 	begin
-		DeleteAccountFromIniFile(IniPath, AccountsList.Items[AccountsList.ItemIndex]);
+		CurrentAccountSettings.DeleteAccount(AccountsList.Items[AccountsList.ItemIndex]);
 		UpdateAccountsList();
 	end;
 end;
@@ -448,7 +442,8 @@ begin
 	CryptedGUID := PasswordManager.StoreFileCryptPassword(self.SelectedAccount);
 	PasswordManager.parentWindow := FindTCWindow;
 	if CryptedGUID <> EmptyWideStr then
-		SetAccountSettingsValue(IniPath, self.SelectedAccount, 'CryptedGUID_files', CryptedGUID);
+		//    CurrentAccountSettings.Account:=self.SelectedAccount;   //should be already selected
+		CurrentAccountSettings.SetSettingValue('CryptedGUID_files', CryptedGUID)
 end;
 
 procedure TAccountsForm.FormActivate(Sender: TObject);
@@ -489,16 +484,14 @@ begin
 end;
 
 procedure TAccountsForm.NewAccountBtnClick(Sender: TObject);
-var
-	Account: TAccountSettings;
 begin
-	if mrOk = TRegistrationForm.ShowRegistration(self.parentWindow, PluginSettings.ConnectionSettings, Account) then
+	if mrOk = TRegistrationForm.ShowRegistration(self.parentWindow, PluginSettings.ConnectionSettings, CurrentAccountSettings) then
 	begin
-		if Account.use_tc_password_manager then //просим TC сохранить пароль
-			if FS_FILE_OK <> PasswordManager.SetPassword(Account.name, Account.password) then
+		if CurrentAccountSettings.UseTCPasswordManager then //просим TC сохранить пароль
+			if FS_FILE_OK <> PasswordManager.SetPassword(CurrentAccountSettings.Account, CurrentAccountSettings.Password) then
 				exit(); //Не удалось сохранить пароль/нажали отмену
 
-		SetAccountSettingsToIniFile(Account, IniPath);
+		CurrentAccountSettings.Save;
 		UpdateAccountsList();
 	end;
 end;
@@ -514,14 +507,14 @@ begin
 	AccountsPanel.Visible := not PublicAccountCB.Checked;
 end;
 
-class procedure TAccountsForm.ShowAccounts(parentWindow: HWND; IniPath: WideString; Settings: TPluginSettings; PasswordManager: TTCPasswordManager; Account: WideString);
+class procedure TAccountsForm.ShowAccounts(parentWindow: HWND; AccountSettings: TNewAccountSettings; Settings: TPluginSettings; PasswordManager: TTCPasswordManager; Account: WideString);
 var
 	AccountsForm: TAccountsForm;
 begin
 	try
 		AccountsForm := TAccountsForm.Create(nil);
 		AccountsForm.parentWindow := parentWindow;
-		AccountsForm.IniPath := IniPath;
+		AccountsForm.CurrentAccountSettings := AccountSettings;
 		AccountsForm.PluginSettings := Settings;
 		AccountsForm.PasswordManager := PasswordManager;
 		AccountsForm.SelectedAccount := EmptyWideStr;
@@ -544,7 +537,7 @@ begin
 		AccountsForm.ProxyServerEdit.Text := AccountsForm.PluginSettings.ConnectionSettings.ProxySettings.Server;
 		AccountsForm.ProxyPortEdit.Text := AccountsForm.PluginSettings.ConnectionSettings.ProxySettings.Port.ToString;
 		AccountsForm.ProxyUserEdit.Text := AccountsForm.PluginSettings.ConnectionSettings.ProxySettings.user;
-		AccountsForm.ProxyPwd.Text := AccountsForm.PluginSettings.ConnectionSettings.ProxySettings.password;
+		AccountsForm.ProxyPwd.Text := AccountsForm.PluginSettings.ConnectionSettings.ProxySettings.Password;
 		AccountsForm.ProxyTCPwdMngrCB.Checked := AccountsForm.PluginSettings.ConnectionSettings.ProxySettings.use_tc_password_manager;
 
 		AccountsForm.UserAgentEdit.Text := AccountsForm.PluginSettings.ConnectionSettings.UserAgent;

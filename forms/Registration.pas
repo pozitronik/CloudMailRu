@@ -23,7 +23,7 @@ uses
 	CMRStrings,
 	SETTINGS_CONSTANTS,
 	PLUGIN_TYPES,
-	AccountSettings,
+	NewAccountSettings,
 	ConnectionSettings,
 	Vcl.Imaging.JPEG;
 
@@ -62,7 +62,7 @@ type
 
 	private
 		{Private declarations}
-		Account: TAccountSettings;
+		Account: TNewAccountSettings;
 		ConnectionSettings: TConnectionSettings;
 		Code: WideString;
 		function RegistrationValid: boolean;
@@ -77,7 +77,7 @@ type
 	public
 		property isRegistrationValid: boolean read RegistrationValid;
 		{Public declarations}
-		class function ShowRegistration(parentWindow: HWND; ConnectionSettings: TConnectionSettings; var Account: TAccountSettings): integer;
+		class function ShowRegistration(parentWindow: HWND; ConnectionSettings: TConnectionSettings; AccountSettings: TNewAccountSettings): integer;
 	end;
 
 implementation
@@ -183,7 +183,7 @@ begin
 		self.ModalResult := mrNone;
 end;
 
-class function TRegistrationForm.ShowRegistration(parentWindow: HWND; ConnectionSettings: TConnectionSettings; var Account: TAccountSettings): integer;
+class function TRegistrationForm.ShowRegistration(parentWindow: HWND; ConnectionSettings: TConnectionSettings; AccountSettings: TNewAccountSettings): integer;
 var
 	RegistrationForm: TRegistrationForm;
 
@@ -191,16 +191,16 @@ begin
 	try
 		RegistrationForm := TRegistrationForm.Create(nil);
 		RegistrationForm.parentWindow := parentWindow;
-		RegistrationForm.Account := Account;
+		RegistrationForm.Account := AccountSettings;
 		RegistrationForm.ConnectionSettings := ConnectionSettings;
-		RegistrationForm.LoginEdit.Text := Account.user;
-		RegistrationForm.UseTCPwdMngrCB.Checked := Account.use_tc_password_manager;
+		RegistrationForm.LoginEdit.Text := AccountSettings.User;
+		RegistrationForm.UseTCPwdMngrCB.Checked := AccountSettings.UseTCPasswordManager;
 		RegistrationForm.ModalResult := mrNone;
 		result := RegistrationForm.ShowModal;
 		if result = mrOk then
 		begin
-			Account := RegistrationForm.Account;
-			Account.use_tc_password_manager := RegistrationForm.UseTCPwdMngrCB.Checked;
+			AccountSettings := RegistrationForm.Account;
+			AccountSettings.UseTCPasswordManager := RegistrationForm.UseTCPwdMngrCB.Checked;
 		end;
 
 	finally
@@ -215,18 +215,16 @@ var
 begin
 	CaptchaEdit.Enabled := false;
 	SendBtn.Enabled := false;
-	Account.name := LoginEdit.Text;
-	Account.email := Format('%s@%s', [LoginEdit.Text, DomainCombo.Text]);
-	Account.user := LoginEdit.Text;
+	Account.Account := LoginEdit.Text;
+	Account.Email := Format('%s@%s', [LoginEdit.Text, DomainCombo.Text]);
 	Account.password := PasswordEdit.Text;
-	Account.Domain := DomainCombo.Text;
-	Account.public_account := false;
-	Account.encrypt_files_mode := EncryptModeNone;
-	Account.twostep_auth := false;
+	Account.PublicAccount := false;
+	Account.EncryptFilesMode := EncryptModeNone;
+	Account.TwostepAuth := false;
 
 	self.Enabled := false;
 
-	if (createAccount(FirstNameEdit.Text, LastNameEdit.Text, Account.user, Account.password, Account.Domain, Code)) then
+	if (createAccount(FirstNameEdit.Text, LastNameEdit.Text, Account.User, Account.password, Account.Domain, Code)) then
 	begin
 		MemStream := TMemoryStream.Create();
 		if getRegisrationCaptcha(MemStream) then
