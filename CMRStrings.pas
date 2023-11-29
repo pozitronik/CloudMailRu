@@ -1,4 +1,4 @@
-﻿unit CMRStrings;  //todo: rename to language strings
+﻿unit CMRStrings; //todo: rename to language strings
 
 interface
 
@@ -202,6 +202,12 @@ const
 
 	ERR_PARSING_ANSWER = 'Parsing answer';
 	ERR_JSON_PARSING = 'JSON parsing error: %s';
+
+	PROCEED_UPDATE = 'Use the new password';
+	PROCEED_IGNORE = 'Proceed without encryption';
+	PROCEED_RETYPE = 'Retype password';
+	PREFIX_ERR_PASSWORD_MATCH = 'Password doesn''t match!';
+	ERR_PASSWORD_MATCH = 'The specified password does not match the previously entered one. If you choose to use the new password,  previously encrypted files become inaccessible.';
 
 implementation
 
