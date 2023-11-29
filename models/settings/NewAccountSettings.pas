@@ -40,6 +40,8 @@ type
 
 		constructor Create(IniFilePath: WideString; Account: WideString); overload;
 		constructor Create(IniFilePath: WideString); overload;
+		constructor Create(AccountSettings: TNewAccountSettings; Account: WideString); overload;
+		constructor Create(AccountSettings: TNewAccountSettings); overload;
 		procedure Refresh();
 		property Account: WideString read GetAccount write SetAccount;
 		property IsInAccount: Boolean read GetIsInAccount;
@@ -80,13 +82,12 @@ begin
 	self.FSaveOnChange := False;
 end;
 
-procedure TNewAccountSettings.DeleteAccount(Account: WideString);
-var
-	IniFile: TIniFile;
+constructor TNewAccountSettings.Create(AccountSettings: TNewAccountSettings; Account: WideString);
 begin
-	IniFile := TIniFile.Create(FIniFilePath);
-	IniFile.EraseSection(Account);
-	IniFile.Destroy;
+	self.FIniFilePath := AccountSettings.FIniFilePath;
+	self.FSaveOnChange := AccountSettings.SaveOnChange;
+	self.Account := Account;
+	Refresh();
 end;
 
 constructor TNewAccountSettings.Create(IniFilePath, Account: WideString);
@@ -94,6 +95,23 @@ begin
 	self.FIniFilePath := IniFilePath;
 	self.FSaveOnChange := False;
 	self.Account := Account;
+	Refresh();
+end;
+
+constructor TNewAccountSettings.Create(AccountSettings: TNewAccountSettings);
+begin
+	self.FIniFilePath := AccountSettings.FIniFilePath;
+	self.FSaveOnChange := AccountSettings.SaveOnChange;
+	self.Account := Account;
+end;
+
+procedure TNewAccountSettings.DeleteAccount(Account: WideString);
+var
+	IniFile: TIniFile;
+begin
+	IniFile := TIniFile.Create(FIniFilePath);
+	IniFile.EraseSection(Account);
+	IniFile.Destroy;
 end;
 
 function TNewAccountSettings.GetAccount: WideString;
@@ -107,7 +125,7 @@ var
 	TempAccountSettings: TNewAccountSettings;
 begin
 	Result.Clear;
-	TempAccountSettings := TNewAccountSettings.Create(self.FIniFilePath);
+	TempAccountSettings := TNewAccountSettings.Create(self);
 	for CurrentAccount in self.Accounts do
 	begin
 		TempAccountSettings.Account := CurrentAccount;
