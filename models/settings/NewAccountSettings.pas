@@ -29,7 +29,7 @@ type
 		FDomain: WideString;
 
 		function GetAccount: WideString;
-		function GetIsRemoteDescriptionsSupported: Boolean;
+		function GetIsRemoteDescriptionsSupported: Boolean; overload;
 		function GetIsInAccount: Boolean;
 		procedure SetAccount(const Value: WideString);
 		function Accounts: TWSList;
@@ -55,6 +55,7 @@ type
 		procedure SetSettingValue(OptionName: WideString; OptionValue: Variant); override;
 		procedure Save(); override;
 
+		function GetIsRemoteDescriptionsSupported(Account: WideString): Boolean; overload;
 	end;
 
 implementation
@@ -160,6 +161,15 @@ end;
 function TNewAccountSettings.GetIsRemoteDescriptionsSupported: Boolean;
 begin
 	Result := not((FEncryptFilesMode <> EncryptModeNone) and FEncryptFileNames)
+end;
+
+function TNewAccountSettings.GetIsRemoteDescriptionsSupported(Account: WideString): Boolean;
+var
+	TempAccountSettings: TNewAccountSettings;
+begin
+	TempAccountSettings := TNewAccountSettings.Create(self);
+	Result := TempAccountSettings.GetIsRemoteDescriptionsSupported;
+	TempAccountSettings.Free;
 end;
 
 procedure TNewAccountSettings.Refresh;
