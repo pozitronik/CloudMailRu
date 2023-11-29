@@ -107,7 +107,8 @@ uses
 	PluginSettings in 'models\settings\PluginSettings.pas',
 	AbstractPluginSettings in 'models\settings\AbstractPluginSettings.pas',
 	AbstractAccountSettings in 'models\settings\AbstractAccountSettings.pas',
-	NewAccountSettings in 'models\settings\NewAccountSettings.pas';
+	NewAccountSettings in 'models\settings\NewAccountSettings.pas',
+	WSList in 'models\WSList.pas';
 
 {$IFDEF WIN64}
 {$E wfx64}

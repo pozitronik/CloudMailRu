@@ -279,6 +279,7 @@
         <DCCReference Include="models\settings\AbstractPluginSettings.pas"/>
         <DCCReference Include="models\settings\AbstractAccountSettings.pas"/>
         <DCCReference Include="models\settings\NewAccountSettings.pas"/>
+        <DCCReference Include="models\WSList.pas"/>
         <RcItem Include="icons\icon.ico">
             <ResourceType>ICON</ResourceType>
             <ResourceId>base_icon</ResourceId>
