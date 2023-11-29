@@ -56,6 +56,7 @@ type
 		procedure Save(); override;
 
 		function GetIsRemoteDescriptionsSupported(Account: WideString): Boolean; overload;
+		function GetDescription(Account: WideString): WideString;
 	end;
 
 implementation
@@ -151,6 +152,15 @@ begin
 	if self.PublicAccount then
 		exit([ATPublic]);
 	exit([ATPrivate]);
+end;
+
+function TNewAccountSettings.GetDescription(Account: WideString): WideString;
+var
+	TempAccountSettings: TNewAccountSettings;
+begin
+	TempAccountSettings := TNewAccountSettings.Create(self);
+	Result := TempAccountSettings.Description;
+	TempAccountSettings.Free;
 end;
 
 function TNewAccountSettings.GetIsInAccount: Boolean;
