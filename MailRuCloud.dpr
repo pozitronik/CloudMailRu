@@ -97,7 +97,6 @@ uses
 	TCLogger in 'models\TCLogger.pas',
 	TCProgress in 'models\TCProgress.pas',
 	TCRequest in 'models\TCRequest.pas',
-	AccountSettings in 'models\settings\AccountSettings.pas',
 	ProxySettings in 'models\settings\ProxySettings.pas',
 	ConnectionSettings in 'models\settings\ConnectionSettings.pas',
 	CloudSettings in 'models\settings\CloudSettings.pas',
@@ -128,10 +127,7 @@ const
 
 var
 
-	AccountsIniFilePath: WideString;
-
 	GlobalPath, PluginPath: WideString;
-	AccountsList: TStringList; //Global accounts list
 	FileCounter: integer = 0;
 	CurrentlyMovedDir: TRealPath;
 	ThreadSkipListDelete: TDictionary<DWORD, Boolean>; //Массив id потоков, для которых операции получения листинга должны быть пропущены (при удалении)
@@ -150,6 +146,9 @@ var
 	PluginNum: integer;
 
 	CurrentSettings: TPluginSettings;
+	AccountSettings: TNewAccountSettings;
+	Accounts: TWSList;
+
 	CurrentListing: TCMRDirItemList;
 	CurrentIncomingInvitesListing: TCMRIncomingInviteList;
 	ConnectionManager: TConnectionManager;
@@ -535,14 +534,9 @@ begin
 	GlobalPath := path;
 	if GlobalPath = '\' then
 	begin //список соединений
-		AccountsList := TStringList.Create;
-		GetAccountsListFromIniFile(AccountsIniFilePath, AccountsList);
-
-		if (AccountsList.Count > 0) then
+		if (Accounts.Count > 0) then
 		begin
-			AddVirtualAccountsToAccountsList(AccountsIniFilePath, AccountsList, [CurrentSettings.ShowTrashFolders, CurrentSettings.ShowSharedFolders, CurrentSettings.ShowInvitesFolders]);
-
-			FindData := GetFindDataEmptyDir(AccountsList.Strings[0]);
+			FindData := GetFindDataEmptyDir(Accounts[0]);
 			FileCounter := 1;
 			Result := FIND_ROOT_DIRECTORY;
 		end else begin
@@ -620,9 +614,9 @@ function FsFindNextW(Hdl: THandle; var FindData: tWIN32FINDDATAW): Bool; stdcall
 begin
 	if GlobalPath = '\' then
 	begin
-		if (AccountsList.Count > FileCounter) then
+		if (Accounts.Count > FileCounter) then
 		begin
-			FindData := GetFindDataEmptyDir(AccountsList.Strings[FileCounter]);
+			FindData := GetFindDataEmptyDir(Accounts[FileCounter]);
 			inc(FileCounter);
 			Result := true;
 		end
@@ -646,10 +640,6 @@ end;
 
 function FsFindClose(Hdl: THandle): integer; stdcall;
 begin //Завершение получения списка файлов. Result тоталом не используется (всегда равен 0)
-	//SetLength(CurrentListing, 0); // Пусть будет
-	if Hdl = FIND_ROOT_DIRECTORY then
-		FreeAndNil(AccountsList);
-
 	Result := 0;
 	FileCounter := 0;
 end;
@@ -704,7 +694,7 @@ begin
 		Result := FS_EXEC_SYMLINK;
 	end else begin
 		if RealPath.isInAccountsList then
-			TAccountsForm.ShowAccounts(MainWin, AccountsIniFilePath, CurrentSettings, PasswordManager, RealPath.account) //main shared folder properties - open connection settings
+			TAccountsForm.ShowAccounts(MainWin, AccountSettings, CurrentSettings, PasswordManager, RealPath.account) //main shared folder properties - open connection settings
 		else
 		begin
 			Cloud := ConnectionManager.get(RealPath.account, getResult);
@@ -725,7 +715,7 @@ begin
 	Cloud := ConnectionManager.get(RealPath.account, getResult);
 	if RealPath.isInAccountsList then //main invites folder properties
 	begin
-		TAccountsForm.ShowAccounts(MainWin, AccountsIniFilePath, CurrentSettings, PasswordManager, RealPath.account)
+		TAccountsForm.ShowAccounts(MainWin, AccountSettings, CurrentSettings, PasswordManager, RealPath.account)
 	end else begin //one invite item
 		CurrentInvite := FindIncomingInviteItemByPath(CurrentIncomingInvitesListing, RealPath);
 		if CurrentInvite.name = EmptyWideStr then
@@ -756,7 +746,7 @@ var
 begin
 	Result := FS_EXEC_OK;
 	if RealPath.isInAccountsList then
-		TAccountsForm.ShowAccounts(MainWin, AccountsIniFilePath, CurrentSettings, PasswordManager, RealPath.account) //show account properties
+		TAccountsForm.ShowAccounts(MainWin, AccountSettings, CurrentSettings, PasswordManager, RealPath.account) //show account properties
 	else
 	begin
 		Cloud := ConnectionManager.get(RealPath.account, getResult);
@@ -1057,7 +1047,6 @@ var
 	getResult: integer;
 	Item: TCMRDirItem;
 	Cloud: TCloudMailRu;
-	AccountSettings: TAccountSettings;
 	resultHash: WideString;
 begin
 	if (CurrentSettings.CheckCRC) then
@@ -1065,7 +1054,6 @@ begin
 	else
 		resultHash := 'dummy'; //calculations will be ignored if variable is not empty
 	Cloud := ConnectionManager.get(RemotePath.account, getResult);
-	AccountSettings := GetAccountSettingsFromIniFile(AccountsIniFilePath, RemotePath.account);
 
 	Result := Cloud.getFile(WideString(RemotePath.path), LocalName, resultHash);
 
@@ -1088,7 +1076,7 @@ begin
 		if CheckFlag(FS_COPYFLAGS_MOVE, CopyFlags) then
 		begin
 			Cloud.deleteFile(RemotePath.path);
-			if (CurrentSettings.DescriptionTrackCloudFS and RemoteDescriptionsSupportEnabled(GetAccountSettingsFromIniFile(AccountsIniFilePath, RemotePath.account))) then
+			if (CurrentSettings.DescriptionTrackCloudFS and AccountSettings.GetIsRemoteDescriptionsSupported(RemotePath.account)) then
 				DeleteRemoteFileDescription(RemotePath, Cloud);
 		end;
 		TCProgress.Progress(PWideChar(LocalName), PWideChar(RemoteName), 100);
@@ -1180,10 +1168,8 @@ function PutRemoteFile(RemotePath: TRealPath; LocalName, RemoteName: WideString;
 var
 	getResult: integer;
 	Cloud: TCloudMailRu;
-	AccountSettings: TAccountSettings;
 begin
 	Cloud := ConnectionManager.get(RemotePath.account, getResult);
-	AccountSettings := GetAccountSettingsFromIniFile(AccountsIniFilePath, RemotePath.account);
 
 	Result := Cloud.putFile(WideString(LocalName), RemotePath.path);
 	if Result = FS_FILE_OK then
@@ -1192,7 +1178,7 @@ begin
 		TCLogger.Log(LOG_LEVEL_FILE_OPERATION, MSGTYPE_TRANSFERCOMPLETE, '%s -> %s', [LocalName, RemoteName]);
 		if CheckFlag(FS_COPYFLAGS_MOVE, CopyFlags) then
 			Result := DeleteLocalFile(LocalName);
-		if (CurrentSettings.DescriptionCopyToCloud and RemoteDescriptionsSupportEnabled(AccountSettings)) then
+		if (CurrentSettings.DescriptionCopyToCloud and AccountSettings.GetIsRemoteDescriptionsSupported(RemotePath.account)) then
 			UpdateRemoteFileDescription(RemotePath, LocalName, Cloud);
 	end;
 
@@ -1295,7 +1281,7 @@ begin
 	end
 	else
 		Result := Cloud.deleteFile(RealPath.path);
-	if (Result and CurrentSettings.DescriptionTrackCloudFS and RemoteDescriptionsSupportEnabled(GetAccountSettingsFromIniFile(AccountsIniFilePath, RealPath.account))) then
+	if (Result and CurrentSettings.DescriptionTrackCloudFS and AccountSettings.GetIsRemoteDescriptionsSupported(RealPath.account)) then
 		DeleteRemoteFileDescription(RealPath, Cloud);
 end;
 
@@ -1305,7 +1291,7 @@ var
 	getResult: integer;
 	SkipListRenMov: Boolean;
 	OperationContextId: integer;
-	account: TAccountSettings;
+	RegisteredAccount: TNewAccountSettings;
 begin
 	ThreadSkipListRenMov.TryGetValue(GetCurrentThreadID(), SkipListRenMov);
 	if SkipListRenMov then
@@ -1314,15 +1300,17 @@ begin
 	RealPath.FromPath(WideString(path));
 	if RealPath.isInAccountsList then //accounts list
 	begin
-		account.user := RealPath.account;
-		Result := (mrOk = TRegistrationForm.ShowRegistration(FindTCWindow, CurrentSettings.ConnectionSettings, account));
+		RegisteredAccount := TNewAccountSettings.Create(AccountSettings, RealPath.account);
+
+		Result := (mrOk = TRegistrationForm.ShowRegistration(FindTCWindow, CurrentSettings.ConnectionSettings, RegisteredAccount));
 		if Result then
 		begin
-			if account.use_tc_password_manager then //просим TC сохранить пароль
-				Result := FS_FILE_OK = PasswordManager.SetPassword(account.name, account.password);
+			if RegisteredAccount.UseTCPasswordManager then //просим TC сохранить пароль
+				Result := FS_FILE_OK = PasswordManager.SetPassword(RegisteredAccount.account, RegisteredAccount.password);
 			if Result then
-				Result := SetAccountSettingsToIniFile(account, AccountsIniFilePath);
+				RegisteredAccount.Save;
 		end;
+		RegisteredAccount.Free;
 		exit();
 	end;
 	if (RealPath.isAccountEmpty) or RealPath.isVirtual then
@@ -1360,7 +1348,7 @@ begin
 	Cloud := ConnectionManager.get(RealPath.account, getResult);
 	Result := Cloud.removeDir(RealPath.path);
 
-	if (Result and CurrentSettings.DescriptionTrackCloudFS and RemoteDescriptionsSupportEnabled(GetAccountSettingsFromIniFile(AccountsIniFilePath, RealPath.account))) then
+	if (Result and CurrentSettings.DescriptionTrackCloudFS and AccountSettings.GetIsRemoteDescriptionsSupported(RealPath.account)) then
 	begin
 		ThreadFsStatusInfo.TryGetValue(GetCurrentThreadID, OperationContextId); //need to check operation context => directory can be deleted after moving operation
 		if OperationContextId = FS_STATUS_OP_RENMOV_MULTI then
@@ -1570,7 +1558,7 @@ begin
 				end;
 
 			end;
-			if ((FS_FILE_OK = Result) and CurrentSettings.DescriptionTrackCloudFS and RemoteDescriptionsSupportEnabled(GetAccountSettingsFromIniFile(AccountsIniFilePath, NewRealPath.account))) then
+			if ((FS_FILE_OK = Result) and CurrentSettings.DescriptionTrackCloudFS and AccountSettings.GetIsRemoteDescriptionsSupported(NewRealPath.account)) then
 				RenameRemoteFileDescription(OldRealPath, NewRealPath, OldCloud);
 		end else begin
 			Result := OldCloud.cpFile(OldRealPath.path, NewRealPath.path);
@@ -1608,7 +1596,7 @@ begin
 		CurrentSettings.SetSettingValue('ProxyTCPwdMngr', true);
 
 	HTTPManager := THTTPManager.Create(CurrentSettings.ConnectionSettings, TCProgress, TCLogger);
-	ConnectionManager := TConnectionManager.Create(AccountsIniFilePath, CurrentSettings, HTTPManager, TCProgress, TCLogger, TCRequest, PasswordManager);
+	ConnectionManager := TConnectionManager.Create(CurrentSettings, HTTPManager, TCProgress, TCLogger, TCRequest, PasswordManager);
 
 end;
 
@@ -1624,7 +1612,7 @@ begin
 	begin
 		if FieldIndex = 14 then
 		begin
-			strpcopy(FieldValue, GetAccountSettingsFromIniFile(AccountsIniFilePath, RealPath.account).Description);
+			strpcopy(FieldValue, AccountSettings.GetDescription(RealPath.account));
 			exit(ft_stringw);
 		end
 		else
@@ -1848,8 +1836,7 @@ begin
 
 	if RealPath.isInAccountsList then //connection list
 	begin
-
-		if (GetAccountSettingsFromIniFile(AccountsIniFilePath, copy(RemoteName, 2, StrLen(RemoteName) - 2)).public_account) then
+		if AccountSettings.GetIsPublic(copy(RemoteName, 2, StrLen(RemoteName) - 2)) then
 			strpcopy(RemoteName, 'cloud_public')
 		else
 			strpcopy(RemoteName, 'cloud');
@@ -1924,6 +1911,9 @@ begin
 	ThreadFsStatusInfo := TDictionary<DWORD, Int32>.Create;
 	ThreadFsRemoveDirSkippedPath := TDictionary<DWORD, TStringList>.Create;
 
+	AccountSettings := TNewAccountSettings.Create(CurrentSettings.AccountsIniFileName);
+	Accounts := AccountSettings.GetAccountsList([ATPrivate, ATPublic], CurrentSettings.EnabledVirtualTypes);
+
 end;
 
 procedure FreePluginData();
@@ -1942,10 +1932,10 @@ begin
 	FreeAndNil(ConnectionManager);
 	FreeAndNil(HTTPManager);
 
-	FreeAndNil(AccountsList); //уже сделано, но не страшно, к тому же в будущем может не разрушаться ранее
 	CurrentDescriptions.Free;
 
 	CurrentSettings.Free;
+	AccountSettings.Free;
 	PasswordManager.Free;
 	TCLogger.Free;
 	TCProgress.Free;
