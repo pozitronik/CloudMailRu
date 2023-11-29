@@ -6,8 +6,6 @@ interface
 type
 	TAbstractAccountSettings = class abstract
 	protected
-		{Todo: rename to CamelCase}
-		FName: WideString;
 		FEmail: WideString;
 		FPassword: WideString;
 		FUseTCPasswordManager: boolean;
@@ -37,11 +35,9 @@ type
 		procedure SetUnlimitedFileSize(const Value: boolean);
 		procedure SetUploadUrlOverride(const Value: WideString);
 		procedure SetUseTCPasswordManager(const Value: boolean);
-		procedure SetName(const Value: WideString);
 		procedure SetPassword(const Value: WideString);
 		procedure SetCryptedGUIDFiles(const Value: WideString);
 	public
-		property Name: WideString read FName write SetName;
 		property Email: WideString read FEmail write SetEmail;
 		property Password: WideString read FPassword write SetPassword;
 		property UseTCPasswordManager: boolean read FUseTCPasswordManager write SetUseTCPasswordManager;
@@ -97,13 +93,6 @@ end;
 procedure TAbstractAccountSettings.SetEncryptFilesMode(const Value: integer);
 begin
 	FEncryptFilesMode := Value;
-	if FSaveOnChange then
-		Save();
-end;
-
-procedure TAbstractAccountSettings.SetName(const Value: WideString);
-begin
-	FName := Value;
 	if FSaveOnChange then
 		Save();
 end;
