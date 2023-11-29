@@ -134,6 +134,7 @@
         <DCCReference Include="..\models\settings\NewAccountSettings.pas"/>
         <DCCReference Include="models\settings\AccountSettingsTest.pas"/>
         <DCCReference Include="..\helpers\ParsingHelper.pas"/>
+        <DCCReference Include="..\models\WSList.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

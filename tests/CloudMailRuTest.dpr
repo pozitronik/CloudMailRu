@@ -6,41 +6,42 @@
 {$STRONGLINKTYPES ON}
 
 uses
-	System.SysUtils,
-{$IFDEF TESTINSIGHT}
-	TestInsight.DUnitX,
-{$ELSE}
-	DUnitX.Loggers.Console,
-	DUnitX.Loggers.Xml.NUnit,
-{$ENDIF }
-	DUnitX.TestFramework,
-	TestHelper in 'TestHelper.pas',
-	TCLoggerTest in 'models\TCLoggerTest.pas',
-	TCLogger in '..\models\TCLogger.pas',
-	PLUGIN_TYPES in '..\PLUGIN_TYPES.pas',
-	SystemHelper in '..\helpers\SystemHelper.pas',
-	TCProgress in '..\models\TCProgress.pas',
-	TCProgressTest in 'models\TCProgressTest.pas',
-	TCRequest in '..\models\TCRequest.pas',
-	TCRequestTest in 'models\TCRequestTest.pas',
-	FileHelper in '..\helpers\FileHelper.pas',
-	PathHelper in '..\helpers\PathHelper.pas',
-	WindowsHelper in '..\helpers\WindowsHelper.pas',
-	ConnectionSettings in '..\models\settings\ConnectionSettings.pas',
-	SETTINGS_CONSTANTS in '..\models\settings\SETTINGS_CONSTANTS.pas',
-	CMRConstants in '..\CMRConstants.pas',
-	ProxySettings in '..\models\settings\ProxySettings.pas',
-	StringHelper in '..\helpers\StringHelper.pas',
-	TCHelper in '..\helpers\TCHelper.pas',
-	Description in '..\models\Description.pas',
-	CMRStrings in '..\CMRStrings.pas',
-	PluginSettingsTest in 'models\settings\PluginSettingsTest.pas',
-	AbstractPluginSettings in '..\models\settings\AbstractPluginSettings.pas',
-	PluginSettings in '..\models\settings\PluginSettings.pas',
-	AbstractAccountSettings in '..\models\settings\AbstractAccountSettings.pas',
-	NewAccountSettings in '..\models\settings\NewAccountSettings.pas',
-	AccountSettingsTest in 'models\settings\AccountSettingsTest.pas',
-	ParsingHelper in '..\helpers\ParsingHelper.pas';
+  System.SysUtils,
+  {$IFDEF TESTINSIGHT}
+  TestInsight.DUnitX,
+  {$ELSE}
+  DUnitX.Loggers.Console,
+  DUnitX.Loggers.Xml.NUnit,
+  {$ENDIF }
+  DUnitX.TestFramework,
+  TestHelper in 'TestHelper.pas',
+  TCLoggerTest in 'models\TCLoggerTest.pas',
+  TCLogger in '..\models\TCLogger.pas',
+  PLUGIN_TYPES in '..\PLUGIN_TYPES.pas',
+  SystemHelper in '..\helpers\SystemHelper.pas',
+  TCProgress in '..\models\TCProgress.pas',
+  TCProgressTest in 'models\TCProgressTest.pas',
+  TCRequest in '..\models\TCRequest.pas',
+  TCRequestTest in 'models\TCRequestTest.pas',
+  FileHelper in '..\helpers\FileHelper.pas',
+  PathHelper in '..\helpers\PathHelper.pas',
+  WindowsHelper in '..\helpers\WindowsHelper.pas',
+  ConnectionSettings in '..\models\settings\ConnectionSettings.pas',
+  SETTINGS_CONSTANTS in '..\models\settings\SETTINGS_CONSTANTS.pas',
+  CMRConstants in '..\CMRConstants.pas',
+  ProxySettings in '..\models\settings\ProxySettings.pas',
+  StringHelper in '..\helpers\StringHelper.pas',
+  TCHelper in '..\helpers\TCHelper.pas',
+  Description in '..\models\Description.pas',
+  CMRStrings in '..\CMRStrings.pas',
+  PluginSettingsTest in 'models\settings\PluginSettingsTest.pas',
+  AbstractPluginSettings in '..\models\settings\AbstractPluginSettings.pas',
+  PluginSettings in '..\models\settings\PluginSettings.pas',
+  AbstractAccountSettings in '..\models\settings\AbstractAccountSettings.pas',
+  NewAccountSettings in '..\models\settings\NewAccountSettings.pas',
+  AccountSettingsTest in 'models\settings\AccountSettingsTest.pas',
+  ParsingHelper in '..\helpers\ParsingHelper.pas',
+  WSList in '..\models\WSList.pas';
 
 {keep comment here to protect the following conditional from being removed by the IDE when adding a unit}
 {$IFNDEF TESTINSIGHT}
