@@ -6,15 +6,21 @@ uses
 	IniFiles,
 	SysUtils,
 	Variants,
+	Classes,
 	WindowsHelper,
 	Windows,
 	ParsingHelper,
 	CMRStrings,
 	SETTINGS_CONSTANTS,
+	WSList,
 	AbstractAccountSettings;
 
 type
 
+	EAccountType = set of (ATPrivate, ATPublic);
+	EVirtualType = set of (VTTrash, VTShared, VTInvites);
+
+type
 	TNewAccountSettings = class(TAbstractAccountSettings)
 	private
 		FIniFilePath: WideString;
@@ -26,8 +32,8 @@ type
 		function GetIsRemoteDescriptionsSupported: Boolean;
 		function GetIsInAccount: Boolean;
 		procedure SetAccount(const Value: WideString);
-		function GetAccountsList: TArray<WideString>; //Шифрованная строка для проверки пароля шифрования
-
+		function Accounts: TWSList;
+		function GetAccountType: EAccountType;
 	public
 
 		crypt_files_password: WideString; //todo: check usage
@@ -40,7 +46,10 @@ type
 		property User: WideString read FUser;
 		property Domain: WideString read FDomain;
 		property IsRemoteDescriptionsSupported: Boolean read GetIsRemoteDescriptionsSupported;
-		property AccountsList: TArray<WideString> read GetAccountsList; //the list of current accounts
+		property AccountType: EAccountType read GetAccountType;
+
+		procedure DeleteAccount(Account: WideString);
+		function GetAccountsList(const AccountTypes: EAccountType = [ATPrivate, ATPublic]; const VirtualTypes: EVirtualType = [VTTrash, VTShared, VTInvites]): TWSList;
 		procedure SetSettingValue(OptionName: WideString; OptionValue: Variant); override;
 		procedure Save(); override;
 
@@ -50,10 +59,34 @@ implementation
 
 {TNewAccountSettings}
 
+function TNewAccountSettings.Accounts: TWSList;
+var
+	AccountsList: TStringList; {Todo: use a direct method to not to use TStrings}
+	IniFile: TIniFile;
+	I: Integer;
+begin
+	AccountsList := TStringList.Create();
+	IniFile := TIniFile.Create(FIniFilePath);
+	IniFile.ReadSections(AccountsList);
+	IniFile.Destroy;
+	SetLength(Result, AccountsList.Count);
+	for I := 0 to AccountsList.Count - 1 do
+		Result[I] := AccountsList[I];
+end;
+
 constructor TNewAccountSettings.Create(IniFilePath: WideString);
 begin
 	self.FIniFilePath := IniFilePath;
 	self.FSaveOnChange := False;
+end;
+
+procedure TNewAccountSettings.DeleteAccount(Account: WideString);
+var
+	IniFile: TIniFile;
+begin
+	IniFile := TIniFile.Create(FIniFilePath);
+	IniFile.EraseSection(Account);
+	IniFile.Destroy;
 end;
 
 constructor TNewAccountSettings.Create(IniFilePath, Account: WideString);
@@ -68,9 +101,34 @@ begin
 	Result := FAccount;
 end;
 
-function TNewAccountSettings.GetAccountsList: TArray<WideString>;
+function TNewAccountSettings.GetAccountsList(const AccountTypes: EAccountType = [ATPrivate, ATPublic]; const VirtualTypes: EVirtualType = [VTTrash, VTShared, VTInvites]): TWSList;
+var
+	CurrentAccount: WideString;
+	TempAccountSettings: TNewAccountSettings;
 begin
-	//todo
+	TempAccountSettings := TNewAccountSettings.Create(self.FIniFilePath);
+	for CurrentAccount in self.Accounts do
+	begin
+		TempAccountSettings.Account := CurrentAccount;
+		if TempAccountSettings.GetAccountType <= AccountTypes then {current account tyep is in requested accounts types}
+			Result.Add(CurrentAccount);
+		if [ATPrivate] = TempAccountSettings.GetAccountType then {current account is private}
+		begin
+			if VTTrash in VirtualTypes then
+				Result.Add(CurrentAccount + TrashPostfix);
+			if VTShared in VirtualTypes then
+				Result.Add(CurrentAccount + SharedPostfix);
+			if VTInvites in VirtualTypes then
+				Result.Add(CurrentAccount + InvitesPostfix);
+		end;
+
+	end;
+	TempAccountSettings.Free;
+end;
+
+function TNewAccountSettings.GetAccountType: EAccountType;
+begin
+
 end;
 
 function TNewAccountSettings.GetIsInAccount: Boolean;
@@ -142,7 +200,7 @@ end;
 procedure TNewAccountSettings.SetSettingValue(OptionName: WideString; OptionValue: Variant);
 var
 	IniFile: TIniFile;
-	basicType: integer;
+	basicType: Integer;
 begin
 	IniFile := TIniFile.Create(FIniFilePath);
 
