@@ -19,7 +19,7 @@ type
 		FEncryptFileNames: boolean;
 		FShardOverride: WideString; //hidden option, allows to override working shard for account
 		FUploadUrlOverride: WideString; //hidden option, alows to override upload server for account
-		FCryptedGUIDFiles: WideString;
+		FCryptedGUIDFiles: WideString; //Шифрованная строка для проверки пароля шифрования
 
 		FSaveOnChange: boolean;
 	private
