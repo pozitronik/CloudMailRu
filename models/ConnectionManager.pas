@@ -15,7 +15,7 @@ uses
 	Vcl.Controls,
 	SETTINGS_CONSTANTS,
 	PLUGIN_TYPES,
-	AccountSettings,
+	NewAccountSettings,
 	PluginSettings,
 	CloudSettings,
 	TCPasswordManager,
@@ -31,7 +31,8 @@ type
 	private
 		Connections: TDictionary<WideString, TCloudMailRu>;
 		HTTPManager: THTTPManager;
-		IniFileName: WideString;
+
+		AccountSettings: TNewAccountSettings;
 		Settings: TPluginSettings; //Сохраняем параметры плагина, чтобы проксировать параметры из них при инициализации конкретного облака
 
 		Logger: TTCLogger;
@@ -42,7 +43,7 @@ type
 
 		function init(connectionName: WideString; var Cloud: TCloudMailRu): integer; //инициализирует подключение по его имени, возвращает код состояния
 	public
-		constructor Create(IniFileName: WideString; Settings: TPluginSettings; HTTPManager: THTTPManager; Progress: TTCProgress; Logger: TTCLogger; Request: TTCRequest; PasswordManager: TTCPasswordManager);
+		constructor Create(AccountSettings: TNewAccountSettings; Settings: TPluginSettings; HTTPManager: THTTPManager; Progress: TTCProgress; Logger: TTCLogger; Request: TTCRequest; PasswordManager: TTCPasswordManager);
 		destructor Destroy(); override;
 		function get(connectionName: WideString; var OperationResult: integer): TCloudMailRu; //возвращает готовое подклчение по имени
 		procedure free(connectionName: WideString); //освобождает подключение по его имени, если оно существует
@@ -51,10 +52,10 @@ type
 implementation
 
 {TConnectionManager}
-constructor TConnectionManager.Create(IniFileName: WideString; Settings: TPluginSettings; HTTPManager: THTTPManager; Progress: TTCProgress; Logger: TTCLogger; Request: TTCRequest; PasswordManager: TTCPasswordManager);
+constructor TConnectionManager.Create(AccountSettings: TNewAccountSettings; Settings: TPluginSettings; HTTPManager: THTTPManager; Progress: TTCProgress; Logger: TTCLogger; Request: TTCRequest; PasswordManager: TTCPasswordManager);
 begin
 	Connections := TDictionary<WideString, TCloudMailRu>.Create;
-	self.IniFileName := IniFileName;
+	self.AccountSettings := AccountSettings;
 	self.Settings := Settings;
 	self.Progress := Progress;
 	self.Logger := Logger;
@@ -104,28 +105,28 @@ var
 	PasswordActionRetry: Boolean;
 begin
 	Result := CLOUD_OPERATION_OK;
-	CloudSettings.AccountSettings := GetAccountSettingsFromIniFile(IniFileName, connectionName);
+	CloudSettings.AccountSettings := TNewAccountSettings.Create(self.AccountSettings, connectionName);
 
 	if not PasswordManager.GetAccountPassword(CloudSettings.AccountSettings) then
 		exit(CLOUD_OPERATION_ERROR_STATUS_UNKNOWN); //INVALID_HANDLE_VALUE
 
 	PasswordActionRetry := false;
-	if CloudSettings.AccountSettings.encrypt_files_mode <> EncryptModeNone then
+	if CloudSettings.AccountSettings.EncryptFilesMode <> EncryptModeNone then
 	begin
 		repeat //пока не будет разрешающего действия
 			if not PasswordManager.InitCloudCryptPasswords(CloudSettings.AccountSettings) then
 				exit(CLOUD_OPERATION_FAILED);
-			if not TFileCipher.CheckPasswordGUID(CloudSettings.AccountSettings.crypt_files_password, CloudSettings.AccountSettings.CryptedGUID_files) then
+			if not TFileCipher.CheckPasswordGUID(CloudSettings.AccountSettings.crypt_files_password, CloudSettings.AccountSettings.CryptedGUIDFiles) then
 			begin
 				ActionsList := TDictionary<Int32, WideString>.Create;
-				ActionsList.AddOrSetValue(mrYes, 'Update and proceed');
+				ActionsList.AddOrSetValue(mrYes, 'Update and proceed'); //todo: move to language strings
 				ActionsList.AddOrSetValue(mrNo, 'Proceed without enctyption');
 				ActionsList.AddOrSetValue(mrRetry, 'Retype password');
 				case TAskPasswordForm.AskAction('Password doesn''t match!', 'It seems that the entered password does not match the password you previously specified. Password update may make previously encrypted files inaccessible.', ActionsList) of
 					mrYes: //store and use updated password
 						begin
-							CloudSettings.AccountSettings.CryptedGUID_files := TFileCipher.CryptedGUID(CloudSettings.AccountSettings.crypt_files_password);
-							SetAccountSettingsValue(IniFileName, connectionName, 'CryptedGUID_files', CloudSettings.AccountSettings.CryptedGUID_files);
+							CloudSettings.AccountSettings.CryptedGUIDFiles := TFileCipher.CryptedGUID(CloudSettings.AccountSettings.crypt_files_password);
+							CloudSettings.AccountSettings.SetSettingValue('CryptedGUID_files', CloudSettings.AccountSettings.CryptedGUIDFiles);
 						end;
 					mrNo:
 						begin
@@ -156,7 +157,7 @@ begin
 
 	Cloud := TCloudMailRu.Create(CloudSettings, HTTPManager, Progress, Logger, Request);
 
-	if (CloudSettings.AccountSettings.twostep_auth) then
+	if (CloudSettings.AccountSettings.TwostepAuth) then
 		LoginMethod := CLOUD_AUTH_METHOD_TWO_STEP
 	else
 		LoginMethod := CLOUD_AUTH_METHOD_WEB;
