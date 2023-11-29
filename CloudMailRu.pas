@@ -95,6 +95,8 @@ type
 		function getHTTPConnection: TCloudMailRuHTTP;
 		function RefreshCSRFToken: Boolean;
 	protected
+		FUser: WideString;
+		FDomain: WideString;
 		{REGULAR CLOUD}
 		function loginRegular(method: integer = CLOUD_AUTH_METHOD_WEB): Boolean;
 		function getFileRegular(remotePath, localPath: WideString; var resultHash: WideString; LogErrors: Boolean = true): integer; //LogErrors=false => не логируем результат копирования, нужно для запроса descript.ion (которого может не быть)
@@ -109,11 +111,16 @@ type
 		crypt_filenames: Boolean;
 
 		Property Cookie: TIdCookieManager read AuthCookie;
-		Property public_account: Boolean read OptionsSet.AccountSettings.public_account;
-		Property user: WideString read OptionsSet.AccountSettings.user;
-		Property domain: WideString read OptionsSet.AccountSettings.domain;
-		Property password: WideString read OptionsSet.AccountSettings.password;
-		Property email: WideString read OptionsSet.AccountSettings.email;
+
+		Property public_account: Boolean read OptionsSet.PublicAccount;
+		Property user: WideString read FUser;
+		Property domain: WideString read FDomain;
+		Property password: WideString read OptionsSet.password;
+		Property email: WideString read OptionsSet.email;
+		Property shard_override: WideString read OptionsSet.ShardOverride;
+		Property upload_url_override: WideString read OptionsSet.UploadUrlOverride;
+		Property unlimited_filesize: Boolean read OptionsSet.UnlimitedFilesize;
+		Property split_large_files: Boolean read OptionsSet.SplitLargeFiles;
 
 		Property HTTP: TCloudMailRuHTTP read getHTTPConnection;
 
@@ -121,10 +128,7 @@ type
 		Property PrecalculateHash: Boolean read OptionsSet.PrecalculateHash;
 		property ForcePrecalculateSize: int64 read OptionsSet.ForcePrecalculateSize;
 		Property CheckCRC: Boolean read OptionsSet.CheckCRC;
-		Property shard_override: WideString read OptionsSet.AccountSettings.shard_override;
-		Property upload_url_override: WideString read OptionsSet.AccountSettings.upload_url_override;
-		Property unlimited_filesize: Boolean read OptionsSet.AccountSettings.unlimited_filesize;
-		Property split_large_files: Boolean read OptionsSet.AccountSettings.split_large_files;
+
 		Property OperationErrorMode: integer read OptionsSet.OperationErrorMode;
 		Property RetryAttempts: integer read OptionsSet.RetryAttempts;
 		Property AttemptWait: integer read OptionsSet.AttemptWait;
@@ -176,7 +180,7 @@ type
 		class function StringToCloudAccess(accessString: WideString; Invert: Boolean = false): integer; static;
 		class function ErrorCodeText(ErrorCode: integer): WideString; static;
 		class function IsSameIdentity(IdentityOne, IdentityTwo: TCMRFileIdentity): Boolean; static;
-		class function TempPublicCloudInit(var TempCloud: TCloudMailRu; publicUrl: WideString): Boolean; static;
+		class function TempPublicCloudInit(var TempCloud: TCloudMailRu; PublicUrl: WideString): Boolean; static;
 	end;
 
 implementation
@@ -345,6 +349,7 @@ constructor TCloudMailRu.Create(CloudSettings: TCloudSettings; ConnectionManager
 begin
 	try
 		self.OptionsSet := CloudSettings;
+		ExtractEmailParts(self.email, FUser, FDomain);
 
 		self.HTTPConnectionsManager := ConnectionManager;
 
@@ -363,14 +368,14 @@ begin
 		//self.HTTP := TCloudMailRuHTTP.Create(CloudSettings.ConnectionSettings, ExternalProgressProc, ExternalLogProc);
 		//self.JSONParser := TCloudMailRuJSONParser.Create();
 
-		if CloudSettings.AccountSettings.encrypt_files_mode <> EncryptModeNone then
+		if OptionsSet.EncryptFilesMode <> EncryptModeNone then
 		begin
-			self.FileCipher := TFileCipher.Create(CloudSettings.AccountSettings.crypt_files_password, CloudSettings.AccountSettings.CryptedGUID_files, CloudSettings.AccountSettings.encrypt_filenames);
+			self.FileCipher := TFileCipher.Create(OptionsSet.CryptFilesPassword, OptionsSet.CryptedGUIDFiles, OptionsSet.EncryptFilenames);
 			if self.FileCipher.WrongPassword then
 				Logger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_WRONG_ENCRYPT_PASSWORD);
 
 			self.crypt_files := not(self.FileCipher.WrongPassword);
-			self.crypt_filenames := self.crypt_files and CloudSettings.AccountSettings.encrypt_filenames and not(self.FileCipher.WrongPassword);
+			self.crypt_filenames := self.crypt_files and OptionsSet.EncryptFilenames and not(self.FileCipher.WrongPassword);
 		end;
 
 		self.public_link := getPublicLink;
@@ -424,6 +429,7 @@ begin
 
 	if Assigned(self.FileCipher) then
 		self.FileCipher.Destroy;
+
 	inherited;
 end;
 
@@ -792,10 +798,10 @@ end;
 function TCloudMailRu.getPublicLink: WideString;
 begin
 	result := EmptyWideStr;
-	if self.public_account and (self.OptionsSet.AccountSettings.public_url <> EmptyWideStr) then
+	if self.public_account and (self.OptionsSet.PublicUrl <> EmptyWideStr) then
 	begin
-		result := self.OptionsSet.AccountSettings.public_url;
-		self.OptionsSet.AccountSettings.public_url := IncludeSlash(self.OptionsSet.AccountSettings.public_url);
+		result := self.OptionsSet.PublicUrl;
+		self.OptionsSet.PublicUrl := IncludeSlash(self.OptionsSet.PublicUrl);
 		Delete(result, 1, length(PUBLIC_ACCESS_URL));
 		if (result <> EmptyWideStr) and (result[length(result)] = '/') then
 			Delete(result, length(result), 1);
@@ -881,7 +887,7 @@ begin
 	if not(Assigned(self)) then
 		exit; //Проверка на вызов без инициализации
 	Progress := false;
-	result := self.HTTP.GetPage(self.OptionsSet.AccountSettings.public_url, PageContent, Progress);
+	result := self.HTTP.GetPage(self.OptionsSet.PublicUrl, PageContent, Progress);
 	if result then
 	begin
 		if not extractPublicShard(PageContent, self.public_shard) then
@@ -1032,7 +1038,7 @@ end;
 
 function TCloudMailRu.loginShared(method: integer): Boolean;
 begin
-	Logger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, URL_OPEN, [self.OptionsSet.AccountSettings.public_url]);
+	Logger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, URL_OPEN, [self.OptionsSet.PublicUrl]);
 	result := self.initSharedConnectionParameters();
 	//exit(true);
 end;
@@ -1603,13 +1609,13 @@ begin
 		result := CLOUD_SHARE_RW;
 end;
 
-class function TCloudMailRu.TempPublicCloudInit(var TempCloud: TCloudMailRu; publicUrl: WideString): Boolean;
+class function TCloudMailRu.TempPublicCloudInit(var TempCloud: TCloudMailRu; PublicUrl: WideString): Boolean;
 var
 	TempCloudSettings: TCloudSettings;
 begin
 	TempCloudSettings := default (TCloudSettings);
-	TempCloudSettings.AccountSettings.public_account := true;
-	TempCloudSettings.AccountSettings.public_url := publicUrl;
+	TempCloudSettings.PublicAccount := true;
+	TempCloudSettings.PublicUrl := PublicUrl;
 	TempCloud := TCloudMailRu.Create(TempCloudSettings, nil);
 	result := TempCloud.login;
 end;
