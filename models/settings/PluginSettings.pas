@@ -198,6 +198,7 @@ begin
 	IniFile.Destroy;
 end;
 
+{TODO: this method violates the model abstraction boundaries and should not be used. It'll be removed after refactoring.}
 procedure TPluginSettings.SetSettingValue(OptionName: WideString; OptionValue: Variant);
 var
 	IniFile: TIniFile;
