@@ -4,32 +4,170 @@ interface
 
 uses
 	NewAccountSettings,
+	TestHelper,
+	SysUtils,
 	DUnitX.TestFramework;
 
 type
 
 	[TestFixture]
 	TAccountSettingsTest = class
+		AppDir: WideString; //the current test binary directory
+		AppDataSubDir: WideString; //the subdirectory in AppData
+	private const
+		FP_ACCOUNTS_INI = 'Accounts.ini';
 	public
-		// Sample Methods
-		// Simple single Test
+		[Setup]
+		procedure Setup;
+
 		[Test]
-		procedure Test1;
-		// Test with TestCase Attribute to supply parameters.
+		procedure TestCreate;
+
 		[Test]
-		[TestCase('TestA', '1,2')]
-		[TestCase('TestB', '3,4')]
-		procedure Test2(const AValue1: Integer; const AValue2: Integer);
+		procedure TestSetValue;
+
+		[Test]
+		procedure TestSaveOnChange;
+
+		[Test]
+		procedure TestSaveOnChangeDisabled;
+
+		[Test]
+		procedure TestSetSettingValue;
+
+		[Test]
+		procedure TestNoAccount;
+
 	end;
 
 implementation
 
-procedure TAccountSettingsTest.Test1;
+{TAccountSettingsTest}
+
+procedure TAccountSettingsTest.Setup;
 begin
+	AppDir := IncludeTrailingBackslash(ExtractFilePath(GetModuleName(hInstance)));
+
+	{cleans the previous run artefacts}
+	if FileExists(self.AppDir + FP_ACCOUNTS_INI) then
+		DeleteFile(self.AppDir + FP_ACCOUNTS_INI);
 end;
 
-procedure TAccountSettingsTest.Test2(const AValue1: Integer; const AValue2: Integer);
+procedure TAccountSettingsTest.TestCreate;
+var
+	TestAccountSettings: TNewAccountSettings;
 begin
+	TestAccountSettings := TNewAccountSettings.Create(DataPath(FP_ACCOUNTS_INI));
+
+	Assert.IsFalse(TestAccountSettings.IsInAccount);
+	Assert.AreEqual('', TestAccountSettings.Email);
+
+	TestAccountSettings.Account := 'TEST_ACCOUNT_ONE';
+	Assert.IsTrue(TestAccountSettings.IsInAccount);
+	Assert.AreEqual('test_fake_email_one@mail.ru', TestAccountSettings.Email);
+
+	TestAccountSettings.Free;
+end;
+
+procedure TAccountSettingsTest.TestNoAccount;
+var
+	TestAccountSettings: TNewAccountSettings;
+begin
+	TestAccountSettings := TNewAccountSettings.Create(self.AppDir + FP_ACCOUNTS_INI); //creates a file in the test exe dir
+
+	TestAccountSettings.Email := 'no_acc_email@mail.test';
+	TestAccountSettings.Save();
+	TestAccountSettings.Free;
+
+	Assert.IsFalse(FileExists(self.AppDir + FP_ACCOUNTS_INI));
+end;
+
+procedure TAccountSettingsTest.TestSaveOnChange;
+var
+	TestAccountSettings: TNewAccountSettings;
+begin
+	TestAccountSettings := TNewAccountSettings.Create(self.AppDir + FP_ACCOUNTS_INI); //creates a file in the test exe dir
+	Assert.IsFalse(TestAccountSettings.SaveOnChange);
+	TestAccountSettings.SaveOnChange := True;
+
+	Assert.IsFalse(TestAccountSettings.IsInAccount);
+	Assert.AreEqual('', TestAccountSettings.Email);
+
+	TestAccountSettings.Account := 'NEW_ACCOUNT';
+	Assert.IsTrue(TestAccountSettings.IsInAccount);
+	Assert.AreEqual('', TestAccountSettings.Email);
+
+	TestAccountSettings.Email := 'new_acc_email@mail.test';
+
+	TestAccountSettings.Free;
+
+	Assert.IsTrue(FileExists(self.AppDir + FP_ACCOUNTS_INI));
+
+	TestAccountSettings := TNewAccountSettings.Create(self.AppDir + FP_ACCOUNTS_INI, 'NEW_ACCOUNT');
+	Assert.IsTrue(TestAccountSettings.IsInAccount);
+	Assert.AreEqual('new_acc_email@mail.test', TestAccountSettings.Email);
+	TestAccountSettings.Free;
+end;
+
+procedure TAccountSettingsTest.TestSaveOnChangeDisabled;
+var
+	TestAccountSettings: TNewAccountSettings;
+begin
+	TestAccountSettings := TNewAccountSettings.Create(self.AppDir + FP_ACCOUNTS_INI); //creates a file in the test exe dir
+	Assert.IsFalse(TestAccountSettings.SaveOnChange);
+
+	Assert.IsFalse(TestAccountSettings.IsInAccount);
+	Assert.AreEqual('', TestAccountSettings.Email);
+
+	TestAccountSettings.Account := 'NEW_ACCOUNT';
+	Assert.IsTrue(TestAccountSettings.IsInAccount);
+	Assert.AreEqual('', TestAccountSettings.Email);
+	TestAccountSettings.Email := 'new_acc_email@mail.test';
+
+	{The values aren't saved}
+	TestAccountSettings.Free;
+
+	Assert.IsFalse(FileExists(self.AppDir + FP_ACCOUNTS_INI));
+end;
+
+procedure TAccountSettingsTest.TestSetSettingValue;
+var
+	TestAccountSettings: TNewAccountSettings;
+begin
+	Assert.IsFalse(FileExists(self.AppDir + FP_ACCOUNTS_INI));
+	TestAccountSettings := TNewAccountSettings.Create(self.AppDir + FP_ACCOUNTS_INI, 'NEW_ACCOUNT'); //creates a file in the test exe dir
+
+	TestAccountSettings.SetSettingValue('email', 'new_acc_email@mail.test');
+
+	Assert.IsTrue(FileExists(self.AppDir + FP_ACCOUNTS_INI));
+	TestAccountSettings.Free;
+
+	TestAccountSettings := TNewAccountSettings.Create(self.AppDir + FP_ACCOUNTS_INI, 'NEW_ACCOUNT');
+	Assert.AreEqual('new_acc_email@mail.test', TestAccountSettings.Email);
+	TestAccountSettings.Free;
+end;
+
+procedure TAccountSettingsTest.TestSetValue;
+var
+	TestAccountSettings: TNewAccountSettings;
+begin
+	TestAccountSettings := TNewAccountSettings.Create(self.AppDir + FP_ACCOUNTS_INI); //creates a file in the test exe dir
+
+	Assert.IsFalse(TestAccountSettings.IsInAccount);
+	Assert.AreEqual('', TestAccountSettings.Email);
+
+	TestAccountSettings.Account := 'NEW_ACCOUNT';
+	Assert.IsTrue(TestAccountSettings.IsInAccount);
+	Assert.AreEqual('', TestAccountSettings.Email);
+	TestAccountSettings.Email := 'new_acc_email@mail.test';
+	TestAccountSettings.Save;
+
+	TestAccountSettings.Free;
+
+	TestAccountSettings := TNewAccountSettings.Create(self.AppDir + FP_ACCOUNTS_INI, 'NEW_ACCOUNT');
+	Assert.IsTrue(TestAccountSettings.IsInAccount);
+	Assert.AreEqual('new_acc_email@mail.test', TestAccountSettings.Email);
+	TestAccountSettings.Free;
 end;
 
 initialization

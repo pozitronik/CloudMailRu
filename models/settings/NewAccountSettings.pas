@@ -23,7 +23,10 @@ type
 		FDomain: WideString;
 
 		function GetAccount: WideString;
-		function GetIsRemoteDescriptionsSupported: Boolean; //Шифрованная строка для проверки пароля шифрования
+		function GetIsRemoteDescriptionsSupported: Boolean;
+		function GetIsInAccount: Boolean;
+		procedure SetAccount(const Value: WideString);
+		function GetAccountsList: TArray<WideString>; //Шифрованная строка для проверки пароля шифрования
 
 	public
 
@@ -32,13 +35,15 @@ type
 		constructor Create(IniFilePath: WideString; Account: WideString); overload;
 		constructor Create(IniFilePath: WideString); overload;
 		procedure Refresh();
-		property Account: WideString read GetAccount write FAccount;
+		property Account: WideString read GetAccount write SetAccount;
+		property IsInAccount: Boolean read GetIsInAccount;
 		property User: WideString read FUser;
 		property Domain: WideString read FDomain;
 		property IsRemoteDescriptionsSupported: Boolean read GetIsRemoteDescriptionsSupported;
-
+		property AccountsList: TArray<WideString> read GetAccountsList; //the list of current accounts
 		procedure SetSettingValue(OptionName: WideString; OptionValue: Variant); override;
 		procedure Save(); override;
+
 	end;
 
 implementation
@@ -49,22 +54,28 @@ constructor TNewAccountSettings.Create(IniFilePath: WideString);
 begin
 	self.FIniFilePath := IniFilePath;
 	self.FSaveOnChange := False;
-	Refresh();
 end;
 
 constructor TNewAccountSettings.Create(IniFilePath, Account: WideString);
 begin
 	self.FIniFilePath := IniFilePath;
-	self.FAccount := Account;
 	self.FSaveOnChange := False;
-	Refresh();
+	self.Account := Account;
 end;
 
 function TNewAccountSettings.GetAccount: WideString;
 begin
-	if FAccount = EmptyWideStr then
-		raise Exception.Create('Account can''t be empty');
 	Result := FAccount;
+end;
+
+function TNewAccountSettings.GetAccountsList: TArray<WideString>;
+begin
+	//todo
+end;
+
+function TNewAccountSettings.GetIsInAccount: Boolean;
+begin
+	Result := FAccount <> EmptyWideStr;
 end;
 
 function TNewAccountSettings.GetIsRemoteDescriptionsSupported: Boolean;
@@ -76,6 +87,8 @@ procedure TNewAccountSettings.Refresh;
 var
 	IniFile: TIniFile;
 begin
+	if not IsInAccount then
+		exit;
 	IniFile := TIniFile.Create(FIniFilePath);
 
 	FEmail := IniFile.ReadString(Account, 'email', EmptyWideStr);
@@ -102,6 +115,8 @@ procedure TNewAccountSettings.Save;
 var
 	IniFile: TIniFile;
 begin
+	if not IsInAccount then
+		exit;
 	IniFile := TIniFile.Create(FIniFilePath);
 	IniFile.WriteString(Account, 'email', FEmail);
 	IniFile.WriteString(Account, 'password', FPassword);
@@ -117,6 +132,13 @@ begin
 	IniFile.Destroy;
 end;
 
+procedure TNewAccountSettings.SetAccount(const Value: WideString);
+begin
+	FAccount := Value;
+	Refresh();
+end;
+
+{TODO: this method violates the model abstraction boundaries and should not be used. It'll be removed after refactoring.}
 procedure TNewAccountSettings.SetSettingValue(OptionName: WideString; OptionValue: Variant);
 var
 	IniFile: TIniFile;

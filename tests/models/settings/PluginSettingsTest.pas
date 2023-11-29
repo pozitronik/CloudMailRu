@@ -23,8 +23,6 @@ type
 	public
 		[Setup]
 		procedure Setup;
-		[TearDown]
-		procedure TearDown;
 
 		[Test]
 		procedure TestCreateFromKnownFile; {When the ini file name is known, it can be used in the simple way}
@@ -56,10 +54,6 @@ begin
 	if FileExists(self.AppDir + PLUGIN_CONFIG_FILE_NAME) then
 		DeleteFile(self.AppDir + PLUGIN_CONFIG_FILE_NAME);
 
-end;
-
-procedure TPluginSettingsTest.TearDown;
-begin
 end;
 
 procedure TPluginSettingsTest.TestCreateDefaults;
