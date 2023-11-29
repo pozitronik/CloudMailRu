@@ -6,6 +6,8 @@ uses
 	NewAccountSettings,
 	TestHelper,
 	SysUtils,
+	WSList,
+	SETTINGS_CONSTANTS,
 	DUnitX.TestFramework;
 
 type
@@ -38,6 +40,12 @@ type
 		[Test]
 		procedure TestNoAccount;
 
+		[Test]
+		procedure TestDeleteAccount;
+
+		[Test]
+		procedure TestListAccounts;
+
 	end;
 
 implementation
@@ -60,11 +68,69 @@ begin
 	TestAccountSettings := TNewAccountSettings.Create(DataPath(FP_ACCOUNTS_INI));
 
 	Assert.IsFalse(TestAccountSettings.IsInAccount);
-	Assert.AreEqual('', TestAccountSettings.Email);
+	Assert.IsEmpty(TestAccountSettings.Email);
 
 	TestAccountSettings.Account := 'TEST_ACCOUNT_ONE';
 	Assert.IsTrue(TestAccountSettings.IsInAccount);
 	Assert.AreEqual('test_fake_email_one@mail.ru', TestAccountSettings.Email);
+
+	TestAccountSettings.Free;
+end;
+
+procedure TAccountSettingsTest.TestDeleteAccount;
+var
+	TestAccountSettings: TNewAccountSettings;
+begin
+	TestAccountSettings := TNewAccountSettings.Create(self.AppDir + FP_ACCOUNTS_INI, 'NEW_ACCOUNT'); //creates a file in the test exe dir
+	TestAccountSettings.Email := 'deleted_account@mail.ru';
+	TestAccountSettings.Save;
+	TestAccountSettings.Free;
+
+	TestAccountSettings := TNewAccountSettings.Create(self.AppDir + FP_ACCOUNTS_INI, 'NEW_ACCOUNT');
+	Assert.AreEqual('deleted_account@mail.ru', TestAccountSettings.Email);
+	TestAccountSettings.DeleteAccount('NEW_ACCOUNT');
+	TestAccountSettings.Free;
+
+	TestAccountSettings := TNewAccountSettings.Create(self.AppDir + FP_ACCOUNTS_INI, 'NEW_ACCOUNT');
+	Assert.IsEmpty(TestAccountSettings.Email);
+	TestAccountSettings.Free;
+end;
+
+procedure TAccountSettingsTest.TestListAccounts;
+var
+	TestAccountSettings: TNewAccountSettings;
+	AccountsList: TWSList;
+begin
+	AccountsList := TWSList.Create();
+	TestAccountSettings := TNewAccountSettings.Create(DataPath(FP_ACCOUNTS_INI));
+
+	AccountsList := TestAccountSettings.GetAccountsList();
+	Assert.IsTrue(AccountsList.Contains('TEST_ACCOUNT_ONE'));
+	Assert.IsTrue(AccountsList.Contains('TEST_ACCOUNT_TWO'));
+	Assert.IsFalse(AccountsList.Contains('TEST_ACCOUNT_THREE'));
+	Assert.IsTrue(AccountsList.Contains('TEST_PUBLIC_ACCOUNT'));
+
+	AccountsList := TestAccountSettings.GetAccountsList([ATPrivate]);
+	Assert.IsTrue(AccountsList.Contains('TEST_ACCOUNT_ONE'));
+	Assert.IsTrue(AccountsList.Contains('TEST_ACCOUNT_TWO'));
+	Assert.IsFalse(AccountsList.Contains('TEST_ACCOUNT_THREE'));
+	Assert.IsFalse(AccountsList.Contains('TEST_PUBLIC_ACCOUNT'));
+
+	AccountsList := TestAccountSettings.GetAccountsList([ATPublic]);
+	Assert.IsFalse(AccountsList.Contains('TEST_ACCOUNT_ONE'));
+	Assert.IsFalse(AccountsList.Contains('TEST_ACCOUNT_TWO'));
+	Assert.IsFalse(AccountsList.Contains('TEST_ACCOUNT_THREE'));
+	Assert.IsTrue(AccountsList.Contains('TEST_PUBLIC_ACCOUNT'));
+
+	AccountsList := TestAccountSettings.GetAccountsList([ATPrivate, ATPublic], [VTTrash, VTInvites]);
+	Assert.IsTrue(AccountsList.Contains('TEST_ACCOUNT_ONE'));
+	Assert.IsTrue(AccountsList.Contains('TEST_ACCOUNT_ONE' + TrashPostfix));
+	Assert.IsTrue(AccountsList.Contains('TEST_ACCOUNT_ONE' + InvitesPostfix));
+	Assert.IsFalse(AccountsList.Contains('TEST_ACCOUNT_ONE' + SharedPostfix));
+	Assert.IsTrue(AccountsList.Contains('TEST_PUBLIC_ACCOUNT'));
+	Assert.IsFalse(AccountsList.Contains('TEST_PUBLIC_ACCOUNT' + TrashPostfix));
+	Assert.IsFalse(AccountsList.Contains('TEST_PUBLIC_ACCOUNT' + InvitesPostfix));
+	Assert.IsFalse(AccountsList.Contains('TEST_PUBLIC_ACCOUNT' + SharedPostfix));
 
 	TestAccountSettings.Free;
 end;
@@ -91,11 +157,11 @@ begin
 	TestAccountSettings.SaveOnChange := True;
 
 	Assert.IsFalse(TestAccountSettings.IsInAccount);
-	Assert.AreEqual('', TestAccountSettings.Email);
+	Assert.IsEmpty(TestAccountSettings.Email);
 
 	TestAccountSettings.Account := 'NEW_ACCOUNT';
 	Assert.IsTrue(TestAccountSettings.IsInAccount);
-	Assert.AreEqual('', TestAccountSettings.Email);
+	Assert.IsEmpty(TestAccountSettings.Email);
 
 	TestAccountSettings.Email := 'new_acc_email@mail.test';
 
@@ -117,7 +183,7 @@ begin
 	Assert.IsFalse(TestAccountSettings.SaveOnChange);
 
 	Assert.IsFalse(TestAccountSettings.IsInAccount);
-	Assert.AreEqual('', TestAccountSettings.Email);
+	Assert.IsEmpty(TestAccountSettings.Email);
 
 	TestAccountSettings.Account := 'NEW_ACCOUNT';
 	Assert.IsTrue(TestAccountSettings.IsInAccount);
@@ -154,11 +220,11 @@ begin
 	TestAccountSettings := TNewAccountSettings.Create(self.AppDir + FP_ACCOUNTS_INI); //creates a file in the test exe dir
 
 	Assert.IsFalse(TestAccountSettings.IsInAccount);
-	Assert.AreEqual('', TestAccountSettings.Email);
+	Assert.IsEmpty(TestAccountSettings.Email);
 
 	TestAccountSettings.Account := 'NEW_ACCOUNT';
 	Assert.IsTrue(TestAccountSettings.IsInAccount);
-	Assert.AreEqual('', TestAccountSettings.Email);
+	Assert.IsEmpty(TestAccountSettings.Email);
 	TestAccountSettings.Email := 'new_acc_email@mail.test';
 	TestAccountSettings.Save;
 
