@@ -14,6 +14,7 @@ uses
 	CMRStrings,
 	CMRConstants,
 	ConnectionSettings,
+	NewAccountSettings,
 	AbstractPluginSettings;
 
 type
@@ -24,12 +25,14 @@ type
 		IniFileDir: WideString; // the directory where the currently used ini files (global+accounts) are
 
 		function GetAccountsIniFileName: WideString;
+		function GetEnabledVirtualTypes: EVirtualType;
 	public
 
 		property IniDir: WideString read IniFileDir;
 		property PluginPath: WideString read ApplicationPath;
 		property AccountsIniFileName: WideString read GetAccountsIniFileName; //Path to the accounts config file
 		property IniFileName: WideString read IniFilePath;
+		property EnabledVirtualTypes: EVirtualType read GetEnabledVirtualTypes;
 		constructor Create(); overload; //finds the settings file by itself
 		constructor Create(IniFilePath: WideString); overload;
 		procedure Refresh();
@@ -104,22 +107,33 @@ begin
 	result := self.IniDir + ACCOUNTS_CONFIG_FILE_NAME;
 end;
 
+function TPluginSettings.GetEnabledVirtualTypes: EVirtualType;
+begin
+	result := [];
+	if FShowTrashFolders then
+		result := result + [VTTrash];
+	if FShowSharedFolders then
+		result := result + [VTShared];
+	if FShowInvitesFolders then
+		result := result + [VTInvites];
+end;
+
 procedure TPluginSettings.Refresh;
 var
 	IniFile: TIniFile;
 begin
 	IniFile := TIniFile.Create(IniFilePath);
 	FIniPath := IniFile.ReadInteger('Main', 'IniPath', 0);
-	FLoadSSLDLLOnlyFromPluginDir := IniFile.ReadBool('Main', 'LoadSSLDLLOnlyFromPluginDir', false);
-	FPreserveFileTime := IniFile.ReadBool('Main', 'PreserveFileTime', false);
-	FDescriptionEnabled := IniFile.ReadBool('Main', 'DescriptionEnabled', false);
-	FDescriptionEditorEnabled := IniFile.ReadBool('Main', 'DescriptionEditorEnabled', false);
-	FDescriptionCopyToCloud := IniFile.ReadBool('Main', 'DescriptionCopyToCloud', false);
-	FDescriptionCopyFromCloud := IniFile.ReadBool('Main', 'DescriptionCopyFromCloud', false);
-	FDescriptionTrackCloudFS := IniFile.ReadBool('Main', 'DescriptionTrackCloudFS', false);
+	FLoadSSLDLLOnlyFromPluginDir := IniFile.ReadBool('Main', 'LoadSSLDLLOnlyFromPluginDir', False);
+	FPreserveFileTime := IniFile.ReadBool('Main', 'PreserveFileTime', False);
+	FDescriptionEnabled := IniFile.ReadBool('Main', 'DescriptionEnabled', False);
+	FDescriptionEditorEnabled := IniFile.ReadBool('Main', 'DescriptionEditorEnabled', False);
+	FDescriptionCopyToCloud := IniFile.ReadBool('Main', 'DescriptionCopyToCloud', False);
+	FDescriptionCopyFromCloud := IniFile.ReadBool('Main', 'DescriptionCopyFromCloud', False);
+	FDescriptionTrackCloudFS := IniFile.ReadBool('Main', 'DescriptionTrackCloudFS', False);
 	FDescriptionFileName := IniFile.ReadString('Main', 'DescriptionFileName', 'descript.ion');
 	FCopyBetweenAccountsMode := IniFile.ReadInteger('Main', 'CopyBetweenAccountsMode', CopyBetweenAccountsModeDisabled);
-	FDisableMultiThreading := IniFile.ReadBool('Main', 'DisableMultiThreading', false);
+	FDisableMultiThreading := IniFile.ReadBool('Main', 'DisableMultiThreading', False);
 	FLogUserSpace := IniFile.ReadBool('Main', 'LogUserSpace', True);
 	FIconsMode := IniFile.ReadInteger('Main', 'IconsMode', 0);
 	FConnectionSettings.SocketTimeout := IniFile.ReadInteger('Main', 'SocketTimeout', -1);
@@ -136,7 +150,7 @@ begin
 	FConnectionSettings.ProxySettings.Server := IniFile.ReadString('Main', 'ProxyServer', EmptyWideStr);
 	FConnectionSettings.ProxySettings.Port := IniFile.ReadInteger('Main', 'ProxyPort', 0);
 	FConnectionSettings.ProxySettings.user := IniFile.ReadString('Main', 'ProxyUser', EmptyWideStr);
-	FConnectionSettings.ProxySettings.use_tc_password_manager := IniFile.ReadBool('Main', 'ProxyTCPwdMngr', false);
+	FConnectionSettings.ProxySettings.use_tc_password_manager := IniFile.ReadBool('Main', 'ProxyTCPwdMngr', False);
 	FConnectionSettings.ProxySettings.password := IniFile.ReadString('Main', 'ProxyPassword', EmptyWideStr);
 	FConnectionSettings.UserAgent := IniFile.ReadString('Main', 'UserAgent', DEFAULT_USERAGENT);
 	FDownloadLinksEncode := IniFile.ReadBool('Main', 'DownloadLinksEncode', True);
