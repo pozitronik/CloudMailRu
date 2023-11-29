@@ -2,6 +2,9 @@
 
 interface
 
+uses
+	Classes;
+
 type
 	{A simple array-like type to replace TStrings}
 	TWSList = TArray<WideString>;
@@ -11,6 +14,10 @@ type
 		procedure Clear();
 		function Count: Integer;
 		function Contains(S: WideString): Boolean;
+	end;
+
+	TStringsHelper = class helper for TStrings
+		procedure AddStrings(const Strings: TWSList);
 	end;
 
 implementation
@@ -46,6 +53,21 @@ end;
 function TWSHelper.Count: Integer;
 begin
 	Result := Length(self);
+end;
+
+{TStringsHelper}
+
+procedure TStringsHelper.AddStrings(const Strings: TWSList);
+var
+	I: Integer;
+begin
+	BeginUpdate;
+	try
+		for I := Low(Strings) to High(Strings) do
+			Add(Strings[I]);
+	finally
+		EndUpdate;
+	end;
 end;
 
 end.
