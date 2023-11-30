@@ -43,6 +43,7 @@ type
 
 		function Init(ConnectionName: WideString; out Cloud: TCloudMailRu): integer; //инициализирует подключение по его имени, возвращает код состояния
 		function GetAccountPassword(const ConnectionName: WideString; var CloudSettings: TCloudSettings): Boolean;
+		function InitCloudCryptPasswords(const ConnectionName: WideString; var CloudSettings: TCloudSettings): Boolean;
 	public
 		constructor Create(Settings: TPluginSettings; HTTPManager: THTTPManager; Progress: TTCProgress; Logger: TTCLogger; Request: TTCRequest; PasswordManager: TTCPasswordManager);
 		destructor Destroy(); override;
@@ -146,11 +147,8 @@ begin
 	if CloudSettings.EncryptFilesMode <> EncryptModeNone then
 	begin
 		repeat //пока не будет разрешающего действия
-			if not InitCloudCryptPasswords(PasswordManager, ConnectionName, CloudSettings) then
-			begin
-
+			if not InitCloudCryptPasswords(ConnectionName, CloudSettings) then
 				exit(CLOUD_OPERATION_FAILED);
-			end;
 			if not TFileCipher.CheckPasswordGUID(CloudSettings.CryptFilesPassword, CloudSettings.CryptedGUIDFiles) then
 			begin
 				ActionsList := TDictionary<Int32, WideString>.Create;
@@ -196,7 +194,43 @@ begin
 	AccountSettings.Free;
 end;
 
-{Retrieves the password for ConnectionName: from TC passwords storage, then from settings, and the from user input. Returns true if password retrieved, false otherwise
+{Depending on the account settings, initializes and retrieves the files encryption password.
+ The password retrieves from the TC passwords storage or user input. Returns true if password retrieved, false otherwise.
+ If file encryption is not enabled, immediately returns true.}
+function TConnectionManager.InitCloudCryptPasswords(const ConnectionName: WideString; var CloudSettings: TCloudSettings): Boolean;
+var
+	crypt_id: WideString;
+	StorePassword: Boolean;
+begin
+	Result := true;
+	StorePassword := false;
+	crypt_id := ConnectionName + ' filecrypt';
+
+	if EncryptModeAlways = CloudSettings.EncryptFilesMode then {password must be taken from tc storage, otherwise ask user and store password}
+	begin
+		case PasswordManager.GetPassword(crypt_id, CloudSettings.CryptFilesPassword) of
+			FS_FILE_OK:
+				begin
+					exit(true);
+				end;
+			FS_FILE_READERROR: //password not found in store => act like EncryptModeAskOnce
+				begin
+					CloudSettings.EncryptFilesMode := EncryptModeAskOnce;
+				end;
+			FS_FILE_NOTSUPPORTED: //user doesn't know master password
+				begin
+					exit(false);
+				end;
+		end;
+	end;
+	if EncryptModeAskOnce = CloudSettings.EncryptFilesMode then
+	begin
+		if mrOK <> TAskPasswordForm.AskPassword(Format(ASK_ENCRYPTION_PASSWORD, [ConnectionName]), PREFIX_ASK_ENCRYPTION_PASSWORD, CloudSettings.CryptFilesPassword, StorePassword, true, PasswordManager.ParentWindow) then
+			Result := false
+	end;
+end;
+
+{Retrieves the password for ConnectionName: from TC passwords storage, then from settings, and the from user input. Returns true if password retrieved, false otherwise.
  Note: the metod saves password to TC storage and removes it from config, if current option set for the account}
 function TConnectionManager.GetAccountPassword(const ConnectionName: WideString; var CloudSettings: TCloudSettings): Boolean;
 begin

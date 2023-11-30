@@ -18,7 +18,6 @@ uses
 	ProxySettings;
 
 function GetProxyPassword(PasswordManager: TTCPasswordManager; var ProxySettings: TProxySettings): Boolean;
-function InitCloudCryptPasswords(PasswordManager: TTCPasswordManager; const Account: WideString; var CloudSettings: TCloudSettings): Boolean;
 function StoreFileCryptPassword(PasswordManager: TTCPasswordManager; AccountName: WideString): WideString;
 
 implementation
@@ -59,39 +58,6 @@ begin
 	end;
 end;
 
-{Retrieves file encryption password from storage or user input}
-function InitCloudCryptPasswords(PasswordManager: TTCPasswordManager; const Account: WideString; var CloudSettings: TCloudSettings): Boolean;
-var
-	crypt_id: WideString;
-	StorePassword: Boolean;
-begin
-	result := true;
-	StorePassword := false;
-	crypt_id := Account + ' filecrypt';
-
-	if EncryptModeAlways = CloudSettings.EncryptFilesMode then {password must be taken from tc storage, otherwise ask user and store password}
-	begin
-		case PasswordManager.GetPassword(crypt_id, CloudSettings.CryptFilesPassword) of
-			FS_FILE_OK:
-				begin
-					exit(true);
-				end;
-			FS_FILE_READERROR: //password not found in store => act like EncryptModeAskOnce
-				begin
-					CloudSettings.EncryptFilesMode := EncryptModeAskOnce;
-				end;
-			FS_FILE_NOTSUPPORTED: //user doesn't know master password
-				begin
-					exit(false);
-				end;
-		end;
-	end;
-	if EncryptModeAskOnce = CloudSettings.EncryptFilesMode then
-	begin
-		if mrOK <> TAskPasswordForm.AskPassword(Format(ASK_ENCRYPTION_PASSWORD, [Account]), PREFIX_ASK_ENCRYPTION_PASSWORD, CloudSettings.CryptFilesPassword, StorePassword, true, PasswordManager.ParentWindow) then
-			result := false
-	end;
-end;
 
 function StoreFileCryptPassword(PasswordManager: TTCPasswordManager; AccountName: WideString): WideString;
 var
