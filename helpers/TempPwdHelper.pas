@@ -19,7 +19,7 @@ uses
 
 function GetAccountPassword(PasswordManager: TTCPasswordManager; const Account: WideString; var CloudSettings: TCloudSettings): Boolean;
 function GetProxyPassword(PasswordManager: TTCPasswordManager; var ProxySettings: TProxySettings): Boolean;
-function InitCloudCryptPasswords(PasswordManager: TTCPasswordManager; const Account: WideString; var EncryptFilesMode: integer; var Password: WideString): Boolean;
+function InitCloudCryptPasswords(PasswordManager: TTCPasswordManager; const Account: WideString; var CloudSettings: TCloudSettings): Boolean;
 function StoreFileCryptPassword(PasswordManager: TTCPasswordManager; AccountName: WideString): WideString;
 
 implementation
@@ -30,7 +30,6 @@ begin
 		exit(true);
 
 	//иначе предполагается, что пароль взят из конфига
-
 	if CloudSettings.Password = EmptyWideStr then //но пароля нет, не в инишнике, не в тотале
 	begin
 		if mrOK <> TAskPasswordForm.AskPassword(Format(ASK_PASSWORD, [Account]), PREFIX_ASK_PASSWORD, CloudSettings.Password, CloudSettings.UseTCPasswordManager, false, FindTCWindow) then
@@ -87,7 +86,7 @@ begin
 end;
 
 {Retrieves file encryption password from storage or user input}
-function InitCloudCryptPasswords(PasswordManager: TTCPasswordManager; const Account: WideString; var EncryptFilesMode: integer; var Password: WideString): Boolean;
+function InitCloudCryptPasswords(PasswordManager: TTCPasswordManager; const Account: WideString; var CloudSettings: TCloudSettings): Boolean;
 var
 	crypt_id: WideString;
 	StorePassword: Boolean;
@@ -96,16 +95,16 @@ begin
 	StorePassword := false;
 	crypt_id := Account + ' filecrypt';
 
-	if EncryptModeAlways = EncryptFilesMode then {password must be taken from tc storage, otherwise ask user and store password}
+	if EncryptModeAlways = CloudSettings.EncryptFilesMode then {password must be taken from tc storage, otherwise ask user and store password}
 	begin
-		case PasswordManager.GetPassword(crypt_id, Password) of
+		case PasswordManager.GetPassword(crypt_id, CloudSettings.CryptFilesPassword) of
 			FS_FILE_OK:
 				begin
 					exit(true);
 				end;
 			FS_FILE_READERROR: //password not found in store => act like EncryptModeAskOnce
 				begin
-					EncryptFilesMode := EncryptModeAskOnce;
+					CloudSettings.EncryptFilesMode := EncryptModeAskOnce;
 				end;
 			FS_FILE_NOTSUPPORTED: //user doesn't know master password
 				begin
@@ -113,9 +112,9 @@ begin
 				end;
 		end;
 	end;
-	if EncryptModeAskOnce = EncryptFilesMode then
+	if EncryptModeAskOnce = CloudSettings.EncryptFilesMode then
 	begin
-		if mrOK <> TAskPasswordForm.AskPassword(Format(ASK_ENCRYPTION_PASSWORD, [Account]), PREFIX_ASK_ENCRYPTION_PASSWORD, Password, StorePassword, true, PasswordManager.ParentWindow) then
+		if mrOK <> TAskPasswordForm.AskPassword(Format(ASK_ENCRYPTION_PASSWORD, [Account]), PREFIX_ASK_ENCRYPTION_PASSWORD, CloudSettings.CryptFilesPassword, StorePassword, true, PasswordManager.ParentWindow) then
 			result := false
 	end;
 end;

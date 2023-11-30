@@ -148,7 +148,7 @@ begin
 	if CloudSettings.EncryptFilesMode <> EncryptModeNone then
 	begin
 		repeat //пока не будет разрешающего действия
-			if not InitCloudCryptPasswords(PasswordManager, ConnectionName, CloudSettings.EncryptFilesMode, CloudSettings.CryptFilesPassword) then
+			if not InitCloudCryptPasswords(PasswordManager, ConnectionName, CloudSettings) then
 			begin
 
 				exit(CLOUD_OPERATION_FAILED);
