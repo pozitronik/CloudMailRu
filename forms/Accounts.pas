@@ -540,9 +540,9 @@ begin
 		AccountsForm.ProxyCB.ItemIndex := AccountsForm.PluginSettings.ConnectionSettings.ProxySettings.ProxyType;
 		AccountsForm.ProxyServerEdit.Text := AccountsForm.PluginSettings.ConnectionSettings.ProxySettings.Server;
 		AccountsForm.ProxyPortEdit.Text := AccountsForm.PluginSettings.ConnectionSettings.ProxySettings.Port.ToString;
-		AccountsForm.ProxyUserEdit.Text := AccountsForm.PluginSettings.ConnectionSettings.ProxySettings.user;
+		AccountsForm.ProxyUserEdit.Text := AccountsForm.PluginSettings.ConnectionSettings.ProxySettings.User;
 		AccountsForm.ProxyPwd.Text := AccountsForm.PluginSettings.ConnectionSettings.ProxySettings.Password;
-		AccountsForm.ProxyTCPwdMngrCB.Checked := AccountsForm.PluginSettings.ConnectionSettings.ProxySettings.use_tc_password_manager;
+		AccountsForm.ProxyTCPwdMngrCB.Checked := AccountsForm.PluginSettings.ConnectionSettings.ProxySettings.UseTCPasswordManager;
 
 		AccountsForm.UserAgentEdit.Text := AccountsForm.PluginSettings.ConnectionSettings.UserAgent;
 		AccountsForm.ChangeUserAgentCB.Checked := DEFAULT_USERAGENT <> AccountsForm.UserAgentEdit.Text;

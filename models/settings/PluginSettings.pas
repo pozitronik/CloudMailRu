@@ -149,9 +149,9 @@ begin
 	FConnectionSettings.ProxySettings.ProxyType := IniFile.ReadInteger('Main', 'ProxyType', ProxyNone);
 	FConnectionSettings.ProxySettings.Server := IniFile.ReadString('Main', 'ProxyServer', EmptyWideStr);
 	FConnectionSettings.ProxySettings.Port := IniFile.ReadInteger('Main', 'ProxyPort', 0);
-	FConnectionSettings.ProxySettings.user := IniFile.ReadString('Main', 'ProxyUser', EmptyWideStr);
-	FConnectionSettings.ProxySettings.use_tc_password_manager := IniFile.ReadBool('Main', 'ProxyTCPwdMngr', False);
-	FConnectionSettings.ProxySettings.password := IniFile.ReadString('Main', 'ProxyPassword', EmptyWideStr);
+	FConnectionSettings.ProxySettings.User := IniFile.ReadString('Main', 'ProxyUser', EmptyWideStr);
+	FConnectionSettings.ProxySettings.UseTCPasswordManager := IniFile.ReadBool('Main', 'ProxyTCPwdMngr', False);
+	FConnectionSettings.ProxySettings.Password := IniFile.ReadString('Main', 'ProxyPassword', EmptyWideStr);
 	FConnectionSettings.UserAgent := IniFile.ReadString('Main', 'UserAgent', DEFAULT_USERAGENT);
 	FDownloadLinksEncode := IniFile.ReadBool('Main', 'DownloadLinksEncode', True);
 	FAutoUpdateDownloadListing := IniFile.ReadBool('Main', 'AutoUpdateDownloadListing', True);
@@ -196,9 +196,9 @@ begin
 	IniFile.WriteInteger('Main', 'ProxyType', FConnectionSettings.ProxySettings.ProxyType);
 	IniFile.WriteString('Main', 'ProxyServer', FConnectionSettings.ProxySettings.Server);
 	IniFile.WriteInteger('Main', 'ProxyPort', FConnectionSettings.ProxySettings.Port);
-	IniFile.WriteString('Main', 'ProxyUser', FConnectionSettings.ProxySettings.user);
-	IniFile.WriteBool('Main', 'ProxyTCPwdMngr', FConnectionSettings.ProxySettings.use_tc_password_manager);
-	IniFile.WriteString('Main', 'ProxyPassword', FConnectionSettings.ProxySettings.password);
+	IniFile.WriteString('Main', 'ProxyUser', FConnectionSettings.ProxySettings.User);
+	IniFile.WriteBool('Main', 'ProxyTCPwdMngr', FConnectionSettings.ProxySettings.UseTCPasswordManager);
+	IniFile.WriteString('Main', 'ProxyPassword', FConnectionSettings.ProxySettings.Password);
 	IniFile.WriteString('Main', 'UserAgent', FConnectionSettings.UserAgent);
 	IniFile.WriteBool('Main', 'DownloadLinksEncode', FDownloadLinksEncode);
 	IniFile.WriteBool('Main', 'AutoUpdateDownloadListing', FAutoUpdateDownloadListing);

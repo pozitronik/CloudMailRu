@@ -1594,17 +1594,17 @@ begin
 	ProxySettings := CurrentSettings.ConnectionSettings.ProxySettings;
 	PasswordManager := TTCPasswordManager.Create(PCryptProc, PluginNum, CryptoNr, TCLogger);
 
-	if not((ProxySettings.ProxyType = ProxyNone) or (ProxySettings.user = EmptyWideStr)) then {proxy connection is password-protected}
+	if not((ProxySettings.ProxyType = ProxyNone) or (ProxySettings.User = EmptyWideStr)) then {proxy connection is password-protected}
 	begin
-		if not(ProxySettings.use_tc_password_manager and (PasswordManager.GetPassword('proxy' + ProxySettings.user, ProxySettings.password) = FS_FILE_OK)) then {retrieve the proxy password from TC passwords storage}
+		if not(ProxySettings.UseTCPasswordManager and (PasswordManager.GetPassword('proxy' + ProxySettings.User, ProxySettings.Password) = FS_FILE_OK)) then {retrieve the proxy password from TC passwords storage}
 		begin
-			if ProxySettings.password = EmptyWideStr then {the password may be taken from config before, otherwise ask user}
+			if ProxySettings.Password = EmptyWideStr then {the password may be taken from config before, otherwise ask user}
 			begin
-				if mrOk = TAskPasswordForm.AskPassword(Format(ASK_PROXY_PASSWORD, [ProxySettings.user]), PREFIX_ASK_PROXY_PASSWORD, ProxySettings.password, ProxySettings.use_tc_password_manager, false, FindTCWindow) then
+				if mrOk = TAskPasswordForm.AskPassword(Format(ASK_PROXY_PASSWORD, [ProxySettings.User]), PREFIX_ASK_PROXY_PASSWORD, ProxySettings.Password, ProxySettings.UseTCPasswordManager, false, FindTCWindow) then
 				begin {get proxy password and parameters from the user input}
-					if FS_FILE_OK = PasswordManager.SetPassword('proxy' + ProxySettings.user, ProxySettings.password) then
+					if FS_FILE_OK = PasswordManager.SetPassword('proxy' + ProxySettings.User, ProxySettings.Password) then
 					begin {Now the proxy password stored in TC, clear password from the ini file}
-						TCLogger.Log(LOG_LEVEL_DEBUG, msgtype_details, PASSWORD_SAVED, [ProxySettings.user]);
+						TCLogger.Log(LOG_LEVEL_DEBUG, msgtype_details, PASSWORD_SAVED, [ProxySettings.User]);
 						CurrentSettings.SetSettingValue('ProxyTCPwdMngr', true);
 						CurrentSettings.SetSettingValue('ProxyPassword', null);
 					end; //Ошибки здесь не значат, что пароль мы не получили - он может быть введён в диалоге

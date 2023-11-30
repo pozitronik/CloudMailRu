@@ -7,9 +7,9 @@ type
 		ProxyType: integer;
 		Server: WideString;
 		Port: integer;
-		user: WideString;
-		password: WideString;
-		use_tc_password_manager: boolean;
+		User: WideString;
+		Password: WideString;
+		UseTCPasswordManager: boolean;
 	end;
 
 implementation
