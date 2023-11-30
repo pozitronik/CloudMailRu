@@ -24,7 +24,8 @@ uses
 	System.Generics.Collections,
 	SysUtils,
 	AskPassword,
-	FileCipher;
+	FileCipher,
+	TempPwdHelper;
 
 type
 
@@ -41,12 +42,12 @@ type
 
 		PasswordManager: TTCPasswordManager;
 
-		function init(ConnectionName: WideString; out Cloud: TCloudMailRu): integer; //инициализирует подключение по его имени, возвращает код состояния
+		function Init(ConnectionName: WideString; out Cloud: TCloudMailRu): integer; //инициализирует подключение по его имени, возвращает код состояния
 	public
 		constructor Create(Settings: TPluginSettings; HTTPManager: THTTPManager; Progress: TTCProgress; Logger: TTCLogger; Request: TTCRequest; PasswordManager: TTCPasswordManager);
 		destructor Destroy(); override;
-		function get(ConnectionName: WideString; var OperationResult: integer): TCloudMailRu; //возвращает готовое подклчение по имени
-		procedure free(ConnectionName: WideString); //освобождает подключение по его имени, если оно существует
+		function Get(ConnectionName: WideString; var OperationResult: integer): TCloudMailRu; //возвращает готовое подключение по имени
+		procedure Free(ConnectionName: WideString); //освобождает подключение по его имени, если оно существует
 	end;
 
 implementation
@@ -74,21 +75,21 @@ begin
 	inherited;
 end;
 
-procedure TConnectionManager.free(ConnectionName: WideString);
+procedure TConnectionManager.Free(ConnectionName: WideString);
 begin
 	if Connections.ContainsKey(ConnectionName) then
 	begin
-		Connections.Items[ConnectionName].free;
+		Connections.Items[ConnectionName].Free;
 		Connections.Remove(ConnectionName);
 	end;
 end;
 
-function TConnectionManager.get(ConnectionName: WideString; var OperationResult: integer): TCloudMailRu;
+function TConnectionManager.Get(ConnectionName: WideString; var OperationResult: integer): TCloudMailRu;
 begin
 	OperationResult := CLOUD_OPERATION_OK;
 	if not Connections.TryGetValue(ConnectionName, Result) then
 	begin
-		OperationResult := init(ConnectionName, Result);
+		OperationResult := Init(ConnectionName, Result);
 		if CLOUD_OPERATION_OK = OperationResult then
 			Connections.AddOrSetValue(ConnectionName, Result)
 		else
@@ -96,7 +97,7 @@ begin
 	end;
 end;
 
-function TConnectionManager.init(ConnectionName: WideString; out Cloud: TCloudMailRu): integer;
+function TConnectionManager.Init(ConnectionName: WideString; out Cloud: TCloudMailRu): integer;
 var
 	CloudSettings: TCloudSettings;
 	LoginMethod: integer;
@@ -112,7 +113,7 @@ begin
 	Result := CLOUD_OPERATION_OK;
 
 	{TODO: This block of code should be refactored to exclude the TAccountSettings entirely}
-	if not PasswordManager.GetAccountPassword(ConnectionName, UseTCPasswordManager, Password) then
+	if not GetAccountPassword(PasswordManager, ConnectionName, UseTCPasswordManager, Password) then
 	begin
 		exit(CLOUD_OPERATION_ERROR_STATUS_UNKNOWN); //INVALID_HANDLE_VALUE
 		if UseTCPasswordManager then
@@ -128,9 +129,9 @@ begin
 	begin
 		EncryptFilesMode := AccountSettings.EncryptFilesMode;
 		repeat //пока не будет разрешающего действия
-			if not PasswordManager.InitCloudCryptPasswords(AccountSettings.Account, EncryptFilesMode, FilePassword) then
+			if not InitCloudCryptPasswords(PasswordManager, AccountSettings.Account, EncryptFilesMode, FilePassword) then
 			begin
-				AccountSettings.free;
+				AccountSettings.Free;
 				exit(CLOUD_OPERATION_FAILED);
 			end;
 			AccountSettings.EncryptFilesMode := EncryptFilesMode;
@@ -202,10 +203,10 @@ begin
 	if not(Cloud.login(LoginMethod)) then
 	begin
 		Result := CLOUD_OPERATION_FAILED;
-		Cloud.free;
+		Cloud.Free;
 	end;
 
-	AccountSettings.free;
+	AccountSettings.Free;
 end;
 
 end.

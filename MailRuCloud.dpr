@@ -107,7 +107,8 @@ uses
 	AbstractPluginSettings in 'models\settings\AbstractPluginSettings.pas',
 	AbstractAccountSettings in 'models\settings\AbstractAccountSettings.pas',
 	NewAccountSettings in 'models\settings\NewAccountSettings.pas',
-	WSList in 'models\WSList.pas';
+	WSList in 'models\WSList.pas',
+	TempPwdHelper in 'helpers\TempPwdHelper.pas';
 
 {$IFDEF WIN64}
 {$E wfx64}
@@ -172,7 +173,7 @@ begin
 
 	if Result.isNone and UpdateListing then //если там его нет (нажали пробел на папке, например), то запросим в облаке напрямую, в зависимости от того, внутри чего мы находимся
 	begin
-		CurrentCloud := ConnectionManager.get(path.account, getResult);
+		CurrentCloud := ConnectionManager.Get(path.account, getResult);
 		if not Assigned(CurrentCloud) then
 			exit;
 
@@ -205,7 +206,7 @@ begin
 	Result := InviteListing.FindByName(path.path);
 	{item not found in current global listing, so refresh it}
 	if Result.isNone then
-		if ConnectionManager.get(path.account, getResult).getIncomingLinksListing(CurrentIncomingInvitesListing) then
+		if ConnectionManager.Get(path.account, getResult).getIncomingLinksListing(CurrentIncomingInvitesListing) then
 			exit(CurrentIncomingInvitesListing.FindByName(path.path));
 end;
 
@@ -306,7 +307,7 @@ begin
 				begin
 					if (CurrentSettings.DescriptionEnabled) and RealPath.IsInAccount() then
 					begin
-						if ConnectionManager.get(RealPath.account, getResult).getDescriptionFile(IncludeTrailingBackslash(RealPath.path) + CurrentSettings.DescriptionFileName, CurrentDescriptions.ionFilename) then
+						if ConnectionManager.Get(RealPath.account, getResult).getDescriptionFile(IncludeTrailingBackslash(RealPath.path) + CurrentSettings.DescriptionFileName, CurrentDescriptions.ionFilename) then
 						begin
 							CurrentDescriptions.Read;
 						end else begin
@@ -335,7 +336,7 @@ begin
 				end;
 			FS_STATUS_OP_RENMOV_MULTI:
 				begin
-					if ConnectionManager.get(RealPath.account, getResult).public_account then
+					if ConnectionManager.Get(RealPath.account, getResult).public_account then
 					begin
 						TCLogger.Log(LOG_LEVEL_WARNING, MSGTYPE_IMPORTANTERROR, ERR_DIRECT_COPY_SUPPORT);
 						ThreadSkipListRenMov.AddOrSetValue(GetCurrentThreadID, true);
@@ -414,17 +415,17 @@ begin
 			FS_STATUS_OP_PUT_SINGLE:
 				begin
 					if RealPath.IsInAccount() and CurrentSettings.LogUserSpace then
-						ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
+						ConnectionManager.Get(RealPath.account, getResult).logUserSpaceInfo;
 				end;
 			FS_STATUS_OP_PUT_MULTI:
 				begin
 					if RealPath.IsInAccount() and CurrentSettings.LogUserSpace then
-						ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
+						ConnectionManager.Get(RealPath.account, getResult).logUserSpaceInfo;
 				end;
 			FS_STATUS_OP_RENMOV_SINGLE:
 				begin
 					if RealPath.IsInAccount() and CurrentSettings.LogUserSpace then
-						ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
+						ConnectionManager.Get(RealPath.account, getResult).logUserSpaceInfo;
 				end;
 			FS_STATUS_OP_RENMOV_MULTI:
 				begin
@@ -435,13 +436,13 @@ begin
 					ThreadFsRemoveDirSkippedPath.AddOrSetValue(GetCurrentThreadID, nil);
 
 					if RealPath.IsInAccount() and CurrentSettings.LogUserSpace then
-						ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
+						ConnectionManager.Get(RealPath.account, getResult).logUserSpaceInfo;
 				end;
 			FS_STATUS_OP_DELETE:
 				begin
 					ThreadSkipListDelete.AddOrSetValue(GetCurrentThreadID(), false);
 					if RealPath.IsInAccount() and CurrentSettings.LogUserSpace then
-						ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
+						ConnectionManager.Get(RealPath.account, getResult).logUserSpaceInfo;
 				end;
 			FS_STATUS_OP_ATTRIB:
 				begin
@@ -467,22 +468,22 @@ begin
 			FS_STATUS_OP_SYNC_GET:
 				begin
 					if RealPath.IsInAccount() and CurrentSettings.LogUserSpace then
-						ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
+						ConnectionManager.Get(RealPath.account, getResult).logUserSpaceInfo;
 				end;
 			FS_STATUS_OP_SYNC_PUT:
 				begin
 					if RealPath.IsInAccount() and CurrentSettings.LogUserSpace then
-						ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
+						ConnectionManager.Get(RealPath.account, getResult).logUserSpaceInfo;
 				end;
 			FS_STATUS_OP_SYNC_DELETE:
 				begin
 					if RealPath.IsInAccount() and CurrentSettings.LogUserSpace then
-						ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
+						ConnectionManager.Get(RealPath.account, getResult).logUserSpaceInfo;
 				end;
 			FS_STATUS_OP_GET_MULTI_THREAD:
 				begin
 					if RealPath.IsInAccount() and CurrentSettings.LogUserSpace then
-						ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
+						ConnectionManager.Get(RealPath.account, getResult).logUserSpaceInfo;
 					if not ThreadBackgroundJobs.TryGetValue(RealPath.account, BackgroundJobsCount) then
 						BackgroundJobsCount := 0;
 					ThreadBackgroundJobs.AddOrSetValue(RealPath.account, BackgroundJobsCount - 1);
@@ -492,7 +493,7 @@ begin
 			FS_STATUS_OP_PUT_MULTI_THREAD:
 				begin
 					if RealPath.IsInAccount() and CurrentSettings.LogUserSpace then
-						ConnectionManager.get(RealPath.account, getResult).logUserSpaceInfo;
+						ConnectionManager.Get(RealPath.account, getResult).logUserSpaceInfo;
 					if not ThreadBackgroundJobs.TryGetValue(RealPath.account, BackgroundJobsCount) then
 						BackgroundJobsCount := 0;
 					ThreadBackgroundJobs.AddOrSetValue(RealPath.account, BackgroundJobsCount - 1);
@@ -546,7 +547,7 @@ begin
 		end;
 	end else begin
 		RealPath.FromPath(GlobalPath);
-		CurrentCloud := ConnectionManager.get(RealPath.account, getResult);
+		CurrentCloud := ConnectionManager.Get(RealPath.account, getResult);
 
 		if getResult <> CLOUD_OPERATION_OK then
 		begin
@@ -652,7 +653,7 @@ var
 	CurrentItem: TCMRDirItem;
 begin
 	Result := FS_EXEC_OK;
-	Cloud := ConnectionManager.get(RealPath.account, getResult);
+	Cloud := ConnectionManager.Get(RealPath.account, getResult);
 	if RealPath.isInAccountsList then //main trashbin folder properties
 	begin
 		if not Cloud.getTrashbinListing(CurrentListing) then
@@ -698,7 +699,7 @@ begin
 			TAccountsForm.ShowAccounts(MainWin, AccountSettings, CurrentSettings, PasswordManager, RealPath.account) //main shared folder properties - open connection settings
 		else
 		begin
-			Cloud := ConnectionManager.get(RealPath.account, getResult);
+			Cloud := ConnectionManager.Get(RealPath.account, getResult);
 			CurrentItem := FindListingItemByPath(CurrentListing, RealPath);
 			if Cloud.statusFile(CurrentItem.home, CurrentItem) then
 				TPropertyForm.ShowProperty(MainWin, RealPath.path, CurrentItem, Cloud, CurrentSettings.DownloadLinksEncode, CurrentSettings.AutoUpdateDownloadListing, false, false, CurrentSettings.DescriptionFileName)
@@ -713,7 +714,7 @@ var
 	CurrentInvite: TCMRIncomingInvite;
 begin
 	Result := FS_EXEC_OK;
-	Cloud := ConnectionManager.get(RealPath.account, getResult);
+	Cloud := ConnectionManager.Get(RealPath.account, getResult);
 	if RealPath.isInAccountsList then //main invites folder properties
 	begin
 		TAccountsForm.ShowAccounts(MainWin, AccountSettings, CurrentSettings, PasswordManager, RealPath.account)
@@ -750,7 +751,7 @@ begin
 		TAccountsForm.ShowAccounts(MainWin, AccountSettings, CurrentSettings, PasswordManager, RealPath.account) //show account properties
 	else
 	begin
-		Cloud := ConnectionManager.get(RealPath.account, getResult);
+		Cloud := ConnectionManager.Get(RealPath.account, getResult);
 		//всегда нужно обновлять статус на сервере, CurrentListing может быть изменён в другой панели
 		if (Cloud.statusFile(RealPath.path, CurrentItem)) and (idContinue = TPropertyForm.ShowProperty(MainWin, RealPath.path, CurrentItem, Cloud, CurrentSettings.DownloadLinksEncode, CurrentSettings.AutoUpdateDownloadListing, CurrentSettings.DescriptionEnabled, CurrentSettings.DescriptionEditorEnabled, CurrentSettings.DescriptionFileName)) then
 			PostMessage(MainWin, WM_USER + 51, 540, 0); //refresh tc panel if description edited
@@ -769,12 +770,12 @@ begin
 	if command = 'rmdir' then
 	begin
 		RealPath.FromPath(RemoteName + Parameter);
-		if (ConnectionManager.get(RealPath.account, getResult).removeDir(RealPath.path) <> true) then
+		if (ConnectionManager.Get(RealPath.account, getResult).removeDir(RealPath.path) <> true) then
 			exit(FS_EXEC_ERROR);
 	end;
 
 	RealPath.FromPath(RemoteName); //default
-	Cloud := ConnectionManager.get(RealPath.account, getResult);
+	Cloud := ConnectionManager.Get(RealPath.account, getResult);
 
 	//undocumented, share current folder to email param
 	if command = 'share' then
@@ -858,7 +859,7 @@ begin
 			begin
 				if not CurrentItem.isPublished then
 				begin
-					CurrentCloud := ConnectionManager.get(RealPath.account, getResult);
+					CurrentCloud := ConnectionManager.Get(RealPath.account, getResult);
 					if not CurrentCloud.publishFile(CurrentItem.home, CurrentItem.weblink) then
 						exit(FS_EXEC_ERROR);
 					//Здесь можно бы обновить листинг
@@ -1054,7 +1055,7 @@ begin
 		resultHash := EmptyWideStr
 	else
 		resultHash := 'dummy'; //calculations will be ignored if variable is not empty
-	Cloud := ConnectionManager.get(RemotePath.account, getResult);
+	Cloud := ConnectionManager.Get(RemotePath.account, getResult);
 
 	Result := Cloud.getFile(WideString(RemotePath.path), LocalName, resultHash);
 
@@ -1170,7 +1171,7 @@ var
 	getResult: integer;
 	Cloud: TCloudMailRu;
 begin
-	Cloud := ConnectionManager.get(RemotePath.account, getResult);
+	Cloud := ConnectionManager.Get(RemotePath.account, getResult);
 
 	Result := Cloud.putFile(WideString(LocalName), RemotePath.path);
 	if Result = FS_FILE_OK then
@@ -1208,7 +1209,7 @@ begin
 
 	if CheckFlag(FS_COPYFLAGS_OVERWRITE, CopyFlags) then
 	begin
-		if not(ConnectionManager.get(RealPath.account, getResult).deleteFile(RealPath.path)) then
+		if not(ConnectionManager.Get(RealPath.account, getResult).deleteFile(RealPath.path)) then
 			exit(FS_FILE_NOTSUPPORTED); //Неизвестно, как перезаписать файл черз API, но мы можем его удалить
 	end;
 	Result := PutRemoteFile(RealPath, LocalName, RemoteName, CopyFlags);
@@ -1269,7 +1270,7 @@ begin
 	RealPath.FromPath(WideString(RemoteName));
 	if RealPath.isAccountEmpty or RealPath.trashDir or RealPath.invitesDir then
 		exit(false);
-	Cloud := ConnectionManager.get(RealPath.account, getResult);
+	Cloud := ConnectionManager.Get(RealPath.account, getResult);
 	if RealPath.sharedDir then
 	begin
 		CurrentItem := FindListingItemByPath(CurrentListing, RealPath);
@@ -1317,7 +1318,7 @@ begin
 	if (RealPath.isAccountEmpty) or RealPath.isVirtual then
 		exit(false);
 
-	Result := ConnectionManager.get(RealPath.account, getResult).createDir(RealPath.path);
+	Result := ConnectionManager.Get(RealPath.account, getResult).createDir(RealPath.path);
 	if Result then //need to check operation context => directory can be moved
 	begin
 		ThreadFsStatusInfo.TryGetValue(GetCurrentThreadID, OperationContextId);
@@ -1346,7 +1347,7 @@ begin
 	RealPath.FromPath(WideString(RemoteName));
 	if RealPath.isVirtual then
 		exit(false);
-	Cloud := ConnectionManager.get(RealPath.account, getResult);
+	Cloud := ConnectionManager.Get(RealPath.account, getResult);
 	Result := Cloud.removeDir(RealPath.path);
 
 	if (Result and CurrentSettings.DescriptionTrackCloudFS and AccountSettings.GetIsRemoteDescriptionsSupported(RealPath.account)) then
@@ -1513,8 +1514,8 @@ begin
 	if OldRealPath.trashDir or NewRealPath.trashDir or OldRealPath.sharedDir or NewRealPath.sharedDir then
 		exit(FS_FILE_NOTSUPPORTED);
 
-	OldCloud := ConnectionManager.get(OldRealPath.account, getResult);
-	NewCloud := ConnectionManager.get(NewRealPath.account, getResult);
+	OldCloud := ConnectionManager.Get(OldRealPath.account, getResult);
+	NewCloud := ConnectionManager.Get(NewRealPath.account, getResult);
 
 	if OldRealPath.account <> NewRealPath.account then //разные аккаунты
 	begin
@@ -1592,7 +1593,7 @@ var
 begin
 	ProxySettings := CurrentSettings.ConnectionSettings.ProxySettings;
 	PasswordManager := TTCPasswordManager.Create(PCryptProc, PluginNum, CryptoNr, TCLogger);
-	PasswordManager.GetProxyPassword(ProxySettings);
+	GetProxyPassword(PasswordManager, ProxySettings);
 	if ProxySettings.use_tc_password_manager then
 		CurrentSettings.SetSettingValue('ProxyTCPwdMngr', true);
 

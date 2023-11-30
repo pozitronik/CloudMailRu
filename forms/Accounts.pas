@@ -32,6 +32,7 @@ uses
 	Settings,
 	PluginSettings,
 	WSList,
+	TempPwdHelper,
 	NewAccountSettings;
 
 type
@@ -442,7 +443,7 @@ var
 	CryptedGUID: WideString;
 begin
 	PasswordManager.parentWindow := self.Handle;
-	CryptedGUID := PasswordManager.StoreFileCryptPassword(self.SelectedAccount);
+	CryptedGUID := StoreFileCryptPassword(PasswordManager, self.SelectedAccount);
 	PasswordManager.parentWindow := FindTCWindow;
 	if CryptedGUID <> EmptyWideStr then
 		//    CurrentAccountSettings.Account:=self.SelectedAccount;   //should be already selected
