@@ -534,6 +534,7 @@ begin
 	GlobalPath := path;
 	if GlobalPath = '\' then
 	begin //список соединений
+		Accounts := AccountSettings.GetAccountsList([ATPrivate, ATPublic], CurrentSettings.EnabledVirtualTypes);
 		if (Accounts.Count > 0) then
 		begin
 			FindData := GetFindDataEmptyDir(Accounts[0]);
@@ -1912,8 +1913,6 @@ begin
 	ThreadFsRemoveDirSkippedPath := TDictionary<DWORD, TStringList>.Create;
 
 	AccountSettings := TNewAccountSettings.Create(CurrentSettings.AccountsIniFileName);
-	Accounts := AccountSettings.GetAccountsList([ATPrivate, ATPublic], CurrentSettings.EnabledVirtualTypes);
-
 end;
 
 procedure FreePluginData();
