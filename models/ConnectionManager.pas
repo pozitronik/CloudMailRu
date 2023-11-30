@@ -25,8 +25,7 @@ uses
 	System.Generics.Collections,
 	SysUtils,
 	AskPassword,
-	FileCipher,
-	TempPwdHelper;
+	FileCipher;
 
 type
 
@@ -44,6 +43,7 @@ type
 		function Init(ConnectionName: WideString; out Cloud: TCloudMailRu): integer; //инициализирует подключение по его имени, возвращает код состояния
 		function GetAccountPassword(const ConnectionName: WideString; var CloudSettings: TCloudSettings): Boolean;
 		function InitCloudCryptPasswords(const ConnectionName: WideString; var CloudSettings: TCloudSettings): Boolean;
+		//		function GetProxyPassword(var CloudSettings: TCloudSettings): Boolean;
 	public
 		constructor Create(Settings: TPluginSettings; HTTPManager: THTTPManager; Progress: TTCProgress; Logger: TTCLogger; Request: TTCRequest; PasswordManager: TTCPasswordManager);
 		destructor Destroy(); override;
@@ -229,7 +229,6 @@ begin
 			Result := false
 	end;
 end;
-
 
 {Retrieves the password for ConnectionName: from TC passwords storage, then from settings, and the from user input. Returns true if password retrieved, false otherwise.
  Note: the metod saves password to TC storage and removes it from config, if current option set for the account}

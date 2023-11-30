@@ -19,6 +19,7 @@ uses
 	IdSSLOpenSSLHeaders,
 	messages,
 	inifiles,
+	Variants,
 	Vcl.controls,
 	CloudMailRu in 'CloudMailRu.pas',
 	Accounts in 'forms\Accounts.pas'{AccountsForm},
@@ -107,8 +108,7 @@ uses
 	AbstractPluginSettings in 'models\settings\AbstractPluginSettings.pas',
 	AbstractAccountSettings in 'models\settings\AbstractAccountSettings.pas',
 	NewAccountSettings in 'models\settings\NewAccountSettings.pas',
-	WSList in 'models\WSList.pas',
-	TempPwdHelper in 'helpers\TempPwdHelper.pas';
+	WSList in 'models\WSList.pas';
 
 {$IFDEF WIN64}
 {$E wfx64}
@@ -1593,9 +1593,25 @@ var
 begin
 	ProxySettings := CurrentSettings.ConnectionSettings.ProxySettings;
 	PasswordManager := TTCPasswordManager.Create(PCryptProc, PluginNum, CryptoNr, TCLogger);
-	GetProxyPassword(PasswordManager, ProxySettings);
-	if ProxySettings.use_tc_password_manager then
-		CurrentSettings.SetSettingValue('ProxyTCPwdMngr', true);
+
+	if not((ProxySettings.ProxyType = ProxyNone) or (ProxySettings.user = EmptyWideStr)) then {proxy connection is password-protected}
+	begin
+		if not(ProxySettings.use_tc_password_manager and (PasswordManager.GetPassword('proxy' + ProxySettings.user, ProxySettings.password) = FS_FILE_OK)) then {retrieve the proxy password from TC passwords storage}
+		begin
+			if ProxySettings.password = EmptyWideStr then {the password may be taken from config before, otherwise ask user}
+			begin
+				if mrOk = TAskPasswordForm.AskPassword(Format(ASK_PROXY_PASSWORD, [ProxySettings.user]), PREFIX_ASK_PROXY_PASSWORD, ProxySettings.password, ProxySettings.use_tc_password_manager, false, FindTCWindow) then
+				begin {get proxy password and parameters from the user input}
+					if FS_FILE_OK = PasswordManager.SetPassword('proxy' + ProxySettings.user, ProxySettings.password) then
+					begin {Now the proxy password stored in TC, clear password from the ini file}
+						TCLogger.Log(LOG_LEVEL_DEBUG, msgtype_details, PASSWORD_SAVED, [ProxySettings.user]);
+						CurrentSettings.SetSettingValue('ProxyTCPwdMngr', true);
+						CurrentSettings.SetSettingValue('ProxyPassword', null);
+					end; //Ошибки здесь не значат, что пароль мы не получили - он может быть введён в диалоге
+				end;
+			end;
+		end;
+	end;
 
 	HTTPManager := THTTPManager.Create(CurrentSettings.ConnectionSettings, TCProgress, TCLogger);
 	ConnectionManager := TConnectionManager.Create(CurrentSettings, HTTPManager, TCProgress, TCLogger, TCRequest, PasswordManager);

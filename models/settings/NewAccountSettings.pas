@@ -50,7 +50,7 @@ type
 
 		procedure DeleteAccount(Account: WideString);
 		function GetAccountsList(const AccountTypes: EAccountType = [ATPrivate, ATPublic]; const VirtualTypes: EVirtualType = []): TWSList;
-		procedure SetSettingValue(OptionName: WideString; OptionValue: Variant);  override;
+		procedure SetSettingValue(OptionName: WideString; OptionValue: Variant); override;
 		procedure Save(); override;
 
 		{TODO: TEMP STUB methods}
@@ -110,7 +110,6 @@ begin
 	TempAccountSettings := TNewAccountSettings.Create(IniFilePath, Account);
 	TempAccountSettings.SetSettingValue('password', null);
 	TempAccountSettings.Free;
-
 end;
 
 constructor TNewAccountSettings.Create(AccountSettings: TNewAccountSettings);
