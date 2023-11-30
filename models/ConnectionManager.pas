@@ -230,6 +230,7 @@ begin
 	end;
 end;
 
+
 {Retrieves the password for ConnectionName: from TC passwords storage, then from settings, and the from user input. Returns true if password retrieved, false otherwise.
  Note: the metod saves password to TC storage and removes it from config, if current option set for the account}
 function TConnectionManager.GetAccountPassword(const ConnectionName: WideString; var CloudSettings: TCloudSettings): Boolean;

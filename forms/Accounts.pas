@@ -32,7 +32,7 @@ uses
 	Settings,
 	PluginSettings,
 	WSList,
-	TempPwdHelper,
+	FileCipher,
 	NewAccountSettings;
 
 type
@@ -175,7 +175,7 @@ type
 		{Private declarations}
 		procedure ApplySettings();
 		function CheckValidators(): boolean;
-
+		function StoreFileCryptPassword(AccountName: WideString): WideString;
 	public
 		{Public declarations}
 		CurrentAccountSettings: TNewAccountSettings;
@@ -443,7 +443,7 @@ var
 	CryptedGUID: WideString;
 begin
 	PasswordManager.parentWindow := self.Handle;
-	CryptedGUID := StoreFileCryptPassword(PasswordManager, self.SelectedAccount);
+	CryptedGUID := StoreFileCryptPassword(self.SelectedAccount);
 	PasswordManager.parentWindow := FindTCWindow;
 	if CryptedGUID <> EmptyWideStr then
 		//    CurrentAccountSettings.Account:=self.SelectedAccount;   //should be already selected
@@ -582,6 +582,39 @@ begin
 	finally
 		FreeAndNil(AccountsForm);
 	end;
+end;
+
+{Sets/updates the file encryption password for the account, returns the password hash to save in configuration (to check the password later)}
+function TAccountsForm.StoreFileCryptPassword(AccountName: WideString): WideString;
+var
+	CurrentPassword: WideString;
+	crypt_id: WideString;
+	Verb: WideString;
+	StorePassword: boolean;
+begin
+	StorePassword := true;
+	result := EmptyWideStr;
+	crypt_id := AccountName + ' filecrypt';
+	case PasswordManager.GetPassword(crypt_id, CurrentPassword) of
+		FS_FILE_OK: //пользователь знает мастер-пароль, и пароль был сохранен
+			begin
+				Verb := VERB_UPDATE;
+			end;
+		FS_FILE_READERROR: //Пользователь знает мастер-пароль, и пароль вводится впервые
+			begin
+				Verb := VERB_SET;
+			end;
+		else
+			begin
+				exit;
+			end;
+	end;
+	if mrOk = TAskPasswordForm.AskPassword(Format(ASK_ENCRYPTION_PASSWORD, [Verb]), PREFIX_ASK_NEW_PASSWORD, CurrentPassword, StorePassword, true, PasswordManager.parentWindow) then
+	begin
+		PasswordManager.SetPassword(crypt_id, CurrentPassword);
+		result := TFileCipher.CryptedGUID(CurrentPassword);
+	end
+
 end;
 
 procedure TAccountsForm.StreamingExtensionsListClick(Sender: TObject);

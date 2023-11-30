@@ -18,10 +18,8 @@ uses
 	ProxySettings;
 
 function GetProxyPassword(PasswordManager: TTCPasswordManager; var ProxySettings: TProxySettings): Boolean;
-function StoreFileCryptPassword(PasswordManager: TTCPasswordManager; AccountName: WideString): WideString;
 
 implementation
-
 
 function GetProxyPassword(PasswordManager: TTCPasswordManager; var ProxySettings: TProxySettings): Boolean;
 var
@@ -56,39 +54,6 @@ begin
 			end;
 		end;
 	end;
-end;
-
-
-function StoreFileCryptPassword(PasswordManager: TTCPasswordManager; AccountName: WideString): WideString;
-var
-	CurrentPassword: WideString;
-	crypt_id: WideString;
-	Verb: WideString;
-	StorePassword: Boolean;
-begin
-	StorePassword := true;
-	result := EmptyWideStr;
-	crypt_id := AccountName + ' filecrypt';
-	case PasswordManager.GetPassword(crypt_id, CurrentPassword) of
-		FS_FILE_OK: //пользователь знает мастер-пароль, и пароль был сохранен
-			begin
-				Verb := VERB_UPDATE;
-			end;
-		FS_FILE_READERROR: //Пользователь знает мастер-пароль, и пароль вводится впервые
-			begin
-				Verb := VERB_SET;
-			end;
-		else
-			begin
-				exit;
-			end;
-	end;
-	if mrOK = TAskPasswordForm.AskPassword(Format(ASK_ENCRYPTION_PASSWORD, [Verb]), PREFIX_ASK_NEW_PASSWORD, CurrentPassword, StorePassword, true, PasswordManager.ParentWindow) then
-	begin
-		PasswordManager.SetPassword(crypt_id, CurrentPassword);
-		result := TFileCipher.CryptedGUID(CurrentPassword);
-	end
-
 end;
 
 end.
