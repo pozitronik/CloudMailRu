@@ -9,6 +9,7 @@ uses
 	CloudMailRu,
 	CMRConstants,
 	CMRStrings,
+	TCHelper,
 	TCLogger,
 	TCProgress,
 	TCRequest,
@@ -33,16 +34,15 @@ type
 	private
 		Connections: TDictionary<WideString, TCloudMailRu>;
 		HTTPManager: THTTPManager;
-
-		Settings: TPluginSettings; //Сохраняем параметры плагина, чтобы проксировать параметры из них при инициализации конкретного облака
+		Settings: TPluginSettings; //required to proxyfy plugin parameters to cloud parametes, when initialized
 
 		Logger: TTCLogger;
 		Progress: TTCProgress;
 		Request: TTCRequest;
-
 		PasswordManager: TTCPasswordManager;
 
 		function Init(ConnectionName: WideString; out Cloud: TCloudMailRu): integer; //инициализирует подключение по его имени, возвращает код состояния
+		function GetAccountPassword(const ConnectionName: WideString; var CloudSettings: TCloudSettings): Boolean;
 	public
 		constructor Create(Settings: TPluginSettings; HTTPManager: THTTPManager; Progress: TTCProgress; Logger: TTCLogger; Request: TTCRequest; PasswordManager: TTCPasswordManager);
 		destructor Destroy(); override;
@@ -137,11 +137,9 @@ begin
 	end;
 	AccountSettings.Free;
 
-	if not GetAccountPassword(PasswordManager, ConnectionName, CloudSettings) then
+	if not GetAccountPassword(ConnectionName, CloudSettings) then
 	begin
 		exit(CLOUD_OPERATION_ERROR_STATUS_UNKNOWN); //INVALID_HANDLE_VALUE
-		if CloudSettings.UseTCPasswordManager then
-			TNewAccountSettings.ClearPassword(self.Settings.AccountsIniFileName, ConnectionName);
 	end;
 
 	PasswordActionRetry := false;
@@ -196,6 +194,35 @@ begin
 	end;
 
 	AccountSettings.Free;
+end;
+
+{Retrieves the password for ConnectionName: from TC passwords storage, then from settings, and the from user input. Returns true if password retrieved, false otherwise
+ Note: the metod saves password to TC storage and removes it from config, if current option set for the account}
+function TConnectionManager.GetAccountPassword(const ConnectionName: WideString; var CloudSettings: TCloudSettings): Boolean;
+begin
+	if CloudSettings.UseTCPasswordManager and (PasswordManager.GetPassword(ConnectionName, CloudSettings.Password) = FS_FILE_OK) then //пароль должен браться из TC
+		exit(true);
+
+	//иначе предполагается, что пароль взят из конфига
+	if CloudSettings.Password = EmptyWideStr then //но пароля нет, не в инишнике, не в тотале
+	begin
+		if mrOK <> TAskPasswordForm.AskPassword(Format(ASK_PASSWORD, [ConnectionName]), PREFIX_ASK_PASSWORD, CloudSettings.Password, CloudSettings.UseTCPasswordManager, false, FindTCWindow) then
+		begin //не указали пароль в диалоге
+			exit(false); //отказались вводить пароль
+		end else begin
+			Result := true;
+			if CloudSettings.UseTCPasswordManager then
+			begin
+				if FS_FILE_OK = PasswordManager.SetPassword(ConnectionName, CloudSettings.Password) then
+				begin //Now the account password stored in TC, clear password from the ini file
+					Logger.Log(LOG_LEVEL_DEBUG, MSGTYPE_DETAILS, PASSWORD_SAVED, [ConnectionName]);
+					TNewAccountSettings.ClearPassword(self.Settings.AccountsIniFileName, ConnectionName);
+				end;
+			end;
+		end;
+	end
+	else
+		Result := true;
 end;
 
 end.
