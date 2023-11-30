@@ -50,7 +50,7 @@ type
 
 		procedure DeleteAccount(Account: WideString);
 		function GetAccountsList(const AccountTypes: EAccountType = [ATPrivate, ATPublic]; const VirtualTypes: EVirtualType = []): TWSList;
-		procedure SetSettingValue(OptionName: WideString; OptionValue: Variant); override;
+		procedure SetSettingValue(OptionName: WideString; OptionValue: Variant);  override;
 		procedure Save(); override;
 
 		{TODO: TEMP STUB methods}
@@ -59,7 +59,7 @@ type
 		function GetDescription(Account: WideString): WideString;
 		function GetIsPublic(Account: WideString): Boolean;
 		class procedure ClearPassword(IniFilePath: WideString; Account: WideString); //clears the account password from INI for account
-
+		class procedure SetSettingValueStatic(IniFilePath: WideString; OptionName: WideString; OptionValue: Variant); //todo: it is a temp method
 	end;
 
 implementation
@@ -257,6 +257,15 @@ procedure TNewAccountSettings.SetAccount(const Value: WideString);
 begin
 	FAccount := Value;
 	Refresh();
+end;
+
+class procedure TNewAccountSettings.SetSettingValueStatic(IniFilePath, OptionName: WideString; OptionValue: Variant);
+var
+	TempAccountSettings: TNewAccountSettings;
+begin
+	TempAccountSettings := TNewAccountSettings.Create(IniFilePath);
+	TempAccountSettings.SetSettingValue(OptionName, OptionValue);
+	TempAccountSettings.Free;
 end;
 
 {TODO: this method violates the model abstraction boundaries and should not be used. It'll be removed after refactoring.}

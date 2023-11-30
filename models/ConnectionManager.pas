@@ -103,67 +103,11 @@ var
 	LoginMethod: integer;
 	ActionsList: TDictionary<Int32, WideString>;
 	PasswordActionRetry: Boolean;
-	UseTCPasswordManager: Boolean;
-	Password: WideString;
-	EncryptFilesMode: integer;
-	FilePassword: WideString;
-
 	AccountSettings: TNewAccountSettings;
 begin
 	Result := CLOUD_OPERATION_OK;
 
-	{TODO: This block of code should be refactored to exclude the TAccountSettings entirely}
-	if not GetAccountPassword(PasswordManager, ConnectionName, UseTCPasswordManager, Password) then
-	begin
-		exit(CLOUD_OPERATION_ERROR_STATUS_UNKNOWN); //INVALID_HANDLE_VALUE
-		if UseTCPasswordManager then
-			TNewAccountSettings.ClearPassword(self.Settings.AccountsIniFileName, ConnectionName);
-	end;
-
 	AccountSettings := TNewAccountSettings.Create(self.Settings.AccountsIniFileName, ConnectionName);
-	AccountSettings.UseTCPasswordManager := UseTCPasswordManager;
-	AccountSettings.Password := Password;
-
-	PasswordActionRetry := false;
-	if AccountSettings.EncryptFilesMode <> EncryptModeNone then
-	begin
-		EncryptFilesMode := AccountSettings.EncryptFilesMode;
-		repeat //пока не будет разрешающего действия
-			if not InitCloudCryptPasswords(PasswordManager, AccountSettings.Account, EncryptFilesMode, FilePassword) then
-			begin
-				AccountSettings.Free;
-				exit(CLOUD_OPERATION_FAILED);
-			end;
-			AccountSettings.EncryptFilesMode := EncryptFilesMode;
-			if not TFileCipher.CheckPasswordGUID(FilePassword, AccountSettings.CryptedGUIDFiles) then
-			begin
-				ActionsList := TDictionary<Int32, WideString>.Create;
-				ActionsList.AddOrSetValue(mrYes, PROCEED_UPDATE);
-				ActionsList.AddOrSetValue(mrNo, PROCEED_IGNORE);
-				ActionsList.AddOrSetValue(mrRetry, PROCEED_RETYPE);
-				case TAskPasswordForm.AskAction(PREFIX_ERR_PASSWORD_MATCH, ERR_PASSWORD_MATCH, ActionsList) of
-					mrYes: //store and use updated password
-						begin
-							AccountSettings.CryptedGUIDFiles := TFileCipher.CryptedGUID(FilePassword);
-							AccountSettings.SetSettingValue('CryptedGUID_files', AccountSettings.CryptedGUIDFiles);
-						end;
-					mrNo:
-						begin
-							//continue without password
-						end;
-					mrRetry:
-						begin
-							PasswordActionRetry := true;
-						end;
-				end;
-				FreeAndNil(ActionsList);
-			end;
-
-		until not PasswordActionRetry;
-	end;
-
-	Logger.Log(LOG_LEVEL_CONNECT, MSGTYPE_CONNECT, 'CONNECT \%s', [ConnectionName]);
-
 	with CloudSettings do
 	begin
 		{proxify plugin settings to the cloud settings}
@@ -190,9 +134,54 @@ begin
 		ShardOverride := AccountSettings.ShardOverride;
 		UploadUrlOverride := AccountSettings.UploadUrlOverride;
 		CryptedGUIDFiles := AccountSettings.CryptedGUIDFiles;
-		CryptFilesPassword := FilePassword;
-
 	end;
+	AccountSettings.Free;
+
+	if not GetAccountPassword(PasswordManager, ConnectionName, CloudSettings) then
+	begin
+		exit(CLOUD_OPERATION_ERROR_STATUS_UNKNOWN); //INVALID_HANDLE_VALUE
+		if CloudSettings.UseTCPasswordManager then
+			TNewAccountSettings.ClearPassword(self.Settings.AccountsIniFileName, ConnectionName);
+	end;
+
+	PasswordActionRetry := false;
+	if CloudSettings.EncryptFilesMode <> EncryptModeNone then
+	begin
+		repeat //пока не будет разрешающего действия
+			if not InitCloudCryptPasswords(PasswordManager, ConnectionName, CloudSettings.EncryptFilesMode, CloudSettings.CryptFilesPassword) then
+			begin
+
+				exit(CLOUD_OPERATION_FAILED);
+			end;
+			if not TFileCipher.CheckPasswordGUID(CloudSettings.CryptFilesPassword, CloudSettings.CryptedGUIDFiles) then
+			begin
+				ActionsList := TDictionary<Int32, WideString>.Create;
+				ActionsList.AddOrSetValue(mrYes, PROCEED_UPDATE);
+				ActionsList.AddOrSetValue(mrNo, PROCEED_IGNORE);
+				ActionsList.AddOrSetValue(mrRetry, PROCEED_RETYPE);
+				case TAskPasswordForm.AskAction(PREFIX_ERR_PASSWORD_MATCH, ERR_PASSWORD_MATCH, ActionsList) of
+					mrYes: //store and use updated password
+						begin
+							CloudSettings.CryptedGUIDFiles := TFileCipher.CryptedGUID(CloudSettings.CryptFilesPassword);
+							TNewAccountSettings.SetSettingValueStatic(self.Settings.AccountsIniFileName, 'CryptedGUID_files', CloudSettings.CryptedGUIDFiles);
+						end;
+					mrNo:
+						begin
+							//continue without password
+						end;
+					mrRetry:
+						begin
+							PasswordActionRetry := true;
+						end;
+				end;
+				FreeAndNil(ActionsList);
+			end;
+
+		until not PasswordActionRetry;
+	end;
+
+	Logger.Log(LOG_LEVEL_CONNECT, MSGTYPE_CONNECT, 'CONNECT \%s', [ConnectionName]);
+
 	Cloud := TCloudMailRu.Create(CloudSettings, HTTPManager, Progress, Logger, Request);
 
 	if (CloudSettings.TwostepAuth) then

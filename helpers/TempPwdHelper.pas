@@ -5,43 +5,44 @@ interface
 
 uses
 	PLUGIN_TYPES,
-  SETTINGS_CONSTANTS,
+	SETTINGS_CONSTANTS,
 	SysUtils,
 	Controls,
 	FileCipher,
 	CMRConstants,
 	CMRStrings,
 	TCHelper,
-	TCPasswordmanager,
+	TCPasswordManager,
+	CloudSettings,
 	AskPassword,
 	ProxySettings;
 
-function GetAccountPassword(PasswordManager: TTCPasswordManager; const Account: WideString; var UseTCPasswordManager: Boolean; out Password: WideString): Boolean;
+function GetAccountPassword(PasswordManager: TTCPasswordManager; const Account: WideString; var CloudSettings: TCloudSettings): Boolean;
 function GetProxyPassword(PasswordManager: TTCPasswordManager; var ProxySettings: TProxySettings): Boolean;
-function InitCloudCryptPasswords(PasswordManager: TTCPasswordManager; const Account: WideString; var EncryptFilesMode: integer; out Password: WideString): Boolean;
+function InitCloudCryptPasswords(PasswordManager: TTCPasswordManager; const Account: WideString; var EncryptFilesMode: integer; var Password: WideString): Boolean;
 function StoreFileCryptPassword(PasswordManager: TTCPasswordManager; AccountName: WideString): WideString;
 
 implementation
 
-function GetAccountPassword(PasswordManager: TTCPasswordManager; const Account: WideString; var UseTCPasswordManager: Boolean; out Password: WideString): Boolean;
+function GetAccountPassword(PasswordManager: TTCPasswordManager; const Account: WideString; var CloudSettings: TCloudSettings): Boolean;
 begin
-	if UseTCPasswordManager and (PasswordManager.GetPassword(Account, Password) = FS_FILE_OK) then //пароль должен браться из TC
+	if CloudSettings.UseTCPasswordManager and (PasswordManager.GetPassword(Account, CloudSettings.Password) = FS_FILE_OK) then //пароль должен браться из TC
 		exit(true);
 
 	//иначе предполагается, что пароль взят из конфига
 
-	if Password = EmptyWideStr then //но пароля нет, не в инишнике, не в тотале
+	if CloudSettings.Password = EmptyWideStr then //но пароля нет, не в инишнике, не в тотале
 	begin
-		if mrOK <> TAskPasswordForm.AskPassword(Format(ASK_PASSWORD, [Account]), PREFIX_ASK_PASSWORD, Password, UseTCPasswordManager, false, FindTCWindow) then
+		if mrOK <> TAskPasswordForm.AskPassword(Format(ASK_PASSWORD, [Account]), PREFIX_ASK_PASSWORD, CloudSettings.Password, CloudSettings.UseTCPasswordManager, false, FindTCWindow) then
 		begin //не указали пароль в диалоге
 			exit(false); //отказались вводить пароль
 		end else begin
 			result := true;
-			if UseTCPasswordManager then
+			if CloudSettings.UseTCPasswordManager then
 			begin
-				if FS_FILE_OK = PasswordManager.SetPassword(Account, Password) then
+				if FS_FILE_OK = PasswordManager.SetPassword(Account, CloudSettings.Password) then
 				begin //TC скушал пароль, запомним в инишник галочку
-//					Logger.Log(LOG_LEVEL_DEBUG, MSGTYPE_DETAILS, PASSWORD_SAVED, [Account]);
+					//					Logger.Log(LOG_LEVEL_DEBUG, MSGTYPE_DETAILS, PASSWORD_SAVED, [Account]);
 				end;
 			end;
 		end;
@@ -74,7 +75,7 @@ begin
 			begin
 				if FS_FILE_OK = PasswordManager.SetPassword('proxy' + ProxySettings.user, ProxySettings.Password) then
 				begin //TC скушал пароль, запомним в инишник галочку
-//					Logger.Log(LOG_LEVEL_DEBUG, MSGTYPE_DETAILS, PASSWORD_SAVED, [ProxySettings.user]);
+					//					Logger.Log(LOG_LEVEL_DEBUG, MSGTYPE_DETAILS, PASSWORD_SAVED, [ProxySettings.user]);
 					TmpString := ProxySettings.Password;
 					ProxySettings.Password := EmptyWideStr;
 					ProxySettings.use_tc_password_manager := true; //чтобы не прокидывать сюда сохранение настроек прокси, галочка сохраняется в вызывающем коде
@@ -86,7 +87,7 @@ begin
 end;
 
 {Retrieves file encryption password from storage or user input}
-function InitCloudCryptPasswords(PasswordManager: TTCPasswordManager; const Account: WideString; var EncryptFilesMode: integer; out Password: WideString): Boolean;
+function InitCloudCryptPasswords(PasswordManager: TTCPasswordManager; const Account: WideString; var EncryptFilesMode: integer; var Password: WideString): Boolean;
 var
 	crypt_id: WideString;
 	StorePassword: Boolean;
