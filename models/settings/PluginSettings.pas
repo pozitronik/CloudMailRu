@@ -240,6 +240,7 @@ begin
 			exit;
 		end;
 	end;
+	Refresh;
 	IniFile.Destroy;
 end;
 
