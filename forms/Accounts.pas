@@ -189,10 +189,13 @@ implementation
 {$R *.dfm}
 
 procedure TAccountsForm.UpdateAccountsList();
+var
+	TempList: TStrings;
 begin
-
-	AccountsList.Items.AddStrings(self.CurrentAccountSettings.GetAccountsList());
-
+	TempList := TStringList.Create;
+	TempList.AddStrings(self.CurrentAccountSettings.GetAccountsList());
+	AccountsList.Items := TempList;
+	TempList.Destroy;
 	AccountsList.OnClick(self);
 end;
 
