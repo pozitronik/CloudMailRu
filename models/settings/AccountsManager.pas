@@ -22,8 +22,7 @@ type
 
 		function Accounts: TWSList;
 	public
-		constructor Create(IniFilePath: WideString); overload;
-		constructor Create(AccountSettings: TAccountsManager); overload;
+		constructor Create(IniFilePath: WideString);
 		function GetAccountsList(const AccountTypes: EAccountType = [ATPrivate, ATPublic]; const VirtualTypes: EVirtualType = []): TWSList;
 		function GetAccountSettings(Account: WideString): TAccountSettings;
 		procedure SetAccountSettings(Account: WideString; AccountSettings: TAccountSettings); overload;
@@ -56,11 +55,6 @@ end;
 constructor TAccountsManager.Create(IniFilePath: WideString);
 begin
 	self.FIniFilePath := IniFilePath;
-end;
-
-constructor TAccountsManager.Create(AccountSettings: TAccountsManager);
-begin
-	self.FIniFilePath := AccountSettings.FIniFilePath;
 end;
 
 procedure TAccountsManager.ClearPassword(Account: WideString);
