@@ -9,7 +9,7 @@ uses
 type
 	TPluginSettings = record
 		ConnectionSettings: TConnectionSettings;
-		IniPath: integer;
+		IniDir: integer; {See INI_DIR_* constants}
 		LoadSSLDLLOnlyFromPluginDir: boolean;
 		PreserveFileTime: boolean;
 		DescriptionEnabled: boolean;

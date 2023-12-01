@@ -48,9 +48,9 @@ const
 	IconsModeExternal = 3;
 	IconsModeExternalOverlay = 4;
 
-	INI_PATH_PLUGIN_DIR = 0; //use ini files only from the plugin dir
-	INI_PATH_APPDATA = 1; //use ini files only from %AppData%
-	INI_PATH_AUTO = 2; // plugin dir, if writeable, else %AppData%
+	INI_DIR_PLUGIN = 0; //use ini files only from the plugin dir
+	INI_DIR_APPDATA = 1; //use ini files only from %AppData%
+	INI_DIR_AUTO = 2; // plugin dir, if writeable, else %AppData%
 
 	EncryptModeNone = 0; //Без шифрования
 	EncryptModeAlways = 1; //С прозрачным шифрованием

@@ -127,9 +127,7 @@
         <DCCReference Include="..\helpers\TCHelper.pas"/>
         <DCCReference Include="..\models\Description.pas"/>
         <DCCReference Include="..\CMRStrings.pas"/>
-        <DCCReference Include="models\settings\PluginSettingsTest.pas"/>
-        <DCCReference Include="..\models\settings\AbstractPluginSettings.pas"/>
-        <DCCReference Include="..\models\settings\PluginSettings.pas"/>
+        <DCCReference Include="models\settings\PluginSettingsManagerTest.pas"/>
         <DCCReference Include="models\settings\AccountsManagerTest.pas"/>
         <DCCReference Include="..\helpers\ParsingHelper.pas"/>
         <DCCReference Include="..\models\WSList.pas"/>
@@ -146,6 +144,8 @@
         <DCCReference Include="..\DCPCrypt\DCPconst.pas"/>
         <DCCReference Include="..\DCPCrypt\DCPbase64.pas"/>
         <DCCReference Include="..\DCPCrypt\Hashes\DCPsha1.pas"/>
+        <DCCReference Include="..\models\settings\PluginSettingsManager.pas"/>
+        <DCCReference Include="..\models\settings\PluginSettings.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

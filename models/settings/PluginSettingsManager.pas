@@ -18,7 +18,7 @@ type
 
 	TPluginSettingsManager = class
 	private
-		ApplicationPath: WideString; // the directory of the current binary file
+		FApplicationPath: WideString; // the directory of the current binary file
 		FIniFilePath: WideString;
 		FIniFileDir: WideString; // the directory where the currently used ini files (global+accounts) are
 
@@ -26,6 +26,9 @@ type
 
 	public
 		Settings: TPluginSettings;
+		property ApplicationPath: WideString read FApplicationPath; {Required for tests}
+		property IniFileDir: WideString read FIniFileDir; {Required for tests}
+
 		property AccountsIniFileName: WideString read GetAccountsIniFileName; //Path to the accounts config file
 		property IniFilePath: WideString read FIniFilePath;
 
@@ -53,25 +56,25 @@ var
 	TempManager: TPluginSettingsManager;
 begin
 	AppDataDir := IncludeTrailingBackslash(IncludeTrailingBackslash(SysUtils.GetEnvironmentVariable('APPDATA')) + APPDATA_DIR_NAME);
-	ApplicationPath := IncludeTrailingBackslash(ExtractFilePath(GetModuleName(hInstance)));
+	FApplicationPath := IncludeTrailingBackslash(ExtractFilePath(GetModuleName(hInstance)));
 
-	if FileExists(GetUNCFilePath(ApplicationPath + PLUGIN_CONFIG_FILE_NAME)) then
+	if FileExists(GetUNCFilePath(FApplicationPath + PLUGIN_CONFIG_FILE_NAME)) then
 	begin
-		TempManager := TPluginSettingsManager.Create(GetUNCFilePath(ApplicationPath + PLUGIN_CONFIG_FILE_NAME));
+		TempManager := TPluginSettingsManager.Create(GetUNCFilePath(FApplicationPath + PLUGIN_CONFIG_FILE_NAME));
 
-		case TempManager.Settings.IniPath of
-			INI_PATH_PLUGIN_DIR:
+		case TempManager.Settings.IniDir of
+			INI_DIR_PLUGIN:
 				begin
-					self.FIniFileDir := ApplicationPath;
+					self.FIniFileDir := FApplicationPath;
 				end;
-			INI_PATH_APPDATA: //use appdata path
+			INI_DIR_APPDATA: //use appdata path
 				begin
 					self.FIniFileDir := AppDataDir;
 				end;
-			INI_PATH_AUTO: //use plugin dir if writeable
+			INI_DIR_AUTO: //use plugin dir if writeable
 				begin
-					if IsWriteable(ApplicationPath) then
-						self.FIniFileDir := ApplicationPath
+					if IsWriteable(FApplicationPath) then
+						self.FIniFileDir := FApplicationPath
 					else
 						self.FIniFileDir := AppDataDir;
 				end;
@@ -79,9 +82,9 @@ begin
 		TempManager.Free;
 
 	end else begin
-		if IsWriteable(ApplicationPath) then
+		if IsWriteable(FApplicationPath) then
 		begin
-			self.FIniFileDir := ApplicationPath;
+			self.FIniFileDir := FApplicationPath;
 		end else begin
 			self.FIniFileDir := AppDataDir;
 		end;
@@ -107,7 +110,7 @@ begin
 	IniFile := TIniFile.Create(IniFilePath);
 	with self.Settings do
 	begin
-		IniPath := IniFile.ReadInteger('Main', 'IniPath', 0);
+		IniDir := IniFile.ReadInteger('Main', 'IniPath', 0);  //TODO: Key should be renamed
 		LoadSSLDLLOnlyFromPluginDir := IniFile.ReadBool('Main', 'LoadSSLDLLOnlyFromPluginDir', False);
 		PreserveFileTime := IniFile.ReadBool('Main', 'PreserveFileTime', False);
 		DescriptionEnabled := IniFile.ReadBool('Main', 'DescriptionEnabled', False);
@@ -159,7 +162,7 @@ begin
 	IniFile := TIniFile.Create(IniFilePath);
 	with self.Settings do
 	begin
-		IniFile.WriteInteger('Main', 'IniPath', IniPath);
+		IniFile.WriteInteger('Main', 'IniPath', IniDir);
 		IniFile.WriteBool('Main', 'LoadSSLDLLOnlyFromPluginDir', LoadSSLDLLOnlyFromPluginDir);
 		IniFile.WriteBool('Main', 'PreserveFileTime', PreserveFileTime);
 		IniFile.WriteBool('Main', 'DescriptionEnabled', DescriptionEnabled);
