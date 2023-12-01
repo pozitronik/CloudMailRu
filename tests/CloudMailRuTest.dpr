@@ -41,9 +41,21 @@ uses
 	ParsingHelper in '..\helpers\ParsingHelper.pas',
 	WSList in '..\models\WSList.pas',
 	AccountSettings in '..\models\settings\AccountSettings.pas',
-	AccountsManager in '..\models\settings\AccountsManager.pas';
+	AccountsManager in '..\models\settings\AccountsManager.pas',
+	FileCipher in '..\models\cipher\FileCipher.pas',
+	CMRDirItemList in '..\models\dto\CMRDirItemList.pas',
+	CMRDirItem in '..\models\dto\CMRDirItem.pas',
+	JSONHelper in '..\helpers\JSONHelper.pas',
+	DCPblockciphers in '..\DCPCrypt\DCPblockciphers.pas',
+	DCPcrypt2 in '..\DCPCrypt\DCPcrypt2.pas',
+	DCPtypes in '..\DCPCrypt\DCPtypes.pas',
+	DCPrijndael in '..\DCPCrypt\Ciphers\DCPrijndael.pas',
+	DCPconst in '..\DCPCrypt\DCPconst.pas',
+	DCPbase64 in '..\DCPCrypt\DCPbase64.pas',
+	DCPsha1 in '..\DCPCrypt\Hashes\DCPsha1.pas';
 
 {keep comment here to protect the following conditional from being removed by the IDE when adding a unit}
+{Todo: get a look what DCPCrypt imports are unused in the main project to delete them}
 {$IFNDEF TESTINSIGHT}
 
 var

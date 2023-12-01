@@ -8,6 +8,7 @@ uses
 	TestHelper,
 	SysUtils,
 	WSList,
+	FileCipher,
 	SETTINGS_CONSTANTS,
 	DUnitX.TestFramework;
 
@@ -21,13 +22,18 @@ type
 	public
 		[Setup]
 		procedure Setup;
-
+		[Test]
+		procedure TestGetAccountSettings;
+		[Test]
+		procedure TestSetAccountSettings;
+		[Test]
+		procedure TestSetCryptedGUID;
+		[Test]
+		procedure TestClearPassword;
 		[Test]
 		procedure TestDeleteAccount;
-
 		[Test]
 		procedure TestListAccounts;
-
 		[Test]
 		procedure TestListAccountsEmpty;
 
@@ -44,6 +50,24 @@ begin
 	{cleans the previous run artefacts}
 	if FileExists(self.AppDir + FP_ACCOUNTS_INI) then
 		DeleteFile(self.AppDir + FP_ACCOUNTS_INI);
+end;
+
+procedure TAccountsManagerTest.TestClearPassword;
+var
+	TestAccountsManager: TAccountsManager;
+	TestAccountSettings: TAccountSettings;
+begin
+	TestAccountsManager := TAccountsManager.Create(self.AppDir + FP_ACCOUNTS_INI); //Uses a new file in the test exe dir
+
+	TestAccountSettings.Password := 'cjhjrnsczxj,tpmzyd;jgeceyekb,fyfy';
+	TestAccountsManager.SetAccountSettings('NEW_ACCOUNT', TestAccountSettings);
+	TestAccountsManager.Free;
+
+	TestAccountsManager := TAccountsManager.Create(self.AppDir + FP_ACCOUNTS_INI);
+	Assert.IsNotEmpty(TestAccountsManager.GetAccountSettings('NEW_ACCOUNT').Password);
+	TestAccountsManager.ClearPassword('NEW_ACCOUNT');
+	Assert.IsEmpty(TestAccountsManager.GetAccountSettings('NEW_ACCOUNT').Password);
+	TestAccountsManager.Free;
 end;
 
 procedure TAccountsManagerTest.TestDeleteAccount;
@@ -67,6 +91,22 @@ begin
 
 	TestAccountsManager := TAccountsManager.Create(self.AppDir + FP_ACCOUNTS_INI);
 	Assert.IsEmpty(TestAccountsManager.GetAccountSettings('NEW_ACCOUNT').Email);
+	TestAccountsManager.Free;
+end;
+
+procedure TAccountsManagerTest.TestGetAccountSettings;
+var
+	TestAccountsManager: TAccountsManager;
+	TestAccountSettings: TAccountSettings;
+begin
+	TestAccountsManager := TAccountsManager.Create(DataPath(FP_ACCOUNTS_INI)); //Uses a test file
+	TestAccountSettings := TestAccountsManager.GetAccountSettings('TEST_ACCOUNT_TWO');
+
+	Assert.AreEqual('test_fake_email_two@mail.ru', TestAccountSettings.Email);
+	Assert.IsTrue(TestAccountSettings.UseTCPasswordManager);
+	Assert.AreEqual('https://cloclo44.datacloudmail.ru/get/', TestAccountSettings.ShardOverride);
+	Assert.AreEqual('1MXM1IaThcWdCXnOJuCJMMWHr1wzLJMYTpsMEdJixqomW0F6C7UaOqAJKFTNMzgKvKIlB8KoWZBRWraXhU9mwF+6tIKTRr0l', TestAccountSettings.CryptedGUIDFiles);
+
 	TestAccountsManager.Free;
 end;
 
@@ -120,6 +160,42 @@ begin
 
 	Assert.IsTrue(AccountsList.Count = 0);
 
+	TestAccountsManager.Free;
+end;
+
+procedure TAccountsManagerTest.TestSetAccountSettings;
+var
+	TestAccountsManager: TAccountsManager;
+	TestAccountSettings: TAccountSettings;
+	TestAccountSettingsNew: TAccountSettings;
+begin
+	TestAccountsManager := TAccountsManager.Create(DataPath(FP_ACCOUNTS_INI)); //Uses a test file
+	TestAccountSettings := TestAccountsManager.GetAccountSettings('TEST_ACCOUNT_TWO');
+	TestAccountsManager.Free;
+
+	TestAccountsManager := TAccountsManager.Create(self.AppDir + FP_ACCOUNTS_INI); //Uses a new file in the test exe dir
+	TestAccountsManager.SetAccountSettings('NEW_ACCOUNT', TestAccountSettings);
+	TestAccountsManager.Free;
+
+	TestAccountsManager := TAccountsManager.Create(self.AppDir + FP_ACCOUNTS_INI);
+	TestAccountSettingsNew := TestAccountsManager.GetAccountSettings('NEW_ACCOUNT');
+	TestAccountsManager.Free;
+
+	Assert.AreEqual(TestAccountSettings.Email, TestAccountSettingsNew.Email);
+	Assert.AreEqual(TestAccountSettings.TwostepAuth, TestAccountSettingsNew.TwostepAuth);
+	Assert.AreEqual(TestAccountSettings.UseTCPasswordManager, TestAccountSettingsNew.UseTCPasswordManager);
+	Assert.AreEqual('', TestAccountSettingsNew.CryptedGUIDFiles);
+end;
+
+procedure TAccountsManagerTest.TestSetCryptedGUID;
+var
+	TestAccountsManager: TAccountsManager;
+begin
+	TestAccountsManager := TAccountsManager.Create(self.AppDir + FP_ACCOUNTS_INI); //Uses a new file in the test exe dir
+	Assert.IsEmpty(TestAccountsManager.GetAccountSettings('NEW_ACCOUNT').CryptedGUIDFiles);
+	TestAccountsManager.SetCryptedGUID('NEW_ACCOUNT', TFileCipher.CryptedGUID('cjhjrnsczxj,tpmzyd;jgeceyekb,fyfy'));
+
+	Assert.AreEqual(TFileCipher.CryptedGUID('cjhjrnsczxj,tpmzyd;jgeceyekb,fyfy'), TestAccountsManager.GetAccountSettings('NEW_ACCOUNT').CryptedGUIDFiles);
 	TestAccountsManager.Free;
 end;
 
