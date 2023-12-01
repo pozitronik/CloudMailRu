@@ -3,7 +3,6 @@
 interface
 
 uses
-	NewAccountSettings,
 	ConnectionSettings;
 
 type

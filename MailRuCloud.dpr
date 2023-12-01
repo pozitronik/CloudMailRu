@@ -106,7 +106,7 @@ uses
 	IniFilesHelper in 'helpers\IniFilesHelper.pas',
 	PluginSettings in 'models\settings\PluginSettings.pas',
 	AbstractPluginSettings in 'models\settings\AbstractPluginSettings.pas',
-	NewAccountSettings in 'models\settings\NewAccountSettings.pas',
+	AccountsManager in 'models\settings\AccountsManager.pas',
 	WSList in 'models\WSList.pas',
 	AccountSettings in 'models\settings\AccountSettings.pas';
 
@@ -147,7 +147,7 @@ var
 	PluginNum: integer;
 
 	CurrentSettings: TPluginSettings;
-	AccountSettings: TNewAccountSettings;
+	AccountSettings: TAccountsManager;
 	Accounts: TWSList;
 
 	CurrentListing: TCMRDirItemList;
@@ -1928,7 +1928,7 @@ begin
 	ThreadFsStatusInfo := TDictionary<DWORD, Int32>.Create;
 	ThreadFsRemoveDirSkippedPath := TDictionary<DWORD, TStringList>.Create;
 
-	AccountSettings := TNewAccountSettings.Create(CurrentSettings.AccountsIniFileName);
+	AccountSettings := TAccountsManager.Create(CurrentSettings.AccountsIniFileName);
 end;
 
 procedure FreePluginData();

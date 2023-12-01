@@ -34,7 +34,7 @@ uses
 	WSList,
 	FileCipher,
 	AccountSettings,
-	NewAccountSettings;
+	AccountsManager;
 
 type
 	TAccountsForm = class(TForm)
@@ -156,7 +156,7 @@ type
 		procedure UpdateStreamingExtensionsList();
 		procedure DeleteButtonClick(Sender: TObject);
 		procedure AccountsListKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
-		class procedure ShowAccounts(parentWindow: HWND; AccountSettings: TNewAccountSettings; Settings: TPluginSettings; PasswordManager: TTCPasswordManager; Account: WideString);
+		class procedure ShowAccounts(ParentWindow: HWND; AccountsManager: TAccountsManager; Settings: TPluginSettings; PasswordManager: TTCPasswordManager; Account: WideString);
 		procedure FormActivate(Sender: TObject);
 		procedure ProxyUserEditChange(Sender: TObject);
 		procedure GlobalSettingApplyBTNClick(Sender: TObject);
@@ -179,7 +179,7 @@ type
 		function StoreFileCryptPassword(AccountName: WideString): WideString;
 	public
 		{Public declarations}
-		AccountSettings: TNewAccountSettings;
+		AccountsManager: TAccountsManager;
 		PluginSettings: TPluginSettings;
 		PasswordManager: TTCPasswordManager;
 		SelectedAccount: WideString;
@@ -195,7 +195,7 @@ var
 	TempList: TStrings;
 begin
 	TempList := TStringList.Create;
-	TempList.AddStrings(self.AccountSettings.GetAccountsList());
+	TempList.AddStrings(self.AccountsManager.GetAccountsList());
 	AccountsList.Items := TempList;
 	TempList.Destroy;
 	AccountsList.OnClick(self);
@@ -217,7 +217,7 @@ var
 begin
 	if (AccountsList.Items.Count > 0) and (AccountsList.ItemIndex <> -1) then
 	begin
-		CurrentAccountSettings := AccountSettings.GetAccountSettings(AccountsList.Items[AccountsList.ItemIndex]);
+		CurrentAccountSettings := AccountsManager.GetAccountSettings(AccountsList.Items[AccountsList.ItemIndex]);
 		with CurrentAccountSettings do
 		begin
 			EmailEdit.Text := Email;
@@ -287,7 +287,7 @@ begin
 		end;
 	end;
 
-	AccountSettings.SetAccountSettings(CurrentAccountSettings);
+	AccountsManager.SetAccountSettings(CurrentAccountSettings);
 
 	UpdateAccountsList();
 
@@ -426,7 +426,7 @@ procedure TAccountsForm.DeleteButtonClick(Sender: TObject);
 begin
 	if (AccountsList.Items.Count > 0) and (AccountsList.ItemIndex <> -1) then
 	begin
-		AccountSettings.DeleteAccount(AccountsList.Items[AccountsList.ItemIndex]);
+		AccountsManager.DeleteAccount(AccountsList.Items[AccountsList.ItemIndex]);
 		UpdateAccountsList();
 	end;
 end;
@@ -450,21 +450,21 @@ var
 	CryptedGUID: WideString;
 	TempAccountSettings: TAccountSettings;
 begin
-	PasswordManager.parentWindow := self.Handle;
+	PasswordManager.ParentWindow := self.Handle;
 	CryptedGUID := StoreFileCryptPassword(self.SelectedAccount);
-	PasswordManager.parentWindow := FindTCWindow;
+	PasswordManager.ParentWindow := FindTCWindow;
 	if CryptedGUID <> EmptyWideStr then
 	begin
-		TempAccountSettings := AccountSettings.GetAccountSettings(self.SelectedAccount);
+		TempAccountSettings := AccountsManager.GetAccountSettings(self.SelectedAccount);
 		TempAccountSettings.CryptedGUIDFiles := CryptedGUID;
-		AccountSettings.SetAccountSettings(TempAccountSettings);
+		AccountsManager.SetAccountSettings(TempAccountSettings);
 	end;
 end;
 
 procedure TAccountsForm.FormActivate(Sender: TObject);
 begin
 	ProxyTCPwdMngrCB.Enabled := ProxyUserEdit.Text <> EmptyWideStr;
-	CenterWindow(self.parentWindow, self.Handle);
+	CenterWindow(self.ParentWindow, self.Handle);
 end;
 
 procedure TAccountsForm.FormKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -502,14 +502,14 @@ procedure TAccountsForm.NewAccountBtnClick(Sender: TObject);
 var
 	TempAccountSettings: TAccountSettings;
 begin
-	TempAccountSettings := AccountSettings.GetAccountSettings(self.SelectedAccount);
-	if mrOk = TRegistrationForm.ShowRegistration(self.parentWindow, PluginSettings.ConnectionSettings, TempAccountSettings) then
+	TempAccountSettings := AccountsManager.GetAccountSettings(self.SelectedAccount);
+	if mrOk = TRegistrationForm.ShowRegistration(self.ParentWindow, PluginSettings.ConnectionSettings, TempAccountSettings) then
 	begin
 		if TempAccountSettings.UseTCPasswordManager then //просим TC сохранить пароль
 			if FS_FILE_OK <> PasswordManager.SetPassword(TempAccountSettings.User, TempAccountSettings.Password) then
 				exit(); //Не удалось сохранить пароль/нажали отмену
 
-		AccountSettings.SetAccountSettings(TempAccountSettings);
+		AccountsManager.SetAccountSettings(TempAccountSettings);
 		UpdateAccountsList();
 	end;
 end;
@@ -525,14 +525,14 @@ begin
 	AccountsPanel.Visible := not PublicAccountCB.Checked;
 end;
 
-class procedure TAccountsForm.ShowAccounts(parentWindow: HWND; AccountSettings: TNewAccountSettings; Settings: TPluginSettings; PasswordManager: TTCPasswordManager; Account: WideString);
+class procedure TAccountsForm.ShowAccounts(ParentWindow: HWND; AccountsManager: TAccountsManager; Settings: TPluginSettings; PasswordManager: TTCPasswordManager; Account: WideString);
 var
 	AccountsForm: TAccountsForm;
 begin
 	try
 		AccountsForm := TAccountsForm.Create(nil);
-		AccountsForm.parentWindow := parentWindow;
-		AccountsForm.AccountSettings := AccountSettings;
+		AccountsForm.ParentWindow := ParentWindow;
+		AccountsForm.AccountsManager := AccountsManager;
 		AccountsForm.PluginSettings := Settings;
 		AccountsForm.PasswordManager := PasswordManager;
 		AccountsForm.SelectedAccount := EmptyWideStr;
@@ -623,7 +623,7 @@ begin
 				exit;
 			end;
 	end;
-	if mrOk = TAskPasswordForm.AskPassword(Format(ASK_ENCRYPTION_PASSWORD, [Verb]), PREFIX_ASK_NEW_PASSWORD, CurrentPassword, StorePassword, true, PasswordManager.parentWindow) then
+	if mrOk = TAskPasswordForm.AskPassword(Format(ASK_ENCRYPTION_PASSWORD, [Verb]), PREFIX_ASK_NEW_PASSWORD, CurrentPassword, StorePassword, true, PasswordManager.ParentWindow) then
 	begin
 		PasswordManager.SetPassword(crypt_id, CurrentPassword);
 		result := TFileCipher.CryptedGUID(CurrentPassword);

@@ -18,7 +18,7 @@ uses
 	SETTINGS_CONSTANTS,
 	PLUGIN_TYPES,
 	AccountSettings,
-	NewAccountSettings,
+	AccountsManager,
 	PluginSettings,
 	CloudSettings,
 	TCPasswordManager,
@@ -105,13 +105,13 @@ var
 	LoginMethod: integer;
 	ActionsList: TDictionary<Int32, WideString>;
 	PasswordActionRetry: Boolean;
-	AccountSettingsHandler: TNewAccountSettings;
+	AccountsManager: TAccountsManager;
 	AccountSettings: TAccountSettings;
 begin
 	Result := CLOUD_OPERATION_OK;
-	AccountSettingsHandler := TNewAccountSettings.Create(self.Settings.AccountsIniFileName);
-	AccountSettings := AccountSettingsHandler.GetAccountSettings(ConnectionName);
-	AccountSettingsHandler.Free;
+	AccountsManager := TAccountsManager.Create(self.Settings.AccountsIniFileName);
+	AccountSettings := AccountsManager.GetAccountSettings(ConnectionName);
+	AccountsManager.Free;
 	with CloudSettings do
 	begin
 		{proxify plugin settings to the cloud settings}
@@ -161,9 +161,9 @@ begin
 					mrYes: //store and use updated password
 						begin
 							CloudSettings.CryptedGUIDFiles := TFileCipher.CryptedGUID(CloudSettings.CryptFilesPassword);
-							AccountSettingsHandler := TNewAccountSettings.Create(self.Settings.AccountsIniFileName);
-							AccountSettingsHandler.SetCryptedGUID(ConnectionName, CloudSettings.CryptedGUIDFiles);
-							AccountSettingsHandler.Free;
+							AccountsManager := TAccountsManager.Create(self.Settings.AccountsIniFileName);
+							AccountsManager.SetCryptedGUID(ConnectionName, CloudSettings.CryptedGUIDFiles);
+							AccountsManager.Free;
 						end;
 					mrNo:
 						begin
@@ -236,7 +236,7 @@ end;
  Note: the metod saves password to TC storage and removes it from config, if current option set for the account}
 function TConnectionManager.GetAccountPassword(const ConnectionName: WideString; var CloudSettings: TCloudSettings): Boolean;
 var
-	AccountsManager: TNewAccountSettings;
+	AccountsManager: TAccountsManager;
 begin
 	if CloudSettings.UseTCPasswordManager and (PasswordManager.GetPassword(ConnectionName, CloudSettings.Password) = FS_FILE_OK) then //пароль должен браться из TC
 		exit(true);
@@ -254,7 +254,7 @@ begin
 				if FS_FILE_OK = PasswordManager.SetPassword(ConnectionName, CloudSettings.Password) then
 				begin //Now the account password stored in TC, clear password from the ini file
 					Logger.Log(LOG_LEVEL_DEBUG, MSGTYPE_DETAILS, PASSWORD_SAVED, [ConnectionName]);
-					AccountsManager := TNewAccountSettings.Create(self.Settings.AccountsIniFileName);
+					AccountsManager := TAccountsManager.Create(self.Settings.AccountsIniFileName);
 					AccountsManager.ClearPassword(ConnectionName);
 					AccountsManager.Free;
 				end;

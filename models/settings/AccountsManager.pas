@@ -1,4 +1,4 @@
-﻿unit NewAccountSettings;
+﻿unit AccountsManager;
 
 interface
 
@@ -16,14 +16,14 @@ uses
 	AccountSettings;
 
 type
-	TNewAccountSettings = class //todo: TAccountManager or smth
+	TAccountsManager = class
 	private
 		FIniFilePath: WideString;
 
 		function Accounts: TWSList;
 	public
 		constructor Create(IniFilePath: WideString); overload;
-		constructor Create(AccountSettings: TNewAccountSettings); overload;
+		constructor Create(AccountSettings: TAccountsManager); overload;
 		function GetAccountsList(const AccountTypes: EAccountType = [ATPrivate, ATPublic]; const VirtualTypes: EVirtualType = []): TWSList;
 		function GetAccountSettings(Account: WideString): TAccountSettings;
 		procedure SetAccountSettings(Account: WideString; AccountSettings: TAccountSettings); overload;
@@ -38,7 +38,7 @@ implementation
 
 {TNewAccountSettings}
 
-function TNewAccountSettings.Accounts: TWSList;
+function TAccountsManager.Accounts: TWSList;
 var
 	AccountsList: TStringList; {Todo: use a direct method to not to use TStrings}
 	IniFile: TIniFile;
@@ -53,17 +53,17 @@ begin
 		Result[I] := AccountsList[I];
 end;
 
-constructor TNewAccountSettings.Create(IniFilePath: WideString);
+constructor TAccountsManager.Create(IniFilePath: WideString);
 begin
 	self.FIniFilePath := IniFilePath;
 end;
 
-constructor TNewAccountSettings.Create(AccountSettings: TNewAccountSettings);
+constructor TAccountsManager.Create(AccountSettings: TAccountsManager);
 begin
 	self.FIniFilePath := AccountSettings.FIniFilePath;
 end;
 
-procedure TNewAccountSettings.ClearPassword(Account: WideString);
+procedure TAccountsManager.ClearPassword(Account: WideString);
 var
 	TempAccountSettings: TAccountSettings;
 begin
@@ -72,7 +72,7 @@ begin
 	self.SetAccountSettings(Account, TempAccountSettings);
 end;
 
-procedure TNewAccountSettings.DeleteAccount(Account: WideString);
+procedure TAccountsManager.DeleteAccount(Account: WideString);
 var
 	IniFile: TIniFile;
 begin
@@ -81,7 +81,7 @@ begin
 	IniFile.Destroy;
 end;
 
-function TNewAccountSettings.GetAccountSettings(Account: WideString): TAccountSettings;
+function TAccountsManager.GetAccountSettings(Account: WideString): TAccountSettings;
 var
 	IniFile: TIniFile;
 begin
@@ -106,7 +106,7 @@ begin
 	IniFile.Destroy;
 end;
 
-function TNewAccountSettings.GetAccountsList(const AccountTypes: EAccountType = [ATPrivate, ATPublic]; const VirtualTypes: EVirtualType = []): TWSList;
+function TAccountsManager.GetAccountsList(const AccountTypes: EAccountType = [ATPrivate, ATPublic]; const VirtualTypes: EVirtualType = []): TWSList;
 var
 	CurrentAccount: WideString;
 	TempAccountSettings: TAccountSettings;
@@ -132,12 +132,12 @@ begin
 
 end;
 
-procedure TNewAccountSettings.SetAccountSettings(AccountSettings: TAccountSettings);
+procedure TAccountsManager.SetAccountSettings(AccountSettings: TAccountSettings);
 begin
 	SetAccountSettings(AccountSettings.User, AccountSettings);
 end;
 
-procedure TNewAccountSettings.SetCryptedGUID(Account, GUID: WideString);
+procedure TAccountsManager.SetCryptedGUID(Account, GUID: WideString);
 var
 	TempAccountSettings: TAccountSettings;
 begin
@@ -146,7 +146,7 @@ begin
 	self.SetAccountSettings(Account, TempAccountSettings);
 end;
 
-procedure TNewAccountSettings.SetAccountSettings(Account: WideString; AccountSettings: TAccountSettings);
+procedure TAccountsManager.SetAccountSettings(Account: WideString; AccountSettings: TAccountSettings);
 var
 	IniFile: TIniFile;
 begin
