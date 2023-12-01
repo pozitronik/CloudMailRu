@@ -23,7 +23,7 @@ uses
 	CMRStrings,
 	SETTINGS_CONSTANTS,
 	PLUGIN_TYPES,
-	NewAccountSettings,
+	AccountSettings,
 	ConnectionSettings,
 	Vcl.Imaging.JPEG;
 

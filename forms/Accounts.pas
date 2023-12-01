@@ -33,6 +33,7 @@ uses
 	PluginSettings,
 	WSList,
 	FileCipher,
+	AccountSettings,
 	NewAccountSettings;
 
 type

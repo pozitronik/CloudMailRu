@@ -17,6 +17,7 @@ uses
 	Vcl.Controls,
 	SETTINGS_CONSTANTS,
 	PLUGIN_TYPES,
+	AccountSettings,
 	NewAccountSettings,
 	PluginSettings,
 	CloudSettings,

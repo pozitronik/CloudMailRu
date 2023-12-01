@@ -276,9 +276,9 @@
         <DCCReference Include="helpers\IniFilesHelper.pas"/>
         <DCCReference Include="models\settings\PluginSettings.pas"/>
         <DCCReference Include="models\settings\AbstractPluginSettings.pas"/>
-        <DCCReference Include="models\settings\AbstractAccountSettings.pas"/>
         <DCCReference Include="models\settings\NewAccountSettings.pas"/>
         <DCCReference Include="models\WSList.pas"/>
+        <DCCReference Include="models\settings\AccountSettings.pas"/>
         <RcItem Include="icons\icon.ico">
             <ResourceType>ICON</ResourceType>
             <ResourceId>base_icon</ResourceId>

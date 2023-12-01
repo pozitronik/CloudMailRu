@@ -14,7 +14,7 @@ uses
 	CMRStrings,
 	CMRConstants,
 	ConnectionSettings,
-	NewAccountSettings,
+	AccountSettings,
 	AbstractPluginSettings;
 
 type

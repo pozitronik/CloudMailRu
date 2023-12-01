@@ -13,39 +13,7 @@ uses
 	CMRStrings,
 	SETTINGS_CONSTANTS,
 	WSList,
-	AbstractAccountSettings;
-
-type
-
-	EAccountType = set of (ATPrivate, ATPublic);
-	EVirtualType = set of (VTTrash, VTShared, VTInvites);
-
-	TAccountSettings = record
-		Email: WideString;
-		Password: WideString;
-		UseTCPasswordManager: Boolean;
-		TwostepAuth: Boolean;
-		UnlimitedFileSize: Boolean;
-		SplitLargeFiles: Boolean;
-		PublicAccount: Boolean;
-		PublicUrl: WideString;
-		Description: WideString;
-		EncryptFilesMode: Integer;
-		EncryptFileNames: Boolean;
-		ShardOverride: WideString; //hidden option, allows to override working shard for account
-		UploadUrlOverride: WideString; //hidden option, alows to override upload server for account
-		CryptedGUIDFiles: WideString; //Шифрованная строка для проверки пароля шифрования
-	private
-		FUser: WideString;
-		FDomain: WideString;
-		function GetAccountType: EAccountType;
-		function GetIsRemoteDescriptionsSupported: Boolean;
-	public
-		property User: WideString read FUser;
-		property Domain: WideString read FDomain;
-		property IsRemoteDescriptionsSupported: Boolean read GetIsRemoteDescriptionsSupported;
-		property AccountType: EAccountType read GetAccountType;
-	end;
+	AccountSettings;
 
 type
 	TNewAccountSettings = class //todo: TAccountManager or smth
@@ -134,7 +102,6 @@ begin
 		ShardOverride := IniFile.ReadString(Account, 'shard_override', EmptyWideStr);
 		UploadUrlOverride := IniFile.ReadString(Account, 'upload_url_override', EmptyWideStr);
 		CryptedGUIDFiles := IniFile.ReadString(Account, 'CryptedGUID_files', EmptyWideStr);
-		ExtractEmailParts(Email, FUser, FDomain);
 	end;
 	IniFile.Destroy;
 end;
@@ -149,9 +116,9 @@ begin
 	for CurrentAccount in self.Accounts do
 	begin
 		TempAccountSettings := self.GetAccountSettings(CurrentAccount);
-		if TempAccountSettings.GetAccountType <= AccountTypes then {current account type is in requested accounts types}
+		if TempAccountSettings.AccountType <= AccountTypes then {current account type is in requested accounts types}
 			Result.Add(CurrentAccount);
-		if [ATPrivate] = TempAccountSettings.GetAccountType then {current account is private}
+		if [ATPrivate] = TempAccountSettings.AccountType then {current account is private}
 		begin
 			if VTTrash in VirtualTypes then
 				Result.Add(CurrentAccount + TrashPostfix);
@@ -199,20 +166,6 @@ begin
 		IniFile.WriteBool(Account, 'encrypt_filenames', EncryptFileNames);
 		IniFile.Destroy;
 	end;
-end;
-
-{TAccountSettings}
-
-function TAccountSettings.GetAccountType: EAccountType;
-begin
-	if self.PublicAccount then
-		exit([ATPublic]);
-	exit([ATPrivate]);
-end;
-
-function TAccountSettings.GetIsRemoteDescriptionsSupported: Boolean;
-begin
-	Result := not((EncryptFilesMode <> EncryptModeNone) and EncryptFileNames);
 end;
 
 end.
