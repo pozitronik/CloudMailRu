@@ -20,46 +20,50 @@ type
 	EAccountType = set of (ATPrivate, ATPublic);
 	EVirtualType = set of (VTTrash, VTShared, VTInvites);
 
-type
-	TNewAccountSettings = class(TAbstractAccountSettings)
+	TAccountSettings = record
+		Email: WideString;
+		Password: WideString;
+		UseTCPasswordManager: Boolean;
+		TwostepAuth: Boolean;
+		UnlimitedFileSize: Boolean;
+		SplitLargeFiles: Boolean;
+		PublicAccount: Boolean;
+		PublicUrl: WideString;
+		Description: WideString;
+		EncryptFilesMode: Integer;
+		EncryptFileNames: Boolean;
+		ShardOverride: WideString; //hidden option, allows to override working shard for account
+		UploadUrlOverride: WideString; //hidden option, alows to override upload server for account
+		CryptedGUIDFiles: WideString; //Шифрованная строка для проверки пароля шифрования
 	private
-		FIniFilePath: WideString;
-		FAccount: WideString;
 		FUser: WideString;
 		FDomain: WideString;
-
-		function GetAccount: WideString;
-		function GetIsRemoteDescriptionsSupported: Boolean; overload;
-		function GetIsInAccount: Boolean;
-		procedure SetAccount(const Value: WideString);
-		function Accounts: TWSList;
 		function GetAccountType: EAccountType;
+		function GetIsRemoteDescriptionsSupported: Boolean;
 	public
-
-		constructor Create(IniFilePath: WideString; Account: WideString); overload;
-		constructor Create(IniFilePath: WideString); overload;
-		constructor Create(AccountSettings: TNewAccountSettings; Account: WideString); overload;
-		constructor Create(AccountSettings: TNewAccountSettings); overload;
-		procedure Refresh();
-		property Account: WideString read GetAccount write SetAccount;
-		property IsInAccount: Boolean read GetIsInAccount;
 		property User: WideString read FUser;
 		property Domain: WideString read FDomain;
 		property IsRemoteDescriptionsSupported: Boolean read GetIsRemoteDescriptionsSupported;
 		property AccountType: EAccountType read GetAccountType;
+	end;
 
-		procedure DeleteAccount(Account: WideString);
+type
+	TNewAccountSettings = class //todo: TAccountManager or smth
+	private
+		FIniFilePath: WideString;
+
+		function Accounts: TWSList;
+	public
+		constructor Create(IniFilePath: WideString); overload;
+		constructor Create(AccountSettings: TNewAccountSettings); overload;
 		function GetAccountsList(const AccountTypes: EAccountType = [ATPrivate, ATPublic]; const VirtualTypes: EVirtualType = []): TWSList;
-		procedure SetSettingValue(OptionName: WideString; OptionValue: Variant); override;
-		procedure Save(); override;
+		function GetAccountSettings(Account: WideString): TAccountSettings;
+		procedure SetAccountSettings(Account: WideString; AccountSettings: TAccountSettings); overload;
+		procedure SetAccountSettings(AccountSettings: TAccountSettings); overload;
+		procedure DeleteAccount(Account: WideString);
+		procedure SetCryptedGUID(Account: WideString; GUID: WideString);
+		procedure ClearPassword(Account: WideString); //clears the account password from INI for account
 
-		{TODO: TEMP STUB methods}
-
-		function GetIsRemoteDescriptionsSupported(Account: WideString): Boolean; overload;
-		function GetDescription(Account: WideString): WideString;
-		function GetIsPublic(Account: WideString): Boolean;
-		class procedure ClearPassword(IniFilePath: WideString; Account: WideString); //clears the account password from INI for account
-		class procedure SetSettingValueStatic(IniFilePath: WideString; OptionName: WideString; OptionValue: Variant); //todo: it is a temp method
 	end;
 
 implementation
@@ -84,39 +88,20 @@ end;
 constructor TNewAccountSettings.Create(IniFilePath: WideString);
 begin
 	self.FIniFilePath := IniFilePath;
-	self.FSaveOnChange := False;
-end;
-
-constructor TNewAccountSettings.Create(AccountSettings: TNewAccountSettings; Account: WideString);
-begin
-	self.FIniFilePath := AccountSettings.FIniFilePath;
-	self.FSaveOnChange := AccountSettings.SaveOnChange;
-	self.Account := Account;
-	Refresh();
-end;
-
-constructor TNewAccountSettings.Create(IniFilePath, Account: WideString);
-begin
-	self.FIniFilePath := IniFilePath;
-	self.FSaveOnChange := False;
-	self.Account := Account;
-	Refresh();
-end;
-
-class procedure TNewAccountSettings.ClearPassword(IniFilePath: WideString; Account: WideString);
-var
-	TempAccountSettings: TNewAccountSettings;
-begin
-	TempAccountSettings := TNewAccountSettings.Create(IniFilePath, Account);
-	TempAccountSettings.SetSettingValue('password', null);
-	TempAccountSettings.Free;
 end;
 
 constructor TNewAccountSettings.Create(AccountSettings: TNewAccountSettings);
 begin
 	self.FIniFilePath := AccountSettings.FIniFilePath;
-	self.FSaveOnChange := AccountSettings.SaveOnChange;
-	self.Account := Account;
+end;
+
+procedure TNewAccountSettings.ClearPassword(Account: WideString);
+var
+	TempAccountSettings: TAccountSettings;
+begin
+	TempAccountSettings := self.GetAccountSettings(Account);
+	TempAccountSettings.Password := EmptyWideStr;
+	self.SetAccountSettings(Account, TempAccountSettings);
 end;
 
 procedure TNewAccountSettings.DeleteAccount(Account: WideString);
@@ -128,22 +113,43 @@ begin
 	IniFile.Destroy;
 end;
 
-function TNewAccountSettings.GetAccount: WideString;
+function TNewAccountSettings.GetAccountSettings(Account: WideString): TAccountSettings;
+var
+	IniFile: TIniFile;
 begin
-	Result := FAccount;
+	IniFile := TIniFile.Create(FIniFilePath);
+	with Result do
+	begin
+		Email := IniFile.ReadString(Account, 'email', EmptyWideStr);
+		Password := IniFile.ReadString(Account, 'password', EmptyWideStr);
+		UseTCPasswordManager := IniFile.ReadBool(Account, 'tc_pwd_mngr', False);
+		UnlimitedFileSize := IniFile.ReadBool(Account, 'unlimited_filesize', False);
+		SplitLargeFiles := IniFile.ReadBool(Account, 'split_large_files', False);
+		TwostepAuth := IniFile.ReadBool(Account, 'twostep_auth', False);
+		PublicAccount := IniFile.ReadBool(Account, 'public_account', False);
+		PublicUrl := IniFile.ReadString(Account, 'public_url', EmptyWideStr);
+		Description := IniFile.ReadString(Account, 'description', EmptyWideStr);
+		EncryptFilesMode := IniFile.ReadInteger(Account, 'encrypt_files_mode', EncryptModeNone);
+		EncryptFileNames := IniFile.ReadBool(Account, 'encrypt_filenames', False);
+		ShardOverride := IniFile.ReadString(Account, 'shard_override', EmptyWideStr);
+		UploadUrlOverride := IniFile.ReadString(Account, 'upload_url_override', EmptyWideStr);
+		CryptedGUIDFiles := IniFile.ReadString(Account, 'CryptedGUID_files', EmptyWideStr);
+		ExtractEmailParts(Email, FUser, FDomain);
+	end;
+	IniFile.Destroy;
 end;
 
 function TNewAccountSettings.GetAccountsList(const AccountTypes: EAccountType = [ATPrivate, ATPublic]; const VirtualTypes: EVirtualType = []): TWSList;
 var
 	CurrentAccount: WideString;
-	TempAccountSettings: TNewAccountSettings;
+	TempAccountSettings: TAccountSettings;
 begin
 	Result.Clear;
-	TempAccountSettings := TNewAccountSettings.Create(self);
+
 	for CurrentAccount in self.Accounts do
 	begin
-		TempAccountSettings.Account := CurrentAccount;
-		if TempAccountSettings.GetAccountType <= AccountTypes then {current account tyep is in requested accounts types}
+		TempAccountSettings := self.GetAccountSettings(CurrentAccount);
+		if TempAccountSettings.GetAccountType <= AccountTypes then {current account type is in requested accounts types}
 			Result.Add(CurrentAccount);
 		if [ATPrivate] = TempAccountSettings.GetAccountType then {current account is private}
 		begin
@@ -156,147 +162,57 @@ begin
 		end;
 
 	end;
-	TempAccountSettings.Free;
+
 end;
 
-function TNewAccountSettings.GetAccountType: EAccountType;
+procedure TNewAccountSettings.SetAccountSettings(AccountSettings: TAccountSettings);
+begin
+	SetAccountSettings(AccountSettings.User, AccountSettings);
+end;
+
+procedure TNewAccountSettings.SetCryptedGUID(Account, GUID: WideString);
+var
+	TempAccountSettings: TAccountSettings;
+begin
+	TempAccountSettings := self.GetAccountSettings(Account);
+	TempAccountSettings.CryptedGUIDFiles := GUID;
+	self.SetAccountSettings(Account, TempAccountSettings);
+end;
+
+procedure TNewAccountSettings.SetAccountSettings(Account: WideString; AccountSettings: TAccountSettings);
+var
+	IniFile: TIniFile;
+begin
+	with AccountSettings do
+	begin
+		IniFile := TIniFile.Create(FIniFilePath);
+		IniFile.WriteString(Account, 'email', Email);
+		IniFile.WriteString(Account, 'password', Password);
+		IniFile.WriteBool(Account, 'tc_pwd_mngr', UseTCPasswordManager);
+		IniFile.WriteBool(Account, 'unlimited_filesize', UnlimitedFileSize);
+		IniFile.WriteBool(Account, 'split_large_files', SplitLargeFiles);
+		IniFile.WriteBool(Account, 'twostep_auth', TwostepAuth);
+		IniFile.WriteBool(Account, 'public_account', PublicAccount);
+		IniFile.WriteString(Account, 'public_url', PublicUrl);
+		IniFile.WriteString(Account, 'description', Description);
+		IniFile.WriteInteger(Account, 'encrypt_files_mode', EncryptFilesMode);
+		IniFile.WriteBool(Account, 'encrypt_filenames', EncryptFileNames);
+		IniFile.Destroy;
+	end;
+end;
+
+{TAccountSettings}
+
+function TAccountSettings.GetAccountType: EAccountType;
 begin
 	if self.PublicAccount then
 		exit([ATPublic]);
 	exit([ATPrivate]);
 end;
 
-function TNewAccountSettings.GetDescription(Account: WideString): WideString;
-var
-	TempAccountSettings: TNewAccountSettings;
+function TAccountSettings.GetIsRemoteDescriptionsSupported: Boolean;
 begin
-	TempAccountSettings := TNewAccountSettings.Create(self);
-	Result := TempAccountSettings.Description;
-	TempAccountSettings.Free;
-end;
-
-function TNewAccountSettings.GetIsInAccount: Boolean;
-begin
-	Result := FAccount <> EmptyWideStr;
-end;
-
-function TNewAccountSettings.GetIsPublic(Account: WideString): Boolean;
-var
-	TempAccountSettings: TNewAccountSettings;
-begin
-	TempAccountSettings := TNewAccountSettings.Create(self);
-	Result := TempAccountSettings.PublicAccount;
-	TempAccountSettings.Free;
-end;
-
-function TNewAccountSettings.GetIsRemoteDescriptionsSupported: Boolean;
-begin
-	Result := not((FEncryptFilesMode <> EncryptModeNone) and FEncryptFileNames)
-end;
-
-function TNewAccountSettings.GetIsRemoteDescriptionsSupported(Account: WideString): Boolean;
-var
-	TempAccountSettings: TNewAccountSettings;
-begin
-	TempAccountSettings := TNewAccountSettings.Create(self);
-	Result := TempAccountSettings.GetIsRemoteDescriptionsSupported;
-	TempAccountSettings.Free;
-end;
-
-procedure TNewAccountSettings.Refresh;
-var
-	IniFile: TIniFile;
-begin
-	if not IsInAccount then
-		exit;
-	IniFile := TIniFile.Create(FIniFilePath);
-
-	FEmail := IniFile.ReadString(Account, 'email', EmptyWideStr);
-	FPassword := IniFile.ReadString(Account, 'password', EmptyWideStr);
-	FUseTCPasswordManager := IniFile.ReadBool(Account, 'tc_pwd_mngr', False);
-	FUnlimitedFilesize := IniFile.ReadBool(Account, 'unlimited_filesize', False);
-	FSplitLargeFiles := IniFile.ReadBool(Account, 'split_large_files', False);
-	FTwostepAuth := IniFile.ReadBool(Account, 'twostep_auth', False);
-	FPublicAccount := IniFile.ReadBool(Account, 'public_account', False);
-	FPublicUrl := IniFile.ReadString(Account, 'public_url', EmptyWideStr);
-	FDescription := IniFile.ReadString(Account, 'description', EmptyWideStr);
-	FEncryptFilesMode := IniFile.ReadInteger(Account, 'encrypt_files_mode', EncryptModeNone);
-	FEncryptFileNames := IniFile.ReadBool(Account, 'encrypt_filenames', False);
-	FShardOverride := IniFile.ReadString(Account, 'shard_override', EmptyWideStr);
-	FUploadUrlOverride := IniFile.ReadString(Account, 'upload_url_override', EmptyWideStr);
-	FCryptedGUIDFiles := IniFile.ReadString(Account, 'CryptedGUID_files', EmptyWideStr);
-
-	IniFile.Destroy;
-
-	ExtractEmailParts(FEmail, FUser, FDomain);
-end;
-
-procedure TNewAccountSettings.Save;
-var
-	IniFile: TIniFile;
-begin
-	if not IsInAccount then
-		exit;
-	IniFile := TIniFile.Create(FIniFilePath);
-	IniFile.WriteString(Account, 'email', FEmail);
-	IniFile.WriteString(Account, 'password', FPassword);
-	IniFile.WriteBool(Account, 'tc_pwd_mngr', FUseTCPasswordManager);
-	IniFile.WriteBool(Account, 'unlimited_filesize', FUnlimitedFilesize);
-	IniFile.WriteBool(Account, 'split_large_files', FSplitLargeFiles);
-	IniFile.WriteBool(Account, 'twostep_auth', FTwostepAuth);
-	IniFile.WriteBool(Account, 'public_account', FPublicAccount);
-	IniFile.WriteString(Account, 'public_url', FPublicUrl);
-	IniFile.WriteString(Account, 'description', FDescription);
-	IniFile.WriteInteger(Account, 'encrypt_files_mode', FEncryptFilesMode);
-	IniFile.WriteBool(Account, 'encrypt_filenames', FEncryptFileNames);
-	IniFile.Destroy;
-end;
-
-procedure TNewAccountSettings.SetAccount(const Value: WideString);
-begin
-	FAccount := Value;
-	Refresh();
-end;
-
-class procedure TNewAccountSettings.SetSettingValueStatic(IniFilePath, OptionName: WideString; OptionValue: Variant);
-var
-	TempAccountSettings: TNewAccountSettings;
-begin
-	TempAccountSettings := TNewAccountSettings.Create(IniFilePath);
-	TempAccountSettings.SetSettingValue(OptionName, OptionValue);
-	TempAccountSettings.Free;
-end;
-
-{TODO: this method violates the model abstraction boundaries and should not be used. It'll be removed after refactoring.}
-procedure TNewAccountSettings.SetSettingValue(OptionName: WideString; OptionValue: Variant);
-var
-	IniFile: TIniFile;
-	basicType: Integer;
-begin
-	IniFile := TIniFile.Create(FIniFilePath);
-
-	basicType := VarType(OptionValue);
-	try
-		case basicType of
-			varNull:
-				IniFile.DeleteKey(Account, OptionName); //remove value in that case
-			varInteger:
-				IniFile.WriteInteger(Account, OptionName, OptionValue);
-			varString, varUString, varOleStr:
-				IniFile.WriteString(Account, OptionName, OptionValue);
-			varBoolean:
-				IniFile.WriteBool(Account, OptionName, OptionValue);
-		end;
-	except
-		On E: EIniFileException do
-		begin
-			MsgBox(0, E.Message, ERR_INI_GENERAL, MB_ICONERROR + MB_OK);
-			IniFile.Destroy;
-			exit;
-		end;
-	end;
-	Refresh;
-	IniFile.Destroy;
+	Result := not((EncryptFilesMode <> EncryptModeNone) and EncryptFileNames);
 end;
 
 end.

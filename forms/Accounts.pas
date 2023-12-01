@@ -178,7 +178,7 @@ type
 		function StoreFileCryptPassword(AccountName: WideString): WideString;
 	public
 		{Public declarations}
-		CurrentAccountSettings: TNewAccountSettings;
+		AccountSettings: TNewAccountSettings;
 		PluginSettings: TPluginSettings;
 		PasswordManager: TTCPasswordManager;
 		SelectedAccount: WideString;
@@ -194,7 +194,7 @@ var
 	TempList: TStrings;
 begin
 	TempList := TStringList.Create;
-	TempList.AddStrings(self.CurrentAccountSettings.GetAccountsList());
+	TempList.AddStrings(self.AccountSettings.GetAccountsList());
 	AccountsList.Items := TempList;
 	TempList.Destroy;
 	AccountsList.OnClick(self);
@@ -211,24 +211,27 @@ begin
 end;
 
 procedure TAccountsForm.AccountsListClick(Sender: TObject);
+var
+	CurrentAccountSettings: TAccountSettings;
 begin
 	if (AccountsList.Items.Count > 0) and (AccountsList.ItemIndex <> -1) then
 	begin
-
-		CurrentAccountSettings.Account := AccountsList.Items[AccountsList.ItemIndex];
-		AccountNameEdit.Text := CurrentAccountSettings.Account;
-		EmailEdit.Text := CurrentAccountSettings.Email;
-		PasswordEdit.Text := CurrentAccountSettings.Password;
-		UseTCPwdMngrCB.Checked := CurrentAccountSettings.UseTCPasswordManager;
-		UnlimitedFileSizeCB.Checked := CurrentAccountSettings.UnlimitedFilesize;
-		SplitLargeFilesCB.Checked := CurrentAccountSettings.SplitLargeFiles;
-		PublicAccountCB.Checked := CurrentAccountSettings.PublicAccount;
-		PublicUrlEdit.Text := CurrentAccountSettings.PublicUrl;
-		TwostepAuthCB.Checked := CurrentAccountSettings.TwostepAuth;
-		EncryptFilesCombo.ItemIndex := CurrentAccountSettings.EncryptFilesMode;
-		EncryptFilenamesCB.Checked := CurrentAccountSettings.EncryptFilenames;
-		self.SelectedAccount := CurrentAccountSettings.Account;
-		EncryptFilesComboChange(nil);
+		CurrentAccountSettings := AccountSettings.GetAccountSettings(AccountsList.Items[AccountsList.ItemIndex]);
+		with CurrentAccountSettings do
+		begin
+			EmailEdit.Text := Email;
+			PasswordEdit.Text := Password;
+			UseTCPwdMngrCB.Checked := UseTCPasswordManager;
+			UnlimitedFileSizeCB.Checked := UnlimitedFilesize;
+			SplitLargeFilesCB.Checked := SplitLargeFiles;
+			PublicAccountCB.Checked := PublicAccount;
+			PublicUrlEdit.Text := PublicUrl;
+			TwostepAuthCB.Checked := TwostepAuth;
+			EncryptFilesCombo.ItemIndex := EncryptFilesMode;
+			EncryptFilenamesCB.Checked := EncryptFilenames;
+			self.SelectedAccount := User;
+			EncryptFilesComboChange(nil);
+		end;
 	end else begin
 		AccountNameEdit.Text := EmptyWideStr;
 		EmailEdit.Text := EmptyWideStr;
@@ -246,25 +249,28 @@ begin
 end;
 
 procedure TAccountsForm.ApplyButtonClick(Sender: TObject);
+var
+	CurrentAccountSettings: TAccountSettings;
 begin
 	if (AccountNameEdit.Text = EmptyWideStr) then
 		exit();
-	CurrentAccountSettings.Account := AccountNameEdit.Text;
-	CurrentAccountSettings.Email := EmailEdit.Text;
-	CurrentAccountSettings.Password := PasswordEdit.Text;
-	CurrentAccountSettings.UseTCPasswordManager := UseTCPwdMngrCB.Checked;
-	CurrentAccountSettings.UnlimitedFilesize := UnlimitedFileSizeCB.Checked;
-	CurrentAccountSettings.SplitLargeFiles := SplitLargeFilesCB.Checked;
-	CurrentAccountSettings.TwostepAuth := TwostepAuthCB.Checked;
-	CurrentAccountSettings.PublicAccount := PublicAccountCB.Checked;
-	CurrentAccountSettings.PublicUrl := PublicUrlEdit.Text;
-	CurrentAccountSettings.EncryptFilesMode := EncryptFilesCombo.ItemIndex;
-	CurrentAccountSettings.EncryptFilenames := EncryptFilenamesCB.Checked;
-
+	with CurrentAccountSettings do
+	begin
+		Email := EmailEdit.Text;
+		Password := PasswordEdit.Text;
+		UseTCPasswordManager := UseTCPwdMngrCB.Checked;
+		UnlimitedFilesize := UnlimitedFileSizeCB.Checked;
+		SplitLargeFiles := SplitLargeFilesCB.Checked;
+		TwostepAuth := TwostepAuthCB.Checked;
+		PublicAccount := PublicAccountCB.Checked;
+		PublicUrl := PublicUrlEdit.Text;
+		EncryptFilesMode := EncryptFilesCombo.ItemIndex;
+		EncryptFilenames := EncryptFilenamesCB.Checked;
+	end;
 	if CurrentAccountSettings.UseTCPasswordManager then //просим TC сохранить пароль
 	begin
 
-		case PasswordManager.SetPassword(CurrentAccountSettings.Account, CurrentAccountSettings.Password) of
+		case PasswordManager.SetPassword(CurrentAccountSettings.User, CurrentAccountSettings.Password) of
 			FS_FILE_OK:
 				begin //TC скушал пароль
 					CurrentAccountSettings.Password := EmptyWideStr;
@@ -280,7 +286,7 @@ begin
 		end;
 	end;
 
-	CurrentAccountSettings.Save;
+	AccountSettings.SetAccountSettings(CurrentAccountSettings);
 
 	UpdateAccountsList();
 
@@ -419,7 +425,7 @@ procedure TAccountsForm.DeleteButtonClick(Sender: TObject);
 begin
 	if (AccountsList.Items.Count > 0) and (AccountsList.ItemIndex <> -1) then
 	begin
-		CurrentAccountSettings.DeleteAccount(AccountsList.Items[AccountsList.ItemIndex]);
+		AccountSettings.DeleteAccount(AccountsList.Items[AccountsList.ItemIndex]);
 		UpdateAccountsList();
 	end;
 end;
@@ -441,13 +447,17 @@ end;
 procedure TAccountsForm.EncryptFilesPwdButtonClick(Sender: TObject);
 var
 	CryptedGUID: WideString;
+	TempAccountSettings: TAccountSettings;
 begin
 	PasswordManager.parentWindow := self.Handle;
 	CryptedGUID := StoreFileCryptPassword(self.SelectedAccount);
 	PasswordManager.parentWindow := FindTCWindow;
 	if CryptedGUID <> EmptyWideStr then
-		//    CurrentAccountSettings.Account:=self.SelectedAccount;   //should be already selected
-		CurrentAccountSettings.SetSettingValue('CryptedGUID_files', CryptedGUID)
+	begin
+		TempAccountSettings := AccountSettings.GetAccountSettings(self.SelectedAccount);
+		TempAccountSettings.CryptedGUIDFiles := CryptedGUID;
+		AccountSettings.SetAccountSettings(TempAccountSettings);
+	end;
 end;
 
 procedure TAccountsForm.FormActivate(Sender: TObject);
@@ -488,14 +498,17 @@ begin
 end;
 
 procedure TAccountsForm.NewAccountBtnClick(Sender: TObject);
+var
+	TempAccountSettings: TAccountSettings;
 begin
-	if mrOk = TRegistrationForm.ShowRegistration(self.parentWindow, PluginSettings.ConnectionSettings, CurrentAccountSettings) then
+	TempAccountSettings := AccountSettings.GetAccountSettings(self.SelectedAccount);
+	if mrOk = TRegistrationForm.ShowRegistration(self.parentWindow, PluginSettings.ConnectionSettings, TempAccountSettings) then
 	begin
-		if CurrentAccountSettings.UseTCPasswordManager then //просим TC сохранить пароль
-			if FS_FILE_OK <> PasswordManager.SetPassword(CurrentAccountSettings.Account, CurrentAccountSettings.Password) then
+		if TempAccountSettings.UseTCPasswordManager then //просим TC сохранить пароль
+			if FS_FILE_OK <> PasswordManager.SetPassword(TempAccountSettings.User, TempAccountSettings.Password) then
 				exit(); //Не удалось сохранить пароль/нажали отмену
 
-		CurrentAccountSettings.Save;
+		AccountSettings.SetAccountSettings(TempAccountSettings);
 		UpdateAccountsList();
 	end;
 end;
@@ -518,7 +531,7 @@ begin
 	try
 		AccountsForm := TAccountsForm.Create(nil);
 		AccountsForm.parentWindow := parentWindow;
-		AccountsForm.CurrentAccountSettings := AccountSettings;
+		AccountsForm.AccountSettings := AccountSettings;
 		AccountsForm.PluginSettings := Settings;
 		AccountsForm.PasswordManager := PasswordManager;
 		AccountsForm.SelectedAccount := EmptyWideStr;

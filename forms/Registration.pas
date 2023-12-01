@@ -62,7 +62,7 @@ type
 
 	private
 		{Private declarations}
-		Account: TNewAccountSettings;
+		AccountSettings: TAccountSettings;
 		ConnectionSettings: TConnectionSettings;
 		Code: WideString;
 		function RegistrationValid: boolean;
@@ -73,11 +73,11 @@ type
 		procedure FreeComponents();
 		function createAccount(firstname, lastname, Login, password, Domain: WideString; var Code: WideString): boolean;
 		function getRegisrationCaptcha(CaptchaStream: TStream): boolean;
-		function confirmRegistration(email, Code, captcha: WideString): boolean;
+		function confirmRegistration(Email, Code, captcha: WideString): boolean;
 	public
 		property isRegistrationValid: boolean read RegistrationValid;
 		{Public declarations}
-		class function ShowRegistration(parentWindow: HWND; ConnectionSettings: TConnectionSettings; AccountSettings: TNewAccountSettings): integer;
+		class function ShowRegistration(parentWindow: HWND; ConnectionSettings: TConnectionSettings; AccountSettings: TAccountSettings): integer;
 	end;
 
 implementation
@@ -94,11 +94,11 @@ begin
 	end;
 end;
 
-function TRegistrationForm.confirmRegistration(email, Code, captcha: WideString): boolean;
+function TRegistrationForm.confirmRegistration(Email, Code, captcha: WideString): boolean;
 var
 	JSON: WideString;
 begin
-	result := HTTPConnection.PostForm(MAILRU_REGISTRATION_CONFIRM, Format('email=%s&reg_anketa={"id":"%s","capcha":"%s"}', [email, Code, captcha]), JSON);
+	result := HTTPConnection.PostForm(MAILRU_REGISTRATION_CONFIRM, Format('email=%s&reg_anketa={"id":"%s","capcha":"%s"}', [Email, Code, captcha]), JSON);
 	if result then
 	begin
 		result := TCMROperationResult.GetRegistrationOperationResult(JSON).OperationResult = CLOUD_OPERATION_OK;
@@ -177,13 +177,13 @@ end;
 
 procedure TRegistrationForm.SendBtnClick(Sender: TObject);
 begin
-	if confirmRegistration(Account.email, Code, CaptchaEdit.Text) then
+	if confirmRegistration(AccountSettings.Email, Code, CaptchaEdit.Text) then
 		self.ModalResult := mrOk
 	else
 		self.ModalResult := mrNone;
 end;
 
-class function TRegistrationForm.ShowRegistration(parentWindow: HWND; ConnectionSettings: TConnectionSettings; AccountSettings: TNewAccountSettings): integer;
+class function TRegistrationForm.ShowRegistration(parentWindow: HWND; ConnectionSettings: TConnectionSettings; AccountSettings: TAccountSettings): integer;
 var
 	RegistrationForm: TRegistrationForm;
 
@@ -191,7 +191,7 @@ begin
 	try
 		RegistrationForm := TRegistrationForm.Create(nil);
 		RegistrationForm.parentWindow := parentWindow;
-		RegistrationForm.Account := AccountSettings;
+		RegistrationForm.AccountSettings := AccountSettings;
 		RegistrationForm.ConnectionSettings := ConnectionSettings;
 		RegistrationForm.LoginEdit.Text := AccountSettings.User;
 		RegistrationForm.UseTCPwdMngrCB.Checked := AccountSettings.UseTCPasswordManager;
@@ -199,7 +199,7 @@ begin
 		result := RegistrationForm.ShowModal;
 		if result = mrOk then
 		begin
-			AccountSettings := RegistrationForm.Account;
+			AccountSettings := RegistrationForm.AccountSettings;
 			AccountSettings.UseTCPasswordManager := RegistrationForm.UseTCPwdMngrCB.Checked;
 		end;
 
@@ -215,16 +215,15 @@ var
 begin
 	CaptchaEdit.Enabled := false;
 	SendBtn.Enabled := false;
-	Account.Account := LoginEdit.Text;
-	Account.Email := Format('%s@%s', [LoginEdit.Text, DomainCombo.Text]);
-	Account.password := PasswordEdit.Text;
-	Account.PublicAccount := false;
-	Account.EncryptFilesMode := EncryptModeNone;
-	Account.TwostepAuth := false;
+	AccountSettings.Email := Format('%s@%s', [LoginEdit.Text, DomainCombo.Text]);
+	AccountSettings.password := PasswordEdit.Text;
+	AccountSettings.PublicAccount := false;
+	AccountSettings.EncryptFilesMode := EncryptModeNone;
+	AccountSettings.TwostepAuth := false;
 
 	self.Enabled := false;
 
-	if (createAccount(FirstNameEdit.Text, LastNameEdit.Text, Account.User, Account.password, Account.Domain, Code)) then
+	if (createAccount(FirstNameEdit.Text, LastNameEdit.Text, AccountSettings.User, AccountSettings.password, AccountSettings.Domain, Code)) then
 	begin
 		MemStream := TMemoryStream.Create();
 		if getRegisrationCaptcha(MemStream) then

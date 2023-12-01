@@ -1078,7 +1078,7 @@ begin
 		if CheckFlag(FS_COPYFLAGS_MOVE, CopyFlags) then
 		begin
 			Cloud.deleteFile(RemotePath.path);
-			if (CurrentSettings.DescriptionTrackCloudFS and AccountSettings.GetIsRemoteDescriptionsSupported(RemotePath.account)) then
+			if (CurrentSettings.DescriptionTrackCloudFS and AccountSettings.GetAccountSettings(RemotePath.account).IsRemoteDescriptionsSupported) then
 				DeleteRemoteFileDescription(RemotePath, Cloud);
 		end;
 		TCProgress.Progress(PWideChar(LocalName), PWideChar(RemoteName), 100);
@@ -1180,7 +1180,7 @@ begin
 		TCLogger.Log(LOG_LEVEL_FILE_OPERATION, MSGTYPE_TRANSFERCOMPLETE, '%s -> %s', [LocalName, RemoteName]);
 		if CheckFlag(FS_COPYFLAGS_MOVE, CopyFlags) then
 			Result := DeleteLocalFile(LocalName);
-		if (CurrentSettings.DescriptionCopyToCloud and AccountSettings.GetIsRemoteDescriptionsSupported(RemotePath.account)) then
+		if (CurrentSettings.DescriptionCopyToCloud and AccountSettings.GetAccountSettings(RemotePath.account).IsRemoteDescriptionsSupported) then
 			UpdateRemoteFileDescription(RemotePath, LocalName, Cloud);
 	end;
 
@@ -1283,7 +1283,7 @@ begin
 	end
 	else
 		Result := Cloud.deleteFile(RealPath.path);
-	if (Result and CurrentSettings.DescriptionTrackCloudFS and AccountSettings.GetIsRemoteDescriptionsSupported(RealPath.account)) then
+	if (Result and CurrentSettings.DescriptionTrackCloudFS and AccountSettings.GetAccountSettings(RealPath.account).IsRemoteDescriptionsSupported) then
 		DeleteRemoteFileDescription(RealPath, Cloud);
 end;
 
@@ -1293,7 +1293,7 @@ var
 	getResult: integer;
 	SkipListRenMov: Boolean;
 	OperationContextId: integer;
-	RegisteredAccount: TNewAccountSettings;
+	RegisteredAccount: TAccountSettings;
 begin
 	ThreadSkipListRenMov.TryGetValue(GetCurrentThreadID(), SkipListRenMov);
 	if SkipListRenMov then
@@ -1302,17 +1302,16 @@ begin
 	RealPath.FromPath(WideString(path));
 	if RealPath.isInAccountsList then //accounts list
 	begin
-		RegisteredAccount := TNewAccountSettings.Create(AccountSettings, RealPath.account);
+		RegisteredAccount := AccountSettings.GetAccountSettings(RealPath.account);
 
 		Result := (mrOk = TRegistrationForm.ShowRegistration(FindTCWindow, CurrentSettings.ConnectionSettings, RegisteredAccount));
 		if Result then
 		begin
 			if RegisteredAccount.UseTCPasswordManager then //просим TC сохранить пароль
-				Result := FS_FILE_OK = PasswordManager.SetPassword(RegisteredAccount.account, RegisteredAccount.password);
+				Result := FS_FILE_OK = PasswordManager.SetPassword(RealPath.account, RegisteredAccount.password);
 			if Result then
-				RegisteredAccount.Save;
+				AccountSettings.SetAccountSettings(RealPath.account, RegisteredAccount);
 		end;
-		RegisteredAccount.Free;
 		exit();
 	end;
 	if (RealPath.isAccountEmpty) or RealPath.isVirtual then
@@ -1350,7 +1349,7 @@ begin
 	Cloud := ConnectionManager.Get(RealPath.account, getResult);
 	Result := Cloud.removeDir(RealPath.path);
 
-	if (Result and CurrentSettings.DescriptionTrackCloudFS and AccountSettings.GetIsRemoteDescriptionsSupported(RealPath.account)) then
+	if (Result and CurrentSettings.DescriptionTrackCloudFS and AccountSettings.GetAccountSettings(RealPath.account).IsRemoteDescriptionsSupported) then
 	begin
 		ThreadFsStatusInfo.TryGetValue(GetCurrentThreadID, OperationContextId); //need to check operation context => directory can be deleted after moving operation
 		if OperationContextId = FS_STATUS_OP_RENMOV_MULTI then
@@ -1560,7 +1559,7 @@ begin
 				end;
 
 			end;
-			if ((FS_FILE_OK = Result) and CurrentSettings.DescriptionTrackCloudFS and AccountSettings.GetIsRemoteDescriptionsSupported(NewRealPath.account)) then
+			if ((FS_FILE_OK = Result) and CurrentSettings.DescriptionTrackCloudFS and AccountSettings.GetAccountSettings(NewRealPath.account).IsRemoteDescriptionsSupported) then
 				RenameRemoteFileDescription(OldRealPath, NewRealPath, OldCloud);
 		end else begin
 			Result := OldCloud.cpFile(OldRealPath.path, NewRealPath.path);
@@ -1596,13 +1595,13 @@ begin
 
 	if not((ProxySettings.ProxyType = ProxyNone) or (ProxySettings.User = EmptyWideStr)) then {proxy connection is password-protected}
 	begin
-		if not(ProxySettings.UseTCPasswordManager and (PasswordManager.GetPassword('proxy' + ProxySettings.User, ProxySettings.Password) = FS_FILE_OK)) then {retrieve the proxy password from TC passwords storage}
+		if not(ProxySettings.UseTCPasswordManager and (PasswordManager.GetPassword('proxy' + ProxySettings.User, ProxySettings.password) = FS_FILE_OK)) then {retrieve the proxy password from TC passwords storage}
 		begin
-			if ProxySettings.Password = EmptyWideStr then {the password may be taken from config before, otherwise ask user}
+			if ProxySettings.password = EmptyWideStr then {the password may be taken from config before, otherwise ask user}
 			begin
-				if mrOk = TAskPasswordForm.AskPassword(Format(ASK_PROXY_PASSWORD, [ProxySettings.User]), PREFIX_ASK_PROXY_PASSWORD, ProxySettings.Password, ProxySettings.UseTCPasswordManager, false, FindTCWindow) then
+				if mrOk = TAskPasswordForm.AskPassword(Format(ASK_PROXY_PASSWORD, [ProxySettings.User]), PREFIX_ASK_PROXY_PASSWORD, ProxySettings.password, ProxySettings.UseTCPasswordManager, false, FindTCWindow) then
 				begin {get proxy password and parameters from the user input}
-					if FS_FILE_OK = PasswordManager.SetPassword('proxy' + ProxySettings.User, ProxySettings.Password) then
+					if FS_FILE_OK = PasswordManager.SetPassword('proxy' + ProxySettings.User, ProxySettings.password) then
 					begin {Now the proxy password stored in TC, clear password from the ini file}
 						TCLogger.Log(LOG_LEVEL_DEBUG, msgtype_details, PASSWORD_SAVED, [ProxySettings.User]);
 						CurrentSettings.SetSettingValue('ProxyTCPwdMngr', true);
@@ -1630,7 +1629,7 @@ begin
 	begin
 		if FieldIndex = 14 then
 		begin
-			strpcopy(FieldValue, AccountSettings.GetDescription(RealPath.account));
+			strpcopy(FieldValue, AccountSettings.GetAccountSettings(RealPath.account).Description);
 			exit(ft_stringw);
 		end
 		else
@@ -1854,7 +1853,7 @@ begin
 
 	if RealPath.isInAccountsList then //connection list
 	begin
-		if AccountSettings.GetIsPublic(copy(RemoteName, 2, StrLen(RemoteName) - 2)) then
+		if AccountSettings.GetAccountSettings(copy(RemoteName, 2, StrLen(RemoteName) - 2)).PublicAccount then
 			strpcopy(RemoteName, 'cloud_public')
 		else
 			strpcopy(RemoteName, 'cloud');
