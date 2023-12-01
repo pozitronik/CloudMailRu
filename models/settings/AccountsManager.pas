@@ -59,11 +59,11 @@ end;
 
 procedure TAccountsManager.ClearPassword(Account: WideString);
 var
-	TempAccountSettings: TAccountSettings;
+	IniFile: TIniFile;
 begin
-	TempAccountSettings := self.GetAccountSettings(Account);
-	TempAccountSettings.Password := EmptyWideStr;
-	self.SetAccountSettings(Account, TempAccountSettings);
+	IniFile := TIniFile.Create(FIniFilePath);
+	IniFile.DeleteKey(Account, 'password');
+	IniFile.Destroy;
 end;
 
 procedure TAccountsManager.DeleteAccount(Account: WideString);
@@ -133,11 +133,11 @@ end;
 
 procedure TAccountsManager.SetCryptedGUID(Account, GUID: WideString);
 var
-	TempAccountSettings: TAccountSettings;
+	IniFile: TIniFile;
 begin
-	TempAccountSettings := self.GetAccountSettings(Account);
-	TempAccountSettings.CryptedGUIDFiles := GUID;
-	self.SetAccountSettings(Account, TempAccountSettings);
+	IniFile := TIniFile.Create(FIniFilePath);
+	IniFile.WriteString(Account, 'CryptedGUID_files', GUID);
+	IniFile.Destroy;
 end;
 
 procedure TAccountsManager.SetAccountSettings(Account: WideString; AccountSettings: TAccountSettings);

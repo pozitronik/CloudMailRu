@@ -25,7 +25,7 @@ type
 		EncryptFileNames: Boolean;
 		ShardOverride: WideString; //hidden option, allows to override working shard for account
 		UploadUrlOverride: WideString; //hidden option, alows to override upload server for account
-		CryptedGUIDFiles: WideString; //Шифрованная строка для проверки пароля шифрования
+		CryptedGUIDFiles: WideString; //The hash of files encryption password to check its validity
 	private
 		FUser: WideString;
 		FDomain: WideString;
