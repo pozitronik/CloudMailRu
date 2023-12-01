@@ -55,7 +55,6 @@ uses
 	DCPsha1 in '..\DCPCrypt\Hashes\DCPsha1.pas';
 
 {keep comment here to protect the following conditional from being removed by the IDE when adding a unit}
-{Todo: get a look what DCPCrypt imports are unused in the main project to delete them}
 {$IFNDEF TESTINSIGHT}
 
 var

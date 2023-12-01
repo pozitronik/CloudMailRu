@@ -199,13 +199,13 @@
         <DCCReference Include="forms\Registration.pas">
             <Form>AskPasswordForm</Form>
         </DCCReference>
-        <DCCReference Include="..\DCPCrypt\DCPblockciphers.pas"/>
-        <DCCReference Include="..\DCPCrypt\DCPcrypt2.pas"/>
-        <DCCReference Include="..\DCPCrypt\DCPtypes.pas"/>
-        <DCCReference Include="..\DCPCrypt\Ciphers\DCPrijndael.pas"/>
-        <DCCReference Include="..\DCPCrypt\DCPconst.pas"/>
-        <DCCReference Include="..\DCPCrypt\DCPbase64.pas"/>
-        <DCCReference Include="..\DCPCrypt\Hashes\DCPsha1.pas"/>
+        <DCCReference Include="DCPCrypt\DCPblockciphers.pas"/>
+        <DCCReference Include="DCPCrypt\DCPcrypt2.pas"/>
+        <DCCReference Include="DCPCrypt\DCPtypes.pas"/>
+        <DCCReference Include="DCPCrypt\Ciphers\DCPrijndael.pas"/>
+        <DCCReference Include="DCPCrypt\DCPconst.pas"/>
+        <DCCReference Include="DCPCrypt\DCPbase64.pas"/>
+        <DCCReference Include="DCPCrypt\Hashes\DCPsha1.pas"/>
         <DCCReference Include="helpers\JSONHelper.pas"/>
         <DCCReference Include="helpers\PluginHelper.pas"/>
         <DCCReference Include="models\ChunkedFileStream.pas"/>
