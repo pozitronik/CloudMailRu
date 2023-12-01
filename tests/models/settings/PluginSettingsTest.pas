@@ -66,7 +66,7 @@ begin
 	Assert.IsFalse(MRCSetting.DescriptionEnabled); //boolean
 	Assert.AreEqual(1000, MRCSetting.AttemptWait); //integer
 	Assert.AreEqual('descript.ion', MRCSetting.DescriptionFileName); //string
-	Assert.IsFalse(MRCSetting.ConnectionSettings.ProxySettings.use_tc_password_manager); //subrecord boolean
+	Assert.IsFalse(MRCSetting.ConnectionSettings.ProxySettings.UseTCPasswordManager); //subrecord boolean
 	Assert.AreEqual(DEFAULT_USERAGENT, MRCSetting.ConnectionSettings.UserAgent); //subrecord string
 	Assert.AreEqual(0, MRCSetting.ConnectionSettings.ProxySettings.Port); //subrecord string
 	MRCSetting.Free;
@@ -109,7 +109,7 @@ begin
 	Assert.IsTrue(MRCSetting.DescriptionEnabled); //boolean
 	Assert.AreEqual(1000, MRCSetting.AttemptWait); //integer
 	Assert.AreEqual('descript.ed', MRCSetting.DescriptionFileName); //string
-	Assert.IsFalse(MRCSetting.ConnectionSettings.ProxySettings.use_tc_password_manager); //subrecord boolean
+	Assert.IsFalse(MRCSetting.ConnectionSettings.ProxySettings.UseTCPasswordManager); //subrecord boolean
 	Assert.AreEqual('There''s no spoon', MRCSetting.ConnectionSettings.UserAgent); //subrecord string
 	Assert.AreEqual(5000, MRCSetting.ConnectionSettings.ProxySettings.Port); //subrecord string
 	MRCSetting.Free;

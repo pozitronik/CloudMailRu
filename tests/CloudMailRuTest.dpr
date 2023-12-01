@@ -37,11 +37,11 @@ uses
 	PluginSettingsTest in 'models\settings\PluginSettingsTest.pas',
 	AbstractPluginSettings in '..\models\settings\AbstractPluginSettings.pas',
 	PluginSettings in '..\models\settings\PluginSettings.pas',
-	AbstractAccountSettings in '..\models\settings\AbstractAccountSettings.pas',
-	NewAccountSettings in '..\models\settings\NewAccountSettings.pas',
-	AccountSettingsTest in 'models\settings\AccountSettingsTest.pas',
+	AccountsManagerTest in 'models\settings\AccountsManagerTest.pas',
 	ParsingHelper in '..\helpers\ParsingHelper.pas',
-	WSList in '..\models\WSList.pas';
+	WSList in '..\models\WSList.pas',
+	AccountSettings in '..\models\settings\AccountSettings.pas',
+	AccountsManager in '..\models\settings\AccountsManager.pas';
 
 {keep comment here to protect the following conditional from being removed by the IDE when adding a unit}
 {$IFNDEF TESTINSIGHT}
