@@ -79,11 +79,11 @@ uses
 	SETTINGS_CONSTANTS in 'models\settings\SETTINGS_CONSTANTS.pas',
 	StreamingOptions in 'models\settings\StreamingOptions.pas',
 	IniFilesHelper in 'helpers\IniFilesHelper.pas',
-	PluginSettings in 'models\settings\PluginSettings.pas',
-	AbstractPluginSettings in 'models\settings\AbstractPluginSettings.pas',
+	PluginSettingsManager in 'models\settings\PluginSettingsManager.pas',
 	AccountsManager in 'models\settings\AccountsManager.pas',
 	WSList in 'models\WSList.pas',
-	AccountSettings in 'models\settings\AccountSettings.pas';
+	AccountSettings in 'models\settings\AccountSettings.pas',
+	PluginSettings in 'models\settings\PluginSettings.pas';
 
 {$IFDEF WIN64}
 {$E wfx64}
@@ -122,6 +122,8 @@ var
 	PluginNum: integer;
 
 	CurrentSettings: TPluginSettings;
+
+	SettingsManager: TPluginSettingsManager;
 	AccountSettings: TAccountsManager;
 	Accounts: TWSList;
 
@@ -671,7 +673,7 @@ begin
 		Result := FS_EXEC_SYMLINK;
 	end else begin
 		if RealPath.isInAccountsList then
-			TAccountsForm.ShowAccounts(MainWin, AccountSettings, CurrentSettings, PasswordManager, RealPath.account) //main shared folder properties - open connection settings
+			TAccountsForm.ShowAccounts(MainWin, AccountSettings, SettingsManager, PasswordManager, RealPath.account) //main shared folder properties - open connection settings
 		else
 		begin
 			Cloud := ConnectionManager.Get(RealPath.account, getResult);
@@ -692,7 +694,7 @@ begin
 	Cloud := ConnectionManager.Get(RealPath.account, getResult);
 	if RealPath.isInAccountsList then //main invites folder properties
 	begin
-		TAccountsForm.ShowAccounts(MainWin, AccountSettings, CurrentSettings, PasswordManager, RealPath.account)
+		TAccountsForm.ShowAccounts(MainWin, AccountSettings, SettingsManager, PasswordManager, RealPath.account)
 	end else begin //one invite item
 		CurrentInvite := FindIncomingInviteItemByPath(CurrentIncomingInvitesListing, RealPath);
 		if CurrentInvite.name = EmptyWideStr then
@@ -723,7 +725,7 @@ var
 begin
 	Result := FS_EXEC_OK;
 	if RealPath.isInAccountsList then
-		TAccountsForm.ShowAccounts(MainWin, AccountSettings, CurrentSettings, PasswordManager, RealPath.account) //show account properties
+		TAccountsForm.ShowAccounts(MainWin, AccountSettings, SettingsManager, PasswordManager, RealPath.account) //show account properties
 	else
 	begin
 		Cloud := ConnectionManager.Get(RealPath.account, getResult);
@@ -878,7 +880,7 @@ begin
 
 	if Verb = VERB_OPEN then
 	begin
-		if (not(RealPath.isDir = ID_Yes)) and GetStreamingOptionsFromIniFile(CurrentSettings.IniFileName, RealPath.path, StreamingOptions) and (STREAMING_FORMAT_NONE <> StreamingOptions.Format) then
+		if (not(RealPath.isDir = ID_Yes)) and GetStreamingOptionsFromIniFile(CurrentSettings.IniFilePath, RealPath.path, StreamingOptions) and (STREAMING_FORMAT_NONE <> StreamingOptions.Format) then
 			exit(ExecuteFileStream(RealPath, StreamingOptions));
 		exit(FS_EXEC_YOURSELF);
 	end;
@@ -1579,8 +1581,7 @@ begin
 					if FS_FILE_OK = PasswordManager.SetPassword('proxy' + ProxySettings.User, ProxySettings.password) then
 					begin {Now the proxy password stored in TC, clear password from the ini file}
 						TCLogger.Log(LOG_LEVEL_DEBUG, msgtype_details, PASSWORD_SAVED, [ProxySettings.User]);
-						CurrentSettings.SetSettingValue('ProxyTCPwdMngr', true);
-						CurrentSettings.SetSettingValue('ProxyPassword', null);
+						SettingsManager.SwitchProxyPasswordStorage;
 					end; //Ошибки здесь не значат, что пароль мы не получили - он может быть введён в диалоге
 				end;
 			end;
@@ -1877,7 +1878,8 @@ begin
 	PluginPath := GetModuleName(hInstance);
 	PluginPath := IncludeTrailingBackslash(ExtractFilePath(PluginPath));
 
-	CurrentSettings := TPluginSettings.Create();
+	SettingsManager := TPluginSettingsManager.Create();
+	CurrentSettings := SettingsManager.Settings;
 
 	if CurrentSettings.LoadSSLDLLOnlyFromPluginDir then
 	begin
@@ -1903,7 +1905,8 @@ begin
 	ThreadFsStatusInfo := TDictionary<DWORD, Int32>.Create;
 	ThreadFsRemoveDirSkippedPath := TDictionary<DWORD, TStringList>.Create;
 
-	AccountSettings := TAccountsManager.Create(CurrentSettings.AccountsIniFileName);
+	AccountSettings := TAccountsManager.Create(CurrentSettings.IniFilePath);
+
 end;
 
 procedure FreePluginData();
@@ -1924,7 +1927,7 @@ begin
 
 	CurrentDescriptions.Free;
 
-	CurrentSettings.Free;
+	SettingsManager.Free;
 	AccountSettings.Free;
 	PasswordManager.Free;
 	TCLogger.Free;

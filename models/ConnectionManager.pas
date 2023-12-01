@@ -34,7 +34,7 @@ type
 	private
 		Connections: TDictionary<WideString, TCloudMailRu>;
 		HTTPManager: THTTPManager;
-		Settings: TPluginSettings; //required to proxyfy plugin parameters to cloud parametes, when initialized
+		PluginSettings: TPluginSettings; //required to proxyfy plugin parameters to cloud parametes, when initialized
 
 		Logger: TTCLogger;
 		Progress: TTCProgress;
@@ -46,7 +46,7 @@ type
 		function InitCloudCryptPasswords(const ConnectionName: WideString; var CloudSettings: TCloudSettings): Boolean;
 		//		function GetProxyPassword(var CloudSettings: TCloudSettings): Boolean;
 	public
-		constructor Create(Settings: TPluginSettings; HTTPManager: THTTPManager; Progress: TTCProgress; Logger: TTCLogger; Request: TTCRequest; PasswordManager: TTCPasswordManager);
+		constructor Create(PluginSettings: TPluginSettings; HTTPManager: THTTPManager; Progress: TTCProgress; Logger: TTCLogger; Request: TTCRequest; PasswordManager: TTCPasswordManager);
 		destructor Destroy(); override;
 		function Get(ConnectionName: WideString; var OperationResult: integer): TCloudMailRu; //возвращает готовое подключение по имени
 		procedure Free(ConnectionName: WideString); //освобождает подключение по его имени, если оно существует
@@ -55,10 +55,10 @@ type
 implementation
 
 {TConnectionManager}
-constructor TConnectionManager.Create(Settings: TPluginSettings; HTTPManager: THTTPManager; Progress: TTCProgress; Logger: TTCLogger; Request: TTCRequest; PasswordManager: TTCPasswordManager);
+constructor TConnectionManager.Create(PluginSettings: TPluginSettings; HTTPManager: THTTPManager; Progress: TTCProgress; Logger: TTCLogger; Request: TTCRequest; PasswordManager: TTCPasswordManager);
 begin
 	Connections := TDictionary<WideString, TCloudMailRu>.Create;
-	self.Settings := Settings;
+	self.PluginSettings := PluginSettings;
 	self.Progress := Progress;
 	self.Logger := Logger;
 	self.Request := Request;
@@ -109,20 +109,20 @@ var
 	AccountSettings: TAccountSettings;
 begin
 	Result := CLOUD_OPERATION_OK;
-	AccountsManager := TAccountsManager.Create(self.Settings.AccountsIniFileName);
+	AccountsManager := TAccountsManager.Create(self.PluginSettings.IniFilePath);
 	AccountSettings := AccountsManager.GetAccountSettings(ConnectionName);
 	AccountsManager.Free;
 	with CloudSettings do
 	begin
 		{proxify plugin settings to the cloud settings}
-		ConnectionSettings := self.Settings.ConnectionSettings;
-		PrecalculateHash := self.Settings.PrecalculateHash;
-		ForcePrecalculateSize := self.Settings.ForcePrecalculateSize;
-		CheckCRC := self.Settings.CheckCRC;
-		CloudMaxFileSize := self.Settings.CloudMaxFileSize;
-		OperationErrorMode := self.Settings.OperationErrorMode;
-		RetryAttempts := self.Settings.RetryAttempts;
-		AttemptWait := self.Settings.AttemptWait;
+		ConnectionSettings := self.PluginSettings.ConnectionSettings;
+		PrecalculateHash := self.PluginSettings.PrecalculateHash;
+		ForcePrecalculateSize := self.PluginSettings.ForcePrecalculateSize;
+		CheckCRC := self.PluginSettings.CheckCRC;
+		CloudMaxFileSize := self.PluginSettings.CloudMaxFileSize;
+		OperationErrorMode := self.PluginSettings.OperationErrorMode;
+		RetryAttempts := self.PluginSettings.RetryAttempts;
+		AttemptWait := self.PluginSettings.AttemptWait;
 		{proxify account settings to the cloud settings}
 		Email := AccountSettings.Email;
 		Password := AccountSettings.Password;
@@ -161,7 +161,7 @@ begin
 					mrYes: //store and use updated password
 						begin
 							CloudSettings.CryptedGUIDFiles := TFileCipher.CryptedGUID(CloudSettings.CryptFilesPassword);
-							AccountsManager := TAccountsManager.Create(self.Settings.AccountsIniFileName);
+							AccountsManager := TAccountsManager.Create(self.PluginSettings.IniFilePath);
 							AccountsManager.SetCryptedGUID(ConnectionName, CloudSettings.CryptedGUIDFiles);
 							AccountsManager.Free;
 						end;
@@ -254,7 +254,7 @@ begin
 				if FS_FILE_OK = PasswordManager.SetPassword(ConnectionName, CloudSettings.Password) then
 				begin //Now the account password stored in TC, clear password from the ini file
 					Logger.Log(LOG_LEVEL_DEBUG, MSGTYPE_DETAILS, PASSWORD_SAVED, [ConnectionName]);
-					AccountsManager := TAccountsManager.Create(self.Settings.AccountsIniFileName);
+					AccountsManager := TAccountsManager.Create(self.PluginSettings.IniFilePath);
 					AccountsManager.ClearPassword(ConnectionName);
 					AccountsManager.Free;
 				end;
