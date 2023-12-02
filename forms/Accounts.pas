@@ -261,6 +261,7 @@ begin
 		exit();
 	with CurrentAccountSettings do
 	begin
+		Account := AccountNameEdit.Text;
 		Email := EmailEdit.Text;
 		Password := PasswordEdit.Text;
 		UseTCPasswordManager := UseTCPwdMngrCB.Checked;
