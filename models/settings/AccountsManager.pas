@@ -80,25 +80,25 @@ var
 	IniFile: TIniFile;
 begin
 	IniFile := TIniFile.Create(FIniFilePath);
-	with Result do
-	begin
-		Account := Account;
-		Email := IniFile.ReadString(Account, 'email', EmptyWideStr);
-		Password := IniFile.ReadString(Account, 'password', EmptyWideStr);
-		UseTCPasswordManager := IniFile.ReadBool(Account, 'tc_pwd_mngr', False);
-		UnlimitedFileSize := IniFile.ReadBool(Account, 'unlimited_filesize', False);
-		SplitLargeFiles := IniFile.ReadBool(Account, 'split_large_files', False);
-		TwostepAuth := IniFile.ReadBool(Account, 'twostep_auth', False);
-		PublicAccount := IniFile.ReadBool(Account, 'public_account', False);
-		PublicUrl := IniFile.ReadString(Account, 'public_url', EmptyWideStr);
-		Description := IniFile.ReadString(Account, 'description', EmptyWideStr);
-		EncryptFilesMode := IniFile.ReadInteger(Account, 'encrypt_files_mode', EncryptModeNone);
-		EncryptFileNames := IniFile.ReadBool(Account, 'encrypt_filenames', False);
-		ShardOverride := IniFile.ReadString(Account, 'shard_override', EmptyWideStr);
-		UploadUrlOverride := IniFile.ReadString(Account, 'upload_url_override', EmptyWideStr);
-		CryptedGUIDFiles := IniFile.ReadString(Account, 'CryptedGUID_files', EmptyWideStr);
-	end;
+
+	Result.Account := Account;
+	Result.Email := IniFile.ReadString(Account, 'email', EmptyWideStr);
+	Result.Password := IniFile.ReadString(Account, 'password', EmptyWideStr);
+	Result.UseTCPasswordManager := IniFile.ReadBool(Account, 'tc_pwd_mngr', False);
+	Result.UnlimitedFileSize := IniFile.ReadBool(Account, 'unlimited_filesize', False);
+	Result.SplitLargeFiles := IniFile.ReadBool(Account, 'split_large_files', False);
+	Result.TwostepAuth := IniFile.ReadBool(Account, 'twostep_auth', False);
+	Result.PublicAccount := IniFile.ReadBool(Account, 'public_account', False);
+	Result.PublicUrl := IniFile.ReadString(Account, 'public_url', EmptyWideStr);
+	Result.Description := IniFile.ReadString(Account, 'description', EmptyWideStr);
+	Result.EncryptFilesMode := IniFile.ReadInteger(Account, 'encrypt_files_mode', EncryptModeNone);
+	Result.EncryptFileNames := IniFile.ReadBool(Account, 'encrypt_filenames', False);
+	Result.ShardOverride := IniFile.ReadString(Account, 'shard_override', EmptyWideStr);
+	Result.UploadUrlOverride := IniFile.ReadString(Account, 'upload_url_override', EmptyWideStr);
+	Result.CryptedGUIDFiles := IniFile.ReadString(Account, 'CryptedGUID_files', EmptyWideStr);
+
 	IniFile.Destroy;
+
 end;
 
 function TAccountsManager.GetAccountsList(const AccountTypes: EAccountType = [ATPrivate, ATPublic]; const VirtualTypes: EVirtualType = []): TWSList;

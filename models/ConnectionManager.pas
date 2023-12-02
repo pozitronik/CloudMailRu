@@ -109,7 +109,7 @@ var
 	AccountSettings: TAccountSettings;
 begin
 	Result := CLOUD_OPERATION_OK;
-	AccountsManager := TAccountsManager.Create(self.PluginSettings.IniFilePath);
+	AccountsManager := TAccountsManager.Create(self.PluginSettings.AccountsIniFilePath);
 	AccountSettings := AccountsManager.GetAccountSettings(ConnectionName);
 	AccountsManager.Free;
 	with CloudSettings do
