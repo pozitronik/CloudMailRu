@@ -50,6 +50,7 @@ begin
 	SetLength(Result, AccountsList.Count);
 	for I := 0 to AccountsList.Count - 1 do
 		Result[I] := AccountsList[I];
+	AccountsList.Free;
 end;
 
 constructor TAccountsManager.Create(IniFilePath: WideString);
