@@ -145,22 +145,21 @@ procedure TAccountsManager.SetAccountSettings(Account: WideString; AccountSettin
 var
 	IniFile: TIniFile;
 begin
-	with AccountSettings do
-	begin
-		IniFile := TIniFile.Create(FIniFilePath);
-		IniFile.WriteString(Account, 'email', Email);
-		IniFile.WriteString(Account, 'password', Password);
-		IniFile.WriteBool(Account, 'tc_pwd_mngr', UseTCPasswordManager);
-		IniFile.WriteBool(Account, 'unlimited_filesize', UnlimitedFileSize);
-		IniFile.WriteBool(Account, 'split_large_files', SplitLargeFiles);
-		IniFile.WriteBool(Account, 'twostep_auth', TwostepAuth);
-		IniFile.WriteBool(Account, 'public_account', PublicAccount);
-		IniFile.WriteString(Account, 'public_url', PublicUrl);
-		IniFile.WriteString(Account, 'description', Description);
-		IniFile.WriteInteger(Account, 'encrypt_files_mode', EncryptFilesMode);
-		IniFile.WriteBool(Account, 'encrypt_filenames', EncryptFileNames);
-		IniFile.Destroy;
-	end;
+
+	IniFile := TIniFile.Create(FIniFilePath);
+	IniFile.WriteString(Account, 'email', AccountSettings.Email);
+	IniFile.WriteString(Account, 'password', AccountSettings.Password);
+	IniFile.WriteBool(Account, 'tc_pwd_mngr', AccountSettings.UseTCPasswordManager);
+	IniFile.WriteBool(Account, 'unlimited_filesize', AccountSettings.UnlimitedFileSize);
+	IniFile.WriteBool(Account, 'split_large_files', AccountSettings.SplitLargeFiles);
+	IniFile.WriteBool(Account, 'twostep_auth', AccountSettings.TwostepAuth);
+	IniFile.WriteBool(Account, 'public_account', AccountSettings.PublicAccount);
+	IniFile.WriteString(Account, 'public_url', AccountSettings.PublicUrl);
+	IniFile.WriteString(Account, 'description', AccountSettings.Description);
+	IniFile.WriteInteger(Account, 'encrypt_files_mode', AccountSettings.EncryptFilesMode);
+	IniFile.WriteBool(Account, 'encrypt_filenames', AccountSettings.EncryptFileNames);
+	IniFile.Destroy;
+
 end;
 
 end.
