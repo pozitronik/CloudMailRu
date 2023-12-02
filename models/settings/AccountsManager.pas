@@ -39,7 +39,7 @@ implementation
 
 function TAccountsManager.Accounts: TWSList;
 var
-	AccountsList: TStringList; {Todo: use a direct method to not to use TStrings}
+	AccountsList: TStringList;
 	IniFile: TIniFile;
 	I: Integer;
 begin
