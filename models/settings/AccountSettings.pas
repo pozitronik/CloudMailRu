@@ -12,6 +12,7 @@ type
 	EVirtualType = set of (VTTrash, VTShared, VTInvites);
 
 	TAccountSettings = record
+		Account: WideString; {The account name itself}
 		Email: WideString;
 		Password: WideString;
 		UseTCPasswordManager: Boolean;

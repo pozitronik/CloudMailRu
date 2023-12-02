@@ -223,6 +223,7 @@ begin
 		CurrentAccountSettings := AccountsManager.GetAccountSettings(AccountsList.Items[AccountsList.ItemIndex]);
 		with CurrentAccountSettings do
 		begin
+			AccountNameEdit.Text := Account;
 			EmailEdit.Text := Email;
 			PasswordEdit.Text := Password;
 			UseTCPwdMngrCB.Checked := UseTCPasswordManager;
@@ -274,7 +275,7 @@ begin
 	if CurrentAccountSettings.UseTCPasswordManager then //просим TC сохранить пароль
 	begin
 
-		case PasswordManager.SetPassword(CurrentAccountSettings.User, CurrentAccountSettings.Password) of
+		case PasswordManager.SetPassword(CurrentAccountSettings.Account, CurrentAccountSettings.Password) of
 			FS_FILE_OK:
 				begin //TC скушал пароль
 					CurrentAccountSettings.Password := EmptyWideStr;
@@ -504,7 +505,7 @@ begin
 	if mrOk = TRegistrationForm.ShowRegistration(self.ParentWindow, SettingsManager.Settings.ConnectionSettings, TempAccountSettings) then
 	begin
 		if TempAccountSettings.UseTCPasswordManager then //просим TC сохранить пароль
-			if FS_FILE_OK <> PasswordManager.SetPassword(TempAccountSettings.User, TempAccountSettings.Password) then
+			if FS_FILE_OK <> PasswordManager.SetPassword(TempAccountSettings.Account, TempAccountSettings.Password) then
 				exit(); //Не удалось сохранить пароль/нажали отмену
 
 		AccountsManager.SetAccountSettings(TempAccountSettings);

@@ -199,6 +199,7 @@ object AccountsForm: TAccountsForm
           TabOrder = 0
           OnClick = AccountsListClick
           OnKeyUp = AccountsListKeyUp
+          ExplicitHeight = 411
         end
       end
       object ApplyButton: TButton

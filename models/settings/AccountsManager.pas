@@ -82,6 +82,7 @@ begin
 	IniFile := TIniFile.Create(FIniFilePath);
 	with Result do
 	begin
+		Account := Account;
 		Email := IniFile.ReadString(Account, 'email', EmptyWideStr);
 		Password := IniFile.ReadString(Account, 'password', EmptyWideStr);
 		UseTCPasswordManager := IniFile.ReadBool(Account, 'tc_pwd_mngr', False);
@@ -128,7 +129,7 @@ end;
 
 procedure TAccountsManager.SetAccountSettings(AccountSettings: TAccountSettings);
 begin
-	SetAccountSettings(AccountSettings.User, AccountSettings);
+	SetAccountSettings(AccountSettings.Account, AccountSettings);
 end;
 
 procedure TAccountsManager.SetCryptedGUID(Account, GUID: WideString);
