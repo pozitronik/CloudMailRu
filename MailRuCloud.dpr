@@ -1905,7 +1905,7 @@ begin
 	ThreadFsStatusInfo := TDictionary<DWORD, Int32>.Create;
 	ThreadFsRemoveDirSkippedPath := TDictionary<DWORD, TStringList>.Create;
 
-	AccountSettings := TAccountsManager.Create(CurrentSettings.IniFilePath);
+	AccountSettings := TAccountsManager.Create(SettingsManager.AccountsIniFilePath);
 
 end;
 

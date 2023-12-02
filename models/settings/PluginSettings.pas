@@ -40,9 +40,11 @@ type
 		CheckCRC: boolean;
 	private
 		FIniFilePath: WideString;
+		FAccountsIniFilePath: WideString;
 		function GetEnabledVirtualTypes: EVirtualType;
 	public
-		property IniFilePath: WideString read FIniFilePath;
+		property IniFilePath: WideString read FIniFilePath write FIniFilePath;
+		property AccountsIniFilePath: WideString read FAccountsIniFilePath write FAccountsIniFilePath;
 		property EnabledVirtualTypes: EVirtualType read GetEnabledVirtualTypes;
 	end;
 

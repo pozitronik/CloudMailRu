@@ -16,27 +16,31 @@ uses
 
 type
 
+	{Files names and path naming convetions:
+	 (File)Path or (Dir)Patn should contain the full absolute path for a file or a directory
+	 (File)Name or (Dir)Name should contain only the name of a file or a directory
+	}
+
 	TPluginSettingsManager = class
 	private
-		FApplicationPath: WideString; // the directory of the current binary file
-		FIniFilePath: WideString;
-		FIniFileDir: WideString; // the directory where the currently used ini files (global+accounts) are
+		FApplicationPath: WideString; {the directory of the current executable file}
+		FIniFilePath: WideString; {the absolute path of the current configuration file}
+		FIniFileDir: WideString; {the directory where the currently used ini files (global+accounts) are}
 
-		function GetAccountsIniFileName: WideString;
+		function GetAccountsIniFilePath: WideString;
 
 	public
 		Settings: TPluginSettings;
 		property ApplicationPath: WideString read FApplicationPath; {Required for tests}
 		property IniFileDir: WideString read FIniFileDir; {Required for tests}
-
-		property AccountsIniFileName: WideString read GetAccountsIniFileName; //Path to the accounts config file
 		property IniFilePath: WideString read FIniFilePath;
+		property AccountsIniFilePath: WideString read GetAccountsIniFilePath; {The path to the accounts config file}
 
-		constructor Create(); overload; //finds the settings file by itself
+		constructor Create(); overload; {finds the settings file by itself}
 		constructor Create(IniFilePath: WideString); overload;
 		procedure Refresh();
 
-		procedure Save(); //save current options set into the file
+		procedure Save(); {save current options set into the file}
 		procedure SwitchProxyPasswordStorage;
 	end;
 
@@ -98,7 +102,7 @@ begin
 
 end;
 
-function TPluginSettingsManager.GetAccountsIniFileName: WideString;
+function TPluginSettingsManager.GetAccountsIniFilePath: WideString;
 begin
 	result := self.FIniFileDir + ACCOUNTS_CONFIG_FILE_NAME;
 end;
@@ -110,7 +114,7 @@ begin
 	IniFile := TIniFile.Create(IniFilePath);
 	with self.Settings do
 	begin
-		IniDir := IniFile.ReadInteger('Main', 'IniPath', 0);  //TODO: Key should be renamed
+		IniDir := IniFile.ReadInteger('Main', 'IniPath', 0); //TODO: Key should be renamed
 		LoadSSLDLLOnlyFromPluginDir := IniFile.ReadBool('Main', 'LoadSSLDLLOnlyFromPluginDir', False);
 		PreserveFileTime := IniFile.ReadBool('Main', 'PreserveFileTime', False);
 		DescriptionEnabled := IniFile.ReadBool('Main', 'DescriptionEnabled', False);
@@ -149,10 +153,10 @@ begin
 		PrecalculateHash := IniFile.ReadBool('Main', 'PrecalculateHash', True);
 		ForcePrecalculateSize := IniFile.ReadInt64('Main', 'ForcePrecalculateSize', CLOUD_PRECALCULATE_LIMIT_DEFAULT);
 		CheckCRC := IniFile.ReadBool('Main', 'CheckCRC', True);
-
-		FIniFilePath := self.FIniFilePath;
 	end;
 	IniFile.Destroy;
+	self.Settings.IniFilePath := self.FIniFilePath;
+	self.Settings.AccountsIniFilePath := self.AccountsIniFilePath;
 end;
 
 procedure TPluginSettingsManager.Save;
