@@ -128,7 +128,6 @@ var
 	CurrentListing: TCMRDirItemList;
 	CurrentIncomingInvitesListing: TCMRIncomingInviteList;
 	ConnectionManager: TConnectionManager;
-	HTTPManager: THTTPManager;
 	CurrentDescriptions: TDescription;
 	PasswordManager: TTCPasswordManager;
 	TCLogger: TTCLogger;
@@ -1589,8 +1588,7 @@ begin
 		end;
 	end;
 
-	HTTPManager := THTTPManager.Create(SettingsManager.Settings.ConnectionSettings, TCProgress, TCLogger);
-	ConnectionManager := TConnectionManager.Create(SettingsManager.Settings, HTTPManager, TCProgress, TCLogger, TCRequest, PasswordManager);
+	ConnectionManager := TConnectionManager.Create(SettingsManager.Settings, TCProgress, TCLogger, TCRequest, PasswordManager);
 
 end;
 
@@ -1923,7 +1921,6 @@ begin
 	FreeAndNil(ThreadFsRemoveDirSkippedPath);
 	FreeAndNil(ThreadBackgroundThreads);
 	FreeAndNil(ConnectionManager);
-	FreeAndNil(HTTPManager);
 
 	CurrentDescriptions.Free;
 

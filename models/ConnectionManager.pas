@@ -46,7 +46,7 @@ type
 		function InitCloudCryptPasswords(const ConnectionName: WideString; var CloudSettings: TCloudSettings): Boolean;
 		//		function GetProxyPassword(var CloudSettings: TCloudSettings): Boolean;
 	public
-		constructor Create(PluginSettings: TPluginSettings; HTTPManager: THTTPManager; Progress: TTCProgress; Logger: TTCLogger; Request: TTCRequest; PasswordManager: TTCPasswordManager);
+		constructor Create(PluginSettings: TPluginSettings; Progress: TTCProgress; Logger: TTCLogger; Request: TTCRequest; PasswordManager: TTCPasswordManager);
 		destructor Destroy(); override;
 		function Get(ConnectionName: WideString; var OperationResult: integer): TCloudMailRu; //возвращает готовое подключение по имени
 		procedure Free(ConnectionName: WideString); //освобождает подключение по его имени, если оно существует
@@ -55,14 +55,14 @@ type
 implementation
 
 {TConnectionManager}
-constructor TConnectionManager.Create(PluginSettings: TPluginSettings; HTTPManager: THTTPManager; Progress: TTCProgress; Logger: TTCLogger; Request: TTCRequest; PasswordManager: TTCPasswordManager);
+constructor TConnectionManager.Create(PluginSettings: TPluginSettings; Progress: TTCProgress; Logger: TTCLogger; Request: TTCRequest; PasswordManager: TTCPasswordManager);
 begin
 	Connections := TDictionary<WideString, TCloudMailRu>.Create;
 	self.PluginSettings := PluginSettings;
 	self.Progress := Progress;
 	self.Logger := Logger;
 	self.Request := Request;
-	self.HTTPManager := HTTPManager;
+	self.HTTPManager := THTTPManager.Create(PluginSettings.ConnectionSettings, Progress, Logger);
 	self.PasswordManager := PasswordManager;
 end;
 
@@ -74,6 +74,8 @@ begin
 		Item.Value.Destroy;
 
 	FreeAndNil(Connections);
+
+	self.HTTPManager.Destroy;
 	inherited;
 end;
 
@@ -211,7 +213,7 @@ begin
 	end;
 	if EncryptModeAskOnce = CloudSettings.AccountSettings.EncryptFilesMode then
 	begin
-		if mrOK <> TAskPasswordForm.AskPassword(Format(ASK_ENCRYPTION_PASSWORD, [ConnectionName]), PREFIX_ASK_ENCRYPTION_PASSWORD, CloudSettings.CryptFilesPassword, StorePassword, true, PasswordManager.ParentWindow) then
+		if mrOk <> TAskPasswordForm.AskPassword(Format(ASK_ENCRYPTION_PASSWORD, [ConnectionName]), PREFIX_ASK_ENCRYPTION_PASSWORD, CloudSettings.CryptFilesPassword, StorePassword, true, PasswordManager.ParentWindow) then
 			Result := false
 	end;
 end;
@@ -222,22 +224,22 @@ function TConnectionManager.GetAccountPassword(const ConnectionName: WideString;
 var
 	AccountsManager: TAccountsManager;
 begin
-	if CloudSettings.AccountSettings.UseTCPasswordManager and (PasswordManager.GetPassword(ConnectionName, CloudSettings.AccountSettings.Password) = FS_FILE_OK) then //пароль должен браться из TC
+	if CloudSettings.AccountSettings.UseTCPasswordManager and (PasswordManager.GetPassword(ConnectionName, CloudSettings.AccountSettings.password) = FS_FILE_OK) then //пароль должен браться из TC
 		exit(true);
 
 	//иначе предполагается, что пароль взят из конфига
-	if CloudSettings.AccountSettings.Password = EmptyWideStr then //но пароля нет, не в инишнике, не в тотале
+	if CloudSettings.AccountSettings.password = EmptyWideStr then //но пароля нет, не в инишнике, не в тотале
 	begin
-		if mrOK <> TAskPasswordForm.AskPassword(Format(ASK_PASSWORD, [ConnectionName]), PREFIX_ASK_PASSWORD, CloudSettings.AccountSettings.Password, CloudSettings.AccountSettings.UseTCPasswordManager, false, FindTCWindow) then
+		if mrOk <> TAskPasswordForm.AskPassword(Format(ASK_PASSWORD, [ConnectionName]), PREFIX_ASK_PASSWORD, CloudSettings.AccountSettings.password, CloudSettings.AccountSettings.UseTCPasswordManager, false, FindTCWindow) then
 		begin //не указали пароль в диалоге
 			exit(false); //отказались вводить пароль
 		end else begin
 			Result := true;
 			if CloudSettings.AccountSettings.UseTCPasswordManager then
 			begin
-				if FS_FILE_OK = PasswordManager.SetPassword(ConnectionName, CloudSettings.AccountSettings.Password) then
+				if FS_FILE_OK = PasswordManager.SetPassword(ConnectionName, CloudSettings.AccountSettings.password) then
 				begin //Now the account password stored in TC, clear password from the ini file
-					Logger.Log(LOG_LEVEL_DEBUG, MSGTYPE_DETAILS, PASSWORD_SAVED, [ConnectionName]);
+					Logger.Log(LOG_LEVEL_DEBUG, msgtype_details, PASSWORD_SAVED, [ConnectionName]);
 					AccountsManager := TAccountsManager.Create(self.PluginSettings.AccountsIniFilePath);
 					AccountsManager.ClearPassword(ConnectionName);
 					AccountsManager.Free;
