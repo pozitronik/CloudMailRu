@@ -5,6 +5,7 @@ interface
 uses
 	IniFiles,
 	System.RegularExpressions,
+	Variants,
 	SysUtils,
 	Windows,
 	IOUtils,
@@ -17,6 +18,8 @@ type
 		procedure WriteString(const Section, Ident, Value: String); //owerride default Write%Anything% metod
 		function ValidateSectionName(const Section: string): boolean;
 		function ValidateIdentName(const Ident: string): boolean;
+
+		procedure SetSingleOptionValue(const Section, OptionName: WideString; OptionValue: Variant);
 	end;
 
 implementation
@@ -62,6 +65,24 @@ begin
 	if not(self.ValidateIdentName(Ident)) then
 		raise EIniFileException.CreateFmt(ERR_INVALID_IDENTIFIER_NAME, [Ident]);
 	inherited WriteString(Section, Ident, Value);
+end;
+
+procedure TIniFilesHelper.SetSingleOptionValue(const Section, OptionName: WideString; OptionValue: Variant);
+var
+	basicType: integer;
+begin
+	basicType := VarType(OptionValue);
+	case basicType of
+		varNull:
+			self.DeleteKey(Section, OptionName); //remove value in that case
+		varInteger:
+			self.WriteInteger(Section, OptionName, OptionValue);
+		varString, varUString, varOleStr:
+			self.WriteString(Section, OptionName, OptionValue);
+		varBoolean:
+			self.WriteBool(Section, OptionName, OptionValue);
+	end;
+
 end;
 
 end.
