@@ -670,9 +670,10 @@ begin
 		Result := FS_EXEC_SYMLINK;
 	end else begin
 		if RealPath.isInAccountsList then
-			TAccountsForm.ShowAccounts(MainWin, PasswordManager, RealPath.account) //main shared folder properties - open connection settings
-		else
 		begin
+			if TAccountsForm.ShowAccounts(MainWin, PasswordManager, RealPath.account) then //main shared folder properties - open connection settings
+				SettingsManager.Refresh;
+		end else begin
 			Cloud := ConnectionManager.Get(RealPath.account, getResult);
 			CurrentItem := FindListingItemByPath(CurrentListing, RealPath);
 			if Cloud.statusFile(CurrentItem.home, CurrentItem) then
@@ -691,7 +692,8 @@ begin
 	Cloud := ConnectionManager.Get(RealPath.account, getResult);
 	if RealPath.isInAccountsList then //main invites folder properties
 	begin
-		TAccountsForm.ShowAccounts(MainWin, PasswordManager, RealPath.account)
+		if TAccountsForm.ShowAccounts(MainWin, PasswordManager, RealPath.account) then
+			SettingsManager.Refresh;
 	end else begin //one invite item
 		CurrentInvite := FindIncomingInviteItemByPath(CurrentIncomingInvitesListing, RealPath);
 		if CurrentInvite.name = EmptyWideStr then
@@ -722,9 +724,10 @@ var
 begin
 	Result := FS_EXEC_OK;
 	if RealPath.isInAccountsList then
-		TAccountsForm.ShowAccounts(MainWin, PasswordManager, RealPath.account) //show account properties
-	else
 	begin
+		if TAccountsForm.ShowAccounts(MainWin, PasswordManager, RealPath.account) then //show account properties
+			SettingsManager.Refresh;
+	end else begin
 		Cloud := ConnectionManager.Get(RealPath.account, getResult);
 		//всегда нужно обновлять статус на сервере, CurrentListing может быть изменён в другой панели
 		if (Cloud.statusFile(RealPath.path, CurrentItem)) and (idContinue = TPropertyForm.ShowProperty(MainWin, RealPath.path, CurrentItem, Cloud, SettingsManager.Settings.DownloadLinksEncode, SettingsManager.Settings.AutoUpdateDownloadListing, SettingsManager.Settings.DescriptionEnabled, SettingsManager.Settings.DescriptionEditorEnabled, SettingsManager.Settings.DescriptionFileName)) then
