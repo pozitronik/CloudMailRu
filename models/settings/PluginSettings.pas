@@ -3,13 +3,14 @@
 interface
 
 uses
+	SETTINGS_CONSTANTS,
 	ConnectionSettings,
 	AccountSettings;
 
 type
 	TPluginSettings = record
 		ConnectionSettings: TConnectionSettings;
-		IniDir: integer; {See INI_DIR_* constants}
+		IniDir: TIniDirTypes; {See INI_DIR_* constants}
 		LoadSSLDLLOnlyFromPluginDir: boolean;
 		PreserveFileTime: boolean;
 		DescriptionEnabled: boolean;

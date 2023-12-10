@@ -69,6 +69,8 @@ const
 
 	DEFAULT_USERAGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.150 Safari/537.36/TCWFX(' + PlatformX + ')';
 
+type
+	TIniDirTypes =INI_DIR_PLUGIN .. INI_DIR_AUTO;
 implementation
 
 end.

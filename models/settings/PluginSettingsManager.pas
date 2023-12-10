@@ -115,7 +115,14 @@ begin
 	IniFile := TIniFile.Create(IniFilePath);
 	with self.Settings do
 	begin
-		IniDir := IniFile.ReadInteger('Main', 'IniPath', 0); //TODO: Key should be renamed
+		try
+			IniDir := IniFile.ReadInteger('Main', 'IniPath', INI_DIR_PLUGIN); //TODO: Key should be renamed
+		except
+			on E: ERangeError do
+			begin
+				IniDir := INI_DIR_PLUGIN;
+			end;
+		end;
 		LoadSSLDLLOnlyFromPluginDir := IniFile.ReadBool('Main', 'LoadSSLDLLOnlyFromPluginDir', False);
 		PreserveFileTime := IniFile.ReadBool('Main', 'PreserveFileTime', False);
 		DescriptionEnabled := IniFile.ReadBool('Main', 'DescriptionEnabled', False);
@@ -167,7 +174,7 @@ begin
 	IniFile := TIniFile.Create(IniFilePath);
 	with self.Settings do
 	begin
-		IniFile.WriteIntegerIfNotDefault('Main', 'IniPath', IniDir, 0);
+		IniFile.WriteIntegerIfNotDefault('Main', 'IniPath', IniDir, INI_DIR_PLUGIN);
 		IniFile.WriteBoolIfNotDefault('Main', 'LoadSSLDLLOnlyFromPluginDir', LoadSSLDLLOnlyFromPluginDir, False);
 		IniFile.WriteBoolIfNotDefault('Main', 'PreserveFileTime', PreserveFileTime, False);
 		IniFile.WriteBoolIfNotDefault('Main', 'DescriptionEnabled', DescriptionEnabled, False);
