@@ -31,6 +31,7 @@ type
 		function get(ThreadId: Cardinal): TCloudMailRuHTTP;
 
 		property ConnectionSettings: TConnectionSettings read FConnectionSettings;
+		property ProxyPassword: WideString write FConnectionSettings.ProxySettings.Password;
 	end;
 
 implementation
