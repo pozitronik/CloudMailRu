@@ -10,6 +10,7 @@ uses
 	WindowsHelper,
 	Windows,
 	ParsingHelper,
+	IniFilesHelper,
 	CMRStrings,
 	SETTINGS_CONSTANTS,
 	WSList,
@@ -81,7 +82,6 @@ var
 	IniFile: TIniFile;
 begin
 	IniFile := TIniFile.Create(FIniFilePath);
-
 	Result.Account := Account;
 	Result.Email := IniFile.ReadString(Account, 'email', EmptyWideStr);
 	Result.Password := IniFile.ReadString(Account, 'password', EmptyWideStr);
@@ -97,9 +97,26 @@ begin
 	Result.ShardOverride := IniFile.ReadString(Account, 'shard_override', EmptyWideStr);
 	Result.UploadUrlOverride := IniFile.ReadString(Account, 'upload_url_override', EmptyWideStr);
 	Result.CryptedGUIDFiles := IniFile.ReadString(Account, 'CryptedGUID_files', EmptyWideStr);
-
 	IniFile.Destroy;
+end;
 
+procedure TAccountsManager.SetAccountSettings(Account: WideString; AccountSettings: TAccountSettings);
+var
+	IniFile: TIniFile;
+begin
+	IniFile := TIniFile.Create(FIniFilePath);
+	IniFile.WriteStringIfNotDefault(Account, 'email', AccountSettings.Email, EmptyWideStr);
+	IniFile.WriteStringIfNotDefault(Account, 'password', AccountSettings.Password, EmptyWideStr);
+	IniFile.WriteBoolIfNotDefault(Account, 'tc_pwd_mngr', AccountSettings.UseTCPasswordManager, False);
+	IniFile.WriteBoolIfNotDefault(Account, 'unlimited_filesize', AccountSettings.UnlimitedFileSize, False);
+	IniFile.WriteBoolIfNotDefault(Account, 'split_large_files', AccountSettings.SplitLargeFiles, False);
+	IniFile.WriteBoolIfNotDefault(Account, 'twostep_auth', AccountSettings.TwostepAuth, False);
+	IniFile.WriteBoolIfNotDefault(Account, 'public_account', AccountSettings.PublicAccount, False);
+	IniFile.WriteStringIfNotDefault(Account, 'public_url', AccountSettings.PublicUrl, EmptyWideStr);
+	IniFile.WriteStringIfNotDefault(Account, 'description', AccountSettings.Description, EmptyWideStr);
+	IniFile.WriteIntegerIfNotDefault(Account, 'encrypt_files_mode', AccountSettings.EncryptFilesMode, EncryptModeNone);
+	IniFile.WriteBoolIfNotDefault(Account, 'encrypt_filenames', AccountSettings.EncryptFileNames, False);
+	IniFile.Destroy;
 end;
 
 function TAccountsManager.GetAccountsList(const AccountTypes: EAccountType = [ATPrivate, ATPublic]; const VirtualTypes: EVirtualType = []): TWSList;
@@ -140,27 +157,6 @@ begin
 	IniFile := TIniFile.Create(FIniFilePath);
 	IniFile.WriteString(Account, 'CryptedGUID_files', GUID);
 	IniFile.Destroy;
-end;
-
-procedure TAccountsManager.SetAccountSettings(Account: WideString; AccountSettings: TAccountSettings);
-var
-	IniFile: TIniFile;
-begin
-
-	IniFile := TIniFile.Create(FIniFilePath);
-	IniFile.WriteString(Account, 'email', AccountSettings.Email);
-	IniFile.WriteString(Account, 'password', AccountSettings.Password);
-	IniFile.WriteBool(Account, 'tc_pwd_mngr', AccountSettings.UseTCPasswordManager);
-	IniFile.WriteBool(Account, 'unlimited_filesize', AccountSettings.UnlimitedFileSize);
-	IniFile.WriteBool(Account, 'split_large_files', AccountSettings.SplitLargeFiles);
-	IniFile.WriteBool(Account, 'twostep_auth', AccountSettings.TwostepAuth);
-	IniFile.WriteBool(Account, 'public_account', AccountSettings.PublicAccount);
-	IniFile.WriteString(Account, 'public_url', AccountSettings.PublicUrl);
-	IniFile.WriteString(Account, 'description', AccountSettings.Description);
-	IniFile.WriteInteger(Account, 'encrypt_files_mode', AccountSettings.EncryptFilesMode);
-	IniFile.WriteBool(Account, 'encrypt_filenames', AccountSettings.EncryptFileNames);
-	IniFile.Destroy;
-
 end;
 
 end.
