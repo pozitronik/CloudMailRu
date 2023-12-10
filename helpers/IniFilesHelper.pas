@@ -13,13 +13,18 @@ uses
 
 type
 	TIniFilesHelper = class helper for TIniFile
-		function ReadInt64(const Section, Ident: string; Default: int64): int64;
+		function ReadInt64(const Section, Ident: string; Default: int64): int64; overload;
 		procedure WriteInt64(const Section, Ident: string; Value: int64);
 		procedure WriteString(const Section, Ident, Value: String); //owerride default Write%Anything% metod
 		function ValidateSectionName(const Section: string): boolean;
 		function ValidateIdentName(const Ident: string): boolean;
 
-		procedure SetSingleOptionValue(const Section, OptionName: WideString; OptionValue: Variant);
+		procedure WriteIntegerIfNotDefault(const Section, Ident: string; Value, Default: Integer); overload;
+		procedure WriteInt64IfNotDefault(const Section, Ident: string; Value, Default: int64); overload;
+		procedure WriteStringIfNotDefault(const Section, Ident: string; Value, Default: String);
+		procedure WriteBoolIfNotDefault(const Section, Ident: string; Value, Default: boolean);
+
+		procedure SetSingleOptionValue(const Section, Ident: WideString; OptionValue: Variant);
 	end;
 
 implementation
@@ -58,6 +63,36 @@ begin
 	WriteString(Section, Ident, IntToStr(Value));
 end;
 
+procedure TIniFilesHelper.WriteInt64IfNotDefault(const Section, Ident: string; Value, Default: int64);
+begin
+	if Value <> Default then
+	begin
+		self.WriteInt64(Section, Ident, Value);
+	end else begin
+		self.DeleteKey(Section, Ident)
+	end;
+end;
+
+procedure TIniFilesHelper.WriteIntegerIfNotDefault(const Section, Ident: string; Value, Default: Integer);
+begin
+	if Value <> Default then
+	begin
+		self.WriteInteger(Section, Ident, Value);
+	end else begin
+		self.DeleteKey(Section, Ident)
+	end;
+end;
+
+procedure TIniFilesHelper.WriteStringIfNotDefault(const Section, Ident: string; Value, Default: String);
+begin
+	if Value <> Default then
+	begin
+		self.WriteString(Section, Ident, Value);
+	end else begin
+		self.DeleteKey(Section, Ident)
+	end;
+end;
+
 procedure TIniFilesHelper.WriteString(const Section, Ident, Value: String);
 begin
 	if not(self.ValidateSectionName(Section)) then
@@ -67,20 +102,31 @@ begin
 	inherited WriteString(Section, Ident, Value);
 end;
 
-procedure TIniFilesHelper.SetSingleOptionValue(const Section, OptionName: WideString; OptionValue: Variant);
+procedure TIniFilesHelper.SetSingleOptionValue(const Section, Ident: WideString; OptionValue: Variant);
 var
-	basicType: integer;
+	basicType: Integer;
 begin
 	basicType := VarType(OptionValue);
 	case basicType of
 		varNull:
-			self.DeleteKey(Section, OptionName); //remove value in that case
+			self.DeleteKey(Section, Ident); //remove value in that case
 		varInteger:
-			self.WriteInteger(Section, OptionName, OptionValue);
+			self.WriteInteger(Section, Ident, OptionValue);
 		varString, varUString, varOleStr:
-			self.WriteString(Section, OptionName, OptionValue);
+			self.WriteString(Section, Ident, OptionValue);
 		varBoolean:
-			self.WriteBool(Section, OptionName, OptionValue);
+			self.WriteBool(Section, Ident, OptionValue);
+	end;
+
+end;
+
+procedure TIniFilesHelper.WriteBoolIfNotDefault(const Section, Ident: string; Value, Default: boolean);
+begin
+	if Value <> Default then
+	begin
+		self.WriteBool(Section, Ident, Value);
+	end else begin
+		self.DeleteKey(Section, Ident)
 	end;
 
 end;
