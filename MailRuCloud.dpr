@@ -1561,6 +1561,7 @@ begin
 
 end;
 
+{The password manager can be created only after this method is being called — it needs passed parameters}
 procedure FsSetCryptCallbackW(PCryptProc: TCryptProcW; CryptoNr: integer; Flags: integer); stdcall;
 var
 	ProxySettings: TProxySettings;
