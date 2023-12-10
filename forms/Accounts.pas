@@ -155,7 +155,7 @@ type
 		procedure UpdateStreamingExtensionsList();
 		procedure DeleteButtonClick(Sender: TObject);
 		procedure AccountsListKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
-		class procedure ShowAccounts(ParentWindow: HWND; AccountsManager: TAccountsManager; SettingsManager: TPluginSettingsManager; PasswordManager: TTCPasswordManager; Account: WideString);
+		class procedure ShowAccounts(ParentWindow: HWND; PasswordManager: TTCPasswordManager; Account: WideString);
 		procedure FormActivate(Sender: TObject);
 		procedure ProxyUserEditChange(Sender: TObject);
 		procedure GlobalSettingApplyBTNClick(Sender: TObject);
@@ -173,15 +173,14 @@ type
 		procedure ChangeUserAgentCBClick(Sender: TObject);
 	private
 		{Private declarations}
-		procedure ApplySettings();
-		function CheckValidators(): boolean;
-		function StoreFileCryptPassword(AccountName: WideString): WideString;
-	public
-		{Public declarations}
 		AccountsManager: TAccountsManager;
 		SettingsManager: TPluginSettingsManager;
 		PasswordManager: TTCPasswordManager;
 		SelectedAccount: WideString;
+		procedure ApplySettings();
+		function CheckValidators(): boolean;
+		function StoreFileCryptPassword(AccountName: WideString): WideString;
+	public
 
 	end;
 
@@ -525,15 +524,17 @@ begin
 	AccountsPanel.Visible := not PublicAccountCB.Checked;
 end;
 
-class procedure TAccountsForm.ShowAccounts(ParentWindow: HWND; AccountsManager: TAccountsManager; SettingsManager: TPluginSettingsManager; PasswordManager: TTCPasswordManager; Account: WideString);
+class procedure TAccountsForm.ShowAccounts(ParentWindow: HWND; PasswordManager: TTCPasswordManager; Account: WideString);
 var
 	AccountsForm: TAccountsForm;
 begin
 	try
 		AccountsForm := TAccountsForm.Create(nil);
 		AccountsForm.ParentWindow := ParentWindow;
-		AccountsForm.AccountsManager := AccountsManager;
-		AccountsForm.SettingsManager := SettingsManager;
+
+		AccountsForm.SettingsManager := TPluginSettingsManager.Create();
+		AccountsForm.AccountsManager := TAccountsManager.Create(AccountsForm.SettingsManager.AccountsIniFilePath);
+
 		AccountsForm.PasswordManager := PasswordManager;
 		AccountsForm.SelectedAccount := EmptyWideStr;
 		{global settings}
@@ -594,6 +595,8 @@ begin
 		AccountsForm.OptionPages.ActivePageIndex := 0;
 		AccountsForm.ShowModal;
 	finally
+		AccountsForm.SettingsManager.Free;
+		AccountsForm.AccountsManager.Free;
 		FreeAndNil(AccountsForm);
 	end;
 end;

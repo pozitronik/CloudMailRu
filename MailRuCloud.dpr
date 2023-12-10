@@ -671,7 +671,7 @@ begin
 		Result := FS_EXEC_SYMLINK;
 	end else begin
 		if RealPath.isInAccountsList then
-			TAccountsForm.ShowAccounts(MainWin, AccountSettings, SettingsManager, PasswordManager, RealPath.account) //main shared folder properties - open connection settings
+			TAccountsForm.ShowAccounts(MainWin, PasswordManager, RealPath.account) //main shared folder properties - open connection settings
 		else
 		begin
 			Cloud := ConnectionManager.Get(RealPath.account, getResult);
@@ -692,7 +692,7 @@ begin
 	Cloud := ConnectionManager.Get(RealPath.account, getResult);
 	if RealPath.isInAccountsList then //main invites folder properties
 	begin
-		TAccountsForm.ShowAccounts(MainWin, AccountSettings, SettingsManager, PasswordManager, RealPath.account)
+		TAccountsForm.ShowAccounts(MainWin, PasswordManager, RealPath.account)
 	end else begin //one invite item
 		CurrentInvite := FindIncomingInviteItemByPath(CurrentIncomingInvitesListing, RealPath);
 		if CurrentInvite.name = EmptyWideStr then
@@ -723,7 +723,7 @@ var
 begin
 	Result := FS_EXEC_OK;
 	if RealPath.isInAccountsList then
-		TAccountsForm.ShowAccounts(MainWin, AccountSettings, SettingsManager, PasswordManager, RealPath.account) //show account properties
+		TAccountsForm.ShowAccounts(MainWin, PasswordManager, RealPath.account) //show account properties
 	else
 	begin
 		Cloud := ConnectionManager.Get(RealPath.account, getResult);
