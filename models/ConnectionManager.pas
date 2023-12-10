@@ -17,8 +17,10 @@ uses
 	Vcl.Controls,
 	SETTINGS_CONSTANTS,
 	PLUGIN_TYPES,
+	ProxySettings,
 	AccountSettings,
 	AccountsManager,
+	PluginSettingsManager,
 	PluginSettings,
 	CloudSettings,
 	TCPasswordManager,
@@ -43,6 +45,7 @@ type
 
 		function Init(ConnectionName: WideString; out Cloud: TCloudMailRu): integer; //инициализирует подключение по его имени, возвращает код состояния
 		function GetAccountPassword(const ConnectionName: WideString; var CloudSettings: TCloudSettings): Boolean;
+		function GetProxyPassword(): Boolean;
 		function InitCloudCryptPasswords(const ConnectionName: WideString; var CloudSettings: TCloudSettings): Boolean;
 		//		function GetProxyPassword(var CloudSettings: TCloudSettings): Boolean;
 	public
@@ -108,7 +111,6 @@ var
 	ActionsList: TDictionary<Int32, WideString>;
 	PasswordActionRetry: Boolean;
 	AccountsManager: TAccountsManager;
-
 begin
 	Result := CLOUD_OPERATION_OK;
 	AccountsManager := TAccountsManager.Create(self.PluginSettings.AccountsIniFilePath);
@@ -128,10 +130,10 @@ begin
 		AttemptWait := self.PluginSettings.AttemptWait;
 	end;
 
-	if not GetAccountPassword(ConnectionName, CloudSettings) then
+	if not GetAccountPassword(ConnectionName, CloudSettings) or not GetProxyPassword then
 		exit(CLOUD_OPERATION_ERROR_STATUS_UNKNOWN); //INVALID_HANDLE_VALUE
 
-	PasswordActionRetry := false;
+	PasswordActionRetry := False;
 	if CloudSettings.AccountSettings.EncryptFilesMode <> EncryptModeNone then
 	begin
 		repeat //пока не будет разрешающего действия
@@ -157,7 +159,7 @@ begin
 						end;
 					mrRetry:
 						begin
-							PasswordActionRetry := true;
+							PasswordActionRetry := True;
 						end;
 				end;
 				FreeAndNil(ActionsList);
@@ -190,8 +192,8 @@ var
 	crypt_id: WideString;
 	StorePassword: Boolean;
 begin
-	Result := true;
-	StorePassword := false;
+	Result := True;
+	StorePassword := False;
 	crypt_id := ConnectionName + ' filecrypt';
 
 	if EncryptModeAlways = CloudSettings.AccountSettings.EncryptFilesMode then {password must be taken from tc storage, otherwise ask user and store password}
@@ -199,7 +201,7 @@ begin
 		case PasswordManager.GetPassword(crypt_id, CloudSettings.CryptFilesPassword) of
 			FS_FILE_OK:
 				begin
-					exit(true);
+					exit(True);
 				end;
 			FS_FILE_READERROR: //password not found in store => act like EncryptModeAskOnce
 				begin
@@ -207,14 +209,14 @@ begin
 				end;
 			FS_FILE_NOTSUPPORTED: //user doesn't know master password
 				begin
-					exit(false);
+					exit(False);
 				end;
 		end;
 	end;
 	if EncryptModeAskOnce = CloudSettings.AccountSettings.EncryptFilesMode then
 	begin
-		if mrOk <> TAskPasswordForm.AskPassword(Format(ASK_ENCRYPTION_PASSWORD, [ConnectionName]), PREFIX_ASK_ENCRYPTION_PASSWORD, CloudSettings.CryptFilesPassword, StorePassword, true, PasswordManager.ParentWindow) then
-			Result := false
+		if mrOk <> TAskPasswordForm.AskPassword(Format(ASK_ENCRYPTION_PASSWORD, [ConnectionName]), PREFIX_ASK_ENCRYPTION_PASSWORD, CloudSettings.CryptFilesPassword, StorePassword, True, PasswordManager.ParentWindow) then
+			Result := False
 	end;
 end;
 
@@ -225,30 +227,69 @@ var
 	AccountsManager: TAccountsManager;
 begin
 	if CloudSettings.AccountSettings.UseTCPasswordManager and (PasswordManager.GetPassword(ConnectionName, CloudSettings.AccountSettings.password) = FS_FILE_OK) then //пароль должен браться из TC
-		exit(true);
+		exit(True);
 
 	//иначе предполагается, что пароль взят из конфига
 	if CloudSettings.AccountSettings.password = EmptyWideStr then //но пароля нет, не в инишнике, не в тотале
 	begin
-		if mrOk <> TAskPasswordForm.AskPassword(Format(ASK_PASSWORD, [ConnectionName]), PREFIX_ASK_PASSWORD, CloudSettings.AccountSettings.password, CloudSettings.AccountSettings.UseTCPasswordManager, false, FindTCWindow) then
+		if mrOk <> TAskPasswordForm.AskPassword(Format(ASK_PASSWORD, [ConnectionName]), PREFIX_ASK_PASSWORD, CloudSettings.AccountSettings.password, CloudSettings.AccountSettings.UseTCPasswordManager, False, FindTCWindow) then
 		begin //не указали пароль в диалоге
-			exit(false); //отказались вводить пароль
+			exit(False); //отказались вводить пароль
 		end else begin
-			Result := true;
+			Result := True;
 			if CloudSettings.AccountSettings.UseTCPasswordManager then
 			begin
 				if FS_FILE_OK = PasswordManager.SetPassword(ConnectionName, CloudSettings.AccountSettings.password) then
 				begin //Now the account password stored in TC, clear password from the ini file
 					Logger.Log(LOG_LEVEL_DEBUG, msgtype_details, PASSWORD_SAVED, [ConnectionName]);
 					AccountsManager := TAccountsManager.Create(self.PluginSettings.AccountsIniFilePath);
-					AccountsManager.ClearPassword(ConnectionName);
+					AccountsManager.SwitchPasswordStorage(ConnectionName);
 					AccountsManager.Free;
 				end;
 			end;
 		end;
 	end
 	else
-		Result := true;
+		Result := True;
+end;
+
+{Retrieves the proxy password, if required, from TC passwords storage, the settings file or user input. Returns true if password retrieved or not required, false otherwise.
+ Note: the metod saves password to TC storage and removes it from config, if user chooses to do so}
+function TConnectionManager.GetProxyPassword: Boolean;
+var
+	SettingsManager: TPluginSettingsManager;
+	ProxySettings: TProxySettings;
+begin
+	Result := False;
+	ProxySettings := HTTPManager.ConnectionSettings.ProxySettings;
+
+	if (ProxySettings.ProxyType = ProxyNone) or (ProxySettings.User = EmptyWideStr) then
+		exit(True); {No proxy or not password protected}
+
+	if ProxySettings.UseTCPasswordManager and (PasswordManager.GetPassword('proxy' + ProxySettings.User, ProxySettings.password) = FS_FILE_OK) then {retrieve the proxy password from TC passwords storage}
+		Result := True{Password is retrieved and should be updated in th HTTPManager}
+	else begin
+		if ProxySettings.password = EmptyWideStr then {password can be retrieved previously or just read from config}
+		begin
+			if mrOk = TAskPasswordForm.AskPassword(Format(ASK_PROXY_PASSWORD, [ProxySettings.User]), PREFIX_ASK_PROXY_PASSWORD, ProxySettings.password, ProxySettings.UseTCPasswordManager, False, FindTCWindow) then
+			begin {get proxy password and parameters from the user input}
+				if FS_FILE_OK = PasswordManager.SetPassword('proxy' + ProxySettings.User, ProxySettings.password) then
+				begin {Now the proxy password stored in TC, clear password from the ini file}
+					Logger.Log(LOG_LEVEL_DEBUG, msgtype_details, PASSWORD_SAVED, [ProxySettings.User]);
+					SettingsManager := TPluginSettingsManager.Create();
+					SettingsManager.SwitchProxyPasswordStorage;
+					SettingsManager.Destroy;
+					Result := True;
+				end else begin
+					Logger.Log(LOG_LEVEL_WARNING, msgtype_details, WARN_PROXY_PASSWORD_IGNORED);
+					Result := False;
+				end;
+			end;
+		end;
+	end;
+
+	if Result = True then {update proxy password in the httpmanager to not ask it again}
+		HTTPManager.ProxyPassword := ProxySettings.password;
 end;
 
 end.

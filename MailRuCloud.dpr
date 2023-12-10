@@ -1562,34 +1562,10 @@ end;
 
 {The password manager can be created only after this method is being called — it needs passed parameters}
 procedure FsSetCryptCallbackW(PCryptProc: TCryptProcW; CryptoNr: integer; Flags: integer); stdcall;
-var
-	ProxySettings: TProxySettings;
 begin
-	ProxySettings := SettingsManager.Settings.ConnectionSettings.ProxySettings;
 	PasswordManager := TTCPasswordManager.Create(PCryptProc, PluginNum, CryptoNr, TCLogger);
 
-	if not((ProxySettings.ProxyType = ProxyNone) or (ProxySettings.User = EmptyWideStr)) then {proxy connection is password-protected}
-	begin
-		if not(ProxySettings.UseTCPasswordManager and (PasswordManager.GetPassword('proxy' + ProxySettings.User, ProxySettings.password) = FS_FILE_OK)) then {retrieve the proxy password from TC passwords storage}
-		begin
-			if ProxySettings.password = EmptyWideStr then {the password may be taken from config before, otherwise ask user}
-			begin
-				if mrOk = TAskPasswordForm.AskPassword(Format(ASK_PROXY_PASSWORD, [ProxySettings.User]), PREFIX_ASK_PROXY_PASSWORD, ProxySettings.password, ProxySettings.UseTCPasswordManager, false, FindTCWindow) then
-				begin {get proxy password and parameters from the user input}
-					if FS_FILE_OK = PasswordManager.SetPassword('proxy' + ProxySettings.User, ProxySettings.password) then
-					begin {Now the proxy password stored in TC, clear password from the ini file}
-						TCLogger.Log(LOG_LEVEL_DEBUG, msgtype_details, PASSWORD_SAVED, [ProxySettings.User]);
-						SettingsManager.SwitchProxyPasswordStorage;
-					end else begin
-						TCLogger.Log(LOG_LEVEL_WARNING, msgtype_details, WARN_PROXY_PASSWORD_IGNORED);
-					end;
-				end;
-			end;
-		end;
-	end;
-
 	ConnectionManager := TConnectionManager.Create(SettingsManager.Settings, TCProgress, TCLogger, TCRequest, PasswordManager);
-
 end;
 
 function FsContentGetValueW(FileName: PWideChar; FieldIndex: integer; UnitIndex: integer; FieldValue: Pointer; maxlen: integer; Flags: integer): integer; stdcall;
