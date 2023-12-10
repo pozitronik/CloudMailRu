@@ -65,6 +65,7 @@ var
 begin
 	IniFile := TIniFile.Create(FIniFilePath);
 	IniFile.DeleteKey(Account, 'password');
+	IniFile.WriteBool(Account, 'tc_pwd_mngr', True);
 	IniFile.Destroy;
 end;
 

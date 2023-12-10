@@ -254,7 +254,7 @@ begin
 				if FS_FILE_OK = PasswordManager.SetPassword(ConnectionName, CloudSettings.Password) then
 				begin //Now the account password stored in TC, clear password from the ini file
 					Logger.Log(LOG_LEVEL_DEBUG, MSGTYPE_DETAILS, PASSWORD_SAVED, [ConnectionName]);
-					AccountsManager := TAccountsManager.Create(self.PluginSettings.IniFilePath);
+					AccountsManager := TAccountsManager.Create(self.PluginSettings.AccountsIniFilePath);
 					AccountsManager.ClearPassword(ConnectionName);
 					AccountsManager.Free;
 				end;
