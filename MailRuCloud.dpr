@@ -142,9 +142,9 @@ var
 	CurrentCloud: TCloudMailRu;
 begin
 	if path.HasHomePath then
-		Result := CurrentListing.FindByName(path.path)
+		Result := CurrentListing.FindByHomePath(path.path) //сначала попробуем найти поле в имеющемся списке
 	else
-		Result := CurrentListing.FindByHomePath(path.path); //сначала попробуем найти поле в имеющемся списке
+		Result := CurrentListing.FindByName(path.path);
 
 	if Result.isNone and UpdateListing then //если там его нет (нажали пробел на папке, например), то запросим в облаке напрямую, в зависимости от того, внутри чего мы находимся
 	begin
