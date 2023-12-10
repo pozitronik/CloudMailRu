@@ -127,9 +127,7 @@ begin
 	end;
 
 	if not GetAccountPassword(ConnectionName, CloudSettings) then
-	begin
 		exit(CLOUD_OPERATION_ERROR_STATUS_UNKNOWN); //INVALID_HANDLE_VALUE
-	end;
 
 	PasswordActionRetry := false;
 	if CloudSettings.AccountSettings.EncryptFilesMode <> EncryptModeNone then
