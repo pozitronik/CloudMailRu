@@ -12,6 +12,7 @@ uses
 	SETTINGS_CONSTANTS,
 	CMRStrings,
 	CMRConstants,
+	IniFilesHelper,
 	PluginSettings;
 
 type
@@ -126,15 +127,15 @@ begin
 		CopyBetweenAccountsMode := IniFile.ReadInteger('Main', 'CopyBetweenAccountsMode', CopyBetweenAccountsModeDisabled);
 		DisableMultiThreading := IniFile.ReadBool('Main', 'DisableMultiThreading', False);
 		LogUserSpace := IniFile.ReadBool('Main', 'LogUserSpace', True);
-		IconsMode := IniFile.ReadInteger('Main', 'IconsMode', 0);
+		IconsMode := IniFile.ReadInteger('Main', 'IconsMode', IconsModeDisabled);
 		ConnectionSettings.SocketTimeout := IniFile.ReadInteger('Main', 'SocketTimeout', -1);
 		ConnectionSettings.UploadBPS := IniFile.ReadInteger('Main', 'UploadBPS', -1);
 		ConnectionSettings.DownloadBPS := IniFile.ReadInteger('Main', 'DownloadBPS', -1);
 		CloudMaxFileSize := IniFile.ReadInt64('Main', 'CloudMaxFileSize', CLOUD_MAX_FILESIZE_DEFAULT);
-		ChunkOverwriteMode := IniFile.ReadInteger('Main', 'ChunkOverwriteMode', 0);
-		DeleteFailOnUploadMode := IniFile.ReadInteger('Main', 'DeleteFailOnUploadMode', 0);
-		OverwriteLocalMode := IniFile.ReadInteger('Main', 'OverwriteLocalMode', 0);
-		OperationErrorMode := IniFile.ReadInteger('Main', 'OperationErrorMode', 0);
+		ChunkOverwriteMode := IniFile.ReadInteger('Main', 'ChunkOverwriteMode', ChunkOverwrite);
+		DeleteFailOnUploadMode := IniFile.ReadInteger('Main', 'DeleteFailOnUploadMode', DeleteFailOnUploadAsk);
+		OverwriteLocalMode := IniFile.ReadInteger('Main', 'OverwriteLocalMode', OverwriteLocalModeAsk);
+		OperationErrorMode := IniFile.ReadInteger('Main', 'OperationErrorMode', OperationErrorModeAsk);
 		RetryAttempts := IniFile.ReadInteger('Main', 'RetryAttempts', 1);
 		AttemptWait := IniFile.ReadInteger('Main', 'AttemptWait', 1000);
 		ConnectionSettings.ProxySettings.ProxyType := IniFile.ReadInteger('Main', 'ProxyType', ProxyNone);
@@ -166,45 +167,45 @@ begin
 	IniFile := TIniFile.Create(IniFilePath);
 	with self.Settings do
 	begin
-		IniFile.WriteInteger('Main', 'IniPath', IniDir);
-		IniFile.WriteBool('Main', 'LoadSSLDLLOnlyFromPluginDir', LoadSSLDLLOnlyFromPluginDir);
-		IniFile.WriteBool('Main', 'PreserveFileTime', PreserveFileTime);
-		IniFile.WriteBool('Main', 'DescriptionEnabled', DescriptionEnabled);
-		IniFile.WriteBool('Main', 'DescriptionEditorEnabled', DescriptionEditorEnabled);
-		IniFile.WriteBool('Main', 'DescriptionCopyToCloud', DescriptionCopyToCloud);
-		IniFile.WriteBool('Main', 'DescriptionCopyFromCloud', DescriptionCopyFromCloud);
-		IniFile.WriteBool('Main', 'DescriptionTrackCloudFS', DescriptionTrackCloudFS);
-		IniFile.WriteString('Main', 'DescriptionFileName', DescriptionFileName);
-		IniFile.WriteInteger('Main', 'CopyBetweenAccountsMode', CopyBetweenAccountsMode);
-		IniFile.WriteBool('Main', 'DisableMultiThreading', DisableMultiThreading);
-		IniFile.WriteBool('Main', 'LogUserSpace', LogUserSpace);
-		IniFile.WriteInteger('Main', 'IconsMode', IconsMode);
-		IniFile.WriteInteger('Main', 'SocketTimeout', ConnectionSettings.SocketTimeout);
-		IniFile.WriteInteger('Main', 'UploadBPS', ConnectionSettings.UploadBPS);
-		IniFile.WriteInteger('Main', 'DownloadBPS', ConnectionSettings.DownloadBPS);
-		IniFile.WriteInt64('Main', 'CloudMaxFileSize', CloudMaxFileSize);
-		IniFile.WriteInteger('Main', 'ChunkOverwriteMode', ChunkOverwriteMode);
-		IniFile.WriteInteger('Main', 'DeleteFailOnUploadMode', DeleteFailOnUploadMode);
-		IniFile.WriteInteger('Main', 'OverwriteLocalMode', OverwriteLocalMode);
-		IniFile.WriteInteger('Main', 'OperationErrorMode', OperationErrorMode);
-		IniFile.WriteInteger('Main', 'RetryAttempts', RetryAttempts);
-		IniFile.WriteInteger('Main', 'AttemptWait', AttemptWait);
-		IniFile.WriteInteger('Main', 'ProxyType', ConnectionSettings.ProxySettings.ProxyType);
-		IniFile.WriteString('Main', 'ProxyServer', ConnectionSettings.ProxySettings.Server);
-		IniFile.WriteInteger('Main', 'ProxyPort', ConnectionSettings.ProxySettings.Port);
-		IniFile.WriteString('Main', 'ProxyUser', ConnectionSettings.ProxySettings.User);
-		IniFile.WriteBool('Main', 'ProxyTCPwdMngr', ConnectionSettings.ProxySettings.UseTCPasswordManager);
-		IniFile.WriteString('Main', 'ProxyPassword', ConnectionSettings.ProxySettings.Password);
-		IniFile.WriteString('Main', 'UserAgent', ConnectionSettings.UserAgent);
-		IniFile.WriteBool('Main', 'DownloadLinksEncode', DownloadLinksEncode);
-		IniFile.WriteBool('Main', 'AutoUpdateDownloadListing', AutoUpdateDownloadListing);
-		IniFile.WriteBool('Main', 'ShowTrashFolders', ShowTrashFolders);
-		IniFile.WriteBool('Main', 'ShowSharedFolders', ShowSharedFolders);
-		IniFile.WriteBool('Main', 'ShowInvitesFolders', ShowInvitesFolders);
-		IniFile.WriteInteger('Main', 'LogLevel', LogLevel);
-		IniFile.WriteBool('Main', 'PrecalculateHash', PrecalculateHash);
-		IniFile.WriteInt64('Main', 'ForcePrecalculateSize', ForcePrecalculateSize);
-		IniFile.WriteBool('Main', 'CheckCRC', CheckCRC);
+		IniFile.WriteIntegerIfNotDefault('Main', 'IniPath', IniDir, 0);
+		IniFile.WriteBoolIfNotDefault('Main', 'LoadSSLDLLOnlyFromPluginDir', LoadSSLDLLOnlyFromPluginDir, False);
+		IniFile.WriteBoolIfNotDefault('Main', 'PreserveFileTime', PreserveFileTime, False);
+		IniFile.WriteBoolIfNotDefault('Main', 'DescriptionEnabled', DescriptionEnabled, False);
+		IniFile.WriteBoolIfNotDefault('Main', 'DescriptionEditorEnabled', DescriptionEditorEnabled, False);
+		IniFile.WriteBoolIfNotDefault('Main', 'DescriptionCopyToCloud', DescriptionCopyToCloud, False);
+		IniFile.WriteBoolIfNotDefault('Main', 'DescriptionCopyFromCloud', DescriptionCopyFromCloud, False);
+		IniFile.WriteBoolIfNotDefault('Main', 'DescriptionTrackCloudFS', DescriptionTrackCloudFS, False);
+		IniFile.WriteStringIfNotDefault('Main', 'DescriptionFileName', DescriptionFileName, 'descript.ion');
+		IniFile.WriteIntegerIfNotDefault('Main', 'CopyBetweenAccountsMode', CopyBetweenAccountsMode, CopyBetweenAccountsModeDisabled);
+		IniFile.WriteBoolIfNotDefault('Main', 'DisableMultiThreading', DisableMultiThreading, False);
+		IniFile.WriteBoolIfNotDefault('Main', 'LogUserSpace', LogUserSpace, True);
+		IniFile.WriteIntegerIfNotDefault('Main', 'IconsMode', IconsMode, IconsModeDisabled);
+		IniFile.WriteIntegerIfNotDefault('Main', 'SocketTimeout', ConnectionSettings.SocketTimeout, -1);
+		IniFile.WriteIntegerIfNotDefault('Main', 'UploadBPS', ConnectionSettings.UploadBPS, -1);
+		IniFile.WriteIntegerIfNotDefault('Main', 'DownloadBPS', ConnectionSettings.DownloadBPS, -1);
+		IniFile.WriteInt64IfNotDefault('Main', 'CloudMaxFileSize', CloudMaxFileSize, CLOUD_MAX_FILESIZE_DEFAULT);
+		IniFile.WriteIntegerIfNotDefault('Main', 'ChunkOverwriteMode', ChunkOverwriteMode, ChunkOverwrite);
+		IniFile.WriteIntegerIfNotDefault('Main', 'DeleteFailOnUploadMode', DeleteFailOnUploadMode, DeleteFailOnUploadAsk);
+		IniFile.WriteIntegerIfNotDefault('Main', 'OverwriteLocalMode', OverwriteLocalMode, OverwriteLocalModeAsk);
+		IniFile.WriteIntegerIfNotDefault('Main', 'OperationErrorMode', OperationErrorMode, OperationErrorModeAsk);
+		IniFile.WriteIntegerIfNotDefault('Main', 'RetryAttempts', RetryAttempts, 1);
+		IniFile.WriteIntegerIfNotDefault('Main', 'AttemptWait', AttemptWait, 1000);
+		IniFile.WriteIntegerIfNotDefault('Main', 'ProxyType', ConnectionSettings.ProxySettings.ProxyType, ProxyNone);
+		IniFile.WriteStringIfNotDefault('Main', 'ProxyServer', ConnectionSettings.ProxySettings.Server, EmptyWideStr);
+		IniFile.WriteIntegerIfNotDefault('Main', 'ProxyPort', ConnectionSettings.ProxySettings.Port, 0);
+		IniFile.WriteStringIfNotDefault('Main', 'ProxyUser', ConnectionSettings.ProxySettings.User, EmptyWideStr);
+		IniFile.WriteBoolIfNotDefault('Main', 'ProxyTCPwdMngr', ConnectionSettings.ProxySettings.UseTCPasswordManager, False);
+		IniFile.WriteStringIfNotDefault('Main', 'ProxyPassword', ConnectionSettings.ProxySettings.Password, EmptyWideStr);
+		IniFile.WriteStringIfNotDefault('Main', 'UserAgent', ConnectionSettings.UserAgent, DEFAULT_USERAGENT);
+		IniFile.WriteBoolIfNotDefault('Main', 'DownloadLinksEncode', DownloadLinksEncode, True);
+		IniFile.WriteBoolIfNotDefault('Main', 'AutoUpdateDownloadListing', AutoUpdateDownloadListing, True);
+		IniFile.WriteBoolIfNotDefault('Main', 'ShowTrashFolders', ShowTrashFolders, True);
+		IniFile.WriteBoolIfNotDefault('Main', 'ShowSharedFolders', ShowSharedFolders, True);
+		IniFile.WriteBoolIfNotDefault('Main', 'ShowInvitesFolders', ShowInvitesFolders, True);
+		IniFile.WriteIntegerIfNotDefault('Main', 'LogLevel', LogLevel, LOG_LEVEL_CONNECT + LOG_LEVEL_FILE_OPERATION + LOG_LEVEL_DETAIL + LOG_LEVEL_WARNING + LOG_LEVEL_ERROR);
+		IniFile.WriteBoolIfNotDefault('Main', 'PrecalculateHash', PrecalculateHash, True);
+		IniFile.WriteInt64IfNotDefault('Main', 'ForcePrecalculateSize', ForcePrecalculateSize, CLOUD_PRECALCULATE_LIMIT_DEFAULT);
+		IniFile.WriteBoolIfNotDefault('Main', 'CheckCRC', CheckCRC, True);
 	end;
 	IniFile.Destroy;
 end;
