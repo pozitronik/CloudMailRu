@@ -1580,7 +1580,9 @@ begin
 					begin {Now the proxy password stored in TC, clear password from the ini file}
 						TCLogger.Log(LOG_LEVEL_DEBUG, msgtype_details, PASSWORD_SAVED, [ProxySettings.User]);
 						SettingsManager.SwitchProxyPasswordStorage;
-					end; //Ошибки здесь не значат, что пароль мы не получили - он может быть введён в диалоге
+					end else begin
+						TCLogger.Log(LOG_LEVEL_WARNING, msgtype_details, WARN_PROXY_PASSWORD_IGNORED);
+					end;
 				end;
 			end;
 		end;

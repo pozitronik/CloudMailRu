@@ -199,6 +199,7 @@ const
 	VERB_UPDATE = 'Update';
 	WAIT = 'Wait for it...';
 	WARN_QUOTA_EXHAUSTED = 'Warning: space quota exhausted!';
+  WARN_PROXY_PASSWORD_IGNORED = 'Warning: proxy password input skipped ignored, parameter will be ignored!';
 
 	ERR_PARSING_ANSWER = 'Parsing answer';
 	ERR_JSON_PARSING = 'JSON parsing error: %s';
@@ -207,7 +208,7 @@ const
 	PROCEED_IGNORE = 'Proceed without encryption';
 	PROCEED_RETYPE = 'Retype password';
 	PREFIX_ERR_PASSWORD_MATCH = 'Password doesn''t match!';
-	ERR_PASSWORD_MATCH = 'The specified password does not match the previously entered one. If you choose to use the new password,  previously encrypted files become inaccessible.';
+	ERR_PASSWORD_MATCH = 'The specified password does not match the previously entered one. If you choose to use the new password, previously encrypted files become inaccessible.';
 
 implementation
 
