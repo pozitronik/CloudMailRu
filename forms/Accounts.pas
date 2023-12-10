@@ -155,7 +155,7 @@ type
 		procedure UpdateStreamingExtensionsList();
 		procedure DeleteButtonClick(Sender: TObject);
 		procedure AccountsListKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
-		class procedure ShowAccounts(ParentWindow: HWND; PasswordManager: TTCPasswordManager; Account: WideString);
+		class function ShowAccounts(ParentWindow: HWND; PasswordManager: TTCPasswordManager; Account: WideString): Boolean;
 		procedure FormActivate(Sender: TObject);
 		procedure ProxyUserEditChange(Sender: TObject);
 		procedure GlobalSettingApplyBTNClick(Sender: TObject);
@@ -177,8 +177,9 @@ type
 		SettingsManager: TPluginSettingsManager;
 		PasswordManager: TTCPasswordManager;
 		SelectedAccount: WideString;
+		SettingsApplied: Boolean;
 		procedure ApplySettings();
-		function CheckValidators(): boolean;
+		function CheckValidators(): Boolean;
 		function StoreFileCryptPassword(AccountName: WideString): WideString;
 	public
 
@@ -362,6 +363,7 @@ begin
 	self.SettingsManager.Settings.PrecalculateHash := PrecalculateHashCB.Checked;
 	self.SettingsManager.Settings.CheckCRC := CheckCRCCB.Checked;
 	self.SettingsManager.Save;
+	self.SettingsApplied := True;
 	if ProxyTCPwdMngrCB.Checked then //просим TC сохранить пароль
 	begin
 		case PasswordManager.SetPassword('proxy' + ProxyUserEdit.Text, ProxyPwd.Text) of
@@ -388,7 +390,7 @@ begin
 	UserAgentEdit.ReadOnly := not ChangeUserAgentCB.Checked;
 end;
 
-function TAccountsForm.CheckValidators: boolean;
+function TAccountsForm.CheckValidators: Boolean;
 var
 	MessageBaloon: TBalloonHint;
 begin
@@ -403,7 +405,7 @@ begin
 		MessageBaloon.ShowHint(DescriptionFileNameEdit);
 		exit;
 	end;
-	exit(true);
+	exit(True);
 end;
 
 procedure TAccountsForm.CloudMaxFileSizeCBClick(Sender: TObject);
@@ -483,9 +485,9 @@ begin
 	begin
 		if (self.SelectedAccount <> EmptyWideStr) and (AccountsList.Items.IndexOf(self.SelectedAccount) <> -1) then
 		begin
-			AccountsList.Selected[AccountsList.Items.IndexOf(self.SelectedAccount)] := true;
+			AccountsList.Selected[AccountsList.Items.IndexOf(self.SelectedAccount)] := True;
 		end else begin
-			AccountsList.Selected[0] := true;
+			AccountsList.Selected[0] := True;
 		end;
 		AccountsList.OnClick(self);
 	end;
@@ -524,7 +526,8 @@ begin
 	AccountsPanel.Visible := not PublicAccountCB.Checked;
 end;
 
-class procedure TAccountsForm.ShowAccounts(ParentWindow: HWND; PasswordManager: TTCPasswordManager; Account: WideString);
+{The method returns True if settings were applied}
+class function TAccountsForm.ShowAccounts(ParentWindow: HWND; PasswordManager: TTCPasswordManager; Account: WideString): Boolean;
 var
 	AccountsForm: TAccountsForm;
 begin
@@ -567,8 +570,8 @@ begin
 
 		if (AccountsForm.SettingsManager.Settings.CloudMaxFileSize <> CLOUD_MAX_FILESIZE_DEFAULT) then
 		begin
-			AccountsForm.CloudMaxFileSizeValue.Enabled := true;
-			AccountsForm.CloudMaxFileSizeCB.Checked := true;
+			AccountsForm.CloudMaxFileSizeValue.Enabled := True;
+			AccountsForm.CloudMaxFileSizeCB.Checked := True;
 		end;
 		AccountsForm.ChunkOverwriteModeCombo.ItemIndex := AccountsForm.SettingsManager.Settings.ChunkOverwriteMode;
 		AccountsForm.DeleteFailOnUploadModeCombo.ItemIndex := AccountsForm.SettingsManager.Settings.DeleteFailOnUploadMode;
@@ -594,6 +597,7 @@ begin
 			AccountsForm.SelectedAccount := Account;
 		AccountsForm.OptionPages.ActivePageIndex := 0;
 		AccountsForm.ShowModal;
+		result := AccountsForm.SettingsApplied;
 	finally
 		AccountsForm.SettingsManager.Free;
 		AccountsForm.AccountsManager.Free;
@@ -607,9 +611,9 @@ var
 	CurrentPassword: WideString;
 	crypt_id: WideString;
 	Verb: WideString;
-	StorePassword: boolean;
+	StorePassword: Boolean;
 begin
-	StorePassword := true;
+	StorePassword := True;
 	result := EmptyWideStr;
 	crypt_id := AccountName + ' filecrypt';
 	case PasswordManager.GetPassword(crypt_id, CurrentPassword) of
@@ -626,7 +630,7 @@ begin
 				exit;
 			end;
 	end;
-	if mrOk = TAskPasswordForm.AskPassword(Format(ASK_ENCRYPTION_PASSWORD, [Verb]), PREFIX_ASK_NEW_PASSWORD, CurrentPassword, StorePassword, true, PasswordManager.ParentWindow) then
+	if mrOk = TAskPasswordForm.AskPassword(Format(ASK_ENCRYPTION_PASSWORD, [Verb]), PREFIX_ASK_NEW_PASSWORD, CurrentPassword, StorePassword, True, PasswordManager.ParentWindow) then
 	begin
 		PasswordManager.SetPassword(crypt_id, CurrentPassword);
 		result := TFileCipher.CryptedGUID(CurrentPassword);
