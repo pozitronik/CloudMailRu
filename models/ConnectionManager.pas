@@ -34,7 +34,7 @@ type
 	private
 		Connections: TDictionary<WideString, TCloudMailRu>;
 		HTTPManager: THTTPManager;
-		PluginSettings: TPluginSettings; //required to proxyfy plugin parameters to cloud parametes, when initialized
+		PluginSettings: TPluginSettings; //required to proxify plugin parameters to cloud parametes, when initialized
 
 		Logger: TTCLogger;
 		Progress: TTCProgress;
