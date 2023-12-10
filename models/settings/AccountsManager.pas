@@ -30,7 +30,7 @@ type
 		procedure SetAccountSettings(AccountSettings: TAccountSettings); overload;
 		procedure DeleteAccount(Account: WideString);
 		procedure SetCryptedGUID(Account: WideString; GUID: WideString);
-		procedure ClearPassword(Account: WideString); //clears the account password from INI for account
+		procedure SwitchPasswordStorage(Account: WideString); //clears the account password from INI for account and sets 'managed by TC' flag
 
 	end;
 
@@ -59,7 +59,7 @@ begin
 	self.FIniFilePath := IniFilePath;
 end;
 
-procedure TAccountsManager.ClearPassword(Account: WideString);
+procedure TAccountsManager.SwitchPasswordStorage(Account: WideString);
 var
 	IniFile: TIniFile;
 begin
