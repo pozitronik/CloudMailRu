@@ -3,6 +3,7 @@
 interface
 
 uses
+	AccountSettings,
 	ConnectionSettings;
 
 type
@@ -10,6 +11,8 @@ type
 	TCloudSettings = record
 		{Параметры, наследуемые от глобальных настроек}
 		ConnectionSettings: TConnectionSettings;
+		AccountSettings: TAccountSettings;
+
 		PrecalculateHash: boolean;
 		ForcePrecalculateSize: int64;
 		CheckCRC: boolean;
@@ -18,21 +21,6 @@ type
 		RetryAttempts: integer;
 		AttemptWait: integer;
 
-		{Account settings}
-		Email: WideString;
-		Password: WideString;
-		UseTCPasswordManager: boolean;
-		TwostepAuth: boolean;
-		UnlimitedFilesize: boolean;
-		SplitLargeFiles: boolean;
-		PublicAccount: boolean;
-		PublicUrl: WideString;
-		Description: WideString;
-		EncryptFilesMode: integer;
-		EncryptFilenames: boolean;
-		ShardOverride: WideString;
-		UploadUrlOverride: WideString;
-		CryptedGUIDFiles: WideString;
 		CryptFilesPassword: WideString;
 
 	end;

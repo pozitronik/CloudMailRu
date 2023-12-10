@@ -112,15 +112,15 @@ type
 
 		Property Cookie: TIdCookieManager read AuthCookie;
 
-		Property public_account: Boolean read OptionsSet.PublicAccount;
+		Property public_account: Boolean read OptionsSet.AccountSettings.PublicAccount;
 		Property user: WideString read FUser;
 		Property domain: WideString read FDomain;
-		Property password: WideString read OptionsSet.password;
-		Property email: WideString read OptionsSet.email;
-		Property shard_override: WideString read OptionsSet.ShardOverride;
-		Property upload_url_override: WideString read OptionsSet.UploadUrlOverride;
-		Property unlimited_filesize: Boolean read OptionsSet.UnlimitedFilesize;
-		Property split_large_files: Boolean read OptionsSet.SplitLargeFiles;
+		Property password: WideString read OptionsSet.AccountSettings.password;
+		Property email: WideString read OptionsSet.AccountSettings.email;
+		Property shard_override: WideString read OptionsSet.AccountSettings.ShardOverride;
+		Property upload_url_override: WideString read OptionsSet.AccountSettings.UploadUrlOverride;
+		Property unlimited_filesize: Boolean read OptionsSet.AccountSettings.UnlimitedFilesize;
+		Property split_large_files: Boolean read OptionsSet.AccountSettings.SplitLargeFiles;
 
 		Property HTTP: TCloudMailRuHTTP read getHTTPConnection;
 
@@ -368,14 +368,14 @@ begin
 		//self.HTTP := TCloudMailRuHTTP.Create(CloudSettings.ConnectionSettings, ExternalProgressProc, ExternalLogProc);
 		//self.JSONParser := TCloudMailRuJSONParser.Create();
 
-		if OptionsSet.EncryptFilesMode <> EncryptModeNone then
+		if OptionsSet.AccountSettings.EncryptFilesMode <> EncryptModeNone then
 		begin
-			self.FileCipher := TFileCipher.Create(OptionsSet.CryptFilesPassword, OptionsSet.CryptedGUIDFiles, OptionsSet.EncryptFilenames);
+			self.FileCipher := TFileCipher.Create(OptionsSet.CryptFilesPassword, OptionsSet.AccountSettings.CryptedGUIDFiles, OptionsSet.AccountSettings.EncryptFilenames);
 			if self.FileCipher.WrongPassword then
 				Logger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_WRONG_ENCRYPT_PASSWORD);
 
 			self.crypt_files := not(self.FileCipher.WrongPassword);
-			self.crypt_filenames := self.crypt_files and OptionsSet.EncryptFilenames and not(self.FileCipher.WrongPassword);
+			self.crypt_filenames := self.crypt_files and OptionsSet.AccountSettings.EncryptFilenames and not(self.FileCipher.WrongPassword);
 		end;
 
 		self.public_link := getPublicLink;
@@ -798,10 +798,10 @@ end;
 function TCloudMailRu.getPublicLink: WideString;
 begin
 	result := EmptyWideStr;
-	if self.public_account and (self.OptionsSet.PublicUrl <> EmptyWideStr) then
+	if self.public_account and (self.OptionsSet.AccountSettings.PublicUrl <> EmptyWideStr) then
 	begin
-		result := self.OptionsSet.PublicUrl;
-		self.OptionsSet.PublicUrl := IncludeSlash(self.OptionsSet.PublicUrl);
+		result := self.OptionsSet.AccountSettings.PublicUrl;
+		self.OptionsSet.AccountSettings.PublicUrl := IncludeSlash(self.OptionsSet.AccountSettings.PublicUrl);
 		Delete(result, 1, length(PUBLIC_ACCESS_URL));
 		if (result <> EmptyWideStr) and (result[length(result)] = '/') then
 			Delete(result, length(result), 1);
@@ -887,7 +887,7 @@ begin
 	if not(Assigned(self)) then
 		exit; //Проверка на вызов без инициализации
 	Progress := false;
-	result := self.HTTP.GetPage(self.OptionsSet.PublicUrl, PageContent, Progress);
+	result := self.HTTP.GetPage(self.OptionsSet.AccountSettings.PublicUrl, PageContent, Progress);
 	if result then
 	begin
 		if not extractPublicShard(PageContent, self.public_shard) then
@@ -1038,7 +1038,7 @@ end;
 
 function TCloudMailRu.loginShared(method: integer): Boolean;
 begin
-	Logger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, URL_OPEN, [self.OptionsSet.PublicUrl]);
+	Logger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, URL_OPEN, [self.OptionsSet.AccountSettings.PublicUrl]);
 	result := self.initSharedConnectionParameters();
 	//exit(true);
 end;
@@ -1614,8 +1614,8 @@ var
 	TempCloudSettings: TCloudSettings;
 begin
 	TempCloudSettings := default (TCloudSettings);
-	TempCloudSettings.PublicAccount := true;
-	TempCloudSettings.PublicUrl := PublicUrl;
+	TempCloudSettings.AccountSettings.PublicAccount := true;
+	TempCloudSettings.AccountSettings.PublicUrl := PublicUrl;
 	TempCloud := TCloudMailRu.Create(TempCloudSettings, nil);
 	result := TempCloud.login;
 end;

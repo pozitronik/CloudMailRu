@@ -106,16 +106,17 @@ var
 	ActionsList: TDictionary<Int32, WideString>;
 	PasswordActionRetry: Boolean;
 	AccountsManager: TAccountsManager;
-	AccountSettings: TAccountSettings;
+
 begin
 	Result := CLOUD_OPERATION_OK;
 	AccountsManager := TAccountsManager.Create(self.PluginSettings.AccountsIniFilePath);
-	AccountSettings := AccountsManager.GetAccountSettings(ConnectionName);
+	CloudSettings.AccountSettings := AccountsManager.GetAccountSettings(ConnectionName);
 	AccountsManager.Free;
 	with CloudSettings do
 	begin
 		{proxify plugin settings to the cloud settings}
 		ConnectionSettings := self.PluginSettings.ConnectionSettings;
+
 		PrecalculateHash := self.PluginSettings.PrecalculateHash;
 		ForcePrecalculateSize := self.PluginSettings.ForcePrecalculateSize;
 		CheckCRC := self.PluginSettings.CheckCRC;
@@ -123,21 +124,6 @@ begin
 		OperationErrorMode := self.PluginSettings.OperationErrorMode;
 		RetryAttempts := self.PluginSettings.RetryAttempts;
 		AttemptWait := self.PluginSettings.AttemptWait;
-		{proxify account settings to the cloud settings}
-		Email := AccountSettings.Email;
-		Password := AccountSettings.Password;
-		UseTCPasswordManager := AccountSettings.UseTCPasswordManager;
-		TwostepAuth := AccountSettings.TwostepAuth;
-		UnlimitedFilesize := AccountSettings.UnlimitedFilesize;
-		SplitLargeFiles := AccountSettings.SplitLargeFiles;
-		PublicAccount := AccountSettings.PublicAccount;
-		PublicUrl := AccountSettings.PublicUrl;
-		Description := AccountSettings.Description;
-		EncryptFilesMode := AccountSettings.EncryptFilesMode;
-		EncryptFilenames := AccountSettings.EncryptFilenames;
-		ShardOverride := AccountSettings.ShardOverride;
-		UploadUrlOverride := AccountSettings.UploadUrlOverride;
-		CryptedGUIDFiles := AccountSettings.CryptedGUIDFiles;
 	end;
 
 	if not GetAccountPassword(ConnectionName, CloudSettings) then
@@ -146,12 +132,12 @@ begin
 	end;
 
 	PasswordActionRetry := false;
-	if CloudSettings.EncryptFilesMode <> EncryptModeNone then
+	if CloudSettings.AccountSettings.EncryptFilesMode <> EncryptModeNone then
 	begin
 		repeat //пока не будет разрешающего действия
 			if not InitCloudCryptPasswords(ConnectionName, CloudSettings) then
 				exit(CLOUD_OPERATION_FAILED);
-			if not TFileCipher.CheckPasswordGUID(CloudSettings.CryptFilesPassword, CloudSettings.CryptedGUIDFiles) then
+			if not TFileCipher.CheckPasswordGUID(CloudSettings.CryptFilesPassword, CloudSettings.AccountSettings.CryptedGUIDFiles) then
 			begin
 				ActionsList := TDictionary<Int32, WideString>.Create;
 				ActionsList.AddOrSetValue(mrYes, PROCEED_UPDATE);
@@ -160,9 +146,9 @@ begin
 				case TAskPasswordForm.AskAction(PREFIX_ERR_PASSWORD_MATCH, ERR_PASSWORD_MATCH, ActionsList) of
 					mrYes: //store and use updated password
 						begin
-							CloudSettings.CryptedGUIDFiles := TFileCipher.CryptedGUID(CloudSettings.CryptFilesPassword);
+							CloudSettings.AccountSettings.CryptedGUIDFiles := TFileCipher.CryptedGUID(CloudSettings.CryptFilesPassword);
 							AccountsManager := TAccountsManager.Create(self.PluginSettings.IniFilePath);
-							AccountsManager.SetCryptedGUID(ConnectionName, CloudSettings.CryptedGUIDFiles);
+							AccountsManager.SetCryptedGUID(ConnectionName, CloudSettings.AccountSettings.CryptedGUIDFiles);
 							AccountsManager.Free;
 						end;
 					mrNo:
@@ -184,7 +170,7 @@ begin
 
 	Cloud := TCloudMailRu.Create(CloudSettings, HTTPManager, Progress, Logger, Request);
 
-	if (CloudSettings.TwostepAuth) then
+	if (CloudSettings.AccountSettings.TwostepAuth) then
 		LoginMethod := CLOUD_AUTH_METHOD_TWO_STEP
 	else
 		LoginMethod := CLOUD_AUTH_METHOD_WEB;
@@ -208,7 +194,7 @@ begin
 	StorePassword := false;
 	crypt_id := ConnectionName + ' filecrypt';
 
-	if EncryptModeAlways = CloudSettings.EncryptFilesMode then {password must be taken from tc storage, otherwise ask user and store password}
+	if EncryptModeAlways = CloudSettings.AccountSettings.EncryptFilesMode then {password must be taken from tc storage, otherwise ask user and store password}
 	begin
 		case PasswordManager.GetPassword(crypt_id, CloudSettings.CryptFilesPassword) of
 			FS_FILE_OK:
@@ -217,7 +203,7 @@ begin
 				end;
 			FS_FILE_READERROR: //password not found in store => act like EncryptModeAskOnce
 				begin
-					CloudSettings.EncryptFilesMode := EncryptModeAskOnce;
+					CloudSettings.AccountSettings.EncryptFilesMode := EncryptModeAskOnce;
 				end;
 			FS_FILE_NOTSUPPORTED: //user doesn't know master password
 				begin
@@ -225,7 +211,7 @@ begin
 				end;
 		end;
 	end;
-	if EncryptModeAskOnce = CloudSettings.EncryptFilesMode then
+	if EncryptModeAskOnce = CloudSettings.AccountSettings.EncryptFilesMode then
 	begin
 		if mrOK <> TAskPasswordForm.AskPassword(Format(ASK_ENCRYPTION_PASSWORD, [ConnectionName]), PREFIX_ASK_ENCRYPTION_PASSWORD, CloudSettings.CryptFilesPassword, StorePassword, true, PasswordManager.ParentWindow) then
 			Result := false
@@ -238,20 +224,20 @@ function TConnectionManager.GetAccountPassword(const ConnectionName: WideString;
 var
 	AccountsManager: TAccountsManager;
 begin
-	if CloudSettings.UseTCPasswordManager and (PasswordManager.GetPassword(ConnectionName, CloudSettings.Password) = FS_FILE_OK) then //пароль должен браться из TC
+	if CloudSettings.AccountSettings.UseTCPasswordManager and (PasswordManager.GetPassword(ConnectionName, CloudSettings.AccountSettings.Password) = FS_FILE_OK) then //пароль должен браться из TC
 		exit(true);
 
 	//иначе предполагается, что пароль взят из конфига
-	if CloudSettings.Password = EmptyWideStr then //но пароля нет, не в инишнике, не в тотале
+	if CloudSettings.AccountSettings.Password = EmptyWideStr then //но пароля нет, не в инишнике, не в тотале
 	begin
-		if mrOK <> TAskPasswordForm.AskPassword(Format(ASK_PASSWORD, [ConnectionName]), PREFIX_ASK_PASSWORD, CloudSettings.Password, CloudSettings.UseTCPasswordManager, false, FindTCWindow) then
+		if mrOK <> TAskPasswordForm.AskPassword(Format(ASK_PASSWORD, [ConnectionName]), PREFIX_ASK_PASSWORD, CloudSettings.AccountSettings.Password, CloudSettings.AccountSettings.UseTCPasswordManager, false, FindTCWindow) then
 		begin //не указали пароль в диалоге
 			exit(false); //отказались вводить пароль
 		end else begin
 			Result := true;
-			if CloudSettings.UseTCPasswordManager then
+			if CloudSettings.AccountSettings.UseTCPasswordManager then
 			begin
-				if FS_FILE_OK = PasswordManager.SetPassword(ConnectionName, CloudSettings.Password) then
+				if FS_FILE_OK = PasswordManager.SetPassword(ConnectionName, CloudSettings.AccountSettings.Password) then
 				begin //Now the account password stored in TC, clear password from the ini file
 					Logger.Log(LOG_LEVEL_DEBUG, MSGTYPE_DETAILS, PASSWORD_SAVED, [ConnectionName]);
 					AccountsManager := TAccountsManager.Create(self.PluginSettings.AccountsIniFilePath);
