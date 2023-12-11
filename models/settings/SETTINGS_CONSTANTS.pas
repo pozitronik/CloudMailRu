@@ -57,6 +57,8 @@ const
 	EncryptModeAskOnce = 2; //С прозрачным шифрованием, без хранения пароля
 	//EncryptModeAskAlways = 3; //не буду поддерживать без необходимости
 
+	DOT = '.'; {Just a dot, it used to trail files extensions in some situations}
+
 	TrashPostfix = '.trash';
 	SharedPostfix = '.shared';
 	InvitesPostfix = '.invites';
@@ -70,7 +72,8 @@ const
 	DEFAULT_USERAGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.150 Safari/537.36/TCWFX(' + PlatformX + ')';
 
 type
-	TIniDirTypes =INI_DIR_PLUGIN .. INI_DIR_AUTO;
+	TIniDirTypes = INI_DIR_PLUGIN .. INI_DIR_AUTO;
+
 implementation
 
 end.

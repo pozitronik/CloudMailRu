@@ -27,10 +27,9 @@ uses
 	TCPasswordManager,
 	Registration,
 	CMRStrings,
-	StreamingOptions,
-	Settings,
-	PluginSettingsManager,
 	WSList,
+	StreamingSettings,
+	PluginSettingsManager,
 	FileCipher,
 	AccountSettings,
 	AccountsManager;
@@ -209,7 +208,7 @@ var
 	TempList: TStringList;
 begin
 	TempList := TStringList.Create;
-	GetStreamingExtensionsFromIniFile(self.SettingsManager.IniFilePath, TempList); //todo: it is temporary solution while Settings unit isn't refactored
+	SettingsManager.GetStreamingExtensionsList(TempList);
 	StreamingExtensionsList.Items := TempList;
 	TempList.Destroy;
 end;
@@ -300,14 +299,13 @@ end;
 
 procedure TAccountsForm.ApplyExtButtonClick(Sender: TObject);
 var
-	StreamingOptions: TStreamingOptions;
+	StreamingSettings: TStreamingSettings;
 begin
-	StreamingOptions.Command := CommandPathEdit.Text;
-	StreamingOptions.Parameters := ParametersEdit.Text;
-	StreamingOptions.StartPath := StartPathEdit.Text;
-	StreamingOptions.Format := StreamingTypeCombo.ItemIndex;
-
-	SetStreamingOptionsToIniFile(self.SettingsManager.IniFilePath, '.' + StreamingExtensionEdit.Text, StreamingOptions);
+	StreamingSettings.Command := CommandPathEdit.Text;
+	StreamingSettings.Parameters := ParametersEdit.Text;
+	StreamingSettings.StartPath := StartPathEdit.Text;
+	StreamingSettings.Format := StreamingTypeCombo.ItemIndex;
+	SettingsManager.SetStreamingSettings(DOT + StreamingExtensionEdit.Text, StreamingSettings);
 	UpdateStreamingExtensionsList();
 end;
 
@@ -436,7 +434,7 @@ procedure TAccountsForm.DeleteExtButtonClick(Sender: TObject);
 begin
 	if (StreamingExtensionsList.Items.Count > 0) and (StreamingExtensionsList.ItemIndex <> -1) then
 	begin
-		DeleteStreamingExtensionsFromIniFile(self.SettingsManager.IniFilePath, StreamingExtensionsList.Items[StreamingExtensionsList.ItemIndex]);
+		SettingsManager.RemoveStreamingExtension(StreamingExtensionsList.Items[StreamingExtensionsList.ItemIndex]);
 		UpdateStreamingExtensionsList();
 	end;
 end;
@@ -640,16 +638,17 @@ end;
 
 procedure TAccountsForm.StreamingExtensionsListClick(Sender: TObject);
 var
-	StreamingOptions: TStreamingOptions;
+	StreamingSettings: TStreamingSettings;
 begin
 	if (StreamingExtensionsList.Items.Count > 0) and (StreamingExtensionsList.ItemIndex <> -1) then
 	begin
-		GetStreamingOptionsFromIniFile(SettingsManager.IniFilePath, '.' + StreamingExtensionsList.Items[StreamingExtensionsList.ItemIndex], StreamingOptions); //не проверяем результат, это настройки
+		StreamingSettings := SettingsManager.GetStreamingSettings(DOT + StreamingExtensionsList.Items[StreamingExtensionsList.ItemIndex]);
+		//		GetStreamingOptionsFromIniFile(SettingsManager.IniFilePath, '.' + StreamingExtensionsList.Items[StreamingExtensionsList.ItemIndex], StreamingOptions); //не проверяем результат, это настройки
 		StreamingExtensionEdit.Text := StreamingExtensionsList.Items[StreamingExtensionsList.ItemIndex];
-		CommandPathEdit.Text := StreamingOptions.Command;
-		ParametersEdit.Text := StreamingOptions.Parameters;
-		StartPathEdit.Text := StreamingOptions.StartPath;
-		StreamingTypeCombo.ItemIndex := StreamingOptions.Format;
+		CommandPathEdit.Text := StreamingSettings.Command;
+		ParametersEdit.Text := StreamingSettings.Parameters;
+		StartPathEdit.Text := StreamingSettings.StartPath;
+		StreamingTypeCombo.ItemIndex := StreamingSettings.Format;
 	end else begin
 		StreamingExtensionEdit.Text := EmptyWideStr;
 		CommandPathEdit.Text := EmptyWideStr;

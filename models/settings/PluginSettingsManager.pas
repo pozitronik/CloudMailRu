@@ -12,6 +12,7 @@ uses
 	SETTINGS_CONSTANTS,
 	CMRStrings,
 	CMRConstants,
+	Classes,
 	IniFilesHelper,
 	PluginSettings,
 	StreamingSettings;
@@ -47,6 +48,9 @@ type
 
 		function GetStreamingSettings(const FileName: WideString): TStreamingSettings;
 		procedure SetStreamingSettings(const FileName: WideString; StreamingSettings: TStreamingSettings);
+		procedure GetStreamingExtensionsList(ExtensionsList: TStrings);
+		procedure RemoveStreamingExtension(const Extension: WideString);
+
 	end;
 
 implementation
@@ -218,6 +222,34 @@ begin
 		IniFile.WriteInt64IfNotDefault('Main', 'ForcePrecalculateSize', ForcePrecalculateSize, CLOUD_PRECALCULATE_LIMIT_DEFAULT);
 		IniFile.WriteBoolIfNotDefault('Main', 'CheckCRC', CheckCRC, True);
 	end;
+	IniFile.Destroy;
+end;
+
+procedure TPluginSettingsManager.GetStreamingExtensionsList(ExtensionsList: TStrings);
+var
+	IniFile: TIniFile;
+	TempList: TStrings;
+	Line: String;
+begin
+	ExtensionsList.Clear;
+	IniFile := TIniFile.Create(IniFilePath);
+	TempList := TStringList.Create;
+	IniFile.ReadSections(TempList);
+	for Line in TempList do
+	begin
+		if Line.StartsWith(StreamingPrefix) then
+			ExtensionsList.Add(Line.Substring(Length(StreamingPrefix)));
+	end;
+	TempList.Destroy;
+	IniFile.Destroy;
+end;
+
+procedure TPluginSettingsManager.RemoveStreamingExtension(const Extension: WideString);
+var
+	IniFile: TIniFile;
+begin
+	IniFile := TIniFile.Create(IniFilePath);
+	IniFile.EraseSection(StreamingPrefix + Extension);
 	IniFile.Destroy;
 end;
 

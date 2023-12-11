@@ -8,7 +8,6 @@ uses
 	System.Generics.Collections,
 	ChunkedFileStream,
 	FileSplitInfo,
-	Settings,
 	TCLogger,
 	TCProgress,
 	SETTINGS_CONSTANTS,
