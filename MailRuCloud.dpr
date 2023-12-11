@@ -139,16 +139,17 @@ var
 	getResult: integer;
 	CurrentCloud: TCloudMailRu;
 begin
-	if path.HasHomePath then
+	CurrentCloud := ConnectionManager.Get(path.account, getResult);
+	if not Assigned(CurrentCloud) then
+		exit;
+
+	if path.HasHomePath and not CurrentCloud.public_account then
 		Result := CurrentListing.FindByHomePath(path.path) //сначала попробуем найти поле в имеющемся списке
 	else
-		Result := CurrentListing.FindByName(path.path);
+		Result := CurrentListing.FindByName(ExtractUniversalFileName(path.path));
 
 	if Result.isNone and UpdateListing then //если там его нет (нажали пробел на папке, например), то запросим в облаке напрямую, в зависимости от того, внутри чего мы находимся
 	begin
-		CurrentCloud := ConnectionManager.Get(path.account, getResult);
-		if not Assigned(CurrentCloud) then
-			exit;
 
 		if path.trashDir then //корзина - обновим CurrentListing, поищем в нём
 		begin
