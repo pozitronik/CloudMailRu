@@ -19,10 +19,6 @@ const
 	TYPE_KYLOBYTES = 1;
 	TYPE_MEGABYTES = 2;
 
-	TrashPostfix = '.trash';
-	SharedPostfix = '.shared';
-	InvitesPostfix = '.invites';
-
 function FormatSize(size: Int64; SizeType: integer = TYPE_AUTO): WideString; //Форматируем размер в удобочитаемый вид
 function ShardTypeFromStreamingFormat(StreamingFormat: integer): string;
 

@@ -5,7 +5,7 @@ interface
 uses
 	Classes,
 	SysUtils,
-	PluginHelper,
+	SETTINGS_CONSTANTS,
 	StringHelper;
 
 type

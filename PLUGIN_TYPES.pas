@@ -1,4 +1,4 @@
-﻿unit PLUGIN_Types;
+﻿unit PLUGIN_TYPES;
 
 {Типы и константы, используемые в плагине}
 interface

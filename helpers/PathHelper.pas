@@ -1,6 +1,7 @@
 ﻿unit PathHelper;
 
 {Paths manipulation helper methods}
+{TODO: Check TPath method interferentions}
 interface
 
 uses

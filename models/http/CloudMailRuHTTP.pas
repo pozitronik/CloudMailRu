@@ -11,7 +11,8 @@ uses
 	Settings,
 	TCLogger,
 	TCProgress,
-	PLUGIN_Types,
+	SETTINGS_CONSTANTS,
+	PLUGIN_TYPES,
 	CMRConstants,
 	CMRStrings,
 	ParsingHelper,
@@ -33,7 +34,8 @@ uses
 	IdIOHandlerStream,
 	IdInterceptThrottler,
 	IdCookie,
-	IdMultipartFormData;
+	IdMultipartFormData,
+	ConnectionSettings;
 
 type
 
@@ -112,11 +114,11 @@ begin
 		self.Socks := TIdSocksInfo.Create();
 		self.Socks.Host := Settings.ProxySettings.Server;
 		self.Socks.Port := Settings.ProxySettings.Port;
-		if Settings.ProxySettings.user <> EmptyWideStr then
+		if Settings.ProxySettings.User <> EmptyWideStr then
 		begin
 			self.Socks.Authentication := saUsernamePassword;
-			self.Socks.Username := Settings.ProxySettings.user;
-			self.Socks.password := Settings.ProxySettings.password;
+			self.Socks.Username := Settings.ProxySettings.User;
+			self.Socks.password := Settings.ProxySettings.Password;
 		end
 		else
 			self.Socks.Authentication := saNoAuthentication;
@@ -136,11 +138,11 @@ begin
 	begin
 		HTTP.ProxyParams.ProxyServer := Settings.ProxySettings.Server;
 		HTTP.ProxyParams.ProxyPort := Settings.ProxySettings.Port;
-		if Settings.ProxySettings.user <> EmptyWideStr then
+		if Settings.ProxySettings.User <> EmptyWideStr then
 		begin
 			HTTP.ProxyParams.BasicAuthentication := true;
-			HTTP.ProxyParams.ProxyUsername := Settings.ProxySettings.user;
-			HTTP.ProxyParams.ProxyPassword := Settings.ProxySettings.password;
+			HTTP.ProxyParams.ProxyUsername := Settings.ProxySettings.User;
+			HTTP.ProxyParams.ProxyPassword := Settings.ProxySettings.Password;
 		end
 	end;
 

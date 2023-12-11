@@ -16,6 +16,8 @@ function extract_upload_url_FromText(Text: WideString; var UploadUrl: WideString
 function extractPublicShard(Text: WideString; var Shard: WideString): Boolean;
 function extractTwostepJson(Text: WideString; var JSON: WideString): Boolean;
 
+function ExtractEmailParts(const Email: WideString; out Username, Domain: WideString): Boolean;
+
 implementation
 
 function extractNearValue(Text, Anchor: WideString; StartChar: WideChar = '"'; EndChar: WideChar = '"'): WideString;
@@ -99,6 +101,19 @@ begin
 		JSON := copy(Text, start + 35, finish - start - 35);
 
 		result := true;
+	end;
+end;
+
+function ExtractEmailParts(const Email: WideString; out Username, Domain: WideString): Boolean;
+var
+	AtPos: integer;
+begin
+	AtPos := Pos('@', Email);
+	result := (AtPos > 0) and (AtPos < length(Email));
+	if result then
+	begin
+		Username := copy(Email, 0, AtPos - 1);
+		Domain := copy(Email, AtPos + 1, length(Email) - AtPos);
 	end;
 end;
 
