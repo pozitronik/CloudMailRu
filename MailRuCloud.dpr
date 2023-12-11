@@ -824,36 +824,45 @@ var
 	CurrentCloud, TempPublicCloud: TCloudMailRu;
 	CurrentItem: TCMRDirItem;
 begin
+	Result := FS_EXEC_OK;
+	if STREAMING_FORMAT_DISABLED = StreamingOptions.Format then
+		exit;
+
 	//может быть разница в атрибутах настоящих и полученных из листинга (они не рефрешатся)
 	CurrentItem := FindListingItemByPath(CurrentListing, RealPath); //внутри публичного облака веблинк есть автоматически
-	case StreamingOptions.Format of
-		STREAMING_FORMAT_DISABLED:
-			exit(FS_EXEC_OK);
-		STREAMING_FORMAT_PLAYLIST:
-			if not TempPublicCloud.getPublishedFileStreamUrl(CurrentItem, StreamUrl) then
-				exit(FS_EXEC_ERROR);
-		else
-			begin
-				if not CurrentItem.isPublished then
-				begin
-					CurrentCloud := ConnectionManager.Get(RealPath.account, getResult);
-					if not CurrentCloud.publishFile(CurrentItem.home, CurrentItem.weblink) then
-						exit(FS_EXEC_ERROR);
-					//Здесь можно бы обновить листинг
-				end;
-				TCloudMailRu.TempPublicCloudInit(TempPublicCloud, PUBLIC_ACCESS_URL + CurrentItem.weblink);
-				StreamUrl := TempPublicCloud.getSharedFileUrl(EmptyWideStr, ShardTypeFromStreamingFormat(StreamingOptions.Format));
-			end;
-	end;
-	if EmptyWideStr = StreamingOptions.Parameters then
-		StreamingOptions.Parameters := '%url%';
-	StreamingOptions.Parameters := StringReplace(StreamingOptions.Parameters, '%url%', StreamUrl, [rfReplaceAll, rfIgnoreCase]);
 
-	if (Run(StreamingOptions.command, StreamUrl, StreamingOptions.StartPath)) then
-		Result := FS_EXEC_OK
-	else
-		Result := FS_EXEC_ERROR;
-	TempPublicCloud.Free;
+	if TCloudMailRu.TempPublicCloudInit(TempPublicCloud, PUBLIC_ACCESS_URL + CurrentItem.weblink) then
+	begin
+		if STREAMING_FORMAT_PLAYLIST = StreamingOptions.Format then
+		begin
+			if not TempPublicCloud.getPublishedFileStreamUrl(CurrentItem, StreamUrl) then
+				Result := FS_EXEC_ERROR;
+		end else begin
+			if not CurrentItem.isPublished then
+			begin
+				CurrentCloud := ConnectionManager.Get(RealPath.account, getResult);
+				if not CurrentCloud.publishFile(CurrentItem.home, CurrentItem.weblink) then
+					Result := FS_EXEC_ERROR;
+				//Здесь можно бы обновить листинг
+			end;
+			if FS_EXEC_OK = Result then
+				StreamUrl := TempPublicCloud.getSharedFileUrl(EmptyWideStr, ShardTypeFromStreamingFormat(StreamingOptions.Format));
+		end;
+
+		if FS_EXEC_OK = Result then
+		begin
+			if EmptyWideStr = StreamingOptions.Parameters then
+				StreamingOptions.Parameters := '%url%';
+			StreamingOptions.Parameters := StringReplace(StreamingOptions.Parameters, '%url%', StreamUrl, [rfReplaceAll, rfIgnoreCase]);
+
+			if not(Run(StreamingOptions.command, StreamUrl, StreamingOptions.StartPath)) then
+				Result := FS_EXEC_ERROR;
+		end;
+
+	end;
+
+	FreeAndNil(TempPublicCloud);
+
 end;
 
 function FsExecuteFileW(MainWin: THandle; RemoteName, Verb: PWideChar): integer; stdcall; //Запуск файла
