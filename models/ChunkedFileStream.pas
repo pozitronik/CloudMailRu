@@ -5,7 +5,7 @@ interface
 uses
 	System.Classes,
 	System.SysUtils,
-	CMRStrings;
+	LANGUAGE_STRINGS;
 
 type
 

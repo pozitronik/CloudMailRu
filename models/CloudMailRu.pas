@@ -16,7 +16,7 @@ uses
 	ParsingHelper,
 	CMRConstants,
 	CloudMailRuHTTP,
-	CMRStrings,
+	LANGUAGE_STRINGS,
 	System.Hash,
 	System.Classes,
 	System.Generics.Collections,

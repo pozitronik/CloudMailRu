@@ -5,7 +5,7 @@ interface
 uses
 	SysUtils,
 	CMRConstants,
-	CMRStrings,
+	LANGUAGE_STRINGS,
 	JSONHelper,
 	JSON;
 

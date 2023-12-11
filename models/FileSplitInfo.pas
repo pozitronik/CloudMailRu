@@ -6,7 +6,7 @@ uses
 	System.SysUtils,
 	System.Classes,
 	FileHelper,
-	CMRStrings,
+	LANGUAGE_STRINGS,
 	Winapi.Windows;
 
 Const

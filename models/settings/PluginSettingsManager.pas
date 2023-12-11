@@ -10,7 +10,7 @@ uses
 	WindowsHelper,
 	Windows,
 	SETTINGS_CONSTANTS,
-	CMRStrings,
+	LANGUAGE_STRINGS,
 	CMRConstants,
 	Classes,
 	IniFilesHelper,

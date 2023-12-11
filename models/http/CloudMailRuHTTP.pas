@@ -13,7 +13,7 @@ uses
 	SETTINGS_CONSTANTS,
 	PLUGIN_TYPES,
 	CMRConstants,
-	CMRStrings,
+	LANGUAGE_STRINGS,
 	ParsingHelper,
 	JSONHelper,
 	IdStack,

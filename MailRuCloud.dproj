@@ -201,7 +201,7 @@
         <DCCReference Include="models\dto\CMROperationResult.pas"/>
         <DCCReference Include="models\dto\CMROwner.pas"/>
         <DCCReference Include="models\dto\CMRSpace.pas"/>
-        <DCCReference Include="types\CMRStrings.pas"/>
+        <DCCReference Include="types\LANGUAGE_STRINGS.pas"/>
         <DCCReference Include="models\dto\CMRTwostep.pas"/>
         <DCCReference Include="models\ChunkedFileStream.pas"/>
         <DCCReference Include="models\CloudMailRu.pas"/>

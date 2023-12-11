@@ -26,7 +26,7 @@ uses
 	AskPassword,
 	TCPasswordManager,
 	Registration,
-	CMRStrings,
+	LANGUAGE_STRINGS,
 	WSList,
 	StreamingSettings,
 	PluginSettingsManager,

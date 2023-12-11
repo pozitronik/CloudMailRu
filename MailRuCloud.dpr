@@ -24,7 +24,7 @@ uses
 	CMROperationResult in 'models\dto\CMROperationResult.pas',
 	CMROwner in 'models\dto\CMROwner.pas',
 	CMRSpace in 'models\dto\CMRSpace.pas',
-	CMRStrings in 'types\CMRStrings.pas',
+	LANGUAGE_STRINGS in 'types\LANGUAGE_STRINGS.pas',
 	CMRTwostep in 'models\dto\CMRTwostep.pas',
 	ChunkedFileStream in 'models\ChunkedFileStream.pas',
 	Classes,

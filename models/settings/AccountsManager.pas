@@ -11,7 +11,7 @@ uses
 	Windows,
 	ParsingHelper,
 	IniFilesHelper,
-	CMRStrings,
+	LANGUAGE_STRINGS,
 	SETTINGS_CONSTANTS,
 	WSList,
 	AccountSettings;

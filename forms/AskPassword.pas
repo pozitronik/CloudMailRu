@@ -16,7 +16,7 @@ uses
 	TCHelper,
 	WindowsHelper,
 	System.Generics.Collections,
-	CMRStrings;
+	LANGUAGE_STRINGS;
 
 type
 

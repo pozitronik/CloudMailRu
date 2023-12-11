@@ -17,7 +17,7 @@ uses
 	CloudMailRu,
 	CMRConstants,
 	PluginHelper,
-	CMRStrings;
+	LANGUAGE_STRINGS;
 
 type
 	TInvitePropertyForm = class(TForm)

@@ -19,7 +19,7 @@ uses
 	CloudMailRuHTTP,
 	CMROperationResult,
 	CMRConstants,
-	CMRStrings,
+	LANGUAGE_STRINGS,
 	SETTINGS_CONSTANTS,
 	PLUGIN_TYPES,
 	AccountSettings,

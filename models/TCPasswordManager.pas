@@ -5,11 +5,11 @@ interface
 
 Uses
 	PLUGIN_TYPES,
+	LANGUAGE_STRINGS,
 	Windows,
 	SysUtils,
 	AskPassword, {AskEncryptionPasswords,}
 	TCHelper,
-	CMRStrings,
 	CMRConstants,
 	TCLogger;
 
@@ -102,6 +102,5 @@ begin
 		//Ошибки здесь не значат, что пароль мы не получили - он может быть введён в диалоге
 	end;
 end;
-
 
 end.

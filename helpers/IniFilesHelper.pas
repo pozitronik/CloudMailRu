@@ -9,7 +9,7 @@ uses
 	SysUtils,
 	Windows,
 	IOUtils,
-	CMRStrings;
+	LANGUAGE_STRINGS;
 
 type
 	TIniFilesHelper = class helper for TIniFile

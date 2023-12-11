@@ -7,7 +7,7 @@ uses
 	system.sysutils,
 	StringHelper,
 	CMRConstants,
-	CMRStrings;
+	LANGUAGE_STRINGS;
 
 type
 
