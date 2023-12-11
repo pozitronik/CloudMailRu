@@ -26,10 +26,6 @@ uses
 	ConnectionSettings,
 	Vcl.Imaging.JPEG;
 
-const
-	MAILRU_REGISTRATION_SIGNUP = 'https://account.mail.ru/api/v1/user/signup';
-	MAILRU_REGISTRATION_CONFIRM = 'https://account.mail.ru/api/v1/user/signup/confirm';
-	MAILRU_CAPTCHA = 'https://c.mail.ru/c/6';
 
 type
 	TRegistrationForm = class(TForm)
