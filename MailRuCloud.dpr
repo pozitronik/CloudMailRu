@@ -44,7 +44,6 @@ uses
 	FileSplitInfo in 'models\FileSplitInfo.pas',
 	HashInfo in 'models\HashInfo.pas',
 	TCPasswordManager in 'models\TCPasswordManager.pas',
-	Settings in 'models\settings\Settings.pas',
 	CloudMailRuHTTP in 'models\http\CloudMailRuHTTP.pas',
 	HTTPManager in 'models\http\HTTPManager.pas',
 	CMRDirItemList in 'models\dto\CMRDirItemList.pas',
@@ -77,13 +76,13 @@ uses
 	ConnectionSettings in 'models\settings\ConnectionSettings.pas',
 	CloudSettings in 'models\settings\CloudSettings.pas',
 	SETTINGS_CONSTANTS in 'models\settings\SETTINGS_CONSTANTS.pas',
-	StreamingOptions in 'models\settings\StreamingOptions.pas',
 	IniFilesHelper in 'helpers\IniFilesHelper.pas',
 	PluginSettingsManager in 'models\settings\PluginSettingsManager.pas',
 	AccountsManager in 'models\settings\AccountsManager.pas',
 	WSList in 'models\WSList.pas',
 	AccountSettings in 'models\settings\AccountSettings.pas',
-	PluginSettings in 'models\settings\PluginSettings.pas';
+	PluginSettings in 'models\settings\PluginSettings.pas',
+	StreamingSettings in 'models\settings\StreamingSettings.pas';
 
 {$IFDEF WIN64}
 {$E wfx64}
@@ -817,7 +816,7 @@ begin
 
 end;
 
-function ExecuteFileStream(RealPath: TRealPath; StreamingOptions: TStreamingOptions): integer;
+function ExecuteFileStream(RealPath: TRealPath; StreamingSettings: TStreamingSettings): integer;
 var
 	StreamUrl: WideString;
 	getResult: integer;
@@ -825,7 +824,7 @@ var
 	CurrentItem: TCMRDirItem;
 begin
 	Result := FS_EXEC_OK;
-	if STREAMING_FORMAT_DISABLED = StreamingOptions.Format then
+	if (STREAMING_FORMAT_DISABLED = StreamingSettings.Format) or (STREAMING_FORMAT_UNSET = StreamingSettings.Format) then
 		exit;
 
 	//может быть разница в атрибутах настоящих и полученных из листинга (они не рефрешатся)
@@ -833,7 +832,7 @@ begin
 
 	if TCloudMailRu.TempPublicCloudInit(TempPublicCloud, PUBLIC_ACCESS_URL + CurrentItem.weblink) then
 	begin
-		if STREAMING_FORMAT_PLAYLIST = StreamingOptions.Format then
+		if STREAMING_FORMAT_PLAYLIST = StreamingSettings.Format then
 		begin
 			if not TempPublicCloud.getPublishedFileStreamUrl(CurrentItem, StreamUrl) then
 				Result := FS_EXEC_ERROR;
@@ -846,16 +845,16 @@ begin
 				//Здесь можно бы обновить листинг
 			end;
 			if FS_EXEC_OK = Result then
-				StreamUrl := TempPublicCloud.getSharedFileUrl(EmptyWideStr, ShardTypeFromStreamingFormat(StreamingOptions.Format));
+				StreamUrl := TempPublicCloud.getSharedFileUrl(EmptyWideStr, ShardTypeFromStreamingFormat(StreamingSettings.Format));
 		end;
 
 		if FS_EXEC_OK = Result then
 		begin
-			if EmptyWideStr = StreamingOptions.Parameters then
-				StreamingOptions.Parameters := '%url%';
-			StreamingOptions.Parameters := StringReplace(StreamingOptions.Parameters, '%url%', StreamUrl, [rfReplaceAll, rfIgnoreCase]);
+			if EmptyWideStr = StreamingSettings.Parameters then
+				StreamingSettings.Parameters := '%url%';
+			StreamingSettings.Parameters := StringReplace(StreamingSettings.Parameters, '%url%', StreamUrl, [rfReplaceAll, rfIgnoreCase]);
 
-			if not(Run(StreamingOptions.command, StreamUrl, StreamingOptions.StartPath)) then
+			if not(Run(StreamingSettings.command, StreamUrl, StreamingSettings.StartPath)) then
 				Result := FS_EXEC_ERROR;
 		end;
 
@@ -868,7 +867,6 @@ end;
 function FsExecuteFileW(MainWin: THandle; RemoteName, Verb: PWideChar): integer; stdcall; //Запуск файла
 var
 	RealPath: TRealPath;
-	StreamingOptions: TStreamingOptions;
 begin
 	RealPath.FromPath(RemoteName);
 
@@ -889,9 +887,10 @@ begin
 
 	if Verb = VERB_OPEN then
 	begin
-		if (not(RealPath.isDir = ID_Yes)) and GetStreamingOptionsFromIniFile(SettingsManager.Settings.IniFilePath, RealPath.path, StreamingOptions) and (STREAMING_FORMAT_NONE <> StreamingOptions.Format) then
-			exit(ExecuteFileStream(RealPath, StreamingOptions));
-		exit(FS_EXEC_YOURSELF);
+		if (not(RealPath.isDir = ID_Yes)) then
+			exit(ExecuteFileStream(RealPath, SettingsManager.GetStreamingSettings(RealPath.path)))
+		else
+			exit(FS_EXEC_YOURSELF);
 	end;
 
 	if copy(Verb, 1, 5) = VERB_QUOTE then

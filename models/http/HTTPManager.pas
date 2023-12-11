@@ -6,7 +6,6 @@ uses
 	CloudMailRuHTTP,
 	CMRConstants,
 	PLUGIN_TYPES,
-	Settings,
 	ConnectionSettings,
 	TCLogger,
 	TCProgress,

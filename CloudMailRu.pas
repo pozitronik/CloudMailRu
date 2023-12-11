@@ -34,7 +34,6 @@ uses
 	TCProgress,
 	TCRequest,
 	RealPath,
-	Settings,
 	CloudSettings,
 	FileCipher,
 	FileSplitInfo,

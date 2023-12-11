@@ -13,7 +13,6 @@ uses
 	Vcl.Forms,
 	Vcl.Dialogs,
 	CloudMailRu,
-	Settings,
 	Vcl.StdCtrls,
 	Vcl.ExtCtrls,
 	JSONHelper,

@@ -214,7 +214,6 @@
         <DCCReference Include="models\FileSplitInfo.pas"/>
         <DCCReference Include="models\HashInfo.pas"/>
         <DCCReference Include="models\TCPasswordManager.pas"/>
-        <DCCReference Include="models\settings\Settings.pas"/>
         <DCCReference Include="models\http\CloudMailRuHTTP.pas"/>
         <DCCReference Include="models\http\HTTPManager.pas"/>
         <DCCReference Include="models\dto\CMRDirItemList.pas"/>
@@ -247,13 +246,13 @@
         <DCCReference Include="models\settings\ConnectionSettings.pas"/>
         <DCCReference Include="models\settings\CloudSettings.pas"/>
         <DCCReference Include="models\settings\SETTINGS_CONSTANTS.pas"/>
-        <DCCReference Include="models\settings\StreamingOptions.pas"/>
         <DCCReference Include="helpers\IniFilesHelper.pas"/>
         <DCCReference Include="models\settings\PluginSettingsManager.pas"/>
         <DCCReference Include="models\settings\AccountsManager.pas"/>
         <DCCReference Include="models\WSList.pas"/>
         <DCCReference Include="models\settings\AccountSettings.pas"/>
         <DCCReference Include="models\settings\PluginSettings.pas"/>
+        <DCCReference Include="models\settings\StreamingSettings.pas"/>
         <RcItem Include="icons\icon.ico">
             <ResourceType>ICON</ResourceType>
             <ResourceId>base_icon</ResourceId>
