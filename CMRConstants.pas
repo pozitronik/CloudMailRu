@@ -187,6 +187,7 @@ const
 	NAME_DEVICE = 'device';
 
 	{Streaming formats}
+	STREAMING_FORMAT_UNSET = -1; {not a format, it set when the streaming settings cannot be retrieved for an extension}
 	STREAMING_FORMAT_NONE = 0;
 	STREAMING_FORMAT_DISABLED = 1;
 	STREAMING_FORMAT_PLAYLIST = 2;
