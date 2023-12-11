@@ -73,7 +73,7 @@ begin
 
 	{It finds no config, but writeable application directory, and uses it}
 	Assert.AreEqual(self.AppDir, TempSettingsManager.ApplicationPath);
-	Assert.AreEqual(INI_DIR_PLUGIN, TempSettingsManager.Settings.IniDir);
+	Assert.isTrue(TempSettingsManager.Settings.IniDir = INI_DIR_PLUGIN);
 
 	TempSettingsManager.Free;
 
@@ -99,7 +99,7 @@ begin
 	TempSettingsManager := TPluginSettingsManager.Create(DataPath(FP_SETTINGS_INI));
 
 	{peek some randoms of different data types}
-	Assert.IsTrue(TempSettingsManager.Settings.DescriptionEnabled); //boolean
+	Assert.isTrue(TempSettingsManager.Settings.DescriptionEnabled); //boolean
 	Assert.AreEqual(1000, TempSettingsManager.Settings.AttemptWait); //integer
 	Assert.AreEqual('descript.ed', TempSettingsManager.Settings.DescriptionFileName); //string
 	Assert.IsFalse(TempSettingsManager.Settings.ConnectionSettings.ProxySettings.UseTCPasswordManager); //subrecord boolean
@@ -108,7 +108,6 @@ begin
 	TempSettingsManager.Free;
 
 end;
-
 
 initialization
 

@@ -110,7 +110,7 @@
         <DCCReference Include="TestHelper.pas"/>
         <DCCReference Include="models\TCLoggerTest.pas"/>
         <DCCReference Include="..\models\TCLogger.pas"/>
-        <DCCReference Include="..\PLUGIN_TYPES.pas"/>
+        <DCCReference Include="..\types\PLUGIN_TYPES.pas"/>
         <DCCReference Include="..\helpers\SystemHelper.pas"/>
         <DCCReference Include="..\models\TCProgress.pas"/>
         <DCCReference Include="models\TCProgressTest.pas"/>
@@ -121,12 +121,12 @@
         <DCCReference Include="..\helpers\WindowsHelper.pas"/>
         <DCCReference Include="..\models\settings\ConnectionSettings.pas"/>
         <DCCReference Include="..\models\settings\SETTINGS_CONSTANTS.pas"/>
-        <DCCReference Include="..\CMRConstants.pas"/>
+        <DCCReference Include="..\types\CMRConstants.pas"/>
         <DCCReference Include="..\models\settings\ProxySettings.pas"/>
         <DCCReference Include="..\helpers\StringHelper.pas"/>
         <DCCReference Include="..\helpers\TCHelper.pas"/>
         <DCCReference Include="..\models\Description.pas"/>
-        <DCCReference Include="..\CMRStrings.pas"/>
+        <DCCReference Include="..\types\LANGUAGE_STRINGS.pas"/>
         <DCCReference Include="models\settings\PluginSettingsManagerTest.pas"/>
         <DCCReference Include="models\settings\AccountsManagerTest.pas"/>
         <DCCReference Include="..\helpers\ParsingHelper.pas"/>
@@ -146,6 +146,8 @@
         <DCCReference Include="..\DCPCrypt\Hashes\DCPsha1.pas"/>
         <DCCReference Include="..\models\settings\PluginSettingsManager.pas"/>
         <DCCReference Include="..\models\settings\PluginSettings.pas"/>
+        <DCCReference Include="..\helpers\IniFilesHelper.pas"/>
+        <DCCReference Include="..\models\settings\StreamingSettings.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

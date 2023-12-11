@@ -65,7 +65,7 @@ begin
 
 	TestAccountsManager := TAccountsManager.Create(self.AppDir + FP_ACCOUNTS_INI);
 	Assert.IsNotEmpty(TestAccountsManager.GetAccountSettings('NEW_ACCOUNT').Password);
-	TestAccountsManager.ClearPassword('NEW_ACCOUNT');
+	TestAccountsManager.SwitchPasswordStorage('NEW_ACCOUNT');
 	Assert.IsEmpty(TestAccountsManager.GetAccountSettings('NEW_ACCOUNT').Password);
 	TestAccountsManager.Free;
 end;
