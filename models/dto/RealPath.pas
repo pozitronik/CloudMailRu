@@ -9,7 +9,7 @@ uses
 	StringHelper;
 
 type
-	TIsDir = (ID_Yes, ID_No, ID_Unset);
+	TIsDir = (ID_True, ID_False, ID_Unset);
 
 	TRealPath = record
 	private
@@ -67,13 +67,13 @@ begin
 		self.upDirItem := true;
 
 	if (List.Count > 0) and (List.Strings[List.Count - 1] = '\') then
-		self.isDir := ID_Yes; // it newer happens, actually
+		self.isDir := ID_True; // it newer happens, actually
 
 	if List.Count = 1 then
 	begin
 		self.account := List.Strings[0];
 		if (self.account = VirtualPath) then
-			self.isDir := ID_Yes;
+			self.isDir := ID_True;
 
 	end else if (List.Count > 1) then
 	begin

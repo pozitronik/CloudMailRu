@@ -271,7 +271,7 @@ var
 	getResult: integer;
 	BackgroundJobsCount: integer;
 begin
-	RealPath.FromPath(RemoteDir, ID_Yes); // RemoteDir always a directory
+	RealPath.FromPath(RemoteDir, ID_True); // RemoteDir always a directory
 	if (InfoStartEnd = FS_STATUS_START) then
 	begin
 		ThreadFsStatusInfo.AddOrSetValue(GetCurrentThreadID(), InfoOperation);
@@ -887,7 +887,7 @@ begin
 
 	if Verb = VERB_OPEN then
 	begin
-		if (not(RealPath.isDir = ID_Yes)) then
+		if (not(RealPath.isDir = ID_True)) then
 			exit(ExecuteFileStream(RealPath, SettingsManager.GetStreamingSettings(RealPath.path)))
 		else
 			exit(FS_EXEC_YOURSELF);
