@@ -13,7 +13,8 @@ uses
 	CMRStrings,
 	CMRConstants,
 	IniFilesHelper,
-	PluginSettings;
+	PluginSettings,
+	StreamingSettings;
 
 type
 
@@ -43,6 +44,9 @@ type
 
 		procedure Save(); {save current options set into the file}
 		procedure SwitchProxyPasswordStorage;
+
+		function GetStreamingSettings(const FileName: WideString): TStreamingSettings;
+		procedure SetStreamingSettings(const FileName: WideString; StreamingSettings: TStreamingSettings);
 	end;
 
 implementation
@@ -215,6 +219,42 @@ begin
 		IniFile.WriteBoolIfNotDefault('Main', 'CheckCRC', CheckCRC, True);
 	end;
 	IniFile.Destroy;
+end;
+
+function TPluginSettingsManager.GetStreamingSettings(const FileName: WideString): TStreamingSettings;
+var
+	IniFile: TIniFile;
+	SectionName: WideString;
+begin
+	//	Result.Format := STREAMING_FORMAT_UNSET;
+	result := default (TStreamingSettings);
+	IniFile := TIniFile.Create(IniFilePath);
+	SectionName := StreamingPrefix + ExtractUniversalFileExt(FileName, True);
+	if IniFile.SectionExists(SectionName) then
+	begin
+		result.Command := IniFile.ReadString(SectionName, 'Command', EmptyWideStr);
+		result.Parameters := IniFile.ReadString(SectionName, 'Parameters', EmptyWideStr);
+		result.StartPath := IniFile.ReadString(SectionName, 'StartPath', EmptyWideStr);
+		result.Format := IniFile.ReadInteger(SectionName, 'Format', STREAMING_FORMAT_NONE);
+	end;
+	IniFile.Destroy;
+end;
+
+procedure TPluginSettingsManager.SetStreamingSettings(const FileName: WideString; StreamingSettings: TStreamingSettings);
+var
+	IniFile: TIniFile;
+	SectionName: WideString;
+begin
+	if ExtractUniversalFileExt(FileName, True) <> EmptyWideStr then
+	begin
+		SectionName := StreamingPrefix + ExtractUniversalFileExt(FileName, True);
+		IniFile := TIniFile.Create(IniFilePath);
+		IniFile.WriteString(SectionName, 'Command', StreamingSettings.Command);
+		IniFile.WriteString(SectionName, 'Parameters', StreamingSettings.Parameters);
+		IniFile.WriteString(SectionName, 'StartPath', StreamingSettings.StartPath);
+		IniFile.WriteInteger(SectionName, 'Format', StreamingSettings.Format);
+		IniFile.Destroy;
+	end;
 end;
 
 procedure TPluginSettingsManager.SwitchProxyPasswordStorage;
