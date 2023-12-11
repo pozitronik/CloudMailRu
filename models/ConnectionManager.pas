@@ -45,6 +45,7 @@ type
 
 		function Init(ConnectionName: WideString; out Cloud: TCloudMailRu): integer; //инициализирует подключение по его имени, возвращает код состояния
 		function GetAccountPassword(const ConnectionName: WideString; var CloudSettings: TCloudSettings): Boolean;
+		function GetFilesPassword(const ConnectionName: WideString; var CloudSettings: TCloudSettings): Boolean;
 		function GetProxyPassword(): Boolean;
 		function InitCloudCryptPasswords(const ConnectionName: WideString; var CloudSettings: TCloudSettings): Boolean;
 		//		function GetProxyPassword(var CloudSettings: TCloudSettings): Boolean;
@@ -108,8 +109,6 @@ function TConnectionManager.Init(ConnectionName: WideString; out Cloud: TCloudMa
 var
 	CloudSettings: TCloudSettings;
 	LoginMethod: integer;
-	ActionsList: TDictionary<Int32, WideString>;
-	PasswordActionRetry: Boolean;
 	AccountsManager: TAccountsManager;
 begin
 	Result := CLOUD_OPERATION_OK;
@@ -130,43 +129,8 @@ begin
 		AttemptWait := self.PluginSettings.AttemptWait;
 	end;
 
-	if not GetAccountPassword(ConnectionName, CloudSettings) or not GetProxyPassword then
+	if not CloudSettings.AccountSettings.PublicAccount and (not GetAccountPassword(ConnectionName, CloudSettings) or Not GetFilesPassword(ConnectionName, CloudSettings) or not GetProxyPassword) then
 		exit(CLOUD_OPERATION_ERROR_STATUS_UNKNOWN); //INVALID_HANDLE_VALUE
-
-	PasswordActionRetry := False;
-	if CloudSettings.AccountSettings.EncryptFilesMode <> EncryptModeNone then
-	begin
-		repeat //пока не будет разрешающего действия
-			if not InitCloudCryptPasswords(ConnectionName, CloudSettings) then
-				exit(CLOUD_OPERATION_FAILED);
-			if not TFileCipher.CheckPasswordGUID(CloudSettings.CryptFilesPassword, CloudSettings.AccountSettings.CryptedGUIDFiles) then
-			begin
-				ActionsList := TDictionary<Int32, WideString>.Create;
-				ActionsList.AddOrSetValue(mrYes, PROCEED_UPDATE);
-				ActionsList.AddOrSetValue(mrNo, PROCEED_IGNORE);
-				ActionsList.AddOrSetValue(mrRetry, PROCEED_RETYPE);
-				case TAskPasswordForm.AskAction(PREFIX_ERR_PASSWORD_MATCH, ERR_PASSWORD_MATCH, ActionsList) of
-					mrYes: //store and use updated password
-						begin
-							CloudSettings.AccountSettings.CryptedGUIDFiles := TFileCipher.CryptedGUID(CloudSettings.CryptFilesPassword);
-							AccountsManager := TAccountsManager.Create(self.PluginSettings.IniFilePath);
-							AccountsManager.SetCryptedGUID(ConnectionName, CloudSettings.AccountSettings.CryptedGUIDFiles);
-							AccountsManager.Free;
-						end;
-					mrNo:
-						begin
-							//continue without password
-						end;
-					mrRetry:
-						begin
-							PasswordActionRetry := True;
-						end;
-				end;
-				FreeAndNil(ActionsList);
-			end;
-
-		until not PasswordActionRetry;
-	end;
 
 	Logger.Log(LOG_LEVEL_CONNECT, MSGTYPE_CONNECT, 'CONNECT \%s', [ConnectionName]);
 
@@ -251,6 +215,49 @@ begin
 	end
 	else
 		Result := True;
+end;
+
+function TConnectionManager.GetFilesPassword(const ConnectionName: WideString; var CloudSettings: TCloudSettings): Boolean;
+var
+	PasswordActionRetry: Boolean;
+	ActionsList: TDictionary<Int32, WideString>;
+	AccountsManager: TAccountsManager;
+begin
+	Result := True;
+	PasswordActionRetry := False;
+	if CloudSettings.AccountSettings.EncryptFilesMode <> EncryptModeNone then
+	begin
+		repeat //пока не будет разрешающего действия
+			if not InitCloudCryptPasswords(ConnectionName, CloudSettings) then
+				exit(False);
+			if not TFileCipher.CheckPasswordGUID(CloudSettings.CryptFilesPassword, CloudSettings.AccountSettings.CryptedGUIDFiles) then
+			begin
+				ActionsList := TDictionary<Int32, WideString>.Create;
+				ActionsList.AddOrSetValue(mrYes, PROCEED_UPDATE);
+				ActionsList.AddOrSetValue(mrNo, PROCEED_IGNORE);
+				ActionsList.AddOrSetValue(mrRetry, PROCEED_RETYPE);
+				case TAskPasswordForm.AskAction(PREFIX_ERR_PASSWORD_MATCH, ERR_PASSWORD_MATCH, ActionsList) of
+					mrYes: //store and use updated password
+						begin
+							CloudSettings.AccountSettings.CryptedGUIDFiles := TFileCipher.CryptedGUID(CloudSettings.CryptFilesPassword);
+							AccountsManager := TAccountsManager.Create(self.PluginSettings.IniFilePath);
+							AccountsManager.SetCryptedGUID(ConnectionName, CloudSettings.AccountSettings.CryptedGUIDFiles);
+							AccountsManager.Free;
+						end;
+					mrNo:
+						begin
+							//continue without password
+						end;
+					mrRetry:
+						begin
+							PasswordActionRetry := True;
+						end;
+				end;
+				FreeAndNil(ActionsList);
+			end;
+
+		until not PasswordActionRetry;
+	end;
 end;
 
 {Retrieves the proxy password, if required, from TC passwords storage, the settings file or user input. Returns true if password retrieved or not required, false otherwise.
