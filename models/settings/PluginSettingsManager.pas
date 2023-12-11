@@ -258,8 +258,8 @@ var
 	IniFile: TIniFile;
 	SectionName: WideString;
 begin
-	//	Result.Format := STREAMING_FORMAT_UNSET;
 	result := default (TStreamingSettings);
+	result.Format := STREAMING_FORMAT_UNSET;
 	IniFile := TIniFile.Create(IniFilePath);
 	SectionName := StreamingPrefix + ExtractUniversalFileExt(FileName, True);
 	if IniFile.SectionExists(SectionName) then
