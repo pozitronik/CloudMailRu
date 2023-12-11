@@ -124,7 +124,7 @@ end;
 function TRealPath.GetHasHomePath: boolean;
 begin
 	{Виртуальные каталоги не имеют HomePath. Почему тут не включается invitesDir - я не помню}
-	result := self.trashDir or self.sharedDir or (self.isDir = ID_Unset);
+	result := not(self.trashDir or self.sharedDir or (self.isDir = ID_Unset));
 end;
 
 function TRealPath.IsInAccount(ignoreVirtual: boolean): boolean;
