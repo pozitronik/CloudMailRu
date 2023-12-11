@@ -24,7 +24,7 @@ implementation
 
 {TCMRDirItemList}
 
-{It seems that this kind of search is preferrable somehow, but I forgot, why. So, I jusst keep the logic.}
+{It seems that this kind of search is preferrable somehow, but I forgot, why. So, I just keep the logic.}
 function TCMRDirItemListHelper.FindByHomePath(HomePath: WideString): TCMRDirItem;
 var
 	CurrentItem: TCMRDirItem;
