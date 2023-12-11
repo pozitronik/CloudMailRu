@@ -80,6 +80,7 @@ const
 	ERR_INVALID_IDENTIFIER_NAME = 'Invalid identifier name %s';
 	ERR_INVALID_SECTION_NAME = 'Invalid section name %s';
 	ERR_INVITE_MSG = 'Error while inviting %s to %s folder, see the main log';
+	ERR_JSON_PARSING = 'JSON parsing error: %s';
 	ERR_LINE_HASH = 'Line %d[%s]: %s';
 	ERR_LIST_INVITES_MSG = 'Error while retrieving file %s invites list, see the main log';
 	ERR_LOAD_CAPTCHA = 'Can''t load captcha image!';
@@ -89,12 +90,14 @@ const
 	ERR_OPERATION = 'Operation error';
 	ERR_OTHER_GENERAL = '%s error with message: %s at %s %s';
 	ERR_PARSE_AUTH_DATA = 'error: parsing authorization data';
+	ERR_PARSING_ANSWER = 'Parsing answer';
 	ERR_PARSING_AUTH_TOKEN = 'error: parsing auth token for %s';
 	ERR_PARTIAL_UPLOAD_ABORT = 'Partial upload error, code: %d, aborted';
 	ERR_PARTIAL_UPLOAD_ASK = 'Partial upload error, code: %d' + sLineBreak + 'part name: %s' + sLineBreak + ASK_CONTINUE;
 	ERR_PARTIAL_UPLOAD_IGNORE = 'Partial upload error, code: %d, ignored';
 	ERR_PARTIAL_UPLOAD_RETRY = 'Partial upload error, code: %d, retry attempt %d of %d';
 	ERR_PARTIAL_UPLOAD_RETRY_EXCEED = 'Partial upload error, code: %d, retry attempt limit exceed, aborted';
+	ERR_PASSWORD_MATCH = 'The specified password does not match the previously entered one. If you choose to use the new password, previously encrypted files become inaccessible.';
 	ERR_PUBLISH_FILE = 'File publishing error';
 	ERR_PUBLISH_FILE_ASK = 'File publish error: %s' + sLineBreak + CONTINUE_ASK;
 	ERR_PUBLISH_MSG = 'Error while publishing file %s, see the main log';
@@ -162,6 +165,7 @@ const
 	PREFIX_ERR_INVITE_MEMBER = 'Invite member error: ';
 	PREFIX_ERR_INVITE_REJECT = 'Invite rejection error: ';
 	PREFIX_ERR_OAUTH = 'OAuth error: %s (%s).';
+	PREFIX_ERR_PASSWORD_MATCH = 'Password doesn''t match!';
 	PREFIX_ERR_PATH_NOT_EXISTS = 'Path not exists: ';
 	PREFIX_ERR_REMOVE_TEMP_PUBLIC_LINK = 'Can''t remove temporary public link on ';
 	PREFIX_ERR_SHARD_RECEIVE = 'Shard receive error: ';
@@ -174,6 +178,9 @@ const
 	PREFIX_SCAN = 'Scanning %s';
 	PREFIX_SHARD_RECEIVED = 'Shard received: %s, type: %s';
 	PREFIX_STATUS = 'Status: ';
+	PROCEED_IGNORE = 'Proceed without encryption';
+	PROCEED_RETYPE = 'Retype password';
+	PROCEED_UPDATE = 'Use the new password';
 	PUBLISH_FILE_RETRY = 'File publish error: %s, retry attempt %d of %d';
 	REDIRECTION_LIMIT = 'Redirection limit';
 	REQUESTING_AUTH_TOKEN = 'Requesting auth token for %s';
@@ -198,17 +205,8 @@ const
 	VERB_SET = 'Set';
 	VERB_UPDATE = 'Update';
 	WAIT = 'Wait for it...';
+	WARN_PROXY_PASSWORD_IGNORED = 'Warning: proxy password input skipped ignored, parameter will be ignored!';
 	WARN_QUOTA_EXHAUSTED = 'Warning: space quota exhausted!';
-  WARN_PROXY_PASSWORD_IGNORED = 'Warning: proxy password input skipped ignored, parameter will be ignored!';
-
-	ERR_PARSING_ANSWER = 'Parsing answer';
-	ERR_JSON_PARSING = 'JSON parsing error: %s';
-
-	PROCEED_UPDATE = 'Use the new password';
-	PROCEED_IGNORE = 'Proceed without encryption';
-	PROCEED_RETYPE = 'Retype password';
-	PREFIX_ERR_PASSWORD_MATCH = 'Password doesn''t match!';
-	ERR_PASSWORD_MATCH = 'The specified password does not match the previously entered one. If you choose to use the new password, previously encrypted files become inaccessible.';
 
 implementation
 
