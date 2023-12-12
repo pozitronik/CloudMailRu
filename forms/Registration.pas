@@ -26,7 +26,6 @@ uses
 	ConnectionSettings,
 	Vcl.Imaging.JPEG;
 
-
 type
 	TRegistrationForm = class(TForm)
 		FirstNameLabel: TLabel;

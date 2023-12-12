@@ -117,7 +117,7 @@ begin
 		begin
 			self.Socks.Authentication := saUsernamePassword;
 			self.Socks.Username := Settings.ProxySettings.User;
-			self.Socks.password := Settings.ProxySettings.Password;
+			self.Socks.password := Settings.ProxySettings.password;
 		end
 		else
 			self.Socks.Authentication := saNoAuthentication;
@@ -141,7 +141,7 @@ begin
 		begin
 			HTTP.ProxyParams.BasicAuthentication := true;
 			HTTP.ProxyParams.ProxyUsername := Settings.ProxySettings.User;
-			HTTP.ProxyParams.ProxyPassword := Settings.ProxySettings.Password;
+			HTTP.ProxyParams.ProxyPassword := Settings.ProxySettings.password;
 		end
 	end;
 
