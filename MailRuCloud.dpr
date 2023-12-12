@@ -212,9 +212,11 @@ begin
 			InitPluginData;
 		DLL_PROCESS_DETACH:
 			FreePluginData();
-		DLL_THREAD_ATTACH: begin
+		DLL_THREAD_ATTACH:
+			begin
 			end;
-		DLL_THREAD_DETACH: begin
+		DLL_THREAD_DETACH:
+			begin
 			end;
 	end; //case
 end;
