@@ -265,6 +265,8 @@
         <DCCReference Include="models\TCRequest.pas"/>
         <DCCReference Include="models\WSList.pas"/>
         <DCCReference Include="helpers\WindowsHelper.pas"/>
+        <DCCReference Include="models\wfx\MailRuCloudWFX.pas"/>
+        <DCCReference Include="models\wfx\WFXInterface.pas"/>
         <RcItem Include="icons\icon.ico">
             <ResourceType>ICON</ResourceType>
             <ResourceId>base_icon</ResourceId>

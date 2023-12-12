@@ -21,7 +21,6 @@ function FsDisconnect(DisconnectRoot: PAnsiChar): Bool; stdcall;
 function FsMkDir(path: PAnsiChar): Bool; stdcall;
 function FsRemoveDir(RemoteName: PAnsiChar): Bool; stdcall;
 procedure FsSetCryptCallback(PCryptProc: TCryptProcW; CryptoNr: integer; Flags: integer); stdcall;
-function FsContentGetSupportedField(FieldIndex: integer; FieldName: PAnsiChar; Units: PAnsiChar; maxlen: integer): integer; stdcall;
 function FsContentGetValue(FileName: PAnsiChar; FieldIndex: integer; UnitIndex: integer; FieldValue: Pointer; maxlen: integer; Flags: integer): integer; stdcall;
 function FsExtractCustomIcon(RemoteName: pchar; ExtractFlags: integer; var TheIcon: hicon): integer; stdcall;
 
@@ -100,103 +99,6 @@ end;
 procedure FsSetCryptCallback(PCryptProc: TCryptProcW; CryptoNr: integer; Flags: integer); stdcall;
 begin
 	SetLastError(ERROR_INVALID_FUNCTION);
-end;
-
-function FsContentGetSupportedField(FieldIndex: integer; FieldName: PAnsiChar; Units: PAnsiChar; maxlen: integer): integer; stdcall;
-begin
-	Result := ft_nomorefields;
-	case FieldIndex of
-		0:
-			begin
-				System.AnsiStrings.strpcopy(FieldName, 'tree');
-				Result := ft_stringw;
-			end;
-		1:
-			begin
-				System.AnsiStrings.strpcopy(FieldName, 'name');
-				Result := ft_stringw;
-			end;
-		2:
-			begin
-				System.AnsiStrings.strpcopy(FieldName, 'grev');
-				Result := ft_numeric_32;
-			end;
-		3:
-			begin
-				System.AnsiStrings.strpcopy(FieldName, 'size');
-				Result := ft_numeric_64;
-			end;
-		4:
-			begin
-				System.AnsiStrings.strpcopy(FieldName, 'kind');
-				Result := ft_stringw;
-			end;
-		5:
-			begin
-				System.AnsiStrings.strpcopy(FieldName, 'weblink');
-				Result := ft_stringw;
-			end;
-		6:
-			begin
-				System.AnsiStrings.strpcopy(FieldName, 'rev');
-				Result := ft_numeric_32;
-			end;
-		7:
-			begin
-				System.AnsiStrings.strpcopy(FieldName, 'type');
-				Result := ft_stringw;
-			end;
-		8:
-			begin
-				System.AnsiStrings.strpcopy(FieldName, 'home');
-				Result := ft_stringw;
-			end;
-		9:
-			begin
-				System.AnsiStrings.strpcopy(FieldName, 'mtime');
-				Result := ft_datetime;
-			end;
-		10:
-			begin
-				System.AnsiStrings.strpcopy(FieldName, 'hash');
-				Result := ft_stringw;
-			end;
-		11:
-			begin
-				System.AnsiStrings.strpcopy(FieldName, 'virus_scan');
-				Result := ft_stringw;
-			end;
-		12:
-			begin
-				System.AnsiStrings.strpcopy(FieldName, 'folders_count');
-				Result := ft_numeric_32;
-			end;
-		13:
-			begin
-				System.AnsiStrings.strpcopy(FieldName, 'files_count');
-				Result := ft_numeric_32;
-			end;
-		14:
-			begin
-				System.AnsiStrings.strpcopy(FieldName, 'description');
-				Result := ft_stringw;
-			end;
-		15:
-			begin
-				System.AnsiStrings.strpcopy(FieldName, 'deleted_at');
-				Result := ft_datetime;
-			end;
-		16:
-			begin
-				System.AnsiStrings.strpcopy(FieldName, 'deleted_from');
-				Result := ft_stringw;
-			end;
-		17:
-			begin
-				System.AnsiStrings.strpcopy(FieldName, 'deleted_by');
-				Result := ft_stringw;
-			end;
-	end;
 end;
 
 function FsContentGetValue(FileName: PAnsiChar; FieldIndex: integer; UnitIndex: integer; FieldValue: Pointer; maxlen: integer; Flags: integer): integer; stdcall;
