@@ -7,18 +7,6 @@ uses
 	CMRConstants,
 	SysUtils;
 
-const
-	//FsFindFirst* success return codes (INVALID_HANDLE_VALUE returns on error)
-	FIND_NO_MORE_FILES = 0;
-	FIND_OK = 1;
-	FIND_ROOT_DIRECTORY = 2;
-	FIND_SHARED_LINKS = 3; //.shared folder
-
-	TYPE_AUTO = -1;
-	TYPE_BYTES = 0;
-	TYPE_KYLOBYTES = 1;
-	TYPE_MEGABYTES = 2;
-
 function FormatSize(size: Int64; SizeType: integer = TYPE_AUTO): WideString; //Форматируем размер в удобочитаемый вид
 function ShardTypeFromStreamingFormat(StreamingFormat: integer): string;
 
