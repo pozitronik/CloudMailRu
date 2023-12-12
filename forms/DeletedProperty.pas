@@ -7,7 +7,7 @@ uses
 	CMRDirItem,
 	CloudMailRu,
 	SETTINGS_CONSTANTS,
-  LANGUAGE_STRINGS,
+	LANGUAGE_STRINGS,
 	CMRConstants,
 	PluginHelper,
 	DateUtils,

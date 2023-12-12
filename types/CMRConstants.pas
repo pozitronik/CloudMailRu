@@ -211,6 +211,17 @@ const
 	LOG_LEVEL_ERROR = 16; //error details
 	LOG_LEVEL_DEBUG = 32; //also same internal debugging info
 
+	//FsFindFirst* success return codes (INVALID_HANDLE_VALUE returns on error)
+	FIND_NO_MORE_FILES = 0;
+	FIND_OK = 1;
+	FIND_ROOT_DIRECTORY = 2;
+	FIND_SHARED_LINKS = 3; //.shared folder
+
+	TYPE_AUTO = -1;
+	TYPE_BYTES = 0;
+	TYPE_KYLOBYTES = 1;
+	TYPE_MEGABYTES = 2;
+
 implementation
 
 end.

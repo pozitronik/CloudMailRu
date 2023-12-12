@@ -47,7 +47,7 @@ type
 		function DecryptFile(SourceFileName, DestinationFilename: WideString): integer;
 		function DecryptStream(SourceStream, DestinationStream: TStream): integer;
 		function DecryptFileName(const FileName: WideString): WideString;
-		procedure DecryptDirListing(var CloudMailRuDirListing:TCMRDirItemList);
+		procedure DecryptDirListing(var CloudMailRuDirListing: TCMRDirItemList);
 
 		class function Base64ToSafe(const Base64: WideString): WideString; //converts Base64-encoded string to URL and Filename safe (RFC 4648)
 		class function Base64FromSafe(const Safe: WideString): WideString;

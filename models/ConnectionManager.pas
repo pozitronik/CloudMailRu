@@ -275,7 +275,8 @@ begin
 
 	if ProxySettings.UseTCPasswordManager and (PasswordManager.GetPassword('proxy' + ProxySettings.User, ProxySettings.password) = FS_FILE_OK) then {retrieve the proxy password from TC passwords storage}
 		Result := True{Password is retrieved and should be updated in th HTTPManager}
-	else begin
+	else
+	begin
 		if ProxySettings.password = EmptyWideStr then {password can be retrieved previously or just read from config}
 		begin
 			if mrOk = TAskPasswordForm.AskPassword(Format(ASK_PROXY_PASSWORD, [ProxySettings.User]), PREFIX_ASK_PROXY_PASSWORD, ProxySettings.password, ProxySettings.UseTCPasswordManager, False, FindTCWindow) then
