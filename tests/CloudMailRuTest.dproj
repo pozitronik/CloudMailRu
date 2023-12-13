@@ -149,6 +149,7 @@
         <DCCReference Include="..\helpers\IniFilesHelper.pas"/>
         <DCCReference Include="..\models\settings\StreamingSettings.pas"/>
         <DCCReference Include="helpers\TestFileHelper.pas"/>
+        <DCCReference Include="helpers\TestPathHelper.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

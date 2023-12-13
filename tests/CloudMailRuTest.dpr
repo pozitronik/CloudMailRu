@@ -55,7 +55,8 @@ uses
 	PluginSettings in '..\models\settings\PluginSettings.pas',
 	IniFilesHelper in '..\helpers\IniFilesHelper.pas',
 	StreamingSettings in '..\models\settings\StreamingSettings.pas',
-	TestFileHelper in 'helpers\TestFileHelper.pas';
+	TestFileHelper in 'helpers\TestFileHelper.pas',
+	TestPathHelper in 'helpers\TestPathHelper.pas';
 
 {keep comment here to protect the following conditional from being removed by the IDE when adding a unit}
 {$IFNDEF TESTINSIGHT}
