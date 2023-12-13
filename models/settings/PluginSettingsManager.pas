@@ -19,7 +19,7 @@ uses
 
 type
 
-	{Files names and path naming convetions:
+	{Files names and path naming conventions:
 	 (File)Path or (Dir)Patn should contain the full absolute path for a file or a directory
 	 (File)Name or (Dir)Name should contain only the name of a file or a directory
 	}
