@@ -89,7 +89,7 @@ var
 	I: integer;
 begin
 	I := FileName.LastDelimiter('.' + '/' + '\' + DriveDelim);
-	if (I >= 0) and (FileName.Chars[I] = '.') then
+	if (I > 0) and (FileName.Chars[I] = '.') then
 		if TrimDot then
 			Result := FileName.Substring(I + 1)
 		else
