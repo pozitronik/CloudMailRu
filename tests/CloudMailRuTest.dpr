@@ -54,16 +54,17 @@ uses
 	PluginSettingsManager in '..\models\settings\PluginSettingsManager.pas',
 	PluginSettings in '..\models\settings\PluginSettings.pas',
 	IniFilesHelper in '..\helpers\IniFilesHelper.pas',
-	StreamingSettings in '..\models\settings\StreamingSettings.pas';
+	StreamingSettings in '..\models\settings\StreamingSettings.pas',
+	TestFileHelper in 'helpers\TestFileHelper.pas';
 
 {keep comment here to protect the following conditional from being removed by the IDE when adding a unit}
 {$IFNDEF TESTINSIGHT}
 
 var
-	runner: ITestRunner;
-	results: IRunResults;
-	logger: ITestLogger;
-	nunitLogger: ITestLogger;
+	Runner: ITestRunner;
+	Results: IRunResults;
+	Logger: ITestLogger;
+	NunitLogger: ITestLogger;
 {$ENDIF}
 
 begin
@@ -74,26 +75,26 @@ begin
 		//Check command line options, will exit if invalid
 		TDUnitX.CheckCommandLine;
 		//Create the test runner
-		runner := TDUnitX.CreateRunner;
+		Runner := TDUnitX.CreateRunner;
 		//Tell the runner to use RTTI to find Fixtures
-		runner.UseRTTI := True;
+		Runner.UseRTTI := True;
 		//When true, Assertions must be made during tests;
-		runner.FailsOnNoAsserts := False;
+		Runner.FailsOnNoAsserts := False;
 
 		//tell the runner how we will log things
 		//Log to the console window if desired
 		if TDUnitX.Options.ConsoleMode <> TDunitXConsoleMode.Off then
 		begin
-			logger := TDUnitXConsoleLogger.Create(TDUnitX.Options.ConsoleMode = TDunitXConsoleMode.Quiet);
-			runner.AddLogger(logger);
+			Logger := TDUnitXConsoleLogger.Create(TDUnitX.Options.ConsoleMode = TDunitXConsoleMode.Quiet);
+			Runner.AddLogger(Logger);
 		end;
 		//Generate an NUnit compatible XML File
-		nunitLogger := TDUnitXXMLNUnitFileLogger.Create(TDUnitX.Options.XMLOutputFile);
-		runner.AddLogger(nunitLogger);
+		NunitLogger := TDUnitXXMLNUnitFileLogger.Create(TDUnitX.Options.XMLOutputFile);
+		Runner.AddLogger(NunitLogger);
 
 		//Run tests
-		results := runner.Execute;
-		if not results.AllPassed then
+		Results := Runner.Execute;
+		if not Results.AllPassed then
 			System.ExitCode := EXIT_ERRORS;
 
 {$IFNDEF CI}

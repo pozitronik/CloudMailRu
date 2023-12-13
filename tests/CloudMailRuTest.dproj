@@ -148,6 +148,7 @@
         <DCCReference Include="..\models\settings\PluginSettings.pas"/>
         <DCCReference Include="..\helpers\IniFilesHelper.pas"/>
         <DCCReference Include="..\models\settings\StreamingSettings.pas"/>
+        <DCCReference Include="helpers\TestFileHelper.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>
