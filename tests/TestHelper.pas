@@ -14,7 +14,7 @@ implementation
 
 function DataPath(Path: WideString): WideString;
 begin
-	exit(TPath.Combine(TPath.GetLibraryPath, '..\..\data', Path)); //up to two levels, due binary is in subdir
+	Exit(TPath.GetFullPath(TPath.Combine(TPath.GetLibraryPath, '..\..\data', Path))); //up to two levels, due binary is in subdir
 end;
 
 procedure DataFileContents(DataFileName: WideString; out VarName: WideString);
@@ -29,12 +29,12 @@ function RandomString(const Len: Integer): WideString;
 const
 	CharSet = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 var
-	i: Integer;
+	I: Integer;
 begin
 	Result := '';
 	Randomize; // Initialize the random number generator
 
-	for i := 1 to Len do
+	for I := 1 to Len do
 		Result := Result + CharSet[Random(Length(CharSet)) + 1];
 end;
 
