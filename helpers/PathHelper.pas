@@ -9,7 +9,7 @@ uses
 
 function GetUNCFilePath(FilePath: WideString): WideString;
 function GetLFCFilePath(FilePath: WideString): WideString; //UNC => LFC
-function IncludeSlash(const Str: WideString): WideString;
+function IncludeSlash(const URL: WideString): WideString;
 function ChangePathFileName(const FilePath, NewFileName: WideString): WideString;
 function CopyExt(FromFilename, ToFilename: WideString): WideString;
 function PathToUrl(path: WideString; RestrictEmptyUrl: boolean = true; DoUrlEncode: boolean = true): WideString;
@@ -20,12 +20,12 @@ function ExtractUniversalFileExt(const FileName: string; TrimDot: boolean = Fals
 
 implementation
 
-function IncludeSlash(const Str: WideString): WideString;
+function IncludeSlash(const URL: WideString): WideString;
 begin
-	if Str = EmptyWideStr then
+	if URL = EmptyWideStr then
 		exit('/');
 
-	Result := Str;
+	Result := URL;
 	if not(Result[High(Result)] = '/') then
 		Result := Result + '/';
 end;
