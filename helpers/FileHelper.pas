@@ -8,16 +8,16 @@ uses
 	SysUtils,
 	Windows;
 
-function IsWriteable(const DirName: WideString; FileName: WideString = 'delete.me'; CleanFile: boolean = true): boolean;
+function IsWriteable(const DirName: WideString; FileName: WideString = 'delete.me'; CleanFile: Boolean = True): Boolean;
 procedure SetAllFileTime(const FileName: string; const FileTime: TFileTime);
 function SizeOfFile(const FileName: String): Int64;
 
 implementation
 
-function IsWriteable(const DirName: WideString; FileName: WideString = 'delete.me'; CleanFile: boolean = true): boolean;
+function IsWriteable(const DirName: WideString; FileName: WideString = 'delete.me'; CleanFile: Boolean = True): Boolean;
 var
 	NewName: WideString;
-	H: thandle;
+	H: Thandle;
 begin
 	NewName := IncludeTrailingPathDelimiter(DirName) + FileName;
 	if CleanFile then
@@ -33,7 +33,7 @@ end;
 
 procedure SetAllFileTime(const FileName: string; const FileTime: TFileTime);
 var
-	Handle: thandle;
+	Handle: Thandle;
 begin
 	Handle := INVALID_HANDLE_VALUE;
 	try
@@ -41,7 +41,7 @@ begin
 		if Handle = INVALID_HANDLE_VALUE then
 		begin
 			CloseHandle(Handle);
-			exit;
+			Exit;
 		end;
 
 		SetFileTime(Handle, @FileTime, @FileTime, @FileTime);
@@ -52,16 +52,21 @@ end;
 
 function SizeOfFile(const FileName: String): Int64;
 var
-	fHandle: DWORD;
+	FHandle: DWORD;
 begin
-	fHandle := CreateFile(PChar(FileName), 0, 0, nil, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
-	if fHandle = INVALID_HANDLE_VALUE then
+	try
+		FHandle := CreateFile(PChar(FileName), 0, 0, nil, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+	except
+		on E: ERangeError do
+			Exit(-1); {File does not exists}
+	end;
+	if FHandle = INVALID_HANDLE_VALUE then
 		Result := -1
 	else
 		try
-			Int64Rec(Result).Lo := GetFileSize(fHandle, @Int64Rec(Result).Hi);
+			Int64Rec(Result).Lo := GetFileSize(FHandle, @Int64Rec(Result).Hi);
 		finally
-			CloseHandle(fHandle);
+			CloseHandle(FHandle);
 		end;
 end;
 
