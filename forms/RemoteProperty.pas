@@ -189,7 +189,7 @@ begin
 	end;
 	CurrentDescriptions.SetValue(ExtractFileName(self.RemoteName), DescriptionEditMemo.lines.Text);
 	CurrentDescriptions.Write();
-	self.Cloud.putDesriptionFile(RemotePath, CurrentDescriptions.ionFilename);
+	self.Cloud.PutDescriptionFile(RemotePath, CurrentDescriptions.ionFilename);
 
 	CurrentDescriptions.Destroy;
 end;

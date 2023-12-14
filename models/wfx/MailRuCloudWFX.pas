@@ -269,7 +269,7 @@ begin
 	RemoteDescriptions.DeleteValue(ExtractFileName(RemotePath.Path));
 	RemoteDescriptions.Write();
 	Cloud.deleteFile(RemoteIonPath); //Приходится удалять, потому что не знаем, как переписать
-	Cloud.putDesriptionFile(RemoteIonPath, RemoteDescriptions.ionFilename);
+	Cloud.PutDescriptionFile(RemoteIonPath, RemoteDescriptions.ionFilename);
 	RemoteDescriptions.Destroy;
 end;
 
@@ -1801,7 +1801,7 @@ begin
 		begin
 			OldDescriptions.Write();
 			Cloud.deleteFile(OldRemoteIonPath);
-			Cloud.putDesriptionFile(OldRemoteIonPath, OldDescriptions.ionFilename);
+			Cloud.PutDescriptionFile(OldRemoteIonPath, OldDescriptions.ionFilename);
 		end;
 		OldDescriptions.Destroy;
 	end
@@ -1821,10 +1821,10 @@ begin
 		OldDescriptions.Write();
 		NewDescriptions.Write();
 		Cloud.deleteFile(OldRemoteIonPath);
-		Cloud.putDesriptionFile(OldRemoteIonPath, OldDescriptions.ionFilename);
+		Cloud.PutDescriptionFile(OldRemoteIonPath, OldDescriptions.ionFilename);
 		if NewRemoteIonExists then
 			Cloud.deleteFile(NewRemoteIonPath); //Если файл существовал ранее, его нужно удалить для последующей записи на его место
-		Cloud.putDesriptionFile(NewRemoteIonPath, NewDescriptions.ionFilename);
+		Cloud.PutDescriptionFile(NewRemoteIonPath, NewDescriptions.ionFilename);
 		OldDescriptions.Destroy;
 		NewDescriptions.Destroy;
 	end;
@@ -2007,7 +2007,7 @@ begin
 	if RemoteIonExists then
 		Cloud.deleteFile(RemoteIonPath); //Приходится удалять, потому что не знаем, как переписать
 
-	Cloud.putDesriptionFile(RemoteIonPath, RemoteDescriptions.ionFilename);
+	Cloud.PutDescriptionFile(RemoteIonPath, RemoteDescriptions.ionFilename);
 
 	RemoteDescriptions.Destroy;
 	LocalDescriptions.Destroy

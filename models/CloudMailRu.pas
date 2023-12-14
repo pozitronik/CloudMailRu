@@ -159,7 +159,7 @@ type
 		function GetPublishedFileStreamUrl(FileIdentity: TCMRDirItem; var StreamUrl: WideString; ShardType: WideString = SHARD_TYPE_WEBLINK_VIDEO; Publish: Boolean = CLOUD_PUBLISH): Boolean;
 		{OTHER ROUTINES}
 		function GetDescriptionFile(RemotePath, LocalCopy: WideString): Boolean; //Если в каталоге remotePath есть descript.ion - скопировать его в файл localcopy
-		function PutDesriptionFile(RemotePath, LocalCopy: WideString): Boolean; //Скопировать descript.ion из временного файла на сервер
+		function PutDescriptionFile(RemotePath, LocalCopy: WideString): Boolean; //Скопировать descript.ion из временного файла на сервер
 		procedure LogUserSpaceInfo();
 		function FileIdentity(LocalPath: WideString): TCMRFileIdentity;
 		{STATIC ROUTINES}
@@ -466,7 +466,7 @@ begin
 	Result := GetFile(RemotePath, LocalCopy, ResultHash, False) = FS_FILE_OK;
 end;
 
-function TCloudMailRu.PutDesriptionFile(RemotePath, LocalCopy: WideString): Boolean;
+function TCloudMailRu.PutDescriptionFile(RemotePath, LocalCopy: WideString): Boolean;
 begin
 	if FileExists(LocalCopy) then
 		Result := PutFile(LocalCopy, RemotePath) = FS_FILE_OK
