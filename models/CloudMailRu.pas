@@ -46,18 +46,18 @@ uses
 type
 	TCloudMailRu = class
 	private
-		Settings: TCloudSettings; {Current options set for the cloud instance}
+		FSettings: TCloudSettings; {Current options set for the cloud instance}
 
-		HTTPConnectionsManager: THTTPManager; {Internal connections manager (can be set externally or omitted)}
-		InternalHTTPConnection: TCloudMailRuHTTP; {Normally managed by HTTPConnectionsManager. If HTTPConnectionsManager is omitted, Cloud will create its own atomic connection}
+		FHTTPManager: THTTPManager; {Internal connections manager (can be set externally or omitted)}
+		FHTTPConnection: TCloudMailRuHTTP; {Normally managed by HTTPConnectionsManager. If HTTPConnectionsManager is omitted, Cloud will create its own atomic connection}
 
-		AuthCookie: TIdCookieManager; {The auth cookie, should be stored separately, because it associated with a cloud instance, not a connection}
+		FCookieManager: TIdCookieManager; {The auth cookie, should be stored separately, because it associated with a cloud instance, not a connection}
 
-		Logger: TTCLogger;
-		Progress: TTCProgress;
-		Request: TTCRequest;
+		FLogger: TTCLogger;
+		FProgress: TTCProgress;
+		FRequest: TTCRequest;
 
-		FileCipher: TFileCipher; {The encryption instance}
+		FCipher: TFileCipher; {The encryption instance}
 
 		FPublicLink: WideString; {Holder for GetPublicLink() value, should not be accessed directly}
 		FPublicShard: WideString; {Public shard url, used for public downloads}
@@ -96,19 +96,19 @@ type
 		FDoCryptFiles: Boolean;
 		FDoCryptFilenames: Boolean;
 		{Those properties are simple shortcuts to settings fields}
-		property FPassword: WideString read Settings.AccountSettings.Password;
-		property FEmail: WideString read Settings.AccountSettings.email;
-		property FDownloadShardOverride: WideString read Settings.AccountSettings.ShardOverride;
-		property FUploadShardOverride: WideString read Settings.AccountSettings.UploadUrlOverride;
-		property FUnlimitedFileSize: Boolean read Settings.AccountSettings.UnlimitedFilesize;
-		property FSplitLargeFiles: Boolean read Settings.AccountSettings.SplitLargeFiles;
-		property FCloudMaxFileSize: Int64 read Settings.CloudMaxFileSize;
-		property FPrecalculateHash: Boolean read Settings.PrecalculateHash;
-		property FForcePrecalculateSize: Int64 read Settings.ForcePrecalculateSize;
-		property FCheckCRC: Boolean read Settings.CheckCRC;
-		property FOperationErrorMode: Integer read Settings.OperationErrorMode;
-		property FRetryAttempts: Integer read Settings.RetryAttempts;
-		property FAttemptWait: Integer read Settings.AttemptWait;
+		property FPassword: WideString read FSettings.AccountSettings.Password;
+		property FEmail: WideString read FSettings.AccountSettings.email;
+		property FDownloadShardOverride: WideString read FSettings.AccountSettings.ShardOverride;
+		property FUploadShardOverride: WideString read FSettings.AccountSettings.UploadUrlOverride;
+		property FUnlimitedFileSize: Boolean read FSettings.AccountSettings.UnlimitedFilesize;
+		property FSplitLargeFiles: Boolean read FSettings.AccountSettings.SplitLargeFiles;
+		property FCloudMaxFileSize: Int64 read FSettings.CloudMaxFileSize;
+		property FPrecalculateHash: Boolean read FSettings.PrecalculateHash;
+		property FForcePrecalculateSize: Int64 read FSettings.ForcePrecalculateSize;
+		property FCheckCRC: Boolean read FSettings.CheckCRC;
+		property FOperationErrorMode: Integer read FSettings.OperationErrorMode;
+		property FRetryAttempts: Integer read FSettings.RetryAttempts;
+		property FAttemptWait: Integer read FSettings.AttemptWait;
 		{Also shortcut properties}
 		property FHTTP: TCloudMailRuHTTP read GetHTTPConnection;
 
@@ -120,7 +120,7 @@ type
 		function GetFileShared(RemotePath, LocalPath: WideString; var ResultHash: WideString; LogErrors: Boolean = true): Integer; //LogErrors=false => не логируем результат копирования, нужно для запроса descript.ion (которого может не быть)
 		function GetPublicLink(): WideString;
 	public
-		property IsPublicAccount: Boolean read Settings.AccountSettings.PublicAccount;
+		property IsPublicAccount: Boolean read FSettings.AccountSettings.PublicAccount;
 		{CONSTRUCTOR/DESTRUCTOR}
 		constructor Create(CloudSettings: TCloudSettings; ConnectionManager: THTTPManager; Progress: TTCProgress = nil; Logger: TTCLogger = nil; Request: TTCRequest = nil);
 		destructor Destroy; override;
@@ -187,7 +187,7 @@ begin
 	if FDoCryptFilenames then
 	begin
 		FileName := ExtractUniversalFileName(RemotePath);
-		FileName := FileCipher.CryptFileName(FileName);
+		FileName := FCipher.CryptFileName(FileName);
 		RemotePath := ChangePathFileName(RemotePath, FileName);
 	end;
 	{Экспериментально выяснено, что параметры api, build, email, x-email, x-page-id в запросе не обязательны}
@@ -196,7 +196,7 @@ begin
 		OperationResult.FromJSON(JSON);
 		Result := CloudResultToFsResult(OperationResult, PREFIX_ERR_FILE_UPLOADING);
 		if (CLOUD_OPERATION_OK = OperationResult.OperationResult) and LogSuccess then
-			Logger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, FILE_FOUND_BY_HASH, [RemotePath]);
+			FLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, FILE_FOUND_BY_HASH, [RemotePath]);
 		if (NAME_TOKEN = getBodyError(JSON)) and RefreshCSRFToken() then
 			Result := AddFileByIdentity(FileIdentity, RemotePath, ConflictMode, LogErrors, LogSuccess);
 	end;
@@ -242,7 +242,7 @@ function TCloudMailRu.CloudResultToBoolean(CloudResult: TCMROperationResult; Err
 begin
 	Result := CloudResult.ToBoolean;
 	if not(Result) and (ErrorPrefix <> EmptyWideStr) then
-		Logger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, '%s%s%s%s', [ErrorPrefix, ErrorCodeText(CloudResult.OperationResult), PREFIX_STATUS, CloudResult.OperationStatus]);
+		FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, '%s%s%s%s', [ErrorPrefix, ErrorCodeText(CloudResult.OperationResult), PREFIX_STATUS, CloudResult.OperationStatus]);
 end;
 
 function TCloudMailRu.CloudResultToFsResult(JSON, ErrorPrefix: WideString): Integer;
@@ -263,18 +263,18 @@ begin
 			Exit(FS_FILE_NOTSUPPORTED);
 		CLOUD_ERROR_OVERQUOTA:
 			begin
-				Logger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_INSUFFICIENT_STORAGE);
+				FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_INSUFFICIENT_STORAGE);
 				Exit(FS_FILE_WRITEERROR);
 			end;
 		CLOUD_ERROR_NAME_TOO_LONG:
 			begin
-				Logger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_NAME_TOO_LONG);
+				FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_NAME_TOO_LONG);
 				Exit(FS_FILE_WRITEERROR);
 			end;
 		else
 			begin //что-то неизвестное
 				if (ErrorPrefix <> EmptyWideStr) then
-					Logger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, '%s%s%s%d', [ErrorPrefix, ErrorCodeText(CloudResult.OperationResult), PREFIX_STATUS, CloudResult.OperationStatus]);
+					FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, '%s%s%s%d', [ErrorPrefix, ErrorCodeText(CloudResult.OperationResult), PREFIX_STATUS, CloudResult.OperationStatus]);
 				Exit(FS_FILE_WRITEERROR);
 			end;
 	end;
@@ -308,7 +308,7 @@ begin //Облако умеет скопировать файл, но не см�
 	SameName := ExtractFileName(OldName) = ExtractFileName(NewName);
 	if (SameDir) then //копирование в тот же каталог не поддерживается напрямую, а мудрить со временными каталогами я не хочу
 	begin
-		Logger.Log(LOG_LEVEL_WARNING, MSGTYPE_IMPORTANTERROR, ERR_COPY_SAME_DIR_NOT_SUPPORTED);
+		FLogger.Log(LOG_LEVEL_WARNING, MSGTYPE_IMPORTANTERROR, ERR_COPY_SAME_DIR_NOT_SUPPORTED);
 		Exit(FS_FILE_NOTSUPPORTED);
 	end else begin
 		{TODO: issue #219}
@@ -329,31 +329,31 @@ end;
 constructor TCloudMailRu.Create(CloudSettings: TCloudSettings; ConnectionManager: THTTPManager; Progress: TTCProgress; Logger: TTCLogger; Request: TTCRequest);
 begin
 	try
-		Settings := CloudSettings;
+		FSettings := CloudSettings;
 		ExtractEmailParts(FEmail, FUser, FDomain);
 
-		HTTPConnectionsManager := ConnectionManager;
+		FHTTPManager := ConnectionManager;
 
-		self.Progress := Progress;
-		if not Assigned(self.Progress) then
-			self.Progress := TTCProgress.Create();
+		self.FProgress := Progress;
+		if not Assigned(self.FProgress) then
+			self.FProgress := TTCProgress.Create();
 		Logger := Logger;
 		if not Assigned(Logger) then
 			Logger := TTCLogger.Create();
-		self.Request := Request;
-		if not Assigned(self.Request) then
-			self.Request := TTCRequest.Create();
+		self.FRequest := Request;
+		if not Assigned(self.FRequest) then
+			self.FRequest := TTCRequest.Create();
 
-		AuthCookie := TIdCookieManager.Create();
+		FCookieManager := TIdCookieManager.Create();
 
-		if Settings.AccountSettings.EncryptFilesMode <> EncryptModeNone then
+		if FSettings.AccountSettings.EncryptFilesMode <> EncryptModeNone then
 		begin
-			FileCipher := TFileCipher.Create(Settings.CryptFilesPassword, Settings.AccountSettings.CryptedGUIDFiles, Settings.AccountSettings.EncryptFilenames);
-			if FileCipher.IsWrongPassword then
+			FCipher := TFileCipher.Create(FSettings.CryptFilesPassword, FSettings.AccountSettings.CryptedGUIDFiles, FSettings.AccountSettings.EncryptFilenames);
+			if FCipher.IsWrongPassword then
 				Logger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_WRONG_ENCRYPT_PASSWORD);
 
-			FDoCryptFiles := not(FileCipher.IsWrongPassword);
-			FDoCryptFilenames := FDoCryptFiles and Settings.AccountSettings.EncryptFilenames and not(FileCipher.IsWrongPassword);
+			FDoCryptFiles := not(FCipher.IsWrongPassword);
+			FDoCryptFilenames := FDoCryptFiles and FSettings.AccountSettings.EncryptFilenames and not(FCipher.IsWrongPassword);
 		end;
 
 	except
@@ -398,13 +398,13 @@ destructor TCloudMailRu.Destroy;
 begin
 	//HTTP.Destroy;
 
-	AuthCookie.Destroy;
+	FCookieManager.Destroy;
 
-	if Assigned(InternalHTTPConnection) then
-		InternalHTTPConnection.Destroy;
+	if Assigned(FHTTPConnection) then
+		FHTTPConnection.Destroy;
 
-	if Assigned(FileCipher) then
-		FileCipher.Destroy;
+	if Assigned(FCipher) then
+		FCipher.Destroy;
 
 	inherited;
 end;
@@ -593,9 +593,9 @@ begin
 		begin
 			Result := DirListing.FromJSON(JSON);
 			if Result and FDoCryptFilenames then
-				FileCipher.DecryptDirListing(DirListing);
+				FCipher.DecryptDirListing(DirListing);
 		end else if OperationResult.OperationResult = CLOUD_ERROR_NOT_EXISTS then
-			Logger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, '%s%s', [PREFIX_ERR_PATH_NOT_EXISTS, Path]);
+			FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, '%s%s', [PREFIX_ERR_PATH_NOT_EXISTS, Path]);
 	end else begin
 		if (NAME_TOKEN = getBodyError(JSON)) and RefreshCSRFToken() then
 			Result := GetDirListing(Path, DirListing, ShowProgress);
@@ -628,10 +628,10 @@ begin
 		Exit; //Проверка на вызов без инициализации
 	if FDownloadShard = EmptyWideStr then
 	begin
-		Logger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, UNDEFINED_DOWNLOAD_SHARD);
+		FLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, UNDEFINED_DOWNLOAD_SHARD);
 		if FDownloadShardOverride <> EmptyWideStr then
 		begin
-			Logger.Log(LOG_LEVEL_ERROR, MSGTYPE_DETAILS, SHARD_OVERRIDDEN);
+			FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_DETAILS, SHARD_OVERRIDDEN);
 			FDownloadShard := FDownloadShardOverride;
 		end else begin
 			if not GetShard(FDownloadShard) then
@@ -641,7 +641,7 @@ begin
 	if FDoCryptFilenames then
 	begin
 		FileName := ExtractUniversalFileName(RemotePath);
-		FileName := FileCipher.DecryptFileName(FileName);
+		FileName := FCipher.DecryptFileName(FileName);
 		LocalPath := ChangePathFileName(LocalPath, FileName);
 	end;
 
@@ -650,7 +650,7 @@ begin
 	except
 		on E: Exception do
 		begin
-			Logger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, E.Message);
+			FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, E.Message);
 			Exit(FS_FILE_WRITEERROR);
 		end;
 	end;
@@ -665,8 +665,8 @@ begin
 
 		if Result in [FS_FILE_NOTSUPPORTED] then //this code returned on shard connection error
 		begin
-			Logger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, '%s%s', [PREFIX_REDIRECTION_LIMIT, URL]);
-			if (Request.Request(RT_MsgYesNo, REDIRECTION_LIMIT, TRY_ANOTHER_SHARD, EmptyWideStr, 0)) and (GetShard(FDownloadShard)) then
+			FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, '%s%s', [PREFIX_REDIRECTION_LIMIT, URL]);
+			if (FRequest.Request(RT_MsgYesNo, REDIRECTION_LIMIT, TRY_ANOTHER_SHARD, EmptyWideStr, 0)) and (GetShard(FDownloadShard)) then
 				Result := GetFileRegular(RemotePath, LocalPath, ResultHash, LogErrors);
 		end;
 
@@ -674,7 +674,7 @@ begin
 		begin
 			ResultHash := CloudHash(MemoryStream);
 			MemoryStream.Position := 0;
-			FileCipher.DecryptStream(MemoryStream, FileStream);
+			FCipher.DecryptStream(MemoryStream, FileStream);
 		end;
 		MemoryStream.free;
 
@@ -714,7 +714,7 @@ begin
 	end;
 
 	ProgressEnabled := False;
-	InternalHTTPConnection.GetRedirection(Result, Result, ProgressEnabled);
+	FHTTPConnection.GetRedirection(Result, Result, ProgressEnabled);
 
 end;
 
@@ -730,7 +730,7 @@ begin
 	except
 		on E: Exception do
 		begin
-			Logger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, E.Message);
+			FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, E.Message);
 			Exit(FS_FILE_WRITEERROR);
 		end;
 	end;
@@ -750,16 +750,16 @@ function TCloudMailRu.GetHTTPConnection: TCloudMailRuHTTP;
 begin
 	if not(Assigned(self)) then
 		Exit(nil); //Проверка на вызов без инициализации
-	if (nil = HTTPConnectionsManager) then
+	if (nil = FHTTPManager) then
 	begin
-		if not Assigned(InternalHTTPConnection) then
-			InternalHTTPConnection := TCloudMailRuHTTP.Create(Settings.ConnectionSettings, Progress, Logger);
+		if not Assigned(FHTTPConnection) then
+			FHTTPConnection := TCloudMailRuHTTP.Create(FSettings.ConnectionSettings, FProgress, FLogger);
 
-		Result := InternalHTTPConnection;
+		Result := FHTTPConnection;
 	end
 	else
-		Result := HTTPConnectionsManager.get(GetCurrentThreadID());
-	Result.AuthCookie := AuthCookie;
+		Result := FHTTPManager.get(GetCurrentThreadID());
+	Result.AuthCookie := FCookieManager;
 	if EmptyWideStr <> FAuthToken then
 		Result.HTTP.Request.CustomHeaders.Values['X-CSRF-Token'] := FAuthToken;
 end;
@@ -782,10 +782,10 @@ begin
 	if FPublicLink <> '' then
 		Exit(FPublicLink); {Already have a public link}
 
-	if IsPublicAccount and (Settings.AccountSettings.PublicUrl <> EmptyWideStr) then
+	if IsPublicAccount and (FSettings.AccountSettings.PublicUrl <> EmptyWideStr) then
 	begin
-		FPublicLink := Settings.AccountSettings.PublicUrl;
-		Settings.AccountSettings.PublicUrl := IncludeSlash(Settings.AccountSettings.PublicUrl);
+		FPublicLink := FSettings.AccountSettings.PublicUrl;
+		FSettings.AccountSettings.PublicUrl := IncludeSlash(FSettings.AccountSettings.PublicUrl);
 		Delete(FPublicLink, 1, length(PUBLIC_ACCESS_URL));
 		if (FPublicLink <> EmptyWideStr) and (FPublicLink[length(Result)] = '/') then
 			Delete(FPublicLink, length(FPublicLink), 1);
@@ -821,7 +821,7 @@ begin
 	if Result then
 	begin
 		Result := JSONHelper.GetShard(JSON, Shard, ShardType) and (Shard <> EmptyWideStr);
-		Logger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, PREFIX_SHARD_RECEIVED, [Shard, ShardType]);
+		FLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, PREFIX_SHARD_RECEIVED, [Shard, ShardType]);
 	end;
 end;
 
@@ -852,9 +852,9 @@ begin
 	FHTTP.GetPage(API_CSRF, JSON, Progress);
 	Result := getBodyToken(JSON, FAuthToken);
 	if Result then
-		Logger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, TOKEN_UPDATED)
+		FLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, TOKEN_UPDATED)
 	else
-		Logger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_TOKEN_UPDATE)
+		FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_TOKEN_UPDATE)
 end;
 
 function TCloudMailRu.InitSharedConnectionParameters(): Boolean;
@@ -866,12 +866,12 @@ begin
 	if not(Assigned(self)) then
 		Exit; //Проверка на вызов без инициализации
 	Progress := False;
-	Result := FHTTP.GetPage(Settings.AccountSettings.PublicUrl, PageContent, Progress);
+	Result := FHTTP.GetPage(FSettings.AccountSettings.PublicUrl, PageContent, Progress);
 	if Result then
 	begin
 		if not extractPublicShard(PageContent, FPublicShard) then
 		begin
-			Logger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_GET_PUBLIC_SHARE);
+			FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_GET_PUBLIC_SHARE);
 			Exit(False);
 		end;
 	end;
@@ -918,7 +918,7 @@ var
 begin
 	Result := False;
 
-	Logger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, Format(LOGIN_TO, [FEmail]));
+	FLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, Format(LOGIN_TO, [FEmail]));
 	case Method of
 		CLOUD_AUTH_METHOD_TWO_STEP:
 			begin
@@ -926,11 +926,11 @@ begin
 				FormFields.AddOrSetValue('Domain', FDomain);
 				FormFields.AddOrSetValue('Login', FUser);
 				FormFields.AddOrSetValue('Password', FPassword);
-				Logger.Log(LOG_LEVEL_DEBUG, MSGTYPE_DETAILS, REQUESTING_FIRST_STEP_AUTH_TOKEN, [FEmail]);
+				FLogger.Log(LOG_LEVEL_DEBUG, MSGTYPE_DETAILS, REQUESTING_FIRST_STEP_AUTH_TOKEN, [FEmail]);
 				Result := FHTTP.PostMultipart(LOGIN_URL, FormFields, PostAnswer);
 				if Result then
 				begin
-					Logger.Log(LOG_LEVEL_DEBUG, MSGTYPE_DETAILS, PARSING_AUTH_DATA);
+					FLogger.Log(LOG_LEVEL_DEBUG, MSGTYPE_DETAILS, PARSING_AUTH_DATA);
 					if extractTwostepJson(PostAnswer, TwoStepJson) and TwostepData.FromJSON(TwoStepJson) then
 					begin
 						if TwostepData.secstep_timeout = AUTH_APP_USED then
@@ -940,7 +940,7 @@ begin
 						else
 							AuthMessage := Format(ASK_SENT_CODE, [TwostepData.secstep_phone]);
 
-						Logger.Log(LOG_LEVEL_DEBUG, MSGTYPE_DETAILS, AWAIT_SECURITY_KEY);
+						FLogger.Log(LOG_LEVEL_DEBUG, MSGTYPE_DETAILS, AWAIT_SECURITY_KEY);
 
 						if (true = TAskPasswordForm.AskText(ASK_AUTH_KEY, AuthMessage, SecurityKey)) then
 						begin
@@ -948,7 +948,7 @@ begin
 							FormFields.AddOrSetValue('Login', FEmail);
 							FormFields.AddOrSetValue('csrf', TwostepData.csrf);
 							FormFields.AddOrSetValue('AuthCode', SecurityKey);
-							Logger.Log(LOG_LEVEL_DEBUG, MSGTYPE_DETAILS, SECOND_STEP_AUTH);
+							FLogger.Log(LOG_LEVEL_DEBUG, MSGTYPE_DETAILS, SECOND_STEP_AUTH);
 							Result := FHTTP.PostMultipart(SECSTEP_URL, FormFields, PostAnswer);
 							FormFields.free;
 							if Result then
@@ -956,59 +956,59 @@ begin
 								Result := InitConnectionParameters();
 								if (Result) then
 								begin
-									Logger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, CONNECTED_TO, [FEmail]);
+									FLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, CONNECTED_TO, [FEmail]);
 									LogUserSpaceInfo;
 								end else begin
-									Logger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_TWOSTEP_AUTH);
+									FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_TWOSTEP_AUTH);
 								end;
 							end;
 						end else begin
-							Logger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_SECURITY_KEY);
+							FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_SECURITY_KEY);
 							Exit(False);
 						end;
 
 					end else begin
-						Logger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_PARSE_AUTH_DATA);
+						FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_PARSE_AUTH_DATA);
 						Exit(False);
 					end;
 
 				end else begin
-					Logger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_GET_FIRST_STEP_AUTH_TOKEN, [FEmail]);
+					FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_GET_FIRST_STEP_AUTH_TOKEN, [FEmail]);
 					FormFields.free;
 				end;
 			end;
 		CLOUD_AUTH_METHOD_WEB: //todo: вынести в отдельный метод
 			begin
-				Logger.Log(LOG_LEVEL_DEBUG, MSGTYPE_DETAILS, REQUESTING_AUTH_TOKEN, [FEmail]);
+				FLogger.Log(LOG_LEVEL_DEBUG, MSGTYPE_DETAILS, REQUESTING_AUTH_TOKEN, [FEmail]);
 				Result := FHTTP.PostForm(LOGIN_URL, Format('page=https://cloud.mail.ru/?new_auth_form=1&Domain=%s&Login=%s&Password=%s&FailPage=', [FDomain, FUser, UrlEncode(FPassword)]), PostAnswer);
 				if (Result) then
 				begin
-					Logger.Log(LOG_LEVEL_DEBUG, MSGTYPE_DETAILS, PARSING_TOKEN_DATA);
+					FLogger.Log(LOG_LEVEL_DEBUG, MSGTYPE_DETAILS, PARSING_TOKEN_DATA);
 					Result := InitConnectionParameters();
 					if (Result) then
 					begin
-						Logger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, CONNECTED_TO, [FEmail]);
+						FLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, CONNECTED_TO, [FEmail]);
 						LogUserSpaceInfo;
 					end else begin
-						Logger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_PARSING_AUTH_TOKEN, [FEmail]);
+						FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_PARSING_AUTH_TOKEN, [FEmail]);
 						Exit(False);
 					end;
 				end
 				else
-					Logger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_GET_AUTH_TOKEN, [FEmail]);
+					FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_GET_AUTH_TOKEN, [FEmail]);
 			end;
 		CLOUD_AUTH_METHOD_OAUTH:
 			begin
 				Result := GetOAuthToken(FOAuthToken);
 				if not Result then
-					Logger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, PREFIX_ERR_OAUTH, [FOAuthToken.error, FOAuthToken.error_description]);
+					FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, PREFIX_ERR_OAUTH, [FOAuthToken.error, FOAuthToken.error_description]);
 			end;
 	end;
 end;
 
 function TCloudMailRu.LoginShared(Method: Integer): Boolean;
 begin
-	Logger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, URL_OPEN, [Settings.AccountSettings.PublicUrl]);
+	FLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, URL_OPEN, [FSettings.AccountSettings.PublicUrl]);
 	Exit(InitSharedConnectionParameters());
 end;
 
@@ -1027,9 +1027,9 @@ begin
 			QuotaInfo := WARN_QUOTA_EXHAUSTED
 		else
 			QuotaInfo := EmptyWideStr;
-		Logger.Log(LOG_LEVEL_FILE_OPERATION, MSGTYPE_DETAILS, USER_SPACE_INFO, [FormatSize(US.total), FormatSize(US.used), FormatSize(US.total - US.used), QuotaInfo]);
+		FLogger.Log(LOG_LEVEL_FILE_OPERATION, MSGTYPE_DETAILS, USER_SPACE_INFO, [FormatSize(US.total), FormatSize(US.used), FormatSize(US.total - US.used), QuotaInfo]);
 	end else begin
-		Logger.Log(LOG_LEVEL_DEBUG, MSGTYPE_IMPORTANTERROR, ERR_GET_USER_SPACE, [FEmail]);
+		FLogger.Log(LOG_LEVEL_DEBUG, MSGTYPE_IMPORTANTERROR, ERR_GET_USER_SPACE, [FEmail]);
 	end;
 end;
 
@@ -1239,7 +1239,7 @@ begin
 		if FDoCryptFiles then {Will encrypt any type of data passed here}
 		begin
 			MemoryStream := TMemoryStream.Create;
-			FileCipher.CryptStream(FileStream, MemoryStream);
+			FCipher.CryptStream(FileStream, MemoryStream);
 			MemoryStream.Position := 0;
 			OperationResult := PutFileToCloud(FileName, MemoryStream, RemoteFileIdentity);
 			MemoryStream.Destroy;
@@ -1253,7 +1253,7 @@ begin
 			begin
 				Result := FS_FILE_USERABORT;
 			end else begin
-				Logger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_UPLOAD_INFO, [E.ClassName, E.Message]);
+				FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_UPLOAD_INFO, [E.ClassName, E.Message]);
 				Result := FS_FILE_WRITEERROR;
 			end;
 		end;
@@ -1316,7 +1316,7 @@ begin
 	begin
 		ChunkRemotePath := Format('%s%s', [ExtractFilePath(RemotePath), SplitFileInfo.GetChunks[SplittedPartIndex].name]);
 		FHTTP.SetProgressNames(LocalPath, ChunkRemotePath);
-		Logger.Log(LOG_LEVEL_DEBUG, MSGTYPE_DETAILS, PARTIAL_UPLOAD_INFO, [LocalPath, (SplittedPartIndex + 1), SplitFileInfo.ChunksCount, ChunkRemotePath]);
+		FLogger.Log(LOG_LEVEL_DEBUG, MSGTYPE_DETAILS, PARTIAL_UPLOAD_INFO, [LocalPath, (SplittedPartIndex + 1), SplitFileInfo.ChunksCount, ChunkRemotePath]);
 		ChunkStream := TChunkedFileStream.Create(GetUNCFilePath(LocalPath), fmOpenRead or fmShareDenyWrite, SplitFileInfo.GetChunks[SplittedPartIndex].start, SplitFileInfo.GetChunks[SplittedPartIndex].size);
 		Result := PutFileStream(ExtractFileName(ChunkRemotePath), ChunkRemotePath, ChunkStream, ConflictMode);
 		ChunkStream.Destroy;
@@ -1328,7 +1328,7 @@ begin
 				end;
 			FS_FILE_USERABORT:
 				begin
-					Logger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, PARTIAL_UPLOAD_ABORTED);
+					FLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, PARTIAL_UPLOAD_ABORTED);
 					Break;
 				end;
 			FS_FILE_EXISTS:
@@ -1336,7 +1336,7 @@ begin
 					case ChunkOverwriteMode of
 						ChunkOverwrite: //silently overwrite chunk
 							begin
-								Logger.Log(LOG_LEVEL_WARNING, MSGTYPE_DETAILS, CHUNK_OVERWRITE, [ChunkRemotePath]);
+								FLogger.Log(LOG_LEVEL_WARNING, MSGTYPE_DETAILS, CHUNK_OVERWRITE, [ChunkRemotePath]);
 								if not(DeleteFile(ChunkRemotePath)) then
 								begin
 									Result := FS_FILE_WRITEERROR;
@@ -1347,11 +1347,11 @@ begin
 							end;
 						ChunkOverwriteIgnore: //ignore this chunk
 							begin
-								Logger.Log(LOG_LEVEL_WARNING, MSGTYPE_DETAILS, CHUNK_SKIP, [ChunkRemotePath]); //ignore and continue
+								FLogger.Log(LOG_LEVEL_WARNING, MSGTYPE_DETAILS, CHUNK_SKIP, [ChunkRemotePath]); //ignore and continue
 							end;
 						ChunkOverwriteAbort: //abort operation
 							begin
-								Logger.Log(LOG_LEVEL_WARNING, MSGTYPE_DETAILS, CHUNK_ABORT, [ChunkRemotePath]);
+								FLogger.Log(LOG_LEVEL_WARNING, MSGTYPE_DETAILS, CHUNK_ABORT, [ChunkRemotePath]);
 								Result := FS_FILE_NOTSUPPORTED;
 								Break;
 							end;
@@ -1377,11 +1377,11 @@ begin
 							end;
 						OperationErrorModeIgnore:
 							begin
-								Logger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_PARTIAL_UPLOAD_IGNORE, [Result]);
+								FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_PARTIAL_UPLOAD_IGNORE, [Result]);
 							end;
 						OperationErrorModeAbort:
 							begin
-								Logger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_PARTIAL_UPLOAD_ABORT, [Result]);
+								FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_PARTIAL_UPLOAD_ABORT, [Result]);
 								Result := FS_FILE_USERABORT;
 								Break;
 							end;
@@ -1390,12 +1390,12 @@ begin
 								Inc(RetryAttemptsCount);
 								if RetryAttemptsCount <> FRetryAttempts + 1 then
 								begin
-									Logger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_PARTIAL_UPLOAD_RETRY, [Result, RetryAttemptsCount, FRetryAttempts]);
+									FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_PARTIAL_UPLOAD_RETRY, [Result, RetryAttemptsCount, FRetryAttempts]);
 									Dec(SplittedPartIndex); //retry with this chunk
 									ProcessMessages;
 									Sleep(FAttemptWait);
 								end else begin
-									Logger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_PARTIAL_UPLOAD_RETRY_EXCEED, [Result]);
+									FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_PARTIAL_UPLOAD_RETRY_EXCEED, [Result]);
 									Result := CLOUD_OPERATION_FAILED;
 									Break;
 								end;
@@ -1438,10 +1438,10 @@ begin
 	begin
 		if FSplitLargeFiles then
 		begin
-			Logger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, SPLIT_LARGE_FILE, [FCloudMaxFileSize]);
+			FLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, SPLIT_LARGE_FILE, [FCloudMaxFileSize]);
 			Exit(PutFileSplit(LocalPath, RemotePath, ConflictMode, ChunkOverwriteMode));
 		end else begin
-			Logger.Log(LOG_LEVEL_WARNING, MSGTYPE_IMPORTANTERROR, SPLIT_LARGE_FILE_IGNORE, [FCloudMaxFileSize]);
+			FLogger.Log(LOG_LEVEL_WARNING, MSGTYPE_IMPORTANTERROR, SPLIT_LARGE_FILE_IGNORE, [FCloudMaxFileSize]);
 			Exit(FS_FILE_NOTSUPPORTED);
 		end;
 	end;
@@ -1464,10 +1464,10 @@ begin
 		Exit;
 	if (EmptyWideStr = FUploadShard) then
 	begin
-		Logger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, UNDEFINED_UPLOAD_SHARD);
+		FLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, UNDEFINED_UPLOAD_SHARD);
 		if (EmptyWideStr <> FUploadShardOverride) then
 		begin
-			Logger.Log(LOG_LEVEL_ERROR, MSGTYPE_DETAILS, UPLOAD_URL_OVERRIDDEN);
+			FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_DETAILS, UPLOAD_URL_OVERRIDDEN);
 			FUploadShard := FUploadShardOverride;
 		end else begin
 			GetShard(FUploadShard, SHARD_TYPE_UPLOAD);
@@ -1649,7 +1649,7 @@ begin
 
 		read := Stream.read(buffer, bufSize);
 		sha1.Update(buffer, read);
-		Aborted := Progress.Progress(Path, CALCULATING_HASH, Percent);
+		Aborted := FProgress.Progress(Path, CALCULATING_HASH, Percent);
 	until (read < sizeof(buffer)) or Aborted;
 
 	finalBuffer := TEncoding.UTF8.GetBytes(Stream.size.ToString);
