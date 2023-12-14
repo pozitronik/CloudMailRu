@@ -96,21 +96,21 @@ type
 		FDoCryptFiles: Boolean;
 		FDoCryptFilenames: Boolean;
 		{Those properties are simple shortcuts to settings fields}
-		property FPassword: WideString read FSettings.AccountSettings.Password;
-		property FEmail: WideString read FSettings.AccountSettings.email;
-		property FDownloadShardOverride: WideString read FSettings.AccountSettings.ShardOverride;
-		property FUploadShardOverride: WideString read FSettings.AccountSettings.UploadUrlOverride;
-		property FUnlimitedFileSize: Boolean read FSettings.AccountSettings.UnlimitedFilesize;
-		property FSplitLargeFiles: Boolean read FSettings.AccountSettings.SplitLargeFiles;
-		property FCloudMaxFileSize: Int64 read FSettings.CloudMaxFileSize;
-		property FPrecalculateHash: Boolean read FSettings.PrecalculateHash;
-		property FForcePrecalculateSize: Int64 read FSettings.ForcePrecalculateSize;
-		property FCheckCRC: Boolean read FSettings.CheckCRC;
-		property FOperationErrorMode: Integer read FSettings.OperationErrorMode;
-		property FRetryAttempts: Integer read FSettings.RetryAttempts;
-		property FAttemptWait: Integer read FSettings.AttemptWait;
+		property Password: WideString read FSettings.AccountSettings.Password;
+		property Email: WideString read FSettings.AccountSettings.Email;
+		property DownloadShardOverride: WideString read FSettings.AccountSettings.ShardOverride;
+		property UploadShardOverride: WideString read FSettings.AccountSettings.UploadUrlOverride;
+		property UnlimitedFileSize: Boolean read FSettings.AccountSettings.UnlimitedFileSize;
+		property SplitLargeFiles: Boolean read FSettings.AccountSettings.SplitLargeFiles;
+		property CloudMaxFileSize: Int64 read FSettings.CloudMaxFileSize;
+		property PrecalculateHash: Boolean read FSettings.PrecalculateHash;
+		property ForcePrecalculateSize: Int64 read FSettings.ForcePrecalculateSize;
+		property CheckCRC: Boolean read FSettings.CheckCRC;
+		property OperationErrorMode: Integer read FSettings.OperationErrorMode;
+		property RetryAttempts: Integer read FSettings.RetryAttempts;
+		property AttemptWait: Integer read FSettings.AttemptWait;
 		{Also shortcut properties}
-		property FHTTP: TCloudMailRuHTTP read GetHTTPConnection;
+		property HTTP: TCloudMailRuHTTP read GetHTTPConnection;
 
 		{REGULAR CLOUD}
 		function LoginRegular(Method: Integer = CLOUD_AUTH_METHOD_WEB): Boolean;
@@ -143,20 +143,20 @@ type
 		function FileMove(OldName, NewName: WideString): Integer; //объединяющая функция, определяет делать rename или move
 		function FileCopy(OldName, NewName: WideString): Integer; //Копирует файл, и переименует, если нужно
 		function DeleteFile(Path: WideString): Boolean;
-		function PublishFile(Path: WideString; var PublicLink: WideString; publish: Boolean = CLOUD_PUBLISH): Boolean;
-		function CloneWeblink(Path, link: WideString; ConflictMode: WideString = CLOUD_CONFLICT_RENAME): Integer; //клонировать публичную ссылку в текущий каталог
+		function PublishFile(Path: WideString; var PublicLink: WideString; Publish: Boolean = CLOUD_PUBLISH): Boolean;
+		function CloneWeblink(Path, Link: WideString; ConflictMode: WideString = CLOUD_CONFLICT_RENAME): Integer; //клонировать публичную ссылку в текущий каталог
 
 		function AddFileByIdentity(FileIdentity: TCMRFileIdentity; RemotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; LogErrors: Boolean = true; LogSuccess: Boolean = False): Integer; overload;
 		function AddFileByIdentity(FileIdentity: TCMRDirItem; RemotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; LogErrors: Boolean = true; LogSuccess: Boolean = False): Integer; overload;
 
 		function GetShareInfo(Path: WideString; var InviteListing: TCMRInviteList): Boolean;
-		function ShareFolder(Path, email: WideString; Access: Integer): Boolean;
+		function ShareFolder(Path, Email: WideString; Access: Integer): Boolean;
 		function TrashbinRestore(Path: WideString; RestoreRevision: Integer; ConflictMode: WideString = CLOUD_CONFLICT_RENAME): Boolean;
 		function TrashbinEmpty(): Boolean;
-		function MountFolder(Home, invite_token: WideString; ConflictMode: WideString = CLOUD_CONFLICT_RENAME): Boolean;
-		function UnmountFolder(Home: WideString; clone_copy: Boolean): Boolean;
-		function RejectInvite(invite_token: WideString): Boolean;
-		function GetPublishedFileStreamUrl(FileIdentity: TCMRDirItem; var StreamUrl: WideString; ShardType: WideString = SHARD_TYPE_WEBLINK_VIDEO; publish: Boolean = CLOUD_PUBLISH): Boolean;
+		function MountFolder(Home, InviteToken: WideString; ConflictMode: WideString = CLOUD_CONFLICT_RENAME): Boolean;
+		function UnmountFolder(Home: WideString; Clone_copy: Boolean): Boolean;
+		function RejectInvite(InviteToken: WideString): Boolean;
+		function GetPublishedFileStreamUrl(FileIdentity: TCMRDirItem; var StreamUrl: WideString; ShardType: WideString = SHARD_TYPE_WEBLINK_VIDEO; Publish: Boolean = CLOUD_PUBLISH): Boolean;
 		{OTHER ROUTINES}
 		function GetDescriptionFile(RemotePath, LocalCopy: WideString): Boolean; //Если в каталоге remotePath есть descript.ion - скопировать его в файл localcopy
 		function PutDesriptionFile(RemotePath, LocalCopy: WideString): Boolean; //Скопировать descript.ion из временного файла на сервер
@@ -191,7 +191,7 @@ begin
 		RemotePath := ChangePathFileName(RemotePath, FileName);
 	end;
 	{Экспериментально выяснено, что параметры api, build, email, x-email, x-page-id в запросе не обязательны}
-	if FHTTP.PostForm(API_FILE_ADD, Format('api=2&conflict=%s&home=/%s&hash=%s&size=%d%s', [ConflictMode, PathToUrl(RemotePath), FileIdentity.Hash, FileIdentity.size, FUnitedParams]), JSON, 'application/x-www-form-urlencoded', LogErrors, False) then {Do not allow to cancel operation here}
+	if HTTP.PostForm(API_FILE_ADD, Format('api=2&conflict=%s&home=/%s&hash=%s&size=%d%s', [ConflictMode, PathToUrl(RemotePath), FileIdentity.Hash, FileIdentity.size, FUnitedParams]), JSON, 'application/x-www-form-urlencoded', LogErrors, False) then {Do not allow to cancel operation here}
 	begin
 		OperationResult.FromJSON(JSON);
 		Result := CloudResultToFsResult(OperationResult, PREFIX_ERR_FILE_UPLOADING);
@@ -211,7 +211,7 @@ begin
 	Result := AddFileByIdentity(CloudFileIdentity, RemotePath, ConflictMode, LogErrors, LogSuccess)
 end;
 
-function TCloudMailRu.CloneWeblink(Path, link, ConflictMode: WideString): Integer;
+function TCloudMailRu.CloneWeblink(Path, Link, ConflictMode: WideString): Integer;
 var
 	JSON: WideString;
 	Progress: Boolean;
@@ -222,14 +222,14 @@ begin
 	if IsPublicAccount then
 		Exit(FS_FILE_NOTSUPPORTED);
 	Progress := true;
-	if FHTTP.GetPage(Format('%s?folder=/%s&weblink=%s&conflict=%s%s', [API_CLONE, PathToUrl(Path), link, ConflictMode, FUnitedParams]), JSON, Progress) then
+	if HTTP.GetPage(Format('%s?folder=/%s&weblink=%s&conflict=%s%s', [API_CLONE, PathToUrl(Path), Link, ConflictMode, FUnitedParams]), JSON, Progress) then
 	begin //Парсим ответ
 		Result := CloudResultToFsResult(JSON, PREFIX_ERR_FILE_PUBLISH);
 		if (Result <> FS_FILE_OK) and not(Progress) then
 			Result := FS_FILE_USERABORT; //user cancelled
 	end else begin
 		if (NAME_TOKEN = getBodyError(JSON)) and RefreshCSRFToken() then
-			Result := CloneWeblink(Path, link, ConflictMode);
+			Result := CloneWeblink(Path, Link, ConflictMode);
 	end;
 end;
 
@@ -289,8 +289,8 @@ begin
 		Exit; //Проверка на вызов без инициализации
 	if IsPublicAccount then
 		Exit(FS_FILE_NOTSUPPORTED);
-	FHTTP.SetProgressNames(OldName, Format('%s%s', [IncludeTrailingPathDelimiter(ToPath), ExtractFileName(OldName)]));
-	if FHTTP.PostForm(API_FILE_COPY, Format('home=/%s&folder=/%s%s&conflict', [PathToUrl(OldName), PathToUrl(ToPath), FUnitedParams]), JSON) then
+	HTTP.SetProgressNames(OldName, Format('%s%s', [IncludeTrailingPathDelimiter(ToPath), ExtractFileName(OldName)]));
+	if HTTP.PostForm(API_FILE_COPY, Format('home=/%s&folder=/%s%s&conflict', [PathToUrl(OldName), PathToUrl(ToPath), FUnitedParams]), JSON) then
 	begin //Парсим ответ
 		Result := CloudResultToFsResult(JSON, PREFIX_ERR_FILE_COPY);
 	end;
@@ -330,7 +330,7 @@ constructor TCloudMailRu.Create(CloudSettings: TCloudSettings; ConnectionManager
 begin
 	try
 		FSettings := CloudSettings;
-		ExtractEmailParts(FEmail, FUser, FDomain);
+		ExtractEmailParts(Email, FUser, FDomain);
 
 		FHTTPManager := ConnectionManager;
 
@@ -373,8 +373,8 @@ begin
 		Exit; //Проверка на вызов без инициализации
 	if IsPublicAccount then
 		Exit;
-	FHTTP.SetProgressNames(CREATE_DIRECTORY, Path);
-	Result := FHTTP.PostForm(API_FOLDER_ADD, Format('home=/%s%s&conflict', [PathToUrl(Path), FUnitedParams]), JSON) and CloudResultToBoolean(JSON);
+	HTTP.SetProgressNames(CREATE_DIRECTORY, Path);
+	Result := HTTP.PostForm(API_FOLDER_ADD, Format('home=/%s%s&conflict', [PathToUrl(Path), FUnitedParams]), JSON) and CloudResultToBoolean(JSON);
 	if (not Result and (NAME_TOKEN = getBodyError(JSON))) and RefreshCSRFToken() then
 		Result := CreateDir(Path);
 end;
@@ -388,8 +388,8 @@ begin
 		Exit; //Проверка на вызов без инициализации
 	if IsPublicAccount then
 		Exit;
-	FHTTP.SetProgressNames(DELETE_FILE, Path);
-	Result := FHTTP.PostForm(API_FILE_REMOVE, Format('home=/%s%s&conflict', [PathToUrl(Path), FUnitedParams]), JSON) and CloudResultToBoolean(JSON, PREFIX_ERR_DELETE_FILE);
+	HTTP.SetProgressNames(DELETE_FILE, Path);
+	Result := HTTP.PostForm(API_FILE_REMOVE, Format('home=/%s%s&conflict', [PathToUrl(Path), FUnitedParams]), JSON) and CloudResultToBoolean(JSON, PREFIX_ERR_DELETE_FILE);
 	if (not Result and (NAME_TOKEN = getBodyError(JSON))) and RefreshCSRFToken() then
 		Result := DeleteFile(Path);
 end;
@@ -485,9 +485,9 @@ begin
 	if IsPublicAccount then
 		Exit;
 	if (ShowProgress) then
-		FHTTP.SetProgressNames(SHARED_LINKS_LISTING, UNKNOWN_ITEM);
+		HTTP.SetProgressNames(SHARED_LINKS_LISTING, UNKNOWN_ITEM);
 
-	Result := FHTTP.GetPage(Format('%s?%s', [API_FOLDER_SHARED_LINKS, FUnitedParams]), JSON, ShowProgress);
+	Result := HTTP.GetPage(Format('%s?%s', [API_FOLDER_SHARED_LINKS, FUnitedParams]), JSON, ShowProgress);
 	if Result then
 		Result := CloudResultToBoolean(JSON, PREFIX_ERR_SHARED_LINKS_LISTING) and GetDirListing(JSON, DirListing)
 	else
@@ -509,8 +509,8 @@ begin
 	if IsPublicAccount then
 		Exit;
 	if (ShowProgress) then
-		FHTTP.SetProgressNames(INCOMING_LINKS_LISTING, UNKNOWN_ITEM);
-	Result := FHTTP.GetPage(Format('%s?%s', [API_FOLDER_SHARED_INCOMING, FUnitedParams]), JSON, ShowProgress);
+		HTTP.SetProgressNames(INCOMING_LINKS_LISTING, UNKNOWN_ITEM);
+	Result := HTTP.GetPage(Format('%s?%s', [API_FOLDER_SHARED_INCOMING, FUnitedParams]), JSON, ShowProgress);
 
 	if Result then
 		Result := CloudResultToBoolean(JSON, PREFIX_ERR_INCOMING_REQUESTS_LISTING) and IncomingListing.FromJSON(JSON)
@@ -556,8 +556,8 @@ begin
 	if IsPublicAccount then
 		Exit;
 	if (ShowProgress) then
-		FHTTP.SetProgressNames(TRASH_LISTING, UNKNOWN_ITEM);
-	Result := FHTTP.GetPage(Format('%s?%s', [API_TRASHBIN, FUnitedParams]), JSON, ShowProgress);
+		HTTP.SetProgressNames(TRASH_LISTING, UNKNOWN_ITEM);
+	Result := HTTP.GetPage(Format('%s?%s', [API_TRASHBIN, FUnitedParams]), JSON, ShowProgress);
 
 	if Result then
 		Result := CloudResultToBoolean(JSON, PREFIX_ERR_TRASH_LISTING) and GetDirListing(JSON, DirListing)
@@ -579,11 +579,11 @@ begin
 		Exit; //Проверка на вызов без инициализации
 	SetLength(DirListing, 0);
 	if IsPublicAccount then
-		Result := FHTTP.GetPage(Format('%s&weblink=%s%s%s', [API_FOLDER, IncludeSlash(GetPublicLink), PathToUrl(Path, False), FUnitedParams]), JSON, ShowProgress)
+		Result := HTTP.GetPage(Format('%s&weblink=%s%s%s', [API_FOLDER, IncludeSlash(GetPublicLink), PathToUrl(Path, False), FUnitedParams]), JSON, ShowProgress)
 	else
 	begin
-		FHTTP.SetProgressNames(DIR_LISTING, Path);
-		Result := FHTTP.GetPage(Format('%s&home=%s%s', [API_FOLDER, PathToUrl(Path), FUnitedParams]), JSON, ShowProgress);
+		HTTP.SetProgressNames(DIR_LISTING, Path);
+		Result := HTTP.GetPage(Format('%s&home=%s%s', [API_FOLDER, PathToUrl(Path), FUnitedParams]), JSON, ShowProgress);
 	end;
 	if Result then
 	begin
@@ -609,7 +609,7 @@ begin
 	if not(Assigned(self)) then
 		Exit; //Проверка на вызов без инициализации
 
-	FHTTP.SetProgressNames(RemotePath, LocalPath);
+	HTTP.SetProgressNames(RemotePath, LocalPath);
 	if IsPublicAccount then
 		Result := GetFileShared(RemotePath, LocalPath, ResultHash, LogErrors)
 	else
@@ -629,10 +629,10 @@ begin
 	if FDownloadShard = EmptyWideStr then
 	begin
 		FLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, UNDEFINED_DOWNLOAD_SHARD);
-		if FDownloadShardOverride <> EmptyWideStr then
+		if DownloadShardOverride <> EmptyWideStr then
 		begin
 			FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_DETAILS, SHARD_OVERRIDDEN);
-			FDownloadShard := FDownloadShardOverride;
+			FDownloadShard := DownloadShardOverride;
 		end else begin
 			if not GetShard(FDownloadShard) then
 				Exit;
@@ -659,7 +659,7 @@ begin
 	begin
 		MemoryStream := TMemoryStream.Create;
 		URL := Format('%s%s', [FDownloadShard, PathToUrl(RemotePath, False)]);
-		Result := FHTTP.GetFile(URL, MemoryStream, LogErrors);
+		Result := HTTP.GetFile(URL, MemoryStream, LogErrors);
 		if (CLOUD_ERROR_TOKEN_OUTDATED = Result) and RefreshCSRFToken() then
 			Result := GetFileRegular(RemotePath, LocalPath, ResultHash, LogErrors);
 
@@ -679,7 +679,7 @@ begin
 		MemoryStream.free;
 
 	end else begin
-		Result := FHTTP.GetFile(Format('%s%s', [FDownloadShard, PathToUrl(RemotePath, False)]), FileStream, LogErrors);
+		Result := HTTP.GetFile(Format('%s%s', [FDownloadShard, PathToUrl(RemotePath, False)]), FileStream, LogErrors);
 		if (CLOUD_ERROR_TOKEN_OUTDATED = Result) and RefreshCSRFToken() then
 			Result := GetFileRegular(RemotePath, LocalPath, ResultHash, LogErrors);
 		if ((Result in [FS_FILE_OK]) and (EmptyWideStr = ResultHash)) then
@@ -736,7 +736,7 @@ begin
 	end;
 	if (Assigned(FileStream)) then
 	begin
-		Result := FHTTP.GetFile(GetSharedFileUrl(RemotePath), FileStream, LogErrors);
+		Result := HTTP.GetFile(GetSharedFileUrl(RemotePath), FileStream, LogErrors);
 		if ((Result in [FS_FILE_OK]) and (EmptyWideStr = ResultHash)) then
 			ResultHash := CloudHash(FileStream);
 		FlushFileBuffers(FileStream.Handle);
@@ -769,7 +769,7 @@ var
 	Answer: WideString;
 begin
 	Result := False;
-	if FHTTP.PostForm(OAUTH_TOKEN_URL, Format('client_id=cloud-win&grant_type=password&username=%s@%s&password=%s', [FUser, FDomain, UrlEncode(FPassword)]), Answer) then
+	if HTTP.PostForm(OAUTH_TOKEN_URL, Format('client_id=cloud-win&grant_type=password&username=%s@%s&password=%s', [FUser, FDomain, UrlEncode(Password)]), Answer) then
 	begin
 		if not OAuthToken.FromJSON(Answer) then
 			Exit(False);
@@ -793,14 +793,14 @@ begin
 	Exit(FPublicLink)
 end;
 
-function TCloudMailRu.GetPublishedFileStreamUrl(FileIdentity: TCMRDirItem; var StreamUrl: WideString; ShardType: WideString = SHARD_TYPE_WEBLINK_VIDEO; publish: Boolean = CLOUD_PUBLISH): Boolean;
+function TCloudMailRu.GetPublishedFileStreamUrl(FileIdentity: TCMRDirItem; var StreamUrl: WideString; ShardType: WideString = SHARD_TYPE_WEBLINK_VIDEO; Publish: Boolean = CLOUD_PUBLISH): Boolean;
 var
 	shard_url: WideString;
 begin
 	Result := False;
 	if (EmptyWideStr = FileIdentity.weblink) then //publish and fill weblink, if required
 	begin
-		if (not publish) or (not PublishFile(FileIdentity.Home, FileIdentity.weblink)) then
+		if (not Publish) or (not PublishFile(FileIdentity.Home, FileIdentity.weblink)) then
 			Exit;
 	end;
 
@@ -817,7 +817,7 @@ begin
 	Result := False;
 	if not(Assigned(self)) then
 		Exit; //Проверка на вызов без инициализации
-	Result := FHTTP.PostForm(API_DISPATCHER, FUnitedParams, JSON) and CloudResultToBoolean(JSON, PREFIX_ERR_SHARD_RECEIVE);
+	Result := HTTP.PostForm(API_DISPATCHER, FUnitedParams, JSON) and CloudResultToBoolean(JSON, PREFIX_ERR_SHARD_RECEIVE);
 	if Result then
 	begin
 		Result := JSONHelper.GetShard(JSON, Shard, ShardType) and (Shard <> EmptyWideStr);
@@ -835,7 +835,7 @@ begin
 	if not(Assigned(self)) then
 		Exit; //Проверка на вызов без инициализации
 	Progress := False;
-	Result := FHTTP.GetPage(TOKEN_HOME_URL, JSON, Progress);
+	Result := HTTP.GetPage(TOKEN_HOME_URL, JSON, Progress);
 	if Result then
 	begin
 		{При первоначальной инициализации получаем токен из страницы ответа, затем он обновляется по необходимости}
@@ -849,7 +849,7 @@ var
 	JSON: WideString;
 	Progress: Boolean;
 begin
-	FHTTP.GetPage(API_CSRF, JSON, Progress);
+	HTTP.GetPage(API_CSRF, JSON, Progress);
 	Result := getBodyToken(JSON, FAuthToken);
 	if Result then
 		FLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, TOKEN_UPDATED)
@@ -866,7 +866,7 @@ begin
 	if not(Assigned(self)) then
 		Exit; //Проверка на вызов без инициализации
 	Progress := False;
-	Result := FHTTP.GetPage(FSettings.AccountSettings.PublicUrl, PageContent, Progress);
+	Result := HTTP.GetPage(FSettings.AccountSettings.PublicUrl, PageContent, Progress);
 	if Result then
 	begin
 		if not extractPublicShard(PageContent, FPublicShard) then
@@ -886,7 +886,7 @@ begin
 	if not(Assigned(self)) then
 		Exit; //Проверка на вызов без инициализации
 	Progress := False;
-	Result := FHTTP.GetPage(Format('%s?home=/%s', [API_USER_SPACE, FUnitedParams]), JSON, Progress);
+	Result := HTTP.GetPage(Format('%s?home=/%s', [API_USER_SPACE, FUnitedParams]), JSON, Progress);
 	if Result then
 	begin
 		Result := CloudResultToBoolean(JSON, PREFIX_ERR_GET_USER_SPACE) and SpaceInfo.FromJSON(JSON);
@@ -901,7 +901,7 @@ begin
 	Result := False;
 	if not(Assigned(self)) then
 		Exit; //Проверка на вызов без инициализации
-	FHTTP.SetProgressNames(LOGIN_IN_PROGRESS, EmptyWideStr);
+	HTTP.SetProgressNames(LOGIN_IN_PROGRESS, EmptyWideStr);
 	if IsPublicAccount then
 		Exit(LoginShared());
 	Exit(LoginRegular(Method)); {If not a public account}
@@ -918,16 +918,16 @@ var
 begin
 	Result := False;
 
-	FLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, Format(LOGIN_TO, [FEmail]));
+	FLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, Format(LOGIN_TO, [Email]));
 	case Method of
 		CLOUD_AUTH_METHOD_TWO_STEP:
 			begin
 				FormFields := TDictionary<WideString, WideString>.Create();
 				FormFields.AddOrSetValue('Domain', FDomain);
 				FormFields.AddOrSetValue('Login', FUser);
-				FormFields.AddOrSetValue('Password', FPassword);
-				FLogger.Log(LOG_LEVEL_DEBUG, MSGTYPE_DETAILS, REQUESTING_FIRST_STEP_AUTH_TOKEN, [FEmail]);
-				Result := FHTTP.PostMultipart(LOGIN_URL, FormFields, PostAnswer);
+				FormFields.AddOrSetValue('Password', Password);
+				FLogger.Log(LOG_LEVEL_DEBUG, MSGTYPE_DETAILS, REQUESTING_FIRST_STEP_AUTH_TOKEN, [Email]);
+				Result := HTTP.PostMultipart(LOGIN_URL, FormFields, PostAnswer);
 				if Result then
 				begin
 					FLogger.Log(LOG_LEVEL_DEBUG, MSGTYPE_DETAILS, PARSING_AUTH_DATA);
@@ -945,18 +945,18 @@ begin
 						if (true = TAskPasswordForm.AskText(ASK_AUTH_KEY, AuthMessage, SecurityKey)) then
 						begin
 							FormFields.Clear;
-							FormFields.AddOrSetValue('Login', FEmail);
+							FormFields.AddOrSetValue('Login', Email);
 							FormFields.AddOrSetValue('csrf', TwostepData.csrf);
 							FormFields.AddOrSetValue('AuthCode', SecurityKey);
 							FLogger.Log(LOG_LEVEL_DEBUG, MSGTYPE_DETAILS, SECOND_STEP_AUTH);
-							Result := FHTTP.PostMultipart(SECSTEP_URL, FormFields, PostAnswer);
+							Result := HTTP.PostMultipart(SECSTEP_URL, FormFields, PostAnswer);
 							FormFields.free;
 							if Result then
 							begin
 								Result := InitConnectionParameters();
 								if (Result) then
 								begin
-									FLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, CONNECTED_TO, [FEmail]);
+									FLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, CONNECTED_TO, [Email]);
 									LogUserSpaceInfo;
 								end else begin
 									FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_TWOSTEP_AUTH);
@@ -973,29 +973,29 @@ begin
 					end;
 
 				end else begin
-					FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_GET_FIRST_STEP_AUTH_TOKEN, [FEmail]);
+					FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_GET_FIRST_STEP_AUTH_TOKEN, [Email]);
 					FormFields.free;
 				end;
 			end;
 		CLOUD_AUTH_METHOD_WEB: //todo: вынести в отдельный метод
 			begin
-				FLogger.Log(LOG_LEVEL_DEBUG, MSGTYPE_DETAILS, REQUESTING_AUTH_TOKEN, [FEmail]);
-				Result := FHTTP.PostForm(LOGIN_URL, Format('page=https://cloud.mail.ru/?new_auth_form=1&Domain=%s&Login=%s&Password=%s&FailPage=', [FDomain, FUser, UrlEncode(FPassword)]), PostAnswer);
+				FLogger.Log(LOG_LEVEL_DEBUG, MSGTYPE_DETAILS, REQUESTING_AUTH_TOKEN, [Email]);
+				Result := HTTP.PostForm(LOGIN_URL, Format('page=https://cloud.mail.ru/?new_auth_form=1&Domain=%s&Login=%s&Password=%s&FailPage=', [FDomain, FUser, UrlEncode(Password)]), PostAnswer);
 				if (Result) then
 				begin
 					FLogger.Log(LOG_LEVEL_DEBUG, MSGTYPE_DETAILS, PARSING_TOKEN_DATA);
 					Result := InitConnectionParameters();
 					if (Result) then
 					begin
-						FLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, CONNECTED_TO, [FEmail]);
+						FLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, CONNECTED_TO, [Email]);
 						LogUserSpaceInfo;
 					end else begin
-						FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_PARSING_AUTH_TOKEN, [FEmail]);
+						FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_PARSING_AUTH_TOKEN, [Email]);
 						Exit(False);
 					end;
 				end
 				else
-					FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_GET_AUTH_TOKEN, [FEmail]);
+					FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_GET_AUTH_TOKEN, [Email]);
 			end;
 		CLOUD_AUTH_METHOD_OAUTH:
 			begin
@@ -1029,7 +1029,7 @@ begin
 			QuotaInfo := EmptyWideStr;
 		FLogger.Log(LOG_LEVEL_FILE_OPERATION, MSGTYPE_DETAILS, USER_SPACE_INFO, [FormatSize(US.total), FormatSize(US.used), FormatSize(US.total - US.used), QuotaInfo]);
 	end else begin
-		FLogger.Log(LOG_LEVEL_DEBUG, MSGTYPE_IMPORTANTERROR, ERR_GET_USER_SPACE, [FEmail]);
+		FLogger.Log(LOG_LEVEL_DEBUG, MSGTYPE_IMPORTANTERROR, ERR_GET_USER_SPACE, [Email]);
 	end;
 end;
 
@@ -1042,7 +1042,7 @@ begin
 		Exit; //Проверка на вызов без инициализации
 	if IsPublicAccount then
 		Exit(FS_FILE_NOTSUPPORTED);
-	if FHTTP.PostForm(API_FILE_MOVE, Format('home=%s&folder=%s%s&conflict', [PathToUrl(OldName), PathToUrl(ToPath), FUnitedParams]), JSON) then
+	if HTTP.PostForm(API_FILE_MOVE, Format('home=%s&folder=%s%s&conflict', [PathToUrl(OldName), PathToUrl(ToPath), FUnitedParams]), JSON) then
 		Result := CloudResultToFsResult(JSON, PREFIX_ERR_FILE_MOVE);
 	if (NAME_TOKEN = getBodyError(JSON)) and RefreshCSRFToken() then
 		Result := MoveFile(OldName, ToPath);
@@ -1070,7 +1070,7 @@ begin //К сожалению, переименование и перемеще�
 	end;
 end;
 
-function TCloudMailRu.PublishFile(Path: WideString; var PublicLink: WideString; publish: Boolean): Boolean;
+function TCloudMailRu.PublishFile(Path: WideString; var PublicLink: WideString; Publish: Boolean): Boolean;
 var
 	JSON: WideString;
 begin
@@ -1079,20 +1079,20 @@ begin
 		Exit; //Проверка на вызов без инициализации
 	if IsPublicAccount then
 		Exit;
-	if publish then
+	if Publish then
 	begin
-		Result := FHTTP.PostForm(API_FILE_PUBLISH, Format('home=/%s%s&conflict', [PathToUrl(Path), FUnitedParams]), JSON, 'application/x-www-form-urlencoded', true, False);
+		Result := HTTP.PostForm(API_FILE_PUBLISH, Format('home=/%s%s&conflict', [PathToUrl(Path), FUnitedParams]), JSON, 'application/x-www-form-urlencoded', true, False);
 	end else begin
-		Result := FHTTP.PostForm(API_FILE_UNPUBLISH, Format('weblink=%s%s&conflict', [PublicLink, FUnitedParams]), JSON, 'application/x-www-form-urlencoded', true, False);
+		Result := HTTP.PostForm(API_FILE_UNPUBLISH, Format('weblink=%s%s&conflict', [PublicLink, FUnitedParams]), JSON, 'application/x-www-form-urlencoded', true, False);
 	end;
 
 	if Result then
 		Result := CloudResultToBoolean(JSON, PREFIX_ERR_FILE_PUBLISH);
 
-	if Result and publish then
+	if Result and Publish then
 		Result := JSONHelper.GetPublicLink(JSON, PublicLink);
 	if (not Result and (NAME_TOKEN = getBodyError(JSON))) and RefreshCSRFToken() then
-		Result := PublishFile(Path, PublicLink, publish);
+		Result := PublishFile(Path, PublicLink, Publish);
 end;
 
 function TCloudMailRu.GetShareInfo(Path: WideString; var InviteListing: TCMRInviteList): Boolean;
@@ -1104,7 +1104,7 @@ begin
 	if not(Assigned(self)) then
 		Exit; //Проверка на вызов без инициализации
 	Progress := False;
-	if FHTTP.GetPage(Format('%s?home=%s%s', [API_FOLDER_SHARED_INFO, PathToUrl(Path), FUnitedParams]), JSON, Progress) then
+	if HTTP.GetPage(Format('%s?home=%s%s', [API_FOLDER_SHARED_INFO, PathToUrl(Path), FUnitedParams]), JSON, Progress) then
 	begin
 		Result := InviteListing.FromJSON(JSON);
 	end else begin
@@ -1113,7 +1113,7 @@ begin
 	end;
 end;
 
-function TCloudMailRu.ShareFolder(Path, email: WideString; Access: Integer): Boolean;
+function TCloudMailRu.ShareFolder(Path, Email: WideString; Access: Integer): Boolean;
 var
 	JSON: WideString;
 	access_string: WideString;
@@ -1128,14 +1128,14 @@ begin
 		else
 			access_string := CLOUD_SHARE_ACCESS_READ_ONLY;
 
-		Result := FHTTP.PostForm(API_FOLDER_SHARE, Format('home=/%s%s&invite={"email":"%s","access":"%s"}', [PathToUrl(Path), FUnitedParams, email, access_string]), JSON)
+		Result := HTTP.PostForm(API_FOLDER_SHARE, Format('home=/%s%s&invite={"email":"%s","access":"%s"}', [PathToUrl(Path), FUnitedParams, Email, access_string]), JSON)
 	end else begin
-		Result := FHTTP.PostForm(API_FOLDER_UNSHARE, Format('home=/%s%s&invite={"email":"%s"}', [PathToUrl(Path), FUnitedParams, email]), JSON);
+		Result := HTTP.PostForm(API_FOLDER_UNSHARE, Format('home=/%s%s&invite={"email":"%s"}', [PathToUrl(Path), FUnitedParams, Email]), JSON);
 	end;
 	if Result then
 		Result := CloudResultToBoolean(JSON, PREFIX_ERR_INVITE_MEMBER);
 	if (not Result and (NAME_TOKEN = getBodyError(JSON))) and RefreshCSRFToken() then
-		Result := ShareFolder(Path, email, Access);
+		Result := ShareFolder(Path, Email, Access);
 end;
 
 function TCloudMailRu.TrashbinRestore(Path: WideString; RestoreRevision: Integer; ConflictMode: WideString): Boolean;
@@ -1147,7 +1147,7 @@ begin
 		Exit; //Проверка на вызов без инициализации
 	if IsPublicAccount then
 		Exit;
-	Result := FHTTP.PostForm(API_TRASHBIN_RESTORE, Format('path=%s&restore_revision=%d%s&conflict=%s', [PathToUrl(Path), RestoreRevision, FUnitedParams, ConflictMode]), JSON) and CloudResultToBoolean(JSON, PREFIX_ERR_FILE_RESTORE);
+	Result := HTTP.PostForm(API_TRASHBIN_RESTORE, Format('path=%s&restore_revision=%d%s&conflict=%s', [PathToUrl(Path), RestoreRevision, FUnitedParams, ConflictMode]), JSON) and CloudResultToBoolean(JSON, PREFIX_ERR_FILE_RESTORE);
 	if (not Result and (NAME_TOKEN = getBodyError(JSON))) and RefreshCSRFToken() then
 		Result := TrashbinRestore(Path, RestoreRevision, ConflictMode);
 end;
@@ -1162,12 +1162,12 @@ begin
 	if IsPublicAccount then
 		Exit;
 
-	Result := FHTTP.PostForm(API_TRASHBIN_EMPTY, FUnitedParams, JSON) and CloudResultToBoolean(JSON, PREFIX_ERR_TRASH_CLEAN);
+	Result := HTTP.PostForm(API_TRASHBIN_EMPTY, FUnitedParams, JSON) and CloudResultToBoolean(JSON, PREFIX_ERR_TRASH_CLEAN);
 	if (not Result and (NAME_TOKEN = getBodyError(JSON))) and RefreshCSRFToken() then
 		Result := TrashbinEmpty();
 end;
 
-function TCloudMailRu.MountFolder(Home, invite_token, ConflictMode: WideString): Boolean;
+function TCloudMailRu.MountFolder(Home, InviteToken, ConflictMode: WideString): Boolean;
 var
 	JSON: WideString;
 begin
@@ -1176,12 +1176,12 @@ begin
 		Exit; //Проверка на вызов без инициализации
 	if IsPublicAccount then
 		Exit;
-	Result := FHTTP.PostForm(API_FOLDER_MOUNT, Format('home=%s&invite_token=%s%s&conflict=%s', [UrlEncode(Home), invite_token, FUnitedParams, ConflictMode]), JSON) and CloudResultToBoolean(JSON, PREFIX_ERR_FOLDER_MOUNT);
+	Result := HTTP.PostForm(API_FOLDER_MOUNT, Format('home=%s&invite_token=%s%s&conflict=%s', [UrlEncode(Home), InviteToken, FUnitedParams, ConflictMode]), JSON) and CloudResultToBoolean(JSON, PREFIX_ERR_FOLDER_MOUNT);
 	if (not Result and (NAME_TOKEN = getBodyError(JSON))) and RefreshCSRFToken() then
-		Result := MountFolder(Home, invite_token, ConflictMode);
+		Result := MountFolder(Home, InviteToken, ConflictMode);
 end;
 
-function TCloudMailRu.UnmountFolder(Home: WideString; clone_copy: Boolean): Boolean;
+function TCloudMailRu.UnmountFolder(Home: WideString; Clone_copy: Boolean): Boolean;
 var
 	JSON: WideString;
 	CopyStr: WideString;
@@ -1191,16 +1191,16 @@ begin
 		Exit; //Проверка на вызов без инициализации
 	if IsPublicAccount then
 		Exit;
-	if clone_copy then
+	if Clone_copy then
 		CopyStr := 'true'
 	else
 		CopyStr := 'false';
-	Result := FHTTP.PostForm(API_FOLDER_UNMOUNT, Format('home=%s&clone_copy=%s%s', [UrlEncode(Home), CopyStr, FUnitedParams]), JSON) and CloudResultToBoolean(JSON, PREFIX_ERR_FOLDER_UNMOUNT);
+	Result := HTTP.PostForm(API_FOLDER_UNMOUNT, Format('home=%s&clone_copy=%s%s', [UrlEncode(Home), CopyStr, FUnitedParams]), JSON) and CloudResultToBoolean(JSON, PREFIX_ERR_FOLDER_UNMOUNT);
 	if (not Result and (NAME_TOKEN = getBodyError(JSON))) and RefreshCSRFToken() then
-		Result := UnmountFolder(Home, clone_copy);
+		Result := UnmountFolder(Home, Clone_copy);
 end;
 
-function TCloudMailRu.RejectInvite(invite_token: WideString): Boolean;
+function TCloudMailRu.RejectInvite(InviteToken: WideString): Boolean;
 var
 	JSON: WideString;
 begin
@@ -1209,9 +1209,9 @@ begin
 		Exit; //Проверка на вызов без инициализации
 	if IsPublicAccount then
 		Exit;
-	Result := FHTTP.PostForm(API_INVITE_REJECT, Format('invite_token=%s%s', [invite_token, FUnitedParams]), JSON) and CloudResultToBoolean(JSON, PREFIX_ERR_INVITE_REJECT);
+	Result := HTTP.PostForm(API_INVITE_REJECT, Format('invite_token=%s%s', [InviteToken, FUnitedParams]), JSON) and CloudResultToBoolean(JSON, PREFIX_ERR_INVITE_REJECT);
 	if (not Result and (NAME_TOKEN = getBodyError(JSON))) and RefreshCSRFToken() then
-		Result := RejectInvite(invite_token);
+		Result := RejectInvite(InviteToken);
 end;
 
 function TCloudMailRu.PutFileStream(FileName, RemotePath: WideString; FileStream: TStream; ConflictMode: WideString): Integer;
@@ -1225,9 +1225,9 @@ begin
 	Result := FS_FILE_WRITEERROR;
 	OperationResult := CLOUD_OPERATION_FAILED;
 
-	UseHash := FPrecalculateHash or (FForcePrecalculateSize >= FileStream.size); //issue #231
+	UseHash := PrecalculateHash or (ForcePrecalculateSize >= FileStream.size); //issue #231
 
-	if UseHash or FCheckCRC then
+	if UseHash or CheckCRC then
 	begin
 		LocalFileIdentity.Hash := CloudHash(FileStream);
 		LocalFileIdentity.size := FileStream.size;
@@ -1260,7 +1260,7 @@ begin
 	end;
 	if OperationResult = CLOUD_OPERATION_OK then
 	begin
-		if FCheckCRC then
+		if CheckCRC then
 		begin
 			if not LocalFileIdentity.IsEqualTo(RemoteFileIdentity) then {При включённой проверке CRC сравниваем хеши и размеры}
 				Result := CLOUD_OPERATION_FAILED;
@@ -1301,21 +1301,21 @@ var
 	RetryAttemptsCount: Integer;
 	UseHash: Boolean;
 begin
-	UseHash := FPrecalculateHash or (FForcePrecalculateSize >= SizeOfFile(LocalPath)); //issue #231
+	UseHash := PrecalculateHash or (ForcePrecalculateSize >= SizeOfFile(LocalPath)); //issue #231
 	if UseHash then //try to add whole file by hash at first.
 		LocalFileIdentity := FileIdentity(GetUNCFilePath(LocalPath));
 	{Отмена расчёта хеша приведёт к отмене всей операции: TC запоминает нажатие отмены и ExternalProgressProc будет возвращать 1 до следующего вызова копирования}
 	if UseHash and (LocalFileIdentity.Hash <> EmptyWideStr) and (not FDoCryptFiles) and (FS_FILE_OK = AddFileByIdentity(LocalFileIdentity, RemotePath, CLOUD_CONFLICT_STRICT, False, true)) then {issue #135}
 		Exit(CLOUD_OPERATION_OK);
 
-	SplitFileInfo := TFileSplitInfo.Create(GetUNCFilePath(LocalPath), FCloudMaxFileSize); //quickly get information about file parts
+	SplitFileInfo := TFileSplitInfo.Create(GetUNCFilePath(LocalPath), CloudMaxFileSize); //quickly get information about file parts
 	RetryAttemptsCount := 0;
 	SplittedPartIndex := 0;
 
 	while SplittedPartIndex < SplitFileInfo.ChunksCount do {use while instead for..loop, need to modify loop counter sometimes}
 	begin
 		ChunkRemotePath := Format('%s%s', [ExtractFilePath(RemotePath), SplitFileInfo.GetChunks[SplittedPartIndex].name]);
-		FHTTP.SetProgressNames(LocalPath, ChunkRemotePath);
+		HTTP.SetProgressNames(LocalPath, ChunkRemotePath);
 		FLogger.Log(LOG_LEVEL_DEBUG, MSGTYPE_DETAILS, PARTIAL_UPLOAD_INFO, [LocalPath, (SplittedPartIndex + 1), SplitFileInfo.ChunksCount, ChunkRemotePath]);
 		ChunkStream := TChunkedFileStream.Create(GetUNCFilePath(LocalPath), fmOpenRead or fmShareDenyWrite, SplitFileInfo.GetChunks[SplittedPartIndex].start, SplitFileInfo.GetChunks[SplittedPartIndex].size);
 		Result := PutFileStream(ExtractFileName(ChunkRemotePath), ChunkRemotePath, ChunkStream, ConflictMode);
@@ -1359,7 +1359,7 @@ begin
 				end;
 			else {any other error}
 				begin
-					case FOperationErrorMode of
+					case OperationErrorMode of
 						OperationErrorModeAsk:
 							begin
 								case (MsgBox(ERR_PARTIAL_UPLOAD_ASK, [Result, ChunkRemotePath], ERR_UPLOAD, MB_ABORTRETRYIGNORE + MB_ICONERROR)) of
@@ -1388,12 +1388,12 @@ begin
 						OperationErrorModeRetry:
 							begin
 								Inc(RetryAttemptsCount);
-								if RetryAttemptsCount <> FRetryAttempts + 1 then
+								if RetryAttemptsCount <> RetryAttempts + 1 then
 								begin
-									FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_PARTIAL_UPLOAD_RETRY, [Result, RetryAttemptsCount, FRetryAttempts]);
+									FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_PARTIAL_UPLOAD_RETRY, [Result, RetryAttemptsCount, RetryAttempts]);
 									Dec(SplittedPartIndex); //retry with this chunk
 									ProcessMessages;
-									Sleep(FAttemptWait);
+									Sleep(AttemptWait);
 								end else begin
 									FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_PARTIAL_UPLOAD_RETRY_EXCEED, [Result]);
 									Result := CLOUD_OPERATION_FAILED;
@@ -1414,7 +1414,7 @@ begin
 	if Result = FS_FILE_OK then {Only after successful upload}
 	begin
 		CRCRemotePath := ExtractFilePath(RemotePath) + SplitFileInfo.CRCFileName;
-		FHTTP.TargetName := CRCRemotePath;
+		HTTP.TargetName := CRCRemotePath;
 		CRCStream := TStringStream.Create;
 		SplitFileInfo.GetCRCData(CRCStream);
 		PutFileStream(SplitFileInfo.CRCFileName, CRCRemotePath, CRCStream, ConflictMode);
@@ -1433,15 +1433,15 @@ begin
 		Exit(FS_FILE_WRITEERROR); //Проверка на вызов без инициализации
 	if IsPublicAccount then
 		Exit(FS_FILE_NOTSUPPORTED);
-	FHTTP.SetProgressNames(LocalPath, RemotePath);
-	if (not(FUnlimitedFileSize)) and (SizeOfFile(GetUNCFilePath(LocalPath)) > FCloudMaxFileSize) then
+	HTTP.SetProgressNames(LocalPath, RemotePath);
+	if (not(UnlimitedFileSize)) and (SizeOfFile(GetUNCFilePath(LocalPath)) > CloudMaxFileSize) then
 	begin
-		if FSplitLargeFiles then
+		if SplitLargeFiles then
 		begin
-			FLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, SPLIT_LARGE_FILE, [FCloudMaxFileSize]);
+			FLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, SPLIT_LARGE_FILE, [CloudMaxFileSize]);
 			Exit(PutFileSplit(LocalPath, RemotePath, ConflictMode, ChunkOverwriteMode));
 		end else begin
-			FLogger.Log(LOG_LEVEL_WARNING, MSGTYPE_IMPORTANTERROR, SPLIT_LARGE_FILE_IGNORE, [FCloudMaxFileSize]);
+			FLogger.Log(LOG_LEVEL_WARNING, MSGTYPE_IMPORTANTERROR, SPLIT_LARGE_FILE_IGNORE, [CloudMaxFileSize]);
 			Exit(FS_FILE_NOTSUPPORTED);
 		end;
 	end;
@@ -1465,10 +1465,10 @@ begin
 	if (EmptyWideStr = FUploadShard) then
 	begin
 		FLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, UNDEFINED_UPLOAD_SHARD);
-		if (EmptyWideStr <> FUploadShardOverride) then
+		if (EmptyWideStr <> UploadShardOverride) then
 		begin
 			FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_DETAILS, UPLOAD_URL_OVERRIDDEN);
-			FUploadShard := FUploadShardOverride;
+			FUploadShard := UploadShardOverride;
 		end else begin
 			GetShard(FUploadShard, SHARD_TYPE_UPLOAD);
 		end
@@ -1477,7 +1477,7 @@ begin
 	UploadUrl := Format('%s?cloud_domain=2&x-email=%s@%s', [FUploadShard, FUser, FDomain])(*+ '&fileapi' + DateTimeToUnix(now).ToString + '0246'*);
 	return := TStringList.Create;
 	//HTTP.OptionsMethod(UploadUrl, PostAnswer, ProgressEnabled); //not required at current moment, see issue #232
-	Result := FHTTP.PutFile(UploadUrl, FileName, FileStream, PostAnswer);
+	Result := HTTP.PutFile(UploadUrl, FileName, FileStream, PostAnswer);
 	if (CLOUD_ERROR_TOKEN_OUTDATED = Result) and RefreshCSRFToken() then
 		Result := PutFileToCloud(FileName, FileStream, FileIdentity);
 	if (Result = CLOUD_OPERATION_OK) then
@@ -1502,8 +1502,8 @@ begin
 		Exit; //Проверка на вызов без инициализации
 	if IsPublicAccount then
 		Exit;
-	FHTTP.SetProgressNames(DELETE_DIR, Path);
-	Result := FHTTP.PostForm(API_FILE_REMOVE, Format('home=/%s%s&conflict', [IncludeSlash(PathToUrl(Path)), FUnitedParams]), JSON) and CloudResultToBoolean(JSON, PREFIX_ERR_DELETE_DIR); //API всегда отвечает true, даже если путь не существует
+	HTTP.SetProgressNames(DELETE_DIR, Path);
+	Result := HTTP.PostForm(API_FILE_REMOVE, Format('home=/%s%s&conflict', [IncludeSlash(PathToUrl(Path)), FUnitedParams]), JSON) and CloudResultToBoolean(JSON, PREFIX_ERR_DELETE_DIR); //API всегда отвечает true, даже если путь не существует
 	if (not Result and (NAME_TOKEN = getBodyError(JSON))) and RefreshCSRFToken() then
 		Result := RemoveDir(Path);
 end;
@@ -1517,7 +1517,7 @@ begin
 		Exit; //Проверка на вызов без инициализации
 	if IsPublicAccount then
 		Exit;
-	if FHTTP.PostForm(API_FILE_RENAME, Format('home=%s&name=%s%s', [PathToUrl(OldName), PathToUrl(NewName), FUnitedParams]), JSON) then
+	if HTTP.PostForm(API_FILE_RENAME, Format('home=%s&name=%s%s', [PathToUrl(OldName), PathToUrl(NewName), FUnitedParams]), JSON) then
 		Result := CloudResultToFsResult(JSON, PREFIX_ERR_FILE_RENAME);
 	if (NAME_TOKEN = getBodyError(JSON)) and RefreshCSRFToken() then
 		Result := RenameFile(OldName, NewName);
@@ -1533,9 +1533,9 @@ begin
 		Exit; //Проверка на вызов без инициализации
 	Progress := False;
 	if IsPublicAccount then
-		Result := FHTTP.GetPage(Format('%s?weblink=%s%s%s', [API_FILE, IncludeSlash(GetPublicLink), PathToUrl(Path), FUnitedParams]), JSON, Progress)
+		Result := HTTP.GetPage(Format('%s?weblink=%s%s%s', [API_FILE, IncludeSlash(GetPublicLink), PathToUrl(Path), FUnitedParams]), JSON, Progress)
 	else
-		Result := FHTTP.GetPage(Format('%s?home=%s%s', [API_FILE, PathToUrl(Path), FUnitedParams]), JSON, Progress);
+		Result := HTTP.GetPage(Format('%s?home=%s%s', [API_FILE, PathToUrl(Path), FUnitedParams]), JSON, Progress);
 	if Result then
 	begin
 		Result := CloudResultToBoolean(JSON, PREFIX_ERR_FILE_STATUS) and FileInfo.FromJSON(JSON);
