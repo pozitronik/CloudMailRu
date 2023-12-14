@@ -641,8 +641,14 @@ begin
 	if FDownloadShard = EmptyWideStr then
 	begin
 		Logger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, UNDEFINED_DOWNLOAD_SHARD);
-		if not GetShard(FDownloadShard) then
-			Exit;
+		if FShardOverride <> EmptyWideStr then
+		begin
+			Logger.Log(LOG_LEVEL_ERROR, MSGTYPE_DETAILS, SHARD_OVERRIDDEN);
+			FDownloadShard := FShardOverride;
+		end else begin
+			if not GetShard(FDownloadShard) then
+				Exit;
+		end;
 	end;
 	if FDoCryptFilenames then
 	begin
@@ -823,12 +829,6 @@ begin
 	Result := False;
 	if not(Assigned(self)) then
 		Exit; //Проверка на вызов без инициализации
-	if FShardOverride <> EmptyWideStr then
-	begin
-		Logger.Log(LOG_LEVEL_ERROR, MSGTYPE_DETAILS, SHARD_OVERRIDDEN);
-		Shard := FShardOverride;
-		Exit(true);
-	end;
 	Result := HTTP.PostForm(API_DISPATCHER, FUnitedParams, JSON) and CloudResultToBoolean(JSON, PREFIX_ERR_SHARD_RECEIVE);
 	if Result then
 	begin
