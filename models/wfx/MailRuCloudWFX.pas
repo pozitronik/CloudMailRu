@@ -1468,7 +1468,7 @@ begin
 			exit(FS_FILE_NOTSUPPORTED); //мы не умеем перезаписывать, но мы можем удалить существующий файл
 		if Move then
 		begin
-			Result := OldCloud.mvFile(OldRealPath.Path, NewRealPath.Path);
+			Result := OldCloud.FileMove(OldRealPath.Path, NewRealPath.Path);
 			if (FS_FILE_EXISTS = Result) and (ThreadFsRemoveDirSkippedPath.ContainsKey(GetCurrentThreadID)) then //TC сразу же попытается удалить каталог, чтобы избежать этого - внесем путь в своеобразный блеклист
 			begin
 				ThreadFsRemoveDirSkippedPath.Items[GetCurrentThreadID].Add(OldRealPath.ToPath);
@@ -1486,7 +1486,7 @@ begin
 			if ((FS_FILE_OK = Result) and SettingsManager.Settings.DescriptionTrackCloudFS and AccountSettings.GetAccountSettings(NewRealPath.account).IsRemoteDescriptionsSupported) then
 				RenameRemoteFileDescription(OldRealPath, NewRealPath, OldCloud);
 		end else begin
-			Result := OldCloud.cpFile(OldRealPath.Path, NewRealPath.Path);
+			Result := OldCloud.FileCopy(OldRealPath.Path, NewRealPath.Path);
 		end;
 
 	end;
