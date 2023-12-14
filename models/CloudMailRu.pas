@@ -98,8 +98,8 @@ type
 		{Those properties are simple shortcuts to settings fields}
 		property FPassword: WideString read Settings.AccountSettings.Password;
 		property FEmail: WideString read Settings.AccountSettings.email;
-		property FShardOverride: WideString read Settings.AccountSettings.ShardOverride;
-		property FUploadUrlOverride: WideString read Settings.AccountSettings.UploadUrlOverride;
+		property FDownloadShardOverride: WideString read Settings.AccountSettings.ShardOverride;
+		property FUploadShardOverride: WideString read Settings.AccountSettings.UploadUrlOverride;
 		property FUnlimitedFileSize: Boolean read Settings.AccountSettings.UnlimitedFilesize;
 		property FSplitLargeFiles: Boolean read Settings.AccountSettings.SplitLargeFiles;
 
@@ -641,10 +641,10 @@ begin
 	if FDownloadShard = EmptyWideStr then
 	begin
 		Logger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, UNDEFINED_DOWNLOAD_SHARD);
-		if FShardOverride <> EmptyWideStr then
+		if FDownloadShardOverride <> EmptyWideStr then
 		begin
 			Logger.Log(LOG_LEVEL_ERROR, MSGTYPE_DETAILS, SHARD_OVERRIDDEN);
-			FDownloadShard := FShardOverride;
+			FDownloadShard := FDownloadShardOverride;
 		end else begin
 			if not GetShard(FDownloadShard) then
 				Exit;
@@ -915,17 +915,8 @@ begin
 		Exit; //Проверка на вызов без инициализации
 	HTTP.SetProgressNames(LOGIN_IN_PROGRESS, EmptyWideStr);
 	if IsPublicAccount then
-		Result := LoginShared()
-	else
-	begin
-		Result := LoginRegular(Method);
-		if (Result and (EmptyWideStr <> FUploadUrlOverride)) then
-		begin
-			Logger.Log(LOG_LEVEL_ERROR, MSGTYPE_DETAILS, UPLOAD_URL_OVERRIDDEN);
-			FUploadShard := FUploadUrlOverride;
-			Exit(true);
-		end;
-	end;
+		Exit(LoginShared());
+	Exit(LoginRegular(Method)); {If not a public account}
 end;
 
 function TCloudMailRu.LoginRegular(Method: Integer): Boolean;
