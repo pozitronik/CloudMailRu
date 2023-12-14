@@ -10,6 +10,7 @@ type
 	{This class implements a basic abstract filesystem plugin}
 	{TODO: do not use pointers}
 	IWFXInterface = interface
+		['{30C665E4-3796-435A-BE77-18E09268B8FF}']
 		{Initialization methods}
 		function FsInit(PluginNr: Integer; pProgressProc: TProgressProcW; pLogProc: TLogProcW; pRequestProc: TRequestProcW): Integer;
 		procedure FsGetDefRootName(DefRootName: PAnsiChar; MaxLen: Integer);
