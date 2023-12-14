@@ -348,7 +348,7 @@ begin
 
 	if Command = 'trash' then //go to current account trash directory
 	begin
-		if Cloud.public_account then
+		if Cloud.IsPublicAccount then
 			exit(FS_EXEC_ERROR);
 		if RealPath.IsInAccount(false) then
 		begin
@@ -359,7 +359,7 @@ begin
 
 	if Command = 'shared' then
 	begin
-		if Cloud.public_account then
+		if Cloud.IsPublicAccount then
 			exit(FS_EXEC_ERROR);
 		if RealPath.IsInAccount(false) then
 		begin
@@ -370,7 +370,7 @@ begin
 
 	if Command = 'invites' then
 	begin
-		if Cloud.public_account then
+		if Cloud.IsPublicAccount then
 			exit(FS_EXEC_ERROR);
 		if RealPath.IsInAccount(false) then
 		begin
@@ -562,7 +562,7 @@ begin
 	if not Assigned(CurrentCloud) then
 		exit;
 
-	if Path.HasHomePath and not CurrentCloud.public_account then
+	if Path.HasHomePath and not CurrentCloud.IsPublicAccount then
 		Result := CurrentListing.FindByHomePath(Path.Path) //сначала попробуем найти поле в имеющемся списке
 	else
 		Result := CurrentListing.FindByName(ExtractUniversalFileName(Path.Path));
@@ -586,7 +586,7 @@ begin
 		end;
 		if CurrentCloud.statusFile(Path.Path, Result) then //Обычный каталог
 		begin
-			if (Result.home = EmptyWideStr) and not CurrentCloud.public_account then
+			if (Result.home = EmptyWideStr) and not CurrentCloud.IsPublicAccount then
 				TCLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_WHERE_IS_THE_FILE, [Path.Path]); {Такого быть не может, но...}
 		end;
 	end; //Не рапортуем, это будет уровнем выше
@@ -1134,7 +1134,7 @@ begin
 			exit(INVALID_HANDLE_VALUE);
 		end;
 
-		if CurrentCloud.public_account then
+		if CurrentCloud.IsPublicAccount then
 			CurrentItem := CurrentListing.FindByName(ExtractUniversalFileName(RealPath.Path))
 		else
 			CurrentItem := CurrentListing.FindByHomePath(RealPath.Path);
@@ -1442,7 +1442,7 @@ begin
 
 	if OldRealPath.account <> NewRealPath.account then //разные аккаунты
 	begin
-		if OldCloud.public_account then
+		if OldCloud.IsPublicAccount then
 		begin
 			TCLogger.Log(LOG_LEVEL_WARNING, MSGTYPE_IMPORTANTERROR, ERR_DIRECT_OPERATIONS_NOT_SUPPORTED);
 			exit(FS_FILE_USERABORT);
@@ -1543,7 +1543,7 @@ begin
 				end;
 			FS_STATUS_OP_RENMOV_MULTI:
 				begin
-					if ConnectionManager.Get(RealPath.account, getResult).public_account then
+					if ConnectionManager.Get(RealPath.account, getResult).IsPublicAccount then
 					begin
 						TCLogger.Log(LOG_LEVEL_WARNING, MSGTYPE_IMPORTANTERROR, ERR_DIRECT_COPY_SUPPORT);
 						ThreadSkipListRenMov.AddOrSetValue(GetCurrentThreadID, true);

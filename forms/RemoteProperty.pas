@@ -197,7 +197,7 @@ end;
 procedure TPropertyForm.UpdateDownloadListing;
 begin
 	DownloadLinksMemo.lines.Clear;
-	if self.Cloud.public_account then
+	if self.Cloud.IsPublicAccount then
 	begin
 		if Props.type_ = TYPE_DIR then
 		begin (*рекурсивно получаем все ссылки в каталоге*)
@@ -421,7 +421,7 @@ end;
 
 function TPropertyForm.CanApplyHashes: Boolean;
 begin
-	result := not self.Cloud.public_account;
+	result := not self.Cloud.IsPublicAccount;
 end;
 
 procedure TPropertyForm.CancelHashesScanTbClick(Sender: TObject);
@@ -620,7 +620,7 @@ begin
 	ApplyHashesTB.Enabled := CanApplyHashes;
 	LoadHashesTb.Enabled := CanApplyHashes;
 
-	if self.Cloud.public_account then
+	if self.Cloud.IsPublicAccount then
 	begin
 		AccessCB.Enabled := false;
 		AccessCB.Checked := true;
@@ -676,7 +676,7 @@ end;
 
 procedure TPropertyForm.AccessCBClick(Sender: TObject);
 begin
-	if self.Cloud.public_account then
+	if self.Cloud.IsPublicAccount then
 		exit;
 	AccessCB.Enabled := false; //блокируем во избежание повторных кликов
 	WebLink.Text := WAIT;
