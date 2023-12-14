@@ -239,7 +239,7 @@ begin
 				case TAskPasswordForm.AskAction(PREFIX_ERR_PASSWORD_MATCH, ERR_PASSWORD_MATCH, ActionsList) of
 					mrYes: //store and use updated password
 						begin
-							CloudSettings.AccountSettings.CryptedGUIDFiles := TFileCipher.CryptedGUID(CloudSettings.CryptFilesPassword);
+							CloudSettings.AccountSettings.CryptedGUIDFiles := TFileCipher.GetCryptedGUID(CloudSettings.CryptFilesPassword);
 							AccountsManager := TAccountsManager.Create(self.PluginSettings.IniFilePath);
 							AccountsManager.SetCryptedGUID(ConnectionName, CloudSettings.AccountSettings.CryptedGUIDFiles);
 							AccountsManager.Free;

@@ -170,11 +170,10 @@ object AccountsForm: TAccountsForm
       object AccountNameLabel: TLabel
         Left = 225
         Top = 10
-        Width = 62
+        Width = 68
         Height = 13
         Anchors = [akLeft, akTop, akRight]
         Caption = 'Account name'
-        ExplicitWidth = 68
       end
       object AccountsGroupBox: TGroupBox
         Left = -4
@@ -982,47 +981,42 @@ object AccountsForm: TAccountsForm
       object ExtLabel: TLabel
         Left = 225
         Top = 10
-        Width = 60
+        Width = 66
         Height = 13
         Anchors = [akLeft, akTop, akRight]
         Caption = 'File extension'
-        ExplicitWidth = 66
       end
       object CommandLabel: TLabel
         Left = 225
         Top = 52
-        Width = 41
+        Width = 47
         Height = 13
         Anchors = [akLeft, akTop, akRight]
         Caption = 'Command'
-        ExplicitWidth = 47
       end
       object ParametersLabel: TLabel
         Left = 225
         Top = 93
-        Width = 221
+        Width = 227
         Height = 13
         Anchors = [akLeft, akTop, akRight]
         Caption = 'Parameters (%url% for stream url substitution)'
-        ExplicitWidth = 227
       end
       object StartPathLabel: TLabel
         Left = 225
         Top = 134
-        Width = 43
+        Width = 49
         Height = 13
         Anchors = [akLeft, akTop, akRight]
         Caption = 'Start path'
-        ExplicitWidth = 49
       end
       object StreamingTypeLabel: TLabel
         Left = 225
         Top = 177
-        Width = 67
+        Width = 73
         Height = 13
         Anchors = [akLeft, akTop, akRight]
         Caption = 'Streaming type'
-        ExplicitWidth = 73
       end
       object TExtensionsGroupBox: TGroupBox
         Left = -4

@@ -84,7 +84,8 @@ uses
 	Windows,
 	WindowsHelper in 'helpers\WindowsHelper.pas',
 	MailRuCloudWFX in 'models\wfx\MailRuCloudWFX.pas',
-	WFXInterface in 'models\wfx\WFXInterface.pas';
+	WFXInterface in 'models\wfx\WFXInterface.pas',
+	CipherInterface in 'models\cipher\CipherInterface.pas';
 
 {$IFDEF WIN64}
 {$E wfx64}

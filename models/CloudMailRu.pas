@@ -370,11 +370,11 @@ begin
 		if Settings.AccountSettings.EncryptFilesMode <> EncryptModeNone then
 		begin
 			self.FileCipher := TFileCipher.Create(Settings.CryptFilesPassword, Settings.AccountSettings.CryptedGUIDFiles, Settings.AccountSettings.EncryptFilenames);
-			if self.FileCipher.WrongPassword then
+			if self.FileCipher.IsWrongPassword then
 				Logger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_WRONG_ENCRYPT_PASSWORD);
 
-			self.crypt_files := not(self.FileCipher.WrongPassword);
-			self.crypt_filenames := self.crypt_files and Settings.AccountSettings.EncryptFilenames and not(self.FileCipher.WrongPassword);
+			self.crypt_files := not(self.FileCipher.IsWrongPassword);
+			self.crypt_filenames := self.crypt_files and Settings.AccountSettings.EncryptFilenames and not(self.FileCipher.IsWrongPassword);
 		end;
 
 		self.public_link := getPublicLink;
