@@ -46,18 +46,18 @@ uses
 type
 	TCloudMailRu = class
 	private
-		{VARIABLES}
-		OptionsSet: TCloudSettings;
-		HTTPConnectionsManager: THTTPManager;
-		InternalHTTPConnection: TCloudMailRuHTTP; //Если не задан HTTPConnectionsManager, класс создаст своё атомарное соединение
+		Settings: TCloudSettings; {Current options set for the cloud instance}
 
-		AuthCookie: TIdCookieManager; //Авторизационная кука - должна храниться отдельно от HTTP-соединения, т.к. ассоциируется с облаком. Передаётся в менеджер HTTP-подключений внутри ConnetionManager
+		HTTPConnectionsManager: THTTPManager; {Internal connections manager (can be set externally or omitted)}
+		InternalHTTPConnection: TCloudMailRuHTTP; {Normally managed by HTTPConnectionsManager. If HTTPConnectionsManager is omitted, Cloud will create its own atomic connection}
+
+		AuthCookie: TIdCookieManager; {The auth cookie, should be stored separately, because it associated with a cloud instance, not a connection}
 
 		Logger: TTCLogger;
 		Progress: TTCProgress;
 		Request: TTCRequest;
 
-		FileCipher: TFileCipher; //Encryption class
+		FileCipher: TFileCipher; {The encryption instance}
 		//JSONParser: TCloudMailRuJSONParser; //JSON parser
 
 		public_link: WideString; //public_ params is active for public clouds only
@@ -111,26 +111,26 @@ type
 
 		Property Cookie: TIdCookieManager read AuthCookie;
 
-		Property public_account: Boolean read OptionsSet.AccountSettings.PublicAccount;
+		Property public_account: Boolean read Settings.AccountSettings.PublicAccount;
 		Property user: WideString read FUser;
 		Property domain: WideString read FDomain;
-		Property password: WideString read OptionsSet.AccountSettings.password;
-		Property email: WideString read OptionsSet.AccountSettings.email;
-		Property shard_override: WideString read OptionsSet.AccountSettings.ShardOverride;
-		Property upload_url_override: WideString read OptionsSet.AccountSettings.UploadUrlOverride;
-		Property unlimited_filesize: Boolean read OptionsSet.AccountSettings.UnlimitedFilesize;
-		Property split_large_files: Boolean read OptionsSet.AccountSettings.SplitLargeFiles;
+		Property password: WideString read Settings.AccountSettings.password;
+		Property email: WideString read Settings.AccountSettings.email;
+		Property shard_override: WideString read Settings.AccountSettings.ShardOverride;
+		Property upload_url_override: WideString read Settings.AccountSettings.UploadUrlOverride;
+		Property unlimited_filesize: Boolean read Settings.AccountSettings.UnlimitedFilesize;
+		Property split_large_files: Boolean read Settings.AccountSettings.SplitLargeFiles;
 
 		Property HTTP: TCloudMailRuHTTP read getHTTPConnection;
 
-		Property CloudMaxFileSize: int64 read OptionsSet.CloudMaxFileSize;
-		Property PrecalculateHash: Boolean read OptionsSet.PrecalculateHash;
-		property ForcePrecalculateSize: int64 read OptionsSet.ForcePrecalculateSize;
-		Property CheckCRC: Boolean read OptionsSet.CheckCRC;
+		Property CloudMaxFileSize: int64 read Settings.CloudMaxFileSize;
+		Property PrecalculateHash: Boolean read Settings.PrecalculateHash;
+		property ForcePrecalculateSize: int64 read Settings.ForcePrecalculateSize;
+		Property CheckCRC: Boolean read Settings.CheckCRC;
 
-		Property OperationErrorMode: integer read OptionsSet.OperationErrorMode;
-		Property RetryAttempts: integer read OptionsSet.RetryAttempts;
-		Property AttemptWait: integer read OptionsSet.AttemptWait;
+		Property OperationErrorMode: integer read Settings.OperationErrorMode;
+		Property RetryAttempts: integer read Settings.RetryAttempts;
+		Property AttemptWait: integer read Settings.AttemptWait;
 
 		function getSharedFileUrl(remotePath: WideString; ShardType: WideString = SHARD_TYPE_DEFAULT): WideString;
 
@@ -347,7 +347,7 @@ end;
 constructor TCloudMailRu.Create(CloudSettings: TCloudSettings; ConnectionManager: THTTPManager; Progress: TTCProgress; Logger: TTCLogger; Request: TTCRequest);
 begin
 	try
-		self.OptionsSet := CloudSettings;
+		self.Settings := CloudSettings;
 		ExtractEmailParts(self.email, FUser, FDomain);
 
 		self.HTTPConnectionsManager := ConnectionManager;
@@ -367,14 +367,14 @@ begin
 		//self.HTTP := TCloudMailRuHTTP.Create(CloudSettings.ConnectionSettings, ExternalProgressProc, ExternalLogProc);
 		//self.JSONParser := TCloudMailRuJSONParser.Create();
 
-		if OptionsSet.AccountSettings.EncryptFilesMode <> EncryptModeNone then
+		if Settings.AccountSettings.EncryptFilesMode <> EncryptModeNone then
 		begin
-			self.FileCipher := TFileCipher.Create(OptionsSet.CryptFilesPassword, OptionsSet.AccountSettings.CryptedGUIDFiles, OptionsSet.AccountSettings.EncryptFilenames);
+			self.FileCipher := TFileCipher.Create(Settings.CryptFilesPassword, Settings.AccountSettings.CryptedGUIDFiles, Settings.AccountSettings.EncryptFilenames);
 			if self.FileCipher.WrongPassword then
 				Logger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_WRONG_ENCRYPT_PASSWORD);
 
 			self.crypt_files := not(self.FileCipher.WrongPassword);
-			self.crypt_filenames := self.crypt_files and OptionsSet.AccountSettings.EncryptFilenames and not(self.FileCipher.WrongPassword);
+			self.crypt_filenames := self.crypt_files and Settings.AccountSettings.EncryptFilenames and not(self.FileCipher.WrongPassword);
 		end;
 
 		self.public_link := getPublicLink;
@@ -770,7 +770,7 @@ begin
 	if (nil = self.HTTPConnectionsManager) then
 	begin
 		if not Assigned(InternalHTTPConnection) then
-			self.InternalHTTPConnection := TCloudMailRuHTTP.Create(OptionsSet.ConnectionSettings, Progress, Logger);
+			self.InternalHTTPConnection := TCloudMailRuHTTP.Create(Settings.ConnectionSettings, Progress, Logger);
 
 		result := self.InternalHTTPConnection;
 	end
@@ -797,10 +797,10 @@ end;
 function TCloudMailRu.getPublicLink: WideString;
 begin
 	result := EmptyWideStr;
-	if self.public_account and (self.OptionsSet.AccountSettings.PublicUrl <> EmptyWideStr) then
+	if self.public_account and (self.Settings.AccountSettings.PublicUrl <> EmptyWideStr) then
 	begin
-		result := self.OptionsSet.AccountSettings.PublicUrl;
-		self.OptionsSet.AccountSettings.PublicUrl := IncludeSlash(self.OptionsSet.AccountSettings.PublicUrl);
+		result := self.Settings.AccountSettings.PublicUrl;
+		self.Settings.AccountSettings.PublicUrl := IncludeSlash(self.Settings.AccountSettings.PublicUrl);
 		Delete(result, 1, length(PUBLIC_ACCESS_URL));
 		if (result <> EmptyWideStr) and (result[length(result)] = '/') then
 			Delete(result, length(result), 1);
@@ -886,7 +886,7 @@ begin
 	if not(Assigned(self)) then
 		exit; //Проверка на вызов без инициализации
 	Progress := false;
-	result := self.HTTP.GetPage(self.OptionsSet.AccountSettings.PublicUrl, PageContent, Progress);
+	result := self.HTTP.GetPage(self.Settings.AccountSettings.PublicUrl, PageContent, Progress);
 	if result then
 	begin
 		if not extractPublicShard(PageContent, self.public_shard) then
@@ -1037,7 +1037,7 @@ end;
 
 function TCloudMailRu.loginShared(method: integer): Boolean;
 begin
-	Logger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, URL_OPEN, [self.OptionsSet.AccountSettings.PublicUrl]);
+	Logger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, URL_OPEN, [self.Settings.AccountSettings.PublicUrl]);
 	result := self.initSharedConnectionParameters();
 	//exit(true);
 end;
