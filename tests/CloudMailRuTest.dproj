@@ -2,7 +2,7 @@
     <PropertyGroup>
         <ProjectGuid>{8E6079B8-7221-43EE-AB0E-4C575BD8DE0A}</ProjectGuid>
         <ProjectVersion>20.1</ProjectVersion>
-        <FrameworkType>None</FrameworkType>
+        <FrameworkType>VCL</FrameworkType>
         <Base>True</Base>
         <Config Condition="'$(Config)'==''">Debug</Config>
         <Platform Condition="'$(Platform)'==''">Win64</Platform>
@@ -53,7 +53,7 @@
         <DCC_S>false</DCC_S>
         <DCC_F>false</DCC_F>
         <DCC_K>false</DCC_K>
-        <DCC_Namespace>System;Xml;Data;Datasnap;Web;Soap;$(DCC_Namespace)</DCC_Namespace>
+        <DCC_Namespace>System;Xml;Data;Datasnap;Web;Soap;Vcl;Vcl.Imaging;Vcl.Touch;Vcl.Samples;Vcl.Shell;$(DCC_Namespace)</DCC_Namespace>
         <UsingDelphiRTL>true</UsingDelphiRTL>
         <Icon_MainIcon>$(BDS)\bin\delphi_PROJECTICON.ico</Icon_MainIcon>
         <Icns_MainIcns>$(BDS)\bin\delphi_PROJECTICNS.icns</Icns_MainIcns>
@@ -150,6 +150,27 @@
         <DCCReference Include="..\models\settings\StreamingSettings.pas"/>
         <DCCReference Include="helpers\TestFileHelper.pas"/>
         <DCCReference Include="helpers\TestPathHelper.pas"/>
+        <DCCReference Include="..\models\CloudMailRu.pas"/>
+        <DCCReference Include="..\models\dto\CMRFileIdentity.pas"/>
+        <DCCReference Include="..\models\dto\CMRIncomingInviteList.pas"/>
+        <DCCReference Include="..\models\dto\CMRInviteList.pas"/>
+        <DCCReference Include="..\models\dto\CMROAuth.pas"/>
+        <DCCReference Include="..\models\dto\CMROperationResult.pas"/>
+        <DCCReference Include="..\models\dto\CMRSpace.pas"/>
+        <DCCReference Include="..\models\dto\CMRTwostep.pas"/>
+        <DCCReference Include="..\models\http\CloudMailRuHTTP.pas"/>
+        <DCCReference Include="..\models\dto\CMRInvite.pas"/>
+        <DCCReference Include="..\models\dto\CMRIncomingInvite.pas"/>
+        <DCCReference Include="..\models\dto\CMROwner.pas"/>
+        <DCCReference Include="..\models\ChunkedFileStream.pas"/>
+        <DCCReference Include="..\models\FileSplitInfo.pas"/>
+        <DCCReference Include="..\helpers\PluginHelper.pas"/>
+        <DCCReference Include="..\models\http\HTTPManager.pas"/>
+        <DCCReference Include="..\models\dto\RealPath.pas"/>
+        <DCCReference Include="..\models\settings\CloudSettings.pas"/>
+        <DCCReference Include="..\forms\AskPassword.pas">
+            <Form>AskPasswordForm</Form>
+        </DCCReference>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>
