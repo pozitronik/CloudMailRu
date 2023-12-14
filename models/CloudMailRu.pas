@@ -166,7 +166,6 @@ type
 		class function CloudAccessToString(Access: WideString; Invert: Boolean = False): WideString; static;
 		class function StringToCloudAccess(AccessString: WideString; Invert: Boolean = False): Integer; static;
 		class function ErrorCodeText(ErrorCode: Integer): WideString; static;
-		class function IsSameIdentity(IdentityOne, IdentityTwo: TCMRFileIdentity): Boolean; static;
 		class function TempPublicCloudInit(var TempCloud: TCloudMailRu; PublicUrl: WideString): Boolean; static;
 	end;
 
@@ -279,11 +278,6 @@ begin
 				Exit(FS_FILE_WRITEERROR);
 			end;
 	end;
-end;
-
-class function TCloudMailRu.IsSameIdentity(IdentityOne, IdentityTwo: TCMRFileIdentity): Boolean;
-begin
-	Result := (IdentityOne.size = IdentityTwo.size) and (IdentityOne.Hash = IdentityTwo.Hash);
 end;
 
 function TCloudMailRu.CopyFile(OldName, ToPath: WideString): Integer;
@@ -1268,7 +1262,7 @@ begin
 	begin
 		if FCheckCRC then
 		begin
-			if not IsSameIdentity(LocalFileIdentity, RemoteFileIdentity) then {При включённой проверке CRC сравниваем хеши и размеры}
+			if not LocalFileIdentity.IsEqualTo(RemoteFileIdentity) then {При включённой проверке CRC сравниваем хеши и размеры}
 				Result := CLOUD_OPERATION_FAILED;
 
 		end;
