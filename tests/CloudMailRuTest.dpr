@@ -56,7 +56,26 @@ uses
 	IniFilesHelper in '..\helpers\IniFilesHelper.pas',
 	StreamingSettings in '..\models\settings\StreamingSettings.pas',
 	TestFileHelper in 'helpers\TestFileHelper.pas',
-	TestPathHelper in 'helpers\TestPathHelper.pas';
+	TestPathHelper in 'helpers\TestPathHelper.pas',
+	CloudMailRu in '..\models\CloudMailRu.pas',
+	CMRFileIdentity in '..\models\dto\CMRFileIdentity.pas',
+	CMRIncomingInviteList in '..\models\dto\CMRIncomingInviteList.pas',
+	CMRInviteList in '..\models\dto\CMRInviteList.pas',
+	CMROAuth in '..\models\dto\CMROAuth.pas',
+	CMROperationResult in '..\models\dto\CMROperationResult.pas',
+	CMRSpace in '..\models\dto\CMRSpace.pas',
+	CMRTwostep in '..\models\dto\CMRTwostep.pas',
+	CloudMailRuHTTP in '..\models\http\CloudMailRuHTTP.pas',
+	CMRInvite in '..\models\dto\CMRInvite.pas',
+	CMRIncomingInvite in '..\models\dto\CMRIncomingInvite.pas',
+	CMROwner in '..\models\dto\CMROwner.pas',
+	ChunkedFileStream in '..\models\ChunkedFileStream.pas',
+	FileSplitInfo in '..\models\FileSplitInfo.pas',
+	PluginHelper in '..\helpers\PluginHelper.pas',
+	HTTPManager in '..\models\http\HTTPManager.pas',
+	RealPath in '..\models\dto\RealPath.pas',
+	CloudSettings in '..\models\settings\CloudSettings.pas',
+	AskPassword in '..\forms\AskPassword.pas'{AskPasswordForm};
 
 {keep comment here to protect the following conditional from being removed by the IDE when adding a unit}
 {$IFNDEF TESTINSIGHT}

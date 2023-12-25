@@ -6,7 +6,7 @@ uses
 {$IFDEF DEBUG}
 	FastMM4 in 'FastMM\FastMM4.pas',
 	FastMM4Messages in 'FastMM\FastMM4Messages.pas',
-{$ENDIF }
+{$ENDIF}
 	ANSIFunctions in 'types\ANSIFunctions.pas',
 	AccountSettings in 'models\settings\AccountSettings.pas',
 	Accounts in 'forms\Accounts.pas'{AccountsForm},
@@ -79,12 +79,13 @@ uses
 	TCProgress in 'models\TCProgress.pas',
 	TCRequest in 'models\TCRequest.pas',
 	Variants,
-	Vcl.controls,
+	Vcl.Controls,
 	WSList in 'models\WSList.pas',
 	Windows,
 	WindowsHelper in 'helpers\WindowsHelper.pas',
 	MailRuCloudWFX in 'models\wfx\MailRuCloudWFX.pas',
-	WFXInterface in 'models\wfx\WFXInterface.pas';
+	WFXInterface in 'models\wfx\WFXInterface.pas',
+	CipherInterface in 'models\cipher\CipherInterface.pas';
 
 {$IFDEF WIN64}
 {$E wfx64}
@@ -97,24 +98,24 @@ uses
 var
 	MailRuCloudWFX: TMailRuCloudWFX;
 
-function FsGetBackgroundFlags: integer; stdcall;
+function FsGetBackgroundFlags: Integer; stdcall;
 begin
 	Exit(MailRuCloudWFX.FsGetBackgroundFlags);
 end;
 
-function FsInit(PluginNr: integer; pProgressProc: TProgressProc; pLogProc: TLogProc; pRequestProc: TRequestProc): integer; stdcall;
+function FsInit(PluginNr: Integer; pProgressProc: TProgressProc; pLogProc: TLogProc; pRequestProc: TRequestProc): Integer; stdcall;
 begin
 	Result := 0;
 end;
 
 {GLORIOUS UNICODE MASTER RACE}
 
-function FsInitW(PluginNr: integer; pProgressProc: TProgressProcW; pLogProc: TLogProcW; pRequestProc: TRequestProcW): integer; stdcall; //Вход в плагин.
+function FsInitW(PluginNr: Integer; pProgressProc: TProgressProcW; pLogProc: TLogProcW; pRequestProc: TRequestProcW): Integer; stdcall; //Вход в плагин.
 begin
 	Result := MailRuCloudWFX.FsInit(PluginNr, pProgressProc, pLogProc, pRequestProc);
 end;
 
-procedure FsStatusInfoW(RemoteDir: PWideChar; InfoStartEnd, InfoOperation: integer); stdcall; //Начало и конец операций FS
+procedure FsStatusInfoW(RemoteDir: PWideChar; InfoStartEnd, InfoOperation: Integer); stdcall; //Начало и конец операций FS
 begin
 	MailRuCloudWFX.FsStatusInfo(RemoteDir, InfoStartEnd, InfoOperation);
 end;
@@ -129,22 +130,22 @@ begin
 	Exit(MailRuCloudWFX.FsFindNext(Hdl, FindData));
 end;
 
-function FsFindClose(Hdl: THandle): integer; stdcall;
+function FsFindClose(Hdl: THandle): Integer; stdcall;
 begin //Завершение получения списка файлов. Result тоталом не используется (всегда равен 0)
 	Exit(MailRuCloudWFX.FsFindClose(Hdl));
 end;
 
-function FsExecuteFileW(MainWin: THandle; RemoteName, Verb: PWideChar): integer; stdcall; //Запуск файла
+function FsExecuteFileW(MainWin: THandle; RemoteName, Verb: PWideChar): Integer; stdcall; //Запуск файла
 begin
 	Exit(MailRuCloudWFX.FsExecuteFile(MainWin, RemoteName, Verb));
 end;
 
-function FsGetFileW(RemoteName, LocalName: PWideChar; CopyFlags: integer; RemoteInfo: pRemoteInfo): integer; stdcall; //Копирование файла из файловой системы плагина
+function FsGetFileW(RemoteName, LocalName: PWideChar; CopyFlags: Integer; RemoteInfo: pRemoteInfo): Integer; stdcall; //Копирование файла из файловой системы плагина
 begin
 	Exit(MailRuCloudWFX.FsGetFile(RemoteName, LocalName, CopyFlags, RemoteInfo));
 end;
 
-function FsPutFileW(LocalName, RemoteName: PWideChar; CopyFlags: integer): integer; stdcall;
+function FsPutFileW(LocalName, RemoteName: PWideChar; CopyFlags: Integer): Integer; stdcall;
 begin
 	Exit(MailRuCloudWFX.FsPutFile(RemoteName, LocalName, CopyFlags));
 end;
@@ -164,7 +165,7 @@ begin
 	Exit(MailRuCloudWFX.FsRemoveDir(RemoteName));
 end;
 
-function FsRenMovFileW(OldName: PWideChar; NewName: PWideChar; Move: Boolean; OverWrite: Boolean; ri: pRemoteInfo): integer; stdcall;
+function FsRenMovFileW(OldName: PWideChar; NewName: PWideChar; Move: Boolean; OverWrite: Boolean; ri: pRemoteInfo): Integer; stdcall;
 begin
 	Exit(MailRuCloudWFX.FsRenMovFile(OldName, NewName, Move, OverWrite, ri));
 end;
@@ -175,22 +176,22 @@ begin
 end;
 
 {The password manager can be created only after this method is being called — it needs passed parameters}
-procedure FsSetCryptCallbackW(PCryptProc: TCryptProcW; CryptoNr: integer; Flags: integer); stdcall;
+procedure FsSetCryptCallbackW(PCryptProc: TCryptProcW; CryptoNr: Integer; Flags: Integer); stdcall;
 begin
 	MailRuCloudWFX.FsSetCryptCallback(PCryptProc, CryptoNr, Flags);
 end;
 
-function FsContentGetSupportedField(FieldIndex: integer; FieldName: PAnsiChar; Units: PAnsiChar; maxlen: integer): integer; stdcall;
+function FsContentGetSupportedField(FieldIndex: Integer; FieldName: PAnsiChar; Units: PAnsiChar; maxlen: Integer): Integer; stdcall;
 begin
 	Exit(MailRuCloudWFX.FsContentGetSupportedField(FieldIndex, FieldName, Units, maxlen));
 end;
 
-function FsContentGetValueW(FileName: PWideChar; FieldIndex: integer; UnitIndex: integer; FieldValue: Pointer; maxlen: integer; Flags: integer): integer; stdcall;
+function FsContentGetValueW(FileName: PWideChar; FieldIndex: Integer; UnitIndex: Integer; FieldValue: Pointer; maxlen: Integer; Flags: Integer): Integer; stdcall;
 begin
 	Exit(MailRuCloudWFX.FsContentGetValue(FileName, FieldIndex, UnitIndex, FieldValue, maxlen, Flags));
 end;
 
-function FsExtractCustomIconW(RemoteName: PWideChar; ExtractFlags: integer; var TheIcon: hicon): integer; stdcall;
+function FsExtractCustomIconW(RemoteName: PWideChar; ExtractFlags: Integer; var TheIcon: hicon): Integer; stdcall;
 begin
 	Exit(MailRuCloudWFX.FsExtractCustomIcon(RemoteName, ExtractFlags, TheIcon));
 end;
@@ -205,7 +206,7 @@ begin
 	MailRuCloudWFX.Destroy;
 end;
 
-procedure DllInit(Code: integer);
+procedure DllInit(Code: Integer);
 begin
 	case Code of
 		DLL_PROCESS_ATTACH:

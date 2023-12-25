@@ -631,7 +631,7 @@ begin
 	if mrOk = TAskPasswordForm.AskPassword(Format(ASK_ENCRYPTION_PASSWORD, [Verb]), PREFIX_ASK_NEW_PASSWORD, CurrentPassword, StorePassword, True, PasswordManager.ParentWindow) then
 	begin
 		PasswordManager.SetPassword(crypt_id, CurrentPassword);
-		result := TFileCipher.CryptedGUID(CurrentPassword);
+		result := TFileCipher.GetCryptedGUID(CurrentPassword);
 	end
 
 end;

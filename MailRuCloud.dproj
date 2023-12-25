@@ -266,6 +266,7 @@
         <DCCReference Include="helpers\WindowsHelper.pas"/>
         <DCCReference Include="models\wfx\MailRuCloudWFX.pas"/>
         <DCCReference Include="models\wfx\WFXInterface.pas"/>
+        <DCCReference Include="models\cipher\CipherInterface.pas"/>
         <RcItem Include="icons\icon.ico">
             <ResourceType>ICON</ResourceType>
             <ResourceId>base_icon</ResourceId>
@@ -341,6 +342,12 @@
                 </DeployFile>
                 <DeployFile LocalName="MailRuCloud.dll" Configuration="Canary" Class="ProjectOutput">
                     <Platform Name="Win32">
+                        <RemoteName>MailRuCloud.dll</RemoteName>
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
+                <DeployFile LocalName="MailRuCloud.dll" Configuration="Canary" Class="ProjectOutput">
+                    <Platform Name="Win64">
                         <RemoteName>MailRuCloud.dll</RemoteName>
                         <Overwrite>true</Overwrite>
                     </Platform>
