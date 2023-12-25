@@ -5,23 +5,26 @@ interface
 {$IFDEF DEBUG}
 
 uses
-	SysUtils;
+	SysUtils,
+	StrUtils;
 
-Procedure FileLog(S: WideString);
+Procedure FileLog(S: WideString; FileMask: WideString = 'debug_%t.log');
 {$ENDIF}
 
 implementation
 
 {$IFDEF DEBUG}
 
-Procedure FileLog(S: WideString);
+Procedure FileLog(S: WideString; FileMask: WideString = 'debug_%t.log');
 var
-	f: textfile;
+	DebugFileHandler: TextFile;
+	FileName: WideString;
 begin
-	Assign(f, IncludeTrailingBackslash(ExtractFilePath(GetModuleName(hInstance))) + 'debug.log');
-	Rewrite(f);
-	Write(f, S);
-	close(f);
+	FileName := ReplaceText(FileMask, '%t', FormatDateTime('dd.mm.yyyy_hh.nn.ss', Now));
+	Assign(DebugFileHandler, IncludeTrailingBackslash(ExtractFilePath(GetModuleName(hInstance))) + FileName);
+	Rewrite(DebugFileHandler);
+	Write(DebugFileHandler, S);
+	close(DebugFileHandler);
 end;
 {$ENDIF}
 
