@@ -6,8 +6,8 @@ uses
 {$IFDEF DEBUG}
 	FastMM4 in 'FastMM\FastMM4.pas',
 	FastMM4Messages in 'FastMM\FastMM4Messages.pas',
-	DebugHelper in 'helpers\DebugHelper.pas',
 {$ENDIF}
+	DebugHelper in 'helpers\DebugHelper.pas',
 	ANSIFunctions in 'types\ANSIFunctions.pas',
 	AccountSettings in 'models\settings\AccountSettings.pas',
 	Accounts in 'forms\Accounts.pas'{AccountsForm},
