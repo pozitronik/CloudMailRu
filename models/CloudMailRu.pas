@@ -3,6 +3,9 @@
 interface
 
 uses
+{$IFDEF DEBUG}
+	DebugHelper,
+{$ENDIF}
 	CMRDirItemList,
 	CMRDirItem,
 	CMRInviteList,

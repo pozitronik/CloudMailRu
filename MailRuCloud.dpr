@@ -6,6 +6,7 @@ uses
 {$IFDEF DEBUG}
 	FastMM4 in 'FastMM\FastMM4.pas',
 	FastMM4Messages in 'FastMM\FastMM4Messages.pas',
+	DebugHelper in 'helpers\DebugHelper.pas',
 {$ENDIF}
 	ANSIFunctions in 'types\ANSIFunctions.pas',
 	AccountSettings in 'models\settings\AccountSettings.pas',
@@ -41,7 +42,6 @@ uses
 	DCPsha1 in 'DCPCrypt\Hashes\DCPsha1.pas',
 	DCPtypes in 'DCPCrypt\DCPtypes.pas',
 	DateUtils,
-	DebugHelper in 'helpers\DebugHelper.pas',
 	DeletedProperty in 'forms\DeletedProperty.pas'{DeletedPropertyForm},
 	Description in 'models\Description.pas',
 	FileCipher in 'models\cipher\FileCipher.pas',
