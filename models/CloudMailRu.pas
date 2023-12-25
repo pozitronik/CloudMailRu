@@ -334,15 +334,15 @@ begin
 
 		FHTTPManager := ConnectionManager;
 
-		self.FProgress := Progress;
-		if not Assigned(self.FProgress) then
-			self.FProgress := TTCProgress.Create();
-		Logger := Logger;
-		if not Assigned(Logger) then
-			Logger := TTCLogger.Create();
-		self.FRequest := Request;
-		if not Assigned(self.FRequest) then
-			self.FRequest := TTCRequest.Create();
+		FProgress := Progress;
+		if not Assigned(FProgress) then
+			FProgress := TTCProgress.Create();
+		FLogger := Logger;
+		if not Assigned(FLogger) then
+			FLogger := TTCLogger.Create();
+		FRequest := Request;
+		if not Assigned(FRequest) then
+			FRequest := TTCRequest.Create();
 
 		FCookieManager := TIdCookieManager.Create();
 
@@ -350,7 +350,7 @@ begin
 		begin
 			FCipher := TFileCipher.Create(FSettings.CryptFilesPassword, FSettings.AccountSettings.CryptedGUIDFiles, FSettings.AccountSettings.EncryptFilenames);
 			if FCipher.IsWrongPassword then
-				Logger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_WRONG_ENCRYPT_PASSWORD);
+				FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_WRONG_ENCRYPT_PASSWORD);
 
 			FDoCryptFiles := not(FCipher.IsWrongPassword);
 			FDoCryptFilenames := FDoCryptFiles and FSettings.AccountSettings.EncryptFilenames and not(FCipher.IsWrongPassword);
@@ -359,7 +359,7 @@ begin
 	except
 		on E: Exception do
 		begin
-			Logger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, '%s%s', [PREFIX_ERR_FILE_UPLOADING, E.Message]);
+			FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, '%s%s', [PREFIX_ERR_FILE_UPLOADING, E.Message]);
 		end;
 	end;
 end;
