@@ -788,7 +788,7 @@ begin
 		FPublicLink := FSettings.AccountSettings.PublicUrl;
 		FSettings.AccountSettings.PublicUrl := IncludeSlash(FSettings.AccountSettings.PublicUrl);
 		Delete(FPublicLink, 1, length(PUBLIC_ACCESS_URL));
-		if (FPublicLink <> EmptyWideStr) and (FPublicLink[length(Result)] = '/') then
+		if (FPublicLink <> EmptyWideStr) and (FPublicLink[length(FPublicLink)] = '/') then
 			Delete(FPublicLink, length(FPublicLink), 1);
 	end;
 	Exit(FPublicLink)
