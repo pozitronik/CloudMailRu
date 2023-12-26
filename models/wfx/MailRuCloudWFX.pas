@@ -881,6 +881,7 @@ end;
 function TMailRuCloudWFX.FsExecuteFile(MainWin: THandle; RemoteName, Verb: PWideChar): Integer;
 var
 	RealPath: TRealPath;
+	TargetStreamingSettings: TStreamingSettings;
 begin
 	RealPath.FromPath(RemoteName);
 
@@ -902,9 +903,10 @@ begin
 	if Verb = VERB_OPEN then
 	begin
 		if (not(RealPath.isDir = ID_True)) then
-			exit(ExecuteFileStream(RealPath, SettingsManager.GetStreamingSettings(RealPath.Path)))
-		else
-			exit(FS_EXEC_YOURSELF);
+			TargetStreamingSettings := SettingsManager.GetStreamingSettings(RealPath.Path);
+		if (TargetStreamingSettings.Format <> STREAMING_FORMAT_UNSET) and (TargetStreamingSettings.Format <> STREAMING_FORMAT_NONE) then
+			exit(ExecuteFileStream(RealPath, TargetStreamingSettings));
+		exit(FS_EXEC_YOURSELF);
 	end;
 
 	if copy(Verb, 1, 5) = VERB_QUOTE then
