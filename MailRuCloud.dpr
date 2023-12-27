@@ -147,7 +147,7 @@ end;
 
 function FsPutFileW(LocalName, RemoteName: PWideChar; CopyFlags: Integer): Integer; stdcall;
 begin
-	Exit(MailRuCloudWFX.FsPutFile(RemoteName, LocalName, CopyFlags));
+	Exit(MailRuCloudWFX.FsPutFile(LocalName, RemoteName, CopyFlags));
 end;
 
 function FsDeleteFileW(RemoteName: PWideChar): Bool; stdcall; //Удаление файла из файловой системы плагина
