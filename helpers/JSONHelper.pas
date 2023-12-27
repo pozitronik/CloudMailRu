@@ -55,7 +55,7 @@ begin
 	except
 		Exit;
 	end;
-	result := true;
+	result := JSONVal <> nil;
 end;
 
 function getPublicLink(JSON: WideString; var PublicLink: WideString): Boolean;
@@ -95,9 +95,9 @@ var
 	JSONVal: TJSONObject;
 begin
 	result := '';
+	if (not init(JSON, JSONVal)) then
+		Exit;
 	try
-		if (not init(JSON, JSONVal)) then
-			Exit;
 		result := JSONVal.Values[NAME_BODY].Value;
 	except
 		Exit;
