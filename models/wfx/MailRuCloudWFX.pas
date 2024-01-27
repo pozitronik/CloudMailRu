@@ -1057,7 +1057,7 @@ begin
 end;
 
 function TMailRuCloudWFX.FsFindFirst(Path: WideString; var FindData: tWIN32FINDDATAW): THandle;
-var //Получение первого файла в папке. Result тоталом не используется (можно использовать для работы плагина).
+var //Получение первого файла в папке. Result не используется (можно использовать для работы плагина).
 	RealPath: TRealPath;
 	getResult: Integer;
 	SkipListDelete, SkipListRenMov, CanAbortRenMov, RenMovAborted: Boolean;
@@ -1066,7 +1066,6 @@ var //Получение первого файла в папке. Result тот�
 begin
 	ThreadSkipListDelete.TryGetValue(GetCurrentThreadID(), SkipListDelete);
 	ThreadSkipListRenMov.TryGetValue(GetCurrentThreadID(), SkipListRenMov);
-
 	ThreadCanAbortRenMov.TryGetValue(GetCurrentThreadID(), CanAbortRenMov);
 
 	if (CanAbortRenMov and TCProgress.Progress(Path)) then
@@ -1079,87 +1078,88 @@ begin
 
 	if SkipListDelete or SkipListRenMov or RenMovAborted then
 	begin
+		CurrentListing := [];
 		SetLastError(ERROR_NO_MORE_FILES);
-		exit(INVALID_HANDLE_VALUE);
-	end;
-
-	//Result := FIND_NO_MORE_FILES;
-	GlobalPath := Path;
-	if GlobalPath = '\' then
-	begin //список соединений
-		Accounts := AccountSettings.GetAccountsList([ATPrivate, ATPublic], SettingsManager.Settings.EnabledVirtualTypes);
-		if (Accounts.Count > 0) then
-		begin
-			FindData := GetFindDataEmptyDir(Accounts[0]);
-			FileCounter := 1;
-			Result := FIND_ROOT_DIRECTORY;
-		end else begin
-			Result := INVALID_HANDLE_VALUE; //Нельзя использовать exit
-			SetLastError(ERROR_NO_MORE_FILES);
-		end;
+		Result := FIND_NO_MORE_FILES;
 	end else begin
-		RealPath.FromPath(GlobalPath);
-		CurrentCloud := ConnectionManager.Get(RealPath.account, getResult);
-
-		if getResult <> CLOUD_OPERATION_OK then
-		begin
-			SetLastError(ERROR_ACCESS_DENIED);
-			exit(INVALID_HANDLE_VALUE);
-		end;
-
-		if not Assigned(CurrentCloud) then
-		begin
-			SetLastError(ERROR_PATH_NOT_FOUND);
-			exit(INVALID_HANDLE_VALUE);
-		end;
-
-		if RealPath.trashDir then
-		begin
-			if not CurrentCloud.getTrashbinListing(CurrentListing) then
-				SetLastError(ERROR_PATH_NOT_FOUND);
-		end else if RealPath.sharedDir then
-		begin
-			if not CurrentCloud.getSharedLinksListing(CurrentListing) then
-				SetLastError(ERROR_PATH_NOT_FOUND); //that will be interpreted as symlinks later
-		end else if RealPath.invitesDir then
-		begin
-			if not CurrentCloud.getIncomingLinksListing(CurrentListing, CurrentIncomingInvitesListing) then
-				SetLastError(ERROR_PATH_NOT_FOUND); //одновременно получаем оба листинга, чтобы не перечитывать листинг инватов на каждый чих
-		end else begin //Нужно проверить, является ли открываемый объект каталогом - для файлов API вернёт листинг вышестоящего каталога, см. issue #174
-			if not CurrentCloud.getDirListing(RealPath.Path, CurrentListing) then
-				SetLastError(ERROR_PATH_NOT_FOUND);
-		end;
-
-		if RealPath.isVirtual and not RealPath.isInAccountsList then //игнорим попытки получить листинги объектов вирутальных каталогов
-		begin
-			SetLastError(ERROR_ACCESS_DENIED);
-			exit(INVALID_HANDLE_VALUE);
-		end;
-
-		if CurrentCloud.IsPublicAccount then
-			CurrentItem := CurrentListing.FindByName(ExtractUniversalFileName(RealPath.Path))
-		else
-			CurrentItem := CurrentListing.FindByHomePath(RealPath.Path);
-
-		if not(CurrentItem.isNone or CurrentItem.isDir) then
-		begin
-			SetLastError(ERROR_PATH_NOT_FOUND);
-			exit(INVALID_HANDLE_VALUE);
-		end;
-
-		if (Length(CurrentListing) = 0) then
-		begin
-			FindData := GetFindDataEmptyDir(); //воркароунд бага с невозможностью входа в пустой каталог, см. http://www.ghisler.ch/board/viewtopic.php?t=42399
-			Result := FIND_NO_MORE_FILES;
-			SetLastError(ERROR_NO_MORE_FILES);
+		//Result := FIND_NO_MORE_FILES;
+		GlobalPath := Path;
+		if GlobalPath = '\' then
+		begin //список соединений
+			Accounts := AccountSettings.GetAccountsList([ATPrivate, ATPublic], SettingsManager.Settings.EnabledVirtualTypes);
+			if (Accounts.Count > 0) then
+			begin
+				FindData := GetFindDataEmptyDir(Accounts[0]);
+				FileCounter := 1;
+				Result := FIND_ROOT_DIRECTORY;
+			end else begin
+				Result := INVALID_HANDLE_VALUE; //Нельзя использовать exit
+				SetLastError(ERROR_NO_MORE_FILES);
+			end;
 		end else begin
+			RealPath.FromPath(GlobalPath);
+			CurrentCloud := ConnectionManager.Get(RealPath.account, getResult);
 
-			FindData := CurrentListing[0].ToFindData(RealPath.sharedDir); //folders inside shared links directory must be displayed as symlinks
-			FileCounter := 1;
-			if RealPath.sharedDir then
-				Result := FIND_SHARED_LINKS
+			if getResult <> CLOUD_OPERATION_OK then
+			begin
+				SetLastError(ERROR_ACCESS_DENIED);
+				exit(INVALID_HANDLE_VALUE);
+			end;
+
+			if not Assigned(CurrentCloud) then
+			begin
+				SetLastError(ERROR_PATH_NOT_FOUND);
+				exit(INVALID_HANDLE_VALUE);
+			end;
+
+			if RealPath.trashDir then
+			begin
+				if not CurrentCloud.getTrashbinListing(CurrentListing) then
+					SetLastError(ERROR_PATH_NOT_FOUND);
+			end else if RealPath.sharedDir then
+			begin
+				if not CurrentCloud.getSharedLinksListing(CurrentListing) then
+					SetLastError(ERROR_PATH_NOT_FOUND); //that will be interpreted as symlinks later
+			end else if RealPath.invitesDir then
+			begin
+				if not CurrentCloud.getIncomingLinksListing(CurrentListing, CurrentIncomingInvitesListing) then
+					SetLastError(ERROR_PATH_NOT_FOUND); //одновременно получаем оба листинга, чтобы не перечитывать листинг инватов на каждый чих
+			end else begin //Нужно проверить, является ли открываемый объект каталогом - для файлов API вернёт листинг вышестоящего каталога, см. issue #174
+				if not CurrentCloud.getDirListing(RealPath.Path, CurrentListing) then
+					SetLastError(ERROR_PATH_NOT_FOUND);
+			end;
+
+			if RealPath.isVirtual and not RealPath.isInAccountsList then //игнорим попытки получить листинги объектов вирутальных каталогов
+			begin
+				SetLastError(ERROR_ACCESS_DENIED);
+				exit(INVALID_HANDLE_VALUE);
+			end;
+
+			if CurrentCloud.IsPublicAccount then
+				CurrentItem := CurrentListing.FindByName(ExtractUniversalFileName(RealPath.Path))
 			else
-				Result := FIND_OK;
+				CurrentItem := CurrentListing.FindByHomePath(RealPath.Path);
+
+			if not(CurrentItem.isNone or CurrentItem.isDir) then
+			begin
+				SetLastError(ERROR_PATH_NOT_FOUND);
+				exit(INVALID_HANDLE_VALUE);
+			end;
+
+			if (Length(CurrentListing) = 0) then
+			begin
+				FindData := GetFindDataEmptyDir(); //воркароунд бага с невозможностью входа в пустой каталог, см. http://www.ghisler.ch/board/viewtopic.php?t=42399
+				Result := FIND_NO_MORE_FILES;
+				SetLastError(ERROR_NO_MORE_FILES);
+			end else begin
+
+				FindData := CurrentListing[0].ToFindData(RealPath.sharedDir); //folders inside shared links directory must be displayed as symlinks
+				FileCounter := 1;
+				if RealPath.sharedDir then
+					Result := FIND_SHARED_LINKS
+				else
+					Result := FIND_OK;
+			end;
 		end;
 	end;
 end;
