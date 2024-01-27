@@ -1079,8 +1079,9 @@ begin
 
 	if SkipListDelete or SkipListRenMov or RenMovAborted then
 	begin
-		SetLastError(ERROR_NO_MORE_FILES);
-		exit(INVALID_HANDLE_VALUE);
+		Result := INVALID_HANDLE_VALUE;
+		SetLastError(ERROR_NO_MORE_FILES); //in some unpredictable situations causes unintentional exit (#308)
+		exit;
 	end;
 
 	//Result := FIND_NO_MORE_FILES;
@@ -1094,8 +1095,9 @@ begin
 			FileCounter := 1;
 			Result := FIND_ROOT_DIRECTORY;
 		end else begin
-			Result := INVALID_HANDLE_VALUE; //Нельзя использовать exit
-			SetLastError(ERROR_NO_MORE_FILES);
+			Result := INVALID_HANDLE_VALUE;
+			SetLastError(ERROR_NO_MORE_FILES); //in some unpredictable situations causes unintentional exit (#308)
+			exit;
 		end;
 	end else begin
 		RealPath.FromPath(GlobalPath);
@@ -1103,14 +1105,16 @@ begin
 
 		if getResult <> CLOUD_OPERATION_OK then
 		begin
+			Result := INVALID_HANDLE_VALUE;
 			SetLastError(ERROR_ACCESS_DENIED);
-			exit(INVALID_HANDLE_VALUE);
+			exit;
 		end;
 
 		if not Assigned(CurrentCloud) then
 		begin
+			Result := INVALID_HANDLE_VALUE;
 			SetLastError(ERROR_PATH_NOT_FOUND);
-			exit(INVALID_HANDLE_VALUE);
+			exit;
 		end;
 
 		if RealPath.trashDir then
@@ -1132,8 +1136,9 @@ begin
 
 		if RealPath.isVirtual and not RealPath.isInAccountsList then //игнорим попытки получить листинги объектов вирутальных каталогов
 		begin
+			Result := INVALID_HANDLE_VALUE;
 			SetLastError(ERROR_ACCESS_DENIED);
-			exit(INVALID_HANDLE_VALUE);
+			exit;
 		end;
 
 		if CurrentCloud.IsPublicAccount then
@@ -1143,8 +1148,9 @@ begin
 
 		if not(CurrentItem.isNone or CurrentItem.isDir) then
 		begin
-			SetLastError(ERROR_PATH_NOT_FOUND);
-			exit(INVALID_HANDLE_VALUE);
+			Result := INVALID_HANDLE_VALUE;
+			SetLastError(ERROR_ACCESS_DENIED);
+			exit;
 		end;
 
 		if (Length(CurrentListing) = 0) then
