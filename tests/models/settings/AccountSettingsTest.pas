@@ -1,0 +1,168 @@
+unit AccountSettingsTest;
+
+interface
+
+uses
+	AccountSettings,
+	SETTINGS_CONSTANTS,
+	DUnitX.TestFramework;
+
+type
+
+	[TestFixture]
+	TAccountSettingsTest = class
+	public
+		{ GetAccountType tests }
+		[Test]
+		procedure TestGetAccountTypePrivate;
+		[Test]
+		procedure TestGetAccountTypePublic;
+
+		{ GetDomain tests }
+		[Test]
+		procedure TestGetDomainFromEmail;
+		[Test]
+		procedure TestGetDomainCached;
+
+		{ GetUser tests }
+		[Test]
+		procedure TestGetUserFromEmail;
+
+		{ GetIsRemoteDescriptionsSupported tests }
+		[Test]
+		procedure TestIsRemoteDescriptionsSupportedNoEncryption;
+		[Test]
+		procedure TestIsRemoteDescriptionsSupportedEncryptFilesOnly;
+		[Test]
+		procedure TestIsRemoteDescriptionsSupportedEncryptFilenames;
+		[Test]
+		procedure TestIsRemoteDescriptionsSupportedAskOnceNoFilenames;
+	end;
+
+implementation
+
+{ GetAccountType tests }
+
+procedure TAccountSettingsTest.TestGetAccountTypePrivate;
+var
+	Settings: TAccountSettings;
+begin
+	Settings := Default(TAccountSettings);
+	Settings.PublicAccount := False;
+
+	Assert.IsTrue(ATPrivate in Settings.AccountType);
+	Assert.IsFalse(ATPublic in Settings.AccountType);
+end;
+
+procedure TAccountSettingsTest.TestGetAccountTypePublic;
+var
+	Settings: TAccountSettings;
+begin
+	Settings := Default(TAccountSettings);
+	Settings.PublicAccount := True;
+
+	Assert.IsTrue(ATPublic in Settings.AccountType);
+	Assert.IsFalse(ATPrivate in Settings.AccountType);
+end;
+
+{ GetDomain tests }
+
+procedure TAccountSettingsTest.TestGetDomainFromEmail;
+var
+	Settings: TAccountSettings;
+begin
+	Settings := Default(TAccountSettings);
+	Settings.Email := 'user@mail.ru';
+
+	Assert.AreEqual('mail.ru', Settings.Domain);
+end;
+
+procedure TAccountSettingsTest.TestGetDomainCached;
+var
+	Settings: TAccountSettings;
+	Domain1, Domain2: WideString;
+begin
+	{ Domain should be cached after first access }
+	Settings := Default(TAccountSettings);
+	Settings.Email := 'test@example.com';
+
+	Domain1 := Settings.Domain;
+	{ Change email - but cached value should still be used }
+	Settings.Email := 'different@other.com';
+	Domain2 := Settings.Domain;
+
+	{ Both should return the same (cached) value }
+	Assert.AreEqual(Domain1, Domain2);
+end;
+
+{ GetUser tests }
+
+procedure TAccountSettingsTest.TestGetUserFromEmail;
+var
+	Settings: TAccountSettings;
+begin
+	{ NOTE: There is a BUG in AccountSettings.pas:71 - GetUser returns FDomain instead of FUser }
+	{ This test documents the EXPECTED behavior, which currently fails due to the bug }
+	Settings := Default(TAccountSettings);
+	Settings.Email := 'testuser@mail.ru';
+
+	{ Expected: 'testuser', but bug returns 'mail.ru' }
+	{ When the bug is fixed, this test will pass }
+	Assert.AreEqual('testuser', Settings.User);
+end;
+
+{ GetIsRemoteDescriptionsSupported tests }
+
+procedure TAccountSettingsTest.TestIsRemoteDescriptionsSupportedNoEncryption;
+var
+	Settings: TAccountSettings;
+begin
+	{ No encryption = descriptions supported }
+	Settings := Default(TAccountSettings);
+	Settings.EncryptFilesMode := EncryptModeNone;
+	Settings.EncryptFileNames := False;
+
+	Assert.IsTrue(Settings.IsRemoteDescriptionsSupported);
+end;
+
+procedure TAccountSettingsTest.TestIsRemoteDescriptionsSupportedEncryptFilesOnly;
+var
+	Settings: TAccountSettings;
+begin
+	{ Encrypt files but NOT filenames = descriptions supported }
+	Settings := Default(TAccountSettings);
+	Settings.EncryptFilesMode := EncryptModeAlways;
+	Settings.EncryptFileNames := False;
+
+	Assert.IsTrue(Settings.IsRemoteDescriptionsSupported);
+end;
+
+procedure TAccountSettingsTest.TestIsRemoteDescriptionsSupportedEncryptFilenames;
+var
+	Settings: TAccountSettings;
+begin
+	{ Encrypt files AND filenames = descriptions NOT supported }
+	Settings := Default(TAccountSettings);
+	Settings.EncryptFilesMode := EncryptModeAlways;
+	Settings.EncryptFileNames := True;
+
+	Assert.IsFalse(Settings.IsRemoteDescriptionsSupported);
+end;
+
+procedure TAccountSettingsTest.TestIsRemoteDescriptionsSupportedAskOnceNoFilenames;
+var
+	Settings: TAccountSettings;
+begin
+	{ EncryptModeAskOnce without filename encryption = supported }
+	Settings := Default(TAccountSettings);
+	Settings.EncryptFilesMode := EncryptModeAskOnce;
+	Settings.EncryptFileNames := False;
+
+	Assert.IsTrue(Settings.IsRemoteDescriptionsSupported);
+end;
+
+initialization
+
+TDUnitX.RegisterTestFixture(TAccountSettingsTest);
+
+end.
