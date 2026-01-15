@@ -137,51 +137,44 @@ procedure TCMROperationResultTest.TestFromJSONStatus451Fahrenheit;
 var
 	Result: TCMROperationResult;
 begin
-	{ HTTP 451 = content blocked (copyright)
-	  BUG: OperationResult is set to CLOUD_ERROR_FAHRENHEIT but then overwritten
-	  by error string parsing. The test documents actual (buggy) behavior. }
+	{ HTTP 451 = content blocked (copyright) }
 	Result.FromJSON(JSON_STATUS_451);
 
 	Assert.AreEqual(451, Result.OperationStatus);
-	{ Should be CLOUD_ERROR_FAHRENHEIT but gets overwritten to CLOUD_ERROR_UNKNOWN }
-	Assert.AreEqual(CLOUD_ERROR_UNKNOWN, Result.OperationResult);
+	Assert.AreEqual(CLOUD_ERROR_FAHRENHEIT, Result.OperationResult);
 end;
 
 procedure TCMROperationResultTest.TestFromJSONStatus507Overquota;
 var
 	Result: TCMROperationResult;
 begin
-	{ HTTP 507 = storage quota exceeded
-	  BUG: Same issue as 451 - OperationResult gets overwritten }
+	{ HTTP 507 = storage quota exceeded }
 	Result.FromJSON(JSON_STATUS_507);
 
 	Assert.AreEqual(507, Result.OperationStatus);
-	{ Should be CLOUD_ERROR_OVERQUOTA but gets overwritten }
-	Assert.AreEqual(CLOUD_ERROR_UNKNOWN, Result.OperationResult);
+	Assert.AreEqual(CLOUD_ERROR_OVERQUOTA, Result.OperationResult);
 end;
 
 procedure TCMROperationResultTest.TestFromJSONInvalidJSON;
 var
 	Result: TCMROperationResult;
 begin
-	{ BUG: FromJSON exits without setting OperationResult when parsing fails,
-	  leaving record fields uninitialized. Test documents actual behavior. }
-	FillChar(Result, SizeOf(Result), 0);
+	{ Invalid JSON should result in CLOUD_ERROR_UNKNOWN }
 	Result.FromJSON('not valid json');
 
-	{ With zero-initialized record, OperationResult remains 0 (CLOUD_OPERATION_OK) }
-	Assert.AreEqual(CLOUD_OPERATION_OK, Result.OperationResult);
+	Assert.AreEqual(0, Result.OperationStatus);
+	Assert.AreEqual(CLOUD_ERROR_UNKNOWN, Result.OperationResult);
 end;
 
 procedure TCMROperationResultTest.TestFromJSONEmptyString;
 var
 	Result: TCMROperationResult;
 begin
-	{ BUG: Same as TestFromJSONInvalidJSON - no error handling for empty string }
-	FillChar(Result, SizeOf(Result), 0);
+	{ Empty string should result in CLOUD_ERROR_UNKNOWN }
 	Result.FromJSON('');
 
-	Assert.AreEqual(CLOUD_OPERATION_OK, Result.OperationResult);
+	Assert.AreEqual(0, Result.OperationStatus);
+	Assert.AreEqual(CLOUD_ERROR_UNKNOWN, Result.OperationResult);
 end;
 
 procedure TCMROperationResultTest.TestToBooleanTrue;
