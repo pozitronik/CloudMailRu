@@ -1453,7 +1453,6 @@ end;
 function TCloudMailRu.PutFileToCloud(FileName: WideString; FileStream: TStream; var FileIdentity: TCMRFileIdentity): Integer;
 var
 	PostAnswer: WideString;
-	return: TStringList;
 	UploadUrl: WideString;
 begin
 	FileIdentity.Hash := EmptyWideStr;
@@ -1476,8 +1475,6 @@ begin
 	end;
 
 	UploadUrl := Format('%s?cloud_domain=2&x-email=%s@%s', [FUploadShard, FUser, FDomain])(*+ '&fileapi' + DateTimeToUnix(now).ToString + '0246'*);
-	return := TStringList.Create;
-	//HTTP.OptionsMethod(UploadUrl, PostAnswer, ProgressEnabled); //not required at current moment, see issue #232
 	Result := HTTP.PutFile(UploadUrl, FileName, FileStream, PostAnswer);
 	if (CLOUD_ERROR_TOKEN_OUTDATED = Result) and RefreshCSRFToken() then
 		Result := PutFileToCloud(FileName, FileStream, FileIdentity);
@@ -1491,7 +1488,6 @@ begin
 			FileIdentity.size := FileStream.size;
 		end;
 	end;
-	return.Destroy;
 end;
 
 function TCloudMailRu.RemoveDir(Path: WideString): Boolean;
