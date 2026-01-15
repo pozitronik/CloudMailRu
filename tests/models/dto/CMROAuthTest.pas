@@ -92,15 +92,12 @@ procedure TCMROAuthTest.TestFromJSONInvalidJSON;
 var
 	OAuth: TCMROAuth;
 begin
-	{ BUG: When init() fails (invalid JSON), method exits without initializing fields.
-	  The exception handler sets CLOUD_ERROR_UNKNOWN only if exception is raised,
-	  but init() just returns false without raising an exception.
-	  Test documents actual (buggy) behavior. }
-	FillChar(OAuth, SizeOf(OAuth), 0);
+	{ Invalid JSON should return false with initialized fields }
 	Assert.IsFalse(OAuth.fromJSON('not valid json'));
 
-	{ With zero-initialized record, error_code remains 0 }
+	{ Fields are initialized to safe defaults }
 	Assert.AreEqual(0, OAuth.error_code);
+	Assert.AreEqual(0, OAuth.expires_in);
 end;
 
 procedure TCMROAuthTest.TestFromJSONEmptyString;
@@ -114,17 +111,13 @@ procedure TCMROAuthTest.TestFromJSONPartialData;
 var
 	OAuth: TCMROAuth;
 begin
-	{ BUG: Missing fields remain uninitialized (garbage values) because
-	  the record is not initialized before parsing. Test must zero-initialize
-	  to get predictable behavior. }
-	FillChar(OAuth, SizeOf(OAuth), 0);
-
 	{ Partial data should still parse successfully }
 	Assert.IsTrue(OAuth.fromJSON(JSON_OAUTH_PARTIAL));
 
 	Assert.AreEqual('partial_token', OAuth.access_token);
-	{ With zero-initialized record, missing fields are 0 }
+	{ Missing fields are initialized to safe defaults }
 	Assert.AreEqual(0, OAuth.expires_in);
+	Assert.AreEqual(0, OAuth.error_code);
 end;
 
 initialization
