@@ -70,6 +70,8 @@ uses
 	WSListTest in 'models\WSListTest.pas',
 	JSONHelperTest in 'helpers\JSONHelperTest.pas',
 	IniFilesHelperTest in 'helpers\IniFilesHelperTest.pas',
+	PluginHelperTest in 'helpers\PluginHelperTest.pas',
+	WindowsHelperTest in 'helpers\WindowsHelperTest.pas',
 	CMRDirItemListTest in 'models\dto\CMRDirItemListTest.pas',
 	CMROAuthTest in 'models\dto\CMROAuthTest.pas',
 	CMRIncomingInviteTest in 'models\dto\CMRIncomingInviteTest.pas',
