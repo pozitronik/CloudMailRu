@@ -68,7 +68,7 @@ function TAccountSettings.GetUser: WideString;
 begin
 	if FUser = EmptyWideStr then
 		ExtractEmailParts(Email, FUser, FDomain);
-	result := FDomain;
+	result := FUser;
 end;
 
 end.
