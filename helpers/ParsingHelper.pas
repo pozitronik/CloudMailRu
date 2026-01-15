@@ -5,7 +5,8 @@ interface
 uses
 	CMRConstants,
 	System.SysUtils,
-	System.StrUtils;
+	System.StrUtils,
+	System.Math;
 
 function extractNearValue(Text, Anchor: WideString; StartChar: WideChar = '"'; EndChar: WideChar = '"'): WideString;
 function extractTokenFromText(Text: WideString; var token: WideString): Boolean;
@@ -58,22 +59,34 @@ begin
 end;
 
 function extract_upload_url_FromText(Text: WideString; var UploadUrl: WideString): Boolean;
+const
+	URL_SEARCH_WINDOW = 50;
+	PATTERN = 'mail.ru/upload/"';
+	HTTPS_PREFIX = 'https://';
 var
-	start, start1, start2, finish, length: Cardinal;
-	temp: WideString;
+	PatternPos, WindowStart, WindowEnd, HttpsPos: Integer;
+	SearchWindow: WideString;
 begin
 	result := false;
-	start := Pos(WideString('mail.ru/upload/"'), Text);
-	if start > 0 then
-	begin
-		start1 := start - 50;
-		finish := start + 15;
-		length := finish - start1;
-		temp := copy(Text, start1, length);
-		start2 := Pos(WideString('https://'), temp);
-		UploadUrl := copy(temp, start2, Strlen(PWideChar(temp)) - start2);
-		result := true;
-	end;
+	UploadUrl := EmptyWideStr;
+
+	PatternPos := Pos(WideString(PATTERN), Text);
+	if PatternPos <= 0 then
+		Exit;
+
+	{ Extract a window of text that should contain the full URL }
+	WindowStart := Max(1, PatternPos - URL_SEARCH_WINDOW);
+	WindowEnd := PatternPos + Length(PATTERN) - 1;
+	SearchWindow := Copy(Text, WindowStart, WindowEnd - WindowStart + 1);
+
+	{ Find https:// within the window }
+	HttpsPos := Pos(WideString(HTTPS_PREFIX), SearchWindow);
+	if HttpsPos <= 0 then
+		Exit;
+
+	{ Extract URL from https:// to the end of the window }
+	UploadUrl := Copy(SearchWindow, HttpsPos, Length(SearchWindow) - HttpsPos + 1);
+	result := true;
 end;
 
 function extractPublicShard(Text: WideString; var Shard: WideString): Boolean;

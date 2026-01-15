@@ -30,7 +30,11 @@ type
 		[Test]
 		procedure TestExtract_upload_url_FromText;
 		[Test]
+		procedure TestExtract_upload_url_EarlyPosition;
+		[Test]
 		procedure TestExtract_upload_url_NotFound;
+		[Test]
+		procedure TestExtract_upload_url_NoHttpsPrefix;
 		[Test]
 		procedure TestExtractPublicShard;
 		[Test]
@@ -121,10 +125,20 @@ procedure TParsingHelperTest.TestExtract_upload_url_FromText;
 var
 	Text, UploadUrl: WideString;
 begin
-	{ Text must have 'mail.ru/upload/"' at position > 50 to avoid integer overflow bug in production code.
-	  BUG FOUND: extract_upload_url_FromText does 'start1 := start - 50' with Cardinal types,
-	  causing overflow when match position < 50. }
+	{ Standard case with URL in the middle of text }
 	Text := '0123456789012345678901234567890123456789012345678901234567890https://cloclo1.cloud.mail.ru/upload/" more text';
+	Assert.IsTrue(extract_upload_url_FromText(Text, UploadUrl));
+	Assert.IsNotEmpty(UploadUrl);
+	Assert.StartsWith('https://', UploadUrl);
+end;
+
+procedure TParsingHelperTest.TestExtract_upload_url_EarlyPosition;
+var
+	Text, UploadUrl: WideString;
+begin
+	{ Edge case: URL appears early in text (position < 50).
+	  Previously caused Cardinal underflow in 'start - 50'. }
+	Text := 'https://cloclo1.cloud.mail.ru/upload/" end';
 	Assert.IsTrue(extract_upload_url_FromText(Text, UploadUrl));
 	Assert.IsNotEmpty(UploadUrl);
 	Assert.StartsWith('https://', UploadUrl);
@@ -136,6 +150,17 @@ var
 begin
 	Text := 'no upload url here';
 	Assert.IsFalse(extract_upload_url_FromText(Text, UploadUrl));
+	Assert.IsEmpty(UploadUrl);
+end;
+
+procedure TParsingHelperTest.TestExtract_upload_url_NoHttpsPrefix;
+var
+	Text, UploadUrl: WideString;
+begin
+	{ Pattern found but no https:// prefix - should return false }
+	Text := 'some text mail.ru/upload/" without https prefix';
+	Assert.IsFalse(extract_upload_url_FromText(Text, UploadUrl));
+	Assert.IsEmpty(UploadUrl);
 end;
 
 procedure TParsingHelperTest.TestExtractPublicShard;
