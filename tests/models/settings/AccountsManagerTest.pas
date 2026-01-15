@@ -193,9 +193,9 @@ var
 begin
 	TestAccountsManager := TAccountsManager.Create(self.AppDir + FP_ACCOUNTS_INI); //Uses a new file in the test exe dir
 	Assert.IsEmpty(TestAccountsManager.GetAccountSettings('NEW_ACCOUNT').CryptedGUIDFiles);
-	TestAccountsManager.SetCryptedGUID('NEW_ACCOUNT', TFileCipher.CryptedGUID('cjhjrnsczxj,tpmzyd;jgeceyekb,fyfy'));
+	TestAccountsManager.SetCryptedGUID('NEW_ACCOUNT', TFileCipher.GetCryptedGUID('cjhjrnsczxj,tpmzyd;jgeceyekb,fyfy'));
 
-	Assert.AreEqual(TFileCipher.CryptedGUID('cjhjrnsczxj,tpmzyd;jgeceyekb,fyfy'), TestAccountsManager.GetAccountSettings('NEW_ACCOUNT').CryptedGUIDFiles);
+	Assert.AreEqual(TFileCipher.GetCryptedGUID('cjhjrnsczxj,tpmzyd;jgeceyekb,fyfy'), TestAccountsManager.GetAccountSettings('NEW_ACCOUNT').CryptedGUIDFiles);
 	TestAccountsManager.Free;
 end;
 
