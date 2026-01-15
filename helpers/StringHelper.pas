@@ -27,14 +27,15 @@ begin
 		exit;
 	for iCount := 0 to pred(S.Count) do
 		Result := Result + S.Strings[iCount] + Delimiter;
-	System.Delete(Result, Length(Result), 1);
+	System.Delete(Result, Length(Result) - Length(Delimiter) + 1, Length(Delimiter));
 end;
 
 function Explode(S: WideString; Delimiter: char): TStringList;
 begin
 	Result := TStringList.Create;
-	Result.DelimitedText := S;
+	Result.StrictDelimiter := True;
 	Result.Delimiter := Delimiter;
+	Result.DelimitedText := S;
 end;
 
 function MyExtractStrings(Separators, WhiteSpace: TSysCharSet; Content: PWideChar; Strings: TStrings): integer;
@@ -137,11 +138,15 @@ var
 begin
 	Result := EmptyWideStr;
 	Exploded := Explode(command, ' ');
-	if Exploded.Count = 0 then
-		exit;
-	if Exploded.Count <= WordIndex then
-		exit;
-	Result := Exploded.Strings[WordIndex];
+	try
+		if Exploded.Count = 0 then
+			exit;
+		if Exploded.Count <= WordIndex then
+			exit;
+		Result := Exploded.Strings[WordIndex];
+	finally
+		Exploded.Free;
+	end;
 end;
 
 function UrlEncode(URL: WideString): WideString;

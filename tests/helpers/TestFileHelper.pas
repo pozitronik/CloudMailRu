@@ -28,6 +28,8 @@ type
 		procedure TestSizeOfFileWithExistingFile;
 		[Test]
 		procedure TestSizeOfFileWithNonExistingFile;
+		[Test]
+		procedure TestSetAllFileTimeNonExistentFile;
 	end;
 
 implementation
@@ -105,6 +107,21 @@ var
 begin
 	FileName := DataPath(TEST_FILE_NON_EXISTING);
 	Assert.IsTrue(-1 = SizeOfFile(FileName), 'Size of non-existing file should return -1');
+end;
+
+{ TDD: Test that SetAllFileTime handles non-existent files gracefully without crashing }
+procedure TTestFileHelper.TestSetAllFileTimeNonExistentFile;
+var
+	FileName: string;
+	NewTime: TFileTime;
+	SystemTime: TSystemTime;
+begin
+	FileName := DataPath(TEST_FILE_NON_EXISTING);
+	DateTimeToSystemTime(Now, SystemTime);
+	SystemTimeToFileTime(SystemTime, NewTime);
+	{ Should not crash or raise exception when file doesn't exist }
+	SetAllFileTime(FileName, NewTime);
+	Assert.Pass('SetAllFileTime should handle non-existent files gracefully');
 end;
 
 initialization

@@ -354,7 +354,7 @@ begin
 				FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_WRONG_ENCRYPT_PASSWORD);
 
 			FDoCryptFiles := not(FCipher.IsWrongPassword);
-			FDoCryptFilenames := FDoCryptFiles and FSettings.AccountSettings.EncryptFilenames and not(FCipher.IsWrongPassword);
+			FDoCryptFilenames := FDoCryptFiles and FSettings.AccountSettings.EncryptFilenames;
 		end;
 
 	except

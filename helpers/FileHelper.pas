@@ -39,14 +39,12 @@ begin
 	try
 		Handle := CreateFileW(PWideChar(GetUNCFilePath(FileName)), FILE_WRITE_ATTRIBUTES, FILE_SHARE_READ or FILE_SHARE_WRITE, nil, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
 		if Handle = INVALID_HANDLE_VALUE then
-		begin
-			CloseHandle(Handle);
 			Exit;
-		end;
 
 		SetFileTime(Handle, @FileTime, @FileTime, @FileTime);
 	finally
-		CloseHandle(Handle);
+		if Handle <> INVALID_HANDLE_VALUE then
+			CloseHandle(Handle);
 	end;
 end;
 

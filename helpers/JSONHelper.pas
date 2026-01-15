@@ -63,31 +63,37 @@ var
 	JSONVal: TJSONObject;
 begin
 	result := False;
-	try
-		if (not init(JSON, JSONVal)) then
-			Exit;
-		PublicLink := JSONVal.Values[NAME_BODY].Value;
-	except
+	if (not init(JSON, JSONVal)) then
 		Exit;
+	try
+		try
+			PublicLink := JSONVal.Values[NAME_BODY].Value;
+			result := true;
+		except
+			Exit;
+		end;
+	finally
+		JSONVal.Free;
 	end;
-	result := true;
-	JSONVal.free;
 end;
 
-function getShard(JSON: WideString; var Shard: WideString; ShardType: WideString = NAME_GET): Boolean; //Некрасиво получается, подумать над переделкой, например вызывать методы только статикой
+function getShard(JSON: WideString; var Shard: WideString; ShardType: WideString = NAME_GET): Boolean;
 var
 	JSONVal: TJSONObject;
 begin
 	result := False;
-	try
-		if (not init(JSON, JSONVal)) then
-			Exit;
-		Shard := (((JSONVal.Values[NAME_BODY] as TJSONObject).Values[ShardType] as TJSONArray).Items[0] as TJSONObject).Values[NAME_URL].Value;
-	except
+	if (not init(JSON, JSONVal)) then
 		Exit;
+	try
+		try
+			Shard := (((JSONVal.Values[NAME_BODY] as TJSONObject).Values[ShardType] as TJSONArray).Items[0] as TJSONObject).Values[NAME_URL].Value;
+			result := true;
+		except
+			Exit;
+		end;
+	finally
+		JSONVal.Free;
 	end;
-	result := true;
-	JSONVal.free;
 end;
 
 function getBodyError(JSON: WideString): WideString;
@@ -98,11 +104,14 @@ begin
 	if (not init(JSON, JSONVal)) then
 		Exit;
 	try
-		result := JSONVal.Values[NAME_BODY].Value;
-	except
-		Exit;
+		try
+			result := JSONVal.Values[NAME_BODY].Value;
+		except
+			Exit;
+		end;
+	finally
+		JSONVal.Free;
 	end;
-	JSONVal.free;
 end;
 
 function getBodyToken(JSON: WideString; var Token: WideString): Boolean;
@@ -110,15 +119,18 @@ var
 	JSONVal: TJSONObject;
 begin
 	result := False;
-	try
-		if (not init(JSON, JSONVal)) then
-			Exit;
-		Token := (JSONVal.Values[NAME_BODY] as TJSONObject).Values[NAME_TOKEN].Value;
-	except
+	if (not init(JSON, JSONVal)) then
 		Exit;
+	try
+		try
+			Token := (JSONVal.Values[NAME_BODY] as TJSONObject).Values[NAME_TOKEN].Value;
+			result := true;
+		except
+			Exit;
+		end;
+	finally
+		JSONVal.Free;
 	end;
-	result := true;
-	JSONVal.free;
 end;
 
 function getRegistrationBody(JSON: WideString; var Body: WideString): Boolean;
@@ -126,15 +138,18 @@ var
 	JSONVal: TJSONObject;
 begin
 	result := False;
-	try
-		if (not init(JSON, JSONVal)) then
-			Exit;
-		Body := JSONVal.Values[NAME_BODY].Value;
-	except
+	if (not init(JSON, JSONVal)) then
 		Exit;
+	try
+		try
+			Body := JSONVal.Values[NAME_BODY].Value;
+			result := true;
+		except
+			Exit;
+		end;
+	finally
+		JSONVal.Free;
 	end;
-	result := true;
-	JSONVal.free;
 end;
 
 end.
