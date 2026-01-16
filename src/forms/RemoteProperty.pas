@@ -157,9 +157,12 @@ begin
 	if not self.Cloud.getDescriptionFile(IncludeTrailingBackslash(ExtractFileDir(self.RemoteName)) + self.PluginIonFileName, LocalPath) then
 		exit;
 	CurrentDescriptions := TDescription.Create(LocalPath, GetTCCommentPreferredFormat);
-	CurrentDescriptions.Read;
-	DescriptionEditMemo.lines.Text := CurrentDescriptions.GetValue(ExtractFileName(self.RemoteName), FORMAT_CLEAR);
-	CurrentDescriptions.Destroy;
+	try
+		CurrentDescriptions.Read;
+		DescriptionEditMemo.lines.Text := CurrentDescriptions.GetValue(ExtractFileName(self.RemoteName), FORMAT_CLEAR);
+	finally
+		CurrentDescriptions.Free;
+	end;
 	DeleteFileW(PWideChar(LocalPath));
 end;
 
@@ -182,16 +185,18 @@ begin
 
 	RemoteFileExists := self.Cloud.getDescriptionFile(RemotePath, LocalPath);
 	CurrentDescriptions := TDescription.Create(LocalPath, GetTCCommentPreferredFormat);
-	if RemoteFileExists then //если был прежний файл - его надо перечитать и удалить с сервера
-	begin
-		CurrentDescriptions.Read;
-		self.Cloud.deleteFile(RemotePath); //Приходится удалять, потому что не знаем, как переписать
+	try
+		if RemoteFileExists then //если был прежний файл - его надо перечитать и удалить с сервера
+		begin
+			CurrentDescriptions.Read;
+			self.Cloud.deleteFile(RemotePath); //Приходится удалять, потому что не знаем, как переписать
+		end;
+		CurrentDescriptions.SetValue(ExtractFileName(self.RemoteName), DescriptionEditMemo.lines.Text);
+		CurrentDescriptions.Write();
+		self.Cloud.PutDescriptionFile(RemotePath, CurrentDescriptions.ionFilename);
+	finally
+		CurrentDescriptions.Free;
 	end;
-	CurrentDescriptions.SetValue(ExtractFileName(self.RemoteName), DescriptionEditMemo.lines.Text);
-	CurrentDescriptions.Write();
-	self.Cloud.PutDescriptionFile(RemotePath, CurrentDescriptions.ionFilename);
-
-	CurrentDescriptions.Destroy;
 end;
 
 procedure TPropertyForm.UpdateDownloadListing;

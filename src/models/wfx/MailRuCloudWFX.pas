@@ -265,12 +265,15 @@ begin
 	if not Cloud.getDescriptionFile(RemoteIonPath, LocalTempPath) then
 		exit; //описания нет, не заморачиваемся
 	RemoteDescriptions := TDescription.Create(LocalTempPath, GetTCCommentPreferredFormat);
-	RemoteDescriptions.Read;
-	RemoteDescriptions.DeleteValue(ExtractFileName(RemotePath.Path));
-	RemoteDescriptions.Write();
-	Cloud.deleteFile(RemoteIonPath); //Приходится удалять, потому что не знаем, как переписать
-	Cloud.PutDescriptionFile(RemoteIonPath, RemoteDescriptions.ionFilename);
-	RemoteDescriptions.Destroy;
+	try
+		RemoteDescriptions.Read;
+		RemoteDescriptions.DeleteValue(ExtractFileName(RemotePath.Path));
+		RemoteDescriptions.Write();
+		Cloud.deleteFile(RemoteIonPath); //Приходится удалять, потому что не знаем, как переписать
+		Cloud.PutDescriptionFile(RemoteIonPath, RemoteDescriptions.ionFilename);
+	finally
+		RemoteDescriptions.Free;
+	end;
 end;
 
 destructor TMailRuCloudWFX.Destroy;
@@ -1808,37 +1811,46 @@ begin
 		if not Cloud.getDescriptionFile(OldRemoteIonPath, OldLocalTempPath) then
 			exit; //описания нет, переносить нечего
 		OldDescriptions := TDescription.Create(OldLocalTempPath, GetTCCommentPreferredFormat);
-		OldDescriptions.Read;
-		if (OldDescriptions.RenameItem(OldItem, NewItem)) then //метод сам проверит существование описания
-		begin
-			OldDescriptions.Write();
-			Cloud.deleteFile(OldRemoteIonPath);
-			Cloud.PutDescriptionFile(OldRemoteIonPath, OldDescriptions.ionFilename);
+		try
+			OldDescriptions.Read;
+			if (OldDescriptions.RenameItem(OldItem, NewItem)) then //метод сам проверит существование описания
+			begin
+				OldDescriptions.Write();
+				Cloud.deleteFile(OldRemoteIonPath);
+				Cloud.PutDescriptionFile(OldRemoteIonPath, OldDescriptions.ionFilename);
+			end;
+		finally
+			OldDescriptions.Free;
 		end;
-		OldDescriptions.Destroy;
 	end
 	else //перенос и переименование в разных файлах (например, перемещение в подкаталог)
 	begin
 		if not Cloud.getDescriptionFile(OldRemoteIonPath, OldLocalTempPath) then
 			exit; //описания нет, не заморачиваемся
 		OldDescriptions := TDescription.Create(OldLocalTempPath, GetTCCommentPreferredFormat);
-		OldDescriptions.Read;
-		NewRemoteIonExists := Cloud.getDescriptionFile(NewRemoteIonPath, NewLocalTempPath);
-		NewDescriptions := TDescription.Create(NewLocalTempPath, GetTCCommentPreferredFormat);
-		if NewRemoteIonExists then
-			NewDescriptions.Read; //прочитать существующий, если его нет - то и читать нечего
+		try
+			OldDescriptions.Read;
+			NewRemoteIonExists := Cloud.getDescriptionFile(NewRemoteIonPath, NewLocalTempPath);
+			NewDescriptions := TDescription.Create(NewLocalTempPath, GetTCCommentPreferredFormat);
+			try
+				if NewRemoteIonExists then
+					NewDescriptions.Read; //прочитать существующий, если его нет - то и читать нечего
 
-		NewDescriptions.SetValue(ExtractFileName(NewRemotePath.Path), OldDescriptions.GetValue(ExtractFileName(OldRemotePath.Path)));
-		OldDescriptions.DeleteValue(ExtractFileName(OldRemotePath.Path));
-		OldDescriptions.Write();
-		NewDescriptions.Write();
-		Cloud.deleteFile(OldRemoteIonPath);
-		Cloud.PutDescriptionFile(OldRemoteIonPath, OldDescriptions.ionFilename);
-		if NewRemoteIonExists then
-			Cloud.deleteFile(NewRemoteIonPath); //Если файл существовал ранее, его нужно удалить для последующей записи на его место
-		Cloud.PutDescriptionFile(NewRemoteIonPath, NewDescriptions.ionFilename);
-		OldDescriptions.Destroy;
-		NewDescriptions.Destroy;
+				NewDescriptions.SetValue(ExtractFileName(NewRemotePath.Path), OldDescriptions.GetValue(ExtractFileName(OldRemotePath.Path)));
+				OldDescriptions.DeleteValue(ExtractFileName(OldRemotePath.Path));
+				OldDescriptions.Write();
+				NewDescriptions.Write();
+				Cloud.deleteFile(OldRemoteIonPath);
+				Cloud.PutDescriptionFile(OldRemoteIonPath, OldDescriptions.ionFilename);
+				if NewRemoteIonExists then
+					Cloud.deleteFile(NewRemoteIonPath); //Если файл существовал ранее, его нужно удалить для последующей записи на его место
+				Cloud.PutDescriptionFile(NewRemoteIonPath, NewDescriptions.ionFilename);
+			finally
+				NewDescriptions.Free;
+			end;
+		finally
+			OldDescriptions.Free;
+		end;
 	end;
 end;
 
@@ -1984,13 +1996,19 @@ begin
 		exit; //удалённого файла описаний нет
 
 	RemoteDescriptions := TDescription.Create(LocalTempPath, GetTCCommentPreferredFormat);
-	RemoteDescriptions.Read;
-	LocalDescriptions := TDescription.Create(IncludeTrailingPathDelimiter(ExtractFileDir(LocalFilePath)) + SettingsManager.Settings.DescriptionFileName, GetTCCommentPreferredFormat); //open local ion file
-	LocalDescriptions.Read;
-	LocalDescriptions.CopyFrom(RemoteDescriptions, ExtractFileName(LocalFilePath));
-	LocalDescriptions.Write();
-	LocalDescriptions.Destroy;
-	RemoteDescriptions.Destroy
+	try
+		RemoteDescriptions.Read;
+		LocalDescriptions := TDescription.Create(IncludeTrailingPathDelimiter(ExtractFileDir(LocalFilePath)) + SettingsManager.Settings.DescriptionFileName, GetTCCommentPreferredFormat); //open local ion file
+		try
+			LocalDescriptions.Read;
+			LocalDescriptions.CopyFrom(RemoteDescriptions, ExtractFileName(LocalFilePath));
+			LocalDescriptions.Write();
+		finally
+			LocalDescriptions.Free;
+		end;
+	finally
+		RemoteDescriptions.Free;
+	end;
 end;
 
 procedure TMailRuCloudWFX.UpdateRemoteFileDescription(RemotePath: TRealPath; LocalFilePath: WideString; var Cloud: TCloudMailRu);
@@ -2007,22 +2025,27 @@ begin
 		exit; //Файла описаний нет, не паримся
 
 	LocalDescriptions := TDescription.Create(LocalIonPath, GetTCCommentPreferredFormat);
-	LocalDescriptions.Read;
+	try
+		LocalDescriptions.Read;
 
-	RemoteIonExists := Cloud.getDescriptionFile(RemoteIonPath, LocalTempPath);
-	RemoteDescriptions := TDescription.Create(LocalTempPath, GetTCCommentPreferredFormat);
-	if RemoteIonExists then
-		RemoteDescriptions.Read; //если был прежний файл - его надо перечитать
+		RemoteIonExists := Cloud.getDescriptionFile(RemoteIonPath, LocalTempPath);
+		RemoteDescriptions := TDescription.Create(LocalTempPath, GetTCCommentPreferredFormat);
+		try
+			if RemoteIonExists then
+				RemoteDescriptions.Read; //если был прежний файл - его надо перечитать
 
-	RemoteDescriptions.CopyFrom(LocalDescriptions, ExtractFileName(RemotePath.Path));
-	RemoteDescriptions.Write();
-	if RemoteIonExists then
-		Cloud.deleteFile(RemoteIonPath); //Приходится удалять, потому что не знаем, как переписать
+			RemoteDescriptions.CopyFrom(LocalDescriptions, ExtractFileName(RemotePath.Path));
+			RemoteDescriptions.Write();
+			if RemoteIonExists then
+				Cloud.deleteFile(RemoteIonPath); //Приходится удалять, потому что не знаем, как переписать
 
-	Cloud.PutDescriptionFile(RemoteIonPath, RemoteDescriptions.ionFilename);
-
-	RemoteDescriptions.Destroy;
-	LocalDescriptions.Destroy
+			Cloud.PutDescriptionFile(RemoteIonPath, RemoteDescriptions.ionFilename);
+		finally
+			RemoteDescriptions.Free;
+		end;
+	finally
+		LocalDescriptions.Free;
+	end;
 end;
 
 end.
