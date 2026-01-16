@@ -924,58 +924,60 @@ begin
 		CLOUD_AUTH_METHOD_TWO_STEP:
 			begin
 				FormFields := TDictionary<WideString, WideString>.Create();
-				FormFields.AddOrSetValue('Domain', FDomain);
-				FormFields.AddOrSetValue('Login', FUser);
-				FormFields.AddOrSetValue('Password', Password);
-				FLogger.Log(LOG_LEVEL_DEBUG, MSGTYPE_DETAILS, REQUESTING_FIRST_STEP_AUTH_TOKEN, [Email]);
-				Result := HTTP.PostMultipart(LOGIN_URL, FormFields, PostAnswer);
-				if Result then
-				begin
-					FLogger.Log(LOG_LEVEL_DEBUG, MSGTYPE_DETAILS, PARSING_AUTH_DATA);
-					if extractTwostepJson(PostAnswer, TwoStepJson) and TwostepData.FromJSON(TwoStepJson) then
+				try
+					FormFields.AddOrSetValue('Domain', FDomain);
+					FormFields.AddOrSetValue('Login', FUser);
+					FormFields.AddOrSetValue('Password', Password);
+					FLogger.Log(LOG_LEVEL_DEBUG, MSGTYPE_DETAILS, REQUESTING_FIRST_STEP_AUTH_TOKEN, [Email]);
+					Result := HTTP.PostMultipart(LOGIN_URL, FormFields, PostAnswer);
+					if Result then
 					begin
-						if TwostepData.secstep_timeout = AUTH_APP_USED then
-							AuthMessage := ASK_AUTH_APP_CODE //mobile app used
-						else if TwostepData.secstep_resend_fail = '1' then
-							AuthMessage := Format(SMS_TIMEOUT, [TwostepData.secstep_phone, TwostepData.secstep_timeout])
-						else
-							AuthMessage := Format(ASK_SENT_CODE, [TwostepData.secstep_phone]);
-
-						FLogger.Log(LOG_LEVEL_DEBUG, MSGTYPE_DETAILS, AWAIT_SECURITY_KEY);
-
-						if (true = TAskPasswordForm.AskText(ASK_AUTH_KEY, AuthMessage, SecurityKey)) then
+						FLogger.Log(LOG_LEVEL_DEBUG, MSGTYPE_DETAILS, PARSING_AUTH_DATA);
+						if extractTwostepJson(PostAnswer, TwoStepJson) and TwostepData.FromJSON(TwoStepJson) then
 						begin
-							FormFields.Clear;
-							FormFields.AddOrSetValue('Login', Email);
-							FormFields.AddOrSetValue('csrf', TwostepData.csrf);
-							FormFields.AddOrSetValue('AuthCode', SecurityKey);
-							FLogger.Log(LOG_LEVEL_DEBUG, MSGTYPE_DETAILS, SECOND_STEP_AUTH);
-							Result := HTTP.PostMultipart(SECSTEP_URL, FormFields, PostAnswer);
-							FormFields.free;
-							if Result then
+							if TwostepData.secstep_timeout = AUTH_APP_USED then
+								AuthMessage := ASK_AUTH_APP_CODE //mobile app used
+							else if TwostepData.secstep_resend_fail = '1' then
+								AuthMessage := Format(SMS_TIMEOUT, [TwostepData.secstep_phone, TwostepData.secstep_timeout])
+							else
+								AuthMessage := Format(ASK_SENT_CODE, [TwostepData.secstep_phone]);
+
+							FLogger.Log(LOG_LEVEL_DEBUG, MSGTYPE_DETAILS, AWAIT_SECURITY_KEY);
+
+							if (true = TAskPasswordForm.AskText(ASK_AUTH_KEY, AuthMessage, SecurityKey)) then
 							begin
-								Result := InitConnectionParameters();
-								if (Result) then
+								FormFields.Clear;
+								FormFields.AddOrSetValue('Login', Email);
+								FormFields.AddOrSetValue('csrf', TwostepData.csrf);
+								FormFields.AddOrSetValue('AuthCode', SecurityKey);
+								FLogger.Log(LOG_LEVEL_DEBUG, MSGTYPE_DETAILS, SECOND_STEP_AUTH);
+								Result := HTTP.PostMultipart(SECSTEP_URL, FormFields, PostAnswer);
+								if Result then
 								begin
-									FLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, CONNECTED_TO, [Email]);
-									LogUserSpaceInfo;
-								end else begin
-									FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_TWOSTEP_AUTH);
+									Result := InitConnectionParameters();
+									if (Result) then
+									begin
+										FLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, CONNECTED_TO, [Email]);
+										LogUserSpaceInfo;
+									end else begin
+										FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_TWOSTEP_AUTH);
+									end;
 								end;
+							end else begin
+								FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_SECURITY_KEY);
+								Exit(False);
 							end;
+
 						end else begin
-							FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_SECURITY_KEY);
+							FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_PARSE_AUTH_DATA);
 							Exit(False);
 						end;
 
 					end else begin
-						FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_PARSE_AUTH_DATA);
-						Exit(False);
+						FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_GET_FIRST_STEP_AUTH_TOKEN, [Email]);
 					end;
-
-				end else begin
-					FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_GET_FIRST_STEP_AUTH_TOKEN, [Email]);
-					FormFields.free;
+				finally
+					FormFields.Free;
 				end;
 			end;
 		CLOUD_AUTH_METHOD_WEB: //todo: вынести в отдельный метод
