@@ -189,7 +189,7 @@
             <MainSource>MainSource</MainSource>
         </DelphiCompile>
         <DCCReference Include="src\libs\FastMM\FastMM4.pas"/>
-        <DCCReference Include="src\types\ANSIFunctions.pas"/>
+        <DCCReference Include="src\models\wfx\ANSIFunctions.pas"/>
         <DCCReference Include="src\models\settings\AccountSettings.pas"/>
         <DCCReference Include="src\forms\Accounts.pas">
             <Form>AccountsForm</Form>
@@ -260,10 +260,10 @@
         <DCCReference Include="src\helpers\StringHelper.pas"/>
         <DCCReference Include="src\helpers\SystemHelper.pas"/>
         <DCCReference Include="src\helpers\TCHelper.pas"/>
-        <DCCReference Include="src\models\TCLogger.pas"/>
-        <DCCReference Include="src\models\TCPasswordManager.pas"/>
-        <DCCReference Include="src\models\TCProgress.pas"/>
-        <DCCReference Include="src\models\TCRequest.pas"/>
+        <DCCReference Include="src\models\tc\TCLogger.pas"/>
+        <DCCReference Include="src\models\tc\TCPasswordManager.pas"/>
+        <DCCReference Include="src\models\tc\TCProgress.pas"/>
+        <DCCReference Include="src\models\tc\TCRequest.pas"/>
         <DCCReference Include="src\models\WSList.pas"/>
         <DCCReference Include="src\helpers\WindowsHelper.pas"/>
         <DCCReference Include="src\models\wfx\MailRuCloudWFX.pas"/>
