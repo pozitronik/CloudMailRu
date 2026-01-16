@@ -62,6 +62,16 @@ type
 		procedure TestCheckPasswordGUIDWrongPassword;
 		[Test]
 		procedure TestCheckPasswordGUIDEmptyPassword;
+
+		{ CryptFileName/DecryptFileName empty input tests - verify early exit cleanup }
+		[Test]
+		procedure TestCryptFileNameEmptyInput;
+		[Test]
+		procedure TestDecryptFileNameEmptyInput;
+		[Test]
+		procedure TestCryptFileNameValidInput;
+		[Test]
+		procedure TestDecryptFileNameValidInput;
 	end;
 
 implementation
@@ -295,6 +305,70 @@ begin
 	{ Empty password should still work consistently }
 	StoredGUID := TFileCipher.GetCryptedGUID('');
 	Assert.IsTrue(TFileCipher.CheckPasswordGUID('', StoredGUID));
+end;
+
+{ CryptFileName/DecryptFileName tests - verify early exit cleanup }
+
+procedure TFileCipherTest.TestCryptFileNameEmptyInput;
+var
+	Cipher: TFileCipher;
+	Result: WideString;
+begin
+	{ Empty filename should return empty string without leaking cipher resources }
+	Cipher := TFileCipher.Create('testpassword', '', true);
+	try
+		Result := Cipher.CryptFileName('');
+		Assert.AreEqual('', Result);
+	finally
+		Cipher.Free;
+	end;
+end;
+
+procedure TFileCipherTest.TestDecryptFileNameEmptyInput;
+var
+	Cipher: TFileCipher;
+	Result: WideString;
+begin
+	{ Empty filename should return empty string without leaking cipher resources }
+	Cipher := TFileCipher.Create('testpassword', '', true);
+	try
+		Result := Cipher.DecryptFileName('');
+		Assert.AreEqual('', Result);
+	finally
+		Cipher.Free;
+	end;
+end;
+
+procedure TFileCipherTest.TestCryptFileNameValidInput;
+var
+	Cipher: TFileCipher;
+	Encrypted: WideString;
+begin
+	{ Valid filename should be encrypted when DoFilenameCipher is true }
+	Cipher := TFileCipher.Create('testpassword', '', true);
+	try
+		Encrypted := Cipher.CryptFileName('testfile.txt');
+		Assert.IsNotEmpty(Encrypted);
+		Assert.AreNotEqual('testfile.txt', Encrypted, 'Filename should be encrypted');
+	finally
+		Cipher.Free;
+	end;
+end;
+
+procedure TFileCipherTest.TestDecryptFileNameValidInput;
+var
+	Cipher: TFileCipher;
+	Encrypted, Decrypted: WideString;
+begin
+	{ Encrypted filename should decrypt back to original }
+	Cipher := TFileCipher.Create('testpassword', '', true);
+	try
+		Encrypted := Cipher.CryptFileName('myfile.dat');
+		Decrypted := Cipher.DecryptFileName(Encrypted);
+		Assert.AreEqual('myfile.dat', Decrypted);
+	finally
+		Cipher.Free;
+	end;
 end;
 
 initialization

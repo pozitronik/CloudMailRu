@@ -156,24 +156,30 @@ end;
 function TFileCipher.CryptFileName(const FileName: WideString): WideString;
 begin
 	self.CiphersInit();
-	Result := ExtractFileName(FileName);
-	if EmptyWideStr = Result then
-		exit;
-	if DoFilenameCipher then
-		Result := Base64ToSafe(self.FilenameCipher.EncryptString(Result));
-	self.CiphersDestroy;
+	try
+		Result := ExtractFileName(FileName);
+		if EmptyWideStr = Result then
+			exit;
+		if DoFilenameCipher then
+			Result := Base64ToSafe(self.FilenameCipher.EncryptString(Result));
+	finally
+		self.CiphersDestroy;
+	end;
 end;
 
 function TFileCipher.CryptStream(SourceStream, DestinationStream: TStream): integer;
 begin
 	self.CiphersInit();
-	Result := 0;
-	if SourceStream.Size > 0 then
-	begin
-		SourceStream.Position := 0;
-		Result := self.FileCipher.EncryptStream(SourceStream, DestinationStream, SourceStream.Size);
+	try
+		Result := 0;
+		if SourceStream.Size > 0 then
+		begin
+			SourceStream.Position := 0;
+			Result := self.FileCipher.EncryptStream(SourceStream, DestinationStream, SourceStream.Size);
+		end;
+	finally
+		self.CiphersDestroy;
 	end;
-	self.CiphersDestroy;
 end;
 
 procedure TFileCipher.DecryptDirListing(var CloudMailRuDirListing: TCMRDirItemList);
@@ -209,22 +215,27 @@ end;
 function TFileCipher.DecryptFileName(const FileName: WideString): WideString;
 begin
 	self.CiphersInit();
-	Result := ExtractFileName(FileName);
-	if EmptyWideStr = Result then
-		exit;
-
-	if DoFilenameCipher then
-		Result := self.FilenameCipher.DecryptString(Base64FromSafe(FileName));
-	self.CiphersDestroy();
+	try
+		Result := ExtractFileName(FileName);
+		if EmptyWideStr = Result then
+			exit;
+		if DoFilenameCipher then
+			Result := self.FilenameCipher.DecryptString(Base64FromSafe(FileName));
+	finally
+		self.CiphersDestroy();
+	end;
 end;
 
 function TFileCipher.DecryptStream(SourceStream, DestinationStream: TStream): integer;
 begin
 	self.CiphersInit();
-	Result := 0;
-	if SourceStream.Size > 0 then
-		Result := self.FileCipher.DecryptStream(SourceStream, DestinationStream, SourceStream.Size);
-	self.CiphersDestroy();
+	try
+		Result := 0;
+		if SourceStream.Size > 0 then
+			Result := self.FileCipher.DecryptStream(SourceStream, DestinationStream, SourceStream.Size);
+	finally
+		self.CiphersDestroy();
+	end;
 end;
 
 end.
