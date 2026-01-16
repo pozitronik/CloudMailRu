@@ -57,6 +57,14 @@ type
 		procedure TestShardTypeFromStreamingFormatUnset;
 		[Test]
 		procedure TestShardTypeFromStreamingFormatUnknown;
+
+		{ FormatSize tests - explicit SizeType mode }
+		[Test]
+		procedure TestFormatSizeExplicitBytes;
+		[Test]
+		procedure TestFormatSizeExplicitKilobytes;
+		[Test]
+		procedure TestFormatSizeExplicitMegabytes;
 	end;
 
 implementation
@@ -74,44 +82,40 @@ end;
 
 procedure TPluginHelperTest.TestFormatSizeAutoKilobytes;
 begin
-	{ Note: uses > 1024 not >= 1024, so exactly 1024 stays in bytes }
-	Assert.AreEqual('1024 b', FormatSize(1024)); { boundary: stays in bytes }
+	{ Values at or above 1024 convert to next unit }
+	Assert.AreEqual('1 kb', FormatSize(1024)); { exactly 1024 converts }
 	Assert.AreEqual('1 kb', FormatSize(1025)); { just over boundary: converts }
-	Assert.AreEqual('10 kb', FormatSize(10241)); { 10 * 1024 + 1 }
+	Assert.AreEqual('10 kb', FormatSize(10240)); { 10 * 1024 }
 end;
 
 procedure TPluginHelperTest.TestFormatSizeAutoMegabytes;
 begin
-	{ Note: uses > 1024 at each level with integer division }
-	{ To get Mb, need (size div 1024) > 1024, so size > 1024*1025 = 1049600 }
-	Assert.AreEqual('1024 kb', FormatSize(1048576)); { exactly 1024^2 stays in kb }
-	Assert.AreEqual('1 Mb', FormatSize(1049601)); { smallest value that shows Mb }
+	{ Values at or above 1024 kb convert to Mb }
+	Assert.AreEqual('1 Mb', FormatSize(1048576)); { exactly 1024^2 = 1 Mb }
 	Assert.AreEqual('50 Mb', FormatSize(52428800)); { 50 * 1024^2 }
+	Assert.AreEqual('100 Mb', FormatSize(104857600)); { 100 * 1024^2 }
 end;
 
 procedure TPluginHelperTest.TestFormatSizeAutoGigabytes;
 begin
-	{ Note: boundary values stay in lower unit due to > 1024 check with integer division }
-	Assert.AreEqual('1024 Mb', FormatSize(1073741824)); { exactly 1024^3 stays in Mb }
-	{ To get Gb, need value where second div 1024 gives > 1024 }
-	Assert.AreEqual('1 Gb', FormatSize(1074790401)); { 1024 * 1024 * 1025 + 1 }
-	Assert.AreEqual('2 Gb', FormatSize(2149580801)); { 2 * 1024^3 + extra }
+	{ Values at or above 1024 Mb convert to Gb }
+	Assert.AreEqual('1 Gb', FormatSize(1073741824)); { exactly 1024^3 = 1 Gb }
+	Assert.AreEqual('2 Gb', FormatSize(2147483648)); { 2 * 1024^3 }
+	Assert.AreEqual('10 Gb', FormatSize(10737418240)); { 10 * 1024^3 }
 end;
 
 procedure TPluginHelperTest.TestFormatSizeAutoTerabytes;
 begin
-	{ Note: boundary values stay in lower unit due to > 1024 check }
-	Assert.AreEqual('1024 Gb', FormatSize(1099511627776)); { exactly 1024^4 stays in Gb }
-	{ To get Tb, need value well above boundary: 1024^3 * 1025 + 1 = 1100585369601 }
-	Assert.AreEqual('1 Tb', FormatSize(1100585369601));
+	{ Values at or above 1024 Gb convert to Tb }
+	Assert.AreEqual('1 Tb', FormatSize(1099511627776)); { exactly 1024^4 = 1 Tb }
+	Assert.AreEqual('2 Tb', FormatSize(2199023255552)); { 2 * 1024^4 }
 end;
 
 procedure TPluginHelperTest.TestFormatSizeAutoPetabytes;
 begin
-	{ Note: boundary values stay in lower unit due to > 1024 check }
-	Assert.AreEqual('1024 Tb', FormatSize(1125899906842624)); { exactly 1024^5 stays in Tb }
-	{ To get Pb, need value well above boundary: 1024^4 * 1025 + 1 = 1126999418470401 }
-	Assert.AreEqual('1 Pb', FormatSize(1126999418470401));
+	{ Values at or above 1024 Tb convert to Pb }
+	Assert.AreEqual('1 Pb', FormatSize(1125899906842624)); { exactly 1024^5 = 1 Pb }
+	Assert.AreEqual('2 Pb', FormatSize(2251799813685248)); { 2 * 1024^5 }
 end;
 
 procedure TPluginHelperTest.TestFormatSizeAutoZero;
@@ -122,9 +126,9 @@ end;
 
 procedure TPluginHelperTest.TestFormatSizeAutoExactBoundary;
 begin
-	{ Exactly at 1024 boundary stays in current unit (uses > not >=) }
-	Assert.AreEqual('1024 b', FormatSize(1024));
-	Assert.AreEqual('1024 kb', FormatSize(1048576));
+	{ Exactly at 1024 boundary converts to next unit (uses < 1024 check) }
+	Assert.AreEqual('1 kb', FormatSize(1024));
+	Assert.AreEqual('1 Mb', FormatSize(1048576));
 end;
 
 procedure TPluginHelperTest.TestFormatSizeAutoBelowBoundary;
@@ -136,9 +140,8 @@ end;
 
 procedure TPluginHelperTest.TestFormatSizeAutoLargeValue;
 begin
-	{ Large values should be handled correctly using integer division }
-	{ 2 TB = 2199023255552 bytes }
-	Assert.AreEqual('2 Tb', FormatSize(2199023255552));
+	{ Large values should be handled correctly }
+	Assert.AreEqual('2 Tb', FormatSize(2199023255552)); { 2 * 1024^4 }
 end;
 
 { ShardTypeFromStreamingFormat tests }
@@ -203,6 +206,33 @@ begin
 	{ Unknown values return default shard type }
 	Assert.AreEqual(SHARD_TYPE_DEFAULT, ShardTypeFromStreamingFormat(999));
 	Assert.AreEqual(SHARD_TYPE_DEFAULT, ShardTypeFromStreamingFormat(-999));
+end;
+
+{ FormatSize explicit SizeType tests - TDD: these expose the array index bug }
+
+procedure TPluginHelperTest.TestFormatSizeExplicitBytes;
+begin
+	{ TYPE_BYTES (0) - no conversion, just append 'b' suffix }
+	Assert.AreEqual('1024 b', FormatSize(1024, TYPE_BYTES));
+	Assert.AreEqual('5000 b', FormatSize(5000, TYPE_BYTES));
+end;
+
+procedure TPluginHelperTest.TestFormatSizeExplicitKilobytes;
+begin
+	{ TYPE_KYLOBYTES (1) - divide by 1024 once, append 'kb' suffix }
+	{ 2048 bytes = 2 kb }
+	Assert.AreEqual('2 kb', FormatSize(2048, TYPE_KYLOBYTES), 'TYPE_KYLOBYTES should show kb suffix');
+	{ 10240 bytes = 10 kb }
+	Assert.AreEqual('10 kb', FormatSize(10240, TYPE_KYLOBYTES), 'TYPE_KYLOBYTES should divide by 1024 once');
+end;
+
+procedure TPluginHelperTest.TestFormatSizeExplicitMegabytes;
+begin
+	{ TYPE_MEGABYTES (2) - divide by 1024 twice, append 'Mb' suffix }
+	{ 2097152 bytes = 2 Mb }
+	Assert.AreEqual('2 Mb', FormatSize(2097152, TYPE_MEGABYTES), 'TYPE_MEGABYTES should show Mb suffix');
+	{ 10485760 bytes = 10 Mb }
+	Assert.AreEqual('10 Mb', FormatSize(10485760, TYPE_MEGABYTES), 'TYPE_MEGABYTES should divide by 1024 twice');
 end;
 
 initialization

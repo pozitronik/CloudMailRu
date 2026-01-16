@@ -5,6 +5,7 @@ interface
 
 uses
 	CMRConstants,
+	Math,
 	SysUtils;
 
 function FormatSize(size: Int64; SizeType: integer = TYPE_AUTO): WideString; //Форматируем размер в удобочитаемый вид
@@ -17,26 +18,29 @@ const
 	postfixes: array [0 .. 6] of string = ('b', 'kb', 'Mb', 'Gb', 'Tb', 'Pb', 'Eb');
 var
 	iteration: integer;
+	floatSize: Double;
 begin
-	if TYPE_AUTO = SizeType then
+	floatSize := size;
+	iteration := 0;
+
+	if SizeType = TYPE_AUTO then
 	begin
-		iteration := 0;
-		while size > 1024 do
+		for iteration := 0 to Length(postfixes) - 1 do
 		begin
-			iteration := iteration + 1;
-			size := size div 1024;
+			if floatSize < 1024 then
+				Break;
+			floatSize := floatSize / 1024;
 		end;
-		exit(Format('%d %s', [size, postfixes[iteration]]));
-	end else begin
-		iteration := 0;
-		while iteration < SizeType do
+	end
+	else begin
+		while iteration < Min(SizeType, Length(postfixes) - 1) do
 		begin
-			iteration := iteration + 1;
-			size := size div 1024;
+			floatSize := floatSize / 1024;
+			Inc(iteration);
 		end;
-		exit(Format('%d %s', [size, postfixes[iteration + SizeType]]));
 	end;
 
+	Result := Format('%d %s', [Round(floatSize), postfixes[iteration]]);
 end;
 
 function ShardTypeFromStreamingFormat(StreamingFormat: integer): string;
