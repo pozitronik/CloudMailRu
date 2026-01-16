@@ -138,19 +138,21 @@ var
 	SourceStream, DestinationStream: TBufferedFileStream;
 begin
 	Result := CIPHER_OK;
-	self.CiphersInit();
+	SourceStream := nil;
+	DestinationStream := nil;
 	try
-		SourceStream := TBufferedFileStream.Create(SourceFileName, fmOpenRead or fmShareDenyWrite);
-		DestinationStream := TBufferedFileStream.Create(DestinationFilename, fmCreate);
-		if SourceStream.Size > 0 then
-			self.CryptStream(SourceStream, DestinationStream);
+		try
+			SourceStream := TBufferedFileStream.Create(SourceFileName, fmOpenRead or fmShareDenyWrite);
+			DestinationStream := TBufferedFileStream.Create(DestinationFilename, fmCreate);
+			if SourceStream.Size > 0 then
+				self.CryptStream(SourceStream, DestinationStream);
+		except
+			Result := CIPHER_IO_ERROR;
+		end;
+	finally
 		SourceStream.Free;
 		DestinationStream.Free;
-	except
-		self.CiphersDestroy();
-		Result := CIPHER_IO_ERROR;
 	end;
-	self.CiphersDestroy();
 end;
 
 function TFileCipher.CryptFileName(const FileName: WideString): WideString;
@@ -196,20 +198,22 @@ function TFileCipher.DecryptFile(SourceFileName, DestinationFilename: WideString
 var
 	SourceStream, DestinationStream: TBufferedFileStream;
 begin
-	self.CiphersInit();
 	Result := CIPHER_OK;
+	SourceStream := nil;
+	DestinationStream := nil;
 	try
-		SourceStream := TBufferedFileStream.Create(SourceFileName, fmOpenRead or fmShareDenyWrite);
-		DestinationStream := TBufferedFileStream.Create(DestinationFilename, fmCreate);
-		if SourceStream.Size > 0 then
-			self.DecryptStream(SourceStream, DestinationStream);
+		try
+			SourceStream := TBufferedFileStream.Create(SourceFileName, fmOpenRead or fmShareDenyWrite);
+			DestinationStream := TBufferedFileStream.Create(DestinationFilename, fmCreate);
+			if SourceStream.Size > 0 then
+				self.DecryptStream(SourceStream, DestinationStream);
+		except
+			Result := CIPHER_IO_ERROR;
+		end;
+	finally
 		SourceStream.Free;
 		DestinationStream.Free;
-	except
-		self.CiphersDestroy;
-		Result := CIPHER_IO_ERROR;
 	end;
-	self.CiphersDestroy;
 end;
 
 function TFileCipher.DecryptFileName(const FileName: WideString): WideString;

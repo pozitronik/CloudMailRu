@@ -4,6 +4,9 @@ interface
 
 uses
 	FileCipher,
+	System.SysUtils,
+	System.IOUtils,
+	System.Classes,
 	DUnitX.TestFramework;
 
 type
@@ -72,6 +75,26 @@ type
 		procedure TestCryptFileNameValidInput;
 		[Test]
 		procedure TestDecryptFileNameValidInput;
+
+		{ CryptFile/DecryptFile tests - verify stream cleanup on exceptions }
+		[Test]
+		procedure TestCryptFileNonExistentSource;
+		[Test]
+		procedure TestCryptFileInvalidDestination;
+		[Test]
+		procedure TestDecryptFileNonExistentSource;
+		[Test]
+		procedure TestDecryptFileInvalidDestination;
+		[Test]
+		procedure TestCryptDecryptFileRoundtrip;
+		[Test]
+		procedure TestCryptDecryptFileEmptyFile;
+
+		{ CryptStream/DecryptStream tests - verify stream operations }
+		[Test]
+		procedure TestCryptDecryptStreamRoundtrip;
+		[Test]
+		procedure TestCryptDecryptStreamEmptyStream;
 	end;
 
 implementation
@@ -368,6 +391,224 @@ begin
 		Assert.AreEqual('myfile.dat', Decrypted);
 	finally
 		Cipher.Free;
+	end;
+end;
+
+{ CryptFile/DecryptFile tests - these prove stream leak fix works }
+
+procedure TFileCipherTest.TestCryptFileNonExistentSource;
+var
+	Cipher: TFileCipher;
+	ResultCode: Integer;
+begin
+	{ Non-existent source file should return CIPHER_IO_ERROR without leaking streams.
+	  Before the fix, streams would leak on exception because Free was not in finally block. }
+	Cipher := TFileCipher.Create('testpassword');
+	try
+		ResultCode := Cipher.CryptFile('C:\NonExistent\File\That\Does\Not\Exist.txt', TPath.GetTempFileName);
+		Assert.AreEqual(CIPHER_IO_ERROR, ResultCode);
+	finally
+		Cipher.Free;
+	end;
+end;
+
+procedure TFileCipherTest.TestCryptFileInvalidDestination;
+var
+	Cipher: TFileCipher;
+	SourceFile: string;
+	ResultCode: Integer;
+begin
+	{ Invalid destination path should return CIPHER_IO_ERROR without leaking streams.
+	  Before the fix, SourceStream would leak if DestinationStream creation failed. }
+	SourceFile := TPath.GetTempFileName;
+	try
+		TFile.WriteAllText(SourceFile, 'test content');
+		Cipher := TFileCipher.Create('testpassword');
+		try
+			ResultCode := Cipher.CryptFile(SourceFile, 'Z:\Invalid\Path\That\Cannot\Be\Created\output.enc');
+			Assert.AreEqual(CIPHER_IO_ERROR, ResultCode);
+		finally
+			Cipher.Free;
+		end;
+	finally
+		if TFile.Exists(SourceFile) then
+			TFile.Delete(SourceFile);
+	end;
+end;
+
+procedure TFileCipherTest.TestDecryptFileNonExistentSource;
+var
+	Cipher: TFileCipher;
+	ResultCode: Integer;
+begin
+	{ Non-existent source file should return CIPHER_IO_ERROR without leaking streams.
+	  Before the fix, streams would leak on exception because Free was not in finally block. }
+	Cipher := TFileCipher.Create('testpassword');
+	try
+		ResultCode := Cipher.DecryptFile('C:\NonExistent\File\That\Does\Not\Exist.enc', TPath.GetTempFileName);
+		Assert.AreEqual(CIPHER_IO_ERROR, ResultCode);
+	finally
+		Cipher.Free;
+	end;
+end;
+
+procedure TFileCipherTest.TestDecryptFileInvalidDestination;
+var
+	Cipher: TFileCipher;
+	SourceFile: string;
+	ResultCode: Integer;
+begin
+	{ Invalid destination path should return CIPHER_IO_ERROR without leaking streams.
+	  Before the fix, SourceStream would leak if DestinationStream creation failed. }
+	SourceFile := TPath.GetTempFileName;
+	try
+		TFile.WriteAllText(SourceFile, 'encrypted content placeholder');
+		Cipher := TFileCipher.Create('testpassword');
+		try
+			ResultCode := Cipher.DecryptFile(SourceFile, 'Z:\Invalid\Path\That\Cannot\Be\Created\output.txt');
+			Assert.AreEqual(CIPHER_IO_ERROR, ResultCode);
+		finally
+			Cipher.Free;
+		end;
+	finally
+		if TFile.Exists(SourceFile) then
+			TFile.Delete(SourceFile);
+	end;
+end;
+
+procedure TFileCipherTest.TestCryptDecryptFileRoundtrip;
+var
+	Cipher: TFileCipher;
+	SourceFile, EncryptedFile, DecryptedFile: string;
+	OriginalContent, DecryptedContent: string;
+	CryptResult, DecryptResult: Integer;
+begin
+	{ Verify file encryption/decryption roundtrip works correctly }
+	SourceFile := TPath.GetTempFileName;
+	EncryptedFile := TPath.GetTempFileName;
+	DecryptedFile := TPath.GetTempFileName;
+	try
+		OriginalContent := 'This is test content for encryption roundtrip testing. 1234567890!@#$%';
+		TFile.WriteAllText(SourceFile, OriginalContent);
+
+		Cipher := TFileCipher.Create('testpassword');
+		try
+			CryptResult := Cipher.CryptFile(SourceFile, EncryptedFile);
+			Assert.AreEqual(CIPHER_OK, CryptResult, 'Encryption should succeed');
+
+			DecryptResult := Cipher.DecryptFile(EncryptedFile, DecryptedFile);
+			Assert.AreEqual(CIPHER_OK, DecryptResult, 'Decryption should succeed');
+
+			DecryptedContent := TFile.ReadAllText(DecryptedFile);
+			Assert.AreEqual(OriginalContent, DecryptedContent, 'Decrypted content should match original');
+		finally
+			Cipher.Free;
+		end;
+	finally
+		if TFile.Exists(SourceFile) then TFile.Delete(SourceFile);
+		if TFile.Exists(EncryptedFile) then TFile.Delete(EncryptedFile);
+		if TFile.Exists(DecryptedFile) then TFile.Delete(DecryptedFile);
+	end;
+end;
+
+procedure TFileCipherTest.TestCryptDecryptFileEmptyFile;
+var
+	Cipher: TFileCipher;
+	SourceFile, EncryptedFile, DecryptedFile: string;
+	CryptResult, DecryptResult: Integer;
+begin
+	{ Verify empty file handling - edge case where Size = 0 skips encryption }
+	SourceFile := TPath.GetTempFileName;
+	EncryptedFile := TPath.GetTempFileName;
+	DecryptedFile := TPath.GetTempFileName;
+	try
+		TFile.WriteAllText(SourceFile, ''); { Empty file }
+
+		Cipher := TFileCipher.Create('testpassword');
+		try
+			CryptResult := Cipher.CryptFile(SourceFile, EncryptedFile);
+			Assert.AreEqual(CIPHER_OK, CryptResult, 'Empty file encryption should succeed');
+
+			DecryptResult := Cipher.DecryptFile(EncryptedFile, DecryptedFile);
+			Assert.AreEqual(CIPHER_OK, DecryptResult, 'Empty file decryption should succeed');
+
+			Assert.AreEqual(Int64(0), TFile.GetSize(DecryptedFile), 'Decrypted file should be empty');
+		finally
+			Cipher.Free;
+		end;
+	finally
+		if TFile.Exists(SourceFile) then TFile.Delete(SourceFile);
+		if TFile.Exists(EncryptedFile) then TFile.Delete(EncryptedFile);
+		if TFile.Exists(DecryptedFile) then TFile.Delete(DecryptedFile);
+	end;
+end;
+
+{ CryptStream/DecryptStream tests }
+
+procedure TFileCipherTest.TestCryptDecryptStreamRoundtrip;
+var
+	Cipher: TFileCipher;
+	SourceStream, EncryptedStream, DecryptedStream: TMemoryStream;
+	OriginalBytes, DecryptedBytes: TBytes;
+begin
+	{ Verify stream encryption/decryption roundtrip works correctly }
+	SourceStream := TMemoryStream.Create;
+	EncryptedStream := TMemoryStream.Create;
+	DecryptedStream := TMemoryStream.Create;
+	try
+		OriginalBytes := TEncoding.UTF8.GetBytes('Stream test content for roundtrip verification');
+		SourceStream.WriteBuffer(OriginalBytes[0], Length(OriginalBytes));
+		SourceStream.Position := 0;
+
+		Cipher := TFileCipher.Create('testpassword');
+		try
+			Cipher.CryptStream(SourceStream, EncryptedStream);
+			Assert.IsTrue(EncryptedStream.Size > 0, 'Encrypted stream should have content');
+
+			EncryptedStream.Position := 0;
+			Cipher.DecryptStream(EncryptedStream, DecryptedStream);
+
+			SetLength(DecryptedBytes, DecryptedStream.Size);
+			DecryptedStream.Position := 0;
+			DecryptedStream.ReadBuffer(DecryptedBytes[0], DecryptedStream.Size);
+
+			Assert.AreEqual(
+				TEncoding.UTF8.GetString(OriginalBytes),
+				TEncoding.UTF8.GetString(DecryptedBytes),
+				'Decrypted stream content should match original'
+			);
+		finally
+			Cipher.Free;
+		end;
+	finally
+		SourceStream.Free;
+		EncryptedStream.Free;
+		DecryptedStream.Free;
+	end;
+end;
+
+procedure TFileCipherTest.TestCryptDecryptStreamEmptyStream;
+var
+	Cipher: TFileCipher;
+	SourceStream, EncryptedStream: TMemoryStream;
+	BytesEncrypted: Integer;
+begin
+	{ Verify empty stream handling - Size = 0 should return 0 bytes encrypted }
+	SourceStream := TMemoryStream.Create;
+	EncryptedStream := TMemoryStream.Create;
+	try
+		{ SourceStream is empty (Size = 0) }
+		Cipher := TFileCipher.Create('testpassword');
+		try
+			BytesEncrypted := Cipher.CryptStream(SourceStream, EncryptedStream);
+			Assert.AreEqual(0, BytesEncrypted, 'Empty stream should encrypt 0 bytes');
+			Assert.AreEqual(Int64(0), EncryptedStream.Size, 'Encrypted stream should be empty');
+		finally
+			Cipher.Free;
+		end;
+	finally
+		SourceStream.Free;
+		EncryptedStream.Free;
 	end;
 end;
 
