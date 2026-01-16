@@ -76,6 +76,10 @@ type
 		procedure TestCRC32KnownValue;
 		[Test]
 		procedure TestCRC32EmptyFile;
+
+		{ Resource cleanup tests }
+		[Test]
+		procedure TestGetCRC32FileStreamCleanupOnNonExistentFile;
 	end;
 
 implementation
@@ -517,6 +521,42 @@ begin
 		finally
 			DataStream.Free;
 		end;
+	finally
+		SplitInfo.Free;
+	end;
+end;
+
+{ Resource cleanup tests }
+
+procedure TFileSplitInfoTest.TestGetCRC32FileStreamCleanupOnNonExistentFile;
+var
+	SplitInfo: TFileSplitInfo;
+	ExceptionRaised: Boolean;
+begin
+	{This test verifies that TBufferedFileStream is properly cleaned up with try-finally
+	 when GetCRC32File fails to open a non-existent file. The test creates a valid
+	 FileSplitInfo, then deletes the file before calling GetCRCData to trigger the
+	 exception path. FastMM will catch any stream leak.}
+	CreateTestFile(100);
+	SplitInfo := TFileSplitInfo.Create(FTempFile, 1000);
+	try
+		{ Delete the file after construction to trigger error in GetCRC32File }
+		System.SysUtils.DeleteFile(FTempFile);
+
+		ExceptionRaised := False;
+		try
+			{ This will try to read a non-existent file }
+			var DataStream := TStringStream.Create;
+			try
+				SplitInfo.GetCRCData(DataStream);
+			finally
+				DataStream.Free;
+			end;
+		except
+			ExceptionRaised := True;
+		end;
+
+		Assert.IsTrue(ExceptionRaised, 'Expected exception when file deleted before CRC calculation');
 	finally
 		SplitInfo.Free;
 	end;

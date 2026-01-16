@@ -143,15 +143,18 @@ begin
 		filename := self.filename;
 
 	Stream := TBufferedFileStream.Create(filename, fmOpenRead or fmShareDenyWrite);
-	CRCValue := CRCSeed;
-	ReadBytes := Stream.Read(inbuffer, Sizeof(inbuffer));
-	repeat
-		CRCValue := crc32_update(@inbuffer, ReadBytes, CRCValue);
+	try
+		CRCValue := CRCSeed;
 		ReadBytes := Stream.Read(inbuffer, Sizeof(inbuffer));
-	until ReadBytes = 0;
-	Stream.Destroy;
-	CRCValue := CRCend(CRCValue);
-	exit(IntToHex(CRCValue, 8));
+		repeat
+			CRCValue := crc32_update(@inbuffer, ReadBytes, CRCValue);
+			ReadBytes := Stream.Read(inbuffer, Sizeof(inbuffer));
+		until ReadBytes = 0;
+		CRCValue := CRCend(CRCValue);
+		result := IntToHex(CRCValue, 8);
+	finally
+		Stream.Free;
+	end;
 end;
 
 procedure TFileSplitInfo.GetCRCData(DataStream: TStringStream);
