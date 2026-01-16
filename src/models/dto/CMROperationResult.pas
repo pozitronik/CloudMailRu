@@ -142,32 +142,32 @@ var
 	JSONVal: TJSONObject;
 begin
 	result.OperationResult := CLOUD_ERROR_UNKNOWN;
+	JSONVal := nil;
 	try
-		if (not init(JSON, JSONVal)) then
-			Exit;
-		result.OperationStatus := JSONVal.Values[NAME_STATUS].Value.ToInteger;
-		case result.OperationStatus of
-			200:
-				begin
-					result.OperationResult := CLOUD_OPERATION_OK;
-				end;
-			400:
-				begin
-					result.OperationResult := CLOUD_ERROR_BAD_REQUEST;
-				end;
-			else
-				begin
-					result.OperationResult := CLOUD_ERROR_UNKNOWN; //Эту ошибку мы пока не встречали
-				end;
-		end;
-
-	except
-		on E: {EJSON}Exception do
-		begin
+		try
+			if (not init(JSON, JSONVal)) then
+				Exit;
+			result.OperationStatus := JSONVal.Values[NAME_STATUS].Value.ToInteger;
+			case result.OperationStatus of
+				200:
+					begin
+						result.OperationResult := CLOUD_OPERATION_OK;
+					end;
+				400:
+					begin
+						result.OperationResult := CLOUD_ERROR_BAD_REQUEST;
+					end;
+				else
+					begin
+						result.OperationResult := CLOUD_ERROR_UNKNOWN; //Эту ошибку мы пока не встречали
+					end;
+			end;
+		except
 			result.OperationResult := CLOUD_ERROR_UNKNOWN;
 		end;
+	finally
+		JSONVal.Free;
 	end;
-	JSONVal.free;
 end;
 
 function TCMROperationResult.ToBoolean: Boolean;

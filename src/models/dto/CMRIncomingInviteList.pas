@@ -41,45 +41,45 @@ var
 	A: TJSONArray;
 begin
 	result := False;
-
 	SetLength(self, 0);
+	JSONVal := nil;
 	try
-		if (not init(JSON, JSONVal)) then
-			exit;
-		A := (JSONVal.Values[NAME_BODY] as TJSONObject).Values[NAME_LIST] as TJSONArray;
-		if not Assigned(A) then
-			exit; //no invites
-		SetLength(self, A.count);
-		for J := 0 to A.count - 1 do
-		begin
-			ParserObj := A.Items[J] as TJSONObject;
-			with self[J] do
+		try
+			if (not init(JSON, JSONVal)) then
+				exit;
+			A := (JSONVal.Values[NAME_BODY] as TJSONObject).Values[NAME_LIST] as TJSONArray;
+			if not Assigned(A) then
+				exit; //no invites
+			SetLength(self, A.count);
+			for J := 0 to A.count - 1 do
 			begin
-				if Assigned(ParserObj.Values[NAME_OWNER]) then
+				ParserObj := A.Items[J] as TJSONObject;
+				with self[J] do
 				begin
-					OwnerObj := ParserObj.Values[NAME_OWNER] as TJSONObject;
-					if Assigned(OwnerObj.Values[NAME_EMAIL]) then
-						owner.email := OwnerObj.Values[NAME_EMAIL].Value;
-					if Assigned(OwnerObj.Values[NAME_NAME]) then
-						owner.name := OwnerObj.Values[NAME_NAME].Value;
-				end;
+					if Assigned(ParserObj.Values[NAME_OWNER]) then
+					begin
+						OwnerObj := ParserObj.Values[NAME_OWNER] as TJSONObject;
+						if Assigned(OwnerObj.Values[NAME_EMAIL]) then
+							owner.email := OwnerObj.Values[NAME_EMAIL].Value;
+						if Assigned(OwnerObj.Values[NAME_NAME]) then
+							owner.name := OwnerObj.Values[NAME_NAME].Value;
+					end;
 
-				assignFromName(NAME_TREE, ParserObj, tree);
-				assignFromName(NAME_ACCESS, ParserObj, access);
-				assignFromName(NAME_NAME, ParserObj, name);
-				assignFromName(NAME_HOME, ParserObj, home);
-				assignFromName(NAME_SIZE, ParserObj, size);
-				assignFromName(NAME_INVITE_TOKEN, ParserObj, invite_token);
+					assignFromName(NAME_TREE, ParserObj, tree);
+					assignFromName(NAME_ACCESS, ParserObj, access);
+					assignFromName(NAME_NAME, ParserObj, name);
+					assignFromName(NAME_HOME, ParserObj, home);
+					assignFromName(NAME_SIZE, ParserObj, size);
+					assignFromName(NAME_INVITE_TOKEN, ParserObj, invite_token);
+				end;
 			end;
-		end;
-	except
-		on E: {EJSON}Exception do
-		begin
+			result := true;
+		except
 			exit;
 		end;
+	finally
+		JSONVal.Free;
 	end;
-	result := true;
-	JSONVal.free;
 end;
 
 end.
