@@ -5,7 +5,11 @@
 {$ENDIF}
 {$STRONGLINKTYPES ON}
 
+{ Enable FastMM5 memory leak reporting for tests }
+{$DEFINE FastMM_EnableMemoryLeakReporting}
+
 uses
+	FastMM5 in 'FastMM5\FastMM5.pas',
 	System.SysUtils,
 {$IFDEF TESTINSIGHT}
 	TestInsight.DUnitX,

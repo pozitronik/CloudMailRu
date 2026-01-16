@@ -3,10 +3,6 @@
 {$R *.dres}
 
 uses
-{$IFDEF DEBUG}
-	FastMM4 in 'src\libs\FastMM\FastMM4.pas',
-	FastMM4Messages in 'src\libs\FastMM\FastMM4Messages.pas',
-{$ENDIF}
 	DebugHelper in 'src\helpers\DebugHelper.pas',
 	ANSIFunctions in 'src\models\wfx\ANSIFunctions.pas',
 	AccountSettings in 'src\models\settings\AccountSettings.pas',
@@ -226,9 +222,6 @@ exports
 	FsGetDefRootName, FsInit, FsInitW, FsFindFirst, FsFindFirstW, FsFindNext, FsFindNextW, FsFindClose, FsGetFile, FsGetFileW, FsDisconnect, FsDisconnectW, FsStatusInfo, FsStatusInfoW, FsPutFile, FsPutFileW, FsDeleteFile, FsDeleteFileW, FsMkDir, FsMkDirW, FsRemoveDir, FsRemoveDirW, FsSetCryptCallback, FsSetCryptCallbackW, FsExecuteFileW, FsRenMovFile, FsRenMovFileW, FsGetBackgroundFlags, FsContentGetSupportedField, FsContentGetValue, FsContentGetValueW, FsExtractCustomIcon, FsExtractCustomIconW;
 
 begin
-{$IFDEF DEBUG}
-	ReportMemoryLeaksOnShutdown := true;
-{$ENDIF}
 	DllProc := @DllInit;
 	DllInit(DLL_PROCESS_ATTACH);
 
