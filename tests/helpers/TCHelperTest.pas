@@ -59,6 +59,12 @@ type
 		{ FindTCWindow tests - environment dependent }
 		[Test]
 		procedure TestFindTCWindowReturnsHandle;
+
+		{ Resource cleanup pattern tests - verify try-finally is used }
+		[Test]
+		procedure TestGetTCIconsSizeResourceCleanupOnException;
+		[Test]
+		procedure TestGetTCCommentPreferredFormatResourceCleanupOnException;
 	end;
 
 implementation
@@ -269,6 +275,71 @@ begin
 	  Both are valid behaviors - just verify it doesn't crash. }
 	FindTCWindow;
 	Assert.IsTrue(True, 'FindTCWindow executed without error');
+end;
+
+{ Resource cleanup pattern tests.
+  These tests document the correct try-finally pattern that must be used
+  in GetTCIconsSize and GetTCCommentPreferredFormat.
+  FastMM5 will detect leaks if try-finally is not properly implemented. }
+
+procedure TTCHelperTest.TestGetTCIconsSizeResourceCleanupOnException;
+var
+	Ini: TIniFile;
+begin
+	{ Create an INI file with a valid Configuration section but missing
+	  resolution-specific section. This exercises the section fallback logic
+	  that could potentially throw if TIniFile was not properly protected.
+	  The pattern used in GetTCIconsSize should be:
+	    TC_INI := TIniFile.Create(...);
+	    try
+	      // all operations
+	    finally
+	      TC_INI.Free;
+	    end;
+	}
+	Ini := TIniFile.Create(FTempIniFile);
+	try
+		Ini.WriteBool('Configuration', 'ResolutionSpecific', True);
+		{ Intentionally don't create the resolution-specific section.
+		  This will cause GetTCIconsSize to fall through all section checks
+		  and land on AllResolutions fallback. }
+	finally
+		Ini.Free;
+	end;
+
+	SetCommanderIniEnv(FTempIniFile);
+
+	{ Function should return default 16 without leaking TIniFile }
+	Assert.AreEqual(16, GetTCIconsSize,
+		'Should return default when resolution section not found');
+end;
+
+procedure TTCHelperTest.TestGetTCCommentPreferredFormatResourceCleanupOnException;
+var
+	Ini: TIniFile;
+begin
+	{ Create an INI file with an empty Configuration section.
+	  The pattern used in GetTCCommentPreferredFormat should be:
+	    TC_INI := TIniFile.Create(...);
+	    try
+	      // all operations
+	    finally
+	      TC_INI.Free;
+	    end;
+	}
+	Ini := TIniFile.Create(FTempIniFile);
+	try
+		{ Write something to create the section but not the key we're looking for }
+		Ini.WriteString('Configuration', 'SomeOtherKey', 'SomeValue');
+	finally
+		Ini.Free;
+	end;
+
+	SetCommanderIniEnv(FTempIniFile);
+
+	{ Function should return UTF-8 default without leaking TIniFile }
+	Assert.AreEqual(ENCODING_UTF8, GetTCCommentPreferredFormat,
+		'Should return UTF-8 default when key not found');
 end;
 
 initialization

@@ -137,40 +137,45 @@ var
 	fStream: TStreamReader;
 begin
 	result := self.encoding;
+	FillChar(Buffer, SizeOf(Buffer), 0);
 
 	AssignFile(F, ion_filename);
-	Reset(F, 1);
 	try
-		BlockRead(F, Buffer, SizeOf(Buffer));
+		Reset(F, 1);
 	except
-		on E: EInOutError do
-		begin
-			CloseFile(F);
-			exit;
-		end;
-
+		exit; { File can't be opened, return default encoding }
 	end;
-	CloseFile(F);
+
+	try
+		try
+			BlockRead(F, Buffer, SizeOf(Buffer));
+		except
+			{ Ignore read errors (e.g., file smaller than 3 bytes) }
+		end;
+	finally
+		CloseFile(F);
+	end;
+
 	if (Buffer[0] = $EF) and (Buffer[1] = $BB) and (Buffer[2] = $BF) then
 		exit(TEncoding.UTF8);
 	if (Buffer[0] = $FE) and (Buffer[1] = $FF) then
 		exit(TEncoding.BigEndianUnicode);
 	if (Buffer[0] = $FF) and (Buffer[1] = $FE) then
 		exit(TEncoding.Unicode);
-	//Кодировка всё ещё не определилась, идём на крайнюю меру: создадим поток с выбранной кодировкой, если будет ошибка EEncodingError - значит это галимый ANSI
-	//fStream := nil;
+
+	{ Encoding still not determined - try reading with chosen encoding.
+	  If EEncodingError occurs, it's ANSI. }
 	fStream := TStreamReader.Create(self.ion_filename, self.encoding, false);
 	try
-		if fStream.ReadToEnd <> EmptyWideStr then
-			result := fStream.CurrentEncoding;
-	except
-		on E: Exception do
-		begin
-			fStream.Destroy;
-			exit(TEncoding.Default);
+		try
+			if fStream.ReadToEnd <> EmptyWideStr then
+				result := fStream.CurrentEncoding;
+		except
+			result := TEncoding.Default;
 		end;
+	finally
+		fStream.Free;
 	end;
-	fStream.Destroy;
 end;
 
 function TDescription.FormatValue(Value: WideString; FormatType: Integer): WideString;
@@ -218,38 +223,37 @@ begin
 	if filename = NullChar then
 		filename := self.ion_filename;
 
-	result := 0; //not used
-	fStream := nil;
+	result := 0;
+	DeleteFileW(PWideChar(filename));
+	if items.Count = 0 then
+		exit;
 
+	fStream := TStreamWriter.Create(filename, false, self.encoding);
 	try
-		DeleteFileW(PWideChar(filename));
-		if items.Count = 0 then
-			exit;
-
-		fStream := TStreamWriter.Create(filename, false, self.encoding);
-		for Key in items.Keys do
-		begin
-			items.TryGetValue(Key, Value);
-			if Pos(Space, Key) <> 0 then
-				tKey := '"' + Key + '"'
-			else
-				tKey := Key;
-
-			if Pos(sLineBreak, Value) <> 0 then
-				Value := WideStringReplace(Value, sLineBreak, '\n', [rfReplaceAll]) + divider;
-			if Length(Value) > 0 then
+		try
+			for Key in items.Keys do
 			begin
-				line := tKey + Space + Value;
-				fStream.WriteLine(line);
-			end;
-		end;
-		fStream.Flush;
+				items.TryGetValue(Key, Value);
+				if Pos(Space, Key) <> 0 then
+					tKey := '"' + Key + '"'
+				else
+					tKey := Key;
 
-	except
-		fStream.Destroy;
-		exit(-1);
+				if Pos(sLineBreak, Value) <> 0 then
+					Value := WideStringReplace(Value, sLineBreak, '\n', [rfReplaceAll]) + divider;
+				if Length(Value) > 0 then
+				begin
+					line := tKey + Space + Value;
+					fStream.WriteLine(line);
+				end;
+			end;
+			fStream.Flush;
+		except
+			result := -1;
+		end;
+	finally
+		fStream.Free;
 	end;
-	fStream.Destroy;
 end;
 
 function TDescription.Read(): Integer;
@@ -258,34 +262,36 @@ var
 	line, Key, Value: WideString;
 	t: Integer;
 begin
-	result := 0; //not used
+	result := 0;
 	self.Clear;
-	fStream := nil;
-	try
-		self.encoding := DetermineEncoding();
-		self.divider := DetermineDivider();
-		fStream := TStreamReader.Create(self.ion_filename, self.encoding, false);
-		while not fStream.EndOfStream do
-		begin
-			line := fStream.ReadLine;
-			if StartsStr('"', line) then
-			begin
-				t := PosEx('" ', line);
-				Value := copy(line, t + 2, Length(line));
-				Key := copy(line, 2, t - 2);
-			end else begin
-				t := PosEx(Space, line);
-				Value := copy(line, t + 1, Length(line));
-				Key := copy(line, 0, t - 1);
-			end;
+	self.encoding := DetermineEncoding();
+	self.divider := DetermineDivider();
 
-			items.Add(Key, Value);
+	fStream := TStreamReader.Create(self.ion_filename, self.encoding, false);
+	try
+		try
+			while not fStream.EndOfStream do
+			begin
+				line := fStream.ReadLine;
+				if StartsStr('"', line) then
+				begin
+					t := PosEx('" ', line);
+					Value := copy(line, t + 2, Length(line));
+					Key := copy(line, 2, t - 2);
+				end else begin
+					t := PosEx(Space, line);
+					Value := copy(line, t + 1, Length(line));
+					Key := copy(line, 0, t - 1);
+				end;
+
+				items.Add(Key, Value);
+			end;
+		except
+			result := -1;
 		end;
-	except
-		fStream.Destroy;
-		exit(-1);
+	finally
+		fStream.Free;
 	end;
-	fStream.Destroy;
 end;
 
 end.

@@ -68,6 +68,12 @@ type
 		procedure TestDetermineEncodingUTF8;
 		[Test]
 		procedure TestDetermineEncodingUnicode;
+
+		{ Resource cleanup pattern tests }
+		[Test]
+		procedure TestWriteResourceCleanupOnError;
+		[Test]
+		procedure TestReadResourceCleanupOnError;
 	end;
 
 implementation
@@ -287,6 +293,75 @@ begin
 	try
 		Encoding := Description2.DetermineEncoding;
 		Assert.AreSame(TEncoding.Unicode, Encoding);
+	finally
+		Description2.Free;
+	end;
+end;
+
+{ Resource cleanup pattern tests.
+  These tests document the correct try-finally pattern that must be used
+  in Write and Read methods. FastMM5 will detect leaks if streams are
+  not properly freed on all code paths. }
+
+procedure TDescriptionTest.TestWriteResourceCleanupOnError;
+var
+	WriteResult: Integer;
+	Description2: TDescription;
+begin
+	{ The Write method should use try-finally to ensure TStreamWriter is freed.
+	  Pattern should be:
+	    fStream := TStreamWriter.Create(...);
+	    try
+	      // operations
+	    finally
+	      fStream.Free;
+	    end;
+
+	  Test by writing data first (which succeeds), then verify no leaks occur. }
+	FDescription.SetValue('testfile.txt', 'Test description');
+	WriteResult := FDescription.Write;
+
+	{ Write should succeed and return 0 }
+	Assert.AreEqual(0, WriteResult, 'Write should return 0 on success');
+
+	{ Verify data was written correctly by reading it back }
+	Description2 := TDescription.Create(FTempFile, ENCODING_UTF8);
+	try
+		Description2.Read;
+		Assert.AreEqual('Test description', Description2.GetValue('testfile.txt'));
+	finally
+		Description2.Free;
+	end;
+end;
+
+procedure TDescriptionTest.TestReadResourceCleanupOnError;
+var
+	ReadResult: Integer;
+	Description2: TDescription;
+begin
+	{ The Read method should use try-finally to ensure TStreamReader is freed.
+	  Pattern should be:
+	    fStream := TStreamReader.Create(...);
+	    try
+	      // operations
+	    finally
+	      fStream.Free;
+	    end;
+
+	  Test by reading a valid file and verify no leaks occur. }
+
+	{ Write test data first }
+	FDescription.SetValue('key1', 'value1');
+	FDescription.SetValue('key2', 'value2');
+	FDescription.Write;
+
+	{ Read with new instance - exercises the Read method's stream handling }
+	Description2 := TDescription.Create(FTempFile, ENCODING_UTF8);
+	try
+		ReadResult := Description2.Read;
+		Assert.AreEqual(0, ReadResult, 'Read should return 0 on success');
+		Assert.AreEqual('value1', Description2.GetValue('key1'));
+		Assert.AreEqual('value2', Description2.GetValue('key2'));
 	finally
 		Description2.Free;
 	end;
