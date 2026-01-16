@@ -13,6 +13,11 @@ Uses
 	CMRConstants,
 	TCLogger;
 
+const
+	{Password manager key constants}
+	PASSWORD_SUFFIX_FILECRYPT = ' filecrypt'; {Suffix for file encryption password keys}
+	PASSWORD_KEY_PROXY = 'proxy'; {Key prefix for proxy passwords}
+
 type
 
 	TTCPasswordManager = class

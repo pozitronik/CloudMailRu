@@ -194,7 +194,7 @@ begin
 	TCLogger := TTCLogger.Create(pLogProc, PluginNr, SettingsManager.Settings.LogLevel);
 	TCProgress := TTCProgress.Create(pProgressProc, PluginNr);
 	TCRequest := TTCRequest.Create(pRequestProc, PluginNr);
-	CurrentDescriptions := TDescription.Create(GetTmpFileName('ion'), GetTCCommentPreferredFormat);
+	CurrentDescriptions := TDescription.Create(GetTmpFileName(DESCRIPTION_TEMP_EXT), GetTCCommentPreferredFormat);
 	Result := 0;
 end;
 
@@ -261,7 +261,7 @@ var
 	RemoteIonPath, LocalTempPath: WideString;
 begin
 	RemoteIonPath := IncludeTrailingBackslash(ExtractFileDir(RemotePath.Path)) + SettingsManager.Settings.DescriptionFileName;
-	LocalTempPath := GetTmpFileName('ion');
+	LocalTempPath := GetTmpFileName(DESCRIPTION_TEMP_EXT);
 	if not Cloud.getDescriptionFile(RemoteIonPath, LocalTempPath) then
 		exit; //описания нет, не заморачиваемся
 	RemoteDescriptions := TDescription.Create(LocalTempPath, GetTCCommentPreferredFormat);
@@ -426,7 +426,7 @@ begin
 
 	end;
 
-	PostMessage(MainWin, WM_USER + 51, 540, 0); //TC does not update current panel, so we should do it this way
+	PostMessage(MainWin, WM_USER + TC_REFRESH_MESSAGE, TC_REFRESH_PARAM, 0); //TC does not update current panel, so we should do it this way
 end;
 
 function TMailRuCloudWFX.ExecProperties(MainWin: THandle; RealPath: TRealPath): Integer;
@@ -444,7 +444,7 @@ begin
 		Cloud := ConnectionManager.Get(RealPath.account, getResult);
 		//всегда нужно обновлять статус на сервере, CurrentListing может быть изменён в другой панели
 		if (Cloud.statusFile(RealPath.Path, CurrentItem)) and (idContinue = TPropertyForm.ShowProperty(MainWin, RealPath.Path, CurrentItem, Cloud, SettingsManager.Settings.DownloadLinksEncode, SettingsManager.Settings.AutoUpdateDownloadListing, SettingsManager.Settings.DescriptionEnabled, SettingsManager.Settings.DescriptionEditorEnabled, SettingsManager.Settings.DescriptionFileName)) then
-			PostMessage(MainWin, WM_USER + 51, 540, 0); //refresh tc panel if description edited
+			PostMessage(MainWin, WM_USER + TC_REFRESH_MESSAGE, TC_REFRESH_PARAM, 0); //refresh tc panel if description edited
 	end;
 end;
 
@@ -507,7 +507,7 @@ begin
 					exit(FS_EXEC_ERROR);
 	end;
 
-	PostMessage(MainWin, WM_USER + 51, 540, 0); //TC does not update current panel, so we should do it this way
+	PostMessage(MainWin, WM_USER + TC_REFRESH_MESSAGE, TC_REFRESH_PARAM, 0); //TC does not update current panel, so we should do it this way
 end;
 
 function TMailRuCloudWFX.ExecuteFileStream(RealPath: TRealPath; StreamingSettings: TStreamingSettings): Integer;
@@ -1805,8 +1805,8 @@ begin
 	NewItem := ExtractFileName(NewRemotePath.Path);
 	OldRemoteIonPath := IncludeTrailingBackslash(ExtractFileDir(OldRemotePath.Path)) + SettingsManager.Settings.DescriptionFileName;
 	NewRemoteIonPath := IncludeTrailingBackslash(ExtractFileDir(NewRemotePath.Path)) + SettingsManager.Settings.DescriptionFileName;
-	OldLocalTempPath := GetTmpFileName('ion');
-	NewLocalTempPath := GetTmpFileName('ion');
+	OldLocalTempPath := GetTmpFileName(DESCRIPTION_TEMP_EXT);
+	NewLocalTempPath := GetTmpFileName(DESCRIPTION_TEMP_EXT);
 
 	if ExtractFileDir(OldRemotePath.Path) = ExtractFileDir(NewRemotePath.Path) then //переименование внутри одного файла
 	begin
@@ -1994,7 +1994,7 @@ var
 	RemoteIonExists: Boolean;
 begin
 	RemoteIonPath := IncludeTrailingBackslash(ExtractFileDir(RemotePath.Path)) + SettingsManager.Settings.DescriptionFileName;
-	LocalTempPath := GetTmpFileName('ion');
+	LocalTempPath := GetTmpFileName(DESCRIPTION_TEMP_EXT);
 
 	RemoteIonExists := Cloud.getDescriptionFile(RemoteIonPath, LocalTempPath);
 	if not RemoteIonExists then
@@ -2024,7 +2024,7 @@ var
 begin
 	RemoteIonPath := IncludeTrailingBackslash(ExtractFileDir(RemotePath.Path)) + SettingsManager.Settings.DescriptionFileName;
 	LocalIonPath := IncludeTrailingBackslash(ExtractFileDir(LocalFilePath)) + SettingsManager.Settings.DescriptionFileName;
-	LocalTempPath := GetTmpFileName('ion');
+	LocalTempPath := GetTmpFileName(DESCRIPTION_TEMP_EXT);
 
 	if (not FileExists(GetUNCFilePath(LocalIonPath))) then
 		exit; //Файла описаний нет, не паримся

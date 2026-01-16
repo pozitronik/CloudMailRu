@@ -153,7 +153,7 @@ var
 	LocalPath: WideString;
 begin
 	DescriptionEditMemo.lines.Clear;
-	LocalPath := GetTmpFileName('ion');
+	LocalPath := GetTmpFileName(DESCRIPTION_TEMP_EXT);
 	if not self.Cloud.getDescriptionFile(IncludeTrailingBackslash(ExtractFileDir(self.RemoteName)) + self.PluginIonFileName, LocalPath) then
 		exit;
 	CurrentDescriptions := TDescription.Create(LocalPath, GetTCCommentPreferredFormat);
@@ -181,7 +181,7 @@ var
 	RemoteFileExists: Boolean;
 begin
 	RemotePath := IncludeTrailingBackslash(ExtractFileDir(self.RemoteName)) + self.PluginIonFileName;
-	LocalPath := GetTmpFileName('ion');
+	LocalPath := GetTmpFileName(DESCRIPTION_TEMP_EXT);
 
 	RemoteFileExists := self.Cloud.getDescriptionFile(RemotePath, LocalPath);
 	CurrentDescriptions := TDescription.Create(LocalPath, GetTCCommentPreferredFormat);
@@ -421,7 +421,7 @@ begin
 		end;
 
 	end;
-	PostMessage(FindTCWindow, WM_USER + 51, 540, 0); //TC does not update current panel, so we should do it this way
+	PostMessage(FindTCWindow, WM_USER + TC_REFRESH_MESSAGE, TC_REFRESH_PARAM, 0); //TC does not update current panel, so we should do it this way
 end;
 
 function TPropertyForm.CanApplyHashes: Boolean;

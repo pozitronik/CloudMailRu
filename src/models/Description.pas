@@ -24,6 +24,8 @@ const
 	ENCODING_UNCODE_BE = 2;
 	ENCODING_UTF8 = 3;
 
+	DESCRIPTION_TEMP_EXT = 'ion'; {Extension for temporary description files}
+
 type
 
 	TDescription = class

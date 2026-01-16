@@ -9,6 +9,9 @@ uses
 	CMRConstants,
 	LANGUAGE_STRINGS;
 
+const
+	SHA1_HEX_LENGTH = 40; {Length of SHA1 hash in hexadecimal representation}
+
 type
 
 	THashInfo = class
@@ -60,7 +63,7 @@ begin
 		exit;
 	end;
 	self.hash := copy(parameter, 0, divisor_position - 1);
-	if length(hash) <> 40 then
+	if length(hash) <> SHA1_HEX_LENGTH then
 	begin
 		self.errorString := ERR_WRONG_HASH_LENGTH;
 		exit;

@@ -18,6 +18,7 @@ uses
 	CMRConstants,
 	CloudMailRuHTTP,
 	LANGUAGE_STRINGS,
+	HashInfo,
 	System.Hash,
 	System.Classes,
 	System.Generics.Collections,
@@ -1505,7 +1506,7 @@ begin
 		Result := PutFileToCloud(FileName, FileStream, FileIdentity);
 	if (Result = CLOUD_OPERATION_OK) then
 	begin
-		if length(PostAnswer) <> 40 then
+		if length(PostAnswer) <> SHA1_HEX_LENGTH then
 		begin
 			Result := CLOUD_OPERATION_FAILED;
 		end else begin
@@ -1639,10 +1640,14 @@ end;
 
 function TCloudMailRu.CloudHash(Stream: TStream; Path: WideString = CALCULATING_HASH): WideString;
 const
-	bufSize = 8192;
+	{Cloud Mail.ru hash algorithm constants}
+	HASH_SEED = 'mrCloud';
+	SMALL_FILE_THRESHOLD = 21;
+	SMALL_FILE_BUFFER = 20;
+	BUFFER_SIZE = 8192;
 var
 	sha1: THashSHA1;
-	buffer: array [0 .. bufSize - 1] of byte;
+	buffer: array [0 .. BUFFER_SIZE - 1] of byte;
 	read, iteration, processedBytes: Int64;
 	initBuffer, finalBuffer: TBytes;
 	Percent: Integer;
@@ -1650,28 +1655,28 @@ var
 begin
 	Stream.Position := 0;
 	Result := EmptyWideStr;
-	if Stream.size < 21 then
+	if Stream.size < SMALL_FILE_THRESHOLD then
 	begin
-		SetLength(initBuffer, 20);
+		SetLength(initBuffer, SMALL_FILE_BUFFER);
 		Stream.read(initBuffer, Stream.size);
 		Result := UpperCase(THash.DigestAsString(initBuffer));
 		Exit;
 	end;
 
 	FillChar(buffer, sizeof(buffer), 0);
-	initBuffer := TEncoding.UTF8.GetBytes('mrCloud');
+	initBuffer := TEncoding.UTF8.GetBytes(HASH_SEED);
 
 	sha1 := THashSHA1.Create;
 	sha1.Update(initBuffer, length(initBuffer));
 	iteration := 0;
 	repeat
 		iteration := iteration + 1;
-		processedBytes := bufSize * iteration;
+		processedBytes := BUFFER_SIZE * iteration;
 		Percent := Round((processedBytes / Stream.size) * 100);
 		if Percent > 100 then
 			Percent := 100;
 
-		read := Stream.read(buffer, bufSize);
+		read := Stream.read(buffer, BUFFER_SIZE);
 		sha1.Update(buffer, read);
 		Aborted := FProgress.Progress(Path, CALCULATING_HASH, Percent);
 	until (read < sizeof(buffer)) or Aborted;

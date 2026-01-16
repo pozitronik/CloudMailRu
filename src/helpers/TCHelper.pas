@@ -10,6 +10,11 @@ uses
 	Description,
 	Windows;
 
+const
+	{Total Commander panel refresh message constants}
+	TC_REFRESH_MESSAGE = 51; {WM_USER + TC_REFRESH_MESSAGE to refresh panel}
+	TC_REFRESH_PARAM = 540; {wParam for panel refresh message}
+
 function FindTCWindow: HWND;
 function FindTCIniPath: WideString;
 function GetTCIconsSize: integer;

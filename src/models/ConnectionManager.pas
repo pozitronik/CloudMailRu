@@ -160,7 +160,7 @@ var
 begin
 	Result := True;
 	StorePassword := False;
-	crypt_id := ConnectionName + ' filecrypt';
+	crypt_id := ConnectionName + PASSWORD_SUFFIX_FILECRYPT;
 
 	if EncryptModeAlways = CloudSettings.AccountSettings.EncryptFilesMode then {password must be taken from tc storage, otherwise ask user and store password}
 	begin
@@ -281,7 +281,7 @@ begin
 	if (ProxySettings.ProxyType = ProxyNone) or (ProxySettings.User = EmptyWideStr) then
 		exit(True); {No proxy or not password protected}
 
-	if ProxySettings.UseTCPasswordManager and (FPasswordManager.GetPassword('proxy' + ProxySettings.User, ProxySettings.password) = FS_FILE_OK) then {retrieve the proxy password from TC passwords storage}
+	if ProxySettings.UseTCPasswordManager and (FPasswordManager.GetPassword(PASSWORD_KEY_PROXY + ProxySettings.User, ProxySettings.password) = FS_FILE_OK) then {retrieve the proxy password from TC passwords storage}
 		Result := True{Password is retrieved and should be updated in th HTTPManager}
 	else
 	begin
@@ -289,7 +289,7 @@ begin
 		begin
 			if mrOk = TAskPasswordForm.AskPassword(Format(ASK_PROXY_PASSWORD, [ProxySettings.User]), PREFIX_ASK_PROXY_PASSWORD, ProxySettings.password, ProxySettings.UseTCPasswordManager, False, FindTCWindow) then
 			begin {get proxy password and parameters from the user input}
-				if FS_FILE_OK = FPasswordManager.SetPassword('proxy' + ProxySettings.User, ProxySettings.password) then
+				if FS_FILE_OK = FPasswordManager.SetPassword(PASSWORD_KEY_PROXY + ProxySettings.User, ProxySettings.password) then
 				begin {Now the proxy password stored in TC, clear password from the ini file}
 					FLogger.Log(LOG_LEVEL_DEBUG, msgtype_details, PASSWORD_SAVED, [ProxySettings.User]);
 					SettingsManager := TPluginSettingsManager.Create();

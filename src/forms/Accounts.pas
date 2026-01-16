@@ -370,7 +370,7 @@ begin
 	self.SettingsApplied := True;
 	if ProxyTCPwdMngrCB.Checked then //просим TC сохранить пароль
 	begin
-		case PasswordManager.SetPassword('proxy' + ProxyUserEdit.Text, ProxyPwd.Text) of
+		case PasswordManager.SetPassword(PASSWORD_KEY_PROXY + ProxyUserEdit.Text, ProxyPwd.Text) of
 			FS_FILE_OK:
 				begin //TC скушал пароль
 					ProxyPwd.Text := EmptyWideStr;
@@ -619,7 +619,7 @@ var
 begin
 	StorePassword := True;
 	result := EmptyWideStr;
-	crypt_id := AccountName + ' filecrypt';
+	crypt_id := AccountName + PASSWORD_SUFFIX_FILECRYPT;
 	case PasswordManager.GetPassword(crypt_id, CurrentPassword) of
 		FS_FILE_OK: //пользователь знает мастер-пароль, и пароль был сохранен
 			begin
