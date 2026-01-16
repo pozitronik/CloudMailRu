@@ -10,6 +10,7 @@ uses
 	MultiMon,
 	ShlObj,
 	ShellApi,
+	ActiveX,
 	TCHelper;
 
 const
@@ -120,8 +121,12 @@ begin
 			uFlags := SHGFI_ICON or SHGFI_LARGEICON; //not working with SHGetFileInfo
 	end;
 	SHGetSpecialFolderLocation(FindTCWindow, ItemType, PIDL);
-	if SHGetFileInfo(PChar(PIDL), 0, SFI, SizeOf(SFI), SHGFI_PIDL or SHGFI_SYSICONINDEX or uFlags) <> 0 then
-		Result := SFI.Hicon;
+	try
+		if SHGetFileInfo(PChar(PIDL), 0, SFI, SizeOf(SFI), SHGFI_PIDL or SHGFI_SYSICONINDEX or uFlags) <> 0 then
+			Result := SFI.Hicon;
+	finally
+		CoTaskMemFree(PIDL);
+	end;
 end;
 
 function GetTmpDir: WideString;

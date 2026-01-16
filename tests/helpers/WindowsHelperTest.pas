@@ -39,12 +39,21 @@ type
 		procedure TestGetFindDataEmptyDirHasDirectoryAttribute;
 		[Test]
 		procedure TestGetFindDataEmptyDirSizeIsZero;
+
+		{ GetSystemIcon tests - verifies PIDL leak issue }
+		[Test]
+		procedure TestGetSystemIconReturnsValidHandle;
+		[Test]
+		procedure TestGetSystemIconSmallSize;
+		[Test]
+		procedure TestGetSystemIconNormalSize;
 	end;
 
 implementation
 
 uses
-	SysUtils;
+	SysUtils,
+	ShlObj;
 
 { GetTmpDir tests }
 
@@ -168,6 +177,38 @@ begin
 	FindData := GetFindDataEmptyDir;
 	Assert.AreEqual(Cardinal(0), FindData.nFileSizeLow);
 	Assert.AreEqual(Cardinal(0), FindData.nFileSizeHigh);
+end;
+
+{ GetSystemIcon tests }
+
+procedure TWindowsHelperTest.TestGetSystemIconReturnsValidHandle;
+var
+	Icon: HIcon;
+begin
+	{ GetSystemIcon should return a valid icon handle for recycle bin }
+	Icon := GetSystemIcon(IconSizeSmall, CSIDL_BITBUCKET);
+	Assert.AreNotEqual(HIcon(INVALID_HANDLE_VALUE), Icon,
+		'GetSystemIcon should return valid handle for recycle bin');
+end;
+
+procedure TWindowsHelperTest.TestGetSystemIconSmallSize;
+var
+	Icon: HIcon;
+begin
+	{ Test small icon size parameter }
+	Icon := GetSystemIcon(IconSizeSmall, CSIDL_BITBUCKET);
+	Assert.AreNotEqual(HIcon(INVALID_HANDLE_VALUE), Icon,
+		'Small icon should be retrievable');
+end;
+
+procedure TWindowsHelperTest.TestGetSystemIconNormalSize;
+var
+	Icon: HIcon;
+begin
+	{ Test normal icon size parameter }
+	Icon := GetSystemIcon(IconSizeNormal, CSIDL_BITBUCKET);
+	Assert.AreNotEqual(HIcon(INVALID_HANDLE_VALUE), Icon,
+		'Normal icon should be retrievable');
 end;
 
 initialization
