@@ -656,39 +656,45 @@ begin
 		end;
 	end;
 
-	if FDoCryptFiles then //Загрузка файла в память, дешифрация в файл
-	begin
-		MemoryStream := TMemoryStream.Create;
-		URL := Format('%s%s', [FDownloadShard, PathToUrl(RemotePath, False)]);
-		Result := HTTP.GetFile(URL, MemoryStream, LogErrors);
-		if (CLOUD_ERROR_TOKEN_OUTDATED = Result) and RefreshCSRFToken() then
-			Result := GetFileRegular(RemotePath, LocalPath, ResultHash, LogErrors);
-
-		if Result in [FS_FILE_NOTSUPPORTED] then //this code returned on shard connection error
+	try
+		if FDoCryptFiles then //Загрузка файла в память, дешифрация в файл
 		begin
-			FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, '%s%s', [PREFIX_REDIRECTION_LIMIT, URL]);
-			if (FRequest.Request(RT_MsgYesNo, REDIRECTION_LIMIT, TRY_ANOTHER_SHARD, EmptyWideStr, 0)) and (GetShard(FDownloadShard)) then
-				Result := GetFileRegular(RemotePath, LocalPath, ResultHash, LogErrors);
+			MemoryStream := TMemoryStream.Create;
+			try
+				URL := Format('%s%s', [FDownloadShard, PathToUrl(RemotePath, False)]);
+				Result := HTTP.GetFile(URL, MemoryStream, LogErrors);
+
+				if (CLOUD_ERROR_TOKEN_OUTDATED = Result) and RefreshCSRFToken() then
+					Exit(GetFileRegular(RemotePath, LocalPath, ResultHash, LogErrors));
+
+				if Result in [FS_FILE_NOTSUPPORTED] then //this code returned on shard connection error
+				begin
+					FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, '%s%s', [PREFIX_REDIRECTION_LIMIT, URL]);
+					if (FRequest.Request(RT_MsgYesNo, REDIRECTION_LIMIT, TRY_ANOTHER_SHARD, EmptyWideStr, 0)) and (GetShard(FDownloadShard)) then
+						Exit(GetFileRegular(RemotePath, LocalPath, ResultHash, LogErrors));
+				end;
+
+				if Result in [FS_FILE_OK] then
+				begin
+					ResultHash := CloudHash(MemoryStream);
+					MemoryStream.Position := 0;
+					FCipher.DecryptStream(MemoryStream, FileStream);
+				end;
+			finally
+				MemoryStream.Free;
+			end;
+		end else begin
+			Result := HTTP.GetFile(Format('%s%s', [FDownloadShard, PathToUrl(RemotePath, False)]), FileStream, LogErrors);
+			if (CLOUD_ERROR_TOKEN_OUTDATED = Result) and RefreshCSRFToken() then
+				Exit(GetFileRegular(RemotePath, LocalPath, ResultHash, LogErrors));
+			if ((Result in [FS_FILE_OK]) and (EmptyWideStr = ResultHash)) then
+				ResultHash := CloudHash(FileStream);
 		end;
 
-		if Result in [FS_FILE_OK] then
-		begin
-			ResultHash := CloudHash(MemoryStream);
-			MemoryStream.Position := 0;
-			FCipher.DecryptStream(MemoryStream, FileStream);
-		end;
-		MemoryStream.free;
-
-	end else begin
-		Result := HTTP.GetFile(Format('%s%s', [FDownloadShard, PathToUrl(RemotePath, False)]), FileStream, LogErrors);
-		if (CLOUD_ERROR_TOKEN_OUTDATED = Result) and RefreshCSRFToken() then
-			Result := GetFileRegular(RemotePath, LocalPath, ResultHash, LogErrors);
-		if ((Result in [FS_FILE_OK]) and (EmptyWideStr = ResultHash)) then
-			ResultHash := CloudHash(FileStream);
+		FlushFileBuffers(FileStream.Handle);
+	finally
+		FileStream.Free;
 	end;
-
-	FlushFileBuffers(FileStream.Handle);
-	FileStream.free;
 
 	if not(Result in [FS_FILE_OK]) then
 		System.SysUtils.DeleteFile(GetUNCFilePath(LocalPath));
@@ -1419,9 +1425,12 @@ begin
 		CRCRemotePath := ExtractFilePath(RemotePath) + SplitFileInfo.CRCFileName;
 		HTTP.TargetName := CRCRemotePath;
 		CRCStream := TStringStream.Create;
-		SplitFileInfo.GetCRCData(CRCStream);
-		PutFileStream(SplitFileInfo.CRCFileName, CRCRemotePath, CRCStream, ConflictMode);
-		CRCStream.Destroy;
+		try
+			SplitFileInfo.GetCRCData(CRCStream);
+			PutFileStream(SplitFileInfo.CRCFileName, CRCRemotePath, CRCStream, ConflictMode);
+		finally
+			CRCStream.Free;
+		end;
 	end;
 
 	SplitFileInfo.Destroy;

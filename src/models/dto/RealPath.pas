@@ -61,28 +61,30 @@ begin
 	VirtualPath := Copy(VirtualPath, 2, Length(VirtualPath) - 1);
 
 	List := TStringList.Create;
-	MyExtractStrings(['\'], [], PWideChar(VirtualPath), List);
+	try
+		MyExtractStrings(['\'], [], PWideChar(VirtualPath), List);
 
-	if (List.Count > 0) and (List.Strings[List.Count - 1] = '..') then
-		self.upDirItem := true;
+		if (List.Count > 0) and (List.Strings[List.Count - 1] = '..') then
+			self.upDirItem := true;
 
-	if (List.Count > 0) and (List.Strings[List.Count - 1] = '\') then
-		self.isDir := ID_True; // it newer happens, actually
+		if (List.Count > 0) and (List.Strings[List.Count - 1] = '\') then
+			self.isDir := ID_True; // it newer happens, actually
 
-	if List.Count = 1 then
-	begin
-		self.account := List.Strings[0];
-		if (self.account = VirtualPath) then
-			self.isDir := ID_True;
+		if List.Count = 1 then
+		begin
+			self.account := List.Strings[0];
+			if (self.account = VirtualPath) then
+				self.isDir := ID_True;
 
-	end else if (List.Count > 1) then
-	begin
-		self.account := List.Strings[0];
-		List.Delete(0);
-		self.path := Implode(List, '\');
+		end else if (List.Count > 1) then
+		begin
+			self.account := List.Strings[0];
+			List.Delete(0);
+			self.path := Implode(List, '\');
+		end;
+	finally
+		List.Free;
 	end;
-
-	List.Destroy;
 
 	if ExtractFileExt(self.account) = TrashPostfix then
 	begin

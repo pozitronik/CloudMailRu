@@ -284,8 +284,11 @@ begin
 				begin {Now the proxy password stored in TC, clear password from the ini file}
 					FLogger.Log(LOG_LEVEL_DEBUG, msgtype_details, PASSWORD_SAVED, [ProxySettings.User]);
 					SettingsManager := TPluginSettingsManager.Create();
-					SettingsManager.SwitchProxyPasswordStorage;
-					SettingsManager.Destroy;
+					try
+						SettingsManager.SwitchProxyPasswordStorage;
+					finally
+						SettingsManager.Free;
+					end;
 					Result := True;
 				end else begin
 					FLogger.Log(LOG_LEVEL_WARNING, msgtype_details, WARN_PROXY_PASSWORD_IGNORED);

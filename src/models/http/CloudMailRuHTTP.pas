@@ -316,16 +316,20 @@ function TCloudMailRuHTTP.PostFile(URL, FileName: WideString; FileStream: TStrea
 var
 	PostData: TIdMultiPartFormDataStream;
 	ResultStream: TStringStream;
-
 begin
 	ResultStream := TStringStream.Create;
-	PostData := TIdMultiPartFormDataStream.Create;
-	PostData.AddFormField('file', 'application/octet-stream', EmptyWideStr, FileStream, FileName);
-	result := self.Post(URL, PostData, ResultStream);
-	Answer := ResultStream.DataString;
-
-	ResultStream.free;
-	PostData.free;
+	try
+		PostData := TIdMultiPartFormDataStream.Create;
+		try
+			PostData.AddFormField('file', 'application/octet-stream', EmptyWideStr, FileStream, FileName);
+			result := self.Post(URL, PostData, ResultStream);
+			Answer := ResultStream.DataString;
+		finally
+			PostData.Free;
+		end;
+	finally
+		ResultStream.Free;
+	end;
 end;
 
 function TCloudMailRuHTTP.PostForm(URL, PostDataString: WideString; var Answer: WideString; ContentType: WideString; LogErrors, ProgressEnabled: Boolean): Boolean;
@@ -334,14 +338,18 @@ var
 	PostResult: integer;
 begin
 	ResultStream := TStringStream.Create;
-	PostData := TStringStream.Create(PostDataString, TEncoding.UTF8);
-
-	PostResult := self.Post(URL, PostData, ResultStream, true, ContentType, LogErrors, ProgressEnabled);
-	result := PostResult = CLOUD_OPERATION_OK;
-	Answer := ResultStream.DataString;
-
-	ResultStream.free;
-	PostData.free;
+	try
+		PostData := TStringStream.Create(PostDataString, TEncoding.UTF8);
+		try
+			PostResult := self.Post(URL, PostData, ResultStream, true, ContentType, LogErrors, ProgressEnabled);
+			result := PostResult = CLOUD_OPERATION_OK;
+			Answer := ResultStream.DataString;
+		finally
+			PostData.Free;
+		end;
+	finally
+		ResultStream.Free;
+	end;
 end;
 
 function TCloudMailRuHTTP.PostMultipart(URL: WideString; Params: TDictionary<WideString, WideString>; var Answer: WideString): Boolean;
@@ -351,19 +359,22 @@ var
 	ParamItem: TPair<WideString, WideString>;
 	PostResult: integer;
 begin
-
 	ResultStream := TStringStream.Create;
+	try
+		PostData := TIdMultiPartFormDataStream.Create;
+		try
+			for ParamItem in Params do
+				PostData.AddFormField(ParamItem.Key, ParamItem.Value);
 
-	PostData := TIdMultiPartFormDataStream.Create;
-	for ParamItem in Params do
-		PostData.AddFormField(ParamItem.Key, ParamItem.Value);
-
-	PostResult := self.Post(URL, PostData, ResultStream);
-	result := PostResult = CLOUD_OPERATION_OK;
-	Answer := ResultStream.DataString;
-
-	ResultStream.free;
-	PostData.free;
+			PostResult := self.Post(URL, PostData, ResultStream);
+			result := PostResult = CLOUD_OPERATION_OK;
+			Answer := ResultStream.DataString;
+		finally
+			PostData.Free;
+		end;
+	finally
+		ResultStream.Free;
+	end;
 end;
 
 function TCloudMailRuHTTP.OptionsMethod(URL: WideString; var Answer: WideString; var ProgressEnabled: Boolean): Boolean;
@@ -373,19 +384,21 @@ begin
 	result := true;
 	ResultStream := TStringStream.Create;
 	try
-		HTTP.Intercept := Throttle;
-		HTTP.OnWork := self.HTTPProgress;
-		HTTP.Options(URL, ResultStream);
-		Answer := ResultStream.DataString;
-	except
-		On E: Exception do
-		begin
-			self.ExceptionHandler(E, URL, HTTP_METHOD_OPTIONS);
-			result := false;
+		try
+			HTTP.Intercept := Throttle;
+			HTTP.OnWork := self.HTTPProgress;
+			HTTP.Options(URL, ResultStream);
+			Answer := ResultStream.DataString;
+		except
+			On E: Exception do
+			begin
+				self.ExceptionHandler(E, URL, HTTP_METHOD_OPTIONS);
+				result := false;
+			end;
 		end;
+	finally
+		ResultStream.Free;
 	end;
-
-	ResultStream.free;
 end;
 
 procedure TCloudMailRuHTTP.HTTPProgress(ASender: TObject; AWorkMode: TWorkMode; AWorkCount: int64);
@@ -431,9 +444,12 @@ var
 	ResultStream: TStringStream;
 begin
 	ResultStream := TStringStream.Create;
-	result := self.Put(URL, FileStream, ResultStream);
-	Answer := ResultStream.DataString;
-	ResultStream.free;
+	try
+		result := self.Put(URL, FileStream, ResultStream);
+		Answer := ResultStream.DataString;
+	finally
+		ResultStream.Free;
+	end;
 end;
 
 procedure TCloudMailRuHTTP.setCookie(const Value: TIdCookieManager);

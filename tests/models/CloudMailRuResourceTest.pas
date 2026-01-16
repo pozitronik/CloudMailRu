@@ -43,6 +43,25 @@ type
 		{ Dictionary with object values - cleanup when operation interrupted }
 		[Test]
 		procedure TestDictionaryObjectValuesCleanupOnInterrupt;
+
+		{ HTTP stream cleanup patterns - demonstrates correct cleanup when
+		  multiple streams are created for HTTP POST operations.
+		  Pattern used in CloudMailRuHTTP.PostFile, PostForm, PostMultipart. }
+		[Test]
+		procedure TestMultipleStreamsCleanupOnException;
+
+		{ Two streams cleanup - simulates PostForm pattern with ResultStream and PostData }
+		[Test]
+		procedure TestTwoStreamsCleanupOnException;
+
+		{ Cleanup with operation that may throw - simulates HTTP Post that throws }
+		[Test]
+		procedure TestStreamCleanupWhenOperationThrows;
+
+		{ Nested streams with recursive exit - simulates GetFileRegular pattern
+		  where FileStream and MemoryStream must be freed on recursive retry }
+		[Test]
+		procedure TestNestedStreamsCleanupOnRecursiveExit;
 	end;
 
 implementation
@@ -246,6 +265,209 @@ begin
 	end;
 
 	{ Note: this line not reached due to Exit, but finally block still runs }
+end;
+
+{ HTTP stream cleanup pattern tests.
+  These tests document the correct try-finally pattern that must be used
+  in CloudMailRuHTTP methods like PostFile, PostForm, PostMultipart.
+  FastMM5 will detect leaks if streams are not properly freed. }
+
+procedure TCloudMailRuResourceTest.TestMultipleStreamsCleanupOnException;
+var
+	ResultStream: TStringStream;
+	PostData: TStringStream;
+	ExceptionCaught: Boolean;
+begin
+	{ Simulates PostForm pattern where two TStringStream objects are created.
+	  Both must be freed even if an operation between them throws.
+	  The correct pattern is:
+	    ResultStream := TStringStream.Create;
+	    try
+	      PostData := TStringStream.Create(...);
+	      try
+	        // operations that may throw
+	      finally
+	        PostData.Free;
+	      end;
+	    finally
+	      ResultStream.Free;
+	    end;
+	}
+	ExceptionCaught := False;
+
+	try
+		ResultStream := TStringStream.Create;
+		try
+			PostData := TStringStream.Create('test data', TEncoding.UTF8);
+			try
+				{ Simulate operation that throws }
+				raise Exception.Create('Simulated HTTP error');
+			finally
+				PostData.Free;
+			end;
+		finally
+			ResultStream.Free;
+		end;
+	except
+		ExceptionCaught := True;
+	end;
+
+	Assert.IsTrue(ExceptionCaught, 'Exception should be caught');
+	{ If we reach here without memory leak (FastMM5 would report), pattern is correct }
+	Assert.Pass('Multiple streams cleaned up correctly on exception');
+end;
+
+procedure TCloudMailRuResourceTest.TestTwoStreamsCleanupOnException;
+var
+	Stream1, Stream2: TStringStream;
+	CleanupCount: Integer;
+begin
+	{ Tests the simpler pattern where both streams are created upfront.
+	  This is what CloudMailRuHTTP currently does (without try-finally).
+	  The fix requires nested try-finally blocks. }
+	CleanupCount := 0;
+
+	Stream1 := TStringStream.Create;
+	try
+		Stream2 := TStringStream.Create;
+		try
+			Stream1.WriteString('data1');
+			Stream2.WriteString('data2');
+
+			{ Simulate early exit that previously leaked both streams }
+			Exit;
+		finally
+			Stream2.Free;
+			Inc(CleanupCount);
+		end;
+	finally
+		Stream1.Free;
+		Inc(CleanupCount);
+	end;
+
+	{ Never reached due to Exit, but cleanups still run }
+end;
+
+procedure TCloudMailRuResourceTest.TestStreamCleanupWhenOperationThrows;
+var
+	ResultStream: TStringStream;
+	OperationResult: Integer;
+	CleanupExecuted: Boolean;
+
+	{ Simulates an operation like HTTP.Post that may throw }
+	function SimulatedPostOperation(Data: TStringStream): Integer;
+	begin
+		raise Exception.Create('Network error');
+	end;
+
+begin
+	{ This pattern simulates PostFile/PutFile where:
+	    ResultStream := TStringStream.Create;
+	    result := self.Post(URL, PostData, ResultStream);  // May throw!
+	    Answer := ResultStream.DataString;
+	    ResultStream.free;  // Never reached if Post throws!
+
+	  Correct pattern:
+	    ResultStream := TStringStream.Create;
+	    try
+	      result := self.Post(URL, PostData, ResultStream);
+	      Answer := ResultStream.DataString;
+	    finally
+	      ResultStream.Free;  // Always executed
+	    end;
+	}
+	CleanupExecuted := False;
+	OperationResult := -1;
+
+	try
+		ResultStream := TStringStream.Create;
+		try
+			OperationResult := SimulatedPostOperation(ResultStream);
+		finally
+			ResultStream.Free;
+			CleanupExecuted := True;
+		end;
+	except
+		{ Swallow exception for test }
+	end;
+
+	Assert.IsTrue(CleanupExecuted, 'Stream should be freed even when operation throws');
+	Assert.AreEqual(-1, OperationResult, 'Operation result should remain -1 (never assigned)');
+end;
+
+procedure TCloudMailRuResourceTest.TestNestedStreamsCleanupOnRecursiveExit;
+var
+	FileStream: TStringStream;
+	MemoryStream: TMemoryStream;
+	NeedsRetry: Boolean;
+	OuterCleanupDone, InnerCleanupDone: Boolean;
+
+	{ Simulates recursive retry pattern where function calls itself on certain conditions }
+	function SimulatedRecursiveOperation: Integer;
+	begin
+		Result := 0; { Success }
+	end;
+
+begin
+	{ This pattern simulates GetFileRegular where:
+	    FileStream := TBufferedFileStream.Create(...);
+	    if FDoCryptFiles then
+	    begin
+	      MemoryStream := TMemoryStream.Create;
+	      Result := HTTP.GetFile(..., MemoryStream);
+	      if (token_outdated) then
+	        Result := GetFileRegular(...);  // Recursive! Old streams leak!
+	      ...
+	      MemoryStream.free;  // Never reached if recursion happens
+	    end
+	    FileStream.free;  // Never reached if recursion happens
+
+	  Correct pattern:
+	    FileStream := TBufferedFileStream.Create(...);
+	    try
+	      if FDoCryptFiles then
+	      begin
+	        MemoryStream := TMemoryStream.Create;
+	        try
+	          Result := HTTP.GetFile(..., MemoryStream);
+	          if (token_outdated) then
+	            Exit(GetFileRegular(...));  // Exit after recursive call!
+	          ...
+	        finally
+	          MemoryStream.Free;
+	        end;
+	      end
+	    finally
+	      FileStream.Free;
+	    end;
+	}
+	NeedsRetry := True;
+	OuterCleanupDone := False;
+	InnerCleanupDone := False;
+
+	FileStream := TStringStream.Create;
+	try
+		MemoryStream := TMemoryStream.Create;
+		try
+			{ Simulate condition that triggers retry }
+			if NeedsRetry then
+			begin
+				{ With Exit, finally blocks still execute }
+				Exit;
+			end;
+
+			{ This code never reached on retry }
+			MemoryStream.WriteBuffer(FileStream, 0);
+		finally
+			MemoryStream.Free;
+			InnerCleanupDone := True;
+		end;
+	finally
+		FileStream.Free;
+		OuterCleanupDone := True;
+	end;
+
+	{ Never reached due to Exit, but cleanups still run }
 end;
 
 initialization
