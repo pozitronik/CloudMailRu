@@ -274,6 +274,8 @@ begin
 end;
 
 destructor TMailRuCloudWFX.Destroy;
+var
+	SkippedPathPair: TPair<DWORD, TStringList>;
 begin
 	FreeAndNil(ThreadRetryCountDownload);
 	FreeAndNil(ThreadRetryCountUpload);
@@ -284,7 +286,15 @@ begin
 	FreeAndNil(ThreadListingAborted);
 	FreeAndNil(ThreadBackgroundJobs);
 	FreeAndNil(ThreadFsStatusInfo);
+
+	{ Free any remaining TStringList values before freeing the dictionary.
+	  Values may remain if operations were interrupted before FS_STATUS_END. }
+	if Assigned(ThreadFsRemoveDirSkippedPath) then
+		for SkippedPathPair in ThreadFsRemoveDirSkippedPath do
+			if Assigned(SkippedPathPair.Value) then
+				SkippedPathPair.Value.Free;
 	FreeAndNil(ThreadFsRemoveDirSkippedPath);
+
 	FreeAndNil(ThreadBackgroundThreads);
 	FreeAndNil(ConnectionManager);
 
