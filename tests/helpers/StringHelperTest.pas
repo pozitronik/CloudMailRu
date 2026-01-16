@@ -13,6 +13,10 @@ type
 	[TestFixture]
 	TStringHelperTest = class
 	public
+		{ SizeOf vs Length verification - proves WideString is pointer-based }
+		[Test]
+		procedure TestWideStringSizeOfReturnsPointerSize;
+
 		[Test]
 		procedure TestImplodeEmpty;
 		[Test]
@@ -69,6 +73,31 @@ type
 	end;
 
 implementation
+
+{ Verifies that SizeOf(WideString) returns pointer size, not string content size.
+  This proves why TCPasswordManager.SetPassword needed fixing. }
+procedure TStringHelperTest.TestWideStringSizeOfReturnsPointerSize;
+var
+	ShortStr: WideString;
+	LongStr: WideString;
+begin
+	ShortStr := 'A';                                  // 1 character
+	LongStr := '12345678901234567890123456789012';    // 32 characters
+
+	{ SizeOf returns the same value regardless of string content length }
+	Assert.AreEqual(SizeOf(ShortStr), SizeOf(LongStr),
+		'SizeOf must be identical for 1-char and 32-char strings');
+
+	{ Both equal pointer size }
+	Assert.AreEqual(SizeOf(Pointer), SizeOf(ShortStr),
+		'SizeOf(WideString) equals pointer size');
+
+	{ But actual content sizes are different }
+	Assert.AreEqual(4, (Length(ShortStr) + 1) * SizeOf(WideChar),
+		'1-char string = 4 bytes with null terminator');
+	Assert.AreEqual(66, (Length(LongStr) + 1) * SizeOf(WideChar),
+		'32-char string = 66 bytes with null terminator');
+end;
 
 procedure TStringHelperTest.TestImplodeEmpty;
 var

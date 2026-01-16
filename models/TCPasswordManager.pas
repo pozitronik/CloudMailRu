@@ -81,7 +81,7 @@ end;
 
 function TTCPasswordManager.SetPassword(Key, Password: WideString): integer;
 begin
-	result := self.CryptProc(PluginNum, CryptoNum, FS_CRYPT_SAVE_PASSWORD, PWideChar(Key), PWideChar(Password), SizeOf(Password));
+	result := self.CryptProc(PluginNum, CryptoNum, FS_CRYPT_SAVE_PASSWORD, PWideChar(Key), PWideChar(Password), (Length(Password) + 1) * SizeOf(WideChar));
 	case result of
 		FS_FILE_OK:
 			begin //TC скушал пароль, запомним в инишник галочку
