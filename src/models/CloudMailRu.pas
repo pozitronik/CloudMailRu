@@ -743,11 +743,14 @@ begin
 	end;
 	if (Assigned(FileStream)) then
 	begin
-		Result := HTTP.GetFile(GetSharedFileUrl(RemotePath), FileStream, LogErrors);
-		if ((Result in [FS_FILE_OK]) and (EmptyWideStr = ResultHash)) then
-			ResultHash := CloudHash(FileStream);
-		FlushFileBuffers(FileStream.Handle);
-		FileStream.free;
+		try
+			Result := HTTP.GetFile(GetSharedFileUrl(RemotePath), FileStream, LogErrors);
+			if ((Result in [FS_FILE_OK]) and (EmptyWideStr = ResultHash)) then
+				ResultHash := CloudHash(FileStream);
+			FlushFileBuffers(FileStream.Handle);
+		finally
+			FileStream.Free;
+		end;
 	end;
 	if Result <> FS_FILE_OK then
 		System.SysUtils.DeleteFile(GetUNCFilePath(LocalPath));
@@ -1248,10 +1251,13 @@ begin
 		if FDoCryptFiles then {Will encrypt any type of data passed here}
 		begin
 			MemoryStream := TMemoryStream.Create;
-			FCipher.CryptStream(FileStream, MemoryStream);
-			MemoryStream.Position := 0;
-			OperationResult := PutFileToCloud(FileName, MemoryStream, RemoteFileIdentity);
-			MemoryStream.Destroy;
+			try
+				FCipher.CryptStream(FileStream, MemoryStream);
+				MemoryStream.Position := 0;
+				OperationResult := PutFileToCloud(FileName, MemoryStream, RemoteFileIdentity);
+			finally
+				MemoryStream.Free;
+			end;
 		end else begin
 			OperationResult := PutFileToCloud(FileName, FileStream, RemoteFileIdentity)
 		end;
@@ -1289,8 +1295,11 @@ var
 	FileStream: TBufferedFileStream;
 begin
 	FileStream := TBufferedFileStream.Create(GetUNCFilePath(LocalPath), fmOpenRead or fmShareDenyWrite);
-	Result := PutFileStream(ExtractFileName(RemotePath), RemotePath, FileStream, ConflictMode); {putFileStream может обойтись без параметра имени - оно всегда берётся из remotePath}
-	FileStream.free;
+	try
+		Result := PutFileStream(ExtractFileName(RemotePath), RemotePath, FileStream, ConflictMode); {putFileStream может обойтись без параметра имени - оно всегда берётся из remotePath}
+	finally
+		FileStream.Free;
+	end;
 end;
 
 {$WARN NO_RETVAL OFF}
@@ -1318,19 +1327,23 @@ begin
 		Exit(CLOUD_OPERATION_OK);
 
 	SplitFileInfo := TFileSplitInfo.Create(GetUNCFilePath(LocalPath), CloudMaxFileSize); //quickly get information about file parts
-	RetryAttemptsCount := 0;
-	SplittedPartIndex := 0;
+	try
+		RetryAttemptsCount := 0;
+		SplittedPartIndex := 0;
 
-	while SplittedPartIndex < SplitFileInfo.ChunksCount do {use while instead for..loop, need to modify loop counter sometimes}
-	begin
-		ChunkRemotePath := Format('%s%s', [ExtractFilePath(RemotePath), SplitFileInfo.GetChunks[SplittedPartIndex].name]);
-		HTTP.SetProgressNames(LocalPath, ChunkRemotePath);
-		FLogger.Log(LOG_LEVEL_DEBUG, MSGTYPE_DETAILS, PARTIAL_UPLOAD_INFO, [LocalPath, (SplittedPartIndex + 1), SplitFileInfo.ChunksCount, ChunkRemotePath]);
-		ChunkStream := TChunkedFileStream.Create(GetUNCFilePath(LocalPath), fmOpenRead or fmShareDenyWrite, SplitFileInfo.GetChunks[SplittedPartIndex].start, SplitFileInfo.GetChunks[SplittedPartIndex].size);
-		Result := PutFileStream(ExtractFileName(ChunkRemotePath), ChunkRemotePath, ChunkStream, ConflictMode);
-		ChunkStream.Destroy;
+		while SplittedPartIndex < SplitFileInfo.ChunksCount do {use while instead for..loop, need to modify loop counter sometimes}
+		begin
+			ChunkRemotePath := Format('%s%s', [ExtractFilePath(RemotePath), SplitFileInfo.GetChunks[SplittedPartIndex].name]);
+			HTTP.SetProgressNames(LocalPath, ChunkRemotePath);
+			FLogger.Log(LOG_LEVEL_DEBUG, MSGTYPE_DETAILS, PARTIAL_UPLOAD_INFO, [LocalPath, (SplittedPartIndex + 1), SplitFileInfo.ChunksCount, ChunkRemotePath]);
+			ChunkStream := TChunkedFileStream.Create(GetUNCFilePath(LocalPath), fmOpenRead or fmShareDenyWrite, SplitFileInfo.GetChunks[SplittedPartIndex].start, SplitFileInfo.GetChunks[SplittedPartIndex].size);
+			try
+				Result := PutFileStream(ExtractFileName(ChunkRemotePath), ChunkRemotePath, ChunkStream, ConflictMode);
+			finally
+				ChunkStream.Free;
+			end;
 
-		case Result of
+			case Result of
 			FS_FILE_OK:
 				begin
 					RetryAttemptsCount := 0;
@@ -1417,23 +1430,24 @@ begin
 					end
 				end;
 		end;
-		Inc(SplittedPartIndex); //all ok, continue with next chunk
-	end; {end while}
+			Inc(SplittedPartIndex); //all ok, continue with next chunk
+		end; {end while}
 
-	if Result = FS_FILE_OK then {Only after successful upload}
-	begin
-		CRCRemotePath := ExtractFilePath(RemotePath) + SplitFileInfo.CRCFileName;
-		HTTP.TargetName := CRCRemotePath;
-		CRCStream := TStringStream.Create;
-		try
-			SplitFileInfo.GetCRCData(CRCStream);
-			PutFileStream(SplitFileInfo.CRCFileName, CRCRemotePath, CRCStream, ConflictMode);
-		finally
-			CRCStream.Free;
+		if Result = FS_FILE_OK then {Only after successful upload}
+		begin
+			CRCRemotePath := ExtractFilePath(RemotePath) + SplitFileInfo.CRCFileName;
+			HTTP.TargetName := CRCRemotePath;
+			CRCStream := TStringStream.Create;
+			try
+				SplitFileInfo.GetCRCData(CRCStream);
+				PutFileStream(SplitFileInfo.CRCFileName, CRCRemotePath, CRCStream, ConflictMode);
+			finally
+				CRCStream.Free;
+			end;
 		end;
+	finally
+		SplitFileInfo.Free;
 	end;
-
-	SplitFileInfo.Destroy;
 	Exit(FS_FILE_OK); //Файлик залит по частям, выходим
 end;
 {$WARN NO_RETVAL ON}
@@ -1616,9 +1630,11 @@ begin
 	except
 		Exit;
 	end;
-	Result := CloudHash(Stream, GetLFCFilePath(Path));
-	Stream.Destroy;
-
+	try
+		Result := CloudHash(Stream, GetLFCFilePath(Path));
+	finally
+		Stream.Free;
+	end;
 end;
 
 function TCloudMailRu.CloudHash(Stream: TStream; Path: WideString = CALCULATING_HASH): WideString;

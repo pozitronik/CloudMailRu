@@ -197,9 +197,12 @@ var
 	TempList: TStrings;
 begin
 	TempList := TStringList.Create;
-	TempList.AddStrings(self.AccountsManager.GetAccountsList());
-	AccountsList.Items := TempList;
-	TempList.Destroy;
+	try
+		TempList.AddStrings(self.AccountsManager.GetAccountsList());
+		AccountsList.Items := TempList;
+	finally
+		TempList.Free;
+	end;
 	AccountsList.OnClick(self);
 end;
 
@@ -208,9 +211,12 @@ var
 	TempList: TStringList;
 begin
 	TempList := TStringList.Create;
-	SettingsManager.GetStreamingExtensionsList(TempList);
-	StreamingExtensionsList.Items := TempList;
-	TempList.Destroy;
+	try
+		SettingsManager.GetStreamingExtensionsList(TempList);
+		StreamingExtensionsList.Items := TempList;
+	finally
+		TempList.Free;
+	end;
 end;
 
 procedure TAccountsForm.AccountsListClick(Sender: TObject);

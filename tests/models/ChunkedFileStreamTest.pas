@@ -60,6 +60,10 @@ type
 		procedure TestSeekFromEnd;
 		[Test]
 		procedure TestSeekBeyondChunkClamps;
+
+		{ Resource cleanup tests }
+		[Test]
+		procedure TestConstructorCleanupOnValidationFailure;
 	end;
 
 implementation
@@ -365,6 +369,32 @@ begin
 		Assert.AreEqual(Int64(200), NewPos);
 	finally
 		Stream.Free;
+	end;
+end;
+
+{ Resource cleanup tests }
+
+procedure TChunkedFileStreamTest.TestConstructorCleanupOnValidationFailure;
+var
+	ExceptionRaised: Boolean;
+	i: Integer;
+begin
+	{This test verifies that TBufferedFileStream is properly cleaned up in the
+	 constructor when validation fails. The try-except-raise pattern with FreeAndNil
+	 prevents resource leaks. FastMM will catch any leak if cleanup fails.
+	 Run multiple iterations to increase chance of detecting leaks.}
+	CreateTestFile(1000);
+	for i := 1 to 100 do
+	begin
+		ExceptionRaised := False;
+		try
+			{ ChunkStart beyond file size should fail validation }
+			TChunkedFileStream.Create(FTempFile, fmOpenRead, 2000, 100).Free;
+		except
+			on E: EReadError do
+				ExceptionRaised := True;
+		end;
+		Assert.IsTrue(ExceptionRaised, 'Expected EReadError on iteration ' + IntToStr(i));
 	end;
 end;
 

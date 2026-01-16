@@ -339,14 +339,16 @@ begin
 	if Command = 'hash' then //add file by hash & filesize
 	begin
 		HashInfo := THashInfo.Create(Parameter);
-		if HashInfo.valid then
-		begin
-			Cloud.addFileByIdentity(HashInfo.CloudFileIdentity, IncludeTrailingPathDelimiter(RealPath.Path) + HashInfo.name, CLOUD_CONFLICT_RENAME);
-			HashInfo.Destroy;
-		end else begin
-			TCLogger.Log(LOG_LEVEL_DEBUG, msgtype_details, ERR_CLONE_BY_HASH, [HashInfo.errorString, Parameter]);
-			HashInfo.Destroy;
-			exit(FS_EXEC_ERROR);
+		try
+			if HashInfo.valid then
+			begin
+				Cloud.addFileByIdentity(HashInfo.CloudFileIdentity, IncludeTrailingPathDelimiter(RealPath.Path) + HashInfo.name, CLOUD_CONFLICT_RENAME);
+			end else begin
+				TCLogger.Log(LOG_LEVEL_DEBUG, msgtype_details, ERR_CLONE_BY_HASH, [HashInfo.errorString, Parameter]);
+				exit(FS_EXEC_ERROR);
+			end;
+		finally
+			HashInfo.Free;
 		end;
 	end;
 

@@ -31,20 +31,23 @@ implementation
 
 constructor TChunkedFileStream.Create(const AFileName: string; Mode: Word; ChunkStart, ChunkSize: Int64);
 var
-
 	FileSize: Int64;
 begin
 	inherited Create;
 	self.FileStream := TBufferedFileStream.Create(AFileName, Mode);
-	FileSize := FileStream.Size;
-	if (ChunkSize < 0) or (ChunkSize > FileSize) or (ChunkStart < 0) or (ChunkStart > FileSize) or (FileStream.Seek(ChunkStart, soBeginning) <> ChunkStart) then
-		raise EReadError.Create(Format(ERR_READ_BYTES_FROM, [AFileName, ChunkSize, ChunkStart]));
-	self.FStartPos := ChunkStart;
-	if ChunkSize = 0 then
-		self.FSize := FileSize - ChunkStart
-	else
-		self.FSize := ChunkSize;
-
+	try
+		FileSize := FileStream.Size;
+		if (ChunkSize < 0) or (ChunkSize > FileSize) or (ChunkStart < 0) or (ChunkStart > FileSize) or (FileStream.Seek(ChunkStart, soBeginning) <> ChunkStart) then
+			raise EReadError.Create(Format(ERR_READ_BYTES_FROM, [AFileName, ChunkSize, ChunkStart]));
+		self.FStartPos := ChunkStart;
+		if ChunkSize = 0 then
+			self.FSize := FileSize - ChunkStart
+		else
+			self.FSize := ChunkSize;
+	except
+		FreeAndNil(FileStream);
+		raise;
+	end;
 end;
 
 destructor TChunkedFileStream.Destroy;

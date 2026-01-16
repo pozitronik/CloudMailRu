@@ -112,8 +112,11 @@ var
 begin
 	Result := CLOUD_OPERATION_OK;
 	AccountsManager := TAccountsManager.Create(self.FPluginSettings.AccountsIniFilePath);
-	CloudSettings.AccountSettings := AccountsManager.GetAccountSettings(ConnectionName);
-	AccountsManager.Free;
+	try
+		CloudSettings.AccountSettings := AccountsManager.GetAccountSettings(ConnectionName);
+	finally
+		AccountsManager.Free;
+	end;
 	with CloudSettings do
 	begin
 		{proxify plugin settings to the cloud settings}
@@ -206,8 +209,11 @@ begin
 				begin //Now the account password stored in TC, clear password from the ini file
 					FLogger.Log(LOG_LEVEL_DEBUG, msgtype_details, PASSWORD_SAVED, [ConnectionName]);
 					AccountsManager := TAccountsManager.Create(self.FPluginSettings.AccountsIniFilePath);
-					AccountsManager.SwitchPasswordStorage(ConnectionName);
-					AccountsManager.Free;
+					try
+						AccountsManager.SwitchPasswordStorage(ConnectionName);
+					finally
+						AccountsManager.Free;
+					end;
 				end;
 			end;
 		end;
@@ -240,8 +246,11 @@ begin
 						begin
 							CloudSettings.AccountSettings.CryptedGUIDFiles := TFileCipher.GetCryptedGUID(CloudSettings.CryptFilesPassword);
 							AccountsManager := TAccountsManager.Create(self.FPluginSettings.IniFilePath);
-							AccountsManager.SetCryptedGUID(ConnectionName, CloudSettings.AccountSettings.CryptedGUIDFiles);
-							AccountsManager.Free;
+							try
+								AccountsManager.SetCryptedGUID(ConnectionName, CloudSettings.AccountSettings.CryptedGUIDFiles);
+							finally
+								AccountsManager.Free;
+							end;
 						end;
 					mrNo:
 						begin
