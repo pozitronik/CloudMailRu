@@ -1854,6 +1854,9 @@ begin
 	end;
 end;
 
+{RenMoveFileViaHash and RenMoveFileViaPublicLink share similar error handling logic.
+ Kept separate intentionally: context-specific error messages, ViaPublicLink has extra publish/unpublish logic,
+ and extracting to generic callback pattern adds complexity for marginal benefit.}
 function TMailRuCloudWFX.RenMoveFileViaHash(OldCloud, NewCloud: TCloudMailRu; OldRealPath, NewRealPath: TRealPath; Move, OverWrite: Boolean): Integer;
 var
 	CurrentItem: TCMRDirItem;
