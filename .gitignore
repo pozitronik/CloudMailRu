@@ -55,3 +55,5 @@
 /ignore_me
 /src/libs/FastMM/
 /src/libs/FastMM5/
+/FastMM_FullDebugMode64.dll
+/FastMM_FullDebugMode.dll
