@@ -195,7 +195,7 @@ begin
 		RemotePath := ChangePathFileName(RemotePath, FileName);
 	end;
 	{Экспериментально выяснено, что параметры api, build, email, x-email, x-page-id в запросе не обязательны}
-	if HTTP.PostForm(API_FILE_ADD, Format('api=2&conflict=%s&home=/%s&hash=%s&size=%d%s', [ConflictMode, PathToUrl(RemotePath), FileIdentity.Hash, FileIdentity.size, FUnitedParams]), JSON, 'application/x-www-form-urlencoded', LogErrors, False) then {Do not allow to cancel operation here}
+	if HTTP.PostForm(API_FILE_ADD + '?' + FUnitedParams, Format('api=2&conflict=%s&home=/%s&hash=%s&size=%d', [ConflictMode, PathToUrl(RemotePath), FileIdentity.Hash, FileIdentity.size]), JSON, 'application/x-www-form-urlencoded', LogErrors, False) then {Do not allow to cancel operation here}
 	begin
 		OperationResult.FromJSON(JSON);
 		Result := CloudResultToFsResult(OperationResult, PREFIX_ERR_FILE_UPLOADING);
@@ -226,7 +226,7 @@ begin
 	if IsPublicAccount then
 		Exit(FS_FILE_NOTSUPPORTED);
 	Progress := true;
-	if HTTP.GetPage(Format('%s?folder=/%s&weblink=%s&conflict=%s%s', [API_CLONE, PathToUrl(Path), Link, ConflictMode, FUnitedParams]), JSON, Progress) then
+	if HTTP.GetPage(Format('%s?folder=/%s&weblink=%s&conflict=%s&%s', [API_CLONE, PathToUrl(Path), Link, ConflictMode, FUnitedParams]), JSON, Progress) then
 	begin //Парсим ответ
 		Result := CloudResultToFsResult(JSON, PREFIX_ERR_FILE_PUBLISH);
 		if (Result <> FS_FILE_OK) and not(Progress) then
@@ -294,7 +294,7 @@ begin
 	if IsPublicAccount then
 		Exit(FS_FILE_NOTSUPPORTED);
 	HTTP.SetProgressNames(OldName, Format('%s%s', [IncludeTrailingPathDelimiter(ToPath), ExtractFileName(OldName)]));
-	if HTTP.PostForm(API_FILE_COPY, Format('home=/%s&folder=/%s%s&conflict', [PathToUrl(OldName), PathToUrl(ToPath), FUnitedParams]), JSON) then
+	if HTTP.PostForm(API_FILE_COPY + '?' + FUnitedParams, Format('home=/%s&folder=/%s&conflict', [PathToUrl(OldName), PathToUrl(ToPath)]), JSON) then
 	begin //Парсим ответ
 		Result := CloudResultToFsResult(JSON, PREFIX_ERR_FILE_COPY);
 	end;
@@ -378,7 +378,7 @@ begin
 	if IsPublicAccount then
 		Exit;
 	HTTP.SetProgressNames(CREATE_DIRECTORY, Path);
-	Result := HTTP.PostForm(API_FOLDER_ADD, Format('home=/%s%s&conflict', [PathToUrl(Path), FUnitedParams]), JSON) and CloudResultToBoolean(JSON);
+	Result := HTTP.PostForm(API_FOLDER_ADD + '?' + FUnitedParams, Format('home=/%s&conflict', [PathToUrl(Path)]), JSON) and CloudResultToBoolean(JSON);
 	if (not Result and (NAME_TOKEN = getBodyError(JSON))) and RefreshCSRFToken() then
 		Result := CreateDir(Path);
 end;
@@ -393,7 +393,7 @@ begin
 	if IsPublicAccount then
 		Exit;
 	HTTP.SetProgressNames(DELETE_FILE, Path);
-	Result := HTTP.PostForm(API_FILE_REMOVE, Format('home=/%s%s&conflict', [PathToUrl(Path), FUnitedParams]), JSON) and CloudResultToBoolean(JSON, PREFIX_ERR_DELETE_FILE);
+	Result := HTTP.PostForm(API_FILE_REMOVE + '?' + FUnitedParams, Format('home=/%s&conflict', [PathToUrl(Path)]), JSON) and CloudResultToBoolean(JSON, PREFIX_ERR_DELETE_FILE);
 	if (not Result and (NAME_TOKEN = getBodyError(JSON))) and RefreshCSRFToken() then
 		Result := DeleteFile(Path);
 end;
@@ -583,11 +583,11 @@ begin
 		Exit; //Проверка на вызов без инициализации
 	SetLength(DirListing, 0);
 	if IsPublicAccount then
-		Result := HTTP.GetPage(Format('%s&weblink=%s%s%s', [API_FOLDER, IncludeSlash(GetPublicLink), PathToUrl(Path, False), FUnitedParams]), JSON, ShowProgress)
+		Result := HTTP.GetPage(Format('%s&weblink=%s%s&%s', [API_FOLDER, IncludeSlash(GetPublicLink), PathToUrl(Path, False), FUnitedParams]), JSON, ShowProgress)
 	else
 	begin
 		HTTP.SetProgressNames(DIR_LISTING, Path);
-		Result := HTTP.GetPage(Format('%s&home=%s%s', [API_FOLDER, PathToUrl(Path), FUnitedParams]), JSON, ShowProgress);
+		Result := HTTP.GetPage(Format('%s&home=%s&%s', [API_FOLDER, PathToUrl(Path), FUnitedParams]), JSON, ShowProgress);
 	end;
 	if Result then
 	begin
@@ -626,6 +626,9 @@ var
 	FileStream: TBufferedFileStream;
 	URL, FileName: WideString;
 	MemoryStream: TMemoryStream;
+	DispatcherResponse: WideString;
+	Progress: Boolean;
+	SavedUserAgent: WideString;
 begin
 	Result := FS_FILE_NOTSUPPORTED;
 	if not(Assigned(self)) then
@@ -638,7 +641,14 @@ begin
 			FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_DETAILS, SHARD_OVERRIDDEN);
 			FDownloadShard := DownloadShardOverride;
 		end else begin
-			if not GetShard(FDownloadShard) then
+			{OAuth uses different dispatcher endpoint that returns plain text URL}
+			Progress := False;
+			if HTTP.GetPage(Format('%s/d?token=%s', [OAUTH_DISPATCHER_URL, FOAuthToken.access_token]), DispatcherResponse, Progress) then
+			begin
+				{Response format: "URL IP COUNT", extract the URL (first word)}
+				FDownloadShard := Trim(Copy(DispatcherResponse, 1, Pos(' ', DispatcherResponse) - 1));
+				FLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, PREFIX_SHARD_RECEIVED, [FDownloadShard, SHARD_TYPE_GET]);
+			end else
 				Exit;
 		end;
 	end;
@@ -659,12 +669,16 @@ begin
 		end;
 	end;
 
+	{OAuth download endpoint blocks browser-like User-Agents (Mozilla/*)}
+	SavedUserAgent := HTTP.HTTP.Request.UserAgent;
+	HTTP.HTTP.Request.UserAgent := OAUTH_USERAGENT;
 	try
 		if FDoCryptFiles then //Загрузка файла в память, дешифрация в файл
 		begin
 			MemoryStream := TMemoryStream.Create;
 			try
-				URL := Format('%s%s', [FDownloadShard, PathToUrl(RemotePath, False)]);
+				{OAuth requires client_id and token parameters for download authentication}
+				URL := Format('%s%s?client_id=%s&token=%s', [FDownloadShard, PathToUrl(RemotePath, False), OAUTH_CLIENT_ID, FOAuthToken.access_token]);
 				Result := HTTP.GetFile(URL, MemoryStream, LogErrors);
 
 				if (CLOUD_ERROR_TOKEN_OUTDATED = Result) and RefreshCSRFToken() then
@@ -687,7 +701,8 @@ begin
 				MemoryStream.Free;
 			end;
 		end else begin
-			Result := HTTP.GetFile(Format('%s%s', [FDownloadShard, PathToUrl(RemotePath, False)]), FileStream, LogErrors);
+			{OAuth requires client_id and token parameters for download authentication}
+			Result := HTTP.GetFile(Format('%s%s?client_id=%s&token=%s', [FDownloadShard, PathToUrl(RemotePath, False), OAUTH_CLIENT_ID, FOAuthToken.access_token]), FileStream, LogErrors);
 			if (CLOUD_ERROR_TOKEN_OUTDATED = Result) and RefreshCSRFToken() then
 				Exit(GetFileRegular(RemotePath, LocalPath, ResultHash, LogErrors));
 			if ((Result in [FS_FILE_OK]) and (EmptyWideStr = ResultHash)) then
@@ -696,6 +711,7 @@ begin
 
 		FlushFileBuffers(FileStream.Handle);
 	finally
+		HTTP.HTTP.Request.UserAgent := SavedUserAgent;
 		FileStream.Free;
 	end;
 
@@ -830,7 +846,7 @@ begin
 	Result := False;
 	if not(Assigned(self)) then
 		Exit; //Проверка на вызов без инициализации
-	Result := HTTP.PostForm(API_DISPATCHER, FUnitedParams, JSON) and CloudResultToBoolean(JSON, PREFIX_ERR_SHARD_RECEIVE);
+	Result := HTTP.PostForm(API_DISPATCHER + '?' + FUnitedParams, '', JSON) and CloudResultToBoolean(JSON, PREFIX_ERR_SHARD_RECEIVE);
 	if Result then
 	begin
 		Result := JSONHelper.GetShard(JSON, Shard, ShardType) and (Shard <> EmptyWideStr);
@@ -853,7 +869,7 @@ begin
 	begin
 		{При первоначальной инициализации получаем токен из страницы ответа, затем он обновляется по необходимости}
 		Result := extractTokenFromText(JSON, FAuthToken) and extract_x_page_id_FromText(JSON, x_page_id) and extract_build_FromText(JSON, build); //and extract_upload_url_FromText(JSON, upload_url);
-		FUnitedParams := Format('&api=2&build=%s&x-page-id=%s&email=%s@%s&x-email=%s@%s&_=%d810', [build, x_page_id, FUser, FDomain, FUser, FDomain, DateTimeToUnix(now)]);
+		FUnitedParams := Format('api=2&build=%s&x-page-id=%s&email=%s@%s&x-email=%s@%s&_=%d810', [build, x_page_id, FUser, FDomain, FUser, FDomain, DateTimeToUnix(now)]);
 	end;
 end;
 
@@ -899,7 +915,7 @@ begin
 	if not(Assigned(self)) then
 		Exit; //Проверка на вызов без инициализации
 	Progress := False;
-	Result := HTTP.GetPage(Format('%s?home=/%s', [API_USER_SPACE, FUnitedParams]), JSON, Progress);
+	Result := HTTP.GetPage(Format('%s?%s', [API_USER_SPACE, FUnitedParams]), JSON, Progress);
 	if Result then
 	begin
 		Result := CloudResultToBoolean(JSON, PREFIX_ERR_GET_USER_SPACE) and SpaceInfo.FromJSON(JSON);
@@ -1026,7 +1042,7 @@ begin
 				begin
 					{Use access_token for API calls instead of CSRF token}
 					FAuthToken := FOAuthToken.access_token;
-					FUnitedParams := Format('&access_token=%s', [FOAuthToken.access_token]);
+					FUnitedParams := Format('access_token=%s', [FOAuthToken.access_token]);
 					FLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, CONNECTED_TO, [Email]);
 					LogUserSpaceInfo;
 				end else begin
@@ -1072,7 +1088,7 @@ begin
 		Exit; //Проверка на вызов без инициализации
 	if IsPublicAccount then
 		Exit(FS_FILE_NOTSUPPORTED);
-	if HTTP.PostForm(API_FILE_MOVE, Format('home=%s&folder=%s%s&conflict', [PathToUrl(OldName), PathToUrl(ToPath), FUnitedParams]), JSON) then
+	if HTTP.PostForm(API_FILE_MOVE + '?' + FUnitedParams, Format('home=%s&folder=%s&conflict', [PathToUrl(OldName), PathToUrl(ToPath)]), JSON) then
 		Result := CloudResultToFsResult(JSON, PREFIX_ERR_FILE_MOVE);
 	if (NAME_TOKEN = getBodyError(JSON)) and RefreshCSRFToken() then
 		Result := MoveFile(OldName, ToPath);
@@ -1111,9 +1127,9 @@ begin
 		Exit;
 	if Publish then
 	begin
-		Result := HTTP.PostForm(API_FILE_PUBLISH, Format('home=/%s%s&conflict', [PathToUrl(Path), FUnitedParams]), JSON, 'application/x-www-form-urlencoded', true, False);
+		Result := HTTP.PostForm(API_FILE_PUBLISH + '?' + FUnitedParams, Format('home=/%s&conflict', [PathToUrl(Path)]), JSON, 'application/x-www-form-urlencoded', true, False);
 	end else begin
-		Result := HTTP.PostForm(API_FILE_UNPUBLISH, Format('weblink=%s%s&conflict', [PublicLink, FUnitedParams]), JSON, 'application/x-www-form-urlencoded', true, False);
+		Result := HTTP.PostForm(API_FILE_UNPUBLISH + '?' + FUnitedParams, Format('weblink=%s&conflict', [PublicLink]), JSON, 'application/x-www-form-urlencoded', true, False);
 	end;
 
 	if Result then
@@ -1134,7 +1150,7 @@ begin
 	if not(Assigned(self)) then
 		Exit; //Проверка на вызов без инициализации
 	Progress := False;
-	if HTTP.GetPage(Format('%s?home=%s%s', [API_FOLDER_SHARED_INFO, PathToUrl(Path), FUnitedParams]), JSON, Progress) then
+	if HTTP.GetPage(Format('%s?home=%s&%s', [API_FOLDER_SHARED_INFO, PathToUrl(Path), FUnitedParams]), JSON, Progress) then
 	begin
 		Result := InviteListing.FromJSON(JSON);
 	end else begin
@@ -1158,9 +1174,9 @@ begin
 		else
 			access_string := CLOUD_SHARE_ACCESS_READ_ONLY;
 
-		Result := HTTP.PostForm(API_FOLDER_SHARE, Format('home=/%s%s&invite={"email":"%s","access":"%s"}', [PathToUrl(Path), FUnitedParams, Email, access_string]), JSON)
+		Result := HTTP.PostForm(API_FOLDER_SHARE + '?' + FUnitedParams, Format('home=/%s&invite={"email":"%s","access":"%s"}', [PathToUrl(Path), Email, access_string]), JSON)
 	end else begin
-		Result := HTTP.PostForm(API_FOLDER_UNSHARE, Format('home=/%s%s&invite={"email":"%s"}', [PathToUrl(Path), FUnitedParams, Email]), JSON);
+		Result := HTTP.PostForm(API_FOLDER_UNSHARE + '?' + FUnitedParams, Format('home=/%s&invite={"email":"%s"}', [PathToUrl(Path), Email]), JSON);
 	end;
 	if Result then
 		Result := CloudResultToBoolean(JSON, PREFIX_ERR_INVITE_MEMBER);
@@ -1177,7 +1193,7 @@ begin
 		Exit; //Проверка на вызов без инициализации
 	if IsPublicAccount then
 		Exit;
-	Result := HTTP.PostForm(API_TRASHBIN_RESTORE, Format('path=%s&restore_revision=%d%s&conflict=%s', [PathToUrl(Path), RestoreRevision, FUnitedParams, ConflictMode]), JSON) and CloudResultToBoolean(JSON, PREFIX_ERR_FILE_RESTORE);
+	Result := HTTP.PostForm(API_TRASHBIN_RESTORE + '?' + FUnitedParams, Format('path=%s&restore_revision=%d&conflict=%s', [PathToUrl(Path), RestoreRevision, ConflictMode]), JSON) and CloudResultToBoolean(JSON, PREFIX_ERR_FILE_RESTORE);
 	if (not Result and (NAME_TOKEN = getBodyError(JSON))) and RefreshCSRFToken() then
 		Result := TrashbinRestore(Path, RestoreRevision, ConflictMode);
 end;
@@ -1192,7 +1208,7 @@ begin
 	if IsPublicAccount then
 		Exit;
 
-	Result := HTTP.PostForm(API_TRASHBIN_EMPTY, FUnitedParams, JSON) and CloudResultToBoolean(JSON, PREFIX_ERR_TRASH_CLEAN);
+	Result := HTTP.PostForm(API_TRASHBIN_EMPTY + '?' + FUnitedParams, '', JSON) and CloudResultToBoolean(JSON, PREFIX_ERR_TRASH_CLEAN);
 	if (not Result and (NAME_TOKEN = getBodyError(JSON))) and RefreshCSRFToken() then
 		Result := TrashbinEmpty();
 end;
@@ -1206,7 +1222,7 @@ begin
 		Exit; //Проверка на вызов без инициализации
 	if IsPublicAccount then
 		Exit;
-	Result := HTTP.PostForm(API_FOLDER_MOUNT, Format('home=%s&invite_token=%s%s&conflict=%s', [UrlEncode(Home), InviteToken, FUnitedParams, ConflictMode]), JSON) and CloudResultToBoolean(JSON, PREFIX_ERR_FOLDER_MOUNT);
+	Result := HTTP.PostForm(API_FOLDER_MOUNT + '?' + FUnitedParams, Format('home=%s&invite_token=%s&conflict=%s', [UrlEncode(Home), InviteToken, ConflictMode]), JSON) and CloudResultToBoolean(JSON, PREFIX_ERR_FOLDER_MOUNT);
 	if (not Result and (NAME_TOKEN = getBodyError(JSON))) and RefreshCSRFToken() then
 		Result := MountFolder(Home, InviteToken, ConflictMode);
 end;
@@ -1225,7 +1241,7 @@ begin
 		CopyStr := 'true'
 	else
 		CopyStr := 'false';
-	Result := HTTP.PostForm(API_FOLDER_UNMOUNT, Format('home=%s&clone_copy=%s%s', [UrlEncode(Home), CopyStr, FUnitedParams]), JSON) and CloudResultToBoolean(JSON, PREFIX_ERR_FOLDER_UNMOUNT);
+	Result := HTTP.PostForm(API_FOLDER_UNMOUNT + '?' + FUnitedParams, Format('home=%s&clone_copy=%s', [UrlEncode(Home), CopyStr]), JSON) and CloudResultToBoolean(JSON, PREFIX_ERR_FOLDER_UNMOUNT);
 	if (not Result and (NAME_TOKEN = getBodyError(JSON))) and RefreshCSRFToken() then
 		Result := UnmountFolder(Home, Clone_copy);
 end;
@@ -1239,7 +1255,7 @@ begin
 		Exit; //Проверка на вызов без инициализации
 	if IsPublicAccount then
 		Exit;
-	Result := HTTP.PostForm(API_INVITE_REJECT, Format('invite_token=%s%s', [InviteToken, FUnitedParams]), JSON) and CloudResultToBoolean(JSON, PREFIX_ERR_INVITE_REJECT);
+	Result := HTTP.PostForm(API_INVITE_REJECT + '?' + FUnitedParams, Format('invite_token=%s', [InviteToken]), JSON) and CloudResultToBoolean(JSON, PREFIX_ERR_INVITE_REJECT);
 	if (not Result and (NAME_TOKEN = getBodyError(JSON))) and RefreshCSRFToken() then
 		Result := RejectInvite(InviteToken);
 end;
@@ -1497,6 +1513,8 @@ function TCloudMailRu.PutFileToCloud(FileName: WideString; FileStream: TStream; 
 var
 	PostAnswer: WideString;
 	UploadUrl: WideString;
+	DispatcherResponse: WideString;
+	Progress: Boolean;
 begin
 	FileIdentity.Hash := EmptyWideStr;
 	FileIdentity.size := -1;
@@ -1513,11 +1531,19 @@ begin
 			FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_DETAILS, UPLOAD_URL_OVERRIDDEN);
 			FUploadShard := UploadShardOverride;
 		end else begin
-			GetShard(FUploadShard, SHARD_TYPE_UPLOAD);
+			{OAuth uses different dispatcher endpoint that returns plain text URL}
+			Progress := False;
+			if HTTP.GetPage(Format('%s/u?token=%s', [OAUTH_DISPATCHER_URL, FOAuthToken.access_token]), DispatcherResponse, Progress) then
+			begin
+				{Response format: "URL IP COUNT", extract the URL (first word)}
+				FUploadShard := Trim(Copy(DispatcherResponse, 1, Pos(' ', DispatcherResponse) - 1));
+				FLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, PREFIX_SHARD_RECEIVED, [FUploadShard, SHARD_TYPE_UPLOAD]);
+			end;
 		end
 	end;
 
-	UploadUrl := Format('%s?cloud_domain=2&x-email=%s@%s', [FUploadShard, FUser, FDomain])(*+ '&fileapi' + DateTimeToUnix(now).ToString + '0246'*);
+	{OAuth requires only client_id and token parameters for upload authentication}
+	UploadUrl := Format('%s?client_id=%s&token=%s', [FUploadShard, OAUTH_CLIENT_ID, FOAuthToken.access_token]);
 	Result := HTTP.PutFile(UploadUrl, FileName, FileStream, PostAnswer);
 	if (CLOUD_ERROR_TOKEN_OUTDATED = Result) and RefreshCSRFToken() then
 		Result := PutFileToCloud(FileName, FileStream, FileIdentity);
@@ -1543,7 +1569,7 @@ begin
 	if IsPublicAccount then
 		Exit;
 	HTTP.SetProgressNames(DELETE_DIR, Path);
-	Result := HTTP.PostForm(API_FILE_REMOVE, Format('home=/%s%s&conflict', [IncludeSlash(PathToUrl(Path)), FUnitedParams]), JSON) and CloudResultToBoolean(JSON, PREFIX_ERR_DELETE_DIR); //API всегда отвечает true, даже если путь не существует
+	Result := HTTP.PostForm(API_FILE_REMOVE + '?' + FUnitedParams, Format('home=/%s&conflict', [IncludeSlash(PathToUrl(Path))]), JSON) and CloudResultToBoolean(JSON, PREFIX_ERR_DELETE_DIR); //API всегда отвечает true, даже если путь не существует
 	if (not Result and (NAME_TOKEN = getBodyError(JSON))) and RefreshCSRFToken() then
 		Result := RemoveDir(Path);
 end;
@@ -1557,7 +1583,7 @@ begin
 		Exit; //Проверка на вызов без инициализации
 	if IsPublicAccount then
 		Exit;
-	if HTTP.PostForm(API_FILE_RENAME, Format('home=%s&name=%s%s', [PathToUrl(OldName), PathToUrl(NewName), FUnitedParams]), JSON) then
+	if HTTP.PostForm(API_FILE_RENAME + '?' + FUnitedParams, Format('home=%s&name=%s', [PathToUrl(OldName), PathToUrl(NewName)]), JSON) then
 		Result := CloudResultToFsResult(JSON, PREFIX_ERR_FILE_RENAME);
 	if (NAME_TOKEN = getBodyError(JSON)) and RefreshCSRFToken() then
 		Result := RenameFile(OldName, NewName);
@@ -1573,9 +1599,9 @@ begin
 		Exit; //Проверка на вызов без инициализации
 	Progress := False;
 	if IsPublicAccount then
-		Result := HTTP.GetPage(Format('%s?weblink=%s%s%s', [API_FILE, IncludeSlash(GetPublicLink), PathToUrl(Path), FUnitedParams]), JSON, Progress)
+		Result := HTTP.GetPage(Format('%s?weblink=%s%s&%s', [API_FILE, IncludeSlash(GetPublicLink), PathToUrl(Path), FUnitedParams]), JSON, Progress)
 	else
-		Result := HTTP.GetPage(Format('%s?home=%s%s', [API_FILE, PathToUrl(Path), FUnitedParams]), JSON, Progress);
+		Result := HTTP.GetPage(Format('%s?home=%s&%s', [API_FILE, PathToUrl(Path), FUnitedParams]), JSON, Progress);
 	if Result then
 	begin
 		Result := CloudResultToBoolean(JSON, PREFIX_ERR_FILE_STATUS) and FileInfo.FromJSON(JSON);

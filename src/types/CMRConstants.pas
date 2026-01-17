@@ -5,6 +5,7 @@ interface
 const
 	PUBLIC_ACCESS_URL = 'https://cloud.mail.ru/public/';
 	OAUTH_TOKEN_URL = 'https://o2.mail.ru/token';
+	OAUTH_DISPATCHER_URL = 'https://dispatcher.cloud.mail.ru';
 	TOKEN_HOME_URL = 'https://cloud.mail.ru/home';
 	TOKEN_URL = 'https://cloud.mail.ru/?from=promo&from=authpopup';
 	LOGIN_URL = 'https://auth.mail.ru/cgi-bin/auth?from=splash';
@@ -100,6 +101,8 @@ const
 
 	{OAuth client credentials for app password auth}
 	OAUTH_CLIENT_ID = 'cloud-win';
+	{OAuth User-Agent - server blocks browser-like User-Agents (Mozilla/*) on OAuth endpoints}
+	OAUTH_USERAGENT = 'cloud-win';
 
 	{Константа использования мобильного аутентификатора для двухфакторной авторизации}
 	AUTH_APP_USED = -1;
