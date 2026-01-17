@@ -87,6 +87,7 @@ uses
 	PluginSettingsTest in 'models\settings\PluginSettingsTest.pas',
 	FileCipherTest in 'models\cipher\FileCipherTest.pas',
 	CloudMailRuResourceTest in 'models\CloudMailRuResourceTest.pas',
+	CloudMailRuStaticTest in 'models\CloudMailRuStaticTest.pas',
 	ChunkedFileStreamTest in 'models\ChunkedFileStreamTest.pas',
 	DescriptionTest in 'models\DescriptionTest.pas',
 	FileSplitInfoTest in 'models\FileSplitInfoTest.pas',
