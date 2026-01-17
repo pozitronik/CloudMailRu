@@ -84,10 +84,6 @@ type
 		function PutFileStream(FileName, RemotePath: WideString; FileStream: TStream; ConflictMode: WideString = CLOUD_CONFLICT_STRICT): Integer;
 
 		{OTHER ROUTINES}
-		function CloudResultToFsResult(CloudResult: TCMROperationResult; ErrorPrefix: WideString = ''): Integer; overload;
-		function CloudResultToFsResult(JSON: WideString; ErrorPrefix: WideString = ''): Integer; overload;
-		function CloudResultToBoolean(CloudResult: TCMROperationResult; ErrorPrefix: WideString = ''): Boolean; overload;
-		function CloudResultToBoolean(JSON: WideString; ErrorPrefix: WideString = ''): Boolean; overload;
 		function CloudHash(Path: WideString): WideString; overload; //get cloud hash for specified file
 		function CloudHash(Stream: TStream; Path: WideString = CALCULATING_HASH): WideString; overload; //get cloud hash for data in stream
 		function GetHTTPConnection: TCloudMailRuHTTP;
@@ -123,6 +119,11 @@ type
 		function GetPublicLink(): WideString;
 	public
 		property IsPublicAccount: Boolean read FSettings.AccountSettings.PublicAccount;
+		{ERROR RESULT MAPPING - exposed for testing and external use}
+		function CloudResultToFsResult(CloudResult: TCMROperationResult; ErrorPrefix: WideString = ''): Integer; overload;
+		function CloudResultToFsResult(JSON: WideString; ErrorPrefix: WideString = ''): Integer; overload;
+		function CloudResultToBoolean(CloudResult: TCMROperationResult; ErrorPrefix: WideString = ''): Boolean; overload;
+		function CloudResultToBoolean(JSON: WideString; ErrorPrefix: WideString = ''): Boolean; overload;
 		{CONSTRUCTOR/DESTRUCTOR}
 		constructor Create(CloudSettings: TCloudSettings; ConnectionManager: THTTPManager; Progress: TTCProgress = nil; Logger: TTCLogger = nil; Request: TTCRequest = nil);
 		destructor Destroy; override;
