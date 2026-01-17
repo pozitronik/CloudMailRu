@@ -3,8 +3,8 @@ object AccountsForm: TAccountsForm
   Top = 0
   BorderStyle = bsDialog
   Caption = 'Cloud Accounts'
-  ClientHeight = 475
-  ClientWidth = 492
+  ClientHeight = 476
+  ClientWidth = 495
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -155,8 +155,8 @@ object AccountsForm: TAccountsForm
   object OptionPages: TPageControl
     Left = 0
     Top = 0
-    Width = 492
-    Height = 475
+    Width = 495
+    Height = 476
     ActivePage = AccountsTab
     Align = alClient
     TabOrder = 0
@@ -165,33 +165,34 @@ object AccountsForm: TAccountsForm
     object AccountsTab: TTabSheet
       Caption = 'Accounts'
       DesignSize = (
-        484
-        447)
+        487
+        448)
       object AccountNameLabel: TLabel
         Left = 225
         Top = 10
-        Width = 68
+        Width = 71
         Height = 13
         Anchors = [akLeft, akTop, akRight]
         Caption = 'Account name'
+        ExplicitWidth = 68
       end
       object AccountsGroupBox: TGroupBox
         Left = -4
         Top = 0
         Width = 225
-        Height = 448
+        Height = 449
         Anchors = [akLeft, akTop, akBottom]
         Caption = 'Accounts'
         TabOrder = 0
         ExplicitHeight = 431
         DesignSize = (
           225
-          448)
+          449)
         object AccountsList: TListBox
           Left = 4
           Top = 17
           Width = 218
-          Height = 428
+          Height = 429
           Style = lbVirtual
           Anchors = [akLeft, akTop, akRight, akBottom]
           ExtendedSelect = False
@@ -199,6 +200,7 @@ object AccountsForm: TAccountsForm
           TabOrder = 0
           OnClick = AccountsListClick
           OnKeyUp = AccountsListKeyUp
+          ExplicitHeight = 411
         end
       end
       object ApplyButton: TButton
@@ -248,13 +250,34 @@ object AccountsForm: TAccountsForm
           Anchors = [akLeft, akTop, akRight]
           Caption = 'Email:'
         end
+        object AuthMethodLabel: TLabel
+          Left = 5
+          Top = 161
+          Width = 113
+          Height = 13
+          Caption = 'Authentication method:'
+        end
         object TwostepAuthCB: TCheckBox
           Left = 3
-          Top = 161
+          Top = 202
           Width = 253
           Height = 17
-          Caption = 'Two-step authentification'
+          Caption = 'Two-step auth (classic only)'
+          TabOrder = 7
+        end
+        object AuthMethodCombo: TComboBox
+          Left = 3
+          Top = 177
+          Width = 253
+          Height = 21
+          Style = csDropDownList
+          ItemIndex = 0
           TabOrder = 5
+          Text = 'Classic (deprecated)'
+          OnChange = AuthMethodComboChange
+          Items.Strings = (
+            'Classic (deprecated)'
+            'OAuth app password (recommended)')
         end
         object SplitLargeFilesCB: TCheckBox
           Left = 3
@@ -302,9 +325,9 @@ object AccountsForm: TAccountsForm
         end
         object EncryptGB: TGroupBox
           Left = 2
-          Top = 184
+          Top = 225
           Width = 256
-          Height = 149
+          Height = 100
           Caption = 'Encryption (UNDER HEAVY DEVELOPMENT)'
           TabOrder = 6
           object EncryptFilesLabel: TLabel
@@ -352,10 +375,11 @@ object AccountsForm: TAccountsForm
       object AccountNameEdit: TEdit
         Left = 225
         Top = 27
-        Width = 243
+        Width = 246
         Height = 21
         Anchors = [akLeft, akTop, akRight]
         TabOrder = 1
+        ExplicitWidth = 237
       end
       object PublicAccountCB: TCheckBox
         Left = 225
@@ -976,64 +1000,70 @@ object AccountsForm: TAccountsForm
       Caption = 'Streaming settings'
       ImageIndex = 4
       DesignSize = (
-        484
-        447)
+        487
+        448)
       object ExtLabel: TLabel
         Left = 225
         Top = 10
-        Width = 66
+        Width = 69
         Height = 13
         Anchors = [akLeft, akTop, akRight]
         Caption = 'File extension'
+        ExplicitWidth = 66
       end
       object CommandLabel: TLabel
         Left = 225
         Top = 52
-        Width = 47
+        Width = 50
         Height = 13
         Anchors = [akLeft, akTop, akRight]
         Caption = 'Command'
+        ExplicitWidth = 47
       end
       object ParametersLabel: TLabel
         Left = 225
         Top = 93
-        Width = 227
+        Width = 230
         Height = 13
         Anchors = [akLeft, akTop, akRight]
         Caption = 'Parameters (%url% for stream url substitution)'
+        ExplicitWidth = 227
       end
       object StartPathLabel: TLabel
         Left = 225
         Top = 134
-        Width = 49
+        Width = 52
         Height = 13
         Anchors = [akLeft, akTop, akRight]
         Caption = 'Start path'
+        ExplicitWidth = 49
       end
       object StreamingTypeLabel: TLabel
         Left = 225
         Top = 177
-        Width = 73
+        Width = 76
         Height = 13
         Anchors = [akLeft, akTop, akRight]
         Caption = 'Streaming type'
+        ExplicitWidth = 73
       end
       object TExtensionsGroupBox: TGroupBox
         Left = -4
         Top = -1
         Width = 225
-        Height = 448
+        Height = 449
         Anchors = [akLeft, akTop, akBottom]
         Caption = 'Registered extensions'
         TabOrder = 0
+        ExplicitHeight = 448
         DesignSize = (
           225
-          448)
+          449)
         object StreamingExtensionsList: TListBox
           Left = 4
           Top = 17
           Width = 218
-          Height = 428
+          Height = 429
           Style = lbVirtual
           Anchors = [akLeft, akTop, akRight, akBottom]
           ExtendedSelect = False
@@ -1041,25 +1071,26 @@ object AccountsForm: TAccountsForm
           TabOrder = 0
           OnClick = StreamingExtensionsListClick
           OnKeyUp = StreamingExtensionsListKeyUp
+          ExplicitHeight = 428
         end
       end
       object StreamingExtensionEdit: TEdit
         Left = 225
         Top = 27
-        Width = 243
+        Width = 246
         Height = 21
         Anchors = [akLeft, akTop, akRight]
         TabOrder = 1
-        ExplicitWidth = 249
+        ExplicitWidth = 243
       end
       object CommandPathEdit: TEdit
         Left = 225
         Top = 69
-        Width = 222
+        Width = 225
         Height = 21
         Anchors = [akLeft, akTop, akRight]
         TabOrder = 2
-        ExplicitWidth = 228
+        ExplicitWidth = 222
       end
       object CommandPathButton: TButton
         Left = 459
@@ -1073,20 +1104,20 @@ object AccountsForm: TAccountsForm
       object ParametersEdit: TEdit
         Left = 225
         Top = 110
-        Width = 243
+        Width = 246
         Height = 21
         Anchors = [akLeft, akTop, akRight]
         TabOrder = 4
-        ExplicitWidth = 249
+        ExplicitWidth = 243
       end
       object StartPathEdit: TEdit
         Left = 225
         Top = 151
-        Width = 243
+        Width = 246
         Height = 21
         Anchors = [akLeft, akTop, akRight]
         TabOrder = 5
-        ExplicitWidth = 249
+        ExplicitWidth = 243
       end
       object StreamingTypeCombo: TComboBox
         Left = 225

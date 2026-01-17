@@ -50,6 +50,8 @@ type
 		AccountNameEdit: TEdit;
 		AccountNameLabel: TLabel;
 		TwostepAuthCB: TCheckBox;
+		AuthMethodLabel: TLabel;
+		AuthMethodCombo: TComboBox;
 		SplitLargeFilesCB: TCheckBox;
 		UnlimitedFileSizeCB: TCheckBox;
 		UseTCPwdMngrCB: TCheckBox;
@@ -170,6 +172,7 @@ type
 		procedure ApplyExtButtonClick(Sender: TObject);
 		procedure CommandPathButtonClick(Sender: TObject);
 		procedure ChangeUserAgentCBClick(Sender: TObject);
+		procedure AuthMethodComboChange(Sender: TObject);
 	private
 		{Private declarations}
 		AccountsManager: TAccountsManager;
@@ -190,7 +193,8 @@ implementation
 
 uses
 	ConnectionSettings,
-	ProxySettings;
+	ProxySettings,
+	CMRConstants;
 
 procedure TAccountsForm.UpdateAccountsList();
 var
@@ -239,8 +243,14 @@ begin
 			TwostepAuthCB.Checked := TwostepAuth;
 			EncryptFilesCombo.ItemIndex := EncryptFilesMode;
 			EncryptFilenamesCB.Checked := EncryptFilenames;
+			{Map auth method constant to combo index: 0=Classic (CLOUD_AUTH_METHOD_WEB), 1=OAuth (CLOUD_AUTH_METHOD_OAUTH_APP)}
+			if AuthMethod = CLOUD_AUTH_METHOD_OAUTH_APP then
+				AuthMethodCombo.ItemIndex := 1
+			else
+				AuthMethodCombo.ItemIndex := 0;
 			self.SelectedAccount := User;
 			EncryptFilesComboChange(nil);
+			AuthMethodComboChange(nil);
 		end;
 	end else begin
 		AccountNameEdit.Text := EmptyWideStr;
@@ -248,8 +258,10 @@ begin
 		PasswordEdit.Text := EmptyWideStr;
 		UseTCPwdMngrCB.Checked := false;
 		EncryptFilesPwdButton.Enabled := false;
+		AuthMethodCombo.ItemIndex := 0;
 	end;
 	PublicAccountCB.OnClick(nil);
+	AuthMethodComboChange(nil);
 end;
 
 procedure TAccountsForm.AccountsListKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -277,6 +289,15 @@ begin
 		PublicUrl := PublicUrlEdit.Text;
 		EncryptFilesMode := EncryptFilesCombo.ItemIndex;
 		EncryptFilenames := EncryptFilenamesCB.Checked;
+		{Map combo index to auth method constant: 0=Classic, 1=OAuth app password}
+		if AuthMethodCombo.ItemIndex = 1 then
+		begin
+			AuthMethod := CLOUD_AUTH_METHOD_OAUTH_APP;
+			UseAppPassword := True;
+		end else begin
+			AuthMethod := CLOUD_AUTH_METHOD_WEB;
+			UseAppPassword := False;
+		end;
 	end;
 	if CurrentAccountSettings.UseTCPasswordManager then //просим TC сохранить пароль
 	begin
@@ -392,6 +413,19 @@ end;
 procedure TAccountsForm.ChangeUserAgentCBClick(Sender: TObject);
 begin
 	UserAgentEdit.ReadOnly := not ChangeUserAgentCB.Checked;
+end;
+
+procedure TAccountsForm.AuthMethodComboChange(Sender: TObject);
+begin
+	{Two-step auth is only available for classic authentication method}
+	TwostepAuthCB.Enabled := AuthMethodCombo.ItemIndex = 0; {0 = Classic}
+	if not TwostepAuthCB.Enabled then
+		TwostepAuthCB.Checked := False;
+	{Update password label based on auth method}
+	if AuthMethodCombo.ItemIndex = 1 then {OAuth app password}
+		PasswordLabel.Caption := 'App password (from mail.ru security settings):'
+	else
+		PasswordLabel.Caption := 'Password (stored as plaintext, see readme):';
 end;
 
 function TAccountsForm.CheckValidators: Boolean;

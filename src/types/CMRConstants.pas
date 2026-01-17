@@ -92,10 +92,14 @@ const
 	CLOUD_SHARE_NO = 2;
 
 	{Поддерживаемые методы авторизации}
-	CLOUD_AUTH_METHOD_WEB = 0; //Через парсинг HTTP-страницы
-	CLOUD_AUTH_METHOD_TWO_STEP = 1; //Через парсинг HTTP-страницы, двухфакторная
-	CLOUD_AUTH_METHOD_OAUTH = 2; //Через сервер OAuth-авторизации
-	CLOUD_AUTH_METHOD_API = 3; //Новый двухступенчатоый метод авторизации
+	CLOUD_AUTH_METHOD_WEB = 0; //Через парсинг HTTP-страницы (устаревший)
+	CLOUD_AUTH_METHOD_TWO_STEP = 1; //Через парсинг HTTP-страницы, двухфакторная (устаревший)
+	CLOUD_AUTH_METHOD_OAUTH = 2; //Через сервер OAuth-авторизации (устаревший)
+	CLOUD_AUTH_METHOD_API = 3; //Новый двухступенчатоый метод авторизации (устаревший)
+	CLOUD_AUTH_METHOD_OAUTH_APP = 4; //OAuth с паролем приложения (рекомендуемый)
+
+	{OAuth client credentials for app password auth}
+	OAUTH_CLIENT_ID = 'cloud-win';
 
 	{Константа использования мобильного аутентификатора для двухфакторной авторизации}
 	AUTH_APP_USED = -1;

@@ -5,6 +5,7 @@ interface
 uses
 	AccountsManager,
 	AccountSettings,
+	CMRConstants,
 	TestHelper,
 	SysUtils,
 	WSList,
@@ -36,6 +37,8 @@ type
 		procedure TestListAccounts;
 		[Test]
 		procedure TestListAccountsEmpty;
+		[Test]
+		procedure TestAuthMethodPersistence;
 
 	end;
 
@@ -197,6 +200,39 @@ begin
 
 	Assert.AreEqual(TFileCipher.GetCryptedGUID('cjhjrnsczxj,tpmzyd;jgeceyekb,fyfy'), TestAccountsManager.GetAccountSettings('NEW_ACCOUNT').CryptedGUIDFiles);
 	TestAccountsManager.Free;
+end;
+
+procedure TAccountsManagerTest.TestAuthMethodPersistence;
+var
+	TestAccountsManager: TAccountsManager;
+	TestAccountSettings: TAccountSettings;
+	LoadedSettings: TAccountSettings;
+begin
+	{ Test that AuthMethod and UseAppPassword are properly saved and loaded }
+	TestAccountsManager := TAccountsManager.Create(self.AppDir + FP_ACCOUNTS_INI);
+	try
+		TestAccountSettings := Default(TAccountSettings);
+		TestAccountSettings.Account := 'OAUTH_TEST_ACCOUNT';
+		TestAccountSettings.Email := 'oauth_test@mail.ru';
+		TestAccountSettings.AuthMethod := CLOUD_AUTH_METHOD_OAUTH_APP;
+		TestAccountSettings.UseAppPassword := True;
+
+		TestAccountsManager.SetAccountSettings(TestAccountSettings);
+	finally
+		TestAccountsManager.Free;
+	end;
+
+	{ Reload and verify }
+	TestAccountsManager := TAccountsManager.Create(self.AppDir + FP_ACCOUNTS_INI);
+	try
+		LoadedSettings := TestAccountsManager.GetAccountSettings('OAUTH_TEST_ACCOUNT');
+
+		Assert.AreEqual('oauth_test@mail.ru', LoadedSettings.Email);
+		Assert.AreEqual(CLOUD_AUTH_METHOD_OAUTH_APP, LoadedSettings.AuthMethod);
+		Assert.IsTrue(LoadedSettings.UseAppPassword);
+	finally
+		TestAccountsManager.Free;
+	end;
 end;
 
 initialization

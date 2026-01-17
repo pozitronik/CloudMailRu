@@ -185,6 +185,7 @@ const
 	REDIRECTION_LIMIT = 'Redirection limit';
 	REQUESTING_AUTH_TOKEN = 'Requesting auth token for %s';
 	REQUESTING_FIRST_STEP_AUTH_TOKEN = 'Requesting first step auth token for %s';
+	REQUESTING_OAUTH_TOKEN = 'Requesting OAuth token for %s';
 	SECOND_STEP_AUTH = 'Performing second step auth...';
 	SHARD_OVERRIDDEN = 'Shard is overridden via config!';
 	SHARED_LINKS_LISTING = 'Shared links listing';

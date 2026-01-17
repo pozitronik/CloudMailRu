@@ -1018,6 +1018,21 @@ begin
 				if not Result then
 					FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, PREFIX_ERR_OAUTH, [FOAuthToken.error, FOAuthToken.error_description]);
 			end;
+		CLOUD_AUTH_METHOD_OAUTH_APP:
+			begin
+				FLogger.Log(LOG_LEVEL_DEBUG, MSGTYPE_DETAILS, REQUESTING_OAUTH_TOKEN, [Email]);
+				Result := GetOAuthToken(FOAuthToken);
+				if Result then
+				begin
+					{Use access_token for API calls instead of CSRF token}
+					FAuthToken := FOAuthToken.access_token;
+					FUnitedParams := Format('&access_token=%s', [FOAuthToken.access_token]);
+					FLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, CONNECTED_TO, [Email]);
+					LogUserSpaceInfo;
+				end else begin
+					FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, PREFIX_ERR_OAUTH, [FOAuthToken.error, FOAuthToken.error_description]);
+				end;
+			end;
 	end;
 end;
 

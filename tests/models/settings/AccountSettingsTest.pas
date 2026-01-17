@@ -4,6 +4,7 @@ interface
 
 uses
 	AccountSettings,
+	CMRConstants,
 	SETTINGS_CONSTANTS,
 	DUnitX.TestFramework;
 
@@ -37,6 +38,14 @@ type
 		procedure TestIsRemoteDescriptionsSupportedEncryptFilenames;
 		[Test]
 		procedure TestIsRemoteDescriptionsSupportedAskOnceNoFilenames;
+
+		{ AuthMethod tests }
+		[Test]
+		procedure TestAuthMethodDefaultValue;
+		[Test]
+		procedure TestAuthMethodOAuthAppPassword;
+		[Test]
+		procedure TestUseAppPasswordWithOAuth;
 	end;
 
 implementation
@@ -159,6 +168,42 @@ begin
 	Settings.EncryptFileNames := False;
 
 	Assert.IsTrue(Settings.IsRemoteDescriptionsSupported);
+end;
+
+{ AuthMethod tests }
+
+procedure TAccountSettingsTest.TestAuthMethodDefaultValue;
+var
+	Settings: TAccountSettings;
+begin
+	{ Default value should be 0 (classic web auth) }
+	Settings := Default(TAccountSettings);
+
+	Assert.AreEqual(0, Settings.AuthMethod);
+end;
+
+procedure TAccountSettingsTest.TestAuthMethodOAuthAppPassword;
+var
+	Settings: TAccountSettings;
+begin
+	{ OAuth app password should be stored correctly }
+	Settings := Default(TAccountSettings);
+	Settings.AuthMethod := CLOUD_AUTH_METHOD_OAUTH_APP;
+
+	Assert.AreEqual(CLOUD_AUTH_METHOD_OAUTH_APP, Settings.AuthMethod);
+end;
+
+procedure TAccountSettingsTest.TestUseAppPasswordWithOAuth;
+var
+	Settings: TAccountSettings;
+begin
+	{ UseAppPassword flag should work with OAuth }
+	Settings := Default(TAccountSettings);
+	Settings.AuthMethod := CLOUD_AUTH_METHOD_OAUTH_APP;
+	Settings.UseAppPassword := True;
+
+	Assert.IsTrue(Settings.UseAppPassword);
+	Assert.AreEqual(CLOUD_AUTH_METHOD_OAUTH_APP, Settings.AuthMethod);
 end;
 
 initialization

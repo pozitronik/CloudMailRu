@@ -111,6 +111,8 @@ begin
 		Result.ShardOverride := IniFile.ReadString(Account, 'shard_override', EmptyWideStr);
 		Result.UploadUrlOverride := IniFile.ReadString(Account, 'upload_url_override', EmptyWideStr);
 		Result.CryptedGUIDFiles := IniFile.ReadString(Account, 'CryptedGUID_files', EmptyWideStr);
+		Result.AuthMethod := IniFile.ReadInteger(Account, 'auth_method', 0);
+		Result.UseAppPassword := IniFile.ReadBool(Account, 'use_app_password', False);
 	finally
 		IniFile.Free;
 	end;
@@ -133,6 +135,8 @@ begin
 		IniFile.WriteStringIfNotDefault(Account, 'description', AccountSettings.Description, EmptyWideStr);
 		IniFile.WriteIntegerIfNotDefault(Account, 'encrypt_files_mode', AccountSettings.EncryptFilesMode, EncryptModeNone);
 		IniFile.WriteBoolIfNotDefault(Account, 'encrypt_filenames', AccountSettings.EncryptFileNames, False);
+		IniFile.WriteIntegerIfNotDefault(Account, 'auth_method', AccountSettings.AuthMethod, 0);
+		IniFile.WriteBoolIfNotDefault(Account, 'use_app_password', AccountSettings.UseAppPassword, False);
 	finally
 		IniFile.Free;
 	end;

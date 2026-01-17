@@ -3,7 +3,7 @@
         <ProjectGuid>{331FEEB4-0D9D-4F0B-B88C-2A76C7983324}</ProjectGuid>
         <MainSource>MailRuCloud.dpr</MainSource>
         <Base>True</Base>
-        <Config Condition="'$(Config)'==''">Canary</Config>
+        <Config Condition="'$(Config)'==''">Release</Config>
         <TargetedPlatforms>3</TargetedPlatforms>
         <AppType>Library</AppType>
         <FrameworkType>VCL</FrameworkType>
@@ -330,7 +330,6 @@
                 <DeployFile LocalName="$(BDS)\Redist\iossimulator\libcgunwind.1.0.dylib" Class="DependencyModule"/>
                 <DeployFile LocalName="$(BDS)\Redist\iossimulator\libpcre.dylib" Class="DependencyModule"/>
                 <DeployFile LocalName="$(BDS)\Redist\osx32\libcgunwind.1.0.dylib" Class="DependencyModule"/>
-                <DeployFile LocalName="MailRuCloud.dll" Configuration="Canary" Class="ProjectOutput"/>
                 <DeployFile LocalName="MailRuCloud.dll" Configuration="Canary" Class="ProjectOutput"/>
                 <DeployFile LocalName="MailRuCloud.dll" Configuration="Debug" Class="ProjectOutput"/>
                 <DeployClass Name="AdditionalDebugSymbols">
