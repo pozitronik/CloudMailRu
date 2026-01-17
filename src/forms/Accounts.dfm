@@ -160,8 +160,8 @@ object AccountsForm: TAccountsForm
     ActivePage = AccountsTab
     Align = alClient
     TabOrder = 0
-    ExplicitWidth = 486
-    ExplicitHeight = 458
+    ExplicitWidth = 489
+    ExplicitHeight = 459
     object AccountsTab: TTabSheet
       Caption = 'Accounts'
       DesignSize = (
@@ -170,11 +170,10 @@ object AccountsForm: TAccountsForm
       object AccountNameLabel: TLabel
         Left = 225
         Top = 10
-        Width = 71
+        Width = 68
         Height = 13
         Anchors = [akLeft, akTop, akRight]
         Caption = 'Account name'
-        ExplicitWidth = 68
       end
       object AccountsGroupBox: TGroupBox
         Left = -4
@@ -184,7 +183,7 @@ object AccountsForm: TAccountsForm
         Anchors = [akLeft, akTop, akBottom]
         Caption = 'Accounts'
         TabOrder = 0
-        ExplicitHeight = 431
+        ExplicitHeight = 432
         DesignSize = (
           225
           449)
@@ -200,7 +199,7 @@ object AccountsForm: TAccountsForm
           TabOrder = 0
           OnClick = AccountsListClick
           OnKeyUp = AccountsListKeyUp
-          ExplicitHeight = 411
+          ExplicitHeight = 412
         end
       end
       object ApplyButton: TButton
@@ -237,7 +236,7 @@ object AccountsForm: TAccountsForm
         object PasswordLabel: TLabel
           Left = 3
           Top = 46
-          Width = 214
+          Width = 174
           Height = 13
           Anchors = [akLeft, akTop, akRight]
           Caption = 'App password (create at id.mail.ru):'
@@ -297,10 +296,10 @@ object AccountsForm: TAccountsForm
         object EncryptGB: TGroupBox
           Left = 2
           Top = 161
-          Width = 256
+          Width = 254
           Height = 100
           Caption = 'Encryption (UNDER HEAVY DEVELOPMENT)'
-          TabOrder = 6
+          TabOrder = 5
           object EncryptFilesLabel: TLabel
             Left = 7
             Top = 20
@@ -334,7 +333,7 @@ object AccountsForm: TAccountsForm
           object EncryptFilesPwdButton: TButton
             Left = 164
             Top = 39
-            Width = 86
+            Width = 84
             Height = 21
             Caption = 'Set password'
             Enabled = False
@@ -346,11 +345,10 @@ object AccountsForm: TAccountsForm
       object AccountNameEdit: TEdit
         Left = 225
         Top = 27
-        Width = 246
+        Width = 253
         Height = 21
         Anchors = [akLeft, akTop, akRight]
         TabOrder = 1
-        ExplicitWidth = 237
       end
       object PublicAccountCB: TCheckBox
         Left = 225
@@ -381,7 +379,7 @@ object AccountsForm: TAccountsForm
         object PublicUrlEdit: TEdit
           Left = 3
           Top = 19
-          Width = 253
+          Width = 251
           Height = 21
           TabOrder = 0
         end
@@ -976,47 +974,42 @@ object AccountsForm: TAccountsForm
       object ExtLabel: TLabel
         Left = 225
         Top = 10
-        Width = 69
+        Width = 66
         Height = 13
         Anchors = [akLeft, akTop, akRight]
         Caption = 'File extension'
-        ExplicitWidth = 66
       end
       object CommandLabel: TLabel
         Left = 225
         Top = 52
-        Width = 50
+        Width = 47
         Height = 13
         Anchors = [akLeft, akTop, akRight]
         Caption = 'Command'
-        ExplicitWidth = 47
       end
       object ParametersLabel: TLabel
         Left = 225
         Top = 93
-        Width = 230
+        Width = 227
         Height = 13
         Anchors = [akLeft, akTop, akRight]
         Caption = 'Parameters (%url% for stream url substitution)'
-        ExplicitWidth = 227
       end
       object StartPathLabel: TLabel
         Left = 225
         Top = 134
-        Width = 52
+        Width = 49
         Height = 13
         Anchors = [akLeft, akTop, akRight]
         Caption = 'Start path'
-        ExplicitWidth = 49
       end
       object StreamingTypeLabel: TLabel
         Left = 225
         Top = 177
-        Width = 76
+        Width = 73
         Height = 13
         Anchors = [akLeft, akTop, akRight]
         Caption = 'Streaming type'
-        ExplicitWidth = 73
       end
       object TExtensionsGroupBox: TGroupBox
         Left = -4
@@ -1026,7 +1019,6 @@ object AccountsForm: TAccountsForm
         Anchors = [akLeft, akTop, akBottom]
         Caption = 'Registered extensions'
         TabOrder = 0
-        ExplicitHeight = 448
         DesignSize = (
           225
           449)
@@ -1042,26 +1034,23 @@ object AccountsForm: TAccountsForm
           TabOrder = 0
           OnClick = StreamingExtensionsListClick
           OnKeyUp = StreamingExtensionsListKeyUp
-          ExplicitHeight = 428
         end
       end
       object StreamingExtensionEdit: TEdit
         Left = 225
         Top = 27
-        Width = 246
+        Width = 240
         Height = 21
         Anchors = [akLeft, akTop, akRight]
         TabOrder = 1
-        ExplicitWidth = 243
       end
       object CommandPathEdit: TEdit
         Left = 225
         Top = 69
-        Width = 225
+        Width = 219
         Height = 21
         Anchors = [akLeft, akTop, akRight]
         TabOrder = 2
-        ExplicitWidth = 222
       end
       object CommandPathButton: TButton
         Left = 459
@@ -1075,20 +1064,18 @@ object AccountsForm: TAccountsForm
       object ParametersEdit: TEdit
         Left = 225
         Top = 110
-        Width = 246
+        Width = 240
         Height = 21
         Anchors = [akLeft, akTop, akRight]
         TabOrder = 4
-        ExplicitWidth = 243
       end
       object StartPathEdit: TEdit
         Left = 225
         Top = 151
-        Width = 246
+        Width = 240
         Height = 21
         Anchors = [akLeft, akTop, akRight]
         TabOrder = 5
-        ExplicitWidth = 243
       end
       object StreamingTypeCombo: TComboBox
         Left = 225
