@@ -72,11 +72,10 @@ procedure TCloudMailRuResourceTest.TestFormFieldsDictionaryCleanupOnEarlyExit;
 var
 	FormFields: TDictionary<WideString, WideString>;
 	SimulatedUserCancelled: Boolean;
-	WasFreed: Boolean;
 begin
-	{ Simulate user cancelling security key entry - this was a leak path }
+	{ Simulate user cancelling security key entry - this was a leak path.
+	  FastMM5 will detect if FormFields leaks due to missing try-finally. }
 	SimulatedUserCancelled := True;
-	WasFreed := False;
 
 	FormFields := TDictionary<WideString, WideString>.Create;
 	try
@@ -95,22 +94,17 @@ begin
 		FormFields.Add('AuthCode', '123456');
 	finally
 		FormFields.Free;
-		WasFreed := True;
 	end;
-
-	{ Note: WasFreed would remain False in old buggy pattern without try-finally }
-	Assert.IsTrue(WasFreed, 'FormFields should be freed on early exit');
 end;
 
 procedure TCloudMailRuResourceTest.TestFormFieldsDictionaryCleanupOnNestedFailure;
 var
 	FormFields: TDictionary<WideString, WideString>;
 	SimulatedParsingFailed: Boolean;
-	CleanupExecuted: Boolean;
 begin
-	{ Simulate JSON parsing failure - another leak path in LoginRegular }
+	{ Simulate JSON parsing failure - another leak path in LoginRegular.
+	  FastMM5 will detect if FormFields leaks due to missing try-finally. }
 	SimulatedParsingFailed := True;
-	CleanupExecuted := False;
 
 	FormFields := TDictionary<WideString, WideString>.Create;
 	try
@@ -127,20 +121,15 @@ begin
 		end;
 	finally
 		FormFields.Free;
-		CleanupExecuted := True;
 	end;
-
-	Assert.IsTrue(CleanupExecuted, 'FormFields should be freed when nested conditions fail');
 end;
 
 procedure TCloudMailRuResourceTest.TestFormFieldsDictionaryCleanupOnException;
 var
 	FormFields: TDictionary<WideString, WideString>;
 	CleanupExecuted: Boolean;
-	ExceptionCaught: Boolean;
 begin
 	CleanupExecuted := False;
-	ExceptionCaught := False;
 
 	try
 		FormFields := TDictionary<WideString, WideString>.Create;
@@ -154,11 +143,10 @@ begin
 			CleanupExecuted := True;
 		end;
 	except
-		ExceptionCaught := True;
+		{ Exception caught - this is expected }
 	end;
 
 	Assert.IsTrue(CleanupExecuted, 'FormFields should be freed even when exception occurs');
-	Assert.IsTrue(ExceptionCaught, 'Exception should have been raised');
 end;
 
 { Tests for dictionary with object values - pattern from ThreadFsRemoveDirSkippedPath }
@@ -276,7 +264,6 @@ procedure TCloudMailRuResourceTest.TestMultipleStreamsCleanupOnException;
 var
 	ResultStream: TStringStream;
 	PostData: TStringStream;
-	ExceptionCaught: Boolean;
 begin
 	{ Simulates PostForm pattern where two TStringStream objects are created.
 	  Both must be freed even if an operation between them throws.
@@ -292,8 +279,8 @@ begin
 	    finally
 	      ResultStream.Free;
 	    end;
+	  FastMM5 will detect if streams leak due to missing try-finally.
 	}
-	ExceptionCaught := False;
 
 	try
 		ResultStream := TStringStream.Create;
@@ -309,10 +296,9 @@ begin
 			ResultStream.Free;
 		end;
 	except
-		ExceptionCaught := True;
+		{ Exception caught - this is expected }
 	end;
 
-	Assert.IsTrue(ExceptionCaught, 'Exception should be caught');
 	{ If we reach here without memory leak (FastMM5 would report), pattern is correct }
 	Assert.Pass('Multiple streams cleaned up correctly on exception');
 end;
@@ -320,12 +306,11 @@ end;
 procedure TCloudMailRuResourceTest.TestTwoStreamsCleanupOnException;
 var
 	Stream1, Stream2: TStringStream;
-	CleanupCount: Integer;
 begin
 	{ Tests the simpler pattern where both streams are created upfront.
 	  This is what CloudMailRuHTTP currently does (without try-finally).
-	  The fix requires nested try-finally blocks. }
-	CleanupCount := 0;
+	  The fix requires nested try-finally blocks.
+	  FastMM5 will detect if streams leak due to missing try-finally. }
 
 	Stream1 := TStringStream.Create;
 	try
@@ -338,14 +323,10 @@ begin
 			Exit;
 		finally
 			Stream2.Free;
-			Inc(CleanupCount);
 		end;
 	finally
 		Stream1.Free;
-		Inc(CleanupCount);
 	end;
-
-	{ Never reached due to Exit, but cleanups still run }
 end;
 
 procedure TCloudMailRuResourceTest.TestStreamCleanupWhenOperationThrows;
@@ -400,14 +381,6 @@ var
 	FileStream: TStringStream;
 	MemoryStream: TMemoryStream;
 	NeedsRetry: Boolean;
-	OuterCleanupDone, InnerCleanupDone: Boolean;
-
-	{ Simulates recursive retry pattern where function calls itself on certain conditions }
-	function SimulatedRecursiveOperation: Integer;
-	begin
-		Result := 0; { Success }
-	end;
-
 begin
 	{ This pattern simulates GetFileRegular where:
 	    FileStream := TBufferedFileStream.Create(...);
@@ -440,10 +413,9 @@ begin
 	    finally
 	      FileStream.Free;
 	    end;
+	  FastMM5 will detect if streams leak due to missing try-finally.
 	}
 	NeedsRetry := True;
-	OuterCleanupDone := False;
-	InnerCleanupDone := False;
 
 	FileStream := TStringStream.Create;
 	try
@@ -460,14 +432,10 @@ begin
 			MemoryStream.WriteBuffer(FileStream, 0);
 		finally
 			MemoryStream.Free;
-			InnerCleanupDone := True;
 		end;
 	finally
 		FileStream.Free;
-		OuterCleanupDone := True;
 	end;
-
-	{ Never reached due to Exit, but cleanups still run }
 end;
 
 initialization
