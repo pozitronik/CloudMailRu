@@ -84,8 +84,6 @@ type
 		function PutFileStream(FileName, RemotePath: WideString; FileStream: TStream; ConflictMode: WideString = CLOUD_CONFLICT_STRICT): Integer;
 
 		{OTHER ROUTINES}
-		function CloudHash(Path: WideString): WideString; overload; //get cloud hash for specified file
-		function CloudHash(Stream: TStream; Path: WideString = CALCULATING_HASH): WideString; overload; //get cloud hash for data in stream
 		function GetHTTPConnection: TCloudMailRuHTTP;
 		function RefreshCSRFToken: Boolean;
 	protected
@@ -93,6 +91,9 @@ type
 		FDomain: WideString;
 		FDoCryptFiles: Boolean;
 		FDoCryptFilenames: Boolean;
+		{HASHING - exposed for testing via subclass}
+		function CloudHash(Path: WideString): WideString; overload; //get cloud hash for specified file
+		function CloudHash(Stream: TStream; Path: WideString = CALCULATING_HASH): WideString; overload; //get cloud hash for data in stream
 		{Those properties are simple shortcuts to settings fields}
 		property Password: WideString read FSettings.AccountSettings.Password;
 		property Email: WideString read FSettings.AccountSettings.Email;

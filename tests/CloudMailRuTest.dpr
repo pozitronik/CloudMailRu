@@ -89,6 +89,7 @@ uses
 	CloudMailRuResourceTest in 'models\CloudMailRuResourceTest.pas',
 	CloudMailRuStaticTest in 'models\CloudMailRuStaticTest.pas',
 	CloudMailRuInstanceTest in 'models\CloudMailRuInstanceTest.pas',
+	CloudMailRuHashTest in 'models\CloudMailRuHashTest.pas',
 	ChunkedFileStreamTest in 'models\ChunkedFileStreamTest.pas',
 	DescriptionTest in 'models\DescriptionTest.pas',
 	FileSplitInfoTest in 'models\FileSplitInfoTest.pas',
