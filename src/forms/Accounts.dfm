@@ -240,7 +240,7 @@ object AccountsForm: TAccountsForm
           Width = 214
           Height = 13
           Anchors = [akLeft, akTop, akRight]
-          Caption = 'Password (stored as plaintext, see readme):'
+          Caption = 'App password (create at id.mail.ru):'
         end
         object UsernameLabel: TLabel
           Left = 3
@@ -249,35 +249,6 @@ object AccountsForm: TAccountsForm
           Height = 13
           Anchors = [akLeft, akTop, akRight]
           Caption = 'Email:'
-        end
-        object AuthMethodLabel: TLabel
-          Left = 5
-          Top = 161
-          Width = 113
-          Height = 13
-          Caption = 'Authentication method:'
-        end
-        object TwostepAuthCB: TCheckBox
-          Left = 3
-          Top = 202
-          Width = 253
-          Height = 17
-          Caption = 'Two-step auth (classic only)'
-          TabOrder = 7
-        end
-        object AuthMethodCombo: TComboBox
-          Left = 3
-          Top = 177
-          Width = 253
-          Height = 21
-          Style = csDropDownList
-          ItemIndex = 0
-          TabOrder = 5
-          Text = 'Classic (deprecated)'
-          OnChange = AuthMethodComboChange
-          Items.Strings = (
-            'Classic (deprecated)'
-            'OAuth app password (recommended)')
         end
         object SplitLargeFilesCB: TCheckBox
           Left = 3
@@ -325,7 +296,7 @@ object AccountsForm: TAccountsForm
         end
         object EncryptGB: TGroupBox
           Left = 2
-          Top = 225
+          Top = 161
           Width = 256
           Height = 100
           Caption = 'Encryption (UNDER HEAVY DEVELOPMENT)'

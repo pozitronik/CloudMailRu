@@ -933,7 +933,7 @@ begin
 
 	FLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, Format(LOGIN_TO, [Email]));
 	case Method of
-		CLOUD_AUTH_METHOD_TWO_STEP:
+		CLOUD_AUTH_METHOD_TWO_STEP: {DEPRECATED: Web-based two-step auth no longer works after VK ID migration}
 			begin
 				FormFields := TDictionary<WideString, WideString>.Create();
 				try
@@ -992,7 +992,7 @@ begin
 					FormFields.Free;
 				end;
 			end;
-		CLOUD_AUTH_METHOD_WEB: //todo: вынести в отдельный метод
+		CLOUD_AUTH_METHOD_WEB: {DEPRECATED: Web-based auth no longer works after VK ID migration}
 			begin
 				FLogger.Log(LOG_LEVEL_DEBUG, MSGTYPE_DETAILS, REQUESTING_AUTH_TOKEN, [Email]);
 				Result := HTTP.PostForm(LOGIN_URL, Format('page=https://cloud.mail.ru/?new_auth_form=1&Domain=%s&Login=%s&Password=%s&FailPage=', [FDomain, FUser, UrlEncode(Password)]), PostAnswer);
@@ -1012,7 +1012,7 @@ begin
 				else
 					FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_GET_AUTH_TOKEN, [Email]);
 			end;
-		CLOUD_AUTH_METHOD_OAUTH:
+		CLOUD_AUTH_METHOD_OAUTH: {DEPRECATED: Old OAuth method, incomplete implementation}
 			begin
 				Result := GetOAuthToken(FOAuthToken);
 				if not Result then

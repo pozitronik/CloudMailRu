@@ -138,13 +138,8 @@ begin
 
 	Cloud := TCloudMailRu.Create(CloudSettings, FHTTPManager, FProgress, FLogger, FRequest);
 
-	{Determine login method: OAuth app password takes priority, then two-step, then classic web}
-	if CloudSettings.AccountSettings.AuthMethod = CLOUD_AUTH_METHOD_OAUTH_APP then
-		LoginMethod := CLOUD_AUTH_METHOD_OAUTH_APP
-	else if CloudSettings.AccountSettings.TwostepAuth then
-		LoginMethod := CLOUD_AUTH_METHOD_TWO_STEP
-	else
-		LoginMethod := CLOUD_AUTH_METHOD_WEB;
+	{OAuth app password is the only supported auth method. Legacy methods are kept for backwards compatibility but are deprecated.}
+	LoginMethod := CLOUD_AUTH_METHOD_OAUTH_APP;
 
 	if not(Cloud.login(LoginMethod)) then
 	begin
