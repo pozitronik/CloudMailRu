@@ -169,7 +169,8 @@ uses
 	CloudMailRuErrorHandlingTest in 'models\CloudMailRuErrorHandlingTest.pas',
 	CloudMailRuUploadDownloadTest in 'models\CloudMailRuUploadDownloadTest.pas',
 	CloudMailRuAdditionalOpsTest in 'models\CloudMailRuAdditionalOpsTest.pas',
-	CloudMailRuMiscOpsTest in 'models\CloudMailRuMiscOpsTest.pas';
+	CloudMailRuMiscOpsTest in 'models\CloudMailRuMiscOpsTest.pas',
+	CloudMailRuCombinedOpsTest in 'models\CloudMailRuCombinedOpsTest.pas';
 
 {keep comment here to protect the following conditional from being removed by the IDE when adding a unit}
 {$IFNDEF TESTINSIGHT}

@@ -1,6 +1,6 @@
 unit CloudMailRuFileOperationsTest;
 
-{Tests for TCloudMailRu file operations: CreateDir, DeleteFile, CopyFile, MoveFile, RenameFile.
+{Tests for TCloudMailRu file operations: CreateDir, DeleteFile, RemoveDir, CopyFile, MoveFile, RenameFile.
  Uses mock HTTP to verify request formation and response handling.}
 
 interface
@@ -67,6 +67,18 @@ type
 		[Test]
 		procedure TestDeleteFile_ConstructsCorrectPostData;
 
+		{RemoveDir tests}
+		[Test]
+		procedure TestRemoveDir_Success_ReturnsTrue;
+		[Test]
+		procedure TestRemoveDir_Failure_ReturnsFalse;
+		[Test]
+		procedure TestRemoveDir_PublicAccount_ReturnsFalse;
+		[Test]
+		procedure TestRemoveDir_ConstructsCorrectPostData;
+		[Test]
+		procedure TestRemoveDir_AlwaysReturnsTrue_EvenIfNotExists;
+
 		{CopyFile tests}
 		[Test]
 		procedure TestCopyFile_Success_ReturnsOK;
@@ -94,6 +106,18 @@ type
 		procedure TestRenameFile_PublicAccount_ReturnsError;
 		[Test]
 		procedure TestRenameFile_ConstructsCorrectPostData;
+
+		{CloneWeblink tests}
+		[Test]
+		procedure TestCloneWeblink_Success_ReturnsOK;
+		[Test]
+		procedure TestCloneWeblink_Failure_ReturnsError;
+		[Test]
+		procedure TestCloneWeblink_PublicAccount_ReturnsNotSupported;
+		[Test]
+		procedure TestCloneWeblink_ConstructsCorrectURL;
+		[Test]
+		procedure TestCloneWeblink_UsesConflictRename;
 
 		{Error scenarios}
 		[Test]
@@ -261,6 +285,137 @@ begin
 
 	PostedData := FMockHTTP.GetLastPostedData;
 	Assert.IsTrue(Pos(String('home=/'), String(PostedData)) > 0, 'Post data should contain home parameter');
+end;
+
+{RemoveDir tests}
+
+procedure TCloudMailRuFileOperationsTest.TestRemoveDir_Success_ReturnsTrue;
+var
+	Success: Boolean;
+begin
+	FCloud := CreateCloud;
+	FMockHTTP.SetResponse(API_FILE_REMOVE, True, JSON_SUCCESS);
+
+	Success := FCloud.RemoveDir('/FolderToDelete');
+
+	Assert.IsTrue(Success, 'RemoveDir should return True on success');
+end;
+
+procedure TCloudMailRuFileOperationsTest.TestRemoveDir_Failure_ReturnsFalse;
+var
+	Success: Boolean;
+begin
+	FCloud := CreateCloud;
+	FMockHTTP.SetResponse(API_FILE_REMOVE, True, JSON_FAILURE);
+
+	Success := FCloud.RemoveDir('/FolderToDelete');
+
+	Assert.IsFalse(Success, 'RemoveDir should return False on API error');
+end;
+
+procedure TCloudMailRuFileOperationsTest.TestRemoveDir_PublicAccount_ReturnsFalse;
+var
+	Success: Boolean;
+begin
+	FCloud := CreateCloud(True);
+	FMockHTTP.SetResponse(API_FILE_REMOVE, True, JSON_SUCCESS);
+
+	Success := FCloud.RemoveDir('/FolderToDelete');
+
+	Assert.IsFalse(Success, 'RemoveDir should return False for public accounts');
+	Assert.IsFalse(FMockHTTP.WasURLCalled(API_FILE_REMOVE), 'Should not call API for public accounts');
+end;
+
+procedure TCloudMailRuFileOperationsTest.TestRemoveDir_ConstructsCorrectPostData;
+var
+	PostedData: WideString;
+begin
+	FCloud := CreateCloud;
+	FMockHTTP.SetResponse(API_FILE_REMOVE, True, JSON_SUCCESS);
+
+	FCloud.RemoveDir('/path/to/folder');
+
+	PostedData := FMockHTTP.GetLastPostedData;
+	Assert.IsTrue(Pos(String('home=/'), String(PostedData)) > 0, 'Post data should contain home parameter');
+	Assert.IsTrue(Pos(String('conflict'), String(PostedData)) > 0, 'Post data should contain conflict parameter');
+end;
+
+procedure TCloudMailRuFileOperationsTest.TestRemoveDir_AlwaysReturnsTrue_EvenIfNotExists;
+var
+	Success: Boolean;
+begin
+	{Note: According to the implementation comment, API always returns true even if path doesn't exist.
+	 However, if the mock returns error JSON, RemoveDir will return False based on CloudResultToBoolean.
+	 This test verifies behavior when API returns success for non-existent path.}
+	FCloud := CreateCloud;
+	{Even for non-existent path, API returns success according to comment in RemoveDir}
+	FMockHTTP.SetResponse(API_FILE_REMOVE, True, JSON_SUCCESS);
+
+	Success := FCloud.RemoveDir('/NonExistentFolder');
+
+	Assert.IsTrue(Success, 'RemoveDir should return True even for non-existent paths (API behavior)');
+end;
+
+{CloneWeblink tests}
+
+procedure TCloudMailRuFileOperationsTest.TestCloneWeblink_Success_ReturnsOK;
+var
+	ResultCode: Integer;
+begin
+	FCloud := CreateCloud;
+	FMockHTTP.SetResponse(API_CLONE, True, JSON_SUCCESS);
+
+	ResultCode := FCloud.CloneWeblink('/TargetFolder', 'abc123publiclink');
+
+	Assert.AreEqual(FS_FILE_OK, ResultCode, 'CloneWeblink should return FS_FILE_OK on success');
+end;
+
+procedure TCloudMailRuFileOperationsTest.TestCloneWeblink_Failure_ReturnsError;
+var
+	ResultCode: Integer;
+begin
+	FCloud := CreateCloud;
+	FMockHTTP.SetResponse(API_CLONE, True, JSON_FAILURE);
+
+	ResultCode := FCloud.CloneWeblink('/TargetFolder', 'abc123publiclink');
+
+	Assert.AreNotEqual(FS_FILE_OK, ResultCode, 'CloneWeblink should return error on API failure');
+end;
+
+procedure TCloudMailRuFileOperationsTest.TestCloneWeblink_PublicAccount_ReturnsNotSupported;
+var
+	ResultCode: Integer;
+begin
+	FCloud := CreateCloud(True);
+	FMockHTTP.SetResponse(API_CLONE, True, JSON_SUCCESS);
+
+	ResultCode := FCloud.CloneWeblink('/TargetFolder', 'abc123publiclink');
+
+	Assert.AreEqual(FS_FILE_NOTSUPPORTED, ResultCode, 'CloneWeblink should return FS_FILE_NOTSUPPORTED for public accounts');
+end;
+
+procedure TCloudMailRuFileOperationsTest.TestCloneWeblink_ConstructsCorrectURL;
+begin
+	FCloud := CreateCloud;
+	FMockHTTP.SetResponse(API_CLONE, True, JSON_SUCCESS);
+
+	FCloud.CloneWeblink('/TargetFolder', 'my_weblink_123');
+
+	Assert.IsTrue(FMockHTTP.WasURLCalled(API_CLONE), 'Should call clone API');
+	{Verify weblink is in URL}
+	var LastCall := FMockHTTP.GetLastCall;
+	Assert.IsTrue(Pos(String('weblink=my_weblink_123'), String(LastCall)) > 0, 'URL should contain weblink parameter');
+end;
+
+procedure TCloudMailRuFileOperationsTest.TestCloneWeblink_UsesConflictRename;
+begin
+	FCloud := CreateCloud;
+	FMockHTTP.SetResponse(API_CLONE, True, JSON_SUCCESS);
+
+	FCloud.CloneWeblink('/TargetFolder', 'abc123', CLOUD_CONFLICT_RENAME);
+
+	var LastCall := FMockHTTP.GetLastCall;
+	Assert.IsTrue(Pos(String('conflict=' + CLOUD_CONFLICT_RENAME), String(LastCall)) > 0, 'URL should contain conflict=rename parameter');
 end;
 
 {CopyFile tests}
