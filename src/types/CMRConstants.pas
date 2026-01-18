@@ -101,8 +101,6 @@ const
 
 	{OAuth client credentials for app password auth}
 	OAUTH_CLIENT_ID = 'cloud-win';
-	{OAuth User-Agent - server blocks browser-like User-Agents (Mozilla/*) on OAuth endpoints}
-	OAUTH_USERAGENT = 'cloud-win';
 
 	{Константа использования мобильного аутентификатора для двухфакторной авторизации}
 	AUTH_APP_USED = -1;
