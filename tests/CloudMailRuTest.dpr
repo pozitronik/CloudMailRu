@@ -147,7 +147,17 @@ uses
 	IEnvironmentInterface in '..\src\models\environment\IEnvironmentInterface.pas',
 	WindowsEnvironment in '..\src\models\environment\WindowsEnvironment.pas',
 	MemoryEnvironmentTest in 'models\environment\MemoryEnvironmentTest.pas',
-	AskPassword in '..\src\forms\AskPassword.pas'{AskPasswordForm};
+	AskPassword in '..\src\forms\AskPassword.pas'{AskPasswordForm},
+	IAuthStrategyInterface in '..\src\models\auth\IAuthStrategyInterface.pas',
+	NullAuthStrategyTest in 'models\auth\NullAuthStrategyTest.pas',
+	OAuthAppAuthStrategy in '..\src\models\auth\OAuthAppAuthStrategy.pas',
+	OAuthAppAuthStrategyTest in 'models\auth\OAuthAppAuthStrategyTest.pas',
+	SharedAccountAuthStrategy in '..\src\models\auth\SharedAccountAuthStrategy.pas',
+	SharedAccountAuthStrategyTest in 'models\auth\SharedAccountAuthStrategyTest.pas',
+	WebAuthStrategy in '..\src\models\auth\WebAuthStrategy.pas',
+	TwoStepAuthStrategy in '..\src\models\auth\TwoStepAuthStrategy.pas',
+	OldOAuthStrategy in '..\src\models\auth\OldOAuthStrategy.pas',
+	DeprecatedStrategiesTest in 'models\auth\DeprecatedStrategiesTest.pas';
 
 {keep comment here to protect the following conditional from being removed by the IDE when adding a unit}
 {$IFNDEF TESTINSIGHT}

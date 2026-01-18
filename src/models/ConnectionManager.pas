@@ -26,6 +26,8 @@ uses
 	IPasswordManagerInterface,
 	IHTTPManagerInterface,
 	ICipherValidatorInterface,
+	IAuthStrategyInterface,
+	OAuthAppAuthStrategy,
 	System.Generics.Collections,
 	SysUtils;
 
@@ -119,6 +121,7 @@ function TConnectionManager.Init(ConnectionName: WideString; out Cloud: TCloudMa
 var
 	CloudSettings: TCloudSettings;
 	LoginMethod: Integer;
+	AuthStrategy: IAuthStrategy;
 begin
 	Result := CLOUD_OPERATION_OK;
 
@@ -133,7 +136,10 @@ begin
 
 	FLogger.Log(LOG_LEVEL_CONNECT, MSGTYPE_CONNECT, 'CONNECT \%s', [ConnectionName]);
 
-	Cloud := TCloudMailRu.Create(CloudSettings, FHTTPManager, FLogger, FProgress, FRequest);
+	{Create appropriate auth strategy}
+	AuthStrategy := TOAuthAppAuthStrategy.Create;
+
+	Cloud := TCloudMailRu.Create(CloudSettings, FHTTPManager, AuthStrategy, FLogger, FProgress, FRequest);
 
 	{OAuth app password is the only supported auth method. Legacy methods are kept for backwards compatibility but are deprecated.}
 	LoginMethod := CLOUD_AUTH_METHOD_OAUTH_APP;

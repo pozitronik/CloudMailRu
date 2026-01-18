@@ -98,7 +98,13 @@ uses
 	IConfigFileInterface in 'src\models\config\IConfigFileInterface.pas',
 	IniConfigFile in 'src\models\config\IniConfigFile.pas',
 	IEnvironmentInterface in 'src\models\environment\IEnvironmentInterface.pas',
-	WindowsEnvironment in 'src\models\environment\WindowsEnvironment.pas';
+	WindowsEnvironment in 'src\models\environment\WindowsEnvironment.pas',
+	IAuthStrategyInterface in 'src\models\auth\IAuthStrategyInterface.pas',
+	OAuthAppAuthStrategy in 'src\models\auth\OAuthAppAuthStrategy.pas',
+	SharedAccountAuthStrategy in 'src\models\auth\SharedAccountAuthStrategy.pas',
+	WebAuthStrategy in 'src\models\auth\WebAuthStrategy.pas',
+	TwoStepAuthStrategy in 'src\models\auth\TwoStepAuthStrategy.pas',
+	OldOAuthStrategy in 'src\models\auth\OldOAuthStrategy.pas';
 
 {$IFDEF WIN64}
 {$E wfx64}

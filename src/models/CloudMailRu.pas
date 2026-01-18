@@ -44,7 +44,8 @@ uses
 	IHTTPManagerInterface,
 	IdCookieManager,
 	DCPbase64,
-	AskPassword;
+	AskPassword,
+	IAuthStrategyInterface;
 
 type
 	TCloudMailRu = class
@@ -61,6 +62,7 @@ type
 		FRequest: IRequest;
 
 		FCipher: ICipher; {The encryption instance}
+		FAuthStrategy: IAuthStrategy; {Authentication strategy}
 
 		FPublicLink: WideString; {Holder for GetPublicLink() value, should not be accessed directly}
 		FPublicShard: WideString; {Public shard url, used for public downloads}
@@ -73,9 +75,7 @@ type
 		FUnitedParams: WideString; {The set of required authentification attributes united to the string — just for a handy usage}
 
 		{HTTP REQUESTS WRAPPERS}
-		function InitConnectionParameters(): Boolean;
 		function InitSharedConnectionParameters(): Boolean;
-		function GetOAuthToken(var OAuthToken: TCMROAuth): Boolean;
 		function GetShard(var Shard: WideString; ShardType: WideString = SHARD_TYPE_GET): Boolean;
 		function GetUserSpace(var SpaceInfo: TCMRSpace): Boolean;
 		function PutFileToCloud(FileName: WideString; FileStream: TStream; var FileIdentity: TCMRFileIdentity): Integer; overload; //отправка на сервер данных из потока
@@ -127,7 +127,7 @@ type
 		function CloudResultToBoolean(CloudResult: TCMROperationResult; ErrorPrefix: WideString = ''): Boolean; overload;
 		function CloudResultToBoolean(JSON: WideString; ErrorPrefix: WideString = ''): Boolean; overload;
 		{CONSTRUCTOR/DESTRUCTOR}
-		constructor Create(CloudSettings: TCloudSettings; ConnectionManager: IHTTPManager; Logger: ILogger; Progress: IProgress; Request: IRequest);
+		constructor Create(CloudSettings: TCloudSettings; ConnectionManager: IHTTPManager; AuthStrategy: IAuthStrategy; Logger: ILogger; Progress: IProgress; Request: IRequest);
 		destructor Destroy; override;
 		{CLOUD INTERFACE METHODS}
 		function Login(Method: Integer = CLOUD_AUTH_METHOD_WEB): Boolean;
@@ -331,7 +331,7 @@ begin //Облако умеет скопировать файл, но не см�
 	end;
 end;
 
-constructor TCloudMailRu.Create(CloudSettings: TCloudSettings; ConnectionManager: IHTTPManager; Logger: ILogger; Progress: IProgress; Request: IRequest);
+constructor TCloudMailRu.Create(CloudSettings: TCloudSettings; ConnectionManager: IHTTPManager; AuthStrategy: IAuthStrategy; Logger: ILogger; Progress: IProgress; Request: IRequest);
 var
 	FileCipherInstance: TFileCipher;
 begin
@@ -340,6 +340,7 @@ begin
 		ExtractEmailParts(Email, FUser, FDomain);
 
 		FHTTPManager := ConnectionManager;
+		FAuthStrategy := AuthStrategy;
 
 		FProgress := Progress;
 		FLogger := Logger;
@@ -790,19 +791,6 @@ begin
 		Result.HTTP.Request.CustomHeaders.Values['X-CSRF-Token'] := FAuthToken;
 end;
 
-function TCloudMailRu.GetOAuthToken(var OAuthToken: TCMROAuth): Boolean;
-var
-	Answer: WideString;
-begin
-	Result := False;
-	if HTTP.PostForm(OAUTH_TOKEN_URL, Format('client_id=cloud-win&grant_type=password&username=%s@%s&password=%s', [FUser, FDomain, UrlEncode(Password)]), Answer) then
-	begin
-		if not OAuthToken.FromJSON(Answer) then
-			Exit(False);
-		Result := OAuthToken.error_code = NOERROR;
-	end;
-end;
-
 function TCloudMailRu.GetPublicLink: WideString;
 begin
 	if FPublicLink <> '' then
@@ -848,25 +836,6 @@ begin
 	begin
 		Result := JSONHelper.GetShard(JSON, Shard, ShardType) and (Shard <> EmptyWideStr);
 		FLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, PREFIX_SHARD_RECEIVED, [Shard, ShardType]);
-	end;
-end;
-
-function TCloudMailRu.InitConnectionParameters: Boolean;
-var
-	JSON: WideString;
-	Progress: Boolean;
-	x_page_id, build: WideString;
-begin
-	Result := False;
-	if not(Assigned(self)) then
-		Exit; //Проверка на вызов без инициализации
-	Progress := False;
-	Result := HTTP.GetPage(TOKEN_HOME_URL, JSON, Progress);
-	if Result then
-	begin
-		{При первоначальной инициализации получаем токен из страницы ответа, затем он обновляется по необходимости}
-		Result := extractTokenFromText(JSON, FAuthToken) and extract_x_page_id_FromText(JSON, x_page_id) and extract_build_FromText(JSON, build); //and extract_upload_url_FromText(JSON, upload_url);
-		FUnitedParams := Format('api=2&build=%s&x-page-id=%s&email=%s@%s&x-email=%s@%s&_=%d810', [build, x_page_id, FUser, FDomain, FUser, FDomain, DateTimeToUnix(now)]);
 	end;
 end;
 
@@ -933,119 +902,33 @@ begin
 	Exit(LoginRegular(Method)); {If not a public account}
 end;
 
+{Delegates authentication to the injected IAuthStrategy.
+ The strategy is responsible for obtaining auth tokens and setting up connection parameters.
+ Method parameter is ignored - the injected strategy determines the auth method.}
 function TCloudMailRu.LoginRegular(Method: Integer): Boolean;
 var
-	PostAnswer: WideString;
-	TwoStepJson: WideString;
-	AuthMessage: WideString;
-	TwostepData: TCMRTwostep;
-	SecurityKey: WideString;
-	FormFields: TDictionary<WideString, WideString>;
+	Credentials: TAuthCredentials;
+	AuthResult: TAuthResult;
 begin
 	Result := False;
 
 	FLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, Format(LOGIN_TO, [Email]));
-	case Method of
-		CLOUD_AUTH_METHOD_TWO_STEP: {DEPRECATED: Web-based two-step auth no longer works after VK ID migration}
-			begin
-				FormFields := TDictionary<WideString, WideString>.Create();
-				try
-					FormFields.AddOrSetValue('Domain', FDomain);
-					FormFields.AddOrSetValue('Login', FUser);
-					FormFields.AddOrSetValue('Password', Password);
-					FLogger.Log(LOG_LEVEL_DEBUG, MSGTYPE_DETAILS, REQUESTING_FIRST_STEP_AUTH_TOKEN, [Email]);
-					Result := HTTP.PostMultipart(LOGIN_URL, FormFields, PostAnswer);
-					if Result then
-					begin
-						FLogger.Log(LOG_LEVEL_DEBUG, MSGTYPE_DETAILS, PARSING_AUTH_DATA);
-						if extractTwostepJson(PostAnswer, TwoStepJson) and TwostepData.FromJSON(TwoStepJson) then
-						begin
-							if TwostepData.secstep_timeout = AUTH_APP_USED then
-								AuthMessage := ASK_AUTH_APP_CODE //mobile app used
-							else if TwostepData.secstep_resend_fail = '1' then
-								AuthMessage := Format(SMS_TIMEOUT, [TwostepData.secstep_phone, TwostepData.secstep_timeout])
-							else
-								AuthMessage := Format(ASK_SENT_CODE, [TwostepData.secstep_phone]);
 
-							FLogger.Log(LOG_LEVEL_DEBUG, MSGTYPE_DETAILS, AWAIT_SECURITY_KEY);
+	{Build credentials from account settings}
+	Credentials := TAuthCredentials.Create(Email, Password, FUser, FDomain);
 
-							if (true = TAskPasswordForm.AskText(ASK_AUTH_KEY, AuthMessage, SecurityKey)) then
-							begin
-								FormFields.Clear;
-								FormFields.AddOrSetValue('Login', Email);
-								FormFields.AddOrSetValue('csrf', TwostepData.csrf);
-								FormFields.AddOrSetValue('AuthCode', SecurityKey);
-								FLogger.Log(LOG_LEVEL_DEBUG, MSGTYPE_DETAILS, SECOND_STEP_AUTH);
-								Result := HTTP.PostMultipart(SECSTEP_URL, FormFields, PostAnswer);
-								if Result then
-								begin
-									Result := InitConnectionParameters();
-									if (Result) then
-									begin
-										FLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, CONNECTED_TO, [Email]);
-										LogUserSpaceInfo;
-									end else begin
-										FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_TWOSTEP_AUTH);
-									end;
-								end;
-							end else begin
-								FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_SECURITY_KEY);
-								Exit(False);
-							end;
+	{Delegate to auth strategy}
+	AuthResult := FAuthStrategy.Authenticate(Credentials, HTTP, FLogger);
 
-						end else begin
-							FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_PARSE_AUTH_DATA);
-							Exit(False);
-						end;
-
-					end else begin
-						FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_GET_FIRST_STEP_AUTH_TOKEN, [Email]);
-					end;
-				finally
-					FormFields.Free;
-				end;
-			end;
-		CLOUD_AUTH_METHOD_WEB: {DEPRECATED: Web-based auth no longer works after VK ID migration}
-			begin
-				FLogger.Log(LOG_LEVEL_DEBUG, MSGTYPE_DETAILS, REQUESTING_AUTH_TOKEN, [Email]);
-				Result := HTTP.PostForm(LOGIN_URL, Format('page=https://cloud.mail.ru/?new_auth_form=1&Domain=%s&Login=%s&Password=%s&FailPage=', [FDomain, FUser, UrlEncode(Password)]), PostAnswer);
-				if (Result) then
-				begin
-					FLogger.Log(LOG_LEVEL_DEBUG, MSGTYPE_DETAILS, PARSING_TOKEN_DATA);
-					Result := InitConnectionParameters();
-					if (Result) then
-					begin
-						FLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, CONNECTED_TO, [Email]);
-						LogUserSpaceInfo;
-					end else begin
-						FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_PARSING_AUTH_TOKEN, [Email]);
-						Exit(False);
-					end;
-				end
-				else
-					FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_GET_AUTH_TOKEN, [Email]);
-			end;
-		CLOUD_AUTH_METHOD_OAUTH: {DEPRECATED: Old OAuth method, incomplete implementation}
-			begin
-				Result := GetOAuthToken(FOAuthToken);
-				if not Result then
-					FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, PREFIX_ERR_OAUTH, [FOAuthToken.error, FOAuthToken.error_description]);
-			end;
-		CLOUD_AUTH_METHOD_OAUTH_APP:
-			begin
-				FLogger.Log(LOG_LEVEL_DEBUG, MSGTYPE_DETAILS, REQUESTING_OAUTH_TOKEN, [Email]);
-				Result := GetOAuthToken(FOAuthToken);
-				if Result then
-				begin
-					{Use access_token for API calls instead of CSRF token}
-					FAuthToken := FOAuthToken.access_token;
-					FUnitedParams := Format('access_token=%s', [FOAuthToken.access_token]);
-					FLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, CONNECTED_TO, [Email]);
-					LogUserSpaceInfo;
-				end else begin
-					FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, PREFIX_ERR_OAUTH, [FOAuthToken.error, FOAuthToken.error_description]);
-				end;
-			end;
+	if AuthResult.Success then
+	begin
+		{Apply auth result to connection state}
+		FAuthToken := AuthResult.AuthToken;
+		FOAuthToken := AuthResult.OAuthToken;
+		FUnitedParams := AuthResult.UnitedParams;
+		FLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, CONNECTED_TO, [Email]);
+		LogUserSpaceInfo;
+		Result := True;
 	end;
 end;
 
@@ -1654,7 +1537,7 @@ begin
 	TempCloudSettings := default (TCloudSettings);
 	TempCloudSettings.AccountSettings.PublicAccount := true;
 	TempCloudSettings.AccountSettings.PublicUrl := PublicUrl;
-	TempCloud := TCloudMailRu.Create(TempCloudSettings, nil, TNullLogger.Create, TNullProgress.Create, TNullRequest.Create);
+	TempCloud := TCloudMailRu.Create(TempCloudSettings, nil, TNullAuthStrategy.Create, TNullLogger.Create, TNullProgress.Create, TNullRequest.Create);
 	Result := TempCloud.Login;
 end;
 
