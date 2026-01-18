@@ -3,7 +3,6 @@
 interface
 
 uses
-	IniFiles,
 	SysUtils,
 	FileHelper,
 	PathHelper,
@@ -13,10 +12,10 @@ uses
 	LANGUAGE_STRINGS,
 	CMRConstants,
 	Classes,
-	IniFilesHelper,
 	PluginSettings,
 	StreamingSettings,
-	IPluginSettingsManagerInterface;
+	IPluginSettingsManagerInterface,
+	IConfigFileInterface;
 
 type
 
@@ -30,6 +29,7 @@ type
 		FApplicationPath: WideString; {the directory of the current executable file}
 		FIniFilePath: WideString; {the absolute path of the current configuration file}
 		FIniFileDir: WideString; {the directory where the currently used ini files (global+accounts) are}
+		FConfigFile: IConfigFile;
 
 		function GetAccountsIniFilePath: WideString;
 
@@ -41,7 +41,7 @@ type
 		property AccountsIniFilePath: WideString read GetAccountsIniFilePath; {The path to the accounts config file}
 
 		constructor Create(); overload; {finds the settings file by itself}
-		constructor Create(IniFilePath: WideString); overload;
+		constructor Create(ConfigFile: IConfigFile; IniFilePath: WideString); overload;
 		procedure Refresh();
 
 		procedure Save(); {save current options set into the file}
@@ -59,62 +59,69 @@ type
 
 implementation
 
-{TMRCSettings}
+uses
+	IniConfigFile;
 
-constructor TPluginSettingsManager.Create(IniFilePath: WideString);
+{TPluginSettingsManager}
+
+constructor TPluginSettingsManager.Create(ConfigFile: IConfigFile; IniFilePath: WideString);
 begin
-	self.FIniFilePath := IniFilePath;
+	FConfigFile := ConfigFile;
+	FIniFilePath := IniFilePath;
 	Refresh();
 end;
 
 constructor TPluginSettingsManager.Create;
 var
 	AppDataDir: WideString;
-	TempManager: TPluginSettingsManager;
+	TempConfigFile: IConfigFile;
+	TempIniDir: Integer;
 begin
 	AppDataDir := IncludeTrailingBackslash(IncludeTrailingBackslash(SysUtils.GetEnvironmentVariable('APPDATA')) + APPDATA_DIR_NAME);
 	FApplicationPath := IncludeTrailingBackslash(ExtractFilePath(GetModuleName(hInstance)));
 
 	if FileExists(GetUNCFilePath(FApplicationPath + PLUGIN_CONFIG_FILE_NAME)) then
 	begin
-		TempManager := TPluginSettingsManager.Create(GetUNCFilePath(FApplicationPath + PLUGIN_CONFIG_FILE_NAME));
+		{Read IniDir setting from plugin directory config to determine actual config location}
+		TempConfigFile := TIniConfigFile.Create(GetUNCFilePath(FApplicationPath + PLUGIN_CONFIG_FILE_NAME));
 		try
-			case TempManager.Settings.IniDir of
+			TempIniDir := TempConfigFile.ReadInteger('Main', 'IniPath', INI_DIR_PLUGIN);
+			case TempIniDir of
 				INI_DIR_PLUGIN:
 					begin
-						self.FIniFileDir := FApplicationPath;
+						FIniFileDir := FApplicationPath;
 					end;
-				INI_DIR_APPDATA: //use appdata path
+				INI_DIR_APPDATA:
 					begin
-						self.FIniFileDir := AppDataDir;
+						FIniFileDir := AppDataDir;
 					end;
-				INI_DIR_AUTO: //use plugin dir if writeable
+				INI_DIR_AUTO:
 					begin
 						if IsWriteable(FApplicationPath) then
-							self.FIniFileDir := FApplicationPath
+							FIniFileDir := FApplicationPath
 						else
-							self.FIniFileDir := AppDataDir;
+							FIniFileDir := AppDataDir;
 					end;
 			end;
 		finally
-			TempManager.Free;
+			TempConfigFile := nil;
 		end;
 
 	end else begin
 		if IsWriteable(FApplicationPath) then
 		begin
-			self.FIniFileDir := FApplicationPath;
+			FIniFileDir := FApplicationPath;
 		end else begin
-			self.FIniFileDir := AppDataDir;
+			FIniFileDir := AppDataDir;
 		end;
 	end;
 
-	if not DirectoryExists(GetUNCFilePath(self.FIniFileDir)) then
-		createDir(GetUNCFilePath(self.FIniFileDir)); //assuming this is inside the appdata dir
+	if not DirectoryExists(GetUNCFilePath(FIniFileDir)) then
+		CreateDir(GetUNCFilePath(FIniFileDir));
 
-	self.FIniFilePath := GetUNCFilePath(self.FIniFileDir + PLUGIN_CONFIG_FILE_NAME);
+	FIniFilePath := GetUNCFilePath(FIniFileDir + PLUGIN_CONFIG_FILE_NAME);
+	FConfigFile := TIniConfigFile.Create(FIniFilePath);
 	Refresh();
-
 end;
 
 function TPluginSettingsManager.GetAccountsIniFilePath: WideString;
@@ -123,210 +130,164 @@ begin
 end;
 
 procedure TPluginSettingsManager.Refresh;
-var
-	IniFile: TIniFile;
 begin
-	IniFile := TIniFile.Create(IniFilePath);
-	try
-		with self.Settings do
-		begin
-			try
-				IniDir := IniFile.ReadInteger('Main', 'IniPath', INI_DIR_PLUGIN); //TODO: Key should be renamed
-			except
-				on E: ERangeError do
-				begin
-					IniDir := INI_DIR_PLUGIN;
-				end;
+	with Settings do
+	begin
+		try
+			IniDir := FConfigFile.ReadInteger('Main', 'IniPath', INI_DIR_PLUGIN);
+		except
+			on E: ERangeError do
+			begin
+				IniDir := INI_DIR_PLUGIN;
 			end;
-			LoadSSLDLLOnlyFromPluginDir := IniFile.ReadBool('Main', 'LoadSSLDLLOnlyFromPluginDir', False);
-			PreserveFileTime := IniFile.ReadBool('Main', 'PreserveFileTime', False);
-			DescriptionEnabled := IniFile.ReadBool('Main', 'DescriptionEnabled', False);
-			DescriptionEditorEnabled := IniFile.ReadBool('Main', 'DescriptionEditorEnabled', False);
-			DescriptionCopyToCloud := IniFile.ReadBool('Main', 'DescriptionCopyToCloud', False);
-			DescriptionCopyFromCloud := IniFile.ReadBool('Main', 'DescriptionCopyFromCloud', False);
-			DescriptionTrackCloudFS := IniFile.ReadBool('Main', 'DescriptionTrackCloudFS', False);
-			DescriptionFileName := IniFile.ReadString('Main', 'DescriptionFileName', 'descript.ion');
-			CopyBetweenAccountsMode := IniFile.ReadInteger('Main', 'CopyBetweenAccountsMode', CopyBetweenAccountsModeDisabled);
-			DisableMultiThreading := IniFile.ReadBool('Main', 'DisableMultiThreading', False);
-			LogUserSpace := IniFile.ReadBool('Main', 'LogUserSpace', True);
-			IconsMode := IniFile.ReadInteger('Main', 'IconsMode', IconsModeDisabled);
-			ConnectionSettings.SocketTimeout := IniFile.ReadInteger('Main', 'SocketTimeout', -1);
-			ConnectionSettings.UploadBPS := IniFile.ReadInteger('Main', 'UploadBPS', -1);
-			ConnectionSettings.DownloadBPS := IniFile.ReadInteger('Main', 'DownloadBPS', -1);
-			CloudMaxFileSize := IniFile.ReadInt64('Main', 'CloudMaxFileSize', CLOUD_MAX_FILESIZE_DEFAULT);
-			ChunkOverwriteMode := IniFile.ReadInteger('Main', 'ChunkOverwriteMode', ChunkOverwrite);
-			DeleteFailOnUploadMode := IniFile.ReadInteger('Main', 'DeleteFailOnUploadMode', DeleteFailOnUploadAsk);
-			OverwriteLocalMode := IniFile.ReadInteger('Main', 'OverwriteLocalMode', OverwriteLocalModeAsk);
-			OperationErrorMode := IniFile.ReadInteger('Main', 'OperationErrorMode', OperationErrorModeAsk);
-			RetryAttempts := IniFile.ReadInteger('Main', 'RetryAttempts', 1);
-			AttemptWait := IniFile.ReadInteger('Main', 'AttemptWait', 1000);
-			ConnectionSettings.ProxySettings.ProxyType := IniFile.ReadInteger('Main', 'ProxyType', ProxyNone);
-			ConnectionSettings.ProxySettings.Server := IniFile.ReadString('Main', 'ProxyServer', EmptyWideStr);
-			ConnectionSettings.ProxySettings.Port := IniFile.ReadInteger('Main', 'ProxyPort', 0);
-			ConnectionSettings.ProxySettings.User := IniFile.ReadString('Main', 'ProxyUser', EmptyWideStr);
-			ConnectionSettings.ProxySettings.UseTCPasswordManager := IniFile.ReadBool('Main', 'ProxyTCPwdMngr', False);
-			ConnectionSettings.ProxySettings.Password := IniFile.ReadString('Main', 'ProxyPassword', EmptyWideStr);
-			ConnectionSettings.UserAgent := IniFile.ReadString('Main', 'UserAgent', DEFAULT_USERAGENT);
-			DownloadLinksEncode := IniFile.ReadBool('Main', 'DownloadLinksEncode', True);
-			AutoUpdateDownloadListing := IniFile.ReadBool('Main', 'AutoUpdateDownloadListing', True);
-			ShowTrashFolders := IniFile.ReadBool('Main', 'ShowTrashFolders', True);
-			ShowSharedFolders := IniFile.ReadBool('Main', 'ShowSharedFolders', True);
-			ShowInvitesFolders := IniFile.ReadBool('Main', 'ShowInvitesFolders', True);
-			LogLevel := IniFile.ReadInteger('Main', 'LogLevel', LOG_LEVEL_CONNECT + LOG_LEVEL_FILE_OPERATION + LOG_LEVEL_DETAIL + LOG_LEVEL_WARNING + LOG_LEVEL_ERROR);
-			PrecalculateHash := IniFile.ReadBool('Main', 'PrecalculateHash', True);
-			ForcePrecalculateSize := IniFile.ReadInt64('Main', 'ForcePrecalculateSize', CLOUD_PRECALCULATE_LIMIT_DEFAULT);
-			CheckCRC := IniFile.ReadBool('Main', 'CheckCRC', True);
 		end;
-	finally
-		IniFile.Free;
+		LoadSSLDLLOnlyFromPluginDir := FConfigFile.ReadBool('Main', 'LoadSSLDLLOnlyFromPluginDir', False);
+		PreserveFileTime := FConfigFile.ReadBool('Main', 'PreserveFileTime', False);
+		DescriptionEnabled := FConfigFile.ReadBool('Main', 'DescriptionEnabled', False);
+		DescriptionEditorEnabled := FConfigFile.ReadBool('Main', 'DescriptionEditorEnabled', False);
+		DescriptionCopyToCloud := FConfigFile.ReadBool('Main', 'DescriptionCopyToCloud', False);
+		DescriptionCopyFromCloud := FConfigFile.ReadBool('Main', 'DescriptionCopyFromCloud', False);
+		DescriptionTrackCloudFS := FConfigFile.ReadBool('Main', 'DescriptionTrackCloudFS', False);
+		DescriptionFileName := FConfigFile.ReadString('Main', 'DescriptionFileName', 'descript.ion');
+		CopyBetweenAccountsMode := FConfigFile.ReadInteger('Main', 'CopyBetweenAccountsMode', CopyBetweenAccountsModeDisabled);
+		DisableMultiThreading := FConfigFile.ReadBool('Main', 'DisableMultiThreading', False);
+		LogUserSpace := FConfigFile.ReadBool('Main', 'LogUserSpace', True);
+		IconsMode := FConfigFile.ReadInteger('Main', 'IconsMode', IconsModeDisabled);
+		ConnectionSettings.SocketTimeout := FConfigFile.ReadInteger('Main', 'SocketTimeout', -1);
+		ConnectionSettings.UploadBPS := FConfigFile.ReadInteger('Main', 'UploadBPS', -1);
+		ConnectionSettings.DownloadBPS := FConfigFile.ReadInteger('Main', 'DownloadBPS', -1);
+		CloudMaxFileSize := FConfigFile.ReadInt64('Main', 'CloudMaxFileSize', CLOUD_MAX_FILESIZE_DEFAULT);
+		ChunkOverwriteMode := FConfigFile.ReadInteger('Main', 'ChunkOverwriteMode', ChunkOverwrite);
+		DeleteFailOnUploadMode := FConfigFile.ReadInteger('Main', 'DeleteFailOnUploadMode', DeleteFailOnUploadAsk);
+		OverwriteLocalMode := FConfigFile.ReadInteger('Main', 'OverwriteLocalMode', OverwriteLocalModeAsk);
+		OperationErrorMode := FConfigFile.ReadInteger('Main', 'OperationErrorMode', OperationErrorModeAsk);
+		RetryAttempts := FConfigFile.ReadInteger('Main', 'RetryAttempts', 1);
+		AttemptWait := FConfigFile.ReadInteger('Main', 'AttemptWait', 1000);
+		ConnectionSettings.ProxySettings.ProxyType := FConfigFile.ReadInteger('Main', 'ProxyType', ProxyNone);
+		ConnectionSettings.ProxySettings.Server := FConfigFile.ReadString('Main', 'ProxyServer', EmptyWideStr);
+		ConnectionSettings.ProxySettings.Port := FConfigFile.ReadInteger('Main', 'ProxyPort', 0);
+		ConnectionSettings.ProxySettings.User := FConfigFile.ReadString('Main', 'ProxyUser', EmptyWideStr);
+		ConnectionSettings.ProxySettings.UseTCPasswordManager := FConfigFile.ReadBool('Main', 'ProxyTCPwdMngr', False);
+		ConnectionSettings.ProxySettings.Password := FConfigFile.ReadString('Main', 'ProxyPassword', EmptyWideStr);
+		ConnectionSettings.UserAgent := FConfigFile.ReadString('Main', 'UserAgent', DEFAULT_USERAGENT);
+		DownloadLinksEncode := FConfigFile.ReadBool('Main', 'DownloadLinksEncode', True);
+		AutoUpdateDownloadListing := FConfigFile.ReadBool('Main', 'AutoUpdateDownloadListing', True);
+		ShowTrashFolders := FConfigFile.ReadBool('Main', 'ShowTrashFolders', True);
+		ShowSharedFolders := FConfigFile.ReadBool('Main', 'ShowSharedFolders', True);
+		ShowInvitesFolders := FConfigFile.ReadBool('Main', 'ShowInvitesFolders', True);
+		LogLevel := FConfigFile.ReadInteger('Main', 'LogLevel', LOG_LEVEL_CONNECT + LOG_LEVEL_FILE_OPERATION + LOG_LEVEL_DETAIL + LOG_LEVEL_WARNING + LOG_LEVEL_ERROR);
+		PrecalculateHash := FConfigFile.ReadBool('Main', 'PrecalculateHash', True);
+		ForcePrecalculateSize := FConfigFile.ReadInt64('Main', 'ForcePrecalculateSize', CLOUD_PRECALCULATE_LIMIT_DEFAULT);
+		CheckCRC := FConfigFile.ReadBool('Main', 'CheckCRC', True);
 	end;
-	self.Settings.IniFilePath := self.FIniFilePath;
-	self.Settings.AccountsIniFilePath := self.AccountsIniFilePath;
+	Settings.IniFilePath := FIniFilePath;
+	Settings.AccountsIniFilePath := AccountsIniFilePath;
 end;
 
 procedure TPluginSettingsManager.Save;
-var
-	IniFile: TIniFile;
 begin
-	IniFile := TIniFile.Create(IniFilePath);
-	try
-		with self.Settings do
-		begin
-			IniFile.WriteIntegerIfNotDefault('Main', 'IniPath', IniDir, INI_DIR_PLUGIN);
-			IniFile.WriteBoolIfNotDefault('Main', 'LoadSSLDLLOnlyFromPluginDir', LoadSSLDLLOnlyFromPluginDir, False);
-			IniFile.WriteBoolIfNotDefault('Main', 'PreserveFileTime', PreserveFileTime, False);
-			IniFile.WriteBoolIfNotDefault('Main', 'DescriptionEnabled', DescriptionEnabled, False);
-			IniFile.WriteBoolIfNotDefault('Main', 'DescriptionEditorEnabled', DescriptionEditorEnabled, False);
-			IniFile.WriteBoolIfNotDefault('Main', 'DescriptionCopyToCloud', DescriptionCopyToCloud, False);
-			IniFile.WriteBoolIfNotDefault('Main', 'DescriptionCopyFromCloud', DescriptionCopyFromCloud, False);
-			IniFile.WriteBoolIfNotDefault('Main', 'DescriptionTrackCloudFS', DescriptionTrackCloudFS, False);
-			IniFile.WriteStringIfNotDefault('Main', 'DescriptionFileName', DescriptionFileName, 'descript.ion');
-			IniFile.WriteIntegerIfNotDefault('Main', 'CopyBetweenAccountsMode', CopyBetweenAccountsMode, CopyBetweenAccountsModeDisabled);
-			IniFile.WriteBoolIfNotDefault('Main', 'DisableMultiThreading', DisableMultiThreading, False);
-			IniFile.WriteBoolIfNotDefault('Main', 'LogUserSpace', LogUserSpace, True);
-			IniFile.WriteIntegerIfNotDefault('Main', 'IconsMode', IconsMode, IconsModeDisabled);
-			IniFile.WriteIntegerIfNotDefault('Main', 'SocketTimeout', ConnectionSettings.SocketTimeout, -1);
-			IniFile.WriteIntegerIfNotDefault('Main', 'UploadBPS', ConnectionSettings.UploadBPS, -1);
-			IniFile.WriteIntegerIfNotDefault('Main', 'DownloadBPS', ConnectionSettings.DownloadBPS, -1);
-			IniFile.WriteInt64IfNotDefault('Main', 'CloudMaxFileSize', CloudMaxFileSize, CLOUD_MAX_FILESIZE_DEFAULT);
-			IniFile.WriteIntegerIfNotDefault('Main', 'ChunkOverwriteMode', ChunkOverwriteMode, ChunkOverwrite);
-			IniFile.WriteIntegerIfNotDefault('Main', 'DeleteFailOnUploadMode', DeleteFailOnUploadMode, DeleteFailOnUploadAsk);
-			IniFile.WriteIntegerIfNotDefault('Main', 'OverwriteLocalMode', OverwriteLocalMode, OverwriteLocalModeAsk);
-			IniFile.WriteIntegerIfNotDefault('Main', 'OperationErrorMode', OperationErrorMode, OperationErrorModeAsk);
-			IniFile.WriteIntegerIfNotDefault('Main', 'RetryAttempts', RetryAttempts, 1);
-			IniFile.WriteIntegerIfNotDefault('Main', 'AttemptWait', AttemptWait, 1000);
-			IniFile.WriteIntegerIfNotDefault('Main', 'ProxyType', ConnectionSettings.ProxySettings.ProxyType, ProxyNone);
-			IniFile.WriteStringIfNotDefault('Main', 'ProxyServer', ConnectionSettings.ProxySettings.Server, EmptyWideStr);
-			IniFile.WriteIntegerIfNotDefault('Main', 'ProxyPort', ConnectionSettings.ProxySettings.Port, 0);
-			IniFile.WriteStringIfNotDefault('Main', 'ProxyUser', ConnectionSettings.ProxySettings.User, EmptyWideStr);
-			IniFile.WriteBoolIfNotDefault('Main', 'ProxyTCPwdMngr', ConnectionSettings.ProxySettings.UseTCPasswordManager, False);
-			IniFile.WriteStringIfNotDefault('Main', 'ProxyPassword', ConnectionSettings.ProxySettings.Password, EmptyWideStr);
-			IniFile.WriteStringIfNotDefault('Main', 'UserAgent', ConnectionSettings.UserAgent, DEFAULT_USERAGENT);
-			IniFile.WriteBoolIfNotDefault('Main', 'DownloadLinksEncode', DownloadLinksEncode, True);
-			IniFile.WriteBoolIfNotDefault('Main', 'AutoUpdateDownloadListing', AutoUpdateDownloadListing, True);
-			IniFile.WriteBoolIfNotDefault('Main', 'ShowTrashFolders', ShowTrashFolders, True);
-			IniFile.WriteBoolIfNotDefault('Main', 'ShowSharedFolders', ShowSharedFolders, True);
-			IniFile.WriteBoolIfNotDefault('Main', 'ShowInvitesFolders', ShowInvitesFolders, True);
-			IniFile.WriteIntegerIfNotDefault('Main', 'LogLevel', LogLevel, LOG_LEVEL_CONNECT + LOG_LEVEL_FILE_OPERATION + LOG_LEVEL_DETAIL + LOG_LEVEL_WARNING + LOG_LEVEL_ERROR);
-			IniFile.WriteBoolIfNotDefault('Main', 'PrecalculateHash', PrecalculateHash, True);
-			IniFile.WriteInt64IfNotDefault('Main', 'ForcePrecalculateSize', ForcePrecalculateSize, CLOUD_PRECALCULATE_LIMIT_DEFAULT);
-			IniFile.WriteBoolIfNotDefault('Main', 'CheckCRC', CheckCRC, True);
-		end;
-	finally
-		IniFile.Free;
+	with Settings do
+	begin
+		FConfigFile.WriteIntegerIfNotDefault('Main', 'IniPath', IniDir, INI_DIR_PLUGIN);
+		FConfigFile.WriteBoolIfNotDefault('Main', 'LoadSSLDLLOnlyFromPluginDir', LoadSSLDLLOnlyFromPluginDir, False);
+		FConfigFile.WriteBoolIfNotDefault('Main', 'PreserveFileTime', PreserveFileTime, False);
+		FConfigFile.WriteBoolIfNotDefault('Main', 'DescriptionEnabled', DescriptionEnabled, False);
+		FConfigFile.WriteBoolIfNotDefault('Main', 'DescriptionEditorEnabled', DescriptionEditorEnabled, False);
+		FConfigFile.WriteBoolIfNotDefault('Main', 'DescriptionCopyToCloud', DescriptionCopyToCloud, False);
+		FConfigFile.WriteBoolIfNotDefault('Main', 'DescriptionCopyFromCloud', DescriptionCopyFromCloud, False);
+		FConfigFile.WriteBoolIfNotDefault('Main', 'DescriptionTrackCloudFS', DescriptionTrackCloudFS, False);
+		FConfigFile.WriteStringIfNotDefault('Main', 'DescriptionFileName', DescriptionFileName, 'descript.ion');
+		FConfigFile.WriteIntegerIfNotDefault('Main', 'CopyBetweenAccountsMode', CopyBetweenAccountsMode, CopyBetweenAccountsModeDisabled);
+		FConfigFile.WriteBoolIfNotDefault('Main', 'DisableMultiThreading', DisableMultiThreading, False);
+		FConfigFile.WriteBoolIfNotDefault('Main', 'LogUserSpace', LogUserSpace, True);
+		FConfigFile.WriteIntegerIfNotDefault('Main', 'IconsMode', IconsMode, IconsModeDisabled);
+		FConfigFile.WriteIntegerIfNotDefault('Main', 'SocketTimeout', ConnectionSettings.SocketTimeout, -1);
+		FConfigFile.WriteIntegerIfNotDefault('Main', 'UploadBPS', ConnectionSettings.UploadBPS, -1);
+		FConfigFile.WriteIntegerIfNotDefault('Main', 'DownloadBPS', ConnectionSettings.DownloadBPS, -1);
+		FConfigFile.WriteInt64IfNotDefault('Main', 'CloudMaxFileSize', CloudMaxFileSize, CLOUD_MAX_FILESIZE_DEFAULT);
+		FConfigFile.WriteIntegerIfNotDefault('Main', 'ChunkOverwriteMode', ChunkOverwriteMode, ChunkOverwrite);
+		FConfigFile.WriteIntegerIfNotDefault('Main', 'DeleteFailOnUploadMode', DeleteFailOnUploadMode, DeleteFailOnUploadAsk);
+		FConfigFile.WriteIntegerIfNotDefault('Main', 'OverwriteLocalMode', OverwriteLocalMode, OverwriteLocalModeAsk);
+		FConfigFile.WriteIntegerIfNotDefault('Main', 'OperationErrorMode', OperationErrorMode, OperationErrorModeAsk);
+		FConfigFile.WriteIntegerIfNotDefault('Main', 'RetryAttempts', RetryAttempts, 1);
+		FConfigFile.WriteIntegerIfNotDefault('Main', 'AttemptWait', AttemptWait, 1000);
+		FConfigFile.WriteIntegerIfNotDefault('Main', 'ProxyType', ConnectionSettings.ProxySettings.ProxyType, ProxyNone);
+		FConfigFile.WriteStringIfNotDefault('Main', 'ProxyServer', ConnectionSettings.ProxySettings.Server, EmptyWideStr);
+		FConfigFile.WriteIntegerIfNotDefault('Main', 'ProxyPort', ConnectionSettings.ProxySettings.Port, 0);
+		FConfigFile.WriteStringIfNotDefault('Main', 'ProxyUser', ConnectionSettings.ProxySettings.User, EmptyWideStr);
+		FConfigFile.WriteBoolIfNotDefault('Main', 'ProxyTCPwdMngr', ConnectionSettings.ProxySettings.UseTCPasswordManager, False);
+		FConfigFile.WriteStringIfNotDefault('Main', 'ProxyPassword', ConnectionSettings.ProxySettings.Password, EmptyWideStr);
+		FConfigFile.WriteStringIfNotDefault('Main', 'UserAgent', ConnectionSettings.UserAgent, DEFAULT_USERAGENT);
+		FConfigFile.WriteBoolIfNotDefault('Main', 'DownloadLinksEncode', DownloadLinksEncode, True);
+		FConfigFile.WriteBoolIfNotDefault('Main', 'AutoUpdateDownloadListing', AutoUpdateDownloadListing, True);
+		FConfigFile.WriteBoolIfNotDefault('Main', 'ShowTrashFolders', ShowTrashFolders, True);
+		FConfigFile.WriteBoolIfNotDefault('Main', 'ShowSharedFolders', ShowSharedFolders, True);
+		FConfigFile.WriteBoolIfNotDefault('Main', 'ShowInvitesFolders', ShowInvitesFolders, True);
+		FConfigFile.WriteIntegerIfNotDefault('Main', 'LogLevel', LogLevel, LOG_LEVEL_CONNECT + LOG_LEVEL_FILE_OPERATION + LOG_LEVEL_DETAIL + LOG_LEVEL_WARNING + LOG_LEVEL_ERROR);
+		FConfigFile.WriteBoolIfNotDefault('Main', 'PrecalculateHash', PrecalculateHash, True);
+		FConfigFile.WriteInt64IfNotDefault('Main', 'ForcePrecalculateSize', ForcePrecalculateSize, CLOUD_PRECALCULATE_LIMIT_DEFAULT);
+		FConfigFile.WriteBoolIfNotDefault('Main', 'CheckCRC', CheckCRC, True);
 	end;
 end;
 
 procedure TPluginSettingsManager.GetStreamingExtensionsList(ExtensionsList: TStrings);
 var
-	IniFile: TIniFile;
 	TempList: TStrings;
 	Line: String;
 begin
 	ExtensionsList.Clear;
-	IniFile := TIniFile.Create(IniFilePath);
+	TempList := TStringList.Create;
 	try
-		TempList := TStringList.Create;
-		try
-			IniFile.ReadSections(TempList);
-			for Line in TempList do
-			begin
-				if Line.StartsWith(StreamingPrefix) then
-					ExtensionsList.Add(Line.Substring(Length(StreamingPrefix)));
-			end;
-		finally
-			TempList.Free;
+		FConfigFile.ReadSections(TempList);
+		for Line in TempList do
+		begin
+			if Line.StartsWith(StreamingPrefix) then
+				ExtensionsList.Add(Line.Substring(Length(StreamingPrefix)));
 		end;
 	finally
-		IniFile.Free;
+		TempList.Free;
 	end;
 end;
 
 procedure TPluginSettingsManager.RemoveStreamingExtension(const Extension: WideString);
-var
-	IniFile: TIniFile;
 begin
-	IniFile := TIniFile.Create(IniFilePath);
-	try
-		IniFile.EraseSection(StreamingPrefix + Extension);
-	finally
-		IniFile.Free;
-	end;
+	FConfigFile.EraseSection(StreamingPrefix + Extension);
 end;
 
 function TPluginSettingsManager.GetStreamingSettings(const FileName: WideString): TStreamingSettings;
 var
-	IniFile: TIniFile;
 	SectionName: WideString;
 begin
-	result := default (TStreamingSettings);
-	result.Format := STREAMING_FORMAT_UNSET;
-	IniFile := TIniFile.Create(IniFilePath);
-	try
-		SectionName := StreamingPrefix + ExtractUniversalFileExt(FileName, True);
-		if IniFile.SectionExists(SectionName) then
-		begin
-			result.Command := IniFile.ReadString(SectionName, 'Command', EmptyWideStr);
-			result.Parameters := IniFile.ReadString(SectionName, 'Parameters', EmptyWideStr);
-			result.StartPath := IniFile.ReadString(SectionName, 'StartPath', EmptyWideStr);
-			result.Format := IniFile.ReadInteger(SectionName, 'Format', STREAMING_FORMAT_NONE);
-		end;
-	finally
-		IniFile.Free;
+	Result := default (TStreamingSettings);
+	Result.Format := STREAMING_FORMAT_UNSET;
+	SectionName := StreamingPrefix + ExtractUniversalFileExt(FileName, True);
+	if FConfigFile.SectionExists(SectionName) then
+	begin
+		Result.Command := FConfigFile.ReadString(SectionName, 'Command', EmptyWideStr);
+		Result.Parameters := FConfigFile.ReadString(SectionName, 'Parameters', EmptyWideStr);
+		Result.StartPath := FConfigFile.ReadString(SectionName, 'StartPath', EmptyWideStr);
+		Result.Format := FConfigFile.ReadInteger(SectionName, 'Format', STREAMING_FORMAT_NONE);
 	end;
 end;
 
 procedure TPluginSettingsManager.SetStreamingSettings(const FileName: WideString; StreamingSettings: TStreamingSettings);
 var
-	IniFile: TIniFile;
 	SectionName: WideString;
 begin
 	if ExtractUniversalFileExt(FileName, True) <> EmptyWideStr then
 	begin
 		SectionName := StreamingPrefix + ExtractUniversalFileExt(FileName, True);
-		IniFile := TIniFile.Create(IniFilePath);
-		try
-			IniFile.WriteString(SectionName, 'Command', StreamingSettings.Command);
-			IniFile.WriteString(SectionName, 'Parameters', StreamingSettings.Parameters);
-			IniFile.WriteString(SectionName, 'StartPath', StreamingSettings.StartPath);
-			IniFile.WriteInteger(SectionName, 'Format', StreamingSettings.Format);
-		finally
-			IniFile.Free;
-		end;
+		FConfigFile.WriteString(SectionName, 'Command', StreamingSettings.Command);
+		FConfigFile.WriteString(SectionName, 'Parameters', StreamingSettings.Parameters);
+		FConfigFile.WriteString(SectionName, 'StartPath', StreamingSettings.StartPath);
+		FConfigFile.WriteInteger(SectionName, 'Format', StreamingSettings.Format);
 	end;
 end;
 
 procedure TPluginSettingsManager.SwitchProxyPasswordStorage;
-var
-	IniFile: TIniFile;
 begin
-	IniFile := TIniFile.Create(IniFilePath);
-	try
-		IniFile.WriteBool('Main', 'ProxyTCPwdMngr', True);
-		IniFile.DeleteKey('Main', 'ProxyPassword');
-	finally
-		IniFile.Free;
-	end;
+	FConfigFile.WriteBool('Main', 'ProxyTCPwdMngr', True);
+	FConfigFile.DeleteKey('Main', 'ProxyPassword');
 end;
 
 function TPluginSettingsManager.GetSettings: TPluginSettings;

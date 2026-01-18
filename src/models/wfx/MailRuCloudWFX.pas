@@ -60,7 +60,9 @@ uses
 	ICipherValidatorInterface,
 	CipherValidator,
 	IFileSystemInterface,
-	WindowsFileSystem;
+	WindowsFileSystem,
+	IConfigFileInterface,
+	IniConfigFile;
 
 type
 	TMailRuCloudWFX = class(TInterfacedObject, IWFXInterface)
@@ -203,7 +205,7 @@ begin
 	ThreadFsStatusInfo := TDictionary<DWORD, Int32>.Create;
 	ThreadFsRemoveDirSkippedPath := TDictionary<DWORD, TStringList>.Create;
 
-	AccountSettings := TAccountsManager.Create(SettingsManager.AccountsIniFilePath);
+	AccountSettings := TAccountsManager.Create(TIniConfigFile.Create(SettingsManager.AccountsIniFilePath));
 	FFileSystem := TWindowsFileSystem.Create;
 end;
 

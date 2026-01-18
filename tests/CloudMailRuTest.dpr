@@ -142,6 +142,8 @@ uses
 	ConnectionManager in '..\src\models\ConnectionManager.pas',
 	IFileSystemInterface in '..\src\models\filesystem\IFileSystemInterface.pas',
 	WindowsFileSystem in '..\src\models\filesystem\WindowsFileSystem.pas',
+	IConfigFileInterface in '..\src\models\config\IConfigFileInterface.pas',
+	IniConfigFile in '..\src\models\config\IniConfigFile.pas',
 	AskPassword in '..\src\forms\AskPassword.pas'{AskPasswordForm};
 
 {keep comment here to protect the following conditional from being removed by the IDE when adding a unit}

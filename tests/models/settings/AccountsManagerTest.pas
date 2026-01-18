@@ -11,6 +11,8 @@ uses
 	WSList,
 	FileCipher,
 	SETTINGS_CONSTANTS,
+	IConfigFileInterface,
+	IniConfigFile,
 	DUnitX.TestFramework;
 
 type
@@ -60,13 +62,13 @@ var
 	TestAccountsManager: TAccountsManager;
 	TestAccountSettings: TAccountSettings;
 begin
-	TestAccountsManager := TAccountsManager.Create(self.AppDir + FP_ACCOUNTS_INI); //Uses a new file in the test exe dir
+	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(self.AppDir + FP_ACCOUNTS_INI)); //Uses a new file in the test exe dir
 
 	TestAccountSettings.Password := 'cjhjrnsczxj,tpmzyd;jgeceyekb,fyfy';
 	TestAccountsManager.SetAccountSettings('NEW_ACCOUNT', TestAccountSettings);
 	TestAccountsManager.Free;
 
-	TestAccountsManager := TAccountsManager.Create(self.AppDir + FP_ACCOUNTS_INI);
+	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(self.AppDir + FP_ACCOUNTS_INI));
 	Assert.IsNotEmpty(TestAccountsManager.GetAccountSettings('NEW_ACCOUNT').Password);
 	TestAccountsManager.SwitchPasswordStorage('NEW_ACCOUNT');
 	Assert.IsEmpty(TestAccountsManager.GetAccountSettings('NEW_ACCOUNT').Password);
@@ -78,7 +80,7 @@ var
 	TestAccountsManager: TAccountsManager;
 	TestAccountSettings: TAccountSettings;
 begin
-	TestAccountsManager := TAccountsManager.Create(self.AppDir + FP_ACCOUNTS_INI); //Uses a new file in the test exe dir
+	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(self.AppDir + FP_ACCOUNTS_INI)); //Uses a new file in the test exe dir
 
 	TestAccountSettings.Email := 'deleted_account@mail.ru';
 	TestAccountsManager.SetAccountSettings('NEW_ACCOUNT', TestAccountSettings);
@@ -86,13 +88,13 @@ begin
 
 	TestAccountSettings.Email := EmptyWideStr;
 
-	TestAccountsManager := TAccountsManager.Create(self.AppDir + FP_ACCOUNTS_INI);
+	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(self.AppDir + FP_ACCOUNTS_INI));
 	TestAccountSettings := TestAccountsManager.GetAccountSettings('NEW_ACCOUNT');
 	Assert.AreEqual('deleted_account@mail.ru', TestAccountSettings.Email);
 	TestAccountsManager.DeleteAccount('NEW_ACCOUNT');
 	TestAccountsManager.Free;
 
-	TestAccountsManager := TAccountsManager.Create(self.AppDir + FP_ACCOUNTS_INI);
+	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(self.AppDir + FP_ACCOUNTS_INI));
 	Assert.IsEmpty(TestAccountsManager.GetAccountSettings('NEW_ACCOUNT').Email);
 	TestAccountsManager.Free;
 end;
@@ -102,7 +104,7 @@ var
 	TestAccountsManager: TAccountsManager;
 	TestAccountSettings: TAccountSettings;
 begin
-	TestAccountsManager := TAccountsManager.Create(DataPath(FP_ACCOUNTS_INI)); //Uses a test file
+	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(DataPath(FP_ACCOUNTS_INI))); //Uses a test file
 	TestAccountSettings := TestAccountsManager.GetAccountSettings('TEST_ACCOUNT_TWO');
 
 	Assert.AreEqual('test_fake_email_two@mail.ru', TestAccountSettings.Email);
@@ -119,7 +121,7 @@ var
 	AccountsList: TWSList;
 begin
 	AccountsList := TWSList.Create();
-	TestAccountsManager := TAccountsManager.Create(DataPath(FP_ACCOUNTS_INI)); //Uses a test file
+	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(DataPath(FP_ACCOUNTS_INI))); //Uses a test file
 
 	AccountsList := TestAccountsManager.GetAccountsList();
 	Assert.IsTrue(AccountsList.Contains('TEST_ACCOUNT_ONE'));
@@ -158,7 +160,7 @@ var
 	AccountsList: TWSList;
 begin
 	AccountsList := TWSList.Create();
-	TestAccountsManager := TAccountsManager.Create(self.AppDir + FP_ACCOUNTS_INI); //Uses a new file in the test exe dir
+	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(self.AppDir + FP_ACCOUNTS_INI)); //Uses a new file in the test exe dir
 	AccountsList := TestAccountsManager.GetAccountsList();
 
 	Assert.IsTrue(AccountsList.Count = 0);
@@ -172,15 +174,15 @@ var
 	TestAccountSettings: TAccountSettings;
 	TestAccountSettingsNew: TAccountSettings;
 begin
-	TestAccountsManager := TAccountsManager.Create(DataPath(FP_ACCOUNTS_INI)); //Uses a test file
+	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(DataPath(FP_ACCOUNTS_INI))); //Uses a test file
 	TestAccountSettings := TestAccountsManager.GetAccountSettings('TEST_ACCOUNT_TWO');
 	TestAccountsManager.Free;
 
-	TestAccountsManager := TAccountsManager.Create(self.AppDir + FP_ACCOUNTS_INI); //Uses a new file in the test exe dir
+	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(self.AppDir + FP_ACCOUNTS_INI)); //Uses a new file in the test exe dir
 	TestAccountsManager.SetAccountSettings('NEW_ACCOUNT', TestAccountSettings);
 	TestAccountsManager.Free;
 
-	TestAccountsManager := TAccountsManager.Create(self.AppDir + FP_ACCOUNTS_INI);
+	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(self.AppDir + FP_ACCOUNTS_INI));
 	TestAccountSettingsNew := TestAccountsManager.GetAccountSettings('NEW_ACCOUNT');
 	TestAccountsManager.Free;
 
@@ -194,7 +196,7 @@ procedure TAccountsManagerTest.TestSetCryptedGUID;
 var
 	TestAccountsManager: TAccountsManager;
 begin
-	TestAccountsManager := TAccountsManager.Create(self.AppDir + FP_ACCOUNTS_INI); //Uses a new file in the test exe dir
+	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(self.AppDir + FP_ACCOUNTS_INI)); //Uses a new file in the test exe dir
 	Assert.IsEmpty(TestAccountsManager.GetAccountSettings('NEW_ACCOUNT').CryptedGUIDFiles);
 	TestAccountsManager.SetCryptedGUID('NEW_ACCOUNT', TFileCipher.GetCryptedGUID('cjhjrnsczxj,tpmzyd;jgeceyekb,fyfy'));
 
@@ -209,7 +211,7 @@ var
 	LoadedSettings: TAccountSettings;
 begin
 	{ Test that AuthMethod and UseAppPassword are properly saved and loaded }
-	TestAccountsManager := TAccountsManager.Create(self.AppDir + FP_ACCOUNTS_INI);
+	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(self.AppDir + FP_ACCOUNTS_INI));
 	try
 		TestAccountSettings := Default(TAccountSettings);
 		TestAccountSettings.Account := 'OAUTH_TEST_ACCOUNT';
@@ -223,7 +225,7 @@ begin
 	end;
 
 	{ Reload and verify }
-	TestAccountsManager := TAccountsManager.Create(self.AppDir + FP_ACCOUNTS_INI);
+	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(self.AppDir + FP_ACCOUNTS_INI));
 	try
 		LoadedSettings := TestAccountsManager.GetAccountSettings('OAUTH_TEST_ACCOUNT');
 

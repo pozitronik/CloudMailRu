@@ -94,7 +94,9 @@ uses
 	ICipherValidatorInterface in 'src\models\cipher\ICipherValidatorInterface.pas',
 	CipherValidator in 'src\models\cipher\CipherValidator.pas',
 	IFileSystemInterface in 'src\models\filesystem\IFileSystemInterface.pas',
-	WindowsFileSystem in 'src\models\filesystem\WindowsFileSystem.pas';
+	WindowsFileSystem in 'src\models\filesystem\WindowsFileSystem.pas',
+	IConfigFileInterface in 'src\models\config\IConfigFileInterface.pas',
+	IniConfigFile in 'src\models\config\IniConfigFile.pas';
 
 {$IFDEF WIN64}
 {$E wfx64}

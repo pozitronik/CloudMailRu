@@ -3,28 +3,27 @@
 interface
 
 uses
-	IniFiles,
 	SysUtils,
 	Variants,
 	Classes,
 	WindowsHelper,
 	Windows,
 	ParsingHelper,
-	IniFilesHelper,
 	LANGUAGE_STRINGS,
 	SETTINGS_CONSTANTS,
 	WSList,
 	AccountSettings,
-	IAccountsManagerInterface;
+	IAccountsManagerInterface,
+	IConfigFileInterface;
 
 type
 	TAccountsManager = class(TInterfacedObject, IAccountsManager)
 	private
-		FIniFilePath: WideString;
+		FConfigFile: IConfigFile;
 
 		function Accounts: TWSList;
 	public
-		constructor Create(IniFilePath: WideString);
+		constructor Create(ConfigFile: IConfigFile);
 		function GetAccountsList(const AccountTypes: EAccountType = [ATPrivate, ATPublic]; const VirtualTypes: EVirtualType = []): TWSList;
 		function GetAccountSettings(Account: WideString): TAccountSettings;
 		procedure SetAccountSettings(Account: WideString; AccountSettings: TAccountSettings); overload;
@@ -37,22 +36,16 @@ type
 
 implementation
 
-{TNewAccountSettings}
+{TAccountsManager}
 
 function TAccountsManager.Accounts: TWSList;
 var
 	AccountsList: TStringList;
-	IniFile: TIniFile;
 	I: Integer;
 begin
 	AccountsList := TStringList.Create();
 	try
-		IniFile := TIniFile.Create(FIniFilePath);
-		try
-			IniFile.ReadSections(AccountsList);
-		finally
-			IniFile.Free;
-		end;
+		FConfigFile.ReadSections(AccountsList);
 		SetLength(Result, AccountsList.Count);
 		for I := 0 to AccountsList.Count - 1 do
 			Result[I] := AccountsList[I];
@@ -61,86 +54,58 @@ begin
 	end;
 end;
 
-constructor TAccountsManager.Create(IniFilePath: WideString);
+constructor TAccountsManager.Create(ConfigFile: IConfigFile);
 begin
-	self.FIniFilePath := IniFilePath;
+	FConfigFile := ConfigFile;
 end;
 
 procedure TAccountsManager.SwitchPasswordStorage(Account: WideString);
-var
-	IniFile: TIniFile;
 begin
-	IniFile := TIniFile.Create(FIniFilePath);
-	try
-		IniFile.DeleteKey(Account, 'password');
-		IniFile.WriteBool(Account, 'tc_pwd_mngr', True);
-	finally
-		IniFile.Free;
-	end;
+	FConfigFile.DeleteKey(Account, 'password');
+	FConfigFile.WriteBool(Account, 'tc_pwd_mngr', True);
 end;
 
 procedure TAccountsManager.DeleteAccount(Account: WideString);
-var
-	IniFile: TIniFile;
 begin
-	IniFile := TIniFile.Create(FIniFilePath);
-	try
-		IniFile.EraseSection(Account);
-	finally
-		IniFile.Free;
-	end;
+	FConfigFile.EraseSection(Account);
 end;
 
 function TAccountsManager.GetAccountSettings(Account: WideString): TAccountSettings;
-var
-	IniFile: TIniFile;
 begin
-	IniFile := TIniFile.Create(FIniFilePath);
-	try
-		Result.Account := Account;
-		Result.Email := IniFile.ReadString(Account, 'email', EmptyWideStr);
-		Result.Password := IniFile.ReadString(Account, 'password', EmptyWideStr);
-		Result.UseTCPasswordManager := IniFile.ReadBool(Account, 'tc_pwd_mngr', False);
-		Result.UnlimitedFileSize := IniFile.ReadBool(Account, 'unlimited_filesize', False);
-		Result.SplitLargeFiles := IniFile.ReadBool(Account, 'split_large_files', False);
-		Result.TwostepAuth := IniFile.ReadBool(Account, 'twostep_auth', False);
-		Result.PublicAccount := IniFile.ReadBool(Account, 'public_account', False);
-		Result.PublicUrl := IniFile.ReadString(Account, 'public_url', EmptyWideStr);
-		Result.Description := IniFile.ReadString(Account, 'description', EmptyWideStr);
-		Result.EncryptFilesMode := IniFile.ReadInteger(Account, 'encrypt_files_mode', EncryptModeNone);
-		Result.EncryptFileNames := IniFile.ReadBool(Account, 'encrypt_filenames', False);
-		Result.ShardOverride := IniFile.ReadString(Account, 'shard_override', EmptyWideStr);
-		Result.UploadUrlOverride := IniFile.ReadString(Account, 'upload_url_override', EmptyWideStr);
-		Result.CryptedGUIDFiles := IniFile.ReadString(Account, 'CryptedGUID_files', EmptyWideStr);
-		Result.AuthMethod := IniFile.ReadInteger(Account, 'auth_method', 0);
-		Result.UseAppPassword := IniFile.ReadBool(Account, 'use_app_password', False);
-	finally
-		IniFile.Free;
-	end;
+	Result.Account := Account;
+	Result.Email := FConfigFile.ReadString(Account, 'email', EmptyWideStr);
+	Result.Password := FConfigFile.ReadString(Account, 'password', EmptyWideStr);
+	Result.UseTCPasswordManager := FConfigFile.ReadBool(Account, 'tc_pwd_mngr', False);
+	Result.UnlimitedFileSize := FConfigFile.ReadBool(Account, 'unlimited_filesize', False);
+	Result.SplitLargeFiles := FConfigFile.ReadBool(Account, 'split_large_files', False);
+	Result.TwostepAuth := FConfigFile.ReadBool(Account, 'twostep_auth', False);
+	Result.PublicAccount := FConfigFile.ReadBool(Account, 'public_account', False);
+	Result.PublicUrl := FConfigFile.ReadString(Account, 'public_url', EmptyWideStr);
+	Result.Description := FConfigFile.ReadString(Account, 'description', EmptyWideStr);
+	Result.EncryptFilesMode := FConfigFile.ReadInteger(Account, 'encrypt_files_mode', EncryptModeNone);
+	Result.EncryptFileNames := FConfigFile.ReadBool(Account, 'encrypt_filenames', False);
+	Result.ShardOverride := FConfigFile.ReadString(Account, 'shard_override', EmptyWideStr);
+	Result.UploadUrlOverride := FConfigFile.ReadString(Account, 'upload_url_override', EmptyWideStr);
+	Result.CryptedGUIDFiles := FConfigFile.ReadString(Account, 'CryptedGUID_files', EmptyWideStr);
+	Result.AuthMethod := FConfigFile.ReadInteger(Account, 'auth_method', 0);
+	Result.UseAppPassword := FConfigFile.ReadBool(Account, 'use_app_password', False);
 end;
 
 procedure TAccountsManager.SetAccountSettings(Account: WideString; AccountSettings: TAccountSettings);
-var
-	IniFile: TIniFile;
 begin
-	IniFile := TIniFile.Create(FIniFilePath);
-	try
-		IniFile.WriteStringIfNotDefault(Account, 'email', AccountSettings.Email, EmptyWideStr);
-		IniFile.WriteStringIfNotDefault(Account, 'password', AccountSettings.Password, EmptyWideStr);
-		IniFile.WriteBoolIfNotDefault(Account, 'tc_pwd_mngr', AccountSettings.UseTCPasswordManager, False);
-		IniFile.WriteBoolIfNotDefault(Account, 'unlimited_filesize', AccountSettings.UnlimitedFileSize, False);
-		IniFile.WriteBoolIfNotDefault(Account, 'split_large_files', AccountSettings.SplitLargeFiles, False);
-		IniFile.WriteBoolIfNotDefault(Account, 'twostep_auth', AccountSettings.TwostepAuth, False);
-		IniFile.WriteBoolIfNotDefault(Account, 'public_account', AccountSettings.PublicAccount, False);
-		IniFile.WriteStringIfNotDefault(Account, 'public_url', AccountSettings.PublicUrl, EmptyWideStr);
-		IniFile.WriteStringIfNotDefault(Account, 'description', AccountSettings.Description, EmptyWideStr);
-		IniFile.WriteIntegerIfNotDefault(Account, 'encrypt_files_mode', AccountSettings.EncryptFilesMode, EncryptModeNone);
-		IniFile.WriteBoolIfNotDefault(Account, 'encrypt_filenames', AccountSettings.EncryptFileNames, False);
-		IniFile.WriteIntegerIfNotDefault(Account, 'auth_method', AccountSettings.AuthMethod, 0);
-		IniFile.WriteBoolIfNotDefault(Account, 'use_app_password', AccountSettings.UseAppPassword, False);
-	finally
-		IniFile.Free;
-	end;
+	FConfigFile.WriteStringIfNotDefault(Account, 'email', AccountSettings.Email, EmptyWideStr);
+	FConfigFile.WriteStringIfNotDefault(Account, 'password', AccountSettings.Password, EmptyWideStr);
+	FConfigFile.WriteBoolIfNotDefault(Account, 'tc_pwd_mngr', AccountSettings.UseTCPasswordManager, False);
+	FConfigFile.WriteBoolIfNotDefault(Account, 'unlimited_filesize', AccountSettings.UnlimitedFileSize, False);
+	FConfigFile.WriteBoolIfNotDefault(Account, 'split_large_files', AccountSettings.SplitLargeFiles, False);
+	FConfigFile.WriteBoolIfNotDefault(Account, 'twostep_auth', AccountSettings.TwostepAuth, False);
+	FConfigFile.WriteBoolIfNotDefault(Account, 'public_account', AccountSettings.PublicAccount, False);
+	FConfigFile.WriteStringIfNotDefault(Account, 'public_url', AccountSettings.PublicUrl, EmptyWideStr);
+	FConfigFile.WriteStringIfNotDefault(Account, 'description', AccountSettings.Description, EmptyWideStr);
+	FConfigFile.WriteIntegerIfNotDefault(Account, 'encrypt_files_mode', AccountSettings.EncryptFilesMode, EncryptModeNone);
+	FConfigFile.WriteBoolIfNotDefault(Account, 'encrypt_filenames', AccountSettings.EncryptFileNames, False);
+	FConfigFile.WriteIntegerIfNotDefault(Account, 'auth_method', AccountSettings.AuthMethod, 0);
+	FConfigFile.WriteBoolIfNotDefault(Account, 'use_app_password', AccountSettings.UseAppPassword, False);
 end;
 
 function TAccountsManager.GetAccountsList(const AccountTypes: EAccountType = [ATPrivate, ATPublic]; const VirtualTypes: EVirtualType = []): TWSList;
@@ -175,15 +140,8 @@ begin
 end;
 
 procedure TAccountsManager.SetCryptedGUID(Account, GUID: WideString);
-var
-	IniFile: TIniFile;
 begin
-	IniFile := TIniFile.Create(FIniFilePath);
-	try
-		IniFile.WriteString(Account, 'CryptedGUID_files', GUID);
-	finally
-		IniFile.Free;
-	end;
+	FConfigFile.WriteString(Account, 'CryptedGUID_files', GUID);
 end;
 
 end.
