@@ -128,6 +128,14 @@ type
 		procedure TestAccessConversion_RoundTrip_ReadOnly;
 		[Test]
 		procedure TestAccessConversion_RoundTrip_ReadWrite;
+
+		{ TempPublicCloudInit tests }
+		[Test]
+		procedure TestTempPublicCloudInit_CreatesCloudInstance;
+		[Test]
+		procedure TestTempPublicCloudInit_SetsPublicAccountFlag;
+		[Test]
+		procedure TestTempPublicCloudInit_CloudMustBeFreedByCaller;
 	end;
 
 implementation
@@ -436,6 +444,51 @@ begin
 	StringResult := TCloudMailRu.CloudAccessToString(CLOUD_SHARE_ACCESS_READ_WRITE, False);
 	IntResult := TCloudMailRu.StringToCloudAccess(StringResult, False);
 	Assert.AreEqual(CLOUD_SHARE_RW, IntResult, 'Round-trip conversion should preserve read-write semantics');
+end;
+
+{ TempPublicCloudInit tests }
+
+procedure TCloudMailRuStaticTest.TestTempPublicCloudInit_CreatesCloudInstance;
+var
+	TempCloud: TCloudMailRu;
+begin
+	{ TempPublicCloudInit creates a TCloudMailRu instance.
+	  Note: Login will fail without network, but instance should still be created.
+	  We don't test Login result since it requires network. }
+	TempCloud := nil;
+	try
+		TCloudMailRu.TempPublicCloudInit(TempCloud, 'https://cloud.mail.ru/public/test123');
+		Assert.IsNotNull(TempCloud, 'TempPublicCloudInit should create a cloud instance');
+	finally
+		TempCloud.Free;
+	end;
+end;
+
+procedure TCloudMailRuStaticTest.TestTempPublicCloudInit_SetsPublicAccountFlag;
+var
+	TempCloud: TCloudMailRu;
+begin
+	{ Verify the created instance is configured as public account }
+	TempCloud := nil;
+	try
+		TCloudMailRu.TempPublicCloudInit(TempCloud, 'https://cloud.mail.ru/public/abc123');
+		Assert.IsTrue(TempCloud.IsPublicAccount, 'Created cloud should be marked as public account');
+	finally
+		TempCloud.Free;
+	end;
+end;
+
+procedure TCloudMailRuStaticTest.TestTempPublicCloudInit_CloudMustBeFreedByCaller;
+var
+	TempCloud: TCloudMailRu;
+begin
+	{ Verify that after TempPublicCloudInit, the caller owns the instance and must free it.
+	  This test ensures no memory leaks by properly freeing. FastMM will catch leaks. }
+	TempCloud := nil;
+	TCloudMailRu.TempPublicCloudInit(TempCloud, 'https://cloud.mail.ru/public/xyz789');
+	Assert.IsNotNull(TempCloud, 'Instance should be created');
+	TempCloud.Free; { Caller is responsible for freeing }
+	Assert.Pass('Instance freed successfully - caller owns the instance');
 end;
 
 initialization
