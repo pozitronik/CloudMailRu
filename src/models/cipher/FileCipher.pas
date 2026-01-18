@@ -14,14 +14,8 @@ uses
 	DCPSha1,
 	DCPbase64;
 
-const
-	CIPHER_OK = 0;
-	CIPHER_IO_ERROR = 1;
-	CIPHER_WRONG_PASSWORD = 2;
-	CIPHER_CONTROL_GUID = '2b580ce6-e72f-433d-9788-3ecb6b0d9580';
-
 type
-	TFileCipher = class(TInterfacedObject, ICipherInterface)
+	TFileCipher = class(TInterfacedObject, ICipher)
 	private
 		Password: WideString;
 		FileCipher: TDCP_rijndael; {The cipher used to encrypt files and streams}

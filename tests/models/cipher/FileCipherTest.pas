@@ -4,6 +4,7 @@ interface
 
 uses
 	FileCipher,
+	CipherInterface,
 	System.SysUtils,
 	System.IOUtils,
 	System.Classes,
@@ -20,6 +21,10 @@ type
 	[TestFixture]
 	TFileCipherTest = class
 	public
+		{ Interface implementation test }
+		[Test]
+		procedure TestImplementsICipher;
+
 		{ Base64ToSafe tests }
 		[Test]
 		procedure TestBase64ToSafePlusToMinus;
@@ -109,6 +114,16 @@ end;
 function TFileCipherTestHelper.TestBase64FromSafe(const Safe: WideString): WideString;
 begin
 	Result := Self.Base64FromSafe(Safe);
+end;
+
+{ Interface implementation test }
+
+procedure TFileCipherTest.TestImplementsICipher;
+var
+	Cipher: ICipher;
+begin
+	Cipher := TFileCipher.Create('testpassword');
+	Assert.IsNotNull(Cipher);
 end;
 
 { Base64ToSafe tests - converts + to - and / to _ for URL/filename safety }

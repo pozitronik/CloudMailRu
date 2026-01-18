@@ -35,6 +35,7 @@ uses
 	ILoggerInterface,
 	IProgressInterface,
 	IRequestInterface,
+	CipherInterface,
 	RealPath,
 	CloudSettings,
 	FileCipher,
@@ -59,7 +60,7 @@ type
 		FProgress: IProgress;
 		FRequest: IRequest;
 
-		FCipher: TFileCipher; {The encryption instance}
+		FCipher: ICipher; {The encryption instance}
 
 		FPublicLink: WideString; {Holder for GetPublicLink() value, should not be accessed directly}
 		FPublicShard: WideString; {Public shard url, used for public downloads}
@@ -331,6 +332,8 @@ begin //Облако умеет скопировать файл, но не см�
 end;
 
 constructor TCloudMailRu.Create(CloudSettings: TCloudSettings; ConnectionManager: THTTPManager; Logger: ILogger; Progress: IProgress; Request: IRequest);
+var
+	FileCipherInstance: TFileCipher;
 begin
 	try
 		FSettings := CloudSettings;
@@ -346,12 +349,13 @@ begin
 
 		if FSettings.AccountSettings.EncryptFilesMode <> EncryptModeNone then
 		begin
-			FCipher := TFileCipher.Create(FSettings.CryptFilesPassword, FSettings.AccountSettings.CryptedGUIDFiles, FSettings.AccountSettings.EncryptFilenames);
-			if FCipher.IsWrongPassword then
+			FileCipherInstance := TFileCipher.Create(FSettings.CryptFilesPassword, FSettings.AccountSettings.CryptedGUIDFiles, FSettings.AccountSettings.EncryptFilenames);
+			if FileCipherInstance.IsWrongPassword then
 				FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_WRONG_ENCRYPT_PASSWORD);
 
-			FDoCryptFiles := not(FCipher.IsWrongPassword);
+			FDoCryptFiles := not(FileCipherInstance.IsWrongPassword);
 			FDoCryptFilenames := FDoCryptFiles and FSettings.AccountSettings.EncryptFilenames;
+			FCipher := FileCipherInstance;
 		end;
 
 	except
@@ -401,8 +405,7 @@ begin
 	if Assigned(FHTTPConnection) then
 		FHTTPConnection.Destroy;
 
-	if Assigned(FCipher) then
-		FCipher.Destroy;
+	FCipher := nil; {Release interface reference}
 
 	inherited;
 end;

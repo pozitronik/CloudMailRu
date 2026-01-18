@@ -149,6 +149,8 @@
         <DCCReference Include="..\src\models\dto\CMRDirItem.pas"/>
         <DCCReference Include="..\src\helpers\JSONHelper.pas"/>
         <DCCReference Include="..\src\models\cipher\CipherInterface.pas"/>
+        <DCCReference Include="models\cipher\FileCipherTest.pas"/>
+        <DCCReference Include="models\cipher\NullCipherTest.pas"/>
         <DCCReference Include="..\src\libs\DCPCrypt\DCPblockciphers.pas"/>
         <DCCReference Include="..\src\libs\DCPCrypt\DCPcrypt2.pas"/>
         <DCCReference Include="..\src\libs\DCPCrypt\DCPtypes.pas"/>

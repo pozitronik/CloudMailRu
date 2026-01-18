@@ -96,6 +96,7 @@ uses
 	AccountSettingsTest in 'models\settings\AccountSettingsTest.pas',
 	PluginSettingsTest in 'models\settings\PluginSettingsTest.pas',
 	FileCipherTest in 'models\cipher\FileCipherTest.pas',
+	NullCipherTest in 'models\cipher\NullCipherTest.pas',
 	CloudMailRuResourceTest in 'models\CloudMailRuResourceTest.pas',
 	CloudMailRuStaticTest in 'models\CloudMailRuStaticTest.pas',
 	CloudMailRuInstanceTest in 'models\CloudMailRuInstanceTest.pas',
