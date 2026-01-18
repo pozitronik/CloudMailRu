@@ -411,8 +411,6 @@ begin
 end;
 
 procedure TDescriptionWithMemoryFileSystemTest.TestReadUsesFileSystem;
-var
-	Description2: TDescription;
 begin
 	{Set up file content in memory}
 	FFileSystem.SetFileContent('test.ion', 'testfile.txt Test description');

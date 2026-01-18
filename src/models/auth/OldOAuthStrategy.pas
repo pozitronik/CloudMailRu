@@ -35,7 +35,6 @@ var
 	Answer: WideString;
 	PostData: WideString;
 begin
-	Result := False;
 	OAuthToken := Default(TCMROAuth);
 
 	PostData := Format('client_id=%s&grant_type=password&username=%s&password=%s',

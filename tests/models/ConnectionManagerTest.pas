@@ -329,6 +329,7 @@ begin
 		PasswordUI, CipherValidator, Progress, Logger, Request, PasswordManager);
 	try
 		Cloud := Manager.Get('test_connection', OperationResult);
+		Assert.IsNull(Cloud, 'Cloud should be nil when password retrieval fails');
 		Assert.AreNotEqual(CLOUD_OPERATION_OK, OperationResult,
 			'OperationResult should not be OK when password retrieval fails');
 	finally
