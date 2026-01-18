@@ -90,7 +90,9 @@ uses
 	IPluginSettingsManagerInterface in 'src\models\settings\IPluginSettingsManagerInterface.pas',
 	IPasswordUIProviderInterface in 'src\models\ui\IPasswordUIProviderInterface.pas',
 	PasswordUIProvider in 'src\models\ui\PasswordUIProvider.pas',
-	IHTTPManagerInterface in 'src\models\http\IHTTPManagerInterface.pas';
+	IHTTPManagerInterface in 'src\models\http\IHTTPManagerInterface.pas',
+	ICipherValidatorInterface in 'src\models\cipher\ICipherValidatorInterface.pas',
+	CipherValidator in 'src\models\cipher\CipherValidator.pas';
 
 {$IFDEF WIN64}
 {$E wfx64}

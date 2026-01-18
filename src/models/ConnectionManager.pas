@@ -25,9 +25,9 @@ uses
 	CloudSettings,
 	IPasswordManagerInterface,
 	IHTTPManagerInterface,
+	ICipherValidatorInterface,
 	System.Generics.Collections,
-	SysUtils,
-	FileCipher;
+	SysUtils;
 
 type
 
@@ -38,6 +38,7 @@ type
 		FPluginSettingsManager: IPluginSettingsManager;
 		FAccountsManager: IAccountsManager;
 		FPasswordUI: IPasswordUIProvider;
+		FCipherValidator: ICipherValidator;
 
 		FLogger: ILogger;
 		FProgress: IProgress;
@@ -50,7 +51,7 @@ type
 		function GetProxyPassword(): Boolean;
 		function InitCloudCryptPasswords(const ConnectionName: WideString; var CloudSettings: TCloudSettings): Boolean;
 	public
-		constructor Create(PluginSettingsManager: IPluginSettingsManager; AccountsManager: IAccountsManager; HTTPManager: IHTTPManager; PasswordUI: IPasswordUIProvider; Progress: IProgress; Logger: ILogger; Request: IRequest; PasswordManager: IPasswordManager);
+		constructor Create(PluginSettingsManager: IPluginSettingsManager; AccountsManager: IAccountsManager; HTTPManager: IHTTPManager; PasswordUI: IPasswordUIProvider; CipherValidator: ICipherValidator; Progress: IProgress; Logger: ILogger; Request: IRequest; PasswordManager: IPasswordManager);
 		destructor Destroy(); override;
 		function Get(ConnectionName: WideString; var OperationResult: Integer): TCloudMailRu; {Return the cloud connection by its name}
 		procedure Free(ConnectionName: WideString); {Free a connection by its name, if present}
@@ -59,13 +60,14 @@ type
 implementation
 
 {TConnectionManager}
-constructor TConnectionManager.Create(PluginSettingsManager: IPluginSettingsManager; AccountsManager: IAccountsManager; HTTPManager: IHTTPManager; PasswordUI: IPasswordUIProvider; Progress: IProgress; Logger: ILogger; Request: IRequest; PasswordManager: IPasswordManager);
+constructor TConnectionManager.Create(PluginSettingsManager: IPluginSettingsManager; AccountsManager: IAccountsManager; HTTPManager: IHTTPManager; PasswordUI: IPasswordUIProvider; CipherValidator: ICipherValidator; Progress: IProgress; Logger: ILogger; Request: IRequest; PasswordManager: IPasswordManager);
 begin
 	FConnections := TDictionary<WideString, TCloudMailRu>.Create;
 	FPluginSettingsManager := PluginSettingsManager;
 	FAccountsManager := AccountsManager;
 	FHTTPManager := HTTPManager;
 	FPasswordUI := PasswordUI;
+	FCipherValidator := CipherValidator;
 	FProgress := Progress;
 	FLogger := Logger;
 	FRequest := Request;
@@ -86,6 +88,7 @@ begin
 	FPluginSettingsManager := nil;
 	FAccountsManager := nil;
 	FPasswordUI := nil;
+	FCipherValidator := nil;
 
 	inherited;
 end;
@@ -218,7 +221,7 @@ begin
 		repeat
 			if not InitCloudCryptPasswords(ConnectionName, CloudSettings) then
 				exit(False);
-			if not TFileCipher.CheckPasswordGUID(CloudSettings.CryptFilesPassword, CloudSettings.AccountSettings.CryptedGUIDFiles) then
+			if not FCipherValidator.CheckPasswordGUID(CloudSettings.CryptFilesPassword, CloudSettings.AccountSettings.CryptedGUIDFiles) then
 			begin
 				ActionsList := TDictionary<Int32, WideString>.Create;
 				ActionsList.AddOrSetValue(mrYes, PROCEED_UPDATE);
@@ -227,7 +230,7 @@ begin
 				case FPasswordUI.AskAction(PREFIX_ERR_PASSWORD_MATCH, ERR_PASSWORD_MATCH, ActionsList, FindTCWindow) of
 					mrYes: {store and use updated password}
 						begin
-							CloudSettings.AccountSettings.CryptedGUIDFiles := TFileCipher.GetCryptedGUID(CloudSettings.CryptFilesPassword);
+							CloudSettings.AccountSettings.CryptedGUIDFiles := FCipherValidator.GetCryptedGUID(CloudSettings.CryptFilesPassword);
 							FAccountsManager.SetCryptedGUID(ConnectionName, CloudSettings.AccountSettings.CryptedGUIDFiles);
 						end;
 					mrNo:

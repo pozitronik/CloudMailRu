@@ -135,6 +135,11 @@ uses
 	NullPasswordUIProviderTest in 'models\ui\NullPasswordUIProviderTest.pas',
 	IHTTPManagerInterface in '..\src\models\http\IHTTPManagerInterface.pas',
 	NullHTTPManagerTest in 'models\http\NullHTTPManagerTest.pas',
+	ICipherValidatorInterface in '..\src\models\cipher\ICipherValidatorInterface.pas',
+	CipherValidator in '..\src\models\cipher\CipherValidator.pas',
+	CipherValidatorTest in 'models\cipher\CipherValidatorTest.pas',
+	ConnectionManagerTest in 'models\ConnectionManagerTest.pas',
+	ConnectionManager in '..\src\models\ConnectionManager.pas',
 	AskPassword in '..\src\forms\AskPassword.pas'{AskPasswordForm};
 
 {keep comment here to protect the following conditional from being removed by the IDE when adding a unit}

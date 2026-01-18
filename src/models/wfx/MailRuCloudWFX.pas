@@ -56,7 +56,9 @@ uses
 	IPasswordUIProviderInterface,
 	PasswordUIProvider,
 	IHTTPManagerInterface,
-	HTTPManager;
+	HTTPManager,
+	ICipherValidatorInterface,
+	CipherValidator;
 
 type
 	TMailRuCloudWFX = class(TInterfacedObject, IWFXInterface)
@@ -98,6 +100,7 @@ type
 		PasswordManager: IPasswordManager;
 		PasswordUI: IPasswordUIProvider;
 		HTTPMgr: IHTTPManager;
+		CipherVal: ICipherValidator;
 		TCLogger: ILogger;
 		TCProgress: IProgress;
 		TCRequest: IRequest;
@@ -1527,7 +1530,8 @@ begin
 	PasswordManager := TTCPasswordManager.Create(PCryptProc, PluginNum, CryptoNr, TCLogger);
 	PasswordUI := TPasswordUIProvider.Create;
 	HTTPMgr := THTTPManager.Create(SettingsManager.Settings.ConnectionSettings, TCLogger, TCProgress);
-	ConnectionManager := TConnectionManager.Create(SettingsManager, AccountSettings, HTTPMgr, PasswordUI, TCProgress, TCLogger, TCRequest, PasswordManager);
+	CipherVal := TCipherValidator.Create;
+	ConnectionManager := TConnectionManager.Create(SettingsManager, AccountSettings, HTTPMgr, PasswordUI, CipherVal, TCProgress, TCLogger, TCRequest, PasswordManager);
 end;
 
 procedure TMailRuCloudWFX.FsStatusInfo(RemoteDir: WideString; InfoStartEnd, InfoOperation: Integer);
