@@ -185,8 +185,6 @@ var
 	CallResult: TAPICallResult;
 begin
 	Result := FS_FILE_WRITEERROR;
-	if not(Assigned(self)) then
-		Exit; //Проверка на вызов без инициализации
 	if IsPublicAccount then
 		Exit(FS_FILE_NOTSUPPORTED);
 
@@ -233,8 +231,6 @@ var
 	CallResult: TAPICallResult;
 begin
 	Result := FS_FILE_WRITEERROR;
-	if not(Assigned(self)) then
-		Exit; //Проверка на вызов без инициализации
 	if IsPublicAccount then
 		Exit(FS_FILE_NOTSUPPORTED);
 
@@ -310,8 +306,6 @@ end;
 function TCloudMailRu.CopyFile(OldName, ToPath: WideString): Integer;
 begin
 	Result := FS_FILE_WRITEERROR;
-	if not(Assigned(self)) then
-		Exit; //Проверка на вызов без инициализации
 	if IsPublicAccount then
 		Exit(FS_FILE_NOTSUPPORTED);
 	HTTP.SetProgressNames(OldName, Format('%s%s', [IncludeTrailingPathDelimiter(ToPath), ExtractFileName(OldName)]));
@@ -396,8 +390,6 @@ end;
 function TCloudMailRu.CreateDir(Path: WideString): Boolean;
 begin
 	Result := False;
-	if not(Assigned(self)) then
-		Exit; //Проверка на вызов без инициализации
 	if IsPublicAccount then
 		Exit;
 	HTTP.SetProgressNames(CREATE_DIRECTORY, Path);
@@ -410,8 +402,6 @@ end;
 function TCloudMailRu.DeleteFile(Path: WideString): Boolean;
 begin
 	Result := False;
-	if not(Assigned(self)) then
-		Exit; //Проверка на вызов без инициализации
 	if IsPublicAccount then
 		Exit;
 	HTTP.SetProgressNames(DELETE_FILE, Path);
@@ -509,8 +499,6 @@ var
 	LocalListing: TCMRDirItemList;
 begin
 	Result := False;
-	if not(Assigned(self)) then
-		Exit; //Проверка на вызов без инициализации
 	SetLength(DirListing, 0);
 	if IsPublicAccount then
 		Exit;
@@ -541,8 +529,6 @@ var
 	LocalListing: TCMRIncomingInviteList;
 begin
 	Result := False;
-	if not(Assigned(self)) then
-		Exit; //Проверка на вызов без инициализации
 	SetLength(IncomingListing, 0);
 	if IsPublicAccount then
 		Exit;
@@ -572,8 +558,6 @@ var
 	i: Integer;
 begin
 	Result := False;
-	if not(Assigned(self)) then
-		Exit; //Проверка на вызов без инициализации
 	SetLength(IncomingListing, 0);
 	Result := GetIncomingLinksListing(InvitesListing, ShowProgress);
 	if Result then
@@ -597,8 +581,6 @@ var
 	LocalListing: TCMRDirItemList;
 begin
 	Result := False;
-	if not(Assigned(self)) then
-		Exit; //Проверка на вызов без инициализации
 	SetLength(DirListing, 0);
 	if IsPublicAccount then
 		Exit;
@@ -629,8 +611,6 @@ var
 	LocalListing: TCMRDirItemList;
 begin
 	Result := False;
-	if not(Assigned(self)) then
-		Exit; //Проверка на вызов без инициализации
 	SetLength(DirListing, 0);
 
 	{Public accounts don't need token refresh}
@@ -687,8 +667,6 @@ end;
 function TCloudMailRu.GetFile(RemotePath, LocalPath: WideString; var ResultHash: WideString; LogErrors: Boolean): Integer;
 begin
 	Result := FS_FILE_NOTSUPPORTED;
-	if not(Assigned(self)) then
-		Exit; //Проверка на вызов без инициализации
 
 	HTTP.SetProgressNames(RemotePath, LocalPath);
 	if IsPublicAccount then
@@ -708,8 +686,6 @@ var
 	SavedUserAgent: WideString;
 begin
 	Result := FS_FILE_NOTSUPPORTED;
-	if not(Assigned(self)) then
-		Exit; //Проверка на вызов без инициализации
 	if FDownloadShard = EmptyWideStr then
 	begin
 		FLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, UNDEFINED_DOWNLOAD_SHARD);
@@ -854,8 +830,6 @@ end;
 
 function TCloudMailRu.GetHTTPConnection: TCloudMailRuHTTP;
 begin
-	if not(Assigned(self)) then
-		Exit(nil); //Проверка на вызов без инициализации
 	if (nil = FHTTPManager) then
 	begin
 		if not Assigned(FHTTPConnection) then
@@ -908,8 +882,6 @@ var
 	JSON: WideString;
 begin
 	Result := False;
-	if not(Assigned(self)) then
-		Exit; //Проверка на вызов без инициализации
 	Result := HTTP.PostForm(API_DISPATCHER + '?' + FUnitedParams, '', JSON) and CloudResultToBoolean(JSON, PREFIX_ERR_SHARD_RECEIVE);
 	if Result then
 	begin
@@ -937,8 +909,6 @@ var
 	Progress: Boolean;
 begin
 	Result := False;
-	if not(Assigned(self)) then
-		Exit; //Проверка на вызов без инициализации
 	Progress := False;
 	Result := HTTP.GetPage(FSettings.AccountSettings.PublicUrl, PageContent, Progress);
 	if Result then
@@ -957,8 +927,6 @@ var
 	LocalSpace: TCMRSpace;
 begin
 	Result := False;
-	if not(Assigned(self)) then
-		Exit; //Проверка на вызов без инициализации
 
 	LocalSpace := default(TCMRSpace);
 	CallResult := FRetryOperation.Execute(
@@ -983,8 +951,6 @@ end;
 function TCloudMailRu.Login(Method: Integer): Boolean;
 begin
 	Result := False;
-	if not(Assigned(self)) then
-		Exit; //Проверка на вызов без инициализации
 	HTTP.SetProgressNames(LOGIN_IN_PROGRESS, EmptyWideStr);
 	if IsPublicAccount then
 		Exit(LoginShared());
@@ -1032,8 +998,6 @@ var
 	US: TCMRSpace;
 	QuotaInfo: WideString;
 begin
-	if not(Assigned(self)) then
-		Exit; //Проверка на вызов без инициализации
 	if IsPublicAccount then
 		Exit;
 	if GetUserSpace(US) then
@@ -1051,8 +1015,6 @@ end;
 function TCloudMailRu.MoveFile(OldName, ToPath: WideString): Integer;
 begin
 	Result := FS_FILE_WRITEERROR;
-	if not(Assigned(self)) then
-		Exit; //Проверка на вызов без инициализации
 	if IsPublicAccount then
 		Exit(FS_FILE_NOTSUPPORTED);
 	Result := FRetryOperation.PostFormInteger(
@@ -1090,8 +1052,6 @@ var
 	CurrentLink: WideString;
 begin
 	Result := False;
-	if not(Assigned(self)) then
-		Exit; //Проверка на вызов без инициализации
 	if IsPublicAccount then
 		Exit;
 
@@ -1132,8 +1092,6 @@ var
 	LocalListing: TCMRInviteList;
 begin
 	Result := False;
-	if not(Assigned(self)) then
-		Exit; //Проверка на вызов без инициализации
 
 	SetLength(LocalListing, 0);
 	CallResult := FRetryOperation.Execute(
@@ -1161,8 +1119,6 @@ var
 	access_string: WideString;
 begin
 	Result := False;
-	if not(Assigned(self)) then
-		Exit; //Проверка на вызов без инициализации
 
 	if Access in [CLOUD_SHARE_RW, CLOUD_SHARE_RO] then
 	begin
@@ -1196,8 +1152,6 @@ end;
 function TCloudMailRu.TrashbinRestore(Path: WideString; RestoreRevision: Integer; ConflictMode: WideString): Boolean;
 begin
 	Result := False;
-	if not(Assigned(self)) then
-		Exit; //Проверка на вызов без инициализации
 	if IsPublicAccount then
 		Exit;
 	Result := FRetryOperation.PostFormBoolean(
@@ -1209,8 +1163,6 @@ end;
 function TCloudMailRu.TrashbinEmpty(): Boolean;
 begin
 	Result := False;
-	if not(Assigned(self)) then
-		Exit; //Проверка на вызов без инициализации
 	if IsPublicAccount then
 		Exit;
 	Result := FRetryOperation.PostFormBoolean(
@@ -1222,8 +1174,6 @@ end;
 function TCloudMailRu.MountFolder(Home, InviteToken, ConflictMode: WideString): Boolean;
 begin
 	Result := False;
-	if not(Assigned(self)) then
-		Exit; //Проверка на вызов без инициализации
 	if IsPublicAccount then
 		Exit;
 	Result := FRetryOperation.PostFormBoolean(
@@ -1237,8 +1187,6 @@ var
 	CopyStr: WideString;
 begin
 	Result := False;
-	if not(Assigned(self)) then
-		Exit; //Проверка на вызов без инициализации
 	if IsPublicAccount then
 		Exit;
 	if Clone_copy then
@@ -1254,8 +1202,6 @@ end;
 function TCloudMailRu.RejectInvite(InviteToken: WideString): Boolean;
 begin
 	Result := False;
-	if not(Assigned(self)) then
-		Exit; //Проверка на вызов без инициализации
 	if IsPublicAccount then
 		Exit;
 	Result := FRetryOperation.PostFormBoolean(
@@ -1493,8 +1439,6 @@ end;
 {Wrapper for putFileWhole/putFileSplit}
 function TCloudMailRu.PutFile(LocalPath, RemotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; ChunkOverwriteMode: Integer = 0): Integer;
 begin
-	if not(Assigned(self)) then
-		Exit(FS_FILE_WRITEERROR); //Проверка на вызов без инициализации
 	if IsPublicAccount then
 		Exit(FS_FILE_NOTSUPPORTED);
 	HTTP.SetProgressNames(LocalPath, RemotePath);
@@ -1523,8 +1467,6 @@ begin
 	FileIdentity.Hash := EmptyWideStr;
 	FileIdentity.size := -1;
 	Result := CLOUD_OPERATION_FAILED;
-	if not(Assigned(self)) then
-		Exit; //Проверка на вызов без инициализации
 	if IsPublicAccount then
 		Exit;
 	if (EmptyWideStr = FUploadShard) then
@@ -1578,8 +1520,6 @@ end;
 function TCloudMailRu.RemoveDir(Path: WideString): Boolean;
 begin
 	Result := False;
-	if not(Assigned(self)) then
-		Exit; //Проверка на вызов без инициализации
 	if IsPublicAccount then
 		Exit;
 	HTTP.SetProgressNames(DELETE_DIR, Path);
@@ -1593,8 +1533,6 @@ end;
 function TCloudMailRu.RenameFile(OldName, NewName: WideString): Integer;
 begin
 	Result := FS_FILE_WRITEERROR;
-	if not(Assigned(self)) then
-		Exit; //Проверка на вызов без инициализации
 	if IsPublicAccount then
 		Exit;
 	Result := FRetryOperation.PostFormInteger(
@@ -1609,8 +1547,6 @@ var
 	LocalInfo: TCMRDirItem;
 begin
 	Result := False;
-	if not(Assigned(self)) then
-		Exit; //Проверка на вызов без инициализации
 
 	{Public accounts don't need token refresh}
 	if IsPublicAccount then
