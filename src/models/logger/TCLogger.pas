@@ -1,21 +1,33 @@
-﻿unit TCLogger;
+unit TCLogger;
 
 interface
 
 uses
 	SysUtils,
 	PLUGIN_TYPES,
-	SystemHelper;
+	SystemHelper,
+	ILoggerInterface;
 
 type
-	TTCLogger = class
+	{Logger implementation that outputs to Total Commander's connection log window.
+	 Filters messages based on configured log level bitmask.}
+	TTCLogger = class(TInterfacedObject, ILogger)
 	private
 		LogProc: TLogProcW;
 		PluginNum: Integer;
 		LogLevel: Integer;
 	public
-		constructor Create(); overload; //creates a dummy logger
+		{Creates a dummy logger that discards all messages.
+		 Use when TC callbacks are not available.}
+		constructor Create(); overload;
+
+		{Creates a logger connected to Total Commander.
+		 @param LogProc TC callback for logging
+		 @param PluginNum Plugin instance number
+		 @param LogLevel Bitmask of enabled log levels}
 		constructor Create(LogProc: TLogProcW; PluginNum: Integer; LogLevel: Integer); overload;
+
+		{ILogger}
 		procedure Log(LogLevel, MsgType: Integer; LogString: WideString); overload;
 		procedure Log(LogLevel, MsgType: Integer; LogString: WideString; const Args: array of const); overload;
 	end;

@@ -1,11 +1,12 @@
-﻿unit TCLoggerTest;
+unit TCLoggerTest;
 
 interface
 
 uses
 	TCLogger,
+	ILoggerInterface,
 	PLUGIN_TYPES,
-	CMRCOnstants,
+	CMRConstants,
 	TestHelper,
 	SysUtils,
 	DUnitX.TestFramework;
@@ -25,6 +26,9 @@ type
 		procedure TestCreateDummy;
 		[Test]
 		procedure TestFilterLevel;
+		[Test]
+		{Verifies TTCLogger implements ILogger interface}
+		procedure TestImplementsILogger;
 	end;
 
 var
@@ -109,6 +113,23 @@ begin
 	Assert.AreEqual(msgtype_details, MsgType);
 	Assert.AreEqual(Format('formatted message %s, %d', [randomStr, randomPN]), LogString);
 
+end;
+
+procedure TTCLoggerTest.TestImplementsILogger;
+var
+	Logger: ILogger;
+	TestLogger: TTCLogger;
+	randomPN: integer;
+begin
+	randomPN := Random(100);
+
+	TestLogger := TTCLogger.Create(@TestLoggerProc, randomPN, LOG_LEVEL_DEBUG);
+	Logger := TestLogger;
+
+	Assert.IsNotNull(Logger, 'TTCLogger should be assignable to ILogger');
+
+	Logger.Log(LOG_LEVEL_DEBUG, MSGTYPE_DETAILS, 'interface test');
+	Assert.AreEqual('interface test', LogString, 'Log via ILogger should work');
 end;
 
 procedure TTCLoggerTest.Setup;

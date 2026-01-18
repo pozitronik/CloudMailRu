@@ -19,8 +19,10 @@ uses
 {$ENDIF }
 	DUnitX.TestFramework,
 	TestHelper in 'TestHelper.pas',
-	TCLoggerTest in 'models\TCLoggerTest.pas',
-	TCLogger in '..\src\models\tc\TCLogger.pas',
+	ILoggerInterface in '..\src\models\logger\ILoggerInterface.pas',
+	TCLogger in '..\src\models\logger\TCLogger.pas',
+	TCLoggerTest in 'models\logger\TCLoggerTest.pas',
+	NullLoggerTest in 'models\logger\NullLoggerTest.pas',
 	PLUGIN_TYPES in '..\src\types\PLUGIN_TYPES.pas',
 	SystemHelper in '..\src\helpers\SystemHelper.pas',
 	TCProgress in '..\src\models\tc\TCProgress.pas',

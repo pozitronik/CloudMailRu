@@ -109,8 +109,10 @@
             <MainSource>MainSource</MainSource>
         </DelphiCompile>
         <DCCReference Include="TestHelper.pas"/>
-        <DCCReference Include="models\TCLoggerTest.pas"/>
-        <DCCReference Include="..\src\models\tc\TCLogger.pas"/>
+        <DCCReference Include="..\src\models\logger\ILoggerInterface.pas"/>
+        <DCCReference Include="..\src\models\logger\TCLogger.pas"/>
+        <DCCReference Include="models\logger\TCLoggerTest.pas"/>
+        <DCCReference Include="models\logger\NullLoggerTest.pas"/>
         <DCCReference Include="..\src\types\PLUGIN_TYPES.pas"/>
         <DCCReference Include="..\src\helpers\SystemHelper.pas"/>
         <DCCReference Include="..\src\models\tc\TCProgress.pas"/>
