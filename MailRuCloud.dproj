@@ -262,9 +262,10 @@
         <DCCReference Include="src\helpers\SystemHelper.pas"/>
         <DCCReference Include="src\helpers\TCHelper.pas"/>
         <DCCReference Include="src\models\logger\ILoggerInterface.pas"/>
+        <DCCReference Include="src\models\progress\IProgressInterface.pas"/>
         <DCCReference Include="src\models\logger\TCLogger.pas"/>
         <DCCReference Include="src\models\tc\TCPasswordManager.pas"/>
-        <DCCReference Include="src\models\tc\TCProgress.pas"/>
+        <DCCReference Include="src\models\progress\TCProgress.pas"/>
         <DCCReference Include="src\models\tc\TCRequest.pas"/>
         <DCCReference Include="src\models\WSList.pas"/>
         <DCCReference Include="src\helpers\WindowsHelper.pas"/>

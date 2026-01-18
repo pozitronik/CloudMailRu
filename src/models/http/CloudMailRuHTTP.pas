@@ -9,7 +9,7 @@ uses
 	ChunkedFileStream,
 	FileSplitInfo,
 	ILoggerInterface,
-	TCProgress,
+	IProgressInterface,
 	SETTINGS_CONSTANTS,
 	PLUGIN_TYPES,
 	CMRConstants,
@@ -50,7 +50,7 @@ type
 		Settings: TConnectionSettings;
 
 		Logger: ILogger;
-		Progress: TTCProgress;
+		Progress: IProgress;
 
 		{PROCEDURES}
 		procedure setCookie(const Value: TIdCookieManager);
@@ -65,7 +65,7 @@ type
 		property SourceName: WideString write SetExternalSourceName;
 		property TargetName: WideString write SetExternalTargetName;
 		{CONSTRUCTOR/DESTRUCTOR}
-		constructor Create(Settings: TConnectionSettings; Logger: ILogger; Progress: TTCProgress = nil);
+		constructor Create(Settings: TConnectionSettings; Logger: ILogger; Progress: IProgress);
 		destructor Destroy; override;
 		{MAIN ROUTINES}
 		procedure Head(URL: WideString);
@@ -95,11 +95,9 @@ implementation
 
 {TCloudMailRuHTTP}
 
-constructor TCloudMailRuHTTP.Create(Settings: TConnectionSettings; Logger: ILogger; Progress: TTCProgress = nil);
+constructor TCloudMailRuHTTP.Create(Settings: TConnectionSettings; Logger: ILogger; Progress: IProgress);
 begin
 	self.Progress := Progress;
-	if not Assigned(Progress) then
-		self.Progress := TTCProgress.Create();
 	self.Logger := Logger;
 	self.Throttle := TIdInterceptThrottler.Create();
 	SSL := TIdSSLIOHandlerSocketOpenSSL.Create();

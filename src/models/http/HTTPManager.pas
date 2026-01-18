@@ -8,7 +8,7 @@ uses
 	PLUGIN_TYPES,
 	ConnectionSettings,
 	ILoggerInterface,
-	TCProgress,
+	IProgressInterface,
 	System.Generics.Collections,
 	SysUtils,
 	IdCookieManager;
@@ -19,13 +19,13 @@ type
 	private
 		FConnectionSettings: TConnectionSettings;
 		FLogger: ILogger;
-		FProgress: TTCProgress;
+		FProgress: IProgress;
 
 		Connections: TDictionary<Cardinal, TCloudMailRuHTTP>; //<ThreadId, HTTP>
 
 	public
 		{Параметры, с которыми будут отдаваться подключения: создаём с ними экземпляр класса, а дальше он сам рулит}
-		constructor Create(Settings: TConnectionSettings; Logger: ILogger; Progress: TTCProgress = nil);
+		constructor Create(Settings: TConnectionSettings; Logger: ILogger; Progress: IProgress);
 		destructor Destroy; override;
 		function get(ThreadId: Cardinal): TCloudMailRuHTTP;
 
@@ -37,13 +37,10 @@ implementation
 
 {THTTPManager}
 
-constructor THTTPManager.Create(Settings: TConnectionSettings; Logger: ILogger; Progress: TTCProgress = nil);
+constructor THTTPManager.Create(Settings: TConnectionSettings; Logger: ILogger; Progress: IProgress);
 begin
 	self.FConnectionSettings := Settings;
 	self.FProgress := Progress;
-	if not Assigned(self.FProgress) then
-		self.FProgress := TTCProgress.Create;
-
 	self.FLogger := Logger;
 	Connections := TDictionary<Cardinal, TCloudMailRuHTTP>.Create;
 end;

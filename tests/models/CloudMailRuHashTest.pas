@@ -9,6 +9,8 @@ uses
 	CMRConstants,
 	LANGUAGE_STRINGS,
 	PLUGIN_TYPES,
+	ILoggerInterface,
+	IProgressInterface,
 	TestHelper,
 	System.Classes,
 	System.SysUtils,
@@ -104,7 +106,7 @@ end;
 procedure TCloudMailRuHashTest.Setup;
 begin
 	FSettings := Default(TCloudSettings);
-	FCloud := TTestableCloudMailRu.Create(FSettings, nil, nil, nil, nil);
+	FCloud := TTestableCloudMailRu.Create(FSettings, nil, TNullLogger.Create, TNullProgress.Create);
 end;
 
 procedure TCloudMailRuHashTest.TearDown;

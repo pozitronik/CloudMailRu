@@ -29,6 +29,7 @@ uses
 	Description,
 	TCPasswordManager,
 	ILoggerInterface,
+	IProgressInterface,
 	TCProgress,
 	TCRequest,
 	PathHelper,
@@ -90,7 +91,7 @@ type
 		CurrentDescriptions: TDescription;
 		PasswordManager: TTCPasswordManager;
 		TCLogger: ILogger;
-		TCProgress: TTCProgress;
+		TCProgress: IProgress;
 		TCRequest: TTCRequest;
 	protected
 		function FindListingItemByPath(CurrentListing: TCMRDirItemList; Path: TRealPath; UpdateListing: Boolean = true): TCMRDirItem;
@@ -310,7 +311,7 @@ begin
 	AccountSettings.Free;
 	PasswordManager.Free;
 	TCLogger := nil; {ILogger is reference-counted, setting to nil releases it}
-	TCProgress.Free;
+	TCProgress := nil; {IProgress is reference-counted, setting to nil releases it}
 	TCRequest.Free;
 	inherited;
 end;
@@ -1086,7 +1087,7 @@ begin
 	ThreadSkipListRenMov.TryGetValue(GetCurrentThreadID(), SkipListRenMov);
 	ThreadCanAbortRenMov.TryGetValue(GetCurrentThreadID(), CanAbortRenMov);
 
-	if (CanAbortRenMov and TCProgress.Progress(Path)) then
+	if (CanAbortRenMov and TCProgress.Progress(Path, 0)) then
 	begin
 		ThreadListingAborted.AddOrSetValue(GetCurrentThreadID(), true);
 		RenMovAborted := true;

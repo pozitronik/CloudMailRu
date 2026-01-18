@@ -18,6 +18,7 @@ uses
 	JSONHelper,
 	CloudMailRuHTTP,
 	ILoggerInterface,
+	IProgressInterface,
 	CMROperationResult,
 	CMRConstants,
 	LANGUAGE_STRINGS,
@@ -161,7 +162,7 @@ end;
 
 procedure TRegistrationForm.InitComponents;
 begin
-	HTTPConnection := TCloudMailRuHTTP.Create(ConnectionSettings, TNullLogger.Create);
+	HTTPConnection := TCloudMailRuHTTP.Create(ConnectionSettings, TNullLogger.Create, TNullProgress.Create);
 	//	JSONParser := TCloudMailRuJSONParser.Create();
 end;
 

@@ -1,9 +1,10 @@
-﻿unit TCProgressTest;
+unit TCProgressTest;
 
 interface
 
 uses
 	TCProgress,
+	IProgressInterface,
 	TestHelper,
 	Plugin_TYPES,
 	SysUtils,
@@ -19,6 +20,9 @@ type
 		[TearDown]
 		procedure TearDown;
 		[Test]
+		{Verifies TTCProgress implements IProgress interface}
+		procedure TestImplementsIProgress;
+		[Test]
 		procedure TestProgress;
 		[Test]
 		procedure TestProgressNoTarget;
@@ -26,8 +30,6 @@ type
 		procedure TestProgressNoSourceTarget;
 		[Test]
 		procedure TestProgressNoParams;
-		[Test]
-		procedure TestCreateDummy;
 	end;
 
 var
@@ -65,29 +67,12 @@ begin
 
 end;
 
-procedure TTCProgressTest.TestCreateDummy;
+procedure TTCProgressTest.TestImplementsIProgress;
 var
-	TestTCProgress: TTCProgress;
-	RandomSourceName: WideString;
-	RandomTargetName: WideString;
-	RandomProgress: Integer;
+	Progress: IProgress;
 begin
-	Assert.AreEqual(0, PluginNr);
-	Assert.AreEqual(0, PercentDone);
-	Assert.AreEqual('', SourceName);
-	Assert.AreEqual('', TargetName);
-
-	RandomProgress := Random(100);
-	RandomSourceName := RandomString(32);
-	RandomTargetName := RandomString(64);
-
-	TestTCProgress := TTCProgress.Create();
-
-	Assert.IsFalse(TestTCProgress.Progress(RandomSourceName, RandomTargetName, RandomProgress));
-	Assert.AreEqual(0, PluginNr);
-	Assert.AreEqual(0, PercentDone);
-	Assert.AreEqual('', SourceName);
-	Assert.AreEqual('', TargetName);
+	Progress := TTCProgress.Create(TestProgressProc, 1);
+	Assert.IsNotNull(Progress);
 end;
 
 procedure TTCProgressTest.TestProgress;
@@ -134,10 +119,10 @@ begin
 
 	TestTCProgress := TTCProgress.Create(TestProgressProc, randomPN);
 
-	Assert.IsFalse(TestTCProgress.Progress());
+	Assert.IsFalse(TestTCProgress.Progress(0));
 
 	Assert.AreEqual(randomPN, PluginNr);
-	Assert.AreEqual(0, PercentDone); //should be reset to the default value
+	Assert.AreEqual(0, PercentDone); {should be reset to the default value}
 	Assert.AreEqual('', SourceName);
 	Assert.AreEqual('', TargetName);
 

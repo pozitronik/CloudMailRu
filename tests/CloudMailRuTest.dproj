@@ -115,8 +115,10 @@
         <DCCReference Include="models\logger\NullLoggerTest.pas"/>
         <DCCReference Include="..\src\types\PLUGIN_TYPES.pas"/>
         <DCCReference Include="..\src\helpers\SystemHelper.pas"/>
-        <DCCReference Include="..\src\models\tc\TCProgress.pas"/>
-        <DCCReference Include="models\TCProgressTest.pas"/>
+        <DCCReference Include="..\src\models\progress\IProgressInterface.pas"/>
+        <DCCReference Include="..\src\models\progress\TCProgress.pas"/>
+        <DCCReference Include="models\progress\TCProgressTest.pas"/>
+        <DCCReference Include="models\progress\NullProgressTest.pas"/>
         <DCCReference Include="..\src\models\tc\TCRequest.pas"/>
         <DCCReference Include="models\TCRequestTest.pas"/>
         <DCCReference Include="..\src\helpers\FileHelper.pas"/>
