@@ -5,7 +5,7 @@ unit IHTTPManagerInterface;
 interface
 
 uses
-	CloudMailRuHTTP,
+	ICloudHTTPInterface,
 	ConnectionSettings;
 
 type
@@ -14,7 +14,7 @@ type
 	IHTTPManager = interface
 		['{D33816F9-B695-44DB-AB97-38171EC81C7B}']
 		{Returns HTTP connection for the specified thread, creating one if needed}
-		function Get(ThreadId: Cardinal): TCloudMailRuHTTP;
+		function Get(ThreadId: Cardinal): ICloudHTTP;
 
 		{Returns the connection settings used by this manager}
 		function GetConnectionSettings: TConnectionSettings;
@@ -33,7 +33,7 @@ type
 	private
 		FConnectionSettings: TConnectionSettings;
 	public
-		function Get(ThreadId: Cardinal): TCloudMailRuHTTP;
+		function Get(ThreadId: Cardinal): ICloudHTTP;
 		function GetConnectionSettings: TConnectionSettings;
 		procedure SetProxyPassword(Password: WideString);
 	end;
@@ -42,7 +42,7 @@ implementation
 
 {TNullHTTPManager}
 
-function TNullHTTPManager.Get(ThreadId: Cardinal): TCloudMailRuHTTP;
+function TNullHTTPManager.Get(ThreadId: Cardinal): ICloudHTTP;
 begin
 	Result := nil;
 end;

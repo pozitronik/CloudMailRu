@@ -34,11 +34,12 @@ uses
 	IdInterceptThrottler,
 	IdCookie,
 	IdMultipartFormData,
-	ConnectionSettings;
+	ConnectionSettings,
+	ICloudHTTPInterface;
 
 type
 
-	TCloudMailRuHTTP = class
+	TCloudMailRuHTTP = class(TInterfacedObject, ICloudHTTP)
 	private
 		{VARIABLES}
 		ExternalSourceName: WideString;
@@ -53,15 +54,19 @@ type
 		Progress: IProgress;
 
 		{PROCEDURES}
-		procedure setCookie(const Value: TIdCookieManager);
+		procedure SetCookie(const Value: TIdCookieManager);
 		procedure SetExternalSourceName(const Value: WideString);
 		procedure SetExternalTargetName(const Value: WideString);
+
+		{ICloudHTTP interface methods}
+		procedure SetAuthCookie(Value: TIdCookieManager);
+		function GetHTTP: TIdHTTP;
 
 	public
 		{PROPERTIES}
 		HTTP: TIdHTTP;
 		Property Options: TConnectionSettings read Settings;
-		Property AuthCookie: TIdCookieManager write setCookie; //Кука управляется снаружи - это нужно для передачи авторизации между подключениям
+		Property AuthCookie: TIdCookieManager write SetCookie; {Managed externally for auth sharing between connections}
 		property SourceName: WideString write SetExternalSourceName;
 		property TargetName: WideString write SetExternalTargetName;
 		{CONSTRUCTOR/DESTRUCTOR}
@@ -467,6 +472,16 @@ procedure TCloudMailRuHTTP.SetProgressNames(SourceName, TargetName: WideString);
 begin
 	self.ExternalSourceName := SourceName;
 	self.ExternalTargetName := TargetName;
+end;
+
+procedure TCloudMailRuHTTP.SetAuthCookie(Value: TIdCookieManager);
+begin
+	self.HTTP.CookieManager := Value;
+end;
+
+function TCloudMailRuHTTP.GetHTTP: TIdHTTP;
+begin
+	Result := self.HTTP;
 end;
 
 function TCloudMailRuHTTP.ExceptionHandler(E: Exception; URL: WideString; HTTPMethod: integer; LogErrors: Boolean): integer; //todo: handle OPTIONS method

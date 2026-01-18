@@ -10,7 +10,7 @@ interface
 uses
 	IAuthStrategyInterface,
 	IPasswordUIProviderInterface,
-	CloudMailRuHTTP,
+	ICloudHTTPInterface,
 	ILoggerInterface;
 
 type
@@ -19,8 +19,7 @@ type
 		FPasswordUI: IPasswordUIProvider;
 	public
 		constructor Create(PasswordUI: IPasswordUIProvider);
-		function Authenticate(const Credentials: TAuthCredentials;
-			HTTP: TCloudMailRuHTTP; Logger: ILogger): TAuthResult;
+		function Authenticate(const Credentials: TAuthCredentials; HTTP: ICloudHTTP; Logger: ILogger): TAuthResult;
 		function GetName: WideString;
 	end;
 
@@ -46,8 +45,7 @@ begin
 	FPasswordUI := PasswordUI;
 end;
 
-function TTwoStepAuthStrategy.Authenticate(const Credentials: TAuthCredentials;
-	HTTP: TCloudMailRuHTTP; Logger: ILogger): TAuthResult;
+function TTwoStepAuthStrategy.Authenticate(const Credentials: TAuthCredentials; HTTP: ICloudHTTP; Logger: ILogger): TAuthResult;
 var
 	PostAnswer: WideString;
 	TwoStepJson: WideString;

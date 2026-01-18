@@ -17,6 +17,7 @@ uses
 	ParsingHelper,
 	CMRConstants,
 	CloudMailRuHTTP,
+	ICloudHTTPInterface,
 	LANGUAGE_STRINGS,
 	HashInfo,
 	System.Hash,
@@ -54,7 +55,7 @@ type
 		FSettings: TCloudSettings; {Current options set for the cloud instance}
 
 		FHTTPManager: IHTTPManager; {Internal connections manager (can be set externally or omitted)}
-		FHTTPConnection: TCloudMailRuHTTP; {Normally managed by HTTPConnectionsManager. If HTTPConnectionsManager is omitted, Cloud will create its own atomic connection}
+		FHTTPConnection: ICloudHTTP; {Normally managed by HTTPConnectionsManager. If HTTPConnectionsManager is omitted, Cloud will create its own atomic connection}
 
 		FCookieManager: TIdCookieManager; {The auth cookie, should be stored separately, because it associated with a cloud instance, not a connection}
 
@@ -67,15 +68,12 @@ type
 		FFileSystem: IFileSystem; {File system abstraction for testability}
 		FRetryOperation: TRetryOperation; {Token refresh retry handler}
 
-		FPublicLink: WideString; {Holder for GetPublicLink() value, should not be accessed directly}
 		FPublicShard: WideString; {Public shard url, used for public downloads}
 		FDownloadShard: WideString; {Holder of the current instance download shard adress, retrieved on the first download attempt}
 		FUploadShard: WideString; {Holder of the current instance upload shard adress, retrieved on the first upload attempt}
 
 		FAuthToken: WideString; {The current (constantly refreshing) connection token}
 		FOAuthToken: TCMROAuth; {Unused at this moment}
-
-		FUnitedParams: WideString; {The set of required authentification attributes united to the string — just for a handy usage}
 
 		{HTTP REQUESTS WRAPPERS}
 		function InitSharedConnectionParameters(): Boolean;
@@ -88,13 +86,15 @@ type
 		function PutFileStream(FileName, RemotePath: WideString; FileStream: TStream; ConflictMode: WideString = CLOUD_CONFLICT_STRICT): Integer;
 
 		{OTHER ROUTINES}
-		function GetHTTPConnection: TCloudMailRuHTTP;
+		function GetHTTPConnection: ICloudHTTP;
 		function RefreshCSRFToken: Boolean;
 	protected
 		FUser: WideString;
 		FDomain: WideString;
 		FDoCryptFiles: Boolean;
 		FDoCryptFilenames: Boolean;
+		FPublicLink: WideString; {Holder for GetPublicLink() value - protected for testability}
+		FUnitedParams: WideString; {The set of required authentification attributes united to the string}
 		{HASHING - exposed for testing via subclass}
 		function CloudHash(Path: WideString): WideString; overload; //get cloud hash for specified file
 		function CloudHash(Stream: TStream; Path: WideString = CALCULATING_HASH): WideString; overload; //get cloud hash for data in stream
@@ -113,7 +113,7 @@ type
 		property RetryAttempts: Integer read FSettings.RetryAttempts;
 		property AttemptWait: Integer read FSettings.AttemptWait;
 		{Also shortcut properties}
-		property HTTP: TCloudMailRuHTTP read GetHTTPConnection;
+		property HTTP: ICloudHTTP read GetHTTPConnection;
 
 		{REGULAR CLOUD}
 		function LoginRegular(Method: Integer = CLOUD_AUTH_METHOD_WEB): Boolean;
@@ -408,8 +408,8 @@ begin
 
 	FCookieManager.Destroy;
 
-	if Assigned(FHTTPConnection) then
-		FHTTPConnection.Destroy;
+	{Interface reference - will be released automatically}
+	FHTTPConnection := nil;
 
 	if Assigned(FRetryOperation) then
 		FRetryOperation.Free;
@@ -505,7 +505,7 @@ begin
 		begin
 			Success := HTTP.GetPage(Format('%s?%s', [API_FOLDER_SHARED_LINKS, FUnitedParams]), JSON, ShowProgress);
 			if Success then
-				Success := CloudResultToBoolean(JSON, PREFIX_ERR_SHARED_LINKS_LISTING) and GetDirListing(JSON, LocalListing);
+				Success := CloudResultToBoolean(JSON, PREFIX_ERR_SHARED_LINKS_LISTING) and GetDirListing(JSON, LocalListing); //todo: investigate, it is possible that we need LocalListing.FromJSON(JSON) here
 			Result := TAPICallResult.FromBoolean(Success, JSON);
 		end);
 
@@ -586,7 +586,7 @@ begin
 		begin
 			Success := HTTP.GetPage(Format('%s?%s', [API_TRASHBIN, FUnitedParams]), JSON, ShowProgress);
 			if Success then
-				Success := CloudResultToBoolean(JSON, PREFIX_ERR_TRASH_LISTING) and GetDirListing(JSON, LocalListing);
+				Success := CloudResultToBoolean(JSON, PREFIX_ERR_TRASH_LISTING) and GetDirListing(JSON, LocalListing); //todo: investigate, it is possible that we need LocalListing.FromJSON(JSON) here
 			Result := TAPICallResult.FromBoolean(Success, JSON);
 		end);
 
@@ -669,7 +669,6 @@ var
 	MemoryStream: TMemoryStream;
 	DispatcherResponse: WideString;
 	Progress: Boolean;
-	SavedUserAgent: WideString;
 begin
 	Result := FS_FILE_NOTSUPPORTED;
 	if FDownloadShard = EmptyWideStr then
@@ -708,9 +707,9 @@ begin
 		end;
 	end;
 
-	{OAuth download endpoint blocks browser-like User-Agents (Mozilla/*)}
-	SavedUserAgent := HTTP.HTTP.Request.UserAgent;
-	HTTP.HTTP.Request.UserAgent := OAUTH_USERAGENT;
+	{Note: Previously User-Agent was set to 'cloud-win' here to avoid OAuth endpoint
+	 blocking browser-like UAs. Removed as UA manipulation is no longer needed.
+	 If downloads start failing with 403/blocking errors, consider restoring UA override.}
 	try
 		if FDoCryptFiles then //Загрузка файла в память, дешифрация в файл
 		begin
@@ -750,7 +749,6 @@ begin
 
 		FlushFileBuffers(FileStream.Handle);
 	finally
-		HTTP.HTTP.Request.UserAgent := SavedUserAgent;
 		FileStream.Free;
 	end;
 
@@ -814,7 +812,7 @@ begin
 		FFileSystem.DeleteFile(GetUNCFilePath(LocalPath));
 end;
 
-function TCloudMailRu.GetHTTPConnection: TCloudMailRuHTTP;
+function TCloudMailRu.GetHTTPConnection: ICloudHTTP;
 begin
 	if (nil = FHTTPManager) then
 	begin
@@ -826,7 +824,7 @@ begin
 	else
 		Result := FHTTPManager.get(GetCurrentThreadID());
 	Result.AuthCookie := FCookieManager;
-	if EmptyWideStr <> FAuthToken then
+	if (EmptyWideStr <> FAuthToken) and Assigned(Result.HTTP) then
 		Result.HTTP.Request.CustomHeaders.Values['X-CSRF-Token'] := FAuthToken;
 end;
 
@@ -1396,7 +1394,7 @@ begin
 		if Result = FS_FILE_OK then {Only after successful upload}
 		begin
 			CRCRemotePath := ExtractFilePath(RemotePath) + SplitFileInfo.CRCFileName;
-			HTTP.TargetName := CRCRemotePath;
+			HTTP.SetProgressNames(LocalPath, CRCRemotePath);
 			CRCStream := TStringStream.Create;
 			try
 				SplitFileInfo.GetCRCData(CRCStream);

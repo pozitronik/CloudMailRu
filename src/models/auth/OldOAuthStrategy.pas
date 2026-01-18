@@ -8,14 +8,13 @@ interface
 
 uses
 	IAuthStrategyInterface,
-	CloudMailRuHTTP,
+	ICloudHTTPInterface,
 	ILoggerInterface;
 
 type
 	TOldOAuthStrategy = class(TInterfacedObject, IAuthStrategy)
 	public
-		function Authenticate(const Credentials: TAuthCredentials;
-			HTTP: TCloudMailRuHTTP; Logger: ILogger): TAuthResult;
+		function Authenticate(const Credentials: TAuthCredentials; HTTP: ICloudHTTP; Logger: ILogger): TAuthResult;
 		function GetName: WideString;
 	end;
 
@@ -29,8 +28,7 @@ uses
 	LANGUAGE_STRINGS;
 
 {Helper function to get OAuth token - extracted from CloudMailRu.pas}
-function GetOAuthToken(HTTP: TCloudMailRuHTTP; const Email, Password: WideString;
-	out OAuthToken: TCMROAuth): Boolean;
+function GetOAuthToken(HTTP: ICloudHTTP; const Email, Password: WideString; out OAuthToken: TCMROAuth): Boolean;
 var
 	Answer: WideString;
 	PostData: WideString;
@@ -47,8 +45,7 @@ end;
 
 {TOldOAuthStrategy}
 
-function TOldOAuthStrategy.Authenticate(const Credentials: TAuthCredentials;
-	HTTP: TCloudMailRuHTTP; Logger: ILogger): TAuthResult;
+function TOldOAuthStrategy.Authenticate(const Credentials: TAuthCredentials; HTTP: ICloudHTTP; Logger: ILogger): TAuthResult;
 var
 	OAuthToken: TCMROAuth;
 begin

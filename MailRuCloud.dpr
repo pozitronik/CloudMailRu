@@ -27,6 +27,7 @@ uses
 	Classes,
 	CloudMailRu in 'src\models\CloudMailRu.pas',
 	CloudMailRuHTTP in 'src\models\http\CloudMailRuHTTP.pas',
+	ICloudHTTPInterface in 'src\models\http\ICloudHTTPInterface.pas',
 	CloudSettings in 'src\models\settings\CloudSettings.pas',
 	ConnectionManager in 'src\models\ConnectionManager.pas',
 	ConnectionSettings in 'src\models\settings\ConnectionSettings.pas',

@@ -8,14 +8,13 @@ interface
 
 uses
 	IAuthStrategyInterface,
-	CloudMailRuHTTP,
+	ICloudHTTPInterface,
 	ILoggerInterface;
 
 type
 	TWebAuthStrategy = class(TInterfacedObject, IAuthStrategy)
 	public
-		function Authenticate(const Credentials: TAuthCredentials;
-			HTTP: TCloudMailRuHTTP; Logger: ILogger): TAuthResult;
+		function Authenticate(const Credentials: TAuthCredentials; HTTP: ICloudHTTP; Logger: ILogger): TAuthResult;
 		function GetName: WideString;
 	end;
 
@@ -33,8 +32,7 @@ uses
 
 {TWebAuthStrategy}
 
-function TWebAuthStrategy.Authenticate(const Credentials: TAuthCredentials;
-	HTTP: TCloudMailRuHTTP; Logger: ILogger): TAuthResult;
+function TWebAuthStrategy.Authenticate(const Credentials: TAuthCredentials; HTTP: ICloudHTTP; Logger: ILogger): TAuthResult;
 var
 	PostAnswer: WideString;
 	TokenPageContent: WideString;

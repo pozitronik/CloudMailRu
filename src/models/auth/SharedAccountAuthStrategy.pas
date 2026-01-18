@@ -8,14 +8,13 @@ interface
 
 uses
 	IAuthStrategyInterface,
-	CloudMailRuHTTP,
+	ICloudHTTPInterface,
 	ILoggerInterface;
 
 type
 	TSharedAccountAuthStrategy = class(TInterfacedObject, IAuthStrategy)
 	public
-		function Authenticate(const Credentials: TAuthCredentials;
-			HTTP: TCloudMailRuHTTP; Logger: ILogger): TAuthResult;
+		function Authenticate(const Credentials: TAuthCredentials; HTTP: ICloudHTTP; Logger: ILogger): TAuthResult;
 		function GetName: WideString;
 	end;
 
@@ -45,8 +44,7 @@ end;
 
 {TSharedAccountAuthStrategy}
 
-function TSharedAccountAuthStrategy.Authenticate(const Credentials: TAuthCredentials;
-	HTTP: TCloudMailRuHTTP; Logger: ILogger): TAuthResult;
+function TSharedAccountAuthStrategy.Authenticate(const Credentials: TAuthCredentials; HTTP: ICloudHTTP; Logger: ILogger): TAuthResult;
 var
 	PageContent: WideString;
 	PublicShard: WideString;

@@ -7,7 +7,7 @@ interface
 
 uses
 	CMROAuth,
-	CloudMailRuHTTP,
+	ICloudHTTPInterface,
 	ILoggerInterface;
 
 type
@@ -46,8 +46,7 @@ type
 		 @param HTTP HTTP connection for making requests
 		 @param Logger Logger for diagnostic output
 		 @return TAuthResult with success/failure and tokens}
-		function Authenticate(const Credentials: TAuthCredentials;
-			HTTP: TCloudMailRuHTTP; Logger: ILogger): TAuthResult;
+		function Authenticate(const Credentials: TAuthCredentials; 	HTTP: ICloudHTTP; Logger: ILogger): TAuthResult;
 		{Returns human-readable strategy name for logging.}
 		function GetName: WideString;
 	end;
@@ -56,8 +55,7 @@ type
 	 Use in unit tests where authentication behavior needs to be controlled.}
 	TNullAuthStrategy = class(TInterfacedObject, IAuthStrategy)
 	public
-		function Authenticate(const Credentials: TAuthCredentials;
-			HTTP: TCloudMailRuHTTP; Logger: ILogger): TAuthResult;
+		function Authenticate(const Credentials: TAuthCredentials; HTTP: ICloudHTTP; Logger: ILogger): TAuthResult;
 		function GetName: WideString;
 	end;
 
@@ -119,8 +117,7 @@ end;
 
 {TNullAuthStrategy}
 
-function TNullAuthStrategy.Authenticate(const Credentials: TAuthCredentials;
-	HTTP: TCloudMailRuHTTP; Logger: ILogger): TAuthResult;
+function TNullAuthStrategy.Authenticate(const Credentials: TAuthCredentials; HTTP: ICloudHTTP; Logger: ILogger): TAuthResult;
 begin
 	Result := TAuthResult.CreateFailure('Null authentication strategy - always fails');
 end;

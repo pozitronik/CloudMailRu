@@ -118,6 +118,7 @@ uses
 	CMRSpace in '..\src\models\dto\CMRSpace.pas',
 	CMRTwostep in '..\src\models\dto\CMRTwostep.pas',
 	CloudMailRuHTTP in '..\src\models\http\CloudMailRuHTTP.pas',
+	ICloudHTTPInterface in '..\src\models\http\ICloudHTTPInterface.pas',
 	CMRInvite in '..\src\models\dto\CMRInvite.pas',
 	CMRIncomingInvite in '..\src\models\dto\CMRIncomingInvite.pas',
 	CMROwner in '..\src\models\dto\CMROwner.pas',
@@ -159,7 +160,14 @@ uses
 	WebAuthStrategy in '..\src\models\auth\WebAuthStrategy.pas',
 	TwoStepAuthStrategy in '..\src\models\auth\TwoStepAuthStrategy.pas',
 	OldOAuthStrategy in '..\src\models\auth\OldOAuthStrategy.pas',
-	DeprecatedStrategiesTest in 'models\auth\DeprecatedStrategiesTest.pas';
+	DeprecatedStrategiesTest in 'models\auth\DeprecatedStrategiesTest.pas',
+	MockCloudHTTP in 'mocks\MockCloudHTTP.pas',
+	MockHTTPManager in 'mocks\MockHTTPManager.pas',
+	CloudMailRuDirListingTest in 'models\CloudMailRuDirListingTest.pas',
+	CloudMailRuFileOperationsTest in 'models\CloudMailRuFileOperationsTest.pas',
+	CloudMailRuPublicAccountTest in 'models\CloudMailRuPublicAccountTest.pas',
+	CloudMailRuErrorHandlingTest in 'models\CloudMailRuErrorHandlingTest.pas',
+	CloudMailRuUploadDownloadTest in 'models\CloudMailRuUploadDownloadTest.pas';
 
 {keep comment here to protect the following conditional from being removed by the IDE when adding a unit}
 {$IFNDEF TESTINSIGHT}

@@ -4,6 +4,7 @@ interface
 
 uses
 	CloudMailRuHTTP,
+	ICloudHTTPInterface,
 	CMRConstants,
 	PLUGIN_TYPES,
 	ConnectionSettings,
@@ -22,13 +23,13 @@ type
 		FLogger: ILogger;
 		FProgress: IProgress;
 
-		Connections: TDictionary<Cardinal, TCloudMailRuHTTP>; //<ThreadId, HTTP>
+		Connections: TDictionary<Cardinal, ICloudHTTP>; //<ThreadId, HTTP>
 
 	public
 		{Параметры, с которыми будут отдаваться подключения: создаём с ними экземпляр класса, а дальше он сам рулит}
 		constructor Create(Settings: TConnectionSettings; Logger: ILogger; Progress: IProgress);
 		destructor Destroy; override;
-		function Get(ThreadId: Cardinal): TCloudMailRuHTTP;
+		function Get(ThreadId: Cardinal): ICloudHTTP;
 		function GetConnectionSettings: TConnectionSettings;
 		procedure SetProxyPassword(Password: WideString);
 
@@ -45,21 +46,18 @@ begin
 	self.FConnectionSettings := Settings;
 	self.FProgress := Progress;
 	self.FLogger := Logger;
-	Connections := TDictionary<Cardinal, TCloudMailRuHTTP>.Create;
+	Connections := TDictionary<Cardinal, ICloudHTTP>.Create;
 end;
 
 destructor THTTPManager.Destroy;
-var
-	Item: TPair<Cardinal, TCloudMailRuHTTP>;
 begin
-	for Item in Connections do
-		Item.Value.Destroy;
-
+	{Interfaces are reference-counted - just clear the dictionary}
+	Connections.Clear;
 	FreeAndNil(Connections);
 	inherited;
 end;
 
-function THTTPManager.Get(ThreadId: Cardinal): TCloudMailRuHTTP;
+function THTTPManager.Get(ThreadId: Cardinal): ICloudHTTP;
 begin
 	if not Connections.TryGetValue(ThreadId, Result) then
 	begin
