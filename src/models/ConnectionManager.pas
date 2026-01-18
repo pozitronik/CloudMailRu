@@ -16,6 +16,7 @@ uses
 	IAccountsManagerInterface,
 	IPluginSettingsManagerInterface,
 	IPasswordUIProviderInterface,
+	IFileSystemInterface,
 	Windows,
 	Vcl.Controls,
 	SETTINGS_CONSTANTS,
@@ -26,6 +27,8 @@ uses
 	IPasswordManagerInterface,
 	IHTTPManagerInterface,
 	ICipherValidatorInterface,
+	CipherInterface,
+	FileCipher,
 	IAuthStrategyInterface,
 	OAuthAppAuthStrategy,
 	System.Generics.Collections,
@@ -41,6 +44,7 @@ type
 		FAccountsManager: IAccountsManager;
 		FPasswordUI: IPasswordUIProvider;
 		FCipherValidator: ICipherValidator;
+		FFileSystem: IFileSystem;
 
 		FLogger: ILogger;
 		FProgress: IProgress;
@@ -53,7 +57,7 @@ type
 		function GetProxyPassword(): Boolean;
 		function InitCloudCryptPasswords(const ConnectionName: WideString; var CloudSettings: TCloudSettings): Boolean;
 	public
-		constructor Create(PluginSettingsManager: IPluginSettingsManager; AccountsManager: IAccountsManager; HTTPManager: IHTTPManager; PasswordUI: IPasswordUIProvider; CipherValidator: ICipherValidator; Progress: IProgress; Logger: ILogger; Request: IRequest; PasswordManager: IPasswordManager);
+		constructor Create(PluginSettingsManager: IPluginSettingsManager; AccountsManager: IAccountsManager; HTTPManager: IHTTPManager; PasswordUI: IPasswordUIProvider; CipherValidator: ICipherValidator; FileSystem: IFileSystem; Progress: IProgress; Logger: ILogger; Request: IRequest; PasswordManager: IPasswordManager);
 		destructor Destroy(); override;
 		function Get(ConnectionName: WideString; var OperationResult: Integer): TCloudMailRu; {Return the cloud connection by its name}
 		procedure Free(ConnectionName: WideString); {Free a connection by its name, if present}
@@ -62,7 +66,7 @@ type
 implementation
 
 {TConnectionManager}
-constructor TConnectionManager.Create(PluginSettingsManager: IPluginSettingsManager; AccountsManager: IAccountsManager; HTTPManager: IHTTPManager; PasswordUI: IPasswordUIProvider; CipherValidator: ICipherValidator; Progress: IProgress; Logger: ILogger; Request: IRequest; PasswordManager: IPasswordManager);
+constructor TConnectionManager.Create(PluginSettingsManager: IPluginSettingsManager; AccountsManager: IAccountsManager; HTTPManager: IHTTPManager; PasswordUI: IPasswordUIProvider; CipherValidator: ICipherValidator; FileSystem: IFileSystem; Progress: IProgress; Logger: ILogger; Request: IRequest; PasswordManager: IPasswordManager);
 begin
 	FConnections := TDictionary<WideString, TCloudMailRu>.Create;
 	FPluginSettingsManager := PluginSettingsManager;
@@ -70,6 +74,7 @@ begin
 	FHTTPManager := HTTPManager;
 	FPasswordUI := PasswordUI;
 	FCipherValidator := CipherValidator;
+	FFileSystem := FileSystem;
 	FProgress := Progress;
 	FLogger := Logger;
 	FRequest := Request;
@@ -122,8 +127,11 @@ var
 	CloudSettings: TCloudSettings;
 	LoginMethod: Integer;
 	AuthStrategy: IAuthStrategy;
+	Cipher: ICipher;
+	FileCipherInstance: TFileCipher;
 begin
 	Result := CLOUD_OPERATION_OK;
+	Cipher := nil;
 
 	{Create CloudSettings using factory method - combines plugin settings with account settings}
 	CloudSettings := TCloudSettings.CreateFromSettings(
@@ -136,10 +144,22 @@ begin
 
 	FLogger.Log(LOG_LEVEL_CONNECT, MSGTYPE_CONNECT, 'CONNECT \%s', [ConnectionName]);
 
+	{Create cipher when encryption is enabled}
+	if CloudSettings.AccountSettings.EncryptFilesMode <> EncryptModeNone then
+	begin
+		FileCipherInstance := TFileCipher.Create(CloudSettings.CryptFilesPassword, CloudSettings.AccountSettings.CryptedGUIDFiles, CloudSettings.AccountSettings.EncryptFilenames);
+		if FileCipherInstance.IsWrongPassword then
+		begin
+			FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_WRONG_ENCRYPT_PASSWORD);
+			FileCipherInstance.Free;
+		end else
+			Cipher := FileCipherInstance;
+	end;
+
 	{Create appropriate auth strategy}
 	AuthStrategy := TOAuthAppAuthStrategy.Create;
 
-	Cloud := TCloudMailRu.Create(CloudSettings, FHTTPManager, AuthStrategy, FLogger, FProgress, FRequest);
+	Cloud := TCloudMailRu.Create(CloudSettings, FHTTPManager, AuthStrategy, FFileSystem, FLogger, FProgress, FRequest, Cipher);
 
 	{OAuth app password is the only supported auth method. Legacy methods are kept for backwards compatibility but are deprecated.}
 	LoginMethod := CLOUD_AUTH_METHOD_OAUTH_APP;

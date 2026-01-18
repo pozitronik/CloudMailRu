@@ -8,6 +8,7 @@ uses
 	IPasswordUIProviderInterface,
 	IHTTPManagerInterface,
 	ICipherValidatorInterface,
+	IFileSystemInterface,
 	ILoggerInterface,
 	IProgressInterface,
 	IRequestInterface,
@@ -202,6 +203,7 @@ var
 	HTTPManager: IHTTPManager;
 	PasswordUI: IPasswordUIProvider;
 	CipherValidator: ICipherValidator;
+	FileSystem: IFileSystem;
 	Progress: IProgress;
 	Logger: ILogger;
 	Request: IRequest;
@@ -212,13 +214,14 @@ begin
 	HTTPManager := TNullHTTPManager.Create;
 	PasswordUI := TNullPasswordUIProvider.Create;
 	CipherValidator := TNullCipherValidator.Create;
+	FileSystem := TNullFileSystem.Create;
 	Progress := TNullProgress.Create;
 	Logger := TNullLogger.Create;
 	Request := TNullRequest.Create;
 	PasswordManager := TNullPasswordManager.Create;
 
 	Manager := TConnectionManager.Create(PluginSettings, AccountsManager, HTTPManager,
-		PasswordUI, CipherValidator, Progress, Logger, Request, PasswordManager);
+		PasswordUI, CipherValidator, FileSystem, Progress, Logger, Request, PasswordManager);
 	try
 		Assert.IsNotNull(Manager, 'ConnectionManager should be created successfully');
 	finally
@@ -234,6 +237,7 @@ var
 	HTTPManager: IHTTPManager;
 	PasswordUI: IPasswordUIProvider;
 	CipherValidator: ICipherValidator;
+	FileSystem: IFileSystem;
 	Progress: IProgress;
 	Logger: ILogger;
 	Request: IRequest;
@@ -244,13 +248,14 @@ begin
 	HTTPManager := TNullHTTPManager.Create;
 	PasswordUI := TNullPasswordUIProvider.Create;
 	CipherValidator := TNullCipherValidator.Create;
+	FileSystem := TNullFileSystem.Create;
 	Progress := TNullProgress.Create;
 	Logger := TNullLogger.Create;
 	Request := TNullRequest.Create;
 	PasswordManager := TNullPasswordManager.Create;
 
 	Manager := TConnectionManager.Create(PluginSettings, AccountsManager, HTTPManager,
-		PasswordUI, CipherValidator, Progress, Logger, Request, PasswordManager);
+		PasswordUI, CipherValidator, FileSystem, Progress, Logger, Request, PasswordManager);
 	Manager.Destroy;
 
 	Assert.Pass('ConnectionManager destroyed without errors');
@@ -266,6 +271,7 @@ var
 	HTTPManager: IHTTPManager;
 	PasswordUI: IPasswordUIProvider;
 	CipherValidator: ICipherValidator;
+	FileSystem: IFileSystem;
 	Progress: IProgress;
 	Logger: ILogger;
 	Request: IRequest;
@@ -282,13 +288,14 @@ begin
 	HTTPManager := TNullHTTPManager.Create;
 	PasswordUI := TNullPasswordUIProvider.Create; {Returns mrCancel}
 	CipherValidator := TNullCipherValidator.Create;
+	FileSystem := TNullFileSystem.Create;
 	Progress := TNullProgress.Create;
 	Logger := TNullLogger.Create;
 	Request := TNullRequest.Create;
 	PasswordManager := TNullPasswordManager.Create;
 
 	Manager := TConnectionManager.Create(PluginSettings, AccountsManager, HTTPManager,
-		PasswordUI, CipherValidator, Progress, Logger, Request, PasswordManager);
+		PasswordUI, CipherValidator, FileSystem, Progress, Logger, Request, PasswordManager);
 	try
 		Cloud := Manager.Get('test_connection', OperationResult);
 		Assert.IsNull(Cloud, 'Get should return nil when password UI is cancelled');
@@ -305,6 +312,7 @@ var
 	HTTPManager: IHTTPManager;
 	PasswordUI: IPasswordUIProvider;
 	CipherValidator: ICipherValidator;
+	FileSystem: IFileSystem;
 	Progress: IProgress;
 	Logger: ILogger;
 	Request: IRequest;
@@ -320,13 +328,14 @@ begin
 	HTTPManager := TNullHTTPManager.Create;
 	PasswordUI := TNullPasswordUIProvider.Create;
 	CipherValidator := TNullCipherValidator.Create;
+	FileSystem := TNullFileSystem.Create;
 	Progress := TNullProgress.Create;
 	Logger := TNullLogger.Create;
 	Request := TNullRequest.Create;
 	PasswordManager := TNullPasswordManager.Create;
 
 	Manager := TConnectionManager.Create(PluginSettings, AccountsManager, HTTPManager,
-		PasswordUI, CipherValidator, Progress, Logger, Request, PasswordManager);
+		PasswordUI, CipherValidator, FileSystem, Progress, Logger, Request, PasswordManager);
 	try
 		Cloud := Manager.Get('test_connection', OperationResult);
 		Assert.IsNull(Cloud, 'Cloud should be nil when password retrieval fails');
@@ -345,6 +354,7 @@ var
 	HTTPManager: IHTTPManager;
 	PasswordUI: IPasswordUIProvider;
 	CipherValidator: ICipherValidator;
+	FileSystem: IFileSystem;
 	Progress: IProgress;
 	Logger: ILogger;
 	Request: IRequest;
@@ -360,13 +370,14 @@ begin
 	HTTPManager := TNullHTTPManager.Create;
 	PasswordUI := TNullPasswordUIProvider.Create;
 	CipherValidator := TNullCipherValidator.Create;
+	FileSystem := TNullFileSystem.Create;
 	Progress := TNullProgress.Create;
 	Logger := TNullLogger.Create;
 	Request := TNullRequest.Create;
 	PasswordManager := TNullPasswordManager.Create;
 
 	Manager := TConnectionManager.Create(PluginSettings, AccountsManager, HTTPManager,
-		PasswordUI, CipherValidator, Progress, Logger, Request, PasswordManager);
+		PasswordUI, CipherValidator, FileSystem, Progress, Logger, Request, PasswordManager);
 	try
 		Cloud1 := Manager.Get('test_connection', Result1);
 		Cloud2 := Manager.Get('test_connection', Result2);
@@ -388,6 +399,7 @@ var
 	HTTPManager: IHTTPManager;
 	PasswordUI: IPasswordUIProvider;
 	CipherValidator: ICipherValidator;
+	FileSystem: IFileSystem;
 	Progress: IProgress;
 	Logger: ILogger;
 	Request: IRequest;
@@ -398,13 +410,14 @@ begin
 	HTTPManager := TNullHTTPManager.Create;
 	PasswordUI := TNullPasswordUIProvider.Create;
 	CipherValidator := TNullCipherValidator.Create;
+	FileSystem := TNullFileSystem.Create;
 	Progress := TNullProgress.Create;
 	Logger := TNullLogger.Create;
 	Request := TNullRequest.Create;
 	PasswordManager := TNullPasswordManager.Create;
 
 	Manager := TConnectionManager.Create(PluginSettings, AccountsManager, HTTPManager,
-		PasswordUI, CipherValidator, Progress, Logger, Request, PasswordManager);
+		PasswordUI, CipherValidator, FileSystem, Progress, Logger, Request, PasswordManager);
 	try
 		Manager.Free('non_existent_connection');
 		Assert.Pass('Free non-existent connection should not throw');
@@ -421,6 +434,7 @@ var
 	HTTPManager: IHTTPManager;
 	PasswordUI: IPasswordUIProvider;
 	CipherValidator: ICipherValidator;
+	FileSystem: IFileSystem;
 	Progress: IProgress;
 	Logger: ILogger;
 	Request: IRequest;
@@ -431,13 +445,14 @@ begin
 	HTTPManager := TNullHTTPManager.Create;
 	PasswordUI := TNullPasswordUIProvider.Create;
 	CipherValidator := TNullCipherValidator.Create;
+	FileSystem := TNullFileSystem.Create;
 	Progress := TNullProgress.Create;
 	Logger := TNullLogger.Create;
 	Request := TNullRequest.Create;
 	PasswordManager := TNullPasswordManager.Create;
 
 	Manager := TConnectionManager.Create(PluginSettings, AccountsManager, HTTPManager,
-		PasswordUI, CipherValidator, Progress, Logger, Request, PasswordManager);
+		PasswordUI, CipherValidator, FileSystem, Progress, Logger, Request, PasswordManager);
 	try
 		Manager.Free('connection1');
 		Manager.Free('connection1');

@@ -27,6 +27,9 @@ type
 		{Checks if a file exists at the specified path}
 		function FileExists(const Path: WideString): Boolean;
 
+		{Returns file size in bytes, -1 if file doesn't exist or error}
+		function GetFileSize(const Path: WideString): Int64;
+
 		{Creates an empty file at the specified path, overwrites if exists}
 		procedure CreateEmptyFile(const Path: WideString);
 
@@ -56,6 +59,7 @@ type
 	TNullFileSystem = class(TInterfacedObject, IFileSystem)
 	public
 		function FileExists(const Path: WideString): Boolean;
+		function GetFileSize(const Path: WideString): Int64;
 		procedure CreateEmptyFile(const Path: WideString);
 		procedure DeleteFile(const Path: WideString);
 		function ReadFileHeader(const Path: WideString; ByteCount: Integer): TBytes;
@@ -75,6 +79,7 @@ type
 		destructor Destroy; override;
 
 		function FileExists(const Path: WideString): Boolean;
+		function GetFileSize(const Path: WideString): Int64;
 		procedure CreateEmptyFile(const Path: WideString);
 		procedure DeleteFile(const Path: WideString);
 		function ReadFileHeader(const Path: WideString; ByteCount: Integer): TBytes;
@@ -113,6 +118,11 @@ end;
 function TNullFileSystem.FileExists(const Path: WideString): Boolean;
 begin
 	Result := False;
+end;
+
+function TNullFileSystem.GetFileSize(const Path: WideString): Int64;
+begin
+	Result := -1; {File doesn't exist in null implementation}
 end;
 
 procedure TNullFileSystem.CreateEmptyFile(const Path: WideString);
@@ -177,6 +187,16 @@ end;
 function TMemoryFileSystem.FileExists(const Path: WideString): Boolean;
 begin
 	Result := FFiles.IndexOfName(Path) >= 0;
+end;
+
+function TMemoryFileSystem.GetFileSize(const Path: WideString): Int64;
+var
+	Content: WideString;
+begin
+	if not FileExists(Path) then
+		Exit(-1);
+	Content := GetFileContent(Path);
+	Result := Length(TEncoding.UTF8.GetBytes(Content));
 end;
 
 procedure TMemoryFileSystem.CreateEmptyFile(const Path: WideString);

@@ -14,6 +14,7 @@ type
 	TWindowsFileSystem = class(TInterfacedObject, IFileSystem)
 	public
 		function FileExists(const Path: WideString): Boolean;
+		function GetFileSize(const Path: WideString): Int64;
 		procedure CreateEmptyFile(const Path: WideString);
 		procedure DeleteFile(const Path: WideString);
 		function ReadFileHeader(const Path: WideString; ByteCount: Integer): TBytes;
@@ -33,19 +34,25 @@ begin
 	Result := System.SysUtils.FileExists(Path);
 end;
 
+function TWindowsFileSystem.GetFileSize(const Path: WideString): Int64;
+var
+	Handle: THandle;
+begin
+	Handle := CreateFileW(PWideChar(Path), 0, 0, nil, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+	if Handle = INVALID_HANDLE_VALUE then
+		Exit(-1);
+	try
+		Int64Rec(Result).Lo := Windows.GetFileSize(Handle, @Int64Rec(Result).Hi);
+	finally
+		CloseHandle(Handle);
+	end;
+end;
+
 procedure TWindowsFileSystem.CreateEmptyFile(const Path: WideString);
 var
 	Handle: THandle;
 begin
-	Handle := CreateFileW(
-		PWideChar(Path),
-		GENERIC_WRITE,
-		0,
-		nil,
-		CREATE_ALWAYS,
-		FILE_ATTRIBUTE_NORMAL,
-		0
-	);
+	Handle := CreateFileW(PWideChar(Path), GENERIC_WRITE, 0, nil, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
 	if Handle <> INVALID_HANDLE_VALUE then
 		CloseHandle(Handle);
 end;

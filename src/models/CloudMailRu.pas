@@ -38,13 +38,13 @@ uses
 	CipherInterface,
 	RealPath,
 	CloudSettings,
-	FileCipher,
 	FileSplitInfo,
 	ChunkedFileStream,
 	IHTTPManagerInterface,
+	IFileSystemInterface,
+	WindowsFileSystem,
 	IdCookieManager,
 	DCPbase64,
-	AskPassword,
 	IAuthStrategyInterface,
 	TokenRetryHelper;
 
@@ -64,6 +64,7 @@ type
 
 		FCipher: ICipher; {The encryption instance}
 		FAuthStrategy: IAuthStrategy; {Authentication strategy}
+		FFileSystem: IFileSystem; {File system abstraction for testability}
 		FRetryOperation: TRetryOperation; {Token refresh retry handler}
 
 		FPublicLink: WideString; {Holder for GetPublicLink() value, should not be accessed directly}
@@ -129,7 +130,7 @@ type
 		function CloudResultToBoolean(CloudResult: TCMROperationResult; ErrorPrefix: WideString = ''): Boolean; overload;
 		function CloudResultToBoolean(JSON: WideString; ErrorPrefix: WideString = ''): Boolean; overload;
 		{CONSTRUCTOR/DESTRUCTOR}
-		constructor Create(CloudSettings: TCloudSettings; ConnectionManager: IHTTPManager; AuthStrategy: IAuthStrategy; Logger: ILogger; Progress: IProgress; Request: IRequest);
+		constructor Create(CloudSettings: TCloudSettings; ConnectionManager: IHTTPManager; AuthStrategy: IAuthStrategy; FileSystem: IFileSystem; Logger: ILogger; Progress: IProgress; Request: IRequest; Cipher: ICipher = nil);
 		destructor Destroy; override;
 		{CLOUD INTERFACE METHODS}
 		function Login(Method: Integer = CLOUD_AUTH_METHOD_WEB): Boolean;
@@ -184,7 +185,6 @@ var
 	FileName: WideString;
 	CallResult: TAPICallResult;
 begin
-	Result := FS_FILE_WRITEERROR;
 	if IsPublicAccount then
 		Exit(FS_FILE_NOTSUPPORTED);
 
@@ -230,7 +230,6 @@ function TCloudMailRu.CloneWeblink(Path, Link, ConflictMode: WideString): Intege
 var
 	CallResult: TAPICallResult;
 begin
-	Result := FS_FILE_WRITEERROR;
 	if IsPublicAccount then
 		Exit(FS_FILE_NOTSUPPORTED);
 
@@ -305,7 +304,6 @@ end;
 
 function TCloudMailRu.CopyFile(OldName, ToPath: WideString): Integer;
 begin
-	Result := FS_FILE_WRITEERROR;
 	if IsPublicAccount then
 		Exit(FS_FILE_NOTSUPPORTED);
 	HTTP.SetProgressNames(OldName, Format('%s%s', [IncludeTrailingPathDelimiter(ToPath), ExtractFileName(OldName)]));
@@ -343,9 +341,7 @@ begin //Облако умеет скопировать файл, но не см�
 	end;
 end;
 
-constructor TCloudMailRu.Create(CloudSettings: TCloudSettings; ConnectionManager: IHTTPManager; AuthStrategy: IAuthStrategy; Logger: ILogger; Progress: IProgress; Request: IRequest);
-var
-	FileCipherInstance: TFileCipher;
+constructor TCloudMailRu.Create(CloudSettings: TCloudSettings; ConnectionManager: IHTTPManager; AuthStrategy: IAuthStrategy; FileSystem: IFileSystem; Logger: ILogger; Progress: IProgress; Request: IRequest; Cipher: ICipher = nil);
 begin
 	try
 		FSettings := CloudSettings;
@@ -353,6 +349,7 @@ begin
 
 		FHTTPManager := ConnectionManager;
 		FAuthStrategy := AuthStrategy;
+		FFileSystem := FileSystem;
 
 		FProgress := Progress;
 		FLogger := Logger;
@@ -368,16 +365,10 @@ begin
 			function(const JSON, ErrorPrefix: WideString): Boolean begin Result := CloudResultToBoolean(JSON, ErrorPrefix); end,
 			function(const JSON, ErrorPrefix: WideString): Integer begin Result := CloudResultToFsResult(JSON, ErrorPrefix); end);
 
-		if FSettings.AccountSettings.EncryptFilesMode <> EncryptModeNone then
-		begin
-			FileCipherInstance := TFileCipher.Create(FSettings.CryptFilesPassword, FSettings.AccountSettings.CryptedGUIDFiles, FSettings.AccountSettings.EncryptFilenames);
-			if FileCipherInstance.IsWrongPassword then
-				FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_WRONG_ENCRYPT_PASSWORD);
-
-			FDoCryptFiles := not(FileCipherInstance.IsWrongPassword);
-			FDoCryptFilenames := FDoCryptFiles and FSettings.AccountSettings.EncryptFilenames;
-			FCipher := FileCipherInstance;
-		end;
+		{Use injected cipher for encryption operations}
+		FCipher := Cipher;
+		FDoCryptFiles := Assigned(Cipher);
+		FDoCryptFilenames := FDoCryptFiles and FSettings.AccountSettings.EncryptFilenames;
 
 	except
 		on E: Exception do
@@ -475,7 +466,7 @@ end;
 function TCloudMailRu.FileIdentity(LocalPath: WideString): TCMRFileIdentity;
 begin
 	Result.Hash := CloudHash(LocalPath);
-	Result.size := SizeOfFile(LocalPath);
+	Result.size := FFileSystem.GetFileSize(LocalPath);
 end;
 
 function TCloudMailRu.GetDescriptionFile(RemotePath, LocalCopy: WideString): Boolean;
@@ -487,7 +478,7 @@ end;
 
 function TCloudMailRu.PutDescriptionFile(RemotePath, LocalCopy: WideString): Boolean;
 begin
-	if FileExists(LocalCopy) then
+	if FFileSystem.FileExists(LocalCopy) then
 		Result := PutFile(LocalCopy, RemotePath) = FS_FILE_OK
 	else
 		Result := DeleteFile(RemotePath);
@@ -557,7 +548,6 @@ function TCloudMailRu.GetIncomingLinksListing(var IncomingListing: TCMRDirItemLi
 var
 	i: Integer;
 begin
-	Result := False;
 	SetLength(IncomingListing, 0);
 	Result := GetIncomingLinksListing(InvitesListing, ShowProgress);
 	if Result then
@@ -610,7 +600,6 @@ var
 	CallResult: TAPICallResult;
 	LocalListing: TCMRDirItemList;
 begin
-	Result := False;
 	SetLength(DirListing, 0);
 
 	{Public accounts don't need token refresh}
@@ -666,14 +655,11 @@ end;
 
 function TCloudMailRu.GetFile(RemotePath, LocalPath: WideString; var ResultHash: WideString; LogErrors: Boolean): Integer;
 begin
-	Result := FS_FILE_NOTSUPPORTED;
-
 	HTTP.SetProgressNames(RemotePath, LocalPath);
 	if IsPublicAccount then
 		Result := GetFileShared(RemotePath, LocalPath, ResultHash, LogErrors)
 	else
 		Result := GetFileRegular(RemotePath, LocalPath, ResultHash, LogErrors);
-
 end;
 
 function TCloudMailRu.GetFileRegular(RemotePath, LocalPath: WideString; var ResultHash: WideString; LogErrors: Boolean): Integer;
@@ -769,7 +755,7 @@ begin
 	end;
 
 	if not(Result in [FS_FILE_OK]) then
-		System.SysUtils.DeleteFile(GetUNCFilePath(LocalPath));
+		FFileSystem.DeleteFile(GetUNCFilePath(LocalPath));
 end;
 
 {since 29.07.2022: изменена логика получения ссылок, см. issue #285. URL теперь всегда должны быть кодированы, иначе в некоторых случаях приходит 400}
@@ -825,7 +811,7 @@ begin
 		end;
 	end;
 	if Result <> FS_FILE_OK then
-		System.SysUtils.DeleteFile(GetUNCFilePath(LocalPath));
+		FFileSystem.DeleteFile(GetUNCFilePath(LocalPath));
 end;
 
 function TCloudMailRu.GetHTTPConnection: TCloudMailRuHTTP;
@@ -881,7 +867,6 @@ function TCloudMailRu.GetShard(var Shard: WideString; ShardType: WideString = SH
 var
 	JSON: WideString;
 begin
-	Result := False;
 	Result := HTTP.PostForm(API_DISPATCHER + '?' + FUnitedParams, '', JSON) and CloudResultToBoolean(JSON, PREFIX_ERR_SHARD_RECEIVE);
 	if Result then
 	begin
@@ -908,7 +893,6 @@ var
 	PageContent: WideString;
 	Progress: Boolean;
 begin
-	Result := False;
 	Progress := False;
 	Result := HTTP.GetPage(FSettings.AccountSettings.PublicUrl, PageContent, Progress);
 	if Result then
@@ -926,8 +910,6 @@ var
 	CallResult: TAPICallResult;
 	LocalSpace: TCMRSpace;
 begin
-	Result := False;
-
 	LocalSpace := default(TCMRSpace);
 	CallResult := FRetryOperation.Execute(
 		function: TAPICallResult
@@ -950,11 +932,10 @@ end;
 
 function TCloudMailRu.Login(Method: Integer): Boolean;
 begin
-	Result := False;
 	HTTP.SetProgressNames(LOGIN_IN_PROGRESS, EmptyWideStr);
 	if IsPublicAccount then
 		Exit(LoginShared());
-	Exit(LoginRegular(Method)); {If not a public account}
+	Result := LoginRegular(Method);
 end;
 
 {Delegates authentication to the injected IAuthStrategy.
@@ -1014,7 +995,6 @@ end;
 
 function TCloudMailRu.MoveFile(OldName, ToPath: WideString): Integer;
 begin
-	Result := FS_FILE_WRITEERROR;
 	if IsPublicAccount then
 		Exit(FS_FILE_NOTSUPPORTED);
 	Result := FRetryOperation.PostFormInteger(
@@ -1091,8 +1071,6 @@ var
 	CallResult: TAPICallResult;
 	LocalListing: TCMRInviteList;
 begin
-	Result := False;
-
 	SetLength(LocalListing, 0);
 	CallResult := FRetryOperation.Execute(
 		function: TAPICallResult
@@ -1118,8 +1096,6 @@ var
 	CallResult: TAPICallResult;
 	access_string: WideString;
 begin
-	Result := False;
-
 	if Access in [CLOUD_SHARE_RW, CLOUD_SHARE_RO] then
 	begin
 		if Access = CLOUD_SHARE_RW then
@@ -1303,7 +1279,7 @@ var
 	RetryAttemptsCount: Integer;
 	UseHash: Boolean;
 begin
-	UseHash := PrecalculateHash or (ForcePrecalculateSize >= SizeOfFile(LocalPath)); //issue #231
+	UseHash := PrecalculateHash or (ForcePrecalculateSize >= FFileSystem.GetFileSize(LocalPath)); //issue #231
 	if UseHash then //try to add whole file by hash at first.
 		LocalFileIdentity := FileIdentity(GetUNCFilePath(LocalPath));
 	{Отмена расчёта хеша приведёт к отмене всей операции: TC запоминает нажатие отмены и ExternalProgressProc будет возвращать 1 до следующего вызова копирования}
@@ -1442,7 +1418,7 @@ begin
 	if IsPublicAccount then
 		Exit(FS_FILE_NOTSUPPORTED);
 	HTTP.SetProgressNames(LocalPath, RemotePath);
-	if (not(UnlimitedFileSize)) and (SizeOfFile(GetUNCFilePath(LocalPath)) > CloudMaxFileSize) then
+	if (not(UnlimitedFileSize)) and (FFileSystem.GetFileSize(GetUNCFilePath(LocalPath)) > CloudMaxFileSize) then
 	begin
 		if SplitLargeFiles then
 		begin
@@ -1546,8 +1522,6 @@ var
 	CallResult: TAPICallResult;
 	LocalInfo: TCMRDirItem;
 begin
-	Result := False;
-
 	{Public accounts don't need token refresh}
 	if IsPublicAccount then
 	begin
@@ -1624,7 +1598,7 @@ begin
 	TempCloudSettings := default (TCloudSettings);
 	TempCloudSettings.AccountSettings.PublicAccount := true;
 	TempCloudSettings.AccountSettings.PublicUrl := PublicUrl;
-	TempCloud := TCloudMailRu.Create(TempCloudSettings, nil, TNullAuthStrategy.Create, TNullLogger.Create, TNullProgress.Create, TNullRequest.Create);
+	TempCloud := TCloudMailRu.Create(TempCloudSettings, nil, TNullAuthStrategy.Create, TWindowsFileSystem.Create, TNullLogger.Create, TNullProgress.Create, TNullRequest.Create);
 	Result := TempCloud.Login;
 end;
 
@@ -1633,7 +1607,7 @@ var
 	Stream: TStream;
 begin
 	Result := EmptyWideStr;
-	if not FileExists(Path) then
+	if not FFileSystem.FileExists(Path) then
 		Exit;
 
 	try

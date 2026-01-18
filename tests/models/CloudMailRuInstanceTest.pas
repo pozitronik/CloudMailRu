@@ -11,6 +11,7 @@ uses
 	IProgressInterface,
 	IRequestInterface,
 	IAuthStrategyInterface,
+	IFileSystemInterface,
 	PLUGIN_TYPES,
 	SysUtils,
 	DUnitX.TestFramework;
@@ -104,7 +105,7 @@ procedure TCloudMailRuInstanceTest.Setup;
 begin
 	{ Create minimal TCloudMailRu instance with null implementations }
 	FSettings := Default(TCloudSettings);
-	FCloud := TCloudMailRu.Create(FSettings, nil, TNullAuthStrategy.Create, TNullLogger.Create, TNullProgress.Create, TNullRequest.Create);
+	FCloud := TCloudMailRu.Create(FSettings, nil, TNullAuthStrategy.Create, TNullFileSystem.Create, TNullLogger.Create, TNullProgress.Create, TNullRequest.Create);
 end;
 
 procedure TCloudMailRuInstanceTest.TearDown;
