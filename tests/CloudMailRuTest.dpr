@@ -178,7 +178,8 @@ uses
 	CloudMailRuLoginTest in 'models\CloudMailRuLoginTest.pas',
 	CloudMailRuDownloadTest in 'models\CloudMailRuDownloadTest.pas',
 	CloudMailRuUploadTest in 'models\CloudMailRuUploadTest.pas',
-	CloudMailRuIntegrationTest in 'models\CloudMailRuIntegrationTest.pas';
+	CloudMailRuIntegrationTest in 'models\CloudMailRuIntegrationTest.pas',
+	CloudMailRuLoginFlowTest in 'models\CloudMailRuLoginFlowTest.pas';
 
 {keep comment here to protect the following conditional from being removed by the IDE when adding a unit}
 {$IFNDEF TESTINSIGHT}

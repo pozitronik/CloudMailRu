@@ -19,9 +19,11 @@ type
 		FShouldSucceed: Boolean;
 		FAccessToken: WideString;
 		FRefreshToken: WideString;
+		FExpiresIn: Integer;
 		FErrorMessage: WideString;
 		FPublicShard: WideString;
 		FPublicLink: WideString;
+		FUnitedParams: WideString;
 		FAuthenticateCalled: Boolean;
 		FLastCredentials: TAuthCredentials;
 		FCallCount: Integer;
@@ -35,6 +37,9 @@ type
 
 		{Create a mock for shared account authentication}
 		constructor CreateSharedSuccess(const PublicShard, PublicLink: WideString);
+
+		{Create a mock that succeeds with full OAuth configuration}
+		constructor CreateOAuthSuccess(const AccessToken, RefreshToken: WideString; ExpiresIn: Integer);
 
 		{IAuthStrategy implementation}
 		function Authenticate(const Credentials: TAuthCredentials; HTTP: ICloudHTTP;
@@ -50,6 +55,7 @@ type
 		procedure SetSucceed(Value: Boolean);
 		procedure SetAccessToken(const Value: WideString);
 		procedure SetErrorMessage(const Value: WideString);
+		procedure SetUnitedParams(const Value: WideString);
 		procedure Reset;
 	end;
 
@@ -110,6 +116,18 @@ begin
 	FCallCount := 0;
 end;
 
+constructor TMockAuthStrategy.CreateOAuthSuccess(const AccessToken, RefreshToken: WideString;
+	ExpiresIn: Integer);
+begin
+	inherited Create;
+	FShouldSucceed := True;
+	FAccessToken := AccessToken;
+	FRefreshToken := RefreshToken;
+	FExpiresIn := ExpiresIn;
+	FAuthenticateCalled := False;
+	FCallCount := 0;
+end;
+
 function TMockAuthStrategy.Authenticate(const Credentials: TAuthCredentials;
 	HTTP: ICloudHTTP; Logger: ILogger): TAuthResult;
 var
@@ -130,9 +148,16 @@ begin
 	OAuth := Default(TCMROAuth);
 	OAuth.access_token := FAccessToken;
 	OAuth.refresh_token := FRefreshToken;
-	OAuth.expires_in := 3600;
+	if FExpiresIn > 0 then
+		OAuth.expires_in := FExpiresIn
+	else
+		OAuth.expires_in := 3600;
 
 	Result := TAuthResult.CreateOAuthSuccess(OAuth);
+
+	{Override UnitedParams if custom value was set}
+	if FUnitedParams <> '' then
+		Result.UnitedParams := FUnitedParams;
 end;
 
 function TMockAuthStrategy.GetName: WideString;
@@ -153,6 +178,11 @@ end;
 procedure TMockAuthStrategy.SetErrorMessage(const Value: WideString);
 begin
 	FErrorMessage := Value;
+end;
+
+procedure TMockAuthStrategy.SetUnitedParams(const Value: WideString);
+begin
+	FUnitedParams := Value;
 end;
 
 procedure TMockAuthStrategy.Reset;

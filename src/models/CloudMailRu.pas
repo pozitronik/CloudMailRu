@@ -68,17 +68,12 @@ type
 		FFileSystem: IFileSystem; {File system abstraction for testability}
 		FRetryOperation: TRetryOperation; {Token refresh retry handler}
 
-		FPublicShard: WideString; {Public shard url, used for public downloads}
 		FDownloadShard: WideString; {Holder of the current instance download shard adress, retrieved on the first download attempt}
 		FUploadShard: WideString; {Holder of the current instance upload shard adress, retrieved on the first upload attempt}
-
-		FAuthToken: WideString; {The current (constantly refreshing) connection token}
-		FOAuthToken: TCMROAuth; {Unused at this moment}
 
 		{HTTP REQUESTS WRAPPERS}
 		function InitSharedConnectionParameters(): Boolean;
 		function GetShard(var Shard: WideString; ShardType: WideString = SHARD_TYPE_GET): Boolean;
-		function GetUserSpace(var SpaceInfo: TCMRSpace): Boolean;
 		function PutFileToCloud(FileName: WideString; FileStream: TStream; var FileIdentity: TCMRFileIdentity): Integer; overload; //отправка на сервер данных из потока
 		{PRIVATE UPLOAD METHODS CHAIN (CALLED FROM putFile())}
 		function PutFileWhole(LocalPath, RemotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT): Integer; //Загрузка файла целиком
@@ -95,6 +90,13 @@ type
 		FDoCryptFilenames: Boolean;
 		FPublicLink: WideString; {Holder for GetPublicLink() value - protected for testability}
 		FUnitedParams: WideString; {The set of required authentification attributes united to the string}
+
+		{Auth tokens - protected for testability}
+		FPublicShard: WideString; {Public shard url, used for public downloads}
+		FAuthToken: WideString; {The current (constantly refreshing) connection token}
+		FOAuthToken: TCMROAuth; {OAuth token data}
+		{HTTP REQUESTS WRAPPERS - protected for testability}
+		function GetUserSpace(var SpaceInfo: TCMRSpace): Boolean;
 		{HASHING - exposed for testing via subclass}
 		function CloudHash(Path: WideString): WideString; overload; //get cloud hash for specified file
 		function CloudHash(Stream: TStream; Path: WideString = CALCULATING_HASH): WideString; overload; //get cloud hash for data in stream
