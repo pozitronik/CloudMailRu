@@ -508,7 +508,7 @@ begin
 	FMockHTTP.QueueResponse(API_CSRF, True, JSON_CSRF_SUCCESS);
 	FMockHTTP.QueueResponse(API_FOLDER_ADD, True, JSON_SUCCESS);
 
-	var Result := FCloud.CreateDir('/test/newdir');
+	FCloud.CreateDir('/test/newdir');
 
 	{Note: actual retry behavior depends on TCloudMailRu implementation}
 	{This test verifies the mock queue works for multi-step error handling}

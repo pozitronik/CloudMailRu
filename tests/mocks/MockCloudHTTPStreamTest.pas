@@ -515,7 +515,6 @@ procedure TMockCloudHTTPStreamTest.TestMultiStepFlow_ShardThenUpload;
 var
 	Stream: TMemoryStream;
 	Answer: WideString;
-	Progress: Boolean;
 	Content: TBytes;
 const
 	{Typical dispatcher response}
@@ -528,7 +527,6 @@ begin
 	Content := TEncoding.UTF8.GetBytes('File content to upload');
 
 	{Step 1: Get shard}
-	Progress := True;
 	Assert.IsTrue(FMockHTTP.PostForm('https://cloud.mail.ru/api/v2/dispatcher/', '', Answer), 'Should get dispatcher response');
 	Assert.IsTrue(Pos('upload-shard', String(Answer)) > 0, 'Response should contain shard URL');
 

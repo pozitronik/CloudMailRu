@@ -129,12 +129,10 @@ end;
 procedure TCloudMailRuShardTest.TestGetShard_Download_ReturnsURL;
 var
 	Answer: WideString;
-	Progress: Boolean;
 begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetShardResponse(SHARD_TYPE_GET, 'https://download.cloud.mail.ru/');
 
-	Progress := True;
 	FMockHTTP.PostForm(API_DISPATCHER + '?token=test', '', Answer);
 
 	Assert.IsTrue(Pos('https://download.cloud.mail.ru/', String(Answer)) > 0,
@@ -301,12 +299,10 @@ end;
 procedure TCloudMailRuShardTest.TestSetShardResponse_ConfiguresDispatcher;
 var
 	Answer: WideString;
-	Progress: Boolean;
 begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetShardResponse('get', 'https://configured.url/');
 
-	Progress := True;
 	FMockHTTP.PostForm(API_DISPATCHER + '?token=test', '', Answer);
 
 	Assert.IsTrue(Pos('https://configured.url/', String(Answer)) > 0, 'Dispatcher should return configured shard URL');
@@ -315,12 +311,10 @@ end;
 procedure TCloudMailRuShardTest.TestSetFullDispatcherResponse_ConfiguresBothShards;
 var
 	Answer: WideString;
-	Progress: Boolean;
 begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetFullDispatcherResponse('https://download.test/', 'https://upload.test/');
 
-	Progress := True;
 	FMockHTTP.PostForm(API_DISPATCHER + '?token=test', '', Answer);
 
 	Assert.IsTrue(Pos('"get"', String(Answer)) > 0, 'Should contain get shard');
