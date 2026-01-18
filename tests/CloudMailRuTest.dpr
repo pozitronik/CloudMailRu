@@ -163,6 +163,9 @@ uses
 	DeprecatedStrategiesTest in 'models\auth\DeprecatedStrategiesTest.pas',
 	MockCloudHTTP in 'mocks\MockCloudHTTP.pas',
 	MockHTTPManager in 'mocks\MockHTTPManager.pas',
+	MockShardHelper in 'mocks\MockShardHelper.pas',
+	MockAuthStrategy in 'mocks\MockAuthStrategy.pas',
+	MockCloudHTTPStreamTest in 'mocks\MockCloudHTTPStreamTest.pas',
 	CloudMailRuDirListingTest in 'models\CloudMailRuDirListingTest.pas',
 	CloudMailRuFileOperationsTest in 'models\CloudMailRuFileOperationsTest.pas',
 	CloudMailRuPublicAccountTest in 'models\CloudMailRuPublicAccountTest.pas',
@@ -170,7 +173,11 @@ uses
 	CloudMailRuUploadDownloadTest in 'models\CloudMailRuUploadDownloadTest.pas',
 	CloudMailRuAdditionalOpsTest in 'models\CloudMailRuAdditionalOpsTest.pas',
 	CloudMailRuMiscOpsTest in 'models\CloudMailRuMiscOpsTest.pas',
-	CloudMailRuCombinedOpsTest in 'models\CloudMailRuCombinedOpsTest.pas';
+	CloudMailRuCombinedOpsTest in 'models\CloudMailRuCombinedOpsTest.pas',
+	CloudMailRuShardTest in 'models\CloudMailRuShardTest.pas',
+	CloudMailRuLoginTest in 'models\CloudMailRuLoginTest.pas',
+	CloudMailRuDownloadTest in 'models\CloudMailRuDownloadTest.pas',
+	CloudMailRuUploadTest in 'models\CloudMailRuUploadTest.pas';
 
 {keep comment here to protect the following conditional from being removed by the IDE when adding a unit}
 {$IFNDEF TESTINSIGHT}
