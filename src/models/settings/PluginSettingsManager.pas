@@ -15,7 +15,8 @@ uses
 	PluginSettings,
 	StreamingSettings,
 	IPluginSettingsManagerInterface,
-	IConfigFileInterface;
+	IConfigFileInterface,
+	IEnvironmentInterface;
 
 type
 
@@ -30,6 +31,7 @@ type
 		FIniFilePath: WideString; {the absolute path of the current configuration file}
 		FIniFileDir: WideString; {the directory where the currently used ini files (global+accounts) are}
 		FConfigFile: IConfigFile;
+		FEnvironment: IEnvironment;
 
 		function GetAccountsIniFilePath: WideString;
 
@@ -42,6 +44,7 @@ type
 
 		constructor Create(); overload; {finds the settings file by itself}
 		constructor Create(ConfigFile: IConfigFile; IniFilePath: WideString); overload;
+		constructor Create(ConfigFile: IConfigFile; Environment: IEnvironment; IniFilePath: WideString); overload; {Full DI constructor for testing}
 		procedure Refresh();
 
 		procedure Save(); {save current options set into the file}
@@ -60,13 +63,23 @@ type
 implementation
 
 uses
-	IniConfigFile;
+	IniConfigFile,
+	WindowsEnvironment;
 
 {TPluginSettingsManager}
 
 constructor TPluginSettingsManager.Create(ConfigFile: IConfigFile; IniFilePath: WideString);
 begin
 	FConfigFile := ConfigFile;
+	FEnvironment := nil; {Not needed when config file is provided directly}
+	FIniFilePath := IniFilePath;
+	Refresh();
+end;
+
+constructor TPluginSettingsManager.Create(ConfigFile: IConfigFile; Environment: IEnvironment; IniFilePath: WideString);
+begin
+	FConfigFile := ConfigFile;
+	FEnvironment := Environment;
 	FIniFilePath := IniFilePath;
 	Refresh();
 end;
@@ -77,10 +90,11 @@ var
 	TempConfigFile: IConfigFile;
 	TempIniDir: Integer;
 begin
-	AppDataDir := IncludeTrailingBackslash(IncludeTrailingBackslash(SysUtils.GetEnvironmentVariable('APPDATA')) + APPDATA_DIR_NAME);
-	FApplicationPath := IncludeTrailingBackslash(ExtractFilePath(GetModuleName(hInstance)));
+	FEnvironment := TWindowsEnvironment.Create;
+	AppDataDir := IncludeTrailingBackslash(IncludeTrailingBackslash(FEnvironment.GetEnvironmentVariable('APPDATA')) + APPDATA_DIR_NAME);
+	FApplicationPath := FEnvironment.GetModulePath;
 
-	if FileExists(GetUNCFilePath(FApplicationPath + PLUGIN_CONFIG_FILE_NAME)) then
+	if FEnvironment.FileExists(FApplicationPath + PLUGIN_CONFIG_FILE_NAME) then
 	begin
 		{Read IniDir setting from plugin directory config to determine actual config location}
 		TempConfigFile := TIniConfigFile.Create(GetUNCFilePath(FApplicationPath + PLUGIN_CONFIG_FILE_NAME));
@@ -97,7 +111,7 @@ begin
 					end;
 				INI_DIR_AUTO:
 					begin
-						if IsWriteable(FApplicationPath) then
+						if FEnvironment.IsDirectoryWriteable(FApplicationPath) then
 							FIniFileDir := FApplicationPath
 						else
 							FIniFileDir := AppDataDir;
@@ -108,7 +122,7 @@ begin
 		end;
 
 	end else begin
-		if IsWriteable(FApplicationPath) then
+		if FEnvironment.IsDirectoryWriteable(FApplicationPath) then
 		begin
 			FIniFileDir := FApplicationPath;
 		end else begin
@@ -116,8 +130,8 @@ begin
 		end;
 	end;
 
-	if not DirectoryExists(GetUNCFilePath(FIniFileDir)) then
-		CreateDir(GetUNCFilePath(FIniFileDir));
+	if not FEnvironment.DirectoryExists(FIniFileDir) then
+		FEnvironment.CreateDirectory(FIniFileDir);
 
 	FIniFilePath := GetUNCFilePath(FIniFileDir + PLUGIN_CONFIG_FILE_NAME);
 	FConfigFile := TIniConfigFile.Create(FIniFilePath);

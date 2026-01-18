@@ -144,6 +144,9 @@ uses
 	WindowsFileSystem in '..\src\models\filesystem\WindowsFileSystem.pas',
 	IConfigFileInterface in '..\src\models\config\IConfigFileInterface.pas',
 	IniConfigFile in '..\src\models\config\IniConfigFile.pas',
+	IEnvironmentInterface in '..\src\models\environment\IEnvironmentInterface.pas',
+	WindowsEnvironment in '..\src\models\environment\WindowsEnvironment.pas',
+	MemoryEnvironmentTest in 'models\environment\MemoryEnvironmentTest.pas',
 	AskPassword in '..\src\forms\AskPassword.pas'{AskPasswordForm};
 
 {keep comment here to protect the following conditional from being removed by the IDE when adding a unit}

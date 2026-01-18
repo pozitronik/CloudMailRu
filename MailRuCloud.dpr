@@ -96,7 +96,9 @@ uses
 	IFileSystemInterface in 'src\models\filesystem\IFileSystemInterface.pas',
 	WindowsFileSystem in 'src\models\filesystem\WindowsFileSystem.pas',
 	IConfigFileInterface in 'src\models\config\IConfigFileInterface.pas',
-	IniConfigFile in 'src\models\config\IniConfigFile.pas';
+	IniConfigFile in 'src\models\config\IniConfigFile.pas',
+	IEnvironmentInterface in 'src\models\environment\IEnvironmentInterface.pas',
+	WindowsEnvironment in 'src\models\environment\WindowsEnvironment.pas';
 
 {$IFDEF WIN64}
 {$E wfx64}
