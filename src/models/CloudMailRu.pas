@@ -41,7 +41,7 @@ uses
 	FileCipher,
 	FileSplitInfo,
 	ChunkedFileStream,
-	HTTPManager,
+	IHTTPManagerInterface,
 	IdCookieManager,
 	DCPbase64,
 	AskPassword;
@@ -51,7 +51,7 @@ type
 	private
 		FSettings: TCloudSettings; {Current options set for the cloud instance}
 
-		FHTTPManager: THTTPManager; {Internal connections manager (can be set externally or omitted)}
+		FHTTPManager: IHTTPManager; {Internal connections manager (can be set externally or omitted)}
 		FHTTPConnection: TCloudMailRuHTTP; {Normally managed by HTTPConnectionsManager. If HTTPConnectionsManager is omitted, Cloud will create its own atomic connection}
 
 		FCookieManager: TIdCookieManager; {The auth cookie, should be stored separately, because it associated with a cloud instance, not a connection}
@@ -127,7 +127,7 @@ type
 		function CloudResultToBoolean(CloudResult: TCMROperationResult; ErrorPrefix: WideString = ''): Boolean; overload;
 		function CloudResultToBoolean(JSON: WideString; ErrorPrefix: WideString = ''): Boolean; overload;
 		{CONSTRUCTOR/DESTRUCTOR}
-		constructor Create(CloudSettings: TCloudSettings; ConnectionManager: THTTPManager; Logger: ILogger; Progress: IProgress; Request: IRequest);
+		constructor Create(CloudSettings: TCloudSettings; ConnectionManager: IHTTPManager; Logger: ILogger; Progress: IProgress; Request: IRequest);
 		destructor Destroy; override;
 		{CLOUD INTERFACE METHODS}
 		function Login(Method: Integer = CLOUD_AUTH_METHOD_WEB): Boolean;
@@ -331,7 +331,7 @@ begin //Облако умеет скопировать файл, но не см�
 	end;
 end;
 
-constructor TCloudMailRu.Create(CloudSettings: TCloudSettings; ConnectionManager: THTTPManager; Logger: ILogger; Progress: IProgress; Request: IRequest);
+constructor TCloudMailRu.Create(CloudSettings: TCloudSettings; ConnectionManager: IHTTPManager; Logger: ILogger; Progress: IProgress; Request: IRequest);
 var
 	FileCipherInstance: TFileCipher;
 begin

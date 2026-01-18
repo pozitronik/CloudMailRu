@@ -133,6 +133,8 @@ uses
 	IPasswordUIProviderInterface in '..\src\models\ui\IPasswordUIProviderInterface.pas',
 	PasswordUIProvider in '..\src\models\ui\PasswordUIProvider.pas',
 	NullPasswordUIProviderTest in 'models\ui\NullPasswordUIProviderTest.pas',
+	IHTTPManagerInterface in '..\src\models\http\IHTTPManagerInterface.pas',
+	NullHTTPManagerTest in 'models\http\NullHTTPManagerTest.pas',
 	AskPassword in '..\src\forms\AskPassword.pas'{AskPasswordForm};
 
 {keep comment here to protect the following conditional from being removed by the IDE when adding a unit}

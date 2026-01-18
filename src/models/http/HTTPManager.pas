@@ -9,13 +9,14 @@ uses
 	ConnectionSettings,
 	ILoggerInterface,
 	IProgressInterface,
+	IHTTPManagerInterface,
 	System.Generics.Collections,
 	SysUtils,
 	IdCookieManager;
 
 type
 
-	THTTPManager = class
+	THTTPManager = class(TInterfacedObject, IHTTPManager)
 	private
 		FConnectionSettings: TConnectionSettings;
 		FLogger: ILogger;
@@ -27,10 +28,12 @@ type
 		{Параметры, с которыми будут отдаваться подключения: создаём с ними экземпляр класса, а дальше он сам рулит}
 		constructor Create(Settings: TConnectionSettings; Logger: ILogger; Progress: IProgress);
 		destructor Destroy; override;
-		function get(ThreadId: Cardinal): TCloudMailRuHTTP;
+		function Get(ThreadId: Cardinal): TCloudMailRuHTTP;
+		function GetConnectionSettings: TConnectionSettings;
+		procedure SetProxyPassword(Password: WideString);
 
-		property ConnectionSettings: TConnectionSettings read FConnectionSettings;
-		property ProxyPassword: WideString write FConnectionSettings.ProxySettings.Password;
+		property ConnectionSettings: TConnectionSettings read GetConnectionSettings;
+		property ProxyPassword: WideString write SetProxyPassword;
 	end;
 
 implementation
@@ -56,13 +59,23 @@ begin
 	inherited;
 end;
 
-function THTTPManager.get(ThreadId: Cardinal): TCloudMailRuHTTP;
+function THTTPManager.Get(ThreadId: Cardinal): TCloudMailRuHTTP;
 begin
-	if not Connections.TryGetValue(ThreadId, result) then
+	if not Connections.TryGetValue(ThreadId, Result) then
 	begin
-		result := TCloudMailRuHTTP.Create(FConnectionSettings, FLogger, FProgress);
-		Connections.AddOrSetValue(ThreadId, result);
+		Result := TCloudMailRuHTTP.Create(FConnectionSettings, FLogger, FProgress);
+		Connections.AddOrSetValue(ThreadId, Result);
 	end;
+end;
+
+function THTTPManager.GetConnectionSettings: TConnectionSettings;
+begin
+	Result := FConnectionSettings;
+end;
+
+procedure THTTPManager.SetProxyPassword(Password: WideString);
+begin
+	FConnectionSettings.ProxySettings.Password := Password;
 end;
 
 end.

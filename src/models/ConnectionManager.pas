@@ -24,7 +24,7 @@ uses
 	AccountSettings,
 	CloudSettings,
 	IPasswordManagerInterface,
-	HTTPManager,
+	IHTTPManagerInterface,
 	System.Generics.Collections,
 	SysUtils,
 	FileCipher;
@@ -34,7 +34,7 @@ type
 	TConnectionManager = class
 	private
 		FConnections: TDictionary<WideString, TCloudMailRu>; {It is better to encapsulate the dictionary}
-		FHTTPManager: THTTPManager;
+		FHTTPManager: IHTTPManager;
 		FPluginSettingsManager: IPluginSettingsManager;
 		FAccountsManager: IAccountsManager;
 		FPasswordUI: IPasswordUIProvider;
@@ -50,7 +50,7 @@ type
 		function GetProxyPassword(): Boolean;
 		function InitCloudCryptPasswords(const ConnectionName: WideString; var CloudSettings: TCloudSettings): Boolean;
 	public
-		constructor Create(PluginSettingsManager: IPluginSettingsManager; AccountsManager: IAccountsManager; PasswordUI: IPasswordUIProvider; Progress: IProgress; Logger: ILogger; Request: IRequest; PasswordManager: IPasswordManager);
+		constructor Create(PluginSettingsManager: IPluginSettingsManager; AccountsManager: IAccountsManager; HTTPManager: IHTTPManager; PasswordUI: IPasswordUIProvider; Progress: IProgress; Logger: ILogger; Request: IRequest; PasswordManager: IPasswordManager);
 		destructor Destroy(); override;
 		function Get(ConnectionName: WideString; var OperationResult: Integer): TCloudMailRu; {Return the cloud connection by its name}
 		procedure Free(ConnectionName: WideString); {Free a connection by its name, if present}
@@ -59,16 +59,16 @@ type
 implementation
 
 {TConnectionManager}
-constructor TConnectionManager.Create(PluginSettingsManager: IPluginSettingsManager; AccountsManager: IAccountsManager; PasswordUI: IPasswordUIProvider; Progress: IProgress; Logger: ILogger; Request: IRequest; PasswordManager: IPasswordManager);
+constructor TConnectionManager.Create(PluginSettingsManager: IPluginSettingsManager; AccountsManager: IAccountsManager; HTTPManager: IHTTPManager; PasswordUI: IPasswordUIProvider; Progress: IProgress; Logger: ILogger; Request: IRequest; PasswordManager: IPasswordManager);
 begin
 	FConnections := TDictionary<WideString, TCloudMailRu>.Create;
 	FPluginSettingsManager := PluginSettingsManager;
 	FAccountsManager := AccountsManager;
+	FHTTPManager := HTTPManager;
 	FPasswordUI := PasswordUI;
 	FProgress := Progress;
 	FLogger := Logger;
 	FRequest := Request;
-	FHTTPManager := THTTPManager.Create(FPluginSettingsManager.GetSettings.ConnectionSettings, Logger, Progress);
 	FPasswordManager := PasswordManager;
 end;
 
@@ -81,9 +81,8 @@ begin
 
 	FreeAndNil(FConnections);
 
-	FHTTPManager.Destroy;
-
 	{Release interface references}
+	FHTTPManager := nil;
 	FPluginSettingsManager := nil;
 	FAccountsManager := nil;
 	FPasswordUI := nil;

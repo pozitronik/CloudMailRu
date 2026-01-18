@@ -89,7 +89,8 @@ uses
 	IAccountsManagerInterface in 'src\models\settings\IAccountsManagerInterface.pas',
 	IPluginSettingsManagerInterface in 'src\models\settings\IPluginSettingsManagerInterface.pas',
 	IPasswordUIProviderInterface in 'src\models\ui\IPasswordUIProviderInterface.pas',
-	PasswordUIProvider in 'src\models\ui\PasswordUIProvider.pas';
+	PasswordUIProvider in 'src\models\ui\PasswordUIProvider.pas',
+	IHTTPManagerInterface in 'src\models\http\IHTTPManagerInterface.pas';
 
 {$IFDEF WIN64}
 {$E wfx64}
