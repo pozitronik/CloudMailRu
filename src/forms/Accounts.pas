@@ -191,7 +191,8 @@ implementation
 uses
 	ConnectionSettings,
 	ProxySettings,
-	CMRConstants;
+	CMRConstants,
+	IniConfigFile;
 
 procedure TAccountsForm.UpdateAccountsList();
 var
@@ -545,7 +546,7 @@ begin
 		AccountsForm.DialogParentWindow := ParentWindow; {Store for password dialogs}
 
 		AccountsForm.SettingsManager := TPluginSettingsManager.Create();
-		AccountsForm.AccountsManager := TAccountsManager.Create(AccountsForm.SettingsManager.AccountsIniFilePath);
+		AccountsForm.AccountsManager := TAccountsManager.Create(TIniConfigFile.Create(AccountsForm.SettingsManager.AccountsIniFilePath));
 
 		AccountsForm.PasswordManager := PasswordManager;
 		AccountsForm.SelectedAccount := EmptyWideStr;
