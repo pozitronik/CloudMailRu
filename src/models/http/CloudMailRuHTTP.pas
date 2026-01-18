@@ -8,7 +8,7 @@ uses
 	System.Generics.Collections,
 	ChunkedFileStream,
 	FileSplitInfo,
-	TCLogger,
+	ILoggerInterface,
 	TCProgress,
 	SETTINGS_CONSTANTS,
 	PLUGIN_TYPES,
@@ -49,7 +49,7 @@ type
 		Throttle: TIdInterceptThrottler;
 		Settings: TConnectionSettings;
 
-		Logger: TTCLogger;
+		Logger: ILogger;
 		Progress: TTCProgress;
 
 		{PROCEDURES}
@@ -65,7 +65,7 @@ type
 		property SourceName: WideString write SetExternalSourceName;
 		property TargetName: WideString write SetExternalTargetName;
 		{CONSTRUCTOR/DESTRUCTOR}
-		constructor Create(Settings: TConnectionSettings; Progress: TTCProgress = nil; Logger: TTCLogger = nil);
+		constructor Create(Settings: TConnectionSettings; Progress: TTCProgress = nil; Logger: ILogger = nil);
 		destructor Destroy; override;
 		{MAIN ROUTINES}
 		procedure Head(URL: WideString);
@@ -95,14 +95,15 @@ implementation
 
 {TCloudMailRuHTTP}
 
-constructor TCloudMailRuHTTP.Create(Settings: TConnectionSettings; Progress: TTCProgress = nil; Logger: TTCLogger = nil);
+constructor TCloudMailRuHTTP.Create(Settings: TConnectionSettings; Progress: TTCProgress = nil; Logger: ILogger = nil);
 begin
 	self.Progress := Progress;
 	if not Assigned(Progress) then
 		self.Progress := TTCProgress.Create();
-	self.Logger := Logger;
-	if not Assigned(Logger) then
-		self.Logger := TTCLogger.Create();
+	if Assigned(Logger) then
+		self.Logger := Logger
+	else
+		self.Logger := TNullLogger.Create;
 	self.Throttle := TIdInterceptThrottler.Create();
 	SSL := TIdSSLIOHandlerSocketOpenSSL.Create();
 	SSL.SSLOptions.SSLVersions := [sslvSSLv23];

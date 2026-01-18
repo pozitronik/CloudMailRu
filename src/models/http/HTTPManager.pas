@@ -7,7 +7,7 @@ uses
 	CMRConstants,
 	PLUGIN_TYPES,
 	ConnectionSettings,
-	TCLogger,
+	ILoggerInterface,
 	TCProgress,
 	System.Generics.Collections,
 	SysUtils,
@@ -18,14 +18,14 @@ type
 	THTTPManager = class
 	private
 		FConnectionSettings: TConnectionSettings;
-		FLogger: TTCLogger;
+		FLogger: ILogger;
 		FProgress: TTCProgress;
 
 		Connections: TDictionary<Cardinal, TCloudMailRuHTTP>; //<ThreadId, HTTP>
 
 	public
 		{Параметры, с которыми будут отдаваться подключения: создаём с ними экземпляр класса, а дальше он сам рулит}
-		constructor Create(Settings: TConnectionSettings; Progress: TTCProgress = nil; Logger: TTCLogger = nil);
+		constructor Create(Settings: TConnectionSettings; Progress: TTCProgress = nil; Logger: ILogger = nil);
 		destructor Destroy; override;
 		function get(ThreadId: Cardinal): TCloudMailRuHTTP;
 
@@ -37,16 +37,17 @@ implementation
 
 {THTTPManager}
 
-constructor THTTPManager.Create(Settings: TConnectionSettings; Progress: TTCProgress = nil; Logger: TTCLogger = nil);
+constructor THTTPManager.Create(Settings: TConnectionSettings; Progress: TTCProgress = nil; Logger: ILogger = nil);
 begin
 	self.FConnectionSettings := Settings;
 	self.FProgress := Progress;
 	if not Assigned(self.FProgress) then
 		self.FProgress := TTCProgress.Create;
 
-	self.FLogger := Logger;
-	if not Assigned(self.FLogger) then
-		self.FLogger := TTCLogger.Create;
+	if Assigned(Logger) then
+		self.FLogger := Logger
+	else
+		self.FLogger := TNullLogger.Create;
 	Connections := TDictionary<Cardinal, TCloudMailRuHTTP>.Create;
 end;
 

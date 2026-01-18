@@ -11,7 +11,7 @@ Uses
 	AskPassword, {AskEncryptionPasswords,}
 	TCHelper,
 	CMRConstants,
-	TCLogger;
+	ILoggerInterface;
 
 const
 	{Password manager key constants}
@@ -25,11 +25,11 @@ type
 		CryptProc: TCryptProcW;
 		PluginNum: integer;
 		CryptoNum: integer;
-		Logger: TTCLogger;
+		Logger: ILogger;
 
 	public
 		ParentWindow: HWND;
-		constructor Create(CryptProc: TCryptProcW; PluginNum, CryptoNum: integer; Logger: TTCLogger; ParentWindow: HWND = 0);
+		constructor Create(CryptProc: TCryptProcW; PluginNum, CryptoNum: integer; Logger: ILogger; ParentWindow: HWND = 0);
 		destructor Destroy(); override;
 		function GetPassword(Key: WideString; var Password: WideString): integer;
 		function SetPassword(Key, Password: WideString): integer;
@@ -39,7 +39,7 @@ implementation
 
 {TTCPasswordManager}
 
-constructor TTCPasswordManager.Create(CryptProc: TCryptProcW; PluginNum, CryptoNum: integer; Logger: TTCLogger; ParentWindow: HWND = 0);
+constructor TTCPasswordManager.Create(CryptProc: TCryptProcW; PluginNum, CryptoNum: integer; Logger: ILogger; ParentWindow: HWND = 0);
 begin
 	self.PluginNum := PluginNum;
 	self.CryptoNum := CryptoNum;

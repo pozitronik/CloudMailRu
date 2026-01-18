@@ -32,7 +32,7 @@ uses
 	StringHelper,
 	SystemHelper,
 	WindowsHelper,
-	TCLogger,
+	ILoggerInterface,
 	TCProgress,
 	TCRequest,
 	RealPath,
@@ -55,7 +55,7 @@ type
 
 		FCookieManager: TIdCookieManager; {The auth cookie, should be stored separately, because it associated with a cloud instance, not a connection}
 
-		FLogger: TTCLogger;
+		FLogger: ILogger;
 		FProgress: TTCProgress;
 		FRequest: TTCRequest;
 
@@ -126,7 +126,7 @@ type
 		function CloudResultToBoolean(CloudResult: TCMROperationResult; ErrorPrefix: WideString = ''): Boolean; overload;
 		function CloudResultToBoolean(JSON: WideString; ErrorPrefix: WideString = ''): Boolean; overload;
 		{CONSTRUCTOR/DESTRUCTOR}
-		constructor Create(CloudSettings: TCloudSettings; ConnectionManager: THTTPManager; Progress: TTCProgress = nil; Logger: TTCLogger = nil; Request: TTCRequest = nil);
+		constructor Create(CloudSettings: TCloudSettings; ConnectionManager: THTTPManager; Progress: TTCProgress = nil; Logger: ILogger = nil; Request: TTCRequest = nil);
 		destructor Destroy; override;
 		{CLOUD INTERFACE METHODS}
 		function Login(Method: Integer = CLOUD_AUTH_METHOD_WEB): Boolean;
@@ -330,7 +330,7 @@ begin //Облако умеет скопировать файл, но не см�
 	end;
 end;
 
-constructor TCloudMailRu.Create(CloudSettings: TCloudSettings; ConnectionManager: THTTPManager; Progress: TTCProgress; Logger: TTCLogger; Request: TTCRequest);
+constructor TCloudMailRu.Create(CloudSettings: TCloudSettings; ConnectionManager: THTTPManager; Progress: TTCProgress; Logger: ILogger; Request: TTCRequest);
 begin
 	try
 		FSettings := CloudSettings;
@@ -341,9 +341,10 @@ begin
 		FProgress := Progress;
 		if not Assigned(FProgress) then
 			FProgress := TTCProgress.Create();
-		FLogger := Logger;
-		if not Assigned(FLogger) then
-			FLogger := TTCLogger.Create();
+		if Assigned(Logger) then
+			FLogger := Logger
+		else
+			FLogger := TNullLogger.Create;
 		FRequest := Request;
 		if not Assigned(FRequest) then
 			FRequest := TTCRequest.Create();

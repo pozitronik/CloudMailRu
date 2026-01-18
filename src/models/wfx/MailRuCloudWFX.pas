@@ -28,7 +28,7 @@ uses
 	IdSSLOpenSSLHeaders,
 	Description,
 	TCPasswordManager,
-	TCLogger,
+	ILoggerInterface,
 	TCProgress,
 	TCRequest,
 	PathHelper,
@@ -89,7 +89,7 @@ type
 		ConnectionManager: TConnectionManager;
 		CurrentDescriptions: TDescription;
 		PasswordManager: TTCPasswordManager;
-		TCLogger: TTCLogger;
+		TCLogger: ILogger;
 		TCProgress: TTCProgress;
 		TCRequest: TTCRequest;
 	protected
@@ -143,6 +143,9 @@ type
 	end;
 
 implementation
+
+uses
+	TCLogger;
 
 {TMailRuCloudWFX}
 
@@ -306,7 +309,7 @@ begin
 	SettingsManager.Free;
 	AccountSettings.Free;
 	PasswordManager.Free;
-	TCLogger.Free;
+	TCLogger := nil; {ILogger is reference-counted, setting to nil releases it}
 	TCProgress.Free;
 	TCRequest.Free;
 	inherited;
