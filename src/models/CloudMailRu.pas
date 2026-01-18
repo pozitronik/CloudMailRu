@@ -50,6 +50,13 @@ uses
 	TokenRetryHelper;
 
 type
+	{Action to take after chunk upload result in PutFileSplit}
+	TChunkActionResult = (
+		caRetry,     {Retry current chunk (Dec index)}
+		caContinue,  {Move to next chunk (Inc index)}
+		caAbort      {Stop loop and return error}
+	);
+
 	TCloudMailRu = class
 	private
 		FSettings: TCloudSettings; {Current options set for the cloud instance}
@@ -77,7 +84,6 @@ type
 		function PutFileToCloud(FileName: WideString; FileStream: TStream; var FileIdentity: TCMRFileIdentity): Integer; overload; //отправка на сервер данных из потока
 		{PRIVATE UPLOAD METHODS CHAIN (CALLED FROM putFile())}
 		function PutFileWhole(LocalPath, RemotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT): Integer; //Загрузка файла целиком
-		function PutFileSplit(LocalPath, RemotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; ChunkOverwriteMode: Integer = 0): Integer; //Загрузка файла по частям
 		function PutFileStream(FileName, RemotePath: WideString; FileStream: TStream; ConflictMode: WideString = CLOUD_CONFLICT_STRICT): Integer;
 
 		{OTHER ROUTINES}
@@ -97,6 +103,12 @@ type
 		FOAuthToken: TCMROAuth; {OAuth token data}
 		{HTTP REQUESTS WRAPPERS - protected for testability}
 		function GetUserSpace(var SpaceInfo: TCMRSpace): Boolean;
+		{SPLIT UPLOAD - protected for testability}
+		function PutFileSplit(LocalPath, RemotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; ChunkOverwriteMode: Integer = 0): Integer;
+		{SPLIT UPLOAD HELPERS - extracted for clarity and testability}
+		function HandleChunkExists(const ChunkRemotePath: WideString; ChunkOverwriteMode: Integer; var ResultCode: Integer): TChunkActionResult;
+		function HandleChunkError(UploadResult: Integer; const ChunkRemotePath: WideString; var RetryAttemptsCount: Integer; var ResultCode: Integer): TChunkActionResult;
+		procedure GenerateAndUploadCRC(const LocalPath, RemotePath: WideString; const SplitFileInfo: TFileSplitInfo; const ConflictMode: WideString);
 		{HASHING - exposed for testing via subclass}
 		function CloudHash(Path: WideString): WideString; overload; //get cloud hash for specified file
 		function CloudHash(Stream: TStream; Path: WideString = CALCULATING_HASH): WideString; overload; //get cloud hash for data in stream
@@ -1262,155 +1274,201 @@ begin
 	end;
 end;
 
-{$WARN NO_RETVAL OFF}
-(*
- The W1035 compiler warning could be a false positive in this case
- BUT this code needs to be covered with tests and perhaps refactored due its length and complexity.
-*)
+{Helper method for PutFileSplit: handles FS_FILE_EXISTS case based on ChunkOverwriteMode}
+function TCloudMailRu.HandleChunkExists(const ChunkRemotePath: WideString; ChunkOverwriteMode: Integer; var ResultCode: Integer): TChunkActionResult;
+begin
+	case ChunkOverwriteMode of
+		ChunkOverwrite: {Silently overwrite chunk by deleting first}
+			begin
+				FLogger.Log(LOG_LEVEL_WARNING, MSGTYPE_DETAILS, CHUNK_OVERWRITE, [ChunkRemotePath]);
+				if not DeleteFile(ChunkRemotePath) then
+				begin
+					ResultCode := FS_FILE_WRITEERROR;
+					Result := caAbort;
+				end else begin
+					Result := caRetry; {Retry with same chunk after delete}
+				end;
+			end;
+		ChunkOverwriteIgnore: {Skip this chunk and continue}
+			begin
+				FLogger.Log(LOG_LEVEL_WARNING, MSGTYPE_DETAILS, CHUNK_SKIP, [ChunkRemotePath]);
+				Result := caContinue;
+			end;
+		ChunkOverwriteAbort: {Abort the entire operation}
+			begin
+				FLogger.Log(LOG_LEVEL_WARNING, MSGTYPE_DETAILS, CHUNK_ABORT, [ChunkRemotePath]);
+				ResultCode := FS_FILE_NOTSUPPORTED;
+				Result := caAbort;
+			end;
+	else
+		{Unknown mode - treat as abort}
+		ResultCode := CLOUD_OPERATION_FAILED;
+		Result := caAbort;
+	end;
+end;
 
+{Helper method for PutFileSplit: handles upload errors based on OperationErrorMode}
+function TCloudMailRu.HandleChunkError(UploadResult: Integer; const ChunkRemotePath: WideString; var RetryAttemptsCount: Integer; var ResultCode: Integer): TChunkActionResult;
+begin
+	case OperationErrorMode of
+		OperationErrorModeAsk:
+			begin
+				case MsgBox(ERR_PARTIAL_UPLOAD_ASK, [UploadResult, ChunkRemotePath], ERR_UPLOAD, MB_ABORTRETRYIGNORE + MB_ICONERROR) of
+					ID_ABORT:
+						begin
+							ResultCode := FS_FILE_USERABORT;
+							Result := caAbort;
+						end;
+					ID_RETRY:
+						Result := caRetry;
+					ID_IGNORE:
+						Result := caContinue;
+				else
+					Result := caContinue; {Default to continue for unknown response}
+				end;
+			end;
+		OperationErrorModeIgnore:
+			begin
+				FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_PARTIAL_UPLOAD_IGNORE, [UploadResult]);
+				Result := caContinue;
+			end;
+		OperationErrorModeAbort:
+			begin
+				FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_PARTIAL_UPLOAD_ABORT, [UploadResult]);
+				ResultCode := FS_FILE_USERABORT;
+				Result := caAbort;
+			end;
+		OperationErrorModeRetry:
+			begin
+				Inc(RetryAttemptsCount);
+				if RetryAttemptsCount <= RetryAttempts then
+				begin
+					FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_PARTIAL_UPLOAD_RETRY, [UploadResult, RetryAttemptsCount, RetryAttempts]);
+					ProcessMessages;
+					Sleep(AttemptWait);
+					Result := caRetry;
+				end else begin
+					FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_PARTIAL_UPLOAD_RETRY_EXCEED, [UploadResult]);
+					ResultCode := CLOUD_OPERATION_FAILED;
+					Result := caAbort;
+				end;
+			end;
+	else
+		{Unknown option value - abort}
+		ResultCode := CLOUD_OPERATION_FAILED;
+		Result := caAbort;
+	end;
+end;
+
+{Helper method for PutFileSplit: generates and uploads CRC file after successful chunk uploads}
+procedure TCloudMailRu.GenerateAndUploadCRC(const LocalPath, RemotePath: WideString; const SplitFileInfo: TFileSplitInfo; const ConflictMode: WideString);
+var
+	CRCRemotePath: WideString;
+	CRCStream: TStringStream;
+begin
+	CRCRemotePath := ExtractFilePath(RemotePath) + SplitFileInfo.CRCFileName;
+	HTTP.SetProgressNames(LocalPath, CRCRemotePath);
+	CRCStream := TStringStream.Create;
+	try
+		SplitFileInfo.GetCRCData(CRCStream);
+		PutFileStream(SplitFileInfo.CRCFileName, CRCRemotePath, CRCStream, ConflictMode);
+	finally
+		CRCStream.Free;
+	end;
+end;
+
+{Uploads file in chunks when it exceeds CloudMaxFileSize.
+ Returns FS_FILE_OK on success, or appropriate error code on failure.}
 function TCloudMailRu.PutFileSplit(LocalPath, RemotePath, ConflictMode: WideString; ChunkOverwriteMode: Integer): Integer;
 var
 	LocalFileIdentity: TCMRFileIdentity;
 	SplitFileInfo: TFileSplitInfo;
-	SplittedPartIndex: Integer;
-	ChunkRemotePath, CRCRemotePath: WideString;
+	ChunkIndex: Integer;
+	ChunkRemotePath: WideString;
 	ChunkStream: TChunkedFileStream;
-	CRCStream: TStringStream;
 	RetryAttemptsCount: Integer;
 	UseHash: Boolean;
+	Action: TChunkActionResult;
 begin
-	UseHash := PrecalculateHash or (ForcePrecalculateSize >= FFileSystem.GetFileSize(LocalPath)); //issue #231
-	if UseHash then //try to add whole file by hash at first.
+	{Try hash deduplication first - may skip upload entirely if file already exists}
+	UseHash := PrecalculateHash or (ForcePrecalculateSize >= FFileSystem.GetFileSize(LocalPath)); {issue #231}
+	if UseHash then
 		LocalFileIdentity := FileIdentity(GetUNCFilePath(LocalPath));
-	{Отмена расчёта хеша приведёт к отмене всей операции: TC запоминает нажатие отмены и ExternalProgressProc будет возвращать 1 до следующего вызова копирования}
-	if UseHash and (LocalFileIdentity.Hash <> EmptyWideStr) and (not FDoCryptFiles) and (FS_FILE_OK = AddFileByIdentity(LocalFileIdentity, RemotePath, CLOUD_CONFLICT_STRICT, False, true)) then {issue #135}
-		Exit(CLOUD_OPERATION_OK);
+	{Hash calculation cancellation causes entire operation abort - TC remembers cancel press}
+	if UseHash and (LocalFileIdentity.Hash <> EmptyWideStr) and (not FDoCryptFiles)
+		and (FS_FILE_OK = AddFileByIdentity(LocalFileIdentity, RemotePath, CLOUD_CONFLICT_STRICT, False, True)) then
+		Exit(CLOUD_OPERATION_OK); {issue #135}
 
-	SplitFileInfo := TFileSplitInfo.Create(GetUNCFilePath(LocalPath), CloudMaxFileSize); //quickly get information about file parts
+	{Create split info to determine chunk boundaries}
+	SplitFileInfo := TFileSplitInfo.Create(GetUNCFilePath(LocalPath), CloudMaxFileSize);
 	try
+		ChunkIndex := 0;
 		RetryAttemptsCount := 0;
-		SplittedPartIndex := 0;
+		Result := FS_FILE_OK;
 
-		while SplittedPartIndex < SplitFileInfo.ChunksCount do {use while instead for..loop, need to modify loop counter sometimes}
+		{Upload each chunk - using while loop because we may need to retry (dec index)}
+		while ChunkIndex < SplitFileInfo.ChunksCount do
 		begin
-			ChunkRemotePath := Format('%s%s', [ExtractFilePath(RemotePath), SplitFileInfo.GetChunks[SplittedPartIndex].name]);
+			ChunkRemotePath := Format('%s%s', [ExtractFilePath(RemotePath), SplitFileInfo.GetChunks[ChunkIndex].name]);
 			HTTP.SetProgressNames(LocalPath, ChunkRemotePath);
-			FLogger.Log(LOG_LEVEL_DEBUG, MSGTYPE_DETAILS, PARTIAL_UPLOAD_INFO, [LocalPath, (SplittedPartIndex + 1), SplitFileInfo.ChunksCount, ChunkRemotePath]);
-			ChunkStream := TChunkedFileStream.Create(GetUNCFilePath(LocalPath), fmOpenRead or fmShareDenyWrite, SplitFileInfo.GetChunks[SplittedPartIndex].start, SplitFileInfo.GetChunks[SplittedPartIndex].size);
+			FLogger.Log(LOG_LEVEL_DEBUG, MSGTYPE_DETAILS, PARTIAL_UPLOAD_INFO, [LocalPath, ChunkIndex + 1, SplitFileInfo.ChunksCount, ChunkRemotePath]);
+
+			{Upload current chunk}
+			ChunkStream := TChunkedFileStream.Create(GetUNCFilePath(LocalPath), fmOpenRead or fmShareDenyWrite, SplitFileInfo.GetChunks[ChunkIndex].start, SplitFileInfo.GetChunks[ChunkIndex].size);
 			try
 				Result := PutFileStream(ExtractFileName(ChunkRemotePath), ChunkRemotePath, ChunkStream, ConflictMode);
 			finally
 				ChunkStream.Free;
 			end;
 
+			{Handle upload result}
 			case Result of
-			FS_FILE_OK:
-				begin
-					RetryAttemptsCount := 0;
-				end;
-			FS_FILE_USERABORT:
-				begin
-					FLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, PARTIAL_UPLOAD_ABORTED);
-					Break;
-				end;
-			FS_FILE_EXISTS:
-				begin
-					case ChunkOverwriteMode of
-						ChunkOverwrite: //silently overwrite chunk
-							begin
-								FLogger.Log(LOG_LEVEL_WARNING, MSGTYPE_DETAILS, CHUNK_OVERWRITE, [ChunkRemotePath]);
-								if not(DeleteFile(ChunkRemotePath)) then
-								begin
-									Result := FS_FILE_WRITEERROR;
-									Break;
-								end else begin
-									Dec(SplittedPartIndex); //retry with this chunk
-								end;
-							end;
-						ChunkOverwriteIgnore: //ignore this chunk
-							begin
-								FLogger.Log(LOG_LEVEL_WARNING, MSGTYPE_DETAILS, CHUNK_SKIP, [ChunkRemotePath]); //ignore and continue
-							end;
-						ChunkOverwriteAbort: //abort operation
-							begin
-								FLogger.Log(LOG_LEVEL_WARNING, MSGTYPE_DETAILS, CHUNK_ABORT, [ChunkRemotePath]);
-								Result := FS_FILE_NOTSUPPORTED;
-								Break;
-							end;
+				FS_FILE_OK:
+					begin
+						RetryAttemptsCount := 0;
+						Inc(ChunkIndex);
 					end;
-				end;
-			else {any other error}
-				begin
-					case OperationErrorMode of
-						OperationErrorModeAsk:
-							begin
-								case (MsgBox(ERR_PARTIAL_UPLOAD_ASK, [Result, ChunkRemotePath], ERR_UPLOAD, MB_ABORTRETRYIGNORE + MB_ICONERROR)) of
-									ID_ABORT:
-										begin
-											Result := FS_FILE_USERABORT;
-											Break;
-										end;
-									ID_RETRY:
-										Dec(SplittedPartIndex); //retry with this chunk
-									ID_IGNORE:
-										begin {do nothing && continue}
-										end;
-								end;
-							end;
-						OperationErrorModeIgnore:
-							begin
-								FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_PARTIAL_UPLOAD_IGNORE, [Result]);
-							end;
-						OperationErrorModeAbort:
-							begin
-								FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_PARTIAL_UPLOAD_ABORT, [Result]);
-								Result := FS_FILE_USERABORT;
-								Break;
-							end;
-						OperationErrorModeRetry:
-							begin
-								Inc(RetryAttemptsCount);
-								if RetryAttemptsCount <> RetryAttempts + 1 then
+				FS_FILE_USERABORT:
+					begin
+						FLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, PARTIAL_UPLOAD_ABORTED);
+						Break; {Exit loop preserving USERABORT result}
+					end;
+				FS_FILE_EXISTS:
+					begin
+						Action := HandleChunkExists(ChunkRemotePath, ChunkOverwriteMode, Result);
+						case Action of
+							caRetry: ; {Don't increment, retry same chunk}
+							caContinue:
 								begin
-									FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_PARTIAL_UPLOAD_RETRY, [Result, RetryAttemptsCount, RetryAttempts]);
-									Dec(SplittedPartIndex); //retry with this chunk
-									ProcessMessages;
-									Sleep(AttemptWait);
-								end else begin
-									FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_PARTIAL_UPLOAD_RETRY_EXCEED, [Result]);
-									Result := CLOUD_OPERATION_FAILED;
-									Break;
+									Result := FS_FILE_OK; {Clear error when ignoring and continuing}
+									Inc(ChunkIndex);
 								end;
-							end
-						else {unknown option value}
-							begin
-								Result := CLOUD_OPERATION_FAILED;
-								Break;
-							end;
-					end
+							caAbort: Break;
+						end;
+					end;
+			else
+				{Any other error - handle via OperationErrorMode}
+				Action := HandleChunkError(Result, ChunkRemotePath, RetryAttemptsCount, Result);
+				case Action of
+					caRetry: ; {Don't increment, retry same chunk}
+					caContinue:
+						begin
+							Result := FS_FILE_OK; {Clear error when ignoring and continuing}
+							Inc(ChunkIndex);
+						end;
+					caAbort: Break;
 				end;
-		end;
-			Inc(SplittedPartIndex); //all ok, continue with next chunk
-		end; {end while}
-
-		if Result = FS_FILE_OK then {Only after successful upload}
-		begin
-			CRCRemotePath := ExtractFilePath(RemotePath) + SplitFileInfo.CRCFileName;
-			HTTP.SetProgressNames(LocalPath, CRCRemotePath);
-			CRCStream := TStringStream.Create;
-			try
-				SplitFileInfo.GetCRCData(CRCStream);
-				PutFileStream(SplitFileInfo.CRCFileName, CRCRemotePath, CRCStream, ConflictMode);
-			finally
-				CRCStream.Free;
 			end;
 		end;
+
+		{Generate and upload CRC file only after all chunks uploaded successfully}
+		if Result = FS_FILE_OK then
+			GenerateAndUploadCRC(LocalPath, RemotePath, SplitFileInfo, ConflictMode);
 	finally
 		SplitFileInfo.Free;
 	end;
-	Exit(FS_FILE_OK); //Файлик залит по частям, выходим
+	{Return actual Result - previously always returned OK which was a bug}
 end;
-{$WARN NO_RETVAL ON}
 
 {Wrapper for putFileWhole/putFileSplit}
 function TCloudMailRu.PutFile(LocalPath, RemotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; ChunkOverwriteMode: Integer = 0): Integer;

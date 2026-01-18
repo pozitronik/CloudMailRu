@@ -179,6 +179,9 @@ end;
 
 function TMockCloudHTTP.MatchURLPattern(const URL, Pattern: WideString): Boolean;
 begin
+	{Empty pattern matches everything - useful for catch-all responses}
+	if Pattern = '' then
+		Exit(True);
 	{Exact match or pattern contained in URL}
 	Result := (URL = Pattern) or (Pos(Pattern, URL) > 0);
 end;
