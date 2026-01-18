@@ -19,6 +19,7 @@ type
 	public
 		constructor Create(const FilePath: string);
 
+		function GetFilePath: string;
 		function ReadString(const Section, Ident, Default: string): string;
 		function ReadBool(const Section, Ident: string; Default: Boolean): Boolean;
 		function ReadInteger(const Section, Ident: string; Default: Integer): Integer;
@@ -51,6 +52,11 @@ constructor TIniConfigFile.Create(const FilePath: string);
 begin
 	inherited Create;
 	FFilePath := FilePath;
+end;
+
+function TIniConfigFile.GetFilePath: string;
+begin
+	Result := FFilePath;
 end;
 
 function TIniConfigFile.ReadString(const Section, Ident, Default: string): string;

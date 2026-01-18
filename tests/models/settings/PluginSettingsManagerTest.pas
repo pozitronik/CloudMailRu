@@ -54,10 +54,8 @@ end;
 procedure TPluginSettingsManagerTest.TestCreateDefaults;
 var
 	TempSettingsManager: TPluginSettingsManager;
-	EmptyPath: WideString;
 begin
-	EmptyPath := '';
-	TempSettingsManager := TPluginSettingsManager.Create(TIniConfigFile.Create(EmptyPath), EmptyPath);
+	TempSettingsManager := TPluginSettingsManager.Create(TIniConfigFile.Create(''));
 
 	{peek some randoms of different data types}
 	Assert.IsFalse(TempSettingsManager.Settings.DescriptionEnabled); //boolean
@@ -99,10 +97,8 @@ end;
 procedure TPluginSettingsManagerTest.TestCreateFromKnownFile;
 var
 	TempSettingsManager: TPluginSettingsManager;
-	IniPath: WideString;
 begin
-	IniPath := DataPath(FP_SETTINGS_INI);
-	TempSettingsManager := TPluginSettingsManager.Create(TIniConfigFile.Create(IniPath), IniPath);
+	TempSettingsManager := TPluginSettingsManager.Create(TIniConfigFile.Create(DataPath(FP_SETTINGS_INI)));
 
 	{peek some randoms of different data types}
 	Assert.isTrue(TempSettingsManager.Settings.DescriptionEnabled); //boolean

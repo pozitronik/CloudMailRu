@@ -42,9 +42,8 @@ type
 		property IniFilePath: WideString read FIniFilePath;
 		property AccountsIniFilePath: WideString read GetAccountsIniFilePath; {The path to the accounts config file}
 
-		constructor Create(); overload; {finds the settings file by itself}
-		constructor Create(ConfigFile: IConfigFile; IniFilePath: WideString); overload;
-		constructor Create(ConfigFile: IConfigFile; Environment: IEnvironment; IniFilePath: WideString); overload; {Full DI constructor for testing}
+		constructor Create(Environment: IEnvironment = nil); overload; {finds the settings file using Environment}
+		constructor Create(ConfigFile: IConfigFile); overload; {uses provided config file}
 		procedure Refresh();
 
 		procedure Save(); {save current options set into the file}
@@ -68,29 +67,26 @@ uses
 
 {TPluginSettingsManager}
 
-constructor TPluginSettingsManager.Create(ConfigFile: IConfigFile; IniFilePath: WideString);
+constructor TPluginSettingsManager.Create(ConfigFile: IConfigFile);
 begin
 	FConfigFile := ConfigFile;
-	FEnvironment := nil; {Not needed when config file is provided directly}
-	FIniFilePath := IniFilePath;
+	FEnvironment := nil;
+	FIniFilePath := ConfigFile.GetFilePath;
+	FIniFileDir := IncludeTrailingBackslash(ExtractFilePath(FIniFilePath));
 	Refresh();
 end;
 
-constructor TPluginSettingsManager.Create(ConfigFile: IConfigFile; Environment: IEnvironment; IniFilePath: WideString);
-begin
-	FConfigFile := ConfigFile;
-	FEnvironment := Environment;
-	FIniFilePath := IniFilePath;
-	Refresh();
-end;
-
-constructor TPluginSettingsManager.Create;
+constructor TPluginSettingsManager.Create(Environment: IEnvironment);
 var
 	AppDataDir: WideString;
 	TempConfigFile: IConfigFile;
 	TempIniDir: Integer;
 begin
-	FEnvironment := TWindowsEnvironment.Create;
+	if Environment = nil then
+		FEnvironment := TWindowsEnvironment.Create
+	else
+		FEnvironment := Environment;
+
 	AppDataDir := IncludeTrailingBackslash(IncludeTrailingBackslash(FEnvironment.GetEnvironmentVariable('APPDATA')) + APPDATA_DIR_NAME);
 	FApplicationPath := FEnvironment.GetModulePath;
 

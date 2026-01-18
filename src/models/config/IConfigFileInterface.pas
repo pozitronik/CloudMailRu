@@ -15,6 +15,9 @@ type
 	IConfigFile = interface
 		['{BAC4C620-1BF1-460B-8742-026C9E45E89F}']
 
+		{Returns the file path this config was loaded from, empty for in-memory configs}
+		function GetFilePath: string;
+
 		{Read operations}
 		function ReadString(const Section, Ident, Default: string): string;
 		function ReadBool(const Section, Ident: string; Default: Boolean): Boolean;
@@ -46,6 +49,7 @@ type
 	{Null implementation for testing - returns defaults, does nothing on writes}
 	TNullConfigFile = class(TInterfacedObject, IConfigFile)
 	public
+		function GetFilePath: string;
 		function ReadString(const Section, Ident, Default: string): string;
 		function ReadBool(const Section, Ident: string; Default: Boolean): Boolean;
 		function ReadInteger(const Section, Ident: string; Default: Integer): Integer;
@@ -73,12 +77,15 @@ type
 	private
 		{Section -> (Ident -> Value) mapping}
 		FData: TObjectDictionary<string, TDictionary<string, string>>;
+		FFilePath: string;
 
 		function GetSection(const Section: string; CreateIfMissing: Boolean): TDictionary<string, string>;
 	public
-		constructor Create;
+		constructor Create; overload;
+		constructor Create(const FilePath: string); overload;
 		destructor Destroy; override;
 
+		function GetFilePath: string;
 		function ReadString(const Section, Ident, Default: string): string;
 		function ReadBool(const Section, Ident: string; Default: Boolean): Boolean;
 		function ReadInteger(const Section, Ident: string; Default: Integer): Integer;
@@ -107,6 +114,11 @@ type
 implementation
 
 {TNullConfigFile}
+
+function TNullConfigFile.GetFilePath: string;
+begin
+	Result := '';
+end;
 
 function TNullConfigFile.ReadString(const Section, Ident, Default: string): string;
 begin
@@ -194,6 +206,18 @@ constructor TMemoryConfigFile.Create;
 begin
 	inherited Create;
 	FData := TObjectDictionary<string, TDictionary<string, string>>.Create([doOwnsValues]);
+	FFilePath := '';
+end;
+
+constructor TMemoryConfigFile.Create(const FilePath: string);
+begin
+	Create;
+	FFilePath := FilePath;
+end;
+
+function TMemoryConfigFile.GetFilePath: string;
+begin
+	Result := FFilePath;
 end;
 
 destructor TMemoryConfigFile.Destroy;
