@@ -87,7 +87,9 @@ uses
 	WFXInterface in 'src\models\wfx\WFXInterface.pas',
 	CipherInterface in 'src\models\cipher\CipherInterface.pas',
 	IAccountsManagerInterface in 'src\models\settings\IAccountsManagerInterface.pas',
-	IPluginSettingsManagerInterface in 'src\models\settings\IPluginSettingsManagerInterface.pas';
+	IPluginSettingsManagerInterface in 'src\models\settings\IPluginSettingsManagerInterface.pas',
+	IPasswordUIProviderInterface in 'src\models\ui\IPasswordUIProviderInterface.pas',
+	PasswordUIProvider in 'src\models\ui\PasswordUIProvider.pas';
 
 {$IFDEF WIN64}
 {$E wfx64}

@@ -52,7 +52,9 @@ uses
 	FileHelper,
 	IconHelper,
 	SystemHelper,
-	StreamingSettings;
+	StreamingSettings,
+	IPasswordUIProviderInterface,
+	PasswordUIProvider;
 
 type
 	TMailRuCloudWFX = class(TInterfacedObject, IWFXInterface)
@@ -92,6 +94,7 @@ type
 		ConnectionManager: TConnectionManager;
 		CurrentDescriptions: TDescription;
 		PasswordManager: IPasswordManager;
+		PasswordUI: IPasswordUIProvider;
 		TCLogger: ILogger;
 		TCProgress: IProgress;
 		TCRequest: IRequest;
@@ -1519,7 +1522,8 @@ end;
 procedure TMailRuCloudWFX.FsSetCryptCallback(PCryptProc: TCryptProcW; CryptoNr, Flags: Integer);
 begin
 	PasswordManager := TTCPasswordManager.Create(PCryptProc, PluginNum, CryptoNr, TCLogger);
-	ConnectionManager := TConnectionManager.Create(SettingsManager, AccountSettings, TCProgress, TCLogger, TCRequest, PasswordManager);
+	PasswordUI := TPasswordUIProvider.Create;
+	ConnectionManager := TConnectionManager.Create(SettingsManager, AccountSettings, PasswordUI, TCProgress, TCLogger, TCRequest, PasswordManager);
 end;
 
 procedure TMailRuCloudWFX.FsStatusInfo(RemoteDir: WideString; InfoStartEnd, InfoOperation: Integer);
