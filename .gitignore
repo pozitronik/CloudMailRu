@@ -58,3 +58,6 @@
 /FastMM_FullDebugMode64.dll
 /FastMM_FullDebugMode.dll
 /tests/FastMM5
+/tests/CloudMailRuTest.dproj.local
+/tests/CloudMailRuTest.identcache
+/tests/CloudMailRuTest.res
