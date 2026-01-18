@@ -23,7 +23,7 @@ uses
 	PluginSettingsManager,
 	PluginSettings,
 	CloudSettings,
-	TCPasswordManager,
+	IPasswordManagerInterface,
 	HTTPManager,
 	System.Generics.Collections,
 	SysUtils,
@@ -41,7 +41,7 @@ type
 		FLogger: ILogger;
 		FProgress: IProgress;
 		FRequest: IRequest;
-		FPasswordManager: TTCPasswordManager;
+		FPasswordManager: IPasswordManager;
 
 		function Init(ConnectionName: WideString; out Cloud: TCloudMailRu): Integer; {Create a connection by its name, returns the status code}
 		function GetAccountPassword(const ConnectionName: WideString; var CloudSettings: TCloudSettings): Boolean;
@@ -49,7 +49,7 @@ type
 		function GetProxyPassword(): Boolean;
 		function InitCloudCryptPasswords(const ConnectionName: WideString; var CloudSettings: TCloudSettings): Boolean;
 	public
-		constructor Create(PluginSettings: TPluginSettings; Progress: IProgress; Logger: ILogger; Request: IRequest; PasswordManager: TTCPasswordManager);
+		constructor Create(PluginSettings: TPluginSettings; Progress: IProgress; Logger: ILogger; Request: IRequest; PasswordManager: IPasswordManager);
 		destructor Destroy(); override;
 		function Get(ConnectionName: WideString; var OperationResult: Integer): TCloudMailRu; {Return the cloud connection by its name}
 		procedure Free(ConnectionName: WideString); {Free a connection by its name, if present}
@@ -58,7 +58,7 @@ type
 implementation
 
 {TConnectionManager}
-constructor TConnectionManager.Create(PluginSettings: TPluginSettings; Progress: IProgress; Logger: ILogger; Request: IRequest; PasswordManager: TTCPasswordManager);
+constructor TConnectionManager.Create(PluginSettings: TPluginSettings; Progress: IProgress; Logger: ILogger; Request: IRequest; PasswordManager: IPasswordManager);
 begin
 	FConnections := TDictionary<WideString, TCloudMailRu>.Create;
 	self.FPluginSettings := PluginSettings;
@@ -179,7 +179,7 @@ begin
 	end;
 	if EncryptModeAskOnce = CloudSettings.AccountSettings.EncryptFilesMode then
 	begin
-		if mrOk <> TAskPasswordForm.AskPassword(Format(ASK_ENCRYPTION_PASSWORD, [ConnectionName]), PREFIX_ASK_ENCRYPTION_PASSWORD, CloudSettings.CryptFilesPassword, StorePassword, True, FPasswordManager.ParentWindow) then
+		if mrOk <> TAskPasswordForm.AskPassword(Format(ASK_ENCRYPTION_PASSWORD, [ConnectionName]), PREFIX_ASK_ENCRYPTION_PASSWORD, CloudSettings.CryptFilesPassword, StorePassword, True, FindTCWindow) then
 			Result := False
 	end;
 end;

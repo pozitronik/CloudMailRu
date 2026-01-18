@@ -27,6 +27,7 @@ uses
 	ConnectionManager,
 	IdSSLOpenSSLHeaders,
 	Description,
+	IPasswordManagerInterface,
 	TCPasswordManager,
 	ILoggerInterface,
 	IProgressInterface,
@@ -90,7 +91,7 @@ type
 		CurrentIncomingInvitesListing: TCMRIncomingInviteList;
 		ConnectionManager: TConnectionManager;
 		CurrentDescriptions: TDescription;
-		PasswordManager: TTCPasswordManager;
+		PasswordManager: IPasswordManager;
 		TCLogger: ILogger;
 		TCProgress: IProgress;
 		TCRequest: IRequest;
@@ -310,7 +311,7 @@ begin
 
 	SettingsManager.Free;
 	AccountSettings.Free;
-	PasswordManager.Free;
+	PasswordManager := nil; {IPasswordManager is reference-counted, setting to nil releases it}
 	TCLogger := nil; {ILogger is reference-counted, setting to nil releases it}
 	TCProgress := nil; {IProgress is reference-counted, setting to nil releases it}
 	TCRequest := nil; {IRequest is reference-counted, setting to nil releases it}

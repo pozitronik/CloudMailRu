@@ -24,7 +24,7 @@ uses
 	Vcl.Samples.Spin,
 	System.IOUtils,
 	AskPassword,
-	TCPasswordManager,
+	IPasswordManagerInterface,
 	Registration,
 	LANGUAGE_STRINGS,
 	WSList,
@@ -153,7 +153,7 @@ type
 		procedure UpdateStreamingExtensionsList();
 		procedure DeleteButtonClick(Sender: TObject);
 		procedure AccountsListKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
-		class function ShowAccounts(ParentWindow: HWND; PasswordManager: TTCPasswordManager; Account: WideString): Boolean;
+		class function ShowAccounts(ParentWindow: HWND; PasswordManager: IPasswordManager; Account: WideString): Boolean;
 		procedure FormActivate(Sender: TObject);
 		procedure ProxyUserEditChange(Sender: TObject);
 		procedure GlobalSettingApplyBTNClick(Sender: TObject);
@@ -173,7 +173,8 @@ type
 		{Private declarations}
 		AccountsManager: TAccountsManager;
 		SettingsManager: TPluginSettingsManager;
-		PasswordManager: TTCPasswordManager;
+		PasswordManager: IPasswordManager;
+		DialogParentWindow: HWND; {Parent window for password dialogs}
 		SelectedAccount: WideString;
 		SettingsApplied: Boolean;
 		procedure ApplySettings();
@@ -458,9 +459,9 @@ var
 	CryptedGUID: WideString;
 	TempAccountSettings: TAccountSettings;
 begin
-	PasswordManager.ParentWindow := self.Handle;
+	DialogParentWindow := self.Handle; {Use form handle for dialogs}
 	CryptedGUID := StoreFileCryptPassword(self.SelectedAccount);
-	PasswordManager.ParentWindow := FindTCWindow;
+	DialogParentWindow := FindTCWindow; {Restore for subsequent dialogs}
 	if CryptedGUID <> EmptyWideStr then
 	begin
 		TempAccountSettings := AccountsManager.GetAccountSettings(self.SelectedAccount);
@@ -534,13 +535,14 @@ begin
 end;
 
 {The method returns True if settings were applied}
-class function TAccountsForm.ShowAccounts(ParentWindow: HWND; PasswordManager: TTCPasswordManager; Account: WideString): Boolean;
+class function TAccountsForm.ShowAccounts(ParentWindow: HWND; PasswordManager: IPasswordManager; Account: WideString): Boolean;
 var
 	AccountsForm: TAccountsForm;
 begin
 	try
 		AccountsForm := TAccountsForm.Create(nil);
 		AccountsForm.ParentWindow := ParentWindow;
+		AccountsForm.DialogParentWindow := ParentWindow; {Store for password dialogs}
 
 		AccountsForm.SettingsManager := TPluginSettingsManager.Create();
 		AccountsForm.AccountsManager := TAccountsManager.Create(AccountsForm.SettingsManager.AccountsIniFilePath);
@@ -637,7 +639,7 @@ begin
 				exit;
 			end;
 	end;
-	if mrOk = TAskPasswordForm.AskPassword(Format(ASK_ENCRYPTION_PASSWORD, [Verb]), PREFIX_ASK_NEW_PASSWORD, CurrentPassword, StorePassword, True, PasswordManager.ParentWindow) then
+	if mrOk = TAskPasswordForm.AskPassword(Format(ASK_ENCRYPTION_PASSWORD, [Verb]), PREFIX_ASK_NEW_PASSWORD, CurrentPassword, StorePassword, True, DialogParentWindow) then
 	begin
 		PasswordManager.SetPassword(crypt_id, CurrentPassword);
 		result := TFileCipher.GetCryptedGUID(CurrentPassword);

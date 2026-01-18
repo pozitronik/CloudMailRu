@@ -264,7 +264,8 @@
         <DCCReference Include="src\models\logger\ILoggerInterface.pas"/>
         <DCCReference Include="src\models\progress\IProgressInterface.pas"/>
         <DCCReference Include="src\models\logger\TCLogger.pas"/>
-        <DCCReference Include="src\models\tc\TCPasswordManager.pas"/>
+        <DCCReference Include="src\models\password\IPasswordManagerInterface.pas"/>
+        <DCCReference Include="src\models\password\TCPasswordManager.pas"/>
         <DCCReference Include="src\models\progress\TCProgress.pas"/>
         <DCCReference Include="src\models\request\IRequestInterface.pas"/>
         <DCCReference Include="src\models\request\TCRequest.pas"/>
