@@ -125,6 +125,11 @@ uses
 	HTTPManager in '..\src\models\http\HTTPManager.pas',
 	RealPath in '..\src\models\dto\RealPath.pas',
 	CloudSettings in '..\src\models\settings\CloudSettings.pas',
+	IAccountsManagerInterface in '..\src\models\settings\IAccountsManagerInterface.pas',
+	IPluginSettingsManagerInterface in '..\src\models\settings\IPluginSettingsManagerInterface.pas',
+	NullAccountsManagerTest in 'models\settings\NullAccountsManagerTest.pas',
+	NullPluginSettingsManagerTest in 'models\settings\NullPluginSettingsManagerTest.pas',
+	CloudSettingsTest in 'models\settings\CloudSettingsTest.pas',
 	AskPassword in '..\src\forms\AskPassword.pas'{AskPasswordForm};
 
 {keep comment here to protect the following conditional from being removed by the IDE when adding a unit}

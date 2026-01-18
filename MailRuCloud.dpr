@@ -85,7 +85,9 @@ uses
 	WindowsHelper in 'src\helpers\WindowsHelper.pas',
 	MailRuCloudWFX in 'src\models\wfx\MailRuCloudWFX.pas',
 	WFXInterface in 'src\models\wfx\WFXInterface.pas',
-	CipherInterface in 'src\models\cipher\CipherInterface.pas';
+	CipherInterface in 'src\models\cipher\CipherInterface.pas',
+	IAccountsManagerInterface in 'src\models\settings\IAccountsManagerInterface.pas',
+	IPluginSettingsManagerInterface in 'src\models\settings\IPluginSettingsManagerInterface.pas';
 
 {$IFDEF WIN64}
 {$E wfx64}

@@ -15,7 +15,8 @@ uses
 	Classes,
 	IniFilesHelper,
 	PluginSettings,
-	StreamingSettings;
+	StreamingSettings,
+	IPluginSettingsManagerInterface;
 
 type
 
@@ -24,7 +25,7 @@ type
 	 (File)Name or (Dir)Name should contain only the name of a file or a directory
 	}
 
-	TPluginSettingsManager = class
+	TPluginSettingsManager = class(TInterfacedObject, IPluginSettingsManager)
 	private
 		FApplicationPath: WideString; {the directory of the current executable file}
 		FIniFilePath: WideString; {the absolute path of the current configuration file}
@@ -45,6 +46,9 @@ type
 
 		procedure Save(); {save current options set into the file}
 		procedure SwitchProxyPasswordStorage;
+
+		{IPluginSettingsManager interface method}
+		function GetSettings: TPluginSettings;
 
 		function GetStreamingSettings(const FileName: WideString): TStreamingSettings;
 		procedure SetStreamingSettings(const FileName: WideString; StreamingSettings: TStreamingSettings);
@@ -323,6 +327,11 @@ begin
 	finally
 		IniFile.Free;
 	end;
+end;
+
+function TPluginSettingsManager.GetSettings: TPluginSettings;
+begin
+	Result := Settings;
 end;
 
 end.

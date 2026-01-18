@@ -14,10 +14,11 @@ uses
 	LANGUAGE_STRINGS,
 	SETTINGS_CONSTANTS,
 	WSList,
-	AccountSettings;
+	AccountSettings,
+	IAccountsManagerInterface;
 
 type
-	TAccountsManager = class
+	TAccountsManager = class(TInterfacedObject, IAccountsManager)
 	private
 		FIniFilePath: WideString;
 

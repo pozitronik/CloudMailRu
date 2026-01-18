@@ -13,15 +13,14 @@ uses
 	ILoggerInterface,
 	IProgressInterface,
 	IRequestInterface,
+	IAccountsManagerInterface,
+	IPluginSettingsManagerInterface,
 	Windows,
 	Vcl.Controls,
 	SETTINGS_CONSTANTS,
 	PLUGIN_TYPES,
 	ProxySettings,
 	AccountSettings,
-	AccountsManager,
-	PluginSettingsManager,
-	PluginSettings,
 	CloudSettings,
 	IPasswordManagerInterface,
 	HTTPManager,
@@ -36,7 +35,8 @@ type
 	private
 		FConnections: TDictionary<WideString, TCloudMailRu>; {It is better to encapsulate the dictionary}
 		FHTTPManager: THTTPManager;
-		FPluginSettings: TPluginSettings; {Required to proxify plugin parameters to cloud parametes, when initialized}
+		FPluginSettingsManager: IPluginSettingsManager;
+		FAccountsManager: IAccountsManager;
 
 		FLogger: ILogger;
 		FProgress: IProgress;
@@ -49,7 +49,7 @@ type
 		function GetProxyPassword(): Boolean;
 		function InitCloudCryptPasswords(const ConnectionName: WideString; var CloudSettings: TCloudSettings): Boolean;
 	public
-		constructor Create(PluginSettings: TPluginSettings; Progress: IProgress; Logger: ILogger; Request: IRequest; PasswordManager: IPasswordManager);
+		constructor Create(PluginSettingsManager: IPluginSettingsManager; AccountsManager: IAccountsManager; Progress: IProgress; Logger: ILogger; Request: IRequest; PasswordManager: IPasswordManager);
 		destructor Destroy(); override;
 		function Get(ConnectionName: WideString; var OperationResult: Integer): TCloudMailRu; {Return the cloud connection by its name}
 		procedure Free(ConnectionName: WideString); {Free a connection by its name, if present}
@@ -58,15 +58,16 @@ type
 implementation
 
 {TConnectionManager}
-constructor TConnectionManager.Create(PluginSettings: TPluginSettings; Progress: IProgress; Logger: ILogger; Request: IRequest; PasswordManager: IPasswordManager);
+constructor TConnectionManager.Create(PluginSettingsManager: IPluginSettingsManager; AccountsManager: IAccountsManager; Progress: IProgress; Logger: ILogger; Request: IRequest; PasswordManager: IPasswordManager);
 begin
 	FConnections := TDictionary<WideString, TCloudMailRu>.Create;
-	self.FPluginSettings := PluginSettings;
-	self.FProgress := Progress;
-	self.FLogger := Logger;
-	self.FRequest := Request;
-	self.FHTTPManager := THTTPManager.Create(PluginSettings.ConnectionSettings, Logger, Progress);
-	self.FPasswordManager := PasswordManager;
+	FPluginSettingsManager := PluginSettingsManager;
+	FAccountsManager := AccountsManager;
+	FProgress := Progress;
+	FLogger := Logger;
+	FRequest := Request;
+	FHTTPManager := THTTPManager.Create(FPluginSettingsManager.GetSettings.ConnectionSettings, Logger, Progress);
+	FPasswordManager := PasswordManager;
 end;
 
 destructor TConnectionManager.Destroy;
@@ -78,7 +79,12 @@ begin
 
 	FreeAndNil(FConnections);
 
-	self.FHTTPManager.Destroy;
+	FHTTPManager.Destroy;
+
+	{Release interface references}
+	FPluginSettingsManager := nil;
+	FAccountsManager := nil;
+
 	inherited;
 end;
 
@@ -108,28 +114,14 @@ function TConnectionManager.Init(ConnectionName: WideString; out Cloud: TCloudMa
 var
 	CloudSettings: TCloudSettings;
 	LoginMethod: Integer;
-	AccountsManager: TAccountsManager;
 begin
 	Result := CLOUD_OPERATION_OK;
-	AccountsManager := TAccountsManager.Create(self.FPluginSettings.AccountsIniFilePath);
-	try
-		CloudSettings.AccountSettings := AccountsManager.GetAccountSettings(ConnectionName);
-	finally
-		AccountsManager.Free;
-	end;
-	with CloudSettings do
-	begin
-		{proxify plugin settings to the cloud settings}
-		ConnectionSettings := self.FPluginSettings.ConnectionSettings;
 
-		PrecalculateHash := self.FPluginSettings.PrecalculateHash;
-		ForcePrecalculateSize := self.FPluginSettings.ForcePrecalculateSize;
-		CheckCRC := self.FPluginSettings.CheckCRC;
-		CloudMaxFileSize := self.FPluginSettings.CloudMaxFileSize;
-		OperationErrorMode := self.FPluginSettings.OperationErrorMode;
-		RetryAttempts := self.FPluginSettings.RetryAttempts;
-		AttemptWait := self.FPluginSettings.AttemptWait;
-	end;
+	{Create CloudSettings using factory method - combines plugin settings with account settings}
+	CloudSettings := TCloudSettings.CreateFromSettings(
+		FPluginSettingsManager.GetSettings,
+		FAccountsManager.GetAccountSettings(ConnectionName)
+	);
 
 	if not CloudSettings.AccountSettings.PublicAccount and (not GetAccountPassword(ConnectionName, CloudSettings) or not GetFilesPassword(ConnectionName, CloudSettings) or not GetProxyPassword) then
 		exit(CLOUD_OPERATION_ERROR_STATUS_UNKNOWN); //INVALID_HANDLE_VALUE
@@ -187,31 +179,23 @@ end;
 {Retrieves the password for ConnectionName: from TC passwords storage, then from settings, and the from user input. Returns true if password retrieved, false otherwise.
  Note: the metod saves password to TC storage and removes it from config, if current option set for the account}
 function TConnectionManager.GetAccountPassword(const ConnectionName: WideString; var CloudSettings: TCloudSettings): Boolean;
-var
-	AccountsManager: TAccountsManager;
 begin
-	if CloudSettings.AccountSettings.UseTCPasswordManager and (FPasswordManager.GetPassword(ConnectionName, CloudSettings.AccountSettings.password) = FS_FILE_OK) then //пароль должен браться из TC
+	if CloudSettings.AccountSettings.UseTCPasswordManager and (FPasswordManager.GetPassword(ConnectionName, CloudSettings.AccountSettings.password) = FS_FILE_OK) then
 		exit(True);
 
-	//иначе предполагается, что пароль взят из конфига
-	if CloudSettings.AccountSettings.password = EmptyWideStr then //но пароля нет, не в инишнике, не в тотале
+	if CloudSettings.AccountSettings.password = EmptyWideStr then
 	begin
 		if mrOk <> TAskPasswordForm.AskPassword(Format(ASK_PASSWORD, [ConnectionName]), PREFIX_ASK_PASSWORD, CloudSettings.AccountSettings.password, CloudSettings.AccountSettings.UseTCPasswordManager, False, FindTCWindow) then
-		begin //не указали пароль в диалоге
-			exit(False); //отказались вводить пароль
+		begin
+			exit(False);
 		end else begin
 			Result := True;
 			if CloudSettings.AccountSettings.UseTCPasswordManager then
 			begin
 				if FS_FILE_OK = FPasswordManager.SetPassword(ConnectionName, CloudSettings.AccountSettings.password) then
-				begin //Now the account password stored in TC, clear password from the ini file
+				begin {Now the account password stored in TC, clear password from the ini file}
 					FLogger.Log(LOG_LEVEL_DEBUG, msgtype_details, PASSWORD_SAVED, [ConnectionName]);
-					AccountsManager := TAccountsManager.Create(self.FPluginSettings.AccountsIniFilePath);
-					try
-						AccountsManager.SwitchPasswordStorage(ConnectionName);
-					finally
-						AccountsManager.Free;
-					end;
+					FAccountsManager.SwitchPasswordStorage(ConnectionName);
 				end;
 			end;
 		end;
@@ -224,13 +208,12 @@ function TConnectionManager.GetFilesPassword(const ConnectionName: WideString; v
 var
 	PasswordActionRetry: Boolean;
 	ActionsList: TDictionary<Int32, WideString>;
-	AccountsManager: TAccountsManager;
 begin
 	Result := True;
 	PasswordActionRetry := False;
 	if CloudSettings.AccountSettings.EncryptFilesMode <> EncryptModeNone then
 	begin
-		repeat //пока не будет разрешающего действия
+		repeat
 			if not InitCloudCryptPasswords(ConnectionName, CloudSettings) then
 				exit(False);
 			if not TFileCipher.CheckPasswordGUID(CloudSettings.CryptFilesPassword, CloudSettings.AccountSettings.CryptedGUIDFiles) then
@@ -240,19 +223,14 @@ begin
 				ActionsList.AddOrSetValue(mrNo, PROCEED_IGNORE);
 				ActionsList.AddOrSetValue(mrRetry, PROCEED_RETYPE);
 				case TAskPasswordForm.AskAction(PREFIX_ERR_PASSWORD_MATCH, ERR_PASSWORD_MATCH, ActionsList) of
-					mrYes: //store and use updated password
+					mrYes: {store and use updated password}
 						begin
 							CloudSettings.AccountSettings.CryptedGUIDFiles := TFileCipher.GetCryptedGUID(CloudSettings.CryptFilesPassword);
-							AccountsManager := TAccountsManager.Create(self.FPluginSettings.IniFilePath); // todo: chick if it is a bug, maybe I should use self.FPluginSettings.AccountsIniFilePath instead?
-							try
-								AccountsManager.SetCryptedGUID(ConnectionName, CloudSettings.AccountSettings.CryptedGUIDFiles);
-							finally
-								AccountsManager.Free;
-							end;
+							FAccountsManager.SetCryptedGUID(ConnectionName, CloudSettings.AccountSettings.CryptedGUIDFiles);
 						end;
 					mrNo:
 						begin
-							//continue without password
+							{continue without password}
 						end;
 					mrRetry:
 						begin
@@ -270,7 +248,6 @@ end;
  Note: the metod saves password to TC storage and removes it from config, if user chooses to do so}
 function TConnectionManager.GetProxyPassword: Boolean;
 var
-	SettingsManager: TPluginSettingsManager;
 	ProxySettings: TProxySettings;
 begin
 	Result := False;
@@ -279,23 +256,18 @@ begin
 	if (ProxySettings.ProxyType = ProxyNone) or (ProxySettings.User = EmptyWideStr) then
 		exit(True); {No proxy or not password protected}
 
-	if ProxySettings.UseTCPasswordManager and (FPasswordManager.GetPassword(PASSWORD_KEY_PROXY + ProxySettings.User, ProxySettings.password) = FS_FILE_OK) then {retrieve the proxy password from TC passwords storage}
-		Result := True{Password is retrieved and should be updated in th HTTPManager}
+	if ProxySettings.UseTCPasswordManager and (FPasswordManager.GetPassword(PASSWORD_KEY_PROXY + ProxySettings.User, ProxySettings.password) = FS_FILE_OK) then
+		Result := True {Password is retrieved and should be updated in the HTTPManager}
 	else
 	begin
-		if ProxySettings.password = EmptyWideStr then {password can be retrieved previously or just read from config}
+		if ProxySettings.password = EmptyWideStr then
 		begin
 			if mrOk = TAskPasswordForm.AskPassword(Format(ASK_PROXY_PASSWORD, [ProxySettings.User]), PREFIX_ASK_PROXY_PASSWORD, ProxySettings.password, ProxySettings.UseTCPasswordManager, False, FindTCWindow) then
 			begin {get proxy password and parameters from the user input}
 				if FS_FILE_OK = FPasswordManager.SetPassword(PASSWORD_KEY_PROXY + ProxySettings.User, ProxySettings.password) then
 				begin {Now the proxy password stored in TC, clear password from the ini file}
 					FLogger.Log(LOG_LEVEL_DEBUG, msgtype_details, PASSWORD_SAVED, [ProxySettings.User]);
-					SettingsManager := TPluginSettingsManager.Create();
-					try
-						SettingsManager.SwitchProxyPasswordStorage;
-					finally
-						SettingsManager.Free;
-					end;
+					FPluginSettingsManager.SwitchProxyPasswordStorage;
 					Result := True;
 				end else begin
 					FLogger.Log(LOG_LEVEL_WARNING, msgtype_details, WARN_PROXY_PASSWORD_IGNORED);

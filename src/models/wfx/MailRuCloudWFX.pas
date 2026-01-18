@@ -1519,7 +1519,7 @@ end;
 procedure TMailRuCloudWFX.FsSetCryptCallback(PCryptProc: TCryptProcW; CryptoNr, Flags: Integer);
 begin
 	PasswordManager := TTCPasswordManager.Create(PCryptProc, PluginNum, CryptoNr, TCLogger);
-	ConnectionManager := TConnectionManager.Create(SettingsManager.Settings, TCProgress, TCLogger, TCRequest, PasswordManager);
+	ConnectionManager := TConnectionManager.Create(SettingsManager, AccountSettings, TCProgress, TCLogger, TCRequest, PasswordManager);
 end;
 
 procedure TMailRuCloudWFX.FsStatusInfo(RemoteDir: WideString; InfoStartEnd, InfoOperation: Integer);
