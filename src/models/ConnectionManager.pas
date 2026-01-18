@@ -12,7 +12,7 @@ uses
 	TCHelper,
 	ILoggerInterface,
 	IProgressInterface,
-	TCRequest,
+	IRequestInterface,
 	Windows,
 	Vcl.Controls,
 	SETTINGS_CONSTANTS,
@@ -40,7 +40,7 @@ type
 
 		FLogger: ILogger;
 		FProgress: IProgress;
-		FRequest: TTCRequest;
+		FRequest: IRequest;
 		FPasswordManager: TTCPasswordManager;
 
 		function Init(ConnectionName: WideString; out Cloud: TCloudMailRu): Integer; {Create a connection by its name, returns the status code}
@@ -49,7 +49,7 @@ type
 		function GetProxyPassword(): Boolean;
 		function InitCloudCryptPasswords(const ConnectionName: WideString; var CloudSettings: TCloudSettings): Boolean;
 	public
-		constructor Create(PluginSettings: TPluginSettings; Progress: IProgress; Logger: ILogger; Request: TTCRequest; PasswordManager: TTCPasswordManager);
+		constructor Create(PluginSettings: TPluginSettings; Progress: IProgress; Logger: ILogger; Request: IRequest; PasswordManager: TTCPasswordManager);
 		destructor Destroy(); override;
 		function Get(ConnectionName: WideString; var OperationResult: Integer): TCloudMailRu; {Return the cloud connection by its name}
 		procedure Free(ConnectionName: WideString); {Free a connection by its name, if present}
@@ -58,7 +58,7 @@ type
 implementation
 
 {TConnectionManager}
-constructor TConnectionManager.Create(PluginSettings: TPluginSettings; Progress: IProgress; Logger: ILogger; Request: TTCRequest; PasswordManager: TTCPasswordManager);
+constructor TConnectionManager.Create(PluginSettings: TPluginSettings; Progress: IProgress; Logger: ILogger; Request: IRequest; PasswordManager: TTCPasswordManager);
 begin
 	FConnections := TDictionary<WideString, TCloudMailRu>.Create;
 	self.FPluginSettings := PluginSettings;

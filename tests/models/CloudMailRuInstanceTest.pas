@@ -9,6 +9,7 @@ uses
 	CMROperationResult,
 	ILoggerInterface,
 	IProgressInterface,
+	IRequestInterface,
 	PLUGIN_TYPES,
 	SysUtils,
 	DUnitX.TestFramework;
@@ -100,9 +101,9 @@ const
 
 procedure TCloudMailRuInstanceTest.Setup;
 begin
-	{ Create minimal TCloudMailRu instance with TNullLogger and TNullProgress }
+	{ Create minimal TCloudMailRu instance with null implementations }
 	FSettings := Default(TCloudSettings);
-	FCloud := TCloudMailRu.Create(FSettings, nil, TNullLogger.Create, TNullProgress.Create);
+	FCloud := TCloudMailRu.Create(FSettings, nil, TNullLogger.Create, TNullProgress.Create, TNullRequest.Create);
 end;
 
 procedure TCloudMailRuInstanceTest.TearDown;

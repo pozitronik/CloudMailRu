@@ -30,6 +30,7 @@ uses
 	TCPasswordManager,
 	ILoggerInterface,
 	IProgressInterface,
+	IRequestInterface,
 	TCProgress,
 	TCRequest,
 	PathHelper,
@@ -92,7 +93,7 @@ type
 		PasswordManager: TTCPasswordManager;
 		TCLogger: ILogger;
 		TCProgress: IProgress;
-		TCRequest: TTCRequest;
+		TCRequest: IRequest;
 	protected
 		function FindListingItemByPath(CurrentListing: TCMRDirItemList; Path: TRealPath; UpdateListing: Boolean = true): TCMRDirItem;
 		function FindIncomingInviteItemByPath(InviteListing: TCMRIncomingInviteList; Path: TRealPath): TCMRIncomingInvite;
@@ -312,7 +313,7 @@ begin
 	PasswordManager.Free;
 	TCLogger := nil; {ILogger is reference-counted, setting to nil releases it}
 	TCProgress := nil; {IProgress is reference-counted, setting to nil releases it}
-	TCRequest.Free;
+	TCRequest := nil; {IRequest is reference-counted, setting to nil releases it}
 	inherited;
 end;
 

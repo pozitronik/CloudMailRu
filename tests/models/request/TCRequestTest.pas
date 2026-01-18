@@ -1,9 +1,10 @@
-﻿unit TCRequestTest;
+unit TCRequestTest;
 
 interface
 
 uses
 	TCRequest,
+	IRequestInterface,
 	TestHelper,
 	Plugin_TYPES,
 	SysUtils,
@@ -21,10 +22,10 @@ type
 		[TearDown]
 		procedure TearDown;
 		[Test]
-		procedure TestRequest;
+		{Verifies TTCRequest implements IRequest interface}
+		procedure TestImplementsIRequest;
 		[Test]
-		procedure TestCreateDummy;
-
+		procedure TestRequest;
 	end;
 
 var
@@ -48,7 +49,7 @@ begin
 	CustomText := Custom_Text;
 	ReturnedText := Returned_Text;
 	GetMem(Returned_Text, (max_len + 1) * SizeOf(WideChar));
-	StrPLCopy(Returned_Text, ReverseString(ReturnedText), max_len); //to test the returned value
+	StrPLCopy(Returned_Text, ReverseString(ReturnedText), max_len); {to test the returned value}
 	MaxLen := max_len;
 end;
 
@@ -66,38 +67,12 @@ procedure TTCRequestTest.TearDown;
 begin
 end;
 
-procedure TTCRequestTest.TestCreateDummy;
+procedure TTCRequestTest.TestImplementsIRequest;
 var
-	TestTCRequest: TTCRequest;
-	RandomRT: Integer;
-	RandomTitle: WideString;
-	RandomText: WideString;
-	RandomReturnedText: WideString;
-	RandomReturnedTextOrig: WideString;
+	Request: IRequest;
 begin
-	Assert.AreEqual(0, PluginNr);
-	Assert.AreEqual(RT_Other, RequestType);
-	Assert.AreEqual('', CustomTitle);
-	Assert.AreEqual('', CustomText);
-	Assert.AreEqual('', ReturnedText);
-	Assert.AreEqual(0, MaxLen);
-
-	RandomRT := Random(RT_MsgOKCancel);
-	RandomTitle := RandomString(32);
-	RandomText := RandomString(64);
-	RandomReturnedText := 'ABC'; // RandomString(128);
-	RandomReturnedTextOrig := RandomReturnedText;
-
-	TestTCRequest := TTCRequest.Create();
-
-	Assert.IsFalse(TestTCRequest.Request(RandomRT, RandomTitle, RandomText, RandomReturnedText, Length(RandomReturnedText)));
-
-	Assert.AreEqual(0, PluginNr);
-	Assert.AreEqual(RT_Other, RequestType);
-	Assert.AreEqual('', CustomTitle);
-	Assert.AreEqual('', CustomText);
-	Assert.AreEqual('', ReturnedText);
-	Assert.AreEqual(0, MaxLen);
+	Request := TTCRequest.Create(TestRequestFunc, 1);
+	Assert.IsNotNull(Request);
 end;
 
 procedure TTCRequestTest.TestRequest;
@@ -121,7 +96,7 @@ begin
 	RandomRT := Random(RT_MsgOKCancel);
 	RandomTitle := RandomString(32);
 	RandomText := RandomString(64);
-	RandomReturnedText := 'ABC'; // RandomString(128);
+	RandomReturnedText := 'ABC';
 	RandomReturnedTextOrig := RandomReturnedText;
 
 	TestTCRequest := TTCRequest.Create(TestRequestFunc, randomPN);

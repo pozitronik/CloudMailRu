@@ -11,6 +11,7 @@ uses
 	PLUGIN_TYPES,
 	ILoggerInterface,
 	IProgressInterface,
+	IRequestInterface,
 	TestHelper,
 	System.Classes,
 	System.SysUtils,
@@ -106,7 +107,7 @@ end;
 procedure TCloudMailRuHashTest.Setup;
 begin
 	FSettings := Default(TCloudSettings);
-	FCloud := TTestableCloudMailRu.Create(FSettings, nil, TNullLogger.Create, TNullProgress.Create);
+	FCloud := TTestableCloudMailRu.Create(FSettings, nil, TNullLogger.Create, TNullProgress.Create, TNullRequest.Create);
 end;
 
 procedure TCloudMailRuHashTest.TearDown;

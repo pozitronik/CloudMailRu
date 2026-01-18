@@ -34,7 +34,7 @@ uses
 	WindowsHelper,
 	ILoggerInterface,
 	IProgressInterface,
-	TCRequest,
+	IRequestInterface,
 	RealPath,
 	CloudSettings,
 	FileCipher,
@@ -57,7 +57,7 @@ type
 
 		FLogger: ILogger;
 		FProgress: IProgress;
-		FRequest: TTCRequest;
+		FRequest: IRequest;
 
 		FCipher: TFileCipher; {The encryption instance}
 
@@ -126,7 +126,7 @@ type
 		function CloudResultToBoolean(CloudResult: TCMROperationResult; ErrorPrefix: WideString = ''): Boolean; overload;
 		function CloudResultToBoolean(JSON: WideString; ErrorPrefix: WideString = ''): Boolean; overload;
 		{CONSTRUCTOR/DESTRUCTOR}
-		constructor Create(CloudSettings: TCloudSettings; ConnectionManager: THTTPManager; Logger: ILogger; Progress: IProgress; Request: TTCRequest = nil);
+		constructor Create(CloudSettings: TCloudSettings; ConnectionManager: THTTPManager; Logger: ILogger; Progress: IProgress; Request: IRequest);
 		destructor Destroy; override;
 		{CLOUD INTERFACE METHODS}
 		function Login(Method: Integer = CLOUD_AUTH_METHOD_WEB): Boolean;
@@ -330,7 +330,7 @@ begin //Облако умеет скопировать файл, но не см�
 	end;
 end;
 
-constructor TCloudMailRu.Create(CloudSettings: TCloudSettings; ConnectionManager: THTTPManager; Logger: ILogger; Progress: IProgress; Request: TTCRequest);
+constructor TCloudMailRu.Create(CloudSettings: TCloudSettings; ConnectionManager: THTTPManager; Logger: ILogger; Progress: IProgress; Request: IRequest);
 begin
 	try
 		FSettings := CloudSettings;
@@ -341,8 +341,6 @@ begin
 		FProgress := Progress;
 		FLogger := Logger;
 		FRequest := Request;
-		if not Assigned(FRequest) then
-			FRequest := TTCRequest.Create();
 
 		FCookieManager := TIdCookieManager.Create();
 
@@ -1653,7 +1651,7 @@ begin
 	TempCloudSettings := default (TCloudSettings);
 	TempCloudSettings.AccountSettings.PublicAccount := true;
 	TempCloudSettings.AccountSettings.PublicUrl := PublicUrl;
-	TempCloud := TCloudMailRu.Create(TempCloudSettings, nil, TNullLogger.Create, TNullProgress.Create);
+	TempCloud := TCloudMailRu.Create(TempCloudSettings, nil, TNullLogger.Create, TNullProgress.Create, TNullRequest.Create);
 	Result := TempCloud.Login;
 end;
 

@@ -119,8 +119,10 @@
         <DCCReference Include="..\src\models\progress\TCProgress.pas"/>
         <DCCReference Include="models\progress\TCProgressTest.pas"/>
         <DCCReference Include="models\progress\NullProgressTest.pas"/>
-        <DCCReference Include="..\src\models\tc\TCRequest.pas"/>
-        <DCCReference Include="models\TCRequestTest.pas"/>
+        <DCCReference Include="..\src\models\request\IRequestInterface.pas"/>
+        <DCCReference Include="..\src\models\request\TCRequest.pas"/>
+        <DCCReference Include="models\request\TCRequestTest.pas"/>
+        <DCCReference Include="models\request\NullRequestTest.pas"/>
         <DCCReference Include="..\src\helpers\FileHelper.pas"/>
         <DCCReference Include="..\src\helpers\PathHelper.pas"/>
         <DCCReference Include="..\src\helpers\WindowsHelper.pas"/>

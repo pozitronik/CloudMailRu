@@ -1,31 +1,25 @@
-﻿unit TCRequest;
+unit TCRequest;
 
 interface
 
 uses
 	SysUtils,
+	IRequestInterface,
 	PLUGIN_TYPES;
 
 type
-	TTCRequest = class
+	TTCRequest = class(TInterfacedObject, IRequest)
 	private
 		PluginNum: Integer;
 		RequestProc: TRequestProcW;
 	public
-		constructor Create(); overload; //creates a dummy progress
-		constructor Create(RequestProc: TRequestProcW; PluginNum: Integer); overload;
+		constructor Create(RequestProc: TRequestProcW; PluginNum: Integer);
 		function Request(RequestType: Integer; CustomTitle, CustomText: WideString; var ReturnedText: WideString; maxlen: Integer): Boolean;
 	end;
 
 implementation
 
 {TTCRequest}
-
-constructor TTCRequest.Create;
-begin
-	self.RequestProc := nil;
-	self.PluginNum := -1;
-end;
 
 constructor TTCRequest.Create(RequestProc: TRequestProcW; PluginNum: Integer);
 begin

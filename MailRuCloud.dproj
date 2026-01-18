@@ -266,7 +266,8 @@
         <DCCReference Include="src\models\logger\TCLogger.pas"/>
         <DCCReference Include="src\models\tc\TCPasswordManager.pas"/>
         <DCCReference Include="src\models\progress\TCProgress.pas"/>
-        <DCCReference Include="src\models\tc\TCRequest.pas"/>
+        <DCCReference Include="src\models\request\IRequestInterface.pas"/>
+        <DCCReference Include="src\models\request\TCRequest.pas"/>
         <DCCReference Include="src\models\WSList.pas"/>
         <DCCReference Include="src\helpers\WindowsHelper.pas"/>
         <DCCReference Include="src\models\wfx\MailRuCloudWFX.pas"/>
