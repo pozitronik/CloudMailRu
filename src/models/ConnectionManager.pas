@@ -243,7 +243,7 @@ begin
 					mrYes: //store and use updated password
 						begin
 							CloudSettings.AccountSettings.CryptedGUIDFiles := TFileCipher.GetCryptedGUID(CloudSettings.CryptFilesPassword);
-							AccountsManager := TAccountsManager.Create(self.FPluginSettings.IniFilePath);
+							AccountsManager := TAccountsManager.Create(self.FPluginSettings.IniFilePath); // todo: chick if it is a bug, maybe I should use self.FPluginSettings.AccountsIniFilePath instead?
 							try
 								AccountsManager.SetCryptedGUID(ConnectionName, CloudSettings.AccountSettings.CryptedGUIDFiles);
 							finally
