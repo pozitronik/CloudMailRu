@@ -74,6 +74,8 @@ uses
 	TestFileHelper in 'helpers\TestFileHelper.pas',
 	TestPathHelper in 'helpers\TestPathHelper.pas',
 	StringHelperTest in 'helpers\StringHelperTest.pas',
+	TokenRetryHelper in '..\src\helpers\TokenRetryHelper.pas',
+	TokenRetryHelperTest in 'helpers\TokenRetryHelperTest.pas',
 	ParsingHelperTest in 'helpers\ParsingHelperTest.pas',
 	RealPathTest in 'models\dto\RealPathTest.pas',
 	HashInfo in '..\src\models\HashInfo.pas',

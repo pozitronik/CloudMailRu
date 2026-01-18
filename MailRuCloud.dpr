@@ -66,6 +66,7 @@ uses
 	SETTINGS_CONSTANTS in 'src\models\settings\SETTINGS_CONSTANTS.pas',
 	StreamingSettings in 'src\models\settings\StreamingSettings.pas',
 	StringHelper in 'src\helpers\StringHelper.pas',
+	TokenRetryHelper in 'src\helpers\TokenRetryHelper.pas',
 	SysUtils,
 	System.Generics.Collections,
 	SystemHelper in 'src\helpers\SystemHelper.pas',

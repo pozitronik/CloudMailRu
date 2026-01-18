@@ -45,7 +45,8 @@ uses
 	IdCookieManager,
 	DCPbase64,
 	AskPassword,
-	IAuthStrategyInterface;
+	IAuthStrategyInterface,
+	TokenRetryHelper;
 
 type
 	TCloudMailRu = class
@@ -180,8 +181,7 @@ implementation
 function TCloudMailRu.AddFileByIdentity(FileIdentity: TCMRFileIdentity; RemotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; LogErrors: Boolean = true; LogSuccess: Boolean = False): Integer;
 var
 	FileName: WideString;
-	JSON: WideString;
-	OperationResult: TCMROperationResult;
+	CallResult: TAPICallResult;
 begin
 	Result := FS_FILE_WRITEERROR;
 	if not(Assigned(self)) then
@@ -195,16 +195,28 @@ begin
 		FileName := FCipher.CryptFileName(FileName);
 		RemotePath := ChangePathFileName(RemotePath, FileName);
 	end;
-	{Экспериментально выяснено, что параметры api, build, email, x-email, x-page-id в запросе не обязательны}
-	if HTTP.PostForm(API_FILE_ADD + '?' + FUnitedParams, Format('api=2&conflict=%s&home=/%s&hash=%s&size=%d', [ConflictMode, PathToUrl(RemotePath), FileIdentity.Hash, FileIdentity.size]), JSON, 'application/x-www-form-urlencoded', LogErrors, False) then {Do not allow to cancel operation here}
-	begin
-		OperationResult.FromJSON(JSON);
-		Result := CloudResultToFsResult(OperationResult, PREFIX_ERR_FILE_UPLOADING);
-		if (CLOUD_OPERATION_OK = OperationResult.OperationResult) and LogSuccess then
-			FLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, FILE_FOUND_BY_HASH, [RemotePath]);
-		if (NAME_TOKEN = getBodyError(JSON)) and RefreshCSRFToken() then
-			Result := AddFileByIdentity(FileIdentity, RemotePath, ConflictMode, LogErrors, LogSuccess);
-	end;
+
+	CallResult := ExecuteWithTokenRetry(
+		function: TAPICallResult
+		var
+			JSON: WideString;
+			OperationResult: TCMROperationResult;
+			ResultCode: Integer;
+		begin
+			{Экспериментально выяснено, что параметры api, build, email, x-email, x-page-id в запросе не обязательны}
+			if HTTP.PostForm(API_FILE_ADD + '?' + FUnitedParams, Format('api=2&conflict=%s&home=/%s&hash=%s&size=%d', [ConflictMode, PathToUrl(RemotePath), FileIdentity.Hash, FileIdentity.size]), JSON, 'application/x-www-form-urlencoded', LogErrors, False) then {Do not allow to cancel operation here}
+			begin
+				OperationResult.FromJSON(JSON);
+				ResultCode := CloudResultToFsResult(OperationResult, PREFIX_ERR_FILE_UPLOADING);
+				if (CLOUD_OPERATION_OK = OperationResult.OperationResult) and LogSuccess then
+					FLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, FILE_FOUND_BY_HASH, [RemotePath]);
+			end else
+				ResultCode := FS_FILE_WRITEERROR;
+			Result := TAPICallResult.FromInteger(ResultCode, JSON);
+		end,
+		RefreshCSRFToken);
+
+	Result := CallResult.ResultCode;
 end;
 
 function TCloudMailRu.AddFileByIdentity(FileIdentity: TCMRDirItem; RemotePath, ConflictMode: WideString; LogErrors, LogSuccess: Boolean): Integer;
@@ -218,24 +230,35 @@ end;
 
 function TCloudMailRu.CloneWeblink(Path, Link, ConflictMode: WideString): Integer;
 var
-	JSON: WideString;
-	Progress: Boolean;
+	CallResult: TAPICallResult;
 begin
 	Result := FS_FILE_WRITEERROR;
 	if not(Assigned(self)) then
 		Exit; //Проверка на вызов без инициализации
 	if IsPublicAccount then
 		Exit(FS_FILE_NOTSUPPORTED);
-	Progress := true;
-	if HTTP.GetPage(Format('%s?folder=/%s&weblink=%s&conflict=%s&%s', [API_CLONE, PathToUrl(Path), Link, ConflictMode, FUnitedParams]), JSON, Progress) then
-	begin //Парсим ответ
-		Result := CloudResultToFsResult(JSON, PREFIX_ERR_FILE_PUBLISH);
-		if (Result <> FS_FILE_OK) and not(Progress) then
-			Result := FS_FILE_USERABORT; //user cancelled
-	end else begin
-		if (NAME_TOKEN = getBodyError(JSON)) and RefreshCSRFToken() then
-			Result := CloneWeblink(Path, Link, ConflictMode);
-	end;
+
+	CallResult := ExecuteWithTokenRetry(
+		function: TAPICallResult
+		var
+			JSON: WideString;
+			Progress: Boolean;
+			ResultCode: Integer;
+		begin
+			Progress := true;
+			if HTTP.GetPage(Format('%s?folder=/%s&weblink=%s&conflict=%s&%s',
+				[API_CLONE, PathToUrl(Path), Link, ConflictMode, FUnitedParams]), JSON, Progress) then
+			begin
+				ResultCode := CloudResultToFsResult(JSON, PREFIX_ERR_FILE_PUBLISH);
+				if (ResultCode <> FS_FILE_OK) and not(Progress) then
+					ResultCode := FS_FILE_USERABORT; {user cancelled}
+			end else
+				ResultCode := FS_FILE_WRITEERROR;
+			Result := TAPICallResult.FromInteger(ResultCode, JSON);
+		end,
+		RefreshCSRFToken);
+
+	Result := CallResult.ResultCode;
 end;
 
 function TCloudMailRu.CloudResultToBoolean(JSON, ErrorPrefix: WideString): Boolean;
@@ -287,7 +310,7 @@ end;
 
 function TCloudMailRu.CopyFile(OldName, ToPath: WideString): Integer;
 var
-	JSON: WideString;
+	CallResult: TAPICallResult;
 begin
 	Result := FS_FILE_WRITEERROR;
 	if not(Assigned(self)) then
@@ -295,12 +318,23 @@ begin
 	if IsPublicAccount then
 		Exit(FS_FILE_NOTSUPPORTED);
 	HTTP.SetProgressNames(OldName, Format('%s%s', [IncludeTrailingPathDelimiter(ToPath), ExtractFileName(OldName)]));
-	if HTTP.PostForm(API_FILE_COPY + '?' + FUnitedParams, Format('home=/%s&folder=/%s&conflict', [PathToUrl(OldName), PathToUrl(ToPath)]), JSON) then
-	begin //Парсим ответ
-		Result := CloudResultToFsResult(JSON, PREFIX_ERR_FILE_COPY);
-	end;
-	if (NAME_TOKEN = getBodyError(JSON)) and RefreshCSRFToken() then
-		Result := CopyFile(OldName, ToPath);
+
+	CallResult := ExecuteWithTokenRetry(
+		function: TAPICallResult
+		var
+			JSON: WideString;
+			ResultCode: Integer;
+		begin
+			if HTTP.PostForm(API_FILE_COPY + '?' + FUnitedParams,
+				Format('home=/%s&folder=/%s&conflict', [PathToUrl(OldName), PathToUrl(ToPath)]), JSON) then
+				ResultCode := CloudResultToFsResult(JSON, PREFIX_ERR_FILE_COPY)
+			else
+				ResultCode := FS_FILE_WRITEERROR;
+			Result := TAPICallResult.FromInteger(ResultCode, JSON);
+		end,
+		RefreshCSRFToken);
+
+	Result := CallResult.ResultCode;
 end;
 
 function TCloudMailRu.FileCopy(OldName, NewName: WideString): Integer;
@@ -369,7 +403,7 @@ end;
 
 function TCloudMailRu.CreateDir(Path: WideString): Boolean;
 var
-	JSON: WideString;
+	CallResult: TAPICallResult;
 begin
 	Result := False;
 	if not(Assigned(self)) then
@@ -377,14 +411,26 @@ begin
 	if IsPublicAccount then
 		Exit;
 	HTTP.SetProgressNames(CREATE_DIRECTORY, Path);
-	Result := HTTP.PostForm(API_FOLDER_ADD + '?' + FUnitedParams, Format('home=/%s&conflict', [PathToUrl(Path)]), JSON) and CloudResultToBoolean(JSON);
-	if (not Result and (NAME_TOKEN = getBodyError(JSON))) and RefreshCSRFToken() then
-		Result := CreateDir(Path);
+
+	CallResult := ExecuteWithTokenRetry(
+		function: TAPICallResult
+		var
+			JSON: WideString;
+			Success: Boolean;
+		begin
+			Success := HTTP.PostForm(API_FOLDER_ADD + '?' + FUnitedParams,
+				Format('home=/%s&conflict', [PathToUrl(Path)]), JSON)
+				and CloudResultToBoolean(JSON);
+			Result := TAPICallResult.FromBoolean(Success, JSON);
+		end,
+		RefreshCSRFToken);
+
+	Result := CallResult.Success;
 end;
 
 function TCloudMailRu.DeleteFile(Path: WideString): Boolean;
 var
-	JSON: WideString;
+	CallResult: TAPICallResult;
 begin
 	Result := False;
 	if not(Assigned(self)) then
@@ -392,9 +438,21 @@ begin
 	if IsPublicAccount then
 		Exit;
 	HTTP.SetProgressNames(DELETE_FILE, Path);
-	Result := HTTP.PostForm(API_FILE_REMOVE + '?' + FUnitedParams, Format('home=/%s&conflict', [PathToUrl(Path)]), JSON) and CloudResultToBoolean(JSON, PREFIX_ERR_DELETE_FILE);
-	if (not Result and (NAME_TOKEN = getBodyError(JSON))) and RefreshCSRFToken() then
-		Result := DeleteFile(Path);
+
+	CallResult := ExecuteWithTokenRetry(
+		function: TAPICallResult
+		var
+			JSON: WideString;
+			Success: Boolean;
+		begin
+			Success := HTTP.PostForm(API_FILE_REMOVE + '?' + FUnitedParams,
+				Format('home=/%s&conflict', [PathToUrl(Path)]), JSON)
+				and CloudResultToBoolean(JSON, PREFIX_ERR_DELETE_FILE);
+			Result := TAPICallResult.FromBoolean(Success, JSON);
+		end,
+		RefreshCSRFToken);
+
+	Result := CallResult.Success;
 end;
 
 destructor TCloudMailRu.Destroy;
@@ -478,7 +536,8 @@ end;
 
 function TCloudMailRu.GetSharedLinksListing(var DirListing: TCMRDirItemList; ShowProgress: Boolean = False): Boolean;
 var
-	JSON: WideString;
+	CallResult: TAPICallResult;
+	LocalListing: TCMRDirItemList;
 begin
 	Result := False;
 	if not(Assigned(self)) then
@@ -489,20 +548,29 @@ begin
 	if (ShowProgress) then
 		HTTP.SetProgressNames(SHARED_LINKS_LISTING, UNKNOWN_ITEM);
 
-	Result := HTTP.GetPage(Format('%s?%s', [API_FOLDER_SHARED_LINKS, FUnitedParams]), JSON, ShowProgress);
-	if Result then
-		Result := CloudResultToBoolean(JSON, PREFIX_ERR_SHARED_LINKS_LISTING) and GetDirListing(JSON, DirListing)
-	else
-	begin
-		if (NAME_TOKEN = getBodyError(JSON)) and RefreshCSRFToken() then
-			Result := GetSharedLinksListing(DirListing, ShowProgress);
-	end;
+	SetLength(LocalListing, 0);
+	CallResult := ExecuteWithTokenRetry(
+		function: TAPICallResult
+		var
+			JSON: WideString;
+			Success: Boolean;
+		begin
+			Success := HTTP.GetPage(Format('%s?%s', [API_FOLDER_SHARED_LINKS, FUnitedParams]), JSON, ShowProgress);
+			if Success then
+				Success := CloudResultToBoolean(JSON, PREFIX_ERR_SHARED_LINKS_LISTING) and GetDirListing(JSON, LocalListing);
+			Result := TAPICallResult.FromBoolean(Success, JSON);
+		end,
+		RefreshCSRFToken);
 
+	Result := CallResult.Success;
+	if Result then
+		DirListing := LocalListing;
 end;
 
 function TCloudMailRu.GetIncomingLinksListing(var IncomingListing: TCMRIncomingInviteList; ShowProgress: Boolean): Boolean;
 var
-	JSON: WideString;
+	CallResult: TAPICallResult;
+	LocalListing: TCMRIncomingInviteList;
 begin
 	Result := False;
 	if not(Assigned(self)) then
@@ -512,15 +580,24 @@ begin
 		Exit;
 	if (ShowProgress) then
 		HTTP.SetProgressNames(INCOMING_LINKS_LISTING, UNKNOWN_ITEM);
-	Result := HTTP.GetPage(Format('%s?%s', [API_FOLDER_SHARED_INCOMING, FUnitedParams]), JSON, ShowProgress);
 
+	SetLength(LocalListing, 0);
+	CallResult := ExecuteWithTokenRetry(
+		function: TAPICallResult
+		var
+			JSON: WideString;
+			Success: Boolean;
+		begin
+			Success := HTTP.GetPage(Format('%s?%s', [API_FOLDER_SHARED_INCOMING, FUnitedParams]), JSON, ShowProgress);
+			if Success then
+				Success := CloudResultToBoolean(JSON, PREFIX_ERR_INCOMING_REQUESTS_LISTING) and LocalListing.FromJSON(JSON);
+			Result := TAPICallResult.FromBoolean(Success, JSON);
+		end,
+		RefreshCSRFToken);
+
+	Result := CallResult.Success;
 	if Result then
-		Result := CloudResultToBoolean(JSON, PREFIX_ERR_INCOMING_REQUESTS_LISTING) and IncomingListing.FromJSON(JSON)
-	else
-	begin
-		if (NAME_TOKEN = getBodyError(JSON)) and RefreshCSRFToken() then
-			Result := GetIncomingLinksListing(IncomingListing, ShowProgress);
-	end;
+		IncomingListing := LocalListing;
 end;
 
 function TCloudMailRu.GetIncomingLinksListing(var IncomingListing: TCMRDirItemList; var InvitesListing: TCMRIncomingInviteList; ShowProgress: Boolean = False): Boolean;
@@ -549,7 +626,8 @@ end;
 
 function TCloudMailRu.GetTrashbinListing(var DirListing: TCMRDirItemList; ShowProgress: Boolean): Boolean;
 var
-	JSON: WideString;
+	CallResult: TAPICallResult;
+	LocalListing: TCMRDirItemList;
 begin
 	Result := False;
 	if not(Assigned(self)) then
@@ -559,50 +637,86 @@ begin
 		Exit;
 	if (ShowProgress) then
 		HTTP.SetProgressNames(TRASH_LISTING, UNKNOWN_ITEM);
-	Result := HTTP.GetPage(Format('%s?%s', [API_TRASHBIN, FUnitedParams]), JSON, ShowProgress);
 
+	SetLength(LocalListing, 0);
+	CallResult := ExecuteWithTokenRetry(
+		function: TAPICallResult
+		var
+			JSON: WideString;
+			Success: Boolean;
+		begin
+			Success := HTTP.GetPage(Format('%s?%s', [API_TRASHBIN, FUnitedParams]), JSON, ShowProgress);
+			if Success then
+				Success := CloudResultToBoolean(JSON, PREFIX_ERR_TRASH_LISTING) and GetDirListing(JSON, LocalListing);
+			Result := TAPICallResult.FromBoolean(Success, JSON);
+		end,
+		RefreshCSRFToken);
+
+	Result := CallResult.Success;
 	if Result then
-		Result := CloudResultToBoolean(JSON, PREFIX_ERR_TRASH_LISTING) and GetDirListing(JSON, DirListing)
-	else
-	begin
-		if (NAME_TOKEN = getBodyError(JSON)) and RefreshCSRFToken() then
-			Result := GetTrashbinListing(DirListing, ShowProgress);
-	end;
-
+		DirListing := LocalListing;
 end;
 
 function TCloudMailRu.GetDirListing(Path: WideString; var DirListing: TCMRDirItemList; ShowProgress: Boolean = False): Boolean;
 var
-	JSON: WideString;
-	OperationResult: TCMROperationResult;
+	CallResult: TAPICallResult;
+	LocalListing: TCMRDirItemList;
 begin
 	Result := False;
 	if not(Assigned(self)) then
 		Exit; //Проверка на вызов без инициализации
 	SetLength(DirListing, 0);
+
+	{Public accounts don't need token refresh}
 	if IsPublicAccount then
-		Result := HTTP.GetPage(Format('%s&weblink=%s%s&%s', [API_FOLDER, IncludeSlash(GetPublicLink), PathToUrl(Path, False), FUnitedParams]), JSON, ShowProgress)
-	else
 	begin
-		HTTP.SetProgressNames(DIR_LISTING, Path);
-		Result := HTTP.GetPage(Format('%s&home=%s&%s', [API_FOLDER, PathToUrl(Path), FUnitedParams]), JSON, ShowProgress);
-	end;
-	if Result then
-	begin
-		OperationResult.FromJSON(JSON);
-		Result := CloudResultToBoolean(OperationResult, PREFIX_ERR_DIR_LISTING);
+		var JSON: WideString;
+		var OperationResult: TCMROperationResult;
+		Result := HTTP.GetPage(Format('%s&weblink=%s%s&%s', [API_FOLDER, IncludeSlash(GetPublicLink), PathToUrl(Path, False), FUnitedParams]), JSON, ShowProgress);
 		if Result then
 		begin
-			Result := DirListing.FromJSON(JSON);
-			if Result and FDoCryptFilenames then
-				FCipher.DecryptDirListing(DirListing);
-		end else if OperationResult.OperationResult = CLOUD_ERROR_NOT_EXISTS then
-			FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, '%s%s', [PREFIX_ERR_PATH_NOT_EXISTS, Path]);
-	end else begin
-		if (NAME_TOKEN = getBodyError(JSON)) and RefreshCSRFToken() then
-			Result := GetDirListing(Path, DirListing, ShowProgress);
+			OperationResult.FromJSON(JSON);
+			Result := CloudResultToBoolean(OperationResult, PREFIX_ERR_DIR_LISTING);
+			if Result then
+			begin
+				Result := DirListing.FromJSON(JSON);
+				if Result and FDoCryptFilenames then
+					FCipher.DecryptDirListing(DirListing);
+			end else if OperationResult.OperationResult = CLOUD_ERROR_NOT_EXISTS then
+				FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, '%s%s', [PREFIX_ERR_PATH_NOT_EXISTS, Path]);
+		end;
+		Exit;
 	end;
 
+	HTTP.SetProgressNames(DIR_LISTING, Path);
+	SetLength(LocalListing, 0);
+	CallResult := ExecuteWithTokenRetry(
+		function: TAPICallResult
+		var
+			JSON: WideString;
+			OperationResult: TCMROperationResult;
+			Success: Boolean;
+		begin
+			Success := HTTP.GetPage(Format('%s&home=%s&%s', [API_FOLDER, PathToUrl(Path), FUnitedParams]), JSON, ShowProgress);
+			if Success then
+			begin
+				OperationResult.FromJSON(JSON);
+				Success := CloudResultToBoolean(OperationResult, PREFIX_ERR_DIR_LISTING);
+				if Success then
+				begin
+					Success := LocalListing.FromJSON(JSON);
+					if Success and FDoCryptFilenames then
+						FCipher.DecryptDirListing(LocalListing);
+				end else if OperationResult.OperationResult = CLOUD_ERROR_NOT_EXISTS then
+					FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, '%s%s', [PREFIX_ERR_PATH_NOT_EXISTS, Path]);
+			end;
+			Result := TAPICallResult.FromBoolean(Success, JSON);
+		end,
+		RefreshCSRFToken);
+
+	Result := CallResult.Success;
+	if Result then
+		DirListing := LocalListing;
 end;
 
 function TCloudMailRu.GetFile(RemotePath, LocalPath: WideString; var ResultHash: WideString; LogErrors: Boolean): Integer;
@@ -874,21 +988,32 @@ end;
 
 function TCloudMailRu.GetUserSpace(var SpaceInfo: TCMRSpace): Boolean;
 var
-	JSON: WideString;
-	Progress: Boolean;
+	CallResult: TAPICallResult;
+	LocalSpace: TCMRSpace;
 begin
 	Result := False;
 	if not(Assigned(self)) then
 		Exit; //Проверка на вызов без инициализации
-	Progress := False;
-	Result := HTTP.GetPage(Format('%s?%s', [API_USER_SPACE, FUnitedParams]), JSON, Progress);
+
+	LocalSpace := default(TCMRSpace);
+	CallResult := ExecuteWithTokenRetry(
+		function: TAPICallResult
+		var
+			JSON: WideString;
+			Progress: Boolean;
+			Success: Boolean;
+		begin
+			Progress := False;
+			Success := HTTP.GetPage(Format('%s?%s', [API_USER_SPACE, FUnitedParams]), JSON, Progress);
+			if Success then
+				Success := CloudResultToBoolean(JSON, PREFIX_ERR_GET_USER_SPACE) and LocalSpace.FromJSON(JSON);
+			Result := TAPICallResult.FromBoolean(Success, JSON);
+		end,
+		RefreshCSRFToken);
+
+	Result := CallResult.Success;
 	if Result then
-	begin
-		Result := CloudResultToBoolean(JSON, PREFIX_ERR_GET_USER_SPACE) and SpaceInfo.FromJSON(JSON);
-	end else begin
-		if (NAME_TOKEN = getBodyError(JSON)) and RefreshCSRFToken() then
-			Result := GetUserSpace(SpaceInfo)
-	end;
+		SpaceInfo := LocalSpace;
 end;
 
 function TCloudMailRu.Login(Method: Integer): Boolean;
@@ -961,17 +1086,30 @@ end;
 
 function TCloudMailRu.MoveFile(OldName, ToPath: WideString): Integer;
 var
-	JSON: WideString;
+	CallResult: TAPICallResult;
 begin
 	Result := FS_FILE_WRITEERROR;
 	if not(Assigned(self)) then
 		Exit; //Проверка на вызов без инициализации
 	if IsPublicAccount then
 		Exit(FS_FILE_NOTSUPPORTED);
-	if HTTP.PostForm(API_FILE_MOVE + '?' + FUnitedParams, Format('home=%s&folder=%s&conflict', [PathToUrl(OldName), PathToUrl(ToPath)]), JSON) then
-		Result := CloudResultToFsResult(JSON, PREFIX_ERR_FILE_MOVE);
-	if (NAME_TOKEN = getBodyError(JSON)) and RefreshCSRFToken() then
-		Result := MoveFile(OldName, ToPath);
+
+	CallResult := ExecuteWithTokenRetry(
+		function: TAPICallResult
+		var
+			JSON: WideString;
+			ResultCode: Integer;
+		begin
+			if HTTP.PostForm(API_FILE_MOVE + '?' + FUnitedParams,
+				Format('home=%s&folder=%s&conflict', [PathToUrl(OldName), PathToUrl(ToPath)]), JSON) then
+				ResultCode := CloudResultToFsResult(JSON, PREFIX_ERR_FILE_MOVE)
+			else
+				ResultCode := FS_FILE_WRITEERROR;
+			Result := TAPICallResult.FromInteger(ResultCode, JSON);
+		end,
+		RefreshCSRFToken);
+
+	Result := CallResult.ResultCode;
 end;
 
 function TCloudMailRu.FileMove(OldName, NewName: WideString): Integer;
@@ -998,89 +1136,146 @@ end;
 
 function TCloudMailRu.PublishFile(Path: WideString; var PublicLink: WideString; Publish: Boolean): Boolean;
 var
-	JSON: WideString;
+	CallResult: TAPICallResult;
+	ExtractedLink: WideString;
+	CurrentLink: WideString;
 begin
 	Result := False;
 	if not(Assigned(self)) then
 		Exit; //Проверка на вызов без инициализации
 	if IsPublicAccount then
 		Exit;
-	if Publish then
-	begin
-		Result := HTTP.PostForm(API_FILE_PUBLISH + '?' + FUnitedParams, Format('home=/%s&conflict', [PathToUrl(Path)]), JSON, 'application/x-www-form-urlencoded', true, False);
-	end else begin
-		Result := HTTP.PostForm(API_FILE_UNPUBLISH + '?' + FUnitedParams, Format('weblink=%s&conflict', [PublicLink]), JSON, 'application/x-www-form-urlencoded', true, False);
-	end;
 
-	if Result then
-		Result := CloudResultToBoolean(JSON, PREFIX_ERR_FILE_PUBLISH);
+	ExtractedLink := '';
+	CurrentLink := PublicLink; {Capture var parameter value for anonymous method}
+	CallResult := ExecuteWithTokenRetry(
+		function: TAPICallResult
+		var
+			JSON: WideString;
+			Success: Boolean;
+		begin
+			if Publish then
+				Success := HTTP.PostForm(API_FILE_PUBLISH + '?' + FUnitedParams,
+					Format('home=/%s&conflict', [PathToUrl(Path)]), JSON, 'application/x-www-form-urlencoded', true, False)
+			else
+				Success := HTTP.PostForm(API_FILE_UNPUBLISH + '?' + FUnitedParams,
+					Format('weblink=%s&conflict', [CurrentLink]), JSON, 'application/x-www-form-urlencoded', true, False);
 
+			if Success then
+				Success := CloudResultToBoolean(JSON, PREFIX_ERR_FILE_PUBLISH);
+
+			if Success and Publish then
+			begin
+				Success := JSONHelper.GetPublicLink(JSON, ExtractedLink);
+			end;
+
+			Result := TAPICallResult.FromBoolean(Success, JSON);
+		end,
+		RefreshCSRFToken);
+
+	Result := CallResult.Success;
 	if Result and Publish then
-		Result := JSONHelper.GetPublicLink(JSON, PublicLink);
-	if (not Result and (NAME_TOKEN = getBodyError(JSON))) and RefreshCSRFToken() then
-		Result := PublishFile(Path, PublicLink, Publish);
+		PublicLink := ExtractedLink;
 end;
 
 function TCloudMailRu.GetShareInfo(Path: WideString; var InviteListing: TCMRInviteList): Boolean;
 var
-	JSON: WideString;
-	Progress: Boolean;
+	CallResult: TAPICallResult;
+	LocalListing: TCMRInviteList;
 begin
 	Result := False;
 	if not(Assigned(self)) then
 		Exit; //Проверка на вызов без инициализации
-	Progress := False;
-	if HTTP.GetPage(Format('%s?home=%s&%s', [API_FOLDER_SHARED_INFO, PathToUrl(Path), FUnitedParams]), JSON, Progress) then
-	begin
-		Result := InviteListing.FromJSON(JSON);
-	end else begin
-		if (NAME_TOKEN = getBodyError(JSON)) and RefreshCSRFToken() then
-			Result := GetShareInfo(Path, InviteListing);
-	end;
+
+	SetLength(LocalListing, 0);
+	CallResult := ExecuteWithTokenRetry(
+		function: TAPICallResult
+		var
+			JSON: WideString;
+			Progress: Boolean;
+			Success: Boolean;
+		begin
+			Progress := False;
+			Success := HTTP.GetPage(Format('%s?home=%s&%s', [API_FOLDER_SHARED_INFO, PathToUrl(Path), FUnitedParams]), JSON, Progress);
+			if Success then
+				Success := LocalListing.FromJSON(JSON);
+			Result := TAPICallResult.FromBoolean(Success, JSON);
+		end,
+		RefreshCSRFToken);
+
+	Result := CallResult.Success;
+	if Result then
+		InviteListing := LocalListing;
 end;
 
 function TCloudMailRu.ShareFolder(Path, Email: WideString; Access: Integer): Boolean;
 var
-	JSON: WideString;
+	CallResult: TAPICallResult;
 	access_string: WideString;
 begin
 	Result := False;
 	if not(Assigned(self)) then
 		Exit; //Проверка на вызов без инициализации
+
 	if Access in [CLOUD_SHARE_RW, CLOUD_SHARE_RO] then
 	begin
 		if Access = CLOUD_SHARE_RW then
 			access_string := CLOUD_SHARE_ACCESS_READ_WRITE
 		else
 			access_string := CLOUD_SHARE_ACCESS_READ_ONLY;
-
-		Result := HTTP.PostForm(API_FOLDER_SHARE + '?' + FUnitedParams, Format('home=/%s&invite={"email":"%s","access":"%s"}', [PathToUrl(Path), Email, access_string]), JSON)
-	end else begin
-		Result := HTTP.PostForm(API_FOLDER_UNSHARE + '?' + FUnitedParams, Format('home=/%s&invite={"email":"%s"}', [PathToUrl(Path), Email]), JSON);
 	end;
-	if Result then
-		Result := CloudResultToBoolean(JSON, PREFIX_ERR_INVITE_MEMBER);
-	if (not Result and (NAME_TOKEN = getBodyError(JSON))) and RefreshCSRFToken() then
-		Result := ShareFolder(Path, Email, Access);
+
+	CallResult := ExecuteWithTokenRetry(
+		function: TAPICallResult
+		var
+			JSON: WideString;
+			Success: Boolean;
+		begin
+			if Access in [CLOUD_SHARE_RW, CLOUD_SHARE_RO] then
+				Success := HTTP.PostForm(API_FOLDER_SHARE + '?' + FUnitedParams,
+					Format('home=/%s&invite={"email":"%s","access":"%s"}', [PathToUrl(Path), Email, access_string]), JSON)
+			else
+				Success := HTTP.PostForm(API_FOLDER_UNSHARE + '?' + FUnitedParams,
+					Format('home=/%s&invite={"email":"%s"}', [PathToUrl(Path), Email]), JSON);
+
+			if Success then
+				Success := CloudResultToBoolean(JSON, PREFIX_ERR_INVITE_MEMBER);
+			Result := TAPICallResult.FromBoolean(Success, JSON);
+		end,
+		RefreshCSRFToken);
+
+	Result := CallResult.Success;
 end;
 
 function TCloudMailRu.TrashbinRestore(Path: WideString; RestoreRevision: Integer; ConflictMode: WideString): Boolean;
 var
-	JSON: WideString;
+	CallResult: TAPICallResult;
 begin
 	Result := False;
 	if not(Assigned(self)) then
 		Exit; //Проверка на вызов без инициализации
 	if IsPublicAccount then
 		Exit;
-	Result := HTTP.PostForm(API_TRASHBIN_RESTORE + '?' + FUnitedParams, Format('path=%s&restore_revision=%d&conflict=%s', [PathToUrl(Path), RestoreRevision, ConflictMode]), JSON) and CloudResultToBoolean(JSON, PREFIX_ERR_FILE_RESTORE);
-	if (not Result and (NAME_TOKEN = getBodyError(JSON))) and RefreshCSRFToken() then
-		Result := TrashbinRestore(Path, RestoreRevision, ConflictMode);
+
+	CallResult := ExecuteWithTokenRetry(
+		function: TAPICallResult
+		var
+			JSON: WideString;
+			Success: Boolean;
+		begin
+			Success := HTTP.PostForm(API_TRASHBIN_RESTORE + '?' + FUnitedParams,
+				Format('path=%s&restore_revision=%d&conflict=%s', [PathToUrl(Path), RestoreRevision, ConflictMode]), JSON)
+				and CloudResultToBoolean(JSON, PREFIX_ERR_FILE_RESTORE);
+			Result := TAPICallResult.FromBoolean(Success, JSON);
+		end,
+		RefreshCSRFToken);
+
+	Result := CallResult.Success;
 end;
 
 function TCloudMailRu.TrashbinEmpty(): Boolean;
 var
-	JSON: WideString;
+	CallResult: TAPICallResult;
 begin
 	Result := False;
 	if not(Assigned(self)) then
@@ -1088,28 +1283,50 @@ begin
 	if IsPublicAccount then
 		Exit;
 
-	Result := HTTP.PostForm(API_TRASHBIN_EMPTY + '?' + FUnitedParams, '', JSON) and CloudResultToBoolean(JSON, PREFIX_ERR_TRASH_CLEAN);
-	if (not Result and (NAME_TOKEN = getBodyError(JSON))) and RefreshCSRFToken() then
-		Result := TrashbinEmpty();
+	CallResult := ExecuteWithTokenRetry(
+		function: TAPICallResult
+		var
+			JSON: WideString;
+			Success: Boolean;
+		begin
+			Success := HTTP.PostForm(API_TRASHBIN_EMPTY + '?' + FUnitedParams, '', JSON)
+				and CloudResultToBoolean(JSON, PREFIX_ERR_TRASH_CLEAN);
+			Result := TAPICallResult.FromBoolean(Success, JSON);
+		end,
+		RefreshCSRFToken);
+
+	Result := CallResult.Success;
 end;
 
 function TCloudMailRu.MountFolder(Home, InviteToken, ConflictMode: WideString): Boolean;
 var
-	JSON: WideString;
+	CallResult: TAPICallResult;
 begin
 	Result := False;
 	if not(Assigned(self)) then
 		Exit; //Проверка на вызов без инициализации
 	if IsPublicAccount then
 		Exit;
-	Result := HTTP.PostForm(API_FOLDER_MOUNT + '?' + FUnitedParams, Format('home=%s&invite_token=%s&conflict=%s', [UrlEncode(Home), InviteToken, ConflictMode]), JSON) and CloudResultToBoolean(JSON, PREFIX_ERR_FOLDER_MOUNT);
-	if (not Result and (NAME_TOKEN = getBodyError(JSON))) and RefreshCSRFToken() then
-		Result := MountFolder(Home, InviteToken, ConflictMode);
+
+	CallResult := ExecuteWithTokenRetry(
+		function: TAPICallResult
+		var
+			JSON: WideString;
+			Success: Boolean;
+		begin
+			Success := HTTP.PostForm(API_FOLDER_MOUNT + '?' + FUnitedParams,
+				Format('home=%s&invite_token=%s&conflict=%s', [UrlEncode(Home), InviteToken, ConflictMode]), JSON)
+				and CloudResultToBoolean(JSON, PREFIX_ERR_FOLDER_MOUNT);
+			Result := TAPICallResult.FromBoolean(Success, JSON);
+		end,
+		RefreshCSRFToken);
+
+	Result := CallResult.Success;
 end;
 
 function TCloudMailRu.UnmountFolder(Home: WideString; Clone_copy: Boolean): Boolean;
 var
-	JSON: WideString;
+	CallResult: TAPICallResult;
 	CopyStr: WideString;
 begin
 	Result := False;
@@ -1121,23 +1338,47 @@ begin
 		CopyStr := 'true'
 	else
 		CopyStr := 'false';
-	Result := HTTP.PostForm(API_FOLDER_UNMOUNT + '?' + FUnitedParams, Format('home=%s&clone_copy=%s', [UrlEncode(Home), CopyStr]), JSON) and CloudResultToBoolean(JSON, PREFIX_ERR_FOLDER_UNMOUNT);
-	if (not Result and (NAME_TOKEN = getBodyError(JSON))) and RefreshCSRFToken() then
-		Result := UnmountFolder(Home, Clone_copy);
+
+	CallResult := ExecuteWithTokenRetry(
+		function: TAPICallResult
+		var
+			JSON: WideString;
+			Success: Boolean;
+		begin
+			Success := HTTP.PostForm(API_FOLDER_UNMOUNT + '?' + FUnitedParams,
+				Format('home=%s&clone_copy=%s', [UrlEncode(Home), CopyStr]), JSON)
+				and CloudResultToBoolean(JSON, PREFIX_ERR_FOLDER_UNMOUNT);
+			Result := TAPICallResult.FromBoolean(Success, JSON);
+		end,
+		RefreshCSRFToken);
+
+	Result := CallResult.Success;
 end;
 
 function TCloudMailRu.RejectInvite(InviteToken: WideString): Boolean;
 var
-	JSON: WideString;
+	CallResult: TAPICallResult;
 begin
 	Result := False;
 	if not(Assigned(self)) then
 		Exit; //Проверка на вызов без инициализации
 	if IsPublicAccount then
 		Exit;
-	Result := HTTP.PostForm(API_INVITE_REJECT + '?' + FUnitedParams, Format('invite_token=%s', [InviteToken]), JSON) and CloudResultToBoolean(JSON, PREFIX_ERR_INVITE_REJECT);
-	if (not Result and (NAME_TOKEN = getBodyError(JSON))) and RefreshCSRFToken() then
-		Result := RejectInvite(InviteToken);
+
+	CallResult := ExecuteWithTokenRetry(
+		function: TAPICallResult
+		var
+			JSON: WideString;
+			Success: Boolean;
+		begin
+			Success := HTTP.PostForm(API_INVITE_REJECT + '?' + FUnitedParams,
+				Format('invite_token=%s', [InviteToken]), JSON)
+				and CloudResultToBoolean(JSON, PREFIX_ERR_INVITE_REJECT);
+			Result := TAPICallResult.FromBoolean(Success, JSON);
+		end,
+		RefreshCSRFToken);
+
+	Result := CallResult.Success;
 end;
 
 function TCloudMailRu.PutFileStream(FileName, RemotePath: WideString; FileStream: TStream; ConflictMode: WideString): Integer;
@@ -1391,8 +1632,8 @@ end;
 
 function TCloudMailRu.PutFileToCloud(FileName: WideString; FileStream: TStream; var FileIdentity: TCMRFileIdentity): Integer;
 var
-	PostAnswer: WideString;
-	UploadUrl: WideString;
+	CallResult: TAPICallResult;
+	LocalIdentity: TCMRFileIdentity;
 	DispatcherResponse: WideString;
 	Progress: Boolean;
 begin
@@ -1422,26 +1663,39 @@ begin
 		end
 	end;
 
-	{OAuth requires only client_id and token parameters for upload authentication}
-	UploadUrl := Format('%s?client_id=%s&token=%s', [FUploadShard, OAUTH_CLIENT_ID, FOAuthToken.access_token]);
-	Result := HTTP.PutFile(UploadUrl, FileName, FileStream, PostAnswer);
-	if (CLOUD_ERROR_TOKEN_OUTDATED = Result) and RefreshCSRFToken() then
-		Result := PutFileToCloud(FileName, FileStream, FileIdentity);
-	if (Result = CLOUD_OPERATION_OK) then
-	begin
-		if length(PostAnswer) <> SHA1_HEX_LENGTH then
+	LocalIdentity.Hash := EmptyWideStr;
+	LocalIdentity.size := -1;
+	CallResult := ExecuteWithTokenRetry(
+		function: TAPICallResult
+		var
+			PostAnswer: WideString;
+			UploadUrl: WideString;
+			ResultCode: Integer;
 		begin
-			Result := CLOUD_OPERATION_FAILED;
-		end else begin
-			FileIdentity.Hash := PostAnswer;
-			FileIdentity.size := FileStream.size;
-		end;
-	end;
+			{OAuth requires only client_id and token parameters for upload authentication}
+			UploadUrl := Format('%s?client_id=%s&token=%s', [FUploadShard, OAUTH_CLIENT_ID, FOAuthToken.access_token]);
+			ResultCode := HTTP.PutFile(UploadUrl, FileName, FileStream, PostAnswer);
+			if (ResultCode = CLOUD_OPERATION_OK) then
+			begin
+				if length(PostAnswer) <> SHA1_HEX_LENGTH then
+					ResultCode := CLOUD_OPERATION_FAILED
+				else begin
+					LocalIdentity.Hash := PostAnswer;
+					LocalIdentity.size := FileStream.size;
+				end;
+			end;
+			Result := TAPICallResult.FromInteger(ResultCode);
+		end,
+		RefreshCSRFToken);
+
+	Result := CallResult.ResultCode;
+	if Result = CLOUD_OPERATION_OK then
+		FileIdentity := LocalIdentity;
 end;
 
 function TCloudMailRu.RemoveDir(Path: WideString): Boolean;
 var
-	JSON: WideString;
+	CallResult: TAPICallResult;
 begin
 	Result := False;
 	if not(Assigned(self)) then
@@ -1449,47 +1703,91 @@ begin
 	if IsPublicAccount then
 		Exit;
 	HTTP.SetProgressNames(DELETE_DIR, Path);
-	Result := HTTP.PostForm(API_FILE_REMOVE + '?' + FUnitedParams, Format('home=/%s&conflict', [IncludeSlash(PathToUrl(Path))]), JSON) and CloudResultToBoolean(JSON, PREFIX_ERR_DELETE_DIR); //API всегда отвечает true, даже если путь не существует
-	if (not Result and (NAME_TOKEN = getBodyError(JSON))) and RefreshCSRFToken() then
-		Result := RemoveDir(Path);
+
+	CallResult := ExecuteWithTokenRetry(
+		function: TAPICallResult
+		var
+			JSON: WideString;
+			Success: Boolean;
+		begin
+			{API always returns true even if path doesn't exist}
+			Success := HTTP.PostForm(API_FILE_REMOVE + '?' + FUnitedParams,
+				Format('home=/%s&conflict', [IncludeSlash(PathToUrl(Path))]), JSON)
+				and CloudResultToBoolean(JSON, PREFIX_ERR_DELETE_DIR);
+			Result := TAPICallResult.FromBoolean(Success, JSON);
+		end,
+		RefreshCSRFToken);
+
+	Result := CallResult.Success;
 end;
 
 function TCloudMailRu.RenameFile(OldName, NewName: WideString): Integer;
 var
-	JSON: WideString;
+	CallResult: TAPICallResult;
 begin
 	Result := FS_FILE_WRITEERROR;
 	if not(Assigned(self)) then
 		Exit; //Проверка на вызов без инициализации
 	if IsPublicAccount then
 		Exit;
-	if HTTP.PostForm(API_FILE_RENAME + '?' + FUnitedParams, Format('home=%s&name=%s', [PathToUrl(OldName), PathToUrl(NewName)]), JSON) then
-		Result := CloudResultToFsResult(JSON, PREFIX_ERR_FILE_RENAME);
-	if (NAME_TOKEN = getBodyError(JSON)) and RefreshCSRFToken() then
-		Result := RenameFile(OldName, NewName);
+
+	CallResult := ExecuteWithTokenRetry(
+		function: TAPICallResult
+		var
+			JSON: WideString;
+			ResultCode: Integer;
+		begin
+			if HTTP.PostForm(API_FILE_RENAME + '?' + FUnitedParams,
+				Format('home=%s&name=%s', [PathToUrl(OldName), PathToUrl(NewName)]), JSON) then
+				ResultCode := CloudResultToFsResult(JSON, PREFIX_ERR_FILE_RENAME)
+			else
+				ResultCode := FS_FILE_WRITEERROR;
+			Result := TAPICallResult.FromInteger(ResultCode, JSON);
+		end,
+		RefreshCSRFToken);
+
+	Result := CallResult.ResultCode;
 end;
 
 function TCloudMailRu.StatusFile(Path: WideString; var FileInfo: TCMRDirItem): Boolean;
 var
-	JSON: WideString;
-	Progress: Boolean;
+	CallResult: TAPICallResult;
+	LocalInfo: TCMRDirItem;
 begin
 	Result := False;
 	if not(Assigned(self)) then
 		Exit; //Проверка на вызов без инициализации
-	Progress := False;
+
+	{Public accounts don't need token refresh}
 	if IsPublicAccount then
-		Result := HTTP.GetPage(Format('%s?weblink=%s%s&%s', [API_FILE, IncludeSlash(GetPublicLink), PathToUrl(Path), FUnitedParams]), JSON, Progress)
-	else
-		Result := HTTP.GetPage(Format('%s?home=%s&%s', [API_FILE, PathToUrl(Path), FUnitedParams]), JSON, Progress);
-	if Result then
 	begin
-		Result := CloudResultToBoolean(JSON, PREFIX_ERR_FILE_STATUS) and FileInfo.FromJSON(JSON);
-	end else begin
-		if (NAME_TOKEN = getBodyError(JSON)) and RefreshCSRFToken() then
-			Result := StatusFile(Path, FileInfo);
+		var JSON: WideString;
+		var Progress: Boolean := False;
+		Result := HTTP.GetPage(Format('%s?weblink=%s%s&%s', [API_FILE, IncludeSlash(GetPublicLink), PathToUrl(Path), FUnitedParams]), JSON, Progress);
+		if Result then
+			Result := CloudResultToBoolean(JSON, PREFIX_ERR_FILE_STATUS) and FileInfo.FromJSON(JSON);
+		Exit;
 	end;
 
+	LocalInfo := default(TCMRDirItem);
+	CallResult := ExecuteWithTokenRetry(
+		function: TAPICallResult
+		var
+			JSON: WideString;
+			Progress: Boolean;
+			Success: Boolean;
+		begin
+			Progress := False;
+			Success := HTTP.GetPage(Format('%s?home=%s&%s', [API_FILE, PathToUrl(Path), FUnitedParams]), JSON, Progress);
+			if Success then
+				Success := CloudResultToBoolean(JSON, PREFIX_ERR_FILE_STATUS) and LocalInfo.FromJSON(JSON);
+			Result := TAPICallResult.FromBoolean(Success, JSON);
+		end,
+		RefreshCSRFToken);
+
+	Result := CallResult.Success;
+	if Result then
+		FileInfo := LocalInfo;
 end;
 
 class function TCloudMailRu.CloudAccessToString(Access: WideString; Invert: Boolean): WideString;
