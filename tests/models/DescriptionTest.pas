@@ -4,6 +4,8 @@ interface
 
 uses
 	Description,
+	IFileSystemInterface,
+	WindowsFileSystem,
 	System.Classes,
 	Windows,
 	DUnitX.TestFramework;
@@ -15,6 +17,7 @@ type
 	private
 		FTempFile: string;
 		FDescription: TDescription;
+		FFileSystem: IFileSystem;
 	public
 		[Setup]
 		procedure Setup;
@@ -76,23 +79,53 @@ type
 		procedure TestReadResourceCleanupOnError;
 	end;
 
+	[TestFixture]
+	TDescriptionWithMemoryFileSystemTest = class
+	private
+		FDescription: TDescription;
+		FFileSystem: TMemoryFileSystem;
+	public
+		[Setup]
+		procedure Setup;
+		[TearDown]
+		procedure TearDown;
+
+		[Test]
+		{Verifies TDescription works with TMemoryFileSystem}
+		procedure TestCreateWithMemoryFileSystem;
+
+		[Test]
+		{Verifies SetValue and GetValue work without real files}
+		procedure TestSetAndGetValueInMemory;
+
+		[Test]
+		{Verifies Write uses IFileSystem}
+		procedure TestWriteUsesFileSystem;
+
+		[Test]
+		{Verifies Read uses IFileSystem}
+		procedure TestReadUsesFileSystem;
+	end;
+
 implementation
 
 uses
 	System.SysUtils;
 
-{ Setup and TearDown }
+{ TDescriptionTest - Setup and TearDown }
 
 procedure TDescriptionTest.Setup;
 begin
+	FFileSystem := TWindowsFileSystem.Create;
 	FTempFile := IncludeTrailingPathDelimiter(GetEnvironmentVariable('TEMP')) +
 		'DescriptionTest_' + IntToStr(GetCurrentThreadId) + '.ion';
-	FDescription := TDescription.Create(FTempFile, ENCODING_UTF8);
+	FDescription := TDescription.Create(FTempFile, FFileSystem, ENCODING_UTF8);
 end;
 
 procedure TDescriptionTest.TearDown;
 begin
 	FDescription.Free;
+	FFileSystem := nil;
 	if FileExists(FTempFile) then
 		System.SysUtils.DeleteFile(FTempFile);
 end;
@@ -204,7 +237,7 @@ begin
 	FDescription.Write;
 
 	{ Read with new instance }
-	Description2 := TDescription.Create(FTempFile, ENCODING_UTF8);
+	Description2 := TDescription.Create(FTempFile, FFileSystem, ENCODING_UTF8);
 	try
 		Description2.Read;
 		Assert.AreEqual('value1', Description2.GetValue('key1'));
@@ -222,7 +255,7 @@ begin
 	FDescription.SetValue('file with spaces.txt', 'description text');
 	FDescription.Write;
 
-	Description2 := TDescription.Create(FTempFile, ENCODING_UTF8);
+	Description2 := TDescription.Create(FTempFile, FFileSystem, ENCODING_UTF8);
 	try
 		Description2.Read;
 		Assert.AreEqual('description text', Description2.GetValue('file with spaces.txt'));
@@ -239,7 +272,7 @@ begin
 	FDescription.Clear;
 	FDescription.Write;
 
-	Description2 := TDescription.Create(FTempFile, ENCODING_UTF8);
+	Description2 := TDescription.Create(FTempFile, FFileSystem, ENCODING_UTF8);
 	try
 		Description2.Read;
 		Assert.AreEqual('', Description2.GetValue('anykey'));
@@ -289,7 +322,7 @@ begin
 		F.Free;
 	end;
 
-	Description2 := TDescription.Create(FTempFile, ENCODING_UNICODE);
+	Description2 := TDescription.Create(FTempFile, FFileSystem, ENCODING_UNICODE);
 	try
 		Encoding := Description2.DetermineEncoding;
 		Assert.AreSame(TEncoding.Unicode, Encoding);
@@ -298,34 +331,19 @@ begin
 	end;
 end;
 
-{ Resource cleanup pattern tests.
-  These tests document the correct try-finally pattern that must be used
-  in Write and Read methods. FastMM5 will detect leaks if streams are
-  not properly freed on all code paths. }
+{ Resource cleanup pattern tests }
 
 procedure TDescriptionTest.TestWriteResourceCleanupOnError;
 var
 	WriteResult: Integer;
 	Description2: TDescription;
 begin
-	{ The Write method should use try-finally to ensure TStreamWriter is freed.
-	  Pattern should be:
-	    fStream := TStreamWriter.Create(...);
-	    try
-	      // operations
-	    finally
-	      fStream.Free;
-	    end;
-
-	  Test by writing data first (which succeeds), then verify no leaks occur. }
 	FDescription.SetValue('testfile.txt', 'Test description');
 	WriteResult := FDescription.Write;
 
-	{ Write should succeed and return 0 }
 	Assert.AreEqual(0, WriteResult, 'Write should return 0 on success');
 
-	{ Verify data was written correctly by reading it back }
-	Description2 := TDescription.Create(FTempFile, ENCODING_UTF8);
+	Description2 := TDescription.Create(FTempFile, FFileSystem, ENCODING_UTF8);
 	try
 		Description2.Read;
 		Assert.AreEqual('Test description', Description2.GetValue('testfile.txt'));
@@ -339,24 +357,11 @@ var
 	ReadResult: Integer;
 	Description2: TDescription;
 begin
-	{ The Read method should use try-finally to ensure TStreamReader is freed.
-	  Pattern should be:
-	    fStream := TStreamReader.Create(...);
-	    try
-	      // operations
-	    finally
-	      fStream.Free;
-	    end;
-
-	  Test by reading a valid file and verify no leaks occur. }
-
-	{ Write test data first }
 	FDescription.SetValue('key1', 'value1');
 	FDescription.SetValue('key2', 'value2');
 	FDescription.Write;
 
-	{ Read with new instance - exercises the Read method's stream handling }
-	Description2 := TDescription.Create(FTempFile, ENCODING_UTF8);
+	Description2 := TDescription.Create(FTempFile, FFileSystem, ENCODING_UTF8);
 	try
 		ReadResult := Description2.Read;
 		Assert.AreEqual(0, ReadResult, 'Read should return 0 on success');
@@ -367,8 +372,60 @@ begin
 	end;
 end;
 
+{ TDescriptionWithMemoryFileSystemTest }
+
+procedure TDescriptionWithMemoryFileSystemTest.Setup;
+begin
+	FFileSystem := TMemoryFileSystem.Create;
+end;
+
+procedure TDescriptionWithMemoryFileSystemTest.TearDown;
+begin
+	FDescription.Free;
+	FFileSystem := nil;
+end;
+
+procedure TDescriptionWithMemoryFileSystemTest.TestCreateWithMemoryFileSystem;
+begin
+	FDescription := TDescription.Create('test.ion', FFileSystem, ENCODING_UTF8);
+	Assert.IsNotNull(FDescription);
+	Assert.IsTrue(FFileSystem.FileExists('test.ion'), 'Empty file should be created');
+end;
+
+procedure TDescriptionWithMemoryFileSystemTest.TestSetAndGetValueInMemory;
+begin
+	FDescription := TDescription.Create('test.ion', FFileSystem, ENCODING_UTF8);
+	FDescription.SetValue('myfile.txt', 'My description');
+	Assert.AreEqual('My description', FDescription.GetValue('myfile.txt'));
+end;
+
+procedure TDescriptionWithMemoryFileSystemTest.TestWriteUsesFileSystem;
+begin
+	FDescription := TDescription.Create('test.ion', FFileSystem, ENCODING_UTF8);
+	FDescription.SetValue('file1.txt', 'Description 1');
+	FDescription.Write;
+
+	{Verify content was written to memory file system}
+	Assert.IsTrue(FFileSystem.FileExists('test.ion'));
+	Assert.IsNotEmpty(FFileSystem.GetFileContent('test.ion'));
+end;
+
+procedure TDescriptionWithMemoryFileSystemTest.TestReadUsesFileSystem;
+var
+	Description2: TDescription;
+begin
+	{Set up file content in memory}
+	FFileSystem.SetFileContent('test.ion', 'testfile.txt Test description');
+
+	FDescription := TDescription.Create('test.ion', FFileSystem, ENCODING_UTF8);
+	FDescription.Read;
+
+	Assert.AreEqual('Test description', FDescription.GetValue('testfile.txt'));
+end;
+
 initialization
 
 TDUnitX.RegisterTestFixture(TDescriptionTest);
+TDUnitX.RegisterTestFixture(TDescriptionWithMemoryFileSystemTest);
 
 end.

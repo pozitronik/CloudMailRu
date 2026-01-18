@@ -58,7 +58,9 @@ uses
 	IHTTPManagerInterface,
 	HTTPManager,
 	ICipherValidatorInterface,
-	CipherValidator;
+	CipherValidator,
+	IFileSystemInterface,
+	WindowsFileSystem;
 
 type
 	TMailRuCloudWFX = class(TInterfacedObject, IWFXInterface)
@@ -104,6 +106,7 @@ type
 		TCLogger: ILogger;
 		TCProgress: IProgress;
 		TCRequest: IRequest;
+		FFileSystem: IFileSystem;
 	protected
 		function FindListingItemByPath(CurrentListing: TCMRDirItemList; Path: TRealPath; UpdateListing: Boolean = true): TCMRDirItem;
 		function FindIncomingInviteItemByPath(InviteListing: TCMRIncomingInviteList; Path: TRealPath): TCMRIncomingInvite;
@@ -201,6 +204,7 @@ begin
 	ThreadFsRemoveDirSkippedPath := TDictionary<DWORD, TStringList>.Create;
 
 	AccountSettings := TAccountsManager.Create(SettingsManager.AccountsIniFilePath);
+	FFileSystem := TWindowsFileSystem.Create;
 end;
 
 function TMailRuCloudWFX.FsInit(PluginNr: Integer; pProgressProc: TProgressProcW; pLogProc: TLogProcW; pRequestProc: TRequestProcW): Integer;
@@ -209,7 +213,7 @@ begin
 	TCLogger := TTCLogger.Create(pLogProc, PluginNr, SettingsManager.Settings.LogLevel);
 	TCProgress := TTCProgress.Create(pProgressProc, PluginNr);
 	TCRequest := TTCRequest.Create(pRequestProc, PluginNr);
-	CurrentDescriptions := TDescription.Create(GetTmpFileName(DESCRIPTION_TEMP_EXT), GetTCCommentPreferredFormat);
+	CurrentDescriptions := TDescription.Create(GetTmpFileName(DESCRIPTION_TEMP_EXT), FFileSystem, GetTCCommentPreferredFormat);
 	Result := 0;
 end;
 
@@ -279,7 +283,7 @@ begin
 	LocalTempPath := GetTmpFileName(DESCRIPTION_TEMP_EXT);
 	if not Cloud.getDescriptionFile(RemoteIonPath, LocalTempPath) then
 		exit; //описания нет, не заморачиваемся
-	RemoteDescriptions := TDescription.Create(LocalTempPath, GetTCCommentPreferredFormat);
+	RemoteDescriptions := TDescription.Create(LocalTempPath, FFileSystem, GetTCCommentPreferredFormat);
 	try
 		RemoteDescriptions.Read;
 		RemoteDescriptions.DeleteValue(ExtractFileName(RemotePath.Path));
@@ -458,7 +462,7 @@ begin
 	end else begin
 		Cloud := ConnectionManager.Get(RealPath.account, getResult);
 		//всегда нужно обновлять статус на сервере, CurrentListing может быть изменён в другой панели
-		if (Cloud.statusFile(RealPath.Path, CurrentItem)) and (idContinue = TPropertyForm.ShowProperty(MainWin, RealPath.Path, CurrentItem, Cloud, SettingsManager.Settings.DownloadLinksEncode, SettingsManager.Settings.AutoUpdateDownloadListing, SettingsManager.Settings.DescriptionEnabled, SettingsManager.Settings.DescriptionEditorEnabled, SettingsManager.Settings.DescriptionFileName)) then
+		if (Cloud.statusFile(RealPath.Path, CurrentItem)) and (idContinue = TPropertyForm.ShowProperty(MainWin, RealPath.Path, CurrentItem, Cloud, FFileSystem, SettingsManager.Settings.DownloadLinksEncode, SettingsManager.Settings.AutoUpdateDownloadListing, SettingsManager.Settings.DescriptionEnabled, SettingsManager.Settings.DescriptionEditorEnabled, SettingsManager.Settings.DescriptionFileName)) then
 			PostMessage(MainWin, WM_USER + TC_REFRESH_MESSAGE, TC_REFRESH_PARAM, 0); //refresh tc panel if description edited
 	end;
 end;
@@ -487,7 +491,7 @@ begin
 			Cloud := ConnectionManager.Get(RealPath.account, getResult);
 			CurrentItem := FindListingItemByPath(CurrentListing, RealPath);
 			if Cloud.statusFile(CurrentItem.home, CurrentItem) then
-				TPropertyForm.ShowProperty(MainWin, RealPath.Path, CurrentItem, Cloud, SettingsManager.Settings.DownloadLinksEncode, SettingsManager.Settings.AutoUpdateDownloadListing, false, false, SettingsManager.Settings.DescriptionFileName)
+				TPropertyForm.ShowProperty(MainWin, RealPath.Path, CurrentItem, Cloud, FFileSystem, SettingsManager.Settings.DownloadLinksEncode, SettingsManager.Settings.AutoUpdateDownloadListing, false, false, SettingsManager.Settings.DescriptionFileName)
 		end;
 	end;
 end;
@@ -1830,7 +1834,7 @@ begin
 	begin
 		if not Cloud.getDescriptionFile(OldRemoteIonPath, OldLocalTempPath) then
 			exit; //описания нет, переносить нечего
-		OldDescriptions := TDescription.Create(OldLocalTempPath, GetTCCommentPreferredFormat);
+		OldDescriptions := TDescription.Create(OldLocalTempPath, FFileSystem, GetTCCommentPreferredFormat);
 		try
 			OldDescriptions.Read;
 			if (OldDescriptions.RenameItem(OldItem, NewItem)) then //метод сам проверит существование описания
@@ -1847,11 +1851,11 @@ begin
 	begin
 		if not Cloud.getDescriptionFile(OldRemoteIonPath, OldLocalTempPath) then
 			exit; //описания нет, не заморачиваемся
-		OldDescriptions := TDescription.Create(OldLocalTempPath, GetTCCommentPreferredFormat);
+		OldDescriptions := TDescription.Create(OldLocalTempPath, FFileSystem, GetTCCommentPreferredFormat);
 		try
 			OldDescriptions.Read;
 			NewRemoteIonExists := Cloud.getDescriptionFile(NewRemoteIonPath, NewLocalTempPath);
-			NewDescriptions := TDescription.Create(NewLocalTempPath, GetTCCommentPreferredFormat);
+			NewDescriptions := TDescription.Create(NewLocalTempPath, FFileSystem, GetTCCommentPreferredFormat);
 			try
 				if NewRemoteIonExists then
 					NewDescriptions.Read; //прочитать существующий, если его нет - то и читать нечего
@@ -2018,10 +2022,10 @@ begin
 	if not RemoteIonExists then
 		exit; //удалённого файла описаний нет
 
-	RemoteDescriptions := TDescription.Create(LocalTempPath, GetTCCommentPreferredFormat);
+	RemoteDescriptions := TDescription.Create(LocalTempPath, FFileSystem, GetTCCommentPreferredFormat);
 	try
 		RemoteDescriptions.Read;
-		LocalDescriptions := TDescription.Create(IncludeTrailingPathDelimiter(ExtractFileDir(LocalFilePath)) + SettingsManager.Settings.DescriptionFileName, GetTCCommentPreferredFormat); //open local ion file
+		LocalDescriptions := TDescription.Create(IncludeTrailingPathDelimiter(ExtractFileDir(LocalFilePath)) + SettingsManager.Settings.DescriptionFileName, FFileSystem, GetTCCommentPreferredFormat); //open local ion file
 		try
 			LocalDescriptions.Read;
 			LocalDescriptions.CopyFrom(RemoteDescriptions, ExtractFileName(LocalFilePath));
@@ -2047,12 +2051,12 @@ begin
 	if (not FileExists(GetUNCFilePath(LocalIonPath))) then
 		exit; //Файла описаний нет, не паримся
 
-	LocalDescriptions := TDescription.Create(LocalIonPath, GetTCCommentPreferredFormat);
+	LocalDescriptions := TDescription.Create(LocalIonPath, FFileSystem, GetTCCommentPreferredFormat);
 	try
 		LocalDescriptions.Read;
 
 		RemoteIonExists := Cloud.getDescriptionFile(RemoteIonPath, LocalTempPath);
-		RemoteDescriptions := TDescription.Create(LocalTempPath, GetTCCommentPreferredFormat);
+		RemoteDescriptions := TDescription.Create(LocalTempPath, FFileSystem, GetTCCommentPreferredFormat);
 		try
 			if RemoteIonExists then
 				RemoteDescriptions.Read; //если был прежний файл - его надо перечитать

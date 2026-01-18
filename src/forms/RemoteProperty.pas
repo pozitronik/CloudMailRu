@@ -32,7 +32,8 @@ uses
 	System.ImageList,
 	Vcl.ImgList,
 	Clipbrd,
-	HashInfo;
+	HashInfo,
+	IFileSystemInterface;
 
 const
 	WM_AFTER_SHOW = WM_USER + 300; //custom message
@@ -81,7 +82,7 @@ type
 		OpenDialogOD: TOpenDialog;
 		ApplyHashesTB: TToolButton;
 		procedure AccessCBClick(Sender: TObject);
-		class function ShowProperty(parentWindow: HWND; RemoteName: WideString; RemoteProperty: TCMRDirItem; Cloud: TCloudMailRu; DoUrlEncode: Boolean = true; AutoUpdateDownloadListing: Boolean = true; ShowDescription: Boolean = true; EditDescription: Boolean = true; PluginIonFileName: WideString = 'descript.ion'): Integer;
+		class function ShowProperty(parentWindow: HWND; RemoteName: WideString; RemoteProperty: TCMRDirItem; Cloud: TCloudMailRu; FileSystem: IFileSystem; DoUrlEncode: Boolean = true; AutoUpdateDownloadListing: Boolean = true; ShowDescription: Boolean = true; EditDescription: Boolean = true; PluginIonFileName: WideString = 'descript.ion'): Integer;
 		procedure FormActivate(Sender: TObject);
 		procedure InviteBtnClick(Sender: TObject);
 		procedure ItemDeleteClick(Sender: TObject);
@@ -132,6 +133,7 @@ type
 		ShowDescription: Boolean;
 		EditDescription: Boolean;
 		PluginIonFileName: WideString; //Переопределённое (или нет) имя файла описаний, с которым будет работать плагин
+		FFileSystem: IFileSystem;
 
 		TempPublicCloud: TCloudMailRu; //Облако для получения прямых ссылок на опубликованные объекты
 	public
@@ -156,7 +158,7 @@ begin
 	LocalPath := GetTmpFileName(DESCRIPTION_TEMP_EXT);
 	if not self.Cloud.getDescriptionFile(IncludeTrailingBackslash(ExtractFileDir(self.RemoteName)) + self.PluginIonFileName, LocalPath) then
 		exit;
-	CurrentDescriptions := TDescription.Create(LocalPath, GetTCCommentPreferredFormat);
+	CurrentDescriptions := TDescription.Create(LocalPath, FFileSystem, GetTCCommentPreferredFormat);
 	try
 		CurrentDescriptions.Read;
 		DescriptionEditMemo.lines.Text := CurrentDescriptions.GetValue(ExtractFileName(self.RemoteName), FORMAT_CLEAR);
@@ -184,7 +186,7 @@ begin
 	LocalPath := GetTmpFileName(DESCRIPTION_TEMP_EXT);
 
 	RemoteFileExists := self.Cloud.getDescriptionFile(RemotePath, LocalPath);
-	CurrentDescriptions := TDescription.Create(LocalPath, GetTCCommentPreferredFormat);
+	CurrentDescriptions := TDescription.Create(LocalPath, FFileSystem, GetTCCommentPreferredFormat);
 	try
 		if RemoteFileExists then //если был прежний файл - его надо перечитать и удалить с сервера
 		begin
@@ -578,7 +580,7 @@ begin
 	end;
 end;
 
-class function TPropertyForm.ShowProperty(parentWindow: HWND; RemoteName: WideString; RemoteProperty: TCMRDirItem; Cloud: TCloudMailRu; DoUrlEncode: Boolean = true; AutoUpdateDownloadListing: Boolean = true; ShowDescription: Boolean = true; EditDescription: Boolean = true; PluginIonFileName: WideString = 'descript.ion'): Integer;
+class function TPropertyForm.ShowProperty(parentWindow: HWND; RemoteName: WideString; RemoteProperty: TCMRDirItem; Cloud: TCloudMailRu; FileSystem: IFileSystem; DoUrlEncode: Boolean = true; AutoUpdateDownloadListing: Boolean = true; ShowDescription: Boolean = true; EditDescription: Boolean = true; PluginIonFileName: WideString = 'descript.ion'): Integer;
 var
 	PropertyForm: TPropertyForm;
 begin
@@ -597,6 +599,7 @@ begin
 		PropertyForm.ShowDescription := ShowDescription;
 		PropertyForm.EditDescription := EditDescription;
 		PropertyForm.PluginIonFileName := PluginIonFileName;
+		PropertyForm.FFileSystem := FileSystem;
 		if ('descript.ion' <> PluginIonFileName) then
 			PropertyForm.DescriptionTS.Caption := Format(DESCRIPTION_FROM, [PluginIonFileName]);
 

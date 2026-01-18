@@ -140,6 +140,8 @@ uses
 	CipherValidatorTest in 'models\cipher\CipherValidatorTest.pas',
 	ConnectionManagerTest in 'models\ConnectionManagerTest.pas',
 	ConnectionManager in '..\src\models\ConnectionManager.pas',
+	IFileSystemInterface in '..\src\models\filesystem\IFileSystemInterface.pas',
+	WindowsFileSystem in '..\src\models\filesystem\WindowsFileSystem.pas',
 	AskPassword in '..\src\forms\AskPassword.pas'{AskPasswordForm};
 
 {keep comment here to protect the following conditional from being removed by the IDE when adding a unit}

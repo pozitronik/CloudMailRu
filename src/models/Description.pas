@@ -1,4 +1,4 @@
-﻿unit Description;
+unit Description;
 
 interface
 
@@ -9,6 +9,7 @@ uses
 	Generics.Collections,
 	System.SysUtils,
 	System.WideStrUtils,
+	IFileSystemInterface,
 	Windows;
 
 const
@@ -36,13 +37,14 @@ type
 		ion_filename: WideString;
 		encoding: TEncoding;
 		divider: WideString;
+		FFileSystem: IFileSystem;
 
 		function GetionFilename: WideString;
 		function FormatValue(Value: WideString; FormatType: Integer): WideString;
 		function DetermineDivider(): WideString;
 
 	public
-		constructor Create(ion_filename: WideString; encoding: Integer = ENCODING_UTF8);
+		constructor Create(ion_filename: WideString; FileSystem: IFileSystem; encoding: Integer = ENCODING_UTF8);
 
 		destructor Destroy; override;
 		function Read(): Integer;
@@ -81,12 +83,14 @@ begin
 	self.items.Clear;
 end;
 
-constructor TDescription.Create(ion_filename: WideString; encoding: Integer = ENCODING_UTF8);
+constructor TDescription.Create(ion_filename: WideString; FileSystem: IFileSystem; encoding: Integer = ENCODING_UTF8);
 begin
 	self.items := TDictionary<WideString, WideString>.Create;
 	self.ion_filename := ion_filename;
-	if not FileExists(ion_filename) then
-		CloseHandle(CreateFile(PChar(ion_filename), 0, 0, nil, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0));
+	self.FFileSystem := FileSystem;
+
+	if not FFileSystem.FileExists(ion_filename) then
+		FFileSystem.CreateEmptyFile(ion_filename);
 
 	case encoding of
 		ENCODING_DEFAULT:
@@ -109,6 +113,7 @@ end;
 destructor TDescription.Destroy;
 begin
 	self.items.Free;
+	FFileSystem := nil;
 	inherited;
 end;
 
@@ -134,49 +139,34 @@ end;
 
 function TDescription.DetermineEncoding(): TEncoding;
 var
-	F: File;
-	Buffer: array [0 .. 2] of byte;
-	fStream: TStreamReader;
+	Buffer: TBytes;
+	Content: WideString;
 begin
 	result := self.encoding;
-	FillChar(Buffer, SizeOf(Buffer), 0);
 
-	AssignFile(F, ion_filename);
-	try
-		Reset(F, 1);
-	except
-		exit; { File can't be opened, return default encoding }
-	end;
+	{Read first 3 bytes to detect BOM}
+	Buffer := FFileSystem.ReadFileHeader(ion_filename, 3);
+	if Length(Buffer) < 2 then
+		Exit; {File too small or unreadable, return default encoding}
 
-	try
-		try
-			BlockRead(F, Buffer, SizeOf(Buffer));
-		except
-			{ Ignore read errors (e.g., file smaller than 3 bytes) }
-		end;
-	finally
-		CloseFile(F);
-	end;
-
-	if (Buffer[0] = $EF) and (Buffer[1] = $BB) and (Buffer[2] = $BF) then
+	{Check for BOM signatures}
+	if (Length(Buffer) >= 3) and (Buffer[0] = $EF) and (Buffer[1] = $BB) and (Buffer[2] = $BF) then
 		exit(TEncoding.UTF8);
 	if (Buffer[0] = $FE) and (Buffer[1] = $FF) then
 		exit(TEncoding.BigEndianUnicode);
 	if (Buffer[0] = $FF) and (Buffer[1] = $FE) then
 		exit(TEncoding.Unicode);
 
-	{ Encoding still not determined - try reading with chosen encoding.
-	  If EEncodingError occurs, it's ANSI. }
-	fStream := TStreamReader.Create(self.ion_filename, self.encoding, false);
+	{Encoding still not determined - try reading with chosen encoding.
+	 If content is empty or unreadable, use ANSI.}
 	try
-		try
-			if fStream.ReadToEnd <> EmptyWideStr then
-				result := fStream.CurrentEncoding;
-		except
+		Content := FFileSystem.ReadAllText(ion_filename, self.encoding);
+		if Content <> EmptyWideStr then
+			result := self.encoding
+		else
 			result := TEncoding.Default;
-		end;
-	finally
-		fStream.Free;
+	except
+		result := TEncoding.Default;
 	end;
 end;
 
@@ -219,18 +209,18 @@ end;
 
 function TDescription.Write(filename: WideString = NullChar): Integer;
 var
-	fStream: TStreamWriter;
+	Lines: TStringList;
 	line, Key, tKey, Value: WideString;
 begin
 	if filename = NullChar then
 		filename := self.ion_filename;
 
 	result := 0;
-	DeleteFileW(PWideChar(filename));
+	FFileSystem.DeleteFile(filename);
 	if items.Count = 0 then
 		exit;
 
-	fStream := TStreamWriter.Create(filename, false, self.encoding);
+	Lines := TStringList.Create;
 	try
 		try
 			for Key in items.Keys do
@@ -246,21 +236,22 @@ begin
 				if Length(Value) > 0 then
 				begin
 					line := tKey + Space + Value;
-					fStream.WriteLine(line);
+					Lines.Add(line);
 				end;
 			end;
-			fStream.Flush;
+
+			FFileSystem.WriteAllLines(filename, Lines, self.encoding);
 		except
 			result := -1;
 		end;
 	finally
-		fStream.Free;
+		Lines.Free;
 	end;
 end;
 
 function TDescription.Read(): Integer;
 var
-	fStream: TStreamReader;
+	Reader: TStreamReader;
 	line, Key, Value: WideString;
 	t: Integer;
 begin
@@ -269,12 +260,12 @@ begin
 	self.encoding := DetermineEncoding();
 	self.divider := DetermineDivider();
 
-	fStream := TStreamReader.Create(self.ion_filename, self.encoding, false);
+	Reader := FFileSystem.OpenTextReader(self.ion_filename, self.encoding);
 	try
 		try
-			while not fStream.EndOfStream do
+			while not Reader.EndOfStream do
 			begin
-				line := fStream.ReadLine;
+				line := Reader.ReadLine;
 				if StartsStr('"', line) then
 				begin
 					t := PosEx('" ', line);
@@ -292,7 +283,7 @@ begin
 			result := -1;
 		end;
 	finally
-		fStream.Free;
+		Reader.Free;
 	end;
 end;
 

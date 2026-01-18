@@ -92,7 +92,9 @@ uses
 	PasswordUIProvider in 'src\models\ui\PasswordUIProvider.pas',
 	IHTTPManagerInterface in 'src\models\http\IHTTPManagerInterface.pas',
 	ICipherValidatorInterface in 'src\models\cipher\ICipherValidatorInterface.pas',
-	CipherValidator in 'src\models\cipher\CipherValidator.pas';
+	CipherValidator in 'src\models\cipher\CipherValidator.pas',
+	IFileSystemInterface in 'src\models\filesystem\IFileSystemInterface.pas',
+	WindowsFileSystem in 'src\models\filesystem\WindowsFileSystem.pas';
 
 {$IFDEF WIN64}
 {$E wfx64}
