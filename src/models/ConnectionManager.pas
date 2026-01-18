@@ -65,7 +65,7 @@ begin
 	self.FProgress := Progress;
 	self.FLogger := Logger;
 	self.FRequest := Request;
-	self.FHTTPManager := THTTPManager.Create(PluginSettings.ConnectionSettings, Progress, Logger);
+	self.FHTTPManager := THTTPManager.Create(PluginSettings.ConnectionSettings, Logger, Progress);
 	self.FPasswordManager := PasswordManager;
 end;
 
@@ -136,7 +136,7 @@ begin
 
 	FLogger.Log(LOG_LEVEL_CONNECT, MSGTYPE_CONNECT, 'CONNECT \%s', [ConnectionName]);
 
-	Cloud := TCloudMailRu.Create(CloudSettings, FHTTPManager, FProgress, FLogger, FRequest);
+	Cloud := TCloudMailRu.Create(CloudSettings, FHTTPManager, FLogger, FProgress, FRequest);
 
 	{OAuth app password is the only supported auth method. Legacy methods are kept for backwards compatibility but are deprecated.}
 	LoginMethod := CLOUD_AUTH_METHOD_OAUTH_APP;

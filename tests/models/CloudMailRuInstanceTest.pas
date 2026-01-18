@@ -7,6 +7,7 @@ uses
 	CloudSettings,
 	CMRConstants,
 	CMROperationResult,
+	ILoggerInterface,
 	PLUGIN_TYPES,
 	SysUtils,
 	DUnitX.TestFramework;
@@ -98,9 +99,9 @@ const
 
 procedure TCloudMailRuInstanceTest.Setup;
 begin
-	{ Create minimal TCloudMailRu instance - nil dependencies are handled by constructor }
+	{ Create minimal TCloudMailRu instance with TNullLogger }
 	FSettings := Default(TCloudSettings);
-	FCloud := TCloudMailRu.Create(FSettings, nil, nil, nil, nil);
+	FCloud := TCloudMailRu.Create(FSettings, nil, TNullLogger.Create);
 end;
 
 procedure TCloudMailRuInstanceTest.TearDown;

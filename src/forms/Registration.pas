@@ -17,6 +17,7 @@ uses
 	Vcl.ExtCtrls,
 	JSONHelper,
 	CloudMailRuHTTP,
+	ILoggerInterface,
 	CMROperationResult,
 	CMRConstants,
 	LANGUAGE_STRINGS,
@@ -160,7 +161,7 @@ end;
 
 procedure TRegistrationForm.InitComponents;
 begin
-	HTTPConnection := TCloudMailRuHTTP.Create(ConnectionSettings);
+	HTTPConnection := TCloudMailRuHTTP.Create(ConnectionSettings, TNullLogger.Create);
 	//	JSONParser := TCloudMailRuJSONParser.Create();
 end;
 

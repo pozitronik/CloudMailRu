@@ -25,7 +25,7 @@ type
 
 	public
 		{Параметры, с которыми будут отдаваться подключения: создаём с ними экземпляр класса, а дальше он сам рулит}
-		constructor Create(Settings: TConnectionSettings; Progress: TTCProgress = nil; Logger: ILogger = nil);
+		constructor Create(Settings: TConnectionSettings; Logger: ILogger; Progress: TTCProgress = nil);
 		destructor Destroy; override;
 		function get(ThreadId: Cardinal): TCloudMailRuHTTP;
 
@@ -37,17 +37,14 @@ implementation
 
 {THTTPManager}
 
-constructor THTTPManager.Create(Settings: TConnectionSettings; Progress: TTCProgress = nil; Logger: ILogger = nil);
+constructor THTTPManager.Create(Settings: TConnectionSettings; Logger: ILogger; Progress: TTCProgress = nil);
 begin
 	self.FConnectionSettings := Settings;
 	self.FProgress := Progress;
 	if not Assigned(self.FProgress) then
 		self.FProgress := TTCProgress.Create;
 
-	if Assigned(Logger) then
-		self.FLogger := Logger
-	else
-		self.FLogger := TNullLogger.Create;
+	self.FLogger := Logger;
 	Connections := TDictionary<Cardinal, TCloudMailRuHTTP>.Create;
 end;
 
@@ -66,7 +63,7 @@ function THTTPManager.get(ThreadId: Cardinal): TCloudMailRuHTTP;
 begin
 	if not Connections.TryGetValue(ThreadId, result) then
 	begin
-		result := TCloudMailRuHTTP.Create(FConnectionSettings, FProgress, FLogger);
+		result := TCloudMailRuHTTP.Create(FConnectionSettings, FLogger, FProgress);
 		Connections.AddOrSetValue(ThreadId, result);
 	end;
 end;

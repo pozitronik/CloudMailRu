@@ -65,7 +65,7 @@ type
 		property SourceName: WideString write SetExternalSourceName;
 		property TargetName: WideString write SetExternalTargetName;
 		{CONSTRUCTOR/DESTRUCTOR}
-		constructor Create(Settings: TConnectionSettings; Progress: TTCProgress = nil; Logger: ILogger = nil);
+		constructor Create(Settings: TConnectionSettings; Logger: ILogger; Progress: TTCProgress = nil);
 		destructor Destroy; override;
 		{MAIN ROUTINES}
 		procedure Head(URL: WideString);
@@ -95,15 +95,12 @@ implementation
 
 {TCloudMailRuHTTP}
 
-constructor TCloudMailRuHTTP.Create(Settings: TConnectionSettings; Progress: TTCProgress = nil; Logger: ILogger = nil);
+constructor TCloudMailRuHTTP.Create(Settings: TConnectionSettings; Logger: ILogger; Progress: TTCProgress = nil);
 begin
 	self.Progress := Progress;
 	if not Assigned(Progress) then
 		self.Progress := TTCProgress.Create();
-	if Assigned(Logger) then
-		self.Logger := Logger
-	else
-		self.Logger := TNullLogger.Create;
+	self.Logger := Logger;
 	self.Throttle := TIdInterceptThrottler.Create();
 	SSL := TIdSSLIOHandlerSocketOpenSSL.Create();
 	SSL.SSLOptions.SSLVersions := [sslvSSLv23];

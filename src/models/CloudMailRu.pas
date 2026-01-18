@@ -126,7 +126,7 @@ type
 		function CloudResultToBoolean(CloudResult: TCMROperationResult; ErrorPrefix: WideString = ''): Boolean; overload;
 		function CloudResultToBoolean(JSON: WideString; ErrorPrefix: WideString = ''): Boolean; overload;
 		{CONSTRUCTOR/DESTRUCTOR}
-		constructor Create(CloudSettings: TCloudSettings; ConnectionManager: THTTPManager; Progress: TTCProgress = nil; Logger: ILogger = nil; Request: TTCRequest = nil);
+		constructor Create(CloudSettings: TCloudSettings; ConnectionManager: THTTPManager; Logger: ILogger; Progress: TTCProgress = nil; Request: TTCRequest = nil);
 		destructor Destroy; override;
 		{CLOUD INTERFACE METHODS}
 		function Login(Method: Integer = CLOUD_AUTH_METHOD_WEB): Boolean;
@@ -330,7 +330,7 @@ begin //Облако умеет скопировать файл, но не см�
 	end;
 end;
 
-constructor TCloudMailRu.Create(CloudSettings: TCloudSettings; ConnectionManager: THTTPManager; Progress: TTCProgress; Logger: ILogger; Request: TTCRequest);
+constructor TCloudMailRu.Create(CloudSettings: TCloudSettings; ConnectionManager: THTTPManager; Logger: ILogger; Progress: TTCProgress; Request: TTCRequest);
 begin
 	try
 		FSettings := CloudSettings;
@@ -341,10 +341,7 @@ begin
 		FProgress := Progress;
 		if not Assigned(FProgress) then
 			FProgress := TTCProgress.Create();
-		if Assigned(Logger) then
-			FLogger := Logger
-		else
-			FLogger := TNullLogger.Create;
+		FLogger := Logger;
 		FRequest := Request;
 		if not Assigned(FRequest) then
 			FRequest := TTCRequest.Create();
@@ -783,7 +780,7 @@ begin
 	if (nil = FHTTPManager) then
 	begin
 		if not Assigned(FHTTPConnection) then
-			FHTTPConnection := TCloudMailRuHTTP.Create(FSettings.ConnectionSettings, FProgress, FLogger);
+			FHTTPConnection := TCloudMailRuHTTP.Create(FSettings.ConnectionSettings, FLogger, FProgress);
 
 		Result := FHTTPConnection;
 	end
@@ -1658,7 +1655,7 @@ begin
 	TempCloudSettings := default (TCloudSettings);
 	TempCloudSettings.AccountSettings.PublicAccount := true;
 	TempCloudSettings.AccountSettings.PublicUrl := PublicUrl;
-	TempCloud := TCloudMailRu.Create(TempCloudSettings, nil);
+	TempCloud := TCloudMailRu.Create(TempCloudSettings, nil, TNullLogger.Create);
 	Result := TempCloud.Login;
 end;
 
