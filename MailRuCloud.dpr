@@ -132,7 +132,9 @@ uses
 	IDownloadSuccessHandlerInterface in 'src\models\wfx\IDownloadSuccessHandlerInterface.pas',
 	DownloadSuccessHandler in 'src\models\wfx\DownloadSuccessHandler.pas',
 	IOperationActionExecutorInterface in 'src\models\wfx\IOperationActionExecutorInterface.pas',
-	OperationActionExecutor in 'src\models\wfx\OperationActionExecutor.pas';
+	OperationActionExecutor in 'src\models\wfx\OperationActionExecutor.pas',
+	IListingSkipDeciderInterface in 'src\models\wfx\IListingSkipDeciderInterface.pas',
+	ListingSkipDecider in 'src\models\wfx\ListingSkipDecider.pas';
 
 {$IFDEF WIN64}
 {$E wfx64}

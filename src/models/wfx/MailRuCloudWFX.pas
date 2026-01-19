@@ -87,7 +87,9 @@ uses
 	IDownloadSuccessHandlerInterface,
 	DownloadSuccessHandler,
 	IOperationActionExecutorInterface,
-	OperationActionExecutor;
+	OperationActionExecutor,
+	IListingSkipDeciderInterface,
+	ListingSkipDecider;
 
 type
 	TMailRuCloudWFX = class(TInterfacedObject, IWFXInterface)
@@ -115,6 +117,7 @@ type
 		FLocalFileDeletionHandler: ILocalFileDeletionHandler;
 		FDownloadSuccessHandler: IDownloadSuccessHandler;
 		FActionExecutor: IOperationActionExecutor;
+		FListingSkipDecider: IListingSkipDecider;
 
 		PluginNum: Integer;
 
@@ -270,6 +273,9 @@ begin
 
 	{Create operation action executor for lifecycle event handling}
 	FActionExecutor := TOperationActionExecutor.Create(FThreadState, ConnectionManager, SettingsManager, CurrentDescriptions, TCLogger);
+
+	{Create listing skip decider for FsFindFirst skip logic}
+	FListingSkipDecider := TListingSkipDecider.Create(FThreadState, TCProgress);
 	Result := 0;
 end;
 
@@ -289,6 +295,7 @@ begin
 	FLocalFileDeletionHandler := nil;
 	FDownloadSuccessHandler := nil;
 	FActionExecutor := nil;
+	FListingSkipDecider := nil;
 	FreeAndNil(ConnectionManager);
 
 	CurrentDescriptions.Free;
@@ -739,95 +746,83 @@ begin
 end;
 
 function TMailRuCloudWFX.FsFindFirst(Path: WideString; var FindData: tWIN32FINDDATAW): THandle;
-var //Получение первого файла в папке. Result не используется (можно использовать для работы плагина).
+var
 	RealPath: TRealPath;
 	getResult: Integer;
-	SkipListDelete, SkipListRenMov, CanAbortRenMov, RenMovAborted: Boolean;
 	CurrentItem: TCMRDirItem;
 	CurrentCloud: TCloudMailRu;
+	SkipResult: TListingSkipResult;
 begin
-	SkipListDelete := FThreadState.GetSkipListDelete;
-	SkipListRenMov := FThreadState.GetSkipListRenMov;
-	CanAbortRenMov := FThreadState.GetCanAbortRenMov;
-
-	if (CanAbortRenMov and TCProgress.Progress(Path, 0)) then
-	begin
-		FThreadState.SetListingAborted(True);
-		RenMovAborted := true;
-	end
-	else
-		RenMovAborted := false;
-
-	if SkipListDelete or SkipListRenMov or RenMovAborted then
+	{Check if listing should be skipped (delete/renmov operation in progress or user abort)}
+	SkipResult := FListingSkipDecider.ShouldSkipListing(Path);
+	if SkipResult.ShouldSkip then
 	begin
 		CurrentListing := [];
 		SetLastError(ERROR_NO_MORE_FILES);
-		Result := FIND_NO_MORE_FILES;
-	end else begin
-		//Result := FIND_NO_MORE_FILES;
-		GlobalPath := Path;
-		if GlobalPath = '\' then
-		begin //список соединений
-			Accounts := AccountSettings.GetAccountsList([ATPrivate, ATPublic], SettingsManager.Settings.EnabledVirtualTypes);
-			if (Accounts.Count > 0) then
-			begin
-				FindData := GetFindDataEmptyDir(Accounts[0]);
-				FileCounter := 1;
-				Result := FIND_ROOT_DIRECTORY;
-			end else begin
-				Result := INVALID_HANDLE_VALUE; //Нельзя использовать exit
-				SetLastError(ERROR_NO_MORE_FILES);
-			end;
+		Exit(FIND_NO_MORE_FILES);
+	end;
+
+	GlobalPath := Path;
+	if GlobalPath = '\' then
+	begin {Root listing - list accounts}
+		Accounts := AccountSettings.GetAccountsList([ATPrivate, ATPublic], SettingsManager.Settings.EnabledVirtualTypes);
+		if (Accounts.Count > 0) then
+		begin
+			FindData := GetFindDataEmptyDir(Accounts[0]);
+			FileCounter := 1;
+			Result := FIND_ROOT_DIRECTORY;
 		end else begin
-			RealPath.FromPath(GlobalPath);
-			CurrentCloud := ConnectionManager.Get(RealPath.account, getResult);
+			Result := INVALID_HANDLE_VALUE; {Can't use exit}
+			SetLastError(ERROR_NO_MORE_FILES);
+		end;
+	end else begin {Regular path listing}
+		RealPath.FromPath(GlobalPath);
+		CurrentCloud := ConnectionManager.Get(RealPath.account, getResult);
 
-			if getResult <> CLOUD_OPERATION_OK then
-			begin
-				SetLastError(ERROR_ACCESS_DENIED);
-				exit(INVALID_HANDLE_VALUE);
-			end;
+		if getResult <> CLOUD_OPERATION_OK then
+		begin
+			SetLastError(ERROR_ACCESS_DENIED);
+			exit(INVALID_HANDLE_VALUE);
+		end;
 
-			if not Assigned(CurrentCloud) then
-			begin
-				SetLastError(ERROR_PATH_NOT_FOUND);
-				exit(INVALID_HANDLE_VALUE);
-			end;
+		if not Assigned(CurrentCloud) then
+		begin
+			SetLastError(ERROR_PATH_NOT_FOUND);
+			exit(INVALID_HANDLE_VALUE);
+		end;
 
-			if not FListingProvider.FetchListing(CurrentCloud, RealPath, CurrentListing, CurrentIncomingInvitesListing) then
-				SetLastError(ERROR_PATH_NOT_FOUND);
+		if not FListingProvider.FetchListing(CurrentCloud, RealPath, CurrentListing, CurrentIncomingInvitesListing) then
+			SetLastError(ERROR_PATH_NOT_FOUND);
 
-			if RealPath.isVirtual and not RealPath.isInAccountsList then //игнорим попытки получить листинги объектов вирутальных каталогов
-			begin
-				SetLastError(ERROR_ACCESS_DENIED);
-				exit(INVALID_HANDLE_VALUE);
-			end;
+		if RealPath.isVirtual and not RealPath.isInAccountsList then {ignore listings inside virtual directories objects}
+		begin
+			SetLastError(ERROR_ACCESS_DENIED);
+			exit(INVALID_HANDLE_VALUE);
+		end;
 
-			if CurrentCloud.IsPublicAccount then
-				CurrentItem := CurrentListing.FindByName(ExtractUniversalFileName(RealPath.Path))
+		if CurrentCloud.IsPublicAccount then
+			CurrentItem := CurrentListing.FindByName(ExtractUniversalFileName(RealPath.Path))
+		else
+			CurrentItem := CurrentListing.FindByHomePath(RealPath.Path);
+
+		if not(CurrentItem.isNone or CurrentItem.isDir) then
+		begin
+			SetLastError(ERROR_PATH_NOT_FOUND);
+			exit(INVALID_HANDLE_VALUE);
+		end;
+
+		if (Length(CurrentListing) = 0) then
+		begin
+			FindData := GetFindDataEmptyDir();
+			Result := FIND_NO_MORE_FILES;
+			SetLastError(ERROR_NO_MORE_FILES);
+		end else begin
+			FindData := CurrentListing[0].ToFindData(RealPath.sharedDir);
+			FileCounter := 1;
+			if RealPath.sharedDir then
+				Result := FIND_SHARED_LINKS
 			else
-				CurrentItem := CurrentListing.FindByHomePath(RealPath.Path);
-
-			if not(CurrentItem.isNone or CurrentItem.isDir) then
-			begin
-				SetLastError(ERROR_PATH_NOT_FOUND);
-				exit(INVALID_HANDLE_VALUE);
-			end;
-
-			if (Length(CurrentListing) = 0) then
-			begin
-				FindData := GetFindDataEmptyDir(); //воркароунд бага с невозможностью входа в пустой каталог, см. http://www.ghisler.ch/board/viewtopic.php?t=42399
-				Result := FIND_NO_MORE_FILES;
-				SetLastError(ERROR_NO_MORE_FILES);
-			end else begin
-
-				FindData := CurrentListing[0].ToFindData(RealPath.sharedDir); //folders inside shared links directory must be displayed as symlinks
-				FileCounter := 1;
-				if RealPath.sharedDir then
-					Result := FIND_SHARED_LINKS
-				else
-					Result := FIND_OK;
-			end;
+				Result := FIND_OK;
 		end;
 	end;
 end;

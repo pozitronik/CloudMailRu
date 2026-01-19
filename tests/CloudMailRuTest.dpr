@@ -219,7 +219,10 @@ uses
 	DownloadSuccessHandlerTest in 'models\wfx\DownloadSuccessHandlerTest.pas',
 	IOperationActionExecutorInterface in '..\src\models\wfx\IOperationActionExecutorInterface.pas',
 	OperationActionExecutor in '..\src\models\wfx\OperationActionExecutor.pas',
-	OperationActionExecutorTest in 'models\wfx\OperationActionExecutorTest.pas';
+	OperationActionExecutorTest in 'models\wfx\OperationActionExecutorTest.pas',
+	IListingSkipDeciderInterface in '..\src\models\wfx\IListingSkipDeciderInterface.pas',
+	ListingSkipDecider in '..\src\models\wfx\ListingSkipDecider.pas',
+	ListingSkipDeciderTest in 'models\wfx\ListingSkipDeciderTest.pas';
 
 {keep comment here to protect the following conditional from being removed by the IDE when adding a unit}
 {$IFNDEF TESTINSIGHT}
