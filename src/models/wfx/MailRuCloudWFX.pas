@@ -1339,8 +1339,7 @@ begin
 	Context.DescriptionsEnabled := SettingsManager.Settings.DescriptionEnabled;
 	Context.LogUserSpaceEnabled := SettingsManager.Settings.LogUserSpace;
 
-	{ Check if public account - only needed for RENMOV_MULTI to show warning }
-	if (InfoOperation = FS_STATUS_OP_RENMOV_MULTI) and Context.IsInAccount then
+	if Context.IsInAccount then { Clear intention despite it only needed for RENMOV_MULTI to show warning }
 		Context.IsPublicAccount := ConnectionManager.Get(RealPath.account, getResult).IsPublicAccount
 	else
 		Context.IsPublicAccount := False;
