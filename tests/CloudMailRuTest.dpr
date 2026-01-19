@@ -225,7 +225,10 @@ uses
 	ListingSkipDeciderTest in 'models\wfx\ListingSkipDeciderTest.pas',
 	IListingPathValidatorInterface in '..\src\models\wfx\IListingPathValidatorInterface.pas',
 	ListingPathValidator in '..\src\models\wfx\ListingPathValidator.pas',
-	ListingPathValidatorTest in 'models\wfx\ListingPathValidatorTest.pas';
+	ListingPathValidatorTest in 'models\wfx\ListingPathValidatorTest.pas',
+	ISameAccountMoveHandlerInterface in '..\src\models\wfx\ISameAccountMoveHandlerInterface.pas',
+	SameAccountMoveHandler in '..\src\models\wfx\SameAccountMoveHandler.pas',
+	SameAccountMoveHandlerTest in 'models\wfx\SameAccountMoveHandlerTest.pas';
 
 {keep comment here to protect the following conditional from being removed by the IDE when adding a unit}
 {$IFNDEF TESTINSIGHT}

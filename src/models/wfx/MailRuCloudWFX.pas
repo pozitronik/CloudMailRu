@@ -91,7 +91,9 @@ uses
 	IListingSkipDeciderInterface,
 	ListingSkipDecider,
 	IListingPathValidatorInterface,
-	ListingPathValidator;
+	ListingPathValidator,
+	ISameAccountMoveHandlerInterface,
+	SameAccountMoveHandler;
 
 type
 	TMailRuCloudWFX = class(TInterfacedObject, IWFXInterface)
@@ -121,6 +123,7 @@ type
 		FActionExecutor: IOperationActionExecutor;
 		FListingSkipDecider: IListingSkipDecider;
 		FListingPathValidator: IListingPathValidator;
+		FSameAccountMoveHandler: ISameAccountMoveHandler;
 
 		PluginNum: Integer;
 
@@ -282,6 +285,9 @@ begin
 
 	{Create listing path validator for FsFindFirst path validation}
 	FListingPathValidator := TListingPathValidator.Create;
+
+	{Create same-account move handler for FsRenMovFile}
+	FSameAccountMoveHandler := TSameAccountMoveHandler.Create(FThreadState, FDescriptionSyncGuard);
 	Result := 0;
 end;
 
@@ -303,6 +309,7 @@ begin
 	FActionExecutor := nil;
 	FListingSkipDecider := nil;
 	FListingPathValidator := nil;
+	FSameAccountMoveHandler := nil;
 	FreeAndNil(ConnectionManager);
 
 	CurrentDescriptions.Free;
@@ -1065,26 +1072,8 @@ begin
 				exit(FS_FILE_WRITEERROR);
 		end;
 
-	end else begin //один аккаунт
-
-		if OverWrite and not(NewCloud.deleteFile(NewRealPath.Path)) then
-			exit(FS_FILE_NOTSUPPORTED); //мы не умеем перезаписывать, но мы можем удалить существующий файл
-		if Move then
-		begin
-			Result := OldCloud.FileMove(OldRealPath.Path, NewRealPath.Path);
-			if (FS_FILE_EXISTS = Result) and FThreadState.HasRemoveDirSkippedPath then //TC сразу же попытается удалить каталог, чтобы избежать этого - внесем путь в своеобразный блеклист
-			begin
-				FThreadState.AddSkippedPath(OldRealPath.ToPath);
-			end else if (FS_FILE_OK = Result) and FThreadState.HasRemoveDirSkippedPath then
-			begin //Вытащим из блеклиста, если решили перезаписать
-				FThreadState.RemoveSkippedPath(OldRealPath.ToPath);
-			end;
-			if (FS_FILE_OK = Result) then
-				FDescriptionSyncGuard.OnFileRenamed(OldRealPath, NewRealPath, OldCloud);
-		end else begin
-			Result := OldCloud.FileCopy(OldRealPath.Path, NewRealPath.Path);
-		end;
-
+	end else begin {Same account - delegate to handler}
+		Result := FSameAccountMoveHandler.Execute(OldCloud, OldRealPath, NewRealPath, Move, OverWrite);
 	end;
 	TCProgress.Progress(OldName, NewName, 100);
 end;

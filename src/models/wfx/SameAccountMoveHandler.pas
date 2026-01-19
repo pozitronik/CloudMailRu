@@ -1,0 +1,79 @@
+unit SameAccountMoveHandler;
+
+{Handles move/copy operations within a single account.
+ Manages overwrite behavior, skip-path blacklist for directory removal (issue #168),
+ and notifies description sync on successful renames.}
+
+interface
+
+uses
+	RealPath,
+	CloudMailRu,
+	IThreadStateManagerInterface,
+	IDescriptionSyncGuardInterface,
+	ISameAccountMoveHandlerInterface;
+
+type
+	TSameAccountMoveHandler = class(TInterfacedObject, ISameAccountMoveHandler)
+	private
+		FThreadState: IThreadStateManager;
+		FDescriptionSyncGuard: IDescriptionSyncGuard;
+
+		{Updates skip-path blacklist based on move result.
+		 Adds path on FS_FILE_EXISTS (TC will try to delete source dir).
+		 Removes path on FS_FILE_OK (successful overwrite).}
+		procedure UpdateSkipPath(MoveResult: Integer; const OldPath: TRealPath);
+	public
+		constructor Create(ThreadState: IThreadStateManager; DescriptionSyncGuard: IDescriptionSyncGuard);
+
+		function Execute(Cloud: TCloudMailRu; const OldPath, NewPath: TRealPath;
+			Move, OverWrite: Boolean): Integer;
+	end;
+
+implementation
+
+uses
+	PLUGIN_TYPES;
+
+constructor TSameAccountMoveHandler.Create(ThreadState: IThreadStateManager;
+	DescriptionSyncGuard: IDescriptionSyncGuard);
+begin
+	inherited Create;
+	FThreadState := ThreadState;
+	FDescriptionSyncGuard := DescriptionSyncGuard;
+end;
+
+procedure TSameAccountMoveHandler.UpdateSkipPath(MoveResult: Integer; const OldPath: TRealPath);
+begin
+	if not FThreadState.HasRemoveDirSkippedPath then
+		Exit;
+
+	{TC will try to delete source directory after move if target exists.
+	 Add to blacklist to prevent deletion (issue #168).}
+	if MoveResult = FS_FILE_EXISTS then
+		FThreadState.AddSkippedPath(OldPath.ToPath)
+	{Remove from blacklist if move succeeded (user chose to overwrite)}
+	else if MoveResult = FS_FILE_OK then
+		FThreadState.RemoveSkippedPath(OldPath.ToPath);
+end;
+
+function TSameAccountMoveHandler.Execute(Cloud: TCloudMailRu; const OldPath, NewPath: TRealPath;
+	Move, OverWrite: Boolean): Integer;
+begin
+	{Handle overwrite by deleting existing file first}
+	if OverWrite and not Cloud.deleteFile(NewPath.Path) then
+		Exit(FS_FILE_NOTSUPPORTED);
+
+	if Move then
+	begin
+		Result := Cloud.FileMove(OldPath.Path, NewPath.Path);
+		UpdateSkipPath(Result, OldPath);
+
+		if Result = FS_FILE_OK then
+			FDescriptionSyncGuard.OnFileRenamed(OldPath, NewPath, Cloud);
+	end
+	else
+		Result := Cloud.FileCopy(OldPath.Path, NewPath.Path);
+end;
+
+end.

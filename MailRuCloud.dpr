@@ -136,7 +136,9 @@ uses
 	IListingSkipDeciderInterface in 'src\models\wfx\IListingSkipDeciderInterface.pas',
 	ListingSkipDecider in 'src\models\wfx\ListingSkipDecider.pas',
 	IListingPathValidatorInterface in 'src\models\wfx\IListingPathValidatorInterface.pas',
-	ListingPathValidator in 'src\models\wfx\ListingPathValidator.pas';
+	ListingPathValidator in 'src\models\wfx\ListingPathValidator.pas',
+	ISameAccountMoveHandlerInterface in 'src\models\wfx\ISameAccountMoveHandlerInterface.pas',
+	SameAccountMoveHandler in 'src\models\wfx\SameAccountMoveHandler.pas';
 
 {$IFDEF WIN64}
 {$E wfx64}
