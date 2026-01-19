@@ -174,7 +174,9 @@ uses
 	IRootListingHandlerInterface in 'src\models\wfx\IRootListingHandlerInterface.pas',
 	RootListingHandler in 'src\models\wfx\RootListingHandler.pas',
 	IPathListingHandlerInterface in 'src\models\wfx\IPathListingHandlerInterface.pas',
-	PathListingHandler in 'src\models\wfx\PathListingHandler.pas';
+	PathListingHandler in 'src\models\wfx\PathListingHandler.pas',
+	IIconContextBuilderInterface in 'src\models\wfx\IIconContextBuilderInterface.pas',
+	IconContextBuilder in 'src\models\wfx\IconContextBuilder.pas';
 
 {$IFDEF WIN64}
 {$E wfx64}

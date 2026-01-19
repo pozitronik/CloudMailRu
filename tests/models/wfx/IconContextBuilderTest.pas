@@ -1,0 +1,456 @@
+unit IconContextBuilderTest;
+
+{Unit tests for TIconContextBuilder.
+ Tests icon context building with various path types and account settings.}
+
+interface
+
+uses
+	DUnitX.TestFramework,
+	Windows,
+	RealPath,
+	CMRDirItem,
+	CMRDirItemList,
+	CMRIncomingInvite,
+	CMRIncomingInviteList,
+	AccountSettings,
+	CloudMailRu,
+	CloudSettings,
+	ConnectionManager,
+	IIconContextBuilderInterface,
+	IIconProviderInterface,
+	IAccountsManagerInterface,
+	IListingItemFetcherInterface,
+	ILoggerInterface,
+	IProgressInterface,
+	IRequestInterface,
+	IAuthStrategyInterface,
+	IFileSystemInterface,
+	IHTTPManagerInterface,
+	MockCloudHTTP,
+	MockHTTPManager,
+	IconContextBuilder;
+
+type
+	{Mock accounts manager for testing - implements interface directly}
+	TMockAccountsManager = class(TInterfacedObject, IAccountsManager)
+	private
+		FPublicAccountNames: array of WideString;
+	public
+		procedure AddPublicAccount(const AccountName: WideString);
+		function GetAccountSettings(Account: WideString): TAccountSettings;
+		procedure SetAccountSettings(Account: WideString; AccountSettings: TAccountSettings);
+		procedure SwitchPasswordStorage(Account: WideString);
+		procedure SetCryptedGUID(Account: WideString; GUID: WideString);
+	end;
+
+	{Mock listing item fetcher for testing}
+	TMockIconListingItemFetcher = class(TInterfacedObject, IListingItemFetcher)
+	private
+		FReturnItem: TCMRDirItem;
+		FFetchCalled: Boolean;
+	public
+		property FetchCalled: Boolean read FFetchCalled;
+		procedure SetReturnItem(const Item: TCMRDirItem);
+		function FetchItem(var Listing: TCMRDirItemList; const Path: TRealPath;
+			Cloud: TCloudMailRu; UpdateListing: Boolean): TCMRDirItem;
+	end;
+
+	[TestFixture]
+	TIconContextBuilderTest = class
+	private
+		FBuilder: IIconContextBuilder;
+		FMockAccountSettings: TMockAccountsManager;
+		FMockItemFetcher: TMockIconListingItemFetcher;
+		FConnectionManager: TConnectionManager;
+		FMockHTTP: TMockCloudHTTP;
+		FMockHTTPManager: TMockHTTPManager;
+
+		function CreateInviteItem(const Name: WideString): TCMRIncomingInvite;
+	public
+		[Setup]
+		procedure Setup;
+		[TearDown]
+		procedure TearDown;
+
+		{Basic context building tests}
+		[Test]
+		procedure TestBuildContext_SetsIconsMode;
+		[Test]
+		procedure TestBuildContext_DefaultsHasItemFalse;
+		[Test]
+		procedure TestBuildContext_DefaultsHasInviteItemFalse;
+		[Test]
+		procedure TestBuildContext_DefaultsIsPublicAccountFalse;
+
+		{Public account detection tests}
+		[Test]
+		procedure TestBuildContext_AccountRoot_DetectsPublicAccount;
+		[Test]
+		procedure TestBuildContext_AccountRoot_DetectsPrivateAccount;
+		[Test]
+		procedure TestBuildContext_VirtualPath_SkipsPublicAccountCheck;
+
+		{Dir item lookup tests}
+		[Test]
+		procedure TestBuildContext_RegularPath_FindsDirItem;
+		[Test]
+		procedure TestBuildContext_RegularPath_SetsHasItemTrue;
+		[Test]
+		procedure TestBuildContext_AccountRoot_SkipsDirItemLookup;
+
+		{Invite item lookup tests}
+		[Test]
+		procedure TestBuildContext_InvitesPath_FindsInviteItem;
+		[Test]
+		procedure TestBuildContext_InvitesPath_SetsHasInviteItemTrue;
+		[Test]
+		procedure TestBuildContext_InvitesRoot_SkipsInviteItemLookup;
+	end;
+
+implementation
+
+uses
+	SysUtils;
+
+{TMockAccountsManager}
+
+procedure TMockAccountsManager.AddPublicAccount(const AccountName: WideString);
+begin
+	SetLength(FPublicAccountNames, Length(FPublicAccountNames) + 1);
+	FPublicAccountNames[High(FPublicAccountNames)] := AccountName;
+end;
+
+function TMockAccountsManager.GetAccountSettings(Account: WideString): TAccountSettings;
+var
+	i: Integer;
+begin
+	Result := Default(TAccountSettings);
+	Result.Account := Account;
+	for i := 0 to High(FPublicAccountNames) do
+		if FPublicAccountNames[i] = Account then
+		begin
+			Result.PublicAccount := True;
+			Exit;
+		end;
+end;
+
+procedure TMockAccountsManager.SetAccountSettings(Account: WideString; AccountSettings: TAccountSettings);
+begin
+	{No-op for mock}
+end;
+
+procedure TMockAccountsManager.SwitchPasswordStorage(Account: WideString);
+begin
+	{No-op for mock}
+end;
+
+procedure TMockAccountsManager.SetCryptedGUID(Account: WideString; GUID: WideString);
+begin
+	{No-op for mock}
+end;
+
+{TMockIconListingItemFetcher}
+
+procedure TMockIconListingItemFetcher.SetReturnItem(const Item: TCMRDirItem);
+begin
+	FReturnItem := Item;
+end;
+
+function TMockIconListingItemFetcher.FetchItem(var Listing: TCMRDirItemList;
+	const Path: TRealPath; Cloud: TCloudMailRu; UpdateListing: Boolean): TCMRDirItem;
+begin
+	FFetchCalled := True;
+	Result := FReturnItem;
+end;
+
+{TIconContextBuilderTest}
+
+function TIconContextBuilderTest.CreateInviteItem(const Name: WideString): TCMRIncomingInvite;
+begin
+	FillChar(Result, SizeOf(Result), 0);
+	Result.name := Name;
+end;
+
+procedure TIconContextBuilderTest.Setup;
+begin
+	FMockAccountSettings := TMockAccountsManager.Create;
+	FMockItemFetcher := TMockIconListingItemFetcher.Create;
+	FMockHTTP := TMockCloudHTTP.Create;
+	FMockHTTPManager := TMockHTTPManager.Create(FMockHTTP);
+	{Pass nil ConnectionManager - FindDirItem handles nil gracefully}
+	FConnectionManager := nil;
+
+	FBuilder := TIconContextBuilder.Create(
+		FMockAccountSettings,
+		FConnectionManager,
+		FMockItemFetcher);
+end;
+
+procedure TIconContextBuilderTest.TearDown;
+begin
+	FBuilder := nil;
+	FreeAndNil(FConnectionManager);
+	FMockHTTPManager := nil;
+	FMockHTTP := nil;
+	FMockItemFetcher := nil;
+	FMockAccountSettings := nil;
+end;
+
+{Basic context building tests}
+
+procedure TIconContextBuilderTest.TestBuildContext_SetsIconsMode;
+var
+	Input: TIconContextInput;
+	DirListing: TCMRDirItemList;
+	InviteListing: TCMRIncomingInviteList;
+	Context: TIconContext;
+begin
+	Input.Path.FromPath('\account');
+	// RemoteName removed := '\account';
+	Input.IconsMode := 3;
+	SetLength(DirListing, 0);
+	SetLength(InviteListing, 0);
+
+	Context := FBuilder.BuildContext(Input, DirListing, InviteListing);
+
+	Assert.AreEqual(3, Context.IconsMode);
+end;
+
+procedure TIconContextBuilderTest.TestBuildContext_DefaultsHasItemFalse;
+var
+	Input: TIconContextInput;
+	DirListing: TCMRDirItemList;
+	InviteListing: TCMRIncomingInviteList;
+	Context: TIconContext;
+begin
+	Input.Path.FromPath('\account');
+	// RemoteName removed := '\account';
+	Input.IconsMode := 1;
+	SetLength(DirListing, 0);
+	SetLength(InviteListing, 0);
+
+	Context := FBuilder.BuildContext(Input, DirListing, InviteListing);
+
+	Assert.IsFalse(Context.HasItem);
+end;
+
+procedure TIconContextBuilderTest.TestBuildContext_DefaultsHasInviteItemFalse;
+var
+	Input: TIconContextInput;
+	DirListing: TCMRDirItemList;
+	InviteListing: TCMRIncomingInviteList;
+	Context: TIconContext;
+begin
+	Input.Path.FromPath('\account');
+	// RemoteName removed := '\account';
+	Input.IconsMode := 1;
+	SetLength(DirListing, 0);
+	SetLength(InviteListing, 0);
+
+	Context := FBuilder.BuildContext(Input, DirListing, InviteListing);
+
+	Assert.IsFalse(Context.HasInviteItem);
+end;
+
+procedure TIconContextBuilderTest.TestBuildContext_DefaultsIsPublicAccountFalse;
+var
+	Input: TIconContextInput;
+	DirListing: TCMRDirItemList;
+	InviteListing: TCMRIncomingInviteList;
+	Context: TIconContext;
+begin
+	Input.Path.FromPath('\account\subfolder');
+	// RemoteName removed := '\account\subfolder';
+	Input.IconsMode := 1;
+	SetLength(DirListing, 0);
+	SetLength(InviteListing, 0);
+
+	Context := FBuilder.BuildContext(Input, DirListing, InviteListing);
+
+	Assert.IsFalse(Context.IsPublicAccount);
+end;
+
+{Public account detection tests}
+
+procedure TIconContextBuilderTest.TestBuildContext_AccountRoot_DetectsPublicAccount;
+var
+	Input: TIconContextInput;
+	DirListing: TCMRDirItemList;
+	InviteListing: TCMRIncomingInviteList;
+	Context: TIconContext;
+begin
+	FMockAccountSettings.AddPublicAccount('public_acc');
+	Input.Path.FromPath('\public_acc');
+	// RemoteName removed := '\public_acc';
+	Input.IconsMode := 1;
+	SetLength(DirListing, 0);
+	SetLength(InviteListing, 0);
+
+	Context := FBuilder.BuildContext(Input, DirListing, InviteListing);
+
+	Assert.IsTrue(Context.IsPublicAccount);
+end;
+
+procedure TIconContextBuilderTest.TestBuildContext_AccountRoot_DetectsPrivateAccount;
+var
+	Input: TIconContextInput;
+	DirListing: TCMRDirItemList;
+	InviteListing: TCMRIncomingInviteList;
+	Context: TIconContext;
+begin
+	Input.Path.FromPath('\private_acc');
+	// RemoteName removed := '\private_acc';
+	Input.IconsMode := 1;
+	SetLength(DirListing, 0);
+	SetLength(InviteListing, 0);
+
+	Context := FBuilder.BuildContext(Input, DirListing, InviteListing);
+
+	Assert.IsFalse(Context.IsPublicAccount);
+end;
+
+procedure TIconContextBuilderTest.TestBuildContext_VirtualPath_SkipsPublicAccountCheck;
+var
+	Input: TIconContextInput;
+	DirListing: TCMRDirItemList;
+	InviteListing: TCMRIncomingInviteList;
+	Context: TIconContext;
+begin
+	FMockAccountSettings.AddPublicAccount('account');
+	Input.Path.FromPath('\account.trash');
+	// RemoteName removed := '\account.trash';
+	Input.IconsMode := 1;
+	SetLength(DirListing, 0);
+	SetLength(InviteListing, 0);
+
+	Context := FBuilder.BuildContext(Input, DirListing, InviteListing);
+
+	{Virtual paths should not check public account status}
+	Assert.IsFalse(Context.IsPublicAccount);
+end;
+
+{Dir item lookup tests}
+
+procedure TIconContextBuilderTest.TestBuildContext_RegularPath_FindsDirItem;
+var
+	Input: TIconContextInput;
+	DirListing: TCMRDirItemList;
+	InviteListing: TCMRIncomingInviteList;
+	Context: TIconContext;
+begin
+	{With nil ConnectionManager, FindDirItem returns None.
+	 This test verifies the path triggers dir item lookup branch.
+	 Actual item lookup integration requires a configured ConnectionManager.}
+	Input.Path.FromPath('\account\folder\test.txt');
+	Input.IconsMode := 1;
+	SetLength(DirListing, 0);
+	SetLength(InviteListing, 0);
+
+	Context := FBuilder.BuildContext(Input, DirListing, InviteListing);
+
+	{Verify path correctly identified as regular path (not account root, not virtual)}
+	Assert.IsTrue(Context.HasItem, 'Regular path should set HasItem');
+	Assert.IsFalse(Context.HasInviteItem, 'Regular path should not set HasInviteItem');
+end;
+
+procedure TIconContextBuilderTest.TestBuildContext_RegularPath_SetsHasItemTrue;
+var
+	Input: TIconContextInput;
+	DirListing: TCMRDirItemList;
+	InviteListing: TCMRIncomingInviteList;
+	Context: TIconContext;
+begin
+	{HasItem is set unconditionally when path matches regular file/folder branch}
+	Input.Path.FromPath('\account\file.txt');
+	Input.IconsMode := 1;
+	SetLength(DirListing, 0);
+	SetLength(InviteListing, 0);
+
+	Context := FBuilder.BuildContext(Input, DirListing, InviteListing);
+
+	Assert.IsTrue(Context.HasItem);
+end;
+
+procedure TIconContextBuilderTest.TestBuildContext_AccountRoot_SkipsDirItemLookup;
+var
+	Input: TIconContextInput;
+	DirListing: TCMRDirItemList;
+	InviteListing: TCMRIncomingInviteList;
+	Context: TIconContext;
+begin
+	Input.Path.FromPath('\account');
+	// RemoteName removed := '\account';
+	Input.IconsMode := 1;
+	SetLength(DirListing, 0);
+	SetLength(InviteListing, 0);
+
+	Context := FBuilder.BuildContext(Input, DirListing, InviteListing);
+
+	Assert.IsFalse(FMockItemFetcher.FetchCalled, 'Should not call fetcher for account root');
+	Assert.IsFalse(Context.HasItem);
+end;
+
+{Invite item lookup tests}
+
+procedure TIconContextBuilderTest.TestBuildContext_InvitesPath_FindsInviteItem;
+var
+	Input: TIconContextInput;
+	DirListing: TCMRDirItemList;
+	InviteListing: TCMRIncomingInviteList;
+	Context: TIconContext;
+begin
+	Input.Path.FromPath('\account.invites\shared_folder');
+	// RemoteName removed := '\account.invites\shared_folder';
+	Input.IconsMode := 1;
+	SetLength(DirListing, 0);
+	SetLength(InviteListing, 1);
+	InviteListing[0] := CreateInviteItem('shared_folder');
+
+	Context := FBuilder.BuildContext(Input, DirListing, InviteListing);
+
+	Assert.AreEqual('shared_folder', string(Context.InviteItem.name));
+end;
+
+procedure TIconContextBuilderTest.TestBuildContext_InvitesPath_SetsHasInviteItemTrue;
+var
+	Input: TIconContextInput;
+	DirListing: TCMRDirItemList;
+	InviteListing: TCMRIncomingInviteList;
+	Context: TIconContext;
+begin
+	Input.Path.FromPath('\account.invites\folder');
+	// RemoteName removed := '\account.invites\folder';
+	Input.IconsMode := 1;
+	SetLength(DirListing, 0);
+	SetLength(InviteListing, 1);
+	InviteListing[0] := CreateInviteItem('folder');
+
+	Context := FBuilder.BuildContext(Input, DirListing, InviteListing);
+
+	Assert.IsTrue(Context.HasInviteItem);
+end;
+
+procedure TIconContextBuilderTest.TestBuildContext_InvitesRoot_SkipsInviteItemLookup;
+var
+	Input: TIconContextInput;
+	DirListing: TCMRDirItemList;
+	InviteListing: TCMRIncomingInviteList;
+	Context: TIconContext;
+begin
+	Input.Path.FromPath('\account.invites');
+	// RemoteName removed := '\account.invites';
+	Input.IconsMode := 1;
+	SetLength(DirListing, 0);
+	SetLength(InviteListing, 0);
+
+	Context := FBuilder.BuildContext(Input, DirListing, InviteListing);
+
+	{Account root in invites should not look up invite items}
+	Assert.IsFalse(Context.HasInviteItem);
+end;
+
+initialization
+	TDUnitX.RegisterTestFixture(TIconContextBuilderTest);
+
+end.

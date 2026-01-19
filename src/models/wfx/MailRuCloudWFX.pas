@@ -130,7 +130,9 @@ uses
 	IRootListingHandlerInterface,
 	RootListingHandler,
 	IPathListingHandlerInterface,
-	PathListingHandler;
+	PathListingHandler,
+	IIconContextBuilderInterface,
+	IconContextBuilder;
 
 type
 	TMailRuCloudWFX = class(TInterfacedObject, IWFXInterface)
@@ -173,6 +175,7 @@ type
 		FInviteOperationHandler: IInviteOperationHandler;
 		FCrossAccountFileOperationHandler: ICrossAccountFileOperationHandler;
 		FIconRenderingEngine: IIconRenderingEngine;
+		FIconContextBuilder: IIconContextBuilder;
 		FFileExecutionDispatcher: IFileExecutionDispatcher;
 		FSharedItemActionHandler: ISharedItemActionHandler;
 		FUploadCompletionHandler: IUploadCompletionHandler;
@@ -412,6 +415,7 @@ begin
 	FInviteOperationHandler := nil;
 	FCrossAccountFileOperationHandler := nil;
 	FIconRenderingEngine := nil;
+	FIconContextBuilder := nil;
 	FFileExecutionDispatcher := nil;
 	FSharedItemActionHandler := nil;
 	FUploadCompletionHandler := nil;
@@ -680,6 +684,7 @@ end;
 function TMailRuCloudWFX.FsExtractCustomIcon(RemoteName: PWideChar; ExtractFlags: Integer; var TheIcon: hIcon): Integer;
 var
 	RealPath: TRealPath;
+	Input: TIconContextInput;
 	Context: TIconContext;
 	IconInfo: TIconInfo;
 	IconsSize: Integer;
@@ -688,26 +693,10 @@ begin
 	RealPath.FromPath(RemoteName);
 	IconsSize := GetTCIconsSize;
 
-	{Build context for provider}
-	Context.IconsMode := SettingsManager.Settings.IconsMode;
-	Context.HasItem := False;
-	Context.HasInviteItem := False;
-	Context.IsPublicAccount := False;
-
-	if RealPath.isInAccountsList and not RealPath.isVirtual then
-		Context.IsPublicAccount := AccountSettings.GetAccountSettings(
-			copy(RemoteName, 2, StrLen(RemoteName) - 2)).PublicAccount;
-
-	if RealPath.invitesDir and not RealPath.isInAccountsList then
-	begin
-		Context.InviteItem := FindIncomingInviteItemByPath(CurrentIncomingInvitesListing, RealPath);
-		Context.HasInviteItem := True;
-	end
-	else if not RealPath.isInAccountsList and not RealPath.isVirtual then
-	begin
-		Context.Item := FindListingItemByPath(CurrentListing, RealPath);
-		Context.HasItem := True;
-	end;
+	{Build context using builder}
+	Input.Path := RealPath;
+	Input.IconsMode := SettingsManager.Settings.IconsMode;
+	Context := FIconContextBuilder.BuildContext(Input, CurrentListing, CurrentIncomingInvitesListing);
 
 	{Get icon info from provider}
 	IconInfo := FIconProvider.GetIcon(RealPath, Context);
@@ -978,6 +967,9 @@ begin
 	CipherVal := TCipherValidator.Create;
 	ConnectionManager := TConnectionManager.Create(SettingsManager, AccountSettings, HTTPMgr, PasswordUI, CipherVal, TWindowsFileSystem.Create, TCProgress, TCLogger, TCRequest, PasswordManager);
 	FCommandDispatcher := TCommandDispatcher.Create(ConnectionManager, TCLogger, SettingsManager);
+
+	{Create icon context builder for FsExtractCustomIcon}
+	FIconContextBuilder := TIconContextBuilder.Create(AccountSettings, ConnectionManager, FListingItemFetcher);
 end;
 
 procedure TMailRuCloudWFX.FsStatusInfo(RemoteDir: WideString; InfoStartEnd, InfoOperation: Integer);

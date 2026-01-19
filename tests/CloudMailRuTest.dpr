@@ -282,7 +282,10 @@ uses
 	RootListingHandlerTest in 'models\wfx\RootListingHandlerTest.pas',
 	IPathListingHandlerInterface in '..\src\models\wfx\IPathListingHandlerInterface.pas',
 	PathListingHandler in '..\src\models\wfx\PathListingHandler.pas',
-	PathListingHandlerTest in 'models\wfx\PathListingHandlerTest.pas';
+	PathListingHandlerTest in 'models\wfx\PathListingHandlerTest.pas',
+	IIconContextBuilderInterface in '..\src\models\wfx\IIconContextBuilderInterface.pas',
+	IconContextBuilder in '..\src\models\wfx\IconContextBuilder.pas',
+	IconContextBuilderTest in 'models\wfx\IconContextBuilderTest.pas';
 
 {keep comment here to protect the following conditional from being removed by the IDE when adding a unit}
 {$IFNDEF TESTINSIGHT}
