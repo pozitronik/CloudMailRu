@@ -105,7 +105,9 @@ uses
 	IAccountRegistrationHandlerInterface,
 	AccountRegistrationHandler,
 	ITrashBinOperationHandlerInterface,
-	TrashBinOperationHandler;
+	TrashBinOperationHandler,
+	IInviteOperationHandlerInterface,
+	InviteOperationHandler;
 
 type
 	TMailRuCloudWFX = class(TInterfacedObject, IWFXInterface)
@@ -142,6 +144,7 @@ type
 		FSharedItemDeletionHandler: ISharedItemDeletionHandler;
 		FAccountRegistrationHandler: IAccountRegistrationHandler;
 		FTrashBinOperationHandler: ITrashBinOperationHandler;
+		FInviteOperationHandler: IInviteOperationHandler;
 
 		PluginNum: Integer;
 
@@ -324,6 +327,9 @@ begin
 
 	{Create trashbin operation handler for ExecTrashbinProperties}
 	FTrashBinOperationHandler := TTrashBinOperationHandler.Create;
+
+	{Create invite operation handler for ExecInvitesAction}
+	FInviteOperationHandler := TInviteOperationHandler.Create;
 	Result := 0;
 end;
 
@@ -352,6 +358,7 @@ begin
 	FSharedItemDeletionHandler := nil;
 	FAccountRegistrationHandler := nil;
 	FTrashBinOperationHandler := nil;
+	FInviteOperationHandler := nil;
 	FreeAndNil(ConnectionManager);
 
 	CurrentDescriptions.Free;
@@ -389,23 +396,16 @@ begin
 	begin
 		if TAccountsForm.ShowAccounts(MainWin, PasswordManager, RealPath.account) then
 			SettingsManager.Refresh;
-	end else begin //one invite item
+	end else begin //one invite item - delegate to handler
 		CurrentInvite := FindIncomingInviteItemByPath(CurrentIncomingInvitesListing, RealPath);
 		if CurrentInvite.name = EmptyWideStr then
 			exit(FS_EXEC_ERROR);
 
-		getResult := TInvitePropertyForm.ShowProperties(MainWin, CurrentInvite);
-	end;
-	case (getResult) of
-		mrAbort:
-			Cloud.unmountFolder(CurrentInvite.name, true);
-		mrClose:
-			Cloud.unmountFolder(CurrentInvite.name, false);
-		mrYes:
-			Cloud.mountFolder(CurrentInvite.name, CurrentInvite.invite_token);
-		mrNo:
-			Cloud.rejectInvite(CurrentInvite.invite_token);
-
+		Result := FInviteOperationHandler.Execute(MainWin, Cloud, CurrentInvite,
+			function(ParentWindow: HWND; const Inv: TCMRIncomingInvite): Integer
+			begin
+				Result := TInvitePropertyForm.ShowProperties(ParentWindow, Inv);
+			end);
 	end;
 
 	PostMessage(MainWin, WM_USER + TC_REFRESH_MESSAGE, TC_REFRESH_PARAM, 0); //TC does not update current panel, so we should do it this way

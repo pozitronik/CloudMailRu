@@ -150,7 +150,9 @@ uses
 	IAccountRegistrationHandlerInterface in 'src\models\wfx\IAccountRegistrationHandlerInterface.pas',
 	AccountRegistrationHandler in 'src\models\wfx\AccountRegistrationHandler.pas',
 	ITrashBinOperationHandlerInterface in 'src\models\wfx\ITrashBinOperationHandlerInterface.pas',
-	TrashBinOperationHandler in 'src\models\wfx\TrashBinOperationHandler.pas';
+	TrashBinOperationHandler in 'src\models\wfx\TrashBinOperationHandler.pas',
+	IInviteOperationHandlerInterface in 'src\models\wfx\IInviteOperationHandlerInterface.pas',
+	InviteOperationHandler in 'src\models\wfx\InviteOperationHandler.pas';
 
 {$IFDEF WIN64}
 {$E wfx64}
