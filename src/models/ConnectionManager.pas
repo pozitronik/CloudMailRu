@@ -17,6 +17,7 @@ uses
 	IPluginSettingsManagerInterface,
 	IPasswordUIProviderInterface,
 	IFileSystemInterface,
+	IConnectionManagerInterface,
 	Windows,
 	Vcl.Controls,
 	SETTINGS_CONSTANTS,
@@ -36,7 +37,7 @@ uses
 
 type
 
-	TConnectionManager = class
+	TConnectionManager = class(TInterfacedObject, IConnectionManager)
 	private
 		FConnections: TDictionary<WideString, TCloudMailRu>; {It is better to encapsulate the dictionary}
 		FHTTPManager: IHTTPManager;

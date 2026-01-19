@@ -10,7 +10,7 @@ uses
 	ICommandDispatcherInterface,
 	ILoggerInterface,
 	IPluginSettingsManagerInterface,
-	ConnectionManager,
+	IConnectionManagerInterface,
 	CloudMailRu,
 	RealPath,
 	HashInfo,
@@ -23,7 +23,7 @@ uses
 type
 	TCommandDispatcher = class(TInterfacedObject, ICommandDispatcher)
 	private
-		FConnectionManager: TConnectionManager;
+		FConnectionManager: IConnectionManager;
 		FLogger: ILogger;
 		FSettingsManager: IPluginSettingsManager;
 
@@ -39,7 +39,7 @@ type
 		 @param ALogger Logger for error reporting
 		 @param ASettingsManager Settings manager for configuration access}
 		constructor Create(
-			AConnectionManager: TConnectionManager;
+			AConnectionManager: IConnectionManager;
 			ALogger: ILogger;
 			ASettingsManager: IPluginSettingsManager
 		);
@@ -50,7 +50,7 @@ type
 implementation
 
 constructor TCommandDispatcher.Create(
-	AConnectionManager: TConnectionManager;
+	AConnectionManager: IConnectionManager;
 	ALogger: ILogger;
 	ASettingsManager: IPluginSettingsManager
 );

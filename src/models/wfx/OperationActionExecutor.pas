@@ -13,7 +13,7 @@ uses
 	IThreadStateManagerInterface,
 	IPluginSettingsManagerInterface,
 	ILoggerInterface,
-	ConnectionManager,
+	IConnectionManagerInterface,
 	Description,
 	RealPath,
 	CMRConstants,
@@ -24,7 +24,7 @@ type
 	TOperationActionExecutor = class(TInterfacedObject, IOperationActionExecutor)
 	private
 		FThreadState: IThreadStateManager;
-		FConnectionManager: TConnectionManager;
+		FConnectionManager: IConnectionManager;
 		FSettingsManager: IPluginSettingsManager;
 		FDescriptions: TDescription;
 		FLogger: ILogger;
@@ -55,7 +55,7 @@ type
 	public
 		constructor Create(
 			ThreadState: IThreadStateManager;
-			AConnectionManager: TConnectionManager;
+			AConnectionManager: IConnectionManager;
 			SettingsManager: IPluginSettingsManager;
 			Descriptions: TDescription;
 			Logger: ILogger
@@ -71,7 +71,7 @@ uses
 
 constructor TOperationActionExecutor.Create(
 	ThreadState: IThreadStateManager;
-	AConnectionManager: TConnectionManager;
+	AConnectionManager: IConnectionManager;
 	SettingsManager: IPluginSettingsManager;
 	Descriptions: TDescription;
 	Logger: ILogger

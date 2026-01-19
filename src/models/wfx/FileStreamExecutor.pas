@@ -11,7 +11,7 @@ uses
 	CMRDirItem,
 	CMRConstants,
 	StreamingSettings,
-	ConnectionManager,
+	IConnectionManagerInterface,
 	CloudMailRu,
 	IFileStreamExecutorInterface;
 
@@ -22,7 +22,7 @@ type
 		 For playlist: gets HLS stream URL.
 		 For other formats: publishes file if needed and gets shared URL.}
 		function ResolveStreamUrl(const RealPath: TRealPath; const Item: TCMRDirItem;
-			Format: Integer; TempCloud: TCloudMailRu; ConnManager: TConnectionManager;
+			Format: Integer; TempCloud: TCloudMailRu; ConnManager: IConnectionManager;
 			out StreamUrl: WideString): Boolean;
 
 		{Executes streaming command with URL substitution.}
@@ -30,7 +30,7 @@ type
 			const StreamUrl: WideString): Boolean;
 	public
 		function Execute(const RealPath: TRealPath; const Item: TCMRDirItem;
-			var Settings: TStreamingSettings; ConnManager: TConnectionManager): Integer;
+			var Settings: TStreamingSettings; ConnManager: IConnectionManager): Integer;
 	end;
 
 implementation
@@ -43,7 +43,7 @@ uses
 
 function TFileStreamExecutor.ResolveStreamUrl(const RealPath: TRealPath;
 	const Item: TCMRDirItem; Format: Integer; TempCloud: TCloudMailRu;
-	ConnManager: TConnectionManager; out StreamUrl: WideString): Boolean;
+	ConnManager: IConnectionManager; out StreamUrl: WideString): Boolean;
 var
 	getResult: Integer;
 	CurrentCloud: TCloudMailRu;
@@ -89,7 +89,7 @@ end;
 
 function TFileStreamExecutor.Execute(const RealPath: TRealPath;
 	const Item: TCMRDirItem; var Settings: TStreamingSettings;
-	ConnManager: TConnectionManager): Integer;
+	ConnManager: IConnectionManager): Integer;
 var
 	StreamUrl: WideString;
 	TempPublicCloud: TCloudMailRu;

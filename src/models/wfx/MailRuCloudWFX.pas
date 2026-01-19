@@ -25,6 +25,7 @@ uses
 	CMRDirItemList,
 	CMRIncomingInviteList,
 	ConnectionManager,
+	IConnectionManagerInterface,
 	ConnectionSettings,
 	IdSSLOpenSSLHeaders,
 	Description,
@@ -190,7 +191,7 @@ type
 
 		CurrentListing: TCMRDirItemList;
 		CurrentIncomingInvitesListing: TCMRIncomingInviteList;
-		ConnectionManager: TConnectionManager;
+		ConnectionManager: IConnectionManager;
 		CurrentDescriptions: TDescription;
 		PasswordManager: IPasswordManager;
 		PasswordUI: IPasswordUIProvider;
@@ -421,7 +422,7 @@ begin
 	FUploadCompletionHandler := nil;
 	FRootListingHandler := nil;
 	FPathListingHandler := nil;
-	FreeAndNil(ConnectionManager);
+	ConnectionManager := nil;
 
 	CurrentDescriptions.Free;
 

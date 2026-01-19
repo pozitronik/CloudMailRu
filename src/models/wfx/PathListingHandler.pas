@@ -10,7 +10,7 @@ uses
 	IPathListingHandlerInterface,
 	IListingProviderInterface,
 	IListingPathValidatorInterface,
-	ConnectionManager,
+	IConnectionManagerInterface,
 	PLUGIN_TYPES,
 	RealPath,
 	CMRDirItemList,
@@ -21,7 +21,7 @@ uses
 type
 	TPathListingHandler = class(TInterfacedObject, IPathListingHandler)
 	private
-		FConnectionManager: TConnectionManager;
+		FConnectionManager: IConnectionManager;
 		FListingProvider: IListingProvider;
 		FListingPathValidator: IListingPathValidator;
 
@@ -32,7 +32,7 @@ type
 		procedure HandleNonEmptyListing(var Result: TPathListingResult);
 	public
 		constructor Create(
-			ConnectionManager: TConnectionManager;
+			ConnectionManager: IConnectionManager;
 			ListingProvider: IListingProvider;
 			ListingPathValidator: IListingPathValidator
 		);
@@ -45,7 +45,7 @@ uses
 	CloudMailRu;
 
 constructor TPathListingHandler.Create(
-	ConnectionManager: TConnectionManager;
+	ConnectionManager: IConnectionManager;
 	ListingProvider: IListingProvider;
 	ListingPathValidator: IListingPathValidator
 );

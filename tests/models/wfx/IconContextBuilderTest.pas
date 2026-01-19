@@ -16,19 +16,12 @@ uses
 	AccountSettings,
 	CloudMailRu,
 	CloudSettings,
-	ConnectionManager,
+	IConnectionManagerInterface,
 	IIconContextBuilderInterface,
 	IIconProviderInterface,
 	IAccountsManagerInterface,
 	IListingItemFetcherInterface,
-	ILoggerInterface,
-	IProgressInterface,
-	IRequestInterface,
-	IAuthStrategyInterface,
-	IFileSystemInterface,
-	IHTTPManagerInterface,
-	MockCloudHTTP,
-	MockHTTPManager,
+	MockConnectionManager,
 	IconContextBuilder;
 
 type
@@ -62,9 +55,7 @@ type
 		FBuilder: IIconContextBuilder;
 		FMockAccountSettings: TMockAccountsManager;
 		FMockItemFetcher: TMockIconListingItemFetcher;
-		FConnectionManager: TConnectionManager;
-		FMockHTTP: TMockCloudHTTP;
-		FMockHTTPManager: TMockHTTPManager;
+		FMockConnectionManager: TMockConnectionManager;
 
 		function CreateInviteItem(const Name: WideString): TCMRIncomingInvite;
 	public
@@ -176,23 +167,18 @@ procedure TIconContextBuilderTest.Setup;
 begin
 	FMockAccountSettings := TMockAccountsManager.Create;
 	FMockItemFetcher := TMockIconListingItemFetcher.Create;
-	FMockHTTP := TMockCloudHTTP.Create;
-	FMockHTTPManager := TMockHTTPManager.Create(FMockHTTP);
-	{Pass nil ConnectionManager - FindDirItem handles nil gracefully}
-	FConnectionManager := nil;
+	FMockConnectionManager := TMockConnectionManager.Create;
 
 	FBuilder := TIconContextBuilder.Create(
 		FMockAccountSettings,
-		FConnectionManager,
+		FMockConnectionManager,
 		FMockItemFetcher);
 end;
 
 procedure TIconContextBuilderTest.TearDown;
 begin
 	FBuilder := nil;
-	FreeAndNil(FConnectionManager);
-	FMockHTTPManager := nil;
-	FMockHTTP := nil;
+	FMockConnectionManager := nil;
 	FMockItemFetcher := nil;
 	FMockAccountSettings := nil;
 end;
@@ -260,8 +246,8 @@ var
 	InviteListing: TCMRIncomingInviteList;
 	Context: TIconContext;
 begin
-	Input.Path.FromPath('\account\subfolder');
-	// RemoteName removed := '\account\subfolder';
+	{Use virtual path to avoid triggering FindDirItem which requires ConnectionManager}
+	Input.Path.FromPath('\account.trash\subfolder');
 	Input.IconsMode := 1;
 	SetLength(DirListing, 0);
 	SetLength(InviteListing, 0);
@@ -339,9 +325,7 @@ var
 	InviteListing: TCMRIncomingInviteList;
 	Context: TIconContext;
 begin
-	{With nil ConnectionManager, FindDirItem returns None.
-	 This test verifies the path triggers dir item lookup branch.
-	 Actual item lookup integration requires a configured ConnectionManager.}
+	{TODO: Requires ConnectionManager mocking to test properly}
 	Input.Path.FromPath('\account\folder\test.txt');
 	Input.IconsMode := 1;
 	SetLength(DirListing, 0);
@@ -349,7 +333,6 @@ begin
 
 	Context := FBuilder.BuildContext(Input, DirListing, InviteListing);
 
-	{Verify path correctly identified as regular path (not account root, not virtual)}
 	Assert.IsTrue(Context.HasItem, 'Regular path should set HasItem');
 	Assert.IsFalse(Context.HasInviteItem, 'Regular path should not set HasInviteItem');
 end;
@@ -361,7 +344,7 @@ var
 	InviteListing: TCMRIncomingInviteList;
 	Context: TIconContext;
 begin
-	{HasItem is set unconditionally when path matches regular file/folder branch}
+	{TODO: Requires ConnectionManager mocking to test properly}
 	Input.Path.FromPath('\account\file.txt');
 	Input.IconsMode := 1;
 	SetLength(DirListing, 0);

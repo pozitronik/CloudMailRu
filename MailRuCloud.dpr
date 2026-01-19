@@ -29,6 +29,7 @@ uses
 	CloudMailRuHTTP in 'src\models\http\CloudMailRuHTTP.pas',
 	ICloudHTTPInterface in 'src\models\http\ICloudHTTPInterface.pas',
 	CloudSettings in 'src\models\settings\CloudSettings.pas',
+	IConnectionManagerInterface in 'src\models\IConnectionManagerInterface.pas',
 	ConnectionManager in 'src\models\ConnectionManager.pas',
 	ConnectionSettings in 'src\models\settings\ConnectionSettings.pas',
 	DCPbase64 in 'src\libs\DCPCrypt\DCPbase64.pas',

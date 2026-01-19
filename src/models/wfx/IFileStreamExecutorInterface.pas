@@ -9,7 +9,7 @@ uses
 	RealPath,
 	CMRDirItem,
 	StreamingSettings,
-	ConnectionManager;
+	IConnectionManagerInterface;
 
 type
 	IFileStreamExecutor = interface
@@ -24,7 +24,7 @@ type
 		 @param ConnManager Connection manager for account access
 		 @return FS_EXEC_OK on success, FS_EXEC_ERROR on failure}
 		function Execute(const RealPath: TRealPath; const Item: TCMRDirItem;
-			var Settings: TStreamingSettings; ConnManager: TConnectionManager): Integer;
+			var Settings: TStreamingSettings; ConnManager: IConnectionManager): Integer;
 	end;
 
 implementation

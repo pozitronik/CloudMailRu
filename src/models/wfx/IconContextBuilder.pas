@@ -11,18 +11,18 @@ uses
 	IIconProviderInterface,
 	IListingItemFetcherInterface,
 	IAccountsManagerInterface,
+	IConnectionManagerInterface,
 	RealPath,
 	CMRDirItem,
 	CMRDirItemList,
 	CMRIncomingInvite,
-	CMRIncomingInviteList,
-	ConnectionManager;
+	CMRIncomingInviteList;
 
 type
 	TIconContextBuilder = class(TInterfacedObject, IIconContextBuilder)
 	private
 		FAccountSettings: IAccountsManager;
-		FConnectionManager: TConnectionManager;
+		FConnectionManager: IConnectionManager;
 		FListingItemFetcher: IListingItemFetcher;
 
 		{Checks if account is a public account}
@@ -38,7 +38,7 @@ type
 	public
 		constructor Create(
 			AccountSettings: IAccountsManager;
-			AConnectionManager: TConnectionManager;
+			AConnectionManager: IConnectionManager;
 			ListingItemFetcher: IListingItemFetcher);
 
 		function BuildContext(const Input: TIconContextInput;
@@ -54,7 +54,7 @@ uses
 
 constructor TIconContextBuilder.Create(
 	AccountSettings: IAccountsManager;
-	AConnectionManager: TConnectionManager;
+	AConnectionManager: IConnectionManager;
 	ListingItemFetcher: IListingItemFetcher);
 begin
 	inherited Create;
@@ -72,17 +72,13 @@ function TIconContextBuilder.FindInviteItem(const Path: TRealPath;
 	var InviteListing: TCMRIncomingInviteList): TCMRIncomingInvite;
 var
 	getResult: Integer;
-	Cloud: TCloudMailRu;
 begin
 	Result := InviteListing.FindByName(Path.Path);
 
 	{Item not found in current listing, refresh and search again}
 	if Result.isNone then
-	begin
-		Cloud := FConnectionManager.Get(Path.account, getResult);
-		if Assigned(Cloud) and Cloud.getIncomingLinksListing(InviteListing) then
+		if FConnectionManager.Get(Path.account, getResult).getIncomingLinksListing(InviteListing) then
 			Result := InviteListing.FindByName(Path.Path);
-	end;
 end;
 
 function TIconContextBuilder.FindDirItem(const Path: TRealPath;
@@ -91,19 +87,7 @@ var
 	getResult: Integer;
 	Cloud: TCloudMailRu;
 begin
-	if not Assigned(FConnectionManager) then
-	begin
-		Result := Result.None;
-		Exit;
-	end;
-
 	Cloud := FConnectionManager.Get(Path.account, getResult);
-	if not Assigned(Cloud) then
-	begin
-		Result := Result.None;
-		Exit;
-	end;
-
 	Result := FListingItemFetcher.FetchItem(DirListing, Path, Cloud, True);
 end;
 
