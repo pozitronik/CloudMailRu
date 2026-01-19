@@ -231,7 +231,10 @@ uses
 	SameAccountMoveHandlerTest in 'models\wfx\SameAccountMoveHandlerTest.pas',
 	IFileStreamExecutorInterface in '..\src\models\wfx\IFileStreamExecutorInterface.pas',
 	FileStreamExecutor in '..\src\models\wfx\FileStreamExecutor.pas',
-	FileStreamExecutorTest in 'models\wfx\FileStreamExecutorTest.pas';
+	FileStreamExecutorTest in 'models\wfx\FileStreamExecutorTest.pas',
+	ILocalFileConflictResolverInterface in '..\src\models\wfx\ILocalFileConflictResolverInterface.pas',
+	LocalFileConflictResolver in '..\src\models\wfx\LocalFileConflictResolver.pas',
+	LocalFileConflictResolverTest in 'models\wfx\LocalFileConflictResolverTest.pas';
 
 {keep comment here to protect the following conditional from being removed by the IDE when adding a unit}
 {$IFNDEF TESTINSIGHT}

@@ -140,7 +140,9 @@ uses
 	ISameAccountMoveHandlerInterface in 'src\models\wfx\ISameAccountMoveHandlerInterface.pas',
 	SameAccountMoveHandler in 'src\models\wfx\SameAccountMoveHandler.pas',
 	IFileStreamExecutorInterface in 'src\models\wfx\IFileStreamExecutorInterface.pas',
-	FileStreamExecutor in 'src\models\wfx\FileStreamExecutor.pas';
+	FileStreamExecutor in 'src\models\wfx\FileStreamExecutor.pas',
+	ILocalFileConflictResolverInterface in 'src\models\wfx\ILocalFileConflictResolverInterface.pas',
+	LocalFileConflictResolver in 'src\models\wfx\LocalFileConflictResolver.pas';
 
 {$IFDEF WIN64}
 {$E wfx64}

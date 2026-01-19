@@ -95,7 +95,9 @@ uses
 	ISameAccountMoveHandlerInterface,
 	SameAccountMoveHandler,
 	IFileStreamExecutorInterface,
-	FileStreamExecutor;
+	FileStreamExecutor,
+	ILocalFileConflictResolverInterface,
+	LocalFileConflictResolver;
 
 type
 	TMailRuCloudWFX = class(TInterfacedObject, IWFXInterface)
@@ -127,6 +129,7 @@ type
 		FListingPathValidator: IListingPathValidator;
 		FSameAccountMoveHandler: ISameAccountMoveHandler;
 		FFileStreamExecutor: IFileStreamExecutor;
+		FLocalFileConflictResolver: ILocalFileConflictResolver;
 
 		PluginNum: Integer;
 
@@ -294,6 +297,9 @@ begin
 
 	{Create file stream executor for ExecuteFileStream}
 	FFileStreamExecutor := TFileStreamExecutor.Create;
+
+	{Create local file conflict resolver for FsGetFile}
+	FLocalFileConflictResolver := TLocalFileConflictResolver.Create(TCLogger);
 	Result := 0;
 end;
 
@@ -317,6 +323,7 @@ begin
 	FListingPathValidator := nil;
 	FSameAccountMoveHandler := nil;
 	FFileStreamExecutor := nil;
+	FLocalFileConflictResolver := nil;
 	FreeAndNil(ConnectionManager);
 
 	CurrentDescriptions.Free;
@@ -847,7 +854,7 @@ end;
 function TMailRuCloudWFX.FsGetFile(RemoteName, LocalName: WideString; CopyFlags: Integer; RemoteInfo: pRemoteInfo): Integer;
 var
 	RealPath: TRealPath;
-	OverwriteLocalMode: Integer;
+	ConflictResolution: TConflictResolution;
 begin
 	Result := FS_FILE_NOTSUPPORTED;
 	if CheckFlag(FS_COPYFLAGS_RESUME, CopyFlags) then
@@ -858,21 +865,11 @@ begin
 
 	TCProgress.Progress(RemoteName, LocalName, 0);
 
-	OverwriteLocalMode := SettingsManager.Settings.OverwriteLocalMode;
-	if (FileExists(GetUNCFilePath(LocalName)) and not(CheckFlag(FS_COPYFLAGS_OVERWRITE, CopyFlags))) then
-	begin
-		case OverwriteLocalMode of
-			OverwriteLocalModeAsk:
-				exit(FS_FILE_EXISTS); //TC will ask user
-			OverwriteLocalModeIgnore:
-				begin
-					TCLogger.Log(LOG_LEVEL_DETAIL, msgtype_details, FILE_EXISTS_IGNORE, [LocalName]);
-					exit(FS_FILE_OK);
-				end;
-			OverwriteLocalModeOverwrite:
-				TCLogger.Log(LOG_LEVEL_DETAIL, msgtype_details, FILE_EXISTS_OVERWRITE, [LocalName]);
-		end;
-	end;
+	{Check for local file conflict}
+	ConflictResolution := FLocalFileConflictResolver.Resolve(LocalName, CopyFlags,
+		SettingsManager.Settings.OverwriteLocalMode);
+	if not ConflictResolution.ShouldProceed then
+		Exit(ConflictResolution.ResultCode);
 
 	Result := GetRemoteFile(RealPath, LocalName, RemoteName, CopyFlags);
 
