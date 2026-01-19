@@ -222,7 +222,10 @@ uses
 	OperationActionExecutorTest in 'models\wfx\OperationActionExecutorTest.pas',
 	IListingSkipDeciderInterface in '..\src\models\wfx\IListingSkipDeciderInterface.pas',
 	ListingSkipDecider in '..\src\models\wfx\ListingSkipDecider.pas',
-	ListingSkipDeciderTest in 'models\wfx\ListingSkipDeciderTest.pas';
+	ListingSkipDeciderTest in 'models\wfx\ListingSkipDeciderTest.pas',
+	IListingPathValidatorInterface in '..\src\models\wfx\IListingPathValidatorInterface.pas',
+	ListingPathValidator in '..\src\models\wfx\ListingPathValidator.pas',
+	ListingPathValidatorTest in 'models\wfx\ListingPathValidatorTest.pas';
 
 {keep comment here to protect the following conditional from being removed by the IDE when adding a unit}
 {$IFNDEF TESTINSIGHT}

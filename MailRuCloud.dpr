@@ -134,7 +134,9 @@ uses
 	IOperationActionExecutorInterface in 'src\models\wfx\IOperationActionExecutorInterface.pas',
 	OperationActionExecutor in 'src\models\wfx\OperationActionExecutor.pas',
 	IListingSkipDeciderInterface in 'src\models\wfx\IListingSkipDeciderInterface.pas',
-	ListingSkipDecider in 'src\models\wfx\ListingSkipDecider.pas';
+	ListingSkipDecider in 'src\models\wfx\ListingSkipDecider.pas',
+	IListingPathValidatorInterface in 'src\models\wfx\IListingPathValidatorInterface.pas',
+	ListingPathValidator in 'src\models\wfx\ListingPathValidator.pas';
 
 {$IFDEF WIN64}
 {$E wfx64}

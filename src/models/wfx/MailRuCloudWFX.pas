@@ -89,7 +89,9 @@ uses
 	IOperationActionExecutorInterface,
 	OperationActionExecutor,
 	IListingSkipDeciderInterface,
-	ListingSkipDecider;
+	ListingSkipDecider,
+	IListingPathValidatorInterface,
+	ListingPathValidator;
 
 type
 	TMailRuCloudWFX = class(TInterfacedObject, IWFXInterface)
@@ -118,6 +120,7 @@ type
 		FDownloadSuccessHandler: IDownloadSuccessHandler;
 		FActionExecutor: IOperationActionExecutor;
 		FListingSkipDecider: IListingSkipDecider;
+		FListingPathValidator: IListingPathValidator;
 
 		PluginNum: Integer;
 
@@ -276,6 +279,9 @@ begin
 
 	{Create listing skip decider for FsFindFirst skip logic}
 	FListingSkipDecider := TListingSkipDecider.Create(FThreadState, TCProgress);
+
+	{Create listing path validator for FsFindFirst path validation}
+	FListingPathValidator := TListingPathValidator.Create;
 	Result := 0;
 end;
 
@@ -296,6 +302,7 @@ begin
 	FDownloadSuccessHandler := nil;
 	FActionExecutor := nil;
 	FListingSkipDecider := nil;
+	FListingPathValidator := nil;
 	FreeAndNil(ConnectionManager);
 
 	CurrentDescriptions.Free;
@@ -749,9 +756,9 @@ function TMailRuCloudWFX.FsFindFirst(Path: WideString; var FindData: tWIN32FINDD
 var
 	RealPath: TRealPath;
 	getResult: Integer;
-	CurrentItem: TCMRDirItem;
 	CurrentCloud: TCloudMailRu;
 	SkipResult: TListingSkipResult;
+	ValidationResult: TListingValidationResult;
 begin
 	{Check if listing should be skipped (delete/renmov operation in progress or user abort)}
 	SkipResult := FListingSkipDecider.ShouldSkipListing(Path);
@@ -794,20 +801,11 @@ begin
 		if not FListingProvider.FetchListing(CurrentCloud, RealPath, CurrentListing, CurrentIncomingInvitesListing) then
 			SetLastError(ERROR_PATH_NOT_FOUND);
 
-		if RealPath.isVirtual and not RealPath.isInAccountsList then {ignore listings inside virtual directories objects}
+		{Validate path can be listed (virtual path constraints + directory check)}
+		ValidationResult := FListingPathValidator.ValidatePath(RealPath.isVirtual, RealPath.isInAccountsList, CurrentCloud.IsPublicAccount, RealPath.Path, CurrentListing);
+		if not ValidationResult.IsValid then
 		begin
-			SetLastError(ERROR_ACCESS_DENIED);
-			exit(INVALID_HANDLE_VALUE);
-		end;
-
-		if CurrentCloud.IsPublicAccount then
-			CurrentItem := CurrentListing.FindByName(ExtractUniversalFileName(RealPath.Path))
-		else
-			CurrentItem := CurrentListing.FindByHomePath(RealPath.Path);
-
-		if not(CurrentItem.isNone or CurrentItem.isDir) then
-		begin
-			SetLastError(ERROR_PATH_NOT_FOUND);
+			SetLastError(ValidationResult.ErrorCode);
 			exit(INVALID_HANDLE_VALUE);
 		end;
 
