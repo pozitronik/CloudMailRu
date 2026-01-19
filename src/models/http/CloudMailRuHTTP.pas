@@ -238,24 +238,25 @@ function TCloudMailRuHTTP.GetRedirection(URL: WideString; var RedirectionURL: Wi
 var
 	Answer: WideString;
 begin
-	result := false;
+	Result := False;
+	HTTP.HandleRedirects := False;
 	try
-		HTTP.HandleRedirects := false;
-		Answer := HTTP.Get(URL);
-	except
-		on E: Exception do
-		begin
-			if (HTTP_FOUND_REDIRECT = HTTP.ResponseCode) then
+		try
+			Answer := HTTP.Get(URL);
+		except
+			on E: Exception do
 			begin
-				RedirectionURL := HTTP.Response.Location;
-				HTTP.HandleRedirects := true;
-				exit(true)
-			end else begin
-				self.ExceptionHandler(E, URL, HTTP_METHOD_GET);
-				HTTP.Request
+				if (HTTP_FOUND_REDIRECT = HTTP.ResponseCode) then
+				begin
+					RedirectionURL := HTTP.Response.Location;
+					Result := True;
+				end else begin
+					self.ExceptionHandler(E, URL, HTTP_METHOD_GET);
+				end;
 			end;
-			HTTP.HandleRedirects := true;
 		end;
+	finally
+		HTTP.HandleRedirects := True;
 	end;
 end;
 
