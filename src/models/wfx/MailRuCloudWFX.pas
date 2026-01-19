@@ -126,7 +126,11 @@ uses
 	IDownloadPreparationValidatorInterface,
 	DownloadPreparationValidator,
 	IUploadCompletionHandlerInterface,
-	UploadCompletionHandler;
+	UploadCompletionHandler,
+	IRootListingHandlerInterface,
+	RootListingHandler,
+	IPathListingHandlerInterface,
+	PathListingHandler;
 
 type
 	TMailRuCloudWFX = class(TInterfacedObject, IWFXInterface)
@@ -172,6 +176,8 @@ type
 		FFileExecutionDispatcher: IFileExecutionDispatcher;
 		FSharedItemActionHandler: ISharedItemActionHandler;
 		FUploadCompletionHandler: IUploadCompletionHandler;
+		FRootListingHandler: IRootListingHandler;
+		FPathListingHandler: IPathListingHandler;
 
 		PluginNum: Integer;
 
@@ -371,6 +377,10 @@ begin
 
 	{Create upload completion handler for PutRemoteFile}
 	FUploadCompletionHandler := TUploadCompletionHandler.Create(TCLogger, TCProgress, FLocalFileDeletionHandler, FDescriptionSyncGuard);
+
+	{Create listing handlers for FsFindFirst}
+	FRootListingHandler := TRootListingHandler.Create;
+	FPathListingHandler := TPathListingHandler.Create(ConnectionManager, FListingProvider, FListingPathValidator);
 	Result := 0;
 end;
 
@@ -405,6 +415,8 @@ begin
 	FFileExecutionDispatcher := nil;
 	FSharedItemActionHandler := nil;
 	FUploadCompletionHandler := nil;
+	FRootListingHandler := nil;
+	FPathListingHandler := nil;
 	FreeAndNil(ConnectionManager);
 
 	CurrentDescriptions.Free;
@@ -720,11 +732,9 @@ end;
 
 function TMailRuCloudWFX.FsFindFirst(Path: WideString; var FindData: tWIN32FINDDATAW): THandle;
 var
-	RealPath: TRealPath;
-	getResult: Integer;
-	CurrentCloud: TCloudMailRu;
 	SkipResult: TListingSkipResult;
-	ValidationResult: TListingValidationResult;
+	RootResult: TRootListingResult;
+	PathResult: TPathListingResult;
 begin
 	{Check if listing should be skipped (delete/renmov operation in progress or user abort)}
 	SkipResult := FListingSkipDecider.ShouldSkipListing(Path);
@@ -738,56 +748,22 @@ begin
 	GlobalPath := Path;
 	if GlobalPath = '\' then
 	begin {Root listing - list accounts}
-		Accounts := AccountSettings.GetAccountsList([ATPrivate, ATPublic], SettingsManager.Settings.EnabledVirtualTypes);
-		if (Accounts.Count > 0) then
-		begin
-			FindData := GetFindDataEmptyDir(Accounts[0]);
-			FileCounter := 1;
-			Result := FIND_ROOT_DIRECTORY;
-		end else begin
-			Result := INVALID_HANDLE_VALUE; {Can't use exit}
-			SetLastError(ERROR_NO_MORE_FILES);
-		end;
+		RootResult := FRootListingHandler.ExecuteWithAccounts(AccountSettings.GetAccountsList([ATPrivate, ATPublic], SettingsManager.Settings.EnabledVirtualTypes));
+		Accounts := RootResult.Accounts;
+		FileCounter := RootResult.FileCounter;
+		FindData := RootResult.FindData;
+		if RootResult.ErrorCode <> 0 then
+			SetLastError(RootResult.ErrorCode);
+		Result := RootResult.Handle;
 	end else begin {Regular path listing}
-		RealPath.FromPath(GlobalPath);
-		CurrentCloud := ConnectionManager.Get(RealPath.account, getResult);
-
-		if getResult <> CLOUD_OPERATION_OK then
-		begin
-			SetLastError(ERROR_ACCESS_DENIED);
-			exit(INVALID_HANDLE_VALUE);
-		end;
-
-		if not Assigned(CurrentCloud) then
-		begin
-			SetLastError(ERROR_PATH_NOT_FOUND);
-			exit(INVALID_HANDLE_VALUE);
-		end;
-
-		if not FListingProvider.FetchListing(CurrentCloud, RealPath, CurrentListing, CurrentIncomingInvitesListing) then
-			SetLastError(ERROR_PATH_NOT_FOUND);
-
-		{Validate path can be listed (virtual path constraints + directory check)}
-		ValidationResult := FListingPathValidator.ValidatePath(RealPath.isVirtual, RealPath.isInAccountsList, CurrentCloud.IsPublicAccount, RealPath.Path, CurrentListing);
-		if not ValidationResult.IsValid then
-		begin
-			SetLastError(ValidationResult.ErrorCode);
-			exit(INVALID_HANDLE_VALUE);
-		end;
-
-		if (Length(CurrentListing) = 0) then
-		begin
-			FindData := GetFindDataEmptyDir();
-			Result := FIND_NO_MORE_FILES;
-			SetLastError(ERROR_NO_MORE_FILES);
-		end else begin
-			FindData := CurrentListing[0].ToFindData(RealPath.sharedDir);
-			FileCounter := 1;
-			if RealPath.sharedDir then
-				Result := FIND_SHARED_LINKS
-			else
-				Result := FIND_OK;
-		end;
+		PathResult := FPathListingHandler.Execute(GlobalPath);
+		CurrentListing := PathResult.Listing;
+		CurrentIncomingInvitesListing := PathResult.IncomingInvites;
+		FileCounter := PathResult.FileCounter;
+		FindData := PathResult.FindData;
+		if PathResult.ErrorCode <> 0 then
+			SetLastError(PathResult.ErrorCode);
+		Result := PathResult.Handle;
 	end;
 end;
 

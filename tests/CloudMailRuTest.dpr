@@ -276,7 +276,13 @@ uses
 	DownloadPreparationValidatorTest in 'models\wfx\DownloadPreparationValidatorTest.pas',
 	IUploadCompletionHandlerInterface in '..\src\models\wfx\IUploadCompletionHandlerInterface.pas',
 	UploadCompletionHandler in '..\src\models\wfx\UploadCompletionHandler.pas',
-	UploadCompletionHandlerTest in 'models\wfx\UploadCompletionHandlerTest.pas';
+	UploadCompletionHandlerTest in 'models\wfx\UploadCompletionHandlerTest.pas',
+	IRootListingHandlerInterface in '..\src\models\wfx\IRootListingHandlerInterface.pas',
+	RootListingHandler in '..\src\models\wfx\RootListingHandler.pas',
+	RootListingHandlerTest in 'models\wfx\RootListingHandlerTest.pas',
+	IPathListingHandlerInterface in '..\src\models\wfx\IPathListingHandlerInterface.pas',
+	PathListingHandler in '..\src\models\wfx\PathListingHandler.pas',
+	PathListingHandlerTest in 'models\wfx\PathListingHandlerTest.pas';
 
 {keep comment here to protect the following conditional from being removed by the IDE when adding a unit}
 {$IFNDEF TESTINSIGHT}

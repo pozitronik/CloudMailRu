@@ -170,7 +170,11 @@ uses
 	IDownloadPreparationValidatorInterface in 'src\models\wfx\IDownloadPreparationValidatorInterface.pas',
 	DownloadPreparationValidator in 'src\models\wfx\DownloadPreparationValidator.pas',
 	IUploadCompletionHandlerInterface in 'src\models\wfx\IUploadCompletionHandlerInterface.pas',
-	UploadCompletionHandler in 'src\models\wfx\UploadCompletionHandler.pas';
+	UploadCompletionHandler in 'src\models\wfx\UploadCompletionHandler.pas',
+	IRootListingHandlerInterface in 'src\models\wfx\IRootListingHandlerInterface.pas',
+	RootListingHandler in 'src\models\wfx\RootListingHandler.pas',
+	IPathListingHandlerInterface in 'src\models\wfx\IPathListingHandlerInterface.pas',
+	PathListingHandler in 'src\models\wfx\PathListingHandler.pas';
 
 {$IFDEF WIN64}
 {$E wfx64}
