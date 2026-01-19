@@ -258,7 +258,10 @@ uses
 	IconRenderingEngineTest in 'models\wfx\IconRenderingEngineTest.pas',
 	IFileExecutionDispatcherInterface in '..\src\models\wfx\IFileExecutionDispatcherInterface.pas',
 	FileExecutionDispatcher in '..\src\models\wfx\FileExecutionDispatcher.pas',
-	FileExecutionDispatcherTest in 'models\wfx\FileExecutionDispatcherTest.pas';
+	FileExecutionDispatcherTest in 'models\wfx\FileExecutionDispatcherTest.pas',
+	ISharedItemActionHandlerInterface in '..\src\models\wfx\ISharedItemActionHandlerInterface.pas',
+	SharedItemActionHandler in '..\src\models\wfx\SharedItemActionHandler.pas',
+	SharedItemActionHandlerTest in 'models\wfx\SharedItemActionHandlerTest.pas';
 
 {keep comment here to protect the following conditional from being removed by the IDE when adding a unit}
 {$IFNDEF TESTINSIGHT}

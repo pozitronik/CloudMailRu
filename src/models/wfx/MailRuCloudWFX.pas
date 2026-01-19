@@ -113,7 +113,9 @@ uses
 	IIconRenderingEngineInterface,
 	IconRenderingEngine,
 	IFileExecutionDispatcherInterface,
-	FileExecutionDispatcher;
+	FileExecutionDispatcher,
+	ISharedItemActionHandlerInterface,
+	SharedItemActionHandler;
 
 type
 	TMailRuCloudWFX = class(TInterfacedObject, IWFXInterface)
@@ -154,6 +156,7 @@ type
 		FCrossAccountFileOperationHandler: ICrossAccountFileOperationHandler;
 		FIconRenderingEngine: IIconRenderingEngine;
 		FFileExecutionDispatcher: IFileExecutionDispatcher;
+		FSharedItemActionHandler: ISharedItemActionHandler;
 
 		PluginNum: Integer;
 
@@ -338,6 +341,9 @@ begin
 
 	{Create file execution dispatcher for FsExecuteFile routing}
 	FFileExecutionDispatcher := TFileExecutionDispatcher.Create;
+
+	{Create shared item action handler for ExecSharedAction}
+	FSharedItemActionHandler := TSharedItemActionHandler.Create;
 	Result := 0;
 end;
 
@@ -370,6 +376,7 @@ begin
 	FCrossAccountFileOperationHandler := nil;
 	FIconRenderingEngine := nil;
 	FFileExecutionDispatcher := nil;
+	FSharedItemActionHandler := nil;
 	FreeAndNil(ConnectionManager);
 
 	CurrentDescriptions.Free;
@@ -446,26 +453,30 @@ var
 	Cloud: TCloudMailRu;
 	CurrentItem: TCMRDirItem;
 	getResult: Integer;
+	ActionResult: TSharedItemActionResult;
 begin
 	Result := FS_EXEC_OK;
-	if ActionOpen then //open item, i.e. treat it as symlink to original location
-	begin
-		CurrentItem := FindListingItemByPath(CurrentListing, RealPath);
-		if CurrentItem.type_ = TYPE_FILE then
-			strpcopy(RemoteName, '\' + RealPath.account + ExtractFilePath(UrlToPath(CurrentItem.home)))
-		else
-			strpcopy(RemoteName, '\' + RealPath.account + UrlToPath(CurrentItem.home));
-		Result := FS_EXEC_SYMLINK;
-	end else begin
-		if RealPath.isInAccountsList then
+
+	{Determine action from handler}
+	ActionResult := FSharedItemActionHandler.HandleAction(RealPath, ActionOpen, CurrentListing);
+
+	case ActionResult.ActionType of
+		satSymlink:
 		begin
-			if TAccountsForm.ShowAccounts(MainWin, PasswordManager, RealPath.account) then //main shared folder properties - open connection settings
+			strpcopy(RemoteName, ActionResult.SymlinkPath);
+			Result := FS_EXEC_SYMLINK;
+		end;
+		satAccountSettings:
+		begin
+			if TAccountsForm.ShowAccounts(MainWin, PasswordManager, RealPath.account) then
 				SettingsManager.Refresh;
-		end else begin
+		end;
+		satPropertyDialog:
+		begin
 			Cloud := ConnectionManager.Get(RealPath.account, getResult);
-			CurrentItem := FindListingItemByPath(CurrentListing, RealPath);
+			CurrentItem := ActionResult.CurrentItem;
 			if Cloud.statusFile(CurrentItem.home, CurrentItem) then
-				TPropertyForm.ShowProperty(MainWin, RealPath.Path, CurrentItem, Cloud, FFileSystem, SettingsManager.Settings.DownloadLinksEncode, SettingsManager.Settings.AutoUpdateDownloadListing, false, false, SettingsManager.Settings.DescriptionFileName)
+				TPropertyForm.ShowProperty(MainWin, RealPath.Path, CurrentItem, Cloud, FFileSystem, SettingsManager.Settings.DownloadLinksEncode, SettingsManager.Settings.AutoUpdateDownloadListing, false, false, SettingsManager.Settings.DescriptionFileName);
 		end;
 	end;
 end;

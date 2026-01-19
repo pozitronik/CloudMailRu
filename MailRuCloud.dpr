@@ -158,7 +158,9 @@ uses
 	IIconRenderingEngineInterface in 'src\models\wfx\IIconRenderingEngineInterface.pas',
 	IconRenderingEngine in 'src\models\wfx\IconRenderingEngine.pas',
 	IFileExecutionDispatcherInterface in 'src\models\wfx\IFileExecutionDispatcherInterface.pas',
-	FileExecutionDispatcher in 'src\models\wfx\FileExecutionDispatcher.pas';
+	FileExecutionDispatcher in 'src\models\wfx\FileExecutionDispatcher.pas',
+	ISharedItemActionHandlerInterface in 'src\models\wfx\ISharedItemActionHandlerInterface.pas',
+	SharedItemActionHandler in 'src\models\wfx\SharedItemActionHandler.pas';
 
 {$IFDEF WIN64}
 {$E wfx64}
