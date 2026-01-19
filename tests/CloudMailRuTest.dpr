@@ -243,7 +243,10 @@ uses
 	SharedItemDeletionHandlerTest in 'models\wfx\SharedItemDeletionHandlerTest.pas',
 	IAccountRegistrationHandlerInterface in '..\src\models\wfx\IAccountRegistrationHandlerInterface.pas',
 	AccountRegistrationHandler in '..\src\models\wfx\AccountRegistrationHandler.pas',
-	AccountRegistrationHandlerTest in 'models\wfx\AccountRegistrationHandlerTest.pas';
+	AccountRegistrationHandlerTest in 'models\wfx\AccountRegistrationHandlerTest.pas',
+	ITrashBinOperationHandlerInterface in '..\src\models\wfx\ITrashBinOperationHandlerInterface.pas',
+	TrashBinOperationHandler in '..\src\models\wfx\TrashBinOperationHandler.pas',
+	TrashBinOperationHandlerTest in 'models\wfx\TrashBinOperationHandlerTest.pas';
 
 {keep comment here to protect the following conditional from being removed by the IDE when adding a unit}
 {$IFNDEF TESTINSIGHT}

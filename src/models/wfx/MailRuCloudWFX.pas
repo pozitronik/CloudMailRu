@@ -103,7 +103,9 @@ uses
 	ISharedItemDeletionHandlerInterface,
 	SharedItemDeletionHandler,
 	IAccountRegistrationHandlerInterface,
-	AccountRegistrationHandler;
+	AccountRegistrationHandler,
+	ITrashBinOperationHandlerInterface,
+	TrashBinOperationHandler;
 
 type
 	TMailRuCloudWFX = class(TInterfacedObject, IWFXInterface)
@@ -139,6 +141,7 @@ type
 		FListingItemFetcher: IListingItemFetcher;
 		FSharedItemDeletionHandler: ISharedItemDeletionHandler;
 		FAccountRegistrationHandler: IAccountRegistrationHandler;
+		FTrashBinOperationHandler: ITrashBinOperationHandler;
 
 		PluginNum: Integer;
 
@@ -318,6 +321,9 @@ begin
 
 	{Create account registration handler for FsMkDir}
 	FAccountRegistrationHandler := TAccountRegistrationHandler.Create(AccountSettings, PasswordManager);
+
+	{Create trashbin operation handler for ExecTrashbinProperties}
+	FTrashBinOperationHandler := TTrashBinOperationHandler.Create;
 	Result := 0;
 end;
 
@@ -345,6 +351,7 @@ begin
 	FListingItemFetcher := nil;
 	FSharedItemDeletionHandler := nil;
 	FAccountRegistrationHandler := nil;
+	FTrashBinOperationHandler := nil;
 	FreeAndNil(ConnectionManager);
 
 	CurrentDescriptions.Free;
@@ -457,30 +464,25 @@ var
 	Cloud: TCloudMailRu;
 	getResult: Integer;
 	CurrentItem: TCMRDirItem;
+	IsTrashDir: Boolean;
 begin
-	Result := FS_EXEC_OK;
 	Cloud := ConnectionManager.Get(RealPath.account, getResult);
-	if RealPath.isInAccountsList then //main trashbin folder properties
+	IsTrashDir := RealPath.isInAccountsList;
+
+	if IsTrashDir then //main trashbin folder properties
 	begin
 		if not Cloud.getTrashbinListing(CurrentListing) then
 			exit(FS_EXEC_ERROR);
-		getResult := TDeletedPropertyForm.ShowProperties(MainWin, CurrentListing, true, RealPath.account);
+		CurrentItem := CurrentItem.None;
 	end else begin //one item in trashbin
 		CurrentItem := FindListingItemByPath(CurrentListing, RealPath); //для одинаково именованных файлов в корзине будут показываться свойства первого, сорян
-		getResult := TDeletedPropertyForm.ShowProperties(MainWin, [CurrentItem]);
 	end;
-	case (getResult) of
-		mrNo:
-			if not Cloud.trashbinEmpty then
-				exit(FS_EXEC_ERROR);
-		mrYes:
-			if not Cloud.trashbinRestore(CurrentItem.deleted_from + CurrentItem.name, CurrentItem.rev) then
-				exit(FS_EXEC_ERROR);
-		mrYesToAll:
-			for CurrentItem in CurrentListing do
-				if not Cloud.trashbinRestore(CurrentItem.deleted_from + CurrentItem.name, CurrentItem.rev) then
-					exit(FS_EXEC_ERROR);
-	end;
+
+	Result := FTrashBinOperationHandler.Execute(MainWin, Cloud, CurrentListing, CurrentItem, IsTrashDir, RealPath.account,
+		function(ParentWindow: HWND; Items: TCMRDirItemList; TrashDir: Boolean; const AccountName: WideString): Integer
+		begin
+			Result := TDeletedPropertyForm.ShowProperties(ParentWindow, Items, TrashDir, AccountName);
+		end);
 
 	PostMessage(MainWin, WM_USER + TC_REFRESH_MESSAGE, TC_REFRESH_PARAM, 0); //TC does not update current panel, so we should do it this way
 end;

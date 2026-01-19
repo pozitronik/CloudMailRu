@@ -148,7 +148,9 @@ uses
 	ISharedItemDeletionHandlerInterface in 'src\models\wfx\ISharedItemDeletionHandlerInterface.pas',
 	SharedItemDeletionHandler in 'src\models\wfx\SharedItemDeletionHandler.pas',
 	IAccountRegistrationHandlerInterface in 'src\models\wfx\IAccountRegistrationHandlerInterface.pas',
-	AccountRegistrationHandler in 'src\models\wfx\AccountRegistrationHandler.pas';
+	AccountRegistrationHandler in 'src\models\wfx\AccountRegistrationHandler.pas',
+	ITrashBinOperationHandlerInterface in 'src\models\wfx\ITrashBinOperationHandlerInterface.pas',
+	TrashBinOperationHandler in 'src\models\wfx\TrashBinOperationHandler.pas';
 
 {$IFDEF WIN64}
 {$E wfx64}
