@@ -74,7 +74,9 @@ uses
 	ICloudDescriptionOpsInterface,
 	IDescriptionSyncManagerInterface,
 	DescriptionSyncManager,
-	CloudDescriptionOpsAdapter;
+	CloudDescriptionOpsAdapter,
+	IRetryHandlerInterface,
+	RetryHandler;
 
 type
 	TMailRuCloudWFX = class(TInterfacedObject, IWFXInterface)
@@ -95,6 +97,7 @@ type
 		FIconProvider: IIconProvider;
 		FOperationLifecycle: IOperationLifecycleHandler;
 		FDescriptionSync: IDescriptionSyncManager;
+		FRetryHandler: IRetryHandler;
 
 		PluginNum: Integer;
 
@@ -206,12 +209,23 @@ begin
 end;
 
 function TMailRuCloudWFX.FsInit(PluginNr: Integer; pProgressProc: TProgressProcW; pLogProc: TLogProcW; pRequestProc: TRequestProcW): Integer;
+var
+	Logger: ILogger;
 begin
 	PluginNum := PluginNr;
 	TCLogger := TTCLogger.Create(pLogProc, PluginNr, SettingsManager.Settings.LogLevel);
 	TCProgress := TTCProgress.Create(pProgressProc, PluginNr);
 	TCRequest := TTCRequest.Create(pRequestProc, PluginNr);
 	CurrentDescriptions := TDescription.Create(GetTmpFileName(DESCRIPTION_TEMP_EXT), FFileSystem, GetTCCommentPreferredFormat);
+
+	{Create retry handler with log callback that uses TCLogger}
+	Logger := TCLogger;
+	FRetryHandler := TRetryHandler.Create(FThreadState, SettingsManager, nil,
+		procedure(LogLevel, MsgType: Integer; const Msg: WideString; const Args: array of const)
+		begin
+			Logger.Log(LogLevel, MsgType, Msg, Args);
+		end
+	);
 	Result := 0;
 end;
 
@@ -948,7 +962,6 @@ function TMailRuCloudWFX.FsGetFile(RemoteName, LocalName: WideString; CopyFlags:
 var
 	RealPath: TRealPath;
 	OverwriteLocalMode: Integer;
-	RetryAttempts: Integer;
 begin
 	Result := FS_FILE_NOTSUPPORTED;
 	if CheckFlag(FS_COPYFLAGS_RESUME, CopyFlags) then
@@ -980,43 +993,16 @@ begin
 	if Result <> FS_FILE_READERROR then
 		exit;
 
-	case SettingsManager.Settings.OperationErrorMode of
-		OperationErrorModeAsk:
-			begin
-				while (not(Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
-				begin
-					case (MsgBox(ERR_DOWNLOAD_FILE_ASK, [RemoteName], ERR_DOWNLOAD, MB_ABORTRETRYIGNORE + MB_ICONERROR)) of
-						ID_ABORT:
-							Result := FS_FILE_USERABORT;
-						ID_RETRY:
-							Result := GetRemoteFile(RealPath, LocalName, RemoteName, CopyFlags);
-						ID_IGNORE:
-							break;
-					end;
-				end;
-
-			end;
-		OperationErrorModeIgnore:
-			exit;
-		OperationErrorModeAbort:
-			exit(FS_FILE_USERABORT);
-		OperationErrorModeRetry:
-			begin;
-				RetryAttempts := SettingsManager.Settings.RetryAttempts;
-				while (FThreadState.GetRetryCountDownload <> RetryAttempts) and (not(Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
-				begin
-					FThreadState.IncrementRetryCountDownload;
-					TCLogger.Log(LOG_LEVEL_DETAIL, msgtype_details, DOWNLOAD_FILE_RETRY, [RemoteName, FThreadState.GetRetryCountDownload, RetryAttempts]);
-					Result := GetRemoteFile(RealPath, LocalName, RemoteName, CopyFlags);
-					if TCProgress.Progress(PWideChar(LocalName), RemoteName, 0) then
-						Result := FS_FILE_USERABORT;
-					if (Result in [FS_FILE_OK, FS_FILE_USERABORT]) then
-						FThreadState.ResetRetryCountDownload;
-					ProcessMessages;
-					Sleep(SettingsManager.Settings.AttemptWait);
-				end;
-			end;
-	end;
+	Result := FRetryHandler.HandleOperationError(Result, rotDownload, ERR_DOWNLOAD_FILE_ASK, ERR_DOWNLOAD, DOWNLOAD_FILE_RETRY, RemoteName,
+		function: Integer
+		begin
+			Result := GetRemoteFile(RealPath, LocalName, RemoteName, CopyFlags);
+		end,
+		function: Boolean
+		begin
+			Result := TCProgress.Progress(PWideChar(LocalName), RemoteName, 0);
+		end
+	);
 end;
 
 function TMailRuCloudWFX.FsMkDir(Path: WideString): Boolean;
@@ -1061,7 +1047,6 @@ end;
 function TMailRuCloudWFX.FsPutFile(LocalName, RemoteName: WideString; CopyFlags: Integer): Integer;
 var
 	RealPath: TRealPath;
-	RetryAttempts: Integer;
 	getResult: Integer;
 begin
 	RealPath.FromPath(RemoteName);
@@ -1085,47 +1070,18 @@ begin
 	end;
 	Result := PutRemoteFile(RealPath, LocalName, RemoteName, CopyFlags);
 
-	//if Result in [FS_FILE_OK, FS_FILE_USERABORT, FS_FILE_NOTSUPPORTED] then exit;
 	if Result <> FS_FILE_WRITEERROR then
 		exit;
 
-	case SettingsManager.Settings.OperationErrorMode of
-		OperationErrorModeAsk:
-			begin
-				while (not(Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
-				begin
-					case (MsgBox(ERR_UPLOAD_FILE_ASK, [LocalName], ERR_UPLOAD, MB_ABORTRETRYIGNORE + MB_ICONERROR)) of
-						ID_ABORT:
-							Result := FS_FILE_USERABORT;
-						ID_RETRY:
-							Result := PutRemoteFile(RealPath, LocalName, RemoteName, CopyFlags);
-						ID_IGNORE:
-							break;
-					end;
-				end;
-
-			end;
-		OperationErrorModeIgnore:
-			exit;
-		OperationErrorModeAbort:
-			exit(FS_FILE_USERABORT);
-		OperationErrorModeRetry:
-			begin;
-				RetryAttempts := SettingsManager.Settings.RetryAttempts;
-				while (FThreadState.GetRetryCountUpload <> RetryAttempts) and (not(Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
-				begin
-					FThreadState.IncrementRetryCountUpload;
-					TCLogger.Log(LOG_LEVEL_DETAIL, msgtype_details, UPLOAD_FILE_RETRY, [LocalName, FThreadState.GetRetryCountUpload, RetryAttempts]);
-					Result := PutRemoteFile(RealPath, LocalName, RemoteName, CopyFlags);
-					if TCProgress.Progress(PWideChar(LocalName), RemoteName, 0) then
-						Result := FS_FILE_USERABORT;
-					if (Result in [FS_FILE_OK, FS_FILE_USERABORT]) then
-						FThreadState.ResetRetryCountUpload;
-					ProcessMessages;
-					Sleep(SettingsManager.Settings.AttemptWait);
-				end;
-			end;
-	end;
+	Result := FRetryHandler.HandleOperationError(Result, rotUpload, ERR_UPLOAD_FILE_ASK, ERR_UPLOAD, UPLOAD_FILE_RETRY, LocalName, function: Integer
+		begin
+			Result := PutRemoteFile(RealPath, LocalName, RemoteName, CopyFlags);
+		end,
+		function: Boolean
+		begin
+			Result := TCProgress.Progress(PWideChar(LocalName), RemoteName, 0);
+		end
+	);
 end;
 
 function TMailRuCloudWFX.FsRemoveDir(RemoteName: WideString): Boolean;
@@ -1408,7 +1364,6 @@ end;
 function TMailRuCloudWFX.RenMoveFileViaHash(OldCloud, NewCloud: TCloudMailRu; OldRealPath, NewRealPath: TRealPath; Move, OverWrite: Boolean): Integer;
 var
 	CurrentItem: TCMRDirItem;
-	RetryAttempts: Integer;
 begin
 	Result := FS_FILE_NOTSUPPORTED;
 	if OverWrite and not(NewCloud.deleteFile(NewRealPath.Path)) then
@@ -1417,45 +1372,16 @@ begin
 	begin
 		Result := NewCloud.addFileByIdentity(CurrentItem, IncludeTrailingPathDelimiter(ExtractFileDir(NewRealPath.Path)) + ExtractFileName(NewRealPath.Path));
 		if not(Result in [FS_FILE_OK, FS_FILE_EXISTS]) then
-		begin
-
-			case SettingsManager.Settings.OperationErrorMode of
-				OperationErrorModeAsk:
-					begin
-						while (not(Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
-						begin
-							case (MsgBox(ERR_CLONE_FILE_ASK, [TCloudMailRu.ErrorCodeText(Result)], ERR_OPERATION, MB_ABORTRETRYIGNORE + MB_ICONERROR)) of
-								ID_ABORT:
-									Result := FS_FILE_USERABORT;
-								ID_RETRY:
-									Result := NewCloud.addFileByIdentity(CurrentItem, IncludeTrailingPathDelimiter(ExtractFileDir(NewRealPath.Path)) + CurrentItem.name);
-								ID_IGNORE:
-									break;
-							end;
-						end;
-					end;
-				OperationErrorModeIgnore:
-					exit;
-				OperationErrorModeAbort:
-					exit(FS_FILE_USERABORT);
-				OperationErrorModeRetry:
-					begin;
-						RetryAttempts := SettingsManager.Settings.RetryAttempts;
-						while (FThreadState.GetRetryCountRenMov <> RetryAttempts) and (not(Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
-						begin
-							FThreadState.IncrementRetryCountRenMov;
-							TCLogger.Log(LOG_LEVEL_DETAIL, msgtype_details, CLONE_FILE_RETRY, [TCloudMailRu.ErrorCodeText(Result), FThreadState.GetRetryCountRenMov, RetryAttempts]);
-							Result := NewCloud.addFileByIdentity(CurrentItem, IncludeTrailingPathDelimiter(ExtractFileDir(NewRealPath.Path)) + ExtractFileName(NewRealPath.Path));
-							if TCProgress.Aborted() then
-								Result := FS_FILE_USERABORT;
-							if (Result in [FS_FILE_OK, FS_FILE_USERABORT]) then
-								FThreadState.ResetRetryCountRenMov;
-							ProcessMessages;
-							Sleep(SettingsManager.Settings.AttemptWait);
-						end;
-					end;
-			end;
-		end;
+			Result := FRetryHandler.HandleOperationError(Result, rotRenMov, ERR_CLONE_FILE_ASK, ERR_OPERATION, CLONE_FILE_RETRY, TCloudMailRu.ErrorCodeText(Result),
+				function: Integer
+				begin
+					Result := NewCloud.addFileByIdentity(CurrentItem, IncludeTrailingPathDelimiter(ExtractFileDir(NewRealPath.Path)) + ExtractFileName(NewRealPath.Path));
+				end,
+				function: Boolean
+				begin
+					Result := TCProgress.Aborted();
+				end
+			);
 
 		if (Result = CLOUD_OPERATION_OK) and Move and not(OldCloud.deleteFile(OldRealPath.Path)) then
 			TCLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_DELETE, [CurrentItem.home]); //пишем в лог, но не отваливаемся
@@ -1466,7 +1392,6 @@ function TMailRuCloudWFX.RenMoveFileViaPublicLink(OldCloud, NewCloud: TCloudMail
 var
 	NeedUnpublish: Boolean;
 	CurrentItem: TCMRDirItem;
-	RetryAttempts: Integer;
 begin
 	Result := FS_FILE_NOTSUPPORTED;
 	NeedUnpublish := false;
@@ -1486,47 +1411,16 @@ begin
 		end;
 		Result := CloneWeblink(NewCloud, OldCloud, NewRealPath.Path, CurrentItem, NeedUnpublish);
 		if not(Result in [FS_FILE_OK, FS_FILE_EXISTS]) then
-		begin
-
-			case SettingsManager.Settings.OperationErrorMode of
-				OperationErrorModeAsk:
-					begin
-
-						while (not(Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
-						begin
-							case (MsgBox(ERR_PUBLISH_FILE_ASK, [TCloudMailRu.ErrorCodeText(Result)], ERR_PUBLISH_FILE, MB_ABORTRETRYIGNORE + MB_ICONERROR)) of
-								ID_ABORT:
-									Result := FS_FILE_USERABORT;
-								ID_RETRY:
-									Result := CloneWeblink(NewCloud, OldCloud, NewRealPath.Path, CurrentItem, NeedUnpublish);
-								ID_IGNORE:
-									break;
-							end;
-						end;
-
-					end;
-				OperationErrorModeIgnore:
-					exit;
-				OperationErrorModeAbort:
-					exit(FS_FILE_USERABORT);
-				OperationErrorModeRetry:
-					begin;
-						RetryAttempts := SettingsManager.Settings.RetryAttempts;
-						while (FThreadState.GetRetryCountRenMov <> RetryAttempts) and (not(Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
-						begin
-							FThreadState.IncrementRetryCountRenMov;
-							TCLogger.Log(LOG_LEVEL_DETAIL, msgtype_details, PUBLISH_FILE_RETRY, [TCloudMailRu.ErrorCodeText(Result), FThreadState.GetRetryCountRenMov, RetryAttempts]);
-							Result := CloneWeblink(NewCloud, OldCloud, NewRealPath.Path, CurrentItem, NeedUnpublish);
-							if TCProgress.Aborted() then
-								Result := FS_FILE_USERABORT;
-							if (Result in [FS_FILE_OK, FS_FILE_USERABORT]) then
-								FThreadState.ResetRetryCountRenMov;
-							ProcessMessages;
-							Sleep(SettingsManager.Settings.AttemptWait);
-						end;
-					end;
-			end;
-		end;
+			Result := FRetryHandler.HandleOperationError(Result, rotRenMov, ERR_PUBLISH_FILE_ASK, ERR_PUBLISH_FILE, PUBLISH_FILE_RETRY, TCloudMailRu.ErrorCodeText(Result),
+			function: Integer
+				begin
+					Result := CloneWeblink(NewCloud, OldCloud, NewRealPath.Path, CurrentItem, NeedUnpublish);
+				end,
+				function: Boolean
+				begin
+					Result := TCProgress.Aborted();
+				end
+			);
 
 		if (Result = CLOUD_OPERATION_OK) and Move and not(OldCloud.deleteFile(OldRealPath.Path)) then
 			TCLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_DELETE, [CurrentItem.home]); //пишем в лог, но не отваливаемся

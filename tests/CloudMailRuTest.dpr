@@ -198,7 +198,10 @@ uses
 	DescriptionSyncManager in '..\src\models\wfx\DescriptionSyncManager.pas',
 	CloudDescriptionOpsAdapter in '..\src\models\wfx\CloudDescriptionOpsAdapter.pas',
 	MockCloudDescriptionOps in 'mocks\MockCloudDescriptionOps.pas',
-	DescriptionSyncManagerTest in 'models\wfx\DescriptionSyncManagerTest.pas';
+	DescriptionSyncManagerTest in 'models\wfx\DescriptionSyncManagerTest.pas',
+	IRetryHandlerInterface in '..\src\models\wfx\IRetryHandlerInterface.pas',
+	RetryHandler in '..\src\models\wfx\RetryHandler.pas',
+	RetryHandlerTest in 'models\wfx\RetryHandlerTest.pas';
 
 {keep comment here to protect the following conditional from being removed by the IDE when adding a unit}
 {$IFNDEF TESTINSIGHT}

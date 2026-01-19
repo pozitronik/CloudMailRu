@@ -118,7 +118,9 @@ uses
 	ICloudDescriptionOpsInterface in 'src\models\wfx\ICloudDescriptionOpsInterface.pas',
 	IDescriptionSyncManagerInterface in 'src\models\wfx\IDescriptionSyncManagerInterface.pas',
 	DescriptionSyncManager in 'src\models\wfx\DescriptionSyncManager.pas',
-	CloudDescriptionOpsAdapter in 'src\models\wfx\CloudDescriptionOpsAdapter.pas';
+	CloudDescriptionOpsAdapter in 'src\models\wfx\CloudDescriptionOpsAdapter.pas',
+	IRetryHandlerInterface in 'src\models\wfx\IRetryHandlerInterface.pas',
+	RetryHandler in 'src\models\wfx\RetryHandler.pas';
 
 {$IFDEF WIN64}
 {$E wfx64}
