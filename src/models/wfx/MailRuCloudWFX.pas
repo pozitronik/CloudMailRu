@@ -62,7 +62,9 @@ uses
 	IFileSystemInterface,
 	WindowsFileSystem,
 	IConfigFileInterface,
-	IniConfigFile;
+	IniConfigFile,
+	IThreadStateManagerInterface,
+	ThreadStateManager;
 
 type
 	TMailRuCloudWFX = class(TInterfacedObject, IWFXInterface)
@@ -78,18 +80,7 @@ type
 		GlobalPath, PluginPath: WideString;
 		FileCounter: Integer;
 		CurrentlyMovedDir: TRealPath;
-		ThreadSkipListDelete: TDictionary<DWORD, Boolean>; //Массив id потоков, для которых операции получения листинга должны быть пропущены (при удалении)
-		ThreadSkipListRenMov: TDictionary<DWORD, Boolean>; //Массив id потоков, для которых операции получения листинга должны быть пропущены (при копировании/перемещении)
-		ThreadCanAbortRenMov: TDictionary<DWORD, Boolean>; //Массив id потоков, для которых в операциях получения листинга должен быть выведен дополнительный диалог прогресса с возможностью отмены операции (fix issue #113)
-		ThreadListingAborted: TDictionary<DWORD, Boolean>; //Массив id потоков, для которых в операциях получения листинга была нажата отмена
-
-		ThreadRetryCountDownload: TDictionary<DWORD, Int32>; //массив [id потока => количество попыток] для подсчёта количества повторов скачивания файла
-		ThreadRetryCountUpload: TDictionary<DWORD, Int32>; //массив [id потока => количество попыток] для подсчёта количества повторов закачивания файла
-		ThreadRetryCountRenMov: TDictionary<DWORD, Int32>; //массив [id потока => количество попыток] для подсчёта количества повторов межсерверных операций с файлом
-		ThreadBackgroundJobs: TDictionary<WideString, Int32>; //массив [account root => количество потоков] для хранения количества текущих фоновых задач (предохраняемся от удаления объектов, которые могут быть использованы потоками)
-		ThreadBackgroundThreads: TDictionary<DWORD, Int32>; //массив [id потока => статус операции] для хранения текущих фоновых потоков (предохраняемся от завершения работы плагина при закрытии TC)
-		ThreadFsStatusInfo: TDictionary<DWORD, Int32>; //массив [id потока => текущая операция] для хранения контекста выполняемой операции (применяем для отлова перемещений каталогов)
-		ThreadFsRemoveDirSkippedPath: TDictionary<DWORD, TStringList>; //массив [id потока => путь] для хранения путей, пропускаемых при перемещении (см. issue #168).
+		FThreadState: IThreadStateManager;
 
 		PluginNum: Integer;
 
@@ -193,17 +184,7 @@ begin
 	end;
 
 	IsMultiThread := not(SettingsManager.Settings.DisableMultiThreading);
-	ThreadRetryCountDownload := TDictionary<DWORD, Int32>.Create;
-	ThreadRetryCountUpload := TDictionary<DWORD, Int32>.Create;
-	ThreadRetryCountRenMov := TDictionary<DWORD, Int32>.Create;
-	ThreadSkipListDelete := TDictionary<DWORD, Boolean>.Create;
-	ThreadSkipListRenMov := TDictionary<DWORD, Boolean>.Create;
-	ThreadCanAbortRenMov := TDictionary<DWORD, Boolean>.Create;
-	ThreadListingAborted := TDictionary<DWORD, Boolean>.Create;
-	ThreadBackgroundJobs := TDictionary<WideString, Int32>.Create;
-	ThreadBackgroundThreads := TDictionary<DWORD, Int32>.Create;
-	ThreadFsStatusInfo := TDictionary<DWORD, Int32>.Create;
-	ThreadFsRemoveDirSkippedPath := TDictionary<DWORD, TStringList>.Create;
+	FThreadState := TThreadStateManager.Create;
 
 	AccountSettings := TAccountsManager.Create(TIniConfigFile.Create(SettingsManager.AccountsIniFilePath));
 	FFileSystem := TWindowsFileSystem.Create;
@@ -298,28 +279,8 @@ begin
 end;
 
 destructor TMailRuCloudWFX.Destroy;
-var
-	SkippedPathPair: TPair<DWORD, TStringList>;
 begin
-	FreeAndNil(ThreadRetryCountDownload);
-	FreeAndNil(ThreadRetryCountUpload);
-	FreeAndNil(ThreadRetryCountRenMov);
-	FreeAndNil(ThreadSkipListDelete);
-	FreeAndNil(ThreadSkipListRenMov);
-	FreeAndNil(ThreadCanAbortRenMov);
-	FreeAndNil(ThreadListingAborted);
-	FreeAndNil(ThreadBackgroundJobs);
-	FreeAndNil(ThreadFsStatusInfo);
-
-	{ Free any remaining TStringList values before freeing the dictionary.
-	  Values may remain if operations were interrupted before FS_STATUS_END. }
-	if Assigned(ThreadFsRemoveDirSkippedPath) then
-		for SkippedPathPair in ThreadFsRemoveDirSkippedPath do
-			if Assigned(SkippedPathPair.Value) then
-				SkippedPathPair.Value.Free;
-	FreeAndNil(ThreadFsRemoveDirSkippedPath);
-
-	FreeAndNil(ThreadBackgroundThreads);
+	FThreadState := nil; {IThreadStateManager is reference-counted, setting to nil releases it}
 	FreeAndNil(ConnectionManager);
 
 	CurrentDescriptions.Free;
@@ -901,11 +862,8 @@ begin
 end;
 
 function TMailRuCloudWFX.FsDisconnect(DisconnectRoot: PWideChar): Boolean;
-var
-	BackgroundJobsCount: Integer;
 begin
-	BackgroundJobsCount := 0;
-	if ((not ThreadBackgroundJobs.TryGetValue(ExtractFileName(DisconnectRoot), BackgroundJobsCount)) or (BackgroundJobsCount = 0)) then
+	if not FThreadState.HasActiveBackgroundJobs(ExtractFileName(DisconnectRoot)) then
 	begin
 		ConnectionManager.Free(ExtractFileName(DisconnectRoot));
 		Result := true;
@@ -1100,13 +1058,13 @@ var //Получение первого файла в папке. Result не и
 	CurrentItem: TCMRDirItem;
 	CurrentCloud: TCloudMailRu;
 begin
-	ThreadSkipListDelete.TryGetValue(GetCurrentThreadID(), SkipListDelete);
-	ThreadSkipListRenMov.TryGetValue(GetCurrentThreadID(), SkipListRenMov);
-	ThreadCanAbortRenMov.TryGetValue(GetCurrentThreadID(), CanAbortRenMov);
+	SkipListDelete := FThreadState.GetSkipListDelete;
+	SkipListRenMov := FThreadState.GetSkipListRenMov;
+	CanAbortRenMov := FThreadState.GetCanAbortRenMov;
 
 	if (CanAbortRenMov and TCProgress.Progress(Path, 0)) then
 	begin
-		ThreadListingAborted.AddOrSetValue(GetCurrentThreadID(), true);
+		FThreadState.SetListingAborted(True);
 		RenMovAborted := true;
 	end
 	else
@@ -1300,15 +1258,15 @@ begin
 		OperationErrorModeRetry:
 			begin;
 				RetryAttempts := SettingsManager.Settings.RetryAttempts;
-				while (ThreadRetryCountDownload.Items[GetCurrentThreadID()] <> RetryAttempts) and (not(Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
+				while (FThreadState.GetRetryCountDownload <> RetryAttempts) and (not(Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
 				begin
-					ThreadRetryCountDownload.Items[GetCurrentThreadID()] := ThreadRetryCountDownload.Items[GetCurrentThreadID()] + 1;
-					TCLogger.Log(LOG_LEVEL_DETAIL, msgtype_details, DOWNLOAD_FILE_RETRY, [RemoteName, ThreadRetryCountDownload.Items[GetCurrentThreadID()], RetryAttempts]);
+					FThreadState.IncrementRetryCountDownload;
+					TCLogger.Log(LOG_LEVEL_DETAIL, msgtype_details, DOWNLOAD_FILE_RETRY, [RemoteName, FThreadState.GetRetryCountDownload, RetryAttempts]);
 					Result := GetRemoteFile(RealPath, LocalName, RemoteName, CopyFlags);
 					if TCProgress.Progress(PWideChar(LocalName), RemoteName, 0) then
 						Result := FS_FILE_USERABORT;
 					if (Result in [FS_FILE_OK, FS_FILE_USERABORT]) then
-						ThreadRetryCountDownload.Items[GetCurrentThreadID()] := 0; //сбросим счётчик попыток
+						FThreadState.ResetRetryCountDownload;
 					ProcessMessages;
 					Sleep(SettingsManager.Settings.AttemptWait);
 				end;
@@ -1324,7 +1282,7 @@ var
 	OperationContextId: Integer;
 	RegisteredAccount: TAccountSettings;
 begin
-	ThreadSkipListRenMov.TryGetValue(GetCurrentThreadID(), SkipListRenMov);
+	SkipListRenMov := FThreadState.GetSkipListRenMov;
 	if SkipListRenMov then
 		exit(false); //skip create directory if this flag set on
 
@@ -1349,7 +1307,7 @@ begin
 	Result := ConnectionManager.Get(RealPath.account, getResult).createDir(RealPath.Path);
 	if Result then //need to check operation context => directory can be moved
 	begin
-		ThreadFsStatusInfo.TryGetValue(GetCurrentThreadID, OperationContextId);
+		OperationContextId := FThreadState.GetFsStatusInfo;
 		if OperationContextId = FS_STATUS_OP_RENMOV_MULTI then
 			CurrentlyMovedDir := RealPath;
 	end;
@@ -1409,15 +1367,15 @@ begin
 		OperationErrorModeRetry:
 			begin;
 				RetryAttempts := SettingsManager.Settings.RetryAttempts;
-				while (ThreadRetryCountUpload.Items[GetCurrentThreadID()] <> RetryAttempts) and (not(Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
+				while (FThreadState.GetRetryCountUpload <> RetryAttempts) and (not(Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
 				begin
-					ThreadRetryCountUpload.Items[GetCurrentThreadID()] := ThreadRetryCountUpload.Items[GetCurrentThreadID()] + 1;
-					TCLogger.Log(LOG_LEVEL_DETAIL, msgtype_details, UPLOAD_FILE_RETRY, [LocalName, ThreadRetryCountUpload.Items[GetCurrentThreadID()], RetryAttempts]);
+					FThreadState.IncrementRetryCountUpload;
+					TCLogger.Log(LOG_LEVEL_DETAIL, msgtype_details, UPLOAD_FILE_RETRY, [LocalName, FThreadState.GetRetryCountUpload, RetryAttempts]);
 					Result := PutRemoteFile(RealPath, LocalName, RemoteName, CopyFlags);
 					if TCProgress.Progress(PWideChar(LocalName), RemoteName, 0) then
 						Result := FS_FILE_USERABORT;
 					if (Result in [FS_FILE_OK, FS_FILE_USERABORT]) then
-						ThreadRetryCountUpload.Items[GetCurrentThreadID()] := 0; //сбросим счётчик попыток
+						FThreadState.ResetRetryCountUpload;
 					ProcessMessages;
 					Sleep(SettingsManager.Settings.AttemptWait);
 				end;
@@ -1433,12 +1391,12 @@ var
 	Cloud: TCloudMailRu;
 	OperationContextId: Integer;
 begin
-	if (ThreadFsRemoveDirSkippedPath.ContainsKey(GetCurrentThreadID) and Assigned(ThreadFsRemoveDirSkippedPath.Items[GetCurrentThreadID]) and ThreadFsRemoveDirSkippedPath.Items[GetCurrentThreadID].Text.Contains(RemoteName)) then //файлы по удаляемому пути есть в блек-листе
+	if FThreadState.IsPathSkipped(RemoteName) then
 		exit(false);
-	ThreadListingAborted.TryGetValue(GetCurrentThreadID(), ListingAborted);
+	ListingAborted := FThreadState.GetListingAborted;
 	if ListingAborted then
 	begin
-		ThreadListingAborted.AddOrSetValue(GetCurrentThreadID(), false);
+		FThreadState.SetListingAborted(False);
 		exit(false);
 	end;
 	RealPath.FromPath(WideString(RemoteName));
@@ -1449,7 +1407,7 @@ begin
 
 	if (Result and SettingsManager.Settings.DescriptionTrackCloudFS and AccountSettings.GetAccountSettings(RealPath.account).IsRemoteDescriptionsSupported) then
 	begin
-		ThreadFsStatusInfo.TryGetValue(GetCurrentThreadID, OperationContextId); //need to check operation context => directory can be deleted after moving operation
+		OperationContextId := FThreadState.GetFsStatusInfo; //need to check operation context => directory can be deleted after moving operation
 		if OperationContextId = FS_STATUS_OP_RENMOV_MULTI then
 		begin
 			RenameRemoteFileDescription(RealPath, CurrentlyMovedDir, Cloud);
@@ -1463,7 +1421,7 @@ function TMailRuCloudWFX.FsRenMovFile(OldName, NewName: PWideChar; Move, OverWri
 var
 	OldRealPath: TRealPath;
 	NewRealPath: TRealPath;
-	getResult, SkippedFoundIndex: Integer;
+	getResult: Integer;
 	OldCloud, NewCloud: TCloudMailRu;
 begin
 	TCProgress.Progress(OldName, NewName, 0);
@@ -1507,19 +1465,12 @@ begin
 		if Move then
 		begin
 			Result := OldCloud.FileMove(OldRealPath.Path, NewRealPath.Path);
-			if (FS_FILE_EXISTS = Result) and (ThreadFsRemoveDirSkippedPath.ContainsKey(GetCurrentThreadID)) then //TC сразу же попытается удалить каталог, чтобы избежать этого - внесем путь в своеобразный блеклист
+			if (FS_FILE_EXISTS = Result) and FThreadState.HasRemoveDirSkippedPath then //TC сразу же попытается удалить каталог, чтобы избежать этого - внесем путь в своеобразный блеклист
 			begin
-				ThreadFsRemoveDirSkippedPath.Items[GetCurrentThreadID].Add(OldRealPath.ToPath);
-			end else if (FS_FILE_OK = Result) and (ThreadFsRemoveDirSkippedPath.ContainsKey(GetCurrentThreadID)) then
+				FThreadState.AddSkippedPath(OldRealPath.ToPath);
+			end else if (FS_FILE_OK = Result) and FThreadState.HasRemoveDirSkippedPath then
 			begin //Вытащим из блеклиста, если решили перезаписать
-
-				if Assigned(ThreadFsRemoveDirSkippedPath.Items[GetCurrentThreadID]) then
-				begin
-					SkippedFoundIndex := ThreadFsRemoveDirSkippedPath.Items[GetCurrentThreadID].IndexOf(OldRealPath.ToPath);
-					if (-1 <> SkippedFoundIndex) then
-						ThreadFsRemoveDirSkippedPath.Items[GetCurrentThreadID].Delete(SkippedFoundIndex);
-				end;
-
+				FThreadState.RemoveSkippedPath(OldRealPath.ToPath);
 			end;
 			if ((FS_FILE_OK = Result) and SettingsManager.Settings.DescriptionTrackCloudFS and AccountSettings.GetAccountSettings(NewRealPath.account).IsRemoteDescriptionsSupported) then
 				RenameRemoteFileDescription(OldRealPath, NewRealPath, OldCloud);
@@ -1544,12 +1495,11 @@ procedure TMailRuCloudWFX.FsStatusInfo(RemoteDir: WideString; InfoStartEnd, Info
 var
 	RealPath: TRealPath;
 	getResult: Integer;
-	BackgroundJobsCount: Integer;
 begin
 	RealPath.FromPath(RemoteDir, ID_True); // RemoteDir always a directory
 	if (InfoStartEnd = FS_STATUS_START) then
 	begin
-		ThreadFsStatusInfo.AddOrSetValue(GetCurrentThreadID(), InfoOperation);
+		FThreadState.SetFsStatusInfo(InfoOperation);
 		case InfoOperation of
 			FS_STATUS_OP_LIST:
 				begin
@@ -1565,19 +1515,19 @@ begin
 				end;
 			FS_STATUS_OP_GET_SINGLE:
 				begin
-					ThreadRetryCountDownload.AddOrSetValue(GetCurrentThreadID(), 0);
+					FThreadState.ResetRetryCountDownload;
 				end;
 			FS_STATUS_OP_GET_MULTI:
 				begin
-					ThreadRetryCountDownload.AddOrSetValue(GetCurrentThreadID(), 0);
+					FThreadState.ResetRetryCountDownload;
 				end;
 			FS_STATUS_OP_PUT_SINGLE:
 				begin
-					ThreadRetryCountUpload.AddOrSetValue(GetCurrentThreadID(), 0);
+					FThreadState.ResetRetryCountUpload;
 				end;
 			FS_STATUS_OP_PUT_MULTI:
 				begin
-					ThreadRetryCountUpload.AddOrSetValue(GetCurrentThreadID(), 0);
+					FThreadState.ResetRetryCountUpload;
 				end;
 			FS_STATUS_OP_RENMOV_SINGLE:
 				begin
@@ -1587,16 +1537,15 @@ begin
 					if ConnectionManager.Get(RealPath.account, getResult).IsPublicAccount then
 					begin
 						TCLogger.Log(LOG_LEVEL_WARNING, MSGTYPE_IMPORTANTERROR, ERR_DIRECT_COPY_SUPPORT);
-						ThreadSkipListRenMov.AddOrSetValue(GetCurrentThreadID, true);
+						FThreadState.SetSkipListRenMov(True);
 					end;
-					ThreadRetryCountRenMov.AddOrSetValue(GetCurrentThreadID(), 0);
-					ThreadCanAbortRenMov.AddOrSetValue(GetCurrentThreadID, true);
-					ThreadFsRemoveDirSkippedPath.AddOrSetValue(GetCurrentThreadID, TStringList.Create());
+					FThreadState.ResetRetryCountRenMov;
+					FThreadState.SetCanAbortRenMov(True);
+					FThreadState.CreateRemoveDirSkippedPath;
 				end;
 			FS_STATUS_OP_DELETE:
 				begin
-					//ThreadSkipListDelete.Add(GetCurrentThreadID());
-					ThreadSkipListDelete.AddOrSetValue(GetCurrentThreadID, true);
+					FThreadState.SetSkipListDelete(True);
 				end;
 			FS_STATUS_OP_ATTRIB:
 				begin
@@ -1630,26 +1579,22 @@ begin
 				end;
 			FS_STATUS_OP_GET_MULTI_THREAD:
 				begin
-					ThreadRetryCountDownload.AddOrSetValue(GetCurrentThreadID(), 0);
-					if not ThreadBackgroundJobs.TryGetValue(RealPath.account, BackgroundJobsCount) then
-						BackgroundJobsCount := 0;
-					ThreadBackgroundJobs.AddOrSetValue(RealPath.account, BackgroundJobsCount + 1);
-					ThreadBackgroundThreads.AddOrSetValue(GetCurrentThreadID(), FS_STATUS_OP_GET_MULTI_THREAD);
+					FThreadState.ResetRetryCountDownload;
+					FThreadState.IncrementBackgroundJobs(RealPath.account);
+					FThreadState.SetBackgroundThreadStatus(FS_STATUS_OP_GET_MULTI_THREAD);
 				end;
 			FS_STATUS_OP_PUT_MULTI_THREAD:
 				begin
-					ThreadRetryCountUpload.AddOrSetValue(GetCurrentThreadID(), 0);
-					if not ThreadBackgroundJobs.TryGetValue(RealPath.account, BackgroundJobsCount) then
-						BackgroundJobsCount := 0;
-					ThreadBackgroundJobs.AddOrSetValue(RealPath.account, BackgroundJobsCount + 1);
-					ThreadBackgroundThreads.AddOrSetValue(GetCurrentThreadID(), FS_STATUS_OP_PUT_MULTI_THREAD);
+					FThreadState.ResetRetryCountUpload;
+					FThreadState.IncrementBackgroundJobs(RealPath.account);
+					FThreadState.SetBackgroundThreadStatus(FS_STATUS_OP_PUT_MULTI_THREAD);
 				end;
 		end;
 		exit;
 	end;
 	if (InfoStartEnd = FS_STATUS_END) then
 	begin
-		ThreadFsStatusInfo.Remove(GetCurrentThreadID);
+		FThreadState.RemoveFsStatusInfo;
 		case InfoOperation of
 			FS_STATUS_OP_LIST:
 				begin
@@ -1677,18 +1622,16 @@ begin
 				end;
 			FS_STATUS_OP_RENMOV_MULTI:
 				begin
-					ThreadSkipListRenMov.AddOrSetValue(GetCurrentThreadID, false);
-					ThreadCanAbortRenMov.AddOrSetValue(GetCurrentThreadID, false);
-
-					ThreadFsRemoveDirSkippedPath.Items[GetCurrentThreadID].Free;
-					ThreadFsRemoveDirSkippedPath.AddOrSetValue(GetCurrentThreadID, nil);
+					FThreadState.SetSkipListRenMov(False);
+					FThreadState.SetCanAbortRenMov(False);
+					FThreadState.ClearRemoveDirSkippedPath;
 
 					if RealPath.IsInAccount() and SettingsManager.Settings.LogUserSpace then
 						ConnectionManager.Get(RealPath.account, getResult).logUserSpaceInfo;
 				end;
 			FS_STATUS_OP_DELETE:
 				begin
-					ThreadSkipListDelete.AddOrSetValue(GetCurrentThreadID(), false);
+					FThreadState.SetSkipListDelete(False);
 					if RealPath.IsInAccount() and SettingsManager.Settings.LogUserSpace then
 						ConnectionManager.Get(RealPath.account, getResult).logUserSpaceInfo;
 				end;
@@ -1732,20 +1675,15 @@ begin
 				begin
 					if RealPath.IsInAccount() and SettingsManager.Settings.LogUserSpace then
 						ConnectionManager.Get(RealPath.account, getResult).logUserSpaceInfo;
-					if not ThreadBackgroundJobs.TryGetValue(RealPath.account, BackgroundJobsCount) then
-						BackgroundJobsCount := 0;
-					ThreadBackgroundJobs.AddOrSetValue(RealPath.account, BackgroundJobsCount - 1);
-					ThreadBackgroundThreads.Remove(GetCurrentThreadID());
-
+					FThreadState.DecrementBackgroundJobs(RealPath.account);
+					FThreadState.RemoveBackgroundThread;
 				end;
 			FS_STATUS_OP_PUT_MULTI_THREAD:
 				begin
 					if RealPath.IsInAccount() and SettingsManager.Settings.LogUserSpace then
 						ConnectionManager.Get(RealPath.account, getResult).logUserSpaceInfo;
-					if not ThreadBackgroundJobs.TryGetValue(RealPath.account, BackgroundJobsCount) then
-						BackgroundJobsCount := 0;
-					ThreadBackgroundJobs.AddOrSetValue(RealPath.account, BackgroundJobsCount - 1);
-					ThreadBackgroundThreads.Remove(GetCurrentThreadID());
+					FThreadState.DecrementBackgroundJobs(RealPath.account);
+					FThreadState.RemoveBackgroundThread;
 				end;
 		end;
 		exit;
@@ -1919,15 +1857,15 @@ begin
 				OperationErrorModeRetry:
 					begin;
 						RetryAttempts := SettingsManager.Settings.RetryAttempts;
-						while (ThreadRetryCountRenMov.Items[GetCurrentThreadID()] <> RetryAttempts) and (not(Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
+						while (FThreadState.GetRetryCountRenMov <> RetryAttempts) and (not(Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
 						begin
-							ThreadRetryCountRenMov.Items[GetCurrentThreadID()] := ThreadRetryCountRenMov.Items[GetCurrentThreadID()] + 1;
-							TCLogger.Log(LOG_LEVEL_DETAIL, msgtype_details, CLONE_FILE_RETRY, [TCloudMailRu.ErrorCodeText(Result), ThreadRetryCountRenMov.Items[GetCurrentThreadID()], RetryAttempts]);
+							FThreadState.IncrementRetryCountRenMov;
+							TCLogger.Log(LOG_LEVEL_DETAIL, msgtype_details, CLONE_FILE_RETRY, [TCloudMailRu.ErrorCodeText(Result), FThreadState.GetRetryCountRenMov, RetryAttempts]);
 							Result := NewCloud.addFileByIdentity(CurrentItem, IncludeTrailingPathDelimiter(ExtractFileDir(NewRealPath.Path)) + ExtractFileName(NewRealPath.Path));
 							if TCProgress.Aborted() then
 								Result := FS_FILE_USERABORT;
 							if (Result in [FS_FILE_OK, FS_FILE_USERABORT]) then
-								ThreadRetryCountRenMov.Items[GetCurrentThreadID()] := 0; //сбросим счётчик попыток
+								FThreadState.ResetRetryCountRenMov;
 							ProcessMessages;
 							Sleep(SettingsManager.Settings.AttemptWait);
 						end;
@@ -1990,15 +1928,15 @@ begin
 				OperationErrorModeRetry:
 					begin;
 						RetryAttempts := SettingsManager.Settings.RetryAttempts;
-						while (ThreadRetryCountRenMov.Items[GetCurrentThreadID()] <> RetryAttempts) and (not(Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
+						while (FThreadState.GetRetryCountRenMov <> RetryAttempts) and (not(Result in [FS_FILE_OK, FS_FILE_USERABORT])) do
 						begin
-							ThreadRetryCountRenMov.Items[GetCurrentThreadID()] := ThreadRetryCountRenMov.Items[GetCurrentThreadID()] + 1;
-							TCLogger.Log(LOG_LEVEL_DETAIL, msgtype_details, PUBLISH_FILE_RETRY, [TCloudMailRu.ErrorCodeText(Result), ThreadRetryCountRenMov.Items[GetCurrentThreadID()], RetryAttempts]);
+							FThreadState.IncrementRetryCountRenMov;
+							TCLogger.Log(LOG_LEVEL_DETAIL, msgtype_details, PUBLISH_FILE_RETRY, [TCloudMailRu.ErrorCodeText(Result), FThreadState.GetRetryCountRenMov, RetryAttempts]);
 							Result := CloneWeblink(NewCloud, OldCloud, NewRealPath.Path, CurrentItem, NeedUnpublish);
 							if TCProgress.Aborted() then
 								Result := FS_FILE_USERABORT;
 							if (Result in [FS_FILE_OK, FS_FILE_USERABORT]) then
-								ThreadRetryCountRenMov.Items[GetCurrentThreadID()] := 0; //сбросим счётчик попыток
+								FThreadState.ResetRetryCountRenMov;
 							ProcessMessages;
 							Sleep(SettingsManager.Settings.AttemptWait);
 						end;

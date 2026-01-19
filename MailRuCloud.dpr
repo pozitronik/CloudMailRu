@@ -106,7 +106,9 @@ uses
 	SharedAccountAuthStrategy in 'src\models\auth\SharedAccountAuthStrategy.pas',
 	WebAuthStrategy in 'src\models\auth\WebAuthStrategy.pas',
 	TwoStepAuthStrategy in 'src\models\auth\TwoStepAuthStrategy.pas',
-	OldOAuthStrategy in 'src\models\auth\OldOAuthStrategy.pas';
+	OldOAuthStrategy in 'src\models\auth\OldOAuthStrategy.pas',
+	IThreadStateManagerInterface in 'src\models\wfx\IThreadStateManagerInterface.pas',
+	ThreadStateManager in 'src\models\wfx\ThreadStateManager.pas';
 
 {$IFDEF WIN64}
 {$E wfx64}

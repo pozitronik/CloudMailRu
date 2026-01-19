@@ -180,7 +180,10 @@ uses
 	CloudMailRuUploadTest in 'models\CloudMailRuUploadTest.pas',
 	CloudMailRuIntegrationTest in 'models\CloudMailRuIntegrationTest.pas',
 	CloudMailRuLoginFlowTest in 'models\CloudMailRuLoginFlowTest.pas',
-	CloudMailRuPutFileSplitTest in 'models\CloudMailRuPutFileSplitTest.pas';
+	CloudMailRuPutFileSplitTest in 'models\CloudMailRuPutFileSplitTest.pas',
+	IThreadStateManagerInterface in '..\src\models\wfx\IThreadStateManagerInterface.pas',
+	ThreadStateManager in '..\src\models\wfx\ThreadStateManager.pas',
+	ThreadStateManagerTest in 'models\wfx\ThreadStateManagerTest.pas';
 
 {keep comment here to protect the following conditional from being removed by the IDE when adding a unit}
 {$IFNDEF TESTINSIGHT}
