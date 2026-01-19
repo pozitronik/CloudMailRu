@@ -122,7 +122,9 @@ uses
 	IRetryHandlerInterface in 'src\models\wfx\IRetryHandlerInterface.pas',
 	RetryHandler in 'src\models\wfx\RetryHandler.pas',
 	ICommandDispatcherInterface in 'src\models\wfx\ICommandDispatcherInterface.pas',
-	CommandDispatcher in 'src\models\wfx\CommandDispatcher.pas';
+	CommandDispatcher in 'src\models\wfx\CommandDispatcher.pas',
+	IListingProviderInterface in 'src\models\wfx\IListingProviderInterface.pas',
+	ListingProvider in 'src\models\wfx\ListingProvider.pas';
 
 {$IFDEF WIN64}
 {$E wfx64}

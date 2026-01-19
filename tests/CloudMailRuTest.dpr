@@ -204,7 +204,10 @@ uses
 	RetryHandlerTest in 'models\wfx\RetryHandlerTest.pas',
 	ICommandDispatcherInterface in '..\src\models\wfx\ICommandDispatcherInterface.pas',
 	CommandDispatcher in '..\src\models\wfx\CommandDispatcher.pas',
-	CommandDispatcherTest in 'models\wfx\CommandDispatcherTest.pas';
+	CommandDispatcherTest in 'models\wfx\CommandDispatcherTest.pas',
+	IListingProviderInterface in '..\src\models\wfx\IListingProviderInterface.pas',
+	ListingProvider in '..\src\models\wfx\ListingProvider.pas',
+	ListingProviderTest in 'models\wfx\ListingProviderTest.pas';
 
 {keep comment here to protect the following conditional from being removed by the IDE when adding a unit}
 {$IFNDEF TESTINSIGHT}

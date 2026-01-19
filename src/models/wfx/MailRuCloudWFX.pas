@@ -77,7 +77,9 @@ uses
 	IRetryHandlerInterface,
 	RetryHandler,
 	ICommandDispatcherInterface,
-	CommandDispatcher;
+	CommandDispatcher,
+	IListingProviderInterface,
+	ListingProvider;
 
 type
 	TMailRuCloudWFX = class(TInterfacedObject, IWFXInterface)
@@ -100,6 +102,7 @@ type
 		FDescriptionSync: IDescriptionSyncManager;
 		FRetryHandler: IRetryHandler;
 		FCommandDispatcher: ICommandDispatcher;
+		FListingProvider: IListingProvider;
 
 		PluginNum: Integer;
 
@@ -204,6 +207,7 @@ begin
 	FContentFieldProvider := TContentFieldProvider.Create;
 	FIconProvider := TIconProvider.Create;
 	FOperationLifecycle := TOperationLifecycleHandler.Create;
+	FListingProvider := TListingProvider.Create;
 
 	AccountSettings := TAccountsManager.Create(TIniConfigFile.Create(SettingsManager.AccountsIniFilePath));
 	FFileSystem := TWindowsFileSystem.Create;
@@ -293,6 +297,7 @@ begin
 	FThreadState := nil; {IThreadStateManager is reference-counted, setting to nil releases it}
 	FRetryHandler := nil;
 	FCommandDispatcher := nil;
+	FListingProvider := nil;
 	FreeAndNil(ConnectionManager);
 
 	CurrentDescriptions.Free;
@@ -798,22 +803,8 @@ begin
 				exit(INVALID_HANDLE_VALUE);
 			end;
 
-			if RealPath.trashDir then
-			begin
-				if not CurrentCloud.getTrashbinListing(CurrentListing) then
-					SetLastError(ERROR_PATH_NOT_FOUND);
-			end else if RealPath.sharedDir then
-			begin
-				if not CurrentCloud.getSharedLinksListing(CurrentListing) then
-					SetLastError(ERROR_PATH_NOT_FOUND); //that will be interpreted as symlinks later
-			end else if RealPath.invitesDir then
-			begin
-				if not CurrentCloud.getIncomingLinksListing(CurrentListing, CurrentIncomingInvitesListing) then
-					SetLastError(ERROR_PATH_NOT_FOUND); //одновременно получаем оба листинга, чтобы не перечитывать листинг инватов на каждый чих
-			end else begin //Нужно проверить, является ли открываемый объект каталогом - для файлов API вернёт листинг вышестоящего каталога, см. issue #174
-				if not CurrentCloud.getDirListing(RealPath.Path, CurrentListing) then
-					SetLastError(ERROR_PATH_NOT_FOUND);
-			end;
+			if not FListingProvider.FetchListing(CurrentCloud, RealPath, CurrentListing, CurrentIncomingInvitesListing) then
+				SetLastError(ERROR_PATH_NOT_FOUND);
 
 			if RealPath.isVirtual and not RealPath.isInAccountsList then //игнорим попытки получить листинги объектов вирутальных каталогов
 			begin
