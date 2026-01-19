@@ -9,7 +9,7 @@ uses
 	Windows,
 	IIconContextBuilderInterface,
 	IIconProviderInterface,
-	IListingItemFetcherInterface,
+	ListingItemFetcher,
 	IAccountsManagerInterface,
 	IConnectionManagerInterface,
 	RealPath,

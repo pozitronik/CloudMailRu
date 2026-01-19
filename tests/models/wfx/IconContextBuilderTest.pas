@@ -20,7 +20,7 @@ uses
 	IIconContextBuilderInterface,
 	IIconProviderInterface,
 	IAccountsManagerInterface,
-	IListingItemFetcherInterface,
+	ListingItemFetcher,
 	MockConnectionManager,
 	IconContextBuilder;
 
