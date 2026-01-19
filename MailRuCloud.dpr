@@ -130,7 +130,9 @@ uses
 	ILocalFileDeletionHandlerInterface in 'src\models\wfx\ILocalFileDeletionHandlerInterface.pas',
 	LocalFileDeletionHandler in 'src\models\wfx\LocalFileDeletionHandler.pas',
 	IDownloadSuccessHandlerInterface in 'src\models\wfx\IDownloadSuccessHandlerInterface.pas',
-	DownloadSuccessHandler in 'src\models\wfx\DownloadSuccessHandler.pas';
+	DownloadSuccessHandler in 'src\models\wfx\DownloadSuccessHandler.pas',
+	IOperationActionExecutorInterface in 'src\models\wfx\IOperationActionExecutorInterface.pas',
+	OperationActionExecutor in 'src\models\wfx\OperationActionExecutor.pas';
 
 {$IFDEF WIN64}
 {$E wfx64}

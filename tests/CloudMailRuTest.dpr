@@ -216,7 +216,10 @@ uses
 	LocalFileDeletionHandlerTest in 'models\wfx\LocalFileDeletionHandlerTest.pas',
 	IDownloadSuccessHandlerInterface in '..\src\models\wfx\IDownloadSuccessHandlerInterface.pas',
 	DownloadSuccessHandler in '..\src\models\wfx\DownloadSuccessHandler.pas',
-	DownloadSuccessHandlerTest in 'models\wfx\DownloadSuccessHandlerTest.pas';
+	DownloadSuccessHandlerTest in 'models\wfx\DownloadSuccessHandlerTest.pas',
+	IOperationActionExecutorInterface in '..\src\models\wfx\IOperationActionExecutorInterface.pas',
+	OperationActionExecutor in '..\src\models\wfx\OperationActionExecutor.pas',
+	OperationActionExecutorTest in 'models\wfx\OperationActionExecutorTest.pas';
 
 {keep comment here to protect the following conditional from being removed by the IDE when adding a unit}
 {$IFNDEF TESTINSIGHT}

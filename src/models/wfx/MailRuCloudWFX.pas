@@ -85,7 +85,9 @@ uses
 	ILocalFileDeletionHandlerInterface,
 	LocalFileDeletionHandler,
 	IDownloadSuccessHandlerInterface,
-	DownloadSuccessHandler;
+	DownloadSuccessHandler,
+	IOperationActionExecutorInterface,
+	OperationActionExecutor;
 
 type
 	TMailRuCloudWFX = class(TInterfacedObject, IWFXInterface)
@@ -112,6 +114,7 @@ type
 		FListingProvider: IListingProvider;
 		FLocalFileDeletionHandler: ILocalFileDeletionHandler;
 		FDownloadSuccessHandler: IDownloadSuccessHandler;
+		FActionExecutor: IOperationActionExecutor;
 
 		PluginNum: Integer;
 
@@ -146,7 +149,6 @@ type
 		function CloneWeblink(NewCloud, OldCloud: TCloudMailRu; CloudPath: WideString; CurrentItem: TCMRDirItem; NeedUnpublish: Boolean): Integer;
 		function RenMoveFileViaHash(OldCloud, NewCloud: TCloudMailRu; OldRealPath, NewRealPath: TRealPath; Move, OverWrite: Boolean): Integer;
 		function RenMoveFileViaPublicLink(OldCloud, NewCloud: TCloudMailRu; OldRealPath, NewRealPath: TRealPath; Move, OverWrite: Boolean): Integer;
-		procedure ExecuteOperationActions(Actions: TOperationActions; const RealPath: TRealPath; Operation: Integer);
 	public
 		constructor Create();
 		destructor Destroy; override;
@@ -265,6 +267,9 @@ begin
 
 	{Create download success handler for post-download operations}
 	FDownloadSuccessHandler := TDownloadSuccessHandler.Create(SettingsManager, TCLogger, TCProgress, FDescriptionSyncGuard);
+
+	{Create operation action executor for lifecycle event handling}
+	FActionExecutor := TOperationActionExecutor.Create(FThreadState, ConnectionManager, SettingsManager, CurrentDescriptions, TCLogger);
 	Result := 0;
 end;
 
@@ -283,6 +288,7 @@ begin
 	FDescriptionSync := nil;
 	FLocalFileDeletionHandler := nil;
 	FDownloadSuccessHandler := nil;
+	FActionExecutor := nil;
 	FreeAndNil(ConnectionManager);
 
 	CurrentDescriptions.Free;
@@ -1100,75 +1106,6 @@ begin
 	FCommandDispatcher := TCommandDispatcher.Create(ConnectionManager, TCLogger, SettingsManager);
 end;
 
-procedure TMailRuCloudWFX.ExecuteOperationActions(Actions: TOperationActions; const RealPath: TRealPath; Operation: Integer);
-var
-	getResult: Integer;
-begin
-	{ Retry resets }
-	if oaResetRetryDownload in Actions then
-		FThreadState.ResetRetryCountDownload;
-	if oaResetRetryUpload in Actions then
-		FThreadState.ResetRetryCountUpload;
-	if oaResetRetryRenMov in Actions then
-		FThreadState.ResetRetryCountRenMov;
-
-	{ Skip list flags }
-	if oaSetSkipListDelete in Actions then
-		FThreadState.SetSkipListDelete(True);
-	if oaClearSkipListDelete in Actions then
-		FThreadState.SetSkipListDelete(False);
-	if oaSetSkipListRenMov in Actions then
-		FThreadState.SetSkipListRenMov(True);
-	if oaClearSkipListRenMov in Actions then
-		FThreadState.SetSkipListRenMov(False);
-
-	{ RenMov abort control }
-	if oaSetCanAbortRenMov in Actions then
-		FThreadState.SetCanAbortRenMov(True);
-	if oaClearCanAbortRenMov in Actions then
-		FThreadState.SetCanAbortRenMov(False);
-
-	{ Skipped path management }
-	if oaCreateSkippedPath in Actions then
-		FThreadState.CreateRemoveDirSkippedPath;
-	if oaClearSkippedPath in Actions then
-		FThreadState.ClearRemoveDirSkippedPath;
-
-	{ Background job tracking }
-	if oaIncrementBackgroundJobs in Actions then
-		FThreadState.IncrementBackgroundJobs(RealPath.account);
-	if oaDecrementBackgroundJobs in Actions then
-		FThreadState.DecrementBackgroundJobs(RealPath.account);
-
-	{ Background thread status }
-	if oaSetBackgroundThreadStatus in Actions then
-		FThreadState.SetBackgroundThreadStatus(Operation);
-	if oaRemoveBackgroundThread in Actions then
-		FThreadState.RemoveBackgroundThread;
-
-	{ User space logging }
-	if oaLogUserSpaceInfo in Actions then
-		ConnectionManager.Get(RealPath.account, getResult).logUserSpaceInfo;
-
-	{ Description loading }
-	if oaLoadDescriptions in Actions then
-	begin
-		if ConnectionManager.Get(RealPath.account, getResult).getDescriptionFile(
-			IncludeTrailingBackslash(RealPath.Path) + SettingsManager.Settings.DescriptionFileName,
-			CurrentDescriptions.ionFilename) then
-			CurrentDescriptions.Read
-		else
-			CurrentDescriptions.Clear;
-	end;
-
-	{ Public account warning - also sets skip flag to prevent unsupported operations }
-	if oaWarnPublicAccountCopy in Actions then
-	begin
-		TCLogger.Log(LOG_LEVEL_WARNING, MSGTYPE_IMPORTANTERROR, ERR_DIRECT_COPY_SUPPORT);
-		FThreadState.SetSkipListRenMov(True);
-	end;
-end;
-
 procedure TMailRuCloudWFX.FsStatusInfo(RemoteDir: WideString; InfoStartEnd, InfoOperation: Integer);
 var
 	RealPath: TRealPath;
@@ -1193,13 +1130,13 @@ begin
 	begin
 		FThreadState.SetFsStatusInfo(InfoOperation);
 		Actions := FOperationLifecycle.GetStartActions(Context);
-		ExecuteOperationActions(Actions, RealPath, InfoOperation);
+		FActionExecutor.Execute(Actions, RealPath, InfoOperation);
 	end
 	else if InfoStartEnd = FS_STATUS_END then
 	begin
 		FThreadState.RemoveFsStatusInfo;
 		Actions := FOperationLifecycle.GetEndActions(Context);
-		ExecuteOperationActions(Actions, RealPath, InfoOperation);
+		FActionExecutor.Execute(Actions, RealPath, InfoOperation);
 	end;
 end;
 
