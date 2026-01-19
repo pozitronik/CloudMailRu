@@ -93,7 +93,9 @@ uses
 	IListingPathValidatorInterface,
 	ListingPathValidator,
 	ISameAccountMoveHandlerInterface,
-	SameAccountMoveHandler;
+	SameAccountMoveHandler,
+	IFileStreamExecutorInterface,
+	FileStreamExecutor;
 
 type
 	TMailRuCloudWFX = class(TInterfacedObject, IWFXInterface)
@@ -124,6 +126,7 @@ type
 		FListingSkipDecider: IListingSkipDecider;
 		FListingPathValidator: IListingPathValidator;
 		FSameAccountMoveHandler: ISameAccountMoveHandler;
+		FFileStreamExecutor: IFileStreamExecutor;
 
 		PluginNum: Integer;
 
@@ -288,6 +291,9 @@ begin
 
 	{Create same-account move handler for FsRenMovFile}
 	FSameAccountMoveHandler := TSameAccountMoveHandler.Create(FThreadState, FDescriptionSyncGuard);
+
+	{Create file stream executor for ExecuteFileStream}
+	FFileStreamExecutor := TFileStreamExecutor.Create;
 	Result := 0;
 end;
 
@@ -310,6 +316,7 @@ begin
 	FListingSkipDecider := nil;
 	FListingPathValidator := nil;
 	FSameAccountMoveHandler := nil;
+	FFileStreamExecutor := nil;
 	FreeAndNil(ConnectionManager);
 
 	CurrentDescriptions.Free;
@@ -452,49 +459,13 @@ end;
 
 function TMailRuCloudWFX.ExecuteFileStream(RealPath: TRealPath; StreamingSettings: TStreamingSettings): Integer;
 var
-	StreamUrl: WideString;
-	getResult: Integer;
-	CurrentCloud, TempPublicCloud: TCloudMailRu;
 	CurrentItem: TCMRDirItem;
 begin
-	Result := FS_EXEC_OK;
-	if (STREAMING_FORMAT_DISABLED = StreamingSettings.Format) or (STREAMING_FORMAT_UNSET = StreamingSettings.Format) then
-		exit;
-
 	//может быть разница в атрибутах настоящих и полученных из листинга (они не рефрешатся)
 	CurrentItem := FindListingItemByPath(CurrentListing, RealPath); //внутри публичного облака веблинк есть автоматически
 
-	if TCloudMailRu.TempPublicCloudInit(TempPublicCloud, PUBLIC_ACCESS_URL + CurrentItem.weblink) then
-	begin
-		if STREAMING_FORMAT_PLAYLIST = StreamingSettings.Format then
-		begin
-			if not TempPublicCloud.getPublishedFileStreamUrl(CurrentItem, StreamUrl) then
-				Result := FS_EXEC_ERROR;
-		end else begin
-			if not CurrentItem.isPublished then
-			begin
-				CurrentCloud := ConnectionManager.Get(RealPath.account, getResult);
-				if not CurrentCloud.publishFile(CurrentItem.home, CurrentItem.weblink) then
-					Result := FS_EXEC_ERROR;
-				//Здесь можно бы обновить листинг
-			end;
-			if FS_EXEC_OK = Result then
-				StreamUrl := TempPublicCloud.getSharedFileUrl(EmptyWideStr, ShardTypeFromStreamingFormat(StreamingSettings.Format));
-		end;
-
-		if FS_EXEC_OK = Result then
-		begin
-			if EmptyWideStr = StreamingSettings.Parameters then
-				StreamingSettings.Parameters := '%url%';
-			StreamingSettings.Parameters := StringReplace(StreamingSettings.Parameters, '%url%', StreamUrl, [rfReplaceAll, rfIgnoreCase]);
-
-			if not(Run(StreamingSettings.Command, StreamUrl, StreamingSettings.StartPath)) then
-				Result := FS_EXEC_ERROR;
-		end;
-
-	end;
-
-	FreeAndNil(TempPublicCloud);
+	{Delegate streaming execution to handler}
+	Result := FFileStreamExecutor.Execute(RealPath, CurrentItem, StreamingSettings, ConnectionManager);
 end;
 
 function TMailRuCloudWFX.FindIncomingInviteItemByPath(InviteListing: TCMRIncomingInviteList; Path: TRealPath): TCMRIncomingInvite;

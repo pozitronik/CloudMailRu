@@ -228,7 +228,10 @@ uses
 	ListingPathValidatorTest in 'models\wfx\ListingPathValidatorTest.pas',
 	ISameAccountMoveHandlerInterface in '..\src\models\wfx\ISameAccountMoveHandlerInterface.pas',
 	SameAccountMoveHandler in '..\src\models\wfx\SameAccountMoveHandler.pas',
-	SameAccountMoveHandlerTest in 'models\wfx\SameAccountMoveHandlerTest.pas';
+	SameAccountMoveHandlerTest in 'models\wfx\SameAccountMoveHandlerTest.pas',
+	IFileStreamExecutorInterface in '..\src\models\wfx\IFileStreamExecutorInterface.pas',
+	FileStreamExecutor in '..\src\models\wfx\FileStreamExecutor.pas',
+	FileStreamExecutorTest in 'models\wfx\FileStreamExecutorTest.pas';
 
 {keep comment here to protect the following conditional from being removed by the IDE when adding a unit}
 {$IFNDEF TESTINSIGHT}

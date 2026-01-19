@@ -138,7 +138,9 @@ uses
 	IListingPathValidatorInterface in 'src\models\wfx\IListingPathValidatorInterface.pas',
 	ListingPathValidator in 'src\models\wfx\ListingPathValidator.pas',
 	ISameAccountMoveHandlerInterface in 'src\models\wfx\ISameAccountMoveHandlerInterface.pas',
-	SameAccountMoveHandler in 'src\models\wfx\SameAccountMoveHandler.pas';
+	SameAccountMoveHandler in 'src\models\wfx\SameAccountMoveHandler.pas',
+	IFileStreamExecutorInterface in 'src\models\wfx\IFileStreamExecutorInterface.pas',
+	FileStreamExecutor in 'src\models\wfx\FileStreamExecutor.pas';
 
 {$IFDEF WIN64}
 {$E wfx64}
