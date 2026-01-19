@@ -183,7 +183,9 @@ uses
 	IOperationStatusContextBuilderInterface in 'src\models\wfx\IOperationStatusContextBuilderInterface.pas',
 	OperationStatusContextBuilder in 'src\models\wfx\OperationStatusContextBuilder.pas',
 	IListingResultApplierInterface in 'src\models\wfx\IListingResultApplierInterface.pas',
-	ListingResultApplier in 'src\models\wfx\ListingResultApplier.pas';
+	ListingResultApplier in 'src\models\wfx\ListingResultApplier.pas',
+	IDownloadOrchestratorInterface in 'src\models\wfx\IDownloadOrchestratorInterface.pas',
+	DownloadOrchestrator in 'src\models\wfx\DownloadOrchestrator.pas';
 
 {$IFDEF WIN64}
 {$E wfx64}

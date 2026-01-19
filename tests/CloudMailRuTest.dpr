@@ -296,7 +296,10 @@ uses
 	OperationStatusContextBuilderTest in 'models\wfx\OperationStatusContextBuilderTest.pas',
 	IListingResultApplierInterface in '..\src\models\wfx\IListingResultApplierInterface.pas',
 	ListingResultApplier in '..\src\models\wfx\ListingResultApplier.pas',
-	ListingResultApplierTest in 'models\wfx\ListingResultApplierTest.pas';
+	ListingResultApplierTest in 'models\wfx\ListingResultApplierTest.pas',
+	IDownloadOrchestratorInterface in '..\src\models\wfx\IDownloadOrchestratorInterface.pas',
+	DownloadOrchestrator in '..\src\models\wfx\DownloadOrchestrator.pas',
+	DownloadOrchestratorTest in 'models\wfx\DownloadOrchestratorTest.pas';
 
 {keep comment here to protect the following conditional from being removed by the IDE when adding a unit}
 {$IFNDEF TESTINSIGHT}

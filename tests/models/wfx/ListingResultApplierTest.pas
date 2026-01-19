@@ -71,7 +71,6 @@ var
 	Base: TListingResultBase;
 	FindData: tWIN32FINDDATAW;
 	FileCounter: Integer;
-	ResultHandle: THandle;
 begin
 	Base.FileCounter := 42;
 	Base.ErrorCode := 0;
@@ -80,7 +79,7 @@ begin
 	FillChar(FindData, SizeOf(FindData), 0);
 	FileCounter := 0;
 
-	ResultHandle := FApplier.Apply(Base, FindData, FileCounter);
+	FApplier.Apply(Base, FindData, FileCounter);
 
 	Assert.AreEqual(42, FileCounter, 'FileCounter should be set from Base');
 end;

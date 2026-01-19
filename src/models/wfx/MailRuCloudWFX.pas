@@ -139,7 +139,9 @@ uses
 	IOperationStatusContextBuilderInterface,
 	OperationStatusContextBuilder,
 	IListingResultApplierInterface,
-	ListingResultApplier;
+	ListingResultApplier,
+	IDownloadOrchestratorInterface,
+	DownloadOrchestrator;
 
 type
 	TMailRuCloudWFX = class(TInterfacedObject, IWFXInterface)
@@ -191,6 +193,7 @@ type
 		FOverwritePreparationHandler: IOverwritePreparationHandler;
 		FOperationStatusContextBuilder: IOperationStatusContextBuilder;
 		FListingResultApplier: IListingResultApplier;
+		FDownloadOrchestrator: IDownloadOrchestrator;
 
 		PluginNum: Integer;
 
@@ -403,6 +406,9 @@ begin
 
 	{Create listing result applier for FsFindFirst}
 	FListingResultApplier := TListingResultApplier.Create;
+
+	{Create download orchestrator for FsGetFile}
+	FDownloadOrchestrator := TDownloadOrchestrator.Create(FDownloadPreparationValidator, FLocalFileConflictResolver, FRetryHandler, SettingsManager);
 	Result := 0;
 end;
 
@@ -443,6 +449,7 @@ begin
 	FOverwritePreparationHandler := nil;
 	FOperationStatusContextBuilder := nil;
 	FListingResultApplier := nil;
+	FDownloadOrchestrator := nil;
 	ConnectionManager := nil;
 
 	CurrentDescriptions.Free;
@@ -528,22 +535,22 @@ begin
 
 	case ActionResult.ActionType of
 		satSymlink:
-		begin
-			strpcopy(RemoteName, ActionResult.SymlinkPath);
-			Result := FS_EXEC_SYMLINK;
-		end;
+			begin
+				strpcopy(RemoteName, ActionResult.SymlinkPath);
+				Result := FS_EXEC_SYMLINK;
+			end;
 		satAccountSettings:
-		begin
-			if TAccountsForm.ShowAccounts(MainWin, PasswordManager, RealPath.account) then
-				SettingsManager.Refresh;
-		end;
+			begin
+				if TAccountsForm.ShowAccounts(MainWin, PasswordManager, RealPath.account) then
+					SettingsManager.Refresh;
+			end;
 		satPropertyDialog:
-		begin
-			Cloud := ConnectionManager.Get(RealPath.account, getResult);
-			CurrentItem := ActionResult.CurrentItem;
-			if Cloud.statusFile(CurrentItem.home, CurrentItem) then
-				TPropertyForm.ShowProperty(MainWin, RealPath.Path, CurrentItem, Cloud, FFileSystem, SettingsManager.Settings.DownloadLinksEncode, SettingsManager.Settings.AutoUpdateDownloadListing, false, false, SettingsManager.Settings.DescriptionFileName);
-		end;
+			begin
+				Cloud := ConnectionManager.Get(RealPath.account, getResult);
+				CurrentItem := ActionResult.CurrentItem;
+				if Cloud.statusFile(CurrentItem.home, CurrentItem) then
+					TPropertyForm.ShowProperty(MainWin, RealPath.Path, CurrentItem, Cloud, FFileSystem, SettingsManager.Settings.DownloadLinksEncode, SettingsManager.Settings.AutoUpdateDownloadListing, false, false, SettingsManager.Settings.DescriptionFileName);
+			end;
 	end;
 end;
 
@@ -698,8 +705,8 @@ begin
 			Result := ExecCommand(RemoteName, Action.Command, Action.Parameter);
 		eatOpenYourself:
 			Result := FS_EXEC_YOURSELF;
-	else
-		Result := FS_EXEC_OK;
+		else
+			Result := FS_EXEC_OK;
 	end;
 end;
 
@@ -825,39 +832,15 @@ begin
 end;
 
 function TMailRuCloudWFX.FsGetFile(RemoteName, LocalName: WideString; CopyFlags: Integer; RemoteInfo: pRemoteInfo): Integer;
-var
-	RealPath: TRealPath;
-	ConflictResolution: TConflictResolution;
-	ValidationResult: TDownloadValidationResult;
 begin
-	RealPath.FromPath(RemoteName);
-
-	{Validate download preconditions}
-	ValidationResult := FDownloadPreparationValidator.Validate(RealPath, CopyFlags);
-	if not ValidationResult.ShouldProceed then
-		Exit(ValidationResult.ResultCode);
-
-	TCProgress.Progress(RemoteName, LocalName, 0);
-
-	{Check for local file conflict}
-	ConflictResolution := FLocalFileConflictResolver.Resolve(LocalName, CopyFlags,
-		SettingsManager.Settings.OverwriteLocalMode);
-	if not ConflictResolution.ShouldProceed then
-		Exit(ConflictResolution.ResultCode);
-
-	Result := GetRemoteFile(RealPath, LocalName, RemoteName, CopyFlags);
-
-	if Result <> FS_FILE_READERROR then
-		exit;
-
-	Result := FRetryHandler.HandleOperationError(Result, rotDownload, ERR_DOWNLOAD_FILE_ASK, ERR_DOWNLOAD, DOWNLOAD_FILE_RETRY, RemoteName,
-		function: Integer
+	Result := FDownloadOrchestrator.Execute(RemoteName, LocalName, CopyFlags,
+		function(const RemotePath: TRealPath; const ALocalName, ARemoteName: WideString; ACopyFlags: Integer): Integer
 		begin
-			Result := GetRemoteFile(RealPath, LocalName, RemoteName, CopyFlags);
+			Result := GetRemoteFile(RemotePath, ALocalName, ARemoteName, ACopyFlags);
 		end,
-		function: Boolean
+		function(const Source, Target: WideString; PercentDone: Integer): Boolean
 		begin
-			Result := TCProgress.Progress(PWideChar(LocalName), RemoteName, 0);
+			Result := TCProgress.Progress(PWideChar(Source), PWideChar(Target), PercentDone);
 		end
 	);
 end;
@@ -916,7 +899,8 @@ begin
 	if Result <> FS_FILE_WRITEERROR then
 		exit;
 
-	Result := FRetryHandler.HandleOperationError(Result, rotUpload, ERR_UPLOAD_FILE_ASK, ERR_UPLOAD, UPLOAD_FILE_RETRY, LocalName, function: Integer
+	Result := FRetryHandler.HandleOperationError(Result, rotUpload, ERR_UPLOAD_FILE_ASK, ERR_UPLOAD, UPLOAD_FILE_RETRY, LocalName,
+		function: Integer
 		begin
 			Result := PutRemoteFile(RealPath, LocalName, RemoteName, CopyFlags);
 		end,
@@ -974,7 +958,7 @@ begin
 
 	if OldRealPath.account <> NewRealPath.account then {Cross-account operation - delegate to handler}
 		Result := FCrossAccountFileOperationHandler.Execute(OldCloud, NewCloud, OldRealPath, NewRealPath, Move, OverWrite, SettingsManager.Settings.CopyBetweenAccountsMode, OldCloud.IsPublicAccount,
-		function: Boolean
+			function: Boolean
 			begin
 				Result := TCProgress.Aborted();
 			end)
