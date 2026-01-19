@@ -109,7 +109,11 @@ uses
 	IInviteOperationHandlerInterface,
 	InviteOperationHandler,
 	ICrossAccountFileOperationHandlerInterface,
-	CrossAccountFileOperationHandler;
+	CrossAccountFileOperationHandler,
+	IIconRenderingEngineInterface,
+	IconRenderingEngine,
+	IFileExecutionDispatcherInterface,
+	FileExecutionDispatcher;
 
 type
 	TMailRuCloudWFX = class(TInterfacedObject, IWFXInterface)
@@ -148,6 +152,8 @@ type
 		FTrashBinOperationHandler: ITrashBinOperationHandler;
 		FInviteOperationHandler: IInviteOperationHandler;
 		FCrossAccountFileOperationHandler: ICrossAccountFileOperationHandler;
+		FIconRenderingEngine: IIconRenderingEngine;
+		FFileExecutionDispatcher: IFileExecutionDispatcher;
 
 		PluginNum: Integer;
 
@@ -326,6 +332,12 @@ begin
 
 	{Create cross-account file operation handler for FsRenMovFile}
 	FCrossAccountFileOperationHandler := TCrossAccountFileOperationHandler.Create(FRetryHandler, TCLogger);
+
+	{Create icon rendering engine for FsExtractCustomIcon}
+	FIconRenderingEngine := TIconRenderingEngine.Create;
+
+	{Create file execution dispatcher for FsExecuteFile routing}
+	FFileExecutionDispatcher := TFileExecutionDispatcher.Create;
 	Result := 0;
 end;
 
@@ -356,6 +368,8 @@ begin
 	FTrashBinOperationHandler := nil;
 	FInviteOperationHandler := nil;
 	FCrossAccountFileOperationHandler := nil;
+	FIconRenderingEngine := nil;
+	FFileExecutionDispatcher := nil;
 	FreeAndNil(ConnectionManager);
 
 	CurrentDescriptions.Free;
@@ -586,40 +600,30 @@ end;
 
 function TMailRuCloudWFX.FsExecuteFile(MainWin: THandle; RemoteName, Verb: PWideChar): Integer;
 var
-	RealPath: TRealPath;
-	TargetStreamingSettings: TStreamingSettings;
+	Action: TExecutionAction;
 begin
-	RealPath.FromPath(RemoteName);
+	{Dispatch verb to determine appropriate action}
+	Action := FFileExecutionDispatcher.GetAction(RemoteName, Verb, SettingsManager.GetStreamingSettings);
 
-	if RealPath.upDirItem then
-		RealPath.Path := ExtractFilePath(RealPath.Path); //if somepath/.. item properties called
-
-	if RealPath.trashDir and ((Verb = VERB_OPEN) or (Verb = VERB_PROPERTIES)) then
-		exit(ExecTrashbinProperties(MainWin, RealPath));
-
-	if RealPath.sharedDir then
-		exit(ExecSharedAction(MainWin, RealPath, RemoteName, Verb = VERB_OPEN));
-
-	if RealPath.invitesDir then
-		exit(ExecInvitesAction(MainWin, RealPath));
-
-	if Verb = VERB_PROPERTIES then
-		exit(ExecProperties(MainWin, RealPath));
-
-	if Verb = VERB_OPEN then
-	begin
-		if (not(RealPath.isDir = ID_True)) then
-			TargetStreamingSettings := SettingsManager.GetStreamingSettings(RealPath.Path);
-		if (TargetStreamingSettings.Format <> STREAMING_FORMAT_UNSET) and (TargetStreamingSettings.Format <> STREAMING_FORMAT_NONE) then
-			exit(ExecuteFileStream(RealPath, TargetStreamingSettings));
-		exit(FS_EXEC_YOURSELF);
+	{Execute the appropriate handler based on action type}
+	case Action.ActionType of
+		eatTrashbinProperties:
+			Result := ExecTrashbinProperties(MainWin, Action.RealPath);
+		eatSharedAction:
+			Result := ExecSharedAction(MainWin, Action.RealPath, RemoteName, Action.ActionOpen);
+		eatInvitesAction:
+			Result := ExecInvitesAction(MainWin, Action.RealPath);
+		eatProperties:
+			Result := ExecProperties(MainWin, Action.RealPath);
+		eatStream:
+			Result := ExecuteFileStream(Action.RealPath, Action.StreamingSettings);
+		eatCommand:
+			Result := ExecCommand(RemoteName, Action.Command, Action.Parameter);
+		eatOpenYourself:
+			Result := FS_EXEC_YOURSELF;
+	else
+		Result := FS_EXEC_OK;
 	end;
-
-	if copy(Verb, 1, 5) = VERB_QUOTE then
-		exit(ExecCommand(RemoteName, LowerCase(GetWord(Verb, 1)), GetWord(Verb, 2)));
-
-	//if copy(Verb, 1, 5) = 'chmod' then exit; //future usage
-	exit(FS_EXEC_OK)
 end;
 
 function TMailRuCloudWFX.FsExtractCustomIcon(RemoteName: PWideChar; ExtractFlags: Integer; var TheIcon: hIcon): Integer;
@@ -628,20 +632,12 @@ var
 	Context: TIconContext;
 	IconInfo: TIconInfo;
 	IconsSize: Integer;
-	FrontIcon, BackIcon: hIcon;
-
-	function GetFolderIconSize(Size: Integer): Integer;
-	begin
-		if Size <= 16 then exit(IconSizeSmall);
-		if Size <= 32 then exit(IconSizeNormal);
-		exit(IconSizeLarge);
-	end;
+	RenderResult: TIconRenderResult;
 begin
-	Result := FS_ICON_EXTRACTED;
 	RealPath.FromPath(RemoteName);
 	IconsSize := GetTCIconsSize;
 
-	{ Build context for provider }
+	{Build context for provider}
 	Context.IconsMode := SettingsManager.Settings.IconsMode;
 	Context.HasItem := False;
 	Context.HasInviteItem := False;
@@ -662,56 +658,19 @@ begin
 		Context.HasItem := True;
 	end;
 
-	{ Get icon info from provider }
+	{Get icon info from provider}
 	IconInfo := FIconProvider.GetIcon(RealPath, Context);
 
-	{ Render based on icon type }
-	case IconInfo.IconType of
-		itUseDefault:
-			exit(FS_ICON_USEDEFAULT);
+	{Delegate rendering to engine}
+	RenderResult := FIconRenderingEngine.Render(IconInfo, IconsSize, PluginPath);
 
-		itSystemTrash:
-			begin
-				TheIcon := GetSystemIcon(GetFolderIconSize(IconsSize));
-				exit(FS_ICON_EXTRACTED_DESTROY);
-			end;
+	{Apply render result}
+	TheIcon := RenderResult.IconHandle;
+	Result := RenderResult.ResultCode;
 
-		itInternal:
-			begin
-				strpcopy(RemoteName, IconInfo.IconName);
-				TheIcon := LoadImageW(hInstance, RemoteName, IMAGE_ICON, IconsSize, IconsSize, LR_DEFAULTCOLOR);
-			end;
-
-		itInternalOverlay:
-			begin
-				strpcopy(RemoteName, IconInfo.IconName);
-				FrontIcon := LoadImageW(hInstance, RemoteName, IMAGE_ICON, IconsSize, IconsSize, LR_DEFAULTCOLOR);
-				BackIcon := GetFolderIcon(GetFolderIconSize(IconsSize));
-				TheIcon := CombineIcons(FrontIcon, BackIcon);
-				DeleteObject(FrontIcon);
-				DeleteObject(BackIcon);
-				exit(FS_ICON_EXTRACTED_DESTROY);
-			end;
-
-		itExternal:
-			begin
-				TheIcon := LoadPluginIcon(PluginPath + 'icons', IconInfo.IconName);
-				if TheIcon = INVALID_HANDLE_VALUE then
-					exit(FS_ICON_USEDEFAULT);
-				exit(FS_ICON_EXTRACTED_DESTROY);
-			end;
-
-		itExternalOverlay:
-			begin
-				TheIcon := LoadPluginIcon(PluginPath + 'icons', IconInfo.IconName);
-				if TheIcon = INVALID_HANDLE_VALUE then
-					exit(FS_ICON_USEDEFAULT);
-				BackIcon := GetFolderIcon(GetFolderIconSize(IconsSize));
-				TheIcon := CombineIcons(TheIcon, BackIcon);
-				DeleteObject(BackIcon);
-				exit(FS_ICON_EXTRACTED_DESTROY);
-			end;
-	end;
+	{For internal resources, TC expects resource name in RemoteName buffer}
+	if RenderResult.ResourceName <> '' then
+		strpcopy(RemoteName, RenderResult.ResourceName);
 end;
 
 function TMailRuCloudWFX.FsFindClose(Hdl: THandle): Integer;

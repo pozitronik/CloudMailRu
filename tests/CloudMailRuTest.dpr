@@ -252,7 +252,13 @@ uses
 	InviteOperationHandlerTest in 'models\wfx\InviteOperationHandlerTest.pas',
 	ICrossAccountFileOperationHandlerInterface in '..\src\models\wfx\ICrossAccountFileOperationHandlerInterface.pas',
 	CrossAccountFileOperationHandler in '..\src\models\wfx\CrossAccountFileOperationHandler.pas',
-	CrossAccountFileOperationHandlerTest in 'models\wfx\CrossAccountFileOperationHandlerTest.pas';
+	CrossAccountFileOperationHandlerTest in 'models\wfx\CrossAccountFileOperationHandlerTest.pas',
+	IIconRenderingEngineInterface in '..\src\models\wfx\IIconRenderingEngineInterface.pas',
+	IconRenderingEngine in '..\src\models\wfx\IconRenderingEngine.pas',
+	IconRenderingEngineTest in 'models\wfx\IconRenderingEngineTest.pas',
+	IFileExecutionDispatcherInterface in '..\src\models\wfx\IFileExecutionDispatcherInterface.pas',
+	FileExecutionDispatcher in '..\src\models\wfx\FileExecutionDispatcher.pas',
+	FileExecutionDispatcherTest in 'models\wfx\FileExecutionDispatcherTest.pas';
 
 {keep comment here to protect the following conditional from being removed by the IDE when adding a unit}
 {$IFNDEF TESTINSIGHT}

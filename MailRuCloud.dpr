@@ -154,7 +154,11 @@ uses
 	IInviteOperationHandlerInterface in 'src\models\wfx\IInviteOperationHandlerInterface.pas',
 	InviteOperationHandler in 'src\models\wfx\InviteOperationHandler.pas',
 	ICrossAccountFileOperationHandlerInterface in 'src\models\wfx\ICrossAccountFileOperationHandlerInterface.pas',
-	CrossAccountFileOperationHandler in 'src\models\wfx\CrossAccountFileOperationHandler.pas';
+	CrossAccountFileOperationHandler in 'src\models\wfx\CrossAccountFileOperationHandler.pas',
+	IIconRenderingEngineInterface in 'src\models\wfx\IIconRenderingEngineInterface.pas',
+	IconRenderingEngine in 'src\models\wfx\IconRenderingEngine.pas',
+	IFileExecutionDispatcherInterface in 'src\models\wfx\IFileExecutionDispatcherInterface.pas',
+	FileExecutionDispatcher in 'src\models\wfx\FileExecutionDispatcher.pas';
 
 {$IFDEF WIN64}
 {$E wfx64}
