@@ -120,7 +120,9 @@ uses
 	DescriptionSyncManager in 'src\models\wfx\DescriptionSyncManager.pas',
 	CloudDescriptionOpsAdapter in 'src\models\wfx\CloudDescriptionOpsAdapter.pas',
 	IRetryHandlerInterface in 'src\models\wfx\IRetryHandlerInterface.pas',
-	RetryHandler in 'src\models\wfx\RetryHandler.pas';
+	RetryHandler in 'src\models\wfx\RetryHandler.pas',
+	ICommandDispatcherInterface in 'src\models\wfx\ICommandDispatcherInterface.pas',
+	CommandDispatcher in 'src\models\wfx\CommandDispatcher.pas';
 
 {$IFDEF WIN64}
 {$E wfx64}

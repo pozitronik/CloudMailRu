@@ -46,7 +46,6 @@ uses
 	DeletedProperty,
 	Controls,
 	Messages,
-	HashInfo,
 	StringHelper,
 	PluginHelper,
 	FileHelper,
@@ -76,7 +75,9 @@ uses
 	DescriptionSyncManager,
 	CloudDescriptionOpsAdapter,
 	IRetryHandlerInterface,
-	RetryHandler;
+	RetryHandler,
+	ICommandDispatcherInterface,
+	CommandDispatcher;
 
 type
 	TMailRuCloudWFX = class(TInterfacedObject, IWFXInterface)
@@ -98,6 +99,7 @@ type
 		FOperationLifecycle: IOperationLifecycleHandler;
 		FDescriptionSync: IDescriptionSyncManager;
 		FRetryHandler: IRetryHandler;
+		FCommandDispatcher: ICommandDispatcher;
 
 		PluginNum: Integer;
 
@@ -289,6 +291,8 @@ end;
 destructor TMailRuCloudWFX.Destroy;
 begin
 	FThreadState := nil; {IThreadStateManager is reference-counted, setting to nil releases it}
+	FRetryHandler := nil;
+	FCommandDispatcher := nil;
 	FreeAndNil(ConnectionManager);
 
 	CurrentDescriptions.Free;
@@ -304,85 +308,14 @@ end;
 
 function TMailRuCloudWFX.ExecCommand(RemoteName: PWideChar; Command, Parameter: WideString): Integer;
 var
-	RealPath: TRealPath;
-	getResult: Integer;
-	Cloud: TCloudMailRu;
-	HashInfo: THashInfo;
+	CmdResult: TCommandResult;
 begin
-	Result := FS_EXEC_OK;
+	CmdResult := FCommandDispatcher.Execute(RemoteName, Command, Parameter);
+	Result := CmdResult.ResultCode;
 
-	if Command = 'rmdir' then
-	begin
-		RealPath.FromPath(RemoteName + Parameter);
-		if (ConnectionManager.Get(RealPath.account, getResult).removeDir(RealPath.Path) <> true) then
-			exit(FS_EXEC_ERROR);
-	end;
-
-	RealPath.FromPath(RemoteName); //default
-	Cloud := ConnectionManager.Get(RealPath.account, getResult);
-
-	//undocumented, share current folder to email param
-	if Command = 'share' then
-		if not(Cloud.shareFolder(RealPath.Path, ExtractLinkFromUrl(Parameter), CLOUD_SHARE_RW)) then
-			exit(FS_EXEC_ERROR);
-
-	if Command = 'hash' then //add file by hash & filesize
-	begin
-		HashInfo := THashInfo.Create(Parameter);
-		try
-			if HashInfo.valid then
-			begin
-				Cloud.addFileByIdentity(HashInfo.CloudFileIdentity, IncludeTrailingPathDelimiter(RealPath.Path) + HashInfo.name, CLOUD_CONFLICT_RENAME);
-			end else begin
-				TCLogger.Log(LOG_LEVEL_DEBUG, msgtype_details, ERR_CLONE_BY_HASH, [HashInfo.errorString, Parameter]);
-				exit(FS_EXEC_ERROR);
-			end;
-		finally
-			HashInfo.Free;
-		end;
-	end;
-
-	if Command = 'clone' then //add file by weblink
-	begin
-		if (Cloud.CloneWeblink(RealPath.Path, ExtractLinkFromUrl(Parameter)) = CLOUD_OPERATION_OK) then
-			if SettingsManager.Settings.LogUserSpace then
-				Cloud.logUserSpaceInfo
-			else
-				exit(FS_EXEC_ERROR);
-	end;
-
-	if Command = 'trash' then //go to current account trash directory
-	begin
-		if Cloud.IsPublicAccount then
-			exit(FS_EXEC_ERROR);
-		if RealPath.IsInAccount(false) then
-		begin
-			strpcopy(RemoteName, '\' + RealPath.account + TrashPostfix);
-			exit(FS_EXEC_SYMLINK);
-		end;
-	end;
-
-	if Command = 'shared' then
-	begin
-		if Cloud.IsPublicAccount then
-			exit(FS_EXEC_ERROR);
-		if RealPath.IsInAccount(false) then
-		begin
-			strpcopy(RemoteName, '\' + RealPath.account + SharedPostfix);
-			exit(FS_EXEC_SYMLINK);
-		end;
-	end;
-
-	if Command = 'invites' then
-	begin
-		if Cloud.IsPublicAccount then
-			exit(FS_EXEC_ERROR);
-		if RealPath.IsInAccount(false) then
-		begin
-			strpcopy(RemoteName, '\' + RealPath.account + InvitesPostfix);
-			exit(FS_EXEC_SYMLINK);
-		end;
-	end;
+	{Update RemoteName for symlink navigation commands}
+	if CmdResult.ResultCode = FS_EXEC_SYMLINK then
+		strpcopy(RemoteName, CmdResult.SymlinkPath);
 end;
 
 function TMailRuCloudWFX.ExecInvitesAction(MainWin: THandle; RealPath: TRealPath): Integer;
@@ -1188,6 +1121,7 @@ begin
 	HTTPMgr := THTTPManager.Create(SettingsManager.Settings.ConnectionSettings, TCLogger, TCProgress);
 	CipherVal := TCipherValidator.Create;
 	ConnectionManager := TConnectionManager.Create(SettingsManager, AccountSettings, HTTPMgr, PasswordUI, CipherVal, TWindowsFileSystem.Create, TCProgress, TCLogger, TCRequest, PasswordManager);
+	FCommandDispatcher := TCommandDispatcher.Create(ConnectionManager, TCLogger, SettingsManager);
 end;
 
 procedure TMailRuCloudWFX.ExecuteOperationActions(Actions: TOperationActions; const RealPath: TRealPath; Operation: Integer);
