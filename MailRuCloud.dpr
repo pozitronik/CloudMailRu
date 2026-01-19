@@ -162,7 +162,9 @@ uses
 	ISharedItemActionHandlerInterface in 'src\models\wfx\ISharedItemActionHandlerInterface.pas',
 	SharedItemActionHandler in 'src\models\wfx\SharedItemActionHandler.pas',
 	IMoveOperationContextTrackerInterface in 'src\models\wfx\IMoveOperationContextTrackerInterface.pas',
-	MoveOperationContextTracker in 'src\models\wfx\MoveOperationContextTracker.pas';
+	MoveOperationContextTracker in 'src\models\wfx\MoveOperationContextTracker.pas',
+	IDirectoryDeletionPreCheckInterface in 'src\models\wfx\IDirectoryDeletionPreCheckInterface.pas',
+	DirectoryDeletionPreCheck in 'src\models\wfx\DirectoryDeletionPreCheck.pas';
 
 {$IFDEF WIN64}
 {$E wfx64}

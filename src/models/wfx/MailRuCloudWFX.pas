@@ -118,7 +118,9 @@ uses
 	ISharedItemActionHandlerInterface,
 	SharedItemActionHandler,
 	IMoveOperationContextTrackerInterface,
-	MoveOperationContextTracker;
+	MoveOperationContextTracker,
+	IDirectoryDeletionPreCheckInterface,
+	DirectoryDeletionPreCheck;
 
 type
 	TMailRuCloudWFX = class(TInterfacedObject, IWFXInterface)
@@ -135,6 +137,7 @@ type
 		FileCounter: Integer;
 		FThreadState: IThreadStateManager;
 		FMoveOperationTracker: IMoveOperationContextTracker;
+		FDirectoryDeletionPreCheck: IDirectoryDeletionPreCheck;
 		FContentFieldProvider: IContentFieldProvider;
 		FIconProvider: IIconProvider;
 		FOperationLifecycle: IOperationLifecycleHandler;
@@ -251,6 +254,7 @@ begin
 	IsMultiThread := not(SettingsManager.Settings.DisableMultiThreading);
 	FThreadState := TThreadStateManager.Create;
 	FMoveOperationTracker := TMoveOperationContextTracker.Create(FThreadState);
+	FDirectoryDeletionPreCheck := TDirectoryDeletionPreCheck.Create(FThreadState);
 	FContentFieldProvider := TContentFieldProvider.Create;
 	FIconProvider := TIconProvider.Create;
 	FOperationLifecycle := TOperationLifecycleHandler.Create;
@@ -917,20 +921,15 @@ function TMailRuCloudWFX.FsRemoveDir(RemoteName: WideString): Boolean;
 var
 	RealPath: TRealPath;
 	getResult: Integer;
-	ListingAborted: Boolean;
 	Cloud: TCloudMailRu;
 begin
-	if FThreadState.IsPathSkipped(RemoteName) then
-		exit(false);
-	ListingAborted := FThreadState.GetListingAborted;
-	if ListingAborted then
-	begin
-		FThreadState.SetListingAborted(False);
-		exit(false);
-	end;
+	if not FDirectoryDeletionPreCheck.ShouldProceed(RemoteName) then
+		Exit(False);
+
 	RealPath.FromPath(WideString(RemoteName));
 	if RealPath.isVirtual then
 		exit(false);
+
 	Cloud := ConnectionManager.Get(RealPath.account, getResult);
 	Result := Cloud.removeDir(RealPath.Path);
 
