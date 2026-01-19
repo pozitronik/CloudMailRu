@@ -152,7 +152,9 @@ uses
 	ITrashBinOperationHandlerInterface in 'src\models\wfx\ITrashBinOperationHandlerInterface.pas',
 	TrashBinOperationHandler in 'src\models\wfx\TrashBinOperationHandler.pas',
 	IInviteOperationHandlerInterface in 'src\models\wfx\IInviteOperationHandlerInterface.pas',
-	InviteOperationHandler in 'src\models\wfx\InviteOperationHandler.pas';
+	InviteOperationHandler in 'src\models\wfx\InviteOperationHandler.pas',
+	ICrossAccountFileOperationHandlerInterface in 'src\models\wfx\ICrossAccountFileOperationHandlerInterface.pas',
+	CrossAccountFileOperationHandler in 'src\models\wfx\CrossAccountFileOperationHandler.pas';
 
 {$IFDEF WIN64}
 {$E wfx64}

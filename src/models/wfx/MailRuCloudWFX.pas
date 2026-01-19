@@ -107,7 +107,9 @@ uses
 	ITrashBinOperationHandlerInterface,
 	TrashBinOperationHandler,
 	IInviteOperationHandlerInterface,
-	InviteOperationHandler;
+	InviteOperationHandler,
+	ICrossAccountFileOperationHandlerInterface,
+	CrossAccountFileOperationHandler;
 
 type
 	TMailRuCloudWFX = class(TInterfacedObject, IWFXInterface)
@@ -145,6 +147,7 @@ type
 		FAccountRegistrationHandler: IAccountRegistrationHandler;
 		FTrashBinOperationHandler: ITrashBinOperationHandler;
 		FInviteOperationHandler: IInviteOperationHandler;
+		FCrossAccountFileOperationHandler: ICrossAccountFileOperationHandler;
 
 		PluginNum: Integer;
 
@@ -176,9 +179,6 @@ type
 		function ExecuteFileStream(RealPath: TRealPath; StreamingSettings: TStreamingSettings): Integer;
 		function GetRemoteFile(RemotePath: TRealPath; LocalName, RemoteName: WideString; CopyFlags: Integer): Integer;
 		function PutRemoteFile(RemotePath: TRealPath; LocalName, RemoteName: WideString; CopyFlags: Integer): Integer;
-		function CloneWeblink(NewCloud, OldCloud: TCloudMailRu; CloudPath: WideString; CurrentItem: TCMRDirItem; NeedUnpublish: Boolean): Integer;
-		function RenMoveFileViaHash(OldCloud, NewCloud: TCloudMailRu; OldRealPath, NewRealPath: TRealPath; Move, OverWrite: Boolean): Integer;
-		function RenMoveFileViaPublicLink(OldCloud, NewCloud: TCloudMailRu; OldRealPath, NewRealPath: TRealPath; Move, OverWrite: Boolean): Integer;
 	public
 		constructor Create();
 		destructor Destroy; override;
@@ -216,13 +216,6 @@ uses
 	TCLogger;
 
 {TMailRuCloudWFX}
-
-function TMailRuCloudWFX.CloneWeblink(NewCloud, OldCloud: TCloudMailRu; CloudPath: WideString; CurrentItem: TCMRDirItem; NeedUnpublish: Boolean): Integer;
-begin
-	Result := NewCloud.CloneWeblink(ExtractFileDir(CloudPath), CurrentItem.weblink, CLOUD_CONFLICT_STRICT);
-	if (NeedUnpublish) and (FS_FILE_USERABORT <> Result) and not(OldCloud.publishFile(CurrentItem.home, CurrentItem.weblink, CLOUD_UNPUBLISH)) then
-		TCLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, PREFIX_ERR_REMOVE_TEMP_PUBLIC_LINK + CurrentItem.home);
-end;
 
 constructor TMailRuCloudWFX.Create();
 begin
@@ -330,6 +323,9 @@ begin
 
 	{Create invite operation handler for ExecInvitesAction}
 	FInviteOperationHandler := TInviteOperationHandler.Create;
+
+	{Create cross-account file operation handler for FsRenMovFile}
+	FCrossAccountFileOperationHandler := TCrossAccountFileOperationHandler.Create(FRetryHandler, TCLogger);
 	Result := 0;
 end;
 
@@ -359,6 +355,7 @@ begin
 	FAccountRegistrationHandler := nil;
 	FTrashBinOperationHandler := nil;
 	FInviteOperationHandler := nil;
+	FCrossAccountFileOperationHandler := nil;
 	FreeAndNil(ConnectionManager);
 
 	CurrentDescriptions.Free;
@@ -998,31 +995,15 @@ begin
 	OldCloud := ConnectionManager.Get(OldRealPath.account, getResult);
 	NewCloud := ConnectionManager.Get(NewRealPath.account, getResult);
 
-	if OldRealPath.account <> NewRealPath.account then //разные аккаунты
-	begin
-		if OldCloud.IsPublicAccount then
-		begin
-			TCLogger.Log(LOG_LEVEL_WARNING, MSGTYPE_IMPORTANTERROR, ERR_DIRECT_OPERATIONS_NOT_SUPPORTED);
-			exit(FS_FILE_USERABORT);
-		end;
-
-		case SettingsManager.Settings.CopyBetweenAccountsMode of
-			CopyBetweenAccountsModeDisabled:
-				begin
-					TCLogger.Log(LOG_LEVEL_WARNING, MSGTYPE_IMPORTANTERROR, ERR_DIRECT_OPERATIONS_DISABLED);
-					exit(FS_FILE_USERABORT);
-				end;
-			CopyBetweenAccountsModeViaHash:
-				Result := RenMoveFileViaHash(OldCloud, NewCloud, OldRealPath, NewRealPath, Move, OverWrite);
-			CopyBetweenAccountsModeViaPublicLink:
-				Result := RenMoveFileViaPublicLink(OldCloud, NewCloud, OldRealPath, NewRealPath, Move, OverWrite);
-			else
-				exit(FS_FILE_WRITEERROR);
-		end;
-
-	end else begin {Same account - delegate to handler}
+	if OldRealPath.account <> NewRealPath.account then {Cross-account operation - delegate to handler}
+		Result := FCrossAccountFileOperationHandler.Execute(OldCloud, NewCloud, OldRealPath, NewRealPath, Move, OverWrite, SettingsManager.Settings.CopyBetweenAccountsMode, OldCloud.IsPublicAccount,
+		function: Boolean
+			begin
+				Result := TCProgress.Aborted();
+			end)
+	else {Same account - delegate to handler}
 		Result := FSameAccountMoveHandler.Execute(OldCloud, OldRealPath, NewRealPath, Move, OverWrite);
-	end;
+
 	TCProgress.Progress(OldName, NewName, 100);
 end;
 
@@ -1114,75 +1095,6 @@ begin
 		if CheckFlag(FS_COPYFLAGS_MOVE, CopyFlags) then
 			Result := DeleteLocalFile(LocalName);
 		FDescriptionSyncGuard.OnFileUploaded(RemotePath, LocalName, Cloud);
-	end;
-end;
-
-{RenMoveFileViaHash and RenMoveFileViaPublicLink share similar error handling logic.
- Kept separate intentionally: context-specific error messages, ViaPublicLink has extra publish/unpublish logic,
- and extracting to generic callback pattern adds complexity for marginal benefit.}
-function TMailRuCloudWFX.RenMoveFileViaHash(OldCloud, NewCloud: TCloudMailRu; OldRealPath, NewRealPath: TRealPath; Move, OverWrite: Boolean): Integer;
-var
-	CurrentItem: TCMRDirItem;
-begin
-	Result := FS_FILE_NOTSUPPORTED;
-	if OverWrite and not(NewCloud.deleteFile(NewRealPath.Path)) then
-		exit;
-	if OldCloud.statusFile(OldRealPath.Path, CurrentItem) then
-	begin
-		Result := NewCloud.addFileByIdentity(CurrentItem, IncludeTrailingPathDelimiter(ExtractFileDir(NewRealPath.Path)) + ExtractFileName(NewRealPath.Path));
-		if not(Result in [FS_FILE_OK, FS_FILE_EXISTS]) then
-			Result := FRetryHandler.HandleOperationError(Result, rotRenMov, ERR_CLONE_FILE_ASK, ERR_OPERATION, CLONE_FILE_RETRY, TCloudMailRu.ErrorCodeText(Result),
-				function: Integer
-				begin
-					Result := NewCloud.addFileByIdentity(CurrentItem, IncludeTrailingPathDelimiter(ExtractFileDir(NewRealPath.Path)) + ExtractFileName(NewRealPath.Path));
-				end,
-				function: Boolean
-				begin
-					Result := TCProgress.Aborted();
-				end
-			);
-
-		if (Result = CLOUD_OPERATION_OK) and Move and not(OldCloud.deleteFile(OldRealPath.Path)) then
-			TCLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_DELETE, [CurrentItem.home]); //пишем в лог, но не отваливаемся
-	end;
-end;
-
-function TMailRuCloudWFX.RenMoveFileViaPublicLink(OldCloud, NewCloud: TCloudMailRu; OldRealPath, NewRealPath: TRealPath; Move, OverWrite: Boolean): Integer;
-var
-	NeedUnpublish: Boolean;
-	CurrentItem: TCMRDirItem;
-begin
-	Result := FS_FILE_NOTSUPPORTED;
-	NeedUnpublish := false;
-	if OverWrite and not(NewCloud.deleteFile(NewRealPath.Path)) then
-		exit;
-
-	if OldCloud.statusFile(OldRealPath.Path, CurrentItem) then
-	begin
-		if not CurrentItem.isPublished then //create temporary weblink
-		begin
-			NeedUnpublish := true;
-			if not(OldCloud.publishFile(CurrentItem.home, CurrentItem.weblink)) then //problem publishing
-			begin
-				TCLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_GET_TEMP_PUBLIC_LINK, [CurrentItem.home]);
-				exit(FS_FILE_READERROR);
-			end;
-		end;
-		Result := CloneWeblink(NewCloud, OldCloud, NewRealPath.Path, CurrentItem, NeedUnpublish);
-		if not(Result in [FS_FILE_OK, FS_FILE_EXISTS]) then
-			Result := FRetryHandler.HandleOperationError(Result, rotRenMov, ERR_PUBLISH_FILE_ASK, ERR_PUBLISH_FILE, PUBLISH_FILE_RETRY, TCloudMailRu.ErrorCodeText(Result),
-			function: Integer
-				begin
-					Result := CloneWeblink(NewCloud, OldCloud, NewRealPath.Path, CurrentItem, NeedUnpublish);
-				end,
-				function: Boolean
-				begin
-					Result := TCProgress.Aborted();
-				end
-			);
-
-		if (Result = CLOUD_OPERATION_OK) and Move and not(OldCloud.deleteFile(OldRealPath.Path)) then
-			TCLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_DELETE, [CurrentItem.home]); //пишем в лог, но не отваливаемся
 	end;
 end;
 

@@ -249,7 +249,10 @@ uses
 	TrashBinOperationHandlerTest in 'models\wfx\TrashBinOperationHandlerTest.pas',
 	IInviteOperationHandlerInterface in '..\src\models\wfx\IInviteOperationHandlerInterface.pas',
 	InviteOperationHandler in '..\src\models\wfx\InviteOperationHandler.pas',
-	InviteOperationHandlerTest in 'models\wfx\InviteOperationHandlerTest.pas';
+	InviteOperationHandlerTest in 'models\wfx\InviteOperationHandlerTest.pas',
+	ICrossAccountFileOperationHandlerInterface in '..\src\models\wfx\ICrossAccountFileOperationHandlerInterface.pas',
+	CrossAccountFileOperationHandler in '..\src\models\wfx\CrossAccountFileOperationHandler.pas',
+	CrossAccountFileOperationHandlerTest in 'models\wfx\CrossAccountFileOperationHandlerTest.pas';
 
 {keep comment here to protect the following conditional from being removed by the IDE when adding a unit}
 {$IFNDEF TESTINSIGHT}
