@@ -133,7 +133,13 @@ uses
 	IPathListingHandlerInterface,
 	PathListingHandler,
 	IIconContextBuilderInterface,
-	IconContextBuilder;
+	IconContextBuilder,
+	IOverwritePreparationHandlerInterface,
+	OverwritePreparationHandler,
+	IOperationStatusContextBuilderInterface,
+	OperationStatusContextBuilder,
+	IListingResultApplierInterface,
+	ListingResultApplier;
 
 type
 	TMailRuCloudWFX = class(TInterfacedObject, IWFXInterface)
@@ -182,6 +188,9 @@ type
 		FUploadCompletionHandler: IUploadCompletionHandler;
 		FRootListingHandler: IRootListingHandler;
 		FPathListingHandler: IPathListingHandler;
+		FOverwritePreparationHandler: IOverwritePreparationHandler;
+		FOperationStatusContextBuilder: IOperationStatusContextBuilder;
+		FListingResultApplier: IListingResultApplier;
 
 		PluginNum: Integer;
 
@@ -385,6 +394,15 @@ begin
 	{Create listing handlers for FsFindFirst}
 	FRootListingHandler := TRootListingHandler.Create;
 	FPathListingHandler := TPathListingHandler.Create(ConnectionManager, FListingProvider, FListingPathValidator);
+
+	{Create overwrite preparation handler for FsPutFile}
+	FOverwritePreparationHandler := TOverwritePreparationHandler.Create(ConnectionManager);
+
+	{Create operation status context builder for FsStatusInfo}
+	FOperationStatusContextBuilder := TOperationStatusContextBuilder.Create(SettingsManager, ConnectionManager);
+
+	{Create listing result applier for FsFindFirst}
+	FListingResultApplier := TListingResultApplier.Create;
 	Result := 0;
 end;
 
@@ -422,6 +440,9 @@ begin
 	FUploadCompletionHandler := nil;
 	FRootListingHandler := nil;
 	FPathListingHandler := nil;
+	FOverwritePreparationHandler := nil;
+	FOperationStatusContextBuilder := nil;
+	FListingResultApplier := nil;
 	ConnectionManager := nil;
 
 	CurrentDescriptions.Free;
@@ -725,6 +746,7 @@ var
 	SkipResult: TListingSkipResult;
 	RootResult: TRootListingResult;
 	PathResult: TPathListingResult;
+	BaseResult: TListingResultBase;
 begin
 	{Check if listing should be skipped (delete/renmov operation in progress or user abort)}
 	SkipResult := FListingSkipDecider.ShouldSkipListing(Path);
@@ -740,20 +762,24 @@ begin
 	begin {Root listing - list accounts}
 		RootResult := FRootListingHandler.ExecuteWithAccounts(AccountSettings.GetAccountsList([ATPrivate, ATPublic], SettingsManager.Settings.EnabledVirtualTypes));
 		Accounts := RootResult.Accounts;
-		FileCounter := RootResult.FileCounter;
-		FindData := RootResult.FindData;
-		if RootResult.ErrorCode <> 0 then
-			SetLastError(RootResult.ErrorCode);
-		Result := RootResult.Handle;
+
+		{Apply common result fields}
+		BaseResult.FileCounter := RootResult.FileCounter;
+		BaseResult.FindData := RootResult.FindData;
+		BaseResult.ErrorCode := RootResult.ErrorCode;
+		BaseResult.Handle := RootResult.Handle;
+		Result := FListingResultApplier.Apply(BaseResult, FindData, FileCounter);
 	end else begin {Regular path listing}
 		PathResult := FPathListingHandler.Execute(GlobalPath);
 		CurrentListing := PathResult.Listing;
 		CurrentIncomingInvitesListing := PathResult.IncomingInvites;
-		FileCounter := PathResult.FileCounter;
-		FindData := PathResult.FindData;
-		if PathResult.ErrorCode <> 0 then
-			SetLastError(PathResult.ErrorCode);
-		Result := PathResult.Handle;
+
+		{Apply common result fields}
+		BaseResult.FileCounter := PathResult.FileCounter;
+		BaseResult.FindData := PathResult.FindData;
+		BaseResult.ErrorCode := PathResult.ErrorCode;
+		BaseResult.Handle := PathResult.Handle;
+		Result := FListingResultApplier.Apply(BaseResult, FindData, FileCounter);
 	end;
 end;
 
@@ -868,8 +894,8 @@ end;
 function TMailRuCloudWFX.FsPutFile(LocalName, RemoteName: WideString; CopyFlags: Integer): Integer;
 var
 	RealPath: TRealPath;
-	getResult: Integer;
 	ValidationResult: TUploadValidationResult;
+	OverwriteResult: TOverwritePreparationResult;
 begin
 	RealPath.FromPath(RemoteName);
 
@@ -880,12 +906,10 @@ begin
 
 	TCProgress.Progress(LocalName, PWideChar(RealPath.Path), 0);
 
-	{Don't know how to overwrite file via API, but we can delete it first}
-	if ValidationResult.RequiresOverwrite then
-	begin
-		if not ConnectionManager.Get(RealPath.account, getResult).deleteFile(RealPath.Path) then
-			Exit(FS_FILE_NOTSUPPORTED);
-	end;
+	{Prepare for overwrite if required (cloud API doesn't support overwrite, so delete first)}
+	OverwriteResult := FOverwritePreparationHandler.Prepare(RealPath, ValidationResult.RequiresOverwrite);
+	if not OverwriteResult.Success then
+		Exit(OverwriteResult.ResultCode);
 
 	Result := PutRemoteFile(RealPath, LocalName, RemoteName, CopyFlags);
 
@@ -978,20 +1002,11 @@ var
 	RealPath: TRealPath;
 	Context: TOperationContext;
 	Actions: TOperationActions;
-	getResult: Integer;
 begin
 	RealPath.FromPath(RemoteDir, ID_True); { RemoteDir always a directory }
 
 	{ Build context for the handler }
-	Context.Operation := InfoOperation;
-	Context.IsInAccount := RealPath.IsInAccount();
-	Context.DescriptionsEnabled := SettingsManager.Settings.DescriptionEnabled;
-	Context.LogUserSpaceEnabled := SettingsManager.Settings.LogUserSpace;
-
-	if Context.IsInAccount then { Clear intention despite it only needed for RENMOV_MULTI to show warning }
-		Context.IsPublicAccount := ConnectionManager.Get(RealPath.account, getResult).IsPublicAccount
-	else
-		Context.IsPublicAccount := False;
+	Context := FOperationStatusContextBuilder.BuildContext(RealPath, InfoOperation);
 
 	if InfoStartEnd = FS_STATUS_START then
 	begin

@@ -177,7 +177,13 @@ uses
 	IPathListingHandlerInterface in 'src\models\wfx\IPathListingHandlerInterface.pas',
 	PathListingHandler in 'src\models\wfx\PathListingHandler.pas',
 	IIconContextBuilderInterface in 'src\models\wfx\IIconContextBuilderInterface.pas',
-	IconContextBuilder in 'src\models\wfx\IconContextBuilder.pas';
+	IconContextBuilder in 'src\models\wfx\IconContextBuilder.pas',
+	IOverwritePreparationHandlerInterface in 'src\models\wfx\IOverwritePreparationHandlerInterface.pas',
+	OverwritePreparationHandler in 'src\models\wfx\OverwritePreparationHandler.pas',
+	IOperationStatusContextBuilderInterface in 'src\models\wfx\IOperationStatusContextBuilderInterface.pas',
+	OperationStatusContextBuilder in 'src\models\wfx\OperationStatusContextBuilder.pas',
+	IListingResultApplierInterface in 'src\models\wfx\IListingResultApplierInterface.pas',
+	ListingResultApplier in 'src\models\wfx\ListingResultApplier.pas';
 
 {$IFDEF WIN64}
 {$E wfx64}

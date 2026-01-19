@@ -287,7 +287,16 @@ uses
 	PathListingHandlerTest in 'models\wfx\PathListingHandlerTest.pas',
 	IIconContextBuilderInterface in '..\src\models\wfx\IIconContextBuilderInterface.pas',
 	IconContextBuilder in '..\src\models\wfx\IconContextBuilder.pas',
-	IconContextBuilderTest in 'models\wfx\IconContextBuilderTest.pas';
+	IconContextBuilderTest in 'models\wfx\IconContextBuilderTest.pas',
+	IOverwritePreparationHandlerInterface in '..\src\models\wfx\IOverwritePreparationHandlerInterface.pas',
+	OverwritePreparationHandler in '..\src\models\wfx\OverwritePreparationHandler.pas',
+	OverwritePreparationHandlerTest in 'models\wfx\OverwritePreparationHandlerTest.pas',
+	IOperationStatusContextBuilderInterface in '..\src\models\wfx\IOperationStatusContextBuilderInterface.pas',
+	OperationStatusContextBuilder in '..\src\models\wfx\OperationStatusContextBuilder.pas',
+	OperationStatusContextBuilderTest in 'models\wfx\OperationStatusContextBuilderTest.pas',
+	IListingResultApplierInterface in '..\src\models\wfx\IListingResultApplierInterface.pas',
+	ListingResultApplier in '..\src\models\wfx\ListingResultApplier.pas',
+	ListingResultApplierTest in 'models\wfx\ListingResultApplierTest.pas';
 
 {keep comment here to protect the following conditional from being removed by the IDE when adding a unit}
 {$IFNDEF TESTINSIGHT}
