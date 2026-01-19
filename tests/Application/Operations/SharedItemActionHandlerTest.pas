@@ -7,7 +7,6 @@ interface
 
 uses
 	DUnitX.TestFramework,
-	ISharedItemActionHandlerInterface,
 	SharedItemActionHandler,
 	CMRDirItem,
 	CMRDirItemList,

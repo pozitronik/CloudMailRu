@@ -11,7 +11,6 @@ uses
 	CMRDirItem,
 	CMRDirItemList,
 	CMRConstants,
-	ITrashBinOperationHandlerInterface,
 	TrashBinOperationHandler;
 
 type

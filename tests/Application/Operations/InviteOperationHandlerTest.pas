@@ -9,7 +9,6 @@ uses
 	DUnitX.TestFramework,
 	Windows,
 	CMRIncomingInvite,
-	IInviteOperationHandlerInterface,
 	InviteOperationHandler;
 
 type

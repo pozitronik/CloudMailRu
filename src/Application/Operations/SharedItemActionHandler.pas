@@ -1,6 +1,6 @@
-unit ISharedItemActionHandlerInterface;
+unit SharedItemActionHandler;
 
-{Interface for handling shared folder actions (open as symlink, show properties).
+{Handles shared folder actions (open as symlink, show properties).
  Determines action type and provides necessary context for UI operations.}
 
 interface
@@ -42,7 +42,18 @@ type
 			const CurrentListing: TCMRDirItemList): TSharedItemActionResult;
 	end;
 
+	TSharedItemActionHandler = class(TInterfacedObject, ISharedItemActionHandler)
+	public
+		function HandleAction(const RealPath: TRealPath; ActionOpen: Boolean;
+			const CurrentListing: TCMRDirItemList): TSharedItemActionResult;
+	end;
+
 implementation
+
+uses
+	SysUtils,
+	CMRConstants,
+	PathHelper;
 
 class function TSharedItemActionResult.Symlink(const APath: WideString): TSharedItemActionResult;
 begin
@@ -68,6 +79,46 @@ class function TSharedItemActionResult.None: TSharedItemActionResult;
 begin
 	Result := Default(TSharedItemActionResult);
 	Result.ActionType := satNone;
+end;
+
+function TSharedItemActionHandler.HandleAction(const RealPath: TRealPath; ActionOpen: Boolean;
+	const CurrentListing: TCMRDirItemList): TSharedItemActionResult;
+var
+	CurrentItem: TCMRDirItem;
+	ResolvedPath: WideString;
+begin
+	if ActionOpen then
+	begin
+		{Open action - resolve shared item to its actual location (symlink)}
+		CurrentItem := CurrentListing.FindByHomePath(RealPath.Path);
+		if CurrentItem.IsNone then
+			Exit(TSharedItemActionResult.None);
+
+		{Build path: \account + original location}
+		if CurrentItem.type_ = TYPE_FILE then
+			ResolvedPath := '\' + RealPath.account + ExtractFilePath(UrlToPath(CurrentItem.home))
+		else
+			ResolvedPath := '\' + RealPath.account + UrlToPath(CurrentItem.home);
+
+		Result := TSharedItemActionResult.Symlink(ResolvedPath);
+	end
+	else
+	begin
+		{Properties action - determine what dialog to show}
+		if RealPath.isInAccountsList then
+		begin
+			{Root of shared folder - show account settings}
+			Result := TSharedItemActionResult.AccountSettings;
+		end
+		else
+		begin
+			{Item in shared folder - show property dialog}
+			CurrentItem := CurrentListing.FindByHomePath(RealPath.Path);
+			if CurrentItem.IsNone then
+				Exit(TSharedItemActionResult.None);
+			Result := TSharedItemActionResult.PropertyDialog(CurrentItem);
+		end;
+	end;
 end;
 
 end.

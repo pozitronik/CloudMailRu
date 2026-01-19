@@ -11,7 +11,6 @@ uses
 	ConnectionSettings,
 	IPasswordManagerInterface,
 	IAccountsManagerInterface,
-	IAccountRegistrationHandlerInterface,
 	AccountRegistrationHandler;
 
 type

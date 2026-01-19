@@ -7,7 +7,6 @@ interface
 
 uses
 	DUnitX.TestFramework,
-	IFileExecutionDispatcherInterface,
 	FileExecutionDispatcher,
 	StreamingSettings;
 
