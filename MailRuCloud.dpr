@@ -160,7 +160,9 @@ uses
 	IFileExecutionDispatcherInterface in 'src\models\wfx\IFileExecutionDispatcherInterface.pas',
 	FileExecutionDispatcher in 'src\models\wfx\FileExecutionDispatcher.pas',
 	ISharedItemActionHandlerInterface in 'src\models\wfx\ISharedItemActionHandlerInterface.pas',
-	SharedItemActionHandler in 'src\models\wfx\SharedItemActionHandler.pas';
+	SharedItemActionHandler in 'src\models\wfx\SharedItemActionHandler.pas',
+	IMoveOperationContextTrackerInterface in 'src\models\wfx\IMoveOperationContextTrackerInterface.pas',
+	MoveOperationContextTracker in 'src\models\wfx\MoveOperationContextTracker.pas';
 
 {$IFDEF WIN64}
 {$E wfx64}

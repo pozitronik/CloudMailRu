@@ -25,6 +25,7 @@ uses
 	CMRDirItemList,
 	CMRIncomingInviteList,
 	ConnectionManager,
+	ConnectionSettings,
 	IdSSLOpenSSLHeaders,
 	Description,
 	IPasswordManagerInterface,
@@ -115,7 +116,9 @@ uses
 	IFileExecutionDispatcherInterface,
 	FileExecutionDispatcher,
 	ISharedItemActionHandlerInterface,
-	SharedItemActionHandler;
+	SharedItemActionHandler,
+	IMoveOperationContextTrackerInterface,
+	MoveOperationContextTracker;
 
 type
 	TMailRuCloudWFX = class(TInterfacedObject, IWFXInterface)
@@ -130,8 +133,8 @@ type
 	var
 		GlobalPath, PluginPath: WideString;
 		FileCounter: Integer;
-		CurrentlyMovedDir: TRealPath;
 		FThreadState: IThreadStateManager;
+		FMoveOperationTracker: IMoveOperationContextTracker;
 		FContentFieldProvider: IContentFieldProvider;
 		FIconProvider: IIconProvider;
 		FOperationLifecycle: IOperationLifecycleHandler;
@@ -247,6 +250,7 @@ begin
 
 	IsMultiThread := not(SettingsManager.Settings.DisableMultiThreading);
 	FThreadState := TThreadStateManager.Create;
+	FMoveOperationTracker := TMoveOperationContextTracker.Create(FThreadState);
 	FContentFieldProvider := TContentFieldProvider.Create;
 	FIconProvider := TIconProvider.Create;
 	FOperationLifecycle := TOperationLifecycleHandler.Create;
@@ -846,7 +850,6 @@ var
 	RealPath: TRealPath;
 	getResult: Integer;
 	SkipListRenMov: Boolean;
-	OperationContextId: Integer;
 begin
 	SkipListRenMov := FThreadState.GetSkipListRenMov;
 	if SkipListRenMov then
@@ -866,12 +869,8 @@ begin
 		exit(false);
 
 	Result := ConnectionManager.Get(RealPath.account, getResult).createDir(RealPath.Path);
-	if Result then //need to check operation context => directory can be moved
-	begin
-		OperationContextId := FThreadState.GetFsStatusInfo;
-		if OperationContextId = FS_STATUS_OP_RENMOV_MULTI then
-			CurrentlyMovedDir := RealPath;
-	end;
+	if Result and FMoveOperationTracker.IsMoveOperation then
+		FMoveOperationTracker.TrackMoveTarget(RealPath);
 end;
 
 function TMailRuCloudWFX.FsPutFile(LocalName, RemoteName: WideString; CopyFlags: Integer): Integer;
@@ -920,7 +919,6 @@ var
 	getResult: Integer;
 	ListingAborted: Boolean;
 	Cloud: TCloudMailRu;
-	OperationContextId: Integer;
 begin
 	if FThreadState.IsPathSkipped(RemoteName) then
 		exit(false);
@@ -938,9 +936,9 @@ begin
 
 	if Result then
 	begin
-		OperationContextId := FThreadState.GetFsStatusInfo; {Directory can be deleted after moving operation}
-		if OperationContextId = FS_STATUS_OP_RENMOV_MULTI then
-			FDescriptionSyncGuard.OnFileRenamed(RealPath, CurrentlyMovedDir, Cloud)
+		{Directory can be deleted after moving operation - use tracker to check context}
+		if FMoveOperationTracker.IsMoveOperation then
+			FDescriptionSyncGuard.OnFileRenamed(RealPath, FMoveOperationTracker.GetMoveTarget, Cloud)
 		else
 			FDescriptionSyncGuard.OnFileDeleted(RealPath, Cloud);
 	end;
