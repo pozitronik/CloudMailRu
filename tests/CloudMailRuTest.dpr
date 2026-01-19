@@ -207,7 +207,10 @@ uses
 	CommandDispatcherTest in 'models\wfx\CommandDispatcherTest.pas',
 	IListingProviderInterface in '..\src\models\wfx\IListingProviderInterface.pas',
 	ListingProvider in '..\src\models\wfx\ListingProvider.pas',
-	ListingProviderTest in 'models\wfx\ListingProviderTest.pas';
+	ListingProviderTest in 'models\wfx\ListingProviderTest.pas',
+	IDescriptionSyncGuardInterface in '..\src\models\wfx\IDescriptionSyncGuardInterface.pas',
+	DescriptionSyncGuard in '..\src\models\wfx\DescriptionSyncGuard.pas',
+	DescriptionSyncGuardTest in 'models\wfx\DescriptionSyncGuardTest.pas';
 
 {keep comment here to protect the following conditional from being removed by the IDE when adding a unit}
 {$IFNDEF TESTINSIGHT}

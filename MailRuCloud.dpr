@@ -124,7 +124,9 @@ uses
 	ICommandDispatcherInterface in 'src\models\wfx\ICommandDispatcherInterface.pas',
 	CommandDispatcher in 'src\models\wfx\CommandDispatcher.pas',
 	IListingProviderInterface in 'src\models\wfx\IListingProviderInterface.pas',
-	ListingProvider in 'src\models\wfx\ListingProvider.pas';
+	ListingProvider in 'src\models\wfx\ListingProvider.pas',
+	IDescriptionSyncGuardInterface in 'src\models\wfx\IDescriptionSyncGuardInterface.pas',
+	DescriptionSyncGuard in 'src\models\wfx\DescriptionSyncGuard.pas';
 
 {$IFDEF WIN64}
 {$E wfx64}

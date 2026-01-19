@@ -79,7 +79,9 @@ uses
 	ICommandDispatcherInterface,
 	CommandDispatcher,
 	IListingProviderInterface,
-	ListingProvider;
+	ListingProvider,
+	IDescriptionSyncGuardInterface,
+	DescriptionSyncGuard;
 
 type
 	TMailRuCloudWFX = class(TInterfacedObject, IWFXInterface)
@@ -100,6 +102,7 @@ type
 		FIconProvider: IIconProvider;
 		FOperationLifecycle: IOperationLifecycleHandler;
 		FDescriptionSync: IDescriptionSyncManager;
+		FDescriptionSyncGuard: IDescriptionSyncGuard;
 		FRetryHandler: IRetryHandler;
 		FCommandDispatcher: ICommandDispatcher;
 		FListingProvider: IListingProvider;
@@ -212,6 +215,7 @@ begin
 	AccountSettings := TAccountsManager.Create(TIniConfigFile.Create(SettingsManager.AccountsIniFilePath));
 	FFileSystem := TWindowsFileSystem.Create;
 	FDescriptionSync := TDescriptionSyncManager.Create(SettingsManager.Settings.DescriptionFileName, FFileSystem);
+	FDescriptionSyncGuard := TDescriptionSyncGuard.Create(FDescriptionSync, SettingsManager, AccountSettings);
 end;
 
 function TMailRuCloudWFX.FsInit(PluginNr: Integer; pProgressProc: TProgressProcW; pLogProc: TLogProcW; pRequestProc: TRequestProcW): Integer;
@@ -298,6 +302,8 @@ begin
 	FRetryHandler := nil;
 	FCommandDispatcher := nil;
 	FListingProvider := nil;
+	FDescriptionSyncGuard := nil;
+	FDescriptionSync := nil;
 	FreeAndNil(ConnectionManager);
 
 	CurrentDescriptions.Free;
@@ -596,8 +602,8 @@ begin
 	end
 	else
 		Result := Cloud.deleteFile(RealPath.Path);
-	if (Result and SettingsManager.Settings.DescriptionTrackCloudFS and AccountSettings.GetAccountSettings(RealPath.account).IsRemoteDescriptionsSupported) then
-		FDescriptionSync.OnFileDeleted(RealPath, TCloudDescriptionOpsAdapter.Create(Cloud));
+	if Result then
+		FDescriptionSyncGuard.OnFileDeleted(RealPath, Cloud);
 end;
 
 function TMailRuCloudWFX.FsDisconnect(DisconnectRoot: PWideChar): Boolean;
@@ -1030,13 +1036,13 @@ begin
 	Cloud := ConnectionManager.Get(RealPath.account, getResult);
 	Result := Cloud.removeDir(RealPath.Path);
 
-	if (Result and SettingsManager.Settings.DescriptionTrackCloudFS and AccountSettings.GetAccountSettings(RealPath.account).IsRemoteDescriptionsSupported) then
+	if Result then
 	begin
 		OperationContextId := FThreadState.GetFsStatusInfo; {Directory can be deleted after moving operation}
 		if OperationContextId = FS_STATUS_OP_RENMOV_MULTI then
-			FDescriptionSync.OnFileRenamed(RealPath, CurrentlyMovedDir, TCloudDescriptionOpsAdapter.Create(Cloud))
+			FDescriptionSyncGuard.OnFileRenamed(RealPath, CurrentlyMovedDir, Cloud)
 		else
-			FDescriptionSync.OnFileDeleted(RealPath, TCloudDescriptionOpsAdapter.Create(Cloud));
+			FDescriptionSyncGuard.OnFileDeleted(RealPath, Cloud);
 	end;
 end;
 
@@ -1095,8 +1101,8 @@ begin
 			begin //Вытащим из блеклиста, если решили перезаписать
 				FThreadState.RemoveSkippedPath(OldRealPath.ToPath);
 			end;
-			if ((FS_FILE_OK = Result) and SettingsManager.Settings.DescriptionTrackCloudFS and AccountSettings.GetAccountSettings(NewRealPath.account).IsRemoteDescriptionsSupported) then
-				FDescriptionSync.OnFileRenamed(OldRealPath, NewRealPath, TCloudDescriptionOpsAdapter.Create(OldCloud));
+			if (FS_FILE_OK = Result) then
+				FDescriptionSyncGuard.OnFileRenamed(OldRealPath, NewRealPath, OldCloud);
 		end else begin
 			Result := OldCloud.FileCopy(OldRealPath.Path, NewRealPath.Path);
 		end;
@@ -1252,14 +1258,12 @@ begin
 		if CheckFlag(FS_COPYFLAGS_MOVE, CopyFlags) then
 		begin
 			Cloud.deleteFile(RemotePath.Path);
-			if (SettingsManager.Settings.DescriptionTrackCloudFS and AccountSettings.GetAccountSettings(RemotePath.account).IsRemoteDescriptionsSupported) then
-				FDescriptionSync.OnFileDeleted(RemotePath, TCloudDescriptionOpsAdapter.Create(Cloud));
+			FDescriptionSyncGuard.OnFileDeleted(RemotePath, Cloud);
 		end;
 		TCProgress.Progress(PWideChar(LocalName), PWideChar(RemoteName), 100);
 		TCLogger.Log(LOG_LEVEL_FILE_OPERATION, MSGTYPE_TRANSFERCOMPLETE, '%s -> %s', [RemoteName, LocalName]);
 
-		if SettingsManager.Settings.DescriptionCopyFromCloud then
-			FDescriptionSync.OnFileDownloaded(RemotePath, LocalName, TCloudDescriptionOpsAdapter.Create(Cloud));
+		FDescriptionSyncGuard.OnFileDownloaded(RemotePath, LocalName, Cloud);
 
 	end;
 end;
@@ -1278,8 +1282,7 @@ begin
 		TCLogger.Log(LOG_LEVEL_FILE_OPERATION, MSGTYPE_TRANSFERCOMPLETE, '%s -> %s', [LocalName, RemoteName]);
 		if CheckFlag(FS_COPYFLAGS_MOVE, CopyFlags) then
 			Result := DeleteLocalFile(LocalName);
-		if (SettingsManager.Settings.DescriptionCopyToCloud and AccountSettings.GetAccountSettings(RemotePath.account).IsRemoteDescriptionsSupported) then
-			FDescriptionSync.OnFileUploaded(RemotePath, LocalName, TCloudDescriptionOpsAdapter.Create(Cloud));
+		FDescriptionSyncGuard.OnFileUploaded(RemotePath, LocalName, Cloud);
 	end;
 end;
 
