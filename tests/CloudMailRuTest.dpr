@@ -216,7 +216,7 @@ begin
 		//Log to the console window if desired
 		if TDUnitX.Options.ConsoleMode <> TDunitXConsoleMode.Off then
 		begin
-			Logger := TDUnitXConsoleLogger.Create(TDUnitX.Options.ConsoleMode = TDunitXConsoleMode.Quiet);
+			Logger := TDUnitXConsoleLogger.Create(True); { Quiet mode: dots instead of verbose output }
 			Runner.AddLogger(Logger);
 		end;
 		//Generate an NUnit compatible XML File
