@@ -237,7 +237,10 @@ uses
 	LocalFileConflictResolverTest in 'models\wfx\LocalFileConflictResolverTest.pas',
 	IListingItemFetcherInterface in '..\src\models\wfx\IListingItemFetcherInterface.pas',
 	ListingItemFetcher in '..\src\models\wfx\ListingItemFetcher.pas',
-	ListingItemFetcherTest in 'models\wfx\ListingItemFetcherTest.pas';
+	ListingItemFetcherTest in 'models\wfx\ListingItemFetcherTest.pas',
+	ISharedItemDeletionHandlerInterface in '..\src\models\wfx\ISharedItemDeletionHandlerInterface.pas',
+	SharedItemDeletionHandler in '..\src\models\wfx\SharedItemDeletionHandler.pas',
+	SharedItemDeletionHandlerTest in 'models\wfx\SharedItemDeletionHandlerTest.pas';
 
 {keep comment here to protect the following conditional from being removed by the IDE when adding a unit}
 {$IFNDEF TESTINSIGHT}

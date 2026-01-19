@@ -144,7 +144,9 @@ uses
 	ILocalFileConflictResolverInterface in 'src\models\wfx\ILocalFileConflictResolverInterface.pas',
 	LocalFileConflictResolver in 'src\models\wfx\LocalFileConflictResolver.pas',
 	IListingItemFetcherInterface in 'src\models\wfx\IListingItemFetcherInterface.pas',
-	ListingItemFetcher in 'src\models\wfx\ListingItemFetcher.pas';
+	ListingItemFetcher in 'src\models\wfx\ListingItemFetcher.pas',
+	ISharedItemDeletionHandlerInterface in 'src\models\wfx\ISharedItemDeletionHandlerInterface.pas',
+	SharedItemDeletionHandler in 'src\models\wfx\SharedItemDeletionHandler.pas';
 
 {$IFDEF WIN64}
 {$E wfx64}

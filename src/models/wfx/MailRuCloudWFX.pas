@@ -99,7 +99,9 @@ uses
 	ILocalFileConflictResolverInterface,
 	LocalFileConflictResolver,
 	IListingItemFetcherInterface,
-	ListingItemFetcher;
+	ListingItemFetcher,
+	ISharedItemDeletionHandlerInterface,
+	SharedItemDeletionHandler;
 
 type
 	TMailRuCloudWFX = class(TInterfacedObject, IWFXInterface)
@@ -133,6 +135,7 @@ type
 		FFileStreamExecutor: IFileStreamExecutor;
 		FLocalFileConflictResolver: ILocalFileConflictResolver;
 		FListingItemFetcher: IListingItemFetcher;
+		FSharedItemDeletionHandler: ISharedItemDeletionHandler;
 
 		PluginNum: Integer;
 
@@ -306,6 +309,9 @@ begin
 
 	{Create listing item fetcher for FindListingItemByPath}
 	FListingItemFetcher := TListingItemFetcher.Create(TCLogger);
+
+	{Create shared item deletion handler for FsDeleteFile}
+	FSharedItemDeletionHandler := TSharedItemDeletionHandler.Create;
 	Result := 0;
 end;
 
@@ -331,6 +337,7 @@ begin
 	FFileStreamExecutor := nil;
 	FLocalFileConflictResolver := nil;
 	FListingItemFetcher := nil;
+	FSharedItemDeletionHandler := nil;
 	FreeAndNil(ConnectionManager);
 
 	CurrentDescriptions.Free;
@@ -544,8 +551,6 @@ var
 	getResult: Integer;
 	CurrentItem: TCMRDirItem;
 	Cloud: TCloudMailRu;
-	InvitesListing: TCMRInviteList;
-	Invite: TCMRInvite;
 begin
 	RealPath.FromPath(WideString(RemoteName));
 	if RealPath.isAccountEmpty or RealPath.trashDir or RealPath.invitesDir then
@@ -554,12 +559,7 @@ begin
 	if RealPath.sharedDir then
 	begin
 		CurrentItem := FindListingItemByPath(CurrentListing, RealPath);
-		Cloud.getShareInfo(CurrentItem.home, InvitesListing);
-		for Invite in InvitesListing do
-			Cloud.shareFolder(CurrentItem.home, Invite.email, CLOUD_SHARE_NO); //no reporting here
-		if CurrentItem.isPublished then
-			Cloud.publishFile(CurrentItem.home, CurrentItem.weblink, CLOUD_UNPUBLISH);
-		Result := true;
+		Result := FSharedItemDeletionHandler.Execute(Cloud, CurrentItem);
 	end
 	else
 		Result := Cloud.deleteFile(RealPath.Path);
