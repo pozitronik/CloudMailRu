@@ -8,8 +8,7 @@ interface
 uses
 	DUnitX.TestFramework,
 	Windows,
-	IIconProviderInterface,
-	IIconRenderingEngineInterface,
+	IconProvider,
 	IconRenderingEngine;
 
 type

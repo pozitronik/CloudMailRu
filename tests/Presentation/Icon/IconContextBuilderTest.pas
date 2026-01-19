@@ -17,12 +17,11 @@ uses
 	CloudMailRu,
 	CloudSettings,
 	IConnectionManagerInterface,
-	IIconContextBuilderInterface,
-	IIconProviderInterface,
+	IconProvider,
+	IconContextBuilder,
 	IAccountsManagerInterface,
 	ListingItemFetcher,
-	MockConnectionManager,
-	IconContextBuilder;
+	MockConnectionManager;
 
 type
 	{Mock accounts manager for testing - implements interface directly}

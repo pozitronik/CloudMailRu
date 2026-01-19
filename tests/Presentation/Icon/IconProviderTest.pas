@@ -6,7 +6,7 @@ uses
 	SysUtils,
 	CMRDirItem, CMRIncomingInvite, CMRConstants, RealPath,
 	SETTINGS_CONSTANTS,
-	IIconProviderInterface, IconProvider,
+	IconProvider,
 	DUnitX.TestFramework;
 
 type
