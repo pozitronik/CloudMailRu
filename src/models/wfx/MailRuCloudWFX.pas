@@ -124,7 +124,9 @@ uses
 	IUploadPreparationValidatorInterface,
 	UploadPreparationValidator,
 	IDownloadPreparationValidatorInterface,
-	DownloadPreparationValidator;
+	DownloadPreparationValidator,
+	IUploadCompletionHandlerInterface,
+	UploadCompletionHandler;
 
 type
 	TMailRuCloudWFX = class(TInterfacedObject, IWFXInterface)
@@ -169,6 +171,7 @@ type
 		FIconRenderingEngine: IIconRenderingEngine;
 		FFileExecutionDispatcher: IFileExecutionDispatcher;
 		FSharedItemActionHandler: ISharedItemActionHandler;
+		FUploadCompletionHandler: IUploadCompletionHandler;
 
 		PluginNum: Integer;
 
@@ -365,6 +368,9 @@ begin
 
 	{Create shared item action handler for ExecSharedAction}
 	FSharedItemActionHandler := TSharedItemActionHandler.Create;
+
+	{Create upload completion handler for PutRemoteFile}
+	FUploadCompletionHandler := TUploadCompletionHandler.Create(TCLogger, TCProgress, FLocalFileDeletionHandler, FDescriptionSyncGuard);
 	Result := 0;
 end;
 
@@ -398,6 +404,7 @@ begin
 	FIconRenderingEngine := nil;
 	FFileExecutionDispatcher := nil;
 	FSharedItemActionHandler := nil;
+	FUploadCompletionHandler := nil;
 	FreeAndNil(ConnectionManager);
 
 	CurrentDescriptions.Free;
@@ -1064,17 +1071,19 @@ function TMailRuCloudWFX.PutRemoteFile(RemotePath: TRealPath; LocalName, RemoteN
 var
 	getResult: Integer;
 	Cloud: TCloudMailRu;
+	CompletionContext: TUploadCompletionContext;
 begin
 	Cloud := ConnectionManager.Get(RemotePath.account, getResult);
 
 	Result := Cloud.putFile(WideString(LocalName), RemotePath.Path);
 	if Result = FS_FILE_OK then
 	begin
-		TCProgress.Progress(PWideChar(LocalName), PWideChar(RemotePath.Path), 100);
-		TCLogger.Log(LOG_LEVEL_FILE_OPERATION, MSGTYPE_TRANSFERCOMPLETE, '%s -> %s', [LocalName, RemoteName]);
-		if CheckFlag(FS_COPYFLAGS_MOVE, CopyFlags) then
-			Result := DeleteLocalFile(LocalName);
-		FDescriptionSyncGuard.OnFileUploaded(RemotePath, LocalName, Cloud);
+		CompletionContext.RemotePath := RemotePath;
+		CompletionContext.LocalName := LocalName;
+		CompletionContext.RemoteName := RemoteName;
+		CompletionContext.CopyFlags := CopyFlags;
+		CompletionContext.Cloud := Cloud;
+		Result := FUploadCompletionHandler.HandleCompletion(CompletionContext);
 	end;
 end;
 

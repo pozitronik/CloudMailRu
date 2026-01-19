@@ -168,7 +168,9 @@ uses
 	IUploadPreparationValidatorInterface in 'src\models\wfx\IUploadPreparationValidatorInterface.pas',
 	UploadPreparationValidator in 'src\models\wfx\UploadPreparationValidator.pas',
 	IDownloadPreparationValidatorInterface in 'src\models\wfx\IDownloadPreparationValidatorInterface.pas',
-	DownloadPreparationValidator in 'src\models\wfx\DownloadPreparationValidator.pas';
+	DownloadPreparationValidator in 'src\models\wfx\DownloadPreparationValidator.pas',
+	IUploadCompletionHandlerInterface in 'src\models\wfx\IUploadCompletionHandlerInterface.pas',
+	UploadCompletionHandler in 'src\models\wfx\UploadCompletionHandler.pas';
 
 {$IFDEF WIN64}
 {$E wfx64}

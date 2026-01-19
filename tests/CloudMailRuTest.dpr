@@ -273,7 +273,10 @@ uses
 	UploadPreparationValidatorTest in 'models\wfx\UploadPreparationValidatorTest.pas',
 	IDownloadPreparationValidatorInterface in '..\src\models\wfx\IDownloadPreparationValidatorInterface.pas',
 	DownloadPreparationValidator in '..\src\models\wfx\DownloadPreparationValidator.pas',
-	DownloadPreparationValidatorTest in 'models\wfx\DownloadPreparationValidatorTest.pas';
+	DownloadPreparationValidatorTest in 'models\wfx\DownloadPreparationValidatorTest.pas',
+	IUploadCompletionHandlerInterface in '..\src\models\wfx\IUploadCompletionHandlerInterface.pas',
+	UploadCompletionHandler in '..\src\models\wfx\UploadCompletionHandler.pas',
+	UploadCompletionHandlerTest in 'models\wfx\UploadCompletionHandlerTest.pas';
 
 {keep comment here to protect the following conditional from being removed by the IDE when adding a unit}
 {$IFNDEF TESTINSIGHT}
