@@ -68,7 +68,9 @@ uses
 	IContentFieldProviderInterface,
 	ContentFieldProvider,
 	IIconProviderInterface,
-	IconProvider;
+	IconProvider,
+	IOperationLifecycleInterface,
+	OperationLifecycleHandler;
 
 type
 	TMailRuCloudWFX = class(TInterfacedObject, IWFXInterface)
@@ -87,6 +89,7 @@ type
 		FThreadState: IThreadStateManager;
 		FContentFieldProvider: IContentFieldProvider;
 		FIconProvider: IIconProvider;
+		FOperationLifecycle: IOperationLifecycleHandler;
 
 		PluginNum: Integer;
 
@@ -125,6 +128,7 @@ type
 		function CloneWeblink(NewCloud, OldCloud: TCloudMailRu; CloudPath: WideString; CurrentItem: TCMRDirItem; NeedUnpublish: Boolean): Integer;
 		function RenMoveFileViaHash(OldCloud, NewCloud: TCloudMailRu; OldRealPath, NewRealPath: TRealPath; Move, OverWrite: Boolean): Integer;
 		function RenMoveFileViaPublicLink(OldCloud, NewCloud: TCloudMailRu; OldRealPath, NewRealPath: TRealPath; Move, OverWrite: Boolean): Integer;
+		procedure ExecuteOperationActions(Actions: TOperationActions; const RealPath: TRealPath; Operation: Integer);
 	public
 		constructor Create();
 		destructor Destroy; override;
@@ -193,6 +197,7 @@ begin
 	FThreadState := TThreadStateManager.Create;
 	FContentFieldProvider := TContentFieldProvider.Create;
 	FIconProvider := TIconProvider.Create;
+	FOperationLifecycle := TOperationLifecycleHandler.Create;
 
 	AccountSettings := TAccountsManager.Create(TIniConfigFile.Create(SettingsManager.AccountsIniFilePath));
 	FFileSystem := TWindowsFileSystem.Create;
@@ -1250,202 +1255,107 @@ begin
 	ConnectionManager := TConnectionManager.Create(SettingsManager, AccountSettings, HTTPMgr, PasswordUI, CipherVal, TWindowsFileSystem.Create, TCProgress, TCLogger, TCRequest, PasswordManager);
 end;
 
+procedure TMailRuCloudWFX.ExecuteOperationActions(Actions: TOperationActions; const RealPath: TRealPath; Operation: Integer);
+var
+	getResult: Integer;
+begin
+	{ Retry resets }
+	if oaResetRetryDownload in Actions then
+		FThreadState.ResetRetryCountDownload;
+	if oaResetRetryUpload in Actions then
+		FThreadState.ResetRetryCountUpload;
+	if oaResetRetryRenMov in Actions then
+		FThreadState.ResetRetryCountRenMov;
+
+	{ Skip list flags }
+	if oaSetSkipListDelete in Actions then
+		FThreadState.SetSkipListDelete(True);
+	if oaClearSkipListDelete in Actions then
+		FThreadState.SetSkipListDelete(False);
+	if oaSetSkipListRenMov in Actions then
+		FThreadState.SetSkipListRenMov(True);
+	if oaClearSkipListRenMov in Actions then
+		FThreadState.SetSkipListRenMov(False);
+
+	{ RenMov abort control }
+	if oaSetCanAbortRenMov in Actions then
+		FThreadState.SetCanAbortRenMov(True);
+	if oaClearCanAbortRenMov in Actions then
+		FThreadState.SetCanAbortRenMov(False);
+
+	{ Skipped path management }
+	if oaCreateSkippedPath in Actions then
+		FThreadState.CreateRemoveDirSkippedPath;
+	if oaClearSkippedPath in Actions then
+		FThreadState.ClearRemoveDirSkippedPath;
+
+	{ Background job tracking }
+	if oaIncrementBackgroundJobs in Actions then
+		FThreadState.IncrementBackgroundJobs(RealPath.account);
+	if oaDecrementBackgroundJobs in Actions then
+		FThreadState.DecrementBackgroundJobs(RealPath.account);
+
+	{ Background thread status }
+	if oaSetBackgroundThreadStatus in Actions then
+		FThreadState.SetBackgroundThreadStatus(Operation);
+	if oaRemoveBackgroundThread in Actions then
+		FThreadState.RemoveBackgroundThread;
+
+	{ User space logging }
+	if oaLogUserSpaceInfo in Actions then
+		ConnectionManager.Get(RealPath.account, getResult).logUserSpaceInfo;
+
+	{ Description loading }
+	if oaLoadDescriptions in Actions then
+	begin
+		if ConnectionManager.Get(RealPath.account, getResult).getDescriptionFile(
+			IncludeTrailingBackslash(RealPath.Path) + SettingsManager.Settings.DescriptionFileName,
+			CurrentDescriptions.ionFilename) then
+			CurrentDescriptions.Read
+		else
+			CurrentDescriptions.Clear;
+	end;
+
+	{ Public account warning - also sets skip flag to prevent unsupported operations }
+	if oaWarnPublicAccountCopy in Actions then
+	begin
+		TCLogger.Log(LOG_LEVEL_WARNING, MSGTYPE_IMPORTANTERROR, ERR_DIRECT_COPY_SUPPORT);
+		FThreadState.SetSkipListRenMov(True);
+	end;
+end;
+
 procedure TMailRuCloudWFX.FsStatusInfo(RemoteDir: WideString; InfoStartEnd, InfoOperation: Integer);
 var
 	RealPath: TRealPath;
+	Context: TOperationContext;
+	Actions: TOperationActions;
 	getResult: Integer;
 begin
-	RealPath.FromPath(RemoteDir, ID_True); // RemoteDir always a directory
-	if (InfoStartEnd = FS_STATUS_START) then
+	RealPath.FromPath(RemoteDir, ID_True); { RemoteDir always a directory }
+
+	{ Build context for the handler }
+	Context.Operation := InfoOperation;
+	Context.IsInAccount := RealPath.IsInAccount();
+	Context.DescriptionsEnabled := SettingsManager.Settings.DescriptionEnabled;
+	Context.LogUserSpaceEnabled := SettingsManager.Settings.LogUserSpace;
+
+	{ Check if public account - only needed for RENMOV_MULTI to show warning }
+	if (InfoOperation = FS_STATUS_OP_RENMOV_MULTI) and Context.IsInAccount then
+		Context.IsPublicAccount := ConnectionManager.Get(RealPath.account, getResult).IsPublicAccount
+	else
+		Context.IsPublicAccount := False;
+
+	if InfoStartEnd = FS_STATUS_START then
 	begin
 		FThreadState.SetFsStatusInfo(InfoOperation);
-		case InfoOperation of
-			FS_STATUS_OP_LIST:
-				begin
-					if (SettingsManager.Settings.DescriptionEnabled) and RealPath.IsInAccount() then
-					begin
-						if ConnectionManager.Get(RealPath.account, getResult).getDescriptionFile(IncludeTrailingBackslash(RealPath.Path) + SettingsManager.Settings.DescriptionFileName, CurrentDescriptions.ionFilename) then
-						begin
-							CurrentDescriptions.Read;
-						end else begin
-							CurrentDescriptions.Clear;
-						end;
-					end;
-				end;
-			FS_STATUS_OP_GET_SINGLE:
-				begin
-					FThreadState.ResetRetryCountDownload;
-				end;
-			FS_STATUS_OP_GET_MULTI:
-				begin
-					FThreadState.ResetRetryCountDownload;
-				end;
-			FS_STATUS_OP_PUT_SINGLE:
-				begin
-					FThreadState.ResetRetryCountUpload;
-				end;
-			FS_STATUS_OP_PUT_MULTI:
-				begin
-					FThreadState.ResetRetryCountUpload;
-				end;
-			FS_STATUS_OP_RENMOV_SINGLE:
-				begin
-				end;
-			FS_STATUS_OP_RENMOV_MULTI:
-				begin
-					if ConnectionManager.Get(RealPath.account, getResult).IsPublicAccount then
-					begin
-						TCLogger.Log(LOG_LEVEL_WARNING, MSGTYPE_IMPORTANTERROR, ERR_DIRECT_COPY_SUPPORT);
-						FThreadState.SetSkipListRenMov(True);
-					end;
-					FThreadState.ResetRetryCountRenMov;
-					FThreadState.SetCanAbortRenMov(True);
-					FThreadState.CreateRemoveDirSkippedPath;
-				end;
-			FS_STATUS_OP_DELETE:
-				begin
-					FThreadState.SetSkipListDelete(True);
-				end;
-			FS_STATUS_OP_ATTRIB:
-				begin
-				end;
-			FS_STATUS_OP_MKDIR:
-				begin
-				end;
-			FS_STATUS_OP_EXEC:
-				begin
-				end;
-			FS_STATUS_OP_CALCSIZE:
-				begin
-				end;
-			FS_STATUS_OP_SEARCH:
-				begin
-				end;
-			FS_STATUS_OP_SEARCH_TEXT:
-				begin
-				end;
-			FS_STATUS_OP_SYNC_SEARCH:
-				begin
-				end;
-			FS_STATUS_OP_SYNC_GET:
-				begin
-				end;
-			FS_STATUS_OP_SYNC_PUT:
-				begin
-				end;
-			FS_STATUS_OP_SYNC_DELETE:
-				begin
-				end;
-			FS_STATUS_OP_GET_MULTI_THREAD:
-				begin
-					FThreadState.ResetRetryCountDownload;
-					FThreadState.IncrementBackgroundJobs(RealPath.account);
-					FThreadState.SetBackgroundThreadStatus(FS_STATUS_OP_GET_MULTI_THREAD);
-				end;
-			FS_STATUS_OP_PUT_MULTI_THREAD:
-				begin
-					FThreadState.ResetRetryCountUpload;
-					FThreadState.IncrementBackgroundJobs(RealPath.account);
-					FThreadState.SetBackgroundThreadStatus(FS_STATUS_OP_PUT_MULTI_THREAD);
-				end;
-		end;
-		exit;
-	end;
-	if (InfoStartEnd = FS_STATUS_END) then
+		Actions := FOperationLifecycle.GetStartActions(Context);
+		ExecuteOperationActions(Actions, RealPath, InfoOperation);
+	end
+	else if InfoStartEnd = FS_STATUS_END then
 	begin
 		FThreadState.RemoveFsStatusInfo;
-		case InfoOperation of
-			FS_STATUS_OP_LIST:
-				begin
-				end;
-			FS_STATUS_OP_GET_SINGLE:
-				begin
-				end;
-			FS_STATUS_OP_GET_MULTI:
-				begin
-				end;
-			FS_STATUS_OP_PUT_SINGLE:
-				begin
-					if RealPath.IsInAccount() and SettingsManager.Settings.LogUserSpace then
-						ConnectionManager.Get(RealPath.account, getResult).logUserSpaceInfo;
-				end;
-			FS_STATUS_OP_PUT_MULTI:
-				begin
-					if RealPath.IsInAccount() and SettingsManager.Settings.LogUserSpace then
-						ConnectionManager.Get(RealPath.account, getResult).logUserSpaceInfo;
-				end;
-			FS_STATUS_OP_RENMOV_SINGLE:
-				begin
-					if RealPath.IsInAccount() and SettingsManager.Settings.LogUserSpace then
-						ConnectionManager.Get(RealPath.account, getResult).logUserSpaceInfo;
-				end;
-			FS_STATUS_OP_RENMOV_MULTI:
-				begin
-					FThreadState.SetSkipListRenMov(False);
-					FThreadState.SetCanAbortRenMov(False);
-					FThreadState.ClearRemoveDirSkippedPath;
-
-					if RealPath.IsInAccount() and SettingsManager.Settings.LogUserSpace then
-						ConnectionManager.Get(RealPath.account, getResult).logUserSpaceInfo;
-				end;
-			FS_STATUS_OP_DELETE:
-				begin
-					FThreadState.SetSkipListDelete(False);
-					if RealPath.IsInAccount() and SettingsManager.Settings.LogUserSpace then
-						ConnectionManager.Get(RealPath.account, getResult).logUserSpaceInfo;
-				end;
-			FS_STATUS_OP_ATTRIB:
-				begin
-				end;
-			FS_STATUS_OP_MKDIR:
-				begin
-				end;
-			FS_STATUS_OP_EXEC:
-				begin
-				end;
-			FS_STATUS_OP_CALCSIZE:
-				begin
-				end;
-			FS_STATUS_OP_SEARCH:
-				begin
-				end;
-			FS_STATUS_OP_SEARCH_TEXT:
-				begin
-				end;
-			FS_STATUS_OP_SYNC_SEARCH:
-				begin
-				end;
-			FS_STATUS_OP_SYNC_GET:
-				begin
-					if RealPath.IsInAccount() and SettingsManager.Settings.LogUserSpace then
-						ConnectionManager.Get(RealPath.account, getResult).logUserSpaceInfo;
-				end;
-			FS_STATUS_OP_SYNC_PUT:
-				begin
-					if RealPath.IsInAccount() and SettingsManager.Settings.LogUserSpace then
-						ConnectionManager.Get(RealPath.account, getResult).logUserSpaceInfo;
-				end;
-			FS_STATUS_OP_SYNC_DELETE:
-				begin
-					if RealPath.IsInAccount() and SettingsManager.Settings.LogUserSpace then
-						ConnectionManager.Get(RealPath.account, getResult).logUserSpaceInfo;
-				end;
-			FS_STATUS_OP_GET_MULTI_THREAD:
-				begin
-					if RealPath.IsInAccount() and SettingsManager.Settings.LogUserSpace then
-						ConnectionManager.Get(RealPath.account, getResult).logUserSpaceInfo;
-					FThreadState.DecrementBackgroundJobs(RealPath.account);
-					FThreadState.RemoveBackgroundThread;
-				end;
-			FS_STATUS_OP_PUT_MULTI_THREAD:
-				begin
-					if RealPath.IsInAccount() and SettingsManager.Settings.LogUserSpace then
-						ConnectionManager.Get(RealPath.account, getResult).logUserSpaceInfo;
-					FThreadState.DecrementBackgroundJobs(RealPath.account);
-					FThreadState.RemoveBackgroundThread;
-				end;
-		end;
-		exit;
+		Actions := FOperationLifecycle.GetEndActions(Context);
+		ExecuteOperationActions(Actions, RealPath, InfoOperation);
 	end;
 end;
 

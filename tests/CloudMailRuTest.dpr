@@ -189,7 +189,10 @@ uses
 	ContentFieldProviderTest in 'models\wfx\ContentFieldProviderTest.pas',
 	IIconProviderInterface in '..\src\models\wfx\IIconProviderInterface.pas',
 	IconProvider in '..\src\models\wfx\IconProvider.pas',
-	IconProviderTest in 'models\wfx\IconProviderTest.pas';
+	IconProviderTest in 'models\wfx\IconProviderTest.pas',
+	IOperationLifecycleInterface in '..\src\models\wfx\IOperationLifecycleInterface.pas',
+	OperationLifecycleHandler in '..\src\models\wfx\OperationLifecycleHandler.pas',
+	OperationLifecycleHandlerTest in 'models\wfx\OperationLifecycleHandlerTest.pas';
 
 {keep comment here to protect the following conditional from being removed by the IDE when adding a unit}
 {$IFNDEF TESTINSIGHT}

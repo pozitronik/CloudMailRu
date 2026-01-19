@@ -112,7 +112,9 @@ uses
 	IContentFieldProviderInterface in 'src\models\wfx\IContentFieldProviderInterface.pas',
 	ContentFieldProvider in 'src\models\wfx\ContentFieldProvider.pas',
 	IIconProviderInterface in 'src\models\wfx\IIconProviderInterface.pas',
-	IconProvider in 'src\models\wfx\IconProvider.pas';
+	IconProvider in 'src\models\wfx\IconProvider.pas',
+	IOperationLifecycleInterface in 'src\models\wfx\IOperationLifecycleInterface.pas',
+	OperationLifecycleHandler in 'src\models\wfx\OperationLifecycleHandler.pas';
 
 {$IFDEF WIN64}
 {$E wfx64}
