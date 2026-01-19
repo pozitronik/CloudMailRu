@@ -122,7 +122,9 @@ uses
 	IDirectoryDeletionPreCheckInterface,
 	DirectoryDeletionPreCheck,
 	IUploadPreparationValidatorInterface,
-	UploadPreparationValidator;
+	UploadPreparationValidator,
+	IDownloadPreparationValidatorInterface,
+	DownloadPreparationValidator;
 
 type
 	TMailRuCloudWFX = class(TInterfacedObject, IWFXInterface)
@@ -141,6 +143,7 @@ type
 		FMoveOperationTracker: IMoveOperationContextTracker;
 		FDirectoryDeletionPreCheck: IDirectoryDeletionPreCheck;
 		FUploadPreparationValidator: IUploadPreparationValidator;
+		FDownloadPreparationValidator: IDownloadPreparationValidator;
 		FContentFieldProvider: IContentFieldProvider;
 		FIconProvider: IIconProvider;
 		FOperationLifecycle: IOperationLifecycleHandler;
@@ -264,6 +267,7 @@ begin
 			Result := FileExists(Path);
 		end
 	);
+	FDownloadPreparationValidator := TDownloadPreparationValidator.Create;
 	FContentFieldProvider := TContentFieldProvider.Create;
 	FIconProvider := TIconProvider.Create;
 	FOperationLifecycle := TOperationLifecycleHandler.Create;
@@ -825,13 +829,14 @@ function TMailRuCloudWFX.FsGetFile(RemoteName, LocalName: WideString; CopyFlags:
 var
 	RealPath: TRealPath;
 	ConflictResolution: TConflictResolution;
+	ValidationResult: TDownloadValidationResult;
 begin
-	Result := FS_FILE_NOTSUPPORTED;
-	if CheckFlag(FS_COPYFLAGS_RESUME, CopyFlags) then
-		exit; {NEVER CALLED HERE}
 	RealPath.FromPath(RemoteName);
-	if RealPath.isVirtual then
-		exit;
+
+	{Validate download preconditions}
+	ValidationResult := FDownloadPreparationValidator.Validate(RealPath, CopyFlags);
+	if not ValidationResult.ShouldProceed then
+		Exit(ValidationResult.ResultCode);
 
 	TCProgress.Progress(RemoteName, LocalName, 0);
 

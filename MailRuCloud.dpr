@@ -166,7 +166,9 @@ uses
 	IDirectoryDeletionPreCheckInterface in 'src\models\wfx\IDirectoryDeletionPreCheckInterface.pas',
 	DirectoryDeletionPreCheck in 'src\models\wfx\DirectoryDeletionPreCheck.pas',
 	IUploadPreparationValidatorInterface in 'src\models\wfx\IUploadPreparationValidatorInterface.pas',
-	UploadPreparationValidator in 'src\models\wfx\UploadPreparationValidator.pas';
+	UploadPreparationValidator in 'src\models\wfx\UploadPreparationValidator.pas',
+	IDownloadPreparationValidatorInterface in 'src\models\wfx\IDownloadPreparationValidatorInterface.pas',
+	DownloadPreparationValidator in 'src\models\wfx\DownloadPreparationValidator.pas';
 
 {$IFDEF WIN64}
 {$E wfx64}
