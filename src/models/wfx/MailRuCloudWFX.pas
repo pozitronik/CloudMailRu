@@ -66,7 +66,9 @@ uses
 	IThreadStateManagerInterface,
 	ThreadStateManager,
 	IContentFieldProviderInterface,
-	ContentFieldProvider;
+	ContentFieldProvider,
+	IIconProviderInterface,
+	IconProvider;
 
 type
 	TMailRuCloudWFX = class(TInterfacedObject, IWFXInterface)
@@ -84,6 +86,7 @@ type
 		CurrentlyMovedDir: TRealPath;
 		FThreadState: IThreadStateManager;
 		FContentFieldProvider: IContentFieldProvider;
+		FIconProvider: IIconProvider;
 
 		PluginNum: Integer;
 
@@ -189,6 +192,7 @@ begin
 	IsMultiThread := not(SettingsManager.Settings.DisableMultiThreading);
 	FThreadState := TThreadStateManager.Create;
 	FContentFieldProvider := TContentFieldProvider.Create;
+	FIconProvider := TIconProvider.Create;
 
 	AccountSettings := TAccountsManager.Create(TIniConfigFile.Create(SettingsManager.AccountsIniFilePath));
 	FFileSystem := TWindowsFileSystem.Create;
@@ -710,126 +714,85 @@ end;
 function TMailRuCloudWFX.FsExtractCustomIcon(RemoteName: PWideChar; ExtractFlags: Integer; var TheIcon: hIcon): Integer;
 var
 	RealPath: TRealPath;
-	Item: TCMRDirItem;
-	IconsMode: Integer;
-	CurrentInviteItem: TCMRIncomingInvite;
+	Context: TIconContext;
+	IconInfo: TIconInfo;
 	IconsSize: Integer;
 	FrontIcon, BackIcon: hIcon;
 
-	function GetFolderIconSize(IconsSize: Integer): Integer;
+	function GetFolderIconSize(Size: Integer): Integer;
 	begin
-		if IconsSize <= 16 then
-			exit(IconSizeSmall);
-		if IconsSize <= 32 then
-			exit(IconSizeNormal);
+		if Size <= 16 then exit(IconSizeSmall);
+		if Size <= 32 then exit(IconSizeNormal);
 		exit(IconSizeLarge);
 	end;
-
-	procedure CombineMacro(var CombinedIcon: hIcon);
-	begin
-		FrontIcon := LoadImageW(hInstance, RemoteName, IMAGE_ICON, IconsSize, IconsSize, LR_DEFAULTCOLOR);
-		BackIcon := GetFolderIcon(GetFolderIconSize(IconsSize));
-		CombinedIcon := CombineIcons(FrontIcon, BackIcon);
-		DeleteObject(FrontIcon);
-		DeleteObject(BackIcon);
-	end;
-
 begin
 	Result := FS_ICON_EXTRACTED;
-
 	RealPath.FromPath(RemoteName);
-
-	if RealPath.upDirItem then
-		exit; //do not overlap updir icon
-
-	IconsMode := SettingsManager.Settings.IconsMode;
 	IconsSize := GetTCIconsSize;
 
-	if RealPath.trashDir and RealPath.isInAccountsList then //always draw system trash icon
+	{ Build context for provider }
+	Context.IconsMode := SettingsManager.Settings.IconsMode;
+	Context.HasItem := False;
+	Context.HasInviteItem := False;
+	Context.IsPublicAccount := False;
+
+	if RealPath.isInAccountsList and not RealPath.isVirtual then
+		Context.IsPublicAccount := AccountSettings.GetAccountSettings(
+			copy(RemoteName, 2, StrLen(RemoteName) - 2)).PublicAccount;
+
+	if RealPath.invitesDir and not RealPath.isInAccountsList then
 	begin
-		strpcopy(RemoteName, 'cloud_trash');
-		TheIcon := GetSystemIcon(GetFolderIconSize(IconsSize));
-		exit(FS_ICON_EXTRACTED_DESTROY);
+		Context.InviteItem := FindIncomingInviteItemByPath(CurrentIncomingInvitesListing, RealPath);
+		Context.HasInviteItem := True;
+	end
+	else if not RealPath.isInAccountsList and not RealPath.isVirtual then
+	begin
+		Context.Item := FindListingItemByPath(CurrentListing, RealPath);
+		Context.HasItem := True;
 	end;
 
-	if RealPath.sharedDir then
-	begin
-		if RealPath.isInAccountsList then
-		begin
-			strpcopy(RemoteName, 'shared');
-			CombineMacro(TheIcon);
+	{ Get icon info from provider }
+	IconInfo := FIconProvider.GetIcon(RealPath, Context);
 
-			exit(FS_ICON_EXTRACTED_DESTROY);
-		end else begin
-			if IconsMode = IconsModeDisabled then
-				IconsMode := IconsModeInternalOverlay; //always draw icons in shared links directory
-		end;
-	end;
-
-	if RealPath.invitesDir then
-	begin
-		if RealPath.isInAccountsList then
-		begin
-			strpcopy(RemoteName, 'shared_incoming');
-			CombineMacro(TheIcon);
-			exit(FS_ICON_EXTRACTED_DESTROY);
-		end else begin
-
-			CurrentInviteItem := FindIncomingInviteItemByPath(CurrentIncomingInvitesListing, RealPath);
-			if CurrentInviteItem.name = EmptyWideStr then
-				exit(FS_ICON_USEDEFAULT);
-
-			if CurrentInviteItem.isMounted then //mounted item
-			begin
-				strpcopy(RemoteName, 'shared_incoming');
-				CombineMacro(TheIcon);
-			end else begin
-				strpcopy(RemoteName, 'shared');
-				CombineMacro(TheIcon);
-			end;
-			exit(FS_ICON_EXTRACTED_DESTROY);
-
-		end;
-	end;
-
-	if IconsMode = IconsModeDisabled then
-		exit(FS_ICON_USEDEFAULT);
-
-	if RealPath.isInAccountsList then //connection list
-	begin
-		if AccountSettings.GetAccountSettings(copy(RemoteName, 2, StrLen(RemoteName) - 2)).PublicAccount then
-			strpcopy(RemoteName, 'cloud_public')
-		else
-			strpcopy(RemoteName, 'cloud');
-	end else begin //directories
-		Item := FindListingItemByPath(CurrentListing, RealPath);
-		if (Item.type_ = TYPE_DIR) or (Item.kind = KIND_SHARED) then
-		begin
-			if Item.kind = KIND_SHARED then
-				strpcopy(RemoteName, 'shared')
-			else if Item.isPublished then
-				strpcopy(RemoteName, 'shared_public')
-			else
-				exit(FS_ICON_USEDEFAULT);
-		end
-		else
+	{ Render based on icon type }
+	case IconInfo.IconType of
+		itUseDefault:
 			exit(FS_ICON_USEDEFAULT);
-	end;
-	case IconsMode of
-		IconsModeInternal:
-			TheIcon := LoadImageW(hInstance, RemoteName, IMAGE_ICON, IconsSize, IconsSize, LR_DEFAULTCOLOR);
-		IconsModeInternalOverlay:
-			CombineMacro(TheIcon);
-		IconsModeExternal:
+
+		itSystemTrash:
 			begin
-				TheIcon := LoadPluginIcon(PluginPath + 'icons', RemoteName);
+				TheIcon := GetSystemIcon(GetFolderIconSize(IconsSize));
+				exit(FS_ICON_EXTRACTED_DESTROY);
+			end;
+
+		itInternal:
+			begin
+				strpcopy(RemoteName, IconInfo.IconName);
+				TheIcon := LoadImageW(hInstance, RemoteName, IMAGE_ICON, IconsSize, IconsSize, LR_DEFAULTCOLOR);
+			end;
+
+		itInternalOverlay:
+			begin
+				strpcopy(RemoteName, IconInfo.IconName);
+				FrontIcon := LoadImageW(hInstance, RemoteName, IMAGE_ICON, IconsSize, IconsSize, LR_DEFAULTCOLOR);
+				BackIcon := GetFolderIcon(GetFolderIconSize(IconsSize));
+				TheIcon := CombineIcons(FrontIcon, BackIcon);
+				DeleteObject(FrontIcon);
+				DeleteObject(BackIcon);
+				exit(FS_ICON_EXTRACTED_DESTROY);
+			end;
+
+		itExternal:
+			begin
+				TheIcon := LoadPluginIcon(PluginPath + 'icons', IconInfo.IconName);
 				if TheIcon = INVALID_HANDLE_VALUE then
 					exit(FS_ICON_USEDEFAULT);
 				exit(FS_ICON_EXTRACTED_DESTROY);
 			end;
-		IconsModeExternalOverlay:
+
+		itExternalOverlay:
 			begin
-				TheIcon := LoadPluginIcon(PluginPath + 'icons', RemoteName);
+				TheIcon := LoadPluginIcon(PluginPath + 'icons', IconInfo.IconName);
 				if TheIcon = INVALID_HANDLE_VALUE then
 					exit(FS_ICON_USEDEFAULT);
 				BackIcon := GetFolderIcon(GetFolderIconSize(IconsSize));
@@ -837,7 +800,6 @@ begin
 				DeleteObject(BackIcon);
 				exit(FS_ICON_EXTRACTED_DESTROY);
 			end;
-
 	end;
 end;
 

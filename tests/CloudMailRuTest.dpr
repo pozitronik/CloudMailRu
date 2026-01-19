@@ -186,7 +186,10 @@ uses
 	ThreadStateManagerTest in 'models\wfx\ThreadStateManagerTest.pas',
 	IContentFieldProviderInterface in '..\src\models\wfx\IContentFieldProviderInterface.pas',
 	ContentFieldProvider in '..\src\models\wfx\ContentFieldProvider.pas',
-	ContentFieldProviderTest in 'models\wfx\ContentFieldProviderTest.pas';
+	ContentFieldProviderTest in 'models\wfx\ContentFieldProviderTest.pas',
+	IIconProviderInterface in '..\src\models\wfx\IIconProviderInterface.pas',
+	IconProvider in '..\src\models\wfx\IconProvider.pas',
+	IconProviderTest in 'models\wfx\IconProviderTest.pas';
 
 {keep comment here to protect the following conditional from being removed by the IDE when adding a unit}
 {$IFNDEF TESTINSIGHT}

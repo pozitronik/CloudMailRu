@@ -110,7 +110,9 @@ uses
 	IThreadStateManagerInterface in 'src\models\wfx\IThreadStateManagerInterface.pas',
 	ThreadStateManager in 'src\models\wfx\ThreadStateManager.pas',
 	IContentFieldProviderInterface in 'src\models\wfx\IContentFieldProviderInterface.pas',
-	ContentFieldProvider in 'src\models\wfx\ContentFieldProvider.pas';
+	ContentFieldProvider in 'src\models\wfx\ContentFieldProvider.pas',
+	IIconProviderInterface in 'src\models\wfx\IIconProviderInterface.pas',
+	IconProvider in 'src\models\wfx\IconProvider.pas';
 
 {$IFDEF WIN64}
 {$E wfx64}
