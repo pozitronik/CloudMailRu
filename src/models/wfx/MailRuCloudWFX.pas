@@ -70,7 +70,11 @@ uses
 	IIconProviderInterface,
 	IconProvider,
 	IOperationLifecycleInterface,
-	OperationLifecycleHandler;
+	OperationLifecycleHandler,
+	ICloudDescriptionOpsInterface,
+	IDescriptionSyncManagerInterface,
+	DescriptionSyncManager,
+	CloudDescriptionOpsAdapter;
 
 type
 	TMailRuCloudWFX = class(TInterfacedObject, IWFXInterface)
@@ -90,6 +94,7 @@ type
 		FContentFieldProvider: IContentFieldProvider;
 		FIconProvider: IIconProvider;
 		FOperationLifecycle: IOperationLifecycleHandler;
+		FDescriptionSync: IDescriptionSyncManager;
 
 		PluginNum: Integer;
 
@@ -119,10 +124,6 @@ type
 		function ExecProperties(MainWin: THandle; RealPath: TRealPath): Integer;
 		function ExecCommand(RemoteName: PWideChar; Command: WideString; Parameter: WideString = ''): Integer;
 		function ExecuteFileStream(RealPath: TRealPath; StreamingSettings: TStreamingSettings): Integer;
-		procedure UpdateFileDescription(RemotePath: TRealPath; LocalFilePath: WideString; var Cloud: TCloudMailRu);
-		procedure UpdateRemoteFileDescription(RemotePath: TRealPath; LocalFilePath: WideString; var Cloud: TCloudMailRu);
-		procedure RenameRemoteFileDescription(OldRemotePath, NewRemotePath: TRealPath; var Cloud: TCloudMailRu);
-		procedure DeleteRemoteFileDescription(RemotePath: TRealPath; var Cloud: TCloudMailRu);
 		function GetRemoteFile(RemotePath: TRealPath; LocalName, RemoteName: WideString; CopyFlags: Integer): Integer;
 		function PutRemoteFile(RemotePath: TRealPath; LocalName, RemoteName: WideString; CopyFlags: Integer): Integer;
 		function CloneWeblink(NewCloud, OldCloud: TCloudMailRu; CloudPath: WideString; CurrentItem: TCMRDirItem; NeedUnpublish: Boolean): Integer;
@@ -201,6 +202,7 @@ begin
 
 	AccountSettings := TAccountsManager.Create(TIniConfigFile.Create(SettingsManager.AccountsIniFilePath));
 	FFileSystem := TWindowsFileSystem.Create;
+	FDescriptionSync := TDescriptionSyncManager.Create(SettingsManager.Settings.DescriptionFileName, FFileSystem);
 end;
 
 function TMailRuCloudWFX.FsInit(PluginNr: Integer; pProgressProc: TProgressProcW; pLogProc: TLogProcW; pRequestProc: TRequestProcW): Integer;
@@ -267,27 +269,6 @@ begin
 					TCLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_IMPORTANTERROR, ERR_DELETE_FILE_IGNORE, [LocalName]);
 				end;
 		end;
-	end;
-end;
-
-procedure TMailRuCloudWFX.DeleteRemoteFileDescription(RemotePath: TRealPath; var Cloud: TCloudMailRu);
-var
-	RemoteDescriptions: TDescription;
-	RemoteIonPath, LocalTempPath: WideString;
-begin
-	RemoteIonPath := IncludeTrailingBackslash(ExtractFileDir(RemotePath.Path)) + SettingsManager.Settings.DescriptionFileName;
-	LocalTempPath := GetTmpFileName(DESCRIPTION_TEMP_EXT);
-	if not Cloud.getDescriptionFile(RemoteIonPath, LocalTempPath) then
-		exit; //описания нет, не заморачиваемся
-	RemoteDescriptions := TDescription.Create(LocalTempPath, FFileSystem, GetTCCommentPreferredFormat);
-	try
-		RemoteDescriptions.Read;
-		RemoteDescriptions.DeleteValue(ExtractFileName(RemotePath.Path));
-		RemoteDescriptions.Write();
-		Cloud.deleteFile(RemoteIonPath); //Приходится удалять, потому что не знаем, как переписать
-		Cloud.PutDescriptionFile(RemoteIonPath, RemoteDescriptions.ionFilename);
-	finally
-		RemoteDescriptions.Free;
 	end;
 end;
 
@@ -664,7 +645,7 @@ begin
 	else
 		Result := Cloud.deleteFile(RealPath.Path);
 	if (Result and SettingsManager.Settings.DescriptionTrackCloudFS and AccountSettings.GetAccountSettings(RealPath.account).IsRemoteDescriptionsSupported) then
-		DeleteRemoteFileDescription(RealPath, Cloud);
+		FDescriptionSync.OnFileDeleted(RealPath, TCloudDescriptionOpsAdapter.Create(Cloud));
 end;
 
 function TMailRuCloudWFX.FsDisconnect(DisconnectRoot: PWideChar): Boolean;
@@ -1171,13 +1152,11 @@ begin
 
 	if (Result and SettingsManager.Settings.DescriptionTrackCloudFS and AccountSettings.GetAccountSettings(RealPath.account).IsRemoteDescriptionsSupported) then
 	begin
-		OperationContextId := FThreadState.GetFsStatusInfo; //need to check operation context => directory can be deleted after moving operation
+		OperationContextId := FThreadState.GetFsStatusInfo; {Directory can be deleted after moving operation}
 		if OperationContextId = FS_STATUS_OP_RENMOV_MULTI then
-		begin
-			RenameRemoteFileDescription(RealPath, CurrentlyMovedDir, Cloud);
-		end
+			FDescriptionSync.OnFileRenamed(RealPath, CurrentlyMovedDir, TCloudDescriptionOpsAdapter.Create(Cloud))
 		else
-			DeleteRemoteFileDescription(RealPath, Cloud);
+			FDescriptionSync.OnFileDeleted(RealPath, TCloudDescriptionOpsAdapter.Create(Cloud));
 	end;
 end;
 
@@ -1237,7 +1216,7 @@ begin
 				FThreadState.RemoveSkippedPath(OldRealPath.ToPath);
 			end;
 			if ((FS_FILE_OK = Result) and SettingsManager.Settings.DescriptionTrackCloudFS and AccountSettings.GetAccountSettings(NewRealPath.account).IsRemoteDescriptionsSupported) then
-				RenameRemoteFileDescription(OldRealPath, NewRealPath, OldCloud);
+				FDescriptionSync.OnFileRenamed(OldRealPath, NewRealPath, TCloudDescriptionOpsAdapter.Create(OldCloud));
 		end else begin
 			Result := OldCloud.FileCopy(OldRealPath.Path, NewRealPath.Path);
 		end;
@@ -1393,13 +1372,13 @@ begin
 		begin
 			Cloud.deleteFile(RemotePath.Path);
 			if (SettingsManager.Settings.DescriptionTrackCloudFS and AccountSettings.GetAccountSettings(RemotePath.account).IsRemoteDescriptionsSupported) then
-				DeleteRemoteFileDescription(RemotePath, Cloud);
+				FDescriptionSync.OnFileDeleted(RemotePath, TCloudDescriptionOpsAdapter.Create(Cloud));
 		end;
 		TCProgress.Progress(PWideChar(LocalName), PWideChar(RemoteName), 100);
 		TCLogger.Log(LOG_LEVEL_FILE_OPERATION, MSGTYPE_TRANSFERCOMPLETE, '%s -> %s', [RemoteName, LocalName]);
 
 		if SettingsManager.Settings.DescriptionCopyFromCloud then
-			UpdateFileDescription(RemotePath, LocalName, Cloud);
+			FDescriptionSync.OnFileDownloaded(RemotePath, LocalName, TCloudDescriptionOpsAdapter.Create(Cloud));
 
 	end;
 end;
@@ -1419,70 +1398,7 @@ begin
 		if CheckFlag(FS_COPYFLAGS_MOVE, CopyFlags) then
 			Result := DeleteLocalFile(LocalName);
 		if (SettingsManager.Settings.DescriptionCopyToCloud and AccountSettings.GetAccountSettings(RemotePath.account).IsRemoteDescriptionsSupported) then
-			UpdateRemoteFileDescription(RemotePath, LocalName, Cloud);
-	end;
-end;
-
-{Assume the operation is inside of the same cloud instance - plugin does not support direct operations between different accounts}
-procedure TMailRuCloudWFX.RenameRemoteFileDescription(OldRemotePath, NewRemotePath: TRealPath; var Cloud: TCloudMailRu);
-var
-	OldDescriptions, NewDescriptions: TDescription;
-	OldRemoteIonPath, NewRemoteIonPath, OldLocalTempPath, NewLocalTempPath: WideString;
-	NewRemoteIonExists: Boolean;
-	OldItem, NewItem: WideString;
-begin
-	OldItem := ExtractFileName(OldRemotePath.Path);
-	NewItem := ExtractFileName(NewRemotePath.Path);
-	OldRemoteIonPath := IncludeTrailingBackslash(ExtractFileDir(OldRemotePath.Path)) + SettingsManager.Settings.DescriptionFileName;
-	NewRemoteIonPath := IncludeTrailingBackslash(ExtractFileDir(NewRemotePath.Path)) + SettingsManager.Settings.DescriptionFileName;
-	OldLocalTempPath := GetTmpFileName(DESCRIPTION_TEMP_EXT);
-	NewLocalTempPath := GetTmpFileName(DESCRIPTION_TEMP_EXT);
-
-	if ExtractFileDir(OldRemotePath.Path) = ExtractFileDir(NewRemotePath.Path) then //переименование внутри одного файла
-	begin
-		if not Cloud.getDescriptionFile(OldRemoteIonPath, OldLocalTempPath) then
-			exit; //описания нет, переносить нечего
-		OldDescriptions := TDescription.Create(OldLocalTempPath, FFileSystem, GetTCCommentPreferredFormat);
-		try
-			OldDescriptions.Read;
-			if (OldDescriptions.RenameItem(OldItem, NewItem)) then //метод сам проверит существование описания
-			begin
-				OldDescriptions.Write();
-				Cloud.deleteFile(OldRemoteIonPath);
-				Cloud.PutDescriptionFile(OldRemoteIonPath, OldDescriptions.ionFilename);
-			end;
-		finally
-			OldDescriptions.Free;
-		end;
-	end
-	else //перенос и переименование в разных файлах (например, перемещение в подкаталог)
-	begin
-		if not Cloud.getDescriptionFile(OldRemoteIonPath, OldLocalTempPath) then
-			exit; //описания нет, не заморачиваемся
-		OldDescriptions := TDescription.Create(OldLocalTempPath, FFileSystem, GetTCCommentPreferredFormat);
-		try
-			OldDescriptions.Read;
-			NewRemoteIonExists := Cloud.getDescriptionFile(NewRemoteIonPath, NewLocalTempPath);
-			NewDescriptions := TDescription.Create(NewLocalTempPath, FFileSystem, GetTCCommentPreferredFormat);
-			try
-				if NewRemoteIonExists then
-					NewDescriptions.Read; //прочитать существующий, если его нет - то и читать нечего
-
-				NewDescriptions.SetValue(ExtractFileName(NewRemotePath.Path), OldDescriptions.GetValue(ExtractFileName(OldRemotePath.Path)));
-				OldDescriptions.DeleteValue(ExtractFileName(OldRemotePath.Path));
-				OldDescriptions.Write();
-				NewDescriptions.Write();
-				Cloud.deleteFile(OldRemoteIonPath);
-				Cloud.PutDescriptionFile(OldRemoteIonPath, OldDescriptions.ionFilename);
-				if NewRemoteIonExists then
-					Cloud.deleteFile(NewRemoteIonPath); //Если файл существовал ранее, его нужно удалить для последующей записи на его место
-				Cloud.PutDescriptionFile(NewRemoteIonPath, NewDescriptions.ionFilename);
-			finally
-				NewDescriptions.Free;
-			end;
-		finally
-			OldDescriptions.Free;
-		end;
+			FDescriptionSync.OnFileUploaded(RemotePath, LocalName, TCloudDescriptionOpsAdapter.Create(Cloud));
 	end;
 end;
 
@@ -1614,72 +1530,6 @@ begin
 
 		if (Result = CLOUD_OPERATION_OK) and Move and not(OldCloud.deleteFile(OldRealPath.Path)) then
 			TCLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_DELETE, [CurrentItem.home]); //пишем в лог, но не отваливаемся
-	end;
-end;
-
-procedure TMailRuCloudWFX.UpdateFileDescription(RemotePath: TRealPath; LocalFilePath: WideString; var Cloud: TCloudMailRu);
-var
-	RemoteDescriptions, LocalDescriptions: TDescription;
-	RemoteIonPath, LocalTempPath: WideString;
-	RemoteIonExists: Boolean;
-begin
-	RemoteIonPath := IncludeTrailingBackslash(ExtractFileDir(RemotePath.Path)) + SettingsManager.Settings.DescriptionFileName;
-	LocalTempPath := GetTmpFileName(DESCRIPTION_TEMP_EXT);
-
-	RemoteIonExists := Cloud.getDescriptionFile(RemoteIonPath, LocalTempPath);
-	if not RemoteIonExists then
-		exit; //удалённого файла описаний нет
-
-	RemoteDescriptions := TDescription.Create(LocalTempPath, FFileSystem, GetTCCommentPreferredFormat);
-	try
-		RemoteDescriptions.Read;
-		LocalDescriptions := TDescription.Create(IncludeTrailingPathDelimiter(ExtractFileDir(LocalFilePath)) + SettingsManager.Settings.DescriptionFileName, FFileSystem, GetTCCommentPreferredFormat); //open local ion file
-		try
-			LocalDescriptions.Read;
-			LocalDescriptions.CopyFrom(RemoteDescriptions, ExtractFileName(LocalFilePath));
-			LocalDescriptions.Write();
-		finally
-			LocalDescriptions.Free;
-		end;
-	finally
-		RemoteDescriptions.Free;
-	end;
-end;
-
-procedure TMailRuCloudWFX.UpdateRemoteFileDescription(RemotePath: TRealPath; LocalFilePath: WideString; var Cloud: TCloudMailRu);
-var
-	RemoteDescriptions, LocalDescriptions: TDescription;
-	RemoteIonPath, LocalIonPath, LocalTempPath: WideString;
-	RemoteIonExists: Boolean;
-begin
-	RemoteIonPath := IncludeTrailingBackslash(ExtractFileDir(RemotePath.Path)) + SettingsManager.Settings.DescriptionFileName;
-	LocalIonPath := IncludeTrailingBackslash(ExtractFileDir(LocalFilePath)) + SettingsManager.Settings.DescriptionFileName;
-	LocalTempPath := GetTmpFileName(DESCRIPTION_TEMP_EXT);
-
-	if (not FileExists(GetUNCFilePath(LocalIonPath))) then
-		exit; //Файла описаний нет, не паримся
-
-	LocalDescriptions := TDescription.Create(LocalIonPath, FFileSystem, GetTCCommentPreferredFormat);
-	try
-		LocalDescriptions.Read;
-
-		RemoteIonExists := Cloud.getDescriptionFile(RemoteIonPath, LocalTempPath);
-		RemoteDescriptions := TDescription.Create(LocalTempPath, FFileSystem, GetTCCommentPreferredFormat);
-		try
-			if RemoteIonExists then
-				RemoteDescriptions.Read; //если был прежний файл - его надо перечитать
-
-			RemoteDescriptions.CopyFrom(LocalDescriptions, ExtractFileName(RemotePath.Path));
-			RemoteDescriptions.Write();
-			if RemoteIonExists then
-				Cloud.deleteFile(RemoteIonPath); //Приходится удалять, потому что не знаем, как переписать
-
-			Cloud.PutDescriptionFile(RemoteIonPath, RemoteDescriptions.ionFilename);
-		finally
-			RemoteDescriptions.Free;
-		end;
-	finally
-		LocalDescriptions.Free;
 	end;
 end;
 

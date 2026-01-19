@@ -114,7 +114,11 @@ uses
 	IIconProviderInterface in 'src\models\wfx\IIconProviderInterface.pas',
 	IconProvider in 'src\models\wfx\IconProvider.pas',
 	IOperationLifecycleInterface in 'src\models\wfx\IOperationLifecycleInterface.pas',
-	OperationLifecycleHandler in 'src\models\wfx\OperationLifecycleHandler.pas';
+	OperationLifecycleHandler in 'src\models\wfx\OperationLifecycleHandler.pas',
+	ICloudDescriptionOpsInterface in 'src\models\wfx\ICloudDescriptionOpsInterface.pas',
+	IDescriptionSyncManagerInterface in 'src\models\wfx\IDescriptionSyncManagerInterface.pas',
+	DescriptionSyncManager in 'src\models\wfx\DescriptionSyncManager.pas',
+	CloudDescriptionOpsAdapter in 'src\models\wfx\CloudDescriptionOpsAdapter.pas';
 
 {$IFDEF WIN64}
 {$E wfx64}

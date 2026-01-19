@@ -192,7 +192,13 @@ uses
 	IconProviderTest in 'models\wfx\IconProviderTest.pas',
 	IOperationLifecycleInterface in '..\src\models\wfx\IOperationLifecycleInterface.pas',
 	OperationLifecycleHandler in '..\src\models\wfx\OperationLifecycleHandler.pas',
-	OperationLifecycleHandlerTest in 'models\wfx\OperationLifecycleHandlerTest.pas';
+	OperationLifecycleHandlerTest in 'models\wfx\OperationLifecycleHandlerTest.pas',
+	ICloudDescriptionOpsInterface in '..\src\models\wfx\ICloudDescriptionOpsInterface.pas',
+	IDescriptionSyncManagerInterface in '..\src\models\wfx\IDescriptionSyncManagerInterface.pas',
+	DescriptionSyncManager in '..\src\models\wfx\DescriptionSyncManager.pas',
+	CloudDescriptionOpsAdapter in '..\src\models\wfx\CloudDescriptionOpsAdapter.pas',
+	MockCloudDescriptionOps in 'mocks\MockCloudDescriptionOps.pas',
+	DescriptionSyncManagerTest in 'models\wfx\DescriptionSyncManagerTest.pas';
 
 {keep comment here to protect the following conditional from being removed by the IDE when adding a unit}
 {$IFNDEF TESTINSIGHT}
