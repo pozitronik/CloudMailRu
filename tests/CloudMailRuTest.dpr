@@ -234,7 +234,10 @@ uses
 	FileStreamExecutorTest in 'models\wfx\FileStreamExecutorTest.pas',
 	ILocalFileConflictResolverInterface in '..\src\models\wfx\ILocalFileConflictResolverInterface.pas',
 	LocalFileConflictResolver in '..\src\models\wfx\LocalFileConflictResolver.pas',
-	LocalFileConflictResolverTest in 'models\wfx\LocalFileConflictResolverTest.pas';
+	LocalFileConflictResolverTest in 'models\wfx\LocalFileConflictResolverTest.pas',
+	IListingItemFetcherInterface in '..\src\models\wfx\IListingItemFetcherInterface.pas',
+	ListingItemFetcher in '..\src\models\wfx\ListingItemFetcher.pas',
+	ListingItemFetcherTest in 'models\wfx\ListingItemFetcherTest.pas';
 
 {keep comment here to protect the following conditional from being removed by the IDE when adding a unit}
 {$IFNDEF TESTINSIGHT}

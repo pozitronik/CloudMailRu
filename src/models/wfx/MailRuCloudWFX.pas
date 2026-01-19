@@ -97,7 +97,9 @@ uses
 	IFileStreamExecutorInterface,
 	FileStreamExecutor,
 	ILocalFileConflictResolverInterface,
-	LocalFileConflictResolver;
+	LocalFileConflictResolver,
+	IListingItemFetcherInterface,
+	ListingItemFetcher;
 
 type
 	TMailRuCloudWFX = class(TInterfacedObject, IWFXInterface)
@@ -130,6 +132,7 @@ type
 		FSameAccountMoveHandler: ISameAccountMoveHandler;
 		FFileStreamExecutor: IFileStreamExecutor;
 		FLocalFileConflictResolver: ILocalFileConflictResolver;
+		FListingItemFetcher: IListingItemFetcher;
 
 		PluginNum: Integer;
 
@@ -300,6 +303,9 @@ begin
 
 	{Create local file conflict resolver for FsGetFile}
 	FLocalFileConflictResolver := TLocalFileConflictResolver.Create(TCLogger);
+
+	{Create listing item fetcher for FindListingItemByPath}
+	FListingItemFetcher := TListingItemFetcher.Create(TCLogger);
 	Result := 0;
 end;
 
@@ -324,6 +330,7 @@ begin
 	FSameAccountMoveHandler := nil;
 	FFileStreamExecutor := nil;
 	FLocalFileConflictResolver := nil;
+	FListingItemFetcher := nil;
 	FreeAndNil(ConnectionManager);
 
 	CurrentDescriptions.Free;
@@ -492,37 +499,7 @@ var
 	CurrentCloud: TCloudMailRu;
 begin
 	CurrentCloud := ConnectionManager.Get(Path.account, getResult);
-	if not Assigned(CurrentCloud) then
-		exit;
-
-	if Path.HasHomePath and not CurrentCloud.IsPublicAccount then
-		Result := CurrentListing.FindByHomePath(Path.Path) //сначала попробуем найти поле в имеющемся списке
-	else
-		Result := CurrentListing.FindByName(ExtractUniversalFileName(Path.Path));
-
-	if Result.isNone and UpdateListing then //если там его нет (нажали пробел на папке, например), то запросим в облаке напрямую, в зависимости от того, внутри чего мы находимся
-	begin
-
-		if Path.trashDir then //корзина - обновим CurrentListing, поищем в нём
-		begin
-			if CurrentCloud.getTrashbinListing(CurrentListing) then
-				exit(CurrentListing.FindByName(Path.Path));
-		end;
-		if Path.sharedDir then //ссылки - обновим список
-		begin
-			if CurrentCloud.getSharedLinksListing(CurrentListing) then
-				exit(CurrentListing.FindByName(Path.Path));
-		end;
-		if Path.invitesDir then
-		begin
-			//FindIncomingInviteItemByPath in that case!
-		end;
-		if CurrentCloud.statusFile(Path.Path, Result) then //Обычный каталог
-		begin
-			if (Result.home = EmptyWideStr) and not CurrentCloud.IsPublicAccount then
-				TCLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_WHERE_IS_THE_FILE, [Path.Path]); {Такого быть не может, но...}
-		end;
-	end; //Не рапортуем, это будет уровнем выше
+	Result := FListingItemFetcher.FetchItem(CurrentListing, Path, CurrentCloud, UpdateListing);
 end;
 
 function TMailRuCloudWFX.FsContentGetSupportedField(FieldIndex: Integer; FieldName, Units: PAnsiChar; MaxLen: Integer): Integer;
