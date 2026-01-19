@@ -7,9 +7,8 @@ interface
 
 uses
 	DUnitX.TestFramework,
-	IOperationStatusContextBuilderInterface,
 	OperationStatusContextBuilder,
-	IOperationLifecycleInterface,
+	OperationLifecycleHandler,
 	IPluginSettingsManagerInterface,
 	MockConnectionManager,
 	RealPath;

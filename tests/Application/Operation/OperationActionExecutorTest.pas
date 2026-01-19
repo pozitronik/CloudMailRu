@@ -9,13 +9,11 @@ interface
 
 uses
 	DUnitX.TestFramework,
-	IOperationActionExecutorInterface,
-	IOperationLifecycleInterface,
-	IThreadStateManagerInterface,
-	IPluginSettingsManagerInterface,
-	ILoggerInterface,
+	OperationLifecycleHandler,
 	OperationActionExecutor,
 	ThreadStateManager,
+	IPluginSettingsManagerInterface,
+	ILoggerInterface,
 	PluginSettings,
 	RealPath;
 

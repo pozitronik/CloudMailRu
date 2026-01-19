@@ -4,7 +4,6 @@ interface
 
 uses
 	Windows, Classes, SysUtils,
-	IThreadStateManagerInterface,
 	ThreadStateManager,
 	DUnitX.TestFramework;
 

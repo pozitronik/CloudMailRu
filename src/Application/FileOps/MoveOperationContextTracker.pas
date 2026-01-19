@@ -16,7 +16,7 @@ interface
 
 uses
 	RealPath,
-	IThreadStateManagerInterface;
+	ThreadStateManager;
 
 type
 	IMoveOperationContextTracker = interface

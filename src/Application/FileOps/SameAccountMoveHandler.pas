@@ -10,7 +10,7 @@ interface
 uses
 	RealPath,
 	CloudMailRu,
-	IThreadStateManagerInterface,
+	ThreadStateManager,
 	DescriptionSyncGuard;
 
 type

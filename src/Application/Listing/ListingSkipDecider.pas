@@ -7,7 +7,7 @@ unit ListingSkipDecider;
 interface
 
 uses
-	IThreadStateManagerInterface,
+	ThreadStateManager,
 	IProgressInterface;
 
 type

@@ -8,7 +8,7 @@ interface
 uses
 	CloudMailRu,
 	RealPath,
-	IRetryHandlerInterface,
+	RetryHandler,
 	ILoggerInterface;
 
 type

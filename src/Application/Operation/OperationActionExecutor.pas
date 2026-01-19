@@ -8,9 +8,8 @@ unit OperationActionExecutor;
 interface
 
 uses
-	IOperationActionExecutorInterface,
-	IOperationLifecycleInterface,
-	IThreadStateManagerInterface,
+	OperationLifecycleHandler,
+	ThreadStateManager,
 	IPluginSettingsManagerInterface,
 	ILoggerInterface,
 	IConnectionManagerInterface,
@@ -21,6 +20,14 @@ uses
 	PLUGIN_TYPES;
 
 type
+	{Executes operation lifecycle actions determined by IOperationLifecycleHandler.
+	 Each action in the set triggers specific side effects (thread state changes,
+	 logging, description loading, etc.).}
+	IOperationActionExecutor = interface
+		['{8A3D1F92-E4B7-4C6A-9D5E-2F8B7A1C3E4D}']
+		procedure Execute(Actions: TOperationActions; const RealPath: TRealPath; Operation: Integer);
+	end;
+
 	TOperationActionExecutor = class(TInterfacedObject, IOperationActionExecutor)
 	private
 		FThreadState: IThreadStateManager;

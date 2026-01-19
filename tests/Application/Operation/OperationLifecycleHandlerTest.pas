@@ -5,7 +5,7 @@ interface
 uses
 	SysUtils,
 	PLUGIN_TYPES,
-	IOperationLifecycleInterface, OperationLifecycleHandler,
+	OperationLifecycleHandler,
 	DUnitX.TestFramework;
 
 type

@@ -7,7 +7,7 @@ interface
 uses
 	System.SysUtils,
 	DUnitX.TestFramework,
-	ICommandDispatcherInterface,
+	CommandDispatcher,
 	PLUGIN_TYPES;
 
 type

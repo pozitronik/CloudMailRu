@@ -17,7 +17,7 @@ unit DirectoryDeletionPreCheck;
 interface
 
 uses
-	IThreadStateManagerInterface;
+	ThreadStateManager;
 
 type
 	IDirectoryDeletionPreCheck = interface

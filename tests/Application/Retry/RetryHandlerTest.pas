@@ -10,11 +10,9 @@ uses
 	System.Classes,
 	System.Generics.Collections,
 	DUnitX.TestFramework,
-	IRetryHandlerInterface,
-	IThreadStateManagerInterface,
+	ThreadStateManager,
 	IPluginSettingsManagerInterface,
 	RetryHandler,
-	ThreadStateManager,
 	PluginSettings,
 	PLUGIN_TYPES,
 	SETTINGS_CONSTANTS;
