@@ -83,7 +83,9 @@ uses
 	IDescriptionSyncGuardInterface,
 	DescriptionSyncGuard,
 	ILocalFileDeletionHandlerInterface,
-	LocalFileDeletionHandler;
+	LocalFileDeletionHandler,
+	IDownloadSuccessHandlerInterface,
+	DownloadSuccessHandler;
 
 type
 	TMailRuCloudWFX = class(TInterfacedObject, IWFXInterface)
@@ -109,6 +111,7 @@ type
 		FCommandDispatcher: ICommandDispatcher;
 		FListingProvider: IListingProvider;
 		FLocalFileDeletionHandler: ILocalFileDeletionHandler;
+		FDownloadSuccessHandler: IDownloadSuccessHandler;
 
 		PluginNum: Integer;
 
@@ -259,6 +262,9 @@ begin
 			Result := MsgBox(ERR_DELETE_FILE_ASK, [FileName], ERR_DELETE_FILE, MB_ABORTRETRYIGNORE + MB_ICONQUESTION);
 		end
 	);
+
+	{Create download success handler for post-download operations}
+	FDownloadSuccessHandler := TDownloadSuccessHandler.Create(SettingsManager, TCLogger, TCProgress, FDescriptionSyncGuard);
 	Result := 0;
 end;
 
@@ -276,6 +282,7 @@ begin
 	FDescriptionSyncGuard := nil;
 	FDescriptionSync := nil;
 	FLocalFileDeletionHandler := nil;
+	FDownloadSuccessHandler := nil;
 	FreeAndNil(ConnectionManager);
 
 	CurrentDescriptions.Free;
@@ -1199,44 +1206,29 @@ end;
 function TMailRuCloudWFX.GetRemoteFile(RemotePath: TRealPath; LocalName, RemoteName: WideString; CopyFlags: Integer): Integer;
 var
 	getResult: Integer;
-	Item: TCMRDirItem;
 	Cloud: TCloudMailRu;
 	resultHash: WideString;
+	DownloadContext: TDownloadContext;
 begin
 	if (SettingsManager.Settings.CheckCRC) then
 		resultHash := EmptyWideStr
 	else
-		resultHash := 'dummy'; //calculations will be ignored if variable is not empty
+		resultHash := 'dummy'; {Calculations will be ignored if variable is not empty}
 	Cloud := ConnectionManager.Get(RemotePath.account, getResult);
 
 	Result := Cloud.getFile(WideString(RemotePath.Path), LocalName, resultHash);
 
 	if Result = FS_FILE_OK then
 	begin
-
-		Item := FindListingItemByPath(CurrentListing, RemotePath);
-		{Дополнительно проверим CRC скачанного файла}
-		if SettingsManager.Settings.CheckCRC then
-		begin
-			if (resultHash <> EmptyWideStr) and (Item.hash <> resultHash) then
-				exit(FS_FILE_READERROR);
-		end;
-
-		if SettingsManager.Settings.PreserveFileTime then
-		begin
-			if Item.mtime <> 0 then
-				SetAllFileTime(ExpandUNCFileName(LocalName), DateTimeToFileTime(UnixToDateTime(Item.mtime)));
-		end;
-		if CheckFlag(FS_COPYFLAGS_MOVE, CopyFlags) then
-		begin
-			Cloud.deleteFile(RemotePath.Path);
-			FDescriptionSyncGuard.OnFileDeleted(RemotePath, Cloud);
-		end;
-		TCProgress.Progress(PWideChar(LocalName), PWideChar(RemoteName), 100);
-		TCLogger.Log(LOG_LEVEL_FILE_OPERATION, MSGTYPE_TRANSFERCOMPLETE, '%s -> %s', [RemoteName, LocalName]);
-
-		FDescriptionSyncGuard.OnFileDownloaded(RemotePath, LocalName, Cloud);
-
+		{Build context and delegate to success handler}
+		DownloadContext.RemotePath := RemotePath;
+		DownloadContext.LocalName := LocalName;
+		DownloadContext.RemoteName := RemoteName;
+		DownloadContext.CopyFlags := CopyFlags;
+		DownloadContext.ResultHash := resultHash;
+		DownloadContext.Item := FindListingItemByPath(CurrentListing, RemotePath);
+		DownloadContext.Cloud := Cloud;
+		Result := FDownloadSuccessHandler.HandleSuccess(DownloadContext);
 	end;
 end;
 

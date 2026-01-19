@@ -213,7 +213,10 @@ uses
 	DescriptionSyncGuardTest in 'models\wfx\DescriptionSyncGuardTest.pas',
 	ILocalFileDeletionHandlerInterface in '..\src\models\wfx\ILocalFileDeletionHandlerInterface.pas',
 	LocalFileDeletionHandler in '..\src\models\wfx\LocalFileDeletionHandler.pas',
-	LocalFileDeletionHandlerTest in 'models\wfx\LocalFileDeletionHandlerTest.pas';
+	LocalFileDeletionHandlerTest in 'models\wfx\LocalFileDeletionHandlerTest.pas',
+	IDownloadSuccessHandlerInterface in '..\src\models\wfx\IDownloadSuccessHandlerInterface.pas',
+	DownloadSuccessHandler in '..\src\models\wfx\DownloadSuccessHandler.pas',
+	DownloadSuccessHandlerTest in 'models\wfx\DownloadSuccessHandlerTest.pas';
 
 {keep comment here to protect the following conditional from being removed by the IDE when adding a unit}
 {$IFNDEF TESTINSIGHT}
