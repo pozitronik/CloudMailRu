@@ -120,7 +120,9 @@ uses
 	IMoveOperationContextTrackerInterface,
 	MoveOperationContextTracker,
 	IDirectoryDeletionPreCheckInterface,
-	DirectoryDeletionPreCheck;
+	DirectoryDeletionPreCheck,
+	IUploadPreparationValidatorInterface,
+	UploadPreparationValidator;
 
 type
 	TMailRuCloudWFX = class(TInterfacedObject, IWFXInterface)
@@ -138,6 +140,7 @@ type
 		FThreadState: IThreadStateManager;
 		FMoveOperationTracker: IMoveOperationContextTracker;
 		FDirectoryDeletionPreCheck: IDirectoryDeletionPreCheck;
+		FUploadPreparationValidator: IUploadPreparationValidator;
 		FContentFieldProvider: IContentFieldProvider;
 		FIconProvider: IIconProvider;
 		FOperationLifecycle: IOperationLifecycleHandler;
@@ -255,6 +258,12 @@ begin
 	FThreadState := TThreadStateManager.Create;
 	FMoveOperationTracker := TMoveOperationContextTracker.Create(FThreadState);
 	FDirectoryDeletionPreCheck := TDirectoryDeletionPreCheck.Create(FThreadState);
+	FUploadPreparationValidator := TUploadPreparationValidator.Create(
+		function(const Path: WideString): Boolean
+		begin
+			Result := FileExists(Path);
+		end
+	);
 	FContentFieldProvider := TContentFieldProvider.Create;
 	FIconProvider := TIconProvider.Create;
 	FOperationLifecycle := TOperationLifecycleHandler.Create;
@@ -873,6 +882,7 @@ begin
 		exit(false);
 
 	Result := ConnectionManager.Get(RealPath.account, getResult).createDir(RealPath.Path);
+	{Need to check operation context => directory can be moved}
 	if Result and FMoveOperationTracker.IsMoveOperation then
 		FMoveOperationTracker.TrackMoveTarget(RealPath);
 end;
@@ -881,26 +891,24 @@ function TMailRuCloudWFX.FsPutFile(LocalName, RemoteName: WideString; CopyFlags:
 var
 	RealPath: TRealPath;
 	getResult: Integer;
+	ValidationResult: TUploadValidationResult;
 begin
 	RealPath.FromPath(RemoteName);
-	if not FileExists(GetUNCFilePath(LocalName)) then
-		exit(FS_FILE_NOTFOUND);
 
-	if RealPath.isAccountEmpty or RealPath.isVirtual then
-		exit(FS_FILE_NOTSUPPORTED);
+	{Validate upload preconditions}
+	ValidationResult := FUploadPreparationValidator.Validate(LocalName, RealPath, CopyFlags);
+	if not ValidationResult.ShouldProceed then
+		Exit(ValidationResult.ResultCode);
+
 	TCProgress.Progress(LocalName, PWideChar(RealPath.Path), 0);
 
-	if CheckFlag(FS_COPYFLAGS_RESUME, CopyFlags) then
-		exit(FS_FILE_NOTSUPPORTED); //NOT SUPPORTED
-
-	if (CheckFlag(FS_COPYFLAGS_EXISTS_SAMECASE, CopyFlags) or CheckFlag(FS_COPYFLAGS_EXISTS_DIFFERENTCASE, CopyFlags)) and not(CheckFlag(FS_COPYFLAGS_OVERWRITE, CopyFlags)) then
-		exit(FS_FILE_EXISTS); //Облако не поддерживает разные регистры
-
-	if CheckFlag(FS_COPYFLAGS_OVERWRITE, CopyFlags) then
+	{Don't know how to overwrite file via API, but we can delete it first}
+	if ValidationResult.RequiresOverwrite then
 	begin
-		if not(ConnectionManager.Get(RealPath.account, getResult).deleteFile(RealPath.Path)) then
-			exit(FS_FILE_NOTSUPPORTED); //Неизвестно, как перезаписать файл черз API, но мы можем его удалить
+		if not ConnectionManager.Get(RealPath.account, getResult).deleteFile(RealPath.Path) then
+			Exit(FS_FILE_NOTSUPPORTED);
 	end;
+
 	Result := PutRemoteFile(RealPath, LocalName, RemoteName, CopyFlags);
 
 	if Result <> FS_FILE_WRITEERROR then

@@ -32,7 +32,8 @@ end;
 
 function TDirectoryDeletionPreCheck.ShouldProceed(const RemoteName: WideString): Boolean;
 begin
-	{Check if path is in the skip list (partial delete handling)}
+	{Файлы по удаляемому пути есть в блек-листе}
+	{Files at the path being deleted are in the blacklist (issue #168)}
 	if FThreadState.IsPathSkipped(RemoteName) then
 		Exit(False);
 

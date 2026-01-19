@@ -164,7 +164,9 @@ uses
 	IMoveOperationContextTrackerInterface in 'src\models\wfx\IMoveOperationContextTrackerInterface.pas',
 	MoveOperationContextTracker in 'src\models\wfx\MoveOperationContextTracker.pas',
 	IDirectoryDeletionPreCheckInterface in 'src\models\wfx\IDirectoryDeletionPreCheckInterface.pas',
-	DirectoryDeletionPreCheck in 'src\models\wfx\DirectoryDeletionPreCheck.pas';
+	DirectoryDeletionPreCheck in 'src\models\wfx\DirectoryDeletionPreCheck.pas',
+	IUploadPreparationValidatorInterface in 'src\models\wfx\IUploadPreparationValidatorInterface.pas',
+	UploadPreparationValidator in 'src\models\wfx\UploadPreparationValidator.pas';
 
 {$IFDEF WIN64}
 {$E wfx64}

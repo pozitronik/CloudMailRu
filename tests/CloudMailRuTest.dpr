@@ -267,7 +267,10 @@ uses
 	MoveOperationContextTrackerTest in 'models\wfx\MoveOperationContextTrackerTest.pas',
 	IDirectoryDeletionPreCheckInterface in '..\src\models\wfx\IDirectoryDeletionPreCheckInterface.pas',
 	DirectoryDeletionPreCheck in '..\src\models\wfx\DirectoryDeletionPreCheck.pas',
-	DirectoryDeletionPreCheckTest in 'models\wfx\DirectoryDeletionPreCheckTest.pas';
+	DirectoryDeletionPreCheckTest in 'models\wfx\DirectoryDeletionPreCheckTest.pas',
+	IUploadPreparationValidatorInterface in '..\src\models\wfx\IUploadPreparationValidatorInterface.pas',
+	UploadPreparationValidator in '..\src\models\wfx\UploadPreparationValidator.pas',
+	UploadPreparationValidatorTest in 'models\wfx\UploadPreparationValidatorTest.pas';
 
 {keep comment here to protect the following conditional from being removed by the IDE when adding a unit}
 {$IFNDEF TESTINSIGHT}
