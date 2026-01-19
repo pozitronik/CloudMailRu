@@ -64,7 +64,9 @@ uses
 	IConfigFileInterface,
 	IniConfigFile,
 	IThreadStateManagerInterface,
-	ThreadStateManager;
+	ThreadStateManager,
+	IContentFieldProviderInterface,
+	ContentFieldProvider;
 
 type
 	TMailRuCloudWFX = class(TInterfacedObject, IWFXInterface)
@@ -81,6 +83,7 @@ type
 		FileCounter: Integer;
 		CurrentlyMovedDir: TRealPath;
 		FThreadState: IThreadStateManager;
+		FContentFieldProvider: IContentFieldProvider;
 
 		PluginNum: Integer;
 
@@ -185,6 +188,7 @@ begin
 
 	IsMultiThread := not(SettingsManager.Settings.DisableMultiThreading);
 	FThreadState := TThreadStateManager.Create;
+	FContentFieldProvider := TContentFieldProvider.Create;
 
 	AccountSettings := TAccountsManager.Create(TIniConfigFile.Create(SettingsManager.AccountsIniFilePath));
 	FFileSystem := TWindowsFileSystem.Create;
@@ -591,245 +595,38 @@ end;
 
 function TMailRuCloudWFX.FsContentGetSupportedField(FieldIndex: Integer; FieldName, Units: PAnsiChar; MaxLen: Integer): Integer;
 begin
-	Result := ft_nomorefields;
-	case FieldIndex of
-		0:
-			begin
-				System.AnsiStrings.strpcopy(FieldName, 'tree');
-				Result := ft_stringw;
-			end;
-		1:
-			begin
-				System.AnsiStrings.strpcopy(FieldName, 'name');
-				Result := ft_stringw;
-			end;
-		2:
-			begin
-				System.AnsiStrings.strpcopy(FieldName, 'grev');
-				Result := ft_numeric_32;
-			end;
-		3:
-			begin
-				System.AnsiStrings.strpcopy(FieldName, 'size');
-				Result := ft_numeric_64;
-			end;
-		4:
-			begin
-				System.AnsiStrings.strpcopy(FieldName, 'kind');
-				Result := ft_stringw;
-			end;
-		5:
-			begin
-				System.AnsiStrings.strpcopy(FieldName, 'weblink');
-				Result := ft_stringw;
-			end;
-		6:
-			begin
-				System.AnsiStrings.strpcopy(FieldName, 'rev');
-				Result := ft_numeric_32;
-			end;
-		7:
-			begin
-				System.AnsiStrings.strpcopy(FieldName, 'type');
-				Result := ft_stringw;
-			end;
-		8:
-			begin
-				System.AnsiStrings.strpcopy(FieldName, 'home');
-				Result := ft_stringw;
-			end;
-		9:
-			begin
-				System.AnsiStrings.strpcopy(FieldName, 'mtime');
-				Result := ft_datetime;
-			end;
-		10:
-			begin
-				System.AnsiStrings.strpcopy(FieldName, 'hash');
-				Result := ft_stringw;
-			end;
-		11:
-			begin
-				System.AnsiStrings.strpcopy(FieldName, 'virus_scan');
-				Result := ft_stringw;
-			end;
-		12:
-			begin
-				System.AnsiStrings.strpcopy(FieldName, 'folders_count');
-				Result := ft_numeric_32;
-			end;
-		13:
-			begin
-				System.AnsiStrings.strpcopy(FieldName, 'files_count');
-				Result := ft_numeric_32;
-			end;
-		14:
-			begin
-				System.AnsiStrings.strpcopy(FieldName, 'description');
-				Result := ft_stringw;
-			end;
-		15:
-			begin
-				System.AnsiStrings.strpcopy(FieldName, 'deleted_at');
-				Result := ft_datetime;
-			end;
-		16:
-			begin
-				System.AnsiStrings.strpcopy(FieldName, 'deleted_from');
-				Result := ft_stringw;
-			end;
-		17:
-			begin
-				System.AnsiStrings.strpcopy(FieldName, 'deleted_by');
-				Result := ft_stringw;
-			end;
-	end;
+	Result := FContentFieldProvider.GetSupportedField(FieldIndex, FieldName, MaxLen);
 end;
 
 function TMailRuCloudWFX.FsContentGetValue(FileName: PWideChar; FieldIndex, UnitIndex: Integer; FieldValue: Pointer; MaxLen, Flags: Integer): Integer;
 var
 	Item: TCMRDirItem;
 	RealPath: TRealPath;
-	FileTime: TFileTime;
+	Context: TContentFieldContext;
 begin
-	Result := ft_nosuchfield;
 	RealPath.FromPath(FileName);
-	if RealPath.isInAccountsList then
+
+	{ Build context for the provider }
+	Context.IsAccountRoot := RealPath.isInAccountsList;
+	Context.DescriptionsEnabled := SettingsManager.Settings.DescriptionEnabled;
+	if Context.IsAccountRoot then
+		Context.AccountDescription := AccountSettings.GetAccountSettings(RealPath.account).Description
+	else
+		Context.AccountDescription := '';
+
+	{ Account root only supports description field via context }
+	if Context.IsAccountRoot then
 	begin
-		if FieldIndex = 14 then
-		begin
-			strpcopy(FieldValue, AccountSettings.GetAccountSettings(RealPath.account).Description);
-			exit(ft_stringw);
-		end
-		else
-			exit(ft_nosuchfield);
+		Item := Default(TCMRDirItem);
+		Result := FContentFieldProvider.GetValue(FieldIndex, Item, FieldValue, Context);
+		exit;
 	end;
 
+	{ Find the item for regular paths }
 	Item := FindListingItemByPath(CurrentListing, RealPath, not RealPath.invitesDir);
-	//if Item.home = '' then exit(ft_nosuchfield);
+	Context.FileDescription := CurrentDescriptions.GetValue(Item.name);
 
-	case FieldIndex of
-		0:
-			begin
-				if Item.mtime <> 0 then
-					exit(ft_nosuchfield);
-				strpcopy(FieldValue, Item.tree);
-				Result := ft_stringw;
-			end;
-		1:
-			begin
-				strpcopy(FieldValue, Item.name);
-				Result := ft_stringw;
-			end;
-		2:
-			begin
-				if Item.mtime <> 0 then
-					exit(ft_nosuchfield);
-				Move(Item.grev, FieldValue^, sizeof(Item.grev));
-				Result := ft_numeric_32;
-			end;
-		3:
-			begin
-				Move(Item.size, FieldValue^, sizeof(Item.size));
-				Result := ft_numeric_64;
-			end;
-		4:
-			begin
-				strpcopy(FieldValue, Item.kind);
-				Result := ft_stringw;
-			end;
-		5:
-			begin
-				strpcopy(FieldValue, Item.weblink);
-				Result := ft_stringw;
-			end;
-		6:
-			begin
-				if Item.mtime <> 0 then
-					exit(ft_nosuchfield);
-				Move(Item.rev, FieldValue^, sizeof(Item.rev));
-				Result := ft_numeric_32;
-			end;
-		7:
-			begin
-				strpcopy(FieldValue, Item.type_);
-				Result := ft_stringw;
-			end;
-		8:
-			begin
-				strpcopy(FieldValue, Item.home);
-				Result := ft_stringw;
-			end;
-		9:
-			begin
-				if Item.mtime = 0 then
-					exit(ft_nosuchfield);
-				FileTime.dwHighDateTime := 0;
-				FileTime.dwLowDateTime := 0;
-				FileTime := DateTimeToFileTime(UnixToDateTime(Item.mtime));
-				Move(FileTime, FieldValue^, sizeof(FileTime));
-				Result := ft_datetime;
-			end;
-		10:
-			begin
-				strpcopy(FieldValue, Item.hash);
-				Result := ft_stringw;
-			end;
-		11:
-			begin
-				strpcopy(FieldValue, Item.virus_scan);
-				Result := ft_stringw;
-			end;
-		12:
-			begin
-				if Item.type_ = TYPE_FILE then
-					exit(ft_nosuchfield);
-				Move(Item.folders_count, FieldValue^, sizeof(Item.folders_count));
-				Result := ft_numeric_32;
-			end;
-		13:
-			begin
-				if Item.type_ = TYPE_FILE then
-					exit(ft_nosuchfield);
-				Move(Item.files_count, FieldValue^, sizeof(Item.files_count));
-				Result := ft_numeric_32;
-			end;
-		14:
-			begin
-				//При включённой сортировке Запрос происходит при появлении в списке
-				if SettingsManager.Settings.DescriptionEnabled then
-				begin
-					strpcopy(FieldValue, CurrentDescriptions.GetValue(Item.name));
-				end else begin
-					strpcopy(FieldValue, '<disabled>');
-				end;
-				Result := ft_stringw;
-			end;
-		15:
-			begin
-				if Item.deleted_at = 0 then
-					exit(ft_nosuchfield);
-				FileTime.dwHighDateTime := 0;
-				FileTime.dwLowDateTime := 0;
-				FileTime := DateTimeToFileTime(UnixToDateTime(Item.deleted_at));
-				Move(FileTime, FieldValue^, sizeof(FileTime));
-				Result := ft_datetime;
-			end;
-		16:
-			begin
-				if Item.deleted_from = EmptyWideStr then
-					exit(ft_nosuchfield);
-				strpcopy(FieldValue, Item.deleted_from);
-				Result := ft_stringw;
-			end;
-		17:
-			begin
-				if Item.deleted_by = 0 then
-					exit(ft_nosuchfield);
-				strpcopy(FieldValue, Item.deleted_by.ToString); //display user id as is, because no conversation api method performed
-				Result := ft_stringw;
-			end;
-	end;
+	Result := FContentFieldProvider.GetValue(FieldIndex, Item, FieldValue, Context);
 end;
 
 function TMailRuCloudWFX.FsDeleteFile(RemoteName: WideString): Boolean;

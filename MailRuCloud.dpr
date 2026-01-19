@@ -108,7 +108,9 @@ uses
 	TwoStepAuthStrategy in 'src\models\auth\TwoStepAuthStrategy.pas',
 	OldOAuthStrategy in 'src\models\auth\OldOAuthStrategy.pas',
 	IThreadStateManagerInterface in 'src\models\wfx\IThreadStateManagerInterface.pas',
-	ThreadStateManager in 'src\models\wfx\ThreadStateManager.pas';
+	ThreadStateManager in 'src\models\wfx\ThreadStateManager.pas',
+	IContentFieldProviderInterface in 'src\models\wfx\IContentFieldProviderInterface.pas',
+	ContentFieldProvider in 'src\models\wfx\ContentFieldProvider.pas';
 
 {$IFDEF WIN64}
 {$E wfx64}

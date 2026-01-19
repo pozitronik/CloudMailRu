@@ -183,7 +183,10 @@ uses
 	CloudMailRuPutFileSplitTest in 'models\CloudMailRuPutFileSplitTest.pas',
 	IThreadStateManagerInterface in '..\src\models\wfx\IThreadStateManagerInterface.pas',
 	ThreadStateManager in '..\src\models\wfx\ThreadStateManager.pas',
-	ThreadStateManagerTest in 'models\wfx\ThreadStateManagerTest.pas';
+	ThreadStateManagerTest in 'models\wfx\ThreadStateManagerTest.pas',
+	IContentFieldProviderInterface in '..\src\models\wfx\IContentFieldProviderInterface.pas',
+	ContentFieldProvider in '..\src\models\wfx\ContentFieldProvider.pas',
+	ContentFieldProviderTest in 'models\wfx\ContentFieldProviderTest.pas';
 
 {keep comment here to protect the following conditional from being removed by the IDE when adding a unit}
 {$IFNDEF TESTINSIGHT}
