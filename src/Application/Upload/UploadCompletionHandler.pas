@@ -10,7 +10,7 @@ uses
 	ILoggerInterface,
 	IProgressInterface,
 	LocalFileDeletionHandler,
-	IDescriptionSyncGuardInterface,
+	DescriptionSyncGuard,
 	PLUGIN_TYPES,
 	CMRConstants,
 	RealPath,

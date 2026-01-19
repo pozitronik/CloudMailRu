@@ -8,12 +8,11 @@ interface
 uses
 	System.SysUtils,
 	DUnitX.TestFramework,
-	IDescriptionSyncGuardInterface,
-	IDescriptionSyncManagerInterface,
+	DescriptionSyncGuard,
+	DescriptionSyncManager,
 	IPluginSettingsManagerInterface,
 	IAccountsManagerInterface,
-	ICloudDescriptionOpsInterface,
-	DescriptionSyncGuard,
+	CloudDescriptionOpsAdapter,
 	PluginSettings,
 	AccountSettings,
 	RealPath;

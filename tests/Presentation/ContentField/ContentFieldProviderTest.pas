@@ -5,7 +5,6 @@ interface
 uses
 	Windows, SysUtils, AnsiStrings,
 	CMRDirItem, CMRConstants, PLUGIN_TYPES,
-	IContentFieldProviderInterface,
 	ContentFieldProvider,
 	DUnitX.TestFramework;
 

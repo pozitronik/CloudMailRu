@@ -12,7 +12,7 @@ uses
 	CloudMailRu,
 	PLUGIN_TYPES,
 	IThreadStateManagerInterface,
-	IDescriptionSyncGuardInterface,
+	DescriptionSyncGuard,
 	SameAccountMoveHandler;
 
 type

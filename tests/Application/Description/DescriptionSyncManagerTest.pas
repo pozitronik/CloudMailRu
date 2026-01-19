@@ -12,8 +12,7 @@ uses
 	RealPath,
 	Description,
 	IFileSystemInterface,
-	ICloudDescriptionOpsInterface,
-	IDescriptionSyncManagerInterface,
+	CloudDescriptionOpsAdapter,
 	DescriptionSyncManager,
 	WindowsFileSystem,
 	MockCloudDescriptionOps;

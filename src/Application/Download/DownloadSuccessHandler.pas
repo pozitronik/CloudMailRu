@@ -13,7 +13,7 @@ uses
 	IPluginSettingsManagerInterface,
 	ILoggerInterface,
 	IProgressInterface,
-	IDescriptionSyncGuardInterface,
+	DescriptionSyncGuard,
 	PLUGIN_TYPES,
 	CMRConstants,
 	RealPath,

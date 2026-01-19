@@ -11,7 +11,7 @@ uses
 	RealPath,
 	CloudMailRu,
 	IThreadStateManagerInterface,
-	IDescriptionSyncGuardInterface;
+	DescriptionSyncGuard;
 
 type
 	ISameAccountMoveHandler = interface

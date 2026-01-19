@@ -12,7 +12,7 @@ uses
 	ILoggerInterface,
 	IProgressInterface,
 	LocalFileDeletionHandler,
-	IDescriptionSyncGuardInterface,
+	DescriptionSyncGuard,
 	RealPath,
 	CloudMailRu,
 	PLUGIN_TYPES;
