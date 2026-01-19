@@ -101,7 +101,9 @@ uses
 	IListingItemFetcherInterface,
 	ListingItemFetcher,
 	ISharedItemDeletionHandlerInterface,
-	SharedItemDeletionHandler;
+	SharedItemDeletionHandler,
+	IAccountRegistrationHandlerInterface,
+	AccountRegistrationHandler;
 
 type
 	TMailRuCloudWFX = class(TInterfacedObject, IWFXInterface)
@@ -136,6 +138,7 @@ type
 		FLocalFileConflictResolver: ILocalFileConflictResolver;
 		FListingItemFetcher: IListingItemFetcher;
 		FSharedItemDeletionHandler: ISharedItemDeletionHandler;
+		FAccountRegistrationHandler: IAccountRegistrationHandler;
 
 		PluginNum: Integer;
 
@@ -312,6 +315,9 @@ begin
 
 	{Create shared item deletion handler for FsDeleteFile}
 	FSharedItemDeletionHandler := TSharedItemDeletionHandler.Create;
+
+	{Create account registration handler for FsMkDir}
+	FAccountRegistrationHandler := TAccountRegistrationHandler.Create(AccountSettings, PasswordManager);
 	Result := 0;
 end;
 
@@ -338,6 +344,7 @@ begin
 	FLocalFileConflictResolver := nil;
 	FListingItemFetcher := nil;
 	FSharedItemDeletionHandler := nil;
+	FAccountRegistrationHandler := nil;
 	FreeAndNil(ConnectionManager);
 
 	CurrentDescriptions.Free;
@@ -871,7 +878,6 @@ var
 	getResult: Integer;
 	SkipListRenMov: Boolean;
 	OperationContextId: Integer;
-	RegisteredAccount: TAccountSettings;
 begin
 	SkipListRenMov := FThreadState.GetSkipListRenMov;
 	if SkipListRenMov then
@@ -880,16 +886,11 @@ begin
 	RealPath.FromPath(WideString(Path));
 	if RealPath.isInAccountsList then //accounts list
 	begin
-		RegisteredAccount := AccountSettings.GetAccountSettings(RealPath.account);
-
-		Result := (mrOk = TRegistrationForm.ShowRegistration(FindTCWindow, SettingsManager.Settings.ConnectionSettings, RegisteredAccount));
-		if Result then
-		begin
-			if RegisteredAccount.UseTCPasswordManager then //просим TC сохранить пароль
-				Result := FS_FILE_OK = PasswordManager.SetPassword(RealPath.account, RegisteredAccount.password);
-			if Result then
-				AccountSettings.SetAccountSettings(RealPath.account, RegisteredAccount);
-		end;
+		Result := FAccountRegistrationHandler.Execute(FindTCWindow, RealPath.account, SettingsManager.Settings.ConnectionSettings,
+			function(ParentWindow: HWND; ConnSettings: TConnectionSettings; var AccSettings: TAccountSettings): Integer
+			begin
+				Result := TRegistrationForm.ShowRegistration(ParentWindow, ConnSettings, AccSettings);
+			end);
 		exit();
 	end;
 	if (RealPath.isAccountEmpty) or RealPath.isVirtual then

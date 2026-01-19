@@ -11,6 +11,7 @@ type
 	IAccountsManager = interface
 		['{7B8C9D0E-1F2A-3B4C-5D6E-7F8A9B0C1D2E}']
 		function GetAccountSettings(Account: WideString): TAccountSettings;
+		procedure SetAccountSettings(Account: WideString; AccountSettings: TAccountSettings);
 		procedure SwitchPasswordStorage(Account: WideString);
 		procedure SetCryptedGUID(Account: WideString; GUID: WideString);
 	end;
@@ -19,6 +20,7 @@ type
 	TNullAccountsManager = class(TInterfacedObject, IAccountsManager)
 	public
 		function GetAccountSettings(Account: WideString): TAccountSettings;
+		procedure SetAccountSettings(Account: WideString; AccountSettings: TAccountSettings);
 		procedure SwitchPasswordStorage(Account: WideString);
 		procedure SetCryptedGUID(Account: WideString; GUID: WideString);
 	end;
@@ -31,6 +33,11 @@ function TNullAccountsManager.GetAccountSettings(Account: WideString): TAccountS
 begin
 	Result := Default(TAccountSettings);
 	Result.Account := Account;
+end;
+
+procedure TNullAccountsManager.SetAccountSettings(Account: WideString; AccountSettings: TAccountSettings);
+begin
+	{No-op for null implementation}
 end;
 
 procedure TNullAccountsManager.SwitchPasswordStorage(Account: WideString);

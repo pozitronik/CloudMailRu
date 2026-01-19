@@ -240,7 +240,10 @@ uses
 	ListingItemFetcherTest in 'models\wfx\ListingItemFetcherTest.pas',
 	ISharedItemDeletionHandlerInterface in '..\src\models\wfx\ISharedItemDeletionHandlerInterface.pas',
 	SharedItemDeletionHandler in '..\src\models\wfx\SharedItemDeletionHandler.pas',
-	SharedItemDeletionHandlerTest in 'models\wfx\SharedItemDeletionHandlerTest.pas';
+	SharedItemDeletionHandlerTest in 'models\wfx\SharedItemDeletionHandlerTest.pas',
+	IAccountRegistrationHandlerInterface in '..\src\models\wfx\IAccountRegistrationHandlerInterface.pas',
+	AccountRegistrationHandler in '..\src\models\wfx\AccountRegistrationHandler.pas',
+	AccountRegistrationHandlerTest in 'models\wfx\AccountRegistrationHandlerTest.pas';
 
 {keep comment here to protect the following conditional from being removed by the IDE when adding a unit}
 {$IFNDEF TESTINSIGHT}

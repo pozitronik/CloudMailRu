@@ -29,14 +29,17 @@ type
 		FAccountSettings: TAccountSettings;
 		FSwitchPasswordStorageCalled: Boolean;
 		FSetCryptedGUIDCalled: Boolean;
+		FSetAccountSettingsCalled: Boolean;
 		FLastCryptedGUID: WideString;
 	public
 		constructor Create;
 		function GetAccountSettings(Account: WideString): TAccountSettings;
+		procedure SetAccountSettings(Account: WideString; Settings: TAccountSettings);
 		procedure SwitchPasswordStorage(Account: WideString);
 		procedure SetCryptedGUID(Account: WideString; GUID: WideString);
 		property AccountSettings: TAccountSettings read FAccountSettings write FAccountSettings;
 		property SwitchPasswordStorageCalled: Boolean read FSwitchPasswordStorageCalled;
+		property SetAccountSettingsCalled: Boolean read FSetAccountSettingsCalled;
 		property SetCryptedGUIDCalled: Boolean read FSetCryptedGUIDCalled;
 		property LastCryptedGUID: WideString read FLastCryptedGUID;
 	end;
@@ -132,6 +135,12 @@ function TMockAccountsManager.GetAccountSettings(Account: WideString): TAccountS
 begin
 	FAccountSettings.Account := Account;
 	Result := FAccountSettings;
+end;
+
+procedure TMockAccountsManager.SetAccountSettings(Account: WideString; Settings: TAccountSettings);
+begin
+	FSetAccountSettingsCalled := True;
+	FAccountSettings := Settings;
 end;
 
 procedure TMockAccountsManager.SwitchPasswordStorage(Account: WideString);

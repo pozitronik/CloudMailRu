@@ -60,6 +60,7 @@ type
 	public
 		constructor Create;
 		function GetAccountSettings(Account: WideString): TAccountSettings;
+		procedure SetAccountSettings(Account: WideString; Settings: TAccountSettings);
 		procedure SwitchPasswordStorage(Account: WideString);
 		procedure SetCryptedGUID(Account: WideString; GUID: WideString);
 
@@ -206,6 +207,10 @@ begin
 		Result.EncryptFilesMode := 1; {Any non-zero mode}
 		Result.EncryptFileNames := True; {Combined with non-zero mode makes IsRemoteDescriptionsSupported = False}
 	end;
+end;
+
+procedure TMockAccountsManager.SetAccountSettings(Account: WideString; Settings: TAccountSettings);
+begin
 end;
 
 procedure TMockAccountsManager.SwitchPasswordStorage(Account: WideString);

@@ -146,7 +146,9 @@ uses
 	IListingItemFetcherInterface in 'src\models\wfx\IListingItemFetcherInterface.pas',
 	ListingItemFetcher in 'src\models\wfx\ListingItemFetcher.pas',
 	ISharedItemDeletionHandlerInterface in 'src\models\wfx\ISharedItemDeletionHandlerInterface.pas',
-	SharedItemDeletionHandler in 'src\models\wfx\SharedItemDeletionHandler.pas';
+	SharedItemDeletionHandler in 'src\models\wfx\SharedItemDeletionHandler.pas',
+	IAccountRegistrationHandlerInterface in 'src\models\wfx\IAccountRegistrationHandlerInterface.pas',
+	AccountRegistrationHandler in 'src\models\wfx\AccountRegistrationHandler.pas';
 
 {$IFDEF WIN64}
 {$E wfx64}
