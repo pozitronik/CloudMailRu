@@ -126,7 +126,9 @@ uses
 	IListingProviderInterface in 'src\models\wfx\IListingProviderInterface.pas',
 	ListingProvider in 'src\models\wfx\ListingProvider.pas',
 	IDescriptionSyncGuardInterface in 'src\models\wfx\IDescriptionSyncGuardInterface.pas',
-	DescriptionSyncGuard in 'src\models\wfx\DescriptionSyncGuard.pas';
+	DescriptionSyncGuard in 'src\models\wfx\DescriptionSyncGuard.pas',
+	ILocalFileDeletionHandlerInterface in 'src\models\wfx\ILocalFileDeletionHandlerInterface.pas',
+	LocalFileDeletionHandler in 'src\models\wfx\LocalFileDeletionHandler.pas';
 
 {$IFDEF WIN64}
 {$E wfx64}

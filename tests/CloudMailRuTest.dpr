@@ -210,7 +210,10 @@ uses
 	ListingProviderTest in 'models\wfx\ListingProviderTest.pas',
 	IDescriptionSyncGuardInterface in '..\src\models\wfx\IDescriptionSyncGuardInterface.pas',
 	DescriptionSyncGuard in '..\src\models\wfx\DescriptionSyncGuard.pas',
-	DescriptionSyncGuardTest in 'models\wfx\DescriptionSyncGuardTest.pas';
+	DescriptionSyncGuardTest in 'models\wfx\DescriptionSyncGuardTest.pas',
+	ILocalFileDeletionHandlerInterface in '..\src\models\wfx\ILocalFileDeletionHandlerInterface.pas',
+	LocalFileDeletionHandler in '..\src\models\wfx\LocalFileDeletionHandler.pas',
+	LocalFileDeletionHandlerTest in 'models\wfx\LocalFileDeletionHandlerTest.pas';
 
 {keep comment here to protect the following conditional from being removed by the IDE when adding a unit}
 {$IFNDEF TESTINSIGHT}

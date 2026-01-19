@@ -81,7 +81,9 @@ uses
 	IListingProviderInterface,
 	ListingProvider,
 	IDescriptionSyncGuardInterface,
-	DescriptionSyncGuard;
+	DescriptionSyncGuard,
+	ILocalFileDeletionHandlerInterface,
+	LocalFileDeletionHandler;
 
 type
 	TMailRuCloudWFX = class(TInterfacedObject, IWFXInterface)
@@ -106,6 +108,7 @@ type
 		FRetryHandler: IRetryHandler;
 		FCommandDispatcher: ICommandDispatcher;
 		FListingProvider: IListingProvider;
+		FLocalFileDeletionHandler: ILocalFileDeletionHandler;
 
 		PluginNum: Integer;
 
@@ -236,64 +239,32 @@ begin
 			Logger.Log(LogLevel, MsgType, Msg, Args);
 		end
 	);
+
+	{Create local file deletion handler with callbacks for file operations and user dialogs}
+	FLocalFileDeletionHandler := TLocalFileDeletionHandler.Create(SettingsManager, TCLogger,
+		function(const Path: WideString): Boolean
+		begin
+			Result := DeleteFileW(PWideChar(Path));
+		end,
+		function(const Path: WideString): Integer
+		begin
+			Result := FileGetAttr(Path);
+		end,
+		function(const Path: WideString; Attr: Integer): Boolean
+		begin
+			Result := FileSetAttr(Path, Attr) = 0; {FileSetAttr returns 0 on success}
+		end,
+		function(const FileName: WideString): Integer
+		begin
+			Result := MsgBox(ERR_DELETE_FILE_ASK, [FileName], ERR_DELETE_FILE, MB_ABORTRETRYIGNORE + MB_ICONQUESTION);
+		end
+	);
 	Result := 0;
 end;
 
 function TMailRuCloudWFX.DeleteLocalFile(LocalName: WideString): Integer;
-var
-	UNCLocalName: WideString;
-	DeleteFailOnUploadMode, DeleteFailOnUploadModeAsked: Integer;
 begin
-	Result := FS_FILE_OK;
-	DeleteFailOnUploadModeAsked := IDRETRY;
-	UNCLocalName := GetUNCFilePath(LocalName);
-
-	while (not DeleteFileW(PWideChar(UNCLocalName))) and (DeleteFailOnUploadModeAsked = IDRETRY) do
-	begin
-		DeleteFailOnUploadMode := SettingsManager.Settings.DeleteFailOnUploadMode;
-		if DeleteFailOnUploadMode = DeleteFailOnUploadAsk then
-		begin
-			DeleteFailOnUploadModeAsked := MsgBox(ERR_DELETE_FILE_ASK, [LocalName], ERR_DELETE_FILE, MB_ABORTRETRYIGNORE + MB_ICONQUESTION);
-			case DeleteFailOnUploadModeAsked of
-				IDRETRY:
-					continue;
-				IDABORT:
-					DeleteFailOnUploadMode := DeleteFailOnUploadAbort;
-				IDIGNORE:
-					DeleteFailOnUploadMode := DeleteFailOnUploadIgnore;
-			end;
-		end;
-
-		case DeleteFailOnUploadMode of
-			DeleteFailOnUploadAbort:
-				begin
-					TCLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_IMPORTANTERROR, ERR_DELETE_FILE_ABORT, [LocalName]);
-					exit(FS_FILE_NOTSUPPORTED);
-				end;
-			DeleteFailOnUploadDeleteIgnore, DeleteFailOnUploadDeleteAbort:
-				begin
-					//check if file just have RO attr, then remove it. If user has lack of rights, then ignore or abort
-					if ((FileGetAttr(UNCLocalName) or faReadOnly) <> 0) and ((FileSetAttr(UNCLocalName, not faReadOnly) = 0) and (DeleteFileW(PWideChar(UNCLocalName)))) then
-					begin
-						TCLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_IMPORTANTERROR, ERR_DELETE_FILE_DELETE, [LocalName]);
-						exit(FS_FILE_OK);
-					end else begin
-						if SettingsManager.Settings.DeleteFailOnUploadMode = DeleteFailOnUploadDeleteIgnore then
-						begin
-							TCLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_IMPORTANTERROR, ERR_DELETE_FILE_IGNORE, [LocalName]);
-							exit(FS_FILE_OK);
-						end else begin
-							TCLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_IMPORTANTERROR, ERR_DELETE_FILE_ABORT, [LocalName]);
-							exit(FS_FILE_NOTSUPPORTED);
-						end;
-					end;
-				end;
-			else
-				begin
-					TCLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_IMPORTANTERROR, ERR_DELETE_FILE_IGNORE, [LocalName]);
-				end;
-		end;
-	end;
+	Result := FLocalFileDeletionHandler.DeleteLocalFile(LocalName);
 end;
 
 destructor TMailRuCloudWFX.Destroy;
@@ -304,6 +275,7 @@ begin
 	FListingProvider := nil;
 	FDescriptionSyncGuard := nil;
 	FDescriptionSync := nil;
+	FLocalFileDeletionHandler := nil;
 	FreeAndNil(ConnectionManager);
 
 	CurrentDescriptions.Free;
