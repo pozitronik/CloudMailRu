@@ -13,7 +13,6 @@ uses
 	CMRConstants,
 	StreamingSettings,
 	PLUGIN_TYPES,
-	IFileStreamExecutorInterface,
 	FileStreamExecutor;
 
 type

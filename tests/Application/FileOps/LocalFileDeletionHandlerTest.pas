@@ -9,7 +9,6 @@ uses
 	Windows,
 	SysUtils,
 	DUnitX.TestFramework,
-	ILocalFileDeletionHandlerInterface,
 	IPluginSettingsManagerInterface,
 	ILoggerInterface,
 	LocalFileDeletionHandler,

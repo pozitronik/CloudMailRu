@@ -11,7 +11,7 @@ uses
 	UploadCompletionHandler,
 	ILoggerInterface,
 	IProgressInterface,
-	ILocalFileDeletionHandlerInterface,
+	LocalFileDeletionHandler,
 	IDescriptionSyncGuardInterface,
 	RealPath,
 	CloudMailRu,

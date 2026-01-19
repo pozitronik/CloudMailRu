@@ -11,7 +11,6 @@ uses
 	CMRConstants,
 	CloudMailRu,
 	CloudSettings,
-	ISharedItemDeletionHandlerInterface,
 	IAuthStrategyInterface,
 	IFileSystemInterface,
 	ILoggerInterface,

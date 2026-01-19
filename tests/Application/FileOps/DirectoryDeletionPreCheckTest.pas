@@ -8,7 +8,6 @@ interface
 uses
 	Classes,
 	DUnitX.TestFramework,
-	IDirectoryDeletionPreCheckInterface,
 	IThreadStateManagerInterface,
 	DirectoryDeletionPreCheck;
 

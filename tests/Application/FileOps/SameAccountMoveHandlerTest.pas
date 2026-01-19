@@ -13,7 +13,6 @@ uses
 	PLUGIN_TYPES,
 	IThreadStateManagerInterface,
 	IDescriptionSyncGuardInterface,
-	ISameAccountMoveHandlerInterface,
 	SameAccountMoveHandler;
 
 type

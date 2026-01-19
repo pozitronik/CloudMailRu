@@ -8,7 +8,6 @@ interface
 uses
 	DUnitX.TestFramework,
 	SysUtils,
-	ICrossAccountFileOperationHandlerInterface,
 	CrossAccountFileOperationHandler,
 	IRetryHandlerInterface,
 	ILoggerInterface,

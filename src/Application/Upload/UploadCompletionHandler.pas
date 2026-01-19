@@ -9,7 +9,7 @@ interface
 uses
 	ILoggerInterface,
 	IProgressInterface,
-	ILocalFileDeletionHandlerInterface,
+	LocalFileDeletionHandler,
 	IDescriptionSyncGuardInterface,
 	PLUGIN_TYPES,
 	CMRConstants,

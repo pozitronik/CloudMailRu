@@ -8,7 +8,6 @@ interface
 uses
 	Classes,
 	DUnitX.TestFramework,
-	IMoveOperationContextTrackerInterface,
 	IThreadStateManagerInterface,
 	MoveOperationContextTracker,
 	RealPath;
