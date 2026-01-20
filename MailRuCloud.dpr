@@ -131,7 +131,15 @@ uses
 	OverwritePreparationHandler in 'src\Application\Upload\OverwritePreparationHandler.pas',
 	OperationStatusContextBuilder in 'src\Application\Operation\OperationStatusContextBuilder.pas',
 	ListingResultApplier in 'src\Application\Listing\ListingResultApplier.pas',
-	DownloadOrchestrator in 'src\Application\Download\DownloadOrchestrator.pas';
+	DownloadOrchestrator in 'src\Application\Download\DownloadOrchestrator.pas',
+	CloudHashCalculator in 'src\Infrastructure\Hash\CloudHashCalculator.pas',
+	CloudShardManager in 'src\Infrastructure\Shard\CloudShardManager.pas',
+	CloudErrorMapper in 'src\Domain\Services\CloudErrorMapper.pas',
+	CloudFileDownloader in 'src\Application\Download\CloudFileDownloader.pas',
+	CloudFileUploader in 'src\Application\Upload\CloudFileUploader.pas',
+	CloudShareService in 'src\Application\Share\CloudShareService.pas',
+	CloudListingService in 'src\Application\Listing\CloudListingService.pas',
+	CloudFileOperations in 'src\Application\FileOps\CloudFileOperations.pas';
 
 {$IFDEF WIN64}
 {$E wfx64}

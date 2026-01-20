@@ -45,16 +45,17 @@ uses
 	IdCookieManager,
 	DCPbase64,
 	IAuthStrategyInterface,
-	TokenRetryHelper;
+	TokenRetryHelper,
+	CloudHashCalculator,
+	CloudShardManager,
+	CloudErrorMapper,
+	CloudFileDownloader,
+	CloudFileUploader,
+	CloudShareService,
+	CloudListingService,
+	CloudFileOperations;
 
 type
-	{Action to take after chunk upload result in PutFileSplit}
-	TChunkActionResult = (
-		caRetry,     {Retry current chunk (Dec index)}
-		caContinue,  {Move to next chunk (Inc index)}
-		caAbort      {Stop loop and return error}
-	);
-
 	TCloudMailRu = class
 	private
 		FSettings: TCloudSettings; {Current options set for the cloud instance}
@@ -72,17 +73,16 @@ type
 		FAuthStrategy: IAuthStrategy; {Authentication strategy}
 		FFileSystem: IFileSystem; {File system abstraction for testability}
 		FRetryOperation: TRetryOperation; {Token refresh retry handler}
-
-		FDownloadShard: WideString; {Holder of the current instance download shard adress, retrieved on the first download attempt}
-		FUploadShard: WideString; {Holder of the current instance upload shard adress, retrieved on the first upload attempt}
+		FHashCalculator: ICloudHashCalculator; {Cloud hash calculation service}
+		FDownloader: ICloudFileDownloader; {File download service}
+		FUploader: ICloudFileUploader; {File upload service}
+		FShareService: ICloudShareService; {Share and publish service}
+		FListingService: ICloudListingService; {Directory listing service}
+		FFileOps: ICloudFileOperations; {File operations service}
 
 		{HTTP REQUESTS WRAPPERS}
 		function InitSharedConnectionParameters(): Boolean;
 		function GetShard(var Shard: WideString; ShardType: WideString = SHARD_TYPE_GET): Boolean;
-		function PutFileToCloud(FileName: WideString; FileStream: TStream; var FileIdentity: TCMRFileIdentity): Integer; overload; //отправка на сервер данных из потока
-		{PRIVATE UPLOAD METHODS CHAIN (CALLED FROM putFile())}
-		function PutFileWhole(LocalPath, RemotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT): Integer; //Загрузка файла целиком
-		function PutFileStream(FileName, RemotePath: WideString; FileStream: TStream; ConflictMode: WideString = CLOUD_CONFLICT_STRICT): Integer;
 
 		{OTHER ROUTINES}
 		function GetHTTPConnection: ICloudHTTP;
@@ -95,18 +95,12 @@ type
 		FPublicLink: WideString; {Holder for GetPublicLink() value - protected for testability}
 		FUnitedParams: WideString; {The set of required authentification attributes united to the string}
 
-		{Auth tokens - protected for testability}
-		FPublicShard: WideString; {Public shard url, used for public downloads}
+		{Protected for testability}
+		FShardManager: ICloudShardManager; {Shard URL caching and management}
 		FAuthToken: WideString; {The current (constantly refreshing) connection token}
 		FOAuthToken: TCMROAuth; {OAuth token data}
 		{HTTP REQUESTS WRAPPERS - protected for testability}
 		function GetUserSpace(var SpaceInfo: TCMRSpace): Boolean;
-		{SPLIT UPLOAD - protected for testability}
-		function PutFileSplit(LocalPath, RemotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; ChunkOverwriteMode: Integer = 0): Integer;
-		{SPLIT UPLOAD HELPERS - extracted for clarity and testability}
-		function HandleChunkExists(const ChunkRemotePath: WideString; ChunkOverwriteMode: Integer; var ResultCode: Integer): TChunkActionResult;
-		function HandleChunkError(UploadResult: Integer; const ChunkRemotePath: WideString; var RetryAttemptsCount: Integer; var ResultCode: Integer): TChunkActionResult;
-		procedure GenerateAndUploadCRC(const LocalPath, RemotePath: WideString; const SplitFileInfo: TFileSplitInfo; const ConflictMode: WideString);
 		{HASHING - exposed for testing via subclass}
 		function CloudHash(Path: WideString): WideString; overload; //get cloud hash for specified file
 		function CloudHash(Stream: TStream; Path: WideString = CALCULATING_HASH): WideString; overload; //get cloud hash for data in stream
@@ -267,90 +261,40 @@ begin
 	Result := CallResult.ResultCode;
 end;
 
+{Delegates to TCloudErrorMapper - kept for backward compatibility}
 function TCloudMailRu.CloudResultToBoolean(JSON, ErrorPrefix: WideString): Boolean;
 begin
-	Result := CloudResultToBoolean(TCMROperationResult.GetOperationResult(JSON), ErrorPrefix)
+	Result := TCloudErrorMapper.ToBoolean(JSON, FLogger, ErrorPrefix);
 end;
 
+{Delegates to TCloudErrorMapper - kept for backward compatibility}
 function TCloudMailRu.CloudResultToBoolean(CloudResult: TCMROperationResult; ErrorPrefix: WideString): Boolean;
 begin
-	Result := CloudResult.ToBoolean;
-	if not(Result) and (ErrorPrefix <> EmptyWideStr) then
-		FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, '%s%s%s%s', [ErrorPrefix, ErrorCodeText(CloudResult.OperationResult), PREFIX_STATUS, CloudResult.OperationStatus]);
+	Result := TCloudErrorMapper.ToBoolean(CloudResult, FLogger, ErrorPrefix);
 end;
 
+{Delegates to TCloudErrorMapper - kept for backward compatibility}
 function TCloudMailRu.CloudResultToFsResult(JSON, ErrorPrefix: WideString): Integer;
 begin
-	Result := CloudResultToFsResult(TCMROperationResult.GetOperationResult(JSON), ErrorPrefix);
+	Result := TCloudErrorMapper.ToFsResult(JSON, FLogger, ErrorPrefix);
 end;
 
+{Delegates to TCloudErrorMapper - kept for backward compatibility}
 function TCloudMailRu.CloudResultToFsResult(CloudResult: TCMROperationResult; ErrorPrefix: WideString): Integer;
 begin
-	case CloudResult.OperationResult of
-		CLOUD_OPERATION_OK:
-			Exit(FS_FILE_OK);
-		CLOUD_ERROR_EXISTS:
-			Exit(FS_FILE_EXISTS);
-		CLOUD_ERROR_REQUIRED, CLOUD_ERROR_INVALID, CLOUD_ERROR_READONLY, CLOUD_ERROR_NAME_LENGTH_EXCEEDED:
-			Exit(FS_FILE_WRITEERROR);
-		CLOUD_ERROR_UNKNOWN:
-			Exit(FS_FILE_NOTSUPPORTED);
-		CLOUD_ERROR_OVERQUOTA:
-			begin
-				FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_INSUFFICIENT_STORAGE);
-				Exit(FS_FILE_WRITEERROR);
-			end;
-		CLOUD_ERROR_NAME_TOO_LONG:
-			begin
-				FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_NAME_TOO_LONG);
-				Exit(FS_FILE_WRITEERROR);
-			end;
-		else
-			begin //что-то неизвестное
-				if (ErrorPrefix <> EmptyWideStr) then
-					FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, '%s%s%s%d', [ErrorPrefix, ErrorCodeText(CloudResult.OperationResult), PREFIX_STATUS, CloudResult.OperationStatus]);
-				Exit(FS_FILE_WRITEERROR);
-			end;
-	end;
+	Result := TCloudErrorMapper.ToFsResult(CloudResult, FLogger, ErrorPrefix);
 end;
 
+{Delegates to FFileOps}
 function TCloudMailRu.CopyFile(OldName, ToPath: WideString): Integer;
 begin
-	if IsPublicAccount then
-		Exit(FS_FILE_NOTSUPPORTED);
-	HTTP.SetProgressNames(OldName, Format('%s%s', [IncludeTrailingPathDelimiter(ToPath), ExtractFileName(OldName)]));
-	Result := FRetryOperation.PostFormInteger(
-		API_FILE_COPY + '?' + FUnitedParams,
-		Format('home=/%s&folder=/%s&conflict', [PathToUrl(OldName), PathToUrl(ToPath)]),
-		PREFIX_ERR_FILE_COPY);
+	Result := FFileOps.CopyToPath(OldName, ToPath);
 end;
 
+{Delegates to FFileOps}
 function TCloudMailRu.FileCopy(OldName, NewName: WideString): Integer;
-var
-	NewPath: WideString;
-	SameDir, SameName: Boolean;
-begin //Облако умеет скопировать файл, но не сможет его переименовать, поэтому хитрим
-	NewPath := ExtractFilePath(NewName);
-	SameDir := ExtractFilePath(OldName) = ExtractFilePath(NewName);
-	SameName := ExtractFileName(OldName) = ExtractFileName(NewName);
-	if (SameDir) then //копирование в тот же каталог не поддерживается напрямую, а мудрить со временными каталогами я не хочу
-	begin
-		FLogger.Log(LOG_LEVEL_WARNING, MSGTYPE_IMPORTANTERROR, ERR_COPY_SAME_DIR_NOT_SUPPORTED);
-		Exit(FS_FILE_NOTSUPPORTED);
-	end else begin
-		{TODO: issue #219}
-		//if (statusFile(NewName,FileInfo)) then //file already exists
-		//begin
-		//
-		//end;
-		Result := CopyFile(OldName, NewPath);
-		if Result <> CLOUD_OPERATION_OK then
-			Exit;
-	end;
-	if not(SameName) then
-	begin //скопированный файл лежит в новом каталоге со старым именем
-		Result := RenameFile(Format('%s%s', [NewPath, ExtractFileName(OldName)]), ExtractFileName(NewName));
-	end;
+begin
+	Result := FFileOps.Copy(OldName, NewName);
 end;
 
 constructor TCloudMailRu.Create(CloudSettings: TCloudSettings; ConnectionManager: IHTTPManager; AuthStrategy: IAuthStrategy; FileSystem: IFileSystem; Logger: ILogger; Progress: IProgress; Request: IRequest; Cipher: ICipher = nil);
@@ -369,6 +313,14 @@ begin
 
 		FCookieManager := TIdCookieManager.Create();
 
+		{Initialize hash calculator service}
+		FHashCalculator := TCloudHashCalculator.Create(Progress, FileSystem);
+
+		{Initialize shard manager with overrides from settings}
+		FShardManager := TCloudShardManager.Create(Logger,
+			FSettings.AccountSettings.ShardOverride,
+			FSettings.AccountSettings.UploadUrlOverride);
+
 		{Initialize retry operation handler with HTTP callbacks}
 		FRetryOperation := TRetryOperation.Create(
 			function: Boolean begin Result := RefreshCSRFToken; end,
@@ -382,6 +334,90 @@ begin
 		FDoCryptFiles := Assigned(Cipher);
 		FDoCryptFilenames := FDoCryptFiles and FSettings.AccountSettings.EncryptFilenames;
 
+		{Initialize file downloader service with callbacks for dynamic state}
+		FDownloader := TCloudFileDownloader.Create(
+			function: ICloudHTTP begin Result := Self.HTTP; end,
+			FShardManager,
+			FHashCalculator,
+			FCipher,
+			FFileSystem,
+			FLogger,
+			FProgress,
+			FRequest,
+			function: TCMROAuth begin Result := Self.FOAuthToken; end,
+			function: Boolean begin Result := Self.IsPublicAccount; end,
+			function: WideString begin Result := Self.GetPublicLink; end,
+			function: Boolean begin Result := Self.RefreshCSRFToken; end,
+			function(var Shard: WideString; ShardType: WideString): Boolean begin Result := Self.GetShard(Shard, ShardType); end,
+			FDoCryptFiles,
+			FDoCryptFilenames);
+
+		{Initialize file uploader service with callbacks and settings}
+		var UploadSettings: TUploadSettings;
+		UploadSettings.PrecalculateHash := Self.PrecalculateHash;
+		UploadSettings.ForcePrecalculateSize := Self.ForcePrecalculateSize;
+		UploadSettings.CheckCRC := Self.CheckCRC;
+		UploadSettings.OperationErrorMode := Self.OperationErrorMode;
+		UploadSettings.RetryAttempts := Self.RetryAttempts;
+		UploadSettings.AttemptWait := Self.AttemptWait;
+		UploadSettings.UnlimitedFileSize := Self.UnlimitedFileSize;
+		UploadSettings.SplitLargeFiles := Self.SplitLargeFiles;
+		UploadSettings.CloudMaxFileSize := Self.CloudMaxFileSize;
+
+		FUploader := TCloudFileUploader.Create(
+			function: ICloudHTTP begin Result := Self.HTTP; end,
+			FShardManager,
+			FHashCalculator,
+			FCipher,
+			FFileSystem,
+			FLogger,
+			FProgress,
+			FRequest,
+			function: TCMROAuth begin Result := Self.FOAuthToken; end,
+			function: Boolean begin Result := Self.IsPublicAccount; end,
+			function: TRetryOperation begin Result := Self.FRetryOperation; end,
+			function(FileIdentity: TCMRFileIdentity; RemotePath, ConflictMode: WideString; LogErrors, LogSuccess: Boolean): Integer begin Result := Self.AddFileByIdentity(FileIdentity, RemotePath, ConflictMode, LogErrors, LogSuccess); end,
+			function(Path: WideString): Boolean begin Result := Self.DeleteFile(Path); end,
+			function(LocalPath: WideString): TCMRFileIdentity begin Result := Self.FileIdentity(LocalPath); end,
+			FDoCryptFiles,
+			FDoCryptFilenames,
+			UploadSettings);
+
+		{Initialize share service with callbacks for dynamic state}
+		FShareService := TCloudShareService.Create(
+			Self.HTTP,
+			FLogger,
+			FRetryOperation,
+			function: Boolean begin Result := Self.IsPublicAccount; end,
+			function: WideString begin Result := Self.FUnitedParams; end,
+			function(Path: WideString; var PublicLink: WideString; Publish: Boolean): Boolean begin Result := Self.PublishFile(Path, PublicLink, Publish); end,
+			function(JSON: WideString; ErrorPrefix: WideString): Boolean begin Result := Self.CloudResultToBoolean(JSON, ErrorPrefix); end,
+			function(var Shard: WideString; ShardType: WideString): Boolean begin Result := Self.GetShard(Shard, ShardType); end
+		);
+
+		{Initialize listing service with callbacks for dynamic state}
+		FListingService := TCloudListingService.Create(
+			Self.HTTP,
+			FCipher,
+			FLogger,
+			FRetryOperation,
+			function: Boolean begin Result := Self.IsPublicAccount; end,
+			function: WideString begin Result := Self.FUnitedParams; end,
+			function: WideString begin Result := Self.GetPublicLink; end,
+			function(JSON: WideString; ErrorPrefix: WideString): Boolean begin Result := Self.CloudResultToBoolean(JSON, ErrorPrefix); end,
+			function(OperationResult: TCMROperationResult; ErrorPrefix: WideString): Boolean begin Result := Self.CloudResultToBoolean(OperationResult, ErrorPrefix); end,
+			FDoCryptFilenames
+		);
+
+		{Initialize file operations service with callbacks for dynamic state}
+		FFileOps := TCloudFileOperations.Create(
+			Self.HTTP,
+			FLogger,
+			FRetryOperation,
+			function: Boolean begin Result := Self.IsPublicAccount; end,
+			function: WideString begin Result := Self.FUnitedParams; end
+		);
+
 	except
 		on E: Exception do
 		begin
@@ -390,28 +426,16 @@ begin
 	end;
 end;
 
+{Delegates to FFileOps}
 function TCloudMailRu.CreateDir(Path: WideString): Boolean;
 begin
-	Result := False;
-	if IsPublicAccount then
-		Exit;
-	HTTP.SetProgressNames(CREATE_DIRECTORY, Path);
-	Result := FRetryOperation.PostFormBoolean(
-		API_FOLDER_ADD + '?' + FUnitedParams,
-		Format('home=/%s&conflict', [PathToUrl(Path)]),
-		EmptyWideStr);
+	Result := FFileOps.CreateDirectory(Path);
 end;
 
+{Delegates to FFileOps}
 function TCloudMailRu.DeleteFile(Path: WideString): Boolean;
 begin
-	Result := False;
-	if IsPublicAccount then
-		Exit;
-	HTTP.SetProgressNames(DELETE_FILE, Path);
-	Result := FRetryOperation.PostFormBoolean(
-		API_FILE_REMOVE + '?' + FUnitedParams,
-		Format('home=/%s&conflict', [PathToUrl(Path)]),
-		PREFIX_ERR_DELETE_FILE);
+	Result := FFileOps.Delete(Path);
 end;
 
 destructor TCloudMailRu.Destroy;
@@ -427,52 +451,21 @@ begin
 		FRetryOperation.Free;
 
 	FCipher := nil; {Release interface reference}
+	FHashCalculator := nil; {Release interface reference}
+	FShardManager := nil; {Release interface reference}
+	FDownloader := nil; {Release interface reference}
+	FUploader := nil; {Release interface reference}
+	FShareService := nil; {Release interface reference}
+	FListingService := nil; {Release interface reference}
+	FFileOps := nil; {Release interface reference}
 
 	inherited;
 end;
 
+{Delegates to TCloudErrorMapper - kept for backward compatibility}
 class function TCloudMailRu.ErrorCodeText(ErrorCode: Integer): WideString;
 begin
-	case ErrorCode of
-		CLOUD_ERROR_EXISTS:
-			Exit(ERR_CLOUD_ERROR_EXISTS);
-		CLOUD_ERROR_REQUIRED:
-			Exit(ERR_CLOUD_ERROR_REQUIRED);
-		CLOUD_ERROR_INVALID:
-			Exit(ERR_CLOUD_ERROR_INVALID);
-		CLOUD_ERROR_READONLY:
-			Exit(ERR_CLOUD_ERROR_READONLY);
-		CLOUD_ERROR_NAME_LENGTH_EXCEEDED:
-			Exit(ERR_CLOUD_ERROR_NAME_LENGTH_EXCEEDED);
-		CLOUD_ERROR_OVERQUOTA:
-			Exit(ERR_CLOUD_ERROR_OVERQUOTA);
-		CLOUD_ERROR_NOT_EXISTS:
-			Exit(ERR_CLOUD_ERROR_NOT_EXISTS);
-		CLOUD_ERROR_OWN:
-			Exit(ERR_CLOUD_ERROR_OWN);
-		CLOUD_ERROR_NAME_TOO_LONG:
-			Exit(ERR_CLOUD_ERROR_NAME_TOO_LONG);
-		CLOUD_ERROR_VIRUS_SCAN_FAIL:
-			Exit(ERR_CLOUD_ERROR_VIRUS_SCAN_FAIL);
-		CLOUD_ERROR_OWNER:
-			Exit(ERR_CLOUD_ERROR_OWNER);
-		CLOUD_ERROR_FAHRENHEIT:
-			Exit(ERR_CLOUD_ERROR_FAHRENHEIT);
-		CLOUD_ERROR_BAD_REQUEST:
-			Exit(ERR_CLOUD_ERROR_BAD_REQUEST);
-		CLOUD_ERROR_TREES_CONFLICT:
-			Exit(ERR_CLOUD_ERROR_TREES_CONFLICT);
-		CLOUD_ERROR_UNPROCESSABLE_ENTRY:
-			Exit(ERR_CLOUD_ERROR_UNPROCESSABLE_ENTRY);
-		CLOUD_ERROR_USER_LIMIT_EXCEEDED:
-			Exit(ERR_CLOUD_ERROR_USER_LIMIT_EXCEEDED);
-		CLOUD_ERROR_EXPORT_LIMIT_EXCEEDED:
-			Exit(ERR_CLOUD_ERROR_EXPORT_LIMIT_EXCEEDED);
-		CLOUD_ERROR_NOT_ACCEPTABLE:
-			Exit(ERR_CLOUD_ERROR_NOT_ACCEPTABLE);
-		else
-			Exit(Format(ERR_CLOUD_ERROR_UNKNOWN, [ErrorCode]));
-	end;
+	Result := TCloudErrorMapper.ErrorCodeText(ErrorCode);
 end;
 
 function TCloudMailRu.FileIdentity(LocalPath: WideString): TCMRFileIdentity;
@@ -497,331 +490,53 @@ begin
 end;
 
 function TCloudMailRu.GetSharedLinksListing(var DirListing: TCMRDirItemList; ShowProgress: Boolean = False): Boolean;
-var
-	CallResult: TAPICallResult;
-	LocalListing: TCMRDirItemList;
 begin
-	Result := False;
-	SetLength(DirListing, 0);
-	if IsPublicAccount then
-		Exit;
-	if (ShowProgress) then
-		HTTP.SetProgressNames(SHARED_LINKS_LISTING, UNKNOWN_ITEM);
-
-	SetLength(LocalListing, 0);
-	CallResult := FRetryOperation.Execute(
-		function: TAPICallResult
-		var
-			JSON: WideString;
-			Success: Boolean;
-		begin
-			Success := HTTP.GetPage(Format('%s?%s', [API_FOLDER_SHARED_LINKS, FUnitedParams]), JSON, ShowProgress);
-			if Success then
-				Success := CloudResultToBoolean(JSON, PREFIX_ERR_SHARED_LINKS_LISTING) and GetDirListing(JSON, LocalListing); //todo: investigate, it is possible that we need LocalListing.FromJSON(JSON) here
-			Result := TAPICallResult.FromBoolean(Success, JSON);
-		end);
-
-	Result := CallResult.Success;
-	if Result then
-		DirListing := LocalListing;
+	Result := FListingService.GetSharedLinks(DirListing, ShowProgress);
 end;
 
 function TCloudMailRu.GetIncomingLinksListing(var IncomingListing: TCMRIncomingInviteList; ShowProgress: Boolean): Boolean;
-var
-	CallResult: TAPICallResult;
-	LocalListing: TCMRIncomingInviteList;
 begin
-	Result := False;
-	SetLength(IncomingListing, 0);
-	if IsPublicAccount then
-		Exit;
-	if (ShowProgress) then
-		HTTP.SetProgressNames(INCOMING_LINKS_LISTING, UNKNOWN_ITEM);
-
-	SetLength(LocalListing, 0);
-	CallResult := FRetryOperation.Execute(
-		function: TAPICallResult
-		var
-			JSON: WideString;
-			Success: Boolean;
-		begin
-			Success := HTTP.GetPage(Format('%s?%s', [API_FOLDER_SHARED_INCOMING, FUnitedParams]), JSON, ShowProgress);
-			if Success then
-				Success := CloudResultToBoolean(JSON, PREFIX_ERR_INCOMING_REQUESTS_LISTING) and LocalListing.FromJSON(JSON);
-			Result := TAPICallResult.FromBoolean(Success, JSON);
-		end);
-
-	Result := CallResult.Success;
-	if Result then
-		IncomingListing := LocalListing;
+	Result := FListingService.GetIncomingInvites(IncomingListing, ShowProgress);
 end;
 
 function TCloudMailRu.GetIncomingLinksListing(var IncomingListing: TCMRDirItemList; var InvitesListing: TCMRIncomingInviteList; ShowProgress: Boolean = False): Boolean;
-var
-	i: Integer;
 begin
-	SetLength(IncomingListing, 0);
-	Result := GetIncomingLinksListing(InvitesListing, ShowProgress);
-	if Result then
-	begin
-		SetLength(IncomingListing, length(InvitesListing));
-		for i := 0 to length(InvitesListing) - 1 do
-		begin
-
-			IncomingListing[i].name := InvitesListing[i].name;
-			IncomingListing[i].size := InvitesListing[i].size;
-			IncomingListing[i].tree := InvitesListing[i].tree;
-			//IncomingListing[length(IncomingListing)].
-		end;
-
-	end;
+	Result := FListingService.GetIncomingInvitesAsDirItems(IncomingListing, InvitesListing, ShowProgress);
 end;
 
 function TCloudMailRu.GetTrashbinListing(var DirListing: TCMRDirItemList; ShowProgress: Boolean): Boolean;
-var
-	CallResult: TAPICallResult;
-	LocalListing: TCMRDirItemList;
 begin
-	Result := False;
-	SetLength(DirListing, 0);
-	if IsPublicAccount then
-		Exit;
-	if (ShowProgress) then
-		HTTP.SetProgressNames(TRASH_LISTING, UNKNOWN_ITEM);
-
-	SetLength(LocalListing, 0);
-	CallResult := FRetryOperation.Execute(
-		function: TAPICallResult
-		var
-			JSON: WideString;
-			Success: Boolean;
-		begin
-			Success := HTTP.GetPage(Format('%s?%s', [API_TRASHBIN, FUnitedParams]), JSON, ShowProgress);
-			if Success then
-				Success := CloudResultToBoolean(JSON, PREFIX_ERR_TRASH_LISTING) and GetDirListing(JSON, LocalListing); //todo: investigate, it is possible that we need LocalListing.FromJSON(JSON) here
-			Result := TAPICallResult.FromBoolean(Success, JSON);
-		end);
-
-	Result := CallResult.Success;
-	if Result then
-		DirListing := LocalListing;
+	Result := FListingService.GetTrashbin(DirListing, ShowProgress);
 end;
 
 function TCloudMailRu.GetDirListing(Path: WideString; var DirListing: TCMRDirItemList; ShowProgress: Boolean = False): Boolean;
-var
-	CallResult: TAPICallResult;
-	LocalListing: TCMRDirItemList;
 begin
-	SetLength(DirListing, 0);
-
-	{Public accounts don't need token refresh}
-	if IsPublicAccount then
-	begin
-		var JSON: WideString;
-		var OperationResult: TCMROperationResult;
-		Result := HTTP.GetPage(Format('%s&weblink=%s%s&%s', [API_FOLDER, IncludeSlash(GetPublicLink), PathToUrl(Path, False), FUnitedParams]), JSON, ShowProgress);
-		if Result then
-		begin
-			OperationResult.FromJSON(JSON);
-			Result := CloudResultToBoolean(OperationResult, PREFIX_ERR_DIR_LISTING);
-			if Result then
-			begin
-				Result := DirListing.FromJSON(JSON);
-				if Result and FDoCryptFilenames then
-					FCipher.DecryptDirListing(DirListing);
-			end else if OperationResult.OperationResult = CLOUD_ERROR_NOT_EXISTS then
-				FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, '%s%s', [PREFIX_ERR_PATH_NOT_EXISTS, Path]);
-		end;
-		Exit;
-	end;
-
-	HTTP.SetProgressNames(DIR_LISTING, Path);
-	SetLength(LocalListing, 0);
-	CallResult := FRetryOperation.Execute(
-		function: TAPICallResult
-		var
-			JSON: WideString;
-			OperationResult: TCMROperationResult;
-			Success: Boolean;
-		begin
-			Success := HTTP.GetPage(Format('%s&home=%s&%s', [API_FOLDER, PathToUrl(Path), FUnitedParams]), JSON, ShowProgress);
-			if Success then
-			begin
-				OperationResult.FromJSON(JSON);
-				Success := CloudResultToBoolean(OperationResult, PREFIX_ERR_DIR_LISTING);
-				if Success then
-				begin
-					Success := LocalListing.FromJSON(JSON);
-					if Success and FDoCryptFilenames then
-						FCipher.DecryptDirListing(LocalListing);
-				end else if OperationResult.OperationResult = CLOUD_ERROR_NOT_EXISTS then
-					FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, '%s%s', [PREFIX_ERR_PATH_NOT_EXISTS, Path]);
-			end;
-			Result := TAPICallResult.FromBoolean(Success, JSON);
-		end);
-
-	Result := CallResult.Success;
-	if Result then
-		DirListing := LocalListing;
+	Result := FListingService.GetDirectory(Path, DirListing, ShowProgress);
 end;
 
+{Delegates to FDownloader - kept for backward compatibility}
 function TCloudMailRu.GetFile(RemotePath, LocalPath: WideString; var ResultHash: WideString; LogErrors: Boolean): Integer;
 begin
-	HTTP.SetProgressNames(RemotePath, LocalPath);
-	if IsPublicAccount then
-		Result := GetFileShared(RemotePath, LocalPath, ResultHash, LogErrors)
-	else
-		Result := GetFileRegular(RemotePath, LocalPath, ResultHash, LogErrors);
+	Result := FDownloader.Download(RemotePath, LocalPath, ResultHash, LogErrors);
 end;
 
+{Delegates to FDownloader - kept for backward compatibility with tests}
 function TCloudMailRu.GetFileRegular(RemotePath, LocalPath: WideString; var ResultHash: WideString; LogErrors: Boolean): Integer;
-var
-	FileStream: TBufferedFileStream;
-	URL, FileName: WideString;
-	MemoryStream: TMemoryStream;
-	DispatcherResponse: WideString;
-	Progress: Boolean;
 begin
-	Result := FS_FILE_NOTSUPPORTED;
-	if FDownloadShard = EmptyWideStr then
-	begin
-		FLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, UNDEFINED_DOWNLOAD_SHARD);
-		if DownloadShardOverride <> EmptyWideStr then
-		begin
-			FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_DETAILS, SHARD_OVERRIDDEN);
-			FDownloadShard := DownloadShardOverride;
-		end else begin
-			{OAuth uses different dispatcher endpoint that returns plain text URL}
-			Progress := False;
-			if HTTP.GetPage(Format('%s/d?token=%s', [OAUTH_DISPATCHER_URL, FOAuthToken.access_token]), DispatcherResponse, Progress) then
-			begin
-				{Response format: "URL IP COUNT", extract the URL (first word)}
-				FDownloadShard := Trim(Copy(DispatcherResponse, 1, Pos(' ', DispatcherResponse) - 1));
-				FLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, PREFIX_SHARD_RECEIVED, [FDownloadShard, SHARD_TYPE_GET]);
-			end else
-				Exit;
-		end;
-	end;
-	if FDoCryptFilenames then
-	begin
-		FileName := ExtractUniversalFileName(RemotePath);
-		FileName := FCipher.DecryptFileName(FileName);
-		LocalPath := ChangePathFileName(LocalPath, FileName);
-	end;
-
-	try
-		FileStream := TBufferedFileStream.Create(GetUNCFilePath(LocalPath), fmCreate);
-	except
-		on E: Exception do
-		begin
-			FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, E.Message);
-			Exit(FS_FILE_WRITEERROR);
-		end;
-	end;
-
-	{Note: Previously User-Agent was set to 'cloud-win' here to avoid OAuth endpoint
-	 blocking browser-like UAs. Removed as UA manipulation is no longer needed.
-	 If downloads start failing with 403/blocking errors, consider restoring UA override.}
-	try
-		if FDoCryptFiles then //Загрузка файла в память, дешифрация в файл
-		begin
-			MemoryStream := TMemoryStream.Create;
-			try
-				{OAuth requires client_id and token parameters for download authentication}
-				URL := Format('%s%s?client_id=%s&token=%s', [FDownloadShard, PathToUrl(RemotePath, False), OAUTH_CLIENT_ID, FOAuthToken.access_token]);
-				Result := HTTP.GetFile(URL, MemoryStream, LogErrors);
-
-				if (CLOUD_ERROR_TOKEN_OUTDATED = Result) and RefreshCSRFToken() then
-					Exit(GetFileRegular(RemotePath, LocalPath, ResultHash, LogErrors));
-
-				if Result in [FS_FILE_NOTSUPPORTED] then //this code returned on shard connection error
-				begin
-					FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, '%s%s', [PREFIX_REDIRECTION_LIMIT, URL]);
-					if (FRequest.Request(RT_MsgYesNo, REDIRECTION_LIMIT, TRY_ANOTHER_SHARD, EmptyWideStr, 0)) and (GetShard(FDownloadShard)) then
-						Exit(GetFileRegular(RemotePath, LocalPath, ResultHash, LogErrors));
-				end;
-
-				if Result in [FS_FILE_OK] then
-				begin
-					ResultHash := CloudHash(MemoryStream);
-					MemoryStream.Position := 0;
-					FCipher.DecryptStream(MemoryStream, FileStream);
-				end;
-			finally
-				MemoryStream.Free;
-			end;
-		end else begin
-			{OAuth requires client_id and token parameters for download authentication}
-			Result := HTTP.GetFile(Format('%s%s?client_id=%s&token=%s', [FDownloadShard, PathToUrl(RemotePath, False), OAUTH_CLIENT_ID, FOAuthToken.access_token]), FileStream, LogErrors);
-			if (CLOUD_ERROR_TOKEN_OUTDATED = Result) and RefreshCSRFToken() then
-				Exit(GetFileRegular(RemotePath, LocalPath, ResultHash, LogErrors));
-			if ((Result in [FS_FILE_OK]) and (EmptyWideStr = ResultHash)) then
-				ResultHash := CloudHash(FileStream);
-		end;
-
-		FlushFileBuffers(FileStream.Handle);
-	finally
-		FileStream.Free;
-	end;
-
-	if not(Result in [FS_FILE_OK]) then
-		FFileSystem.DeleteFile(GetUNCFilePath(LocalPath));
+	Result := FDownloader.Download(RemotePath, LocalPath, ResultHash, LogErrors);
 end;
 
+{Delegates to FDownloader - kept for backward compatibility}
 {since 29.07.2022: изменена логика получения ссылок, см. issue #285. URL теперь всегда должны быть кодированы, иначе в некоторых случаях приходит 400}
 function TCloudMailRu.GetSharedFileUrl(RemotePath: WideString; ShardType: WideString = SHARD_TYPE_DEFAULT): WideString;
-var
-	usedShard: WideString;
-	ProgressEnabled: Boolean;
 begin
-	if ShardType = SHARD_TYPE_DEFAULT then
-		usedShard := FPublicShard
-	else
-		GetShard(usedShard, ShardType);
-	if (IsPublicAccount) then
-		Exit(Format('%s%s%s', [IncludeSlash(usedShard), IncludeSlash(GetPublicLink), PathToUrl(RemotePath, true, true)]));
-
-	if (TRealPath.GetRealPath(RemotePath).isDir = ID_True) then {для ссылок внутри каталогов перебираются файлы внутри «публичной ссылки» на каталог}
-	begin
-		Result := Format('%s%s%s', [IncludeSlash(usedShard), GetPublicLink, PathToUrl(RemotePath, true, true)]);
-	end else begin {для прямых ссылок берутся публичные ссылки файлов}
-		Result := Format('%s%s%s', [IncludeSlash(usedShard), GetPublicLink])
-	end;
-
-	ProgressEnabled := False;
-	FHTTPConnection.GetRedirection(Result, Result, ProgressEnabled);
-
+	Result := FDownloader.GetSharedFileUrl(RemotePath, ShardType);
 end;
 
+{Delegates to FDownloader - kept for backward compatibility with tests}
 function TCloudMailRu.GetFileShared(RemotePath, LocalPath: WideString; var ResultHash: WideString; LogErrors: Boolean): Integer;
-var
-	FileStream: TBufferedFileStream;
 begin
-	Result := FS_FILE_NOTFOUND;
-	if (FPublicShard = EmptyWideStr) then
-		Exit;
-	try
-		FileStream := TBufferedFileStream.Create(GetUNCFilePath(LocalPath), fmCreate);
-	except
-		on E: Exception do
-		begin
-			FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, E.Message);
-			Exit(FS_FILE_WRITEERROR);
-		end;
-	end;
-	if (Assigned(FileStream)) then
-	begin
-		try
-			Result := HTTP.GetFile(GetSharedFileUrl(RemotePath), FileStream, LogErrors);
-			if ((Result in [FS_FILE_OK]) and (EmptyWideStr = ResultHash)) then
-				ResultHash := CloudHash(FileStream);
-			FlushFileBuffers(FileStream.Handle);
-		finally
-			FileStream.Free;
-		end;
-	end;
-	if Result <> FS_FILE_OK then
-		FFileSystem.DeleteFile(GetUNCFilePath(LocalPath));
+	Result := FDownloader.Download(RemotePath, LocalPath, ResultHash, LogErrors);
 end;
 
 function TCloudMailRu.GetHTTPConnection: ICloudHTTP;
@@ -857,20 +572,8 @@ begin
 end;
 
 function TCloudMailRu.GetPublishedFileStreamUrl(FileIdentity: TCMRDirItem; var StreamUrl: WideString; ShardType: WideString = SHARD_TYPE_WEBLINK_VIDEO; Publish: Boolean = CLOUD_PUBLISH): Boolean;
-var
-	shard_url: WideString;
 begin
-	Result := False;
-	if (EmptyWideStr = FileIdentity.weblink) then //publish and fill weblink, if required
-	begin
-		if (not Publish) or (not PublishFile(FileIdentity.Home, FileIdentity.weblink)) then
-			Exit;
-	end;
-
-	if not GetShard(shard_url, ShardType) then
-		Exit;
-	StreamUrl := Format('%s0p/%s.m3u8?double_encode=1', [shard_url, DCPbase64.Base64EncodeStr(String(RawByteString(FileIdentity.weblink)))]); //UTF2Ansi is required
-	Result := true;
+	Result := FShareService.GetPublishedFileStreamUrl(FileIdentity, StreamUrl, ShardType, Publish);
 end;
 
 function TCloudMailRu.GetShard(var Shard: WideString; ShardType: WideString = SHARD_TYPE_GET): Boolean;
@@ -901,17 +604,19 @@ end;
 function TCloudMailRu.InitSharedConnectionParameters(): Boolean;
 var
 	PageContent: WideString;
+	PublicShard: WideString;
 	Progress: Boolean;
 begin
 	Progress := False;
 	Result := HTTP.GetPage(FSettings.AccountSettings.PublicUrl, PageContent, Progress);
 	if Result then
 	begin
-		if not extractPublicShard(PageContent, FPublicShard) then
+		if not extractPublicShard(PageContent, PublicShard) then
 		begin
 			FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_GET_PUBLIC_SHARE);
 			Exit(False);
 		end;
+		FShardManager.SetPublicShard(PublicShard);
 	end;
 end;
 
@@ -1003,36 +708,16 @@ begin
 	end;
 end;
 
+{Delegates to FFileOps}
 function TCloudMailRu.MoveFile(OldName, ToPath: WideString): Integer;
 begin
-	if IsPublicAccount then
-		Exit(FS_FILE_NOTSUPPORTED);
-	Result := FRetryOperation.PostFormInteger(
-		API_FILE_MOVE + '?' + FUnitedParams,
-		Format('home=%s&folder=%s&conflict', [PathToUrl(OldName), PathToUrl(ToPath)]),
-		PREFIX_ERR_FILE_MOVE);
+	Result := FFileOps.MoveToPath(OldName, ToPath);
 end;
 
+{Delegates to FFileOps}
 function TCloudMailRu.FileMove(OldName, NewName: WideString): Integer;
-var
-	NewPath: WideString;
-	SameDir, SameName: Boolean;
-begin //К сожалению, переименование и перемещение в облаке - разные действия
-	NewPath := ExtractFilePath(NewName);
-	SameDir := ExtractFilePath(OldName) = ExtractFilePath(NewName);
-	SameName := ExtractFileName(OldName) = ExtractFileName(NewName);
-	if SameDir then
-	begin //один каталог
-		Result := RenameFile(OldName, ExtractFileName(NewName));
-	end else begin
-		Result := MoveFile(OldName, ExtractFilePath(NewName)); //Если файл со старым именем лежит в новом каталоге, вернётся ошибка. Так реализовано в облаке, а мудрить со временными каталогами я не хочу
-		if Result <> CLOUD_OPERATION_OK then
-			Exit;
-		if not(SameName) then
-		begin //скопированный файл лежит в новом каталоге со старым именем
-			Result := RenameFile(Format('%s%s', [NewPath, ExtractFileName(OldName)]), ExtractFileName(NewName));
-		end;
-	end;
+begin
+	Result := FFileOps.Move(OldName, NewName);
 end;
 
 function TCloudMailRu.PublishFile(Path: WideString; var PublicLink: WideString; Publish: Boolean): Boolean;
@@ -1077,62 +762,17 @@ begin
 end;
 
 function TCloudMailRu.GetShareInfo(Path: WideString; var InviteListing: TCMRInviteList): Boolean;
-var
-	CallResult: TAPICallResult;
-	LocalListing: TCMRInviteList;
 begin
-	SetLength(LocalListing, 0);
-	CallResult := FRetryOperation.Execute(
-		function: TAPICallResult
-		var
-			JSON: WideString;
-			Progress: Boolean;
-			Success: Boolean;
-		begin
-			Progress := False;
-			Success := HTTP.GetPage(Format('%s?home=%s&%s', [API_FOLDER_SHARED_INFO, PathToUrl(Path), FUnitedParams]), JSON, Progress);
-			if Success then
-				Success := LocalListing.FromJSON(JSON);
-			Result := TAPICallResult.FromBoolean(Success, JSON);
-		end);
-
-	Result := CallResult.Success;
-	if Result then
-		InviteListing := LocalListing;
+	Result := FShareService.GetShareInfo(Path, InviteListing);
 end;
 
 function TCloudMailRu.ShareFolder(Path, Email: WideString; Access: Integer): Boolean;
-var
-	CallResult: TAPICallResult;
-	access_string: WideString;
 begin
+	{ShareFolder handles both sharing and unsharing based on Access value}
 	if Access in [CLOUD_SHARE_RW, CLOUD_SHARE_RO] then
-	begin
-		if Access = CLOUD_SHARE_RW then
-			access_string := CLOUD_SHARE_ACCESS_READ_WRITE
-		else
-			access_string := CLOUD_SHARE_ACCESS_READ_ONLY;
-	end;
-
-	CallResult := FRetryOperation.Execute(
-		function: TAPICallResult
-		var
-			JSON: WideString;
-			Success: Boolean;
-		begin
-			if Access in [CLOUD_SHARE_RW, CLOUD_SHARE_RO] then
-				Success := HTTP.PostForm(API_FOLDER_SHARE + '?' + FUnitedParams,
-					Format('home=/%s&invite={"email":"%s","access":"%s"}', [PathToUrl(Path), Email, access_string]), JSON)
-			else
-				Success := HTTP.PostForm(API_FOLDER_UNSHARE + '?' + FUnitedParams,
-					Format('home=/%s&invite={"email":"%s"}', [PathToUrl(Path), Email]), JSON);
-
-			if Success then
-				Success := CloudResultToBoolean(JSON, PREFIX_ERR_INVITE_MEMBER);
-			Result := TAPICallResult.FromBoolean(Success, JSON);
-		end);
-
-	Result := CallResult.Success;
+		Result := FShareService.Share(Path, Email, Access)
+	else
+		Result := FShareService.Unshare(Path, Email);
 end;
 
 function TCloudMailRu.TrashbinRestore(Path: WideString; RestoreRevision: Integer; ConflictMode: WideString): Boolean;
@@ -1159,418 +799,35 @@ end;
 
 function TCloudMailRu.MountFolder(Home, InviteToken, ConflictMode: WideString): Boolean;
 begin
-	Result := False;
-	if IsPublicAccount then
-		Exit;
-	Result := FRetryOperation.PostFormBoolean(
-		API_FOLDER_MOUNT + '?' + FUnitedParams,
-		Format('home=%s&invite_token=%s&conflict=%s', [UrlEncode(Home), InviteToken, ConflictMode]),
-		PREFIX_ERR_FOLDER_MOUNT);
+	Result := FShareService.Mount(Home, InviteToken, ConflictMode);
 end;
 
 function TCloudMailRu.UnmountFolder(Home: WideString; Clone_copy: Boolean): Boolean;
-var
-	CopyStr: WideString;
 begin
-	Result := False;
-	if IsPublicAccount then
-		Exit;
-	if Clone_copy then
-		CopyStr := 'true'
-	else
-		CopyStr := 'false';
-	Result := FRetryOperation.PostFormBoolean(
-		API_FOLDER_UNMOUNT + '?' + FUnitedParams,
-		Format('home=%s&clone_copy=%s', [UrlEncode(Home), CopyStr]),
-		PREFIX_ERR_FOLDER_UNMOUNT);
+	Result := FShareService.Unmount(Home, Clone_copy);
 end;
 
 function TCloudMailRu.RejectInvite(InviteToken: WideString): Boolean;
 begin
-	Result := False;
-	if IsPublicAccount then
-		Exit;
-	Result := FRetryOperation.PostFormBoolean(
-		API_INVITE_REJECT + '?' + FUnitedParams,
-		Format('invite_token=%s', [InviteToken]),
-		PREFIX_ERR_INVITE_REJECT);
+	Result := FShareService.RejectInvite(InviteToken);
 end;
 
-function TCloudMailRu.PutFileStream(FileName, RemotePath: WideString; FileStream: TStream; ConflictMode: WideString): Integer;
-var
-	LocalFileIdentity, RemoteFileIdentity: TCMRFileIdentity;
-	OperationResult: Integer;
-	MemoryStream: TMemoryStream;
-	UseHash: Boolean;
-begin
-
-	Result := FS_FILE_WRITEERROR;
-	OperationResult := CLOUD_OPERATION_FAILED;
-
-	UseHash := PrecalculateHash or (ForcePrecalculateSize >= FileStream.size); //issue #231
-
-	if UseHash or CheckCRC then
-	begin
-		LocalFileIdentity.Hash := CloudHash(FileStream);
-		LocalFileIdentity.size := FileStream.size;
-	end;
-	if UseHash and (LocalFileIdentity.Hash <> EmptyWideStr) and (not FDoCryptFiles) and (FS_FILE_OK = AddFileByIdentity(LocalFileIdentity, RemotePath, CLOUD_CONFLICT_STRICT, False, true)) then {issue #135}
-		Exit(CLOUD_OPERATION_OK);
-
-	try
-		if FDoCryptFiles then {Will encrypt any type of data passed here}
-		begin
-			MemoryStream := TMemoryStream.Create;
-			try
-				FCipher.CryptStream(FileStream, MemoryStream);
-				MemoryStream.Position := 0;
-				OperationResult := PutFileToCloud(FileName, MemoryStream, RemoteFileIdentity);
-			finally
-				MemoryStream.Free;
-			end;
-		end else begin
-			OperationResult := PutFileToCloud(FileName, FileStream, RemoteFileIdentity)
-		end;
-	except
-		on E: Exception do
-		begin
-			if E.ClassName = 'EAbort' then
-			begin
-				Result := FS_FILE_USERABORT;
-			end else begin
-				FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_UPLOAD_INFO, [E.ClassName, E.Message]);
-				Result := FS_FILE_WRITEERROR;
-			end;
-		end;
-	end;
-	if OperationResult = CLOUD_OPERATION_OK then
-	begin
-		if CheckCRC then
-		begin
-			if not LocalFileIdentity.IsEqualTo(RemoteFileIdentity) then {При включённой проверке CRC сравниваем хеши и размеры}
-				Result := CLOUD_OPERATION_FAILED;
-
-		end;
-	end else if OperationResult = CLOUD_OPERATION_CANCELLED then
-	begin
-		Result := FS_FILE_USERABORT;
-	end;
-
-	if OperationResult = CLOUD_OPERATION_OK then
-		Result := AddFileByIdentity(RemoteFileIdentity, RemotePath, ConflictMode, False); //Не логируем HTTP-ошибку, она распарсится и обработается уровнем выше
-end;
-
-function TCloudMailRu.PutFileWhole(LocalPath, RemotePath, ConflictMode: WideString): Integer;
-var
-	FileStream: TBufferedFileStream;
-begin
-	FileStream := TBufferedFileStream.Create(GetUNCFilePath(LocalPath), fmOpenRead or fmShareDenyWrite);
-	try
-		Result := PutFileStream(ExtractFileName(RemotePath), RemotePath, FileStream, ConflictMode); {putFileStream может обойтись без параметра имени - оно всегда берётся из remotePath}
-	finally
-		FileStream.Free;
-	end;
-end;
-
-{Helper method for PutFileSplit: handles FS_FILE_EXISTS case based on ChunkOverwriteMode}
-function TCloudMailRu.HandleChunkExists(const ChunkRemotePath: WideString; ChunkOverwriteMode: Integer; var ResultCode: Integer): TChunkActionResult;
-begin
-	case ChunkOverwriteMode of
-		ChunkOverwrite: {Silently overwrite chunk by deleting first}
-			begin
-				FLogger.Log(LOG_LEVEL_WARNING, MSGTYPE_DETAILS, CHUNK_OVERWRITE, [ChunkRemotePath]);
-				if not DeleteFile(ChunkRemotePath) then
-				begin
-					ResultCode := FS_FILE_WRITEERROR;
-					Result := caAbort;
-				end else begin
-					Result := caRetry; {Retry with same chunk after delete}
-				end;
-			end;
-		ChunkOverwriteIgnore: {Skip this chunk and continue}
-			begin
-				FLogger.Log(LOG_LEVEL_WARNING, MSGTYPE_DETAILS, CHUNK_SKIP, [ChunkRemotePath]);
-				Result := caContinue;
-			end;
-		ChunkOverwriteAbort: {Abort the entire operation}
-			begin
-				FLogger.Log(LOG_LEVEL_WARNING, MSGTYPE_DETAILS, CHUNK_ABORT, [ChunkRemotePath]);
-				ResultCode := FS_FILE_NOTSUPPORTED;
-				Result := caAbort;
-			end;
-	else
-		{Unknown mode - treat as abort}
-		ResultCode := CLOUD_OPERATION_FAILED;
-		Result := caAbort;
-	end;
-end;
-
-{Helper method for PutFileSplit: handles upload errors based on OperationErrorMode}
-function TCloudMailRu.HandleChunkError(UploadResult: Integer; const ChunkRemotePath: WideString; var RetryAttemptsCount: Integer; var ResultCode: Integer): TChunkActionResult;
-begin
-	case OperationErrorMode of
-		OperationErrorModeAsk:
-			begin
-				case MsgBox(ERR_PARTIAL_UPLOAD_ASK, [UploadResult, ChunkRemotePath], ERR_UPLOAD, MB_ABORTRETRYIGNORE + MB_ICONERROR) of
-					ID_ABORT:
-						begin
-							ResultCode := FS_FILE_USERABORT;
-							Result := caAbort;
-						end;
-					ID_RETRY:
-						Result := caRetry;
-					ID_IGNORE:
-						Result := caContinue;
-				else
-					Result := caContinue; {Default to continue for unknown response}
-				end;
-			end;
-		OperationErrorModeIgnore:
-			begin
-				FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_PARTIAL_UPLOAD_IGNORE, [UploadResult]);
-				Result := caContinue;
-			end;
-		OperationErrorModeAbort:
-			begin
-				FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_PARTIAL_UPLOAD_ABORT, [UploadResult]);
-				ResultCode := FS_FILE_USERABORT;
-				Result := caAbort;
-			end;
-		OperationErrorModeRetry:
-			begin
-				Inc(RetryAttemptsCount);
-				if RetryAttemptsCount <= RetryAttempts then
-				begin
-					FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_PARTIAL_UPLOAD_RETRY, [UploadResult, RetryAttemptsCount, RetryAttempts]);
-					ProcessMessages;
-					Sleep(AttemptWait);
-					Result := caRetry;
-				end else begin
-					FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_PARTIAL_UPLOAD_RETRY_EXCEED, [UploadResult]);
-					ResultCode := CLOUD_OPERATION_FAILED;
-					Result := caAbort;
-				end;
-			end;
-	else
-		{Unknown option value - abort}
-		ResultCode := CLOUD_OPERATION_FAILED;
-		Result := caAbort;
-	end;
-end;
-
-{Helper method for PutFileSplit: generates and uploads CRC file after successful chunk uploads}
-procedure TCloudMailRu.GenerateAndUploadCRC(const LocalPath, RemotePath: WideString; const SplitFileInfo: TFileSplitInfo; const ConflictMode: WideString);
-var
-	CRCRemotePath: WideString;
-	CRCStream: TStringStream;
-begin
-	CRCRemotePath := ExtractFilePath(RemotePath) + SplitFileInfo.CRCFileName;
-	HTTP.SetProgressNames(LocalPath, CRCRemotePath);
-	CRCStream := TStringStream.Create;
-	try
-		SplitFileInfo.GetCRCData(CRCStream);
-		PutFileStream(SplitFileInfo.CRCFileName, CRCRemotePath, CRCStream, ConflictMode);
-	finally
-		CRCStream.Free;
-	end;
-end;
-
-{Uploads file in chunks when it exceeds CloudMaxFileSize.
- Returns FS_FILE_OK on success, or appropriate error code on failure.}
-function TCloudMailRu.PutFileSplit(LocalPath, RemotePath, ConflictMode: WideString; ChunkOverwriteMode: Integer): Integer;
-var
-	LocalFileIdentity: TCMRFileIdentity;
-	SplitFileInfo: TFileSplitInfo;
-	ChunkIndex: Integer;
-	ChunkRemotePath: WideString;
-	ChunkStream: TChunkedFileStream;
-	RetryAttemptsCount: Integer;
-	UseHash: Boolean;
-	Action: TChunkActionResult;
-begin
-	{Try hash deduplication first - may skip upload entirely if file already exists}
-	UseHash := PrecalculateHash or (ForcePrecalculateSize >= FFileSystem.GetFileSize(LocalPath)); {issue #231}
-	if UseHash then
-		LocalFileIdentity := FileIdentity(GetUNCFilePath(LocalPath));
-	{Hash calculation cancellation causes entire operation abort - TC remembers cancel press}
-	if UseHash and (LocalFileIdentity.Hash <> EmptyWideStr) and (not FDoCryptFiles)
-		and (FS_FILE_OK = AddFileByIdentity(LocalFileIdentity, RemotePath, CLOUD_CONFLICT_STRICT, False, True)) then
-		Exit(CLOUD_OPERATION_OK); {issue #135}
-
-	{Create split info to determine chunk boundaries}
-	SplitFileInfo := TFileSplitInfo.Create(GetUNCFilePath(LocalPath), CloudMaxFileSize);
-	try
-		ChunkIndex := 0;
-		RetryAttemptsCount := 0;
-		Result := FS_FILE_OK;
-
-		{Upload each chunk - using while loop because we may need to retry (dec index)}
-		while ChunkIndex < SplitFileInfo.ChunksCount do
-		begin
-			ChunkRemotePath := Format('%s%s', [ExtractFilePath(RemotePath), SplitFileInfo.GetChunks[ChunkIndex].name]);
-			HTTP.SetProgressNames(LocalPath, ChunkRemotePath);
-			FLogger.Log(LOG_LEVEL_DEBUG, MSGTYPE_DETAILS, PARTIAL_UPLOAD_INFO, [LocalPath, ChunkIndex + 1, SplitFileInfo.ChunksCount, ChunkRemotePath]);
-
-			{Upload current chunk}
-			ChunkStream := TChunkedFileStream.Create(GetUNCFilePath(LocalPath), fmOpenRead or fmShareDenyWrite, SplitFileInfo.GetChunks[ChunkIndex].start, SplitFileInfo.GetChunks[ChunkIndex].size);
-			try
-				Result := PutFileStream(ExtractFileName(ChunkRemotePath), ChunkRemotePath, ChunkStream, ConflictMode);
-			finally
-				ChunkStream.Free;
-			end;
-
-			{Handle upload result}
-			case Result of
-				FS_FILE_OK:
-					begin
-						RetryAttemptsCount := 0;
-						Inc(ChunkIndex);
-					end;
-				FS_FILE_USERABORT:
-					begin
-						FLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, PARTIAL_UPLOAD_ABORTED);
-						Break; {Exit loop preserving USERABORT result}
-					end;
-				FS_FILE_EXISTS:
-					begin
-						Action := HandleChunkExists(ChunkRemotePath, ChunkOverwriteMode, Result);
-						case Action of
-							caRetry: ; {Don't increment, retry same chunk}
-							caContinue:
-								begin
-									Result := FS_FILE_OK; {Clear error when ignoring and continuing}
-									Inc(ChunkIndex);
-								end;
-							caAbort: Break;
-						end;
-					end;
-			else
-				{Any other error - handle via OperationErrorMode}
-				Action := HandleChunkError(Result, ChunkRemotePath, RetryAttemptsCount, Result);
-				case Action of
-					caRetry: ; {Don't increment, retry same chunk}
-					caContinue:
-						begin
-							Result := FS_FILE_OK; {Clear error when ignoring and continuing}
-							Inc(ChunkIndex);
-						end;
-					caAbort: Break;
-				end;
-			end;
-		end;
-
-		{Generate and upload CRC file only after all chunks uploaded successfully}
-		if Result = FS_FILE_OK then
-			GenerateAndUploadCRC(LocalPath, RemotePath, SplitFileInfo, ConflictMode);
-	finally
-		SplitFileInfo.Free;
-	end;
-	{Return actual Result - previously always returned OK which was a bug}
-end;
-
-{Wrapper for putFileWhole/putFileSplit}
+{Delegates to FUploader}
 function TCloudMailRu.PutFile(LocalPath, RemotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; ChunkOverwriteMode: Integer = 0): Integer;
 begin
-	if IsPublicAccount then
-		Exit(FS_FILE_NOTSUPPORTED);
-	HTTP.SetProgressNames(LocalPath, RemotePath);
-	if (not(UnlimitedFileSize)) and (FFileSystem.GetFileSize(GetUNCFilePath(LocalPath)) > CloudMaxFileSize) then
-	begin
-		if SplitLargeFiles then
-		begin
-			FLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, SPLIT_LARGE_FILE, [CloudMaxFileSize]);
-			Exit(PutFileSplit(LocalPath, RemotePath, ConflictMode, ChunkOverwriteMode));
-		end else begin
-			FLogger.Log(LOG_LEVEL_WARNING, MSGTYPE_IMPORTANTERROR, SPLIT_LARGE_FILE_IGNORE, [CloudMaxFileSize]);
-			Exit(FS_FILE_NOTSUPPORTED);
-		end;
-	end;
-
-	Result := PutFileWhole(LocalPath, RemotePath, ConflictMode);
+	Result := FUploader.Upload(LocalPath, RemotePath, ConflictMode, ChunkOverwriteMode);
 end;
 
-function TCloudMailRu.PutFileToCloud(FileName: WideString; FileStream: TStream; var FileIdentity: TCMRFileIdentity): Integer;
-var
-	CallResult: TAPICallResult;
-	LocalIdentity: TCMRFileIdentity;
-	DispatcherResponse: WideString;
-	Progress: Boolean;
-begin
-	FileIdentity.Hash := EmptyWideStr;
-	FileIdentity.size := -1;
-	Result := CLOUD_OPERATION_FAILED;
-	if IsPublicAccount then
-		Exit;
-	if (EmptyWideStr = FUploadShard) then
-	begin
-		FLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, UNDEFINED_UPLOAD_SHARD);
-		if (EmptyWideStr <> UploadShardOverride) then
-		begin
-			FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_DETAILS, UPLOAD_URL_OVERRIDDEN);
-			FUploadShard := UploadShardOverride;
-		end else begin
-			{OAuth uses different dispatcher endpoint that returns plain text URL}
-			Progress := False;
-			if HTTP.GetPage(Format('%s/u?token=%s', [OAUTH_DISPATCHER_URL, FOAuthToken.access_token]), DispatcherResponse, Progress) then
-			begin
-				{Response format: "URL IP COUNT", extract the URL (first word)}
-				FUploadShard := Trim(Copy(DispatcherResponse, 1, Pos(' ', DispatcherResponse) - 1));
-				FLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, PREFIX_SHARD_RECEIVED, [FUploadShard, SHARD_TYPE_UPLOAD]);
-			end;
-		end
-	end;
-
-	LocalIdentity.Hash := EmptyWideStr;
-	LocalIdentity.size := -1;
-	CallResult := FRetryOperation.Execute(
-		function: TAPICallResult
-		var
-			PostAnswer: WideString;
-			UploadUrl: WideString;
-			ResultCode: Integer;
-		begin
-			{OAuth requires only client_id and token parameters for upload authentication}
-			UploadUrl := Format('%s?client_id=%s&token=%s', [FUploadShard, OAUTH_CLIENT_ID, FOAuthToken.access_token]);
-			ResultCode := HTTP.PutFile(UploadUrl, FileName, FileStream, PostAnswer);
-			if (ResultCode = CLOUD_OPERATION_OK) then
-			begin
-				if length(PostAnswer) <> SHA1_HEX_LENGTH then
-					ResultCode := CLOUD_OPERATION_FAILED
-				else begin
-					LocalIdentity.Hash := PostAnswer;
-					LocalIdentity.size := FileStream.size;
-				end;
-			end;
-			Result := TAPICallResult.FromInteger(ResultCode);
-		end);
-
-	Result := CallResult.ResultCode;
-	if Result = CLOUD_OPERATION_OK then
-		FileIdentity := LocalIdentity;
-end;
-
+{Delegates to FFileOps}
 function TCloudMailRu.RemoveDir(Path: WideString): Boolean;
 begin
-	Result := False;
-	if IsPublicAccount then
-		Exit;
-	HTTP.SetProgressNames(DELETE_DIR, Path);
-	{API always returns true even if path doesn't exist}
-	Result := FRetryOperation.PostFormBoolean(
-		API_FILE_REMOVE + '?' + FUnitedParams,
-		Format('home=/%s&conflict', [IncludeSlash(PathToUrl(Path))]),
-		PREFIX_ERR_DELETE_DIR);
+	Result := FFileOps.RemoveDirectory(Path);
 end;
 
+{Delegates to FFileOps}
 function TCloudMailRu.RenameFile(OldName, NewName: WideString): Integer;
 begin
-	Result := FS_FILE_WRITEERROR;
-	if IsPublicAccount then
-		Exit;
-	Result := FRetryOperation.PostFormInteger(
-		API_FILE_RENAME + '?' + FUnitedParams,
-		Format('home=%s&name=%s', [PathToUrl(OldName), PathToUrl(NewName)]),
-		PREFIX_ERR_FILE_RENAME);
+	Result := FFileOps.Rename(OldName, NewName);
 end;
 
 function TCloudMailRu.StatusFile(Path: WideString; var FileInfo: TCMRDirItem): Boolean;
@@ -1658,74 +915,16 @@ begin
 	Result := TempCloud.Login;
 end;
 
+{Delegates to FHashCalculator - kept for backward compatibility with tests}
 function TCloudMailRu.CloudHash(Path: WideString): WideString;
-var
-	Stream: TStream;
 begin
-	Result := EmptyWideStr;
-	if not FFileSystem.FileExists(Path) then
-		Exit;
-
-	try
-		Stream := TBufferedFileStream.Create(Path, fmOpenRead or fmShareDenyWrite);
-	except
-		Exit;
-	end;
-	try
-		Result := CloudHash(Stream, GetLFCFilePath(Path));
-	finally
-		Stream.Free;
-	end;
+	Result := FHashCalculator.CalculateHash(Path);
 end;
 
+{Delegates to FHashCalculator - kept for backward compatibility with tests}
 function TCloudMailRu.CloudHash(Stream: TStream; Path: WideString = CALCULATING_HASH): WideString;
-const
-	{Cloud Mail.ru hash algorithm constants}
-	HASH_SEED = 'mrCloud';
-	SMALL_FILE_THRESHOLD = 21;
-	SMALL_FILE_BUFFER = 20;
-	BUFFER_SIZE = 8192;
-var
-	sha1: THashSHA1;
-	buffer: array [0 .. BUFFER_SIZE - 1] of byte;
-	read, iteration, processedBytes: Int64;
-	initBuffer, finalBuffer: TBytes;
-	Percent: Integer;
-	Aborted: Boolean;
 begin
-	Stream.Position := 0;
-	Result := EmptyWideStr;
-	if Stream.size < SMALL_FILE_THRESHOLD then
-	begin
-		SetLength(initBuffer, SMALL_FILE_BUFFER);
-		Stream.read(initBuffer, Stream.size);
-		Result := UpperCase(THash.DigestAsString(initBuffer));
-		Exit;
-	end;
-
-	FillChar(buffer, sizeof(buffer), 0);
-	initBuffer := TEncoding.UTF8.GetBytes(HASH_SEED);
-
-	sha1 := THashSHA1.Create;
-	sha1.Update(initBuffer, length(initBuffer));
-	iteration := 0;
-	repeat
-		iteration := iteration + 1;
-		processedBytes := BUFFER_SIZE * iteration;
-		Percent := Round((processedBytes / Stream.size) * 100);
-		if Percent > 100 then
-			Percent := 100;
-
-		read := Stream.read(buffer, BUFFER_SIZE);
-		sha1.Update(buffer, read);
-		Aborted := FProgress.Progress(Path, CALCULATING_HASH, Percent);
-	until (read < sizeof(buffer)) or Aborted;
-
-	finalBuffer := TEncoding.UTF8.GetBytes(Stream.size.ToString);
-	sha1.Update(finalBuffer, length(finalBuffer));
-	if (not Aborted) then
-		Result := UpperCase(sha1.HashAsString);
-	sha1.Reset;
+	Result := FHashCalculator.CalculateHash(Stream, Path);
 end;
 
 end.

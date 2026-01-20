@@ -20,6 +20,7 @@ uses
 	WindowsFileSystem,
 	CloudHTTP,
 	HTTPManager,
+	CloudShardManager,
 	MockCloudHTTP,
 	MockHTTPManager,
 	MockAuthStrategy,
@@ -122,7 +123,7 @@ end;
 
 function TTestableLoginCloud.GetPublicShard: WideString;
 begin
-	Result := FPublicShard;
+	Result := FShardManager.GetPublicShard;
 end;
 
 {TCloudMailRuLoginFlowTest}

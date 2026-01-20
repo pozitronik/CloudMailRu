@@ -262,21 +262,15 @@ end;
 
 procedure TCloudMailRuCombinedOpsTest.TestFileMove_PublicAccount_Fails;
 begin
-	{Note: FileMove uses standard ExtractFilePath which doesn't recognize forward slashes
-	 on Windows. With paths like '/folder1/file.txt', ExtractFilePath returns '',
-	 making SameDir=True, which calls RenameFile instead of MoveFile.
-	 RenameFile returns FS_FILE_WRITEERROR for public accounts.
-	 This is a known limitation - cloud paths use forward slashes but Windows path
-	 functions don't handle them. Production code should use ExtractUniversalFilePath.
-	 For now, we test with the actual behavior.}
+	{FileMove uses ExtractUniversalFilePath which correctly handles forward slashes.
+	 For public accounts, MoveToPath returns FS_FILE_NOTSUPPORTED.}
 	FCloud := CreateCloud(True);
 	FMockHTTP.SetResponse(API_FILE_MOVE, True, JSON_SUCCESS);
 
 	var Result := FCloud.FileMove('/folder1/file.txt', '/folder2/file.txt');
 
-	{Due to ExtractFilePath not recognizing '/', SameDir becomes True,
-	 so RenameFile is called which returns FS_FILE_WRITEERROR for public accounts}
-	Assert.AreEqual(FS_FILE_WRITEERROR, Result, 'FileMove should fail for public accounts');
+	{Public accounts cannot perform move operations}
+	Assert.AreEqual(FS_FILE_NOTSUPPORTED, Result, 'FileMove should fail for public accounts');
 end;
 
 {FileCopy tests}

@@ -162,7 +162,7 @@ uses
 	CloudMailRuUploadTest in 'Domain\Services\CloudMailRuUploadTest.pas',
 	CloudMailRuIntegrationTest in 'Domain\Services\CloudMailRuIntegrationTest.pas',
 	CloudMailRuLoginFlowTest in 'Domain\Services\CloudMailRuLoginFlowTest.pas',
-	CloudMailRuPutFileSplitTest in 'Domain\Services\CloudMailRuPutFileSplitTest.pas',
+	CloudFileUploaderSplitTest in 'Application\Upload\CloudFileUploaderSplitTest.pas',
 	ThreadStateManager in '..\src\Infrastructure\State\ThreadStateManager.pas',
 	ThreadStateManagerTest in 'Infrastructure\State\ThreadStateManagerTest.pas',
 	ContentFieldProvider in '..\src\Presentation\ContentField\ContentFieldProvider.pas',
@@ -240,7 +240,23 @@ uses
 	ListingResultApplier in '..\src\Application\Listing\ListingResultApplier.pas',
 	ListingResultApplierTest in 'Application\Listing\ListingResultApplierTest.pas',
 	DownloadOrchestrator in '..\src\Application\Download\DownloadOrchestrator.pas',
-	DownloadOrchestratorTest in 'Application\Download\DownloadOrchestratorTest.pas';
+	DownloadOrchestratorTest in 'Application\Download\DownloadOrchestratorTest.pas',
+	CloudHashCalculator in '..\src\Infrastructure\Hash\CloudHashCalculator.pas',
+	CloudHashCalculatorTest in 'Infrastructure\Hash\CloudHashCalculatorTest.pas',
+	CloudShardManager in '..\src\Infrastructure\Shard\CloudShardManager.pas',
+	CloudShardManagerTest in 'Infrastructure\Shard\CloudShardManagerTest.pas',
+	CloudErrorMapper in '..\src\Domain\Services\CloudErrorMapper.pas',
+	CloudErrorMapperTest in 'Domain\Services\CloudErrorMapperTest.pas',
+	CloudFileDownloader in '..\src\Application\Download\CloudFileDownloader.pas',
+	CloudFileDownloaderTest in 'Application\Download\CloudFileDownloaderTest.pas',
+	CloudFileUploader in '..\src\Application\Upload\CloudFileUploader.pas',
+	CloudFileUploaderTest in 'Application\Upload\CloudFileUploaderTest.pas',
+	CloudShareService in '..\src\Application\Share\CloudShareService.pas',
+	CloudShareServiceTest in 'Application\Share\CloudShareServiceTest.pas',
+	CloudListingService in '..\src\Application\Listing\CloudListingService.pas',
+	CloudListingServiceTest in 'Application\Listing\CloudListingServiceTest.pas',
+	CloudFileOperations in '..\src\Application\FileOps\CloudFileOperations.pas',
+	CloudFileOperationsTest in 'Application\FileOps\CloudFileOperationsTest.pas';
 
 {keep comment here to protect the following conditional from being removed by the IDE when adding a unit}
 {$IFNDEF TESTINSIGHT}
