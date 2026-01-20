@@ -6,7 +6,7 @@ interface
 
 uses
 	ICloudHTTPInterface,
-	IHTTPManagerInterface,
+	HTTPManager,
 	ConnectionSettings,
 	System.Generics.Collections;
 

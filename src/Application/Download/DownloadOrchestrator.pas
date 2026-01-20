@@ -9,7 +9,7 @@ uses
 	DownloadPreparationValidator,
 	LocalFileConflictResolver,
 	RetryHandler,
-	IPluginSettingsManagerInterface,
+	PluginSettingsManager,
 	RealPath,
 	PLUGIN_TYPES;
 

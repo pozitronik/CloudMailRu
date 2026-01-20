@@ -9,7 +9,7 @@ uses
 	Windows,
 	SysUtils,
 	DUnitX.TestFramework,
-	IPluginSettingsManagerInterface,
+	PluginSettingsManager,
 	TCLogger,
 	LocalFileDeletionHandler,
 	PluginSettings,

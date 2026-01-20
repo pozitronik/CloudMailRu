@@ -11,7 +11,7 @@ uses
 	TCProgress,
 	TCRequest,
 	IAuthStrategyInterface,
-	IFileSystemInterface,
+	WindowsFileSystem,
 	PLUGIN_TYPES,
 	SysUtils,
 	DUnitX.TestFramework;

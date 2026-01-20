@@ -7,7 +7,7 @@ interface
 
 uses
 	OperationLifecycleHandler,
-	IPluginSettingsManagerInterface,
+	PluginSettingsManager,
 	IConnectionManagerInterface,
 	RealPath;
 

@@ -8,7 +8,7 @@ interface
 uses
 	SysUtils,
 	TCLogger,
-	IPluginSettingsManagerInterface,
+	PluginSettingsManager,
 	IConnectionManagerInterface,
 	CloudMailRu,
 	RealPath,

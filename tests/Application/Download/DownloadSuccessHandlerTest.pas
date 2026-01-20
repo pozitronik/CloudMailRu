@@ -10,7 +10,7 @@ uses
 	SysUtils,
 	DUnitX.TestFramework,
 	DownloadSuccessHandler,
-	IPluginSettingsManagerInterface,
+	PluginSettingsManager,
 	TCLogger,
 	TCProgress,
 	DescriptionSyncGuard,

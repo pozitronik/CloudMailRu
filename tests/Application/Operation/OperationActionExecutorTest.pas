@@ -12,7 +12,7 @@ uses
 	OperationLifecycleHandler,
 	OperationActionExecutor,
 	ThreadStateManager,
-	IPluginSettingsManagerInterface,
+	PluginSettingsManager,
 	TCLogger,
 	PluginSettings,
 	RealPath;

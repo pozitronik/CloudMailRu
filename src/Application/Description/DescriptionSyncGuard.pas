@@ -8,8 +8,8 @@ interface
 
 uses
 	DescriptionSyncManager,
-	IPluginSettingsManagerInterface,
-	IAccountsManagerInterface,
+	PluginSettingsManager,
+	AccountsManager,
 	CloudDescriptionOpsAdapter,
 	RealPath,
 	CloudMailRu;

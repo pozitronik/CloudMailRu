@@ -1,4 +1,6 @@
-﻿unit PluginSettingsManager;
+unit PluginSettingsManager;
+
+{Interface for plugin settings management, decoupled from INI file implementation}
 
 interface
 
@@ -14,11 +16,25 @@ uses
 	Classes,
 	PluginSettings,
 	StreamingSettings,
-	IPluginSettingsManagerInterface,
-	IConfigFileInterface,
-	IEnvironmentInterface;
+	IniConfigFile,
+	WindowsEnvironment;
 
 type
+
+	IPluginSettingsManager = interface
+		['{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}']
+		function GetSettings: TPluginSettings;
+		procedure SwitchProxyPasswordStorage;
+	end;
+
+	{Null implementation for testing - returns defaults, no-op for writes}
+	TNullPluginSettingsManager = class(TInterfacedObject, IPluginSettingsManager)
+	private
+		FSettings: TPluginSettings;
+	public
+		function GetSettings: TPluginSettings;
+		procedure SwitchProxyPasswordStorage;
+	end;
 
 	{Files names and path naming conventions:
 	 (File)Path or (Dir)Patn should contain the full absolute path for a file or a directory
@@ -61,9 +77,17 @@ type
 
 implementation
 
-uses
-	IniConfigFile,
-	WindowsEnvironment;
+{TNullPluginSettingsManager}
+
+function TNullPluginSettingsManager.GetSettings: TPluginSettings;
+begin
+	Result := FSettings;
+end;
+
+procedure TNullPluginSettingsManager.SwitchProxyPasswordStorage;
+begin
+	{No-op for null implementation}
+end;
 
 {TPluginSettingsManager}
 

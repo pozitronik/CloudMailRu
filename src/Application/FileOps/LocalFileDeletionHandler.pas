@@ -14,7 +14,7 @@ interface
 uses
 	Windows,
 	SysUtils,
-	IPluginSettingsManagerInterface,
+	PluginSettingsManager,
 	TCLogger,
 	PLUGIN_TYPES,
 	CMRConstants,

@@ -19,7 +19,7 @@ uses
 	IConnectionManagerInterface,
 	IconProvider,
 	IconContextBuilder,
-	IAccountsManagerInterface,
+	AccountsManager,
 	ListingItemFetcher,
 	MockConnectionManager;
 

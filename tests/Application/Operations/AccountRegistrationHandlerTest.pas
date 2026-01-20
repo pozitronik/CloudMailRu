@@ -10,7 +10,7 @@ uses
 	AccountSettings,
 	ConnectionSettings,
 	TCPasswordManager,
-	IAccountsManagerInterface,
+	AccountsManager,
 	AccountRegistrationHandler;
 
 type

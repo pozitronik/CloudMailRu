@@ -13,7 +13,6 @@ uses
 	TCProgress,
 	TCRequest,
 	IAuthStrategyInterface,
-	IFileSystemInterface,
 	WindowsFileSystem,
 	TestHelper,
 	System.Classes,

@@ -10,7 +10,7 @@ uses
 	Windows,
 	SysUtils,
 	DateUtils,
-	IPluginSettingsManagerInterface,
+	PluginSettingsManager,
 	TCLogger,
 	TCProgress,
 	DescriptionSyncGuard,

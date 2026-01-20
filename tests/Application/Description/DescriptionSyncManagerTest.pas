@@ -11,10 +11,9 @@ uses
 	DUnitX.TestFramework,
 	RealPath,
 	Description,
-	IFileSystemInterface,
+	WindowsFileSystem,
 	CloudDescriptionOpsAdapter,
 	DescriptionSyncManager,
-	WindowsFileSystem,
 	MockCloudDescriptionOps;
 
 type

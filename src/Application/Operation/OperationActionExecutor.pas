@@ -10,7 +10,7 @@ interface
 uses
 	OperationLifecycleHandler,
 	ThreadStateManager,
-	IPluginSettingsManagerInterface,
+	PluginSettingsManager,
 	TCLogger,
 	IConnectionManagerInterface,
 	Description,

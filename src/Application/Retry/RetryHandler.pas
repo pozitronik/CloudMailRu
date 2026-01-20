@@ -8,7 +8,7 @@ interface
 uses
 	SysUtils,
 	ThreadStateManager,
-	IPluginSettingsManagerInterface;
+	PluginSettingsManager;
 
 type
 	{Identifies which retry counter to use for tracking attempts}

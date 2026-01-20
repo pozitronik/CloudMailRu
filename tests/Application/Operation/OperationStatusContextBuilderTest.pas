@@ -9,7 +9,7 @@ uses
 	DUnitX.TestFramework,
 	OperationStatusContextBuilder,
 	OperationLifecycleHandler,
-	IPluginSettingsManagerInterface,
+	PluginSettingsManager,
 	MockConnectionManager,
 	RealPath;
 
@@ -54,7 +54,7 @@ uses
 	CloudMailRu,
 	CloudSettings,
 	IAuthStrategyInterface,
-	IFileSystemInterface,
+	WindowsFileSystem,
 	TCLogger,
 	TCProgress,
 	TCRequest;

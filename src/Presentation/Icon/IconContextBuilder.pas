@@ -11,7 +11,7 @@ uses
 	Windows,
 	IconProvider,
 	ListingItemFetcher,
-	IAccountsManagerInterface,
+	AccountsManager,
 	IConnectionManagerInterface,
 	RealPath,
 	CMRDirItem,

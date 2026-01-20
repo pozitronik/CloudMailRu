@@ -11,7 +11,7 @@ uses
 	System.Generics.Collections,
 	DUnitX.TestFramework,
 	ThreadStateManager,
-	IPluginSettingsManagerInterface,
+	PluginSettingsManager,
 	RetryHandler,
 	PluginSettings,
 	PLUGIN_TYPES,

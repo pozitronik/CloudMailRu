@@ -1,9 +1,9 @@
-unit MemoryEnvironmentTest;
+unit WindowsEnvironmentTest;
 
 interface
 
 uses
-	IEnvironmentInterface,
+	WindowsEnvironment,
 	DUnitX.TestFramework;
 
 type

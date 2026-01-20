@@ -4,7 +4,6 @@ interface
 
 uses
 	Description,
-	IFileSystemInterface,
 	WindowsFileSystem,
 	System.Classes,
 	Windows,

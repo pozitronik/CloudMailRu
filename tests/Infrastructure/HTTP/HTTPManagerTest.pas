@@ -1,9 +1,9 @@
-unit NullHTTPManagerTest;
+unit HTTPManagerTest;
 
 interface
 
 uses
-	IHTTPManagerInterface,
+	HTTPManager,
 	ConnectionSettings,
 	DUnitX.TestFramework;
 

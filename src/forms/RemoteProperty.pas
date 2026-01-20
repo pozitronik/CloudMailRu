@@ -33,7 +33,7 @@ uses
 	Vcl.ImgList,
 	Clipbrd,
 	HashInfo,
-	IFileSystemInterface;
+	WindowsFileSystem;
 
 const
 	WM_AFTER_SHOW = WM_USER + 300; //custom message

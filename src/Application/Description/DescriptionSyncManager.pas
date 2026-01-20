@@ -10,7 +10,7 @@ uses
 	SysUtils,
 	RealPath,
 	Description,
-	IFileSystemInterface,
+	WindowsFileSystem,
 	CloudDescriptionOpsAdapter;
 
 type
