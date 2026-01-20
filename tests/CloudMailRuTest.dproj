@@ -113,7 +113,7 @@
         <DCCReference Include="..\src\models\logger\TCLogger.pas"/>
         <DCCReference Include="models\logger\TCLoggerTest.pas"/>
         <DCCReference Include="models\logger\NullLoggerTest.pas"/>
-        <DCCReference Include="..\src\types\PLUGIN_TYPES.pas"/>
+        <DCCReference Include="..\src\Presentation\WFX\PLUGIN_TYPES.pas"/>
         <DCCReference Include="..\src\helpers\SystemHelper.pas"/>
         <DCCReference Include="..\src\models\progress\IProgressInterface.pas"/>
         <DCCReference Include="..\src\models\progress\TCProgress.pas"/>
@@ -132,12 +132,12 @@
         <DCCReference Include="..\src\helpers\WindowsHelper.pas"/>
         <DCCReference Include="..\src\models\settings\ConnectionSettings.pas"/>
         <DCCReference Include="..\src\models\settings\SETTINGS_CONSTANTS.pas"/>
-        <DCCReference Include="..\src\types\CMRConstants.pas"/>
+        <DCCReference Include="..\src\Domain\Constants\CMRConstants.pas"/>
         <DCCReference Include="..\src\models\settings\ProxySettings.pas"/>
         <DCCReference Include="..\src\helpers\StringHelper.pas"/>
         <DCCReference Include="..\src\helpers\TCHelper.pas"/>
         <DCCReference Include="..\src\Domain\Services\Description.pas"/>
-        <DCCReference Include="..\src\types\LANGUAGE_STRINGS.pas"/>
+        <DCCReference Include="..\src\Presentation\Localization\LANGUAGE_STRINGS.pas"/>
         <DCCReference Include="models\settings\PluginSettingsManagerTest.pas"/>
         <DCCReference Include="models\settings\AccountsManagerTest.pas"/>
         <DCCReference Include="..\src\helpers\ParsingHelper.pas"/>
@@ -161,8 +161,8 @@
         <DCCReference Include="..\src\models\settings\PluginSettings.pas"/>
         <DCCReference Include="..\src\helpers\IniFilesHelper.pas"/>
         <DCCReference Include="..\src\models\settings\StreamingSettings.pas"/>
-        <DCCReference Include="helpers\TestFileHelper.pas"/>
-        <DCCReference Include="helpers\TestPathHelper.pas"/>
+        <DCCReference Include="Infrastructure\IO\TestFileHelper.pas"/>
+        <DCCReference Include="Infrastructure\IO\TestPathHelper.pas"/>
         <DCCReference Include="..\src\Domain\Services\CloudMailRu.pas"/>
         <DCCReference Include="..\src\Domain\ValueObjects\CMRFileIdentity.pas"/>
         <DCCReference Include="..\src\Domain\ValueObjects\CMRIncomingInviteList.pas"/>
@@ -177,11 +177,11 @@
         <DCCReference Include="..\src\Domain\ValueObjects\CMROwner.pas"/>
         <DCCReference Include="..\src\Infrastructure\IO\ChunkedFileStream.pas"/>
         <DCCReference Include="..\src\Infrastructure\IO\FileSplitInfo.pas"/>
-        <DCCReference Include="..\src\helpers\PluginHelper.pas"/>
+        <DCCReference Include="..\src\Presentation\WFX\PluginHelper.pas"/>
         <DCCReference Include="..\src\models\http\HTTPManager.pas"/>
         <DCCReference Include="..\src\Domain\ValueObjects\RealPath.pas"/>
         <DCCReference Include="..\src\models\settings\CloudSettings.pas"/>
-        <DCCReference Include="..\src\forms\AskPassword.pas">
+        <DCCReference Include="..\src\Presentation\UI\Forms\AskPassword.pas">
             <Form>AskPasswordForm</Form>
         </DCCReference>
         <BuildConfiguration Include="Base">

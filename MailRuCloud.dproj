@@ -190,17 +190,17 @@
         <DelphiCompile Include="$(MainSource)">
             <MainSource>MainSource</MainSource>
         </DelphiCompile>
-        <DCCReference Include="src\helpers\DebugHelper.pas"/>
+        <DCCReference Include="src\Infrastructure\Logger\DebugHelper.pas"/>
         <DCCReference Include="src\Presentation\WFX\ANSIFunctions.pas"/>
         <DCCReference Include="src\models\settings\AccountSettings.pas"/>
-        <DCCReference Include="src\forms\Accounts.pas">
+        <DCCReference Include="src\Presentation\UI\Forms\Accounts.pas">
             <Form>AccountsForm</Form>
         </DCCReference>
         <DCCReference Include="src\models\settings\AccountsManager.pas"/>
-        <DCCReference Include="src\forms\AskPassword.pas">
+        <DCCReference Include="src\Presentation\UI\Forms\AskPassword.pas">
             <Form>AskPasswordForm</Form>
         </DCCReference>
-        <DCCReference Include="src\types\CMRConstants.pas"/>
+        <DCCReference Include="src\Domain\Constants\CMRConstants.pas"/>
         <DCCReference Include="src\Domain\ValueObjects\CMRDirItem.pas"/>
         <DCCReference Include="src\Domain\ValueObjects\CMRDirItemList.pas"/>
         <DCCReference Include="src\Domain\ValueObjects\CMRFileIdentity.pas"/>
@@ -212,7 +212,7 @@
         <DCCReference Include="src\Domain\ValueObjects\CMROperationResult.pas"/>
         <DCCReference Include="src\Domain\ValueObjects\CMROwner.pas"/>
         <DCCReference Include="src\Domain\ValueObjects\CMRSpace.pas"/>
-        <DCCReference Include="src\types\LANGUAGE_STRINGS.pas"/>
+        <DCCReference Include="src\Presentation\Localization\LANGUAGE_STRINGS.pas"/>
         <DCCReference Include="src\Domain\ValueObjects\CMRTwostep.pas"/>
         <DCCReference Include="src\Infrastructure\IO\ChunkedFileStream.pas"/>
         <DCCReference Include="src\Domain\Services\CloudMailRu.pas"/>
@@ -228,41 +228,41 @@
         <DCCReference Include="src\libs\DCPCrypt\Ciphers\DCPrijndael.pas"/>
         <DCCReference Include="src\libs\DCPCrypt\Hashes\DCPsha1.pas"/>
         <DCCReference Include="src\libs\DCPCrypt\DCPtypes.pas"/>
-        <DCCReference Include="src\forms\DeletedProperty.pas">
+        <DCCReference Include="src\Presentation\UI\Forms\DeletedProperty.pas">
             <Form>DeletedPropertyForm</Form>
         </DCCReference>
         <DCCReference Include="src\Domain\Services\Description.pas"/>
         <DCCReference Include="src\Infrastructure\Cipher\FileCipher.pas"/>
-        <DCCReference Include="src\helpers\FileHelper.pas"/>
+        <DCCReference Include="src\Infrastructure\IO\FileHelper.pas"/>
         <DCCReference Include="src\Infrastructure\IO\FileSplitInfo.pas"/>
         <DCCReference Include="src\models\http\HTTPManager.pas"/>
         <DCCReference Include="src\Domain\ValueObjects\HashInfo.pas"/>
-        <DCCReference Include="src\helpers\IconHelper.pas"/>
-        <DCCReference Include="src\helpers\IniFilesHelper.pas"/>
-        <DCCReference Include="src\forms\InviteProperty.pas">
+        <DCCReference Include="src\Presentation\Icon\IconHelper.pas"/>
+        <DCCReference Include="src\Infrastructure\Config\IniFilesHelper.pas"/>
+        <DCCReference Include="src\Presentation\UI\Forms\InviteProperty.pas">
             <Form>InvitePropertyForm</Form>
         </DCCReference>
-        <DCCReference Include="src\helpers\JSONHelper.pas"/>
-        <DCCReference Include="src\types\PLUGIN_TYPES.pas"/>
-        <DCCReference Include="src\helpers\ParsingHelper.pas"/>
-        <DCCReference Include="src\helpers\PathHelper.pas"/>
-        <DCCReference Include="src\helpers\PluginHelper.pas"/>
+        <DCCReference Include="src\Infrastructure\HTTP\JSONHelper.pas"/>
+        <DCCReference Include="src\Presentation\WFX\PLUGIN_TYPES.pas"/>
+        <DCCReference Include="src\Infrastructure\HTTP\ParsingHelper.pas"/>
+        <DCCReference Include="src\Infrastructure\IO\PathHelper.pas"/>
+        <DCCReference Include="src\Presentation\WFX\PluginHelper.pas"/>
         <DCCReference Include="src\models\settings\PluginSettings.pas"/>
         <DCCReference Include="src\models\settings\PluginSettingsManager.pas"/>
         <DCCReference Include="src\models\settings\ProxySettings.pas"/>
         <DCCReference Include="src\Domain\ValueObjects\RealPath.pas"/>
-        <DCCReference Include="src\forms\Registration.pas">
+        <DCCReference Include="src\Presentation\UI\Forms\Registration.pas">
             <Form>AskPasswordForm</Form>
         </DCCReference>
-        <DCCReference Include="src\forms\RemoteProperty.pas">
+        <DCCReference Include="src\Presentation\UI\Forms\RemoteProperty.pas">
             <Form>PropertyForm</Form>
         </DCCReference>
         <DCCReference Include="src\models\settings\SETTINGS_CONSTANTS.pas"/>
         <DCCReference Include="src\models\settings\StreamingSettings.pas"/>
-        <DCCReference Include="src\helpers\StringHelper.pas"/>
-        <DCCReference Include="src\helpers\TokenRetryHelper.pas"/>
-        <DCCReference Include="src\helpers\SystemHelper.pas"/>
-        <DCCReference Include="src\helpers\TCHelper.pas"/>
+        <DCCReference Include="src\Infrastructure\IO\StringHelper.pas"/>
+        <DCCReference Include="src\Application\Retry\TokenRetryHelper.pas"/>
+        <DCCReference Include="src\Infrastructure\OS\SystemHelper.pas"/>
+        <DCCReference Include="src\Infrastructure\TC\TCHelper.pas"/>
         <DCCReference Include="src\models\logger\ILoggerInterface.pas"/>
         <DCCReference Include="src\models\progress\IProgressInterface.pas"/>
         <DCCReference Include="src\models\logger\TCLogger.pas"/>
@@ -272,7 +272,7 @@
         <DCCReference Include="src\models\request\IRequestInterface.pas"/>
         <DCCReference Include="src\models\request\TCRequest.pas"/>
         <DCCReference Include="src\Domain\ValueObjects\WSList.pas"/>
-        <DCCReference Include="src\helpers\WindowsHelper.pas"/>
+        <DCCReference Include="src\Infrastructure\OS\WindowsHelper.pas"/>
         <DCCReference Include="src\Presentation\WFX\MailRuCloudWFX.pas"/>
         <DCCReference Include="src\Presentation\WFX\WFXInterface.pas"/>
         <DCCReference Include="src\models\settings\IAccountsManagerInterface.pas"/>
