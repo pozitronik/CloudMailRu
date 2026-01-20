@@ -1,8 +1,8 @@
 unit DownloadSuccessHandler;
 
 {Post-download success handler.
- Performs CRC verification, timestamp preservation, move cleanup,
- progress reporting, logging, and description sync after successful download.}
+	Performs CRC verification, timestamp preservation, move cleanup,
+	progress reporting, logging, and description sync after successful download.}
 
 interface
 
@@ -29,17 +29,17 @@ type
 		LocalName: WideString;
 		RemoteName: WideString;
 		CopyFlags: Integer;
-		ResultHash: WideString;  {Hash calculated during download, empty if not calculated}
-		Item: TCMRDirItem;       {Directory item with expected hash and mtime}
-		Cloud: TCloudMailRu;     {Cloud connection for move operations}
+		ResultHash: WideString; {Hash calculated during download, empty if not calculated}
+		Item: TCMRDirItem; {Directory item with expected hash and mtime}
+		Cloud: TCloudMailRu; {Cloud connection for move operations}
 	end;
 
 	IDownloadSuccessHandler = interface
-		['{E7F8A9B0-C1D2-3E4F-5A6B-7C8D9E0F1A2B}']
+		['{DA65FDA6-4828-43D2-92D1-D5CC8FF0C8DC}']
 
 		{Handles all post-download success operations.
-		 @param Context Download context with all required data
-		 @return FS_FILE_OK on success, FS_FILE_READERROR if CRC mismatch}
+			@param Context Download context with all required data
+			@return FS_FILE_OK on success, FS_FILE_READERROR if CRC mismatch}
 		function HandleSuccess(const Context: TDownloadContext): Integer;
 	end;
 
@@ -57,7 +57,7 @@ type
 		FDescriptionSyncGuard: IDescriptionSyncGuard;
 
 		{Verifies downloaded file hash matches expected hash.
-		 @return True if hash matches or verification disabled/skipped}
+			@return True if hash matches or verification disabled/skipped}
 		function VerifyCRC(const ResultHash, ExpectedHash: WideString): Boolean;
 
 		{Sets file modification time from Unix timestamp}
@@ -69,12 +69,7 @@ type
 		{Reports completion progress and logs transfer}
 		procedure ReportCompletion(const LocalName, RemoteName: WideString);
 	public
-		constructor Create(
-			Settings: IPluginSettingsManager;
-			Logger: ILogger;
-			Progress: IProgress;
-			DescriptionSyncGuard: IDescriptionSyncGuard
-		);
+		constructor Create(Settings: IPluginSettingsManager; Logger: ILogger; Progress: IProgress; DescriptionSyncGuard: IDescriptionSyncGuard);
 
 		function HandleSuccess(const Context: TDownloadContext): Integer;
 	end;
@@ -90,12 +85,7 @@ end;
 
 {TDownloadSuccessHandler}
 
-constructor TDownloadSuccessHandler.Create(
-	Settings: IPluginSettingsManager;
-	Logger: ILogger;
-	Progress: IProgress;
-	DescriptionSyncGuard: IDescriptionSyncGuard
-);
+constructor TDownloadSuccessHandler.Create(Settings: IPluginSettingsManager; Logger: ILogger; Progress: IProgress; DescriptionSyncGuard: IDescriptionSyncGuard);
 begin
 	inherited Create;
 	FSettings := Settings;

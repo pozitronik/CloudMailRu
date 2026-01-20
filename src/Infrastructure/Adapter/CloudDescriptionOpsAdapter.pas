@@ -1,8 +1,8 @@
 unit CloudDescriptionOpsAdapter;
 
 {Adapter that wraps TCloudMailRu to implement ICloudDescriptionOps.
- Enables DescriptionSyncManager to use cloud operations via interface,
- abstracting TCloudMailRu dependency to enable unit testing.}
+	Enables DescriptionSyncManager to use cloud operations via interface,
+	abstracting TCloudMailRu dependency to enable unit testing.}
 
 interface
 
@@ -11,26 +11,26 @@ uses
 
 type
 	{Interface for cloud operations needed by description synchronization.
-	 Abstracts TCloudMailRu dependency to enable unit testing.}
+		Abstracts TCloudMailRu dependency to enable unit testing.}
 	ICloudDescriptionOps = interface
-		['{DBE14B0E-4CEA-44E1-9D3E-21F2CDF65068}']
+		['{B1E745B6-3964-4FFF-ABA6-0DE5A3B35332}']
 
 		{Download remote description file to local path.
-		 @param RemotePath Full path to description file on cloud
-		 @param LocalCopy Local path to save downloaded content
-		 @return True if file downloaded, False if not exists or error}
+			@param RemotePath Full path to description file on cloud
+			@param LocalCopy Local path to save downloaded content
+			@return True if file downloaded, False if not exists or error}
 		function GetDescriptionFile(const RemotePath, LocalCopy: WideString): Boolean;
 
 		{Upload local description file to remote path.
-		 If local file doesn't exist, deletes remote file.
-		 @param RemotePath Full path for description file on cloud
-		 @param LocalCopy Local path to upload from
-		 @return True on success}
+			If local file doesn't exist, deletes remote file.
+			@param RemotePath Full path for description file on cloud
+			@param LocalCopy Local path to upload from
+			@return True on success}
 		function PutDescriptionFile(const RemotePath, LocalCopy: WideString): Boolean;
 
 		{Delete file from cloud.
-		 @param Path Full path to file on cloud
-		 @return True on success}
+			@param Path Full path to file on cloud
+			@return True on success}
 		function DeleteFile(const Path: WideString): Boolean;
 	end;
 

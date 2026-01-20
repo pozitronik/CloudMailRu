@@ -1,8 +1,8 @@
 unit IconProvider;
 
 {Determines what icon to display based on path and context.
- Does NOT load icons - only determines icon name and render mode.
- Separates icon selection logic from icon loading/rendering.}
+	Does NOT load icons - only determines icon name and render mode.
+	Separates icon selection logic from icon loading/rendering.}
 
 interface
 
@@ -12,16 +12,15 @@ uses
 	SETTINGS_CONSTANTS;
 
 type
-	TIconType = (
-		itUseDefault,       { Use TC default icon }
-		itSystemTrash,      { System trash icon }
-		itInternal,         { Load from DLL resources }
-		itInternalOverlay,  { Load from resources + combine with folder }
-		itExternal,         { Load from external .ico file }
-		itExternalOverlay   { Load external + combine with folder }
-	);
+	TIconType = (itUseDefault, {Use TC default icon}
+		itSystemTrash, {System trash icon}
+		itInternal, {Load from DLL resources}
+		itInternalOverlay, {Load from resources + combine with folder}
+		itExternal, {Load from external .ico file}
+		itExternalOverlay {Load external + combine with folder}
+		);
 
-	{ Result of icon determination }
+	{Result of icon determination}
 	TIconInfo = record
 		IconType: TIconType;
 		IconName: WideString;
@@ -30,7 +29,7 @@ type
 		class function Create(AType: TIconType; const AName: WideString): TIconInfo; static;
 	end;
 
-	{ Context for icon determination - provides all external data needed }
+	{Context for icon determination - provides all external data needed}
 	TIconContext = record
 		IconsMode: Integer;
 		IsPublicAccount: Boolean;
@@ -40,15 +39,15 @@ type
 		HasInviteItem: Boolean;
 	end;
 
-	{ Determines what icon to display based on path and context.
-	  Separates icon selection logic from icon loading/rendering. }
+	{Determines what icon to display based on path and context.
+		Separates icon selection logic from icon loading/rendering.}
 	IIconProvider = interface
-		['{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}']
+		['{21958F24-1F8B-4816-80F5-1F8D4450C8B1}']
 		function GetIcon(const RealPath: TRealPath; const Context: TIconContext): TIconInfo;
 	end;
 
-	{ Determines what icon to display based on path and context.
-	  Does NOT load icons - only determines icon name and render mode. }
+	{Determines what icon to display based on path and context.
+		Does NOT load icons - only determines icon name and render mode.}
 	TIconProvider = class(TInterfacedObject, IIconProvider)
 	private
 		function GetIconForTrashRoot: TIconInfo;
@@ -64,7 +63,7 @@ type
 
 implementation
 
-{ TIconInfo }
+{TIconInfo}
 
 class function TIconInfo.UseDefault: TIconInfo;
 begin
@@ -84,34 +83,34 @@ begin
 	Result.IconName := AName;
 end;
 
-{ TIconProvider }
+{TIconProvider}
 
 function TIconProvider.GetIcon(const RealPath: TRealPath; const Context: TIconContext): TIconInfo;
 var
 	EffectiveIconsMode: Integer;
 begin
-	{ Skip updir items }
+	{Skip updir items}
 	if RealPath.upDirItem then
 		exit(TIconInfo.UseDefault);
 
 	EffectiveIconsMode := Context.IconsMode;
 
-	{ Trash directory at account root - always show system trash icon }
+	{Trash directory at account root - always show system trash icon}
 	if RealPath.trashDir and RealPath.isInAccountsList then
 		exit(GetIconForTrashRoot);
 
-	{ Shared directory }
+	{Shared directory}
 	if RealPath.sharedDir then
 	begin
 		if RealPath.isInAccountsList then
 			exit(GetIconForSharedRoot)
 		else
-			{ Force overlay mode inside shared directory }
+			{Force overlay mode inside shared directory}
 			if EffectiveIconsMode = IconsModeDisabled then
 				EffectiveIconsMode := IconsModeInternalOverlay;
 	end;
 
-	{ Invites directory }
+	{Invites directory}
 	if RealPath.invitesDir then
 	begin
 		if RealPath.isInAccountsList then
@@ -122,15 +121,15 @@ begin
 			exit(TIconInfo.UseDefault);
 	end;
 
-	{ Icons disabled - use default }
+	{Icons disabled - use default}
 	if EffectiveIconsMode = IconsModeDisabled then
 		exit(TIconInfo.UseDefault);
 
-	{ Account list (root level) }
+	{Account list (root level)}
 	if RealPath.isInAccountsList then
 		exit(GetIconForAccountRoot(Context.IsPublicAccount, EffectiveIconsMode));
 
-	{ Regular directory items }
+	{Regular directory items}
 	if Context.HasItem then
 		exit(GetIconForDirectoryItem(Context.Item, EffectiveIconsMode));
 
@@ -173,7 +172,7 @@ end;
 
 function TIconProvider.GetIconForDirectoryItem(const Item: TCMRDirItem; IconsMode: Integer): TIconInfo;
 begin
-	{ Only directories and shared items get custom icons }
+	{Only directories and shared items get custom icons}
 	if (Item.type_ <> TYPE_DIR) and (Item.kind <> KIND_SHARED) then
 		exit(TIconInfo.UseDefault);
 
@@ -196,8 +195,8 @@ begin
 			Result := TIconInfo.Create(itExternal, IconName);
 		IconsModeExternalOverlay:
 			Result := TIconInfo.Create(itExternalOverlay, IconName);
-	else
-		Result := TIconInfo.UseDefault;
+		else
+			Result := TIconInfo.UseDefault;
 	end;
 end;
 

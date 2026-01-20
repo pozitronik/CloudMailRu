@@ -46,10 +46,8 @@ var
 begin
 	self.account := EmptyWideStr;
 	self.path := EmptyWideStr;
-	(*
-	 we can't rely on isDir property, cause it can't be clearly determined from the path
-	 therefore the property value can be passed as the parameter, when it is known.
-	*)
+	{We can't rely on isDir property, cause it can't be clearly determined from the path
+		therefore the property value can be passed as the parameter, when it is known.}
 	self.isDir := isDir;
 	self.upDirItem := False;
 	self.trashDir := False;
@@ -102,7 +100,7 @@ begin
 end;
 
 {Returns True if current path is in the main accounts list.
- Note: account attribute can not be used for this check because it contains the currently listed item name}
+	Note: account attribute can not be used for this check because it contains the currently listed item name}
 function TRealPath.GetIsAccountEmpty: boolean;
 begin
 	result := self.account = EmptyWideStr;

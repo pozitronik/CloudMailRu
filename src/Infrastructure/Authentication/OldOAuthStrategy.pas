@@ -1,8 +1,8 @@
 unit OldOAuthStrategy;
 
 {DEPRECATED: Old OAuth method - incomplete implementation.
- This strategy is preserved for historical reference only.
- Use TOAuthAppAuthStrategy for production authentication.}
+	This strategy is preserved for historical reference only.
+	Use TOAuthAppAuthStrategy for production authentication.}
 
 interface
 
@@ -33,10 +33,9 @@ var
 	Answer: WideString;
 	PostData: WideString;
 begin
-	OAuthToken := Default(TCMROAuth);
+	OAuthToken := Default (TCMROAuth);
 
-	PostData := Format('client_id=%s&grant_type=password&username=%s&password=%s',
-		[OAUTH_CLIENT_ID, Email, Password]);
+	PostData := Format('client_id=%s&grant_type=password&username=%s&password=%s', [OAUTH_CLIENT_ID, Email, Password]);
 
 	Result := HTTP.PostForm(OAUTH_TOKEN_URL, PostData, Answer);
 	if Result then

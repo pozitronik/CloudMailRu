@@ -1,8 +1,8 @@
 unit WindowsEnvironment;
 
 {Abstraction for environment and directory operations, enabling testability
- of path detection logic without real file system access.
- Used primarily by PluginSettingsManager for config file location detection.}
+	of path detection logic without real file system access.
+	Used primarily by PluginSettingsManager for config file location detection.}
 
 interface
 
@@ -14,7 +14,7 @@ uses
 type
 	{Interface for environment and directory operations}
 	IEnvironment = interface
-		['{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}']
+		['{E3BAAF45-24C7-41E6-8481-2D891CE2C82D}']
 
 		{Returns the value of an environment variable, empty string if not found}
 		function GetEnvironmentVariable(const Name: WideString): WideString;

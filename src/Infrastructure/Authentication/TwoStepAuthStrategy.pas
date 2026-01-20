@@ -1,9 +1,9 @@
 unit TwoStepAuthStrategy;
 
 {DEPRECATED: Two-step web authentication - no longer works after VK ID migration.
- This strategy requires UI interaction for the security code prompt.
- This strategy is preserved for historical reference only.
- Use TOAuthAppAuthStrategy for production authentication.}
+	This strategy requires UI interaction for the security code prompt.
+	This strategy is preserved for historical reference only.
+	Use TOAuthAppAuthStrategy for production authentication.}
 
 interface
 
@@ -108,7 +108,7 @@ begin
 		if Assigned(Logger) then
 			Logger.Log(LOG_LEVEL_DEBUG, msgtype_details, PARSING_AUTH_DATA);
 
-		if not (extractTwostepJson(PostAnswer, TwoStepJson) and TwostepData.FromJSON(TwoStepJson)) then
+		if not(extractTwostepJson(PostAnswer, TwoStepJson) and TwostepData.FromJSON(TwoStepJson)) then
 		begin
 			if Assigned(Logger) then
 				Logger.Log(LOG_LEVEL_ERROR, msgtype_importanterror, ERR_PARSE_AUTH_DATA);
@@ -160,9 +160,7 @@ begin
 			Exit;
 		end;
 
-		if not (extractTokenFromText(TokenPageContent, AuthToken) and
-				extract_x_page_id_FromText(TokenPageContent, x_page_id) and
-				extract_build_FromText(TokenPageContent, build)) then
+		if not(extractTokenFromText(TokenPageContent, AuthToken) and extract_x_page_id_FromText(TokenPageContent, x_page_id) and extract_build_FromText(TokenPageContent, build)) then
 		begin
 			if Assigned(Logger) then
 				Logger.Log(LOG_LEVEL_ERROR, msgtype_importanterror, ERR_TWOSTEP_AUTH);
@@ -171,9 +169,7 @@ begin
 		end;
 
 		{Build united params string for API calls}
-		UnitedParams := Format('api=2&build=%s&x-page-id=%s&email=%s@%s&x-email=%s@%s&_=%d810',
-			[build, x_page_id, Credentials.User, Credentials.Domain,
-			 Credentials.User, Credentials.Domain, DateTimeToUnix(Now)]);
+		UnitedParams := Format('api=2&build=%s&x-page-id=%s&email=%s@%s&x-email=%s@%s&_=%d810', [build, x_page_id, Credentials.User, Credentials.Domain, Credentials.User, Credentials.Domain, DateTimeToUnix(Now)]);
 
 		Result := TAuthResult.CreateSuccess(AuthToken, UnitedParams);
 

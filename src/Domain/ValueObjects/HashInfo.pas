@@ -35,8 +35,8 @@ implementation
 
 {THashInfo}
 (*Парсер параметров команды hash. Корректный формат параметра:
- hash:size:name
- hash:size
+	hash:size:name
+	hash:size
 *)
 constructor THashInfo.Create(parameter: WideString; doClean: boolean = true);
 const

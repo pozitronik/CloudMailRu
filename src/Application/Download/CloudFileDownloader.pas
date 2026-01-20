@@ -1,4 +1,4 @@
-unit CloudFileDownloader;
+﻿unit CloudFileDownloader;
 
 interface
 
@@ -37,8 +37,8 @@ type
 	ICloudFileDownloader = interface
 		['{D7A8E5F2-3B4C-4D6E-9F1A-2C5B8E0F4D7A}']
 		{Download file from cloud to local path.
-		 Returns FS_FILE_OK on success, or appropriate error code on failure.
-		 ResultHash receives the cloud hash of downloaded file.}
+			Returns FS_FILE_OK on success, or appropriate error code on failure.
+			ResultHash receives the cloud hash of downloaded file.}
 		function Download(RemotePath, LocalPath: WideString; var ResultHash: WideString; LogErrors: Boolean = True): Integer;
 		{Get URL for shared/public file download.}
 		function GetSharedFileUrl(RemotePath: WideString; ShardType: WideString = SHARD_TYPE_DEFAULT): WideString;
@@ -68,21 +68,7 @@ type
 		function DownloadRegular(RemotePath, LocalPath: WideString; var ResultHash: WideString; LogErrors: Boolean): Integer;
 		function DownloadShared(RemotePath, LocalPath: WideString; var ResultHash: WideString; LogErrors: Boolean): Integer;
 	public
-		constructor Create(
-			GetHTTP: TGetHTTPFunc;
-			ShardManager: ICloudShardManager;
-			HashCalculator: ICloudHashCalculator;
-			Cipher: ICipher;
-			FileSystem: IFileSystem;
-			Logger: ILogger;
-			Progress: IProgress;
-			Request: IRequest;
-			GetOAuthToken: TGetOAuthTokenFunc;
-			IsPublicAccount: TGetBoolFunc;
-			GetPublicLink: TGetStringFunc;
-			RefreshToken: TRefreshTokenFunc;
-			GetShard: TGetShardFunc;
-			DoCryptFiles, DoCryptFilenames: Boolean);
+		constructor Create(GetHTTP: TGetHTTPFunc; ShardManager: ICloudShardManager; HashCalculator: ICloudHashCalculator; Cipher: ICipher; FileSystem: IFileSystem; Logger: ILogger; Progress: IProgress; Request: IRequest; GetOAuthToken: TGetOAuthTokenFunc; IsPublicAccount: TGetBoolFunc; GetPublicLink: TGetStringFunc; RefreshToken: TRefreshTokenFunc; GetShard: TGetShardFunc; DoCryptFiles, DoCryptFilenames: Boolean);
 
 		{ICloudFileDownloader}
 		function Download(RemotePath, LocalPath: WideString; var ResultHash: WideString; LogErrors: Boolean = True): Integer;
@@ -95,23 +81,9 @@ uses
 	Winapi.Windows,
 	ChunkedFileStream;
 
-{ TCloudFileDownloader }
+{TCloudFileDownloader}
 
-constructor TCloudFileDownloader.Create(
-	GetHTTP: TGetHTTPFunc;
-	ShardManager: ICloudShardManager;
-	HashCalculator: ICloudHashCalculator;
-	Cipher: ICipher;
-	FileSystem: IFileSystem;
-	Logger: ILogger;
-	Progress: IProgress;
-	Request: IRequest;
-	GetOAuthToken: TGetOAuthTokenFunc;
-	IsPublicAccount: TGetBoolFunc;
-	GetPublicLink: TGetStringFunc;
-	RefreshToken: TRefreshTokenFunc;
-	GetShard: TGetShardFunc;
-	DoCryptFiles, DoCryptFilenames: Boolean);
+constructor TCloudFileDownloader.Create(GetHTTP: TGetHTTPFunc; ShardManager: ICloudShardManager; HashCalculator: ICloudHashCalculator; Cipher: ICipher; FileSystem: IFileSystem; Logger: ILogger; Progress: IProgress; Request: IRequest; GetOAuthToken: TGetOAuthTokenFunc; IsPublicAccount: TGetBoolFunc; GetPublicLink: TGetStringFunc; RefreshToken: TRefreshTokenFunc; GetShard: TGetShardFunc; DoCryptFiles, DoCryptFilenames: Boolean);
 begin
 	inherited Create;
 	FGetHTTP := GetHTTP;
@@ -169,7 +141,8 @@ begin
 				{Response format: "URL IP COUNT", extract the URL (first word)}
 				DownloadShard := Trim(Copy(DispatcherResponse, 1, Pos(' ', DispatcherResponse) - 1));
 				FShardManager.SetDownloadShard(DownloadShard);
-			end else
+			end
+			else
 				Exit;
 		end;
 	end;
@@ -191,8 +164,8 @@ begin
 	end;
 
 	{Note: Previously User-Agent was set to 'cloud-win' here to avoid OAuth endpoint
-	 blocking browser-like UAs. Removed as UA manipulation is no longer needed.
-	 If downloads start failing with 403/blocking errors, consider restoring UA override.}
+		blocking browser-like UAs. Removed as UA manipulation is no longer needed.
+		If downloads start failing with 403/blocking errors, consider restoring UA override.}
 	try
 		OAuthToken := FGetOAuthToken();
 		if FDoCryptFiles then //Загрузка файла в память, дешифрация в файл
@@ -255,11 +228,11 @@ begin
 	else
 		FGetShard(usedShard, ShardType);
 	if (FIsPublicAccount()) then
-		Exit(Format('%s%s%s', [IncludeSlash(usedShard), IncludeSlash(FGetPublicLink()), PathToUrl(RemotePath, true, true)]));
+		Exit(Format('%s%s%s', [IncludeSlash(usedShard), IncludeSlash(FGetPublicLink()), PathToUrl(RemotePath, True, True)]));
 
 	if (TRealPath.GetRealPath(RemotePath).isDir = ID_True) then {для ссылок внутри каталогов перебираются файлы внутри «публичной ссылки» на каталог}
 	begin
-		Result := Format('%s%s%s', [IncludeSlash(usedShard), FGetPublicLink(), PathToUrl(RemotePath, true, true)]);
+		Result := Format('%s%s%s', [IncludeSlash(usedShard), FGetPublicLink(), PathToUrl(RemotePath, True, True)]);
 	end else begin {для прямых ссылок берутся публичные ссылки файлов}
 		Result := Format('%s%s%s', [IncludeSlash(usedShard), FGetPublicLink()])
 	end;

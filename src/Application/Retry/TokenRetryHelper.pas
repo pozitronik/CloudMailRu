@@ -1,8 +1,8 @@
 unit TokenRetryHelper;
 
 {Helper for automatic token refresh retry logic.
- TRetryOperation centralizes the duplicated pattern of checking for token
- expiration and retrying API operations after refreshing the CSRF token.}
+	TRetryOperation centralizes the duplicated pattern of checking for token
+	expiration and retrying API operations after refreshing the CSRF token.}
 
 interface
 
@@ -37,8 +37,8 @@ type
 	TResultToIntegerFunc = reference to function(const JSON, ErrorPrefix: WideString): Integer;
 
 	{Handles API operations with automatic token refresh retry.
-	 Initialize once with callbacks, then use specialized methods for common patterns
-	 or Execute() for complex operations.}
+		Initialize once with callbacks, then use specialized methods for common patterns
+		or Execute() for complex operations.}
 	TRetryOperation = class
 	private
 		FRefreshToken: TTokenRefreshFunc;
@@ -48,13 +48,7 @@ type
 		FToInteger: TResultToIntegerFunc;
 		FMaxRetries: Integer;
 	public
-		constructor Create(
-			RefreshToken: TTokenRefreshFunc;
-			PostForm: THTTPPostFormFunc;
-			GetPage: THTTPGetPageFunc;
-			ToBoolean: TResultToBooleanFunc;
-			ToInteger: TResultToIntegerFunc;
-			MaxRetries: Integer = 1);
+		constructor Create(RefreshToken: TTokenRefreshFunc; PostForm: THTTPPostFormFunc; GetPage: THTTPGetPageFunc; ToBoolean: TResultToBooleanFunc; ToInteger: TResultToIntegerFunc; MaxRetries: Integer = 1);
 
 		{Generic execute for complex operations that need custom logic}
 		function Execute(Operation: TAPIOperation): TAPICallResult;
@@ -72,7 +66,7 @@ type
 		function GetPage(const URL: WideString; out JSON: WideString; ShowProgress: Boolean = False): Boolean;
 	end;
 
-{Check if JSON response indicates token expiration}
+	{Check if JSON response indicates token expiration}
 function IsTokenExpiredInJSON(const JSON: WideString): Boolean;
 
 {Check if result code indicates token expiration}
@@ -95,12 +89,12 @@ begin
 	Result := ResultCode = CLOUD_ERROR_TOKEN_OUTDATED;
 end;
 
-{ TAPICallResult }
+{TAPICallResult}
 
 function TAPICallResult.NeedsTokenRefresh: Boolean;
 begin
 	{Check both ResultCode (for file transfer operations that return CLOUD_ERROR_TOKEN_OUTDATED)
-	 and JSON error (for API calls that return token error in JSON body)}
+		and JSON error (for API calls that return token error in JSON body)}
 	Result := IsTokenExpiredResult(ResultCode) or ((not Success) and IsTokenExpiredInJSON(JSON));
 end;
 
@@ -118,15 +112,9 @@ begin
 	Result.ResultCode := AResultCode;
 end;
 
-{ TRetryOperation }
+{TRetryOperation}
 
-constructor TRetryOperation.Create(
-	RefreshToken: TTokenRefreshFunc;
-	PostForm: THTTPPostFormFunc;
-	GetPage: THTTPGetPageFunc;
-	ToBoolean: TResultToBooleanFunc;
-	ToInteger: TResultToIntegerFunc;
-	MaxRetries: Integer);
+constructor TRetryOperation.Create(RefreshToken: TTokenRefreshFunc; PostForm: THTTPPostFormFunc; GetPage: THTTPGetPageFunc; ToBoolean: TResultToBooleanFunc; ToInteger: TResultToIntegerFunc; MaxRetries: Integer);
 begin
 	inherited Create;
 	FRefreshToken := RefreshToken;

@@ -8,16 +8,16 @@ uses
 
 type
 	{Static helper class for mapping cloud API results to file system results.
-	 Centralizes error code mapping and error message generation.}
+		Centralizes error code mapping and error message generation.}
 	TCloudErrorMapper = class
 	public
 		{Map cloud operation result to WFX file system result code.
-		 Logs errors if Logger is provided and ErrorPrefix is non-empty.}
+			Logs errors if Logger is provided and ErrorPrefix is non-empty.}
 		class function ToFsResult(CloudResult: TCMROperationResult; Logger: ILogger; ErrorPrefix: WideString = ''): Integer; overload; static;
 		{Parse JSON and map to WFX file system result code.}
 		class function ToFsResult(JSON: WideString; Logger: ILogger; ErrorPrefix: WideString = ''): Integer; overload; static;
 		{Map cloud operation result to boolean success/failure.
-		 Logs errors if Logger is provided and ErrorPrefix is non-empty.}
+			Logs errors if Logger is provided and ErrorPrefix is non-empty.}
 		class function ToBoolean(CloudResult: TCMROperationResult; Logger: ILogger; ErrorPrefix: WideString = ''): Boolean; overload; static;
 		{Parse JSON and map to boolean success/failure.}
 		class function ToBoolean(JSON: WideString; Logger: ILogger; ErrorPrefix: WideString = ''): Boolean; overload; static;
@@ -33,7 +33,7 @@ uses
 	PLUGIN_TYPES,
 	LANGUAGE_STRINGS;
 
-{ TCloudErrorMapper }
+{TCloudErrorMapper}
 
 class function TCloudErrorMapper.ToFsResult(JSON: WideString; Logger: ILogger; ErrorPrefix: WideString): Integer;
 begin

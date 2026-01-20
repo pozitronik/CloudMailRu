@@ -273,7 +273,7 @@ begin
 		UseTCPasswordManager := UseTCPwdMngrCB.Checked;
 		UnlimitedFilesize := UnlimitedFileSizeCB.Checked;
 		SplitLargeFiles := SplitLargeFilesCB.Checked;
-		TwostepAuth := False; {Deprecated: two-step auth is not used with OAuth}
+		TwostepAuth := false; {Deprecated: two-step auth is not used with OAuth}
 		PublicAccount := PublicAccountCB.Checked;
 		PublicUrl := PublicUrlEdit.Text;
 		EncryptFilesMode := EncryptFilesCombo.ItemIndex;
@@ -397,7 +397,6 @@ procedure TAccountsForm.ChangeUserAgentCBClick(Sender: TObject);
 begin
 	UserAgentEdit.ReadOnly := not ChangeUserAgentCB.Checked;
 end;
-
 
 function TAccountsForm.CheckValidators: Boolean;
 var

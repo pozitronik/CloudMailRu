@@ -33,7 +33,7 @@ var
 	JSONVal: TJSONObject;
 	error, nodename: WideString;
 begin
-	{ Initialize with safe defaults }
+	{Initialize with safe defaults}
 	self.OperationStatus := 0;
 	self.OperationResult := CLOUD_ERROR_UNKNOWN;
 
@@ -49,7 +49,7 @@ begin
 				Exit;
 			end;
 
-			{ Handle HTTP status codes that have defined meanings regardless of body content }
+			{Handle HTTP status codes that have defined meanings regardless of body content}
 			if self.OperationStatus = 451 then
 			begin
 				self.OperationResult := CLOUD_ERROR_FAHRENHEIT;
@@ -66,7 +66,7 @@ begin
 				Exit;
 			end;
 
-			{ Parse error from response body for other status codes }
+			{Parse error from response body for other status codes}
 			error := EmptyWideStr;
 			if (Assigned((JSONVal.Values[NAME_BODY] as TJSONObject).Values[NAME_HOME])) then
 				nodename := 'home'
@@ -76,7 +76,7 @@ begin
 			begin
 				error := (((JSONVal.Values[NAME_BODY] as TJSONObject).Values[NAME_INVITE_EMAIL]) as TJSONObject).Values[NAME_ERROR].Value;
 			end else begin
-				{ Unknown body structure - keep CLOUD_ERROR_UNKNOWN from initialization }
+				{Unknown body structure - keep CLOUD_ERROR_UNKNOWN from initialization}
 				Exit;
 			end;
 
@@ -119,12 +119,12 @@ begin
 				self.OperationResult := CLOUD_ERROR_EXPORT_LIMIT_EXCEEDED
 			else if error = 'unprocessable_entry' then
 				self.OperationResult := CLOUD_ERROR_UNPROCESSABLE_ENTRY;
-			{ Unknown errors keep CLOUD_ERROR_UNKNOWN from initialization }
+			{Unknown errors keep CLOUD_ERROR_UNKNOWN from initialization}
 
 		except
 			on E: Exception do
 			begin
-				{ Keep CLOUD_ERROR_UNKNOWN from initialization }
+				{Keep CLOUD_ERROR_UNKNOWN from initialization}
 			end;
 		end;
 	finally

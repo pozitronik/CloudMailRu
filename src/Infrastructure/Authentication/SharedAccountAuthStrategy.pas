@@ -1,8 +1,8 @@
 unit SharedAccountAuthStrategy;
 
 {Authentication for public/shared weblinks.
- This strategy doesn't require credentials - it fetches the public URL page
- and extracts the shard information needed to access shared content.}
+	This strategy doesn't require credentials - it fetches the public URL page
+	and extracts the shard information needed to access shared content.}
 
 interface
 

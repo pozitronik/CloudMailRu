@@ -1,7 +1,7 @@
 unit SharedItemDeletionHandler;
 
 {Handles shared item deletion by removing all sharing and publication.
- Unshares item with all collaborators and unpublishes if public.}
+	Unshares item with all collaborators and unpublishes if public.}
 
 interface
 
@@ -11,12 +11,12 @@ uses
 
 type
 	ISharedItemDeletionHandler = interface
-		['{A7B3C9D1-2E4F-5A6B-8C7D-9E0F1A2B3C4D}']
+		['{DE60363C-7C11-4F5D-A363-310606242118}']
 
 		{Removes all sharing and publication from an item.
-		 @param Cloud Cloud connection for the account
-		 @param Item The shared item to process
-		 @return True if operation completed (always true for shared items)}
+			@param Cloud Cloud connection for the account
+			@param Item The shared item to process
+			@return True if operation completed (always true for shared items)}
 		function Execute(Cloud: TCloudMailRu; const Item: TCMRDirItem): Boolean;
 	end;
 
@@ -49,7 +49,7 @@ begin
 	{Unpublish if item has public link}
 	if Item.isPublished then
 	begin
-		Weblink := Item.weblink;
+		Weblink := Item.Weblink;
 		Cloud.PublishFile(Item.home, Weblink, CLOUD_UNPUBLISH);
 	end;
 

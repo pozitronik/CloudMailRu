@@ -31,8 +31,7 @@ begin
 				Break;
 			floatSize := floatSize / 1024;
 		end;
-	end
-	else begin
+	end else begin
 		while iteration < Min(SizeType, Length(postfixes) - 1) do
 		begin
 			floatSize := floatSize / 1024;

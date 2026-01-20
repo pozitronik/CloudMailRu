@@ -1,7 +1,7 @@
 unit CommandDispatcher;
 
 {Handles plugin command dispatching for Total Commander quote commands.
- Extracts command routing logic from MailRuCloudWFX.}
+	Extracts command routing logic from MailRuCloudWFX.}
 
 interface
 
@@ -34,11 +34,11 @@ type
 		['{B8F2D4A1-3E7C-4D9B-8A1F-5C6E9D2B4A8F}']
 
 		{Execute a plugin command.
-		 Supported commands: rmdir, share, hash, clone, trash, shared, invites
-		 @param RemoteName Current remote path (used to determine account context)
-		 @param Command Command name (should be lowercase)
-		 @param Parameter Command-specific parameter
-		 @return TCommandResult with result code and optional symlink path}
+			Supported commands: rmdir, share, hash, clone, trash, shared, invites
+			@param RemoteName Current remote path (used to determine account context)
+			@param Command Command name (should be lowercase)
+			@param Parameter Command-specific parameter
+			@return TCommandResult with result code and optional symlink path}
 		function Execute(const RemoteName, Command, Parameter: WideString): TCommandResult;
 	end;
 
@@ -52,18 +52,13 @@ type
 		function ExecuteShare(Cloud: TCloudMailRu; const Path, Parameter: WideString): TCommandResult;
 		function ExecuteHash(Cloud: TCloudMailRu; const Path, Parameter: WideString): TCommandResult;
 		function ExecuteClone(Cloud: TCloudMailRu; const Path, Parameter: WideString): TCommandResult;
-		function ExecuteVirtualNavigation(Cloud: TCloudMailRu; const Account: WideString;
-			IsInAccount: Boolean; const Postfix: WideString): TCommandResult;
+		function ExecuteVirtualNavigation(Cloud: TCloudMailRu; const Account: WideString; IsInAccount: Boolean; const Postfix: WideString): TCommandResult;
 	public
 		{Create command dispatcher with required dependencies.
-		 @param AConnectionManager Connection manager for cloud access
-		 @param ALogger Logger for error reporting
-		 @param ASettingsManager Settings manager for configuration access}
-		constructor Create(
-			AConnectionManager: IConnectionManager;
-			ALogger: ILogger;
-			ASettingsManager: IPluginSettingsManager
-		);
+			@param AConnectionManager Connection manager for cloud access
+			@param ALogger Logger for error reporting
+			@param ASettingsManager Settings manager for configuration access}
+		constructor Create(AConnectionManager: IConnectionManager; ALogger: ILogger; ASettingsManager: IPluginSettingsManager);
 
 		function Execute(const RemoteName, Command, Parameter: WideString): TCommandResult;
 	end;
@@ -88,11 +83,7 @@ begin
 	Result.SymlinkPath := Path;
 end;
 
-constructor TCommandDispatcher.Create(
-	AConnectionManager: IConnectionManager;
-	ALogger: ILogger;
-	ASettingsManager: IPluginSettingsManager
-);
+constructor TCommandDispatcher.Create(AConnectionManager: IConnectionManager; ALogger: ILogger; ASettingsManager: IPluginSettingsManager);
 begin
 	inherited Create;
 	FConnectionManager := AConnectionManager;
@@ -114,7 +105,7 @@ begin
 
 	{All other commands use default path from RemoteName}
 	Path.FromPath(RemoteName);
-	Cloud := FConnectionManager.Get(Path.account, getResult);
+	Cloud := FConnectionManager.Get(Path.Account, getResult);
 
 	if Command = 'share' then
 		exit(ExecuteShare(Cloud, Path.Path, Parameter));
@@ -126,13 +117,13 @@ begin
 		exit(ExecuteClone(Cloud, Path.Path, Parameter));
 
 	if Command = 'trash' then
-		exit(ExecuteVirtualNavigation(Cloud, Path.account, Path.IsInAccount(false), TrashPostfix));
+		exit(ExecuteVirtualNavigation(Cloud, Path.Account, Path.IsInAccount(false), TrashPostfix));
 
 	if Command = 'shared' then
-		exit(ExecuteVirtualNavigation(Cloud, Path.account, Path.IsInAccount(false), SharedPostfix));
+		exit(ExecuteVirtualNavigation(Cloud, Path.Account, Path.IsInAccount(false), SharedPostfix));
 
 	if Command = 'invites' then
-		exit(ExecuteVirtualNavigation(Cloud, Path.account, Path.IsInAccount(false), InvitesPostfix));
+		exit(ExecuteVirtualNavigation(Cloud, Path.Account, Path.IsInAccount(false), InvitesPostfix));
 end;
 
 function TCommandDispatcher.ExecuteRmdir(const RemoteName, Parameter: WideString): TCommandResult;
@@ -141,7 +132,7 @@ var
 	getResult: Integer;
 begin
 	Path.FromPath(RemoteName + Parameter);
-	if FConnectionManager.Get(Path.account, getResult).removeDir(Path.Path) then
+	if FConnectionManager.Get(Path.Account, getResult).removeDir(Path.Path) then
 		Result := TCommandResult.OK
 	else
 		Result := TCommandResult.Error;
@@ -165,12 +156,9 @@ begin
 	try
 		if Info.valid then
 		begin
-			Cloud.addFileByIdentity(Info.CloudFileIdentity,
-				IncludeTrailingPathDelimiter(Path) + Info.name, CLOUD_CONFLICT_RENAME);
+			Cloud.addFileByIdentity(Info.CloudFileIdentity, IncludeTrailingPathDelimiter(Path) + Info.name, CLOUD_CONFLICT_RENAME);
 			Result := TCommandResult.OK;
-		end
-		else
-		begin
+		end else begin
 			FLogger.Log(LOG_LEVEL_DEBUG, msgtype_details, ERR_CLONE_BY_HASH, [Info.errorString, Parameter]);
 			Result := TCommandResult.Error;
 		end;
@@ -192,8 +180,7 @@ begin
 		Result := TCommandResult.Error;
 end;
 
-function TCommandDispatcher.ExecuteVirtualNavigation(Cloud: TCloudMailRu; const Account: WideString;
-	IsInAccount: Boolean; const Postfix: WideString): TCommandResult;
+function TCommandDispatcher.ExecuteVirtualNavigation(Cloud: TCloudMailRu; const Account: WideString; IsInAccount: Boolean; const Postfix: WideString): TCommandResult;
 begin
 	{Navigate to virtual directory (trash, shared, invites)}
 	if Cloud.IsPublicAccount then

@@ -1,8 +1,8 @@
-unit ListingItemFetcher;
+﻿unit ListingItemFetcher;
 
 {Interface and implementation for context-aware listing item fetching.
- Finds items in listing by path, refreshing from appropriate cloud source
- (trashbin, shared links, or direct status) if not found.}
+	Finds items in listing by path, refreshing from appropriate cloud source
+	(trashbin, shared links, or direct status) if not found.}
 
 interface
 
@@ -18,15 +18,14 @@ type
 		['{D9A6F3B2-1E8C-4D7A-C5B9-6F2E8A1D4C7B}']
 
 		{Finds an item in the listing, optionally refreshing from cloud.
-		 Searches by home path (private) or name (public).
-		 If not found and UpdateListing is true, refreshes from appropriate source.
-		 @param Listing Current directory listing (may be updated)
-		 @param Path Path to find
-		 @param Cloud Cloud connection for the account
-		 @param UpdateListing True to refresh listing if not found
-		 @return Found item or None record}
-		function FetchItem(var Listing: TCMRDirItemList; const Path: TRealPath;
-			Cloud: TCloudMailRu; UpdateListing: Boolean): TCMRDirItem;
+			Searches by home path (private) or name (public).
+			If not found and UpdateListing is true, refreshes from appropriate source.
+			@param Listing Current directory listing (may be updated)
+			@param Path Path to find
+			@param Cloud Cloud connection for the account
+			@param UpdateListing True to refresh listing if not found
+			@return Found item or None record}
+		function FetchItem(var Listing: TCMRDirItemList; const Path: TRealPath; Cloud: TCloudMailRu; UpdateListing: Boolean): TCMRDirItem;
 	end;
 
 	TListingItemFetcher = class(TInterfacedObject, IListingItemFetcher)
@@ -34,17 +33,14 @@ type
 		FLogger: ILogger;
 
 		{Searches listing by appropriate key (home path or name)}
-		function SearchListing(const Listing: TCMRDirItemList; const Path: TRealPath;
-			IsPublicAccount: Boolean): TCMRDirItem;
+		function SearchListing(const Listing: TCMRDirItemList; const Path: TRealPath; IsPublicAccount: Boolean): TCMRDirItem;
 
 		{Refreshes listing and searches again based on path context}
-		function RefreshAndSearch(var Listing: TCMRDirItemList; const Path: TRealPath;
-			Cloud: TCloudMailRu): TCMRDirItem;
+		function RefreshAndSearch(var Listing: TCMRDirItemList; const Path: TRealPath; Cloud: TCloudMailRu): TCMRDirItem;
 	public
 		constructor Create(Logger: ILogger);
 
-		function FetchItem(var Listing: TCMRDirItemList; const Path: TRealPath;
-			Cloud: TCloudMailRu; UpdateListing: Boolean): TCMRDirItem;
+		function FetchItem(var Listing: TCMRDirItemList; const Path: TRealPath; Cloud: TCloudMailRu; UpdateListing: Boolean): TCMRDirItem;
 	end;
 
 implementation
@@ -62,8 +58,7 @@ begin
 	FLogger := Logger;
 end;
 
-function TListingItemFetcher.SearchListing(const Listing: TCMRDirItemList;
-	const Path: TRealPath; IsPublicAccount: Boolean): TCMRDirItem;
+function TListingItemFetcher.SearchListing(const Listing: TCMRDirItemList; const Path: TRealPath; IsPublicAccount: Boolean): TCMRDirItem;
 begin
 	//сначала попробуем найти поле в имеющемся списке
 	if Path.HasHomePath and not IsPublicAccount then
@@ -72,8 +67,7 @@ begin
 		Result := Listing.FindByName(ExtractUniversalFileName(Path.Path));
 end;
 
-function TListingItemFetcher.RefreshAndSearch(var Listing: TCMRDirItemList;
-	const Path: TRealPath; Cloud: TCloudMailRu): TCMRDirItem;
+function TListingItemFetcher.RefreshAndSearch(var Listing: TCMRDirItemList; const Path: TRealPath; Cloud: TCloudMailRu): TCMRDirItem;
 begin
 	Result := Result.None;
 
@@ -105,8 +99,7 @@ begin
 	//Не рапортуем, это будет уровнем выше
 end;
 
-function TListingItemFetcher.FetchItem(var Listing: TCMRDirItemList;
-	const Path: TRealPath; Cloud: TCloudMailRu; UpdateListing: Boolean): TCMRDirItem;
+function TListingItemFetcher.FetchItem(var Listing: TCMRDirItemList; const Path: TRealPath; Cloud: TCloudMailRu; UpdateListing: Boolean): TCMRDirItem;
 begin
 	if not Assigned(Cloud) then
 	begin

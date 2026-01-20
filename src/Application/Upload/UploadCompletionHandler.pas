@@ -1,8 +1,8 @@
 unit UploadCompletionHandler;
 
 {Post-upload completion handler.
- Performs progress reporting, logging, move cleanup (local file deletion),
- and description sync after successful file upload.}
+	Performs progress reporting, logging, move cleanup (local file deletion),
+	and description sync after successful file upload.}
 
 interface
 
@@ -31,10 +31,10 @@ type
 		['{F8A9B0C1-D2E3-4F5A-6B7C-8D9E0F1A2B3C}']
 
 		{Handles all post-upload success operations.
-		 Reports progress, logs completion, handles move flag (deletes local file),
-		 and triggers description sync.
-		 @param Context Upload context with all required data
-		 @return FS_FILE_OK on success, or error code if local file deletion fails}
+			Reports progress, logs completion, handles move flag (deletes local file),
+			and triggers description sync.
+			@param Context Upload context with all required data
+			@return FS_FILE_OK on success, or error code if local file deletion fails}
 		function HandleCompletion(const Context: TUploadCompletionContext): Integer;
 	end;
 
@@ -57,12 +57,7 @@ type
 		{Handles move operation - deletes local file after upload}
 		function HandleMoveOperation(const LocalName: WideString): Integer;
 	public
-		constructor Create(
-			Logger: ILogger;
-			Progress: IProgress;
-			LocalFileDeletionHandler: ILocalFileDeletionHandler;
-			DescriptionSyncGuard: IDescriptionSyncGuard
-		);
+		constructor Create(Logger: ILogger; Progress: IProgress; LocalFileDeletionHandler: ILocalFileDeletionHandler; DescriptionSyncGuard: IDescriptionSyncGuard);
 
 		function HandleCompletion(const Context: TUploadCompletionContext): Integer;
 	end;
@@ -78,12 +73,7 @@ end;
 
 {TUploadCompletionHandler}
 
-constructor TUploadCompletionHandler.Create(
-	Logger: ILogger;
-	Progress: IProgress;
-	LocalFileDeletionHandler: ILocalFileDeletionHandler;
-	DescriptionSyncGuard: IDescriptionSyncGuard
-);
+constructor TUploadCompletionHandler.Create(Logger: ILogger; Progress: IProgress; LocalFileDeletionHandler: ILocalFileDeletionHandler; DescriptionSyncGuard: IDescriptionSyncGuard);
 begin
 	inherited Create;
 	FLogger := Logger;

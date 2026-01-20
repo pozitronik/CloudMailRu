@@ -1,7 +1,7 @@
-unit AccountRegistrationHandler;
+﻿unit AccountRegistrationHandler;
 
 {Handles account registration in FsMkDir.
- Manages registration dialog, password manager, and account settings persistence.}
+	Manages registration dialog, password manager, and account settings persistence.}
 
 interface
 
@@ -14,21 +14,18 @@ uses
 
 type
 	{Callback type for showing registration dialog}
-	TShowRegistrationFunc = reference to function(ParentWindow: HWND;
-		ConnSettings: TConnectionSettings; var AccSettings: TAccountSettings): Integer;
+	TShowRegistrationFunc = reference to function(ParentWindow: HWND; ConnSettings: TConnectionSettings; var AccSettings: TAccountSettings): Integer;
 
 	IAccountRegistrationHandler = interface
 		['{B8C4D2E5-3F6A-7B8C-9D0E-1F2A3B4C5D6E}']
 
 		{Registers a new account via dialog.
-		 @param ParentWindow Parent window handle for dialog
-		 @param AccountName The account name being registered
-		 @param ConnSettings Connection settings for registration
-		 @param ShowDialog Callback to show the registration dialog
-		 @return True if registration completed successfully}
-		function Execute(ParentWindow: HWND; const AccountName: WideString;
-			const ConnSettings: TConnectionSettings;
-			ShowDialog: TShowRegistrationFunc): Boolean;
+			@param ParentWindow Parent window handle for dialog
+			@param AccountName The account name being registered
+			@param ConnSettings Connection settings for registration
+			@param ShowDialog Callback to show the registration dialog
+			@return True if registration completed successfully}
+		function Execute(ParentWindow: HWND; const AccountName: WideString; const ConnSettings: TConnectionSettings; ShowDialog: TShowRegistrationFunc): Boolean;
 	end;
 
 	TAccountRegistrationHandler = class(TInterfacedObject, IAccountRegistrationHandler)
@@ -38,9 +35,7 @@ type
 	public
 		constructor Create(AccountsManager: IAccountsManager; PasswordManager: IPasswordManager);
 
-		function Execute(ParentWindow: HWND; const AccountName: WideString;
-			const ConnSettings: TConnectionSettings;
-			ShowDialog: TShowRegistrationFunc): Boolean;
+		function Execute(ParentWindow: HWND; const AccountName: WideString; const ConnSettings: TConnectionSettings; ShowDialog: TShowRegistrationFunc): Boolean;
 	end;
 
 implementation
@@ -49,17 +44,14 @@ uses
 	Controls,
 	PLUGIN_TYPES;
 
-constructor TAccountRegistrationHandler.Create(AccountsManager: IAccountsManager;
-	PasswordManager: IPasswordManager);
+constructor TAccountRegistrationHandler.Create(AccountsManager: IAccountsManager; PasswordManager: IPasswordManager);
 begin
 	inherited Create;
 	FAccountsManager := AccountsManager;
 	FPasswordManager := PasswordManager;
 end;
 
-function TAccountRegistrationHandler.Execute(ParentWindow: HWND;
-	const AccountName: WideString; const ConnSettings: TConnectionSettings;
-	ShowDialog: TShowRegistrationFunc): Boolean;
+function TAccountRegistrationHandler.Execute(ParentWindow: HWND; const AccountName: WideString; const ConnSettings: TConnectionSettings; ShowDialog: TShowRegistrationFunc): Boolean;
 var
 	RegisteredAccount: TAccountSettings;
 begin

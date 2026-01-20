@@ -1,13 +1,13 @@
 unit LocalFileDeletionHandler;
 
 {Local file deletion handler with retry and error mode handling.
- Handles configurable behavior when file deletion fails during move operations:
- - Ask: Prompt user with Retry/Abort/Ignore options
- - Ignore: Log and continue
- - Abort: Log and stop operation
- - DeleteIgnore/DeleteAbort: Try clearing readonly attribute, then ignore or abort
- Encapsulates the complex retry logic, user prompts, and readonly attribute
- handling that occurs when deleting local files after move operations.}
+	Handles configurable behavior when file deletion fails during move operations:
+	- Ask: Prompt user with Retry/Abort/Ignore options
+	- Ignore: Log and continue
+	- Abort: Log and stop operation
+	- DeleteIgnore/DeleteAbort: Try clearing readonly attribute, then ignore or abort
+	Encapsulates the complex retry logic, user prompts, and readonly attribute
+	handling that occurs when deleting local files after move operations.}
 
 interface
 
@@ -31,11 +31,11 @@ type
 	TAskDeleteModeFunc = reference to function(const FileName: WideString): Integer;
 
 	ILocalFileDeletionHandler = interface
-		['{D5E6F7A8-B9C0-1D2E-3F4A-5B6C7D8E9F0A}']
+		['{8DCEA413-7515-47C5-B41E-4A6DBB343BF9}']
 
 		{Attempts to delete a local file with retry and error mode handling.
-		 @param LocalPath Path to the local file to delete
-		 @return FS_FILE_OK on success, FS_FILE_NOTSUPPORTED on abort}
+			@param LocalPath Path to the local file to delete
+			@return FS_FILE_OK on success, FS_FILE_NOTSUPPORTED on abort}
 		function DeleteLocalFile(const LocalPath: WideString): Integer;
 	end;
 
@@ -60,20 +60,13 @@ type
 		function HandleDeleteFailure(const UNCPath, DisplayPath: WideString; Mode: Integer): Integer;
 	public
 		{Create handler with dependencies.
-		 @param Settings Plugin settings for getting delete mode
-		 @param Logger For logging delete operations
-		 @param DeleteFile Callback to delete file (returns true on success)
-		 @param GetFileAttr Callback to get file attributes
-		 @param SetFileAttr Callback to set file attributes (returns true on success)
-		 @param AskUser Callback to prompt user (returns IDRETRY/IDABORT/IDIGNORE)}
-		constructor Create(
-			Settings: IPluginSettingsManager;
-			Logger: ILogger;
-			DeleteFile: TDeleteFileFunc;
-			GetFileAttr: TGetFileAttrFunc;
-			SetFileAttr: TSetFileAttrFunc;
-			AskUser: TAskDeleteModeFunc
-		);
+			@param Settings Plugin settings for getting delete mode
+			@param Logger For logging delete operations
+			@param DeleteFile Callback to delete file (returns true on success)
+			@param GetFileAttr Callback to get file attributes
+			@param SetFileAttr Callback to set file attributes (returns true on success)
+			@param AskUser Callback to prompt user (returns IDRETRY/IDABORT/IDIGNORE)}
+		constructor Create(Settings: IPluginSettingsManager; Logger: ILogger; DeleteFile: TDeleteFileFunc; GetFileAttr: TGetFileAttrFunc; SetFileAttr: TSetFileAttrFunc; AskUser: TAskDeleteModeFunc);
 
 		function DeleteLocalFile(const LocalPath: WideString): Integer;
 	end;
@@ -89,14 +82,7 @@ end;
 
 {TLocalFileDeletionHandler}
 
-constructor TLocalFileDeletionHandler.Create(
-	Settings: IPluginSettingsManager;
-	Logger: ILogger;
-	DeleteFile: TDeleteFileFunc;
-	GetFileAttr: TGetFileAttrFunc;
-	SetFileAttr: TSetFileAttrFunc;
-	AskUser: TAskDeleteModeFunc
-);
+constructor TLocalFileDeletionHandler.Create(Settings: IPluginSettingsManager; Logger: ILogger; DeleteFile: TDeleteFileFunc; GetFileAttr: TGetFileAttrFunc; SetFileAttr: TSetFileAttrFunc; AskUser: TAskDeleteModeFunc);
 begin
 	inherited Create;
 	FSettings := Settings;
@@ -134,7 +120,8 @@ begin
 				{Try clearing readonly attribute and deleting}
 				if TryDeleteReadonlyFile(UNCPath, DisplayPath) then
 					Result := FS_FILE_OK
-				else begin
+				else
+				begin
 					{Couldn't delete even after clearing readonly - check configured fallback}
 					if FSettings.GetSettings.DeleteFailOnUploadMode = DeleteFailOnUploadDeleteIgnore then
 					begin

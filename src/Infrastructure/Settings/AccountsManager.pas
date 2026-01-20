@@ -58,7 +58,7 @@ implementation
 
 function TNullAccountsManager.GetAccountSettings(Account: WideString): TAccountSettings;
 begin
-	Result := Default(TAccountSettings);
+	Result := Default (TAccountSettings);
 	Result.Account := Account;
 end;
 

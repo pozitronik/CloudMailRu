@@ -1,8 +1,8 @@
-unit ConnectionManager;
+﻿unit ConnectionManager;
 
 {Connection pool manager for cloud connections by account name.
- Creates connections on first access, returns existing connections on subsequent calls.
- Combines interface definition with implementation.}
+	Creates connections on first access, returns existing connections on subsequent calls.
+	Combines interface definition with implementation.}
 
 interface
 
@@ -36,16 +36,16 @@ uses
 
 type
 	IConnectionManager = interface
-		['{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}']
+		['{DE5905AB-A410-42C0-A517-C30EC573D7FD}']
 
 		{Returns cloud connection for account, creating if needed.
-		 @param ConnectionName Account name to get connection for
-		 @param OperationResult Output status code (CLOUD_OPERATION_OK on success)
-		 @return TCloudMailRu instance or nil on failure}
+			@param ConnectionName Account name to get connection for
+			@param OperationResult Output status code (CLOUD_OPERATION_OK on success)
+			@return TCloudMailRu instance or nil on failure}
 		function Get(ConnectionName: WideString; var OperationResult: Integer): TCloudMailRu;
 
 		{Releases connection for account if it exists.
-		 @param ConnectionName Account name to release connection for}
+			@param ConnectionName Account name to release connection for}
 		procedure Free(ConnectionName: WideString);
 	end;
 
@@ -147,10 +147,7 @@ begin
 	Cipher := nil;
 
 	{Create CloudSettings using factory method - combines plugin settings with account settings}
-	CloudSettings := TCloudSettings.CreateFromSettings(
-		FPluginSettingsManager.GetSettings,
-		FAccountsManager.GetAccountSettings(ConnectionName)
-	);
+	CloudSettings := TCloudSettings.CreateFromSettings(FPluginSettingsManager.GetSettings, FAccountsManager.GetAccountSettings(ConnectionName));
 
 	if not CloudSettings.AccountSettings.PublicAccount and (not GetAccountPassword(ConnectionName, CloudSettings) or not GetFilesPassword(ConnectionName, CloudSettings) or not GetProxyPassword) then
 		exit(CLOUD_OPERATION_ERROR_STATUS_UNKNOWN); //INVALID_HANDLE_VALUE
@@ -165,7 +162,8 @@ begin
 		begin
 			FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_WRONG_ENCRYPT_PASSWORD);
 			FileCipherInstance.Free;
-		end else
+		end
+		else
 			Cipher := FileCipherInstance;
 	end;
 
@@ -185,8 +183,8 @@ begin
 end;
 
 {Depending on the account settings, initializes and retrieves the files encryption password.
- The password retrieves from the TC passwords storage or user input. Returns true if password retrieved, false otherwise.
- If file encryption is not enabled, immediately returns true.}
+	The password retrieves from the TC passwords storage or user input. Returns true if password retrieved, false otherwise.
+	If file encryption is not enabled, immediately returns true.}
 function TConnectionManager.InitCloudCryptPasswords(const ConnectionName: WideString; var CloudSettings: TCloudSettings): Boolean;
 var
 	crypt_id: WideString;
@@ -221,7 +219,7 @@ begin
 end;
 
 {Retrieves the password for ConnectionName: from TC passwords storage, then from settings, and the from user input. Returns true if password retrieved, false otherwise.
- Note: the metod saves password to TC storage and removes it from config, if current option set for the account}
+	Note: the metod saves password to TC storage and removes it from config, if current option set for the account}
 function TConnectionManager.GetAccountPassword(const ConnectionName: WideString; var CloudSettings: TCloudSettings): Boolean;
 begin
 	if CloudSettings.AccountSettings.UseTCPasswordManager and (FPasswordManager.GetPassword(ConnectionName, CloudSettings.AccountSettings.password) = FS_FILE_OK) then
@@ -289,7 +287,7 @@ begin
 end;
 
 {Retrieves the proxy password, if required, from TC passwords storage, the settings file or user input. Returns true if password retrieved or not required, false otherwise.
- Note: the metod saves password to TC storage and removes it from config, if user chooses to do so}
+	Note: the metod saves password to TC storage and removes it from config, if user chooses to do so}
 function TConnectionManager.GetProxyPassword: Boolean;
 var
 	ProxySettings: TProxySettings;

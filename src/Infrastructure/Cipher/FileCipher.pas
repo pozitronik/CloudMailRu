@@ -67,12 +67,12 @@ type
 		constructor Create(Password: WideString; PasswordControl: WideString = ''; DoFilenameCipher: Boolean = false);
 		destructor Destroy; override;
 
-		function CryptFile(SourceFileName, DestinationFilename: WideString): integer;
-		function CryptStream(SourceStream, DestinationStream: TStream): integer;
+		function CryptFile(SourceFileName, DestinationFilename: WideString): Integer;
+		function CryptStream(SourceStream, DestinationStream: TStream): Integer;
 		function CryptFileName(const FileName: WideString): WideString;
 
-		function DecryptFile(SourceFileName, DestinationFilename: WideString): integer;
-		function DecryptStream(SourceStream, DestinationStream: TStream): integer;
+		function DecryptFile(SourceFileName, DestinationFilename: WideString): Integer;
+		function DecryptStream(SourceStream, DestinationStream: TStream): Integer;
 		function DecryptFileName(const FileName: WideString): WideString;
 		procedure DecryptDirListing(var CloudMailRuDirListing: TCMRDirItemList);
 
@@ -223,7 +223,7 @@ begin
 	inherited;
 end;
 
-function TFileCipher.CryptFile(SourceFileName, DestinationFilename: WideString): integer;
+function TFileCipher.CryptFile(SourceFileName, DestinationFilename: WideString): Integer;
 var
 	SourceStream, DestinationStream: TBufferedFileStream;
 begin
@@ -259,7 +259,7 @@ begin
 	end;
 end;
 
-function TFileCipher.CryptStream(SourceStream, DestinationStream: TStream): integer;
+function TFileCipher.CryptStream(SourceStream, DestinationStream: TStream): Integer;
 begin
 	self.CiphersInit();
 	try
@@ -276,7 +276,7 @@ end;
 
 procedure TFileCipher.DecryptDirListing(var CloudMailRuDirListing: TCMRDirItemList);
 var
-	i: integer;
+	i: Integer;
 begin
 	for i := 0 to Length(CloudMailRuDirListing) - 1 do
 	begin
@@ -284,7 +284,7 @@ begin
 	end;
 end;
 
-function TFileCipher.DecryptFile(SourceFileName, DestinationFilename: WideString): integer;
+function TFileCipher.DecryptFile(SourceFileName, DestinationFilename: WideString): Integer;
 var
 	SourceStream, DestinationStream: TBufferedFileStream;
 begin
@@ -320,7 +320,7 @@ begin
 	end;
 end;
 
-function TFileCipher.DecryptStream(SourceStream, DestinationStream: TStream): integer;
+function TFileCipher.DecryptStream(SourceStream, DestinationStream: TStream): Integer;
 begin
 	self.CiphersInit();
 	try

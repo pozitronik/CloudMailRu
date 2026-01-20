@@ -64,7 +64,7 @@ const
 	PATTERN = 'mail.ru/upload/"';
 	HTTPS_PREFIX = 'https://';
 var
-	PatternPos, WindowStart, WindowEnd, HttpsPos: Integer;
+	PatternPos, WindowStart, WindowEnd, HttpsPos: integer;
 	SearchWindow: WideString;
 begin
 	result := false;
@@ -74,18 +74,18 @@ begin
 	if PatternPos <= 0 then
 		Exit;
 
-	{ Extract a window of text that should contain the full URL }
+	{Extract a window of text that should contain the full URL}
 	WindowStart := Max(1, PatternPos - URL_SEARCH_WINDOW);
-	WindowEnd := PatternPos + Length(PATTERN) - 1;
-	SearchWindow := Copy(Text, WindowStart, WindowEnd - WindowStart + 1);
+	WindowEnd := PatternPos + length(PATTERN) - 1;
+	SearchWindow := copy(Text, WindowStart, WindowEnd - WindowStart + 1);
 
-	{ Find https:// within the window }
+	{Find https:// within the window}
 	HttpsPos := Pos(WideString(HTTPS_PREFIX), SearchWindow);
 	if HttpsPos <= 0 then
 		Exit;
 
-	{ Extract URL from https:// to the end of the window }
-	UploadUrl := Copy(SearchWindow, HttpsPos, Length(SearchWindow) - HttpsPos + 1);
+	{Extract URL from https:// to the end of the window}
+	UploadUrl := copy(SearchWindow, HttpsPos, length(SearchWindow) - HttpsPos + 1);
 	result := true;
 end;
 

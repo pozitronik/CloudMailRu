@@ -30,7 +30,7 @@ type
 
 	{Interface for listing service operations}
 	ICloudListingService = interface
-		['{C9D0E1F2-A3B4-5C6D-7E8F-9A0B1C2D3E4F}']
+		['{2A923C8D-EB0B-4E3B-84DC-E372CD6C9AE5}']
 		{Get directory listing for a path}
 		function GetDirectory(Path: WideString; var Listing: TCMRDirItemList; ShowProgress: Boolean = False): Boolean;
 		{Get shared links listing}
@@ -63,18 +63,7 @@ type
 		FCloudResultToBooleanFromResult: TCloudResultToBooleanFromResultFunc;
 		FDoCryptFilenames: Boolean;
 	public
-		constructor Create(
-			HTTP: ICloudHTTP;
-			Cipher: ICipher;
-			Logger: ILogger;
-			RetryOperation: TRetryOperation;
-			IsPublicAccount: TIsPublicAccountFunc;
-			GetUnitedParams: TGetUnitedParamsFunc;
-			GetPublicLink: TGetPublicLinkFunc;
-			CloudResultToBoolean: TCloudResultToBooleanFunc;
-			CloudResultToBooleanFromResult: TCloudResultToBooleanFromResultFunc;
-			DoCryptFilenames: Boolean
-		);
+		constructor Create(HTTP: ICloudHTTP; Cipher: ICipher; Logger: ILogger; RetryOperation: TRetryOperation; IsPublicAccount: TIsPublicAccountFunc; GetUnitedParams: TGetUnitedParamsFunc; GetPublicLink: TGetPublicLinkFunc; CloudResultToBoolean: TCloudResultToBooleanFunc; CloudResultToBooleanFromResult: TCloudResultToBooleanFromResultFunc; DoCryptFilenames: Boolean);
 
 		{ICloudListingService implementation}
 		function GetDirectory(Path: WideString; var Listing: TCMRDirItemList; ShowProgress: Boolean = False): Boolean;
@@ -89,20 +78,9 @@ type
 
 implementation
 
-{ TCloudListingService }
+{TCloudListingService}
 
-constructor TCloudListingService.Create(
-	HTTP: ICloudHTTP;
-	Cipher: ICipher;
-	Logger: ILogger;
-	RetryOperation: TRetryOperation;
-	IsPublicAccount: TIsPublicAccountFunc;
-	GetUnitedParams: TGetUnitedParamsFunc;
-	GetPublicLink: TGetPublicLinkFunc;
-	CloudResultToBoolean: TCloudResultToBooleanFunc;
-	CloudResultToBooleanFromResult: TCloudResultToBooleanFromResultFunc;
-	DoCryptFilenames: Boolean
-);
+constructor TCloudListingService.Create(HTTP: ICloudHTTP; Cipher: ICipher; Logger: ILogger; RetryOperation: TRetryOperation; IsPublicAccount: TIsPublicAccountFunc; GetUnitedParams: TGetUnitedParamsFunc; GetPublicLink: TGetPublicLinkFunc; CloudResultToBoolean: TCloudResultToBooleanFunc; CloudResultToBooleanFromResult: TCloudResultToBooleanFromResultFunc; DoCryptFilenames: Boolean);
 begin
 	inherited Create;
 	FHTTP := HTTP;
@@ -129,8 +107,10 @@ begin
 	{Public accounts use different API endpoint}
 	if FIsPublicAccount() then
 	begin
-		var JSON: WideString;
-		var OperationResult: TCMROperationResult;
+		var
+			JSON: WideString;
+		var
+			OperationResult: TCMROperationResult;
 		Result := FHTTP.GetPage(Format('%s&weblink=%s%s&%s', [API_FOLDER, IncludeSlash(FGetPublicLink()), PathToUrl(Path, False), UnitedParams]), JSON, ShowProgress);
 		if Result then
 		begin
@@ -312,15 +292,17 @@ begin
 	{Public accounts use different API endpoint}
 	if FIsPublicAccount() then
 	begin
-		var JSON: WideString;
-		var Progress: Boolean := False;
+		var
+			JSON: WideString;
+		var
+			Progress: Boolean := False;
 		Result := FHTTP.GetPage(Format('%s?weblink=%s%s&%s', [API_FILE, IncludeSlash(FGetPublicLink()), PathToUrl(Path), UnitedParams]), JSON, Progress);
 		if Result then
 			Result := FCloudResultToBoolean(JSON, PREFIX_ERR_FILE_STATUS) and FileInfo.FromJSON(JSON);
 		Exit;
 	end;
 
-	LocalInfo := default(TCMRDirItem);
+	LocalInfo := default (TCMRDirItem);
 	CallResult := FRetryOperation.Execute(
 		function: TAPICallResult
 		var
@@ -345,10 +327,7 @@ begin
 	Result := False;
 	if FIsPublicAccount() then
 		Exit;
-	Result := FRetryOperation.PostFormBoolean(
-		API_TRASHBIN_RESTORE + '?' + FGetUnitedParams(),
-		Format('path=%s&restore_revision=%d&conflict=%s', [PathToUrl(Path), RestoreRevision, ConflictMode]),
-		PREFIX_ERR_FILE_RESTORE);
+	Result := FRetryOperation.PostFormBoolean(API_TRASHBIN_RESTORE + '?' + FGetUnitedParams(), Format('path=%s&restore_revision=%d&conflict=%s', [PathToUrl(Path), RestoreRevision, ConflictMode]), PREFIX_ERR_FILE_RESTORE);
 end;
 
 function TCloudListingService.TrashbinEmpty(): Boolean;
@@ -356,10 +335,7 @@ begin
 	Result := False;
 	if FIsPublicAccount() then
 		Exit;
-	Result := FRetryOperation.PostFormBoolean(
-		API_TRASHBIN_EMPTY + '?' + FGetUnitedParams(),
-		EmptyWideStr,
-		PREFIX_ERR_TRASH_CLEAN);
+	Result := FRetryOperation.PostFormBoolean(API_TRASHBIN_EMPTY + '?' + FGetUnitedParams(), EmptyWideStr, PREFIX_ERR_TRASH_CLEAN);
 end;
 
 end.

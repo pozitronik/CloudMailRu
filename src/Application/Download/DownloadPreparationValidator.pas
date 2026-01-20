@@ -2,12 +2,12 @@ unit DownloadPreparationValidator;
 
 {Pre-download validation for FsGetFile.
 
- Centralizes initial validation logic:
- - Resume flag check (not supported by cloud API)
- - Virtual path rejection (can't download from trash/shared/invites)
+	Centralizes initial validation logic:
+	- Resume flag check (not supported by cloud API)
+	- Virtual path rejection (can't download from trash/shared/invites)
 
- Note: Local file conflict resolution is handled separately by
- ILocalFileConflictResolver which is already extracted.}
+	Note: Local file conflict resolution is handled separately by
+	ILocalFileConflictResolver which is already extracted.}
 
 interface
 
@@ -21,12 +21,12 @@ type
 	end;
 
 	IDownloadPreparationValidator = interface
-		['{C3D4E5F6-A7B8-9012-CDEF-345678901234}']
+		['{DC01E5E1-D5D5-45F2-8870-15016011CF71}']
 
 		{Validates whether download can proceed.
-		 @param RemotePath The parsed remote path
-		 @param CopyFlags TC copy operation flags
-		 @returns Validation result with proceed decision and error code}
+			@param RemotePath The parsed remote path
+			@param CopyFlags TC copy operation flags
+			@returns Validation result with proceed decision and error code}
 		function Validate(const RemotePath: TRealPath; CopyFlags: Integer): TDownloadValidationResult;
 	end;
 

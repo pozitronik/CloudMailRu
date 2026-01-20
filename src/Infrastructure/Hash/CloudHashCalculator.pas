@@ -10,15 +10,15 @@ uses
 type
 	{Interface for cloud hash calculation - allows dependency injection and testability}
 	ICloudHashCalculator = interface
-		['{A3B7C9D1-E5F2-4A6B-8C0D-1E2F3A4B5C6D}']
+		['{45039BC6-7501-41B6-8C82-620E45895E41}']
 		function CalculateHash(Path: WideString): WideString; overload;
 		function CalculateHash(Stream: TStream; ProgressPath: WideString): WideString; overload;
 	end;
 
 	{Cloud Mail.ru proprietary hash calculator.
-	 Hash algorithm:
-	 - Files < 21 bytes: pad to 20 bytes, return hex digest of raw bytes
-	 - Files >= 21 bytes: SHA1('mrCloud' + content + size_string)}
+		Hash algorithm:
+		- Files < 21 bytes: pad to 20 bytes, return hex digest of raw bytes
+		- Files >= 21 bytes: SHA1('mrCloud' + content + size_string)}
 	TCloudHashCalculator = class(TInterfacedObject, ICloudHashCalculator)
 	private
 		FProgress: IProgress;
@@ -54,7 +54,7 @@ const
 	SMALL_FILE_BUFFER = 20;
 	BUFFER_SIZE = 8192;
 
-{ TCloudHashCalculator }
+	{TCloudHashCalculator}
 
 constructor TCloudHashCalculator.Create(Progress: IProgress; FileSystem: IFileSystem);
 begin
@@ -97,7 +97,7 @@ begin
 	if Stream.Size < SMALL_FILE_THRESHOLD then
 	begin
 		SetLength(initBuffer, SMALL_FILE_BUFFER);
-		Stream.Read(initBuffer, Stream.Size);
+		Stream.read(initBuffer, Stream.Size);
 		Result := UpperCase(THash.DigestAsString(initBuffer));
 		Exit;
 	end;
@@ -115,7 +115,7 @@ begin
 		if Percent > 100 then
 			Percent := 100;
 
-		read := Stream.Read(buffer, BUFFER_SIZE);
+		read := Stream.read(buffer, BUFFER_SIZE);
 		sha1.Update(buffer, read);
 		Aborted := FProgress.Progress(ProgressPath, CALCULATING_HASH, Percent);
 	until (read < sizeof(buffer)) or Aborted;
@@ -127,7 +127,7 @@ begin
 	sha1.Reset;
 end;
 
-{ TNullHashCalculator }
+{TNullHashCalculator}
 
 function TNullHashCalculator.CalculateHash(Path: WideString): WideString;
 begin

@@ -1,7 +1,7 @@
 unit IniConfigFile;
 
 {Abstraction for INI-style configuration file operations, enabling testability
- without actual disk I/O. Used by AccountsManager and PluginSettingsManager.}
+	without actual disk I/O. Used by AccountsManager and PluginSettingsManager.}
 
 interface
 
@@ -15,7 +15,7 @@ uses
 type
 	{Interface for INI-style configuration file operations}
 	IConfigFile = interface
-		['{BAC4C620-1BF1-460B-8742-026C9E45E89F}']
+		['{0AA80DC2-22BF-45E1-960A-C81992AF95E1}']
 
 		{Returns the file path this config was loaded from, empty for in-memory configs}
 		function GetFilePath: string;
@@ -33,7 +33,7 @@ type
 		procedure WriteInt64(const Section, Ident: string; Value: Int64);
 
 		{Write-if-not-default operations - writes value only if different from default,
-		 otherwise deletes the key to keep INI files clean}
+			otherwise deletes the key to keep INI files clean}
 		procedure WriteStringIfNotDefault(const Section, Ident, Value, Default: string);
 		procedure WriteBoolIfNotDefault(const Section, Ident: string; Value, Default: Boolean);
 		procedure WriteIntegerIfNotDefault(const Section, Ident: string; Value, Default: Integer);
@@ -114,7 +114,7 @@ type
 	end;
 
 	{TIniFile wrapper implementing IConfigFile interface for production use.
-	 Each operation opens and closes the file to match original behavior pattern.}
+		Each operation opens and closes the file to match original behavior pattern.}
 	TIniConfigFile = class(TInterfacedObject, IConfigFile)
 	private
 		FFilePath: string;
@@ -240,7 +240,7 @@ end;
 constructor TMemoryConfigFile.Create;
 begin
 	inherited Create;
-	FData := TObjectDictionary<string, TDictionary<string, string>>.Create([doOwnsValues]);
+	FData := TObjectDictionary < string, TDictionary < string, string >>.Create([doOwnsValues]);
 	FFilePath := '';
 end;
 

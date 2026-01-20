@@ -1,9 +1,9 @@
 unit OperationActionExecutor;
 
 {Executes operation lifecycle actions determined by IOperationLifecycleHandler.
- Centralizes all side effects triggered by operation START/END events:
- retry counter management, skip list flags, background job tracking,
- description loading, and user space logging.}
+	Centralizes all side effects triggered by operation START/END events:
+	retry counter management, skip list flags, background job tracking,
+	description loading, and user space logging.}
 
 interface
 
@@ -21,8 +21,8 @@ uses
 
 type
 	{Executes operation lifecycle actions determined by IOperationLifecycleHandler.
-	 Each action in the set triggers specific side effects (thread state changes,
-	 logging, description loading, etc.).}
+		Each action in the set triggers specific side effects (thread state changes,
+		logging, description loading, etc.).}
 	IOperationActionExecutor = interface
 		['{8A3D1F92-E4B7-4C6A-9D5E-2F8B7A1C3E4D}']
 		procedure Execute(Actions: TOperationActions; const RealPath: TRealPath; Operation: Integer);
@@ -60,13 +60,7 @@ type
 		{Warning actions}
 		procedure ExecuteWarningActions(Actions: TOperationActions);
 	public
-		constructor Create(
-			ThreadState: IThreadStateManager;
-			AConnectionManager: IConnectionManager;
-			SettingsManager: IPluginSettingsManager;
-			Descriptions: TDescription;
-			Logger: ILogger
-		);
+		constructor Create(ThreadState: IThreadStateManager; AConnectionManager: IConnectionManager; SettingsManager: IPluginSettingsManager; Descriptions: TDescription; Logger: ILogger);
 
 		procedure Execute(Actions: TOperationActions; const RealPath: TRealPath; Operation: Integer);
 	end;
@@ -76,13 +70,7 @@ implementation
 uses
 	SysUtils;
 
-constructor TOperationActionExecutor.Create(
-	ThreadState: IThreadStateManager;
-	AConnectionManager: IConnectionManager;
-	SettingsManager: IPluginSettingsManager;
-	Descriptions: TDescription;
-	Logger: ILogger
-);
+constructor TOperationActionExecutor.Create(ThreadState: IThreadStateManager; AConnectionManager: IConnectionManager; SettingsManager: IPluginSettingsManager; Descriptions: TDescription; Logger: ILogger);
 begin
 	inherited Create;
 	FThreadState := ThreadState;
@@ -157,9 +145,7 @@ var
 begin
 	if oaLoadDescriptions in Actions then
 	begin
-		if FConnectionManager.Get(RealPath.account, getResult).getDescriptionFile(
-			IncludeTrailingBackslash(RealPath.Path) + FSettingsManager.GetSettings.DescriptionFileName,
-			FDescriptions.ionFilename) then
+		if FConnectionManager.Get(RealPath.account, getResult).getDescriptionFile(IncludeTrailingBackslash(RealPath.Path) + FSettingsManager.GetSettings.DescriptionFileName, FDescriptions.ionFilename) then
 			FDescriptions.Read
 		else
 			FDescriptions.Clear;

@@ -147,7 +147,7 @@ begin
 	{Read first 3 bytes to detect BOM}
 	Buffer := FFileSystem.ReadFileHeader(ion_filename, 3);
 	if Length(Buffer) < 2 then
-		Exit; {File too small or unreadable, return default encoding}
+		exit; {File too small or unreadable, return default encoding}
 
 	{Check for BOM signatures}
 	if (Length(Buffer) >= 3) and (Buffer[0] = $EF) and (Buffer[1] = $BB) and (Buffer[2] = $BF) then
@@ -158,7 +158,7 @@ begin
 		exit(TEncoding.Unicode);
 
 	{Encoding still not determined - try reading with chosen encoding.
-	 If content is empty or unreadable, use ANSI.}
+		If content is empty or unreadable, use ANSI.}
 	try
 		Content := FFileSystem.ReadAllText(ion_filename, self.encoding);
 		if Content <> EmptyWideStr then

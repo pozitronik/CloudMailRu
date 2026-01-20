@@ -1,9 +1,9 @@
-unit CloudHTTP;
+﻿unit CloudHTTP;
 
 {Interface and implementation for HTTP operations.
- ICloudHTTP enables testability without real HTTP connections.
- TCloudMailRuHTTP implements this interface for production use.
- TNullCloudHTTP provides a null implementation for testing.}
+	ICloudHTTP enables testability without real HTTP connections.
+	TCloudMailRuHTTP implements this interface for production use.
+	TNullCloudHTTP provides a null implementation for testing.}
 
 interface
 
@@ -44,7 +44,7 @@ uses
 type
 	{Interface for cloud HTTP operations}
 	ICloudHTTP = interface
-		['{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}']
+		['{B4F9BB0D-F019-480A-A6DE-C6DA169EDBBF}']
 
 		{GET request returning page content}
 		function GetPage(URL: WideString; var Answer: WideString; var ProgressEnabled: Boolean): Boolean;
@@ -56,9 +56,7 @@ type
 		function GetRedirection(URL: WideString; var RedirectionURL: WideString; var ProgressEnabled: Boolean): Boolean;
 
 		{POST form data}
-		function PostForm(URL: WideString; PostDataString: WideString; var Answer: WideString;
-			ContentType: WideString = 'application/x-www-form-urlencoded'; LogErrors: Boolean = True;
-			ProgressEnabled: Boolean = True): Boolean;
+		function PostForm(URL: WideString; PostDataString: WideString; var Answer: WideString; ContentType: WideString = 'application/x-www-form-urlencoded'; LogErrors: Boolean = True; ProgressEnabled: Boolean = True): Boolean;
 
 		{POST multipart form data}
 		function PostMultipart(URL: WideString; Params: TDictionary<WideString, WideString>; var Answer: WideString): Boolean;
@@ -91,9 +89,7 @@ type
 		function GetPage(URL: WideString; var Answer: WideString; var ProgressEnabled: Boolean): Boolean;
 		function GetFile(URL: WideString; FileStream: TStream; LogErrors: Boolean = True): Integer;
 		function GetRedirection(URL: WideString; var RedirectionURL: WideString; var ProgressEnabled: Boolean): Boolean;
-		function PostForm(URL: WideString; PostDataString: WideString; var Answer: WideString;
-			ContentType: WideString = 'application/x-www-form-urlencoded'; LogErrors: Boolean = True;
-			ProgressEnabled: Boolean = True): Boolean;
+		function PostForm(URL: WideString; PostDataString: WideString; var Answer: WideString; ContentType: WideString = 'application/x-www-form-urlencoded'; LogErrors: Boolean = True; ProgressEnabled: Boolean = True): Boolean;
 		function PostMultipart(URL: WideString; Params: TDictionary<WideString, WideString>; var Answer: WideString): Boolean;
 		function PostFile(URL: WideString; FileName: WideString; FileStream: TStream; var Answer: WideString): Integer;
 		function PutFile(URL: WideString; FileName: WideString; FileStream: TStream; var Answer: WideString): Integer;
@@ -141,21 +137,21 @@ type
 		procedure Head(URL: WideString);
 
 		function GetPage(URL: WideString; var Answer: WideString; var ProgressEnabled: Boolean): Boolean; //если ProgressEnabled - включаем обработчик onWork, возвращаем ProgressEnabled=false при отмене
-		function GetFile(URL: WideString; FileStream: TStream; LogErrors: Boolean = true): integer;
+		function GetFile(URL: WideString; FileStream: TStream; LogErrors: Boolean = True): Integer;
 		function GetRedirection(URL: WideString; var RedirectionURL: WideString; var ProgressEnabled: Boolean): Boolean;
 
-		function PostForm(URL: WideString; PostDataString: WideString; var Answer: WideString; ContentType: WideString = 'application/x-www-form-urlencoded'; LogErrors: Boolean = true; ProgressEnabled: Boolean = true): Boolean; //Постинг данных с возможным получением ответа.
+		function PostForm(URL: WideString; PostDataString: WideString; var Answer: WideString; ContentType: WideString = 'application/x-www-form-urlencoded'; LogErrors: Boolean = True; ProgressEnabled: Boolean = True): Boolean; //Постинг данных с возможным получением ответа.
 		function PostMultipart(URL: WideString; Params: TDictionary<WideString, WideString>; var Answer: WideString): Boolean;
-		function PostFile(URL: WideString; FileName: WideString; FileStream: TStream; var Answer: WideString): integer; overload; //Постинг потока данных как файла
+		function PostFile(URL: WideString; FileName: WideString; FileStream: TStream; var Answer: WideString): Integer; overload; //Постинг потока данных как файла
 
-		function Post(URL: WideString; PostData, ResultData: TStringStream; UnderstandResponseCode: Boolean = false; ContentType: WideString = ''; LogErrors: Boolean = true; ProgressEnabled: Boolean = true): integer; overload; //Постинг подготовленных данных, отлов ошибок
-		function Post(URL: WideString; var PostData: TIdMultiPartFormDataStream; ResultData: TStringStream): integer; overload; //TIdMultiPartFormDataStream should be passed via var
+		function Post(URL: WideString; PostData, ResultData: TStringStream; UnderstandResponseCode: Boolean = false; ContentType: WideString = ''; LogErrors: Boolean = True; ProgressEnabled: Boolean = True): Integer; overload; //Постинг подготовленных данных, отлов ошибок
+		function Post(URL: WideString; var PostData: TIdMultiPartFormDataStream; ResultData: TStringStream): Integer; overload; //TIdMultiPartFormDataStream should be passed via var
 
 		function OptionsMethod(URL: WideString; var Answer: WideString; var ProgressEnabled: Boolean): Boolean;
-		function PutFile(URL: WideString; FileName: WideString; FileStream: TStream; var Answer: WideString): integer;
-		function Put(URL: WideString; var PostData: TStream; ResultData: TStringStream): integer;
+		function PutFile(URL: WideString; FileName: WideString; FileStream: TStream; var Answer: WideString): Integer;
+		function Put(URL: WideString; var PostData: TStream; ResultData: TStringStream): Integer;
 
-		function ExceptionHandler(E: Exception; URL: WideString; HTTPMethod: integer = HTTP_METHOD_POST; LogErrors: Boolean = true): integer;
+		function ExceptionHandler(E: Exception; URL: WideString; HTTPMethod: Integer = HTTP_METHOD_POST; LogErrors: Boolean = True): Integer;
 
 		procedure SetProgressNames(SourceName, TargetName: WideString);
 		procedure HTTPProgress(ASender: TObject; AWorkMode: TWorkMode; AWorkCount: int64);
@@ -168,7 +164,7 @@ implementation
 function TNullCloudHTTP.GetPage(URL: WideString; var Answer: WideString; var ProgressEnabled: Boolean): Boolean;
 begin
 	Answer := '';
-	Result := False;
+	Result := false;
 end;
 
 function TNullCloudHTTP.GetFile(URL: WideString; FileStream: TStream; LogErrors: Boolean): Integer;
@@ -179,20 +175,19 @@ end;
 function TNullCloudHTTP.GetRedirection(URL: WideString; var RedirectionURL: WideString; var ProgressEnabled: Boolean): Boolean;
 begin
 	RedirectionURL := '';
-	Result := False;
+	Result := false;
 end;
 
-function TNullCloudHTTP.PostForm(URL: WideString; PostDataString: WideString; var Answer: WideString;
-	ContentType: WideString; LogErrors: Boolean; ProgressEnabled: Boolean): Boolean;
+function TNullCloudHTTP.PostForm(URL: WideString; PostDataString: WideString; var Answer: WideString; ContentType: WideString; LogErrors: Boolean; ProgressEnabled: Boolean): Boolean;
 begin
 	Answer := '';
-	Result := False;
+	Result := false;
 end;
 
 function TNullCloudHTTP.PostMultipart(URL: WideString; Params: TDictionary<WideString, WideString>; var Answer: WideString): Boolean;
 begin
 	Answer := '';
-	Result := False;
+	Result := false;
 end;
 
 function TNullCloudHTTP.PostFile(URL: WideString; FileName: WideString; FileStream: TStream; var Answer: WideString): Integer;
@@ -258,7 +253,7 @@ begin
 			ProxySocks4:
 				Socks.Version := svSocks4;
 		end;
-		self.Socks.Enabled := true;
+		self.Socks.Enabled := True;
 	end;
 
 	if (Settings.ProxySettings.ProxyType in SocksProxyTypes) and (self.Socks.Enabled) then
@@ -269,16 +264,16 @@ begin
 		HTTP.ProxyParams.ProxyPort := Settings.ProxySettings.Port;
 		if Settings.ProxySettings.User <> EmptyWideStr then
 		begin
-			HTTP.ProxyParams.BasicAuthentication := true;
+			HTTP.ProxyParams.BasicAuthentication := True;
 			HTTP.ProxyParams.ProxyUsername := Settings.ProxySettings.User;
 			HTTP.ProxyParams.ProxyPassword := Settings.ProxySettings.password;
 		end
 	end;
 
 	HTTP.IOHandler := SSL;
-	HTTP.AllowCookies := true;
+	HTTP.AllowCookies := True;
 	HTTP.HTTPOptions := [hoForceEncodeParams, hoNoParseMetaHTTPEquiv, hoKeepOrigProtocol, hoTreat302Like303];
-	HTTP.HandleRedirects := true;
+	HTTP.HandleRedirects := True;
 	if (Settings.SocketTimeout < 0) then
 	begin
 		HTTP.ConnectTimeout := Settings.SocketTimeout;
@@ -305,37 +300,37 @@ begin
 	inherited;
 end;
 
-function TCloudMailRuHTTP.GetFile(URL: WideString; FileStream: TStream; LogErrors: Boolean): integer;
+function TCloudMailRuHTTP.GetFile(URL: WideString; FileStream: TStream; LogErrors: Boolean): Integer;
 begin
-	result := FS_FILE_OK;
+	Result := FS_FILE_OK;
 	try
 		HTTP.Intercept := Throttle;
 		HTTP.Request.ContentType := 'application/octet-stream';
-		HTTP.Response.KeepAlive := true;
+		HTTP.Response.KeepAlive := True;
 		HTTP.OnWork := self.HTTPProgress;
 		HTTP.Get(URL, FileStream);
 		if (HTTP.RedirectCount = HTTP.RedirectMaximum) and (FileStream.size = 0) then
 		begin
-			result := FS_FILE_NOTSUPPORTED;
+			Result := FS_FILE_NOTSUPPORTED;
 		end;
 	except
 		on E: Exception do
 		begin
-			result := self.ExceptionHandler(E, URL, HTTP_METHOD_GET, LogErrors);
+			Result := self.ExceptionHandler(E, URL, HTTP_METHOD_GET, LogErrors);
 		end;
 	end;
 end;
 
 function TCloudMailRuHTTP.GetPage(URL: WideString; var Answer: WideString; var ProgressEnabled: Boolean): Boolean;
 begin
-	result := false;
+	Result := false;
 	try
 		if ProgressEnabled then
 			HTTP.OnWork := self.HTTPProgress //Вызов прогресса ведёт к возможности отменить получение списка каталогов и других операций, поэтому он нужен не всегда
 		else
 			HTTP.OnWork := nil;
 		Answer := HTTP.Get(URL);
-		result := Answer <> EmptyWideStr;
+		Result := Answer <> EmptyWideStr;
 	Except
 		on E: Exception do
 		begin
@@ -367,8 +362,8 @@ function TCloudMailRuHTTP.GetRedirection(URL: WideString; var RedirectionURL: Wi
 var
 	Answer: WideString;
 begin
-	Result := False;
-	HTTP.HandleRedirects := False;
+	Result := false;
+	HTTP.HandleRedirects := false;
 	try
 		try
 			Answer := HTTP.Get(URL);
@@ -395,9 +390,9 @@ begin
 	HTTP.Request.Referer := URL;
 end;
 
-function TCloudMailRuHTTP.Post(URL: WideString; PostData, ResultData: TStringStream; UnderstandResponseCode: Boolean; ContentType: WideString; LogErrors, ProgressEnabled: Boolean): integer;
+function TCloudMailRuHTTP.Post(URL: WideString; PostData, ResultData: TStringStream; UnderstandResponseCode: Boolean; ContentType: WideString; LogErrors, ProgressEnabled: Boolean): Integer;
 begin
-	result := CLOUD_OPERATION_OK;
+	Result := CLOUD_OPERATION_OK;
 	ResultData.Position := 0;
 	try
 		if ContentType <> EmptyWideStr then
@@ -411,14 +406,14 @@ begin
 	except
 		on E: Exception do
 		begin
-			result := self.ExceptionHandler(E, URL, HTTP_METHOD_POST, LogErrors);
+			Result := self.ExceptionHandler(E, URL, HTTP_METHOD_POST, LogErrors);
 			if UnderstandResponseCode and (E is EIdHTTPProtocolException) then
 			begin
 				case HTTP.ResponseCode of
 					HTTP_ERROR_BAD_REQUEST, HTTP_ERROR_OVERQUOTA: //recoverable errors
 						begin
 							ResultData.WriteString((E as EIdHTTPProtocolException).ErrorMessage);
-							result := CLOUD_OPERATION_OK;
+							Result := CLOUD_OPERATION_OK;
 						end;
 				end;
 			end;
@@ -427,9 +422,9 @@ begin
 	end;
 end;
 
-function TCloudMailRuHTTP.Post(URL: WideString; var PostData: TIdMultiPartFormDataStream; ResultData: TStringStream): integer;
+function TCloudMailRuHTTP.Post(URL: WideString; var PostData: TIdMultiPartFormDataStream; ResultData: TStringStream): Integer;
 begin
-	result := CLOUD_OPERATION_OK;
+	Result := CLOUD_OPERATION_OK;
 	ResultData.Position := 0;
 	try
 		HTTP.Intercept := Throttle;
@@ -438,12 +433,12 @@ begin
 	except
 		On E: Exception do
 		begin
-			result := self.ExceptionHandler(E, URL);
+			Result := self.ExceptionHandler(E, URL);
 		end;
 	end;
 end;
 
-function TCloudMailRuHTTP.PostFile(URL, FileName: WideString; FileStream: TStream; var Answer: WideString): integer;
+function TCloudMailRuHTTP.PostFile(URL, FileName: WideString; FileStream: TStream; var Answer: WideString): Integer;
 var
 	PostData: TIdMultiPartFormDataStream;
 	ResultStream: TStringStream;
@@ -453,33 +448,33 @@ begin
 		PostData := TIdMultiPartFormDataStream.Create;
 		try
 			PostData.AddFormField('file', 'application/octet-stream', EmptyWideStr, FileStream, FileName);
-			result := self.Post(URL, PostData, ResultStream);
+			Result := self.Post(URL, PostData, ResultStream);
 			Answer := ResultStream.DataString;
 		finally
-			PostData.Free;
+			PostData.free;
 		end;
 	finally
-		ResultStream.Free;
+		ResultStream.free;
 	end;
 end;
 
 function TCloudMailRuHTTP.PostForm(URL, PostDataString: WideString; var Answer: WideString; ContentType: WideString; LogErrors, ProgressEnabled: Boolean): Boolean;
 var
 	ResultStream, PostData: TStringStream;
-	PostResult: integer;
+	PostResult: Integer;
 begin
 	ResultStream := TStringStream.Create;
 	try
 		PostData := TStringStream.Create(PostDataString, TEncoding.UTF8);
 		try
-			PostResult := self.Post(URL, PostData, ResultStream, true, ContentType, LogErrors, ProgressEnabled);
-			result := PostResult = CLOUD_OPERATION_OK;
+			PostResult := self.Post(URL, PostData, ResultStream, True, ContentType, LogErrors, ProgressEnabled);
+			Result := PostResult = CLOUD_OPERATION_OK;
 			Answer := ResultStream.DataString;
 		finally
-			PostData.Free;
+			PostData.free;
 		end;
 	finally
-		ResultStream.Free;
+		ResultStream.free;
 	end;
 end;
 
@@ -488,7 +483,7 @@ var
 	ResultStream: TStringStream;
 	PostData: TIdMultiPartFormDataStream;
 	ParamItem: TPair<WideString, WideString>;
-	PostResult: integer;
+	PostResult: Integer;
 begin
 	ResultStream := TStringStream.Create;
 	try
@@ -498,13 +493,13 @@ begin
 				PostData.AddFormField(ParamItem.Key, ParamItem.Value);
 
 			PostResult := self.Post(URL, PostData, ResultStream);
-			result := PostResult = CLOUD_OPERATION_OK;
+			Result := PostResult = CLOUD_OPERATION_OK;
 			Answer := ResultStream.DataString;
 		finally
-			PostData.Free;
+			PostData.free;
 		end;
 	finally
-		ResultStream.Free;
+		ResultStream.free;
 	end;
 end;
 
@@ -512,7 +507,7 @@ function TCloudMailRuHTTP.OptionsMethod(URL: WideString; var Answer: WideString;
 var
 	ResultStream: TStringStream;
 begin
-	result := true;
+	Result := True;
 	ResultStream := TStringStream.Create;
 	try
 		try
@@ -524,18 +519,18 @@ begin
 			On E: Exception do
 			begin
 				self.ExceptionHandler(E, URL, HTTP_METHOD_OPTIONS);
-				result := false;
+				Result := false;
 			end;
 		end;
 	finally
-		ResultStream.Free;
+		ResultStream.free;
 	end;
 end;
 
 procedure TCloudMailRuHTTP.HTTPProgress(ASender: TObject; AWorkMode: TWorkMode; AWorkCount: int64);
 var
 	ContentLength: int64;
-	Percent: integer;
+	Percent: Integer;
 begin
 	HTTP := TIdHTTP(ASender);
 	if AWorkMode = wmRead then
@@ -550,11 +545,11 @@ begin
 	end;
 end;
 
-function TCloudMailRuHTTP.Put(URL: WideString; var PostData: TStream; ResultData: TStringStream): integer;
+function TCloudMailRuHTTP.Put(URL: WideString; var PostData: TStream; ResultData: TStringStream): Integer;
 var
 	PutAnswer: WideString;
 begin
-	result := CLOUD_OPERATION_OK;
+	Result := CLOUD_OPERATION_OK;
 	ResultData.Position := 0;
 	try
 		HTTP.Intercept := Throttle;
@@ -565,25 +560,25 @@ begin
 	except
 		On E: Exception do
 		begin
-			result := self.ExceptionHandler(E, URL, HTTP_METHOD_PUT);
+			Result := self.ExceptionHandler(E, URL, HTTP_METHOD_PUT);
 		end;
 	end;
 end;
 
-function TCloudMailRuHTTP.PutFile(URL, FileName: WideString; FileStream: TStream; var Answer: WideString): integer;
+function TCloudMailRuHTTP.PutFile(URL, FileName: WideString; FileStream: TStream; var Answer: WideString): Integer;
 var
 	ResultStream: TStringStream;
 begin
 	ResultStream := TStringStream.Create;
 	try
-		result := self.Put(URL, FileStream, ResultStream);
+		Result := self.Put(URL, FileStream, ResultStream);
 		Answer := ResultStream.DataString;
 	finally
-		ResultStream.Free;
+		ResultStream.free;
 	end;
 end;
 
-procedure TCloudMailRuHTTP.setCookie(const Value: TIdCookieManager);
+procedure TCloudMailRuHTTP.SetCookie(const Value: TIdCookieManager);
 begin
 	self.HTTP.CookieManager := Value;
 end;
@@ -614,26 +609,26 @@ begin
 	Result := self.HTTP;
 end;
 
-function TCloudMailRuHTTP.ExceptionHandler(E: Exception; URL: WideString; HTTPMethod: integer; LogErrors: Boolean): integer; //todo: handle OPTIONS method
+function TCloudMailRuHTTP.ExceptionHandler(E: Exception; URL: WideString; HTTPMethod: Integer; LogErrors: Boolean): Integer; //todo: handle OPTIONS method
 var
 	method_string: WideString; //в зависимости от метода исходного запроса меняется текст сообщения
 begin
-	result := FS_FILE_OK; //just to avoid compiler warning
+	Result := FS_FILE_OK; //just to avoid compiler warning
 	case HTTPMethod of
 		HTTP_METHOD_GET:
 			begin
 				method_string := METHOD_STR_RECEIVE;
-				result := FS_FILE_READERROR; //для GetFile, GetForm не интересует код ошибки
+				Result := FS_FILE_READERROR; //для GetFile, GetForm не интересует код ошибки
 			end;
 		HTTP_METHOD_POST, HTTP_METHOD_PUT:
 			begin
 				method_string := METHOD_STR_POST;
-				result := CLOUD_OPERATION_FAILED; //Для всех Post-запросов
+				Result := CLOUD_OPERATION_FAILED; //Для всех Post-запросов
 			end;
 		HTTP_METHOD_OPTIONS:
 			begin
 				method_string := METHOD_STR_OPTIONS;
-				result := CLOUD_OPERATION_FAILED; //Для всех Post-запросов
+				Result := CLOUD_OPERATION_FAILED; //Для всех Post-запросов
 			end;
 	end;
 	if (E is EIdHTTPProtocolException and (NAME_TOKEN = JSONHelper.getBodyError((E as EIdHTTPProtocolException).ErrorMessage))) then
@@ -644,7 +639,7 @@ begin
 
 	if E is EAbort then
 	begin
-		result := CLOUD_OPERATION_CANCELLED;
+		Result := CLOUD_OPERATION_CANCELLED;
 	end else if LogErrors then //разбирать ошибку дальше имеет смысл только для логирования - что вернуть уже понятно
 	begin
 		if E is EIdHTTPProtocolException then

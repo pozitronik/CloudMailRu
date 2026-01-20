@@ -239,8 +239,7 @@ begin
 		function(const Path: WideString): Boolean
 		begin
 			Result := FileExists(Path);
-		end
-	);
+		end);
 	FDownloadPreparationValidator := TDownloadPreparationValidator.Create;
 	FContentFieldProvider := TContentFieldProvider.Create;
 	FIconProvider := TIconProvider.Create;
@@ -269,8 +268,7 @@ begin
 		procedure(LogLevel, MsgType: Integer; const Msg: WideString; const Args: array of const)
 		begin
 			Logger.Log(LogLevel, MsgType, Msg, Args);
-		end
-	);
+		end);
 
 	{Create local file deletion handler with callbacks for file operations and user dialogs}
 	FLocalFileDeletionHandler := TLocalFileDeletionHandler.Create(SettingsManager, TCLogger,
@@ -289,8 +287,7 @@ begin
 		function(const FileName: WideString): Integer
 		begin
 			Result := MsgBox(ERR_DELETE_FILE_ASK, [FileName], ERR_DELETE_FILE, MB_ABORTRETRYIGNORE + MB_ICONQUESTION);
-		end
-	);
+		end);
 
 	{Create download success handler for post-download operations}
 	FDownloadSuccessHandler := TDownloadSuccessHandler.Create(SettingsManager, TCLogger, TCProgress, FDescriptionSyncGuard);
@@ -575,7 +572,7 @@ var
 begin
 	RealPath.FromPath(FileName);
 
-	{ Build context for the provider }
+	{Build context for the provider}
 	Context.IsAccountRoot := RealPath.isInAccountsList;
 	Context.DescriptionsEnabled := SettingsManager.Settings.DescriptionEnabled;
 	if Context.IsAccountRoot then
@@ -583,15 +580,15 @@ begin
 	else
 		Context.AccountDescription := '';
 
-	{ Account root only supports description field via context }
+	{Account root only supports description field via context}
 	if Context.IsAccountRoot then
 	begin
-		Item := Default(TCMRDirItem);
+		Item := Default (TCMRDirItem);
 		Result := FContentFieldProvider.GetValue(FieldIndex, Item, FieldValue, Context);
 		exit;
 	end;
 
-	{ Find the item for regular paths }
+	{Find the item for regular paths}
 	Item := FindListingItemByPath(CurrentListing, RealPath, not RealPath.invitesDir);
 	Context.FileDescription := CurrentDescriptions.GetValue(Item.name);
 
@@ -606,7 +603,7 @@ var
 	Cloud: TCloudMailRu;
 begin
 	RealPath.FromPath(WideString(RemoteName));
-	if RealPath.isAccountEmpty or RealPath.trashDir or RealPath.invitesDir then
+	if RealPath.isAccountEmpty or RealPath.TrashDir or RealPath.invitesDir then
 		exit(false);
 	Cloud := ConnectionManager.Get(RealPath.account, getResult);
 	if RealPath.sharedDir then
@@ -710,7 +707,7 @@ begin
 	begin
 		CurrentListing := [];
 		SetLastError(ERROR_NO_MORE_FILES);
-		Exit(FIND_NO_MORE_FILES);
+		exit(FIND_NO_MORE_FILES);
 	end;
 
 	GlobalPath := Path;
@@ -790,8 +787,7 @@ begin
 		function(const Source, Target: WideString; PercentDone: Integer): Boolean
 		begin
 			Result := TCProgress.Progress(PWideChar(Source), PWideChar(Target), PercentDone);
-		end
-	);
+		end);
 end;
 
 function TMailRuCloudWFX.FsMkDir(Path: WideString): Boolean;
@@ -834,14 +830,14 @@ begin
 	{Validate upload preconditions}
 	ValidationResult := FUploadPreparationValidator.Validate(LocalName, RealPath, CopyFlags);
 	if not ValidationResult.ShouldProceed then
-		Exit(ValidationResult.ResultCode);
+		exit(ValidationResult.ResultCode);
 
 	TCProgress.Progress(LocalName, PWideChar(RealPath.Path), 0);
 
 	{Prepare for overwrite if required (cloud API doesn't support overwrite, so delete first)}
 	OverwriteResult := FOverwritePreparationHandler.Prepare(RealPath, ValidationResult.RequiresOverwrite);
 	if not OverwriteResult.Success then
-		Exit(OverwriteResult.ResultCode);
+		exit(OverwriteResult.ResultCode);
 
 	Result := PutRemoteFile(RealPath, LocalName, RemoteName, CopyFlags);
 
@@ -856,8 +852,7 @@ begin
 		function: Boolean
 		begin
 			Result := TCProgress.Progress(PWideChar(LocalName), RemoteName, 0);
-		end
-	);
+		end);
 end;
 
 function TMailRuCloudWFX.FsRemoveDir(RemoteName: WideString): Boolean;
@@ -867,7 +862,7 @@ var
 	Cloud: TCloudMailRu;
 begin
 	if not FDirectoryDeletionPreCheck.ShouldProceed(RemoteName) then
-		Exit(False);
+		exit(false);
 
 	RealPath.FromPath(WideString(RemoteName));
 	if RealPath.isVirtual then
@@ -899,7 +894,7 @@ begin
 	NewRealPath.FromPath(WideString(NewName));
 
 	{TODO: Check the behavior inside virtual directories}
-	if OldRealPath.trashDir or NewRealPath.trashDir or OldRealPath.sharedDir or NewRealPath.sharedDir then
+	if OldRealPath.TrashDir or NewRealPath.TrashDir or OldRealPath.sharedDir or NewRealPath.sharedDir then
 		exit(FS_FILE_NOTSUPPORTED);
 
 	OldCloud := ConnectionManager.Get(OldRealPath.account, getResult);
@@ -936,9 +931,9 @@ var
 	Context: TOperationContext;
 	Actions: TOperationActions;
 begin
-	RealPath.FromPath(RemoteDir, ID_True); { RemoteDir always a directory }
+	RealPath.FromPath(RemoteDir, ID_True); {RemoteDir always a directory}
 
-	{ Build context for the handler }
+	{Build context for the handler}
 	Context := FOperationStatusContextBuilder.BuildContext(RealPath, InfoOperation);
 
 	if InfoStartEnd = FS_STATUS_START then
@@ -946,8 +941,7 @@ begin
 		FThreadState.SetFsStatusInfo(InfoOperation);
 		Actions := FOperationLifecycle.GetStartActions(Context);
 		FActionExecutor.Execute(Actions, RealPath, InfoOperation);
-	end
-	else if InfoStartEnd = FS_STATUS_END then
+	end else if InfoStartEnd = FS_STATUS_END then
 	begin
 		FThreadState.RemoveFsStatusInfo;
 		Actions := FOperationLifecycle.GetEndActions(Context);
@@ -977,7 +971,7 @@ begin
 		DownloadContext.LocalName := LocalName;
 		DownloadContext.RemoteName := RemoteName;
 		DownloadContext.CopyFlags := CopyFlags;
-		DownloadContext.ResultHash := resultHash;
+		DownloadContext.resultHash := resultHash;
 		DownloadContext.Item := FindListingItemByPath(CurrentListing, RemotePath);
 		DownloadContext.Cloud := Cloud;
 		Result := FDownloadSuccessHandler.HandleSuccess(DownloadContext);

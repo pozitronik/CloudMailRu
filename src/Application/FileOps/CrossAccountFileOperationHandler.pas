@@ -1,7 +1,7 @@
 unit CrossAccountFileOperationHandler;
 
 {Handles cross-account file operations: copy/move files between different cloud accounts.
- Supports transfer via hash (file identity) or via public link (weblink cloning).}
+	Supports transfer via hash (file identity) or via public link (weblink cloning).}
 
 interface
 
@@ -16,25 +16,20 @@ type
 	TAbortCheckFunc = reference to function: Boolean;
 
 	ICrossAccountFileOperationHandler = interface
-		['{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}']
+		['{2C8C695B-1FCA-418D-9650-B1764F40EB30}']
 
 		{Executes cross-account file operation (copy/move between different accounts).
-		 @param OldCloud Source cloud connection
-		 @param NewCloud Target cloud connection
-		 @param OldRealPath Source path
-		 @param NewRealPath Target path
-		 @param Move True to move (delete source after copy), False to copy only
-		 @param OverWrite True to overwrite existing target
-		 @param Mode Copy mode (CopyBetweenAccountsModeDisabled/ViaHash/ViaPublicLink)
-		 @param IsSourcePublicAccount True if source is a public account
-		 @param AbortCheck Callback for checking user abort
-		 @return FS_FILE_OK on success, error code otherwise}
-		function Execute(OldCloud, NewCloud: TCloudMailRu;
-			const OldRealPath, NewRealPath: TRealPath;
-			Move, OverWrite: Boolean;
-			Mode: Integer;
-			IsSourcePublicAccount: Boolean;
-			AbortCheck: TAbortCheckFunc): Integer;
+			@param OldCloud Source cloud connection
+			@param NewCloud Target cloud connection
+			@param OldRealPath Source path
+			@param NewRealPath Target path
+			@param Move True to move (delete source after copy), False to copy only
+			@param OverWrite True to overwrite existing target
+			@param Mode Copy mode (CopyBetweenAccountsModeDisabled/ViaHash/ViaPublicLink)
+			@param IsSourcePublicAccount True if source is a public account
+			@param AbortCheck Callback for checking user abort
+			@return FS_FILE_OK on success, error code otherwise}
+		function Execute(OldCloud, NewCloud: TCloudMailRu; const OldRealPath, NewRealPath: TRealPath; Move, OverWrite: Boolean; Mode: Integer; IsSourcePublicAccount: Boolean; AbortCheck: TAbortCheckFunc): Integer;
 	end;
 
 	TCrossAccountFileOperationHandler = class(TInterfacedObject, ICrossAccountFileOperationHandler)
@@ -43,30 +38,17 @@ type
 		FLogger: ILogger;
 
 		{Transfers file by adding it via hash identity to target account}
-		function ExecuteViaHash(OldCloud, NewCloud: TCloudMailRu;
-			const OldRealPath, NewRealPath: TRealPath;
-			Move, OverWrite: Boolean;
-			AbortCheck: TAbortCheckFunc): Integer;
+		function ExecuteViaHash(OldCloud, NewCloud: TCloudMailRu; const OldRealPath, NewRealPath: TRealPath; Move, OverWrite: Boolean; AbortCheck: TAbortCheckFunc): Integer;
 
 		{Transfers file by creating/cloning public weblink}
-		function ExecuteViaPublicLink(OldCloud, NewCloud: TCloudMailRu;
-			const OldRealPath, NewRealPath: TRealPath;
-			Move, OverWrite: Boolean;
-			AbortCheck: TAbortCheckFunc): Integer;
+		function ExecuteViaPublicLink(OldCloud, NewCloud: TCloudMailRu; const OldRealPath, NewRealPath: TRealPath; Move, OverWrite: Boolean; AbortCheck: TAbortCheckFunc): Integer;
 
 		{Clones weblink from source to target, unpublishes if needed}
-		function CloneWeblink(NewCloud, OldCloud: TCloudMailRu;
-			const CloudPath, Weblink, Home: WideString;
-			NeedUnpublish: Boolean): Integer;
+		function CloneWeblink(NewCloud, OldCloud: TCloudMailRu; const CloudPath, Weblink, Home: WideString; NeedUnpublish: Boolean): Integer;
 	public
 		constructor Create(RetryHandler: IRetryHandler; Logger: ILogger);
 
-		function Execute(OldCloud, NewCloud: TCloudMailRu;
-			const OldRealPath, NewRealPath: TRealPath;
-			Move, OverWrite: Boolean;
-			Mode: Integer;
-			IsSourcePublicAccount: Boolean;
-			AbortCheck: TAbortCheckFunc): Integer;
+		function Execute(OldCloud, NewCloud: TCloudMailRu; const OldRealPath, NewRealPath: TRealPath; Move, OverWrite: Boolean; Mode: Integer; IsSourcePublicAccount: Boolean; AbortCheck: TAbortCheckFunc): Integer;
 	end;
 
 implementation
@@ -86,12 +68,7 @@ begin
 	FLogger := Logger;
 end;
 
-function TCrossAccountFileOperationHandler.Execute(OldCloud, NewCloud: TCloudMailRu;
-	const OldRealPath, NewRealPath: TRealPath;
-	Move, OverWrite: Boolean;
-	Mode: Integer;
-	IsSourcePublicAccount: Boolean;
-	AbortCheck: TAbortCheckFunc): Integer;
+function TCrossAccountFileOperationHandler.Execute(OldCloud, NewCloud: TCloudMailRu; const OldRealPath, NewRealPath: TRealPath; Move, OverWrite: Boolean; Mode: Integer; IsSourcePublicAccount: Boolean; AbortCheck: TAbortCheckFunc): Integer;
 begin
 	{Public accounts cannot be source for cross-account operations}
 	if IsSourcePublicAccount then
@@ -115,10 +92,7 @@ begin
 	end;
 end;
 
-function TCrossAccountFileOperationHandler.ExecuteViaHash(OldCloud, NewCloud: TCloudMailRu;
-	const OldRealPath, NewRealPath: TRealPath;
-	Move, OverWrite: Boolean;
-	AbortCheck: TAbortCheckFunc): Integer;
+function TCrossAccountFileOperationHandler.ExecuteViaHash(OldCloud, NewCloud: TCloudMailRu; const OldRealPath, NewRealPath: TRealPath; Move, OverWrite: Boolean; AbortCheck: TAbortCheckFunc): Integer;
 var
 	CurrentItem: TCMRDirItem;
 	TargetPath: WideString;
@@ -134,10 +108,8 @@ begin
 	TargetPath := IncludeTrailingPathDelimiter(ExtractFileDir(NewRealPath.Path)) + ExtractFileName(NewRealPath.Path);
 	Result := NewCloud.addFileByIdentity(CurrentItem, TargetPath);
 
-	if not (Result in [FS_FILE_OK, FS_FILE_EXISTS]) then
-		Result := FRetryHandler.HandleOperationError(Result, rotRenMov,
-			ERR_CLONE_FILE_ASK, ERR_OPERATION, CLONE_FILE_RETRY,
-			TCloudMailRu.ErrorCodeText(Result),
+	if not(Result in [FS_FILE_OK, FS_FILE_EXISTS]) then
+		Result := FRetryHandler.HandleOperationError(Result, rotRenMov, ERR_CLONE_FILE_ASK, ERR_OPERATION, CLONE_FILE_RETRY, TCloudMailRu.ErrorCodeText(Result),
 			function: Integer
 			begin
 				Result := NewCloud.addFileByIdentity(CurrentItem, TargetPath);
@@ -145,18 +117,14 @@ begin
 			function: Boolean
 			begin
 				Result := AbortCheck();
-			end
-		);
+			end);
 
 	{Delete source if move operation succeeded}
 	if (Result = CLOUD_OPERATION_OK) and Move and not OldCloud.deleteFile(OldRealPath.Path) then
-		FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_DELETE, [CurrentItem.home]);
+		FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_DELETE, [CurrentItem.Home]);
 end;
 
-function TCrossAccountFileOperationHandler.ExecuteViaPublicLink(OldCloud, NewCloud: TCloudMailRu;
-	const OldRealPath, NewRealPath: TRealPath;
-	Move, OverWrite: Boolean;
-	AbortCheck: TAbortCheckFunc): Integer;
+function TCrossAccountFileOperationHandler.ExecuteViaPublicLink(OldCloud, NewCloud: TCloudMailRu; const OldRealPath, NewRealPath: TRealPath; Move, OverWrite: Boolean; AbortCheck: TAbortCheckFunc): Integer;
 var
 	NeedUnpublish: Boolean;
 	CurrentItem: TCMRDirItem;
@@ -175,39 +143,34 @@ begin
 	if not CurrentItem.isPublished then
 	begin
 		NeedUnpublish := True;
-		Weblink := CurrentItem.weblink;
-		if not OldCloud.publishFile(CurrentItem.home, Weblink) then
+		Weblink := CurrentItem.Weblink;
+		if not OldCloud.publishFile(CurrentItem.Home, Weblink) then
 		begin
-			FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_GET_TEMP_PUBLIC_LINK, [CurrentItem.home]);
+			FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_GET_TEMP_PUBLIC_LINK, [CurrentItem.Home]);
 			Exit(FS_FILE_READERROR);
 		end;
-		CurrentItem.weblink := Weblink;
+		CurrentItem.Weblink := Weblink;
 	end;
 
-	Result := CloneWeblink(NewCloud, OldCloud, NewRealPath.Path, CurrentItem.weblink, CurrentItem.home, NeedUnpublish);
+	Result := CloneWeblink(NewCloud, OldCloud, NewRealPath.Path, CurrentItem.Weblink, CurrentItem.Home, NeedUnpublish);
 
-	if not (Result in [FS_FILE_OK, FS_FILE_EXISTS]) then
-		Result := FRetryHandler.HandleOperationError(Result, rotRenMov,
-			ERR_PUBLISH_FILE_ASK, ERR_PUBLISH_FILE, PUBLISH_FILE_RETRY,
-			TCloudMailRu.ErrorCodeText(Result),
+	if not(Result in [FS_FILE_OK, FS_FILE_EXISTS]) then
+		Result := FRetryHandler.HandleOperationError(Result, rotRenMov, ERR_PUBLISH_FILE_ASK, ERR_PUBLISH_FILE, PUBLISH_FILE_RETRY, TCloudMailRu.ErrorCodeText(Result),
 			function: Integer
 			begin
-				Result := CloneWeblink(NewCloud, OldCloud, NewRealPath.Path, CurrentItem.weblink, CurrentItem.home, NeedUnpublish);
+				Result := CloneWeblink(NewCloud, OldCloud, NewRealPath.Path, CurrentItem.Weblink, CurrentItem.Home, NeedUnpublish);
 			end,
 			function: Boolean
 			begin
 				Result := AbortCheck();
-			end
-		);
+			end);
 
 	{Delete source if move operation succeeded}
 	if (Result = CLOUD_OPERATION_OK) and Move and not OldCloud.deleteFile(OldRealPath.Path) then
-		FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_DELETE, [CurrentItem.home]);
+		FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_DELETE, [CurrentItem.Home]);
 end;
 
-function TCrossAccountFileOperationHandler.CloneWeblink(NewCloud, OldCloud: TCloudMailRu;
-	const CloudPath, Weblink, Home: WideString;
-	NeedUnpublish: Boolean): Integer;
+function TCrossAccountFileOperationHandler.CloneWeblink(NewCloud, OldCloud: TCloudMailRu; const CloudPath, Weblink, Home: WideString; NeedUnpublish: Boolean): Integer;
 var
 	TempWeblink: WideString;
 begin

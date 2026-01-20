@@ -66,17 +66,7 @@ type
 		FCloudResultToFsResult: TCloudResultToFsResultFunc;
 		FGetShard: TGetShardFunc;
 	public
-		constructor Create(
-			HTTP: ICloudHTTP;
-			Logger: ILogger;
-			RetryOperation: TRetryOperation;
-			IsPublicAccount: TIsPublicAccountFunc;
-			GetUnitedParams: TGetUnitedParamsFunc;
-			PublishFile: TPublishFileFunc;
-			CloudResultToBoolean: TCloudResultToBooleanFunc;
-			CloudResultToFsResult: TCloudResultToFsResultFunc;
-			GetShard: TGetShardFunc
-		);
+		constructor Create(HTTP: ICloudHTTP; Logger: ILogger; RetryOperation: TRetryOperation; IsPublicAccount: TIsPublicAccountFunc; GetUnitedParams: TGetUnitedParamsFunc; PublishFile: TPublishFileFunc; CloudResultToBoolean: TCloudResultToBooleanFunc; CloudResultToFsResult: TCloudResultToFsResultFunc; GetShard: TGetShardFunc);
 
 		{ICloudShareService implementation}
 		function Publish(Path: WideString; var PublicLink: WideString): Boolean;
@@ -93,19 +83,9 @@ type
 
 implementation
 
-{ TCloudShareService }
+{TCloudShareService}
 
-constructor TCloudShareService.Create(
-	HTTP: ICloudHTTP;
-	Logger: ILogger;
-	RetryOperation: TRetryOperation;
-	IsPublicAccount: TIsPublicAccountFunc;
-	GetUnitedParams: TGetUnitedParamsFunc;
-	PublishFile: TPublishFileFunc;
-	CloudResultToBoolean: TCloudResultToBooleanFunc;
-	CloudResultToFsResult: TCloudResultToFsResultFunc;
-	GetShard: TGetShardFunc
-);
+constructor TCloudShareService.Create(HTTP: ICloudHTTP; Logger: ILogger; RetryOperation: TRetryOperation; IsPublicAccount: TIsPublicAccountFunc; GetUnitedParams: TGetUnitedParamsFunc; PublishFile: TPublishFileFunc; CloudResultToBoolean: TCloudResultToBooleanFunc; CloudResultToFsResult: TCloudResultToFsResultFunc; GetShard: TGetShardFunc);
 begin
 	inherited Create;
 	FHTTP := HTTP;
@@ -138,8 +118,7 @@ begin
 			JSON: WideString;
 			Success: Boolean;
 		begin
-			Success := FHTTP.PostForm(API_FILE_PUBLISH + '?' + UnitedParams,
-				Format('home=/%s&conflict', [PathToUrl(Path)]), JSON, 'application/x-www-form-urlencoded', true, False);
+			Success := FHTTP.PostForm(API_FILE_PUBLISH + '?' + UnitedParams, Format('home=/%s&conflict', [PathToUrl(Path)]), JSON, 'application/x-www-form-urlencoded', true, False);
 
 			if Success then
 				Success := FCloudResultToBoolean(JSON, PREFIX_ERR_FILE_PUBLISH);
@@ -174,8 +153,7 @@ begin
 			JSON: WideString;
 			Success: Boolean;
 		begin
-			Success := FHTTP.PostForm(API_FILE_UNPUBLISH + '?' + UnitedParams,
-				Format('weblink=%s&conflict', [CurrentLink]), JSON, 'application/x-www-form-urlencoded', true, False);
+			Success := FHTTP.PostForm(API_FILE_UNPUBLISH + '?' + UnitedParams, Format('weblink=%s&conflict', [CurrentLink]), JSON, 'application/x-www-form-urlencoded', true, False);
 
 			if Success then
 				Success := FCloudResultToBoolean(JSON, PREFIX_ERR_FILE_PUBLISH);
@@ -220,7 +198,7 @@ var
 	AccessString: WideString;
 	UnitedParams: WideString;
 begin
-	if not (Access in [CLOUD_SHARE_RW, CLOUD_SHARE_RO]) then
+	if not(Access in [CLOUD_SHARE_RW, CLOUD_SHARE_RO]) then
 		Exit(False);
 
 	UnitedParams := FGetUnitedParams();
@@ -236,8 +214,7 @@ begin
 			JSON: WideString;
 			Success: Boolean;
 		begin
-			Success := FHTTP.PostForm(API_FOLDER_SHARE + '?' + UnitedParams,
-				Format('home=/%s&invite={"email":"%s","access":"%s"}', [PathToUrl(Path), Email, AccessString]), JSON);
+			Success := FHTTP.PostForm(API_FOLDER_SHARE + '?' + UnitedParams, Format('home=/%s&invite={"email":"%s","access":"%s"}', [PathToUrl(Path), Email, AccessString]), JSON);
 
 			if Success then
 				Success := FCloudResultToBoolean(JSON, PREFIX_ERR_INVITE_MEMBER);
@@ -260,8 +237,7 @@ begin
 			JSON: WideString;
 			Success: Boolean;
 		begin
-			Success := FHTTP.PostForm(API_FOLDER_UNSHARE + '?' + UnitedParams,
-				Format('home=/%s&invite={"email":"%s"}', [PathToUrl(Path), Email]), JSON);
+			Success := FHTTP.PostForm(API_FOLDER_UNSHARE + '?' + UnitedParams, Format('home=/%s&invite={"email":"%s"}', [PathToUrl(Path), Email]), JSON);
 
 			if Success then
 				Success := FCloudResultToBoolean(JSON, PREFIX_ERR_INVITE_MEMBER);
@@ -277,10 +253,7 @@ begin
 	if FIsPublicAccount() then
 		Exit;
 
-	Result := FRetryOperation.PostFormBoolean(
-		API_FOLDER_MOUNT + '?' + FGetUnitedParams(),
-		Format('home=%s&invite_token=%s&conflict=%s', [UrlEncode(Home), InviteToken, ConflictMode]),
-		PREFIX_ERR_FOLDER_MOUNT);
+	Result := FRetryOperation.PostFormBoolean(API_FOLDER_MOUNT + '?' + FGetUnitedParams(), Format('home=%s&invite_token=%s&conflict=%s', [UrlEncode(Home), InviteToken, ConflictMode]), PREFIX_ERR_FOLDER_MOUNT);
 end;
 
 function TCloudShareService.Unmount(Home: WideString; CloneCopy: Boolean): Boolean;
@@ -296,10 +269,7 @@ begin
 	else
 		CopyStr := 'false';
 
-	Result := FRetryOperation.PostFormBoolean(
-		API_FOLDER_UNMOUNT + '?' + FGetUnitedParams(),
-		Format('home=%s&clone_copy=%s', [UrlEncode(Home), CopyStr]),
-		PREFIX_ERR_FOLDER_UNMOUNT);
+	Result := FRetryOperation.PostFormBoolean(API_FOLDER_UNMOUNT + '?' + FGetUnitedParams(), Format('home=%s&clone_copy=%s', [UrlEncode(Home), CopyStr]), PREFIX_ERR_FOLDER_UNMOUNT);
 end;
 
 function TCloudShareService.RejectInvite(InviteToken: WideString): Boolean;
@@ -308,10 +278,7 @@ begin
 	if FIsPublicAccount() then
 		Exit;
 
-	Result := FRetryOperation.PostFormBoolean(
-		API_INVITE_REJECT + '?' + FGetUnitedParams(),
-		Format('invite_token=%s', [InviteToken]),
-		PREFIX_ERR_INVITE_REJECT);
+	Result := FRetryOperation.PostFormBoolean(API_INVITE_REJECT + '?' + FGetUnitedParams(), Format('invite_token=%s', [InviteToken]), PREFIX_ERR_INVITE_REJECT);
 end;
 
 function TCloudShareService.GetPublishedFileStreamUrl(FileIdentity: TCMRDirItem; var StreamUrl: WideString; ShardType: WideString = SHARD_TYPE_WEBLINK_VIDEO; Publish: Boolean = CLOUD_PUBLISH): Boolean;
@@ -325,7 +292,7 @@ begin
 	{Publish file first if no weblink exists and publishing is requested}
 	if (EmptyWideStr = LocalWeblink) then
 	begin
-		if (not Publish) or (not FPublishFile(FileIdentity.Home, LocalWeblink, True)) then
+		if (not Publish) or (not FPublishFile(FileIdentity.Home, LocalWeblink, true)) then
 			Exit;
 	end;
 
@@ -335,7 +302,7 @@ begin
 
 	{Build streaming URL with base64-encoded weblink}
 	StreamUrl := Format('%s0p/%s.m3u8?double_encode=1', [ShardUrl, DCPbase64.Base64EncodeStr(String(RawByteString(LocalWeblink)))]);
-	Result := True;
+	Result := true;
 end;
 
 function TCloudShareService.CloneWeblink(Path, Link, ConflictMode: WideString): Integer;
@@ -356,13 +323,13 @@ begin
 			ResultCode: Integer;
 		begin
 			Progress := true;
-			if FHTTP.GetPage(Format('%s?folder=/%s&weblink=%s&conflict=%s&%s',
-				[API_CLONE, PathToUrl(Path), Link, ConflictMode, UnitedParams]), JSON, Progress) then
+			if FHTTP.GetPage(Format('%s?folder=/%s&weblink=%s&conflict=%s&%s', [API_CLONE, PathToUrl(Path), Link, ConflictMode, UnitedParams]), JSON, Progress) then
 			begin
 				ResultCode := FCloudResultToFsResult(JSON, PREFIX_ERR_FILE_PUBLISH);
 				if (ResultCode <> FS_FILE_OK) and not(Progress) then
 					ResultCode := FS_FILE_USERABORT; {user cancelled}
-			end else
+			end
+			else
 				ResultCode := FS_FILE_WRITEERROR;
 			Result := TAPICallResult.FromInteger(ResultCode, JSON);
 		end);

@@ -1,7 +1,7 @@
 unit WindowsFileSystem;
 
 {Abstraction for file system operations, enabling testability without actual disk I/O.
- Used primarily by TDescription for description file handling.}
+	Used primarily by TDescription for description file handling.}
 
 interface
 
@@ -12,7 +12,7 @@ uses
 
 type
 	{TStreamReader wrapper that owns its underlying stream.
-	 Needed because TStreamReader.Create(Stream) doesn't take ownership.}
+		Needed because TStreamReader.Create(Stream) doesn't take ownership.}
 	TOwningStreamReader = class(TStreamReader)
 	private
 		FOwnedStream: TStream;
@@ -23,7 +23,7 @@ type
 
 	{Interface for file system operations}
 	IFileSystem = interface
-		['{8A3B4C5D-6E7F-8901-ABCD-EF2345678901}']
+		['{8A8F24F8-A1B3-4FB0-A328-14DD231E453A}']
 
 		{Checks if a file exists at the specified path}
 		function FileExists(const Path: WideString): Boolean;

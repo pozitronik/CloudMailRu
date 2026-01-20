@@ -1,12 +1,12 @@
-unit UploadPreparationValidator;
+﻿unit UploadPreparationValidator;
 
 {Pre-upload validation for FsPutFile.
 
- Centralizes validation logic that was previously inline:
- - Local file existence check
- - Path validation (reject empty account or virtual paths)
- - Resume flag check (not supported by cloud API)
- - Conflict detection (file exists without overwrite permission)}
+	Centralizes validation logic that was previously inline:
+	- Local file existence check
+	- Path validation (reject empty account or virtual paths)
+	- Resume flag check (not supported by cloud API)
+	- Conflict detection (file exists without overwrite permission)}
 
 interface
 
@@ -16,7 +16,7 @@ uses
 type
 	TUploadValidationResult = record
 		ShouldProceed: Boolean;
-		ResultCode: Integer;       {Error code if not proceeding (FS_FILE_*)}
+		ResultCode: Integer; {Error code if not proceeding (FS_FILE_*)}
 		RequiresOverwrite: Boolean; {True if existing file should be deleted first}
 	end;
 
@@ -24,10 +24,10 @@ type
 		['{B2C3D4E5-F6A7-8901-BCDE-F23456789ABC}']
 
 		{Validates whether upload can proceed.
-		 @param LocalName The local file path to upload
-		 @param RemotePath The parsed remote path
-		 @param CopyFlags TC copy operation flags
-		 @returns Validation result with proceed decision and error code}
+			@param LocalName The local file path to upload
+			@param RemotePath The parsed remote path
+			@param CopyFlags TC copy operation flags
+			@returns Validation result with proceed decision and error code}
 		function Validate(const LocalName: WideString; const RemotePath: TRealPath; CopyFlags: Integer): TUploadValidationResult;
 	end;
 
@@ -40,8 +40,7 @@ type
 	public
 		constructor Create(FileExistsFunc: TFileExistsFunc);
 
-		function Validate(const LocalName: WideString; const RemotePath: TRealPath;
-			CopyFlags: Integer): TUploadValidationResult;
+		function Validate(const LocalName: WideString; const RemotePath: TRealPath; CopyFlags: Integer): TUploadValidationResult;
 	end;
 
 implementation
@@ -57,8 +56,7 @@ begin
 	FFileExists := FileExistsFunc;
 end;
 
-function TUploadPreparationValidator.Validate(const LocalName: WideString;
-	const RemotePath: TRealPath; CopyFlags: Integer): TUploadValidationResult;
+function TUploadPreparationValidator.Validate(const LocalName: WideString; const RemotePath: TRealPath; CopyFlags: Integer): TUploadValidationResult;
 begin
 	Result.ShouldProceed := False;
 	Result.ResultCode := FS_FILE_OK;
@@ -86,9 +84,7 @@ begin
 	end;
 
 	{Облако не поддерживает разные регистры - cloud doesn't support case-different names}
-	if (CheckFlag(FS_COPYFLAGS_EXISTS_SAMECASE, CopyFlags) or
-		CheckFlag(FS_COPYFLAGS_EXISTS_DIFFERENTCASE, CopyFlags)) and
-		not CheckFlag(FS_COPYFLAGS_OVERWRITE, CopyFlags) then
+	if (CheckFlag(FS_COPYFLAGS_EXISTS_SAMECASE, CopyFlags) or CheckFlag(FS_COPYFLAGS_EXISTS_DIFFERENTCASE, CopyFlags)) and not CheckFlag(FS_COPYFLAGS_OVERWRITE, CopyFlags) then
 	begin
 		Result.ResultCode := FS_FILE_EXISTS;
 		Exit;

@@ -6,9 +6,9 @@ uses
 	DebugHelper in 'src\Infrastructure\Logger\DebugHelper.pas',
 	ANSIFunctions in 'src\Presentation\WFX\ANSIFunctions.pas',
 	AccountSettings in 'src\Infrastructure\Settings\AccountSettings.pas',
-	Accounts in 'src\Presentation\UI\Forms\Accounts.pas'{AccountsForm},
+	Accounts in 'src\Presentation\UI\Forms\Accounts.pas' {AccountsForm} ,
 	AccountsManager in 'src\Infrastructure\Settings\AccountsManager.pas',
-	AskPassword in 'src\Presentation\UI\Forms\AskPassword.pas'{AskPasswordForm},
+	AskPassword in 'src\Presentation\UI\Forms\AskPassword.pas' {AskPasswordForm} ,
 	CMRConstants in 'src\Domain\Constants\CMRConstants.pas',
 	CMRDirItem in 'src\Domain\ValueObjects\CMRDirItem.pas',
 	CMRDirItemList in 'src\Domain\ValueObjects\CMRDirItemList.pas',
@@ -38,7 +38,7 @@ uses
 	DCPsha1 in 'src\libs\DCPCrypt\Hashes\DCPsha1.pas',
 	DCPtypes in 'src\libs\DCPCrypt\DCPtypes.pas',
 	DateUtils,
-	DeletedProperty in 'src\Presentation\UI\Forms\DeletedProperty.pas'{DeletedPropertyForm},
+	DeletedProperty in 'src\Presentation\UI\Forms\DeletedProperty.pas' {DeletedPropertyForm} ,
 	Description in 'src\Domain\Services\Description.pas',
 	FileCipher in 'src\Infrastructure\Cipher\FileCipher.pas',
 	FileHelper in 'src\Infrastructure\IO\FileHelper.pas',
@@ -49,7 +49,7 @@ uses
 	IdSSLOpenSSLHeaders,
 	IniFiles,
 	IniFilesHelper in 'src\Infrastructure\Config\IniFilesHelper.pas',
-	InviteProperty in 'src\Presentation\UI\Forms\InviteProperty.pas'{InvitePropertyForm},
+	InviteProperty in 'src\Presentation\UI\Forms\InviteProperty.pas' {InvitePropertyForm} ,
 	JSON,
 	JSONHelper in 'src\Infrastructure\HTTP\JSONHelper.pas',
 	Messages,
@@ -61,8 +61,8 @@ uses
 	PluginSettingsManager in 'src\Infrastructure\Settings\PluginSettingsManager.pas',
 	ProxySettings in 'src\Infrastructure\Settings\ProxySettings.pas',
 	RealPath in 'src\Domain\ValueObjects\RealPath.pas',
-	Registration in 'src\Presentation\UI\Forms\Registration.pas'{AskPasswordForm},
-	RemoteProperty in 'src\Presentation\UI\Forms\RemoteProperty.pas'{PropertyForm},
+	Registration in 'src\Presentation\UI\Forms\Registration.pas' {AskPasswordForm} ,
+	RemoteProperty in 'src\Presentation\UI\Forms\RemoteProperty.pas' {PropertyForm} ,
 	SETTINGS_CONSTANTS in 'src\Infrastructure\Settings\SETTINGS_CONSTANTS.pas',
 	StreamingSettings in 'src\Infrastructure\Settings\StreamingSettings.pas',
 	StringHelper in 'src\Infrastructure\IO\StringHelper.pas',
@@ -195,7 +195,7 @@ begin
 end;
 
 function FsGetFileW(RemoteName, LocalName: PWideChar; CopyFlags: Integer; RemoteInfo: pRemoteInfo): Integer; stdcall;
-begin  //Копирование файла из файловой системы плагина
+begin //Копирование файла из файловой системы плагина
 	Exit(MailRuCloudWFX.FsGetFile(RemoteName, LocalName, CopyFlags, RemoteInfo));
 end;
 

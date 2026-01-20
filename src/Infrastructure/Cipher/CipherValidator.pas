@@ -1,7 +1,7 @@
 unit CipherValidator;
 
 {Abstraction for password validation via encrypted GUID comparison,
- enabling testability without actual cryptographic operations.}
+	enabling testability without actual cryptographic operations.}
 
 interface
 
@@ -18,7 +18,7 @@ type
 	end;
 
 	{Null implementation that always validates passwords.
-	 Useful for testing scenarios where encryption is not relevant.}
+		Useful for testing scenarios where encryption is not relevant.}
 	TNullCipherValidator = class(TInterfacedObject, ICipherValidator)
 	public
 		function GetCryptedGUID(const Password: WideString): WideString;

@@ -1,8 +1,8 @@
 unit WebAuthStrategy;
 
 {DEPRECATED: Web form authentication - no longer works after VK ID migration.
- This strategy is preserved for historical reference only.
- Use TOAuthAppAuthStrategy for production authentication.}
+	This strategy is preserved for historical reference only.
+	Use TOAuthAppAuthStrategy for production authentication.}
 
 interface
 
@@ -65,10 +65,7 @@ begin
 		Logger.Log(LOG_LEVEL_DEBUG, msgtype_details, REQUESTING_AUTH_TOKEN, [Credentials.Email]);
 
 	{Step 1: Post login form}
-	if not HTTP.PostForm(LOGIN_URL,
-		Format('page=https://cloud.mail.ru/?new_auth_form=1&Domain=%s&Login=%s&Password=%s&FailPage=',
-			[Credentials.Domain, Credentials.User, UrlEncode(Credentials.Password)]),
-		PostAnswer) then
+	if not HTTP.PostForm(LOGIN_URL, Format('page=https://cloud.mail.ru/?new_auth_form=1&Domain=%s&Login=%s&Password=%s&FailPage=', [Credentials.Domain, Credentials.User, UrlEncode(Credentials.Password)]), PostAnswer) then
 	begin
 		if Assigned(Logger) then
 			Logger.Log(LOG_LEVEL_ERROR, msgtype_importanterror, ERR_GET_AUTH_TOKEN, [Credentials.Email]);
@@ -88,9 +85,7 @@ begin
 	end;
 
 	{Step 3: Extract token and parameters from page}
-	if not (extractTokenFromText(TokenPageContent, AuthToken) and
-			extract_x_page_id_FromText(TokenPageContent, x_page_id) and
-			extract_build_FromText(TokenPageContent, build)) then
+	if not(extractTokenFromText(TokenPageContent, AuthToken) and extract_x_page_id_FromText(TokenPageContent, x_page_id) and extract_build_FromText(TokenPageContent, build)) then
 	begin
 		if Assigned(Logger) then
 			Logger.Log(LOG_LEVEL_ERROR, msgtype_importanterror, ERR_PARSING_AUTH_TOKEN, [Credentials.Email]);
@@ -99,9 +94,7 @@ begin
 	end;
 
 	{Build united params string for API calls}
-	UnitedParams := Format('api=2&build=%s&x-page-id=%s&email=%s@%s&x-email=%s@%s&_=%d810',
-		[build, x_page_id, Credentials.User, Credentials.Domain,
-		 Credentials.User, Credentials.Domain, DateTimeToUnix(Now)]);
+	UnitedParams := Format('api=2&build=%s&x-page-id=%s&email=%s@%s&x-email=%s@%s&_=%d810', [build, x_page_id, Credentials.User, Credentials.Domain, Credentials.User, Credentials.Domain, DateTimeToUnix(Now)]);
 
 	Result := TAuthResult.CreateSuccess(AuthToken, UnitedParams);
 end;

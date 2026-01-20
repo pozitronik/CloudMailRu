@@ -1,9 +1,9 @@
 unit IconContextBuilder;
 
 {Builds TIconContext for icon provider.
- Encapsulates the logic for determining public account status,
- and finding the appropriate item (dir item or invite) for icon display.
- Handles public account detection, item lookup, and invite lookup.}
+	Encapsulates the logic for determining public account status,
+	and finding the appropriate item (dir item or invite) for icon display.
+	Handles public account detection, item lookup, and invite lookup.}
 
 interface
 
@@ -27,18 +27,16 @@ type
 	end;
 
 	{Builds TIconContext from path and current listings.
-	 Handles public account detection and item lookup.}
+		Handles public account detection and item lookup.}
 	IIconContextBuilder = interface
-		['{C4D5E6F7-A8B9-0123-CDEF-456789ABCDEF}']
+		['{0DDFA70C-FCCB-4D48-9D65-B3F64D4D5BBD}']
 
 		{Builds icon context from input and current listings.
-		 @param Input Path, remote name, and icon mode settings
-		 @param DirListing Current directory listing (may be refreshed if item not found)
-		 @param InviteListing Current invite listing (may be refreshed if item not found)
-		 @return TIconContext ready for IIconProvider}
-		function BuildContext(const Input: TIconContextInput;
-			var DirListing: TCMRDirItemList;
-			var InviteListing: TCMRIncomingInviteList): TIconContext;
+			@param Input Path, remote name, and icon mode settings
+			@param DirListing Current directory listing (may be refreshed if item not found)
+			@param InviteListing Current invite listing (may be refreshed if item not found)
+			@return TIconContext ready for IIconProvider}
+		function BuildContext(const Input: TIconContextInput; var DirListing: TCMRDirItemList; var InviteListing: TCMRIncomingInviteList): TIconContext;
 	end;
 
 	TIconContextBuilder = class(TInterfacedObject, IIconContextBuilder)
@@ -51,21 +49,14 @@ type
 		function IsPublicAccount(const AccountName: WideString): Boolean;
 
 		{Finds invite item in listing, refreshing if not found}
-		function FindInviteItem(const Path: TRealPath;
-			var InviteListing: TCMRIncomingInviteList): TCMRIncomingInvite;
+		function FindInviteItem(const Path: TRealPath; var InviteListing: TCMRIncomingInviteList): TCMRIncomingInvite;
 
 		{Finds dir item in listing using ListingItemFetcher}
-		function FindDirItem(const Path: TRealPath;
-			var DirListing: TCMRDirItemList): TCMRDirItem;
+		function FindDirItem(const Path: TRealPath; var DirListing: TCMRDirItemList): TCMRDirItem;
 	public
-		constructor Create(
-			AccountSettings: IAccountsManager;
-			AConnectionManager: IConnectionManager;
-			ListingItemFetcher: IListingItemFetcher);
+		constructor Create(AccountSettings: IAccountsManager; AConnectionManager: IConnectionManager; ListingItemFetcher: IListingItemFetcher);
 
-		function BuildContext(const Input: TIconContextInput;
-			var DirListing: TCMRDirItemList;
-			var InviteListing: TCMRIncomingInviteList): TIconContext;
+		function BuildContext(const Input: TIconContextInput; var DirListing: TCMRDirItemList; var InviteListing: TCMRIncomingInviteList): TIconContext;
 	end;
 
 implementation
@@ -74,10 +65,7 @@ uses
 	SysUtils,
 	CloudMailRu;
 
-constructor TIconContextBuilder.Create(
-	AccountSettings: IAccountsManager;
-	AConnectionManager: IConnectionManager;
-	ListingItemFetcher: IListingItemFetcher);
+constructor TIconContextBuilder.Create(AccountSettings: IAccountsManager; AConnectionManager: IConnectionManager; ListingItemFetcher: IListingItemFetcher);
 begin
 	inherited Create;
 	FAccountSettings := AccountSettings;
@@ -90,8 +78,7 @@ begin
 	Result := FAccountSettings.GetAccountSettings(AccountName).PublicAccount;
 end;
 
-function TIconContextBuilder.FindInviteItem(const Path: TRealPath;
-	var InviteListing: TCMRIncomingInviteList): TCMRIncomingInvite;
+function TIconContextBuilder.FindInviteItem(const Path: TRealPath; var InviteListing: TCMRIncomingInviteList): TCMRIncomingInvite;
 var
 	getResult: Integer;
 begin
@@ -103,8 +90,7 @@ begin
 			Result := InviteListing.FindByName(Path.Path);
 end;
 
-function TIconContextBuilder.FindDirItem(const Path: TRealPath;
-	var DirListing: TCMRDirItemList): TCMRDirItem;
+function TIconContextBuilder.FindDirItem(const Path: TRealPath; var DirListing: TCMRDirItemList): TCMRDirItem;
 var
 	getResult: Integer;
 	Cloud: TCloudMailRu;
@@ -113,9 +99,7 @@ begin
 	Result := FListingItemFetcher.FetchItem(DirListing, Path, Cloud, True);
 end;
 
-function TIconContextBuilder.BuildContext(const Input: TIconContextInput;
-	var DirListing: TCMRDirItemList;
-	var InviteListing: TCMRIncomingInviteList): TIconContext;
+function TIconContextBuilder.BuildContext(const Input: TIconContextInput; var DirListing: TCMRDirItemList; var InviteListing: TCMRIncomingInviteList): TIconContext;
 begin
 	{Initialize context with defaults}
 	Result.IconsMode := Input.IconsMode;
@@ -132,8 +116,7 @@ begin
 	begin
 		Result.InviteItem := FindInviteItem(Input.Path, InviteListing);
 		Result.HasInviteItem := True;
-	end
-	else if not Input.Path.isInAccountsList and not Input.Path.isVirtual then
+	end else if not Input.Path.isInAccountsList and not Input.Path.isVirtual then
 	begin
 		Result.Item := FindDirItem(Input.Path, DirListing);
 		Result.HasItem := True;

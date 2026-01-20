@@ -1,8 +1,8 @@
 unit OperationLifecycleHandler;
 
 {Determines what actions to perform for operation START/END events.
- Maps TC operation codes to discrete actions.
- Separates action determination from execution (IOperationActionExecutor).}
+	Maps TC operation codes to discrete actions.
+	Separates action determination from execution (IOperationActionExecutor).}
 
 interface
 
@@ -10,31 +10,12 @@ uses
 	PLUGIN_TYPES;
 
 type
-	{ Discrete actions that can be performed during operation lifecycle }
-	TOperationAction = (
-		oaResetRetryDownload,
-		oaResetRetryUpload,
-		oaResetRetryRenMov,
-		oaSetSkipListDelete,
-		oaClearSkipListDelete,
-		oaSetSkipListRenMov,
-		oaClearSkipListRenMov,
-		oaSetCanAbortRenMov,
-		oaClearCanAbortRenMov,
-		oaCreateSkippedPath,
-		oaClearSkippedPath,
-		oaIncrementBackgroundJobs,
-		oaDecrementBackgroundJobs,
-		oaSetBackgroundThreadStatus,
-		oaRemoveBackgroundThread,
-		oaLogUserSpaceInfo,
-		oaLoadDescriptions,
-		oaWarnPublicAccountCopy
-	);
+	{Discrete actions that can be performed during operation lifecycle}
+	TOperationAction = (oaResetRetryDownload, oaResetRetryUpload, oaResetRetryRenMov, oaSetSkipListDelete, oaClearSkipListDelete, oaSetSkipListRenMov, oaClearSkipListRenMov, oaSetCanAbortRenMov, oaClearCanAbortRenMov, oaCreateSkippedPath, oaClearSkippedPath, oaIncrementBackgroundJobs, oaDecrementBackgroundJobs, oaSetBackgroundThreadStatus, oaRemoveBackgroundThread, oaLogUserSpaceInfo, oaLoadDescriptions, oaWarnPublicAccountCopy);
 
 	TOperationActions = set of TOperationAction;
 
-	{ Context for determining what actions to perform }
+	{Context for determining what actions to perform}
 	TOperationContext = record
 		Operation: Integer;
 		IsPublicAccount: Boolean;
@@ -43,16 +24,16 @@ type
 		LogUserSpaceEnabled: Boolean;
 	end;
 
-	{ Determines what actions to perform for operation START/END events.
-	  Separates action determination from execution. }
+	{Determines what actions to perform for operation START/END events.
+		Separates action determination from execution.}
 	IOperationLifecycleHandler = interface
 		['{1F5B2387-0B3E-44F3-B84B-7C5EA6A686DF}']
 		function GetStartActions(const Context: TOperationContext): TOperationActions;
 		function GetEndActions(const Context: TOperationContext): TOperationActions;
 	end;
 
-	{ Determines what actions to perform for operation START/END events.
-	  Maps TC operation codes to discrete actions. }
+	{Determines what actions to perform for operation START/END events.
+		Maps TC operation codes to discrete actions.}
 	TOperationLifecycleHandler = class(TInterfacedObject, IOperationLifecycleHandler)
 	public
 		function GetStartActions(const Context: TOperationContext): TOperationActions;
@@ -70,12 +51,10 @@ begin
 			if Context.DescriptionsEnabled and Context.IsInAccount then
 				Include(Result, oaLoadDescriptions);
 
-		FS_STATUS_OP_GET_SINGLE,
-		FS_STATUS_OP_GET_MULTI:
+		FS_STATUS_OP_GET_SINGLE, FS_STATUS_OP_GET_MULTI:
 			Include(Result, oaResetRetryDownload);
 
-		FS_STATUS_OP_PUT_SINGLE,
-		FS_STATUS_OP_PUT_MULTI:
+		FS_STATUS_OP_PUT_SINGLE, FS_STATUS_OP_PUT_MULTI:
 			Include(Result, oaResetRetryUpload);
 
 		FS_STATUS_OP_RENMOV_MULTI:
@@ -108,12 +87,7 @@ begin
 	Result := [];
 
 	case Context.Operation of
-		FS_STATUS_OP_PUT_SINGLE,
-		FS_STATUS_OP_PUT_MULTI,
-		FS_STATUS_OP_RENMOV_SINGLE,
-		FS_STATUS_OP_SYNC_GET,
-		FS_STATUS_OP_SYNC_PUT,
-		FS_STATUS_OP_SYNC_DELETE:
+		FS_STATUS_OP_PUT_SINGLE, FS_STATUS_OP_PUT_MULTI, FS_STATUS_OP_RENMOV_SINGLE, FS_STATUS_OP_SYNC_GET, FS_STATUS_OP_SYNC_PUT, FS_STATUS_OP_SYNC_DELETE:
 			AddLogUserSpaceIfEnabled;
 
 		FS_STATUS_OP_RENMOV_MULTI:

@@ -160,8 +160,6 @@ object AccountsForm: TAccountsForm
     ActivePage = AccountsTab
     Align = alClient
     TabOrder = 0
-    ExplicitWidth = 489
-    ExplicitHeight = 459
     object AccountsTab: TTabSheet
       Caption = 'Accounts'
       DesignSize = (
@@ -183,7 +181,6 @@ object AccountsForm: TAccountsForm
         Anchors = [akLeft, akTop, akBottom]
         Caption = 'Accounts'
         TabOrder = 0
-        ExplicitHeight = 432
         DesignSize = (
           225
           449)
@@ -199,7 +196,6 @@ object AccountsForm: TAccountsForm
           TabOrder = 0
           OnClick = AccountsListClick
           OnKeyUp = AccountsListKeyUp
-          ExplicitHeight = 412
         end
       end
       object ApplyButton: TButton

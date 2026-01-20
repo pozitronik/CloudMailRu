@@ -1,9 +1,9 @@
 unit IconRenderingEngine;
 
 {Renders icons based on icon info from IIconProvider.
- Takes icon info (what to show) and renders the actual icon handle.
- Separates icon loading/composition from WFX plugin orchestration.
- Handles loading from DLL resources, external files, and icon composition.}
+	Takes icon info (what to show) and renders the actual icon handle.
+	Separates icon loading/composition from WFX plugin orchestration.
+	Handles loading from DLL resources, external files, and icon composition.}
 
 interface
 
@@ -14,9 +14,9 @@ uses
 type
 	{Result of icon rendering operation}
 	TIconRenderResult = record
-		ResultCode: Integer;        {FS_ICON_EXTRACTED, FS_ICON_USEDEFAULT, FS_ICON_EXTRACTED_DESTROY}
-		IconHandle: HICON;          {The loaded/composed icon handle}
-		ResourceName: WideString;   {For internal icons - resource name to write to RemoteName buffer}
+		ResultCode: Integer; {FS_ICON_EXTRACTED, FS_ICON_USEDEFAULT, FS_ICON_EXTRACTED_DESTROY}
+		IconHandle: HICON; {The loaded/composed icon handle}
+		ResourceName: WideString; {For internal icons - resource name to write to RemoteName buffer}
 
 		class function UseDefault: TIconRenderResult; static;
 		class function Extracted(AIcon: HICON): TIconRenderResult; static;
@@ -25,17 +25,16 @@ type
 	end;
 
 	{Renders icons based on icon info from IIconProvider.
-	 Handles loading from resources, external files, and icon composition.}
+		Handles loading from resources, external files, and icon composition.}
 	IIconRenderingEngine = interface
-		['{B2C3D4E5-F6A7-8901-BCDE-F23456789012}']
+		['{172811AB-80C3-49F4-952B-A9DD3DF0BF21}']
 
 		{Renders icon based on icon info.
-		 @param IconInfo Icon type and name from IIconProvider
-		 @param IconsSize Target icon size in pixels
-		 @param PluginPath Plugin directory for external icon files
-		 @return Render result with icon handle and result code}
-		function Render(const IconInfo: TIconInfo; IconsSize: Integer;
-			const PluginPath: WideString): TIconRenderResult;
+			@param IconInfo Icon type and name from IIconProvider
+			@param IconsSize Target icon size in pixels
+			@param PluginPath Plugin directory for external icon files
+			@return Render result with icon handle and result code}
+		function Render(const IconInfo: TIconInfo; IconsSize: Integer; const PluginPath: WideString): TIconRenderResult;
 	end;
 
 	TIconRenderingEngine = class(TInterfacedObject, IIconRenderingEngine)
@@ -58,8 +57,7 @@ type
 		{Renders icon from external .ico file with folder overlay}
 		function RenderExternalOverlay(const IconName, PluginPath: WideString; IconsSize: Integer): TIconRenderResult;
 	public
-		function Render(const IconInfo: TIconInfo; IconsSize: Integer;
-			const PluginPath: WideString): TIconRenderResult;
+		function Render(const IconInfo: TIconInfo; IconsSize: Integer; const PluginPath: WideString): TIconRenderResult;
 	end;
 
 implementation
@@ -70,7 +68,7 @@ uses
 	WindowsHelper,
 	IconHelper;
 
-{ TIconRenderResult }
+{TIconRenderResult}
 
 class function TIconRenderResult.UseDefault: TIconRenderResult;
 begin
@@ -100,7 +98,7 @@ begin
 	Result.ResourceName := AName;
 end;
 
-{ TIconRenderingEngine }
+{TIconRenderingEngine}
 
 function TIconRenderingEngine.GetFolderIconSize(PixelSize: Integer): Integer;
 begin
@@ -113,16 +111,14 @@ end;
 
 function TIconRenderingEngine.RenderSystemTrash(IconsSize: Integer): TIconRenderResult;
 begin
-	Result := TIconRenderResult.ExtractedDestroy(
-		GetSystemIcon(GetFolderIconSize(IconsSize)));
+	Result := TIconRenderResult.ExtractedDestroy(GetSystemIcon(GetFolderIconSize(IconsSize)));
 end;
 
 function TIconRenderingEngine.RenderInternal(const IconName: WideString; IconsSize: Integer): TIconRenderResult;
 var
 	IconHandle: HICON;
 begin
-	IconHandle := LoadImageW(hInstance, PWideChar(IconName), IMAGE_ICON,
-		IconsSize, IconsSize, LR_DEFAULTCOLOR);
+	IconHandle := LoadImageW(hInstance, PWideChar(IconName), IMAGE_ICON, IconsSize, IconsSize, LR_DEFAULTCOLOR);
 	Result := TIconRenderResult.InternalResource(IconHandle, IconName);
 end;
 
@@ -130,8 +126,7 @@ function TIconRenderingEngine.RenderInternalOverlay(const IconName: WideString; 
 var
 	FrontIcon, BackIcon, CombinedIcon: HICON;
 begin
-	FrontIcon := LoadImageW(hInstance, PWideChar(IconName), IMAGE_ICON,
-		IconsSize, IconsSize, LR_DEFAULTCOLOR);
+	FrontIcon := LoadImageW(hInstance, PWideChar(IconName), IMAGE_ICON, IconsSize, IconsSize, LR_DEFAULTCOLOR);
 	BackIcon := GetFolderIcon(GetFolderIconSize(IconsSize));
 	CombinedIcon := CombineIcons(FrontIcon, BackIcon);
 	DeleteObject(FrontIcon);
@@ -162,8 +157,7 @@ begin
 	Result := TIconRenderResult.ExtractedDestroy(CombinedIcon);
 end;
 
-function TIconRenderingEngine.Render(const IconInfo: TIconInfo; IconsSize: Integer;
-	const PluginPath: WideString): TIconRenderResult;
+function TIconRenderingEngine.Render(const IconInfo: TIconInfo; IconsSize: Integer; const PluginPath: WideString): TIconRenderResult;
 begin
 	case IconInfo.IconType of
 		itUseDefault:
@@ -178,8 +172,8 @@ begin
 			Result := RenderExternal(IconInfo.IconName, PluginPath);
 		itExternalOverlay:
 			Result := RenderExternalOverlay(IconInfo.IconName, PluginPath, IconsSize);
-	else
-		Result := TIconRenderResult.UseDefault;
+		else
+			Result := TIconRenderResult.UseDefault;
 	end;
 end;
 

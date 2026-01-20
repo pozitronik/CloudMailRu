@@ -1,9 +1,9 @@
 unit ThreadStateManager;
 
 {Per-thread state management for WFX plugin.
- Encapsulates 11 TDictionary instances for thread-safe state tracking.
- All methods implicitly use GetCurrentThreadID() for thread-keyed operations,
- except background jobs which are keyed by account name.}
+	Encapsulates 11 TDictionary instances for thread-safe state tracking.
+	All methods implicitly use GetCurrentThreadID() for thread-keyed operations,
+	except background jobs which are keyed by account name.}
 
 interface
 
@@ -11,25 +11,25 @@ uses
 	Windows, SysUtils, Classes, Generics.Collections;
 
 type
-	{ Interface for managing per-thread state in WFX plugin.
-	  All methods implicitly use GetCurrentThreadID() for thread-keyed operations,
-	  except background jobs which are keyed by account name. }
+	{Interface for managing per-thread state in WFX plugin.
+		All methods implicitly use GetCurrentThreadID() for thread-keyed operations,
+		except background jobs which are keyed by account name.}
 	IThreadStateManager = interface
-		['{A7E8F3B2-4C1D-4E5F-9A8B-7C6D5E4F3A2B}']
+		['{30E7A013-7529-4A45-B122-99A218FCCE6C}']
 
-		{ Skip listing flags - prevent directory enumeration during bulk operations }
+		{Skip listing flags - prevent directory enumeration during bulk operations}
 		function GetSkipListDelete: Boolean;
 		procedure SetSkipListDelete(Value: Boolean);
 		function GetSkipListRenMov: Boolean;
 		procedure SetSkipListRenMov(Value: Boolean);
 
-		{ Abort control - enable cancel dialog during long operations (issue #113) }
+		{Abort control - enable cancel dialog during long operations (issue #113)}
 		function GetCanAbortRenMov: Boolean;
 		procedure SetCanAbortRenMov(Value: Boolean);
 		function GetListingAborted: Boolean;
 		procedure SetListingAborted(Value: Boolean);
 
-		{ Retry counters - track retry attempts per operation type }
+		{Retry counters - track retry attempts per operation type}
 		function GetRetryCountDownload: Int32;
 		procedure SetRetryCountDownload(Value: Int32);
 		procedure IncrementRetryCountDownload;
@@ -45,20 +45,20 @@ type
 		procedure IncrementRetryCountRenMov;
 		procedure ResetRetryCountRenMov;
 
-		{ Operation context - track current filesystem operation for context-aware decisions }
+		{Operation context - track current filesystem operation for context-aware decisions}
 		function GetFsStatusInfo: Int32;
 		procedure SetFsStatusInfo(Value: Int32);
 		procedure RemoveFsStatusInfo;
 		function HasFsStatusInfo: Boolean;
 
-		{ Background thread tracking - track operation status per thread }
+		{Background thread tracking - track operation status per thread}
 		function GetBackgroundThreadStatus: Int32;
 		procedure SetBackgroundThreadStatus(Value: Int32);
 		procedure RemoveBackgroundThread;
 		function HasBackgroundThread: Boolean;
 
-		{ Path blacklist - paths to skip during move operations (issue #168).
-		  Ownership: TStringList created internally, caller should not free it. }
+		{Path blacklist - paths to skip during move operations (issue #168).
+			Ownership: TStringList created internally, caller should not free it.}
 		function GetRemoveDirSkippedPath: TStringList;
 		procedure CreateRemoveDirSkippedPath;
 		procedure ClearRemoveDirSkippedPath;
@@ -67,17 +67,17 @@ type
 		procedure AddSkippedPath(const Path: WideString);
 		procedure RemoveSkippedPath(const Path: WideString);
 
-		{ Background jobs - track active jobs per account (keyed by account name, not thread ID).
-		  Used to prevent connection pool cleanup while operations are in progress. }
+		{Background jobs - track active jobs per account (keyed by account name, not thread ID).
+			Used to prevent connection pool cleanup while operations are in progress.}
 		function GetBackgroundJobsCount(const Account: WideString): Int32;
 		procedure IncrementBackgroundJobs(const Account: WideString);
 		procedure DecrementBackgroundJobs(const Account: WideString);
 		function HasActiveBackgroundJobs(const Account: WideString): Boolean;
 	end;
 
-	{ Centralized manager for per-thread state in WFX plugin.
-	  Encapsulates 11 TDictionary instances previously scattered in TMailRuCloudWFX.
-	  Thread-safe through TDictionary keyed by GetCurrentThreadID(). }
+	{Centralized manager for per-thread state in WFX plugin.
+		Encapsulates 11 TDictionary instances previously scattered in TMailRuCloudWFX.
+		Thread-safe through TDictionary keyed by GetCurrentThreadID().}
 	TThreadStateManager = class(TInterfacedObject, IThreadStateManager)
 	private
 		FSkipListDelete: TDictionary<DWORD, Boolean>;
@@ -95,19 +95,19 @@ type
 		constructor Create;
 		destructor Destroy; override;
 
-		{ Skip listing flags }
+		{Skip listing flags}
 		function GetSkipListDelete: Boolean;
 		procedure SetSkipListDelete(Value: Boolean);
 		function GetSkipListRenMov: Boolean;
 		procedure SetSkipListRenMov(Value: Boolean);
 
-		{ Abort control }
+		{Abort control}
 		function GetCanAbortRenMov: Boolean;
 		procedure SetCanAbortRenMov(Value: Boolean);
 		function GetListingAborted: Boolean;
 		procedure SetListingAborted(Value: Boolean);
 
-		{ Retry counters }
+		{Retry counters}
 		function GetRetryCountDownload: Int32;
 		procedure SetRetryCountDownload(Value: Int32);
 		procedure IncrementRetryCountDownload;
@@ -123,19 +123,19 @@ type
 		procedure IncrementRetryCountRenMov;
 		procedure ResetRetryCountRenMov;
 
-		{ Operation context }
+		{Operation context}
 		function GetFsStatusInfo: Int32;
 		procedure SetFsStatusInfo(Value: Int32);
 		procedure RemoveFsStatusInfo;
 		function HasFsStatusInfo: Boolean;
 
-		{ Background thread tracking }
+		{Background thread tracking}
 		function GetBackgroundThreadStatus: Int32;
 		procedure SetBackgroundThreadStatus(Value: Int32);
 		procedure RemoveBackgroundThread;
 		function HasBackgroundThread: Boolean;
 
-		{ Path blacklist }
+		{Path blacklist}
 		function GetRemoveDirSkippedPath: TStringList;
 		procedure CreateRemoveDirSkippedPath;
 		procedure ClearRemoveDirSkippedPath;
@@ -144,7 +144,7 @@ type
 		procedure AddSkippedPath(const Path: WideString);
 		procedure RemoveSkippedPath(const Path: WideString);
 
-		{ Background jobs (account-keyed) }
+		{Background jobs (account-keyed)}
 		function GetBackgroundJobsCount(const Account: WideString): Int32;
 		procedure IncrementBackgroundJobs(const Account: WideString);
 		procedure DecrementBackgroundJobs(const Account: WideString);
@@ -173,7 +173,7 @@ destructor TThreadStateManager.Destroy;
 var
 	Pair: TPair<DWORD, TStringList>;
 begin
-	{ Free TStringList values before dictionary - may remain if operations were interrupted }
+	{Free TStringList values before dictionary - may remain if operations were interrupted}
 	if Assigned(FRemoveDirSkippedPath) then
 		for Pair in FRemoveDirSkippedPath do
 			if Assigned(Pair.Value) then
@@ -193,7 +193,7 @@ begin
 	inherited;
 end;
 
-{ Skip listing flags }
+{Skip listing flags}
 
 function TThreadStateManager.GetSkipListDelete: Boolean;
 begin
@@ -217,7 +217,7 @@ begin
 	FSkipListRenMov.AddOrSetValue(GetCurrentThreadID(), Value);
 end;
 
-{ Abort control }
+{Abort control}
 
 function TThreadStateManager.GetCanAbortRenMov: Boolean;
 begin
@@ -241,7 +241,7 @@ begin
 	FListingAborted.AddOrSetValue(GetCurrentThreadID(), Value);
 end;
 
-{ Retry counters }
+{Retry counters}
 
 function TThreadStateManager.GetRetryCountDownload: Int32;
 begin
@@ -306,7 +306,7 @@ begin
 	SetRetryCountRenMov(0);
 end;
 
-{ Operation context }
+{Operation context}
 
 function TThreadStateManager.GetFsStatusInfo: Int32;
 begin
@@ -329,7 +329,7 @@ begin
 	Result := FFsStatusInfo.ContainsKey(GetCurrentThreadID());
 end;
 
-{ Background thread tracking }
+{Background thread tracking}
 
 function TThreadStateManager.GetBackgroundThreadStatus: Int32;
 begin
@@ -352,7 +352,7 @@ begin
 	Result := FBackgroundThreads.ContainsKey(GetCurrentThreadID());
 end;
 
-{ Path blacklist }
+{Path blacklist}
 
 function TThreadStateManager.GetRemoveDirSkippedPath: TStringList;
 begin
@@ -417,7 +417,7 @@ begin
 		end;
 end;
 
-{ Background jobs (account-keyed) }
+{Background jobs (account-keyed)}
 
 function TThreadStateManager.GetBackgroundJobsCount(const Account: WideString): Int32;
 begin

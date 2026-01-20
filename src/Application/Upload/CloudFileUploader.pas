@@ -1,4 +1,4 @@
-unit CloudFileUploader;
+﻿unit CloudFileUploader;
 
 interface
 
@@ -32,11 +32,10 @@ uses
 
 type
 	{Action to take after chunk upload result}
-	TChunkActionResult = (
-		caRetry,     {Retry current chunk}
-		caContinue,  {Move to next chunk}
-		caAbort      {Stop loop and return error}
-	);
+	TChunkActionResult = (caRetry, {Retry current chunk}
+		caContinue, {Move to next chunk}
+		caAbort {Stop loop and return error}
+		);
 
 	{Callback types for accessing CloudMailRu state and operations}
 	TGetHTTPFunc = reference to function: ICloudHTTP;
@@ -68,9 +67,9 @@ type
 
 	{Interface for cloud file upload operations}
 	ICloudFileUploader = interface
-		['{A9B7C6D5-E4F3-2A1B-8C9D-0E1F2A3B4C5D}']
+		['{D4BF6315-520B-4801-A633-965A339484EB}']
 		{Upload file from local path to cloud.
-		 Returns FS_FILE_OK on success, or appropriate error code on failure.}
+			Returns FS_FILE_OK on success, or appropriate error code on failure.}
 		function Upload(LocalPath, RemotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; ChunkOverwriteMode: Integer = 0): Integer;
 	end;
 
@@ -108,23 +107,7 @@ type
 		{Protected for testability - tests need direct access to split upload logic}
 		function PutFileSplit(LocalPath, RemotePath, ConflictMode: WideString; ChunkOverwriteMode: Integer): Integer;
 	public
-		constructor Create(
-			GetHTTP: TGetHTTPFunc;
-			ShardManager: ICloudShardManager;
-			HashCalculator: ICloudHashCalculator;
-			Cipher: ICipher;
-			FileSystem: IFileSystem;
-			Logger: ILogger;
-			Progress: IProgress;
-			Request: IRequest;
-			GetOAuthToken: TGetOAuthTokenFunc;
-			IsPublicAccount: TGetBoolFunc;
-			GetRetryOperation: TGetRetryOperationFunc;
-			AddFileByIdentity: TAddFileByIdentityFunc;
-			DeleteFile: TDeleteFileFunc;
-			FileIdentity: TFileIdentityFunc;
-			DoCryptFiles, DoCryptFilenames: Boolean;
-			Settings: TUploadSettings);
+		constructor Create(GetHTTP: TGetHTTPFunc; ShardManager: ICloudShardManager; HashCalculator: ICloudHashCalculator; Cipher: ICipher; FileSystem: IFileSystem; Logger: ILogger; Progress: IProgress; Request: IRequest; GetOAuthToken: TGetOAuthTokenFunc; IsPublicAccount: TGetBoolFunc; GetRetryOperation: TGetRetryOperationFunc; AddFileByIdentity: TAddFileByIdentityFunc; DeleteFile: TDeleteFileFunc; FileIdentity: TFileIdentityFunc; DoCryptFiles, DoCryptFilenames: Boolean; Settings: TUploadSettings);
 
 		{ICloudFileUploader}
 		function Upload(LocalPath, RemotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; ChunkOverwriteMode: Integer = 0): Integer;
@@ -135,25 +118,9 @@ implementation
 uses
 	Winapi.Windows;
 
-{ TCloudFileUploader }
+{TCloudFileUploader}
 
-constructor TCloudFileUploader.Create(
-	GetHTTP: TGetHTTPFunc;
-	ShardManager: ICloudShardManager;
-	HashCalculator: ICloudHashCalculator;
-	Cipher: ICipher;
-	FileSystem: IFileSystem;
-	Logger: ILogger;
-	Progress: IProgress;
-	Request: IRequest;
-	GetOAuthToken: TGetOAuthTokenFunc;
-	IsPublicAccount: TGetBoolFunc;
-	GetRetryOperation: TGetRetryOperationFunc;
-	AddFileByIdentity: TAddFileByIdentityFunc;
-	DeleteFile: TDeleteFileFunc;
-	FileIdentity: TFileIdentityFunc;
-	DoCryptFiles, DoCryptFilenames: Boolean;
-	Settings: TUploadSettings);
+constructor TCloudFileUploader.Create(GetHTTP: TGetHTTPFunc; ShardManager: ICloudShardManager; HashCalculator: ICloudHashCalculator; Cipher: ICipher; FileSystem: IFileSystem; Logger: ILogger; Progress: IProgress; Request: IRequest; GetOAuthToken: TGetOAuthTokenFunc; IsPublicAccount: TGetBoolFunc; GetRetryOperation: TGetRetryOperationFunc; AddFileByIdentity: TAddFileByIdentityFunc; DeleteFile: TDeleteFileFunc; FileIdentity: TFileIdentityFunc; DoCryptFiles, DoCryptFilenames: Boolean; Settings: TUploadSettings);
 begin
 	inherited Create;
 	FGetHTTP := GetHTTP;
@@ -322,7 +289,8 @@ begin
 			begin
 				if length(PostAnswer) <> SHA1_HEX_LENGTH then
 					ResultCode := CLOUD_OPERATION_FAILED
-				else begin
+				else
+				begin
 					LocalIdentity.Hash := PostAnswer;
 					LocalIdentity.size := FileStream.size;
 				end;
@@ -361,10 +329,10 @@ begin
 				ResultCode := FS_FILE_NOTSUPPORTED;
 				Result := caAbort;
 			end;
-	else
-		{Unknown mode - treat as abort}
-		ResultCode := CLOUD_OPERATION_FAILED;
-		Result := caAbort;
+		else
+			{Unknown mode - treat as abort}
+			ResultCode := CLOUD_OPERATION_FAILED;
+			Result := caAbort;
 	end;
 end;
 
@@ -384,8 +352,8 @@ begin
 						Result := caRetry;
 					ID_IGNORE:
 						Result := caContinue;
-				else
-					Result := caContinue; {Default to continue for unknown response}
+					else
+						Result := caContinue; {Default to continue for unknown response}
 				end;
 			end;
 		OperationErrorModeIgnore:
@@ -414,10 +382,10 @@ begin
 					Result := caAbort;
 				end;
 			end;
-	else
-		{Unknown option value - abort}
-		ResultCode := CLOUD_OPERATION_FAILED;
-		Result := caAbort;
+		else
+			{Unknown option value - abort}
+			ResultCode := CLOUD_OPERATION_FAILED;
+			Result := caAbort;
 	end;
 end;
 
@@ -439,7 +407,7 @@ begin
 end;
 
 {Uploads file in chunks when it exceeds CloudMaxFileSize.
- Returns FS_FILE_OK on success, or appropriate error code on failure.}
+	Returns FS_FILE_OK on success, or appropriate error code on failure.}
 function TCloudFileUploader.PutFileSplit(LocalPath, RemotePath, ConflictMode: WideString; ChunkOverwriteMode: Integer): Integer;
 var
 	LocalFileIdentity: TCMRFileIdentity;
@@ -456,8 +424,7 @@ begin
 	if UseHash then
 		LocalFileIdentity := FFileIdentity(GetUNCFilePath(LocalPath));
 	{Hash calculation cancellation causes entire operation abort - TC remembers cancel press}
-	if UseHash and (LocalFileIdentity.Hash <> EmptyWideStr) and (not FDoCryptFiles)
-		and (FS_FILE_OK = FAddFileByIdentity(LocalFileIdentity, RemotePath, CLOUD_CONFLICT_STRICT, False, True)) then
+	if UseHash and (LocalFileIdentity.Hash <> EmptyWideStr) and (not FDoCryptFiles) and (FS_FILE_OK = FAddFileByIdentity(LocalFileIdentity, RemotePath, CLOUD_CONFLICT_STRICT, False, True)) then
 		Exit(CLOUD_OPERATION_OK); {issue #135}
 
 	{Create split info to determine chunk boundaries}
@@ -498,27 +465,31 @@ begin
 					begin
 						Action := HandleChunkExists(ChunkRemotePath, ChunkOverwriteMode, Result);
 						case Action of
-							caRetry: ; {Don't increment, retry same chunk}
+							caRetry:
+								; {Don't increment, retry same chunk}
 							caContinue:
 								begin
 									Result := FS_FILE_OK; {Clear error when ignoring and continuing}
 									Inc(ChunkIndex);
 								end;
-							caAbort: Break;
+							caAbort:
+								Break;
 						end;
 					end;
-			else
-				{Any other error - handle via OperationErrorMode}
-				Action := HandleChunkError(Result, ChunkRemotePath, RetryAttemptsCount, Result);
-				case Action of
-					caRetry: ; {Don't increment, retry same chunk}
-					caContinue:
-						begin
-							Result := FS_FILE_OK; {Clear error when ignoring and continuing}
-							Inc(ChunkIndex);
-						end;
-					caAbort: Break;
-				end;
+				else
+					{Any other error - handle via OperationErrorMode}
+					Action := HandleChunkError(Result, ChunkRemotePath, RetryAttemptsCount, Result);
+					case Action of
+						caRetry:
+							; {Don't increment, retry same chunk}
+						caContinue:
+							begin
+								Result := FS_FILE_OK; {Clear error when ignoring and continuing}
+								Inc(ChunkIndex);
+							end;
+						caAbort:
+							Break;
+					end;
 			end;
 		end;
 

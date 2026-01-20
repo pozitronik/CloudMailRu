@@ -215,8 +215,9 @@ begin
 				ResultCode := CloudResultToFsResult(OperationResult, PREFIX_ERR_FILE_UPLOADING);
 				if (CLOUD_OPERATION_OK = OperationResult.OperationResult) and LogSuccess then
 					FLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, FILE_FOUND_BY_HASH, [RemotePath]);
-			end else
+			end else begin
 				ResultCode := FS_FILE_WRITEERROR;
+			end;
 			Result := TAPICallResult.FromInteger(ResultCode, JSON);
 		end);
 
@@ -294,17 +295,30 @@ begin
 		FHashCalculator := TCloudHashCalculator.Create(Progress, FileSystem);
 
 		{Initialize shard manager with overrides from settings}
-		FShardManager := TCloudShardManager.Create(Logger,
-			FSettings.AccountSettings.ShardOverride,
-			FSettings.AccountSettings.UploadUrlOverride);
+		FShardManager := TCloudShardManager.Create(Logger, FSettings.AccountSettings.ShardOverride, FSettings.AccountSettings.UploadUrlOverride);
 
 		{Initialize retry operation handler with HTTP callbacks}
 		FRetryOperation := TRetryOperation.Create(
-			function: Boolean begin Result := RefreshCSRFToken; end,
-			function(const URL, Params: WideString; var JSON: WideString): Boolean begin Result := HTTP.PostForm(URL, Params, JSON); end,
-			function(const URL: WideString; var JSON: WideString; var ShowProgress: Boolean): Boolean begin Result := HTTP.GetPage(URL, JSON, ShowProgress); end,
-			function(const JSON, ErrorPrefix: WideString): Boolean begin Result := CloudResultToBoolean(JSON, ErrorPrefix); end,
-			function(const JSON, ErrorPrefix: WideString): Integer begin Result := CloudResultToFsResult(JSON, ErrorPrefix); end);
+			function: Boolean
+			begin
+				Result := RefreshCSRFToken;
+			end,
+			function(const URL, Params: WideString; var JSON: WideString): Boolean
+			begin
+				Result := HTTP.PostForm(URL, Params, JSON);
+			end,
+			function(const URL: WideString; var JSON: WideString; var ShowProgress: Boolean): Boolean
+			begin
+				Result := HTTP.GetPage(URL, JSON, ShowProgress);
+			end,
+			function(const JSON, ErrorPrefix: WideString): Boolean
+			begin
+				Result := CloudResultToBoolean(JSON, ErrorPrefix);
+			end,
+			function(const JSON, ErrorPrefix: WideString): Integer
+			begin
+				Result := CloudResultToFsResult(JSON, ErrorPrefix);
+			end);
 
 		{Use injected cipher for encryption operations}
 		FCipher := Cipher;
@@ -313,24 +327,34 @@ begin
 
 		{Initialize file downloader service with callbacks for dynamic state}
 		FDownloader := TCloudFileDownloader.Create(
-			function: ICloudHTTP begin Result := Self.HTTP; end,
-			FShardManager,
-			FHashCalculator,
-			FCipher,
-			FFileSystem,
-			FLogger,
-			FProgress,
-			FRequest,
-			function: TCMROAuth begin Result := Self.FOAuthToken; end,
-			function: Boolean begin Result := Self.IsPublicAccount; end,
-			function: WideString begin Result := Self.GetPublicLink; end,
-			function: Boolean begin Result := Self.RefreshCSRFToken; end,
-			function(var Shard: WideString; ShardType: WideString): Boolean begin Result := Self.GetShard(Shard, ShardType); end,
-			FDoCryptFiles,
-			FDoCryptFilenames);
+			function: ICloudHTTP
+			begin
+				Result := Self.HTTP;
+			end, FShardManager, FHashCalculator, FCipher, FFileSystem, FLogger, FProgress, FRequest,
+			function: TCMROAuth
+			begin
+				Result := Self.FOAuthToken;
+			end,
+			function: Boolean
+			begin
+				Result := Self.IsPublicAccount;
+			end,
+			function: WideString
+			begin
+				Result := Self.GetPublicLink;
+			end,
+			function: Boolean
+			begin
+				Result := Self.RefreshCSRFToken;
+			end,
+			function(var Shard: WideString; ShardType: WideString): Boolean
+			begin
+				Result := Self.GetShard(Shard, ShardType);
+			end, FDoCryptFiles, FDoCryptFilenames);
 
 		{Initialize file uploader service with callbacks and settings}
-		var UploadSettings: TUploadSettings;
+		var
+			UploadSettings: TUploadSettings;
 		UploadSettings.PrecalculateHash := Self.PrecalculateHash;
 		UploadSettings.ForcePrecalculateSize := Self.ForcePrecalculateSize;
 		UploadSettings.CheckCRC := Self.CheckCRC;
@@ -342,59 +366,95 @@ begin
 		UploadSettings.CloudMaxFileSize := Self.CloudMaxFileSize;
 
 		FUploader := TCloudFileUploader.Create(
-			function: ICloudHTTP begin Result := Self.HTTP; end,
-			FShardManager,
-			FHashCalculator,
-			FCipher,
-			FFileSystem,
-			FLogger,
-			FProgress,
-			FRequest,
-			function: TCMROAuth begin Result := Self.FOAuthToken; end,
-			function: Boolean begin Result := Self.IsPublicAccount; end,
-			function: TRetryOperation begin Result := Self.FRetryOperation; end,
-			function(FileIdentity: TCMRFileIdentity; RemotePath, ConflictMode: WideString; LogErrors, LogSuccess: Boolean): Integer begin Result := Self.AddFileByIdentity(FileIdentity, RemotePath, ConflictMode, LogErrors, LogSuccess); end,
-			function(Path: WideString): Boolean begin Result := Self.DeleteFile(Path); end,
-			function(LocalPath: WideString): TCMRFileIdentity begin Result := Self.FileIdentity(LocalPath); end,
-			FDoCryptFiles,
-			FDoCryptFilenames,
-			UploadSettings);
+			function: ICloudHTTP
+			begin
+				Result := Self.HTTP;
+			end, FShardManager, FHashCalculator, FCipher, FFileSystem, FLogger, FProgress, FRequest,
+			function: TCMROAuth
+			begin
+				Result := Self.FOAuthToken;
+			end,
+			function: Boolean
+			begin
+				Result := Self.IsPublicAccount;
+			end,
+			function: TRetryOperation
+			begin
+				Result := Self.FRetryOperation;
+			end,
+			function(FileIdentity: TCMRFileIdentity; RemotePath, ConflictMode: WideString; LogErrors, LogSuccess: Boolean): Integer
+			begin
+				Result := Self.AddFileByIdentity(FileIdentity, RemotePath, ConflictMode, LogErrors, LogSuccess);
+			end,
+			function(Path: WideString): Boolean
+			begin
+				Result := Self.DeleteFile(Path);
+			end,
+			function(LocalPath: WideString): TCMRFileIdentity
+			begin
+				Result := Self.FileIdentity(LocalPath);
+			end, FDoCryptFiles, FDoCryptFilenames, UploadSettings);
 
 		{Initialize share service with callbacks for dynamic state}
-		FShareService := TCloudShareService.Create(
-			Self.HTTP,
-			FLogger,
-			FRetryOperation,
-			function: Boolean begin Result := Self.IsPublicAccount; end,
-			function: WideString begin Result := Self.FUnitedParams; end,
-			function(Path: WideString; var PublicLink: WideString; Publish: Boolean): Boolean begin Result := Self.PublishFile(Path, PublicLink, Publish); end,
-			function(JSON: WideString; ErrorPrefix: WideString): Boolean begin Result := Self.CloudResultToBoolean(JSON, ErrorPrefix); end,
-			function(JSON: WideString; ErrorPrefix: WideString): Integer begin Result := Self.CloudResultToFsResult(JSON, ErrorPrefix); end,
-			function(var Shard: WideString; ShardType: WideString): Boolean begin Result := Self.GetShard(Shard, ShardType); end
-		);
+		FShareService := TCloudShareService.Create(Self.HTTP, FLogger, FRetryOperation,
+			function: Boolean
+			begin
+				Result := Self.IsPublicAccount;
+			end,
+			function: WideString
+			begin
+				Result := Self.FUnitedParams;
+			end,
+			function(Path: WideString; var PublicLink: WideString; Publish: Boolean): Boolean
+			begin
+				Result := Self.PublishFile(Path, PublicLink, Publish);
+			end,
+			function(JSON: WideString; ErrorPrefix: WideString): Boolean
+			begin
+				Result := Self.CloudResultToBoolean(JSON, ErrorPrefix);
+			end,
+			function(JSON: WideString; ErrorPrefix: WideString): Integer
+			begin
+				Result := Self.CloudResultToFsResult(JSON, ErrorPrefix);
+			end,
+			function(var Shard: WideString; ShardType: WideString): Boolean
+			begin
+				Result := Self.GetShard(Shard, ShardType);
+			end);
 
 		{Initialize listing service with callbacks for dynamic state}
-		FListingService := TCloudListingService.Create(
-			Self.HTTP,
-			FCipher,
-			FLogger,
-			FRetryOperation,
-			function: Boolean begin Result := Self.IsPublicAccount; end,
-			function: WideString begin Result := Self.FUnitedParams; end,
-			function: WideString begin Result := Self.GetPublicLink; end,
-			function(JSON: WideString; ErrorPrefix: WideString): Boolean begin Result := Self.CloudResultToBoolean(JSON, ErrorPrefix); end,
-			function(OperationResult: TCMROperationResult; ErrorPrefix: WideString): Boolean begin Result := Self.CloudResultToBoolean(OperationResult, ErrorPrefix); end,
-			FDoCryptFilenames
-		);
+		FListingService := TCloudListingService.Create(Self.HTTP, FCipher, FLogger, FRetryOperation,
+			function: Boolean
+			begin
+				Result := Self.IsPublicAccount;
+			end,
+			function: WideString
+			begin
+				Result := Self.FUnitedParams;
+			end,
+			function: WideString
+			begin
+				Result := Self.GetPublicLink;
+			end,
+			function(JSON: WideString; ErrorPrefix: WideString): Boolean
+			begin
+				Result := Self.CloudResultToBoolean(JSON, ErrorPrefix);
+			end,
+			function(OperationResult: TCMROperationResult; ErrorPrefix: WideString): Boolean
+			begin
+				Result := Self.CloudResultToBoolean(OperationResult, ErrorPrefix);
+			end, FDoCryptFilenames);
 
 		{Initialize file operations service with callbacks for dynamic state}
-		FFileOps := TCloudFileOperations.Create(
-			Self.HTTP,
-			FLogger,
-			FRetryOperation,
-			function: Boolean begin Result := Self.IsPublicAccount; end,
-			function: WideString begin Result := Self.FUnitedParams; end
-		);
+		FFileOps := TCloudFileOperations.Create(Self.HTTP, FLogger, FRetryOperation,
+			function: Boolean
+			begin
+				Result := Self.IsPublicAccount;
+			end,
+			function: WideString
+			begin
+				Result := Self.FUnitedParams;
+			end);
 
 	except
 		on E: Exception do
@@ -603,7 +663,7 @@ var
 	CallResult: TAPICallResult;
 	LocalSpace: TCMRSpace;
 begin
-	LocalSpace := default(TCMRSpace);
+	LocalSpace := default (TCMRSpace);
 	CallResult := FRetryOperation.Execute(
 		function: TAPICallResult
 		var
@@ -632,8 +692,8 @@ begin
 end;
 
 {Delegates authentication to the injected IAuthStrategy.
- The strategy is responsible for obtaining auth tokens and setting up connection parameters.
- Method parameter is ignored - the injected strategy determines the auth method.}
+	The strategy is responsible for obtaining auth tokens and setting up connection parameters.
+	Method parameter is ignored - the injected strategy determines the auth method.}
 function TCloudMailRu.LoginRegular(Method: Integer): Boolean;
 var
 	Credentials: TAuthCredentials;
@@ -657,7 +717,7 @@ begin
 		FUnitedParams := AuthResult.UnitedParams;
 		FLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, CONNECTED_TO, [Email]);
 		LogUserSpaceInfo;
-		Result := True;
+		Result := true;
 	end;
 end;
 
@@ -717,11 +777,9 @@ begin
 			Success: Boolean;
 		begin
 			if Publish then
-				Success := HTTP.PostForm(API_FILE_PUBLISH + '?' + FUnitedParams,
-					Format('home=/%s&conflict', [PathToUrl(Path)]), JSON, 'application/x-www-form-urlencoded', true, False)
+				Success := HTTP.PostForm(API_FILE_PUBLISH + '?' + FUnitedParams, Format('home=/%s&conflict', [PathToUrl(Path)]), JSON, 'application/x-www-form-urlencoded', true, False)
 			else
-				Success := HTTP.PostForm(API_FILE_UNPUBLISH + '?' + FUnitedParams,
-					Format('weblink=%s&conflict', [CurrentLink]), JSON, 'application/x-www-form-urlencoded', true, False);
+				Success := HTTP.PostForm(API_FILE_UNPUBLISH + '?' + FUnitedParams, Format('weblink=%s&conflict', [CurrentLink]), JSON, 'application/x-www-form-urlencoded', true, False);
 
 			if Success then
 				Success := CloudResultToBoolean(JSON, PREFIX_ERR_FILE_PUBLISH);

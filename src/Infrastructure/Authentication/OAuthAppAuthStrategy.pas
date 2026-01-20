@@ -1,8 +1,8 @@
 unit OAuthAppAuthStrategy;
 
 {OAuth authentication using app password - the recommended method.
- This strategy authenticates using the OAuth password grant with an app-specific password.
- It is the only currently working authentication method after VK ID migration.}
+	This strategy authenticates using the OAuth password grant with an app-specific password.
+	It is the only currently working authentication method after VK ID migration.}
 
 interface
 
@@ -42,10 +42,7 @@ begin
 		Logger.Log(LOG_LEVEL_DEBUG, msgtype_details, REQUESTING_OAUTH_TOKEN, [Credentials.Email]);
 
 	{OAuth password grant request}
-	if HTTP.PostForm(OAUTH_TOKEN_URL,
-		Format('client_id=%s&grant_type=password&username=%s@%s&password=%s',
-			[OAUTH_CLIENT_ID, Credentials.User, Credentials.Domain, UrlEncode(Credentials.Password)]),
-		PostAnswer) then
+	if HTTP.PostForm(OAUTH_TOKEN_URL, Format('client_id=%s&grant_type=password&username=%s@%s&password=%s', [OAUTH_CLIENT_ID, Credentials.User, Credentials.Domain, UrlEncode(Credentials.Password)]), PostAnswer) then
 	begin
 		if not OAuthToken.FromJSON(PostAnswer) then
 		begin

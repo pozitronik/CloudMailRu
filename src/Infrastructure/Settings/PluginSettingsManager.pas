@@ -22,7 +22,7 @@ uses
 type
 
 	IPluginSettingsManager = interface
-		['{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}']
+		['{1028658B-966F-43D1-9329-A82E41726BEB}']
 		function GetSettings: TPluginSettings;
 		procedure SwitchProxyPasswordStorage;
 	end;
@@ -37,8 +37,8 @@ type
 	end;
 
 	{Files names and path naming conventions:
-	 (File)Path or (Dir)Patn should contain the full absolute path for a file or a directory
-	 (File)Name or (Dir)Name should contain only the name of a file or a directory
+		(File)Path or (Dir)Patn should contain the full absolute path for a file or a directory
+		(File)Name or (Dir)Name should contain only the name of a file or a directory
 	}
 
 	TPluginSettingsManager = class(TInterfacedObject, IPluginSettingsManager)
@@ -160,7 +160,7 @@ end;
 
 function TPluginSettingsManager.GetAccountsIniFilePath: WideString;
 begin
-	result := self.FIniFileDir + ACCOUNTS_CONFIG_FILE_NAME;
+	Result := self.FIniFileDir + ACCOUNTS_CONFIG_FILE_NAME;
 end;
 
 procedure TPluginSettingsManager.Refresh;

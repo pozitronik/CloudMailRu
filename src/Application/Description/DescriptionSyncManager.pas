@@ -1,8 +1,8 @@
 unit DescriptionSyncManager;
 
 {Manages file description synchronization between local and remote storage.
- Handles description file (.ion) operations when files are created, deleted,
- renamed, or transferred.}
+	Handles description file (.ion) operations when files are created, deleted,
+	renamed, or transferred.}
 
 interface
 
@@ -15,10 +15,10 @@ uses
 
 type
 	{Manages file description synchronization between local and remote storage.
-	 Handles description file (.ion) operations when files are created, deleted,
-	 renamed, or transferred.}
+		Handles description file (.ion) operations when files are created, deleted,
+		renamed, or transferred.}
 	IDescriptionSyncManager = interface
-		['{A1B2C3D4-E5F6-7890-ABCD-123456789ABC}']
+		['{BB56B2CC-B5E6-4454-8D7E-B14AA8A52345}']
 
 		{Called when a remote file is deleted - removes entry from remote description file}
 		procedure OnFileDeleted(const RemotePath: TRealPath; Cloud: ICloudDescriptionOps);
@@ -34,7 +34,7 @@ type
 	end;
 
 	{Manages synchronization of file descriptions (.ion files) between local and remote storage.
-	 Extracts description file manipulation logic from WFX to centralize and make testable.}
+		Extracts description file manipulation logic from WFX to centralize and make testable.}
 	TDescriptionSyncManager = class(TInterfacedObject, IDescriptionSyncManager)
 	private
 		FDescriptionFileName: WideString;
@@ -97,7 +97,7 @@ begin
 	RemoteIonPath := GetRemoteDescriptionPath(ExtractFileDir(RemotePath.Path));
 
 	if not DownloadRemoteDescription(RemoteIonPath, Cloud, LocalTempPath) then
-		exit; { No description file exists }
+		exit; {No description file exists}
 
 	RemoteDescriptions := CreateDescription(LocalTempPath);
 	try
@@ -125,9 +125,9 @@ begin
 
 	if ExtractFileDir(OldPath.Path) = ExtractFileDir(NewPath.Path) then
 	begin
-		{ Rename within same directory - modify single description file }
+		{Rename within same directory - modify single description file}
 		if not DownloadRemoteDescription(OldRemoteIonPath, Cloud, OldLocalTempPath) then
-			exit; { No description file exists }
+			exit; {No description file exists}
 
 		OldDescriptions := CreateDescription(OldLocalTempPath);
 		try
@@ -141,12 +141,10 @@ begin
 		finally
 			OldDescriptions.Free;
 		end;
-	end
-	else
-	begin
-		{ Move between directories - transfer entry between two description files }
+	end else begin
+		{Move between directories - transfer entry between two description files}
 		if not DownloadRemoteDescription(OldRemoteIonPath, Cloud, OldLocalTempPath) then
-			exit; { No source description file exists }
+			exit; {No source description file exists}
 
 		OldDescriptions := CreateDescription(OldLocalTempPath);
 		try
@@ -187,7 +185,7 @@ begin
 	RemoteIonPath := GetRemoteDescriptionPath(ExtractFileDir(RemotePath.Path));
 
 	if not DownloadRemoteDescription(RemoteIonPath, Cloud, LocalTempPath) then
-		exit; { No remote description file exists }
+		exit; {No remote description file exists}
 
 	RemoteDescriptions := CreateDescription(LocalTempPath);
 	try
@@ -214,7 +212,7 @@ begin
 	LocalIonPath := GetLocalDescriptionPath(LocalFilePath);
 
 	if not FileExists(GetUNCFilePath(LocalIonPath)) then
-		exit; { No local description file exists }
+		exit; {No local description file exists}
 
 	LocalDescriptions := CreateDescription(LocalIonPath);
 	try

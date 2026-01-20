@@ -8,10 +8,10 @@ uses
 
 type
 	{Interface for managing cloud shard URLs.
-	 Shards are server endpoints for specific operations (download, upload, etc.).
-	 This interface abstracts shard caching and override handling.}
+		Shards are server endpoints for specific operations (download, upload, etc.).
+		This interface abstracts shard caching and override handling.}
 	ICloudShardManager = interface
-		['{B4C8D2E6-F7A3-4B5C-9D1E-2F3A4B5C6D7E}']
+		['{D8F2AA4A-4560-471A-A1E7-3E374BB9A4E0}']
 		{Get the download shard URL, returns empty string if not yet resolved}
 		function GetDownloadShard: WideString;
 		{Set the download shard URL after resolution}
@@ -39,7 +39,7 @@ type
 	end;
 
 	{Shard manager implementation that caches shard URLs and handles overrides.
-	 Shard resolution (HTTP calls) remains external - this class only manages state.}
+		Shard resolution (HTTP calls) remains external - this class only manages state.}
 	TCloudShardManager = class(TInterfacedObject, ICloudShardManager)
 	private
 		FDownloadShard: WideString;
@@ -89,7 +89,7 @@ uses
 	PLUGIN_TYPES,
 	LANGUAGE_STRINGS;
 
-{ TCloudShardManager }
+{TCloudShardManager}
 
 constructor TCloudShardManager.Create(Logger: ILogger; DownloadOverride: WideString; UploadOverride: WideString);
 begin
@@ -173,7 +173,7 @@ begin
 	FPublicShard := EmptyWideStr;
 end;
 
-{ TNullShardManager }
+{TNullShardManager}
 
 function TNullShardManager.GetDownloadShard: WideString;
 begin

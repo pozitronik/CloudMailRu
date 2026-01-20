@@ -32,7 +32,7 @@ implementation
 
 class function TCloudSettings.CreateFromSettings(const PluginSettings: TPluginSettings; const AccSettings: TAccountSettings): TCloudSettings;
 begin
-	Result := Default(TCloudSettings);
+	Result := Default (TCloudSettings);
 	Result.ConnectionSettings := PluginSettings.ConnectionSettings;
 	Result.AccountSettings := AccSettings;
 	Result.PrecalculateHash := PluginSettings.PrecalculateHash;

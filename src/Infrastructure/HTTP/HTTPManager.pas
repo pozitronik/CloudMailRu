@@ -1,4 +1,4 @@
-unit HTTPManager;
+﻿unit HTTPManager;
 
 {Abstraction for HTTP connection management, enabling testability without real HTTP connections.}
 
@@ -35,7 +35,7 @@ type
 	end;
 
 	{Null implementation that returns nil/default values.
-	 Useful for testing scenarios where no HTTP connections are expected.}
+		Useful for testing scenarios where no HTTP connections are expected.}
 	TNullHTTPManager = class(TInterfacedObject, IHTTPManager)
 	private
 		FConnectionSettings: TConnectionSettings;

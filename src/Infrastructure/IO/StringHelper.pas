@@ -66,7 +66,7 @@ begin
 				Inc(Tail);
 
 			Head := Tail;
-			while true do
+			while True do
 			begin
 				while (InQuote and not((Tail^ = #0) or (Tail^ = QuoteChar))) or not(CharInSet(Tail^, Separators)) do
 					Inc(Tail);

@@ -1,7 +1,7 @@
 unit TCProgress;
 
 {Interface for progress reporting, abstracting the concrete implementation from consumers.
- This enables dependency injection and testability by allowing mock implementations.}
+	This enables dependency injection and testability by allowing mock implementations.}
 
 interface
 
@@ -11,7 +11,7 @@ uses
 
 type
 	{Progress reporting interface for file operations.
-	 Returns True if operation should be cancelled, False to continue.}
+		Returns True if operation should be cancelled, False to continue.}
 	IProgress = interface
 		['{C7F5FC9E-E036-4E8E-97EC-8B99EC4B6A60}']
 		function Progress(SourceName, TargetName: WideString; PercentDone: Integer): Boolean; overload;
@@ -21,7 +21,7 @@ type
 	end;
 
 	{Null object implementation of IProgress. All methods return False (not cancelled).
-	 Use when progress reporting is not needed, e.g., in tests or standalone operations.}
+		Use when progress reporting is not needed, e.g., in tests or standalone operations.}
 	TNullProgress = class(TInterfacedObject, IProgress)
 	public
 		function Progress(SourceName, TargetName: WideString; PercentDone: Integer): Boolean; overload;

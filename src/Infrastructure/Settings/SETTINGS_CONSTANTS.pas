@@ -70,8 +70,8 @@ const
 	ACCOUNTS_CONFIG_FILE_NAME = 'MailRuCloud.ini';
 
 	{TODO: Remove User-Agent option entirely. OAuth endpoints either ignore it or block Mozilla UAs.
-	 Old web-based auth methods are deprecated. Remove: this constant, UserAgent from TConnectionSettings,
-	 INI read/write in PluginSettingsManager, UI controls in Accounts form.}
+		Old web-based auth methods are deprecated. Remove: this constant, UserAgent from TConnectionSettings,
+		INI read/write in PluginSettingsManager, UI controls in Accounts form.}
 	DEFAULT_USERAGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.150 Safari/537.36/TCWFX(' + PlatformX + ')';
 
 type

@@ -1,7 +1,7 @@
 unit OverwritePreparationHandler;
 
 {Handles file overwrite preparation by deleting existing remote file.
- Cloud API doesn't support overwrite directly, so we delete first.}
+	Cloud API doesn't support overwrite directly, so we delete first.}
 
 interface
 
@@ -20,9 +20,9 @@ type
 		['{4F6DB3F8-9A3C-4AA2-8C03-ABF2189FF5B0}']
 
 		{Prepares for overwrite by deleting existing file if required.
-		 @param Path Remote path to prepare
-		 @param RequiresOverwrite Whether overwrite was requested
-		 @return Result with Success=True if ready to proceed, or ResultCode on failure}
+			@param Path Remote path to prepare
+			@param RequiresOverwrite Whether overwrite was requested
+			@return Result with Success=True if ready to proceed, or ResultCode on failure}
 		function Prepare(const Path: TRealPath; RequiresOverwrite: Boolean): TOverwritePreparationResult;
 	end;
 
@@ -42,8 +42,7 @@ begin
 	FConnectionManager := ConnectionManager;
 end;
 
-function TOverwritePreparationHandler.Prepare(const Path: TRealPath;
-	RequiresOverwrite: Boolean): TOverwritePreparationResult;
+function TOverwritePreparationHandler.Prepare(const Path: TRealPath; RequiresOverwrite: Boolean): TOverwritePreparationResult;
 var
 	getResult: Integer;
 begin

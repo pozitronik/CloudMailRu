@@ -1,7 +1,7 @@
 unit InviteOperationHandler;
 
 {Handles invite operations (mount, unmount, reject).
- Orchestrates dialog display and cloud operations based on user choice.}
+	Orchestrates dialog display and cloud operations based on user choice.}
 
 interface
 
@@ -12,29 +12,24 @@ uses
 
 type
 	{Callback type for showing invite properties dialog.
-	 Returns: mrAbort=Unmount(keep), mrClose=Unmount(no keep), mrYes=Mount, mrNo=Reject}
-	TShowInvitePropertiesFunc = reference to function(ParentWindow: HWND;
-		const Invite: TCMRIncomingInvite): Integer;
+		Returns: mrAbort=Unmount(keep), mrClose=Unmount(no keep), mrYes=Mount, mrNo=Reject}
+	TShowInvitePropertiesFunc = reference to function(ParentWindow: HWND; const Invite: TCMRIncomingInvite): Integer;
 
 	IInviteOperationHandler = interface
-		['{D0E1F2A3-5B6C-7D8E-9F0A-1B2C3D4E5F6A}']
+		['{0AD6EAD4-816C-42D4-BA71-3915C43E4C32}']
 
 		{Executes invite operation based on dialog result.
-		 @param ParentWindow Parent window handle for dialog
-		 @param Cloud Cloud connection for the account
-		 @param Invite The incoming invite to process
-		 @param ShowDialog Callback to show the properties dialog
-		 @return FS_EXEC_OK on success, FS_EXEC_ERROR on failure}
-		function Execute(ParentWindow: HWND; Cloud: TCloudMailRu;
-			const Invite: TCMRIncomingInvite;
-			ShowDialog: TShowInvitePropertiesFunc): Integer;
+			@param ParentWindow Parent window handle for dialog
+			@param Cloud Cloud connection for the account
+			@param Invite The incoming invite to process
+			@param ShowDialog Callback to show the properties dialog
+			@return FS_EXEC_OK on success, FS_EXEC_ERROR on failure}
+		function Execute(ParentWindow: HWND; Cloud: TCloudMailRu; const Invite: TCMRIncomingInvite; ShowDialog: TShowInvitePropertiesFunc): Integer;
 	end;
 
 	TInviteOperationHandler = class(TInterfacedObject, IInviteOperationHandler)
 	public
-		function Execute(ParentWindow: HWND; Cloud: TCloudMailRu;
-			const Invite: TCMRIncomingInvite;
-			ShowDialog: TShowInvitePropertiesFunc): Integer;
+		function Execute(ParentWindow: HWND; Cloud: TCloudMailRu; const Invite: TCMRIncomingInvite; ShowDialog: TShowInvitePropertiesFunc): Integer;
 	end;
 
 implementation
@@ -43,9 +38,7 @@ uses
 	Controls,
 	PLUGIN_TYPES;
 
-function TInviteOperationHandler.Execute(ParentWindow: HWND; Cloud: TCloudMailRu;
-	const Invite: TCMRIncomingInvite;
-	ShowDialog: TShowInvitePropertiesFunc): Integer;
+function TInviteOperationHandler.Execute(ParentWindow: HWND; Cloud: TCloudMailRu; const Invite: TCMRIncomingInvite; ShowDialog: TShowInvitePropertiesFunc): Integer;
 var
 	DialogResult: Integer;
 begin

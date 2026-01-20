@@ -1,7 +1,7 @@
 unit DownloadOrchestrator;
 
 {Orchestrates file download operations.
- Coordinates validation, conflict resolution, download execution, and retry handling.}
+	Coordinates validation, conflict resolution, download execution, and retry handling.}
 
 interface
 
@@ -15,24 +15,22 @@ uses
 
 type
 	{Callback for performing the actual download operation}
-	TDownloadOperation = reference to function(const RemotePath: TRealPath;
-		const LocalName, RemoteName: WideString; CopyFlags: Integer): Integer;
+	TDownloadOperation = reference to function(const RemotePath: TRealPath; const LocalName, RemoteName: WideString; CopyFlags: Integer): Integer;
 
 	{Callback for progress reporting, returns True if user aborted}
 	TProgressCallback = reference to function(const Source, Target: WideString; PercentDone: Integer): Boolean;
 
 	IDownloadOrchestrator = interface
-		['{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}']
+		['{926A4DD9-A57E-4378-8B35-4FACB971B477}']
 
 		{Orchestrates complete download operation.
-		 @param RemoteName Remote file path
-		 @param LocalName Local file path
-		 @param CopyFlags TC copy operation flags
-		 @param DownloadOp Callback to perform actual download
-		 @param ProgressOp Callback for progress updates
-		 @return FS_FILE_* result code}
-		function Execute(const RemoteName, LocalName: WideString; CopyFlags: Integer;
-			DownloadOp: TDownloadOperation; ProgressOp: TProgressCallback): Integer;
+			@param RemoteName Remote file path
+			@param LocalName Local file path
+			@param CopyFlags TC copy operation flags
+			@param DownloadOp Callback to perform actual download
+			@param ProgressOp Callback for progress updates
+			@return FS_FILE_* result code}
+		function Execute(const RemoteName, LocalName: WideString; CopyFlags: Integer; DownloadOp: TDownloadOperation; ProgressOp: TProgressCallback): Integer;
 	end;
 
 	TDownloadOrchestrator = class(TInterfacedObject, IDownloadOrchestrator)
@@ -42,14 +40,9 @@ type
 		FRetryHandler: IRetryHandler;
 		FSettingsManager: IPluginSettingsManager;
 	public
-		constructor Create(
-			PreparationValidator: IDownloadPreparationValidator;
-			ConflictResolver: ILocalFileConflictResolver;
-			RetryHandler: IRetryHandler;
-			SettingsManager: IPluginSettingsManager);
+		constructor Create(PreparationValidator: IDownloadPreparationValidator; ConflictResolver: ILocalFileConflictResolver; RetryHandler: IRetryHandler; SettingsManager: IPluginSettingsManager);
 
-		function Execute(const RemoteName, LocalName: WideString; CopyFlags: Integer;
-			DownloadOp: TDownloadOperation; ProgressOp: TProgressCallback): Integer;
+		function Execute(const RemoteName, LocalName: WideString; CopyFlags: Integer; DownloadOp: TDownloadOperation; ProgressOp: TProgressCallback): Integer;
 	end;
 
 implementation
@@ -57,11 +50,7 @@ implementation
 uses
 	LANGUAGE_STRINGS;
 
-constructor TDownloadOrchestrator.Create(
-	PreparationValidator: IDownloadPreparationValidator;
-	ConflictResolver: ILocalFileConflictResolver;
-	RetryHandler: IRetryHandler;
-	SettingsManager: IPluginSettingsManager);
+constructor TDownloadOrchestrator.Create(PreparationValidator: IDownloadPreparationValidator; ConflictResolver: ILocalFileConflictResolver; RetryHandler: IRetryHandler; SettingsManager: IPluginSettingsManager);
 begin
 	inherited Create;
 	FPreparationValidator := PreparationValidator;
@@ -70,9 +59,7 @@ begin
 	FSettingsManager := SettingsManager;
 end;
 
-function TDownloadOrchestrator.Execute(const RemoteName, LocalName: WideString;
-	CopyFlags: Integer; DownloadOp: TDownloadOperation;
-	ProgressOp: TProgressCallback): Integer;
+function TDownloadOrchestrator.Execute(const RemoteName, LocalName: WideString; CopyFlags: Integer; DownloadOp: TDownloadOperation; ProgressOp: TProgressCallback): Integer;
 var
 	RealPath: TRealPath;
 	ValidationResult: TDownloadValidationResult;
@@ -88,8 +75,7 @@ begin
 	ProgressOp(RemoteName, LocalName, 0);
 
 	{Check for local file conflict}
-	ConflictResolution := FConflictResolver.Resolve(LocalName, CopyFlags,
-		FSettingsManager.GetSettings.OverwriteLocalMode);
+	ConflictResolution := FConflictResolver.Resolve(LocalName, CopyFlags, FSettingsManager.GetSettings.OverwriteLocalMode);
 	if not ConflictResolution.ShouldProceed then
 		Exit(ConflictResolution.ResultCode);
 
@@ -99,8 +85,7 @@ begin
 		Exit;
 
 	{Handle retry on read error}
-	Result := FRetryHandler.HandleOperationError(Result, rotDownload,
-		ERR_DOWNLOAD_FILE_ASK, ERR_DOWNLOAD, DOWNLOAD_FILE_RETRY, RemoteName,
+	Result := FRetryHandler.HandleOperationError(Result, rotDownload, ERR_DOWNLOAD_FILE_ASK, ERR_DOWNLOAD, DOWNLOAD_FILE_RETRY, RemoteName,
 		function: Integer
 		begin
 			Result := DownloadOp(RealPath, LocalName, RemoteName, CopyFlags);
@@ -108,8 +93,7 @@ begin
 		function: Boolean
 		begin
 			Result := ProgressOp(LocalName, RemoteName, 0);
-		end
-	);
+		end);
 end;
 
 end.
