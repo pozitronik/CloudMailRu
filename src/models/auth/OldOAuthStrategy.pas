@@ -8,7 +8,7 @@ interface
 
 uses
 	IAuthStrategyInterface,
-	ICloudHTTPInterface,
+	CloudHTTP,
 	TCLogger;
 
 type

@@ -7,7 +7,7 @@ interface
 
 uses
 	IAuthStrategyInterface,
-	ICloudHTTPInterface,
+	CloudHTTP,
 	TCLogger,
 	CMROAuth,
 	System.SysUtils;

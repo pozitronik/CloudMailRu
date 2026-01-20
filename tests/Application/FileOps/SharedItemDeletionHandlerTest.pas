@@ -16,7 +16,7 @@ uses
 	TCLogger,
 	TCProgress,
 	TCRequest,
-	ICloudHTTPInterface,
+	CloudHTTP,
 	HTTPManager,
 	MockCloudHTTP,
 	MockHTTPManager,

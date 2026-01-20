@@ -16,7 +16,7 @@ uses
 	Vcl.StdCtrls,
 	Vcl.ExtCtrls,
 	JSONHelper,
-	CloudMailRuHTTP,
+	CloudHTTP,
 	TCLogger,
 	TCProgress,
 	CMROperationResult,

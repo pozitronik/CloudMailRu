@@ -10,7 +10,7 @@ uses
 	System.Classes,
 	System.SysUtils,
 	System.Generics.Collections,
-	ICloudHTTPInterface,
+	CloudHTTP,
 	PLUGIN_TYPES,
 	IdCookieManager,
 	IdHTTP;

@@ -7,7 +7,7 @@ interface
 
 uses
 	CMROAuth,
-	ICloudHTTPInterface,
+	CloudHTTP,
 	TCLogger;
 
 type

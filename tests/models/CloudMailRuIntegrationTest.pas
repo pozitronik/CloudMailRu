@@ -19,7 +19,7 @@ uses
 	TCRequest,
 	IAuthStrategyInterface,
 	WindowsFileSystem,
-	ICloudHTTPInterface,
+	CloudHTTP,
 	HTTPManager,
 	MockCloudHTTP,
 	MockHTTPManager,

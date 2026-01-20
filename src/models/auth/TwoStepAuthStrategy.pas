@@ -10,7 +10,7 @@ interface
 uses
 	IAuthStrategyInterface,
 	PasswordUIProvider,
-	ICloudHTTPInterface,
+	CloudHTTP,
 	TCLogger;
 
 type

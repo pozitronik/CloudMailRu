@@ -9,7 +9,7 @@ interface
 uses
 	IAuthStrategyInterface,
 	CMROAuth,
-	ICloudHTTPInterface,
+	CloudHTTP,
 	TCLogger;
 
 type

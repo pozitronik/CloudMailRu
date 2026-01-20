@@ -5,7 +5,7 @@ unit MockHTTPManager;
 interface
 
 uses
-	ICloudHTTPInterface,
+	CloudHTTP,
 	HTTPManager,
 	ConnectionSettings,
 	System.Generics.Collections;

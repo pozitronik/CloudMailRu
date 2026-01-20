@@ -5,8 +5,7 @@ unit HTTPManager;
 interface
 
 uses
-	CloudMailRuHTTP,
-	ICloudHTTPInterface,
+	CloudHTTP,
 	CMRConstants,
 	PLUGIN_TYPES,
 	ConnectionSettings,

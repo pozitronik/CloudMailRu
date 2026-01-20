@@ -46,7 +46,7 @@ type
 
 		{ HTTP stream cleanup patterns - demonstrates correct cleanup when
 		  multiple streams are created for HTTP POST operations.
-		  Pattern used in CloudMailRuHTTP.PostFile, PostForm, PostMultipart. }
+		  Pattern used in CloudHTTP.PostFile, PostForm, PostMultipart. }
 		[Test]
 		procedure TestMultipleStreamsCleanupOnException;
 
@@ -257,7 +257,7 @@ end;
 
 { HTTP stream cleanup pattern tests.
   These tests document the correct try-finally pattern that must be used
-  in CloudMailRuHTTP methods like PostFile, PostForm, PostMultipart.
+  in CloudHTTP methods like PostFile, PostForm, PostMultipart.
   FastMM5 will detect leaks if streams are not properly freed. }
 
 procedure TCloudMailRuResourceTest.TestMultipleStreamsCleanupOnException;
@@ -308,7 +308,7 @@ var
 	Stream1, Stream2: TStringStream;
 begin
 	{ Tests the simpler pattern where both streams are created upfront.
-	  This is what CloudMailRuHTTP currently does (without try-finally).
+	  This is what CloudHTTP currently does (without try-finally).
 	  The fix requires nested try-finally blocks.
 	  FastMM5 will detect if streams leak due to missing try-finally. }
 
