@@ -13,6 +13,7 @@ uses
 	CloudHTTP,
 	FileCipher,
 	PathHelper,
+	StringHelper,
 	LANGUAGE_STRINGS,
 	PLUGIN_TYPES,
 	TCLogger,
@@ -40,6 +41,12 @@ type
 		function GetIncomingInvitesAsDirItems(var DirListing: TCMRDirItemList; var InvitesListing: TCMRIncomingInviteList; ShowProgress: Boolean = False): Boolean;
 		{Get trashbin listing}
 		function GetTrashbin(var Listing: TCMRDirItemList; ShowProgress: Boolean = False): Boolean;
+		{Get file/folder status information}
+		function StatusFile(Path: WideString; var FileInfo: TCMRDirItem): Boolean;
+		{Restore item from trashbin}
+		function TrashbinRestore(Path: WideString; RestoreRevision: Integer; ConflictMode: WideString = CLOUD_CONFLICT_RENAME): Boolean;
+		{Empty trashbin}
+		function TrashbinEmpty(): Boolean;
 	end;
 
 	{Implementation of listing service}
@@ -75,6 +82,9 @@ type
 		function GetIncomingInvites(var Listing: TCMRIncomingInviteList; ShowProgress: Boolean = False): Boolean;
 		function GetIncomingInvitesAsDirItems(var DirListing: TCMRDirItemList; var InvitesListing: TCMRIncomingInviteList; ShowProgress: Boolean = False): Boolean;
 		function GetTrashbin(var Listing: TCMRDirItemList; ShowProgress: Boolean = False): Boolean;
+		function StatusFile(Path: WideString; var FileInfo: TCMRDirItem): Boolean;
+		function TrashbinRestore(Path: WideString; RestoreRevision: Integer; ConflictMode: WideString = CLOUD_CONFLICT_RENAME): Boolean;
+		function TrashbinEmpty(): Boolean;
 	end;
 
 implementation
@@ -289,6 +299,67 @@ begin
 	Result := CallResult.Success;
 	if Result then
 		Listing := LocalListing;
+end;
+
+function TCloudListingService.StatusFile(Path: WideString; var FileInfo: TCMRDirItem): Boolean;
+var
+	CallResult: TAPICallResult;
+	LocalInfo: TCMRDirItem;
+	UnitedParams: WideString;
+begin
+	UnitedParams := FGetUnitedParams();
+
+	{Public accounts use different API endpoint}
+	if FIsPublicAccount() then
+	begin
+		var JSON: WideString;
+		var Progress: Boolean := False;
+		Result := FHTTP.GetPage(Format('%s?weblink=%s%s&%s', [API_FILE, IncludeSlash(FGetPublicLink()), PathToUrl(Path), UnitedParams]), JSON, Progress);
+		if Result then
+			Result := FCloudResultToBoolean(JSON, PREFIX_ERR_FILE_STATUS) and FileInfo.FromJSON(JSON);
+		Exit;
+	end;
+
+	LocalInfo := default(TCMRDirItem);
+	CallResult := FRetryOperation.Execute(
+		function: TAPICallResult
+		var
+			JSON: WideString;
+			Progress: Boolean;
+			Success: Boolean;
+		begin
+			Progress := False;
+			Success := FHTTP.GetPage(Format('%s?home=%s&%s', [API_FILE, PathToUrl(Path), UnitedParams]), JSON, Progress);
+			if Success then
+				Success := FCloudResultToBoolean(JSON, PREFIX_ERR_FILE_STATUS) and LocalInfo.FromJSON(JSON);
+			Result := TAPICallResult.FromBoolean(Success, JSON);
+		end);
+
+	Result := CallResult.Success;
+	if Result then
+		FileInfo := LocalInfo;
+end;
+
+function TCloudListingService.TrashbinRestore(Path: WideString; RestoreRevision: Integer; ConflictMode: WideString): Boolean;
+begin
+	Result := False;
+	if FIsPublicAccount() then
+		Exit;
+	Result := FRetryOperation.PostFormBoolean(
+		API_TRASHBIN_RESTORE + '?' + FGetUnitedParams(),
+		Format('path=%s&restore_revision=%d&conflict=%s', [PathToUrl(Path), RestoreRevision, ConflictMode]),
+		PREFIX_ERR_FILE_RESTORE);
+end;
+
+function TCloudListingService.TrashbinEmpty(): Boolean;
+begin
+	Result := False;
+	if FIsPublicAccount() then
+		Exit;
+	Result := FRetryOperation.PostFormBoolean(
+		API_TRASHBIN_EMPTY + '?' + FGetUnitedParams(),
+		EmptyWideStr,
+		PREFIX_ERR_TRASH_CLEAN);
 end;
 
 end.

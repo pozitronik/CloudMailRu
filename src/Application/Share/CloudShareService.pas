@@ -13,6 +13,7 @@ uses
 	ParsingHelper,
 	LANGUAGE_STRINGS,
 	PathHelper,
+	PLUGIN_TYPES,
 	StringHelper,
 	TCLogger,
 	TokenRetryHelper,
@@ -25,6 +26,7 @@ type
 	TGetUnitedParamsFunc = reference to function: WideString;
 	TPublishFileFunc = reference to function(Path: WideString; var PublicLink: WideString; Publish: Boolean): Boolean;
 	TCloudResultToBooleanFunc = reference to function(JSON: WideString; ErrorPrefix: WideString): Boolean;
+	TCloudResultToFsResultFunc = reference to function(JSON: WideString; ErrorPrefix: WideString): Integer;
 	TGetShardFunc = reference to function(var Shard: WideString; ShardType: WideString): Boolean;
 
 	{Interface for share service operations}
@@ -47,6 +49,8 @@ type
 		function RejectInvite(InviteToken: WideString): Boolean;
 		{Get streaming URL for a published file}
 		function GetPublishedFileStreamUrl(FileIdentity: TCMRDirItem; var StreamUrl: WideString; ShardType: WideString = SHARD_TYPE_WEBLINK_VIDEO; Publish: Boolean = CLOUD_PUBLISH): Boolean;
+		{Clone a public weblink to user's cloud}
+		function CloneWeblink(Path, Link: WideString; ConflictMode: WideString = CLOUD_CONFLICT_RENAME): Integer;
 	end;
 
 	{Implementation of share service}
@@ -59,6 +63,7 @@ type
 		FGetUnitedParams: TGetUnitedParamsFunc;
 		FPublishFile: TPublishFileFunc;
 		FCloudResultToBoolean: TCloudResultToBooleanFunc;
+		FCloudResultToFsResult: TCloudResultToFsResultFunc;
 		FGetShard: TGetShardFunc;
 	public
 		constructor Create(
@@ -69,6 +74,7 @@ type
 			GetUnitedParams: TGetUnitedParamsFunc;
 			PublishFile: TPublishFileFunc;
 			CloudResultToBoolean: TCloudResultToBooleanFunc;
+			CloudResultToFsResult: TCloudResultToFsResultFunc;
 			GetShard: TGetShardFunc
 		);
 
@@ -82,6 +88,7 @@ type
 		function Unmount(Home: WideString; CloneCopy: Boolean): Boolean;
 		function RejectInvite(InviteToken: WideString): Boolean;
 		function GetPublishedFileStreamUrl(FileIdentity: TCMRDirItem; var StreamUrl: WideString; ShardType: WideString = SHARD_TYPE_WEBLINK_VIDEO; Publish: Boolean = CLOUD_PUBLISH): Boolean;
+		function CloneWeblink(Path, Link: WideString; ConflictMode: WideString = CLOUD_CONFLICT_RENAME): Integer;
 	end;
 
 implementation
@@ -96,6 +103,7 @@ constructor TCloudShareService.Create(
 	GetUnitedParams: TGetUnitedParamsFunc;
 	PublishFile: TPublishFileFunc;
 	CloudResultToBoolean: TCloudResultToBooleanFunc;
+	CloudResultToFsResult: TCloudResultToFsResultFunc;
 	GetShard: TGetShardFunc
 );
 begin
@@ -107,6 +115,7 @@ begin
 	FGetUnitedParams := GetUnitedParams;
 	FPublishFile := PublishFile;
 	FCloudResultToBoolean := CloudResultToBoolean;
+	FCloudResultToFsResult := CloudResultToFsResult;
 	FGetShard := GetShard;
 end;
 
@@ -327,6 +336,38 @@ begin
 	{Build streaming URL with base64-encoded weblink}
 	StreamUrl := Format('%s0p/%s.m3u8?double_encode=1', [ShardUrl, DCPbase64.Base64EncodeStr(String(RawByteString(LocalWeblink)))]);
 	Result := True;
+end;
+
+function TCloudShareService.CloneWeblink(Path, Link, ConflictMode: WideString): Integer;
+var
+	CallResult: TAPICallResult;
+	UnitedParams: WideString;
+begin
+	if FIsPublicAccount() then
+		Exit(FS_FILE_NOTSUPPORTED);
+
+	UnitedParams := FGetUnitedParams();
+
+	CallResult := FRetryOperation.Execute(
+		function: TAPICallResult
+		var
+			JSON: WideString;
+			Progress: Boolean;
+			ResultCode: Integer;
+		begin
+			Progress := true;
+			if FHTTP.GetPage(Format('%s?folder=/%s&weblink=%s&conflict=%s&%s',
+				[API_CLONE, PathToUrl(Path), Link, ConflictMode, UnitedParams]), JSON, Progress) then
+			begin
+				ResultCode := FCloudResultToFsResult(JSON, PREFIX_ERR_FILE_PUBLISH);
+				if (ResultCode <> FS_FILE_OK) and not(Progress) then
+					ResultCode := FS_FILE_USERABORT; {user cancelled}
+			end else
+				ResultCode := FS_FILE_WRITEERROR;
+			Result := TAPICallResult.FromInteger(ResultCode, JSON);
+		end);
+
+	Result := CallResult.ResultCode;
 end;
 
 end.

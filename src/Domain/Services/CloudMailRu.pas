@@ -232,33 +232,10 @@ begin
 	Result := AddFileByIdentity(CloudFileIdentity, RemotePath, ConflictMode, LogErrors, LogSuccess)
 end;
 
+{Delegates to FShareService}
 function TCloudMailRu.CloneWeblink(Path, Link, ConflictMode: WideString): Integer;
-var
-	CallResult: TAPICallResult;
 begin
-	if IsPublicAccount then
-		Exit(FS_FILE_NOTSUPPORTED);
-
-	CallResult := FRetryOperation.Execute(
-		function: TAPICallResult
-		var
-			JSON: WideString;
-			Progress: Boolean;
-			ResultCode: Integer;
-		begin
-			Progress := true;
-			if HTTP.GetPage(Format('%s?folder=/%s&weblink=%s&conflict=%s&%s',
-				[API_CLONE, PathToUrl(Path), Link, ConflictMode, FUnitedParams]), JSON, Progress) then
-			begin
-				ResultCode := CloudResultToFsResult(JSON, PREFIX_ERR_FILE_PUBLISH);
-				if (ResultCode <> FS_FILE_OK) and not(Progress) then
-					ResultCode := FS_FILE_USERABORT; {user cancelled}
-			end else
-				ResultCode := FS_FILE_WRITEERROR;
-			Result := TAPICallResult.FromInteger(ResultCode, JSON);
-		end);
-
-	Result := CallResult.ResultCode;
+	Result := FShareService.CloneWeblink(Path, Link, ConflictMode);
 end;
 
 {Delegates to TCloudErrorMapper - kept for backward compatibility}
@@ -392,6 +369,7 @@ begin
 			function: WideString begin Result := Self.FUnitedParams; end,
 			function(Path: WideString; var PublicLink: WideString; Publish: Boolean): Boolean begin Result := Self.PublishFile(Path, PublicLink, Publish); end,
 			function(JSON: WideString; ErrorPrefix: WideString): Boolean begin Result := Self.CloudResultToBoolean(JSON, ErrorPrefix); end,
+			function(JSON: WideString; ErrorPrefix: WideString): Integer begin Result := Self.CloudResultToFsResult(JSON, ErrorPrefix); end,
 			function(var Shard: WideString; ShardType: WideString): Boolean begin Result := Self.GetShard(Shard, ShardType); end
 		);
 
@@ -775,26 +753,16 @@ begin
 		Result := FShareService.Unshare(Path, Email);
 end;
 
+{Delegates to FListingService}
 function TCloudMailRu.TrashbinRestore(Path: WideString; RestoreRevision: Integer; ConflictMode: WideString): Boolean;
 begin
-	Result := False;
-	if IsPublicAccount then
-		Exit;
-	Result := FRetryOperation.PostFormBoolean(
-		API_TRASHBIN_RESTORE + '?' + FUnitedParams,
-		Format('path=%s&restore_revision=%d&conflict=%s', [PathToUrl(Path), RestoreRevision, ConflictMode]),
-		PREFIX_ERR_FILE_RESTORE);
+	Result := FListingService.TrashbinRestore(Path, RestoreRevision, ConflictMode);
 end;
 
+{Delegates to FListingService}
 function TCloudMailRu.TrashbinEmpty(): Boolean;
 begin
-	Result := False;
-	if IsPublicAccount then
-		Exit;
-	Result := FRetryOperation.PostFormBoolean(
-		API_TRASHBIN_EMPTY + '?' + FUnitedParams,
-		EmptyWideStr,
-		PREFIX_ERR_TRASH_CLEAN);
+	Result := FListingService.TrashbinEmpty();
 end;
 
 function TCloudMailRu.MountFolder(Home, InviteToken, ConflictMode: WideString): Boolean;
@@ -830,40 +798,10 @@ begin
 	Result := FFileOps.Rename(OldName, NewName);
 end;
 
+{Delegates to FListingService}
 function TCloudMailRu.StatusFile(Path: WideString; var FileInfo: TCMRDirItem): Boolean;
-var
-	CallResult: TAPICallResult;
-	LocalInfo: TCMRDirItem;
 begin
-	{Public accounts don't need token refresh}
-	if IsPublicAccount then
-	begin
-		var JSON: WideString;
-		var Progress: Boolean := False;
-		Result := HTTP.GetPage(Format('%s?weblink=%s%s&%s', [API_FILE, IncludeSlash(GetPublicLink), PathToUrl(Path), FUnitedParams]), JSON, Progress);
-		if Result then
-			Result := CloudResultToBoolean(JSON, PREFIX_ERR_FILE_STATUS) and FileInfo.FromJSON(JSON);
-		Exit;
-	end;
-
-	LocalInfo := default(TCMRDirItem);
-	CallResult := FRetryOperation.Execute(
-		function: TAPICallResult
-		var
-			JSON: WideString;
-			Progress: Boolean;
-			Success: Boolean;
-		begin
-			Progress := False;
-			Success := HTTP.GetPage(Format('%s?home=%s&%s', [API_FILE, PathToUrl(Path), FUnitedParams]), JSON, Progress);
-			if Success then
-				Success := CloudResultToBoolean(JSON, PREFIX_ERR_FILE_STATUS) and LocalInfo.FromJSON(JSON);
-			Result := TAPICallResult.FromBoolean(Success, JSON);
-		end);
-
-	Result := CallResult.Success;
-	if Result then
-		FileInfo := LocalInfo;
+	Result := FListingService.StatusFile(Path, FileInfo);
 end;
 
 class function TCloudMailRu.CloudAccessToString(Access: WideString; Invert: Boolean): WideString;

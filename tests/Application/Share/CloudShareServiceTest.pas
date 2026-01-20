@@ -36,6 +36,7 @@ type
 		function GetUnitedParams: WideString;
 		function PublishFile(Path: WideString; var PublicLink: WideString; Publish: Boolean): Boolean;
 		function CloudResultToBoolean(JSON: WideString; ErrorPrefix: WideString): Boolean;
+		function CloudResultToFsResult(JSON: WideString; ErrorPrefix: WideString): Integer;
 		function GetShard(var Shard: WideString; ShardType: WideString): Boolean;
 	public
 		[Setup]
@@ -104,6 +105,14 @@ type
 		procedure TestGetPublishedFileStreamUrl_NoWeblink_PublishesFirst;
 		[Test]
 		procedure TestGetPublishedFileStreamUrl_PublishFails_ReturnsFalse;
+
+		{CloneWeblink tests}
+		[Test]
+		procedure TestCloneWeblink_PublicAccount_ReturnsNotSupported;
+		[Test]
+		procedure TestCloneWeblink_Success_ReturnsOK;
+		[Test]
+		procedure TestCloneWeblink_HTTPFailure_ReturnsWriteError;
 	end;
 
 implementation
@@ -140,6 +149,7 @@ begin
 		GetUnitedParams,
 		PublishFile,
 		CloudResultToBoolean,
+		CloudResultToFsResult,
 		GetShard
 	);
 end;
@@ -177,6 +187,14 @@ end;
 function TCloudShareServiceTest.CloudResultToBoolean(JSON: WideString; ErrorPrefix: WideString): Boolean;
 begin
 	Result := Pos(WideString('"status":200'), JSON) > 0;
+end;
+
+function TCloudShareServiceTest.CloudResultToFsResult(JSON: WideString; ErrorPrefix: WideString): Integer;
+begin
+	if Pos(WideString('"status":200'), JSON) > 0 then
+		Result := FS_FILE_OK
+	else
+		Result := FS_FILE_WRITEERROR;
 end;
 
 function TCloudShareServiceTest.GetShard(var Shard: WideString; ShardType: WideString): Boolean;
@@ -431,6 +449,35 @@ begin
 
 	Assert.IsFalse(Result, 'GetPublishedFileStreamUrl should fail when publish fails');
 	Assert.IsTrue(FPublishCalled, 'Publish should have been called');
+end;
+
+{CloneWeblink tests}
+
+procedure TCloudShareServiceTest.TestCloneWeblink_PublicAccount_ReturnsNotSupported;
+var
+	ResultCode: Integer;
+begin
+	FIsPublicAccount := True;
+	ResultCode := FService.CloneWeblink('/dest/folder', 'weblink123');
+	Assert.AreEqual(FS_FILE_NOTSUPPORTED, ResultCode, 'CloneWeblink should return NOTSUPPORTED for public account');
+end;
+
+procedure TCloudShareServiceTest.TestCloneWeblink_Success_ReturnsOK;
+var
+	ResultCode: Integer;
+begin
+	FMockHTTP.SetDefaultResponse(True, '{"status":200,"body":"ok"}');
+	ResultCode := FService.CloneWeblink('/dest/folder', 'weblink123');
+	Assert.AreEqual(FS_FILE_OK, ResultCode, 'CloneWeblink should return OK on success');
+end;
+
+procedure TCloudShareServiceTest.TestCloneWeblink_HTTPFailure_ReturnsWriteError;
+var
+	ResultCode: Integer;
+begin
+	FMockHTTP.SetDefaultResponse(False, '');
+	ResultCode := FService.CloneWeblink('/dest/folder', 'weblink123');
+	Assert.AreEqual(FS_FILE_WRITEERROR, ResultCode, 'CloneWeblink should return WRITEERROR on HTTP failure');
 end;
 
 initialization
