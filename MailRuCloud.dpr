@@ -164,13 +164,13 @@ end;
 
 {GLORIOUS UNICODE MASTER RACE}
 
-function FsInitW(PluginNr: Integer; pProgressProc: TProgressProcW; pLogProc: TLogProcW; pRequestProc: TRequestProcW): Integer; stdcall; //Вход в плагин.
-begin
+function FsInitW(PluginNr: Integer; pProgressProc: TProgressProcW; pLogProc: TLogProcW; pRequestProc: TRequestProcW): Integer; stdcall;
+begin //Вход в плагин.
 	Result := MailRuCloudWFX.FsInit(PluginNr, pProgressProc, pLogProc, pRequestProc);
 end;
 
-procedure FsStatusInfoW(RemoteDir: PWideChar; InfoStartEnd, InfoOperation: Integer); stdcall; //Начало и конец операций FS
-begin
+procedure FsStatusInfoW(RemoteDir: PWideChar; InfoStartEnd, InfoOperation: Integer); stdcall;
+begin //Начало и конец операций FS
 	MailRuCloudWFX.FsStatusInfo(RemoteDir, InfoStartEnd, InfoOperation);
 end;
 
@@ -194,8 +194,8 @@ begin
 	Exit(MailRuCloudWFX.FsExecuteFile(MainWin, RemoteName, Verb));
 end;
 
-function FsGetFileW(RemoteName, LocalName: PWideChar; CopyFlags: Integer; RemoteInfo: pRemoteInfo): Integer; stdcall; //Копирование файла из файловой системы плагина
-begin
+function FsGetFileW(RemoteName, LocalName: PWideChar; CopyFlags: Integer; RemoteInfo: pRemoteInfo): Integer; stdcall;
+begin  //Копирование файла из файловой системы плагина
 	Exit(MailRuCloudWFX.FsGetFile(RemoteName, LocalName, CopyFlags, RemoteInfo));
 end;
 
@@ -204,8 +204,8 @@ begin
 	Exit(MailRuCloudWFX.FsPutFile(LocalName, RemoteName, CopyFlags));
 end;
 
-function FsDeleteFileW(RemoteName: PWideChar): Bool; stdcall; //Удаление файла из файловой системы плагина
-begin
+function FsDeleteFileW(RemoteName: PWideChar): Bool; stdcall;
+begin //Удаление файла из файловой системы плагина
 	Exit(MailRuCloudWFX.FsDeleteFile(RemoteName));
 end;
 
