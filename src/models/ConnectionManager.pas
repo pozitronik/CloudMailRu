@@ -28,7 +28,6 @@ uses
 	TCPasswordManager,
 	HTTPManager,
 	CipherValidator,
-	CipherInterface,
 	FileCipher,
 	IAuthStrategyInterface,
 	OAuthAppAuthStrategy,

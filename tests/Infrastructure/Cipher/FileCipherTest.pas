@@ -4,7 +4,6 @@ interface
 
 uses
 	FileCipher,
-	CipherInterface,
 	System.SysUtils,
 	System.IOUtils,
 	System.Classes,

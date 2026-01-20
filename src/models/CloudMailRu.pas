@@ -35,7 +35,7 @@ uses
 	TCLogger,
 	TCProgress,
 	TCRequest,
-	CipherInterface,
+	FileCipher,
 	RealPath,
 	CloudSettings,
 	FileSplitInfo,

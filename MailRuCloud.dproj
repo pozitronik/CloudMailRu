@@ -233,7 +233,7 @@
             <Form>DeletedPropertyForm</Form>
         </DCCReference>
         <DCCReference Include="src\models\Description.pas"/>
-        <DCCReference Include="src\models\cipher\FileCipher.pas"/>
+        <DCCReference Include="src\Infrastructure\Cipher\FileCipher.pas"/>
         <DCCReference Include="src\helpers\FileHelper.pas"/>
         <DCCReference Include="src\models\FileSplitInfo.pas"/>
         <DCCReference Include="src\models\http\HTTPManager.pas"/>
@@ -276,7 +276,6 @@
         <DCCReference Include="src\helpers\WindowsHelper.pas"/>
         <DCCReference Include="src\models\wfx\MailRuCloudWFX.pas"/>
         <DCCReference Include="src\models\wfx\WFXInterface.pas"/>
-        <DCCReference Include="src\models\cipher\CipherInterface.pas"/>
         <DCCReference Include="src\models\settings\IAccountsManagerInterface.pas"/>
         <DCCReference Include="src\models\settings\IPluginSettingsManagerInterface.pas"/>
         <DCCReference Include="src\models\ui\IPasswordUIProviderInterface.pas"/>
