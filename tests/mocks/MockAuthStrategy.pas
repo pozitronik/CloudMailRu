@@ -8,7 +8,7 @@ interface
 uses
 	IAuthStrategyInterface,
 	ICloudHTTPInterface,
-	ILoggerInterface,
+	TCLogger,
 	CMROAuth,
 	System.SysUtils;
 

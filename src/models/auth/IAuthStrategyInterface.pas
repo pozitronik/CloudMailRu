@@ -8,7 +8,7 @@ interface
 uses
 	CMROAuth,
 	ICloudHTTPInterface,
-	ILoggerInterface;
+	TCLogger;
 
 type
 	{Result of authentication attempt}

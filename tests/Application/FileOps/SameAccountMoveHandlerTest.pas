@@ -11,7 +11,7 @@ uses
 	RealPath,
 	CloudMailRu,
 	PLUGIN_TYPES,
-	IThreadStateManagerInterface,
+	ThreadStateManager,
 	DescriptionSyncGuard,
 	SameAccountMoveHandler;
 

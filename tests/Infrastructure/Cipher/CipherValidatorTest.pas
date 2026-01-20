@@ -3,7 +3,6 @@ unit CipherValidatorTest;
 interface
 
 uses
-	ICipherValidatorInterface,
 	CipherValidator,
 	DUnitX.TestFramework;
 

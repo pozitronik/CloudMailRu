@@ -1,4 +1,4 @@
-unit ICipherValidatorInterface;
+unit CipherValidator;
 
 {Abstraction for password validation via encrypted GUID comparison,
  enabling testability without actual cryptographic operations.}
@@ -25,7 +25,17 @@ type
 		function CheckPasswordGUID(const Password, ControlGUID: WideString): Boolean;
 	end;
 
+	{Production implementation of ICipherValidator that delegates to TFileCipher.}
+	TCipherValidator = class(TInterfacedObject, ICipherValidator)
+	public
+		function GetCryptedGUID(const Password: WideString): WideString;
+		function CheckPasswordGUID(const Password, ControlGUID: WideString): Boolean;
+	end;
+
 implementation
+
+uses
+	FileCipher;
 
 {TNullCipherValidator}
 
@@ -37,6 +47,18 @@ end;
 function TNullCipherValidator.CheckPasswordGUID(const Password, ControlGUID: WideString): Boolean;
 begin
 	Result := True;
+end;
+
+{TCipherValidator}
+
+function TCipherValidator.GetCryptedGUID(const Password: WideString): WideString;
+begin
+	Result := TFileCipher.GetCryptedGUID(Password);
+end;
+
+function TCipherValidator.CheckPasswordGUID(const Password, ControlGUID: WideString): Boolean;
+begin
+	Result := TFileCipher.CheckPasswordGUID(Password, ControlGUID);
 end;
 
 end.

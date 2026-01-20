@@ -10,7 +10,7 @@ uses
 	IAuthStrategyInterface,
 	CMROAuth,
 	ICloudHTTPInterface,
-	ILoggerInterface;
+	TCLogger;
 
 type
 	TOAuthAppAuthStrategy = class(TInterfacedObject, IAuthStrategy)

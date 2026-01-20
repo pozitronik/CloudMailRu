@@ -7,7 +7,7 @@ interface
 
 uses
 	PLUGIN_TYPES,
-	ILoggerInterface;
+	TCLogger;
 
 type
 	{Result of conflict resolution}

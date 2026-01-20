@@ -9,7 +9,7 @@ uses
 	DUnitX.TestFramework,
 	PLUGIN_TYPES,
 	SETTINGS_CONSTANTS,
-	ILoggerInterface,
+	TCLogger,
 	LocalFileConflictResolver;
 
 type

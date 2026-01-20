@@ -12,8 +12,8 @@ uses
 	TwoStepAuthStrategy,
 	OldOAuthStrategy,
 	IAuthStrategyInterface,
-	IPasswordUIProviderInterface,
-	ILoggerInterface,
+	PasswordUIProvider,
+	TCLogger,
 	DUnitX.TestFramework;
 
 type

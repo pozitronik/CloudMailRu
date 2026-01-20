@@ -13,7 +13,7 @@ uses
 	OperationActionExecutor,
 	ThreadStateManager,
 	IPluginSettingsManagerInterface,
-	ILoggerInterface,
+	TCLogger,
 	PluginSettings,
 	RealPath;
 

@@ -10,7 +10,7 @@ uses
 	DownloadOrchestrator,
 	DownloadPreparationValidator,
 	LocalFileConflictResolver,
-	IRetryHandlerInterface,
+	RetryHandler,
 	IPluginSettingsManagerInterface,
 	RealPath,
 	PLUGIN_TYPES;

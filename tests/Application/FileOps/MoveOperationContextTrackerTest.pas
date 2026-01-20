@@ -8,7 +8,7 @@ interface
 uses
 	Classes,
 	DUnitX.TestFramework,
-	IThreadStateManagerInterface,
+	ThreadStateManager,
 	MoveOperationContextTracker,
 	RealPath;
 

@@ -104,7 +104,7 @@ uses
 	PLUGIN_TYPES,
 	SETTINGS_CONSTANTS,
 	CMRConstants,
-	ILoggerInterface,
+	TCLogger,
 	WindowsHelper,
 	SystemHelper;
 

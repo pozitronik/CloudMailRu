@@ -9,7 +9,7 @@ interface
 uses
 	IAuthStrategyInterface,
 	ICloudHTTPInterface,
-	ILoggerInterface;
+	TCLogger;
 
 type
 	TSharedAccountAuthStrategy = class(TInterfacedObject, IAuthStrategy)

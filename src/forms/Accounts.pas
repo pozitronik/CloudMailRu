@@ -24,7 +24,7 @@ uses
 	Vcl.Samples.Spin,
 	System.IOUtils,
 	AskPassword,
-	IPasswordManagerInterface,
+	TCPasswordManager,
 	Registration,
 	LANGUAGE_STRINGS,
 	WSList,

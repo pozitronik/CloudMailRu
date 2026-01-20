@@ -7,7 +7,7 @@ interface
 
 uses
 	SysUtils,
-	ILoggerInterface,
+	TCLogger,
 	IPluginSettingsManagerInterface,
 	IConnectionManagerInterface,
 	CloudMailRu,

@@ -11,7 +11,7 @@ uses
 	CMRDirItem,
 	CMRDirItemList,
 	CloudMailRu,
-	ILoggerInterface;
+	TCLogger;
 
 type
 	IListingItemFetcher = interface

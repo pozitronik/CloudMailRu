@@ -10,7 +10,7 @@ uses
 	SysUtils,
 	DUnitX.TestFramework,
 	IPluginSettingsManagerInterface,
-	ILoggerInterface,
+	TCLogger,
 	LocalFileDeletionHandler,
 	PluginSettings,
 	PLUGIN_TYPES,

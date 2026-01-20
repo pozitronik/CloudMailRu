@@ -9,8 +9,8 @@ uses
 	DUnitX.TestFramework,
 	SysUtils,
 	CrossAccountFileOperationHandler,
-	IRetryHandlerInterface,
-	ILoggerInterface,
+	RetryHandler,
+	TCLogger,
 	RealPath;
 
 type

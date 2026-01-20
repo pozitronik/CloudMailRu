@@ -9,9 +9,9 @@ interface
 
 uses
 	IAuthStrategyInterface,
-	IPasswordUIProviderInterface,
+	PasswordUIProvider,
 	ICloudHTTPInterface,
-	ILoggerInterface;
+	TCLogger;
 
 type
 	TTwoStepAuthStrategy = class(TInterfacedObject, IAuthStrategy)

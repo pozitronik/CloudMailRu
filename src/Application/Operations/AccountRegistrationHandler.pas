@@ -9,7 +9,7 @@ uses
 	Windows,
 	AccountSettings,
 	ConnectionSettings,
-	IPasswordManagerInterface,
+	TCPasswordManager,
 	IAccountsManagerInterface;
 
 type

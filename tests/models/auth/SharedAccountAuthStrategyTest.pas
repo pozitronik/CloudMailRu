@@ -9,7 +9,7 @@ interface
 uses
 	SharedAccountAuthStrategy,
 	IAuthStrategyInterface,
-	ILoggerInterface,
+	TCLogger,
 	DUnitX.TestFramework;
 
 type

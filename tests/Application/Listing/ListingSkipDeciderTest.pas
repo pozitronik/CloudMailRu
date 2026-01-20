@@ -8,8 +8,8 @@ interface
 uses
 	Classes,
 	DUnitX.TestFramework,
-	IThreadStateManagerInterface,
-	IProgressInterface,
+	ThreadStateManager,
+	TCProgress,
 	ListingSkipDecider;
 
 type

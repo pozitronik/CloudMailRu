@@ -15,7 +15,7 @@ uses
 	Windows,
 	SysUtils,
 	IPluginSettingsManagerInterface,
-	ILoggerInterface,
+	TCLogger,
 	PLUGIN_TYPES,
 	CMRConstants,
 	SETTINGS_CONSTANTS,

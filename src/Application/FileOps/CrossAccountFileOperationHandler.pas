@@ -9,7 +9,7 @@ uses
 	CloudMailRu,
 	RealPath,
 	RetryHandler,
-	ILoggerInterface;
+	TCLogger;
 
 type
 	{Callback for checking if operation was aborted by user}

@@ -9,7 +9,7 @@ interface
 uses
 	IAuthStrategyInterface,
 	ICloudHTTPInterface,
-	ILoggerInterface;
+	TCLogger;
 
 type
 	TOldOAuthStrategy = class(TInterfacedObject, IAuthStrategy)

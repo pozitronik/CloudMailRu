@@ -1,9 +1,9 @@
-unit NullPasswordUIProviderTest;
+unit PasswordUIProviderTest;
 
 interface
 
 uses
-	IPasswordUIProviderInterface,
+	PasswordUIProvider,
 	System.Generics.Collections,
 	System.UITypes,
 	Windows,

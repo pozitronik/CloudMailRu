@@ -11,7 +11,7 @@ uses
 	OperationLifecycleHandler,
 	ThreadStateManager,
 	IPluginSettingsManagerInterface,
-	ILoggerInterface,
+	TCLogger,
 	IConnectionManagerInterface,
 	Description,
 	RealPath,

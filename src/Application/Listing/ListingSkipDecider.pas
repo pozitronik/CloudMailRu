@@ -8,7 +8,7 @@ interface
 
 uses
 	ThreadStateManager,
-	IProgressInterface;
+	TCProgress;
 
 type
 	{Result of skip decision with abort information}

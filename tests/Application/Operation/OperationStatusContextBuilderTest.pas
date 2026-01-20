@@ -55,9 +55,9 @@ uses
 	CloudSettings,
 	IAuthStrategyInterface,
 	IFileSystemInterface,
-	ILoggerInterface,
-	IProgressInterface,
-	IRequestInterface;
+	TCLogger,
+	TCProgress,
+	TCRequest;
 
 type
 	{Test settings manager with configurable values}
