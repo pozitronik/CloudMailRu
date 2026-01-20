@@ -211,9 +211,6 @@ type
 
 implementation
 
-uses
-	TCLogger;
-
 {TMailRuCloudWFX}
 
 constructor TMailRuCloudWFX.Create();
