@@ -16,7 +16,7 @@ uses
 	AccountSettings,
 	CloudMailRu,
 	CloudSettings,
-	IConnectionManagerInterface,
+	ConnectionManager,
 	IconProvider,
 	IconContextBuilder,
 	AccountsManager,

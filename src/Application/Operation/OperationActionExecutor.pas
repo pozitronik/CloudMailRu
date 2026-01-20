@@ -12,7 +12,7 @@ uses
 	ThreadStateManager,
 	PluginSettingsManager,
 	TCLogger,
-	IConnectionManagerInterface,
+	ConnectionManager,
 	Description,
 	RealPath,
 	CMRConstants,

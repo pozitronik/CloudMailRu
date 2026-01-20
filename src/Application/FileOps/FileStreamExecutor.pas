@@ -12,7 +12,7 @@ uses
 	CMRDirItem,
 	CMRConstants,
 	StreamingSettings,
-	IConnectionManagerInterface,
+	ConnectionManager,
 	CloudMailRu;
 
 type

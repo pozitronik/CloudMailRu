@@ -6,7 +6,7 @@ unit MockConnectionManager;
 interface
 
 uses
-	IConnectionManagerInterface,
+	ConnectionManager,
 	CloudMailRu,
 	CMRConstants,
 	System.Generics.Collections;

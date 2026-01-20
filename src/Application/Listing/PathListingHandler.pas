@@ -13,7 +13,7 @@ uses
 	CMRIncomingInviteList,
 	CMRConstants,
 	WindowsHelper,
-	IConnectionManagerInterface,
+	ConnectionManager,
 	ListingProvider,
 	ListingPathValidator;
 

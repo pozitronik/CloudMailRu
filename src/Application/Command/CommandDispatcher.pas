@@ -9,7 +9,7 @@ uses
 	SysUtils,
 	TCLogger,
 	PluginSettingsManager,
-	IConnectionManagerInterface,
+	ConnectionManager,
 	CloudMailRu,
 	RealPath,
 	HashInfo,

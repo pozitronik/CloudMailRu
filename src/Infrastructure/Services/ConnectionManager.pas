@@ -1,7 +1,8 @@
-﻿unit ConnectionManager;
+unit ConnectionManager;
 
-{Обеспечиваем управление множественными поключениями без необходимости постоянных переподключений. При первом обращении нужное подключение создаётся,
- при последующих - отдаются уже созданные.}
+{Connection pool manager for cloud connections by account name.
+ Creates connections on first access, returns existing connections on subsequent calls.
+ Combines interface definition with implementation.}
 
 interface
 
@@ -17,7 +18,6 @@ uses
 	PluginSettingsManager,
 	PasswordUIProvider,
 	WindowsFileSystem,
-	IConnectionManagerInterface,
 	Windows,
 	Vcl.Controls,
 	SETTINGS_CONSTANTS,
@@ -35,6 +35,19 @@ uses
 	SysUtils;
 
 type
+	IConnectionManager = interface
+		['{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}']
+
+		{Returns cloud connection for account, creating if needed.
+		 @param ConnectionName Account name to get connection for
+		 @param OperationResult Output status code (CLOUD_OPERATION_OK on success)
+		 @return TCloudMailRu instance or nil on failure}
+		function Get(ConnectionName: WideString; var OperationResult: Integer): TCloudMailRu;
+
+		{Releases connection for account if it exists.
+		 @param ConnectionName Account name to release connection for}
+		procedure Free(ConnectionName: WideString);
+	end;
 
 	TConnectionManager = class(TInterfacedObject, IConnectionManager)
 	private

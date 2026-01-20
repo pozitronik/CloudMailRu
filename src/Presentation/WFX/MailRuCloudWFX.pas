@@ -25,7 +25,6 @@ uses
 	CMRDirItemList,
 	CMRIncomingInviteList,
 	ConnectionManager,
-	IConnectionManagerInterface,
 	ConnectionSettings,
 	IdSSLOpenSSLHeaders,
 	Description,

@@ -6,7 +6,7 @@ unit OverwritePreparationHandler;
 interface
 
 uses
-	IConnectionManagerInterface,
+	ConnectionManager,
 	RealPath,
 	PLUGIN_TYPES;
 

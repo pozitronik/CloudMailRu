@@ -8,7 +8,7 @@ interface
 uses
 	OperationLifecycleHandler,
 	PluginSettingsManager,
-	IConnectionManagerInterface,
+	ConnectionManager,
 	RealPath;
 
 type

@@ -12,7 +12,7 @@ uses
 	IconProvider,
 	ListingItemFetcher,
 	AccountsManager,
-	IConnectionManagerInterface,
+	ConnectionManager,
 	RealPath,
 	CMRDirItem,
 	CMRDirItemList,
