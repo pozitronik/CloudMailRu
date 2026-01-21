@@ -30,7 +30,6 @@ type
 	TGetBoolFunc = reference to function: Boolean;
 	TGetStringFunc = reference to function: WideString;
 	TRefreshTokenFunc = reference to function: Boolean;
-	TGetShardFunc = reference to function(var Shard: WideString; ShardType: WideString): Boolean;
 	TGetHTTPFunc = reference to function: ICloudHTTP;
 
 	{Interface for cloud file download operations}
@@ -60,7 +59,6 @@ type
 		FIsPublicAccount: TGetBoolFunc;
 		FGetPublicLink: TGetStringFunc;
 		FRefreshToken: TRefreshTokenFunc;
-		FGetShard: TGetShardFunc;
 		FDoCryptFiles: Boolean;
 		FDoCryptFilenames: Boolean;
 
@@ -68,7 +66,7 @@ type
 		function DownloadRegular(RemotePath, LocalPath: WideString; var ResultHash: WideString; LogErrors: Boolean): Integer;
 		function DownloadShared(RemotePath, LocalPath: WideString; var ResultHash: WideString; LogErrors: Boolean): Integer;
 	public
-		constructor Create(GetHTTP: TGetHTTPFunc; ShardManager: ICloudShardManager; HashCalculator: ICloudHashCalculator; Cipher: ICipher; FileSystem: IFileSystem; Logger: ILogger; Progress: IProgress; Request: IRequest; GetOAuthToken: TGetOAuthTokenFunc; IsPublicAccount: TGetBoolFunc; GetPublicLink: TGetStringFunc; RefreshToken: TRefreshTokenFunc; GetShard: TGetShardFunc; DoCryptFiles, DoCryptFilenames: Boolean);
+		constructor Create(GetHTTP: TGetHTTPFunc; ShardManager: ICloudShardManager; HashCalculator: ICloudHashCalculator; Cipher: ICipher; FileSystem: IFileSystem; Logger: ILogger; Progress: IProgress; Request: IRequest; GetOAuthToken: TGetOAuthTokenFunc; IsPublicAccount: TGetBoolFunc; GetPublicLink: TGetStringFunc; RefreshToken: TRefreshTokenFunc; DoCryptFiles, DoCryptFilenames: Boolean);
 
 		{ICloudFileDownloader}
 		function Download(RemotePath, LocalPath: WideString; var ResultHash: WideString; LogErrors: Boolean = True): Integer;
@@ -83,7 +81,7 @@ uses
 
 {TCloudFileDownloader}
 
-constructor TCloudFileDownloader.Create(GetHTTP: TGetHTTPFunc; ShardManager: ICloudShardManager; HashCalculator: ICloudHashCalculator; Cipher: ICipher; FileSystem: IFileSystem; Logger: ILogger; Progress: IProgress; Request: IRequest; GetOAuthToken: TGetOAuthTokenFunc; IsPublicAccount: TGetBoolFunc; GetPublicLink: TGetStringFunc; RefreshToken: TRefreshTokenFunc; GetShard: TGetShardFunc; DoCryptFiles, DoCryptFilenames: Boolean);
+constructor TCloudFileDownloader.Create(GetHTTP: TGetHTTPFunc; ShardManager: ICloudShardManager; HashCalculator: ICloudHashCalculator; Cipher: ICipher; FileSystem: IFileSystem; Logger: ILogger; Progress: IProgress; Request: IRequest; GetOAuthToken: TGetOAuthTokenFunc; IsPublicAccount: TGetBoolFunc; GetPublicLink: TGetStringFunc; RefreshToken: TRefreshTokenFunc; DoCryptFiles, DoCryptFilenames: Boolean);
 begin
 	inherited Create;
 	FGetHTTP := GetHTTP;
@@ -98,7 +96,6 @@ begin
 	FIsPublicAccount := IsPublicAccount;
 	FGetPublicLink := GetPublicLink;
 	FRefreshToken := RefreshToken;
-	FGetShard := GetShard;
 	FDoCryptFiles := DoCryptFiles;
 	FDoCryptFilenames := DoCryptFilenames;
 end;
@@ -183,7 +180,7 @@ begin
 				begin
 					FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, '%s%s', [PREFIX_REDIRECTION_LIMIT, URL]);
 					DownloadShard := EmptyWideStr;
-					if (FRequest.Request(RT_MsgYesNo, REDIRECTION_LIMIT, TRY_ANOTHER_SHARD, EmptyWideStr, 0)) and (FGetShard(DownloadShard, SHARD_TYPE_GET)) then
+					if (FRequest.Request(RT_MsgYesNo, REDIRECTION_LIMIT, TRY_ANOTHER_SHARD, EmptyWideStr, 0)) and (FShardManager.ResolveShard(DownloadShard, SHARD_TYPE_GET)) then
 					begin
 						FShardManager.SetDownloadShard(DownloadShard);
 						Exit(DownloadRegular(RemotePath, LocalPath, ResultHash, LogErrors));
@@ -226,7 +223,7 @@ begin
 	if ShardType = SHARD_TYPE_DEFAULT then
 		usedShard := FShardManager.GetPublicShard
 	else
-		FGetShard(usedShard, ShardType);
+		FShardManager.ResolveShard(usedShard, ShardType);
 	if (FIsPublicAccount()) then
 		Exit(Format('%s%s%s', [IncludeSlash(usedShard), IncludeSlash(FGetPublicLink()), PathToUrl(RemotePath, True, True)]));
 

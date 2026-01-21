@@ -82,7 +82,6 @@ type
 
 		{HTTP REQUESTS WRAPPERS}
 		function InitSharedConnectionParameters(): Boolean;
-		function GetShard(var Shard: WideString; ShardType: WideString = SHARD_TYPE_GET): Boolean;
 
 		{OTHER ROUTINES}
 		function GetHTTPConnection: ICloudHTTP;
@@ -294,8 +293,21 @@ begin
 		{Initialize hash calculator service}
 		FHashCalculator := TCloudHashCalculator.Create(Progress, FileSystem);
 
-		{Initialize shard manager with overrides from settings}
-		FShardManager := TCloudShardManager.Create(Logger, FSettings.AccountSettings.ShardOverride, FSettings.AccountSettings.UploadUrlOverride);
+		{Initialize shard manager with HTTP callbacks for resolution}
+		FShardManager := TCloudShardManager.Create(Logger,
+			function(const URL, Data: WideString; var Answer: WideString): Boolean
+			begin
+				Result := Self.HTTP.PostForm(URL, Data, Answer);
+			end,
+			function(const JSON, ErrorPrefix: WideString): Boolean
+			begin
+				Result := Self.CloudResultToBoolean(JSON, ErrorPrefix);
+			end,
+			function: WideString
+			begin
+				Result := Self.FUnitedParams;
+			end,
+			FSettings.AccountSettings.ShardOverride, FSettings.AccountSettings.UploadUrlOverride);
 
 		{Initialize retry operation handler with HTTP callbacks}
 		FRetryOperation := TRetryOperation.Create(
@@ -346,10 +358,6 @@ begin
 			function: Boolean
 			begin
 				Result := Self.RefreshCSRFToken;
-			end,
-			function(var Shard: WideString; ShardType: WideString): Boolean
-			begin
-				Result := Self.GetShard(Shard, ShardType);
 			end, FDoCryptFiles, FDoCryptFilenames);
 
 		{Initialize file uploader service with callbacks and settings}
@@ -405,10 +413,6 @@ begin
 			begin
 				Result := Self.FUnitedParams;
 			end,
-			function(Path: WideString; var PublicLink: WideString; Publish: Boolean): Boolean
-			begin
-				Result := Self.PublishFile(Path, PublicLink, Publish);
-			end,
 			function(JSON: WideString; ErrorPrefix: WideString): Boolean
 			begin
 				Result := Self.CloudResultToBoolean(JSON, ErrorPrefix);
@@ -416,11 +420,7 @@ begin
 			function(JSON: WideString; ErrorPrefix: WideString): Integer
 			begin
 				Result := Self.CloudResultToFsResult(JSON, ErrorPrefix);
-			end,
-			function(var Shard: WideString; ShardType: WideString): Boolean
-			begin
-				Result := Self.GetShard(Shard, ShardType);
-			end);
+			end, FShardManager);
 
 		{Initialize listing service with callbacks for dynamic state}
 		FListingService := TCloudListingService.Create(Self.HTTP, FCipher, FLogger, FRetryOperation,
@@ -614,18 +614,6 @@ begin
 	Result := FShareService.GetPublishedFileStreamUrl(FileIdentity, StreamUrl, ShardType, Publish);
 end;
 
-function TCloudMailRu.GetShard(var Shard: WideString; ShardType: WideString = SHARD_TYPE_GET): Boolean;
-var
-	JSON: WideString;
-begin
-	Result := HTTP.PostForm(API_DISPATCHER + '?' + FUnitedParams, '', JSON) and CloudResultToBoolean(JSON, PREFIX_ERR_SHARD_RECEIVE);
-	if Result then
-	begin
-		Result := JSONHelper.GetShard(JSON, Shard, ShardType) and (Shard <> EmptyWideStr);
-		FLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, PREFIX_SHARD_RECEIVED, [Shard, ShardType]);
-	end;
-end;
-
 function TCloudMailRu.RefreshCSRFToken: Boolean;
 var
 	JSON: WideString;
@@ -758,43 +746,13 @@ begin
 	Result := FFileOps.Move(OldName, NewName);
 end;
 
+{Delegates to FShareService}
 function TCloudMailRu.PublishFile(Path: WideString; var PublicLink: WideString; Publish: Boolean): Boolean;
-var
-	CallResult: TAPICallResult;
-	ExtractedLink: WideString;
-	CurrentLink: WideString;
 begin
-	Result := False;
-	if IsPublicAccount then
-		Exit;
-
-	ExtractedLink := '';
-	CurrentLink := PublicLink; {Capture var parameter value for anonymous method}
-	CallResult := FRetryOperation.Execute(
-		function: TAPICallResult
-		var
-			JSON: WideString;
-			Success: Boolean;
-		begin
-			if Publish then
-				Success := HTTP.PostForm(API_FILE_PUBLISH + '?' + FUnitedParams, Format('home=/%s&conflict', [PathToUrl(Path)]), JSON, 'application/x-www-form-urlencoded', true, False)
-			else
-				Success := HTTP.PostForm(API_FILE_UNPUBLISH + '?' + FUnitedParams, Format('weblink=%s&conflict', [CurrentLink]), JSON, 'application/x-www-form-urlencoded', true, False);
-
-			if Success then
-				Success := CloudResultToBoolean(JSON, PREFIX_ERR_FILE_PUBLISH);
-
-			if Success and Publish then
-			begin
-				Success := JSONHelper.GetPublicLink(JSON, ExtractedLink);
-			end;
-
-			Result := TAPICallResult.FromBoolean(Success, JSON);
-		end);
-
-	Result := CallResult.Success;
-	if Result and Publish then
-		PublicLink := ExtractedLink;
+	if Publish then
+		Result := FShareService.Publish(Path, PublicLink)
+	else
+		Result := FShareService.Unpublish(Path, PublicLink);
 end;
 
 function TCloudMailRu.GetShareInfo(Path: WideString; var InviteListing: TCMRInviteList): Boolean;

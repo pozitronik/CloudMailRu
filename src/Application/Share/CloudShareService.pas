@@ -9,6 +9,7 @@ uses
 	CMRInviteList,
 	CMRConstants,
 	CloudHTTP,
+	CloudShardManager,
 	JSONHelper,
 	ParsingHelper,
 	LANGUAGE_STRINGS,
@@ -24,10 +25,8 @@ type
 	{Callback types for dynamic state access}
 	TIsPublicAccountFunc = reference to function: Boolean;
 	TGetUnitedParamsFunc = reference to function: WideString;
-	TPublishFileFunc = reference to function(Path: WideString; var PublicLink: WideString; Publish: Boolean): Boolean;
 	TCloudResultToBooleanFunc = reference to function(JSON: WideString; ErrorPrefix: WideString): Boolean;
 	TCloudResultToFsResultFunc = reference to function(JSON: WideString; ErrorPrefix: WideString): Integer;
-	TGetShardFunc = reference to function(var Shard: WideString; ShardType: WideString): Boolean;
 
 	{Interface for share service operations}
 	ICloudShareService = interface
@@ -61,12 +60,11 @@ type
 		FRetryOperation: TRetryOperation;
 		FIsPublicAccount: TIsPublicAccountFunc;
 		FGetUnitedParams: TGetUnitedParamsFunc;
-		FPublishFile: TPublishFileFunc;
 		FCloudResultToBoolean: TCloudResultToBooleanFunc;
 		FCloudResultToFsResult: TCloudResultToFsResultFunc;
-		FGetShard: TGetShardFunc;
+		FShardManager: ICloudShardManager;
 	public
-		constructor Create(HTTP: ICloudHTTP; Logger: ILogger; RetryOperation: TRetryOperation; IsPublicAccount: TIsPublicAccountFunc; GetUnitedParams: TGetUnitedParamsFunc; PublishFile: TPublishFileFunc; CloudResultToBoolean: TCloudResultToBooleanFunc; CloudResultToFsResult: TCloudResultToFsResultFunc; GetShard: TGetShardFunc);
+		constructor Create(HTTP: ICloudHTTP; Logger: ILogger; RetryOperation: TRetryOperation; IsPublicAccount: TIsPublicAccountFunc; GetUnitedParams: TGetUnitedParamsFunc; CloudResultToBoolean: TCloudResultToBooleanFunc; CloudResultToFsResult: TCloudResultToFsResultFunc; ShardManager: ICloudShardManager);
 
 		{ICloudShareService implementation}
 		function Publish(Path: WideString; var PublicLink: WideString): Boolean;
@@ -85,7 +83,7 @@ implementation
 
 {TCloudShareService}
 
-constructor TCloudShareService.Create(HTTP: ICloudHTTP; Logger: ILogger; RetryOperation: TRetryOperation; IsPublicAccount: TIsPublicAccountFunc; GetUnitedParams: TGetUnitedParamsFunc; PublishFile: TPublishFileFunc; CloudResultToBoolean: TCloudResultToBooleanFunc; CloudResultToFsResult: TCloudResultToFsResultFunc; GetShard: TGetShardFunc);
+constructor TCloudShareService.Create(HTTP: ICloudHTTP; Logger: ILogger; RetryOperation: TRetryOperation; IsPublicAccount: TIsPublicAccountFunc; GetUnitedParams: TGetUnitedParamsFunc; CloudResultToBoolean: TCloudResultToBooleanFunc; CloudResultToFsResult: TCloudResultToFsResultFunc; ShardManager: ICloudShardManager);
 begin
 	inherited Create;
 	FHTTP := HTTP;
@@ -93,10 +91,9 @@ begin
 	FRetryOperation := RetryOperation;
 	FIsPublicAccount := IsPublicAccount;
 	FGetUnitedParams := GetUnitedParams;
-	FPublishFile := PublishFile;
 	FCloudResultToBoolean := CloudResultToBoolean;
 	FCloudResultToFsResult := CloudResultToFsResult;
-	FGetShard := GetShard;
+	FShardManager := ShardManager;
 end;
 
 function TCloudShareService.Publish(Path: WideString; var PublicLink: WideString): Boolean;
@@ -292,12 +289,12 @@ begin
 	{Publish file first if no weblink exists and publishing is requested}
 	if (EmptyWideStr = LocalWeblink) then
 	begin
-		if (not Publish) or (not FPublishFile(FileIdentity.Home, LocalWeblink, true)) then
+		if (not Publish) or (not Self.Publish(FileIdentity.Home, LocalWeblink)) then
 			Exit;
 	end;
 
 	{Get the shard URL for video streaming}
-	if not FGetShard(ShardUrl, ShardType) then
+	if not FShardManager.ResolveShard(ShardUrl, ShardType) then
 		Exit;
 
 	{Build streaming URL with base64-encoded weblink}

@@ -7,11 +7,18 @@ uses
 	TCLogger;
 
 type
+	{Callback types for shard resolution}
+	TShardPostFormFunc = reference to function(const URL, Data: WideString; var Answer: WideString): Boolean;
+	TShardResultToBooleanFunc = reference to function(const JSON, ErrorPrefix: WideString): Boolean;
+	TShardGetParamsFunc = reference to function: WideString;
+
 	{Interface for managing cloud shard URLs.
 		Shards are server endpoints for specific operations (download, upload, etc.).
-		This interface abstracts shard caching and override handling.}
+		This interface abstracts shard caching, resolution, and override handling.}
 	ICloudShardManager = interface
 		['{D8F2AA4A-4560-471A-A1E7-3E374BB9A4E0}']
+		{Resolve and cache a shard URL, returns true on success}
+		function ResolveShard(var Shard: WideString; ShardType: WideString): Boolean;
 		{Get the download shard URL, returns empty string if not yet resolved}
 		function GetDownloadShard: WideString;
 		{Set the download shard URL after resolution}
@@ -38,8 +45,7 @@ type
 		procedure InvalidateAll;
 	end;
 
-	{Shard manager implementation that caches shard URLs and handles overrides.
-		Shard resolution (HTTP calls) remains external - this class only manages state.}
+	{Shard manager implementation that caches shard URLs and handles resolution.}
 	TCloudShardManager = class(TInterfacedObject, ICloudShardManager)
 	private
 		FDownloadShard: WideString;
@@ -48,9 +54,13 @@ type
 		FDownloadOverride: WideString;
 		FUploadOverride: WideString;
 		FLogger: ILogger;
+		FPostForm: TShardPostFormFunc;
+		FResultToBoolean: TShardResultToBooleanFunc;
+		FGetParams: TShardGetParamsFunc;
 	public
-		constructor Create(Logger: ILogger; DownloadOverride: WideString = ''; UploadOverride: WideString = '');
+		constructor Create(Logger: ILogger; PostForm: TShardPostFormFunc; ResultToBoolean: TShardResultToBooleanFunc; GetParams: TShardGetParamsFunc; DownloadOverride: WideString = ''; UploadOverride: WideString = '');
 
+		function ResolveShard(var Shard: WideString; ShardType: WideString): Boolean;
 		function GetDownloadShard: WideString;
 		procedure SetDownloadShard(const Shard: WideString);
 		function GetUploadShard: WideString;
@@ -68,6 +78,7 @@ type
 	{Null implementation for testing}
 	TNullShardManager = class(TInterfacedObject, ICloudShardManager)
 	public
+		function ResolveShard(var Shard: WideString; ShardType: WideString): Boolean;
 		function GetDownloadShard: WideString;
 		procedure SetDownloadShard(const Shard: WideString);
 		function GetUploadShard: WideString;
@@ -87,19 +98,35 @@ implementation
 uses
 	System.SysUtils,
 	PLUGIN_TYPES,
-	LANGUAGE_STRINGS;
+	LANGUAGE_STRINGS,
+	JSONHelper;
 
 {TCloudShardManager}
 
-constructor TCloudShardManager.Create(Logger: ILogger; DownloadOverride: WideString; UploadOverride: WideString);
+constructor TCloudShardManager.Create(Logger: ILogger; PostForm: TShardPostFormFunc; ResultToBoolean: TShardResultToBooleanFunc; GetParams: TShardGetParamsFunc; DownloadOverride: WideString; UploadOverride: WideString);
 begin
 	inherited Create;
 	FLogger := Logger;
+	FPostForm := PostForm;
+	FResultToBoolean := ResultToBoolean;
+	FGetParams := GetParams;
 	FDownloadOverride := DownloadOverride;
 	FUploadOverride := UploadOverride;
 	FDownloadShard := EmptyWideStr;
 	FUploadShard := EmptyWideStr;
 	FPublicShard := EmptyWideStr;
+end;
+
+function TCloudShardManager.ResolveShard(var Shard: WideString; ShardType: WideString): Boolean;
+var
+	JSON: WideString;
+begin
+	Result := FPostForm(API_DISPATCHER + '?' + FGetParams(), '', JSON) and FResultToBoolean(JSON, PREFIX_ERR_SHARD_RECEIVE);
+	if Result then
+	begin
+		Result := JSONHelper.GetShard(JSON, Shard, ShardType) and (Shard <> EmptyWideStr);
+		FLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, PREFIX_SHARD_RECEIVED, [Shard, ShardType]);
+	end;
 end;
 
 function TCloudShardManager.GetDownloadShard: WideString;
@@ -174,6 +201,12 @@ begin
 end;
 
 {TNullShardManager}
+
+function TNullShardManager.ResolveShard(var Shard: WideString; ShardType: WideString): Boolean;
+begin
+	Shard := EmptyWideStr;
+	Result := False;
+end;
 
 function TNullShardManager.GetDownloadShard: WideString;
 begin

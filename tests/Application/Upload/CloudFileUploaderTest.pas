@@ -75,7 +75,10 @@ begin
 	{Set up successful upload response - returns 40-char hash}
 	FMockHTTP.SetPutFileResponse('', 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', FS_FILE_OK);
 
-	FShardManager := TCloudShardManager.Create(TNullLogger.Create, '', '');
+	FShardManager := TCloudShardManager.Create(TNullLogger.Create,
+		function(const URL, Data: WideString; var Answer: WideString): Boolean begin Result := True; end,
+		function(const JSON, ErrorPrefix: WideString): Boolean begin Result := True; end,
+		function: WideString begin Result := ''; end, '', '');
 	FShardManager.SetUploadShard('https://upload.shard/');
 
 	FHashCalculator := TCloudHashCalculator.Create(TNullProgress.Create, TWindowsFileSystem.Create);

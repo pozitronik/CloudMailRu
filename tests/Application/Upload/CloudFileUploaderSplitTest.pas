@@ -195,7 +195,10 @@ begin
 	FTempDir := TPath.Combine(TPath.GetTempPath, 'CloudFileUploaderTest_' + TGUID.NewGuid.ToString);
 	TDirectory.CreateDirectory(FTempDir);
 
-	FShardManager := TCloudShardManager.Create(TNullLogger.Create, '', '');
+	FShardManager := TCloudShardManager.Create(TNullLogger.Create,
+		function(const URL, Data: WideString; var Answer: WideString): Boolean begin Result := True; end,
+		function(const JSON, ErrorPrefix: WideString): Boolean begin Result := True; end,
+		function: WideString begin Result := ''; end, '', '');
 	FShardManager.SetUploadShard('https://upload.shard/');
 	FHashCalculator := TCloudHashCalculator.Create(TNullProgress.Create, TWindowsFileSystem.Create);
 

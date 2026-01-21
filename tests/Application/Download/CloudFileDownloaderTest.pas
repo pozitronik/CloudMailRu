@@ -33,13 +33,14 @@ type
 		FIsPublicAccount: Boolean;
 		FPublicLink: WideString;
 		FOAuthToken: TCMROAuth;
+		FResolveShardResult: Boolean;
+		FResolvedShardUrl: WideString;
 
 		function GetHTTP: ICloudHTTP;
 		function GetOAuthToken: TCMROAuth;
 		function IsPublicAccount: Boolean;
 		function GetPublicLink: WideString;
 		function RefreshToken: Boolean;
-		function GetShard(var Shard: WideString; ShardType: WideString): Boolean;
 	public
 		[Setup]
 		procedure Setup;
@@ -67,7 +68,24 @@ begin
 	FMockHTTP.SetDefaultResponse(True, 'https://shard.url/path 127.0.0.1 1');
 	FMockHTTP.SetResponse('', True, 'https://redirect.url/file');
 
-	FShardManager := TCloudShardManager.Create(TNullLogger.Create, '', '');
+	FResolveShardResult := True;
+	FResolvedShardUrl := 'https://requested.shard/';
+
+	FShardManager := TCloudShardManager.Create(TNullLogger.Create,
+		function(const URL, Data: WideString; var Answer: WideString): Boolean
+		begin
+			{Return valid JSON with shard URL for all shard types}
+			Answer := '{"status":200,"body":{"get":[{"url":"' + Self.FResolvedShardUrl + '"}],"upload":[{"url":"' + Self.FResolvedShardUrl + '"}],"video":[{"url":"' + Self.FResolvedShardUrl + '"}]}}';
+			Result := Self.FResolveShardResult;
+		end,
+		function(const JSON, ErrorPrefix: WideString): Boolean
+		begin
+			Result := Pos(WideString('"status":200'), JSON) > 0;
+		end,
+		function: WideString
+		begin
+			Result := 'token=test';
+		end, '', '');
 	FShardManager.SetPublicShard('https://public.shard/');
 	FShardManager.SetDownloadShard('https://download.shard/');
 
@@ -91,7 +109,6 @@ begin
 		IsPublicAccount,
 		GetPublicLink,
 		RefreshToken,
-		GetShard,
 		False, {DoCryptFiles}
 		False  {DoCryptFilenames}
 	);
@@ -130,12 +147,6 @@ begin
 	Result := True;
 end;
 
-function TCloudFileDownloaderTest.GetShard(var Shard: WideString; ShardType: WideString): Boolean;
-begin
-	Shard := 'https://requested.shard/';
-	Result := True;
-end;
-
 { Construction tests }
 
 procedure TCloudFileDownloaderTest.TestCreate_InitializesCorrectly;
@@ -160,10 +171,10 @@ var
 	URL: WideString;
 begin
 	FIsPublicAccount := True;
-	{When using non-default shard type, should call GetShard callback}
+	{When using non-default shard type, should call FShardManager.ResolveShard}
 	URL := FDownloader.GetSharedFileUrl('/test/file.txt', SHARD_TYPE_VIDEO);
-	{The GetShard callback returns 'https://requested.shard/'}
-	Assert.Contains(URL, 'requested.shard', 'URL should use shard from GetShard callback');
+	{FShardManager.ResolveShard returns 'https://requested.shard/'}
+	Assert.Contains(URL, 'requested.shard', 'URL should use shard from ShardManager.ResolveShard');
 end;
 
 initialization

@@ -4,6 +4,7 @@ interface
 
 uses
 	CloudShareService,
+	CloudShardManager,
 	CMRDirItem,
 	CMRInviteList,
 	CMRConstants,
@@ -22,22 +23,18 @@ type
 	TCloudShareServiceTest = class
 	private
 		FService: ICloudShareService;
+		FShardManager: ICloudShardManager;
 		FMockHTTP: TMockCloudHTTP;
 		FIsPublicAccount: Boolean;
 		FUnitedParams: WideString;
-		FPublishCalled: Boolean;
-		FPublishResult: Boolean;
-		FPublishedLink: WideString;
 		FRetryOperation: TRetryOperation;
 		FVideoShard: WideString;
 
 		function GetHTTP: ICloudHTTP;
 		function IsPublicAccount: Boolean;
 		function GetUnitedParams: WideString;
-		function PublishFile(Path: WideString; var PublicLink: WideString; Publish: Boolean): Boolean;
 		function CloudResultToBoolean(JSON: WideString; ErrorPrefix: WideString): Boolean;
 		function CloudResultToFsResult(JSON: WideString; ErrorPrefix: WideString): Integer;
-		function GetShard(var Shard: WideString; ShardType: WideString): Boolean;
 	public
 		[Setup]
 		procedure Setup;
@@ -126,10 +123,24 @@ begin
 
 	FIsPublicAccount := False;
 	FUnitedParams := 'token=test&x-email=test@mail.ru';
-	FPublishCalled := False;
-	FPublishResult := True;
-	FPublishedLink := 'published_weblink_123';
 	FVideoShard := 'https://video.shard/';
+
+	{Create shard manager with mock that returns FVideoShard for video shard type}
+	FShardManager := TCloudShardManager.Create(TNullLogger.Create,
+		function(const URL, Data: WideString; var Answer: WideString): Boolean
+		begin
+			{Return JSON with video shard URL}
+			Answer := '{"status":200,"body":{"weblink_video":[{"url":"' + Self.FVideoShard + '"}]}}';
+			Result := Self.FVideoShard <> '';
+		end,
+		function(const JSON, ErrorPrefix: WideString): Boolean
+		begin
+			Result := Pos(WideString('"status":200'), JSON) > 0;
+		end,
+		function: WideString
+		begin
+			Result := Self.FUnitedParams;
+		end);
 
 	{Create retry operation for tests}
 	FRetryOperation := TRetryOperation.Create(
@@ -147,16 +158,16 @@ begin
 		FRetryOperation,
 		IsPublicAccount,
 		GetUnitedParams,
-		PublishFile,
 		CloudResultToBoolean,
 		CloudResultToFsResult,
-		GetShard
+		FShardManager
 	);
 end;
 
 procedure TCloudShareServiceTest.TearDown;
 begin
 	FService := nil;
+	FShardManager := nil;
 	if Assigned(FRetryOperation) then
 		FRetryOperation.Free;
 end;
@@ -176,14 +187,6 @@ begin
 	Result := FUnitedParams;
 end;
 
-function TCloudShareServiceTest.PublishFile(Path: WideString; var PublicLink: WideString; Publish: Boolean): Boolean;
-begin
-	FPublishCalled := True;
-	Result := FPublishResult;
-	if Result then
-		PublicLink := FPublishedLink;
-end;
-
 function TCloudShareServiceTest.CloudResultToBoolean(JSON: WideString; ErrorPrefix: WideString): Boolean;
 begin
 	Result := Pos(WideString('"status":200'), JSON) > 0;
@@ -195,20 +198,6 @@ begin
 		Result := FS_FILE_OK
 	else
 		Result := FS_FILE_WRITEERROR;
-end;
-
-function TCloudShareServiceTest.GetShard(var Shard: WideString; ShardType: WideString): Boolean;
-begin
-	if ShardType = SHARD_TYPE_WEBLINK_VIDEO then
-	begin
-		Shard := FVideoShard;
-		Result := FVideoShard <> '';
-	end
-	else
-	begin
-		Shard := 'https://default.shard/';
-		Result := True;
-	end;
 end;
 
 {Construction tests}
@@ -401,17 +390,20 @@ var
 	FileItem: TCMRDirItem;
 	StreamUrl: WideString;
 	Result: Boolean;
+	CallCountBefore: Integer;
 begin
 	FileItem := Default(TCMRDirItem);
 	FileItem.weblink := 'existing_weblink_456';
 	FileItem.Home := '/test/video.mp4';
 
+	CallCountBefore := FMockHTTP.GetCallCount;
 	Result := FService.GetPublishedFileStreamUrl(FileItem, StreamUrl);
 
 	Assert.IsTrue(Result, 'GetPublishedFileStreamUrl should succeed with existing weblink');
 	Assert.IsTrue(Pos(WideString('video.shard'), StreamUrl) > 0, 'StreamUrl should contain video shard');
 	Assert.IsTrue(Pos(WideString('.m3u8'), StreamUrl) > 0, 'StreamUrl should be m3u8 format');
-	Assert.IsFalse(FPublishCalled, 'Publish should not be called when weblink exists');
+	{No HTTP calls should be made for publish when weblink exists}
+	Assert.AreEqual(CallCountBefore, FMockHTTP.GetCallCount, 'No HTTP calls expected when weblink exists');
 end;
 
 procedure TCloudShareServiceTest.TestGetPublishedFileStreamUrl_NoWeblink_PublishesFirst;
@@ -424,13 +416,14 @@ begin
 	FileItem.weblink := ''; {No existing weblink}
 	FileItem.Home := '/test/video.mp4';
 
-	FPublishResult := True;
-	FPublishedLink := 'new_published_link';
+	{Set up mock to return a weblink when publish is called}
+	FMockHTTP.SetDefaultResponse(True, '{"status":200,"body":"new_published_link"}');
 
 	Result := FService.GetPublishedFileStreamUrl(FileItem, StreamUrl);
 
 	Assert.IsTrue(Result, 'GetPublishedFileStreamUrl should succeed after publishing');
-	Assert.IsTrue(FPublishCalled, 'Publish should be called when no weblink exists');
+	{Verify HTTP call was made for publish}
+	Assert.IsTrue(FMockHTTP.WasURLCalled('publish'), 'Publish endpoint should have been called');
 end;
 
 procedure TCloudShareServiceTest.TestGetPublishedFileStreamUrl_PublishFails_ReturnsFalse;
@@ -443,12 +436,12 @@ begin
 	FileItem.weblink := ''; {No existing weblink}
 	FileItem.Home := '/test/video.mp4';
 
-	FPublishResult := False; {Publish will fail}
+	{Set up mock to fail publish}
+	FMockHTTP.SetDefaultResponse(False, '');
 
 	Result := FService.GetPublishedFileStreamUrl(FileItem, StreamUrl);
 
 	Assert.IsFalse(Result, 'GetPublishedFileStreamUrl should fail when publish fails');
-	Assert.IsTrue(FPublishCalled, 'Publish should have been called');
 end;
 
 {CloneWeblink tests}

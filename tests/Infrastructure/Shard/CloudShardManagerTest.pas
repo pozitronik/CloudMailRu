@@ -17,6 +17,14 @@ type
 	TCloudShardManagerTest = class
 	private
 		FManager: ICloudShardManager;
+		FPostFormCalled: Boolean;
+		FPostFormResult: Boolean;
+		FPostFormResponse: WideString;
+		FParamsResult: WideString;
+
+		function NullPostForm(const URL, Data: WideString; var Answer: WideString): Boolean;
+		function NullResultToBoolean(const JSON, ErrorPrefix: WideString): Boolean;
+		function NullGetParams: WideString;
 	public
 		[Setup]
 		procedure Setup;
@@ -72,6 +80,14 @@ type
 		procedure TestGetDownloadShardOverride_ReturnsConfiguredValue;
 		[Test]
 		procedure TestGetUploadShardOverride_ReturnsConfiguredValue;
+
+		{ ResolveShard tests }
+		[Test]
+		procedure TestResolveShard_Success_ReturnsTrueAndShard;
+		[Test]
+		procedure TestResolveShard_PostFormFails_ReturnsFalse;
+		[Test]
+		procedure TestResolveShard_InvalidJSON_ReturnsFalse;
 	end;
 
 	{Tests for TCloudShardManager with overrides configured}
@@ -110,6 +126,8 @@ type
 		procedure TearDown;
 
 		[Test]
+		procedure TestResolveShard_AlwaysReturnsFalse;
+		[Test]
 		procedure TestGetDownloadShard_AlwaysEmpty;
 		[Test]
 		procedure TestGetUploadShard_AlwaysEmpty;
@@ -127,9 +145,43 @@ implementation
 
 { TCloudShardManagerTest }
 
+function TCloudShardManagerTest.NullPostForm(const URL, Data: WideString; var Answer: WideString): Boolean;
+begin
+	FPostFormCalled := True;
+	Answer := FPostFormResponse;
+	Result := FPostFormResult;
+end;
+
+function TCloudShardManagerTest.NullResultToBoolean(const JSON, ErrorPrefix: WideString): Boolean;
+begin
+	Result := Pos(WideString('"status":200'), JSON) > 0;
+end;
+
+function TCloudShardManagerTest.NullGetParams: WideString;
+begin
+	Result := FParamsResult;
+end;
+
 procedure TCloudShardManagerTest.Setup;
 begin
-	FManager := TCloudShardManager.Create(TNullLogger.Create);
+	FPostFormCalled := False;
+	FPostFormResult := True;
+	FPostFormResponse := '';
+	FParamsResult := 'token=test';
+
+	FManager := TCloudShardManager.Create(TNullLogger.Create,
+		function(const URL, Data: WideString; var Answer: WideString): Boolean
+		begin
+			Result := Self.NullPostForm(URL, Data, Answer);
+		end,
+		function(const JSON, ErrorPrefix: WideString): Boolean
+		begin
+			Result := Self.NullResultToBoolean(JSON, ErrorPrefix);
+		end,
+		function: WideString
+		begin
+			Result := Self.NullGetParams;
+		end);
 end;
 
 procedure TCloudShardManagerTest.TearDown;
@@ -261,7 +313,11 @@ procedure TCloudShardManagerTest.TestHasDownloadOverride_TrueWhenSet;
 var
 	ManagerWithOverride: ICloudShardManager;
 begin
-	ManagerWithOverride := TCloudShardManager.Create(TNullLogger.Create, 'https://override.url/');
+	ManagerWithOverride := TCloudShardManager.Create(TNullLogger.Create,
+		function(const URL, Data: WideString; var Answer: WideString): Boolean begin Result := True; end,
+		function(const JSON, ErrorPrefix: WideString): Boolean begin Result := True; end,
+		function: WideString begin Result := ''; end,
+		'https://override.url/');
 	Assert.IsTrue(ManagerWithOverride.HasDownloadOverride);
 end;
 
@@ -274,7 +330,11 @@ procedure TCloudShardManagerTest.TestHasUploadOverride_TrueWhenSet;
 var
 	ManagerWithOverride: ICloudShardManager;
 begin
-	ManagerWithOverride := TCloudShardManager.Create(TNullLogger.Create, '', 'https://override.url/');
+	ManagerWithOverride := TCloudShardManager.Create(TNullLogger.Create,
+		function(const URL, Data: WideString; var Answer: WideString): Boolean begin Result := True; end,
+		function(const JSON, ErrorPrefix: WideString): Boolean begin Result := True; end,
+		function: WideString begin Result := ''; end,
+		'', 'https://override.url/');
 	Assert.IsTrue(ManagerWithOverride.HasUploadOverride);
 end;
 
@@ -284,7 +344,11 @@ const
 var
 	ManagerWithOverride: ICloudShardManager;
 begin
-	ManagerWithOverride := TCloudShardManager.Create(TNullLogger.Create, OverrideUrl);
+	ManagerWithOverride := TCloudShardManager.Create(TNullLogger.Create,
+		function(const URL, Data: WideString; var Answer: WideString): Boolean begin Result := True; end,
+		function(const JSON, ErrorPrefix: WideString): Boolean begin Result := True; end,
+		function: WideString begin Result := ''; end,
+		OverrideUrl);
 	Assert.AreEqual(OverrideUrl, ManagerWithOverride.GetDownloadShardOverride);
 end;
 
@@ -294,15 +358,64 @@ const
 var
 	ManagerWithOverride: ICloudShardManager;
 begin
-	ManagerWithOverride := TCloudShardManager.Create(TNullLogger.Create, '', OverrideUrl);
+	ManagerWithOverride := TCloudShardManager.Create(TNullLogger.Create,
+		function(const URL, Data: WideString; var Answer: WideString): Boolean begin Result := True; end,
+		function(const JSON, ErrorPrefix: WideString): Boolean begin Result := True; end,
+		function: WideString begin Result := ''; end,
+		'', OverrideUrl);
 	Assert.AreEqual(OverrideUrl, ManagerWithOverride.GetUploadShardOverride);
+end;
+
+{ ResolveShard tests }
+
+procedure TCloudShardManagerTest.TestResolveShard_Success_ReturnsTrueAndShard;
+const
+	TestShardUrl = 'https://cloclo1.cloud.mail.ru/get/';
+var
+	Shard: WideString;
+	Success: Boolean;
+begin
+	FPostFormResult := True;
+	FPostFormResponse := '{"status":200,"body":{"get":[{"url":"' + TestShardUrl + '"}]}}';
+	Shard := '';
+	Success := FManager.ResolveShard(Shard, SHARD_TYPE_GET);
+	Assert.IsTrue(FPostFormCalled, 'PostForm should have been called');
+	Assert.IsTrue(Success, 'ResolveShard should return true on success');
+	Assert.AreEqual(TestShardUrl, Shard, 'Shard URL should be extracted from response');
+end;
+
+procedure TCloudShardManagerTest.TestResolveShard_PostFormFails_ReturnsFalse;
+var
+	Shard: WideString;
+	Success: Boolean;
+begin
+	FPostFormResult := False;
+	Shard := '';
+	Success := FManager.ResolveShard(Shard, SHARD_TYPE_GET);
+	Assert.IsFalse(Success, 'ResolveShard should return false when PostForm fails');
+end;
+
+procedure TCloudShardManagerTest.TestResolveShard_InvalidJSON_ReturnsFalse;
+var
+	Shard: WideString;
+	Success: Boolean;
+begin
+	FPostFormResult := True;
+	FPostFormResponse := '{"status":500,"error":"internal error"}';
+	Shard := '';
+	Success := FManager.ResolveShard(Shard, SHARD_TYPE_GET);
+	Assert.IsFalse(Success, 'ResolveShard should return false when JSON status is not 200');
 end;
 
 { TCloudShardManagerWithOverridesTest }
 
 procedure TCloudShardManagerWithOverridesTest.Setup;
 begin
-	FManager := TCloudShardManager.Create(TNullLogger.Create, DownloadOverrideUrl, UploadOverrideUrl);
+	FManager := TCloudShardManager.Create(TNullLogger.Create,
+		function(const URL, Data: WideString; var Answer: WideString): Boolean begin Result := True; end,
+		function(const JSON, ErrorPrefix: WideString): Boolean begin Result := True; end,
+		function: WideString begin Result := ''; end,
+		DownloadOverrideUrl, UploadOverrideUrl);
 end;
 
 procedure TCloudShardManagerWithOverridesTest.TearDown;
@@ -340,6 +453,17 @@ end;
 procedure TNullShardManagerTest.TearDown;
 begin
 	FManager := nil;
+end;
+
+procedure TNullShardManagerTest.TestResolveShard_AlwaysReturnsFalse;
+var
+	Shard: WideString;
+	Success: Boolean;
+begin
+	Shard := '';
+	Success := FManager.ResolveShard(Shard, SHARD_TYPE_GET);
+	Assert.IsFalse(Success, 'Null manager ResolveShard should always return false');
+	Assert.AreEqual('', Shard, 'Null manager should set shard to empty string');
 end;
 
 procedure TNullShardManagerTest.TestGetDownloadShard_AlwaysEmpty;
