@@ -21,6 +21,8 @@ uses
 	Vcl.Dialogs,
 	Vcl.StdCtrls,
 	CloudMailRu,
+	CloudMailRuFactory,
+	CloudAccessUtils,
 	WindowsHelper,
 	TCHelper,
 	SystemHelper,
@@ -153,11 +155,13 @@ procedure TPropertyForm.RefreshItemDescription;
 var
 	CurrentDescriptions: TDescription;
 	LocalPath: WideString;
+	ResultHash: WideString;
 begin
 	DescriptionEditMemo.lines.Clear;
 	LocalPath := GetTmpFileName(DESCRIPTION_TEMP_EXT);
-	if not self.Cloud.getDescriptionFile(IncludeTrailingBackslash(ExtractFileDir(self.RemoteName)) + self.PluginIonFileName, LocalPath) then
-		exit;
+	{Download description file without logging errors (file may not exist)}
+	if self.Cloud.GetFile(IncludeTrailingBackslash(ExtractFileDir(self.RemoteName)) + self.PluginIonFileName, LocalPath, ResultHash, False) <> FS_FILE_OK then
+		Exit;
 	CurrentDescriptions := TDescription.Create(LocalPath, FFileSystem, GetTCCommentPreferredFormat);
 	try
 		CurrentDescriptions.Read;
@@ -181,11 +185,13 @@ var
 	CurrentDescriptions: TDescription;
 	RemotePath, LocalPath: WideString;
 	RemoteFileExists: Boolean;
+	ResultHash: WideString;
 begin
 	RemotePath := IncludeTrailingBackslash(ExtractFileDir(self.RemoteName)) + self.PluginIonFileName;
 	LocalPath := GetTmpFileName(DESCRIPTION_TEMP_EXT);
 
-	RemoteFileExists := self.Cloud.getDescriptionFile(RemotePath, LocalPath);
+	{Download existing description file (if any) without logging errors}
+	RemoteFileExists := self.Cloud.GetFile(RemotePath, LocalPath, ResultHash, False) = FS_FILE_OK;
 	CurrentDescriptions := TDescription.Create(LocalPath, FFileSystem, GetTCCommentPreferredFormat);
 	try
 		if RemoteFileExists then //если был прежний файл - его надо перечитать и удалить с сервера
@@ -195,7 +201,11 @@ begin
 		end;
 		CurrentDescriptions.SetValue(ExtractFileName(self.RemoteName), DescriptionEditMemo.lines.Text);
 		CurrentDescriptions.Write();
-		self.Cloud.PutDescriptionFile(RemotePath, CurrentDescriptions.ionFilename);
+		{Upload description file or delete remote if local doesn't exist}
+		if System.SysUtils.FileExists(CurrentDescriptions.ionFilename) then
+			self.Cloud.PutFile(CurrentDescriptions.ionFilename, RemotePath)
+		else
+			self.Cloud.DeleteFile(RemotePath);
 	finally
 		CurrentDescriptions.Free;
 	end;
@@ -214,7 +224,7 @@ begin
 		end;
 	end else begin
 		(*У объекта есть публичная ссылка, можно получить прямые ссылки на скачивание*)
-		TCloudMailRu.TempPublicCloudInit(self.TempPublicCloud, WebLink.Text);
+		TCloudMailRuFactory.CreatePublicCloud(self.TempPublicCloud, WebLink.Text);
 		if Props.type_ = TYPE_DIR then
 		begin (*рекурсивно получаем все ссылки в каталоге*)
 			FillRecursiveDownloadListing(EmptyWideStr, self.TempPublicCloud);
@@ -366,7 +376,7 @@ begin
 	begin
 		InvitesCount := Length(self.InvitesListing) - 1;
 		for i := 0 to InvitesCount do
-			InvitesLE.InsertRow(self.InvitesListing[i].email, TCloudMailRu.CloudAccessToString(self.InvitesListing[i].access), true);
+			InvitesLE.InsertRow(self.InvitesListing[i].email, TCloudAccessUtils.AccessToString(self.InvitesListing[i].access), true);
 	end else begin
 		MessageBoxW(self.Handle, PWideChar(Format(ERR_LIST_INVITES_MSG, [Props.home])), PREFIX_ERR_INVITES_LISTING, MB_OK + MB_ICONERROR);
 	end;
@@ -537,7 +547,7 @@ begin
 	end;
 
 	access := InvitesLE.Values[email];
-	access := TCloudMailRu.CloudAccessToString(access, true);
+	access := TCloudAccessUtils.AccessToString(access, true);
 
 	ItemChangeAccess.Caption := Format(PREFIX_ACCESS_CHANGE, [access]);
 end;
@@ -548,7 +558,7 @@ var
 begin
 	email := InvitesLE.Keys[InvitesLE.Row];
 	access := InvitesLE.Values[email];
-	if Cloud.shareFolder(Props.home, InvitesLE.Keys[InvitesLE.Row], TCloudMailRu.StringToCloudAccess(access, true)) then
+	if Cloud.shareFolder(Props.home, InvitesLE.Keys[InvitesLE.Row], TCloudAccessUtils.StringToAccess(access, true)) then
 	begin
 		RefreshInvites;
 	end else begin

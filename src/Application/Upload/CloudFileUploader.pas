@@ -50,7 +50,6 @@ type
 	THashFileFunc = reference to function(Path: WideString): WideString;
 	TDeleteFileFunc = reference to function(Path: WideString): Boolean;
 	TGetRetryOperationFunc = reference to function: TRetryOperation;
-	TFileIdentityFunc = reference to function(LocalPath: WideString): TCMRFileIdentity;
 	TCloudResultToFsResultFunc = reference to function(JSON: WideString; ErrorPrefix: WideString): Integer;
 
 	{Upload settings passed to uploader}
@@ -95,7 +94,6 @@ type
 		FGetUnitedParams: TGetUnitedParamsFunc;
 		FCloudResultToFsResult: TCloudResultToFsResultFunc;
 		FDeleteFile: TDeleteFileFunc;
-		FFileIdentity: TFileIdentityFunc;
 		FDoCryptFiles: Boolean;
 		FDoCryptFilenames: Boolean;
 		FSettings: TUploadSettings;
@@ -108,11 +106,13 @@ type
 		function HandleChunkExists(const ChunkRemotePath: WideString; ChunkOverwriteMode: Integer; var ResultCode: Integer): TChunkActionResult;
 		function HandleChunkError(UploadResult: Integer; const ChunkRemotePath: WideString; var RetryAttemptsCount: Integer; var ResultCode: Integer): TChunkActionResult;
 		procedure GenerateAndUploadCRC(const LocalPath, RemotePath: WideString; const SplitFileInfo: TFileSplitInfo; const ConflictMode: WideString);
+		{Calculate file identity (hash + size) for local file}
+		function CalculateFileIdentity(LocalPath: WideString): TCMRFileIdentity;
 	protected
 		{Protected for testability - tests need direct access to split upload logic}
 		function PutFileSplit(LocalPath, RemotePath, ConflictMode: WideString; ChunkOverwriteMode: Integer): Integer;
 	public
-		constructor Create(GetHTTP: TGetHTTPFunc; ShardManager: ICloudShardManager; HashCalculator: ICloudHashCalculator; Cipher: ICipher; FileSystem: IFileSystem; Logger: ILogger; Progress: IProgress; Request: IRequest; GetOAuthToken: TGetOAuthTokenFunc; IsPublicAccount: TGetBoolFunc; GetRetryOperation: TGetRetryOperationFunc; GetUnitedParams: TGetUnitedParamsFunc; CloudResultToFsResult: TCloudResultToFsResultFunc; DeleteFile: TDeleteFileFunc; FileIdentity: TFileIdentityFunc; DoCryptFiles, DoCryptFilenames: Boolean; Settings: TUploadSettings);
+		constructor Create(GetHTTP: TGetHTTPFunc; ShardManager: ICloudShardManager; HashCalculator: ICloudHashCalculator; Cipher: ICipher; FileSystem: IFileSystem; Logger: ILogger; Progress: IProgress; Request: IRequest; GetOAuthToken: TGetOAuthTokenFunc; IsPublicAccount: TGetBoolFunc; GetRetryOperation: TGetRetryOperationFunc; GetUnitedParams: TGetUnitedParamsFunc; CloudResultToFsResult: TCloudResultToFsResultFunc; DeleteFile: TDeleteFileFunc; DoCryptFiles, DoCryptFilenames: Boolean; Settings: TUploadSettings);
 
 		{ICloudFileUploader}
 		function Upload(LocalPath, RemotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; ChunkOverwriteMode: Integer = 0): Integer;
@@ -126,7 +126,7 @@ uses
 
 {TCloudFileUploader}
 
-constructor TCloudFileUploader.Create(GetHTTP: TGetHTTPFunc; ShardManager: ICloudShardManager; HashCalculator: ICloudHashCalculator; Cipher: ICipher; FileSystem: IFileSystem; Logger: ILogger; Progress: IProgress; Request: IRequest; GetOAuthToken: TGetOAuthTokenFunc; IsPublicAccount: TGetBoolFunc; GetRetryOperation: TGetRetryOperationFunc; GetUnitedParams: TGetUnitedParamsFunc; CloudResultToFsResult: TCloudResultToFsResultFunc; DeleteFile: TDeleteFileFunc; FileIdentity: TFileIdentityFunc; DoCryptFiles, DoCryptFilenames: Boolean; Settings: TUploadSettings);
+constructor TCloudFileUploader.Create(GetHTTP: TGetHTTPFunc; ShardManager: ICloudShardManager; HashCalculator: ICloudHashCalculator; Cipher: ICipher; FileSystem: IFileSystem; Logger: ILogger; Progress: IProgress; Request: IRequest; GetOAuthToken: TGetOAuthTokenFunc; IsPublicAccount: TGetBoolFunc; GetRetryOperation: TGetRetryOperationFunc; GetUnitedParams: TGetUnitedParamsFunc; CloudResultToFsResult: TCloudResultToFsResultFunc; DeleteFile: TDeleteFileFunc; DoCryptFiles, DoCryptFilenames: Boolean; Settings: TUploadSettings);
 begin
 	inherited Create;
 	FGetHTTP := GetHTTP;
@@ -143,7 +143,6 @@ begin
 	FGetUnitedParams := GetUnitedParams;
 	FCloudResultToFsResult := CloudResultToFsResult;
 	FDeleteFile := DeleteFile;
-	FFileIdentity := FileIdentity;
 	FDoCryptFiles := DoCryptFiles;
 	FDoCryptFilenames := DoCryptFilenames;
 	FSettings := Settings;
@@ -446,6 +445,13 @@ begin
 	end;
 end;
 
+{Calculate file identity (hash + size) for a local file}
+function TCloudFileUploader.CalculateFileIdentity(LocalPath: WideString): TCMRFileIdentity;
+begin
+	Result.Hash := FHashCalculator.CalculateHash(LocalPath);
+	Result.size := FFileSystem.GetFileSize(LocalPath);
+end;
+
 {Helper method: generates and uploads CRC file after successful chunk uploads}
 procedure TCloudFileUploader.GenerateAndUploadCRC(const LocalPath, RemotePath: WideString; const SplitFileInfo: TFileSplitInfo; const ConflictMode: WideString);
 var
@@ -479,7 +485,7 @@ begin
 	{Try hash deduplication first - may skip upload entirely if file already exists}
 	UseHash := FSettings.PrecalculateHash or (FSettings.ForcePrecalculateSize >= FFileSystem.GetFileSize(LocalPath)); {issue #231}
 	if UseHash then
-		LocalFileIdentity := FFileIdentity(GetUNCFilePath(LocalPath));
+		LocalFileIdentity := CalculateFileIdentity(GetUNCFilePath(LocalPath));
 	{Hash calculation cancellation causes entire operation abort - TC remembers cancel press}
 	if UseHash and (LocalFileIdentity.Hash <> EmptyWideStr) and (not FDoCryptFiles) and (FS_FILE_OK = AddFileByIdentity(LocalFileIdentity, RemotePath, CLOUD_CONFLICT_STRICT, False, True)) then
 		Exit(CLOUD_OPERATION_OK); {issue #135}

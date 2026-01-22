@@ -13,7 +13,8 @@ uses
 	CMRConstants,
 	StreamingSettings,
 	ConnectionManager,
-	CloudMailRu;
+	CloudMailRu,
+	CloudMailRuFactory;
 
 type
 	IFileStreamExecutor = interface
@@ -102,7 +103,7 @@ begin
 		Exit;
 
 	{Initialize temporary public cloud for URL resolution}
-	if not TCloudMailRu.TempPublicCloudInit(TempPublicCloud, PUBLIC_ACCESS_URL + Item.weblink) then
+	if not TCloudMailRuFactory.CreatePublicCloud(TempPublicCloud, PUBLIC_ACCESS_URL + Item.weblink) then
 		Exit(FS_EXEC_ERROR);
 
 	try

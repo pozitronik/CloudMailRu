@@ -164,6 +164,7 @@
         <DCCReference Include="Infrastructure\IO\TestFileHelper.pas"/>
         <DCCReference Include="Infrastructure\IO\TestPathHelper.pas"/>
         <DCCReference Include="..\src\Domain\Services\CloudMailRu.pas"/>
+        <DCCReference Include="..\src\Domain\Services\CloudMailRuFactory.pas"/>
         <DCCReference Include="..\src\Domain\ValueObjects\CMRFileIdentity.pas"/>
         <DCCReference Include="..\src\Domain\ValueObjects\CMRIncomingInviteList.pas"/>
         <DCCReference Include="..\src\Domain\ValueObjects\CMRInviteList.pas"/>

@@ -7,6 +7,7 @@ interface
 
 uses
 	CloudMailRu,
+	CloudErrorMapper,
 	RealPath,
 	RetryHandler,
 	TCLogger;
@@ -109,7 +110,7 @@ begin
 	Result := NewCloud.addFileByIdentity(CurrentItem, TargetPath);
 
 	if not(Result in [FS_FILE_OK, FS_FILE_EXISTS]) then
-		Result := FRetryHandler.HandleOperationError(Result, rotRenMov, ERR_CLONE_FILE_ASK, ERR_OPERATION, CLONE_FILE_RETRY, TCloudMailRu.ErrorCodeText(Result),
+		Result := FRetryHandler.HandleOperationError(Result, rotRenMov, ERR_CLONE_FILE_ASK, ERR_OPERATION, CLONE_FILE_RETRY, TCloudErrorMapper.ErrorCodeText(Result),
 			function: Integer
 			begin
 				Result := NewCloud.addFileByIdentity(CurrentItem, TargetPath);
@@ -155,7 +156,7 @@ begin
 	Result := CloneWeblink(NewCloud, OldCloud, NewRealPath.Path, CurrentItem.Weblink, CurrentItem.Home, NeedUnpublish);
 
 	if not(Result in [FS_FILE_OK, FS_FILE_EXISTS]) then
-		Result := FRetryHandler.HandleOperationError(Result, rotRenMov, ERR_PUBLISH_FILE_ASK, ERR_PUBLISH_FILE, PUBLISH_FILE_RETRY, TCloudMailRu.ErrorCodeText(Result),
+		Result := FRetryHandler.HandleOperationError(Result, rotRenMov, ERR_PUBLISH_FILE_ASK, ERR_PUBLISH_FILE, PUBLISH_FILE_RETRY, TCloudErrorMapper.ErrorCodeText(Result),
 			function: Integer
 			begin
 				Result := CloneWeblink(NewCloud, OldCloud, NewRealPath.Path, CurrentItem.Weblink, CurrentItem.Home, NeedUnpublish);

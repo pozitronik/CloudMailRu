@@ -48,6 +48,7 @@ uses
 	CloudHashCalculator,
 	CloudShardManager,
 	CloudErrorMapper,
+	CloudAccessUtils,
 	CloudFileDownloader,
 	CloudFileUploader,
 	CloudShareService,
@@ -170,15 +171,11 @@ type
 		function RejectInvite(InviteToken: WideString): Boolean;
 		function GetPublishedFileStreamUrl(FileIdentity: TCMRDirItem; var StreamUrl: WideString; ShardType: WideString = SHARD_TYPE_WEBLINK_VIDEO; Publish: Boolean = CLOUD_PUBLISH): Boolean;
 		{OTHER ROUTINES}
-		function GetDescriptionFile(RemotePath, LocalCopy: WideString): Boolean; //Если в каталоге remotePath есть descript.ion - скопировать его в файл localcopy
-		function PutDescriptionFile(RemotePath, LocalCopy: WideString): Boolean; //Скопировать descript.ion из временного файла на сервер
 		procedure LogUserSpaceInfo();
 		function FileIdentity(LocalPath: WideString): TCMRFileIdentity;
 		{STATIC ROUTINES}
 		class function CloudAccessToString(Access: WideString; Invert: Boolean = False): WideString; static;
 		class function StringToCloudAccess(AccessString: WideString; Invert: Boolean = False): Integer; static;
-		class function ErrorCodeText(ErrorCode: Integer): WideString; static;
-		class function TempPublicCloudInit(var TempCloud: TCloudMailRu; PublicUrl: WideString): Boolean; static;
 	end;
 
 implementation
@@ -369,10 +366,6 @@ begin
 			function(Path: WideString): Boolean
 			begin
 				Result := Self.DeleteFile(Path);
-			end,
-			function(LocalPath: WideString): TCMRFileIdentity
-			begin
-				Result := Self.FileIdentity(LocalPath);
 			end, FDoCryptFiles, FDoCryptFilenames, UploadSettings);
 
 		{Initialize share service with callbacks for dynamic state}
@@ -472,31 +465,10 @@ begin
 	inherited;
 end;
 
-{Delegates to TCloudErrorMapper - kept for backward compatibility}
-class function TCloudMailRu.ErrorCodeText(ErrorCode: Integer): WideString;
-begin
-	Result := TCloudErrorMapper.ErrorCodeText(ErrorCode);
-end;
-
 function TCloudMailRu.FileIdentity(LocalPath: WideString): TCMRFileIdentity;
 begin
 	Result.Hash := CloudHash(LocalPath);
 	Result.size := FFileSystem.GetFileSize(LocalPath);
-end;
-
-function TCloudMailRu.GetDescriptionFile(RemotePath, LocalCopy: WideString): Boolean;
-var
-	ResultHash: WideString;
-begin
-	Result := GetFile(RemotePath, LocalCopy, ResultHash, False) = FS_FILE_OK;
-end;
-
-function TCloudMailRu.PutDescriptionFile(RemotePath, LocalCopy: WideString): Boolean;
-begin
-	if FFileSystem.FileExists(LocalCopy) then
-		Result := PutFile(LocalCopy, RemotePath) = FS_FILE_OK
-	else
-		Result := DeleteFile(RemotePath);
 end;
 
 function TCloudMailRu.GetSharedLinksListing(var DirListing: TCMRDirItemList; ShowProgress: Boolean = False): Boolean;
@@ -760,53 +732,16 @@ begin
 	Result := FListingService.StatusFile(Path, FileInfo);
 end;
 
+{Delegates to TCloudAccessUtils - kept for backward compatibility}
 class function TCloudMailRu.CloudAccessToString(Access: WideString; Invert: Boolean): WideString;
 begin
-	if Access = 'read only' then
-		Access := CLOUD_SHARE_ACCESS_READ_ONLY;
-	if Access = 'read and write' then
-		Access := CLOUD_SHARE_ACCESS_READ_WRITE;
-	if Invert then
-	begin
-		if (Access = CLOUD_SHARE_ACCESS_READ_ONLY) then
-			Access := CLOUD_SHARE_ACCESS_READ_WRITE
-		else
-			Access := CLOUD_SHARE_ACCESS_READ_ONLY;
-	end;
-	if Access = CLOUD_SHARE_ACCESS_READ_ONLY then
-		Result := 'read only'
-	else
-		Result := 'read and write';
+	Result := TCloudAccessUtils.AccessToString(Access, Invert);
 end;
 
+{Delegates to TCloudAccessUtils - kept for backward compatibility}
 class function TCloudMailRu.StringToCloudAccess(AccessString: WideString; Invert: Boolean): Integer;
 begin
-	if AccessString = 'read only' then
-		AccessString := CLOUD_SHARE_ACCESS_READ_ONLY;
-	if AccessString = 'read and write' then
-		AccessString := CLOUD_SHARE_ACCESS_READ_WRITE;
-	if Invert then
-	begin
-		if (AccessString = CLOUD_SHARE_ACCESS_READ_ONLY) then
-			AccessString := CLOUD_SHARE_ACCESS_READ_WRITE
-		else
-			AccessString := CLOUD_SHARE_ACCESS_READ_ONLY;
-	end;
-	if AccessString = CLOUD_SHARE_ACCESS_READ_ONLY then
-		Result := CLOUD_SHARE_RO
-	else
-		Result := CLOUD_SHARE_RW;
-end;
-
-class function TCloudMailRu.TempPublicCloudInit(var TempCloud: TCloudMailRu; PublicUrl: WideString): Boolean;
-var
-	TempCloudSettings: TCloudSettings;
-begin
-	TempCloudSettings := default (TCloudSettings);
-	TempCloudSettings.AccountSettings.PublicAccount := true;
-	TempCloudSettings.AccountSettings.PublicUrl := PublicUrl;
-	TempCloud := TCloudMailRu.Create(TempCloudSettings, nil, TNullAuthStrategy.Create, TWindowsFileSystem.Create, TNullLogger.Create, TNullProgress.Create, TNullRequest.Create);
-	Result := TempCloud.Login;
+	Result := TCloudAccessUtils.StringToAccess(AccessString, Invert);
 end;
 
 {Delegates to FHashCalculator - kept for backward compatibility with tests}

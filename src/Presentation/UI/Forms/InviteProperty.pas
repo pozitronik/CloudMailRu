@@ -15,6 +15,7 @@ uses
 	Vcl.Dialogs,
 	Vcl.StdCtrls,
 	CloudMailRu,
+	CloudAccessUtils,
 	CMRConstants,
 	PluginHelper,
 	LANGUAGE_STRINGS;
@@ -60,7 +61,7 @@ begin
 		InvitePropertyForm.InviteNameLB.Caption := Item.name;
 		InvitePropertyForm.InviteOwnerEmailLB.Caption := Item.owner.email;
 		InvitePropertyForm.InviteOwnerNameLB.Caption := Item.owner.name;
-		InvitePropertyForm.InviteAccessLB.Caption := TCloudMailRu.CloudAccessToString(Item.access);
+		InvitePropertyForm.InviteAccessLB.Caption := TCloudAccessUtils.AccessToString(Item.access);
 		InvitePropertyForm.InviteSizeLB.Caption := FormatSize(Item.size, TYPE_BYTES);
 		InvitePropertyForm.InviteTokenLB.Caption := Item.invite_token;
 		InvitePropertyForm.Caption := Format(INVITE_FORM_TITLE, [AccountName, Item.name]);

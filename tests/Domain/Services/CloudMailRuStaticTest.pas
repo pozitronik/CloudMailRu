@@ -4,6 +4,7 @@ interface
 
 uses
 	CloudMailRu,
+	CloudMailRuFactory,
 	CMRConstants,
 	LANGUAGE_STRINGS,
 	SysUtils,
@@ -11,58 +12,11 @@ uses
 
 type
 	{ Tests for TCloudMailRu static class functions.
-	  These are pure functions with no dependencies - ideal for unit testing. }
+	  Tests wrappers that delegate to extracted utility classes.
+	  ErrorCodeText tests moved to CloudErrorMapperTest. }
 	[TestFixture]
 	TCloudMailRuStaticTest = class
 	public
-		{ ErrorCodeText tests - all 18 known error codes }
-		[Test]
-		procedure TestErrorCodeText_Exists;
-		[Test]
-		procedure TestErrorCodeText_Required;
-		[Test]
-		procedure TestErrorCodeText_Invalid;
-		[Test]
-		procedure TestErrorCodeText_ReadOnly;
-		[Test]
-		procedure TestErrorCodeText_NameLengthExceeded;
-		[Test]
-		procedure TestErrorCodeText_Overquota;
-		[Test]
-		procedure TestErrorCodeText_NotExists;
-		[Test]
-		procedure TestErrorCodeText_Own;
-		[Test]
-		procedure TestErrorCodeText_NameTooLong;
-		[Test]
-		procedure TestErrorCodeText_VirusScanFail;
-		[Test]
-		procedure TestErrorCodeText_Owner;
-		[Test]
-		procedure TestErrorCodeText_Fahrenheit;
-		[Test]
-		procedure TestErrorCodeText_BadRequest;
-		[Test]
-		procedure TestErrorCodeText_TreesConflict;
-		[Test]
-		procedure TestErrorCodeText_UnprocessableEntry;
-		[Test]
-		procedure TestErrorCodeText_UserLimitExceeded;
-		[Test]
-		procedure TestErrorCodeText_ExportLimitExceeded;
-		[Test]
-		procedure TestErrorCodeText_NotAcceptable;
-
-		{ ErrorCodeText edge cases - unknown error codes }
-		[Test]
-		procedure TestErrorCodeText_UnknownPositive;
-		[Test]
-		procedure TestErrorCodeText_UnknownNegative;
-		[Test]
-		procedure TestErrorCodeText_Zero;
-		[Test]
-		procedure TestErrorCodeText_MaxInt;
-
 		{ CloudAccessToString tests - input normalization }
 		[Test]
 		procedure TestCloudAccessToString_ReadOnlyHuman_NoInvert;
@@ -139,128 +93,6 @@ type
 	end;
 
 implementation
-
-{ ErrorCodeText tests - known error codes }
-
-procedure TCloudMailRuStaticTest.TestErrorCodeText_Exists;
-begin
-	Assert.AreEqual(ERR_CLOUD_ERROR_EXISTS, TCloudMailRu.ErrorCodeText(CLOUD_ERROR_EXISTS));
-end;
-
-procedure TCloudMailRuStaticTest.TestErrorCodeText_Required;
-begin
-	Assert.AreEqual(ERR_CLOUD_ERROR_REQUIRED, TCloudMailRu.ErrorCodeText(CLOUD_ERROR_REQUIRED));
-end;
-
-procedure TCloudMailRuStaticTest.TestErrorCodeText_Invalid;
-begin
-	Assert.AreEqual(ERR_CLOUD_ERROR_INVALID, TCloudMailRu.ErrorCodeText(CLOUD_ERROR_INVALID));
-end;
-
-procedure TCloudMailRuStaticTest.TestErrorCodeText_ReadOnly;
-begin
-	Assert.AreEqual(ERR_CLOUD_ERROR_READONLY, TCloudMailRu.ErrorCodeText(CLOUD_ERROR_READONLY));
-end;
-
-procedure TCloudMailRuStaticTest.TestErrorCodeText_NameLengthExceeded;
-begin
-	Assert.AreEqual(ERR_CLOUD_ERROR_NAME_LENGTH_EXCEEDED, TCloudMailRu.ErrorCodeText(CLOUD_ERROR_NAME_LENGTH_EXCEEDED));
-end;
-
-procedure TCloudMailRuStaticTest.TestErrorCodeText_Overquota;
-begin
-	{ Note: CLOUD_ERROR_OVERQUOTA = 7, same as CLOUD_ERROR_QUOTA_EXCEEDED }
-	Assert.AreEqual(ERR_CLOUD_ERROR_OVERQUOTA, TCloudMailRu.ErrorCodeText(CLOUD_ERROR_OVERQUOTA));
-end;
-
-procedure TCloudMailRuStaticTest.TestErrorCodeText_NotExists;
-begin
-	Assert.AreEqual(ERR_CLOUD_ERROR_NOT_EXISTS, TCloudMailRu.ErrorCodeText(CLOUD_ERROR_NOT_EXISTS));
-end;
-
-procedure TCloudMailRuStaticTest.TestErrorCodeText_Own;
-begin
-	Assert.AreEqual(ERR_CLOUD_ERROR_OWN, TCloudMailRu.ErrorCodeText(CLOUD_ERROR_OWN));
-end;
-
-procedure TCloudMailRuStaticTest.TestErrorCodeText_NameTooLong;
-begin
-	Assert.AreEqual(ERR_CLOUD_ERROR_NAME_TOO_LONG, TCloudMailRu.ErrorCodeText(CLOUD_ERROR_NAME_TOO_LONG));
-end;
-
-procedure TCloudMailRuStaticTest.TestErrorCodeText_VirusScanFail;
-begin
-	Assert.AreEqual(ERR_CLOUD_ERROR_VIRUS_SCAN_FAIL, TCloudMailRu.ErrorCodeText(CLOUD_ERROR_VIRUS_SCAN_FAIL));
-end;
-
-procedure TCloudMailRuStaticTest.TestErrorCodeText_Owner;
-begin
-	Assert.AreEqual(ERR_CLOUD_ERROR_OWNER, TCloudMailRu.ErrorCodeText(CLOUD_ERROR_OWNER));
-end;
-
-procedure TCloudMailRuStaticTest.TestErrorCodeText_Fahrenheit;
-begin
-	{ Code 451 - content blocked by rights holder }
-	Assert.AreEqual(ERR_CLOUD_ERROR_FAHRENHEIT, TCloudMailRu.ErrorCodeText(CLOUD_ERROR_FAHRENHEIT));
-end;
-
-procedure TCloudMailRuStaticTest.TestErrorCodeText_BadRequest;
-begin
-	{ HTTP 400 error }
-	Assert.AreEqual(ERR_CLOUD_ERROR_BAD_REQUEST, TCloudMailRu.ErrorCodeText(CLOUD_ERROR_BAD_REQUEST));
-end;
-
-procedure TCloudMailRuStaticTest.TestErrorCodeText_TreesConflict;
-begin
-	Assert.AreEqual(ERR_CLOUD_ERROR_TREES_CONFLICT, TCloudMailRu.ErrorCodeText(CLOUD_ERROR_TREES_CONFLICT));
-end;
-
-procedure TCloudMailRuStaticTest.TestErrorCodeText_UnprocessableEntry;
-begin
-	Assert.AreEqual(ERR_CLOUD_ERROR_UNPROCESSABLE_ENTRY, TCloudMailRu.ErrorCodeText(CLOUD_ERROR_UNPROCESSABLE_ENTRY));
-end;
-
-procedure TCloudMailRuStaticTest.TestErrorCodeText_UserLimitExceeded;
-begin
-	Assert.AreEqual(ERR_CLOUD_ERROR_USER_LIMIT_EXCEEDED, TCloudMailRu.ErrorCodeText(CLOUD_ERROR_USER_LIMIT_EXCEEDED));
-end;
-
-procedure TCloudMailRuStaticTest.TestErrorCodeText_ExportLimitExceeded;
-begin
-	Assert.AreEqual(ERR_CLOUD_ERROR_EXPORT_LIMIT_EXCEEDED, TCloudMailRu.ErrorCodeText(CLOUD_ERROR_EXPORT_LIMIT_EXCEEDED));
-end;
-
-procedure TCloudMailRuStaticTest.TestErrorCodeText_NotAcceptable;
-begin
-	{ HTTP 406 error }
-	Assert.AreEqual(ERR_CLOUD_ERROR_NOT_ACCEPTABLE, TCloudMailRu.ErrorCodeText(CLOUD_ERROR_NOT_ACCEPTABLE));
-end;
-
-{ ErrorCodeText edge cases }
-
-procedure TCloudMailRuStaticTest.TestErrorCodeText_UnknownPositive;
-begin
-	{ Unknown error code 999 should format with ERR_CLOUD_ERROR_UNKNOWN }
-	Assert.AreEqual(Format(ERR_CLOUD_ERROR_UNKNOWN, [999]), TCloudMailRu.ErrorCodeText(999));
-end;
-
-procedure TCloudMailRuStaticTest.TestErrorCodeText_UnknownNegative;
-begin
-	{ Negative error codes (except internal ones) should be unknown }
-	Assert.AreEqual(Format(ERR_CLOUD_ERROR_UNKNOWN, [-999]), TCloudMailRu.ErrorCodeText(-999));
-end;
-
-procedure TCloudMailRuStaticTest.TestErrorCodeText_Zero;
-begin
-	{ Zero is CLOUD_OPERATION_OK, not in ErrorCodeText case - should be unknown }
-	Assert.AreEqual(Format(ERR_CLOUD_ERROR_UNKNOWN, [0]), TCloudMailRu.ErrorCodeText(0));
-end;
-
-procedure TCloudMailRuStaticTest.TestErrorCodeText_MaxInt;
-begin
-	{ Boundary test with MaxInt }
-	Assert.AreEqual(Format(ERR_CLOUD_ERROR_UNKNOWN, [MaxInt]), TCloudMailRu.ErrorCodeText(MaxInt));
-end;
 
 { CloudAccessToString tests - input normalization without Invert }
 
@@ -452,13 +284,13 @@ procedure TCloudMailRuStaticTest.TestTempPublicCloudInit_CreatesCloudInstance;
 var
 	TempCloud: TCloudMailRu;
 begin
-	{ TempPublicCloudInit creates a TCloudMailRu instance.
+	{ CreatePublicCloud creates a TCloudMailRu instance via the factory.
 	  Note: Login will fail without network, but instance should still be created.
 	  We don't test Login result since it requires network. }
 	TempCloud := nil;
 	try
-		TCloudMailRu.TempPublicCloudInit(TempCloud, 'https://cloud.mail.ru/public/test123');
-		Assert.IsNotNull(TempCloud, 'TempPublicCloudInit should create a cloud instance');
+		TCloudMailRuFactory.CreatePublicCloud(TempCloud, 'https://cloud.mail.ru/public/test123');
+		Assert.IsNotNull(TempCloud, 'CreatePublicCloud should create a cloud instance');
 	finally
 		TempCloud.Free;
 	end;
@@ -471,7 +303,7 @@ begin
 	{ Verify the created instance is configured as public account }
 	TempCloud := nil;
 	try
-		TCloudMailRu.TempPublicCloudInit(TempCloud, 'https://cloud.mail.ru/public/abc123');
+		TCloudMailRuFactory.CreatePublicCloud(TempCloud, 'https://cloud.mail.ru/public/abc123');
 		Assert.IsTrue(TempCloud.IsPublicAccount, 'Created cloud should be marked as public account');
 	finally
 		TempCloud.Free;
@@ -482,10 +314,10 @@ procedure TCloudMailRuStaticTest.TestTempPublicCloudInit_CloudMustBeFreedByCalle
 var
 	TempCloud: TCloudMailRu;
 begin
-	{ Verify that after TempPublicCloudInit, the caller owns the instance and must free it.
+	{ Verify that after CreatePublicCloud, the caller owns the instance and must free it.
 	  This test ensures no memory leaks by properly freeing. FastMM will catch leaks. }
 	TempCloud := nil;
-	TCloudMailRu.TempPublicCloudInit(TempCloud, 'https://cloud.mail.ru/public/xyz789');
+	TCloudMailRuFactory.CreatePublicCloud(TempCloud, 'https://cloud.mail.ru/public/xyz789');
 	Assert.IsNotNull(TempCloud, 'Instance should be created');
 	TempCloud.Free; { Caller is responsible for freeing }
 	Assert.Pass('Instance freed successfully - caller owns the instance');

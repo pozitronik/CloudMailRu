@@ -47,7 +47,6 @@ type
 		FSettings: TCloudSettings;
 
 		function CreateCloud(PublicAccount: Boolean = False): TTestableCloudMailRu;
-		function CreateCloudWithFileSystem(FileSystem: IFileSystem): TTestableCloudMailRu;
 	public
 		[Setup]
 		procedure Setup;
@@ -106,20 +105,6 @@ type
 		[Test]
 		[Ignore('Requires shard retrieval + redirect; complex mock setup needed')]
 		procedure TestGetSharedFileUrl_WithShardType;
-
-		{GetDescriptionFile tests - require complex shard + file download mocking}
-		[Test]
-		[Ignore('Requires shard retrieval + file download; mock infrastructure needs enhancement')]
-		procedure TestGetDescriptionFile_Success;
-		[Test]
-		procedure TestGetDescriptionFile_Failure;
-
-		{PutDescriptionFile tests - require complex shard + file upload mocking}
-		[Test]
-		[Ignore('Requires shard retrieval + file upload; mock infrastructure needs enhancement')]
-		procedure TestPutDescriptionFile_FileExists_Success;
-		[Test]
-		procedure TestPutDescriptionFile_FileNotExists_Fails;
 	end;
 
 implementation
@@ -181,23 +166,6 @@ begin
 		FMockHTTPManager,
 		TNullAuthStrategy.Create,
 		TNullFileSystem.Create,
-		TNullLogger.Create,
-		TNullProgress.Create,
-		TNullRequest.Create);
-
-	Result.SetUnitedParams('api=2&access_token=test_token');
-end;
-
-function TCloudMailRuCombinedOpsTest.CreateCloudWithFileSystem(FileSystem: IFileSystem): TTestableCloudMailRu;
-begin
-	FSettings := Default(TCloudSettings);
-	FSettings.AccountSettings.PublicAccount := False;
-
-	Result := TTestableCloudMailRu.Create(
-		FSettings,
-		FMockHTTPManager,
-		TNullAuthStrategy.Create,
-		FileSystem,
 		TNullLogger.Create,
 		TNullProgress.Create,
 		TNullRequest.Create);
@@ -420,59 +388,6 @@ begin
 
 	{Method should request shard when ShardType is not default}
 	Assert.IsNotEmpty(Url, 'GetSharedFileUrl should return URL');
-end;
-
-{GetDescriptionFile tests}
-
-procedure TCloudMailRuCombinedOpsTest.TestGetDescriptionFile_Success;
-begin
-	FCloud := CreateCloud;
-	{Mock successful GetFile - needs shard and file download}
-	FMockHTTP.SetResponse(API_DISPATCHER, True, JSON_SHARD_SUCCESS);
-	FMockHTTP.SetFileResponse('cloclo1.cloud.mail.ru/get/', TEncoding.UTF8.GetBytes('file content'), FS_FILE_OK);
-
-	var Success := FCloud.GetDescriptionFile('/folder/descript.ion', 'C:\temp\descript.ion');
-
-	Assert.IsTrue(Success, 'GetDescriptionFile should return True on success');
-end;
-
-procedure TCloudMailRuCombinedOpsTest.TestGetDescriptionFile_Failure;
-begin
-	FCloud := CreateCloud;
-	{Mock failed download}
-	FMockHTTP.SetDefaultResponse(False, '', FS_FILE_READERROR);
-
-	var Success := FCloud.GetDescriptionFile('/folder/descript.ion', 'C:\temp\descript.ion');
-
-	Assert.IsFalse(Success, 'GetDescriptionFile should return False on failure');
-end;
-
-{PutDescriptionFile tests}
-
-procedure TCloudMailRuCombinedOpsTest.TestPutDescriptionFile_FileExists_Success;
-var
-	MemFS: TMemoryFileSystem;
-begin
-	MemFS := TMemoryFileSystem.Create;
-	MemFS.SetFileContent('C:\temp\descript.ion', 'description content');
-	FCloud := CreateCloudWithFileSystem(MemFS);
-	{Mock successful upload}
-	FMockHTTP.SetResponse(API_DISPATCHER, True, JSON_SHARD_SUCCESS);
-	FMockHTTP.SetResponse('', True, JSON_SUCCESS, FS_FILE_OK);
-	FMockHTTP.SetResponse(API_FILE_ADD, True, JSON_SUCCESS);
-
-	var Success := FCloud.PutDescriptionFile('/folder/', 'C:\temp\descript.ion');
-
-	Assert.IsTrue(Success, 'PutDescriptionFile should return True when file exists');
-end;
-
-procedure TCloudMailRuCombinedOpsTest.TestPutDescriptionFile_FileNotExists_Fails;
-begin
-	FCloud := CreateCloud; {Uses TNullFileSystem - files don't exist}
-
-	var Success := FCloud.PutDescriptionFile('/folder/', 'C:\nonexistent\descript.ion');
-
-	Assert.IsFalse(Success, 'PutDescriptionFile should return False when local file does not exist');
 end;
 
 initialization

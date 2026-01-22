@@ -46,7 +46,6 @@ type
 		function GetUnitedParams: WideString;
 		function CloudResultToFsResult(JSON: WideString; ErrorPrefix: WideString): Integer;
 		function DeleteFile(Path: WideString): Boolean;
-		function FileIdentity(LocalPath: WideString): TCMRFileIdentity;
 	public
 		[Setup]
 		procedure Setup;
@@ -125,7 +124,6 @@ begin
 		GetUnitedParams,
 		CloudResultToFsResult,
 		DeleteFile,
-		FileIdentity,
 		False, {DoCryptFiles}
 		False, {DoCryptFilenames}
 		FSettings
@@ -180,12 +178,6 @@ begin
 	Result := True;
 end;
 
-function TCloudFileUploaderTest.FileIdentity(LocalPath: WideString): TCMRFileIdentity;
-begin
-	Result.Hash := '';
-	Result.size := 0;
-end;
-
 { Construction tests }
 
 procedure TCloudFileUploaderTest.TestCreate_InitializesCorrectly;
@@ -229,7 +221,6 @@ begin
 		GetUnitedParams,
 		CloudResultToFsResult,
 		DeleteFile,
-		FileIdentity,
 		False,
 		False,
 		FSettings

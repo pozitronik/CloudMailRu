@@ -268,7 +268,6 @@ begin
 				Result := TestSelf.FAddByIdentityNextResult;
 		end,
 		function(Path: WideString): Boolean begin TestSelf.FDeleteFileCalled := True; Result := TestSelf.FDeleteFileResult; end,
-		function(LocalPath: WideString): TCMRFileIdentity begin Result.Hash := SHA1_HASH_40; Result.size := SizeOfFile(LocalPath); end,
 		False, {DoCryptFiles}
 		False, {DoCryptFilenames}
 		FSettings);

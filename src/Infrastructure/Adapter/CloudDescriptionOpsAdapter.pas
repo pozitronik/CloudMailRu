@@ -7,7 +7,9 @@ unit CloudDescriptionOpsAdapter;
 interface
 
 uses
-	CloudMailRu;
+	CloudMailRu,
+	PLUGIN_TYPES,
+	System.SysUtils;
 
 type
 	{Interface for cloud operations needed by description synchronization.
@@ -57,13 +59,20 @@ begin
 end;
 
 function TCloudDescriptionOpsAdapter.GetDescriptionFile(const RemotePath, LocalCopy: WideString): Boolean;
+var
+	ResultHash: WideString;
 begin
-	Result := FCloud.GetDescriptionFile(RemotePath, LocalCopy);
+	{Download description file without logging errors (file may not exist)}
+	Result := FCloud.GetFile(RemotePath, LocalCopy, ResultHash, False) = FS_FILE_OK;
 end;
 
 function TCloudDescriptionOpsAdapter.PutDescriptionFile(const RemotePath, LocalCopy: WideString): Boolean;
 begin
-	Result := FCloud.PutDescriptionFile(RemotePath, LocalCopy);
+	{Upload description file or delete remote if local doesn't exist}
+	if System.SysUtils.FileExists(LocalCopy) then
+		Result := FCloud.PutFile(LocalCopy, RemotePath) = FS_FILE_OK
+	else
+		Result := FCloud.DeleteFile(RemotePath);
 end;
 
 function TCloudDescriptionOpsAdapter.DeleteFile(const Path: WideString): Boolean;
