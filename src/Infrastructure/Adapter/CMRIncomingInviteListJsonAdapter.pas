@@ -17,6 +17,7 @@ type
 implementation
 
 uses
+	System.Generics.Collections,
 	SysUtils,
 	CMRIncomingInvite,
 	CMRConstants,

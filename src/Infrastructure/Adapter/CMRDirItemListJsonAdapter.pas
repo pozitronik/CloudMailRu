@@ -21,6 +21,7 @@ type
 implementation
 
 uses
+	System.Generics.Collections,
 	CMRDirItem,
 	CMRConstants,
 	JSONHelper,
