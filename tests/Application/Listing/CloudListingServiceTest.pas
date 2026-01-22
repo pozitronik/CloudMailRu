@@ -8,6 +8,7 @@ uses
 	CMRDirItemList,
 	CMRIncomingInviteList,
 	CMROperationResult,
+	CMRSpace,
 	CMRConstants,
 	PLUGIN_TYPES,
 	TCLogger,
@@ -92,6 +93,12 @@ type
 		procedure TestTrashbinEmpty_PublicAccount_ReturnsFalse;
 		[Test]
 		procedure TestTrashbinEmpty_Success_ReturnsTrue;
+
+		{GetUserSpace tests}
+		[Test]
+		procedure TestGetUserSpace_Success_PopulatesSpaceInfo;
+		[Test]
+		procedure TestGetUserSpace_HTTPFailure_ReturnsFalse;
 	end;
 
 implementation
@@ -384,6 +391,36 @@ begin
 	Success := FService.TrashbinEmpty();
 
 	Assert.IsTrue(Success, 'TrashbinEmpty should succeed');
+end;
+
+{GetUserSpace tests}
+
+procedure TCloudListingServiceTest.TestGetUserSpace_Success_PopulatesSpaceInfo;
+var
+	SpaceInfo: TCMRSpace;
+	Success: Boolean;
+begin
+	FMockHTTP.SetDefaultResponse(True,
+		'{"status":200,"body":{"bytes_total":10737418240,"bytes_used":5368709120,"overquota":false}}');
+
+	Success := FService.GetUserSpace(SpaceInfo);
+
+	Assert.IsTrue(Success, 'GetUserSpace should succeed');
+	Assert.AreEqual(Int64(10737418240), SpaceInfo.total, 'Total space should be parsed');
+	Assert.AreEqual(Int64(5368709120), SpaceInfo.used, 'Used space should be parsed');
+	Assert.IsFalse(SpaceInfo.overquota, 'Overquota should be false');
+end;
+
+procedure TCloudListingServiceTest.TestGetUserSpace_HTTPFailure_ReturnsFalse;
+var
+	SpaceInfo: TCMRSpace;
+	Success: Boolean;
+begin
+	FMockHTTP.SetDefaultResponse(False, '');
+
+	Success := FService.GetUserSpace(SpaceInfo);
+
+	Assert.IsFalse(Success, 'GetUserSpace should return false on HTTP failure');
 end;
 
 initialization

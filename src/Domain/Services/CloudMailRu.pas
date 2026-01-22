@@ -646,29 +646,10 @@ begin
 	end;
 end;
 
+{Delegates to FListingService}
 function TCloudMailRu.GetUserSpace(var SpaceInfo: TCMRSpace): Boolean;
-var
-	CallResult: TAPICallResult;
-	LocalSpace: TCMRSpace;
 begin
-	LocalSpace := default (TCMRSpace);
-	CallResult := FRetryOperation.Execute(
-		function: TAPICallResult
-		var
-			JSON: WideString;
-			Progress: Boolean;
-			Success: Boolean;
-		begin
-			Progress := False;
-			Success := HTTP.GetPage(Format('%s?%s', [API_USER_SPACE, FUnitedParams]), JSON, Progress);
-			if Success then
-				Success := CloudResultToBoolean(JSON, PREFIX_ERR_GET_USER_SPACE) and LocalSpace.FromJSON(JSON);
-			Result := TAPICallResult.FromBoolean(Success, JSON);
-		end);
-
-	Result := CallResult.Success;
-	if Result then
-		SpaceInfo := LocalSpace;
+	Result := FListingService.GetUserSpace(SpaceInfo);
 end;
 
 function TCloudMailRu.Login(Method: Integer): Boolean;

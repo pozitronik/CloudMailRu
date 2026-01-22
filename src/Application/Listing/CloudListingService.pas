@@ -9,6 +9,7 @@ uses
 	CMRDirItemList,
 	CMRIncomingInviteList,
 	CMROperationResult,
+	CMRSpace,
 	CMRConstants,
 	CloudHTTP,
 	FileCipher,
@@ -47,6 +48,8 @@ type
 		function TrashbinRestore(Path: WideString; RestoreRevision: Integer; ConflictMode: WideString = CLOUD_CONFLICT_RENAME): Boolean;
 		{Empty trashbin}
 		function TrashbinEmpty(): Boolean;
+		{Get user storage space information}
+		function GetUserSpace(var SpaceInfo: TCMRSpace): Boolean;
 	end;
 
 	{Implementation of listing service}
@@ -74,6 +77,7 @@ type
 		function StatusFile(Path: WideString; var FileInfo: TCMRDirItem): Boolean;
 		function TrashbinRestore(Path: WideString; RestoreRevision: Integer; ConflictMode: WideString = CLOUD_CONFLICT_RENAME): Boolean;
 		function TrashbinEmpty(): Boolean;
+		function GetUserSpace(var SpaceInfo: TCMRSpace): Boolean;
 	end;
 
 implementation
@@ -336,6 +340,31 @@ begin
 	if FIsPublicAccount() then
 		Exit;
 	Result := FRetryOperation.PostFormBoolean(API_TRASHBIN_EMPTY + '?' + FGetUnitedParams(), EmptyWideStr, PREFIX_ERR_TRASH_CLEAN);
+end;
+
+function TCloudListingService.GetUserSpace(var SpaceInfo: TCMRSpace): Boolean;
+var
+	CallResult: TAPICallResult;
+	LocalSpace: TCMRSpace;
+begin
+	LocalSpace := default(TCMRSpace);
+	CallResult := FRetryOperation.Execute(
+		function: TAPICallResult
+		var
+			JSON: WideString;
+			Progress: Boolean;
+			Success: Boolean;
+		begin
+			Progress := False;
+			Success := FHTTP.GetPage(Format('%s?%s', [API_USER_SPACE, FGetUnitedParams()]), JSON, Progress);
+			if Success then
+				Success := FCloudResultToBoolean(JSON, PREFIX_ERR_GET_USER_SPACE) and LocalSpace.FromJSON(JSON);
+			Result := TAPICallResult.FromBoolean(Success, JSON);
+		end);
+
+	Result := CallResult.Success;
+	if Result then
+		SpaceInfo := LocalSpace;
 end;
 
 end.
