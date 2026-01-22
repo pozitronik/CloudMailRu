@@ -77,6 +77,7 @@ uses
 	WSListTest in 'Domain\ValueObjects\WSListTest.pas',
 	JSONHelperTest in 'Infrastructure\HTTP\JSONHelperTest.pas',
 	IniFilesHelperTest in 'Infrastructure\Config\IniFilesHelperTest.pas',
+	IniConfigFileTest in 'Infrastructure\Config\IniConfigFileTest.pas',
 	PluginHelperTest in 'Presentation\WFX\PluginHelperTest.pas',
 	WindowsHelperTest in 'Infrastructure\OS\WindowsHelperTest.pas',
 	CMRDirItemListTest in 'Domain\ValueObjects\CMRDirItemListTest.pas',
