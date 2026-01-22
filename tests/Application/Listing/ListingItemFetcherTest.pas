@@ -78,6 +78,30 @@ type
 		{UpdateListing tests}
 		[Test]
 		procedure TestFetchItem_UpdateListingFalse_DoesNotRefresh;
+
+		{RefreshAndSearch tests - trashbin path}
+		[Test]
+		procedure TestFetchItem_TrashDir_RefreshesFromTrashbin;
+		[Test]
+		procedure TestFetchItem_TrashDir_RefreshFails_ReturnsNone;
+
+		{RefreshAndSearch tests - shared links path}
+		[Test]
+		procedure TestFetchItem_SharedDir_RefreshesFromSharedLinks;
+		[Test]
+		procedure TestFetchItem_SharedDir_RefreshFails_ReturnsNone;
+
+		{RefreshAndSearch tests - invites path}
+		[Test]
+		procedure TestFetchItem_InvitesDir_ReturnsNoneWithoutAPICall;
+
+		{RefreshAndSearch tests - regular directory (statusFile)}
+		[Test]
+		procedure TestFetchItem_RegularDir_RefreshesViaStatusFile;
+		[Test]
+		procedure TestFetchItem_RegularDir_StatusFileFails_ReturnsNone;
+		[Test]
+		procedure TestFetchItem_RegularDir_LogsErrorWhenHomeEmpty;
 	end;
 
 implementation
@@ -304,6 +328,182 @@ begin
 
 	Assert.IsTrue(Item.isNone, 'Should return None without refreshing');
 	Assert.AreEqual(0, FMockHTTP.GetCallCount, 'Should not make any HTTP calls');
+end;
+
+{RefreshAndSearch tests - trashbin path}
+
+procedure TListingItemFetcherTest.TestFetchItem_TrashDir_RefreshesFromTrashbin;
+var
+	Listing: TCMRDirItemList;
+	Path: TRealPath;
+	Item: TCMRDirItem;
+	TrashbinJson: WideString;
+begin
+	{When item not found and path is in .trash, should refresh from trashbin API}
+	FCloud := CreateCloud(False);
+	SetLength(Listing, 0);
+	Path.FromPath('\account.trash\deleted_file.txt');
+
+	{Configure mock to return trashbin listing with the file}
+	TrashbinJson := '{"status":200,"body":{"list":[{"name":"deleted_file.txt","type":"file",' +
+		'"deleted_from":"/backup/","rev":123,"size":1024}]}}';
+	FMockHTTP.SetResponse('trashbin', True, TrashbinJson);
+
+	Item := FFetcher.FetchItem(Listing, Path, FCloud, True);
+
+	Assert.AreEqual('deleted_file.txt', string(Item.name), 'Should find file in refreshed trashbin listing');
+	Assert.IsTrue(FMockHTTP.WasURLCalled('trashbin'), 'Should call trashbin API');
+end;
+
+procedure TListingItemFetcherTest.TestFetchItem_TrashDir_RefreshFails_ReturnsNone;
+var
+	Listing: TCMRDirItemList;
+	Path: TRealPath;
+	Item: TCMRDirItem;
+begin
+	{When trashbin API fails, should return None}
+	FCloud := CreateCloud(False);
+	SetLength(Listing, 0);
+	Path.FromPath('\account.trash\deleted_file.txt');
+
+	{Configure mock to fail}
+	FMockHTTP.SetDefaultResponse(False, '{"status":500}');
+
+	Item := FFetcher.FetchItem(Listing, Path, FCloud, True);
+
+	Assert.IsTrue(Item.isNone, 'Should return None when trashbin API fails');
+end;
+
+{RefreshAndSearch tests - shared links path}
+
+procedure TListingItemFetcherTest.TestFetchItem_SharedDir_RefreshesFromSharedLinks;
+var
+	Listing: TCMRDirItemList;
+	Path: TRealPath;
+	Item: TCMRDirItem;
+	SharedJson: WideString;
+begin
+	{When item not found and path is in .shared, should refresh from shared links API}
+	FCloud := CreateCloud(False);
+	SetLength(Listing, 0);
+	Path.FromPath('\account.shared\published_doc.pdf');
+
+	{Configure mock to return shared links listing}
+	SharedJson := '{"status":200,"body":{"list":[{"name":"published_doc.pdf","type":"file",' +
+		'"weblink":"abc123xyz","size":2048,"home":"/docs/published_doc.pdf"}]}}';
+	FMockHTTP.SetResponse('shared/links', True, SharedJson);
+
+	Item := FFetcher.FetchItem(Listing, Path, FCloud, True);
+
+	Assert.AreEqual('published_doc.pdf', string(Item.name), 'Should find file in refreshed shared listing');
+	Assert.IsTrue(FMockHTTP.WasURLCalled('shared/links'), 'Should call shared links API');
+end;
+
+procedure TListingItemFetcherTest.TestFetchItem_SharedDir_RefreshFails_ReturnsNone;
+var
+	Listing: TCMRDirItemList;
+	Path: TRealPath;
+	Item: TCMRDirItem;
+begin
+	{When shared links API fails, should return None}
+	FCloud := CreateCloud(False);
+	SetLength(Listing, 0);
+	Path.FromPath('\account.shared\missing.pdf');
+
+	{Configure mock to fail}
+	FMockHTTP.SetDefaultResponse(False, '{"status":500}');
+
+	Item := FFetcher.FetchItem(Listing, Path, FCloud, True);
+
+	Assert.IsTrue(Item.isNone, 'Should return None when shared links API fails');
+end;
+
+{RefreshAndSearch tests - invites path}
+
+procedure TListingItemFetcherTest.TestFetchItem_InvitesDir_ReturnsNoneWithoutAPICall;
+var
+	Listing: TCMRDirItemList;
+	Path: TRealPath;
+	Item: TCMRDirItem;
+begin
+	{Invites are handled differently - should exit early without API call}
+	FCloud := CreateCloud(False);
+	SetLength(Listing, 0);
+	Path.FromPath('\account.invites\some_invite');
+
+	Item := FFetcher.FetchItem(Listing, Path, FCloud, True);
+
+	Assert.IsTrue(Item.isNone, 'Should return None for invites directory');
+	{Note: invites use a different lookup mechanism, so no HTTP call expected}
+end;
+
+{RefreshAndSearch tests - regular directory (statusFile)}
+
+procedure TListingItemFetcherTest.TestFetchItem_RegularDir_RefreshesViaStatusFile;
+var
+	Listing: TCMRDirItemList;
+	Path: TRealPath;
+	Item: TCMRDirItem;
+	StatusJson: WideString;
+begin
+	{When item not found in regular dir, should call statusFile API}
+	FCloud := CreateCloud(False);
+	SetLength(Listing, 0);
+	Path.FromPath('\account\documents\report.docx');
+
+	{Configure mock to return file status}
+	StatusJson := '{"status":200,"body":{"name":"report.docx","type":"file",' +
+		'"home":"/documents/report.docx","size":4096,"hash":"ABC123"}}';
+	FMockHTTP.SetResponse('api/v2/file', True, StatusJson);
+
+	Item := FFetcher.FetchItem(Listing, Path, FCloud, True);
+
+	Assert.AreEqual('report.docx', string(Item.name), 'Should find file via statusFile');
+	Assert.AreEqual('/documents/report.docx', string(Item.home), 'Should have correct home path');
+	Assert.IsTrue(FMockHTTP.WasURLCalled('file'), 'Should call file status API');
+end;
+
+procedure TListingItemFetcherTest.TestFetchItem_RegularDir_StatusFileFails_ReturnsNone;
+var
+	Listing: TCMRDirItemList;
+	Path: TRealPath;
+	Item: TCMRDirItem;
+begin
+	{When statusFile API fails, should return None}
+	FCloud := CreateCloud(False);
+	SetLength(Listing, 0);
+	Path.FromPath('\account\documents\missing.docx');
+
+	{Configure mock to fail}
+	FMockHTTP.SetDefaultResponse(False, '{"status":404}');
+
+	Item := FFetcher.FetchItem(Listing, Path, FCloud, True);
+
+	Assert.IsTrue(Item.isNone, 'Should return None when statusFile fails');
+end;
+
+procedure TListingItemFetcherTest.TestFetchItem_RegularDir_LogsErrorWhenHomeEmpty;
+var
+	Listing: TCMRDirItemList;
+	Path: TRealPath;
+	Item: TCMRDirItem;
+	StatusJson: WideString;
+begin
+	{When statusFile returns item with empty home path, should log error}
+	FCloud := CreateCloud(False);
+	SetLength(Listing, 0);
+	Path.FromPath('\account\documents\weird.txt');
+
+	{Configure mock to return file with empty home (edge case)}
+	StatusJson := '{"status":200,"body":{"name":"weird.txt","type":"file",' +
+		'"home":"","size":100}}';
+	FMockHTTP.SetResponse('api/v2/file', True, StatusJson);
+
+	Item := FFetcher.FetchItem(Listing, Path, FCloud, True);
+
+	{Item found but with empty home - should log error}
+	Assert.AreEqual('weird.txt', string(Item.name), 'Should still return the item');
+	Assert.IsTrue(FLogger.LogCalls > 0, 'Should have logged an error about empty home');
 end;
 
 initialization
