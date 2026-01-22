@@ -4,6 +4,7 @@ interface
 
 uses
 	CMRTwostep,
+	CMRTwostepJsonAdapter,
 	CMRConstants,
 	DUnitX.TestFramework;
 
@@ -77,14 +78,14 @@ procedure TCMRTwostepTest.TestFromJSONValid;
 var
 	Twostep: TCMRTwostep;
 begin
-	Assert.IsTrue(Twostep.fromJSON(JSON_TWOSTEP_FULL));
+	Assert.IsTrue(TCMRTwostepJsonAdapter.Parse(JSON_TWOSTEP_FULL, Twostep));
 end;
 
 procedure TCMRTwostepTest.TestFromJSONAllFields;
 var
 	Twostep: TCMRTwostep;
 begin
-	Twostep.fromJSON(JSON_TWOSTEP_FULL);
+	TCMRTwostepJsonAdapter.Parse(JSON_TWOSTEP_FULL, Twostep);
 
 	Assert.AreEqual('secstep', Twostep.form_name);
 	Assert.AreEqual('auth.mail.ru', Twostep.auth_host);
@@ -109,7 +110,7 @@ procedure TCMRTwostepTest.TestFromJSONTimeoutWithValue;
 var
 	Twostep: TCMRTwostep;
 begin
-	Twostep.fromJSON(JSON_TWOSTEP_FULL);
+	TCMRTwostepJsonAdapter.Parse(JSON_TWOSTEP_FULL, Twostep);
 
 	{ Timeout should be parsed as integer }
 	Assert.AreEqual(Int64(120), Twostep.secstep_timeout);
@@ -120,7 +121,7 @@ var
 	Twostep: TCMRTwostep;
 begin
 	{ Empty timeout indicates authenticator app is used }
-	Twostep.fromJSON(JSON_TWOSTEP_AUTH_APP);
+	TCMRTwostepJsonAdapter.Parse(JSON_TWOSTEP_AUTH_APP, Twostep);
 
 	Assert.AreEqual(Int64(AUTH_APP_USED), Twostep.secstep_timeout);
 end;
@@ -130,8 +131,7 @@ var
 	Twostep: TCMRTwostep;
 begin
 	{ When timeout field is missing, it should remain at default (0) }
-	FillChar(Twostep, SizeOf(Twostep), 0);
-	Twostep.fromJSON(JSON_TWOSTEP_NO_TIMEOUT);
+	TCMRTwostepJsonAdapter.Parse(JSON_TWOSTEP_NO_TIMEOUT, Twostep);
 
 	{ Default value when field is missing }
 	Assert.AreEqual(Int64(0), Twostep.secstep_timeout);
@@ -141,7 +141,7 @@ procedure TCMRTwostepTest.TestFromJSONPartialData;
 var
 	Twostep: TCMRTwostep;
 begin
-	Assert.IsTrue(Twostep.fromJSON(JSON_TWOSTEP_PARTIAL));
+	Assert.IsTrue(TCMRTwostepJsonAdapter.Parse(JSON_TWOSTEP_PARTIAL, Twostep));
 
 	Assert.AreEqual('token123', Twostep.csrf);
 	Assert.AreEqual('en_US', Twostep.locale);
@@ -151,14 +151,14 @@ procedure TCMRTwostepTest.TestFromJSONInvalidJSON;
 var
 	Twostep: TCMRTwostep;
 begin
-	Assert.IsFalse(Twostep.fromJSON('not valid json'));
+	Assert.IsFalse(TCMRTwostepJsonAdapter.Parse('not valid json', Twostep));
 end;
 
 procedure TCMRTwostepTest.TestFromJSONEmptyString;
 var
 	Twostep: TCMRTwostep;
 begin
-	Assert.IsFalse(Twostep.fromJSON(''));
+	Assert.IsFalse(TCMRTwostepJsonAdapter.Parse('', Twostep));
 end;
 
 initialization

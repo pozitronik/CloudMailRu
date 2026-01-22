@@ -4,6 +4,7 @@ interface
 
 uses
 	CMRSpace,
+	CMRSpaceJsonAdapter,
 	DUnitX.TestFramework;
 
 type
@@ -36,7 +37,7 @@ procedure TCMRSpaceTest.TestFromJSONValid;
 var
 	Space: TCMRSpace;
 begin
-	Assert.IsTrue(Space.fromJSON(JSON_SPACE_NORMAL));
+	Assert.IsTrue(TCMRSpaceJsonAdapter.Parse(JSON_SPACE_NORMAL, Space));
 
 	Assert.IsFalse(Space.overquota);
 	Assert.AreEqual(Int64(17179869184), Space.total);
@@ -47,7 +48,7 @@ procedure TCMRSpaceTest.TestFromJSONOverquotaTrue;
 var
 	Space: TCMRSpace;
 begin
-	Assert.IsTrue(Space.fromJSON(JSON_SPACE_OVERQUOTA));
+	Assert.IsTrue(TCMRSpaceJsonAdapter.Parse(JSON_SPACE_OVERQUOTA, Space));
 
 	Assert.IsTrue(Space.overquota);
 end;
@@ -56,7 +57,7 @@ procedure TCMRSpaceTest.TestFromJSONOverquotaFalse;
 var
 	Space: TCMRSpace;
 begin
-	Assert.IsTrue(Space.fromJSON(JSON_SPACE_NORMAL));
+	Assert.IsTrue(TCMRSpaceJsonAdapter.Parse(JSON_SPACE_NORMAL, Space));
 
 	Assert.IsFalse(Space.overquota);
 end;
@@ -66,7 +67,7 @@ var
 	Space: TCMRSpace;
 begin
 	{ Test with 1TB total and 512GB used }
-	Assert.IsTrue(Space.fromJSON(JSON_SPACE_LARGE));
+	Assert.IsTrue(TCMRSpaceJsonAdapter.Parse(JSON_SPACE_LARGE, Space));
 
 	Assert.AreEqual(Int64(1099511627776), Space.total);
 	Assert.AreEqual(Int64(549755813888), Space.used);
@@ -76,14 +77,14 @@ procedure TCMRSpaceTest.TestFromJSONInvalid;
 var
 	Space: TCMRSpace;
 begin
-	Assert.IsFalse(Space.fromJSON('invalid json'));
+	Assert.IsFalse(TCMRSpaceJsonAdapter.Parse('invalid json', Space));
 end;
 
 procedure TCMRSpaceTest.TestFromJSONEmpty;
 var
 	Space: TCMRSpace;
 begin
-	Assert.IsFalse(Space.fromJSON(''));
+	Assert.IsFalse(TCMRSpaceJsonAdapter.Parse('', Space));
 end;
 
 initialization

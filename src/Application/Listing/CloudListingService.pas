@@ -10,8 +10,11 @@ uses
 	CMRDirItemJsonAdapter,
 	CMRDirItemListJsonAdapter,
 	CMRIncomingInviteList,
+	CMRIncomingInviteListJsonAdapter,
 	CMROperationResult,
+	CMROperationResultJsonAdapter,
 	CMRSpace,
+	CMRSpaceJsonAdapter,
 	CMRConstants,
 	CloudHTTP,
 	FileCipher,
@@ -123,7 +126,7 @@ begin
 		Result := FHTTP.GetPage(Format('%s&weblink=%s%s&%s', [API_FOLDER, IncludeSlash(FGetPublicLink()), PathToUrl(Path, False), UnitedParams]), JSON, ShowProgress);
 		if Result then
 		begin
-			OperationResult.FromJSON(JSON);
+			TCMROperationResultJsonAdapter.Parse(JSON, OperationResult);
 			Result := FCloudResultToBooleanFromResult(OperationResult, PREFIX_ERR_DIR_LISTING);
 			if Result then
 			begin
@@ -149,7 +152,7 @@ begin
 			Success := FHTTP.GetPage(Format('%s&home=%s&%s', [API_FOLDER, PathToUrl(Path), UnitedParams]), JSON, ShowProgress);
 			if Success then
 			begin
-				OperationResult.FromJSON(JSON);
+				TCMROperationResultJsonAdapter.Parse(JSON, OperationResult);
 				Success := FCloudResultToBooleanFromResult(OperationResult, PREFIX_ERR_DIR_LISTING);
 				if Success then
 				begin
@@ -228,7 +231,7 @@ begin
 		begin
 			Success := FHTTP.GetPage(Format('%s?%s', [API_FOLDER_SHARED_INCOMING, UnitedParams]), JSON, ShowProgress);
 			if Success then
-				Success := FCloudResultToBoolean(JSON, PREFIX_ERR_INCOMING_REQUESTS_LISTING) and LocalListing.FromJSON(JSON);
+				Success := FCloudResultToBoolean(JSON, PREFIX_ERR_INCOMING_REQUESTS_LISTING) and TCMRIncomingInviteListJsonAdapter.Parse(JSON, LocalListing);
 			Result := TAPICallResult.FromBoolean(Success, JSON);
 		end);
 
@@ -363,7 +366,7 @@ begin
 			Progress := False;
 			Success := FHTTP.GetPage(Format('%s?%s', [API_USER_SPACE, FGetUnitedParams()]), JSON, Progress);
 			if Success then
-				Success := FCloudResultToBoolean(JSON, PREFIX_ERR_GET_USER_SPACE) and LocalSpace.FromJSON(JSON);
+				Success := FCloudResultToBoolean(JSON, PREFIX_ERR_GET_USER_SPACE) and TCMRSpaceJsonAdapter.Parse(JSON, LocalSpace);
 			Result := TAPICallResult.FromBoolean(Success, JSON);
 		end);
 

@@ -33,6 +33,7 @@ uses
 	Windows,
 	CMRConstants,
 	CMRTwostep,
+	CMRTwostepJsonAdapter,
 	PLUGIN_TYPES,
 	LANGUAGE_STRINGS,
 	ParsingHelper;
@@ -108,7 +109,7 @@ begin
 		if Assigned(Logger) then
 			Logger.Log(LOG_LEVEL_DEBUG, msgtype_details, PARSING_AUTH_DATA);
 
-		if not(extractTwostepJson(PostAnswer, TwoStepJson) and TwostepData.FromJSON(TwoStepJson)) then
+		if not(extractTwostepJson(PostAnswer, TwoStepJson) and TCMRTwostepJsonAdapter.Parse(TwoStepJson, TwostepData)) then
 		begin
 			if Assigned(Logger) then
 				Logger.Log(LOG_LEVEL_ERROR, msgtype_importanterror, ERR_PARSE_AUTH_DATA);

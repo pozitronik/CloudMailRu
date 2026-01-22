@@ -4,6 +4,7 @@ interface
 
 uses
 	CMROperationResult,
+	CMROperationResultJsonAdapter,
 	TCLogger;
 
 type
@@ -36,8 +37,11 @@ uses
 {TCloudErrorMapper}
 
 class function TCloudErrorMapper.ToFsResult(JSON: WideString; Logger: ILogger; ErrorPrefix: WideString): Integer;
+var
+	OperationResult: TCMROperationResult;
 begin
-	Result := ToFsResult(TCMROperationResult.GetOperationResult(JSON), Logger, ErrorPrefix);
+	TCMROperationResultJsonAdapter.Parse(JSON, OperationResult);
+	Result := ToFsResult(OperationResult, Logger, ErrorPrefix);
 end;
 
 class function TCloudErrorMapper.ToFsResult(CloudResult: TCMROperationResult; Logger: ILogger; ErrorPrefix: WideString): Integer;
@@ -73,8 +77,11 @@ begin
 end;
 
 class function TCloudErrorMapper.ToBoolean(JSON: WideString; Logger: ILogger; ErrorPrefix: WideString): Boolean;
+var
+	OperationResult: TCMROperationResult;
 begin
-	Result := ToBoolean(TCMROperationResult.GetOperationResult(JSON), Logger, ErrorPrefix);
+	TCMROperationResultJsonAdapter.Parse(JSON, OperationResult);
+	Result := ToBoolean(OperationResult, Logger, ErrorPrefix);
 end;
 
 class function TCloudErrorMapper.ToBoolean(CloudResult: TCMROperationResult; Logger: ILogger; ErrorPrefix: WideString): Boolean;

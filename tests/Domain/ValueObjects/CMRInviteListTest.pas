@@ -4,6 +4,7 @@ interface
 
 uses
 	CMRInviteList,
+	CMRInviteListJsonAdapter,
 	CMRInvite,
 	DUnitX.TestFramework;
 
@@ -53,7 +54,7 @@ procedure TCMRInviteListTest.TestFromJSONValidSingle;
 var
 	List: TCMRInviteList;
 begin
-	Assert.IsTrue(List.FromJSON(JSON_SINGLE_INVITE));
+	Assert.IsTrue(TCMRInviteListJsonAdapter.Parse(JSON_SINGLE_INVITE, List));
 
 	Assert.AreEqual(Integer(1), Integer(Length(List)));
 end;
@@ -62,7 +63,7 @@ procedure TCMRInviteListTest.TestFromJSONValidMultiple;
 var
 	List: TCMRInviteList;
 begin
-	Assert.IsTrue(List.FromJSON(JSON_MULTIPLE_INVITES));
+	Assert.IsTrue(TCMRInviteListJsonAdapter.Parse(JSON_MULTIPLE_INVITES, List));
 
 	Assert.AreEqual(Integer(3), Integer(Length(List)));
 end;
@@ -72,7 +73,7 @@ var
 	List: TCMRInviteList;
 begin
 	{ When there's no "invited" array, should return true with empty list }
-	Assert.IsTrue(List.FromJSON(JSON_NO_INVITES));
+	Assert.IsTrue(TCMRInviteListJsonAdapter.Parse(JSON_NO_INVITES, List));
 
 	Assert.AreEqual(Integer(0), Integer(Length(List)));
 end;
@@ -81,7 +82,7 @@ procedure TCMRInviteListTest.TestFromJSONEmptyInvitedArray;
 var
 	List: TCMRInviteList;
 begin
-	Assert.IsTrue(List.FromJSON(JSON_EMPTY_INVITES));
+	Assert.IsTrue(TCMRInviteListJsonAdapter.Parse(JSON_EMPTY_INVITES, List));
 
 	Assert.AreEqual(Integer(0), Integer(Length(List)));
 end;
@@ -90,7 +91,7 @@ procedure TCMRInviteListTest.TestFromJSONInvalidJSON;
 var
 	List: TCMRInviteList;
 begin
-	Assert.IsFalse(List.FromJSON('invalid json'));
+	Assert.IsFalse(TCMRInviteListJsonAdapter.Parse('invalid json', List));
 
 	Assert.AreEqual(Integer(0), Integer(Length(List)));
 end;
@@ -99,7 +100,7 @@ procedure TCMRInviteListTest.TestFromJSONEmptyString;
 var
 	List: TCMRInviteList;
 begin
-	Assert.IsFalse(List.FromJSON(''));
+	Assert.IsFalse(TCMRInviteListJsonAdapter.Parse('', List));
 
 	Assert.AreEqual(Integer(0), Integer(Length(List)));
 end;
@@ -108,7 +109,7 @@ procedure TCMRInviteListTest.TestInviteFields;
 var
 	List: TCMRInviteList;
 begin
-	List.FromJSON(JSON_MULTIPLE_INVITES);
+	TCMRInviteListJsonAdapter.Parse(JSON_MULTIPLE_INVITES, List);
 
 	{ Check first invite }
 	Assert.AreEqual('user1@mail.ru', List[0].email);

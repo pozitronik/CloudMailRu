@@ -4,6 +4,7 @@ interface
 
 uses
 	CMRIncomingInviteList,
+	CMRIncomingInviteListJsonAdapter,
 	CMRIncomingInvite,
 	DUnitX.TestFramework;
 
@@ -68,7 +69,7 @@ procedure TCMRIncomingInviteListTest.TestFromJSONValidSingle;
 var
 	List: TCMRIncomingInviteList;
 begin
-	Assert.IsTrue(List.FromJSON(JSON_SINGLE_INVITE));
+	Assert.IsTrue(TCMRIncomingInviteListJsonAdapter.Parse(JSON_SINGLE_INVITE, List));
 
 	Assert.AreEqual(Integer(1), Integer(Length(List)));
 end;
@@ -77,7 +78,7 @@ procedure TCMRIncomingInviteListTest.TestFromJSONValidMultiple;
 var
 	List: TCMRIncomingInviteList;
 begin
-	Assert.IsTrue(List.FromJSON(JSON_MULTIPLE_INVITES));
+	Assert.IsTrue(TCMRIncomingInviteListJsonAdapter.Parse(JSON_MULTIPLE_INVITES, List));
 
 	Assert.AreEqual(Integer(3), Integer(Length(List)));
 end;
@@ -86,7 +87,7 @@ procedure TCMRIncomingInviteListTest.TestFromJSONWithOwner;
 var
 	List: TCMRIncomingInviteList;
 begin
-	List.FromJSON(JSON_SINGLE_INVITE);
+	TCMRIncomingInviteListJsonAdapter.Parse(JSON_SINGLE_INVITE, List);
 
 	Assert.AreEqual('owner@mail.ru', List[0].owner.email);
 	Assert.AreEqual('Owner Name', List[0].owner.name);
@@ -96,7 +97,7 @@ procedure TCMRIncomingInviteListTest.TestFromJSONMountedItem;
 var
 	List: TCMRIncomingInviteList;
 begin
-	List.FromJSON(JSON_SINGLE_INVITE);
+	TCMRIncomingInviteListJsonAdapter.Parse(JSON_SINGLE_INVITE, List);
 
 	{ Item with home path is considered mounted }
 	Assert.AreEqual('/SharedFolder', List[0].home);
@@ -107,7 +108,7 @@ procedure TCMRIncomingInviteListTest.TestFromJSONUnmountedItem;
 var
 	List: TCMRIncomingInviteList;
 begin
-	List.FromJSON(JSON_MULTIPLE_INVITES);
+	TCMRIncomingInviteListJsonAdapter.Parse(JSON_MULTIPLE_INVITES, List);
 
 	{ First item has no home path - not mounted }
 	Assert.IsFalse(List[0].isMounted);
@@ -124,7 +125,7 @@ var
 	List: TCMRIncomingInviteList;
 begin
 	{ When there's no list array, should return false }
-	Assert.IsFalse(List.FromJSON(JSON_NO_LIST));
+	Assert.IsFalse(TCMRIncomingInviteListJsonAdapter.Parse(JSON_NO_LIST, List));
 
 	Assert.AreEqual(Integer(0), Integer(Length(List)));
 end;
@@ -133,7 +134,7 @@ procedure TCMRIncomingInviteListTest.TestFromJSONEmptyList;
 var
 	List: TCMRIncomingInviteList;
 begin
-	Assert.IsTrue(List.FromJSON(JSON_EMPTY_LIST));
+	Assert.IsTrue(TCMRIncomingInviteListJsonAdapter.Parse(JSON_EMPTY_LIST, List));
 
 	Assert.AreEqual(Integer(0), Integer(Length(List)));
 end;
@@ -142,7 +143,7 @@ procedure TCMRIncomingInviteListTest.TestFromJSONInvalidJSON;
 var
 	List: TCMRIncomingInviteList;
 begin
-	Assert.IsFalse(List.FromJSON('invalid json'));
+	Assert.IsFalse(TCMRIncomingInviteListJsonAdapter.Parse('invalid json', List));
 
 	Assert.AreEqual(Integer(0), Integer(Length(List)));
 end;
@@ -151,7 +152,7 @@ procedure TCMRIncomingInviteListTest.TestFromJSONEmptyString;
 var
 	List: TCMRIncomingInviteList;
 begin
-	Assert.IsFalse(List.FromJSON(''));
+	Assert.IsFalse(TCMRIncomingInviteListJsonAdapter.Parse('', List));
 
 	Assert.AreEqual(Integer(0), Integer(Length(List)));
 end;
@@ -161,7 +162,7 @@ var
 	List: TCMRIncomingInviteList;
 	Item: TCMRIncomingInvite;
 begin
-	List.FromJSON(JSON_MULTIPLE_INVITES);
+	TCMRIncomingInviteListJsonAdapter.Parse(JSON_MULTIPLE_INVITES, List);
 
 	Item := List.FindByName('Folder2');
 
@@ -176,7 +177,7 @@ var
 	List: TCMRIncomingInviteList;
 	Item: TCMRIncomingInvite;
 begin
-	List.FromJSON(JSON_MULTIPLE_INVITES);
+	TCMRIncomingInviteListJsonAdapter.Parse(JSON_MULTIPLE_INVITES, List);
 
 	Item := List.FindByName('NonexistentFolder');
 
@@ -188,7 +189,7 @@ var
 	List: TCMRIncomingInviteList;
 	Item: TCMRIncomingInvite;
 begin
-	List.FromJSON(JSON_EMPTY_LIST);
+	TCMRIncomingInviteListJsonAdapter.Parse(JSON_EMPTY_LIST, List);
 
 	Item := List.FindByName('AnyName');
 

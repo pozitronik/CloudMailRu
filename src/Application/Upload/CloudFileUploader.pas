@@ -9,6 +9,7 @@ uses
 	CMROAuth,
 	CMRFileIdentity,
 	CMROperationResult,
+	CMROperationResultJsonAdapter,
 	PLUGIN_TYPES,
 	LANGUAGE_STRINGS,
 	SETTINGS_CONSTANTS,
@@ -185,7 +186,7 @@ begin
 		begin
 			if HTTP.PostForm(API_FILE_ADD + '?' + UnitedParams, Format('api=2&conflict=%s&home=/%s&hash=%s&size=%d', [ConflictMode, PathToUrl(RemotePath), FileIdentity.Hash, FileIdentity.size]), JSON, 'application/x-www-form-urlencoded', LogErrors, False) then
 			begin
-				OperationResult.FromJSON(JSON);
+				TCMROperationResultJsonAdapter.Parse(JSON, OperationResult);
 				ResultCode := CloudResultToFsResult(JSON, PREFIX_ERR_FILE_UPLOADING);
 				if (CLOUD_OPERATION_OK = OperationResult.OperationResult) and LogSuccess then
 					Logger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, FILE_FOUND_BY_HASH, [RemotePath]);

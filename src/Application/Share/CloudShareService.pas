@@ -7,6 +7,7 @@ interface
 uses
 	CMRDirItem,
 	CMRInviteList,
+	CMRInviteListJsonAdapter,
 	CMRConstants,
 	CloudHTTP,
 	CloudShardManager,
@@ -180,7 +181,7 @@ begin
 			Progress := False;
 			Success := FHTTP.GetPage(Format('%s?home=%s&%s', [API_FOLDER_SHARED_INFO, PathToUrl(Path), UnitedParams]), JSON, Progress);
 			if Success then
-				Success := LocalListing.FromJSON(JSON);
+				Success := TCMRInviteListJsonAdapter.Parse(JSON, LocalListing);
 			Result := TAPICallResult.FromBoolean(Success, JSON);
 		end);
 

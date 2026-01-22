@@ -4,6 +4,7 @@ interface
 
 uses
 	CMROperationResult,
+	CMROperationResultJsonAdapter,
 	CMRConstants,
 	DUnitX.TestFramework;
 
@@ -39,13 +40,9 @@ type
 		[Test]
 		procedure TestToBooleanFalse;
 		[Test]
-		procedure TestGetOperationResultStatic;
+		procedure TestParseRegistration200;
 		[Test]
-		procedure TestToBooleanStatic;
-		[Test]
-		procedure TestGetRegistrationOperationResult200;
-		[Test]
-		procedure TestGetRegistrationOperationResult400;
+		procedure TestParseRegistration400;
 	end;
 
 implementation
@@ -69,7 +66,7 @@ procedure TCMROperationResultTest.TestFromJSONSuccess;
 var
 	Result: TCMROperationResult;
 begin
-	Result.FromJSON(JSON_SUCCESS);
+	TCMROperationResultJsonAdapter.Parse(JSON_SUCCESS, Result);
 
 	Assert.AreEqual(200, Result.OperationStatus);
 	Assert.AreEqual(CLOUD_OPERATION_OK, Result.OperationResult);
@@ -79,7 +76,7 @@ procedure TCMROperationResultTest.TestFromJSONErrorExists;
 var
 	Result: TCMROperationResult;
 begin
-	Result.FromJSON(JSON_ERROR_EXISTS);
+	TCMROperationResultJsonAdapter.Parse(JSON_ERROR_EXISTS, Result);
 
 	Assert.AreEqual(400, Result.OperationStatus);
 	Assert.AreEqual(CLOUD_ERROR_EXISTS, Result.OperationResult);
@@ -90,10 +87,10 @@ var
 	Result: TCMROperationResult;
 begin
 	{ Test both 'readonly' and 'read_only' variants }
-	Result.FromJSON(JSON_ERROR_READONLY);
+	TCMROperationResultJsonAdapter.Parse(JSON_ERROR_READONLY, Result);
 	Assert.AreEqual(CLOUD_ERROR_READONLY, Result.OperationResult);
 
-	Result.FromJSON(JSON_ERROR_READ_ONLY);
+	TCMROperationResultJsonAdapter.Parse(JSON_ERROR_READ_ONLY, Result);
 	Assert.AreEqual(CLOUD_ERROR_READONLY, Result.OperationResult);
 end;
 
@@ -101,7 +98,7 @@ procedure TCMROperationResultTest.TestFromJSONErrorOverquota;
 var
 	Result: TCMROperationResult;
 begin
-	Result.FromJSON(JSON_ERROR_OVERQUOTA);
+	TCMROperationResultJsonAdapter.Parse(JSON_ERROR_OVERQUOTA, Result);
 
 	Assert.AreEqual(CLOUD_ERROR_OVERQUOTA, Result.OperationResult);
 end;
@@ -110,7 +107,7 @@ procedure TCMROperationResultTest.TestFromJSONErrorNotExists;
 var
 	Result: TCMROperationResult;
 begin
-	Result.FromJSON(JSON_ERROR_NOT_EXISTS);
+	TCMROperationResultJsonAdapter.Parse(JSON_ERROR_NOT_EXISTS, Result);
 
 	Assert.AreEqual(CLOUD_ERROR_NOT_EXISTS, Result.OperationResult);
 end;
@@ -119,7 +116,7 @@ procedure TCMROperationResultTest.TestFromJSONErrorNameTooLong;
 var
 	Result: TCMROperationResult;
 begin
-	Result.FromJSON(JSON_ERROR_NAME_TOO_LONG);
+	TCMROperationResultJsonAdapter.Parse(JSON_ERROR_NAME_TOO_LONG, Result);
 
 	Assert.AreEqual(CLOUD_ERROR_NAME_TOO_LONG, Result.OperationResult);
 end;
@@ -128,7 +125,7 @@ procedure TCMROperationResultTest.TestFromJSONErrorInvalid;
 var
 	Result: TCMROperationResult;
 begin
-	Result.FromJSON(JSON_ERROR_INVALID);
+	TCMROperationResultJsonAdapter.Parse(JSON_ERROR_INVALID, Result);
 
 	Assert.AreEqual(CLOUD_ERROR_INVALID, Result.OperationResult);
 end;
@@ -138,7 +135,7 @@ var
 	Result: TCMROperationResult;
 begin
 	{ HTTP 451 = content blocked (copyright) }
-	Result.FromJSON(JSON_STATUS_451);
+	TCMROperationResultJsonAdapter.Parse(JSON_STATUS_451, Result);
 
 	Assert.AreEqual(451, Result.OperationStatus);
 	Assert.AreEqual(CLOUD_ERROR_FAHRENHEIT, Result.OperationResult);
@@ -149,7 +146,7 @@ var
 	Result: TCMROperationResult;
 begin
 	{ HTTP 507 = storage quota exceeded }
-	Result.FromJSON(JSON_STATUS_507);
+	TCMROperationResultJsonAdapter.Parse(JSON_STATUS_507, Result);
 
 	Assert.AreEqual(507, Result.OperationStatus);
 	Assert.AreEqual(CLOUD_ERROR_OVERQUOTA, Result.OperationResult);
@@ -160,7 +157,7 @@ var
 	Result: TCMROperationResult;
 begin
 	{ Invalid JSON should result in CLOUD_ERROR_UNKNOWN }
-	Result.FromJSON('not valid json');
+	TCMROperationResultJsonAdapter.Parse('not valid json', Result);
 
 	Assert.AreEqual(0, Result.OperationStatus);
 	Assert.AreEqual(CLOUD_ERROR_UNKNOWN, Result.OperationResult);
@@ -171,7 +168,7 @@ var
 	Result: TCMROperationResult;
 begin
 	{ Empty string should result in CLOUD_ERROR_UNKNOWN }
-	Result.FromJSON('');
+	TCMROperationResultJsonAdapter.Parse('', Result);
 
 	Assert.AreEqual(0, Result.OperationStatus);
 	Assert.AreEqual(CLOUD_ERROR_UNKNOWN, Result.OperationResult);
@@ -181,7 +178,7 @@ procedure TCMROperationResultTest.TestToBooleanTrue;
 var
 	Result: TCMROperationResult;
 begin
-	Result.FromJSON(JSON_SUCCESS);
+	TCMROperationResultJsonAdapter.Parse(JSON_SUCCESS, Result);
 
 	Assert.IsTrue(Result.ToBoolean);
 end;
@@ -190,41 +187,26 @@ procedure TCMROperationResultTest.TestToBooleanFalse;
 var
 	Result: TCMROperationResult;
 begin
-	Result.FromJSON(JSON_ERROR_EXISTS);
+	TCMROperationResultJsonAdapter.Parse(JSON_ERROR_EXISTS, Result);
 
 	Assert.IsFalse(Result.ToBoolean);
 end;
 
-procedure TCMROperationResultTest.TestGetOperationResultStatic;
+procedure TCMROperationResultTest.TestParseRegistration200;
 var
 	Result: TCMROperationResult;
 begin
-	Result := TCMROperationResult.GetOperationResult(JSON_SUCCESS);
-
-	Assert.AreEqual(CLOUD_OPERATION_OK, Result.OperationResult);
-end;
-
-procedure TCMROperationResultTest.TestToBooleanStatic;
-begin
-	Assert.IsTrue(TCMROperationResult.ToBoolean(JSON_SUCCESS));
-	Assert.IsFalse(TCMROperationResult.ToBoolean(JSON_ERROR_EXISTS));
-end;
-
-procedure TCMROperationResultTest.TestGetRegistrationOperationResult200;
-var
-	Result: TCMROperationResult;
-begin
-	Result := TCMROperationResult.GetRegistrationOperationResult(JSON_REGISTRATION_200);
+	TCMROperationResultJsonAdapter.ParseRegistration(JSON_REGISTRATION_200, Result);
 
 	Assert.AreEqual(200, Result.OperationStatus);
 	Assert.AreEqual(CLOUD_OPERATION_OK, Result.OperationResult);
 end;
 
-procedure TCMROperationResultTest.TestGetRegistrationOperationResult400;
+procedure TCMROperationResultTest.TestParseRegistration400;
 var
 	Result: TCMROperationResult;
 begin
-	Result := TCMROperationResult.GetRegistrationOperationResult(JSON_REGISTRATION_400);
+	TCMROperationResultJsonAdapter.ParseRegistration(JSON_REGISTRATION_400, Result);
 
 	Assert.AreEqual(400, Result.OperationStatus);
 	Assert.AreEqual(CLOUD_ERROR_BAD_REQUEST, Result.OperationResult);
