@@ -26,7 +26,6 @@ uses
 	SETTINGS_CONSTANTS,
 	PLUGIN_TYPES,
 	Winapi.Windows,
-	PluginHelper,
 	PathHelper,
 	FileHelper,
 	StringHelper,
@@ -185,42 +184,11 @@ type
 implementation
 
 {TCloudMailRu}
+
+{Delegates to FUploader}
 function TCloudMailRu.AddFileByIdentity(FileIdentity: TCMRFileIdentity; RemotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; LogErrors: Boolean = true; LogSuccess: Boolean = False): Integer;
-var
-	FileName: WideString;
-	CallResult: TAPICallResult;
 begin
-	if IsPublicAccount then
-		Exit(FS_FILE_NOTSUPPORTED);
-
-	if FDoCryptFilenames then
-	begin
-		FileName := ExtractUniversalFileName(RemotePath);
-		FileName := FCipher.CryptFileName(FileName);
-		RemotePath := ChangePathFileName(RemotePath, FileName);
-	end;
-
-	CallResult := FRetryOperation.Execute(
-		function: TAPICallResult
-		var
-			JSON: WideString;
-			OperationResult: TCMROperationResult;
-			ResultCode: Integer;
-		begin
-			{Экспериментально выяснено, что параметры api, build, email, x-email, x-page-id в запросе не обязательны}
-			if HTTP.PostForm(API_FILE_ADD + '?' + FUnitedParams, Format('api=2&conflict=%s&home=/%s&hash=%s&size=%d', [ConflictMode, PathToUrl(RemotePath), FileIdentity.Hash, FileIdentity.size]), JSON, 'application/x-www-form-urlencoded', LogErrors, False) then {Do not allow to cancel operation here}
-			begin
-				OperationResult.FromJSON(JSON);
-				ResultCode := CloudResultToFsResult(OperationResult, PREFIX_ERR_FILE_UPLOADING);
-				if (CLOUD_OPERATION_OK = OperationResult.OperationResult) and LogSuccess then
-					FLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, FILE_FOUND_BY_HASH, [RemotePath]);
-			end else begin
-				ResultCode := FS_FILE_WRITEERROR;
-			end;
-			Result := TAPICallResult.FromInteger(ResultCode, JSON);
-		end);
-
-	Result := CallResult.ResultCode;
+	Result := FUploader.AddFileByIdentity(FileIdentity, RemotePath, ConflictMode, LogErrors, LogSuccess);
 end;
 
 function TCloudMailRu.AddFileByIdentity(FileIdentity: TCMRDirItem; RemotePath, ConflictMode: WideString; LogErrors, LogSuccess: Boolean): Integer;
@@ -390,9 +358,13 @@ begin
 			begin
 				Result := Self.FRetryOperation;
 			end,
-			function(FileIdentity: TCMRFileIdentity; RemotePath, ConflictMode: WideString; LogErrors, LogSuccess: Boolean): Integer
+			function: WideString
 			begin
-				Result := Self.AddFileByIdentity(FileIdentity, RemotePath, ConflictMode, LogErrors, LogSuccess);
+				Result := Self.FUnitedParams;
+			end,
+			function(JSON: WideString; ErrorPrefix: WideString): Integer
+			begin
+				Result := Self.CloudResultToFsResult(JSON, ErrorPrefix);
 			end,
 			function(Path: WideString): Boolean
 			begin
@@ -696,23 +668,10 @@ begin
 	Exit(InitSharedConnectionParameters());
 end;
 
+{Delegates to FListingService}
 procedure TCloudMailRu.LogUserSpaceInfo;
-var
-	US: TCMRSpace;
-	QuotaInfo: WideString;
 begin
-	if IsPublicAccount then
-		Exit;
-	if GetUserSpace(US) then
-	begin
-		if (US.overquota) then
-			QuotaInfo := WARN_QUOTA_EXHAUSTED
-		else
-			QuotaInfo := EmptyWideStr;
-		FLogger.Log(LOG_LEVEL_FILE_OPERATION, MSGTYPE_DETAILS, USER_SPACE_INFO, [FormatSize(US.total), FormatSize(US.used), FormatSize(US.total - US.used), QuotaInfo]);
-	end else begin
-		FLogger.Log(LOG_LEVEL_DEBUG, MSGTYPE_IMPORTANTERROR, ERR_GET_USER_SPACE, [Email]);
-	end;
+	FListingService.LogUserSpaceInfo(Email);
 end;
 
 {Delegates to FFileOps}

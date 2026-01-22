@@ -5,9 +5,14 @@ interface
 
 uses
 	SysUtils,
-	Classes;
+	Classes,
+	Math;
+
+const
+	SIZE_TYPE_AUTO = -1;
 
 function GetWord(command: WideString; WordIndex: integer = 0): WideString; //Возвращает указанное значащее слово из строки с учётом кавычек (парсинг команд)
+function FormatSize(size: Int64; SizeType: Integer = SIZE_TYPE_AUTO): WideString;
 function ExtractLinkFromUrl(URL: WideString): WideString; //При необходимости преобразует адрес публичной ссылки к нужному виду
 function Implode(S: TStringList; Delimiter: WideString): WideString;
 function Explode(S: WideString; Delimiter: char): TStringList;
@@ -161,6 +166,35 @@ begin
 			Result := Result + WideString(UTF8[I])
 		else
 			Result := Result + '%' + IntToHex(Ord(UTF8[I]), 2);
+end;
+
+function FormatSize(size: Int64; SizeType: Integer = SIZE_TYPE_AUTO): WideString;
+const
+	Postfixes: array [0 .. 6] of string = ('b', 'kb', 'Mb', 'Gb', 'Tb', 'Pb', 'Eb');
+var
+	Iteration: Integer;
+	FloatSize: Double;
+begin
+	FloatSize := size;
+	Iteration := 0;
+
+	if SizeType = SIZE_TYPE_AUTO then
+	begin
+		for Iteration := 0 to Length(Postfixes) - 1 do
+		begin
+			if FloatSize < 1024 then
+				Break;
+			FloatSize := FloatSize / 1024;
+		end;
+	end else begin
+		while Iteration < Min(SizeType, Length(Postfixes) - 1) do
+		begin
+			FloatSize := FloatSize / 1024;
+			Inc(Iteration);
+		end;
+	end;
+
+	Result := Format('%d %s', [Round(FloatSize), Postfixes[Iteration]]);
 end;
 
 end.

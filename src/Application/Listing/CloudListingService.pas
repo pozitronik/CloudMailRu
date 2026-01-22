@@ -14,7 +14,7 @@ uses
 	CloudHTTP,
 	FileCipher,
 	PathHelper,
-	StringHelper,
+	StringHelper, {FormatSize}
 	LANGUAGE_STRINGS,
 	PLUGIN_TYPES,
 	TCLogger,
@@ -50,6 +50,8 @@ type
 		function TrashbinEmpty(): Boolean;
 		{Get user storage space information}
 		function GetUserSpace(var SpaceInfo: TCMRSpace): Boolean;
+		{Log user space information to logger}
+		procedure LogUserSpaceInfo(Email: WideString);
 	end;
 
 	{Implementation of listing service}
@@ -78,6 +80,7 @@ type
 		function TrashbinRestore(Path: WideString; RestoreRevision: Integer; ConflictMode: WideString = CLOUD_CONFLICT_RENAME): Boolean;
 		function TrashbinEmpty(): Boolean;
 		function GetUserSpace(var SpaceInfo: TCMRSpace): Boolean;
+		procedure LogUserSpaceInfo(Email: WideString);
 	end;
 
 implementation
@@ -365,6 +368,25 @@ begin
 	Result := CallResult.Success;
 	if Result then
 		SpaceInfo := LocalSpace;
+end;
+
+procedure TCloudListingService.LogUserSpaceInfo(Email: WideString);
+var
+	US: TCMRSpace;
+	QuotaInfo: WideString;
+begin
+	if FIsPublicAccount() then
+		Exit;
+	if GetUserSpace(US) then
+	begin
+		if US.overquota then
+			QuotaInfo := WARN_QUOTA_EXHAUSTED
+		else
+			QuotaInfo := EmptyWideStr;
+		FLogger.Log(LOG_LEVEL_FILE_OPERATION, MSGTYPE_DETAILS, USER_SPACE_INFO, [FormatSize(US.total), FormatSize(US.used), FormatSize(US.total - US.used), QuotaInfo]);
+	end else begin
+		FLogger.Log(LOG_LEVEL_DEBUG, MSGTYPE_IMPORTANTERROR, ERR_GET_USER_SPACE, [Email]);
+	end;
 end;
 
 end.

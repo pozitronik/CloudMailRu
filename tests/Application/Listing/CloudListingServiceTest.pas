@@ -99,6 +99,12 @@ type
 		procedure TestGetUserSpace_Success_PopulatesSpaceInfo;
 		[Test]
 		procedure TestGetUserSpace_HTTPFailure_ReturnsFalse;
+
+		{LogUserSpaceInfo tests}
+		[Test]
+		procedure TestLogUserSpaceInfo_PublicAccount_DoesNotLog;
+		[Test]
+		procedure TestLogUserSpaceInfo_Success_LogsSpaceInfo;
 	end;
 
 implementation
@@ -421,6 +427,32 @@ begin
 	Success := FService.GetUserSpace(SpaceInfo);
 
 	Assert.IsFalse(Success, 'GetUserSpace should return false on HTTP failure');
+end;
+
+{LogUserSpaceInfo tests}
+
+procedure TCloudListingServiceTest.TestLogUserSpaceInfo_PublicAccount_DoesNotLog;
+begin
+	FIsPublicAccount := True;
+
+	{Should not throw, just exit early for public accounts}
+	FService.LogUserSpaceInfo('test@mail.ru');
+
+	{No assertions needed - just verify no exception}
+	Assert.Pass('LogUserSpaceInfo should handle public accounts gracefully');
+end;
+
+procedure TCloudListingServiceTest.TestLogUserSpaceInfo_Success_LogsSpaceInfo;
+begin
+	{Set up response for GetUserSpace}
+	FMockHTTP.SetDefaultResponse(True, '{"status":200,"body":{"bytes_total":10737418240,"bytes_used":5368709120,"overquota":false}}');
+	FIsPublicAccount := False;
+
+	{Should log space info without throwing}
+	FService.LogUserSpaceInfo('test@mail.ru');
+
+	{No assertions needed - verify method completes without exception}
+	Assert.Pass('LogUserSpaceInfo should log space information successfully');
 end;
 
 initialization

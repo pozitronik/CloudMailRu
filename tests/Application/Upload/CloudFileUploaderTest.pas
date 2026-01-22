@@ -36,7 +36,6 @@ type
 		FIsPublicAccount: Boolean;
 		FOAuthToken: TCMROAuth;
 		FSettings: TUploadSettings;
-		FAddByIdentityCalled: Boolean;
 		FDeleteFileCalled: Boolean;
 		FRetryOperation: TRetryOperation;
 
@@ -44,7 +43,8 @@ type
 		function GetOAuthToken: TCMROAuth;
 		function IsPublicAccount: Boolean;
 		function GetRetryOperation: TRetryOperation;
-		function AddFileByIdentity(FileIdentity: TCMRFileIdentity; RemotePath, ConflictMode: WideString; LogErrors, LogSuccess: Boolean): Integer;
+		function GetUnitedParams: WideString;
+		function CloudResultToFsResult(JSON: WideString; ErrorPrefix: WideString): Integer;
 		function DeleteFile(Path: WideString): Boolean;
 		function FileIdentity(LocalPath: WideString): TCMRFileIdentity;
 	public
@@ -87,7 +87,6 @@ begin
 	FOAuthToken.access_token := 'test_token';
 	FOAuthToken.refresh_token := 'test_refresh';
 
-	FAddByIdentityCalled := False;
 	FDeleteFileCalled := False;
 
 	{Default settings}
@@ -123,7 +122,8 @@ begin
 		GetOAuthToken,
 		IsPublicAccount,
 		GetRetryOperation,
-		AddFileByIdentity,
+		GetUnitedParams,
+		CloudResultToFsResult,
 		DeleteFile,
 		FileIdentity,
 		False, {DoCryptFiles}
@@ -161,10 +161,17 @@ begin
 	Result := FRetryOperation;
 end;
 
-function TCloudFileUploaderTest.AddFileByIdentity(FileIdentity: TCMRFileIdentity; RemotePath, ConflictMode: WideString; LogErrors, LogSuccess: Boolean): Integer;
+function TCloudFileUploaderTest.GetUnitedParams: WideString;
 begin
-	FAddByIdentityCalled := True;
-	Result := FS_FILE_OK;
+	Result := 'token=test&x-email=test@mail.ru';
+end;
+
+function TCloudFileUploaderTest.CloudResultToFsResult(JSON: WideString; ErrorPrefix: WideString): Integer;
+begin
+	if Pos(WideString('"status":200'), JSON) > 0 then
+		Result := FS_FILE_OK
+	else
+		Result := FS_FILE_WRITEERROR;
 end;
 
 function TCloudFileUploaderTest.DeleteFile(Path: WideString): Boolean;
@@ -219,7 +226,8 @@ begin
 		GetOAuthToken,
 		IsPublicAccount,
 		GetRetryOperation,
-		AddFileByIdentity,
+		GetUnitedParams,
+		CloudResultToFsResult,
 		DeleteFile,
 		FileIdentity,
 		False,

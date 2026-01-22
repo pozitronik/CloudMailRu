@@ -5,41 +5,18 @@ interface
 
 uses
 	CMRConstants,
-	Math,
+	StringHelper,
 	SysUtils;
 
-function FormatSize(size: Int64; SizeType: integer = TYPE_AUTO): WideString; //Форматируем размер в удобочитаемый вид
+{Re-export FormatSize from StringHelper for backwards compatibility}
+function FormatSize(size: Int64; SizeType: Integer = SIZE_TYPE_AUTO): WideString;
 function ShardTypeFromStreamingFormat(StreamingFormat: integer): string;
 
 implementation
 
-function FormatSize(size: Int64; SizeType: integer = TYPE_AUTO): WideString; //Форматируем размер в удобочитаемый вид
-const
-	postfixes: array [0 .. 6] of string = ('b', 'kb', 'Mb', 'Gb', 'Tb', 'Pb', 'Eb');
-var
-	iteration: integer;
-	floatSize: Double;
+function FormatSize(size: Int64; SizeType: Integer = SIZE_TYPE_AUTO): WideString;
 begin
-	floatSize := size;
-	iteration := 0;
-
-	if SizeType = TYPE_AUTO then
-	begin
-		for iteration := 0 to Length(postfixes) - 1 do
-		begin
-			if floatSize < 1024 then
-				Break;
-			floatSize := floatSize / 1024;
-		end;
-	end else begin
-		while iteration < Min(SizeType, Length(postfixes) - 1) do
-		begin
-			floatSize := floatSize / 1024;
-			Inc(iteration);
-		end;
-	end;
-
-	Result := Format('%d %s', [Round(floatSize), postfixes[iteration]]);
+	Result := StringHelper.FormatSize(size, SizeType);
 end;
 
 function ShardTypeFromStreamingFormat(StreamingFormat: integer): string;
