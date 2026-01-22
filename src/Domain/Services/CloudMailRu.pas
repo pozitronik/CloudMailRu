@@ -126,6 +126,12 @@ type
 		function GetPublicLink(): WideString;
 	public
 		property IsPublicAccount: Boolean read FSettings.AccountSettings.PublicAccount;
+		{Service accessors - exposed for external use and MVP architecture}
+		property Downloader: ICloudFileDownloader read FDownloader;
+		property Uploader: ICloudFileUploader read FUploader;
+		property ShareService: ICloudShareService read FShareService;
+		property ListingService: ICloudListingService read FListingService;
+		property FileOps: ICloudFileOperations read FFileOps;
 		{ERROR RESULT MAPPING - exposed for testing and external use}
 		function CloudResultToFsResult(CloudResult: TCMROperationResult; ErrorPrefix: WideString = ''): Integer; overload;
 		function CloudResultToFsResult(JSON: WideString; ErrorPrefix: WideString = ''): Integer; overload;

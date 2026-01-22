@@ -257,6 +257,7 @@
         <DCCReference Include="src\Presentation\UI\Forms\RemoteProperty.pas">
             <Form>PropertyForm</Form>
         </DCCReference>
+        <DCCReference Include="src\Presentation\Presenter\RemotePropertyPresenter.pas"/>
         <DCCReference Include="src\Infrastructure\Settings\SETTINGS_CONSTANTS.pas"/>
         <DCCReference Include="src\Infrastructure\Settings\StreamingSettings.pas"/>
         <DCCReference Include="src\Infrastructure\IO\StringHelper.pas"/>

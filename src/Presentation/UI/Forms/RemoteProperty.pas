@@ -1,4 +1,8 @@
-﻿unit RemoteProperty;
+unit RemoteProperty;
+
+{Properties dialog for cloud files/folders.
+ Implements IRemotePropertyView for MVP pattern.
+ Business logic delegated to TRemotePropertyPresenter.}
 
 interface
 
@@ -35,13 +39,15 @@ uses
 	Vcl.ImgList,
 	Clipbrd,
 	HashInfo,
-	WindowsFileSystem;
+	WindowsFileSystem,
+	RemotePropertyPresenter;
 
 const
-	WM_AFTER_SHOW = WM_USER + 300; //custom message
+	WM_AFTER_SHOW = WM_USER + 300; {Custom message for post-show initialization}
 
 type
-	TPropertyForm = class(TForm)
+	{Properties dialog form implementing IRemotePropertyView}
+	TPropertyForm = class(TForm, IRemotePropertyView)
 		PublicLinkLabel: TLabel;
 		WebLink: TEdit;
 		AccessCB: TCheckBox;
@@ -107,40 +113,56 @@ type
 		procedure ApplyHashesTBClick(Sender: TObject);
 		procedure HashesMemoExit(Sender: TObject);
 	private
-		{Private declarations}
+		{Presenter handles business logic}
+		FPresenter: TRemotePropertyPresenter;
+		{Cancellation flags}
+		FDownloadLinksCancelled: Boolean;
+		FHashesCancelled: Boolean;
+		{Post-show initialization}
 		procedure WMAfterShow(var Message: TMessage); message WM_AFTER_SHOW;
-		procedure RefreshInvites();
-		procedure RefreshPublicShare(const Publish: Boolean);
-		function FillRecursiveDownloadListing(const Path: WideString; Cloud: TCloudMailRu = nil): Boolean; //break recursion if false - cancelled
-		function FillRecursiveHashListing(const Path: WideString; Cloud: TCloudMailRu = nil; BaseDir: WideString = ''): Boolean; //break recursion if false - cancelled
-		procedure UpdateDownloadListing();
-		procedure UpdateHashesListing();
-		procedure RefreshItemDescription();
-		procedure SaveItemDescription();
-		function LinksLogProc(LogText: WideString): Boolean;
-		function HashesLogProc(LogText: WideString): Boolean;
-		function GenerateHashCommand(ListingItem: TCMRDirItem; BaseDir: WideString = ''; Path: WideString = ''): WideString;
-		procedure ApplyHashCommandList(CommandList: TStrings);
-		function CanApplyHashes(): Boolean;
-
 	protected
-		Props: TCMRDirItem;
-		InvitesListing: TCMRInviteList;
-		Cloud: TCloudMailRu;
-		RemoteName: WideString;
-		DoUrlEncode: Boolean;
-		LogCancelledFlag: Boolean;
-		HashCancelledFlag: Boolean;
-		AutoUpdateDownloadListing: Boolean;
-		ShowDescription: Boolean;
-		EditDescription: Boolean;
-		PluginIonFileName: WideString; //Переопределённое (или нет) имя файла описаний, с которым будет работать плагин
-		FFileSystem: IFileSystem;
-
-		TempPublicCloud: TCloudMailRu; //Облако для получения прямых ссылок на опубликованные объекты
+		{IRemotePropertyView implementation}
+		procedure SetCaption(ACaption: WideString);
+		procedure SetWebLink(Link: WideString);
+		procedure SetWebLinkEnabled(Enabled: Boolean);
+		procedure SetPublishChecked(Checked: Boolean);
+		procedure SetPublishEnabled(Enabled: Boolean);
+		procedure ShowTab(Tab: TRemotePropertyTab);
+		procedure HideTab(Tab: TRemotePropertyTab);
+		procedure SetExtPropertiesVisible(Visible: Boolean);
+		procedure ClearInvitesList;
+		procedure AddInvite(Email, Access: WideString);
+		function GetSelectedInviteEmail: WideString;
+		function GetSelectedInviteAccess: WideString;
+		procedure ClearDownloadLinks;
+		procedure AddDownloadLink(Link: WideString);
+		procedure SetDownloadLinksLogMessage(Message: WideString);
+		procedure SetDownloadLinksCancelEnabled(Enabled: Boolean);
+		procedure SetDownloadLinksRefreshEnabled(Enabled: Boolean);
+		procedure ClearHashes;
+		procedure AddHash(HashCommand: WideString);
+		procedure SetHashesLogMessage(Message: WideString);
+		procedure SetHashesCancelEnabled(Enabled: Boolean);
+		procedure SetHashesRefreshEnabled(Enabled: Boolean);
+		procedure SetHashesMemoReadOnly(ReadOnly: Boolean);
+		procedure SetApplyHashesEnabled(Enabled: Boolean);
+		procedure SetLoadHashesEnabled(Enabled: Boolean);
+		function GetHashCommands: TStrings;
+		procedure SetDescription(Text: WideString);
+		function GetDescription: WideString;
+		procedure SetDescriptionReadOnly(ReadOnly: Boolean);
+		procedure SetDescriptionSaveEnabled(Enabled: Boolean);
+		procedure SetDescriptionTabCaption(ACaption: WideString);
+		procedure ShowError(Title, Message: WideString);
+		procedure ProcessMessages;
+		function IsDownloadLinksCancelled: Boolean;
+		function IsHashesCancelled: Boolean;
+		procedure ResetDownloadLinksCancelled;
+		procedure ResetHashesCancelled;
+		function GetInviteEmailInput: WideString;
+		function GetInviteAccessInput: Integer;
 	public
-		{Public declarations}
-
+		destructor Destroy; override;
 	end;
 
 var
@@ -149,317 +171,240 @@ var
 implementation
 
 {$R *.dfm}
-{TPropertyForm}
 
-procedure TPropertyForm.RefreshItemDescription;
-var
-	CurrentDescriptions: TDescription;
-	LocalPath: WideString;
-	ResultHash: WideString;
+uses
+	PathHelper;
+
+{TPropertyForm - IRemotePropertyView implementation}
+
+procedure TPropertyForm.SetCaption(ACaption: WideString);
 begin
-	DescriptionEditMemo.lines.Clear;
-	LocalPath := GetTmpFileName(DESCRIPTION_TEMP_EXT);
-	{Download description file without logging errors (file may not exist)}
-	if self.Cloud.GetFile(IncludeTrailingBackslash(ExtractFileDir(self.RemoteName)) + self.PluginIonFileName, LocalPath, ResultHash, False) <> FS_FILE_OK then
-		Exit;
-	CurrentDescriptions := TDescription.Create(LocalPath, FFileSystem, GetTCCommentPreferredFormat);
-	try
-		CurrentDescriptions.Read;
-		DescriptionEditMemo.lines.Text := CurrentDescriptions.GetValue(ExtractFileName(self.RemoteName), FORMAT_CLEAR);
-	finally
-		CurrentDescriptions.Free;
-	end;
-	DeleteFileW(PWideChar(LocalPath));
+	Caption := ACaption;
 end;
 
-procedure TPropertyForm.SaveHashesTbClick(Sender: TObject);
+procedure TPropertyForm.SetWebLink(Link: WideString);
 begin
-	if (SaveDialogSD.Execute(self.Handle)) then
+	WebLink.Text := Link;
+	if Link <> EmptyWideStr then
 	begin
-		HashesMemo.lines.SaveToFile(SaveDialogSD.FileName);
+		WebLink.SetFocus;
+		WebLink.SelectAll;
 	end;
 end;
 
-procedure TPropertyForm.SaveItemDescription;
-var
-	CurrentDescriptions: TDescription;
-	RemotePath, LocalPath: WideString;
-	RemoteFileExists: Boolean;
-	ResultHash: WideString;
+procedure TPropertyForm.SetWebLinkEnabled(Enabled: Boolean);
 begin
-	RemotePath := IncludeTrailingBackslash(ExtractFileDir(self.RemoteName)) + self.PluginIonFileName;
-	LocalPath := GetTmpFileName(DESCRIPTION_TEMP_EXT);
+	WebLink.Enabled := Enabled;
+end;
 
-	{Download existing description file (if any) without logging errors}
-	RemoteFileExists := self.Cloud.GetFile(RemotePath, LocalPath, ResultHash, False) = FS_FILE_OK;
-	CurrentDescriptions := TDescription.Create(LocalPath, FFileSystem, GetTCCommentPreferredFormat);
-	try
-		if RemoteFileExists then //если был прежний файл - его надо перечитать и удалить с сервера
-		begin
-			CurrentDescriptions.Read;
-			self.Cloud.deleteFile(RemotePath); //Приходится удалять, потому что не знаем, как переписать
-		end;
-		CurrentDescriptions.SetValue(ExtractFileName(self.RemoteName), DescriptionEditMemo.lines.Text);
-		CurrentDescriptions.Write();
-		{Upload description file or delete remote if local doesn't exist}
-		if System.SysUtils.FileExists(CurrentDescriptions.ionFilename) then
-			self.Cloud.PutFile(CurrentDescriptions.ionFilename, RemotePath)
-		else
-			self.Cloud.DeleteFile(RemotePath);
-	finally
-		CurrentDescriptions.Free;
+procedure TPropertyForm.SetPublishChecked(Checked: Boolean);
+begin
+	AccessCB.Checked := Checked;
+end;
+
+procedure TPropertyForm.SetPublishEnabled(Enabled: Boolean);
+begin
+	AccessCB.Enabled := Enabled;
+end;
+
+procedure TPropertyForm.ShowTab(Tab: TRemotePropertyTab);
+begin
+	case Tab of
+		rptFolderAccess: FolderAccessTS.TabVisible := True;
+		rptDownloadLinks: DownloadLinksTS.TabVisible := True;
+		rptDescription: DescriptionTS.TabVisible := True;
+		rptHashesList: HashesListTS.TabVisible := True;
 	end;
 end;
 
-procedure TPropertyForm.UpdateDownloadListing;
+procedure TPropertyForm.HideTab(Tab: TRemotePropertyTab);
 begin
-	DownloadLinksMemo.lines.Clear;
-	if self.Cloud.IsPublicAccount then
-	begin
-		if Props.type_ = TYPE_DIR then
-		begin (*рекурсивно получаем все ссылки в каталоге*)
-			FillRecursiveDownloadListing(IncludeTrailingPathDelimiter(self.RemoteName))
-		end else begin
-			DownloadLinksMemo.lines.Text := self.Cloud.getSharedFileUrl(self.RemoteName);
-		end;
-	end else begin
-		(*У объекта есть публичная ссылка, можно получить прямые ссылки на скачивание*)
-		TCloudMailRuFactory.CreatePublicCloud(self.TempPublicCloud, WebLink.Text);
-		if Props.type_ = TYPE_DIR then
-		begin (*рекурсивно получаем все ссылки в каталоге*)
-			FillRecursiveDownloadListing(EmptyWideStr, self.TempPublicCloud);
-		end else begin
-			DownloadLinksMemo.lines.Text := TempPublicCloud.getSharedFileUrl(self.RemoteName);
-		end;
-		TempPublicCloud.Free;
-	end;
-	LinksLogProc(DONE);
-end;
-
-procedure TPropertyForm.UpdateHashesListing;
-begin
-	HashesMemo.lines.Clear;
-
-	if Props.type_ = TYPE_DIR then
-	begin (*рекурсивно получаем все ссылки в каталоге*)
-		FillRecursiveHashListing(IncludeTrailingPathDelimiter(self.RemoteName))
-	end else begin
-		HashesMemo.lines.Add(GenerateHashCommand(Props));
-	end;
-
-	LinksLogProc(DONE);
-end;
-
-function TPropertyForm.FillRecursiveDownloadListing(const Path: WideString; Cloud: TCloudMailRu = nil): Boolean;
-var
-	CurrentDirListing: TCMRDirItemList;
-	CurrentDirItemsCounter: Integer;
-begin
-	CancelLinksScanTb.Enabled := true;
-	RefreshLinksScanTb.Enabled := false;
-	result := true;
-	if not(Assigned(Cloud)) then
-		Cloud := self.Cloud;
-
-	if not LinksLogProc(Format(PREFIX_SCAN, [IncludeTrailingPathDelimiter(Path)])) then
-		exit(false);
-	Cloud.getDirListing(Path, CurrentDirListing);
-	ProcessMessages;
-	for CurrentDirItemsCounter := 0 to Length(CurrentDirListing) - 1 do
-	begin
-		if CurrentDirListing[CurrentDirItemsCounter].type_ = TYPE_DIR then
-		begin
-			result := FillRecursiveDownloadListing(IncludeTrailingPathDelimiter(Path) + CurrentDirListing[CurrentDirItemsCounter].name, Cloud);
-			if not result then
-				break;
-
-		end else begin
-			DownloadLinksMemo.lines.Add(Cloud.getSharedFileUrl(IncludeTrailingPathDelimiter(Path) + CurrentDirListing[CurrentDirItemsCounter].name));
-		end;
-	end;
-	RefreshLinksScanTb.Enabled := true;
-	CancelLinksScanTb.Enabled := false;
-end;
-
-function TPropertyForm.FillRecursiveHashListing(const Path: WideString; Cloud: TCloudMailRu = nil; BaseDir: WideString = ''): Boolean;
-var
-	CurrentDirListing: TCMRDirItemList;
-	CurrentDirItemsCounter: Integer;
-	CurrentItem: TCMRDirItem;
-begin
-	CancelHashesScanTb.Enabled := true;
-	RefreshHashesScanTb.Enabled := false;
-	result := true;
-
-	if EmptyWideStr = BaseDir then
-		BaseDir := Path;
-
-	if not(Assigned(Cloud)) then
-		Cloud := self.Cloud;
-	if not HashesLogProc(Format(PREFIX_SCAN, [IncludeTrailingPathDelimiter(Path)])) then
-		exit(false);
-	Cloud.getDirListing(Path, CurrentDirListing);
-	ProcessMessages;
-	for CurrentDirItemsCounter := 0 to Length(CurrentDirListing) - 1 do
-	begin
-		CurrentItem := CurrentDirListing[CurrentDirItemsCounter];
-		if CurrentItem.type_ = TYPE_DIR then
-		begin
-			result := FillRecursiveHashListing(IncludeTrailingPathDelimiter(Path) + CurrentItem.name, Cloud, BaseDir);
-			if not result then
-				break;
-
-		end else begin
-			HashesMemo.lines.Add(GenerateHashCommand(CurrentItem, BaseDir, Path));
-		end;
-	end;
-	RefreshHashesScanTb.Enabled := true;
-	CancelHashesScanTb.Enabled := false;
-end;
-
-procedure TPropertyForm.RefreshPublicShare(const Publish: Boolean);
-var
-	PublicLink: WideString;
-begin
-	if Publish then
-	begin
-		if self.Cloud.publishFile(Props.home, PublicLink) then
-		begin
-			WebLink.Text := PUBLIC_ACCESS_URL + PublicLink;
-			Props.WebLink := PublicLink;
-			WebLink.Enabled := true;
-			WebLink.SetFocus;
-			WebLink.SelectAll;
-			ExtPropertiesPC.Visible := true;
-			DownloadLinksTS.TabVisible := true;
-			//UpdateDownloadListing;
-		end else begin
-			MessageBoxW(self.Handle, PWideChar(Format(ERR_PUBLISH_MSG, [Props.home])), ERR_PUBLISH_FILE, MB_OK + MB_ICONERROR);
-		end;
-	end else begin
-		if Cloud.publishFile(Props.home, Props.WebLink, CLOUD_UNPUBLISH) then
-		begin
-			WebLink.Text := EmptyWideStr;
-			Props.WebLink := EmptyWideStr;
-			WebLink.Enabled := false;
-			DownloadLinksTS.TabVisible := false;
-			if ExtPropertiesPC.TabIndex = -1 then
-				ExtPropertiesPC.Visible := false;
-
-		end else begin
-			MessageBoxW(self.Handle, PWideChar(Format(ERR_PUBLISH_MSG, [Props.home])), ERR_UNPUBLISH_FILE, MB_OK + MB_ICONERROR);
-		end;
+	case Tab of
+		rptFolderAccess: FolderAccessTS.TabVisible := False;
+		rptDownloadLinks: DownloadLinksTS.TabVisible := False;
+		rptDescription: DescriptionTS.TabVisible := False;
+		rptHashesList: HashesListTS.TabVisible := False;
 	end;
 end;
 
-procedure TPropertyForm.RefreshLinksScanTbClick(Sender: TObject);
+procedure TPropertyForm.SetExtPropertiesVisible(Visible: Boolean);
 begin
-	UpdateDownloadListing;
+	ExtPropertiesPC.Visible := Visible;
 end;
 
-procedure TPropertyForm.RefreshHashesScanTbClick(Sender: TObject);
-begin
-	ApplyHashesTB.Enabled := false;
-	LoadHashesTb.Enabled := false;
-	UpdateHashesListing();
-	ApplyHashesTB.Enabled := CanApplyHashes;
-	LoadHashesTb.Enabled := CanApplyHashes;
-end;
-
-procedure TPropertyForm.RefreshInvites;
-var
-	i, InvitesCount: Integer;
+procedure TPropertyForm.ClearInvitesList;
 begin
 	while InvitesLE.Strings.Count > 0 do
 		InvitesLE.DeleteRow(1);
-	if Cloud.getShareInfo(Props.home, self.InvitesListing) then
-	begin
-		InvitesCount := Length(self.InvitesListing) - 1;
-		for i := 0 to InvitesCount do
-			InvitesLE.InsertRow(self.InvitesListing[i].email, TCloudAccessUtils.AccessToString(self.InvitesListing[i].access), true);
-	end else begin
-		MessageBoxW(self.Handle, PWideChar(Format(ERR_LIST_INVITES_MSG, [Props.home])), PREFIX_ERR_INVITES_LISTING, MB_OK + MB_ICONERROR);
-	end;
 end;
 
-procedure TPropertyForm.ApplyHashesTBClick(Sender: TObject);
+procedure TPropertyForm.AddInvite(Email, Access: WideString);
 begin
-	ApplyHashesTB.Enabled := false;
-	ApplyHashCommandList(HashesMemo.lines);
-	ApplyHashesTB.Enabled := true;
+	InvitesLE.InsertRow(Email, Access, True);
 end;
 
-function TPropertyForm.LinksLogProc(LogText: WideString): Boolean;
+function TPropertyForm.GetSelectedInviteEmail: WideString;
 begin
-	result := not LogCancelledFlag;
-	if (result) then
-		LinksLogLabel.Caption := LogText
-	else
-		LinksLogLabel.Caption := EmptyWideStr;
-	LogCancelledFlag := false;
+	Result := InvitesLE.Keys[InvitesLE.Row];
 end;
 
-procedure TPropertyForm.LoadHashesTbClick(Sender: TObject);
+function TPropertyForm.GetSelectedInviteAccess: WideString;
 begin
-	if (OpenDialogOD.Execute(self.Handle)) then
-	begin
-		HashesMemo.lines.LoadFromFile(OpenDialogOD.FileName);
-	end;
+	Result := InvitesLE.Values[GetSelectedInviteEmail];
 end;
 
-procedure TPropertyForm.PublicLinkLabelClick(Sender: TObject);
+procedure TPropertyForm.ClearDownloadLinks;
 begin
-	if AccessCB.Checked then
-		Clipboard.AsText := WebLink.Text;
+	DownloadLinksMemo.Lines.Clear;
 end;
 
-procedure TPropertyForm.ApplyHashCommandList(CommandList: TStrings);
-var
-	ItemIndex: Integer;
-	CurrentCommand: THashInfo;
+procedure TPropertyForm.AddDownloadLink(Link: WideString);
 begin
-	for ItemIndex := 0 to CommandList.Count do
-	begin
-		ProcessMessages;
-		CurrentCommand := THashInfo.Create(CommandList.Strings[ItemIndex]);
-		if CurrentCommand.valid then
-		begin
-			if Props.kind = TYPE_DIR then //клонируем в каталог
-				Cloud.addFileByIdentity(CurrentCommand.CloudFileIdentity, IncludeTrailingPathDelimiter(self.RemoteName) + CurrentCommand.name, CLOUD_CONFLICT_RENAME)
-			else //клонируем рядом
-				Cloud.addFileByIdentity(CurrentCommand.CloudFileIdentity, ExtractFilePath(self.RemoteName) + CurrentCommand.name, CLOUD_CONFLICT_RENAME);
-		end else begin
-			HashesLogProc(Format(ERR_LINE_HASH, [ItemIndex, CommandList.Strings[ItemIndex], CurrentCommand.errorString]));
-		end;
-
-	end;
-	PostMessage(FindTCWindow, WM_USER + TC_REFRESH_MESSAGE, TC_REFRESH_PARAM, 0); //TC does not update current panel, so we should do it this way
+	DownloadLinksMemo.Lines.Add(Link);
 end;
 
-function TPropertyForm.CanApplyHashes: Boolean;
+procedure TPropertyForm.SetDownloadLinksLogMessage(Message: WideString);
 begin
-	result := not self.Cloud.IsPublicAccount;
+	LinksLogLabel.Caption := Message;
 end;
 
-procedure TPropertyForm.CancelHashesScanTbClick(Sender: TObject);
+procedure TPropertyForm.SetDownloadLinksCancelEnabled(Enabled: Boolean);
 begin
-	HashCancelledFlag := true;
-
+	CancelLinksScanTb.Enabled := Enabled;
 end;
 
-procedure TPropertyForm.CancelLinksScanTbClick(Sender: TObject);
+procedure TPropertyForm.SetDownloadLinksRefreshEnabled(Enabled: Boolean);
 begin
-	LogCancelledFlag := true;
+	RefreshLinksScanTb.Enabled := Enabled;
 end;
 
-procedure TPropertyForm.DescriptionSaveButtonClick(Sender: TObject);
+procedure TPropertyForm.ClearHashes;
 begin
-	SaveItemDescription;
+	HashesMemo.Lines.Clear;
+end;
+
+procedure TPropertyForm.AddHash(HashCommand: WideString);
+begin
+	HashesMemo.Lines.Add(HashCommand);
+end;
+
+procedure TPropertyForm.SetHashesLogMessage(Message: WideString);
+begin
+	HashesLogLabel.Caption := Message;
+end;
+
+procedure TPropertyForm.SetHashesCancelEnabled(Enabled: Boolean);
+begin
+	CancelHashesScanTb.Enabled := Enabled;
+end;
+
+procedure TPropertyForm.SetHashesRefreshEnabled(Enabled: Boolean);
+begin
+	RefreshHashesScanTb.Enabled := Enabled;
+end;
+
+procedure TPropertyForm.SetHashesMemoReadOnly(ReadOnly: Boolean);
+begin
+	HashesMemo.ReadOnly := ReadOnly;
+end;
+
+procedure TPropertyForm.SetApplyHashesEnabled(Enabled: Boolean);
+begin
+	ApplyHashesTB.Enabled := Enabled;
+end;
+
+procedure TPropertyForm.SetLoadHashesEnabled(Enabled: Boolean);
+begin
+	LoadHashesTb.Enabled := Enabled;
+end;
+
+function TPropertyForm.GetHashCommands: TStrings;
+begin
+	Result := HashesMemo.Lines;
+end;
+
+procedure TPropertyForm.SetDescription(Text: WideString);
+begin
+	DescriptionEditMemo.Lines.Text := Text;
+end;
+
+function TPropertyForm.GetDescription: WideString;
+begin
+	Result := DescriptionEditMemo.Lines.Text;
+end;
+
+procedure TPropertyForm.SetDescriptionReadOnly(ReadOnly: Boolean);
+begin
+	DescriptionEditMemo.ReadOnly := ReadOnly;
+end;
+
+procedure TPropertyForm.SetDescriptionSaveEnabled(Enabled: Boolean);
+begin
+	DescriptionSaveButton.Enabled := Enabled;
+end;
+
+procedure TPropertyForm.SetDescriptionTabCaption(ACaption: WideString);
+begin
+	DescriptionTS.Caption := ACaption;
+end;
+
+procedure TPropertyForm.ShowError(Title, Message: WideString);
+begin
+	MessageBoxW(Handle, PWideChar(Message), PWideChar(Title), MB_OK + MB_ICONERROR);
+end;
+
+procedure TPropertyForm.ProcessMessages;
+begin
+	SystemHelper.ProcessMessages;
+end;
+
+function TPropertyForm.IsDownloadLinksCancelled: Boolean;
+begin
+	Result := FDownloadLinksCancelled;
+end;
+
+function TPropertyForm.IsHashesCancelled: Boolean;
+begin
+	Result := FHashesCancelled;
+end;
+
+procedure TPropertyForm.ResetDownloadLinksCancelled;
+begin
+	FDownloadLinksCancelled := False;
+end;
+
+procedure TPropertyForm.ResetHashesCancelled;
+begin
+	FHashesCancelled := False;
+end;
+
+function TPropertyForm.GetInviteEmailInput: WideString;
+begin
+	Result := InviteEmailEdit.Text;
+end;
+
+function TPropertyForm.GetInviteAccessInput: Integer;
+begin
+	Result := InviteAcessCB.ItemIndex;
+end;
+
+destructor TPropertyForm.Destroy;
+begin
+	FPresenter.Free;
+	inherited;
+end;
+
+{TPropertyForm - Event handlers}
+
+procedure TPropertyForm.AccessCBClick(Sender: TObject);
+begin
+	if Assigned(FPresenter) then
+		FPresenter.OnPublishChanged(AccessCB.Checked);
 end;
 
 procedure TPropertyForm.FormActivate(Sender: TObject);
 begin
-	CenterWindow(self.parentWindow, self.Handle);
+	CenterWindow(parentWindow, Handle);
 end;
 
 procedure TPropertyForm.FormKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -469,217 +414,117 @@ begin
 			Close;
 		VK_F2:
 			begin
-				if (self.ShowDescription) and (self.EditDescription) then
+				if Assigned(FPresenter) then
 				begin
-					SaveItemDescription;
-					self.ModalResult := IDCONTINUE;
-					self.CloseModal;
+					FPresenter.SaveDescription;
+					ModalResult := IDCONTINUE;
+					CloseModal;
 				end;
 			end;
 	end;
-
 end;
 
 procedure TPropertyForm.FormShow(Sender: TObject);
 begin
-	PostMessage(self.Handle, WM_AFTER_SHOW, 0, 0);
-end;
-
-function TPropertyForm.GenerateHashCommand(ListingItem: TCMRDirItem; BaseDir: WideString = ''; Path: WideString = ''): WideString;
-var
-	AppliedName: WideString;
-begin
-	(*Если задан базовый каталог, то имена отсчитываем от него*)
-	if EmptyWideStr = BaseDir then
-	begin
-		AppliedName := ListingItem.name;
-	end else begin
-		if (EmptyWideStr <> Path) then
-		begin
-			if (Pos(BaseDir, Path) = 1) and (BaseDir <> Path) then
-				AppliedName := IncludeTrailingPathDelimiter(StringReplace(Path, BaseDir, '', [])) + ListingItem.name
-			else
-				AppliedName := ListingItem.name;
-		end;
-	end;
-	result := Format('hash "%s:%d:%s"', [ListingItem.hash, ListingItem.size, AppliedName]);
-end;
-
-function TPropertyForm.HashesLogProc(LogText: WideString): Boolean;
-begin
-	result := not HashCancelledFlag;
-	if (result) then
-		HashesLogLabel.Caption := LogText
-	else
-		HashesLogLabel.Caption := EmptyWideStr;
-	HashCancelledFlag := false;
-end;
-
-procedure TPropertyForm.HashesMemoExit(Sender: TObject);
-begin
-	if CanApplyHashes then
-		ApplyHashesTB.Enabled := EmptyWideStr <> HashesMemo.Text;
-end;
-
-procedure TPropertyForm.InviteBtnClick(Sender: TObject);
-begin
-	if (Cloud.shareFolder(Props.home, InviteEmailEdit.Text, InviteAcessCB.ItemIndex)) then
-	begin
-		RefreshInvites;
-	end else begin
-		MessageBoxW(self.Handle, PWideChar(Format(ERR_INVITE_MSG, [InviteEmailEdit.Text, Props.home])), PREFIX_ERR_INVITE, MB_OK + MB_ICONERROR);
-	end;
-end;
-
-procedure TPropertyForm.InvitesPopupPopup(Sender: TObject);
-var
-	email, access: WideString;
-begin
-	email := InvitesLE.Keys[InvitesLE.Row];
-	if email = EmptyWideStr then
-	begin
-		ItemChangeAccess.Visible := false;
-		ItemDelete.Visible := false;
-		exit;
-	end else begin
-		ItemChangeAccess.Visible := true;
-		ItemDelete.Visible := true;
-	end;
-
-	access := InvitesLE.Values[email];
-	access := TCloudAccessUtils.AccessToString(access, true);
-
-	ItemChangeAccess.Caption := Format(PREFIX_ACCESS_CHANGE, [access]);
-end;
-
-procedure TPropertyForm.ItemChangeAccessClick(Sender: TObject);
-var
-	email, access: WideString;
-begin
-	email := InvitesLE.Keys[InvitesLE.Row];
-	access := InvitesLE.Values[email];
-	if Cloud.shareFolder(Props.home, InvitesLE.Keys[InvitesLE.Row], TCloudAccessUtils.StringToAccess(access, true)) then
-	begin
-		RefreshInvites;
-	end else begin
-		MessageBoxW(self.Handle, PWideChar(Format(ERR_SHARE_FOLDER_MSG, [InviteEmailEdit.Text, Props.home])), PREFIX_ERR_SHARE_FOLDER, MB_OK + MB_ICONERROR);
-	end;
-end;
-
-procedure TPropertyForm.ItemDeleteClick(Sender: TObject);
-begin
-	if Cloud.shareFolder(Props.home, InvitesLE.Keys[InvitesLE.Row], CLOUD_SHARE_NO) then
-	begin
-		RefreshInvites;
-	end else begin
-		MessageBoxW(self.Handle, PWideChar(Format(ERR_UNSHARE_FOLDER_MSG, [InviteEmailEdit.Text, Props.home])), PREFIX_ERR_UNSHARE_FOLDER, MB_OK + MB_ICONERROR);
-	end;
-
-end;
-
-procedure TPropertyForm.ItemRefreshClick(Sender: TObject);
-begin
-	RefreshInvites;
-end;
-
-procedure TPropertyForm.SaveLinksTbClick(Sender: TObject);
-begin
-	if (SaveDialogSD.Execute(self.Handle)) then
-	begin
-		DownloadLinksMemo.lines.SaveToFile(SaveDialogSD.FileName);
-	end;
-end;
-
-class function TPropertyForm.ShowProperty(parentWindow: HWND; RemoteName: WideString; RemoteProperty: TCMRDirItem; Cloud: TCloudMailRu; FileSystem: IFileSystem; DoUrlEncode: Boolean = true; AutoUpdateDownloadListing: Boolean = true; ShowDescription: Boolean = true; EditDescription: Boolean = true; PluginIonFileName: WideString = 'descript.ion'): Integer;
-var
-	PropertyForm: TPropertyForm;
-begin
-	try
-		PropertyForm := TPropertyForm.Create(nil);
-		PropertyForm.parentWindow := parentWindow;
-
-		PropertyForm.RemoteName := RemoteName;
-		PropertyForm.Caption := RemoteProperty.name;
-		PropertyForm.Cloud := Cloud;
-		PropertyForm.Props := RemoteProperty;
-		PropertyForm.AutoUpdateDownloadListing := AutoUpdateDownloadListing;
-		PropertyForm.LogCancelledFlag := false;
-		PropertyForm.HashCancelledFlag := false;
-		PropertyForm.DoUrlEncode := DoUrlEncode;
-		PropertyForm.ShowDescription := ShowDescription;
-		PropertyForm.EditDescription := EditDescription;
-		PropertyForm.PluginIonFileName := PluginIonFileName;
-		PropertyForm.FFileSystem := FileSystem;
-		if ('descript.ion' <> PluginIonFileName) then
-			PropertyForm.DescriptionTS.Caption := Format(DESCRIPTION_FROM, [PluginIonFileName]);
-
-		result := PropertyForm.Showmodal;
-
-	finally
-		FreeAndNil(PropertyForm);
-	end;
+	PostMessage(Handle, WM_AFTER_SHOW, 0, 0);
 end;
 
 procedure TPropertyForm.WMAfterShow(var Message: TMessage);
 begin
-	if not(Props.WebLink = EmptyWideStr) then
-	begin
-		WebLink.Text := PUBLIC_ACCESS_URL + Props.WebLink;
-		WebLink.SetFocus;
-		WebLink.SelectAll;
-	end;
-
-	ExtPropertiesPC.Visible := false;
-	FolderAccessTS.TabVisible := false;
-	DownloadLinksTS.TabVisible := false;
-	DescriptionTS.TabVisible := false;
-	HashesListTS.TabVisible := false;
-
-	ApplyHashesTB.Enabled := CanApplyHashes;
-	LoadHashesTb.Enabled := CanApplyHashes;
-
-	if self.Cloud.IsPublicAccount then
-	begin
-		AccessCB.Enabled := false;
-		AccessCB.Checked := true;
-		ExtPropertiesPC.Visible := true;
-		DownloadLinksTS.TabVisible := true;
-		HashesMemo.ReadOnly := true;
-
-		if self.AutoUpdateDownloadListing then
-			UpdateDownloadListing;
-	end else begin
-		AccessCB.Checked := not(Props.WebLink = EmptyWideStr);
-		WebLink.Enabled := AccessCB.Checked;
-		if (Props.type_ = TYPE_DIR) or (Props.kind = KIND_SHARED) then
-		begin
-			ExtPropertiesPC.Visible := true;
-			FolderAccessTS.TabVisible := true;
-			RefreshInvites;
-		end;
-
-	end;
-	if self.ShowDescription then
-	begin
-		ExtPropertiesPC.Visible := true;
-		DescriptionTS.TabVisible := true;
-		RefreshItemDescription;
-		DescriptionEditMemo.ReadOnly := not self.EditDescription;
-		DescriptionSaveButton.Enabled := self.EditDescription;
-
-	end;
-	HashesListTS.TabVisible := true;
-
+	{Presenter initialization happens after form is shown}
+	{View state already set by presenter during Initialize call}
 end;
 
-procedure TPropertyForm.WrapHashesTbClick(Sender: TObject);
+procedure TPropertyForm.InviteBtnClick(Sender: TObject);
 begin
-	if WrapHashesTb.Down then
-		HashesMemo.ScrollBars := ssVertical
-	else
-		HashesMemo.ScrollBars := ssBoth;
+	if Assigned(FPresenter) then
+		FPresenter.OnInviteClick;
+end;
 
-	HashesMemo.WordWrap := WrapHashesTb.Down;
+procedure TPropertyForm.ItemDeleteClick(Sender: TObject);
+begin
+	if Assigned(FPresenter) then
+		FPresenter.OnInviteDeleteClick;
+end;
+
+procedure TPropertyForm.ItemRefreshClick(Sender: TObject);
+begin
+	if Assigned(FPresenter) then
+		FPresenter.RefreshInvites;
+end;
+
+procedure TPropertyForm.InvitesPopupPopup(Sender: TObject);
+var
+	Email, Access: WideString;
+begin
+	Email := GetSelectedInviteEmail;
+	if Email = EmptyWideStr then
+	begin
+		ItemChangeAccess.Visible := False;
+		ItemDelete.Visible := False;
+		Exit;
+	end
+	else
+	begin
+		ItemChangeAccess.Visible := True;
+		ItemDelete.Visible := True;
+	end;
+
+	Access := GetSelectedInviteAccess;
+	Access := TCloudAccessUtils.AccessToString(Access, True);
+	ItemChangeAccess.Caption := Format(PREFIX_ACCESS_CHANGE, [Access]);
+end;
+
+procedure TPropertyForm.ItemChangeAccessClick(Sender: TObject);
+begin
+	if Assigned(FPresenter) then
+		FPresenter.OnInviteChangeAccessClick;
+end;
+
+procedure TPropertyForm.RefreshLinksScanTbClick(Sender: TObject);
+begin
+	if Assigned(FPresenter) then
+		FPresenter.RefreshDownloadLinks;
+end;
+
+procedure TPropertyForm.CancelLinksScanTbClick(Sender: TObject);
+begin
+	FDownloadLinksCancelled := True;
+end;
+
+procedure TPropertyForm.RefreshHashesScanTbClick(Sender: TObject);
+begin
+	if Assigned(FPresenter) then
+		FPresenter.RefreshHashes;
+end;
+
+procedure TPropertyForm.CancelHashesScanTbClick(Sender: TObject);
+begin
+	FHashesCancelled := True;
+end;
+
+procedure TPropertyForm.ApplyHashesTBClick(Sender: TObject);
+begin
+	if Assigned(FPresenter) then
+		FPresenter.ApplyHashCommands;
+end;
+
+procedure TPropertyForm.HashesMemoExit(Sender: TObject);
+begin
+	if Assigned(FPresenter) and FPresenter.CanApplyHashes then
+		ApplyHashesTB.Enabled := HashesMemo.Text <> EmptyWideStr;
+end;
+
+procedure TPropertyForm.DescriptionSaveButtonClick(Sender: TObject);
+begin
+	if Assigned(FPresenter) then
+		FPresenter.SaveDescription;
+end;
+
+procedure TPropertyForm.PublicLinkLabelClick(Sender: TObject);
+begin
+	if AccessCB.Checked then
+		Clipboard.AsText := WebLink.Text;
 end;
 
 procedure TPropertyForm.WrapLinksTbClick(Sender: TObject);
@@ -688,21 +533,72 @@ begin
 		DownloadLinksMemo.ScrollBars := ssVertical
 	else
 		DownloadLinksMemo.ScrollBars := ssBoth;
-
 	DownloadLinksMemo.WordWrap := WrapLinksTb.Down;
 end;
 
-procedure TPropertyForm.AccessCBClick(Sender: TObject);
+procedure TPropertyForm.SaveLinksTbClick(Sender: TObject);
 begin
-	if self.Cloud.IsPublicAccount then
-		exit;
-	AccessCB.Enabled := false; //блокируем во избежание повторных кликов
-	WebLink.Text := WAIT;
-	RefreshPublicShare(AccessCB.Checked);
-	if AccessCB.Checked and self.AutoUpdateDownloadListing then
-		UpdateDownloadListing;
+	if SaveDialogSD.Execute(Handle) then
+		DownloadLinksMemo.Lines.SaveToFile(SaveDialogSD.FileName);
+end;
 
-	AccessCB.Enabled := true;
+procedure TPropertyForm.WrapHashesTbClick(Sender: TObject);
+begin
+	if WrapHashesTb.Down then
+		HashesMemo.ScrollBars := ssVertical
+	else
+		HashesMemo.ScrollBars := ssBoth;
+	HashesMemo.WordWrap := WrapHashesTb.Down;
+end;
+
+procedure TPropertyForm.SaveHashesTbClick(Sender: TObject);
+begin
+	if SaveDialogSD.Execute(Handle) then
+		HashesMemo.Lines.SaveToFile(SaveDialogSD.FileName);
+end;
+
+procedure TPropertyForm.LoadHashesTbClick(Sender: TObject);
+begin
+	if OpenDialogOD.Execute(Handle) then
+		HashesMemo.Lines.LoadFromFile(OpenDialogOD.FileName);
+end;
+
+{TPropertyForm - Static factory method}
+
+class function TPropertyForm.ShowProperty(parentWindow: HWND; RemoteName: WideString; RemoteProperty: TCMRDirItem; Cloud: TCloudMailRu; FileSystem: IFileSystem; DoUrlEncode: Boolean; AutoUpdateDownloadListing: Boolean; ShowDescription: Boolean; EditDescription: Boolean; PluginIonFileName: WideString): Integer;
+var
+	Form: TPropertyForm;
+	Config: TRemotePropertyConfig;
+begin
+	Form := TPropertyForm.Create(nil);
+	try
+		Form.parentWindow := parentWindow;
+
+		{Create presenter with cloud services}
+		Form.FPresenter := TRemotePropertyPresenter.Create(
+			Form,
+			Cloud.Downloader,
+			Cloud.Uploader,
+			Cloud.FileOps,
+			Cloud.ListingService,
+			Cloud.ShareService,
+			FileSystem,
+			TPublicCloudFactory.Create,
+			Cloud.IsPublicAccount);
+
+		{Configure and initialize presenter}
+		Config.DoUrlEncode := DoUrlEncode;
+		Config.AutoUpdateDownloadListing := AutoUpdateDownloadListing;
+		Config.ShowDescription := ShowDescription;
+		Config.EditDescription := EditDescription;
+		Config.PluginIonFileName := PluginIonFileName;
+
+		Form.FPresenter.Initialize(RemoteProperty, RemoteName, Config);
+
+		Result := Form.ShowModal;
+	finally
+		Form.Free;
+	end;
 end;
 
 end.

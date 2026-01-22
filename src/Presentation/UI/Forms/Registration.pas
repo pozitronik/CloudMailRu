@@ -20,6 +20,7 @@ uses
 	TCLogger,
 	TCProgress,
 	CMROperationResult,
+	CMROperationResultJsonAdapter,
 	CMRConstants,
 	LANGUAGE_STRINGS,
 	SETTINGS_CONSTANTS,
@@ -93,21 +94,22 @@ end;
 function TRegistrationForm.confirmRegistration(Email, Code, captcha: WideString): boolean;
 var
 	JSON: WideString;
+	OperationResult: TCMROperationResult;
 begin
 	result := HTTPConnection.PostForm(MAILRU_REGISTRATION_CONFIRM, Format('email=%s&reg_anketa={"id":"%s","capcha":"%s"}', [Email, Code, captcha]), JSON);
 	if result then
 	begin
-		result := TCMROperationResult.GetRegistrationOperationResult(JSON).OperationResult = CLOUD_OPERATION_OK;
+		TCMROperationResultJsonAdapter.ParseRegistration(JSON, OperationResult);
+		result := OperationResult.OperationResult = CLOUD_OPERATION_OK;
 		if not result then
 			MessageBox(Handle, PWideChar(JSON), ERR_CONFIRMATION, MB_ICONERROR + MB_OK);
 	end;
-
 end;
 
 function TRegistrationForm.createAccount(firstname, lastname, Login, password, Domain: WideString; var Code: WideString): boolean;
 var
 	JSON: WideString;
-
+	OperationResult: TCMROperationResult;
 begin
 	HTTPConnection.HTTP.Request.UserAgent := 'curl/7.63.0'; //required by the server
 	HTTPConnection.HTTP.Request.Connection := EmptyWideStr;
@@ -118,7 +120,8 @@ begin
 	result := HTTPConnection.PostForm(MAILRU_REGISTRATION_SIGNUP, Format('name={"first":"%s","last":"%s"}&login=%s&domain=%s&password=%s', [firstname, lastname, Login, Domain, password]), JSON);
 	if result then
 	begin
-		result := TCMROperationResult.GetRegistrationOperationResult(JSON).OperationResult = CLOUD_OPERATION_OK;
+		TCMROperationResultJsonAdapter.ParseRegistration(JSON, OperationResult);
+		result := OperationResult.OperationResult = CLOUD_OPERATION_OK;
 		if result then
 			result := getRegistrationBody(JSON, Code)
 		else
