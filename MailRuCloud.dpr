@@ -65,6 +65,7 @@ uses
 	Registration in 'src\Presentation\UI\Forms\Registration.pas' {AskPasswordForm} ,
 	RemoteProperty in 'src\Presentation\UI\Forms\RemoteProperty.pas' {PropertyForm} ,
 	RemotePropertyPresenter in 'src\Presentation\Presenter\RemotePropertyPresenter.pas',
+	AccountsPresenter in 'src\Presentation\Presenter\AccountsPresenter.pas',
 	SETTINGS_CONSTANTS in 'src\Infrastructure\Settings\SETTINGS_CONSTANTS.pas',
 	StreamingSettings in 'src\Infrastructure\Settings\StreamingSettings.pas',
 	StringHelper in 'src\Infrastructure\IO\StringHelper.pas',

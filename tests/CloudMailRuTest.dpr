@@ -281,7 +281,9 @@ uses
 	CloudFileOperations in '..\src\Application\FileOps\CloudFileOperations.pas',
 	CloudFileOperationsTest in 'Application\FileOps\CloudFileOperationsTest.pas',
 	RemotePropertyPresenter in '..\src\Presentation\Presenter\RemotePropertyPresenter.pas',
-	RemotePropertyPresenterTest in 'Presentation\Presenter\RemotePropertyPresenterTest.pas';
+	RemotePropertyPresenterTest in 'Presentation\Presenter\RemotePropertyPresenterTest.pas',
+	AccountsPresenter in '..\src\Presentation\Presenter\AccountsPresenter.pas',
+	AccountsPresenterTest in 'Presentation\Presenter\AccountsPresenterTest.pas';
 
 {keep comment here to protect the following conditional from being removed by the IDE when adding a unit}
 {$IFNDEF TESTINSIGHT}
