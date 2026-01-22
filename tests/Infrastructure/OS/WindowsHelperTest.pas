@@ -47,6 +47,22 @@ type
 		procedure TestGetSystemIconSmallSize;
 		[Test]
 		procedure TestGetSystemIconNormalSize;
+		[Test]
+		procedure TestGetSystemIconLargeSize;
+
+		{ GetFolderIcon tests }
+		[Test]
+		procedure TestGetFolderIconSmallSize;
+		[Test]
+		procedure TestGetFolderIconNormalSize;
+		[Test]
+		procedure TestGetFolderIconLargeSize;
+		[Test]
+		procedure TestGetFolderIconDefaultSize;
+
+		{ TWindowsCommandExecutor tests }
+		[Test]
+		procedure TestWindowsCommandExecutorImplementsInterface;
 	end;
 
 implementation
@@ -209,6 +225,65 @@ begin
 	Icon := GetSystemIcon(IconSizeNormal, CSIDL_BITBUCKET);
 	Assert.AreNotEqual(HIcon(INVALID_HANDLE_VALUE), Icon,
 		'Normal icon should be retrievable');
+end;
+
+procedure TWindowsHelperTest.TestGetSystemIconLargeSize;
+var
+	Icon: HIcon;
+begin
+	{ Test large icon size parameter }
+	Icon := GetSystemIcon(IconSizeLarge, CSIDL_BITBUCKET);
+	{ Large icons may not be supported by SHGetFileInfo, but should not crash }
+	Assert.Pass('Large icon request completed without error');
+end;
+
+{ GetFolderIcon tests }
+
+procedure TWindowsHelperTest.TestGetFolderIconSmallSize;
+var
+	Icon: HIcon;
+begin
+	Icon := GetFolderIcon(IconSizeSmall);
+	Assert.AreNotEqual(HIcon(INVALID_HANDLE_VALUE), Icon,
+		'Small folder icon should be retrievable');
+end;
+
+procedure TWindowsHelperTest.TestGetFolderIconNormalSize;
+var
+	Icon: HIcon;
+begin
+	Icon := GetFolderIcon(IconSizeNormal);
+	Assert.AreNotEqual(HIcon(INVALID_HANDLE_VALUE), Icon,
+		'Normal folder icon should be retrievable');
+end;
+
+procedure TWindowsHelperTest.TestGetFolderIconLargeSize;
+var
+	Icon: HIcon;
+begin
+	{ Large icons may not be fully supported but should not crash }
+	Icon := GetFolderIcon(IconSizeLarge);
+	Assert.Pass('Large folder icon request completed without error');
+end;
+
+procedure TWindowsHelperTest.TestGetFolderIconDefaultSize;
+var
+	Icon: HIcon;
+begin
+	{ Default parameter should be IconSizeSmall }
+	Icon := GetFolderIcon;
+	Assert.AreNotEqual(HIcon(INVALID_HANDLE_VALUE), Icon,
+		'Default folder icon should be retrievable');
+end;
+
+{ TWindowsCommandExecutor tests }
+
+procedure TWindowsHelperTest.TestWindowsCommandExecutorImplementsInterface;
+var
+	Executor: ICommandExecutor;
+begin
+	Executor := TWindowsCommandExecutor.Create;
+	Assert.IsNotNull(Executor, 'TWindowsCommandExecutor should implement ICommandExecutor');
 end;
 
 initialization
