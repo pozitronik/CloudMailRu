@@ -53,22 +53,14 @@ type
 		[TearDown]
 		procedure TearDown;
 
-		{FileMove tests - combines MoveFile and RenameFile
-		 Note: These tests use complex mock interactions through TRetryOperation callbacks.
-		 Some tests are ignored because the mock HTTP response matching doesn't work
-		 correctly with the callback-based architecture. The underlying logic is tested
-		 by verifying the correct API calls in non-public scenarios.}
+		{FileMove tests - combines MoveFile and RenameFile}
 		[Test]
-		[Ignore('TRetryOperation callback captures HTTP lazily; mock response matching needs investigation')]
 		procedure TestFileMove_SameDir_CallsRenameOnly;
 		[Test]
-		[Ignore('TRetryOperation callback captures HTTP lazily; mock response matching needs investigation')]
 		procedure TestFileMove_DifferentDir_SameName_CallsMoveOnly;
 		[Test]
-		[Ignore('TRetryOperation callback captures HTTP lazily; mock response matching needs investigation')]
 		procedure TestFileMove_DifferentDir_DifferentName_CallsMoveAndRename;
 		[Test]
-		[Ignore('TRetryOperation callback captures HTTP lazily; mock response matching needs investigation')]
 		procedure TestFileMove_MoveFailure_DoesNotRename;
 		[Test]
 		procedure TestFileMove_PublicAccount_Fails;
@@ -77,13 +69,10 @@ type
 		[Test]
 		procedure TestFileCopy_SameDir_ReturnsNotSupported;
 		[Test]
-		[Ignore('TRetryOperation callback captures HTTP lazily; mock response matching needs investigation')]
 		procedure TestFileCopy_DifferentDir_SameName_CallsCopyOnly;
 		[Test]
-		[Ignore('TRetryOperation callback captures HTTP lazily; mock response matching needs investigation')]
 		procedure TestFileCopy_DifferentDir_DifferentName_CallsCopyAndRename;
 		[Test]
-		[Ignore('TRetryOperation callback captures HTTP lazily; mock response matching needs investigation')]
 		procedure TestFileCopy_CopyFailure_DoesNotRename;
 		[Test]
 		procedure TestFileCopy_PublicAccount_Fails;
@@ -100,10 +89,8 @@ type
 
 		{GetSharedFileUrl tests - require shard/redirect mocking}
 		[Test]
-		[Ignore('Requires redirect URL resolution; mock GetRedirection needs enhancement')]
 		procedure TestGetSharedFileUrl_PublicAccount_ReturnsUrl;
 		[Test]
-		[Ignore('Requires shard retrieval + redirect; complex mock setup needed')]
 		procedure TestGetSharedFileUrl_WithShardType;
 	end;
 

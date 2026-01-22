@@ -83,17 +83,14 @@ type
 
 		{GetTrashbinListing tests}
 		[Test]
-		[Ignore('Needs investigation - unclear if GetDirListing call in GetTrashbinListing is intentional')]
 		procedure TestGetTrashbinListing_Success;
 		[Test]
-		[Ignore('Needs investigation - unclear if GetDirListing call in GetTrashbinListing is intentional')]
 		procedure TestGetTrashbinListing_Empty;
 		[Test]
 		procedure TestGetTrashbinListing_Failure;
 
 		{GetSharedLinksListing tests}
 		[Test]
-		[Ignore('Needs investigation - unclear if GetDirListing call in GetSharedLinksListing is intentional')]
 		procedure TestGetSharedLinksListing_Success;
 		[Test]
 		procedure TestGetSharedLinksListing_Failure;

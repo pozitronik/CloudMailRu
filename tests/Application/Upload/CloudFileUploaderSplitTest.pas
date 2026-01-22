@@ -89,7 +89,7 @@ type
 		{Hash deduplication tests - file already exists on cloud by hash}
 		{TODO: Fix test - assertion/closure issue after AddFileByIdentity extraction}
 		[Test]
-		[Ignore('Temporarily disabled - needs investigation after AddFileByIdentity extraction')]
+		[Ignore('Access violation during hash calculation - closure/callback lifetime issue needs investigation')]
 		procedure TestPutFileSplit_HashDedup_SkipsUploadIfHashMatches;
 
 		{User abort tests}
