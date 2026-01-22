@@ -5,7 +5,6 @@ interface
 uses
 	CloudMailRu,
 	CloudSettings,
-	CMRFileIdentity,
 	CMRConstants,
 	LANGUAGE_STRINGS,
 	PLUGIN_TYPES,
@@ -68,12 +67,6 @@ type
 		procedure TestCloudHashPath_ExistingSmallFile;
 		[Test]
 		procedure TestCloudHashPath_ExistingLargeFile;
-
-		{ FileIdentity tests }
-		[Test]
-		procedure TestFileIdentity_NonExistentFile;
-		[Test]
-		procedure TestFileIdentity_ExistingFile;
 
 		{ Hash consistency tests }
 		[Test]
@@ -306,30 +299,6 @@ begin
 
 	Assert.AreEqual(40, Length(Hash), 'Large file hash should be 40 characters');
 	Assert.AreNotEqual('', Hash, 'Existing file should return non-empty hash');
-end;
-
-{ FileIdentity tests }
-
-procedure TCloudMailRuHashTest.TestFileIdentity_NonExistentFile;
-var
-	Identity: TCMRFileIdentity;
-begin
-	Identity := FCloud.FileIdentity('C:\NonExistent\File\Path.txt');
-
-	Assert.AreEqual('', Identity.Hash, 'Non-existent file should have empty hash');
-	Assert.AreEqual(Int64(-1), Identity.Size, 'Non-existent file should have size -1');
-end;
-
-procedure TCloudMailRuHashTest.TestFileIdentity_ExistingFile;
-var
-	Identity: TCMRFileIdentity;
-	FilePath: WideString;
-begin
-	FilePath := DataPath('Settings.ini');
-	Identity := FCloud.FileIdentity(FilePath);
-
-	Assert.AreEqual(40, Length(Identity.Hash), 'Hash should be 40 characters');
-	Assert.AreEqual(Int64(817), Identity.Size, 'Settings.ini should be 817 bytes');
 end;
 
 { Hash consistency tests }

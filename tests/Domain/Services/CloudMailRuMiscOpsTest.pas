@@ -2,8 +2,7 @@ unit CloudMailRuMiscOpsTest;
 
 {Tests for TCloudMailRu miscellaneous operations:
  - RejectInvite
- - GetPublishedFileStreamUrl
- - FileIdentity}
+ - GetPublishedFileStreamUrl}
 
 interface
 
@@ -11,7 +10,6 @@ uses
 	CloudMailRu,
 	CloudSettings,
 	CMRDirItem,
-	CMRFileIdentity,
 	CMRConstants,
 	PLUGIN_TYPES,
 	TCLogger,
@@ -44,7 +42,6 @@ type
 		FSettings: TCloudSettings;
 
 		function CreateCloud(PublicAccount: Boolean = False): TTestableCloudMailRu;
-		function CreateCloudWithFileSystem(FileSystem: IFileSystem): TTestableCloudMailRu;
 	public
 		[Setup]
 		procedure Setup;
@@ -70,12 +67,6 @@ type
 		procedure TestGetPublishedFileStreamUrl_FailsIfShardFails;
 		[Test]
 		procedure TestGetPublishedFileStreamUrl_GeneratesM3U8Url;
-
-		{FileIdentity tests}
-		[Test]
-		procedure TestFileIdentity_ReturnsCorrectSize;
-		[Test]
-		procedure TestFileIdentity_FileNotExists_ReturnsEmptyHash;
 	end;
 
 implementation
@@ -125,23 +116,6 @@ begin
 		FMockHTTPManager,
 		TNullAuthStrategy.Create,
 		TNullFileSystem.Create,
-		TNullLogger.Create,
-		TNullProgress.Create,
-		TNullRequest.Create);
-
-	Result.SetUnitedParams('api=2&access_token=test_token');
-end;
-
-function TCloudMailRuMiscOpsTest.CreateCloudWithFileSystem(FileSystem: IFileSystem): TTestableCloudMailRu;
-begin
-	FSettings := Default(TCloudSettings);
-	FSettings.AccountSettings.PublicAccount := False;
-
-	Result := TTestableCloudMailRu.Create(
-		FSettings,
-		FMockHTTPManager,
-		TNullAuthStrategy.Create,
-		FileSystem,
 		TNullLogger.Create,
 		TNullProgress.Create,
 		TNullRequest.Create);
@@ -267,34 +241,6 @@ begin
 
 	Assert.IsTrue(Pos(String('.m3u8'), String(StreamUrl)) > 0, 'StreamUrl should contain .m3u8 extension');
 	Assert.IsTrue(Pos(String('double_encode=1'), String(StreamUrl)) > 0, 'StreamUrl should contain double_encode parameter');
-end;
-
-{FileIdentity tests}
-
-procedure TCloudMailRuMiscOpsTest.TestFileIdentity_ReturnsCorrectSize;
-var
-	MemFS: TMemoryFileSystem;
-	Identity: TCMRFileIdentity;
-begin
-	MemFS := TMemoryFileSystem.Create;
-	{Set file content - size will be length of UTF8 bytes}
-	MemFS.SetFileContent('C:\test\file.txt', 'Hello World!'); {12 chars = 12 bytes UTF8}
-	FCloud := CreateCloudWithFileSystem(MemFS);
-
-	Identity := FCloud.FileIdentity('C:\test\file.txt');
-
-	Assert.AreEqual(Int64(12), Identity.size, 'FileIdentity should return correct file size');
-end;
-
-procedure TCloudMailRuMiscOpsTest.TestFileIdentity_FileNotExists_ReturnsEmptyHash;
-var
-	Identity: TCMRFileIdentity;
-begin
-	FCloud := CreateCloud; {Uses TNullFileSystem - files don't exist}
-
-	Identity := FCloud.FileIdentity('C:\nonexistent\file.txt');
-
-	Assert.AreEqual(WideString(''), Identity.Hash, 'FileIdentity should return empty hash for non-existent file');
 end;
 
 initialization

@@ -48,7 +48,6 @@ uses
 	CloudHashCalculator,
 	CloudShardManager,
 	CloudErrorMapper,
-	CloudAccessUtils,
 	CloudFileDownloader,
 	CloudFileUploader,
 	CloudShareService,
@@ -122,10 +121,8 @@ type
 
 		{REGULAR CLOUD}
 		function LoginRegular(Method: Integer = CLOUD_AUTH_METHOD_WEB): Boolean;
-		function GetFileRegular(RemotePath, LocalPath: WideString; var ResultHash: WideString; LogErrors: Boolean = true): Integer; //LogErrors=false => не логируем результат копирования, нужно для запроса descript.ion (которого может не быть)
 		{SHARED WEBFOLDERS}
 		function LoginShared(Method: Integer = CLOUD_AUTH_METHOD_WEB): Boolean;
-		function GetFileShared(RemotePath, LocalPath: WideString; var ResultHash: WideString; LogErrors: Boolean = true): Integer; //LogErrors=false => не логируем результат копирования, нужно для запроса descript.ion (которого может не быть)
 		function GetPublicLink(): WideString;
 	public
 		property IsPublicAccount: Boolean read FSettings.AccountSettings.PublicAccount;
@@ -172,10 +169,6 @@ type
 		function GetPublishedFileStreamUrl(FileIdentity: TCMRDirItem; var StreamUrl: WideString; ShardType: WideString = SHARD_TYPE_WEBLINK_VIDEO; Publish: Boolean = CLOUD_PUBLISH): Boolean;
 		{OTHER ROUTINES}
 		procedure LogUserSpaceInfo();
-		function FileIdentity(LocalPath: WideString): TCMRFileIdentity;
-		{STATIC ROUTINES}
-		class function CloudAccessToString(Access: WideString; Invert: Boolean = False): WideString; static;
-		class function StringToCloudAccess(AccessString: WideString; Invert: Boolean = False): Integer; static;
 	end;
 
 implementation
@@ -465,12 +458,6 @@ begin
 	inherited;
 end;
 
-function TCloudMailRu.FileIdentity(LocalPath: WideString): TCMRFileIdentity;
-begin
-	Result.Hash := CloudHash(LocalPath);
-	Result.size := FFileSystem.GetFileSize(LocalPath);
-end;
-
 function TCloudMailRu.GetSharedLinksListing(var DirListing: TCMRDirItemList; ShowProgress: Boolean = False): Boolean;
 begin
 	Result := FListingService.GetSharedLinks(DirListing, ShowProgress);
@@ -496,29 +483,17 @@ begin
 	Result := FListingService.GetDirectory(Path, DirListing, ShowProgress);
 end;
 
-{Delegates to FDownloader - kept for backward compatibility}
+{Delegates to FDownloader}
 function TCloudMailRu.GetFile(RemotePath, LocalPath: WideString; var ResultHash: WideString; LogErrors: Boolean): Integer;
 begin
 	Result := FDownloader.Download(RemotePath, LocalPath, ResultHash, LogErrors);
 end;
 
-{Delegates to FDownloader - kept for backward compatibility with tests}
-function TCloudMailRu.GetFileRegular(RemotePath, LocalPath: WideString; var ResultHash: WideString; LogErrors: Boolean): Integer;
-begin
-	Result := FDownloader.Download(RemotePath, LocalPath, ResultHash, LogErrors);
-end;
-
-{Delegates to FDownloader - kept for backward compatibility}
+{Delegates to FDownloader}
 {since 29.07.2022: изменена логика получения ссылок, см. issue #285. URL теперь всегда должны быть кодированы, иначе в некоторых случаях приходит 400}
 function TCloudMailRu.GetSharedFileUrl(RemotePath: WideString; ShardType: WideString = SHARD_TYPE_DEFAULT): WideString;
 begin
 	Result := FDownloader.GetSharedFileUrl(RemotePath, ShardType);
-end;
-
-{Delegates to FDownloader - kept for backward compatibility with tests}
-function TCloudMailRu.GetFileShared(RemotePath, LocalPath: WideString; var ResultHash: WideString; LogErrors: Boolean): Integer;
-begin
-	Result := FDownloader.Download(RemotePath, LocalPath, ResultHash, LogErrors);
 end;
 
 function TCloudMailRu.GetHTTPConnection: ICloudHTTP;
@@ -732,25 +707,13 @@ begin
 	Result := FListingService.StatusFile(Path, FileInfo);
 end;
 
-{Delegates to TCloudAccessUtils - kept for backward compatibility}
-class function TCloudMailRu.CloudAccessToString(Access: WideString; Invert: Boolean): WideString;
-begin
-	Result := TCloudAccessUtils.AccessToString(Access, Invert);
-end;
-
-{Delegates to TCloudAccessUtils - kept for backward compatibility}
-class function TCloudMailRu.StringToCloudAccess(AccessString: WideString; Invert: Boolean): Integer;
-begin
-	Result := TCloudAccessUtils.StringToAccess(AccessString, Invert);
-end;
-
-{Delegates to FHashCalculator - kept for backward compatibility with tests}
+{Delegates to FHashCalculator - protected for testability}
 function TCloudMailRu.CloudHash(Path: WideString): WideString;
 begin
 	Result := FHashCalculator.CalculateHash(Path);
 end;
 
-{Delegates to FHashCalculator - kept for backward compatibility with tests}
+{Delegates to FHashCalculator - protected for testability}
 function TCloudMailRu.CloudHash(Stream: TStream; Path: WideString = CALCULATING_HASH): WideString;
 begin
 	Result := FHashCalculator.CalculateHash(Stream, Path);
