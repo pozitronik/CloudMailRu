@@ -31,6 +31,7 @@ type
 		FShardManager: ICloudShardManager;
 		FHashCalculator: ICloudHashCalculator;
 		FMockHTTP: TMockCloudHTTP;
+		FMockHTTPRef: ICloudHTTP; {Prevents premature freeing due to TInterfacedObject reference counting}
 		FIsPublicAccount: Boolean;
 		FPublicLink: WideString;
 		FOAuthToken: TCMROAuth;
@@ -70,13 +71,12 @@ type
 		procedure TestGetSharedFileUrl_DefaultShardType_UsesPublicShard;
 
 		{GetSharedFileUrl tests - non-public account}
-		{TODO: Investigate access violations in these tests - related to GetRedirection call}
-		{[Test]
+		[Test]
 		procedure TestGetSharedFileUrl_NonPublicAccount_DirectoryPath_IncludesPublicLink;
 		[Test]
 		procedure TestGetSharedFileUrl_NonPublicAccount_FilePath_UsesPublicLinkOnly;
 		[Test]
-		procedure TestGetSharedFileUrl_NonPublicAccount_CallsGetRedirection;}
+		procedure TestGetSharedFileUrl_NonPublicAccount_CallsGetRedirection;
 
 		{Download tests - regular account}
 		[Test]
@@ -101,11 +101,10 @@ type
 		procedure TestDownload_SharedAccount_HTTPError_DeletesPartialFile;
 
 		{Download tests - shard resolution}
-		{TODO: Investigate access violations - related to new shard manager instances}
-		{[Test]
+		[Test]
 		procedure TestDownload_NoDownloadShard_ResolvesFromDispatcher;
 		[Test]
-		procedure TestDownload_NoDownloadShard_WithOverride_UsesOverride;}
+		procedure TestDownload_NoDownloadShard_WithOverride_UsesOverride;
 
 		{Download tests - encryption}
 		[Test]
@@ -120,9 +119,8 @@ type
 		{Download tests - HTTP calls verification}
 		[Test]
 		procedure TestDownload_SetsProgressNames;
-		{TODO: Investigate access violation}
-		{[Test]
-		procedure TestDownload_RegularAccount_UsesOAuthToken;}
+		[Test]
+		procedure TestDownload_RegularAccount_UsesOAuthToken;
 	end;
 
 implementation
@@ -135,6 +133,7 @@ uses
 procedure TCloudFileDownloaderTest.Setup;
 begin
 	FMockHTTP := TMockCloudHTTP.Create;
+	FMockHTTPRef := FMockHTTP; {Keep interface reference to prevent premature freeing}
 	FMockHTTP.SetDefaultResponse(True, '');
 	FMockHTTP.SetResponse('', True, 'https://redirect.url/file');
 
@@ -179,6 +178,7 @@ begin
 	FDownloader := nil;
 	FShardManager := nil;
 	FHashCalculator := nil;
+	FMockHTTPRef := nil; {Release interface reference, allows FMockHTTP to be freed}
 	CleanupTempFiles;
 end;
 
@@ -293,8 +293,42 @@ begin
 	Assert.Contains(URL, 'public.shard', 'Default shard type should use public shard');
 end;
 
-{GetSharedFileUrl tests - non-public account - DISABLED due to access violations}
-{TODO: Investigate GetRedirection call causing access violations}
+{GetSharedFileUrl tests - non-public account}
+
+procedure TCloudFileDownloaderTest.TestGetSharedFileUrl_NonPublicAccount_DirectoryPath_IncludesPublicLink;
+begin
+	FIsPublicAccount := False;
+	FPublicLink := 'dirlink';
+	FMockHTTP.SetResponse('public.shard', True, 'https://redirected.url/');
+
+	FDownloader.GetSharedFileUrl('/subdir/:d');
+
+	Assert.IsTrue(FMockHTTP.WasURLCalled('dirlink'), 'GetRedirection should be called with URL containing public link');
+end;
+
+procedure TCloudFileDownloaderTest.TestGetSharedFileUrl_NonPublicAccount_FilePath_UsesPublicLinkOnly;
+begin
+	FIsPublicAccount := False;
+	FPublicLink := 'filelink';
+	FMockHTTP.SetResponse('public.shard', True, 'https://redirected.url/');
+
+	FDownloader.GetSharedFileUrl('/file.txt');
+
+	Assert.IsTrue(FMockHTTP.WasURLCalled('filelink'), 'GetRedirection should be called with URL containing public link');
+end;
+
+procedure TCloudFileDownloaderTest.TestGetSharedFileUrl_NonPublicAccount_CallsGetRedirection;
+var
+	CallCount: Integer;
+begin
+	FIsPublicAccount := False;
+	FMockHTTP.SetResponse('public.shard', True, 'https://final.redirect.url/');
+
+	CallCount := FMockHTTP.GetCallCount;
+	FDownloader.GetSharedFileUrl('/file.txt');
+
+	Assert.IsTrue(FMockHTTP.GetCallCount > CallCount, 'Should call GetRedirection');
+end;
 
 {Download tests - regular account}
 
@@ -448,8 +482,117 @@ begin
 	Assert.IsFalse(TFile.Exists(LocalPath), 'Partial file should be deleted on shared download error');
 end;
 
-{Download tests - shard resolution - DISABLED due to access violations}
-{TODO: Investigate access violations with new shard manager instances}
+{Download tests - shard resolution}
+
+procedure TCloudFileDownloaderTest.TestDownload_NoDownloadShard_ResolvesFromDispatcher;
+var
+	LocalPath: string;
+	ResultHash: WideString;
+	FileContent: TBytes;
+	NewShardManager: ICloudShardManager;
+	NewDownloader: ICloudFileDownloader;
+begin
+	FIsPublicAccount := False;
+	LocalPath := GetTempFilePath('dispatcher_resolve.txt');
+
+	{Create new shard manager without download shard set}
+	NewShardManager := TCloudShardManager.Create(TNullLogger.Create,
+		function(const URL, Data: WideString; var Answer: WideString): Boolean
+		begin
+			Answer := '{"status":200,"body":{"get":[{"url":"https://resolved.shard/"}]}}';
+			Result := True;
+		end,
+		function(const JSON, ErrorPrefix: WideString): Boolean
+		begin
+			Result := Pos(WideString('"status":200'), JSON) > 0;
+		end,
+		function: WideString
+		begin
+			Result := 'token=test';
+		end, '', '');
+
+	{OAuth dispatcher returns plain text URL}
+	FMockHTTP.SetResponse('dispatcher', True, 'https://new.shard.url/ 127.0.0.1 1');
+
+	FileContent := TEncoding.UTF8.GetBytes('Content');
+	FMockHTTP.SetStreamResponse('new.shard.url', FileContent, FS_FILE_OK);
+
+	NewDownloader := TCloudFileDownloader.Create(
+		GetHTTP,
+		NewShardManager,
+		FHashCalculator,
+		TNullCipher.Create,
+		TWindowsFileSystem.Create,
+		TNullLogger.Create,
+		TNullProgress.Create,
+		TNullRequest.Create,
+		GetOAuthToken,
+		IsPublicAccount,
+		GetPublicLink,
+		RefreshToken,
+		False,
+		False
+	);
+
+	NewDownloader.Download('/remote/file.txt', LocalPath, ResultHash);
+
+	Assert.IsTrue(FMockHTTP.WasURLCalled('/d?token='), 'Should call OAuth dispatcher');
+end;
+
+procedure TCloudFileDownloaderTest.TestDownload_NoDownloadShard_WithOverride_UsesOverride;
+var
+	OverrideManager: ICloudShardManager;
+	OverrideDownloader: ICloudFileDownloader;
+	LocalPath: string;
+	ResultHash: WideString;
+	FileContent: TBytes;
+begin
+	FIsPublicAccount := False;
+	LocalPath := GetTempFilePath('override_test.txt');
+
+	{Create shard manager with download override but no shard set}
+	OverrideManager := TCloudShardManager.Create(TNullLogger.Create,
+		function(const URL, Data: WideString; var Answer: WideString): Boolean
+		begin
+			Answer := '';
+			Result := False;
+		end,
+		function(const JSON, ErrorPrefix: WideString): Boolean
+		begin
+			Result := False;
+		end,
+		function: WideString
+		begin
+			Result := 'token=test';
+		end,
+		'https://override.shard/',
+		''
+	);
+
+	FileContent := TEncoding.UTF8.GetBytes('Override content');
+	FMockHTTP.SetStreamResponse('override.shard', FileContent, FS_FILE_OK);
+
+	OverrideDownloader := TCloudFileDownloader.Create(
+		GetHTTP,
+		OverrideManager,
+		FHashCalculator,
+		TNullCipher.Create,
+		TWindowsFileSystem.Create,
+		TNullLogger.Create,
+		TNullProgress.Create,
+		TNullRequest.Create,
+		GetOAuthToken,
+		IsPublicAccount,
+		GetPublicLink,
+		RefreshToken,
+		False,
+		False
+	);
+
+	OverrideDownloader.Download('/remote/file.txt', LocalPath, ResultHash);
+
+	Assert.IsTrue(FMockHTTP.WasURLCalled('override.shard'), 'Should use override shard');
+end;
 
 {Download tests - encryption}
 
@@ -545,7 +688,23 @@ begin
 	Assert.Pass('SetProgressNames called without error');
 end;
 
-{TODO: TestDownload_RegularAccount_UsesOAuthToken - access violation, investigate}
+procedure TCloudFileDownloaderTest.TestDownload_RegularAccount_UsesOAuthToken;
+var
+	LocalPath: string;
+	ResultHash: WideString;
+	FileContent: TBytes;
+begin
+	FIsPublicAccount := False;
+	FOAuthToken.access_token := 'my_oauth_token';
+	LocalPath := GetTempFilePath('oauth_test.txt');
+
+	FileContent := TEncoding.UTF8.GetBytes('Content');
+	FMockHTTP.SetStreamResponse('download.shard', FileContent, FS_FILE_OK);
+
+	FDownloader.Download('/remote/file.txt', LocalPath, ResultHash);
+
+	Assert.IsTrue(FMockHTTP.WasURLCalled('token=my_oauth_token'), 'URL should contain OAuth token');
+end;
 
 initialization
 
