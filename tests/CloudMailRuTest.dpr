@@ -176,6 +176,8 @@ uses
 	OperationLifecycleHandlerTest in 'Application\Operation\OperationLifecycleHandlerTest.pas',
 	DescriptionSyncManager in '..\src\Application\Description\DescriptionSyncManager.pas',
 	CloudDescriptionOpsAdapter in '..\src\Infrastructure\Adapter\CloudDescriptionOpsAdapter.pas',
+	CMRDirItemJsonAdapter in '..\src\Infrastructure\Adapter\CMRDirItemJsonAdapter.pas',
+	CMRDirItemJsonAdapterTest in 'Infrastructure\Adapter\CMRDirItemJsonAdapterTest.pas',
 	MockCloudDescriptionOps in 'mocks\MockCloudDescriptionOps.pas',
 	DescriptionSyncManagerTest in 'Application\Description\DescriptionSyncManagerTest.pas',
 	RetryHandler in '..\src\Application\Retry\RetryHandler.pas',

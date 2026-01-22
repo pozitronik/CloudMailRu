@@ -8,9 +8,7 @@ uses
 	SystemHelper,
 	DateUtils,
 	SysUtils,
-	Windows,
-	JSONHelper,
-	JSON;
+	Windows;
 
 type
 	TCMRDirItem = Record
@@ -44,56 +42,11 @@ type
 		property isPublished: Boolean read GetIsPublished;
 		function None: TCMRDirItem; // Creates a special record, which indicate that Item is not found/not applicable.
 		function ToFindData(DirsAsSymlinks: Boolean = false): tWIN32FINDDATAW;
-		function FromJSON(StatusJSON: WideString): Boolean;
 	End;
 
 implementation
 
 {TCMRDirListingItem}
-
-function TCMRDirItem.FromJSON(StatusJSON: WideString): Boolean;
-var
-	ParserObj, JSONVal: TJSONObject;
-begin
-	Result := false;
-	JSONVal := nil;
-	try
-		try
-			if (not init(StatusJSON, JSONVal)) then
-				Exit;
-			ParserObj := JSONVal.Values[NAME_BODY] as TJSONObject;
-			with self do
-			begin
-				assignFromName(NAME_SIZE, ParserObj, size);
-				assignFromName(NAME_KIND, ParserObj, kind);
-				assignFromName(NAME_WEBLINK, ParserObj, weblink);
-				assignFromName(NAME_TYPE, ParserObj, type_);
-				assignFromName(NAME_HOME, ParserObj, home);
-				assignFromName(NAME_NAME, ParserObj, name);
-				if (type_ = TYPE_FILE) then
-				begin
-					assignFromName(NAME_MTIME, ParserObj, mtime);
-					assignFromName(NAME_VIRUS_SCAN, ParserObj, virus_scan);
-					assignFromName(NAME_HASH, ParserObj, hash);
-				end else begin
-					assignFromName(NAME_TREE, ParserObj, tree);
-					assignFromName(NAME_GREV, ParserObj, grev);
-					assignFromName(NAME_REV, ParserObj, rev);
-					if Assigned((ParserObj.Values[NAME_COUNT] as TJSONObject).Values[NAME_FOLDERS]) then
-						folders_count := (ParserObj.Values[NAME_COUNT] as TJSONObject).Values[NAME_FOLDERS].Value.ToInteger();
-					if Assigned((ParserObj.Values[NAME_COUNT] as TJSONObject).Values[NAME_FILES]) then
-						files_count := (ParserObj.Values[NAME_COUNT] as TJSONObject).Values[NAME_FILES].Value.ToInteger();
-					mtime := 0;
-				end;
-			end;
-			Result := true;
-		except
-			Exit;
-		end;
-	finally
-		JSONVal.Free;
-	end;
-end;
 
 function TCMRDirItem.GetIsDir: Boolean;
 begin

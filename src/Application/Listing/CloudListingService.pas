@@ -7,6 +7,7 @@ interface
 uses
 	CMRDirItem,
 	CMRDirItemList,
+	CMRDirItemJsonAdapter,
 	CMRIncomingInviteList,
 	CMROperationResult,
 	CMRSpace,
@@ -305,7 +306,7 @@ begin
 			Progress: Boolean := False;
 		Result := FHTTP.GetPage(Format('%s?weblink=%s%s&%s', [API_FILE, IncludeSlash(FGetPublicLink()), PathToUrl(Path), UnitedParams]), JSON, Progress);
 		if Result then
-			Result := FCloudResultToBoolean(JSON, PREFIX_ERR_FILE_STATUS) and FileInfo.FromJSON(JSON);
+			Result := FCloudResultToBoolean(JSON, PREFIX_ERR_FILE_STATUS) and TCMRDirItemJsonAdapter.Parse(JSON, FileInfo);
 		Exit;
 	end;
 
@@ -320,7 +321,7 @@ begin
 			Progress := False;
 			Success := FHTTP.GetPage(Format('%s?home=%s&%s', [API_FILE, PathToUrl(Path), UnitedParams]), JSON, Progress);
 			if Success then
-				Success := FCloudResultToBoolean(JSON, PREFIX_ERR_FILE_STATUS) and LocalInfo.FromJSON(JSON);
+				Success := FCloudResultToBoolean(JSON, PREFIX_ERR_FILE_STATUS) and TCMRDirItemJsonAdapter.Parse(JSON, LocalInfo);
 			Result := TAPICallResult.FromBoolean(Success, JSON);
 		end);
 

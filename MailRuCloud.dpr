@@ -101,6 +101,7 @@ uses
 	DescriptionSyncManager in 'src\Application\Description\DescriptionSyncManager.pas',
 	CloudAccessUtils in 'src\Domain\Services\CloudAccessUtils.pas',
 	CloudDescriptionOpsAdapter in 'src\Infrastructure\Adapter\CloudDescriptionOpsAdapter.pas',
+	CMRDirItemJsonAdapter in 'src\Infrastructure\Adapter\CMRDirItemJsonAdapter.pas',
 	RetryHandler in 'src\Application\Retry\RetryHandler.pas',
 	CommandDispatcher in 'src\Application\Command\CommandDispatcher.pas',
 	ListingProvider in 'src\Application\Listing\ListingProvider.pas',
