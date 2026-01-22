@@ -57,6 +57,7 @@ type
 	TCloudFileUploaderSplitTest = class
 	private
 		FMockHTTP: TMockCloudHTTP;
+		FMockHTTPRef: ICloudHTTP; {Prevents premature destruction via interface refcounting}
 		FUploader: TTestableCloudFileUploader;
 		FShardManager: ICloudShardManager;
 		FHashCalculator: ICloudHashCalculator;
@@ -87,9 +88,7 @@ type
 		procedure TearDown;
 
 		{Hash deduplication tests - file already exists on cloud by hash}
-		{TODO: Fix test - assertion/closure issue after AddFileByIdentity extraction}
 		[Test]
-		[Ignore('Access violation during hash calculation - closure/callback lifetime issue needs investigation')]
 		procedure TestPutFileSplit_HashDedup_SkipsUploadIfHashMatches;
 
 		{User abort tests}
@@ -185,6 +184,7 @@ const
 procedure TCloudFileUploaderSplitTest.Setup;
 begin
 	FMockHTTP := TMockCloudHTTP.Create;
+	FMockHTTPRef := FMockHTTP; {Hold interface reference to prevent premature destruction}
 	FMockHTTP.SetDefaultResponse(True, 'https://upload.shard/path 127.0.0.1 1');
 	{Set up response for /file/add endpoint used by AddFileByIdentity - needs valid JSON}
 	FMockHTTP.SetResponse('/file/add', True, '{"status":200,"body":"ok"}');
@@ -238,6 +238,7 @@ begin
 	if Assigned(FRetryOperation) then
 		FRetryOperation.Free;
 	FMockHTTP := nil;
+	FMockHTTPRef := nil; {Release interface reference - triggers destruction}
 	CleanupTempFiles;
 end;
 
