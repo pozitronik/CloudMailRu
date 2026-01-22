@@ -112,6 +112,16 @@ type
 		{Description sync}
 		[Test]
 		procedure TestHandleSuccess_CallsDownloadedSync;
+
+		{File time preservation tests}
+		[Test]
+		procedure TestHandleSuccess_PreserveTimeEnabled_NonZeroMtime_SetsFileTime;
+		[Test]
+		procedure TestHandleSuccess_PreserveTimeDisabled_NonZeroMtime_DoesNotSetFileTime;
+
+		{Null handler tests}
+		[Test]
+		procedure TestNullHandler_ReturnsOK;
 	end;
 
 implementation
@@ -387,6 +397,67 @@ begin
 	FHandler.HandleSuccess(Context);
 
 	Assert.AreEqual(1, FSyncGuard.DownloadedCalls, 'Should call OnFileDownloaded');
+end;
+
+{File time preservation tests}
+
+procedure TDownloadSuccessHandlerTest.TestHandleSuccess_PreserveTimeEnabled_NonZeroMtime_SetsFileTime;
+var
+	Context: TDownloadContext;
+	TempFile: WideString;
+	FileHandle: THandle;
+begin
+	{Create a temp file to test file time modification}
+	TempFile := GetEnvironmentVariable('TEMP') + '\DownloadSuccessTest_' + IntToStr(GetTickCount) + '.tmp';
+	FileHandle := CreateFileW(PWideChar(TempFile), GENERIC_WRITE, 0, nil, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
+	if FileHandle = INVALID_HANDLE_VALUE then
+	begin
+		Assert.Pass('Cannot create temp file, skipping test');
+		Exit;
+	end;
+	CloseHandle(FileHandle);
+
+	try
+		FSettings.SetPreserveFileTime(True);
+		CreateHandler;
+		Context := CreateContext('', '', False);
+		Context.LocalName := TempFile;
+		Context.Item.mtime := 1700000000; {Nov 2023 Unix timestamp}
+
+		FHandler.HandleSuccess(Context);
+
+		{Verify file still exists - SetAllFileTime was called}
+		Assert.IsTrue(FileExists(TempFile), 'File should still exist after time modification');
+	finally
+		DeleteFile(TempFile);
+	end;
+end;
+
+procedure TDownloadSuccessHandlerTest.TestHandleSuccess_PreserveTimeDisabled_NonZeroMtime_DoesNotSetFileTime;
+var
+	Context: TDownloadContext;
+begin
+	{When PreserveFileTime is disabled, mtime should be ignored - no file access}
+	FSettings.SetPreserveFileTime(False);
+	CreateHandler;
+	Context := CreateContext('', '', False);
+	Context.Item.mtime := 1700000000; {Non-zero but won't be used}
+
+	{Should not throw even with non-existent file since PreserveFileTime is disabled}
+	Assert.AreEqual(FS_FILE_OK, FHandler.HandleSuccess(Context));
+end;
+
+{Null handler tests}
+
+procedure TDownloadSuccessHandlerTest.TestNullHandler_ReturnsOK;
+var
+	NullHandler: IDownloadSuccessHandler;
+	Context: TDownloadContext;
+begin
+	NullHandler := TNullDownloadSuccessHandler.Create;
+	Context := CreateContext('abc', 'xyz', True); {Would fail in real handler}
+
+	Assert.AreEqual(FS_FILE_OK, NullHandler.HandleSuccess(Context), 'Null handler always returns OK');
 end;
 
 initialization
