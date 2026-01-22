@@ -62,3 +62,4 @@
 /tests/CloudMailRuTest.identcache
 /tests/CloudMailRuTest.res
 .grepai/
+/coverage/
