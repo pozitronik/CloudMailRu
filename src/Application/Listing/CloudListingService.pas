@@ -8,6 +8,7 @@ uses
 	CMRDirItem,
 	CMRDirItemList,
 	CMRDirItemJsonAdapter,
+	CMRDirItemListJsonAdapter,
 	CMRIncomingInviteList,
 	CMROperationResult,
 	CMRSpace,
@@ -126,7 +127,7 @@ begin
 			Result := FCloudResultToBooleanFromResult(OperationResult, PREFIX_ERR_DIR_LISTING);
 			if Result then
 			begin
-				Result := Listing.FromJSON(JSON);
+				Result := TCMRDirItemListJsonAdapter.Parse(JSON, Listing);
 				if Result and FDoCryptFilenames and Assigned(FCipher) then
 					FCipher.DecryptDirListing(Listing);
 			end else if OperationResult.OperationResult = CLOUD_ERROR_NOT_EXISTS then
@@ -152,7 +153,7 @@ begin
 				Success := FCloudResultToBooleanFromResult(OperationResult, PREFIX_ERR_DIR_LISTING);
 				if Success then
 				begin
-					Success := LocalListing.FromJSON(JSON);
+					Success := TCMRDirItemListJsonAdapter.Parse(JSON, LocalListing);
 					if Success and FDoCryptFilenames and Assigned(FCipher) then
 						FCipher.DecryptDirListing(LocalListing);
 				end else if OperationResult.OperationResult = CLOUD_ERROR_NOT_EXISTS then
@@ -192,7 +193,7 @@ begin
 		begin
 			Success := FHTTP.GetPage(Format('%s?%s', [API_FOLDER_SHARED_LINKS, UnitedParams]), JSON, ShowProgress);
 			if Success then
-				Success := FCloudResultToBoolean(JSON, PREFIX_ERR_SHARED_LINKS_LISTING) and LocalListing.FromJSON(JSON);
+				Success := FCloudResultToBoolean(JSON, PREFIX_ERR_SHARED_LINKS_LISTING) and TCMRDirItemListJsonAdapter.Parse(JSON, LocalListing);
 			Result := TAPICallResult.FromBoolean(Success, JSON);
 		end);
 
@@ -280,7 +281,7 @@ begin
 		begin
 			Success := FHTTP.GetPage(Format('%s?%s', [API_TRASHBIN, UnitedParams]), JSON, ShowProgress);
 			if Success then
-				Success := FCloudResultToBoolean(JSON, PREFIX_ERR_TRASH_LISTING) and LocalListing.FromJSON(JSON);
+				Success := FCloudResultToBoolean(JSON, PREFIX_ERR_TRASH_LISTING) and TCMRDirItemListJsonAdapter.Parse(JSON, LocalListing);
 			Result := TAPICallResult.FromBoolean(Success, JSON);
 		end);
 

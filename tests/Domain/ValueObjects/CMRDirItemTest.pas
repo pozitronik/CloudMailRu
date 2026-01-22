@@ -5,6 +5,7 @@ interface
 uses
 	CMRDirItem,
 	CMRDirItemList,
+	CMRDirItemListJsonAdapter,
 	CMRConstants,
 	TestHelper,
 	SysUtils,
@@ -140,7 +141,7 @@ procedure TCMRDirItemListTest.TestFromJSONValid;
 var
 	List: TCMRDirItemList;
 begin
-	Assert.IsTrue(List.FromJSON(FDirectoryListingJSON));
+	Assert.IsTrue(TCMRDirItemListJsonAdapter.Parse(FDirectoryListingJSON, List));
 	Assert.AreEqual(Integer(2), Integer(Length(List)));
 end;
 
@@ -148,7 +149,7 @@ procedure TCMRDirItemListTest.TestFromJSONBroken;
 var
 	List: TCMRDirItemList;
 begin
-	Assert.IsFalse(List.FromJSON(FBrokenJSON));
+	Assert.IsFalse(TCMRDirItemListJsonAdapter.Parse(FBrokenJSON, List));
 	Assert.AreEqual(Integer(0), Integer(Length(List)));
 end;
 
@@ -156,7 +157,7 @@ procedure TCMRDirItemListTest.TestFromJSONEmpty;
 var
 	List: TCMRDirItemList;
 begin
-	Assert.IsFalse(List.FromJSON(''));
+	Assert.IsFalse(TCMRDirItemListJsonAdapter.Parse('', List));
 	Assert.AreEqual(Integer(0), Integer(Length(List)));
 end;
 
@@ -165,7 +166,7 @@ var
 	List: TCMRDirItemList;
 	Found: TCMRDirItem;
 begin
-	List.FromJSON(FDirectoryListingJSON);
+	TCMRDirItemListJsonAdapter.Parse(FDirectoryListingJSON, List);
 
 	Found := List.FindByName('subdir');
 	Assert.IsFalse(Found.isNone);
@@ -178,7 +179,7 @@ var
 	List: TCMRDirItemList;
 	Found: TCMRDirItem;
 begin
-	List.FromJSON(FDirectoryListingJSON);
+	TCMRDirItemListJsonAdapter.Parse(FDirectoryListingJSON, List);
 
 	Found := List.FindByName('nonexistent');
 	Assert.IsTrue(Found.isNone);
@@ -189,7 +190,7 @@ var
 	List: TCMRDirItemList;
 	Found: TCMRDirItem;
 begin
-	List.FromJSON(FDirectoryListingJSON);
+	TCMRDirItemListJsonAdapter.Parse(FDirectoryListingJSON, List);
 
 	{ FindByHomePath converts backslashes to forward slashes and prepends / }
 	Found := List.FindByHomePath('TEST_DIR\sign.png');
@@ -202,7 +203,7 @@ var
 	List: TCMRDirItemList;
 	Found: TCMRDirItem;
 begin
-	List.FromJSON(FDirectoryListingJSON);
+	TCMRDirItemListJsonAdapter.Parse(FDirectoryListingJSON, List);
 
 	Found := List.FindByHomePath('nonexistent\path');
 	Assert.IsTrue(Found.isNone);
@@ -213,7 +214,7 @@ var
 	List: TCMRDirItemList;
 	FileItem: TCMRDirItem;
 begin
-	List.FromJSON(FDirectoryListingJSON);
+	TCMRDirItemListJsonAdapter.Parse(FDirectoryListingJSON, List);
 
 	FileItem := List.FindByName('sign.png');
 	Assert.IsFalse(FileItem.isNone);
@@ -230,7 +231,7 @@ var
 	List: TCMRDirItemList;
 	FolderItem: TCMRDirItem;
 begin
-	List.FromJSON(FDirectoryListingJSON);
+	TCMRDirItemListJsonAdapter.Parse(FDirectoryListingJSON, List);
 
 	FolderItem := List.FindByName('subdir');
 	Assert.IsFalse(FolderItem.isNone);

@@ -4,6 +4,7 @@ interface
 
 uses
 	CMRDirItemList,
+	CMRDirItemListJsonAdapter,
 	CMRDirItem,
 	DUnitX.TestFramework;
 
@@ -80,7 +81,7 @@ procedure TCMRDirItemListTest.TestFromJSONValid;
 var
 	List: TCMRDirItemList;
 begin
-	Assert.IsTrue(List.FromJSON(JSON_DIRECTORY_LISTING));
+	Assert.IsTrue(TCMRDirItemListJsonAdapter.Parse(JSON_DIRECTORY_LISTING, List));
 
 	Assert.AreEqual(Integer(2), Integer(Length(List)));
 end;
@@ -89,7 +90,7 @@ procedure TCMRDirItemListTest.TestFromJSONWithFolder;
 var
 	List: TCMRDirItemList;
 begin
-	Assert.IsTrue(List.FromJSON(JSON_FOLDER_ITEM));
+	Assert.IsTrue(TCMRDirItemListJsonAdapter.Parse(JSON_FOLDER_ITEM, List));
 	Assert.AreEqual(Integer(1), Integer(Length(List)));
 
 	Assert.AreEqual('Documents', List[0].name);
@@ -105,7 +106,7 @@ procedure TCMRDirItemListTest.TestFromJSONWithFile;
 var
 	List: TCMRDirItemList;
 begin
-	Assert.IsTrue(List.FromJSON(JSON_FILE_ITEM));
+	Assert.IsTrue(TCMRDirItemListJsonAdapter.Parse(JSON_FILE_ITEM, List));
 	Assert.AreEqual(Integer(1), Integer(Length(List)));
 
 	Assert.AreEqual('test.txt', List[0].name);
@@ -121,7 +122,7 @@ procedure TCMRDirItemListTest.TestFromJSONWithTrashItem;
 var
 	List: TCMRDirItemList;
 begin
-	Assert.IsTrue(List.FromJSON(JSON_TRASH_ITEM));
+	Assert.IsTrue(TCMRDirItemListJsonAdapter.Parse(JSON_TRASH_ITEM, List));
 	Assert.AreEqual(Integer(1), Integer(Length(List)));
 
 	Assert.AreEqual('deleted_file.txt', List[0].name);
@@ -134,7 +135,7 @@ procedure TCMRDirItemListTest.TestFromJSONEmpty;
 var
 	List: TCMRDirItemList;
 begin
-	Assert.IsTrue(List.FromJSON(JSON_EMPTY_LIST));
+	Assert.IsTrue(TCMRDirItemListJsonAdapter.Parse(JSON_EMPTY_LIST, List));
 
 	Assert.AreEqual(Integer(0), Integer(Length(List)));
 end;
@@ -143,7 +144,7 @@ procedure TCMRDirItemListTest.TestFromJSONInvalid;
 var
 	List: TCMRDirItemList;
 begin
-	Assert.IsFalse(List.FromJSON('invalid json'));
+	Assert.IsFalse(TCMRDirItemListJsonAdapter.Parse('invalid json', List));
 	Assert.AreEqual(Integer(0), Integer(Length(List)));
 end;
 
@@ -152,7 +153,7 @@ var
 	List: TCMRDirItemList;
 	Item: TCMRDirItem;
 begin
-	List.FromJSON(JSON_MULTIPLE_ITEMS);
+	TCMRDirItemListJsonAdapter.Parse(JSON_MULTIPLE_ITEMS, List);
 
 	Item := List.FindByName('second.txt');
 
@@ -166,7 +167,7 @@ var
 	List: TCMRDirItemList;
 	Item: TCMRDirItem;
 begin
-	List.FromJSON(JSON_MULTIPLE_ITEMS);
+	TCMRDirItemListJsonAdapter.Parse(JSON_MULTIPLE_ITEMS, List);
 
 	Item := List.FindByName('nonexistent.txt');
 
@@ -178,7 +179,7 @@ var
 	List: TCMRDirItemList;
 	Item: TCMRDirItem;
 begin
-	List.FromJSON(JSON_EMPTY_LIST);
+	TCMRDirItemListJsonAdapter.Parse(JSON_EMPTY_LIST, List);
 
 	Item := List.FindByName('anything');
 
@@ -190,7 +191,7 @@ var
 	List: TCMRDirItemList;
 	Item: TCMRDirItem;
 begin
-	List.FromJSON(JSON_MULTIPLE_ITEMS);
+	TCMRDirItemListJsonAdapter.Parse(JSON_MULTIPLE_ITEMS, List);
 
 	{ FindByHomePath adds leading slash, so we pass path without it }
 	Item := List.FindByHomePath('folder/second.txt');
@@ -204,7 +205,7 @@ var
 	List: TCMRDirItemList;
 	Item: TCMRDirItem;
 begin
-	List.FromJSON(JSON_MULTIPLE_ITEMS);
+	TCMRDirItemListJsonAdapter.Parse(JSON_MULTIPLE_ITEMS, List);
 
 	{ FindByHomePath should convert backslashes to forward slashes }
 	Item := List.FindByHomePath('folder\third.txt');
@@ -218,7 +219,7 @@ var
 	List: TCMRDirItemList;
 	Item: TCMRDirItem;
 begin
-	List.FromJSON(JSON_MULTIPLE_ITEMS);
+	TCMRDirItemListJsonAdapter.Parse(JSON_MULTIPLE_ITEMS, List);
 
 	Item := List.FindByHomePath('nonexistent/path.txt');
 
@@ -230,7 +231,7 @@ var
 	List: TCMRDirItemList;
 	Item: TCMRDirItem;
 begin
-	List.FromJSON(JSON_EMPTY_LIST);
+	TCMRDirItemListJsonAdapter.Parse(JSON_EMPTY_LIST, List);
 
 	Item := List.FindByHomePath('any/path');
 
@@ -241,7 +242,7 @@ procedure TCMRDirItemListTest.TestFromJSONMultipleItems;
 var
 	List: TCMRDirItemList;
 begin
-	Assert.IsTrue(List.FromJSON(JSON_MULTIPLE_ITEMS));
+	Assert.IsTrue(TCMRDirItemListJsonAdapter.Parse(JSON_MULTIPLE_ITEMS, List));
 
 	Assert.AreEqual(Integer(3), Integer(Length(List)));
 	Assert.AreEqual('first.txt', List[0].name);

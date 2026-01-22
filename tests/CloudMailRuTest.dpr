@@ -178,6 +178,8 @@ uses
 	CloudDescriptionOpsAdapter in '..\src\Infrastructure\Adapter\CloudDescriptionOpsAdapter.pas',
 	CMRDirItemJsonAdapter in '..\src\Infrastructure\Adapter\CMRDirItemJsonAdapter.pas',
 	CMRDirItemJsonAdapterTest in 'Infrastructure\Adapter\CMRDirItemJsonAdapterTest.pas',
+	CMRDirItemListJsonAdapter in '..\src\Infrastructure\Adapter\CMRDirItemListJsonAdapter.pas',
+	CMRDirItemListJsonAdapterTest in 'Infrastructure\Adapter\CMRDirItemListJsonAdapterTest.pas',
 	MockCloudDescriptionOps in 'mocks\MockCloudDescriptionOps.pas',
 	DescriptionSyncManagerTest in 'Application\Description\DescriptionSyncManagerTest.pas',
 	RetryHandler in '..\src\Application\Retry\RetryHandler.pas',
