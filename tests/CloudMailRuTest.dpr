@@ -133,6 +133,7 @@ uses
 	
 	ConnectionManager in '..\src\Infrastructure\Services\ConnectionManager.pas',
 	WindowsFileSystem in '..\src\Infrastructure\FileSystem\WindowsFileSystem.pas',
+	WindowsFileSystemTest in 'Infrastructure\FileSystem\WindowsFileSystemTest.pas',
 	IniConfigFile in '..\src\Infrastructure\Config\IniConfigFile.pas',
 	WindowsEnvironment in '..\src\Infrastructure\Environment\WindowsEnvironment.pas',
 	WindowsEnvironmentTest in 'Infrastructure\Environment\WindowsEnvironmentTest.pas',
