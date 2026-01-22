@@ -104,6 +104,16 @@ type
 		procedure TestPutFileSplit_ChunkExists_OverwriteMode_DeletesAndRetries;
 		[Test]
 		procedure TestPutFileSplit_ChunkExists_DeleteFails_ReturnsWriteError;
+
+		{OperationErrorMode tests - upload returns error}
+		[Test]
+		procedure TestPutFileSplit_UploadError_IgnoreMode_Continues;
+		[Test]
+		procedure TestPutFileSplit_UploadError_AbortMode_Aborts;
+		[Test]
+		procedure TestPutFileSplit_UploadError_RetryMode_RetriesAndSucceeds;
+		[Test]
+		procedure TestPutFileSplit_UploadError_RetryMode_ExhaustsRetries;
 	end;
 
 implementation
@@ -425,6 +435,95 @@ begin
 
 	{When delete fails, should return WRITEERROR}
 	Assert.AreEqual(FS_FILE_WRITEERROR, ResultCode, 'Should return WRITEERROR when delete fails');
+end;
+
+{OperationErrorMode tests - upload returns error}
+
+procedure TCloudFileUploaderSplitTest.TestPutFileSplit_UploadError_IgnoreMode_Continues;
+var
+	LocalPath: string;
+	ResultCode: Integer;
+begin
+	{Configure Ignore mode - continue despite errors}
+	FSettings.OperationErrorMode := OperationErrorModeIgnore;
+	FUploader := CreateUploader;
+	LocalPath := CreateTestFile('ignoreerror.txt', 512);
+
+	{First upload fails, but Ignore mode continues}
+	FMockHTTP.SetPutFileResponse('', '', FS_FILE_WRITEERROR);
+	FAddByIdentityFirstResult := FS_FILE_OK; {Registration succeeds after ignored error}
+	FAddByIdentityNextResult := FS_FILE_OK;
+
+	ResultCode := FUploader.TestPutFileSplit(LocalPath, '/remote/ignoreerror.txt', CLOUD_CONFLICT_STRICT, ChunkOverwrite);
+
+	{In ignore mode, errors should be logged but upload continues}
+	Assert.AreEqual(FS_FILE_OK, ResultCode, 'Ignore mode should continue despite errors');
+end;
+
+procedure TCloudFileUploaderSplitTest.TestPutFileSplit_UploadError_AbortMode_Aborts;
+var
+	LocalPath: string;
+	ResultCode: Integer;
+begin
+	{Configure Abort mode}
+	FSettings.OperationErrorMode := OperationErrorModeAbort;
+	FUploader := CreateUploader;
+	LocalPath := CreateTestFile('aborterror.txt', 512);
+
+	{Upload fails - Abort mode should stop immediately}
+	FMockHTTP.SetPutFileResponse('', '', FS_FILE_WRITEERROR);
+
+	ResultCode := FUploader.TestPutFileSplit(LocalPath, '/remote/aborterror.txt', CLOUD_CONFLICT_STRICT, ChunkOverwrite);
+
+	{In abort mode, errors should cause immediate abort}
+	Assert.AreEqual(FS_FILE_USERABORT, ResultCode, 'Abort mode should return USERABORT on error');
+end;
+
+procedure TCloudFileUploaderSplitTest.TestPutFileSplit_UploadError_RetryMode_RetriesAndSucceeds;
+var
+	LocalPath: string;
+	ResultCode: Integer;
+begin
+	{Configure Retry mode with 3 attempts}
+	FSettings.OperationErrorMode := OperationErrorModeRetry;
+	FSettings.RetryAttempts := 3;
+	FSettings.AttemptWait := 1; {Minimal wait for tests}
+	FUploader := CreateUploader;
+	LocalPath := CreateTestFile('retryok.txt', 512);
+
+	{Queue responses: first 2 fail, then succeed}
+	FMockHTTP.QueuePutFileResponse('', '', FS_FILE_WRITEERROR);
+	FMockHTTP.QueuePutFileResponse('', '', FS_FILE_WRITEERROR);
+	FMockHTTP.QueuePutFileResponse('', SHA1_HASH_40, FS_FILE_OK);
+	FMockHTTP.QueuePutFileResponse('', SHA1_HASH_40, FS_FILE_OK); {CRC file upload}
+	FAddByIdentityFirstResult := FS_FILE_OK;
+	FAddByIdentityNextResult := FS_FILE_OK;
+
+	ResultCode := FUploader.TestPutFileSplit(LocalPath, '/remote/retryok.txt', CLOUD_CONFLICT_STRICT, ChunkOverwrite);
+
+	{Retry mode should eventually succeed after retries}
+	Assert.AreEqual(FS_FILE_OK, ResultCode, 'Retry mode should succeed after retries');
+end;
+
+procedure TCloudFileUploaderSplitTest.TestPutFileSplit_UploadError_RetryMode_ExhaustsRetries;
+var
+	LocalPath: string;
+	ResultCode: Integer;
+begin
+	{Configure Retry mode with limited attempts}
+	FSettings.OperationErrorMode := OperationErrorModeRetry;
+	FSettings.RetryAttempts := 2;
+	FSettings.AttemptWait := 1;
+	FUploader := CreateUploader;
+	LocalPath := CreateTestFile('retryexhaust.txt', 512);
+
+	{All uploads fail - should exhaust retries}
+	FMockHTTP.SetPutFileResponse('', '', FS_FILE_WRITEERROR);
+
+	ResultCode := FUploader.TestPutFileSplit(LocalPath, '/remote/retryexhaust.txt', CLOUD_CONFLICT_STRICT, ChunkOverwrite);
+
+	{After exhausting retries, should return failure}
+	Assert.AreEqual(CLOUD_OPERATION_FAILED, ResultCode, 'Should fail after exhausting retries');
 end;
 
 initialization

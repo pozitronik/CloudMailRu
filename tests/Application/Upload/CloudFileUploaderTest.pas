@@ -61,6 +61,16 @@ type
 		procedure TestUpload_PublicAccount_ReturnsNotSupported;
 		[Test]
 		procedure TestUpload_LargeFileWithoutSplit_ReturnsNotSupported;
+		[Test]
+		procedure TestUpload_LargeFileWithSplit_CallsPutFileSplit;
+
+		{ AddFileByIdentity tests }
+		[Test]
+		procedure TestAddFileByIdentity_PublicAccount_ReturnsNotSupported;
+		[Test]
+		procedure TestAddFileByIdentity_Success_ReturnsOK;
+		[Test]
+		procedure TestAddFileByIdentity_PostFormFails_ReturnsWriteError;
 	end;
 
 implementation
@@ -230,6 +240,95 @@ begin
 	LargeFilePath := DataPath('SIMPLE.JSON');
 	UploadResult := FUploader.Upload(LargeFilePath, '/test/large.txt');
 	Assert.AreEqual(FS_FILE_NOTSUPPORTED, UploadResult, 'Large file without split enabled should return FS_FILE_NOTSUPPORTED');
+end;
+
+procedure TCloudFileUploaderTest.TestUpload_LargeFileWithSplit_CallsPutFileSplit;
+var
+	UploadResult: Integer;
+	LargeFilePath: WideString;
+begin
+	{Configure for split upload}
+	FSettings.CloudMaxFileSize := 1; {Very small to trigger split logic}
+	FSettings.SplitLargeFiles := True;
+	FSettings.UnlimitedFileSize := False;
+
+	{Configure mock to return success for uploads}
+	FMockHTTP.SetPutFileResponse('', 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', FS_FILE_OK);
+	FMockHTTP.SetResponse('/file/add', True, '{"status":200,"body":"ok"}');
+
+	{Recreate uploader with split enabled}
+	FUploader := TCloudFileUploader.Create(
+		GetHTTP,
+		FShardManager,
+		FHashCalculator,
+		nil,
+		TWindowsFileSystem.Create,
+		TNullLogger.Create,
+		TNullProgress.Create,
+		TNullRequest.Create,
+		GetOAuthToken,
+		IsPublicAccount,
+		GetRetryOperation,
+		GetUnitedParams,
+		CloudResultToFsResult,
+		DeleteFile,
+		False,
+		False,
+		FSettings
+	);
+
+	LargeFilePath := DataPath('SIMPLE.JSON');
+	UploadResult := FUploader.Upload(LargeFilePath, '/test/large.txt');
+	{Split upload path should be exercised}
+	Assert.AreEqual(FS_FILE_OK, UploadResult, 'Large file with split enabled should succeed');
+end;
+
+{ AddFileByIdentity tests }
+
+procedure TCloudFileUploaderTest.TestAddFileByIdentity_PublicAccount_ReturnsNotSupported;
+var
+	Identity: TCMRFileIdentity;
+	Result: Integer;
+begin
+	FIsPublicAccount := True;
+	Identity.Hash := 'ABCD1234567890ABCD1234567890ABCD12345678';
+	Identity.size := 1000;
+
+	Result := FUploader.AddFileByIdentity(Identity, '/test/file.txt');
+
+	Assert.AreEqual(FS_FILE_NOTSUPPORTED, Result, 'Public account should return FS_FILE_NOTSUPPORTED');
+end;
+
+procedure TCloudFileUploaderTest.TestAddFileByIdentity_Success_ReturnsOK;
+var
+	Identity: TCMRFileIdentity;
+	Result: Integer;
+begin
+	Identity.Hash := 'ABCD1234567890ABCD1234567890ABCD12345678';
+	Identity.size := 1000;
+
+	{Configure mock to return success}
+	FMockHTTP.SetResponse('/file/add', True, '{"status":200,"body":{"home":"/test/file.txt"}}');
+
+	Result := FUploader.AddFileByIdentity(Identity, '/test/file.txt');
+
+	Assert.AreEqual(FS_FILE_OK, Result, 'Successful AddFileByIdentity should return FS_FILE_OK');
+end;
+
+procedure TCloudFileUploaderTest.TestAddFileByIdentity_PostFormFails_ReturnsWriteError;
+var
+	Identity: TCMRFileIdentity;
+	Result: Integer;
+begin
+	Identity.Hash := 'ABCD1234567890ABCD1234567890ABCD12345678';
+	Identity.size := 1000;
+
+	{Configure mock to fail POST}
+	FMockHTTP.SetResponse('/file/add', False, '');
+
+	Result := FUploader.AddFileByIdentity(Identity, '/test/file.txt');
+
+	Assert.AreEqual(FS_FILE_WRITEERROR, Result, 'Failed POST should return FS_FILE_WRITEERROR');
 end;
 
 initialization
