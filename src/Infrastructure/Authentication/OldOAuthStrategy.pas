@@ -24,6 +24,7 @@ uses
 	SysUtils,
 	CMRConstants,
 	CMROAuth,
+	CMROAuthJsonAdapter,
 	PLUGIN_TYPES,
 	LANGUAGE_STRINGS;
 
@@ -39,7 +40,7 @@ begin
 
 	Result := HTTP.PostForm(OAUTH_TOKEN_URL, PostData, Answer);
 	if Result then
-		Result := OAuthToken.FromJSON(Answer);
+		Result := TCMROAuthJsonAdapter.Parse(Answer, OAuthToken);
 end;
 
 {TOldOAuthStrategy}

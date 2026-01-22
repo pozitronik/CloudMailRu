@@ -4,6 +4,7 @@ interface
 
 uses
 	CMROAuth,
+	CMROAuthJsonAdapter,
 	CMRConstants,
 	DUnitX.TestFramework;
 
@@ -46,7 +47,7 @@ procedure TCMROAuthTest.TestFromJSONValidSuccess;
 var
 	OAuth: TCMROAuth;
 begin
-	Assert.IsTrue(OAuth.fromJSON(JSON_OAUTH_SUCCESS));
+	Assert.IsTrue(TCMROAuthJsonAdapter.Parse(JSON_OAUTH_SUCCESS, OAuth));
 end;
 
 procedure TCMROAuthTest.TestFromJSONValidWithError;
@@ -54,7 +55,7 @@ var
 	OAuth: TCMROAuth;
 begin
 	{ Error response is still valid JSON that parses successfully }
-	Assert.IsTrue(OAuth.fromJSON(JSON_OAUTH_ERROR));
+	Assert.IsTrue(TCMROAuthJsonAdapter.Parse(JSON_OAUTH_ERROR, OAuth));
 
 	Assert.AreEqual('invalid_grant', OAuth.error);
 	Assert.AreEqual(401, OAuth.error_code);
@@ -65,7 +66,7 @@ procedure TCMROAuthTest.TestFromJSONAccessToken;
 var
 	OAuth: TCMROAuth;
 begin
-	OAuth.fromJSON(JSON_OAUTH_SUCCESS);
+	TCMROAuthJsonAdapter.Parse(JSON_OAUTH_SUCCESS, OAuth);
 
 	Assert.AreEqual('abc123token', OAuth.access_token);
 end;
@@ -74,7 +75,7 @@ procedure TCMROAuthTest.TestFromJSONRefreshToken;
 var
 	OAuth: TCMROAuth;
 begin
-	OAuth.fromJSON(JSON_OAUTH_SUCCESS);
+	TCMROAuthJsonAdapter.Parse(JSON_OAUTH_SUCCESS, OAuth);
 
 	Assert.AreEqual('refresh456', OAuth.refresh_token);
 end;
@@ -83,7 +84,7 @@ procedure TCMROAuthTest.TestFromJSONExpiresIn;
 var
 	OAuth: TCMROAuth;
 begin
-	OAuth.fromJSON(JSON_OAUTH_SUCCESS);
+	TCMROAuthJsonAdapter.Parse(JSON_OAUTH_SUCCESS, OAuth);
 
 	Assert.AreEqual(3600, OAuth.expires_in);
 end;
@@ -93,7 +94,7 @@ var
 	OAuth: TCMROAuth;
 begin
 	{ Invalid JSON should return false with initialized fields }
-	Assert.IsFalse(OAuth.fromJSON('not valid json'));
+	Assert.IsFalse(TCMROAuthJsonAdapter.Parse('not valid json', OAuth));
 
 	{ Fields are initialized to safe defaults }
 	Assert.AreEqual(0, OAuth.error_code);
@@ -104,7 +105,7 @@ procedure TCMROAuthTest.TestFromJSONEmptyString;
 var
 	OAuth: TCMROAuth;
 begin
-	Assert.IsFalse(OAuth.fromJSON(''));
+	Assert.IsFalse(TCMROAuthJsonAdapter.Parse('', OAuth));
 end;
 
 procedure TCMROAuthTest.TestFromJSONPartialData;
@@ -112,7 +113,7 @@ var
 	OAuth: TCMROAuth;
 begin
 	{ Partial data should still parse successfully }
-	Assert.IsTrue(OAuth.fromJSON(JSON_OAUTH_PARTIAL));
+	Assert.IsTrue(TCMROAuthJsonAdapter.Parse(JSON_OAUTH_PARTIAL, OAuth));
 
 	Assert.AreEqual('partial_token', OAuth.access_token);
 	{ Missing fields are initialized to safe defaults }

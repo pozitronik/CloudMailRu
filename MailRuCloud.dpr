@@ -103,6 +103,7 @@ uses
 	CloudDescriptionOpsAdapter in 'src\Infrastructure\Adapter\CloudDescriptionOpsAdapter.pas',
 	CMRDirItemJsonAdapter in 'src\Infrastructure\Adapter\CMRDirItemJsonAdapter.pas',
 	CMRDirItemListJsonAdapter in 'src\Infrastructure\Adapter\CMRDirItemListJsonAdapter.pas',
+	CMROAuthJsonAdapter in 'src\Infrastructure\Adapter\CMROAuthJsonAdapter.pas',
 	RetryHandler in 'src\Application\Retry\RetryHandler.pas',
 	CommandDispatcher in 'src\Application\Command\CommandDispatcher.pas',
 	ListingProvider in 'src\Application\Listing\ListingProvider.pas',

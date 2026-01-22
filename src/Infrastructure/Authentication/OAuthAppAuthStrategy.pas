@@ -25,6 +25,7 @@ uses
 	SysUtils,
 	Winapi.Windows,
 	CMRConstants,
+	CMROAuthJsonAdapter,
 	PLUGIN_TYPES,
 	LANGUAGE_STRINGS,
 	StringHelper;
@@ -44,7 +45,7 @@ begin
 	{OAuth password grant request}
 	if HTTP.PostForm(OAUTH_TOKEN_URL, Format('client_id=%s&grant_type=password&username=%s@%s&password=%s', [OAUTH_CLIENT_ID, Credentials.User, Credentials.Domain, UrlEncode(Credentials.Password)]), PostAnswer) then
 	begin
-		if not OAuthToken.FromJSON(PostAnswer) then
+		if not TCMROAuthJsonAdapter.Parse(PostAnswer, OAuthToken) then
 		begin
 			Result := TAuthResult.CreateFailure(Format(PREFIX_ERR_OAUTH, ['JSON parse error', 'Invalid response format']));
 			Exit;

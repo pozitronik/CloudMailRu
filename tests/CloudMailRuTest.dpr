@@ -180,6 +180,8 @@ uses
 	CMRDirItemJsonAdapterTest in 'Infrastructure\Adapter\CMRDirItemJsonAdapterTest.pas',
 	CMRDirItemListJsonAdapter in '..\src\Infrastructure\Adapter\CMRDirItemListJsonAdapter.pas',
 	CMRDirItemListJsonAdapterTest in 'Infrastructure\Adapter\CMRDirItemListJsonAdapterTest.pas',
+	CMROAuthJsonAdapter in '..\src\Infrastructure\Adapter\CMROAuthJsonAdapter.pas',
+	CMROAuthJsonAdapterTest in 'Infrastructure\Adapter\CMROAuthJsonAdapterTest.pas',
 	MockCloudDescriptionOps in 'mocks\MockCloudDescriptionOps.pas',
 	DescriptionSyncManagerTest in 'Application\Description\DescriptionSyncManagerTest.pas',
 	RetryHandler in '..\src\Application\Retry\RetryHandler.pas',
