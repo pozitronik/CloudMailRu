@@ -9,7 +9,25 @@ uses
 	CloudMailRu;
 
 type
-	{Factory for creating TCloudMailRu instances.
+	{Interface for creating public cloud instances.
+		Enables dependency injection and testing of components that need temporary clouds.}
+	IPublicCloudFactory = interface
+		['{A7D3E8B1-5C2F-4A9D-8E6B-1F3C5D7A9B2E}']
+
+		{Create a temporary TCloudMailRu for accessing public/shared content.
+			@param TempCloud Output parameter that receives the created instance
+			@param PublicUrl The public URL to access
+			@return True if login succeeded, False otherwise}
+		function CreatePublicCloud(var TempCloud: TCloudMailRu; PublicUrl: WideString): Boolean;
+	end;
+
+	{Default implementation using real cloud connections.}
+	TPublicCloudFactory = class(TInterfacedObject, IPublicCloudFactory)
+	public
+		function CreatePublicCloud(var TempCloud: TCloudMailRu; PublicUrl: WideString): Boolean;
+	end;
+
+	{Static factory for creating TCloudMailRu instances.
 		Provides specialized constructors for different use cases.}
 	TCloudMailRuFactory = class
 	public
@@ -30,6 +48,15 @@ uses
 	TCLogger,
 	TCProgress,
 	TCRequest;
+
+{TPublicCloudFactory - default implementation}
+
+function TPublicCloudFactory.CreatePublicCloud(var TempCloud: TCloudMailRu; PublicUrl: WideString): Boolean;
+begin
+	Result := TCloudMailRuFactory.CreatePublicCloud(TempCloud, PublicUrl);
+end;
+
+{TCloudMailRuFactory - static methods}
 
 class function TCloudMailRuFactory.CreatePublicCloud(var TempCloud: TCloudMailRu; PublicUrl: WideString): Boolean;
 var

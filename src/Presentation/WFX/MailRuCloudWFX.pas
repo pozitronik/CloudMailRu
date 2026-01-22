@@ -93,7 +93,8 @@ uses
 	OverwritePreparationHandler,
 	OperationStatusContextBuilder,
 	ListingResultApplier,
-	DownloadOrchestrator;
+	DownloadOrchestrator,
+	CloudMailRuFactory;
 
 type
 	TMailRuCloudWFX = class(TInterfacedObject, IWFXInterface)
@@ -305,7 +306,7 @@ begin
 	FSameAccountMoveHandler := TSameAccountMoveHandler.Create(FThreadState, FDescriptionSyncGuard);
 
 	{Create file stream executor for ExecuteFileStream}
-	FFileStreamExecutor := TFileStreamExecutor.Create;
+	FFileStreamExecutor := TFileStreamExecutor.Create(TPublicCloudFactory.Create, TWindowsCommandExecutor.Create);
 
 	{Create local file conflict resolver for FsGetFile}
 	FLocalFileConflictResolver := TLocalFileConflictResolver.Create(TCLogger);

@@ -14,7 +14,8 @@ uses
 	StreamingSettings,
 	ConnectionManager,
 	CloudMailRu,
-	CloudMailRuFactory;
+	CloudMailRuFactory,
+	WindowsHelper;
 
 type
 	IFileStreamExecutor = interface
@@ -33,6 +34,9 @@ type
 
 	TFileStreamExecutor = class(TInterfacedObject, IFileStreamExecutor)
 	private
+		FCloudFactory: IPublicCloudFactory;
+		FCommandExecutor: ICommandExecutor;
+
 		{Resolves streaming URL based on format.
 			For playlist: gets HLS stream URL.
 			For other formats: publishes file if needed and gets shared URL.}
@@ -41,6 +45,11 @@ type
 		{Executes streaming command with URL substitution.}
 		function ExecuteCommand(var Settings: TStreamingSettings; const StreamUrl: WideString): Boolean;
 	public
+		{Creates executor with injected dependencies.
+			@param CloudFactory Factory for creating public cloud instances
+			@param CommandExecutor Executor for running external commands}
+		constructor Create(CloudFactory: IPublicCloudFactory; CommandExecutor: ICommandExecutor);
+
 		function Execute(const RealPath: TRealPath; const Item: TCMRDirItem; var Settings: TStreamingSettings; ConnManager: IConnectionManager): Integer;
 	end;
 
@@ -49,8 +58,14 @@ implementation
 uses
 	SysUtils,
 	PLUGIN_TYPES,
-	PluginHelper,
-	WindowsHelper;
+	PluginHelper;
+
+constructor TFileStreamExecutor.Create(CloudFactory: IPublicCloudFactory; CommandExecutor: ICommandExecutor);
+begin
+	inherited Create;
+	FCloudFactory := CloudFactory;
+	FCommandExecutor := CommandExecutor;
+end;
 
 function TFileStreamExecutor.ResolveStreamUrl(const RealPath: TRealPath; const Item: TCMRDirItem; Format: Integer; TempCloud: TCloudMailRu; ConnManager: IConnectionManager; out StreamUrl: WideString): Boolean;
 var
@@ -88,7 +103,7 @@ begin
 	{Substitute URL placeholder}
 	Settings.Parameters := StringReplace(Settings.Parameters, '%url%', StreamUrl, [rfReplaceAll, rfIgnoreCase]);
 
-	Result := Run(Settings.Command, StreamUrl, Settings.StartPath);
+	Result := FCommandExecutor.Execute(Settings.Command, StreamUrl, Settings.StartPath);
 end;
 
 function TFileStreamExecutor.Execute(const RealPath: TRealPath; const Item: TCMRDirItem; var Settings: TStreamingSettings; ConnManager: IConnectionManager): Integer;
@@ -103,7 +118,7 @@ begin
 		Exit;
 
 	{Initialize temporary public cloud for URL resolution}
-	if not TCloudMailRuFactory.CreatePublicCloud(TempPublicCloud, PUBLIC_ACCESS_URL + Item.weblink) then
+	if not FCloudFactory.CreatePublicCloud(TempPublicCloud, PUBLIC_ACCESS_URL + Item.weblink) then
 		Exit(FS_EXEC_ERROR);
 
 	try
