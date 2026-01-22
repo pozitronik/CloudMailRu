@@ -917,7 +917,7 @@ procedure TMailRuCloudWFX.FsSetCryptCallback(PCryptProc: TCryptProcW; CryptoNr, 
 begin
 	PasswordManager := TTCPasswordManager.Create(PCryptProc, PluginNum, CryptoNr, TCLogger);
 	PasswordUI := TPasswordUIProvider.Create;
-	HTTPMgr := THTTPManager.Create(SettingsManager.Settings.ConnectionSettings, TCLogger, TCProgress);
+	HTTPMgr := THTTPManager.Create(SettingsManager.Settings.ConnectionSettings, TCLogger, TCProgress, TCloudHTTPFactory.Create);
 	CipherVal := TCipherValidator.Create;
 	ConnectionManager := TConnectionManager.Create(SettingsManager, AccountSettings, HTTPMgr, PasswordUI, CipherVal, TWindowsFileSystem.Create, TCProgress, TCLogger, TCRequest, PasswordManager);
 	FCommandDispatcher := TCommandDispatcher.Create(ConnectionManager, TCLogger, SettingsManager);
