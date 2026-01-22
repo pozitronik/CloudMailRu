@@ -125,6 +125,7 @@ uses
 	PasswordUIProvider in '..\src\Infrastructure\UI\PasswordUIProvider.pas',
 	PasswordUIProviderTest in 'Infrastructure\UI\PasswordUIProviderTest.pas',
 	HTTPManagerTest in 'Infrastructure\HTTP\HTTPManagerTest.pas',
+	CloudHTTPTest in 'Infrastructure\HTTP\CloudHTTPTest.pas',
 	CipherValidator in '..\src\Infrastructure\Cipher\CipherValidator.pas',
 	CipherValidatorTest in 'Infrastructure\Cipher\CipherValidatorTest.pas',
 	ConnectionManagerTest in 'Infrastructure\Services\ConnectionManagerTest.pas',
