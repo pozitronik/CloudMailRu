@@ -10,10 +10,19 @@ uses
 	DUnitX.TestFramework,
 	RealPath,
 	CloudMailRu,
+	CloudSettings,
 	PLUGIN_TYPES,
+	CMRConstants,
 	ThreadStateManager,
 	DescriptionSyncGuard,
-	SameAccountMoveHandler;
+	SameAccountMoveHandler,
+	MockCloudHTTP,
+	MockHTTPManager,
+	IAuthStrategyInterface,
+	WindowsFileSystem,
+	TCLogger,
+	TCProgress,
+	TCRequest;
 
 type
 	{Mock thread state manager for skip-path testing}
@@ -89,12 +98,23 @@ type
 		procedure OnFileUploaded(const RealPath: TRealPath; const LocalPath: WideString; Cloud: TCloudMailRu);
 	end;
 
+	{Testable CloudMailRu for same-account operation tests}
+	TTestableCloudMailRu = class(TCloudMailRu)
+	public
+		procedure SetUnitedParams(const Value: WideString);
+	end;
+
 	[TestFixture]
 	TSameAccountMoveHandlerTest = class
 	private
 		FHandler: ISameAccountMoveHandler;
 		FThreadState: TMockMoveThreadState;
 		FDescriptionSyncGuard: TMockDescriptionSyncGuard;
+		FMockHTTP: TMockCloudHTTP;
+		FMockHTTPManager: TMockHTTPManager;
+		FCloud: TTestableCloudMailRu;
+
+		function CreateCloud: TTestableCloudMailRu;
 	public
 		[Setup]
 		procedure Setup;
@@ -106,12 +126,24 @@ type
 		procedure TestExecute_MoveSuccess_ReturnsOK;
 		[Test]
 		procedure TestExecute_MoveSuccess_NotifiesDescriptionSync;
+		[Test]
+		procedure TestExecute_MoveSuccess_CallsMoveAPI;
+		[Test]
+		procedure TestExecute_MoveFails_ReturnsError;
 
 		{Copy operation tests}
 		[Test]
 		procedure TestExecute_CopySuccess_ReturnsOK;
 		[Test]
 		procedure TestExecute_CopySuccess_DoesNotNotifyDescriptionSync;
+		[Test]
+		procedure TestExecute_CopySuccess_CallsCopyAPI;
+
+		{Overwrite tests}
+		[Test]
+		procedure TestExecute_OverwriteTrue_DeletesTargetFirst;
+		[Test]
+		procedure TestExecute_OverwriteDeleteFails_ReturnsNotSupported;
 
 		{Skip path management tests}
 		[Test]
@@ -126,6 +158,15 @@ implementation
 
 uses
 	SysUtils;
+
+const
+	{Sample JSON responses for same-account operations}
+	JSON_MOVE_SUCCESS = '{"email":"test@mail.ru","body":"/newfolder/file.txt","status":200}';
+	JSON_COPY_SUCCESS = '{"email":"test@mail.ru","body":"/newfolder/file.txt","status":200}';
+	JSON_RENAME_SUCCESS = '{"email":"test@mail.ru","body":"/folder/newname.txt","status":200}';
+	JSON_DELETE_SUCCESS = '{"email":"test@mail.ru","body":"ok","status":200}';
+	JSON_OPERATION_EXISTS = '{"email":"test@mail.ru","body":{"home":{"error":"exists"}},"status":400}';
+	JSON_OPERATION_FAIL = '{"email":"test@mail.ru","body":{"home":{"error":"not_exists"}},"status":400}';
 
 {TMockMoveThreadState}
 
@@ -251,88 +292,261 @@ procedure TMockDescriptionSyncGuard.OnFileUploaded(const RealPath: TRealPath; co
 begin
 end;
 
+{TTestableCloudMailRu}
+
+procedure TTestableCloudMailRu.SetUnitedParams(const Value: WideString);
+begin
+	FUnitedParams := Value;
+end;
+
 {TSameAccountMoveHandlerTest}
 
 procedure TSameAccountMoveHandlerTest.Setup;
 begin
+	FMockHTTP := TMockCloudHTTP.Create;
+	FMockHTTPManager := TMockHTTPManager.Create(FMockHTTP);
 	FThreadState := TMockMoveThreadState.Create;
 	FDescriptionSyncGuard := TMockDescriptionSyncGuard.Create;
 	FHandler := TSameAccountMoveHandler.Create(FThreadState, FDescriptionSyncGuard);
+	FCloud := nil;
 end;
 
 procedure TSameAccountMoveHandlerTest.TearDown;
 begin
 	FHandler := nil;
+	FCloud.Free;
 	FDescriptionSyncGuard := nil;
 	FThreadState := nil;
+	FMockHTTPManager := nil;
+	FMockHTTP := nil;
+end;
+
+function TSameAccountMoveHandlerTest.CreateCloud: TTestableCloudMailRu;
+var
+	Settings: TCloudSettings;
+begin
+	Settings := Default(TCloudSettings);
+	Result := TTestableCloudMailRu.Create(
+		Settings,
+		FMockHTTPManager,
+		TNullAuthStrategy.Create,
+		TNullFileSystem.Create,
+		TNullLogger.Create,
+		TNullProgress.Create,
+		TNullRequest.Create);
+	Result.SetUnitedParams('api=2&access_token=test_token');
 end;
 
 {Move operation tests}
 
 procedure TSameAccountMoveHandlerTest.TestExecute_MoveSuccess_ReturnsOK;
+var
+	OldPath, NewPath: TRealPath;
+	Result: Integer;
 begin
-	{This test requires a real TCloudMailRu which we can't easily mock.
-	 Skip for now - the integration will be tested through existing tests.}
-	Assert.Pass('Move operation tested through integration tests');
+	FCloud := CreateCloud;
+	OldPath.FromPath('\account\folder\file.txt');
+	NewPath.FromPath('\account\newfolder\file.txt');
+
+	{Move uses API_FILE_MOVE when moving to different folder}
+	FMockHTTP.SetResponse(API_FILE_MOVE, True, JSON_MOVE_SUCCESS);
+
+	Result := FHandler.Execute(FCloud, OldPath, NewPath, True, False);
+
+	Assert.AreEqual(FS_FILE_OK, Result, 'Should return OK on successful move');
 end;
 
 procedure TSameAccountMoveHandlerTest.TestExecute_MoveSuccess_NotifiesDescriptionSync;
+var
+	OldPath, NewPath: TRealPath;
 begin
-	{This test requires a real TCloudMailRu which we can't easily mock.
-	 Skip for now - the integration will be tested through existing tests.}
-	Assert.Pass('Description sync notification tested through integration tests');
+	FCloud := CreateCloud;
+	OldPath.FromPath('\account\folder\file.txt');
+	NewPath.FromPath('\account\newfolder\file.txt');
+
+	FMockHTTP.SetResponse(API_FILE_MOVE, True, JSON_MOVE_SUCCESS);
+
+	FHandler.Execute(FCloud, OldPath, NewPath, True, False);
+
+	Assert.IsTrue(FDescriptionSyncGuard.OnFileRenamedCalled,
+		'Should notify description sync on successful move');
+end;
+
+procedure TSameAccountMoveHandlerTest.TestExecute_MoveSuccess_CallsMoveAPI;
+var
+	OldPath, NewPath: TRealPath;
+begin
+	FCloud := CreateCloud;
+	OldPath.FromPath('\account\folder\file.txt');
+	NewPath.FromPath('\account\newfolder\file.txt');
+
+	FMockHTTP.SetResponse(API_FILE_MOVE, True, JSON_MOVE_SUCCESS);
+
+	FHandler.Execute(FCloud, OldPath, NewPath, True, False);
+
+	Assert.IsTrue(FMockHTTP.WasURLCalled(API_FILE_MOVE), 'Should call move API');
+end;
+
+procedure TSameAccountMoveHandlerTest.TestExecute_MoveFails_ReturnsError;
+var
+	OldPath, NewPath: TRealPath;
+	Result: Integer;
+begin
+	FCloud := CreateCloud;
+	OldPath.FromPath('\account\folder\file.txt');
+	NewPath.FromPath('\account\newfolder\file.txt');
+
+	{Move API fails}
+	FMockHTTP.SetResponse(API_FILE_MOVE, False, '');
+
+	Result := FHandler.Execute(FCloud, OldPath, NewPath, True, False);
+
+	Assert.AreNotEqual(FS_FILE_OK, Result, 'Should return error when move fails');
 end;
 
 {Copy operation tests}
 
 procedure TSameAccountMoveHandlerTest.TestExecute_CopySuccess_ReturnsOK;
+var
+	OldPath, NewPath: TRealPath;
+	Result: Integer;
 begin
-	{This test requires a real TCloudMailRu which we can't easily mock.}
-	Assert.Pass('Copy operation tested through integration tests');
+	FCloud := CreateCloud;
+	OldPath.FromPath('\account\folder\file.txt');
+	NewPath.FromPath('\account\newfolder\file.txt');
+
+	{Copy uses API_FILE_COPY}
+	FMockHTTP.SetResponse(API_FILE_COPY, True, JSON_COPY_SUCCESS);
+
+	Result := FHandler.Execute(FCloud, OldPath, NewPath, False, False);
+
+	Assert.AreEqual(FS_FILE_OK, Result, 'Should return OK on successful copy');
 end;
 
 procedure TSameAccountMoveHandlerTest.TestExecute_CopySuccess_DoesNotNotifyDescriptionSync;
+var
+	OldPath, NewPath: TRealPath;
 begin
-	{This test requires a real TCloudMailRu which we can't easily mock.}
-	Assert.Pass('Copy does not notify description sync - tested through integration tests');
+	FCloud := CreateCloud;
+	OldPath.FromPath('\account\folder\file.txt');
+	NewPath.FromPath('\account\newfolder\file.txt');
+
+	FMockHTTP.SetResponse(API_FILE_COPY, True, JSON_COPY_SUCCESS);
+
+	FHandler.Execute(FCloud, OldPath, NewPath, False, False);
+
+	Assert.IsFalse(FDescriptionSyncGuard.OnFileRenamedCalled,
+		'Should NOT notify description sync on copy (only moves)');
+end;
+
+procedure TSameAccountMoveHandlerTest.TestExecute_CopySuccess_CallsCopyAPI;
+var
+	OldPath, NewPath: TRealPath;
+begin
+	FCloud := CreateCloud;
+	OldPath.FromPath('\account\folder\file.txt');
+	NewPath.FromPath('\account\newfolder\file.txt');
+
+	FMockHTTP.SetResponse(API_FILE_COPY, True, JSON_COPY_SUCCESS);
+
+	FHandler.Execute(FCloud, OldPath, NewPath, False, False);
+
+	Assert.IsTrue(FMockHTTP.WasURLCalled(API_FILE_COPY), 'Should call copy API');
+end;
+
+{Overwrite tests}
+
+procedure TSameAccountMoveHandlerTest.TestExecute_OverwriteTrue_DeletesTargetFirst;
+var
+	OldPath, NewPath: TRealPath;
+begin
+	FCloud := CreateCloud;
+	OldPath.FromPath('\account\folder\file.txt');
+	NewPath.FromPath('\account\newfolder\file.txt');
+
+	{Delete succeeds, then move succeeds}
+	FMockHTTP.SetResponse(API_FILE_REMOVE, True, JSON_DELETE_SUCCESS);
+	FMockHTTP.SetResponse(API_FILE_MOVE, True, JSON_MOVE_SUCCESS);
+
+	FHandler.Execute(FCloud, OldPath, NewPath, True, True); {OverWrite=True}
+
+	Assert.IsTrue(FMockHTTP.WasURLCalled(API_FILE_REMOVE),
+		'Should delete target first when overwrite is true');
+end;
+
+procedure TSameAccountMoveHandlerTest.TestExecute_OverwriteDeleteFails_ReturnsNotSupported;
+var
+	OldPath, NewPath: TRealPath;
+	Result: Integer;
+begin
+	FCloud := CreateCloud;
+	OldPath.FromPath('\account\folder\file.txt');
+	NewPath.FromPath('\account\newfolder\file.txt');
+
+	{Delete fails}
+	FMockHTTP.SetResponse(API_FILE_REMOVE, False, '');
+
+	Result := FHandler.Execute(FCloud, OldPath, NewPath, True, True); {OverWrite=True}
+
+	Assert.AreEqual(FS_FILE_NOTSUPPORTED, Result,
+		'Should return not supported when delete fails during overwrite');
 end;
 
 {Skip path management tests}
 
 procedure TSameAccountMoveHandlerTest.TestExecute_MoveExists_AddsToSkipPath;
+var
+	OldPath, NewPath: TRealPath;
 begin
-	{Test the skip path logic directly}
+	FCloud := CreateCloud;
+	OldPath.FromPath('\account\folder\file.txt');
+	NewPath.FromPath('\account\newfolder\file.txt');
 	FThreadState.SetHasSkippedPath(True);
 
-	{Simulate adding path when move returns EXISTS}
-	FThreadState.AddSkippedPath('\account\oldfile.txt');
+	{Move returns EXISTS error}
+	FMockHTTP.SetResponse(API_FILE_MOVE, True, JSON_OPERATION_EXISTS);
 
-	Assert.IsTrue(FThreadState.HasSkippedPathFor('\account\oldfile.txt'),
-		'Should add path to skip list');
+	FHandler.Execute(FCloud, OldPath, NewPath, True, False);
+
+	Assert.IsTrue(FThreadState.HasSkippedPathFor(OldPath.ToPath),
+		'Should add path to skip list when move returns EXISTS');
 end;
 
 procedure TSameAccountMoveHandlerTest.TestExecute_MoveOK_RemovesFromSkipPath;
+var
+	OldPath, NewPath: TRealPath;
 begin
-	{Test the skip path logic directly}
+	FCloud := CreateCloud;
+	OldPath.FromPath('\account\folder\file.txt');
+	NewPath.FromPath('\account\newfolder\file.txt');
 	FThreadState.SetHasSkippedPath(True);
-	FThreadState.AddSkippedPath('\account\oldfile.txt');
+	FThreadState.AddSkippedPath(OldPath.ToPath);
 
-	{Simulate removing path when move succeeds}
-	FThreadState.RemoveSkippedPath('\account\oldfile.txt');
+	{Move succeeds}
+	FMockHTTP.SetResponse(API_FILE_MOVE, True, JSON_MOVE_SUCCESS);
 
-	Assert.IsFalse(FThreadState.HasSkippedPathFor('\account\oldfile.txt'),
-		'Should remove path from skip list');
+	FHandler.Execute(FCloud, OldPath, NewPath, True, False);
+
+	Assert.IsFalse(FThreadState.HasSkippedPathFor(OldPath.ToPath),
+		'Should remove path from skip list when move succeeds');
 end;
 
 procedure TSameAccountMoveHandlerTest.TestExecute_NoSkipPathList_DoesNotAddPath;
+var
+	OldPath, NewPath: TRealPath;
 begin
-	{When HasRemoveDirSkippedPath is false, no paths should be added}
-	FThreadState.SetHasSkippedPath(False);
+	FCloud := CreateCloud;
+	OldPath.FromPath('\account\folder\file.txt');
+	NewPath.FromPath('\account\newfolder\file.txt');
+	FThreadState.SetHasSkippedPath(False); {No skip path list}
 
-	{Even if we try to add, the handler checks HasRemoveDirSkippedPath first}
-	{This tests the mock behavior - the actual handler logic is similar}
+	{Move returns EXISTS error but should not add to skip path}
+	FMockHTTP.SetResponse(API_FILE_MOVE, True, JSON_OPERATION_EXISTS);
+
+	FHandler.Execute(FCloud, OldPath, NewPath, True, False);
+
 	Assert.AreEqual(0, FThreadState.GetSkippedPathCount,
-		'Should not have any skipped paths when feature is disabled');
+		'Should not add to skip list when feature is disabled');
 end;
 
 initialization
