@@ -45,7 +45,6 @@ uses
 	Controls,
 	Messages,
 	StringHelper,
-	PluginHelper,
 	FileHelper,
 	IconHelper,
 	SystemHelper,

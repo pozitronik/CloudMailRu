@@ -10,7 +10,7 @@ uses
 	CMRConstants,
 	SETTINGS_CONSTANTS,
 	LANGUAGE_STRINGS,
-	PluginHelper,
+	StringHelper,
 	DateUtils,
 	System.SysUtils;
 

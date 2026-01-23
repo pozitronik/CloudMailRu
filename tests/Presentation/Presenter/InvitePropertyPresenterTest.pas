@@ -9,7 +9,7 @@ uses
 	CMROwner,
 	CMRConstants,
 	CloudAccessUtils,
-	PluginHelper,
+	StringHelper,
 	LANGUAGE_STRINGS,
 	System.SysUtils;
 

@@ -57,7 +57,6 @@ uses
 	PLUGIN_TYPES in 'src\Presentation\WFX\PLUGIN_TYPES.pas',
 	ParsingHelper in 'src\Infrastructure\HTTP\ParsingHelper.pas',
 	PathHelper in 'src\Infrastructure\IO\PathHelper.pas',
-	PluginHelper in 'src\Presentation\WFX\PluginHelper.pas',
 	PluginSettings in 'src\Infrastructure\Settings\PluginSettings.pas',
 	PluginSettingsManager in 'src\Infrastructure\Settings\PluginSettingsManager.pas',
 	ProxySettings in 'src\Infrastructure\Settings\ProxySettings.pas',

@@ -57,8 +57,26 @@ implementation
 
 uses
 	SysUtils,
-	PLUGIN_TYPES,
-	PluginHelper;
+	PLUGIN_TYPES;
+
+{Maps streaming format to corresponding shard type for URL resolution}
+function ShardTypeFromStreamingFormat(StreamingFormat: Integer): string;
+begin
+	case StreamingFormat of
+		STREAMING_FORMAT_WEBLINK_VIEW:
+			Result := SHARD_TYPE_WEBLINK_VIEW;
+		STREAMING_FORMAT_VIDEO:
+			Result := SHARD_TYPE_VIDEO;
+		STREAMING_FORMAT_VIEW_DIRECT:
+			Result := SHARD_TYPE_VIEW_DIRECT;
+		STREAMING_FORMAT_THUMBNAILS:
+			Result := SHARD_TYPE_THUMBNAILS;
+		STREAMING_FORMAT_WEBLINK_THUMBNAILS:
+			Result := SHARD_TYPE_WEBLINK_THUMBNAILS;
+		else
+			Result := SHARD_TYPE_DEFAULT;
+	end;
+end;
 
 constructor TFileStreamExecutor.Create(CloudFactory: IPublicCloudFactory; CommandExecutor: ICommandExecutor);
 begin

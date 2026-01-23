@@ -12,14 +12,14 @@ uses
 	CMRConstants,
 	SETTINGS_CONSTANTS,
 	LANGUAGE_STRINGS,
-	PluginHelper,
+	StringHelper,
 	DateUtils,
 	System.SysUtils;
 
 type
 	{View interface for DeletedProperty dialog}
 	IDeletedPropertyView = interface
-		['{C3D4E5F6-A7B8-9012-CDEF-345678901234}']
+		['{5755EFE9-A744-4846-B637-A3DC87C23461}']
 		{Form display}
 		procedure SetCaption(Caption: WideString);
 

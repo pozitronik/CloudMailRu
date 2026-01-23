@@ -10,14 +10,14 @@ uses
 	CMRIncomingInvite,
 	CMRConstants,
 	CloudAccessUtils,
-	PluginHelper,
+	StringHelper,
 	LANGUAGE_STRINGS,
 	System.SysUtils;
 
 type
 	{View interface for InviteProperty dialog}
 	IInvitePropertyView = interface
-		['{B2C3D4E5-F6A7-8901-BCDE-F23456789012}']
+		['{6BEC77FE-533D-444D-9CA5-E7DA3874BB20}']
 		{Form display}
 		procedure SetCaption(Caption: WideString);
 
