@@ -85,9 +85,15 @@ type
 		[Test]
 		procedure InitializePasswordMode_SetsCheckboxChecked;
 
+		[Test]
+		procedure InitializePasswordMode_SetsCheckboxUnchecked;
+
 		{Text mode tests}
 		[Test]
 		procedure InitializeTextMode_SetsCaption;
+
+		[Test]
+		procedure InitializeTextMode_SetsLabelText;
 
 		[Test]
 		procedure InitializeTextMode_ShowsPasswordEdit;
@@ -104,9 +110,18 @@ type
 		[Test]
 		procedure InitializeTextMode_AddsOkAndCancelButtons;
 
+		[Test]
+		procedure InitializeTextMode_OkButtonHasCorrectCode;
+
+		[Test]
+		procedure InitializeTextMode_CancelButtonHasCorrectCode;
+
 		{Action mode tests}
 		[Test]
 		procedure InitializeActionMode_SetsCaption;
+
+		[Test]
+		procedure InitializeActionMode_SetsLabelText;
 
 		[Test]
 		procedure InitializeActionMode_HidesPasswordEdit;
@@ -120,6 +135,12 @@ type
 		[Test]
 		procedure InitializeActionMode_AddsAllActionButtons;
 
+		[Test]
+		procedure InitializeActionMode_ButtonsHaveCorrectCodes;
+
+		[Test]
+		procedure InitializeActionMode_EmptyActions_AddsNoButtons;
+
 		{Password change tests}
 		[Test]
 		procedure OnPasswordChanged_EmptyPassword_DisablesOkButton;
@@ -132,7 +153,10 @@ type
 		procedure GetPassword_ReturnsViewPassword;
 
 		[Test]
-		procedure GetUseTCPwdMngr_ReturnsCheckboxState;
+		procedure GetUseTCPwdMngr_ReturnsCheckboxStateTrue;
+
+		[Test]
+		procedure GetUseTCPwdMngr_ReturnsCheckboxStateFalse;
 	end;
 
 implementation
@@ -301,6 +325,13 @@ begin
 	Assert.IsTrue(FMockView.CheckboxChecked);
 end;
 
+procedure TAskPasswordPresenterTest.InitializePasswordMode_SetsCheckboxUnchecked;
+begin
+	FPresenter.InitializePasswordMode('Test Title', 'Enter password:', False, False);
+
+	Assert.IsFalse(FMockView.CheckboxChecked);
+end;
+
 {Text mode tests}
 
 procedure TAskPasswordPresenterTest.InitializeTextMode_SetsCaption;
@@ -308,6 +339,13 @@ begin
 	FPresenter.InitializeTextMode('Enter Text', 'Please enter value:');
 
 	Assert.AreEqual('Enter Text', FMockView.Caption);
+end;
+
+procedure TAskPasswordPresenterTest.InitializeTextMode_SetsLabelText;
+begin
+	FPresenter.InitializeTextMode('Enter Text', 'Please enter value:');
+
+	Assert.AreEqual('Please enter value:', FMockView.LabelText);
 end;
 
 procedure TAskPasswordPresenterTest.InitializeTextMode_ShowsPasswordEdit;
@@ -345,6 +383,22 @@ begin
 	Assert.AreEqual(Integer(2), Integer(FMockView.ActionButtons.Count));
 end;
 
+procedure TAskPasswordPresenterTest.InitializeTextMode_OkButtonHasCorrectCode;
+begin
+	FPresenter.InitializeTextMode('Enter Text', 'Please enter value:');
+
+	Assert.AreEqual(Integer(1), FMockView.ActionButtons[0].Code, 'OK button should have code 1 (mrOk)');
+	Assert.AreEqual(OK, FMockView.ActionButtons[0].Title, 'OK button should have correct title');
+end;
+
+procedure TAskPasswordPresenterTest.InitializeTextMode_CancelButtonHasCorrectCode;
+begin
+	FPresenter.InitializeTextMode('Enter Text', 'Please enter value:');
+
+	Assert.AreEqual(Integer(2), FMockView.ActionButtons[1].Code, 'Cancel button should have code 2 (mrCancel)');
+	Assert.AreEqual(CANCEL, FMockView.ActionButtons[1].Title, 'Cancel button should have correct title');
+end;
+
 {Action mode tests}
 
 procedure TAskPasswordPresenterTest.InitializeActionMode_SetsCaption;
@@ -357,6 +411,21 @@ begin
 		FPresenter.InitializeActionMode('Choose Action', 'Select one:', Actions);
 
 		Assert.AreEqual('Choose Action', FMockView.Caption);
+	finally
+		Actions.Free;
+	end;
+end;
+
+procedure TAskPasswordPresenterTest.InitializeActionMode_SetsLabelText;
+var
+	Actions: TDictionary<Integer, WideString>;
+begin
+	Actions := TDictionary<Integer, WideString>.Create;
+	try
+		Actions.Add(1, 'Action1');
+		FPresenter.InitializeActionMode('Choose Action', 'Select one:', Actions);
+
+		Assert.AreEqual('Select one:', FMockView.LabelText);
 	finally
 		Actions.Free;
 	end;
@@ -424,6 +493,55 @@ begin
 	end;
 end;
 
+procedure TAskPasswordPresenterTest.InitializeActionMode_ButtonsHaveCorrectCodes;
+var
+	Actions: TDictionary<Integer, WideString>;
+	i: Integer;
+	FoundCode100, FoundCode200: Boolean;
+begin
+	Actions := TDictionary<Integer, WideString>.Create;
+	try
+		Actions.Add(100, 'First Action');
+		Actions.Add(200, 'Second Action');
+		FPresenter.InitializeActionMode('Choose', 'Pick:', Actions);
+
+		{Verify buttons have correct codes (order is not guaranteed by dictionary)}
+		FoundCode100 := False;
+		FoundCode200 := False;
+		for i := 0 to FMockView.ActionButtons.Count - 1 do
+		begin
+			if FMockView.ActionButtons[i].Code = 100 then
+			begin
+				FoundCode100 := True;
+				Assert.AreEqual('First Action', FMockView.ActionButtons[i].Title);
+			end;
+			if FMockView.ActionButtons[i].Code = 200 then
+			begin
+				FoundCode200 := True;
+				Assert.AreEqual('Second Action', FMockView.ActionButtons[i].Title);
+			end;
+		end;
+		Assert.IsTrue(FoundCode100, 'Should have button with code 100');
+		Assert.IsTrue(FoundCode200, 'Should have button with code 200');
+	finally
+		Actions.Free;
+	end;
+end;
+
+procedure TAskPasswordPresenterTest.InitializeActionMode_EmptyActions_AddsNoButtons;
+var
+	Actions: TDictionary<Integer, WideString>;
+begin
+	Actions := TDictionary<Integer, WideString>.Create;
+	try
+		FPresenter.InitializeActionMode('Choose', 'Pick:', Actions);
+
+		Assert.AreEqual(Integer(0), Integer(FMockView.ActionButtons.Count));
+	finally
+		Actions.Free;
+	end;
+end;
+
 {Password change tests}
 
 procedure TAskPasswordPresenterTest.OnPasswordChanged_EmptyPassword_DisablesOkButton;
@@ -453,11 +571,18 @@ begin
 	Assert.AreEqual('TestPassword123', FPresenter.GetPassword);
 end;
 
-procedure TAskPasswordPresenterTest.GetUseTCPwdMngr_ReturnsCheckboxState;
+procedure TAskPasswordPresenterTest.GetUseTCPwdMngr_ReturnsCheckboxStateTrue;
 begin
 	FMockView.CheckboxChecked := True;
 
 	Assert.IsTrue(FPresenter.GetUseTCPwdMngr);
+end;
+
+procedure TAskPasswordPresenterTest.GetUseTCPwdMngr_ReturnsCheckboxStateFalse;
+begin
+	FMockView.CheckboxChecked := False;
+
+	Assert.IsFalse(FPresenter.GetUseTCPwdMngr);
 end;
 
 initialization
