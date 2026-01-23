@@ -9,6 +9,7 @@ uses
 	CMRConstants,
 	TestHelper,
 	SysUtils,
+	Windows,
 	DUnitX.TestFramework;
 
 type
@@ -31,6 +32,22 @@ type
 		procedure TestIsFileProperty;
 		[Test]
 		procedure TestIsPublishedProperty;
+
+		{ToFindData tests}
+		[Test]
+		procedure TestToFindData_FileWithMtime;
+		[Test]
+		procedure TestToFindData_Directory;
+		[Test]
+		procedure TestToFindData_DirectoryAsSymlink;
+		[Test]
+		procedure TestToFindData_TrashBinItem;
+		[Test]
+		procedure TestToFindData_SharedFolder;
+		[Test]
+		procedure TestToFindData_LargeFileSize;
+		[Test]
+		procedure TestToFindData_FileName;
 	end;
 
 	[TestFixture]
@@ -127,6 +144,121 @@ begin
 
 	Item.weblink := '/public/ABC123';
 	Assert.IsTrue(Item.isPublished);
+end;
+
+procedure TCMRDirItemTest.TestToFindData_FileWithMtime;
+var
+	Item: TCMRDirItem;
+	FindData: tWIN32FINDDATAW;
+begin
+	Item := Item.None;
+	Item.name := 'test.txt';
+	Item.type_ := TYPE_FILE;
+	Item.size := 1234;
+	Item.mtime := 1700000000; {Unix timestamp}
+
+	FindData := Item.ToFindData;
+
+	Assert.AreEqual(DWORD(0), FindData.dwFileAttributes);
+	Assert.AreEqual(DWORD(1234), FindData.nFileSizeLow);
+	Assert.AreEqual(DWORD(0), FindData.nFileSizeHigh);
+	Assert.AreNotEqual(Int64(0), Int64(FindData.ftLastWriteTime.dwLowDateTime) or Int64(FindData.ftLastWriteTime.dwHighDateTime shl 32));
+end;
+
+procedure TCMRDirItemTest.TestToFindData_Directory;
+var
+	Item: TCMRDirItem;
+	FindData: tWIN32FINDDATAW;
+begin
+	Item := Item.None;
+	Item.name := 'mydir';
+	Item.type_ := TYPE_DIR;
+
+	FindData := Item.ToFindData(False); {DirsAsSymlinks = False}
+
+	Assert.AreEqual(FILE_ATTRIBUTE_DIRECTORY, FindData.dwFileAttributes and FILE_ATTRIBUTE_DIRECTORY);
+end;
+
+procedure TCMRDirItemTest.TestToFindData_DirectoryAsSymlink;
+var
+	Item: TCMRDirItem;
+	FindData: tWIN32FINDDATAW;
+begin
+	Item := Item.None;
+	Item.name := 'mydir';
+	Item.type_ := TYPE_DIR;
+
+	FindData := Item.ToFindData(True); {DirsAsSymlinks = True}
+
+	Assert.AreEqual(DWORD(0), FindData.dwFileAttributes and FILE_ATTRIBUTE_DIRECTORY);
+end;
+
+procedure TCMRDirItemTest.TestToFindData_TrashBinItem;
+var
+	Item: TCMRDirItem;
+	FindData: tWIN32FINDDATAW;
+begin
+	Item := Item.None;
+	Item.name := 'deleted_file.txt';
+	Item.type_ := TYPE_FILE;
+	Item.deleted_from := '/original/path';
+	Item.deleted_at := 1700000000;
+
+	FindData := Item.ToFindData;
+
+	{Deleted file should have creation time set}
+	Assert.AreNotEqual(Int64(0), Int64(FindData.ftCreationTime.dwLowDateTime) or Int64(FindData.ftCreationTime.dwHighDateTime shl 32));
+end;
+
+procedure TCMRDirItemTest.TestToFindData_SharedFolder;
+var
+	Item: TCMRDirItem;
+	FindData: tWIN32FINDDATAW;
+begin
+	Item := Item.None;
+	Item.name := 'shared_folder';
+	Item.type_ := TYPE_FILE; {Shared items might not be TYPE_DIR}
+	Item.kind := KIND_SHARED;
+
+	FindData := Item.ToFindData(False);
+
+	{Shared folders should have directory attribute}
+	Assert.AreEqual(FILE_ATTRIBUTE_DIRECTORY, FindData.dwFileAttributes and FILE_ATTRIBUTE_DIRECTORY);
+end;
+
+procedure TCMRDirItemTest.TestToFindData_LargeFileSize;
+var
+	Item: TCMRDirItem;
+	FindData: tWIN32FINDDATAW;
+	LargeSize: Int64;
+begin
+	Item := Item.None;
+	Item.name := 'large_file.iso';
+	Item.type_ := TYPE_FILE;
+	LargeSize := Int64(10) * 1024 * 1024 * 1024; {10 GB}
+	Item.size := LargeSize;
+	Item.mtime := 1700000000;
+
+	FindData := Item.ToFindData;
+
+	Assert.AreEqual(DWORD(LargeSize and $FFFFFFFF), FindData.nFileSizeLow);
+	Assert.AreEqual(DWORD((LargeSize shr 32) and $FFFFFFFF), FindData.nFileSizeHigh);
+end;
+
+procedure TCMRDirItemTest.TestToFindData_FileName;
+var
+	Item: TCMRDirItem;
+	FindData: tWIN32FINDDATAW;
+begin
+	Item := Item.None;
+	Item.name := 'My Document.txt';
+	Item.type_ := TYPE_FILE;
+	Item.size := 100;
+	Item.mtime := 1700000000;
+
+	FindData := Item.ToFindData;
+
+	Assert.AreEqual('My Document.txt', string(FindData.cFileName));
 end;
 
 { TCMRDirItemListTest }

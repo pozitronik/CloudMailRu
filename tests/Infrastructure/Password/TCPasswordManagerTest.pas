@@ -7,16 +7,37 @@ uses
 	TCLogger,
 	TCHandler,
 	PLUGIN_TYPES,
+	Windows,
 	SysUtils,
 	DUnitX.TestFramework;
 
 type
+	{Test fixture for TTCPasswordManager with mock CryptProc}
 	[TestFixture]
 	TTCPasswordManagerTest = class
 	public
 		[Test]
 		{Verifies TTCPasswordManager implements IPasswordManager interface}
 		procedure TestImplementsIPasswordManager;
+
+		[Test]
+		procedure TestGetPassword_FS_FILE_OK_ReturnsPassword;
+		[Test]
+		procedure TestGetPassword_FS_FILE_NOTFOUND_TriesWithUI;
+		[Test]
+		procedure TestGetPassword_FS_FILE_READERROR_LogsError;
+		[Test]
+		procedure TestGetPassword_FS_FILE_NOTSUPPORTED_LogsDecryptFailed;
+		[Test]
+		procedure TestSetPassword_FS_FILE_OK_LogsSuccess;
+		[Test]
+		procedure TestSetPassword_FS_FILE_NOTSUPPORTED_LogsEncryptFailed;
+		[Test]
+		procedure TestSetPassword_FS_FILE_WRITEERROR_LogsWriteFailed;
+		[Test]
+		procedure TestSetPassword_FS_FILE_NOTFOUND_LogsNoMasterPassword;
+		[Test]
+		procedure TestGetPassword_BufferFilledCorrectly;
 	end;
 
 	[TestFixture]
@@ -49,6 +70,33 @@ type
 
 implementation
 
+var
+	{Global state for mock CryptProc - set before each test}
+	GMockCryptResult: Integer;
+	GMockCryptPassword: WideString;
+	GMockCryptCallCount: Integer;
+	GMockCryptLastMode: Integer;
+
+{Mock CryptProc callback that returns configurable results}
+function MockCryptProc(PluginNr, CryptoNr: Integer; Mode: Integer;
+	ConnectionName, Password: PWideChar; MaxLen: Integer): Integer; stdcall;
+begin
+	Inc(GMockCryptCallCount);
+	GMockCryptLastMode := Mode;
+
+	{For GetPassword, fill the buffer if returning OK}
+	if (Mode = FS_CRYPT_LOAD_PASSWORD_NO_UI) or (Mode = FS_CRYPT_LOAD_PASSWORD) then
+	begin
+		if GMockCryptResult = FS_FILE_OK then
+		begin
+			if Length(GMockCryptPassword) < MaxLen div SizeOf(WideChar) then
+				StrPCopy(Password, GMockCryptPassword);
+		end;
+	end;
+
+	Result := GMockCryptResult;
+end;
+
 {TTCPasswordManagerTest}
 
 procedure TTCPasswordManagerTest.TestImplementsIPasswordManager;
@@ -60,6 +108,174 @@ begin
 	 Functional testing requires running within Total Commander context.}
 	PasswordManager := TTCPasswordManager.Create(nil, 0, 0, TNullLogger.Create, TNullTCHandler.Create);
 	Assert.IsNotNull(PasswordManager);
+end;
+
+procedure TTCPasswordManagerTest.TestGetPassword_FS_FILE_OK_ReturnsPassword;
+var
+	PasswordManager: TTCPasswordManager;
+	Password: WideString;
+	Result: Integer;
+begin
+	GMockCryptResult := FS_FILE_OK;
+	GMockCryptPassword := 'secret123';
+	GMockCryptCallCount := 0;
+
+	PasswordManager := TTCPasswordManager.Create(@MockCryptProc, 1, 2, TNullLogger.Create, TNullTCHandler.Create);
+	try
+		Password := '';
+		Result := PasswordManager.GetPassword('test_key', Password);
+		Assert.AreEqual(FS_FILE_OK, Result);
+		Assert.AreEqual('secret123', Password);
+	finally
+		PasswordManager.Free;
+	end;
+end;
+
+procedure TTCPasswordManagerTest.TestGetPassword_FS_FILE_NOTFOUND_TriesWithUI;
+var
+	PasswordManager: TTCPasswordManager;
+	Password: WideString;
+begin
+	{First call returns NOTFOUND, second should use UI mode}
+	GMockCryptCallCount := 0;
+	GMockCryptResult := FS_FILE_NOTFOUND;
+	GMockCryptPassword := '';
+
+	PasswordManager := TTCPasswordManager.Create(@MockCryptProc, 1, 2, TNullLogger.Create, TNullTCHandler.Create);
+	try
+		Password := '';
+		PasswordManager.GetPassword('test_key', Password);
+		{Should have made 2 calls: first NO_UI, then with UI}
+		Assert.AreEqual(2, GMockCryptCallCount);
+	finally
+		PasswordManager.Free;
+	end;
+end;
+
+procedure TTCPasswordManagerTest.TestGetPassword_FS_FILE_READERROR_LogsError;
+var
+	PasswordManager: TTCPasswordManager;
+	Password: WideString;
+	Result: Integer;
+begin
+	GMockCryptResult := FS_FILE_READERROR;
+	GMockCryptCallCount := 0;
+
+	PasswordManager := TTCPasswordManager.Create(@MockCryptProc, 1, 2, TNullLogger.Create, TNullTCHandler.Create);
+	try
+		Password := '';
+		Result := PasswordManager.GetPassword('test_key', Password);
+		Assert.AreEqual(FS_FILE_READERROR, Result);
+	finally
+		PasswordManager.Free;
+	end;
+end;
+
+procedure TTCPasswordManagerTest.TestGetPassword_FS_FILE_NOTSUPPORTED_LogsDecryptFailed;
+var
+	PasswordManager: TTCPasswordManager;
+	Password: WideString;
+	Result: Integer;
+begin
+	GMockCryptResult := FS_FILE_NOTSUPPORTED;
+	GMockCryptCallCount := 0;
+
+	PasswordManager := TTCPasswordManager.Create(@MockCryptProc, 1, 2, TNullLogger.Create, TNullTCHandler.Create);
+	try
+		Password := '';
+		Result := PasswordManager.GetPassword('test_key', Password);
+		Assert.AreEqual(FS_FILE_NOTSUPPORTED, Result);
+	finally
+		PasswordManager.Free;
+	end;
+end;
+
+procedure TTCPasswordManagerTest.TestSetPassword_FS_FILE_OK_LogsSuccess;
+var
+	PasswordManager: TTCPasswordManager;
+	Result: Integer;
+begin
+	GMockCryptResult := FS_FILE_OK;
+	GMockCryptCallCount := 0;
+
+	PasswordManager := TTCPasswordManager.Create(@MockCryptProc, 1, 2, TNullLogger.Create, TNullTCHandler.Create);
+	try
+		Result := PasswordManager.SetPassword('test_key', 'mypassword');
+		Assert.AreEqual(FS_FILE_OK, Result);
+		Assert.AreEqual(1, GMockCryptCallCount);
+	finally
+		PasswordManager.Free;
+	end;
+end;
+
+procedure TTCPasswordManagerTest.TestSetPassword_FS_FILE_NOTSUPPORTED_LogsEncryptFailed;
+var
+	PasswordManager: TTCPasswordManager;
+	Result: Integer;
+begin
+	GMockCryptResult := FS_FILE_NOTSUPPORTED;
+	GMockCryptCallCount := 0;
+
+	PasswordManager := TTCPasswordManager.Create(@MockCryptProc, 1, 2, TNullLogger.Create, TNullTCHandler.Create);
+	try
+		Result := PasswordManager.SetPassword('test_key', 'mypassword');
+		Assert.AreEqual(FS_FILE_NOTSUPPORTED, Result);
+	finally
+		PasswordManager.Free;
+	end;
+end;
+
+procedure TTCPasswordManagerTest.TestSetPassword_FS_FILE_WRITEERROR_LogsWriteFailed;
+var
+	PasswordManager: TTCPasswordManager;
+	Result: Integer;
+begin
+	GMockCryptResult := FS_FILE_WRITEERROR;
+	GMockCryptCallCount := 0;
+
+	PasswordManager := TTCPasswordManager.Create(@MockCryptProc, 1, 2, TNullLogger.Create, TNullTCHandler.Create);
+	try
+		Result := PasswordManager.SetPassword('test_key', 'mypassword');
+		Assert.AreEqual(FS_FILE_WRITEERROR, Result);
+	finally
+		PasswordManager.Free;
+	end;
+end;
+
+procedure TTCPasswordManagerTest.TestSetPassword_FS_FILE_NOTFOUND_LogsNoMasterPassword;
+var
+	PasswordManager: TTCPasswordManager;
+	Result: Integer;
+begin
+	GMockCryptResult := FS_FILE_NOTFOUND;
+	GMockCryptCallCount := 0;
+
+	PasswordManager := TTCPasswordManager.Create(@MockCryptProc, 1, 2, TNullLogger.Create, TNullTCHandler.Create);
+	try
+		Result := PasswordManager.SetPassword('test_key', 'mypassword');
+		Assert.AreEqual(FS_FILE_NOTFOUND, Result);
+	finally
+		PasswordManager.Free;
+	end;
+end;
+
+procedure TTCPasswordManagerTest.TestGetPassword_BufferFilledCorrectly;
+var
+	PasswordManager: TTCPasswordManager;
+	Password: WideString;
+begin
+	GMockCryptResult := FS_FILE_OK;
+	GMockCryptPassword := 'Unicode_Password_\u1234';
+	GMockCryptCallCount := 0;
+
+	PasswordManager := TTCPasswordManager.Create(@MockCryptProc, 1, 2, TNullLogger.Create, TNullTCHandler.Create);
+	try
+		Password := 'initial_value';
+		PasswordManager.GetPassword('test_key', Password);
+		Assert.AreEqual('Unicode_Password_\u1234', Password);
+	finally
+		PasswordManager.Free;
+	end;
 end;
 
 {TNullPasswordManagerTest}
