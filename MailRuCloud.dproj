@@ -326,6 +326,7 @@
         <DCCReference Include="src\Infrastructure\Hash\CloudHashCalculator.pas"/>
         <DCCReference Include="src\Infrastructure\Shard\CloudShardManager.pas"/>
         <DCCReference Include="src\Domain\Services\CloudErrorMapper.pas"/>
+        <DCCReference Include="src\Application\CloudCallbackTypes.pas"/>
         <DCCReference Include="src\Application\Download\CloudFileDownloader.pas"/>
         <DCCReference Include="src\Application\Upload\CloudFileUploader.pas"/>
         <DCCReference Include="src\Application\Share\CloudShareService.pas"/>

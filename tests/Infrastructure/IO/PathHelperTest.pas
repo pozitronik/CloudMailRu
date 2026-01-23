@@ -1,4 +1,4 @@
-﻿unit TestPathHelper;
+unit PathHelperTest;
 
 interface
 
@@ -9,7 +9,7 @@ uses
 type
 
 	[TestFixture]
-	TTestPathHelper = class
+	TPathHelperTest = class
 	public
 		[Test]
 		procedure TestIncludeSlash;
@@ -35,9 +35,9 @@ type
 
 implementation
 
-{TTestPathHelper}
+{TPathHelperTest}
 
-procedure TTestPathHelper.TestCopyExt;
+procedure TPathHelperTest.TestCopyExt;
 var
 	FromFilename, ToFilename, ExpectedFilename: string;
 begin
@@ -55,7 +55,7 @@ begin
 
 end;
 
-procedure TTestPathHelper.TestExtractUniversalFileExt;
+procedure TPathHelperTest.TestExtractUniversalFileExt;
 var
 	FileName, ExpectedResult: string;
 begin
@@ -120,7 +120,7 @@ begin
 	Assert.AreEqual(ExpectedResult, ExtractUniversalFileExt(FileName), 'Path with only delimiters should return an empty string');
 end;
 
-procedure TTestPathHelper.TestExtractUniversalFileName;
+procedure TPathHelperTest.TestExtractUniversalFileName;
 var
 	FileName, ExpectedResult: string;
 begin
@@ -156,7 +156,7 @@ begin
 
 end;
 
-procedure TTestPathHelper.TestExtractUniversalFilePath;
+procedure TPathHelperTest.TestExtractUniversalFilePath;
 var
 	FileName, ExpectedResult: string;
 begin
@@ -192,7 +192,7 @@ begin
 
 end;
 
-procedure TTestPathHelper.TestGetLFCFilePath;
+procedure TPathHelperTest.TestGetLFCFilePath;
 var
 	FilePath, ExpectedResult: WideString;
 begin
@@ -228,7 +228,7 @@ begin
 
 end;
 
-procedure TTestPathHelper.TestGetUNCFilePath;
+procedure TPathHelperTest.TestGetUNCFilePath;
 var
 	FilePath, ExpectedResult: WideString;
 begin
@@ -263,7 +263,7 @@ begin
 	Assert.AreEqual(ExpectedResult, GetUNCFilePath(FilePath), 'Empty string should be handled');
 end;
 
-procedure TTestPathHelper.TestIncludeSlash;
+procedure TPathHelperTest.TestIncludeSlash;
 var
 	TestURL: string;
 begin
@@ -280,7 +280,7 @@ begin
 	Assert.AreEqual('/', IncludeSlash(TestURL), 'IncludeSlash should return a single slash for an empty string');
 end;
 
-procedure TTestPathHelper.TestPathToUrl;
+procedure TPathHelperTest.TestPathToUrl;
 var
 	Path, ExpectedResult: WideString;
 begin
@@ -315,7 +315,7 @@ begin
 	Assert.AreEqual(ExpectedResult, PathToUrl(Path, False), 'Empty path should remain empty when RestrictEmptyUrl is false');
 end;
 
-procedure TTestPathHelper.TestUrlToPath;
+procedure TPathHelperTest.TestUrlToPath;
 var
 	URL, ExpectedResult: WideString;
 begin
@@ -345,7 +345,7 @@ begin
 	Assert.AreEqual(ExpectedResult, UrlToPath(URL), 'Empty URL should return an empty string');
 end;
 
-procedure TTestPathHelper.TestChangePathFileName;
+procedure TPathHelperTest.TestChangePathFileName;
 var
 	FilePath, NewFileName, ExpectedResult: string;
 begin
@@ -358,6 +358,6 @@ end;
 
 initialization
 
-TDUnitX.RegisterTestFixture(TTestPathHelper);
+TDUnitX.RegisterTestFixture(TPathHelperTest);
 
 end.

@@ -146,6 +146,7 @@ uses
 	CloudHashCalculator in 'src\Infrastructure\Hash\CloudHashCalculator.pas',
 	CloudShardManager in 'src\Infrastructure\Shard\CloudShardManager.pas',
 	CloudErrorMapper in 'src\Domain\Services\CloudErrorMapper.pas',
+	CloudCallbackTypes in 'src\Application\CloudCallbackTypes.pas',
 	CloudFileDownloader in 'src\Application\Download\CloudFileDownloader.pas',
 	CloudFileUploader in 'src\Application\Upload\CloudFileUploader.pas',
 	CloudShareService in 'src\Application\Share\CloudShareService.pas',

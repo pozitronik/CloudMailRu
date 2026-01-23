@@ -21,17 +21,11 @@ uses
 	CloudHashCalculator,
 	CloudHTTP,
 	CloudErrorMapper,
+	CloudCallbackTypes,
 	WindowsFileSystem,
 	DCPbase64;
 
 type
-	{Callback types for accessing CloudMailRu state}
-	TGetOAuthTokenFunc = reference to function: TCMROAuth;
-	TGetBoolFunc = reference to function: Boolean;
-	TGetStringFunc = reference to function: WideString;
-	TRefreshTokenFunc = reference to function: Boolean;
-	TGetHTTPFunc = reference to function: ICloudHTTP;
-
 	{Interface for cloud file download operations}
 	ICloudFileDownloader = interface
 		['{D7A8E5F2-3B4C-4D6E-9F1A-2C5B8E0F4D7A}']

@@ -59,6 +59,20 @@ type
 		function GetName: WideString;
 	end;
 
+	{Factory interface for creating authentication strategies.
+		Enables dependency injection and testability of components that need auth strategies.}
+	IAuthStrategyFactory = interface
+		['{B8E4F6A3-7D2C-4E5B-9A1F-3C6D8E0B4F2A}']
+		{Creates the default authentication strategy for regular cloud accounts.}
+		function CreateDefaultStrategy: IAuthStrategy;
+	end;
+
+	{Null factory for testing - always returns TNullAuthStrategy.}
+	TNullAuthStrategyFactory = class(TInterfacedObject, IAuthStrategyFactory)
+	public
+		function CreateDefaultStrategy: IAuthStrategy;
+	end;
+
 implementation
 
 uses
@@ -125,6 +139,13 @@ end;
 function TNullAuthStrategy.GetName: WideString;
 begin
 	Result := 'Null';
+end;
+
+{TNullAuthStrategyFactory}
+
+function TNullAuthStrategyFactory.CreateDefaultStrategy: IAuthStrategy;
+begin
+	Result := TNullAuthStrategy.Create;
 end;
 
 end.

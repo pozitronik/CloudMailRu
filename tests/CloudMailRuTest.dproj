@@ -161,10 +161,11 @@
         <DCCReference Include="..\src\models\settings\PluginSettings.pas"/>
         <DCCReference Include="..\src\helpers\IniFilesHelper.pas"/>
         <DCCReference Include="..\src\models\settings\StreamingSettings.pas"/>
-        <DCCReference Include="Infrastructure\IO\TestFileHelper.pas"/>
-        <DCCReference Include="Infrastructure\IO\TestPathHelper.pas"/>
+        <DCCReference Include="Infrastructure\IO\FileHelperTest.pas"/>
+        <DCCReference Include="Infrastructure\IO\PathHelperTest.pas"/>
         <DCCReference Include="..\src\Domain\Services\CloudMailRu.pas"/>
         <DCCReference Include="..\src\Domain\Services\CloudMailRuFactory.pas"/>
+        <DCCReference Include="Domain\Services\CloudMailRuFactoryTest.pas"/>
         <DCCReference Include="..\src\Domain\ValueObjects\CMRFileIdentity.pas"/>
         <DCCReference Include="..\src\Domain\ValueObjects\CMRIncomingInviteList.pas"/>
         <DCCReference Include="..\src\Domain\ValueObjects\CMRInviteList.pas"/>

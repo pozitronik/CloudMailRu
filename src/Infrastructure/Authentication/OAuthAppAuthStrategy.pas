@@ -19,6 +19,13 @@ type
 		function GetName: WideString;
 	end;
 
+	{Default factory that creates TOAuthAppAuthStrategy.
+		Use this factory for production code to inject auth strategy via DI.}
+	TDefaultAuthStrategyFactory = class(TInterfacedObject, IAuthStrategyFactory)
+	public
+		function CreateDefaultStrategy: IAuthStrategy;
+	end;
+
 implementation
 
 uses
@@ -67,6 +74,13 @@ end;
 function TOAuthAppAuthStrategy.GetName: WideString;
 begin
 	Result := 'OAuth App Password';
+end;
+
+{TDefaultAuthStrategyFactory}
+
+function TDefaultAuthStrategyFactory.CreateDefaultStrategy: IAuthStrategy;
+begin
+	Result := TOAuthAppAuthStrategy.Create;
 end;
 
 end.

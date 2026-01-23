@@ -27,6 +27,7 @@ uses
 	CloudHashCalculator,
 	CloudHTTP,
 	CloudErrorMapper,
+	CloudCallbackTypes,
 	WindowsFileSystem,
 	FileSplitInfo,
 	ChunkedFileStream,
@@ -38,21 +39,6 @@ type
 		caContinue, {Move to next chunk}
 		caAbort {Stop loop and return error}
 		);
-
-	{Callback types for accessing CloudMailRu state and operations}
-	TGetHTTPFunc = reference to function: ICloudHTTP;
-	TGetOAuthTokenFunc = reference to function: TCMROAuth;
-	TGetBoolFunc = reference to function: Boolean;
-	TGetIntFunc = reference to function: Integer;
-	TGetInt64Func = reference to function: Int64;
-	TGetStringFunc = reference to function: WideString;
-	TGetUnitedParamsFunc = reference to function: WideString;
-	TRefreshTokenFunc = reference to function: Boolean;
-	THashStreamFunc = reference to function(Stream: TStream; Path: WideString): WideString;
-	THashFileFunc = reference to function(Path: WideString): WideString;
-	TDeleteFileFunc = reference to function(Path: WideString): Boolean;
-	TGetRetryOperationFunc = reference to function: TRetryOperation;
-	TCloudResultToFsResultFunc = reference to function(JSON: WideString; ErrorPrefix: WideString): Integer;
 
 	{Upload settings passed to uploader}
 	TUploadSettings = record

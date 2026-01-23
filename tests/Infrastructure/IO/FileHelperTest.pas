@@ -1,4 +1,4 @@
-﻿unit TestFileHelper;
+unit FileHelperTest;
 
 interface
 
@@ -12,7 +12,7 @@ uses
 type
 
 	[TestFixture]
-	TTestFileHelper = class(TObject)
+	TFileHelperTest = class(TObject)
 	private const
 		TEST_WRITEABLE_DIR = 'writeable_dir';
 		TEST_NONWRITEABLE_DIR = 'nonwriteable_dir';
@@ -40,7 +40,7 @@ type
 
 implementation
 
-procedure TTestFileHelper.TestIsWriteable;
+procedure TFileHelperTest.TestIsWriteable;
 var
 	WriteableDir: string;
 	NonWriteableDir: string;
@@ -59,7 +59,7 @@ begin
 	Assert.IsFalse(IsWriteable(NonWriteableDir), 'Non-writeable directory should return false');
 end;
 
-procedure TTestFileHelper.TestSetAllFileTime;
+procedure TFileHelperTest.TestSetAllFileTime;
 var
 	FileName: string;
 	OriginalTime, NewTime, RetrievedTime: TFileTime;
@@ -96,7 +96,7 @@ begin
 	end;
 end;
 
-procedure TTestFileHelper.TestSizeOfFileWithExistingFile;
+procedure TFileHelperTest.TestSizeOfFileWithExistingFile;
 var
 	FileName: String;
 	FileSize: Int64;
@@ -107,7 +107,7 @@ begin
 	Assert.AreEqual(FileSize, SizeOfFile(FileName), 'Size of existing file should be correctly returned');
 end;
 
-procedure TTestFileHelper.TestSizeOfFileWithNonExistingFile;
+procedure TFileHelperTest.TestSizeOfFileWithNonExistingFile;
 var
 	FileName: String;
 begin
@@ -116,7 +116,7 @@ begin
 end;
 
 { TDD: Test that SetAllFileTime handles non-existent files gracefully without crashing }
-procedure TTestFileHelper.TestSetAllFileTimeNonExistentFile;
+procedure TFileHelperTest.TestSetAllFileTimeNonExistentFile;
 var
 	FileName: string;
 	NewTime: TFileTime;
@@ -131,7 +131,7 @@ begin
 end;
 
 { TDD: Test IsWriteable with CleanFile=false on an existing file }
-procedure TTestFileHelper.TestIsWriteableCleanFileFalseExistingFile;
+procedure TFileHelperTest.TestIsWriteableCleanFileFalseExistingFile;
 var
 	WriteableDir: string;
 	TestFile: string;
@@ -157,7 +157,7 @@ end;
 { TDD: Test IsWriteable with CleanFile=false on a non-existing file
   This test exposes the bug: OPEN_EXISTING or CREATE_ALWAYS = OPEN_EXISTING
   so it cannot create the file if it doesn't exist }
-procedure TTestFileHelper.TestIsWriteableCleanFileFalseNonExistingFile;
+procedure TFileHelperTest.TestIsWriteableCleanFileFalseNonExistingFile;
 var
 	WriteableDir: string;
 	TestFile: string;
@@ -180,6 +180,6 @@ end;
 
 initialization
 
-TDUnitX.RegisterTestFixture(TTestFileHelper);
+TDUnitX.RegisterTestFixture(TFileHelperTest);
 
 end.

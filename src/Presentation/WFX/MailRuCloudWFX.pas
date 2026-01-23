@@ -54,6 +54,7 @@ uses
 	CipherValidator,
 	WindowsFileSystem,
 	WindowsEnvironment,
+	OAuthAppAuthStrategy,
 	IniConfigFile,
 	ThreadStateManager,
 	ContentFieldProvider,
@@ -922,7 +923,7 @@ begin
 	PasswordUI := TPasswordUIProvider.Create;
 	HTTPMgr := THTTPManager.Create(SettingsManager.Settings.ConnectionSettings, TCLogger, TCProgress, TCloudHTTPFactory.Create);
 	CipherVal := TCipherValidator.Create;
-	ConnectionManager := TConnectionManager.Create(SettingsManager, AccountSettings, HTTPMgr, PasswordUI, CipherVal, TWindowsFileSystem.Create, TCProgress, TCLogger, TCRequest, PasswordManager, FTCHandler);
+	ConnectionManager := TConnectionManager.Create(SettingsManager, AccountSettings, HTTPMgr, PasswordUI, CipherVal, TWindowsFileSystem.Create, TCProgress, TCLogger, TCRequest, PasswordManager, FTCHandler, TDefaultAuthStrategyFactory.Create);
 	FCommandDispatcher := TCommandDispatcher.Create(ConnectionManager, TCLogger, SettingsManager);
 
 	{Create icon context builder for FsExtractCustomIcon}
