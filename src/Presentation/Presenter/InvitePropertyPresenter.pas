@@ -22,7 +22,7 @@ type
 		procedure SetCaption(Caption: WideString);
 
 		{Item properties}
-		procedure SetName(Name: WideString);
+		procedure SetItemName(Name: WideString);
 		procedure SetOwnerEmail(Email: WideString);
 		procedure SetOwnerName(Name: WideString);
 		procedure SetAccess(Access: WideString);
@@ -76,7 +76,7 @@ begin
 	FAccountName := AccountName;
 
 	{Set item properties}
-	FView.SetName(Item.name);
+	FView.SetItemName(Item.name);
 	FView.SetOwnerEmail(Item.owner.email);
 	FView.SetOwnerName(Item.owner.name);
 	FView.SetAccess(TCloudAccessUtils.AccessToString(Item.access));

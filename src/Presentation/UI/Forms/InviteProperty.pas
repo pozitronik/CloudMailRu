@@ -40,7 +40,7 @@ type
 
 		{IInvitePropertyView implementation}
 		procedure SetCaption(Caption: WideString);
-		procedure SetName(Name: WideString);
+		procedure SetItemName(Name: WideString);
 		procedure SetOwnerEmail(Email: WideString);
 		procedure SetOwnerName(Name: WideString);
 		procedure SetAccess(Access: WideString);
@@ -67,7 +67,7 @@ begin
 	self.Caption := Caption;
 end;
 
-procedure TInvitePropertyForm.SetName(Name: WideString);
+procedure TInvitePropertyForm.SetItemName(Name: WideString);
 begin
 	InviteNameLB.Caption := Name;
 end;

@@ -38,7 +38,7 @@ type
 
 		{IDeletedPropertyView implementation}
 		procedure SetCaption(Caption: WideString);
-		procedure SetName(Name: WideString);
+		procedure SetItemName(Name: WideString);
 		procedure SetDeletedFrom(Path: WideString);
 		procedure SetDeletedAt(DateTime: WideString);
 		procedure SetDeletedBy(UserId: WideString);
@@ -62,7 +62,7 @@ begin
 	self.Caption := Caption;
 end;
 
-procedure TDeletedPropertyForm.SetName(Name: WideString);
+procedure TDeletedPropertyForm.SetItemName(Name: WideString);
 begin
 	DelNameLB.Caption := Name;
 end;

@@ -24,7 +24,7 @@ type
 		procedure SetCaption(Caption: WideString);
 
 		{Item properties}
-		procedure SetName(Name: WideString);
+		procedure SetItemName(Name: WideString);
 		procedure SetDeletedFrom(Path: WideString);
 		procedure SetDeletedAt(DateTime: WideString);
 		procedure SetDeletedBy(UserId: WideString);
@@ -138,7 +138,7 @@ begin
 	end;
 
 	FView.SetCaption(FormCaption);
-	FView.SetName(NameCaption);
+	FView.SetItemName(NameCaption);
 	FView.SetDeletedFrom(FromCaption);
 	FView.SetDeletedAt(AtCaption);
 	FView.SetDeletedBy(ByCaption);

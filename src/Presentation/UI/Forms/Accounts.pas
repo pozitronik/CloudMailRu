@@ -1161,7 +1161,6 @@ var
 	AccountsMgr: TAccountsManager;
 	Config: TAccountsPresenterConfig;
 begin
-	Result := False;
 	Form := TAccountsForm.Create(nil);
 	try
 		Form.ParentWindow := ParentWindow;

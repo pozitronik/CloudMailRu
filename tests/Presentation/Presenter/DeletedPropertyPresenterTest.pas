@@ -30,7 +30,7 @@ type
 
 		{IDeletedPropertyView implementation}
 		procedure SetCaption(ACaption: WideString);
-		procedure SetName(AName: WideString);
+		procedure SetItemName(AName: WideString);
 		procedure SetDeletedFrom(APath: WideString);
 		procedure SetDeletedAt(ADateTime: WideString);
 		procedure SetDeletedBy(AUserId: WideString);
@@ -114,7 +114,7 @@ begin
 	Caption := ACaption;
 end;
 
-procedure TMockDeletedPropertyView.SetName(AName: WideString);
+procedure TMockDeletedPropertyView.SetItemName(AName: WideString);
 begin
 	Name := AName;
 end;
