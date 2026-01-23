@@ -228,12 +228,9 @@ begin
 end;
 
 procedure TWindowsHelperTest.TestGetSystemIconLargeSize;
-var
-	Icon: HIcon;
 begin
-	{ Test large icon size parameter }
-	Icon := GetSystemIcon(IconSizeLarge, CSIDL_BITBUCKET);
 	{ Large icons may not be supported by SHGetFileInfo, but should not crash }
+	GetSystemIcon(IconSizeLarge, CSIDL_BITBUCKET);
 	Assert.Pass('Large icon request completed without error');
 end;
 
@@ -258,11 +255,9 @@ begin
 end;
 
 procedure TWindowsHelperTest.TestGetFolderIconLargeSize;
-var
-	Icon: HIcon;
 begin
 	{ Large icons may not be fully supported but should not crash }
-	Icon := GetFolderIcon(IconSizeLarge);
+	GetFolderIcon(IconSizeLarge);
 	Assert.Pass('Large folder icon request completed without error');
 end;
 
