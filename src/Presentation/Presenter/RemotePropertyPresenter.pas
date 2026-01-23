@@ -592,7 +592,7 @@ begin
 		CurrentDescriptions.Free;
 	end;
 
-	DeleteFileW(PWideChar(LocalPath));
+	FFileSystem.DeleteFile(LocalPath);
 end;
 
 procedure TRemotePropertyPresenter.SaveDescription;

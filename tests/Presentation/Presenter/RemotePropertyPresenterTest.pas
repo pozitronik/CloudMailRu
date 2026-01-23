@@ -64,6 +64,9 @@ type
 		FErrorTitle: WideString;
 		FErrorMessage: WideString;
 		FProcessMessagesCalled: Boolean;
+		{Flags to set cancellation during ProcessMessages}
+		FCancelDownloadLinksOnProcess: Boolean;
+		FCancelHashesOnProcess: Boolean;
 	public
 		constructor Create;
 		destructor Destroy; override;
@@ -129,12 +132,19 @@ type
 		property ErrorTitle: WideString read FErrorTitle;
 		property ErrorMessage: WideString read FErrorMessage;
 		property ProcessMessagesCalled: Boolean read FProcessMessagesCalled;
+		property HashesCancelEnabled: Boolean read FHashesCancelEnabled;
+		property HashesRefreshEnabled: Boolean read FHashesRefreshEnabled;
+		property ApplyHashesEnabled: Boolean read FApplyHashesEnabled;
+		property LoadHashesEnabled: Boolean read FLoadHashesEnabled;
 
 		{Test helpers - input simulation}
 		property InviteEmailInput: WideString read FInviteEmailInput write FInviteEmailInput;
 		property InviteAccessInput: Integer read FInviteAccessInput write FInviteAccessInput;
 		property DownloadLinksCancelled: Boolean read FDownloadLinksCancelled write FDownloadLinksCancelled;
 		property HashesCancelled: Boolean read FHashesCancelled write FHashesCancelled;
+		{Simulate user clicking Cancel during ProcessMessages}
+		property CancelDownloadLinksOnProcess: Boolean read FCancelDownloadLinksOnProcess write FCancelDownloadLinksOnProcess;
+		property CancelHashesOnProcess: Boolean read FCancelHashesOnProcess write FCancelHashesOnProcess;
 
 		function IsTabVisible(Tab: TRemotePropertyTab): Boolean;
 		procedure Reset;
@@ -334,6 +344,66 @@ type
 		procedure TestCanApplyHashesPrivateAccount;
 		[Test]
 		procedure TestCanApplyHashesPublicAccount;
+
+		{OnInviteChangeAccessClick tests}
+		[Test]
+		procedure TestOnInviteChangeAccessClickSuccess;
+		[Test]
+		procedure TestOnInviteChangeAccessClickFailed;
+		[Test]
+		procedure TestOnInviteChangeAccessClickEmptySelection;
+
+		{OnInviteDeleteClick additional tests}
+		[Test]
+		procedure TestOnInviteDeleteClickEmptySelection;
+		[Test]
+		procedure TestOnInviteDeleteClickFailed;
+
+		{RefreshDownloadLinks tests}
+		[Test]
+		procedure TestRefreshDownloadLinksForFile;
+		[Test]
+		procedure TestRefreshDownloadLinksForDirectoryPublicAccount;
+		[Test]
+		procedure TestRefreshDownloadLinksCancellation;
+
+		{RefreshHashes tests}
+		[Test]
+		procedure TestRefreshHashesForFile;
+		[Test]
+		procedure TestRefreshHashesForDirectory;
+		[Test]
+		procedure TestRefreshHashesCancellation;
+		[Test]
+		procedure TestRefreshHashesButtonStates;
+
+		{ApplyHashCommands tests}
+		[Test]
+		procedure TestApplyHashCommandsValidCommand;
+		[Test]
+		procedure TestApplyHashCommandsInvalidCommand;
+		[Test]
+		procedure TestApplyHashCommandsMultipleCommands;
+		[Test]
+		procedure TestApplyHashCommandsForDirectory;
+
+		{Description tests}
+		[Test]
+		procedure TestInitializeWithDescriptionEnabled;
+		[Test]
+		procedure TestInitializeWithDescriptionReadOnly;
+		[Test]
+		procedure TestInitializeWithCustomDescriptionFileName;
+		[Test]
+		procedure TestLoadDescriptionFileNotFound;
+		[Test]
+		procedure TestSaveDescriptionNewFile;
+
+		{Additional Initialize tests}
+		[Test]
+		procedure TestInitializeSharedItem;
+		[Test]
+		procedure TestInitializePublicAccountAutoRefresh;
 	end;
 
 implementation
@@ -536,6 +606,11 @@ end;
 procedure TMockRemotePropertyView.ProcessMessages;
 begin
 	FProcessMessagesCalled := True;
+	{Set cancellation during processing if requested - simulates user clicking Cancel}
+	if FCancelDownloadLinksOnProcess then
+		FDownloadLinksCancelled := True;
+	if FCancelHashesOnProcess then
+		FHashesCancelled := True;
 end;
 
 function TMockRemotePropertyView.IsDownloadLinksCancelled: Boolean;
@@ -596,6 +671,8 @@ begin
 	FProcessMessagesCalled := False;
 	FDownloadLinksCancelled := False;
 	FHashesCancelled := False;
+	FCancelDownloadLinksOnProcess := False;
+	FCancelHashesOnProcess := False;
 end;
 
 {TMockShareService}
@@ -1201,6 +1278,493 @@ begin
 	FPresenter.Initialize(Item, '/test.txt', CreateConfig(False, False));
 
 	Assert.IsFalse(FPresenter.CanApplyHashes, 'Public accounts should not be able to apply hashes');
+end;
+
+{OnInviteChangeAccessClick tests}
+
+procedure TRemotePropertyPresenterTest.TestOnInviteChangeAccessClickSuccess;
+var
+	Item: TCMRDirItem;
+	Invites: TCMRInviteList;
+begin
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
+
+	Item := CreateTestItem('folder', TYPE_DIR);
+
+	{Setup existing invite with read-only access}
+	SetLength(Invites, 1);
+	Invites[0].email := 'user@mail.ru';
+	Invites[0].access := CLOUD_SHARE_ACCESS_READ_ONLY;
+	FShareService.ShareInfoInvites := Invites;
+	FShareService.ShareInfoResult := True;
+	FShareService.ShareResult := True;
+
+	FPresenter.Initialize(Item, '/folder', CreateConfig(False, False));
+
+	FPresenter.OnInviteChangeAccessClick;
+
+	{Access should be toggled to read-write}
+	Assert.AreEqual('/folder', String(FShareService.LastSharePath), 'Should share correct path');
+	Assert.AreEqual('user@mail.ru', String(FShareService.LastShareEmail), 'Should share correct email');
+	Assert.AreEqual(CLOUD_SHARE_RW, FShareService.LastShareAccess, 'Should toggle to read-write access');
+end;
+
+procedure TRemotePropertyPresenterTest.TestOnInviteChangeAccessClickFailed;
+var
+	Item: TCMRDirItem;
+	Invites: TCMRInviteList;
+begin
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
+
+	Item := CreateTestItem('folder', TYPE_DIR);
+
+	SetLength(Invites, 1);
+	Invites[0].email := 'user@mail.ru';
+	Invites[0].access := CLOUD_SHARE_ACCESS_READ_ONLY;
+	FShareService.ShareInfoInvites := Invites;
+	FShareService.ShareInfoResult := True;
+
+	FPresenter.Initialize(Item, '/folder', CreateConfig(False, False));
+
+	{Set ShareResult to False AFTER Initialize (RefreshInvites needs ShareResult to be True for refresh after change)}
+	FShareService.ShareResult := False;
+
+	FPresenter.OnInviteChangeAccessClick;
+
+	Assert.IsNotEmpty(FView.ErrorTitle, 'Error should be shown on failure');
+end;
+
+procedure TRemotePropertyPresenterTest.TestOnInviteChangeAccessClickEmptySelection;
+var
+	Item: TCMRDirItem;
+begin
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
+
+	Item := CreateTestItem('folder', TYPE_DIR);
+	FShareService.ShareInfoResult := True;
+
+	FPresenter.Initialize(Item, '/folder', CreateConfig(False, False));
+
+	{No invites in the list, so selection is empty}
+	FPresenter.OnInviteChangeAccessClick;
+
+	{Should not call share service}
+	Assert.IsEmpty(FShareService.LastShareEmail, 'Should not attempt to change access with empty selection');
+end;
+
+{OnInviteDeleteClick additional tests}
+
+procedure TRemotePropertyPresenterTest.TestOnInviteDeleteClickEmptySelection;
+var
+	Item: TCMRDirItem;
+begin
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
+
+	Item := CreateTestItem('folder', TYPE_DIR);
+	FShareService.ShareInfoResult := True;
+
+	FPresenter.Initialize(Item, '/folder', CreateConfig(False, False));
+
+	{No invites in the list}
+	FPresenter.OnInviteDeleteClick;
+
+	Assert.IsEmpty(FShareService.LastShareEmail, 'Should not attempt to unshare with empty selection');
+end;
+
+procedure TRemotePropertyPresenterTest.TestOnInviteDeleteClickFailed;
+var
+	Item: TCMRDirItem;
+	Invites: TCMRInviteList;
+begin
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
+
+	Item := CreateTestItem('folder', TYPE_DIR);
+
+	SetLength(Invites, 1);
+	Invites[0].email := 'user@mail.ru';
+	Invites[0].access := CLOUD_SHARE_ACCESS_READ_WRITE;
+	FShareService.ShareInfoInvites := Invites;
+	FShareService.ShareInfoResult := True;
+
+	FPresenter.Initialize(Item, '/folder', CreateConfig(False, False));
+
+	{Set UnshareResult to False AFTER Initialize}
+	FShareService.UnshareResult := False;
+
+	FPresenter.OnInviteDeleteClick;
+
+	Assert.IsNotEmpty(FView.ErrorTitle, 'Error should be shown on failure');
+end;
+
+{RefreshDownloadLinks tests}
+
+procedure TRemotePropertyPresenterTest.TestRefreshDownloadLinksForFile;
+var
+	Item: TCMRDirItem;
+begin
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, True);
+
+	Item := CreateTestItem('test.txt');
+	FDownloader.SharedFileUrl := 'https://cloud.mail.ru/public/';
+
+	FPresenter.Initialize(Item, '/test.txt', CreateConfig(False, False));
+
+	FPresenter.RefreshDownloadLinks;
+
+	Assert.AreEqual<Integer>(1, FView.DownloadLinks.Count, 'Should have one download link');
+	Assert.Contains(FView.DownloadLinks[0], '/test.txt', 'Link should contain file path');
+end;
+
+procedure TRemotePropertyPresenterTest.TestRefreshDownloadLinksForDirectoryPublicAccount;
+var
+	Item: TCMRDirItem;
+	DirListing: TCMRDirItemList;
+begin
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, True);
+
+	Item := CreateTestItem('folder', TYPE_DIR);
+	FDownloader.SharedFileUrl := 'https://cloud.mail.ru/public/';
+
+	{Setup directory listing with two files}
+	SetLength(DirListing, 2);
+	DirListing[0] := CreateTestItem('file1.txt');
+	DirListing[1] := CreateTestItem('file2.txt');
+	FListingService.DirectoryListing := DirListing;
+	FListingService.GetDirectoryResult := True;
+
+	FPresenter.Initialize(Item, '/folder', CreateConfig(False, False));
+
+	FPresenter.RefreshDownloadLinks;
+
+	Assert.AreEqual<Integer>(2, FView.DownloadLinks.Count, 'Should have two download links');
+end;
+
+procedure TRemotePropertyPresenterTest.TestRefreshDownloadLinksCancellation;
+var
+	Item: TCMRDirItem;
+	DirListing: TCMRDirItemList;
+begin
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, True);
+
+	Item := CreateTestItem('folder', TYPE_DIR);
+
+	{Setup directory listing}
+	SetLength(DirListing, 2);
+	DirListing[0] := CreateTestItem('file1.txt');
+	DirListing[1] := CreateTestItem('file2.txt');
+	FListingService.DirectoryListing := DirListing;
+	FListingService.GetDirectoryResult := True;
+
+	FPresenter.Initialize(Item, '/folder', CreateConfig(False, False));
+
+	{Set flag to cancel during ProcessMessages (simulates user clicking Cancel button)}
+	FView.CancelDownloadLinksOnProcess := True;
+
+	FPresenter.RefreshDownloadLinks;
+
+	{Should stop early due to cancellation}
+	Assert.AreEqual<Integer>(0, FView.DownloadLinks.Count, 'Should have no links after cancellation');
+end;
+
+{RefreshHashes tests}
+
+procedure TRemotePropertyPresenterTest.TestRefreshHashesForFile;
+var
+	Item: TCMRDirItem;
+begin
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
+
+	Item := CreateTestItem('test.txt');
+	Item.hash := 'ABCDEF123456';
+	Item.size := 12345;
+
+	FPresenter.Initialize(Item, '/test.txt', CreateConfig(False, False));
+
+	FPresenter.RefreshHashes;
+
+	Assert.AreEqual<Integer>(1, FView.Hashes.Count, 'Should have one hash');
+	Assert.Contains(FView.Hashes[0], 'ABCDEF123456', 'Hash should contain the file hash');
+	Assert.Contains(FView.Hashes[0], '12345', 'Hash should contain the file size');
+	Assert.Contains(FView.Hashes[0], 'test.txt', 'Hash should contain the filename');
+end;
+
+procedure TRemotePropertyPresenterTest.TestRefreshHashesForDirectory;
+var
+	Item: TCMRDirItem;
+	DirListing: TCMRDirItemList;
+begin
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
+
+	Item := CreateTestItem('folder', TYPE_DIR);
+
+	{Setup directory listing with files}
+	SetLength(DirListing, 2);
+	DirListing[0] := CreateTestItem('file1.txt');
+	DirListing[0].hash := 'HASH1';
+	DirListing[0].size := 100;
+	DirListing[1] := CreateTestItem('file2.txt');
+	DirListing[1].hash := 'HASH2';
+	DirListing[1].size := 200;
+	FListingService.DirectoryListing := DirListing;
+	FListingService.GetDirectoryResult := True;
+
+	FPresenter.Initialize(Item, '/folder', CreateConfig(False, False));
+
+	FPresenter.RefreshHashes;
+
+	Assert.AreEqual<Integer>(2, FView.Hashes.Count, 'Should have two hashes');
+	Assert.Contains(FView.Hashes[0], 'HASH1', 'First hash should be correct');
+	Assert.Contains(FView.Hashes[1], 'HASH2', 'Second hash should be correct');
+end;
+
+procedure TRemotePropertyPresenterTest.TestRefreshHashesCancellation;
+var
+	Item: TCMRDirItem;
+	DirListing: TCMRDirItemList;
+begin
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
+
+	Item := CreateTestItem('folder', TYPE_DIR);
+
+	SetLength(DirListing, 2);
+	DirListing[0] := CreateTestItem('file1.txt');
+	DirListing[1] := CreateTestItem('file2.txt');
+	FListingService.DirectoryListing := DirListing;
+	FListingService.GetDirectoryResult := True;
+
+	FPresenter.Initialize(Item, '/folder', CreateConfig(False, False));
+
+	{Set flag to cancel during ProcessMessages (simulates user clicking Cancel button)}
+	FView.CancelHashesOnProcess := True;
+
+	FPresenter.RefreshHashes;
+
+	Assert.AreEqual<Integer>(0, FView.Hashes.Count, 'Should have no hashes after cancellation');
+end;
+
+procedure TRemotePropertyPresenterTest.TestRefreshHashesButtonStates;
+var
+	Item: TCMRDirItem;
+begin
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
+
+	Item := CreateTestItem('test.txt');
+
+	FPresenter.Initialize(Item, '/test.txt', CreateConfig(False, False));
+
+	FPresenter.RefreshHashes;
+
+	{After refresh, buttons should be re-enabled based on CanApplyHashes}
+	Assert.IsTrue(FView.HashesRefreshEnabled, 'Refresh button should be enabled after refresh');
+	Assert.IsFalse(FView.HashesCancelEnabled, 'Cancel button should be disabled after refresh');
+end;
+
+{ApplyHashCommands tests}
+
+procedure TRemotePropertyPresenterTest.TestApplyHashCommandsValidCommand;
+var
+	Item: TCMRDirItem;
+begin
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
+
+	Item := CreateTestItem('test.txt');
+	FPresenter.Initialize(Item, '/test.txt', CreateConfig(False, False));
+
+	{Add valid hash command}
+	FView.Hashes.Add('hash "DEADBEEF12345678901234567890123456789012:12345:newfile.txt"');
+	FUploader.AddByIdentityResult := FS_FILE_OK;
+
+	FPresenter.ApplyHashCommands;
+
+	Assert.AreEqual('DEADBEEF12345678901234567890123456789012', String(FUploader.LastAddedIdentity.hash), 'Should add file with correct hash');
+	Assert.AreEqual(Int64(12345), FUploader.LastAddedIdentity.size, 'Should add file with correct size');
+end;
+
+procedure TRemotePropertyPresenterTest.TestApplyHashCommandsInvalidCommand;
+var
+	Item: TCMRDirItem;
+begin
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
+
+	Item := CreateTestItem('test.txt');
+	FPresenter.Initialize(Item, '/test.txt', CreateConfig(False, False));
+
+	{Add invalid hash command}
+	FView.Hashes.Add('invalid command');
+
+	FPresenter.ApplyHashCommands;
+
+	{Should log error message}
+	Assert.IsNotEmpty(FView.HashesLogMessage, 'Should log error for invalid command');
+end;
+
+procedure TRemotePropertyPresenterTest.TestApplyHashCommandsMultipleCommands;
+var
+	Item: TCMRDirItem;
+begin
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
+
+	Item := CreateTestItem('test.txt');
+	FPresenter.Initialize(Item, '/test.txt', CreateConfig(False, False));
+
+	{Add multiple valid hash commands}
+	FView.Hashes.Add('hash "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA:100:file1.txt"');
+	FView.Hashes.Add('hash "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB:200:file2.txt"');
+	FUploader.AddByIdentityResult := FS_FILE_OK;
+
+	FPresenter.ApplyHashCommands;
+
+	{Last call should be for file2}
+	Assert.AreEqual('BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB', String(FUploader.LastAddedIdentity.hash), 'Last added should be second file');
+end;
+
+procedure TRemotePropertyPresenterTest.TestApplyHashCommandsForDirectory;
+var
+	Item: TCMRDirItem;
+begin
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
+
+	Item := CreateTestItem('folder', TYPE_DIR);
+	Item.kind := TYPE_DIR;
+	FPresenter.Initialize(Item, '/folder', CreateConfig(False, False));
+
+	FView.Hashes.Add('hash "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC:300:newfile.txt"');
+	FUploader.AddByIdentityResult := FS_FILE_OK;
+
+	FPresenter.ApplyHashCommands;
+
+	{For directories, target path should be folder/filename}
+	Assert.Contains(FUploader.LastAddedPath, 'folder', 'Path should contain folder name');
+	Assert.Contains(FUploader.LastAddedPath, 'newfile.txt', 'Path should contain filename');
+end;
+
+{Description tests}
+
+procedure TRemotePropertyPresenterTest.TestInitializeWithDescriptionEnabled;
+var
+	Item: TCMRDirItem;
+begin
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
+
+	{Download returns error - no description file exists}
+	FDownloader.DownloadResult := FS_FILE_NOTFOUND;
+
+	Item := CreateTestItem('test.txt');
+	FPresenter.Initialize(Item, '/test.txt', CreateConfig(True, True));
+
+	Assert.IsTrue(FView.IsTabVisible(rptDescription), 'Description tab should be visible');
+	Assert.IsFalse(FView.DescriptionReadOnly, 'Description should be editable');
+	Assert.IsTrue(FView.DescriptionSaveEnabled, 'Save button should be enabled');
+end;
+
+procedure TRemotePropertyPresenterTest.TestInitializeWithDescriptionReadOnly;
+var
+	Item: TCMRDirItem;
+begin
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
+
+	FDownloader.DownloadResult := FS_FILE_NOTFOUND;
+
+	Item := CreateTestItem('test.txt');
+	FPresenter.Initialize(Item, '/test.txt', CreateConfig(True, False));
+
+	Assert.IsTrue(FView.IsTabVisible(rptDescription), 'Description tab should be visible');
+	Assert.IsTrue(FView.DescriptionReadOnly, 'Description should be read-only');
+	Assert.IsFalse(FView.DescriptionSaveEnabled, 'Save button should be disabled');
+end;
+
+procedure TRemotePropertyPresenterTest.TestInitializeWithCustomDescriptionFileName;
+var
+	Item: TCMRDirItem;
+	Config: TRemotePropertyConfig;
+begin
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
+
+	FDownloader.DownloadResult := FS_FILE_NOTFOUND;
+
+	Config := CreateConfig(True, True);
+	Config.PluginIonFileName := 'files.bbs';
+
+	Item := CreateTestItem('test.txt');
+	FPresenter.Initialize(Item, '/test.txt', Config);
+
+	Assert.IsNotEmpty(FView.DescriptionTabCaption, 'Description tab should have custom caption');
+	Assert.Contains(FView.DescriptionTabCaption, 'files.bbs', 'Caption should contain custom filename');
+end;
+
+procedure TRemotePropertyPresenterTest.TestLoadDescriptionFileNotFound;
+var
+	Item: TCMRDirItem;
+begin
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
+
+	{Download fails - no description file}
+	FDownloader.DownloadResult := FS_FILE_NOTFOUND;
+
+	Item := CreateTestItem('test.txt');
+	FPresenter.Initialize(Item, '/test.txt', CreateConfig(True, True));
+
+	{Description should be empty when file not found}
+	Assert.IsEmpty(FView.Description, 'Description should be empty when file not found');
+end;
+
+procedure TRemotePropertyPresenterTest.TestSaveDescriptionNewFile;
+var
+	Item: TCMRDirItem;
+begin
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
+
+	{Download fails - no existing description file}
+	FDownloader.DownloadResult := FS_FILE_NOTFOUND;
+	FUploader.UploadResult := FS_FILE_OK;
+	FFileOps.DeleteResult := True;
+
+	Item := CreateTestItem('test.txt');
+	FPresenter.Initialize(Item, '/test.txt', CreateConfig(True, True));
+
+	FView.Description := 'Test description';
+
+	FPresenter.SaveDescription;
+
+	{Note: Full save verification would require file system interaction.
+	 This test verifies the method completes without error.}
+	Assert.Pass('SaveDescription should complete without error');
+end;
+
+{Additional Initialize tests}
+
+procedure TRemotePropertyPresenterTest.TestInitializeSharedItem;
+var
+	Item: TCMRDirItem;
+begin
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
+
+	{Shared items (kind=shared) should show FolderAccess tab even for files}
+	Item := CreateTestItem('sharedfile.txt', TYPE_FILE, KIND_SHARED);
+
+	FPresenter.Initialize(Item, '/sharedfile.txt', CreateConfig(False, False));
+
+	Assert.IsTrue(FView.IsTabVisible(rptFolderAccess), 'FolderAccess tab should be visible for shared items');
+end;
+
+procedure TRemotePropertyPresenterTest.TestInitializePublicAccountAutoRefresh;
+var
+	Item: TCMRDirItem;
+begin
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, True);
+
+	FDownloader.SharedFileUrl := 'https://cloud.mail.ru/public/';
+
+	Item := CreateTestItem('test.txt');
+
+	{Enable auto-refresh}
+	var Config := CreateConfig(False, False);
+	Config.AutoUpdateDownloadListing := True;
+
+	FPresenter.Initialize(Item, '/test.txt', Config);
+
+	{Download links should be automatically populated}
+	Assert.AreEqual<Integer>(1, FView.DownloadLinks.Count, 'Download links should be auto-refreshed');
 end;
 
 initialization
