@@ -179,7 +179,7 @@ begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_FOLDER_SHARED_INCOMING, True, JSON_INCOMING_LINKS_SUCCESS);
 
-	var Success := FCloud.GetIncomingLinksListing(IncomingListing);
+	var Success := FCloud.ListingService.GetIncomingInvites(IncomingListing);
 
 	Assert.IsTrue(Success, 'GetIncomingLinksListing should return True on success');
 	Assert.AreEqual(Integer(1), Integer(Length(IncomingListing)), 'Should have 1 incoming link');
@@ -192,7 +192,7 @@ begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_FOLDER_SHARED_INCOMING, True, JSON_INCOMING_LINKS_EMPTY);
 
-	var Success := FCloud.GetIncomingLinksListing(IncomingListing);
+	var Success := FCloud.ListingService.GetIncomingInvites(IncomingListing);
 
 	Assert.IsTrue(Success, 'GetIncomingLinksListing should return True for empty list');
 	Assert.AreEqual(Integer(0), Integer(Length(IncomingListing)), 'Should have 0 items');
@@ -205,7 +205,7 @@ begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetDefaultResponse(False, '', FS_FILE_READERROR);
 
-	var Success := FCloud.GetIncomingLinksListing(IncomingListing);
+	var Success := FCloud.ListingService.GetIncomingInvites(IncomingListing);
 
 	Assert.IsFalse(Success, 'GetIncomingLinksListing should return False on failure');
 end;
@@ -217,7 +217,7 @@ begin
 	FCloud := CreateCloud(True);
 	FMockHTTP.SetResponse(API_FOLDER_SHARED_INCOMING, True, JSON_INCOMING_LINKS_SUCCESS);
 
-	var Success := FCloud.GetIncomingLinksListing(IncomingListing);
+	var Success := FCloud.ListingService.GetIncomingInvites(IncomingListing);
 
 	Assert.IsFalse(Success, 'GetIncomingLinksListing should return False for public accounts');
 end;
@@ -229,7 +229,7 @@ begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_TRASHBIN_RESTORE, True, JSON_SUCCESS);
 
-	var Success := FCloud.TrashbinRestore('/deleted/file.txt', 12345);
+	var Success := FCloud.ListingService.TrashbinRestore('/deleted/file.txt', 12345);
 
 	Assert.IsTrue(Success, 'TrashbinRestore should return True on success');
 end;
@@ -239,7 +239,7 @@ begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_TRASHBIN_RESTORE, True, JSON_FAILURE);
 
-	var Success := FCloud.TrashbinRestore('/deleted/file.txt', 12345);
+	var Success := FCloud.ListingService.TrashbinRestore('/deleted/file.txt', 12345);
 
 	Assert.IsFalse(Success, 'TrashbinRestore should return False on failure');
 end;
@@ -249,7 +249,7 @@ begin
 	FCloud := CreateCloud(True);
 	FMockHTTP.SetResponse(API_TRASHBIN_RESTORE, True, JSON_SUCCESS);
 
-	var Success := FCloud.TrashbinRestore('/deleted/file.txt', 12345);
+	var Success := FCloud.ListingService.TrashbinRestore('/deleted/file.txt', 12345);
 
 	Assert.IsFalse(Success, 'TrashbinRestore should return False for public accounts');
 end;
@@ -261,7 +261,7 @@ begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_TRASHBIN_RESTORE, True, JSON_SUCCESS);
 
-	FCloud.TrashbinRestore('/deleted/file.txt', 12345);
+	FCloud.ListingService.TrashbinRestore('/deleted/file.txt', 12345);
 
 	PostedData := FMockHTTP.GetLastPostedData;
 	Assert.IsTrue(Pos(String('path='), String(PostedData)) > 0, 'Should contain path parameter');
@@ -276,7 +276,7 @@ begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_TRASHBIN_EMPTY, True, JSON_SUCCESS);
 
-	var Success := FCloud.TrashbinEmpty;
+	var Success := FCloud.ListingService.TrashbinEmpty;
 
 	Assert.IsTrue(Success, 'TrashbinEmpty should return True on success');
 end;
@@ -286,7 +286,7 @@ begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_TRASHBIN_EMPTY, True, JSON_FAILURE);
 
-	var Success := FCloud.TrashbinEmpty;
+	var Success := FCloud.ListingService.TrashbinEmpty;
 
 	Assert.IsFalse(Success, 'TrashbinEmpty should return False on failure');
 end;
@@ -296,7 +296,7 @@ begin
 	FCloud := CreateCloud(True);
 	FMockHTTP.SetResponse(API_TRASHBIN_EMPTY, True, JSON_SUCCESS);
 
-	var Success := FCloud.TrashbinEmpty;
+	var Success := FCloud.ListingService.TrashbinEmpty;
 
 	Assert.IsFalse(Success, 'TrashbinEmpty should return False for public accounts');
 end;
@@ -358,7 +358,7 @@ begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_FOLDER_MOUNT, True, JSON_SUCCESS);
 
-	var Success := FCloud.MountFolder('/SharedFolder', 'invite_token_123');
+	var Success := FCloud.ShareService.Mount('/SharedFolder', 'invite_token_123');
 
 	Assert.IsTrue(Success, 'MountFolder should return True on success');
 end;
@@ -368,7 +368,7 @@ begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_FOLDER_MOUNT, True, JSON_FAILURE);
 
-	var Success := FCloud.MountFolder('/SharedFolder', 'invite_token_123');
+	var Success := FCloud.ShareService.Mount('/SharedFolder', 'invite_token_123');
 
 	Assert.IsFalse(Success, 'MountFolder should return False on failure');
 end;
@@ -378,7 +378,7 @@ begin
 	FCloud := CreateCloud(True);
 	FMockHTTP.SetResponse(API_FOLDER_MOUNT, True, JSON_SUCCESS);
 
-	var Success := FCloud.MountFolder('/SharedFolder', 'invite_token_123');
+	var Success := FCloud.ShareService.Mount('/SharedFolder', 'invite_token_123');
 
 	Assert.IsFalse(Success, 'MountFolder should return False for public accounts');
 end;
@@ -390,7 +390,7 @@ begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_FOLDER_UNMOUNT, True, JSON_SUCCESS);
 
-	var Success := FCloud.UnmountFolder('/SharedFolder', False);
+	var Success := FCloud.ShareService.Unmount('/SharedFolder', False);
 
 	Assert.IsTrue(Success, 'UnmountFolder should return True on success');
 end;
@@ -402,7 +402,7 @@ begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_FOLDER_UNMOUNT, True, JSON_SUCCESS);
 
-	FCloud.UnmountFolder('/SharedFolder', True);
+	FCloud.ShareService.Unmount('/SharedFolder', True);
 
 	PostedData := FMockHTTP.GetLastPostedData;
 	Assert.IsTrue(Pos(String('clone_copy=true'), String(PostedData)) > 0,
@@ -416,7 +416,7 @@ begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_FOLDER_UNMOUNT, True, JSON_SUCCESS);
 
-	FCloud.UnmountFolder('/SharedFolder', False);
+	FCloud.ShareService.Unmount('/SharedFolder', False);
 
 	PostedData := FMockHTTP.GetLastPostedData;
 	Assert.IsTrue(Pos(String('clone_copy=false'), String(PostedData)) > 0,

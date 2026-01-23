@@ -132,7 +132,7 @@ var
 	getResult: Integer;
 begin
 	Path.FromPath(RemoteName + Parameter);
-	if FConnectionManager.Get(Path.Account, getResult).removeDir(Path.Path) then
+	if FConnectionManager.Get(Path.Account, getResult).FileOps.RemoveDirectory(Path.Path) then
 		Result := TCommandResult.OK
 	else
 		Result := TCommandResult.Error;
@@ -156,7 +156,7 @@ begin
 	try
 		if Info.valid then
 		begin
-			Cloud.addFileByIdentity(Info.CloudFileIdentity, IncludeTrailingPathDelimiter(Path) + Info.name, CLOUD_CONFLICT_RENAME);
+			Cloud.Uploader.AddFileByIdentity(Info.CloudFileIdentity, IncludeTrailingPathDelimiter(Path) + Info.name, CLOUD_CONFLICT_RENAME);
 			Result := TCommandResult.OK;
 		end else begin
 			FLogger.Log(LOG_LEVEL_DEBUG, msgtype_details, ERR_CLONE_BY_HASH, [Info.errorString, Parameter]);
@@ -170,7 +170,7 @@ end;
 function TCommandDispatcher.ExecuteClone(Cloud: TCloudMailRu; const Path, Parameter: WideString): TCommandResult;
 begin
 	{Clone file by weblink}
-	if Cloud.CloneWeblink(Path, ExtractLinkFromUrl(Parameter)) = CLOUD_OPERATION_OK then
+	if Cloud.ShareService.CloneWeblink(Path, ExtractLinkFromUrl(Parameter)) = CLOUD_OPERATION_OK then
 	begin
 		if FSettingsManager.GetSettings.LogUserSpace then
 			Cloud.logUserSpaceInfo;

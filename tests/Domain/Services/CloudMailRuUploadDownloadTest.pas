@@ -166,7 +166,7 @@ begin
 	FileIdentity.Hash := 'ABCD1234567890ABCD1234567890ABCD12345678';
 	FileIdentity.size := 1024;
 
-	var Result := FCloud.AddFileByIdentity(FileIdentity, '/dest/file.txt');
+	var Result := FCloud.Uploader.AddFileByIdentity(FileIdentity, '/dest/file.txt');
 
 	Assert.AreEqual(FS_FILE_OK, Result, 'AddFileByIdentity should return FS_FILE_OK on success');
 end;
@@ -181,7 +181,7 @@ begin
 	FileIdentity.Hash := 'ABCD1234567890ABCD1234567890ABCD12345678';
 	FileIdentity.size := 1024;
 
-	var Result := FCloud.AddFileByIdentity(FileIdentity, '/dest/file.txt');
+	var Result := FCloud.Uploader.AddFileByIdentity(FileIdentity, '/dest/file.txt');
 
 	Assert.AreNotEqual(FS_FILE_OK, Result, 'AddFileByIdentity should return error on failure');
 end;
@@ -196,7 +196,7 @@ begin
 	FileIdentity.Hash := 'ABCD1234567890ABCD1234567890ABCD12345678';
 	FileIdentity.size := 1024;
 
-	var Result := FCloud.AddFileByIdentity(FileIdentity, '/dest/file.txt');
+	var Result := FCloud.Uploader.AddFileByIdentity(FileIdentity, '/dest/file.txt');
 
 	Assert.AreEqual(FS_FILE_NOTSUPPORTED, Result,
 		'AddFileByIdentity should return FS_FILE_NOTSUPPORTED for public accounts');
@@ -215,7 +215,7 @@ begin
 	FileIdentity.Hash := '';
 	FileIdentity.size := 1024;
 
-	FCloud.AddFileByIdentity(FileIdentity, '/dest/file.txt');
+	FCloud.Uploader.AddFileByIdentity(FileIdentity, '/dest/file.txt');
 
 	{Verifies current behavior: API is called even with empty hash}
 	Assert.IsTrue(FMockHTTP.WasURLCalled(API_FILE_ADD),
@@ -233,50 +233,48 @@ begin
 	FileIdentity.Hash := 'TESTHAS1234567890ABCD1234567890ABCD1234';
 	FileIdentity.size := 2048;
 
-	FCloud.AddFileByIdentity(FileIdentity, '/dest/file.txt');
+	FCloud.Uploader.AddFileByIdentity(FileIdentity, '/dest/file.txt');
 
 	PostedData := FMockHTTP.GetLastPostedData;
 	Assert.IsTrue(Pos(String('hash='), String(PostedData)) > 0, 'Post data should contain hash');
 	Assert.IsTrue(Pos(String('size='), String(PostedData)) > 0, 'Post data should contain size');
 end;
 
-{AddFileByIdentity with TCMRDirItem}
+{AddFileByIdentity with TCMRFileIdentity record fields}
 
 procedure TCloudMailRuUploadDownloadTest.TestAddFileByIdentity_DirItem_Success;
 var
-	DirItem: TCMRDirItem;
+	FileIdentity: TCMRFileIdentity;
 begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_FILE_ADD, True, JSON_FILE_ADD_SUCCESS);
 
-	DirItem := Default(TCMRDirItem);
-	DirItem.hash := 'ABCD1234567890ABCD1234567890ABCD12345678';
-	DirItem.size := 1024;
-	DirItem.home := '/source/file.txt';
+	FileIdentity := Default(TCMRFileIdentity);
+	FileIdentity.Hash := 'ABCD1234567890ABCD1234567890ABCD12345678';
+	FileIdentity.Size := 1024;
 
-	var Result := FCloud.AddFileByIdentity(DirItem, '/dest/file.txt');
+	var Result := FCloud.Uploader.AddFileByIdentity(FileIdentity, '/dest/file.txt');
 
-	Assert.AreEqual(FS_FILE_OK, Result, 'AddFileByIdentity with DirItem should return FS_FILE_OK');
+	Assert.AreEqual(FS_FILE_OK, Result, 'AddFileByIdentity with FileIdentity should return FS_FILE_OK');
 end;
 
 procedure TCloudMailRuUploadDownloadTest.TestAddFileByIdentity_DirItem_UsesHashAndSize;
 var
-	DirItem: TCMRDirItem;
+	FileIdentity: TCMRFileIdentity;
 	PostedData: WideString;
 begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_FILE_ADD, True, JSON_FILE_ADD_SUCCESS);
 
-	DirItem := Default(TCMRDirItem);
-	DirItem.hash := 'MYHASH1234567890ABCD1234567890ABCD123456';
-	DirItem.size := 4096;
-	DirItem.home := '/source/file.txt';
+	FileIdentity := Default(TCMRFileIdentity);
+	FileIdentity.Hash := 'MYHASH1234567890ABCD1234567890ABCD123456';
+	FileIdentity.Size := 4096;
 
-	FCloud.AddFileByIdentity(DirItem, '/dest/file.txt');
+	FCloud.Uploader.AddFileByIdentity(FileIdentity, '/dest/file.txt');
 
 	PostedData := FMockHTTP.GetLastPostedData;
-	Assert.IsTrue(Pos(String('MYHASH'), String(PostedData)) > 0, 'Should use hash from DirItem');
-	Assert.IsTrue(Pos(String('4096'), String(PostedData)) > 0, 'Should use size from DirItem');
+	Assert.IsTrue(Pos(String('MYHASH'), String(PostedData)) > 0, 'Should use hash from FileIdentity');
+	Assert.IsTrue(Pos(String('4096'), String(PostedData)) > 0, 'Should use size from FileIdentity');
 end;
 
 {StatusFile tests}
@@ -288,7 +286,7 @@ begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_FILE, True, JSON_STATUS_FILE_SUCCESS);
 
-	var Success := FCloud.StatusFile('/test.txt', FileInfo);
+	var Success := FCloud.ListingService.StatusFile('/test.txt', FileInfo);
 
 	Assert.IsTrue(Success, 'StatusFile should return True when file exists');
 end;
@@ -300,7 +298,7 @@ begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_FILE, True, JSON_STATUS_FILE_NOT_FOUND);
 
-	var Success := FCloud.StatusFile('/nonexistent.txt', FileInfo);
+	var Success := FCloud.ListingService.StatusFile('/nonexistent.txt', FileInfo);
 
 	Assert.IsFalse(Success, 'StatusFile should return False when file not found');
 end;
@@ -312,7 +310,7 @@ begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_FILE, True, JSON_STATUS_FILE_SUCCESS);
 
-	FCloud.StatusFile('/test.txt', FileInfo);
+	FCloud.ListingService.StatusFile('/test.txt', FileInfo);
 
 	Assert.AreEqual(String('test.txt'), String(FileInfo.name), 'Should populate file name');
 	Assert.AreEqual(Int64(1024), FileInfo.size, 'Should populate file size');
@@ -327,7 +325,7 @@ begin
 	FCloud.SetPublicLink('publiclink123');
 	FMockHTTP.SetResponse(API_FILE, True, JSON_STATUS_FILE_SUCCESS);
 
-	var Success := FCloud.StatusFile('/test.txt', FileInfo);
+	var Success := FCloud.ListingService.StatusFile('/test.txt', FileInfo);
 
 	{Public accounts should be able to check file status}
 	Assert.IsTrue(Success, 'StatusFile should work for public accounts');

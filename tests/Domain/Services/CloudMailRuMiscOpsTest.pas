@@ -132,7 +132,7 @@ begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_INVITE_REJECT, True, JSON_SUCCESS);
 
-	var Success := FCloud.RejectInvite('invite_token_123');
+	var Success := FCloud.ShareService.RejectInvite('invite_token_123');
 
 	Assert.IsTrue(Success, 'RejectInvite should return True on success');
 end;
@@ -142,7 +142,7 @@ begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_INVITE_REJECT, True, JSON_FAILURE);
 
-	var Success := FCloud.RejectInvite('invite_token_123');
+	var Success := FCloud.ShareService.RejectInvite('invite_token_123');
 
 	Assert.IsFalse(Success, 'RejectInvite should return False on failure');
 end;
@@ -152,7 +152,7 @@ begin
 	FCloud := CreateCloud(True);
 	FMockHTTP.SetResponse(API_INVITE_REJECT, True, JSON_SUCCESS);
 
-	var Success := FCloud.RejectInvite('invite_token_123');
+	var Success := FCloud.ShareService.RejectInvite('invite_token_123');
 
 	Assert.IsFalse(Success, 'RejectInvite should return False for public accounts');
 end;
@@ -164,7 +164,7 @@ begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_INVITE_REJECT, True, JSON_SUCCESS);
 
-	FCloud.RejectInvite('my_invite_token_xyz');
+	FCloud.ShareService.RejectInvite('my_invite_token_xyz');
 
 	PostedData := FMockHTTP.GetLastPostedData;
 	Assert.IsTrue(Pos(String('invite_token=my_invite_token_xyz'), String(PostedData)) > 0,
@@ -186,7 +186,7 @@ begin
 	FileInfo.weblink := 'existing_weblink';
 	FileInfo.Home := '/test/file.mp4';
 
-	var Success := FCloud.GetPublishedFileStreamUrl(FileInfo, StreamUrl);
+	var Success := FCloud.ShareService.GetPublishedFileStreamUrl(FileInfo, StreamUrl);
 
 	Assert.IsTrue(Success, 'Should succeed with existing weblink');
 	Assert.IsNotEmpty(StreamUrl, 'StreamUrl should not be empty');
@@ -204,7 +204,7 @@ begin
 	FileInfo.Home := '/test/file.mp4';
 
 	{Publish=False means no publishing, so should fail immediately}
-	var Success := FCloud.GetPublishedFileStreamUrl(FileInfo, StreamUrl, SHARD_TYPE_WEBLINK_VIDEO, False);
+	var Success := FCloud.ShareService.GetPublishedFileStreamUrl(FileInfo, StreamUrl, SHARD_TYPE_WEBLINK_VIDEO, False);
 
 	Assert.IsFalse(Success, 'Should fail when weblink is empty and publish is disabled');
 end;
@@ -222,7 +222,7 @@ begin
 	FileInfo.weblink := 'existing_weblink';
 	FileInfo.Home := '/test/file.mp4';
 
-	var Success := FCloud.GetPublishedFileStreamUrl(FileInfo, StreamUrl);
+	var Success := FCloud.ShareService.GetPublishedFileStreamUrl(FileInfo, StreamUrl);
 
 	Assert.IsFalse(Success, 'Should fail if shard retrieval fails');
 end;
@@ -239,7 +239,7 @@ begin
 	FileInfo.weblink := 'test_weblink';
 	FileInfo.Home := '/test/file.mp4';
 
-	FCloud.GetPublishedFileStreamUrl(FileInfo, StreamUrl);
+	FCloud.ShareService.GetPublishedFileStreamUrl(FileInfo, StreamUrl);
 
 	Assert.IsTrue(Pos(String('.m3u8'), String(StreamUrl)) > 0, 'StreamUrl should contain .m3u8 extension');
 	Assert.IsTrue(Pos(String('double_encode=1'), String(StreamUrl)) > 0, 'StreamUrl should contain double_encode parameter');

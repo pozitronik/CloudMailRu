@@ -74,13 +74,13 @@ begin
 	//если там его нет (нажали пробел на папке, например), то запросим в облаке напрямую
 	if Path.trashDir then //корзина - обновим CurrentListing, поищем в нём
 	begin
-		if Cloud.getTrashbinListing(Listing) then
+		if Cloud.ListingService.GetTrashbin(Listing) then
 			Exit(Listing.FindByName(Path.Path));
 	end;
 
 	if Path.sharedDir then //ссылки - обновим список
 	begin
-		if Cloud.getSharedLinksListing(Listing) then
+		if Cloud.ListingService.GetSharedLinks(Listing) then
 			Exit(Listing.FindByName(Path.Path));
 	end;
 
@@ -91,7 +91,7 @@ begin
 	end;
 
 	//Обычный каталог
-	if Cloud.statusFile(Path.Path, Result) then
+	if Cloud.ListingService.StatusFile(Path.Path, Result) then
 	begin
 		if (Result.home = EmptyWideStr) and not Cloud.IsPublicAccount then
 			FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_WHERE_IS_THE_FILE, [Path.Path]); {Такого быть не может, но...}

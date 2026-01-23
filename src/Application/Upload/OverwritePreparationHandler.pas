@@ -53,7 +53,7 @@ begin
 		Exit;
 
 	{Cloud API doesn't support overwrite, delete existing file first}
-	if not FConnectionManager.Get(Path.account, getResult).deleteFile(Path.Path) then
+	if not FConnectionManager.Get(Path.account, getResult).FileOps.Delete(Path.Path) then
 	begin
 		Result.Success := False;
 		Result.ResultCode := FS_FILE_NOTSUPPORTED;

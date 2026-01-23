@@ -59,6 +59,7 @@ uses
 	PLUGIN_TYPES,
 	CMRConstants,
 	CMRDirItem,
+	CMRFileIdentity,
 	SETTINGS_CONSTANTS,
 	LANGUAGE_STRINGS;
 
@@ -96,24 +97,29 @@ end;
 function TCrossAccountFileOperationHandler.ExecuteViaHash(OldCloud, NewCloud: TCloudMailRu; const OldRealPath, NewRealPath: TRealPath; Move, OverWrite: Boolean; AbortCheck: TAbortCheckFunc): Integer;
 var
 	CurrentItem: TCMRDirItem;
+	FileIdentity: TCMRFileIdentity;
 	TargetPath: WideString;
 begin
 	Result := FS_FILE_NOTSUPPORTED;
 
-	if OverWrite and not NewCloud.deleteFile(NewRealPath.Path) then
+	if OverWrite and not NewCloud.FileOps.Delete(NewRealPath.Path) then
 		Exit;
 
-	if not OldCloud.statusFile(OldRealPath.Path, CurrentItem) then
+	if not OldCloud.ListingService.StatusFile(OldRealPath.Path, CurrentItem) then
 		Exit;
+
+	{Convert TCMRDirItem to TCMRFileIdentity for AddFileByIdentity}
+	FileIdentity.Hash := CurrentItem.hash;
+	FileIdentity.Size := CurrentItem.size;
 
 	TargetPath := IncludeTrailingPathDelimiter(ExtractFileDir(NewRealPath.Path)) + ExtractFileName(NewRealPath.Path);
-	Result := NewCloud.addFileByIdentity(CurrentItem, TargetPath);
+	Result := NewCloud.Uploader.AddFileByIdentity(FileIdentity, TargetPath);
 
 	if not(Result in [FS_FILE_OK, FS_FILE_EXISTS]) then
 		Result := FRetryHandler.HandleOperationError(Result, rotRenMov, ERR_CLONE_FILE_ASK, ERR_OPERATION, CLONE_FILE_RETRY, TCloudErrorMapper.ErrorCodeText(Result),
 			function: Integer
 			begin
-				Result := NewCloud.addFileByIdentity(CurrentItem, TargetPath);
+				Result := NewCloud.Uploader.AddFileByIdentity(FileIdentity, TargetPath);
 			end,
 			function: Boolean
 			begin
@@ -121,7 +127,7 @@ begin
 			end);
 
 	{Delete source if move operation succeeded}
-	if (Result = CLOUD_OPERATION_OK) and Move and not OldCloud.deleteFile(OldRealPath.Path) then
+	if (Result = CLOUD_OPERATION_OK) and Move and not OldCloud.FileOps.Delete(OldRealPath.Path) then
 		FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_DELETE, [CurrentItem.Home]);
 end;
 
@@ -134,10 +140,10 @@ begin
 	Result := FS_FILE_NOTSUPPORTED;
 	NeedUnpublish := False;
 
-	if OverWrite and not NewCloud.deleteFile(NewRealPath.Path) then
+	if OverWrite and not NewCloud.FileOps.Delete(NewRealPath.Path) then
 		Exit;
 
-	if not OldCloud.statusFile(OldRealPath.Path, CurrentItem) then
+	if not OldCloud.ListingService.StatusFile(OldRealPath.Path, CurrentItem) then
 		Exit;
 
 	{Create temporary weblink if file is not already published}
@@ -145,7 +151,7 @@ begin
 	begin
 		NeedUnpublish := True;
 		Weblink := CurrentItem.Weblink;
-		if not OldCloud.publishFile(CurrentItem.Home, Weblink) then
+		if not OldCloud.PublishFile(CurrentItem.Home, Weblink) then
 		begin
 			FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_GET_TEMP_PUBLIC_LINK, [CurrentItem.Home]);
 			Exit(FS_FILE_READERROR);
@@ -167,7 +173,7 @@ begin
 			end);
 
 	{Delete source if move operation succeeded}
-	if (Result = CLOUD_OPERATION_OK) and Move and not OldCloud.deleteFile(OldRealPath.Path) then
+	if (Result = CLOUD_OPERATION_OK) and Move and not OldCloud.FileOps.Delete(OldRealPath.Path) then
 		FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_DELETE, [CurrentItem.Home]);
 end;
 
@@ -175,13 +181,13 @@ function TCrossAccountFileOperationHandler.CloneWeblink(NewCloud, OldCloud: TClo
 var
 	TempWeblink: WideString;
 begin
-	Result := NewCloud.CloneWeblink(ExtractFileDir(CloudPath), Weblink, CLOUD_CONFLICT_STRICT);
+	Result := NewCloud.ShareService.CloneWeblink(ExtractFileDir(CloudPath), Weblink, CLOUD_CONFLICT_STRICT);
 
 	{Remove temporary public link if needed}
 	if NeedUnpublish and (FS_FILE_USERABORT <> Result) then
 	begin
 		TempWeblink := Weblink;
-		if not OldCloud.publishFile(Home, TempWeblink, CLOUD_UNPUBLISH) then
+		if not OldCloud.PublishFile(Home, TempWeblink, CLOUD_UNPUBLISH) then
 			FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, PREFIX_ERR_REMOVE_TEMP_PUBLIC_LINK + Home);
 	end;
 end;

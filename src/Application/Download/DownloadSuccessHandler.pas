@@ -109,7 +109,7 @@ end;
 procedure TDownloadSuccessHandler.HandleMoveOperation(const Context: TDownloadContext);
 begin
 	if Assigned(Context.Cloud) then
-		Context.Cloud.deleteFile(Context.RemotePath.Path);
+		Context.Cloud.FileOps.Delete(Context.RemotePath.Path);
 	FDescriptionSyncGuard.OnFileDeleted(Context.RemotePath, Context.Cloud);
 end;
 

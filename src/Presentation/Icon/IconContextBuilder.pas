@@ -86,7 +86,7 @@ begin
 
 	{Item not found in current listing, refresh and search again}
 	if Result.isNone then
-		if FConnectionManager.Get(Path.account, getResult).getIncomingLinksListing(InviteListing) then
+		if FConnectionManager.Get(Path.account, getResult).ListingService.GetIncomingInvites(InviteListing) then
 			Result := InviteListing.FindByName(Path.Path);
 end;
 

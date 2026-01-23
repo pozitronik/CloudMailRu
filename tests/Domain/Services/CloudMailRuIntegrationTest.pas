@@ -186,7 +186,7 @@ begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_FOLDER_ADD, True, JSON_SUCCESS);
 
-	var Result := FCloud.CreateDir('/test/newdir');
+	var Result := FCloud.FileOps.CreateDirectory('/test/newdir');
 
 	Assert.IsTrue(Result, 'CreateDir should return true on success');
 	Assert.IsTrue(FMockHTTP.WasURLCalled(API_FOLDER_ADD), 'Should call folder add API');
@@ -197,7 +197,7 @@ begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_FOLDER_ADD, True, JSON_EXISTS_ERROR);
 
-	var Result := FCloud.CreateDir('/test/existing');
+	var Result := FCloud.FileOps.CreateDirectory('/test/existing');
 
 	Assert.IsFalse(Result, 'CreateDir should return false when dir exists');
 end;
@@ -206,7 +206,7 @@ procedure TCloudMailRuIntegrationTest.TestCreateDir_PublicAccount_ReturnsFalse;
 begin
 	FCloud := CreateCloud(True); {Public account}
 
-	var Result := FCloud.CreateDir('/test/dir');
+	var Result := FCloud.FileOps.CreateDirectory('/test/dir');
 
 	Assert.IsFalse(Result, 'Public account should not create directories');
 	Assert.AreEqual(0, FMockHTTP.GetCallCount, 'Should not make HTTP calls for public account');
@@ -219,7 +219,7 @@ begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_FILE_REMOVE, True, JSON_SUCCESS);
 
-	var Result := FCloud.DeleteFile('/file/to/delete.txt');
+	var Result := FCloud.FileOps.Delete('/file/to/delete.txt');
 
 	Assert.IsTrue(Result, 'DeleteFile should return true on success');
 	Assert.IsTrue(FMockHTTP.WasURLCalled(API_FILE_REMOVE), 'Should call file remove API');
@@ -230,7 +230,7 @@ begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_FILE_REMOVE, True, JSON_NOT_EXISTS_ERROR);
 
-	var Result := FCloud.DeleteFile('/nonexistent.txt');
+	var Result := FCloud.FileOps.Delete('/nonexistent.txt');
 
 	Assert.IsFalse(Result, 'DeleteFile should return false when file not found');
 end;
@@ -242,7 +242,7 @@ begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_FILE_REMOVE, True, JSON_SUCCESS);
 
-	var Result := FCloud.RemoveDir('/dir/to/remove');
+	var Result := FCloud.FileOps.RemoveDirectory('/dir/to/remove');
 
 	Assert.IsTrue(Result, 'RemoveDir should return true on success');
 end;
@@ -252,7 +252,7 @@ begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_FILE_REMOVE, True, JSON_NOT_EXISTS_ERROR);
 
-	var Result := FCloud.RemoveDir('/nonexistent/dir');
+	var Result := FCloud.FileOps.RemoveDirectory('/nonexistent/dir');
 
 	Assert.IsFalse(Result, 'RemoveDir should return false when dir not found');
 end;
@@ -264,7 +264,7 @@ begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_FILE_RENAME, True, JSON_SUCCESS);
 
-	var Result := FCloud.RenameFile('/old/path.txt', '/old/newname.txt');
+	var Result := FCloud.FileOps.Rename('/old/path.txt', '/old/newname.txt');
 
 	Assert.AreEqual(FS_FILE_OK, Result, 'RenameFile should return OK on success');
 	Assert.IsTrue(FMockHTTP.WasURLCalled(API_FILE_RENAME), 'Should call file rename API');
@@ -275,7 +275,7 @@ begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_FILE_RENAME, True, JSON_NOT_EXISTS_ERROR);
 
-	var Result := FCloud.RenameFile('/nonexistent.txt', '/newname.txt');
+	var Result := FCloud.FileOps.Rename('/nonexistent.txt', '/newname.txt');
 
 	Assert.AreNotEqual(FS_FILE_OK, Result, 'RenameFile should return error when file not found');
 end;
@@ -287,7 +287,7 @@ begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_FILE_COPY, True, JSON_SUCCESS);
 
-	var Result := FCloud.CopyFile('/source/file.txt', '/dest/');
+	var Result := FCloud.FileOps.CopyToPath('/source/file.txt', '/dest/');
 
 	Assert.AreEqual(FS_FILE_OK, Result, 'CopyFile should return OK on success');
 	Assert.IsTrue(FMockHTTP.WasURLCalled(API_FILE_COPY), 'Should call file copy API');
@@ -298,7 +298,7 @@ begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_FILE_COPY, True, JSON_NOT_EXISTS_ERROR);
 
-	var Result := FCloud.CopyFile('/nonexistent.txt', '/dest/');
+	var Result := FCloud.FileOps.CopyToPath('/nonexistent.txt', '/dest/');
 
 	Assert.AreNotEqual(FS_FILE_OK, Result, 'CopyFile should return error when file not found');
 end;
@@ -310,7 +310,7 @@ begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_FILE_MOVE, True, JSON_SUCCESS);
 
-	var Result := FCloud.MoveFile('/source/file.txt', '/dest/');
+	var Result := FCloud.FileOps.MoveToPath('/source/file.txt', '/dest/');
 
 	Assert.AreEqual(FS_FILE_OK, Result, 'MoveFile should return OK on success');
 	Assert.IsTrue(FMockHTTP.WasURLCalled(API_FILE_MOVE), 'Should call file move API');
@@ -321,7 +321,7 @@ begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_FILE_MOVE, True, JSON_NOT_EXISTS_ERROR);
 
-	var Result := FCloud.MoveFile('/nonexistent.txt', '/dest/');
+	var Result := FCloud.FileOps.MoveToPath('/nonexistent.txt', '/dest/');
 
 	Assert.AreNotEqual(FS_FILE_OK, Result, 'MoveFile should return error when file not found');
 end;
@@ -335,7 +335,7 @@ begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_FILE, True, JSON_FILE_STATUS);
 
-	var Result := FCloud.StatusFile('/file.txt', DirItem);
+	var Result := FCloud.ListingService.StatusFile('/file.txt', DirItem);
 
 	Assert.IsTrue(Result, 'StatusFile should return true on success');
 	Assert.AreEqual(String('file.txt'), String(DirItem.name), 'Should parse file name');
@@ -349,7 +349,7 @@ begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_FILE, True, JSON_NOT_EXISTS_ERROR);
 
-	var Result := FCloud.StatusFile('/nonexistent.txt', DirItem);
+	var Result := FCloud.ListingService.StatusFile('/nonexistent.txt', DirItem);
 
 	Assert.IsFalse(Result, 'StatusFile should return false when file not found');
 end;
@@ -366,7 +366,7 @@ begin
 	FileIdentity.Hash := SHA1_HASH_40;
 	FileIdentity.size := 1024;
 
-	var Result := FCloud.AddFileByIdentity(FileIdentity, '/dest/file.txt');
+	var Result := FCloud.Uploader.AddFileByIdentity(FileIdentity, '/dest/file.txt');
 
 	Assert.AreEqual(FS_FILE_OK, Result, 'AddFileByIdentity should return OK on success');
 	Assert.IsTrue(FMockHTTP.WasURLCalled(API_FILE_ADD), 'Should call file add API');
@@ -382,7 +382,7 @@ begin
 	FileIdentity.Hash := SHA1_HASH_40;
 	FileIdentity.size := 1024;
 
-	var Result := FCloud.AddFileByIdentity(FileIdentity, '/dest/file.txt');
+	var Result := FCloud.Uploader.AddFileByIdentity(FileIdentity, '/dest/file.txt');
 
 	Assert.AreEqual(FS_FILE_EXISTS, Result, 'AddFileByIdentity should return exists error');
 end;
@@ -394,7 +394,7 @@ begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_CLONE, True, JSON_SUCCESS);
 
-	var Result := FCloud.CloneWeblink('/dest/', 'https://cloud.mail.ru/public/abcd1234', CLOUD_CONFLICT_STRICT);
+	var Result := FCloud.ShareService.CloneWeblink('/dest/', 'https://cloud.mail.ru/public/abcd1234', CLOUD_CONFLICT_STRICT);
 
 	Assert.AreEqual(FS_FILE_OK, Result, 'CloneWeblink should return OK on success');
 	Assert.IsTrue(FMockHTTP.WasURLCalled(API_CLONE), 'Should call clone API');
@@ -405,7 +405,7 @@ begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_CLONE, True, JSON_NOT_EXISTS_ERROR);
 
-	var Result := FCloud.CloneWeblink('/dest/', 'https://cloud.mail.ru/public/invalid', CLOUD_CONFLICT_STRICT);
+	var Result := FCloud.ShareService.CloneWeblink('/dest/', 'https://cloud.mail.ru/public/invalid', CLOUD_CONFLICT_STRICT);
 
 	Assert.AreNotEqual(FS_FILE_OK, Result, 'CloneWeblink should return error for invalid link');
 end;
@@ -445,7 +445,7 @@ begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_TRASHBIN_RESTORE, True, JSON_SUCCESS);
 
-	var Result := FCloud.TrashbinRestore('/deleted/file.txt', 0, CLOUD_CONFLICT_RENAME);
+	var Result := FCloud.ListingService.TrashbinRestore('/deleted/file.txt', 0, CLOUD_CONFLICT_RENAME);
 
 	Assert.IsTrue(Result, 'TrashbinRestore should return true on success');
 	Assert.IsTrue(FMockHTTP.WasURLCalled(API_TRASHBIN_RESTORE), 'Should call restore API');
@@ -456,7 +456,7 @@ begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_TRASHBIN_EMPTY, True, JSON_SUCCESS);
 
-	var Result := FCloud.TrashbinEmpty();
+	var Result := FCloud.ListingService.TrashbinEmpty();
 
 	Assert.IsTrue(Result, 'TrashbinEmpty should return true on success');
 	Assert.IsTrue(FMockHTTP.WasURLCalled(API_TRASHBIN_EMPTY), 'Should call empty API');
@@ -477,11 +477,11 @@ begin
 		'{"email":"test@mail.ru","body":{"name":"second.txt","type":"file","size":200,"mtime":2000},"status":200}');
 
 	{First call gets first response}
-	FCloud.StatusFile('/first.txt', DirItem);
+	FCloud.ListingService.StatusFile('/first.txt', DirItem);
 	Assert.AreEqual(String('first.txt'), String(DirItem.name), 'First call should get first response');
 
 	{Second call gets second response}
-	FCloud.StatusFile('/second.txt', DirItem);
+	FCloud.ListingService.StatusFile('/second.txt', DirItem);
 	Assert.AreEqual(String('second.txt'), String(DirItem.name), 'Second call should get second response');
 end;
 
@@ -494,9 +494,9 @@ begin
 	FMockHTTP.QueueResponse(API_FOLDER_ADD, True, JSON_EXISTS_ERROR);
 	FMockHTTP.QueueResponse(API_FOLDER_ADD, True, JSON_SUCCESS);
 
-	Assert.IsTrue(FCloud.CreateDir('/dir1'), 'First create should succeed');
-	Assert.IsFalse(FCloud.CreateDir('/dir2'), 'Second create should fail (exists)');
-	Assert.IsTrue(FCloud.CreateDir('/dir3'), 'Third create should succeed');
+	Assert.IsTrue(FCloud.FileOps.CreateDirectory('/dir1'), 'First create should succeed');
+	Assert.IsFalse(FCloud.FileOps.CreateDirectory('/dir2'), 'Second create should fail (exists)');
+	Assert.IsTrue(FCloud.FileOps.CreateDirectory('/dir3'), 'Third create should succeed');
 end;
 
 {Token refresh scenario tests}
@@ -510,7 +510,7 @@ begin
 	FMockHTTP.QueueResponse(API_CSRF, True, JSON_CSRF_SUCCESS);
 	FMockHTTP.QueueResponse(API_FOLDER_ADD, True, JSON_SUCCESS);
 
-	FCloud.CreateDir('/test/newdir');
+	FCloud.FileOps.CreateDirectory('/test/newdir');
 
 	{Note: actual retry behavior depends on TCloudMailRu implementation}
 	{This test verifies the mock queue works for multi-step error handling}
@@ -528,8 +528,8 @@ begin
 	FMockHTTP.SetResponse(API_FILE_REMOVE, True, JSON_SUCCESS);
 
 	{Execute multi-step flow}
-	Assert.IsTrue(FCloud.CreateDir('/test/newdir'), 'Create should succeed');
-	Assert.IsTrue(FCloud.RemoveDir('/test/newdir'), 'Delete should succeed');
+	Assert.IsTrue(FCloud.FileOps.CreateDirectory('/test/newdir'), 'Create should succeed');
+	Assert.IsTrue(FCloud.FileOps.RemoveDirectory('/test/newdir'), 'Delete should succeed');
 
 	Assert.IsTrue(FMockHTTP.WasURLCalled(API_FOLDER_ADD), 'Should call create API');
 	Assert.IsTrue(FMockHTTP.WasURLCalled(API_FILE_REMOVE), 'Should call remove API');
@@ -544,8 +544,8 @@ begin
 	FMockHTTP.SetResponse(API_FILE_RENAME, True, JSON_SUCCESS);
 
 	{Execute multi-step flow}
-	Assert.AreEqual(FS_FILE_OK, FCloud.CopyFile('/source.txt', '/dest/'), 'Copy should succeed');
-	Assert.AreEqual(FS_FILE_OK, FCloud.RenameFile('/dest/source.txt', '/dest/renamed.txt'), 'Rename should succeed');
+	Assert.AreEqual(FS_FILE_OK, FCloud.FileOps.CopyToPath('/source.txt', '/dest/'), 'Copy should succeed');
+	Assert.AreEqual(FS_FILE_OK, FCloud.FileOps.Rename('/dest/source.txt', '/dest/renamed.txt'), 'Rename should succeed');
 
 	Assert.IsTrue(FMockHTTP.WasURLCalled(API_FILE_COPY), 'Should call copy API');
 	Assert.IsTrue(FMockHTTP.WasURLCalled(API_FILE_RENAME), 'Should call rename API');

@@ -97,18 +97,18 @@ begin
 	if STREAMING_FORMAT_PLAYLIST = Format then
 	begin
 		{Playlist format - get HLS stream URL directly}
-		Result := TempCloud.getPublishedFileStreamUrl(MutableItem, StreamUrl);
+		Result := TempCloud.ShareService.GetPublishedFileStreamUrl(MutableItem, StreamUrl);
 	end else begin
 		{Other formats - ensure file is published first}
 		if not Item.isPublished then
 		begin
 			CurrentCloud := ConnManager.Get(RealPath.account, getResult);
-			Result := CurrentCloud.publishFile(MutableItem.home, MutableItem.weblink);
+			Result := CurrentCloud.PublishFile(MutableItem.home, MutableItem.weblink);
 			//Здесь можно бы обновить листинг
 		end;
 
 		if Result then
-			StreamUrl := TempCloud.getSharedFileUrl(EmptyWideStr, ShardTypeFromStreamingFormat(Format));
+			StreamUrl := TempCloud.Downloader.GetSharedFileUrl(EmptyWideStr, ShardTypeFromStreamingFormat(Format));
 	end;
 end;
 

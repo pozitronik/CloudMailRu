@@ -103,17 +103,17 @@ end;
 
 function TCloudMailRuFileOpsAdapter.GetFile(RemotePath, LocalPath: WideString; var ResultHash: WideString; LogErrors: Boolean): Integer;
 begin
-	Result := FCloud.GetFile(RemotePath, LocalPath, ResultHash, LogErrors);
+	Result := FCloud.Downloader.Download(RemotePath, LocalPath, ResultHash, LogErrors);
 end;
 
 function TCloudMailRuFileOpsAdapter.PutFile(LocalPath, RemotePath: WideString): Integer;
 begin
-	Result := FCloud.PutFile(LocalPath, RemotePath);
+	Result := FCloud.Uploader.Upload(LocalPath, RemotePath);
 end;
 
 function TCloudMailRuFileOpsAdapter.DeleteFile(Path: WideString): Boolean;
 begin
-	Result := FCloud.DeleteFile(Path);
+	Result := FCloud.FileOps.Delete(Path);
 end;
 
 {TCloudDescriptionOpsAdapter}

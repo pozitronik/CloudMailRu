@@ -192,7 +192,7 @@ begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_FOLDER, True, JSON_DIR_LISTING_SUCCESS);
 
-	Success := FCloud.GetDirListing('/TestDir', DirListing);
+	Success := FCloud.ListingService.GetDirectory('/TestDir', DirListing);
 
 	Assert.IsTrue(Success, 'GetDirListing should return True on success');
 	Assert.AreEqual(Integer(2), Integer(Length(DirListing)), 'Should have 2 items (1 folder + 1 file)');
@@ -206,7 +206,7 @@ begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_FOLDER, True, JSON_DIR_LISTING_EMPTY);
 
-	Success := FCloud.GetDirListing('/EmptyDir', DirListing);
+	Success := FCloud.ListingService.GetDirectory('/EmptyDir', DirListing);
 
 	Assert.IsTrue(Success, 'GetDirListing should return True for empty directory');
 	Assert.AreEqual(Integer(0), Integer(Length(DirListing)), 'Should have 0 items');
@@ -221,7 +221,7 @@ begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_FOLDER, True, JSON_DIR_LISTING_SUCCESS);
 
-	Success := FCloud.GetDirListing('/TestDir', DirListing);
+	Success := FCloud.ListingService.GetDirectory('/TestDir', DirListing);
 
 	Assert.IsTrue(Success);
 	Assert.IsTrue(Length(DirListing) >= 1, 'Should have at least 1 item');
@@ -249,7 +249,7 @@ begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_FOLDER, True, JSON_DIR_LISTING_SUCCESS);
 
-	Success := FCloud.GetDirListing('/TestDir', DirListing);
+	Success := FCloud.ListingService.GetDirectory('/TestDir', DirListing);
 
 	Assert.IsTrue(Success);
 
@@ -280,7 +280,7 @@ begin
 	{Default mock response is failure}
 	FMockHTTP.SetDefaultResponse(False, '', FS_FILE_READERROR);
 
-	Success := FCloud.GetDirListing('/SomeDir', DirListing);
+	Success := FCloud.ListingService.GetDirectory('/SomeDir', DirListing);
 
 	Assert.IsFalse(Success, 'GetDirListing should return False on HTTP failure');
 	Assert.AreEqual(Integer(0), Integer(Length(DirListing)), 'DirListing should be empty');
@@ -294,7 +294,7 @@ begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_FOLDER, True, JSON_DIR_NOT_FOUND);
 
-	Success := FCloud.GetDirListing('/NonExistent', DirListing);
+	Success := FCloud.ListingService.GetDirectory('/NonExistent', DirListing);
 
 	Assert.IsFalse(Success, 'GetDirListing should return False for non-existent path');
 end;
@@ -307,7 +307,7 @@ begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_FOLDER, True, 'invalid json {{{');
 
-	Success := FCloud.GetDirListing('/SomeDir', DirListing);
+	Success := FCloud.ListingService.GetDirectory('/SomeDir', DirListing);
 
 	Assert.IsFalse(Success, 'GetDirListing should return False for invalid JSON');
 end;
@@ -320,7 +320,7 @@ begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_FOLDER, True, JSON_API_ERROR);
 
-	Success := FCloud.GetDirListing('/SomeDir', DirListing);
+	Success := FCloud.ListingService.GetDirectory('/SomeDir', DirListing);
 
 	Assert.IsFalse(Success, 'GetDirListing should return False for API error');
 end;
@@ -334,7 +334,7 @@ begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_FOLDER, True, JSON_DIR_LISTING_SUCCESS);
 
-	FCloud.GetDirListing('/TestDir', DirListing);
+	FCloud.ListingService.GetDirectory('/TestDir', DirListing);
 
 	Assert.IsTrue(FMockHTTP.WasURLCalled(API_FOLDER), 'Should call folder API endpoint');
 	Assert.IsTrue(FMockHTTP.WasURLCalled('home='), 'URL should contain home parameter');
@@ -348,7 +348,7 @@ begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_FOLDER, True, JSON_DIR_LISTING_SUCCESS);
 
-	FCloud.GetDirListing('/Path With Spaces', DirListing);
+	FCloud.ListingService.GetDirectory('/Path With Spaces', DirListing);
 
 	LastCall := FMockHTTP.GetLastCall;
 	{Path should be URL-encoded}
@@ -366,7 +366,7 @@ begin
 	FCloud.SetPublicLink('publiclink123');
 	FMockHTTP.SetResponse(API_FOLDER, True, JSON_DIR_LISTING_SUCCESS);
 
-	FCloud.GetDirListing('/TestDir', DirListing);
+	FCloud.ListingService.GetDirectory('/TestDir', DirListing);
 
 	LastCall := FMockHTTP.GetLastCall;
 	Assert.IsTrue(Pos(String('weblink='), String(LastCall)) > 0, 'Public account should use weblink parameter');
@@ -381,7 +381,7 @@ begin
 	FCloud.SetPublicLink('publiclink123');
 	FMockHTTP.SetResponse(API_FOLDER, True, JSON_DIR_LISTING_SUCCESS);
 
-	Success := FCloud.GetDirListing('/TestDir', DirListing);
+	Success := FCloud.ListingService.GetDirectory('/TestDir', DirListing);
 
 	Assert.IsTrue(Success, 'Public account GetDirListing should succeed');
 	Assert.AreEqual(Integer(2), Integer(Length(DirListing)), 'Should parse items correctly');
@@ -397,7 +397,7 @@ begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_TRASHBIN, True, JSON_TRASHBIN_SUCCESS);
 
-	Success := FCloud.GetTrashbinListing(DirListing);
+	Success := FCloud.ListingService.GetTrashbin(DirListing);
 
 	Assert.IsTrue(Success, 'GetTrashbinListing should return True');
 	Assert.AreEqual(Integer(1), Integer(Length(DirListing)), 'Should have 1 deleted item');
@@ -413,7 +413,7 @@ begin
 	FMockHTTP.SetResponse(API_TRASHBIN, True,
 		'{"email":"test@mail.ru","body":{"list":[]},"status":200}');
 
-	Success := FCloud.GetTrashbinListing(DirListing);
+	Success := FCloud.ListingService.GetTrashbin(DirListing);
 
 	Assert.IsTrue(Success, 'GetTrashbinListing should return True for empty trash');
 	Assert.AreEqual(Integer(0), Integer(Length(DirListing)), 'Should have 0 items');
@@ -427,7 +427,7 @@ begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetDefaultResponse(False, '', FS_FILE_READERROR);
 
-	Success := FCloud.GetTrashbinListing(DirListing);
+	Success := FCloud.ListingService.GetTrashbin(DirListing);
 
 	Assert.IsFalse(Success, 'GetTrashbinListing should return False on HTTP failure');
 end;
@@ -442,7 +442,7 @@ begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_FOLDER_SHARED_LINKS, True, JSON_SHARED_LINKS_SUCCESS);
 
-	Success := FCloud.GetSharedLinksListing(DirListing);
+	Success := FCloud.ListingService.GetSharedLinks(DirListing);
 
 	Assert.IsTrue(Success, 'GetSharedLinksListing should return True');
 	Assert.AreEqual(Integer(1), Integer(Length(DirListing)), 'Should have 1 shared item');
@@ -458,7 +458,7 @@ begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetDefaultResponse(False, '', FS_FILE_READERROR);
 
-	Success := FCloud.GetSharedLinksListing(DirListing);
+	Success := FCloud.ListingService.GetSharedLinks(DirListing);
 
 	Assert.IsFalse(Success, 'GetSharedLinksListing should return False on HTTP failure');
 end;

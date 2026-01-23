@@ -170,7 +170,7 @@ begin
 	{Setup rename response}
 	FMockHTTP.SetResponse(API_FILE_RENAME, True, JSON_SUCCESS);
 
-	var Result := FCloud.FileMove('/folder/oldname.txt', '/folder/newname.txt');
+	var Result := FCloud.FileOps.Move('/folder/oldname.txt', '/folder/newname.txt');
 
 	Assert.AreEqual(CLOUD_OPERATION_OK, Result, 'FileMove in same dir should succeed');
 	Assert.IsTrue(FMockHTTP.WasURLCalled(API_FILE_RENAME), 'Should call RenameFile API');
@@ -183,7 +183,7 @@ begin
 	{Setup move response}
 	FMockHTTP.SetResponse(API_FILE_MOVE, True, JSON_SUCCESS);
 
-	var Result := FCloud.FileMove('/folder1/file.txt', '/folder2/file.txt');
+	var Result := FCloud.FileOps.Move('/folder1/file.txt', '/folder2/file.txt');
 
 	Assert.AreEqual(CLOUD_OPERATION_OK, Result, 'FileMove to different dir should succeed');
 	Assert.IsTrue(FMockHTTP.WasURLCalled(API_FILE_MOVE), 'Should call MoveFile API');
@@ -197,7 +197,7 @@ begin
 	FMockHTTP.SetResponse(API_FILE_MOVE, True, JSON_SUCCESS);
 	FMockHTTP.SetResponse(API_FILE_RENAME, True, JSON_SUCCESS);
 
-	var Result := FCloud.FileMove('/folder1/oldname.txt', '/folder2/newname.txt');
+	var Result := FCloud.FileOps.Move('/folder1/oldname.txt', '/folder2/newname.txt');
 
 	Assert.AreEqual(CLOUD_OPERATION_OK, Result, 'FileMove with rename should succeed');
 	Assert.IsTrue(FMockHTTP.WasURLCalled(API_FILE_MOVE), 'Should call MoveFile API');
@@ -210,7 +210,7 @@ begin
 	{Setup failed move response}
 	FMockHTTP.SetResponse(API_FILE_MOVE, True, JSON_FAILURE);
 
-	var Result := FCloud.FileMove('/folder1/oldname.txt', '/folder2/newname.txt');
+	var Result := FCloud.FileOps.Move('/folder1/oldname.txt', '/folder2/newname.txt');
 
 	Assert.AreNotEqual(CLOUD_OPERATION_OK, Result, 'FileMove should fail');
 	Assert.IsTrue(FMockHTTP.WasURLCalled(API_FILE_MOVE), 'Should call MoveFile API');
@@ -224,7 +224,7 @@ begin
 	FCloud := CreateCloud(True);
 	FMockHTTP.SetResponse(API_FILE_MOVE, True, JSON_SUCCESS);
 
-	var Result := FCloud.FileMove('/folder1/file.txt', '/folder2/file.txt');
+	var Result := FCloud.FileOps.Move('/folder1/file.txt', '/folder2/file.txt');
 
 	{Public accounts cannot perform move operations}
 	Assert.AreEqual(FS_FILE_NOTSUPPORTED, Result, 'FileMove should fail for public accounts');
@@ -236,7 +236,7 @@ procedure TCloudMailRuCombinedOpsTest.TestFileCopy_SameDir_ReturnsNotSupported;
 begin
 	FCloud := CreateCloud;
 
-	var Result := FCloud.FileCopy('/folder/file.txt', '/folder/copy.txt');
+	var Result := FCloud.FileOps.Copy('/folder/file.txt', '/folder/copy.txt');
 
 	Assert.AreEqual(FS_FILE_NOTSUPPORTED, Result, 'FileCopy to same dir should return not supported');
 end;
@@ -247,7 +247,7 @@ begin
 	{Setup copy response}
 	FMockHTTP.SetResponse(API_FILE_COPY, True, JSON_SUCCESS);
 
-	var Result := FCloud.FileCopy('/folder1/file.txt', '/folder2/file.txt');
+	var Result := FCloud.FileOps.Copy('/folder1/file.txt', '/folder2/file.txt');
 
 	Assert.AreEqual(CLOUD_OPERATION_OK, Result, 'FileCopy to different dir should succeed');
 	Assert.IsTrue(FMockHTTP.WasURLCalled(API_FILE_COPY), 'Should call CopyFile API');
@@ -261,7 +261,7 @@ begin
 	FMockHTTP.SetResponse(API_FILE_COPY, True, JSON_SUCCESS);
 	FMockHTTP.SetResponse(API_FILE_RENAME, True, JSON_SUCCESS);
 
-	var Result := FCloud.FileCopy('/folder1/oldname.txt', '/folder2/newname.txt');
+	var Result := FCloud.FileOps.Copy('/folder1/oldname.txt', '/folder2/newname.txt');
 
 	Assert.AreEqual(CLOUD_OPERATION_OK, Result, 'FileCopy with rename should succeed');
 	Assert.IsTrue(FMockHTTP.WasURLCalled(API_FILE_COPY), 'Should call CopyFile API');
@@ -274,7 +274,7 @@ begin
 	{Setup failed copy response}
 	FMockHTTP.SetResponse(API_FILE_COPY, True, JSON_FAILURE);
 
-	var Result := FCloud.FileCopy('/folder1/oldname.txt', '/folder2/newname.txt');
+	var Result := FCloud.FileOps.Copy('/folder1/oldname.txt', '/folder2/newname.txt');
 
 	Assert.AreNotEqual(CLOUD_OPERATION_OK, Result, 'FileCopy should fail');
 	Assert.IsTrue(FMockHTTP.WasURLCalled(API_FILE_COPY), 'Should call CopyFile API');
@@ -290,7 +290,7 @@ begin
 	FCloud := CreateCloud(True);
 	FMockHTTP.SetResponse(API_FILE_COPY, True, JSON_SUCCESS);
 
-	var Result := FCloud.FileCopy('/folder1/file.txt', '/folder2/file.txt');
+	var Result := FCloud.FileOps.Copy('/folder1/file.txt', '/folder2/file.txt');
 
 	{Due to ExtractFilePath not recognizing '/', SameDir becomes True,
 	 so FileCopy returns FS_FILE_NOTSUPPORTED for same-dir copy attempt}
@@ -306,7 +306,7 @@ begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_FOLDER_SHARED_INFO, True, JSON_SHARE_INFO_SUCCESS);
 
-	var Success := FCloud.GetShareInfo('/MySharedFolder', InviteListing);
+	var Success := FCloud.ShareService.GetShareInfo('/MySharedFolder', InviteListing);
 
 	Assert.IsTrue(Success, 'GetShareInfo should return True on success');
 end;
@@ -318,7 +318,7 @@ begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_FOLDER_SHARED_INFO, True, JSON_SHARE_INFO_EMPTY);
 
-	var Success := FCloud.GetShareInfo('/MyFolder', InviteListing);
+	var Success := FCloud.ShareService.GetShareInfo('/MyFolder', InviteListing);
 
 	Assert.IsTrue(Success, 'GetShareInfo should return True for empty list');
 	Assert.AreEqual(Integer(0), Integer(Length(InviteListing)), 'InviteListing should be empty');
@@ -333,7 +333,7 @@ begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_FOLDER_SHARED_INFO, False, '');
 
-	var Success := FCloud.GetShareInfo('/MyFolder', InviteListing);
+	var Success := FCloud.ShareService.GetShareInfo('/MyFolder', InviteListing);
 
 	Assert.IsFalse(Success, 'GetShareInfo should return False when HTTP fails');
 end;
@@ -345,7 +345,7 @@ begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_FOLDER_SHARED_INFO, True, JSON_SHARE_INFO_SUCCESS);
 
-	FCloud.GetShareInfo('/MySharedFolder', InviteListing);
+	FCloud.ShareService.GetShareInfo('/MySharedFolder', InviteListing);
 
 	Assert.AreEqual(Integer(1), Integer(Length(InviteListing)), 'Should have 1 invite');
 	Assert.AreEqual(WideString('user@mail.ru'), InviteListing[0].email, 'Should parse email');
@@ -361,7 +361,7 @@ begin
 	{Setup shard response for redirection}
 	FMockHTTP.SetResponse('', True, 'https://final.url/file.txt');
 
-	var Url := FCloud.GetSharedFileUrl('/test/file.txt');
+	var Url := FCloud.Downloader.GetSharedFileUrl('/test/file.txt');
 
 	Assert.IsNotEmpty(Url, 'GetSharedFileUrl should return non-empty URL');
 end;
@@ -373,7 +373,7 @@ begin
 	FMockHTTP.SetResponse(API_DISPATCHER, True, JSON_SHARD_SUCCESS);
 	FMockHTTP.SetResponse('', True, 'https://final.url/file.txt');
 
-	var Url := FCloud.GetSharedFileUrl('/test/file.txt', SHARD_TYPE_WEBLINK_GET);
+	var Url := FCloud.Downloader.GetSharedFileUrl('/test/file.txt', SHARD_TYPE_WEBLINK_GET);
 
 	{Method should request shard when ShardType is not default}
 	Assert.IsNotEmpty(Url, 'GetSharedFileUrl should return URL');

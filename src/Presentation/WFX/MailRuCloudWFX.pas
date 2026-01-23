@@ -466,7 +466,7 @@ begin
 	end else begin
 		Cloud := ConnectionManager.Get(RealPath.account, getResult);
 		//всегда нужно обновлять статус на сервере, CurrentListing может быть изменён в другой панели
-		if (Cloud.statusFile(RealPath.Path, CurrentItem)) and (idContinue = TPropertyForm.ShowProperty(MainWin, RealPath.Path, CurrentItem, Cloud, FFileSystem, FTCHandler, SettingsManager.Settings.DownloadLinksEncode, SettingsManager.Settings.AutoUpdateDownloadListing, SettingsManager.Settings.DescriptionEnabled, SettingsManager.Settings.DescriptionEditorEnabled, SettingsManager.Settings.DescriptionFileName)) then
+		if (Cloud.ListingService.StatusFile(RealPath.Path, CurrentItem)) and (idContinue = TPropertyForm.ShowProperty(MainWin, RealPath.Path, CurrentItem, Cloud, FFileSystem, FTCHandler, SettingsManager.Settings.DownloadLinksEncode, SettingsManager.Settings.AutoUpdateDownloadListing, SettingsManager.Settings.DescriptionEnabled, SettingsManager.Settings.DescriptionEditorEnabled, SettingsManager.Settings.DescriptionFileName)) then
 			PostMessage(MainWin, WM_USER + TC_REFRESH_MESSAGE, TC_REFRESH_PARAM, 0); //refresh tc panel if description edited
 	end;
 end;
@@ -498,7 +498,7 @@ begin
 			begin
 				Cloud := ConnectionManager.Get(RealPath.account, getResult);
 				CurrentItem := ActionResult.CurrentItem;
-				if Cloud.statusFile(CurrentItem.home, CurrentItem) then
+				if Cloud.ListingService.StatusFile(CurrentItem.home, CurrentItem) then
 					TPropertyForm.ShowProperty(MainWin, RealPath.Path, CurrentItem, Cloud, FFileSystem, FTCHandler, SettingsManager.Settings.DownloadLinksEncode, SettingsManager.Settings.AutoUpdateDownloadListing, false, false, SettingsManager.Settings.DescriptionFileName);
 			end;
 	end;
@@ -516,7 +516,7 @@ begin
 
 	if IsTrashDir then //main trashbin folder properties
 	begin
-		if not Cloud.getTrashbinListing(CurrentListing) then
+		if not Cloud.ListingService.GetTrashbin(CurrentListing) then
 			exit(FS_EXEC_ERROR);
 		CurrentItem := CurrentItem.None;
 	end else begin //one item in trashbin
@@ -550,7 +550,7 @@ begin
 	Result := InviteListing.FindByName(Path.Path);
 	{item not found in current global listing, so refresh it}
 	if Result.isNone then
-		if ConnectionManager.Get(Path.account, getResult).getIncomingLinksListing(CurrentIncomingInvitesListing) then
+		if ConnectionManager.Get(Path.account, getResult).ListingService.GetIncomingInvites(CurrentIncomingInvitesListing) then
 			exit(CurrentIncomingInvitesListing.FindByName(Path.Path));
 end;
 
@@ -616,7 +616,7 @@ begin
 		Result := FSharedItemDeletionHandler.Execute(Cloud, CurrentItem);
 	end
 	else
-		Result := Cloud.deleteFile(RealPath.Path);
+		Result := Cloud.FileOps.Delete(RealPath.Path);
 	if Result then
 		FDescriptionSyncGuard.OnFileDeleted(RealPath, Cloud);
 end;
@@ -817,7 +817,7 @@ begin
 	if (RealPath.isAccountEmpty) or RealPath.isVirtual then
 		exit(false);
 
-	Result := ConnectionManager.Get(RealPath.account, getResult).createDir(RealPath.Path);
+	Result := ConnectionManager.Get(RealPath.account, getResult).FileOps.CreateDirectory(RealPath.Path);
 	{Need to check operation context => directory can be moved}
 	if Result and FMoveOperationTracker.IsMoveOperation then
 		FMoveOperationTracker.TrackMoveTarget(RealPath);
@@ -873,7 +873,7 @@ begin
 		exit(false);
 
 	Cloud := ConnectionManager.Get(RealPath.account, getResult);
-	Result := Cloud.removeDir(RealPath.Path);
+	Result := Cloud.FileOps.RemoveDirectory(RealPath.Path);
 
 	if Result then
 	begin
@@ -966,7 +966,7 @@ begin
 		resultHash := 'dummy'; {Calculations will be ignored if variable is not empty}
 	Cloud := ConnectionManager.Get(RemotePath.account, getResult);
 
-	Result := Cloud.getFile(WideString(RemotePath.Path), LocalName, resultHash);
+	Result := Cloud.Downloader.Download(WideString(RemotePath.Path), LocalName, resultHash);
 
 	if Result = FS_FILE_OK then
 	begin
@@ -990,7 +990,7 @@ var
 begin
 	Cloud := ConnectionManager.Get(RemotePath.account, getResult);
 
-	Result := Cloud.putFile(WideString(LocalName), RemotePath.Path);
+	Result := Cloud.Uploader.Upload(WideString(LocalName), RemotePath.Path);
 	if Result = FS_FILE_OK then
 	begin
 		CompletionContext.RemotePath := RemotePath;

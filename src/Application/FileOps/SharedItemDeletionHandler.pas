@@ -42,7 +42,7 @@ begin
 		Exit(False);
 
 	{Get list of collaborators and unshare with each}
-	Cloud.GetShareInfo(Item.home, InvitesListing);
+	Cloud.ShareService.GetShareInfo(Item.home, InvitesListing);
 	for Invite in InvitesListing do
 		Cloud.shareFolder(Item.home, Invite.email, CLOUD_SHARE_NO); //no reporting here
 

@@ -231,7 +231,7 @@ begin
 	FCloud.SetPublicLink(TEST_PUBLIC_LINK);
 	FMockHTTP.SetResponse(API_FOLDER, True, JSON_DIR_LISTING_SUCCESS);
 
-	FCloud.GetDirListing('/TestDir', DirListing);
+	FCloud.ListingService.GetDirectory('/TestDir', DirListing);
 
 	LastCall := FMockHTTP.GetLastCall;
 	Assert.IsTrue(Pos(String('weblink='), String(LastCall)) > 0,
@@ -247,7 +247,7 @@ begin
 	FCloud.SetPublicLink(TEST_PUBLIC_LINK);
 	FMockHTTP.SetResponse(API_FOLDER, True, JSON_DIR_LISTING_SUCCESS);
 
-	Success := FCloud.GetDirListing('/TestDir', DirListing);
+	Success := FCloud.ListingService.GetDirectory('/TestDir', DirListing);
 
 	Assert.IsTrue(Success, 'Public account GetDirListing should succeed');
 	Assert.IsTrue(Length(DirListing) > 0, 'Should return items');
@@ -262,7 +262,7 @@ begin
 	FCloud.SetPublicLink('myPublicLink');
 	FMockHTTP.SetResponse(API_FOLDER, True, JSON_DIR_LISTING_SUCCESS);
 
-	FCloud.GetDirListing('/TestDir', DirListing);
+	FCloud.ListingService.GetDirectory('/TestDir', DirListing);
 
 	LastCall := FMockHTTP.GetLastCall;
 	Assert.IsTrue(Pos(String('myPublicLink'), String(LastCall)) > 0,
@@ -276,7 +276,7 @@ begin
 	FCloud := CreatePublicCloud;
 	FMockHTTP.SetResponse(API_FOLDER_ADD, True, '{"status":200}');
 
-	var Success := FCloud.CreateDir('/NewFolder');
+	var Success := FCloud.FileOps.CreateDirectory('/NewFolder');
 
 	Assert.IsFalse(Success, 'CreateDir should return False for public accounts');
 	Assert.IsFalse(FMockHTTP.WasURLCalled(API_FOLDER_ADD),
@@ -288,7 +288,7 @@ begin
 	FCloud := CreatePublicCloud;
 	FMockHTTP.SetResponse(API_FILE_REMOVE, True, '{"status":200}');
 
-	var Success := FCloud.DeleteFile('/file.txt');
+	var Success := FCloud.FileOps.Delete('/file.txt');
 
 	Assert.IsFalse(Success, 'DeleteFile should return False for public accounts');
 end;
@@ -298,7 +298,7 @@ begin
 	FCloud := CreatePublicCloud;
 	FMockHTTP.SetResponse(API_FILE_COPY, True, '{"status":200}');
 
-	var Result := FCloud.CopyFile('/source.txt', '/dest');
+	var Result := FCloud.FileOps.CopyToPath('/source.txt', '/dest');
 
 	Assert.AreEqual(FS_FILE_NOTSUPPORTED, Result,
 		'CopyFile should return FS_FILE_NOTSUPPORTED for public accounts');
@@ -309,7 +309,7 @@ begin
 	FCloud := CreatePublicCloud;
 	FMockHTTP.SetResponse(API_FILE_MOVE, True, '{"status":200}');
 
-	var Result := FCloud.MoveFile('/source.txt', '/dest');
+	var Result := FCloud.FileOps.MoveToPath('/source.txt', '/dest');
 
 	Assert.AreEqual(FS_FILE_NOTSUPPORTED, Result,
 		'MoveFile should return FS_FILE_NOTSUPPORTED for public accounts');
@@ -320,7 +320,7 @@ begin
 	FCloud := CreatePublicCloud;
 	FMockHTTP.SetResponse(API_FILE_RENAME, True, '{"status":200}');
 
-	var Result := FCloud.RenameFile('/old.txt', 'new.txt');
+	var Result := FCloud.FileOps.Rename('/old.txt', 'new.txt');
 
 	Assert.AreEqual(FS_FILE_WRITEERROR, Result,
 		'RenameFile should return FS_FILE_WRITEERROR for public accounts');
@@ -346,7 +346,7 @@ begin
 	FCloud := CreatePublicCloud;
 	FMockHTTP.SetResponse(API_TRASHBIN, True, '{"status":200,"body":{"list":[]}}');
 
-	var Success := FCloud.GetTrashbinListing(DirListing);
+	var Success := FCloud.ListingService.GetTrashbin(DirListing);
 
 	Assert.IsFalse(Success, 'GetTrashbinListing should return False for public accounts');
 end;
@@ -358,7 +358,7 @@ begin
 	FCloud := CreatePublicCloud;
 	FMockHTTP.SetResponse(API_FOLDER_SHARED_LINKS, True, '{"status":200,"body":{"list":[]}}');
 
-	var Success := FCloud.GetSharedLinksListing(DirListing);
+	var Success := FCloud.ListingService.GetSharedLinks(DirListing);
 
 	Assert.IsFalse(Success, 'GetSharedLinksListing should return False for public accounts');
 end;
@@ -368,7 +368,7 @@ begin
 	FCloud := CreatePublicCloud;
 	FMockHTTP.SetResponse(API_CLONE, True, '{"status":200}');
 
-	var Result := FCloud.CloneWeblink('/dest', 'https://cloud.mail.ru/public/test');
+	var Result := FCloud.ShareService.CloneWeblink('/dest', 'https://cloud.mail.ru/public/test');
 
 	Assert.AreEqual(FS_FILE_NOTSUPPORTED, Result,
 		'CloneWeblink should return FS_FILE_NOTSUPPORTED for public accounts');

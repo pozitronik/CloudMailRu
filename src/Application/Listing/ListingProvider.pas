@@ -36,14 +36,14 @@ implementation
 function TListingProvider.FetchListing(Cloud: TCloudMailRu; const Path: TRealPath; var DirListing: TCMRDirItemList; var InviteListing: TCMRIncomingInviteList): Boolean;
 begin
 	if Path.trashDir then
-		Result := Cloud.getTrashbinListing(DirListing)
+		Result := Cloud.ListingService.GetTrashbin(DirListing)
 	else if Path.sharedDir then
-		Result := Cloud.getSharedLinksListing(DirListing) {Results will be interpreted as symlinks later}
+		Result := Cloud.ListingService.GetSharedLinks(DirListing) {Results will be interpreted as symlinks later}
 	else if Path.invitesDir then
-		Result := Cloud.getIncomingLinksListing(DirListing, InviteListing) {Fetch both listings to avoid re-reading invites on every action}
+		Result := Cloud.ListingService.GetIncomingInvitesAsDirItems(DirListing, InviteListing) {Fetch both listings to avoid re-reading invites on every action}
 	else
 		{Need to verify target is a directory - API returns parent listing for files, see issue #174}
-		Result := Cloud.getDirListing(Path.Path, DirListing);
+		Result := Cloud.ListingService.GetDirectory(Path.Path, DirListing);
 end;
 
 end.

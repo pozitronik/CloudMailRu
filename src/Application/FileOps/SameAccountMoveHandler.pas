@@ -71,19 +71,19 @@ end;
 function TSameAccountMoveHandler.Execute(Cloud: TCloudMailRu; const OldPath, NewPath: TRealPath; Move, OverWrite: Boolean): Integer;
 begin
 	{Handle overwrite by deleting existing file first}
-	if OverWrite and not Cloud.deleteFile(NewPath.Path) then
+	if OverWrite and not Cloud.FileOps.Delete(NewPath.Path) then
 		Exit(FS_FILE_NOTSUPPORTED);
 
 	if Move then
 	begin
-		Result := Cloud.FileMove(OldPath.Path, NewPath.Path);
+		Result := Cloud.FileOps.Move(OldPath.Path, NewPath.Path);
 		UpdateSkipPath(Result, OldPath);
 
 		if Result = FS_FILE_OK then
 			FDescriptionSyncGuard.OnFileRenamed(OldPath, NewPath, Cloud);
 	end
 	else
-		Result := Cloud.FileCopy(OldPath.Path, NewPath.Path);
+		Result := Cloud.FileOps.Copy(OldPath.Path, NewPath.Path);
 end;
 
 end.
