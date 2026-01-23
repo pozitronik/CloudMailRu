@@ -2,7 +2,12 @@ unit RegistrationPresenter;
 
 {Presenter for Registration dialog - handles business logic for account registration.
  Follows MVP pattern: View (TRegistrationForm) implements IRegistrationView,
- Presenter orchestrates registration workflow including validation and HTTP operations.}
+ Presenter orchestrates registration workflow including validation and HTTP operations.
+
+ TODO: Registration feature needs verification - may need to be dropped entirely.
+ Architecture violation: Registration.pas directly uses Infrastructure layer (CloudHTTP,
+ adapters) instead of going through Application layer service. If feature is kept,
+ refactor to use IRegistrationService in Application/Operations layer.}
 
 interface
 
