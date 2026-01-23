@@ -13,7 +13,6 @@ uses
 	Vcl.Forms,
 	Vcl.Dialogs,
 	Vcl.StdCtrls,
-	TCHelper,
 	WindowsHelper,
 	System.Generics.Collections,
 	AskPasswordPresenter,
@@ -50,9 +49,9 @@ type
 		procedure AddActionButton(Title: WideString; ResultCode: Integer);
 	public
 		destructor Destroy; override;
-		class function AskPassword(CustomTitle, CustomText: WideString; var Password: WideString; var UseTCPwdMngr: Boolean; DisablePWDManagerCB: Boolean = false; ParentWindow: HWND = 0): integer;
-		class function AskAction(CustomTitle, CustomText: WideString; ActionsList: TDictionary<Int32, WideString>; ParentWindow: HWND = 0): integer;
-		class function AskText(CustomTitle, CustomText: WideString; var Text: WideString; ParentWindow: HWND = 0): Boolean;
+		class function AskPassword(CustomTitle, CustomText: WideString; var Password: WideString; var UseTCPwdMngr: Boolean; DisablePWDManagerCB: Boolean; ParentWindow: HWND): integer;
+		class function AskAction(CustomTitle, CustomText: WideString; ActionsList: TDictionary<Int32, WideString>; ParentWindow: HWND): integer;
+		class function AskText(CustomTitle, CustomText: WideString; var Text: WideString; ParentWindow: HWND): Boolean;
 	end;
 
 implementation
@@ -145,11 +144,7 @@ var
 begin
 	AskPasswordForm := TAskPasswordForm.Create(nil);
 	try
-		if (0 = ParentWindow) then
-			AskPasswordForm.ParentWindow := FindTCWindow
-		else
-			AskPasswordForm.ParentWindow := ParentWindow;
-
+		AskPasswordForm.ParentWindow := ParentWindow;
 		AskPasswordForm.FNextButtonLeft := 7;
 		AskPasswordForm.FPresenter := TAskPasswordPresenter.Create(AskPasswordForm);
 		AskPasswordForm.FPresenter.InitializeActionMode(CustomTitle, CustomText, ActionsList);
@@ -165,11 +160,7 @@ var
 begin
 	AskPasswordForm := TAskPasswordForm.Create(nil);
 	try
-		if (0 = ParentWindow) then
-			AskPasswordForm.ParentWindow := FindTCWindow
-		else
-			AskPasswordForm.ParentWindow := ParentWindow;
-
+		AskPasswordForm.ParentWindow := ParentWindow;
 		AskPasswordForm.FPresenter := TAskPasswordPresenter.Create(AskPasswordForm);
 		AskPasswordForm.FPresenter.InitializePasswordMode(CustomTitle, CustomText, UseTCPwdMngr, DisablePWDManagerCB);
 
@@ -191,11 +182,7 @@ begin
 	Result := false;
 	AskPasswordForm := TAskPasswordForm.Create(nil);
 	try
-		if (0 = ParentWindow) then
-			AskPasswordForm.ParentWindow := FindTCWindow
-		else
-			AskPasswordForm.ParentWindow := ParentWindow;
-
+		AskPasswordForm.ParentWindow := ParentWindow;
 		AskPasswordForm.FNextButtonLeft := 7;
 		AskPasswordForm.FPresenter := TAskPasswordPresenter.Create(AskPasswordForm);
 		AskPasswordForm.FPresenter.InitializeTextMode(CustomTitle, CustomText);

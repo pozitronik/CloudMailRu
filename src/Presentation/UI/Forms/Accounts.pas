@@ -13,7 +13,6 @@ uses
 	Vcl.Dialogs,
 	Vcl.StdCtrls,
 	IniFiles,
-	TCHelper,
 	PathHelper,
 	WindowsHelper,
 	SETTINGS_CONSTANTS,
@@ -1021,7 +1020,7 @@ end;
 procedure TAccountsForm.CommandPathButtonClick(Sender: TObject);
 begin
 	CommandPathOpenDialog.InitialDir := ExtractUniversalFilePath(CommandPathEdit.Text);
-	if CommandPathOpenDialog.Execute(FindTCWindow) then
+	if CommandPathOpenDialog.Execute(Self.ParentWindow) then
 		CommandPathEdit.Text := CommandPathOpenDialog.FileName;
 end;
 

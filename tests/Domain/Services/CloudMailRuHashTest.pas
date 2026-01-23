@@ -11,6 +11,7 @@ uses
 	TCLogger,
 	TCProgress,
 	TCRequest,
+	TCHandler,
 	IAuthStrategyInterface,
 	WindowsFileSystem,
 	TestHelper,
@@ -102,7 +103,7 @@ end;
 procedure TCloudMailRuHashTest.Setup;
 begin
 	FSettings := Default(TCloudSettings);
-	FCloud := TTestableCloudMailRu.Create(FSettings, nil, TNullAuthStrategy.Create, TWindowsFileSystem.Create, TNullLogger.Create, TNullProgress.Create, TNullRequest.Create);
+	FCloud := TTestableCloudMailRu.Create(FSettings, nil, TNullAuthStrategy.Create, TWindowsFileSystem.Create, TNullLogger.Create, TNullProgress.Create, TNullRequest.Create, TNullTCHandler.Create);
 end;
 
 procedure TCloudMailRuHashTest.TearDown;

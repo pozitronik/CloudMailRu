@@ -27,7 +27,8 @@ uses
 	WindowsFileSystem,
 	TCLogger,
 	TCProgress,
-	TCRequest;
+	TCRequest,
+	TCHandler;
 
 type
 	{Mock listing provider with configurable results}
@@ -207,7 +208,8 @@ begin
 		TNullFileSystem.Create,
 		TNullLogger.Create,
 		TNullProgress.Create,
-		TNullRequest.Create);
+		TNullRequest.Create,
+		TNullTCHandler.Create);
 	Result.SetUnitedParams('api=2&access_token=test_token');
 end;
 

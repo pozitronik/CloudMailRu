@@ -28,7 +28,7 @@ uses
 	CloudMailRuFactory,
 	CloudAccessUtils,
 	WindowsHelper,
-	TCHelper,
+	TCHandler,
 	SystemHelper,
 	Vcl.Grids,
 	Vcl.ValEdit,
@@ -90,7 +90,7 @@ type
 		OpenDialogOD: TOpenDialog;
 		ApplyHashesTB: TToolButton;
 		procedure AccessCBClick(Sender: TObject);
-		class function ShowProperty(parentWindow: HWND; RemoteName: WideString; RemoteProperty: TCMRDirItem; Cloud: TCloudMailRu; FileSystem: IFileSystem; DoUrlEncode: Boolean = true; AutoUpdateDownloadListing: Boolean = true; ShowDescription: Boolean = true; EditDescription: Boolean = true; PluginIonFileName: WideString = 'descript.ion'): Integer;
+		class function ShowProperty(parentWindow: HWND; RemoteName: WideString; RemoteProperty: TCMRDirItem; Cloud: TCloudMailRu; FileSystem: IFileSystem; TCHandler: ITCHandler; DoUrlEncode: Boolean = true; AutoUpdateDownloadListing: Boolean = true; ShowDescription: Boolean = true; EditDescription: Boolean = true; PluginIonFileName: WideString = 'descript.ion'): Integer;
 		procedure FormActivate(Sender: TObject);
 		procedure InviteBtnClick(Sender: TObject);
 		procedure ItemDeleteClick(Sender: TObject);
@@ -565,7 +565,7 @@ end;
 
 {TPropertyForm - Static factory method}
 
-class function TPropertyForm.ShowProperty(parentWindow: HWND; RemoteName: WideString; RemoteProperty: TCMRDirItem; Cloud: TCloudMailRu; FileSystem: IFileSystem; DoUrlEncode: Boolean; AutoUpdateDownloadListing: Boolean; ShowDescription: Boolean; EditDescription: Boolean; PluginIonFileName: WideString): Integer;
+class function TPropertyForm.ShowProperty(parentWindow: HWND; RemoteName: WideString; RemoteProperty: TCMRDirItem; Cloud: TCloudMailRu; FileSystem: IFileSystem; TCHandler: ITCHandler; DoUrlEncode: Boolean; AutoUpdateDownloadListing: Boolean; ShowDescription: Boolean; EditDescription: Boolean; PluginIonFileName: WideString): Integer;
 var
 	Form: TPropertyForm;
 	Config: TRemotePropertyConfig;
@@ -584,6 +584,7 @@ begin
 			Cloud.ShareService,
 			FileSystem,
 			TPublicCloudFactory.Create,
+			TCHandler,
 			Cloud.IsPublicAccount);
 
 		{Configure and initialize presenter}

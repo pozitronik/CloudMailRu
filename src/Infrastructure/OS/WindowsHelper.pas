@@ -1,4 +1,4 @@
-﻿unit WindowsHelper;
+unit WindowsHelper;
 
 {Windows & Shell & related stuff helper methods}
 interface
@@ -10,8 +10,7 @@ uses
 	MultiMon,
 	ShlObj,
 	ShellApi,
-	ActiveX,
-	TCHelper;
+	ActiveX;
 
 const
 	MAX_UNC_PATH = 32767;
@@ -43,13 +42,12 @@ type
 function Run(path, ParamString, StartDir: WideString; SubstituteVariables: boolean = true): boolean;
 procedure CenterWindow(WindowToStay, WindowToCenter: HWND);
 function GetFolderIcon(const size: integer = IconSizeSmall): Hicon;
-function GetSystemIcon(const size: integer = IconSizeSmall; ItemType: integer = CSIDL_BITBUCKET): Hicon;
+function GetSystemIcon(ParentWindow: HWND; const size: integer = IconSizeSmall; ItemType: integer = CSIDL_BITBUCKET): Hicon;
 function GetTmpDir: WideString;
 function GetTmpFileName(Prefix: WideString = ''): WideString;
 function GetFindDataEmptyDir(DirName: WideString = '.'): tWIN32FINDDATAW;
 function MsgBox(Window: HWND; Text, Caption: WideString; MsgType: integer): integer; overload;
 function MsgBox(Window: HWND; Text: WideString; const TextArgs: array of const; Caption: WideString; MsgType: integer): integer; overload;
-function MsgBox(Text: WideString; const TextArgs: array of const; Caption: WideString; MsgType: integer): integer; overload;
 
 implementation
 
@@ -133,7 +131,7 @@ begin
 
 end;
 
-function GetSystemIcon(const size: integer = IconSizeSmall; ItemType: integer = CSIDL_BITBUCKET): Hicon;
+function GetSystemIcon(ParentWindow: HWND; const size: integer = IconSizeSmall; ItemType: integer = CSIDL_BITBUCKET): Hicon;
 var
 	SFI: TSHFileInfo;
 	PIDL: PItemIDList;
@@ -149,7 +147,7 @@ begin
 		IconSizeLarge:
 			uFlags := SHGFI_ICON or SHGFI_LARGEICON; //not working with SHGetFileInfo
 	end;
-	SHGetSpecialFolderLocation(FindTCWindow, ItemType, PIDL);
+	SHGetSpecialFolderLocation(ParentWindow, ItemType, PIDL);
 	try
 		if SHGetFileInfo(PChar(PIDL), 0, SFI, SizeOf(SFI), SHGFI_PIDL or SHGFI_SYSICONINDEX or uFlags) <> 0 then
 			Result := SFI.Hicon;
@@ -189,11 +187,6 @@ end;
 function MsgBox(Window: HWND; Text: WideString; const TextArgs: array of const; Caption: WideString; MsgType: integer): integer; overload;
 begin
 	Result := MsgBox(Window, Format(Text, TextArgs), Caption, MsgType);
-end;
-
-function MsgBox(Text: WideString; const TextArgs: array of const; Caption: WideString; MsgType: integer): integer; overload;
-begin
-	Result := MsgBox(FindTCWindow, Text, TextArgs, Caption, MsgType);
 end;
 
 end.

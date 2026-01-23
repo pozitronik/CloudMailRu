@@ -135,7 +135,7 @@
         <DCCReference Include="..\src\Domain\Constants\CMRConstants.pas"/>
         <DCCReference Include="..\src\models\settings\ProxySettings.pas"/>
         <DCCReference Include="..\src\helpers\StringHelper.pas"/>
-        <DCCReference Include="..\src\helpers\TCHelper.pas"/>
+        <DCCReference Include="..\src\Infrastructure\TC\TCHandler.pas"/>
         <DCCReference Include="..\src\Domain\Services\Description.pas"/>
         <DCCReference Include="..\src\Presentation\Localization\LANGUAGE_STRINGS.pas"/>
         <DCCReference Include="models\settings\PluginSettingsManagerTest.pas"/>

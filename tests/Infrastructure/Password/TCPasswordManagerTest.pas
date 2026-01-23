@@ -5,6 +5,7 @@ interface
 uses
 	TCPasswordManager,
 	TCLogger,
+	TCHandler,
 	PLUGIN_TYPES,
 	SysUtils,
 	DUnitX.TestFramework;
@@ -57,7 +58,7 @@ begin
 	{Note: TTCPasswordManager requires TC callbacks for actual password operations.
 	 This test only verifies interface implementation, not functionality.
 	 Functional testing requires running within Total Commander context.}
-	PasswordManager := TTCPasswordManager.Create(nil, 0, 0, TNullLogger.Create, 0);
+	PasswordManager := TTCPasswordManager.Create(nil, 0, 0, TNullLogger.Create, TNullTCHandler.Create);
 	Assert.IsNotNull(PasswordManager);
 end;
 

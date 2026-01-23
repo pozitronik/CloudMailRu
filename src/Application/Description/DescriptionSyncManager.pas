@@ -11,7 +11,8 @@ uses
 	RealPath,
 	Description,
 	WindowsFileSystem,
-	CloudDescriptionOpsAdapter;
+	CloudDescriptionOpsAdapter,
+	TCHandler;
 
 type
 	{Manages file description synchronization between local and remote storage.
@@ -39,13 +40,14 @@ type
 	private
 		FDescriptionFileName: WideString;
 		FFileSystem: IFileSystem;
+		FTCHandler: ITCHandler;
 
 		function GetRemoteDescriptionPath(const DirPath: WideString): WideString;
 		function GetLocalDescriptionPath(const LocalFilePath: WideString): WideString;
 		function CreateDescription(const FilePath: WideString): TDescription;
 		function DownloadRemoteDescription(const RemoteIonPath: WideString; Cloud: ICloudDescriptionOps; out LocalTempPath: WideString): Boolean;
 	public
-		constructor Create(const DescriptionFileName: WideString; FileSystem: IFileSystem);
+		constructor Create(const DescriptionFileName: WideString; FileSystem: IFileSystem; TCHandler: ITCHandler);
 
 		procedure OnFileDeleted(const RemotePath: TRealPath; Cloud: ICloudDescriptionOps);
 		procedure OnFileRenamed(const OldPath, NewPath: TRealPath; Cloud: ICloudDescriptionOps);
@@ -58,14 +60,14 @@ implementation
 uses
 	WindowsHelper,
 	PathHelper,
-	TCHelper,
 	CMRConstants;
 
-constructor TDescriptionSyncManager.Create(const DescriptionFileName: WideString; FileSystem: IFileSystem);
+constructor TDescriptionSyncManager.Create(const DescriptionFileName: WideString; FileSystem: IFileSystem; TCHandler: ITCHandler);
 begin
 	inherited Create;
 	FDescriptionFileName := DescriptionFileName;
 	FFileSystem := FileSystem;
+	FTCHandler := TCHandler;
 end;
 
 function TDescriptionSyncManager.GetRemoteDescriptionPath(const DirPath: WideString): WideString;
@@ -80,7 +82,7 @@ end;
 
 function TDescriptionSyncManager.CreateDescription(const FilePath: WideString): TDescription;
 begin
-	Result := TDescription.Create(FilePath, FFileSystem, GetTCCommentPreferredFormat);
+	Result := TDescription.Create(FilePath, FFileSystem, FTCHandler.GetTCCommentPreferredFormat);
 end;
 
 function TDescriptionSyncManager.DownloadRemoteDescription(const RemoteIonPath: WideString; Cloud: ICloudDescriptionOps; out LocalTempPath: WideString): Boolean;

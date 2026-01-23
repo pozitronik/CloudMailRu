@@ -23,6 +23,7 @@ uses
 	Description,
 	HashInfo,
 	WindowsFileSystem,
+	TCHandler,
 	LANGUAGE_STRINGS,
 	PLUGIN_TYPES,
 	System.Classes,
@@ -117,6 +118,7 @@ type
 		FShareService: ICloudShareService;
 		FFileSystem: IFileSystem;
 		FPublicCloudFactory: IPublicCloudFactory;
+		FTCHandler: ITCHandler;
 		FIsPublicAccount: Boolean;
 		FProps: TCMRDirItem;
 		FRemotePath: WideString;
@@ -131,7 +133,7 @@ type
 		function GetDescriptionFilePath: WideString;
 		function DownloadDescriptionFile(var LocalPath: WideString): Boolean;
 	public
-		constructor Create(View: IRemotePropertyView; Downloader: ICloudFileDownloader; Uploader: ICloudFileUploader; FileOps: ICloudFileOperations; ListingService: ICloudListingService; ShareService: ICloudShareService; FileSystem: IFileSystem; PublicCloudFactory: IPublicCloudFactory; IsPublicAccount: Boolean);
+		constructor Create(View: IRemotePropertyView; Downloader: ICloudFileDownloader; Uploader: ICloudFileUploader; FileOps: ICloudFileOperations; ListingService: ICloudListingService; ShareService: ICloudShareService; FileSystem: IFileSystem; PublicCloudFactory: IPublicCloudFactory; TCHandler: ITCHandler; IsPublicAccount: Boolean);
 
 		{Initialize view state based on item properties}
 		procedure Initialize(Props: TCMRDirItem; RemotePath: WideString; Config: TRemotePropertyConfig);
@@ -171,8 +173,7 @@ uses
 	Winapi.Windows,
 	Winapi.Messages,
 	PathHelper,
-	WindowsHelper,
-	TCHelper;
+	WindowsHelper;
 
 const
 	{Default filename for descriptions - matches TC convention}
@@ -180,7 +181,7 @@ const
 
 {TRemotePropertyPresenter}
 
-constructor TRemotePropertyPresenter.Create(View: IRemotePropertyView; Downloader: ICloudFileDownloader; Uploader: ICloudFileUploader; FileOps: ICloudFileOperations; ListingService: ICloudListingService; ShareService: ICloudShareService; FileSystem: IFileSystem; PublicCloudFactory: IPublicCloudFactory; IsPublicAccount: Boolean);
+constructor TRemotePropertyPresenter.Create(View: IRemotePropertyView; Downloader: ICloudFileDownloader; Uploader: ICloudFileUploader; FileOps: ICloudFileOperations; ListingService: ICloudListingService; ShareService: ICloudShareService; FileSystem: IFileSystem; PublicCloudFactory: IPublicCloudFactory; TCHandler: ITCHandler; IsPublicAccount: Boolean);
 begin
 	inherited Create;
 	FView := View;
@@ -191,6 +192,7 @@ begin
 	FShareService := ShareService;
 	FFileSystem := FileSystem;
 	FPublicCloudFactory := PublicCloudFactory;
+	FTCHandler := TCHandler;
 	FIsPublicAccount := IsPublicAccount;
 end;
 
@@ -529,7 +531,7 @@ begin
 		end;
 
 		{Refresh TC panel}
-		PostMessage(FindTCWindow, WM_USER + TC_REFRESH_MESSAGE, TC_REFRESH_PARAM, 0);
+		PostMessage(FTCHandler.FindTCWindow, WM_USER + TC_REFRESH_MESSAGE, TC_REFRESH_PARAM, 0);
 	finally
 		FView.SetApplyHashesEnabled(True);
 	end;
@@ -582,7 +584,7 @@ begin
 	if not DownloadDescriptionFile(LocalPath) then
 		Exit;
 
-	CurrentDescriptions := TDescription.Create(LocalPath, FFileSystem, GetTCCommentPreferredFormat);
+	CurrentDescriptions := TDescription.Create(LocalPath, FFileSystem, FTCHandler.GetTCCommentPreferredFormat);
 	try
 		CurrentDescriptions.Read;
 		FView.SetDescription(CurrentDescriptions.GetValue(ExtractFileName(FRemotePath), FORMAT_CLEAR));
@@ -606,7 +608,7 @@ begin
 	{Download existing description file (if any) without logging errors}
 	RemoteFileExists := FDownloader.Download(RemotePath, LocalPath, ResultHash, False) = FS_FILE_OK;
 
-	CurrentDescriptions := TDescription.Create(LocalPath, FFileSystem, GetTCCommentPreferredFormat);
+	CurrentDescriptions := TDescription.Create(LocalPath, FFileSystem, FTCHandler.GetTCCommentPreferredFormat);
 	try
 		if RemoteFileExists then
 		begin

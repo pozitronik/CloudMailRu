@@ -22,6 +22,7 @@ uses
 	TCLogger,
 	TCProgress,
 	TCRequest,
+	TCHandler,
 	CMRConstants,
 	PLUGIN_TYPES;
 
@@ -294,7 +295,8 @@ begin
 		TNullFileSystem.Create,
 		TNullLogger.Create,
 		TNullProgress.Create,
-		TNullRequest.Create);
+		TNullRequest.Create,
+		TNullTCHandler.Create);
 
 	Result.SetUnitedParams('api=2&access_token=test_token');
 end;

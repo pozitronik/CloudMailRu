@@ -15,7 +15,8 @@ uses
 	RetryHandler,
 	PluginSettings,
 	PLUGIN_TYPES,
-	SETTINGS_CONSTANTS;
+	SETTINGS_CONSTANTS,
+	TCHandler;
 
 type
 	{Mock settings manager for testing}
@@ -240,7 +241,7 @@ begin
 	FSettingsManager := TMockSettingsManager.Create;
 	FSettingsIntf := FSettingsManager;
 
-	FHandler := TRetryHandler.Create(FThreadState, FSettingsIntf, TestMsgBox, TestLog);
+	FHandler := TRetryHandler.Create(FThreadState, FSettingsIntf, TNullTCHandler.Create, TestMsgBox, TestLog);
 end;
 
 procedure TRetryHandlerTest.TearDown;

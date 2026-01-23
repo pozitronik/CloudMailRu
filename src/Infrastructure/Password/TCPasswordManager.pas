@@ -10,7 +10,7 @@ uses
 	Windows,
 	SysUtils,
 	AskPassword,
-	TCHelper,
+	TCHandler,
 	CMRConstants,
 	TCLogger;
 
@@ -39,10 +39,11 @@ type
 		PluginNum: Integer;
 		CryptoNum: Integer;
 		Logger: ILogger;
+		FTCHandler: ITCHandler;
 
 	public
 		ParentWindow: HWND;
-		constructor Create(CryptProc: TCryptProcW; PluginNum, CryptoNum: Integer; Logger: ILogger; ParentWindow: HWND = 0);
+		constructor Create(CryptProc: TCryptProcW; PluginNum, CryptoNum: Integer; Logger: ILogger; TCHandler: ITCHandler);
 		destructor Destroy(); override;
 		function GetPassword(Key: WideString; var Password: WideString): Integer;
 		function SetPassword(Key, Password: WideString): Integer;
@@ -66,16 +67,14 @@ end;
 
 {TTCPasswordManager}
 
-constructor TTCPasswordManager.Create(CryptProc: TCryptProcW; PluginNum, CryptoNum: Integer; Logger: ILogger; ParentWindow: HWND = 0);
+constructor TTCPasswordManager.Create(CryptProc: TCryptProcW; PluginNum, CryptoNum: Integer; Logger: ILogger; TCHandler: ITCHandler);
 begin
 	self.PluginNum := PluginNum;
 	self.CryptoNum := CryptoNum;
 	self.CryptProc := CryptProc;
 	self.Logger := Logger;
-	if (0 = ParentWindow) then
-		self.ParentWindow := FindTCWindow
-	else
-		self.ParentWindow := ParentWindow;
+	self.FTCHandler := TCHandler;
+	self.ParentWindow := TCHandler.FindTCWindow;
 end;
 
 destructor TTCPasswordManager.Destroy;

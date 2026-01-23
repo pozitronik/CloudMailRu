@@ -34,6 +34,7 @@ uses
 	TCLogger,
 	TCProgress,
 	TCRequest,
+	TCHandler,
 	FileCipher,
 	RealPath,
 	CloudSettings,
@@ -67,6 +68,7 @@ type
 		FLogger: ILogger;
 		FProgress: IProgress;
 		FRequest: IRequest;
+		FTCHandler: ITCHandler;
 
 		FCipher: ICipher; {The encryption instance}
 		FAuthStrategy: IAuthStrategy; {Authentication strategy}
@@ -138,7 +140,7 @@ type
 		function CloudResultToBoolean(CloudResult: TCMROperationResult; ErrorPrefix: WideString = ''): Boolean; overload;
 		function CloudResultToBoolean(JSON: WideString; ErrorPrefix: WideString = ''): Boolean; overload;
 		{CONSTRUCTOR/DESTRUCTOR}
-		constructor Create(CloudSettings: TCloudSettings; ConnectionManager: IHTTPManager; AuthStrategy: IAuthStrategy; FileSystem: IFileSystem; Logger: ILogger; Progress: IProgress; Request: IRequest; Cipher: ICipher = nil);
+		constructor Create(CloudSettings: TCloudSettings; ConnectionManager: IHTTPManager; AuthStrategy: IAuthStrategy; FileSystem: IFileSystem; Logger: ILogger; Progress: IProgress; Request: IRequest; TCHandler: ITCHandler; Cipher: ICipher = nil);
 		destructor Destroy; override;
 		{CLOUD INTERFACE METHODS}
 		function Login(Method: Integer = CLOUD_AUTH_METHOD_WEB): Boolean;
@@ -238,7 +240,7 @@ begin
 	Result := FFileOps.Copy(OldName, NewName);
 end;
 
-constructor TCloudMailRu.Create(CloudSettings: TCloudSettings; ConnectionManager: IHTTPManager; AuthStrategy: IAuthStrategy; FileSystem: IFileSystem; Logger: ILogger; Progress: IProgress; Request: IRequest; Cipher: ICipher = nil);
+constructor TCloudMailRu.Create(CloudSettings: TCloudSettings; ConnectionManager: IHTTPManager; AuthStrategy: IAuthStrategy; FileSystem: IFileSystem; Logger: ILogger; Progress: IProgress; Request: IRequest; TCHandler: ITCHandler; Cipher: ICipher = nil);
 begin
 	try
 		FSettings := CloudSettings;
@@ -251,6 +253,7 @@ begin
 		FProgress := Progress;
 		FLogger := Logger;
 		FRequest := Request;
+		FTCHandler := TCHandler;
 
 		FCookieManager := TIdCookieManager.Create();
 
@@ -341,7 +344,7 @@ begin
 			function: ICloudHTTP
 			begin
 				Result := Self.HTTP;
-			end, FShardManager, FHashCalculator, FCipher, FFileSystem, FLogger, FProgress, FRequest,
+			end, FShardManager, FHashCalculator, FCipher, FFileSystem, FLogger, FProgress, FRequest, FTCHandler,
 			function: TCMROAuth
 			begin
 				Result := Self.FOAuthToken;

@@ -16,6 +16,7 @@ uses
 	TCLogger,
 	TCProgress,
 	TCRequest,
+	TCHandler,
 	IAuthStrategyInterface,
 	WindowsFileSystem,
 	CloudHTTP,
@@ -155,7 +156,8 @@ begin
 		TNullFileSystem.Create,
 		TNullLogger.Create,
 		TNullProgress.Create,
-		TNullRequest.Create);
+		TNullRequest.Create,
+		TNullTCHandler.Create);
 end;
 
 function TCloudMailRuLoginFlowTest.CreatePublicCloud(const PublicUrl: WideString): TTestableLoginCloud;
@@ -171,7 +173,8 @@ begin
 		TNullFileSystem.Create,
 		TNullLogger.Create,
 		TNullProgress.Create,
-		TNullRequest.Create);
+		TNullRequest.Create,
+		TNullTCHandler.Create);
 end;
 
 {LoginRegular tests}
@@ -265,7 +268,8 @@ begin
 		TNullFileSystem.Create,
 		TNullLogger.Create,
 		TNullProgress.Create,
-		TNullRequest.Create);
+		TNullRequest.Create,
+		TNullTCHandler.Create);
 
 	FMockHTTP.SetResponse(API_USER_SPACE, True, JSON_USER_SPACE);
 

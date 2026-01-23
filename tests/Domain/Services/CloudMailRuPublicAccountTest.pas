@@ -15,6 +15,7 @@ uses
 	TCLogger,
 	TCProgress,
 	TCRequest,
+	TCHandler,
 	IAuthStrategyInterface,
 	WindowsFileSystem,
 	CloudHTTP,
@@ -150,7 +151,8 @@ begin
 		TNullFileSystem.Create,
 		TNullLogger.Create,
 		TNullProgress.Create,
-		TNullRequest.Create);
+		TNullRequest.Create,
+		TNullTCHandler.Create);
 
 	Result.SetUnitedParams('api=2');
 end;
@@ -175,7 +177,8 @@ begin
 		TNullFileSystem.Create,
 		TNullLogger.Create,
 		TNullProgress.Create,
-		TNullRequest.Create);
+		TNullRequest.Create,
+		TNullTCHandler.Create);
 
 	Assert.IsFalse(FCloud.IsPublicAccount, 'IsPublicAccount should be False for private accounts');
 end;

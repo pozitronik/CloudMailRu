@@ -47,7 +47,8 @@ uses
 	WindowsFileSystem,
 	TCLogger,
 	TCProgress,
-	TCRequest;
+	TCRequest,
+	TCHandler;
 
 {TPublicCloudFactory - default implementation}
 
@@ -72,7 +73,8 @@ begin
 		TWindowsFileSystem.Create,
 		TNullLogger.Create,
 		TNullProgress.Create,
-		TNullRequest.Create);
+		TNullRequest.Create,
+		TNullTCHandler.Create);
 	Result := TempCloud.Login;
 end;
 

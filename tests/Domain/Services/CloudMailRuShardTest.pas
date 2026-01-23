@@ -13,6 +13,7 @@ uses
 	TCLogger,
 	TCProgress,
 	TCRequest,
+	TCHandler,
 	IAuthStrategyInterface,
 	WindowsFileSystem,
 	CloudHTTP,
@@ -119,7 +120,8 @@ begin
 		TNullFileSystem.Create,
 		TNullLogger.Create,
 		TNullProgress.Create,
-		TNullRequest.Create);
+		TNullRequest.Create,
+		TNullTCHandler.Create);
 
 	Result.SetUnitedParams('api=2&access_token=test_token');
 end;

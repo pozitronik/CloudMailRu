@@ -34,7 +34,7 @@ uses
 	TCRequest,
 	PathHelper,
 	WindowsHelper,
-	TCHelper,
+	TCHandler,
 	CMRIncomingInvite,
 	AccountSettings,
 	Accounts,
@@ -54,6 +54,7 @@ uses
 	HTTPManager,
 	CipherValidator,
 	WindowsFileSystem,
+	WindowsEnvironment,
 	IniConfigFile,
 	ThreadStateManager,
 	ContentFieldProvider,
@@ -147,6 +148,7 @@ type
 		FOperationStatusContextBuilder: IOperationStatusContextBuilder;
 		FListingResultApplier: IListingResultApplier;
 		FDownloadOrchestrator: IDownloadOrchestrator;
+		FTCHandler: ITCHandler;
 
 		PluginNum: Integer;
 
@@ -249,7 +251,8 @@ begin
 
 	AccountSettings := TAccountsManager.Create(TIniConfigFile.Create(SettingsManager.AccountsIniFilePath));
 	FFileSystem := TWindowsFileSystem.Create;
-	FDescriptionSync := TDescriptionSyncManager.Create(SettingsManager.Settings.DescriptionFileName, FFileSystem);
+	FTCHandler := TTCHandler.Create(TWindowsEnvironment.Create);
+	FDescriptionSync := TDescriptionSyncManager.Create(SettingsManager.Settings.DescriptionFileName, FFileSystem, FTCHandler);
 	FDescriptionSyncGuard := TDescriptionSyncGuard.Create(FDescriptionSync, SettingsManager, AccountSettings);
 end;
 
@@ -261,11 +264,11 @@ begin
 	TCLogger := TTCLogger.Create(pLogProc, PluginNr, SettingsManager.Settings.LogLevel);
 	TCProgress := TTCProgress.Create(pProgressProc, PluginNr);
 	TCRequest := TTCRequest.Create(pRequestProc, PluginNr);
-	CurrentDescriptions := TDescription.Create(GetTmpFileName(DESCRIPTION_TEMP_EXT), FFileSystem, GetTCCommentPreferredFormat);
+	CurrentDescriptions := TDescription.Create(GetTmpFileName(DESCRIPTION_TEMP_EXT), FFileSystem, FTCHandler.GetTCCommentPreferredFormat);
 
 	{Create retry handler with log callback that uses TCLogger}
 	Logger := TCLogger;
-	FRetryHandler := TRetryHandler.Create(FThreadState, SettingsManager, nil,
+	FRetryHandler := TRetryHandler.Create(FThreadState, SettingsManager, FTCHandler, nil,
 		procedure(LogLevel, MsgType: Integer; const Msg: WideString; const Args: array of const)
 		begin
 			Logger.Log(LogLevel, MsgType, Msg, Args);
@@ -287,7 +290,7 @@ begin
 		end,
 		function(const FileName: WideString): Integer
 		begin
-			Result := MsgBox(ERR_DELETE_FILE_ASK, [FileName], ERR_DELETE_FILE, MB_ABORTRETRYIGNORE + MB_ICONQUESTION);
+			Result := MsgBox(FTCHandler.FindTCWindow, ERR_DELETE_FILE_ASK, [FileName], ERR_DELETE_FILE, MB_ABORTRETRYIGNORE + MB_ICONQUESTION);
 		end);
 
 	{Create download success handler for post-download operations}
@@ -397,6 +400,7 @@ begin
 	FOperationStatusContextBuilder := nil;
 	FListingResultApplier := nil;
 	FDownloadOrchestrator := nil;
+	FTCHandler := nil;
 	ConnectionManager := nil;
 
 	CurrentDescriptions.Free;
@@ -463,7 +467,7 @@ begin
 	end else begin
 		Cloud := ConnectionManager.Get(RealPath.account, getResult);
 		//всегда нужно обновлять статус на сервере, CurrentListing может быть изменён в другой панели
-		if (Cloud.statusFile(RealPath.Path, CurrentItem)) and (idContinue = TPropertyForm.ShowProperty(MainWin, RealPath.Path, CurrentItem, Cloud, FFileSystem, SettingsManager.Settings.DownloadLinksEncode, SettingsManager.Settings.AutoUpdateDownloadListing, SettingsManager.Settings.DescriptionEnabled, SettingsManager.Settings.DescriptionEditorEnabled, SettingsManager.Settings.DescriptionFileName)) then
+		if (Cloud.statusFile(RealPath.Path, CurrentItem)) and (idContinue = TPropertyForm.ShowProperty(MainWin, RealPath.Path, CurrentItem, Cloud, FFileSystem, FTCHandler, SettingsManager.Settings.DownloadLinksEncode, SettingsManager.Settings.AutoUpdateDownloadListing, SettingsManager.Settings.DescriptionEnabled, SettingsManager.Settings.DescriptionEditorEnabled, SettingsManager.Settings.DescriptionFileName)) then
 			PostMessage(MainWin, WM_USER + TC_REFRESH_MESSAGE, TC_REFRESH_PARAM, 0); //refresh tc panel if description edited
 	end;
 end;
@@ -496,7 +500,7 @@ begin
 				Cloud := ConnectionManager.Get(RealPath.account, getResult);
 				CurrentItem := ActionResult.CurrentItem;
 				if Cloud.statusFile(CurrentItem.home, CurrentItem) then
-					TPropertyForm.ShowProperty(MainWin, RealPath.Path, CurrentItem, Cloud, FFileSystem, SettingsManager.Settings.DownloadLinksEncode, SettingsManager.Settings.AutoUpdateDownloadListing, false, false, SettingsManager.Settings.DescriptionFileName);
+					TPropertyForm.ShowProperty(MainWin, RealPath.Path, CurrentItem, Cloud, FFileSystem, FTCHandler, SettingsManager.Settings.DownloadLinksEncode, SettingsManager.Settings.AutoUpdateDownloadListing, false, false, SettingsManager.Settings.DescriptionFileName);
 			end;
 	end;
 end;
@@ -667,7 +671,7 @@ var
 	RenderResult: TIconRenderResult;
 begin
 	RealPath.FromPath(RemoteName);
-	IconsSize := GetTCIconsSize;
+	IconsSize := FTCHandler.GetTCIconsSize;
 
 	{Build context using builder}
 	Input.Path := RealPath;
@@ -804,7 +808,7 @@ begin
 	RealPath.FromPath(WideString(Path));
 	if RealPath.isInAccountsList then //accounts list
 	begin
-		Result := FAccountRegistrationHandler.Execute(FindTCWindow, RealPath.account, SettingsManager.Settings.ConnectionSettings,
+		Result := FAccountRegistrationHandler.Execute(FTCHandler.FindTCWindow, RealPath.account, SettingsManager.Settings.ConnectionSettings,
 			function(ParentWindow: HWND; ConnSettings: TConnectionSettings; var AccSettings: TAccountSettings): Integer
 			begin
 				Result := TRegistrationForm.ShowRegistration(ParentWindow, ConnSettings, AccSettings);
@@ -915,11 +919,11 @@ end;
 
 procedure TMailRuCloudWFX.FsSetCryptCallback(PCryptProc: TCryptProcW; CryptoNr, Flags: Integer);
 begin
-	PasswordManager := TTCPasswordManager.Create(PCryptProc, PluginNum, CryptoNr, TCLogger);
+	PasswordManager := TTCPasswordManager.Create(PCryptProc, PluginNum, CryptoNr, TCLogger, FTCHandler);
 	PasswordUI := TPasswordUIProvider.Create;
 	HTTPMgr := THTTPManager.Create(SettingsManager.Settings.ConnectionSettings, TCLogger, TCProgress, TCloudHTTPFactory.Create);
 	CipherVal := TCipherValidator.Create;
-	ConnectionManager := TConnectionManager.Create(SettingsManager, AccountSettings, HTTPMgr, PasswordUI, CipherVal, TWindowsFileSystem.Create, TCProgress, TCLogger, TCRequest, PasswordManager);
+	ConnectionManager := TConnectionManager.Create(SettingsManager, AccountSettings, HTTPMgr, PasswordUI, CipherVal, TWindowsFileSystem.Create, TCProgress, TCLogger, TCRequest, PasswordManager, FTCHandler);
 	FCommandDispatcher := TCommandDispatcher.Create(ConnectionManager, TCLogger, SettingsManager);
 
 	{Create icon context builder for FsExtractCustomIcon}

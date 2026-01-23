@@ -12,6 +12,7 @@ uses
 	RealPath,
 	Description,
 	WindowsFileSystem,
+	TCHandler,
 	CloudDescriptionOpsAdapter,
 	DescriptionSyncManager,
 	MockCloudDescriptionOps;
@@ -92,7 +93,7 @@ begin
 	FMockCloud := TMockCloudDescriptionOps.Create;
 	FMockCloudIntf := FMockCloud; {Keep interface reference to prevent premature destruction}
 	FFileSystem := TWindowsFileSystem.Create;
-	FManager := TDescriptionSyncManager.Create(TEST_DESCRIPTION_FILE, FFileSystem);
+	FManager := TDescriptionSyncManager.Create(TEST_DESCRIPTION_FILE, FFileSystem, TNullTCHandler.Create);
 	FTempFiles := TStringList.Create;
 	FTempDir := CreateTempDir;
 end;

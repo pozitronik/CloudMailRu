@@ -16,6 +16,7 @@ uses
 	TCLogger,
 	TCProgress,
 	TCRequest,
+	TCHandler,
 	CloudHTTP,
 	HTTPManager,
 	MockCloudHTTP,
@@ -101,7 +102,8 @@ begin
 		TNullFileSystem.Create,
 		TNullLogger.Create,
 		TNullProgress.Create,
-		TNullRequest.Create);
+		TNullRequest.Create,
+		TNullTCHandler.Create);
 end;
 
 procedure TSharedItemDeletionHandlerTest.Setup;

@@ -263,7 +263,7 @@
         <DCCReference Include="src\Infrastructure\IO\StringHelper.pas"/>
         <DCCReference Include="src\Application\Retry\TokenRetryHelper.pas"/>
         <DCCReference Include="src\Infrastructure\OS\SystemHelper.pas"/>
-        <DCCReference Include="src\Infrastructure\TC\TCHelper.pas"/>
+        <DCCReference Include="src\Infrastructure\TC\TCHandler.pas"/>
         <DCCReference Include="src\Infrastructure\Logger\TCLogger.pas"/>
         <DCCReference Include="src\Infrastructure\Password\TCPasswordManager.pas"/>
         <DCCReference Include="src\Infrastructure\Progress\TCProgress.pas"/>

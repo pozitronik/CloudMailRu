@@ -73,7 +73,7 @@ uses
 	SysUtils,
 	System.Generics.Collections,
 	SystemHelper in 'src\Infrastructure\OS\SystemHelper.pas',
-	TCHelper in 'src\Infrastructure\TC\TCHelper.pas',
+	TCHandler in 'src\Infrastructure\TC\TCHandler.pas',
 	TCLogger in 'src\Infrastructure\Logger\TCLogger.pas',
 	TCPasswordManager in 'src\Infrastructure\Password\TCPasswordManager.pas',
 	TCProgress in 'src\Infrastructure\Progress\TCProgress.pas',

@@ -22,7 +22,8 @@ uses
 	WindowsFileSystem,
 	TCLogger,
 	TCProgress,
-	TCRequest;
+	TCRequest,
+	TCHandler;
 
 type
 	{Mock thread state manager for skip-path testing}
@@ -333,7 +334,8 @@ begin
 		TNullFileSystem.Create,
 		TNullLogger.Create,
 		TNullProgress.Create,
-		TNullRequest.Create);
+		TNullRequest.Create,
+		TNullTCHandler.Create);
 	Result.SetUnitedParams('api=2&access_token=test_token');
 end;
 

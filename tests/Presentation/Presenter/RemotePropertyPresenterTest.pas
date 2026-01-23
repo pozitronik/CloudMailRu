@@ -21,6 +21,7 @@ uses
 	CloudMailRuFactory,
 	CloudMailRu,
 	WindowsFileSystem,
+	TCHandler,
 	PLUGIN_TYPES,
 	System.Classes,
 	System.SysUtils,
@@ -907,7 +908,7 @@ procedure TRemotePropertyPresenterTest.TestInitializePrivateAccountNoWebLink;
 var
 	Item: TCMRDirItem;
 begin
-	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, False);
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
 
 	Item := CreateTestItem('test.txt');
 
@@ -924,7 +925,7 @@ procedure TRemotePropertyPresenterTest.TestInitializePrivateAccountWithWebLink;
 var
 	Item: TCMRDirItem;
 begin
-	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, False);
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
 
 	Item := CreateTestItem('test.txt', TYPE_FILE, '', 'ABC123XYZ');
 
@@ -939,7 +940,7 @@ procedure TRemotePropertyPresenterTest.TestInitializePrivateAccountDirectory;
 var
 	Item: TCMRDirItem;
 begin
-	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, False);
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
 
 	Item := CreateTestItem('folder', TYPE_DIR);
 
@@ -953,7 +954,7 @@ procedure TRemotePropertyPresenterTest.TestInitializePublicAccount;
 var
 	Item: TCMRDirItem;
 begin
-	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, True);
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, True);
 
 	Item := CreateTestItem('test.txt');
 
@@ -969,7 +970,7 @@ procedure TRemotePropertyPresenterTest.TestInitializeShowsHashesTab;
 var
 	Item: TCMRDirItem;
 begin
-	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, False);
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
 
 	Item := CreateTestItem('test.txt');
 
@@ -984,7 +985,7 @@ procedure TRemotePropertyPresenterTest.TestOnPublishChangedPublishSuccess;
 var
 	Item: TCMRDirItem;
 begin
-	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, False);
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
 
 	Item := CreateTestItem('test.txt');
 	FPresenter.Initialize(Item, '/test.txt', CreateConfig(False, False));
@@ -1003,7 +1004,7 @@ procedure TRemotePropertyPresenterTest.TestOnPublishChangedPublishFailed;
 var
 	Item: TCMRDirItem;
 begin
-	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, False);
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
 
 	Item := CreateTestItem('test.txt');
 	FPresenter.Initialize(Item, '/test.txt', CreateConfig(False, False));
@@ -1020,7 +1021,7 @@ procedure TRemotePropertyPresenterTest.TestOnPublishChangedUnpublishSuccess;
 var
 	Item: TCMRDirItem;
 begin
-	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, False);
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
 
 	Item := CreateTestItem('test.txt', TYPE_FILE, '', 'EXISTINGLINK');
 	FPresenter.Initialize(Item, '/test.txt', CreateConfig(False, False));
@@ -1038,7 +1039,7 @@ procedure TRemotePropertyPresenterTest.TestOnPublishChangedUnpublishFailed;
 var
 	Item: TCMRDirItem;
 begin
-	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, False);
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
 
 	Item := CreateTestItem('test.txt', TYPE_FILE, '', 'EXISTINGLINK');
 	FPresenter.Initialize(Item, '/test.txt', CreateConfig(False, False));
@@ -1055,7 +1056,7 @@ procedure TRemotePropertyPresenterTest.TestOnPublishChangedIgnoredForPublicAccou
 var
 	Item: TCMRDirItem;
 begin
-	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, True);
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, True);
 
 	Item := CreateTestItem('test.txt');
 	FPresenter.Initialize(Item, '/test.txt', CreateConfig(False, False));
@@ -1077,7 +1078,7 @@ var
 	Item: TCMRDirItem;
 	Invites: TCMRInviteList;
 begin
-	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, False);
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
 
 	Item := CreateTestItem('folder', TYPE_DIR);
 
@@ -1100,7 +1101,7 @@ procedure TRemotePropertyPresenterTest.TestRefreshInvitesFailed;
 var
 	Item: TCMRDirItem;
 begin
-	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, False);
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
 
 	Item := CreateTestItem('folder', TYPE_DIR);
 	FShareService.ShareInfoResult := False;
@@ -1115,7 +1116,7 @@ procedure TRemotePropertyPresenterTest.TestOnInviteClickSuccess;
 var
 	Item: TCMRDirItem;
 begin
-	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, False);
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
 
 	Item := CreateTestItem('folder', TYPE_DIR);
 	FShareService.ShareInfoResult := True;
@@ -1136,7 +1137,7 @@ procedure TRemotePropertyPresenterTest.TestOnInviteClickFailed;
 var
 	Item: TCMRDirItem;
 begin
-	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, False);
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
 
 	Item := CreateTestItem('folder', TYPE_DIR);
 	FShareService.ShareInfoResult := True;
@@ -1157,7 +1158,7 @@ var
 	Item: TCMRDirItem;
 	Invites: TCMRInviteList;
 begin
-	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, False);
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
 
 	Item := CreateTestItem('folder', TYPE_DIR);
 
@@ -1182,7 +1183,7 @@ procedure TRemotePropertyPresenterTest.TestCanApplyHashesPrivateAccount;
 var
 	Item: TCMRDirItem;
 begin
-	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, False);
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
 
 	Item := CreateTestItem('test.txt');
 	FPresenter.Initialize(Item, '/test.txt', CreateConfig(False, False));
@@ -1194,7 +1195,7 @@ procedure TRemotePropertyPresenterTest.TestCanApplyHashesPublicAccount;
 var
 	Item: TCMRDirItem;
 begin
-	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, True);
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, True);
 
 	Item := CreateTestItem('test.txt');
 	FPresenter.Initialize(Item, '/test.txt', CreateConfig(False, False));

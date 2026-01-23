@@ -10,6 +10,7 @@ uses
 	TCLogger,
 	TCProgress,
 	TCRequest,
+	TCHandler,
 	IAuthStrategyInterface,
 	WindowsFileSystem,
 	PLUGIN_TYPES,
@@ -105,7 +106,7 @@ procedure TCloudMailRuInstanceTest.Setup;
 begin
 	{ Create minimal TCloudMailRu instance with null implementations }
 	FSettings := Default(TCloudSettings);
-	FCloud := TCloudMailRu.Create(FSettings, nil, TNullAuthStrategy.Create, TNullFileSystem.Create, TNullLogger.Create, TNullProgress.Create, TNullRequest.Create);
+	FCloud := TCloudMailRu.Create(FSettings, nil, TNullAuthStrategy.Create, TNullFileSystem.Create, TNullLogger.Create, TNullProgress.Create, TNullRequest.Create, TNullTCHandler.Create);
 end;
 
 procedure TCloudMailRuInstanceTest.TearDown;
