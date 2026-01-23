@@ -443,7 +443,7 @@ begin
 		if CurrentInvite.name = EmptyWideStr then
 			exit(FS_EXEC_ERROR);
 
-		Result := FInviteOperationHandler.Execute(MainWin, Cloud, CurrentInvite,
+		Result := FInviteOperationHandler.Execute(MainWin, Cloud.GetShareService, CurrentInvite,
 			function(ParentWindow: HWND; const Inv: TCMRIncomingInvite): Integer
 			begin
 				Result := TInvitePropertyForm.ShowProperties(ParentWindow, Inv);
@@ -524,7 +524,7 @@ begin
 		CurrentItem := FindListingItemByPath(CurrentListing, RealPath); //для одинаково именованных файлов в корзине будут показываться свойства первого, сорян
 	end;
 
-	Result := FTrashBinOperationHandler.Execute(MainWin, Cloud, CurrentListing, CurrentItem, IsTrashDir, RealPath.account,
+	Result := FTrashBinOperationHandler.Execute(MainWin, Cloud.GetListingService, CurrentListing, CurrentItem, IsTrashDir, RealPath.account,
 		function(ParentWindow: HWND; Items: TCMRDirItemList; TrashDir: Boolean; const AccountName: WideString): Integer
 		begin
 			Result := TDeletedPropertyForm.ShowProperties(ParentWindow, Items, TrashDir, AccountName);

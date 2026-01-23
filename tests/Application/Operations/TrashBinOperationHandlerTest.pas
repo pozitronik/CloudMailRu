@@ -1,7 +1,6 @@
 unit TrashBinOperationHandlerTest;
 
-{Unit tests for TTrashBinOperationHandler.
- Note: Full integration tests require TCloudMailRu which isn't interface-based.}
+{Unit tests for TTrashBinOperationHandler using mock ICloudListingService.}
 
 interface
 
@@ -10,14 +9,54 @@ uses
 	Windows,
 	CMRDirItem,
 	CMRDirItemList,
+	CMRIncomingInviteList,
+	CMRSpace,
 	CMRConstants,
+	CloudListingService,
 	TrashBinOperationHandler;
 
 type
+	{Mock ICloudListingService for testing TrashBinOperationHandler}
+	TMockListingService = class(TInterfacedObject, ICloudListingService)
+	private
+		FTrashbinEmptyResult: Boolean;
+		FTrashbinRestoreResult: Boolean;
+		FTrashbinEmptyCalled: Boolean;
+		FTrashbinRestoreCalls: Integer;
+		FLastRestorePath: WideString;
+		FLastRestoreRev: Integer;
+	public
+		constructor Create;
+
+		{Mock configuration}
+		procedure SetTrashbinEmptyResult(Value: Boolean);
+		procedure SetTrashbinRestoreResult(Value: Boolean);
+
+		{Mock verification}
+		function WasTrashbinEmptyCalled: Boolean;
+		function GetTrashbinRestoreCalls: Integer;
+		function GetLastRestorePath: WideString;
+		function GetLastRestoreRev: Integer;
+
+		{ICloudListingService implementation}
+		function GetDirectory(Path: WideString; var Listing: TCMRDirItemList; ShowProgress: Boolean = False): Boolean;
+		function GetSharedLinks(var Listing: TCMRDirItemList; ShowProgress: Boolean = False): Boolean;
+		function GetIncomingInvites(var Listing: TCMRIncomingInviteList; ShowProgress: Boolean = False): Boolean;
+		function GetIncomingInvitesAsDirItems(var DirListing: TCMRDirItemList; var InvitesListing: TCMRIncomingInviteList; ShowProgress: Boolean = False): Boolean;
+		function GetTrashbin(var Listing: TCMRDirItemList; ShowProgress: Boolean = False): Boolean;
+		function StatusFile(Path: WideString; var FileInfo: TCMRDirItem): Boolean;
+		function TrashbinRestore(Path: WideString; RestoreRevision: Integer; ConflictMode: WideString = CLOUD_CONFLICT_RENAME): Boolean;
+		function TrashbinEmpty(): Boolean;
+		function GetUserSpace(var SpaceInfo: TCMRSpace): Boolean;
+		procedure LogUserSpaceInfo(Email: WideString);
+	end;
+
 	[TestFixture]
 	TTrashBinOperationHandlerTest = class
 	private
 		FHandler: ITrashBinOperationHandler;
+		FMockService: TMockListingService;
+		FMockServiceIntf: ICloudListingService;
 
 		function CreateDeletedItem(const Name, DeletedFrom: WideString; Rev: Integer): TCMRDirItem;
 	public
@@ -26,19 +65,35 @@ type
 		[TearDown]
 		procedure TearDown;
 
-		{Nil cloud tests}
+		{Nil service tests}
 		[Test]
-		procedure TestExecute_NilCloud_ReturnsError;
+		procedure TestExecute_NilService_ReturnsError;
 
-		{Dialog result tests - require integration}
+		{Dialog cancel test}
 		[Test]
-		procedure TestExecute_DialogCancel_RequiresIntegration;
+		procedure TestExecute_DialogCancel_ReturnsOK;
+
+		{Empty trashbin tests}
 		[Test]
-		procedure TestExecute_EmptyTrashbin_RequiresIntegration;
+		procedure TestExecute_EmptyTrashbin_CallsService;
 		[Test]
-		procedure TestExecute_RestoreSingle_RequiresIntegration;
+		procedure TestExecute_EmptyTrashbin_Success_ReturnsOK;
 		[Test]
-		procedure TestExecute_RestoreAll_RequiresIntegration;
+		procedure TestExecute_EmptyTrashbin_Failure_ReturnsError;
+
+		{Restore single tests}
+		[Test]
+		procedure TestExecute_RestoreSingle_CallsServiceWithCorrectPath;
+		[Test]
+		procedure TestExecute_RestoreSingle_Success_ReturnsOK;
+		[Test]
+		procedure TestExecute_RestoreSingle_Failure_ReturnsError;
+
+		{Restore all tests}
+		[Test]
+		procedure TestExecute_RestoreAll_CallsServiceForEachItem;
+		[Test]
+		procedure TestExecute_RestoreAll_StopsOnFirstFailure;
 	end;
 
 implementation
@@ -47,6 +102,103 @@ uses
 	SysUtils,
 	Controls,
 	PLUGIN_TYPES;
+
+{TMockListingService}
+
+constructor TMockListingService.Create;
+begin
+	inherited Create;
+	FTrashbinEmptyResult := True;
+	FTrashbinRestoreResult := True;
+	FTrashbinEmptyCalled := False;
+	FTrashbinRestoreCalls := 0;
+end;
+
+procedure TMockListingService.SetTrashbinEmptyResult(Value: Boolean);
+begin
+	FTrashbinEmptyResult := Value;
+end;
+
+procedure TMockListingService.SetTrashbinRestoreResult(Value: Boolean);
+begin
+	FTrashbinRestoreResult := Value;
+end;
+
+function TMockListingService.WasTrashbinEmptyCalled: Boolean;
+begin
+	Result := FTrashbinEmptyCalled;
+end;
+
+function TMockListingService.GetTrashbinRestoreCalls: Integer;
+begin
+	Result := FTrashbinRestoreCalls;
+end;
+
+function TMockListingService.GetLastRestorePath: WideString;
+begin
+	Result := FLastRestorePath;
+end;
+
+function TMockListingService.GetLastRestoreRev: Integer;
+begin
+	Result := FLastRestoreRev;
+end;
+
+function TMockListingService.GetDirectory(Path: WideString; var Listing: TCMRDirItemList; ShowProgress: Boolean): Boolean;
+begin
+	Result := False;
+end;
+
+function TMockListingService.GetSharedLinks(var Listing: TCMRDirItemList; ShowProgress: Boolean): Boolean;
+begin
+	Result := False;
+end;
+
+function TMockListingService.GetIncomingInvites(var Listing: TCMRIncomingInviteList; ShowProgress: Boolean): Boolean;
+begin
+	Result := False;
+end;
+
+function TMockListingService.GetIncomingInvitesAsDirItems(var DirListing: TCMRDirItemList; var InvitesListing: TCMRIncomingInviteList; ShowProgress: Boolean): Boolean;
+begin
+	Result := False;
+end;
+
+function TMockListingService.GetTrashbin(var Listing: TCMRDirItemList; ShowProgress: Boolean): Boolean;
+begin
+	Result := False;
+end;
+
+function TMockListingService.StatusFile(Path: WideString; var FileInfo: TCMRDirItem): Boolean;
+begin
+	Result := False;
+end;
+
+function TMockListingService.TrashbinRestore(Path: WideString; RestoreRevision: Integer; ConflictMode: WideString): Boolean;
+begin
+	Inc(FTrashbinRestoreCalls);
+	FLastRestorePath := Path;
+	FLastRestoreRev := RestoreRevision;
+	Result := FTrashbinRestoreResult;
+end;
+
+function TMockListingService.TrashbinEmpty: Boolean;
+begin
+	FTrashbinEmptyCalled := True;
+	Result := FTrashbinEmptyResult;
+end;
+
+function TMockListingService.GetUserSpace(var SpaceInfo: TCMRSpace): Boolean;
+begin
+	Result := False;
+end;
+
+procedure TMockListingService.LogUserSpaceInfo(Email: WideString);
+begin
+	{No-op}
+end;
+
+{TTrashBinOperationHandlerTest}
 
 function TTrashBinOperationHandlerTest.CreateDeletedItem(const Name, DeletedFrom: WideString; Rev: Integer): TCMRDirItem;
 begin
@@ -60,63 +212,237 @@ end;
 procedure TTrashBinOperationHandlerTest.Setup;
 begin
 	FHandler := TTrashBinOperationHandler.Create;
+	FMockService := TMockListingService.Create;
+	FMockServiceIntf := FMockService;
 end;
 
 procedure TTrashBinOperationHandlerTest.TearDown;
 begin
 	FHandler := nil;
+	FMockServiceIntf := nil;
+	FMockService := nil;
 end;
 
-{Nil cloud tests}
+{Nil service tests}
 
-procedure TTrashBinOperationHandlerTest.TestExecute_NilCloud_ReturnsError;
+procedure TTrashBinOperationHandlerTest.TestExecute_NilService_ReturnsError;
 var
 	Listing: TCMRDirItemList;
 	Item: TCMRDirItem;
-	Result: Integer;
+	ExecResult: Integer;
 begin
 	SetLength(Listing, 1);
 	Listing[0] := CreateDeletedItem('test.txt', '/backup/', 1);
 	Item := Listing[0];
 
-	Result := FHandler.Execute(0, nil, Listing, Item, False, 'account',
+	ExecResult := FHandler.Execute(0, nil, Listing, Item, False, 'account',
 		function(ParentWindow: HWND; Items: TCMRDirItemList;
 			IsTrashDir: Boolean; const AccountName: WideString): Integer
 		begin
 			Result := mrCancel;
 		end);
 
-	Assert.AreEqual(FS_EXEC_ERROR, Result, 'Should return error when cloud is nil');
+	Assert.AreEqual(FS_EXEC_ERROR, ExecResult, 'Should return error when service is nil');
 end;
 
-{Dialog result tests}
+{Dialog cancel test}
 
-procedure TTrashBinOperationHandlerTest.TestExecute_DialogCancel_RequiresIntegration;
+procedure TTrashBinOperationHandlerTest.TestExecute_DialogCancel_ReturnsOK;
+var
+	Listing: TCMRDirItemList;
+	Item: TCMRDirItem;
+	ExecResult: Integer;
 begin
-	{When dialog returns mrCancel (or other), no operation is performed.
-	 The handler returns FS_EXEC_OK since cancel is not an error.}
-	Assert.Pass('Dialog cancel behavior tested through integration tests');
+	SetLength(Listing, 1);
+	Listing[0] := CreateDeletedItem('test.txt', '/backup/', 1);
+	Item := Listing[0];
+
+	ExecResult := FHandler.Execute(0, FMockServiceIntf, Listing, Item, False, 'account',
+		function(ParentWindow: HWND; Items: TCMRDirItemList;
+			IsTrashDir: Boolean; const AccountName: WideString): Integer
+		begin
+			Result := mrCancel;
+		end);
+
+	Assert.AreEqual(FS_EXEC_OK, ExecResult, 'Cancel should return OK (not an error)');
+	Assert.IsFalse(FMockService.WasTrashbinEmptyCalled, 'Should not call TrashbinEmpty on cancel');
+	Assert.AreEqual(0, FMockService.GetTrashbinRestoreCalls, 'Should not call TrashbinRestore on cancel');
 end;
 
-procedure TTrashBinOperationHandlerTest.TestExecute_EmptyTrashbin_RequiresIntegration;
+{Empty trashbin tests}
+
+procedure TTrashBinOperationHandlerTest.TestExecute_EmptyTrashbin_CallsService;
+var
+	Listing: TCMRDirItemList;
+	Item: TCMRDirItem;
 begin
-	{When dialog returns mrNo, Cloud.trashbinEmpty is called.
-	 Requires real TCloudMailRu to test.}
-	Assert.Pass('Empty trashbin tested through integration tests');
+	SetLength(Listing, 1);
+	Listing[0] := CreateDeletedItem('test.txt', '/backup/', 1);
+	Item := Listing[0];
+
+	FHandler.Execute(0, FMockServiceIntf, Listing, Item, True, 'account',
+		function(ParentWindow: HWND; Items: TCMRDirItemList;
+			IsTrashDir: Boolean; const AccountName: WideString): Integer
+		begin
+			Result := mrNo; {mrNo = Empty trashbin}
+		end);
+
+	Assert.IsTrue(FMockService.WasTrashbinEmptyCalled, 'Should call TrashbinEmpty when dialog returns mrNo');
 end;
 
-procedure TTrashBinOperationHandlerTest.TestExecute_RestoreSingle_RequiresIntegration;
+procedure TTrashBinOperationHandlerTest.TestExecute_EmptyTrashbin_Success_ReturnsOK;
+var
+	Listing: TCMRDirItemList;
+	Item: TCMRDirItem;
+	ExecResult: Integer;
 begin
-	{When dialog returns mrYes, Cloud.trashbinRestore is called for single item.
-	 Requires real TCloudMailRu to test.}
-	Assert.Pass('Restore single item tested through integration tests');
+	SetLength(Listing, 1);
+	Listing[0] := CreateDeletedItem('test.txt', '/backup/', 1);
+	Item := Listing[0];
+	FMockService.SetTrashbinEmptyResult(True);
+
+	ExecResult := FHandler.Execute(0, FMockServiceIntf, Listing, Item, True, 'account',
+		function(ParentWindow: HWND; Items: TCMRDirItemList;
+			IsTrashDir: Boolean; const AccountName: WideString): Integer
+		begin
+			Result := mrNo;
+		end);
+
+	Assert.AreEqual(FS_EXEC_OK, ExecResult);
 end;
 
-procedure TTrashBinOperationHandlerTest.TestExecute_RestoreAll_RequiresIntegration;
+procedure TTrashBinOperationHandlerTest.TestExecute_EmptyTrashbin_Failure_ReturnsError;
+var
+	Listing: TCMRDirItemList;
+	Item: TCMRDirItem;
+	ExecResult: Integer;
 begin
-	{When dialog returns mrYesToAll, Cloud.trashbinRestore is called for all items.
-	 Requires real TCloudMailRu to test.}
-	Assert.Pass('Restore all items tested through integration tests');
+	SetLength(Listing, 1);
+	Listing[0] := CreateDeletedItem('test.txt', '/backup/', 1);
+	Item := Listing[0];
+	FMockService.SetTrashbinEmptyResult(False);
+
+	ExecResult := FHandler.Execute(0, FMockServiceIntf, Listing, Item, True, 'account',
+		function(ParentWindow: HWND; Items: TCMRDirItemList;
+			IsTrashDir: Boolean; const AccountName: WideString): Integer
+		begin
+			Result := mrNo;
+		end);
+
+	Assert.AreEqual(FS_EXEC_ERROR, ExecResult);
+end;
+
+{Restore single tests}
+
+procedure TTrashBinOperationHandlerTest.TestExecute_RestoreSingle_CallsServiceWithCorrectPath;
+var
+	Listing: TCMRDirItemList;
+	Item: TCMRDirItem;
+begin
+	SetLength(Listing, 1);
+	Item := CreateDeletedItem('document.pdf', '/work/docs/', 42);
+	Listing[0] := Item;
+
+	FHandler.Execute(0, FMockServiceIntf, Listing, Item, False, 'account',
+		function(ParentWindow: HWND; Items: TCMRDirItemList;
+			IsTrashDir: Boolean; const AccountName: WideString): Integer
+		begin
+			Result := mrYes; {mrYes = Restore single}
+		end);
+
+	Assert.AreEqual(1, FMockService.GetTrashbinRestoreCalls, 'Should call TrashbinRestore once');
+	Assert.AreEqual('/work/docs/document.pdf', FMockService.GetLastRestorePath, 'Path should be deleted_from + name');
+	Assert.AreEqual(42, FMockService.GetLastRestoreRev, 'Should pass correct revision');
+end;
+
+procedure TTrashBinOperationHandlerTest.TestExecute_RestoreSingle_Success_ReturnsOK;
+var
+	Listing: TCMRDirItemList;
+	Item: TCMRDirItem;
+	ExecResult: Integer;
+begin
+	Item := CreateDeletedItem('test.txt', '/backup/', 1);
+	SetLength(Listing, 1);
+	Listing[0] := Item;
+	FMockService.SetTrashbinRestoreResult(True);
+
+	ExecResult := FHandler.Execute(0, FMockServiceIntf, Listing, Item, False, 'account',
+		function(ParentWindow: HWND; Items: TCMRDirItemList;
+			IsTrashDir: Boolean; const AccountName: WideString): Integer
+		begin
+			Result := mrYes;
+		end);
+
+	Assert.AreEqual(FS_EXEC_OK, ExecResult);
+end;
+
+procedure TTrashBinOperationHandlerTest.TestExecute_RestoreSingle_Failure_ReturnsError;
+var
+	Listing: TCMRDirItemList;
+	Item: TCMRDirItem;
+	ExecResult: Integer;
+begin
+	Item := CreateDeletedItem('test.txt', '/backup/', 1);
+	SetLength(Listing, 1);
+	Listing[0] := Item;
+	FMockService.SetTrashbinRestoreResult(False);
+
+	ExecResult := FHandler.Execute(0, FMockServiceIntf, Listing, Item, False, 'account',
+		function(ParentWindow: HWND; Items: TCMRDirItemList;
+			IsTrashDir: Boolean; const AccountName: WideString): Integer
+		begin
+			Result := mrYes;
+		end);
+
+	Assert.AreEqual(FS_EXEC_ERROR, ExecResult);
+end;
+
+{Restore all tests}
+
+procedure TTrashBinOperationHandlerTest.TestExecute_RestoreAll_CallsServiceForEachItem;
+var
+	Listing: TCMRDirItemList;
+	Item: TCMRDirItem;
+begin
+	SetLength(Listing, 3);
+	Listing[0] := CreateDeletedItem('file1.txt', '/docs/', 1);
+	Listing[1] := CreateDeletedItem('file2.txt', '/docs/', 2);
+	Listing[2] := CreateDeletedItem('file3.txt', '/docs/', 3);
+	Item := Item.None;
+
+	FHandler.Execute(0, FMockServiceIntf, Listing, Item, True, 'account',
+		function(ParentWindow: HWND; Items: TCMRDirItemList;
+			IsTrashDir: Boolean; const AccountName: WideString): Integer
+		begin
+			Result := mrYesToAll; {mrYesToAll = Restore all}
+		end);
+
+	Assert.AreEqual(3, FMockService.GetTrashbinRestoreCalls, 'Should call TrashbinRestore for each item');
+end;
+
+procedure TTrashBinOperationHandlerTest.TestExecute_RestoreAll_StopsOnFirstFailure;
+var
+	Listing: TCMRDirItemList;
+	Item: TCMRDirItem;
+	ExecResult: Integer;
+begin
+	SetLength(Listing, 3);
+	Listing[0] := CreateDeletedItem('file1.txt', '/docs/', 1);
+	Listing[1] := CreateDeletedItem('file2.txt', '/docs/', 2);
+	Listing[2] := CreateDeletedItem('file3.txt', '/docs/', 3);
+	Item := Item.None;
+
+	FMockService.SetTrashbinRestoreResult(False); {All will fail, but we want to check it stops}
+
+	ExecResult := FHandler.Execute(0, FMockServiceIntf, Listing, Item, True, 'account',
+		function(ParentWindow: HWND; Items: TCMRDirItemList;
+			IsTrashDir: Boolean; const AccountName: WideString): Integer
+		begin
+			Result := mrYesToAll;
+		end);
+
+	Assert.AreEqual(FS_EXEC_ERROR, ExecResult, 'Should return error on failure');
+	Assert.AreEqual(1, FMockService.GetTrashbinRestoreCalls, 'Should stop after first failure');
 end;
 
 initialization

@@ -177,6 +177,10 @@ type
 		function GetPublishedFileStreamUrl(FileIdentity: TCMRDirItem; var StreamUrl: WideString; ShardType: WideString = SHARD_TYPE_WEBLINK_VIDEO; Publish: Boolean = CLOUD_PUBLISH): Boolean;
 		{OTHER ROUTINES}
 		procedure LogUserSpaceInfo();
+
+		{Service accessors for DI in dependent components}
+		function GetListingService: ICloudListingService;
+		function GetShareService: ICloudShareService;
 	end;
 
 implementation
@@ -628,6 +632,17 @@ end;
 procedure TCloudMailRu.LogUserSpaceInfo;
 begin
 	FListingService.LogUserSpaceInfo(Email);
+end;
+
+{Service accessors for DI}
+function TCloudMailRu.GetListingService: ICloudListingService;
+begin
+	Result := FListingService;
+end;
+
+function TCloudMailRu.GetShareService: ICloudShareService;
+begin
+	Result := FShareService;
 end;
 
 {Delegates to FFileOps}

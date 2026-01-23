@@ -8,7 +8,7 @@ interface
 uses
 	Windows,
 	CMRIncomingInvite,
-	CloudMailRu;
+	CloudShareService;
 
 type
 	{Callback type for showing invite properties dialog.
@@ -20,16 +20,16 @@ type
 
 		{Executes invite operation based on dialog result.
 			@param ParentWindow Parent window handle for dialog
-			@param Cloud Cloud connection for the account
+			@param ShareService Cloud share service for invite operations
 			@param Invite The incoming invite to process
 			@param ShowDialog Callback to show the properties dialog
 			@return FS_EXEC_OK on success, FS_EXEC_ERROR on failure}
-		function Execute(ParentWindow: HWND; Cloud: TCloudMailRu; const Invite: TCMRIncomingInvite; ShowDialog: TShowInvitePropertiesFunc): Integer;
+		function Execute(ParentWindow: HWND; ShareService: ICloudShareService; const Invite: TCMRIncomingInvite; ShowDialog: TShowInvitePropertiesFunc): Integer;
 	end;
 
 	TInviteOperationHandler = class(TInterfacedObject, IInviteOperationHandler)
 	public
-		function Execute(ParentWindow: HWND; Cloud: TCloudMailRu; const Invite: TCMRIncomingInvite; ShowDialog: TShowInvitePropertiesFunc): Integer;
+		function Execute(ParentWindow: HWND; ShareService: ICloudShareService; const Invite: TCMRIncomingInvite; ShowDialog: TShowInvitePropertiesFunc): Integer;
 	end;
 
 implementation
@@ -38,26 +38,26 @@ uses
 	Controls,
 	PLUGIN_TYPES;
 
-function TInviteOperationHandler.Execute(ParentWindow: HWND; Cloud: TCloudMailRu; const Invite: TCMRIncomingInvite; ShowDialog: TShowInvitePropertiesFunc): Integer;
+function TInviteOperationHandler.Execute(ParentWindow: HWND; ShareService: ICloudShareService; const Invite: TCMRIncomingInvite; ShowDialog: TShowInvitePropertiesFunc): Integer;
 var
 	DialogResult: Integer;
 begin
 	Result := FS_EXEC_OK;
 
-	if not Assigned(Cloud) then
+	if not Assigned(ShareService) then
 		Exit(FS_EXEC_ERROR);
 
 	DialogResult := ShowDialog(ParentWindow, Invite);
 
 	case DialogResult of
 		mrAbort: {Unmount folder, keep data}
-			Cloud.unmountFolder(Invite.name, True);
+			ShareService.Unmount(Invite.name, True);
 		mrClose: {Unmount folder, don't keep data}
-			Cloud.unmountFolder(Invite.name, False);
+			ShareService.Unmount(Invite.name, False);
 		mrYes: {Mount folder}
-			Cloud.mountFolder(Invite.name, Invite.invite_token);
+			ShareService.Mount(Invite.name, Invite.invite_token);
 		mrNo: {Reject invite}
-			Cloud.rejectInvite(Invite.invite_token);
+			ShareService.RejectInvite(Invite.invite_token);
 	end;
 end;
 

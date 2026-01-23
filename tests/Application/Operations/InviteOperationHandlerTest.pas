@@ -1,21 +1,71 @@
 unit InviteOperationHandlerTest;
 
-{Unit tests for TInviteOperationHandler.
- Note: Full integration tests require TCloudMailRu which isn't interface-based.}
+{Unit tests for TInviteOperationHandler using mock ICloudShareService.}
 
 interface
 
 uses
 	DUnitX.TestFramework,
 	Windows,
+	CMRDirItem,
+	CMRInviteList,
 	CMRIncomingInvite,
+	CMRConstants,
+	CloudShareService,
 	InviteOperationHandler;
 
 type
+	{Mock ICloudShareService for testing InviteOperationHandler}
+	TMockShareService = class(TInterfacedObject, ICloudShareService)
+	private
+		FMountResult: Boolean;
+		FUnmountResult: Boolean;
+		FRejectResult: Boolean;
+		FMountCalls: Integer;
+		FUnmountCalls: Integer;
+		FRejectCalls: Integer;
+		FLastMountHome: WideString;
+		FLastMountToken: WideString;
+		FLastUnmountHome: WideString;
+		FLastUnmountCloneCopy: Boolean;
+		FLastRejectToken: WideString;
+	public
+		constructor Create;
+
+		{Mock configuration}
+		procedure SetMountResult(Value: Boolean);
+		procedure SetUnmountResult(Value: Boolean);
+		procedure SetRejectResult(Value: Boolean);
+
+		{Mock verification}
+		function GetMountCalls: Integer;
+		function GetUnmountCalls: Integer;
+		function GetRejectCalls: Integer;
+		function GetLastMountHome: WideString;
+		function GetLastMountToken: WideString;
+		function GetLastUnmountHome: WideString;
+		function GetLastUnmountCloneCopy: Boolean;
+		function GetLastRejectToken: WideString;
+
+		{ICloudShareService implementation}
+		function Publish(Path: WideString; var PublicLink: WideString): Boolean;
+		function Unpublish(Path: WideString; PublicLink: WideString): Boolean;
+		function GetShareInfo(Path: WideString; var InviteListing: TCMRInviteList): Boolean;
+		function Share(Path, Email: WideString; Access: Integer): Boolean;
+		function Unshare(Path, Email: WideString): Boolean;
+		function Mount(Home, InviteToken: WideString; ConflictMode: WideString = CLOUD_CONFLICT_RENAME): Boolean;
+		function Unmount(Home: WideString; CloneCopy: Boolean): Boolean;
+		function RejectInvite(InviteToken: WideString): Boolean;
+		function GetPublishedFileStreamUrl(FileIdentity: TCMRDirItem; var StreamUrl: WideString; ShardType: WideString = SHARD_TYPE_WEBLINK_VIDEO; Publish: Boolean = CLOUD_PUBLISH): Boolean;
+		function CloneWeblink(Path, Link: WideString; ConflictMode: WideString = CLOUD_CONFLICT_RENAME): Integer;
+	end;
+
 	[TestFixture]
 	TInviteOperationHandlerTest = class
 	private
 		FHandler: IInviteOperationHandler;
+		FMockService: TMockShareService;
+		FMockServiceIntf: ICloudShareService;
 
 		function CreateInvite(const Name, InviteToken: WideString): TCMRIncomingInvite;
 	public
@@ -24,21 +74,39 @@ type
 		[TearDown]
 		procedure TearDown;
 
-		{Nil cloud tests}
+		{Nil service tests}
 		[Test]
-		procedure TestExecute_NilCloud_ReturnsError;
+		procedure TestExecute_NilService_ReturnsError;
 
-		{Dialog result tests - require integration}
+		{Dialog cancel test}
 		[Test]
-		procedure TestExecute_DialogCancel_RequiresIntegration;
+		procedure TestExecute_DialogCancel_ReturnsOK;
 		[Test]
-		procedure TestExecute_MountFolder_RequiresIntegration;
+		procedure TestExecute_DialogCancel_NoOperationCalled;
+
+		{Mount folder tests (mrYes)}
 		[Test]
-		procedure TestExecute_UnmountKeep_RequiresIntegration;
+		procedure TestExecute_MountFolder_CallsServiceWithCorrectParams;
 		[Test]
-		procedure TestExecute_UnmountNoKeep_RequiresIntegration;
+		procedure TestExecute_MountFolder_Success_ReturnsOK;
+
+		{Unmount with keep tests (mrAbort)}
 		[Test]
-		procedure TestExecute_RejectInvite_RequiresIntegration;
+		procedure TestExecute_UnmountKeep_CallsServiceWithCloneCopyTrue;
+		[Test]
+		procedure TestExecute_UnmountKeep_Success_ReturnsOK;
+
+		{Unmount without keep tests (mrClose)}
+		[Test]
+		procedure TestExecute_UnmountNoKeep_CallsServiceWithCloneCopyFalse;
+		[Test]
+		procedure TestExecute_UnmountNoKeep_Success_ReturnsOK;
+
+		{Reject invite tests (mrNo)}
+		[Test]
+		procedure TestExecute_RejectInvite_CallsServiceWithCorrectToken;
+		[Test]
+		procedure TestExecute_RejectInvite_Success_ReturnsOK;
 	end;
 
 implementation
@@ -47,6 +115,134 @@ uses
 	SysUtils,
 	Controls,
 	PLUGIN_TYPES;
+
+{TMockShareService}
+
+constructor TMockShareService.Create;
+begin
+	inherited Create;
+	FMountResult := True;
+	FUnmountResult := True;
+	FRejectResult := True;
+	FMountCalls := 0;
+	FUnmountCalls := 0;
+	FRejectCalls := 0;
+end;
+
+procedure TMockShareService.SetMountResult(Value: Boolean);
+begin
+	FMountResult := Value;
+end;
+
+procedure TMockShareService.SetUnmountResult(Value: Boolean);
+begin
+	FUnmountResult := Value;
+end;
+
+procedure TMockShareService.SetRejectResult(Value: Boolean);
+begin
+	FRejectResult := Value;
+end;
+
+function TMockShareService.GetMountCalls: Integer;
+begin
+	Result := FMountCalls;
+end;
+
+function TMockShareService.GetUnmountCalls: Integer;
+begin
+	Result := FUnmountCalls;
+end;
+
+function TMockShareService.GetRejectCalls: Integer;
+begin
+	Result := FRejectCalls;
+end;
+
+function TMockShareService.GetLastMountHome: WideString;
+begin
+	Result := FLastMountHome;
+end;
+
+function TMockShareService.GetLastMountToken: WideString;
+begin
+	Result := FLastMountToken;
+end;
+
+function TMockShareService.GetLastUnmountHome: WideString;
+begin
+	Result := FLastUnmountHome;
+end;
+
+function TMockShareService.GetLastUnmountCloneCopy: Boolean;
+begin
+	Result := FLastUnmountCloneCopy;
+end;
+
+function TMockShareService.GetLastRejectToken: WideString;
+begin
+	Result := FLastRejectToken;
+end;
+
+function TMockShareService.Publish(Path: WideString; var PublicLink: WideString): Boolean;
+begin
+	Result := False;
+end;
+
+function TMockShareService.Unpublish(Path: WideString; PublicLink: WideString): Boolean;
+begin
+	Result := False;
+end;
+
+function TMockShareService.GetShareInfo(Path: WideString; var InviteListing: TCMRInviteList): Boolean;
+begin
+	Result := False;
+end;
+
+function TMockShareService.Share(Path, Email: WideString; Access: Integer): Boolean;
+begin
+	Result := False;
+end;
+
+function TMockShareService.Unshare(Path, Email: WideString): Boolean;
+begin
+	Result := False;
+end;
+
+function TMockShareService.Mount(Home, InviteToken: WideString; ConflictMode: WideString): Boolean;
+begin
+	Inc(FMountCalls);
+	FLastMountHome := Home;
+	FLastMountToken := InviteToken;
+	Result := FMountResult;
+end;
+
+function TMockShareService.Unmount(Home: WideString; CloneCopy: Boolean): Boolean;
+begin
+	Inc(FUnmountCalls);
+	FLastUnmountHome := Home;
+	FLastUnmountCloneCopy := CloneCopy;
+	Result := FUnmountResult;
+end;
+
+function TMockShareService.RejectInvite(InviteToken: WideString): Boolean;
+begin
+	Inc(FRejectCalls);
+	FLastRejectToken := InviteToken;
+	Result := FRejectResult;
+end;
+
+function TMockShareService.GetPublishedFileStreamUrl(FileIdentity: TCMRDirItem; var StreamUrl: WideString; ShardType: WideString; Publish: Boolean): Boolean;
+begin
+	Result := False;
+end;
+
+function TMockShareService.CloneWeblink(Path, Link, ConflictMode: WideString): Integer;
+begin
+	Result := FS_FILE_NOTSUPPORTED;
+end;
+
+{TInviteOperationHandlerTest}
 
 function TInviteOperationHandlerTest.CreateInvite(const Name, InviteToken: WideString): TCMRIncomingInvite;
 begin
@@ -58,66 +254,211 @@ end;
 procedure TInviteOperationHandlerTest.Setup;
 begin
 	FHandler := TInviteOperationHandler.Create;
+	FMockService := TMockShareService.Create;
+	FMockServiceIntf := FMockService;
 end;
 
 procedure TInviteOperationHandlerTest.TearDown;
 begin
 	FHandler := nil;
+	FMockServiceIntf := nil;
+	FMockService := nil;
 end;
 
-{Nil cloud tests}
+{Nil service tests}
 
-procedure TInviteOperationHandlerTest.TestExecute_NilCloud_ReturnsError;
+procedure TInviteOperationHandlerTest.TestExecute_NilService_ReturnsError;
 var
 	Invite: TCMRIncomingInvite;
-	Result: Integer;
+	ExecResult: Integer;
 begin
 	Invite := CreateInvite('SharedFolder', 'token123');
 
-	Result := FHandler.Execute(0, nil, Invite,
+	ExecResult := FHandler.Execute(0, nil, Invite,
 		function(ParentWindow: HWND; const Inv: TCMRIncomingInvite): Integer
 		begin
 			Result := mrCancel;
 		end);
 
-	Assert.AreEqual(FS_EXEC_ERROR, Result, 'Should return error when cloud is nil');
+	Assert.AreEqual(FS_EXEC_ERROR, ExecResult, 'Should return error when service is nil');
 end;
 
-{Dialog result tests}
+{Dialog cancel tests}
 
-procedure TInviteOperationHandlerTest.TestExecute_DialogCancel_RequiresIntegration;
+procedure TInviteOperationHandlerTest.TestExecute_DialogCancel_ReturnsOK;
+var
+	Invite: TCMRIncomingInvite;
+	ExecResult: Integer;
 begin
-	{When dialog returns mrCancel (or other unhandled), no operation is performed.
-	 The handler returns FS_EXEC_OK since cancel is not an error.}
-	Assert.Pass('Dialog cancel behavior tested through integration tests');
+	Invite := CreateInvite('SharedFolder', 'token123');
+
+	ExecResult := FHandler.Execute(0, FMockServiceIntf, Invite,
+		function(ParentWindow: HWND; const Inv: TCMRIncomingInvite): Integer
+		begin
+			Result := mrCancel;
+		end);
+
+	Assert.AreEqual(FS_EXEC_OK, ExecResult, 'Cancel should return OK (not an error)');
 end;
 
-procedure TInviteOperationHandlerTest.TestExecute_MountFolder_RequiresIntegration;
+procedure TInviteOperationHandlerTest.TestExecute_DialogCancel_NoOperationCalled;
+var
+	Invite: TCMRIncomingInvite;
 begin
-	{When dialog returns mrYes, Cloud.mountFolder is called.
-	 Requires real TCloudMailRu to test.}
-	Assert.Pass('Mount folder tested through integration tests');
+	Invite := CreateInvite('SharedFolder', 'token123');
+
+	FHandler.Execute(0, FMockServiceIntf, Invite,
+		function(ParentWindow: HWND; const Inv: TCMRIncomingInvite): Integer
+		begin
+			Result := mrCancel;
+		end);
+
+	Assert.AreEqual(0, FMockService.GetMountCalls, 'Should not call Mount on cancel');
+	Assert.AreEqual(0, FMockService.GetUnmountCalls, 'Should not call Unmount on cancel');
+	Assert.AreEqual(0, FMockService.GetRejectCalls, 'Should not call RejectInvite on cancel');
 end;
 
-procedure TInviteOperationHandlerTest.TestExecute_UnmountKeep_RequiresIntegration;
+{Mount folder tests (mrYes)}
+
+procedure TInviteOperationHandlerTest.TestExecute_MountFolder_CallsServiceWithCorrectParams;
+var
+	Invite: TCMRIncomingInvite;
 begin
-	{When dialog returns mrAbort, Cloud.unmountFolder(name, true) is called.
-	 Requires real TCloudMailRu to test.}
-	Assert.Pass('Unmount with keep tested through integration tests');
+	Invite := CreateInvite('SharedDocs', 'invite-token-abc');
+
+	FHandler.Execute(0, FMockServiceIntf, Invite,
+		function(ParentWindow: HWND; const Inv: TCMRIncomingInvite): Integer
+		begin
+			Result := mrYes; {mrYes = Mount folder}
+		end);
+
+	Assert.AreEqual(1, FMockService.GetMountCalls, 'Should call Mount once');
+	Assert.AreEqual('SharedDocs', FMockService.GetLastMountHome, 'Should pass invite name as home');
+	Assert.AreEqual('invite-token-abc', FMockService.GetLastMountToken, 'Should pass invite token');
 end;
 
-procedure TInviteOperationHandlerTest.TestExecute_UnmountNoKeep_RequiresIntegration;
+procedure TInviteOperationHandlerTest.TestExecute_MountFolder_Success_ReturnsOK;
+var
+	Invite: TCMRIncomingInvite;
+	ExecResult: Integer;
 begin
-	{When dialog returns mrClose, Cloud.unmountFolder(name, false) is called.
-	 Requires real TCloudMailRu to test.}
-	Assert.Pass('Unmount without keep tested through integration tests');
+	Invite := CreateInvite('SharedDocs', 'token123');
+	FMockService.SetMountResult(True);
+
+	ExecResult := FHandler.Execute(0, FMockServiceIntf, Invite,
+		function(ParentWindow: HWND; const Inv: TCMRIncomingInvite): Integer
+		begin
+			Result := mrYes;
+		end);
+
+	Assert.AreEqual(FS_EXEC_OK, ExecResult);
 end;
 
-procedure TInviteOperationHandlerTest.TestExecute_RejectInvite_RequiresIntegration;
+{Unmount with keep tests (mrAbort)}
+
+procedure TInviteOperationHandlerTest.TestExecute_UnmountKeep_CallsServiceWithCloneCopyTrue;
+var
+	Invite: TCMRIncomingInvite;
 begin
-	{When dialog returns mrNo, Cloud.rejectInvite is called.
-	 Requires real TCloudMailRu to test.}
-	Assert.Pass('Reject invite tested through integration tests');
+	Invite := CreateInvite('SharedFolder', 'token123');
+
+	FHandler.Execute(0, FMockServiceIntf, Invite,
+		function(ParentWindow: HWND; const Inv: TCMRIncomingInvite): Integer
+		begin
+			Result := mrAbort; {mrAbort = Unmount folder, keep data}
+		end);
+
+	Assert.AreEqual(1, FMockService.GetUnmountCalls, 'Should call Unmount once');
+	Assert.AreEqual('SharedFolder', FMockService.GetLastUnmountHome, 'Should pass invite name');
+	Assert.IsTrue(FMockService.GetLastUnmountCloneCopy, 'CloneCopy should be true for keep data');
+end;
+
+procedure TInviteOperationHandlerTest.TestExecute_UnmountKeep_Success_ReturnsOK;
+var
+	Invite: TCMRIncomingInvite;
+	ExecResult: Integer;
+begin
+	Invite := CreateInvite('SharedFolder', 'token123');
+	FMockService.SetUnmountResult(True);
+
+	ExecResult := FHandler.Execute(0, FMockServiceIntf, Invite,
+		function(ParentWindow: HWND; const Inv: TCMRIncomingInvite): Integer
+		begin
+			Result := mrAbort;
+		end);
+
+	Assert.AreEqual(FS_EXEC_OK, ExecResult);
+end;
+
+{Unmount without keep tests (mrClose)}
+
+procedure TInviteOperationHandlerTest.TestExecute_UnmountNoKeep_CallsServiceWithCloneCopyFalse;
+var
+	Invite: TCMRIncomingInvite;
+begin
+	Invite := CreateInvite('SharedProject', 'token456');
+
+	FHandler.Execute(0, FMockServiceIntf, Invite,
+		function(ParentWindow: HWND; const Inv: TCMRIncomingInvite): Integer
+		begin
+			Result := mrClose; {mrClose = Unmount folder, don't keep data}
+		end);
+
+	Assert.AreEqual(1, FMockService.GetUnmountCalls, 'Should call Unmount once');
+	Assert.AreEqual('SharedProject', FMockService.GetLastUnmountHome, 'Should pass invite name');
+	Assert.IsFalse(FMockService.GetLastUnmountCloneCopy, 'CloneCopy should be false for no keep');
+end;
+
+procedure TInviteOperationHandlerTest.TestExecute_UnmountNoKeep_Success_ReturnsOK;
+var
+	Invite: TCMRIncomingInvite;
+	ExecResult: Integer;
+begin
+	Invite := CreateInvite('SharedFolder', 'token123');
+	FMockService.SetUnmountResult(True);
+
+	ExecResult := FHandler.Execute(0, FMockServiceIntf, Invite,
+		function(ParentWindow: HWND; const Inv: TCMRIncomingInvite): Integer
+		begin
+			Result := mrClose;
+		end);
+
+	Assert.AreEqual(FS_EXEC_OK, ExecResult);
+end;
+
+{Reject invite tests (mrNo)}
+
+procedure TInviteOperationHandlerTest.TestExecute_RejectInvite_CallsServiceWithCorrectToken;
+var
+	Invite: TCMRIncomingInvite;
+begin
+	Invite := CreateInvite('SharedFiles', 'reject-token-xyz');
+
+	FHandler.Execute(0, FMockServiceIntf, Invite,
+		function(ParentWindow: HWND; const Inv: TCMRIncomingInvite): Integer
+		begin
+			Result := mrNo; {mrNo = Reject invite}
+		end);
+
+	Assert.AreEqual(1, FMockService.GetRejectCalls, 'Should call RejectInvite once');
+	Assert.AreEqual('reject-token-xyz', FMockService.GetLastRejectToken, 'Should pass invite token');
+end;
+
+procedure TInviteOperationHandlerTest.TestExecute_RejectInvite_Success_ReturnsOK;
+var
+	Invite: TCMRIncomingInvite;
+	ExecResult: Integer;
+begin
+	Invite := CreateInvite('SharedFolder', 'token123');
+	FMockService.SetRejectResult(True);
+
+	ExecResult := FHandler.Execute(0, FMockServiceIntf, Invite,
+		function(ParentWindow: HWND; const Inv: TCMRIncomingInvite): Integer
+		begin
+			Result := mrNo;
+		end);
+
+	Assert.AreEqual(FS_EXEC_OK, ExecResult);
 end;
 
 initialization
