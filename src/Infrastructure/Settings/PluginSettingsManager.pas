@@ -341,13 +341,35 @@ begin
 	FConfigFile.EraseSection(StreamingPrefix + Extension);
 end;
 
+function ExtractStreamingExt(const FileName: WideString): WideString;
+{Extracts extension from filename or extension-only input.
+ Handles both 'file.mp4' -> 'mp4' and '.mp4' -> 'mp4'}
+var
+	Ext: WideString;
+begin
+	{First try standard extraction for normal filenames}
+	Ext := ExtractUniversalFileExt(FileName, True);
+	if Ext <> EmptyWideStr then
+		Exit(Ext);
+
+	{Handle extension-only input like '.mp4': strip leading dot}
+	if (Length(FileName) > 1) and (FileName[1] = '.') then
+		Exit(Copy(FileName, 2, Length(FileName) - 1));
+
+	Result := EmptyWideStr;
+end;
+
 function TPluginSettingsManager.GetStreamingSettings(const FileName: WideString): TStreamingSettings;
 var
 	SectionName: WideString;
+	Ext: WideString;
 begin
 	Result := default (TStreamingSettings);
 	Result.Format := STREAMING_FORMAT_UNSET;
-	SectionName := StreamingPrefix + ExtractUniversalFileExt(FileName, True);
+	Ext := ExtractStreamingExt(FileName);
+	if Ext = EmptyWideStr then
+		Exit;
+	SectionName := StreamingPrefix + Ext;
 	if FConfigFile.SectionExists(SectionName) then
 	begin
 		Result.Command := FConfigFile.ReadString(SectionName, 'Command', EmptyWideStr);
@@ -360,10 +382,12 @@ end;
 procedure TPluginSettingsManager.SetStreamingSettings(const FileName: WideString; StreamingSettings: TStreamingSettings);
 var
 	SectionName: WideString;
+	Ext: WideString;
 begin
-	if ExtractUniversalFileExt(FileName, True) <> EmptyWideStr then
+	Ext := ExtractStreamingExt(FileName);
+	if Ext <> EmptyWideStr then
 	begin
-		SectionName := StreamingPrefix + ExtractUniversalFileExt(FileName, True);
+		SectionName := StreamingPrefix + Ext;
 		FConfigFile.WriteString(SectionName, 'Command', StreamingSettings.Command);
 		FConfigFile.WriteString(SectionName, 'Parameters', StreamingSettings.Parameters);
 		FConfigFile.WriteString(SectionName, 'StartPath', StreamingSettings.StartPath);
