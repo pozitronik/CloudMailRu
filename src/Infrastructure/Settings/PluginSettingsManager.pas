@@ -24,7 +24,13 @@ type
 	IPluginSettingsManager = interface
 		['{1028658B-966F-43D1-9329-A82E41726BEB}']
 		function GetSettings: TPluginSettings;
+		procedure SetSettings(Value: TPluginSettings);
+		procedure Save;
 		procedure SwitchProxyPasswordStorage;
+		function GetStreamingSettings(const FileName: WideString): TStreamingSettings;
+		procedure SetStreamingSettings(const FileName: WideString; StreamingSettings: TStreamingSettings);
+		procedure GetStreamingExtensionsList(ExtensionsList: TStrings);
+		procedure RemoveStreamingExtension(const Extension: WideString);
 	end;
 
 	{Null implementation for testing - returns defaults, no-op for writes}
@@ -33,7 +39,13 @@ type
 		FSettings: TPluginSettings;
 	public
 		function GetSettings: TPluginSettings;
+		procedure SetSettings(Value: TPluginSettings);
+		procedure Save;
 		procedure SwitchProxyPasswordStorage;
+		function GetStreamingSettings(const FileName: WideString): TStreamingSettings;
+		procedure SetStreamingSettings(const FileName: WideString; StreamingSettings: TStreamingSettings);
+		procedure GetStreamingExtensionsList(ExtensionsList: TStrings);
+		procedure RemoveStreamingExtension(const Extension: WideString);
 	end;
 
 	{Files names and path naming conventions:
@@ -52,7 +64,7 @@ type
 		function GetAccountsIniFilePath: WideString;
 
 	public
-		Settings: TPluginSettings;
+		Settings: TPluginSettings; {Public field for direct nested access in tests and legacy code}
 		property ApplicationPath: WideString read FApplicationPath; {Required for tests}
 		property IniFileDir: WideString read FIniFileDir; {Required for tests}
 		property IniFilePath: WideString read FIniFilePath;
@@ -65,8 +77,9 @@ type
 		procedure Save(); {save current options set into the file}
 		procedure SwitchProxyPasswordStorage;
 
-		{IPluginSettingsManager interface method}
+		{IPluginSettingsManager interface methods}
 		function GetSettings: TPluginSettings;
+		procedure SetSettings(Value: TPluginSettings);
 
 		function GetStreamingSettings(const FileName: WideString): TStreamingSettings;
 		procedure SetStreamingSettings(const FileName: WideString; StreamingSettings: TStreamingSettings);
@@ -84,12 +97,52 @@ begin
 	Result := FSettings;
 end;
 
+procedure TNullPluginSettingsManager.SetSettings(Value: TPluginSettings);
+begin
+	FSettings := Value;
+end;
+
+procedure TNullPluginSettingsManager.Save;
+begin
+	{No-op for null implementation}
+end;
+
 procedure TNullPluginSettingsManager.SwitchProxyPasswordStorage;
 begin
 	{No-op for null implementation}
 end;
 
+function TNullPluginSettingsManager.GetStreamingSettings(const FileName: WideString): TStreamingSettings;
+begin
+	Result := Default(TStreamingSettings);
+end;
+
+procedure TNullPluginSettingsManager.SetStreamingSettings(const FileName: WideString; StreamingSettings: TStreamingSettings);
+begin
+	{No-op for null implementation}
+end;
+
+procedure TNullPluginSettingsManager.GetStreamingExtensionsList(ExtensionsList: TStrings);
+begin
+	ExtensionsList.Clear;
+end;
+
+procedure TNullPluginSettingsManager.RemoveStreamingExtension(const Extension: WideString);
+begin
+	{No-op for null implementation}
+end;
+
 {TPluginSettingsManager}
+
+function TPluginSettingsManager.GetSettings: TPluginSettings;
+begin
+	Result := Settings;
+end;
+
+procedure TPluginSettingsManager.SetSettings(Value: TPluginSettings);
+begin
+	Settings := Value;
+end;
 
 constructor TPluginSettingsManager.Create(ConfigFile: IConfigFile);
 begin
@@ -322,11 +375,6 @@ procedure TPluginSettingsManager.SwitchProxyPasswordStorage;
 begin
 	FConfigFile.WriteBool('Main', 'ProxyTCPwdMngr', True);
 	FConfigFile.DeleteKey('Main', 'ProxyPassword');
-end;
-
-function TPluginSettingsManager.GetSettings: TPluginSettings;
-begin
-	Result := Settings;
 end;
 
 end.

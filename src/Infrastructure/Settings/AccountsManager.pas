@@ -20,8 +20,11 @@ uses
 type
 	IAccountsManager = interface
 		['{7B8C9D0E-1F2A-3B4C-5D6E-7F8A9B0C1D2E}']
+		function GetAccountsList(const AccountTypes: EAccountType = [ATPrivate, ATPublic]; const VirtualTypes: EVirtualType = []): TWSList;
 		function GetAccountSettings(Account: WideString): TAccountSettings;
-		procedure SetAccountSettings(Account: WideString; AccountSettings: TAccountSettings);
+		procedure SetAccountSettings(Account: WideString; AccountSettings: TAccountSettings); overload;
+		procedure SetAccountSettings(AccountSettings: TAccountSettings); overload;
+		procedure DeleteAccount(Account: WideString);
 		procedure SwitchPasswordStorage(Account: WideString);
 		procedure SetCryptedGUID(Account: WideString; GUID: WideString);
 	end;
@@ -29,8 +32,11 @@ type
 	{Null implementation for testing - returns defaults, no-op for writes}
 	TNullAccountsManager = class(TInterfacedObject, IAccountsManager)
 	public
+		function GetAccountsList(const AccountTypes: EAccountType = [ATPrivate, ATPublic]; const VirtualTypes: EVirtualType = []): TWSList;
 		function GetAccountSettings(Account: WideString): TAccountSettings;
-		procedure SetAccountSettings(Account: WideString; AccountSettings: TAccountSettings);
+		procedure SetAccountSettings(Account: WideString; AccountSettings: TAccountSettings); overload;
+		procedure SetAccountSettings(AccountSettings: TAccountSettings); overload;
+		procedure DeleteAccount(Account: WideString);
 		procedure SwitchPasswordStorage(Account: WideString);
 		procedure SetCryptedGUID(Account: WideString; GUID: WideString);
 	end;
@@ -56,6 +62,11 @@ implementation
 
 {TNullAccountsManager}
 
+function TNullAccountsManager.GetAccountsList(const AccountTypes: EAccountType; const VirtualTypes: EVirtualType): TWSList;
+begin
+	Result.Clear;
+end;
+
 function TNullAccountsManager.GetAccountSettings(Account: WideString): TAccountSettings;
 begin
 	Result := Default (TAccountSettings);
@@ -63,6 +74,16 @@ begin
 end;
 
 procedure TNullAccountsManager.SetAccountSettings(Account: WideString; AccountSettings: TAccountSettings);
+begin
+	{No-op for null implementation}
+end;
+
+procedure TNullAccountsManager.SetAccountSettings(AccountSettings: TAccountSettings);
+begin
+	{No-op for null implementation}
+end;
+
+procedure TNullAccountsManager.DeleteAccount(Account: WideString);
 begin
 	{No-op for null implementation}
 end;

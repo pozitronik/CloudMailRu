@@ -7,6 +7,7 @@ interface
 
 uses
 	System.SysUtils,
+	System.Classes,
 	DUnitX.TestFramework,
 	DescriptionSyncGuard,
 	DescriptionSyncManager,
@@ -15,7 +16,9 @@ uses
 	CloudDescriptionOpsAdapter,
 	PluginSettings,
 	AccountSettings,
-	RealPath;
+	RealPath,
+	StreamingSettings,
+	WSList;
 
 type
 	{Mock sync manager that tracks calls}
@@ -45,7 +48,13 @@ type
 	public
 		constructor Create;
 		function GetSettings: TPluginSettings;
+		procedure SetSettings(Value: TPluginSettings);
+		procedure Save;
 		procedure SwitchProxyPasswordStorage;
+		function GetStreamingSettings(const FileName: WideString): TStreamingSettings;
+		procedure SetStreamingSettings(const FileName: WideString; StreamSettings: TStreamingSettings);
+		procedure GetStreamingExtensionsList(ExtensionsList: TStrings);
+		procedure RemoveStreamingExtension(const Extension: WideString);
 
 		procedure SetDescriptionTrackCloudFS(Value: Boolean);
 		procedure SetDescriptionCopyFromCloud(Value: Boolean);
@@ -58,8 +67,11 @@ type
 		FIsRemoteDescriptionsSupported: Boolean;
 	public
 		constructor Create;
+		function GetAccountsList(const AccountTypes: EAccountType = [ATPrivate, ATPublic]; const VirtualTypes: EVirtualType = []): TWSList;
 		function GetAccountSettings(Account: WideString): TAccountSettings;
-		procedure SetAccountSettings(Account: WideString; Settings: TAccountSettings);
+		procedure SetAccountSettings(Account: WideString; Settings: TAccountSettings); overload;
+		procedure SetAccountSettings(Settings: TAccountSettings); overload;
+		procedure DeleteAccount(Account: WideString);
 		procedure SwitchPasswordStorage(Account: WideString);
 		procedure SetCryptedGUID(Account: WideString; GUID: WideString);
 
@@ -169,8 +181,38 @@ begin
 	Result := FSettings;
 end;
 
+procedure TMockSettingsManager.SetSettings(Value: TPluginSettings);
+begin
+	FSettings := Value;
+end;
+
+procedure TMockSettingsManager.Save;
+begin
+	{No-op}
+end;
+
 procedure TMockSettingsManager.SwitchProxyPasswordStorage;
 begin
+end;
+
+function TMockSettingsManager.GetStreamingSettings(const FileName: WideString): TStreamingSettings;
+begin
+	Result := Default(TStreamingSettings);
+end;
+
+procedure TMockSettingsManager.SetStreamingSettings(const FileName: WideString; StreamSettings: TStreamingSettings);
+begin
+	{No-op}
+end;
+
+procedure TMockSettingsManager.GetStreamingExtensionsList(ExtensionsList: TStrings);
+begin
+	ExtensionsList.Clear;
+end;
+
+procedure TMockSettingsManager.RemoveStreamingExtension(const Extension: WideString);
+begin
+	{No-op}
 end;
 
 procedure TMockSettingsManager.SetDescriptionTrackCloudFS(Value: Boolean);
@@ -196,6 +238,11 @@ begin
 	FIsRemoteDescriptionsSupported := False;
 end;
 
+function TMockAccountsManager.GetAccountsList(const AccountTypes: EAccountType; const VirtualTypes: EVirtualType): TWSList;
+begin
+	Result.Clear;
+end;
+
 function TMockAccountsManager.GetAccountSettings(Account: WideString): TAccountSettings;
 begin
 	Result := Default(TAccountSettings);
@@ -209,6 +256,14 @@ begin
 end;
 
 procedure TMockAccountsManager.SetAccountSettings(Account: WideString; Settings: TAccountSettings);
+begin
+end;
+
+procedure TMockAccountsManager.SetAccountSettings(Settings: TAccountSettings);
+begin
+end;
+
+procedure TMockAccountsManager.DeleteAccount(Account: WideString);
 begin
 end;
 

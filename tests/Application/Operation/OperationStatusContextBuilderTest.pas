@@ -6,12 +6,14 @@ unit OperationStatusContextBuilderTest;
 interface
 
 uses
+	System.Classes,
 	DUnitX.TestFramework,
 	OperationStatusContextBuilder,
 	OperationLifecycleHandler,
 	PluginSettingsManager,
 	MockConnectionManager,
-	RealPath;
+	RealPath,
+	StreamingSettings;
 
 type
 	[TestFixture]
@@ -68,7 +70,13 @@ type
 	public
 		constructor Create(DescriptionEnabled, LogUserSpace: Boolean);
 		function GetSettings: TPluginSettings;
+		procedure SetSettings(Value: TPluginSettings);
+		procedure Save;
 		procedure SwitchProxyPasswordStorage;
+		function GetStreamingSettings(const FileName: WideString): TStreamingSettings;
+		procedure SetStreamingSettings(const FileName: WideString; StreamSettings: TStreamingSettings);
+		procedure GetStreamingExtensionsList(ExtensionsList: TStrings);
+		procedure RemoveStreamingExtension(const Extension: WideString);
 	end;
 
 constructor TTestPluginSettingsManager.Create(DescriptionEnabled, LogUserSpace: Boolean);
@@ -83,7 +91,37 @@ begin
 	Result := FSettings;
 end;
 
+procedure TTestPluginSettingsManager.SetSettings(Value: TPluginSettings);
+begin
+	FSettings := Value;
+end;
+
+procedure TTestPluginSettingsManager.Save;
+begin
+	{No-op}
+end;
+
 procedure TTestPluginSettingsManager.SwitchProxyPasswordStorage;
+begin
+	{No-op}
+end;
+
+function TTestPluginSettingsManager.GetStreamingSettings(const FileName: WideString): TStreamingSettings;
+begin
+	Result := Default(TStreamingSettings);
+end;
+
+procedure TTestPluginSettingsManager.SetStreamingSettings(const FileName: WideString; StreamSettings: TStreamingSettings);
+begin
+	{No-op}
+end;
+
+procedure TTestPluginSettingsManager.GetStreamingExtensionsList(ExtensionsList: TStrings);
+begin
+	ExtensionsList.Clear;
+end;
+
+procedure TTestPluginSettingsManager.RemoveStreamingExtension(const Extension: WideString);
 begin
 	{No-op}
 end;

@@ -1156,17 +1156,19 @@ end;
 class function TAccountsForm.ShowAccounts(ParentWindow: HWND; PasswordManager: IPasswordManager; Account: WideString): Boolean;
 var
 	Form: TAccountsForm;
-	SettingsManager: TPluginSettingsManager;
-	AccountsMgr: TAccountsManager;
+	SettingsManager: IPluginSettingsManager;
+	AccountsMgr: IAccountsManager;
 	Config: TAccountsPresenterConfig;
+	PluginSettingsMgr: TPluginSettingsManager;
 begin
 	Form := TAccountsForm.Create(nil);
 	try
 		Form.ParentWindow := ParentWindow;
 
-		{Create managers}
-		SettingsManager := TPluginSettingsManager.Create();
-		AccountsMgr := TAccountsManager.Create(TIniConfigFile.Create(SettingsManager.AccountsIniFilePath));
+		{Create managers - interface reference counting handles cleanup}
+		PluginSettingsMgr := TPluginSettingsManager.Create();
+		SettingsManager := PluginSettingsMgr;
+		AccountsMgr := TAccountsManager.Create(TIniConfigFile.Create(PluginSettingsMgr.AccountsIniFilePath));
 
 		{Create presenter config}
 		Config.PasswordManager := PasswordManager;
@@ -1191,8 +1193,7 @@ begin
 			Result := Form.FPresenter.SettingsApplied;
 		finally
 			Form.FPresenter.Free;
-			AccountsMgr.Free;
-			SettingsManager.Free;
+			{Interface references are released automatically when they go out of scope}
 		end;
 	finally
 		Form.Free;

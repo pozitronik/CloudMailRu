@@ -21,7 +21,8 @@ uses
 	IconContextBuilder,
 	AccountsManager,
 	ListingItemFetcher,
-	MockConnectionManager;
+	MockConnectionManager,
+	WSList;
 
 type
 	{Mock accounts manager for testing - implements interface directly}
@@ -30,8 +31,11 @@ type
 		FPublicAccountNames: array of WideString;
 	public
 		procedure AddPublicAccount(const AccountName: WideString);
+		function GetAccountsList(const AccountTypes: EAccountType = [ATPrivate, ATPublic]; const VirtualTypes: EVirtualType = []): TWSList;
 		function GetAccountSettings(Account: WideString): TAccountSettings;
-		procedure SetAccountSettings(Account: WideString; AccountSettings: TAccountSettings);
+		procedure SetAccountSettings(Account: WideString; AccountSettings: TAccountSettings); overload;
+		procedure SetAccountSettings(AccountSettings: TAccountSettings); overload;
+		procedure DeleteAccount(Account: WideString);
 		procedure SwitchPasswordStorage(Account: WideString);
 		procedure SetCryptedGUID(Account: WideString; GUID: WideString);
 	end;
@@ -111,6 +115,11 @@ begin
 	FPublicAccountNames[High(FPublicAccountNames)] := AccountName;
 end;
 
+function TMockAccountsManager.GetAccountsList(const AccountTypes: EAccountType; const VirtualTypes: EVirtualType): TWSList;
+begin
+	Result.Clear;
+end;
+
 function TMockAccountsManager.GetAccountSettings(Account: WideString): TAccountSettings;
 var
 	i: Integer;
@@ -126,6 +135,16 @@ begin
 end;
 
 procedure TMockAccountsManager.SetAccountSettings(Account: WideString; AccountSettings: TAccountSettings);
+begin
+	{No-op for mock}
+end;
+
+procedure TMockAccountsManager.SetAccountSettings(AccountSettings: TAccountSettings);
+begin
+	{No-op for mock}
+end;
+
+procedure TMockAccountsManager.DeleteAccount(Account: WideString);
 begin
 	{No-op for mock}
 end;

@@ -11,7 +11,8 @@ uses
 	ConnectionSettings,
 	TCPasswordManager,
 	AccountsManager,
-	AccountRegistrationHandler;
+	AccountRegistrationHandler,
+	WSList;
 
 type
 	{Mock accounts manager for testing}
@@ -22,8 +23,11 @@ type
 	public
 		constructor Create;
 
+		function GetAccountsList(const AccountTypes: EAccountType = [ATPrivate, ATPublic]; const VirtualTypes: EVirtualType = []): TWSList;
 		function GetAccountSettings(Account: WideString): TAccountSettings;
-		procedure SetAccountSettings(Account: WideString; Settings: TAccountSettings);
+		procedure SetAccountSettings(Account: WideString; Settings: TAccountSettings); overload;
+		procedure SetAccountSettings(Settings: TAccountSettings); overload;
+		procedure DeleteAccount(Account: WideString);
 		procedure SwitchPasswordStorage(Account: WideString);
 		procedure SetCryptedGUID(Account: WideString; GUID: WideString);
 
@@ -97,6 +101,11 @@ begin
 	FillChar(FStoredAccount, SizeOf(FStoredAccount), 0);
 end;
 
+function TMockRegAccountsManager.GetAccountsList(const AccountTypes: EAccountType; const VirtualTypes: EVirtualType): TWSList;
+begin
+	Result.Clear;
+end;
+
 function TMockRegAccountsManager.GetAccountSettings(Account: WideString): TAccountSettings;
 begin
 	FillChar(Result, SizeOf(Result), 0);
@@ -108,6 +117,17 @@ procedure TMockRegAccountsManager.SetAccountSettings(Account: WideString; Settin
 begin
 	FSetAccountCalled := True;
 	FStoredAccount := Settings;
+end;
+
+procedure TMockRegAccountsManager.SetAccountSettings(Settings: TAccountSettings);
+begin
+	FSetAccountCalled := True;
+	FStoredAccount := Settings;
+end;
+
+procedure TMockRegAccountsManager.DeleteAccount(Account: WideString);
+begin
+	{No-op for test}
 end;
 
 procedure TMockRegAccountsManager.SwitchPasswordStorage(Account: WideString);

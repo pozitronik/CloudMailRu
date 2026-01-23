@@ -283,8 +283,8 @@ type
 		FPasswordManager: TMockPasswordManager;
 		FPasswordManagerRef: IPasswordManager;
 		FPresenter: TAccountsPresenter;
-		FAccountsManager: TAccountsManager;
-		FSettingsManager: TPluginSettingsManager;
+		FAccountsManager: IAccountsManager;
+		FSettingsManager: IPluginSettingsManager;
 	public
 		[Setup]
 		procedure Setup;
@@ -1057,8 +1057,9 @@ end;
 procedure TAccountsPresenterTest.TearDown;
 begin
 	FPresenter.Free;
-	FAccountsManager.Free;
-	FSettingsManager.Free;
+	{Interface references - let reference counting handle cleanup}
+	FAccountsManager := nil;
+	FSettingsManager := nil;
 	FViewRef := nil;
 	FPasswordManagerRef := nil;
 end;

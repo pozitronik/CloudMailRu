@@ -21,6 +21,9 @@ uses
 	CloudSettings,
 	ConnectionSettings,
 	ProxySettings,
+	StreamingSettings,
+	WSList,
+	System.Classes,
 	DUnitX.TestFramework;
 
 type
@@ -31,17 +34,22 @@ type
 		FSwitchPasswordStorageCalled: Boolean;
 		FSetCryptedGUIDCalled: Boolean;
 		FSetAccountSettingsCalled: Boolean;
+		FDeleteAccountCalled: Boolean;
 		FLastCryptedGUID: WideString;
 	public
 		constructor Create;
+		function GetAccountsList(const AccountTypes: EAccountType = [ATPrivate, ATPublic]; const VirtualTypes: EVirtualType = []): TWSList;
 		function GetAccountSettings(Account: WideString): TAccountSettings;
-		procedure SetAccountSettings(Account: WideString; Settings: TAccountSettings);
+		procedure SetAccountSettings(Account: WideString; Settings: TAccountSettings); overload;
+		procedure SetAccountSettings(Settings: TAccountSettings); overload;
+		procedure DeleteAccount(Account: WideString);
 		procedure SwitchPasswordStorage(Account: WideString);
 		procedure SetCryptedGUID(Account: WideString; GUID: WideString);
 		property AccountSettings: TAccountSettings read FAccountSettings write FAccountSettings;
 		property SwitchPasswordStorageCalled: Boolean read FSwitchPasswordStorageCalled;
 		property SetAccountSettingsCalled: Boolean read FSetAccountSettingsCalled;
 		property SetCryptedGUIDCalled: Boolean read FSetCryptedGUIDCalled;
+		property DeleteAccountCalled: Boolean read FDeleteAccountCalled;
 		property LastCryptedGUID: WideString read FLastCryptedGUID;
 	end;
 
@@ -50,12 +58,20 @@ type
 	private
 		FPluginSettings: TPluginSettings;
 		FSwitchProxyPasswordStorageCalled: Boolean;
+		FSaveCalled: Boolean;
 	public
 		constructor Create;
 		function GetSettings: TPluginSettings;
+		procedure SetSettings(Value: TPluginSettings);
+		procedure Save;
 		procedure SwitchProxyPasswordStorage;
+		function GetStreamingSettings(const FileName: WideString): TStreamingSettings;
+		procedure SetStreamingSettings(const FileName: WideString; StreamingSettings: TStreamingSettings);
+		procedure GetStreamingExtensionsList(ExtensionsList: TStrings);
+		procedure RemoveStreamingExtension(const Extension: WideString);
 		property Settings: TPluginSettings read FPluginSettings write FPluginSettings;
 		property SwitchProxyPasswordStorageCalled: Boolean read FSwitchProxyPasswordStorageCalled;
+		property SaveCalled: Boolean read FSaveCalled;
 	end;
 
 	[TestFixture]
@@ -113,6 +129,7 @@ begin
 	inherited Create;
 	FSwitchPasswordStorageCalled := False;
 	FSetCryptedGUIDCalled := False;
+	FDeleteAccountCalled := False;
 	FLastCryptedGUID := '';
 
 	{Initialize with default test settings - public account to simplify testing}
@@ -132,6 +149,11 @@ begin
 	FAccountSettings.UnlimitedFileSize := False;
 end;
 
+function TMockAccountsManager.GetAccountsList(const AccountTypes: EAccountType; const VirtualTypes: EVirtualType): TWSList;
+begin
+	Result.Clear;
+end;
+
 function TMockAccountsManager.GetAccountSettings(Account: WideString): TAccountSettings;
 begin
 	FAccountSettings.Account := Account;
@@ -142,6 +164,17 @@ procedure TMockAccountsManager.SetAccountSettings(Account: WideString; Settings:
 begin
 	FSetAccountSettingsCalled := True;
 	FAccountSettings := Settings;
+end;
+
+procedure TMockAccountsManager.SetAccountSettings(Settings: TAccountSettings);
+begin
+	FSetAccountSettingsCalled := True;
+	FAccountSettings := Settings;
+end;
+
+procedure TMockAccountsManager.DeleteAccount(Account: WideString);
+begin
+	FDeleteAccountCalled := True;
 end;
 
 procedure TMockAccountsManager.SwitchPasswordStorage(Account: WideString);
@@ -161,6 +194,7 @@ constructor TMockPluginSettingsManager.Create;
 begin
 	inherited Create;
 	FSwitchProxyPasswordStorageCalled := False;
+	FSaveCalled := False;
 
 	{Initialize with default test settings}
 	FPluginSettings := Default(TPluginSettings);
@@ -196,6 +230,36 @@ end;
 function TMockPluginSettingsManager.GetSettings: TPluginSettings;
 begin
 	Result := FPluginSettings;
+end;
+
+procedure TMockPluginSettingsManager.SetSettings(Value: TPluginSettings);
+begin
+	FPluginSettings := Value;
+end;
+
+procedure TMockPluginSettingsManager.Save;
+begin
+	FSaveCalled := True;
+end;
+
+function TMockPluginSettingsManager.GetStreamingSettings(const FileName: WideString): TStreamingSettings;
+begin
+	Result := Default(TStreamingSettings);
+end;
+
+procedure TMockPluginSettingsManager.SetStreamingSettings(const FileName: WideString; StreamingSettings: TStreamingSettings);
+begin
+	{No-op for mock}
+end;
+
+procedure TMockPluginSettingsManager.GetStreamingExtensionsList(ExtensionsList: TStrings);
+begin
+	ExtensionsList.Clear;
+end;
+
+procedure TMockPluginSettingsManager.RemoveStreamingExtension(const Extension: WideString);
+begin
+	{No-op for mock}
 end;
 
 procedure TMockPluginSettingsManager.SwitchProxyPasswordStorage;

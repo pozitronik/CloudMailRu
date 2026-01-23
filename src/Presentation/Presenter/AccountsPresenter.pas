@@ -172,8 +172,8 @@ type
 	TAccountsPresenter = class
 	private
 		FView: IAccountsView;
-		FAccountsManager: TAccountsManager;
-		FSettingsManager: TPluginSettingsManager;
+		FAccountsManager: IAccountsManager;
+		FSettingsManager: IPluginSettingsManager;
 		FPasswordManager: IPasswordManager;
 		FParentWindow: THandle;
 		FSelectedAccount: WideString;
@@ -187,8 +187,8 @@ type
 	public
 		constructor Create(
 			AView: IAccountsView;
-			AAccountsManager: TAccountsManager;
-			ASettingsManager: TPluginSettingsManager;
+			AAccountsManager: IAccountsManager;
+			ASettingsManager: IPluginSettingsManager;
 			AConfig: TAccountsPresenterConfig
 		);
 
@@ -237,8 +237,8 @@ const
 
 constructor TAccountsPresenter.Create(
 	AView: IAccountsView;
-	AAccountsManager: TAccountsManager;
-	ASettingsManager: TPluginSettingsManager;
+	AAccountsManager: IAccountsManager;
+	ASettingsManager: IPluginSettingsManager;
 	AConfig: TAccountsPresenterConfig
 );
 begin
@@ -304,7 +304,7 @@ procedure TAccountsPresenter.LoadGlobalSettingsToView;
 var
 	Settings: TPluginSettings;
 begin
-	Settings := FSettingsManager.Settings;
+	Settings := FSettingsManager.GetSettings;
 
 	{General settings}
 	FView.SetLoadSSLFromPluginDir(Settings.LoadSSLDLLOnlyFromPluginDir);
@@ -530,7 +530,7 @@ var
 begin
 	AccSettings := FAccountsManager.GetAccountSettings(FSelectedAccount);
 
-	if FView.ShowRegistrationDialog(AccSettings, FSettingsManager.Settings.ConnectionSettings) then
+	if FView.ShowRegistrationDialog(AccSettings, FSettingsManager.GetSettings.ConnectionSettings) then
 	begin
 		{Handle TC password manager for new account}
 		if AccSettings.UseTCPasswordManager then
@@ -580,7 +580,7 @@ begin
 	if not ValidateGlobalSettings then
 		Exit;
 
-	Settings := FSettingsManager.Settings;
+	Settings := FSettingsManager.GetSettings;
 
 	{General settings}
 	Settings.LoadSSLDLLOnlyFromPluginDir := FView.GetLoadSSLFromPluginDir;
@@ -641,7 +641,7 @@ begin
 	Settings.DescriptionFileName := FView.GetDescriptionFileName;
 
 	{Save settings}
-	FSettingsManager.Settings := Settings;
+	FSettingsManager.SetSettings(Settings);
 	FSettingsManager.Save;
 	FSettingsApplied := True;
 
@@ -652,7 +652,7 @@ begin
 		begin
 			FView.SetProxyPassword('');
 			Settings.ConnectionSettings.ProxySettings.Password := '';
-			FSettingsManager.Settings := Settings;
+			FSettingsManager.SetSettings(Settings);
 			FSettingsManager.Save;
 		end;
 	end;

@@ -14,6 +14,7 @@ uses
 	PluginSettingsManager,
 	RetryHandler,
 	PluginSettings,
+	StreamingSettings,
 	PLUGIN_TYPES,
 	SETTINGS_CONSTANTS,
 	TCHandler;
@@ -26,7 +27,13 @@ type
 	public
 		constructor Create;
 		function GetSettings: TPluginSettings;
+		procedure SetSettings(Value: TPluginSettings);
+		procedure Save;
 		procedure SwitchProxyPasswordStorage;
+		function GetStreamingSettings(const FileName: WideString): TStreamingSettings;
+		procedure SetStreamingSettings(const FileName: WideString; StreamSettings: TStreamingSettings);
+		procedure GetStreamingExtensionsList(ExtensionsList: TStrings);
+		procedure RemoveStreamingExtension(const Extension: WideString);
 		procedure SetOperationErrorMode(Mode: Integer);
 		procedure SetRetryAttempts(Attempts: Integer);
 		procedure SetAttemptWait(WaitMs: Integer);
@@ -210,7 +217,37 @@ begin
 	Result := FSettings;
 end;
 
+procedure TMockSettingsManager.SetSettings(Value: TPluginSettings);
+begin
+	FSettings := Value;
+end;
+
+procedure TMockSettingsManager.Save;
+begin
+	{No-op}
+end;
+
 procedure TMockSettingsManager.SwitchProxyPasswordStorage;
+begin
+	{No-op}
+end;
+
+function TMockSettingsManager.GetStreamingSettings(const FileName: WideString): TStreamingSettings;
+begin
+	Result := Default(TStreamingSettings);
+end;
+
+procedure TMockSettingsManager.SetStreamingSettings(const FileName: WideString; StreamSettings: TStreamingSettings);
+begin
+	{No-op}
+end;
+
+procedure TMockSettingsManager.GetStreamingExtensionsList(ExtensionsList: TStrings);
+begin
+	ExtensionsList.Clear;
+end;
+
+procedure TMockSettingsManager.RemoveStreamingExtension(const Extension: WideString);
 begin
 	{No-op}
 end;
