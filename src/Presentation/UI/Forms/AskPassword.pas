@@ -30,7 +30,7 @@ type
 		procedure FormShow(Sender: TObject);
 		procedure FormActivate(Sender: TObject);
 		procedure FormKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
-	private
+	protected
 		FPresenter: TAskPasswordPresenter;
 		FNextButtonLeft: Integer;
 

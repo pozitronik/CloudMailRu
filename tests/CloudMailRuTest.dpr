@@ -290,7 +290,8 @@ uses
 	DeletedPropertyPresenterTest in 'Presentation\Presenter\DeletedPropertyPresenterTest.pas',
 	AskPasswordPresenter in '..\src\Presentation\Presenter\AskPasswordPresenter.pas',
 	AskPasswordPresenterTest in 'Presentation\Presenter\AskPasswordPresenterTest.pas',
-	RegistrationPresenter in '..\src\Presentation\Presenter\RegistrationPresenter.pas';
+	RegistrationPresenter in '..\src\Presentation\Presenter\RegistrationPresenter.pas',
+	AskPasswordFormTest in 'Presentation\UI\Forms\AskPasswordFormTest.pas';
 
 {keep comment here to protect the following conditional from being removed by the IDE when adding a unit}
 {$IFNDEF TESTINSIGHT}
