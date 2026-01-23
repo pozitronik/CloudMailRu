@@ -222,10 +222,7 @@ const
 	FIND_ROOT_DIRECTORY = 2;
 	FIND_SHARED_LINKS = 3; //.shared folder
 
-	TYPE_AUTO = -1;
 	TYPE_BYTES = 0;
-	TYPE_KYLOBYTES = 1;
-	TYPE_MEGABYTES = 2;
 
 implementation
 

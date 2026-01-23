@@ -450,21 +450,25 @@ begin
 end;
 
 procedure TStringHelperTest.TestFormatSizeExplicitKilobytes;
+const
+	SIZE_TYPE_KILOBYTES = 1;
 begin
-	{ TYPE_KYLOBYTES (1) - divide by 1024 once, append 'kb' suffix }
+	{ SizeType=1 (kilobytes) - divide by 1024 once, append 'kb' suffix }
 	{ 2048 bytes = 2 kb }
-	Assert.AreEqual('2 kb', FormatSize(2048, TYPE_KYLOBYTES), 'TYPE_KYLOBYTES should show kb suffix');
+	Assert.AreEqual('2 kb', FormatSize(2048, SIZE_TYPE_KILOBYTES), 'SIZE_TYPE_KILOBYTES should show kb suffix');
 	{ 10240 bytes = 10 kb }
-	Assert.AreEqual('10 kb', FormatSize(10240, TYPE_KYLOBYTES), 'TYPE_KYLOBYTES should divide by 1024 once');
+	Assert.AreEqual('10 kb', FormatSize(10240, SIZE_TYPE_KILOBYTES), 'SIZE_TYPE_KILOBYTES should divide by 1024 once');
 end;
 
 procedure TStringHelperTest.TestFormatSizeExplicitMegabytes;
+const
+	SIZE_TYPE_MEGABYTES = 2;
 begin
-	{ TYPE_MEGABYTES (2) - divide by 1024 twice, append 'Mb' suffix }
+	{ SizeType=2 (megabytes) - divide by 1024 twice, append 'Mb' suffix }
 	{ 2097152 bytes = 2 Mb }
-	Assert.AreEqual('2 Mb', FormatSize(2097152, TYPE_MEGABYTES), 'TYPE_MEGABYTES should show Mb suffix');
+	Assert.AreEqual('2 Mb', FormatSize(2097152, SIZE_TYPE_MEGABYTES), 'SIZE_TYPE_MEGABYTES should show Mb suffix');
 	{ 10485760 bytes = 10 Mb }
-	Assert.AreEqual('10 Mb', FormatSize(10485760, TYPE_MEGABYTES), 'TYPE_MEGABYTES should divide by 1024 twice');
+	Assert.AreEqual('10 Mb', FormatSize(10485760, SIZE_TYPE_MEGABYTES), 'SIZE_TYPE_MEGABYTES should divide by 1024 twice');
 end;
 
 initialization

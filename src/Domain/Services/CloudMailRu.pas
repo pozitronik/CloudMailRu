@@ -122,9 +122,9 @@ type
 		property HTTP: ICloudHTTP read GetHTTPConnection;
 
 		{REGULAR CLOUD}
-		function LoginRegular(Method: Integer = CLOUD_AUTH_METHOD_WEB): Boolean;
+		function LoginRegular: Boolean;
 		{SHARED WEBFOLDERS}
-		function LoginShared(Method: Integer = CLOUD_AUTH_METHOD_WEB): Boolean;
+		function LoginShared: Boolean;
 		function GetPublicLink(): WideString;
 	public
 		property IsPublicAccount: Boolean read FSettings.AccountSettings.PublicAccount;
@@ -143,7 +143,7 @@ type
 		constructor Create(CloudSettings: TCloudSettings; ConnectionManager: IHTTPManager; AuthStrategy: IAuthStrategy; FileSystem: IFileSystem; Logger: ILogger; Progress: IProgress; Request: IRequest; TCHandler: ITCHandler; Cipher: ICipher = nil);
 		destructor Destroy; override;
 		{CLOUD INTERFACE METHODS}
-		function Login(Method: Integer = CLOUD_AUTH_METHOD_WEB): Boolean;
+		function Login: Boolean;
 		function GetDirListing(Path: WideString; var DirListing: TCMRDirItemList; ShowProgress: Boolean = False): Boolean;
 		function GetSharedFileUrl(RemotePath: WideString; ShardType: WideString = SHARD_TYPE_DEFAULT): WideString;
 		function GetSharedLinksListing(var DirListing: TCMRDirItemList; ShowProgress: Boolean = False): Boolean;
@@ -177,10 +177,6 @@ type
 		function GetPublishedFileStreamUrl(FileIdentity: TCMRDirItem; var StreamUrl: WideString; ShardType: WideString = SHARD_TYPE_WEBLINK_VIDEO; Publish: Boolean = CLOUD_PUBLISH): Boolean;
 		{OTHER ROUTINES}
 		procedure LogUserSpaceInfo();
-
-		{Service accessors for DI in dependent components}
-		function GetListingService: ICloudListingService;
-		function GetShareService: ICloudShareService;
 	end;
 
 implementation
@@ -584,18 +580,17 @@ begin
 	Result := FListingService.GetUserSpace(SpaceInfo);
 end;
 
-function TCloudMailRu.Login(Method: Integer): Boolean;
+function TCloudMailRu.Login: Boolean;
 begin
 	HTTP.SetProgressNames(LOGIN_IN_PROGRESS, EmptyWideStr);
 	if IsPublicAccount then
-		Exit(LoginShared());
-	Result := LoginRegular(Method);
+		Exit(LoginShared);
+	Result := LoginRegular;
 end;
 
 {Delegates authentication to the injected IAuthStrategy.
-	The strategy is responsible for obtaining auth tokens and setting up connection parameters.
-	Method parameter is ignored - the injected strategy determines the auth method.}
-function TCloudMailRu.LoginRegular(Method: Integer): Boolean;
+	The strategy is responsible for obtaining auth tokens and setting up connection parameters.}
+function TCloudMailRu.LoginRegular: Boolean;
 var
 	Credentials: TAuthCredentials;
 	AuthResult: TAuthResult;
@@ -622,7 +617,7 @@ begin
 	end;
 end;
 
-function TCloudMailRu.LoginShared(Method: Integer): Boolean;
+function TCloudMailRu.LoginShared: Boolean;
 begin
 	FLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, URL_OPEN, [FSettings.AccountSettings.PublicUrl]);
 	Exit(InitSharedConnectionParameters());
@@ -632,17 +627,6 @@ end;
 procedure TCloudMailRu.LogUserSpaceInfo;
 begin
 	FListingService.LogUserSpaceInfo(Email);
-end;
-
-{Service accessors for DI}
-function TCloudMailRu.GetListingService: ICloudListingService;
-begin
-	Result := FListingService;
-end;
-
-function TCloudMailRu.GetShareService: ICloudShareService;
-begin
-	Result := FShareService;
 end;
 
 {Delegates to FFileOps}

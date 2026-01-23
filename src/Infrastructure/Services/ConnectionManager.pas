@@ -140,7 +140,6 @@ end;
 function TConnectionManager.Init(ConnectionName: WideString; out Cloud: TCloudMailRu): Integer;
 var
 	CloudSettings: TCloudSettings;
-	LoginMethod: Integer;
 	AuthStrategy: IAuthStrategy;
 	Cipher: ICipher;
 	FileCipherInstance: TFileCipher;
@@ -174,10 +173,7 @@ begin
 
 	Cloud := TCloudMailRu.Create(CloudSettings, FHTTPManager, AuthStrategy, FFileSystem, FLogger, FProgress, FRequest, FTCHandler, Cipher);
 
-	{OAuth app password is the only supported auth method. Legacy methods are kept for backwards compatibility but are deprecated.}
-	LoginMethod := CLOUD_AUTH_METHOD_OAUTH_APP;
-
-	if not(Cloud.login(LoginMethod)) then
+	if not Cloud.Login then
 	begin
 		Result := CLOUD_OPERATION_FAILED;
 		Cloud.Free;
