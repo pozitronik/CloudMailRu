@@ -291,6 +291,7 @@ uses
 	AskPasswordPresenter in '..\src\Presentation\Presenter\AskPasswordPresenter.pas',
 	AskPasswordPresenterTest in 'Presentation\Presenter\AskPasswordPresenterTest.pas',
 	RegistrationPresenter in '..\src\Presentation\Presenter\RegistrationPresenter.pas',
+	RegistrationPresenterTest in 'Presentation\Presenter\RegistrationPresenterTest.pas',
 	AskPasswordFormTest in 'Presentation\UI\Forms\AskPasswordFormTest.pas';
 
 {keep comment here to protect the following conditional from being removed by the IDE when adding a unit}
