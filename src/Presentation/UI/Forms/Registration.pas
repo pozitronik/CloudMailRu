@@ -12,10 +12,9 @@ uses
 	Vcl.Controls,
 	Vcl.Forms,
 	Vcl.Dialogs,
-	CloudMailRu,
 	Vcl.StdCtrls,
 	Vcl.ExtCtrls,
-	JSONHelper,
+	Vcl.Imaging.JPEG,
 	CloudHTTP,
 	TCLogger,
 	TCProgress,
@@ -25,12 +24,13 @@ uses
 	LANGUAGE_STRINGS,
 	SETTINGS_CONSTANTS,
 	PLUGIN_TYPES,
+	JSONHelper,
 	AccountSettings,
 	ConnectionSettings,
-	Vcl.Imaging.JPEG;
+	RegistrationPresenter;
 
 type
-	TRegistrationForm = class(TForm)
+	TRegistrationForm = class(TForm, IRegistrationView)
 		FirstNameLabel: TLabel;
 		LastNameLabel: TLabel;
 		FirstNameEdit: TEdit;
@@ -58,29 +58,177 @@ type
 		procedure CaptchaEditKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
 
 	private
-		{Private declarations}
-		AccountSettings: TAccountSettings;
-		ConnectionSettings: TConnectionSettings;
-		Code: WideString;
-		function RegistrationValid: boolean;
-	protected
+		FPresenter: TRegistrationPresenter;
+		FConnectionSettings: TConnectionSettings;
 		HTTPConnection: TCloudMailRuHTTP;
-		//		JSONParser: TCloudMailRuJSONParser;
-		procedure InitComponents();
-		procedure FreeComponents();
-		function createAccount(firstname, lastname, Login, password, Domain: WideString; var Code: WideString): boolean;
-		function getRegisrationCaptcha(CaptchaStream: TStream): boolean;
-		function confirmRegistration(Email, Code, captcha: WideString): boolean;
+
+		{IRegistrationView implementation}
+		function GetFirstName: WideString;
+		function GetLastName: WideString;
+		function GetLogin: WideString;
+		function GetPassword: WideString;
+		function GetDomain: WideString;
+		function GetCaptcha: WideString;
+		function GetUseTCPwdMngr: Boolean;
+		procedure SetSignupEnabled(Enabled: Boolean);
+		procedure SetCaptchaEnabled(Enabled: Boolean);
+		procedure SetSendEnabled(Enabled: Boolean);
+		procedure SetFormEnabled(Enabled: Boolean);
+		procedure DisplayCaptchaImage(Stream: TStream);
+		procedure ShowError(Title, Message: WideString);
+
+		{HTTP operations}
+		function DoCreateAccount(FirstName, LastName, Login, Password, Domain: WideString; var Code: WideString): Boolean;
+		function DoGetCaptcha(CaptchaStream: TStream): Boolean;
+		function DoConfirmRegistration(Email, Code, Captcha: WideString): Boolean;
+
+		procedure InitComponents;
+		procedure FreeComponents;
 	public
-		property isRegistrationValid: boolean read RegistrationValid;
-		{Public declarations}
 		class function ShowRegistration(parentWindow: HWND; ConnectionSettings: TConnectionSettings; AccountSettings: TAccountSettings): integer;
 	end;
 
 implementation
 
 {$R *.dfm}
+
+{TRegistrationForm - IRegistrationView implementation}
+
+function TRegistrationForm.GetFirstName: WideString;
+begin
+	Result := FirstNameEdit.Text;
+end;
+
+function TRegistrationForm.GetLastName: WideString;
+begin
+	Result := LastNameEdit.Text;
+end;
+
+function TRegistrationForm.GetLogin: WideString;
+begin
+	Result := LoginEdit.Text;
+end;
+
+function TRegistrationForm.GetPassword: WideString;
+begin
+	Result := PasswordEdit.Text;
+end;
+
+function TRegistrationForm.GetDomain: WideString;
+begin
+	Result := DomainCombo.Text;
+end;
+
+function TRegistrationForm.GetCaptcha: WideString;
+begin
+	Result := CaptchaEdit.Text;
+end;
+
+function TRegistrationForm.GetUseTCPwdMngr: Boolean;
+begin
+	Result := UseTCPwdMngrCB.Checked;
+end;
+
+procedure TRegistrationForm.SetSignupEnabled(Enabled: Boolean);
+begin
+	SignupBTN.Enabled := Enabled;
+end;
+
+procedure TRegistrationForm.SetCaptchaEnabled(Enabled: Boolean);
+begin
+	CaptchaEdit.Enabled := Enabled;
+end;
+
+procedure TRegistrationForm.SetSendEnabled(Enabled: Boolean);
+begin
+	SendBtn.Enabled := Enabled;
+end;
+
+procedure TRegistrationForm.SetFormEnabled(Enabled: Boolean);
+begin
+	Self.Enabled := Enabled;
+end;
+
+procedure TRegistrationForm.DisplayCaptchaImage(Stream: TStream);
+var
+	JPEGImage: TJPEGImage;
+begin
+	JPEGImage := TJPEGImage.Create;
+	try
+		JPEGImage.LoadFromStream(Stream);
+		CaptchaImg.Picture.Assign(JPEGImage);
+	finally
+		JPEGImage.Free;
+	end;
+end;
+
+procedure TRegistrationForm.ShowError(Title, Message: WideString);
+begin
+	MessageBox(Handle, PWideChar(Message), PWideChar(Title), MB_ICONERROR + MB_OK);
+end;
+
+{TRegistrationForm - HTTP operations}
+
+function TRegistrationForm.DoCreateAccount(FirstName, LastName, Login, Password, Domain: WideString; var Code: WideString): Boolean;
+var
+	JSON: WideString;
+	OperationResult: TCMROperationResult;
+begin
+	HTTPConnection.HTTP.Request.UserAgent := 'curl/7.63.0';
+	HTTPConnection.HTTP.Request.Connection := EmptyWideStr;
+	HTTPConnection.HTTP.Request.Accept := '*/*';
+	HTTPConnection.HTTP.Request.Referer := MAILRU_REGISTRATION_SIGNUP;
+
+	Result := HTTPConnection.PostForm(MAILRU_REGISTRATION_SIGNUP,
+		Format('name={"first":"%s","last":"%s"}&login=%s&domain=%s&password=%s',
+			[FirstName, LastName, Login, Domain, Password]), JSON);
+
+	if Result then
+	begin
+		TCMROperationResultJsonAdapter.ParseRegistration(JSON, OperationResult);
+		Result := OperationResult.OperationResult = CLOUD_OPERATION_OK;
+		if Result then
+			Result := getRegistrationBody(JSON, Code)
+		else
+			ShowError(ERR_REGISTRATION, JSON);
+	end;
+end;
+
+function TRegistrationForm.DoGetCaptcha(CaptchaStream: TStream): Boolean;
+begin
+	Result := FS_FILE_OK = HTTPConnection.getFile(MAILRU_CAPTCHA, CaptchaStream);
+	if not Result then
+		ShowError(ERR_REGISTRATION, ERR_LOAD_CAPTCHA);
+end;
+
+function TRegistrationForm.DoConfirmRegistration(Email, Code, Captcha: WideString): Boolean;
+var
+	JSON: WideString;
+	OperationResult: TCMROperationResult;
+begin
+	Result := HTTPConnection.PostForm(MAILRU_REGISTRATION_CONFIRM,
+		Format('email=%s&reg_anketa={"id":"%s","capcha":"%s"}', [Email, Code, Captcha]), JSON);
+
+	if Result then
+	begin
+		TCMROperationResultJsonAdapter.ParseRegistration(JSON, OperationResult);
+		Result := OperationResult.OperationResult = CLOUD_OPERATION_OK;
+		if not Result then
+			ShowError(ERR_CONFIRMATION, JSON);
+	end;
+end;
+
 {TRegistrationForm}
+
+procedure TRegistrationForm.InitComponents;
+begin
+	HTTPConnection := TCloudMailRuHTTP.Create(FConnectionSettings, TNullLogger.Create, TNullProgress.Create);
+end;
+
+procedure TRegistrationForm.FreeComponents;
+begin
+	HTTPConnection.Free;
+end;
 
 procedure TRegistrationForm.CaptchaEditKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
 begin
@@ -91,57 +239,21 @@ begin
 	end;
 end;
 
-function TRegistrationForm.confirmRegistration(Email, Code, captcha: WideString): boolean;
-var
-	JSON: WideString;
-	OperationResult: TCMROperationResult;
-begin
-	result := HTTPConnection.PostForm(MAILRU_REGISTRATION_CONFIRM, Format('email=%s&reg_anketa={"id":"%s","capcha":"%s"}', [Email, Code, captcha]), JSON);
-	if result then
-	begin
-		TCMROperationResultJsonAdapter.ParseRegistration(JSON, OperationResult);
-		result := OperationResult.OperationResult = CLOUD_OPERATION_OK;
-		if not result then
-			MessageBox(Handle, PWideChar(JSON), ERR_CONFIRMATION, MB_ICONERROR + MB_OK);
-	end;
-end;
-
-function TRegistrationForm.createAccount(firstname, lastname, Login, password, Domain: WideString; var Code: WideString): boolean;
-var
-	JSON: WideString;
-	OperationResult: TCMROperationResult;
-begin
-	HTTPConnection.HTTP.Request.UserAgent := 'curl/7.63.0'; //required by the server
-	HTTPConnection.HTTP.Request.Connection := EmptyWideStr;
-	HTTPConnection.HTTP.Request.Accept := '*/*';
-
-	HTTPConnection.HTTP.Request.Referer := MAILRU_REGISTRATION_SIGNUP;
-
-	result := HTTPConnection.PostForm(MAILRU_REGISTRATION_SIGNUP, Format('name={"first":"%s","last":"%s"}&login=%s&domain=%s&password=%s', [firstname, lastname, Login, Domain, password]), JSON);
-	if result then
-	begin
-		TCMROperationResultJsonAdapter.ParseRegistration(JSON, OperationResult);
-		result := OperationResult.OperationResult = CLOUD_OPERATION_OK;
-		if result then
-			result := getRegistrationBody(JSON, Code)
-		else
-			MessageBox(Handle, PWideChar(JSON), ERR_REGISTRATION, MB_ICONERROR + MB_OK);
-	end;
-end;
-
 procedure TRegistrationForm.FirstNameEditChange(Sender: TObject);
 begin
-	SignupBTN.Enabled := isRegistrationValid;
+	if Assigned(FPresenter) then
+		FPresenter.OnFieldChanged;
 end;
 
 procedure TRegistrationForm.FormCreate(Sender: TObject);
 begin
-	self.InitComponents;
+	InitComponents;
 end;
 
 procedure TRegistrationForm.FormDestroy(Sender: TObject);
 begin
-	self.FreeComponents;
+	FreeAndNil(FPresenter);
+	FreeComponents;
 end;
 
 procedure TRegistrationForm.FormKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -152,94 +264,45 @@ begin
 	end;
 end;
 
-procedure TRegistrationForm.FreeComponents;
-begin
-	HTTPConnection.Free;
-	//	JSONParser.Free;
-end;
-
-function TRegistrationForm.getRegisrationCaptcha(CaptchaStream: TStream): boolean;
-begin
-	result := FS_FILE_OK = HTTPConnection.getFile(MAILRU_CAPTCHA, CaptchaStream);
-end;
-
-procedure TRegistrationForm.InitComponents;
-begin
-	HTTPConnection := TCloudMailRuHTTP.Create(ConnectionSettings, TNullLogger.Create, TNullProgress.Create);
-	//	JSONParser := TCloudMailRuJSONParser.Create();
-end;
-
-function TRegistrationForm.RegistrationValid: boolean;
-begin
-	result := (FirstNameEdit.Text <> EmptyWideStr) and (LastNameEdit.Text <> EmptyWideStr) and (LoginEdit.Text <> EmptyWideStr) and (PasswordEdit.Text <> EmptyWideStr);
-end;
-
 procedure TRegistrationForm.SendBtnClick(Sender: TObject);
 begin
-	if confirmRegistration(AccountSettings.Email, Code, CaptchaEdit.Text) then
-		self.ModalResult := mrOk
+	if FPresenter.OnConfirmClick then
+		Self.ModalResult := mrOk
 	else
-		self.ModalResult := mrNone;
+		Self.ModalResult := mrNone;
+end;
+
+procedure TRegistrationForm.SignupBTNClick(Sender: TObject);
+begin
+	FPresenter.OnSignupClick;
 end;
 
 class function TRegistrationForm.ShowRegistration(parentWindow: HWND; ConnectionSettings: TConnectionSettings; AccountSettings: TAccountSettings): integer;
 var
 	RegistrationForm: TRegistrationForm;
-
 begin
+	RegistrationForm := TRegistrationForm.Create(nil);
 	try
-		RegistrationForm := TRegistrationForm.Create(nil);
 		RegistrationForm.parentWindow := parentWindow;
-		RegistrationForm.AccountSettings := AccountSettings;
-		RegistrationForm.ConnectionSettings := ConnectionSettings;
+		RegistrationForm.FConnectionSettings := ConnectionSettings;
 		RegistrationForm.LoginEdit.Text := AccountSettings.User;
 		RegistrationForm.UseTCPwdMngrCB.Checked := AccountSettings.UseTCPasswordManager;
 		RegistrationForm.ModalResult := mrNone;
-		result := RegistrationForm.ShowModal;
-		if result = mrOk then
-		begin
-			AccountSettings := RegistrationForm.AccountSettings;
-			AccountSettings.UseTCPasswordManager := RegistrationForm.UseTCPwdMngrCB.Checked;
-		end;
 
+		RegistrationForm.FPresenter := TRegistrationPresenter.Create(RegistrationForm);
+		RegistrationForm.FPresenter.Initialize(AccountSettings);
+		RegistrationForm.FPresenter.SetCallbacks(
+			RegistrationForm.DoCreateAccount,
+			RegistrationForm.DoGetCaptcha,
+			RegistrationForm.DoConfirmRegistration
+		);
+
+		Result := RegistrationForm.ShowModal;
+		if Result = mrOk then
+			AccountSettings := RegistrationForm.FPresenter.GetAccountSettings;
 	finally
 		FreeAndNil(RegistrationForm);
 	end;
-end;
-
-procedure TRegistrationForm.SignupBTNClick(Sender: TObject);
-var
-	MemStream: TMemoryStream;
-	JPEGImage: TJPEGImage;
-begin
-	CaptchaEdit.Enabled := false;
-	SendBtn.Enabled := false;
-	AccountSettings.Email := Format('%s@%s', [LoginEdit.Text, DomainCombo.Text]);
-	AccountSettings.password := PasswordEdit.Text;
-	AccountSettings.PublicAccount := false;
-	AccountSettings.EncryptFilesMode := EncryptModeNone;
-	AccountSettings.TwostepAuth := false;
-
-	self.Enabled := false;
-
-	if (createAccount(FirstNameEdit.Text, LastNameEdit.Text, AccountSettings.User, AccountSettings.password, AccountSettings.Domain, Code)) then
-	begin
-		MemStream := TMemoryStream.Create();
-		if getRegisrationCaptcha(MemStream) then
-		begin
-			MemStream.Position := 0;
-			JPEGImage := TJPEGImage.Create;
-			JPEGImage.LoadFromStream(MemStream);
-			CaptchaImg.Picture.Assign(JPEGImage);
-			JPEGImage.Free;
-			CaptchaEdit.Enabled := true;
-			SendBtn.Enabled := true;
-		end
-		else
-			MessageBox(Handle, ERR_LOAD_CAPTCHA, ERR_REGISTRATION, MB_ICONERROR + MB_OK);
-		MemStream.Free;
-	end;
-	self.Enabled := true;
 end;
 
 end.

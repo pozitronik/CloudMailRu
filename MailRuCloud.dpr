@@ -151,7 +151,11 @@ uses
 	CloudFileUploader in 'src\Application\Upload\CloudFileUploader.pas',
 	CloudShareService in 'src\Application\Share\CloudShareService.pas',
 	CloudListingService in 'src\Application\Listing\CloudListingService.pas',
-	CloudFileOperations in 'src\Application\FileOps\CloudFileOperations.pas';
+	CloudFileOperations in 'src\Application\FileOps\CloudFileOperations.pas',
+	InvitePropertyPresenter in 'src\Presentation\Presenter\InvitePropertyPresenter.pas',
+	DeletedPropertyPresenter in 'src\Presentation\Presenter\DeletedPropertyPresenter.pas',
+	AskPasswordPresenter in 'src\Presentation\Presenter\AskPasswordPresenter.pas',
+	RegistrationPresenter in 'src\Presentation\Presenter\RegistrationPresenter.pas';
 
 {$IFDEF WIN64}
 {$E wfx64}

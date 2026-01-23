@@ -32,6 +32,7 @@ uses
 	PluginSettingsManager,
 	FileCipher,
 	AccountSettings,
+	ConnectionSettings,
 	AccountsManager,
 	AccountsPresenter;
 
@@ -318,11 +319,9 @@ implementation
 {$R *.dfm}
 
 uses
-	ConnectionSettings,
 	ProxySettings,
 	CMRConstants,
-	IniConfigFile,
-	FileCipher;
+	IniConfigFile;
 
 {IAccountsView - Account tab controls}
 

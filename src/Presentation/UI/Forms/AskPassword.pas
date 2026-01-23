@@ -16,11 +16,12 @@ uses
 	TCHelper,
 	WindowsHelper,
 	System.Generics.Collections,
+	AskPasswordPresenter,
 	LANGUAGE_STRINGS;
 
 type
 
-	TAskPasswordForm = class(TForm)
+	TAskPasswordForm = class(TForm, IAskPasswordView)
 		PasswordEditLabel: TLabel;
 		PasswordEdit: TEdit;
 		OkButton: TButton;
@@ -31,126 +32,182 @@ type
 		procedure FormActivate(Sender: TObject);
 		procedure FormKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
 	private
-		{Private declarations}
+		FPresenter: TAskPasswordPresenter;
+		FNextButtonLeft: Integer;
+
+		{IAskPasswordView implementation}
+		procedure SetCaption(Caption: WideString);
+		procedure SetLabelText(Text: WideString);
+		procedure SetPasswordVisible(Visible: Boolean);
+		procedure SetPasswordChar(Ch: Char);
+		function GetPassword: WideString;
+		procedure SetOkButtonVisible(Visible: Boolean);
+		procedure SetOkButtonEnabled(Enabled: Boolean);
+		procedure SetCheckboxVisible(Visible: Boolean);
+		procedure SetCheckboxEnabled(Enabled: Boolean);
+		procedure SetCheckboxChecked(Checked: Boolean);
+		function GetCheckboxChecked: Boolean;
+		procedure AddActionButton(Title: WideString; ResultCode: Integer);
 	public
-		{Public declarations}
+		destructor Destroy; override;
 		class function AskPassword(CustomTitle, CustomText: WideString; var Password: WideString; var UseTCPwdMngr: Boolean; DisablePWDManagerCB: Boolean = false; ParentWindow: HWND = 0): integer;
 		class function AskAction(CustomTitle, CustomText: WideString; ActionsList: TDictionary<Int32, WideString>; ParentWindow: HWND = 0): integer;
 		class function AskText(CustomTitle, CustomText: WideString; var Text: WideString; ParentWindow: HWND = 0): Boolean;
-		function AddButton(BtnTitle: WideString; BtnResultCode: integer; BtnLeft: integer): TButton;
 	end;
 
 implementation
 
 {$R *.dfm}
 
-{TAskPasswordForm}
-function TAskPasswordForm.AddButton(BtnTitle: WideString; BtnResultCode, BtnLeft: integer): TButton;
+{TAskPasswordForm - IAskPasswordView implementation}
+
+procedure TAskPasswordForm.SetCaption(Caption: WideString);
 begin
-	Result := TButton.Create(Self);
-	Result.Caption := BtnTitle;
-	Result.top := 54;
-	Result.Left := BtnLeft;
-	Result.ModalResult := BtnResultCode;
-	Result.Visible := True;
-	Result.Width := Self.Canvas.TextWidth(BtnTitle) + 16;
-	Result.Parent := Self;
+	Self.Caption := Caption;
+end;
+
+procedure TAskPasswordForm.SetLabelText(Text: WideString);
+begin
+	PasswordEditLabel.Caption := Text;
+end;
+
+procedure TAskPasswordForm.SetPasswordVisible(Visible: Boolean);
+begin
+	PasswordEdit.Visible := Visible;
+end;
+
+procedure TAskPasswordForm.SetPasswordChar(Ch: Char);
+begin
+	PasswordEdit.PasswordChar := Ch;
+end;
+
+function TAskPasswordForm.GetPassword: WideString;
+begin
+	Result := PasswordEdit.Text;
+end;
+
+procedure TAskPasswordForm.SetOkButtonVisible(Visible: Boolean);
+begin
+	OkButton.Visible := Visible;
+end;
+
+procedure TAskPasswordForm.SetOkButtonEnabled(Enabled: Boolean);
+begin
+	OkButton.Enabled := Enabled;
+end;
+
+procedure TAskPasswordForm.SetCheckboxVisible(Visible: Boolean);
+begin
+	UseTCPwdMngrCB.Visible := Visible;
+end;
+
+procedure TAskPasswordForm.SetCheckboxEnabled(Enabled: Boolean);
+begin
+	UseTCPwdMngrCB.Enabled := Enabled;
+end;
+
+procedure TAskPasswordForm.SetCheckboxChecked(Checked: Boolean);
+begin
+	UseTCPwdMngrCB.Checked := Checked;
+end;
+
+function TAskPasswordForm.GetCheckboxChecked: Boolean;
+begin
+	Result := UseTCPwdMngrCB.Checked;
+end;
+
+procedure TAskPasswordForm.AddActionButton(Title: WideString; ResultCode: Integer);
+var
+	Btn: TButton;
+begin
+	Btn := TButton.Create(Self);
+	Btn.Caption := Title;
+	Btn.top := 54;
+	Btn.Left := FNextButtonLeft;
+	Btn.ModalResult := ResultCode;
+	Btn.Visible := True;
+	Btn.Width := Self.Canvas.TextWidth(Title) + 16;
+	Btn.Parent := Self;
+	FNextButtonLeft := FNextButtonLeft + Btn.Width + 7;
+end;
+
+{TAskPasswordForm}
+
+destructor TAskPasswordForm.Destroy;
+begin
+	FreeAndNil(FPresenter);
+	inherited;
 end;
 
 class function TAskPasswordForm.AskAction(CustomTitle, CustomText: WideString; ActionsList: TDictionary<Int32, WideString>; ParentWindow: HWND): integer;
 var
 	AskPasswordForm: TAskPasswordForm;
-	ButtonCode, CurrentLeft: integer;
 begin
+	AskPasswordForm := TAskPasswordForm.Create(nil);
 	try
-		AskPasswordForm := TAskPasswordForm.Create(nil);
 		if (0 = ParentWindow) then
 			AskPasswordForm.ParentWindow := FindTCWindow
 		else
 			AskPasswordForm.ParentWindow := ParentWindow;
-		AskPasswordForm.PasswordEditLabel.Caption := CustomText;
-		AskPasswordForm.Caption := CustomTitle;
-		AskPasswordForm.UseTCPwdMngrCB.Visible := false;
-		AskPasswordForm.PasswordEdit.Visible := false;
-		AskPasswordForm.OkButton.Visible := false;
-		CurrentLeft := 7;
-		for ButtonCode in ActionsList.Keys do
-		begin
-			CurrentLeft := CurrentLeft + AskPasswordForm.AddButton(ActionsList.Items[ButtonCode], ButtonCode, CurrentLeft).Width + 7;
-		end;
-		Result := AskPasswordForm.ShowModal;
 
+		AskPasswordForm.FNextButtonLeft := 7;
+		AskPasswordForm.FPresenter := TAskPasswordPresenter.Create(AskPasswordForm);
+		AskPasswordForm.FPresenter.InitializeActionMode(CustomTitle, CustomText, ActionsList);
+		Result := AskPasswordForm.ShowModal;
 	finally
 		FreeAndNil(AskPasswordForm);
 	end;
 end;
 
-class function TAskPasswordForm.AskPassword(CustomTitle, CustomText: WideString; var Password: WideString; var UseTCPwdMngr: Boolean; DisablePWDManagerCB: Boolean = false; ParentWindow: HWND = 0): integer;
+class function TAskPasswordForm.AskPassword(CustomTitle, CustomText: WideString; var Password: WideString; var UseTCPwdMngr: Boolean; DisablePWDManagerCB: Boolean; ParentWindow: HWND): integer;
 var
 	AskPasswordForm: TAskPasswordForm;
 begin
+	AskPasswordForm := TAskPasswordForm.Create(nil);
 	try
-		AskPasswordForm := TAskPasswordForm.Create(nil);
 		if (0 = ParentWindow) then
 			AskPasswordForm.ParentWindow := FindTCWindow
 		else
 			AskPasswordForm.ParentWindow := ParentWindow;
-		AskPasswordForm.PasswordEditLabel.Caption := CustomText;
-		AskPasswordForm.Caption := CustomTitle;
-		AskPasswordForm.UseTCPwdMngrCB.Enabled := not DisablePWDManagerCB;
-		AskPasswordForm.UseTCPwdMngrCB.Checked := UseTCPwdMngr;
-		AskPasswordForm.PasswordEdit.PasswordChar := '*';
+
+		AskPasswordForm.FPresenter := TAskPasswordPresenter.Create(AskPasswordForm);
+		AskPasswordForm.FPresenter.InitializePasswordMode(CustomTitle, CustomText, UseTCPwdMngr, DisablePWDManagerCB);
 
 		Result := AskPasswordForm.ShowModal;
 		if Result = mrOk then
 		begin
-			Password := AskPasswordForm.PasswordEdit.Text;
-			UseTCPwdMngr := AskPasswordForm.UseTCPwdMngrCB.Checked;
+			Password := AskPasswordForm.FPresenter.GetPassword;
+			UseTCPwdMngr := AskPasswordForm.FPresenter.GetUseTCPwdMngr;
 		end;
 	finally
 		FreeAndNil(AskPasswordForm);
 	end;
 end;
 
-class function TAskPasswordForm.AskText(CustomTitle, CustomText: WideString; var Text: WideString; ParentWindow: HWND = 0): Boolean;
+class function TAskPasswordForm.AskText(CustomTitle, CustomText: WideString; var Text: WideString; ParentWindow: HWND): Boolean;
 var
 	AskPasswordForm: TAskPasswordForm;
-	ActionsList: TDictionary<Int32, WideString>;
-	ButtonCode, CurrentLeft: integer;
 begin
 	Result := false;
+	AskPasswordForm := TAskPasswordForm.Create(nil);
 	try
-		AskPasswordForm := TAskPasswordForm.Create(nil);
 		if (0 = ParentWindow) then
 			AskPasswordForm.ParentWindow := FindTCWindow
 		else
 			AskPasswordForm.ParentWindow := ParentWindow;
-		AskPasswordForm.PasswordEditLabel.Caption := CustomText;
-		AskPasswordForm.Caption := CustomTitle;
-		AskPasswordForm.UseTCPwdMngrCB.Visible := false;
-		AskPasswordForm.PasswordEdit.PasswordChar := #0;
 
-		AskPasswordForm.OkButton.Visible := false;
-
-		ActionsList := TDictionary<Int32, WideString>.Create;
-		ActionsList.AddOrSetValue(mrOk, OK);
-		ActionsList.AddOrSetValue(mrCancel, CANCEL);
-
-		CurrentLeft := 7;
-		for ButtonCode in ActionsList.Keys do
-		begin
-			CurrentLeft := CurrentLeft + AskPasswordForm.AddButton(ActionsList.Items[ButtonCode], ButtonCode, CurrentLeft).Width + 7;
-		end;
+		AskPasswordForm.FNextButtonLeft := 7;
+		AskPasswordForm.FPresenter := TAskPasswordPresenter.Create(AskPasswordForm);
+		AskPasswordForm.FPresenter.InitializeTextMode(CustomTitle, CustomText);
 
 		if mrOk = AskPasswordForm.ShowModal then
 		begin
-			Text := AskPasswordForm.PasswordEdit.Text;
+			Text := AskPasswordForm.FPresenter.GetPassword;
 			Result := True;
 		end;
 	finally
 		FreeAndNil(AskPasswordForm);
 	end;
-
 end;
 
 procedure TAskPasswordForm.FormActivate(Sender: TObject);
@@ -160,26 +217,25 @@ end;
 
 procedure TAskPasswordForm.FormKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
 begin
-	begin
-		case Key of
-			VK_ESCAPE:
-				Close;
-			VK_RETURN:
-				if OkButton.Enabled then
-					OkButton.Click;
-		end;
+	case Key of
+		VK_ESCAPE:
+			Close;
+		VK_RETURN:
+			if OkButton.Enabled then
+				OkButton.Click;
 	end;
 end;
 
 procedure TAskPasswordForm.FormShow(Sender: TObject);
 begin
-	if (Sender as TAskPasswordForm).PasswordEdit.Visible then
-		(Sender as TAskPasswordForm).PasswordEdit.SetFocus;
+	if PasswordEdit.Visible then
+		PasswordEdit.SetFocus;
 end;
 
 procedure TAskPasswordForm.PasswordEditChange(Sender: TObject);
 begin
-	OkButton.Enabled := PasswordEdit.Text <> EmptyWideStr;
+	if Assigned(FPresenter) then
+		FPresenter.OnPasswordChanged(PasswordEdit.Text);
 end;
 
 end.

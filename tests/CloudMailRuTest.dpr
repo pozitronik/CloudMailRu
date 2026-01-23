@@ -283,7 +283,14 @@ uses
 	RemotePropertyPresenter in '..\src\Presentation\Presenter\RemotePropertyPresenter.pas',
 	RemotePropertyPresenterTest in 'Presentation\Presenter\RemotePropertyPresenterTest.pas',
 	AccountsPresenter in '..\src\Presentation\Presenter\AccountsPresenter.pas',
-	AccountsPresenterTest in 'Presentation\Presenter\AccountsPresenterTest.pas';
+	AccountsPresenterTest in 'Presentation\Presenter\AccountsPresenterTest.pas',
+	InvitePropertyPresenter in '..\src\Presentation\Presenter\InvitePropertyPresenter.pas',
+	InvitePropertyPresenterTest in 'Presentation\Presenter\InvitePropertyPresenterTest.pas',
+	DeletedPropertyPresenter in '..\src\Presentation\Presenter\DeletedPropertyPresenter.pas',
+	DeletedPropertyPresenterTest in 'Presentation\Presenter\DeletedPropertyPresenterTest.pas',
+	AskPasswordPresenter in '..\src\Presentation\Presenter\AskPasswordPresenter.pas',
+	AskPasswordPresenterTest in 'Presentation\Presenter\AskPasswordPresenterTest.pas',
+	RegistrationPresenter in '..\src\Presentation\Presenter\RegistrationPresenter.pas';
 
 {keep comment here to protect the following conditional from being removed by the IDE when adding a unit}
 {$IFNDEF TESTINSIGHT}

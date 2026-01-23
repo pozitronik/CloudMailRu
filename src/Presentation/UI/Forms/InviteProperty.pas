@@ -4,6 +4,7 @@ interface
 
 uses
 	CMRIncomingInvite,
+	InvitePropertyPresenter,
 	Winapi.Windows,
 	Winapi.Messages,
 	System.SysUtils,
@@ -13,15 +14,10 @@ uses
 	Vcl.Controls,
 	Vcl.Forms,
 	Vcl.Dialogs,
-	Vcl.StdCtrls,
-	CloudMailRu,
-	CloudAccessUtils,
-	CMRConstants,
-	PluginHelper,
-	LANGUAGE_STRINGS;
+	Vcl.StdCtrls;
 
 type
-	TInvitePropertyForm = class(TForm)
+	TInvitePropertyForm = class(TForm, IInvitePropertyView)
 		InviteNameLB: TLabel;
 		InviteOwnerEmailLB: TLabel;
 		InviteOwnerNameLB: TLabel;
@@ -40,46 +36,113 @@ type
 		UnmountCopyBTN: TButton;
 		UnmountDeleteBTN: TButton;
 	private
-		{Private declarations}
+		FPresenter: TInvitePropertyPresenter;
+
+		{IInvitePropertyView implementation}
+		procedure SetCaption(Caption: WideString);
+		procedure SetName(Name: WideString);
+		procedure SetOwnerEmail(Email: WideString);
+		procedure SetOwnerName(Name: WideString);
+		procedure SetAccess(Access: WideString);
+		procedure SetSize(Size: WideString);
+		procedure SetTokenLabel(LabelText: WideString);
+		procedure SetTokenValue(Value: WideString);
+		procedure SetMountEnabled(Enabled: Boolean);
+		procedure SetRejectEnabled(Enabled: Boolean);
+		procedure SetUnmountCopyEnabled(Enabled: Boolean);
+		procedure SetUnmountDeleteEnabled(Enabled: Boolean);
 	public
-		{Public declarations}
+		destructor Destroy; override;
 		class function ShowProperties(parentWindow: HWND; Item: TCMRIncomingInvite; AccountName: WideString = ''): integer;
 	end;
 
 implementation
 
 {$R *.dfm}
+
+{TInvitePropertyForm - IInvitePropertyView implementation}
+
+procedure TInvitePropertyForm.SetCaption(Caption: WideString);
+begin
+	self.Caption := Caption;
+end;
+
+procedure TInvitePropertyForm.SetName(Name: WideString);
+begin
+	InviteNameLB.Caption := Name;
+end;
+
+procedure TInvitePropertyForm.SetOwnerEmail(Email: WideString);
+begin
+	InviteOwnerEmailLB.Caption := Email;
+end;
+
+procedure TInvitePropertyForm.SetOwnerName(Name: WideString);
+begin
+	InviteOwnerNameLB.Caption := Name;
+end;
+
+procedure TInvitePropertyForm.SetAccess(Access: WideString);
+begin
+	InviteAccessLB.Caption := Access;
+end;
+
+procedure TInvitePropertyForm.SetSize(Size: WideString);
+begin
+	InviteSizeLB.Caption := Size;
+end;
+
+procedure TInvitePropertyForm.SetTokenLabel(LabelText: WideString);
+begin
+	TokenLB.Caption := LabelText;
+end;
+
+procedure TInvitePropertyForm.SetTokenValue(Value: WideString);
+begin
+	InviteTokenLB.Caption := Value;
+end;
+
+procedure TInvitePropertyForm.SetMountEnabled(Enabled: Boolean);
+begin
+	MountBTN.Enabled := Enabled;
+end;
+
+procedure TInvitePropertyForm.SetRejectEnabled(Enabled: Boolean);
+begin
+	RejectBTN.Enabled := Enabled;
+end;
+
+procedure TInvitePropertyForm.SetUnmountCopyEnabled(Enabled: Boolean);
+begin
+	UnmountCopyBTN.Enabled := Enabled;
+end;
+
+procedure TInvitePropertyForm.SetUnmountDeleteEnabled(Enabled: Boolean);
+begin
+	UnmountDeleteBTN.Enabled := Enabled;
+end;
+
 {TInvitePropertyForm}
+
+destructor TInvitePropertyForm.Destroy;
+begin
+	FreeAndNil(FPresenter);
+	inherited;
+end;
 
 class function TInvitePropertyForm.ShowProperties(parentWindow: HWND; Item: TCMRIncomingInvite; AccountName: WideString): integer;
 var
 	InvitePropertyForm: TInvitePropertyForm;
 begin
+	InvitePropertyForm := TInvitePropertyForm.Create(nil);
 	try
-		InvitePropertyForm := TInvitePropertyForm.Create(nil);
 		InvitePropertyForm.parentWindow := parentWindow;
-		InvitePropertyForm.InviteNameLB.Caption := Item.name;
-		InvitePropertyForm.InviteOwnerEmailLB.Caption := Item.owner.email;
-		InvitePropertyForm.InviteOwnerNameLB.Caption := Item.owner.name;
-		InvitePropertyForm.InviteAccessLB.Caption := TCloudAccessUtils.AccessToString(Item.access);
-		InvitePropertyForm.InviteSizeLB.Caption := FormatSize(Item.size, TYPE_BYTES);
-		InvitePropertyForm.InviteTokenLB.Caption := Item.invite_token;
-		InvitePropertyForm.Caption := Format(INVITE_FORM_TITLE, [AccountName, Item.name]);
-		if Item.isMounted then //already mounted item
-		begin
-			InvitePropertyForm.TokenLB.Caption := MOUNTED_AS;
-			InvitePropertyForm.InviteTokenLB.Caption := Item.home;
-			InvitePropertyForm.RejectBTN.Enabled := false;
-		end else begin
-			InvitePropertyForm.UnmountCopyBTN.Enabled := false;
-			InvitePropertyForm.UnmountDeleteBTN.Enabled := false;
-		end;
-
+		InvitePropertyForm.FPresenter := TInvitePropertyPresenter.Create(InvitePropertyForm);
+		InvitePropertyForm.FPresenter.Initialize(Item, AccountName);
 		result := InvitePropertyForm.ShowModal;
 	finally
 		FreeAndNil(InvitePropertyForm);
 	end;
-
 end;
 
 end.
