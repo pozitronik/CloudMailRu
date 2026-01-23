@@ -373,7 +373,7 @@ begin
 	begin
 		if Assigned(SkippedPath) then
 			SkippedPath.Free;
-		FRemoveDirSkippedPath.AddOrSetValue(GetCurrentThreadID(), nil);
+		FRemoveDirSkippedPath.Remove(GetCurrentThreadID());
 	end;
 end;
 
