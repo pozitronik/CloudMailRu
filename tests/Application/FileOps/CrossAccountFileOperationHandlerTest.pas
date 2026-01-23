@@ -102,7 +102,11 @@ type
 		[Test]
 		procedure TestExecute_ViaHash_WithOverwrite_DeletesTargetFirst;
 		[Test]
+		procedure TestExecute_ViaHash_OverwriteDeleteFails_ReturnsNotSupported;
+		[Test]
 		procedure TestExecute_ViaHash_MoveSucceeds_DeletesSource;
+		[Test]
+		procedure TestExecute_ViaHash_MoveDeleteSourceFails_LogsError;
 		[Test]
 		procedure TestExecute_ViaHash_AddByIdentityFails_CallsRetryHandler;
 
@@ -114,11 +118,19 @@ type
 		[Test]
 		procedure TestExecute_ViaPublicLink_NotPublished_PublishesFirst;
 		[Test]
+		procedure TestExecute_ViaPublicLink_PublishFails_ReturnsReadError;
+		[Test]
+		procedure TestExecute_ViaPublicLink_OverwriteDeleteFails_ReturnsNotSupported;
+		[Test]
 		procedure TestExecute_ViaPublicLink_CloneSucceeds_ReturnsOK;
 		[Test]
 		procedure TestExecute_ViaPublicLink_CloneFails_CallsRetryHandler;
 		[Test]
 		procedure TestExecute_ViaPublicLink_TempPublished_UnpublishesAfter;
+		[Test]
+		procedure TestExecute_ViaPublicLink_UnpublishFails_LogsError;
+		[Test]
+		procedure TestExecute_ViaPublicLink_MoveDeleteSourceFails_LogsError;
 	end;
 
 implementation
@@ -414,6 +426,48 @@ begin
 	Assert.IsTrue(FMockHTTP.WasURLCalled(API_FILE_REMOVE), 'Should delete source after successful move');
 end;
 
+procedure TCrossAccountFileOperationHandlerTest.TestExecute_ViaHash_OverwriteDeleteFails_ReturnsNotSupported;
+var
+	OldPath, NewPath: TRealPath;
+	Result: Integer;
+begin
+	FOldCloud := CreateCloud;
+	FNewCloud := CreateCloud;
+	OldPath.FromPath('\account1\file.txt');
+	NewPath.FromPath('\account2\file.txt');
+
+	{Delete target fails during overwrite}
+	FMockHTTP.SetResponse(API_FILE_REMOVE, False, '');
+
+	Result := FHandler.Execute(FOldCloud, FNewCloud, OldPath, NewPath, False, True, {OverWrite=True}
+		CopyBetweenAccountsModeViaHash, False,
+		function: Boolean begin Result := False; end);
+
+	Assert.AreEqual(FS_FILE_NOTSUPPORTED, Result, 'Should return not supported when overwrite delete fails');
+end;
+
+procedure TCrossAccountFileOperationHandlerTest.TestExecute_ViaHash_MoveDeleteSourceFails_LogsError;
+var
+	OldPath, NewPath: TRealPath;
+begin
+	FOldCloud := CreateCloud;
+	FNewCloud := CreateCloud;
+	OldPath.FromPath('\account1\file.txt');
+	NewPath.FromPath('\account2\file.txt');
+
+	{StatusFile succeeds, AddFileByIdentity succeeds, but Delete source fails}
+	FMockHTTP.SetResponse(API_FILE, True, JSON_STATUS_FILE_SUCCESS);
+	FMockHTTP.SetResponse(API_FILE_ADD, True, JSON_ADD_FILE_SUCCESS);
+	FMockHTTP.SetResponse(API_FILE_REMOVE, False, '');
+
+	FHandler.Execute(FOldCloud, FNewCloud, OldPath, NewPath, True, False, {Move=True}
+		CopyBetweenAccountsModeViaHash, False,
+		function: Boolean begin Result := False; end);
+
+	Assert.IsTrue(FMockLogger.LogCalled, 'Should log error when delete source fails');
+	Assert.AreEqual(LOG_LEVEL_ERROR, FMockLogger.LastLogLevel, 'Should log at error level');
+end;
+
 procedure TCrossAccountFileOperationHandlerTest.TestExecute_ViaHash_AddByIdentityFails_CallsRetryHandler;
 var
 	OldPath, NewPath: TRealPath;
@@ -500,6 +554,49 @@ begin
 	Assert.IsTrue(FMockHTTP.WasURLCalled(API_CLONE), 'Should call clone API');
 end;
 
+procedure TCrossAccountFileOperationHandlerTest.TestExecute_ViaPublicLink_PublishFails_ReturnsReadError;
+var
+	OldPath, NewPath: TRealPath;
+	Result: Integer;
+begin
+	FOldCloud := CreateCloud;
+	FNewCloud := CreateCloud;
+	OldPath.FromPath('\account1\file.txt');
+	NewPath.FromPath('\account2\file.txt');
+
+	{File is not published and publish fails}
+	FMockHTTP.SetResponse(API_FILE, True, JSON_STATUS_FILE_SUCCESS);
+	FMockHTTP.SetResponse(API_FILE_PUBLISH, False, '');
+
+	Result := FHandler.Execute(FOldCloud, FNewCloud, OldPath, NewPath, False, False,
+		CopyBetweenAccountsModeViaPublicLink, False,
+		function: Boolean begin Result := False; end);
+
+	Assert.AreEqual(FS_FILE_READERROR, Result, 'Should return read error when publish fails');
+	Assert.IsTrue(FMockLogger.LogCalled, 'Should log error when publish fails');
+	Assert.AreEqual(LOG_LEVEL_ERROR, FMockLogger.LastLogLevel, 'Should log at error level');
+end;
+
+procedure TCrossAccountFileOperationHandlerTest.TestExecute_ViaPublicLink_OverwriteDeleteFails_ReturnsNotSupported;
+var
+	OldPath, NewPath: TRealPath;
+	Result: Integer;
+begin
+	FOldCloud := CreateCloud;
+	FNewCloud := CreateCloud;
+	OldPath.FromPath('\account1\file.txt');
+	NewPath.FromPath('\account2\file.txt');
+
+	{Delete target fails during overwrite}
+	FMockHTTP.SetResponse(API_FILE_REMOVE, False, '');
+
+	Result := FHandler.Execute(FOldCloud, FNewCloud, OldPath, NewPath, False, True, {OverWrite=True}
+		CopyBetweenAccountsModeViaPublicLink, False,
+		function: Boolean begin Result := False; end);
+
+	Assert.AreEqual(FS_FILE_NOTSUPPORTED, Result, 'Should return not supported when overwrite delete fails');
+end;
+
 procedure TCrossAccountFileOperationHandlerTest.TestExecute_ViaPublicLink_CloneSucceeds_ReturnsOK;
 var
 	OldPath, NewPath: TRealPath;
@@ -561,6 +658,51 @@ begin
 		function: Boolean begin Result := False; end);
 
 	Assert.IsTrue(FMockHTTP.WasURLCalled(API_FILE_UNPUBLISH), 'Should call unpublish API to remove temp link');
+end;
+
+procedure TCrossAccountFileOperationHandlerTest.TestExecute_ViaPublicLink_UnpublishFails_LogsError;
+var
+	OldPath, NewPath: TRealPath;
+begin
+	FOldCloud := CreateCloud;
+	FNewCloud := CreateCloud;
+	OldPath.FromPath('\account1\file.txt');
+	NewPath.FromPath('\account2\file.txt');
+
+	{File was not published, clone succeeds, but unpublish fails}
+	FMockHTTP.SetResponse(API_FILE, True, JSON_STATUS_FILE_SUCCESS);
+	FMockHTTP.SetResponse(API_FILE_PUBLISH, True, JSON_PUBLISH_SUCCESS);
+	FMockHTTP.SetResponse(API_CLONE, True, JSON_CLONE_SUCCESS);
+	FMockHTTP.SetResponse(API_FILE_UNPUBLISH, False, '');
+
+	FHandler.Execute(FOldCloud, FNewCloud, OldPath, NewPath, False, False,
+		CopyBetweenAccountsModeViaPublicLink, False,
+		function: Boolean begin Result := False; end);
+
+	Assert.IsTrue(FMockLogger.LogCalled, 'Should log error when unpublish fails');
+	Assert.AreEqual(LOG_LEVEL_ERROR, FMockLogger.LastLogLevel, 'Should log at error level');
+end;
+
+procedure TCrossAccountFileOperationHandlerTest.TestExecute_ViaPublicLink_MoveDeleteSourceFails_LogsError;
+var
+	OldPath, NewPath: TRealPath;
+begin
+	FOldCloud := CreateCloud;
+	FNewCloud := CreateCloud;
+	OldPath.FromPath('\account1\file.txt');
+	NewPath.FromPath('\account2\file.txt');
+
+	{Clone succeeds but delete source fails during move}
+	FMockHTTP.SetResponse(API_FILE, True, JSON_STATUS_FILE_PUBLISHED);
+	FMockHTTP.SetResponse(API_CLONE, True, JSON_CLONE_SUCCESS);
+	FMockHTTP.SetResponse(API_FILE_REMOVE, False, '');
+
+	FHandler.Execute(FOldCloud, FNewCloud, OldPath, NewPath, True, False, {Move=True}
+		CopyBetweenAccountsModeViaPublicLink, False,
+		function: Boolean begin Result := False; end);
+
+	Assert.IsTrue(FMockLogger.LogCalled, 'Should log error when delete source fails');
+	Assert.AreEqual(LOG_LEVEL_ERROR, FMockLogger.LastLogLevel, 'Should log at error level');
 end;
 
 initialization

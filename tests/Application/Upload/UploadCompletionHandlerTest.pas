@@ -108,6 +108,10 @@ type
 		{Result tests}
 		[Test]
 		procedure TestHandleCompletion_OnSuccess_ReturnsOK;
+
+		{TNullUploadCompletionHandler tests}
+		[Test]
+		procedure TestNullHandler_ReturnsOK;
 	end;
 
 implementation
@@ -354,6 +358,20 @@ begin
 	ResultCode := FHandler.HandleCompletion(Context);
 
 	Assert.AreEqual(FS_FILE_OK, ResultCode);
+end;
+
+procedure TUploadCompletionHandlerTest.TestNullHandler_ReturnsOK;
+var
+	NullHandler: IUploadCompletionHandler;
+	Context: TUploadCompletionContext;
+	ResultCode: Integer;
+begin
+	NullHandler := TNullUploadCompletionHandler.Create;
+	Context := CreateContext('C:\local\file.txt', '\account\remote\file.txt', FS_COPYFLAGS_MOVE);
+
+	ResultCode := NullHandler.HandleCompletion(Context);
+
+	Assert.AreEqual(FS_FILE_OK, ResultCode, 'Null handler should always return OK');
 end;
 
 initialization

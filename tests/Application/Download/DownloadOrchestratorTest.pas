@@ -57,6 +57,19 @@ type
 
 		[Test]
 		procedure Execute_PassesCorrectPathToDownloadCallback;
+
+		{Retry handler tests}
+		[Test]
+		procedure Execute_WhenDownloadReturnsReadError_CallsRetryHandler;
+
+		[Test]
+		procedure Execute_WhenDownloadReturnsWriteError_DoesNotCallRetryHandler;
+
+		[Test]
+		procedure Execute_WhenRetryHandlerReturnsOK_ReturnsOK;
+
+		[Test]
+		procedure Execute_WhenRetryHandlerReturnsError_ReturnsError;
 	end;
 
 implementation
@@ -88,9 +101,14 @@ type
 			OverwriteMode: Integer): TConflictResolution;
 	end;
 
-	{Mock retry handler that just returns the current result}
+	{Mock retry handler with configurable behavior}
 	TMockRetryHandler = class(TInterfacedObject, IRetryHandler)
+	private
+		FWasCalled: Boolean;
+		FReturnValue: Integer;
 	public
+		constructor Create; overload;
+		constructor Create(ReturnValue: Integer); overload;
 		function HandleOperationError(
 			CurrentResult: Integer;
 			OperationType: TRetryOperationType;
@@ -98,6 +116,7 @@ type
 			RetryOperation: TRetryOperation;
 			AbortCheck: TAbortCheck
 		): Integer;
+		property WasCalled: Boolean read FWasCalled;
 	end;
 
 	{Mock settings manager}
@@ -149,6 +168,20 @@ end;
 
 {TMockRetryHandler}
 
+constructor TMockRetryHandler.Create;
+begin
+	inherited Create;
+	FWasCalled := False;
+	FReturnValue := FS_FILE_READERROR; {Default to pass-through behavior}
+end;
+
+constructor TMockRetryHandler.Create(ReturnValue: Integer);
+begin
+	inherited Create;
+	FWasCalled := False;
+	FReturnValue := ReturnValue;
+end;
+
 function TMockRetryHandler.HandleOperationError(
 	CurrentResult: Integer;
 	OperationType: TRetryOperationType;
@@ -157,7 +190,8 @@ function TMockRetryHandler.HandleOperationError(
 	AbortCheck: TAbortCheck
 ): Integer;
 begin
-	Result := CurrentResult;
+	FWasCalled := True;
+	Result := FReturnValue;
 end;
 
 {TMockSettingsManager}
@@ -358,6 +392,92 @@ begin
 
 	Assert.AreEqual('account', FLastDownloadPath.account, 'Account should be parsed correctly');
 	Assert.AreEqual('folder\test.txt', FLastDownloadPath.Path, 'Path should be parsed correctly');
+end;
+
+procedure TDownloadOrchestratorTest.Execute_WhenDownloadReturnsReadError_CallsRetryHandler;
+var
+	MockRetry: TMockRetryHandler;
+begin
+	MockRetry := TMockRetryHandler.Create(FS_FILE_READERROR);
+	FMockRetryHandler := MockRetry;
+	FOrchestrator := TDownloadOrchestrator.Create(
+		FMockValidator, FMockConflictResolver, FMockRetryHandler, FMockSettingsManager);
+
+	FOrchestrator.Execute('\account\test.txt', 'C:\local.txt', 0,
+		function(const Path: TRealPath; const LocalName, RemoteName: WideString; CopyFlags: Integer): Integer
+		begin
+			Result := FS_FILE_READERROR;
+		end,
+		function(const Source, Target: WideString; PercentDone: Integer): Boolean
+		begin
+			Result := False;
+		end);
+
+	Assert.IsTrue(MockRetry.WasCalled, 'Should call retry handler when download returns read error');
+end;
+
+procedure TDownloadOrchestratorTest.Execute_WhenDownloadReturnsWriteError_DoesNotCallRetryHandler;
+var
+	MockRetry: TMockRetryHandler;
+begin
+	MockRetry := TMockRetryHandler.Create(FS_FILE_WRITEERROR);
+	FMockRetryHandler := MockRetry;
+	FOrchestrator := TDownloadOrchestrator.Create(
+		FMockValidator, FMockConflictResolver, FMockRetryHandler, FMockSettingsManager);
+
+	FOrchestrator.Execute('\account\test.txt', 'C:\local.txt', 0,
+		function(const Path: TRealPath; const LocalName, RemoteName: WideString; CopyFlags: Integer): Integer
+		begin
+			Result := FS_FILE_WRITEERROR;
+		end,
+		function(const Source, Target: WideString; PercentDone: Integer): Boolean
+		begin
+			Result := False;
+		end);
+
+	Assert.IsFalse(MockRetry.WasCalled, 'Should not call retry handler for write errors');
+end;
+
+procedure TDownloadOrchestratorTest.Execute_WhenRetryHandlerReturnsOK_ReturnsOK;
+var
+	Result: Integer;
+begin
+	FMockRetryHandler := TMockRetryHandler.Create(FS_FILE_OK);
+	FOrchestrator := TDownloadOrchestrator.Create(
+		FMockValidator, FMockConflictResolver, FMockRetryHandler, FMockSettingsManager);
+
+	Result := FOrchestrator.Execute('\account\test.txt', 'C:\local.txt', 0,
+		function(const Path: TRealPath; const LocalName, RemoteName: WideString; CopyFlags: Integer): Integer
+		begin
+			Result := FS_FILE_READERROR;
+		end,
+		function(const Source, Target: WideString; PercentDone: Integer): Boolean
+		begin
+			Result := False;
+		end);
+
+	Assert.AreEqual(FS_FILE_OK, Result, 'Should return OK when retry handler succeeds');
+end;
+
+procedure TDownloadOrchestratorTest.Execute_WhenRetryHandlerReturnsError_ReturnsError;
+var
+	Result: Integer;
+begin
+	FMockRetryHandler := TMockRetryHandler.Create(FS_FILE_USERABORT);
+	FOrchestrator := TDownloadOrchestrator.Create(
+		FMockValidator, FMockConflictResolver, FMockRetryHandler, FMockSettingsManager);
+
+	Result := FOrchestrator.Execute('\account\test.txt', 'C:\local.txt', 0,
+		function(const Path: TRealPath; const LocalName, RemoteName: WideString; CopyFlags: Integer): Integer
+		begin
+			Result := FS_FILE_READERROR;
+		end,
+		function(const Source, Target: WideString; PercentDone: Integer): Boolean
+		begin
+			Result := False;
+		end);
+
+	Assert.AreEqual(FS_FILE_USERABORT, Result, 'Should return error code from retry handler');
 end;
 
 initialization
