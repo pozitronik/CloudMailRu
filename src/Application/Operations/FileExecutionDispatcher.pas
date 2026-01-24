@@ -42,7 +42,7 @@ type
 	end;
 
 	{Callback type for getting streaming settings for a path extension}
-	TStreamingSettingsGetter = function(const Path: WideString): TStreamingSettings of object;
+	TStreamingSettingsGetter = reference to function(const Path: WideString): TStreamingSettings;
 
 	IFileExecutionDispatcher = interface
 		['{3351E626-88BA-48A4-9BB3-F5590F0B542C}']

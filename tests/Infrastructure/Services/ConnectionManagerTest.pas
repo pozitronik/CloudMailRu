@@ -70,6 +70,8 @@ type
 		procedure SetStreamingSettings(const FileName: WideString; StreamingSettings: TStreamingSettings);
 		procedure GetStreamingExtensionsList(ExtensionsList: TStrings);
 		procedure RemoveStreamingExtension(const Extension: WideString);
+		function GetAccountsIniFilePath: WideString;
+		procedure Refresh;
 		property Settings: TPluginSettings read FPluginSettings write FPluginSettings;
 		property SwitchProxyPasswordStorageCalled: Boolean read FSwitchProxyPasswordStorageCalled;
 		property SaveCalled: Boolean read FSaveCalled;
@@ -259,6 +261,16 @@ begin
 end;
 
 procedure TMockPluginSettingsManager.RemoveStreamingExtension(const Extension: WideString);
+begin
+	{No-op for mock}
+end;
+
+function TMockPluginSettingsManager.GetAccountsIniFilePath: WideString;
+begin
+	Result := EmptyWideStr;
+end;
+
+procedure TMockPluginSettingsManager.Refresh;
 begin
 	{No-op for mock}
 end;

@@ -77,6 +77,8 @@ type
 		procedure SetStreamingSettings(const FileName: WideString; StreamSettings: TStreamingSettings);
 		procedure GetStreamingExtensionsList(ExtensionsList: TStrings);
 		procedure RemoveStreamingExtension(const Extension: WideString);
+		function GetAccountsIniFilePath: WideString;
+		procedure Refresh;
 	end;
 
 constructor TTestPluginSettingsManager.Create(DescriptionEnabled, LogUserSpace: Boolean);
@@ -122,6 +124,16 @@ begin
 end;
 
 procedure TTestPluginSettingsManager.RemoveStreamingExtension(const Extension: WideString);
+begin
+	{No-op}
+end;
+
+function TTestPluginSettingsManager.GetAccountsIniFilePath: WideString;
+begin
+	Result := EmptyWideStr;
+end;
+
+procedure TTestPluginSettingsManager.Refresh;
 begin
 	{No-op}
 end;

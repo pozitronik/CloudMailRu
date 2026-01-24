@@ -31,6 +31,8 @@ type
 		procedure SetStreamingSettings(const FileName: WideString; StreamingSettings: TStreamingSettings);
 		procedure GetStreamingExtensionsList(ExtensionsList: TStrings);
 		procedure RemoveStreamingExtension(const Extension: WideString);
+		function GetAccountsIniFilePath: WideString;
+		procedure Refresh;
 	end;
 
 	{Null implementation for testing - returns defaults, no-op for writes}
@@ -46,6 +48,8 @@ type
 		procedure SetStreamingSettings(const FileName: WideString; StreamingSettings: TStreamingSettings);
 		procedure GetStreamingExtensionsList(ExtensionsList: TStrings);
 		procedure RemoveStreamingExtension(const Extension: WideString);
+		function GetAccountsIniFilePath: WideString;
+		procedure Refresh;
 	end;
 
 	{Files names and path naming conventions:
@@ -128,6 +132,16 @@ begin
 end;
 
 procedure TNullPluginSettingsManager.RemoveStreamingExtension(const Extension: WideString);
+begin
+	{No-op for null implementation}
+end;
+
+function TNullPluginSettingsManager.GetAccountsIniFilePath: WideString;
+begin
+	Result := EmptyWideStr;
+end;
+
+procedure TNullPluginSettingsManager.Refresh;
 begin
 	{No-op for null implementation}
 end;

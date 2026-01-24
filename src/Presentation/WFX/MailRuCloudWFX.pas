@@ -152,8 +152,8 @@ type
 
 		PluginNum: Integer;
 
-		SettingsManager: TPluginSettingsManager;
-		AccountSettings: TAccountsManager;
+		SettingsManager: IPluginSettingsManager;
+		AccountSettings: IAccountsManager;
 		Accounts: TWSList;
 
 		CurrentListing: TCMRDirItemList;
@@ -223,7 +223,7 @@ begin
 
 	SettingsManager := TPluginSettingsManager.Create();
 
-	if SettingsManager.Settings.LoadSSLDLLOnlyFromPluginDir then
+	if SettingsManager.GetSettings.LoadSSLDLLOnlyFromPluginDir then
 	begin
 		if ((DirectoryExists(PluginPath + PlatformDllPath)) and (FileExists(PluginPath + PlatformDllPath + '\ssleay32.dll')) and (FileExists(PluginPath + PlatformDllPath + '\libeay32.dll'))) then
 		begin //try to load dll from platform subdir
@@ -234,7 +234,7 @@ begin
 		end;
 	end;
 
-	IsMultiThread := not(SettingsManager.Settings.DisableMultiThreading);
+	IsMultiThread := not(SettingsManager.GetSettings.DisableMultiThreading);
 	FThreadState := TThreadStateManager.Create;
 	FMoveOperationTracker := TMoveOperationContextTracker.Create(FThreadState);
 	FDirectoryDeletionPreCheck := TDirectoryDeletionPreCheck.Create(FThreadState);
@@ -249,10 +249,10 @@ begin
 	FOperationLifecycle := TOperationLifecycleHandler.Create;
 	FListingProvider := TListingProvider.Create;
 
-	AccountSettings := TAccountsManager.Create(TIniConfigFile.Create(SettingsManager.AccountsIniFilePath));
+	AccountSettings := TAccountsManager.Create(TIniConfigFile.Create(SettingsManager.GetAccountsIniFilePath));
 	FFileSystem := TWindowsFileSystem.Create;
 	FTCHandler := TTCHandler.Create(TWindowsEnvironment.Create);
-	FDescriptionSync := TDescriptionSyncManager.Create(SettingsManager.Settings.DescriptionFileName, FFileSystem, FTCHandler);
+	FDescriptionSync := TDescriptionSyncManager.Create(SettingsManager.GetSettings.DescriptionFileName, FFileSystem, FTCHandler);
 	FDescriptionSyncGuard := TDescriptionSyncGuard.Create(FDescriptionSync, SettingsManager, AccountSettings);
 end;
 
@@ -261,7 +261,7 @@ var
 	Logger: ILogger;
 begin
 	PluginNum := PluginNr;
-	TCLogger := TTCLogger.Create(pLogProc, PluginNr, SettingsManager.Settings.LogLevel);
+	TCLogger := TTCLogger.Create(pLogProc, PluginNr, SettingsManager.GetSettings.LogLevel);
 	TCProgress := TTCProgress.Create(pProgressProc, PluginNr);
 	TCRequest := TTCRequest.Create(pRequestProc, PluginNr);
 	CurrentDescriptions := TDescription.Create(GetTmpFileName(DESCRIPTION_TEMP_EXT), FFileSystem, FTCHandler.GetTCCommentPreferredFormat);
@@ -405,8 +405,8 @@ begin
 
 	CurrentDescriptions.Free;
 
-	SettingsManager.Free;
-	AccountSettings.Free;
+	SettingsManager := nil; {IPluginSettingsManager is reference-counted, setting to nil releases it}
+	AccountSettings := nil; {IAccountsManager is reference-counted, setting to nil releases it}
 	PasswordManager := nil; {IPasswordManager is reference-counted, setting to nil releases it}
 	TCLogger := nil; {ILogger is reference-counted, setting to nil releases it}
 	TCProgress := nil; {IProgress is reference-counted, setting to nil releases it}
@@ -467,7 +467,7 @@ begin
 	end else begin
 		Cloud := ConnectionManager.Get(RealPath.account, getResult);
 		//всегда нужно обновлять статус на сервере, CurrentListing может быть изменён в другой панели
-		if (Cloud.ListingService.StatusFile(RealPath.Path, CurrentItem)) and (idContinue = TPropertyForm.ShowProperty(MainWin, RealPath.Path, CurrentItem, Cloud, FFileSystem, FTCHandler, SettingsManager.Settings.DownloadLinksEncode, SettingsManager.Settings.AutoUpdateDownloadListing, SettingsManager.Settings.DescriptionEnabled, SettingsManager.Settings.DescriptionEditorEnabled, SettingsManager.Settings.DescriptionFileName)) then
+		if (Cloud.ListingService.StatusFile(RealPath.Path, CurrentItem)) and (idContinue = TPropertyForm.ShowProperty(MainWin, RealPath.Path, CurrentItem, Cloud, FFileSystem, FTCHandler, SettingsManager.GetSettings.DownloadLinksEncode, SettingsManager.GetSettings.AutoUpdateDownloadListing, SettingsManager.GetSettings.DescriptionEnabled, SettingsManager.GetSettings.DescriptionEditorEnabled, SettingsManager.GetSettings.DescriptionFileName)) then
 			PostMessage(MainWin, WM_USER + TC_REFRESH_MESSAGE, TC_REFRESH_PARAM, 0); //refresh tc panel if description edited
 	end;
 end;
@@ -500,7 +500,7 @@ begin
 				Cloud := ConnectionManager.Get(RealPath.account, getResult);
 				CurrentItem := ActionResult.CurrentItem;
 				if Cloud.ListingService.StatusFile(CurrentItem.home, CurrentItem) then
-					TPropertyForm.ShowProperty(MainWin, RealPath.Path, CurrentItem, Cloud, FFileSystem, FTCHandler, SettingsManager.Settings.DownloadLinksEncode, SettingsManager.Settings.AutoUpdateDownloadListing, false, false, SettingsManager.Settings.DescriptionFileName);
+					TPropertyForm.ShowProperty(MainWin, RealPath.Path, CurrentItem, Cloud, FFileSystem, FTCHandler, SettingsManager.GetSettings.DownloadLinksEncode, SettingsManager.GetSettings.AutoUpdateDownloadListing, false, false, SettingsManager.GetSettings.DescriptionFileName);
 			end;
 	end;
 end;
@@ -579,7 +579,7 @@ begin
 
 	{Build context for the provider}
 	Context.IsAccountRoot := RealPath.isInAccountsList;
-	Context.DescriptionsEnabled := SettingsManager.Settings.DescriptionEnabled;
+	Context.DescriptionsEnabled := SettingsManager.GetSettings.DescriptionEnabled;
 	if Context.IsAccountRoot then
 		Context.AccountDescription := AccountSettings.GetAccountSettings(RealPath.account).Description
 	else
@@ -638,7 +638,11 @@ var
 	Action: TExecutionAction;
 begin
 	{Dispatch verb to determine appropriate action}
-	Action := FFileExecutionDispatcher.GetAction(RemoteName, Verb, SettingsManager.GetStreamingSettings);
+	Action := FFileExecutionDispatcher.GetAction(RemoteName, Verb,
+		function(const Path: WideString): TStreamingSettings
+		begin
+			Result := SettingsManager.GetStreamingSettings(Path);
+		end);
 
 	{Execute the appropriate handler based on action type}
 	case Action.ActionType of
@@ -675,7 +679,7 @@ begin
 
 	{Build context using builder}
 	Input.Path := RealPath;
-	Input.IconsMode := SettingsManager.Settings.IconsMode;
+	Input.IconsMode := SettingsManager.GetSettings.IconsMode;
 	Context := FIconContextBuilder.BuildContext(Input, CurrentListing, CurrentIncomingInvitesListing);
 
 	{Get icon info from provider}
@@ -718,7 +722,7 @@ begin
 	GlobalPath := Path;
 	if GlobalPath = '\' then
 	begin {Root listing - list accounts}
-		RootResult := FRootListingHandler.ExecuteWithAccounts(AccountSettings.GetAccountsList([ATPrivate, ATPublic], SettingsManager.Settings.EnabledVirtualTypes));
+		RootResult := FRootListingHandler.ExecuteWithAccounts(AccountSettings.GetAccountsList([ATPrivate, ATPublic], SettingsManager.GetSettings.EnabledVirtualTypes));
 		Accounts := RootResult.Accounts;
 
 		{Apply common result fields}
@@ -771,7 +775,7 @@ end;
 
 function TMailRuCloudWFX.FsGetBackgroundFlags: Integer;
 begin
-	if SettingsManager.Settings.DisableMultiThreading then
+	if SettingsManager.GetSettings.DisableMultiThreading then
 		Result := 0
 	else
 		Result := BG_DOWNLOAD + BG_UPLOAD; //+ BG_ASK_USER;
@@ -808,7 +812,7 @@ begin
 	RealPath.FromPath(WideString(Path));
 	if RealPath.isInAccountsList then //accounts list
 	begin
-		Result := FAccountRegistrationHandler.Execute(FTCHandler.FindTCWindow, RealPath.account, SettingsManager.Settings.ConnectionSettings,
+		Result := FAccountRegistrationHandler.Execute(FTCHandler.FindTCWindow, RealPath.account, SettingsManager.GetSettings.ConnectionSettings,
 			function(ParentWindow: HWND; ConnSettings: TConnectionSettings; var AccSettings: TAccountSettings): Integer
 			begin
 				Result := TRegistrationForm.ShowRegistration(ParentWindow, ConnSettings, AccSettings);
@@ -906,7 +910,7 @@ begin
 	NewCloud := ConnectionManager.Get(NewRealPath.account, getResult);
 
 	if OldRealPath.account <> NewRealPath.account then {Cross-account operation - delegate to handler}
-		Result := FCrossAccountFileOperationHandler.Execute(OldCloud, NewCloud, OldRealPath, NewRealPath, Move, OverWrite, SettingsManager.Settings.CopyBetweenAccountsMode, OldCloud.IsPublicAccount,
+		Result := FCrossAccountFileOperationHandler.Execute(OldCloud, NewCloud, OldRealPath, NewRealPath, Move, OverWrite, SettingsManager.GetSettings.CopyBetweenAccountsMode, OldCloud.IsPublicAccount,
 			function: Boolean
 			begin
 				Result := TCProgress.Aborted();
@@ -921,7 +925,7 @@ procedure TMailRuCloudWFX.FsSetCryptCallback(PCryptProc: TCryptProcW; CryptoNr, 
 begin
 	PasswordManager := TTCPasswordManager.Create(PCryptProc, PluginNum, CryptoNr, TCLogger, FTCHandler);
 	PasswordUI := TPasswordUIProvider.Create;
-	HTTPMgr := THTTPManager.Create(SettingsManager.Settings.ConnectionSettings, TCLogger, TCProgress, TCloudHTTPFactory.Create);
+	HTTPMgr := THTTPManager.Create(SettingsManager.GetSettings.ConnectionSettings, TCLogger, TCProgress, TCloudHTTPFactory.Create);
 	CipherVal := TCipherValidator.Create;
 	ConnectionManager := TConnectionManager.Create(SettingsManager, AccountSettings, HTTPMgr, PasswordUI, CipherVal, TWindowsFileSystem.Create, TCProgress, TCLogger, TCRequest, PasswordManager, FTCHandler, TDefaultAuthStrategyFactory.Create);
 	FCommandDispatcher := TCommandDispatcher.Create(ConnectionManager, TCLogger, SettingsManager);
@@ -961,7 +965,7 @@ var
 	resultHash: WideString;
 	DownloadContext: TDownloadContext;
 begin
-	if (SettingsManager.Settings.CheckCRC) then
+	if (SettingsManager.GetSettings.CheckCRC) then
 		resultHash := EmptyWideStr
 	else
 		resultHash := 'dummy'; {Calculations will be ignored if variable is not empty}

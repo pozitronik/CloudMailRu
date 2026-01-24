@@ -43,6 +43,8 @@ type
 		procedure SetStreamingSettings(const FileName: WideString; StreamSettings: TStreamingSettings);
 		procedure GetStreamingExtensionsList(ExtensionsList: TStrings);
 		procedure RemoveStreamingExtension(const Extension: WideString);
+		function GetAccountsIniFilePath: WideString;
+		procedure Refresh;
 		procedure SetLogUserSpace(Value: Boolean);
 	end;
 
@@ -210,6 +212,16 @@ begin
 end;
 
 procedure TMockSettingsManager.RemoveStreamingExtension(const Extension: WideString);
+begin
+	{No-op}
+end;
+
+function TMockSettingsManager.GetAccountsIniFilePath: WideString;
+begin
+	Result := EmptyWideStr;
+end;
+
+procedure TMockSettingsManager.Refresh;
 begin
 	{No-op}
 end;
