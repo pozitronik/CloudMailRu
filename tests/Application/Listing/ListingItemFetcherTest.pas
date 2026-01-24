@@ -56,10 +56,6 @@ type
 		[TearDown]
 		procedure TearDown;
 
-		{Nil cloud tests}
-		[Test]
-		procedure TestFetchItem_NilCloud_ReturnsNone;
-
 		{Search by home path tests (private account)}
 		[Test]
 		procedure TestFetchItem_PrivateAccount_SearchesByHomePath;
@@ -185,23 +181,6 @@ begin
 	FMockHTTPManager := nil;
 	FMockHTTP := nil;
 	FLogger := nil;
-end;
-
-{Nil cloud tests}
-
-procedure TListingItemFetcherTest.TestFetchItem_NilCloud_ReturnsNone;
-var
-	Listing: TCMRDirItemList;
-	Path: TRealPath;
-	Item: TCMRDirItem;
-begin
-	SetLength(Listing, 1);
-	Listing[0] := CreateFileItem('test.txt', '/test.txt');
-	Path.FromPath('\account\test.txt');
-
-	Item := FFetcher.FetchItem(Listing, Path, nil, False);
-
-	Assert.IsTrue(Item.isNone, 'Should return None when cloud is nil');
 end;
 
 {Search by home path tests (private account)}

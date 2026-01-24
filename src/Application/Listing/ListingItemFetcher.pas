@@ -101,12 +101,6 @@ end;
 
 function TListingItemFetcher.FetchItem(var Listing: TCMRDirItemList; const Path: TRealPath; Cloud: TCloudMailRu; UpdateListing: Boolean): TCMRDirItem;
 begin
-	if not Assigned(Cloud) then
-	begin
-		Result := Result.None;
-		Exit;
-	end;
-
 	Result := SearchListing(Listing, Path, Cloud.IsPublicAccount);
 
 	if Result.isNone and UpdateListing then
