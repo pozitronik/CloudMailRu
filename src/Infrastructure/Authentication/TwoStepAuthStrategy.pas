@@ -75,18 +75,6 @@ begin
 		Exit;
 	end;
 
-	if not Assigned(FPasswordUI) then
-	begin
-		Result := TAuthResult.CreateFailure('Password UI provider is required for two-step auth');
-		Exit;
-	end;
-
-	if not Assigned(HTTP) then
-	begin
-		Result := TAuthResult.CreateFailure('HTTP client is required');
-		Exit;
-	end;
-
 	FormFields := TDictionary<WideString, WideString>.Create();
 	try
 		{Step 1: Initial login request}

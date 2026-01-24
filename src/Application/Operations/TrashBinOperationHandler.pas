@@ -49,9 +49,6 @@ var
 begin
 	Result := FS_EXEC_OK;
 
-	if not Assigned(ListingService) then
-		Exit(FS_EXEC_ERROR);
-
 	{Show dialog - for trash dir show all items, for single item show just that item}
 	if IsTrashDir then
 		DialogResult := ShowDialog(ParentWindow, Listing, True, AccountName)

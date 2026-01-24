@@ -77,31 +77,23 @@ end;
 
 function TTCProgress.Aborted: Boolean;
 begin
-	Result := False;
-	if Assigned(ProgressProc) then
-		{When nil passed as a parameter, TC won't change it}
-		Result := ProgressProc(PluginNum, nil, nil, 0) = 1;
+	{When nil passed as a parameter, TC won't change it}
+	Result := ProgressProc(PluginNum, nil, nil, 0) = 1;
 end;
 
 function TTCProgress.Progress(PercentDone: Integer): Boolean;
 begin
-	Result := False;
-	if Assigned(ProgressProc) then
-		Result := ProgressProc(PluginNum, nil, nil, PercentDone) = 1;
+	Result := ProgressProc(PluginNum, nil, nil, PercentDone) = 1;
 end;
 
 function TTCProgress.Progress(SourceName: WideString; PercentDone: Integer): Boolean;
 begin
-	Result := False;
-	if Assigned(ProgressProc) then
-		Result := ProgressProc(PluginNum, PWideChar(SourceName), nil, PercentDone) = 1;
+	Result := ProgressProc(PluginNum, PWideChar(SourceName), nil, PercentDone) = 1;
 end;
 
 function TTCProgress.Progress(SourceName, TargetName: WideString; PercentDone: Integer): Boolean;
 begin
-	Result := False;
-	if Assigned(ProgressProc) then
-		Result := ProgressProc(PluginNum, PWideChar(SourceName), PWideChar(TargetName), PercentDone) = 1;
+	Result := ProgressProc(PluginNum, PWideChar(SourceName), PWideChar(TargetName), PercentDone) = 1;
 end;
 
 end.

@@ -35,8 +35,6 @@ type
 		[Test]
 		procedure TestAuthenticate_EmptyCredentials_ReturnsFailure;
 		[Test]
-		procedure TestAuthenticate_NoHTTP_ReturnsFailure;
-		[Test]
 		procedure TestAuthenticate_MissingUserDomain_ReturnsFailure;
 	end;
 
@@ -57,10 +55,6 @@ type
 		procedure TestImplementsInterface;
 		[Test]
 		procedure TestAuthenticate_EmptyCredentials_ReturnsFailure;
-		[Test]
-		procedure TestAuthenticate_NoHTTP_ReturnsFailure;
-		[Test]
-		procedure TestAuthenticate_NoPasswordUI_ReturnsFailure;
 	end;
 
 	{TOldOAuthStrategy Tests}
@@ -80,8 +74,6 @@ type
 		procedure TestImplementsInterface;
 		[Test]
 		procedure TestAuthenticate_EmptyCredentials_ReturnsFailure;
-		[Test]
-		procedure TestAuthenticate_NoHTTP_ReturnsFailure;
 	end;
 
 implementation
@@ -123,17 +115,6 @@ begin
 	Result := FStrategy.Authenticate(Credentials, nil, TNullLogger.Create);
 	Assert.IsFalse(Result.Success);
 	Assert.AreEqual('Email and password are required', Result.ErrorMessage);
-end;
-
-procedure TWebAuthStrategyTest.TestAuthenticate_NoHTTP_ReturnsFailure;
-var
-	Credentials: TAuthCredentials;
-	Result: TAuthResult;
-begin
-	Credentials := TAuthCredentials.Create('test@mail.ru', 'password123', 'test', 'mail.ru');
-	Result := FStrategy.Authenticate(Credentials, nil, TNullLogger.Create);
-	Assert.IsFalse(Result.Success);
-	Assert.AreEqual('HTTP client is required', Result.ErrorMessage);
 end;
 
 procedure TWebAuthStrategyTest.TestAuthenticate_MissingUserDomain_ReturnsFailure;
@@ -188,35 +169,6 @@ begin
 	Assert.AreEqual('Email and password are required', Result.ErrorMessage);
 end;
 
-procedure TTwoStepAuthStrategyTest.TestAuthenticate_NoHTTP_ReturnsFailure;
-var
-	Credentials: TAuthCredentials;
-	Result: TAuthResult;
-begin
-	Credentials := TAuthCredentials.Create('test@mail.ru', 'password123', 'test', 'mail.ru');
-	Result := FStrategy.Authenticate(Credentials, nil, TNullLogger.Create);
-	Assert.IsFalse(Result.Success);
-	Assert.AreEqual('HTTP client is required', Result.ErrorMessage);
-end;
-
-procedure TTwoStepAuthStrategyTest.TestAuthenticate_NoPasswordUI_ReturnsFailure;
-var
-	Strategy: TTwoStepAuthStrategy;
-	Credentials: TAuthCredentials;
-	Result: TAuthResult;
-begin
-	{Create strategy without PasswordUI}
-	Strategy := TTwoStepAuthStrategy.Create(nil);
-	try
-		Credentials := TAuthCredentials.Create('test@mail.ru', 'password123', 'test', 'mail.ru');
-		Result := Strategy.Authenticate(Credentials, nil, TNullLogger.Create);
-		Assert.IsFalse(Result.Success);
-		Assert.AreEqual('Password UI provider is required for two-step auth', Result.ErrorMessage);
-	finally
-		Strategy.Free;
-	end;
-end;
-
 { TOldOAuthStrategyTest }
 
 procedure TOldOAuthStrategyTest.Setup;
@@ -251,17 +203,6 @@ begin
 	Result := FStrategy.Authenticate(Credentials, nil, TNullLogger.Create);
 	Assert.IsFalse(Result.Success);
 	Assert.AreEqual('Email and password are required', Result.ErrorMessage);
-end;
-
-procedure TOldOAuthStrategyTest.TestAuthenticate_NoHTTP_ReturnsFailure;
-var
-	Credentials: TAuthCredentials;
-	Result: TAuthResult;
-begin
-	Credentials := TAuthCredentials.Create('test@mail.ru', 'password123', 'test', 'mail.ru');
-	Result := FStrategy.Authenticate(Credentials, nil, TNullLogger.Create);
-	Assert.IsFalse(Result.Success);
-	Assert.AreEqual('HTTP client is required', Result.ErrorMessage);
 end;
 
 initialization

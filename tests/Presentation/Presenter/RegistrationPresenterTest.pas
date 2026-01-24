@@ -137,8 +137,6 @@ type
 
 		{OnSignupClick tests}
 		[Test]
-		procedure OnSignupClick_NoCallback_ReturnsFalse;
-		[Test]
 		procedure OnSignupClick_DisablesCaptchaAndSend;
 		[Test]
 		procedure OnSignupClick_BuildsEmailFromLoginAndDomain;
@@ -161,8 +159,6 @@ type
 		[Test]
 		procedure OnSignupClick_CreateAccountFails_ReturnsFalse;
 		[Test]
-		procedure OnSignupClick_NoCaptchaCallback_ReturnsFalse;
-		[Test]
 		procedure OnSignupClick_CaptchaFails_ReturnsFalse;
 		[Test]
 		procedure OnSignupClick_Success_DisplaysCaptcha;
@@ -172,8 +168,6 @@ type
 		procedure OnSignupClick_Success_ReturnsTrue;
 
 		{OnConfirmClick tests}
-		[Test]
-		procedure OnConfirmClick_NoCallback_ReturnsFalse;
 		[Test]
 		procedure OnConfirmClick_CallsConfirmCallback;
 		[Test]
@@ -491,17 +485,6 @@ end;
 
 {OnSignupClick tests}
 
-procedure TRegistrationPresenterTest.OnSignupClick_NoCallback_ReturnsFalse;
-begin
-	SetupValidForm;
-	FPresenter.Initialize(Default(TAccountSettings));
-	{Don't set callbacks}
-
-	var Result := FPresenter.OnSignupClick;
-
-	Assert.IsFalse(Result);
-end;
-
 procedure TRegistrationPresenterTest.OnSignupClick_DisablesCaptchaAndSend;
 begin
 	SetupValidForm;
@@ -642,18 +625,6 @@ begin
 	Assert.IsFalse(FGetCaptchaCalled, 'Should not proceed to captcha if create fails');
 end;
 
-procedure TRegistrationPresenterTest.OnSignupClick_NoCaptchaCallback_ReturnsFalse;
-begin
-	SetupValidForm;
-	FPresenter.Initialize(Default(TAccountSettings));
-	{Set only create account callback, not captcha}
-	FPresenter.SetCallbacks(MockCreateAccount, nil, MockConfirmRegistration);
-
-	var Result := FPresenter.OnSignupClick;
-
-	Assert.IsFalse(Result);
-end;
-
 procedure TRegistrationPresenterTest.OnSignupClick_CaptchaFails_ReturnsFalse;
 begin
 	SetupValidForm;
@@ -702,15 +673,6 @@ begin
 end;
 
 {OnConfirmClick tests}
-
-procedure TRegistrationPresenterTest.OnConfirmClick_NoCallback_ReturnsFalse;
-begin
-	{Don't set callbacks}
-
-	var Result := FPresenter.OnConfirmClick;
-
-	Assert.IsFalse(Result);
-end;
 
 procedure TRegistrationPresenterTest.OnConfirmClick_CallsConfirmCallback;
 begin

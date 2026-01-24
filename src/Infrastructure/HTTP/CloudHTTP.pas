@@ -293,8 +293,7 @@ destructor TCloudMailRuHTTP.Destroy;
 begin
 	HTTP.free;
 	SSL.free;
-	if Assigned(self.Throttle) then
-		self.Throttle.free;
+	self.Throttle.free;
 	if Assigned(self.Socks) then
 		self.Socks.free;
 	inherited;

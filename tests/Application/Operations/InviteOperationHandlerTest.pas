@@ -74,10 +74,6 @@ type
 		[TearDown]
 		procedure TearDown;
 
-		{Nil service tests}
-		[Test]
-		procedure TestExecute_NilService_ReturnsError;
-
 		{Dialog cancel test}
 		[Test]
 		procedure TestExecute_DialogCancel_ReturnsOK;
@@ -263,24 +259,6 @@ begin
 	FHandler := nil;
 	FMockServiceIntf := nil;
 	FMockService := nil;
-end;
-
-{Nil service tests}
-
-procedure TInviteOperationHandlerTest.TestExecute_NilService_ReturnsError;
-var
-	Invite: TCMRIncomingInvite;
-	ExecResult: Integer;
-begin
-	Invite := CreateInvite('SharedFolder', 'token123');
-
-	ExecResult := FHandler.Execute(0, nil, Invite,
-		function(ParentWindow: HWND; const Inv: TCMRIncomingInvite): Integer
-		begin
-			Result := mrCancel;
-		end);
-
-	Assert.AreEqual(FS_EXEC_ERROR, ExecResult, 'Should return error when service is nil');
 end;
 
 {Dialog cancel tests}

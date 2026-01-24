@@ -146,16 +146,10 @@ begin
 	FView.SetFormEnabled(False);
 	try
 		{Create account}
-		if not Assigned(FOnCreateAccount) then
-			Exit;
-
 		if not FOnCreateAccount(FView.GetFirstName, FView.GetLastName, FView.GetLogin, FView.GetPassword, FView.GetDomain, FCode) then
 			Exit;
 
 		{Load captcha}
-		if not Assigned(FOnGetCaptcha) then
-			Exit;
-
 		CaptchaStream := TMemoryStream.Create;
 		try
 			if FOnGetCaptcha(CaptchaStream) then
@@ -176,10 +170,6 @@ end;
 
 function TRegistrationPresenter.OnConfirmClick: Boolean;
 begin
-	Result := False;
-	if not Assigned(FOnConfirmRegistration) then
-		Exit;
-
 	Result := FOnConfirmRegistration(FAccountSettings.Email, FCode, FView.GetCaptcha);
 end;
 

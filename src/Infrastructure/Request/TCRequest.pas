@@ -54,14 +54,10 @@ function TTCRequest.Request(RequestType: Integer; CustomTitle, CustomText: WideS
 var
 	pReturnedText: PWideChar;
 begin
-	Result := False;
-	if Assigned(RequestProc) then
-	begin
-		SetLength(ReturnedText, maxlen);
-		pReturnedText := PWideChar(ReturnedText);
-		Result := RequestProc(PluginNum, RequestType, PWideChar(CustomTitle), PWideChar(CustomText), pReturnedText, maxlen);
-		ReturnedText := pReturnedText; // not tested!
-	end;
+	SetLength(ReturnedText, maxlen);
+	pReturnedText := PWideChar(ReturnedText);
+	Result := RequestProc(PluginNum, RequestType, PWideChar(CustomTitle), PWideChar(CustomText), pReturnedText, maxlen);
+	ReturnedText := pReturnedText; // not tested!
 end;
 
 end.

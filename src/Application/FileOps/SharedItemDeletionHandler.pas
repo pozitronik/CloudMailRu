@@ -38,9 +38,6 @@ var
 	Invite: TCMRInvite;
 	Weblink: WideString;
 begin
-	if not Assigned(Cloud) then
-		Exit(False);
-
 	{Get list of collaborators and unshare with each}
 	Cloud.ShareService.GetShareInfo(Item.home, InvitesListing);
 	for Invite in InvitesListing do

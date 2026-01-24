@@ -41,10 +41,6 @@ type
 		[TearDown]
 		procedure TearDown;
 
-		{Nil cloud tests}
-		[Test]
-		procedure TestExecute_NilCloud_ReturnsFalse;
-
 		{Published item tests}
 		[Test]
 		procedure TestExecute_PublishedItem_CallsUnpublish;
@@ -120,20 +116,6 @@ begin
 	FHandler := nil;
 	FMockHTTPManager := nil;
 	FMockHTTP := nil;
-end;
-
-{Nil cloud tests}
-
-procedure TSharedItemDeletionHandlerTest.TestExecute_NilCloud_ReturnsFalse;
-var
-	Item: TCMRDirItem;
-	Res: Boolean;
-begin
-	Item := CreatePublishedItem('/shared/folder', 'abc123');
-
-	Res := FHandler.Execute(nil, Item);
-
-	Assert.IsFalse(Res, 'Should return False when cloud is nil');
 end;
 
 {Published item tests}

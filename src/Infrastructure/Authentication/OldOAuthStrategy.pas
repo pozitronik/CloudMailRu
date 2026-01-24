@@ -57,12 +57,6 @@ begin
 		Exit;
 	end;
 
-	if not Assigned(HTTP) then
-	begin
-		Result := TAuthResult.CreateFailure('HTTP client is required');
-		Exit;
-	end;
-
 	{Attempt OAuth token request - note: this implementation is incomplete}
 	if GetOAuthToken(HTTP, Credentials.Email, Credentials.Password, OAuthToken) then
 	begin

@@ -44,9 +44,6 @@ var
 begin
 	Result := FS_EXEC_OK;
 
-	if not Assigned(ShareService) then
-		Exit(FS_EXEC_ERROR);
-
 	DialogResult := ShowDialog(ParentWindow, Invite);
 
 	case DialogResult of

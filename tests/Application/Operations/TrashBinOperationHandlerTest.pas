@@ -65,10 +65,6 @@ type
 		[TearDown]
 		procedure TearDown;
 
-		{Nil service tests}
-		[Test]
-		procedure TestExecute_NilService_ReturnsError;
-
 		{Dialog cancel test}
 		[Test]
 		procedure TestExecute_DialogCancel_ReturnsOK;
@@ -221,28 +217,6 @@ begin
 	FHandler := nil;
 	FMockServiceIntf := nil;
 	FMockService := nil;
-end;
-
-{Nil service tests}
-
-procedure TTrashBinOperationHandlerTest.TestExecute_NilService_ReturnsError;
-var
-	Listing: TCMRDirItemList;
-	Item: TCMRDirItem;
-	ExecResult: Integer;
-begin
-	SetLength(Listing, 1);
-	Listing[0] := CreateDeletedItem('test.txt', '/backup/', 1);
-	Item := Listing[0];
-
-	ExecResult := FHandler.Execute(0, nil, Listing, Item, False, 'account',
-		function(ParentWindow: HWND; Items: TCMRDirItemList;
-			IsTrashDir: Boolean; const AccountName: WideString): Integer
-		begin
-			Result := mrCancel;
-		end);
-
-	Assert.AreEqual(FS_EXEC_ERROR, ExecResult, 'Should return error when service is nil');
 end;
 
 {Dialog cancel test}
