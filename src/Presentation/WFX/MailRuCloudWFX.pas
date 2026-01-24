@@ -296,9 +296,6 @@ begin
 	{Create download success handler for post-download operations}
 	FDownloadSuccessHandler := TDownloadSuccessHandler.Create(SettingsManager, TCLogger, TCProgress, FDescriptionSyncGuard);
 
-	{Create operation action executor for lifecycle event handling}
-	FActionExecutor := TOperationActionExecutor.Create(FThreadState, ConnectionManager, SettingsManager, CurrentDescriptions, TCLogger);
-
 	{Create listing skip decider for FsFindFirst skip logic}
 	FListingSkipDecider := TListingSkipDecider.Create(FThreadState, TCProgress);
 
@@ -319,9 +316,6 @@ begin
 
 	{Create shared item deletion handler for FsDeleteFile}
 	FSharedItemDeletionHandler := TSharedItemDeletionHandler.Create;
-
-	{Create account registration handler for FsMkDir}
-	FAccountRegistrationHandler := TAccountRegistrationHandler.Create(AccountSettings, PasswordManager);
 
 	{Create trashbin operation handler for ExecTrashbinProperties}
 	FTrashBinOperationHandler := TTrashBinOperationHandler.Create;
@@ -346,10 +340,6 @@ begin
 
 	{Create listing handlers for FsFindFirst}
 	FRootListingHandler := TRootListingHandler.Create;
-	FPathListingHandler := TPathListingHandler.Create(ConnectionManager, FListingProvider, FListingPathValidator);
-
-	{Create overwrite preparation handler for FsPutFile}
-	FOverwritePreparationHandler := TOverwritePreparationHandler.Create(ConnectionManager);
 
 	{Create listing result applier for FsFindFirst}
 	FListingResultApplier := TListingResultApplier.Create;
@@ -936,6 +926,18 @@ begin
 
 	{Create operation status context builder for FsStatusInfo - requires ConnectionManager}
 	FOperationStatusContextBuilder := TOperationStatusContextBuilder.Create(SettingsManager, ConnectionManager);
+
+	{Create operation action executor for lifecycle event handling - requires ConnectionManager}
+	FActionExecutor := TOperationActionExecutor.Create(FThreadState, ConnectionManager, SettingsManager, CurrentDescriptions, TCLogger);
+
+	{Create account registration handler for FsMkDir - requires PasswordManager}
+	FAccountRegistrationHandler := TAccountRegistrationHandler.Create(AccountSettings, PasswordManager);
+
+	{Create path listing handler for FsFindFirst - requires ConnectionManager}
+	FPathListingHandler := TPathListingHandler.Create(ConnectionManager, FListingProvider, FListingPathValidator);
+
+	{Create overwrite preparation handler for FsPutFile - requires ConnectionManager}
+	FOverwritePreparationHandler := TOverwritePreparationHandler.Create(ConnectionManager);
 end;
 
 procedure TMailRuCloudWFX.FsStatusInfo(RemoteDir: WideString; InfoStartEnd, InfoOperation: Integer);
