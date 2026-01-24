@@ -564,6 +564,10 @@ var
 begin
 	RealPath.FromPath(FileName);
 
+	{Parent directory entry has no content fields}
+	if RealPath.upDirItem then
+		Exit(FT_NOSUCHFIELD);
+
 	{Build context for the provider}
 	Context.IsAccountRoot := RealPath.isInAccountsList;
 	Context.DescriptionsEnabled := SettingsManager.GetSettings.DescriptionEnabled;
@@ -662,6 +666,11 @@ var
 	RenderResult: TIconRenderResult;
 begin
 	RealPath.FromPath(RemoteName);
+
+	{Parent directory entry uses default icon}
+	if RealPath.upDirItem then
+		Exit(FS_ICON_USEDEFAULT);
+
 	IconsSize := FTCHandler.GetTCIconsSize;
 
 	{Build context using builder}
