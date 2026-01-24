@@ -1175,12 +1175,7 @@ begin
 		Config.ParentWindow := ParentWindow;
 
 		{Create presenter}
-		Form.FPresenter := TAccountsPresenter.Create(
-			Form,
-			AccountsMgr,
-			SettingsManager,
-			Config
-		);
+		Form.FPresenter := TAccountsPresenter.Create(Form, AccountsMgr, SettingsManager, Config);
 
 		try
 			{Initialize presenter - loads all settings to view}

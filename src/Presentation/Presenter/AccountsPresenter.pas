@@ -185,12 +185,7 @@ type
 		function SavePasswordToManager(const AccountKey, Password: WideString): Boolean;
 		function ValidateGlobalSettings: Boolean;
 	public
-		constructor Create(
-			AView: IAccountsView;
-			AAccountsManager: IAccountsManager;
-			ASettingsManager: IPluginSettingsManager;
-			AConfig: TAccountsPresenterConfig
-		);
+		constructor Create(AView: IAccountsView; AAccountsManager: IAccountsManager; ASettingsManager: IPluginSettingsManager; AConfig: TAccountsPresenterConfig);
 
 		{Initialization}
 		procedure Initialize(const InitialAccount: WideString = '');
@@ -235,12 +230,7 @@ uses
 const
 	DOT = '.';
 
-constructor TAccountsPresenter.Create(
-	AView: IAccountsView;
-	AAccountsManager: IAccountsManager;
-	ASettingsManager: IPluginSettingsManager;
-	AConfig: TAccountsPresenterConfig
-);
+constructor TAccountsPresenter.Create(AView: IAccountsView; AAccountsManager: IAccountsManager; ASettingsManager: IPluginSettingsManager; AConfig: TAccountsPresenterConfig);
 begin
 	inherited Create;
 	FView := AView;

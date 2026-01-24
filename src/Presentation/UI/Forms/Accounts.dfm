@@ -189,7 +189,6 @@ object AccountsForm: TAccountsForm
           Top = 17
           Width = 218
           Height = 429
-          Style = lbVirtual
           Anchors = [akLeft, akTop, akRight, akBottom]
           ExtendedSelect = False
           ItemHeight = 13
