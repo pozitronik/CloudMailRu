@@ -351,9 +351,6 @@ begin
 	{Create overwrite preparation handler for FsPutFile}
 	FOverwritePreparationHandler := TOverwritePreparationHandler.Create(ConnectionManager);
 
-	{Create operation status context builder for FsStatusInfo}
-	FOperationStatusContextBuilder := TOperationStatusContextBuilder.Create(SettingsManager, ConnectionManager);
-
 	{Create listing result applier for FsFindFirst}
 	FListingResultApplier := TListingResultApplier.Create;
 
@@ -927,11 +924,18 @@ begin
 	PasswordUI := TPasswordUIProvider.Create;
 	HTTPMgr := THTTPManager.Create(SettingsManager.GetSettings.ConnectionSettings, TCLogger, TCProgress, TCloudHTTPFactory.Create);
 	CipherVal := TCipherValidator.Create;
+	{TODO: ConnectionManager and dependent components are created here because they require
+	PasswordManager, which needs PCryptProc from this callback. This makes FsSetCryptCallback
+	a de-facto "second initialization phase", which is not its intended purpose.
+	Investigate alternatives: lazy initialization, dependency restructuring, or deferred injection.}
 	ConnectionManager := TConnectionManager.Create(SettingsManager, AccountSettings, HTTPMgr, PasswordUI, CipherVal, TWindowsFileSystem.Create, TCProgress, TCLogger, TCRequest, PasswordManager, FTCHandler, TDefaultAuthStrategyFactory.Create);
 	FCommandDispatcher := TCommandDispatcher.Create(ConnectionManager, TCLogger, SettingsManager);
 
 	{Create icon context builder for FsExtractCustomIcon}
 	FIconContextBuilder := TIconContextBuilder.Create(AccountSettings, ConnectionManager, FListingItemFetcher);
+
+	{Create operation status context builder for FsStatusInfo - requires ConnectionManager}
+	FOperationStatusContextBuilder := TOperationStatusContextBuilder.Create(SettingsManager, ConnectionManager);
 end;
 
 procedure TMailRuCloudWFX.FsStatusInfo(RemoteDir: WideString; InfoStartEnd, InfoOperation: Integer);
