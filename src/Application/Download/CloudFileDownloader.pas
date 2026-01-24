@@ -112,6 +112,7 @@ var
 	Progress: Boolean;
 	DownloadShard: WideString;
 	OAuthToken: TCMROAuth;
+	SavedUserAgent: string;
 begin
 	Result := FS_FILE_NOTSUPPORTED;
 	DownloadShard := FShardManager.GetDownloadShard;
@@ -154,9 +155,9 @@ begin
 		end;
 	end;
 
-	{Note: Previously User-Agent was set to 'cloud-win' here to avoid OAuth endpoint
-		blocking browser-like UAs. Removed as UA manipulation is no longer needed.
-		If downloads start failing with 403/blocking errors, consider restoring UA override.}
+	{OAuth download endpoint blocks browser-like User-Agents (Mozilla/*)}
+	SavedUserAgent := FGetHTTP().HTTP.Request.UserAgent;
+	FGetHTTP().HTTP.Request.UserAgent := OAUTH_CLIENT_ID;
 	try
 		OAuthToken := FGetOAuthToken();
 		if FDoCryptFiles then //Загрузка файла в память, дешифрация в файл
@@ -201,6 +202,7 @@ begin
 
 		FlushFileBuffers(FileStream.Handle);
 	finally
+		FGetHTTP().HTTP.Request.UserAgent := SavedUserAgent;
 		FileStream.Free;
 	end;
 

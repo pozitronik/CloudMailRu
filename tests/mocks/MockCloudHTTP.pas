@@ -58,6 +58,9 @@ type
 		{Upload captures for verification}
 		FUploadCaptures: TList<TMockUploadCapture>;
 
+		{TIdHTTP instance for User-Agent manipulation}
+		FHTTP: TIdHTTP;
+
 		function FindResponse(URL: WideString): TMockResponse;
 		function FindStreamResponse(URL: WideString; var Response: TMockStreamResponse): Boolean;
 		function DequeueResponse(URL: WideString; var Response: TMockResponse): Boolean;
@@ -143,6 +146,9 @@ begin
 	FStreamResponseQueue := TDictionary<WideString, TList<TMockStreamResponse>>.Create;
 	FUploadCaptures := TList<TMockUploadCapture>.Create;
 
+	{Create TIdHTTP for User-Agent manipulation}
+	FHTTP := TIdHTTP.Create(nil);
+
 	{Default: fail with empty response}
 	FDefaultResponse.Success := False;
 	FDefaultResponse.Answer := '';
@@ -174,6 +180,7 @@ begin
 	FreeAndNil(FResponses);
 	FreeAndNil(FCalls);
 	FreeAndNil(FPostData);
+	FreeAndNil(FHTTP);
 	inherited;
 end;
 
@@ -722,8 +729,7 @@ end;
 
 function TMockCloudHTTP.GetHTTP: TIdHTTP;
 begin
-	{Mock doesn't have real HTTP - return nil}
-	Result := nil;
+	Result := FHTTP;
 end;
 
 end.
