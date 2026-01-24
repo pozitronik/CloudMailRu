@@ -229,13 +229,13 @@ begin
 	self.Progress := Progress;
 	self.Logger := Logger;
 	self.Throttle := TIdInterceptThrottler.Create();
+	self.Socks := TIdSocksInfo.Create();
 	SSL := TIdSSLIOHandlerSocketOpenSSL.Create();
 	SSL.SSLOptions.SSLVersions := [sslvSSLv23];
 	HTTP := TIdHTTP.Create();
 
-	if Settings.ProxySettings.ProxyType in SocksProxyTypes then //SOCKS proxy initialization
+	if Settings.ProxySettings.ProxyType in SocksProxyTypes then
 	begin
-		self.Socks := TIdSocksInfo.Create();
 		self.Socks.Host := Settings.ProxySettings.Server;
 		self.Socks.Port := Settings.ProxySettings.Port;
 		if Settings.ProxySettings.User <> EmptyWideStr then
@@ -254,10 +254,9 @@ begin
 				Socks.Version := svSocks4;
 		end;
 		self.Socks.Enabled := True;
+		SSL.TransparentProxy := self.Socks;
 	end;
 
-	if (Settings.ProxySettings.ProxyType in SocksProxyTypes) and (self.Socks.Enabled) then
-		SSL.TransparentProxy := self.Socks;
 	if Settings.ProxySettings.ProxyType = ProxyHTTP then
 	begin
 		HTTP.ProxyParams.ProxyServer := Settings.ProxySettings.Server;
@@ -294,8 +293,7 @@ begin
 	HTTP.free;
 	SSL.free;
 	self.Throttle.free;
-	if Assigned(self.Socks) then
-		self.Socks.free;
+	self.Socks.free;
 	inherited;
 end;
 
