@@ -69,9 +69,12 @@ const
 	PLUGIN_CONFIG_FILE_NAME = 'MailRuCloud.global.ini'; //default filenames should be changes to avoid confusions (current names are bad design)
 	ACCOUNTS_CONFIG_FILE_NAME = 'MailRuCloud.ini';
 
-	{TODO: Remove User-Agent option entirely. OAuth endpoints either ignore it or block Mozilla UAs.
-		Old web-based auth methods are deprecated. Remove: this constant, UserAgent from TConnectionSettings,
-		INI read/write in PluginSettingsManager, UI controls in Accounts form.}
+	{User-Agent handling:
+		- Browser-like UA (DEFAULT_USERAGENT) is used for most API calls (cloud.mail.ru/api/v2/*)
+		- OAuth download endpoint (cloclo*.datacloudmail.ru/oauth-get/*) BLOCKS browser-like UAs,
+		  requires 'cloud-win' UA - see CloudFileDownloader.DownloadRegular for override
+		- OAuth upload endpoint (oauth-upload/*) works with any UA
+		Configurable UA exists for edge cases; don't remove without testing all endpoints.}
 	DEFAULT_USERAGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.150 Safari/537.36/TCWFX(' + PlatformX + ')';
 
 type
