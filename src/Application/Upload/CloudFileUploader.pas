@@ -237,7 +237,15 @@ function TCloudFileUploader.PutFileWhole(LocalPath, RemotePath, ConflictMode: Wi
 var
 	FileStream: TBufferedFileStream;
 begin
-	FileStream := TBufferedFileStream.Create(GetUNCFilePath(LocalPath), fmOpenRead or fmShareDenyWrite);
+	try
+		FileStream := TBufferedFileStream.Create(GetUNCFilePath(LocalPath), fmOpenRead or fmShareDenyWrite);
+	except
+		on E: Exception do
+		begin
+			FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_FILE_OPEN, [LocalPath, E.Message]);
+			Exit(FS_FILE_READERROR);
+		end;
+	end;
 	try
 		Result := PutFileStream(ExtractFileName(RemotePath), RemotePath, FileStream, ConflictMode);
 	finally
@@ -600,11 +608,19 @@ begin
 			FLogger.Log(LOG_LEVEL_DEBUG, MSGTYPE_DETAILS, PARTIAL_UPLOAD_INFO, [LocalPath, ChunkIndex + 1, SplitFileInfo.ChunksCount, ChunkRemotePath]);
 
 			{Upload current chunk}
-			ChunkStream := TChunkedFileStream.Create(GetUNCFilePath(LocalPath), fmOpenRead or fmShareDenyWrite, SplitFileInfo.GetChunks[ChunkIndex].start, SplitFileInfo.GetChunks[ChunkIndex].size);
 			try
-				Result := PutFileStream(ExtractFileName(ChunkRemotePath), ChunkRemotePath, ChunkStream, ConflictMode);
-			finally
-				ChunkStream.Free;
+				ChunkStream := TChunkedFileStream.Create(GetUNCFilePath(LocalPath), fmOpenRead or fmShareDenyWrite, SplitFileInfo.GetChunks[ChunkIndex].start, SplitFileInfo.GetChunks[ChunkIndex].size);
+				try
+					Result := PutFileStream(ExtractFileName(ChunkRemotePath), ChunkRemotePath, ChunkStream, ConflictMode);
+				finally
+					ChunkStream.Free;
+				end;
+			except
+				on E: Exception do
+				begin
+					FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_FILE_OPEN, [LocalPath, E.Message]);
+					Result := FS_FILE_READERROR;
+				end;
 			end;
 
 			{Handle upload result}

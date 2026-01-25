@@ -71,6 +71,7 @@ const
 	ERR_DOWNLOAD_FILE_ASK = 'Error downloading file' + SLineBreak + '%s' + SLineBreak + CONTINUE_ASK;
 	ERR_ENCRYPT_FAILED = '%s: CryptProc returns an error: Encrypt failed';
 	ERR_FILE_NOT_EXISTS = 'File not exists';
+	ERR_FILE_OPEN = 'Cannot open file %s: %s';
 	ERR_GET_AUTH_TOKEN = 'error: getting auth token for %s';
 	ERR_GET_FIRST_STEP_AUTH_TOKEN = 'error: getting first step auth token for %s';
 	ERR_GET_PUBLIC_SHARE = 'Can''t get public share download share';
