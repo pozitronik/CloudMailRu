@@ -1,12 +1,8 @@
 ﻿unit CloudFileUploader;
 
-{TODO: Known issues with chunked upload:
+{TODO: Known issue with chunked upload:
 
- 1. No quota pre-check: Upload of 10GB file to 8GB account is not rejected early.
-    Solution: Call GetUserSpace before upload, compare file size against available space,
-    reject with clear error message if insufficient.
-
- 2. Progress bar shows chunk progress, not overall file progress:
+ Progress bar shows chunk progress, not overall file progress:
     TC displays correct chunk name (filename.001) but progress resets 0-100% per chunk.
     Root cause: HTTPProgress calculates percent from current chunk's ContentLength.
     Solution: Pass chunk context (index, total count) to HTTP layer, scale progress:
@@ -20,6 +16,7 @@ uses
 	System.SysUtils,
 	CMRConstants,
 	CMROAuth,
+	CMRSpace,
 	CMRFileIdentity,
 	CMROperationResult,
 	CMROperationResultJsonAdapter,
@@ -96,6 +93,7 @@ type
 		FGetUnitedParams: TGetUnitedParamsFunc;
 		FCloudResultToFsResult: TCloudResultToFsResultFunc;
 		FDeleteFile: TDeleteFileFunc;
+		FGetUserSpace: TGetUserSpaceFunc;
 		FDoCryptFiles: Boolean;
 		FDoCryptFilenames: Boolean;
 		FSettings: TUploadSettings;
@@ -108,13 +106,15 @@ type
 		function HandleChunkExists(const ChunkRemotePath: WideString; ChunkOverwriteMode: Integer; var ResultCode: Integer): TChunkActionResult;
 		function HandleChunkError(UploadResult: Integer; const ChunkRemotePath: WideString; var RetryAttemptsCount: Integer; var ResultCode: Integer): TChunkActionResult;
 		procedure GenerateAndUploadCRC(const LocalPath, RemotePath: WideString; const SplitFileInfo: TFileSplitInfo; const ConflictMode: WideString);
+		{Check available space before split upload, prompt user if partial upload required}
+		function CheckQuotaForSplitUpload(const SplitFileInfo: TFileSplitInfo; var ChunksToUpload: Integer): Boolean;
 		{Calculate file identity (hash + size) for local file}
 		function CalculateFileIdentity(LocalPath: WideString): TCMRFileIdentity;
 	protected
 		{Protected for testability - tests need direct access to split upload logic}
 		function PutFileSplit(LocalPath, RemotePath, ConflictMode: WideString; ChunkOverwriteMode: Integer): Integer;
 	public
-		constructor Create(GetHTTP: TGetHTTPFunc; ShardManager: ICloudShardManager; HashCalculator: ICloudHashCalculator; Cipher: ICipher; FileSystem: IFileSystem; Logger: ILogger; Progress: IProgress; Request: IRequest; TCHandler: ITCHandler; GetOAuthToken: TGetOAuthTokenFunc; IsPublicAccount: TGetBoolFunc; GetRetryOperation: TGetRetryOperationFunc; GetUnitedParams: TGetUnitedParamsFunc; CloudResultToFsResult: TCloudResultToFsResultFunc; DeleteFile: TDeleteFileFunc; DoCryptFiles, DoCryptFilenames: Boolean; Settings: TUploadSettings);
+		constructor Create(GetHTTP: TGetHTTPFunc; ShardManager: ICloudShardManager; HashCalculator: ICloudHashCalculator; Cipher: ICipher; FileSystem: IFileSystem; Logger: ILogger; Progress: IProgress; Request: IRequest; TCHandler: ITCHandler; GetOAuthToken: TGetOAuthTokenFunc; IsPublicAccount: TGetBoolFunc; GetRetryOperation: TGetRetryOperationFunc; GetUnitedParams: TGetUnitedParamsFunc; CloudResultToFsResult: TCloudResultToFsResultFunc; DeleteFile: TDeleteFileFunc; GetUserSpace: TGetUserSpaceFunc; DoCryptFiles, DoCryptFilenames: Boolean; Settings: TUploadSettings);
 
 		{ICloudFileUploader}
 		function Upload(LocalPath, RemotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; ChunkOverwriteMode: Integer = 0): Integer;
@@ -128,7 +128,7 @@ uses
 
 {TCloudFileUploader}
 
-constructor TCloudFileUploader.Create(GetHTTP: TGetHTTPFunc; ShardManager: ICloudShardManager; HashCalculator: ICloudHashCalculator; Cipher: ICipher; FileSystem: IFileSystem; Logger: ILogger; Progress: IProgress; Request: IRequest; TCHandler: ITCHandler; GetOAuthToken: TGetOAuthTokenFunc; IsPublicAccount: TGetBoolFunc; GetRetryOperation: TGetRetryOperationFunc; GetUnitedParams: TGetUnitedParamsFunc; CloudResultToFsResult: TCloudResultToFsResultFunc; DeleteFile: TDeleteFileFunc; DoCryptFiles, DoCryptFilenames: Boolean; Settings: TUploadSettings);
+constructor TCloudFileUploader.Create(GetHTTP: TGetHTTPFunc; ShardManager: ICloudShardManager; HashCalculator: ICloudHashCalculator; Cipher: ICipher; FileSystem: IFileSystem; Logger: ILogger; Progress: IProgress; Request: IRequest; TCHandler: ITCHandler; GetOAuthToken: TGetOAuthTokenFunc; IsPublicAccount: TGetBoolFunc; GetRetryOperation: TGetRetryOperationFunc; GetUnitedParams: TGetUnitedParamsFunc; CloudResultToFsResult: TCloudResultToFsResultFunc; DeleteFile: TDeleteFileFunc; GetUserSpace: TGetUserSpaceFunc; DoCryptFiles, DoCryptFilenames: Boolean; Settings: TUploadSettings);
 begin
 	inherited Create;
 	FGetHTTP := GetHTTP;
@@ -146,6 +146,7 @@ begin
 	FGetUnitedParams := GetUnitedParams;
 	FCloudResultToFsResult := CloudResultToFsResult;
 	FDeleteFile := DeleteFile;
+	FGetUserSpace := GetUserSpace;
 	FDoCryptFiles := DoCryptFiles;
 	FDoCryptFilenames := DoCryptFilenames;
 	FSettings := Settings;
@@ -486,6 +487,54 @@ begin
 	end;
 end;
 
+{Check available space before split upload.
+ If not enough space for all chunks, prompts user to continue with partial upload.
+ Returns True to continue upload, False to abort.
+ ChunksToUpload is set to the number of chunks that can be uploaded (may be limited by available space).}
+function TCloudFileUploader.CheckQuotaForSplitUpload(const SplitFileInfo: TFileSplitInfo; var ChunksToUpload: Integer): Boolean;
+var
+	SpaceInfo: TCMRSpace;
+	AvailableSpace: Int64;
+	ChunksThatFit: Integer;
+	ReturnedText: WideString;
+	Msg: WideString;
+begin
+	ChunksToUpload := SplitFileInfo.ChunksCount;
+	Result := True;
+
+	{Skip check if callback not available or public account}
+	if (not Assigned(FGetUserSpace)) or FIsPublicAccount() then
+		Exit;
+
+	{Get available space}
+	if not FGetUserSpace(SpaceInfo) then
+		Exit; {Can't get space info - proceed anyway}
+
+	AvailableSpace := SpaceInfo.total - SpaceInfo.used;
+	if AvailableSpace <= 0 then
+		AvailableSpace := 0;
+
+	{Calculate how many chunks fit}
+	ChunksThatFit := AvailableSpace div FSettings.CloudMaxFileSize;
+	if ChunksThatFit >= SplitFileInfo.ChunksCount then
+		Exit; {All chunks fit - proceed normally}
+
+	if ChunksThatFit = 0 then
+	begin
+		{No space at all - inform and abort}
+		Msg := Format(SPLIT_NO_SPACE_MSG, [FormatSize(AvailableSpace), FormatSize(SplitFileInfo.FileSize)]);
+		FRequest.Request(RT_MsgOK, SPLIT_PARTIAL_UPLOAD_TITLE, Msg, ReturnedText, 0);
+		Result := False;
+		Exit;
+	end;
+
+	{Not enough space for all chunks - ask user whether to continue with partial upload}
+	Msg := Format(SPLIT_PARTIAL_UPLOAD_MSG, [FormatSize(AvailableSpace), FormatSize(SplitFileInfo.FileSize), ChunksThatFit, SplitFileInfo.ChunksCount]);
+	Result := FRequest.Request(RT_MsgOKCancel, SPLIT_PARTIAL_UPLOAD_TITLE, Msg, ReturnedText, 0);
+	if Result then
+		ChunksToUpload := ChunksThatFit;
+end;
+
 {Uploads file in chunks when it exceeds CloudMaxFileSize.
 	Returns FS_FILE_OK on success, or appropriate error code on failure.}
 function TCloudFileUploader.PutFileSplit(LocalPath, RemotePath, ConflictMode: WideString; ChunkOverwriteMode: Integer): Integer;
@@ -493,34 +542,39 @@ var
 	LocalFileIdentity: TCMRFileIdentity;
 	SplitFileInfo: TFileSplitInfo;
 	ChunkIndex: Integer;
+	ChunksToUpload: Integer;
 	ChunkRemotePath: WideString;
 	ChunkStream: TChunkedFileStream;
 	RetryAttemptsCount: Integer;
 	UseHash: Boolean;
 	Action: TChunkActionResult;
 begin
-	{Whole-file deduplication: try to register the entire file by hash before splitting.
-		This is a speculative optimization - if the whole file's hash exists on server,
-		the file is created instantly without uploading any chunks.
-		Note: This rarely succeeds for split files since chunked storage uses different hashes.
-		If hash doesn't exist, server returns HTTP 400 (see AddFileByIdentity comments).
-		Each chunk also has its own deduplication check in PutFileStream.}
-	UseHash := FSettings.PrecalculateHash or (FSettings.ForcePrecalculateSize >= FFileSystem.GetFileSize(LocalPath)); {issue #231}
-	if UseHash then
-		LocalFileIdentity := CalculateFileIdentity(GetUNCFilePath(LocalPath));
-	{Hash calculation cancellation causes entire operation abort - TC remembers cancel press}
-	if UseHash and (LocalFileIdentity.Hash <> EmptyWideStr) and (not FDoCryptFiles) and (FS_FILE_OK = AddFileByIdentity(LocalFileIdentity, RemotePath, CLOUD_CONFLICT_STRICT, False, True)) then
-		Exit(CLOUD_OPERATION_OK); {issue #135}
-
-	{Create split info to determine chunk boundaries}
+	{Create split info first to determine chunk count for quota check}
 	SplitFileInfo := TFileSplitInfo.Create(GetUNCFilePath(LocalPath), FSettings.CloudMaxFileSize);
 	try
+		{Check available space BEFORE expensive hash calculation}
+		if not CheckQuotaForSplitUpload(SplitFileInfo, ChunksToUpload) then
+			Exit(FS_FILE_USERABORT);
+
+		{Whole-file deduplication: try to register the entire file by hash before splitting.
+			This is a speculative optimization - if the whole file's hash exists on server,
+			the file is created instantly without uploading any chunks.
+			Note: This rarely succeeds for split files since chunked storage uses different hashes.
+			If hash doesn't exist, server returns HTTP 400 (see AddFileByIdentity comments).
+			Each chunk also has its own deduplication check in PutFileStream.}
+		UseHash := FSettings.PrecalculateHash or (FSettings.ForcePrecalculateSize >= FFileSystem.GetFileSize(LocalPath)); {issue #231}
+		if UseHash then
+			LocalFileIdentity := CalculateFileIdentity(GetUNCFilePath(LocalPath));
+		{Hash calculation cancellation causes entire operation abort - TC remembers cancel press}
+		if UseHash and (LocalFileIdentity.Hash <> EmptyWideStr) and (not FDoCryptFiles) and (FS_FILE_OK = AddFileByIdentity(LocalFileIdentity, RemotePath, CLOUD_CONFLICT_STRICT, False, True)) then
+			Exit(CLOUD_OPERATION_OK); {issue #135}
+
 		ChunkIndex := 0;
 		RetryAttemptsCount := 0;
 		Result := FS_FILE_OK;
 
 		{Upload each chunk - using while loop because we may need to retry (dec index)}
-		while ChunkIndex < SplitFileInfo.ChunksCount do
+		while ChunkIndex < ChunksToUpload do
 		begin
 			ChunkRemotePath := Format('%s%s', [ExtractFilePath(RemotePath), SplitFileInfo.GetChunks[ChunkIndex].name]);
 			FGetHTTP().SetProgressNames(LocalPath, ChunkRemotePath);
@@ -578,8 +632,9 @@ begin
 			end;
 		end;
 
-		{Generate and upload CRC file only after all chunks uploaded successfully}
-		if Result = FS_FILE_OK then
+		{Generate and upload CRC file only after ALL chunks uploaded successfully.
+		 Skip CRC for partial uploads - incomplete CRC would be invalid.}
+		if (Result = FS_FILE_OK) and (ChunksToUpload = SplitFileInfo.ChunksCount) then
 			GenerateAndUploadCRC(LocalPath, RemotePath, SplitFileInfo, ConflictMode);
 	finally
 		SplitFileInfo.Free;

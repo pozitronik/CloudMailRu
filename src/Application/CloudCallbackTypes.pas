@@ -9,6 +9,7 @@ interface
 uses
 	System.Classes,
 	CMROAuth,
+	CMRSpace,
 	CloudHTTP,
 	TokenRetryHelper;
 
@@ -29,6 +30,7 @@ type
 	TDeleteFileFunc = reference to function(Path: WideString): Boolean;
 	TGetRetryOperationFunc = reference to function: TRetryOperation;
 	TCloudResultToFsResultFunc = reference to function(JSON: WideString; ErrorPrefix: WideString): Integer;
+	TGetUserSpaceFunc = reference to function(var SpaceInfo: TCMRSpace): Boolean;
 
 implementation
 

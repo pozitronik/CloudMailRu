@@ -192,6 +192,9 @@ const
 	SMS_TIMEOUT = 'SMS timeout to %s (%d sec).';
 	SPLIT_LARGE_FILE = 'File size > %d bytes, file will be split';
 	SPLIT_LARGE_FILE_IGNORE = 'File size > %d bytes, ignored';
+	SPLIT_PARTIAL_UPLOAD_TITLE = 'Insufficient cloud storage';
+	SPLIT_PARTIAL_UPLOAD_MSG = 'Not enough space for the entire file.'#13#10'Available: %s, File size: %s'#13#10#13#10'Only %d of %d chunks can be uploaded.'#13#10'Continue with partial upload?';
+	SPLIT_NO_SPACE_MSG = 'Not enough space to upload.'#13#10'Available: %s, Required: %s';
 	TOKEN_UPDATED = 'Token updated';
 	TRASH_LISTING = 'Trash bin listing';
 	TRY_ANOTHER_SHARD = 'Try with another shard?';

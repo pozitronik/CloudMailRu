@@ -307,7 +307,12 @@ begin
 			function(Path: WideString): Boolean
 			begin
 				Result := Self.FFileOps.Delete(Path);
-			end, FDoCryptFiles, FDoCryptFilenames, UploadSettings);
+			end,
+			function(var SpaceInfo: TCMRSpace): Boolean
+			begin
+				Result := Self.GetUserSpace(SpaceInfo);
+			end,
+			FDoCryptFiles, FDoCryptFilenames, UploadSettings);
 
 		{Initialize share service with callbacks for dynamic state}
 		FShareService := TCloudShareService.Create(Self.HTTP, FLogger, FRetryOperation,

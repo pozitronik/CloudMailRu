@@ -12,6 +12,7 @@ uses
 	CloudShardManager,
 	CloudHashCalculator,
 	CMROAuth,
+	CMRSpace,
 	CMRConstants,
 	CMRFileIdentity,
 	PLUGIN_TYPES,
@@ -281,6 +282,7 @@ begin
 				Result := TestSelf.FAddByIdentityNextResult;
 		end,
 		function(Path: WideString): Boolean begin TestSelf.FDeleteFileCalled := True; Result := TestSelf.FDeleteFileResult; end,
+		function(var SpaceInfo: TCMRSpace): Boolean begin Result := False; end, {Skip quota check in tests}
 		False, {DoCryptFiles}
 		False, {DoCryptFilenames}
 		FSettings);

@@ -7,6 +7,7 @@ uses
 	CloudShardManager,
 	CloudHashCalculator,
 	CMROAuth,
+	CMRSpace,
 	CMRFileIdentity,
 	CMRConstants,
 	PLUGIN_TYPES,
@@ -47,6 +48,7 @@ type
 		function GetUnitedParams: WideString;
 		function CloudResultToFsResult(JSON: WideString; ErrorPrefix: WideString): Integer;
 		function DeleteFile(Path: WideString): Boolean;
+		function GetUserSpace(var SpaceInfo: TCMRSpace): Boolean;
 	public
 		[Setup]
 		procedure Setup;
@@ -136,6 +138,7 @@ begin
 		GetUnitedParams,
 		CloudResultToFsResult,
 		DeleteFile,
+		GetUserSpace,
 		False, {DoCryptFiles}
 		False, {DoCryptFilenames}
 		FSettings
@@ -190,6 +193,12 @@ begin
 	Result := True;
 end;
 
+function TCloudFileUploaderTest.GetUserSpace(var SpaceInfo: TCMRSpace): Boolean;
+begin
+	{Return False to skip quota check in tests}
+	Result := False;
+end;
+
 { Construction tests }
 
 procedure TCloudFileUploaderTest.TestCreate_InitializesCorrectly;
@@ -234,6 +243,7 @@ begin
 		GetUnitedParams,
 		CloudResultToFsResult,
 		DeleteFile,
+		GetUserSpace,
 		False,
 		False,
 		FSettings
@@ -276,6 +286,7 @@ begin
 		GetUnitedParams,
 		CloudResultToFsResult,
 		DeleteFile,
+		GetUserSpace,
 		False,
 		False,
 		FSettings

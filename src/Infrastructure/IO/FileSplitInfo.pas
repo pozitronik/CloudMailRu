@@ -35,7 +35,7 @@ type
 		ChunkSize: Int64;
 		TotalChunksCount: Int64;
 		filename: WideString;
-		filesize: Int64;
+		FFileSize: Int64;
 		function AddLeadingZeroes(const aNumber, length: Integer): string;
 		function crc32_update(inbuffer: pointer; buffersize, crc: DWord): DWord;
 		function CRCend(crc: DWord): DWord;
@@ -46,6 +46,7 @@ type
 		property ChunksCount: Int64 read TotalChunksCount;
 		property GetChunks: AFileChunkInfo read Chunks;
 		property CRCFileName: WideString read GetCRCFileName;
+		property FileSize: Int64 read FFileSize;
 		constructor Create(filename: WideString; ChunkSize: Int64);
 		destructor Destroy; override;
 
@@ -66,10 +67,10 @@ begin
 
 	self.ChunkSize := ChunkSize;
 	self.filename := filename;
-	self.filesize := SizeOfFile(filename);
+	self.FFileSize := SizeOfFile(filename);
 
-	self.TotalChunksCount := self.filesize div self.ChunkSize;
-	if (self.filesize mod self.ChunkSize) <> 0 then
+	self.TotalChunksCount := self.FFileSize div self.ChunkSize;
+	if (self.FFileSize mod self.ChunkSize) <> 0 then
 		inc(self.TotalChunksCount);
 
 	SetLength(self.Chunks, self.TotalChunksCount);
@@ -80,7 +81,7 @@ begin
 			name := ExtractFileName(ChangeFileExt(self.filename, '.' + self.AddLeadingZeroes(partCount + 1, 3)));
 			start := partCount * ChunkSize;
 			if (partCount = self.TotalChunksCount - 1) then
-				size := self.filesize - (ChunkSize * (self.TotalChunksCount - 1))
+				size := self.FFileSize - (ChunkSize * (self.TotalChunksCount - 1))
 			else
 				size := ChunkSize;
 
@@ -159,7 +160,7 @@ end;
 
 procedure TFileSplitInfo.GetCRCData(DataStream: TStringStream);
 begin
-	DataStream.WriteString(Format('filename=%s%ssize=%d%scrc32=%s', [ExtractFileName(self.filename), sLineBreak, self.filesize, sLineBreak, self.GetCRC32File(self.filename)]));
+	DataStream.WriteString(Format('filename=%s%ssize=%d%scrc32=%s', [ExtractFileName(self.filename), sLineBreak, self.FFileSize, sLineBreak, self.GetCRC32File(self.filename)]));
 end;
 
 function TFileSplitInfo.GetCRCFileName: WideString;
