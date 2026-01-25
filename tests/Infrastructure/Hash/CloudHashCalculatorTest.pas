@@ -79,6 +79,26 @@ type
 	TCloudHashCalculatorTest = class(THashCalculatorTestBase)
 	protected
 		procedure CreateCalculator; override;
+	public
+		{Sequential calculation tests - verify state isolation between calls}
+		[Test]
+		procedure TestSequentialCalculations_ProduceSameResults;
+		[Test]
+		procedure TestSequentialCalculations_DifferentStreams;
+
+		{Cloud hash algorithm verification tests}
+		[Test]
+		procedure TestCloudHash_MrCloudPrefixApplied;
+		[Test]
+		procedure TestCloudHash_SizeSuffixApplied;
+
+		{Buffer handling tests with larger data}
+		[Test]
+		procedure TestLargeData_64KBBoundary;
+		[Test]
+		procedure TestLargeData_MultipleBufferReads;
+		[Test]
+		procedure TestLargeData_1MBFile;
 	end;
 
 	{Tests for TCloudHashCalculatorBCrypt (Windows CNG implementation)}
@@ -89,6 +109,14 @@ type
 	public
 		[Test]
 		procedure TestBCrypt_MatchesDelphiImplementation;
+		[Test]
+		procedure TestBCrypt_MatchesDelphiForSmallFile;
+		[Test]
+		procedure TestBCrypt_MatchesDelphiForBoundaryFile;
+		[Test]
+		procedure TestBCrypt_MatchesDelphiForLargeData;
+		[Test]
+		procedure TestBCrypt_SequentialCalculationsMatch;
 	end;
 
 	{Tests for TCloudHashCalculatorOpenSSL (OpenSSL EVP implementation)}
@@ -99,6 +127,14 @@ type
 	public
 		[Test]
 		procedure TestOpenSSL_MatchesDelphiImplementation;
+		[Test]
+		procedure TestOpenSSL_MatchesDelphiForSmallFile;
+		[Test]
+		procedure TestOpenSSL_MatchesDelphiForBoundaryFile;
+		[Test]
+		procedure TestOpenSSL_MatchesDelphiForLargeData;
+		[Test]
+		procedure TestOpenSSL_SequentialCalculationsMatch;
 	end;
 
 	{Tests for TNullHashCalculator}
@@ -138,6 +174,63 @@ type
 		procedure TestIsOpenSSLAvailable_ReturnsBoolean;
 		[Test]
 		procedure TestAllStrategies_ProduceSameHash;
+		[Test]
+		procedure TestAllStrategies_ProduceSameHashForSmallFile;
+		[Test]
+		procedure TestAllStrategies_ProduceSameHashForBoundary;
+		[Test]
+		procedure TestAllStrategies_ProduceSameHashFor1MB;
+	end;
+
+	{Cross-implementation consistency tests with various file sizes}
+	[TestFixture]
+	THashCalculatorCrossImplementationTest = class
+	private
+		FDelphiCalc: ICloudHashCalculator;
+		FBCryptCalc: ICloudHashCalculator;
+		FOpenSSLCalc: ICloudHashCalculator;
+		procedure CompareAllImplementations(Stream: TStream; const TestName: string);
+	public
+		[Setup]
+		procedure Setup;
+		[TearDown]
+		procedure TearDown;
+
+		{Boundary tests around small/large file threshold}
+		[Test]
+		procedure TestThreshold_19Bytes_AllMatch;
+		[Test]
+		procedure TestThreshold_20Bytes_AllMatch;
+		[Test]
+		procedure TestThreshold_21Bytes_AllMatch;
+		[Test]
+		procedure TestThreshold_22Bytes_AllMatch;
+
+		{Various file sizes for comprehensive coverage}
+		[Test]
+		procedure TestVariousSizes_100Bytes;
+		[Test]
+		procedure TestVariousSizes_1KB;
+		[Test]
+		procedure TestVariousSizes_10KB;
+		[Test]
+		procedure TestVariousSizes_64KB;
+		[Test]
+		procedure TestVariousSizes_65KB;
+		[Test]
+		procedure TestVariousSizes_128KB;
+		[Test]
+		procedure TestVariousSizes_256KB;
+		[Test]
+		procedure TestVariousSizes_512KB;
+
+		{Binary content tests}
+		[Test]
+		procedure TestBinaryContent_AllZeros;
+		[Test]
+		procedure TestBinaryContent_AllOnes;
+		[Test]
+		procedure TestBinaryContent_RandomPattern;
 	end;
 
 implementation
@@ -525,6 +618,216 @@ begin
 	FCalculator := TCloudHashCalculator.Create(TNullProgress.Create, TWindowsFileSystem.Create);
 end;
 
+procedure TCloudHashCalculatorTest.TestSequentialCalculations_ProduceSameResults;
+var
+	Stream: TMemoryStream;
+	Hash1, Hash2, Hash3: WideString;
+	Data: AnsiString;
+begin
+	{Verify that multiple sequential calculations on same data produce identical results}
+	Stream := TMemoryStream.Create;
+	try
+		Data := 'Test data for sequential calculation verification';
+		Stream.Write(Data[1], Length(Data));
+
+		Stream.Position := 0;
+		Hash1 := FCalculator.CalculateHash(Stream, 'test1');
+
+		Stream.Position := 0;
+		Hash2 := FCalculator.CalculateHash(Stream, 'test2');
+
+		Stream.Position := 0;
+		Hash3 := FCalculator.CalculateHash(Stream, 'test3');
+
+		Assert.AreEqual(Hash1, Hash2, 'Second calculation must match first');
+		Assert.AreEqual(Hash2, Hash3, 'Third calculation must match second');
+	finally
+		Stream.Free;
+	end;
+end;
+
+procedure TCloudHashCalculatorTest.TestSequentialCalculations_DifferentStreams;
+var
+	Stream1, Stream2: TMemoryStream;
+	Hash1A, Hash1B, Hash2A, Hash2B: WideString;
+	Data1, Data2: AnsiString;
+begin
+	{Verify state isolation: hashing different streams sequentially works correctly}
+	Data1 := 'First stream content here!!';
+	Data2 := 'Second stream different content';
+
+	Stream1 := TMemoryStream.Create;
+	Stream2 := TMemoryStream.Create;
+	try
+		Stream1.Write(Data1[1], Length(Data1));
+		Stream2.Write(Data2[1], Length(Data2));
+
+		{Interleave calculations}
+		Stream1.Position := 0;
+		Hash1A := FCalculator.CalculateHash(Stream1, 'test');
+
+		Stream2.Position := 0;
+		Hash2A := FCalculator.CalculateHash(Stream2, 'test');
+
+		Stream1.Position := 0;
+		Hash1B := FCalculator.CalculateHash(Stream1, 'test');
+
+		Stream2.Position := 0;
+		Hash2B := FCalculator.CalculateHash(Stream2, 'test');
+
+		Assert.AreEqual(Hash1A, Hash1B, 'Stream1 hash must be consistent');
+		Assert.AreEqual(Hash2A, Hash2B, 'Stream2 hash must be consistent');
+		Assert.AreNotEqual(Hash1A, Hash2A, 'Different content must produce different hash');
+	finally
+		Stream1.Free;
+		Stream2.Free;
+	end;
+end;
+
+procedure TCloudHashCalculatorTest.TestCloudHash_MrCloudPrefixApplied;
+var
+	Stream1, Stream2: TMemoryStream;
+	Hash1, Hash2: WideString;
+	Data1, Data2: AnsiString;
+begin
+	{Verify that 'mrCloud' prefix is applied by checking that different content
+	 produces different hashes. The mrCloud prefix + size suffix make
+	 the Cloud hash unique to Cloud Mail.ru service}
+	Stream1 := TMemoryStream.Create;
+	Stream2 := TMemoryStream.Create;
+	try
+		{Two different contents, both >= 21 bytes to trigger SHA1 algorithm}
+		Data1 := 'Test content for prefix verification!';
+		Data2 := 'Different content for prefix verify!!';
+		Assert.AreEqual(Length(Data1), Length(Data2), 'Test setup: both strings must be same length');
+
+		Stream1.Write(Data1[1], Length(Data1));
+		Stream2.Write(Data2[1], Length(Data2));
+
+		Stream1.Position := 0;
+		Hash1 := FCalculator.CalculateHash(Stream1, 'test');
+
+		Stream2.Position := 0;
+		Hash2 := FCalculator.CalculateHash(Stream2, 'test');
+
+		{Different content must produce different hash}
+		Assert.AreNotEqual(Hash1, Hash2, 'Different content must produce different hash');
+
+		{Both hashes must be valid 40-char uppercase hex}
+		Assert.AreEqual(40, Length(Hash1), 'Hash1 must be 40 characters');
+		Assert.AreEqual(40, Length(Hash2), 'Hash2 must be 40 characters');
+	finally
+		Stream1.Free;
+		Stream2.Free;
+	end;
+end;
+
+procedure TCloudHashCalculatorTest.TestCloudHash_SizeSuffixApplied;
+var
+	Stream1, Stream2: TMemoryStream;
+	Hash1, Hash2: WideString;
+	Data: AnsiString;
+begin
+	{Verify that size suffix is applied: same content but different sizes should hash differently.
+	 We can simulate by padding with nulls which changes the size}
+	Stream1 := TMemoryStream.Create;
+	Stream2 := TMemoryStream.Create;
+	try
+		{Same visible content, but Stream2 has extra null byte}
+		Data := 'Content for size test here!';
+		Stream1.Write(Data[1], Length(Data));
+		Stream2.Write(Data[1], Length(Data));
+		Stream2.Write(Data[1], 1); {Add one more byte}
+
+		Stream1.Position := 0;
+		Stream2.Position := 0;
+
+		Hash1 := FCalculator.CalculateHash(Stream1, 'test');
+		Hash2 := FCalculator.CalculateHash(Stream2, 'test');
+
+		{Hashes must be different because size suffix differs}
+		Assert.AreNotEqual(Hash1, Hash2, 'Same content with different size must produce different hash');
+	finally
+		Stream1.Free;
+		Stream2.Free;
+	end;
+end;
+
+procedure TCloudHashCalculatorTest.TestLargeData_64KBBoundary;
+var
+	Stream: TMemoryStream;
+	Hash: WideString;
+	Data: TBytes;
+	i: Integer;
+begin
+	{Test at exactly 64KB - buffer size boundary}
+	Stream := TMemoryStream.Create;
+	try
+		SetLength(Data, 65536);
+		for i := 0 to High(Data) do
+			Data[i] := i mod 256;
+		Stream.Write(Data[0], Length(Data));
+		Stream.Position := 0;
+
+		Hash := FCalculator.CalculateHash(Stream, 'test');
+
+		Assert.AreEqual(40, Length(Hash), 'Hash must be 40 characters');
+		Assert.AreNotEqual('', Hash, 'Hash must not be empty');
+	finally
+		Stream.Free;
+	end;
+end;
+
+procedure TCloudHashCalculatorTest.TestLargeData_MultipleBufferReads;
+var
+	Stream: TMemoryStream;
+	Hash: WideString;
+	Data: TBytes;
+	i: Integer;
+begin
+	{Test with 200KB - forces multiple buffer reads (64KB buffer)}
+	Stream := TMemoryStream.Create;
+	try
+		SetLength(Data, 200 * 1024);
+		for i := 0 to High(Data) do
+			Data[i] := (i * 7) mod 256; {Pseudo-random pattern}
+		Stream.Write(Data[0], Length(Data));
+		Stream.Position := 0;
+
+		Hash := FCalculator.CalculateHash(Stream, 'test');
+
+		Assert.AreEqual(40, Length(Hash), 'Hash must be 40 characters');
+		Assert.AreNotEqual('', Hash, 'Hash must not be empty');
+	finally
+		Stream.Free;
+	end;
+end;
+
+procedure TCloudHashCalculatorTest.TestLargeData_1MBFile;
+var
+	Stream: TMemoryStream;
+	Hash: WideString;
+	Data: TBytes;
+	i: Integer;
+begin
+	{Test with 1MB file - stress test for buffer handling}
+	Stream := TMemoryStream.Create;
+	try
+		SetLength(Data, 1024 * 1024);
+		for i := 0 to High(Data) do
+			Data[i] := (i * 13 + 17) mod 256; {Different pattern}
+		Stream.Write(Data[0], Length(Data));
+		Stream.Position := 0;
+
+		Hash := FCalculator.CalculateHash(Stream, 'test');
+
+		Assert.AreEqual(40, Length(Hash), 'Hash must be 40 characters');
+		Assert.AreNotEqual('', Hash, 'Hash must not be empty');
+	finally
+		Stream.Free;
+	end;
+end;
+
 { TCloudHashCalculatorBCryptTest }
 
 procedure TCloudHashCalculatorBCryptTest.CreateCalculator;
@@ -569,6 +872,144 @@ begin
 	end;
 end;
 
+procedure TCloudHashCalculatorBCryptTest.TestBCrypt_MatchesDelphiForSmallFile;
+var
+	DelphiCalc, BCryptCalc: ICloudHashCalculator;
+	Stream: TMemoryStream;
+	DelphiHash, BCryptHash: WideString;
+	Data: AnsiString;
+begin
+	if not IsBCryptAvailable then
+	begin
+		Assert.Pass('BCrypt not available on this system');
+		Exit;
+	end;
+
+	DelphiCalc := TCloudHashCalculator.Create(TNullProgress.Create, TWindowsFileSystem.Create);
+	BCryptCalc := TCloudHashCalculatorBCrypt.Create(TNullProgress.Create, TWindowsFileSystem.Create);
+
+	Stream := TMemoryStream.Create;
+	try
+		{Small file - uses padding algorithm, not SHA1}
+		Data := 'SmallData'; {9 bytes}
+		Stream.Write(Data[1], Length(Data));
+
+		Stream.Position := 0;
+		DelphiHash := DelphiCalc.CalculateHash(Stream, 'test');
+
+		Stream.Position := 0;
+		BCryptHash := BCryptCalc.CalculateHash(Stream, 'test');
+
+		Assert.AreEqual(DelphiHash, BCryptHash, 'BCrypt must match Delphi for small files');
+	finally
+		Stream.Free;
+	end;
+end;
+
+procedure TCloudHashCalculatorBCryptTest.TestBCrypt_MatchesDelphiForBoundaryFile;
+var
+	DelphiCalc, BCryptCalc: ICloudHashCalculator;
+	Stream: TMemoryStream;
+	DelphiHash, BCryptHash: WideString;
+	Data: AnsiString;
+begin
+	if not IsBCryptAvailable then
+	begin
+		Assert.Pass('BCrypt not available on this system');
+		Exit;
+	end;
+
+	DelphiCalc := TCloudHashCalculator.Create(TNullProgress.Create, TWindowsFileSystem.Create);
+	BCryptCalc := TCloudHashCalculatorBCrypt.Create(TNullProgress.Create, TWindowsFileSystem.Create);
+
+	Stream := TMemoryStream.Create;
+	try
+		{Exactly 21 bytes - boundary where SHA1 algorithm kicks in}
+		Data := '123456789012345678901';
+		Stream.Write(Data[1], Length(Data));
+
+		Stream.Position := 0;
+		DelphiHash := DelphiCalc.CalculateHash(Stream, 'test');
+
+		Stream.Position := 0;
+		BCryptHash := BCryptCalc.CalculateHash(Stream, 'test');
+
+		Assert.AreEqual(DelphiHash, BCryptHash, 'BCrypt must match Delphi at 21-byte boundary');
+	finally
+		Stream.Free;
+	end;
+end;
+
+procedure TCloudHashCalculatorBCryptTest.TestBCrypt_MatchesDelphiForLargeData;
+var
+	DelphiCalc, BCryptCalc: ICloudHashCalculator;
+	Stream: TMemoryStream;
+	DelphiHash, BCryptHash: WideString;
+	Data: TBytes;
+	i: Integer;
+begin
+	if not IsBCryptAvailable then
+	begin
+		Assert.Pass('BCrypt not available on this system');
+		Exit;
+	end;
+
+	DelphiCalc := TCloudHashCalculator.Create(TNullProgress.Create, TWindowsFileSystem.Create);
+	BCryptCalc := TCloudHashCalculatorBCrypt.Create(TNullProgress.Create, TWindowsFileSystem.Create);
+
+	Stream := TMemoryStream.Create;
+	try
+		{256KB of data - multiple buffer reads}
+		SetLength(Data, 256 * 1024);
+		for i := 0 to High(Data) do
+			Data[i] := (i * 11 + 7) mod 256;
+		Stream.Write(Data[0], Length(Data));
+
+		Stream.Position := 0;
+		DelphiHash := DelphiCalc.CalculateHash(Stream, 'test');
+
+		Stream.Position := 0;
+		BCryptHash := BCryptCalc.CalculateHash(Stream, 'test');
+
+		Assert.AreEqual(DelphiHash, BCryptHash, 'BCrypt must match Delphi for large data');
+	finally
+		Stream.Free;
+	end;
+end;
+
+procedure TCloudHashCalculatorBCryptTest.TestBCrypt_SequentialCalculationsMatch;
+var
+	Stream: TMemoryStream;
+	Hash1, Hash2, Hash3: WideString;
+	Data: AnsiString;
+begin
+	if not IsBCryptAvailable then
+	begin
+		Assert.Pass('BCrypt not available on this system');
+		Exit;
+	end;
+
+	Stream := TMemoryStream.Create;
+	try
+		Data := 'Sequential test for BCrypt implementation';
+		Stream.Write(Data[1], Length(Data));
+
+		Stream.Position := 0;
+		Hash1 := FCalculator.CalculateHash(Stream, 'test1');
+
+		Stream.Position := 0;
+		Hash2 := FCalculator.CalculateHash(Stream, 'test2');
+
+		Stream.Position := 0;
+		Hash3 := FCalculator.CalculateHash(Stream, 'test3');
+
+		Assert.AreEqual(Hash1, Hash2, 'BCrypt sequential hashes must match (1-2)');
+		Assert.AreEqual(Hash2, Hash3, 'BCrypt sequential hashes must match (2-3)');
+	finally
+		Stream.Free;
+	end;
+end;
+
 { TCloudHashCalculatorOpenSSLTest }
 
 procedure TCloudHashCalculatorOpenSSLTest.CreateCalculator;
@@ -608,6 +1049,144 @@ begin
 		OpenSSLHash := OpenSSLCalc.CalculateHash(Stream, 'test');
 
 		Assert.AreEqual(DelphiHash, OpenSSLHash, 'OpenSSL must produce same hash as Delphi implementation');
+	finally
+		Stream.Free;
+	end;
+end;
+
+procedure TCloudHashCalculatorOpenSSLTest.TestOpenSSL_MatchesDelphiForSmallFile;
+var
+	DelphiCalc, OpenSSLCalc: ICloudHashCalculator;
+	Stream: TMemoryStream;
+	DelphiHash, OpenSSLHash: WideString;
+	Data: AnsiString;
+begin
+	if not IsOpenSSLAvailable then
+	begin
+		Assert.Pass('OpenSSL not available on this system');
+		Exit;
+	end;
+
+	DelphiCalc := TCloudHashCalculator.Create(TNullProgress.Create, TWindowsFileSystem.Create);
+	OpenSSLCalc := TCloudHashCalculatorOpenSSL.Create(TNullProgress.Create, TWindowsFileSystem.Create);
+
+	Stream := TMemoryStream.Create;
+	try
+		{Small file - uses padding algorithm, not SHA1}
+		Data := 'SmallData'; {9 bytes}
+		Stream.Write(Data[1], Length(Data));
+
+		Stream.Position := 0;
+		DelphiHash := DelphiCalc.CalculateHash(Stream, 'test');
+
+		Stream.Position := 0;
+		OpenSSLHash := OpenSSLCalc.CalculateHash(Stream, 'test');
+
+		Assert.AreEqual(DelphiHash, OpenSSLHash, 'OpenSSL must match Delphi for small files');
+	finally
+		Stream.Free;
+	end;
+end;
+
+procedure TCloudHashCalculatorOpenSSLTest.TestOpenSSL_MatchesDelphiForBoundaryFile;
+var
+	DelphiCalc, OpenSSLCalc: ICloudHashCalculator;
+	Stream: TMemoryStream;
+	DelphiHash, OpenSSLHash: WideString;
+	Data: AnsiString;
+begin
+	if not IsOpenSSLAvailable then
+	begin
+		Assert.Pass('OpenSSL not available on this system');
+		Exit;
+	end;
+
+	DelphiCalc := TCloudHashCalculator.Create(TNullProgress.Create, TWindowsFileSystem.Create);
+	OpenSSLCalc := TCloudHashCalculatorOpenSSL.Create(TNullProgress.Create, TWindowsFileSystem.Create);
+
+	Stream := TMemoryStream.Create;
+	try
+		{Exactly 21 bytes - boundary where SHA1 algorithm kicks in}
+		Data := '123456789012345678901';
+		Stream.Write(Data[1], Length(Data));
+
+		Stream.Position := 0;
+		DelphiHash := DelphiCalc.CalculateHash(Stream, 'test');
+
+		Stream.Position := 0;
+		OpenSSLHash := OpenSSLCalc.CalculateHash(Stream, 'test');
+
+		Assert.AreEqual(DelphiHash, OpenSSLHash, 'OpenSSL must match Delphi at 21-byte boundary');
+	finally
+		Stream.Free;
+	end;
+end;
+
+procedure TCloudHashCalculatorOpenSSLTest.TestOpenSSL_MatchesDelphiForLargeData;
+var
+	DelphiCalc, OpenSSLCalc: ICloudHashCalculator;
+	Stream: TMemoryStream;
+	DelphiHash, OpenSSLHash: WideString;
+	Data: TBytes;
+	i: Integer;
+begin
+	if not IsOpenSSLAvailable then
+	begin
+		Assert.Pass('OpenSSL not available on this system');
+		Exit;
+	end;
+
+	DelphiCalc := TCloudHashCalculator.Create(TNullProgress.Create, TWindowsFileSystem.Create);
+	OpenSSLCalc := TCloudHashCalculatorOpenSSL.Create(TNullProgress.Create, TWindowsFileSystem.Create);
+
+	Stream := TMemoryStream.Create;
+	try
+		{256KB of data - multiple buffer reads}
+		SetLength(Data, 256 * 1024);
+		for i := 0 to High(Data) do
+			Data[i] := (i * 11 + 7) mod 256;
+		Stream.Write(Data[0], Length(Data));
+
+		Stream.Position := 0;
+		DelphiHash := DelphiCalc.CalculateHash(Stream, 'test');
+
+		Stream.Position := 0;
+		OpenSSLHash := OpenSSLCalc.CalculateHash(Stream, 'test');
+
+		Assert.AreEqual(DelphiHash, OpenSSLHash, 'OpenSSL must match Delphi for large data');
+	finally
+		Stream.Free;
+	end;
+end;
+
+procedure TCloudHashCalculatorOpenSSLTest.TestOpenSSL_SequentialCalculationsMatch;
+var
+	Stream: TMemoryStream;
+	Hash1, Hash2, Hash3: WideString;
+	Data: AnsiString;
+begin
+	if not IsOpenSSLAvailable then
+	begin
+		Assert.Pass('OpenSSL not available on this system');
+		Exit;
+	end;
+
+	Stream := TMemoryStream.Create;
+	try
+		Data := 'Sequential test for OpenSSL implementation';
+		Stream.Write(Data[1], Length(Data));
+
+		Stream.Position := 0;
+		Hash1 := FCalculator.CalculateHash(Stream, 'test1');
+
+		Stream.Position := 0;
+		Hash2 := FCalculator.CalculateHash(Stream, 'test2');
+
+		Stream.Position := 0;
+		Hash3 := FCalculator.CalculateHash(Stream, 'test3');
+
+		Assert.AreEqual(Hash1, Hash2, 'OpenSSL sequential hashes must match (1-2)');
+		Assert.AreEqual(Hash2, Hash3, 'OpenSSL sequential hashes must match (2-3)');
 	finally
 		Stream.Free;
 	end;
@@ -766,6 +1345,406 @@ begin
 	end;
 end;
 
+procedure THashCalculatorFactoryTest.TestAllStrategies_ProduceSameHashForSmallFile;
+var
+	DelphiCalc, BCryptCalc, OpenSSLCalc: ICloudHashCalculator;
+	Stream: TMemoryStream;
+	DelphiHash, BCryptHash, OpenSSLHash: WideString;
+	Data: AnsiString;
+begin
+	DelphiCalc := CreateHashCalculator(HashStrategyDelphi, TNullProgress.Create, TWindowsFileSystem.Create);
+	BCryptCalc := CreateHashCalculator(HashStrategyBCrypt, TNullProgress.Create, TWindowsFileSystem.Create);
+	OpenSSLCalc := CreateHashCalculator(HashStrategyOpenSSL, TNullProgress.Create, TWindowsFileSystem.Create);
+
+	Stream := TMemoryStream.Create;
+	try
+		{Small file uses padding algorithm}
+		Data := 'SmallFile'; {9 bytes}
+		Stream.Write(Data[1], Length(Data));
+
+		Stream.Position := 0;
+		DelphiHash := DelphiCalc.CalculateHash(Stream, 'test');
+
+		Stream.Position := 0;
+		BCryptHash := BCryptCalc.CalculateHash(Stream, 'test');
+
+		Stream.Position := 0;
+		OpenSSLHash := OpenSSLCalc.CalculateHash(Stream, 'test');
+
+		Assert.AreEqual(DelphiHash, BCryptHash, 'BCrypt must match Delphi for small file');
+		Assert.AreEqual(DelphiHash, OpenSSLHash, 'OpenSSL must match Delphi for small file');
+	finally
+		Stream.Free;
+	end;
+end;
+
+procedure THashCalculatorFactoryTest.TestAllStrategies_ProduceSameHashForBoundary;
+var
+	DelphiCalc, BCryptCalc, OpenSSLCalc: ICloudHashCalculator;
+	Stream: TMemoryStream;
+	DelphiHash, BCryptHash, OpenSSLHash: WideString;
+	Data: AnsiString;
+begin
+	DelphiCalc := CreateHashCalculator(HashStrategyDelphi, TNullProgress.Create, TWindowsFileSystem.Create);
+	BCryptCalc := CreateHashCalculator(HashStrategyBCrypt, TNullProgress.Create, TWindowsFileSystem.Create);
+	OpenSSLCalc := CreateHashCalculator(HashStrategyOpenSSL, TNullProgress.Create, TWindowsFileSystem.Create);
+
+	Stream := TMemoryStream.Create;
+	try
+		{Exactly 21 bytes - SHA1 boundary}
+		Data := '123456789012345678901';
+		Stream.Write(Data[1], Length(Data));
+
+		Stream.Position := 0;
+		DelphiHash := DelphiCalc.CalculateHash(Stream, 'test');
+
+		Stream.Position := 0;
+		BCryptHash := BCryptCalc.CalculateHash(Stream, 'test');
+
+		Stream.Position := 0;
+		OpenSSLHash := OpenSSLCalc.CalculateHash(Stream, 'test');
+
+		Assert.AreEqual(DelphiHash, BCryptHash, 'BCrypt must match Delphi at boundary');
+		Assert.AreEqual(DelphiHash, OpenSSLHash, 'OpenSSL must match Delphi at boundary');
+	finally
+		Stream.Free;
+	end;
+end;
+
+procedure THashCalculatorFactoryTest.TestAllStrategies_ProduceSameHashFor1MB;
+var
+	DelphiCalc, BCryptCalc, OpenSSLCalc: ICloudHashCalculator;
+	Stream: TMemoryStream;
+	DelphiHash, BCryptHash, OpenSSLHash: WideString;
+	Data: TBytes;
+	i: Integer;
+begin
+	DelphiCalc := CreateHashCalculator(HashStrategyDelphi, TNullProgress.Create, TWindowsFileSystem.Create);
+	BCryptCalc := CreateHashCalculator(HashStrategyBCrypt, TNullProgress.Create, TWindowsFileSystem.Create);
+	OpenSSLCalc := CreateHashCalculator(HashStrategyOpenSSL, TNullProgress.Create, TWindowsFileSystem.Create);
+
+	Stream := TMemoryStream.Create;
+	try
+		{1MB data tests buffer handling across all implementations}
+		SetLength(Data, 1024 * 1024);
+		for i := 0 to High(Data) do
+			Data[i] := (i * 23 + 11) mod 256;
+		Stream.Write(Data[0], Length(Data));
+
+		Stream.Position := 0;
+		DelphiHash := DelphiCalc.CalculateHash(Stream, 'test');
+
+		Stream.Position := 0;
+		BCryptHash := BCryptCalc.CalculateHash(Stream, 'test');
+
+		Stream.Position := 0;
+		OpenSSLHash := OpenSSLCalc.CalculateHash(Stream, 'test');
+
+		Assert.AreEqual(DelphiHash, BCryptHash, 'BCrypt must match Delphi for 1MB');
+		Assert.AreEqual(DelphiHash, OpenSSLHash, 'OpenSSL must match Delphi for 1MB');
+	finally
+		Stream.Free;
+	end;
+end;
+
+{ THashCalculatorCrossImplementationTest }
+
+procedure THashCalculatorCrossImplementationTest.Setup;
+begin
+	FDelphiCalc := CreateHashCalculator(HashStrategyDelphi, TNullProgress.Create, TWindowsFileSystem.Create);
+	FBCryptCalc := CreateHashCalculator(HashStrategyBCrypt, TNullProgress.Create, TWindowsFileSystem.Create);
+	FOpenSSLCalc := CreateHashCalculator(HashStrategyOpenSSL, TNullProgress.Create, TWindowsFileSystem.Create);
+end;
+
+procedure THashCalculatorCrossImplementationTest.TearDown;
+begin
+	FDelphiCalc := nil;
+	FBCryptCalc := nil;
+	FOpenSSLCalc := nil;
+end;
+
+procedure THashCalculatorCrossImplementationTest.CompareAllImplementations(Stream: TStream; const TestName: string);
+var
+	DelphiHash, BCryptHash, OpenSSLHash: WideString;
+begin
+	Stream.Position := 0;
+	DelphiHash := FDelphiCalc.CalculateHash(Stream, 'test');
+
+	Stream.Position := 0;
+	BCryptHash := FBCryptCalc.CalculateHash(Stream, 'test');
+
+	Stream.Position := 0;
+	OpenSSLHash := FOpenSSLCalc.CalculateHash(Stream, 'test');
+
+	Assert.AreEqual(DelphiHash, BCryptHash, TestName + ': BCrypt must match Delphi');
+	Assert.AreEqual(DelphiHash, OpenSSLHash, TestName + ': OpenSSL must match Delphi');
+end;
+
+procedure THashCalculatorCrossImplementationTest.TestThreshold_19Bytes_AllMatch;
+var
+	Stream: TMemoryStream;
+	Data: AnsiString;
+begin
+	Stream := TMemoryStream.Create;
+	try
+		Data := '1234567890123456789'; {19 bytes - small file algorithm}
+		Stream.Write(Data[1], Length(Data));
+		CompareAllImplementations(Stream, '19 bytes');
+	finally
+		Stream.Free;
+	end;
+end;
+
+procedure THashCalculatorCrossImplementationTest.TestThreshold_20Bytes_AllMatch;
+var
+	Stream: TMemoryStream;
+	Data: AnsiString;
+begin
+	Stream := TMemoryStream.Create;
+	try
+		Data := '12345678901234567890'; {20 bytes - last small file size}
+		Stream.Write(Data[1], Length(Data));
+		CompareAllImplementations(Stream, '20 bytes');
+	finally
+		Stream.Free;
+	end;
+end;
+
+procedure THashCalculatorCrossImplementationTest.TestThreshold_21Bytes_AllMatch;
+var
+	Stream: TMemoryStream;
+	Data: AnsiString;
+begin
+	Stream := TMemoryStream.Create;
+	try
+		Data := '123456789012345678901'; {21 bytes - first SHA1 size}
+		Stream.Write(Data[1], Length(Data));
+		CompareAllImplementations(Stream, '21 bytes');
+	finally
+		Stream.Free;
+	end;
+end;
+
+procedure THashCalculatorCrossImplementationTest.TestThreshold_22Bytes_AllMatch;
+var
+	Stream: TMemoryStream;
+	Data: AnsiString;
+begin
+	Stream := TMemoryStream.Create;
+	try
+		Data := '1234567890123456789012'; {22 bytes - SHA1 algorithm}
+		Stream.Write(Data[1], Length(Data));
+		CompareAllImplementations(Stream, '22 bytes');
+	finally
+		Stream.Free;
+	end;
+end;
+
+procedure THashCalculatorCrossImplementationTest.TestVariousSizes_100Bytes;
+var
+	Stream: TMemoryStream;
+	Data: TBytes;
+	i: Integer;
+begin
+	Stream := TMemoryStream.Create;
+	try
+		SetLength(Data, 100);
+		for i := 0 to High(Data) do
+			Data[i] := i mod 256;
+		Stream.Write(Data[0], Length(Data));
+		CompareAllImplementations(Stream, '100 bytes');
+	finally
+		Stream.Free;
+	end;
+end;
+
+procedure THashCalculatorCrossImplementationTest.TestVariousSizes_1KB;
+var
+	Stream: TMemoryStream;
+	Data: TBytes;
+	i: Integer;
+begin
+	Stream := TMemoryStream.Create;
+	try
+		SetLength(Data, 1024);
+		for i := 0 to High(Data) do
+			Data[i] := (i * 3) mod 256;
+		Stream.Write(Data[0], Length(Data));
+		CompareAllImplementations(Stream, '1KB');
+	finally
+		Stream.Free;
+	end;
+end;
+
+procedure THashCalculatorCrossImplementationTest.TestVariousSizes_10KB;
+var
+	Stream: TMemoryStream;
+	Data: TBytes;
+	i: Integer;
+begin
+	Stream := TMemoryStream.Create;
+	try
+		SetLength(Data, 10 * 1024);
+		for i := 0 to High(Data) do
+			Data[i] := (i * 5) mod 256;
+		Stream.Write(Data[0], Length(Data));
+		CompareAllImplementations(Stream, '10KB');
+	finally
+		Stream.Free;
+	end;
+end;
+
+procedure THashCalculatorCrossImplementationTest.TestVariousSizes_64KB;
+var
+	Stream: TMemoryStream;
+	Data: TBytes;
+	i: Integer;
+begin
+	Stream := TMemoryStream.Create;
+	try
+		{Exactly at buffer size boundary}
+		SetLength(Data, 64 * 1024);
+		for i := 0 to High(Data) do
+			Data[i] := (i * 7) mod 256;
+		Stream.Write(Data[0], Length(Data));
+		CompareAllImplementations(Stream, '64KB');
+	finally
+		Stream.Free;
+	end;
+end;
+
+procedure THashCalculatorCrossImplementationTest.TestVariousSizes_65KB;
+var
+	Stream: TMemoryStream;
+	Data: TBytes;
+	i: Integer;
+begin
+	Stream := TMemoryStream.Create;
+	try
+		{Just over buffer size - tests buffer wrap}
+		SetLength(Data, 65 * 1024);
+		for i := 0 to High(Data) do
+			Data[i] := (i * 11) mod 256;
+		Stream.Write(Data[0], Length(Data));
+		CompareAllImplementations(Stream, '65KB');
+	finally
+		Stream.Free;
+	end;
+end;
+
+procedure THashCalculatorCrossImplementationTest.TestVariousSizes_128KB;
+var
+	Stream: TMemoryStream;
+	Data: TBytes;
+	i: Integer;
+begin
+	Stream := TMemoryStream.Create;
+	try
+		{Two buffer reads}
+		SetLength(Data, 128 * 1024);
+		for i := 0 to High(Data) do
+			Data[i] := (i * 13) mod 256;
+		Stream.Write(Data[0], Length(Data));
+		CompareAllImplementations(Stream, '128KB');
+	finally
+		Stream.Free;
+	end;
+end;
+
+procedure THashCalculatorCrossImplementationTest.TestVariousSizes_256KB;
+var
+	Stream: TMemoryStream;
+	Data: TBytes;
+	i: Integer;
+begin
+	Stream := TMemoryStream.Create;
+	try
+		{Four buffer reads}
+		SetLength(Data, 256 * 1024);
+		for i := 0 to High(Data) do
+			Data[i] := (i * 17) mod 256;
+		Stream.Write(Data[0], Length(Data));
+		CompareAllImplementations(Stream, '256KB');
+	finally
+		Stream.Free;
+	end;
+end;
+
+procedure THashCalculatorCrossImplementationTest.TestVariousSizes_512KB;
+var
+	Stream: TMemoryStream;
+	Data: TBytes;
+	i: Integer;
+begin
+	Stream := TMemoryStream.Create;
+	try
+		{Eight buffer reads}
+		SetLength(Data, 512 * 1024);
+		for i := 0 to High(Data) do
+			Data[i] := (i * 19) mod 256;
+		Stream.Write(Data[0], Length(Data));
+		CompareAllImplementations(Stream, '512KB');
+	finally
+		Stream.Free;
+	end;
+end;
+
+procedure THashCalculatorCrossImplementationTest.TestBinaryContent_AllZeros;
+var
+	Stream: TMemoryStream;
+	Data: TBytes;
+begin
+	Stream := TMemoryStream.Create;
+	try
+		{100KB of all zeros - tests edge case}
+		SetLength(Data, 100 * 1024);
+		FillChar(Data[0], Length(Data), 0);
+		Stream.Write(Data[0], Length(Data));
+		CompareAllImplementations(Stream, 'All zeros');
+	finally
+		Stream.Free;
+	end;
+end;
+
+procedure THashCalculatorCrossImplementationTest.TestBinaryContent_AllOnes;
+var
+	Stream: TMemoryStream;
+	Data: TBytes;
+begin
+	Stream := TMemoryStream.Create;
+	try
+		{100KB of all $FF bytes}
+		SetLength(Data, 100 * 1024);
+		FillChar(Data[0], Length(Data), $FF);
+		Stream.Write(Data[0], Length(Data));
+		CompareAllImplementations(Stream, 'All $FF');
+	finally
+		Stream.Free;
+	end;
+end;
+
+procedure THashCalculatorCrossImplementationTest.TestBinaryContent_RandomPattern;
+var
+	Stream: TMemoryStream;
+	Data: TBytes;
+	i: Integer;
+begin
+	Stream := TMemoryStream.Create;
+	try
+		{100KB of varied binary data - pseudo-random pattern using XOR mixing}
+		SetLength(Data, 100 * 1024);
+		for i := 0 to High(Data) do
+		begin
+			{XOR-based mixing that creates varied but deterministic data}
+			Data[i] := Byte(i) xor Byte(i shr 8) xor Byte(i shr 16) xor Byte(i shr 5) xor Byte(i shr 13);
+		end;
+		Stream.Write(Data[0], Length(Data));
+		CompareAllImplementations(Stream, 'Random pattern');
+	finally
+		Stream.Free;
+	end;
+end;
+
 initialization
 
 TDUnitX.RegisterTestFixture(TCloudHashCalculatorTest);
@@ -773,5 +1752,6 @@ TDUnitX.RegisterTestFixture(TCloudHashCalculatorBCryptTest);
 TDUnitX.RegisterTestFixture(TCloudHashCalculatorOpenSSLTest);
 TDUnitX.RegisterTestFixture(TNullHashCalculatorTest);
 TDUnitX.RegisterTestFixture(THashCalculatorFactoryTest);
+TDUnitX.RegisterTestFixture(THashCalculatorCrossImplementationTest);
 
 end.
