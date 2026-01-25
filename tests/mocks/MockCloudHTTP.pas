@@ -11,6 +11,7 @@ uses
 	System.SysUtils,
 	System.Generics.Collections,
 	CloudHTTP,
+	TCProgress,
 	PLUGIN_TYPES,
 	IdCookieManager,
 	IdHTTP;
@@ -125,6 +126,7 @@ type
 		function PutFile(URL: WideString; FileName: WideString; FileStream: TStream; var Answer: WideString): Integer;
 		procedure Head(URL: WideString);
 		procedure SetProgressNames(SourceName, TargetName: WideString);
+		procedure SetProgress(Progress: IProgress);
 		procedure SetAuthCookie(Value: TIdCookieManager);
 		function GetHTTP: TIdHTTP;
 	end;
@@ -718,6 +720,11 @@ begin
 end;
 
 procedure TMockCloudHTTP.SetProgressNames(SourceName, TargetName: WideString);
+begin
+	{No-op for mock}
+end;
+
+procedure TMockCloudHTTP.SetProgress(Progress: IProgress);
 begin
 	{No-op for mock}
 end;

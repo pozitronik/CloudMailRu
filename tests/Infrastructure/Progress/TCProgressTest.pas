@@ -59,6 +59,42 @@ type
 		procedure TestMultipleCalls;
 	end;
 
+	[TestFixture]
+	TScaledProgressTest = class
+	public
+		[Test]
+		{Verifies TScaledProgress implements IProgress}
+		procedure TestImplementsIProgress;
+
+		[Test]
+		{Without scaling, percentage passes through unchanged}
+		procedure TestNoScaling_PassesThrough;
+
+		[Test]
+		{With single part (TotalParts=1), no scaling applied}
+		procedure TestSinglePart_NoScaling;
+
+		[Test]
+		{First part of 5 at 50% = (0*100+50)/5 = 10%}
+		procedure TestFirstPartOfFive_At50Percent;
+
+		[Test]
+		{Third part of 5 at 50% = (2*100+50)/5 = 50%}
+		procedure TestThirdPartOfFive_At50Percent;
+
+		[Test]
+		{Last part of 5 at 100% = (4*100+100)/5 = 100%}
+		procedure TestLastPartOfFive_At100Percent;
+
+		[Test]
+		{ResetScale disables scaling}
+		procedure TestResetScale;
+
+		[Test]
+		{Aborted delegates to inner progress}
+		procedure TestAborted_Delegates;
+	end;
+
 var
 	PluginNr: Integer;
 	SourceName: WideString;
@@ -264,9 +300,100 @@ begin
 	Assert.Pass('Multiple progress calls completed without exception');
 end;
 
+{TScaledProgressTest}
+
+procedure TScaledProgressTest.TestImplementsIProgress;
+var
+	Progress: IProgress;
+begin
+	Progress := TScaledProgress.Create(TNullProgress.Create);
+	Assert.IsNotNull(Progress);
+end;
+
+procedure TScaledProgressTest.TestNoScaling_PassesThrough;
+var
+	Scaled: TScaledProgress;
+begin
+	PercentDone := 0;
+	Scaled := TScaledProgress.Create(TTCProgress.Create(TestProgressProc, 1));
+	{No SetScale called - defaults to 0, 0}
+	Scaled.Progress('src', 'dst', 75);
+	Assert.AreEqual(75, PercentDone);
+end;
+
+procedure TScaledProgressTest.TestSinglePart_NoScaling;
+var
+	Scaled: TScaledProgress;
+begin
+	PercentDone := 0;
+	Scaled := TScaledProgress.Create(TTCProgress.Create(TestProgressProc, 1));
+	Scaled.SetScale(0, 1); {Single part - no scaling}
+	Scaled.Progress('src', 'dst', 50);
+	Assert.AreEqual(50, PercentDone);
+end;
+
+procedure TScaledProgressTest.TestFirstPartOfFive_At50Percent;
+var
+	Scaled: TScaledProgress;
+begin
+	PercentDone := 0;
+	Scaled := TScaledProgress.Create(TTCProgress.Create(TestProgressProc, 1));
+	Scaled.SetScale(0, 5); {First part (index 0) of 5}
+	Scaled.Progress('src', 'dst', 50);
+	{Expected: (0*100 + 50) / 5 = 10}
+	Assert.AreEqual(10, PercentDone);
+end;
+
+procedure TScaledProgressTest.TestThirdPartOfFive_At50Percent;
+var
+	Scaled: TScaledProgress;
+begin
+	PercentDone := 0;
+	Scaled := TScaledProgress.Create(TTCProgress.Create(TestProgressProc, 1));
+	Scaled.SetScale(2, 5); {Third part (index 2) of 5}
+	Scaled.Progress('src', 'dst', 50);
+	{Expected: (2*100 + 50) / 5 = 50}
+	Assert.AreEqual(50, PercentDone);
+end;
+
+procedure TScaledProgressTest.TestLastPartOfFive_At100Percent;
+var
+	Scaled: TScaledProgress;
+begin
+	PercentDone := 0;
+	Scaled := TScaledProgress.Create(TTCProgress.Create(TestProgressProc, 1));
+	Scaled.SetScale(4, 5); {Last part (index 4) of 5}
+	Scaled.Progress('src', 'dst', 100);
+	{Expected: (4*100 + 100) / 5 = 100}
+	Assert.AreEqual(100, PercentDone);
+end;
+
+procedure TScaledProgressTest.TestResetScale;
+var
+	Scaled: TScaledProgress;
+begin
+	PercentDone := 0;
+	Scaled := TScaledProgress.Create(TTCProgress.Create(TestProgressProc, 1));
+	Scaled.SetScale(2, 5); {Enable scaling}
+	Scaled.ResetScale; {Disable scaling}
+	Scaled.Progress('src', 'dst', 75);
+	{After reset, should pass through unchanged}
+	Assert.AreEqual(75, PercentDone);
+end;
+
+procedure TScaledProgressTest.TestAborted_Delegates;
+var
+	Scaled: TScaledProgress;
+begin
+	Scaled := TScaledProgress.Create(TNullProgress.Create);
+	{TNullProgress.Aborted returns False}
+	Assert.IsFalse(Scaled.Aborted);
+end;
+
 initialization
 
 TDUnitX.RegisterTestFixture(TTCProgressTest);
 TDUnitX.RegisterTestFixture(TNullProgressTest);
+TDUnitX.RegisterTestFixture(TScaledProgressTest);
 
 end.

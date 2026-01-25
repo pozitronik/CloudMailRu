@@ -73,6 +73,9 @@ type
 		{Set progress display names}
 		procedure SetProgressNames(SourceName, TargetName: WideString);
 
+		{Replace progress reporter - allows injection of decorators like TScaledProgress}
+		procedure SetProgress(Progress: IProgress);
+
 		{Cookie manager access}
 		procedure SetAuthCookie(Value: TIdCookieManager);
 
@@ -95,6 +98,7 @@ type
 		function PutFile(URL: WideString; FileName: WideString; FileStream: TStream; var Answer: WideString): Integer;
 		procedure Head(URL: WideString);
 		procedure SetProgressNames(SourceName, TargetName: WideString);
+		procedure SetProgress(Progress: IProgress);
 		procedure SetAuthCookie(Value: TIdCookieManager);
 		function GetHTTP: TIdHTTP;
 	end;
@@ -154,6 +158,7 @@ type
 		function ExceptionHandler(E: Exception; URL: WideString; HTTPMethod: Integer = HTTP_METHOD_POST; LogErrors: Boolean = True): Integer;
 
 		procedure SetProgressNames(SourceName, TargetName: WideString);
+		procedure SetProgress(Progress: IProgress);
 		procedure HTTPProgress(ASender: TObject; AWorkMode: TWorkMode; AWorkCount: int64);
 	end;
 
@@ -208,6 +213,11 @@ begin
 end;
 
 procedure TNullCloudHTTP.SetProgressNames(SourceName, TargetName: WideString);
+begin
+	{No-op}
+end;
+
+procedure TNullCloudHTTP.SetProgress(Progress: IProgress);
 begin
 	{No-op}
 end;
@@ -599,6 +609,11 @@ procedure TCloudMailRuHTTP.SetProgressNames(SourceName, TargetName: WideString);
 begin
 	self.ExternalSourceName := SourceName;
 	self.ExternalTargetName := TargetName;
+end;
+
+procedure TCloudMailRuHTTP.SetProgress(Progress: IProgress);
+begin
+	self.Progress := Progress;
 end;
 
 procedure TCloudMailRuHTTP.SetAuthCookie(Value: TIdCookieManager);

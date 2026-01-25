@@ -1,14 +1,5 @@
 ﻿unit CloudFileUploader;
 
-{TODO: Known issue with chunked upload:
-
-	Progress bar shows chunk progress, not overall file progress:
-	TC displays correct chunk name (filename.001) but progress resets 0-100% per chunk.
-	Root cause: HTTPProgress calculates percent from current chunk's ContentLength.
-	Solution: Pass chunk context (index, total count) to HTTP layer, scale progress:
-	OverallPercent = (ChunkIndex * 100 + ChunkPercent) / TotalChunks
-	This requires ICloudHTTP interface changes to support progress scaling context.}
-
 interface
 
 uses
@@ -568,6 +559,7 @@ var
 	UseHash: Boolean;
 	IsPartialUpload: Boolean;
 	Action: TChunkActionResult;
+	ScaledProgress: TScaledProgress;
 begin
 	{Create split info first to determine chunk count for quota check}
 	SplitFileInfo := TFileSplitInfo.Create(GetUNCFilePath(LocalPath), FSettings.CloudMaxFileSize);
@@ -599,12 +591,19 @@ begin
 		RetryAttemptsCount := 0;
 		Result := FS_FILE_OK;
 
+		{Create scaled progress decorator to show overall file progress instead of per-chunk progress}
+		ScaledProgress := TScaledProgress.Create(FProgress);
+		FGetHTTP().SetProgress(ScaledProgress);
+
 		{Upload each chunk - iterate all chunks, but limit ACTUAL uploads (not skips) by quota.
 			Skipped chunks (already exist with matching hash) don't count toward quota.}
 		while (ChunkIndex < SplitFileInfo.ChunksCount) and ((not IsPartialUpload) or (ActualUploads < ChunksToUpload)) do
 		begin
 			ChunkRemotePath := Format('%s%s', [ExtractFilePath(RemotePath), SplitFileInfo.GetChunks[ChunkIndex].name]);
-			FGetHTTP().SetProgressNames(LocalPath, ChunkRemotePath);
+			{Show original filename with chunk position for user-friendly progress display}
+			FGetHTTP().SetProgressNames(LocalPath, Format('%s [%d of %d]', [ExtractFileName(RemotePath), ChunkIndex + 1, SplitFileInfo.ChunksCount]));
+			{Update scale for current chunk position}
+			ScaledProgress.SetScale(ChunkIndex, SplitFileInfo.ChunksCount);
 			FLogger.Log(LOG_LEVEL_DEBUG, MSGTYPE_DETAILS, PARTIAL_UPLOAD_INFO, [LocalPath, ChunkIndex + 1, SplitFileInfo.ChunksCount, ChunkRemotePath]);
 
 			{Upload current chunk}
@@ -678,6 +677,9 @@ begin
 					end;
 			end;
 		end;
+
+		{Restore original progress for subsequent operations}
+		FGetHTTP().SetProgress(FProgress);
 
 		{Generate and upload CRC file only after ALL chunks are on cloud.
 			ChunkIndex = total means all chunks were processed (uploaded or skipped).

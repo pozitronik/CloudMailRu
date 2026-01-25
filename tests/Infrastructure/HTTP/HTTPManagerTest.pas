@@ -34,6 +34,7 @@ type
 		function PutFile(URL: WideString; FileName: WideString; FileStream: TStream; var Answer: WideString): Integer;
 		procedure Head(URL: WideString);
 		procedure SetProgressNames(SourceName, TargetName: WideString);
+		procedure SetProgress(Progress: IProgress);
 		procedure SetAuthCookie(Value: TIdCookieManager);
 		function GetHTTP: TIdHTTP;
 	end;
@@ -180,6 +181,10 @@ begin
 end;
 
 procedure TMockHTTPForPooling.SetProgressNames(SourceName, TargetName: WideString);
+begin
+end;
+
+procedure TMockHTTPForPooling.SetProgress(Progress: IProgress);
 begin
 end;
 
