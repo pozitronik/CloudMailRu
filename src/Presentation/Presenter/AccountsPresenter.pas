@@ -96,6 +96,8 @@ type
 		function GetPrecalculateHash: Boolean;
 		procedure SetCheckCRC(Value: Boolean);
 		function GetCheckCRC: Boolean;
+		procedure SetHashCalculatorStrategy(Value: Integer);
+		function GetHashCalculatorStrategy: Integer;
 
 		{Network settings}
 		procedure SetSocketTimeout(Value: Integer);
@@ -327,6 +329,7 @@ begin
 	FView.SetShowInvitesFolders(Settings.ShowInvitesFolders);
 	FView.SetPrecalculateHash(Settings.PrecalculateHash);
 	FView.SetCheckCRC(Settings.CheckCRC);
+	FView.SetHashCalculatorStrategy(Settings.HashCalculatorStrategy);
 
 	{Network settings}
 	FView.SetSocketTimeout(Settings.ConnectionSettings.SocketTimeout);
@@ -604,6 +607,7 @@ begin
 	Settings.ShowInvitesFolders := FView.GetShowInvitesFolders;
 	Settings.PrecalculateHash := FView.GetPrecalculateHash;
 	Settings.CheckCRC := FView.GetCheckCRC;
+	Settings.HashCalculatorStrategy := FView.GetHashCalculatorStrategy;
 
 	{Network settings}
 	Settings.ConnectionSettings.SocketTimeout := FView.GetSocketTimeout;

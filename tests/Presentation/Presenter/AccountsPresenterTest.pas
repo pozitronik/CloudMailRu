@@ -62,6 +62,7 @@ type
 		FShowInvitesFolders: Boolean;
 		FPrecalculateHash: Boolean;
 		FCheckCRC: Boolean;
+		FHashCalculatorStrategy: Integer;
 
 		{Network settings}
 		FSocketTimeout: Integer;
@@ -176,6 +177,8 @@ type
 		function GetPrecalculateHash: Boolean;
 		procedure SetCheckCRC(Value: Boolean);
 		function GetCheckCRC: Boolean;
+		procedure SetHashCalculatorStrategy(Value: Integer);
+		function GetHashCalculatorStrategy: Integer;
 
 		{IAccountsView - Network settings}
 		procedure SetSocketTimeout(Value: Integer);
@@ -783,6 +786,16 @@ end;
 function TMockAccountsView.GetCheckCRC: Boolean;
 begin
 	Result := FCheckCRC;
+end;
+
+procedure TMockAccountsView.SetHashCalculatorStrategy(Value: Integer);
+begin
+	FHashCalculatorStrategy := Value;
+end;
+
+function TMockAccountsView.GetHashCalculatorStrategy: Integer;
+begin
+	Result := FHashCalculatorStrategy;
 end;
 
 {Network settings}

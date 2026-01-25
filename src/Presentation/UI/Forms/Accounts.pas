@@ -147,6 +147,7 @@ type
 		CommandPathOpenDialog: TOpenDialog;
 		UserAgentEdit: TEdit;
 		ChangeUserAgentCB: TCheckBox;
+    PrecalculateHashStrategyCombo: TComboBox;
 		procedure FormShow(Sender: TObject);
 		procedure AccountsListClick(Sender: TObject);
 		procedure ApplyButtonClick(Sender: TObject);
@@ -244,6 +245,8 @@ type
 		function GetPrecalculateHash: Boolean;
 		procedure SetCheckCRC(Value: Boolean);
 		function GetCheckCRC: Boolean;
+		procedure SetHashCalculatorStrategy(Value: Integer);
+		function GetHashCalculatorStrategy: Integer;
 
 		{IAccountsView - Network settings}
 		procedure SetSocketTimeout(Value: Integer);
@@ -678,6 +681,16 @@ end;
 function TAccountsForm.GetCheckCRC: Boolean;
 begin
 	Result := CheckCRCCB.Checked;
+end;
+
+procedure TAccountsForm.SetHashCalculatorStrategy(Value: Integer);
+begin
+	PrecalculateHashStrategyCombo.ItemIndex := Value;
+end;
+
+function TAccountsForm.GetHashCalculatorStrategy: Integer;
+begin
+	Result := PrecalculateHashStrategyCombo.ItemIndex;
 end;
 
 {IAccountsView - Network settings}
