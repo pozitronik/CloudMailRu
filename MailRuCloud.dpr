@@ -273,7 +273,7 @@ end;
 
 procedure FreePluginData();
 begin
-	MailRuCloudWFX.Destroy;
+	FreeAndNil(MailRuCloudWFX);
 end;
 
 procedure DllInit(Code: Integer);
