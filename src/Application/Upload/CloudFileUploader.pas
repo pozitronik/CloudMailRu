@@ -138,6 +138,17 @@ begin
 	FSettings := Settings;
 end;
 
+{Attempts to create a file by registering an existing hash in cloud storage.
+	Used for deduplication: if content with this hash already exists on server,
+	a new file pointing to it is created instantly without uploading.
+
+	API behavior:
+	- Returns 200 if hash exists and file was created (deduplication success)
+	- Returns HTTP 400 if hash doesn't exist in cloud storage (not an error,
+	  just means the content must be uploaded first)
+
+	The HTTP 400 response raises EIdHTTPProtocolException which is caught and
+	handled, but may trigger debugger breaks during development.}
 function TCloudFileUploader.AddFileByIdentity(FileIdentity: TCMRFileIdentity; RemotePath: WideString; ConflictMode: WideString; LogErrors: Boolean; LogSuccess: Boolean): Integer;
 var
 	FileName: WideString;
@@ -237,6 +248,9 @@ begin
 		LocalFileIdentity.Hash := FHashCalculator.CalculateHash(FileStream, CALCULATING_HASH);
 		LocalFileIdentity.size := FileStream.size;
 	end;
+	{Deduplication: try to create file by hash without uploading.
+		If hash exists on server, file is created instantly. If not, AddFileByIdentity
+		returns error (HTTP 400) and we proceed to actual upload. See AddFileByIdentity comments.}
 	if UseHash and (LocalFileIdentity.Hash <> EmptyWideStr) and (not FDoCryptFiles) and (FS_FILE_OK = AddFileByIdentity(LocalFileIdentity, RemotePath, CLOUD_CONFLICT_STRICT, False, True)) then {issue #135}
 		Exit(CLOUD_OPERATION_OK);
 
@@ -472,7 +486,12 @@ var
 	UseHash: Boolean;
 	Action: TChunkActionResult;
 begin
-	{Try hash deduplication first - may skip upload entirely if file already exists}
+	{Whole-file deduplication: try to register the entire file by hash before splitting.
+		This is a speculative optimization - if the whole file's hash exists on server,
+		the file is created instantly without uploading any chunks.
+		Note: This rarely succeeds for split files since chunked storage uses different hashes.
+		If hash doesn't exist, server returns HTTP 400 (see AddFileByIdentity comments).
+		Each chunk also has its own deduplication check in PutFileStream.}
 	UseHash := FSettings.PrecalculateHash or (FSettings.ForcePrecalculateSize >= FFileSystem.GetFileSize(LocalPath)); {issue #231}
 	if UseHash then
 		LocalFileIdentity := CalculateFileIdentity(GetUNCFilePath(LocalPath));

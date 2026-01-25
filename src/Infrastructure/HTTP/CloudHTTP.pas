@@ -343,7 +343,8 @@ begin
 				CLOUD_OPERATION_FAILED:
 					begin
 						case HTTP.ResponseCode of
-							HTTP_ERROR_BAD_REQUEST, HTTP_ERROR_OVERQUOTA: //recoverable errors
+							HTTP_ERROR_BAD_REQUEST, HTTP_ERROR_OVERQUOTA:
+								{Expected API responses - see Post method comments}
 								begin
 									//Answer := (E as EIdHTTPProtocolException).ErrorMessage; //TODO: нужно протестировать, наверняка тут не json
 								end;
@@ -407,7 +408,11 @@ begin
 			if UnderstandResponseCode and (E is EIdHTTPProtocolException) then
 			begin
 				case HTTP.ResponseCode of
-					HTTP_ERROR_BAD_REQUEST, HTTP_ERROR_OVERQUOTA: //recoverable errors
+					HTTP_ERROR_BAD_REQUEST, HTTP_ERROR_OVERQUOTA:
+						{These are "expected" API responses, not transport errors:
+							- 400: Often means "hash not found" for deduplication checks (see AddFileByIdentity)
+							- 507: Storage quota exceeded
+						Write response body so caller can parse the actual API error.}
 						begin
 							ResultData.WriteString((E as EIdHTTPProtocolException).ErrorMessage);
 							Result := CLOUD_OPERATION_OK;
