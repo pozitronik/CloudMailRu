@@ -185,7 +185,8 @@ end;
 procedure TPropertyForm.SetWebLink(Link: WideString);
 begin
 	WebLink.Text := Link;
-	if Link <> EmptyWideStr then
+	{Only focus when form is active - SetFocus fails if form not yet shown}
+	if (Link <> EmptyWideStr) and Active then
 	begin
 		WebLink.SetFocus;
 		WebLink.SelectAll;
