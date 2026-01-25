@@ -39,6 +39,7 @@ type
 		PrecalculateHash: boolean;
 		ForcePrecalculateSize: int64;
 		CheckCRC: boolean;
+		HashCalculatorStrategy: integer;
 	private
 		FIniFilePath: WideString;
 		FAccountsIniFilePath: WideString;

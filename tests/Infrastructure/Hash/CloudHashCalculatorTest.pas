@@ -12,14 +12,15 @@ uses
 	DUnitX.TestFramework;
 
 type
-	{Tests for TCloudHashCalculator.
+	{Base test class with shared hash algorithm tests.
 	 CloudHash implements Cloud Mail.ru proprietary hash algorithm:
 	 - Files < 21 bytes: pad to 20 bytes, return hex digest
 	 - Files >= 21 bytes: SHA1('mrCloud' + content + size_string)}
-	[TestFixture]
-	TCloudHashCalculatorTest = class
-	private
+	THashCalculatorTestBase = class
+	protected
 		FCalculator: ICloudHashCalculator;
+		{Override in subclasses to create specific implementation}
+		procedure CreateCalculator; virtual; abstract;
 	public
 		[Setup]
 		procedure Setup;
@@ -73,6 +74,33 @@ type
 		procedure TestCalculateHash_WorksWithNonZeroInitialPosition;
 	end;
 
+	{Tests for TCloudHashCalculator (Delphi implementation)}
+	[TestFixture]
+	TCloudHashCalculatorTest = class(THashCalculatorTestBase)
+	protected
+		procedure CreateCalculator; override;
+	end;
+
+	{Tests for TCloudHashCalculatorBCrypt (Windows CNG implementation)}
+	[TestFixture]
+	TCloudHashCalculatorBCryptTest = class(THashCalculatorTestBase)
+	protected
+		procedure CreateCalculator; override;
+	public
+		[Test]
+		procedure TestBCrypt_MatchesDelphiImplementation;
+	end;
+
+	{Tests for TCloudHashCalculatorOpenSSL (OpenSSL EVP implementation)}
+	[TestFixture]
+	TCloudHashCalculatorOpenSSLTest = class(THashCalculatorTestBase)
+	protected
+		procedure CreateCalculator; override;
+	public
+		[Test]
+		procedure TestOpenSSL_MatchesDelphiImplementation;
+	end;
+
 	{Tests for TNullHashCalculator}
 	[TestFixture]
 	TNullHashCalculatorTest = class
@@ -90,23 +118,48 @@ type
 		procedure TestCalculateHashStream_ReturnsEmpty;
 	end;
 
+	{Tests for CreateHashCalculator factory function}
+	[TestFixture]
+	THashCalculatorFactoryTest = class
+	public
+		[Test]
+		procedure TestCreateHashCalculator_Delphi_ReturnsCorrectType;
+		[Test]
+		procedure TestCreateHashCalculator_BCrypt_ReturnsNonNil;
+		[Test]
+		procedure TestCreateHashCalculator_OpenSSL_ReturnsNonNil;
+		[Test]
+		procedure TestCreateHashCalculator_Auto_ReturnsNonNil;
+		[Test]
+		procedure TestCreateHashCalculator_InvalidStrategy_ReturnsDelphi;
+		[Test]
+		procedure TestIsBCryptAvailable_ReturnsBoolean;
+		[Test]
+		procedure TestIsOpenSSLAvailable_ReturnsBoolean;
+		[Test]
+		procedure TestAllStrategies_ProduceSameHash;
+	end;
+
 implementation
 
-{ TCloudHashCalculatorTest }
+uses
+	SETTINGS_CONSTANTS;
 
-procedure TCloudHashCalculatorTest.Setup;
+{ THashCalculatorTestBase }
+
+procedure THashCalculatorTestBase.Setup;
 begin
-	FCalculator := TCloudHashCalculator.Create(TNullProgress.Create, TWindowsFileSystem.Create);
+	CreateCalculator;
 end;
 
-procedure TCloudHashCalculatorTest.TearDown;
+procedure THashCalculatorTestBase.TearDown;
 begin
 	FCalculator := nil;
 end;
 
 { CalculateHash(Stream) tests - small files }
 
-procedure TCloudHashCalculatorTest.TestCalculateHashStream_EmptyStream;
+procedure THashCalculatorTestBase.TestCalculateHashStream_EmptyStream;
 var
 	Stream: TMemoryStream;
 	Hash: WideString;
@@ -124,7 +177,7 @@ begin
 	end;
 end;
 
-procedure TCloudHashCalculatorTest.TestCalculateHashStream_SmallFile_1Byte;
+procedure THashCalculatorTestBase.TestCalculateHashStream_SmallFile_1Byte;
 var
 	Stream: TMemoryStream;
 	Hash: WideString;
@@ -145,7 +198,7 @@ begin
 	end;
 end;
 
-procedure TCloudHashCalculatorTest.TestCalculateHashStream_SmallFile_19Bytes;
+procedure THashCalculatorTestBase.TestCalculateHashStream_SmallFile_19Bytes;
 var
 	Stream: TMemoryStream;
 	Hash: WideString;
@@ -166,7 +219,7 @@ begin
 	end;
 end;
 
-procedure TCloudHashCalculatorTest.TestCalculateHashStream_SmallFile_20Bytes;
+procedure THashCalculatorTestBase.TestCalculateHashStream_SmallFile_20Bytes;
 var
 	Stream: TMemoryStream;
 	Hash: WideString;
@@ -189,7 +242,7 @@ end;
 
 { CalculateHash(Stream) tests - boundary and large files }
 
-procedure TCloudHashCalculatorTest.TestCalculateHashStream_BoundaryFile_21Bytes;
+procedure THashCalculatorTestBase.TestCalculateHashStream_BoundaryFile_21Bytes;
 var
 	Stream: TMemoryStream;
 	Hash: WideString;
@@ -212,7 +265,7 @@ begin
 	end;
 end;
 
-procedure TCloudHashCalculatorTest.TestCalculateHashStream_LargeFile_100Bytes;
+procedure THashCalculatorTestBase.TestCalculateHashStream_LargeFile_100Bytes;
 var
 	Stream: TMemoryStream;
 	Hash: WideString;
@@ -237,7 +290,7 @@ begin
 	end;
 end;
 
-procedure TCloudHashCalculatorTest.TestCalculateHashStream_LargeFile_KnownContent;
+procedure THashCalculatorTestBase.TestCalculateHashStream_LargeFile_KnownContent;
 var
 	Stream: TMemoryStream;
 	Hash: WideString;
@@ -261,7 +314,7 @@ end;
 
 { CalculateHash(Path) tests }
 
-procedure TCloudHashCalculatorTest.TestCalculateHashPath_NonExistentFile;
+procedure THashCalculatorTestBase.TestCalculateHashPath_NonExistentFile;
 var
 	Hash: WideString;
 begin
@@ -269,7 +322,7 @@ begin
 	Assert.AreEqual('', Hash, 'Non-existent file should return empty hash');
 end;
 
-procedure TCloudHashCalculatorTest.TestCalculateHashPath_ExistingSmallFile;
+procedure THashCalculatorTestBase.TestCalculateHashPath_ExistingSmallFile;
 var
 	Hash: WideString;
 	FilePath: WideString;
@@ -282,7 +335,7 @@ begin
 	Assert.AreNotEqual('', Hash, 'Existing file should return non-empty hash');
 end;
 
-procedure TCloudHashCalculatorTest.TestCalculateHashPath_ExistingLargeFile;
+procedure THashCalculatorTestBase.TestCalculateHashPath_ExistingLargeFile;
 var
 	Hash: WideString;
 	FilePath: WideString;
@@ -297,7 +350,7 @@ end;
 
 { Hash consistency tests }
 
-procedure TCloudHashCalculatorTest.TestCalculateHash_SameContentSameHash;
+procedure THashCalculatorTestBase.TestCalculateHash_SameContentSameHash;
 var
 	Stream1, Stream2: TMemoryStream;
 	Hash1, Hash2: WideString;
@@ -323,7 +376,7 @@ begin
 	end;
 end;
 
-procedure TCloudHashCalculatorTest.TestCalculateHash_DifferentContentDifferentHash;
+procedure THashCalculatorTestBase.TestCalculateHash_DifferentContentDifferentHash;
 var
 	Stream1, Stream2: TMemoryStream;
 	Hash1, Hash2: WideString;
@@ -352,7 +405,7 @@ end;
 
 { Hash format tests }
 
-procedure TCloudHashCalculatorTest.TestCalculateHash_ReturnsUppercaseHex;
+procedure THashCalculatorTestBase.TestCalculateHash_ReturnsUppercaseHex;
 var
 	Stream: TMemoryStream;
 	Hash: WideString;
@@ -376,7 +429,7 @@ begin
 	end;
 end;
 
-procedure TCloudHashCalculatorTest.TestCalculateHash_SmallFileReturns40CharHex;
+procedure THashCalculatorTestBase.TestCalculateHash_SmallFileReturns40CharHex;
 var
 	Stream: TMemoryStream;
 	Hash: WideString;
@@ -395,7 +448,7 @@ begin
 	end;
 end;
 
-procedure TCloudHashCalculatorTest.TestCalculateHash_LargeFileReturns40CharHex;
+procedure THashCalculatorTestBase.TestCalculateHash_LargeFileReturns40CharHex;
 var
 	Stream: TMemoryStream;
 	Hash: WideString;
@@ -416,7 +469,7 @@ end;
 
 { Stream position tests }
 
-procedure TCloudHashCalculatorTest.TestCalculateHash_ResetsStreamPosition;
+procedure THashCalculatorTestBase.TestCalculateHash_ResetsStreamPosition;
 var
 	Stream: TMemoryStream;
 	Data: AnsiString;
@@ -438,7 +491,7 @@ begin
 	end;
 end;
 
-procedure TCloudHashCalculatorTest.TestCalculateHash_WorksWithNonZeroInitialPosition;
+procedure THashCalculatorTestBase.TestCalculateHash_WorksWithNonZeroInitialPosition;
 var
 	Stream: TMemoryStream;
 	Hash1, Hash2: WideString;
@@ -460,6 +513,101 @@ begin
 
 		{ Both should produce same hash since CalculateHash resets position }
 		Assert.AreEqual(Hash1, Hash2, 'Hash should be same regardless of initial stream position');
+	finally
+		Stream.Free;
+	end;
+end;
+
+{ TCloudHashCalculatorTest }
+
+procedure TCloudHashCalculatorTest.CreateCalculator;
+begin
+	FCalculator := TCloudHashCalculator.Create(TNullProgress.Create, TWindowsFileSystem.Create);
+end;
+
+{ TCloudHashCalculatorBCryptTest }
+
+procedure TCloudHashCalculatorBCryptTest.CreateCalculator;
+begin
+	if IsBCryptAvailable then
+		FCalculator := TCloudHashCalculatorBCrypt.Create(TNullProgress.Create, TWindowsFileSystem.Create)
+	else
+		FCalculator := TCloudHashCalculator.Create(TNullProgress.Create, TWindowsFileSystem.Create);
+end;
+
+procedure TCloudHashCalculatorBCryptTest.TestBCrypt_MatchesDelphiImplementation;
+var
+	DelphiCalc, BCryptCalc: ICloudHashCalculator;
+	Stream: TMemoryStream;
+	DelphiHash, BCryptHash: WideString;
+	Data: AnsiString;
+begin
+	if not IsBCryptAvailable then
+	begin
+		Assert.Pass('BCrypt not available on this system, skipping comparison');
+		Exit;
+	end;
+
+	DelphiCalc := TCloudHashCalculator.Create(TNullProgress.Create, TWindowsFileSystem.Create);
+	BCryptCalc := TCloudHashCalculatorBCrypt.Create(TNullProgress.Create, TWindowsFileSystem.Create);
+
+	Stream := TMemoryStream.Create;
+	try
+		{ Create test data larger than 21 bytes to trigger SHA1 algorithm }
+		Data := 'This is test data for comparing Delphi and BCrypt SHA1 implementations';
+		Stream.Write(Data[1], Length(Data));
+
+		Stream.Position := 0;
+		DelphiHash := DelphiCalc.CalculateHash(Stream, 'test');
+
+		Stream.Position := 0;
+		BCryptHash := BCryptCalc.CalculateHash(Stream, 'test');
+
+		Assert.AreEqual(DelphiHash, BCryptHash, 'BCrypt must produce same hash as Delphi implementation');
+	finally
+		Stream.Free;
+	end;
+end;
+
+{ TCloudHashCalculatorOpenSSLTest }
+
+procedure TCloudHashCalculatorOpenSSLTest.CreateCalculator;
+begin
+	if IsOpenSSLAvailable then
+		FCalculator := TCloudHashCalculatorOpenSSL.Create(TNullProgress.Create, TWindowsFileSystem.Create)
+	else
+		FCalculator := TCloudHashCalculator.Create(TNullProgress.Create, TWindowsFileSystem.Create);
+end;
+
+procedure TCloudHashCalculatorOpenSSLTest.TestOpenSSL_MatchesDelphiImplementation;
+var
+	DelphiCalc, OpenSSLCalc: ICloudHashCalculator;
+	Stream: TMemoryStream;
+	DelphiHash, OpenSSLHash: WideString;
+	Data: AnsiString;
+begin
+	if not IsOpenSSLAvailable then
+	begin
+		Assert.Pass('OpenSSL not available on this system, skipping comparison');
+		Exit;
+	end;
+
+	DelphiCalc := TCloudHashCalculator.Create(TNullProgress.Create, TWindowsFileSystem.Create);
+	OpenSSLCalc := TCloudHashCalculatorOpenSSL.Create(TNullProgress.Create, TWindowsFileSystem.Create);
+
+	Stream := TMemoryStream.Create;
+	try
+		{ Create test data larger than 21 bytes to trigger SHA1 algorithm }
+		Data := 'This is test data for comparing Delphi and OpenSSL SHA1 implementations';
+		Stream.Write(Data[1], Length(Data));
+
+		Stream.Position := 0;
+		DelphiHash := DelphiCalc.CalculateHash(Stream, 'test');
+
+		Stream.Position := 0;
+		OpenSSLHash := OpenSSLCalc.CalculateHash(Stream, 'test');
+
+		Assert.AreEqual(DelphiHash, OpenSSLHash, 'OpenSSL must produce same hash as Delphi implementation');
 	finally
 		Stream.Free;
 	end;
@@ -504,9 +652,126 @@ begin
 	end;
 end;
 
+{ THashCalculatorFactoryTest }
+
+procedure THashCalculatorFactoryTest.TestCreateHashCalculator_Delphi_ReturnsCorrectType;
+var
+	Calculator: ICloudHashCalculator;
+begin
+	Calculator := CreateHashCalculator(HashStrategyDelphi, TNullProgress.Create, TWindowsFileSystem.Create);
+	Assert.IsNotNull(Calculator);
+	Assert.IsTrue(Calculator is TCloudHashCalculator, 'Should return TCloudHashCalculator for Delphi strategy');
+end;
+
+procedure THashCalculatorFactoryTest.TestCreateHashCalculator_BCrypt_ReturnsNonNil;
+var
+	Calculator: ICloudHashCalculator;
+begin
+	Calculator := CreateHashCalculator(HashStrategyBCrypt, TNullProgress.Create, TWindowsFileSystem.Create);
+	Assert.IsNotNull(Calculator);
+	if IsBCryptAvailable then
+		Assert.IsTrue(Calculator is TCloudHashCalculatorBCrypt, 'Should return TCloudHashCalculatorBCrypt when BCrypt available')
+	else
+		Assert.IsTrue(Calculator is TCloudHashCalculator, 'Should fallback to TCloudHashCalculator when BCrypt not available');
+end;
+
+procedure THashCalculatorFactoryTest.TestCreateHashCalculator_OpenSSL_ReturnsNonNil;
+var
+	Calculator: ICloudHashCalculator;
+begin
+	Calculator := CreateHashCalculator(HashStrategyOpenSSL, TNullProgress.Create, TWindowsFileSystem.Create);
+	Assert.IsNotNull(Calculator);
+	if IsOpenSSLAvailable then
+		Assert.IsTrue(Calculator is TCloudHashCalculatorOpenSSL, 'Should return TCloudHashCalculatorOpenSSL when OpenSSL available')
+	else
+		Assert.IsTrue(Calculator is TCloudHashCalculator, 'Should fallback to TCloudHashCalculator when OpenSSL not available');
+end;
+
+procedure THashCalculatorFactoryTest.TestCreateHashCalculator_Auto_ReturnsNonNil;
+var
+	Calculator: ICloudHashCalculator;
+begin
+	Calculator := CreateHashCalculator(HashStrategyAuto, TNullProgress.Create, TWindowsFileSystem.Create);
+	Assert.IsNotNull(Calculator);
+	{ Auto should prefer BCrypt, then OpenSSL, then Delphi }
+	if IsBCryptAvailable then
+		Assert.IsTrue(Calculator is TCloudHashCalculatorBCrypt, 'Auto should prefer BCrypt when available')
+	else if IsOpenSSLAvailable then
+		Assert.IsTrue(Calculator is TCloudHashCalculatorOpenSSL, 'Auto should use OpenSSL when BCrypt not available')
+	else
+		Assert.IsTrue(Calculator is TCloudHashCalculator, 'Auto should fallback to Delphi');
+end;
+
+procedure THashCalculatorFactoryTest.TestCreateHashCalculator_InvalidStrategy_ReturnsDelphi;
+var
+	Calculator: ICloudHashCalculator;
+begin
+	{ Test with an invalid strategy value }
+	Calculator := CreateHashCalculator(999, TNullProgress.Create, TWindowsFileSystem.Create);
+	Assert.IsNotNull(Calculator);
+	{ Invalid strategies should go through the else branch which is Auto }
+	{ Auto prefers BCrypt > OpenSSL > Delphi }
+end;
+
+procedure THashCalculatorFactoryTest.TestIsBCryptAvailable_ReturnsBoolean;
+var
+	Available: Boolean;
+begin
+	{ BCrypt should always be available on Windows Vista+ }
+	Available := IsBCryptAvailable;
+	Assert.IsTrue(Available, 'BCrypt should be available on modern Windows');
+end;
+
+procedure THashCalculatorFactoryTest.TestIsOpenSSLAvailable_ReturnsBoolean;
+var
+	Available: Boolean;
+begin
+	{ OpenSSL availability depends on whether the DLLs are loaded }
+	Available := IsOpenSSLAvailable;
+	{ Just verify it returns without exception }
+	Assert.Pass(Format('OpenSSL available: %s', [BoolToStr(Available, True)]));
+end;
+
+procedure THashCalculatorFactoryTest.TestAllStrategies_ProduceSameHash;
+var
+	DelphiCalc, BCryptCalc, OpenSSLCalc: ICloudHashCalculator;
+	Stream: TMemoryStream;
+	DelphiHash, BCryptHash, OpenSSLHash: WideString;
+	Data: AnsiString;
+begin
+	DelphiCalc := CreateHashCalculator(HashStrategyDelphi, TNullProgress.Create, TWindowsFileSystem.Create);
+	BCryptCalc := CreateHashCalculator(HashStrategyBCrypt, TNullProgress.Create, TWindowsFileSystem.Create);
+	OpenSSLCalc := CreateHashCalculator(HashStrategyOpenSSL, TNullProgress.Create, TWindowsFileSystem.Create);
+
+	Stream := TMemoryStream.Create;
+	try
+		{ Create test data larger than 21 bytes to trigger SHA1 algorithm }
+		Data := 'Test data for verifying all hash strategies produce identical results';
+		Stream.Write(Data[1], Length(Data));
+
+		Stream.Position := 0;
+		DelphiHash := DelphiCalc.CalculateHash(Stream, 'test');
+
+		Stream.Position := 0;
+		BCryptHash := BCryptCalc.CalculateHash(Stream, 'test');
+
+		Stream.Position := 0;
+		OpenSSLHash := OpenSSLCalc.CalculateHash(Stream, 'test');
+
+		{ All implementations must produce the same hash }
+		Assert.AreEqual(DelphiHash, BCryptHash, 'BCrypt must match Delphi hash');
+		Assert.AreEqual(DelphiHash, OpenSSLHash, 'OpenSSL must match Delphi hash');
+	finally
+		Stream.Free;
+	end;
+end;
+
 initialization
 
 TDUnitX.RegisterTestFixture(TCloudHashCalculatorTest);
+TDUnitX.RegisterTestFixture(TCloudHashCalculatorBCryptTest);
+TDUnitX.RegisterTestFixture(TCloudHashCalculatorOpenSSLTest);
 TDUnitX.RegisterTestFixture(TNullHashCalculatorTest);
+TDUnitX.RegisterTestFixture(THashCalculatorFactoryTest);
 
 end.

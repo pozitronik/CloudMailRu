@@ -57,6 +57,12 @@ const
 	EncryptModeAskOnce = 2; //С прозрачным шифрованием, без хранения пароля
 	//EncryptModeAskAlways = 3; //не буду поддерживать без необходимости
 
+	{Hash calculator strategy selection - allows choosing between different SHA1 implementations}
+	HashStrategyAuto = 0; {Auto-select best available (BCrypt > OpenSSL > Delphi)}
+	HashStrategyDelphi = 1; {Use Delphi's System.Hash.THashSHA1}
+	HashStrategyBCrypt = 2; {Use Windows BCrypt/CNG API (hardware-accelerated)}
+	HashStrategyOpenSSL = 3; {Use OpenSSL EVP functions (already loaded for HTTPS)}
+
 	DOT = '.'; {Just a dot, it used to trail files extensions in some situations}
 
 	TrashPostfix = '.trash';

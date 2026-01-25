@@ -17,6 +17,7 @@ type
 		PrecalculateHash: boolean;
 		ForcePrecalculateSize: int64;
 		CheckCRC: boolean;
+		HashCalculatorStrategy: integer;
 		CloudMaxFileSize: int64;
 		OperationErrorMode: integer;
 		RetryAttempts: integer;
@@ -38,6 +39,7 @@ begin
 	Result.PrecalculateHash := PluginSettings.PrecalculateHash;
 	Result.ForcePrecalculateSize := PluginSettings.ForcePrecalculateSize;
 	Result.CheckCRC := PluginSettings.CheckCRC;
+	Result.HashCalculatorStrategy := PluginSettings.HashCalculatorStrategy;
 	Result.CloudMaxFileSize := PluginSettings.CloudMaxFileSize;
 	Result.OperationErrorMode := PluginSettings.OperationErrorMode;
 	Result.RetryAttempts := PluginSettings.RetryAttempts;

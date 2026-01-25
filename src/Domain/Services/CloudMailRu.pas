@@ -196,8 +196,8 @@ begin
 
 		FCookieManager := TIdCookieManager.Create();
 
-		{Initialize hash calculator service}
-		FHashCalculator := TCloudHashCalculator.Create(Progress, FileSystem);
+		{Initialize hash calculator service using strategy from settings}
+		FHashCalculator := CreateHashCalculator(CloudSettings.HashCalculatorStrategy, Progress, FileSystem);
 
 		{Initialize shard manager with HTTP callbacks for resolution}
 		FShardManager := TCloudShardManager.Create(Logger,
@@ -212,8 +212,7 @@ begin
 			function: WideString
 			begin
 				Result := Self.FUnitedParams;
-			end,
-			FSettings.AccountSettings.ShardOverride, FSettings.AccountSettings.UploadUrlOverride);
+			end, FSettings.AccountSettings.ShardOverride, FSettings.AccountSettings.UploadUrlOverride);
 
 		{Initialize retry operation handler with HTTP callbacks}
 		FRetryOperation := TRetryOperation.Create(
@@ -311,8 +310,7 @@ begin
 			function(var SpaceInfo: TCMRSpace): Boolean
 			begin
 				Result := Self.GetUserSpace(SpaceInfo);
-			end,
-			FDoCryptFiles, FDoCryptFilenames, UploadSettings);
+			end, FDoCryptFiles, FDoCryptFilenames, UploadSettings);
 
 		{Initialize share service with callbacks for dynamic state}
 		FShareService := TCloudShareService.Create(Self.HTTP, FLogger, FRetryOperation,

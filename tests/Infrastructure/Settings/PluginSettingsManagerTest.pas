@@ -96,6 +96,12 @@ type
 
 		[Test]
 		procedure Test_Save_WritesConnectionSettings;
+
+		[Test]
+		procedure Test_Save_WritesHashCalculatorStrategy;
+
+		[Test]
+		procedure Test_HashCalculatorStrategy_DefaultsToAuto;
 	end;
 
 	[TestFixture]
@@ -418,6 +424,28 @@ begin
 	Assert.AreEqual(1000000, FConfigFile.ReadInteger('Main', 'UploadBPS', 0));
 	Assert.AreEqual(2000000, FConfigFile.ReadInteger('Main', 'DownloadBPS', 0));
 	Assert.AreEqual('CustomAgent/1.0', FConfigFile.ReadString('Main', 'UserAgent', ''));
+end;
+
+procedure TPluginSettingsManagerSaveTest.Test_Save_WritesHashCalculatorStrategy;
+begin
+	FManager.Settings.HashCalculatorStrategy := HashStrategyBCrypt;
+
+	FManager.Save;
+
+	Assert.AreEqual(HashStrategyBCrypt, FConfigFile.ReadInteger('Main', 'HashCalculatorStrategy', 0));
+end;
+
+procedure TPluginSettingsManagerSaveTest.Test_HashCalculatorStrategy_DefaultsToAuto;
+var
+	DefaultManager: TPluginSettingsManager;
+begin
+	{Create manager with empty config - should use defaults}
+	DefaultManager := TPluginSettingsManager.Create(TMemoryConfigFile.Create(''));
+	try
+		Assert.AreEqual(HashStrategyAuto, DefaultManager.Settings.HashCalculatorStrategy);
+	finally
+		DefaultManager.Free;
+	end;
 end;
 
 {TPluginSettingsManagerStreamingTest}

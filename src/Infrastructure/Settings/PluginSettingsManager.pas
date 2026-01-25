@@ -280,6 +280,7 @@ begin
 		PrecalculateHash := FConfigFile.ReadBool('Main', 'PrecalculateHash', True);
 		ForcePrecalculateSize := FConfigFile.ReadInt64('Main', 'ForcePrecalculateSize', CLOUD_PRECALCULATE_LIMIT_DEFAULT);
 		CheckCRC := FConfigFile.ReadBool('Main', 'CheckCRC', True);
+		HashCalculatorStrategy := FConfigFile.ReadInteger('Main', 'HashCalculatorStrategy', HashStrategyAuto);
 	end;
 	Settings.IniFilePath := FIniFilePath;
 	Settings.AccountsIniFilePath := AccountsIniFilePath;
@@ -328,6 +329,7 @@ begin
 		FConfigFile.WriteBoolIfNotDefault('Main', 'PrecalculateHash', PrecalculateHash, True);
 		FConfigFile.WriteInt64IfNotDefault('Main', 'ForcePrecalculateSize', ForcePrecalculateSize, CLOUD_PRECALCULATE_LIMIT_DEFAULT);
 		FConfigFile.WriteBoolIfNotDefault('Main', 'CheckCRC', CheckCRC, True);
+		FConfigFile.WriteIntegerIfNotDefault('Main', 'HashCalculatorStrategy', HashCalculatorStrategy, HashStrategyAuto);
 	end;
 end;
 
