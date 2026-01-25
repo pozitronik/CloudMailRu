@@ -46,7 +46,7 @@ type
 		DeleteButton: TButton;
 		PreserveFileTimeCB: TCheckBox;
 		UseDLLFromPluginDir: TCheckBox;
-		GlobalSettingApplyBTN: TButton;
+		GlobalSettingsApplyBtn: TButton;
 		AccountsPanel: TPanel;
 		AccountNameEdit: TEdit;
 		AccountNameLabel: TLabel;
@@ -76,7 +76,7 @@ type
 		ProxyPwd: TMaskEdit;
 		ProxyTCPwdMngrCB: TCheckBox;
 		SocketTimeoutLabel: TLabel;
-		GlobalSettingApplyBTN2: TButton;
+		NetworkSettingsApplyBtn: TButton;
 		CloudMaxFileSizeValue: TEdit;
 		CloudMaxFileSizeLabelBytes: TLabel;
 		CloudMaxFileSizeCB: TCheckBox;
@@ -107,7 +107,7 @@ type
 		CommentsTab: TTabSheet;
 		DescriptionEnabledCB: TCheckBox;
 		DescriptionEditorEnabledCB: TCheckBox;
-		GlobalSettingApplyBTN3: TButton;
+		CommentsSettingsApplyBtn: TButton;
 		DescriptionCopyToCloudCB: TCheckBox;
 		DescriptionCopyFromCloudCB: TCheckBox;
 		DescriptionFileNameLabel: TLabel;
@@ -155,7 +155,7 @@ type
 		class function ShowAccounts(ParentWindow: HWND; PasswordManager: IPasswordManager; Account: WideString): Boolean;
 		procedure FormActivate(Sender: TObject);
 		procedure ProxyUserEditChange(Sender: TObject);
-		procedure GlobalSettingApplyBTNClick(Sender: TObject);
+		procedure GlobalSettingsApplyBtnClick(Sender: TObject);
 		procedure PublicAccountCBClick(Sender: TObject);
 		procedure CloudMaxFileSizeCBClick(Sender: TObject);
 		procedure EncryptFilesComboChange(Sender: TObject);
@@ -1018,8 +1018,13 @@ begin
 end;
 
 procedure TAccountsForm.CommandPathButtonClick(Sender: TObject);
+var
+	InitDir: string;
 begin
-	CommandPathOpenDialog.InitialDir := ExtractUniversalFilePath(CommandPathEdit.Text);
+	InitDir := ExtractUniversalFilePath(CommandPathEdit.Text);
+	if InitDir = '' then
+		InitDir := TPath.GetSharedDocumentsPath;  {Fallback to known location when edit is empty}
+	CommandPathOpenDialog.InitialDir := InitDir;
 	if CommandPathOpenDialog.Execute(Self.ParentWindow) then
 		CommandPathEdit.Text := CommandPathOpenDialog.FileName;
 end;
@@ -1066,7 +1071,7 @@ begin
 	AccountsList.SetFocus;
 end;
 
-procedure TAccountsForm.GlobalSettingApplyBTNClick(Sender: TObject);
+procedure TAccountsForm.GlobalSettingsApplyBtnClick(Sender: TObject);
 begin
 	if Assigned(FPresenter) then
 		FPresenter.OnApplyGlobalSettingsClick;

@@ -160,6 +160,8 @@ object AccountsForm: TAccountsForm
     ActivePage = AccountsTab
     Align = alClient
     TabOrder = 0
+    ExplicitWidth = 489
+    ExplicitHeight = 459
     object AccountsTab: TTabSheet
       Caption = 'Accounts'
       DesignSize = (
@@ -174,13 +176,14 @@ object AccountsForm: TAccountsForm
         Caption = 'Account name'
       end
       object AccountsGroupBox: TGroupBox
-        Left = -4
+        Left = 0
         Top = 0
         Width = 225
         Height = 449
         Anchors = [akLeft, akTop, akBottom]
         Caption = 'Accounts'
         TabOrder = 0
+        ExplicitHeight = 432
         DesignSize = (
           225
           449)
@@ -195,6 +198,7 @@ object AccountsForm: TAccountsForm
           TabOrder = 0
           OnClick = AccountsListClick
           OnKeyUp = AccountsListKeyUp
+          ExplicitHeight = 412
         end
       end
       object ApplyButton: TButton
@@ -293,7 +297,7 @@ object AccountsForm: TAccountsForm
           Top = 161
           Width = 254
           Height = 100
-          Caption = 'Encryption (UNDER HEAVY DEVELOPMENT)'
+          Caption = 'Encryption (experimental)'
           TabOrder = 5
           object EncryptFilesLabel: TLabel
             Left = 7
@@ -330,8 +334,11 @@ object AccountsForm: TAccountsForm
             Top = 39
             Width = 84
             Height = 21
+            Hint = 'Enabled when encryption mode is set'
             Caption = 'Set password'
             Enabled = False
+            ParentShowHint = False
+            ShowHint = True
             TabOrder = 2
             OnClick = EncryptFilesPwdButtonClick
           end
@@ -344,6 +351,7 @@ object AccountsForm: TAccountsForm
         Height = 21
         Anchors = [akLeft, akTop, akRight]
         TabOrder = 1
+        ExplicitWidth = 247
       end
       object PublicAccountCB: TCheckBox
         Left = 225
@@ -393,7 +401,7 @@ object AccountsForm: TAccountsForm
       Caption = 'Global settings'
       ImageIndex = 1
       object CloudMaxFileSizeLabelBytes: TLabel
-        Left = 292
+        Left = 313
         Top = 96
         Width = 27
         Height = 13
@@ -439,21 +447,32 @@ object AccountsForm: TAccountsForm
         Top = 148
         Width = 77
         Height = 13
+        Hint = 
+          'Number of retry attempts on error (-1 for infinite, 0 to disable' +
+          ')'
         Caption = 'Retry attempts:'
+        ParentShowHint = False
+        ShowHint = True
       end
       object RetryWaitLabel: TLabel
         Left = 339
         Top = 148
         Width = 20
         Height = 13
+        Hint = 'Delay between retry attempts in milliseconds'
         Caption = 'wait'
+        ParentShowHint = False
+        ShowHint = True
       end
       object msLabel: TLabel
         Left = 466
         Top = 148
         Width = 13
         Height = 13
+        Hint = 'Delay between retry attempts in milliseconds'
         Caption = 'ms'
+        ParentShowHint = False
+        ShowHint = True
       end
       object ShowAccountsLabel: TLabel
         Left = 5
@@ -467,7 +486,10 @@ object AccountsForm: TAccountsForm
         Top = 175
         Width = 172
         Height = 13
+        Hint = 'How to transfer files between different cloud accounts'
         Caption = 'Copying/moving between accounts:'
+        ParentShowHint = False
+        ShowHint = True
       end
       object PreserveFileTimeCB: TCheckBox
         Left = 5
@@ -485,19 +507,17 @@ object AccountsForm: TAccountsForm
         Caption = 'Load SSL libraries only from plugin directory'
         TabOrder = 0
       end
-      object GlobalSettingApplyBTN: TButton
+      object GlobalSettingsApplyBtn: TButton
         Left = 405
         Top = 417
         Width = 75
         Height = 25
         Caption = 'Apply'
-        ParentShowHint = False
-        ShowHint = False
         TabOrder = 21
-        OnClick = GlobalSettingApplyBTNClick
+        OnClick = GlobalSettingsApplyBtnClick
       end
       object CloudMaxFileSizeValue: TEdit
-        Left = 142
+        Left = 160
         Top = 93
         Width = 146
         Height = 21
@@ -508,9 +528,14 @@ object AccountsForm: TAccountsForm
       object CloudMaxFileSizeCB: TCheckBox
         Left = 5
         Top = 95
-        Width = 134
+        Width = 145
         Height = 17
+        Hint = 
+          'Default: 2147483392 bytes (~2GB). Files larger than this are spl' +
+          'it into chunks'
         Caption = 'Override split file size to'
+        ParentShowHint = False
+        ShowHint = True
         TabOrder = 6
         OnClick = CloudMaxFileSizeCBClick
       end
@@ -704,7 +729,10 @@ object AccountsForm: TAccountsForm
         Top = 11
         Width = 228
         Height = 13
+        Hint = 'Default: 30000ms (30 seconds). Use -1 for system default'
         Caption = 'Network operations timeout, ms (-1 to default):'
+        ParentShowHint = False
+        ShowHint = True
       end
       object ProxyGB: TGroupBox
         Left = 5
@@ -809,16 +837,14 @@ object AccountsForm: TAccountsForm
           TabOrder = 4
         end
       end
-      object GlobalSettingApplyBTN2: TButton
+      object NetworkSettingsApplyBtn: TButton
         Left = 405
         Top = 417
         Width = 75
         Height = 25
         Caption = 'Apply'
-        ParentShowHint = False
-        ShowHint = False
         TabOrder = 5
-        OnClick = GlobalSettingApplyBTNClick
+        OnClick = GlobalSettingsApplyBtnClick
       end
       object SocketTimeoutEdit: TSpinEdit
         Left = 239
@@ -842,14 +868,20 @@ object AccountsForm: TAccountsForm
           Top = 21
           Width = 206
           Height = 13
+          Hint = 'Use -1 or 0 for unlimited upload speed'
           Caption = 'Limit uploads bits per second (-1 for none):'
+          ParentShowHint = False
+          ShowHint = True
         end
         object DownloadsBPSLabel: TLabel
           Left = 5
           Top = 49
           Width = 220
           Height = 13
+          Hint = 'Use -1 or 0 for unlimited download speed'
           Caption = 'Limit downloads bits per second (-1 for none):'
+          ParentShowHint = False
+          ShowHint = True
         end
         object UploadBPSEdit: TSpinEdit
           Left = 230
@@ -895,9 +927,12 @@ object AccountsForm: TAccountsForm
       object DescriptionFileNameLabel: TLabel
         Left = 5
         Top = 118
-        Width = 180
+        Width = 151
         Height = 13
-        Caption = 'Override default comments file name:'
+        Hint = 'Leave empty to use default descript.ion'
+        Caption = 'Override descript.ion file name:'
+        ParentShowHint = False
+        ShowHint = True
       end
       object DescriptionEnabledCB: TCheckBox
         Left = 5
@@ -915,23 +950,21 @@ object AccountsForm: TAccountsForm
         Caption = 'Enable descript.ion editor (experimental)'
         TabOrder = 1
       end
-      object GlobalSettingApplyBTN3: TButton
+      object CommentsSettingsApplyBtn: TButton
         Left = 405
         Top = 417
         Width = 75
         Height = 25
         Caption = 'Apply'
-        ParentShowHint = False
-        ShowHint = False
         TabOrder = 6
-        OnClick = GlobalSettingApplyBTNClick
+        OnClick = GlobalSettingsApplyBtnClick
       end
       object DescriptionCopyToCloudCB: TCheckBox
         Left = 5
         Top = 47
         Width = 475
         Height = 17
-        Caption = 'Copy file comments from local filesystem (experimental)'
+        Caption = 'Copy descript.ion comments to cloud (experimental)'
         TabOrder = 2
       end
       object DescriptionCopyFromCloudCB: TCheckBox
@@ -939,7 +972,7 @@ object AccountsForm: TAccountsForm
         Top = 70
         Width = 475
         Height = 17
-        Caption = 'Copy file comments from cloud filesystem (experimental)'
+        Caption = 'Copy descript.ion comments from cloud (experimental)'
         TabOrder = 3
       end
       object DescriptionFileNameEdit: TEdit
@@ -954,9 +987,10 @@ object AccountsForm: TAccountsForm
         Top = 93
         Width = 475
         Height = 17
-        Caption = 
-          'Track cloud filesystem changes (file rename, delete, etc) (exper' +
-          'imental)'
+        Hint = 'Updates descript.ion when files are renamed or deleted in cloud'
+        Caption = 'Track cloud filesystem changes (experimental)'
+        ParentShowHint = False
+        ShowHint = True
         TabOrder = 4
       end
     end
@@ -1007,8 +1041,8 @@ object AccountsForm: TAccountsForm
         Caption = 'Streaming type'
       end
       object TExtensionsGroupBox: TGroupBox
-        Left = -4
-        Top = -1
+        Left = 0
+        Top = 0
         Width = 225
         Height = 449
         Anchors = [akLeft, akTop, akBottom]
