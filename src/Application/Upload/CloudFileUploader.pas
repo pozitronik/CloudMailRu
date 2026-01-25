@@ -1,5 +1,18 @@
 ﻿unit CloudFileUploader;
 
+{TODO: Known issues with chunked upload:
+
+ 1. No quota pre-check: Upload of 10GB file to 8GB account is not rejected early.
+    Solution: Call GetUserSpace before upload, compare file size against available space,
+    reject with clear error message if insufficient.
+
+ 2. Progress bar shows chunk progress, not overall file progress:
+    TC displays correct chunk name (filename.001) but progress resets 0-100% per chunk.
+    Root cause: HTTPProgress calculates percent from current chunk's ContentLength.
+    Solution: Pass chunk context (index, total count) to HTTP layer, scale progress:
+      OverallPercent = (ChunkIndex * 100 + ChunkPercent) / TotalChunks
+    This requires ICloudHTTP interface changes to support progress scaling context.}
+
 interface
 
 uses
