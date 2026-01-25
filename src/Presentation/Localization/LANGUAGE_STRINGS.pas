@@ -14,10 +14,12 @@ const
 	ASK_SENT_CODE = 'Enter code sent to %s.';
 	AWAIT_SECURITY_KEY = 'Awaiting for security key...';
 	CALCULATING_HASH = 'Calculating cloud hash';
+	CALCULATING_HASH_FOR = 'Calculating cloud hash for %s';
 	CANCEL = 'Cancel';
 	CHUNK_ABORT = 'Chunk %s already exists, aborting';
 	CHUNK_OVERWRITE = 'Chunk %s already exists, overwriting';
 	CHUNK_SKIP = 'Chunk %s already exists, skipping';
+	CHUNK_SKIP_HASH_MATCH = 'Chunk %s already exists with matching hash, skipping';
 	CLONE_FILE_RETRY = 'File cloning error: %s, retry attempt %d of %d';
 	CONNECTED_TO = 'Connected to %s';
 	CONTINUE_ASK = 'Continue operation?';

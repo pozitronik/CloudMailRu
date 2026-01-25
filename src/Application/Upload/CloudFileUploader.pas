@@ -2,12 +2,12 @@
 
 {TODO: Known issue with chunked upload:
 
- Progress bar shows chunk progress, not overall file progress:
-    TC displays correct chunk name (filename.001) but progress resets 0-100% per chunk.
-    Root cause: HTTPProgress calculates percent from current chunk's ContentLength.
-    Solution: Pass chunk context (index, total count) to HTTP layer, scale progress:
-      OverallPercent = (ChunkIndex * 100 + ChunkPercent) / TotalChunks
-    This requires ICloudHTTP interface changes to support progress scaling context.}
+	Progress bar shows chunk progress, not overall file progress:
+	TC displays correct chunk name (filename.001) but progress resets 0-100% per chunk.
+	Root cause: HTTPProgress calculates percent from current chunk's ContentLength.
+	Solution: Pass chunk context (index, total count) to HTTP layer, scale progress:
+	OverallPercent = (ChunkIndex * 100 + ChunkPercent) / TotalChunks
+	This requires ICloudHTTP interface changes to support progress scaling context.}
 
 interface
 
@@ -159,7 +159,7 @@ end;
 	API behavior:
 	- Returns 200 if hash exists and file was created (deduplication success)
 	- Returns HTTP 400 if hash doesn't exist in cloud storage (not an error,
-	  just means the content must be uploaded first)
+	just means the content must be uploaded first)
 
 	The HTTP 400 response raises EIdHTTPProtocolException which is caught and
 	handled, but may trigger debugger breaks during development.}
@@ -249,6 +249,7 @@ function TCloudFileUploader.PutFileStream(FileName, RemotePath: WideString; File
 var
 	LocalFileIdentity, RemoteFileIdentity: TCMRFileIdentity;
 	OperationResult: Integer;
+	DedupeResult: Integer;
 	MemoryStream: TMemoryStream;
 	UseHash: Boolean;
 begin
@@ -259,14 +260,23 @@ begin
 
 	if UseHash or FSettings.CheckCRC then
 	begin
-		LocalFileIdentity.Hash := FHashCalculator.CalculateHash(FileStream, CALCULATING_HASH);
+		LocalFileIdentity.Hash := FHashCalculator.CalculateHash(FileStream, FileName);
 		LocalFileIdentity.size := FileStream.size;
 	end;
 	{Deduplication: try to create file by hash without uploading.
 		If hash exists on server, file is created instantly. If not, AddFileByIdentity
 		returns error (HTTP 400) and we proceed to actual upload. See AddFileByIdentity comments.}
-	if UseHash and (LocalFileIdentity.Hash <> EmptyWideStr) and (not FDoCryptFiles) and (FS_FILE_OK = AddFileByIdentity(LocalFileIdentity, RemotePath, CLOUD_CONFLICT_STRICT, False, True)) then {issue #135}
-		Exit(CLOUD_OPERATION_OK);
+	if UseHash and (LocalFileIdentity.Hash <> EmptyWideStr) and (not FDoCryptFiles) then
+	begin
+		DedupeResult := AddFileByIdentity(LocalFileIdentity, RemotePath, CLOUD_CONFLICT_STRICT, False, True);
+		if DedupeResult = FS_FILE_OK then
+			Exit(CLOUD_OPERATION_OK) {issue #135}
+		else if DedupeResult = FS_FILE_EXISTS then
+			{Path already exists - return EXISTS so caller can decide (skip for resume scenario).
+				This avoids re-uploading data that's likely already there from previous attempt.}
+			Exit(FS_FILE_EXISTS);
+		{Other errors (hash not found on server): fall through to upload}
+	end;
 
 	try
 		if FDoCryptFiles then {Will encrypt any type of data passed here}
@@ -488,9 +498,9 @@ begin
 end;
 
 {Check available space before split upload.
- If not enough space for all chunks, prompts user to continue with partial upload.
- Returns True to continue upload, False to abort.
- ChunksToUpload is set to the number of chunks that can be uploaded (may be limited by available space).}
+	If not enough space for all chunks, prompts user to continue with partial upload.
+	Returns True to continue upload, False to abort.
+	ChunksToUpload is set to the number of chunks that can be uploaded (may be limited by available space).}
 function TCloudFileUploader.CheckQuotaForSplitUpload(const SplitFileInfo: TFileSplitInfo; var ChunksToUpload: Integer): Boolean;
 var
 	SpaceInfo: TCMRSpace;
@@ -543,10 +553,12 @@ var
 	SplitFileInfo: TFileSplitInfo;
 	ChunkIndex: Integer;
 	ChunksToUpload: Integer;
+	ActualUploads: Integer;
 	ChunkRemotePath: WideString;
 	ChunkStream: TChunkedFileStream;
 	RetryAttemptsCount: Integer;
 	UseHash: Boolean;
+	IsPartialUpload: Boolean;
 	Action: TChunkActionResult;
 begin
 	{Create split info first to determine chunk count for quota check}
@@ -556,25 +568,32 @@ begin
 		if not CheckQuotaForSplitUpload(SplitFileInfo, ChunksToUpload) then
 			Exit(FS_FILE_USERABORT);
 
+		IsPartialUpload := ChunksToUpload < SplitFileInfo.ChunksCount;
+		UseHash := FSettings.PrecalculateHash or (FSettings.ForcePrecalculateSize >= FFileSystem.GetFileSize(LocalPath)); {issue #231}
+
 		{Whole-file deduplication: try to register the entire file by hash before splitting.
+			Skip for partial uploads - pointless to calculate hash for file we can't fully upload.
 			This is a speculative optimization - if the whole file's hash exists on server,
 			the file is created instantly without uploading any chunks.
 			Note: This rarely succeeds for split files since chunked storage uses different hashes.
 			If hash doesn't exist, server returns HTTP 400 (see AddFileByIdentity comments).
 			Each chunk also has its own deduplication check in PutFileStream.}
-		UseHash := FSettings.PrecalculateHash or (FSettings.ForcePrecalculateSize >= FFileSystem.GetFileSize(LocalPath)); {issue #231}
-		if UseHash then
+		if UseHash and (not IsPartialUpload) then
+		begin
 			LocalFileIdentity := CalculateFileIdentity(GetUNCFilePath(LocalPath));
-		{Hash calculation cancellation causes entire operation abort - TC remembers cancel press}
-		if UseHash and (LocalFileIdentity.Hash <> EmptyWideStr) and (not FDoCryptFiles) and (FS_FILE_OK = AddFileByIdentity(LocalFileIdentity, RemotePath, CLOUD_CONFLICT_STRICT, False, True)) then
-			Exit(CLOUD_OPERATION_OK); {issue #135}
+			{Hash calculation cancellation causes entire operation abort - TC remembers cancel press}
+			if (LocalFileIdentity.Hash <> EmptyWideStr) and (not FDoCryptFiles) and (FS_FILE_OK = AddFileByIdentity(LocalFileIdentity, RemotePath, CLOUD_CONFLICT_STRICT, False, True)) then
+				Exit(CLOUD_OPERATION_OK); {issue #135}
+		end;
 
 		ChunkIndex := 0;
+		ActualUploads := 0;
 		RetryAttemptsCount := 0;
 		Result := FS_FILE_OK;
 
-		{Upload each chunk - using while loop because we may need to retry (dec index)}
-		while ChunkIndex < ChunksToUpload do
+		{Upload each chunk - iterate all chunks, but limit ACTUAL uploads (not skips) by quota.
+			Skipped chunks (already exist with matching hash) don't count toward quota.}
+		while (ChunkIndex < SplitFileInfo.ChunksCount) and ((not IsPartialUpload) or (ActualUploads < ChunksToUpload)) do
 		begin
 			ChunkRemotePath := Format('%s%s', [ExtractFilePath(RemotePath), SplitFileInfo.GetChunks[ChunkIndex].name]);
 			FGetHTTP().SetProgressNames(LocalPath, ChunkRemotePath);
@@ -593,6 +612,7 @@ begin
 				FS_FILE_OK:
 					begin
 						RetryAttemptsCount := 0;
+						Inc(ActualUploads); {Count actual upload toward quota}
 						Inc(ChunkIndex);
 					end;
 				FS_FILE_USERABORT:
@@ -602,17 +622,28 @@ begin
 					end;
 				FS_FILE_EXISTS:
 					begin
-						Action := HandleChunkExists(ChunkRemotePath, ChunkOverwriteMode, Result);
-						case Action of
-							caRetry:
-								; {Don't increment, retry same chunk}
-							caContinue:
-								begin
-									Result := FS_FILE_OK; {Clear error when ignoring and continuing}
-									Inc(ChunkIndex);
-								end;
-							caAbort:
-								Break;
+						{When hash precalculation is enabled and EXISTS is returned, the chunk's hash
+							was verified and exists on server - safe to skip (resume scenario).
+							Skipped chunks don't count toward upload quota.
+							Otherwise delegate to HandleChunkExists based on ChunkOverwriteMode.}
+						if UseHash then
+						begin
+							FLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, CHUNK_SKIP_HASH_MATCH, [ChunkRemotePath]);
+							Result := FS_FILE_OK;
+							Inc(ChunkIndex); {Skip doesn't count toward ActualUploads}
+						end else begin
+							Action := HandleChunkExists(ChunkRemotePath, ChunkOverwriteMode, Result);
+							case Action of
+								caRetry:
+									; {Don't increment, retry same chunk}
+								caContinue:
+									begin
+										Result := FS_FILE_OK; {Clear error when ignoring and continuing}
+										Inc(ChunkIndex); {Skip doesn't count toward ActualUploads}
+									end;
+								caAbort:
+									Break;
+							end;
 						end;
 					end;
 				else
@@ -632,9 +663,10 @@ begin
 			end;
 		end;
 
-		{Generate and upload CRC file only after ALL chunks uploaded successfully.
-		 Skip CRC for partial uploads - incomplete CRC would be invalid.}
-		if (Result = FS_FILE_OK) and (ChunksToUpload = SplitFileInfo.ChunksCount) then
+		{Generate and upload CRC file only after ALL chunks are on cloud.
+			ChunkIndex = total means all chunks were processed (uploaded or skipped).
+			Skip CRC if upload stopped early due to quota or error.}
+		if (Result = FS_FILE_OK) and (ChunkIndex = SplitFileInfo.ChunksCount) then
 			GenerateAndUploadCRC(LocalPath, RemotePath, SplitFileInfo, ConflictMode);
 	finally
 		SplitFileInfo.Free;

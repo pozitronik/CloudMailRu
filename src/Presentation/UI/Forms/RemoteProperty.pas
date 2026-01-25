@@ -1,8 +1,8 @@
 unit RemoteProperty;
 
 {Properties dialog for cloud files/folders.
- Implements IRemotePropertyView for MVP pattern.
- Business logic delegated to TRemotePropertyPresenter.}
+	Implements IRemotePropertyView for MVP pattern.
+	Business logic delegated to TRemotePropertyPresenter.}
 
 interface
 
@@ -211,20 +211,28 @@ end;
 procedure TPropertyForm.ShowTab(Tab: TRemotePropertyTab);
 begin
 	case Tab of
-		rptFolderAccess: FolderAccessTS.TabVisible := True;
-		rptDownloadLinks: DownloadLinksTS.TabVisible := True;
-		rptDescription: DescriptionTS.TabVisible := True;
-		rptHashesList: HashesListTS.TabVisible := True;
+		rptFolderAccess:
+			FolderAccessTS.TabVisible := true;
+		rptDownloadLinks:
+			DownloadLinksTS.TabVisible := true;
+		rptDescription:
+			DescriptionTS.TabVisible := true;
+		rptHashesList:
+			HashesListTS.TabVisible := true;
 	end;
 end;
 
 procedure TPropertyForm.HideTab(Tab: TRemotePropertyTab);
 begin
 	case Tab of
-		rptFolderAccess: FolderAccessTS.TabVisible := False;
-		rptDownloadLinks: DownloadLinksTS.TabVisible := False;
-		rptDescription: DescriptionTS.TabVisible := False;
-		rptHashesList: HashesListTS.TabVisible := False;
+		rptFolderAccess:
+			FolderAccessTS.TabVisible := False;
+		rptDownloadLinks:
+			DownloadLinksTS.TabVisible := False;
+		rptDescription:
+			DescriptionTS.TabVisible := False;
+		rptHashesList:
+			HashesListTS.TabVisible := False;
 	end;
 end;
 
@@ -241,7 +249,7 @@ end;
 
 procedure TPropertyForm.AddInvite(Email, Access: WideString);
 begin
-	InvitesLE.InsertRow(Email, Access, True);
+	InvitesLE.InsertRow(Email, Access, true);
 end;
 
 function TPropertyForm.GetSelectedInviteEmail: WideString;
@@ -464,15 +472,13 @@ begin
 		ItemChangeAccess.Visible := False;
 		ItemDelete.Visible := False;
 		Exit;
-	end
-	else
-	begin
-		ItemChangeAccess.Visible := True;
-		ItemDelete.Visible := True;
+	end else begin
+		ItemChangeAccess.Visible := true;
+		ItemDelete.Visible := true;
 	end;
 
 	Access := GetSelectedInviteAccess;
-	Access := TCloudAccessUtils.AccessToString(Access, True);
+	Access := TCloudAccessUtils.AccessToString(Access, true);
 	ItemChangeAccess.Caption := Format(PREFIX_ACCESS_CHANGE, [Access]);
 end;
 
@@ -490,7 +496,7 @@ end;
 
 procedure TPropertyForm.CancelLinksScanTbClick(Sender: TObject);
 begin
-	FDownloadLinksCancelled := True;
+	FDownloadLinksCancelled := true;
 end;
 
 procedure TPropertyForm.RefreshHashesScanTbClick(Sender: TObject);
@@ -501,7 +507,7 @@ end;
 
 procedure TPropertyForm.CancelHashesScanTbClick(Sender: TObject);
 begin
-	FHashesCancelled := True;
+	FHashesCancelled := true;
 end;
 
 procedure TPropertyForm.ApplyHashesTBClick(Sender: TObject);
@@ -576,17 +582,7 @@ begin
 		Form.parentWindow := parentWindow;
 
 		{Create presenter with cloud services}
-		Form.FPresenter := TRemotePropertyPresenter.Create(
-			Form,
-			Cloud.Downloader,
-			Cloud.Uploader,
-			Cloud.FileOps,
-			Cloud.ListingService,
-			Cloud.ShareService,
-			FileSystem,
-			TPublicCloudFactory.Create,
-			TCHandler,
-			Cloud.IsPublicAccount);
+		Form.FPresenter := TRemotePropertyPresenter.Create(Form, Cloud.Downloader, Cloud.Uploader, Cloud.FileOps, Cloud.ListingService, Cloud.ShareService, FileSystem, TPublicCloudFactory.Create, TCHandler, Cloud.IsPublicAccount);
 
 		{Configure and initialize presenter}
 		Config.DoUrlEncode := DoUrlEncode;

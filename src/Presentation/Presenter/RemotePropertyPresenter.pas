@@ -1,8 +1,8 @@
 unit RemotePropertyPresenter;
 
 {Presenter for RemoteProperty dialog - handles all business logic for file/folder properties.
- Follows MVP pattern: View (TPropertyForm) implements IRemotePropertyView,
- Presenter orchestrates operations, Model consists of extracted cloud services.}
+	Follows MVP pattern: View (TPropertyForm) implements IRemotePropertyView,
+	Presenter orchestrates operations, Model consists of extracted cloud services.}
 
 interface
 
@@ -179,7 +179,7 @@ const
 	{Default filename for descriptions - matches TC convention}
 	DESCRIPTION_DEFAULT_FILENAME = 'descript.ion';
 
-{TRemotePropertyPresenter}
+	{TRemotePropertyPresenter}
 
 constructor TRemotePropertyPresenter.Create(View: IRemotePropertyView; Downloader: ICloudFileDownloader; Uploader: ICloudFileUploader; FileOps: ICloudFileOperations; ListingService: ICloudListingService; ShareService: ICloudShareService; FileSystem: IFileSystem; PublicCloudFactory: IPublicCloudFactory; TCHandler: ITCHandler; IsPublicAccount: Boolean);
 begin
@@ -226,9 +226,7 @@ begin
 
 		if FConfig.AutoUpdateDownloadListing then
 			RefreshDownloadLinks;
-	end
-	else
-	begin
+	end else begin
 		{Private account: show weblink if published}
 		FView.SetPublishChecked(Props.WebLink <> EmptyWideStr);
 		FView.SetWebLinkEnabled(Props.WebLink <> EmptyWideStr);
@@ -281,24 +279,18 @@ begin
 			FView.SetWebLinkEnabled(True);
 			FView.SetExtPropertiesVisible(True);
 			FView.ShowTab(rptDownloadLinks);
-		end
-		else
-		begin
+		end else begin
 			FView.ShowError(ERR_PUBLISH_FILE, Format(ERR_PUBLISH_MSG, [FProps.home]));
 			FView.SetPublishChecked(False);
 		end;
-	end
-	else
-	begin
+	end else begin
 		if FShareService.Unpublish(FProps.home, FProps.WebLink) then
 		begin
 			FView.SetWebLink(EmptyWideStr);
 			FProps.WebLink := EmptyWideStr;
 			FView.SetWebLinkEnabled(False);
 			FView.HideTab(rptDownloadLinks);
-		end
-		else
-		begin
+		end else begin
 			FView.ShowError(ERR_UNPUBLISH_FILE, Format(ERR_PUBLISH_MSG, [FProps.home]));
 			FView.SetPublishChecked(True);
 		end;
@@ -319,7 +311,7 @@ begin
 	if FShareService.GetShareInfo(FProps.home, FInvitesListing) then
 	begin
 		for i := 0 to Length(FInvitesListing) - 1 do
-			FView.AddInvite(FInvitesListing[i].email, TCloudAccessUtils.AccessToString(FInvitesListing[i].access));
+			FView.AddInvite(FInvitesListing[i].Email, TCloudAccessUtils.AccessToString(FInvitesListing[i].Access));
 	end
 	else
 		FView.ShowError(PREFIX_ERR_INVITES_LISTING, Format(ERR_LIST_INVITES_MSG, [FProps.home]));
@@ -389,19 +381,17 @@ begin
 				FillRecursiveDownloadListing(IncludeTrailingPathDelimiter(FRemotePath), FDownloader, FListingService)
 			else
 				FView.AddDownloadLink(FDownloader.GetSharedFileUrl(FRemotePath));
-		end
-		else
-		begin
+		end else begin
 			{Private account with published item: create temp public cloud}
 			if FPublicCloudFactory.CreatePublicCloud(TempPublicCloud, PUBLIC_ACCESS_URL + FProps.WebLink) then
-			try
-				if FProps.type_ = TYPE_DIR then
-					FillRecursiveDownloadListing(EmptyWideStr, TempPublicCloud.Downloader, TempPublicCloud.ListingService)
-				else
-					FView.AddDownloadLink(TempPublicCloud.Downloader.GetSharedFileUrl(FRemotePath));
-			finally
-				TempPublicCloud.Free;
-			end;
+				try
+					if FProps.type_ = TYPE_DIR then
+						FillRecursiveDownloadListing(EmptyWideStr, TempPublicCloud.Downloader, TempPublicCloud.ListingService)
+					else
+						FView.AddDownloadLink(TempPublicCloud.Downloader.GetSharedFileUrl(FRemotePath));
+				finally
+					TempPublicCloud.Free;
+				end;
 		end;
 
 		FView.SetDownloadLinksLogMessage(DONE);
@@ -545,9 +535,7 @@ begin
 	if BaseDir = EmptyWideStr then
 	begin
 		AppliedName := Item.name;
-	end
-	else
-	begin
+	end else begin
 		if (Path <> EmptyWideStr) then
 		begin
 			if (Pos(BaseDir, Path) = 1) and (BaseDir <> Path) then

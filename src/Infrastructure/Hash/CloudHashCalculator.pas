@@ -124,7 +124,7 @@ begin
 
 		read := Stream.read(buffer, BUFFER_SIZE);
 		sha1.Update(buffer, read);
-		Aborted := FProgress.Progress(ProgressPath, CALCULATING_HASH, Percent);
+		Aborted := FProgress.Progress(ProgressPath, Format(CALCULATING_HASH_FOR, [ProgressPath]), Percent);
 	until (read < sizeof(buffer)) or Aborted;
 
 	finalBuffer := TEncoding.UTF8.GetBytes(Stream.Size.ToString);
