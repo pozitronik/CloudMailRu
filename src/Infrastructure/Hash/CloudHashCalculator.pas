@@ -1,5 +1,12 @@
 unit CloudHashCalculator;
 
+{TODO: Performance optimizations for hash calculation:
+ 1. Increase BUFFER_SIZE to 64-128KB (trivial, 10-30% speedup)
+ 2. Use Windows BCrypt API for hardware-accelerated SHA1 (SHA-NI instructions)
+ 3. Use OpenSSL EVP functions (already loaded for HTTPS)
+ 4. Memory-mapped files for very large files
+ Current bottleneck: 8KB buffer causes excessive syscalls and iterations.}
+
 interface
 
 uses
