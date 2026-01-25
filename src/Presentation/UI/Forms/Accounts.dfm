@@ -308,7 +308,7 @@ object AccountsForm: TAccountsForm
             Width = 244
             Height = 17
             Caption = 'Also encrypt filenames'
-            TabOrder = 0
+            TabOrder = 2
           end
           object EncryptFilesCombo: TComboBox
             Left = 7
@@ -317,7 +317,7 @@ object AccountsForm: TAccountsForm
             Height = 21
             Style = csDropDownList
             ItemIndex = 0
-            TabOrder = 1
+            TabOrder = 0
             Text = 'No'
             OnChange = EncryptFilesComboChange
             Items.Strings = (
@@ -335,7 +335,7 @@ object AccountsForm: TAccountsForm
             Enabled = False
             ParentShowHint = False
             ShowHint = True
-            TabOrder = 2
+            TabOrder = 1
             OnClick = EncryptFilesPwdButtonClick
           end
         end
