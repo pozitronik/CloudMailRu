@@ -88,7 +88,7 @@ class function TCloudErrorMapper.ToBoolean(CloudResult: TCMROperationResult; Log
 begin
 	Result := CloudResult.ToBoolean;
 	if not(Result) and (ErrorPrefix <> EmptyWideStr) and Assigned(Logger) then
-		Logger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, '%s%s%s%s', [ErrorPrefix, ErrorCodeText(CloudResult.OperationResult), PREFIX_STATUS, CloudResult.OperationStatus]);
+		Logger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, '%s%s%s%d', [ErrorPrefix, ErrorCodeText(CloudResult.OperationResult), PREFIX_STATUS, CloudResult.OperationStatus]);
 end;
 
 class function TCloudErrorMapper.ErrorCodeText(ErrorCode: Integer): WideString;
