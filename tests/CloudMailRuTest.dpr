@@ -288,7 +288,20 @@ uses
 	DeletedPropertyPresenterTest in 'Presentation\Presenter\DeletedPropertyPresenterTest.pas',
 	AskPasswordPresenter in '..\src\Presentation\Presenter\AskPasswordPresenter.pas',
 	AskPasswordPresenterTest in 'Presentation\Presenter\AskPasswordPresenterTest.pas',
-	AskPasswordFormTest in 'Presentation\UI\Forms\AskPasswordFormTest.pas';
+	AskPasswordFormTest in 'Presentation\UI\Forms\AskPasswordFormTest.pas',
+	{Integration Tests}
+	IntegrationTestConfig in 'Integration\IntegrationTestConfig.pas',
+	TestDataGenerator in 'Integration\TestDataGenerator.pas',
+	IntegrationTestBase in 'Integration\IntegrationTestBase.pas',
+	AuthenticationIntegrationTest in 'Integration\AuthenticationIntegrationTest.pas',
+	QuotaIntegrationTest in 'Integration\QuotaIntegrationTest.pas',
+	DirectoryIntegrationTest in 'Integration\DirectoryIntegrationTest.pas',
+	UploadIntegrationTest in 'Integration\UploadIntegrationTest.pas',
+	DownloadIntegrationTest in 'Integration\DownloadIntegrationTest.pas',
+	FileOpsIntegrationTest in 'Integration\FileOpsIntegrationTest.pas',
+	TrashIntegrationTest in 'Integration\TrashIntegrationTest.pas',
+	SharingIntegrationTest in 'Integration\SharingIntegrationTest.pas',
+	InviteIntegrationTest in 'Integration\InviteIntegrationTest.pas';
 
 {keep comment here to protect the following conditional from being removed by the IDE when adding a unit}
 {$IFNDEF TESTINSIGHT}

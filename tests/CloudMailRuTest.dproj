@@ -186,6 +186,18 @@
         <DCCReference Include="..\src\Presentation\UI\Forms\AskPassword.pas">
             <Form>AskPasswordForm</Form>
         </DCCReference>
+        <DCCReference Include="Integration\IntegrationTestConfig.pas"/>
+        <DCCReference Include="Integration\TestDataGenerator.pas"/>
+        <DCCReference Include="Integration\IntegrationTestBase.pas"/>
+        <DCCReference Include="Integration\AuthenticationIntegrationTest.pas"/>
+        <DCCReference Include="Integration\QuotaIntegrationTest.pas"/>
+        <DCCReference Include="Integration\DirectoryIntegrationTest.pas"/>
+        <DCCReference Include="Integration\UploadIntegrationTest.pas"/>
+        <DCCReference Include="Integration\DownloadIntegrationTest.pas"/>
+        <DCCReference Include="Integration\FileOpsIntegrationTest.pas"/>
+        <DCCReference Include="Integration\TrashIntegrationTest.pas"/>
+        <DCCReference Include="Integration\SharingIntegrationTest.pas"/>
+        <DCCReference Include="Integration\InviteIntegrationTest.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

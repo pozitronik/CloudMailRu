@@ -71,6 +71,9 @@
 /tests/Win64/Debug/dunitx-results.xml
 /tests/Win64/Debug/MailRuCloud.global.ini
 /tests/CloudMailRuTest.delphilsp.json
+
+# Integration test credentials (contains real passwords)
+/tests/data/IntegrationTest.ini
 /Win64/Canary/MailRuCloud.wfx64
 /Win64/Debug/MailRuCloud.rsm
 /Win64/Debug/MailRuCloud.wfx64

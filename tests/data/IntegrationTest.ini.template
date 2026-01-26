@@ -1,0 +1,60 @@
+; Integration Test Configuration Template
+; ========================================
+; Copy this file to IntegrationTest.ini and fill in your credentials.
+; The IntegrationTest.ini file is gitignored and will not be committed.
+;
+; IMPORTANT: Use app-specific passwords for security.
+; Go to https://account.mail.ru/user/2-step-auth/passwords/ to create one.
+;
+; WARNING: These tests will create and delete files/folders in your cloud storage.
+; Use test accounts or ensure the TestFolder path is safe to modify.
+
+[IntegrationTests]
+; Master switch to enable/disable integration tests
+Enabled=false
+
+; Cloud folder where all test artifacts will be created
+; Tests create a unique subfolder (Run_YYYYMMDD_HHMMSS) for each run
+TestFolder=/IntegrationTests
+
+; If true, test artifacts are cleaned up after tests complete
+; Set to false to inspect test results in cloud storage
+CleanupAfterTests=true
+
+[PrimaryAccount]
+; Main account used for most tests
+; Required for any integration tests to run
+Email=your-primary-email@mail.ru
+AppPassword=xxxx-xxxx-xxxx-xxxx
+UseAppPassword=true
+
+[SecondaryAccount]
+; Secondary account used for sharing/invite tests
+; Optional - sharing tests will be skipped if not configured
+Email=your-secondary-email@mail.ru
+AppPassword=xxxx-xxxx-xxxx-xxxx
+UseAppPassword=true
+
+[PublicAccount]
+; Public URL for testing public/shared content access
+; Optional - public access tests will be skipped if not configured
+; Create a shared folder in your cloud and paste its public link here
+PublicUrl=https://cloud.mail.ru/public/xxxx/yyyy
+
+[Encryption]
+; Password for encryption tests
+; Optional - encryption tests will be skipped if not configured
+TestPassword=test_encryption_password_123
+
+; Test filename encryption (slower, more tests)
+TestEncryptedFilenames=true
+
+[ChunkedUpload]
+; Override CloudMaxFileSize to trigger chunking with smaller files
+; Default: 1048576 (1MB) - small files will be chunked for testing
+; Set to 0 to use actual cloud limit (~2GB)
+CloudMaxFileSizeOverride=1048576
+
+; Size of test file for chunked upload tests
+; Default: 3145728 (3MB) - creates 3 chunks with 1MB override
+TestChunkedFileSize=3145728
