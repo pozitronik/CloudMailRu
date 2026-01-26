@@ -39,10 +39,6 @@ const
 	API_CLONE = 'https://cloud.mail.ru/api/v2/clone';
 	API_INVITE_REJECT = 'https://cloud.mail.ru/api/v2/folder/invites/reject';
 
-	MAILRU_REGISTRATION_SIGNUP = 'https://account.mail.ru/api/v1/user/signup';
-	MAILRU_REGISTRATION_CONFIRM = 'https://account.mail.ru/api/v1/user/signup/confirm';
-	MAILRU_CAPTCHA = 'https://c.mail.ru/c/6';
-
 	TYPE_DIR = 'folder';
 	TYPE_FILE = 'file';
 

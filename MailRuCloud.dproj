@@ -250,9 +250,6 @@
         <DCCReference Include="src\Infrastructure\Settings\PluginSettingsManager.pas"/>
         <DCCReference Include="src\Infrastructure\Settings\ProxySettings.pas"/>
         <DCCReference Include="src\Domain\ValueObjects\RealPath.pas"/>
-        <DCCReference Include="src\Presentation\UI\Forms\Registration.pas">
-            <Form>AskPasswordForm</Form>
-        </DCCReference>
         <DCCReference Include="src\Presentation\UI\Forms\RemoteProperty.pas">
             <Form>PropertyForm</Form>
         </DCCReference>
@@ -312,7 +309,6 @@
         <DCCReference Include="src\Application\Download\LocalFileConflictResolver.pas"/>
         <DCCReference Include="src\Application\Listing\ListingItemFetcher.pas"/>
         <DCCReference Include="src\Application\FileOps\SharedItemDeletionHandler.pas"/>
-        <DCCReference Include="src\Application\Operations\AccountRegistrationHandler.pas"/>
         <DCCReference Include="src\Application\Operations\TrashBinOperationHandler.pas"/>
         <DCCReference Include="src\Application\Operations\InviteOperationHandler.pas"/>
         <DCCReference Include="src\Application\FileOps\CrossAccountFileOperationHandler.pas"/>
@@ -343,7 +339,6 @@
         <DCCReference Include="src\Presentation\Presenter\InvitePropertyPresenter.pas"/>
         <DCCReference Include="src\Presentation\Presenter\DeletedPropertyPresenter.pas"/>
         <DCCReference Include="src\Presentation\Presenter\AskPasswordPresenter.pas"/>
-        <DCCReference Include="src\Presentation\Presenter\RegistrationPresenter.pas"/>
         <RcItem Include="icons\icon.ico">
             <ResourceType>ICON</ResourceType>
             <ResourceId>base_icon</ResourceId>

@@ -24,7 +24,6 @@ uses
 	System.IOUtils,
 	AskPassword,
 	TCPasswordManager,
-	Registration,
 	LANGUAGE_STRINGS,
 	WSList,
 	StreamingSettings,
@@ -127,7 +126,6 @@ type
 		DownloadBPSEdit: TSpinEdit;
 		CopyBetweenAccountsModeCombo: TComboBox;
 		CopyBetweenAccountsModeLabel: TLabel;
-		NewAccountBtn: TButton;
 		StreamingTab: TTabSheet;
 		TExtensionsGroupBox: TGroupBox;
 		StreamingExtensionsList: TListBox;
@@ -147,7 +145,7 @@ type
 		CommandPathOpenDialog: TOpenDialog;
 		UserAgentEdit: TEdit;
 		ChangeUserAgentCB: TCheckBox;
-    PrecalculateHashStrategyCombo: TComboBox;
+		PrecalculateHashStrategyCombo: TComboBox;
 		procedure FormShow(Sender: TObject);
 		procedure AccountsListClick(Sender: TObject);
 		procedure ApplyButtonClick(Sender: TObject);
@@ -162,7 +160,6 @@ type
 		procedure EncryptFilesComboChange(Sender: TObject);
 		procedure EncryptFilesPwdButtonClick(Sender: TObject);
 		procedure FormKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
-		procedure NewAccountBtnClick(Sender: TObject);
 		procedure StreamingExtensionsListClick(Sender: TObject);
 		procedure StreamingExtensionsListKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
 		procedure DeleteExtButtonClick(Sender: TObject);
@@ -310,7 +307,6 @@ type
 		function GetFormHandle: THandle;
 
 		{IAccountsView - Dialogs}
-		function ShowRegistrationDialog(var AccountSettings: TAccountSettings; ConnectionSettings: TConnectionSettings): Boolean;
 		function ShowEncryptionPasswordDialog(const AccountName: WideString; var CryptedGUID: WideString): Boolean;
 	public
 
@@ -1036,7 +1032,7 @@ var
 begin
 	InitDir := ExtractUniversalFilePath(CommandPathEdit.Text);
 	if InitDir = '' then
-		InitDir := TPath.GetSharedDocumentsPath;  {Fallback to known location when edit is empty}
+		InitDir := TPath.GetSharedDocumentsPath; {Fallback to known location when edit is empty}
 	CommandPathOpenDialog.InitialDir := InitDir;
 	if CommandPathOpenDialog.Execute(Self.ParentWindow) then
 		CommandPathEdit.Text := CommandPathOpenDialog.FileName;
@@ -1090,12 +1086,6 @@ begin
 		FPresenter.OnApplyGlobalSettingsClick;
 end;
 
-procedure TAccountsForm.NewAccountBtnClick(Sender: TObject);
-begin
-	if Assigned(FPresenter) then
-		FPresenter.OnNewAccountClick;
-end;
-
 procedure TAccountsForm.ProxyUserEditChange(Sender: TObject);
 begin
 	if Assigned(FPresenter) then
@@ -1122,11 +1112,6 @@ end;
 
 {IAccountsView - Dialogs}
 
-function TAccountsForm.ShowRegistrationDialog(var AccountSettings: TAccountSettings; ConnectionSettings: TConnectionSettings): Boolean;
-begin
-	Result := mrOk = TRegistrationForm.ShowRegistration(Self.ParentWindow, ConnectionSettings, AccountSettings);
-end;
-
 function TAccountsForm.ShowEncryptionPasswordDialog(const AccountName: WideString; var CryptedGUID: WideString): Boolean;
 var
 	CurrentPassword: WideString;
@@ -1150,18 +1135,11 @@ begin
 			Verb := VERB_UPDATE;
 		FS_FILE_READERROR:
 			Verb := VERB_SET;
-	else
-		Exit;
+		else
+			Exit;
 	end;
 
-	if mrOk = TAskPasswordForm.AskPassword(
-		Format(ASK_ENCRYPTION_PASSWORD, [Verb]),
-		PREFIX_ASK_NEW_PASSWORD,
-		CurrentPassword,
-		StorePassword,
-		True,
-		Self.Handle
-	) then
+	if mrOk = TAskPasswordForm.AskPassword(Format(ASK_ENCRYPTION_PASSWORD, [Verb]), PREFIX_ASK_NEW_PASSWORD, CurrentPassword, StorePassword, True, Self.Handle) then
 	begin
 		PasswordMgr.SetPassword(CryptId, CurrentPassword);
 		CryptedGUID := TFileCipher.GetCryptedGUID(CurrentPassword);

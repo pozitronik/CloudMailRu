@@ -38,7 +38,6 @@ uses
 	CMRIncomingInvite,
 	AccountSettings,
 	Accounts,
-	Registration,
 	InviteProperty,
 	RemoteProperty,
 	DeletedProperty,
@@ -76,7 +75,6 @@ uses
 	LocalFileConflictResolver,
 	ListingItemFetcher,
 	SharedItemDeletionHandler,
-	AccountRegistrationHandler,
 	TrashBinOperationHandler,
 	InviteOperationHandler,
 	CrossAccountFileOperationHandler,
@@ -133,7 +131,6 @@ type
 		FLocalFileConflictResolver: ILocalFileConflictResolver;
 		FListingItemFetcher: IListingItemFetcher;
 		FSharedItemDeletionHandler: ISharedItemDeletionHandler;
-		FAccountRegistrationHandler: IAccountRegistrationHandler;
 		FTrashBinOperationHandler: ITrashBinOperationHandler;
 		FInviteOperationHandler: IInviteOperationHandler;
 		FCrossAccountFileOperationHandler: ICrossAccountFileOperationHandler;
@@ -372,7 +369,6 @@ begin
 	FLocalFileConflictResolver := nil;
 	FListingItemFetcher := nil;
 	FSharedItemDeletionHandler := nil;
-	FAccountRegistrationHandler := nil;
 	FTrashBinOperationHandler := nil;
 	FInviteOperationHandler := nil;
 	FCrossAccountFileOperationHandler := nil;
@@ -806,15 +802,8 @@ begin
 		exit(false); //skip create directory if this flag set on
 
 	RealPath.FromPath(WideString(Path));
-	if RealPath.isInAccountsList then //accounts list
-	begin
-		Result := FAccountRegistrationHandler.Execute(FTCHandler.FindTCWindow, RealPath.account, SettingsManager.GetSettings.ConnectionSettings,
-			function(ParentWindow: HWND; ConnSettings: TConnectionSettings; var AccSettings: TAccountSettings): Integer
-			begin
-				Result := TRegistrationForm.ShowRegistration(ParentWindow, ConnSettings, AccSettings);
-			end);
-		exit();
-	end;
+	if RealPath.isInAccountsList then //accounts list - registration not supported
+		Exit(False);
 	if (RealPath.isAccountEmpty) or RealPath.isVirtual then
 		exit(false);
 
@@ -938,9 +927,6 @@ begin
 
 	{Create operation action executor for lifecycle event handling - requires ConnectionManager}
 	FActionExecutor := TOperationActionExecutor.Create(FThreadState, ConnectionManager, SettingsManager, CurrentDescriptions, TCLogger);
-
-	{Create account registration handler for FsMkDir - requires PasswordManager}
-	FAccountRegistrationHandler := TAccountRegistrationHandler.Create(AccountSettings, PasswordManager);
 
 	{Create path listing handler for FsFindFirst - requires ConnectionManager}
 	FPathListingHandler := TPathListingHandler.Create(ConnectionManager, FListingProvider, FListingPathValidator);

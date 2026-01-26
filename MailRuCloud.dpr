@@ -61,7 +61,6 @@ uses
 	PluginSettingsManager in 'src\Infrastructure\Settings\PluginSettingsManager.pas',
 	ProxySettings in 'src\Infrastructure\Settings\ProxySettings.pas',
 	RealPath in 'src\Domain\ValueObjects\RealPath.pas',
-	Registration in 'src\Presentation\UI\Forms\Registration.pas' {AskPasswordForm} ,
 	RemoteProperty in 'src\Presentation\UI\Forms\RemoteProperty.pas' {PropertyForm} ,
 	RemotePropertyPresenter in 'src\Presentation\Presenter\RemotePropertyPresenter.pas',
 	AccountsPresenter in 'src\Presentation\Presenter\AccountsPresenter.pas',
@@ -124,7 +123,6 @@ uses
 	LocalFileConflictResolver in 'src\Application\Download\LocalFileConflictResolver.pas',
 	ListingItemFetcher in 'src\Application\Listing\ListingItemFetcher.pas',
 	SharedItemDeletionHandler in 'src\Application\FileOps\SharedItemDeletionHandler.pas',
-	AccountRegistrationHandler in 'src\Application\Operations\AccountRegistrationHandler.pas',
 	TrashBinOperationHandler in 'src\Application\Operations\TrashBinOperationHandler.pas',
 	InviteOperationHandler in 'src\Application\Operations\InviteOperationHandler.pas',
 	CrossAccountFileOperationHandler in 'src\Application\FileOps\CrossAccountFileOperationHandler.pas',
@@ -154,8 +152,7 @@ uses
 	CloudFileOperations in 'src\Application\FileOps\CloudFileOperations.pas',
 	InvitePropertyPresenter in 'src\Presentation\Presenter\InvitePropertyPresenter.pas',
 	DeletedPropertyPresenter in 'src\Presentation\Presenter\DeletedPropertyPresenter.pas',
-	AskPasswordPresenter in 'src\Presentation\Presenter\AskPasswordPresenter.pas',
-	RegistrationPresenter in 'src\Presentation\Presenter\RegistrationPresenter.pas';
+	AskPasswordPresenter in 'src\Presentation\Presenter\AskPasswordPresenter.pas';
 
 {$IFDEF WIN64}
 {$E wfx64}

@@ -242,7 +242,6 @@ type
 		function GetFormHandle: THandle;
 
 		{IAccountsView - Dialogs}
-		function ShowRegistrationDialog(var AccountSettings: TAccountSettings; ConnectionSettings: TConnectionSettings): Boolean;
 		function ShowEncryptionPasswordDialog(const AccountName: WideString; var CryptedGUID: WideString): Boolean;
 
 		{Test access properties}
@@ -348,10 +347,6 @@ type
 		procedure TestOnDeleteAccountClickRemovesAccount;
 		[Test]
 		procedure TestOnDeleteAccountClickWithEmptySelectionDoesNothing;
-		[Test]
-		procedure TestOnNewAccountClickCreatesAccount;
-		[Test]
-		procedure TestOnNewAccountClickCancelledDoesNothing;
 
 		{Encryption tests}
 		[Test]
@@ -1079,12 +1074,6 @@ begin
 	Result := 0;
 end;
 
-function TMockAccountsView.ShowRegistrationDialog(var AccountSettings: TAccountSettings; ConnectionSettings: TConnectionSettings): Boolean;
-begin
-	{Mock: always return False (dialog cancelled)}
-	Result := False;
-end;
-
 function TMockAccountsView.ShowEncryptionPasswordDialog(const AccountName: WideString; var CryptedGUID: WideString): Boolean;
 begin
 	{Mock: always return False (dialog cancelled)}
@@ -1496,34 +1485,6 @@ begin
 	{Verify account still exists}
 	AccountsList := FAccountsManager.GetAccountsList;
 	Assert.AreEqual(1, AccountsList.Count, 'Account should not be deleted with empty selection');
-end;
-
-procedure TAccountsPresenterTest.TestOnNewAccountClickCreatesAccount;
-begin
-	{Note: This test verifies the presenter calls the view's dialog.
-	 The mock dialog returns False by default, so no account is created.
-	 A more sophisticated mock could simulate dialog confirmation.}
-	FPresenter.Initialize('');
-
-	{Call new account - dialog returns False in mock}
-	FPresenter.OnNewAccountClick;
-
-	{Verify accounts list is refreshed (this happens even if dialog cancelled)}
-	Assert.IsNotNull(FView.AccountsList, 'Accounts list should exist after new account click');
-end;
-
-procedure TAccountsPresenterTest.TestOnNewAccountClickCancelledDoesNothing;
-var
-	AccountsList: TWSList;
-begin
-	FPresenter.Initialize('');
-
-	{Call new account - dialog returns False in mock}
-	FPresenter.OnNewAccountClick;
-
-	{Verify no account was created}
-	AccountsList := FAccountsManager.GetAccountsList;
-	Assert.AreEqual(0, AccountsList.Count, 'No account should be created when dialog is cancelled');
 end;
 
 {Encryption tests}

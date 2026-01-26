@@ -212,7 +212,7 @@ object AccountsForm: TAccountsForm
         Width = 75
         Height = 25
         Caption = 'Delete'
-        TabOrder = 7
+        TabOrder = 6
         OnClick = DeleteButtonClick
       end
       object AccountsPanel: TPanel
@@ -381,15 +381,6 @@ object AccountsForm: TAccountsForm
           Height = 21
           TabOrder = 0
         end
-      end
-      object NewAccountBtn: TButton
-        Left = 306
-        Top = 417
-        Width = 77
-        Height = 25
-        Caption = 'Register new'
-        TabOrder = 6
-        OnClick = NewAccountBtnClick
       end
     end
     object GlobalTab: TTabSheet

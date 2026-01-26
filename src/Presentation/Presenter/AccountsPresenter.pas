@@ -161,7 +161,6 @@ type
 		function GetFormHandle: THandle;
 
 		{Dialogs - view is responsible for showing dialogs}
-		function ShowRegistrationDialog(var AccountSettings: TAccountSettings; ConnectionSettings: TConnectionSettings): Boolean;
 		function ShowEncryptionPasswordDialog(const AccountName: WideString; var CryptedGUID: WideString): Boolean;
 	end;
 
@@ -198,7 +197,6 @@ type
 		procedure OnAccountSelected;
 		procedure OnApplyAccountClick;
 		procedure OnDeleteAccountClick;
-		procedure OnNewAccountClick;
 		procedure OnPublicAccountChanged;
 		procedure OnEncryptModeChanged;
 		procedure OnEncryptPasswordClick;
@@ -515,28 +513,6 @@ begin
 	RefreshAccountsList;
 
 	OnAccountSelected;
-end;
-
-procedure TAccountsPresenter.OnNewAccountClick;
-var
-	AccSettings: TAccountSettings;
-begin
-	AccSettings := FAccountsManager.GetAccountSettings(FSelectedAccount);
-
-	if FView.ShowRegistrationDialog(AccSettings, FSettingsManager.GetSettings.ConnectionSettings) then
-	begin
-		{Handle TC password manager for new account}
-		if AccSettings.UseTCPasswordManager then
-		begin
-			if not SavePasswordToManager(AccSettings.Account, AccSettings.Password) then
-				Exit;
-		end;
-
-		FAccountsManager.SetAccountSettings(AccSettings);
-
-		{Refresh list}
-		RefreshAccountsList;
-	end;
 end;
 
 procedure TAccountsPresenter.OnPublicAccountChanged;

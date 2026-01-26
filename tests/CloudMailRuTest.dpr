@@ -225,8 +225,6 @@ uses
 	ListingItemFetcherTest in 'Application\Listing\ListingItemFetcherTest.pas',
 	SharedItemDeletionHandler in '..\src\Application\FileOps\SharedItemDeletionHandler.pas',
 	SharedItemDeletionHandlerTest in 'Application\FileOps\SharedItemDeletionHandlerTest.pas',
-	AccountRegistrationHandler in '..\src\Application\Operations\AccountRegistrationHandler.pas',
-	AccountRegistrationHandlerTest in 'Application\Operations\AccountRegistrationHandlerTest.pas',
 	TrashBinOperationHandler in '..\src\Application\Operations\TrashBinOperationHandler.pas',
 	TrashBinOperationHandlerTest in 'Application\Operations\TrashBinOperationHandlerTest.pas',
 	InviteOperationHandler in '..\src\Application\Operations\InviteOperationHandler.pas',
@@ -290,8 +288,6 @@ uses
 	DeletedPropertyPresenterTest in 'Presentation\Presenter\DeletedPropertyPresenterTest.pas',
 	AskPasswordPresenter in '..\src\Presentation\Presenter\AskPasswordPresenter.pas',
 	AskPasswordPresenterTest in 'Presentation\Presenter\AskPasswordPresenterTest.pas',
-	RegistrationPresenter in '..\src\Presentation\Presenter\RegistrationPresenter.pas',
-	RegistrationPresenterTest in 'Presentation\Presenter\RegistrationPresenterTest.pas',
 	AskPasswordFormTest in 'Presentation\UI\Forms\AskPasswordFormTest.pas';
 
 {keep comment here to protect the following conditional from being removed by the IDE when adding a unit}
