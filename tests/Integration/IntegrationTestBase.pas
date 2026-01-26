@@ -110,14 +110,26 @@ type
 implementation
 
 uses
-	PLUGIN_TYPES;
+	PLUGIN_TYPES,
+	IdSSLOpenSSLHeaders;
 
 {TIntegrationTestBase}
 
 procedure TIntegrationTestBase.SetupFixture;
+var
+	ExePath, SSLPath: string;
 begin
+	{Set up SSL DLL path - tests run from Win64/Debug, DLLs are in Win64/Debug/x64}
+	ExePath := ExtractFilePath(ParamStr(0));
+	SSLPath := ExePath + 'x64';
+	if DirectoryExists(SSLPath) then
+		IdOpenSSLSetLibPath(SSLPath)
+	else
+		WriteLn('[IntegrationTest] WARNING: SSL path not found: ' + SSLPath);
+
 	FConfig := TIntegrationTestConfig.Instance;
 	Assert.IsNotNull(FConfig, 'Integration test config not loaded');
+
 
 	{Create unique test run folder}
 	FTestRunFolder := FConfig.TestFolder + '/' + TTestDataGenerator.GenerateUniqueFolderName('Run');
@@ -171,7 +183,10 @@ begin
 	Result.AccountSettings.Email := Email;
 	Result.AccountSettings.Password := Password;
 	Result.AccountSettings.UseAppPassword := UseAppPassword;
-	Result.AccountSettings.AuthMethod := CLOUD_AUTH_METHOD_API;
+	if UseAppPassword then
+		Result.AccountSettings.AuthMethod := CLOUD_AUTH_METHOD_OAUTH_APP
+	else
+		Result.AccountSettings.AuthMethod := CLOUD_AUTH_METHOD_API;
 	Result.AccountSettings.PublicAccount := False;
 
 	{Encryption settings}
@@ -190,6 +205,7 @@ begin
 	{Connection settings - use reasonable defaults}
 	Result.ConnectionSettings.SocketTimeout := 30000;
 	Result.ConnectionSettings.ProxySettings.ProxyType := ProxyNone;
+	Result.ConnectionSettings.UserAgent := DEFAULT_USERAGENT;
 
 	{Cloud operation settings}
 	Result.PrecalculateHash := True;

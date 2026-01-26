@@ -120,6 +120,18 @@ begin
 	Result := TPath.GetFullPath(Result);
 end;
 
+{Helper to read boolean from INI - TIniFile.ReadBool only accepts 1/0, not true/false}
+function ReadIniBool(IniFile: TIniFile; const Section, Key: string; Default: Boolean): Boolean;
+var
+	Value: string;
+begin
+	Value := IniFile.ReadString(Section, Key, '');
+	if Value = '' then
+		Result := Default
+	else
+		Result := SameText(Value, 'true') or SameText(Value, '1') or SameText(Value, 'yes');
+end;
+
 class procedure TIntegrationTestConfig.EnsureLoaded;
 var
 	ConfigPath: WideString;
@@ -144,26 +156,26 @@ begin
 	IniFile := TIniFile.Create(ConfigPath);
 	try
 		{Main settings}
-		FInstance.FEnabled := IniFile.ReadBool('IntegrationTests', 'Enabled', False);
+		FInstance.FEnabled := ReadIniBool(IniFile, 'IntegrationTests', 'Enabled', False);
 		FInstance.FTestFolder := IniFile.ReadString('IntegrationTests', 'TestFolder', DEFAULT_TEST_FOLDER);
-		FInstance.FCleanupAfterTests := IniFile.ReadBool('IntegrationTests', 'CleanupAfterTests', True);
+		FInstance.FCleanupAfterTests := ReadIniBool(IniFile, 'IntegrationTests', 'CleanupAfterTests', True);
 
 		{Primary account}
 		FInstance.FPrimaryEmail := IniFile.ReadString('PrimaryAccount', 'Email', '');
 		FInstance.FPrimaryPassword := IniFile.ReadString('PrimaryAccount', 'AppPassword', '');
-		FInstance.FPrimaryUseAppPassword := IniFile.ReadBool('PrimaryAccount', 'UseAppPassword', True);
+		FInstance.FPrimaryUseAppPassword := ReadIniBool(IniFile, 'PrimaryAccount', 'UseAppPassword', True);
 
 		{Secondary account}
 		FInstance.FSecondaryEmail := IniFile.ReadString('SecondaryAccount', 'Email', '');
 		FInstance.FSecondaryPassword := IniFile.ReadString('SecondaryAccount', 'AppPassword', '');
-		FInstance.FSecondaryUseAppPassword := IniFile.ReadBool('SecondaryAccount', 'UseAppPassword', True);
+		FInstance.FSecondaryUseAppPassword := ReadIniBool(IniFile, 'SecondaryAccount', 'UseAppPassword', True);
 
 		{Public account}
 		FInstance.FPublicUrl := IniFile.ReadString('PublicAccount', 'PublicUrl', '');
 
 		{Encryption}
 		FInstance.FEncryptionPassword := IniFile.ReadString('Encryption', 'TestPassword', '');
-		FInstance.FTestEncryptedFilenames := IniFile.ReadBool('Encryption', 'TestEncryptedFilenames', False);
+		FInstance.FTestEncryptedFilenames := ReadIniBool(IniFile, 'Encryption', 'TestEncryptedFilenames', False);
 
 		{Chunked upload}
 		FInstance.FCloudMaxFileSizeOverride := IniFile.ReadInteger('ChunkedUpload', 'CloudMaxFileSizeOverride', DEFAULT_CLOUD_MAX_FILE_SIZE_OVERRIDE);
@@ -213,7 +225,11 @@ class procedure TIntegrationTestConfig.WarnIfSkipped;
 begin
 	EnsureLoaded;
 	if not IsEnabled then
-		WriteLn('[Integration Tests] Integration tests skipped (config not set or disabled)');
+	begin
+		WriteLn('[Integration Tests] Integration tests skipped');
+		if FSkipReason <> '' then
+			WriteLn('[Integration Tests] Reason: ', FSkipReason);
+	end;
 end;
 
 class function TIntegrationTestConfig.Instance: TIntegrationTestConfig;
