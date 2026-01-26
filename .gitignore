@@ -101,3 +101,11 @@
 /docs/refactoring-findings.md
 /docs/REFACTORING_FINDINGS.md
 /MailRuCloud.delphilsp.json
+/Win64/Debug/x32/libeay32.dll
+/Win64/Debug/x32/ssleay32.dll
+/Win64/Debug/x64/libeay32.dll
+/Win64/Debug/x64/ssleay32.dll
+/Win64/Debug/MailRuCloud.global.ini
+/Win64/Debug/MailRuCloud.ini
+/tests/Win64/Debug/x64/libeay32.dll
+/tests/Win64/Debug/x64/ssleay32.dll
