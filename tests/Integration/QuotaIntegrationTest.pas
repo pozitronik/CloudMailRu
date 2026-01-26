@@ -10,7 +10,7 @@ uses
 	IntegrationTestConfig;
 
 type
-	[TestFixture]
+	{No [TestFixture] attribute - registered conditionally in initialization}
 	TQuotaIntegrationTest = class(TIntegrationTestBase)
 	public
 		[Test]
@@ -23,15 +23,11 @@ type
 implementation
 
 uses
-	System.SysUtils,
-	CMRSpace;
+	System.SysUtils;
 
 {TQuotaIntegrationTest}
 
 procedure TQuotaIntegrationTest.TestGetUserSpace_ReturnsValidData;
-var
-	SpaceInfo: TCMRSpace;
-	GetSpaceResult: Boolean;
 begin
 	{Access protected method via downcast - alternatively expose via property}
 	{For now, use LogUserSpaceInfo which internally calls GetUserSpace}

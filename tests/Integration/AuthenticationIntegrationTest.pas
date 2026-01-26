@@ -10,7 +10,7 @@ uses
 	IntegrationTestConfig;
 
 type
-	[TestFixture]
+	{No [TestFixture] attribute - registered conditionally in initialization}
 	TAuthenticationIntegrationTest = class(TIntegrationTestBase)
 	public
 		[Test]

@@ -10,7 +10,7 @@ uses
 	IntegrationTestConfig;
 
 type
-	[TestFixture]
+	{No [TestFixture] attribute - registered conditionally in initialization}
 	TDownloadIntegrationTest = class(TIntegrationTestBase)
 	private
 		function UploadTestFile(SizeBytes: Integer; const NamePrefix: WideString): WideString;

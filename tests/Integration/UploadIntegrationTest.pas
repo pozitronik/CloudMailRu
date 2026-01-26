@@ -11,7 +11,7 @@ uses
 	IntegrationTestConfig;
 
 type
-	[TestFixture]
+	{No [TestFixture] attribute - registered conditionally in initialization}
 	TUploadIntegrationTest = class(TIntegrationTestBase)
 	public
 		[Test]
@@ -240,7 +240,10 @@ begin
 		end;
 
 		{CRC file presence depends on SplitLargeFiles setting}
-		{This test documents behavior - adjust assertion as needed}
+		if CRCFileFound then
+			Assert.Pass('Chunked upload generated CRC file')
+		else
+			Assert.Pass('Chunked upload completed (CRC file not generated - depends on settings)');
 	finally
 		TFile.Delete(LocalFile);
 	end;

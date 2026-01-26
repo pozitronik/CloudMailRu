@@ -44,6 +44,7 @@ type
 		class var FInstance: TIntegrationTestConfig;
 		class var FConfigLoaded: Boolean;
 		class var FConfigValid: Boolean;
+		class var FSkipReason: WideString;
 
 		class function GetConfigFilePath: WideString; static;
 		class procedure EnsureLoaded; static;
@@ -56,6 +57,12 @@ type
 
 		{Check if integration tests should run (config exists, enabled, and valid)}
 		class function IsEnabled: Boolean; static;
+
+		{Get the reason why integration tests are skipped (empty if enabled)}
+		class function GetSkipReason: WideString; static;
+
+		{Output warning to console if integration tests are skipped}
+		class procedure WarnIfSkipped; static;
 
 		{Get the singleton instance (only valid if IsEnabled returns True)}
 		class function Instance: TIntegrationTestConfig; static;
@@ -123,10 +130,14 @@ begin
 
 	FConfigLoaded := True;
 	FConfigValid := False;
+	FSkipReason := '';
 
 	ConfigPath := GetConfigFilePath;
 	if not TFile.Exists(ConfigPath) then
+	begin
+		FSkipReason := 'Config file not found: ' + ConfigPath;
 		Exit;
+	end;
 
 	FInstance := TIntegrationTestConfig.Create;
 
@@ -159,6 +170,11 @@ begin
 		FInstance.FTestChunkedFileSize := IniFile.ReadInteger('ChunkedUpload', 'TestChunkedFileSize', DEFAULT_TEST_CHUNKED_FILE_SIZE);
 
 		FConfigValid := FInstance.Validate;
+
+		if not FInstance.FEnabled then
+			FSkipReason := 'Integration tests disabled in config (Enabled=false)'
+		else if not FConfigValid then
+			FSkipReason := 'Invalid config: primary account credentials missing';
 	finally
 		IniFile.Free;
 	end;
@@ -184,7 +200,20 @@ end;
 class function TIntegrationTestConfig.IsEnabled: Boolean;
 begin
 	EnsureLoaded;
-	Result := FConfigValid and FInstance.FEnabled;
+	Result := FConfigValid and Assigned(FInstance) and FInstance.FEnabled;
+end;
+
+class function TIntegrationTestConfig.GetSkipReason: WideString;
+begin
+	EnsureLoaded;
+	Result := FSkipReason;
+end;
+
+class procedure TIntegrationTestConfig.WarnIfSkipped;
+begin
+	EnsureLoaded;
+	if not IsEnabled then
+		WriteLn('[Integration Tests] Integration tests skipped (config not set or disabled)');
 end;
 
 class function TIntegrationTestConfig.Instance: TIntegrationTestConfig;
@@ -209,6 +238,8 @@ begin
 end;
 
 initialization
+	{Output warning if integration tests are skipped - this runs early during test startup}
+	TIntegrationTestConfig.WarnIfSkipped;
 
 finalization
 	if Assigned(TIntegrationTestConfig.FInstance) then

@@ -11,7 +11,7 @@ uses
 	IntegrationTestConfig;
 
 type
-	[TestFixture]
+	{No [TestFixture] attribute - registered conditionally in initialization}
 	TInviteIntegrationTest = class(TIntegrationTestBase)
 	public
 		[Test]

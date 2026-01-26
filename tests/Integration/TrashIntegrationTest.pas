@@ -10,7 +10,7 @@ uses
 	IntegrationTestConfig;
 
 type
-	[TestFixture]
+	{No [TestFixture] attribute - registered conditionally in initialization}
 	TTrashIntegrationTest = class(TIntegrationTestBase)
 	private
 		function UploadAndDeleteFile(const NamePrefix: WideString): WideString;
