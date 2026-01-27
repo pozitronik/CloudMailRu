@@ -16,7 +16,7 @@ uses
 	WindowsHelper,
 	System.Generics.Collections,
 	AskPasswordPresenter,
-	LANGUAGE_STRINGS;
+	LanguageStrings;
 
 type
 

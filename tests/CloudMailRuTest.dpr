@@ -40,7 +40,7 @@ uses
 	StringHelper in '..\src\Infrastructure\IO\StringHelper.pas',
 	TCHandler in '..\src\Infrastructure\TC\TCHandler.pas',
 	Description in '..\src\Domain\Services\Description.pas',
-	LANGUAGE_STRINGS in '..\src\Presentation\Localization\LANGUAGE_STRINGS.pas',
+	LanguageStrings in '..\src\Presentation\Localization\LanguageStrings.pas',
 	PluginSettingsManagerTest in 'Infrastructure\Settings\PluginSettingsManagerTest.pas',
 	AccountsManagerTest in 'Infrastructure\Settings\AccountsManagerTest.pas',
 	ParsingHelper in '..\src\Infrastructure\HTTP\ParsingHelper.pas',

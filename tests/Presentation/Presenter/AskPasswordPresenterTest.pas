@@ -7,7 +7,7 @@ uses
 	AskPasswordPresenter,
 	System.Generics.Collections,
 	System.SysUtils,
-	LANGUAGE_STRINGS;
+	LanguageStrings;
 
 type
 	{Mock view for testing AskPasswordPresenter}

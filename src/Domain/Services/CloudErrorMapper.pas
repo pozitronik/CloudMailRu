@@ -32,7 +32,7 @@ uses
 	System.SysUtils,
 	CMRConstants,
 	WFXTypes,
-	LANGUAGE_STRINGS;
+	LanguageStrings;
 
 {TCloudErrorMapper}
 

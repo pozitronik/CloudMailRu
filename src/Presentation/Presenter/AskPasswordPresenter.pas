@@ -9,7 +9,7 @@ interface
 uses
 	System.Generics.Collections,
 	System.SysUtils,
-	LANGUAGE_STRINGS;
+	LanguageStrings;
 
 type
 	{Describes a button to be added to the dialog}

@@ -15,7 +15,7 @@ uses
 	HashInfo,
 	CMRConstants,
 	SettingsConstants,
-	LANGUAGE_STRINGS,
+	LanguageStrings,
 	WFXTypes,
 	StringHelper;
 

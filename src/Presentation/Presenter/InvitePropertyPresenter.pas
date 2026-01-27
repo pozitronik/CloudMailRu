@@ -11,7 +11,7 @@ uses
 	CMRConstants,
 	CloudAccessUtils,
 	StringHelper,
-	LANGUAGE_STRINGS,
+	LanguageStrings,
 	System.SysUtils;
 
 type

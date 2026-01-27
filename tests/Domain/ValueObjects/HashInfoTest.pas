@@ -4,7 +4,7 @@ interface
 
 uses
 	HashInfo,
-	LANGUAGE_STRINGS,
+	LanguageStrings,
 	DUnitX.TestFramework;
 
 type

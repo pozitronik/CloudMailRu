@@ -17,7 +17,7 @@ uses
 	Description,
 	RealPath,
 	CMRConstants,
-	LANGUAGE_STRINGS,
+	LanguageStrings,
 	WFXTypes;
 
 type

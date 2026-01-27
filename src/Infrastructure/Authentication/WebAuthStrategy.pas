@@ -25,7 +25,7 @@ uses
 	DateUtils,
 	CMRConstants,
 	WFXTypes,
-	LANGUAGE_STRINGS,
+	LanguageStrings,
 	ParsingHelper,
 	StringHelper,
 	HTTPManager;

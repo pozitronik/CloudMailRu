@@ -19,7 +19,7 @@ uses
 	WFXTypes,
 	CMRConstants,
 	SettingsConstants,
-	LANGUAGE_STRINGS,
+	LanguageStrings,
 	PathHelper;
 
 type

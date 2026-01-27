@@ -4,7 +4,7 @@ interface
 
 uses
 	CMRConstants,
-	LANGUAGE_STRINGS,
+	LanguageStrings,
 	SystemHelper,
 	DateUtils,
 	SysUtils,

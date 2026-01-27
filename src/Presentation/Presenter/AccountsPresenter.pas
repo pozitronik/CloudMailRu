@@ -222,7 +222,7 @@ implementation
 
 uses
 	CMRConstants,
-	LANGUAGE_STRINGS,
+	LanguageStrings,
 	SettingsConstants,
 	System.IOUtils,
 	WSList;

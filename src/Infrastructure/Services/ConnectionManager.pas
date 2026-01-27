@@ -9,7 +9,7 @@ interface
 uses
 	CloudMailRu,
 	CMRConstants,
-	LANGUAGE_STRINGS,
+	LanguageStrings,
 	TCHandler,
 	TCLogger,
 	TCProgress,

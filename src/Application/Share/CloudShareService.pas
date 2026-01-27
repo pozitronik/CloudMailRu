@@ -13,7 +13,7 @@ uses
 	CloudShardManager,
 	JSONHelper,
 	ParsingHelper,
-	LANGUAGE_STRINGS,
+	LanguageStrings,
 	PathHelper,
 	WFXTypes,
 	StringHelper,

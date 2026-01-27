@@ -139,7 +139,7 @@ uses
 	WFXTypes,
 	CMRConstants,
 	SettingsConstants,
-	LANGUAGE_STRINGS;
+	LanguageStrings;
 
 const
 	{Sample JSON responses for cross-account operations}

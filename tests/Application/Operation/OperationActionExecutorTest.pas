@@ -127,7 +127,7 @@ implementation
 uses
 	SysUtils,
 	CMRConstants,
-	LANGUAGE_STRINGS;
+	LanguageStrings;
 
 {TMockSettingsManager}
 

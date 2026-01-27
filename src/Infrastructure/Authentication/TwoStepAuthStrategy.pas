@@ -35,7 +35,7 @@ uses
 	CMRTwostep,
 	CMRTwostepJsonAdapter,
 	WFXTypes,
-	LANGUAGE_STRINGS,
+	LanguageStrings,
 	ParsingHelper;
 
 {TTwoStepAuthStrategy}

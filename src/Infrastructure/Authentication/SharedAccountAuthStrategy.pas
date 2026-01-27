@@ -24,7 +24,7 @@ uses
 	SysUtils,
 	CMRConstants,
 	WFXTypes,
-	LANGUAGE_STRINGS,
+	LanguageStrings,
 	ParsingHelper;
 
 {Helper function to extract public link from URL}

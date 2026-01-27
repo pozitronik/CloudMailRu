@@ -17,7 +17,7 @@ uses
 	ParsingHelper,
 	CMRConstants,
 	CloudHTTP,
-	LANGUAGE_STRINGS,
+	LanguageStrings,
 	HashInfo,
 	System.Hash,
 	System.Classes,

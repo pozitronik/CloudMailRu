@@ -100,7 +100,7 @@ type
 implementation
 
 uses
-	LANGUAGE_STRINGS;
+	LanguageStrings;
 
 const
 	{Sample API responses for testing}

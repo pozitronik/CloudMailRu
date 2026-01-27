@@ -24,7 +24,7 @@ uses
 	System.IOUtils,
 	AskPassword,
 	TCPasswordManager,
-	LANGUAGE_STRINGS,
+	LanguageStrings,
 	WSList,
 	StreamingSettings,
 	PluginSettingsManager,

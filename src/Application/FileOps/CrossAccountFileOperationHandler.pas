@@ -61,7 +61,7 @@ uses
 	CMRDirItem,
 	CMRFileIdentity,
 	SettingsConstants,
-	LANGUAGE_STRINGS;
+	LanguageStrings;
 
 constructor TCrossAccountFileOperationHandler.Create(RetryHandler: IRetryHandler; Logger: ILogger);
 begin

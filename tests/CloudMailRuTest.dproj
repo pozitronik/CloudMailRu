@@ -137,7 +137,7 @@
         <DCCReference Include="..\src\helpers\StringHelper.pas"/>
         <DCCReference Include="..\src\Infrastructure\TC\TCHandler.pas"/>
         <DCCReference Include="..\src\Domain\Services\Description.pas"/>
-        <DCCReference Include="..\src\Presentation\Localization\LANGUAGE_STRINGS.pas"/>
+        <DCCReference Include="..\src\Presentation\Localization\LanguageStrings.pas"/>
         <DCCReference Include="models\settings\PluginSettingsManagerTest.pas"/>
         <DCCReference Include="models\settings\AccountsManagerTest.pas"/>
         <DCCReference Include="..\src\helpers\ParsingHelper.pas"/>

@@ -34,7 +34,7 @@ uses
 	CMRConstants,
 	CMROAuthJsonAdapter,
 	WFXTypes,
-	LANGUAGE_STRINGS,
+	LanguageStrings,
 	StringHelper;
 
 {TOAuthAppAuthStrategy}

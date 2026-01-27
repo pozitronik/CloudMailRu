@@ -5,7 +5,7 @@ interface
 uses
 	System.Classes,
 	System.SysUtils,
-	LANGUAGE_STRINGS;
+	LanguageStrings;
 
 type
 

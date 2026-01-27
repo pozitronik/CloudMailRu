@@ -24,7 +24,7 @@ uses
 	HashInfo,
 	WindowsFileSystem,
 	TCHandler,
-	LANGUAGE_STRINGS,
+	LanguageStrings,
 	WFXTypes,
 	System.Classes,
 	System.SysUtils;

@@ -19,7 +19,7 @@ implementation
 uses
 	SysUtils,
 	CMRConstants,
-	LANGUAGE_STRINGS,
+	LanguageStrings,
 	JSONHelper,
 	JSON;
 

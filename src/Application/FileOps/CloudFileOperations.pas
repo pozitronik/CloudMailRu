@@ -7,7 +7,7 @@ interface
 uses
 	CMRConstants,
 	CloudHTTP,
-	LANGUAGE_STRINGS,
+	LanguageStrings,
 	WFXTypes,
 	TCLogger,
 	TokenRetryHelper,

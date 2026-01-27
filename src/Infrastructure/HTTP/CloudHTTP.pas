@@ -18,7 +18,7 @@ uses
 	SettingsConstants,
 	WFXTypes,
 	CMRConstants,
-	LANGUAGE_STRINGS,
+	LanguageStrings,
 	ParsingHelper,
 	JSONHelper,
 	IdStack,

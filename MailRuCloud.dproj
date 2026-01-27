@@ -212,7 +212,7 @@
         <DCCReference Include="src\Domain\ValueObjects\CMROperationResult.pas"/>
         <DCCReference Include="src\Domain\ValueObjects\CMROwner.pas"/>
         <DCCReference Include="src\Domain\ValueObjects\CMRSpace.pas"/>
-        <DCCReference Include="src\Presentation\Localization\LANGUAGE_STRINGS.pas"/>
+        <DCCReference Include="src\Presentation\Localization\LanguageStrings.pas"/>
         <DCCReference Include="src\Domain\ValueObjects\CMRTwostep.pas"/>
         <DCCReference Include="src\Infrastructure\IO\ChunkedFileStream.pas"/>
         <DCCReference Include="src\Domain\Services\CloudMailRu.pas"/>

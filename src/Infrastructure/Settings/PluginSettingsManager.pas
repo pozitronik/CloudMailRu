@@ -11,7 +11,7 @@ uses
 	WindowsHelper,
 	Windows,
 	SettingsConstants,
-	LANGUAGE_STRINGS,
+	LanguageStrings,
 	CMRConstants,
 	Classes,
 	PluginSettings,

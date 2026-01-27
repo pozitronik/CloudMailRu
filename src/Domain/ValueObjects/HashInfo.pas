@@ -7,7 +7,7 @@ uses
 	system.sysutils,
 	StringHelper,
 	CMRConstants,
-	LANGUAGE_STRINGS;
+	LanguageStrings;
 
 const
 	SHA1_HEX_LENGTH = 40; {Length of SHA1 hash in hexadecimal representation}

@@ -9,7 +9,7 @@ uses
 	CMROAuth,
 	CMROperationResult,
 	WFXTypes,
-	LANGUAGE_STRINGS,
+	LanguageStrings,
 	TCLogger,
 	TCProgress,
 	TCRequest,

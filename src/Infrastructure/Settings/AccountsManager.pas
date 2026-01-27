@@ -11,7 +11,7 @@ uses
 	WindowsHelper,
 	Windows,
 	ParsingHelper,
-	LANGUAGE_STRINGS,
+	LanguageStrings,
 	SettingsConstants,
 	WSList,
 	AccountSettings,

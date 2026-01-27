@@ -17,7 +17,7 @@ uses
 	Accountsmanager,
 	WSList,
 	CMRConstants,
-	LANGUAGE_STRINGS,
+	LanguageStrings,
 	SettingsConstants,
 	CMRInviteList,
 	CMRInvite,

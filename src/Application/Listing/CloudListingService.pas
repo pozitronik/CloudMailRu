@@ -20,7 +20,7 @@ uses
 	FileCipher,
 	PathHelper,
 	StringHelper, {FormatSize}
-	LANGUAGE_STRINGS,
+	LanguageStrings,
 	WFXTypes,
 	TCLogger,
 	TokenRetryHelper,

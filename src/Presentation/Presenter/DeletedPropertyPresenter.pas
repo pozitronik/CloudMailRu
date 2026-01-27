@@ -11,7 +11,7 @@ uses
 	CMRDirItem,
 	CMRConstants,
 	SettingsConstants,
-	LANGUAGE_STRINGS,
+	LanguageStrings,
 	StringHelper,
 	DateUtils,
 	System.SysUtils;

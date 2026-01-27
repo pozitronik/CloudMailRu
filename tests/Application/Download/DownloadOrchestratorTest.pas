@@ -77,7 +77,7 @@ implementation
 uses
 	SysUtils,
 	PluginSettings,
-	LANGUAGE_STRINGS;
+	LanguageStrings;
 
 type
 	{Mock validator that can be configured to pass or fail}

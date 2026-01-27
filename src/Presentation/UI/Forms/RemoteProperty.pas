@@ -13,7 +13,7 @@ uses
 	WFXTypes,
 	Description,
 	CMRConstants,
-	LANGUAGE_STRINGS,
+	LanguageStrings,
 	Winapi.Windows,
 	Winapi.Messages,
 	System.SysUtils,

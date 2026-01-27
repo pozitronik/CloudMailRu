@@ -21,7 +21,7 @@ uses
 	CMROperationResult in 'src\Domain\ValueObjects\CMROperationResult.pas',
 	CMROwner in 'src\Domain\ValueObjects\CMROwner.pas',
 	CMRSpace in 'src\Domain\ValueObjects\CMRSpace.pas',
-	LANGUAGE_STRINGS in 'src\Presentation\Localization\LANGUAGE_STRINGS.pas',
+	LanguageStrings in 'src\Presentation\Localization\LanguageStrings.pas',
 	CMRTwostep in 'src\Domain\ValueObjects\CMRTwostep.pas',
 	ChunkedFileStream in 'src\Infrastructure\IO\ChunkedFileStream.pas',
 	Classes,

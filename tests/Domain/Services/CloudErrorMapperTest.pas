@@ -107,7 +107,7 @@ type
 implementation
 
 uses
-	LANGUAGE_STRINGS;
+	LanguageStrings;
 
 { Helper function to create TCMROperationResult }
 function MakeResult(Code: Integer; Status: Integer = 0): TCMROperationResult;

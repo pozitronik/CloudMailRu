@@ -98,7 +98,7 @@ implementation
 uses
 	System.SysUtils,
 	WFXTypes,
-	LANGUAGE_STRINGS,
+	LanguageStrings,
 	JSONHelper;
 
 {TCloudShardManager}

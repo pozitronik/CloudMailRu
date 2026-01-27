@@ -91,7 +91,7 @@ uses
 	Windows,
 	FileHelper,
 	PathHelper,
-	LANGUAGE_STRINGS,
+	LanguageStrings,
 	SettingsConstants;
 
 const

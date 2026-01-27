@@ -48,7 +48,7 @@ type
 implementation
 
 uses
-	LANGUAGE_STRINGS;
+	LanguageStrings;
 
 constructor TDownloadOrchestrator.Create(PreparationValidator: IDownloadPreparationValidator; ConflictResolver: ILocalFileConflictResolver; RetryHandler: IRetryHandler; SettingsManager: IPluginSettingsManager);
 begin

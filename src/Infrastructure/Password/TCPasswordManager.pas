@@ -6,7 +6,7 @@ interface
 
 uses
 	WFXTypes,
-	LANGUAGE_STRINGS,
+	LanguageStrings,
 	Windows,
 	SysUtils,
 	AskPassword,

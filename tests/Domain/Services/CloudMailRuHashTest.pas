@@ -6,7 +6,7 @@ uses
 	CloudMailRu,
 	CloudSettings,
 	CMRConstants,
-	LANGUAGE_STRINGS,
+	LanguageStrings,
 	WFXTypes,
 	TCLogger,
 	TCProgress,

@@ -12,7 +12,7 @@ uses
 	CMROperationResult,
 	CMROperationResultJsonAdapter,
 	WFXTypes,
-	LANGUAGE_STRINGS,
+	LanguageStrings,
 	SettingsConstants,
 	HashInfo,
 	TCLogger,

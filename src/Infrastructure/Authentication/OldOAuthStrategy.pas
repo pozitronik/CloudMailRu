@@ -26,7 +26,7 @@ uses
 	CMROAuth,
 	CMROAuthJsonAdapter,
 	WFXTypes,
-	LANGUAGE_STRINGS;
+	LanguageStrings;
 
 {Helper function to get OAuth token - extracted from CloudMailRu.pas}
 function GetOAuthToken(HTTP: ICloudHTTP; const Email, Password: WideString; out OAuthToken: TCMROAuth): Boolean;
