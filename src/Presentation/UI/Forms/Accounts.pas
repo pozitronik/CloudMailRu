@@ -956,7 +956,7 @@ end;
 
 procedure TAccountsForm.ShowValidationError(ControlName: WideString; Message: WideString);
 var
-	MessageBaloon: TBalloonHint;
+	MessageBalloon: TBalloonHint;
 	TargetControl: TControl;
 begin
 	TargetControl := nil;
@@ -965,12 +965,12 @@ begin
 
 	if Assigned(TargetControl) then
 	begin
-		MessageBaloon := TBalloonHint.Create(Self);
+		MessageBalloon := TBalloonHint.Create(Self);
 		try
-			MessageBaloon.HideAfter := 5000;
-			MessageBaloon.Delay := 0;
-			MessageBaloon.Description := Message;
-			MessageBaloon.ShowHint(TargetControl);
+			MessageBalloon.HideAfter := 5000;
+			MessageBalloon.Delay := 0;
+			MessageBalloon.Description := Message;
+			MessageBalloon.ShowHint(TargetControl);
 		finally
 			{Note: TBalloonHint manages its own lifetime}
 		end;
