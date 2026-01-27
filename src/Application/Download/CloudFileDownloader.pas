@@ -259,16 +259,13 @@ begin
 			Exit(FS_FILE_WRITEERROR);
 		end;
 	end;
-	if (Assigned(FileStream)) then
-	begin
-		try
-			Result := FGetHTTP().GetFile(GetSharedFileUrl(RemotePath), FileStream, LogErrors);
-			if ((Result in [FS_FILE_OK]) and (EmptyWideStr = ResultHash)) then
-				ResultHash := FHashCalculator.CalculateHash(FileStream, CALCULATING_HASH);
-			FlushFileBuffers(FileStream.Handle);
-		finally
-			FileStream.Free;
-		end;
+	try
+		Result := FGetHTTP().GetFile(GetSharedFileUrl(RemotePath), FileStream, LogErrors);
+		if ((Result in [FS_FILE_OK]) and (EmptyWideStr = ResultHash)) then
+			ResultHash := FHashCalculator.CalculateHash(FileStream, CALCULATING_HASH);
+		FlushFileBuffers(FileStream.Handle);
+	finally
+		FileStream.Free;
 	end;
 	if Result <> FS_FILE_OK then
 		FFileSystem.DeleteFile(GetUNCFilePath(LocalPath));
