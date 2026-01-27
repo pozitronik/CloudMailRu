@@ -3,8 +3,8 @@ unit DeletedProperty;
 interface
 
 uses
-	CMRDirItemList,
-	CMRDirItem,
+	CloudDirItemList,
+	CloudDirItem,
 	DeletedPropertyPresenter,
 	Winapi.Windows,
 	Winapi.Messages,
@@ -48,7 +48,7 @@ type
 		procedure SetEmptyEnabled(Enabled: Boolean);
 	public
 		destructor Destroy; override;
-		class function ShowProperties(parentWindow: HWND; Items: TCMRDirItemList; TrashDir: boolean = false; AccountName: WideString = ''): integer;
+		class function ShowProperties(parentWindow: HWND; Items: TCloudDirItemList; TrashDir: boolean = false; AccountName: WideString = ''): integer;
 	end;
 
 implementation
@@ -110,7 +110,7 @@ begin
 	inherited;
 end;
 
-class function TDeletedPropertyForm.ShowProperties(parentWindow: HWND; Items: TCMRDirItemList; TrashDir: boolean; AccountName: WideString): integer;
+class function TDeletedPropertyForm.ShowProperties(parentWindow: HWND; Items: TCloudDirItemList; TrashDir: boolean; AccountName: WideString): integer;
 var
 	DeletedPropertyForm: TDeletedPropertyForm;
 begin

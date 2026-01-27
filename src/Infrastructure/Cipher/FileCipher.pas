@@ -6,9 +6,9 @@ interface
 
 uses
 	Classes,
-	CMRDirItemList,
+	CloudDirItemList,
 	System.SysUtils,
-	CMRConstants,
+	CloudConstants,
 	DCPcrypt2,
 	DCPblockciphers,
 	DCPrijndael,
@@ -33,7 +33,7 @@ type
 		function DecryptFile(SourceFileName, DestinationFilename: WideString): Integer;
 		function DecryptStream(SourceStream, DestinationStream: TStream): Integer;
 		function DecryptFileName(const FileName: WideString): WideString;
-		procedure DecryptDirListing(var CloudMailRuDirListing: TCMRDirItemList);
+		procedure DecryptDirListing(var CloudMailRuDirListing: TCloudDirItemList);
 	end;
 
 	{Null implementation for testing - pass-through without encryption}
@@ -45,7 +45,7 @@ type
 		function DecryptFile(SourceFileName, DestinationFilename: WideString): Integer;
 		function DecryptStream(SourceStream, DestinationStream: TStream): Integer;
 		function DecryptFileName(const FileName: WideString): WideString;
-		procedure DecryptDirListing(var CloudMailRuDirListing: TCMRDirItemList);
+		procedure DecryptDirListing(var CloudMailRuDirListing: TCloudDirItemList);
 	end;
 
 	{Production implementation using AES/Rijndael encryption}
@@ -74,7 +74,7 @@ type
 		function DecryptFile(SourceFileName, DestinationFilename: WideString): Integer;
 		function DecryptStream(SourceStream, DestinationStream: TStream): Integer;
 		function DecryptFileName(const FileName: WideString): WideString;
-		procedure DecryptDirListing(var CloudMailRuDirListing: TCMRDirItemList);
+		procedure DecryptDirListing(var CloudMailRuDirListing: TCloudDirItemList);
 
 		property IsWrongPassword: Boolean read PasswordIsWrong;
 
@@ -141,7 +141,7 @@ begin
 	Result := ExtractFileName(FileName);
 end;
 
-procedure TNullCipher.DecryptDirListing(var CloudMailRuDirListing: TCMRDirItemList);
+procedure TNullCipher.DecryptDirListing(var CloudMailRuDirListing: TCloudDirItemList);
 var
 	i: Integer;
 begin
@@ -274,7 +274,7 @@ begin
 	end;
 end;
 
-procedure TFileCipher.DecryptDirListing(var CloudMailRuDirListing: TCMRDirItemList);
+procedure TFileCipher.DecryptDirListing(var CloudMailRuDirListing: TCloudDirItemList);
 var
 	i: Integer;
 begin

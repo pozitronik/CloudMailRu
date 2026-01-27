@@ -7,7 +7,7 @@ uses
 	PluginSettingsManager,
 	SettingsConstants,
 	StreamingSettings,
-	CMRConstants,
+	CloudConstants,
 	TestHelper,
 	SysUtils,
 	IOUtils,

@@ -32,9 +32,9 @@ implementation
 uses
 	System.SysUtils,
 	CloudMailRu,
-	CMRIncomingInviteList,
+	CloudIncomingInviteList,
 	WFXTypes,
-	CMRConstants,
+	CloudConstants,
 	TestDataGenerator;
 
 {TInviteIntegrationTest}
@@ -46,7 +46,7 @@ var
 	ShareResult: Boolean;
 	MountResult: Boolean;
 	SecondaryCloud: TCloudMailRu;
-	Invites: TCMRIncomingInviteList;
+	Invites: TCloudIncomingInviteList;
 	InviteToken: WideString;
 	MountPath: WideString;
 	I: Integer;
@@ -127,7 +127,7 @@ var
 	ShareResult: Boolean;
 	MountResult, UnmountResult: Boolean;
 	SecondaryCloud: TCloudMailRu;
-	Invites: TCMRIncomingInviteList;
+	Invites: TCloudIncomingInviteList;
 	InviteToken: WideString;
 	MountPath: WideString;
 	I: Integer;
@@ -205,7 +205,7 @@ var
 	ShareResult: Boolean;
 	MountResult, UnmountResult: Boolean;
 	SecondaryCloud: TCloudMailRu;
-	Invites: TCMRIncomingInviteList;
+	Invites: TCloudIncomingInviteList;
 	InviteToken: WideString;
 	MountPath: WideString;
 	I: Integer;
@@ -282,7 +282,7 @@ var
 	ShareResult: Boolean;
 	RejectResult: Boolean;
 	SecondaryCloud: TCloudMailRu;
-	Invites: TCMRIncomingInviteList;
+	Invites: TCloudIncomingInviteList;
 	InviteToken: WideString;
 	I: Integer;
 begin

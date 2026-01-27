@@ -57,9 +57,9 @@ implementation
 uses
 	SysUtils,
 	WFXTypes,
-	CMRConstants,
-	CMRDirItem,
-	CMRFileIdentity,
+	CloudConstants,
+	CloudDirItem,
+	CloudFileIdentity,
 	SettingsConstants,
 	LanguageStrings;
 
@@ -96,8 +96,8 @@ end;
 
 function TCrossAccountFileOperationHandler.ExecuteViaHash(OldCloud, NewCloud: TCloudMailRu; const OldRealPath, NewRealPath: TRealPath; Move, OverWrite: Boolean; AbortCheck: TAbortCheckFunc): Integer;
 var
-	CurrentItem: TCMRDirItem;
-	FileIdentity: TCMRFileIdentity;
+	CurrentItem: TCloudDirItem;
+	FileIdentity: TCloudFileIdentity;
 	TargetPath: WideString;
 begin
 	Result := FS_FILE_NOTSUPPORTED;
@@ -108,7 +108,7 @@ begin
 	if not OldCloud.ListingService.StatusFile(OldRealPath.Path, CurrentItem) then
 		Exit;
 
-	{Convert TCMRDirItem to TCMRFileIdentity for AddFileByIdentity}
+	{Convert TCloudDirItem to TCloudFileIdentity for AddFileByIdentity}
 	FileIdentity.Hash := CurrentItem.hash;
 	FileIdentity.Size := CurrentItem.size;
 
@@ -134,7 +134,7 @@ end;
 function TCrossAccountFileOperationHandler.ExecuteViaPublicLink(OldCloud, NewCloud: TCloudMailRu; const OldRealPath, NewRealPath: TRealPath; Move, OverWrite: Boolean; AbortCheck: TAbortCheckFunc): Integer;
 var
 	NeedUnpublish: Boolean;
-	CurrentItem: TCMRDirItem;
+	CurrentItem: TCloudDirItem;
 	Weblink: WideString;
 begin
 	Result := FS_FILE_NOTSUPPORTED;

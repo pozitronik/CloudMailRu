@@ -70,7 +70,7 @@ type
 implementation
 
 uses
-	CMROAuth;
+	CloudOAuth;
 
 {TNullAuthStrategyTest}
 
@@ -162,10 +162,10 @@ end;
 
 procedure TAuthResultTest.TestCreateOAuthSuccess_SetsTokenFromOAuth;
 var
-	OAuth: TCMROAuth;
+	OAuth: TCloudOAuth;
 	Result: TAuthResult;
 begin
-	OAuth := Default(TCMROAuth);
+	OAuth := Default(TCloudOAuth);
 	OAuth.access_token := 'oauth_access_token';
 
 	Result := TAuthResult.CreateOAuthSuccess(OAuth);
@@ -177,10 +177,10 @@ end;
 
 procedure TAuthResultTest.TestCreateOAuthSuccess_FormatsUnitedParams;
 var
-	OAuth: TCMROAuth;
+	OAuth: TCloudOAuth;
 	Result: TAuthResult;
 begin
-	OAuth := Default(TCMROAuth);
+	OAuth := Default(TCloudOAuth);
 	OAuth.access_token := 'token123';
 
 	Result := TAuthResult.CreateOAuthSuccess(OAuth);

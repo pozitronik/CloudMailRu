@@ -126,7 +126,7 @@ implementation
 
 uses
 	SysUtils,
-	CMRConstants,
+	CloudConstants,
 	LanguageStrings;
 
 {TMockSettingsManager}

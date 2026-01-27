@@ -4,12 +4,12 @@ interface
 
 uses
 	CloudListingService,
-	CMRDirItem,
-	CMRDirItemList,
-	CMRIncomingInviteList,
-	CMROperationResult,
-	CMRSpace,
-	CMRConstants,
+	CloudDirItem,
+	CloudDirItemList,
+	CloudIncomingInviteList,
+	CloudOperationResult,
+	CloudSpace,
+	CloudConstants,
 	WFXTypes,
 	TCLogger,
 	CloudHTTP,
@@ -37,7 +37,7 @@ type
 		function GetUnitedParams: WideString;
 		function GetPublicLink: WideString;
 		function CloudResultToBoolean(JSON: WideString; ErrorPrefix: WideString): Boolean;
-		function CloudResultToBooleanFromResult(OperationResult: TCMROperationResult; ErrorPrefix: WideString): Boolean;
+		function CloudResultToBooleanFromResult(OperationResult: TCloudOperationResult; ErrorPrefix: WideString): Boolean;
 	public
 		[Setup]
 		procedure Setup;
@@ -176,7 +176,7 @@ begin
 	Result := Pos(WideString('"status":200'), JSON) > 0;
 end;
 
-function TCloudListingServiceTest.CloudResultToBooleanFromResult(OperationResult: TCMROperationResult; ErrorPrefix: WideString): Boolean;
+function TCloudListingServiceTest.CloudResultToBooleanFromResult(OperationResult: TCloudOperationResult; ErrorPrefix: WideString): Boolean;
 begin
 	Result := OperationResult.OperationStatus = 200;
 end;
@@ -192,7 +192,7 @@ end;
 
 procedure TCloudListingServiceTest.TestGetDirectory_Success_PopulatesListing;
 var
-	Listing: TCMRDirItemList;
+	Listing: TCloudDirItemList;
 	Success: Boolean;
 begin
 	FMockHTTP.SetDefaultResponse(True,
@@ -206,7 +206,7 @@ end;
 
 procedure TCloudListingServiceTest.TestGetDirectory_PublicAccount_UsesWeblinkEndpoint;
 var
-	Listing: TCMRDirItemList;
+	Listing: TCloudDirItemList;
 	Success: Boolean;
 begin
 	FIsPublicAccount := True;
@@ -223,7 +223,7 @@ end;
 
 procedure TCloudListingServiceTest.TestGetSharedLinks_PublicAccount_ReturnsFalse;
 var
-	Listing: TCMRDirItemList;
+	Listing: TCloudDirItemList;
 	Success: Boolean;
 begin
 	FIsPublicAccount := True;
@@ -235,7 +235,7 @@ end;
 
 procedure TCloudListingServiceTest.TestGetSharedLinks_Success_PopulatesListing;
 var
-	Listing: TCMRDirItemList;
+	Listing: TCloudDirItemList;
 	Success: Boolean;
 begin
 	FMockHTTP.SetDefaultResponse(True,
@@ -250,7 +250,7 @@ end;
 
 procedure TCloudListingServiceTest.TestGetIncomingInvites_PublicAccount_ReturnsFalse;
 var
-	Listing: TCMRIncomingInviteList;
+	Listing: TCloudIncomingInviteList;
 	Success: Boolean;
 begin
 	FIsPublicAccount := True;
@@ -262,7 +262,7 @@ end;
 
 procedure TCloudListingServiceTest.TestGetIncomingInvites_Success_PopulatesListing;
 var
-	Listing: TCMRIncomingInviteList;
+	Listing: TCloudIncomingInviteList;
 	Success: Boolean;
 begin
 	FMockHTTP.SetDefaultResponse(True,
@@ -278,8 +278,8 @@ end;
 
 procedure TCloudListingServiceTest.TestGetIncomingInvitesAsDirItems_ConvertsToItems;
 var
-	DirListing: TCMRDirItemList;
-	InvitesListing: TCMRIncomingInviteList;
+	DirListing: TCloudDirItemList;
+	InvitesListing: TCloudIncomingInviteList;
 	Success: Boolean;
 begin
 	FMockHTTP.SetDefaultResponse(True, '{"status":200,"body":[]}');
@@ -296,7 +296,7 @@ end;
 
 procedure TCloudListingServiceTest.TestGetTrashbin_PublicAccount_ReturnsFalse;
 var
-	Listing: TCMRDirItemList;
+	Listing: TCloudDirItemList;
 	Success: Boolean;
 begin
 	FIsPublicAccount := True;
@@ -308,7 +308,7 @@ end;
 
 procedure TCloudListingServiceTest.TestGetTrashbin_Success_PopulatesListing;
 var
-	Listing: TCMRDirItemList;
+	Listing: TCloudDirItemList;
 	Success: Boolean;
 begin
 	FMockHTTP.SetDefaultResponse(True,
@@ -323,7 +323,7 @@ end;
 
 procedure TCloudListingServiceTest.TestStatusFile_Success_PopulatesFileInfo;
 var
-	FileInfo: TCMRDirItem;
+	FileInfo: TCloudDirItem;
 	Success: Boolean;
 begin
 	FMockHTTP.SetDefaultResponse(True,
@@ -337,7 +337,7 @@ end;
 
 procedure TCloudListingServiceTest.TestStatusFile_PublicAccount_UsesWeblinkEndpoint;
 var
-	FileInfo: TCMRDirItem;
+	FileInfo: TCloudDirItem;
 	Success: Boolean;
 begin
 	FIsPublicAccount := True;
@@ -403,7 +403,7 @@ end;
 
 procedure TCloudListingServiceTest.TestGetUserSpace_Success_PopulatesSpaceInfo;
 var
-	SpaceInfo: TCMRSpace;
+	SpaceInfo: TCloudSpace;
 	Success: Boolean;
 begin
 	FMockHTTP.SetDefaultResponse(True,
@@ -419,7 +419,7 @@ end;
 
 procedure TCloudListingServiceTest.TestGetUserSpace_HTTPFailure_ReturnsFalse;
 var
-	SpaceInfo: TCMRSpace;
+	SpaceInfo: TCloudSpace;
 	Success: Boolean;
 begin
 	FMockHTTP.SetDefaultResponse(False, '');

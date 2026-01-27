@@ -9,8 +9,8 @@ interface
 uses
 	CloudMailRu,
 	CloudSettings,
-	CMRDirItem,
-	CMRConstants,
+	CloudDirItem,
+	CloudConstants,
 	WFXTypes,
 	TCLogger,
 	TCProgress,
@@ -175,14 +175,14 @@ end;
 
 procedure TCloudMailRuMiscOpsTest.TestGetPublishedFileStreamUrl_WithExistingWeblink;
 var
-	FileInfo: TCMRDirItem;
+	FileInfo: TCloudDirItem;
 	StreamUrl: WideString;
 begin
 	FCloud := CreateCloud;
 	{Setup shard response}
 	FMockHTTP.SetResponse(API_DISPATCHER, True, JSON_SHARD_SUCCESS);
 
-	FileInfo := Default(TCMRDirItem);
+	FileInfo := Default(TCloudDirItem);
 	FileInfo.weblink := 'existing_weblink';
 	FileInfo.Home := '/test/file.mp4';
 
@@ -194,12 +194,12 @@ end;
 
 procedure TCloudMailRuMiscOpsTest.TestGetPublishedFileStreamUrl_FailsIfNoWeblinkAndPublishDisabled;
 var
-	FileInfo: TCMRDirItem;
+	FileInfo: TCloudDirItem;
 	StreamUrl: WideString;
 begin
 	FCloud := CreateCloud;
 
-	FileInfo := Default(TCMRDirItem);
+	FileInfo := Default(TCloudDirItem);
 	FileInfo.weblink := ''; {No weblink}
 	FileInfo.Home := '/test/file.mp4';
 
@@ -211,14 +211,14 @@ end;
 
 procedure TCloudMailRuMiscOpsTest.TestGetPublishedFileStreamUrl_FailsIfShardFails;
 var
-	FileInfo: TCMRDirItem;
+	FileInfo: TCloudDirItem;
 	StreamUrl: WideString;
 begin
 	FCloud := CreateCloud;
 	{Setup failed shard response}
 	FMockHTTP.SetResponse(API_DISPATCHER, True, JSON_FAILURE);
 
-	FileInfo := Default(TCMRDirItem);
+	FileInfo := Default(TCloudDirItem);
 	FileInfo.weblink := 'existing_weblink';
 	FileInfo.Home := '/test/file.mp4';
 
@@ -229,13 +229,13 @@ end;
 
 procedure TCloudMailRuMiscOpsTest.TestGetPublishedFileStreamUrl_GeneratesM3U8Url;
 var
-	FileInfo: TCMRDirItem;
+	FileInfo: TCloudDirItem;
 	StreamUrl: WideString;
 begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_DISPATCHER, True, JSON_SHARD_SUCCESS);
 
-	FileInfo := Default(TCMRDirItem);
+	FileInfo := Default(TCloudDirItem);
 	FileInfo.weblink := 'test_weblink';
 	FileInfo.Home := '/test/file.mp4';
 

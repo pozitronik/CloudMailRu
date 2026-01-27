@@ -4,7 +4,7 @@ interface
 
 uses
 	CloudFileOperations,
-	CMRConstants,
+	CloudConstants,
 	WFXTypes,
 	TCLogger,
 	CloudHTTP,

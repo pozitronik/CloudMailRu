@@ -77,7 +77,7 @@ uses
 	Windows,
 	WFXTypes,
 	SettingsConstants,
-	CMRConstants,
+	CloudConstants,
 	TCLogger,
 	WindowsHelper,
 	SystemHelper;

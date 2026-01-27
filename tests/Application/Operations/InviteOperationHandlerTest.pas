@@ -7,10 +7,10 @@ interface
 uses
 	DUnitX.TestFramework,
 	Windows,
-	CMRDirItem,
-	CMRInviteList,
-	CMRIncomingInvite,
-	CMRConstants,
+	CloudDirItem,
+	CloudInviteList,
+	CloudIncomingInvite,
+	CloudConstants,
 	CloudShareService,
 	InviteOperationHandler;
 
@@ -50,13 +50,13 @@ type
 		{ICloudShareService implementation}
 		function Publish(Path: WideString; var PublicLink: WideString): Boolean;
 		function Unpublish(Path: WideString; PublicLink: WideString): Boolean;
-		function GetShareInfo(Path: WideString; var InviteListing: TCMRInviteList): Boolean;
+		function GetShareInfo(Path: WideString; var InviteListing: TCloudInviteList): Boolean;
 		function Share(Path, Email: WideString; Access: Integer): Boolean;
 		function Unshare(Path, Email: WideString): Boolean;
 		function Mount(Home, InviteToken: WideString; ConflictMode: WideString = CLOUD_CONFLICT_RENAME): Boolean;
 		function Unmount(Home: WideString; CloneCopy: Boolean): Boolean;
 		function RejectInvite(InviteToken: WideString): Boolean;
-		function GetPublishedFileStreamUrl(FileIdentity: TCMRDirItem; var StreamUrl: WideString; ShardType: WideString = SHARD_TYPE_WEBLINK_VIDEO; Publish: Boolean = CLOUD_PUBLISH): Boolean;
+		function GetPublishedFileStreamUrl(FileIdentity: TCloudDirItem; var StreamUrl: WideString; ShardType: WideString = SHARD_TYPE_WEBLINK_VIDEO; Publish: Boolean = CLOUD_PUBLISH): Boolean;
 		function CloneWeblink(Path, Link: WideString; ConflictMode: WideString = CLOUD_CONFLICT_RENAME): Integer;
 	end;
 
@@ -67,7 +67,7 @@ type
 		FMockService: TMockShareService;
 		FMockServiceIntf: ICloudShareService;
 
-		function CreateInvite(const Name, InviteToken: WideString): TCMRIncomingInvite;
+		function CreateInvite(const Name, InviteToken: WideString): TCloudIncomingInvite;
 	public
 		[Setup]
 		procedure Setup;
@@ -190,7 +190,7 @@ begin
 	Result := False;
 end;
 
-function TMockShareService.GetShareInfo(Path: WideString; var InviteListing: TCMRInviteList): Boolean;
+function TMockShareService.GetShareInfo(Path: WideString; var InviteListing: TCloudInviteList): Boolean;
 begin
 	Result := False;
 end;
@@ -228,7 +228,7 @@ begin
 	Result := FRejectResult;
 end;
 
-function TMockShareService.GetPublishedFileStreamUrl(FileIdentity: TCMRDirItem; var StreamUrl: WideString; ShardType: WideString; Publish: Boolean): Boolean;
+function TMockShareService.GetPublishedFileStreamUrl(FileIdentity: TCloudDirItem; var StreamUrl: WideString; ShardType: WideString; Publish: Boolean): Boolean;
 begin
 	Result := False;
 end;
@@ -240,7 +240,7 @@ end;
 
 {TInviteOperationHandlerTest}
 
-function TInviteOperationHandlerTest.CreateInvite(const Name, InviteToken: WideString): TCMRIncomingInvite;
+function TInviteOperationHandlerTest.CreateInvite(const Name, InviteToken: WideString): TCloudIncomingInvite;
 begin
 	FillChar(Result, SizeOf(Result), 0);
 	Result.name := Name;
@@ -265,13 +265,13 @@ end;
 
 procedure TInviteOperationHandlerTest.TestExecute_DialogCancel_ReturnsOK;
 var
-	Invite: TCMRIncomingInvite;
+	Invite: TCloudIncomingInvite;
 	ExecResult: Integer;
 begin
 	Invite := CreateInvite('SharedFolder', 'token123');
 
 	ExecResult := FHandler.Execute(0, FMockServiceIntf, Invite,
-		function(ParentWindow: HWND; const Inv: TCMRIncomingInvite): Integer
+		function(ParentWindow: HWND; const Inv: TCloudIncomingInvite): Integer
 		begin
 			Result := mrCancel;
 		end);
@@ -281,12 +281,12 @@ end;
 
 procedure TInviteOperationHandlerTest.TestExecute_DialogCancel_NoOperationCalled;
 var
-	Invite: TCMRIncomingInvite;
+	Invite: TCloudIncomingInvite;
 begin
 	Invite := CreateInvite('SharedFolder', 'token123');
 
 	FHandler.Execute(0, FMockServiceIntf, Invite,
-		function(ParentWindow: HWND; const Inv: TCMRIncomingInvite): Integer
+		function(ParentWindow: HWND; const Inv: TCloudIncomingInvite): Integer
 		begin
 			Result := mrCancel;
 		end);
@@ -300,12 +300,12 @@ end;
 
 procedure TInviteOperationHandlerTest.TestExecute_MountFolder_CallsServiceWithCorrectParams;
 var
-	Invite: TCMRIncomingInvite;
+	Invite: TCloudIncomingInvite;
 begin
 	Invite := CreateInvite('SharedDocs', 'invite-token-abc');
 
 	FHandler.Execute(0, FMockServiceIntf, Invite,
-		function(ParentWindow: HWND; const Inv: TCMRIncomingInvite): Integer
+		function(ParentWindow: HWND; const Inv: TCloudIncomingInvite): Integer
 		begin
 			Result := mrYes; {mrYes = Mount folder}
 		end);
@@ -317,14 +317,14 @@ end;
 
 procedure TInviteOperationHandlerTest.TestExecute_MountFolder_Success_ReturnsOK;
 var
-	Invite: TCMRIncomingInvite;
+	Invite: TCloudIncomingInvite;
 	ExecResult: Integer;
 begin
 	Invite := CreateInvite('SharedDocs', 'token123');
 	FMockService.SetMountResult(True);
 
 	ExecResult := FHandler.Execute(0, FMockServiceIntf, Invite,
-		function(ParentWindow: HWND; const Inv: TCMRIncomingInvite): Integer
+		function(ParentWindow: HWND; const Inv: TCloudIncomingInvite): Integer
 		begin
 			Result := mrYes;
 		end);
@@ -336,12 +336,12 @@ end;
 
 procedure TInviteOperationHandlerTest.TestExecute_UnmountKeep_CallsServiceWithCloneCopyTrue;
 var
-	Invite: TCMRIncomingInvite;
+	Invite: TCloudIncomingInvite;
 begin
 	Invite := CreateInvite('SharedFolder', 'token123');
 
 	FHandler.Execute(0, FMockServiceIntf, Invite,
-		function(ParentWindow: HWND; const Inv: TCMRIncomingInvite): Integer
+		function(ParentWindow: HWND; const Inv: TCloudIncomingInvite): Integer
 		begin
 			Result := mrAbort; {mrAbort = Unmount folder, keep data}
 		end);
@@ -353,14 +353,14 @@ end;
 
 procedure TInviteOperationHandlerTest.TestExecute_UnmountKeep_Success_ReturnsOK;
 var
-	Invite: TCMRIncomingInvite;
+	Invite: TCloudIncomingInvite;
 	ExecResult: Integer;
 begin
 	Invite := CreateInvite('SharedFolder', 'token123');
 	FMockService.SetUnmountResult(True);
 
 	ExecResult := FHandler.Execute(0, FMockServiceIntf, Invite,
-		function(ParentWindow: HWND; const Inv: TCMRIncomingInvite): Integer
+		function(ParentWindow: HWND; const Inv: TCloudIncomingInvite): Integer
 		begin
 			Result := mrAbort;
 		end);
@@ -372,12 +372,12 @@ end;
 
 procedure TInviteOperationHandlerTest.TestExecute_UnmountNoKeep_CallsServiceWithCloneCopyFalse;
 var
-	Invite: TCMRIncomingInvite;
+	Invite: TCloudIncomingInvite;
 begin
 	Invite := CreateInvite('SharedProject', 'token456');
 
 	FHandler.Execute(0, FMockServiceIntf, Invite,
-		function(ParentWindow: HWND; const Inv: TCMRIncomingInvite): Integer
+		function(ParentWindow: HWND; const Inv: TCloudIncomingInvite): Integer
 		begin
 			Result := mrClose; {mrClose = Unmount folder, don't keep data}
 		end);
@@ -389,14 +389,14 @@ end;
 
 procedure TInviteOperationHandlerTest.TestExecute_UnmountNoKeep_Success_ReturnsOK;
 var
-	Invite: TCMRIncomingInvite;
+	Invite: TCloudIncomingInvite;
 	ExecResult: Integer;
 begin
 	Invite := CreateInvite('SharedFolder', 'token123');
 	FMockService.SetUnmountResult(True);
 
 	ExecResult := FHandler.Execute(0, FMockServiceIntf, Invite,
-		function(ParentWindow: HWND; const Inv: TCMRIncomingInvite): Integer
+		function(ParentWindow: HWND; const Inv: TCloudIncomingInvite): Integer
 		begin
 			Result := mrClose;
 		end);
@@ -408,12 +408,12 @@ end;
 
 procedure TInviteOperationHandlerTest.TestExecute_RejectInvite_CallsServiceWithCorrectToken;
 var
-	Invite: TCMRIncomingInvite;
+	Invite: TCloudIncomingInvite;
 begin
 	Invite := CreateInvite('SharedFiles', 'reject-token-xyz');
 
 	FHandler.Execute(0, FMockServiceIntf, Invite,
-		function(ParentWindow: HWND; const Inv: TCMRIncomingInvite): Integer
+		function(ParentWindow: HWND; const Inv: TCloudIncomingInvite): Integer
 		begin
 			Result := mrNo; {mrNo = Reject invite}
 		end);
@@ -424,14 +424,14 @@ end;
 
 procedure TInviteOperationHandlerTest.TestExecute_RejectInvite_Success_ReturnsOK;
 var
-	Invite: TCMRIncomingInvite;
+	Invite: TCloudIncomingInvite;
 	ExecResult: Integer;
 begin
 	Invite := CreateInvite('SharedFolder', 'token123');
 	FMockService.SetRejectResult(True);
 
 	ExecResult := FHandler.Execute(0, FMockServiceIntf, Invite,
-		function(ParentWindow: HWND; const Inv: TCMRIncomingInvite): Integer
+		function(ParentWindow: HWND; const Inv: TCloudIncomingInvite): Integer
 		begin
 			Result := mrNo;
 		end);

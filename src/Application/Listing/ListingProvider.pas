@@ -7,8 +7,8 @@ unit ListingProvider;
 interface
 
 uses
-	CMRDirItemList,
-	CMRIncomingInviteList,
+	CloudDirItemList,
+	CloudIncomingInviteList,
 	CloudMailRu,
 	RealPath;
 
@@ -23,17 +23,17 @@ type
 			@param DirListing Output: directory item listing (always populated on success)
 			@param InviteListing Output: incoming invite listing (only populated for invites dir)
 			@return True if listing was fetched successfully}
-		function FetchListing(Cloud: TCloudMailRu; const Path: TRealPath; var DirListing: TCMRDirItemList; var InviteListing: TCMRIncomingInviteList): Boolean;
+		function FetchListing(Cloud: TCloudMailRu; const Path: TRealPath; var DirListing: TCloudDirItemList; var InviteListing: TCloudIncomingInviteList): Boolean;
 	end;
 
 	TListingProvider = class(TInterfacedObject, IListingProvider)
 	public
-		function FetchListing(Cloud: TCloudMailRu; const Path: TRealPath; var DirListing: TCMRDirItemList; var InviteListing: TCMRIncomingInviteList): Boolean;
+		function FetchListing(Cloud: TCloudMailRu; const Path: TRealPath; var DirListing: TCloudDirItemList; var InviteListing: TCloudIncomingInviteList): Boolean;
 	end;
 
 implementation
 
-function TListingProvider.FetchListing(Cloud: TCloudMailRu; const Path: TRealPath; var DirListing: TCMRDirItemList; var InviteListing: TCMRIncomingInviteList): Boolean;
+function TListingProvider.FetchListing(Cloud: TCloudMailRu; const Path: TRealPath; var DirListing: TCloudDirItemList; var InviteListing: TCloudIncomingInviteList): Boolean;
 begin
 	if Path.trashDir then
 		Result := Cloud.ListingService.GetTrashbin(DirListing)

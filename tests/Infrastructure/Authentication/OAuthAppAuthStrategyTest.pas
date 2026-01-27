@@ -56,7 +56,7 @@ implementation
 
 uses
 	SysUtils,
-	CMRConstants,
+	CloudConstants,
 	TCLogger;
 
 {TOAuthAppAuthStrategyTest}

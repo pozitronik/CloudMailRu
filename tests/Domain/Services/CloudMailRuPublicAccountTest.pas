@@ -8,9 +8,9 @@ interface
 uses
 	CloudMailRu,
 	CloudSettings,
-	CMRDirItemList,
-	CMRDirItem,
-	CMRConstants,
+	CloudDirItemList,
+	CloudDirItem,
+	CloudConstants,
 	WFXTypes,
 	TCLogger,
 	TCProgress,
@@ -224,7 +224,7 @@ end;
 
 procedure TCloudMailRuPublicAccountTest.TestGetDirListing_Public_UsesWeblinkParameter;
 var
-	DirListing: TCMRDirItemList;
+	DirListing: TCloudDirItemList;
 	LastCall: WideString;
 begin
 	FCloud := CreatePublicCloud(TEST_PUBLIC_URL);
@@ -240,7 +240,7 @@ end;
 
 procedure TCloudMailRuPublicAccountTest.TestGetDirListing_Public_Success;
 var
-	DirListing: TCMRDirItemList;
+	DirListing: TCloudDirItemList;
 	Success: Boolean;
 begin
 	FCloud := CreatePublicCloud(TEST_PUBLIC_URL);
@@ -255,7 +255,7 @@ end;
 
 procedure TCloudMailRuPublicAccountTest.TestGetDirListing_Public_IncludesPublicLinkInUrl;
 var
-	DirListing: TCMRDirItemList;
+	DirListing: TCloudDirItemList;
 	LastCall: WideString;
 begin
 	FCloud := CreatePublicCloud(TEST_PUBLIC_URL);
@@ -341,7 +341,7 @@ end;
 
 procedure TCloudMailRuPublicAccountTest.TestGetTrashbinListing_Public_ReturnsFalse;
 var
-	DirListing: TCMRDirItemList;
+	DirListing: TCloudDirItemList;
 begin
 	FCloud := CreatePublicCloud;
 	FMockHTTP.SetResponse(API_TRASHBIN, True, '{"status":200,"body":{"list":[]}}');
@@ -353,7 +353,7 @@ end;
 
 procedure TCloudMailRuPublicAccountTest.TestGetSharedLinksListing_Public_ReturnsFalse;
 var
-	DirListing: TCMRDirItemList;
+	DirListing: TCloudDirItemList;
 begin
 	FCloud := CreatePublicCloud;
 	FMockHTTP.SetResponse(API_FOLDER_SHARED_LINKS, True, '{"status":200,"body":{"list":[]}}');

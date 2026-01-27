@@ -47,8 +47,8 @@ uses
 	System.Classes,
 	System.IOUtils,
 	CloudMailRu,
-	CMRDirItem,
-	CMRDirItemList,
+	CloudDirItem,
+	CloudDirItemList,
 	WFXTypes,
 	TestDataGenerator;
 
@@ -156,7 +156,7 @@ end;
 procedure TDownloadIntegrationTest.TestDownloadFromPublicAccount_Succeeds;
 var
 	Cloud: TCloudMailRu;
-	Items: TCMRDirItemList;
+	Items: TCloudDirItemList;
 	LocalFile: WideString;
 	RemotePath: WideString;
 	ResultHash: WideString;
@@ -330,7 +330,7 @@ end;
 procedure TDownloadIntegrationTest.TestStatusFile_ReturnsMetadata;
 var
 	RemotePath: WideString;
-	Item: TCMRDirItem;
+	Item: TCloudDirItem;
 	StatusResult: Boolean;
 begin
 	{First upload a file with known size}

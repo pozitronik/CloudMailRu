@@ -4,7 +4,7 @@ interface
 
 uses
 	JSONHelper,
-	CMRConstants,
+	CloudConstants,
 	JSON,
 	DUnitX.TestFramework;
 

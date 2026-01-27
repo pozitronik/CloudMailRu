@@ -4,7 +4,7 @@ interface
 
 uses
 	AccountSettings,
-	CMRConstants,
+	CloudConstants,
 	SettingsConstants,
 	DUnitX.TestFramework;
 

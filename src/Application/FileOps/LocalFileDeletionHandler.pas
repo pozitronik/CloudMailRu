@@ -17,7 +17,7 @@ uses
 	PluginSettingsManager,
 	TCLogger,
 	WFXTypes,
-	CMRConstants,
+	CloudConstants,
 	SettingsConstants,
 	LanguageStrings,
 	PathHelper;

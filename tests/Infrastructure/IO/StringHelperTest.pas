@@ -4,7 +4,7 @@ interface
 
 uses
 	StringHelper,
-	CMRConstants,
+	CloudConstants,
 	Classes,
 	SysUtils,
 	DUnitX.TestFramework;

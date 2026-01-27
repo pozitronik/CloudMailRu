@@ -16,7 +16,7 @@ uses
 	ProxySettings,
 	SettingsConstants,
 	WFXTypes,
-	CMRConstants,
+	CloudConstants,
 	TCLogger,
 	TCProgress,
 	IdCookieManager,

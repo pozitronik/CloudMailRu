@@ -8,7 +8,7 @@ interface
 
 uses
 	CloudMailRu,
-	CMRConstants,
+	CloudConstants,
 	LanguageStrings,
 	TCHandler,
 	TCLogger,

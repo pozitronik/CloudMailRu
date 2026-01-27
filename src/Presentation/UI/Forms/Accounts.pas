@@ -318,7 +318,7 @@ implementation
 
 uses
 	ProxySettings,
-	CMRConstants,
+	CloudConstants,
 	IniConfigFile;
 
 {IAccountsView - Account tab controls}

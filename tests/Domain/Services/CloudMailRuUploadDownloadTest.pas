@@ -8,9 +8,9 @@ interface
 uses
 	CloudMailRu,
 	CloudSettings,
-	CMRFileIdentity,
-	CMRDirItem,
-	CMRConstants,
+	CloudFileIdentity,
+	CloudDirItem,
+	CloudConstants,
 	WFXTypes,
 	TCLogger,
 	TCProgress,
@@ -61,7 +61,7 @@ type
 		[Test]
 		procedure TestAddFileByIdentity_ConstructsCorrectPostData;
 
-		{AddFileByIdentity with TCMRDirItem}
+		{AddFileByIdentity with TCloudDirItem}
 		[Test]
 		procedure TestAddFileByIdentity_DirItem_Success;
 		[Test]
@@ -158,7 +158,7 @@ end;
 
 procedure TCloudMailRuUploadDownloadTest.TestAddFileByIdentity_Success_ReturnsOK;
 var
-	FileIdentity: TCMRFileIdentity;
+	FileIdentity: TCloudFileIdentity;
 begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_FILE_ADD, True, JSON_FILE_ADD_SUCCESS);
@@ -173,7 +173,7 @@ end;
 
 procedure TCloudMailRuUploadDownloadTest.TestAddFileByIdentity_Failure_ReturnsError;
 var
-	FileIdentity: TCMRFileIdentity;
+	FileIdentity: TCloudFileIdentity;
 begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_FILE_ADD, True, JSON_FILE_ADD_FAILURE);
@@ -188,7 +188,7 @@ end;
 
 procedure TCloudMailRuUploadDownloadTest.TestAddFileByIdentity_PublicAccount_ReturnsNotSupported;
 var
-	FileIdentity: TCMRFileIdentity;
+	FileIdentity: TCloudFileIdentity;
 begin
 	FCloud := CreateCloud(True);
 	FMockHTTP.SetResponse(API_FILE_ADD, True, JSON_FILE_ADD_SUCCESS);
@@ -204,7 +204,7 @@ end;
 
 procedure TCloudMailRuUploadDownloadTest.TestAddFileByIdentity_EmptyHash_StillCallsAPI;
 var
-	FileIdentity: TCMRFileIdentity;
+	FileIdentity: TCloudFileIdentity;
 begin
 	{Note: The API is called even with empty hash - this may be a potential improvement
 	 to skip the API call when hash is empty since it will likely fail anyway.
@@ -224,7 +224,7 @@ end;
 
 procedure TCloudMailRuUploadDownloadTest.TestAddFileByIdentity_ConstructsCorrectPostData;
 var
-	FileIdentity: TCMRFileIdentity;
+	FileIdentity: TCloudFileIdentity;
 	PostedData: WideString;
 begin
 	FCloud := CreateCloud;
@@ -240,16 +240,16 @@ begin
 	Assert.IsTrue(Pos(String('size='), String(PostedData)) > 0, 'Post data should contain size');
 end;
 
-{AddFileByIdentity with TCMRFileIdentity record fields}
+{AddFileByIdentity with TCloudFileIdentity record fields}
 
 procedure TCloudMailRuUploadDownloadTest.TestAddFileByIdentity_DirItem_Success;
 var
-	FileIdentity: TCMRFileIdentity;
+	FileIdentity: TCloudFileIdentity;
 begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_FILE_ADD, True, JSON_FILE_ADD_SUCCESS);
 
-	FileIdentity := Default(TCMRFileIdentity);
+	FileIdentity := Default(TCloudFileIdentity);
 	FileIdentity.Hash := 'ABCD1234567890ABCD1234567890ABCD12345678';
 	FileIdentity.Size := 1024;
 
@@ -260,13 +260,13 @@ end;
 
 procedure TCloudMailRuUploadDownloadTest.TestAddFileByIdentity_DirItem_UsesHashAndSize;
 var
-	FileIdentity: TCMRFileIdentity;
+	FileIdentity: TCloudFileIdentity;
 	PostedData: WideString;
 begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_FILE_ADD, True, JSON_FILE_ADD_SUCCESS);
 
-	FileIdentity := Default(TCMRFileIdentity);
+	FileIdentity := Default(TCloudFileIdentity);
 	FileIdentity.Hash := 'MYHASH1234567890ABCD1234567890ABCD123456';
 	FileIdentity.Size := 4096;
 
@@ -281,7 +281,7 @@ end;
 
 procedure TCloudMailRuUploadDownloadTest.TestStatusFile_Success_ReturnsTrue;
 var
-	FileInfo: TCMRDirItem;
+	FileInfo: TCloudDirItem;
 begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_FILE, True, JSON_STATUS_FILE_SUCCESS);
@@ -293,7 +293,7 @@ end;
 
 procedure TCloudMailRuUploadDownloadTest.TestStatusFile_NotFound_ReturnsFalse;
 var
-	FileInfo: TCMRDirItem;
+	FileInfo: TCloudDirItem;
 begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_FILE, True, JSON_STATUS_FILE_NOT_FOUND);
@@ -305,7 +305,7 @@ end;
 
 procedure TCloudMailRuUploadDownloadTest.TestStatusFile_PopulatesFileInfo;
 var
-	FileInfo: TCMRDirItem;
+	FileInfo: TCloudDirItem;
 begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_FILE, True, JSON_STATUS_FILE_SUCCESS);
@@ -319,7 +319,7 @@ end;
 
 procedure TCloudMailRuUploadDownloadTest.TestStatusFile_PublicAccount_Works;
 var
-	FileInfo: TCMRDirItem;
+	FileInfo: TCloudDirItem;
 begin
 	FCloud := CreateCloud(True);
 	FCloud.SetPublicLink('publiclink123');

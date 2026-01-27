@@ -5,17 +5,17 @@ unit CloudListingService;
 interface
 
 uses
-	CMRDirItem,
-	CMRDirItemList,
-	CMRDirItemJsonAdapter,
-	CMRDirItemListJsonAdapter,
-	CMRIncomingInviteList,
-	CMRIncomingInviteListJsonAdapter,
-	CMROperationResult,
-	CMROperationResultJsonAdapter,
-	CMRSpace,
-	CMRSpaceJsonAdapter,
-	CMRConstants,
+	CloudDirItem,
+	CloudDirItemList,
+	CloudDirItemJsonAdapter,
+	CloudDirItemListJsonAdapter,
+	CloudIncomingInviteList,
+	CloudIncomingInviteListJsonAdapter,
+	CloudOperationResult,
+	CloudOperationResultJsonAdapter,
+	CloudSpace,
+	CloudSpaceJsonAdapter,
+	CloudConstants,
 	CloudHTTP,
 	FileCipher,
 	PathHelper,
@@ -32,29 +32,29 @@ type
 	TGetUnitedParamsFunc = reference to function: WideString;
 	TGetPublicLinkFunc = reference to function: WideString;
 	TCloudResultToBooleanFunc = reference to function(JSON: WideString; ErrorPrefix: WideString): Boolean;
-	TCloudResultToBooleanFromResultFunc = reference to function(OperationResult: TCMROperationResult; ErrorPrefix: WideString): Boolean;
+	TCloudResultToBooleanFromResultFunc = reference to function(OperationResult: TCloudOperationResult; ErrorPrefix: WideString): Boolean;
 
 	{Interface for listing service operations}
 	ICloudListingService = interface
 		['{2A923C8D-EB0B-4E3B-84DC-E372CD6C9AE5}']
 		{Get directory listing for a path}
-		function GetDirectory(Path: WideString; var Listing: TCMRDirItemList; ShowProgress: Boolean = False): Boolean;
+		function GetDirectory(Path: WideString; var Listing: TCloudDirItemList; ShowProgress: Boolean = False): Boolean;
 		{Get shared links listing}
-		function GetSharedLinks(var Listing: TCMRDirItemList; ShowProgress: Boolean = False): Boolean;
+		function GetSharedLinks(var Listing: TCloudDirItemList; ShowProgress: Boolean = False): Boolean;
 		{Get incoming invites listing (returns invite data)}
-		function GetIncomingInvites(var Listing: TCMRIncomingInviteList; ShowProgress: Boolean = False): Boolean;
+		function GetIncomingInvites(var Listing: TCloudIncomingInviteList; ShowProgress: Boolean = False): Boolean;
 		{Get incoming invites as directory items with invite data}
-		function GetIncomingInvitesAsDirItems(var DirListing: TCMRDirItemList; var InvitesListing: TCMRIncomingInviteList; ShowProgress: Boolean = False): Boolean;
+		function GetIncomingInvitesAsDirItems(var DirListing: TCloudDirItemList; var InvitesListing: TCloudIncomingInviteList; ShowProgress: Boolean = False): Boolean;
 		{Get trashbin listing}
-		function GetTrashbin(var Listing: TCMRDirItemList; ShowProgress: Boolean = False): Boolean;
+		function GetTrashbin(var Listing: TCloudDirItemList; ShowProgress: Boolean = False): Boolean;
 		{Get file/folder status information}
-		function StatusFile(Path: WideString; var FileInfo: TCMRDirItem): Boolean;
+		function StatusFile(Path: WideString; var FileInfo: TCloudDirItem): Boolean;
 		{Restore item from trashbin}
 		function TrashbinRestore(Path: WideString; RestoreRevision: Integer; ConflictMode: WideString = CLOUD_CONFLICT_RENAME): Boolean;
 		{Empty trashbin}
 		function TrashbinEmpty(): Boolean;
 		{Get user storage space information}
-		function GetUserSpace(var SpaceInfo: TCMRSpace): Boolean;
+		function GetUserSpace(var SpaceInfo: TCloudSpace): Boolean;
 		{Log user space information to logger}
 		procedure LogUserSpaceInfo(Email: WideString);
 	end;
@@ -76,15 +76,15 @@ type
 		constructor Create(HTTP: ICloudHTTP; Cipher: ICipher; Logger: ILogger; RetryOperation: TRetryOperation; IsPublicAccount: TIsPublicAccountFunc; GetUnitedParams: TGetUnitedParamsFunc; GetPublicLink: TGetPublicLinkFunc; CloudResultToBoolean: TCloudResultToBooleanFunc; CloudResultToBooleanFromResult: TCloudResultToBooleanFromResultFunc; DoCryptFilenames: Boolean);
 
 		{ICloudListingService implementation}
-		function GetDirectory(Path: WideString; var Listing: TCMRDirItemList; ShowProgress: Boolean = False): Boolean;
-		function GetSharedLinks(var Listing: TCMRDirItemList; ShowProgress: Boolean = False): Boolean;
-		function GetIncomingInvites(var Listing: TCMRIncomingInviteList; ShowProgress: Boolean = False): Boolean;
-		function GetIncomingInvitesAsDirItems(var DirListing: TCMRDirItemList; var InvitesListing: TCMRIncomingInviteList; ShowProgress: Boolean = False): Boolean;
-		function GetTrashbin(var Listing: TCMRDirItemList; ShowProgress: Boolean = False): Boolean;
-		function StatusFile(Path: WideString; var FileInfo: TCMRDirItem): Boolean;
+		function GetDirectory(Path: WideString; var Listing: TCloudDirItemList; ShowProgress: Boolean = False): Boolean;
+		function GetSharedLinks(var Listing: TCloudDirItemList; ShowProgress: Boolean = False): Boolean;
+		function GetIncomingInvites(var Listing: TCloudIncomingInviteList; ShowProgress: Boolean = False): Boolean;
+		function GetIncomingInvitesAsDirItems(var DirListing: TCloudDirItemList; var InvitesListing: TCloudIncomingInviteList; ShowProgress: Boolean = False): Boolean;
+		function GetTrashbin(var Listing: TCloudDirItemList; ShowProgress: Boolean = False): Boolean;
+		function StatusFile(Path: WideString; var FileInfo: TCloudDirItem): Boolean;
 		function TrashbinRestore(Path: WideString; RestoreRevision: Integer; ConflictMode: WideString = CLOUD_CONFLICT_RENAME): Boolean;
 		function TrashbinEmpty(): Boolean;
-		function GetUserSpace(var SpaceInfo: TCMRSpace): Boolean;
+		function GetUserSpace(var SpaceInfo: TCloudSpace): Boolean;
 		procedure LogUserSpaceInfo(Email: WideString);
 	end;
 
@@ -107,10 +107,10 @@ begin
 	FDoCryptFilenames := DoCryptFilenames;
 end;
 
-function TCloudListingService.GetDirectory(Path: WideString; var Listing: TCMRDirItemList; ShowProgress: Boolean = False): Boolean;
+function TCloudListingService.GetDirectory(Path: WideString; var Listing: TCloudDirItemList; ShowProgress: Boolean = False): Boolean;
 var
 	CallResult: TAPICallResult;
-	LocalListing: TCMRDirItemList;
+	LocalListing: TCloudDirItemList;
 	UnitedParams: WideString;
 begin
 	SetLength(Listing, 0);
@@ -122,15 +122,15 @@ begin
 		var
 			JSON: WideString;
 		var
-			OperationResult: TCMROperationResult;
+			OperationResult: TCloudOperationResult;
 		Result := FHTTP.GetPage(Format('%s&weblink=%s%s&%s', [API_FOLDER, IncludeSlash(FGetPublicLink()), PathToUrl(Path, False), UnitedParams]), JSON, ShowProgress);
 		if Result then
 		begin
-			TCMROperationResultJsonAdapter.Parse(JSON, OperationResult);
+			TCloudOperationResultJsonAdapter.Parse(JSON, OperationResult);
 			Result := FCloudResultToBooleanFromResult(OperationResult, PREFIX_ERR_DIR_LISTING);
 			if Result then
 			begin
-				Result := TCMRDirItemListJsonAdapter.Parse(JSON, Listing);
+				Result := TCloudDirItemListJsonAdapter.Parse(JSON, Listing);
 				if Result and FDoCryptFilenames and Assigned(FCipher) then
 					FCipher.DecryptDirListing(Listing);
 			end else if OperationResult.OperationResult = CLOUD_ERROR_NOT_EXISTS then
@@ -146,17 +146,17 @@ begin
 		function: TAPICallResult
 		var
 			JSON: WideString;
-			OperationResult: TCMROperationResult;
+			OperationResult: TCloudOperationResult;
 			Success: Boolean;
 		begin
 			Success := FHTTP.GetPage(Format('%s&home=%s&%s', [API_FOLDER, PathToUrl(Path), UnitedParams]), JSON, ShowProgress);
 			if Success then
 			begin
-				TCMROperationResultJsonAdapter.Parse(JSON, OperationResult);
+				TCloudOperationResultJsonAdapter.Parse(JSON, OperationResult);
 				Success := FCloudResultToBooleanFromResult(OperationResult, PREFIX_ERR_DIR_LISTING);
 				if Success then
 				begin
-					Success := TCMRDirItemListJsonAdapter.Parse(JSON, LocalListing);
+					Success := TCloudDirItemListJsonAdapter.Parse(JSON, LocalListing);
 					if Success and FDoCryptFilenames and Assigned(FCipher) then
 						FCipher.DecryptDirListing(LocalListing);
 				end else if OperationResult.OperationResult = CLOUD_ERROR_NOT_EXISTS then
@@ -170,10 +170,10 @@ begin
 		Listing := LocalListing;
 end;
 
-function TCloudListingService.GetSharedLinks(var Listing: TCMRDirItemList; ShowProgress: Boolean = False): Boolean;
+function TCloudListingService.GetSharedLinks(var Listing: TCloudDirItemList; ShowProgress: Boolean = False): Boolean;
 var
 	CallResult: TAPICallResult;
-	LocalListing: TCMRDirItemList;
+	LocalListing: TCloudDirItemList;
 	UnitedParams: WideString;
 begin
 	Result := False;
@@ -196,7 +196,7 @@ begin
 		begin
 			Success := FHTTP.GetPage(Format('%s?%s', [API_FOLDER_SHARED_LINKS, UnitedParams]), JSON, ShowProgress);
 			if Success then
-				Success := FCloudResultToBoolean(JSON, PREFIX_ERR_SHARED_LINKS_LISTING) and TCMRDirItemListJsonAdapter.Parse(JSON, LocalListing);
+				Success := FCloudResultToBoolean(JSON, PREFIX_ERR_SHARED_LINKS_LISTING) and TCloudDirItemListJsonAdapter.Parse(JSON, LocalListing);
 			Result := TAPICallResult.FromBoolean(Success, JSON);
 		end);
 
@@ -205,10 +205,10 @@ begin
 		Listing := LocalListing;
 end;
 
-function TCloudListingService.GetIncomingInvites(var Listing: TCMRIncomingInviteList; ShowProgress: Boolean = False): Boolean;
+function TCloudListingService.GetIncomingInvites(var Listing: TCloudIncomingInviteList; ShowProgress: Boolean = False): Boolean;
 var
 	CallResult: TAPICallResult;
-	LocalListing: TCMRIncomingInviteList;
+	LocalListing: TCloudIncomingInviteList;
 	UnitedParams: WideString;
 begin
 	Result := False;
@@ -231,7 +231,7 @@ begin
 		begin
 			Success := FHTTP.GetPage(Format('%s?%s', [API_FOLDER_SHARED_INCOMING, UnitedParams]), JSON, ShowProgress);
 			if Success then
-				Success := FCloudResultToBoolean(JSON, PREFIX_ERR_INCOMING_REQUESTS_LISTING) and TCMRIncomingInviteListJsonAdapter.Parse(JSON, LocalListing);
+				Success := FCloudResultToBoolean(JSON, PREFIX_ERR_INCOMING_REQUESTS_LISTING) and TCloudIncomingInviteListJsonAdapter.Parse(JSON, LocalListing);
 			Result := TAPICallResult.FromBoolean(Success, JSON);
 		end);
 
@@ -240,7 +240,7 @@ begin
 		Listing := LocalListing;
 end;
 
-function TCloudListingService.GetIncomingInvitesAsDirItems(var DirListing: TCMRDirItemList; var InvitesListing: TCMRIncomingInviteList; ShowProgress: Boolean = False): Boolean;
+function TCloudListingService.GetIncomingInvitesAsDirItems(var DirListing: TCloudDirItemList; var InvitesListing: TCloudIncomingInviteList; ShowProgress: Boolean = False): Boolean;
 var
 	i: Integer;
 begin
@@ -258,10 +258,10 @@ begin
 	end;
 end;
 
-function TCloudListingService.GetTrashbin(var Listing: TCMRDirItemList; ShowProgress: Boolean = False): Boolean;
+function TCloudListingService.GetTrashbin(var Listing: TCloudDirItemList; ShowProgress: Boolean = False): Boolean;
 var
 	CallResult: TAPICallResult;
-	LocalListing: TCMRDirItemList;
+	LocalListing: TCloudDirItemList;
 	UnitedParams: WideString;
 begin
 	Result := False;
@@ -284,7 +284,7 @@ begin
 		begin
 			Success := FHTTP.GetPage(Format('%s?%s', [API_TRASHBIN, UnitedParams]), JSON, ShowProgress);
 			if Success then
-				Success := FCloudResultToBoolean(JSON, PREFIX_ERR_TRASH_LISTING) and TCMRDirItemListJsonAdapter.Parse(JSON, LocalListing);
+				Success := FCloudResultToBoolean(JSON, PREFIX_ERR_TRASH_LISTING) and TCloudDirItemListJsonAdapter.Parse(JSON, LocalListing);
 			Result := TAPICallResult.FromBoolean(Success, JSON);
 		end);
 
@@ -293,10 +293,10 @@ begin
 		Listing := LocalListing;
 end;
 
-function TCloudListingService.StatusFile(Path: WideString; var FileInfo: TCMRDirItem): Boolean;
+function TCloudListingService.StatusFile(Path: WideString; var FileInfo: TCloudDirItem): Boolean;
 var
 	CallResult: TAPICallResult;
-	LocalInfo: TCMRDirItem;
+	LocalInfo: TCloudDirItem;
 	UnitedParams: WideString;
 begin
 	UnitedParams := FGetUnitedParams();
@@ -310,11 +310,11 @@ begin
 			Progress: Boolean := False;
 		Result := FHTTP.GetPage(Format('%s?weblink=%s%s&%s', [API_FILE, IncludeSlash(FGetPublicLink()), PathToUrl(Path), UnitedParams]), JSON, Progress);
 		if Result then
-			Result := FCloudResultToBoolean(JSON, PREFIX_ERR_FILE_STATUS) and TCMRDirItemJsonAdapter.Parse(JSON, FileInfo);
+			Result := FCloudResultToBoolean(JSON, PREFIX_ERR_FILE_STATUS) and TCloudDirItemJsonAdapter.Parse(JSON, FileInfo);
 		Exit;
 	end;
 
-	LocalInfo := default (TCMRDirItem);
+	LocalInfo := default (TCloudDirItem);
 	CallResult := FRetryOperation.Execute(
 		function: TAPICallResult
 		var
@@ -325,7 +325,7 @@ begin
 			Progress := False;
 			Success := FHTTP.GetPage(Format('%s?home=%s&%s', [API_FILE, PathToUrl(Path), UnitedParams]), JSON, Progress);
 			if Success then
-				Success := FCloudResultToBoolean(JSON, PREFIX_ERR_FILE_STATUS) and TCMRDirItemJsonAdapter.Parse(JSON, LocalInfo);
+				Success := FCloudResultToBoolean(JSON, PREFIX_ERR_FILE_STATUS) and TCloudDirItemJsonAdapter.Parse(JSON, LocalInfo);
 			Result := TAPICallResult.FromBoolean(Success, JSON);
 		end);
 
@@ -350,12 +350,12 @@ begin
 	Result := FRetryOperation.PostFormBoolean(API_TRASHBIN_EMPTY + '?' + FGetUnitedParams(), EmptyWideStr, PREFIX_ERR_TRASH_CLEAN);
 end;
 
-function TCloudListingService.GetUserSpace(var SpaceInfo: TCMRSpace): Boolean;
+function TCloudListingService.GetUserSpace(var SpaceInfo: TCloudSpace): Boolean;
 var
 	CallResult: TAPICallResult;
-	LocalSpace: TCMRSpace;
+	LocalSpace: TCloudSpace;
 begin
-	LocalSpace := default(TCMRSpace);
+	LocalSpace := default(TCloudSpace);
 	CallResult := FRetryOperation.Execute(
 		function: TAPICallResult
 		var
@@ -366,7 +366,7 @@ begin
 			Progress := False;
 			Success := FHTTP.GetPage(Format('%s?%s', [API_USER_SPACE, FGetUnitedParams()]), JSON, Progress);
 			if Success then
-				Success := FCloudResultToBoolean(JSON, PREFIX_ERR_GET_USER_SPACE) and TCMRSpaceJsonAdapter.Parse(JSON, LocalSpace);
+				Success := FCloudResultToBoolean(JSON, PREFIX_ERR_GET_USER_SPACE) and TCloudSpaceJsonAdapter.Parse(JSON, LocalSpace);
 			Result := TAPICallResult.FromBoolean(Success, JSON);
 		end);
 
@@ -377,7 +377,7 @@ end;
 
 procedure TCloudListingService.LogUserSpaceInfo(Email: WideString);
 var
-	US: TCMRSpace;
+	US: TCloudSpace;
 	QuotaInfo: WideString;
 begin
 	if FIsPublicAccount() then

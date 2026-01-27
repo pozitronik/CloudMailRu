@@ -4,8 +4,8 @@ interface
 
 uses
 	FileCipher,
-	CMRDirItemList,
-	CMRDirItem,
+	CloudDirItemList,
+	CloudDirItem,
 	System.SysUtils,
 	System.IOUtils,
 	System.Classes,
@@ -207,7 +207,7 @@ end;
 procedure TNullCipherTest.TestDecryptDirListingSetsVisibleName;
 var
 	Cipher: ICipher;
-	DirListing: TCMRDirItemList;
+	DirListing: TCloudDirItemList;
 begin
 	SetLength(DirListing, 3);
 	DirListing[0].name := 'file1.txt';

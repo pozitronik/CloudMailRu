@@ -6,10 +6,10 @@ uses
 	CloudFileUploader,
 	CloudShardManager,
 	CloudHashCalculator,
-	CMROAuth,
-	CMRSpace,
-	CMRFileIdentity,
-	CMRConstants,
+	CloudOAuth,
+	CloudSpace,
+	CloudFileIdentity,
+	CloudConstants,
 	WFXTypes,
 	SettingsConstants,
 	TCLogger,
@@ -36,19 +36,19 @@ type
 		FHashCalculator: ICloudHashCalculator;
 		FMockHTTP: TMockCloudHTTP;
 		FIsPublicAccount: Boolean;
-		FOAuthToken: TCMROAuth;
+		FOAuthToken: TCloudOAuth;
 		FSettings: TUploadSettings;
 		FDeleteFileCalled: Boolean;
 		FRetryOperation: TRetryOperation;
 
 		function GetHTTP: ICloudHTTP;
-		function GetOAuthToken: TCMROAuth;
+		function GetOAuthToken: TCloudOAuth;
 		function IsPublicAccount: Boolean;
 		function GetRetryOperation: TRetryOperation;
 		function GetUnitedParams: WideString;
 		function CloudResultToFsResult(JSON: WideString; ErrorPrefix: WideString): Integer;
 		function DeleteFile(Path: WideString): Boolean;
-		function GetUserSpace(var SpaceInfo: TCMRSpace): Boolean;
+		function GetUserSpace(var SpaceInfo: TCloudSpace): Boolean;
 	public
 		[Setup]
 		procedure Setup;
@@ -159,7 +159,7 @@ begin
 	Result := FMockHTTP;
 end;
 
-function TCloudFileUploaderTest.GetOAuthToken: TCMROAuth;
+function TCloudFileUploaderTest.GetOAuthToken: TCloudOAuth;
 begin
 	Result := FOAuthToken;
 end;
@@ -193,7 +193,7 @@ begin
 	Result := True;
 end;
 
-function TCloudFileUploaderTest.GetUserSpace(var SpaceInfo: TCMRSpace): Boolean;
+function TCloudFileUploaderTest.GetUserSpace(var SpaceInfo: TCloudSpace): Boolean;
 begin
 	{Return False to skip quota check in tests}
 	Result := False;
@@ -302,7 +302,7 @@ end;
 
 procedure TCloudFileUploaderTest.TestAddFileByIdentity_PublicAccount_ReturnsNotSupported;
 var
-	Identity: TCMRFileIdentity;
+	Identity: TCloudFileIdentity;
 	Result: Integer;
 begin
 	FIsPublicAccount := True;
@@ -316,7 +316,7 @@ end;
 
 procedure TCloudFileUploaderTest.TestAddFileByIdentity_Success_ReturnsOK;
 var
-	Identity: TCMRFileIdentity;
+	Identity: TCloudFileIdentity;
 	Result: Integer;
 begin
 	Identity.Hash := 'ABCD1234567890ABCD1234567890ABCD12345678';
@@ -332,7 +332,7 @@ end;
 
 procedure TCloudFileUploaderTest.TestAddFileByIdentity_PostFormFails_ReturnsWriteError;
 var
-	Identity: TCMRFileIdentity;
+	Identity: TCloudFileIdentity;
 	Result: Integer;
 begin
 	Identity.Hash := 'ABCD1234567890ABCD1234567890ABCD12345678';

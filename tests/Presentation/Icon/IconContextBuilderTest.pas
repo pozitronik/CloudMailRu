@@ -9,10 +9,10 @@ uses
 	DUnitX.TestFramework,
 	Windows,
 	RealPath,
-	CMRDirItem,
-	CMRDirItemList,
-	CMRIncomingInvite,
-	CMRIncomingInviteList,
+	CloudDirItem,
+	CloudDirItemList,
+	CloudIncomingInvite,
+	CloudIncomingInviteList,
 	AccountSettings,
 	CloudMailRu,
 	CloudSettings,
@@ -43,13 +43,13 @@ type
 	{Mock listing item fetcher for testing}
 	TMockIconListingItemFetcher = class(TInterfacedObject, IListingItemFetcher)
 	private
-		FReturnItem: TCMRDirItem;
+		FReturnItem: TCloudDirItem;
 		FFetchCalled: Boolean;
 	public
 		property FetchCalled: Boolean read FFetchCalled;
-		procedure SetReturnItem(const Item: TCMRDirItem);
-		function FetchItem(var Listing: TCMRDirItemList; const Path: TRealPath;
-			Cloud: TCloudMailRu; UpdateListing: Boolean): TCMRDirItem;
+		procedure SetReturnItem(const Item: TCloudDirItem);
+		function FetchItem(var Listing: TCloudDirItemList; const Path: TRealPath;
+			Cloud: TCloudMailRu; UpdateListing: Boolean): TCloudDirItem;
 	end;
 
 	[TestFixture]
@@ -60,7 +60,7 @@ type
 		FMockItemFetcher: TMockIconListingItemFetcher;
 		FMockConnectionManager: TMockConnectionManager;
 
-		function CreateInviteItem(const Name: WideString): TCMRIncomingInvite;
+		function CreateInviteItem(const Name: WideString): TCloudIncomingInvite;
 	public
 		[Setup]
 		procedure Setup;
@@ -161,13 +161,13 @@ end;
 
 {TMockIconListingItemFetcher}
 
-procedure TMockIconListingItemFetcher.SetReturnItem(const Item: TCMRDirItem);
+procedure TMockIconListingItemFetcher.SetReturnItem(const Item: TCloudDirItem);
 begin
 	FReturnItem := Item;
 end;
 
-function TMockIconListingItemFetcher.FetchItem(var Listing: TCMRDirItemList;
-	const Path: TRealPath; Cloud: TCloudMailRu; UpdateListing: Boolean): TCMRDirItem;
+function TMockIconListingItemFetcher.FetchItem(var Listing: TCloudDirItemList;
+	const Path: TRealPath; Cloud: TCloudMailRu; UpdateListing: Boolean): TCloudDirItem;
 begin
 	FFetchCalled := True;
 	Result := FReturnItem;
@@ -175,7 +175,7 @@ end;
 
 {TIconContextBuilderTest}
 
-function TIconContextBuilderTest.CreateInviteItem(const Name: WideString): TCMRIncomingInvite;
+function TIconContextBuilderTest.CreateInviteItem(const Name: WideString): TCloudIncomingInvite;
 begin
 	FillChar(Result, SizeOf(Result), 0);
 	Result.name := Name;
@@ -206,8 +206,8 @@ end;
 procedure TIconContextBuilderTest.TestBuildContext_SetsIconsMode;
 var
 	Input: TIconContextInput;
-	DirListing: TCMRDirItemList;
-	InviteListing: TCMRIncomingInviteList;
+	DirListing: TCloudDirItemList;
+	InviteListing: TCloudIncomingInviteList;
 	Context: TIconContext;
 begin
 	Input.Path.FromPath('\account');
@@ -224,8 +224,8 @@ end;
 procedure TIconContextBuilderTest.TestBuildContext_DefaultsHasItemFalse;
 var
 	Input: TIconContextInput;
-	DirListing: TCMRDirItemList;
-	InviteListing: TCMRIncomingInviteList;
+	DirListing: TCloudDirItemList;
+	InviteListing: TCloudIncomingInviteList;
 	Context: TIconContext;
 begin
 	Input.Path.FromPath('\account');
@@ -242,8 +242,8 @@ end;
 procedure TIconContextBuilderTest.TestBuildContext_DefaultsHasInviteItemFalse;
 var
 	Input: TIconContextInput;
-	DirListing: TCMRDirItemList;
-	InviteListing: TCMRIncomingInviteList;
+	DirListing: TCloudDirItemList;
+	InviteListing: TCloudIncomingInviteList;
 	Context: TIconContext;
 begin
 	Input.Path.FromPath('\account');
@@ -260,8 +260,8 @@ end;
 procedure TIconContextBuilderTest.TestBuildContext_DefaultsIsPublicAccountFalse;
 var
 	Input: TIconContextInput;
-	DirListing: TCMRDirItemList;
-	InviteListing: TCMRIncomingInviteList;
+	DirListing: TCloudDirItemList;
+	InviteListing: TCloudIncomingInviteList;
 	Context: TIconContext;
 begin
 	{Use virtual path to avoid triggering FindDirItem which requires ConnectionManager}
@@ -280,8 +280,8 @@ end;
 procedure TIconContextBuilderTest.TestBuildContext_AccountRoot_DetectsPublicAccount;
 var
 	Input: TIconContextInput;
-	DirListing: TCMRDirItemList;
-	InviteListing: TCMRIncomingInviteList;
+	DirListing: TCloudDirItemList;
+	InviteListing: TCloudIncomingInviteList;
 	Context: TIconContext;
 begin
 	FMockAccountSettings.AddPublicAccount('public_acc');
@@ -299,8 +299,8 @@ end;
 procedure TIconContextBuilderTest.TestBuildContext_AccountRoot_DetectsPrivateAccount;
 var
 	Input: TIconContextInput;
-	DirListing: TCMRDirItemList;
-	InviteListing: TCMRIncomingInviteList;
+	DirListing: TCloudDirItemList;
+	InviteListing: TCloudIncomingInviteList;
 	Context: TIconContext;
 begin
 	Input.Path.FromPath('\private_acc');
@@ -317,8 +317,8 @@ end;
 procedure TIconContextBuilderTest.TestBuildContext_VirtualPath_SkipsPublicAccountCheck;
 var
 	Input: TIconContextInput;
-	DirListing: TCMRDirItemList;
-	InviteListing: TCMRIncomingInviteList;
+	DirListing: TCloudDirItemList;
+	InviteListing: TCloudIncomingInviteList;
 	Context: TIconContext;
 begin
 	FMockAccountSettings.AddPublicAccount('account');
@@ -339,8 +339,8 @@ end;
 procedure TIconContextBuilderTest.TestBuildContext_RegularPath_FindsDirItem;
 var
 	Input: TIconContextInput;
-	DirListing: TCMRDirItemList;
-	InviteListing: TCMRIncomingInviteList;
+	DirListing: TCloudDirItemList;
+	InviteListing: TCloudIncomingInviteList;
 	Context: TIconContext;
 begin
 	{TODO: Requires ConnectionManager mocking to test properly}
@@ -358,8 +358,8 @@ end;
 procedure TIconContextBuilderTest.TestBuildContext_RegularPath_SetsHasItemTrue;
 var
 	Input: TIconContextInput;
-	DirListing: TCMRDirItemList;
-	InviteListing: TCMRIncomingInviteList;
+	DirListing: TCloudDirItemList;
+	InviteListing: TCloudIncomingInviteList;
 	Context: TIconContext;
 begin
 	{TODO: Requires ConnectionManager mocking to test properly}
@@ -376,8 +376,8 @@ end;
 procedure TIconContextBuilderTest.TestBuildContext_AccountRoot_SkipsDirItemLookup;
 var
 	Input: TIconContextInput;
-	DirListing: TCMRDirItemList;
-	InviteListing: TCMRIncomingInviteList;
+	DirListing: TCloudDirItemList;
+	InviteListing: TCloudIncomingInviteList;
 	Context: TIconContext;
 begin
 	Input.Path.FromPath('\account');
@@ -397,8 +397,8 @@ end;
 procedure TIconContextBuilderTest.TestBuildContext_InvitesPath_FindsInviteItem;
 var
 	Input: TIconContextInput;
-	DirListing: TCMRDirItemList;
-	InviteListing: TCMRIncomingInviteList;
+	DirListing: TCloudDirItemList;
+	InviteListing: TCloudIncomingInviteList;
 	Context: TIconContext;
 begin
 	Input.Path.FromPath('\account.invites\shared_folder');
@@ -416,8 +416,8 @@ end;
 procedure TIconContextBuilderTest.TestBuildContext_InvitesPath_SetsHasInviteItemTrue;
 var
 	Input: TIconContextInput;
-	DirListing: TCMRDirItemList;
-	InviteListing: TCMRIncomingInviteList;
+	DirListing: TCloudDirItemList;
+	InviteListing: TCloudIncomingInviteList;
 	Context: TIconContext;
 begin
 	Input.Path.FromPath('\account.invites\folder');
@@ -435,8 +435,8 @@ end;
 procedure TIconContextBuilderTest.TestBuildContext_InvitesRoot_SkipsInviteItemLookup;
 var
 	Input: TIconContextInput;
-	DirListing: TCMRDirItemList;
-	InviteListing: TCMRIncomingInviteList;
+	DirListing: TCloudDirItemList;
+	InviteListing: TCloudIncomingInviteList;
 	Context: TIconContext;
 begin
 	Input.Path.FromPath('\account.invites');

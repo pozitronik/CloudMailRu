@@ -5,7 +5,7 @@ interface
 uses
 	CloudMailRu,
 	CloudSettings,
-	CMRConstants,
+	CloudConstants,
 	LanguageStrings,
 	WFXTypes,
 	TCLogger,

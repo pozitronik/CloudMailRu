@@ -9,8 +9,8 @@ interface
 
 uses
 	RealPath,
-	CMRDirItem,
-	CMRConstants,
+	CloudDirItem,
+	CloudConstants,
 	StreamingSettings,
 	ConnectionManager,
 	CloudMailRu,
@@ -29,7 +29,7 @@ type
 			@param Settings Streaming configuration (command, parameters, format)
 			@param ConnManager Connection manager for account access
 			@return FS_EXEC_OK on success, FS_EXEC_ERROR on failure}
-		function Execute(const RealPath: TRealPath; const Item: TCMRDirItem; var Settings: TStreamingSettings; ConnManager: IConnectionManager): Integer;
+		function Execute(const RealPath: TRealPath; const Item: TCloudDirItem; var Settings: TStreamingSettings; ConnManager: IConnectionManager): Integer;
 	end;
 
 	TFileStreamExecutor = class(TInterfacedObject, IFileStreamExecutor)
@@ -40,7 +40,7 @@ type
 		{Resolves streaming URL based on format.
 			For playlist: gets HLS stream URL.
 			For other formats: publishes file if needed and gets shared URL.}
-		function ResolveStreamUrl(const RealPath: TRealPath; const Item: TCMRDirItem; Format: Integer; TempCloud: TCloudMailRu; ConnManager: IConnectionManager; out StreamUrl: WideString): Boolean;
+		function ResolveStreamUrl(const RealPath: TRealPath; const Item: TCloudDirItem; Format: Integer; TempCloud: TCloudMailRu; ConnManager: IConnectionManager; out StreamUrl: WideString): Boolean;
 
 		{Executes streaming command with URL substitution.}
 		function ExecuteCommand(var Settings: TStreamingSettings; const StreamUrl: WideString): Boolean;
@@ -50,7 +50,7 @@ type
 			@param CommandExecutor Executor for running external commands}
 		constructor Create(CloudFactory: IPublicCloudFactory; CommandExecutor: ICommandExecutor);
 
-		function Execute(const RealPath: TRealPath; const Item: TCMRDirItem; var Settings: TStreamingSettings; ConnManager: IConnectionManager): Integer;
+		function Execute(const RealPath: TRealPath; const Item: TCloudDirItem; var Settings: TStreamingSettings; ConnManager: IConnectionManager): Integer;
 	end;
 
 implementation
@@ -85,11 +85,11 @@ begin
 	FCommandExecutor := CommandExecutor;
 end;
 
-function TFileStreamExecutor.ResolveStreamUrl(const RealPath: TRealPath; const Item: TCMRDirItem; Format: Integer; TempCloud: TCloudMailRu; ConnManager: IConnectionManager; out StreamUrl: WideString): Boolean;
+function TFileStreamExecutor.ResolveStreamUrl(const RealPath: TRealPath; const Item: TCloudDirItem; Format: Integer; TempCloud: TCloudMailRu; ConnManager: IConnectionManager; out StreamUrl: WideString): Boolean;
 var
 	getResult: Integer;
 	CurrentCloud: TCloudMailRu;
-	MutableItem: TCMRDirItem;
+	MutableItem: TCloudDirItem;
 begin
 	Result := True;
 	MutableItem := Item;
@@ -124,7 +124,7 @@ begin
 	Result := FCommandExecutor.Execute(Settings.Command, StreamUrl, Settings.StartPath);
 end;
 
-function TFileStreamExecutor.Execute(const RealPath: TRealPath; const Item: TCMRDirItem; var Settings: TStreamingSettings; ConnManager: IConnectionManager): Integer;
+function TFileStreamExecutor.Execute(const RealPath: TRealPath; const Item: TCloudDirItem; var Settings: TStreamingSettings; ConnManager: IConnectionManager): Integer;
 var
 	StreamUrl: WideString;
 	TempPublicCloud: TCloudMailRu;

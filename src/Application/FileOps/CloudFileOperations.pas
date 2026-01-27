@@ -5,7 +5,7 @@ unit CloudFileOperations;
 interface
 
 uses
-	CMRConstants,
+	CloudConstants,
 	CloudHTTP,
 	LanguageStrings,
 	WFXTypes,

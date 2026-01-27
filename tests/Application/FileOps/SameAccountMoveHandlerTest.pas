@@ -12,7 +12,7 @@ uses
 	CloudMailRu,
 	CloudSettings,
 	WFXTypes,
-	CMRConstants,
+	CloudConstants,
 	ThreadStateManager,
 	DescriptionSyncGuard,
 	SameAccountMoveHandler,

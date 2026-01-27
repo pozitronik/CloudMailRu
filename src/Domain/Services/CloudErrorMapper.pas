@@ -3,8 +3,8 @@ unit CloudErrorMapper;
 interface
 
 uses
-	CMROperationResult,
-	CMROperationResultJsonAdapter,
+	CloudOperationResult,
+	CloudOperationResultJsonAdapter,
 	TCLogger;
 
 type
@@ -14,12 +14,12 @@ type
 	public
 		{Map cloud operation result to WFX file system result code.
 			Logs errors if Logger is provided and ErrorPrefix is non-empty.}
-		class function ToFsResult(CloudResult: TCMROperationResult; Logger: ILogger; ErrorPrefix: WideString = ''): Integer; overload; static;
+		class function ToFsResult(CloudResult: TCloudOperationResult; Logger: ILogger; ErrorPrefix: WideString = ''): Integer; overload; static;
 		{Parse JSON and map to WFX file system result code.}
 		class function ToFsResult(JSON: WideString; Logger: ILogger; ErrorPrefix: WideString = ''): Integer; overload; static;
 		{Map cloud operation result to boolean success/failure.
 			Logs errors if Logger is provided and ErrorPrefix is non-empty.}
-		class function ToBoolean(CloudResult: TCMROperationResult; Logger: ILogger; ErrorPrefix: WideString = ''): Boolean; overload; static;
+		class function ToBoolean(CloudResult: TCloudOperationResult; Logger: ILogger; ErrorPrefix: WideString = ''): Boolean; overload; static;
 		{Parse JSON and map to boolean success/failure.}
 		class function ToBoolean(JSON: WideString; Logger: ILogger; ErrorPrefix: WideString = ''): Boolean; overload; static;
 		{Get human-readable error text for cloud error code.}
@@ -30,7 +30,7 @@ implementation
 
 uses
 	System.SysUtils,
-	CMRConstants,
+	CloudConstants,
 	WFXTypes,
 	LanguageStrings;
 
@@ -38,13 +38,13 @@ uses
 
 class function TCloudErrorMapper.ToFsResult(JSON: WideString; Logger: ILogger; ErrorPrefix: WideString): Integer;
 var
-	OperationResult: TCMROperationResult;
+	OperationResult: TCloudOperationResult;
 begin
-	TCMROperationResultJsonAdapter.Parse(JSON, OperationResult);
+	TCloudOperationResultJsonAdapter.Parse(JSON, OperationResult);
 	Result := ToFsResult(OperationResult, Logger, ErrorPrefix);
 end;
 
-class function TCloudErrorMapper.ToFsResult(CloudResult: TCMROperationResult; Logger: ILogger; ErrorPrefix: WideString): Integer;
+class function TCloudErrorMapper.ToFsResult(CloudResult: TCloudOperationResult; Logger: ILogger; ErrorPrefix: WideString): Integer;
 begin
 	case CloudResult.OperationResult of
 		CLOUD_OPERATION_OK:
@@ -78,13 +78,13 @@ end;
 
 class function TCloudErrorMapper.ToBoolean(JSON: WideString; Logger: ILogger; ErrorPrefix: WideString): Boolean;
 var
-	OperationResult: TCMROperationResult;
+	OperationResult: TCloudOperationResult;
 begin
-	TCMROperationResultJsonAdapter.Parse(JSON, OperationResult);
+	TCloudOperationResultJsonAdapter.Parse(JSON, OperationResult);
 	Result := ToBoolean(OperationResult, Logger, ErrorPrefix);
 end;
 
-class function TCloudErrorMapper.ToBoolean(CloudResult: TCMROperationResult; Logger: ILogger; ErrorPrefix: WideString): Boolean;
+class function TCloudErrorMapper.ToBoolean(CloudResult: TCloudOperationResult; Logger: ILogger; ErrorPrefix: WideString): Boolean;
 begin
 	Result := CloudResult.ToBoolean;
 	if not(Result) and (ErrorPrefix <> EmptyWideStr) and Assigned(Logger) then

@@ -16,7 +16,7 @@ uses
 	CloudDescriptionOperationsAdapter,
 	Description,
 	RealPath,
-	CMRConstants,
+	CloudConstants,
 	LanguageStrings,
 	WFXTypes;
 

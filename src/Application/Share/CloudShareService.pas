@@ -5,10 +5,10 @@ unit CloudShareService;
 interface
 
 uses
-	CMRDirItem,
-	CMRInviteList,
-	CMRInviteListJsonAdapter,
-	CMRConstants,
+	CloudDirItem,
+	CloudInviteList,
+	CloudInviteListJsonAdapter,
+	CloudConstants,
 	CloudHTTP,
 	CloudShardManager,
 	JSONHelper,
@@ -36,7 +36,7 @@ type
 		function Publish(Path: WideString; var PublicLink: WideString): Boolean;
 		function Unpublish(Path: WideString; PublicLink: WideString): Boolean;
 		{Get sharing information for a path}
-		function GetShareInfo(Path: WideString; var InviteListing: TCMRInviteList): Boolean;
+		function GetShareInfo(Path: WideString; var InviteListing: TCloudInviteList): Boolean;
 		{Share a folder with another user by email}
 		function Share(Path, Email: WideString; Access: Integer): Boolean;
 		{Unshare a folder from a user}
@@ -48,7 +48,7 @@ type
 		{Reject a share invitation}
 		function RejectInvite(InviteToken: WideString): Boolean;
 		{Get streaming URL for a published file}
-		function GetPublishedFileStreamUrl(FileIdentity: TCMRDirItem; var StreamUrl: WideString; ShardType: WideString = SHARD_TYPE_WEBLINK_VIDEO; Publish: Boolean = CLOUD_PUBLISH): Boolean;
+		function GetPublishedFileStreamUrl(FileIdentity: TCloudDirItem; var StreamUrl: WideString; ShardType: WideString = SHARD_TYPE_WEBLINK_VIDEO; Publish: Boolean = CLOUD_PUBLISH): Boolean;
 		{Clone a public weblink to user's cloud}
 		function CloneWeblink(Path, Link: WideString; ConflictMode: WideString = CLOUD_CONFLICT_RENAME): Integer;
 	end;
@@ -70,13 +70,13 @@ type
 		{ICloudShareService implementation}
 		function Publish(Path: WideString; var PublicLink: WideString): Boolean;
 		function Unpublish(Path: WideString; PublicLink: WideString): Boolean;
-		function GetShareInfo(Path: WideString; var InviteListing: TCMRInviteList): Boolean;
+		function GetShareInfo(Path: WideString; var InviteListing: TCloudInviteList): Boolean;
 		function Share(Path, Email: WideString; Access: Integer): Boolean;
 		function Unshare(Path, Email: WideString): Boolean;
 		function Mount(Home, InviteToken: WideString; ConflictMode: WideString = CLOUD_CONFLICT_RENAME): Boolean;
 		function Unmount(Home: WideString; CloneCopy: Boolean): Boolean;
 		function RejectInvite(InviteToken: WideString): Boolean;
-		function GetPublishedFileStreamUrl(FileIdentity: TCMRDirItem; var StreamUrl: WideString; ShardType: WideString = SHARD_TYPE_WEBLINK_VIDEO; Publish: Boolean = CLOUD_PUBLISH): Boolean;
+		function GetPublishedFileStreamUrl(FileIdentity: TCloudDirItem; var StreamUrl: WideString; ShardType: WideString = SHARD_TYPE_WEBLINK_VIDEO; Publish: Boolean = CLOUD_PUBLISH): Boolean;
 		function CloneWeblink(Path, Link: WideString; ConflictMode: WideString = CLOUD_CONFLICT_RENAME): Integer;
 	end;
 
@@ -162,10 +162,10 @@ begin
 	Result := CallResult.Success;
 end;
 
-function TCloudShareService.GetShareInfo(Path: WideString; var InviteListing: TCMRInviteList): Boolean;
+function TCloudShareService.GetShareInfo(Path: WideString; var InviteListing: TCloudInviteList): Boolean;
 var
 	CallResult: TAPICallResult;
-	LocalListing: TCMRInviteList;
+	LocalListing: TCloudInviteList;
 	UnitedParams: WideString;
 begin
 	UnitedParams := FGetUnitedParams();
@@ -181,7 +181,7 @@ begin
 			Progress := False;
 			Success := FHTTP.GetPage(Format('%s?home=%s&%s', [API_FOLDER_SHARED_INFO, PathToUrl(Path), UnitedParams]), JSON, Progress);
 			if Success then
-				Success := TCMRInviteListJsonAdapter.Parse(JSON, LocalListing);
+				Success := TCloudInviteListJsonAdapter.Parse(JSON, LocalListing);
 			Result := TAPICallResult.FromBoolean(Success, JSON);
 		end);
 
@@ -279,7 +279,7 @@ begin
 	Result := FRetryOperation.PostFormBoolean(API_INVITE_REJECT + '?' + FGetUnitedParams(), Format('invite_token=%s', [InviteToken]), PREFIX_ERR_INVITE_REJECT);
 end;
 
-function TCloudShareService.GetPublishedFileStreamUrl(FileIdentity: TCMRDirItem; var StreamUrl: WideString; ShardType: WideString = SHARD_TYPE_WEBLINK_VIDEO; Publish: Boolean = CLOUD_PUBLISH): Boolean;
+function TCloudShareService.GetPublishedFileStreamUrl(FileIdentity: TCloudDirItem; var StreamUrl: WideString; ShardType: WideString = SHARD_TYPE_WEBLINK_VIDEO; Publish: Boolean = CLOUD_PUBLISH): Boolean;
 var
 	ShardUrl: WideString;
 	LocalWeblink: WideString;

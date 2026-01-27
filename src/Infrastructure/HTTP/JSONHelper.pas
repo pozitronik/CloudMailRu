@@ -6,7 +6,7 @@ uses
 	System.Generics.Collections,
 	JSON,
 	SysUtils,
-	CMRConstants;
+	CloudConstants;
 
 procedure assignFromName(Name: WideString; var ParserObj: TJSONObject; var Item: WideString); overload;
 procedure assignFromName(Name: WideString; var ParserObj: TJSONObject; var Item: Int64); overload;

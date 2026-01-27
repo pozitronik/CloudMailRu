@@ -8,12 +8,12 @@ interface
 
 uses
 	Windows, SysUtils, AnsiStrings, DateUtils,
-	CMRDirItem, CMRConstants, WFXTypes,
+	CloudDirItem, CloudConstants, WFXTypes,
 	SystemHelper;
 
 type
 	{Context for fields that need external state (e.g., description field).
-		Passed to GetValue to provide data not available in TCMRDirItem.}
+		Passed to GetValue to provide data not available in TCloudDirItem.}
 	TContentFieldContext = record
 		DescriptionsEnabled: Boolean;
 		FileDescription: WideString;
@@ -38,7 +38,7 @@ type
 			FieldValue: buffer to receive value (type depends on field)
 			Context: external state for context-dependent fields
 			Returns: field type constant or ft_nosuchfield if not applicable}
-		function GetValue(FieldIndex: Integer; const Item: TCMRDirItem; FieldValue: Pointer; const Context: TContentFieldContext): Integer;
+		function GetValue(FieldIndex: Integer; const Item: TCloudDirItem; FieldValue: Pointer; const Context: TContentFieldContext): Integer;
 
 		{Returns total number of supported fields}
 		function GetFieldCount: Integer;
@@ -76,11 +76,11 @@ type
 			(Name: 'deleted_by'; FieldType: ft_stringw)
 		);
 	private
-		function GetDescriptionValue(const Item: TCMRDirItem; FieldValue: Pointer; const Context: TContentFieldContext): Integer;
+		function GetDescriptionValue(const Item: TCloudDirItem; FieldValue: Pointer; const Context: TContentFieldContext): Integer;
 		function GetDateTimeValue(UnixTimestamp: Int64; FieldValue: Pointer): Integer;
 	public
 		function GetSupportedField(FieldIndex: Integer; FieldName: PAnsiChar; MaxLen: Integer): Integer;
-		function GetValue(FieldIndex: Integer; const Item: TCMRDirItem; FieldValue: Pointer; const Context: TContentFieldContext): Integer;
+		function GetValue(FieldIndex: Integer; const Item: TCloudDirItem; FieldValue: Pointer; const Context: TContentFieldContext): Integer;
 		function GetFieldCount: Integer;
 	end;
 
@@ -111,7 +111,7 @@ begin
 	Result := ft_datetime;
 end;
 
-function TContentFieldProvider.GetDescriptionValue(const Item: TCMRDirItem; FieldValue: Pointer; const Context: TContentFieldContext): Integer;
+function TContentFieldProvider.GetDescriptionValue(const Item: TCloudDirItem; FieldValue: Pointer; const Context: TContentFieldContext): Integer;
 begin
 	if Context.IsAccountRoot then
 	begin
@@ -125,7 +125,7 @@ begin
 	Result := ft_stringw;
 end;
 
-function TContentFieldProvider.GetValue(FieldIndex: Integer; const Item: TCMRDirItem; FieldValue: Pointer; const Context: TContentFieldContext): Integer;
+function TContentFieldProvider.GetValue(FieldIndex: Integer; const Item: TCloudDirItem; FieldValue: Pointer; const Context: TContentFieldContext): Integer;
 begin
 	Result := ft_nosuchfield;
 

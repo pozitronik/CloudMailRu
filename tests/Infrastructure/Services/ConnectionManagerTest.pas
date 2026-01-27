@@ -120,7 +120,7 @@ type
 implementation
 
 uses
-	CMRConstants,
+	CloudConstants,
 	SettingsConstants,
 	System.SysUtils,
 	System.Generics.Collections;

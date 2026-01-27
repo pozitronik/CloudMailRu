@@ -8,7 +8,7 @@ interface
 uses
 	System.SysUtils,
 	System.Generics.Collections,
-	CMRConstants;
+	CloudConstants;
 
 type
 	{Shard definition for test setup}

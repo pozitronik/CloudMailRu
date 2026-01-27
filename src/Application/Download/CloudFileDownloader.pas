@@ -5,9 +5,9 @@ interface
 uses
 	System.Classes,
 	System.SysUtils,
-	CMRConstants,
-	CMROAuth,
-	CMROperationResult,
+	CloudConstants,
+	CloudOAuth,
+	CloudOperationResult,
 	WFXTypes,
 	LanguageStrings,
 	TCLogger,
@@ -111,7 +111,7 @@ var
 	DispatcherResponse: WideString;
 	Progress: Boolean;
 	DownloadShard: WideString;
-	OAuthToken: TCMROAuth;
+	OAuthToken: TCloudOAuth;
 	SavedUserAgent: string;
 begin
 	Result := FS_FILE_NOTSUPPORTED;

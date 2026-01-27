@@ -8,9 +8,9 @@ interface
 uses
 	CloudMailRu,
 	CloudSettings,
-	CMRConstants,
-	CMROAuth,
-	CMRSpace,
+	CloudConstants,
+	CloudOAuth,
+	CloudSpace,
 	WFXTypes,
 	SettingsConstants,
 	TCLogger,
@@ -34,7 +34,7 @@ type
 	TTestableLoginCloud = class(TCloudMailRu)
 	public
 		function GetAuthToken: WideString;
-		function GetOAuthToken: TCMROAuth;
+		function GetOAuthToken: TCloudOAuth;
 		function GetUnitedParams: WideString;
 		function GetPublicShard: WideString;
 	end;
@@ -112,7 +112,7 @@ begin
 	Result := FAuthToken;
 end;
 
-function TTestableLoginCloud.GetOAuthToken: TCMROAuth;
+function TTestableLoginCloud.GetOAuthToken: TCloudOAuth;
 begin
 	Result := FOAuthToken;
 end;
@@ -222,7 +222,7 @@ end;
 procedure TCloudMailRuLoginFlowTest.TestLogin_RegularAccount_SetsOAuthToken;
 var
 	AuthStrategy: TMockAuthStrategy;
-	OAuthToken: TCMROAuth;
+	OAuthToken: TCloudOAuth;
 begin
 	AuthStrategy := TMockAuthStrategy.CreateOAuthSuccess('access_123', 'refresh_456', 7200);
 	FCloud := CreateRegularCloud(AuthStrategy);
@@ -327,7 +327,7 @@ end;
 
 procedure TCloudMailRuLoginFlowTest.TestGetUserSpace_Success_ParsesResponse;
 var
-	SpaceInfo: TCMRSpace;
+	SpaceInfo: TCloudSpace;
 begin
 	FCloud := CreateRegularCloud(TNullAuthStrategy.Create);
 	FMockHTTP.SetResponse(API_USER_SPACE, True, JSON_USER_SPACE);
@@ -339,7 +339,7 @@ end;
 
 procedure TCloudMailRuLoginFlowTest.TestGetUserSpace_ParsesTotal;
 var
-	SpaceInfo: TCMRSpace;
+	SpaceInfo: TCloudSpace;
 begin
 	FCloud := CreateRegularCloud(TNullAuthStrategy.Create);
 	FMockHTTP.SetResponse(API_USER_SPACE, True, JSON_USER_SPACE);
@@ -351,7 +351,7 @@ end;
 
 procedure TCloudMailRuLoginFlowTest.TestGetUserSpace_ParsesUsed;
 var
-	SpaceInfo: TCMRSpace;
+	SpaceInfo: TCloudSpace;
 begin
 	FCloud := CreateRegularCloud(TNullAuthStrategy.Create);
 	FMockHTTP.SetResponse(API_USER_SPACE, True, JSON_USER_SPACE);
@@ -363,7 +363,7 @@ end;
 
 procedure TCloudMailRuLoginFlowTest.TestGetUserSpace_ParsesOverquota;
 var
-	SpaceInfo: TCMRSpace;
+	SpaceInfo: TCloudSpace;
 begin
 	FCloud := CreateRegularCloud(TNullAuthStrategy.Create);
 	FMockHTTP.SetResponse(API_USER_SPACE, True, JSON_USER_SPACE_OVERQUOTA);
@@ -375,7 +375,7 @@ end;
 
 procedure TCloudMailRuLoginFlowTest.TestGetUserSpace_HTTPFails_ReturnsFalse;
 var
-	SpaceInfo: TCMRSpace;
+	SpaceInfo: TCloudSpace;
 begin
 	FCloud := CreateRegularCloud(TNullAuthStrategy.Create);
 	FMockHTTP.SetResponse(API_USER_SPACE, False, '');
@@ -387,7 +387,7 @@ end;
 
 procedure TCloudMailRuLoginFlowTest.TestGetUserSpace_PublicAccount_Works;
 var
-	SpaceInfo: TCMRSpace;
+	SpaceInfo: TCloudSpace;
 begin
 	FCloud := CreatePublicCloud('https://cloud.mail.ru/public/abc');
 	FMockHTTP.SetResponse(API_USER_SPACE, True, JSON_USER_SPACE);

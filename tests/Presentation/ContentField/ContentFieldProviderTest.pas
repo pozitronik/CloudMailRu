@@ -4,7 +4,7 @@ interface
 
 uses
 	Windows, SysUtils, AnsiStrings,
-	CMRDirItem, CMRConstants, WFXTypes,
+	CloudDirItem, CloudConstants, WFXTypes,
 	ContentFieldProvider,
 	DUnitX.TestFramework;
 
@@ -13,10 +13,10 @@ type
 	TContentFieldProviderTest = class
 	private
 		FProvider: IContentFieldProvider;
-		function CreateTestItem: TCMRDirItem;
-		function CreateTestItemFolder: TCMRDirItem;
-		function CreateTestItemShared: TCMRDirItem;
-		function CreateTestItemTrash: TCMRDirItem;
+		function CreateTestItem: TCloudDirItem;
+		function CreateTestItemFolder: TCloudDirItem;
+		function CreateTestItemShared: TCloudDirItem;
+		function CreateTestItemTrash: TCloudDirItem;
 		function CreateEmptyContext: TContentFieldContext;
 	public
 		[Setup]
@@ -144,7 +144,7 @@ begin
 	Result.IsAccountRoot := False;
 end;
 
-function TContentFieldProviderTest.CreateTestItem: TCMRDirItem;
+function TContentFieldProviderTest.CreateTestItem: TCloudDirItem;
 begin
 	Result.tree := '';
 	Result.name := 'test_file.txt';
@@ -166,7 +166,7 @@ begin
 	Result.deleted_by := 0;
 end;
 
-function TContentFieldProviderTest.CreateTestItemFolder: TCMRDirItem;
+function TContentFieldProviderTest.CreateTestItemFolder: TCloudDirItem;
 begin
 	Result := CreateTestItem;
 	Result.name := 'test_folder';
@@ -178,7 +178,7 @@ begin
 	Result.files_count := 10;
 end;
 
-function TContentFieldProviderTest.CreateTestItemShared: TCMRDirItem;
+function TContentFieldProviderTest.CreateTestItemShared: TCloudDirItem;
 begin
 	Result := CreateTestItem;
 	Result.mtime := 0; { Shared items have mtime=0 }
@@ -187,7 +187,7 @@ begin
 	Result.rev := 100;
 end;
 
-function TContentFieldProviderTest.CreateTestItemTrash: TCMRDirItem;
+function TContentFieldProviderTest.CreateTestItemTrash: TCloudDirItem;
 begin
 	Result := CreateTestItem;
 	Result.deleted_at := 1704153600; { 2024-01-02 00:00:00 UTC }
@@ -255,7 +255,7 @@ end;
 
 procedure TContentFieldProviderTest.TestGetValue_NameField;
 var
-	Item: TCMRDirItem;
+	Item: TCloudDirItem;
 	Context: TContentFieldContext;
 	Value: array[0..255] of WideChar;
 	FieldType: Integer;
@@ -271,7 +271,7 @@ end;
 
 procedure TContentFieldProviderTest.TestGetValue_KindField;
 var
-	Item: TCMRDirItem;
+	Item: TCloudDirItem;
 	Context: TContentFieldContext;
 	Value: array[0..255] of WideChar;
 begin
@@ -285,7 +285,7 @@ end;
 
 procedure TContentFieldProviderTest.TestGetValue_WeblinkField;
 var
-	Item: TCMRDirItem;
+	Item: TCloudDirItem;
 	Context: TContentFieldContext;
 	Value: array[0..255] of WideChar;
 begin
@@ -299,7 +299,7 @@ end;
 
 procedure TContentFieldProviderTest.TestGetValue_TypeField;
 var
-	Item: TCMRDirItem;
+	Item: TCloudDirItem;
 	Context: TContentFieldContext;
 	Value: array[0..255] of WideChar;
 begin
@@ -313,7 +313,7 @@ end;
 
 procedure TContentFieldProviderTest.TestGetValue_HomeField;
 var
-	Item: TCMRDirItem;
+	Item: TCloudDirItem;
 	Context: TContentFieldContext;
 	Value: array[0..255] of WideChar;
 begin
@@ -327,7 +327,7 @@ end;
 
 procedure TContentFieldProviderTest.TestGetValue_HashField;
 var
-	Item: TCMRDirItem;
+	Item: TCloudDirItem;
 	Context: TContentFieldContext;
 	Value: array[0..255] of WideChar;
 begin
@@ -341,7 +341,7 @@ end;
 
 procedure TContentFieldProviderTest.TestGetValue_VirusScanField;
 var
-	Item: TCMRDirItem;
+	Item: TCloudDirItem;
 	Context: TContentFieldContext;
 	Value: array[0..255] of WideChar;
 begin
@@ -357,7 +357,7 @@ end;
 
 procedure TContentFieldProviderTest.TestGetValue_SizeField;
 var
-	Item: TCMRDirItem;
+	Item: TCloudDirItem;
 	Context: TContentFieldContext;
 	Value: Int64;
 	FieldType: Integer;
@@ -373,7 +373,7 @@ end;
 
 procedure TContentFieldProviderTest.TestGetValue_GrevField_SharedItem;
 var
-	Item: TCMRDirItem;
+	Item: TCloudDirItem;
 	Context: TContentFieldContext;
 	Value: Integer;
 	FieldType: Integer;
@@ -389,7 +389,7 @@ end;
 
 procedure TContentFieldProviderTest.TestGetValue_RevField_SharedItem;
 var
-	Item: TCMRDirItem;
+	Item: TCloudDirItem;
 	Context: TContentFieldContext;
 	Value: Integer;
 	FieldType: Integer;
@@ -405,7 +405,7 @@ end;
 
 procedure TContentFieldProviderTest.TestGetValue_FoldersCountField_Folder;
 var
-	Item: TCMRDirItem;
+	Item: TCloudDirItem;
 	Context: TContentFieldContext;
 	Value: Integer;
 	FieldType: Integer;
@@ -421,7 +421,7 @@ end;
 
 procedure TContentFieldProviderTest.TestGetValue_FilesCountField_Folder;
 var
-	Item: TCMRDirItem;
+	Item: TCloudDirItem;
 	Context: TContentFieldContext;
 	Value: Integer;
 	FieldType: Integer;
@@ -439,7 +439,7 @@ end;
 
 procedure TContentFieldProviderTest.TestGetValue_MtimeField;
 var
-	Item: TCMRDirItem;
+	Item: TCloudDirItem;
 	Context: TContentFieldContext;
 	Value: TFileTime;
 	FieldType: Integer;
@@ -457,7 +457,7 @@ end;
 
 procedure TContentFieldProviderTest.TestGetValue_TreeField_SharedItem;
 var
-	Item: TCMRDirItem;
+	Item: TCloudDirItem;
 	Context: TContentFieldContext;
 	Value: array[0..255] of WideChar;
 	FieldType: Integer;
@@ -473,7 +473,7 @@ end;
 
 procedure TContentFieldProviderTest.TestGetValue_TreeField_RegularItem_ReturnsNoSuchField;
 var
-	Item: TCMRDirItem;
+	Item: TCloudDirItem;
 	Context: TContentFieldContext;
 	Value: array[0..255] of WideChar;
 begin
@@ -485,7 +485,7 @@ end;
 
 procedure TContentFieldProviderTest.TestGetValue_GrevField_RegularItem_ReturnsNoSuchField;
 var
-	Item: TCMRDirItem;
+	Item: TCloudDirItem;
 	Context: TContentFieldContext;
 	Value: Integer;
 begin
@@ -497,7 +497,7 @@ end;
 
 procedure TContentFieldProviderTest.TestGetValue_RevField_RegularItem_ReturnsNoSuchField;
 var
-	Item: TCMRDirItem;
+	Item: TCloudDirItem;
 	Context: TContentFieldContext;
 	Value: Integer;
 begin
@@ -511,7 +511,7 @@ end;
 
 procedure TContentFieldProviderTest.TestGetValue_MtimeField_SharedItem_ReturnsNoSuchField;
 var
-	Item: TCMRDirItem;
+	Item: TCloudDirItem;
 	Context: TContentFieldContext;
 	Value: TFileTime;
 begin
@@ -525,7 +525,7 @@ end;
 
 procedure TContentFieldProviderTest.TestGetValue_FoldersCountField_File_ReturnsNoSuchField;
 var
-	Item: TCMRDirItem;
+	Item: TCloudDirItem;
 	Context: TContentFieldContext;
 	Value: Integer;
 begin
@@ -537,7 +537,7 @@ end;
 
 procedure TContentFieldProviderTest.TestGetValue_FilesCountField_File_ReturnsNoSuchField;
 var
-	Item: TCMRDirItem;
+	Item: TCloudDirItem;
 	Context: TContentFieldContext;
 	Value: Integer;
 begin
@@ -551,7 +551,7 @@ end;
 
 procedure TContentFieldProviderTest.TestGetValue_DescriptionField_Enabled;
 var
-	Item: TCMRDirItem;
+	Item: TCloudDirItem;
 	Context: TContentFieldContext;
 	Value: array[0..255] of WideChar;
 	FieldType: Integer;
@@ -569,7 +569,7 @@ end;
 
 procedure TContentFieldProviderTest.TestGetValue_DescriptionField_Disabled;
 var
-	Item: TCMRDirItem;
+	Item: TCloudDirItem;
 	Context: TContentFieldContext;
 	Value: array[0..255] of WideChar;
 begin
@@ -584,7 +584,7 @@ end;
 
 procedure TContentFieldProviderTest.TestGetValue_DescriptionField_AccountRoot;
 var
-	Item: TCMRDirItem;
+	Item: TCloudDirItem;
 	Context: TContentFieldContext;
 	Value: array[0..255] of WideChar;
 	FieldType: Integer;
@@ -604,7 +604,7 @@ end;
 
 procedure TContentFieldProviderTest.TestGetValue_DeletedAtField_TrashItem;
 var
-	Item: TCMRDirItem;
+	Item: TCloudDirItem;
 	Context: TContentFieldContext;
 	Value: TFileTime;
 	FieldType: Integer;
@@ -620,7 +620,7 @@ end;
 
 procedure TContentFieldProviderTest.TestGetValue_DeletedAtField_RegularItem_ReturnsNoSuchField;
 var
-	Item: TCMRDirItem;
+	Item: TCloudDirItem;
 	Context: TContentFieldContext;
 	Value: TFileTime;
 begin
@@ -632,7 +632,7 @@ end;
 
 procedure TContentFieldProviderTest.TestGetValue_DeletedFromField_TrashItem;
 var
-	Item: TCMRDirItem;
+	Item: TCloudDirItem;
 	Context: TContentFieldContext;
 	Value: array[0..255] of WideChar;
 	FieldType: Integer;
@@ -648,7 +648,7 @@ end;
 
 procedure TContentFieldProviderTest.TestGetValue_DeletedFromField_RegularItem_ReturnsNoSuchField;
 var
-	Item: TCMRDirItem;
+	Item: TCloudDirItem;
 	Context: TContentFieldContext;
 	Value: array[0..255] of WideChar;
 begin
@@ -660,7 +660,7 @@ end;
 
 procedure TContentFieldProviderTest.TestGetValue_DeletedByField_TrashItem;
 var
-	Item: TCMRDirItem;
+	Item: TCloudDirItem;
 	Context: TContentFieldContext;
 	Value: array[0..255] of WideChar;
 	FieldType: Integer;
@@ -676,7 +676,7 @@ end;
 
 procedure TContentFieldProviderTest.TestGetValue_DeletedByField_RegularItem_ReturnsNoSuchField;
 var
-	Item: TCMRDirItem;
+	Item: TCloudDirItem;
 	Context: TContentFieldContext;
 	Value: array[0..255] of WideChar;
 begin
@@ -690,7 +690,7 @@ end;
 
 procedure TContentFieldProviderTest.TestGetValue_AccountRoot_OnlyDescriptionSupported;
 var
-	Item: TCMRDirItem;
+	Item: TCloudDirItem;
 	Context: TContentFieldContext;
 	Value: array[0..255] of WideChar;
 begin
@@ -704,7 +704,7 @@ end;
 
 procedure TContentFieldProviderTest.TestGetValue_AccountRoot_OtherFields_ReturnsNoSuchField;
 var
-	Item: TCMRDirItem;
+	Item: TCloudDirItem;
 	Context: TContentFieldContext;
 	Value: array[0..255] of WideChar;
 	I: Integer;
@@ -726,7 +726,7 @@ end;
 
 procedure TContentFieldProviderTest.TestGetValue_InvalidIndex_ReturnsNoSuchField;
 var
-	Item: TCMRDirItem;
+	Item: TCloudDirItem;
 	Context: TContentFieldContext;
 	Value: array[0..255] of WideChar;
 begin

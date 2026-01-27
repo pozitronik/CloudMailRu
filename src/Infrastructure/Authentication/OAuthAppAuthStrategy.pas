@@ -8,7 +8,7 @@ interface
 
 uses
 	AuthStrategy,
-	CMROAuth,
+	CloudOAuth,
 	CloudHTTP,
 	TCLogger;
 
@@ -31,8 +31,8 @@ implementation
 uses
 	SysUtils,
 	Winapi.Windows,
-	CMRConstants,
-	CMROAuthJsonAdapter,
+	CloudConstants,
+	CloudOAuthJsonAdapter,
 	WFXTypes,
 	LanguageStrings,
 	StringHelper;
@@ -41,7 +41,7 @@ uses
 
 function TOAuthAppAuthStrategy.Authenticate(const Credentials: TAuthCredentials; HTTP: ICloudHTTP; Logger: ILogger): TAuthResult;
 var
-	OAuthToken: TCMROAuth;
+	OAuthToken: TCloudOAuth;
 	PostAnswer: WideString;
 begin
 	Result := TAuthResult.CreateFailure('OAuth authentication failed');
@@ -52,7 +52,7 @@ begin
 	{OAuth password grant request}
 	if HTTP.PostForm(OAUTH_TOKEN_URL, Format('client_id=%s&grant_type=password&username=%s@%s&password=%s', [OAUTH_CLIENT_ID, Credentials.User, Credentials.Domain, UrlEncode(Credentials.Password)]), PostAnswer) then
 	begin
-		if not TCMROAuthJsonAdapter.Parse(PostAnswer, OAuthToken) then
+		if not TCloudOAuthJsonAdapter.Parse(PostAnswer, OAuthToken) then
 		begin
 			Result := TAuthResult.CreateFailure(Format(PREFIX_ERR_OAUTH, ['JSON parse error', 'Invalid response format']));
 			Exit;

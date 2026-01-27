@@ -13,9 +13,9 @@ interface
 uses
 	CloudMailRu,
 	CloudSettings,
-	CMRDirItemList,
-	CMRIncomingInviteList,
-	CMRConstants,
+	CloudDirItemList,
+	CloudIncomingInviteList,
+	CloudConstants,
 	WFXTypes,
 	TCLogger,
 	TCProgress,
@@ -174,7 +174,7 @@ end;
 
 procedure TCloudMailRuAdditionalOpsTest.TestGetIncomingLinksListing_Success;
 var
-	IncomingListing: TCMRIncomingInviteList;
+	IncomingListing: TCloudIncomingInviteList;
 begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_FOLDER_SHARED_INCOMING, True, JSON_INCOMING_LINKS_SUCCESS);
@@ -187,7 +187,7 @@ end;
 
 procedure TCloudMailRuAdditionalOpsTest.TestGetIncomingLinksListing_Empty;
 var
-	IncomingListing: TCMRIncomingInviteList;
+	IncomingListing: TCloudIncomingInviteList;
 begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_FOLDER_SHARED_INCOMING, True, JSON_INCOMING_LINKS_EMPTY);
@@ -200,7 +200,7 @@ end;
 
 procedure TCloudMailRuAdditionalOpsTest.TestGetIncomingLinksListing_Failure;
 var
-	IncomingListing: TCMRIncomingInviteList;
+	IncomingListing: TCloudIncomingInviteList;
 begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetDefaultResponse(False, '', FS_FILE_READERROR);
@@ -212,7 +212,7 @@ end;
 
 procedure TCloudMailRuAdditionalOpsTest.TestGetIncomingLinksListing_PublicAccount_ReturnsFalse;
 var
-	IncomingListing: TCMRIncomingInviteList;
+	IncomingListing: TCloudIncomingInviteList;
 begin
 	FCloud := CreateCloud(True);
 	FMockHTTP.SetResponse(API_FOLDER_SHARED_INCOMING, True, JSON_INCOMING_LINKS_SUCCESS);

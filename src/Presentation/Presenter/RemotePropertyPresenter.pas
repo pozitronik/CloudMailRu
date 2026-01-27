@@ -7,11 +7,11 @@ unit RemotePropertyPresenter;
 interface
 
 uses
-	CMRDirItem,
-	CMRDirItemList,
-	CMRInviteList,
-	CMRFileIdentity,
-	CMRConstants,
+	CloudDirItem,
+	CloudDirItemList,
+	CloudInviteList,
+	CloudFileIdentity,
+	CloudConstants,
 	CloudMailRu,
 	CloudMailRuFactory,
 	CloudFileDownloader,
@@ -120,10 +120,10 @@ type
 		FPublicCloudFactory: IPublicCloudFactory;
 		FTCHandler: ITCHandler;
 		FIsPublicAccount: Boolean;
-		FProps: TCMRDirItem;
+		FProps: TCloudDirItem;
 		FRemotePath: WideString;
 		FConfig: TRemotePropertyConfig;
-		FInvitesListing: TCMRInviteList;
+		FInvitesListing: TCloudInviteList;
 
 		{Internal recursive listing helpers}
 		function FillRecursiveDownloadListing(const Path: WideString; Downloader: ICloudFileDownloader; ListingService: ICloudListingService): Boolean;
@@ -136,7 +136,7 @@ type
 		constructor Create(View: IRemotePropertyView; Downloader: ICloudFileDownloader; Uploader: ICloudFileUploader; FileOps: ICloudFileOperations; ListingService: ICloudListingService; ShareService: ICloudShareService; FileSystem: IFileSystem; PublicCloudFactory: IPublicCloudFactory; TCHandler: ITCHandler; IsPublicAccount: Boolean);
 
 		{Initialize view state based on item properties}
-		procedure Initialize(Props: TCMRDirItem; RemotePath: WideString; Config: TRemotePropertyConfig);
+		procedure Initialize(Props: TCloudDirItem; RemotePath: WideString; Config: TRemotePropertyConfig);
 
 		{Publishing operations}
 		procedure OnPublishChanged(Publish: Boolean);
@@ -160,11 +160,11 @@ type
 		procedure SaveDescription;
 
 		{Hash command generation - stateless, suitable for unit testing}
-		class function GenerateHashCommand(Item: TCMRDirItem; BaseDir: WideString = ''; Path: WideString = ''): WideString; static;
+		class function GenerateHashCommand(Item: TCloudDirItem; BaseDir: WideString = ''; Path: WideString = ''): WideString; static;
 
 		{Properties}
-		property Props: TCMRDirItem read FProps;
-		property InvitesListing: TCMRInviteList read FInvitesListing;
+		property Props: TCloudDirItem read FProps;
+		property InvitesListing: TCloudInviteList read FInvitesListing;
 	end;
 
 implementation
@@ -196,7 +196,7 @@ begin
 	FIsPublicAccount := IsPublicAccount;
 end;
 
-procedure TRemotePropertyPresenter.Initialize(Props: TCMRDirItem; RemotePath: WideString; Config: TRemotePropertyConfig);
+procedure TRemotePropertyPresenter.Initialize(Props: TCloudDirItem; RemotePath: WideString; Config: TRemotePropertyConfig);
 begin
 	FProps := Props;
 	FRemotePath := RemotePath;
@@ -403,7 +403,7 @@ end;
 
 function TRemotePropertyPresenter.FillRecursiveDownloadListing(const Path: WideString; Downloader: ICloudFileDownloader; ListingService: ICloudListingService): Boolean;
 var
-	CurrentDirListing: TCMRDirItemList;
+	CurrentDirListing: TCloudDirItemList;
 	i: Integer;
 begin
 	Result := True;
@@ -456,9 +456,9 @@ end;
 
 function TRemotePropertyPresenter.FillRecursiveHashListing(const Path: WideString; ListingService: ICloudListingService; const BaseDir: WideString): Boolean;
 var
-	CurrentDirListing: TCMRDirItemList;
+	CurrentDirListing: TCloudDirItemList;
 	i: Integer;
-	CurrentItem: TCMRDirItem;
+	CurrentItem: TCloudDirItem;
 begin
 	Result := True;
 
@@ -527,7 +527,7 @@ begin
 	end;
 end;
 
-class function TRemotePropertyPresenter.GenerateHashCommand(Item: TCMRDirItem; BaseDir: WideString; Path: WideString): WideString;
+class function TRemotePropertyPresenter.GenerateHashCommand(Item: TCloudDirItem; BaseDir: WideString; Path: WideString): WideString;
 var
 	AppliedName: WideString;
 begin

@@ -6,7 +6,7 @@ unit SharedItemDeletionHandler;
 interface
 
 uses
-	CMRDirItem,
+	CloudDirItem,
 	CloudMailRu;
 
 type
@@ -17,25 +17,25 @@ type
 			@param Cloud Cloud connection for the account
 			@param Item The shared item to process
 			@return True if operation completed (always true for shared items)}
-		function Execute(Cloud: TCloudMailRu; const Item: TCMRDirItem): Boolean;
+		function Execute(Cloud: TCloudMailRu; const Item: TCloudDirItem): Boolean;
 	end;
 
 	TSharedItemDeletionHandler = class(TInterfacedObject, ISharedItemDeletionHandler)
 	public
-		function Execute(Cloud: TCloudMailRu; const Item: TCMRDirItem): Boolean;
+		function Execute(Cloud: TCloudMailRu; const Item: TCloudDirItem): Boolean;
 	end;
 
 implementation
 
 uses
-	CMRInviteList,
-	CMRInvite,
-	CMRConstants;
+	CloudInviteList,
+	CloudInvite,
+	CloudConstants;
 
-function TSharedItemDeletionHandler.Execute(Cloud: TCloudMailRu; const Item: TCMRDirItem): Boolean;
+function TSharedItemDeletionHandler.Execute(Cloud: TCloudMailRu; const Item: TCloudDirItem): Boolean;
 var
-	InvitesListing: TCMRInviteList;
-	Invite: TCMRInvite;
+	InvitesListing: TCloudInviteList;
+	Invite: TCloudInvite;
 	Weblink: WideString;
 begin
 	{Get list of collaborators and unshare with each}

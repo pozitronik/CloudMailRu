@@ -7,14 +7,14 @@ interface
 
 uses
 	Windows,
-	CMRDirItem,
-	CMRDirItemList,
+	CloudDirItem,
+	CloudDirItemList,
 	CloudListingService;
 
 type
 	{Callback type for showing trashbin properties dialog.
 		Returns: mrNo=Empty, mrYes=Restore single, mrYesToAll=Restore all, other=Cancel}
-	TShowTrashPropertiesFunc = reference to function(ParentWindow: HWND; Items: TCMRDirItemList; IsTrashDir: Boolean; const AccountName: WideString): Integer;
+	TShowTrashPropertiesFunc = reference to function(ParentWindow: HWND; Items: TCloudDirItemList; IsTrashDir: Boolean; const AccountName: WideString): Integer;
 
 	ITrashBinOperationHandler = interface
 		['{640C65AC-337C-4F38-8522-45F186397E53}']
@@ -28,12 +28,12 @@ type
 			@param AccountName Account name for dialog display
 			@param ShowDialog Callback to show the properties dialog
 			@return FS_EXEC_OK on success, FS_EXEC_ERROR on failure}
-		function Execute(ParentWindow: HWND; ListingService: ICloudListingService; var Listing: TCMRDirItemList; const Item: TCMRDirItem; IsTrashDir: Boolean; const AccountName: WideString; ShowDialog: TShowTrashPropertiesFunc): Integer;
+		function Execute(ParentWindow: HWND; ListingService: ICloudListingService; var Listing: TCloudDirItemList; const Item: TCloudDirItem; IsTrashDir: Boolean; const AccountName: WideString; ShowDialog: TShowTrashPropertiesFunc): Integer;
 	end;
 
 	TTrashBinOperationHandler = class(TInterfacedObject, ITrashBinOperationHandler)
 	public
-		function Execute(ParentWindow: HWND; ListingService: ICloudListingService; var Listing: TCMRDirItemList; const Item: TCMRDirItem; IsTrashDir: Boolean; const AccountName: WideString; ShowDialog: TShowTrashPropertiesFunc): Integer;
+		function Execute(ParentWindow: HWND; ListingService: ICloudListingService; var Listing: TCloudDirItemList; const Item: TCloudDirItem; IsTrashDir: Boolean; const AccountName: WideString; ShowDialog: TShowTrashPropertiesFunc): Integer;
 	end;
 
 implementation
@@ -42,10 +42,10 @@ uses
 	Controls,
 	WFXTypes;
 
-function TTrashBinOperationHandler.Execute(ParentWindow: HWND; ListingService: ICloudListingService; var Listing: TCMRDirItemList; const Item: TCMRDirItem; IsTrashDir: Boolean; const AccountName: WideString; ShowDialog: TShowTrashPropertiesFunc): Integer;
+function TTrashBinOperationHandler.Execute(ParentWindow: HWND; ListingService: ICloudListingService; var Listing: TCloudDirItemList; const Item: TCloudDirItem; IsTrashDir: Boolean; const AccountName: WideString; ShowDialog: TShowTrashPropertiesFunc): Integer;
 var
 	DialogResult: Integer;
-	CurrentItem: TCMRDirItem;
+	CurrentItem: TCloudDirItem;
 begin
 	Result := FS_EXEC_OK;
 

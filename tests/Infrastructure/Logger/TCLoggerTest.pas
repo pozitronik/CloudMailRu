@@ -5,7 +5,7 @@ interface
 uses
 	TCLogger,
 	WFXTypes,
-	CMRConstants,
+	CloudConstants,
 	TestHelper,
 	SysUtils,
 	DUnitX.TestFramework;

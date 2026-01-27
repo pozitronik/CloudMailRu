@@ -7,7 +7,7 @@ unit CloudAccessMapper;
 interface
 
 uses
-	CMRConstants;
+	CloudConstants;
 
 type
 	TCloudAccessMapper = class

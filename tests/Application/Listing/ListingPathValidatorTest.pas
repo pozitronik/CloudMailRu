@@ -8,9 +8,9 @@ interface
 uses
 	Windows,
 	DUnitX.TestFramework,
-	CMRDirItem,
-	CMRDirItemList,
-	CMRConstants,
+	CloudDirItem,
+	CloudDirItemList,
+	CloudConstants,
 	ListingPathValidator;
 
 type
@@ -19,8 +19,8 @@ type
 	private
 		FValidator: IListingPathValidator;
 
-		function CreateDirItem(const Name, HomePath: WideString): TCMRDirItem;
-		function CreateFileItem(const Name, HomePath: WideString): TCMRDirItem;
+		function CreateDirItem(const Name, HomePath: WideString): TCloudDirItem;
+		function CreateFileItem(const Name, HomePath: WideString): TCloudDirItem;
 	public
 		[Setup]
 		procedure Setup;
@@ -62,7 +62,7 @@ implementation
 
 {Helper methods}
 
-function TListingPathValidatorTest.CreateDirItem(const Name, HomePath: WideString): TCMRDirItem;
+function TListingPathValidatorTest.CreateDirItem(const Name, HomePath: WideString): TCloudDirItem;
 begin
 	FillChar(Result, SizeOf(Result), 0);
 	Result.name := Name;
@@ -70,7 +70,7 @@ begin
 	Result.type_ := TYPE_DIR;
 end;
 
-function TListingPathValidatorTest.CreateFileItem(const Name, HomePath: WideString): TCMRDirItem;
+function TListingPathValidatorTest.CreateFileItem(const Name, HomePath: WideString): TCloudDirItem;
 begin
 	FillChar(Result, SizeOf(Result), 0);
 	Result.name := Name;
@@ -94,7 +94,7 @@ end;
 
 procedure TListingPathValidatorTest.TestValidatePath_VirtualNotInAccountsList_ReturnsAccessDenied;
 var
-	Listing: TCMRDirItemList;
+	Listing: TCloudDirItemList;
 	Result: TListingValidationResult;
 begin
 	{Virtual path but not at account level - should deny access}
@@ -108,7 +108,7 @@ end;
 
 procedure TListingPathValidatorTest.TestValidatePath_VirtualInAccountsList_ReturnsValid;
 var
-	Listing: TCMRDirItemList;
+	Listing: TCloudDirItemList;
 	Result: TListingValidationResult;
 begin
 	{Virtual path at account level - should allow}
@@ -122,7 +122,7 @@ end;
 
 procedure TListingPathValidatorTest.TestValidatePath_NotVirtual_PassesVirtualCheck;
 var
-	Listing: TCMRDirItemList;
+	Listing: TCloudDirItemList;
 	Result: TListingValidationResult;
 begin
 	{Non-virtual path should pass virtual check regardless of IsInAccountsList}
@@ -137,7 +137,7 @@ end;
 
 procedure TListingPathValidatorTest.TestValidatePath_PrivateAccount_DirectoryFound_ReturnsValid;
 var
-	Listing: TCMRDirItemList;
+	Listing: TCloudDirItemList;
 	Result: TListingValidationResult;
 begin
 	{Private account: lookup by home path, found directory}
@@ -153,7 +153,7 @@ end;
 
 procedure TListingPathValidatorTest.TestValidatePath_PrivateAccount_FileFound_ReturnsPathNotFound;
 var
-	Listing: TCMRDirItemList;
+	Listing: TCloudDirItemList;
 	Result: TListingValidationResult;
 begin
 	{Private account: lookup by home path, found file - can't list a file}
@@ -169,7 +169,7 @@ end;
 
 procedure TListingPathValidatorTest.TestValidatePath_PrivateAccount_NotFound_ReturnsValid;
 var
-	Listing: TCMRDirItemList;
+	Listing: TCloudDirItemList;
 	Result: TListingValidationResult;
 begin
 	{Private account: path not in listing - valid (empty directory)}
@@ -186,7 +186,7 @@ end;
 
 procedure TListingPathValidatorTest.TestValidatePath_PublicAccount_DirectoryFound_ReturnsValid;
 var
-	Listing: TCMRDirItemList;
+	Listing: TCloudDirItemList;
 	Result: TListingValidationResult;
 begin
 	{Public account: lookup by name, found directory}
@@ -200,7 +200,7 @@ end;
 
 procedure TListingPathValidatorTest.TestValidatePath_PublicAccount_FileFound_ReturnsPathNotFound;
 var
-	Listing: TCMRDirItemList;
+	Listing: TCloudDirItemList;
 	Result: TListingValidationResult;
 begin
 	{Public account: lookup by name, found file - can't list a file}
@@ -217,7 +217,7 @@ end;
 
 procedure TListingPathValidatorTest.TestValidatePath_EmptyListing_ReturnsValid;
 var
-	Listing: TCMRDirItemList;
+	Listing: TCloudDirItemList;
 	Result: TListingValidationResult;
 begin
 	{Empty listing - valid (empty directory)}
@@ -232,7 +232,7 @@ end;
 
 procedure TListingPathValidatorTest.TestValidatePath_VirtualButFile_ReturnsAccessDeniedFirst;
 var
-	Listing: TCMRDirItemList;
+	Listing: TCloudDirItemList;
 	Result: TListingValidationResult;
 begin
 	{Virtual constraint is checked before item type - should fail on virtual first}

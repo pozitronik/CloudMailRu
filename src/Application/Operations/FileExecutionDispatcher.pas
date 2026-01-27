@@ -65,7 +65,7 @@ uses
 	SysUtils,
 	PathHelper,
 	StringHelper,
-	CMRConstants,
+	CloudConstants,
 	WFXTypes;
 
 class function TExecutionAction.None: TExecutionAction;

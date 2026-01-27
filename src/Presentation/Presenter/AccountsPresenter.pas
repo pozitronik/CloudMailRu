@@ -221,7 +221,7 @@ type
 implementation
 
 uses
-	CMRConstants,
+	CloudConstants,
 	LanguageStrings,
 	SettingsConstants,
 	System.IOUtils,

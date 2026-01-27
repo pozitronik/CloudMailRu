@@ -9,9 +9,9 @@ interface
 uses
 	CloudMailRu,
 	CloudSettings,
-	CMRConstants,
-	CMRFileIdentity,
-	CMRDirItem,
+	CloudConstants,
+	CloudFileIdentity,
+	CloudDirItem,
 	WFXTypes,
 	SettingsConstants,
 	TCLogger,
@@ -137,10 +137,10 @@ const
 	SHA1_HASH_40 = 'ABCD1234567890ABCD1234567890ABCD12345678';
 
 	JSON_SUCCESS = '{"email":"test@mail.ru","body":{},"status":200}';
-	{File status must include type="file" for TCMRDirItem.FromJSON to parse correctly}
+	{File status must include type="file" for TCloudDirItem.FromJSON to parse correctly}
 	JSON_FILE_STATUS = '{"email":"test@mail.ru","body":{"name":"file.txt","type":"file","size":1024,"hash":"' + SHA1_HASH_40 + '","mtime":1609459200},"status":200}';
 	JSON_PUBLISH_SUCCESS = '{"email":"test@mail.ru","body":"https://cloud.mail.ru/public/abcd1234","status":200}';
-	{Error responses must have non-200 status for TCMROperationResult to parse body errors}
+	{Error responses must have non-200 status for TCloudOperationResult to parse body errors}
 	JSON_EXISTS_ERROR = '{"email":"test@mail.ru","body":{"home":{"error":"exists"}},"status":400}';
 	JSON_NOT_EXISTS_ERROR = '{"email":"test@mail.ru","body":{"home":{"error":"not_exists"}},"status":404}';
 	JSON_TOKEN_ERROR = '{"email":"test@mail.ru","body":{"home":{"error":"token"}},"status":403}';
@@ -330,7 +330,7 @@ end;
 
 procedure TCloudMailRuIntegrationTest.TestStatusFile_Success_ParsesResponse;
 var
-	DirItem: TCMRDirItem;
+	DirItem: TCloudDirItem;
 begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_FILE, True, JSON_FILE_STATUS);
@@ -344,7 +344,7 @@ end;
 
 procedure TCloudMailRuIntegrationTest.TestStatusFile_NotFound_ReturnsFalse;
 var
-	DirItem: TCMRDirItem;
+	DirItem: TCloudDirItem;
 begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_FILE, True, JSON_NOT_EXISTS_ERROR);
@@ -358,7 +358,7 @@ end;
 
 procedure TCloudMailRuIntegrationTest.TestAddFileByIdentity_Success_ReturnsOK;
 var
-	FileIdentity: TCMRFileIdentity;
+	FileIdentity: TCloudFileIdentity;
 begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_FILE_ADD, True, JSON_SUCCESS);
@@ -374,7 +374,7 @@ end;
 
 procedure TCloudMailRuIntegrationTest.TestAddFileByIdentity_Exists_ReturnsExistsError;
 var
-	FileIdentity: TCMRFileIdentity;
+	FileIdentity: TCloudFileIdentity;
 begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_FILE_ADD, True, JSON_EXISTS_ERROR);
@@ -466,7 +466,7 @@ end;
 
 procedure TCloudMailRuIntegrationTest.TestQueuedResponses_MultipleAPICalls_ProcessedInOrder;
 var
-	DirItem: TCMRDirItem;
+	DirItem: TCloudDirItem;
 begin
 	FCloud := CreateCloud;
 

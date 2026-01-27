@@ -10,7 +10,7 @@ uses
 	Windows,
 	RootListingHandler,
 	WSList,
-	CMRConstants;
+	CloudConstants;
 
 type
 	[TestFixture]

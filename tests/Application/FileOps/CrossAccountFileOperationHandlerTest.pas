@@ -137,7 +137,7 @@ implementation
 
 uses
 	WFXTypes,
-	CMRConstants,
+	CloudConstants,
 	SettingsConstants,
 	LanguageStrings;
 

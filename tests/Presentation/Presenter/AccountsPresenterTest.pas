@@ -405,7 +405,7 @@ implementation
 
 uses
 	IniConfigFile,
-	CMRConstants,
+	CloudConstants,
 	SettingsConstants,
 	WSList;
 

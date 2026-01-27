@@ -7,11 +7,11 @@ interface
 uses
 	DUnitX.TestFramework,
 	Windows,
-	CMRDirItem,
-	CMRDirItemList,
-	CMRIncomingInviteList,
-	CMRSpace,
-	CMRConstants,
+	CloudDirItem,
+	CloudDirItemList,
+	CloudIncomingInviteList,
+	CloudSpace,
+	CloudConstants,
 	CloudListingService,
 	TrashBinOperationHandler;
 
@@ -39,15 +39,15 @@ type
 		function GetLastRestoreRev: Integer;
 
 		{ICloudListingService implementation}
-		function GetDirectory(Path: WideString; var Listing: TCMRDirItemList; ShowProgress: Boolean = False): Boolean;
-		function GetSharedLinks(var Listing: TCMRDirItemList; ShowProgress: Boolean = False): Boolean;
-		function GetIncomingInvites(var Listing: TCMRIncomingInviteList; ShowProgress: Boolean = False): Boolean;
-		function GetIncomingInvitesAsDirItems(var DirListing: TCMRDirItemList; var InvitesListing: TCMRIncomingInviteList; ShowProgress: Boolean = False): Boolean;
-		function GetTrashbin(var Listing: TCMRDirItemList; ShowProgress: Boolean = False): Boolean;
-		function StatusFile(Path: WideString; var FileInfo: TCMRDirItem): Boolean;
+		function GetDirectory(Path: WideString; var Listing: TCloudDirItemList; ShowProgress: Boolean = False): Boolean;
+		function GetSharedLinks(var Listing: TCloudDirItemList; ShowProgress: Boolean = False): Boolean;
+		function GetIncomingInvites(var Listing: TCloudIncomingInviteList; ShowProgress: Boolean = False): Boolean;
+		function GetIncomingInvitesAsDirItems(var DirListing: TCloudDirItemList; var InvitesListing: TCloudIncomingInviteList; ShowProgress: Boolean = False): Boolean;
+		function GetTrashbin(var Listing: TCloudDirItemList; ShowProgress: Boolean = False): Boolean;
+		function StatusFile(Path: WideString; var FileInfo: TCloudDirItem): Boolean;
 		function TrashbinRestore(Path: WideString; RestoreRevision: Integer; ConflictMode: WideString = CLOUD_CONFLICT_RENAME): Boolean;
 		function TrashbinEmpty(): Boolean;
-		function GetUserSpace(var SpaceInfo: TCMRSpace): Boolean;
+		function GetUserSpace(var SpaceInfo: TCloudSpace): Boolean;
 		procedure LogUserSpaceInfo(Email: WideString);
 	end;
 
@@ -58,7 +58,7 @@ type
 		FMockService: TMockListingService;
 		FMockServiceIntf: ICloudListingService;
 
-		function CreateDeletedItem(const Name, DeletedFrom: WideString; Rev: Integer): TCMRDirItem;
+		function CreateDeletedItem(const Name, DeletedFrom: WideString; Rev: Integer): TCloudDirItem;
 	public
 		[Setup]
 		procedure Setup;
@@ -140,32 +140,32 @@ begin
 	Result := FLastRestoreRev;
 end;
 
-function TMockListingService.GetDirectory(Path: WideString; var Listing: TCMRDirItemList; ShowProgress: Boolean): Boolean;
+function TMockListingService.GetDirectory(Path: WideString; var Listing: TCloudDirItemList; ShowProgress: Boolean): Boolean;
 begin
 	Result := False;
 end;
 
-function TMockListingService.GetSharedLinks(var Listing: TCMRDirItemList; ShowProgress: Boolean): Boolean;
+function TMockListingService.GetSharedLinks(var Listing: TCloudDirItemList; ShowProgress: Boolean): Boolean;
 begin
 	Result := False;
 end;
 
-function TMockListingService.GetIncomingInvites(var Listing: TCMRIncomingInviteList; ShowProgress: Boolean): Boolean;
+function TMockListingService.GetIncomingInvites(var Listing: TCloudIncomingInviteList; ShowProgress: Boolean): Boolean;
 begin
 	Result := False;
 end;
 
-function TMockListingService.GetIncomingInvitesAsDirItems(var DirListing: TCMRDirItemList; var InvitesListing: TCMRIncomingInviteList; ShowProgress: Boolean): Boolean;
+function TMockListingService.GetIncomingInvitesAsDirItems(var DirListing: TCloudDirItemList; var InvitesListing: TCloudIncomingInviteList; ShowProgress: Boolean): Boolean;
 begin
 	Result := False;
 end;
 
-function TMockListingService.GetTrashbin(var Listing: TCMRDirItemList; ShowProgress: Boolean): Boolean;
+function TMockListingService.GetTrashbin(var Listing: TCloudDirItemList; ShowProgress: Boolean): Boolean;
 begin
 	Result := False;
 end;
 
-function TMockListingService.StatusFile(Path: WideString; var FileInfo: TCMRDirItem): Boolean;
+function TMockListingService.StatusFile(Path: WideString; var FileInfo: TCloudDirItem): Boolean;
 begin
 	Result := False;
 end;
@@ -184,7 +184,7 @@ begin
 	Result := FTrashbinEmptyResult;
 end;
 
-function TMockListingService.GetUserSpace(var SpaceInfo: TCMRSpace): Boolean;
+function TMockListingService.GetUserSpace(var SpaceInfo: TCloudSpace): Boolean;
 begin
 	Result := False;
 end;
@@ -196,7 +196,7 @@ end;
 
 {TTrashBinOperationHandlerTest}
 
-function TTrashBinOperationHandlerTest.CreateDeletedItem(const Name, DeletedFrom: WideString; Rev: Integer): TCMRDirItem;
+function TTrashBinOperationHandlerTest.CreateDeletedItem(const Name, DeletedFrom: WideString; Rev: Integer): TCloudDirItem;
 begin
 	FillChar(Result, SizeOf(Result), 0);
 	Result.name := Name;
@@ -223,8 +223,8 @@ end;
 
 procedure TTrashBinOperationHandlerTest.TestExecute_DialogCancel_ReturnsOK;
 var
-	Listing: TCMRDirItemList;
-	Item: TCMRDirItem;
+	Listing: TCloudDirItemList;
+	Item: TCloudDirItem;
 	ExecResult: Integer;
 begin
 	SetLength(Listing, 1);
@@ -232,7 +232,7 @@ begin
 	Item := Listing[0];
 
 	ExecResult := FHandler.Execute(0, FMockServiceIntf, Listing, Item, False, 'account',
-		function(ParentWindow: HWND; Items: TCMRDirItemList;
+		function(ParentWindow: HWND; Items: TCloudDirItemList;
 			IsTrashDir: Boolean; const AccountName: WideString): Integer
 		begin
 			Result := mrCancel;
@@ -247,15 +247,15 @@ end;
 
 procedure TTrashBinOperationHandlerTest.TestExecute_EmptyTrashbin_CallsService;
 var
-	Listing: TCMRDirItemList;
-	Item: TCMRDirItem;
+	Listing: TCloudDirItemList;
+	Item: TCloudDirItem;
 begin
 	SetLength(Listing, 1);
 	Listing[0] := CreateDeletedItem('test.txt', '/backup/', 1);
 	Item := Listing[0];
 
 	FHandler.Execute(0, FMockServiceIntf, Listing, Item, True, 'account',
-		function(ParentWindow: HWND; Items: TCMRDirItemList;
+		function(ParentWindow: HWND; Items: TCloudDirItemList;
 			IsTrashDir: Boolean; const AccountName: WideString): Integer
 		begin
 			Result := mrNo; {mrNo = Empty trashbin}
@@ -266,8 +266,8 @@ end;
 
 procedure TTrashBinOperationHandlerTest.TestExecute_EmptyTrashbin_Success_ReturnsOK;
 var
-	Listing: TCMRDirItemList;
-	Item: TCMRDirItem;
+	Listing: TCloudDirItemList;
+	Item: TCloudDirItem;
 	ExecResult: Integer;
 begin
 	SetLength(Listing, 1);
@@ -276,7 +276,7 @@ begin
 	FMockService.SetTrashbinEmptyResult(True);
 
 	ExecResult := FHandler.Execute(0, FMockServiceIntf, Listing, Item, True, 'account',
-		function(ParentWindow: HWND; Items: TCMRDirItemList;
+		function(ParentWindow: HWND; Items: TCloudDirItemList;
 			IsTrashDir: Boolean; const AccountName: WideString): Integer
 		begin
 			Result := mrNo;
@@ -287,8 +287,8 @@ end;
 
 procedure TTrashBinOperationHandlerTest.TestExecute_EmptyTrashbin_Failure_ReturnsError;
 var
-	Listing: TCMRDirItemList;
-	Item: TCMRDirItem;
+	Listing: TCloudDirItemList;
+	Item: TCloudDirItem;
 	ExecResult: Integer;
 begin
 	SetLength(Listing, 1);
@@ -297,7 +297,7 @@ begin
 	FMockService.SetTrashbinEmptyResult(False);
 
 	ExecResult := FHandler.Execute(0, FMockServiceIntf, Listing, Item, True, 'account',
-		function(ParentWindow: HWND; Items: TCMRDirItemList;
+		function(ParentWindow: HWND; Items: TCloudDirItemList;
 			IsTrashDir: Boolean; const AccountName: WideString): Integer
 		begin
 			Result := mrNo;
@@ -310,15 +310,15 @@ end;
 
 procedure TTrashBinOperationHandlerTest.TestExecute_RestoreSingle_CallsServiceWithCorrectPath;
 var
-	Listing: TCMRDirItemList;
-	Item: TCMRDirItem;
+	Listing: TCloudDirItemList;
+	Item: TCloudDirItem;
 begin
 	SetLength(Listing, 1);
 	Item := CreateDeletedItem('document.pdf', '/work/docs/', 42);
 	Listing[0] := Item;
 
 	FHandler.Execute(0, FMockServiceIntf, Listing, Item, False, 'account',
-		function(ParentWindow: HWND; Items: TCMRDirItemList;
+		function(ParentWindow: HWND; Items: TCloudDirItemList;
 			IsTrashDir: Boolean; const AccountName: WideString): Integer
 		begin
 			Result := mrYes; {mrYes = Restore single}
@@ -331,8 +331,8 @@ end;
 
 procedure TTrashBinOperationHandlerTest.TestExecute_RestoreSingle_Success_ReturnsOK;
 var
-	Listing: TCMRDirItemList;
-	Item: TCMRDirItem;
+	Listing: TCloudDirItemList;
+	Item: TCloudDirItem;
 	ExecResult: Integer;
 begin
 	Item := CreateDeletedItem('test.txt', '/backup/', 1);
@@ -341,7 +341,7 @@ begin
 	FMockService.SetTrashbinRestoreResult(True);
 
 	ExecResult := FHandler.Execute(0, FMockServiceIntf, Listing, Item, False, 'account',
-		function(ParentWindow: HWND; Items: TCMRDirItemList;
+		function(ParentWindow: HWND; Items: TCloudDirItemList;
 			IsTrashDir: Boolean; const AccountName: WideString): Integer
 		begin
 			Result := mrYes;
@@ -352,8 +352,8 @@ end;
 
 procedure TTrashBinOperationHandlerTest.TestExecute_RestoreSingle_Failure_ReturnsError;
 var
-	Listing: TCMRDirItemList;
-	Item: TCMRDirItem;
+	Listing: TCloudDirItemList;
+	Item: TCloudDirItem;
 	ExecResult: Integer;
 begin
 	Item := CreateDeletedItem('test.txt', '/backup/', 1);
@@ -362,7 +362,7 @@ begin
 	FMockService.SetTrashbinRestoreResult(False);
 
 	ExecResult := FHandler.Execute(0, FMockServiceIntf, Listing, Item, False, 'account',
-		function(ParentWindow: HWND; Items: TCMRDirItemList;
+		function(ParentWindow: HWND; Items: TCloudDirItemList;
 			IsTrashDir: Boolean; const AccountName: WideString): Integer
 		begin
 			Result := mrYes;
@@ -375,8 +375,8 @@ end;
 
 procedure TTrashBinOperationHandlerTest.TestExecute_RestoreAll_CallsServiceForEachItem;
 var
-	Listing: TCMRDirItemList;
-	Item: TCMRDirItem;
+	Listing: TCloudDirItemList;
+	Item: TCloudDirItem;
 begin
 	SetLength(Listing, 3);
 	Listing[0] := CreateDeletedItem('file1.txt', '/docs/', 1);
@@ -385,7 +385,7 @@ begin
 	Item := Item.None;
 
 	FHandler.Execute(0, FMockServiceIntf, Listing, Item, True, 'account',
-		function(ParentWindow: HWND; Items: TCMRDirItemList;
+		function(ParentWindow: HWND; Items: TCloudDirItemList;
 			IsTrashDir: Boolean; const AccountName: WideString): Integer
 		begin
 			Result := mrYesToAll; {mrYesToAll = Restore all}
@@ -396,8 +396,8 @@ end;
 
 procedure TTrashBinOperationHandlerTest.TestExecute_RestoreAll_StopsOnFirstFailure;
 var
-	Listing: TCMRDirItemList;
-	Item: TCMRDirItem;
+	Listing: TCloudDirItemList;
+	Item: TCloudDirItem;
 	ExecResult: Integer;
 begin
 	SetLength(Listing, 3);
@@ -409,7 +409,7 @@ begin
 	FMockService.SetTrashbinRestoreResult(False); {All will fail, but we want to check it stops}
 
 	ExecResult := FHandler.Execute(0, FMockServiceIntf, Listing, Item, True, 'account',
-		function(ParentWindow: HWND; Items: TCMRDirItemList;
+		function(ParentWindow: HWND; Items: TCloudDirItemList;
 			IsTrashDir: Boolean; const AccountName: WideString): Integer
 		begin
 			Result := mrYesToAll;

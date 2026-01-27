@@ -25,7 +25,7 @@ uses
 	TCProgress,
 	TCRequest,
 	TCHandler,
-	CMRConstants,
+	CloudConstants,
 	WFXTypes;
 
 type

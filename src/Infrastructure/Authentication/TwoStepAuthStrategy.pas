@@ -31,9 +31,9 @@ uses
 	System.Generics.Collections,
 	System.UITypes,
 	Windows,
-	CMRConstants,
-	CMRTwostep,
-	CMRTwostepJsonAdapter,
+	CloudConstants,
+	CloudTwostep,
+	CloudTwostepJsonAdapter,
 	WFXTypes,
 	LanguageStrings,
 	ParsingHelper;
@@ -51,7 +51,7 @@ var
 	PostAnswer: WideString;
 	TwoStepJson: WideString;
 	AuthMessage: WideString;
-	TwostepData: TCMRTwostep;
+	TwostepData: TCloudTwostep;
 	SecurityKey: WideString;
 	FormFields: TDictionary<WideString, WideString>;
 	TokenPageContent: WideString;
@@ -97,7 +97,7 @@ begin
 		if Assigned(Logger) then
 			Logger.Log(LOG_LEVEL_DEBUG, msgtype_details, PARSING_AUTH_DATA);
 
-		if not(extractTwostepJson(PostAnswer, TwoStepJson) and TCMRTwostepJsonAdapter.Parse(TwoStepJson, TwostepData)) then
+		if not(extractTwostepJson(PostAnswer, TwoStepJson) and TCloudTwostepJsonAdapter.Parse(TwoStepJson, TwostepData)) then
 		begin
 			if Assigned(Logger) then
 				Logger.Log(LOG_LEVEL_ERROR, msgtype_importanterror, ERR_PARSE_AUTH_DATA);

@@ -8,9 +8,9 @@ interface
 uses
 	DUnitX.TestFramework,
 	RealPath,
-	CMRDirItem,
-	CMRDirItemList,
-	CMRConstants,
+	CloudDirItem,
+	CloudDirItemList,
+	CloudConstants,
 	CloudMailRu,
 	CloudSettings,
 	TCLogger,
@@ -47,8 +47,8 @@ type
 		FMockHTTPManager: TMockHTTPManager;
 		FCloud: TCloudMailRu;
 
-		function CreateFileItem(const Name, HomePath: WideString): TCMRDirItem;
-		function CreateDirItem(const Name, HomePath: WideString): TCMRDirItem;
+		function CreateFileItem(const Name, HomePath: WideString): TCloudDirItem;
+		function CreateDirItem(const Name, HomePath: WideString): TCloudDirItem;
 		function CreateCloud(PublicAccount: Boolean = False): TCloudMailRu;
 	public
 		[Setup]
@@ -131,7 +131,7 @@ end;
 
 {TListingItemFetcherTest}
 
-function TListingItemFetcherTest.CreateFileItem(const Name, HomePath: WideString): TCMRDirItem;
+function TListingItemFetcherTest.CreateFileItem(const Name, HomePath: WideString): TCloudDirItem;
 begin
 	FillChar(Result, SizeOf(Result), 0);
 	Result.name := Name;
@@ -139,7 +139,7 @@ begin
 	Result.type_ := TYPE_FILE;
 end;
 
-function TListingItemFetcherTest.CreateDirItem(const Name, HomePath: WideString): TCMRDirItem;
+function TListingItemFetcherTest.CreateDirItem(const Name, HomePath: WideString): TCloudDirItem;
 begin
 	FillChar(Result, SizeOf(Result), 0);
 	Result.name := Name;
@@ -187,9 +187,9 @@ end;
 
 procedure TListingItemFetcherTest.TestFetchItem_PrivateAccount_SearchesByHomePath;
 var
-	Listing: TCMRDirItemList;
+	Listing: TCloudDirItemList;
 	Path: TRealPath;
-	Item: TCMRDirItem;
+	Item: TCloudDirItem;
 begin
 	{Private accounts search by home path, not by name}
 	FCloud := CreateCloud(False);
@@ -205,9 +205,9 @@ end;
 
 procedure TListingItemFetcherTest.TestFetchItem_PrivateAccount_FileFoundByHomePath;
 var
-	Listing: TCMRDirItemList;
+	Listing: TCloudDirItemList;
 	Path: TRealPath;
-	Item: TCMRDirItem;
+	Item: TCloudDirItem;
 begin
 	FCloud := CreateCloud(False);
 	SetLength(Listing, 1);
@@ -223,9 +223,9 @@ end;
 
 procedure TListingItemFetcherTest.TestFetchItem_PrivateAccount_DirFoundByHomePath;
 var
-	Listing: TCMRDirItemList;
+	Listing: TCloudDirItemList;
 	Path: TRealPath;
-	Item: TCMRDirItem;
+	Item: TCloudDirItem;
 begin
 	FCloud := CreateCloud(False);
 	SetLength(Listing, 1);
@@ -241,9 +241,9 @@ end;
 
 procedure TListingItemFetcherTest.TestFetchItem_PrivateAccount_NotFoundReturnsNone;
 var
-	Listing: TCMRDirItemList;
+	Listing: TCloudDirItemList;
 	Path: TRealPath;
-	Item: TCMRDirItem;
+	Item: TCloudDirItem;
 begin
 	FCloud := CreateCloud(False);
 	SetLength(Listing, 1);
@@ -259,9 +259,9 @@ end;
 
 procedure TListingItemFetcherTest.TestFetchItem_PublicAccount_SearchesByName;
 var
-	Listing: TCMRDirItemList;
+	Listing: TCloudDirItemList;
 	Path: TRealPath;
-	Item: TCMRDirItem;
+	Item: TCloudDirItem;
 begin
 	{Public accounts search by name, not by home path}
 	FCloud := CreateCloud(True);
@@ -277,9 +277,9 @@ end;
 
 procedure TListingItemFetcherTest.TestFetchItem_PublicAccount_FileFoundByName;
 var
-	Listing: TCMRDirItemList;
+	Listing: TCloudDirItemList;
 	Path: TRealPath;
-	Item: TCMRDirItem;
+	Item: TCloudDirItem;
 begin
 	FCloud := CreateCloud(True);
 	SetLength(Listing, 1);
@@ -296,9 +296,9 @@ end;
 
 procedure TListingItemFetcherTest.TestFetchItem_UpdateListingFalse_DoesNotRefresh;
 var
-	Listing: TCMRDirItemList;
+	Listing: TCloudDirItemList;
 	Path: TRealPath;
-	Item: TCMRDirItem;
+	Item: TCloudDirItem;
 begin
 	{When UpdateListing is False and item not found, should not call cloud APIs}
 	FCloud := CreateCloud(False);
@@ -315,9 +315,9 @@ end;
 
 procedure TListingItemFetcherTest.TestFetchItem_TrashDir_RefreshesFromTrashbin;
 var
-	Listing: TCMRDirItemList;
+	Listing: TCloudDirItemList;
 	Path: TRealPath;
-	Item: TCMRDirItem;
+	Item: TCloudDirItem;
 	TrashbinJson: WideString;
 begin
 	{When item not found and path is in .trash, should refresh from trashbin API}
@@ -338,9 +338,9 @@ end;
 
 procedure TListingItemFetcherTest.TestFetchItem_TrashDir_RefreshFails_ReturnsNone;
 var
-	Listing: TCMRDirItemList;
+	Listing: TCloudDirItemList;
 	Path: TRealPath;
-	Item: TCMRDirItem;
+	Item: TCloudDirItem;
 begin
 	{When trashbin API fails, should return None}
 	FCloud := CreateCloud(False);
@@ -359,9 +359,9 @@ end;
 
 procedure TListingItemFetcherTest.TestFetchItem_SharedDir_RefreshesFromSharedLinks;
 var
-	Listing: TCMRDirItemList;
+	Listing: TCloudDirItemList;
 	Path: TRealPath;
-	Item: TCMRDirItem;
+	Item: TCloudDirItem;
 	SharedJson: WideString;
 begin
 	{When item not found and path is in .shared, should refresh from shared links API}
@@ -382,9 +382,9 @@ end;
 
 procedure TListingItemFetcherTest.TestFetchItem_SharedDir_RefreshFails_ReturnsNone;
 var
-	Listing: TCMRDirItemList;
+	Listing: TCloudDirItemList;
 	Path: TRealPath;
-	Item: TCMRDirItem;
+	Item: TCloudDirItem;
 begin
 	{When shared links API fails, should return None}
 	FCloud := CreateCloud(False);
@@ -403,9 +403,9 @@ end;
 
 procedure TListingItemFetcherTest.TestFetchItem_InvitesDir_ReturnsNoneWithoutAPICall;
 var
-	Listing: TCMRDirItemList;
+	Listing: TCloudDirItemList;
 	Path: TRealPath;
-	Item: TCMRDirItem;
+	Item: TCloudDirItem;
 begin
 	{Invites are handled differently - should exit early without API call}
 	FCloud := CreateCloud(False);
@@ -422,9 +422,9 @@ end;
 
 procedure TListingItemFetcherTest.TestFetchItem_RegularDir_RefreshesViaStatusFile;
 var
-	Listing: TCMRDirItemList;
+	Listing: TCloudDirItemList;
 	Path: TRealPath;
-	Item: TCMRDirItem;
+	Item: TCloudDirItem;
 	StatusJson: WideString;
 begin
 	{When item not found in regular dir, should call statusFile API}
@@ -446,9 +446,9 @@ end;
 
 procedure TListingItemFetcherTest.TestFetchItem_RegularDir_StatusFileFails_ReturnsNone;
 var
-	Listing: TCMRDirItemList;
+	Listing: TCloudDirItemList;
 	Path: TRealPath;
-	Item: TCMRDirItem;
+	Item: TCloudDirItem;
 begin
 	{When statusFile API fails, should return None}
 	FCloud := CreateCloud(False);
@@ -465,9 +465,9 @@ end;
 
 procedure TListingItemFetcherTest.TestFetchItem_RegularDir_LogsErrorWhenHomeEmpty;
 var
-	Listing: TCMRDirItemList;
+	Listing: TCloudDirItemList;
 	Path: TRealPath;
-	Item: TCMRDirItem;
+	Item: TCloudDirItem;
 	StatusJson: WideString;
 begin
 	{When statusFile returns item with empty home path, should log error}

@@ -46,9 +46,9 @@ uses
 	System.SysUtils,
 	System.Classes,
 	System.IOUtils,
-	CMRDirItemList,
+	CloudDirItemList,
 	WFXTypes,
-	CMRConstants,
+	CloudConstants,
 	PathHelper,
 	TestDataGenerator;
 
@@ -80,7 +80,7 @@ procedure TFileOpsIntegrationTest.TestDeleteFile_Succeeds;
 var
 	RemotePath: WideString;
 	DeleteResult: Boolean;
-	Items: TCMRDirItemList;
+	Items: TCloudDirItemList;
 	Found: Boolean;
 	I: Integer;
 begin
@@ -113,7 +113,7 @@ procedure TFileOpsIntegrationTest.TestDeleteFile_MovesToTrash;
 var
 	RemotePath: WideString;
 	DeleteResult: Boolean;
-	TrashItems: TCMRDirItemList;
+	TrashItems: TCloudDirItemList;
 	FoundInTrash: Boolean;
 	I: Integer;
 begin
@@ -146,7 +146,7 @@ procedure TFileOpsIntegrationTest.TestRenameFile_SameDirectory_Succeeds;
 var
 	OriginalPath, NewPath: WideString;
 	RenameResult: Integer;
-	Items: TCMRDirItemList;
+	Items: TCloudDirItemList;
 	FoundOriginal, FoundNew: Boolean;
 	I: Integer;
 	NewName: WideString;
@@ -186,7 +186,7 @@ var
 	SourcePath, DestFolder: WideString;
 	MoveResult: Integer;
 	CreateDirResult: Boolean;
-	Items: TCMRDirItemList;
+	Items: TCloudDirItemList;
 	Found: Boolean;
 	I: Integer;
 begin
@@ -228,7 +228,7 @@ var
 	SourcePath, DestFolder, DestPath: WideString;
 	MoveResult: Integer;
 	CreateDirResult: Boolean;
-	Items: TCMRDirItemList;
+	Items: TCloudDirItemList;
 	FoundOldName, FoundNewName: Boolean;
 	I: Integer;
 begin
@@ -272,7 +272,7 @@ var
 	SourcePath, DestFolder: WideString;
 	CopyResult: Integer;
 	CreateDirResult: Boolean;
-	SourceItems, DestItems: TCMRDirItemList;
+	SourceItems, DestItems: TCloudDirItemList;
 	FoundInSource, FoundInDest: Boolean;
 	I: Integer;
 begin
@@ -327,7 +327,7 @@ var
 	SourcePath, DestFolder, DestPath: WideString;
 	CopyResult: Integer;
 	CreateDirResult: Boolean;
-	DestItems: TCMRDirItemList;
+	DestItems: TCloudDirItemList;
 	Found: Boolean;
 	I: Integer;
 begin

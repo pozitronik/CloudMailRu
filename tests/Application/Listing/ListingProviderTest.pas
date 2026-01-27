@@ -20,10 +20,10 @@ uses
 	TCRequest,
 	TCHandler,
 	RealPath,
-	CMRDirItem,
-	CMRDirItemList,
-	CMRIncomingInviteList,
-	CMRConstants,
+	CloudDirItem,
+	CloudDirItemList,
+	CloudIncomingInviteList,
+	CloudConstants,
 	SettingsConstants;
 
 type
@@ -222,8 +222,8 @@ end;
 procedure TListingProviderTest.TestFetchListing_TrashPath_CallsTrashbinAPI;
 var
 	Path: TRealPath;
-	DirListing: TCMRDirItemList;
-	InviteListing: TCMRIncomingInviteList;
+	DirListing: TCloudDirItemList;
+	InviteListing: TCloudIncomingInviteList;
 begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_TRASHBIN, True, JSON_TRASHBIN_LISTING);
@@ -237,8 +237,8 @@ end;
 procedure TListingProviderTest.TestFetchListing_SharedPath_CallsSharedLinksAPI;
 var
 	Path: TRealPath;
-	DirListing: TCMRDirItemList;
-	InviteListing: TCMRIncomingInviteList;
+	DirListing: TCloudDirItemList;
+	InviteListing: TCloudIncomingInviteList;
 begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_FOLDER_SHARED_LINKS, True, JSON_SHARED_LINKS_LISTING);
@@ -252,8 +252,8 @@ end;
 procedure TListingProviderTest.TestFetchListing_InvitesPath_CallsIncomingLinksAPI;
 var
 	Path: TRealPath;
-	DirListing: TCMRDirItemList;
-	InviteListing: TCMRIncomingInviteList;
+	DirListing: TCloudDirItemList;
+	InviteListing: TCloudIncomingInviteList;
 begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_FOLDER_SHARED_INCOMING, True, JSON_INCOMING_INVITES_LISTING);
@@ -267,8 +267,8 @@ end;
 procedure TListingProviderTest.TestFetchListing_NormalPath_CallsDirListingAPI;
 var
 	Path: TRealPath;
-	DirListing: TCMRDirItemList;
-	InviteListing: TCMRIncomingInviteList;
+	DirListing: TCloudDirItemList;
+	InviteListing: TCloudIncomingInviteList;
 begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_FOLDER, True, JSON_DIR_LISTING);
@@ -282,8 +282,8 @@ end;
 procedure TListingProviderTest.TestFetchListing_TrashPath_ReturnsSuccess;
 var
 	Path: TRealPath;
-	DirListing: TCMRDirItemList;
-	InviteListing: TCMRIncomingInviteList;
+	DirListing: TCloudDirItemList;
+	InviteListing: TCloudIncomingInviteList;
 	Success: Boolean;
 begin
 	FCloud := CreateCloud;
@@ -298,8 +298,8 @@ end;
 procedure TListingProviderTest.TestFetchListing_SharedPath_ReturnsSuccess;
 var
 	Path: TRealPath;
-	DirListing: TCMRDirItemList;
-	InviteListing: TCMRIncomingInviteList;
+	DirListing: TCloudDirItemList;
+	InviteListing: TCloudIncomingInviteList;
 	Success: Boolean;
 begin
 	FCloud := CreateCloud;
@@ -314,8 +314,8 @@ end;
 procedure TListingProviderTest.TestFetchListing_InvitesPath_ReturnsSuccess;
 var
 	Path: TRealPath;
-	DirListing: TCMRDirItemList;
-	InviteListing: TCMRIncomingInviteList;
+	DirListing: TCloudDirItemList;
+	InviteListing: TCloudIncomingInviteList;
 	Success: Boolean;
 begin
 	FCloud := CreateCloud;
@@ -330,8 +330,8 @@ end;
 procedure TListingProviderTest.TestFetchListing_NormalPath_ReturnsSuccess;
 var
 	Path: TRealPath;
-	DirListing: TCMRDirItemList;
-	InviteListing: TCMRIncomingInviteList;
+	DirListing: TCloudDirItemList;
+	InviteListing: TCloudIncomingInviteList;
 	Success: Boolean;
 begin
 	FCloud := CreateCloud;
@@ -346,8 +346,8 @@ end;
 procedure TListingProviderTest.TestFetchListing_APIFailure_ReturnsFalse;
 var
 	Path: TRealPath;
-	DirListing: TCMRDirItemList;
-	InviteListing: TCMRIncomingInviteList;
+	DirListing: TCloudDirItemList;
+	InviteListing: TCloudIncomingInviteList;
 	Success: Boolean;
 begin
 	FCloud := CreateCloud;
@@ -362,8 +362,8 @@ end;
 procedure TListingProviderTest.TestFetchListing_PopulatesListing;
 var
 	Path: TRealPath;
-	DirListing: TCMRDirItemList;
-	InviteListing: TCMRIncomingInviteList;
+	DirListing: TCloudDirItemList;
+	InviteListing: TCloudIncomingInviteList;
 begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_FOLDER, True, JSON_DIR_LISTING);

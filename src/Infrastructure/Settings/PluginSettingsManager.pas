@@ -12,7 +12,7 @@ uses
 	Windows,
 	SettingsConstants,
 	LanguageStrings,
-	CMRConstants,
+	CloudConstants,
 	Classes,
 	PluginSettings,
 	StreamingSettings,

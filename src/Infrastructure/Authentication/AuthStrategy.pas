@@ -6,7 +6,7 @@ unit AuthStrategy;
 interface
 
 uses
-	CMROAuth,
+	CloudOAuth,
 	CloudHTTP,
 	TCLogger;
 
@@ -15,14 +15,14 @@ type
 	TAuthResult = record
 		Success: Boolean;
 		AuthToken: WideString; {CSRF token or OAuth access_token}
-		OAuthToken: TCMROAuth; {Full OAuth response structure}
+		OAuthToken: TCloudOAuth; {Full OAuth response structure}
 		UnitedParams: WideString; {Formatted API request parameters string}
 		ErrorMessage: WideString; {Error details if authentication failed}
 		PublicShard: WideString; {Public shard URL for shared account auth}
 		PublicLink: WideString; {Extracted public link for shared accounts}
 		class function CreateSuccess(const Token, Params: WideString): TAuthResult; static;
 		class function CreateFailure(const Error: WideString): TAuthResult; static;
-		class function CreateOAuthSuccess(const OAuth: TCMROAuth): TAuthResult; static;
+		class function CreateOAuthSuccess(const OAuth: TCloudOAuth): TAuthResult; static;
 		class function CreateSharedSuccess(const Shard, Link: WideString): TAuthResult; static;
 	end;
 
@@ -95,7 +95,7 @@ begin
 	Result.ErrorMessage := Error;
 end;
 
-class function TAuthResult.CreateOAuthSuccess(const OAuth: TCMROAuth): TAuthResult;
+class function TAuthResult.CreateOAuthSuccess(const OAuth: TCloudOAuth): TAuthResult;
 begin
 	Result := Default (TAuthResult);
 	Result.Success := True;

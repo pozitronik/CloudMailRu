@@ -2,13 +2,13 @@ unit InvitePropertyPresenter;
 
 {Presenter for InviteProperty dialog - handles display logic for incoming invites.
 	Follows MVP pattern: View (TInvitePropertyForm) implements IInvitePropertyView,
-	Presenter orchestrates display, Model is TCMRIncomingInvite record.}
+	Presenter orchestrates display, Model is TCloudIncomingInvite record.}
 
 interface
 
 uses
-	CMRIncomingInvite,
-	CMRConstants,
+	CloudIncomingInvite,
+	CloudConstants,
 	CloudAccessMapper,
 	StringHelper,
 	LanguageStrings,
@@ -43,16 +43,16 @@ type
 	TInvitePropertyPresenter = class
 	private
 		FView: IInvitePropertyView;
-		FItem: TCMRIncomingInvite;
+		FItem: TCloudIncomingInvite;
 		FAccountName: WideString;
 	public
 		constructor Create(View: IInvitePropertyView);
 
 		{Initialize view state based on invite item}
-		procedure Initialize(Item: TCMRIncomingInvite; AccountName: WideString);
+		procedure Initialize(Item: TCloudIncomingInvite; AccountName: WideString);
 
 		{Properties}
-		property Item: TCMRIncomingInvite read FItem;
+		property Item: TCloudIncomingInvite read FItem;
 		property AccountName: WideString read FAccountName;
 	end;
 
@@ -70,7 +70,7 @@ begin
 	FView := View;
 end;
 
-procedure TInvitePropertyPresenter.Initialize(Item: TCMRIncomingInvite; AccountName: WideString);
+procedure TInvitePropertyPresenter.Initialize(Item: TCloudIncomingInvite; AccountName: WideString);
 begin
 	FItem := Item;
 	FAccountName := AccountName;

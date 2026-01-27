@@ -13,8 +13,8 @@ interface
 uses
 	DUnitX.TestFramework,
 	RealPath,
-	CMRDirItem,
-	CMRConstants,
+	CloudDirItem,
+	CloudConstants,
 	StreamingSettings,
 	WFXTypes,
 	FileStreamExecutor,
@@ -65,7 +65,7 @@ type
 		FMockCloudFactory: TMockPublicCloudFactory;
 		FMockCommandExecutor: TMockCommandExecutor;
 
-		function CreateItem(const Name, Weblink: WideString): TCMRDirItem;
+		function CreateItem(const Name, Weblink: WideString): TCloudDirItem;
 		function CreatePath(const Account, Path: WideString): TRealPath;
 		function CreateSettings(Format: Integer; const Command: WideString = 'test.exe'; const Params: WideString = '%url%'): TStreamingSettings;
 	public
@@ -149,7 +149,7 @@ end;
 
 {TFileStreamExecutorTest - Helper methods}
 
-function TFileStreamExecutorTest.CreateItem(const Name, Weblink: WideString): TCMRDirItem;
+function TFileStreamExecutorTest.CreateItem(const Name, Weblink: WideString): TCloudDirItem;
 begin
 	FillChar(Result, SizeOf(Result), 0);
 	Result.name := Name;
@@ -191,7 +191,7 @@ end;
 procedure TFileStreamExecutorTest.TestExecute_FormatDisabled_ReturnsOKWithoutAction;
 var
 	Path: TRealPath;
-	Item: TCMRDirItem;
+	Item: TCloudDirItem;
 	Settings: TStreamingSettings;
 	ExecResult: Integer;
 begin
@@ -208,7 +208,7 @@ end;
 procedure TFileStreamExecutorTest.TestExecute_FormatUnset_ReturnsOKWithoutAction;
 var
 	Path: TRealPath;
-	Item: TCMRDirItem;
+	Item: TCloudDirItem;
 	Settings: TStreamingSettings;
 	ExecResult: Integer;
 begin
@@ -225,7 +225,7 @@ end;
 procedure TFileStreamExecutorTest.TestExecute_FormatDisabled_DoesNotCallFactory;
 var
 	Path: TRealPath;
-	Item: TCMRDirItem;
+	Item: TCloudDirItem;
 	Settings: TStreamingSettings;
 begin
 	{When format is disabled, factory should not be called}
@@ -241,7 +241,7 @@ end;
 procedure TFileStreamExecutorTest.TestExecute_FormatUnset_DoesNotCallFactory;
 var
 	Path: TRealPath;
-	Item: TCMRDirItem;
+	Item: TCloudDirItem;
 	Settings: TStreamingSettings;
 begin
 	{When format is unset, factory should not be called}
@@ -257,7 +257,7 @@ end;
 procedure TFileStreamExecutorTest.TestExecute_FormatNone_DoesNotExitEarly;
 var
 	Path: TRealPath;
-	Item: TCMRDirItem;
+	Item: TCloudDirItem;
 	Settings: TStreamingSettings;
 begin
 	{STREAMING_FORMAT_NONE (0) is a valid format that should proceed to factory}
@@ -275,7 +275,7 @@ end;
 procedure TFileStreamExecutorTest.TestExecute_FactoryCreateFails_ReturnsError;
 var
 	Path: TRealPath;
-	Item: TCMRDirItem;
+	Item: TCloudDirItem;
 	Settings: TStreamingSettings;
 	ExecResult: Integer;
 begin
@@ -293,7 +293,7 @@ end;
 procedure TFileStreamExecutorTest.TestExecute_FactoryCreateFails_DoesNotCallCommandExecutor;
 var
 	Path: TRealPath;
-	Item: TCMRDirItem;
+	Item: TCloudDirItem;
 	Settings: TStreamingSettings;
 begin
 	{When factory fails, command executor should not be called}
@@ -310,7 +310,7 @@ end;
 procedure TFileStreamExecutorTest.TestExecute_FactoryReceivesCorrectPublicUrl;
 var
 	Path: TRealPath;
-	Item: TCMRDirItem;
+	Item: TCloudDirItem;
 	Settings: TStreamingSettings;
 begin
 	{Factory should receive the correct public URL constructed from weblink}
@@ -327,7 +327,7 @@ end;
 procedure TFileStreamExecutorTest.TestExecute_FactoryReceivesPublicAccessUrlPrefix;
 var
 	Path: TRealPath;
-	Item: TCMRDirItem;
+	Item: TCloudDirItem;
 	Settings: TStreamingSettings;
 begin
 	{Factory URL should start with PUBLIC_ACCESS_URL constant}
@@ -346,7 +346,7 @@ end;
 procedure TFileStreamExecutorTest.TestExecute_PlaylistFormat_CallsFactory;
 var
 	Path: TRealPath;
-	Item: TCMRDirItem;
+	Item: TCloudDirItem;
 	Settings: TStreamingSettings;
 begin
 	{Playlist format should proceed to factory creation}
@@ -362,7 +362,7 @@ end;
 procedure TFileStreamExecutorTest.TestExecute_DefaultFormat_CallsFactory;
 var
 	Path: TRealPath;
-	Item: TCMRDirItem;
+	Item: TCloudDirItem;
 	Settings: TStreamingSettings;
 begin
 	{Default format should proceed to factory creation}
@@ -378,7 +378,7 @@ end;
 procedure TFileStreamExecutorTest.TestExecute_WeblinkViewFormat_CallsFactory;
 var
 	Path: TRealPath;
-	Item: TCMRDirItem;
+	Item: TCloudDirItem;
 	Settings: TStreamingSettings;
 begin
 	{Weblink view format should proceed to factory creation}
@@ -394,7 +394,7 @@ end;
 procedure TFileStreamExecutorTest.TestExecute_VideoFormat_CallsFactory;
 var
 	Path: TRealPath;
-	Item: TCMRDirItem;
+	Item: TCloudDirItem;
 	Settings: TStreamingSettings;
 begin
 	{Video format should proceed to factory creation}

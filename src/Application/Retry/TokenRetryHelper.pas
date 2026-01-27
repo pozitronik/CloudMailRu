@@ -75,7 +75,7 @@ function IsTokenExpiredResult(ResultCode: Integer): Boolean;
 implementation
 
 uses
-	CMRConstants,
+	CloudConstants,
 	WFXTypes,
 	JSONHelper;
 

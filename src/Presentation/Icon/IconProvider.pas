@@ -8,7 +8,7 @@ interface
 
 uses
 	SysUtils,
-	CMRDirItem, CMRIncomingInvite, CMRConstants, RealPath,
+	CloudDirItem, CloudIncomingInvite, CloudConstants, RealPath,
 	SettingsConstants;
 
 type
@@ -33,8 +33,8 @@ type
 	TIconContext = record
 		IconsMode: Integer;
 		IsPublicAccount: Boolean;
-		Item: TCMRDirItem;
-		InviteItem: TCMRIncomingInvite;
+		Item: TCloudDirItem;
+		InviteItem: TCloudIncomingInvite;
 		HasItem: Boolean;
 		HasInviteItem: Boolean;
 	end;
@@ -53,9 +53,9 @@ type
 		function GetIconForTrashRoot: TIconInfo;
 		function GetIconForSharedRoot: TIconInfo;
 		function GetIconForInvitesRoot: TIconInfo;
-		function GetIconForInviteItem(const InviteItem: TCMRIncomingInvite): TIconInfo;
+		function GetIconForInviteItem(const InviteItem: TCloudIncomingInvite): TIconInfo;
 		function GetIconForAccountRoot(IsPublicAccount: Boolean; IconsMode: Integer): TIconInfo;
-		function GetIconForDirectoryItem(const Item: TCMRDirItem; IconsMode: Integer): TIconInfo;
+		function GetIconForDirectoryItem(const Item: TCloudDirItem; IconsMode: Integer): TIconInfo;
 		function ApplyRenderMode(const IconName: WideString; IconsMode: Integer): TIconInfo;
 	public
 		function GetIcon(const RealPath: TRealPath; const Context: TIconContext): TIconInfo;
@@ -151,7 +151,7 @@ begin
 	Result := TIconInfo.Create(itInternalOverlay, 'shared_incoming');
 end;
 
-function TIconProvider.GetIconForInviteItem(const InviteItem: TCMRIncomingInvite): TIconInfo;
+function TIconProvider.GetIconForInviteItem(const InviteItem: TCloudIncomingInvite): TIconInfo;
 begin
 	if InviteItem.name = '' then
 		exit(TIconInfo.UseDefault);
@@ -170,7 +170,7 @@ begin
 		Result := ApplyRenderMode('cloud', IconsMode);
 end;
 
-function TIconProvider.GetIconForDirectoryItem(const Item: TCMRDirItem; IconsMode: Integer): TIconInfo;
+function TIconProvider.GetIconForDirectoryItem(const Item: TCloudDirItem; IconsMode: Integer): TIconInfo;
 begin
 	{Only directories and shared items get custom icons}
 	if (Item.type_ <> TYPE_DIR) and (Item.kind <> KIND_SHARED) then

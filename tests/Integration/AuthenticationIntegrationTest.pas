@@ -40,7 +40,7 @@ uses
 	TCProgress,
 	TCRequest,
 	TCHandler,
-	CMRConstants;
+	CloudConstants;
 
 {TAuthenticationIntegrationTest}
 

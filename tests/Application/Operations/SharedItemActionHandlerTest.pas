@@ -8,8 +8,8 @@ interface
 uses
 	DUnitX.TestFramework,
 	SharedItemActionHandler,
-	CMRDirItem,
-	CMRDirItemList,
+	CloudDirItem,
+	CloudDirItemList,
 	RealPath;
 
 type
@@ -18,8 +18,8 @@ type
 	private
 		FHandler: ISharedItemActionHandler;
 
-		function CreateFileItem(const Home, Name: WideString): TCMRDirItem;
-		function CreateFolderItem(const Home, Name: WideString): TCMRDirItem;
+		function CreateFileItem(const Home, Name: WideString): TCloudDirItem;
+		function CreateFolderItem(const Home, Name: WideString): TCloudDirItem;
 	public
 		[Setup]
 		procedure Setup;
@@ -63,7 +63,7 @@ implementation
 
 uses
 	SysUtils,
-	CMRConstants;
+	CloudConstants;
 
 procedure TSharedItemActionHandlerTest.Setup;
 begin
@@ -75,7 +75,7 @@ begin
 	FHandler := nil;
 end;
 
-function TSharedItemActionHandlerTest.CreateFileItem(const Home, Name: WideString): TCMRDirItem;
+function TSharedItemActionHandlerTest.CreateFileItem(const Home, Name: WideString): TCloudDirItem;
 begin
 	Result := Result.None;
 	Result.home := Home;
@@ -83,7 +83,7 @@ begin
 	Result.type_ := TYPE_FILE;
 end;
 
-function TSharedItemActionHandlerTest.CreateFolderItem(const Home, Name: WideString): TCMRDirItem;
+function TSharedItemActionHandlerTest.CreateFolderItem(const Home, Name: WideString): TCloudDirItem;
 begin
 	Result := Result.None;
 	Result.home := Home;
@@ -96,7 +96,7 @@ end;
 procedure TSharedItemActionHandlerTest.TestHandleAction_OpenFile_ReturnsSymlinkToParentFolder;
 var
 	RealPath: TRealPath;
-	Listing: TCMRDirItemList;
+	Listing: TCloudDirItemList;
 	ActionResult: TSharedItemActionResult;
 begin
 	{Setup: shared file at /documents/report.pdf}
@@ -114,7 +114,7 @@ end;
 procedure TSharedItemActionHandlerTest.TestHandleAction_OpenFolder_ReturnsSymlinkToFolder;
 var
 	RealPath: TRealPath;
-	Listing: TCMRDirItemList;
+	Listing: TCloudDirItemList;
 	ActionResult: TSharedItemActionResult;
 begin
 	{Setup: shared folder at /projects/work}
@@ -132,7 +132,7 @@ end;
 procedure TSharedItemActionHandlerTest.TestHandleAction_OpenItemNotFound_ReturnsNone;
 var
 	RealPath: TRealPath;
-	Listing: TCMRDirItemList;
+	Listing: TCloudDirItemList;
 	ActionResult: TSharedItemActionResult;
 begin
 	RealPath.FromPath('\account.shared\nonexistent');
@@ -149,7 +149,7 @@ end;
 procedure TSharedItemActionHandlerTest.TestHandleAction_PropertiesOnRoot_ReturnsAccountSettings;
 var
 	RealPath: TRealPath;
-	Listing: TCMRDirItemList;
+	Listing: TCloudDirItemList;
 	ActionResult: TSharedItemActionResult;
 begin
 	{Root of shared folder - isInAccountsList should be true}
@@ -164,7 +164,7 @@ end;
 procedure TSharedItemActionHandlerTest.TestHandleAction_PropertiesOnItem_ReturnsPropertyDialog;
 var
 	RealPath: TRealPath;
-	Listing: TCMRDirItemList;
+	Listing: TCloudDirItemList;
 	ActionResult: TSharedItemActionResult;
 begin
 	RealPath.FromPath('\account.shared\documents\report.pdf');
@@ -180,7 +180,7 @@ end;
 procedure TSharedItemActionHandlerTest.TestHandleAction_PropertiesItemNotFound_ReturnsNone;
 var
 	RealPath: TRealPath;
-	Listing: TCMRDirItemList;
+	Listing: TCloudDirItemList;
 	ActionResult: TSharedItemActionResult;
 begin
 	RealPath.FromPath('\account.shared\nonexistent');
@@ -216,7 +216,7 @@ end;
 procedure TSharedItemActionHandlerTest.TestSharedItemActionResult_PropertyDialog_SetsCorrectValues;
 var
 	ActionResult: TSharedItemActionResult;
-	Item: TCMRDirItem;
+	Item: TCloudDirItem;
 begin
 	Item := CreateFileItem('/test/file.txt', 'file.txt');
 
@@ -240,7 +240,7 @@ end;
 procedure TSharedItemActionHandlerTest.TestHandleAction_OpenEmptyListing_ReturnsNone;
 var
 	RealPath: TRealPath;
-	Listing: TCMRDirItemList;
+	Listing: TCloudDirItemList;
 	ActionResult: TSharedItemActionResult;
 begin
 	RealPath.FromPath('\account.shared\somefile.txt');
@@ -254,7 +254,7 @@ end;
 procedure TSharedItemActionHandlerTest.TestHandleAction_PropertiesEmptyListing_ReturnsNone;
 var
 	RealPath: TRealPath;
-	Listing: TCMRDirItemList;
+	Listing: TCloudDirItemList;
 	ActionResult: TSharedItemActionResult;
 begin
 	{Non-root path with empty listing}

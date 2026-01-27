@@ -8,7 +8,7 @@ interface
 uses
 	ConnectionManager,
 	CloudMailRu,
-	CMRConstants,
+	CloudConstants,
 	System.Generics.Collections;
 
 type

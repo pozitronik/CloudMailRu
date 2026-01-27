@@ -60,7 +60,7 @@ implementation
 uses
 	WindowsHelper,
 	PathHelper,
-	CMRConstants;
+	CloudConstants;
 
 constructor TDescriptionSyncManager.Create(const DescriptionFileName: WideString; FileSystem: IFileSystem; TCHandler: ITCHandler);
 begin

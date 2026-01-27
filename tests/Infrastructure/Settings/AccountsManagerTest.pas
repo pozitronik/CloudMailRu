@@ -5,7 +5,7 @@ interface
 uses
 	AccountsManager,
 	AccountSettings,
-	CMRConstants,
+	CloudConstants,
 	TestHelper,
 	SysUtils,
 	WSList,

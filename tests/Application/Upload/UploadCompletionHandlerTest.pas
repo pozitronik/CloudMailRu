@@ -118,7 +118,7 @@ implementation
 
 uses
 	SysUtils,
-	CMRConstants;
+	CloudConstants;
 
 {TMockLogger}
 

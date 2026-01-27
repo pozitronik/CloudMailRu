@@ -43,7 +43,7 @@ implementation
 uses
 	System.SysUtils,
 	System.Classes,
-	CMRDirItemList,
+	CloudDirItemList,
 	WFXTypes,
 	TestDataGenerator;
 
@@ -51,7 +51,7 @@ uses
 
 procedure TDirectoryIntegrationTest.TestListDirectory_Root_ReturnsItems;
 var
-	Items: TCMRDirItemList;
+	Items: TCloudDirItemList;
 	ListResult: Boolean;
 begin
 	{List root directory - should contain at least our test folder}
@@ -63,7 +63,7 @@ end;
 
 procedure TDirectoryIntegrationTest.TestListDirectory_Subfolder_ReturnsItems;
 var
-	Items: TCMRDirItemList;
+	Items: TCloudDirItemList;
 	ListResult: Boolean;
 begin
 	{List our test run folder}
@@ -76,7 +76,7 @@ end;
 procedure TDirectoryIntegrationTest.TestListDirectory_Empty_ReturnsEmptyList;
 var
 	EmptyFolder: WideString;
-	Items: TCMRDirItemList;
+	Items: TCloudDirItemList;
 	CreateResult: Boolean;
 	ListResult: Boolean;
 begin
@@ -98,7 +98,7 @@ procedure TDirectoryIntegrationTest.TestCreateDirectory_NewFolder_Succeeds;
 var
 	NewFolder: WideString;
 	CreateResult: Boolean;
-	Items: TCMRDirItemList;
+	Items: TCloudDirItemList;
 begin
 	NewFolder := UniqueCloudPath('NewFolder');
 	TrackForCleanup(NewFolder);
@@ -173,7 +173,7 @@ end;
 
 procedure TDirectoryIntegrationTest.TestListSharedLinks_ReturnsItems;
 var
-	Items: TCMRDirItemList;
+	Items: TCloudDirItemList;
 	ListResult: Boolean;
 begin
 	{List shared links - may be empty but should succeed}

@@ -8,8 +8,8 @@ interface
 
 uses
 	Windows,
-	CMRDirItem,
-	CMRDirItemList;
+	CloudDirItem,
+	CloudDirItemList;
 
 type
 	{Result of path validation for listing}
@@ -29,12 +29,12 @@ type
 			@param PathToFind Path component to find in listing
 			@param Listing Current directory listing to search
 			@return Validation result with IsValid and ErrorCode}
-		function ValidatePath(IsVirtual, IsInAccountsList, IsPublicAccount: Boolean; const PathToFind: WideString; const Listing: TCMRDirItemList): TListingValidationResult;
+		function ValidatePath(IsVirtual, IsInAccountsList, IsPublicAccount: Boolean; const PathToFind: WideString; const Listing: TCloudDirItemList): TListingValidationResult;
 	end;
 
 	TListingPathValidator = class(TInterfacedObject, IListingPathValidator)
 	public
-		function ValidatePath(IsVirtual, IsInAccountsList, IsPublicAccount: Boolean; const PathToFind: WideString; const Listing: TCMRDirItemList): TListingValidationResult;
+		function ValidatePath(IsVirtual, IsInAccountsList, IsPublicAccount: Boolean; const PathToFind: WideString; const Listing: TCloudDirItemList): TListingValidationResult;
 	end;
 
 implementation
@@ -42,9 +42,9 @@ implementation
 uses
 	PathHelper;
 
-function TListingPathValidator.ValidatePath(IsVirtual, IsInAccountsList, IsPublicAccount: Boolean; const PathToFind: WideString; const Listing: TCMRDirItemList): TListingValidationResult;
+function TListingPathValidator.ValidatePath(IsVirtual, IsInAccountsList, IsPublicAccount: Boolean; const PathToFind: WideString; const Listing: TCloudDirItemList): TListingValidationResult;
 var
-	CurrentItem: TCMRDirItem;
+	CurrentItem: TCloudDirItem;
 begin
 	Result.IsValid := True;
 	Result.ErrorCode := 0;

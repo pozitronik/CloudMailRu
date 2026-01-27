@@ -6,7 +6,7 @@ interface
 
 uses
 	CloudHTTP,
-	CMRConstants,
+	CloudConstants,
 	WFXTypes,
 	ConnectionSettings,
 	TCLogger,

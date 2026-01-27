@@ -6,8 +6,8 @@ uses
 	CloudFileDownloader,
 	CloudShardManager,
 	CloudHashCalculator,
-	CMROAuth,
-	CMRConstants,
+	CloudOAuth,
+	CloudConstants,
 	WFXTypes,
 	TCLogger,
 	TCProgress,
@@ -34,7 +34,7 @@ type
 		FMockHTTPRef: ICloudHTTP; {Prevents premature freeing due to TInterfacedObject reference counting}
 		FIsPublicAccount: Boolean;
 		FPublicLink: WideString;
-		FOAuthToken: TCMROAuth;
+		FOAuthToken: TCloudOAuth;
 		FResolveShardResult: Boolean;
 		FResolvedShardUrl: WideString;
 		FTempDir: string;
@@ -42,7 +42,7 @@ type
 		FRefreshTokenResult: Boolean;
 
 		function GetHTTP: ICloudHTTP;
-		function GetOAuthToken: TCMROAuth;
+		function GetOAuthToken: TCloudOAuth;
 		function IsPublicAccount: Boolean;
 		function GetPublicLink: WideString;
 		function RefreshToken: Boolean;
@@ -225,7 +225,7 @@ begin
 	Result := FMockHTTP;
 end;
 
-function TCloudFileDownloaderTest.GetOAuthToken: TCMROAuth;
+function TCloudFileDownloaderTest.GetOAuthToken: TCloudOAuth;
 begin
 	Result := FOAuthToken;
 end;

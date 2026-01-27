@@ -12,9 +12,9 @@ interface
 uses
 	CloudMailRu,
 	CloudSettings,
-	CMRDirItem,
-	CMRInviteList,
-	CMRConstants,
+	CloudDirItem,
+	CloudInviteList,
+	CloudConstants,
 	WFXTypes,
 	TCLogger,
 	TCProgress,
@@ -301,7 +301,7 @@ end;
 
 procedure TCloudMailRuCombinedOpsTest.TestGetShareInfo_Success;
 var
-	InviteListing: TCMRInviteList;
+	InviteListing: TCloudInviteList;
 begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_FOLDER_SHARED_INFO, True, JSON_SHARE_INFO_SUCCESS);
@@ -313,7 +313,7 @@ end;
 
 procedure TCloudMailRuCombinedOpsTest.TestGetShareInfo_Empty;
 var
-	InviteListing: TCMRInviteList;
+	InviteListing: TCloudInviteList;
 begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_FOLDER_SHARED_INFO, True, JSON_SHARE_INFO_EMPTY);
@@ -326,10 +326,10 @@ end;
 
 procedure TCloudMailRuCombinedOpsTest.TestGetShareInfo_Failure;
 var
-	InviteListing: TCMRInviteList;
+	InviteListing: TCloudInviteList;
 begin
 	{To test failure, we need HTTP.GetPage to return False, not just error JSON.
-	 TCMRInviteList.FromJSON returns True for missing "invited" field (treats as empty).}
+	 TCloudInviteList.FromJSON returns True for missing "invited" field (treats as empty).}
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_FOLDER_SHARED_INFO, False, '');
 
@@ -340,7 +340,7 @@ end;
 
 procedure TCloudMailRuCombinedOpsTest.TestGetShareInfo_ParsesInviteList;
 var
-	InviteListing: TCMRInviteList;
+	InviteListing: TCloudInviteList;
 begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_FOLDER_SHARED_INFO, True, JSON_SHARE_INFO_SUCCESS);

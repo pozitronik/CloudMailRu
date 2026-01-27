@@ -7,8 +7,8 @@ interface
 
 uses
 	DUnitX.TestFramework,
-	CMRDirItem,
-	CMRConstants,
+	CloudDirItem,
+	CloudConstants,
 	CloudMailRu,
 	CloudSettings,
 	AuthStrategy,
@@ -32,8 +32,8 @@ type
 		FMockHTTPManager: TMockHTTPManager;
 		FCloud: TCloudMailRu;
 
-		function CreatePublishedItem(const HomePath, Weblink: WideString): TCMRDirItem;
-		function CreateUnpublishedItem(const HomePath: WideString): TCMRDirItem;
+		function CreatePublishedItem(const HomePath, Weblink: WideString): TCloudDirItem;
+		function CreateUnpublishedItem(const HomePath: WideString): TCloudDirItem;
 		function CreateCloud: TCloudMailRu;
 	public
 		[Setup]
@@ -69,7 +69,7 @@ const
 	JSON_SHARE_INFO_EMPTY = '{"email":"test@mail.ru","body":{"invited":[]},"status":200}';
 	JSON_SHARE_INFO_WITH_COLLABORATORS = '{"email":"test@mail.ru","body":{"invited":[{"email":"user1@mail.ru"},{"email":"user2@mail.ru"}]},"status":200}';
 
-function TSharedItemDeletionHandlerTest.CreatePublishedItem(const HomePath, Weblink: WideString): TCMRDirItem;
+function TSharedItemDeletionHandlerTest.CreatePublishedItem(const HomePath, Weblink: WideString): TCloudDirItem;
 begin
 	FillChar(Result, SizeOf(Result), 0);
 	Result.home := HomePath;
@@ -77,7 +77,7 @@ begin
 	Result.type_ := TYPE_DIR;
 end;
 
-function TSharedItemDeletionHandlerTest.CreateUnpublishedItem(const HomePath: WideString): TCMRDirItem;
+function TSharedItemDeletionHandlerTest.CreateUnpublishedItem(const HomePath: WideString): TCloudDirItem;
 begin
 	FillChar(Result, SizeOf(Result), 0);
 	Result.home := HomePath;
@@ -122,7 +122,7 @@ end;
 
 procedure TSharedItemDeletionHandlerTest.TestExecute_PublishedItem_CallsUnpublish;
 var
-	Item: TCMRDirItem;
+	Item: TCloudDirItem;
 begin
 	FCloud := CreateCloud;
 	FMockHTTP.QueueResponse('', True, JSON_SHARE_INFO_EMPTY);
@@ -136,7 +136,7 @@ end;
 
 procedure TSharedItemDeletionHandlerTest.TestExecute_PublishedItem_ReturnsTrue;
 var
-	Item: TCMRDirItem;
+	Item: TCloudDirItem;
 	Res: Boolean;
 begin
 	FCloud := CreateCloud;
@@ -153,7 +153,7 @@ end;
 
 procedure TSharedItemDeletionHandlerTest.TestExecute_UnpublishedItem_SkipsUnpublish;
 var
-	Item: TCMRDirItem;
+	Item: TCloudDirItem;
 	InitialCallCount: Integer;
 begin
 	FCloud := CreateCloud;
@@ -169,7 +169,7 @@ end;
 
 procedure TSharedItemDeletionHandlerTest.TestExecute_UnpublishedItem_ReturnsTrue;
 var
-	Item: TCMRDirItem;
+	Item: TCloudDirItem;
 	Res: Boolean;
 begin
 	FCloud := CreateCloud;
@@ -185,7 +185,7 @@ end;
 
 procedure TSharedItemDeletionHandlerTest.TestExecute_WithCollaborators_UnsharesEach;
 var
-	Item: TCMRDirItem;
+	Item: TCloudDirItem;
 begin
 	FCloud := CreateCloud;
 	FMockHTTP.QueueResponse('', True, JSON_SHARE_INFO_WITH_COLLABORATORS);

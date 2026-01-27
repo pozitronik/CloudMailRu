@@ -8,10 +8,10 @@ interface
 uses
 	CloudMailRu,
 	CloudSettings,
-	CMRDirItemList,
-	CMRDirItem,
-	CMRIncomingInviteList,
-	CMRConstants,
+	CloudDirItemList,
+	CloudDirItem,
+	CloudIncomingInviteList,
+	CloudConstants,
 	WFXTypes,
 	TCLogger,
 	TCProgress,
@@ -186,7 +186,7 @@ end;
 
 procedure TCloudMailRuDirListingTest.TestGetDirListing_Success_ReturnsTrueAndPopulatesList;
 var
-	DirListing: TCMRDirItemList;
+	DirListing: TCloudDirItemList;
 	Success: Boolean;
 begin
 	FCloud := CreateCloud;
@@ -200,7 +200,7 @@ end;
 
 procedure TCloudMailRuDirListingTest.TestGetDirListing_EmptyDirectory_ReturnsEmptyList;
 var
-	DirListing: TCMRDirItemList;
+	DirListing: TCloudDirItemList;
 	Success: Boolean;
 begin
 	FCloud := CreateCloud;
@@ -214,9 +214,9 @@ end;
 
 procedure TCloudMailRuDirListingTest.TestGetDirListing_WithSubdirectory_ParsesFolderCorrectly;
 var
-	DirListing: TCMRDirItemList;
+	DirListing: TCloudDirItemList;
 	Success: Boolean;
-	FolderItem: TCMRDirItem;
+	FolderItem: TCloudDirItem;
 begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_FOLDER, True, JSON_DIR_LISTING_SUCCESS);
@@ -227,7 +227,7 @@ begin
 	Assert.IsTrue(Length(DirListing) >= 1, 'Should have at least 1 item');
 
 	{Find folder item}
-	FolderItem := Default(TCMRDirItem);
+	FolderItem := Default(TCloudDirItem);
 	for var Item in DirListing do
 		if Item.kind = TYPE_DIR then
 		begin
@@ -242,9 +242,9 @@ end;
 
 procedure TCloudMailRuDirListingTest.TestGetDirListing_WithFile_ParsesFileCorrectly;
 var
-	DirListing: TCMRDirItemList;
+	DirListing: TCloudDirItemList;
 	Success: Boolean;
-	FileItem: TCMRDirItem;
+	FileItem: TCloudDirItem;
 begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_FOLDER, True, JSON_DIR_LISTING_SUCCESS);
@@ -254,7 +254,7 @@ begin
 	Assert.IsTrue(Success);
 
 	{Find file item}
-	FileItem := Default(TCMRDirItem);
+	FileItem := Default(TCloudDirItem);
 	for var Item in DirListing do
 		if Item.kind = TYPE_FILE then
 		begin
@@ -273,7 +273,7 @@ end;
 
 procedure TCloudMailRuDirListingTest.TestGetDirListing_HTTPFailure_ReturnsFalse;
 var
-	DirListing: TCMRDirItemList;
+	DirListing: TCloudDirItemList;
 	Success: Boolean;
 begin
 	FCloud := CreateCloud;
@@ -288,7 +288,7 @@ end;
 
 procedure TCloudMailRuDirListingTest.TestGetDirListing_PathNotFound_ReturnsFalse;
 var
-	DirListing: TCMRDirItemList;
+	DirListing: TCloudDirItemList;
 	Success: Boolean;
 begin
 	FCloud := CreateCloud;
@@ -301,7 +301,7 @@ end;
 
 procedure TCloudMailRuDirListingTest.TestGetDirListing_InvalidJSON_ReturnsFalse;
 var
-	DirListing: TCMRDirItemList;
+	DirListing: TCloudDirItemList;
 	Success: Boolean;
 begin
 	FCloud := CreateCloud;
@@ -314,7 +314,7 @@ end;
 
 procedure TCloudMailRuDirListingTest.TestGetDirListing_APIError_ReturnsFalse;
 var
-	DirListing: TCMRDirItemList;
+	DirListing: TCloudDirItemList;
 	Success: Boolean;
 begin
 	FCloud := CreateCloud;
@@ -329,7 +329,7 @@ end;
 
 procedure TCloudMailRuDirListingTest.TestGetDirListing_ConstructsCorrectURL;
 var
-	DirListing: TCMRDirItemList;
+	DirListing: TCloudDirItemList;
 begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_FOLDER, True, JSON_DIR_LISTING_SUCCESS);
@@ -342,7 +342,7 @@ end;
 
 procedure TCloudMailRuDirListingTest.TestGetDirListing_EncodesPathInURL;
 var
-	DirListing: TCMRDirItemList;
+	DirListing: TCloudDirItemList;
 	LastCall: WideString;
 begin
 	FCloud := CreateCloud;
@@ -359,7 +359,7 @@ end;
 
 procedure TCloudMailRuDirListingTest.TestGetDirListing_PublicAccount_UsesWeblinkURL;
 var
-	DirListing: TCMRDirItemList;
+	DirListing: TCloudDirItemList;
 	LastCall: WideString;
 begin
 	FCloud := CreateCloud(True); {Public account}
@@ -374,7 +374,7 @@ end;
 
 procedure TCloudMailRuDirListingTest.TestGetDirListing_PublicAccount_Success;
 var
-	DirListing: TCMRDirItemList;
+	DirListing: TCloudDirItemList;
 	Success: Boolean;
 begin
 	FCloud := CreateCloud(True);
@@ -391,7 +391,7 @@ end;
 
 procedure TCloudMailRuDirListingTest.TestGetTrashbinListing_Success;
 var
-	DirListing: TCMRDirItemList;
+	DirListing: TCloudDirItemList;
 	Success: Boolean;
 begin
 	FCloud := CreateCloud;
@@ -406,7 +406,7 @@ end;
 
 procedure TCloudMailRuDirListingTest.TestGetTrashbinListing_Empty;
 var
-	DirListing: TCMRDirItemList;
+	DirListing: TCloudDirItemList;
 	Success: Boolean;
 begin
 	FCloud := CreateCloud;
@@ -421,7 +421,7 @@ end;
 
 procedure TCloudMailRuDirListingTest.TestGetTrashbinListing_Failure;
 var
-	DirListing: TCMRDirItemList;
+	DirListing: TCloudDirItemList;
 	Success: Boolean;
 begin
 	FCloud := CreateCloud;
@@ -436,7 +436,7 @@ end;
 
 procedure TCloudMailRuDirListingTest.TestGetSharedLinksListing_Success;
 var
-	DirListing: TCMRDirItemList;
+	DirListing: TCloudDirItemList;
 	Success: Boolean;
 begin
 	FCloud := CreateCloud;
@@ -452,7 +452,7 @@ end;
 
 procedure TCloudMailRuDirListingTest.TestGetSharedLinksListing_Failure;
 var
-	DirListing: TCMRDirItemList;
+	DirListing: TCloudDirItemList;
 	Success: Boolean;
 begin
 	FCloud := CreateCloud;

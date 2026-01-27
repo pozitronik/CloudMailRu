@@ -18,10 +18,10 @@ uses
 	CloudMailRu,
 	CloudSettings,
 	RealPath,
-	CMRDirItem,
-	CMRDirItemList,
-	CMRIncomingInviteList,
-	CMRConstants,
+	CloudDirItem,
+	CloudDirItemList,
+	CloudIncomingInviteList,
+	CloudConstants,
 	WFXTypes,
 	AuthStrategy,
 	WindowsFileSystem,
@@ -34,13 +34,13 @@ type
 	{Mock listing provider with configurable results}
 	TMockListingProvider = class(TInterfacedObject, IListingProvider)
 	private
-		FListing: TCMRDirItemList;
+		FListing: TCloudDirItemList;
 		FFetchSuccess: Boolean;
 		FFetchCalled: Boolean;
 	public
-		constructor Create(const Items: TCMRDirItemList; FetchSuccess: Boolean = True);
+		constructor Create(const Items: TCloudDirItemList; FetchSuccess: Boolean = True);
 		function FetchListing(Cloud: TCloudMailRu; const Path: TRealPath;
-			var DirListing: TCMRDirItemList; var InviteListing: TCMRIncomingInviteList): Boolean;
+			var DirListing: TCloudDirItemList; var InviteListing: TCloudIncomingInviteList): Boolean;
 		property FetchCalled: Boolean read FFetchCalled;
 	end;
 
@@ -53,7 +53,7 @@ type
 	public
 		constructor Create(IsValid: Boolean; ErrorCode: DWORD = 0);
 		function ValidatePath(isVirtual, isInAccountsList, IsPublicAccount: Boolean;
-			const Path: WideString; const Listing: TCMRDirItemList): TListingValidationResult;
+			const Path: WideString; const Listing: TCloudDirItemList): TListingValidationResult;
 		property ValidateCalled: Boolean read FValidateCalled;
 	end;
 
@@ -74,9 +74,9 @@ type
 		FCloud: TTestableCloudMailRu;
 		FHandler: IPathListingHandler;
 
-		function CreateDirItem(const Name: WideString; IsFolder: Boolean = False): TCMRDirItem;
+		function CreateDirItem(const Name: WideString; IsFolder: Boolean = False): TCloudDirItem;
 		function CreateCloud: TTestableCloudMailRu;
-		procedure SetupHandler(const Items: TCMRDirItemList; FetchSuccess: Boolean = True;
+		procedure SetupHandler(const Items: TCloudDirItemList; FetchSuccess: Boolean = True;
 			ValidateSuccess: Boolean = True; ValidateError: DWORD = 0);
 	public
 		[Setup]
@@ -124,7 +124,7 @@ uses
 
 {TMockListingProvider}
 
-constructor TMockListingProvider.Create(const Items: TCMRDirItemList; FetchSuccess: Boolean);
+constructor TMockListingProvider.Create(const Items: TCloudDirItemList; FetchSuccess: Boolean);
 begin
 	inherited Create;
 	FListing := Items;
@@ -133,7 +133,7 @@ begin
 end;
 
 function TMockListingProvider.FetchListing(Cloud: TCloudMailRu; const Path: TRealPath;
-	var DirListing: TCMRDirItemList; var InviteListing: TCMRIncomingInviteList): Boolean;
+	var DirListing: TCloudDirItemList; var InviteListing: TCloudIncomingInviteList): Boolean;
 begin
 	FFetchCalled := True;
 	DirListing := FListing;
@@ -152,7 +152,7 @@ begin
 end;
 
 function TMockListingPathValidator.ValidatePath(isVirtual, isInAccountsList, IsPublicAccount: Boolean;
-	const Path: WideString; const Listing: TCMRDirItemList): TListingValidationResult;
+	const Path: WideString; const Listing: TCloudDirItemList): TListingValidationResult;
 begin
 	FValidateCalled := True;
 	Result.IsValid := FIsValid;
@@ -186,9 +186,9 @@ begin
 	FMockHTTP := nil;
 end;
 
-function TPathListingHandlerTest.CreateDirItem(const Name: WideString; IsFolder: Boolean): TCMRDirItem;
+function TPathListingHandlerTest.CreateDirItem(const Name: WideString; IsFolder: Boolean): TCloudDirItem;
 begin
-	FillChar(Result, SizeOf(TCMRDirItem), 0);
+	FillChar(Result, SizeOf(TCloudDirItem), 0);
 	Result.name := Name;
 	if IsFolder then
 		Result.kind := TYPE_DIR
@@ -213,7 +213,7 @@ begin
 	Result.SetUnitedParams('api=2&access_token=test_token');
 end;
 
-procedure TPathListingHandlerTest.SetupHandler(const Items: TCMRDirItemList; FetchSuccess: Boolean;
+procedure TPathListingHandlerTest.SetupHandler(const Items: TCloudDirItemList; FetchSuccess: Boolean;
 	ValidateSuccess: Boolean; ValidateError: DWORD);
 begin
 	FListingProvider := TMockListingProvider.Create(Items, FetchSuccess);
@@ -225,9 +225,9 @@ end;
 
 procedure TPathListingHandlerTest.TestMockListingProvider_ReturnsFetchSuccess;
 var
-	Items: TCMRDirItemList;
-	Listing: TCMRDirItemList;
-	Invites: TCMRIncomingInviteList;
+	Items: TCloudDirItemList;
+	Listing: TCloudDirItemList;
+	Invites: TCloudIncomingInviteList;
 	Success: Boolean;
 	Path: TRealPath;
 begin
@@ -242,9 +242,9 @@ end;
 
 procedure TPathListingHandlerTest.TestMockListingProvider_ReturnsFetchFailure;
 var
-	Items: TCMRDirItemList;
-	Listing: TCMRDirItemList;
-	Invites: TCMRIncomingInviteList;
+	Items: TCloudDirItemList;
+	Listing: TCloudDirItemList;
+	Invites: TCloudIncomingInviteList;
 	Success: Boolean;
 	Path: TRealPath;
 begin
@@ -355,7 +355,7 @@ end;
 
 procedure TPathListingHandlerTest.TestExecute_NonEmptyListing_SetsFirstItemInFindData;
 var
-	Items: TCMRDirItemList;
+	Items: TCloudDirItemList;
 begin
 	FCloud := CreateCloud;
 	FMockConnectionManager.SetCloud('testaccount', FCloud);

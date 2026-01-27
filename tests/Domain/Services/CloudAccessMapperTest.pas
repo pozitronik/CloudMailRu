@@ -6,7 +6,7 @@ interface
 
 uses
 	CloudAccessMapper,
-	CMRConstants,
+	CloudConstants,
 	DUnitX.TestFramework;
 
 type

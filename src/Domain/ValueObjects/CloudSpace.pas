@@ -1,0 +1,14 @@
+unit CloudSpace;
+
+interface
+
+type
+	TCloudSpace = record
+		overquota: Boolean;
+		total: Int64;
+		used: Int64;
+	end;
+
+implementation
+
+end.

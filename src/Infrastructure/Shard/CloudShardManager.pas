@@ -3,7 +3,7 @@ unit CloudShardManager;
 interface
 
 uses
-	CMRConstants,
+	CloudConstants,
 	TCLogger;
 
 type

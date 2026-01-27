@@ -4,7 +4,7 @@ interface
 
 uses
 	CloudShardManager,
-	CMRConstants,
+	CloudConstants,
 	TCLogger,
 	TestHelper,
 	System.SysUtils,

@@ -16,14 +16,14 @@ uses
 	PluginSettingsManager,
 	Accountsmanager,
 	WSList,
-	CMRConstants,
+	CloudConstants,
 	LanguageStrings,
 	SettingsConstants,
-	CMRInviteList,
-	CMRInvite,
-	CMRDirItem,
-	CMRDirItemList,
-	CMRIncomingInviteList,
+	CloudInviteList,
+	CloudInvite,
+	CloudDirItem,
+	CloudDirItemList,
+	CloudIncomingInviteList,
 	ConnectionManager,
 	ConnectionSettings,
 	IdSSLOpenSSLHeaders,
@@ -35,7 +35,7 @@ uses
 	PathHelper,
 	WindowsHelper,
 	TCHandler,
-	CMRIncomingInvite,
+	CloudIncomingInvite,
 	AccountSettings,
 	Accounts,
 	InviteProperty,
@@ -153,8 +153,8 @@ type
 		AccountSettings: IAccountsManager;
 		Accounts: TWSList;
 
-		CurrentListing: TCMRDirItemList;
-		CurrentIncomingInvitesListing: TCMRIncomingInviteList;
+		CurrentListing: TCloudDirItemList;
+		CurrentIncomingInvitesListing: TCloudIncomingInviteList;
 		ConnectionManager: IConnectionManager;
 		CurrentDescriptions: TDescription;
 		PasswordManager: IPasswordManager;
@@ -166,8 +166,8 @@ type
 		TCRequest: IRequest;
 		FFileSystem: IFileSystem;
 	protected
-		function FindListingItemByPath(CurrentListing: TCMRDirItemList; Path: TRealPath; UpdateListing: Boolean = true): TCMRDirItem;
-		function FindIncomingInviteItemByPath(InviteListing: TCMRIncomingInviteList; Path: TRealPath): TCMRIncomingInvite;
+		function FindListingItemByPath(CurrentListing: TCloudDirItemList; Path: TRealPath; UpdateListing: Boolean = true): TCloudDirItem;
+		function FindIncomingInviteItemByPath(InviteListing: TCloudIncomingInviteList; Path: TRealPath): TCloudIncomingInvite;
 		function DeleteLocalFile(LocalName: WideString): Integer;
 		function ExecTrashbinProperties(MainWin: THandle; RealPath: TRealPath): Integer;
 		function ExecSharedAction(MainWin: THandle; RealPath: TRealPath; RemoteName: PWideChar; ActionOpen: Boolean = true): Integer;
@@ -413,7 +413,7 @@ function TWFXApplication.ExecInvitesAction(MainWin: THandle; RealPath: TRealPath
 var
 	Cloud: TCloudMailRu;
 	getResult: Integer;
-	CurrentInvite: TCMRIncomingInvite;
+	CurrentInvite: TCloudIncomingInvite;
 begin
 	Result := FS_EXEC_OK;
 	Cloud := ConnectionManager.Get(RealPath.account, getResult);
@@ -427,7 +427,7 @@ begin
 			exit(FS_EXEC_ERROR);
 
 		Result := FInviteOperationHandler.Execute(MainWin, Cloud.ShareService, CurrentInvite,
-			function(ParentWindow: HWND; const Inv: TCMRIncomingInvite): Integer
+			function(ParentWindow: HWND; const Inv: TCloudIncomingInvite): Integer
 			begin
 				Result := TInvitePropertyForm.ShowProperties(ParentWindow, Inv);
 			end);
@@ -439,7 +439,7 @@ end;
 function TWFXApplication.ExecProperties(MainWin: THandle; RealPath: TRealPath): Integer;
 var
 	Cloud: TCloudMailRu;
-	CurrentItem: TCMRDirItem;
+	CurrentItem: TCloudDirItem;
 	getResult: Integer;
 begin
 	Result := FS_EXEC_OK;
@@ -458,7 +458,7 @@ end;
 function TWFXApplication.ExecSharedAction(MainWin: THandle; RealPath: TRealPath; RemoteName: PWideChar; ActionOpen: Boolean): Integer;
 var
 	Cloud: TCloudMailRu;
-	CurrentItem: TCMRDirItem;
+	CurrentItem: TCloudDirItem;
 	getResult: Integer;
 	ActionResult: TSharedItemActionResult;
 begin
@@ -492,7 +492,7 @@ function TWFXApplication.ExecTrashbinProperties(MainWin: THandle; RealPath: TRea
 var
 	Cloud: TCloudMailRu;
 	getResult: Integer;
-	CurrentItem: TCMRDirItem;
+	CurrentItem: TCloudDirItem;
 	IsTrashDir: Boolean;
 begin
 	Cloud := ConnectionManager.Get(RealPath.account, getResult);
@@ -508,7 +508,7 @@ begin
 	end;
 
 	Result := FTrashBinOperationHandler.Execute(MainWin, Cloud.ListingService, CurrentListing, CurrentItem, IsTrashDir, RealPath.account,
-		function(ParentWindow: HWND; Items: TCMRDirItemList; TrashDir: Boolean; const AccountName: WideString): Integer
+		function(ParentWindow: HWND; Items: TCloudDirItemList; TrashDir: Boolean; const AccountName: WideString): Integer
 		begin
 			Result := TDeletedPropertyForm.ShowProperties(ParentWindow, Items, TrashDir, AccountName);
 		end);
@@ -518,7 +518,7 @@ end;
 
 function TWFXApplication.ExecuteFileStream(RealPath: TRealPath; StreamingSettings: TStreamingSettings): Integer;
 var
-	CurrentItem: TCMRDirItem;
+	CurrentItem: TCloudDirItem;
 begin
 	//может быть разница в атрибутах настоящих и полученных из листинга (они не рефрешатся)
 	CurrentItem := FindListingItemByPath(CurrentListing, RealPath); //внутри публичного облака веблинк есть автоматически
@@ -527,7 +527,7 @@ begin
 	Result := FFileStreamExecutor.Execute(RealPath, CurrentItem, StreamingSettings, ConnectionManager);
 end;
 
-function TWFXApplication.FindIncomingInviteItemByPath(InviteListing: TCMRIncomingInviteList; Path: TRealPath): TCMRIncomingInvite;
+function TWFXApplication.FindIncomingInviteItemByPath(InviteListing: TCloudIncomingInviteList; Path: TRealPath): TCloudIncomingInvite;
 var
 	getResult: Integer;
 begin
@@ -538,7 +538,7 @@ begin
 			exit(CurrentIncomingInvitesListing.FindByName(Path.Path));
 end;
 
-function TWFXApplication.FindListingItemByPath(CurrentListing: TCMRDirItemList; Path: TRealPath; UpdateListing: Boolean): TCMRDirItem;
+function TWFXApplication.FindListingItemByPath(CurrentListing: TCloudDirItemList; Path: TRealPath; UpdateListing: Boolean): TCloudDirItem;
 var
 	getResult: Integer;
 	CurrentCloud: TCloudMailRu;
@@ -554,7 +554,7 @@ end;
 
 function TWFXApplication.FsContentGetValue(FileName: PWideChar; FieldIndex, UnitIndex: Integer; FieldValue: Pointer; MaxLen, Flags: Integer): Integer;
 var
-	Item: TCMRDirItem;
+	Item: TCloudDirItem;
 	RealPath: TRealPath;
 	Context: TContentFieldContext;
 begin
@@ -575,7 +575,7 @@ begin
 	{Account root only supports description field via context}
 	if Context.IsAccountRoot then
 	begin
-		Item := Default (TCMRDirItem);
+		Item := Default (TCloudDirItem);
 		Result := FContentFieldProvider.GetValue(FieldIndex, Item, FieldValue, Context);
 		exit;
 	end;
@@ -591,7 +591,7 @@ function TWFXApplication.FsDeleteFile(RemoteName: WideString): Boolean;
 var
 	RealPath: TRealPath;
 	getResult: Integer;
-	CurrentItem: TCMRDirItem;
+	CurrentItem: TCloudDirItem;
 	Cloud: TCloudMailRu;
 begin
 	RealPath.FromPath(WideString(RemoteName));

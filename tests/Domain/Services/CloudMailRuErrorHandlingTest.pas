@@ -8,9 +8,9 @@ interface
 uses
 	CloudMailRu,
 	CloudSettings,
-	CMRDirItemList,
-	CMROperationResult,
-	CMRConstants,
+	CloudDirItemList,
+	CloudOperationResult,
+	CloudConstants,
 	WFXTypes,
 	TCLogger,
 	TCProgress,
@@ -298,7 +298,7 @@ end;
 
 procedure TCloudMailRuErrorHandlingTest.TestGetDirListing_HTTPFailure_ReturnsFalse;
 var
-	DirListing: TCMRDirItemList;
+	DirListing: TCloudDirItemList;
 begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetDefaultResponse(False, '', FS_FILE_READERROR);
@@ -322,7 +322,7 @@ end;
 
 procedure TCloudMailRuErrorHandlingTest.TestGetDirListing_InvalidJSON_ReturnsFalse;
 var
-	DirListing: TCMRDirItemList;
+	DirListing: TCloudDirItemList;
 begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_FOLDER, True, JSON_INVALID);

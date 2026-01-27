@@ -22,7 +22,7 @@ implementation
 
 uses
 	SysUtils,
-	CMRConstants,
+	CloudConstants,
 	WFXTypes,
 	LanguageStrings,
 	ParsingHelper;

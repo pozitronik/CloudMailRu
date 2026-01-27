@@ -5,9 +5,9 @@ interface
 uses
 	DUnitX.TestFramework,
 	InvitePropertyPresenter,
-	CMRIncomingInvite,
-	CMROwner,
-	CMRConstants,
+	CloudIncomingInvite,
+	CloudOwner,
+	CloudConstants,
 	CloudAccessMapper,
 	StringHelper,
 	LanguageStrings,
@@ -51,7 +51,7 @@ type
 		FMockView: TMockInvitePropertyView;
 		FPresenter: TInvitePropertyPresenter;
 
-		function CreateTestInvite(IsMounted: Boolean): TCMRIncomingInvite;
+		function CreateTestInvite(IsMounted: Boolean): TCloudIncomingInvite;
 	public
 		[Setup]
 		procedure Setup;
@@ -173,7 +173,7 @@ end;
 
 {TInvitePropertyPresenterTest}
 
-function TInvitePropertyPresenterTest.CreateTestInvite(IsMounted: Boolean): TCMRIncomingInvite;
+function TInvitePropertyPresenterTest.CreateTestInvite(IsMounted: Boolean): TCloudIncomingInvite;
 begin
 	Result.name := 'SharedFolder';
 	Result.owner.email := 'owner@example.com';
@@ -203,7 +203,7 @@ end;
 
 procedure TInvitePropertyPresenterTest.Initialize_SetsCaption_WithAccountNameAndItemName;
 var
-	Item: TCMRIncomingInvite;
+	Item: TCloudIncomingInvite;
 begin
 	Item := CreateTestInvite(False);
 
@@ -214,7 +214,7 @@ end;
 
 procedure TInvitePropertyPresenterTest.Initialize_SetsOwnerEmail_FromItem;
 var
-	Item: TCMRIncomingInvite;
+	Item: TCloudIncomingInvite;
 begin
 	Item := CreateTestInvite(False);
 
@@ -225,7 +225,7 @@ end;
 
 procedure TInvitePropertyPresenterTest.Initialize_SetsOwnerName_FromItem;
 var
-	Item: TCMRIncomingInvite;
+	Item: TCloudIncomingInvite;
 begin
 	Item := CreateTestInvite(False);
 
@@ -236,7 +236,7 @@ end;
 
 procedure TInvitePropertyPresenterTest.Initialize_SetsName_FromItem;
 var
-	Item: TCMRIncomingInvite;
+	Item: TCloudIncomingInvite;
 begin
 	Item := CreateTestInvite(False);
 
@@ -247,7 +247,7 @@ end;
 
 procedure TInvitePropertyPresenterTest.Initialize_SetsAccess_ConvertedToString;
 var
-	Item: TCMRIncomingInvite;
+	Item: TCloudIncomingInvite;
 begin
 	Item := CreateTestInvite(False);
 
@@ -258,7 +258,7 @@ end;
 
 procedure TInvitePropertyPresenterTest.Initialize_SetsSize_Formatted;
 var
-	Item: TCMRIncomingInvite;
+	Item: TCloudIncomingInvite;
 begin
 	Item := CreateTestInvite(False);
 
@@ -269,7 +269,7 @@ end;
 
 procedure TInvitePropertyPresenterTest.Initialize_WhenNotMounted_ShowsInviteToken;
 var
-	Item: TCMRIncomingInvite;
+	Item: TCloudIncomingInvite;
 begin
 	Item := CreateTestInvite(False);
 
@@ -280,7 +280,7 @@ end;
 
 procedure TInvitePropertyPresenterTest.Initialize_WhenNotMounted_SetsMountEnabled;
 var
-	Item: TCMRIncomingInvite;
+	Item: TCloudIncomingInvite;
 begin
 	Item := CreateTestInvite(False);
 
@@ -291,7 +291,7 @@ end;
 
 procedure TInvitePropertyPresenterTest.Initialize_WhenNotMounted_SetsRejectEnabled;
 var
-	Item: TCMRIncomingInvite;
+	Item: TCloudIncomingInvite;
 begin
 	Item := CreateTestInvite(False);
 
@@ -302,7 +302,7 @@ end;
 
 procedure TInvitePropertyPresenterTest.Initialize_WhenNotMounted_DisablesUnmountButtons;
 var
-	Item: TCMRIncomingInvite;
+	Item: TCloudIncomingInvite;
 begin
 	Item := CreateTestInvite(False);
 
@@ -314,7 +314,7 @@ end;
 
 procedure TInvitePropertyPresenterTest.Initialize_WhenMounted_ShowsMountPath;
 var
-	Item: TCMRIncomingInvite;
+	Item: TCloudIncomingInvite;
 begin
 	Item := CreateTestInvite(True);
 
@@ -325,7 +325,7 @@ end;
 
 procedure TInvitePropertyPresenterTest.Initialize_WhenMounted_ChangesTokenLabel;
 var
-	Item: TCMRIncomingInvite;
+	Item: TCloudIncomingInvite;
 begin
 	Item := CreateTestInvite(True);
 
@@ -336,7 +336,7 @@ end;
 
 procedure TInvitePropertyPresenterTest.Initialize_WhenMounted_DisablesReject;
 var
-	Item: TCMRIncomingInvite;
+	Item: TCloudIncomingInvite;
 begin
 	Item := CreateTestInvite(True);
 
@@ -347,7 +347,7 @@ end;
 
 procedure TInvitePropertyPresenterTest.Initialize_WhenMounted_EnablesUnmountButtons;
 var
-	Item: TCMRIncomingInvite;
+	Item: TCloudIncomingInvite;
 begin
 	Item := CreateTestInvite(True);
 
@@ -359,7 +359,7 @@ end;
 
 procedure TInvitePropertyPresenterTest.Item_Property_ReturnsInitializedItem;
 var
-	Item: TCMRIncomingInvite;
+	Item: TCloudIncomingInvite;
 begin
 	Item := CreateTestInvite(False);
 
@@ -371,7 +371,7 @@ end;
 
 procedure TInvitePropertyPresenterTest.AccountName_Property_ReturnsInitializedAccountName;
 var
-	Item: TCMRIncomingInvite;
+	Item: TCloudIncomingInvite;
 begin
 	Item := CreateTestInvite(False);
 

@@ -52,8 +52,8 @@ uses
 	System.Classes,
 	System.IOUtils,
 	CloudMailRu,
-	CMRDirItemList,
-	CMRConstants,
+	CloudDirItemList,
+	CloudConstants,
 	WFXTypes,
 	TestDataGenerator;
 
@@ -95,7 +95,7 @@ var
 	TestData: TMemoryStream;
 	ExpectedHash: WideString;
 	UploadResult: Integer;
-	Items: TCMRDirItemList;
+	Items: TCloudDirItemList;
 	I: Integer;
 	FoundItem: Boolean;
 begin
@@ -191,7 +191,7 @@ var
 	LocalFile: WideString;
 	RemotePath: WideString;
 	TestData: TMemoryStream;
-	Items: TCMRDirItemList;
+	Items: TCloudDirItemList;
 	I: Integer;
 	CRCFileFound: Boolean;
 begin
@@ -294,7 +294,7 @@ var
 	RemotePath: WideString;
 	TestData1, TestData2: TMemoryStream;
 	UploadResult1, UploadResult2: Integer;
-	Items: TCMRDirItemList;
+	Items: TCloudDirItemList;
 	I: Integer;
 	FoundSize: Int64;
 begin
@@ -464,7 +464,7 @@ var
 	RemotePath: WideString;
 	TestData: TMemoryStream;
 	UploadResult1, UploadResult2: Integer;
-	Items: TCMRDirItemList;
+	Items: TCloudDirItemList;
 	FileCount: Integer;
 	I: Integer;
 begin

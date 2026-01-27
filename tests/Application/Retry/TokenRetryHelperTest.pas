@@ -142,7 +142,7 @@ type
 implementation
 
 uses
-	CMRConstants,
+	CloudConstants,
 	WFXTypes;
 
 const

@@ -18,7 +18,7 @@ uses
 	PluginSettings,
 	WFXTypes,
 	RealPath,
-	CMRDirItem,
+	CloudDirItem,
 	CloudMailRu,
 	StreamingSettings;
 

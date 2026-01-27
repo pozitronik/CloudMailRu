@@ -4,7 +4,7 @@ interface
 
 uses
 	SysUtils,
-	CMRDirItem, CMRIncomingInvite, CMRConstants, RealPath,
+	CloudDirItem, CloudIncomingInvite, CloudConstants, RealPath,
 	SettingsConstants,
 	IconProvider,
 	DUnitX.TestFramework;
@@ -15,15 +15,15 @@ type
 	private
 		FProvider: IIconProvider;
 		function CreateEmptyContext: TIconContext;
-		function CreateContextWithItem(const Item: TCMRDirItem): TIconContext;
-		function CreateContextWithInvite(const Invite: TCMRIncomingInvite): TIconContext;
-		function CreateTestDirItem: TCMRDirItem;
-		function CreateTestFileItem: TCMRDirItem;
-		function CreateSharedDirItem: TCMRDirItem;
-		function CreatePublishedDirItem: TCMRDirItem;
-		function CreateMountedInvite: TCMRIncomingInvite;
-		function CreateUnmountedInvite: TCMRIncomingInvite;
-		function CreateEmptyInvite: TCMRIncomingInvite;
+		function CreateContextWithItem(const Item: TCloudDirItem): TIconContext;
+		function CreateContextWithInvite(const Invite: TCloudIncomingInvite): TIconContext;
+		function CreateTestDirItem: TCloudDirItem;
+		function CreateTestFileItem: TCloudDirItem;
+		function CreateSharedDirItem: TCloudDirItem;
+		function CreatePublishedDirItem: TCloudDirItem;
+		function CreateMountedInvite: TCloudIncomingInvite;
+		function CreateUnmountedInvite: TCloudIncomingInvite;
+		function CreateEmptyInvite: TCloudIncomingInvite;
 	public
 		[Setup]
 		procedure Setup;
@@ -112,66 +112,66 @@ begin
 	Result.HasInviteItem := False;
 end;
 
-function TIconProviderTest.CreateContextWithItem(const Item: TCMRDirItem): TIconContext;
+function TIconProviderTest.CreateContextWithItem(const Item: TCloudDirItem): TIconContext;
 begin
 	Result := CreateEmptyContext;
 	Result.Item := Item;
 	Result.HasItem := True;
 end;
 
-function TIconProviderTest.CreateContextWithInvite(const Invite: TCMRIncomingInvite): TIconContext;
+function TIconProviderTest.CreateContextWithInvite(const Invite: TCloudIncomingInvite): TIconContext;
 begin
 	Result := CreateEmptyContext;
 	Result.InviteItem := Invite;
 	Result.HasInviteItem := True;
 end;
 
-function TIconProviderTest.CreateTestDirItem: TCMRDirItem;
+function TIconProviderTest.CreateTestDirItem: TCloudDirItem;
 begin
-	Result := Default(TCMRDirItem);
+	Result := Default(TCloudDirItem);
 	Result.name := 'test_folder';
 	Result.type_ := TYPE_DIR;
 	Result.kind := '';
 	Result.weblink := '';
 end;
 
-function TIconProviderTest.CreateTestFileItem: TCMRDirItem;
+function TIconProviderTest.CreateTestFileItem: TCloudDirItem;
 begin
-	Result := Default(TCMRDirItem);
+	Result := Default(TCloudDirItem);
 	Result.name := 'test_file.txt';
 	Result.type_ := TYPE_FILE;
 	Result.kind := 'file';
 end;
 
-function TIconProviderTest.CreateSharedDirItem: TCMRDirItem;
+function TIconProviderTest.CreateSharedDirItem: TCloudDirItem;
 begin
 	Result := CreateTestDirItem;
 	Result.kind := KIND_SHARED;
 end;
 
-function TIconProviderTest.CreatePublishedDirItem: TCMRDirItem;
+function TIconProviderTest.CreatePublishedDirItem: TCloudDirItem;
 begin
 	Result := CreateTestDirItem;
 	Result.weblink := 'https://cloud.mail.ru/public/abc123';
 end;
 
-function TIconProviderTest.CreateMountedInvite: TCMRIncomingInvite;
+function TIconProviderTest.CreateMountedInvite: TCloudIncomingInvite;
 begin
-	Result := Default(TCMRIncomingInvite);
+	Result := Default(TCloudIncomingInvite);
 	Result.name := 'shared_folder';
 	Result.home := '/mounted/path'; { isMounted returns True when home is not empty }
 end;
 
-function TIconProviderTest.CreateUnmountedInvite: TCMRIncomingInvite;
+function TIconProviderTest.CreateUnmountedInvite: TCloudIncomingInvite;
 begin
-	Result := Default(TCMRIncomingInvite);
+	Result := Default(TCloudIncomingInvite);
 	Result.name := 'shared_folder';
 	Result.home := ''; { isMounted returns False when home is empty }
 end;
 
-function TIconProviderTest.CreateEmptyInvite: TCMRIncomingInvite;
+function TIconProviderTest.CreateEmptyInvite: TCloudIncomingInvite;
 begin
-	Result := Default(TCMRIncomingInvite);
+	Result := Default(TCloudIncomingInvite);
 	Result.name := '';
 end;
 

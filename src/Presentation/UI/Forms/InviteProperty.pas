@@ -3,7 +3,7 @@ unit InviteProperty;
 interface
 
 uses
-	CMRIncomingInvite,
+	CloudIncomingInvite,
 	InvitePropertyPresenter,
 	Winapi.Windows,
 	Winapi.Messages,
@@ -53,7 +53,7 @@ type
 		procedure SetUnmountDeleteEnabled(Enabled: Boolean);
 	public
 		destructor Destroy; override;
-		class function ShowProperties(parentWindow: HWND; Item: TCMRIncomingInvite; AccountName: WideString = ''): integer;
+		class function ShowProperties(parentWindow: HWND; Item: TCloudIncomingInvite; AccountName: WideString = ''): integer;
 	end;
 
 implementation
@@ -130,7 +130,7 @@ begin
 	inherited;
 end;
 
-class function TInvitePropertyForm.ShowProperties(parentWindow: HWND; Item: TCMRIncomingInvite; AccountName: WideString): integer;
+class function TInvitePropertyForm.ShowProperties(parentWindow: HWND; Item: TCloudIncomingInvite; AccountName: WideString): integer;
 var
 	InvitePropertyForm: TInvitePropertyForm;
 begin

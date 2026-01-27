@@ -2,14 +2,14 @@ unit DeletedPropertyPresenter;
 
 {Presenter for DeletedProperty dialog - handles display logic for deleted (trash) items.
  Follows MVP pattern: View (TDeletedPropertyForm) implements IDeletedPropertyView,
- Presenter orchestrates display, Model is TCMRDirItemList record.}
+ Presenter orchestrates display, Model is TCloudDirItemList record.}
 
 interface
 
 uses
-	CMRDirItemList,
-	CMRDirItem,
-	CMRConstants,
+	CloudDirItemList,
+	CloudDirItem,
+	CloudConstants,
 	SettingsConstants,
 	LanguageStrings,
 	StringHelper,
@@ -40,7 +40,7 @@ type
 	TDeletedPropertyPresenter = class
 	private
 		FView: IDeletedPropertyView;
-		FItems: TCMRDirItemList;
+		FItems: TCloudDirItemList;
 		FIsTrashDir: Boolean;
 		FAccountName: WideString;
 
@@ -50,10 +50,10 @@ type
 		constructor Create(View: IDeletedPropertyView);
 
 		{Initialize view state based on deleted items}
-		procedure Initialize(Items: TCMRDirItemList; TrashDir: Boolean; AccountName: WideString);
+		procedure Initialize(Items: TCloudDirItemList; TrashDir: Boolean; AccountName: WideString);
 
 		{Properties}
-		property Items: TCMRDirItemList read FItems;
+		property Items: TCloudDirItemList read FItems;
 		property IsTrashDir: Boolean read FIsTrashDir;
 		property AccountName: WideString read FAccountName;
 	end;
@@ -70,14 +70,14 @@ end;
 
 function TDeletedPropertyPresenter.CalculateSummarySize: Int64;
 var
-	Item: TCMRDirItem;
+	Item: TCloudDirItem;
 begin
 	Result := 0;
 	for Item in FItems do
 		Result := Result + Item.size;
 end;
 
-procedure TDeletedPropertyPresenter.Initialize(Items: TCMRDirItemList; TrashDir: Boolean; AccountName: WideString);
+procedure TDeletedPropertyPresenter.Initialize(Items: TCloudDirItemList; TrashDir: Boolean; AccountName: WideString);
 var
 	FormCaption, NameCaption, FromCaption, AtCaption, ByCaption, SizeCaption: WideString;
 begin

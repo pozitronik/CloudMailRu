@@ -40,7 +40,7 @@ implementation
 
 uses
 	SysUtils,
-	CMRConstants,
+	CloudConstants,
 	LanguageStrings,
 	SettingsConstants,
 	SystemHelper,

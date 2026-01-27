@@ -8,15 +8,15 @@ interface
 
 uses
 	System.Classes,
-	CMROAuth,
-	CMRSpace,
+	CloudOAuth,
+	CloudSpace,
 	CloudHTTP,
 	TokenRetryHelper;
 
 type
 	{Basic getter callbacks - used by multiple services}
 	TGetHTTPFunc = reference to function: ICloudHTTP;
-	TGetOAuthTokenFunc = reference to function: TCMROAuth;
+	TGetOAuthTokenFunc = reference to function: TCloudOAuth;
 	TGetBoolFunc = reference to function: Boolean;
 	TGetIntFunc = reference to function: Integer;
 	TGetInt64Func = reference to function: Int64;
@@ -30,7 +30,7 @@ type
 	TDeleteFileFunc = reference to function(Path: WideString): Boolean;
 	TGetRetryOperationFunc = reference to function: TRetryOperation;
 	TCloudResultToFsResultFunc = reference to function(JSON: WideString; ErrorPrefix: WideString): Integer;
-	TGetUserSpaceFunc = reference to function(var SpaceInfo: TCMRSpace): Boolean;
+	TGetUserSpaceFunc = reference to function(var SpaceInfo: TCloudSpace): Boolean;
 
 implementation
 

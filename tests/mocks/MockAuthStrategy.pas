@@ -9,7 +9,7 @@ uses
 	AuthStrategy,
 	CloudHTTP,
 	TCLogger,
-	CMROAuth,
+	CloudOAuth,
 	System.SysUtils;
 
 type
@@ -131,7 +131,7 @@ end;
 function TMockAuthStrategy.Authenticate(const Credentials: TAuthCredentials;
 	HTTP: ICloudHTTP; Logger: ILogger): TAuthResult;
 var
-	OAuth: TCMROAuth;
+	OAuth: TCloudOAuth;
 begin
 	FAuthenticateCalled := True;
 	FLastCredentials := Credentials;
@@ -145,7 +145,7 @@ begin
 		Exit(TAuthResult.CreateSharedSuccess(FPublicShard, FPublicLink));
 
 	{Return OAuth result}
-	OAuth := Default(TCMROAuth);
+	OAuth := Default(TCloudOAuth);
 	OAuth.access_token := FAccessToken;
 	OAuth.refresh_token := FRefreshToken;
 	if FExpiresIn > 0 then
@@ -203,10 +203,10 @@ end;
 
 procedure TMockAuthStrategySequence.AddSuccess(const AccessToken: WideString);
 var
-	OAuth: TCMROAuth;
+	OAuth: TCloudOAuth;
 begin
 	SetLength(FResults, Length(FResults) + 1);
-	OAuth := Default(TCMROAuth);
+	OAuth := Default(TCloudOAuth);
 	OAuth.access_token := AccessToken;
 	FResults[High(FResults)] := TAuthResult.CreateOAuthSuccess(OAuth);
 end;
@@ -220,10 +220,10 @@ end;
 procedure TMockAuthStrategySequence.AddOAuthSuccess(const AccessToken, RefreshToken: WideString;
 	ExpiresIn: Integer);
 var
-	OAuth: TCMROAuth;
+	OAuth: TCloudOAuth;
 begin
 	SetLength(FResults, Length(FResults) + 1);
-	OAuth := Default(TCMROAuth);
+	OAuth := Default(TCloudOAuth);
 	OAuth.access_token := AccessToken;
 	OAuth.refresh_token := RefreshToken;
 	OAuth.expires_in := ExpiresIn;

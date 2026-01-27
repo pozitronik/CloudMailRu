@@ -34,10 +34,10 @@ uses
 	System.SysUtils,
 	System.Classes,
 	System.IOUtils,
-	CMRDirItem,
-	CMRDirItemList,
+	CloudDirItem,
+	CloudDirItemList,
 	WFXTypes,
-	CMRConstants,
+	CloudConstants,
 	TestDataGenerator;
 
 {TTrashIntegrationTest}
@@ -70,7 +70,7 @@ end;
 procedure TTrashIntegrationTest.TestListTrashbin_ReturnsDeletedItems;
 var
 	DeletedFilePath: WideString;
-	TrashItems: TCMRDirItemList;
+	TrashItems: TCloudDirItemList;
 	ListResult: Boolean;
 	Found: Boolean;
 	I: Integer;
@@ -100,12 +100,12 @@ end;
 procedure TTrashIntegrationTest.TestRestoreFromTrash_Succeeds;
 var
 	OriginalPath: WideString;
-	TrashItems: TCMRDirItemList;
+	TrashItems: TCloudDirItemList;
 	RestoreResult: Boolean;
-	RestoredItems: TCMRDirItemList;
+	RestoredItems: TCloudDirItemList;
 	Found: Boolean;
 	I: Integer;
-	TrashItem: TCMRDirItem;
+	TrashItem: TCloudDirItem;
 begin
 	{Delete a file}
 	OriginalPath := UploadAndDeleteFile('TrashRestoreTest');
@@ -114,7 +114,7 @@ begin
 	{Find file in trash}
 	FPrimaryCloud.ListingService.GetTrashbin(TrashItems);
 
-	TrashItem := Default(TCMRDirItem);
+	TrashItem := Default(TCloudDirItem);
 	for I := 0 to Length(TrashItems) - 1 do
 	begin
 		if Pos(WideString('TrashRestoreTest'), TrashItems[I].Name) > 0 then
@@ -159,9 +159,9 @@ var
 	OriginalPath: WideString;
 	LocalFile: WideString;
 	TestData: TMemoryStream;
-	TrashItems: TCMRDirItemList;
+	TrashItems: TCloudDirItemList;
 	I: Integer;
-	TrashItem: TCMRDirItem;
+	TrashItem: TCloudDirItem;
 begin
 	{This test verifies behavior when restoring to a location where file already exists}
 
@@ -203,7 +203,7 @@ begin
 	{Find original in trash}
 	FPrimaryCloud.ListingService.GetTrashbin(TrashItems);
 
-	TrashItem := Default(TCMRDirItem);
+	TrashItem := Default(TCloudDirItem);
 	for I := 0 to Length(TrashItems) - 1 do
 	begin
 		if Pos(WideString('ConflictRestore'), TrashItems[I].Name) > 0 then
@@ -227,7 +227,7 @@ end;
 procedure TTrashIntegrationTest.TestEmptyTrash_RemovesAllItems;
 var
 	EmptyResult: Boolean;
-	TrashItemsBefore, TrashItemsAfter: TCMRDirItemList;
+	TrashItemsBefore, TrashItemsAfter: TCloudDirItemList;
 begin
 	{Add something to trash first}
 	UploadAndDeleteFile('TrashEmptyTest');

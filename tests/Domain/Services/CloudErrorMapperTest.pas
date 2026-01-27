@@ -4,8 +4,8 @@ interface
 
 uses
 	CloudErrorMapper,
-	CMROperationResult,
-	CMRConstants,
+	CloudOperationResult,
+	CloudConstants,
 	WFXTypes,
 	TCLogger,
 	TestHelper,
@@ -109,8 +109,8 @@ implementation
 uses
 	LanguageStrings;
 
-{ Helper function to create TCMROperationResult }
-function MakeResult(Code: Integer; Status: Integer = 0): TCMROperationResult;
+{ Helper function to create TCloudOperationResult }
+function MakeResult(Code: Integer; Status: Integer = 0): TCloudOperationResult;
 begin
 	Result.OperationResult := Code;
 	Result.OperationStatus := Status;

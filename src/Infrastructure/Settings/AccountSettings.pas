@@ -5,7 +5,7 @@ interface
 uses
 	SysUtils,
 	ParsingHelper,
-	CMRConstants,
+	CloudConstants,
 	SettingsConstants;
 
 type

@@ -12,7 +12,7 @@ uses
 	LocalFileDeletionHandler,
 	DescriptionSyncGuard,
 	WFXTypes,
-	CMRConstants,
+	CloudConstants,
 	RealPath,
 	CloudMailRu,
 	SystemHelper;

@@ -4,18 +4,18 @@ interface
 
 uses
 	DebugHelper,
-	CMRDirItemList,
-	CMRDirItem,
-	CMRInviteList,
-	CMRIncomingInviteList,
-	CMROAuth,
-	CMRSpace,
-	CMRFileIdentity,
-	CMROperationResult,
-	CMRTwostep,
+	CloudDirItemList,
+	CloudDirItem,
+	CloudInviteList,
+	CloudIncomingInviteList,
+	CloudOAuth,
+	CloudSpace,
+	CloudFileIdentity,
+	CloudOperationResult,
+	CloudTwostep,
 	JSONHelper,
 	ParsingHelper,
-	CMRConstants,
+	CloudConstants,
 	CloudHTTP,
 	LanguageStrings,
 	HashInfo,
@@ -98,9 +98,9 @@ type
 		{Protected for testability}
 		FShardManager: ICloudShardManager; {Shard URL caching and management}
 		FAuthToken: WideString; {The current (constantly refreshing) connection token}
-		FOAuthToken: TCMROAuth; {OAuth token data}
+		FOAuthToken: TCloudOAuth; {OAuth token data}
 		{HTTP REQUESTS WRAPPERS - protected for testability}
-		function GetUserSpace(var SpaceInfo: TCMRSpace): Boolean;
+		function GetUserSpace(var SpaceInfo: TCloudSpace): Boolean;
 		{HASHING - exposed for testing via subclass}
 		function CloudHash(Path: WideString): WideString; overload; //get cloud hash for specified file
 		function CloudHash(Stream: TStream; Path: WideString = CALCULATING_HASH): WideString; overload; //get cloud hash for data in stream
@@ -135,9 +135,9 @@ type
 		property ListingService: ICloudListingService read FListingService;
 		property FileOps: ICloudFileOperations read FFileOps;
 		{ERROR RESULT MAPPING - exposed for testing and external use}
-		function CloudResultToFsResult(CloudResult: TCMROperationResult; ErrorPrefix: WideString = ''): Integer; overload;
+		function CloudResultToFsResult(CloudResult: TCloudOperationResult; ErrorPrefix: WideString = ''): Integer; overload;
 		function CloudResultToFsResult(JSON: WideString; ErrorPrefix: WideString = ''): Integer; overload;
-		function CloudResultToBoolean(CloudResult: TCMROperationResult; ErrorPrefix: WideString = ''): Boolean; overload;
+		function CloudResultToBoolean(CloudResult: TCloudOperationResult; ErrorPrefix: WideString = ''): Boolean; overload;
 		function CloudResultToBoolean(JSON: WideString; ErrorPrefix: WideString = ''): Boolean; overload;
 		{CONSTRUCTOR/DESTRUCTOR}
 		constructor Create(CloudSettings: TCloudSettings; ConnectionManager: IHTTPManager; AuthStrategy: IAuthStrategy; FileSystem: IFileSystem; Logger: ILogger; Progress: IProgress; Request: IRequest; TCHandler: ITCHandler; Cipher: ICipher = nil);
@@ -162,7 +162,7 @@ begin
 end;
 
 {Delegates to TCloudErrorMapper - kept for backward compatibility}
-function TCloudMailRu.CloudResultToBoolean(CloudResult: TCMROperationResult; ErrorPrefix: WideString): Boolean;
+function TCloudMailRu.CloudResultToBoolean(CloudResult: TCloudOperationResult; ErrorPrefix: WideString): Boolean;
 begin
 	Result := TCloudErrorMapper.ToBoolean(CloudResult, FLogger, ErrorPrefix);
 end;
@@ -174,7 +174,7 @@ begin
 end;
 
 {Delegates to TCloudErrorMapper - used in constructor callbacks}
-function TCloudMailRu.CloudResultToFsResult(CloudResult: TCMROperationResult; ErrorPrefix: WideString): Integer;
+function TCloudMailRu.CloudResultToFsResult(CloudResult: TCloudOperationResult; ErrorPrefix: WideString): Integer;
 begin
 	Result := TCloudErrorMapper.ToFsResult(CloudResult, FLogger, ErrorPrefix);
 end;
@@ -248,7 +248,7 @@ begin
 			begin
 				Result := Self.HTTP;
 			end, FShardManager, FHashCalculator, FCipher, FFileSystem, FLogger, FProgress, FRequest,
-			function: TCMROAuth
+			function: TCloudOAuth
 			begin
 				Result := Self.FOAuthToken;
 			end,
@@ -283,7 +283,7 @@ begin
 			begin
 				Result := Self.HTTP;
 			end, FShardManager, FHashCalculator, FCipher, FFileSystem, FLogger, FProgress, FRequest, FTCHandler,
-			function: TCMROAuth
+			function: TCloudOAuth
 			begin
 				Result := Self.FOAuthToken;
 			end,
@@ -307,7 +307,7 @@ begin
 			begin
 				Result := Self.FFileOps.Delete(Path);
 			end,
-			function(var SpaceInfo: TCMRSpace): Boolean
+			function(var SpaceInfo: TCloudSpace): Boolean
 			begin
 				Result := Self.GetUserSpace(SpaceInfo);
 			end, FDoCryptFiles, FDoCryptFilenames, UploadSettings);
@@ -349,7 +349,7 @@ begin
 			begin
 				Result := Self.CloudResultToBoolean(JSON, ErrorPrefix);
 			end,
-			function(OperationResult: TCMROperationResult; ErrorPrefix: WideString): Boolean
+			function(OperationResult: TCloudOperationResult; ErrorPrefix: WideString): Boolean
 			begin
 				Result := Self.CloudResultToBoolean(OperationResult, ErrorPrefix);
 			end, FDoCryptFilenames);
@@ -462,7 +462,7 @@ begin
 end;
 
 {Delegates to FListingService}
-function TCloudMailRu.GetUserSpace(var SpaceInfo: TCMRSpace): Boolean;
+function TCloudMailRu.GetUserSpace(var SpaceInfo: TCloudSpace): Boolean;
 begin
 	Result := FListingService.GetUserSpace(SpaceInfo);
 end;

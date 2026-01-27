@@ -5,9 +5,9 @@ interface
 uses
 	CloudShareService,
 	CloudShardManager,
-	CMRDirItem,
-	CMRInviteList,
-	CMRConstants,
+	CloudDirItem,
+	CloudInviteList,
+	CloudConstants,
 	WFXTypes,
 	TCLogger,
 	CloudHTTP,
@@ -266,10 +266,10 @@ end;
 
 procedure TCloudShareServiceTest.TestGetShareInfo_Success_PopulatesInviteList;
 var
-	InviteList: TCMRInviteList;
+	InviteList: TCloudInviteList;
 	Result: Boolean;
 begin
-	{Set up response with share info - structure matches TCMRInviteList.FromJSON}
+	{Set up response with share info - structure matches TCloudInviteList.FromJSON}
 	FMockHTTP.SetDefaultResponse(True,
 		'{"status":200,"body":{"members":[{"email":"user@mail.ru","access":"read_write","name":"User"}]}}');
 
@@ -387,12 +387,12 @@ end;
 
 procedure TCloudShareServiceTest.TestGetPublishedFileStreamUrl_WithWeblink_ReturnsUrl;
 var
-	FileItem: TCMRDirItem;
+	FileItem: TCloudDirItem;
 	StreamUrl: WideString;
 	Result: Boolean;
 	CallCountBefore: Integer;
 begin
-	FileItem := Default(TCMRDirItem);
+	FileItem := Default(TCloudDirItem);
 	FileItem.weblink := 'existing_weblink_456';
 	FileItem.Home := '/test/video.mp4';
 
@@ -408,11 +408,11 @@ end;
 
 procedure TCloudShareServiceTest.TestGetPublishedFileStreamUrl_NoWeblink_PublishesFirst;
 var
-	FileItem: TCMRDirItem;
+	FileItem: TCloudDirItem;
 	StreamUrl: WideString;
 	Result: Boolean;
 begin
-	FileItem := Default(TCMRDirItem);
+	FileItem := Default(TCloudDirItem);
 	FileItem.weblink := ''; {No existing weblink}
 	FileItem.Home := '/test/video.mp4';
 
@@ -428,11 +428,11 @@ end;
 
 procedure TCloudShareServiceTest.TestGetPublishedFileStreamUrl_PublishFails_ReturnsFalse;
 var
-	FileItem: TCMRDirItem;
+	FileItem: TCloudDirItem;
 	StreamUrl: WideString;
 	Result: Boolean;
 begin
-	FileItem := Default(TCMRDirItem);
+	FileItem := Default(TCloudDirItem);
 	FileItem.weblink := ''; {No existing weblink}
 	FileItem.Home := '/test/video.mp4';
 

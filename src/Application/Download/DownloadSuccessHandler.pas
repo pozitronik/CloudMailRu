@@ -15,9 +15,9 @@ uses
 	TCProgress,
 	DescriptionSyncGuard,
 	WFXTypes,
-	CMRConstants,
+	CloudConstants,
 	RealPath,
-	CMRDirItem,
+	CloudDirItem,
 	CloudMailRu,
 	FileHelper,
 	SystemHelper;
@@ -30,7 +30,7 @@ type
 		RemoteName: WideString;
 		CopyFlags: Integer;
 		ResultHash: WideString; {Hash calculated during download, empty if not calculated}
-		Item: TCMRDirItem; {Directory item with expected hash and mtime}
+		Item: TCloudDirItem; {Directory item with expected hash and mtime}
 		Cloud: TCloudMailRu; {Cloud connection for move operations}
 	end;
 

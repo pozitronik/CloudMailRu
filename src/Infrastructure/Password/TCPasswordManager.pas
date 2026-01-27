@@ -11,7 +11,7 @@ uses
 	SysUtils,
 	AskPassword,
 	TCHandler,
-	CMRConstants,
+	CloudConstants,
 	TCLogger;
 
 const

@@ -9,9 +9,9 @@ uses
 	Windows,
 	WFXTypes,
 	RealPath,
-	CMRDirItemList,
-	CMRIncomingInviteList,
-	CMRConstants,
+	CloudDirItemList,
+	CloudIncomingInviteList,
+	CloudConstants,
 	WindowsHelper,
 	ConnectionManager,
 	ListingProvider,
@@ -22,8 +22,8 @@ type
 	TPathListingResult = record
 		Handle: THandle;
 		FindData: tWIN32FINDDATAW;
-		Listing: TCMRDirItemList; {Directory items for FsFindNext}
-		IncomingInvites: TCMRIncomingInviteList; {Incoming invites if invites dir}
+		Listing: TCloudDirItemList; {Directory items for FsFindNext}
+		IncomingInvites: TCloudIncomingInviteList; {Incoming invites if invites dir}
 		FileCounter: Integer; {Counter for iteration}
 		ErrorCode: DWORD; {Error code to set, 0 if none}
 		RealPath: TRealPath; {Parsed path for sharedDir check}

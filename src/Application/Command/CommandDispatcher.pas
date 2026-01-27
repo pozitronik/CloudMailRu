@@ -13,7 +13,7 @@ uses
 	CloudMailRu,
 	RealPath,
 	HashInfo,
-	CMRConstants,
+	CloudConstants,
 	SettingsConstants,
 	LanguageStrings,
 	WFXTypes,

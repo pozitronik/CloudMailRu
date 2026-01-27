@@ -5,8 +5,8 @@ interface
 uses
 	CloudMailRu,
 	CloudSettings,
-	CMRConstants,
-	CMROperationResult,
+	CloudConstants,
+	CloudOperationResult,
 	TCLogger,
 	TCProgress,
 	TCRequest,
@@ -26,8 +26,8 @@ type
 		FCloud: TCloudMailRu;
 		FSettings: TCloudSettings;
 
-		{ Helper to create TCMROperationResult with specific error code }
-		function CreateResult(OperationResult: Integer; OperationStatus: Integer = 0): TCMROperationResult;
+		{ Helper to create TCloudOperationResult with specific error code }
+		function CreateResult(OperationResult: Integer; OperationStatus: Integer = 0): TCloudOperationResult;
 	public
 		[Setup]
 		procedure Setup;
@@ -93,7 +93,7 @@ type
 
 implementation
 
-{ Test JSON responses - reusing patterns from CMROperationResultTest }
+{ Test JSON responses - reusing patterns from CloudOperationResultTest }
 const
 	JSON_SUCCESS = '{"status":200,"body":{"home":"/test"}}';
 	JSON_ERROR_EXISTS = '{"status":400,"body":{"home":{"error":"exists"}}}';
@@ -114,7 +114,7 @@ begin
 	FCloud.Free;
 end;
 
-function TCloudMailRuInstanceTest.CreateResult(OperationResult, OperationStatus: Integer): TCMROperationResult;
+function TCloudMailRuInstanceTest.CreateResult(OperationResult, OperationStatus: Integer): TCloudOperationResult;
 begin
 	Result.OperationResult := OperationResult;
 	Result.OperationStatus := OperationStatus;

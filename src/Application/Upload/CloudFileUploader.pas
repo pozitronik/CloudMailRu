@@ -5,12 +5,12 @@ interface
 uses
 	System.Classes,
 	System.SysUtils,
-	CMRConstants,
-	CMROAuth,
-	CMRSpace,
-	CMRFileIdentity,
-	CMROperationResult,
-	CMROperationResultJsonAdapter,
+	CloudConstants,
+	CloudOAuth,
+	CloudSpace,
+	CloudFileIdentity,
+	CloudOperationResult,
+	CloudOperationResultJsonAdapter,
 	WFXTypes,
 	LanguageStrings,
 	SettingsConstants,
@@ -62,7 +62,7 @@ type
 		function Upload(LocalPath, RemotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; ChunkOverwriteMode: Integer = 0): Integer;
 		{Add file by its hash identity (fast upload if file already exists in cloud).
 			Returns FS_FILE_OK on success, or appropriate error code on failure.}
-		function AddFileByIdentity(FileIdentity: TCMRFileIdentity; RemotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; LogErrors: Boolean = True; LogSuccess: Boolean = False): Integer;
+		function AddFileByIdentity(FileIdentity: TCloudFileIdentity; RemotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; LogErrors: Boolean = True; LogSuccess: Boolean = False): Integer;
 	end;
 
 	{File upload service - handles whole file and chunked uploads}
@@ -92,7 +92,7 @@ type
 		{Internal upload methods}
 		function PutFileWhole(LocalPath, RemotePath, ConflictMode: WideString): Integer;
 		function PutFileStream(FileName, RemotePath: WideString; FileStream: TStream; ConflictMode: WideString): Integer;
-		function PutFileToCloud(FileName: WideString; FileStream: TStream; var FileIdentity: TCMRFileIdentity): Integer;
+		function PutFileToCloud(FileName: WideString; FileStream: TStream; var FileIdentity: TCloudFileIdentity): Integer;
 		{Split upload helpers}
 		function HandleChunkExists(const ChunkRemotePath: WideString; ChunkOverwriteMode: Integer; var ResultCode: Integer): TChunkActionResult;
 		function HandleChunkError(UploadResult: Integer; const ChunkRemotePath: WideString; var RetryAttemptsCount: Integer; var ResultCode: Integer): TChunkActionResult;
@@ -100,7 +100,7 @@ type
 		{Check available space before split upload, prompt user if partial upload required}
 		function CheckQuotaForSplitUpload(const SplitFileInfo: TFileSplitInfo; var ChunksToUpload: Integer): Boolean;
 		{Calculate file identity (hash + size) for local file}
-		function CalculateFileIdentity(LocalPath: WideString): TCMRFileIdentity;
+		function CalculateFileIdentity(LocalPath: WideString): TCloudFileIdentity;
 	protected
 		{Protected for testability - tests need direct access to split upload logic}
 		function PutFileSplit(LocalPath, RemotePath, ConflictMode: WideString; ChunkOverwriteMode: Integer): Integer;
@@ -109,7 +109,7 @@ type
 
 		{ICloudFileUploader}
 		function Upload(LocalPath, RemotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; ChunkOverwriteMode: Integer = 0): Integer;
-		function AddFileByIdentity(FileIdentity: TCMRFileIdentity; RemotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; LogErrors: Boolean = True; LogSuccess: Boolean = False): Integer;
+		function AddFileByIdentity(FileIdentity: TCloudFileIdentity; RemotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; LogErrors: Boolean = True; LogSuccess: Boolean = False): Integer;
 	end;
 
 implementation
@@ -154,7 +154,7 @@ end;
 
 	The HTTP 400 response raises EIdHTTPProtocolException which is caught and
 	handled, but may trigger debugger breaks during development.}
-function TCloudFileUploader.AddFileByIdentity(FileIdentity: TCMRFileIdentity; RemotePath: WideString; ConflictMode: WideString; LogErrors: Boolean; LogSuccess: Boolean): Integer;
+function TCloudFileUploader.AddFileByIdentity(FileIdentity: TCloudFileIdentity; RemotePath: WideString; ConflictMode: WideString; LogErrors: Boolean; LogSuccess: Boolean): Integer;
 var
 	FileName: WideString;
 	CallResult: TAPICallResult;
@@ -186,12 +186,12 @@ begin
 		function: TAPICallResult
 		var
 			JSON: WideString;
-			OperationResult: TCMROperationResult;
+			OperationResult: TCloudOperationResult;
 			ResultCode: Integer;
 		begin
 			if HTTP.PostForm(API_FILE_ADD + '?' + UnitedParams, Format('api=2&conflict=%s&home=/%s&hash=%s&size=%d', [ConflictMode, PathToUrl(RemotePath), FileIdentity.Hash, FileIdentity.size]), JSON, 'application/x-www-form-urlencoded', LogErrors, False) then
 			begin
-				TCMROperationResultJsonAdapter.Parse(JSON, OperationResult);
+				TCloudOperationResultJsonAdapter.Parse(JSON, OperationResult);
 				ResultCode := CloudResultToFsResult(JSON, PREFIX_ERR_FILE_UPLOADING);
 				if (CLOUD_OPERATION_OK = OperationResult.OperationResult) and LogSuccess then
 					Logger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, FILE_FOUND_BY_HASH, [RemotePath]);
@@ -246,7 +246,7 @@ end;
 
 function TCloudFileUploader.PutFileStream(FileName, RemotePath: WideString; FileStream: TStream; ConflictMode: WideString): Integer;
 var
-	LocalFileIdentity, RemoteFileIdentity: TCMRFileIdentity;
+	LocalFileIdentity, RemoteFileIdentity: TCloudFileIdentity;
 	OperationResult: Integer;
 	DedupeResult: Integer;
 	MemoryStream: TMemoryStream;
@@ -319,14 +319,14 @@ begin
 		Result := AddFileByIdentity(RemoteFileIdentity, RemotePath, ConflictMode, False, False);
 end;
 
-function TCloudFileUploader.PutFileToCloud(FileName: WideString; FileStream: TStream; var FileIdentity: TCMRFileIdentity): Integer;
+function TCloudFileUploader.PutFileToCloud(FileName: WideString; FileStream: TStream; var FileIdentity: TCloudFileIdentity): Integer;
 var
 	CallResult: TAPICallResult;
-	LocalIdentity: TCMRFileIdentity;
+	LocalIdentity: TCloudFileIdentity;
 	DispatcherResponse: WideString;
 	Progress: Boolean;
 	UploadShard: WideString;
-	OAuthToken: TCMROAuth;
+	OAuthToken: TCloudOAuth;
 begin
 	FileIdentity.Hash := EmptyWideStr;
 	FileIdentity.size := -1;
@@ -473,7 +473,7 @@ begin
 end;
 
 {Calculate file identity (hash + size) for a local file}
-function TCloudFileUploader.CalculateFileIdentity(LocalPath: WideString): TCMRFileIdentity;
+function TCloudFileUploader.CalculateFileIdentity(LocalPath: WideString): TCloudFileIdentity;
 begin
 	Result.Hash := FHashCalculator.CalculateHash(LocalPath);
 	Result.size := FFileSystem.GetFileSize(LocalPath);
@@ -502,7 +502,7 @@ end;
 	ChunksToUpload is set to the number of chunks that can be uploaded (may be limited by available space).}
 function TCloudFileUploader.CheckQuotaForSplitUpload(const SplitFileInfo: TFileSplitInfo; var ChunksToUpload: Integer): Boolean;
 var
-	SpaceInfo: TCMRSpace;
+	SpaceInfo: TCloudSpace;
 	AvailableSpace: Int64;
 	ChunksThatFit: Integer;
 	ReturnedText: WideString;
@@ -548,7 +548,7 @@ end;
 	Returns FS_FILE_OK on success, or appropriate error code on failure.}
 function TCloudFileUploader.PutFileSplit(LocalPath, RemotePath, ConflictMode: WideString; ChunkOverwriteMode: Integer): Integer;
 var
-	LocalFileIdentity: TCMRFileIdentity;
+	LocalFileIdentity: TCloudFileIdentity;
 	SplitFileInfo: TFileSplitInfo;
 	ChunkIndex: Integer;
 	ChunksToUpload: Integer;

@@ -11,10 +11,10 @@ uses
 	CloudFileUploader,
 	CloudShardManager,
 	CloudHashCalculator,
-	CMROAuth,
-	CMRSpace,
-	CMRConstants,
-	CMRFileIdentity,
+	CloudOAuth,
+	CloudSpace,
+	CloudConstants,
+	CloudFileIdentity,
 	WFXTypes,
 	SettingsConstants,
 	TCLogger,
@@ -65,7 +65,7 @@ type
 		FHashCalculator: ICloudHashCalculator;
 		FSettings: TUploadSettings;
 		FTempDir: string;
-		FOAuthToken: TCMROAuth;
+		FOAuthToken: TCloudOAuth;
 		FRetryOperation: TRetryOperation;
 		FIsPublicAccount: Boolean;
 		FAddByIdentityFirstResult: Integer;  {Result for first call - used to control CloudResultToFsResult}
@@ -269,7 +269,7 @@ begin
 		TNullProgress.Create,
 		TNullRequest.Create,
 		TNullTCHandler.Create,
-		function: TCMROAuth begin Result := TestSelf.FOAuthToken; end,
+		function: TCloudOAuth begin Result := TestSelf.FOAuthToken; end,
 		function: Boolean begin Result := TestSelf.FIsPublicAccount; end,
 		function: TRetryOperation begin Result := TestSelf.FRetryOperation; end,
 		function: WideString begin Result := 'token=test&x-email=test@mail.ru'; end,
@@ -282,7 +282,7 @@ begin
 				Result := TestSelf.FAddByIdentityNextResult;
 		end,
 		function(Path: WideString): Boolean begin TestSelf.FDeleteFileCalled := True; Result := TestSelf.FDeleteFileResult; end,
-		function(var SpaceInfo: TCMRSpace): Boolean begin Result := False; end, {Skip quota check in tests}
+		function(var SpaceInfo: TCloudSpace): Boolean begin Result := False; end, {Skip quota check in tests}
 		False, {DoCryptFiles}
 		False, {DoCryptFilenames}
 		FSettings);

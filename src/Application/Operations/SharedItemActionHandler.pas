@@ -6,8 +6,8 @@ unit SharedItemActionHandler;
 interface
 
 uses
-	CMRDirItem,
-	CMRDirItemList,
+	CloudDirItem,
+	CloudDirItemList,
 	RealPath;
 
 type
@@ -22,11 +22,11 @@ type
 	TSharedItemActionResult = record
 		ActionType: TSharedActionType;
 		SymlinkPath: WideString; {For satSymlink: the resolved path to navigate to}
-		CurrentItem: TCMRDirItem; {For satPropertyDialog: the item to show properties for}
+		CurrentItem: TCloudDirItem; {For satPropertyDialog: the item to show properties for}
 
 		class function Symlink(const APath: WideString): TSharedItemActionResult; static;
 		class function AccountSettings: TSharedItemActionResult; static;
-		class function PropertyDialog(const AItem: TCMRDirItem): TSharedItemActionResult; static;
+		class function PropertyDialog(const AItem: TCloudDirItem): TSharedItemActionResult; static;
 		class function None: TSharedItemActionResult; static;
 	end;
 
@@ -37,19 +37,19 @@ type
 			@param ActionOpen True for open (symlink), False for properties
 			@param CurrentListing Current directory listing to find item in
 			@returns TSharedItemActionResult describing what action the caller should take}
-		function HandleAction(const RealPath: TRealPath; ActionOpen: Boolean; const CurrentListing: TCMRDirItemList): TSharedItemActionResult;
+		function HandleAction(const RealPath: TRealPath; ActionOpen: Boolean; const CurrentListing: TCloudDirItemList): TSharedItemActionResult;
 	end;
 
 	TSharedItemActionHandler = class(TInterfacedObject, ISharedItemActionHandler)
 	public
-		function HandleAction(const RealPath: TRealPath; ActionOpen: Boolean; const CurrentListing: TCMRDirItemList): TSharedItemActionResult;
+		function HandleAction(const RealPath: TRealPath; ActionOpen: Boolean; const CurrentListing: TCloudDirItemList): TSharedItemActionResult;
 	end;
 
 implementation
 
 uses
 	SysUtils,
-	CMRConstants,
+	CloudConstants,
 	PathHelper;
 
 class function TSharedItemActionResult.Symlink(const APath: WideString): TSharedItemActionResult;
@@ -65,7 +65,7 @@ begin
 	Result.ActionType := satAccountSettings;
 end;
 
-class function TSharedItemActionResult.PropertyDialog(const AItem: TCMRDirItem): TSharedItemActionResult;
+class function TSharedItemActionResult.PropertyDialog(const AItem: TCloudDirItem): TSharedItemActionResult;
 begin
 	Result := Default (TSharedItemActionResult);
 	Result.ActionType := satPropertyDialog;
@@ -78,9 +78,9 @@ begin
 	Result.ActionType := satNone;
 end;
 
-function TSharedItemActionHandler.HandleAction(const RealPath: TRealPath; ActionOpen: Boolean; const CurrentListing: TCMRDirItemList): TSharedItemActionResult;
+function TSharedItemActionHandler.HandleAction(const RealPath: TRealPath; ActionOpen: Boolean; const CurrentListing: TCloudDirItemList): TSharedItemActionResult;
 var
-	CurrentItem: TCMRDirItem;
+	CurrentItem: TCloudDirItem;
 	ResolvedPath: WideString;
 begin
 	if ActionOpen then

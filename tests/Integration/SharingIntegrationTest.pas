@@ -46,11 +46,11 @@ uses
 	System.SysUtils,
 	System.Classes,
 	System.IOUtils,
-	CMRDirItemList,
-	CMRInviteList,
-	CMRIncomingInviteList,
+	CloudDirItemList,
+	CloudInviteList,
+	CloudIncomingInviteList,
 	WFXTypes,
-	CMRConstants,
+	CloudConstants,
 	TestDataGenerator;
 
 {TSharingIntegrationTest}
@@ -104,7 +104,7 @@ var
 	FilePath: WideString;
 	PublicLink: WideString;
 	PublishResult, UnpublishResult: Boolean;
-	SharedItems: TCMRDirItemList;
+	SharedItems: TCloudDirItemList;
 	FoundPublished: Boolean;
 	I: Integer;
 begin
@@ -216,7 +216,7 @@ var
 	FolderPath: WideString;
 	CreateResult: Boolean;
 	ShareResult: Boolean;
-	Invites: TCMRInviteList;
+	Invites: TCloudInviteList;
 	GetInfoResult: Boolean;
 begin
 	RequireSecondaryAccount;
@@ -258,7 +258,7 @@ var
 	PublicLink: WideString;
 	PublishResult: Boolean;
 	CloneResult: Integer;
-	Items: TCMRDirItemList;
+	Items: TCloudDirItemList;
 	Found: Boolean;
 	I: Integer;
 begin
@@ -309,7 +309,7 @@ end;
 
 procedure TSharingIntegrationTest.TestListIncomingInvites_ReturnsInvites;
 var
-	Invites: TCMRIncomingInviteList;
+	Invites: TCloudIncomingInviteList;
 	ListResult: Boolean;
 begin
 	{List incoming invites - may be empty but should succeed}

@@ -94,7 +94,7 @@ implementation
 
 uses
 	SysUtils,
-	CMRConstants,
+	CloudConstants,
 	WFXTypes,
 	RealPath;
 

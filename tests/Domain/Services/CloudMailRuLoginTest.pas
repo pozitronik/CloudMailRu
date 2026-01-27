@@ -8,7 +8,7 @@ interface
 uses
 	AuthStrategy,
 	MockAuthStrategy,
-	CMROAuth,
+	CloudOAuth,
 	System.SysUtils,
 	DUnitX.TestFramework;
 

@@ -9,7 +9,7 @@ uses
 	Windows,
 	WFXTypes,
 	WSList,
-	CMRConstants,
+	CloudConstants,
 	WindowsHelper;
 
 type

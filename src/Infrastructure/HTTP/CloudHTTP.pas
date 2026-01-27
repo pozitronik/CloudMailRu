@@ -17,7 +17,7 @@ uses
 	TCProgress,
 	SettingsConstants,
 	WFXTypes,
-	CMRConstants,
+	CloudConstants,
 	LanguageStrings,
 	ParsingHelper,
 	JSONHelper,

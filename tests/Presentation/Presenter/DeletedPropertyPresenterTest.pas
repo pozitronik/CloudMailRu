@@ -5,9 +5,9 @@ interface
 uses
 	DUnitX.TestFramework,
 	DeletedPropertyPresenter,
-	CMRDirItemList,
-	CMRDirItem,
-	CMRConstants,
+	CloudDirItemList,
+	CloudDirItem,
+	CloudConstants,
 	SettingsConstants,
 	LanguageStrings,
 	StringHelper,
@@ -46,7 +46,7 @@ type
 		FMockView: TMockDeletedPropertyView;
 		FPresenter: TDeletedPropertyPresenter;
 
-		function CreateTestItem(AName: WideString; ASize: Int64; ADeletedFrom: WideString = '/original/path'): TCMRDirItem;
+		function CreateTestItem(AName: WideString; ASize: Int64; ADeletedFrom: WideString = '/original/path'): TCloudDirItem;
 	public
 		[Setup]
 		procedure Setup;
@@ -156,7 +156,7 @@ end;
 
 {TDeletedPropertyPresenterTest}
 
-function TDeletedPropertyPresenterTest.CreateTestItem(AName: WideString; ASize: Int64; ADeletedFrom: WideString): TCMRDirItem;
+function TDeletedPropertyPresenterTest.CreateTestItem(AName: WideString; ASize: Int64; ADeletedFrom: WideString): TCloudDirItem;
 begin
 	FillChar(Result, SizeOf(Result), 0);
 	Result.name := AName;
@@ -180,7 +180,7 @@ end;
 
 procedure TDeletedPropertyPresenterTest.Initialize_EmptyItems_SetsNameToEmpty;
 var
-	Items: TCMRDirItemList;
+	Items: TCloudDirItemList;
 begin
 	SetLength(Items, 0);
 
@@ -191,7 +191,7 @@ end;
 
 procedure TDeletedPropertyPresenterTest.Initialize_EmptyItems_SetsCaptionWithAccountName;
 var
-	Items: TCMRDirItemList;
+	Items: TCloudDirItemList;
 begin
 	SetLength(Items, 0);
 
@@ -202,7 +202,7 @@ end;
 
 procedure TDeletedPropertyPresenterTest.Initialize_EmptyItems_DisablesAllButtons;
 var
-	Items: TCMRDirItemList;
+	Items: TCloudDirItemList;
 begin
 	SetLength(Items, 0);
 
@@ -215,7 +215,7 @@ end;
 
 procedure TDeletedPropertyPresenterTest.Initialize_SingleItem_SetsNameFromItem;
 var
-	Items: TCMRDirItemList;
+	Items: TCloudDirItemList;
 begin
 	SetLength(Items, 1);
 	Items[0] := CreateTestItem('DeletedFile.txt', 1024);
@@ -227,7 +227,7 @@ end;
 
 procedure TDeletedPropertyPresenterTest.Initialize_SingleItem_SetsDeletedFromPath;
 var
-	Items: TCMRDirItemList;
+	Items: TCloudDirItemList;
 begin
 	SetLength(Items, 1);
 	Items[0] := CreateTestItem('DeletedFile.txt', 1024, '/original/folder');
@@ -239,7 +239,7 @@ end;
 
 procedure TDeletedPropertyPresenterTest.Initialize_SingleItem_SetsFormattedSize;
 var
-	Items: TCMRDirItemList;
+	Items: TCloudDirItemList;
 begin
 	SetLength(Items, 1);
 	Items[0] := CreateTestItem('DeletedFile.txt', 1024 * 1024);
@@ -251,7 +251,7 @@ end;
 
 procedure TDeletedPropertyPresenterTest.Initialize_SingleItem_SetsCaptionWithItemName;
 var
-	Items: TCMRDirItemList;
+	Items: TCloudDirItemList;
 begin
 	SetLength(Items, 1);
 	Items[0] := CreateTestItem('DeletedFile.txt', 1024);
@@ -263,7 +263,7 @@ end;
 
 procedure TDeletedPropertyPresenterTest.Initialize_SingleItem_DisablesRestoreAll;
 var
-	Items: TCMRDirItemList;
+	Items: TCloudDirItemList;
 begin
 	SetLength(Items, 1);
 	Items[0] := CreateTestItem('DeletedFile.txt', 1024);
@@ -275,7 +275,7 @@ end;
 
 procedure TDeletedPropertyPresenterTest.Initialize_MultipleItems_SetsNameToMultiple;
 var
-	Items: TCMRDirItemList;
+	Items: TCloudDirItemList;
 begin
 	SetLength(Items, 2);
 	Items[0] := CreateTestItem('File1.txt', 1024);
@@ -288,7 +288,7 @@ end;
 
 procedure TDeletedPropertyPresenterTest.Initialize_MultipleItems_CalculatesSummarySize;
 var
-	Items: TCMRDirItemList;
+	Items: TCloudDirItemList;
 begin
 	SetLength(Items, 2);
 	Items[0] := CreateTestItem('File1.txt', 1024);
@@ -301,7 +301,7 @@ end;
 
 procedure TDeletedPropertyPresenterTest.Initialize_MultipleItems_SetsUnsetValues;
 var
-	Items: TCMRDirItemList;
+	Items: TCloudDirItemList;
 begin
 	SetLength(Items, 2);
 	Items[0] := CreateTestItem('File1.txt', 1024);
@@ -316,7 +316,7 @@ end;
 
 procedure TDeletedPropertyPresenterTest.Initialize_TrashDir_SetsCaptionWithTrashPostfix;
 var
-	Items: TCMRDirItemList;
+	Items: TCloudDirItemList;
 begin
 	SetLength(Items, 1);
 	Items[0] := CreateTestItem('File.txt', 1024);
@@ -328,7 +328,7 @@ end;
 
 procedure TDeletedPropertyPresenterTest.Initialize_TrashDir_DisablesRestore;
 var
-	Items: TCMRDirItemList;
+	Items: TCloudDirItemList;
 begin
 	SetLength(Items, 1);
 	Items[0] := CreateTestItem('File.txt', 1024);
@@ -340,7 +340,7 @@ end;
 
 procedure TDeletedPropertyPresenterTest.Initialize_TrashDir_EnablesRestoreAll;
 var
-	Items: TCMRDirItemList;
+	Items: TCloudDirItemList;
 begin
 	SetLength(Items, 1);
 	Items[0] := CreateTestItem('File.txt', 1024);
@@ -352,7 +352,7 @@ end;
 
 procedure TDeletedPropertyPresenterTest.Items_Property_ReturnsInitializedItems;
 var
-	Items: TCMRDirItemList;
+	Items: TCloudDirItemList;
 begin
 	SetLength(Items, 1);
 	Items[0] := CreateTestItem('File.txt', 1024);
@@ -365,7 +365,7 @@ end;
 
 procedure TDeletedPropertyPresenterTest.IsTrashDir_Property_ReturnsInitializedValue;
 var
-	Items: TCMRDirItemList;
+	Items: TCloudDirItemList;
 begin
 	SetLength(Items, 1);
 	Items[0] := CreateTestItem('File.txt', 1024);
@@ -377,7 +377,7 @@ end;
 
 procedure TDeletedPropertyPresenterTest.AccountName_Property_ReturnsInitializedValue;
 var
-	Items: TCMRDirItemList;
+	Items: TCloudDirItemList;
 begin
 	SetLength(Items, 0);
 

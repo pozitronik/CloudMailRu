@@ -22,32 +22,32 @@ implementation
 
 uses
 	SysUtils,
-	CMRConstants,
-	CMROAuth,
-	CMROAuthJsonAdapter,
+	CloudConstants,
+	CloudOAuth,
+	CloudOAuthJsonAdapter,
 	WFXTypes,
 	LanguageStrings;
 
 {Helper function to get OAuth token - extracted from CloudMailRu.pas}
-function GetOAuthToken(HTTP: ICloudHTTP; const Email, Password: WideString; out OAuthToken: TCMROAuth): Boolean;
+function GetOAuthToken(HTTP: ICloudHTTP; const Email, Password: WideString; out OAuthToken: TCloudOAuth): Boolean;
 var
 	Answer: WideString;
 	PostData: WideString;
 begin
-	OAuthToken := Default (TCMROAuth);
+	OAuthToken := Default (TCloudOAuth);
 
 	PostData := Format('client_id=%s&grant_type=password&username=%s&password=%s', [OAUTH_CLIENT_ID, Email, Password]);
 
 	Result := HTTP.PostForm(OAUTH_TOKEN_URL, PostData, Answer);
 	if Result then
-		Result := TCMROAuthJsonAdapter.Parse(Answer, OAuthToken);
+		Result := TCloudOAuthJsonAdapter.Parse(Answer, OAuthToken);
 end;
 
 {TOldOAuthStrategy}
 
 function TOldOAuthStrategy.Authenticate(const Credentials: TAuthCredentials; HTTP: ICloudHTTP; Logger: ILogger): TAuthResult;
 var
-	OAuthToken: TCMROAuth;
+	OAuthToken: TCloudOAuth;
 begin
 	Result := TAuthResult.CreateFailure('Old OAuth authentication failed');
 

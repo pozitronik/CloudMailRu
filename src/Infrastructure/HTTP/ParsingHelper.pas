@@ -3,7 +3,7 @@
 interface
 
 uses
-	CMRConstants,
+	CloudConstants,
 	System.SysUtils,
 	System.StrUtils,
 	System.Math;
