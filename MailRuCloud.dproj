@@ -285,7 +285,7 @@
         <DCCReference Include="src\Presentation\Icon\IconProvider.pas"/>
         <DCCReference Include="src\Application\Operation\OperationLifecycleHandler.pas"/>
         <DCCReference Include="src\Application\Description\DescriptionSyncManager.pas"/>
-        <DCCReference Include="src\Domain\Services\CloudAccessUtils.pas"/>
+        <DCCReference Include="src\Domain\Services\CloudAccessMapper.pas"/>
         <DCCReference Include="src\Infrastructure\Adapter\CloudDescriptionOperationsAdapter.pas"/>
         <DCCReference Include="src\Infrastructure\Adapter\CMRDirItemJsonAdapter.pas"/>
         <DCCReference Include="src\Infrastructure\Adapter\CMRDirItemListJsonAdapter.pas"/>

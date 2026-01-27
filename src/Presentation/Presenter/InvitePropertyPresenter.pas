@@ -1,15 +1,15 @@
 unit InvitePropertyPresenter;
 
 {Presenter for InviteProperty dialog - handles display logic for incoming invites.
- Follows MVP pattern: View (TInvitePropertyForm) implements IInvitePropertyView,
- Presenter orchestrates display, Model is TCMRIncomingInvite record.}
+	Follows MVP pattern: View (TInvitePropertyForm) implements IInvitePropertyView,
+	Presenter orchestrates display, Model is TCMRIncomingInvite record.}
 
 interface
 
 uses
 	CMRIncomingInvite,
 	CMRConstants,
-	CloudAccessUtils,
+	CloudAccessMapper,
 	StringHelper,
 	LanguageStrings,
 	System.SysUtils;
@@ -62,7 +62,7 @@ const
 	{Default label for invite token - matches DFM default value}
 	INVITE_TOKEN_LABEL = 'Invite token:';
 
-{TInvitePropertyPresenter}
+	{TInvitePropertyPresenter}
 
 constructor TInvitePropertyPresenter.Create(View: IInvitePropertyView);
 begin
@@ -76,12 +76,12 @@ begin
 	FAccountName := AccountName;
 
 	{Set item properties}
-	FView.SetItemName(Item.name);
-	FView.SetOwnerEmail(Item.owner.email);
-	FView.SetOwnerName(Item.owner.name);
-	FView.SetAccess(TCloudAccessUtils.AccessToString(Item.access));
-	FView.SetSize(FormatSize(Item.size, TYPE_BYTES));
-	FView.SetCaption(Format(INVITE_FORM_TITLE, [AccountName, Item.name]));
+	FView.SetItemName(Item.Name);
+	FView.SetOwnerEmail(Item.owner.Email);
+	FView.SetOwnerName(Item.owner.Name);
+	FView.SetAccess(TCloudAccessMapper.AccessToString(Item.Access));
+	FView.SetSize(FormatSize(Item.Size, TYPE_BYTES));
+	FView.SetCaption(Format(INVITE_FORM_TITLE, [AccountName, Item.Name]));
 
 	{Configure view based on mount state}
 	if Item.isMounted then
@@ -93,9 +93,7 @@ begin
 		FView.SetMountEnabled(True);
 		FView.SetUnmountCopyEnabled(True);
 		FView.SetUnmountDeleteEnabled(True);
-	end
-	else
-	begin
+	end else begin
 		{Not mounted: show invite token, disable unmount buttons}
 		FView.SetTokenLabel(INVITE_TOKEN_LABEL);
 		FView.SetTokenValue(Item.invite_token);

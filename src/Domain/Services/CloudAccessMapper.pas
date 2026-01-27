@@ -1,8 +1,8 @@
-unit CloudAccessUtils;
+unit CloudAccessMapper;
 
 {Utility functions for converting between cloud access level representations.
- Handles conversion between API constants (read_only/read_write), human-readable
- strings (read only/read and write), and integer access codes (CLOUD_SHARE_RO/RW).}
+	Handles conversion between API constants (read_only/read_write), human-readable
+	strings (read only/read and write), and integer access codes (CLOUD_SHARE_RO/RW).}
 
 interface
 
@@ -10,22 +10,22 @@ uses
 	CMRConstants;
 
 type
-	TCloudAccessUtils = class
+	TCloudAccessMapper = class
 	public
 		{Converts access level to human-readable string.
-		 Accepts both API constants (read_only) and human strings (read only).
-		 Invert=True swaps read-only <-> read-write before converting.}
+			Accepts both API constants (read_only) and human strings (read only).
+			Invert=True swaps read-only <-> read-write before converting.}
 		class function AccessToString(Access: WideString; Invert: Boolean = False): WideString; static;
 
 		{Converts access string to integer access code (CLOUD_SHARE_RO/RW).
-		 Accepts both API constants (read_only) and human strings (read only).
-		 Invert=True swaps read-only <-> read-write before converting.}
+			Accepts both API constants (read_only) and human strings (read only).
+			Invert=True swaps read-only <-> read-write before converting.}
 		class function StringToAccess(AccessString: WideString; Invert: Boolean = False): Integer; static;
 	end;
 
 implementation
 
-class function TCloudAccessUtils.AccessToString(Access: WideString; Invert: Boolean): WideString;
+class function TCloudAccessMapper.AccessToString(Access: WideString; Invert: Boolean): WideString;
 begin
 	{Normalize human-readable input to API constants}
 	if Access = 'read only' then
@@ -49,7 +49,7 @@ begin
 		Result := 'read and write';
 end;
 
-class function TCloudAccessUtils.StringToAccess(AccessString: WideString; Invert: Boolean): Integer;
+class function TCloudAccessMapper.StringToAccess(AccessString: WideString; Invert: Boolean): Integer;
 begin
 	{Normalize human-readable input to API constants}
 	if AccessString = 'read only' then

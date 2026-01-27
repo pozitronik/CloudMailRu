@@ -26,7 +26,7 @@ uses
 	Vcl.StdCtrls,
 	CloudMailRu,
 	CloudMailRuFactory,
-	CloudAccessUtils,
+	CloudAccessMapper,
 	WindowsHelper,
 	TCHandler,
 	SystemHelper,
@@ -478,7 +478,7 @@ begin
 	end;
 
 	Access := GetSelectedInviteAccess;
-	Access := TCloudAccessUtils.AccessToString(Access, true);
+	Access := TCloudAccessMapper.AccessToString(Access, true);
 	ItemChangeAccess.Caption := Format(PREFIX_ACCESS_CHANGE, [Access]);
 end;
 

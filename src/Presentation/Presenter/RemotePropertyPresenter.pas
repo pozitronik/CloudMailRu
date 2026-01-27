@@ -19,7 +19,7 @@ uses
 	CloudFileOperations,
 	CloudListingService,
 	CloudShareService,
-	CloudAccessUtils,
+	CloudAccessMapper,
 	Description,
 	HashInfo,
 	WindowsFileSystem,
@@ -311,7 +311,7 @@ begin
 	if FShareService.GetShareInfo(FProps.home, FInvitesListing) then
 	begin
 		for i := 0 to Length(FInvitesListing) - 1 do
-			FView.AddInvite(FInvitesListing[i].Email, TCloudAccessUtils.AccessToString(FInvitesListing[i].Access));
+			FView.AddInvite(FInvitesListing[i].Email, TCloudAccessMapper.AccessToString(FInvitesListing[i].Access));
 	end
 	else
 		FView.ShowError(PREFIX_ERR_INVITES_LISTING, Format(ERR_LIST_INVITES_MSG, [FProps.home]));
@@ -356,7 +356,7 @@ begin
 
 	CurrentAccessStr := FView.GetSelectedInviteAccess;
 	{Toggle access: get opposite access level}
-	NewAccess := TCloudAccessUtils.StringToAccess(CurrentAccessStr, True);
+	NewAccess := TCloudAccessMapper.StringToAccess(CurrentAccessStr, True);
 
 	if FShareService.Share(FProps.home, Email, NewAccess) then
 		RefreshInvites

@@ -99,7 +99,7 @@ uses
 	IconProvider in 'src\Presentation\Icon\IconProvider.pas',
 	OperationLifecycleHandler in 'src\Application\Operation\OperationLifecycleHandler.pas',
 	DescriptionSyncManager in 'src\Application\Description\DescriptionSyncManager.pas',
-	CloudAccessUtils in 'src\Domain\Services\CloudAccessUtils.pas',
+	CloudAccessMapper in 'src\Domain\Services\CloudAccessMapper.pas',
 	CloudDescriptionOperationsAdapter in 'src\Infrastructure\Adapter\CloudDescriptionOperationsAdapter.pas',
 	CMRDirItemJsonAdapter in 'src\Infrastructure\Adapter\CMRDirItemJsonAdapter.pas',
 	CMRDirItemListJsonAdapter in 'src\Infrastructure\Adapter\CMRDirItemListJsonAdapter.pas',
