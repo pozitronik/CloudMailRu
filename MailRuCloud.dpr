@@ -83,7 +83,7 @@ uses
 	WindowsHelper in 'src\Infrastructure\OS\WindowsHelper.pas',
 	MailRuCloudWFX in 'src\MailRuCloudWFX.pas',
 	WFXInterface in 'src\WFXInterface.pas',
-	PasswordUIProvider in 'src\Infrastructure\UI\PasswordUIProvider.pas',
+	PasswordUIProvider in 'src\Infrastructure\Password\PasswordUIProvider.pas',
 	CipherValidator in 'src\Infrastructure\Cipher\CipherValidator.pas',
 	WindowsFileSystem in 'src\Infrastructure\FileSystem\WindowsFileSystem.pas',
 	IniConfigFile in 'src\Infrastructure\Config\IniConfigFile.pas',

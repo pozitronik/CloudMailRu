@@ -1,7 +1,6 @@
 unit PasswordUIProvider;
 
-{Abstraction for password UI dialogs, enabling testability of ConnectionManager
-	without requiring actual GUI forms.}
+{Abstraction for password UI dialogs, enabling testability of ConnectionManager without requiring actual GUI forms.}
 
 interface
 

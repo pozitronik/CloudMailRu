@@ -269,7 +269,7 @@
         <DCCReference Include="src\Infrastructure\OS\WindowsHelper.pas"/>
         <DCCReference Include="src\MailRuCloudWFX.pas"/>
         <DCCReference Include="src\WFXInterface.pas"/>
-        <DCCReference Include="src\Infrastructure\UI\PasswordUIProvider.pas"/>
+        <DCCReference Include="src\Infrastructure\Password\PasswordUIProvider.pas"/>
         <DCCReference Include="src\Infrastructure\Cipher\CipherValidator.pas"/>
         <DCCReference Include="src\Infrastructure\FileSystem\WindowsFileSystem.pas"/>
         <DCCReference Include="src\Infrastructure\Config\IniConfigFile.pas"/>
