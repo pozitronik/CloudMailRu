@@ -257,11 +257,9 @@ begin
 	Assert.IsTrue(TCloudIncomingInviteListJsonAdapter.Parse(JSON_NULL_OWNER_VALUES, List));
 	Assert.AreEqual(Integer(1), Integer(Length(List)));
 
-	{CURRENT BEHAVIOR: Null values return literal "null" string
-	 EXPECTED BEHAVIOR: Should return empty string
-	 TODO: Fix in TSafeJSON implementation}
-	Assert.AreEqual('null', List[0].owner.email);
-	Assert.AreEqual('null', List[0].owner.name);
+	{TSafeJSON correctly returns empty string for null JSON values}
+	Assert.AreEqual('', List[0].owner.email);
+	Assert.AreEqual('', List[0].owner.name);
 end;
 
 procedure TCloudIncomingInviteListJsonAdapterTest.TestParse_UnicodeOwner_ParsedCorrectly;

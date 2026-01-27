@@ -17,38 +17,32 @@ type
 implementation
 
 uses
-	SysUtils,
 	CloudConstants,
-	JSONHelper,
-	JSON;
+	SafeJSON;
 
 class function TCloudSpaceJsonAdapter.Parse(const JSON: WideString; out Space: TCloudSpace): Boolean;
 var
-	ParserObj, JSONVal: TJSONObject;
+	Root, Body: TSafeJSON;
 begin
-	{Initialize with safe defaults}
-	Space.overquota := False;
-	Space.total := 0;
-	Space.used := 0;
-
+	Space := Default(TCloudSpace);
 	Result := False;
-	JSONVal := nil;
+
+	Root := TSafeJSON.Parse(JSON);
 	try
-		try
-			if not init(JSON, JSONVal) then
-				Exit;
-			ParserObj := JSONVal.Values[NAME_BODY] as TJSONObject;
-
-			assignFromName(NAME_OVERQUOTA, ParserObj, Space.overquota);
-			assignFromName(NAME_TOTAL, ParserObj, Space.total);
-			assignFromName(NAME_USED, ParserObj, Space.used);
-
-			Result := True;
-		except
+		if Root.IsNull then
 			Exit;
-		end;
+
+		Body := Root.Get(NAME_BODY);
+		if Body.IsNull then
+			Exit;
+
+		Space.overquota := Body.Get(NAME_OVERQUOTA).AsBool;
+		Space.total := Body.Get(NAME_TOTAL).AsInt64;
+		Space.used := Body.Get(NAME_USED).AsInt64;
+
+		Result := True;
 	finally
-		JSONVal.Free;
+		Root.Free;
 	end;
 end;
 

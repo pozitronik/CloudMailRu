@@ -274,11 +274,9 @@ var
 begin
 	Assert.IsTrue(TCloudDirItemJsonAdapter.Parse(JSON_FILE_NULL_FIELDS, Item));
 
-	{CURRENT BEHAVIOR: Null fields return literal "null" string
-	 EXPECTED BEHAVIOR: Should return empty string
-	 TODO: Fix in TSafeJSON implementation}
-	Assert.AreEqual(WideString('null'), Item.weblink);
-	Assert.AreEqual(WideString('null'), Item.hash);
+	{TSafeJSON correctly returns empty string for null JSON values}
+	Assert.AreEqual(WideString(''), Item.weblink);
+	Assert.AreEqual(WideString(''), Item.hash);
 end;
 
 initialization

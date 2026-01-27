@@ -17,72 +17,54 @@ type
 implementation
 
 uses
-	SysUtils,
 	CloudConstants,
-	JSONHelper,
-	JSON;
+	SafeJSON;
 
 class function TCloudTwostepJsonAdapter.Parse(const JSON: WideString; out Twostep: TCloudTwostep): Boolean;
 var
-	ParserObj, JSONVal: TJSONObject;
+	Root, TimeoutNode: TSafeJSON;
+	TimeoutStr: WideString;
 begin
-	{Initialize with safe defaults}
-	Twostep.form_name := '';
-	Twostep.auth_host := '';
-	Twostep.secstep_phone := '';
-	Twostep.secstep_page := '';
-	Twostep.secstep_code_fail := '';
-	Twostep.secstep_resend_fail := '';
-	Twostep.secstep_resend_success := '';
-	Twostep.secstep_timeout := 0;
-	Twostep.secstep_login := '';
-	Twostep.secstep_disposable_fail := '';
-	Twostep.secstep_smsapi_error := '';
-	Twostep.secstep_captcha := '';
-	Twostep.totp_enabled := '';
-	Twostep.locale := '';
-	Twostep.client := '';
-	Twostep.csrf := '';
-	Twostep.device := '';
-
+	Twostep := Default(TCloudTwostep);
 	Result := False;
-	JSONVal := nil;
+
+	Root := TSafeJSON.Parse(JSON);
 	try
-		try
-			if not init(JSON, JSONVal) then
-				Exit;
-			ParserObj := JSONVal as TJSONObject;
-
-			assignFromName(NAME_FORM_NAME, ParserObj, Twostep.form_name);
-			assignFromName(NAME_AUTH_HOST, ParserObj, Twostep.auth_host);
-			assignFromName(NAME_SECSTEP_PHONE, ParserObj, Twostep.secstep_phone);
-			assignFromName(NAME_SECSTEP_PAGE, ParserObj, Twostep.secstep_page);
-			assignFromName(NAME_SECSTEP_CODE_FAIL, ParserObj, Twostep.secstep_code_fail);
-			assignFromName(NAME_SECSTEP_RESEND_FAIL, ParserObj, Twostep.secstep_resend_fail);
-			assignFromName(NAME_SECSTEP_RESEND_SUCCESS, ParserObj, Twostep.secstep_resend_success);
-			if Assigned(ParserObj.Values[NAME_SECSTEP_TIMEOUT]) then
-			begin
-				if ParserObj.Values[NAME_SECSTEP_TIMEOUT].Value <> '' then
-					Twostep.secstep_timeout := ParserObj.Values[NAME_SECSTEP_TIMEOUT].Value.ToInt64
-				else
-					Twostep.secstep_timeout := AUTH_APP_USED;
-			end;
-			assignFromName(NAME_SECSTEP_LOGIN, ParserObj, Twostep.secstep_login);
-			assignFromName(NAME_SECSTEP_DISPOSABLE_FAIL, ParserObj, Twostep.secstep_disposable_fail);
-			assignFromName(NAME_SECSTEP_SMSAPI_ERROR, ParserObj, Twostep.secstep_smsapi_error);
-			assignFromName(NAME_SECSTEP_CAPTCHA, ParserObj, Twostep.secstep_captcha);
-			assignFromName(NAME_TOTP_ENABLED, ParserObj, Twostep.totp_enabled);
-			assignFromName(NAME_LOCALE, ParserObj, Twostep.locale);
-			assignFromName(NAME_CLIENT, ParserObj, Twostep.client);
-			assignFromName(NAME_CSRF, ParserObj, Twostep.csrf);
-			assignFromName(NAME_DEVICE, ParserObj, Twostep.device);
-
-			Result := True;
-		except
+		if Root.IsNull then
 			Exit;
+
+		Twostep.form_name := Root.Get(NAME_FORM_NAME).AsString;
+		Twostep.auth_host := Root.Get(NAME_AUTH_HOST).AsString;
+		Twostep.secstep_phone := Root.Get(NAME_SECSTEP_PHONE).AsString;
+		Twostep.secstep_page := Root.Get(NAME_SECSTEP_PAGE).AsString;
+		Twostep.secstep_code_fail := Root.Get(NAME_SECSTEP_CODE_FAIL).AsString;
+		Twostep.secstep_resend_fail := Root.Get(NAME_SECSTEP_RESEND_FAIL).AsString;
+		Twostep.secstep_resend_success := Root.Get(NAME_SECSTEP_RESEND_SUCCESS).AsString;
+
+		{Special handling: empty timeout string means auth app is used}
+		TimeoutNode := Root.Get(NAME_SECSTEP_TIMEOUT);
+		if not TimeoutNode.IsNull then
+		begin
+			TimeoutStr := TimeoutNode.AsString;
+			if TimeoutStr = '' then
+				Twostep.secstep_timeout := AUTH_APP_USED
+			else
+				Twostep.secstep_timeout := TimeoutNode.AsInt64;
 		end;
+
+		Twostep.secstep_login := Root.Get(NAME_SECSTEP_LOGIN).AsString;
+		Twostep.secstep_disposable_fail := Root.Get(NAME_SECSTEP_DISPOSABLE_FAIL).AsString;
+		Twostep.secstep_smsapi_error := Root.Get(NAME_SECSTEP_SMSAPI_ERROR).AsString;
+		Twostep.secstep_captcha := Root.Get(NAME_SECSTEP_CAPTCHA).AsString;
+		Twostep.totp_enabled := Root.Get(NAME_TOTP_ENABLED).AsString;
+		Twostep.locale := Root.Get(NAME_LOCALE).AsString;
+		Twostep.client := Root.Get(NAME_CLIENT).AsString;
+		Twostep.csrf := Root.Get(NAME_CSRF).AsString;
+		Twostep.device := Root.Get(NAME_DEVICE).AsString;
+
+		Result := True;
 	finally
-		JSONVal.Free;
+		Root.Free;
 	end;
 end;
 

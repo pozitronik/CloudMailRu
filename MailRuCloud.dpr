@@ -54,6 +54,7 @@ uses
 	InviteProperty in 'src\Presentation\UI\Forms\InviteProperty.pas' {InvitePropertyForm} ,
 	JSON,
 	JSONHelper in 'src\Infrastructure\HTTP\JSONHelper.pas',
+	SafeJSON in 'src\Infrastructure\HTTP\SafeJSON.pas',
 	Messages,
 	WFXTypes in 'src\Infrastructure\Protocol\WFXTypes.pas',
 	ParsingHelper in 'src\Infrastructure\HTTP\ParsingHelper.pas',

@@ -93,11 +93,11 @@ procedure TCloudOAuthTest.TestFromJSONInvalidJSON;
 var
 	OAuth: TCloudOAuth;
 begin
-	{ Invalid JSON should return false with initialized fields }
+	{ Invalid JSON should return false with error indicated }
 	Assert.IsFalse(TCloudOAuthJsonAdapter.Parse('not valid json', OAuth));
 
-	{ Fields are initialized to safe defaults }
-	Assert.AreEqual(0, OAuth.error_code);
+	{ error_code indicates parse failure }
+	Assert.AreEqual(CLOUD_ERROR_UNKNOWN, OAuth.error_code);
 	Assert.AreEqual(0, OAuth.expires_in);
 end;
 

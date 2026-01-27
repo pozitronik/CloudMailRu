@@ -17,44 +17,44 @@ type
 implementation
 
 uses
-	System.Generics.Collections,
-	SysUtils,
-	CloudInvite,
 	CloudConstants,
-	JSONHelper,
-	JSON;
+	SafeJSON;
 
 class function TCloudInviteListJsonAdapter.Parse(const JSON: WideString; var List: TCloudInviteList): Boolean;
 var
-	ParserObj, JSONVal: TJSONObject;
-	J: Integer;
-	A: TJSONArray;
+	Root, Invited, Item: TSafeJSON;
+	I: Integer;
 begin
 	Result := False;
 	SetLength(List, 0);
-	JSONVal := nil;
+
+	Root := TSafeJSON.Parse(JSON);
 	try
-		try
-			if not init(JSON, JSONVal) then
-				Exit;
-			A := (JSONVal.Values[NAME_BODY] as TJSONObject).Values[NAME_INVITED] as TJSONArray;
-			if not Assigned(A) then
-				Exit(True); {no invites}
-			SetLength(List, A.Count);
-			for J := 0 to A.Count - 1 do
-			begin
-				ParserObj := A.Items[J] as TJSONObject;
-				assignFromName(NAME_EMAIL, ParserObj, List[J].email);
-				assignFromName(NAME_STATUS, ParserObj, List[J].status);
-				assignFromName(NAME_ACCESS, ParserObj, List[J].access);
-				assignFromName(NAME_NAME, ParserObj, List[J].name);
-			end;
-			Result := True;
-		except
+		if Root.IsNull then
 			Exit;
+
+		Invited := Root.Get(NAME_BODY).Get(NAME_INVITED);
+
+		{No invites array is a valid state - return success with empty list}
+		if Invited.IsNull then
+			Exit(True);
+
+		if not Invited.IsArray then
+			Exit(True);
+
+		SetLength(List, Invited.Count);
+		for I := 0 to Invited.Count - 1 do
+		begin
+			Item := Invited.Item(I);
+			List[I].email := Item.Get(NAME_EMAIL).AsString;
+			List[I].status := Item.Get(NAME_STATUS).AsString;
+			List[I].access := Item.Get(NAME_ACCESS).AsString;
+			List[I].name := Item.Get(NAME_NAME).AsString;
 		end;
+
+		Result := True;
 	finally
-		JSONVal.Free;
+		Root.Free;
 	end;
 end;
 

@@ -22,58 +22,54 @@ implementation
 
 uses
 	CloudConstants,
-	JSONHelper,
-	JSON;
+	SafeJSON;
 
 class function TCloudDirItemJsonAdapter.Parse(const JSON: WideString; out Item: TCloudDirItem): Boolean;
 var
-	ParserObj, JSONVal, CountObj: TJSONObject;
-	TempFoldersCount, TempFilesCount: Integer;
+	Root, Body, CountNode: TSafeJSON;
 begin
 	Result := False;
-	JSONVal := nil;
 	Item := Default(TCloudDirItem);
+
+	Root := TSafeJSON.Parse(JSON);
 	try
-		try
-			if not init(JSON, JSONVal) then
-				Exit;
-			ParserObj := JSONVal.Values[NAME_BODY] as TJSONObject;
-
-			assignFromName(NAME_SIZE, ParserObj, Item.size);
-			assignFromName(NAME_KIND, ParserObj, Item.kind);
-			assignFromName(NAME_WEBLINK, ParserObj, Item.weblink);
-			assignFromName(NAME_TYPE, ParserObj, Item.type_);
-			assignFromName(NAME_HOME, ParserObj, Item.home);
-			assignFromName(NAME_NAME, ParserObj, Item.name);
-
-			if (Item.type_ = TYPE_FILE) then
-			begin
-				assignFromName(NAME_MTIME, ParserObj, Item.mtime);
-				assignFromName(NAME_VIRUS_SCAN, ParserObj, Item.virus_scan);
-				assignFromName(NAME_HASH, ParserObj, Item.hash);
-			end else begin
-				assignFromName(NAME_TREE, ParserObj, Item.tree);
-				assignFromName(NAME_GREV, ParserObj, Item.grev);
-				assignFromName(NAME_REV, ParserObj, Item.rev);
-				if Assigned(ParserObj.Values[NAME_COUNT]) then
-				begin
-					CountObj := ParserObj.Values[NAME_COUNT] as TJSONObject;
-					TempFoldersCount := 0;
-					TempFilesCount := 0;
-					assignFromName(NAME_FOLDERS, CountObj, TempFoldersCount);
-					assignFromName(NAME_FILES, CountObj, TempFilesCount);
-					Item.folders_count := TempFoldersCount;
-					Item.files_count := TempFilesCount;
-				end;
-				Item.mtime := 0;
-			end;
-
-			Result := True;
-		except
+		if Root.IsNull then
 			Exit;
+
+		Body := Root.Get(NAME_BODY);
+		if Body.IsNull then
+			Exit;
+
+		Item.size := Body.Get(NAME_SIZE).AsInt64;
+		Item.kind := Body.Get(NAME_KIND).AsString;
+		Item.weblink := Body.Get(NAME_WEBLINK).AsString;
+		Item.type_ := Body.Get(NAME_TYPE).AsString;
+		Item.home := Body.Get(NAME_HOME).AsString;
+		Item.name := Body.Get(NAME_NAME).AsString;
+
+		if Item.type_ = TYPE_FILE then
+		begin
+			Item.mtime := Body.Get(NAME_MTIME).AsInt64;
+			Item.virus_scan := Body.Get(NAME_VIRUS_SCAN).AsString;
+			Item.hash := Body.Get(NAME_HASH).AsString;
+		end
+		else
+		begin
+			Item.tree := Body.Get(NAME_TREE).AsString;
+			Item.grev := Body.Get(NAME_GREV).AsInt;
+			Item.rev := Body.Get(NAME_REV).AsInt;
+
+			{Parse nested count object - TSafeJSON handles missing gracefully}
+			CountNode := Body.Get(NAME_COUNT);
+			Item.folders_count := CountNode.Get(NAME_FOLDERS).AsInt;
+			Item.files_count := CountNode.Get(NAME_FILES).AsInt;
+
+			Item.mtime := 0;
 		end;
+
+		Result := True;
 	finally
-		JSONVal.Free;
+		Root.Free;
 	end;
 end;
 

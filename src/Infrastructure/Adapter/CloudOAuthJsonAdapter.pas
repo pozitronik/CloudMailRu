@@ -20,46 +20,35 @@ uses
 	SysUtils,
 	CloudConstants,
 	LanguageStrings,
-	JSONHelper,
-	JSON;
+	SafeJSON;
 
 class function TCloudOAuthJsonAdapter.Parse(const JSON: WideString; out OAuth: TCloudOAuth): Boolean;
 var
-	JSONVal: TJSONObject;
+	Root: TSafeJSON;
 begin
-	{Initialize with safe defaults}
-	OAuth.error := EmptyWideStr;
-	OAuth.error_code := 0;
-	OAuth.error_description := EmptyWideStr;
-	OAuth.expires_in := 0;
-	OAuth.refresh_token := EmptyWideStr;
-	OAuth.access_token := EmptyWideStr;
-
+	OAuth := Default(TCloudOAuth);
 	Result := False;
-	JSONVal := nil;
+
+	Root := TSafeJSON.Parse(JSON);
 	try
-		try
-			if not init(JSON, JSONVal) then
-				Exit;
-
-			assignFromName(NAME_ERROR, JSONVal, OAuth.error);
-			assignFromName(NAME_ERROR_CODE, JSONVal, OAuth.error_code);
-			assignFromName(NAME_ERROR_DESCRIPTION, JSONVal, OAuth.error_description);
-			assignFromName(NAME_EXPIRES_IN, JSONVal, OAuth.expires_in);
-			assignFromName(NAME_REFRESH_TOKEN, JSONVal, OAuth.refresh_token);
-			assignFromName(NAME_ACCESS_TOKEN, JSONVal, OAuth.access_token);
-
-			Result := True;
-		except
-			on E: Exception do
-			begin
-				OAuth.error_code := CLOUD_ERROR_UNKNOWN;
-				OAuth.error := ERR_PARSING_ANSWER;
-				OAuth.error_description := Format(ERR_JSON_PARSING, [JSON]);
-			end;
+		if Root.IsNull then
+		begin
+			OAuth.error_code := CLOUD_ERROR_UNKNOWN;
+			OAuth.error := ERR_PARSING_ANSWER;
+			OAuth.error_description := Format(ERR_JSON_PARSING, [JSON]);
+			Exit;
 		end;
+
+		OAuth.error := Root.Get(NAME_ERROR).AsString;
+		OAuth.error_code := Root.Get(NAME_ERROR_CODE).AsInt;
+		OAuth.error_description := Root.Get(NAME_ERROR_DESCRIPTION).AsString;
+		OAuth.expires_in := Root.Get(NAME_EXPIRES_IN).AsInt;
+		OAuth.refresh_token := Root.Get(NAME_REFRESH_TOKEN).AsString;
+		OAuth.access_token := Root.Get(NAME_ACCESS_TOKEN).AsString;
+
+		Result := True;
 	finally
-		JSONVal.Free;
+		Root.Free;
 	end;
 end;
 

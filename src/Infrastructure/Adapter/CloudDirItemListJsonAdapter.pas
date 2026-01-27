@@ -21,74 +21,69 @@ type
 implementation
 
 uses
-	System.Generics.Collections,
-	CloudDirItem,
 	CloudConstants,
-	JSONHelper,
-	JSON;
+	SafeJSON;
 
 class function TCloudDirItemListJsonAdapter.Parse(const JSON: WideString; var List: TCloudDirItemList): Boolean;
 var
-	J: Integer;
-	A: TJSONArray;
-	JSONVal: TJSONObject;
-	ParserObj: TJSONObject;
-	CountObj: TJSONObject;
-	TempFoldersCount, TempFilesCount: Integer;
+	Root, ListArray, Item, CountNode: TSafeJSON;
+	I: Integer;
 begin
 	Result := False;
 	SetLength(List, 0);
-	JSONVal := nil;
+
+	Root := TSafeJSON.Parse(JSON);
 	try
-		try
-			if not init(JSON, JSONVal) then
-				Exit;
-			A := (JSONVal.Values[NAME_BODY] as TJSONObject).Values[NAME_LIST] as TJSONArray;
-			SetLength(List, A.Count);
-			for J := 0 to A.Count - 1 do
-			begin
-				ParserObj := A.Items[J] as TJSONObject;
-
-				assignFromName(NAME_SIZE, ParserObj, List[J].size);
-				assignFromName(NAME_KIND, ParserObj, List[J].kind);
-				assignFromName(NAME_WEBLINK, ParserObj, List[J].weblink);
-				assignFromName(NAME_TYPE, ParserObj, List[J].type_);
-				assignFromName(NAME_HOME, ParserObj, List[J].home);
-				assignFromName(NAME_NAME, ParserObj, List[J].name);
-				List[J].visible_name := List[J].name;
-				assignFromName(NAME_DELETED_AT, ParserObj, List[J].deleted_at);
-				assignFromName(NAME_DELETED_FROM, ParserObj, List[J].deleted_from);
-				assignFromName(NAME_DELETED_BY, ParserObj, List[J].deleted_by);
-				assignFromName(NAME_GREV, ParserObj, List[J].grev);
-				assignFromName(NAME_REV, ParserObj, List[J].rev);
-
-				if (List[J].type_ = TYPE_FILE) then
-				begin
-					assignFromName(NAME_MTIME, ParserObj, List[J].mtime);
-					assignFromName(NAME_VIRUS_SCAN, ParserObj, List[J].virus_scan);
-					assignFromName(NAME_HASH, ParserObj, List[J].hash);
-				end else begin
-					assignFromName(NAME_TREE, ParserObj, List[J].tree);
-
-					if Assigned(ParserObj.Values[NAME_COUNT]) then
-					begin
-						CountObj := ParserObj.Values[NAME_COUNT] as TJSONObject;
-						TempFoldersCount := 0;
-						TempFilesCount := 0;
-						assignFromName(NAME_FOLDERS, CountObj, TempFoldersCount);
-						assignFromName(NAME_FILES, CountObj, TempFilesCount);
-						List[J].folders_count := TempFoldersCount;
-						List[J].files_count := TempFilesCount;
-					end;
-					List[J].mtime := 0;
-				end;
-			end;
-			Result := True;
-		except
+		if Root.IsNull then
 			Exit;
+
+		ListArray := Root.Get(NAME_BODY).Get(NAME_LIST);
+		if ListArray.IsNull or not ListArray.IsArray then
+			Exit;
+
+		SetLength(List, ListArray.Count);
+		for I := 0 to ListArray.Count - 1 do
+		begin
+			Item := ListArray.Item(I);
+
+			List[I].size := Item.Get(NAME_SIZE).AsInt64;
+			List[I].kind := Item.Get(NAME_KIND).AsString;
+			List[I].weblink := Item.Get(NAME_WEBLINK).AsString;
+			List[I].type_ := Item.Get(NAME_TYPE).AsString;
+			List[I].home := Item.Get(NAME_HOME).AsString;
+			List[I].name := Item.Get(NAME_NAME).AsString;
+			List[I].visible_name := List[I].name;
+
+			{Trash item fields}
+			List[I].deleted_at := Item.Get(NAME_DELETED_AT).AsInt;
+			List[I].deleted_from := Item.Get(NAME_DELETED_FROM).AsString;
+			List[I].deleted_by := Item.Get(NAME_DELETED_BY).AsInt;
+
+			List[I].grev := Item.Get(NAME_GREV).AsInt;
+			List[I].rev := Item.Get(NAME_REV).AsInt;
+
+			if List[I].type_ = TYPE_FILE then
+			begin
+				List[I].mtime := Item.Get(NAME_MTIME).AsInt64;
+				List[I].virus_scan := Item.Get(NAME_VIRUS_SCAN).AsString;
+				List[I].hash := Item.Get(NAME_HASH).AsString;
+			end
+			else
+			begin
+				List[I].tree := Item.Get(NAME_TREE).AsString;
+
+				{Parse nested count object - TSafeJSON handles missing gracefully}
+				CountNode := Item.Get(NAME_COUNT);
+				List[I].folders_count := CountNode.Get(NAME_FOLDERS).AsInt;
+				List[I].files_count := CountNode.Get(NAME_FILES).AsInt;
+
+				List[I].mtime := 0;
+			end;
 		end;
+
+		Result := True;
 	finally
-		JSONVal.Free;
+		Root.Free;
 	end;
 end;
 

@@ -17,58 +17,49 @@ type
 implementation
 
 uses
-	System.Generics.Collections,
-	SysUtils,
-	CloudIncomingInvite,
 	CloudConstants,
-	JSONHelper,
-	JSON;
+	SafeJSON;
 
 class function TCloudIncomingInviteListJsonAdapter.Parse(const JSON: WideString; var List: TCloudIncomingInviteList): Boolean;
 var
-	JSONVal: TJSONObject;
-	OwnerObj: TJSONObject;
-	ParserObj: TJSONObject;
-	J: Integer;
-	A: TJSONArray;
+	Root, ListArray, Item, Owner: TSafeJSON;
+	I: Integer;
 begin
 	Result := False;
 	SetLength(List, 0);
-	JSONVal := nil;
+
+	Root := TSafeJSON.Parse(JSON);
 	try
-		try
-			if not init(JSON, JSONVal) then
-				Exit;
-			A := (JSONVal.Values[NAME_BODY] as TJSONObject).Values[NAME_LIST] as TJSONArray;
-			if not Assigned(A) then
-				Exit; {no invites}
-			SetLength(List, A.Count);
-			for J := 0 to A.Count - 1 do
-			begin
-				ParserObj := A.Items[J] as TJSONObject;
-
-				if Assigned(ParserObj.Values[NAME_OWNER]) then
-				begin
-					OwnerObj := ParserObj.Values[NAME_OWNER] as TJSONObject;
-					if Assigned(OwnerObj.Values[NAME_EMAIL]) then
-						List[J].owner.email := OwnerObj.Values[NAME_EMAIL].Value;
-					if Assigned(OwnerObj.Values[NAME_NAME]) then
-						List[J].owner.name := OwnerObj.Values[NAME_NAME].Value;
-				end;
-
-				assignFromName(NAME_TREE, ParserObj, List[J].tree);
-				assignFromName(NAME_ACCESS, ParserObj, List[J].access);
-				assignFromName(NAME_NAME, ParserObj, List[J].name);
-				assignFromName(NAME_HOME, ParserObj, List[J].home);
-				assignFromName(NAME_SIZE, ParserObj, List[J].size);
-				assignFromName(NAME_INVITE_TOKEN, ParserObj, List[J].invite_token);
-			end;
-			Result := True;
-		except
+		if Root.IsNull then
 			Exit;
+
+		ListArray := Root.Get(NAME_BODY).Get(NAME_LIST);
+
+		{No list array means failure for incoming invites}
+		if ListArray.IsNull or not ListArray.IsArray then
+			Exit;
+
+		SetLength(List, ListArray.Count);
+		for I := 0 to ListArray.Count - 1 do
+		begin
+			Item := ListArray.Item(I);
+
+			{Parse nested owner object - TSafeJSON handles missing/null gracefully}
+			Owner := Item.Get(NAME_OWNER);
+			List[I].owner.email := Owner.Get(NAME_EMAIL).AsString;
+			List[I].owner.name := Owner.Get(NAME_NAME).AsString;
+
+			List[I].tree := Item.Get(NAME_TREE).AsString;
+			List[I].access := Item.Get(NAME_ACCESS).AsString;
+			List[I].name := Item.Get(NAME_NAME).AsString;
+			List[I].home := Item.Get(NAME_HOME).AsString;
+			List[I].size := Item.Get(NAME_SIZE).AsInt64;
+			List[I].invite_token := Item.Get(NAME_INVITE_TOKEN).AsString;
 		end;
+
+		Result := True;
 	finally
-		JSONVal.Free;
+		Root.Free;
 	end;
 end;
 

@@ -243,6 +243,7 @@
             <Form>InvitePropertyForm</Form>
         </DCCReference>
         <DCCReference Include="src\Infrastructure\HTTP\JSONHelper.pas"/>
+        <DCCReference Include="src\Infrastructure\HTTP\SafeJSON.pas"/>
         <DCCReference Include="src\Infrastructure\Protocol\WFXTypes.pas"/>
         <DCCReference Include="src\Infrastructure\HTTP\ParsingHelper.pas"/>
         <DCCReference Include="src\Infrastructure\IO\PathHelper.pas"/>

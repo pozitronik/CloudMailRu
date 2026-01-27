@@ -145,8 +145,8 @@ var
 begin
 	TCloudOAuthJsonAdapter.Parse(JSON_INVALID, OAuth);
 
-	{On parse error, fields are initialized to safe defaults}
-	Assert.AreEqual(0, OAuth.error_code);
+	{On parse error, error_code is set to indicate failure}
+	Assert.AreEqual(CLOUD_ERROR_UNKNOWN, OAuth.error_code);
 	Assert.AreEqual(0, OAuth.expires_in);
 	Assert.AreEqual('', OAuth.access_token);
 end;
