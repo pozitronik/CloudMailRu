@@ -131,7 +131,7 @@ begin
 			if Result then
 			begin
 				Result := TCloudDirItemListJsonAdapter.Parse(JSON, Listing);
-				if Result and FDoCryptFilenames and Assigned(FCipher) then
+				if Result and FDoCryptFilenames then
 					FCipher.DecryptDirListing(Listing);
 			end else if OperationResult.OperationResult = CLOUD_ERROR_NOT_EXISTS then
 				FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, '%s%s', [PREFIX_ERR_PATH_NOT_EXISTS, Path]);
@@ -157,7 +157,7 @@ begin
 				if Success then
 				begin
 					Success := TCloudDirItemListJsonAdapter.Parse(JSON, LocalListing);
-					if Success and FDoCryptFilenames and Assigned(FCipher) then
+					if Success and FDoCryptFilenames then
 						FCipher.DecryptDirListing(LocalListing);
 				end else if OperationResult.OperationResult = CLOUD_ERROR_NOT_EXISTS then
 					FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, '%s%s', [PREFIX_ERR_PATH_NOT_EXISTS, Path]);

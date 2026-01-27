@@ -132,7 +132,7 @@ begin
 
 	FService := TCloudListingService.Create(
 		GetHTTP,
-		nil, {No cipher for basic tests}
+		TNullCipher.Create,
 		TNullLogger.Create,
 		FRetryOperation,
 		IsPublicAccount,
