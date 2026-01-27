@@ -507,8 +507,8 @@ begin
 	ChunksToUpload := SplitFileInfo.ChunksCount;
 	Result := True;
 
-	{Skip check if callback not available or public account}
-	if (not Assigned(FGetUserSpace)) or FIsPublicAccount() then
+	{Skip check for public accounts - they don't have quota}
+	if FIsPublicAccount() then
 		Exit;
 
 	{Get available space}
