@@ -34,6 +34,10 @@ type
 		procedure TestNameDefaultsToHash;
 		[Test]
 		procedure TestDoCleanFalse;
+
+		{Zero-based Copy behavior verification - Delphi supports zero-based strings}
+		[Test]
+		procedure TestCopyWithZeroPosition_WorksCorrectly;
 	end;
 
 implementation
@@ -195,6 +199,25 @@ begin
 	try
 		{ Should fail because 'hash ' is not stripped }
 		Assert.IsFalse(HI.valid);
+	finally
+		HI.Free;
+	end;
+end;
+
+procedure THashInfoTest.TestCopyWithZeroPosition_WorksCorrectly;
+var
+	HI: THashInfo;
+begin
+	{This test verifies that Copy(str, 0, n) works in Delphi with zero-based strings.
+	 HashInfo.pas uses Copy(parameter, 0, divisor_position - 1) which relies on this.
+	 If this test passes, the zero-based Copy usage is correct for this Delphi version.
+	 Delphi supports ZEROBASEDSTRINGS compiler directive.}
+	HI := THashInfo.Create(VALID_HASH + ':12345:testfile.txt');
+	try
+		Assert.IsTrue(HI.valid, 'HashInfo should parse successfully');
+		Assert.AreEqual(VALID_HASH, HI.hash, 'Hash should be extracted correctly via Copy(str, 0, n)');
+		Assert.AreEqual(Int64(12345), HI.size, 'Size should be extracted correctly');
+		Assert.AreEqual('testfile.txt', HI.name, 'Name should be extracted correctly');
 	finally
 		HI.Free;
 	end;

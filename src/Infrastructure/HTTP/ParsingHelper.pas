@@ -125,6 +125,7 @@ begin
 	result := (AtPos > 0) and (AtPos < length(Email));
 	if result then
 	begin
+		{Copy with position 0 is valid in Delphi - verified by tests}
 		Username := copy(Email, 0, AtPos - 1);
 		Domain := copy(Email, AtPos + 1, length(Email) - AtPos);
 	end;

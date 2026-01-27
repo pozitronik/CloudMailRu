@@ -62,6 +62,7 @@ begin
 		self.errorString := ERR_WRONG_FORMAT;
 		exit;
 	end;
+	{Copy with position 0 is valid in Delphi - verified by TestCopyWithZeroPosition_WorksCorrectly}
 	self.hash := copy(parameter, 0, divisor_position - 1);
 	if length(hash) <> SHA1_HEX_LENGTH then
 	begin

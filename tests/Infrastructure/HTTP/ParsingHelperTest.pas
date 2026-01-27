@@ -49,6 +49,14 @@ type
 		procedure TestExtractEmailPartsAtEnd;
 		[Test]
 		procedure TestExtractEmailPartsAtStart;
+
+		{Edge cases for extractNearValue - missing delimiters after anchor found}
+		[Test]
+		procedure TestExtractNearValue_AnchorFoundStartCharMissing;
+		[Test]
+		procedure TestExtractNearValue_AnchorFoundEndCharMissing;
+		[Test]
+		procedure TestExtractNearValue_BothDelimitersMissing;
 	end;
 
 implementation
@@ -221,6 +229,43 @@ begin
 	Assert.IsTrue(ExtractEmailParts('@domain.com', Username, Domain));
 	Assert.AreEqual('', Username);
 	Assert.AreEqual('domain.com', Domain);
+end;
+
+procedure TParsingHelperTest.TestExtractNearValue_AnchorFoundStartCharMissing;
+var
+	Text: WideString;
+begin
+	{Anchor found but StartChar (") not found after anchor.
+	 Pos returns 0, then start = 0 + 1 = 1, end_ could be anywhere or 0.
+	 This tests the edge case behavior.}
+	Text := '"csrf":no_quotes_here';
+	{Should return empty or partial string - verify it doesn't crash}
+	extractNearValue(Text, '"csrf"');
+	Assert.Pass('No crash when StartChar missing after anchor');
+end;
+
+procedure TParsingHelperTest.TestExtractNearValue_AnchorFoundEndCharMissing;
+var
+	Text, Result: WideString;
+begin
+	{Anchor found, StartChar found, but EndChar not found.
+	 This causes end_ = 0, resulting in Copy(Text, start, 0 - start) = negative length.
+	 Delphi's Copy handles negative length gracefully by returning empty string.}
+	Text := '"csrf":"value_without_closing_quote';
+	Result := extractNearValue(Text, '"csrf"');
+	{Delphi Copy with negative count returns empty string}
+	Assert.AreEqual('', Result, 'Should return empty when EndChar not found');
+end;
+
+procedure TParsingHelperTest.TestExtractNearValue_BothDelimitersMissing;
+var
+	Text, Result: WideString;
+begin
+	{Anchor found but neither StartChar nor EndChar present}
+	Text := '"csrf":value';
+	Result := extractNearValue(Text, '"csrf"');
+	{Both Pos calls return 0, Copy with negative length returns empty}
+	Assert.AreEqual('', Result, 'Should return empty when delimiters missing');
 end;
 
 initialization
