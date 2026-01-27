@@ -97,11 +97,6 @@ type
 		[Test]
 		procedure TestErrorCodeText_Unknown;
 
-		{ Null logger tests }
-		[Test]
-		procedure TestToFsResult_NullLogger_DoesNotCrash;
-		[Test]
-		procedure TestToBoolean_NullLogger_DoesNotCrash;
 	end;
 
 implementation
@@ -122,55 +117,55 @@ end;
 
 procedure TCloudErrorMapperTest.TestToFsResult_OK_ReturnsFileOK;
 begin
-	Assert.AreEqual(FS_FILE_OK, TCloudErrorMapper.ToFsResult(MakeResult(CLOUD_OPERATION_OK), nil));
+	Assert.AreEqual(FS_FILE_OK, TCloudErrorMapper.ToFsResult(MakeResult(CLOUD_OPERATION_OK), TNullLogger.Create));
 end;
 
 procedure TCloudErrorMapperTest.TestToFsResult_Exists_ReturnsFileExists;
 begin
-	Assert.AreEqual(FS_FILE_EXISTS, TCloudErrorMapper.ToFsResult(MakeResult(CLOUD_ERROR_EXISTS), nil));
+	Assert.AreEqual(FS_FILE_EXISTS, TCloudErrorMapper.ToFsResult(MakeResult(CLOUD_ERROR_EXISTS), TNullLogger.Create));
 end;
 
 procedure TCloudErrorMapperTest.TestToFsResult_Unknown_ReturnsNotSupported;
 begin
-	Assert.AreEqual(FS_FILE_NOTSUPPORTED, TCloudErrorMapper.ToFsResult(MakeResult(CLOUD_ERROR_UNKNOWN), nil));
+	Assert.AreEqual(FS_FILE_NOTSUPPORTED, TCloudErrorMapper.ToFsResult(MakeResult(CLOUD_ERROR_UNKNOWN), TNullLogger.Create));
 end;
 
 { ToFsResult tests - error cases mapped to WRITEERROR }
 
 procedure TCloudErrorMapperTest.TestToFsResult_Required_ReturnsWriteError;
 begin
-	Assert.AreEqual(FS_FILE_WRITEERROR, TCloudErrorMapper.ToFsResult(MakeResult(CLOUD_ERROR_REQUIRED), nil));
+	Assert.AreEqual(FS_FILE_WRITEERROR, TCloudErrorMapper.ToFsResult(MakeResult(CLOUD_ERROR_REQUIRED), TNullLogger.Create));
 end;
 
 procedure TCloudErrorMapperTest.TestToFsResult_Invalid_ReturnsWriteError;
 begin
-	Assert.AreEqual(FS_FILE_WRITEERROR, TCloudErrorMapper.ToFsResult(MakeResult(CLOUD_ERROR_INVALID), nil));
+	Assert.AreEqual(FS_FILE_WRITEERROR, TCloudErrorMapper.ToFsResult(MakeResult(CLOUD_ERROR_INVALID), TNullLogger.Create));
 end;
 
 procedure TCloudErrorMapperTest.TestToFsResult_ReadOnly_ReturnsWriteError;
 begin
-	Assert.AreEqual(FS_FILE_WRITEERROR, TCloudErrorMapper.ToFsResult(MakeResult(CLOUD_ERROR_READONLY), nil));
+	Assert.AreEqual(FS_FILE_WRITEERROR, TCloudErrorMapper.ToFsResult(MakeResult(CLOUD_ERROR_READONLY), TNullLogger.Create));
 end;
 
 procedure TCloudErrorMapperTest.TestToFsResult_NameLengthExceeded_ReturnsWriteError;
 begin
-	Assert.AreEqual(FS_FILE_WRITEERROR, TCloudErrorMapper.ToFsResult(MakeResult(CLOUD_ERROR_NAME_LENGTH_EXCEEDED), nil));
+	Assert.AreEqual(FS_FILE_WRITEERROR, TCloudErrorMapper.ToFsResult(MakeResult(CLOUD_ERROR_NAME_LENGTH_EXCEEDED), TNullLogger.Create));
 end;
 
 procedure TCloudErrorMapperTest.TestToFsResult_Overquota_ReturnsWriteError;
 begin
-	Assert.AreEqual(FS_FILE_WRITEERROR, TCloudErrorMapper.ToFsResult(MakeResult(CLOUD_ERROR_OVERQUOTA), nil));
+	Assert.AreEqual(FS_FILE_WRITEERROR, TCloudErrorMapper.ToFsResult(MakeResult(CLOUD_ERROR_OVERQUOTA), TNullLogger.Create));
 end;
 
 procedure TCloudErrorMapperTest.TestToFsResult_NameTooLong_ReturnsWriteError;
 begin
-	Assert.AreEqual(FS_FILE_WRITEERROR, TCloudErrorMapper.ToFsResult(MakeResult(CLOUD_ERROR_NAME_TOO_LONG), nil));
+	Assert.AreEqual(FS_FILE_WRITEERROR, TCloudErrorMapper.ToFsResult(MakeResult(CLOUD_ERROR_NAME_TOO_LONG), TNullLogger.Create));
 end;
 
 procedure TCloudErrorMapperTest.TestToFsResult_UnknownCode_ReturnsWriteError;
 begin
 	{ Any unhandled error code should return WRITEERROR }
-	Assert.AreEqual(FS_FILE_WRITEERROR, TCloudErrorMapper.ToFsResult(MakeResult(9999), nil));
+	Assert.AreEqual(FS_FILE_WRITEERROR, TCloudErrorMapper.ToFsResult(MakeResult(9999), TNullLogger.Create));
 end;
 
 { ToFsResult tests - JSON parsing }
@@ -179,7 +174,7 @@ procedure TCloudErrorMapperTest.TestToFsResult_JSON_Success;
 const
 	JSON = '{"status":200,"body":{}}';
 begin
-	Assert.AreEqual(FS_FILE_OK, TCloudErrorMapper.ToFsResult(JSON, nil));
+	Assert.AreEqual(FS_FILE_OK, TCloudErrorMapper.ToFsResult(JSON, TNullLogger.Create));
 end;
 
 procedure TCloudErrorMapperTest.TestToFsResult_JSON_Error;
@@ -187,7 +182,7 @@ const
 	JSON = '{"status":406,"body":{"error":"exists"}}';
 begin
 	{ Status 406 maps to some error - verify it doesn't crash }
-	var Result := TCloudErrorMapper.ToFsResult(JSON, nil);
+	var Result := TCloudErrorMapper.ToFsResult(JSON, TNullLogger.Create);
 	Assert.IsTrue(Result in [FS_FILE_WRITEERROR, FS_FILE_EXISTS, FS_FILE_NOTSUPPORTED],
 		'Should return an error code');
 end;
@@ -196,26 +191,26 @@ end;
 
 procedure TCloudErrorMapperTest.TestToBoolean_OK_ReturnsTrue;
 begin
-	Assert.IsTrue(TCloudErrorMapper.ToBoolean(MakeResult(CLOUD_OPERATION_OK), nil));
+	Assert.IsTrue(TCloudErrorMapper.ToBoolean(MakeResult(CLOUD_OPERATION_OK), TNullLogger.Create));
 end;
 
 procedure TCloudErrorMapperTest.TestToBoolean_Error_ReturnsFalse;
 begin
-	Assert.IsFalse(TCloudErrorMapper.ToBoolean(MakeResult(CLOUD_ERROR_EXISTS), nil));
+	Assert.IsFalse(TCloudErrorMapper.ToBoolean(MakeResult(CLOUD_ERROR_EXISTS), TNullLogger.Create));
 end;
 
 procedure TCloudErrorMapperTest.TestToBoolean_JSON_Success;
 const
 	JSON = '{"status":200,"body":{}}';
 begin
-	Assert.IsTrue(TCloudErrorMapper.ToBoolean(JSON, nil));
+	Assert.IsTrue(TCloudErrorMapper.ToBoolean(JSON, TNullLogger.Create));
 end;
 
 procedure TCloudErrorMapperTest.TestToBoolean_JSON_Error;
 const
 	JSON = '{"status":406,"body":{"error":"exists"}}';
 begin
-	Assert.IsFalse(TCloudErrorMapper.ToBoolean(JSON, nil));
+	Assert.IsFalse(TCloudErrorMapper.ToBoolean(JSON, TNullLogger.Create));
 end;
 
 { ErrorCodeText tests }
@@ -316,24 +311,6 @@ var
 begin
 	ErrorText := TCloudErrorMapper.ErrorCodeText(12345);
 	Assert.IsTrue(Pos(WideString('12345'), ErrorText) > 0, 'Unknown error should include the error code in the message');
-end;
-
-{ Null logger tests }
-
-procedure TCloudErrorMapperTest.TestToFsResult_NullLogger_DoesNotCrash;
-begin
-	{ Should not crash with nil logger even when logging would occur }
-	TCloudErrorMapper.ToFsResult(MakeResult(CLOUD_ERROR_OVERQUOTA), nil);
-	TCloudErrorMapper.ToFsResult(MakeResult(CLOUD_ERROR_NAME_TOO_LONG), nil);
-	TCloudErrorMapper.ToFsResult(MakeResult(9999), nil, 'prefix');
-	Assert.Pass('No crash with nil logger');
-end;
-
-procedure TCloudErrorMapperTest.TestToBoolean_NullLogger_DoesNotCrash;
-begin
-	{ Should not crash with nil logger even when logging would occur }
-	TCloudErrorMapper.ToBoolean(MakeResult(CLOUD_ERROR_EXISTS), nil, 'prefix');
-	Assert.Pass('No crash with nil logger');
 end;
 
 initialization

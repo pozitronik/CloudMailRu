@@ -82,25 +82,21 @@ begin
 		FormFields.AddOrSetValue('Login', Credentials.User);
 		FormFields.AddOrSetValue('Password', Credentials.Password);
 
-		if Assigned(Logger) then
-			Logger.Log(LOG_LEVEL_DEBUG, msgtype_details, REQUESTING_FIRST_STEP_AUTH_TOKEN, [Credentials.Email]);
+		Logger.Log(LOG_LEVEL_DEBUG, msgtype_details, REQUESTING_FIRST_STEP_AUTH_TOKEN, [Credentials.Email]);
 
 		if not HTTP.PostMultipart(LOGIN_URL, FormFields, PostAnswer) then
 		begin
-			if Assigned(Logger) then
-				Logger.Log(LOG_LEVEL_ERROR, msgtype_importanterror, ERR_GET_FIRST_STEP_AUTH_TOKEN, [Credentials.Email]);
+			Logger.Log(LOG_LEVEL_ERROR, msgtype_importanterror, ERR_GET_FIRST_STEP_AUTH_TOKEN, [Credentials.Email]);
 			Result := TAuthResult.CreateFailure('Failed to perform first step authentication');
 			Exit;
 		end;
 
 		{Step 2: Parse two-step response}
-		if Assigned(Logger) then
-			Logger.Log(LOG_LEVEL_DEBUG, msgtype_details, PARSING_AUTH_DATA);
+		Logger.Log(LOG_LEVEL_DEBUG, msgtype_details, PARSING_AUTH_DATA);
 
 		if not(extractTwostepJson(PostAnswer, TwoStepJson) and TCloudTwostepJsonAdapter.Parse(TwoStepJson, TwostepData)) then
 		begin
-			if Assigned(Logger) then
-				Logger.Log(LOG_LEVEL_ERROR, msgtype_importanterror, ERR_PARSE_AUTH_DATA);
+			Logger.Log(LOG_LEVEL_ERROR, msgtype_importanterror, ERR_PARSE_AUTH_DATA);
 			Result := TAuthResult.CreateFailure('Failed to parse two-step authentication data');
 			Exit;
 		end;
@@ -113,15 +109,13 @@ begin
 		else
 			AuthMessage := Format(ASK_SENT_CODE, [TwostepData.secstep_phone]);
 
-		if Assigned(Logger) then
-			Logger.Log(LOG_LEVEL_DEBUG, msgtype_details, AWAIT_SECURITY_KEY);
+		Logger.Log(LOG_LEVEL_DEBUG, msgtype_details, AWAIT_SECURITY_KEY);
 
 		{Step 4: Ask user for security code}
 		UseTC := False;
 		if FPasswordUI.AskPassword(ASK_AUTH_KEY, AuthMessage, SecurityKey, UseTC, True, 0) <> mrOk then
 		begin
-			if Assigned(Logger) then
-				Logger.Log(LOG_LEVEL_ERROR, msgtype_importanterror, ERR_SECURITY_KEY);
+			Logger.Log(LOG_LEVEL_ERROR, msgtype_importanterror, ERR_SECURITY_KEY);
 			Result := TAuthResult.CreateFailure('User cancelled security key input');
 			Exit;
 		end;
@@ -132,8 +126,7 @@ begin
 		FormFields.AddOrSetValue('csrf', TwostepData.csrf);
 		FormFields.AddOrSetValue('AuthCode', SecurityKey);
 
-		if Assigned(Logger) then
-			Logger.Log(LOG_LEVEL_DEBUG, msgtype_details, SECOND_STEP_AUTH);
+		Logger.Log(LOG_LEVEL_DEBUG, msgtype_details, SECOND_STEP_AUTH);
 
 		if not HTTP.PostMultipart(SECSTEP_URL, FormFields, PostAnswer) then
 		begin
@@ -151,8 +144,7 @@ begin
 
 		if not(extractTokenFromText(TokenPageContent, AuthToken) and extract_x_page_id_FromText(TokenPageContent, x_page_id) and extract_build_FromText(TokenPageContent, build)) then
 		begin
-			if Assigned(Logger) then
-				Logger.Log(LOG_LEVEL_ERROR, msgtype_importanterror, ERR_TWOSTEP_AUTH);
+			Logger.Log(LOG_LEVEL_ERROR, msgtype_importanterror, ERR_TWOSTEP_AUTH);
 			Result := TAuthResult.CreateFailure('Failed to extract authentication token after two-step');
 			Exit;
 		end;

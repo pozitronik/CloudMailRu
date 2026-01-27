@@ -4,6 +4,7 @@ interface
 
 uses
 	AuthStrategy,
+	TCLogger,
 	DUnitX.TestFramework;
 
 type
@@ -91,7 +92,7 @@ var
 begin
 	Credentials := TAuthCredentials.Create('test@mail.ru', 'password', 'test', 'mail.ru');
 
-	Result := FStrategy.Authenticate(Credentials, nil, nil);
+	Result := FStrategy.Authenticate(Credentials, nil, TNullLogger.Create);
 
 	Assert.IsFalse(Result.Success);
 end;
@@ -103,7 +104,7 @@ var
 begin
 	Credentials := TAuthCredentials.Create('test@mail.ru', 'password', 'test', 'mail.ru');
 
-	Result := FStrategy.Authenticate(Credentials, nil, nil);
+	Result := FStrategy.Authenticate(Credentials, nil, TNullLogger.Create);
 
 	Assert.IsNotEmpty(Result.ErrorMessage);
 end;
@@ -115,7 +116,7 @@ var
 begin
 	Credentials := TAuthCredentials.Create('test@mail.ru', 'password', 'test', 'mail.ru');
 
-	Result := FStrategy.Authenticate(Credentials, nil, nil);
+	Result := FStrategy.Authenticate(Credentials, nil, TNullLogger.Create);
 
 	Assert.IsEmpty(Result.AuthToken);
 	Assert.IsEmpty(Result.UnitedParams);

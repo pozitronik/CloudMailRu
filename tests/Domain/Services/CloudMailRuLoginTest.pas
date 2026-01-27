@@ -9,6 +9,7 @@ uses
 	AuthStrategy,
 	MockAuthStrategy,
 	CloudOAuth,
+	TCLogger,
 	System.SysUtils,
 	DUnitX.TestFramework;
 
@@ -64,7 +65,7 @@ begin
 	Strategy := TMockAuthStrategy.CreateSuccess('test_token');
 	try
 		Credentials := TAuthCredentials.Create('test@mail.ru', 'pass', 'test', 'mail.ru');
-		Result := Strategy.Authenticate(Credentials, nil, nil);
+		Result := Strategy.Authenticate(Credentials, nil, TNullLogger.Create);
 
 		Assert.IsTrue(Result.Success, 'Should succeed');
 		Assert.AreEqual(String('test_token'), String(Result.AuthToken), 'Should return configured token');
@@ -82,7 +83,7 @@ begin
 	Strategy := TMockAuthStrategy.CreateFailure('Test error message');
 	try
 		Credentials := TAuthCredentials.Create('test@mail.ru', 'pass', 'test', 'mail.ru');
-		Result := Strategy.Authenticate(Credentials, nil, nil);
+		Result := Strategy.Authenticate(Credentials, nil, TNullLogger.Create);
 
 		Assert.IsFalse(Result.Success, 'Should fail');
 		Assert.AreEqual(String('Test error message'), String(Result.ErrorMessage), 'Should return error message');
@@ -102,10 +103,10 @@ begin
 
 		Assert.AreEqual(0, Strategy.CallCount, 'Initial call count should be 0');
 
-		Strategy.Authenticate(Credentials, nil, nil);
+		Strategy.Authenticate(Credentials, nil, TNullLogger.Create);
 		Assert.AreEqual(1, Strategy.CallCount, 'Call count should be 1 after first call');
 
-		Strategy.Authenticate(Credentials, nil, nil);
+		Strategy.Authenticate(Credentials, nil, TNullLogger.Create);
 		Assert.AreEqual(2, Strategy.CallCount, 'Call count should be 2 after second call');
 	finally
 		Strategy.Free;
@@ -120,7 +121,7 @@ begin
 	Strategy := TMockAuthStrategy.CreateSuccess('token');
 	try
 		Credentials := TAuthCredentials.Create('user@domain.com', 'secret', 'user', 'domain.com');
-		Strategy.Authenticate(Credentials, nil, nil);
+		Strategy.Authenticate(Credentials, nil, TNullLogger.Create);
 
 		Assert.AreEqual(String('user@domain.com'), String(Strategy.LastCredentials.Email), 'Should capture email');
 		Assert.AreEqual(String('secret'), String(Strategy.LastCredentials.Password), 'Should capture password');
@@ -137,7 +138,7 @@ begin
 	Strategy := TMockAuthStrategy.CreateSuccess('token');
 	try
 		Credentials := TAuthCredentials.Create('test@mail.ru', 'pass', 'test', 'mail.ru');
-		Strategy.Authenticate(Credentials, nil, nil);
+		Strategy.Authenticate(Credentials, nil, TNullLogger.Create);
 
 		Assert.IsTrue(Strategy.AuthenticateCalled, 'Should be called');
 		Assert.AreEqual(1, Strategy.CallCount, 'Should have 1 call');
@@ -161,13 +162,13 @@ begin
 	try
 		Credentials := TAuthCredentials.Create('test@mail.ru', 'pass', 'test', 'mail.ru');
 
-		Result := Strategy.Authenticate(Credentials, nil, nil);
+		Result := Strategy.Authenticate(Credentials, nil, TNullLogger.Create);
 		Assert.IsTrue(Result.Success, 'Initially should succeed');
 
 		Strategy.SetSucceed(False);
 		Strategy.SetErrorMessage('Now failing');
 
-		Result := Strategy.Authenticate(Credentials, nil, nil);
+		Result := Strategy.Authenticate(Credentials, nil, TNullLogger.Create);
 		Assert.IsFalse(Result.Success, 'Should now fail');
 		Assert.AreEqual(String('Now failing'), String(Result.ErrorMessage), 'Should have error message');
 	finally
@@ -185,12 +186,12 @@ begin
 	try
 		Credentials := TAuthCredentials.Create('test@mail.ru', 'pass', 'test', 'mail.ru');
 
-		Result := Strategy.Authenticate(Credentials, nil, nil);
+		Result := Strategy.Authenticate(Credentials, nil, TNullLogger.Create);
 		Assert.AreEqual(String('original_token'), String(Result.AuthToken), 'Should have original token');
 
 		Strategy.SetAccessToken('new_token');
 
-		Result := Strategy.Authenticate(Credentials, nil, nil);
+		Result := Strategy.Authenticate(Credentials, nil, TNullLogger.Create);
 		Assert.AreEqual(String('new_token'), String(Result.AuthToken), 'Should have new token');
 	finally
 		Strategy.Free;
@@ -206,7 +207,7 @@ begin
 	Strategy := TMockAuthStrategy.CreateSharedSuccess('https://public.shard/', 'abc123');
 	try
 		Credentials := TAuthCredentials.Create('', '', '', '');
-		Result := Strategy.Authenticate(Credentials, nil, nil);
+		Result := Strategy.Authenticate(Credentials, nil, TNullLogger.Create);
 
 		Assert.IsTrue(Result.Success, 'Should succeed');
 		Assert.AreEqual(String('https://public.shard/'), String(Result.PublicShard), 'Should have public shard');
@@ -244,14 +245,14 @@ begin
 
 		Credentials := TAuthCredentials.Create('test@mail.ru', 'pass', 'test', 'mail.ru');
 
-		Result := Strategy.Authenticate(Credentials, nil, nil);
+		Result := Strategy.Authenticate(Credentials, nil, TNullLogger.Create);
 		Assert.IsFalse(Result.Success, 'First should fail');
 
-		Result := Strategy.Authenticate(Credentials, nil, nil);
+		Result := Strategy.Authenticate(Credentials, nil, TNullLogger.Create);
 		Assert.IsTrue(Result.Success, 'Second should succeed');
 		Assert.AreEqual(String('second_token'), String(Result.AuthToken), 'Second token');
 
-		Result := Strategy.Authenticate(Credentials, nil, nil);
+		Result := Strategy.Authenticate(Credentials, nil, TNullLogger.Create);
 		Assert.IsTrue(Result.Success, 'Third should succeed');
 		Assert.AreEqual(String('third_token'), String(Result.AuthToken), 'Third token');
 	finally
@@ -272,11 +273,11 @@ begin
 
 		Credentials := TAuthCredentials.Create('test@mail.ru', 'pass', 'test', 'mail.ru');
 
-		Strategy.Authenticate(Credentials, nil, nil); {First - fails}
-		Strategy.Authenticate(Credentials, nil, nil); {Second - succeeds}
+		Strategy.Authenticate(Credentials, nil, TNullLogger.Create); {First - fails}
+		Strategy.Authenticate(Credentials, nil, TNullLogger.Create); {Second - succeeds}
 
 		{Third and beyond should repeat last result}
-		Result := Strategy.Authenticate(Credentials, nil, nil);
+		Result := Strategy.Authenticate(Credentials, nil, TNullLogger.Create);
 		Assert.IsTrue(Result.Success, 'Should succeed (repeating last)');
 		Assert.AreEqual(String('final_token'), String(Result.AuthToken), 'Should repeat last token');
 	finally
@@ -295,7 +296,7 @@ begin
 		Strategy.AddOAuthSuccess('access123', 'refresh456', 7200);
 
 		Credentials := TAuthCredentials.Create('test@mail.ru', 'pass', 'test', 'mail.ru');
-		Result := Strategy.Authenticate(Credentials, nil, nil);
+		Result := Strategy.Authenticate(Credentials, nil, TNullLogger.Create);
 
 		Assert.IsTrue(Result.Success, 'Should succeed');
 		Assert.AreEqual(String('access123'), String(Result.OAuthToken.access_token), 'Should have access token');
@@ -319,13 +320,13 @@ begin
 
 		Credentials := TAuthCredentials.Create('test@mail.ru', 'pass', 'test', 'mail.ru');
 
-		Strategy.Authenticate(Credentials, nil, nil);
-		Strategy.Authenticate(Credentials, nil, nil);
+		Strategy.Authenticate(Credentials, nil, TNullLogger.Create);
+		Strategy.Authenticate(Credentials, nil, TNullLogger.Create);
 
 		{Reset should restart from beginning}
 		Strategy.Reset;
 
-		Result := Strategy.Authenticate(Credentials, nil, nil);
+		Result := Strategy.Authenticate(Credentials, nil, TNullLogger.Create);
 		Assert.IsFalse(Result.Success, 'After reset, should fail again (first result)');
 	finally
 		Strategy.Free;
@@ -345,10 +346,10 @@ begin
 
 		Assert.AreEqual(0, Strategy.CallCount, 'Initial count should be 0');
 
-		Strategy.Authenticate(Credentials, nil, nil);
+		Strategy.Authenticate(Credentials, nil, TNullLogger.Create);
 		Assert.AreEqual(1, Strategy.CallCount, 'Count after first call');
 
-		Strategy.Authenticate(Credentials, nil, nil);
+		Strategy.Authenticate(Credentials, nil, TNullLogger.Create);
 		Assert.AreEqual(2, Strategy.CallCount, 'Count after second call');
 
 		Strategy.Reset;
@@ -369,7 +370,7 @@ begin
 		{No results added}
 
 		Credentials := TAuthCredentials.Create('test@mail.ru', 'pass', 'test', 'mail.ru');
-		Result := Strategy.Authenticate(Credentials, nil, nil);
+		Result := Strategy.Authenticate(Credentials, nil, TNullLogger.Create);
 
 		Assert.IsFalse(Result.Success, 'Empty sequence should fail');
 		Assert.AreEqual(String('No results configured'), String(Result.ErrorMessage), 'Should have error message');

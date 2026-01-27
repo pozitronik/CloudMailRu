@@ -59,16 +59,14 @@ begin
 		Exit;
 	end;
 
-	if Assigned(Logger) then
-		Logger.Log(LOG_LEVEL_DETAIL, msgtype_details, URL_OPEN, [Credentials.PublicUrl]);
+	Logger.Log(LOG_LEVEL_DETAIL, msgtype_details, URL_OPEN, [Credentials.PublicUrl]);
 
 	Progress := False;
 	if HTTP.GetPage(Credentials.PublicUrl, PageContent, Progress) then
 	begin
 		if not extractPublicShard(PageContent, PublicShard) then
 		begin
-			if Assigned(Logger) then
-				Logger.Log(LOG_LEVEL_ERROR, msgtype_importanterror, ERR_GET_PUBLIC_SHARE);
+			Logger.Log(LOG_LEVEL_ERROR, msgtype_importanterror, ERR_GET_PUBLIC_SHARE);
 			Result := TAuthResult.CreateFailure('Failed to extract public shard from page');
 			Exit;
 		end;

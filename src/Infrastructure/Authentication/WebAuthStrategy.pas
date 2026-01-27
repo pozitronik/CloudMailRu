@@ -55,20 +55,17 @@ begin
 		Exit;
 	end;
 
-	if Assigned(Logger) then
-		Logger.Log(LOG_LEVEL_DEBUG, msgtype_details, REQUESTING_AUTH_TOKEN, [Credentials.Email]);
+	Logger.Log(LOG_LEVEL_DEBUG, msgtype_details, REQUESTING_AUTH_TOKEN, [Credentials.Email]);
 
 	{Step 1: Post login form}
 	if not HTTP.PostForm(LOGIN_URL, Format('page=https://cloud.mail.ru/?new_auth_form=1&Domain=%s&Login=%s&Password=%s&FailPage=', [Credentials.Domain, Credentials.User, UrlEncode(Credentials.Password)]), PostAnswer) then
 	begin
-		if Assigned(Logger) then
-			Logger.Log(LOG_LEVEL_ERROR, msgtype_importanterror, ERR_GET_AUTH_TOKEN, [Credentials.Email]);
+		Logger.Log(LOG_LEVEL_ERROR, msgtype_importanterror, ERR_GET_AUTH_TOKEN, [Credentials.Email]);
 		Result := TAuthResult.CreateFailure('Failed to post login form');
 		Exit;
 	end;
 
-	if Assigned(Logger) then
-		Logger.Log(LOG_LEVEL_DEBUG, msgtype_details, PARSING_TOKEN_DATA);
+	Logger.Log(LOG_LEVEL_DEBUG, msgtype_details, PARSING_TOKEN_DATA);
 
 	{Step 2: Get token page to extract CSRF token and API params}
 	Progress := False;
@@ -81,8 +78,7 @@ begin
 	{Step 3: Extract token and parameters from page}
 	if not(extractTokenFromText(TokenPageContent, AuthToken) and extract_x_page_id_FromText(TokenPageContent, x_page_id) and extract_build_FromText(TokenPageContent, build)) then
 	begin
-		if Assigned(Logger) then
-			Logger.Log(LOG_LEVEL_ERROR, msgtype_importanterror, ERR_PARSING_AUTH_TOKEN, [Credentials.Email]);
+		Logger.Log(LOG_LEVEL_ERROR, msgtype_importanterror, ERR_PARSING_AUTH_TOKEN, [Credentials.Email]);
 		Result := TAuthResult.CreateFailure('Failed to parse authentication token');
 		Exit;
 	end;

@@ -46,8 +46,7 @@ var
 begin
 	Result := TAuthResult.CreateFailure('OAuth authentication failed');
 
-	if Assigned(Logger) then
-		Logger.Log(LOG_LEVEL_DEBUG, msgtype_details, REQUESTING_OAUTH_TOKEN, [Credentials.Email]);
+	Logger.Log(LOG_LEVEL_DEBUG, msgtype_details, REQUESTING_OAUTH_TOKEN, [Credentials.Email]);
 
 	{OAuth password grant request}
 	if HTTP.PostForm(OAUTH_TOKEN_URL, Format('client_id=%s&grant_type=password&username=%s@%s&password=%s', [OAUTH_CLIENT_ID, Credentials.User, Credentials.Domain, UrlEncode(Credentials.Password)]), PostAnswer) then

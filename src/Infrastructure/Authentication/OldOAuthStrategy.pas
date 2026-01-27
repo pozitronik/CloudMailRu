@@ -63,8 +63,7 @@ begin
 		{Old OAuth didn't properly set up UnitedParams, making it incomplete}
 		Result := TAuthResult.CreateOAuthSuccess(OAuthToken);
 	end else begin
-		if Assigned(Logger) then
-			Logger.Log(LOG_LEVEL_ERROR, msgtype_importanterror, PREFIX_ERR_OAUTH, [OAuthToken.error, OAuthToken.error_description]);
+		Logger.Log(LOG_LEVEL_ERROR, msgtype_importanterror, PREFIX_ERR_OAUTH, [OAuthToken.error, OAuthToken.error_description]);
 		Result := TAuthResult.CreateFailure(Format('%s: %s', [OAuthToken.error, OAuthToken.error_description]));
 	end;
 end;

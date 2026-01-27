@@ -90,7 +90,7 @@ begin
 
 	{This will raise an exception or return failure when HTTP is nil}
 	try
-		Result := FStrategy.Authenticate(Credentials, nil, nil);
+		Result := FStrategy.Authenticate(Credentials, nil, TNullLogger.Create);
 		Assert.IsFalse(Result.Success);
 	except
 		{Expected - nil HTTP cannot be used}
@@ -106,7 +106,7 @@ begin
 	Credentials := TAuthCredentials.Create('test@mail.ru', 'password', 'test', 'mail.ru');
 
 	try
-		Result := FStrategy.Authenticate(Credentials, nil, nil);
+		Result := FStrategy.Authenticate(Credentials, nil, TNullLogger.Create);
 		Assert.IsNotEmpty(Result.ErrorMessage);
 	except
 		{Expected - nil HTTP cannot be used}

@@ -57,19 +57,17 @@ begin
 			Exit(FS_FILE_NOTSUPPORTED);
 		CLOUD_ERROR_OVERQUOTA:
 			begin
-				if Assigned(Logger) then
-					Logger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_INSUFFICIENT_STORAGE);
+				Logger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_INSUFFICIENT_STORAGE);
 				Exit(FS_FILE_WRITEERROR);
 			end;
 		CLOUD_ERROR_NAME_TOO_LONG:
 			begin
-				if Assigned(Logger) then
-					Logger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_NAME_TOO_LONG);
+				Logger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_NAME_TOO_LONG);
 				Exit(FS_FILE_WRITEERROR);
 			end;
 		else
 			begin {Unknown error code}
-				if Assigned(Logger) and (ErrorPrefix <> EmptyWideStr) then
+				if ErrorPrefix <> EmptyWideStr then
 					Logger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, '%s%s%s%d', [ErrorPrefix, ErrorCodeText(CloudResult.OperationResult), PREFIX_STATUS, CloudResult.OperationStatus]);
 				Exit(FS_FILE_WRITEERROR);
 			end;
@@ -87,7 +85,7 @@ end;
 class function TCloudErrorMapper.ToBoolean(CloudResult: TCloudOperationResult; Logger: ILogger; ErrorPrefix: WideString): Boolean;
 begin
 	Result := CloudResult.ToBoolean;
-	if not(Result) and (ErrorPrefix <> EmptyWideStr) and Assigned(Logger) then
+	if not(Result) and (ErrorPrefix <> EmptyWideStr) then
 		Logger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, '%s%s%s%d', [ErrorPrefix, ErrorCodeText(CloudResult.OperationResult), PREFIX_STATUS, CloudResult.OperationStatus]);
 end;
 
