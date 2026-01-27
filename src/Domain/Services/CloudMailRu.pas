@@ -397,8 +397,8 @@ function TCloudMailRu.GetHTTPConnection: ICloudHTTP;
 begin
 	Result := FHTTPManager.Get(GetCurrentThreadID());
 	Result.AuthCookie := FCookieManager;
-	if (EmptyWideStr <> FAuthToken) and Assigned(Result.HTTP) then
-		Result.HTTP.Request.CustomHeaders.Values['X-CSRF-Token'] := FAuthToken;
+	if EmptyWideStr <> FAuthToken then
+		Result.SetCSRFToken(FAuthToken);
 end;
 
 function TCloudMailRu.GetPublicLink: WideString;

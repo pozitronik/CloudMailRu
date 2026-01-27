@@ -79,6 +79,9 @@ type
 		{Cookie manager access}
 		procedure SetAuthCookie(Value: TIdCookieManager);
 
+		{Set CSRF token for authenticated requests}
+		procedure SetCSRFToken(const Token: WideString);
+
 		{Access to underlying HTTP for header manipulation}
 		function GetHTTP: TIdHTTP;
 
@@ -100,6 +103,7 @@ type
 		procedure SetProgressNames(SourceName, TargetName: WideString);
 		procedure SetProgress(Progress: IProgress);
 		procedure SetAuthCookie(Value: TIdCookieManager);
+		procedure SetCSRFToken(const Token: WideString);
 		function GetHTTP: TIdHTTP;
 	end;
 
@@ -125,6 +129,7 @@ type
 
 		{ICloudHTTP interface methods}
 		procedure SetAuthCookie(Value: TIdCookieManager);
+		procedure SetCSRFToken(const Token: WideString);
 		function GetHTTP: TIdHTTP;
 
 	public
@@ -223,6 +228,11 @@ begin
 end;
 
 procedure TNullCloudHTTP.SetAuthCookie(Value: TIdCookieManager);
+begin
+	{No-op}
+end;
+
+procedure TNullCloudHTTP.SetCSRFToken(const Token: WideString);
 begin
 	{No-op}
 end;
@@ -624,6 +634,11 @@ end;
 function TCloudMailRuHTTP.GetHTTP: TIdHTTP;
 begin
 	Result := self.HTTP;
+end;
+
+procedure TCloudMailRuHTTP.SetCSRFToken(const Token: WideString);
+begin
+	HTTP.Request.CustomHeaders.Values['X-CSRF-Token'] := Token;
 end;
 
 function TCloudMailRuHTTP.ExceptionHandler(E: Exception; URL: WideString; HTTPMethod: Integer; LogErrors: Boolean): Integer; //todo: handle OPTIONS method
