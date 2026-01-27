@@ -76,6 +76,8 @@ uses
 	CloudSpaceTest in 'Domain\ValueObjects\CloudSpaceTest.pas',
 	WSListTest in 'Domain\ValueObjects\WSListTest.pas',
 	JSONHelperTest in 'Infrastructure\HTTP\JSONHelperTest.pas',
+	SafeJSON in '..\src\Infrastructure\HTTP\SafeJSON.pas',
+	SafeJSONTest in 'Infrastructure\HTTP\SafeJSONTest.pas',
 	IniFilesHelperTest in 'Infrastructure\Config\IniFilesHelperTest.pas',
 	IniConfigFileTest in 'Infrastructure\Config\IniConfigFileTest.pas',
 	WindowsHelperTest in 'Infrastructure\OS\WindowsHelperTest.pas',

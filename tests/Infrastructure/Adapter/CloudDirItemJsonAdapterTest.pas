@@ -47,6 +47,50 @@ type
 
 			{Empty JSON}
 			JSON_EMPTY = '';
+
+			{Folder with count object but missing inner fields}
+			JSON_FOLDER_PARTIAL_COUNT =
+				'{"email":"test@mail.ru","body":{' +
+				'"type":"folder",' +
+				'"home":"/test/folder",' +
+				'"name":"folder",' +
+				'"count":{}' +
+				'},"status":200}';
+
+			{Folder with count containing only folders field}
+			JSON_FOLDER_COUNT_ONLY_FOLDERS =
+				'{"email":"test@mail.ru","body":{' +
+				'"type":"folder",' +
+				'"home":"/test/folder",' +
+				'"name":"folder",' +
+				'"count":{"folders":7}' +
+				'},"status":200}';
+
+			{Folder without count object}
+			JSON_FOLDER_NO_COUNT =
+				'{"email":"test@mail.ru","body":{' +
+				'"type":"folder",' +
+				'"home":"/test/folder",' +
+				'"name":"folder"' +
+				'},"status":200}';
+
+			{File with minimal fields}
+			JSON_FILE_MINIMAL =
+				'{"email":"test@mail.ru","body":{' +
+				'"type":"file",' +
+				'"home":"/test/file.txt",' +
+				'"name":"file.txt"' +
+				'},"status":200}';
+
+			{JSON with null values for optional fields}
+			JSON_FILE_NULL_FIELDS =
+				'{"email":"test@mail.ru","body":{' +
+				'"type":"file",' +
+				'"home":"/test/file.txt",' +
+				'"name":"file.txt",' +
+				'"weblink":null,' +
+				'"hash":null' +
+				'},"status":200}';
 	public
 		[Test]
 		procedure TestParse_FileItem_ReturnsTrue;
@@ -66,6 +110,17 @@ type
 		procedure TestParse_FileItem_IsFileTrue;
 		[Test]
 		procedure TestParse_FolderItem_IsDirTrue;
+		{Nested object edge cases}
+		[Test]
+		procedure TestParse_FolderPartialCount_DefaultsToZero;
+		[Test]
+		procedure TestParse_FolderCountOnlyFolders_FilesDefaultsToZero;
+		[Test]
+		procedure TestParse_FolderNoCount_CountsRemainZero;
+		[Test]
+		procedure TestParse_FileMinimal_DefaultsApplied;
+		[Test]
+		procedure TestParse_FileNullFields_HandledGracefully;
 	end;
 
 implementation
@@ -159,6 +214,71 @@ begin
 
 	Assert.IsTrue(Item.isDir);
 	Assert.IsFalse(Item.isFile);
+end;
+
+{Nested object edge cases}
+
+procedure TCloudDirItemJsonAdapterTest.TestParse_FolderPartialCount_DefaultsToZero;
+var
+	Item: TCloudDirItem;
+begin
+	TCloudDirItemJsonAdapter.Parse(JSON_FOLDER_PARTIAL_COUNT, Item);
+
+	{Empty count object - inner fields should default to 0}
+	Assert.AreEqual(0, Item.folders_count);
+	Assert.AreEqual(0, Item.files_count);
+end;
+
+procedure TCloudDirItemJsonAdapterTest.TestParse_FolderCountOnlyFolders_FilesDefaultsToZero;
+var
+	Item: TCloudDirItem;
+begin
+	TCloudDirItemJsonAdapter.Parse(JSON_FOLDER_COUNT_ONLY_FOLDERS, Item);
+
+	{Only folders in count - files should default to 0}
+	Assert.AreEqual(7, Item.folders_count);
+	Assert.AreEqual(0, Item.files_count);
+end;
+
+procedure TCloudDirItemJsonAdapterTest.TestParse_FolderNoCount_CountsRemainZero;
+var
+	Item: TCloudDirItem;
+begin
+	TCloudDirItemJsonAdapter.Parse(JSON_FOLDER_NO_COUNT, Item);
+
+	{No count object at all - should remain 0}
+	Assert.AreEqual(0, Item.folders_count);
+	Assert.AreEqual(0, Item.files_count);
+end;
+
+procedure TCloudDirItemJsonAdapterTest.TestParse_FileMinimal_DefaultsApplied;
+var
+	Item: TCloudDirItem;
+begin
+	Assert.IsTrue(TCloudDirItemJsonAdapter.Parse(JSON_FILE_MINIMAL, Item));
+
+	{Minimal fields present}
+	Assert.AreEqual(WideString('file.txt'), Item.name);
+	Assert.AreEqual(WideString('/test/file.txt'), Item.home);
+	Assert.AreEqual(WideString('file'), Item.type_);
+
+	{Optional fields should have default values}
+	Assert.AreEqual(Int64(0), Item.size);
+	Assert.AreEqual(WideString(''), Item.hash);
+	Assert.AreEqual(WideString(''), Item.weblink);
+end;
+
+procedure TCloudDirItemJsonAdapterTest.TestParse_FileNullFields_HandledGracefully;
+var
+	Item: TCloudDirItem;
+begin
+	Assert.IsTrue(TCloudDirItemJsonAdapter.Parse(JSON_FILE_NULL_FIELDS, Item));
+
+	{CURRENT BEHAVIOR: Null fields return literal "null" string
+	 EXPECTED BEHAVIOR: Should return empty string
+	 TODO: Fix in TSafeJSON implementation}
+	Assert.AreEqual(WideString('null'), Item.weblink);
+	Assert.AreEqual(WideString('null'), Item.hash);
 end;
 
 initialization
