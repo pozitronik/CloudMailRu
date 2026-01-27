@@ -263,9 +263,13 @@ begin
 	TCRequest := TTCRequest.Create(pRequestProc, PluginNr);
 	CurrentDescriptions := TDescription.Create(GetTmpFileName(DESCRIPTION_TEMP_EXT), FFileSystem, FTCHandler.GetTCCommentPreferredFormat);
 
-	{Create retry handler with log callback that uses TCLogger}
+	{Create retry handler with callbacks for message boxes and logging}
 	Logger := TCLogger;
-	FRetryHandler := TRetryHandler.Create(FThreadState, SettingsManager, FTCHandler, nil,
+	FRetryHandler := TRetryHandler.Create(FThreadState, SettingsManager, FTCHandler,
+		function(const Text: WideString; const Args: array of const; const Caption: WideString; Flags: Integer): Integer
+		begin
+			Result := MsgBox(FTCHandler.FindTCWindow, Text, Args, Caption, Flags);
+		end,
 		procedure(LogLevel, MsgType: Integer; const Msg: WideString; const Args: array of const)
 		begin
 			Logger.Log(LogLevel, MsgType, Msg, Args);

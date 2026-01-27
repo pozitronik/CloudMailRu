@@ -64,9 +64,9 @@ type
 			@param ThreadState Thread state manager for retry counters
 			@param SettingsManager Settings manager for error mode configuration
 			@param TCHandler TC handler for window handle in message boxes
-			@param MsgBoxCallback Optional message box callback (uses WindowsHelper.MsgBox if nil)
-			@param LogCallback Optional log callback (uses TCLogger.Log if nil)}
-		constructor Create(ThreadState: IThreadStateManager; SettingsManager: IPluginSettingsManager; TCHandler: ITCHandler; MsgBoxCallback: TMsgBoxCallback = nil; LogCallback: TLogCallback = nil);
+			@param MsgBoxCallback Callback for showing message boxes to user
+			@param LogCallback Callback for logging retry operations}
+		constructor Create(ThreadState: IThreadStateManager; SettingsManager: IPluginSettingsManager; TCHandler: ITCHandler; MsgBoxCallback: TMsgBoxCallback; LogCallback: TLogCallback);
 
 		function HandleOperationError(CurrentResult: Integer; OperationType: TRetryOperationType; const AskMessage, AskTitle, RetryLogMessage, FormatParam: WideString; RetryOperation: TRetryOperation; AbortCheck: TAbortCheck): Integer;
 	end;
@@ -85,31 +85,14 @@ uses
 const
 	MB_ABORTRETRYIGNORE_ICONERROR = MB_ABORTRETRYIGNORE + MB_ICONERROR;
 
-{Default Log implementation - no-op. Caller should provide real callback.}
-procedure DefaultLog(LogLevel, MsgType: Integer; const Msg: WideString; const Args: array of const);
-begin
-	{No-op - caller provides logging callback if logging is needed}
-end;
-
 constructor TRetryHandler.Create(ThreadState: IThreadStateManager; SettingsManager: IPluginSettingsManager; TCHandler: ITCHandler; MsgBoxCallback: TMsgBoxCallback; LogCallback: TLogCallback);
 begin
 	inherited Create;
 	FThreadState := ThreadState;
 	FSettingsManager := SettingsManager;
 	FTCHandler := TCHandler;
-
-	if Assigned(MsgBoxCallback) then
-		FMsgBox := MsgBoxCallback
-	else
-		FMsgBox := function(const Text: WideString; const Args: array of const; const Caption: WideString; Flags: Integer): Integer
-			begin
-				Result := MsgBox(FTCHandler.FindTCWindow, Text, Args, Caption, Flags);
-			end;
-
-	if Assigned(LogCallback) then
-		FLog := LogCallback
-	else
-		FLog := DefaultLog;
+	FMsgBox := MsgBoxCallback;
+	FLog := LogCallback;
 end;
 
 function TRetryHandler.GetRetryCount(OperationType: TRetryOperationType): Integer;
