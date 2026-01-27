@@ -21,7 +21,7 @@ uses
 	TestHelper in 'TestHelper.pas',
 	TCLogger in '..\src\Infrastructure\Logger\TCLogger.pas',
 	TCLoggerTest in 'Infrastructure\Logger\TCLoggerTest.pas',
-	PLUGIN_TYPES in '..\src\Presentation\WFX\PLUGIN_TYPES.pas',
+	PLUGIN_TYPES in '..\src\Infrastructure\Protocol\PLUGIN_TYPES.pas',
 	SystemHelper in '..\src\Infrastructure\OS\SystemHelper.pas',
 	TCProgress in '..\src\Infrastructure\Progress\TCProgress.pas',
 	TCProgressTest in 'Infrastructure\Progress\TCProgressTest.pas',

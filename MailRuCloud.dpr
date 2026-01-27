@@ -4,7 +4,7 @@
 
 uses
 	DebugHelper in 'src\Infrastructure\Logger\DebugHelper.pas',
-	ANSIFunctions in 'src\Presentation\WFX\ANSIFunctions.pas',
+	ANSIFunctions in 'src\Infrastructure\Protocol\ANSIFunctions.pas',
 	AccountSettings in 'src\Infrastructure\Settings\AccountSettings.pas',
 	Accounts in 'src\Presentation\UI\Forms\Accounts.pas' {AccountsForm} ,
 	AccountsManager in 'src\Infrastructure\Settings\AccountsManager.pas',
@@ -54,7 +54,7 @@ uses
 	JSON,
 	JSONHelper in 'src\Infrastructure\HTTP\JSONHelper.pas',
 	Messages,
-	PLUGIN_TYPES in 'src\Presentation\WFX\PLUGIN_TYPES.pas',
+	PLUGIN_TYPES in 'src\Infrastructure\Protocol\PLUGIN_TYPES.pas',
 	ParsingHelper in 'src\Infrastructure\HTTP\ParsingHelper.pas',
 	PathHelper in 'src\Infrastructure\IO\PathHelper.pas',
 	PluginSettings in 'src\Infrastructure\Settings\PluginSettings.pas',
@@ -81,8 +81,8 @@ uses
 	WSList in 'src\Domain\ValueObjects\WSList.pas',
 	Windows,
 	WindowsHelper in 'src\Infrastructure\OS\WindowsHelper.pas',
-	MailRuCloudWFX in 'src\Presentation\WFX\MailRuCloudWFX.pas',
-	WFXInterface in 'src\Presentation\WFX\WFXInterface.pas',
+	MailRuCloudWFX in 'src\MailRuCloudWFX.pas',
+	WFXInterface in 'src\WFXInterface.pas',
 	PasswordUIProvider in 'src\Infrastructure\UI\PasswordUIProvider.pas',
 	CipherValidator in 'src\Infrastructure\Cipher\CipherValidator.pas',
 	WindowsFileSystem in 'src\Infrastructure\FileSystem\WindowsFileSystem.pas',

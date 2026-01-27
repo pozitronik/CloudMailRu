@@ -113,7 +113,7 @@
         <DCCReference Include="..\src\models\logger\TCLogger.pas"/>
         <DCCReference Include="models\logger\TCLoggerTest.pas"/>
         <DCCReference Include="models\logger\NullLoggerTest.pas"/>
-        <DCCReference Include="..\src\Presentation\WFX\PLUGIN_TYPES.pas"/>
+        <DCCReference Include="..\src\Infrastructure\Protocol\PLUGIN_TYPES.pas"/>
         <DCCReference Include="..\src\helpers\SystemHelper.pas"/>
         <DCCReference Include="..\src\models\progress\IProgressInterface.pas"/>
         <DCCReference Include="..\src\models\progress\TCProgress.pas"/>
@@ -179,7 +179,7 @@
         <DCCReference Include="..\src\Domain\ValueObjects\CMROwner.pas"/>
         <DCCReference Include="..\src\Infrastructure\IO\ChunkedFileStream.pas"/>
         <DCCReference Include="..\src\Infrastructure\IO\FileSplitInfo.pas"/>
-        <DCCReference Include="..\src\Presentation\WFX\PluginHelper.pas"/>
+        <DCCReference Include="..\src\Infrastructure\Protocol\ANSIFunctions.pas"/>
         <DCCReference Include="..\src\models\http\HTTPManager.pas"/>
         <DCCReference Include="..\src\Domain\ValueObjects\RealPath.pas"/>
         <DCCReference Include="..\src\models\settings\CloudSettings.pas"/>

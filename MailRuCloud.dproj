@@ -191,7 +191,7 @@
             <MainSource>MainSource</MainSource>
         </DelphiCompile>
         <DCCReference Include="src\Infrastructure\Logger\DebugHelper.pas"/>
-        <DCCReference Include="src\Presentation\WFX\ANSIFunctions.pas"/>
+        <DCCReference Include="src\Infrastructure\Protocol\ANSIFunctions.pas"/>
         <DCCReference Include="src\Infrastructure\Settings\AccountSettings.pas"/>
         <DCCReference Include="src\Presentation\UI\Forms\Accounts.pas">
             <Form>AccountsForm</Form>
@@ -243,7 +243,7 @@
             <Form>InvitePropertyForm</Form>
         </DCCReference>
         <DCCReference Include="src\Infrastructure\HTTP\JSONHelper.pas"/>
-        <DCCReference Include="src\Presentation\WFX\PLUGIN_TYPES.pas"/>
+        <DCCReference Include="src\Infrastructure\Protocol\PLUGIN_TYPES.pas"/>
         <DCCReference Include="src\Infrastructure\HTTP\ParsingHelper.pas"/>
         <DCCReference Include="src\Infrastructure\IO\PathHelper.pas"/>
         <DCCReference Include="src\Infrastructure\Settings\PluginSettings.pas"/>
@@ -267,8 +267,8 @@
         <DCCReference Include="src\Infrastructure\Request\TCRequest.pas"/>
         <DCCReference Include="src\Domain\ValueObjects\WSList.pas"/>
         <DCCReference Include="src\Infrastructure\OS\WindowsHelper.pas"/>
-        <DCCReference Include="src\Presentation\WFX\MailRuCloudWFX.pas"/>
-        <DCCReference Include="src\Presentation\WFX\WFXInterface.pas"/>
+        <DCCReference Include="src\MailRuCloudWFX.pas"/>
+        <DCCReference Include="src\WFXInterface.pas"/>
         <DCCReference Include="src\Infrastructure\UI\PasswordUIProvider.pas"/>
         <DCCReference Include="src\Infrastructure\Cipher\CipherValidator.pas"/>
         <DCCReference Include="src\Infrastructure\FileSystem\WindowsFileSystem.pas"/>
