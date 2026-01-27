@@ -238,9 +238,9 @@ begin
 				Result := CloudResultToFsResult(JSON, ErrorPrefix);
 			end);
 
-		{Use injected cipher for encryption operations}
+		{Use injected cipher for encryption operations (NullCipher when encryption disabled)}
 		FCipher := Cipher;
-		FDoCryptFiles := Assigned(Cipher);
+		FDoCryptFiles := FSettings.AccountSettings.EncryptFilesMode <> EncryptModeNone;
 		FDoCryptFilenames := FDoCryptFiles and FSettings.AccountSettings.EncryptFilenames;
 
 		{Initialize file downloader service with callbacks for dynamic state}
