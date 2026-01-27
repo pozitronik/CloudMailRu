@@ -92,6 +92,7 @@ uses
 	PluginSettingsTest in 'Infrastructure\Settings\PluginSettingsTest.pas',
 	FileCipherTest in 'Infrastructure\Cipher\FileCipherTest.pas',
 	NullCipherTest in 'Infrastructure\Cipher\NullCipherTest.pas',
+	CipherStreamsTest in 'Infrastructure\Cipher\CipherStreamsTest.pas',
 	CloudMailRuResourceTest in 'Domain\Services\CloudMailRuResourceTest.pas',
 	CloudMailRuStaticTest in 'Domain\Services\CloudMailRuStaticTest.pas',
 	CloudAccessMapper in '..\src\Domain\Services\CloudAccessMapper.pas',

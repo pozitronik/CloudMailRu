@@ -181,6 +181,7 @@
         <DCCReference Include="Infrastructure\Settings\PluginSettingsTest.pas"/>
         <DCCReference Include="Infrastructure\Cipher\FileCipherTest.pas"/>
         <DCCReference Include="Infrastructure\Cipher\NullCipherTest.pas"/>
+        <DCCReference Include="Infrastructure\Cipher\CipherStreamsTest.pas"/>
         <DCCReference Include="Domain\Services\CloudMailRuResourceTest.pas"/>
         <DCCReference Include="Domain\Services\CloudMailRuStaticTest.pas"/>
         <DCCReference Include="..\src\Domain\Services\CloudAccessMapper.pas"/>
