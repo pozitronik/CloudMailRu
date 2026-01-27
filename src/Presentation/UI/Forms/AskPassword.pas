@@ -221,8 +221,7 @@ end;
 
 procedure TAskPasswordForm.PasswordEditChange(Sender: TObject);
 begin
-	if Assigned(FPresenter) then
-		FPresenter.OnPasswordChanged(PasswordEdit.Text);
+	FPresenter.OnPasswordChanged(PasswordEdit.Text);
 end;
 
 end.

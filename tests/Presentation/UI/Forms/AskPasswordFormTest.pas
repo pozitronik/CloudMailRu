@@ -46,6 +46,7 @@ type
 	TAskPasswordFormTest = class
 	private
 		FForm: TTestableAskPasswordForm;
+		FPresenter: TAskPasswordPresenter;
 	public
 		[Setup]
 		procedure Setup;
@@ -124,9 +125,7 @@ type
 
 		{Event handlers}
 		[Test]
-		procedure PasswordEditChange_WithPresenter_CallsPresenter;
-		[Test]
-		procedure PasswordEditChange_WithoutPresenter_DoesNotCrash;
+		procedure PasswordEditChange_CallsPresenter;
 
 		{FormKeyUp - VK_ESCAPE}
 		[Test]
@@ -205,10 +204,13 @@ end;
 procedure TAskPasswordFormTest.Setup;
 begin
 	FForm := TTestableAskPasswordForm.Create(nil);
+	FPresenter := TAskPasswordPresenter.Create(FForm);
+	FForm.SetPresenter(FPresenter);
 end;
 
 procedure TAskPasswordFormTest.TearDown;
 begin
+	{Form destructor frees the presenter}
 	FreeAndNil(FForm);
 end;
 
@@ -480,29 +482,14 @@ end;
 
 {PasswordEditChange tests}
 
-procedure TAskPasswordFormTest.PasswordEditChange_WithPresenter_CallsPresenter;
-var
-	Presenter: TAskPasswordPresenter;
+procedure TAskPasswordFormTest.PasswordEditChange_CallsPresenter;
 begin
-	Presenter := TAskPasswordPresenter.Create(FForm);
-	FForm.SetPresenter(Presenter);
 	FForm.GetPasswordEdit.Text := 'test';
 
 	{Should not raise exception}
 	FForm.TestPasswordEditChange;
 
 	Assert.Pass('Event handler executed without error');
-end;
-
-procedure TAskPasswordFormTest.PasswordEditChange_WithoutPresenter_DoesNotCrash;
-begin
-	FForm.SetPresenter(nil);
-	FForm.GetPasswordEdit.Text := 'test';
-
-	{Should not raise exception when presenter is nil}
-	FForm.TestPasswordEditChange;
-
-	Assert.Pass('Event handler executed without error when presenter is nil');
 end;
 
 {FormKeyUp tests}

@@ -407,8 +407,7 @@ end;
 
 procedure TPropertyForm.AccessCBClick(Sender: TObject);
 begin
-	if Assigned(FPresenter) then
-		FPresenter.OnPublishChanged(AccessCB.Checked);
+	FPresenter.OnPublishChanged(AccessCB.Checked);
 end;
 
 procedure TPropertyForm.FormActivate(Sender: TObject);
@@ -423,12 +422,9 @@ begin
 			Close;
 		VK_F2:
 			begin
-				if Assigned(FPresenter) then
-				begin
-					FPresenter.SaveDescription;
-					ModalResult := IDCONTINUE;
-					CloseModal;
-				end;
+				FPresenter.SaveDescription;
+				ModalResult := IDCONTINUE;
+				CloseModal;
 			end;
 	end;
 end;
@@ -446,20 +442,17 @@ end;
 
 procedure TPropertyForm.InviteBtnClick(Sender: TObject);
 begin
-	if Assigned(FPresenter) then
-		FPresenter.OnInviteClick;
+	FPresenter.OnInviteClick;
 end;
 
 procedure TPropertyForm.ItemDeleteClick(Sender: TObject);
 begin
-	if Assigned(FPresenter) then
-		FPresenter.OnInviteDeleteClick;
+	FPresenter.OnInviteDeleteClick;
 end;
 
 procedure TPropertyForm.ItemRefreshClick(Sender: TObject);
 begin
-	if Assigned(FPresenter) then
-		FPresenter.RefreshInvites;
+	FPresenter.RefreshInvites;
 end;
 
 procedure TPropertyForm.InvitesPopupPopup(Sender: TObject);
@@ -484,14 +477,12 @@ end;
 
 procedure TPropertyForm.ItemChangeAccessClick(Sender: TObject);
 begin
-	if Assigned(FPresenter) then
-		FPresenter.OnInviteChangeAccessClick;
+	FPresenter.OnInviteChangeAccessClick;
 end;
 
 procedure TPropertyForm.RefreshLinksScanTbClick(Sender: TObject);
 begin
-	if Assigned(FPresenter) then
-		FPresenter.RefreshDownloadLinks;
+	FPresenter.RefreshDownloadLinks;
 end;
 
 procedure TPropertyForm.CancelLinksScanTbClick(Sender: TObject);
@@ -501,8 +492,7 @@ end;
 
 procedure TPropertyForm.RefreshHashesScanTbClick(Sender: TObject);
 begin
-	if Assigned(FPresenter) then
-		FPresenter.RefreshHashes;
+	FPresenter.RefreshHashes;
 end;
 
 procedure TPropertyForm.CancelHashesScanTbClick(Sender: TObject);
@@ -512,20 +502,18 @@ end;
 
 procedure TPropertyForm.ApplyHashesTBClick(Sender: TObject);
 begin
-	if Assigned(FPresenter) then
-		FPresenter.ApplyHashCommands;
+	FPresenter.ApplyHashCommands;
 end;
 
 procedure TPropertyForm.HashesMemoExit(Sender: TObject);
 begin
-	if Assigned(FPresenter) and FPresenter.CanApplyHashes then
+	if FPresenter.CanApplyHashes then
 		ApplyHashesTB.Enabled := HashesMemo.Text <> EmptyWideStr;
 end;
 
 procedure TPropertyForm.DescriptionSaveButtonClick(Sender: TObject);
 begin
-	if Assigned(FPresenter) then
-		FPresenter.SaveDescription;
+	FPresenter.SaveDescription;
 end;
 
 procedure TPropertyForm.PublicLinkLabelClick(Sender: TObject);

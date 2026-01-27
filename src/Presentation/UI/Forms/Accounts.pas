@@ -992,8 +992,7 @@ end;
 
 procedure TAccountsForm.AccountsListClick(Sender: TObject);
 begin
-	if Assigned(FPresenter) then
-		FPresenter.OnAccountSelected;
+	FPresenter.OnAccountSelected;
 end;
 
 procedure TAccountsForm.AccountsListKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -1004,26 +1003,22 @@ end;
 
 procedure TAccountsForm.ApplyButtonClick(Sender: TObject);
 begin
-	if Assigned(FPresenter) then
-		FPresenter.OnApplyAccountClick;
+	FPresenter.OnApplyAccountClick;
 end;
 
 procedure TAccountsForm.ApplyExtButtonClick(Sender: TObject);
 begin
-	if Assigned(FPresenter) then
-		FPresenter.OnApplyStreamingExtensionClick;
+	FPresenter.OnApplyStreamingExtensionClick;
 end;
 
 procedure TAccountsForm.ChangeUserAgentCBClick(Sender: TObject);
 begin
-	if Assigned(FPresenter) then
-		FPresenter.OnChangeUserAgentChanged;
+	FPresenter.OnChangeUserAgentChanged;
 end;
 
 procedure TAccountsForm.CloudMaxFileSizeCBClick(Sender: TObject);
 begin
-	if Assigned(FPresenter) then
-		FPresenter.OnCloudMaxFileSizeCheckChanged;
+	FPresenter.OnCloudMaxFileSizeCheckChanged;
 end;
 
 procedure TAccountsForm.CommandPathButtonClick(Sender: TObject);
@@ -1040,26 +1035,22 @@ end;
 
 procedure TAccountsForm.DeleteButtonClick(Sender: TObject);
 begin
-	if Assigned(FPresenter) then
-		FPresenter.OnDeleteAccountClick;
+	FPresenter.OnDeleteAccountClick;
 end;
 
 procedure TAccountsForm.DeleteExtButtonClick(Sender: TObject);
 begin
-	if Assigned(FPresenter) then
-		FPresenter.OnDeleteStreamingExtensionClick;
+	FPresenter.OnDeleteStreamingExtensionClick;
 end;
 
 procedure TAccountsForm.EncryptFilesComboChange(Sender: TObject);
 begin
-	if Assigned(FPresenter) then
-		FPresenter.OnEncryptModeChanged;
+	FPresenter.OnEncryptModeChanged;
 end;
 
 procedure TAccountsForm.EncryptFilesPwdButtonClick(Sender: TObject);
 begin
-	if Assigned(FPresenter) then
-		FPresenter.OnEncryptPasswordClick;
+	FPresenter.OnEncryptPasswordClick;
 end;
 
 procedure TAccountsForm.FormActivate(Sender: TObject);
@@ -1082,26 +1073,22 @@ end;
 
 procedure TAccountsForm.GlobalSettingsApplyBtnClick(Sender: TObject);
 begin
-	if Assigned(FPresenter) then
-		FPresenter.OnApplyGlobalSettingsClick;
+	FPresenter.OnApplyGlobalSettingsClick;
 end;
 
 procedure TAccountsForm.ProxyUserEditChange(Sender: TObject);
 begin
-	if Assigned(FPresenter) then
-		FPresenter.OnProxyUserChanged;
+	FPresenter.OnProxyUserChanged;
 end;
 
 procedure TAccountsForm.PublicAccountCBClick(Sender: TObject);
 begin
-	if Assigned(FPresenter) then
-		FPresenter.OnPublicAccountChanged;
+	FPresenter.OnPublicAccountChanged;
 end;
 
 procedure TAccountsForm.StreamingExtensionsListClick(Sender: TObject);
 begin
-	if Assigned(FPresenter) then
-		FPresenter.OnStreamingExtensionSelected;
+	FPresenter.OnStreamingExtensionSelected;
 end;
 
 procedure TAccountsForm.StreamingExtensionsListKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
