@@ -78,11 +78,8 @@ end;
 
 destructor TEncryptingStream.Destroy;
 begin
-	if Assigned(FCipher) then
-	begin
-		FCipher.Burn;
-		FCipher.Free;
-	end;
+	FCipher.Burn;
+	FCipher.Free;
 	SetLength(FBuffer, 0);
 	inherited;
 end;
@@ -163,11 +160,8 @@ end;
 
 destructor TDecryptingStream.Destroy;
 begin
-	if Assigned(FCipher) then
-	begin
-		FCipher.Burn;
-		FCipher.Free;
-	end;
+	FCipher.Burn;
+	FCipher.Free;
 	SetLength(FBuffer, 0);
 	inherited;
 end;
