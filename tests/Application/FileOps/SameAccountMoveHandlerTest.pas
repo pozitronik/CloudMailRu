@@ -18,7 +18,7 @@ uses
 	SameAccountMoveHandler,
 	MockCloudHTTP,
 	MockHTTPManager,
-	IAuthStrategyInterface,
+	AuthStrategy,
 	WindowsFileSystem,
 	TCLogger,
 	TCProgress,

@@ -60,7 +60,7 @@ uses
 	IconProvider,
 	OperationLifecycleHandler,
 	DescriptionSyncManager,
-	CloudDescriptionOpsAdapter,
+	CloudDescriptionOperationsAdapter,
 	RetryHandler,
 	CommandDispatcher,
 	ListingProvider,

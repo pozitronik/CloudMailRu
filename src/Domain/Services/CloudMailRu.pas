@@ -44,7 +44,7 @@ uses
 	WindowsFileSystem,
 	IdCookieManager,
 	DCPbase64,
-	IAuthStrategyInterface,
+	AuthStrategy,
 	TokenRetryHelper,
 	CloudHashCalculator,
 	CloudShardManager,

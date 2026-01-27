@@ -6,7 +6,7 @@ unit MockAuthStrategy;
 interface
 
 uses
-	IAuthStrategyInterface,
+	AuthStrategy,
 	CloudHTTP,
 	TCLogger,
 	CMROAuth,

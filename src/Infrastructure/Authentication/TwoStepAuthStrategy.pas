@@ -8,7 +8,7 @@ unit TwoStepAuthStrategy;
 interface
 
 uses
-	IAuthStrategyInterface,
+	AuthStrategy,
 	PasswordUIProvider,
 	CloudHTTP,
 	TCLogger;

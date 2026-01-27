@@ -7,7 +7,7 @@ unit OAuthAppAuthStrategy;
 interface
 
 uses
-	IAuthStrategyInterface,
+	AuthStrategy,
 	CMROAuth,
 	CloudHTTP,
 	TCLogger;

@@ -8,7 +8,7 @@ interface
 
 uses
 	SharedAccountAuthStrategy,
-	IAuthStrategyInterface,
+	AuthStrategy,
 	CloudHTTP,
 	TCLogger,
 	MockCloudHTTP,

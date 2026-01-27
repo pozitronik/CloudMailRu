@@ -17,7 +17,7 @@ uses
 	TCProgress,
 	TCRequest,
 	TCHandler,
-	IAuthStrategyInterface,
+	AuthStrategy,
 	WindowsFileSystem,
 	CloudHTTP,
 	HTTPManager,

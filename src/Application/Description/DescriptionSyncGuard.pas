@@ -10,7 +10,7 @@ uses
 	DescriptionSyncManager,
 	PluginSettingsManager,
 	AccountsManager,
-	CloudDescriptionOpsAdapter,
+	CloudDescriptionOperationsAdapter,
 	RealPath,
 	CloudMailRu;
 
@@ -93,26 +93,26 @@ end;
 procedure TDescriptionSyncGuard.OnFileDeleted(const RealPath: TRealPath; Cloud: TCloudMailRu);
 begin
 	if IsTrackingEnabled(RealPath.Account) then
-		FSyncManager.OnFileDeleted(RealPath, TCloudDescriptionOpsAdapter.Create(Cloud));
+		FSyncManager.OnFileDeleted(RealPath, TCloudDescriptionOperationsAdapter.Create(Cloud));
 end;
 
 procedure TDescriptionSyncGuard.OnFileRenamed(const OldPath, NewPath: TRealPath; Cloud: TCloudMailRu);
 begin
 	if IsTrackingEnabled(NewPath.Account) then
-		FSyncManager.OnFileRenamed(OldPath, NewPath, TCloudDescriptionOpsAdapter.Create(Cloud));
+		FSyncManager.OnFileRenamed(OldPath, NewPath, TCloudDescriptionOperationsAdapter.Create(Cloud));
 end;
 
 procedure TDescriptionSyncGuard.OnFileDownloaded(const RealPath: TRealPath; const LocalPath: WideString; Cloud: TCloudMailRu);
 begin
 	{Download only checks DescriptionCopyFromCloud - no account support check needed}
 	if FSettingsManager.GetSettings.DescriptionCopyFromCloud then
-		FSyncManager.OnFileDownloaded(RealPath, LocalPath, TCloudDescriptionOpsAdapter.Create(Cloud));
+		FSyncManager.OnFileDownloaded(RealPath, LocalPath, TCloudDescriptionOperationsAdapter.Create(Cloud));
 end;
 
 procedure TDescriptionSyncGuard.OnFileUploaded(const RealPath: TRealPath; const LocalPath: WideString; Cloud: TCloudMailRu);
 begin
 	if IsUploadEnabled(RealPath.Account) then
-		FSyncManager.OnFileUploaded(RealPath, LocalPath, TCloudDescriptionOpsAdapter.Create(Cloud));
+		FSyncManager.OnFileUploaded(RealPath, LocalPath, TCloudDescriptionOperationsAdapter.Create(Cloud));
 end;
 
 end.

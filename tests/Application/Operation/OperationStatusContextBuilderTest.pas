@@ -55,7 +55,7 @@ uses
 	PluginSettings,
 	CloudMailRu,
 	CloudSettings,
-	IAuthStrategyInterface,
+	AuthStrategy,
 	WindowsFileSystem,
 	TCLogger,
 	TCProgress,

@@ -1,4 +1,4 @@
-unit CloudDescriptionOpsAdapter;
+unit CloudDescriptionOperationsAdapter;
 
 {Adapter that wraps cloud operations to implement ICloudDescriptionOps.
 	Enables DescriptionSyncManager to use cloud operations via interface,
@@ -14,7 +14,7 @@ uses
 
 type
 	{Interface for basic cloud file operations.
-		Narrow interface used by CloudDescriptionOpsAdapter.}
+		Narrow interface used by CloudDescriptionOperationsAdapter.}
 	ICloudFileOps = interface
 		['{B9C95D48-FCF9-4375-8D15-0412756191C0}']
 
@@ -75,7 +75,7 @@ type
 	end;
 
 	{Wraps cloud operations to ICloudDescriptionOps interface}
-	TCloudDescriptionOpsAdapter = class(TInterfacedObject, ICloudDescriptionOps)
+	TCloudDescriptionOperationsAdapter = class(TInterfacedObject, ICloudDescriptionOps)
 	private
 		FCloudOps: ICloudFileOps;
 		FFileSystem: IFileSystem;
@@ -116,21 +116,21 @@ begin
 	Result := FCloud.FileOps.Delete(Path);
 end;
 
-{TCloudDescriptionOpsAdapter}
+{TCloudDescriptionOperationsAdapter}
 
-constructor TCloudDescriptionOpsAdapter.Create(CloudOps: ICloudFileOps; FileSystem: IFileSystem);
+constructor TCloudDescriptionOperationsAdapter.Create(CloudOps: ICloudFileOps; FileSystem: IFileSystem);
 begin
 	inherited Create;
 	FCloudOps := CloudOps;
 	FFileSystem := FileSystem;
 end;
 
-constructor TCloudDescriptionOpsAdapter.Create(Cloud: TCloudMailRu);
+constructor TCloudDescriptionOperationsAdapter.Create(Cloud: TCloudMailRu);
 begin
 	Create(TCloudMailRuFileOpsAdapter.Create(Cloud), TWindowsFileSystem.Create);
 end;
 
-function TCloudDescriptionOpsAdapter.GetDescriptionFile(const RemotePath, LocalCopy: WideString): Boolean;
+function TCloudDescriptionOperationsAdapter.GetDescriptionFile(const RemotePath, LocalCopy: WideString): Boolean;
 var
 	ResultHash: WideString;
 begin
@@ -138,7 +138,7 @@ begin
 	Result := FCloudOps.GetFile(RemotePath, LocalCopy, ResultHash, False) = FS_FILE_OK;
 end;
 
-function TCloudDescriptionOpsAdapter.PutDescriptionFile(const RemotePath, LocalCopy: WideString): Boolean;
+function TCloudDescriptionOperationsAdapter.PutDescriptionFile(const RemotePath, LocalCopy: WideString): Boolean;
 begin
 	{Upload description file or delete remote if local doesn't exist}
 	if FFileSystem.FileExists(LocalCopy) then
@@ -147,7 +147,7 @@ begin
 		Result := FCloudOps.DeleteFile(RemotePath);
 end;
 
-function TCloudDescriptionOpsAdapter.DeleteFile(const Path: WideString): Boolean;
+function TCloudDescriptionOperationsAdapter.DeleteFile(const Path: WideString): Boolean;
 begin
 	Result := FCloudOps.DeleteFile(Path);
 end;

@@ -3,7 +3,7 @@ unit NullAuthStrategyTest;
 interface
 
 uses
-	IAuthStrategyInterface,
+	AuthStrategy,
 	DUnitX.TestFramework;
 
 type

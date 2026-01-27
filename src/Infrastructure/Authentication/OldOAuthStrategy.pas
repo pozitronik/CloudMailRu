@@ -7,7 +7,7 @@ unit OldOAuthStrategy;
 interface
 
 uses
-	IAuthStrategyInterface,
+	AuthStrategy,
 	CloudHTTP,
 	TCLogger;
 

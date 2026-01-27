@@ -1,12 +1,12 @@
-unit CloudDescriptionOpsAdapterTest;
+unit CloudDescriptionOperationsAdapterTest;
 
-{Tests for CloudDescriptionOpsAdapter - adapter for description file operations.
- Tests both TCloudDescriptionOpsAdapter and TCloudMailRuFileOpsAdapter classes.}
+{Tests for CloudDescriptionOperationsAdapter - adapter for description file operations.
+ Tests both TCloudDescriptionOperationsAdapter and TCloudMailRuFileOpsAdapter classes.}
 
 interface
 
 uses
-	CloudDescriptionOpsAdapter,
+	CloudDescriptionOperationsAdapter,
 	WindowsFileSystem,
 	WFXTypes,
 	DUnitX.TestFramework;
@@ -54,9 +54,9 @@ type
 	end;
 
 	[TestFixture]
-	TCloudDescriptionOpsAdapterTest = class
+	TCloudDescriptionOperationsAdapterTest = class
 	private
-		FAdapter: TCloudDescriptionOpsAdapter;
+		FAdapter: TCloudDescriptionOperationsAdapter;
 		FMockCloudOps: TMockCloudFileOps;
 		FMockCloudOpsRef: ICloudFileOps;
 		FMockFileSystem: TMemoryFileSystem;
@@ -174,18 +174,18 @@ begin
 	Result := FDeleteFileResult;
 end;
 
-{ TCloudDescriptionOpsAdapterTest }
+{ TCloudDescriptionOperationsAdapterTest }
 
-procedure TCloudDescriptionOpsAdapterTest.Setup;
+procedure TCloudDescriptionOperationsAdapterTest.Setup;
 begin
 	FMockCloudOps := TMockCloudFileOps.Create;
 	FMockCloudOpsRef := FMockCloudOps;
 	FMockFileSystem := TMemoryFileSystem.Create;
 	FMockFileSystemRef := FMockFileSystem;
-	FAdapter := TCloudDescriptionOpsAdapter.Create(FMockCloudOpsRef, FMockFileSystemRef);
+	FAdapter := TCloudDescriptionOperationsAdapter.Create(FMockCloudOpsRef, FMockFileSystemRef);
 end;
 
-procedure TCloudDescriptionOpsAdapterTest.TearDown;
+procedure TCloudDescriptionOperationsAdapterTest.TearDown;
 begin
 	FAdapter.Free;
 	FMockCloudOpsRef := nil;
@@ -194,7 +194,7 @@ end;
 
 { GetDescriptionFile tests }
 
-procedure TCloudDescriptionOpsAdapterTest.TestGetDescriptionFile_Success_ReturnsTrue;
+procedure TCloudDescriptionOperationsAdapterTest.TestGetDescriptionFile_Success_ReturnsTrue;
 begin
 	FMockCloudOps.SetGetFileResult(FS_FILE_OK);
 
@@ -202,7 +202,7 @@ begin
 		'Should return True when GetFile succeeds');
 end;
 
-procedure TCloudDescriptionOpsAdapterTest.TestGetDescriptionFile_Failure_ReturnsFalse;
+procedure TCloudDescriptionOperationsAdapterTest.TestGetDescriptionFile_Failure_ReturnsFalse;
 begin
 	FMockCloudOps.SetGetFileResult(FS_FILE_NOTFOUND);
 
@@ -210,7 +210,7 @@ begin
 		'Should return False when GetFile fails');
 end;
 
-procedure TCloudDescriptionOpsAdapterTest.TestGetDescriptionFile_PassesCorrectParameters;
+procedure TCloudDescriptionOperationsAdapterTest.TestGetDescriptionFile_PassesCorrectParameters;
 begin
 	FAdapter.GetDescriptionFile('/account/folder/descript.ion', 'C:\temp\descript.ion');
 
@@ -219,7 +219,7 @@ begin
 	Assert.AreEqual('C:\temp\descript.ion', String(FMockCloudOps.LastGetLocalPath));
 end;
 
-procedure TCloudDescriptionOpsAdapterTest.TestGetDescriptionFile_DisablesErrorLogging;
+procedure TCloudDescriptionOperationsAdapterTest.TestGetDescriptionFile_DisablesErrorLogging;
 begin
 	{Description file may not exist, so errors should not be logged}
 	FAdapter.GetDescriptionFile('/remote/descript.ion', 'C:\local\descript.ion');
@@ -230,7 +230,7 @@ end;
 
 { PutDescriptionFile tests - file exists }
 
-procedure TCloudDescriptionOpsAdapterTest.TestPutDescriptionFile_FileExists_CallsPutFile;
+procedure TCloudDescriptionOperationsAdapterTest.TestPutDescriptionFile_FileExists_CallsPutFile;
 begin
 	{Simulate local file exists}
 	FMockFileSystem.SetFileContent('C:\local\descript.ion', 'File content');
@@ -243,7 +243,7 @@ begin
 	Assert.AreEqual('/remote/descript.ion', String(FMockCloudOps.LastPutRemotePath));
 end;
 
-procedure TCloudDescriptionOpsAdapterTest.TestPutDescriptionFile_FileExists_Success_ReturnsTrue;
+procedure TCloudDescriptionOperationsAdapterTest.TestPutDescriptionFile_FileExists_Success_ReturnsTrue;
 begin
 	FMockFileSystem.SetFileContent('C:\local\descript.ion', 'File content');
 	FMockCloudOps.SetPutFileResult(FS_FILE_OK);
@@ -252,7 +252,7 @@ begin
 		'Should return True when PutFile succeeds');
 end;
 
-procedure TCloudDescriptionOpsAdapterTest.TestPutDescriptionFile_FileExists_Failure_ReturnsFalse;
+procedure TCloudDescriptionOperationsAdapterTest.TestPutDescriptionFile_FileExists_Failure_ReturnsFalse;
 begin
 	FMockFileSystem.SetFileContent('C:\local\descript.ion', 'File content');
 	FMockCloudOps.SetPutFileResult(FS_FILE_WRITEERROR);
@@ -263,7 +263,7 @@ end;
 
 { PutDescriptionFile tests - file doesn't exist }
 
-procedure TCloudDescriptionOpsAdapterTest.TestPutDescriptionFile_FileNotExists_CallsDeleteFile;
+procedure TCloudDescriptionOperationsAdapterTest.TestPutDescriptionFile_FileNotExists_CallsDeleteFile;
 begin
 	{Local file doesn't exist - should delete remote}
 	FAdapter.PutDescriptionFile('/remote/descript.ion', 'C:\local\nonexistent.ion');
@@ -274,7 +274,7 @@ begin
 	Assert.AreEqual('/remote/descript.ion', String(FMockCloudOps.LastDeletePath));
 end;
 
-procedure TCloudDescriptionOpsAdapterTest.TestPutDescriptionFile_FileNotExists_DeleteSuccess_ReturnsTrue;
+procedure TCloudDescriptionOperationsAdapterTest.TestPutDescriptionFile_FileNotExists_DeleteSuccess_ReturnsTrue;
 begin
 	FMockCloudOps.SetDeleteFileResult(True);
 
@@ -282,7 +282,7 @@ begin
 		'Should return True when DeleteFile succeeds');
 end;
 
-procedure TCloudDescriptionOpsAdapterTest.TestPutDescriptionFile_FileNotExists_DeleteFailure_ReturnsFalse;
+procedure TCloudDescriptionOperationsAdapterTest.TestPutDescriptionFile_FileNotExists_DeleteFailure_ReturnsFalse;
 begin
 	FMockCloudOps.SetDeleteFileResult(False);
 
@@ -292,7 +292,7 @@ end;
 
 { DeleteFile tests }
 
-procedure TCloudDescriptionOpsAdapterTest.TestDeleteFile_Success_ReturnsTrue;
+procedure TCloudDescriptionOperationsAdapterTest.TestDeleteFile_Success_ReturnsTrue;
 begin
 	FMockCloudOps.SetDeleteFileResult(True);
 
@@ -300,7 +300,7 @@ begin
 		'Should return True when DeleteFile succeeds');
 end;
 
-procedure TCloudDescriptionOpsAdapterTest.TestDeleteFile_Failure_ReturnsFalse;
+procedure TCloudDescriptionOperationsAdapterTest.TestDeleteFile_Failure_ReturnsFalse;
 begin
 	FMockCloudOps.SetDeleteFileResult(False);
 
@@ -308,7 +308,7 @@ begin
 		'Should return False when DeleteFile fails');
 end;
 
-procedure TCloudDescriptionOpsAdapterTest.TestDeleteFile_PassesCorrectPath;
+procedure TCloudDescriptionOperationsAdapterTest.TestDeleteFile_PassesCorrectPath;
 begin
 	FAdapter.DeleteFile('/account/path/to/file.txt');
 
@@ -318,11 +318,11 @@ end;
 
 { Interface implementation test }
 
-procedure TCloudDescriptionOpsAdapterTest.TestImplementsICloudDescriptionOps;
+procedure TCloudDescriptionOperationsAdapterTest.TestImplementsICloudDescriptionOps;
 var
 	Intf: ICloudDescriptionOps;
 begin
-	Intf := TCloudDescriptionOpsAdapter.Create(FMockCloudOpsRef, FMockFileSystemRef);
+	Intf := TCloudDescriptionOperationsAdapter.Create(FMockCloudOpsRef, FMockFileSystemRef);
 	Assert.IsNotNull(Intf, 'Should implement ICloudDescriptionOps interface');
 end;
 
@@ -340,7 +340,7 @@ end;
 
 initialization
 
-TDUnitX.RegisterTestFixture(TCloudDescriptionOpsAdapterTest);
+TDUnitX.RegisterTestFixture(TCloudDescriptionOperationsAdapterTest);
 TDUnitX.RegisterTestFixture(TCloudMailRuFileOpsAdapterTest);
 
 end.

@@ -274,7 +274,7 @@
         <DCCReference Include="src\Infrastructure\FileSystem\WindowsFileSystem.pas"/>
         <DCCReference Include="src\Infrastructure\Config\IniConfigFile.pas"/>
         <DCCReference Include="src\Infrastructure\Environment\WindowsEnvironment.pas"/>
-        <DCCReference Include="src\Infrastructure\Authentication\IAuthStrategyInterface.pas"/>
+        <DCCReference Include="src\Infrastructure\Authentication\AuthStrategy.pas"/>
         <DCCReference Include="src\Infrastructure\Authentication\OAuthAppAuthStrategy.pas"/>
         <DCCReference Include="src\Infrastructure\Authentication\SharedAccountAuthStrategy.pas"/>
         <DCCReference Include="src\Infrastructure\Authentication\WebAuthStrategy.pas"/>
@@ -286,7 +286,7 @@
         <DCCReference Include="src\Application\Operation\OperationLifecycleHandler.pas"/>
         <DCCReference Include="src\Application\Description\DescriptionSyncManager.pas"/>
         <DCCReference Include="src\Domain\Services\CloudAccessUtils.pas"/>
-        <DCCReference Include="src\Infrastructure\Adapter\CloudDescriptionOpsAdapter.pas"/>
+        <DCCReference Include="src\Infrastructure\Adapter\CloudDescriptionOperationsAdapter.pas"/>
         <DCCReference Include="src\Infrastructure\Adapter\CMRDirItemJsonAdapter.pas"/>
         <DCCReference Include="src\Infrastructure\Adapter\CMRDirItemListJsonAdapter.pas"/>
         <DCCReference Include="src\Infrastructure\Adapter\CMROAuthJsonAdapter.pas"/>

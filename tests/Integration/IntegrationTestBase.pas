@@ -19,7 +19,7 @@ uses
 	CMRDirItemList,
 	IntegrationTestConfig,
 	TestDataGenerator,
-	IAuthStrategyInterface,
+	AuthStrategy,
 	OAuthAppAuthStrategy,
 	WindowsFileSystem,
 	TCLogger,

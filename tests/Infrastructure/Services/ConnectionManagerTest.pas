@@ -22,7 +22,7 @@ uses
 	ConnectionSettings,
 	ProxySettings,
 	StreamingSettings,
-	IAuthStrategyInterface,
+	AuthStrategy,
 	WSList,
 	System.Classes,
 	DUnitX.TestFramework;

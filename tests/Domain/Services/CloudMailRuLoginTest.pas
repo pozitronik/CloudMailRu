@@ -6,7 +6,7 @@ unit CloudMailRuLoginTest;
 interface
 
 uses
-	IAuthStrategyInterface,
+	AuthStrategy,
 	MockAuthStrategy,
 	CMROAuth,
 	System.SysUtils,

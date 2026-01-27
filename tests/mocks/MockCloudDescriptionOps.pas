@@ -9,7 +9,7 @@ uses
 	System.Classes,
 	System.SysUtils,
 	System.Generics.Collections,
-	CloudDescriptionOpsAdapter;
+	CloudDescriptionOperationsAdapter;
 
 type
 	{Records a single cloud operation for verification}

@@ -19,7 +19,7 @@ uses
 	CloudSettings,
 	MockCloudHTTP,
 	MockHTTPManager,
-	IAuthStrategyInterface,
+	AuthStrategy,
 	WindowsFileSystem;
 
 type

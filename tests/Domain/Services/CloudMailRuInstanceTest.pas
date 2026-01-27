@@ -11,7 +11,7 @@ uses
 	TCProgress,
 	TCRequest,
 	TCHandler,
-	IAuthStrategyInterface,
+	AuthStrategy,
 	WindowsFileSystem,
 	WFXTypes,
 	SysUtils,

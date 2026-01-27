@@ -13,7 +13,7 @@ uses
 	DescriptionSyncManager,
 	PluginSettingsManager,
 	AccountsManager,
-	CloudDescriptionOpsAdapter,
+	CloudDescriptionOperationsAdapter,
 	PluginSettings,
 	AccountSettings,
 	RealPath,

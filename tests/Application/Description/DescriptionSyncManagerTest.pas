@@ -13,7 +13,7 @@ uses
 	Description,
 	WindowsFileSystem,
 	TCHandler,
-	CloudDescriptionOpsAdapter,
+	CloudDescriptionOperationsAdapter,
 	DescriptionSyncManager,
 	MockCloudDescriptionOps;
 

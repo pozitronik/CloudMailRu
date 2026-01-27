@@ -13,7 +13,7 @@ uses
 	PluginSettingsManager,
 	TCLogger,
 	ConnectionManager,
-	CloudDescriptionOpsAdapter,
+	CloudDescriptionOperationsAdapter,
 	Description,
 	RealPath,
 	CMRConstants,
@@ -147,7 +147,7 @@ var
 begin
 	if oaLoadDescriptions in Actions then
 	begin
-		DescOps := TCloudDescriptionOpsAdapter.Create(FConnectionManager.Get(RealPath.account, getResult));
+		DescOps := TCloudDescriptionOperationsAdapter.Create(FConnectionManager.Get(RealPath.account, getResult));
 		if DescOps.GetDescriptionFile(IncludeTrailingBackslash(RealPath.Path) + FSettingsManager.GetSettings.DescriptionFileName, FDescriptions.ionFilename) then
 			FDescriptions.Read
 		else

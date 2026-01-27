@@ -1,4 +1,4 @@
-unit IAuthStrategyInterface;
+unit AuthStrategy;
 
 {Authentication strategy interface for cloud services.
 	Implements Strategy pattern to decouple authentication logic from cloud operations.}

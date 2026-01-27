@@ -7,7 +7,7 @@ unit WebAuthStrategy;
 interface
 
 uses
-	IAuthStrategyInterface,
+	AuthStrategy,
 	CloudHTTP,
 	TCLogger;
 

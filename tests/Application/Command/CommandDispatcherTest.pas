@@ -19,7 +19,7 @@ uses
 	MockConnectionManager,
 	MockCloudHTTP,
 	MockHTTPManager,
-	IAuthStrategyInterface,
+	AuthStrategy,
 	WindowsFileSystem,
 	TCLogger,
 	TCProgress,

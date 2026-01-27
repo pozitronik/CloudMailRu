@@ -29,7 +29,7 @@ uses
 	HTTPManager,
 	CipherValidator,
 	FileCipher,
-	IAuthStrategyInterface,
+	AuthStrategy,
 	System.Generics.Collections,
 	SysUtils;
 

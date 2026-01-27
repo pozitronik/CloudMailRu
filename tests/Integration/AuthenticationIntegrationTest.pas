@@ -33,7 +33,7 @@ uses
 	CloudMailRu,
 	CloudSettings,
 	AccountSettings,
-	IAuthStrategyInterface,
+	AuthStrategy,
 	OAuthAppAuthStrategy,
 	WindowsFileSystem,
 	TCLogger,

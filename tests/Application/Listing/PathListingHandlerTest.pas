@@ -23,7 +23,7 @@ uses
 	CMRIncomingInviteList,
 	CMRConstants,
 	WFXTypes,
-	IAuthStrategyInterface,
+	AuthStrategy,
 	WindowsFileSystem,
 	TCLogger,
 	TCProgress,

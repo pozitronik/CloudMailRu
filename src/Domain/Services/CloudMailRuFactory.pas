@@ -43,7 +43,7 @@ implementation
 
 uses
 	CloudSettings,
-	IAuthStrategyInterface,
+	AuthStrategy,
 	WindowsFileSystem,
 	TCLogger,
 	TCProgress,

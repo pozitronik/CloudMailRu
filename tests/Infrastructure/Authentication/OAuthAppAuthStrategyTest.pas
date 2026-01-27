@@ -3,7 +3,7 @@ unit OAuthAppAuthStrategyTest;
 interface
 
 uses
-	IAuthStrategyInterface,
+	AuthStrategy,
 	OAuthAppAuthStrategy,
 	CloudHTTP,
 	MockCloudHTTP,

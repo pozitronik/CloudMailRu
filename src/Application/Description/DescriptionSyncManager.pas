@@ -11,7 +11,7 @@ uses
 	RealPath,
 	Description,
 	WindowsFileSystem,
-	CloudDescriptionOpsAdapter,
+	CloudDescriptionOperationsAdapter,
 	TCHandler;
 
 type

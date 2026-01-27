@@ -7,7 +7,7 @@ unit SharedAccountAuthStrategy;
 interface
 
 uses
-	IAuthStrategyInterface,
+	AuthStrategy,
 	CloudHTTP,
 	TCLogger;
 

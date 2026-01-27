@@ -11,7 +11,7 @@ uses
 	WebAuthStrategy,
 	TwoStepAuthStrategy,
 	OldOAuthStrategy,
-	IAuthStrategyInterface,
+	AuthStrategy,
 	PasswordUIProvider,
 	TCLogger,
 	DUnitX.TestFramework;
