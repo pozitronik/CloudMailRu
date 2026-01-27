@@ -1100,11 +1100,7 @@ begin
 	StorePassword := True;
 	CryptId := AccountName + PASSWORD_SUFFIX_FILECRYPT;
 
-	{Get password manager from presenter}
 	PasswordMgr := FPresenter.PasswordManager;
-	if not Assigned(PasswordMgr) then
-		Exit;
-
 	case PasswordMgr.GetPassword(CryptId, CurrentPassword) of
 		FS_FILE_OK:
 			Verb := VERB_UPDATE;
