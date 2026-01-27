@@ -122,7 +122,8 @@ implementation
 
 uses
 	FileSplitInfo,
-	FileHelper;
+	FileHelper,
+	FileCipher;
 
 {TRealSizeFileSystem - only implements GetFileSize with real file access}
 
@@ -263,7 +264,7 @@ begin
 		function: ICloudHTTP begin Result := TestSelf.FMockHTTP; end,
 		FShardManager,
 		FHashCalculator,
-		nil, {No cipher}
+		TNullCipher.Create,
 		TRealSizeFileSystem.Create,
 		TNullLogger.Create,
 		TNullProgress.Create,

@@ -249,7 +249,7 @@ var
 	LocalFileIdentity, RemoteFileIdentity: TCloudFileIdentity;
 	OperationResult: Integer;
 	DedupeResult: Integer;
-	MemoryStream: TMemoryStream;
+	UploadStream: TStream;
 	UseHash: Boolean;
 begin
 	Result := FS_FILE_WRITEERROR;
@@ -278,18 +278,14 @@ begin
 	end;
 
 	try
-		if FDoCryptFiles then {Will encrypt any type of data passed here}
-		begin
-			MemoryStream := TMemoryStream.Create;
-			try
-				FCipher.CryptStream(FileStream, MemoryStream);
-				MemoryStream.Position := 0;
-				OperationResult := PutFileToCloud(FileName, MemoryStream, RemoteFileIdentity);
-			finally
-				MemoryStream.Free;
-			end;
-		end else begin
-			OperationResult := PutFileToCloud(FileName, FileStream, RemoteFileIdentity)
+		{Get encrypting stream wrapper - encrypts on-the-fly during upload.
+			TNullCipher returns pass-through wrapper with zero overhead.
+			TFileCipher returns encrypting wrapper with constant memory usage.}
+		UploadStream := FCipher.GetEncryptingStream(FileStream);
+		try
+			OperationResult := PutFileToCloud(FileName, UploadStream, RemoteFileIdentity);
+		finally
+			UploadStream.Free;
 		end;
 	except
 		on E: Exception do

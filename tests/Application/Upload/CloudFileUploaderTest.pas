@@ -126,7 +126,7 @@ begin
 		GetHTTP,
 		FShardManager,
 		FHashCalculator,
-		nil, {No cipher for basic tests}
+		TNullCipher.Create,
 		TWindowsFileSystem.Create,
 		TNullLogger.Create,
 		TNullProgress.Create,
@@ -274,7 +274,7 @@ begin
 		GetHTTP,
 		FShardManager,
 		FHashCalculator,
-		nil,
+		TNullCipher.Create,
 		TWindowsFileSystem.Create,
 		TNullLogger.Create,
 		TNullProgress.Create,
