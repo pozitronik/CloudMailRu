@@ -54,12 +54,16 @@ uses
 	CloudShareService,
 	CloudListingService,
 	CloudFileOperations,
+	CloudAuthorizationState,
+	CloudMailRuInterface,
 	OpenSSLProvider;
 
 type
-	TCloudMailRu = class
+	TCloudMailRu = class(TInterfacedObject, ICloudMailRu)
 	private
 		FSettings: TCloudSettings; {Current options set for the cloud instance}
+		FAuthorizationState: TAuthorizationState; {Authorization state machine}
+		FAuthorizationError: TAuthorizationError; {Last authorization error}
 
 		FHTTPManager: IHTTPManager; {HTTP connection manager - required, provides connections per thread}
 
@@ -127,6 +131,20 @@ type
 		function LoginShared: Boolean;
 		function GetPublicLink(): WideString;
 	public
+		{ICloudMailRu - Authorization state}
+		function GetAuthorizationState: TAuthorizationState;
+		function GetAuthorizationError: TAuthorizationError;
+		function Authorize: Boolean;
+		procedure InvalidateAuthorization;
+
+		{ICloudMailRu - Service accessors}
+		function GetDownloader: ICloudFileDownloader;
+		function GetUploader: ICloudFileUploader;
+		function GetShareService: ICloudShareService;
+		function GetListingService: ICloudListingService;
+		function GetFileOps: ICloudFileOperations;
+		function GetIsPublicAccount: Boolean;
+
 		property IsPublicAccount: Boolean read FSettings.AccountSettings.PublicAccount;
 		{Service accessors - exposed for external use and MVP architecture}
 		property Downloader: ICloudFileDownloader read FDownloader;
@@ -182,6 +200,8 @@ end;
 constructor TCloudMailRu.Create(CloudSettings: TCloudSettings; ConnectionManager: IHTTPManager; AuthStrategy: IAuthStrategy; FileSystem: IFileSystem; Logger: ILogger; Progress: IProgress; Request: IRequest; TCHandler: ITCHandler; Cipher: ICipher; OpenSSLProvider: IOpenSSLProvider);
 begin
 	try
+		FAuthorizationState := asPending;
+		FAuthorizationError := TAuthorizationError.Empty;
 		FSettings := CloudSettings;
 		ExtractEmailParts(Email, FUser, FDomain);
 
@@ -533,6 +553,75 @@ end;
 function TCloudMailRu.CloudHash(Stream: TStream; Path: WideString = CALCULATING_HASH): WideString;
 begin
 	Result := FHashCalculator.CalculateHash(Stream, Path);
+end;
+
+{ICloudMailRu implementation - Authorization state}
+
+function TCloudMailRu.GetAuthorizationState: TAuthorizationState;
+begin
+	Result := FAuthorizationState;
+end;
+
+function TCloudMailRu.GetAuthorizationError: TAuthorizationError;
+begin
+	Result := FAuthorizationError;
+end;
+
+function TCloudMailRu.Authorize: Boolean;
+begin
+	if FAuthorizationState = asAuthorized then
+		Exit(True);
+
+	FAuthorizationState := asAuthorizing;
+	FAuthorizationError := TAuthorizationError.Empty;
+
+	Result := Login;
+
+	if Result then
+		FAuthorizationState := asAuthorized
+	else
+	begin
+		FAuthorizationState := asFailed;
+		FAuthorizationError := TAuthorizationError.Create(CLOUD_OPERATION_FAILED, ERR_AUTH_FAILURE);
+	end;
+end;
+
+procedure TCloudMailRu.InvalidateAuthorization;
+begin
+	FAuthorizationState := asPending;
+	FAuthorizationError := TAuthorizationError.Empty;
+end;
+
+{ICloudMailRu implementation - Service accessors}
+
+function TCloudMailRu.GetDownloader: ICloudFileDownloader;
+begin
+	Result := FDownloader;
+end;
+
+function TCloudMailRu.GetUploader: ICloudFileUploader;
+begin
+	Result := FUploader;
+end;
+
+function TCloudMailRu.GetShareService: ICloudShareService;
+begin
+	Result := FShareService;
+end;
+
+function TCloudMailRu.GetListingService: ICloudListingService;
+begin
+	Result := FListingService;
+end;
+
+function TCloudMailRu.GetFileOps: ICloudFileOperations;
+begin
+	Result := FFileOps;
+end;
+
+function TCloudMailRu.GetIsPublicAccount: Boolean;
+begin
+	Result := FSettings.AccountSettings.PublicAccount;
 end;
 
 end.
