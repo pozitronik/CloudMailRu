@@ -7,7 +7,7 @@ interface
 uses
 	CloudHTTP,
 	CMRConstants,
-	PLUGIN_TYPES,
+	WFXTypes,
 	ConnectionSettings,
 	TCLogger,
 	TCProgress,

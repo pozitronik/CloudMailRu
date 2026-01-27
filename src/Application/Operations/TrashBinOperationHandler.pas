@@ -40,7 +40,7 @@ implementation
 
 uses
 	Controls,
-	PLUGIN_TYPES;
+	WFXTypes;
 
 function TTrashBinOperationHandler.Execute(ParentWindow: HWND; ListingService: ICloudListingService; var Listing: TCMRDirItemList; const Item: TCMRDirItem; IsTrashDir: Boolean; const AccountName: WideString; ShowDialog: TShowTrashPropertiesFunc): Integer;
 var

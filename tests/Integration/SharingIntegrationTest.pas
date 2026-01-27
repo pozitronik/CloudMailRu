@@ -49,7 +49,7 @@ uses
 	CMRDirItemList,
 	CMRInviteList,
 	CMRIncomingInviteList,
-	PLUGIN_TYPES,
+	WFXTypes,
 	CMRConstants,
 	TestDataGenerator;
 

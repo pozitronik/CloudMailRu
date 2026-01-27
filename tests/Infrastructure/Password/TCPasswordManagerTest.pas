@@ -6,7 +6,7 @@ uses
 	TCPasswordManager,
 	TCLogger,
 	TCHandler,
-	PLUGIN_TYPES,
+	WFXTypes,
 	Windows,
 	SysUtils,
 	DUnitX.TestFramework;

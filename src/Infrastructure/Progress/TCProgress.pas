@@ -7,7 +7,7 @@ interface
 
 uses
 	SysUtils,
-	PLUGIN_TYPES;
+	WFXTypes;
 
 type
 	{Progress reporting interface for file operations.

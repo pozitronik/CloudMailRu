@@ -11,7 +11,7 @@ uses
 	CMRConstants,
 	CMROAuth,
 	CMRSpace,
-	PLUGIN_TYPES,
+	WFXTypes,
 	SETTINGS_CONSTANTS,
 	TCLogger,
 	TCProgress,

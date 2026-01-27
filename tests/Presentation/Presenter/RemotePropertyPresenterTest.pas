@@ -22,7 +22,7 @@ uses
 	CloudMailRu,
 	WindowsFileSystem,
 	TCHandler,
-	PLUGIN_TYPES,
+	WFXTypes,
 	System.Classes,
 	System.SysUtils,
 	System.Generics.Collections;

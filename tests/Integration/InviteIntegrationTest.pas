@@ -33,7 +33,7 @@ uses
 	System.SysUtils,
 	CloudMailRu,
 	CMRIncomingInviteList,
-	PLUGIN_TYPES,
+	WFXTypes,
 	CMRConstants,
 	TestDataGenerator;
 

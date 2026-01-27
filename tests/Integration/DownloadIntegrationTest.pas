@@ -49,7 +49,7 @@ uses
 	CloudMailRu,
 	CMRDirItem,
 	CMRDirItemList,
-	PLUGIN_TYPES,
+	WFXTypes,
 	TestDataGenerator;
 
 {TDownloadIntegrationTest}

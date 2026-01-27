@@ -16,7 +16,7 @@ uses
 	CMRConstants,
 	SETTINGS_CONSTANTS,
 	LANGUAGE_STRINGS,
-	PLUGIN_TYPES,
+	WFXTypes,
 	StringHelper;
 
 type

@@ -12,7 +12,7 @@ uses
 	CMRDirItem,
 	CMRIncomingInviteList,
 	CMRConstants,
-	PLUGIN_TYPES,
+	WFXTypes,
 	TCLogger,
 	TCProgress,
 	TCRequest,

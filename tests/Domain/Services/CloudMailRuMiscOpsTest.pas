@@ -11,7 +11,7 @@ uses
 	CloudSettings,
 	CMRDirItem,
 	CMRConstants,
-	PLUGIN_TYPES,
+	WFXTypes,
 	TCLogger,
 	TCProgress,
 	TCRequest,

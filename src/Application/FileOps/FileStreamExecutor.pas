@@ -57,7 +57,7 @@ implementation
 
 uses
 	SysUtils,
-	PLUGIN_TYPES;
+	WFXTypes;
 
 {Maps streaming format to corresponding shard type for URL resolution}
 function ShardTypeFromStreamingFormat(StreamingFormat: Integer): string;

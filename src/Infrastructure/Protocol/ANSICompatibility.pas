@@ -1,11 +1,11 @@
-﻿unit ANSIFunctions;
-{DIRTY ANSI PEASANTS}
+﻿unit ANSICompatibility;
+{Legacy ANSI stubs for older Total Commander versions}
 
 interface
 
 uses
 	Windows,
-	PLUGIN_TYPES,
+	WFXTypes,
 	AnsiStrings;
 
 procedure FsGetDefRootName(DefRootName: PAnsiChar; maxlen: integer); stdcall; //Процедура вызывается один раз при установке плагина

@@ -5,7 +5,7 @@ interface
 uses
 	TCRequest,
 	TestHelper,
-	Plugin_TYPES,
+	WFXTypes,
 	SysUtils,
 	StrUtils,
 	Windows,

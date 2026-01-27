@@ -33,7 +33,7 @@ uses
 	Winapi.Windows,
 	CMRConstants,
 	CMROAuthJsonAdapter,
-	PLUGIN_TYPES,
+	WFXTypes,
 	LANGUAGE_STRINGS,
 	StringHelper;
 

@@ -8,7 +8,7 @@ uses
 	CMRConstants,
 	CloudHTTP,
 	LANGUAGE_STRINGS,
-	PLUGIN_TYPES,
+	WFXTypes,
 	TCLogger,
 	TokenRetryHelper,
 	PathHelper,

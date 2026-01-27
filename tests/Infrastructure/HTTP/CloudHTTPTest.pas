@@ -15,7 +15,7 @@ uses
 	ConnectionSettings,
 	ProxySettings,
 	SETTINGS_CONSTANTS,
-	PLUGIN_TYPES,
+	WFXTypes,
 	CMRConstants,
 	TCLogger,
 	TCProgress,

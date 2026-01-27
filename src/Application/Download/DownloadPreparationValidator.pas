@@ -38,7 +38,7 @@ type
 implementation
 
 uses
-	PLUGIN_TYPES,
+	WFXTypes,
 	SystemHelper;
 
 function TDownloadPreparationValidator.Validate(const RemotePath: TRealPath; CopyFlags: Integer): TDownloadValidationResult;

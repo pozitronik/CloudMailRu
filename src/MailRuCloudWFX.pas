@@ -11,7 +11,7 @@ uses
 	DateUtils,
 	Classes,
 	Generics.Collections,
-	PLUGIN_TYPES,
+	WFXTypes,
 	RealPath,
 	PluginSettingsManager,
 	Accountsmanager,
@@ -96,7 +96,7 @@ uses
 	CloudMailRuFactory;
 
 type
-	TMailRuCloudWFX = class(TInterfacedObject, IWFXInterface)
+	TWFXApplication = class(TInterfacedObject, IWFXInterface)
 	private const
 {$IFDEF WIN64}
 		PlatformDllPath = 'x64';
@@ -210,9 +210,9 @@ type
 
 implementation
 
-{TMailRuCloudWFX}
+{TWFXApplication}
 
-constructor TMailRuCloudWFX.Create();
+constructor TWFXApplication.Create();
 begin
 
 	PluginPath := GetModuleName(hInstance);
@@ -253,7 +253,7 @@ begin
 	FDescriptionSyncGuard := TDescriptionSyncGuard.Create(FDescriptionSync, SettingsManager, AccountSettings);
 end;
 
-function TMailRuCloudWFX.FsInit(PluginNr: Integer; pProgressProc: TProgressProcW; pLogProc: TLogProcW; pRequestProc: TRequestProcW): Integer;
+function TWFXApplication.FsInit(PluginNr: Integer; pProgressProc: TProgressProcW; pLogProc: TLogProcW; pRequestProc: TRequestProcW): Integer;
 var
 	Logger: ILogger;
 begin
@@ -346,12 +346,12 @@ begin
 	Result := 0;
 end;
 
-function TMailRuCloudWFX.DeleteLocalFile(LocalName: WideString): Integer;
+function TWFXApplication.DeleteLocalFile(LocalName: WideString): Integer;
 begin
 	Result := FLocalFileDeletionHandler.DeleteLocalFile(LocalName);
 end;
 
-destructor TMailRuCloudWFX.Destroy;
+destructor TWFXApplication.Destroy;
 begin
 	FThreadState := nil; {IThreadStateManager is reference-counted, setting to nil releases it}
 	FRetryHandler := nil;
@@ -397,7 +397,7 @@ begin
 	inherited;
 end;
 
-function TMailRuCloudWFX.ExecCommand(RemoteName: PWideChar; Command, Parameter: WideString): Integer;
+function TWFXApplication.ExecCommand(RemoteName: PWideChar; Command, Parameter: WideString): Integer;
 var
 	CmdResult: TCommandResult;
 begin
@@ -409,7 +409,7 @@ begin
 		strpcopy(RemoteName, CmdResult.SymlinkPath);
 end;
 
-function TMailRuCloudWFX.ExecInvitesAction(MainWin: THandle; RealPath: TRealPath): Integer;
+function TWFXApplication.ExecInvitesAction(MainWin: THandle; RealPath: TRealPath): Integer;
 var
 	Cloud: TCloudMailRu;
 	getResult: Integer;
@@ -436,7 +436,7 @@ begin
 	PostMessage(MainWin, WM_USER + TC_REFRESH_MESSAGE, TC_REFRESH_PARAM, 0); //TC does not update current panel, so we should do it this way
 end;
 
-function TMailRuCloudWFX.ExecProperties(MainWin: THandle; RealPath: TRealPath): Integer;
+function TWFXApplication.ExecProperties(MainWin: THandle; RealPath: TRealPath): Integer;
 var
 	Cloud: TCloudMailRu;
 	CurrentItem: TCMRDirItem;
@@ -455,7 +455,7 @@ begin
 	end;
 end;
 
-function TMailRuCloudWFX.ExecSharedAction(MainWin: THandle; RealPath: TRealPath; RemoteName: PWideChar; ActionOpen: Boolean): Integer;
+function TWFXApplication.ExecSharedAction(MainWin: THandle; RealPath: TRealPath; RemoteName: PWideChar; ActionOpen: Boolean): Integer;
 var
 	Cloud: TCloudMailRu;
 	CurrentItem: TCMRDirItem;
@@ -488,7 +488,7 @@ begin
 	end;
 end;
 
-function TMailRuCloudWFX.ExecTrashbinProperties(MainWin: THandle; RealPath: TRealPath): Integer;
+function TWFXApplication.ExecTrashbinProperties(MainWin: THandle; RealPath: TRealPath): Integer;
 var
 	Cloud: TCloudMailRu;
 	getResult: Integer;
@@ -516,7 +516,7 @@ begin
 	PostMessage(MainWin, WM_USER + TC_REFRESH_MESSAGE, TC_REFRESH_PARAM, 0); //TC does not update current panel, so we should do it this way
 end;
 
-function TMailRuCloudWFX.ExecuteFileStream(RealPath: TRealPath; StreamingSettings: TStreamingSettings): Integer;
+function TWFXApplication.ExecuteFileStream(RealPath: TRealPath; StreamingSettings: TStreamingSettings): Integer;
 var
 	CurrentItem: TCMRDirItem;
 begin
@@ -527,7 +527,7 @@ begin
 	Result := FFileStreamExecutor.Execute(RealPath, CurrentItem, StreamingSettings, ConnectionManager);
 end;
 
-function TMailRuCloudWFX.FindIncomingInviteItemByPath(InviteListing: TCMRIncomingInviteList; Path: TRealPath): TCMRIncomingInvite;
+function TWFXApplication.FindIncomingInviteItemByPath(InviteListing: TCMRIncomingInviteList; Path: TRealPath): TCMRIncomingInvite;
 var
 	getResult: Integer;
 begin
@@ -538,7 +538,7 @@ begin
 			exit(CurrentIncomingInvitesListing.FindByName(Path.Path));
 end;
 
-function TMailRuCloudWFX.FindListingItemByPath(CurrentListing: TCMRDirItemList; Path: TRealPath; UpdateListing: Boolean): TCMRDirItem;
+function TWFXApplication.FindListingItemByPath(CurrentListing: TCMRDirItemList; Path: TRealPath; UpdateListing: Boolean): TCMRDirItem;
 var
 	getResult: Integer;
 	CurrentCloud: TCloudMailRu;
@@ -547,12 +547,12 @@ begin
 	Result := FListingItemFetcher.FetchItem(CurrentListing, Path, CurrentCloud, UpdateListing);
 end;
 
-function TMailRuCloudWFX.FsContentGetSupportedField(FieldIndex: Integer; FieldName, Units: PAnsiChar; MaxLen: Integer): Integer;
+function TWFXApplication.FsContentGetSupportedField(FieldIndex: Integer; FieldName, Units: PAnsiChar; MaxLen: Integer): Integer;
 begin
 	Result := FContentFieldProvider.GetSupportedField(FieldIndex, FieldName, MaxLen);
 end;
 
-function TMailRuCloudWFX.FsContentGetValue(FileName: PWideChar; FieldIndex, UnitIndex: Integer; FieldValue: Pointer; MaxLen, Flags: Integer): Integer;
+function TWFXApplication.FsContentGetValue(FileName: PWideChar; FieldIndex, UnitIndex: Integer; FieldValue: Pointer; MaxLen, Flags: Integer): Integer;
 var
 	Item: TCMRDirItem;
 	RealPath: TRealPath;
@@ -587,7 +587,7 @@ begin
 	Result := FContentFieldProvider.GetValue(FieldIndex, Item, FieldValue, Context);
 end;
 
-function TMailRuCloudWFX.FsDeleteFile(RemoteName: WideString): Boolean;
+function TWFXApplication.FsDeleteFile(RemoteName: WideString): Boolean;
 var
 	RealPath: TRealPath;
 	getResult: Integer;
@@ -609,7 +609,7 @@ begin
 		FDescriptionSyncGuard.OnFileDeleted(RealPath, Cloud);
 end;
 
-function TMailRuCloudWFX.FsDisconnect(DisconnectRoot: PWideChar): Boolean;
+function TWFXApplication.FsDisconnect(DisconnectRoot: PWideChar): Boolean;
 begin
 	if not FThreadState.HasActiveBackgroundJobs(ExtractFileName(DisconnectRoot)) then
 	begin
@@ -620,7 +620,7 @@ begin
 	end;
 end;
 
-function TMailRuCloudWFX.FsExecuteFile(MainWin: THandle; RemoteName, Verb: PWideChar): Integer;
+function TWFXApplication.FsExecuteFile(MainWin: THandle; RemoteName, Verb: PWideChar): Integer;
 var
 	Action: TExecutionAction;
 begin
@@ -652,7 +652,7 @@ begin
 	end;
 end;
 
-function TMailRuCloudWFX.FsExtractCustomIcon(RemoteName: PWideChar; ExtractFlags: Integer; var TheIcon: hIcon): Integer;
+function TWFXApplication.FsExtractCustomIcon(RemoteName: PWideChar; ExtractFlags: Integer; var TheIcon: hIcon): Integer;
 var
 	RealPath: TRealPath;
 	Input: TIconContextInput;
@@ -689,13 +689,13 @@ begin
 		strpcopy(RemoteName, RenderResult.ResourceName);
 end;
 
-function TMailRuCloudWFX.FsFindClose(Hdl: THandle): Integer;
+function TWFXApplication.FsFindClose(Hdl: THandle): Integer;
 begin
 	FileCounter := 0;
 	Result := 0;
 end;
 
-function TMailRuCloudWFX.FsFindFirst(Path: WideString; var FindData: tWIN32FINDDATAW): THandle;
+function TWFXApplication.FsFindFirst(Path: WideString; var FindData: tWIN32FINDDATAW): THandle;
 var
 	SkipResult: TListingSkipResult;
 	RootResult: TRootListingResult;
@@ -737,7 +737,7 @@ begin
 	end;
 end;
 
-function TMailRuCloudWFX.FsFindNext(Hdl: THandle; var FindData: tWIN32FINDDATAW): Boolean;
+function TWFXApplication.FsFindNext(Hdl: THandle; var FindData: tWIN32FINDDATAW): Boolean;
 begin
 	if GlobalPath = '\' then
 	begin
@@ -765,7 +765,7 @@ begin
 	end;
 end;
 
-function TMailRuCloudWFX.FsGetBackgroundFlags: Integer;
+function TWFXApplication.FsGetBackgroundFlags: Integer;
 begin
 	if SettingsManager.GetSettings.DisableMultiThreading then
 		Result := 0
@@ -773,12 +773,12 @@ begin
 		Result := BG_DOWNLOAD + BG_UPLOAD; //+ BG_ASK_USER;
 end;
 
-procedure TMailRuCloudWFX.FsGetDefRootName(DefRootName: PAnsiChar; MaxLen: Integer);
+procedure TWFXApplication.FsGetDefRootName(DefRootName: PAnsiChar; MaxLen: Integer);
 begin
 
 end;
 
-function TMailRuCloudWFX.FsGetFile(RemoteName, LocalName: WideString; CopyFlags: Integer; RemoteInfo: pRemoteInfo): Integer;
+function TWFXApplication.FsGetFile(RemoteName, LocalName: WideString; CopyFlags: Integer; RemoteInfo: pRemoteInfo): Integer;
 begin
 	Result := FDownloadOrchestrator.Execute(RemoteName, LocalName, CopyFlags,
 		function(const RemotePath: TRealPath; const ALocalName, ARemoteName: WideString; ACopyFlags: Integer): Integer
@@ -791,7 +791,7 @@ begin
 		end);
 end;
 
-function TMailRuCloudWFX.FsMkDir(Path: WideString): Boolean;
+function TWFXApplication.FsMkDir(Path: WideString): Boolean;
 var
 	RealPath: TRealPath;
 	getResult: Integer;
@@ -813,7 +813,7 @@ begin
 		FMoveOperationTracker.TrackMoveTarget(RealPath);
 end;
 
-function TMailRuCloudWFX.FsPutFile(LocalName, RemoteName: WideString; CopyFlags: Integer): Integer;
+function TWFXApplication.FsPutFile(LocalName, RemoteName: WideString; CopyFlags: Integer): Integer;
 var
 	RealPath: TRealPath;
 	ValidationResult: TUploadValidationResult;
@@ -849,7 +849,7 @@ begin
 		end);
 end;
 
-function TMailRuCloudWFX.FsRemoveDir(RemoteName: WideString): Boolean;
+function TWFXApplication.FsRemoveDir(RemoteName: WideString): Boolean;
 var
 	RealPath: TRealPath;
 	getResult: Integer;
@@ -875,7 +875,7 @@ begin
 	end;
 end;
 
-function TMailRuCloudWFX.FsRenMovFile(OldName, NewName: PWideChar; Move, OverWrite: Boolean; ri: pRemoteInfo): Integer;
+function TWFXApplication.FsRenMovFile(OldName, NewName: PWideChar; Move, OverWrite: Boolean; ri: pRemoteInfo): Integer;
 var
 	OldRealPath: TRealPath;
 	NewRealPath: TRealPath;
@@ -906,7 +906,7 @@ begin
 	TCProgress.Progress(OldName, NewName, 100);
 end;
 
-procedure TMailRuCloudWFX.FsSetCryptCallback(PCryptProc: TCryptProcW; CryptoNr, Flags: Integer);
+procedure TWFXApplication.FsSetCryptCallback(PCryptProc: TCryptProcW; CryptoNr, Flags: Integer);
 begin
 	PasswordManager := TTCPasswordManager.Create(PCryptProc, PluginNum, CryptoNr, TCLogger, FTCHandler);
 	PasswordUI := TPasswordUIProvider.Create;
@@ -935,7 +935,7 @@ begin
 	FOverwritePreparationHandler := TOverwritePreparationHandler.Create(ConnectionManager);
 end;
 
-procedure TMailRuCloudWFX.FsStatusInfo(RemoteDir: WideString; InfoStartEnd, InfoOperation: Integer);
+procedure TWFXApplication.FsStatusInfo(RemoteDir: WideString; InfoStartEnd, InfoOperation: Integer);
 var
 	RealPath: TRealPath;
 	Context: TOperationContext;
@@ -959,7 +959,7 @@ begin
 	end;
 end;
 
-function TMailRuCloudWFX.GetRemoteFile(RemotePath: TRealPath; LocalName, RemoteName: WideString; CopyFlags: Integer): Integer;
+function TWFXApplication.GetRemoteFile(RemotePath: TRealPath; LocalName, RemoteName: WideString; CopyFlags: Integer): Integer;
 var
 	getResult: Integer;
 	Cloud: TCloudMailRu;
@@ -988,7 +988,7 @@ begin
 	end;
 end;
 
-function TMailRuCloudWFX.PutRemoteFile(RemotePath: TRealPath; LocalName, RemoteName: WideString; CopyFlags: Integer): Integer;
+function TWFXApplication.PutRemoteFile(RemotePath: TRealPath; LocalName, RemoteName: WideString; CopyFlags: Integer): Integer;
 var
 	getResult: Integer;
 	Cloud: TCloudMailRu;

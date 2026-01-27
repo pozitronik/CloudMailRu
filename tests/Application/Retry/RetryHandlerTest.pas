@@ -15,7 +15,7 @@ uses
 	RetryHandler,
 	PluginSettings,
 	StreamingSettings,
-	PLUGIN_TYPES,
+	WFXTypes,
 	SETTINGS_CONSTANTS,
 	TCHandler;
 

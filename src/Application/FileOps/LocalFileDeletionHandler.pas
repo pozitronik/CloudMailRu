@@ -16,7 +16,7 @@ uses
 	SysUtils,
 	PluginSettingsManager,
 	TCLogger,
-	PLUGIN_TYPES,
+	WFXTypes,
 	CMRConstants,
 	SETTINGS_CONSTANTS,
 	LANGUAGE_STRINGS,

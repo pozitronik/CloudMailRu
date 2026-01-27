@@ -97,7 +97,7 @@ implementation
 
 uses
 	System.SysUtils,
-	PLUGIN_TYPES,
+	WFXTypes,
 	LANGUAGE_STRINGS,
 	JSONHelper;
 

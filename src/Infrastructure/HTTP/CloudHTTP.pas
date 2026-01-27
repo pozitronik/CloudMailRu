@@ -16,7 +16,7 @@ uses
 	TCLogger,
 	TCProgress,
 	SETTINGS_CONSTANTS,
-	PLUGIN_TYPES,
+	WFXTypes,
 	CMRConstants,
 	LANGUAGE_STRINGS,
 	ParsingHelper,

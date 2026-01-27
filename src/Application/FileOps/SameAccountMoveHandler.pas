@@ -45,7 +45,7 @@ type
 implementation
 
 uses
-	PLUGIN_TYPES;
+	WFXTypes;
 
 constructor TSameAccountMoveHandler.Create(ThreadState: IThreadStateManager; DescriptionSyncGuard: IDescriptionSyncGuard);
 begin

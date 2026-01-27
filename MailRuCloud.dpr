@@ -4,7 +4,7 @@
 
 uses
 	DebugHelper in 'src\Infrastructure\Logger\DebugHelper.pas',
-	ANSIFunctions in 'src\Infrastructure\Protocol\ANSIFunctions.pas',
+	ANSICompatibility in 'src\Infrastructure\Protocol\ANSICompatibility.pas',
 	AccountSettings in 'src\Infrastructure\Settings\AccountSettings.pas',
 	Accounts in 'src\Presentation\UI\Forms\Accounts.pas' {AccountsForm} ,
 	AccountsManager in 'src\Infrastructure\Settings\AccountsManager.pas',
@@ -54,7 +54,7 @@ uses
 	JSON,
 	JSONHelper in 'src\Infrastructure\HTTP\JSONHelper.pas',
 	Messages,
-	PLUGIN_TYPES in 'src\Infrastructure\Protocol\PLUGIN_TYPES.pas',
+	WFXTypes in 'src\Infrastructure\Protocol\WFXTypes.pas',
 	ParsingHelper in 'src\Infrastructure\HTTP\ParsingHelper.pas',
 	PathHelper in 'src\Infrastructure\IO\PathHelper.pas',
 	PluginSettings in 'src\Infrastructure\Settings\PluginSettings.pas',
@@ -163,7 +163,7 @@ uses
 {$R *.res}
 
 var
-	MailRuCloudWFX: TMailRuCloudWFX;
+	MailRuCloudWFX: TWFXApplication;
 
 function FsGetBackgroundFlags: Integer; stdcall;
 begin
@@ -265,7 +265,7 @@ end;
 
 procedure InitPluginData;
 begin
-	MailRuCloudWFX := TMailRuCloudWFX.Create();
+	MailRuCloudWFX := TWFXApplication.Create();
 end;
 
 procedure FreePluginData();

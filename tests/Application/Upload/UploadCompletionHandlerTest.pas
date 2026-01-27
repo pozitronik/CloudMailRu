@@ -15,7 +15,7 @@ uses
 	DescriptionSyncGuard,
 	RealPath,
 	CloudMailRu,
-	PLUGIN_TYPES;
+	WFXTypes;
 
 type
 	{Mock logger that tracks Log calls}

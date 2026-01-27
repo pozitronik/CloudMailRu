@@ -5,7 +5,7 @@ interface
 uses
 	CloudFileOperations,
 	CMRConstants,
-	PLUGIN_TYPES,
+	WFXTypes,
 	TCLogger,
 	CloudHTTP,
 	MockCloudHTTP,

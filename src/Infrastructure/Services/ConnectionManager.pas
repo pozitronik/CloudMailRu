@@ -21,7 +21,7 @@ uses
 	Windows,
 	Vcl.Controls,
 	SETTINGS_CONSTANTS,
-	PLUGIN_TYPES,
+	WFXTypes,
 	ProxySettings,
 	AccountSettings,
 	CloudSettings,

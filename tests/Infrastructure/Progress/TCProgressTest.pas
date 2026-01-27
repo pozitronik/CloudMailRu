@@ -5,7 +5,7 @@ interface
 uses
 	TCProgress,
 	TestHelper,
-	Plugin_TYPES,
+	WFXTypes,
 	SysUtils,
 	DUnitX.TestFramework;
 

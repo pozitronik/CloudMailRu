@@ -23,7 +23,7 @@ implementation
 uses
 	SysUtils,
 	CMRConstants,
-	PLUGIN_TYPES,
+	WFXTypes,
 	LANGUAGE_STRINGS,
 	ParsingHelper;
 

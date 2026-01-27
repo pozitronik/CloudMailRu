@@ -143,7 +143,7 @@ implementation
 
 uses
 	CMRConstants,
-	PLUGIN_TYPES;
+	WFXTypes;
 
 const
 	{Test JSON responses - body is a string for errors, not an object}

@@ -11,7 +11,7 @@ uses
 	RealPath,
 	CloudMailRu,
 	CloudSettings,
-	PLUGIN_TYPES,
+	WFXTypes,
 	CMRConstants,
 	ThreadStateManager,
 	DescriptionSyncGuard,

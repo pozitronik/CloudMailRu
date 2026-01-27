@@ -11,7 +11,7 @@ uses
 	TCProgress,
 	LocalFileDeletionHandler,
 	DescriptionSyncGuard,
-	PLUGIN_TYPES,
+	WFXTypes,
 	CMRConstants,
 	RealPath,
 	CloudMailRu,

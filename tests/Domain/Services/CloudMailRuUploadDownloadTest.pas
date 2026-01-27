@@ -11,7 +11,7 @@ uses
 	CMRFileIdentity,
 	CMRDirItem,
 	CMRConstants,
-	PLUGIN_TYPES,
+	WFXTypes,
 	TCLogger,
 	TCProgress,
 	TCRequest,

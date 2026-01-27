@@ -31,7 +31,7 @@ implementation
 uses
 	System.SysUtils,
 	CMRConstants,
-	PLUGIN_TYPES,
+	WFXTypes,
 	LANGUAGE_STRINGS;
 
 {TCloudErrorMapper}

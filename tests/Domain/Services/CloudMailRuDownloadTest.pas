@@ -9,7 +9,7 @@ uses
 	MockCloudHTTP,
 	MockHTTPManager,
 	MockShardHelper,
-	PLUGIN_TYPES,
+	WFXTypes,
 	System.Classes,
 	System.SysUtils,
 	DUnitX.TestFramework;

@@ -14,7 +14,7 @@ uses
 	RetryHandler,
 	PluginSettingsManager,
 	RealPath,
-	PLUGIN_TYPES,
+	WFXTypes,
 	StreamingSettings;
 
 type

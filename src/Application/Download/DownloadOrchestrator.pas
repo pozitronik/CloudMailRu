@@ -11,7 +11,7 @@ uses
 	RetryHandler,
 	PluginSettingsManager,
 	RealPath,
-	PLUGIN_TYPES;
+	WFXTypes;
 
 type
 	{Callback for performing the actual download operation}

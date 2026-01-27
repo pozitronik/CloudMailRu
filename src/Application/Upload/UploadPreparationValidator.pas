@@ -46,7 +46,7 @@ type
 implementation
 
 uses
-	PLUGIN_TYPES,
+	WFXTypes,
 	SystemHelper,
 	PathHelper;
 

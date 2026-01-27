@@ -7,7 +7,7 @@ uses
 	CloudSettings,
 	CMRConstants,
 	LANGUAGE_STRINGS,
-	PLUGIN_TYPES,
+	WFXTypes,
 	TCLogger,
 	TCProgress,
 	TCRequest,

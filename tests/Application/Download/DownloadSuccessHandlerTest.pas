@@ -16,7 +16,7 @@ uses
 	TCProgress,
 	DescriptionSyncGuard,
 	PluginSettings,
-	PLUGIN_TYPES,
+	WFXTypes,
 	RealPath,
 	CMRDirItem,
 	CloudMailRu,

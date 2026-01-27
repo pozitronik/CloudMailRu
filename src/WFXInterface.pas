@@ -4,7 +4,7 @@ interface
 
 uses
 	Windows,
-	PLUGIN_TYPES;
+	WFXTypes;
 
 type
 	{This class implements a basic abstract filesystem plugin}

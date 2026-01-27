@@ -7,7 +7,7 @@ interface
 
 uses
 	DUnitX.TestFramework,
-	PLUGIN_TYPES,
+	WFXTypes,
 	SETTINGS_CONSTANTS,
 	TCLogger,
 	LocalFileConflictResolver;

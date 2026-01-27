@@ -7,7 +7,7 @@ unit OperationLifecycleHandler;
 interface
 
 uses
-	PLUGIN_TYPES;
+	WFXTypes;
 
 type
 	{Discrete actions that can be performed during operation lifecycle}

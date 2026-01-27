@@ -56,7 +56,7 @@ type
 implementation
 
 uses
-	PLUGIN_TYPES;
+	WFXTypes;
 
 constructor TMoveOperationContextTracker.Create(ThreadState: IThreadStateManager);
 begin

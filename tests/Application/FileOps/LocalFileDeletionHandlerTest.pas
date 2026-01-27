@@ -14,7 +14,7 @@ uses
 	TCLogger,
 	LocalFileDeletionHandler,
 	PluginSettings,
-	PLUGIN_TYPES,
+	WFXTypes,
 	SETTINGS_CONSTANTS,
 	StreamingSettings;
 

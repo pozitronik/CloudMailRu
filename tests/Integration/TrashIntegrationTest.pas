@@ -36,7 +36,7 @@ uses
 	System.IOUtils,
 	CMRDirItem,
 	CMRDirItemList,
-	PLUGIN_TYPES,
+	WFXTypes,
 	CMRConstants,
 	TestDataGenerator;
 

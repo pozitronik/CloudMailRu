@@ -24,7 +24,7 @@ uses
 	System.Generics.Collections,
 	System.SysUtils,
 	SETTINGS_CONSTANTS,
-	PLUGIN_TYPES,
+	WFXTypes,
 	Winapi.Windows,
 	PathHelper,
 	FileHelper,

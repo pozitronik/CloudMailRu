@@ -7,7 +7,7 @@ interface
 
 uses
 	SysUtils,
-	PLUGIN_TYPES;
+	WFXTypes;
 
 type
 	{User request interface for interactive dialogs.

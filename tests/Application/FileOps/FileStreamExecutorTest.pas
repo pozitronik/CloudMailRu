@@ -16,7 +16,7 @@ uses
 	CMRDirItem,
 	CMRConstants,
 	StreamingSettings,
-	PLUGIN_TYPES,
+	WFXTypes,
 	FileStreamExecutor,
 	CloudMailRu,
 	CloudMailRuFactory,

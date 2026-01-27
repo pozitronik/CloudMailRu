@@ -54,7 +54,7 @@ uses
 	CloudMailRu,
 	CMRDirItemList,
 	CMRConstants,
-	PLUGIN_TYPES,
+	WFXTypes,
 	TestDataGenerator;
 
 {TUploadIntegrationTest}

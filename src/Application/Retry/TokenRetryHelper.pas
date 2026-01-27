@@ -76,7 +76,7 @@ implementation
 
 uses
 	CMRConstants,
-	PLUGIN_TYPES,
+	WFXTypes,
 	JSONHelper;
 
 function IsTokenExpiredInJSON(const JSON: WideString): Boolean;

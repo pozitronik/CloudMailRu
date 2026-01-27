@@ -7,7 +7,7 @@ interface
 
 uses
 	Windows,
-	PLUGIN_TYPES,
+	WFXTypes,
 	WSList,
 	CMRConstants,
 	WindowsHelper;

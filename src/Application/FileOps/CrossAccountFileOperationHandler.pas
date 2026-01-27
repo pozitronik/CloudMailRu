@@ -56,7 +56,7 @@ implementation
 
 uses
 	SysUtils,
-	PLUGIN_TYPES,
+	WFXTypes,
 	CMRConstants,
 	CMRDirItem,
 	CMRFileIdentity,

@@ -26,7 +26,7 @@ uses
 	TCRequest,
 	TCHandler,
 	CMRConstants,
-	PLUGIN_TYPES;
+	WFXTypes;
 
 type
 	{Mock settings manager for testing}

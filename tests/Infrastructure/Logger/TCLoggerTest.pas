@@ -4,7 +4,7 @@ interface
 
 uses
 	TCLogger,
-	PLUGIN_TYPES,
+	WFXTypes,
 	CMRConstants,
 	TestHelper,
 	SysUtils,

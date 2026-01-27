@@ -9,7 +9,7 @@ interface
 uses
 	CloudMailRu,
 	WindowsFileSystem,
-	PLUGIN_TYPES,
+	WFXTypes,
 	System.SysUtils;
 
 type

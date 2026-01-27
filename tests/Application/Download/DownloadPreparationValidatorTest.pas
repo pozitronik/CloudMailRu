@@ -50,7 +50,7 @@ implementation
 
 uses
 	SysUtils,
-	PLUGIN_TYPES;
+	WFXTypes;
 
 {TDownloadPreparationValidatorTest}
 

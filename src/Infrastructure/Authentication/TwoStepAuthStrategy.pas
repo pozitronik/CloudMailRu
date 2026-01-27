@@ -34,7 +34,7 @@ uses
 	CMRConstants,
 	CMRTwostep,
 	CMRTwostepJsonAdapter,
-	PLUGIN_TYPES,
+	WFXTypes,
 	LANGUAGE_STRINGS,
 	ParsingHelper;
 

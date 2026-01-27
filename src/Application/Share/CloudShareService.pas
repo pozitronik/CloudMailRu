@@ -15,7 +15,7 @@ uses
 	ParsingHelper,
 	LANGUAGE_STRINGS,
 	PathHelper,
-	PLUGIN_TYPES,
+	WFXTypes,
 	StringHelper,
 	TCLogger,
 	TokenRetryHelper,

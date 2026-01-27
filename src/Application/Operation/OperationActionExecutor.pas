@@ -18,7 +18,7 @@ uses
 	RealPath,
 	CMRConstants,
 	LANGUAGE_STRINGS,
-	PLUGIN_TYPES;
+	WFXTypes;
 
 type
 	{Executes operation lifecycle actions determined by IOperationLifecycleHandler.

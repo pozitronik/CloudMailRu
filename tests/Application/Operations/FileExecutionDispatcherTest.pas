@@ -95,7 +95,7 @@ implementation
 uses
 	SysUtils,
 	CMRConstants,
-	PLUGIN_TYPES,
+	WFXTypes,
 	RealPath;
 
 procedure TFileExecutionDispatcherTest.Setup;

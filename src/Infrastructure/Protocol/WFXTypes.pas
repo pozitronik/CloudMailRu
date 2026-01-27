@@ -1,4 +1,4 @@
-﻿unit PLUGIN_TYPES;
+﻿unit WFXTypes;
 
 {Типы и константы, используемые в плагине}
 interface

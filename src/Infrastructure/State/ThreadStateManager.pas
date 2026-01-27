@@ -76,7 +76,7 @@ type
 	end;
 
 	{Centralized manager for per-thread state in WFX plugin.
-		Encapsulates 11 TDictionary instances previously scattered in TMailRuCloudWFX.
+		Encapsulates 11 TDictionary instances previously scattered in TWFXApplication.
 		Thread-safe through TDictionary keyed by GetCurrentThreadID().}
 	TThreadStateManager = class(TInterfacedObject, IThreadStateManager)
 	private

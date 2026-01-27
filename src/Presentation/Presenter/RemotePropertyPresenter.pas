@@ -25,7 +25,7 @@ uses
 	WindowsFileSystem,
 	TCHandler,
 	LANGUAGE_STRINGS,
-	PLUGIN_TYPES,
+	WFXTypes,
 	System.Classes,
 	System.SysUtils;
 

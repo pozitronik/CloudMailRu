@@ -44,7 +44,7 @@ uses
 	System.SysUtils,
 	System.Classes,
 	CMRDirItemList,
-	PLUGIN_TYPES,
+	WFXTypes,
 	TestDataGenerator;
 
 {TDirectoryIntegrationTest}

@@ -17,7 +17,7 @@ uses
 	TCPasswordManager,
 	AccountsManager,
 	PluginSettingsManager,
-	PLUGIN_TYPES;
+	WFXTypes;
 
 type
 	{View interface for the Accounts dialog}

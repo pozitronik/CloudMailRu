@@ -66,7 +66,7 @@ uses
 	PathHelper,
 	StringHelper,
 	CMRConstants,
-	PLUGIN_TYPES;
+	WFXTypes;
 
 class function TExecutionAction.None: TExecutionAction;
 begin

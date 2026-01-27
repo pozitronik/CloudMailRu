@@ -12,7 +12,7 @@ uses
 	CMRConstants,
 	CMRFileIdentity,
 	CMRDirItem,
-	PLUGIN_TYPES,
+	WFXTypes,
 	SETTINGS_CONSTANTS,
 	TCLogger,
 	TCProgress,

@@ -25,7 +25,7 @@ uses
 	CMRConstants,
 	CMROAuth,
 	CMROAuthJsonAdapter,
-	PLUGIN_TYPES,
+	WFXTypes,
 	LANGUAGE_STRINGS;
 
 {Helper function to get OAuth token - extracted from CloudMailRu.pas}

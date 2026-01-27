@@ -8,7 +8,7 @@ interface
 uses
 	ConnectionManager,
 	RealPath,
-	PLUGIN_TYPES;
+	WFXTypes;
 
 type
 	TOverwritePreparationResult = record

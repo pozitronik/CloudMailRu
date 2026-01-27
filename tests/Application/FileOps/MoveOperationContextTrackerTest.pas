@@ -114,7 +114,7 @@ implementation
 
 uses
 	SysUtils,
-	PLUGIN_TYPES;
+	WFXTypes;
 
 {TMockThreadStateForMove}
 

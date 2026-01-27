@@ -13,7 +13,7 @@ uses
 	TCPasswordManager,
 	AccountsManager,
 	PluginSettingsManager,
-	PLUGIN_TYPES,
+	WFXTypes,
 	System.Classes,
 	System.SysUtils,
 	System.Generics.Collections,

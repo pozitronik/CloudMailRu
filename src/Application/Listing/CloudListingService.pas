@@ -21,7 +21,7 @@ uses
 	PathHelper,
 	StringHelper, {FormatSize}
 	LANGUAGE_STRINGS,
-	PLUGIN_TYPES,
+	WFXTypes,
 	TCLogger,
 	TokenRetryHelper,
 	System.SysUtils;

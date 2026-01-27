@@ -8,7 +8,7 @@ uses
 	CMRConstants,
 	CMROAuth,
 	CMROperationResult,
-	PLUGIN_TYPES,
+	WFXTypes,
 	LANGUAGE_STRINGS,
 	TCLogger,
 	TCProgress,

@@ -110,7 +110,7 @@ type
 implementation
 
 uses
-	PLUGIN_TYPES,
+	WFXTypes,
 	IdSSLOpenSSLHeaders;
 
 {TIntegrationTestBase}

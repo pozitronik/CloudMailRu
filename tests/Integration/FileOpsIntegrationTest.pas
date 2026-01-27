@@ -47,7 +47,7 @@ uses
 	System.Classes,
 	System.IOUtils,
 	CMRDirItemList,
-	PLUGIN_TYPES,
+	WFXTypes,
 	CMRConstants,
 	PathHelper,
 	TestDataGenerator;

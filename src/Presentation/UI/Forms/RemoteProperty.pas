@@ -10,7 +10,7 @@ uses
 	CMRDirItemList,
 	CMRDirItem,
 	CMRInviteList,
-	Plugin_types,
+	WFXTypes,
 	Description,
 	CMRConstants,
 	LANGUAGE_STRINGS,

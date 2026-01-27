@@ -10,7 +10,7 @@ uses
 	DUnitX.TestFramework,
 	OverwritePreparationHandler,
 	MockConnectionManager,
-	PLUGIN_TYPES,
+	WFXTypes,
 	RealPath;
 
 type

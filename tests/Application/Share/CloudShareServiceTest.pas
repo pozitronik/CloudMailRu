@@ -8,7 +8,7 @@ uses
 	CMRDirItem,
 	CMRInviteList,
 	CMRConstants,
-	PLUGIN_TYPES,
+	WFXTypes,
 	TCLogger,
 	CloudHTTP,
 	MockCloudHTTP,

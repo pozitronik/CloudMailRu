@@ -14,7 +14,7 @@ uses
 	TCLogger,
 	TCProgress,
 	DescriptionSyncGuard,
-	PLUGIN_TYPES,
+	WFXTypes,
 	CMRConstants,
 	RealPath,
 	CMRDirItem,

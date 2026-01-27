@@ -110,7 +110,7 @@ implementation
 uses
 	SysUtils,
 	Controls,
-	PLUGIN_TYPES;
+	WFXTypes;
 
 {TMockShareService}
 

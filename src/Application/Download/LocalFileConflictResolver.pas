@@ -6,7 +6,7 @@ unit LocalFileConflictResolver;
 interface
 
 uses
-	PLUGIN_TYPES,
+	WFXTypes,
 	TCLogger;
 
 type

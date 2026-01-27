@@ -11,7 +11,7 @@ uses
 	CMRFileIdentity,
 	CMROperationResult,
 	CMROperationResultJsonAdapter,
-	PLUGIN_TYPES,
+	WFXTypes,
 	LANGUAGE_STRINGS,
 	SETTINGS_CONSTANTS,
 	HashInfo,

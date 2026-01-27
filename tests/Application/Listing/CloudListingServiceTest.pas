@@ -10,7 +10,7 @@ uses
 	CMROperationResult,
 	CMRSpace,
 	CMRConstants,
-	PLUGIN_TYPES,
+	WFXTypes,
 	TCLogger,
 	CloudHTTP,
 	FileCipher,

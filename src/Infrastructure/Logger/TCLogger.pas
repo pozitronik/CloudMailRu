@@ -4,7 +4,7 @@ interface
 
 uses
 	SysUtils,
-	PLUGIN_TYPES,
+	WFXTypes,
 	SystemHelper;
 
 type

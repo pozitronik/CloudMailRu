@@ -9,7 +9,7 @@ interface
 
 uses
 	MockCloudHTTP,
-	PLUGIN_TYPES,
+	WFXTypes,
 	System.Classes,
 	System.SysUtils,
 	DUnitX.TestFramework;

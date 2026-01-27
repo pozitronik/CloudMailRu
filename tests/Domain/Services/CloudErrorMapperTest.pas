@@ -6,7 +6,7 @@ uses
 	CloudErrorMapper,
 	CMROperationResult,
 	CMRConstants,
-	PLUGIN_TYPES,
+	WFXTypes,
 	TCLogger,
 	TestHelper,
 	System.SysUtils,

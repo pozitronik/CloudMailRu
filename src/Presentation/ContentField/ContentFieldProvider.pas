@@ -8,7 +8,7 @@ interface
 
 uses
 	Windows, SysUtils, AnsiStrings, DateUtils,
-	CMRDirItem, CMRConstants, PLUGIN_TYPES,
+	CMRDirItem, CMRConstants, WFXTypes,
 	SystemHelper;
 
 type
@@ -45,7 +45,7 @@ type
 	end;
 
 	{Provides content field metadata and value extraction for WFX plugin.
-		Encapsulates field definitions and extraction logic previously in TMailRuCloudWFX.}
+		Encapsulates field definitions and extraction logic previously in TWFXApplication.}
 	TContentFieldProvider = class(TInterfacedObject, IContentFieldProvider)
 	private type
 		TFieldDefinition = record

@@ -49,7 +49,7 @@ uses
 	SysUtils,
 	CMRConstants,
 	LANGUAGE_STRINGS,
-	PLUGIN_TYPES,
+	WFXTypes,
 	PathHelper;
 
 constructor TListingItemFetcher.Create(Logger: ILogger);

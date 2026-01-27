@@ -75,7 +75,7 @@ implementation
 
 uses
 	Windows,
-	PLUGIN_TYPES,
+	WFXTypes,
 	SETTINGS_CONSTANTS,
 	CMRConstants,
 	TCLogger,

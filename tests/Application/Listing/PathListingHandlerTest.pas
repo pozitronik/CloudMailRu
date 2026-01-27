@@ -22,7 +22,7 @@ uses
 	CMRDirItemList,
 	CMRIncomingInviteList,
 	CMRConstants,
-	PLUGIN_TYPES,
+	WFXTypes,
 	IAuthStrategyInterface,
 	WindowsFileSystem,
 	TCLogger,

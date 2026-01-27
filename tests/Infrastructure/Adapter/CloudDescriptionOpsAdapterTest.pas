@@ -8,7 +8,7 @@ interface
 uses
 	CloudDescriptionOpsAdapter,
 	WindowsFileSystem,
-	PLUGIN_TYPES,
+	WFXTypes,
 	DUnitX.TestFramework;
 
 type

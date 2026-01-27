@@ -13,7 +13,7 @@ uses
 	TCHandler,
 	IAuthStrategyInterface,
 	WindowsFileSystem,
-	PLUGIN_TYPES,
+	WFXTypes,
 	SysUtils,
 	DUnitX.TestFramework;
 

@@ -12,7 +12,7 @@ uses
 	System.Generics.Collections,
 	CloudHTTP,
 	TCProgress,
-	PLUGIN_TYPES,
+	WFXTypes,
 	IdCookieManager,
 	IdHTTP;
 

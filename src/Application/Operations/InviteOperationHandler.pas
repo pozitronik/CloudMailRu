@@ -36,7 +36,7 @@ implementation
 
 uses
 	Controls,
-	PLUGIN_TYPES;
+	WFXTypes;
 
 function TInviteOperationHandler.Execute(ParentWindow: HWND; ShareService: ICloudShareService; const Invite: TCMRIncomingInvite; ShowDialog: TShowInvitePropertiesFunc): Integer;
 var

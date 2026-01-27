@@ -24,7 +24,7 @@ uses
 	SysUtils,
 	DateUtils,
 	CMRConstants,
-	PLUGIN_TYPES,
+	WFXTypes,
 	LANGUAGE_STRINGS,
 	ParsingHelper,
 	StringHelper,

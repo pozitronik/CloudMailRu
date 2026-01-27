@@ -4,7 +4,7 @@ interface
 
 uses
 	Windows, SysUtils, AnsiStrings,
-	CMRDirItem, CMRConstants, PLUGIN_TYPES,
+	CMRDirItem, CMRConstants, WFXTypes,
 	ContentFieldProvider,
 	DUnitX.TestFramework;
 

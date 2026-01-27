@@ -69,7 +69,7 @@ implementation
 
 uses
 	SysUtils,
-	PLUGIN_TYPES;
+	WFXTypes;
 
 procedure TIconRenderingEngineTest.Setup;
 begin

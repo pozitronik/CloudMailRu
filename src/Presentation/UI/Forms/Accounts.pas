@@ -16,7 +16,7 @@ uses
 	PathHelper,
 	WindowsHelper,
 	SETTINGS_CONSTANTS,
-	PLUGIN_TYPES,
+	WFXTypes,
 	Vcl.ComCtrls,
 	Vcl.Mask,
 	Vcl.ExtCtrls,

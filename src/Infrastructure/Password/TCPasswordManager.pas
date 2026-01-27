@@ -5,7 +5,7 @@ unit TCPasswordManager;
 interface
 
 uses
-	PLUGIN_TYPES,
+	WFXTypes,
 	LANGUAGE_STRINGS,
 	Windows,
 	SysUtils,

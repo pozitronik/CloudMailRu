@@ -15,7 +15,7 @@ uses
 	CMRSpace,
 	CMRConstants,
 	CMRFileIdentity,
-	PLUGIN_TYPES,
+	WFXTypes,
 	SETTINGS_CONSTANTS,
 	TCLogger,
 	TCProgress,
