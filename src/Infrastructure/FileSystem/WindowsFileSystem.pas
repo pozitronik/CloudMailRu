@@ -182,7 +182,12 @@ var
 begin
 	{Return reader over empty stream, reader owns the stream}
 	Stream := TStringStream.Create('', Encoding);
-	Result := TOwningStreamReader.Create(Stream, Encoding);
+	try
+		Result := TOwningStreamReader.Create(Stream, Encoding);
+	except
+		Stream.Free;
+		raise;
+	end;
 end;
 
 {TMemoryFileSystem}
@@ -306,7 +311,12 @@ var
 begin
 	Content := GetFileContent(Path);
 	Stream := TStringStream.Create(Content, Encoding);
-	Result := TOwningStreamReader.Create(Stream, Encoding);
+	try
+		Result := TOwningStreamReader.Create(Stream, Encoding);
+	except
+		Stream.Free;
+		raise;
+	end;
 end;
 
 {TWindowsFileSystem}
