@@ -29,7 +29,7 @@ const
 
 type
 
-	TDescription = class
+	TDescription = class {todo: class rename and interface extraction}
 
 	private
 	var
@@ -39,7 +39,7 @@ type
 		divider: WideString;
 		FFileSystem: IFileSystem;
 
-		function GetionFilename: WideString;
+		function GetIonFilename: WideString;
 		function FormatValue(Value: WideString; FormatType: Integer): WideString;
 		function DetermineDivider(): WideString;
 
@@ -56,7 +56,7 @@ type
 
 		procedure Clear;
 		function DetermineEncoding(): TEncoding;
-		property ionFilename: WideString read GetionFilename;
+		property IonFilename: WideString read GetIonFilename;
 
 		function CopyFrom(from_description: TDescription; item: WideString; move: boolean = false): Integer;
 	end;
@@ -182,7 +182,7 @@ begin
 	end;
 end;
 
-function TDescription.GetionFilename: WideString;
+function TDescription.GetIonFilename: WideString;
 begin
 	result := self.ion_filename;
 end;
