@@ -22,6 +22,7 @@ uses
 	AuthStrategy,
 	OAuthAppAuthStrategy,
 	WindowsFileSystem,
+	HTTPManager,
 	TCLogger,
 	TCProgress,
 	TCRequest,
@@ -246,13 +247,15 @@ begin
 	else
 		Cipher := TNullCipher.Create;
 
+	var Logger: ILogger := TNullLogger.Create;
+	var Progress: IProgress := TNullProgress.Create;
 	Result := TCloudMailRu.Create(
 		Settings,
-		nil, {No connection manager - use atomic connections}
+		TSingleThreadHTTPManager.Create(Settings.ConnectionSettings, Logger, Progress),
 		AuthStrategy,
 		TWindowsFileSystem.Create,
-		TNullLogger.Create,
-		TNullProgress.Create,
+		Logger,
+		Progress,
 		TNullRequest.Create,
 		TNullTCHandler.Create,
 		Cipher,
@@ -278,13 +281,15 @@ begin
 	else
 		AuthStrategy := TNullAuthStrategy.Create;
 
+	var Logger: ILogger := TNullLogger.Create;
+	var Progress: IProgress := TNullProgress.Create;
 	Result := TCloudMailRu.Create(
 		Settings,
-		nil,
+		TSingleThreadHTTPManager.Create(Settings.ConnectionSettings, Logger, Progress),
 		AuthStrategy,
 		TWindowsFileSystem.Create,
-		TNullLogger.Create,
-		TNullProgress.Create,
+		Logger,
+		Progress,
 		TNullRequest.Create,
 		TNullTCHandler.Create,
 		TNullCipher.Create,
@@ -301,13 +306,15 @@ begin
 	Settings.AccountSettings.PublicAccount := True;
 	Settings.AccountSettings.PublicUrl := FConfig.PublicUrl;
 
+	var Logger: ILogger := TNullLogger.Create;
+	var Progress: IProgress := TNullProgress.Create;
 	Result := TCloudMailRu.Create(
 		Settings,
-		nil,
+		TSingleThreadHTTPManager.Create(Settings.ConnectionSettings, Logger, Progress),
 		TNullAuthStrategy.Create,
 		TWindowsFileSystem.Create,
-		TNullLogger.Create,
-		TNullProgress.Create,
+		Logger,
+		Progress,
 		TNullRequest.Create,
 		TNullTCHandler.Create,
 		TNullCipher.Create,

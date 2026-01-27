@@ -61,8 +61,7 @@ type
 	private
 		FSettings: TCloudSettings; {Current options set for the cloud instance}
 
-		FHTTPManager: IHTTPManager; {Internal connections manager (can be set externally or omitted)}
-		FHTTPConnection: ICloudHTTP; {Normally managed by HTTPConnectionsManager. If HTTPConnectionsManager is omitted, Cloud will create its own atomic connection}
+		FHTTPManager: IHTTPManager; {HTTP connection manager - required, provides connections per thread}
 
 		FCookieManager: TIdCookieManager; {The auth cookie, should be stored separately, because it associated with a cloud instance, not a connection}
 
@@ -380,9 +379,6 @@ begin
 
 	FCookieManager.Destroy;
 
-	{Interface reference - will be released automatically}
-	FHTTPConnection := nil;
-
 	FRetryOperation.Free;
 
 	FCipher := nil; {Release interface reference}
@@ -399,15 +395,7 @@ end;
 
 function TCloudMailRu.GetHTTPConnection: ICloudHTTP;
 begin
-	if (nil = FHTTPManager) then
-	begin
-		if not Assigned(FHTTPConnection) then
-			FHTTPConnection := TCloudMailRuHTTP.Create(FSettings.ConnectionSettings, FLogger, FProgress);
-
-		Result := FHTTPConnection;
-	end
-	else
-		Result := FHTTPManager.get(GetCurrentThreadID());
+	Result := FHTTPManager.Get(GetCurrentThreadID());
 	Result.AuthCookie := FCookieManager;
 	if (EmptyWideStr <> FAuthToken) and Assigned(Result.HTTP) then
 		Result.HTTP.Request.CustomHeaders.Values['X-CSRF-Token'] := FAuthToken;

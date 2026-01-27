@@ -56,7 +56,7 @@ type
 		procedure Test_ImplementsIHTTPManager;
 
 		[Test]
-		procedure Test_Get_ReturnsNil;
+		procedure Test_Get_ReturnsNullCloudHTTP;
 
 		[Test]
 		procedure Test_GetConnectionSettings_ReturnsDefault;
@@ -221,12 +221,15 @@ begin
 	Assert.IsNotNull(Manager);
 end;
 
-procedure TNullHTTPManagerTest.Test_Get_ReturnsNil;
+procedure TNullHTTPManagerTest.Test_Get_ReturnsNullCloudHTTP;
 var
 	Manager: IHTTPManager;
+	Connection: ICloudHTTP;
 begin
 	Manager := TNullHTTPManager.Create;
-	Assert.IsNull(Manager.Get(1234));
+	Connection := Manager.Get(1234);
+	{Should return a valid TNullCloudHTTP instance, not nil}
+	Assert.IsNotNull(Connection);
 end;
 
 procedure TNullHTTPManagerTest.Test_GetConnectionSettings_ReturnsDefault;
@@ -263,8 +266,9 @@ var
 begin
 	Manager := TNullHTTPManager.Create;
 
-	Assert.IsNull(Manager.Get(100));
-	Assert.IsNull(Manager.Get(200));
+	{Multiple Get calls should return valid connections}
+	Assert.IsNotNull(Manager.Get(100));
+	Assert.IsNotNull(Manager.Get(200));
 
 	Manager.SetProxyPassword('pwd1');
 	Manager.SetProxyPassword('pwd2');

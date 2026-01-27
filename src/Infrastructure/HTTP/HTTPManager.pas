@@ -58,6 +58,19 @@ type
 		procedure SetProxyPassword(Password: WideString);
 	end;
 
+	{Single-threaded HTTP manager - holds one connection, ignores ThreadId.
+		Use when multi-threading is not needed (e.g., public account cloning).}
+	TSingleThreadHTTPManager = class(TInterfacedObject, IHTTPManager)
+	private
+		FConnection: ICloudHTTP;
+		FConnectionSettings: TConnectionSettings;
+	public
+		constructor Create(Settings: TConnectionSettings; Logger: ILogger; Progress: IProgress);
+		function Get(ThreadId: Cardinal): ICloudHTTP;
+		function GetConnectionSettings: TConnectionSettings;
+		procedure SetProxyPassword(Password: WideString);
+	end;
+
 	THTTPManager = class(TInterfacedObject, IHTTPManager)
 	private
 		FConnectionSettings: TConnectionSettings;
@@ -85,7 +98,7 @@ implementation
 
 function TNullHTTPManager.Get(ThreadId: Cardinal): ICloudHTTP;
 begin
-	Result := nil;
+	Result := TNullCloudHTTP.Create;
 end;
 
 function TNullHTTPManager.GetConnectionSettings: TConnectionSettings;
@@ -103,6 +116,29 @@ end;
 function TCloudHTTPFactory.CreateHTTP(Settings: TConnectionSettings; Logger: ILogger; Progress: IProgress): ICloudHTTP;
 begin
 	Result := TCloudMailRuHTTP.Create(Settings, Logger, Progress);
+end;
+
+{TSingleThreadHTTPManager}
+
+constructor TSingleThreadHTTPManager.Create(Settings: TConnectionSettings; Logger: ILogger; Progress: IProgress);
+begin
+	FConnectionSettings := Settings;
+	FConnection := TCloudMailRuHTTP.Create(Settings, Logger, Progress);
+end;
+
+function TSingleThreadHTTPManager.Get(ThreadId: Cardinal): ICloudHTTP;
+begin
+	Result := FConnection;
+end;
+
+function TSingleThreadHTTPManager.GetConnectionSettings: TConnectionSettings;
+begin
+	Result := FConnectionSettings;
+end;
+
+procedure TSingleThreadHTTPManager.SetProxyPassword(Password: WideString);
+begin
+	FConnectionSettings.ProxySettings.Password := Password;
 end;
 
 {THTTPManager}

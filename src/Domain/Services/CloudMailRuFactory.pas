@@ -50,6 +50,7 @@ uses
 	TCProgress,
 	TCRequest,
 	TCHandler,
+	HTTPManager,
 	OpenSSLProvider;
 
 {TPublicCloudFactory - default implementation}
@@ -64,17 +65,21 @@ end;
 class function TCloudMailRuFactory.CreatePublicCloud(var TempCloud: TCloudMailRu; PublicUrl: WideString): Boolean;
 var
 	Settings: TCloudSettings;
+	Logger: ILogger;
+	Progress: IProgress;
 begin
 	Settings := Default(TCloudSettings);
 	Settings.AccountSettings.PublicAccount := True;
 	Settings.AccountSettings.PublicUrl := PublicUrl;
+	Logger := TNullLogger.Create;
+	Progress := TNullProgress.Create;
 	TempCloud := TCloudMailRu.Create(
 		Settings,
-		nil,
+		TSingleThreadHTTPManager.Create(Settings.ConnectionSettings, Logger, Progress),
 		TNullAuthStrategy.Create,
 		TWindowsFileSystem.Create,
-		TNullLogger.Create,
-		TNullProgress.Create,
+		Logger,
+		Progress,
 		TNullRequest.Create,
 		TNullTCHandler.Create,
 		TNullCipher.Create,

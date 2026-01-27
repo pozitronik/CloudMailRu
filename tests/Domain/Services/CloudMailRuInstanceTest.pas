@@ -8,6 +8,7 @@ uses
 	CloudConstants,
 	CloudOperationResult,
 	FileCipher,
+	HTTPManager,
 	TCLogger,
 	TCProgress,
 	TCRequest,
@@ -108,7 +109,7 @@ procedure TCloudMailRuInstanceTest.Setup;
 begin
 	{ Create minimal TCloudMailRu instance with null implementations }
 	FSettings := Default(TCloudSettings);
-	FCloud := TCloudMailRu.Create(FSettings, nil, TNullAuthStrategy.Create, TNullFileSystem.Create, TNullLogger.Create, TNullProgress.Create, TNullRequest.Create, TNullTCHandler.Create, TNullCipher.Create, TNullOpenSSLProvider.Create);
+	FCloud := TCloudMailRu.Create(FSettings, TNullHTTPManager.Create, TNullAuthStrategy.Create, TNullFileSystem.Create, TNullLogger.Create, TNullProgress.Create, TNullRequest.Create, TNullTCHandler.Create, TNullCipher.Create, TNullOpenSSLProvider.Create);
 end;
 
 procedure TCloudMailRuInstanceTest.TearDown;

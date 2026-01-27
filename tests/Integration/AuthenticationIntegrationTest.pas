@@ -37,6 +37,7 @@ uses
 	AuthStrategy,
 	OAuthAppAuthStrategy,
 	WindowsFileSystem,
+	HTTPManager,
 	TCLogger,
 	TCProgress,
 	TCRequest,
@@ -57,19 +58,23 @@ procedure TAuthenticationIntegrationTest.TestLogin_InvalidPassword_Fails;
 var
 	Cloud: TCloudMailRu;
 	Settings: TCloudSettings;
+	Logger: ILogger;
+	Progress: IProgress;
 begin
 	Settings := CreateCloudSettings(
 		FConfig.PrimaryEmail,
 		'invalid_password_12345',
 		FConfig.PrimaryUseAppPassword);
 
+	Logger := TNullLogger.Create;
+	Progress := TNullProgress.Create;
 	Cloud := TCloudMailRu.Create(
 		Settings,
-		nil,
+		TSingleThreadHTTPManager.Create(Settings.ConnectionSettings, Logger, Progress),
 		TOAuthAppAuthStrategy.Create,
 		TWindowsFileSystem.Create,
-		TNullLogger.Create,
-		TNullProgress.Create,
+		Logger,
+		Progress,
 		TNullRequest.Create,
 		TNullTCHandler.Create,
 		TNullCipher.Create,

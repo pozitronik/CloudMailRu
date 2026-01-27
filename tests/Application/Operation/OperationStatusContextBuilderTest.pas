@@ -58,6 +58,7 @@ uses
 	FileCipher,
 	AuthStrategy,
 	WindowsFileSystem,
+	HTTPManager,
 	TCLogger,
 	TCProgress,
 	TCRequest,
@@ -176,7 +177,7 @@ begin
 	Path.FromPath('\account\folder');
 	{Need to configure a cloud instance since BuildContext accesses it for IsPublicAccount}
 	Settings := Default(TCloudSettings);
-	MockCloud := TCloudMailRu.Create(Settings, nil, TNullAuthStrategy.Create,
+	MockCloud := TCloudMailRu.Create(Settings, TNullHTTPManager.Create, TNullAuthStrategy.Create,
 		TNullFileSystem.Create, TNullLogger.Create, TNullProgress.Create, TNullRequest.Create, TNullTCHandler.Create, TNullCipher.Create, TNullOpenSSLProvider.Create);
 	try
 		FMockConnectionManager.SetCloud('account', MockCloud);
