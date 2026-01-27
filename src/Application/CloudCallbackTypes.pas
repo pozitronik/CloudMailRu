@@ -9,6 +9,7 @@ interface
 uses
 	System.Classes,
 	CloudOAuth,
+	CloudOperationResult,
 	CloudSpace,
 	CloudHTTP,
 	TokenRetryHelper;
@@ -30,6 +31,8 @@ type
 	TDeleteFileFunc = reference to function(Path: WideString): Boolean;
 	TGetRetryOperationFunc = reference to function: TRetryOperation;
 	TCloudResultToFsResultFunc = reference to function(JSON: WideString; ErrorPrefix: WideString): Integer;
+	TCloudResultToBooleanFunc = reference to function(JSON: WideString; ErrorPrefix: WideString): Boolean;
+	TCloudResultToBooleanFromResultFunc = reference to function(OperationResult: TCloudOperationResult; ErrorPrefix: WideString): Boolean;
 	TGetUserSpaceFunc = reference to function(var SpaceInfo: TCloudSpace): Boolean;
 
 implementation

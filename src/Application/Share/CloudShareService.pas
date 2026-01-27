@@ -5,6 +5,7 @@ unit CloudShareService;
 interface
 
 uses
+	CloudCallbackTypes,
 	CloudDirItem,
 	CloudInviteList,
 	CloudInviteListJsonAdapter,
@@ -23,12 +24,6 @@ uses
 	System.SysUtils;
 
 type
-	{Callback types for dynamic state access}
-	TIsPublicAccountFunc = reference to function: Boolean;
-	TGetUnitedParamsFunc = reference to function: WideString;
-	TCloudResultToBooleanFunc = reference to function(JSON: WideString; ErrorPrefix: WideString): Boolean;
-	TCloudResultToFsResultFunc = reference to function(JSON: WideString; ErrorPrefix: WideString): Integer;
-
 	{Interface for share service operations}
 	ICloudShareService = interface
 		['{B8C9D0E1-F2A3-4B5C-6D7E-8F9A0B1C2D3E}']
@@ -59,13 +54,13 @@ type
 		FHTTP: ICloudHTTP;
 		FLogger: ILogger;
 		FRetryOperation: TRetryOperation;
-		FIsPublicAccount: TIsPublicAccountFunc;
+		FIsPublicAccount: TGetBoolFunc;
 		FGetUnitedParams: TGetUnitedParamsFunc;
 		FCloudResultToBoolean: TCloudResultToBooleanFunc;
 		FCloudResultToFsResult: TCloudResultToFsResultFunc;
 		FShardManager: ICloudShardManager;
 	public
-		constructor Create(HTTP: ICloudHTTP; Logger: ILogger; RetryOperation: TRetryOperation; IsPublicAccount: TIsPublicAccountFunc; GetUnitedParams: TGetUnitedParamsFunc; CloudResultToBoolean: TCloudResultToBooleanFunc; CloudResultToFsResult: TCloudResultToFsResultFunc; ShardManager: ICloudShardManager);
+		constructor Create(HTTP: ICloudHTTP; Logger: ILogger; RetryOperation: TRetryOperation; IsPublicAccount: TGetBoolFunc; GetUnitedParams: TGetUnitedParamsFunc; CloudResultToBoolean: TCloudResultToBooleanFunc; CloudResultToFsResult: TCloudResultToFsResultFunc; ShardManager: ICloudShardManager);
 
 		{ICloudShareService implementation}
 		function Publish(Path: WideString; var PublicLink: WideString): Boolean;
@@ -84,7 +79,7 @@ implementation
 
 {TCloudShareService}
 
-constructor TCloudShareService.Create(HTTP: ICloudHTTP; Logger: ILogger; RetryOperation: TRetryOperation; IsPublicAccount: TIsPublicAccountFunc; GetUnitedParams: TGetUnitedParamsFunc; CloudResultToBoolean: TCloudResultToBooleanFunc; CloudResultToFsResult: TCloudResultToFsResultFunc; ShardManager: ICloudShardManager);
+constructor TCloudShareService.Create(HTTP: ICloudHTTP; Logger: ILogger; RetryOperation: TRetryOperation; IsPublicAccount: TGetBoolFunc; GetUnitedParams: TGetUnitedParamsFunc; CloudResultToBoolean: TCloudResultToBooleanFunc; CloudResultToFsResult: TCloudResultToFsResultFunc; ShardManager: ICloudShardManager);
 begin
 	inherited Create;
 	FHTTP := HTTP;

@@ -5,6 +5,7 @@ unit CloudListingService;
 interface
 
 uses
+	CloudCallbackTypes,
 	CloudDirItem,
 	CloudDirItemList,
 	CloudDirItemJsonAdapter,
@@ -27,13 +28,6 @@ uses
 	System.SysUtils;
 
 type
-	{Callback types for dynamic state access}
-	TIsPublicAccountFunc = reference to function: Boolean;
-	TGetUnitedParamsFunc = reference to function: WideString;
-	TGetPublicLinkFunc = reference to function: WideString;
-	TCloudResultToBooleanFunc = reference to function(JSON: WideString; ErrorPrefix: WideString): Boolean;
-	TCloudResultToBooleanFromResultFunc = reference to function(OperationResult: TCloudOperationResult; ErrorPrefix: WideString): Boolean;
-
 	{Interface for listing service operations}
 	ICloudListingService = interface
 		['{2A923C8D-EB0B-4E3B-84DC-E372CD6C9AE5}']
@@ -66,14 +60,14 @@ type
 		FCipher: ICipher;
 		FLogger: ILogger;
 		FRetryOperation: TRetryOperation;
-		FIsPublicAccount: TIsPublicAccountFunc;
+		FIsPublicAccount: TGetBoolFunc;
 		FGetUnitedParams: TGetUnitedParamsFunc;
-		FGetPublicLink: TGetPublicLinkFunc;
+		FGetPublicLink: TGetStringFunc;
 		FCloudResultToBoolean: TCloudResultToBooleanFunc;
 		FCloudResultToBooleanFromResult: TCloudResultToBooleanFromResultFunc;
 		FDoCryptFilenames: Boolean;
 	public
-		constructor Create(HTTP: ICloudHTTP; Cipher: ICipher; Logger: ILogger; RetryOperation: TRetryOperation; IsPublicAccount: TIsPublicAccountFunc; GetUnitedParams: TGetUnitedParamsFunc; GetPublicLink: TGetPublicLinkFunc; CloudResultToBoolean: TCloudResultToBooleanFunc; CloudResultToBooleanFromResult: TCloudResultToBooleanFromResultFunc; DoCryptFilenames: Boolean);
+		constructor Create(HTTP: ICloudHTTP; Cipher: ICipher; Logger: ILogger; RetryOperation: TRetryOperation; IsPublicAccount: TGetBoolFunc; GetUnitedParams: TGetUnitedParamsFunc; GetPublicLink: TGetStringFunc; CloudResultToBoolean: TCloudResultToBooleanFunc; CloudResultToBooleanFromResult: TCloudResultToBooleanFromResultFunc; DoCryptFilenames: Boolean);
 
 		{ICloudListingService implementation}
 		function GetDirectory(Path: WideString; var Listing: TCloudDirItemList; ShowProgress: Boolean = False): Boolean;
@@ -92,7 +86,7 @@ implementation
 
 {TCloudListingService}
 
-constructor TCloudListingService.Create(HTTP: ICloudHTTP; Cipher: ICipher; Logger: ILogger; RetryOperation: TRetryOperation; IsPublicAccount: TIsPublicAccountFunc; GetUnitedParams: TGetUnitedParamsFunc; GetPublicLink: TGetPublicLinkFunc; CloudResultToBoolean: TCloudResultToBooleanFunc; CloudResultToBooleanFromResult: TCloudResultToBooleanFromResultFunc; DoCryptFilenames: Boolean);
+constructor TCloudListingService.Create(HTTP: ICloudHTTP; Cipher: ICipher; Logger: ILogger; RetryOperation: TRetryOperation; IsPublicAccount: TGetBoolFunc; GetUnitedParams: TGetUnitedParamsFunc; GetPublicLink: TGetStringFunc; CloudResultToBoolean: TCloudResultToBooleanFunc; CloudResultToBooleanFromResult: TCloudResultToBooleanFromResultFunc; DoCryptFilenames: Boolean);
 begin
 	inherited Create;
 	FHTTP := HTTP;

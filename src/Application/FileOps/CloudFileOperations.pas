@@ -5,6 +5,7 @@ unit CloudFileOperations;
 interface
 
 uses
+	CloudCallbackTypes,
 	CloudConstants,
 	CloudHTTP,
 	LanguageStrings,
@@ -15,10 +16,6 @@ uses
 	System.SysUtils;
 
 type
-	{Callback types for dynamic state access}
-	TIsPublicAccountFunc = reference to function: Boolean;
-	TGetUnitedParamsFunc = reference to function: WideString;
-
 	{Interface for file operations service}
 	ICloudFileOperations = interface
 		['{9CF7178B-77CC-401A-BD7C-61E34A4C1181}']
@@ -46,10 +43,10 @@ type
 		FHTTP: ICloudHTTP;
 		FLogger: ILogger;
 		FRetryOperation: TRetryOperation;
-		FIsPublicAccount: TIsPublicAccountFunc;
+		FIsPublicAccount: TGetBoolFunc;
 		FGetUnitedParams: TGetUnitedParamsFunc;
 	public
-		constructor Create(HTTP: ICloudHTTP; Logger: ILogger; RetryOperation: TRetryOperation; IsPublicAccount: TIsPublicAccountFunc; GetUnitedParams: TGetUnitedParamsFunc);
+		constructor Create(HTTP: ICloudHTTP; Logger: ILogger; RetryOperation: TRetryOperation; IsPublicAccount: TGetBoolFunc; GetUnitedParams: TGetUnitedParamsFunc);
 
 		{ICloudFileOperations implementation}
 		function CreateDirectory(Path: WideString): Boolean;
@@ -66,7 +63,7 @@ implementation
 
 {TCloudFileOperations}
 
-constructor TCloudFileOperations.Create(HTTP: ICloudHTTP; Logger: ILogger; RetryOperation: TRetryOperation; IsPublicAccount: TIsPublicAccountFunc; GetUnitedParams: TGetUnitedParamsFunc);
+constructor TCloudFileOperations.Create(HTTP: ICloudHTTP; Logger: ILogger; RetryOperation: TRetryOperation; IsPublicAccount: TGetBoolFunc; GetUnitedParams: TGetUnitedParamsFunc);
 begin
 	inherited Create;
 	FHTTP := HTTP;
