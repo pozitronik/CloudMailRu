@@ -4,8 +4,7 @@
 {$APPTYPE CONSOLE}
 {$ENDIF}
 {$STRONGLINKTYPES ON}
-
-{ Enable FastMM5 memory leak reporting for tests }
+{Enable FastMM5 memory leak reporting for tests}
 {$DEFINE FastMM_EnableMemoryLeakReporting}
 
 uses
@@ -92,8 +91,8 @@ uses
 	NullCipherTest in 'Infrastructure\Cipher\NullCipherTest.pas',
 	CloudMailRuResourceTest in 'Domain\Services\CloudMailRuResourceTest.pas',
 	CloudMailRuStaticTest in 'Domain\Services\CloudMailRuStaticTest.pas',
-	CloudAccessUtils in '..\src\Domain\Services\CloudAccessUtils.pas',
-	CloudAccessUtilsTest in 'Domain\Services\CloudAccessUtilsTest.pas',
+	CloudAccessMapper in '..\src\Domain\Services\CloudAccessMapper.pas',
+	CloudAccessMapperTest in 'Domain\Services\CloudAccessMapperTest.pas',
 	CloudMailRuInstanceTest in 'Domain\Services\CloudMailRuInstanceTest.pas',
 	CloudMailRuFactoryTest in 'Domain\Services\CloudMailRuFactoryTest.pas',
 	CloudMailRuHashTest in 'Domain\Services\CloudMailRuHashTest.pas',
@@ -122,21 +121,20 @@ uses
 	RealPath in '..\src\Domain\ValueObjects\RealPath.pas',
 	CloudSettings in '..\src\Infrastructure\Settings\CloudSettings.pas',
 	CloudSettingsTest in 'Infrastructure\Settings\CloudSettingsTest.pas',
-	PasswordUIProvider in '..\src\Infrastructure\UI\PasswordUIProvider.pas',
-	PasswordUIProviderTest in 'Infrastructure\UI\PasswordUIProviderTest.pas',
+	PasswordUIProvider in '..\src\Infrastructure\Password\PasswordUIProvider.pas',
+	PasswordUIProviderTest in 'Infrastructure\Password\PasswordUIProviderTest.pas',
 	HTTPManagerTest in 'Infrastructure\HTTP\HTTPManagerTest.pas',
 	CloudHTTPTest in 'Infrastructure\HTTP\CloudHTTPTest.pas',
 	CipherValidator in '..\src\Infrastructure\Cipher\CipherValidator.pas',
 	CipherValidatorTest in 'Infrastructure\Cipher\CipherValidatorTest.pas',
 	ConnectionManagerTest in 'Infrastructure\Services\ConnectionManagerTest.pas',
-	
 	ConnectionManager in '..\src\Infrastructure\Services\ConnectionManager.pas',
 	WindowsFileSystem in '..\src\Infrastructure\FileSystem\WindowsFileSystem.pas',
 	WindowsFileSystemTest in 'Infrastructure\FileSystem\WindowsFileSystemTest.pas',
 	IniConfigFile in '..\src\Infrastructure\Config\IniConfigFile.pas',
 	WindowsEnvironment in '..\src\Infrastructure\Environment\WindowsEnvironment.pas',
 	WindowsEnvironmentTest in 'Infrastructure\Environment\WindowsEnvironmentTest.pas',
-	AskPassword in '..\src\Presentation\UI\Forms\AskPassword.pas'{AskPasswordForm},
+	AskPassword in '..\src\Presentation\UI\Forms\AskPassword.pas' {AskPasswordForm} ,
 	AuthStrategy in '..\src\Infrastructure\Authentication\AuthStrategy.pas',
 	NullAuthStrategyTest in 'Infrastructure\Authentication\NullAuthStrategyTest.pas',
 	OAuthAppAuthStrategy in '..\src\Infrastructure\Authentication\OAuthAppAuthStrategy.pas',
@@ -289,7 +287,6 @@ uses
 	AskPasswordPresenter in '..\src\Presentation\Presenter\AskPasswordPresenter.pas',
 	AskPasswordPresenterTest in 'Presentation\Presenter\AskPasswordPresenterTest.pas',
 	AskPasswordFormTest in 'Presentation\UI\Forms\AskPasswordFormTest.pas',
-	{Integration Tests}
 	IntegrationTestConfig in 'Integration\IntegrationTestConfig.pas',
 	TestDataGenerator in 'Integration\TestDataGenerator.pas',
 	IntegrationTestBase in 'Integration\IntegrationTestBase.pas',
@@ -331,7 +328,7 @@ begin
 		//Log to the console window if desired
 		if TDUnitX.Options.ConsoleMode <> TDunitXConsoleMode.Off then
 		begin
-			Logger := TDUnitXConsoleLogger.Create(True); { Quiet mode: dots instead of verbose output }
+			Logger := TDUnitXConsoleLogger.Create(True); {Quiet mode: dots instead of verbose output}
 			Runner.AddLogger(Logger);
 		end;
 		//Generate an NUnit compatible XML File

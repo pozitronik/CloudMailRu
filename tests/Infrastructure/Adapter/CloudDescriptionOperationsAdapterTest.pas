@@ -1,7 +1,7 @@
 unit CloudDescriptionOperationsAdapterTest;
 
 {Tests for CloudDescriptionOperationsAdapter - adapter for description file operations.
- Tests both TCloudDescriptionOperationsAdapter and TCloudMailRuFileOpsAdapter classes.}
+ Tests both TCloudDescriptionOperationsAdapter and TCloudFileOperationsAdapter classes.}
 
 interface
 
@@ -12,8 +12,8 @@ uses
 	DUnitX.TestFramework;
 
 type
-	{Mock implementation of ICloudFileOps for testing}
-	TMockCloudFileOps = class(TInterfacedObject, ICloudFileOps)
+	{Mock implementation of ICloudFileOperations for testing}
+	TMockCloudFileOps = class(TInterfacedObject, ICloudFileOperations)
 	private
 		FGetFileResult: Integer;
 		FPutFileResult: Integer;
@@ -35,7 +35,7 @@ type
 		procedure SetPutFileResult(Result: Integer);
 		procedure SetDeleteFileResult(Result: Boolean);
 
-		{ICloudFileOps implementation}
+		{ICloudFileOperations implementation}
 		function GetFile(RemotePath, LocalPath: WideString; var ResultHash: WideString;
 			LogErrors: Boolean = True): Integer;
 		function PutFile(LocalPath, RemotePath: WideString): Integer;
@@ -58,7 +58,7 @@ type
 	private
 		FAdapter: TCloudDescriptionOperationsAdapter;
 		FMockCloudOps: TMockCloudFileOps;
-		FMockCloudOpsRef: ICloudFileOps;
+		FMockCloudOpsRef: ICloudFileOperations;
 		FMockFileSystem: TMemoryFileSystem;
 		FMockFileSystemRef: IFileSystem;
 	public
@@ -106,13 +106,13 @@ type
 		procedure TestImplementsICloudDescriptionOps;
 	end;
 
-	{Tests for TCloudMailRuFileOpsAdapter}
+	{Tests for TCloudFileOperationsAdapter}
 	[TestFixture]
-	TCloudMailRuFileOpsAdapterTest = class
+	TCloudFileOperationsAdapterTest = class
 	public
 		{ Interface implementation test }
 		[Test]
-		procedure TestImplementsICloudFileOps;
+		procedure TestImplementsICloudFileOperations;
 	end;
 
 implementation
@@ -326,21 +326,21 @@ begin
 	Assert.IsNotNull(Intf, 'Should implement ICloudDescriptionOps interface');
 end;
 
-{ TCloudMailRuFileOpsAdapterTest }
+{ TCloudFileOperationsAdapterTest }
 
-procedure TCloudMailRuFileOpsAdapterTest.TestImplementsICloudFileOps;
+procedure TCloudFileOperationsAdapterTest.TestImplementsICloudFileOperations;
 var
-	Adapter: ICloudFileOps;
+	Adapter: ICloudFileOperations;
 begin
 	{Cannot test actual delegation without TCloudMailRu instance,
 	 but we can verify interface implementation}
-	Adapter := TCloudMailRuFileOpsAdapter.Create(nil);
-	Assert.IsNotNull(Adapter, 'Should implement ICloudFileOps interface');
+	Adapter := TCloudFileOperationsAdapter.Create(nil);
+	Assert.IsNotNull(Adapter, 'Should implement ICloudFileOperations interface');
 end;
 
 initialization
 
 TDUnitX.RegisterTestFixture(TCloudDescriptionOperationsAdapterTest);
-TDUnitX.RegisterTestFixture(TCloudMailRuFileOpsAdapterTest);
+TDUnitX.RegisterTestFixture(TCloudFileOperationsAdapterTest);
 
 end.

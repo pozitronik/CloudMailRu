@@ -9,7 +9,7 @@ uses
 
 type
 	{ Tests for TCloudMailRuFactory.
-	  CloudAccessToString/StringToCloudAccess tests moved to CloudAccessUtilsTest.
+	  CloudAccessToString/StringToCloudAccess tests moved to CloudAccessMapperTest.
 	  ErrorCodeText tests moved to CloudErrorMapperTest. }
 	[TestFixture]
 	TCloudMailRuStaticTest = class

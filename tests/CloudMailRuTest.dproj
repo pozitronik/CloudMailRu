@@ -108,48 +108,40 @@
         <DelphiCompile Include="$(MainSource)">
             <MainSource>MainSource</MainSource>
         </DelphiCompile>
+        <DCCReference Include="FastMM5\FastMM5.pas"/>
         <DCCReference Include="TestHelper.pas"/>
-        <DCCReference Include="..\src\models\logger\ILoggerInterface.pas"/>
-        <DCCReference Include="..\src\models\logger\TCLogger.pas"/>
-        <DCCReference Include="models\logger\TCLoggerTest.pas"/>
-        <DCCReference Include="models\logger\NullLoggerTest.pas"/>
+        <DCCReference Include="..\src\Infrastructure\Logger\TCLogger.pas"/>
+        <DCCReference Include="Infrastructure\Logger\TCLoggerTest.pas"/>
         <DCCReference Include="..\src\Infrastructure\Protocol\WFXTypes.pas"/>
-        <DCCReference Include="..\src\helpers\SystemHelper.pas"/>
-        <DCCReference Include="..\src\models\progress\IProgressInterface.pas"/>
-        <DCCReference Include="..\src\models\progress\TCProgress.pas"/>
-        <DCCReference Include="models\progress\TCProgressTest.pas"/>
-        <DCCReference Include="models\progress\NullProgressTest.pas"/>
-        <DCCReference Include="..\src\models\request\IRequestInterface.pas"/>
-        <DCCReference Include="..\src\models\request\TCRequest.pas"/>
-        <DCCReference Include="models\request\TCRequestTest.pas"/>
-        <DCCReference Include="models\request\NullRequestTest.pas"/>
-        <DCCReference Include="..\src\models\password\IPasswordManagerInterface.pas"/>
-        <DCCReference Include="..\src\models\password\TCPasswordManager.pas"/>
-        <DCCReference Include="models\password\TCPasswordManagerTest.pas"/>
-        <DCCReference Include="models\password\NullPasswordManagerTest.pas"/>
-        <DCCReference Include="..\src\helpers\FileHelper.pas"/>
-        <DCCReference Include="..\src\helpers\PathHelper.pas"/>
-        <DCCReference Include="..\src\helpers\WindowsHelper.pas"/>
-        <DCCReference Include="..\src\models\settings\ConnectionSettings.pas"/>
-        <DCCReference Include="..\src\models\settings\SettingsConstants.pas"/>
+        <DCCReference Include="..\src\Infrastructure\OS\SystemHelper.pas"/>
+        <DCCReference Include="..\src\Infrastructure\Progress\TCProgress.pas"/>
+        <DCCReference Include="Infrastructure\Progress\TCProgressTest.pas"/>
+        <DCCReference Include="..\src\Infrastructure\Request\TCRequest.pas"/>
+        <DCCReference Include="Infrastructure\Request\TCRequestTest.pas"/>
+        <DCCReference Include="..\src\Infrastructure\Password\TCPasswordManager.pas"/>
+        <DCCReference Include="Infrastructure\Password\TCPasswordManagerTest.pas"/>
+        <DCCReference Include="..\src\Infrastructure\Logger\DebugHelper.pas"/>
+        <DCCReference Include="..\src\Infrastructure\IO\FileHelper.pas"/>
+        <DCCReference Include="..\src\Infrastructure\IO\PathHelper.pas"/>
+        <DCCReference Include="..\src\Infrastructure\OS\WindowsHelper.pas"/>
+        <DCCReference Include="..\src\Infrastructure\Settings\ConnectionSettings.pas"/>
+        <DCCReference Include="..\src\Infrastructure\Settings\SettingsConstants.pas"/>
         <DCCReference Include="..\src\Domain\Constants\CMRConstants.pas"/>
-        <DCCReference Include="..\src\models\settings\ProxySettings.pas"/>
-        <DCCReference Include="..\src\helpers\StringHelper.pas"/>
+        <DCCReference Include="..\src\Infrastructure\Settings\ProxySettings.pas"/>
+        <DCCReference Include="..\src\Infrastructure\IO\StringHelper.pas"/>
         <DCCReference Include="..\src\Infrastructure\TC\TCHandler.pas"/>
         <DCCReference Include="..\src\Domain\Services\Description.pas"/>
         <DCCReference Include="..\src\Presentation\Localization\LanguageStrings.pas"/>
-        <DCCReference Include="models\settings\PluginSettingsManagerTest.pas"/>
-        <DCCReference Include="models\settings\AccountsManagerTest.pas"/>
-        <DCCReference Include="..\src\helpers\ParsingHelper.pas"/>
+        <DCCReference Include="Infrastructure\Settings\PluginSettingsManagerTest.pas"/>
+        <DCCReference Include="Infrastructure\Settings\AccountsManagerTest.pas"/>
+        <DCCReference Include="..\src\Infrastructure\HTTP\ParsingHelper.pas"/>
         <DCCReference Include="..\src\Domain\ValueObjects\WSList.pas"/>
-        <DCCReference Include="..\src\models\settings\AccountSettings.pas"/>
-        <DCCReference Include="..\src\models\settings\AccountsManager.pas"/>
+        <DCCReference Include="..\src\Infrastructure\Settings\AccountSettings.pas"/>
+        <DCCReference Include="..\src\Infrastructure\Settings\AccountsManager.pas"/>
         <DCCReference Include="..\src\Infrastructure\Cipher\FileCipher.pas"/>
         <DCCReference Include="..\src\Domain\ValueObjects\CMRDirItemList.pas"/>
         <DCCReference Include="..\src\Domain\ValueObjects\CMRDirItem.pas"/>
-        <DCCReference Include="..\src\helpers\JSONHelper.pas"/>
-        <DCCReference Include="Infrastructure\Cipher\FileCipherTest.pas"/>
-        <DCCReference Include="Infrastructure\Cipher\NullCipherTest.pas"/>
+        <DCCReference Include="..\src\Infrastructure\HTTP\JSONHelper.pas"/>
         <DCCReference Include="..\src\libs\DCPCrypt\DCPblockciphers.pas"/>
         <DCCReference Include="..\src\libs\DCPCrypt\DCPcrypt2.pas"/>
         <DCCReference Include="..\src\libs\DCPCrypt\DCPtypes.pas"/>
@@ -157,15 +149,53 @@
         <DCCReference Include="..\src\libs\DCPCrypt\DCPconst.pas"/>
         <DCCReference Include="..\src\libs\DCPCrypt\DCPbase64.pas"/>
         <DCCReference Include="..\src\libs\DCPCrypt\Hashes\DCPsha1.pas"/>
-        <DCCReference Include="..\src\models\settings\PluginSettingsManager.pas"/>
-        <DCCReference Include="..\src\models\settings\PluginSettings.pas"/>
-        <DCCReference Include="..\src\helpers\IniFilesHelper.pas"/>
-        <DCCReference Include="..\src\models\settings\StreamingSettings.pas"/>
+        <DCCReference Include="..\src\Infrastructure\Settings\PluginSettingsManager.pas"/>
+        <DCCReference Include="..\src\Infrastructure\Settings\PluginSettings.pas"/>
+        <DCCReference Include="..\src\Infrastructure\Config\IniFilesHelper.pas"/>
+        <DCCReference Include="..\src\Infrastructure\Settings\StreamingSettings.pas"/>
         <DCCReference Include="Infrastructure\IO\FileHelperTest.pas"/>
         <DCCReference Include="Infrastructure\IO\PathHelperTest.pas"/>
+        <DCCReference Include="Infrastructure\IO\StringHelperTest.pas"/>
+        <DCCReference Include="..\src\Application\Retry\TokenRetryHelper.pas"/>
+        <DCCReference Include="Application\Retry\TokenRetryHelperTest.pas"/>
+        <DCCReference Include="Infrastructure\HTTP\ParsingHelperTest.pas"/>
+        <DCCReference Include="Domain\ValueObjects\RealPathTest.pas"/>
+        <DCCReference Include="..\src\Domain\ValueObjects\HashInfo.pas"/>
+        <DCCReference Include="Domain\ValueObjects\HashInfoTest.pas"/>
+        <DCCReference Include="Domain\ValueObjects\CMRDirItemTest.pas"/>
+        <DCCReference Include="Domain\ValueObjects\CMROperationResultTest.pas"/>
+        <DCCReference Include="Domain\ValueObjects\CMRSpaceTest.pas"/>
+        <DCCReference Include="Domain\ValueObjects\WSListTest.pas"/>
+        <DCCReference Include="Infrastructure\HTTP\JSONHelperTest.pas"/>
+        <DCCReference Include="Infrastructure\Config\IniFilesHelperTest.pas"/>
+        <DCCReference Include="Infrastructure\Config\IniConfigFileTest.pas"/>
+        <DCCReference Include="Infrastructure\OS\WindowsHelperTest.pas"/>
+        <DCCReference Include="Domain\ValueObjects\CMRDirItemListTest.pas"/>
+        <DCCReference Include="Domain\ValueObjects\CMROAuthTest.pas"/>
+        <DCCReference Include="Domain\ValueObjects\CMRIncomingInviteTest.pas"/>
+        <DCCReference Include="Domain\ValueObjects\CMRInviteListTest.pas"/>
+        <DCCReference Include="Domain\ValueObjects\CMRIncomingInviteListTest.pas"/>
+        <DCCReference Include="Domain\ValueObjects\CMRTwostepTest.pas"/>
+        <DCCReference Include="Domain\ValueObjects\CMRFileIdentityTest.pas"/>
+        <DCCReference Include="Infrastructure\Settings\AccountSettingsTest.pas"/>
+        <DCCReference Include="Infrastructure\Settings\PluginSettingsTest.pas"/>
+        <DCCReference Include="Infrastructure\Cipher\FileCipherTest.pas"/>
+        <DCCReference Include="Infrastructure\Cipher\NullCipherTest.pas"/>
+        <DCCReference Include="Domain\Services\CloudMailRuResourceTest.pas"/>
+        <DCCReference Include="Domain\Services\CloudMailRuStaticTest.pas"/>
+        <DCCReference Include="..\src\Domain\Services\CloudAccessMapper.pas"/>
+        <DCCReference Include="Domain\Services\CloudAccessUtilsMapper.pas"/>
+        <DCCReference Include="Domain\Services\CloudMailRuInstanceTest.pas"/>
+        <DCCReference Include="Domain\Services\CloudMailRuFactoryTest.pas"/>
+        <DCCReference Include="Domain\Services\CloudMailRuHashTest.pas"/>
+        <DCCReference Include="Infrastructure\IO\ChunkedFileStreamTest.pas"/>
+        <DCCReference Include="Domain\Services\DescriptionTest.pas"/>
+        <DCCReference Include="Infrastructure\IO\FileSplitInfoTest.pas"/>
+        <DCCReference Include="Infrastructure\TC\TCHandlerTest.pas"/>
+        <DCCReference Include="..\src\Presentation\Icon\IconHelper.pas"/>
+        <DCCReference Include="Presentation\Icon\IconHelperTest.pas"/>
         <DCCReference Include="..\src\Domain\Services\CloudMailRu.pas"/>
         <DCCReference Include="..\src\Domain\Services\CloudMailRuFactory.pas"/>
-        <DCCReference Include="Domain\Services\CloudMailRuFactoryTest.pas"/>
         <DCCReference Include="..\src\Domain\ValueObjects\CMRFileIdentity.pas"/>
         <DCCReference Include="..\src\Domain\ValueObjects\CMRIncomingInviteList.pas"/>
         <DCCReference Include="..\src\Domain\ValueObjects\CMRInviteList.pas"/>
@@ -173,19 +203,184 @@
         <DCCReference Include="..\src\Domain\ValueObjects\CMROperationResult.pas"/>
         <DCCReference Include="..\src\Domain\ValueObjects\CMRSpace.pas"/>
         <DCCReference Include="..\src\Domain\ValueObjects\CMRTwostep.pas"/>
-        <DCCReference Include="..\src\models\http\CloudMailRuHTTP.pas"/>
+        <DCCReference Include="..\src\Infrastructure\HTTP\CloudHTTP.pas"/>
         <DCCReference Include="..\src\Domain\ValueObjects\CMRInvite.pas"/>
         <DCCReference Include="..\src\Domain\ValueObjects\CMRIncomingInvite.pas"/>
         <DCCReference Include="..\src\Domain\ValueObjects\CMROwner.pas"/>
         <DCCReference Include="..\src\Infrastructure\IO\ChunkedFileStream.pas"/>
         <DCCReference Include="..\src\Infrastructure\IO\FileSplitInfo.pas"/>
-        <DCCReference Include="..\src\Infrastructure\Protocol\ANSICompatibility.pas"/>
-        <DCCReference Include="..\src\models\http\HTTPManager.pas"/>
+        <DCCReference Include="..\src\Infrastructure\HTTP\HTTPManager.pas"/>
         <DCCReference Include="..\src\Domain\ValueObjects\RealPath.pas"/>
-        <DCCReference Include="..\src\models\settings\CloudSettings.pas"/>
+        <DCCReference Include="..\src\Infrastructure\Settings\CloudSettings.pas"/>
+        <DCCReference Include="Infrastructure\Settings\CloudSettingsTest.pas"/>
+        <DCCReference Include="..\src\Infrastructure\Password\PasswordUIProvider.pas"/>
+        <DCCReference Include="Infrastructure\Password\PasswordUIProviderTest.pas"/>
+        <DCCReference Include="Infrastructure\HTTP\HTTPManagerTest.pas"/>
+        <DCCReference Include="Infrastructure\HTTP\CloudHTTPTest.pas"/>
+        <DCCReference Include="..\src\Infrastructure\Cipher\CipherValidator.pas"/>
+        <DCCReference Include="Infrastructure\Cipher\CipherValidatorTest.pas"/>
+        <DCCReference Include="Infrastructure\Services\ConnectionManagerTest.pas"/>
+        <DCCReference Include="..\src\Infrastructure\Services\ConnectionManager.pas"/>
+        <DCCReference Include="..\src\Infrastructure\FileSystem\WindowsFileSystem.pas"/>
+        <DCCReference Include="Infrastructure\FileSystem\WindowsFileSystemTest.pas"/>
+        <DCCReference Include="..\src\Infrastructure\Config\IniConfigFile.pas"/>
+        <DCCReference Include="..\src\Infrastructure\Environment\WindowsEnvironment.pas"/>
+        <DCCReference Include="Infrastructure\Environment\WindowsEnvironmentTest.pas"/>
         <DCCReference Include="..\src\Presentation\UI\Forms\AskPassword.pas">
             <Form>AskPasswordForm</Form>
         </DCCReference>
+        <DCCReference Include="..\src\Infrastructure\Authentication\AuthStrategy.pas"/>
+        <DCCReference Include="Infrastructure\Authentication\NullAuthStrategyTest.pas"/>
+        <DCCReference Include="..\src\Infrastructure\Authentication\OAuthAppAuthStrategy.pas"/>
+        <DCCReference Include="Infrastructure\Authentication\OAuthAppAuthStrategyTest.pas"/>
+        <DCCReference Include="..\src\Infrastructure\Authentication\SharedAccountAuthStrategy.pas"/>
+        <DCCReference Include="Infrastructure\Authentication\SharedAccountAuthStrategyTest.pas"/>
+        <DCCReference Include="..\src\Infrastructure\Authentication\WebAuthStrategy.pas"/>
+        <DCCReference Include="..\src\Infrastructure\Authentication\TwoStepAuthStrategy.pas"/>
+        <DCCReference Include="..\src\Infrastructure\Authentication\OldOAuthStrategy.pas"/>
+        <DCCReference Include="Infrastructure\Authentication\DeprecatedStrategiesTest.pas"/>
+        <DCCReference Include="mocks\MockCloudHTTP.pas"/>
+        <DCCReference Include="mocks\MockHTTPManager.pas"/>
+        <DCCReference Include="mocks\MockConnectionManager.pas"/>
+        <DCCReference Include="mocks\MockShardHelper.pas"/>
+        <DCCReference Include="mocks\MockAuthStrategy.pas"/>
+        <DCCReference Include="mocks\MockCloudHTTPStreamTest.pas"/>
+        <DCCReference Include="Domain\Services\CloudMailRuDirListingTest.pas"/>
+        <DCCReference Include="Domain\Services\CloudMailRuFileOperationsTest.pas"/>
+        <DCCReference Include="Domain\Services\CloudMailRuPublicAccountTest.pas"/>
+        <DCCReference Include="Domain\Services\CloudMailRuErrorHandlingTest.pas"/>
+        <DCCReference Include="Domain\Services\CloudMailRuUploadDownloadTest.pas"/>
+        <DCCReference Include="Domain\Services\CloudMailRuAdditionalOpsTest.pas"/>
+        <DCCReference Include="Domain\Services\CloudMailRuMiscOpsTest.pas"/>
+        <DCCReference Include="Domain\Services\CloudMailRuCombinedOpsTest.pas"/>
+        <DCCReference Include="Domain\Services\CloudMailRuShardTest.pas"/>
+        <DCCReference Include="Domain\Services\CloudMailRuLoginTest.pas"/>
+        <DCCReference Include="Domain\Services\CloudMailRuDownloadTest.pas"/>
+        <DCCReference Include="Domain\Services\CloudMailRuUploadTest.pas"/>
+        <DCCReference Include="Domain\Services\CloudMailRuIntegrationTest.pas"/>
+        <DCCReference Include="Domain\Services\CloudMailRuLoginFlowTest.pas"/>
+        <DCCReference Include="Application\Upload\CloudFileUploaderSplitTest.pas"/>
+        <DCCReference Include="..\src\Infrastructure\State\ThreadStateManager.pas"/>
+        <DCCReference Include="Infrastructure\State\ThreadStateManagerTest.pas"/>
+        <DCCReference Include="..\src\Presentation\ContentField\ContentFieldProvider.pas"/>
+        <DCCReference Include="Presentation\ContentField\ContentFieldProviderTest.pas"/>
+        <DCCReference Include="..\src\Presentation\Icon\IconProvider.pas"/>
+        <DCCReference Include="Presentation\Icon\IconProviderTest.pas"/>
+        <DCCReference Include="..\src\Application\Operation\OperationLifecycleHandler.pas"/>
+        <DCCReference Include="Application\Operation\OperationLifecycleHandlerTest.pas"/>
+        <DCCReference Include="..\src\Application\Description\DescriptionSyncManager.pas"/>
+        <DCCReference Include="..\src\Infrastructure\Adapter\CloudDescriptionOperationsAdapter.pas"/>
+        <DCCReference Include="Infrastructure\Adapter\CloudDescriptionOperationsAdapterTest.pas"/>
+        <DCCReference Include="..\src\Infrastructure\Adapter\CMRDirItemJsonAdapter.pas"/>
+        <DCCReference Include="Infrastructure\Adapter\CMRDirItemJsonAdapterTest.pas"/>
+        <DCCReference Include="..\src\Infrastructure\Adapter\CMRDirItemListJsonAdapter.pas"/>
+        <DCCReference Include="Infrastructure\Adapter\CMRDirItemListJsonAdapterTest.pas"/>
+        <DCCReference Include="..\src\Infrastructure\Adapter\CMROAuthJsonAdapter.pas"/>
+        <DCCReference Include="Infrastructure\Adapter\CMROAuthJsonAdapterTest.pas"/>
+        <DCCReference Include="..\src\Infrastructure\Adapter\CMROperationResultJsonAdapter.pas"/>
+        <DCCReference Include="Infrastructure\Adapter\CMROperationResultJsonAdapterTest.pas"/>
+        <DCCReference Include="..\src\Infrastructure\Adapter\CMRSpaceJsonAdapter.pas"/>
+        <DCCReference Include="Infrastructure\Adapter\CMRSpaceJsonAdapterTest.pas"/>
+        <DCCReference Include="..\src\Infrastructure\Adapter\CMRTwostepJsonAdapter.pas"/>
+        <DCCReference Include="Infrastructure\Adapter\CMRTwostepJsonAdapterTest.pas"/>
+        <DCCReference Include="..\src\Infrastructure\Adapter\CMRInviteListJsonAdapter.pas"/>
+        <DCCReference Include="Infrastructure\Adapter\CMRInviteListJsonAdapterTest.pas"/>
+        <DCCReference Include="..\src\Infrastructure\Adapter\CMRIncomingInviteListJsonAdapter.pas"/>
+        <DCCReference Include="Infrastructure\Adapter\CMRIncomingInviteListJsonAdapterTest.pas"/>
+        <DCCReference Include="mocks\MockCloudDescriptionOps.pas"/>
+        <DCCReference Include="Application\Description\DescriptionSyncManagerTest.pas"/>
+        <DCCReference Include="..\src\Application\Retry\RetryHandler.pas"/>
+        <DCCReference Include="Application\Retry\RetryHandlerTest.pas"/>
+        <DCCReference Include="..\src\Application\Command\CommandDispatcher.pas"/>
+        <DCCReference Include="Application\Command\CommandDispatcherTest.pas"/>
+        <DCCReference Include="..\src\Application\Listing\ListingProvider.pas"/>
+        <DCCReference Include="Application\Listing\ListingProviderTest.pas"/>
+        <DCCReference Include="..\src\Application\Description\DescriptionSyncGuard.pas"/>
+        <DCCReference Include="Application\Description\DescriptionSyncGuardTest.pas"/>
+        <DCCReference Include="..\src\Application\FileOps\LocalFileDeletionHandler.pas"/>
+        <DCCReference Include="Application\FileOps\LocalFileDeletionHandlerTest.pas"/>
+        <DCCReference Include="..\src\Application\Download\DownloadSuccessHandler.pas"/>
+        <DCCReference Include="Application\Download\DownloadSuccessHandlerTest.pas"/>
+        <DCCReference Include="..\src\Application\Operation\OperationActionExecutor.pas"/>
+        <DCCReference Include="Application\Operation\OperationActionExecutorTest.pas"/>
+        <DCCReference Include="..\src\Application\Listing\ListingSkipDecider.pas"/>
+        <DCCReference Include="Application\Listing\ListingSkipDeciderTest.pas"/>
+        <DCCReference Include="..\src\Application\Listing\ListingPathValidator.pas"/>
+        <DCCReference Include="Application\Listing\ListingPathValidatorTest.pas"/>
+        <DCCReference Include="..\src\Application\FileOps\SameAccountMoveHandler.pas"/>
+        <DCCReference Include="Application\FileOps\SameAccountMoveHandlerTest.pas"/>
+        <DCCReference Include="..\src\Application\FileOps\FileStreamExecutor.pas"/>
+        <DCCReference Include="Application\FileOps\FileStreamExecutorTest.pas"/>
+        <DCCReference Include="..\src\Application\Download\LocalFileConflictResolver.pas"/>
+        <DCCReference Include="Application\Download\LocalFileConflictResolverTest.pas"/>
+        <DCCReference Include="..\src\Application\Listing\ListingItemFetcher.pas"/>
+        <DCCReference Include="Application\Listing\ListingItemFetcherTest.pas"/>
+        <DCCReference Include="..\src\Application\FileOps\SharedItemDeletionHandler.pas"/>
+        <DCCReference Include="Application\FileOps\SharedItemDeletionHandlerTest.pas"/>
+        <DCCReference Include="..\src\Application\Operations\TrashBinOperationHandler.pas"/>
+        <DCCReference Include="Application\Operations\TrashBinOperationHandlerTest.pas"/>
+        <DCCReference Include="..\src\Application\Operations\InviteOperationHandler.pas"/>
+        <DCCReference Include="Application\Operations\InviteOperationHandlerTest.pas"/>
+        <DCCReference Include="..\src\Application\FileOps\CrossAccountFileOperationHandler.pas"/>
+        <DCCReference Include="Application\FileOps\CrossAccountFileOperationHandlerTest.pas"/>
+        <DCCReference Include="..\src\Presentation\Icon\IconRenderingEngine.pas"/>
+        <DCCReference Include="Presentation\Icon\IconRenderingEngineTest.pas"/>
+        <DCCReference Include="..\src\Application\Operations\FileExecutionDispatcher.pas"/>
+        <DCCReference Include="Application\Operations\FileExecutionDispatcherTest.pas"/>
+        <DCCReference Include="..\src\Application\Operations\SharedItemActionHandler.pas"/>
+        <DCCReference Include="Application\Operations\SharedItemActionHandlerTest.pas"/>
+        <DCCReference Include="..\src\Application\FileOps\MoveOperationContextTracker.pas"/>
+        <DCCReference Include="Application\FileOps\MoveOperationContextTrackerTest.pas"/>
+        <DCCReference Include="..\src\Application\FileOps\DirectoryDeletionPreCheck.pas"/>
+        <DCCReference Include="Application\FileOps\DirectoryDeletionPreCheckTest.pas"/>
+        <DCCReference Include="..\src\Application\Upload\UploadPreparationValidator.pas"/>
+        <DCCReference Include="Application\Upload\UploadPreparationValidatorTest.pas"/>
+        <DCCReference Include="..\src\Application\Download\DownloadPreparationValidator.pas"/>
+        <DCCReference Include="Application\Download\DownloadPreparationValidatorTest.pas"/>
+        <DCCReference Include="..\src\Application\Upload\UploadCompletionHandler.pas"/>
+        <DCCReference Include="Application\Upload\UploadCompletionHandlerTest.pas"/>
+        <DCCReference Include="..\src\Application\Listing\RootListingHandler.pas"/>
+        <DCCReference Include="Application\Listing\RootListingHandlerTest.pas"/>
+        <DCCReference Include="..\src\Application\Listing\PathListingHandler.pas"/>
+        <DCCReference Include="Application\Listing\PathListingHandlerTest.pas"/>
+        <DCCReference Include="..\src\Presentation\Icon\IconContextBuilder.pas"/>
+        <DCCReference Include="Presentation\Icon\IconContextBuilderTest.pas"/>
+        <DCCReference Include="..\src\Application\Upload\OverwritePreparationHandler.pas"/>
+        <DCCReference Include="Application\Upload\OverwritePreparationHandlerTest.pas"/>
+        <DCCReference Include="..\src\Application\Operation\OperationStatusContextBuilder.pas"/>
+        <DCCReference Include="Application\Operation\OperationStatusContextBuilderTest.pas"/>
+        <DCCReference Include="..\src\Application\Listing\ListingResultApplier.pas"/>
+        <DCCReference Include="Application\Listing\ListingResultApplierTest.pas"/>
+        <DCCReference Include="..\src\Application\Download\DownloadOrchestrator.pas"/>
+        <DCCReference Include="Application\Download\DownloadOrchestratorTest.pas"/>
+        <DCCReference Include="..\src\Infrastructure\Hash\CloudHashCalculator.pas"/>
+        <DCCReference Include="Infrastructure\Hash\CloudHashCalculatorTest.pas"/>
+        <DCCReference Include="..\src\Infrastructure\Shard\CloudShardManager.pas"/>
+        <DCCReference Include="Infrastructure\Shard\CloudShardManagerTest.pas"/>
+        <DCCReference Include="..\src\Domain\Services\CloudErrorMapper.pas"/>
+        <DCCReference Include="Domain\Services\CloudErrorMapperTest.pas"/>
+        <DCCReference Include="..\src\Application\CloudCallbackTypes.pas"/>
+        <DCCReference Include="..\src\Application\Download\CloudFileDownloader.pas"/>
+        <DCCReference Include="Application\Download\CloudFileDownloaderTest.pas"/>
+        <DCCReference Include="..\src\Application\Upload\CloudFileUploader.pas"/>
+        <DCCReference Include="Application\Upload\CloudFileUploaderTest.pas"/>
+        <DCCReference Include="..\src\Application\Share\CloudShareService.pas"/>
+        <DCCReference Include="Application\Share\CloudShareServiceTest.pas"/>
+        <DCCReference Include="..\src\Application\Listing\CloudListingService.pas"/>
+        <DCCReference Include="Application\Listing\CloudListingServiceTest.pas"/>
+        <DCCReference Include="..\src\Application\FileOps\CloudFileOperations.pas"/>
+        <DCCReference Include="Application\FileOps\CloudFileOperationsTest.pas"/>
+        <DCCReference Include="..\src\Presentation\Presenter\RemotePropertyPresenter.pas"/>
+        <DCCReference Include="Presentation\Presenter\RemotePropertyPresenterTest.pas"/>
+        <DCCReference Include="..\src\Presentation\Presenter\AccountsPresenter.pas"/>
+        <DCCReference Include="Presentation\Presenter\AccountsPresenterTest.pas"/>
+        <DCCReference Include="..\src\Presentation\Presenter\InvitePropertyPresenter.pas"/>
+        <DCCReference Include="Presentation\Presenter\InvitePropertyPresenterTest.pas"/>
+        <DCCReference Include="..\src\Presentation\Presenter\DeletedPropertyPresenter.pas"/>
+        <DCCReference Include="Presentation\Presenter\DeletedPropertyPresenterTest.pas"/>
+        <DCCReference Include="..\src\Presentation\Presenter\AskPasswordPresenter.pas"/>
+        <DCCReference Include="Presentation\Presenter\AskPasswordPresenterTest.pas"/>
+        <DCCReference Include="Presentation\UI\Forms\AskPasswordFormTest.pas"/>
         <DCCReference Include="Integration\IntegrationTestConfig.pas"/>
         <DCCReference Include="Integration\TestDataGenerator.pas"/>
         <DCCReference Include="Integration\IntegrationTestBase.pas"/>
@@ -223,7 +418,7 @@
                     <Excluded_Packages Name="$(BDSBIN)\dclofficexp290.bpl">Microsoft Office XP Sample Automation Server Wrapper Components</Excluded_Packages>
                 </Excluded_Packages>
             </Delphi.Personality>
-            <Deployment Version="5">
+            <Deployment Version="3">
                 <DeployFile LocalName="$(BDS)\Redist\iossimulator\libcgunwind.1.0.dylib" Class="DependencyModule"/>
                 <DeployFile LocalName="$(BDS)\Redist\iossimulator\libpcre.dylib" Class="DependencyModule"/>
                 <DeployFile LocalName="$(BDS)\Redist\osx32\libcgunwind.1.0.dylib" Class="DependencyModule"/>
@@ -242,6 +437,16 @@
                         <Operation>0</Operation>
                     </Platform>
                 </DeployClass>
+                <DeployClass Name="AndroidClasses">
+                    <Platform Name="Android">
+                        <RemoteDir>classes</RemoteDir>
+                        <Operation>64</Operation>
+                    </Platform>
+                    <Platform Name="Android64">
+                        <RemoteDir>classes</RemoteDir>
+                        <Operation>64</Operation>
+                    </Platform>
+                </DeployClass>
                 <DeployClass Name="AndroidFileProvider">
                     <Platform Name="Android">
                         <RemoteDir>res\xml</RemoteDir>
@@ -249,6 +454,12 @@
                     </Platform>
                     <Platform Name="Android64">
                         <RemoteDir>res\xml</RemoteDir>
+                        <Operation>1</Operation>
+                    </Platform>
+                </DeployClass>
+                <DeployClass Name="AndroidGDBServer">
+                    <Platform Name="Android">
+                        <RemoteDir>library\lib\armeabi-v7a</RemoteDir>
                         <Operation>1</Operation>
                     </Platform>
                 </DeployClass>
@@ -685,7 +896,7 @@
                         <Operation>1</Operation>
                         <Extensions>.dylib</Extensions>
                     </Platform>
-                    <Platform Name="iOSSimARM64">
+                    <Platform Name="iOSSimulator">
                         <Operation>1</Operation>
                         <Extensions>.dylib</Extensions>
                     </Platform>
@@ -718,7 +929,7 @@
                         <Operation>1</Operation>
                         <Extensions>.dylib</Extensions>
                     </Platform>
-                    <Platform Name="iOSSimARM64">
+                    <Platform Name="iOSSimulator">
                         <Operation>1</Operation>
                         <Extensions>.dylib</Extensions>
                     </Platform>
@@ -755,7 +966,7 @@
                     <Platform Name="iOSDevice64">
                         <Operation>0</Operation>
                     </Platform>
-                    <Platform Name="iOSSimARM64">
+                    <Platform Name="iOSSimulator">
                         <Operation>0</Operation>
                     </Platform>
                     <Platform Name="OSX32">
@@ -774,11 +985,259 @@
                         <Operation>0</Operation>
                     </Platform>
                 </DeployClass>
+                <DeployClass Name="iOS_AppStore1024">
+                    <Platform Name="iOSDevice64">
+                        <RemoteDir>..\$(PROJECTNAME).launchscreen\Assets\AppIcon.appiconset</RemoteDir>
+                        <Operation>1</Operation>
+                    </Platform>
+                </DeployClass>
+                <DeployClass Name="iPad_AppIcon152">
+                    <Platform Name="iOSDevice64">
+                        <RemoteDir>..\$(PROJECTNAME).launchscreen\Assets\AppIcon.appiconset</RemoteDir>
+                        <Operation>1</Operation>
+                    </Platform>
+                    <Platform Name="iOSSimulator">
+                        <RemoteDir>..\$(PROJECTNAME).launchscreen\Assets\AppIcon.appiconset</RemoteDir>
+                        <Operation>1</Operation>
+                    </Platform>
+                </DeployClass>
+                <DeployClass Name="iPad_AppIcon167">
+                    <Platform Name="iOSDevice64">
+                        <RemoteDir>..\$(PROJECTNAME).launchscreen\Assets\AppIcon.appiconset</RemoteDir>
+                        <Operation>1</Operation>
+                    </Platform>
+                    <Platform Name="iOSSimulator">
+                        <RemoteDir>..\$(PROJECTNAME).launchscreen\Assets\AppIcon.appiconset</RemoteDir>
+                        <Operation>1</Operation>
+                    </Platform>
+                </DeployClass>
+                <DeployClass Name="iPad_Launch2x">
+                    <Platform Name="iOSDevice64">
+                        <RemoteDir>..\$(PROJECTNAME).launchscreen\Assets\LaunchScreenImage.imageset</RemoteDir>
+                        <Operation>1</Operation>
+                    </Platform>
+                    <Platform Name="iOSSimulator">
+                        <RemoteDir>..\$(PROJECTNAME).launchscreen\Assets\LaunchScreenImage.imageset</RemoteDir>
+                        <Operation>1</Operation>
+                    </Platform>
+                </DeployClass>
+                <DeployClass Name="iPad_LaunchDark2x">
+                    <Platform Name="iOSDevice64">
+                        <RemoteDir>..\$(PROJECTNAME).launchscreen\Assets\LaunchScreenImage.imageset</RemoteDir>
+                        <Operation>1</Operation>
+                    </Platform>
+                    <Platform Name="iOSSimulator">
+                        <RemoteDir>..\$(PROJECTNAME).launchscreen\Assets\LaunchScreenImage.imageset</RemoteDir>
+                        <Operation>1</Operation>
+                    </Platform>
+                </DeployClass>
+                <DeployClass Name="iPad_Notification40">
+                    <Platform Name="iOSDevice64">
+                        <RemoteDir>..\$(PROJECTNAME).launchscreen\Assets\AppIcon.appiconset</RemoteDir>
+                        <Operation>1</Operation>
+                    </Platform>
+                    <Platform Name="iOSSimulator">
+                        <RemoteDir>..\$(PROJECTNAME).launchscreen\Assets\AppIcon.appiconset</RemoteDir>
+                        <Operation>1</Operation>
+                    </Platform>
+                </DeployClass>
+                <DeployClass Name="iPad_Setting58">
+                    <Platform Name="iOSDevice64">
+                        <RemoteDir>..\$(PROJECTNAME).launchscreen\Assets\AppIcon.appiconset</RemoteDir>
+                        <Operation>1</Operation>
+                    </Platform>
+                    <Platform Name="iOSSimulator">
+                        <RemoteDir>..\$(PROJECTNAME).launchscreen\Assets\AppIcon.appiconset</RemoteDir>
+                        <Operation>1</Operation>
+                    </Platform>
+                </DeployClass>
+                <DeployClass Name="iPad_SpotLight80">
+                    <Platform Name="iOSDevice64">
+                        <RemoteDir>..\$(PROJECTNAME).launchscreen\Assets\AppIcon.appiconset</RemoteDir>
+                        <Operation>1</Operation>
+                    </Platform>
+                    <Platform Name="iOSSimulator">
+                        <RemoteDir>..\$(PROJECTNAME).launchscreen\Assets\AppIcon.appiconset</RemoteDir>
+                        <Operation>1</Operation>
+                    </Platform>
+                </DeployClass>
+                <DeployClass Name="iPhone_AppIcon120">
+                    <Platform Name="iOSDevice64">
+                        <RemoteDir>..\$(PROJECTNAME).launchscreen\Assets\AppIcon.appiconset</RemoteDir>
+                        <Operation>1</Operation>
+                    </Platform>
+                    <Platform Name="iOSSimulator">
+                        <RemoteDir>..\$(PROJECTNAME).launchscreen\Assets\AppIcon.appiconset</RemoteDir>
+                        <Operation>1</Operation>
+                    </Platform>
+                </DeployClass>
+                <DeployClass Name="iPhone_AppIcon180">
+                    <Platform Name="iOSDevice64">
+                        <RemoteDir>..\$(PROJECTNAME).launchscreen\Assets\AppIcon.appiconset</RemoteDir>
+                        <Operation>1</Operation>
+                    </Platform>
+                    <Platform Name="iOSSimulator">
+                        <RemoteDir>..\$(PROJECTNAME).launchscreen\Assets\AppIcon.appiconset</RemoteDir>
+                        <Operation>1</Operation>
+                    </Platform>
+                </DeployClass>
+                <DeployClass Name="iPhone_Launch2x">
+                    <Platform Name="iOSDevice64">
+                        <RemoteDir>..\$(PROJECTNAME).launchscreen\Assets\LaunchScreenImage.imageset</RemoteDir>
+                        <Operation>1</Operation>
+                    </Platform>
+                    <Platform Name="iOSSimulator">
+                        <RemoteDir>..\$(PROJECTNAME).launchscreen\Assets\LaunchScreenImage.imageset</RemoteDir>
+                        <Operation>1</Operation>
+                    </Platform>
+                </DeployClass>
+                <DeployClass Name="iPhone_Launch3x">
+                    <Platform Name="iOSDevice64">
+                        <RemoteDir>..\$(PROJECTNAME).launchscreen\Assets\LaunchScreenImage.imageset</RemoteDir>
+                        <Operation>1</Operation>
+                    </Platform>
+                    <Platform Name="iOSSimulator">
+                        <RemoteDir>..\$(PROJECTNAME).launchscreen\Assets\LaunchScreenImage.imageset</RemoteDir>
+                        <Operation>1</Operation>
+                    </Platform>
+                </DeployClass>
+                <DeployClass Name="iPhone_LaunchDark2x">
+                    <Platform Name="iOSDevice64">
+                        <RemoteDir>..\$(PROJECTNAME).launchscreen\Assets\LaunchScreenImage.imageset</RemoteDir>
+                        <Operation>1</Operation>
+                    </Platform>
+                    <Platform Name="iOSSimulator">
+                        <RemoteDir>..\$(PROJECTNAME).launchscreen\Assets\LaunchScreenImage.imageset</RemoteDir>
+                        <Operation>1</Operation>
+                    </Platform>
+                </DeployClass>
+                <DeployClass Name="iPhone_LaunchDark3x">
+                    <Platform Name="iOSDevice64">
+                        <RemoteDir>..\$(PROJECTNAME).launchscreen\Assets\LaunchScreenImage.imageset</RemoteDir>
+                        <Operation>1</Operation>
+                    </Platform>
+                    <Platform Name="iOSSimulator">
+                        <RemoteDir>..\$(PROJECTNAME).launchscreen\Assets\LaunchScreenImage.imageset</RemoteDir>
+                        <Operation>1</Operation>
+                    </Platform>
+                </DeployClass>
+                <DeployClass Name="iPhone_Notification40">
+                    <Platform Name="iOSDevice64">
+                        <RemoteDir>..\$(PROJECTNAME).launchscreen\Assets\AppIcon.appiconset</RemoteDir>
+                        <Operation>1</Operation>
+                    </Platform>
+                    <Platform Name="iOSSimulator">
+                        <RemoteDir>..\$(PROJECTNAME).launchscreen\Assets\AppIcon.appiconset</RemoteDir>
+                        <Operation>1</Operation>
+                    </Platform>
+                </DeployClass>
+                <DeployClass Name="iPhone_Notification60">
+                    <Platform Name="iOSDevice64">
+                        <RemoteDir>..\$(PROJECTNAME).launchscreen\Assets\AppIcon.appiconset</RemoteDir>
+                        <Operation>1</Operation>
+                    </Platform>
+                    <Platform Name="iOSSimulator">
+                        <RemoteDir>..\$(PROJECTNAME).launchscreen\Assets\AppIcon.appiconset</RemoteDir>
+                        <Operation>1</Operation>
+                    </Platform>
+                </DeployClass>
+                <DeployClass Name="iPhone_Setting58">
+                    <Platform Name="iOSDevice64">
+                        <RemoteDir>..\$(PROJECTNAME).launchscreen\Assets\AppIcon.appiconset</RemoteDir>
+                        <Operation>1</Operation>
+                    </Platform>
+                    <Platform Name="iOSSimulator">
+                        <RemoteDir>..\$(PROJECTNAME).launchscreen\Assets\AppIcon.appiconset</RemoteDir>
+                        <Operation>1</Operation>
+                    </Platform>
+                </DeployClass>
+                <DeployClass Name="iPhone_Setting87">
+                    <Platform Name="iOSDevice64">
+                        <RemoteDir>..\$(PROJECTNAME).launchscreen\Assets\AppIcon.appiconset</RemoteDir>
+                        <Operation>1</Operation>
+                    </Platform>
+                    <Platform Name="iOSSimulator">
+                        <RemoteDir>..\$(PROJECTNAME).launchscreen\Assets\AppIcon.appiconset</RemoteDir>
+                        <Operation>1</Operation>
+                    </Platform>
+                </DeployClass>
+                <DeployClass Name="iPhone_Spotlight120">
+                    <Platform Name="iOSDevice64">
+                        <RemoteDir>..\$(PROJECTNAME).launchscreen\Assets\AppIcon.appiconset</RemoteDir>
+                        <Operation>1</Operation>
+                    </Platform>
+                    <Platform Name="iOSSimulator">
+                        <RemoteDir>..\$(PROJECTNAME).launchscreen\Assets\AppIcon.appiconset</RemoteDir>
+                        <Operation>1</Operation>
+                    </Platform>
+                </DeployClass>
+                <DeployClass Name="iPhone_Spotlight80">
+                    <Platform Name="iOSDevice64">
+                        <RemoteDir>..\$(PROJECTNAME).launchscreen\Assets\AppIcon.appiconset</RemoteDir>
+                        <Operation>1</Operation>
+                    </Platform>
+                    <Platform Name="iOSSimulator">
+                        <RemoteDir>..\$(PROJECTNAME).launchscreen\Assets\AppIcon.appiconset</RemoteDir>
+                        <Operation>1</Operation>
+                    </Platform>
+                </DeployClass>
                 <DeployClass Name="ProjectAndroidManifest">
                     <Platform Name="Android">
                         <Operation>1</Operation>
                     </Platform>
                     <Platform Name="Android64">
+                        <Operation>1</Operation>
+                    </Platform>
+                </DeployClass>
+                <DeployClass Name="ProjectiOSDeviceDebug">
+                    <Platform Name="iOSDevice32">
+                        <RemoteDir>..\$(PROJECTNAME).app.dSYM\Contents\Resources\DWARF</RemoteDir>
+                        <Operation>1</Operation>
+                    </Platform>
+                    <Platform Name="iOSDevice64">
+                        <RemoteDir>..\$(PROJECTNAME).app.dSYM\Contents\Resources\DWARF</RemoteDir>
+                        <Operation>1</Operation>
+                    </Platform>
+                </DeployClass>
+                <DeployClass Name="ProjectiOSEntitlements">
+                    <Platform Name="iOSDevice32">
+                        <RemoteDir>..\</RemoteDir>
+                        <Operation>1</Operation>
+                    </Platform>
+                    <Platform Name="iOSDevice64">
+                        <RemoteDir>..\</RemoteDir>
+                        <Operation>1</Operation>
+                    </Platform>
+                </DeployClass>
+                <DeployClass Name="ProjectiOSInfoPList">
+                    <Platform Name="iOSDevice32">
+                        <Operation>1</Operation>
+                    </Platform>
+                    <Platform Name="iOSDevice64">
+                        <Operation>1</Operation>
+                    </Platform>
+                    <Platform Name="iOSSimulator">
+                        <Operation>1</Operation>
+                    </Platform>
+                </DeployClass>
+                <DeployClass Name="ProjectiOSLaunchScreen">
+                    <Platform Name="iOSDevice64">
+                        <RemoteDir>..\$(PROJECTNAME).launchscreen</RemoteDir>
+                        <Operation>64</Operation>
+                    </Platform>
+                    <Platform Name="iOSSimulator">
+                        <RemoteDir>..\$(PROJECTNAME).launchscreen</RemoteDir>
+                        <Operation>64</Operation>
+                    </Platform>
+                </DeployClass>
+                <DeployClass Name="ProjectiOSResource">
+                    <Platform Name="iOSDevice32">
+                        <Operation>1</Operation>
+                    </Platform>
+                    <Platform Name="iOSDevice64">
+                        <Operation>1</Operation>
+                    </Platform>
+                    <Platform Name="iOSSimulator">
                         <Operation>1</Operation>
                     </Platform>
                 </DeployClass>
@@ -849,7 +1308,7 @@
                     <Platform Name="iOSDevice64">
                         <Operation>1</Operation>
                     </Platform>
-                    <Platform Name="iOSSimARM64">
+                    <Platform Name="iOSSimulator">
                         <Operation>1</Operation>
                     </Platform>
                     <Platform Name="Linux64">
@@ -884,69 +1343,6 @@
                     <Platform Name="Win64">
                         <Operation>1</Operation>
                     </Platform>
-                    <Platform Name="Win64x">
-                        <Operation>1</Operation>
-                    </Platform>
-                </DeployClass>
-                <DeployClass Name="ProjectiOSDeviceDebug">
-                    <Platform Name="iOSDevice32">
-                        <RemoteDir>..\$(PROJECTNAME).app.dSYM\Contents\Resources\DWARF</RemoteDir>
-                        <Operation>1</Operation>
-                    </Platform>
-                    <Platform Name="iOSDevice64">
-                        <RemoteDir>..\$(PROJECTNAME).app.dSYM\Contents\Resources\DWARF</RemoteDir>
-                        <Operation>1</Operation>
-                    </Platform>
-                    <Platform Name="iOSSimARM64">
-                        <RemoteDir>..\$(PROJECTNAME).app.dSYM\Contents\Resources\DWARF</RemoteDir>
-                        <Operation>1</Operation>
-                    </Platform>
-                </DeployClass>
-                <DeployClass Name="ProjectiOSEntitlements">
-                    <Platform Name="iOSDevice32">
-                        <RemoteDir>..\</RemoteDir>
-                        <Operation>1</Operation>
-                    </Platform>
-                    <Platform Name="iOSDevice64">
-                        <RemoteDir>..\</RemoteDir>
-                        <Operation>1</Operation>
-                    </Platform>
-                    <Platform Name="iOSSimARM64">
-                        <RemoteDir>..\</RemoteDir>
-                        <Operation>1</Operation>
-                    </Platform>
-                </DeployClass>
-                <DeployClass Name="ProjectiOSInfoPList">
-                    <Platform Name="iOSDevice32">
-                        <Operation>1</Operation>
-                    </Platform>
-                    <Platform Name="iOSDevice64">
-                        <Operation>1</Operation>
-                    </Platform>
-                    <Platform Name="iOSSimARM64">
-                        <Operation>1</Operation>
-                    </Platform>
-                </DeployClass>
-                <DeployClass Name="ProjectiOSLaunchScreen">
-                    <Platform Name="iOSDevice64">
-                        <RemoteDir>..\$(PROJECTNAME).launchscreen</RemoteDir>
-                        <Operation>64</Operation>
-                    </Platform>
-                    <Platform Name="iOSSimARM64">
-                        <RemoteDir>..\$(PROJECTNAME).launchscreen</RemoteDir>
-                        <Operation>64</Operation>
-                    </Platform>
-                </DeployClass>
-                <DeployClass Name="ProjectiOSResource">
-                    <Platform Name="iOSDevice32">
-                        <Operation>1</Operation>
-                    </Platform>
-                    <Platform Name="iOSDevice64">
-                        <Operation>1</Operation>
-                    </Platform>
-                    <Platform Name="iOSSimARM64">
-                        <Operation>1</Operation>
-                    </Platform>
                 </DeployClass>
                 <DeployClass Name="UWP_DelphiLogo150">
                     <Platform Name="Win32">
@@ -968,211 +1364,12 @@
                         <Operation>1</Operation>
                     </Platform>
                 </DeployClass>
-                <DeployClass Name="iOS_AppStore1024">
-                    <Platform Name="iOSDevice64">
-                        <RemoteDir>..\$(PROJECTNAME).launchscreen\Assets\AppIcon.appiconset</RemoteDir>
-                        <Operation>1</Operation>
-                    </Platform>
-                    <Platform Name="iOSSimARM64">
-                        <RemoteDir>..\$(PROJECTNAME).launchscreen\Assets\AppIcon.appiconset</RemoteDir>
-                        <Operation>1</Operation>
-                    </Platform>
-                </DeployClass>
-                <DeployClass Name="iPad_AppIcon152">
-                    <Platform Name="iOSDevice64">
-                        <RemoteDir>..\$(PROJECTNAME).launchscreen\Assets\AppIcon.appiconset</RemoteDir>
-                        <Operation>1</Operation>
-                    </Platform>
-                    <Platform Name="iOSSimARM64">
-                        <RemoteDir>..\$(PROJECTNAME).launchscreen\Assets\AppIcon.appiconset</RemoteDir>
-                        <Operation>1</Operation>
-                    </Platform>
-                </DeployClass>
-                <DeployClass Name="iPad_AppIcon167">
-                    <Platform Name="iOSDevice64">
-                        <RemoteDir>..\$(PROJECTNAME).launchscreen\Assets\AppIcon.appiconset</RemoteDir>
-                        <Operation>1</Operation>
-                    </Platform>
-                    <Platform Name="iOSSimARM64">
-                        <RemoteDir>..\$(PROJECTNAME).launchscreen\Assets\AppIcon.appiconset</RemoteDir>
-                        <Operation>1</Operation>
-                    </Platform>
-                </DeployClass>
-                <DeployClass Name="iPad_Launch2x">
-                    <Platform Name="iOSDevice64">
-                        <RemoteDir>..\$(PROJECTNAME).launchscreen\Assets\LaunchScreenImage.imageset</RemoteDir>
-                        <Operation>1</Operation>
-                    </Platform>
-                    <Platform Name="iOSSimARM64">
-                        <RemoteDir>..\$(PROJECTNAME).launchscreen\Assets\LaunchScreenImage.imageset</RemoteDir>
-                        <Operation>1</Operation>
-                    </Platform>
-                </DeployClass>
-                <DeployClass Name="iPad_LaunchDark2x">
-                    <Platform Name="iOSDevice64">
-                        <RemoteDir>..\$(PROJECTNAME).launchscreen\Assets\LaunchScreenImage.imageset</RemoteDir>
-                        <Operation>1</Operation>
-                    </Platform>
-                    <Platform Name="iOSSimARM64">
-                        <RemoteDir>..\$(PROJECTNAME).launchscreen\Assets\LaunchScreenImage.imageset</RemoteDir>
-                        <Operation>1</Operation>
-                    </Platform>
-                </DeployClass>
-                <DeployClass Name="iPad_Notification40">
-                    <Platform Name="iOSDevice64">
-                        <RemoteDir>..\$(PROJECTNAME).launchscreen\Assets\AppIcon.appiconset</RemoteDir>
-                        <Operation>1</Operation>
-                    </Platform>
-                    <Platform Name="iOSSimARM64">
-                        <RemoteDir>..\$(PROJECTNAME).launchscreen\Assets\AppIcon.appiconset</RemoteDir>
-                        <Operation>1</Operation>
-                    </Platform>
-                </DeployClass>
-                <DeployClass Name="iPad_Setting58">
-                    <Platform Name="iOSDevice64">
-                        <RemoteDir>..\$(PROJECTNAME).launchscreen\Assets\AppIcon.appiconset</RemoteDir>
-                        <Operation>1</Operation>
-                    </Platform>
-                    <Platform Name="iOSSimARM64">
-                        <RemoteDir>..\$(PROJECTNAME).launchscreen\Assets\AppIcon.appiconset</RemoteDir>
-                        <Operation>1</Operation>
-                    </Platform>
-                </DeployClass>
-                <DeployClass Name="iPad_SpotLight80">
-                    <Platform Name="iOSDevice64">
-                        <RemoteDir>..\$(PROJECTNAME).launchscreen\Assets\AppIcon.appiconset</RemoteDir>
-                        <Operation>1</Operation>
-                    </Platform>
-                    <Platform Name="iOSSimARM64">
-                        <RemoteDir>..\$(PROJECTNAME).launchscreen\Assets\AppIcon.appiconset</RemoteDir>
-                        <Operation>1</Operation>
-                    </Platform>
-                </DeployClass>
-                <DeployClass Name="iPhone_AppIcon120">
-                    <Platform Name="iOSDevice64">
-                        <RemoteDir>..\$(PROJECTNAME).launchscreen\Assets\AppIcon.appiconset</RemoteDir>
-                        <Operation>1</Operation>
-                    </Platform>
-                    <Platform Name="iOSSimARM64">
-                        <RemoteDir>..\$(PROJECTNAME).launchscreen\Assets\AppIcon.appiconset</RemoteDir>
-                        <Operation>1</Operation>
-                    </Platform>
-                </DeployClass>
-                <DeployClass Name="iPhone_AppIcon180">
-                    <Platform Name="iOSDevice64">
-                        <RemoteDir>..\$(PROJECTNAME).launchscreen\Assets\AppIcon.appiconset</RemoteDir>
-                        <Operation>1</Operation>
-                    </Platform>
-                    <Platform Name="iOSSimARM64">
-                        <RemoteDir>..\$(PROJECTNAME).launchscreen\Assets\AppIcon.appiconset</RemoteDir>
-                        <Operation>1</Operation>
-                    </Platform>
-                </DeployClass>
-                <DeployClass Name="iPhone_Launch2x">
-                    <Platform Name="iOSDevice64">
-                        <RemoteDir>..\$(PROJECTNAME).launchscreen\Assets\LaunchScreenImage.imageset</RemoteDir>
-                        <Operation>1</Operation>
-                    </Platform>
-                    <Platform Name="iOSSimARM64">
-                        <RemoteDir>..\$(PROJECTNAME).launchscreen\Assets\LaunchScreenImage.imageset</RemoteDir>
-                        <Operation>1</Operation>
-                    </Platform>
-                </DeployClass>
-                <DeployClass Name="iPhone_Launch3x">
-                    <Platform Name="iOSDevice64">
-                        <RemoteDir>..\$(PROJECTNAME).launchscreen\Assets\LaunchScreenImage.imageset</RemoteDir>
-                        <Operation>1</Operation>
-                    </Platform>
-                    <Platform Name="iOSSimARM64">
-                        <RemoteDir>..\$(PROJECTNAME).launchscreen\Assets\LaunchScreenImage.imageset</RemoteDir>
-                        <Operation>1</Operation>
-                    </Platform>
-                </DeployClass>
-                <DeployClass Name="iPhone_LaunchDark2x">
-                    <Platform Name="iOSDevice64">
-                        <RemoteDir>..\$(PROJECTNAME).launchscreen\Assets\LaunchScreenImage.imageset</RemoteDir>
-                        <Operation>1</Operation>
-                    </Platform>
-                    <Platform Name="iOSSimARM64">
-                        <RemoteDir>..\$(PROJECTNAME).launchscreen\Assets\LaunchScreenImage.imageset</RemoteDir>
-                        <Operation>1</Operation>
-                    </Platform>
-                </DeployClass>
-                <DeployClass Name="iPhone_LaunchDark3x">
-                    <Platform Name="iOSDevice64">
-                        <RemoteDir>..\$(PROJECTNAME).launchscreen\Assets\LaunchScreenImage.imageset</RemoteDir>
-                        <Operation>1</Operation>
-                    </Platform>
-                    <Platform Name="iOSSimARM64">
-                        <RemoteDir>..\$(PROJECTNAME).launchscreen\Assets\LaunchScreenImage.imageset</RemoteDir>
-                        <Operation>1</Operation>
-                    </Platform>
-                </DeployClass>
-                <DeployClass Name="iPhone_Notification40">
-                    <Platform Name="iOSDevice64">
-                        <RemoteDir>..\$(PROJECTNAME).launchscreen\Assets\AppIcon.appiconset</RemoteDir>
-                        <Operation>1</Operation>
-                    </Platform>
-                    <Platform Name="iOSSimARM64">
-                        <RemoteDir>..\$(PROJECTNAME).launchscreen\Assets\AppIcon.appiconset</RemoteDir>
-                        <Operation>1</Operation>
-                    </Platform>
-                </DeployClass>
-                <DeployClass Name="iPhone_Notification60">
-                    <Platform Name="iOSDevice64">
-                        <RemoteDir>..\$(PROJECTNAME).launchscreen\Assets\AppIcon.appiconset</RemoteDir>
-                        <Operation>1</Operation>
-                    </Platform>
-                    <Platform Name="iOSSimARM64">
-                        <RemoteDir>..\$(PROJECTNAME).launchscreen\Assets\AppIcon.appiconset</RemoteDir>
-                        <Operation>1</Operation>
-                    </Platform>
-                </DeployClass>
-                <DeployClass Name="iPhone_Setting58">
-                    <Platform Name="iOSDevice64">
-                        <RemoteDir>..\$(PROJECTNAME).launchscreen\Assets\AppIcon.appiconset</RemoteDir>
-                        <Operation>1</Operation>
-                    </Platform>
-                    <Platform Name="iOSSimARM64">
-                        <RemoteDir>..\$(PROJECTNAME).launchscreen\Assets\AppIcon.appiconset</RemoteDir>
-                        <Operation>1</Operation>
-                    </Platform>
-                </DeployClass>
-                <DeployClass Name="iPhone_Setting87">
-                    <Platform Name="iOSDevice64">
-                        <RemoteDir>..\$(PROJECTNAME).launchscreen\Assets\AppIcon.appiconset</RemoteDir>
-                        <Operation>1</Operation>
-                    </Platform>
-                    <Platform Name="iOSSimARM64">
-                        <RemoteDir>..\$(PROJECTNAME).launchscreen\Assets\AppIcon.appiconset</RemoteDir>
-                        <Operation>1</Operation>
-                    </Platform>
-                </DeployClass>
-                <DeployClass Name="iPhone_Spotlight120">
-                    <Platform Name="iOSDevice64">
-                        <RemoteDir>..\$(PROJECTNAME).launchscreen\Assets\AppIcon.appiconset</RemoteDir>
-                        <Operation>1</Operation>
-                    </Platform>
-                    <Platform Name="iOSSimARM64">
-                        <RemoteDir>..\$(PROJECTNAME).launchscreen\Assets\AppIcon.appiconset</RemoteDir>
-                        <Operation>1</Operation>
-                    </Platform>
-                </DeployClass>
-                <DeployClass Name="iPhone_Spotlight80">
-                    <Platform Name="iOSDevice64">
-                        <RemoteDir>..\$(PROJECTNAME).launchscreen\Assets\AppIcon.appiconset</RemoteDir>
-                        <Operation>1</Operation>
-                    </Platform>
-                    <Platform Name="iOSSimARM64">
-                        <RemoteDir>..\$(PROJECTNAME).launchscreen\Assets\AppIcon.appiconset</RemoteDir>
-                        <Operation>1</Operation>
-                    </Platform>
-                </DeployClass>
                 <ProjectRoot Platform="Android" Name="$(PROJECTNAME)"/>
                 <ProjectRoot Platform="Android64" Name="$(PROJECTNAME)"/>
                 <ProjectRoot Platform="iOSDevice32" Name="$(PROJECTNAME).app"/>
                 <ProjectRoot Platform="iOSDevice64" Name="$(PROJECTNAME).app"/>
                 <ProjectRoot Platform="iOSSimARM64" Name="$(PROJECTNAME).app"/>
+                <ProjectRoot Platform="iOSSimulator" Name="$(PROJECTNAME).app"/>
                 <ProjectRoot Platform="Linux64" Name="$(PROJECTNAME)"/>
                 <ProjectRoot Platform="OSX32" Name="$(PROJECTNAME).app"/>
                 <ProjectRoot Platform="OSX64" Name="$(PROJECTNAME).app"/>

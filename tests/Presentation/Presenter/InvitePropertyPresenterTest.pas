@@ -8,7 +8,7 @@ uses
 	CMRIncomingInvite,
 	CMROwner,
 	CMRConstants,
-	CloudAccessUtils,
+	CloudAccessMapper,
 	StringHelper,
 	LanguageStrings,
 	System.SysUtils;
@@ -253,7 +253,7 @@ begin
 
 	FPresenter.Initialize(Item, 'TestAccount');
 
-	Assert.AreEqual(TCloudAccessUtils.AccessToString(CLOUD_SHARE_ACCESS_READ_ONLY), FMockView.Access);
+	Assert.AreEqual(TCloudAccessMapper.AccessToString(CLOUD_SHARE_ACCESS_READ_ONLY), FMockView.Access);
 end;
 
 procedure TInvitePropertyPresenterTest.Initialize_SetsSize_Formatted;
