@@ -34,7 +34,7 @@ uses
 	PathHelper in '..\src\Infrastructure\IO\PathHelper.pas',
 	WindowsHelper in '..\src\Infrastructure\OS\WindowsHelper.pas',
 	ConnectionSettings in '..\src\Infrastructure\Settings\ConnectionSettings.pas',
-	SETTINGS_CONSTANTS in '..\src\Infrastructure\Settings\SETTINGS_CONSTANTS.pas',
+	SettingsConstants in '..\src\Infrastructure\Settings\SettingsConstants.pas',
 	CMRConstants in '..\src\Domain\Constants\CMRConstants.pas',
 	ProxySettings in '..\src\Infrastructure\Settings\ProxySettings.pas',
 	StringHelper in '..\src\Infrastructure\IO\StringHelper.pas',

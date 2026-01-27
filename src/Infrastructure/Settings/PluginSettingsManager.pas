@@ -10,7 +10,7 @@ uses
 	PathHelper,
 	WindowsHelper,
 	Windows,
-	SETTINGS_CONSTANTS,
+	SettingsConstants,
 	LANGUAGE_STRINGS,
 	CMRConstants,
 	Classes,

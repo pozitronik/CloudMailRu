@@ -10,7 +10,7 @@ uses
 	SysUtils,
 	WSList,
 	FileCipher,
-	SETTINGS_CONSTANTS,
+	SettingsConstants,
 	IniConfigFile,
 	DUnitX.TestFramework;
 

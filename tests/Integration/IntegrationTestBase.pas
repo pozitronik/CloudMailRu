@@ -27,7 +27,7 @@ uses
 	TCRequest,
 	TCHandler,
 	FileCipher,
-	SETTINGS_CONSTANTS;
+	SettingsConstants;
 
 type
 	{Base class for integration tests with cloud setup/teardown}

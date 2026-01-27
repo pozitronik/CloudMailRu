@@ -12,7 +12,7 @@ uses
 	Windows,
 	ParsingHelper,
 	LANGUAGE_STRINGS,
-	SETTINGS_CONSTANTS,
+	SettingsConstants,
 	WSList,
 	AccountSettings,
 	IniConfigFile;

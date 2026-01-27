@@ -13,7 +13,7 @@ uses
 	CMROperationResultJsonAdapter,
 	WFXTypes,
 	LANGUAGE_STRINGS,
-	SETTINGS_CONSTANTS,
+	SettingsConstants,
 	HashInfo,
 	TCLogger,
 	TCProgress,

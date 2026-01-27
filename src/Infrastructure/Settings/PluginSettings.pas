@@ -3,7 +3,7 @@
 interface
 
 uses
-	SETTINGS_CONSTANTS,
+	SettingsConstants,
 	ConnectionSettings,
 	AccountSettings;
 

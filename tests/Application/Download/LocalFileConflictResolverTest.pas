@@ -8,7 +8,7 @@ interface
 uses
 	DUnitX.TestFramework,
 	WFXTypes,
-	SETTINGS_CONSTANTS,
+	SettingsConstants,
 	TCLogger,
 	LocalFileConflictResolver;
 

@@ -15,7 +15,7 @@ uses
 	FileSplitInfo,
 	TCLogger,
 	TCProgress,
-	SETTINGS_CONSTANTS,
+	SettingsConstants,
 	WFXTypes,
 	CMRConstants,
 	LANGUAGE_STRINGS,

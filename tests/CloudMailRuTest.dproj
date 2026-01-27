@@ -131,7 +131,7 @@
         <DCCReference Include="..\src\helpers\PathHelper.pas"/>
         <DCCReference Include="..\src\helpers\WindowsHelper.pas"/>
         <DCCReference Include="..\src\models\settings\ConnectionSettings.pas"/>
-        <DCCReference Include="..\src\models\settings\SETTINGS_CONSTANTS.pas"/>
+        <DCCReference Include="..\src\models\settings\SettingsConstants.pas"/>
         <DCCReference Include="..\src\Domain\Constants\CMRConstants.pas"/>
         <DCCReference Include="..\src\models\settings\ProxySettings.pas"/>
         <DCCReference Include="..\src\helpers\StringHelper.pas"/>

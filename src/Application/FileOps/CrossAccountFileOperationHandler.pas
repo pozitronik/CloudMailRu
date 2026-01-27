@@ -60,7 +60,7 @@ uses
 	CMRConstants,
 	CMRDirItem,
 	CMRFileIdentity,
-	SETTINGS_CONSTANTS,
+	SettingsConstants,
 	LANGUAGE_STRINGS;
 
 constructor TCrossAccountFileOperationHandler.Create(RetryHandler: IRetryHandler; Logger: ILogger);

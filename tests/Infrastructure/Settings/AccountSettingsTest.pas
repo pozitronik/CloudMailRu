@@ -5,7 +5,7 @@ interface
 uses
 	AccountSettings,
 	CMRConstants,
-	SETTINGS_CONSTANTS,
+	SettingsConstants,
 	DUnitX.TestFramework;
 
 type

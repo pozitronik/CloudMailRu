@@ -64,7 +64,7 @@ uses
 	RemoteProperty in 'src\Presentation\UI\Forms\RemoteProperty.pas' {PropertyForm} ,
 	RemotePropertyPresenter in 'src\Presentation\Presenter\RemotePropertyPresenter.pas',
 	AccountsPresenter in 'src\Presentation\Presenter\AccountsPresenter.pas',
-	SETTINGS_CONSTANTS in 'src\Infrastructure\Settings\SETTINGS_CONSTANTS.pas',
+	SettingsConstants in 'src\Infrastructure\Settings\SettingsConstants.pas',
 	StreamingSettings in 'src\Infrastructure\Settings\StreamingSettings.pas',
 	StringHelper in 'src\Infrastructure\IO\StringHelper.pas',
 	TokenRetryHelper in 'src\Application\Retry\TokenRetryHelper.pas',

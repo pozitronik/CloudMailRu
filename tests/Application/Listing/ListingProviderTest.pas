@@ -24,7 +24,7 @@ uses
 	CMRDirItemList,
 	CMRIncomingInviteList,
 	CMRConstants,
-	SETTINGS_CONSTANTS;
+	SettingsConstants;
 
 type
 	{Testable CloudMailRu for listing tests}

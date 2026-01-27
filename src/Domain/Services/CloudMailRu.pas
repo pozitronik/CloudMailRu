@@ -23,7 +23,7 @@ uses
 	System.Classes,
 	System.Generics.Collections,
 	System.SysUtils,
-	SETTINGS_CONSTANTS,
+	SettingsConstants,
 	WFXTypes,
 	Winapi.Windows,
 	PathHelper,

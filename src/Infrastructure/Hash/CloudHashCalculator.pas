@@ -92,7 +92,7 @@ uses
 	FileHelper,
 	PathHelper,
 	LANGUAGE_STRINGS,
-	SETTINGS_CONSTANTS;
+	SettingsConstants;
 
 const
 	{Cloud Mail.ru hash algorithm constants}

@@ -16,7 +16,7 @@ uses
 	CMRConstants,
 	CMRFileIdentity,
 	WFXTypes,
-	SETTINGS_CONSTANTS,
+	SettingsConstants,
 	TCLogger,
 	TCProgress,
 	TCRequest,

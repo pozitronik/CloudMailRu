@@ -9,7 +9,7 @@ interface
 uses
 	SysUtils,
 	CMRDirItem, CMRIncomingInvite, CMRConstants, RealPath,
-	SETTINGS_CONSTANTS;
+	SettingsConstants;
 
 type
 	TIconType = (itUseDefault, {Use TC default icon}

@@ -5,7 +5,7 @@ interface
 uses
 	PluginSettings,
 	PluginSettingsManager,
-	SETTINGS_CONSTANTS,
+	SettingsConstants,
 	StreamingSettings,
 	CMRConstants,
 	TestHelper,

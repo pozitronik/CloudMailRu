@@ -255,7 +255,7 @@
         </DCCReference>
         <DCCReference Include="src\Presentation\Presenter\RemotePropertyPresenter.pas"/>
         <DCCReference Include="src\Presentation\Presenter\AccountsPresenter.pas"/>
-        <DCCReference Include="src\Infrastructure\Settings\SETTINGS_CONSTANTS.pas"/>
+        <DCCReference Include="src\Infrastructure\Settings\SettingsConstants.pas"/>
         <DCCReference Include="src\Infrastructure\Settings\StreamingSettings.pas"/>
         <DCCReference Include="src\Infrastructure\IO\StringHelper.pas"/>
         <DCCReference Include="src\Application\Retry\TokenRetryHelper.pas"/>

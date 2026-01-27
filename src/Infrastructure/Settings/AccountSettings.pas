@@ -6,7 +6,7 @@ uses
 	SysUtils,
 	ParsingHelper,
 	CMRConstants,
-	SETTINGS_CONSTANTS;
+	SettingsConstants;
 
 type
 	EAccountType = set of (ATPrivate, ATPublic);

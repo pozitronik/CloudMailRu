@@ -138,7 +138,7 @@ implementation
 uses
 	WFXTypes,
 	CMRConstants,
-	SETTINGS_CONSTANTS,
+	SettingsConstants,
 	LANGUAGE_STRINGS;
 
 const

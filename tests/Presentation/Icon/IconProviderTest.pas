@@ -5,7 +5,7 @@ interface
 uses
 	SysUtils,
 	CMRDirItem, CMRIncomingInvite, CMRConstants, RealPath,
-	SETTINGS_CONSTANTS,
+	SettingsConstants,
 	IconProvider,
 	DUnitX.TestFramework;
 

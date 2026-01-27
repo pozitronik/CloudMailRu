@@ -4,7 +4,7 @@ interface
 
 uses
 	RealPath,
-	SETTINGS_CONSTANTS,
+	SettingsConstants,
 	DUnitX.TestFramework;
 
 type

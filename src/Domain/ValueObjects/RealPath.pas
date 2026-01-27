@@ -5,7 +5,7 @@ interface
 uses
 	Classes,
 	SysUtils,
-	SETTINGS_CONSTANTS,
+	SettingsConstants,
 	StringHelper;
 
 type

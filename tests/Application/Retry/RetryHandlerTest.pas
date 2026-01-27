@@ -16,7 +16,7 @@ uses
 	PluginSettings,
 	StreamingSettings,
 	WFXTypes,
-	SETTINGS_CONSTANTS,
+	SettingsConstants,
 	TCHandler;
 
 type

@@ -18,7 +18,7 @@ uses
 	WSList,
 	CMRConstants,
 	LANGUAGE_STRINGS,
-	SETTINGS_CONSTANTS,
+	SettingsConstants,
 	CMRInviteList,
 	CMRInvite,
 	CMRDirItem,

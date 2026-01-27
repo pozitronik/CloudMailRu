@@ -15,7 +15,7 @@ uses
 	LocalFileDeletionHandler,
 	PluginSettings,
 	WFXTypes,
-	SETTINGS_CONSTANTS,
+	SettingsConstants,
 	StreamingSettings;
 
 type

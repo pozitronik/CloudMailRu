@@ -18,7 +18,7 @@ uses
 	TCLogger,
 	WFXTypes,
 	CMRConstants,
-	SETTINGS_CONSTANTS,
+	SettingsConstants,
 	LANGUAGE_STRINGS,
 	PathHelper;
 

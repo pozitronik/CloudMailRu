@@ -223,7 +223,7 @@ implementation
 uses
 	CMRConstants,
 	LANGUAGE_STRINGS,
-	SETTINGS_CONSTANTS,
+	SettingsConstants,
 	System.IOUtils,
 	WSList;
 

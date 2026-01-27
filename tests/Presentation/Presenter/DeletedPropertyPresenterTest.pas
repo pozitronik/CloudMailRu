@@ -8,7 +8,7 @@ uses
 	CMRDirItemList,
 	CMRDirItem,
 	CMRConstants,
-	SETTINGS_CONSTANTS,
+	SettingsConstants,
 	LANGUAGE_STRINGS,
 	StringHelper,
 	DateUtils,

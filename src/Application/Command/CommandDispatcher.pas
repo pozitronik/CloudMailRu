@@ -14,7 +14,7 @@ uses
 	RealPath,
 	HashInfo,
 	CMRConstants,
-	SETTINGS_CONSTANTS,
+	SettingsConstants,
 	LANGUAGE_STRINGS,
 	WFXTypes,
 	StringHelper;

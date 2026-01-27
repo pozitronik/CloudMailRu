@@ -406,7 +406,7 @@ implementation
 uses
 	IniConfigFile,
 	CMRConstants,
-	SETTINGS_CONSTANTS,
+	SettingsConstants,
 	WSList;
 
 {TMockAccountsView}

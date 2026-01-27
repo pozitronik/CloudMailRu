@@ -13,7 +13,7 @@ uses
 	CMRFileIdentity,
 	CMRDirItem,
 	WFXTypes,
-	SETTINGS_CONSTANTS,
+	SettingsConstants,
 	TCLogger,
 	TCProgress,
 	TCRequest,

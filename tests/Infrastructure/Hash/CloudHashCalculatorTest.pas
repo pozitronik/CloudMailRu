@@ -236,7 +236,7 @@ type
 implementation
 
 uses
-	SETTINGS_CONSTANTS;
+	SettingsConstants;
 
 { THashCalculatorTestBase }
 

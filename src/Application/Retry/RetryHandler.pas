@@ -76,7 +76,7 @@ implementation
 uses
 	Windows,
 	WFXTypes,
-	SETTINGS_CONSTANTS,
+	SettingsConstants,
 	CMRConstants,
 	TCLogger,
 	WindowsHelper,

@@ -42,7 +42,7 @@ uses
 	SysUtils,
 	CMRConstants,
 	LANGUAGE_STRINGS,
-	SETTINGS_CONSTANTS,
+	SettingsConstants,
 	SystemHelper,
 	PathHelper;
 

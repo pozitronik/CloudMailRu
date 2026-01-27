@@ -12,7 +12,7 @@ uses
 	CMROAuth,
 	CMRSpace,
 	WFXTypes,
-	SETTINGS_CONSTANTS,
+	SettingsConstants,
 	TCLogger,
 	TCProgress,
 	TCRequest,

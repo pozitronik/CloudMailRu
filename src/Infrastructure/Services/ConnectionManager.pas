@@ -20,7 +20,7 @@ uses
 	WindowsFileSystem,
 	Windows,
 	Vcl.Controls,
-	SETTINGS_CONSTANTS,
+	SettingsConstants,
 	WFXTypes,
 	ProxySettings,
 	AccountSettings,

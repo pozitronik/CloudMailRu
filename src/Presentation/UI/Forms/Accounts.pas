@@ -15,7 +15,7 @@ uses
 	IniFiles,
 	PathHelper,
 	WindowsHelper,
-	SETTINGS_CONSTANTS,
+	SettingsConstants,
 	WFXTypes,
 	Vcl.ComCtrls,
 	Vcl.Mask,

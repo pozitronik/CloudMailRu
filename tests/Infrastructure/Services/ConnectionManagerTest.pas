@@ -121,7 +121,7 @@ implementation
 
 uses
 	CMRConstants,
-	SETTINGS_CONSTANTS,
+	SettingsConstants,
 	System.SysUtils,
 	System.Generics.Collections;
 

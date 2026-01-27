@@ -14,7 +14,7 @@ uses
 	CloudHTTP,
 	ConnectionSettings,
 	ProxySettings,
-	SETTINGS_CONSTANTS,
+	SettingsConstants,
 	WFXTypes,
 	CMRConstants,
 	TCLogger,
