@@ -53,8 +53,6 @@ type
 		[Test]
 		procedure TestDispatch_OpenVerb_NoStreaming_ReturnsOpenYourself;
 		[Test]
-		procedure TestDispatch_OpenVerb_NilStreamingGetter_ReturnsOpenYourself;
-		[Test]
 		procedure TestDispatch_OpenVerb_Directory_SkipsStreamingCheck;
 
 		{Quote command routing tests}
@@ -126,7 +124,7 @@ procedure TFileExecutionDispatcherTest.TestDispatch_TrashDir_OpenVerb_ReturnsTra
 var
 	Action: TExecutionAction;
 begin
-	Action := FDispatcher.GetAction('\account.trash\somefile.txt', VERB_OPEN, nil);
+	Action := FDispatcher.GetAction('\account.trash\somefile.txt', VERB_OPEN, StreamingGetterEmpty);
 
 	Assert.AreEqual(eatTrashbinProperties, Action.ActionType);
 end;
@@ -135,7 +133,7 @@ procedure TFileExecutionDispatcherTest.TestDispatch_TrashDir_PropertiesVerb_Retu
 var
 	Action: TExecutionAction;
 begin
-	Action := FDispatcher.GetAction('\account.trash\somefile.txt', VERB_PROPERTIES, nil);
+	Action := FDispatcher.GetAction('\account.trash\somefile.txt', VERB_PROPERTIES, StreamingGetterEmpty);
 
 	Assert.AreEqual(eatTrashbinProperties, Action.ActionType);
 end;
@@ -146,7 +144,7 @@ procedure TFileExecutionDispatcherTest.TestDispatch_SharedDir_OpenVerb_ReturnsSh
 var
 	Action: TExecutionAction;
 begin
-	Action := FDispatcher.GetAction('\account.shared\somefile.txt', VERB_OPEN, nil);
+	Action := FDispatcher.GetAction('\account.shared\somefile.txt', VERB_OPEN, StreamingGetterEmpty);
 
 	Assert.AreEqual(eatSharedAction, Action.ActionType);
 	Assert.IsTrue(Action.ActionOpen);
@@ -156,7 +154,7 @@ procedure TFileExecutionDispatcherTest.TestDispatch_SharedDir_PropertiesVerb_Ret
 var
 	Action: TExecutionAction;
 begin
-	Action := FDispatcher.GetAction('\account.shared\somefile.txt', VERB_PROPERTIES, nil);
+	Action := FDispatcher.GetAction('\account.shared\somefile.txt', VERB_PROPERTIES, StreamingGetterEmpty);
 
 	Assert.AreEqual(eatSharedAction, Action.ActionType);
 	Assert.IsFalse(Action.ActionOpen);
@@ -168,7 +166,7 @@ procedure TFileExecutionDispatcherTest.TestDispatch_InvitesDir_ReturnsInvitesAct
 var
 	Action: TExecutionAction;
 begin
-	Action := FDispatcher.GetAction('\account.invites\someinvite', VERB_OPEN, nil);
+	Action := FDispatcher.GetAction('\account.invites\someinvite', VERB_OPEN, StreamingGetterEmpty);
 
 	Assert.AreEqual(eatInvitesAction, Action.ActionType);
 end;
@@ -179,7 +177,7 @@ procedure TFileExecutionDispatcherTest.TestDispatch_RegularPath_PropertiesVerb_R
 var
 	Action: TExecutionAction;
 begin
-	Action := FDispatcher.GetAction('\account\folder\file.txt', VERB_PROPERTIES, nil);
+	Action := FDispatcher.GetAction('\account\folder\file.txt', VERB_PROPERTIES, StreamingGetterEmpty);
 
 	Assert.AreEqual(eatProperties, Action.ActionType);
 end;
@@ -204,15 +202,6 @@ var
 	Action: TExecutionAction;
 begin
 	Action := FDispatcher.GetAction('\account\file.txt', VERB_OPEN, StreamingGetterEmpty);
-
-	Assert.AreEqual(eatOpenYourself, Action.ActionType);
-end;
-
-procedure TFileExecutionDispatcherTest.TestDispatch_OpenVerb_NilStreamingGetter_ReturnsOpenYourself;
-var
-	Action: TExecutionAction;
-begin
-	Action := FDispatcher.GetAction('\account\file.txt', VERB_OPEN, nil);
 
 	Assert.AreEqual(eatOpenYourself, Action.ActionType);
 end;
@@ -243,7 +232,7 @@ procedure TFileExecutionDispatcherTest.TestDispatch_QuoteVerb_ReturnsCommand;
 var
 	Action: TExecutionAction;
 begin
-	Action := FDispatcher.GetAction('\account\folder', 'quote rmdir folder', nil);
+	Action := FDispatcher.GetAction('\account\folder', 'quote rmdir folder', StreamingGetterEmpty);
 
 	Assert.AreEqual(eatCommand, Action.ActionType);
 end;
@@ -252,7 +241,7 @@ procedure TFileExecutionDispatcherTest.TestDispatch_QuoteVerb_ParsesCommandAndPa
 var
 	Action: TExecutionAction;
 begin
-	Action := FDispatcher.GetAction('\account\folder', 'quote clone http://link', nil);
+	Action := FDispatcher.GetAction('\account\folder', 'quote clone http://link', StreamingGetterEmpty);
 
 	Assert.AreEqual('clone', Action.Command);
 	Assert.AreEqual('http://link', Action.Parameter);
@@ -264,7 +253,7 @@ procedure TFileExecutionDispatcherTest.TestDispatch_UnknownVerb_ReturnsNone;
 var
 	Action: TExecutionAction;
 begin
-	Action := FDispatcher.GetAction('\account\file.txt', 'unknown_verb', nil);
+	Action := FDispatcher.GetAction('\account\file.txt', 'unknown_verb', StreamingGetterEmpty);
 
 	Assert.AreEqual(eatNone, Action.ActionType);
 end;
@@ -276,7 +265,7 @@ var
 	Action: TExecutionAction;
 begin
 	{When path ends with .. the path should be adjusted to parent}
-	Action := FDispatcher.GetAction('\account\folder\..', VERB_PROPERTIES, nil);
+	Action := FDispatcher.GetAction('\account\folder\..', VERB_PROPERTIES, StreamingGetterEmpty);
 
 	Assert.AreEqual(eatProperties, Action.ActionType);
 	{TRealPath stores path without leading backslash, ExtractFilePath keeps trailing one}

@@ -158,7 +158,7 @@ begin
 	if Verb = VERB_OPEN then
 	begin
 		{Only check streaming for files, not directories}
-		if (RealPath.isDir <> ID_True) and Assigned(StreamingGetter) then
+		if RealPath.isDir <> ID_True then
 			TargetStreamingSettings := StreamingGetter(RealPath.Path);
 
 		{Stream if format is configured and not unset/none}
