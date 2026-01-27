@@ -174,10 +174,8 @@ var
 	Pair: TPair<DWORD, TStringList>;
 begin
 	{Free TStringList values before dictionary - may remain if operations were interrupted}
-	if Assigned(FRemoveDirSkippedPath) then
-		for Pair in FRemoveDirSkippedPath do
-			if Assigned(Pair.Value) then
-				Pair.Value.Free;
+	for Pair in FRemoveDirSkippedPath do
+		Pair.Value.Free;
 
 	FreeAndNil(FRemoveDirSkippedPath);
 	FreeAndNil(FFsStatusInfo);
@@ -371,27 +369,24 @@ var
 begin
 	if FRemoveDirSkippedPath.TryGetValue(GetCurrentThreadID(), SkippedPath) then
 	begin
-		if Assigned(SkippedPath) then
-			SkippedPath.Free;
+		SkippedPath.Free;
 		FRemoveDirSkippedPath.Remove(GetCurrentThreadID());
 	end;
 end;
 
 function TThreadStateManager.HasRemoveDirSkippedPath: Boolean;
-var
-	SkippedPath: TStringList;
 begin
-	Result := FRemoveDirSkippedPath.TryGetValue(GetCurrentThreadID(), SkippedPath) and Assigned(SkippedPath);
+	Result := FRemoveDirSkippedPath.ContainsKey(GetCurrentThreadID());
 end;
 
 function TThreadStateManager.IsPathSkipped(const Path: WideString): Boolean;
 var
 	SkippedPath: TStringList;
 begin
-	Result := False;
 	if FRemoveDirSkippedPath.TryGetValue(GetCurrentThreadID(), SkippedPath) then
-		if Assigned(SkippedPath) then
-			Result := SkippedPath.Text.Contains(Path);
+		Result := SkippedPath.Text.Contains(Path)
+	else
+		Result := False;
 end;
 
 procedure TThreadStateManager.AddSkippedPath(const Path: WideString);
@@ -399,8 +394,7 @@ var
 	SkippedPath: TStringList;
 begin
 	if FRemoveDirSkippedPath.TryGetValue(GetCurrentThreadID(), SkippedPath) then
-		if Assigned(SkippedPath) then
-			SkippedPath.Add(Path);
+		SkippedPath.Add(Path);
 end;
 
 procedure TThreadStateManager.RemoveSkippedPath(const Path: WideString);
@@ -409,12 +403,11 @@ var
 	Index: Integer;
 begin
 	if FRemoveDirSkippedPath.TryGetValue(GetCurrentThreadID(), SkippedPath) then
-		if Assigned(SkippedPath) then
-		begin
-			Index := SkippedPath.IndexOf(Path);
-			if Index >= 0 then
-				SkippedPath.Delete(Index);
-		end;
+	begin
+		Index := SkippedPath.IndexOf(Path);
+		if Index >= 0 then
+			SkippedPath.Delete(Index);
+	end;
 end;
 
 {Background jobs (account-keyed)}
