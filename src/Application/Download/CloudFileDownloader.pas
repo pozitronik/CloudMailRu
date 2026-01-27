@@ -108,6 +108,7 @@ var
 	FileStream: TBufferedFileStream;
 	URL, FileName: WideString;
 	MemoryStream: TMemoryStream;
+	DecryptingStream: TStream;
 	DispatcherResponse: WideString;
 	Progress: Boolean;
 	DownloadShard: WideString;
@@ -186,7 +187,15 @@ begin
 				begin
 					ResultHash := FHashCalculator.CalculateHash(MemoryStream, CALCULATING_HASH);
 					MemoryStream.Position := 0;
-					FCipher.DecryptStream(MemoryStream, FileStream);
+					{Use stream wrapper for decryption - processes in chunks with constant memory.
+						Note: MemoryStream still buffers entire encrypted file due to HTTP download pattern.
+						True streaming decryption would require a write-based wrapper for GetFile.}
+					DecryptingStream := FCipher.GetDecryptingStream(MemoryStream);
+					try
+						FileStream.CopyFrom(DecryptingStream, DecryptingStream.Size);
+					finally
+						DecryptingStream.Free;
+					end;
 				end;
 			finally
 				MemoryStream.Free;
