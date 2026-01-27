@@ -42,6 +42,7 @@ uses
 	DeletedProperty in 'src\Presentation\UI\Forms\DeletedProperty.pas' {DeletedPropertyForm} ,
 	Description in 'src\Domain\Services\Description.pas',
 	FileCipher in 'src\Infrastructure\Cipher\FileCipher.pas',
+	CipherStreams in 'src\Infrastructure\Cipher\CipherStreams.pas',
 	FileHelper in 'src\Infrastructure\IO\FileHelper.pas',
 	FileSplitInfo in 'src\Infrastructure\IO\FileSplitInfo.pas',
 	HTTPManager in 'src\Infrastructure\HTTP\HTTPManager.pas',
