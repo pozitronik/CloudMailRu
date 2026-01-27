@@ -227,8 +227,11 @@ var
 begin
 	if ShardType = SHARD_TYPE_DEFAULT then
 		usedShard := FShardManager.GetPublicShard
-	else
-		FShardManager.ResolveShard(usedShard, ShardType);
+	else if not FShardManager.ResolveShard(usedShard, ShardType) then
+	begin
+		FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_DETAILS, 'Failed to resolve shard: %s', [ShardType]);
+		Exit(EmptyWideStr);
+	end;
 	if (FIsPublicAccount()) then
 		Exit(Format('%s%s%s', [IncludeSlash(usedShard), IncludeSlash(FGetPublicLink()), PathToUrl(RemotePath, True, True)]));
 
