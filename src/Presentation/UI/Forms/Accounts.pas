@@ -302,7 +302,7 @@ type
 		procedure ClearStreamingFields;
 
 		{IAccountsView - UI actions}
-		procedure ShowValidationError(ControlName: WideString; Message: WideString);
+		procedure ShowDescriptionFileNameError(Message: WideString);
 		procedure ShowTab(TabIndex: Integer);
 		function GetFormHandle: THandle;
 
@@ -954,27 +954,15 @@ end;
 
 {IAccountsView - UI actions}
 
-procedure TAccountsForm.ShowValidationError(ControlName: WideString; Message: WideString);
+procedure TAccountsForm.ShowDescriptionFileNameError(Message: WideString);
 var
 	MessageBalloon: TBalloonHint;
-	TargetControl: TControl;
 begin
-	TargetControl := nil;
-	if ControlName = 'DescriptionFileName' then
-		TargetControl := DescriptionFileNameEdit;
-
-	if Assigned(TargetControl) then
-	begin
-		MessageBalloon := TBalloonHint.Create(Self);
-		try
-			MessageBalloon.HideAfter := 5000;
-			MessageBalloon.Delay := 0;
-			MessageBalloon.Description := Message;
-			MessageBalloon.ShowHint(TargetControl);
-		finally
-			{Note: TBalloonHint manages its own lifetime}
-		end;
-	end;
+	MessageBalloon := TBalloonHint.Create(Self);
+	MessageBalloon.HideAfter := 5000;
+	MessageBalloon.Delay := 0;
+	MessageBalloon.Description := Message;
+	MessageBalloon.ShowHint(DescriptionFileNameEdit);
 end;
 
 procedure TAccountsForm.ShowTab(TabIndex: Integer);

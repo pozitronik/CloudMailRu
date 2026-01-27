@@ -156,7 +156,7 @@ type
 		procedure ClearStreamingFields;
 
 		{UI actions}
-		procedure ShowValidationError(ControlName: WideString; Message: WideString);
+		procedure ShowDescriptionFileNameError(Message: WideString);
 		procedure ShowTab(TabIndex: Integer);
 		function GetFormHandle: THandle;
 
@@ -441,7 +441,7 @@ begin
 	if not TPath.HasValidFileNameChars(FileName, False) then
 	begin
 		FView.ShowTab(3); {Comments tab}
-		FView.ShowValidationError('DescriptionFileName', ERR_ACCOUNT_HAS_INVALID_SYMBOL);
+		FView.ShowDescriptionFileNameError(ERR_ACCOUNT_HAS_INVALID_SYMBOL);
 		Exit;
 	end;
 	Result := True;

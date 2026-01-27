@@ -97,8 +97,7 @@ type
 		FStreamingType: Integer;
 
 		{UI actions}
-		FValidationErrorControlName: WideString;
-		FValidationErrorMessage: WideString;
+		FDescriptionFileNameErrorMessage: WideString;
 		FShownTabIndex: Integer;
 	public
 		constructor Create;
@@ -237,7 +236,7 @@ type
 		procedure ClearStreamingFields;
 
 		{IAccountsView - UI actions}
-		procedure ShowValidationError(ControlName: WideString; Message: WideString);
+		procedure ShowDescriptionFileNameError(Message: WideString);
 		procedure ShowTab(TabIndex: Integer);
 		function GetFormHandle: THandle;
 
@@ -250,8 +249,7 @@ type
 		property AccountsPanelVisible: Boolean read FAccountsPanelVisible;
 		property SharesPanelVisible: Boolean read FSharesPanelVisible;
 		property EncryptPasswordButtonEnabled: Boolean read FEncryptPasswordButtonEnabled;
-		property ValidationErrorControlName: WideString read FValidationErrorControlName;
-		property ValidationErrorMessage: WideString read FValidationErrorMessage;
+		property DescriptionFileNameErrorMessage: WideString read FDescriptionFileNameErrorMessage;
 		property ShownTabIndex: Integer read FShownTabIndex;
 		property CloudMaxFileSizeEditEnabled: Boolean read FCloudMaxFileSizeEditEnabled;
 		property ProxyTCPasswordManagerEnabled: Boolean read FProxyTCPasswordManagerEnabled;
@@ -1058,10 +1056,9 @@ end;
 
 {UI actions}
 
-procedure TMockAccountsView.ShowValidationError(ControlName: WideString; Message: WideString);
+procedure TMockAccountsView.ShowDescriptionFileNameError(Message: WideString);
 begin
-	FValidationErrorControlName := ControlName;
-	FValidationErrorMessage := Message;
+	FDescriptionFileNameErrorMessage := Message;
 end;
 
 procedure TMockAccountsView.ShowTab(TabIndex: Integer);
@@ -1584,7 +1581,7 @@ begin
 	FPresenter.OnApplyGlobalSettingsClick;
 
 	{Verify validation error was shown}
-	Assert.AreEqual('DescriptionFileName', FView.ValidationErrorControlName, 'Validation should target DescriptionFileName');
+	Assert.IsNotEmpty(FView.DescriptionFileNameErrorMessage, 'Should show validation error for DescriptionFileName');
 	Assert.AreEqual(3, FView.ShownTabIndex, 'Should switch to Comments tab (index 3)');
 	Assert.IsFalse(FPresenter.SettingsApplied, 'SettingsApplied should remain False on validation error');
 end;
