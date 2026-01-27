@@ -27,7 +27,8 @@ uses
 	TCRequest,
 	TCHandler,
 	FileCipher,
-	SettingsConstants;
+	SettingsConstants,
+	OpenSSLProvider;
 
 type
 	{Base class for integration tests with cloud setup/teardown}
@@ -254,7 +255,8 @@ begin
 		TNullProgress.Create,
 		TNullRequest.Create,
 		TNullTCHandler.Create,
-		Cipher);
+		Cipher,
+		TNullOpenSSLProvider.Create);
 end;
 
 function TIntegrationTestBase.CreateSecondaryCloud: TCloudMailRu;
@@ -285,7 +287,8 @@ begin
 		TNullProgress.Create,
 		TNullRequest.Create,
 		TNullTCHandler.Create,
-		TNullCipher.Create);
+		TNullCipher.Create,
+		TNullOpenSSLProvider.Create);
 end;
 
 function TIntegrationTestBase.CreatePublicCloud: TCloudMailRu;
@@ -307,7 +310,8 @@ begin
 		TNullProgress.Create,
 		TNullRequest.Create,
 		TNullTCHandler.Create,
-		TNullCipher.Create);
+		TNullCipher.Create,
+		TNullOpenSSLProvider.Create);
 end;
 
 function TIntegrationTestBase.UniqueCloudPath(const BaseName: WideString): WideString;

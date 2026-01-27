@@ -53,7 +53,8 @@ uses
 	CloudFileUploader,
 	CloudShareService,
 	CloudListingService,
-	CloudFileOperations;
+	CloudFileOperations,
+	OpenSSLProvider;
 
 type
 	TCloudMailRu = class
@@ -140,7 +141,7 @@ type
 		function CloudResultToBoolean(CloudResult: TCloudOperationResult; ErrorPrefix: WideString = ''): Boolean; overload;
 		function CloudResultToBoolean(JSON: WideString; ErrorPrefix: WideString = ''): Boolean; overload;
 		{CONSTRUCTOR/DESTRUCTOR}
-		constructor Create(CloudSettings: TCloudSettings; ConnectionManager: IHTTPManager; AuthStrategy: IAuthStrategy; FileSystem: IFileSystem; Logger: ILogger; Progress: IProgress; Request: IRequest; TCHandler: ITCHandler; Cipher: ICipher);
+		constructor Create(CloudSettings: TCloudSettings; ConnectionManager: IHTTPManager; AuthStrategy: IAuthStrategy; FileSystem: IFileSystem; Logger: ILogger; Progress: IProgress; Request: IRequest; TCHandler: ITCHandler; Cipher: ICipher; OpenSSLProvider: IOpenSSLProvider);
 		destructor Destroy; override;
 		{CLOUD INTERFACE METHODS}
 		function Login: Boolean;
@@ -179,7 +180,7 @@ begin
 	Result := TCloudErrorMapper.ToFsResult(CloudResult, FLogger, ErrorPrefix);
 end;
 
-constructor TCloudMailRu.Create(CloudSettings: TCloudSettings; ConnectionManager: IHTTPManager; AuthStrategy: IAuthStrategy; FileSystem: IFileSystem; Logger: ILogger; Progress: IProgress; Request: IRequest; TCHandler: ITCHandler; Cipher: ICipher);
+constructor TCloudMailRu.Create(CloudSettings: TCloudSettings; ConnectionManager: IHTTPManager; AuthStrategy: IAuthStrategy; FileSystem: IFileSystem; Logger: ILogger; Progress: IProgress; Request: IRequest; TCHandler: ITCHandler; Cipher: ICipher; OpenSSLProvider: IOpenSSLProvider);
 begin
 	try
 		FSettings := CloudSettings;
@@ -196,8 +197,8 @@ begin
 
 		FCookieManager := TIdCookieManager.Create();
 
-		{Initialize hash calculator service using strategy from settings}
-		FHashCalculator := CreateHashCalculator(CloudSettings.HashCalculatorStrategy, Progress, FileSystem);
+		{Initialize hash calculator service using strategy from settings and centralized OpenSSL provider}
+		FHashCalculator := CreateHashCalculator(CloudSettings.HashCalculatorStrategy, Progress, FileSystem, OpenSSLProvider);
 
 		{Initialize shard manager with HTTP callbacks for resolution}
 		FShardManager := TCloudShardManager.Create(Logger,

@@ -30,7 +30,8 @@ uses
 	TestHelper,
 	System.SysUtils,
 	System.Classes,
-	DUnitX.TestFramework;
+	DUnitX.TestFramework,
+	OpenSSLProvider;
 
 type
 	{Testable subclass that exposes protected members}
@@ -159,7 +160,7 @@ begin
 		TNullProgress.Create,
 		TNullRequest.Create,
 		TNullTCHandler.Create,
-		TNullCipher.Create);
+		TNullCipher.Create, TNullOpenSSLProvider.Create);
 
 	Result.SetUnitedParams('api=2&access_token=test_token');
 end;

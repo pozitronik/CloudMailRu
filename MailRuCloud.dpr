@@ -153,7 +153,8 @@ uses
 	CloudFileOperations in 'src\Application\FileOps\CloudFileOperations.pas',
 	InvitePropertyPresenter in 'src\Presentation\Presenter\InvitePropertyPresenter.pas',
 	DeletedPropertyPresenter in 'src\Presentation\Presenter\DeletedPropertyPresenter.pas',
-	AskPasswordPresenter in 'src\Presentation\Presenter\AskPasswordPresenter.pas';
+	AskPasswordPresenter in 'src\Presentation\Presenter\AskPasswordPresenter.pas',
+	OpenSSLProvider in 'src\Infrastructure\OpenSSL\OpenSSLProvider.pas';
 
 {$IFDEF WIN64}
 {$E wfx64}

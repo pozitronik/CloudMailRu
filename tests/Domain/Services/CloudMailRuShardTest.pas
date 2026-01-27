@@ -24,7 +24,8 @@ uses
 	MockShardHelper,
 	TestHelper,
 	System.SysUtils,
-	DUnitX.TestFramework;
+	DUnitX.TestFramework,
+	OpenSSLProvider;
 
 type
 	{Testable subclass for shard testing}
@@ -123,7 +124,7 @@ begin
 		TNullProgress.Create,
 		TNullRequest.Create,
 		TNullTCHandler.Create,
-		TNullCipher.Create);
+		TNullCipher.Create, TNullOpenSSLProvider.Create);
 
 	Result.SetUnitedParams('api=2&access_token=test_token');
 end;

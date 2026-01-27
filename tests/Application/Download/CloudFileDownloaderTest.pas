@@ -20,7 +20,8 @@ uses
 	System.Classes,
 	System.SysUtils,
 	System.IOUtils,
-	DUnitX.TestFramework;
+	DUnitX.TestFramework,
+	OpenSSLProvider;
 
 type
 	{Tests for TCloudFileDownloader service}

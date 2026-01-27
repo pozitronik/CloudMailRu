@@ -93,7 +93,8 @@ uses
 	OperationStatusContextBuilder,
 	ListingResultApplier,
 	DownloadOrchestrator,
-	CloudMailRuFactory;
+	CloudMailRuFactory,
+	OpenSSLProvider;
 
 type
 	TWFXApplication = class(TInterfacedObject, IWFXInterface)
@@ -146,6 +147,7 @@ type
 		FListingResultApplier: IListingResultApplier;
 		FDownloadOrchestrator: IDownloadOrchestrator;
 		FTCHandler: ITCHandler;
+		FOpenSSLProvider: IOpenSSLProvider;
 
 		PluginNum: Integer;
 
@@ -220,16 +222,20 @@ begin
 
 	SettingsManager := TPluginSettingsManager.Create();
 
+	{Configure Indy's OpenSSL library path for HTTPS connections}
 	if SettingsManager.GetSettings.LoadSSLDLLOnlyFromPluginDir then
 	begin
 		if ((DirectoryExists(PluginPath + PlatformDllPath)) and (FileExists(PluginPath + PlatformDllPath + '\ssleay32.dll')) and (FileExists(PluginPath + PlatformDllPath + '\libeay32.dll'))) then
-		begin //try to load dll from platform subdir
+		begin {Try to load DLL from platform subdir}
 			IdOpenSSLSetLibPath(PluginPath + PlatformDllPath);
 		end else if ((FileExists(GetUNCFilePath(PluginPath + 'ssleay32.dll'))) and (FileExists(GetUNCFilePath(PluginPath + 'libeay32.dll')))) then
-		begin //else try to load it from plugin dir
+		begin {Else try to load it from plugin dir}
 			IdOpenSSLSetLibPath(PluginPath);
 		end;
 	end;
+
+	{Create centralized OpenSSL provider for hash calculation - respects same settings as Indy}
+	FOpenSSLProvider := TOpenSSLProvider.Create(PluginPath, SettingsManager.GetSettings.LoadSSLDLLOnlyFromPluginDir);
 
 	IsMultiThread := not(SettingsManager.GetSettings.DisableMultiThreading);
 	FThreadState := TThreadStateManager.Create;
@@ -389,6 +395,7 @@ begin
 	FDownloadOrchestrator := nil;
 	FTCHandler := nil;
 	ConnectionManager := nil;
+	FOpenSSLProvider := nil;
 
 	CurrentDescriptions.Free;
 
@@ -920,7 +927,7 @@ begin
 	PasswordManager, which needs PCryptProc from this callback. This makes FsSetCryptCallback
 	a de-facto "second initialization phase", which is not its intended purpose.
 	Investigate alternatives: lazy initialization, dependency restructuring, or deferred injection.}
-	ConnectionManager := TConnectionManager.Create(SettingsManager, AccountSettings, HTTPMgr, PasswordUI, CipherVal, TWindowsFileSystem.Create, TCProgress, TCLogger, TCRequest, PasswordManager, FTCHandler, TDefaultAuthStrategyFactory.Create);
+	ConnectionManager := TConnectionManager.Create(SettingsManager, AccountSettings, HTTPMgr, PasswordUI, CipherVal, TWindowsFileSystem.Create, TCProgress, TCLogger, TCRequest, PasswordManager, FTCHandler, TDefaultAuthStrategyFactory.Create, FOpenSSLProvider);
 	FCommandDispatcher := TCommandDispatcher.Create(ConnectionManager, TCLogger, SettingsManager);
 
 	{Create icon context builder for FsExtractCustomIcon}

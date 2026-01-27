@@ -49,7 +49,8 @@ uses
 	TCLogger,
 	TCProgress,
 	TCRequest,
-	TCHandler;
+	TCHandler,
+	OpenSSLProvider;
 
 {TPublicCloudFactory - default implementation}
 
@@ -76,7 +77,8 @@ begin
 		TNullProgress.Create,
 		TNullRequest.Create,
 		TNullTCHandler.Create,
-		TNullCipher.Create);
+		TNullCipher.Create,
+		TNullOpenSSLProvider.Create);
 	Result := TempCloud.Login;
 end;
 

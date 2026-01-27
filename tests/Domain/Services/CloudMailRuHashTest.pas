@@ -19,7 +19,8 @@ uses
 	System.Classes,
 	System.SysUtils,
 	System.Hash,
-	DUnitX.TestFramework;
+	DUnitX.TestFramework,
+	OpenSSLProvider;
 
 type
 	{ Testable subclass that exposes protected CloudHash methods }
@@ -104,7 +105,7 @@ end;
 procedure TCloudMailRuHashTest.Setup;
 begin
 	FSettings := Default(TCloudSettings);
-	FCloud := TTestableCloudMailRu.Create(FSettings, nil, TNullAuthStrategy.Create, TWindowsFileSystem.Create, TNullLogger.Create, TNullProgress.Create, TNullRequest.Create, TNullTCHandler.Create, TNullCipher.Create);
+	FCloud := TTestableCloudMailRu.Create(FSettings, nil, TNullAuthStrategy.Create, TWindowsFileSystem.Create, TNullLogger.Create, TNullProgress.Create, TNullRequest.Create, TNullTCHandler.Create, TNullCipher.Create, TNullOpenSSLProvider.Create);
 end;
 
 procedure TCloudMailRuHashTest.TearDown;

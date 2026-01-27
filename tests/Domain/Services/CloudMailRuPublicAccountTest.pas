@@ -25,7 +25,8 @@ uses
 	MockHTTPManager,
 	TestHelper,
 	System.SysUtils,
-	DUnitX.TestFramework;
+	DUnitX.TestFramework,
+	OpenSSLProvider;
 
 type
 	{Testable subclass that exposes protected members}
@@ -154,7 +155,7 @@ begin
 		TNullProgress.Create,
 		TNullRequest.Create,
 		TNullTCHandler.Create,
-		TNullCipher.Create);
+		TNullCipher.Create, TNullOpenSSLProvider.Create);
 
 	Result.SetUnitedParams('api=2');
 end;
@@ -181,7 +182,7 @@ begin
 		TNullProgress.Create,
 		TNullRequest.Create,
 		TNullTCHandler.Create,
-		TNullCipher.Create);
+		TNullCipher.Create, TNullOpenSSLProvider.Create);
 
 	Assert.IsFalse(FCloud.IsPublicAccount, 'IsPublicAccount should be False for private accounts');
 end;

@@ -22,7 +22,8 @@ uses
 	HTTPManager,
 	MockCloudHTTP,
 	MockHTTPManager,
-	SharedItemDeletionHandler;
+	SharedItemDeletionHandler,
+	OpenSSLProvider;
 
 type
 	[TestFixture]
@@ -101,7 +102,8 @@ begin
 		TNullProgress.Create,
 		TNullRequest.Create,
 		TNullTCHandler.Create,
-		TNullCipher.Create);
+		TNullCipher.Create,
+		TNullOpenSSLProvider.Create);
 end;
 
 procedure TSharedItemDeletionHandlerTest.Setup;

@@ -24,7 +24,8 @@ uses
 	HTTPManager,
 	MockCloudHTTP,
 	MockHTTPManager,
-	ListingItemFetcher;
+	ListingItemFetcher,
+	OpenSSLProvider;
 
 type
 	{Mock logger}
@@ -164,7 +165,8 @@ begin
 		TNullProgress.Create,
 		TNullRequest.Create,
 		TNullTCHandler.Create,
-		TNullCipher.Create);
+		TNullCipher.Create,
+		TNullOpenSSLProvider.Create);
 end;
 
 procedure TListingItemFetcherTest.Setup;

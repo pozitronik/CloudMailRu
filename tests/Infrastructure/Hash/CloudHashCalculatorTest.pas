@@ -236,7 +236,8 @@ type
 implementation
 
 uses
-	SettingsConstants;
+	SettingsConstants,
+	OpenSSLProvider;
 
 { THashCalculatorTestBase }
 
@@ -1013,9 +1014,12 @@ end;
 { TCloudHashCalculatorOpenSSLTest }
 
 procedure TCloudHashCalculatorOpenSSLTest.CreateCalculator;
+var
+	Provider: IOpenSSLProvider;
 begin
-	if IsOpenSSLAvailable then
-		FCalculator := TCloudHashCalculatorOpenSSL.Create(TNullProgress.Create, TWindowsFileSystem.Create)
+	Provider := TNullOpenSSLProvider.Create;
+	if IsOpenSSLAvailable(Provider) then
+		FCalculator := TCloudHashCalculatorOpenSSL.Create(TNullProgress.Create, TWindowsFileSystem.Create, Provider)
 	else
 		FCalculator := TCloudHashCalculator.Create(TNullProgress.Create, TWindowsFileSystem.Create);
 end;
@@ -1026,15 +1030,17 @@ var
 	Stream: TMemoryStream;
 	DelphiHash, OpenSSLHash: WideString;
 	Data: AnsiString;
+	Provider: IOpenSSLProvider;
 begin
-	if not IsOpenSSLAvailable then
+	Provider := TNullOpenSSLProvider.Create;
+	if not IsOpenSSLAvailable(Provider) then
 	begin
 		Assert.Pass('OpenSSL not available on this system, skipping comparison');
 		Exit;
 	end;
 
 	DelphiCalc := TCloudHashCalculator.Create(TNullProgress.Create, TWindowsFileSystem.Create);
-	OpenSSLCalc := TCloudHashCalculatorOpenSSL.Create(TNullProgress.Create, TWindowsFileSystem.Create);
+	OpenSSLCalc := TCloudHashCalculatorOpenSSL.Create(TNullProgress.Create, TWindowsFileSystem.Create, Provider);
 
 	Stream := TMemoryStream.Create;
 	try
@@ -1060,15 +1066,17 @@ var
 	Stream: TMemoryStream;
 	DelphiHash, OpenSSLHash: WideString;
 	Data: AnsiString;
+	Provider: IOpenSSLProvider;
 begin
-	if not IsOpenSSLAvailable then
+	Provider := TNullOpenSSLProvider.Create;
+	if not IsOpenSSLAvailable(Provider) then
 	begin
 		Assert.Pass('OpenSSL not available on this system');
 		Exit;
 	end;
 
 	DelphiCalc := TCloudHashCalculator.Create(TNullProgress.Create, TWindowsFileSystem.Create);
-	OpenSSLCalc := TCloudHashCalculatorOpenSSL.Create(TNullProgress.Create, TWindowsFileSystem.Create);
+	OpenSSLCalc := TCloudHashCalculatorOpenSSL.Create(TNullProgress.Create, TWindowsFileSystem.Create, Provider);
 
 	Stream := TMemoryStream.Create;
 	try
@@ -1094,15 +1102,17 @@ var
 	Stream: TMemoryStream;
 	DelphiHash, OpenSSLHash: WideString;
 	Data: AnsiString;
+	Provider: IOpenSSLProvider;
 begin
-	if not IsOpenSSLAvailable then
+	Provider := TNullOpenSSLProvider.Create;
+	if not IsOpenSSLAvailable(Provider) then
 	begin
 		Assert.Pass('OpenSSL not available on this system');
 		Exit;
 	end;
 
 	DelphiCalc := TCloudHashCalculator.Create(TNullProgress.Create, TWindowsFileSystem.Create);
-	OpenSSLCalc := TCloudHashCalculatorOpenSSL.Create(TNullProgress.Create, TWindowsFileSystem.Create);
+	OpenSSLCalc := TCloudHashCalculatorOpenSSL.Create(TNullProgress.Create, TWindowsFileSystem.Create, Provider);
 
 	Stream := TMemoryStream.Create;
 	try
@@ -1129,15 +1139,17 @@ var
 	DelphiHash, OpenSSLHash: WideString;
 	Data: TBytes;
 	i: Integer;
+	Provider: IOpenSSLProvider;
 begin
-	if not IsOpenSSLAvailable then
+	Provider := TNullOpenSSLProvider.Create;
+	if not IsOpenSSLAvailable(Provider) then
 	begin
 		Assert.Pass('OpenSSL not available on this system');
 		Exit;
 	end;
 
 	DelphiCalc := TCloudHashCalculator.Create(TNullProgress.Create, TWindowsFileSystem.Create);
-	OpenSSLCalc := TCloudHashCalculatorOpenSSL.Create(TNullProgress.Create, TWindowsFileSystem.Create);
+	OpenSSLCalc := TCloudHashCalculatorOpenSSL.Create(TNullProgress.Create, TWindowsFileSystem.Create, Provider);
 
 	Stream := TMemoryStream.Create;
 	try
@@ -1165,7 +1177,7 @@ var
 	Hash1, Hash2, Hash3: WideString;
 	Data: AnsiString;
 begin
-	if not IsOpenSSLAvailable then
+	if not IsOpenSSLAvailable(TNullOpenSSLProvider.Create) then
 	begin
 		Assert.Pass('OpenSSL not available on this system');
 		Exit;
@@ -1237,7 +1249,7 @@ procedure THashCalculatorFactoryTest.TestCreateHashCalculator_Delphi_ReturnsCorr
 var
 	Calculator: ICloudHashCalculator;
 begin
-	Calculator := CreateHashCalculator(HashStrategyDelphi, TNullProgress.Create, TWindowsFileSystem.Create);
+	Calculator := CreateHashCalculator(HashStrategyDelphi, TNullProgress.Create, TWindowsFileSystem.Create, TNullOpenSSLProvider.Create);
 	Assert.IsNotNull(Calculator);
 	Assert.IsTrue(Calculator is TCloudHashCalculator, 'Should return TCloudHashCalculator for Delphi strategy');
 end;
@@ -1246,7 +1258,7 @@ procedure THashCalculatorFactoryTest.TestCreateHashCalculator_BCrypt_ReturnsNonN
 var
 	Calculator: ICloudHashCalculator;
 begin
-	Calculator := CreateHashCalculator(HashStrategyBCrypt, TNullProgress.Create, TWindowsFileSystem.Create);
+	Calculator := CreateHashCalculator(HashStrategyBCrypt, TNullProgress.Create, TWindowsFileSystem.Create, TNullOpenSSLProvider.Create);
 	Assert.IsNotNull(Calculator);
 	if IsBCryptAvailable then
 		Assert.IsTrue(Calculator is TCloudHashCalculatorBCrypt, 'Should return TCloudHashCalculatorBCrypt when BCrypt available')
@@ -1257,10 +1269,12 @@ end;
 procedure THashCalculatorFactoryTest.TestCreateHashCalculator_OpenSSL_ReturnsNonNil;
 var
 	Calculator: ICloudHashCalculator;
+	Provider: IOpenSSLProvider;
 begin
-	Calculator := CreateHashCalculator(HashStrategyOpenSSL, TNullProgress.Create, TWindowsFileSystem.Create);
+	Provider := TNullOpenSSLProvider.Create;
+	Calculator := CreateHashCalculator(HashStrategyOpenSSL, TNullProgress.Create, TWindowsFileSystem.Create, Provider);
 	Assert.IsNotNull(Calculator);
-	if IsOpenSSLAvailable then
+	if IsOpenSSLAvailable(Provider) then
 		Assert.IsTrue(Calculator is TCloudHashCalculatorOpenSSL, 'Should return TCloudHashCalculatorOpenSSL when OpenSSL available')
 	else
 		Assert.IsTrue(Calculator is TCloudHashCalculator, 'Should fallback to TCloudHashCalculator when OpenSSL not available');
@@ -1269,13 +1283,15 @@ end;
 procedure THashCalculatorFactoryTest.TestCreateHashCalculator_Auto_ReturnsNonNil;
 var
 	Calculator: ICloudHashCalculator;
+	Provider: IOpenSSLProvider;
 begin
-	Calculator := CreateHashCalculator(HashStrategyAuto, TNullProgress.Create, TWindowsFileSystem.Create);
+	Provider := TNullOpenSSLProvider.Create;
+	Calculator := CreateHashCalculator(HashStrategyAuto, TNullProgress.Create, TWindowsFileSystem.Create, Provider);
 	Assert.IsNotNull(Calculator);
 	{ Auto should prefer BCrypt, then OpenSSL, then Delphi }
 	if IsBCryptAvailable then
 		Assert.IsTrue(Calculator is TCloudHashCalculatorBCrypt, 'Auto should prefer BCrypt when available')
-	else if IsOpenSSLAvailable then
+	else if IsOpenSSLAvailable(Provider) then
 		Assert.IsTrue(Calculator is TCloudHashCalculatorOpenSSL, 'Auto should use OpenSSL when BCrypt not available')
 	else
 		Assert.IsTrue(Calculator is TCloudHashCalculator, 'Auto should fallback to Delphi');
@@ -1286,7 +1302,7 @@ var
 	Calculator: ICloudHashCalculator;
 begin
 	{ Test with an invalid strategy value }
-	Calculator := CreateHashCalculator(999, TNullProgress.Create, TWindowsFileSystem.Create);
+	Calculator := CreateHashCalculator(999, TNullProgress.Create, TWindowsFileSystem.Create, TNullOpenSSLProvider.Create);
 	Assert.IsNotNull(Calculator);
 	{ Invalid strategies should go through the else branch which is Auto }
 	{ Auto prefers BCrypt > OpenSSL > Delphi }
@@ -1306,7 +1322,7 @@ var
 	Available: Boolean;
 begin
 	{ OpenSSL availability depends on whether the DLLs are loaded }
-	Available := IsOpenSSLAvailable;
+	Available := IsOpenSSLAvailable(TNullOpenSSLProvider.Create);
 	{ Just verify it returns without exception }
 	Assert.Pass(Format('OpenSSL available: %s', [BoolToStr(Available, True)]));
 end;
@@ -1317,10 +1333,12 @@ var
 	Stream: TMemoryStream;
 	DelphiHash, BCryptHash, OpenSSLHash: WideString;
 	Data: AnsiString;
+	Provider: IOpenSSLProvider;
 begin
-	DelphiCalc := CreateHashCalculator(HashStrategyDelphi, TNullProgress.Create, TWindowsFileSystem.Create);
-	BCryptCalc := CreateHashCalculator(HashStrategyBCrypt, TNullProgress.Create, TWindowsFileSystem.Create);
-	OpenSSLCalc := CreateHashCalculator(HashStrategyOpenSSL, TNullProgress.Create, TWindowsFileSystem.Create);
+	Provider := TNullOpenSSLProvider.Create;
+	DelphiCalc := CreateHashCalculator(HashStrategyDelphi, TNullProgress.Create, TWindowsFileSystem.Create, Provider);
+	BCryptCalc := CreateHashCalculator(HashStrategyBCrypt, TNullProgress.Create, TWindowsFileSystem.Create, Provider);
+	OpenSSLCalc := CreateHashCalculator(HashStrategyOpenSSL, TNullProgress.Create, TWindowsFileSystem.Create, Provider);
 
 	Stream := TMemoryStream.Create;
 	try
@@ -1351,10 +1369,12 @@ var
 	Stream: TMemoryStream;
 	DelphiHash, BCryptHash, OpenSSLHash: WideString;
 	Data: AnsiString;
+	Provider: IOpenSSLProvider;
 begin
-	DelphiCalc := CreateHashCalculator(HashStrategyDelphi, TNullProgress.Create, TWindowsFileSystem.Create);
-	BCryptCalc := CreateHashCalculator(HashStrategyBCrypt, TNullProgress.Create, TWindowsFileSystem.Create);
-	OpenSSLCalc := CreateHashCalculator(HashStrategyOpenSSL, TNullProgress.Create, TWindowsFileSystem.Create);
+	Provider := TNullOpenSSLProvider.Create;
+	DelphiCalc := CreateHashCalculator(HashStrategyDelphi, TNullProgress.Create, TWindowsFileSystem.Create, Provider);
+	BCryptCalc := CreateHashCalculator(HashStrategyBCrypt, TNullProgress.Create, TWindowsFileSystem.Create, Provider);
+	OpenSSLCalc := CreateHashCalculator(HashStrategyOpenSSL, TNullProgress.Create, TWindowsFileSystem.Create, Provider);
 
 	Stream := TMemoryStream.Create;
 	try
@@ -1384,10 +1404,12 @@ var
 	Stream: TMemoryStream;
 	DelphiHash, BCryptHash, OpenSSLHash: WideString;
 	Data: AnsiString;
+	Provider: IOpenSSLProvider;
 begin
-	DelphiCalc := CreateHashCalculator(HashStrategyDelphi, TNullProgress.Create, TWindowsFileSystem.Create);
-	BCryptCalc := CreateHashCalculator(HashStrategyBCrypt, TNullProgress.Create, TWindowsFileSystem.Create);
-	OpenSSLCalc := CreateHashCalculator(HashStrategyOpenSSL, TNullProgress.Create, TWindowsFileSystem.Create);
+	Provider := TNullOpenSSLProvider.Create;
+	DelphiCalc := CreateHashCalculator(HashStrategyDelphi, TNullProgress.Create, TWindowsFileSystem.Create, Provider);
+	BCryptCalc := CreateHashCalculator(HashStrategyBCrypt, TNullProgress.Create, TWindowsFileSystem.Create, Provider);
+	OpenSSLCalc := CreateHashCalculator(HashStrategyOpenSSL, TNullProgress.Create, TWindowsFileSystem.Create, Provider);
 
 	Stream := TMemoryStream.Create;
 	try
@@ -1418,10 +1440,12 @@ var
 	DelphiHash, BCryptHash, OpenSSLHash: WideString;
 	Data: TBytes;
 	i: Integer;
+	Provider: IOpenSSLProvider;
 begin
-	DelphiCalc := CreateHashCalculator(HashStrategyDelphi, TNullProgress.Create, TWindowsFileSystem.Create);
-	BCryptCalc := CreateHashCalculator(HashStrategyBCrypt, TNullProgress.Create, TWindowsFileSystem.Create);
-	OpenSSLCalc := CreateHashCalculator(HashStrategyOpenSSL, TNullProgress.Create, TWindowsFileSystem.Create);
+	Provider := TNullOpenSSLProvider.Create;
+	DelphiCalc := CreateHashCalculator(HashStrategyDelphi, TNullProgress.Create, TWindowsFileSystem.Create, Provider);
+	BCryptCalc := CreateHashCalculator(HashStrategyBCrypt, TNullProgress.Create, TWindowsFileSystem.Create, Provider);
+	OpenSSLCalc := CreateHashCalculator(HashStrategyOpenSSL, TNullProgress.Create, TWindowsFileSystem.Create, Provider);
 
 	Stream := TMemoryStream.Create;
 	try
@@ -1450,10 +1474,13 @@ end;
 { THashCalculatorCrossImplementationTest }
 
 procedure THashCalculatorCrossImplementationTest.Setup;
+var
+	Provider: IOpenSSLProvider;
 begin
-	FDelphiCalc := CreateHashCalculator(HashStrategyDelphi, TNullProgress.Create, TWindowsFileSystem.Create);
-	FBCryptCalc := CreateHashCalculator(HashStrategyBCrypt, TNullProgress.Create, TWindowsFileSystem.Create);
-	FOpenSSLCalc := CreateHashCalculator(HashStrategyOpenSSL, TNullProgress.Create, TWindowsFileSystem.Create);
+	Provider := TNullOpenSSLProvider.Create;
+	FDelphiCalc := CreateHashCalculator(HashStrategyDelphi, TNullProgress.Create, TWindowsFileSystem.Create, Provider);
+	FBCryptCalc := CreateHashCalculator(HashStrategyBCrypt, TNullProgress.Create, TWindowsFileSystem.Create, Provider);
+	FOpenSSLCalc := CreateHashCalculator(HashStrategyOpenSSL, TNullProgress.Create, TWindowsFileSystem.Create, Provider);
 end;
 
 procedure THashCalculatorCrossImplementationTest.TearDown;

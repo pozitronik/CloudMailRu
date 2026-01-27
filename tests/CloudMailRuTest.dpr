@@ -299,7 +299,8 @@ uses
 	FileOpsIntegrationTest in 'Integration\FileOpsIntegrationTest.pas',
 	TrashIntegrationTest in 'Integration\TrashIntegrationTest.pas',
 	SharingIntegrationTest in 'Integration\SharingIntegrationTest.pas',
-	InviteIntegrationTest in 'Integration\InviteIntegrationTest.pas';
+	InviteIntegrationTest in 'Integration\InviteIntegrationTest.pas',
+	OpenSSLProvider in '..\src\Infrastructure\OpenSSL\OpenSSLProvider.pas';
 
 {keep comment here to protect the following conditional from being removed by the IDE when adding a unit}
 {$IFNDEF TESTINSIGHT}

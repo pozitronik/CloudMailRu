@@ -28,7 +28,8 @@ uses
 	MockAuthStrategy,
 	TestHelper,
 	System.SysUtils,
-	DUnitX.TestFramework;
+	DUnitX.TestFramework,
+	OpenSSLProvider;
 
 type
 	{Testable subclass exposing protected fields for verification}
@@ -159,7 +160,7 @@ begin
 		TNullProgress.Create,
 		TNullRequest.Create,
 		TNullTCHandler.Create,
-		TNullCipher.Create);
+		TNullCipher.Create, TNullOpenSSLProvider.Create);
 end;
 
 function TCloudMailRuLoginFlowTest.CreatePublicCloud(const PublicUrl: WideString): TTestableLoginCloud;
@@ -177,7 +178,7 @@ begin
 		TNullProgress.Create,
 		TNullRequest.Create,
 		TNullTCHandler.Create,
-		TNullCipher.Create);
+		TNullCipher.Create, TNullOpenSSLProvider.Create);
 end;
 
 {LoginRegular tests}
@@ -273,7 +274,7 @@ begin
 		TNullProgress.Create,
 		TNullRequest.Create,
 		TNullTCHandler.Create,
-		TNullCipher.Create);
+		TNullCipher.Create, TNullOpenSSLProvider.Create);
 
 	FMockHTTP.SetResponse(API_USER_SPACE, True, JSON_USER_SPACE);
 

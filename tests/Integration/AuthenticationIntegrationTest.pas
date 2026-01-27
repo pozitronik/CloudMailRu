@@ -41,7 +41,8 @@ uses
 	TCProgress,
 	TCRequest,
 	TCHandler,
-	CloudConstants;
+	CloudConstants,
+	OpenSSLProvider;
 
 {TAuthenticationIntegrationTest}
 
@@ -71,7 +72,8 @@ begin
 		TNullProgress.Create,
 		TNullRequest.Create,
 		TNullTCHandler.Create,
-		TNullCipher.Create);
+		TNullCipher.Create,
+		TNullOpenSSLProvider.Create);
 	try
 		Assert.IsFalse(Cloud.Login, 'Login with invalid password should fail');
 	finally

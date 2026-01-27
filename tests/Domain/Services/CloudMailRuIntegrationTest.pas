@@ -29,7 +29,8 @@ uses
 	TestHelper,
 	System.Classes,
 	System.SysUtils,
-	DUnitX.TestFramework;
+	DUnitX.TestFramework,
+	OpenSSLProvider;
 
 type
 	[TestFixture]
@@ -178,7 +179,8 @@ begin
 		TNullProgress.Create,
 		TNullRequest.Create,
 		TNullTCHandler.Create,
-		TNullCipher.Create);
+		TNullCipher.Create,
+		TNullOpenSSLProvider.Create);
 end;
 
 {CreateDir integration tests}

@@ -21,7 +21,8 @@ uses
 	MockCloudHTTP,
 	MockHTTPManager,
 	AuthStrategy,
-	WindowsFileSystem;
+	WindowsFileSystem,
+	OpenSSLProvider;
 
 type
 	{Mock retry handler that tracks calls}
@@ -260,7 +261,7 @@ begin
 		TNullProgress.Create,
 		TNullRequest.Create,
 		TNullTCHandler.Create,
-		TNullCipher.Create);
+		TNullCipher.Create, TNullOpenSSLProvider.Create);
 	Result.SetUnitedParams('api=2&access_token=test_token');
 end;
 

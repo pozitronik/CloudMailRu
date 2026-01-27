@@ -30,6 +30,7 @@ uses
 	CipherValidator,
 	FileCipher,
 	AuthStrategy,
+	OpenSSLProvider,
 	System.Generics.Collections,
 	SysUtils;
 
@@ -59,6 +60,7 @@ type
 		FFileSystem: IFileSystem;
 		FTCHandler: ITCHandler;
 		FAuthStrategyFactory: IAuthStrategyFactory;
+		FOpenSSLProvider: IOpenSSLProvider;
 
 		FLogger: ILogger;
 		FProgress: IProgress;
@@ -71,7 +73,7 @@ type
 		function GetProxyPassword(): Boolean;
 		function InitCloudCryptPasswords(const ConnectionName: WideString; var CloudSettings: TCloudSettings): Boolean;
 	public
-		constructor Create(PluginSettingsManager: IPluginSettingsManager; AccountsManager: IAccountsManager; HTTPManager: IHTTPManager; PasswordUI: IPasswordUIProvider; CipherValidator: ICipherValidator; FileSystem: IFileSystem; Progress: IProgress; Logger: ILogger; Request: IRequest; PasswordManager: IPasswordManager; TCHandler: ITCHandler; AuthStrategyFactory: IAuthStrategyFactory);
+		constructor Create(PluginSettingsManager: IPluginSettingsManager; AccountsManager: IAccountsManager; HTTPManager: IHTTPManager; PasswordUI: IPasswordUIProvider; CipherValidator: ICipherValidator; FileSystem: IFileSystem; Progress: IProgress; Logger: ILogger; Request: IRequest; PasswordManager: IPasswordManager; TCHandler: ITCHandler; AuthStrategyFactory: IAuthStrategyFactory; OpenSSLProvider: IOpenSSLProvider);
 		destructor Destroy(); override;
 		function Get(ConnectionName: WideString; var OperationResult: Integer): TCloudMailRu; {Return the cloud connection by its name}
 		procedure Free(ConnectionName: WideString); {Free a connection by its name, if present}
@@ -80,7 +82,7 @@ type
 implementation
 
 {TConnectionManager}
-constructor TConnectionManager.Create(PluginSettingsManager: IPluginSettingsManager; AccountsManager: IAccountsManager; HTTPManager: IHTTPManager; PasswordUI: IPasswordUIProvider; CipherValidator: ICipherValidator; FileSystem: IFileSystem; Progress: IProgress; Logger: ILogger; Request: IRequest; PasswordManager: IPasswordManager; TCHandler: ITCHandler; AuthStrategyFactory: IAuthStrategyFactory);
+constructor TConnectionManager.Create(PluginSettingsManager: IPluginSettingsManager; AccountsManager: IAccountsManager; HTTPManager: IHTTPManager; PasswordUI: IPasswordUIProvider; CipherValidator: ICipherValidator; FileSystem: IFileSystem; Progress: IProgress; Logger: ILogger; Request: IRequest; PasswordManager: IPasswordManager; TCHandler: ITCHandler; AuthStrategyFactory: IAuthStrategyFactory; OpenSSLProvider: IOpenSSLProvider);
 begin
 	FConnections := TDictionary<WideString, TCloudMailRu>.Create;
 	FPluginSettingsManager := PluginSettingsManager;
@@ -95,6 +97,7 @@ begin
 	FPasswordManager := PasswordManager;
 	FTCHandler := TCHandler;
 	FAuthStrategyFactory := AuthStrategyFactory;
+	FOpenSSLProvider := OpenSSLProvider;
 end;
 
 destructor TConnectionManager.Destroy;
@@ -113,6 +116,7 @@ begin
 	FPasswordUI := nil;
 	FCipherValidator := nil;
 	FAuthStrategyFactory := nil;
+	FOpenSSLProvider := nil;
 
 	inherited;
 end;
@@ -173,7 +177,7 @@ begin
 	{Create appropriate auth strategy via factory - enables DI and testability}
 	AuthStrategy := FAuthStrategyFactory.CreateDefaultStrategy;
 
-	Cloud := TCloudMailRu.Create(CloudSettings, FHTTPManager, AuthStrategy, FFileSystem, FLogger, FProgress, FRequest, FTCHandler, Cipher);
+	Cloud := TCloudMailRu.Create(CloudSettings, FHTTPManager, AuthStrategy, FFileSystem, FLogger, FProgress, FRequest, FTCHandler, Cipher, FOpenSSLProvider);
 
 	if not Cloud.Login then
 	begin

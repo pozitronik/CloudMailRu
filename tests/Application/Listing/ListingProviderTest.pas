@@ -25,7 +25,8 @@ uses
 	CloudDirItemList,
 	CloudIncomingInviteList,
 	CloudConstants,
-	SettingsConstants;
+	SettingsConstants,
+	OpenSSLProvider;
 
 type
 	{Testable CloudMailRu for listing tests}
@@ -158,7 +159,7 @@ begin
 		TNullProgress.Create,
 		TNullRequest.Create,
 		TNullTCHandler.Create,
-		TNullCipher.Create);
+		TNullCipher.Create, TNullOpenSSLProvider.Create);
 	Result.SetUnitedParams('api=2&access_token=test_token');
 end;
 

@@ -6,7 +6,7 @@ unit CloudHashCalculator;
 	- HashStrategyAuto: Auto-select best available (BCrypt > OpenSSL > Delphi)
 	- HashStrategyDelphi: Use Delphi's System.Hash.THashSHA1 with 64KB buffer
 	- HashStrategyBCrypt: Use Windows BCrypt/CNG API (hardware-accelerated SHA-NI)
-	- HashStrategyOpenSSL: Use OpenSSL EVP functions (already loaded for HTTPS)
+	- HashStrategyOpenSSL: Use OpenSSL EVP functions via centralized provider
 
 	BCrypt typically provides 2-3x speedup over Delphi implementation on modern CPUs
 	with SHA-NI instructions (Intel Goldmont+, Ice Lake+; AMD Zen+).}
@@ -16,7 +16,8 @@ interface
 uses
 	System.Classes,
 	TCProgress,
-	WindowsFileSystem;
+	WindowsFileSystem,
+	OpenSSLProvider;
 
 type
 	{Interface for cloud hash calculation - allows dependency injection and testability}
@@ -56,11 +57,15 @@ type
 		function CalculateSHA1(Stream: TStream; ProgressPath: WideString): WideString; override;
 	end;
 
-	{OpenSSL EVP implementation using already-loaded SSL libraries.
-		Good performance, cross-platform potential (not used on Windows currently).}
+	{OpenSSL EVP implementation using centralized OpenSSL provider.
+		Uses the same library instance as Indy (HTTPS), avoiding duplicate loading.}
 	TCloudHashCalculatorOpenSSL = class(TCloudHashCalculatorBase)
+	private
+		FOpenSSLProvider: IOpenSSLProvider;
 	protected
 		function CalculateSHA1(Stream: TStream; ProgressPath: WideString): WideString; override;
+	public
+		constructor Create(Progress: IProgress; FileSystem: IFileSystem; OpenSSLProvider: IOpenSSLProvider);
 	end;
 
 	{Null implementation for testing or when hash calculation is not needed}
@@ -74,14 +79,16 @@ type
 		@param Strategy Hash strategy constant (HashStrategyAuto, HashStrategyDelphi, etc.)
 		@param Progress Progress reporter for long operations
 		@param FileSystem File system abstraction for file access
+		@param OpenSSLProvider Centralized OpenSSL provider for OpenSSL strategy
 		@return Appropriate ICloudHashCalculator implementation}
-function CreateHashCalculator(Strategy: Integer; Progress: IProgress; FileSystem: IFileSystem): ICloudHashCalculator;
+function CreateHashCalculator(Strategy: Integer; Progress: IProgress; FileSystem: IFileSystem; OpenSSLProvider: IOpenSSLProvider): ICloudHashCalculator;
 
 {Check if BCrypt SHA1 is available on this system}
 function IsBCryptAvailable: Boolean;
 
-{Check if OpenSSL EVP functions are available}
-function IsOpenSSLAvailable: Boolean;
+{Check if OpenSSL EVP functions are available via provider
+	@param OpenSSLProvider Provider to check; returns False if nil}
+function IsOpenSSLAvailable(OpenSSLProvider: IOpenSSLProvider): Boolean;
 
 implementation
 
@@ -127,74 +134,6 @@ function BCryptHashData(hHash: BCRYPT_HASH_HANDLE; pbInput: Pointer; cbInput: UL
 
 function BCryptFinishHash(hHash: BCRYPT_HASH_HANDLE; pbOutput: Pointer; cbOutput: ULONG; dwFlags: ULONG): NTSTATUS; stdcall; external 'bcrypt.dll';
 
-{OpenSSL EVP declarations}
-type
-	PEVP_MD_CTX = Pointer;
-	PEVP_MD = Pointer;
-	PENGINE = Pointer;
-
-var
-	{Function pointers for OpenSSL - loaded dynamically}
-	EVP_MD_CTX_new: function: PEVP_MD_CTX; cdecl = nil;
-	EVP_MD_CTX_free: procedure(ctx: PEVP_MD_CTX); cdecl = nil;
-	EVP_sha1: function: PEVP_MD; cdecl = nil;
-	EVP_DigestInit_ex: function(ctx: PEVP_MD_CTX; md: PEVP_MD; impl: PENGINE): Integer; cdecl = nil;
-	EVP_DigestUpdate: function(ctx: PEVP_MD_CTX; d: Pointer; cnt: NativeUInt): Integer; cdecl = nil;
-	EVP_DigestFinal_ex: function(ctx: PEVP_MD_CTX; md: PByte; var s: Cardinal): Integer; cdecl = nil;
-
-	{Legacy OpenSSL 1.0.x function names}
-	EVP_MD_CTX_create: function: PEVP_MD_CTX; cdecl = nil;
-	EVP_MD_CTX_destroy: procedure(ctx: PEVP_MD_CTX); cdecl = nil;
-
-	OpenSSLLoaded: Boolean = False;
-	OpenSSLLoadAttempted: Boolean = False;
-	LibCryptoHandle: THandle = 0;
-
-procedure LoadOpenSSLFunctions;
-var
-	DLLNames: array [0 .. 3] of string;
-	i: Integer;
-begin
-	if OpenSSLLoadAttempted then
-		Exit;
-	OpenSSLLoadAttempted := True;
-
-	{Try different OpenSSL library names}
-	DLLNames[0] := 'libcrypto-1_1-x64.dll'; {OpenSSL 1.1.x 64-bit}
-	DLLNames[1] := 'libcrypto-1_1.dll'; {OpenSSL 1.1.x 32-bit}
-	DLLNames[2] := 'libeay32.dll'; {OpenSSL 1.0.x}
-	DLLNames[3] := 'libcrypto.dll'; {Generic name}
-
-	for i := 0 to High(DLLNames) do
-	begin
-		LibCryptoHandle := LoadLibrary(PChar(DLLNames[i]));
-		if LibCryptoHandle <> 0 then
-			Break;
-	end;
-
-	if LibCryptoHandle = 0 then
-		Exit;
-
-	{Try OpenSSL 1.1.x function names first}
-	@EVP_MD_CTX_new := GetProcAddress(LibCryptoHandle, 'EVP_MD_CTX_new');
-	@EVP_MD_CTX_free := GetProcAddress(LibCryptoHandle, 'EVP_MD_CTX_free');
-
-	{Fall back to OpenSSL 1.0.x function names}
-	if not Assigned(EVP_MD_CTX_new) then
-	begin
-		@EVP_MD_CTX_create := GetProcAddress(LibCryptoHandle, 'EVP_MD_CTX_create');
-		@EVP_MD_CTX_destroy := GetProcAddress(LibCryptoHandle, 'EVP_MD_CTX_destroy');
-		@EVP_MD_CTX_new := @EVP_MD_CTX_create;
-		@EVP_MD_CTX_free := @EVP_MD_CTX_destroy;
-	end;
-
-	@EVP_sha1 := GetProcAddress(LibCryptoHandle, 'EVP_sha1');
-	@EVP_DigestInit_ex := GetProcAddress(LibCryptoHandle, 'EVP_DigestInit_ex');
-	@EVP_DigestUpdate := GetProcAddress(LibCryptoHandle, 'EVP_DigestUpdate');
-	@EVP_DigestFinal_ex := GetProcAddress(LibCryptoHandle, 'EVP_DigestFinal_ex');
-
-	OpenSSLLoaded := Assigned(EVP_MD_CTX_new) and Assigned(EVP_MD_CTX_free) and Assigned(EVP_sha1) and Assigned(EVP_DigestInit_ex) and Assigned(EVP_DigestUpdate) and Assigned(EVP_DigestFinal_ex);
-end;
 
 function IsBCryptAvailable: Boolean;
 var
@@ -206,13 +145,15 @@ begin
 		BCryptCloseAlgorithmProvider(hAlg, 0);
 end;
 
-function IsOpenSSLAvailable: Boolean;
+function IsOpenSSLAvailable(OpenSSLProvider: IOpenSSLProvider): Boolean;
 begin
-	LoadOpenSSLFunctions;
-	Result := OpenSSLLoaded;
+	if OpenSSLProvider = nil then
+		Result := False
+	else
+		Result := OpenSSLProvider.IsAvailable;
 end;
 
-function CreateHashCalculator(Strategy: Integer; Progress: IProgress; FileSystem: IFileSystem): ICloudHashCalculator;
+function CreateHashCalculator(Strategy: Integer; Progress: IProgress; FileSystem: IFileSystem; OpenSSLProvider: IOpenSSLProvider): ICloudHashCalculator;
 begin
 	case Strategy of
 		HashStrategyDelphi:
@@ -223,8 +164,8 @@ begin
 			else
 				Result := TCloudHashCalculator.Create(Progress, FileSystem);
 		HashStrategyOpenSSL:
-			if IsOpenSSLAvailable then
-				Result := TCloudHashCalculatorOpenSSL.Create(Progress, FileSystem)
+			if IsOpenSSLAvailable(OpenSSLProvider) then
+				Result := TCloudHashCalculatorOpenSSL.Create(Progress, FileSystem, OpenSSLProvider)
 			else
 				Result := TCloudHashCalculator.Create(Progress, FileSystem);
 		else {HashStrategyAuto}
@@ -232,8 +173,8 @@ begin
 				{Prefer BCrypt for hardware acceleration, fallback to OpenSSL, then Delphi}
 				if IsBCryptAvailable then
 					Result := TCloudHashCalculatorBCrypt.Create(Progress, FileSystem)
-				else if IsOpenSSLAvailable then
-					Result := TCloudHashCalculatorOpenSSL.Create(Progress, FileSystem)
+				else if IsOpenSSLAvailable(OpenSSLProvider) then
+					Result := TCloudHashCalculatorOpenSSL.Create(Progress, FileSystem, OpenSSLProvider)
 				else
 					Result := TCloudHashCalculator.Create(Progress, FileSystem);
 			end;
@@ -410,9 +351,16 @@ end;
 
 {TCloudHashCalculatorOpenSSL - OpenSSL EVP implementation}
 
+constructor TCloudHashCalculatorOpenSSL.Create(Progress: IProgress; FileSystem: IFileSystem; OpenSSLProvider: IOpenSSLProvider);
+begin
+	inherited Create(Progress, FileSystem);
+	FOpenSSLProvider := OpenSSLProvider;
+end;
+
 function TCloudHashCalculatorOpenSSL.CalculateSHA1(Stream: TStream; ProgressPath: WideString): WideString;
 var
-	ctx: PEVP_MD_CTX;
+	Funcs: TOpenSSLFunctions;
+	ctx: Pointer;
 	buffer: array [0 .. BUFFER_SIZE - 1] of byte;
 	hashValue: array [0 .. 19] of byte; {SHA1 = 20 bytes}
 	hashLen: Cardinal;
@@ -427,15 +375,17 @@ begin
 	Stream.Position := 0;
 	Aborted := False;
 
-	LoadOpenSSLFunctions;
-	if not OpenSSLLoaded then
+	{Get functions from provider}
+	if (FOpenSSLProvider = nil) or not FOpenSSLProvider.IsAvailable then
 	begin
 		{Fallback to Delphi implementation if OpenSSL is not available}
 		Result := TCloudHashCalculator.Create(FProgress, FFileSystem).CalculateSHA1(Stream, ProgressPath);
 		Exit;
 	end;
 
-	ctx := EVP_MD_CTX_new();
+	Funcs := FOpenSSLProvider.GetFunctions;
+
+	ctx := Funcs.EVP_MD_CTX_new();
 	if ctx = nil then
 	begin
 		Result := TCloudHashCalculator.Create(FProgress, FFileSystem).CalculateSHA1(Stream, ProgressPath);
@@ -443,7 +393,7 @@ begin
 	end;
 
 	try
-		if EVP_DigestInit_ex(ctx, EVP_sha1(), nil) <> 1 then
+		if Funcs.EVP_DigestInit_ex(ctx, Funcs.EVP_sha1(), nil) <> 1 then
 		begin
 			Result := TCloudHashCalculator.Create(FProgress, FFileSystem).CalculateSHA1(Stream, ProgressPath);
 			Exit;
@@ -451,7 +401,7 @@ begin
 
 		{Hash the seed prefix}
 		initBuffer := TEncoding.UTF8.GetBytes(HASH_SEED);
-		EVP_DigestUpdate(ctx, @initBuffer[0], Length(initBuffer));
+		Funcs.EVP_DigestUpdate(ctx, @initBuffer[0], Length(initBuffer));
 
 		{Hash the file content}
 		processedBytes := 0;
@@ -459,7 +409,7 @@ begin
 			bytesRead := Stream.Read(buffer, BUFFER_SIZE);
 			if bytesRead > 0 then
 			begin
-				EVP_DigestUpdate(ctx, @buffer[0], bytesRead);
+				Funcs.EVP_DigestUpdate(ctx, @buffer[0], bytesRead);
 				Inc(processedBytes, bytesRead);
 				Percent := Round((processedBytes / Stream.Size) * 100);
 				if Percent > 100 then
@@ -472,11 +422,11 @@ begin
 		begin
 			{Hash the size suffix}
 			finalBuffer := TEncoding.UTF8.GetBytes(Stream.Size.ToString);
-			EVP_DigestUpdate(ctx, @finalBuffer[0], Length(finalBuffer));
+			Funcs.EVP_DigestUpdate(ctx, @finalBuffer[0], Length(finalBuffer));
 
 			{Get final hash}
 			hashLen := SizeOf(hashValue);
-			EVP_DigestFinal_ex(ctx, @hashValue[0], hashLen);
+			Funcs.EVP_DigestFinal_ex(ctx, @hashValue[0], hashLen);
 
 			{Convert to hex string}
 			Result := '';
@@ -484,7 +434,7 @@ begin
 				Result := Result + IntToHex(hashValue[i], 2);
 		end;
 	finally
-		EVP_MD_CTX_free(ctx);
+		Funcs.EVP_MD_CTX_free(ctx);
 	end;
 end;
 
