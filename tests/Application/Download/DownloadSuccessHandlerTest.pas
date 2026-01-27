@@ -20,6 +20,14 @@ uses
 	RealPath,
 	CloudDirItem,
 	CloudMailRu,
+	CloudSettings,
+	FileCipher,
+	AuthStrategy,
+	WindowsFileSystem,
+	HTTPManager,
+	TCRequest,
+	TCHandler,
+	OpenSSLProvider,
 	StreamingSettings;
 
 type
@@ -84,8 +92,10 @@ type
 		FLogger: TMockLogger;
 		FProgress: TMockProgress;
 		FSyncGuard: TMockDescriptionSyncGuard;
+		FMockCloud: TCloudMailRu;
 
 		function CreateContext(const Hash, ExpectedHash: WideString; MoveFlag: Boolean): TDownloadContext;
+		function CreateMockCloud: TCloudMailRu;
 		procedure CreateHandler;
 	public
 		[Setup]
@@ -301,6 +311,25 @@ begin
 	FLogger := nil;
 	FProgress := nil;
 	FSyncGuard := nil;
+	FreeAndNil(FMockCloud);
+end;
+
+function TDownloadSuccessHandlerTest.CreateMockCloud: TCloudMailRu;
+var
+	Settings: TCloudSettings;
+begin
+	Settings := Default(TCloudSettings);
+	Result := TCloudMailRu.Create(
+		Settings,
+		TNullHTTPManager.Create,
+		TNullAuthStrategy.Create,
+		TNullFileSystem.Create,
+		TNullLogger.Create,
+		TNullProgress.Create,
+		TNullRequest.Create,
+		TNullTCHandler.Create,
+		TNullCipher.Create,
+		TNullOpenSSLProvider.Create);
 end;
 
 function TDownloadSuccessHandlerTest.CreateContext(const Hash, ExpectedHash: WideString; MoveFlag: Boolean): TDownloadContext;
@@ -416,7 +445,9 @@ var
 	Context: TDownloadContext;
 begin
 	CreateHandler;
+	FMockCloud := CreateMockCloud;
 	Context := CreateContext('', '', True); {Move flag set}
+	Context.Cloud := FMockCloud;
 
 	FHandler.HandleSuccess(Context);
 
