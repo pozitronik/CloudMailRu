@@ -34,9 +34,29 @@ type
 		function DecryptStream(SourceStream, DestinationStream: TStream): Integer;
 		function DecryptFileName(const FileName: WideString): WideString;
 		procedure DecryptDirListing(var CloudMailRuDirListing: TCloudDirItemList);
+
+		{Stream wrapper methods - return streams that transform data on-the-fly.
+			Caller must free the returned stream. Wrapper does not own/free source.}
+		function GetEncryptingStream(Source: TStream): TStream;
+		function GetDecryptingStream(Source: TStream): TStream;
 	end;
 
-	{Null implementation for testing - pass-through without encryption}
+	{Lightweight read-only stream wrapper that delegates to source without copying.
+		Used by TNullCipher for zero-overhead pass-through.}
+	TPassThroughStream = class(TStream)
+	private
+		FSource: TStream;
+	protected
+		function GetSize: Int64; override;
+	public
+		constructor Create(Source: TStream);
+		function Read(var Buffer; Count: Longint): Longint; override;
+		function Write(const Buffer; Count: Longint): Longint; override;
+		function Seek(const Offset: Int64; Origin: TSeekOrigin): Int64; override;
+	end;
+
+	{Null implementation - pass-through without encryption.
+		Use when encryption is not needed. Zero overhead for stream operations.}
 	TNullCipher = class(TInterfacedObject, ICipher)
 	public
 		function CryptFile(SourceFileName, DestinationFilename: WideString): Integer;
@@ -46,6 +66,8 @@ type
 		function DecryptStream(SourceStream, DestinationStream: TStream): Integer;
 		function DecryptFileName(const FileName: WideString): WideString;
 		procedure DecryptDirListing(var CloudMailRuDirListing: TCloudDirItemList);
+		function GetEncryptingStream(Source: TStream): TStream;
+		function GetDecryptingStream(Source: TStream): TStream;
 	end;
 
 	{Production implementation using AES/Rijndael encryption}
@@ -75,6 +97,8 @@ type
 		function DecryptStream(SourceStream, DestinationStream: TStream): Integer;
 		function DecryptFileName(const FileName: WideString): WideString;
 		procedure DecryptDirListing(var CloudMailRuDirListing: TCloudDirItemList);
+		function GetEncryptingStream(Source: TStream): TStream;
+		function GetDecryptingStream(Source: TStream): TStream;
 
 		property IsWrongPassword: Boolean read PasswordIsWrong;
 
@@ -84,6 +108,35 @@ type
 	end;
 
 implementation
+
+{TPassThroughStream - lightweight read-only wrapper}
+
+constructor TPassThroughStream.Create(Source: TStream);
+begin
+	inherited Create;
+	FSource := Source;
+end;
+
+function TPassThroughStream.GetSize: Int64;
+begin
+	Result := FSource.Size;
+end;
+
+function TPassThroughStream.Read(var Buffer; Count: Longint): Longint;
+begin
+	Result := FSource.Read(Buffer, Count);
+end;
+
+function TPassThroughStream.Write(const Buffer; Count: Longint): Longint;
+begin
+	{Pass-through stream is read-only for encryption/upload use case}
+	Result := FSource.Write(Buffer, Count);
+end;
+
+function TPassThroughStream.Seek(const Offset: Int64; Origin: TSeekOrigin): Int64;
+begin
+	Result := FSource.Seek(Offset, Origin);
+end;
 
 {TNullCipher - pass-through implementation}
 
@@ -148,6 +201,18 @@ begin
 	{Set visible_name to name for all items - no decryption needed}
 	for i := 0 to Length(CloudMailRuDirListing) - 1 do
 		CloudMailRuDirListing[i].visible_name := CloudMailRuDirListing[i].name;
+end;
+
+function TNullCipher.GetEncryptingStream(Source: TStream): TStream;
+begin
+	{Return lightweight wrapper - no transformation, minimal overhead}
+	Result := TPassThroughStream.Create(Source);
+end;
+
+function TNullCipher.GetDecryptingStream(Source: TStream): TStream;
+begin
+	{Return lightweight wrapper - no transformation, minimal overhead}
+	Result := TPassThroughStream.Create(Source);
 end;
 
 {TFileCipher - AES/Rijndael implementation}
@@ -330,6 +395,18 @@ begin
 	finally
 		self.CiphersDestroy();
 	end;
+end;
+
+function TFileCipher.GetEncryptingStream(Source: TStream): TStream;
+begin
+	{Placeholder - will be implemented with TEncryptingStream wrapper in Task #4}
+	raise Exception.Create('TFileCipher.GetEncryptingStream not yet implemented');
+end;
+
+function TFileCipher.GetDecryptingStream(Source: TStream): TStream;
+begin
+	{Placeholder - will be implemented with TDecryptingStream wrapper in Task #4}
+	raise Exception.Create('TFileCipher.GetDecryptingStream not yet implemented');
 end;
 
 end.
