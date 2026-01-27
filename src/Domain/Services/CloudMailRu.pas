@@ -383,8 +383,7 @@ begin
 	{Interface reference - will be released automatically}
 	FHTTPConnection := nil;
 
-	if Assigned(FRetryOperation) then
-		FRetryOperation.Free;
+	FRetryOperation.Free;
 
 	FCipher := nil; {Release interface reference}
 	FHashCalculator := nil; {Release interface reference}
