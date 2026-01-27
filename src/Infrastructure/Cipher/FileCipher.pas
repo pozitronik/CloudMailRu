@@ -109,6 +109,9 @@ type
 
 implementation
 
+uses
+	CipherStreams;
+
 {TPassThroughStream - lightweight read-only wrapper}
 
 constructor TPassThroughStream.Create(Source: TStream);
@@ -398,15 +401,23 @@ begin
 end;
 
 function TFileCipher.GetEncryptingStream(Source: TStream): TStream;
+var
+	Cipher: TDCP_rijndael;
 begin
-	{Placeholder - will be implemented with TEncryptingStream wrapper in Task #4}
-	raise Exception.Create('TFileCipher.GetEncryptingStream not yet implemented');
+	{Create fresh cipher instance - stream takes ownership}
+	Cipher := TDCP_rijndael.Create(nil);
+	Cipher.InitStr(self.Password, TDCP_sha1);
+	Result := TEncryptingStream.Create(Source, Cipher);
 end;
 
 function TFileCipher.GetDecryptingStream(Source: TStream): TStream;
+var
+	Cipher: TDCP_rijndael;
 begin
-	{Placeholder - will be implemented with TDecryptingStream wrapper in Task #4}
-	raise Exception.Create('TFileCipher.GetDecryptingStream not yet implemented');
+	{Create fresh cipher instance - stream takes ownership}
+	Cipher := TDCP_rijndael.Create(nil);
+	Cipher.InitStr(self.Password, TDCP_sha1);
+	Result := TDecryptingStream.Create(Source, Cipher);
 end;
 
 end.

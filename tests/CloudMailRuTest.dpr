@@ -47,6 +47,7 @@ uses
 	AccountSettings in '..\src\Infrastructure\Settings\AccountSettings.pas',
 	AccountsManager in '..\src\Infrastructure\Settings\AccountsManager.pas',
 	FileCipher in '..\src\Infrastructure\Cipher\FileCipher.pas',
+	CipherStreams in '..\src\Infrastructure\Cipher\CipherStreams.pas',
 	CloudDirItemList in '..\src\Domain\ValueObjects\CloudDirItemList.pas',
 	CloudDirItem in '..\src\Domain\ValueObjects\CloudDirItem.pas',
 	JSONHelper in '..\src\Infrastructure\HTTP\JSONHelper.pas',
