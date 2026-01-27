@@ -1,18 +1,12 @@
 ﻿unit JSONHelper;
 
+{Refactored to use TSafeJSON for null-safe JSON navigation.
+ Removed assignFromName and init - use TSafeJSON directly for such operations.}
+
 interface
 
 uses
-	System.Generics.Collections,
-	JSON,
-	SysUtils,
 	CloudConstants;
-
-procedure assignFromName(Name: WideString; var ParserObj: TJSONObject; var Item: WideString); overload;
-procedure assignFromName(Name: WideString; var ParserObj: TJSONObject; var Item: Int64); overload;
-procedure assignFromName(Name: WideString; var ParserObj: TJSONObject; var Item: integer); overload;
-procedure assignFromName(Name: WideString; var ParserObj: TJSONObject; var Item: Boolean); overload;
-function init(JSON: WideString; var JSONVal: TJSONObject): Boolean;
 
 function getPublicLink(JSON: WideString; var PublicLink: WideString): Boolean;
 function getShard(JSON: WideString; var Shard: WideString; ShardType: WideString = SHARD_TYPE_GET): Boolean;
@@ -22,133 +16,94 @@ function getRegistrationBody(JSON: WideString; var Body: WideString): Boolean;
 
 implementation
 
-procedure assignFromName(Name: WideString; var ParserObj: TJSONObject; var Item: WideString);
-begin
-	if Assigned(ParserObj.Values[Name]) then
-		Item := ParserObj.Values[Name].Value;
-end;
-
-procedure assignFromName(Name: WideString; var ParserObj: TJSONObject; var Item: Int64);
-begin
-	if Assigned(ParserObj.Values[Name]) then
-		Item := ParserObj.Values[Name].Value.ToInt64;
-end;
-
-procedure assignFromName(Name: WideString; var ParserObj: TJSONObject; var Item: integer);
-begin
-	if Assigned(ParserObj.Values[Name]) then
-		Item := ParserObj.Values[Name].Value.ToInteger;
-end;
-
-procedure assignFromName(Name: WideString; var ParserObj: TJSONObject; var Item: Boolean);
-begin
-	if Assigned(ParserObj.Values[Name]) then
-		Item := ParserObj.Values[Name].Value.ToBoolean;
-end;
-
-function init(JSON: WideString; var JSONVal: TJSONObject): Boolean;
-begin
-	result := False;
-	try
-		JSONVal := nil;
-		JSONVal := TJSONObject.ParseJSONValue(JSON) as TJSONObject;
-	except
-		Exit;
-	end;
-	result := JSONVal <> nil;
-end;
+uses
+	SafeJSON;
 
 function getPublicLink(JSON: WideString; var PublicLink: WideString): Boolean;
 var
-	JSONVal: TJSONObject;
+	SafeVal: TSafeJSON;
+	ExtractedLink: WideString;
 begin
-	result := False;
-	if (not init(JSON, JSONVal)) then
-		Exit;
+	Result := False;
+	SafeVal := TSafeJSON.Parse(JSON);
 	try
-		try
-			PublicLink := JSONVal.Values[NAME_BODY].Value;
-			result := true;
-		except
-			Exit;
+		ExtractedLink := SafeVal.Get(NAME_BODY).AsString;
+		if ExtractedLink <> '' then
+		begin
+			PublicLink := ExtractedLink;
+			Result := True;
 		end;
 	finally
-		JSONVal.Free;
+		SafeVal.Free;
 	end;
 end;
 
-function getShard(JSON: WideString; var Shard: WideString; ShardType: WideString = NAME_GET): Boolean;
+function getShard(JSON: WideString; var Shard: WideString; ShardType: WideString = SHARD_TYPE_GET): Boolean;
 var
-	JSONVal: TJSONObject;
+	SafeVal: TSafeJSON;
+	ExtractedShard: WideString;
 begin
-	result := False;
-	if (not init(JSON, JSONVal)) then
-		Exit;
+	Result := False;
+	SafeVal := TSafeJSON.Parse(JSON);
 	try
-		try
-			Shard := (((JSONVal.Values[NAME_BODY] as TJSONObject).Values[ShardType] as TJSONArray).Items[0] as TJSONObject).Values[NAME_URL].Value;
-			result := true;
-		except
-			Exit;
+		ExtractedShard := SafeVal.Get(NAME_BODY).Get(ShardType).Item(0).Get(NAME_URL).AsString;
+		if ExtractedShard <> '' then
+		begin
+			Shard := ExtractedShard;
+			Result := True;
 		end;
 	finally
-		JSONVal.Free;
+		SafeVal.Free;
 	end;
 end;
 
 function getBodyError(JSON: WideString): WideString;
 var
-	JSONVal: TJSONObject;
+	SafeVal: TSafeJSON;
 begin
-	result := '';
-	if (not init(JSON, JSONVal)) then
-		Exit;
+	SafeVal := TSafeJSON.Parse(JSON);
 	try
-		try
-			result := JSONVal.Values[NAME_BODY].Value;
-		except
-			Exit;
-		end;
+		Result := SafeVal.Get(NAME_BODY).AsString;
 	finally
-		JSONVal.Free;
+		SafeVal.Free;
 	end;
 end;
 
 function getBodyToken(JSON: WideString; var Token: WideString): Boolean;
 var
-	JSONVal: TJSONObject;
+	SafeVal: TSafeJSON;
+	ExtractedToken: WideString;
 begin
-	result := False;
-	if (not init(JSON, JSONVal)) then
-		Exit;
+	Result := False;
+	SafeVal := TSafeJSON.Parse(JSON);
 	try
-		try
-			Token := (JSONVal.Values[NAME_BODY] as TJSONObject).Values[NAME_TOKEN].Value;
-			result := true;
-		except
-			Exit;
+		ExtractedToken := SafeVal.Get(NAME_BODY).Get(NAME_TOKEN).AsString;
+		if ExtractedToken <> '' then
+		begin
+			Token := ExtractedToken;
+			Result := True;
 		end;
 	finally
-		JSONVal.Free;
+		SafeVal.Free;
 	end;
 end;
 
 function getRegistrationBody(JSON: WideString; var Body: WideString): Boolean;
 var
-	JSONVal: TJSONObject;
+	SafeVal: TSafeJSON;
+	ExtractedBody: WideString;
 begin
-	result := False;
-	if (not init(JSON, JSONVal)) then
-		Exit;
+	Result := False;
+	SafeVal := TSafeJSON.Parse(JSON);
 	try
-		try
-			Body := JSONVal.Values[NAME_BODY].Value;
-			result := true;
-		except
-			Exit;
+		ExtractedBody := SafeVal.Get(NAME_BODY).AsString;
+		if ExtractedBody <> '' then
+		begin
+			Body := ExtractedBody;
+			Result := True;
 		end;
 	finally
-		JSONVal.Free;
+		SafeVal.Free;
 	end;
 end;
 
