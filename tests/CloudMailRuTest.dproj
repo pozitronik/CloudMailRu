@@ -394,6 +394,7 @@
         <DCCReference Include="Integration\TrashIntegrationTest.pas"/>
         <DCCReference Include="Integration\SharingIntegrationTest.pas"/>
         <DCCReference Include="Integration\InviteIntegrationTest.pas"/>
+        <DCCReference Include="Infrastructure\OpenSSL\OpenSSLProviderTest.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>
