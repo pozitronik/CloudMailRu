@@ -115,8 +115,6 @@ type
 		{ WriteAllLines tests }
 		[Test]
 		procedure TestWriteAllLines_CreatesFile;
-		[Test]
-		procedure TestWriteAllLines_NilLines_WritesEmpty;
 
 		{ OpenTextReader tests }
 		[Test]
@@ -203,8 +201,6 @@ type
 		{ WriteAllLines tests }
 		[Test]
 		procedure TestWriteAllLines_CreatesFile;
-		[Test]
-		procedure TestWriteAllLines_NilLines_CreatesEmpty;
 
 		{ OpenTextReader tests }
 		[Test]
@@ -497,12 +493,6 @@ begin
 	end;
 end;
 
-procedure TMemoryFileSystemTest.TestWriteAllLines_NilLines_WritesEmpty;
-begin
-	FFileSystem.WriteAllLines('C:\test.txt', nil, TEncoding.UTF8);
-	Assert.AreEqual('', FFileSystem.GetFileContent('C:\test.txt'));
-end;
-
 procedure TMemoryFileSystemTest.TestOpenTextReader_ReturnsWorkingReader;
 var
 	Reader: TStreamReader;
@@ -767,22 +757,6 @@ begin
 	finally
 		Lines.Free;
 	end;
-end;
-
-procedure TWindowsFileSystemTest.TestWriteAllLines_NilLines_CreatesEmpty;
-var
-	TempFile: String;
-	Content: WideString;
-begin
-	TempFile := FTempDir + 'wfstest_nil_' + IntToStr(GetTickCount) + '.tmp';
-	FTempFiles.Add(TempFile);
-
-	FFileSystem.WriteAllLines(TempFile, nil, TEncoding.UTF8);
-	Assert.IsTrue(System.SysUtils.FileExists(TempFile), 'File should be created');
-
-	{Read back and verify no text content (UTF-8 BOM is added by TStreamWriter but ReadAllText handles it)}
-	Content := FFileSystem.ReadAllText(TempFile, TEncoding.UTF8);
-	Assert.AreEqual('', String(Content), 'Should have no text content');
 end;
 
 procedure TWindowsFileSystemTest.TestOpenTextReader_ReturnsWorkingReader;

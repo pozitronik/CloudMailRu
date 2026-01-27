@@ -269,10 +269,7 @@ end;
 
 procedure TMemoryFileSystem.WriteAllLines(const Path: WideString; Lines: TStrings; Encoding: TEncoding);
 begin
-	if Assigned(Lines) then
-		SetFileContent(Path, Lines.Text)
-	else
-		SetFileContent(Path, '');
+	SetFileContent(Path, Lines.Text);
 end;
 
 procedure TMemoryFileSystem.SetFileContent(const Path: WideString; const Content: WideString);
@@ -429,11 +426,8 @@ var
 begin
 	Stream := TStreamWriter.Create(Path, False, Encoding);
 	try
-		if Assigned(Lines) then
-		begin
-			for I := 0 to Lines.Count - 1 do
-				Stream.WriteLine(Lines[I]);
-		end;
+		for I := 0 to Lines.Count - 1 do
+			Stream.WriteLine(Lines[I]);
 		Stream.Flush;
 	finally
 		Stream.Free;
