@@ -33,6 +33,7 @@ uses
 	CloudMailRu,
 	CloudSettings,
 	AccountSettings,
+	FileCipher,
 	AuthStrategy,
 	OAuthAppAuthStrategy,
 	WindowsFileSystem,
@@ -70,7 +71,7 @@ begin
 		TNullProgress.Create,
 		TNullRequest.Create,
 		TNullTCHandler.Create,
-		nil);
+		TNullCipher.Create);
 	try
 		Assert.IsFalse(Cloud.Login, 'Login with invalid password should fail');
 	finally

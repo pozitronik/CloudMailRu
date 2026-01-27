@@ -44,6 +44,7 @@ implementation
 uses
 	CloudSettings,
 	AuthStrategy,
+	FileCipher,
 	WindowsFileSystem,
 	TCLogger,
 	TCProgress,
@@ -74,7 +75,8 @@ begin
 		TNullLogger.Create,
 		TNullProgress.Create,
 		TNullRequest.Create,
-		TNullTCHandler.Create);
+		TNullTCHandler.Create,
+		TNullCipher.Create);
 	Result := TempCloud.Login;
 end;
 

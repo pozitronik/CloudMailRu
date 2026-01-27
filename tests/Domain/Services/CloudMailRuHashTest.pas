@@ -6,6 +6,7 @@ uses
 	CloudMailRu,
 	CloudSettings,
 	CloudConstants,
+	FileCipher,
 	LanguageStrings,
 	WFXTypes,
 	TCLogger,
@@ -103,7 +104,7 @@ end;
 procedure TCloudMailRuHashTest.Setup;
 begin
 	FSettings := Default(TCloudSettings);
-	FCloud := TTestableCloudMailRu.Create(FSettings, nil, TNullAuthStrategy.Create, TWindowsFileSystem.Create, TNullLogger.Create, TNullProgress.Create, TNullRequest.Create, TNullTCHandler.Create);
+	FCloud := TTestableCloudMailRu.Create(FSettings, nil, TNullAuthStrategy.Create, TWindowsFileSystem.Create, TNullLogger.Create, TNullProgress.Create, TNullRequest.Create, TNullTCHandler.Create, TNullCipher.Create);
 end;
 
 procedure TCloudMailRuHashTest.TearDown;

@@ -55,6 +55,7 @@ uses
 	PluginSettings,
 	CloudMailRu,
 	CloudSettings,
+	FileCipher,
 	AuthStrategy,
 	WindowsFileSystem,
 	TCLogger,
@@ -175,7 +176,7 @@ begin
 	{Need to configure a cloud instance since BuildContext accesses it for IsPublicAccount}
 	Settings := Default(TCloudSettings);
 	MockCloud := TCloudMailRu.Create(Settings, nil, TNullAuthStrategy.Create,
-		TNullFileSystem.Create, TNullLogger.Create, TNullProgress.Create, TNullRequest.Create, TNullTCHandler.Create);
+		TNullFileSystem.Create, TNullLogger.Create, TNullProgress.Create, TNullRequest.Create, TNullTCHandler.Create, TNullCipher.Create);
 	try
 		FMockConnectionManager.SetCloud('account', MockCloud);
 

@@ -11,6 +11,7 @@ uses
 	CloudSettings,
 	CloudDirItem,
 	CloudConstants,
+	FileCipher,
 	WFXTypes,
 	TCLogger,
 	TCProgress,
@@ -120,7 +121,8 @@ begin
 		TNullLogger.Create,
 		TNullProgress.Create,
 		TNullRequest.Create,
-		TNullTCHandler.Create);
+		TNullTCHandler.Create,
+		TNullCipher.Create);
 
 	Result.SetUnitedParams('api=2&access_token=test_token');
 end;

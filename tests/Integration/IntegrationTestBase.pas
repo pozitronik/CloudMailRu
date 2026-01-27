@@ -243,7 +243,7 @@ begin
 	if Encrypted and FConfig.HasEncryptionConfig then
 		Cipher := TFileCipher.Create(FConfig.EncryptionPassword)
 	else
-		Cipher := nil;
+		Cipher := TNullCipher.Create;
 
 	Result := TCloudMailRu.Create(
 		Settings,
@@ -285,7 +285,7 @@ begin
 		TNullProgress.Create,
 		TNullRequest.Create,
 		TNullTCHandler.Create,
-		nil);
+		TNullCipher.Create);
 end;
 
 function TIntegrationTestBase.CreatePublicCloud: TCloudMailRu;
@@ -307,7 +307,7 @@ begin
 		TNullProgress.Create,
 		TNullRequest.Create,
 		TNullTCHandler.Create,
-		nil);
+		TNullCipher.Create);
 end;
 
 function TIntegrationTestBase.UniqueCloudPath(const BaseName: WideString): WideString;

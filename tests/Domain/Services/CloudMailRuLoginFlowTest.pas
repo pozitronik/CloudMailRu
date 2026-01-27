@@ -11,6 +11,7 @@ uses
 	CloudConstants,
 	CloudOAuth,
 	CloudSpace,
+	FileCipher,
 	WFXTypes,
 	SettingsConstants,
 	TCLogger,
@@ -157,7 +158,8 @@ begin
 		TNullLogger.Create,
 		TNullProgress.Create,
 		TNullRequest.Create,
-		TNullTCHandler.Create);
+		TNullTCHandler.Create,
+		TNullCipher.Create);
 end;
 
 function TCloudMailRuLoginFlowTest.CreatePublicCloud(const PublicUrl: WideString): TTestableLoginCloud;
@@ -174,7 +176,8 @@ begin
 		TNullLogger.Create,
 		TNullProgress.Create,
 		TNullRequest.Create,
-		TNullTCHandler.Create);
+		TNullTCHandler.Create,
+		TNullCipher.Create);
 end;
 
 {LoginRegular tests}
@@ -269,7 +272,8 @@ begin
 		TNullLogger.Create,
 		TNullProgress.Create,
 		TNullRequest.Create,
-		TNullTCHandler.Create);
+		TNullTCHandler.Create,
+		TNullCipher.Create);
 
 	FMockHTTP.SetResponse(API_USER_SPACE, True, JSON_USER_SPACE);
 

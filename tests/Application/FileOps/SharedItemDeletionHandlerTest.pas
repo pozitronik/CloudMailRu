@@ -11,6 +11,7 @@ uses
 	CloudConstants,
 	CloudMailRu,
 	CloudSettings,
+	FileCipher,
 	AuthStrategy,
 	WindowsFileSystem,
 	TCLogger,
@@ -99,7 +100,8 @@ begin
 		TNullLogger.Create,
 		TNullProgress.Create,
 		TNullRequest.Create,
-		TNullTCHandler.Create);
+		TNullTCHandler.Create,
+		TNullCipher.Create);
 end;
 
 procedure TSharedItemDeletionHandlerTest.Setup;

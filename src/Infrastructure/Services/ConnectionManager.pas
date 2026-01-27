@@ -147,7 +147,6 @@ var
 	FileCipherInstance: TFileCipher;
 begin
 	Result := CLOUD_OPERATION_OK;
-	Cipher := nil;
 
 	{Create CloudSettings using factory method - combines plugin settings with account settings}
 	CloudSettings := TCloudSettings.CreateFromSettings(FPluginSettingsManager.GetSettings, FAccountsManager.GetAccountSettings(ConnectionName));
@@ -157,7 +156,8 @@ begin
 
 	FLogger.Log(LOG_LEVEL_CONNECT, MSGTYPE_CONNECT, 'CONNECT \%s', [ConnectionName]);
 
-	{Create cipher when encryption is enabled}
+	{Create cipher when encryption is enabled, otherwise use null cipher}
+	Cipher := TNullCipher.Create;
 	if CloudSettings.AccountSettings.EncryptFilesMode <> EncryptModeNone then
 	begin
 		FileCipherInstance := TFileCipher.Create(CloudSettings.CryptFilesPassword, CloudSettings.AccountSettings.CryptedGUIDFiles, CloudSettings.AccountSettings.EncryptFilenames);

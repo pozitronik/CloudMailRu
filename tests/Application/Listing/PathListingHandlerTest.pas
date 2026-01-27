@@ -17,6 +17,7 @@ uses
 	MockHTTPManager,
 	CloudMailRu,
 	CloudSettings,
+	FileCipher,
 	RealPath,
 	CloudDirItem,
 	CloudDirItemList,
@@ -209,7 +210,8 @@ begin
 		TNullLogger.Create,
 		TNullProgress.Create,
 		TNullRequest.Create,
-		TNullTCHandler.Create);
+		TNullTCHandler.Create,
+		TNullCipher.Create);
 	Result.SetUnitedParams('api=2&access_token=test_token');
 end;
 

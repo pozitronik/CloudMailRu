@@ -12,6 +12,7 @@ uses
 	CloudConstants,
 	CloudFileIdentity,
 	CloudDirItem,
+	FileCipher,
 	WFXTypes,
 	SettingsConstants,
 	TCLogger,
@@ -176,7 +177,8 @@ begin
 		TNullLogger.Create,
 		TNullProgress.Create,
 		TNullRequest.Create,
-		TNullTCHandler.Create);
+		TNullTCHandler.Create,
+		TNullCipher.Create);
 end;
 
 {CreateDir integration tests}

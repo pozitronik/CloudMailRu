@@ -11,6 +11,7 @@ uses
 	CloudDirItemList,
 	CloudDirItem,
 	CloudConstants,
+	FileCipher,
 	WFXTypes,
 	TCLogger,
 	TCProgress,
@@ -152,7 +153,8 @@ begin
 		TNullLogger.Create,
 		TNullProgress.Create,
 		TNullRequest.Create,
-		TNullTCHandler.Create);
+		TNullTCHandler.Create,
+		TNullCipher.Create);
 
 	Result.SetUnitedParams('api=2');
 end;
@@ -178,7 +180,8 @@ begin
 		TNullLogger.Create,
 		TNullProgress.Create,
 		TNullRequest.Create,
-		TNullTCHandler.Create);
+		TNullTCHandler.Create,
+		TNullCipher.Create);
 
 	Assert.IsFalse(FCloud.IsPublicAccount, 'IsPublicAccount should be False for private accounts');
 end;
