@@ -15,7 +15,7 @@ uses
 type
 	{Interface for basic cloud file operations.
 		Narrow interface used by CloudDescriptionOperationsAdapter.}
-	ICloudFileOps = interface
+	ICloudFileOperations = interface
 		['{B9C95D48-FCF9-4375-8D15-0412756191C0}']
 
 		{Download file from cloud.
@@ -38,8 +38,8 @@ type
 		function DeleteFile(Path: WideString): Boolean;
 	end;
 
-	{Wraps TCloudMailRu to implement ICloudFileOps interface}
-	TCloudMailRuFileOpsAdapter = class(TInterfacedObject, ICloudFileOps)
+	{Wraps TCloudMailRu to implement ICloudFileOperations interface}
+	TCloudFileOperationsAdapter = class(TInterfacedObject, ICloudFileOperations)
 	private
 		FCloud: TCloudMailRu;
 	public
@@ -77,11 +77,11 @@ type
 	{Wraps cloud operations to ICloudDescriptionOps interface}
 	TCloudDescriptionOperationsAdapter = class(TInterfacedObject, ICloudDescriptionOps)
 	private
-		FCloudOps: ICloudFileOps;
+		FCloudOps: ICloudFileOperations;
 		FFileSystem: IFileSystem;
 	public
 		{Create adapter with injected dependencies}
-		constructor Create(CloudOps: ICloudFileOps; FileSystem: IFileSystem); overload;
+		constructor Create(CloudOps: ICloudFileOperations; FileSystem: IFileSystem); overload;
 
 		{Convenience constructor wrapping TCloudMailRu directly}
 		constructor Create(Cloud: TCloudMailRu); overload;
@@ -95,30 +95,30 @@ implementation
 
 {TCloudMailRuFileOpsAdapter}
 
-constructor TCloudMailRuFileOpsAdapter.Create(Cloud: TCloudMailRu);
+constructor TCloudFileOperationsAdapter.Create(Cloud: TCloudMailRu);
 begin
 	inherited Create;
 	FCloud := Cloud;
 end;
 
-function TCloudMailRuFileOpsAdapter.GetFile(RemotePath, LocalPath: WideString; var ResultHash: WideString; LogErrors: Boolean): Integer;
+function TCloudFileOperationsAdapter.GetFile(RemotePath, LocalPath: WideString; var ResultHash: WideString; LogErrors: Boolean): Integer;
 begin
 	Result := FCloud.Downloader.Download(RemotePath, LocalPath, ResultHash, LogErrors);
 end;
 
-function TCloudMailRuFileOpsAdapter.PutFile(LocalPath, RemotePath: WideString): Integer;
+function TCloudFileOperationsAdapter.PutFile(LocalPath, RemotePath: WideString): Integer;
 begin
 	Result := FCloud.Uploader.Upload(LocalPath, RemotePath);
 end;
 
-function TCloudMailRuFileOpsAdapter.DeleteFile(Path: WideString): Boolean;
+function TCloudFileOperationsAdapter.DeleteFile(Path: WideString): Boolean;
 begin
 	Result := FCloud.FileOps.Delete(Path);
 end;
 
 {TCloudDescriptionOperationsAdapter}
 
-constructor TCloudDescriptionOperationsAdapter.Create(CloudOps: ICloudFileOps; FileSystem: IFileSystem);
+constructor TCloudDescriptionOperationsAdapter.Create(CloudOps: ICloudFileOperations; FileSystem: IFileSystem);
 begin
 	inherited Create;
 	FCloudOps := CloudOps;
@@ -127,7 +127,7 @@ end;
 
 constructor TCloudDescriptionOperationsAdapter.Create(Cloud: TCloudMailRu);
 begin
-	Create(TCloudMailRuFileOpsAdapter.Create(Cloud), TWindowsFileSystem.Create);
+	Create(TCloudFileOperationsAdapter.Create(Cloud), TWindowsFileSystem.Create);
 end;
 
 function TCloudDescriptionOperationsAdapter.GetDescriptionFile(const RemotePath, LocalCopy: WideString): Boolean;
