@@ -2,6 +2,12 @@ unit FileCipher;
 
 {Combined unit for encryption operations: interface, null implementation, and AES/Rijndael implementation}
 
+{TODO: Consider implementing alternative cipher backends for hardware acceleration:
+	- BCrypt/CNG (Windows native, AES-NI support, CFB-8 via BCRYPT_MESSAGE_BLOCK_LENGTH)
+	- OpenSSL EVP (cross-platform, hardware acceleration)
+	Current DCPCrypt implementation works but lacks hardware acceleration.
+	Key challenge: maintaining byte-identical output for backward compatibility with existing encrypted files.}
+
 interface
 
 uses
