@@ -84,7 +84,7 @@ begin
 	TrackForCleanup(EmptyFolder);
 
 	{Create empty folder}
-	CreateResult := FPrimaryCloud.FileOps.CreateDirectory(EmptyFolder);
+	CreateResult := FPrimaryCloud.FileOperations.CreateDirectory(EmptyFolder);
 	Assert.IsTrue(CreateResult, 'Creating empty folder should succeed');
 
 	{List empty folder}
@@ -103,7 +103,7 @@ begin
 	NewFolder := UniqueCloudPath('NewFolder');
 	TrackForCleanup(NewFolder);
 
-	CreateResult := FPrimaryCloud.FileOps.CreateDirectory(NewFolder);
+	CreateResult := FPrimaryCloud.FileOperations.CreateDirectory(NewFolder);
 
 	Assert.IsTrue(CreateResult, 'Creating new folder should succeed');
 
@@ -121,11 +121,11 @@ begin
 	TrackForCleanup(ExistingFolder);
 
 	{Create folder first time}
-	CreateResult1 := FPrimaryCloud.FileOps.CreateDirectory(ExistingFolder);
+	CreateResult1 := FPrimaryCloud.FileOperations.CreateDirectory(ExistingFolder);
 	Assert.IsTrue(CreateResult1, 'First create should succeed');
 
 	{Try to create same folder again}
-	CreateResult2 := FPrimaryCloud.FileOps.CreateDirectory(ExistingFolder);
+	CreateResult2 := FPrimaryCloud.FileOperations.CreateDirectory(ExistingFolder);
 
 	{Should fail with EXISTS error or similar}
 	Assert.IsFalse(CreateResult2, 'Creating existing folder should fail');
@@ -140,11 +140,11 @@ begin
 	{Don't track for cleanup - we're testing removal}
 
 	{Create folder}
-	CreateResult := FPrimaryCloud.FileOps.CreateDirectory(FolderToRemove);
+	CreateResult := FPrimaryCloud.FileOperations.CreateDirectory(FolderToRemove);
 	Assert.IsTrue(CreateResult, 'Creating folder should succeed');
 
 	{Remove empty folder}
-	RemoveResult := FPrimaryCloud.FileOps.RemoveDirectory(FolderToRemove);
+	RemoveResult := FPrimaryCloud.FileOperations.RemoveDirectory(FolderToRemove);
 
 	Assert.IsTrue(RemoveResult, 'Removing empty folder should succeed');
 end;
@@ -159,14 +159,14 @@ begin
 	{Don't track - testing removal}
 
 	{Create parent and child folders}
-	CreateResult1 := FPrimaryCloud.FileOps.CreateDirectory(ParentFolder);
+	CreateResult1 := FPrimaryCloud.FileOperations.CreateDirectory(ParentFolder);
 	Assert.IsTrue(CreateResult1, 'Creating parent folder should succeed');
 
-	CreateResult2 := FPrimaryCloud.FileOps.CreateDirectory(ChildFolder);
+	CreateResult2 := FPrimaryCloud.FileOperations.CreateDirectory(ChildFolder);
 	Assert.IsTrue(CreateResult2, 'Creating child folder should succeed');
 
 	{Remove parent - API removes recursively}
-	RemoveResult := FPrimaryCloud.FileOps.RemoveDirectory(ParentFolder);
+	RemoveResult := FPrimaryCloud.FileOperations.RemoveDirectory(ParentFolder);
 
 	Assert.IsTrue(RemoveResult, 'Removing folder with contents should succeed');
 end;

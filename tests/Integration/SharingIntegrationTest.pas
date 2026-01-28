@@ -158,7 +158,7 @@ begin
 
 	{Create a folder to share}
 	FolderPath := UniqueCloudPath('ShareFolder');
-	CreateResult := FPrimaryCloud.FileOps.CreateDirectory(FolderPath);
+	CreateResult := FPrimaryCloud.FileOperations.CreateDirectory(FolderPath);
 	Assert.IsTrue(CreateResult, 'Creating folder should succeed');
 	TrackForCleanup(FolderPath);
 
@@ -190,7 +190,7 @@ begin
 
 	{Create and share a folder}
 	FolderPath := UniqueCloudPath('UnshareFolder');
-	CreateResult := FPrimaryCloud.FileOps.CreateDirectory(FolderPath);
+	CreateResult := FPrimaryCloud.FileOperations.CreateDirectory(FolderPath);
 	Assert.IsTrue(CreateResult, 'Creating folder should succeed');
 	TrackForCleanup(FolderPath);
 
@@ -220,7 +220,7 @@ begin
 
 	{Create and share a folder}
 	FolderPath := UniqueCloudPath('ShareInfoFolder');
-	CreateResult := FPrimaryCloud.FileOps.CreateDirectory(FolderPath);
+	CreateResult := FPrimaryCloud.FileOperations.CreateDirectory(FolderPath);
 	Assert.IsTrue(CreateResult, 'Creating folder should succeed');
 	TrackForCleanup(FolderPath);
 

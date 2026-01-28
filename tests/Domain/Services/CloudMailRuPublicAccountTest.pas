@@ -280,7 +280,7 @@ begin
 	FCloud := CreatePublicCloud;
 	FMockHTTP.SetResponse(API_FOLDER_ADD, True, '{"status":200}');
 
-	var Success := FCloud.FileOps.CreateDirectory('/NewFolder');
+	var Success := FCloud.FileOperations.CreateDirectory('/NewFolder');
 
 	Assert.IsFalse(Success, 'CreateDir should return False for public accounts');
 	Assert.IsFalse(FMockHTTP.WasURLCalled(API_FOLDER_ADD),
@@ -292,7 +292,7 @@ begin
 	FCloud := CreatePublicCloud;
 	FMockHTTP.SetResponse(API_FILE_REMOVE, True, '{"status":200}');
 
-	var Success := FCloud.FileOps.Delete('/file.txt');
+	var Success := FCloud.FileOperations.Delete('/file.txt');
 
 	Assert.IsFalse(Success, 'DeleteFile should return False for public accounts');
 end;
@@ -302,7 +302,7 @@ begin
 	FCloud := CreatePublicCloud;
 	FMockHTTP.SetResponse(API_FILE_COPY, True, '{"status":200}');
 
-	var Result := FCloud.FileOps.CopyToPath('/source.txt', '/dest');
+	var Result := FCloud.FileOperations.CopyToPath('/source.txt', '/dest');
 
 	Assert.AreEqual(FS_FILE_NOTSUPPORTED, Result,
 		'CopyFile should return FS_FILE_NOTSUPPORTED for public accounts');
@@ -313,7 +313,7 @@ begin
 	FCloud := CreatePublicCloud;
 	FMockHTTP.SetResponse(API_FILE_MOVE, True, '{"status":200}');
 
-	var Result := FCloud.FileOps.MoveToPath('/source.txt', '/dest');
+	var Result := FCloud.FileOperations.MoveToPath('/source.txt', '/dest');
 
 	Assert.AreEqual(FS_FILE_NOTSUPPORTED, Result,
 		'MoveFile should return FS_FILE_NOTSUPPORTED for public accounts');
@@ -324,7 +324,7 @@ begin
 	FCloud := CreatePublicCloud;
 	FMockHTTP.SetResponse(API_FILE_RENAME, True, '{"status":200}');
 
-	var Result := FCloud.FileOps.Rename('/old.txt', 'new.txt');
+	var Result := FCloud.FileOperations.Rename('/old.txt', 'new.txt');
 
 	Assert.AreEqual(FS_FILE_WRITEERROR, Result,
 		'RenameFile should return FS_FILE_WRITEERROR for public accounts');

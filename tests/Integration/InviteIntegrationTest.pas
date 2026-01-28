@@ -55,7 +55,7 @@ begin
 
 	{Create folder in primary account}
 	FolderPath := UniqueCloudPath('MountTestFolder');
-	CreateResult := FPrimaryCloud.FileOps.CreateDirectory(FolderPath);
+	CreateResult := FPrimaryCloud.FileOperations.CreateDirectory(FolderPath);
 	Assert.IsTrue(CreateResult, 'Creating folder should succeed');
 	TrackForCleanup(FolderPath);
 
@@ -136,7 +136,7 @@ begin
 
 	{Setup: Create, share, and mount a folder}
 	FolderPath := UniqueCloudPath('UnmountKeepFolder');
-	CreateResult := FPrimaryCloud.FileOps.CreateDirectory(FolderPath);
+	CreateResult := FPrimaryCloud.FileOperations.CreateDirectory(FolderPath);
 	Assert.IsTrue(CreateResult, 'Creating folder should succeed');
 	TrackForCleanup(FolderPath);
 
@@ -214,7 +214,7 @@ begin
 
 	{Setup: Create, share, and mount a folder}
 	FolderPath := UniqueCloudPath('UnmountDiscardFolder');
-	CreateResult := FPrimaryCloud.FileOps.CreateDirectory(FolderPath);
+	CreateResult := FPrimaryCloud.FileOperations.CreateDirectory(FolderPath);
 	Assert.IsTrue(CreateResult, 'Creating folder should succeed');
 	TrackForCleanup(FolderPath);
 
@@ -290,7 +290,7 @@ begin
 
 	{Create and share a folder}
 	FolderPath := UniqueCloudPath('RejectInviteFolder');
-	CreateResult := FPrimaryCloud.FileOps.CreateDirectory(FolderPath);
+	CreateResult := FPrimaryCloud.FileOperations.CreateDirectory(FolderPath);
 	Assert.IsTrue(CreateResult, 'Creating folder should succeed');
 	TrackForCleanup(FolderPath);
 

@@ -320,7 +320,7 @@ begin
 		Assert.AreEqual(FS_FILE_OK, UploadResult1, 'First upload should succeed');
 
 		{Delete and re-upload with larger file (API doesn't have direct overwrite)}
-		FPrimaryCloud.FileOps.Delete(RemotePath);
+		FPrimaryCloud.FileOperations.Delete(RemotePath);
 		UploadResult2 := FPrimaryCloud.Uploader.Upload(LocalFile2, RemotePath);
 		Assert.AreEqual(FS_FILE_OK, UploadResult2, 'Re-upload should succeed');
 

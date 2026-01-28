@@ -173,7 +173,7 @@ begin
 	{Setup rename response}
 	FMockHTTP.SetResponse(API_FILE_RENAME, True, JSON_SUCCESS);
 
-	var Result := FCloud.FileOps.Move('/folder/oldname.txt', '/folder/newname.txt');
+	var Result := FCloud.FileOperations.Move('/folder/oldname.txt', '/folder/newname.txt');
 
 	Assert.AreEqual(CLOUD_OPERATION_OK, Result, 'FileMove in same dir should succeed');
 	Assert.IsTrue(FMockHTTP.WasURLCalled(API_FILE_RENAME), 'Should call RenameFile API');
@@ -186,7 +186,7 @@ begin
 	{Setup move response}
 	FMockHTTP.SetResponse(API_FILE_MOVE, True, JSON_SUCCESS);
 
-	var Result := FCloud.FileOps.Move('/folder1/file.txt', '/folder2/file.txt');
+	var Result := FCloud.FileOperations.Move('/folder1/file.txt', '/folder2/file.txt');
 
 	Assert.AreEqual(CLOUD_OPERATION_OK, Result, 'FileMove to different dir should succeed');
 	Assert.IsTrue(FMockHTTP.WasURLCalled(API_FILE_MOVE), 'Should call MoveFile API');
@@ -200,7 +200,7 @@ begin
 	FMockHTTP.SetResponse(API_FILE_MOVE, True, JSON_SUCCESS);
 	FMockHTTP.SetResponse(API_FILE_RENAME, True, JSON_SUCCESS);
 
-	var Result := FCloud.FileOps.Move('/folder1/oldname.txt', '/folder2/newname.txt');
+	var Result := FCloud.FileOperations.Move('/folder1/oldname.txt', '/folder2/newname.txt');
 
 	Assert.AreEqual(CLOUD_OPERATION_OK, Result, 'FileMove with rename should succeed');
 	Assert.IsTrue(FMockHTTP.WasURLCalled(API_FILE_MOVE), 'Should call MoveFile API');
@@ -213,7 +213,7 @@ begin
 	{Setup failed move response}
 	FMockHTTP.SetResponse(API_FILE_MOVE, True, JSON_FAILURE);
 
-	var Result := FCloud.FileOps.Move('/folder1/oldname.txt', '/folder2/newname.txt');
+	var Result := FCloud.FileOperations.Move('/folder1/oldname.txt', '/folder2/newname.txt');
 
 	Assert.AreNotEqual(CLOUD_OPERATION_OK, Result, 'FileMove should fail');
 	Assert.IsTrue(FMockHTTP.WasURLCalled(API_FILE_MOVE), 'Should call MoveFile API');
@@ -227,7 +227,7 @@ begin
 	FCloud := CreateCloud(True);
 	FMockHTTP.SetResponse(API_FILE_MOVE, True, JSON_SUCCESS);
 
-	var Result := FCloud.FileOps.Move('/folder1/file.txt', '/folder2/file.txt');
+	var Result := FCloud.FileOperations.Move('/folder1/file.txt', '/folder2/file.txt');
 
 	{Public accounts cannot perform move operations}
 	Assert.AreEqual(FS_FILE_NOTSUPPORTED, Result, 'FileMove should fail for public accounts');
@@ -239,7 +239,7 @@ procedure TCloudMailRuCombinedOpsTest.TestFileCopy_SameDir_ReturnsNotSupported;
 begin
 	FCloud := CreateCloud;
 
-	var Result := FCloud.FileOps.Copy('/folder/file.txt', '/folder/copy.txt');
+	var Result := FCloud.FileOperations.Copy('/folder/file.txt', '/folder/copy.txt');
 
 	Assert.AreEqual(FS_FILE_NOTSUPPORTED, Result, 'FileCopy to same dir should return not supported');
 end;
@@ -250,7 +250,7 @@ begin
 	{Setup copy response}
 	FMockHTTP.SetResponse(API_FILE_COPY, True, JSON_SUCCESS);
 
-	var Result := FCloud.FileOps.Copy('/folder1/file.txt', '/folder2/file.txt');
+	var Result := FCloud.FileOperations.Copy('/folder1/file.txt', '/folder2/file.txt');
 
 	Assert.AreEqual(CLOUD_OPERATION_OK, Result, 'FileCopy to different dir should succeed');
 	Assert.IsTrue(FMockHTTP.WasURLCalled(API_FILE_COPY), 'Should call CopyFile API');
@@ -264,7 +264,7 @@ begin
 	FMockHTTP.SetResponse(API_FILE_COPY, True, JSON_SUCCESS);
 	FMockHTTP.SetResponse(API_FILE_RENAME, True, JSON_SUCCESS);
 
-	var Result := FCloud.FileOps.Copy('/folder1/oldname.txt', '/folder2/newname.txt');
+	var Result := FCloud.FileOperations.Copy('/folder1/oldname.txt', '/folder2/newname.txt');
 
 	Assert.AreEqual(CLOUD_OPERATION_OK, Result, 'FileCopy with rename should succeed');
 	Assert.IsTrue(FMockHTTP.WasURLCalled(API_FILE_COPY), 'Should call CopyFile API');
@@ -277,7 +277,7 @@ begin
 	{Setup failed copy response}
 	FMockHTTP.SetResponse(API_FILE_COPY, True, JSON_FAILURE);
 
-	var Result := FCloud.FileOps.Copy('/folder1/oldname.txt', '/folder2/newname.txt');
+	var Result := FCloud.FileOperations.Copy('/folder1/oldname.txt', '/folder2/newname.txt');
 
 	Assert.AreNotEqual(CLOUD_OPERATION_OK, Result, 'FileCopy should fail');
 	Assert.IsTrue(FMockHTTP.WasURLCalled(API_FILE_COPY), 'Should call CopyFile API');
@@ -293,7 +293,7 @@ begin
 	FCloud := CreateCloud(True);
 	FMockHTTP.SetResponse(API_FILE_COPY, True, JSON_SUCCESS);
 
-	var Result := FCloud.FileOps.Copy('/folder1/file.txt', '/folder2/file.txt');
+	var Result := FCloud.FileOperations.Copy('/folder1/file.txt', '/folder2/file.txt');
 
 	{Due to ExtractFilePath not recognizing '/', SameDir becomes True,
 	 so FileCopy returns FS_FILE_NOTSUPPORTED for same-dir copy attempt}

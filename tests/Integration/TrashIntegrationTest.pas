@@ -64,7 +64,7 @@ begin
 	end;
 
 	{Delete the file - it goes to trash}
-	FPrimaryCloud.FileOps.Delete(Result);
+	FPrimaryCloud.FileOperations.Delete(Result);
 end;
 
 procedure TTrashIntegrationTest.TestListTrashbin_ReturnsDeletedItems;
@@ -184,7 +184,7 @@ begin
 	end;
 
 	{Delete it}
-	FPrimaryCloud.FileOps.Delete(OriginalPath);
+	FPrimaryCloud.FileOperations.Delete(OriginalPath);
 
 	{Upload another file with same name}
 	TestData := TTestDataGenerator.CreateSmallTestFile(2048); {Different size}

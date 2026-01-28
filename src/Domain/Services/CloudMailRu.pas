@@ -82,7 +82,7 @@ type
 		FUploader: ICloudFileUploader; {File upload service}
 		FShareService: ICloudShareService; {Share and publish service}
 		FListingService: ICloudListingService; {Directory listing service}
-		FFileOps: ICloudFileOperations; {File operations service}
+		FFileOperations: ICloudFileOperations; {File operations service}
 
 		{HTTP REQUESTS WRAPPERS}
 		function InitSharedConnectionParameters(): Boolean;
@@ -142,7 +142,7 @@ type
 		property Uploader: ICloudFileUploader read FUploader;
 		property ShareService: ICloudShareService read FShareService;
 		property ListingService: ICloudListingService read FListingService;
-		property FileOps: ICloudFileOperations read FFileOps;
+		property FileOperations: ICloudFileOperations read FFileOperations;
 		{ERROR RESULT MAPPING - exposed for testing and external use}
 		function CloudResultToFsResult(CloudResult: TCloudOperationResult; ErrorPrefix: WideString = ''): Integer; overload;
 		function CloudResultToFsResult(JSON: WideString; ErrorPrefix: WideString = ''): Integer; overload;
@@ -316,7 +316,7 @@ begin
 			end,
 			function(Path: WideString): Boolean
 			begin
-				Result := Self.FFileOps.Delete(Path);
+				Result := Self.FFileOperations.Delete(Path);
 			end,
 			function(var SpaceInfo: TCloudSpace): Boolean
 			begin
@@ -366,7 +366,7 @@ begin
 			end, FDoCryptFilenames);
 
 		{Initialize file operations service with callbacks for dynamic state}
-		FFileOps := TCloudFileOperations.Create(Self.HTTP, FLogger, FRetryOperation,
+		FFileOperations := TCloudFileOperations.Create(Self.HTTP, FLogger, FRetryOperation,
 			function: Boolean
 			begin
 				Result := Self.IsPublicAccount;
@@ -399,7 +399,7 @@ begin
 	FUploader := nil; {Release interface reference}
 	FShareService := nil; {Release interface reference}
 	FListingService := nil; {Release interface reference}
-	FFileOps := nil; {Release interface reference}
+	FFileOperations := nil; {Release interface reference}
 
 	inherited;
 end;

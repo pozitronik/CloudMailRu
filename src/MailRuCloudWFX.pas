@@ -615,7 +615,7 @@ begin
 		Result := FSharedItemDeletionHandler.Execute(Cloud, CurrentItem);
 	end
 	else
-		Result := Cloud.FileOps.Delete(RealPath.Path);
+		Result := Cloud.FileOperations.Delete(RealPath.Path);
 	if Result then
 		FDescriptionSyncGuard.OnFileDeleted(RealPath, Cloud);
 end;
@@ -818,7 +818,7 @@ begin
 	if (RealPath.isAccountEmpty) or RealPath.isVirtual then
 		exit(false);
 
-	Result := ConnectionManager.Get(RealPath.account, getResult).FileOps.CreateDirectory(RealPath.Path);
+	Result := ConnectionManager.Get(RealPath.account, getResult).FileOperations.CreateDirectory(RealPath.Path);
 	{Need to check operation context => directory can be moved}
 	if Result and FMoveOperationTracker.IsMoveOperation then
 		FMoveOperationTracker.TrackMoveTarget(RealPath);
@@ -874,7 +874,7 @@ begin
 		exit(false);
 
 	Cloud := ConnectionManager.Get(RealPath.account, getResult);
-	Result := Cloud.FileOps.RemoveDirectory(RealPath.Path);
+	Result := Cloud.FileOperations.RemoveDirectory(RealPath.Path);
 
 	if Result then
 	begin

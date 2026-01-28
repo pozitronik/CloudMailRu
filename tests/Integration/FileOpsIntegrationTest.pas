@@ -89,7 +89,7 @@ begin
 	{Don't track - we're testing deletion}
 
 	{Delete the file}
-	DeleteResult := FPrimaryCloud.FileOps.Delete(RemotePath);
+	DeleteResult := FPrimaryCloud.FileOperations.Delete(RemotePath);
 
 	Assert.IsTrue(DeleteResult, 'Delete should succeed');
 
@@ -121,7 +121,7 @@ begin
 	RemotePath := UploadTestFile(1024, 'TrashTest');
 
 	{Delete the file}
-	DeleteResult := FPrimaryCloud.FileOps.Delete(RemotePath);
+	DeleteResult := FPrimaryCloud.FileOperations.Delete(RemotePath);
 	Assert.IsTrue(DeleteResult, 'Delete should succeed');
 
 	{Check if file is in trash}
@@ -160,7 +160,7 @@ begin
 	TrackForCleanup(NewPath); {Track the new path for cleanup}
 
 	{Rename the file - extract just the new filename}
-	RenameResult := FPrimaryCloud.FileOps.Rename(OriginalPath, NewName);
+	RenameResult := FPrimaryCloud.FileOperations.Rename(OriginalPath, NewName);
 
 	Assert.AreEqual(CLOUD_OPERATION_OK, RenameResult, 'Rename should succeed');
 
@@ -195,12 +195,12 @@ begin
 
 	{Create destination folder}
 	DestFolder := UniqueCloudPath('MoveDestFolder');
-	CreateDirResult := FPrimaryCloud.FileOps.CreateDirectory(DestFolder);
+	CreateDirResult := FPrimaryCloud.FileOperations.CreateDirectory(DestFolder);
 	Assert.IsTrue(CreateDirResult, 'Creating destination folder should succeed');
 	TrackForCleanup(DestFolder);
 
 	{Move the file (keep same name)}
-	MoveResult := FPrimaryCloud.FileOps.MoveToPath(SourcePath, DestFolder);
+	MoveResult := FPrimaryCloud.FileOperations.MoveToPath(SourcePath, DestFolder);
 
 	Assert.AreEqual(CLOUD_OPERATION_OK, MoveResult, 'Move should succeed');
 
@@ -237,7 +237,7 @@ begin
 
 	{Create destination folder}
 	DestFolder := UniqueCloudPath('MoveRenameDestFolder');
-	CreateDirResult := FPrimaryCloud.FileOps.CreateDirectory(DestFolder);
+	CreateDirResult := FPrimaryCloud.FileOperations.CreateDirectory(DestFolder);
 	Assert.IsTrue(CreateDirResult, 'Creating destination folder should succeed');
 	TrackForCleanup(DestFolder);
 
@@ -246,7 +246,7 @@ begin
 	TrackForCleanup(DestPath);
 
 	{Move the file with rename (uses Move which handles both)}
-	MoveResult := FPrimaryCloud.FileOps.Move(SourcePath, DestPath);
+	MoveResult := FPrimaryCloud.FileOperations.Move(SourcePath, DestPath);
 
 	Assert.AreEqual(CLOUD_OPERATION_OK, MoveResult, 'Move with rename should succeed');
 
@@ -282,12 +282,12 @@ begin
 
 	{Create destination folder}
 	DestFolder := UniqueCloudPath('CopyDestFolder');
-	CreateDirResult := FPrimaryCloud.FileOps.CreateDirectory(DestFolder);
+	CreateDirResult := FPrimaryCloud.FileOperations.CreateDirectory(DestFolder);
 	Assert.IsTrue(CreateDirResult, 'Creating destination folder should succeed');
 	TrackForCleanup(DestFolder);
 
 	{Copy the file (keep same name)}
-	CopyResult := FPrimaryCloud.FileOps.CopyToPath(SourcePath, DestFolder);
+	CopyResult := FPrimaryCloud.FileOperations.CopyToPath(SourcePath, DestFolder);
 
 	Assert.AreEqual(CLOUD_OPERATION_OK, CopyResult, 'Copy should succeed');
 
@@ -337,7 +337,7 @@ begin
 
 	{Create destination folder}
 	DestFolder := UniqueCloudPath('CopyRenameDestFolder');
-	CreateDirResult := FPrimaryCloud.FileOps.CreateDirectory(DestFolder);
+	CreateDirResult := FPrimaryCloud.FileOperations.CreateDirectory(DestFolder);
 	Assert.IsTrue(CreateDirResult, 'Creating destination folder should succeed');
 	TrackForCleanup(DestFolder);
 
@@ -346,7 +346,7 @@ begin
 	TrackForCleanup(DestPath);
 
 	{Copy the file with rename}
-	CopyResult := FPrimaryCloud.FileOps.Copy(SourcePath, DestPath);
+	CopyResult := FPrimaryCloud.FileOperations.Copy(SourcePath, DestPath);
 
 	Assert.AreEqual(CLOUD_OPERATION_OK, CopyResult, 'Copy with rename should succeed');
 

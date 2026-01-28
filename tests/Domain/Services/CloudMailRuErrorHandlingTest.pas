@@ -274,7 +274,7 @@ begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetDefaultResponse(False, '', FS_FILE_READERROR);
 
-	var Success := FCloud.FileOps.CreateDirectory('/NewFolder');
+	var Success := FCloud.FileOperations.CreateDirectory('/NewFolder');
 
 	Assert.IsFalse(Success, 'CreateDir should return False on HTTP failure');
 end;
@@ -284,7 +284,7 @@ begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetDefaultResponse(False, '', FS_FILE_READERROR);
 
-	var Success := FCloud.FileOps.Delete('/file.txt');
+	var Success := FCloud.FileOperations.Delete('/file.txt');
 
 	Assert.IsFalse(Success, 'DeleteFile should return False on HTTP failure');
 end;
@@ -294,7 +294,7 @@ begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetDefaultResponse(False, '', FS_FILE_READERROR);
 
-	var Result := FCloud.FileOps.CopyToPath('/source.txt', '/dest');
+	var Result := FCloud.FileOperations.CopyToPath('/source.txt', '/dest');
 
 	Assert.AreNotEqual(FS_FILE_OK, Result, 'CopyFile should return error on HTTP failure');
 end;
@@ -318,7 +318,7 @@ begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_FOLDER_ADD, True, JSON_INVALID);
 
-	var Success := FCloud.FileOps.CreateDirectory('/NewFolder');
+	var Success := FCloud.FileOperations.CreateDirectory('/NewFolder');
 
 	Assert.IsFalse(Success, 'CreateDir should return False on invalid JSON');
 end;
@@ -342,7 +342,7 @@ begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_FILE_COPY, True, JSON_ERROR_OVERQUOTA);
 
-	var Result := FCloud.FileOps.CopyToPath('/source.txt', '/dest');
+	var Result := FCloud.FileOperations.CopyToPath('/source.txt', '/dest');
 
 	Assert.AreEqual(FS_FILE_WRITEERROR, Result, 'CopyFile should return FS_FILE_WRITEERROR on overquota');
 end;
@@ -352,7 +352,7 @@ begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_FILE_COPY, True, JSON_ERROR_NAME_TOO_LONG);
 
-	var Result := FCloud.FileOps.CopyToPath('/source.txt', '/dest');
+	var Result := FCloud.FileOperations.CopyToPath('/source.txt', '/dest');
 
 	Assert.AreEqual(FS_FILE_WRITEERROR, Result, 'CopyFile should return FS_FILE_WRITEERROR on name too long');
 end;
@@ -362,7 +362,7 @@ begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_FOLDER_ADD, True, JSON_ERROR_EXISTS);
 
-	var Success := FCloud.FileOps.CreateDirectory('/ExistingFolder');
+	var Success := FCloud.FileOperations.CreateDirectory('/ExistingFolder');
 
 	Assert.IsFalse(Success, 'CreateDir should return False when folder already exists');
 end;
@@ -372,7 +372,7 @@ begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_FILE_REMOVE, True, JSON_ERROR_NOT_EXISTS);
 
-	var Success := FCloud.FileOps.Delete('/nonexistent.txt');
+	var Success := FCloud.FileOperations.Delete('/nonexistent.txt');
 
 	Assert.IsFalse(Success, 'DeleteFile should return False when file does not exist');
 end;
@@ -382,7 +382,7 @@ begin
 	FCloud := CreateCloud;
 	FMockHTTP.SetResponse(API_FILE_RENAME, True, JSON_ERROR_READONLY);
 
-	var Result := FCloud.FileOps.Rename('/readonly.txt', 'newname.txt');
+	var Result := FCloud.FileOperations.Rename('/readonly.txt', 'newname.txt');
 
 	Assert.AreEqual(FS_FILE_WRITEERROR, Result, 'RenameFile should return FS_FILE_WRITEERROR on readonly');
 end;

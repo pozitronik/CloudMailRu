@@ -145,7 +145,7 @@ begin
 	Assert.IsTrue(FPrimaryCloud.Login, 'Primary account login failed');
 
 	{Create test run folder in cloud}
-	if not FPrimaryCloud.FileOps.CreateDirectory(FTestRunFolder) then
+	if not FPrimaryCloud.FileOperations.CreateDirectory(FTestRunFolder) then
 		Assert.Fail('Failed to create test run folder: ' + FTestRunFolder);
 end;
 
@@ -155,7 +155,7 @@ begin
 	if FConfig.CleanupAfterTests and Assigned(FPrimaryCloud) then
 	begin
 		{Delete the entire test run folder}
-		FPrimaryCloud.FileOps.RemoveDirectory(FTestRunFolder);
+		FPrimaryCloud.FileOperations.RemoveDirectory(FTestRunFolder);
 	end;
 
 	FreeAndNil(FPrimaryCloud);
@@ -351,11 +351,11 @@ end;
 function TIntegrationTestBase.SafeDeleteCloudItem(Cloud: TCloudMailRu; const Path: WideString): Boolean;
 begin
 	{Try to delete as file first, then as directory}
-	if Cloud.FileOps.Delete(Path) then
+	if Cloud.FileOperations.Delete(Path) then
 		Exit(True);
 
 	{If file delete failed, try directory delete}
-	Result := Cloud.FileOps.RemoveDirectory(Path);
+	Result := Cloud.FileOperations.RemoveDirectory(Path);
 end;
 
 procedure TIntegrationTestBase.RequireSecondaryAccount;
