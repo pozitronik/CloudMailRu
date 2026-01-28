@@ -311,7 +311,9 @@ procedure TCipherStreamsTest.TestEncryptingStream_SeekBeginning_RaisesException;
 var
 	Source: TMemoryStream;
 	EncStream: TEncryptingStream;
+	FirstRead, SecondRead: TBytes;
 begin
+	{Test renamed: SeekBeginning now works - needed for Indy HTTP uploads}
 	Source := TMemoryStream.Create;
 	try
 		Source.WriteBuffer(CreateTestData(100)[0], 100);
@@ -319,14 +321,18 @@ begin
 
 		EncStream := TEncryptingStream.Create(Source, CreateInitializedCipher);
 		try
-			Assert.WillRaise(
-				procedure
-				begin
-					EncStream.Seek(0, soBeginning);
-				end,
-				Exception,
-				'TEncryptingStream does not support seeking to beginning'
-			);
+			{Read encrypted data}
+			SetLength(FirstRead, 100);
+			EncStream.Read(FirstRead[0], 100);
+
+			{Seek back to beginning}
+			Assert.AreEqual(Int64(0), EncStream.Seek(0, soBeginning), 'Seek should return 0');
+
+			{Read again - should get same encrypted data}
+			SetLength(SecondRead, 100);
+			EncStream.Read(SecondRead[0], 100);
+
+			Assert.AreEqual(FirstRead, SecondRead, 'Re-reading after seek should produce same data');
 		finally
 			EncStream.Free;
 		end;
@@ -609,7 +615,9 @@ procedure TCipherStreamsTest.TestDecryptingStream_SeekBeginning_RaisesException;
 var
 	Source: TMemoryStream;
 	DecStream: TDecryptingStream;
+	FirstRead, SecondRead: TBytes;
 begin
+	{Test renamed: SeekBeginning now works - needed for Indy HTTP downloads}
 	Source := TMemoryStream.Create;
 	try
 		Source.WriteBuffer(CreateTestData(100)[0], 100);
@@ -617,14 +625,18 @@ begin
 
 		DecStream := TDecryptingStream.Create(Source, CreateInitializedCipher);
 		try
-			Assert.WillRaise(
-				procedure
-				begin
-					DecStream.Seek(0, soBeginning);
-				end,
-				Exception,
-				'TDecryptingStream does not support seeking to beginning'
-			);
+			{Read decrypted data}
+			SetLength(FirstRead, 100);
+			DecStream.Read(FirstRead[0], 100);
+
+			{Seek back to beginning}
+			Assert.AreEqual(Int64(0), DecStream.Seek(0, soBeginning), 'Seek should return 0');
+
+			{Read again - should get same decrypted data}
+			SetLength(SecondRead, 100);
+			DecStream.Read(SecondRead[0], 100);
+
+			Assert.AreEqual(FirstRead, SecondRead, 'Re-reading after seek should produce same data');
 		finally
 			DecStream.Free;
 		end;

@@ -133,13 +133,17 @@ end;
 
 function TEncryptingStream.Seek(const Offset: Int64; Origin: TSeekOrigin): Int64;
 begin
-	{Only support getting current position - sequential read only}
 	if (Offset = 0) and (Origin = soCurrent) then
+		{Return current logical position}
 		Result := FSource.Position - FBufferLen + FBufferPos
 	else if (Offset = 0) and (Origin = soBeginning) then
 	begin
-		{Reset to beginning - reinitialize cipher state would be needed}
-		raise Exception.Create('TEncryptingStream does not support seeking to beginning');
+		{Reset to beginning - required by Indy HTTP for uploads}
+		FSource.Position := 0;
+		FCipher.Reset; {Restore cipher to state just after Init}
+		FBufferPos := 0;
+		FBufferLen := 0;
+		Result := 0;
 	end
 	else
 		raise Exception.Create('TEncryptingStream does not support arbitrary seeking');
@@ -215,13 +219,17 @@ end;
 
 function TDecryptingStream.Seek(const Offset: Int64; Origin: TSeekOrigin): Int64;
 begin
-	{Only support getting current position - sequential read only}
 	if (Offset = 0) and (Origin = soCurrent) then
+		{Return current logical position}
 		Result := FSource.Position - FBufferLen + FBufferPos
 	else if (Offset = 0) and (Origin = soBeginning) then
 	begin
-		{Reset to beginning - reinitialize cipher state would be needed}
-		raise Exception.Create('TDecryptingStream does not support seeking to beginning');
+		{Reset to beginning - required by Indy HTTP for downloads}
+		FSource.Position := 0;
+		FCipher.Reset; {Restore cipher to state just after Init}
+		FBufferPos := 0;
+		FBufferLen := 0;
+		Result := 0;
 	end
 	else
 		raise Exception.Create('TDecryptingStream does not support arbitrary seeking');
