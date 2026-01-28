@@ -158,7 +158,8 @@ begin
 	{Create CloudSettings using factory method - combines plugin settings with account settings}
 	CloudSettings := TCloudSettings.CreateFromSettings(FPluginSettingsManager.GetSettings, FAccountsManager.GetAccountSettings(ConnectionName));
 
-	if not CloudSettings.AccountSettings.PublicAccount and (not FAccountCredentialsProvider.GetPassword(ConnectionName, CloudSettings.AccountSettings) or not GetFilesPassword(ConnectionName, CloudSettings) or not GetProxyPassword) then
+	{For non-public accounts, get files and proxy passwords. Account password is retrieved by TCloudMailRu.Authorize()}
+	if not CloudSettings.AccountSettings.PublicAccount and (not GetFilesPassword(ConnectionName, CloudSettings) or not GetProxyPassword) then
 		exit(CLOUD_OPERATION_ERROR_STATUS_UNKNOWN); //INVALID_HANDLE_VALUE
 
 	FLogger.Log(LOG_LEVEL_CONNECT, MSGTYPE_CONNECT, 'CONNECT \%s', [ConnectionName]);
@@ -180,9 +181,9 @@ begin
 	{Create appropriate auth strategy via factory - enables DI and testability}
 	AuthStrategy := FAuthStrategyFactory.CreateDefaultStrategy;
 
-	Cloud := TCloudMailRu.Create(CloudSettings, FHTTPManager, function: TThreadID begin Result := GetCurrentThreadID; end, AuthStrategy, FFileSystem, FLogger, FProgress, FRequest, FTCHandler, Cipher, FOpenSSLProvider);
+	Cloud := TCloudMailRu.Create(CloudSettings, FHTTPManager, function: TThreadID begin Result := GetCurrentThreadID; end, AuthStrategy, FFileSystem, FLogger, FProgress, FRequest, FTCHandler, Cipher, FOpenSSLProvider, FAccountCredentialsProvider);
 
-	if not Cloud.Login then
+	if not Cloud.Authorize then
 	begin
 		Result := CLOUD_OPERATION_FAILED;
 		Cloud.Free;

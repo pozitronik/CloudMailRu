@@ -52,7 +52,8 @@ uses
 	TCRequest,
 	TCHandler,
 	HTTPManager,
-	OpenSSLProvider;
+	OpenSSLProvider,
+	AccountCredentialsProvider;
 
 {TPublicCloudFactory - default implementation}
 
@@ -85,8 +86,9 @@ begin
 		TNullRequest.Create,
 		TNullTCHandler.Create,
 		TNullCipher.Create,
-		TNullOpenSSLProvider.Create);
-	Result := TempCloud.Login;
+		TNullOpenSSLProvider.Create,
+		TNullAccountCredentialsProvider.Create);
+	Result := TempCloud.Authorize;
 end;
 
 end.

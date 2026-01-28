@@ -26,6 +26,7 @@ uses
 	MockHTTPManager,
 	ListingItemFetcher,
 	OpenSSLProvider,
+	AccountCredentialsProvider,
 	TestHelper;
 
 type
@@ -168,7 +169,8 @@ begin
 		TNullRequest.Create,
 		TNullTCHandler.Create,
 		TNullCipher.Create,
-		TNullOpenSSLProvider.Create);
+		TNullOpenSSLProvider.Create,
+		TNullAccountCredentialsProvider.Create);
 end;
 
 procedure TListingItemFetcherTest.Setup;

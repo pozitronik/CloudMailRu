@@ -41,7 +41,8 @@ uses
 	CloudFileOperations,
 	CloudAuthorizationState,
 	OpenSSLProvider,
-	CloudCallbackTypes;
+	CloudCallbackTypes,
+	AccountCredentialsProvider;
 
 type
 	TCloudMailRu = class(TInterfacedObject)
@@ -63,6 +64,7 @@ type
 		FCipher: ICipher; {The encryption instance}
 		FAuthStrategy: IAuthStrategy; {Authentication strategy}
 		FFileSystem: IFileSystem; {File system abstraction for testability}
+		FAccountCredentialsProvider: IAccountCredentialsProvider; {Account password retrieval service}
 		FRetryOperation: IRetryOperation; {Token refresh retry handler}
 		FHashCalculator: ICloudHashCalculator; {Cloud hash calculation service}
 		FDownloader: ICloudFileDownloader; {File download service}
@@ -132,7 +134,7 @@ type
 		function CloudResultToBoolean(CloudResult: TCloudOperationResult; ErrorPrefix: WideString = ''): Boolean; overload;
 		function CloudResultToBoolean(JSON: WideString; ErrorPrefix: WideString = ''): Boolean; overload;
 		{CONSTRUCTOR/DESTRUCTOR}
-		constructor Create(CloudSettings: TCloudSettings; ConnectionManager: IHTTPManager; GetThreadID: TGetThreadIDFunc; AuthStrategy: IAuthStrategy; FileSystem: IFileSystem; Logger: ILogger; Progress: IProgress; Request: IRequest; TCHandler: ITCHandler; Cipher: ICipher; OpenSSLProvider: IOpenSSLProvider);
+		constructor Create(CloudSettings: TCloudSettings; ConnectionManager: IHTTPManager; GetThreadID: TGetThreadIDFunc; AuthStrategy: IAuthStrategy; FileSystem: IFileSystem; Logger: ILogger; Progress: IProgress; Request: IRequest; TCHandler: ITCHandler; Cipher: ICipher; OpenSSLProvider: IOpenSSLProvider; AccountCredentialsProvider: IAccountCredentialsProvider);
 		destructor Destroy; override;
 		{CLOUD INTERFACE METHODS}
 		function Login: Boolean;
@@ -171,7 +173,7 @@ begin
 	Result := TCloudErrorMapper.ToFsResult(CloudResult, FLogger, ErrorPrefix);
 end;
 
-constructor TCloudMailRu.Create(CloudSettings: TCloudSettings; ConnectionManager: IHTTPManager; GetThreadID: TGetThreadIDFunc; AuthStrategy: IAuthStrategy; FileSystem: IFileSystem; Logger: ILogger; Progress: IProgress; Request: IRequest; TCHandler: ITCHandler; Cipher: ICipher; OpenSSLProvider: IOpenSSLProvider);
+constructor TCloudMailRu.Create(CloudSettings: TCloudSettings; ConnectionManager: IHTTPManager; GetThreadID: TGetThreadIDFunc; AuthStrategy: IAuthStrategy; FileSystem: IFileSystem; Logger: ILogger; Progress: IProgress; Request: IRequest; TCHandler: ITCHandler; Cipher: ICipher; OpenSSLProvider: IOpenSSLProvider; AccountCredentialsProvider: IAccountCredentialsProvider);
 var
 	IsPublicAccountCallback: TGetBoolFunc;
 	GetUnitedParamsCallback: TGetStringFunc;
@@ -185,6 +187,7 @@ begin
 		FGetThreadID := GetThreadID;
 		FAuthStrategy := AuthStrategy;
 		FFileSystem := FileSystem;
+		FAccountCredentialsProvider := AccountCredentialsProvider;
 
 		FProgress := Progress;
 		FLogger := Logger;
@@ -501,6 +504,17 @@ begin
 
 	FAuthorizationState := asAuthorizing;
 	FAuthorizationError := TAuthorizationError.Empty;
+
+	{For non-public accounts, retrieve password via provider before login}
+	if not IsPublicAccount then
+	begin
+		if not FAccountCredentialsProvider.GetPassword(FSettings.AccountSettings.Account, FSettings.AccountSettings) then
+		begin
+			FAuthorizationState := asFailed;
+			FAuthorizationError := TAuthorizationError.Create(aecAuthFailed, ERR_PASSWORD_CANCELLED);
+			Exit(false);
+		end;
+	end;
 
 	Result := Login;
 

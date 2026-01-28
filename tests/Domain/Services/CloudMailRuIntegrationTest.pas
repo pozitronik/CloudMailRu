@@ -30,7 +30,8 @@ uses
 	System.Classes,
 	System.SysUtils,
 	DUnitX.TestFramework,
-	OpenSSLProvider;
+	OpenSSLProvider,
+	AccountCredentialsProvider;
 
 type
 	[TestFixture]
@@ -181,7 +182,8 @@ begin
 		TNullRequest.Create,
 		TNullTCHandler.Create,
 		TNullCipher.Create,
-		TNullOpenSSLProvider.Create);
+		TNullOpenSSLProvider.Create,
+		TNullAccountCredentialsProvider.Create);
 end;
 
 {CreateDir integration tests}

@@ -64,6 +64,7 @@ uses
 	TCRequest,
 	TCHandler,
 	OpenSSLProvider,
+	AccountCredentialsProvider,
 	TestHelper;
 
 type
@@ -179,7 +180,7 @@ begin
 	{Need to configure a cloud instance since BuildContext accesses it for IsPublicAccount}
 	Settings := Default(TCloudSettings);
 	MockCloud := TCloudMailRu.Create(Settings, TNullHTTPManager.Create, TestThreadID(), TNullAuthStrategy.Create,
-		TNullFileSystem.Create, TNullLogger.Create, TNullProgress.Create, TNullRequest.Create, TNullTCHandler.Create, TNullCipher.Create, TNullOpenSSLProvider.Create);
+		TNullFileSystem.Create, TNullLogger.Create, TNullProgress.Create, TNullRequest.Create, TNullTCHandler.Create, TNullCipher.Create, TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create);
 	try
 		FMockConnectionManager.SetCloud('account', MockCloud);
 

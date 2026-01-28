@@ -28,6 +28,7 @@ uses
 	TCRequest,
 	TCHandler,
 	OpenSSLProvider,
+	AccountCredentialsProvider,
 	StreamingSettings,
 	TestHelper;
 
@@ -331,7 +332,8 @@ begin
 		TNullRequest.Create,
 		TNullTCHandler.Create,
 		TNullCipher.Create,
-		TNullOpenSSLProvider.Create);
+		TNullOpenSSLProvider.Create,
+		TNullAccountCredentialsProvider.Create);
 end;
 
 function TDownloadSuccessHandlerTest.CreateContext(const Hash, ExpectedHash: WideString; MoveFlag: Boolean): TDownloadContext;

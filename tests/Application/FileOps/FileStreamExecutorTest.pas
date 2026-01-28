@@ -31,6 +31,7 @@ uses
 	TCRequest,
 	TCHandler,
 	OpenSSLProvider,
+	AccountCredentialsProvider,
 	TestHelper;
 
 type
@@ -244,7 +245,8 @@ begin
 			TNullRequest.Create,
 			TNullTCHandler.Create,
 			TNullCipher.Create,
-			TNullOpenSSLProvider.Create);
+			TNullOpenSSLProvider.Create,
+			TNullAccountCredentialsProvider.Create);
 
 		FCreatedCloud := TempCloud;
 		Result := True;

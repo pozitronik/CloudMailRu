@@ -19,6 +19,7 @@ uses
 	SysUtils,
 	DUnitX.TestFramework,
 	OpenSSLProvider,
+	AccountCredentialsProvider,
 	TestHelper;
 
 type
@@ -110,7 +111,7 @@ procedure TCloudMailRuInstanceTest.Setup;
 begin
 	{ Create minimal TCloudMailRu instance with null implementations }
 	FSettings := Default(TCloudSettings);
-	FCloud := TCloudMailRu.Create(FSettings, TNullHTTPManager.Create, TestThreadID(), TNullAuthStrategy.Create, TNullFileSystem.Create, TNullLogger.Create, TNullProgress.Create, TNullRequest.Create, TNullTCHandler.Create, TNullCipher.Create, TNullOpenSSLProvider.Create);
+	FCloud := TCloudMailRu.Create(FSettings, TNullHTTPManager.Create, TestThreadID(), TNullAuthStrategy.Create, TNullFileSystem.Create, TNullLogger.Create, TNullProgress.Create, TNullRequest.Create, TNullTCHandler.Create, TNullCipher.Create, TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create);
 end;
 
 procedure TCloudMailRuInstanceTest.TearDown;

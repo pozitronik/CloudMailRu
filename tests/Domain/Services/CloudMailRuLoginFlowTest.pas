@@ -29,7 +29,8 @@ uses
 	TestHelper,
 	System.SysUtils,
 	DUnitX.TestFramework,
-	OpenSSLProvider;
+	OpenSSLProvider,
+	AccountCredentialsProvider;
 
 type
 	{Testable subclass exposing protected fields for verification}
@@ -161,7 +162,7 @@ begin
 		TNullProgress.Create,
 		TNullRequest.Create,
 		TNullTCHandler.Create,
-		TNullCipher.Create, TNullOpenSSLProvider.Create);
+		TNullCipher.Create, TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create);
 end;
 
 function TCloudMailRuLoginFlowTest.CreatePublicCloud(const PublicUrl: WideString): TTestableLoginCloud;
@@ -180,7 +181,7 @@ begin
 		TNullProgress.Create,
 		TNullRequest.Create,
 		TNullTCHandler.Create,
-		TNullCipher.Create, TNullOpenSSLProvider.Create);
+		TNullCipher.Create, TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create);
 end;
 
 {LoginRegular tests}
@@ -277,7 +278,7 @@ begin
 		TNullProgress.Create,
 		TNullRequest.Create,
 		TNullTCHandler.Create,
-		TNullCipher.Create, TNullOpenSSLProvider.Create);
+		TNullCipher.Create, TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create);
 
 	FMockHTTP.SetResponse(API_USER_SPACE, True, JSON_USER_SPACE);
 

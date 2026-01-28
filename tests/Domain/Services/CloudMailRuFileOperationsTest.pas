@@ -24,7 +24,8 @@ uses
 	TestHelper,
 	System.SysUtils,
 	DUnitX.TestFramework,
-	OpenSSLProvider;
+	OpenSSLProvider,
+	AccountCredentialsProvider;
 
 type
 	{Testable subclass that exposes protected members for testing}
@@ -175,7 +176,7 @@ begin
 		TNullProgress.Create,
 		TNullRequest.Create,
 		TNullTCHandler.Create,
-		TNullCipher.Create, TNullOpenSSLProvider.Create);
+		TNullCipher.Create, TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create);
 
 	Result.SetUnitedParams('api=2&access_token=test_token');
 end;

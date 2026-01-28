@@ -35,6 +35,7 @@ const
 	EMPTY = 'Empty';
 	ERR_ACCOUNT_HAS_INVALID_SYMBOL = 'File name must contain only valid symbols';
 	ERR_AUTH_FAILURE = 'Authorization failed';
+	ERR_PASSWORD_CANCELLED = 'Password entry cancelled';
 	ERR_CLONE_BY_HASH = 'Error clone by hash: %s, parameter: %s';
 	ERR_CLONE_FILE_ASK = 'File cloning error: %s' + SLineBreak + CONTINUE_ASK;
 	ERR_CLOUD_ERROR_BAD_REQUEST = 'Request to the server failed.';
