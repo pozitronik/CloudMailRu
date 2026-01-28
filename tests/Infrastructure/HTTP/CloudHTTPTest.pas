@@ -90,6 +90,14 @@ type
 		{GetHTTP tests}
 		[Test]
 		procedure TestGetHTTP_ReturnsNil;
+
+		{SetCSRFToken tests}
+		[Test]
+		procedure TestSetCSRFToken_DoesNotRaiseException;
+
+		{SetProgress tests}
+		[Test]
+		procedure TestSetProgress_DoesNotRaiseException;
 	end;
 
 	[TestFixture]
@@ -196,6 +204,55 @@ type
 		{Generic exception handling}
 		[Test]
 		procedure TestExceptionHandler_GenericException_ReturnsError;
+
+		{Token outdated handling}
+		[Test]
+		procedure TestExceptionHandler_TokenOutdated_ReturnsTokenOutdatedError;
+
+		{Logging tests}
+		[Test]
+		procedure TestExceptionHandler_WithLogging_LogsHTTPProtocolException;
+		[Test]
+		procedure TestExceptionHandler_WithLogging_LogsSocketError;
+		[Test]
+		procedure TestExceptionHandler_WithLogging_LogsGenericException;
+	end;
+
+	[TestFixture]
+	TCloudMailRuHTTPCSRFTokenTest = class
+	private
+		FHTTP: TCloudMailRuHTTP;
+		FHTTPInterface: ICloudHTTP;
+		FSettings: TConnectionSettings;
+	public
+		[Setup]
+		procedure Setup;
+		[TearDown]
+		procedure TearDown;
+
+		[Test]
+		procedure TestSetCSRFToken_SetsCustomHeader;
+		[Test]
+		procedure TestSetCSRFToken_EmptyToken_ClearsHeader;
+		[Test]
+		procedure TestSetCSRFToken_OverwritesPreviousToken;
+	end;
+
+	[TestFixture]
+	TCloudMailRuHTTPSetProgressTest = class
+	private
+		FHTTP: TCloudMailRuHTTP;
+		FSettings: TConnectionSettings;
+	public
+		[Setup]
+		procedure Setup;
+		[TearDown]
+		procedure TearDown;
+
+		[Test]
+		procedure TestSetProgress_DoesNotRaise;
+		[Test]
+		procedure TestSetProgress_AcceptsNullProgress;
 	end;
 
 implementation
@@ -203,7 +260,44 @@ implementation
 uses
 	IdException,
 	IdExceptionCore,
-	IdStack;
+	IdStack,
+	IdHTTPHeaderInfo;
+
+type
+	{Mock logger that tracks log calls}
+	TMockLoggerForHTTP = class(TInterfacedObject, ILogger)
+	private
+		FLogCalled: Boolean;
+		FLastLogLevel: Integer;
+		FLastMessage: WideString;
+	public
+		constructor Create;
+		procedure Log(LogLevel, MsgType: Integer; LogString: WideString); overload;
+		procedure Log(LogLevel, MsgType: Integer; LogString: WideString; const Args: array of const); overload;
+		property LogCalled: Boolean read FLogCalled;
+		property LastLogLevel: Integer read FLastLogLevel;
+		property LastMessage: WideString read FLastMessage;
+	end;
+
+constructor TMockLoggerForHTTP.Create;
+begin
+	inherited Create;
+	FLogCalled := False;
+end;
+
+procedure TMockLoggerForHTTP.Log(LogLevel, MsgType: Integer; LogString: WideString);
+begin
+	FLogCalled := True;
+	FLastLogLevel := LogLevel;
+	FLastMessage := LogString;
+end;
+
+procedure TMockLoggerForHTTP.Log(LogLevel, MsgType: Integer; LogString: WideString; const Args: array of const);
+begin
+	FLogCalled := True;
+	FLastLogLevel := LogLevel;
+	FLastMessage := LogString;
+end;
 
 {TNullCloudHTTPTest}
 
@@ -415,6 +509,20 @@ end;
 procedure TNullCloudHTTPTest.TestGetHTTP_ReturnsNil;
 begin
 	Assert.IsNull(FHTTP.GetHTTP);
+end;
+
+procedure TNullCloudHTTPTest.TestSetCSRFToken_DoesNotRaiseException;
+begin
+	{Should not raise}
+	FHTTP.SetCSRFToken('test-token-123');
+	Assert.Pass;
+end;
+
+procedure TNullCloudHTTPTest.TestSetProgress_DoesNotRaiseException;
+begin
+	{Should not raise}
+	FHTTP.SetProgress(TNullProgress.Create);
+	Assert.Pass;
 end;
 
 {TCloudMailRuHTTPConstructorTest}
@@ -766,7 +874,151 @@ begin
 	end;
 end;
 
+procedure TCloudMailRuHTTPExceptionHandlerTest.TestExceptionHandler_TokenOutdated_ReturnsTokenOutdatedError;
+var
+	E: EIdHTTPProtocolException;
+begin
+	{Token outdated is detected by checking if body equals "token"}
+	E := EIdHTTPProtocolException.CreateError(403, 'Forbidden', '{"body":"token"}');
+	try
+		Assert.AreEqual(CLOUD_ERROR_TOKEN_OUTDATED, FHTTP.ExceptionHandler(E, 'http://test.com', HTTP_METHOD_POST, False));
+	finally
+		E.Free;
+	end;
+end;
+
+procedure TCloudMailRuHTTPExceptionHandlerTest.TestExceptionHandler_WithLogging_LogsHTTPProtocolException;
+var
+	E: EIdHTTPProtocolException;
+	MockLogger: TMockLoggerForHTTP;
+	HTTP: TCloudMailRuHTTP;
+begin
+	MockLogger := TMockLoggerForHTTP.Create;
+	HTTP := TCloudMailRuHTTP.Create(FSettings, MockLogger, TNullProgress.Create);
+	try
+		E := EIdHTTPProtocolException.CreateError(500, 'Internal Server Error', 'Server error details');
+		try
+			HTTP.ExceptionHandler(E, 'http://test.com', HTTP_METHOD_POST, True);
+			Assert.IsTrue(MockLogger.LogCalled, 'Logger should be called for HTTP protocol exception');
+		finally
+			E.Free;
+		end;
+	finally
+		HTTP.Free;
+	end;
+end;
+
+procedure TCloudMailRuHTTPExceptionHandlerTest.TestExceptionHandler_WithLogging_LogsSocketError;
+var
+	E: EIdSocketError;
+	MockLogger: TMockLoggerForHTTP;
+	HTTP: TCloudMailRuHTTP;
+begin
+	MockLogger := TMockLoggerForHTTP.Create;
+	HTTP := TCloudMailRuHTTP.Create(FSettings, MockLogger, TNullProgress.Create);
+	try
+		E := EIdSocketError.Create('Connection refused');
+		try
+			HTTP.ExceptionHandler(E, 'http://test.com', HTTP_METHOD_GET, True);
+			Assert.IsTrue(MockLogger.LogCalled, 'Logger should be called for socket error');
+		finally
+			E.Free;
+		end;
+	finally
+		HTTP.Free;
+	end;
+end;
+
+procedure TCloudMailRuHTTPExceptionHandlerTest.TestExceptionHandler_WithLogging_LogsGenericException;
+var
+	E: Exception;
+	MockLogger: TMockLoggerForHTTP;
+	HTTP: TCloudMailRuHTTP;
+begin
+	MockLogger := TMockLoggerForHTTP.Create;
+	HTTP := TCloudMailRuHTTP.Create(FSettings, MockLogger, TNullProgress.Create);
+	try
+		E := Exception.Create('Something went wrong');
+		try
+			HTTP.ExceptionHandler(E, 'http://test.com', HTTP_METHOD_POST, True);
+			Assert.IsTrue(MockLogger.LogCalled, 'Logger should be called for generic exception');
+		finally
+			E.Free;
+		end;
+	finally
+		HTTP.Free;
+	end;
+end;
+
+{TCloudMailRuHTTPCSRFTokenTest}
+
+procedure TCloudMailRuHTTPCSRFTokenTest.Setup;
+begin
+	FSettings := Default(TConnectionSettings);
+	FHTTP := TCloudMailRuHTTP.Create(FSettings, TNullLogger.Create, TNullProgress.Create);
+	FHTTPInterface := FHTTP;
+end;
+
+procedure TCloudMailRuHTTPCSRFTokenTest.TearDown;
+begin
+	FHTTPInterface := nil;
+	{FHTTP is freed via interface release}
+end;
+
+procedure TCloudMailRuHTTPCSRFTokenTest.TestSetCSRFToken_SetsCustomHeader;
+begin
+	FHTTPInterface.SetCSRFToken('my-csrf-token-123');
+	Assert.AreEqual('my-csrf-token-123', FHTTP.HTTP.Request.CustomHeaders.Values['X-CSRF-Token']);
+end;
+
+procedure TCloudMailRuHTTPCSRFTokenTest.TestSetCSRFToken_EmptyToken_ClearsHeader;
+begin
+	FHTTPInterface.SetCSRFToken('initial-token');
+	FHTTPInterface.SetCSRFToken('');
+	Assert.AreEqual('', FHTTP.HTTP.Request.CustomHeaders.Values['X-CSRF-Token']);
+end;
+
+procedure TCloudMailRuHTTPCSRFTokenTest.TestSetCSRFToken_OverwritesPreviousToken;
+begin
+	FHTTPInterface.SetCSRFToken('first-token');
+	FHTTPInterface.SetCSRFToken('second-token');
+	Assert.AreEqual('second-token', FHTTP.HTTP.Request.CustomHeaders.Values['X-CSRF-Token']);
+end;
+
+{TCloudMailRuHTTPSetProgressTest}
+
+procedure TCloudMailRuHTTPSetProgressTest.Setup;
+begin
+	FSettings := Default(TConnectionSettings);
+	FHTTP := TCloudMailRuHTTP.Create(FSettings, TNullLogger.Create, TNullProgress.Create);
+end;
+
+procedure TCloudMailRuHTTPSetProgressTest.TearDown;
+begin
+	FHTTP.Free;
+end;
+
+procedure TCloudMailRuHTTPSetProgressTest.TestSetProgress_DoesNotRaise;
+begin
+	FHTTP.SetProgress(TNullProgress.Create);
+	Assert.Pass;
+end;
+
+procedure TCloudMailRuHTTPSetProgressTest.TestSetProgress_AcceptsNullProgress;
+begin
+	{SetProgress should accept any IProgress including another null}
+	FHTTP.SetProgress(TNullProgress.Create);
+	FHTTP.SetProgress(TNullProgress.Create);
+	Assert.Pass;
+end;
+
 initialization
+	TDUnitX.RegisterTestFixture(TNullCloudHTTPTest);
+	TDUnitX.RegisterTestFixture(TCloudMailRuHTTPConstructorTest);
+	TDUnitX.RegisterTestFixture(TCloudMailRuHTTPSetterTest);
+	TDUnitX.RegisterTestFixture(TCloudMailRuHTTPExceptionHandlerTest);
+	TDUnitX.RegisterTestFixture(TCloudMailRuHTTPCSRFTokenTest);
+	TDUnitX.RegisterTestFixture(TCloudMailRuHTTPSetProgressTest);
 	TDUnitX.RegisterTestFixture(TNullCloudHTTPTest);
 	TDUnitX.RegisterTestFixture(TCloudMailRuHTTPConstructorTest);
 	TDUnitX.RegisterTestFixture(TCloudMailRuHTTPSetterTest);
