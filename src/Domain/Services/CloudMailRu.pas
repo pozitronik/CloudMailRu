@@ -388,8 +388,6 @@ end;
 
 destructor TCloudMailRu.Destroy;
 begin
-	//HTTP.Destroy;
-
 	FCookieManager.Free;
 
 	FRetryOperation := nil; {Release interface reference}
