@@ -218,7 +218,6 @@
         <DCCReference Include="src\Domain\Services\CloudAuthorizationState.pas"/>
         <DCCReference Include="src\Domain\Services\CloudMailRu.pas"/>
         <DCCReference Include="src\Domain\Services\CloudMailRuFactory.pas"/>
-        <DCCReference Include="src\Domain\Services\CloudMailRuInterface.pas"/>
         <DCCReference Include="src\Infrastructure\HTTP\CloudHTTP.pas"/>
         <DCCReference Include="src\Infrastructure\Settings\CloudSettings.pas"/>
         <DCCReference Include="src\Infrastructure\Services\ConnectionManager.pas"/>

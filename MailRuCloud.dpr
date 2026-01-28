@@ -28,7 +28,6 @@ uses
 	CloudAuthorizationState in 'src\Domain\Services\CloudAuthorizationState.pas',
 	CloudMailRu in 'src\Domain\Services\CloudMailRu.pas',
 	CloudMailRuFactory in 'src\Domain\Services\CloudMailRuFactory.pas',
-	CloudMailRuInterface in 'src\Domain\Services\CloudMailRuInterface.pas',
 	CloudHTTP in 'src\Infrastructure\HTTP\CloudHTTP.pas',
 	CloudSettings in 'src\Infrastructure\Settings\CloudSettings.pas',
 	ConnectionManager in 'src\Infrastructure\Services\ConnectionManager.pas',

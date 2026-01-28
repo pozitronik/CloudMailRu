@@ -109,7 +109,6 @@ uses
 	CloudAuthorizationState in '..\src\Domain\Services\CloudAuthorizationState.pas',
 	CloudMailRu in '..\src\Domain\Services\CloudMailRu.pas',
 	CloudMailRuFactory in '..\src\Domain\Services\CloudMailRuFactory.pas',
-	CloudMailRuInterface in '..\src\Domain\Services\CloudMailRuInterface.pas',
 	CloudFileIdentity in '..\src\Domain\ValueObjects\CloudFileIdentity.pas',
 	CloudIncomingInviteList in '..\src\Domain\ValueObjects\CloudIncomingInviteList.pas',
 	CloudInviteList in '..\src\Domain\ValueObjects\CloudInviteList.pas',
