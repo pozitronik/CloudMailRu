@@ -12,6 +12,7 @@ uses
 	CloudDirItemList,
 	CloudIncomingInviteList,
 	CloudConstants,
+	CloudAuthorizationState,
 	WindowsHelper,
 	ConnectionManager,
 	ListingProvider,
@@ -102,6 +103,14 @@ begin
 		Result.ErrorCode := ERROR_PATH_NOT_FOUND;
 		Exit;
 	end;
+
+	{Ensure cloud is authorized before fetching listing}
+	if CurrentCloud.AuthorizationState <> asAuthorized then
+		if not CurrentCloud.Authorize then
+		begin
+			Result.ErrorCode := ERROR_ACCESS_DENIED;
+			Exit;
+		end;
 
 	{Fetch listing from cloud}
 	if not FListingProvider.FetchListing(CurrentCloud, Result.RealPath, Result.Listing, Result.IncomingInvites) then

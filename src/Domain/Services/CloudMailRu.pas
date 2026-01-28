@@ -91,6 +91,8 @@ type
 		FOAuthToken: TCloudOAuth; {OAuth token data}
 		{HTTP REQUESTS WRAPPERS - protected for testability}
 		function GetUserSpace(var SpaceInfo: TCloudSpace): Boolean;
+		{Protected for testability - allows tests to set authorization state}
+		procedure SetAuthorizationState(State: TAuthorizationState);
 		{Those properties are simple shortcuts to settings fields}
 		property Password: WideString read FSettings.AccountSettings.Password;
 		property Email: WideString read FSettings.AccountSettings.Email;
@@ -525,6 +527,11 @@ begin
 		FAuthorizationState := asFailed;
 		FAuthorizationError := TAuthorizationError.Create(aecAuthFailed, ERR_AUTH_FAILURE);
 	end;
+end;
+
+procedure TCloudMailRu.SetAuthorizationState(State: TAuthorizationState);
+begin
+	FAuthorizationState := State;
 end;
 
 procedure TCloudMailRu.InvalidateAuthorization;

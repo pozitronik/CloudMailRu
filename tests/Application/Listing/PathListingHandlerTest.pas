@@ -17,6 +17,7 @@ uses
 	MockHTTPManager,
 	CloudMailRu,
 	CloudSettings,
+	CloudAuthorizationState,
 	FileCipher,
 	RealPath,
 	CloudDirItem,
@@ -65,6 +66,7 @@ type
 	TTestableCloudMailRu = class(TCloudMailRu)
 	public
 		procedure SetUnitedParams(const Value: WideString);
+		procedure SetAuthorized;
 	end;
 
 	[TestFixture]
@@ -170,6 +172,11 @@ begin
 	FUnitedParams := Value;
 end;
 
+procedure TTestableCloudMailRu.SetAuthorized;
+begin
+	SetAuthorizationState(asAuthorized);
+end;
+
 {TPathListingHandlerTest}
 
 procedure TPathListingHandlerTest.Setup;
@@ -217,6 +224,7 @@ begin
 		TNullTCHandler.Create,
 		TNullCipher.Create, TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create);
 	Result.SetUnitedParams('api=2&access_token=test_token');
+	Result.SetAuthorized; {Set cloud as authorized for testing}
 end;
 
 procedure TPathListingHandlerTest.SetupHandler(const Items: TCloudDirItemList; FetchSuccess: Boolean;

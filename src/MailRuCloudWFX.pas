@@ -95,7 +95,8 @@ uses
 	DownloadOrchestrator,
 	CloudMailRuFactory,
 	OpenSSLProvider,
-	AccountCredentialsProvider;
+	AccountCredentialsProvider,
+	CloudAuthorizationState;
 
 type
 	TWFXApplication = class(TInterfacedObject, IWFXInterface)
@@ -169,6 +170,9 @@ type
 		TCRequest: IRequest;
 		FFileSystem: IFileSystem;
 	protected
+		{Ensures cloud is authorized. Returns True if authorized, False otherwise.
+			Attempts authorization if not yet authorized. Sets LastError on failure.}
+		function EnsureAuthorized(Cloud: TCloudMailRu): Boolean;
 		function FindListingItemByPath(CurrentListing: TCloudDirItemList; Path: TRealPath; UpdateListing: Boolean = true): TCloudDirItem;
 		function FindIncomingInviteItemByPath(InviteListing: TCloudIncomingInviteList; Path: TRealPath): TCloudIncomingInvite;
 		function DeleteLocalFile(LocalName: WideString): Integer;
@@ -357,6 +361,18 @@ begin
 	Result := 0;
 end;
 
+function TWFXApplication.EnsureAuthorized(Cloud: TCloudMailRu): Boolean;
+begin
+	if Cloud.AuthorizationState = asAuthorized then
+		Exit(True);
+
+	{Attempt authorization if not yet authorized}
+	Result := Cloud.Authorize;
+
+	if not Result then
+		SetLastError(ERROR_ACCESS_DENIED);
+end;
+
 function TWFXApplication.DeleteLocalFile(LocalName: WideString): Integer;
 begin
 	Result := FLocalFileDeletionHandler.DeleteLocalFile(LocalName);
@@ -433,6 +449,8 @@ begin
 		if TAccountsForm.ShowAccounts(MainWin, PasswordManager, RealPath.account) then
 			SettingsManager.Refresh;
 	end else begin //one invite item - delegate to handler
+		if not EnsureAuthorized(Cloud) then
+			exit(FS_EXEC_ERROR);
 		CurrentInvite := FindIncomingInviteItemByPath(CurrentIncomingInvitesListing, RealPath);
 		if CurrentInvite.name = EmptyWideStr then
 			exit(FS_EXEC_ERROR);
@@ -459,6 +477,8 @@ begin
 			SettingsManager.Refresh;
 	end else begin
 		Cloud := ConnectionManager.Get(RealPath.account);
+		if not EnsureAuthorized(Cloud) then
+			exit(FS_EXEC_ERROR);
 		//всегда нужно обновлять статус на сервере, CurrentListing может быть изменён в другой панели
 		if (Cloud.ListingService.StatusFile(RealPath.Path, CurrentItem)) and (idContinue = TPropertyForm.ShowProperty(MainWin, RealPath.Path, CurrentItem, Cloud, FFileSystem, FTCHandler, SettingsManager.GetSettings.DownloadLinksEncode, SettingsManager.GetSettings.AutoUpdateDownloadListing, SettingsManager.GetSettings.DescriptionEnabled, SettingsManager.GetSettings.DescriptionEditorEnabled, SettingsManager.GetSettings.DescriptionFileName)) then
 			PostMessage(MainWin, WM_USER + TC_REFRESH_MESSAGE, TC_REFRESH_PARAM, 0); //refresh tc panel if description edited
@@ -490,6 +510,8 @@ begin
 		satPropertyDialog:
 			begin
 				Cloud := ConnectionManager.Get(RealPath.account);
+				if not EnsureAuthorized(Cloud) then
+					exit(FS_EXEC_ERROR);
 				CurrentItem := ActionResult.CurrentItem;
 				if Cloud.ListingService.StatusFile(CurrentItem.home, CurrentItem) then
 					TPropertyForm.ShowProperty(MainWin, RealPath.Path, CurrentItem, Cloud, FFileSystem, FTCHandler, SettingsManager.GetSettings.DownloadLinksEncode, SettingsManager.GetSettings.AutoUpdateDownloadListing, false, false, SettingsManager.GetSettings.DescriptionFileName);
@@ -504,6 +526,8 @@ var
 	IsTrashDir: Boolean;
 begin
 	Cloud := ConnectionManager.Get(RealPath.account);
+	if not EnsureAuthorized(Cloud) then
+		exit(FS_EXEC_ERROR);
 	IsTrashDir := RealPath.isInAccountsList;
 
 	if IsTrashDir then //main trashbin folder properties
@@ -602,6 +626,8 @@ begin
 	if RealPath.isAccountEmpty or RealPath.TrashDir or RealPath.invitesDir then
 		exit(false);
 	Cloud := ConnectionManager.Get(RealPath.account);
+	if not EnsureAuthorized(Cloud) then
+		exit(false);
 	if RealPath.sharedDir then
 	begin
 		CurrentItem := FindListingItemByPath(CurrentListing, RealPath);
@@ -799,6 +825,7 @@ function TWFXApplication.FsMkDir(Path: WideString): Boolean;
 var
 	RealPath: TRealPath;
 	SkipListRenMov: Boolean;
+	Cloud: TCloudMailRu;
 begin
 	SkipListRenMov := FThreadState.GetSkipListRenMov;
 	if SkipListRenMov then
@@ -810,7 +837,11 @@ begin
 	if (RealPath.isAccountEmpty) or RealPath.isVirtual then
 		exit(false);
 
-	Result := ConnectionManager.Get(RealPath.account).FileOperations.CreateDirectory(RealPath.Path);
+	Cloud := ConnectionManager.Get(RealPath.account);
+	if not EnsureAuthorized(Cloud) then
+		exit(false);
+
+	Result := Cloud.FileOperations.CreateDirectory(RealPath.Path);
 	{Need to check operation context => directory can be moved}
 	if Result and FMoveOperationTracker.IsMoveOperation then
 		FMoveOperationTracker.TrackMoveTarget(RealPath);
@@ -865,6 +896,8 @@ begin
 		exit(false);
 
 	Cloud := ConnectionManager.Get(RealPath.account);
+	if not EnsureAuthorized(Cloud) then
+		exit(false);
 	Result := Cloud.FileOperations.RemoveDirectory(RealPath.Path);
 
 	if Result then
@@ -894,6 +927,11 @@ begin
 
 	OldCloud := ConnectionManager.Get(OldRealPath.account);
 	NewCloud := ConnectionManager.Get(NewRealPath.account);
+
+	if not EnsureAuthorized(OldCloud) then
+		exit(FS_FILE_NOTSUPPORTED);
+	if (OldRealPath.account <> NewRealPath.account) and not EnsureAuthorized(NewCloud) then
+		exit(FS_FILE_NOTSUPPORTED);
 
 	if OldRealPath.account <> NewRealPath.account then {Cross-account operation - delegate to handler}
 		Result := FCrossAccountFileOperationHandler.Execute(OldCloud, NewCloud, OldRealPath, NewRealPath, Move, OverWrite, SettingsManager.GetSettings.CopyBetweenAccountsMode, OldCloud.IsPublicAccount,
@@ -971,6 +1009,8 @@ begin
 	else
 		resultHash := 'dummy'; {Calculations will be ignored if variable is not empty}
 	Cloud := ConnectionManager.Get(RemotePath.account);
+	if not EnsureAuthorized(Cloud) then
+		exit(FS_FILE_NOTSUPPORTED);
 
 	Result := Cloud.Downloader.Download(WideString(RemotePath.Path), LocalName, resultHash);
 
@@ -994,6 +1034,8 @@ var
 	CompletionContext: TUploadCompletionContext;
 begin
 	Cloud := ConnectionManager.Get(RemotePath.account);
+	if not EnsureAuthorized(Cloud) then
+		exit(FS_FILE_NOTSUPPORTED);
 
 	Result := Cloud.Uploader.Upload(WideString(LocalName), RemotePath.Path);
 	if Result = FS_FILE_OK then
