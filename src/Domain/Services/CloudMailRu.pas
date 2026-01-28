@@ -194,8 +194,14 @@ begin
 		FCookieManager := TIdCookieManager.Create();
 
 		{Reusable callbacks - avoid duplicating anonymous functions}
-		IsPublicAccountCallback := function: Boolean begin Result := Self.IsPublicAccount; end;
-		GetUnitedParamsCallback := function: WideString begin Result := Self.FUnitedParams; end;
+		IsPublicAccountCallback := function: Boolean
+			begin
+				Result := Self.IsPublicAccount;
+			end;
+		GetUnitedParamsCallback := function: WideString
+			begin
+				Result := Self.FUnitedParams;
+			end;
 
 		{Initialize hash calculator service using strategy from settings and centralized OpenSSL provider}
 		FHashCalculator := CreateHashCalculator(CloudSettings.HashCalculatorStrategy, Progress, FileSystem, OpenSSLProvider);
@@ -209,8 +215,7 @@ begin
 			function(const JSON, ErrorPrefix: WideString): Boolean
 			begin
 				Result := Self.CloudResultToBoolean(JSON, ErrorPrefix);
-			end,
-			GetUnitedParamsCallback, FSettings.AccountSettings.ShardOverride, FSettings.AccountSettings.UploadUrlOverride);
+			end, GetUnitedParamsCallback, FSettings.AccountSettings.ShardOverride, FSettings.AccountSettings.UploadUrlOverride);
 
 		{Initialize retry operation handler with HTTP callbacks}
 		FRetryOperation := TRetryOperation.Create(
@@ -249,8 +254,7 @@ begin
 			function: TCloudOAuth
 			begin
 				Result := Self.FOAuthToken;
-			end,
-			IsPublicAccountCallback,
+			end, IsPublicAccountCallback,
 			function: WideString
 			begin
 				Result := Self.GetPublicLink;
@@ -284,13 +288,11 @@ begin
 			function: TCloudOAuth
 			begin
 				Result := Self.FOAuthToken;
-			end,
-			IsPublicAccountCallback,
+			end, IsPublicAccountCallback,
 			function: IRetryOperation
 			begin
 				Result := Self.FRetryOperation;
-			end,
-			GetUnitedParamsCallback,
+			end, GetUnitedParamsCallback,
 			function(JSON: WideString; ErrorPrefix: WideString): Integer
 			begin
 				Result := Self.CloudResultToFsResult(JSON, ErrorPrefix);
