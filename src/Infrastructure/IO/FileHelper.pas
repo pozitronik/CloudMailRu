@@ -50,14 +50,9 @@ end;
 
 function SizeOfFile(const FileName: String): Int64;
 var
-	FHandle: DWORD;
+	FHandle: THandle;
 begin
-	try
-		FHandle := CreateFile(PChar(FileName), 0, 0, nil, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
-	except
-		on E: ERangeError do
-			Exit(-1); {File does not exists}
-	end;
+	FHandle := CreateFile(PChar(FileName), 0, 0, nil, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
 	if FHandle = INVALID_HANDLE_VALUE then
 		Result := -1
 	else
