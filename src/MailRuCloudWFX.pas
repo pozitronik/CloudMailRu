@@ -94,7 +94,8 @@ uses
 	ListingResultApplier,
 	DownloadOrchestrator,
 	CloudMailRuFactory,
-	OpenSSLProvider;
+	OpenSSLProvider,
+	AccountCredentialsProvider;
 
 type
 	TWFXApplication = class(TInterfacedObject, IWFXInterface)
@@ -927,7 +928,7 @@ begin
 	PasswordManager, which needs PCryptProc from this callback. This makes FsSetCryptCallback
 	a de-facto "second initialization phase", which is not its intended purpose.
 	Investigate alternatives: lazy initialization, dependency restructuring, or deferred injection.}
-	ConnectionManager := TConnectionManager.Create(SettingsManager, AccountSettings, HTTPMgr, PasswordUI, CipherVal, TWindowsFileSystem.Create, TCProgress, TCLogger, TCRequest, PasswordManager, FTCHandler, TDefaultAuthStrategyFactory.Create, FOpenSSLProvider);
+	ConnectionManager := TConnectionManager.Create(SettingsManager, AccountSettings, HTTPMgr, PasswordUI, CipherVal, TWindowsFileSystem.Create, TCProgress, TCLogger, TCRequest, PasswordManager, FTCHandler, TDefaultAuthStrategyFactory.Create, FOpenSSLProvider, TAccountCredentialsProvider.Create(PasswordManager, PasswordUI, TCLogger, FTCHandler, AccountSettings));
 	FCommandDispatcher := TCommandDispatcher.Create(ConnectionManager, TCLogger, SettingsManager);
 
 	{Create icon context builder for FsExtractCustomIcon}

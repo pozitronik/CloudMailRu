@@ -304,7 +304,9 @@ uses
 	SharingIntegrationTest in 'Integration\SharingIntegrationTest.pas',
 	InviteIntegrationTest in 'Integration\InviteIntegrationTest.pas',
 	OpenSSLProvider in '..\src\Infrastructure\OpenSSL\OpenSSLProvider.pas',
-	OpenSSLProviderTest in 'Infrastructure\OpenSSL\OpenSSLProviderTest.pas';
+	OpenSSLProviderTest in 'Infrastructure\OpenSSL\OpenSSLProviderTest.pas',
+	AccountCredentialsProvider in '..\src\Infrastructure\Password\AccountCredentialsProvider.pas',
+	AccountCredentialsProviderTest in 'Infrastructure\Password\AccountCredentialsProviderTest.pas';
 
 {keep comment here to protect the following conditional from being removed by the IDE when adding a unit}
 {$IFNDEF TESTINSIGHT}

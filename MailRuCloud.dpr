@@ -156,7 +156,8 @@ uses
 	InvitePropertyPresenter in 'src\Presentation\Presenter\InvitePropertyPresenter.pas',
 	DeletedPropertyPresenter in 'src\Presentation\Presenter\DeletedPropertyPresenter.pas',
 	AskPasswordPresenter in 'src\Presentation\Presenter\AskPasswordPresenter.pas',
-	OpenSSLProvider in 'src\Infrastructure\OpenSSL\OpenSSLProvider.pas';
+	OpenSSLProvider in 'src\Infrastructure\OpenSSL\OpenSSLProvider.pas',
+	AccountCredentialsProvider in 'src\Infrastructure\Password\AccountCredentialsProvider.pas';
 
 {$IFDEF WIN64}
 {$E wfx64}

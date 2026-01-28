@@ -26,7 +26,8 @@ uses
 	WSList,
 	System.Classes,
 	DUnitX.TestFramework,
-	OpenSSLProvider;
+	OpenSSLProvider,
+	AccountCredentialsProvider;
 
 type
 	{Mock implementation of IAccountsManager that returns test settings}
@@ -309,7 +310,7 @@ begin
 	PasswordManager := TNullPasswordManager.Create;
 
 	Manager := TConnectionManager.Create(PluginSettings, AccountsManager, HTTPManager,
-		PasswordUI, CipherValidator, FileSystem, Progress, Logger, Request, PasswordManager, TNullTCHandler.Create, TNullAuthStrategyFactory.Create, TNullOpenSSLProvider.Create);
+		PasswordUI, CipherValidator, FileSystem, Progress, Logger, Request, PasswordManager, TNullTCHandler.Create, TNullAuthStrategyFactory.Create, TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create);
 	try
 		Assert.IsNotNull(Manager, 'ConnectionManager should be created successfully');
 	finally
@@ -343,7 +344,7 @@ begin
 	PasswordManager := TNullPasswordManager.Create;
 
 	Manager := TConnectionManager.Create(PluginSettings, AccountsManager, HTTPManager,
-		PasswordUI, CipherValidator, FileSystem, Progress, Logger, Request, PasswordManager, TNullTCHandler.Create, TNullAuthStrategyFactory.Create, TNullOpenSSLProvider.Create);
+		PasswordUI, CipherValidator, FileSystem, Progress, Logger, Request, PasswordManager, TNullTCHandler.Create, TNullAuthStrategyFactory.Create, TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create);
 	Manager.Destroy;
 
 	Assert.Pass('ConnectionManager destroyed without errors');
@@ -383,7 +384,7 @@ begin
 	PasswordManager := TNullPasswordManager.Create;
 
 	Manager := TConnectionManager.Create(PluginSettings, AccountsManager, HTTPManager,
-		PasswordUI, CipherValidator, FileSystem, Progress, Logger, Request, PasswordManager, TNullTCHandler.Create, TNullAuthStrategyFactory.Create, TNullOpenSSLProvider.Create);
+		PasswordUI, CipherValidator, FileSystem, Progress, Logger, Request, PasswordManager, TNullTCHandler.Create, TNullAuthStrategyFactory.Create, TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create);
 	try
 		Cloud := Manager.Get('test_connection', OperationResult);
 		Assert.IsNull(Cloud, 'Get should return nil when password UI is cancelled');
@@ -423,7 +424,7 @@ begin
 	PasswordManager := TNullPasswordManager.Create;
 
 	Manager := TConnectionManager.Create(PluginSettings, AccountsManager, HTTPManager,
-		PasswordUI, CipherValidator, FileSystem, Progress, Logger, Request, PasswordManager, TNullTCHandler.Create, TNullAuthStrategyFactory.Create, TNullOpenSSLProvider.Create);
+		PasswordUI, CipherValidator, FileSystem, Progress, Logger, Request, PasswordManager, TNullTCHandler.Create, TNullAuthStrategyFactory.Create, TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create);
 	try
 		Cloud := Manager.Get('test_connection', OperationResult);
 		Assert.IsNull(Cloud, 'Cloud should be nil when password retrieval fails');
@@ -465,7 +466,7 @@ begin
 	PasswordManager := TNullPasswordManager.Create;
 
 	Manager := TConnectionManager.Create(PluginSettings, AccountsManager, HTTPManager,
-		PasswordUI, CipherValidator, FileSystem, Progress, Logger, Request, PasswordManager, TNullTCHandler.Create, TNullAuthStrategyFactory.Create, TNullOpenSSLProvider.Create);
+		PasswordUI, CipherValidator, FileSystem, Progress, Logger, Request, PasswordManager, TNullTCHandler.Create, TNullAuthStrategyFactory.Create, TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create);
 	try
 		Cloud1 := Manager.Get('test_connection', Result1);
 		Cloud2 := Manager.Get('test_connection', Result2);
@@ -505,7 +506,7 @@ begin
 	PasswordManager := TNullPasswordManager.Create;
 
 	Manager := TConnectionManager.Create(PluginSettings, AccountsManager, HTTPManager,
-		PasswordUI, CipherValidator, FileSystem, Progress, Logger, Request, PasswordManager, TNullTCHandler.Create, TNullAuthStrategyFactory.Create, TNullOpenSSLProvider.Create);
+		PasswordUI, CipherValidator, FileSystem, Progress, Logger, Request, PasswordManager, TNullTCHandler.Create, TNullAuthStrategyFactory.Create, TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create);
 	try
 		Manager.Free('non_existent_connection');
 		Assert.Pass('Free non-existent connection should not throw');
@@ -540,7 +541,7 @@ begin
 	PasswordManager := TNullPasswordManager.Create;
 
 	Manager := TConnectionManager.Create(PluginSettings, AccountsManager, HTTPManager,
-		PasswordUI, CipherValidator, FileSystem, Progress, Logger, Request, PasswordManager, TNullTCHandler.Create, TNullAuthStrategyFactory.Create, TNullOpenSSLProvider.Create);
+		PasswordUI, CipherValidator, FileSystem, Progress, Logger, Request, PasswordManager, TNullTCHandler.Create, TNullAuthStrategyFactory.Create, TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create);
 	try
 		Manager.Free('connection1');
 		Manager.Free('connection1');

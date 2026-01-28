@@ -31,6 +31,7 @@ uses
 	FileCipher,
 	AuthStrategy,
 	OpenSSLProvider,
+	AccountCredentialsProvider,
 	System.Generics.Collections,
 	SysUtils;
 
@@ -61,6 +62,7 @@ type
 		FTCHandler: ITCHandler;
 		FAuthStrategyFactory: IAuthStrategyFactory;
 		FOpenSSLProvider: IOpenSSLProvider;
+		FAccountCredentialsProvider: IAccountCredentialsProvider;
 
 		FLogger: ILogger;
 		FProgress: IProgress;
@@ -68,12 +70,11 @@ type
 		FPasswordManager: IPasswordManager;
 
 		function Init(ConnectionName: WideString; out Cloud: TCloudMailRu): Integer; {Create a connection by its name, returns the status code}
-		function GetAccountPassword(const ConnectionName: WideString; var CloudSettings: TCloudSettings): Boolean;
 		function GetFilesPassword(const ConnectionName: WideString; var CloudSettings: TCloudSettings): Boolean;
 		function GetProxyPassword(): Boolean;
 		function InitCloudCryptPasswords(const ConnectionName: WideString; var CloudSettings: TCloudSettings): Boolean;
 	public
-		constructor Create(PluginSettingsManager: IPluginSettingsManager; AccountsManager: IAccountsManager; HTTPManager: IHTTPManager; PasswordUI: IPasswordUIProvider; CipherValidator: ICipherValidator; FileSystem: IFileSystem; Progress: IProgress; Logger: ILogger; Request: IRequest; PasswordManager: IPasswordManager; TCHandler: ITCHandler; AuthStrategyFactory: IAuthStrategyFactory; OpenSSLProvider: IOpenSSLProvider);
+		constructor Create(PluginSettingsManager: IPluginSettingsManager; AccountsManager: IAccountsManager; HTTPManager: IHTTPManager; PasswordUI: IPasswordUIProvider; CipherValidator: ICipherValidator; FileSystem: IFileSystem; Progress: IProgress; Logger: ILogger; Request: IRequest; PasswordManager: IPasswordManager; TCHandler: ITCHandler; AuthStrategyFactory: IAuthStrategyFactory; OpenSSLProvider: IOpenSSLProvider; AccountCredentialsProvider: IAccountCredentialsProvider);
 		destructor Destroy(); override;
 		function Get(ConnectionName: WideString; var OperationResult: Integer): TCloudMailRu; {Return the cloud connection by its name}
 		procedure Free(ConnectionName: WideString); {Free a connection by its name, if present}
@@ -82,7 +83,7 @@ type
 implementation
 
 {TConnectionManager}
-constructor TConnectionManager.Create(PluginSettingsManager: IPluginSettingsManager; AccountsManager: IAccountsManager; HTTPManager: IHTTPManager; PasswordUI: IPasswordUIProvider; CipherValidator: ICipherValidator; FileSystem: IFileSystem; Progress: IProgress; Logger: ILogger; Request: IRequest; PasswordManager: IPasswordManager; TCHandler: ITCHandler; AuthStrategyFactory: IAuthStrategyFactory; OpenSSLProvider: IOpenSSLProvider);
+constructor TConnectionManager.Create(PluginSettingsManager: IPluginSettingsManager; AccountsManager: IAccountsManager; HTTPManager: IHTTPManager; PasswordUI: IPasswordUIProvider; CipherValidator: ICipherValidator; FileSystem: IFileSystem; Progress: IProgress; Logger: ILogger; Request: IRequest; PasswordManager: IPasswordManager; TCHandler: ITCHandler; AuthStrategyFactory: IAuthStrategyFactory; OpenSSLProvider: IOpenSSLProvider; AccountCredentialsProvider: IAccountCredentialsProvider);
 begin
 	FConnections := TDictionary<WideString, TCloudMailRu>.Create;
 	FPluginSettingsManager := PluginSettingsManager;
@@ -98,6 +99,7 @@ begin
 	FTCHandler := TCHandler;
 	FAuthStrategyFactory := AuthStrategyFactory;
 	FOpenSSLProvider := OpenSSLProvider;
+	FAccountCredentialsProvider := AccountCredentialsProvider;
 end;
 
 destructor TConnectionManager.Destroy;
@@ -117,6 +119,7 @@ begin
 	FCipherValidator := nil;
 	FAuthStrategyFactory := nil;
 	FOpenSSLProvider := nil;
+	FAccountCredentialsProvider := nil;
 
 	inherited;
 end;
@@ -155,7 +158,7 @@ begin
 	{Create CloudSettings using factory method - combines plugin settings with account settings}
 	CloudSettings := TCloudSettings.CreateFromSettings(FPluginSettingsManager.GetSettings, FAccountsManager.GetAccountSettings(ConnectionName));
 
-	if not CloudSettings.AccountSettings.PublicAccount and (not GetAccountPassword(ConnectionName, CloudSettings) or not GetFilesPassword(ConnectionName, CloudSettings) or not GetProxyPassword) then
+	if not CloudSettings.AccountSettings.PublicAccount and (not FAccountCredentialsProvider.GetPassword(ConnectionName, CloudSettings.AccountSettings) or not GetFilesPassword(ConnectionName, CloudSettings) or not GetProxyPassword) then
 		exit(CLOUD_OPERATION_ERROR_STATUS_UNKNOWN); //INVALID_HANDLE_VALUE
 
 	FLogger.Log(LOG_LEVEL_CONNECT, MSGTYPE_CONNECT, 'CONNECT \%s', [ConnectionName]);
@@ -220,34 +223,6 @@ begin
 		if mrOk <> FPasswordUI.AskPassword(Format(ASK_ENCRYPTION_PASSWORD, [ConnectionName]), PREFIX_ASK_ENCRYPTION_PASSWORD, CloudSettings.CryptFilesPassword, StorePassword, True, FTCHandler.FindTCWindow) then
 			Result := False
 	end;
-end;
-
-{Retrieves the password for ConnectionName: from TC passwords storage, then from settings, and the from user input. Returns true if password retrieved, false otherwise.
-	Note: the metod saves password to TC storage and removes it from config, if current option set for the account}
-function TConnectionManager.GetAccountPassword(const ConnectionName: WideString; var CloudSettings: TCloudSettings): Boolean;
-begin
-	if CloudSettings.AccountSettings.UseTCPasswordManager and (FPasswordManager.GetPassword(ConnectionName, CloudSettings.AccountSettings.password) = FS_FILE_OK) then
-		exit(True);
-
-	if CloudSettings.AccountSettings.password = EmptyWideStr then
-	begin
-		if mrOk <> FPasswordUI.AskPassword(Format(ASK_PASSWORD, [ConnectionName]), PREFIX_ASK_PASSWORD, CloudSettings.AccountSettings.password, CloudSettings.AccountSettings.UseTCPasswordManager, False, FTCHandler.FindTCWindow) then
-		begin
-			exit(False);
-		end else begin
-			Result := True;
-			if CloudSettings.AccountSettings.UseTCPasswordManager then
-			begin
-				if FS_FILE_OK = FPasswordManager.SetPassword(ConnectionName, CloudSettings.AccountSettings.password) then
-				begin {Now the account password stored in TC, clear password from the ini file}
-					FLogger.Log(LOG_LEVEL_DEBUG, msgtype_details, PASSWORD_SAVED, [ConnectionName]);
-					FAccountsManager.SwitchPasswordStorage(ConnectionName);
-				end;
-			end;
-		end;
-	end
-	else
-		Result := True;
 end;
 
 function TConnectionManager.GetFilesPassword(const ConnectionName: WideString; var CloudSettings: TCloudSettings): Boolean;
