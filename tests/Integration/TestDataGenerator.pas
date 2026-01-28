@@ -85,7 +85,7 @@ var
 	CurrentBlock: Integer;
 	BlockBytes: Integer;
 	I: Integer;
-	RandSeed: Integer;
+	RandSeed: Int64;
 begin
 	Result := TMemoryStream.Create;
 	Result.Size := SizeBytes; {Pre-allocate for efficiency}
@@ -123,7 +123,7 @@ end;
 class function TTestDataGenerator.CreateTestContent(SizeBytes: Integer; Seed: Integer): TBytes;
 var
 	I: Integer;
-	RandSeed: Integer;
+	RandSeed: Int64;
 begin
 	SetLength(Result, SizeBytes);
 	RandSeed := Seed;
