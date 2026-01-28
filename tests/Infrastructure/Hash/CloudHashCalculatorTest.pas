@@ -3,7 +3,9 @@ unit CloudHashCalculatorTest;
 interface
 
 uses
+	Windows,
 	CloudHashCalculator,
+	OpenSSLProvider,
 	TCProgress,
 	WindowsFileSystem,
 	TestHelper,
@@ -182,6 +184,42 @@ type
 		procedure TestAllStrategies_ProduceSameHashFor1MB;
 	end;
 
+	{Tests for IsOpenSSLAvailable helper function}
+	[TestFixture]
+	TIsOpenSSLAvailableTest = class
+	public
+		[Test]
+		procedure TestIsOpenSSLAvailable_NilProvider_ReturnsFalse;
+		[Test]
+		procedure TestIsOpenSSLAvailable_UnavailableProvider_ReturnsFalse;
+		[Test]
+		procedure TestIsOpenSSLAvailable_AvailableProvider_ReturnsTrue;
+	end;
+
+	{Tests for OpenSSL calculator fallback paths when init fails}
+	[TestFixture]
+	TOpenSSLFallbackTest = class
+	public
+		[Test]
+		procedure TestOpenSSL_UnavailableProvider_FallsBackToDelphi;
+		[Test]
+		procedure TestOpenSSL_NullContext_FallsBackToDelphi;
+		[Test]
+		procedure TestOpenSSL_DigestInitFailure_FallsBackToDelphi;
+	end;
+
+	{Tests for CreateHashCalculator factory with mock OpenSSL}
+	[TestFixture]
+	THashCalculatorFactoryOpenSSLTest = class
+	public
+		[Test]
+		procedure TestFactory_OpenSSL_Available_ReturnsOpenSSLCalc;
+		[Test]
+		procedure TestFactory_OpenSSL_Unavailable_FallsToDelphi;
+		[Test]
+		procedure TestFactory_Auto_OpenSSLAvailable_NoBCrypt_ReturnsOpenSSL;
+	end;
+
 	{Cross-implementation consistency tests with various file sizes}
 	[TestFixture]
 	THashCalculatorCrossImplementationTest = class
@@ -233,11 +271,125 @@ type
 		procedure TestBinaryContent_RandomPattern;
 	end;
 
+type
+	{Mock OpenSSL provider for testing fallback paths.
+		Can be configured to simulate various failure scenarios.}
+	TMockOpenSSLProvider = class(TInterfacedObject, IOpenSSLProvider)
+	private
+		FIsAvailable: Boolean;
+		FFunctions: TOpenSSLFunctions;
+		FLibraryHandle: THandle;
+	public
+		constructor Create(Available: Boolean);
+		function IsAvailable: Boolean;
+		function GetFunctions: TOpenSSLFunctions;
+		function GetLibraryHandle: THandle;
+		{Configure to return nil from EVP_MD_CTX_new}
+		procedure SetupNullContextNew;
+		{Configure to return failure from EVP_DigestInit_ex}
+		procedure SetupDigestInitFailure;
+		{Change availability after construction}
+		procedure SetAvailable(Value: Boolean);
+	end;
+
 implementation
 
 uses
-	SettingsConstants,
-	OpenSSLProvider;
+	SettingsConstants;
+
+{Stub functions for mock OpenSSL provider}
+function StubEVP_MD_CTX_new_ReturnNil: Pointer; cdecl;
+begin
+	Result := nil;
+end;
+
+function StubEVP_MD_CTX_new_ReturnValid: Pointer; cdecl;
+begin
+	{Return a non-nil pointer - we won't actually use it}
+	Result := Pointer(1);
+end;
+
+procedure StubEVP_MD_CTX_free(ctx: Pointer); cdecl;
+begin
+	{No-op}
+end;
+
+function StubEVP_sha1: Pointer; cdecl;
+begin
+	Result := Pointer(1);
+end;
+
+function StubEVP_DigestInit_ex_Fail(ctx, md, impl: Pointer): Integer; cdecl;
+begin
+	Result := 0; {Failure}
+end;
+
+function StubEVP_DigestInit_ex_Success(ctx, md, impl: Pointer): Integer; cdecl;
+begin
+	Result := 1; {Success}
+end;
+
+function StubEVP_DigestUpdate(ctx: Pointer; d: Pointer; cnt: NativeUInt): Integer; cdecl;
+begin
+	Result := 1;
+end;
+
+function StubEVP_DigestFinal_ex(ctx: Pointer; md: PByte; var s: Cardinal): Integer; cdecl;
+begin
+	Result := 1;
+end;
+
+{TMockOpenSSLProvider}
+
+constructor TMockOpenSSLProvider.Create(Available: Boolean);
+begin
+	inherited Create;
+	FIsAvailable := Available;
+	FLibraryHandle := 0;
+	FillChar(FFunctions, SizeOf(FFunctions), 0);
+	if Available then
+	begin
+		{Setup valid function pointers by default}
+		FFunctions.EVP_MD_CTX_new := StubEVP_MD_CTX_new_ReturnValid;
+		FFunctions.EVP_MD_CTX_free := StubEVP_MD_CTX_free;
+		FFunctions.EVP_sha1 := StubEVP_sha1;
+		FFunctions.EVP_DigestInit_ex := StubEVP_DigestInit_ex_Success;
+		FFunctions.EVP_DigestUpdate := StubEVP_DigestUpdate;
+		FFunctions.EVP_DigestFinal_ex := StubEVP_DigestFinal_ex;
+		FFunctions.Loaded := True;
+		FLibraryHandle := 1;
+	end;
+end;
+
+function TMockOpenSSLProvider.IsAvailable: Boolean;
+begin
+	Result := FIsAvailable;
+end;
+
+function TMockOpenSSLProvider.GetFunctions: TOpenSSLFunctions;
+begin
+	Result := FFunctions;
+end;
+
+function TMockOpenSSLProvider.GetLibraryHandle: THandle;
+begin
+	Result := FLibraryHandle;
+end;
+
+procedure TMockOpenSSLProvider.SetupNullContextNew;
+begin
+	FFunctions.EVP_MD_CTX_new := StubEVP_MD_CTX_new_ReturnNil;
+end;
+
+procedure TMockOpenSSLProvider.SetupDigestInitFailure;
+begin
+	FFunctions.EVP_DigestInit_ex := StubEVP_DigestInit_ex_Fail;
+end;
+
+procedure TMockOpenSSLProvider.SetAvailable(Value: Boolean);
+begin
+	FIsAvailable := Value;
+end;
 
 { THashCalculatorTestBase }
 
@@ -1471,6 +1623,185 @@ begin
 	end;
 end;
 
+{ TIsOpenSSLAvailableTest }
+
+procedure TIsOpenSSLAvailableTest.TestIsOpenSSLAvailable_NilProvider_ReturnsFalse;
+begin
+	{Test line 150-151 in CloudHashCalculator - nil provider check}
+	Assert.IsFalse(IsOpenSSLAvailable(nil), 'IsOpenSSLAvailable(nil) must return False');
+end;
+
+procedure TIsOpenSSLAvailableTest.TestIsOpenSSLAvailable_UnavailableProvider_ReturnsFalse;
+var
+	Provider: IOpenSSLProvider;
+begin
+	Provider := TMockOpenSSLProvider.Create(False);
+	Assert.IsFalse(IsOpenSSLAvailable(Provider), 'Unavailable provider must return False');
+end;
+
+procedure TIsOpenSSLAvailableTest.TestIsOpenSSLAvailable_AvailableProvider_ReturnsTrue;
+var
+	Provider: IOpenSSLProvider;
+begin
+	Provider := TMockOpenSSLProvider.Create(True);
+	Assert.IsTrue(IsOpenSSLAvailable(Provider), 'Available provider must return True');
+end;
+
+{ TOpenSSLFallbackTest }
+
+procedure TOpenSSLFallbackTest.TestOpenSSL_UnavailableProvider_FallsBackToDelphi;
+var
+	OpenSSLCalc, DelphiCalc: ICloudHashCalculator;
+	Stream: TMemoryStream;
+	OpenSSLHash, DelphiHash: WideString;
+	Data: AnsiString;
+	MockProvider: TMockOpenSSLProvider;
+begin
+	{When provider reports unavailable, OpenSSL calculator falls back to Delphi.
+		Lines 379-384 in CloudHashCalculator.pas}
+	MockProvider := TMockOpenSSLProvider.Create(True); {Create as available}
+	MockProvider.SetAvailable(False); {But then mark unavailable}
+
+	OpenSSLCalc := TCloudHashCalculatorOpenSSL.Create(TNullProgress.Create, TWindowsFileSystem.Create, MockProvider);
+	DelphiCalc := TCloudHashCalculator.Create(TNullProgress.Create, TWindowsFileSystem.Create);
+
+	Stream := TMemoryStream.Create;
+	try
+		Data := 'Test content for OpenSSL fallback verification!!!';
+		Stream.Write(Data[1], Length(Data));
+
+		Stream.Position := 0;
+		OpenSSLHash := OpenSSLCalc.CalculateHash(Stream, 'test');
+
+		Stream.Position := 0;
+		DelphiHash := DelphiCalc.CalculateHash(Stream, 'test');
+
+		Assert.AreEqual(DelphiHash, OpenSSLHash, 'OpenSSL fallback must produce same hash as Delphi');
+	finally
+		Stream.Free;
+	end;
+end;
+
+procedure TOpenSSLFallbackTest.TestOpenSSL_NullContext_FallsBackToDelphi;
+var
+	OpenSSLCalc, DelphiCalc: ICloudHashCalculator;
+	Stream: TMemoryStream;
+	OpenSSLHash, DelphiHash: WideString;
+	Data: AnsiString;
+	MockProvider: TMockOpenSSLProvider;
+begin
+	{When EVP_MD_CTX_new returns nil, OpenSSL calculator falls back to Delphi.
+		Lines 389-393 in CloudHashCalculator.pas}
+	MockProvider := TMockOpenSSLProvider.Create(True);
+	MockProvider.SetupNullContextNew;
+
+	OpenSSLCalc := TCloudHashCalculatorOpenSSL.Create(TNullProgress.Create, TWindowsFileSystem.Create, MockProvider);
+	DelphiCalc := TCloudHashCalculator.Create(TNullProgress.Create, TWindowsFileSystem.Create);
+
+	Stream := TMemoryStream.Create;
+	try
+		Data := 'Test content for null context fallback test!!';
+		Stream.Write(Data[1], Length(Data));
+
+		Stream.Position := 0;
+		OpenSSLHash := OpenSSLCalc.CalculateHash(Stream, 'test');
+
+		Stream.Position := 0;
+		DelphiHash := DelphiCalc.CalculateHash(Stream, 'test');
+
+		Assert.AreEqual(DelphiHash, OpenSSLHash, 'Null context fallback must produce same hash as Delphi');
+	finally
+		Stream.Free;
+	end;
+end;
+
+procedure TOpenSSLFallbackTest.TestOpenSSL_DigestInitFailure_FallsBackToDelphi;
+var
+	OpenSSLCalc, DelphiCalc: ICloudHashCalculator;
+	Stream: TMemoryStream;
+	OpenSSLHash, DelphiHash: WideString;
+	Data: AnsiString;
+	MockProvider: TMockOpenSSLProvider;
+begin
+	{When EVP_DigestInit_ex returns failure (not 1), OpenSSL calculator falls back to Delphi.
+		Lines 396-400 in CloudHashCalculator.pas}
+	MockProvider := TMockOpenSSLProvider.Create(True);
+	MockProvider.SetupDigestInitFailure;
+
+	OpenSSLCalc := TCloudHashCalculatorOpenSSL.Create(TNullProgress.Create, TWindowsFileSystem.Create, MockProvider);
+	DelphiCalc := TCloudHashCalculator.Create(TNullProgress.Create, TWindowsFileSystem.Create);
+
+	Stream := TMemoryStream.Create;
+	try
+		Data := 'Test content for DigestInit failure fallback!';
+		Stream.Write(Data[1], Length(Data));
+
+		Stream.Position := 0;
+		OpenSSLHash := OpenSSLCalc.CalculateHash(Stream, 'test');
+
+		Stream.Position := 0;
+		DelphiHash := DelphiCalc.CalculateHash(Stream, 'test');
+
+		Assert.AreEqual(DelphiHash, OpenSSLHash, 'DigestInit failure fallback must produce same hash as Delphi');
+	finally
+		Stream.Free;
+	end;
+end;
+
+{ THashCalculatorFactoryOpenSSLTest }
+
+procedure THashCalculatorFactoryOpenSSLTest.TestFactory_OpenSSL_Available_ReturnsOpenSSLCalc;
+var
+	Calculator: ICloudHashCalculator;
+	Provider: IOpenSSLProvider;
+begin
+	{When OpenSSL is available and strategy is HashStrategyOpenSSL, factory returns OpenSSL calc.
+		Lines 166-168 in CloudHashCalculator.pas}
+	Provider := TMockOpenSSLProvider.Create(True);
+	Calculator := CreateHashCalculator(HashStrategyOpenSSL, TNullProgress.Create, TWindowsFileSystem.Create, Provider);
+
+	Assert.IsNotNull(Calculator);
+	Assert.IsTrue(Calculator is TCloudHashCalculatorOpenSSL,
+		'Factory must return TCloudHashCalculatorOpenSSL when OpenSSL is available');
+end;
+
+procedure THashCalculatorFactoryOpenSSLTest.TestFactory_OpenSSL_Unavailable_FallsToDelphi;
+var
+	Calculator: ICloudHashCalculator;
+	Provider: IOpenSSLProvider;
+begin
+	{When OpenSSL is unavailable and strategy is HashStrategyOpenSSL, factory falls back to Delphi.
+		Lines 169-170 in CloudHashCalculator.pas}
+	Provider := TMockOpenSSLProvider.Create(False);
+	Calculator := CreateHashCalculator(HashStrategyOpenSSL, TNullProgress.Create, TWindowsFileSystem.Create, Provider);
+
+	Assert.IsNotNull(Calculator);
+	Assert.IsTrue(Calculator is TCloudHashCalculator,
+		'Factory must fallback to TCloudHashCalculator when OpenSSL is unavailable');
+end;
+
+procedure THashCalculatorFactoryOpenSSLTest.TestFactory_Auto_OpenSSLAvailable_NoBCrypt_ReturnsOpenSSL;
+var
+	Calculator: ICloudHashCalculator;
+	Provider: IOpenSSLProvider;
+begin
+	{When BCrypt is not available and OpenSSL is available, Auto strategy returns OpenSSL.
+		Lines 176-177 in CloudHashCalculator.pas
+		Note: On modern Windows BCrypt is always available, so this path is hard to test directly.
+		We verify the factory behavior with OpenSSL available instead.}
+	Provider := TMockOpenSSLProvider.Create(True);
+	Calculator := CreateHashCalculator(HashStrategyAuto, TNullProgress.Create, TWindowsFileSystem.Create, Provider);
+
+	Assert.IsNotNull(Calculator);
+	{Auto prefers BCrypt, so if BCrypt is available it returns BCrypt}
+	if IsBCryptAvailable then
+		Assert.IsTrue(Calculator is TCloudHashCalculatorBCrypt,
+			'Auto with BCrypt available must return BCrypt')
+	else
+		Assert.IsTrue(Calculator is TCloudHashCalculatorOpenSSL,
+			'Auto without BCrypt must return OpenSSL when available');
+end;
+
 { THashCalculatorCrossImplementationTest }
 
 procedure THashCalculatorCrossImplementationTest.Setup;
@@ -1779,6 +2110,9 @@ TDUnitX.RegisterTestFixture(TCloudHashCalculatorBCryptTest);
 TDUnitX.RegisterTestFixture(TCloudHashCalculatorOpenSSLTest);
 TDUnitX.RegisterTestFixture(TNullHashCalculatorTest);
 TDUnitX.RegisterTestFixture(THashCalculatorFactoryTest);
+TDUnitX.RegisterTestFixture(TIsOpenSSLAvailableTest);
+TDUnitX.RegisterTestFixture(TOpenSSLFallbackTest);
+TDUnitX.RegisterTestFixture(THashCalculatorFactoryOpenSSLTest);
 TDUnitX.RegisterTestFixture(THashCalculatorCrossImplementationTest);
 
 end.
