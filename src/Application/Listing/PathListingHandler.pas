@@ -95,14 +95,8 @@ begin
 	Result.Handle := INVALID_HANDLE_VALUE;
 	Result.RealPath.FromPath(Path);
 
-	{Get cloud connection}
+	{Get cloud connection - always returns valid instance}
 	CurrentCloud := FConnectionManager.Get(Result.RealPath.account);
-
-	if not Assigned(CurrentCloud) then
-	begin
-		Result.ErrorCode := ERROR_PATH_NOT_FOUND;
-		Exit;
-	end;
 
 	{Ensure cloud is authorized before fetching listing}
 	if CurrentCloud.AuthorizationState <> asAuthorized then

@@ -102,9 +102,7 @@ type
 
 		{TPathListingHandler.Execute tests}
 		[Test]
-		procedure TestExecute_ConnectionFailed_ReturnsAccessDenied;
-		[Test]
-		procedure TestExecute_CloudIsNil_ReturnsPathNotFound;
+		procedure TestExecute_AuthorizationFailed_ReturnsAccessDenied;
 		[Test]
 		procedure TestExecute_FetchFailed_ReturnsPathNotFound;
 		[Test]
@@ -296,25 +294,17 @@ end;
 
 {TPathListingHandler.Execute tests}
 
-procedure TPathListingHandlerTest.TestExecute_ConnectionFailed_ReturnsAccessDenied;
+procedure TPathListingHandlerTest.TestExecute_AuthorizationFailed_ReturnsAccessDenied;
 begin
-	{Setup with no cloud registered - Get will return nil with error}
-	SetupHandler([], True, True);
-
-	var Result := FHandler.Execute('\unknownaccount\folder');
-
-	{Connection manager returns nil for unknown account}
-	Assert.AreEqual(DWORD(ERROR_PATH_NOT_FOUND), Result.ErrorCode);
-end;
-
-procedure TPathListingHandlerTest.TestExecute_CloudIsNil_ReturnsPathNotFound;
-begin
-	{Setup handler but don't register any cloud}
+	{Create cloud but don't authorize it (remains in asPending state)}
+	FCloud := CreateCloud;
+	FCloud.SetAuthorizationState(asPending); {Override the SetAuthorized from CreateCloud}
+	FMockConnectionManager.SetCloud('testaccount', FCloud);
 	SetupHandler([], True, True);
 
 	var Result := FHandler.Execute('\testaccount\folder');
 
-	Assert.AreEqual(DWORD(ERROR_PATH_NOT_FOUND), Result.ErrorCode);
+	Assert.AreEqual(DWORD(ERROR_ACCESS_DENIED), Result.ErrorCode);
 	Assert.AreEqual(THandle(INVALID_HANDLE_VALUE), Result.Handle);
 end;
 
