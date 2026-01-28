@@ -80,14 +80,10 @@ begin
 		parameter := copy(parameter, divisor_position + 1);
 	end;
 
-	try
-		self.size := StrToInt64(sizeString);
-	Except
-		on E: EConvertError do
-		begin
-			self.errorString := ERR_WRONG_SIZE_FORMAT;
-			exit;
-		end;
+	if not TryStrToInt64(sizeString, self.size) then
+	begin
+		self.errorString := ERR_WRONG_SIZE_FORMAT;
+		exit;
 	end;
 	self.valid := true;
 	if divisor_position = 0 then
