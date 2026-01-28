@@ -4,13 +4,13 @@ interface
 
 uses
 	CloudConstants,
+	CloudCallbackTypes,
 	TCLogger;
 
 type
 	{Callback types for shard resolution}
 	TShardPostFormFunc = reference to function(const URL, Data: WideString; var Answer: WideString): Boolean;
 	TShardResultToBooleanFunc = reference to function(const JSON, ErrorPrefix: WideString): Boolean;
-	TShardGetParamsFunc = reference to function: WideString;
 
 	{Interface for managing cloud shard URLs.
 		Shards are server endpoints for specific operations (download, upload, etc.).
@@ -56,9 +56,9 @@ type
 		FLogger: ILogger;
 		FPostForm: TShardPostFormFunc;
 		FResultToBoolean: TShardResultToBooleanFunc;
-		FGetParams: TShardGetParamsFunc;
+		FGetParams: TGetUnitedParamsFunc;
 	public
-		constructor Create(Logger: ILogger; PostForm: TShardPostFormFunc; ResultToBoolean: TShardResultToBooleanFunc; GetParams: TShardGetParamsFunc; DownloadOverride: WideString = ''; UploadOverride: WideString = '');
+		constructor Create(Logger: ILogger; PostForm: TShardPostFormFunc; ResultToBoolean: TShardResultToBooleanFunc; GetParams: TGetUnitedParamsFunc; DownloadOverride: WideString = ''; UploadOverride: WideString = '');
 
 		function ResolveShard(var Shard: WideString; ShardType: WideString): Boolean;
 		function GetDownloadShard: WideString;
@@ -103,7 +103,7 @@ uses
 
 {TCloudShardManager}
 
-constructor TCloudShardManager.Create(Logger: ILogger; PostForm: TShardPostFormFunc; ResultToBoolean: TShardResultToBooleanFunc; GetParams: TShardGetParamsFunc; DownloadOverride: WideString; UploadOverride: WideString);
+constructor TCloudShardManager.Create(Logger: ILogger; PostForm: TShardPostFormFunc; ResultToBoolean: TShardResultToBooleanFunc; GetParams: TGetUnitedParamsFunc; DownloadOverride: WideString; UploadOverride: WideString);
 begin
 	inherited Create;
 	FLogger := Logger;
