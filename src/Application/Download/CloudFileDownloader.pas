@@ -239,8 +239,7 @@ begin
 	begin
 		Result := Format('%s%s%s', [IncludeSlash(usedShard), FGetPublicLink(), PathToUrl(RemotePath, True, True)]);
 	end else begin {для прямых ссылок берутся публичные ссылки файлов}
-		{TODO: Format has 3 placeholders but only 2 parameters - investigate if should be '%s%s' or needs third param}
-		Result := Format('%s%s%s', [IncludeSlash(usedShard), FGetPublicLink()])
+		Result := Format('%s%s', [IncludeSlash(usedShard), FGetPublicLink()])
 	end;
 
 	ProgressEnabled := False;
