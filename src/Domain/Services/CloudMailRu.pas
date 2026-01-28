@@ -58,41 +58,7 @@ uses
 	OpenSSLProvider;
 
 type
-	ICloudMailRu = interface
-		['{C9BF2862-7907-4E1C-AB48-DA95A5E9F3A3}']
-
-		{Authorization state - indicates if cloud is ready for operations}
-		function GetAuthorizationState: TAuthorizationState;
-		{Authorization error details when state is asFailed}
-		function GetAuthorizationError: TAuthorizationError;
-		{Attempt authorization. Returns True on success.
-			State transitions: asPending/asFailed -> asAuthorizing -> asAuthorized/asFailed}
-		function Authorize: Boolean;
-		{Reset authorization state to asPending for re-authentication.
-			Use when token expires or user requests reconnect.}
-		procedure InvalidateAuthorization;
-
-		{Service accessors - only valid when AuthorizationState = asAuthorized}
-		function GetDownloader: ICloudFileDownloader;
-		function GetUploader: ICloudFileUploader;
-		function GetShareService: ICloudShareService;
-		function GetListingService: ICloudListingService;
-		function GetFileOps: ICloudFileOperations;
-		function GetIsPublicAccount: Boolean;
-
-		{Properties}
-		property AuthorizationState: TAuthorizationState read GetAuthorizationState;
-		property AuthorizationError: TAuthorizationError read GetAuthorizationError;
-		property Downloader: ICloudFileDownloader read GetDownloader;
-		property Uploader: ICloudFileUploader read GetUploader;
-		property ShareService: ICloudShareService read GetShareService;
-		property ListingService: ICloudListingService read GetListingService;
-		property FileOps: ICloudFileOperations read GetFileOps;
-		property IsPublicAccount: Boolean read GetIsPublicAccount;
-	end;
-
-type
-	TCloudMailRu = class(TInterfacedObject, ICloudMailRu)
+	TCloudMailRu = class(TInterfacedObject)
 	private
 		FSettings: TCloudSettings; {Current options set for the cloud instance}
 		FAuthorizationState: TAuthorizationState; {Authorization state machine}
@@ -164,27 +130,19 @@ type
 		function LoginShared: Boolean;
 		function GetPublicLink(): WideString;
 	public
-		{ICloudMailRu - Authorization state}
-		function GetAuthorizationState: TAuthorizationState;
-		function GetAuthorizationError: TAuthorizationError;
+		{Authorization state machine}
 		function Authorize: Boolean;
 		procedure InvalidateAuthorization;
+		property AuthorizationState: TAuthorizationState read FAuthorizationState;
+		property AuthorizationError: TAuthorizationError read FAuthorizationError;
 
-		{ICloudMailRu - Service accessors}
-		function GetDownloader: ICloudFileDownloader;
-		function GetUploader: ICloudFileUploader;
-		function GetShareService: ICloudShareService;
-		function GetListingService: ICloudListingService;
-		function GetFileOps: ICloudFileOperations;
-		function GetIsPublicAccount: Boolean;
-
+		{Service accessors}
 		property IsPublicAccount: Boolean read FSettings.AccountSettings.PublicAccount;
-		{Service accessors - exposed for external use and MVP architecture}
 		property Downloader: ICloudFileDownloader read FDownloader;
 		property Uploader: ICloudFileUploader read FUploader;
 		property ShareService: ICloudShareService read FShareService;
 		property ListingService: ICloudListingService read FListingService;
-		property FileOperations: ICloudFileOperations read FFileOps;
+		property FileOps: ICloudFileOperations read FFileOps;
 		{ERROR RESULT MAPPING - exposed for testing and external use}
 		function CloudResultToFsResult(CloudResult: TCloudOperationResult; ErrorPrefix: WideString = ''): Integer; overload;
 		function CloudResultToFsResult(JSON: WideString; ErrorPrefix: WideString = ''): Integer; overload;
@@ -588,17 +546,7 @@ begin
 	Result := FHashCalculator.CalculateHash(Stream, Path);
 end;
 
-{ICloudMailRu implementation - Authorization state}
-
-function TCloudMailRu.GetAuthorizationState: TAuthorizationState;
-begin
-	Result := FAuthorizationState;
-end;
-
-function TCloudMailRu.GetAuthorizationError: TAuthorizationError;
-begin
-	Result := FAuthorizationError;
-end;
+{Authorization state machine}
 
 function TCloudMailRu.Authorize: Boolean;
 begin
@@ -623,38 +571,6 @@ procedure TCloudMailRu.InvalidateAuthorization;
 begin
 	FAuthorizationState := asPending;
 	FAuthorizationError := TAuthorizationError.Empty;
-end;
-
-{ICloudMailRu implementation - Service accessors}
-
-function TCloudMailRu.GetDownloader: ICloudFileDownloader;
-begin
-	Result := FDownloader;
-end;
-
-function TCloudMailRu.GetUploader: ICloudFileUploader;
-begin
-	Result := FUploader;
-end;
-
-function TCloudMailRu.GetShareService: ICloudShareService;
-begin
-	Result := FShareService;
-end;
-
-function TCloudMailRu.GetListingService: ICloudListingService;
-begin
-	Result := FListingService;
-end;
-
-function TCloudMailRu.GetFileOps: ICloudFileOperations;
-begin
-	Result := FFileOps;
-end;
-
-function TCloudMailRu.GetIsPublicAccount: Boolean;
-begin
-	Result := FSettings.AccountSettings.PublicAccount;
 end;
 
 end.
