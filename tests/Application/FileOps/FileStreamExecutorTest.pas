@@ -85,7 +85,7 @@ type
 		FGetCallCount: Integer;
 	public
 		constructor Create(Cloud: TCloudMailRu);
-		function Get(ConnectionName: WideString; var OperationResult: Integer): TCloudMailRu;
+		function Get(ConnectionName: WideString): TCloudMailRu;
 		procedure Free(ConnectionName: WideString);
 		property GetCallCount: Integer read FGetCallCount;
 	end;
@@ -267,10 +267,9 @@ begin
 	FGetCallCount := 0;
 end;
 
-function TMockConnManager.Get(ConnectionName: WideString; var OperationResult: Integer): TCloudMailRu;
+function TMockConnManager.Get(ConnectionName: WideString): TCloudMailRu;
 begin
 	Inc(FGetCallCount);
-	OperationResult := CLOUD_OPERATION_OK;
 	Result := FCloud;
 end;
 

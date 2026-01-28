@@ -45,7 +45,6 @@ end;
 
 function TOverwritePreparationHandler.Prepare(const Path: TRealPath; RequiresOverwrite: Boolean): TOverwritePreparationResult;
 var
-	getResult: Integer;
 	Cloud: TCloudMailRu;
 begin
 	Result.Success := True;
@@ -55,13 +54,7 @@ begin
 		Exit;
 
 	{Cloud API doesn't support overwrite, delete existing file first}
-	Cloud := FConnectionManager.Get(Path.account, getResult);
-	if Cloud = nil then
-	begin
-		Result.Success := False;
-		Result.ResultCode := FS_FILE_NOTSUPPORTED;
-		Exit;
-	end;
+	Cloud := FConnectionManager.Get(Path.account);
 
 	if not Cloud.FileOperations.Delete(Path.Path) then
 	begin

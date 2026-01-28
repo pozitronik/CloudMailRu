@@ -10,8 +10,22 @@ uses
 	DUnitX.TestFramework,
 	OverwritePreparationHandler,
 	MockConnectionManager,
+	MockCloudHTTP,
+	MockHTTPManager,
+	CloudMailRu,
+	CloudSettings,
+	FileCipher,
+	AuthStrategy,
+	WindowsFileSystem,
+	TCLogger,
+	TCProgress,
+	TCRequest,
+	TCHandler,
+	OpenSSLProvider,
+	AccountCredentialsProvider,
 	WFXTypes,
-	RealPath;
+	RealPath,
+	TestHelper;
 
 type
 	[TestFixture]
@@ -19,6 +33,11 @@ type
 	private
 		FHandler: IOverwritePreparationHandler;
 		FMockConnectionManager: TMockConnectionManager;
+		FMockHTTP: TMockCloudHTTP;
+		FMockHTTPManager: TMockHTTPManager;
+		FCloud: TCloudMailRu;
+
+		function CreateCloud: TCloudMailRu;
 	public
 		[Setup]
 		procedure Setup;
@@ -47,9 +66,33 @@ implementation
 uses
 	SysUtils;
 
+function TOverwritePreparationHandlerTest.CreateCloud: TCloudMailRu;
+var
+	Settings: TCloudSettings;
+begin
+	Settings := Default(TCloudSettings);
+	Result := TCloudMailRu.Create(
+		Settings,
+		FMockHTTPManager,
+		TestThreadID(),
+		TNullAuthStrategy.Create,
+		TNullFileSystem.Create,
+		TNullLogger.Create,
+		TNullProgress.Create,
+		TNullRequest.Create,
+		TNullTCHandler.Create,
+		TNullCipher.Create,
+		TNullOpenSSLProvider.Create,
+		TNullAccountCredentialsProvider.Create);
+end;
+
 procedure TOverwritePreparationHandlerTest.Setup;
 begin
+	FMockHTTP := TMockCloudHTTP.Create;
+	FMockHTTPManager := TMockHTTPManager.Create(FMockHTTP);
+	FCloud := CreateCloud;
 	FMockConnectionManager := TMockConnectionManager.Create;
+	FMockConnectionManager.SetCloud('account', FCloud);
 	FHandler := TOverwritePreparationHandler.Create(FMockConnectionManager);
 end;
 
@@ -57,6 +100,9 @@ procedure TOverwritePreparationHandlerTest.TearDown;
 begin
 	FHandler := nil;
 	FMockConnectionManager := nil;
+	FCloud.Free;
+	FMockHTTPManager := nil;
+	FMockHTTP := nil;
 end;
 
 procedure TOverwritePreparationHandlerTest.Prepare_WhenOverwriteNotRequired_ReturnsSuccess;
@@ -112,11 +158,12 @@ var
 	Result: TOverwritePreparationResult;
 begin
 	Path.FromPath('\account\test.txt');
-	{No cloud configured - Get returns nil, Prepare handles gracefully}
+	{Cloud is configured but Delete will fail (mock HTTP returns failure)}
+	FMockHTTP.SetResponse('', False, '');
 
 	Result := FHandler.Prepare(Path, True);
 
-	Assert.IsFalse(Result.Success, 'Should fail when cloud not available');
+	Assert.IsFalse(Result.Success, 'Should fail when delete fails');
 	Assert.AreEqual(1, FMockConnectionManager.GetCallCount, 'Should call connection manager when overwrite required');
 end;
 

@@ -424,11 +424,10 @@ end;
 function TWFXApplication.ExecInvitesAction(MainWin: THandle; RealPath: TRealPath): Integer;
 var
 	Cloud: TCloudMailRu;
-	getResult: Integer;
 	CurrentInvite: TCloudIncomingInvite;
 begin
 	Result := FS_EXEC_OK;
-	Cloud := ConnectionManager.Get(RealPath.account, getResult);
+	Cloud := ConnectionManager.Get(RealPath.account);
 	if RealPath.isInAccountsList then //main invites folder properties
 	begin
 		if TAccountsForm.ShowAccounts(MainWin, PasswordManager, RealPath.account) then
@@ -452,7 +451,6 @@ function TWFXApplication.ExecProperties(MainWin: THandle; RealPath: TRealPath): 
 var
 	Cloud: TCloudMailRu;
 	CurrentItem: TCloudDirItem;
-	getResult: Integer;
 begin
 	Result := FS_EXEC_OK;
 	if RealPath.isInAccountsList then
@@ -460,7 +458,7 @@ begin
 		if TAccountsForm.ShowAccounts(MainWin, PasswordManager, RealPath.account) then //show account properties
 			SettingsManager.Refresh;
 	end else begin
-		Cloud := ConnectionManager.Get(RealPath.account, getResult);
+		Cloud := ConnectionManager.Get(RealPath.account);
 		//всегда нужно обновлять статус на сервере, CurrentListing может быть изменён в другой панели
 		if (Cloud.ListingService.StatusFile(RealPath.Path, CurrentItem)) and (idContinue = TPropertyForm.ShowProperty(MainWin, RealPath.Path, CurrentItem, Cloud, FFileSystem, FTCHandler, SettingsManager.GetSettings.DownloadLinksEncode, SettingsManager.GetSettings.AutoUpdateDownloadListing, SettingsManager.GetSettings.DescriptionEnabled, SettingsManager.GetSettings.DescriptionEditorEnabled, SettingsManager.GetSettings.DescriptionFileName)) then
 			PostMessage(MainWin, WM_USER + TC_REFRESH_MESSAGE, TC_REFRESH_PARAM, 0); //refresh tc panel if description edited
@@ -471,7 +469,6 @@ function TWFXApplication.ExecSharedAction(MainWin: THandle; RealPath: TRealPath;
 var
 	Cloud: TCloudMailRu;
 	CurrentItem: TCloudDirItem;
-	getResult: Integer;
 	ActionResult: TSharedItemActionResult;
 begin
 	Result := FS_EXEC_OK;
@@ -492,7 +489,7 @@ begin
 			end;
 		satPropertyDialog:
 			begin
-				Cloud := ConnectionManager.Get(RealPath.account, getResult);
+				Cloud := ConnectionManager.Get(RealPath.account);
 				CurrentItem := ActionResult.CurrentItem;
 				if Cloud.ListingService.StatusFile(CurrentItem.home, CurrentItem) then
 					TPropertyForm.ShowProperty(MainWin, RealPath.Path, CurrentItem, Cloud, FFileSystem, FTCHandler, SettingsManager.GetSettings.DownloadLinksEncode, SettingsManager.GetSettings.AutoUpdateDownloadListing, false, false, SettingsManager.GetSettings.DescriptionFileName);
@@ -503,11 +500,10 @@ end;
 function TWFXApplication.ExecTrashbinProperties(MainWin: THandle; RealPath: TRealPath): Integer;
 var
 	Cloud: TCloudMailRu;
-	getResult: Integer;
 	CurrentItem: TCloudDirItem;
 	IsTrashDir: Boolean;
 begin
-	Cloud := ConnectionManager.Get(RealPath.account, getResult);
+	Cloud := ConnectionManager.Get(RealPath.account);
 	IsTrashDir := RealPath.isInAccountsList;
 
 	if IsTrashDir then //main trashbin folder properties
@@ -540,22 +536,19 @@ begin
 end;
 
 function TWFXApplication.FindIncomingInviteItemByPath(InviteListing: TCloudIncomingInviteList; Path: TRealPath): TCloudIncomingInvite;
-var
-	getResult: Integer;
 begin
 	Result := InviteListing.FindByName(Path.Path);
 	{item not found in current global listing, so refresh it}
 	if Result.isNone then
-		if ConnectionManager.Get(Path.account, getResult).ListingService.GetIncomingInvites(CurrentIncomingInvitesListing) then
+		if ConnectionManager.Get(Path.account).ListingService.GetIncomingInvites(CurrentIncomingInvitesListing) then
 			exit(CurrentIncomingInvitesListing.FindByName(Path.Path));
 end;
 
 function TWFXApplication.FindListingItemByPath(CurrentListing: TCloudDirItemList; Path: TRealPath; UpdateListing: Boolean): TCloudDirItem;
 var
-	getResult: Integer;
 	CurrentCloud: TCloudMailRu;
 begin
-	CurrentCloud := ConnectionManager.Get(Path.account, getResult);
+	CurrentCloud := ConnectionManager.Get(Path.account);
 	Result := FListingItemFetcher.FetchItem(CurrentListing, Path, CurrentCloud, UpdateListing);
 end;
 
@@ -602,14 +595,13 @@ end;
 function TWFXApplication.FsDeleteFile(RemoteName: WideString): Boolean;
 var
 	RealPath: TRealPath;
-	getResult: Integer;
 	CurrentItem: TCloudDirItem;
 	Cloud: TCloudMailRu;
 begin
 	RealPath.FromPath(WideString(RemoteName));
 	if RealPath.isAccountEmpty or RealPath.TrashDir or RealPath.invitesDir then
 		exit(false);
-	Cloud := ConnectionManager.Get(RealPath.account, getResult);
+	Cloud := ConnectionManager.Get(RealPath.account);
 	if RealPath.sharedDir then
 	begin
 		CurrentItem := FindListingItemByPath(CurrentListing, RealPath);
@@ -806,7 +798,6 @@ end;
 function TWFXApplication.FsMkDir(Path: WideString): Boolean;
 var
 	RealPath: TRealPath;
-	getResult: Integer;
 	SkipListRenMov: Boolean;
 begin
 	SkipListRenMov := FThreadState.GetSkipListRenMov;
@@ -819,7 +810,7 @@ begin
 	if (RealPath.isAccountEmpty) or RealPath.isVirtual then
 		exit(false);
 
-	Result := ConnectionManager.Get(RealPath.account, getResult).FileOperations.CreateDirectory(RealPath.Path);
+	Result := ConnectionManager.Get(RealPath.account).FileOperations.CreateDirectory(RealPath.Path);
 	{Need to check operation context => directory can be moved}
 	if Result and FMoveOperationTracker.IsMoveOperation then
 		FMoveOperationTracker.TrackMoveTarget(RealPath);
@@ -864,7 +855,6 @@ end;
 function TWFXApplication.FsRemoveDir(RemoteName: WideString): Boolean;
 var
 	RealPath: TRealPath;
-	getResult: Integer;
 	Cloud: TCloudMailRu;
 begin
 	if not FDirectoryDeletionPreCheck.ShouldProceed(RemoteName) then
@@ -874,7 +864,7 @@ begin
 	if RealPath.isVirtual then
 		exit(false);
 
-	Cloud := ConnectionManager.Get(RealPath.account, getResult);
+	Cloud := ConnectionManager.Get(RealPath.account);
 	Result := Cloud.FileOperations.RemoveDirectory(RealPath.Path);
 
 	if Result then
@@ -891,7 +881,6 @@ function TWFXApplication.FsRenMovFile(OldName, NewName: PWideChar; Move, OverWri
 var
 	OldRealPath: TRealPath;
 	NewRealPath: TRealPath;
-	getResult: Integer;
 	OldCloud, NewCloud: TCloudMailRu;
 begin
 	TCProgress.Progress(OldName, NewName, 0);
@@ -903,8 +892,8 @@ begin
 	if OldRealPath.TrashDir or NewRealPath.TrashDir or OldRealPath.sharedDir or NewRealPath.sharedDir then
 		exit(FS_FILE_NOTSUPPORTED);
 
-	OldCloud := ConnectionManager.Get(OldRealPath.account, getResult);
-	NewCloud := ConnectionManager.Get(NewRealPath.account, getResult);
+	OldCloud := ConnectionManager.Get(OldRealPath.account);
+	NewCloud := ConnectionManager.Get(NewRealPath.account);
 
 	if OldRealPath.account <> NewRealPath.account then {Cross-account operation - delegate to handler}
 		Result := FCrossAccountFileOperationHandler.Execute(OldCloud, NewCloud, OldRealPath, NewRealPath, Move, OverWrite, SettingsManager.GetSettings.CopyBetweenAccountsMode, OldCloud.IsPublicAccount,
@@ -973,7 +962,6 @@ end;
 
 function TWFXApplication.GetRemoteFile(RemotePath: TRealPath; LocalName, RemoteName: WideString; CopyFlags: Integer): Integer;
 var
-	getResult: Integer;
 	Cloud: TCloudMailRu;
 	resultHash: WideString;
 	DownloadContext: TDownloadContext;
@@ -982,7 +970,7 @@ begin
 		resultHash := EmptyWideStr
 	else
 		resultHash := 'dummy'; {Calculations will be ignored if variable is not empty}
-	Cloud := ConnectionManager.Get(RemotePath.account, getResult);
+	Cloud := ConnectionManager.Get(RemotePath.account);
 
 	Result := Cloud.Downloader.Download(WideString(RemotePath.Path), LocalName, resultHash);
 
@@ -1002,11 +990,10 @@ end;
 
 function TWFXApplication.PutRemoteFile(RemotePath: TRealPath; LocalName, RemoteName: WideString; CopyFlags: Integer): Integer;
 var
-	getResult: Integer;
 	Cloud: TCloudMailRu;
 	CompletionContext: TUploadCompletionContext;
 begin
-	Cloud := ConnectionManager.Get(RemotePath.account, getResult);
+	Cloud := ConnectionManager.Get(RemotePath.account);
 
 	Result := Cloud.Uploader.Upload(WideString(LocalName), RemotePath.Path);
 	if Result = FS_FILE_OK then

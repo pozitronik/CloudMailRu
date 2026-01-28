@@ -94,7 +94,6 @@ end;
 function TCommandDispatcher.Execute(const RemoteName, Command, Parameter: WideString): TCommandResult;
 var
 	Path: TRealPath;
-	getResult: Integer;
 	Cloud: TCloudMailRu;
 begin
 	Result := TCommandResult.OK;
@@ -105,7 +104,7 @@ begin
 
 	{All other commands use default path from RemoteName}
 	Path.FromPath(RemoteName);
-	Cloud := FConnectionManager.Get(Path.Account, getResult);
+	Cloud := FConnectionManager.Get(Path.Account);
 
 	if Command = 'share' then
 		exit(ExecuteShare(Cloud, Path.Path, Parameter));
@@ -129,10 +128,9 @@ end;
 function TCommandDispatcher.ExecuteRmdir(const RemoteName, Parameter: WideString): TCommandResult;
 var
 	Path: TRealPath;
-	getResult: Integer;
 begin
 	Path.FromPath(RemoteName + Parameter);
-	if FConnectionManager.Get(Path.Account, getResult).FileOperations.RemoveDirectory(Path.Path) then
+	if FConnectionManager.Get(Path.Account).FileOperations.RemoveDirectory(Path.Path) then
 		Result := TCommandResult.OK
 	else
 		Result := TCommandResult.Error;

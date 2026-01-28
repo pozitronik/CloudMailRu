@@ -79,23 +79,20 @@ begin
 end;
 
 function TIconContextBuilder.FindInviteItem(const Path: TRealPath; var InviteListing: TCloudIncomingInviteList): TCloudIncomingInvite;
-var
-	getResult: Integer;
 begin
 	Result := InviteListing.FindByName(Path.Path);
 
 	{Item not found in current listing, refresh and search again}
 	if Result.isNone then
-		if FConnectionManager.Get(Path.account, getResult).ListingService.GetIncomingInvites(InviteListing) then
+		if FConnectionManager.Get(Path.account).ListingService.GetIncomingInvites(InviteListing) then
 			Result := InviteListing.FindByName(Path.Path);
 end;
 
 function TIconContextBuilder.FindDirItem(const Path: TRealPath; var DirListing: TCloudDirItemList): TCloudDirItem;
 var
-	getResult: Integer;
 	Cloud: TCloudMailRu;
 begin
-	Cloud := FConnectionManager.Get(Path.account, getResult);
+	Cloud := FConnectionManager.Get(Path.account);
 	Result := FListingItemFetcher.FetchItem(DirListing, Path, Cloud, True);
 end;
 

@@ -90,7 +90,6 @@ end;
 
 function TFileStreamExecutor.ResolveStreamUrl(const RealPath: TRealPath; const Item: TCloudDirItem; Format: Integer; TempCloud: TCloudMailRu; ConnManager: IConnectionManager; out StreamUrl: WideString): Boolean;
 var
-	getResult: Integer;
 	CurrentCloud: TCloudMailRu;
 	MutableItem: TCloudDirItem;
 begin
@@ -105,7 +104,7 @@ begin
 		{Other formats - ensure file is published first}
 		if not Item.isPublished then
 		begin
-			CurrentCloud := ConnManager.Get(RealPath.account, getResult);
+			CurrentCloud := ConnManager.Get(RealPath.account);
 			Result := CurrentCloud.PublishFile(MutableItem.home, MutableItem.weblink);
 			//Здесь можно бы обновить листинг
 		end;

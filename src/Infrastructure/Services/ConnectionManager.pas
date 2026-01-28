@@ -40,10 +40,11 @@ type
 		['{DE5905AB-A410-42C0-A517-C30EC573D7FD}']
 
 		{Returns cloud connection for account, creating if needed.
+			Always returns a valid instance (never nil).
+			Authorization happens when caller invokes Cloud.Authorize().
 			@param ConnectionName Account name to get connection for
-			@param OperationResult Output status code (CLOUD_OPERATION_OK on success)
-			@return TCloudMailRu instance or nil on failure}
-		function Get(ConnectionName: WideString; var OperationResult: Integer): TCloudMailRu;
+			@return TCloudMailRu instance}
+		function Get(ConnectionName: WideString): TCloudMailRu;
 
 		{Releases connection for account if it exists.
 			@param ConnectionName Account name to release connection for}
@@ -69,14 +70,14 @@ type
 		FRequest: IRequest;
 		FPasswordManager: IPasswordManager;
 
-		function Init(ConnectionName: WideString; out Cloud: TCloudMailRu): Integer; {Create a connection by its name, returns the status code}
+		function Init(ConnectionName: WideString): TCloudMailRu; {Create a connection by its name}
 		function GetFilesPassword(const ConnectionName: WideString; var CloudSettings: TCloudSettings): Boolean;
 		function GetProxyPassword(): Boolean;
 		function InitCloudCryptPasswords(const ConnectionName: WideString; var CloudSettings: TCloudSettings): Boolean;
 	public
 		constructor Create(PluginSettingsManager: IPluginSettingsManager; AccountsManager: IAccountsManager; HTTPManager: IHTTPManager; PasswordUI: IPasswordUIProvider; CipherValidator: ICipherValidator; FileSystem: IFileSystem; Progress: IProgress; Logger: ILogger; Request: IRequest; PasswordManager: IPasswordManager; TCHandler: ITCHandler; AuthStrategyFactory: IAuthStrategyFactory; OpenSSLProvider: IOpenSSLProvider; AccountCredentialsProvider: IAccountCredentialsProvider);
 		destructor Destroy(); override;
-		function Get(ConnectionName: WideString; var OperationResult: Integer): TCloudMailRu; {Return the cloud connection by its name}
+		function Get(ConnectionName: WideString): TCloudMailRu; {Return the cloud connection by its name, always returns a valid instance}
 		procedure Free(ConnectionName: WideString); {Free a connection by its name, if present}
 	end;
 
@@ -133,34 +134,31 @@ begin
 	end;
 end;
 
-function TConnectionManager.Get(ConnectionName: WideString; var OperationResult: Integer): TCloudMailRu;
+function TConnectionManager.Get(ConnectionName: WideString): TCloudMailRu;
 begin
-	OperationResult := CLOUD_OPERATION_OK;
 	if not FConnections.TryGetValue(ConnectionName, Result) then
 	begin
-		OperationResult := Init(ConnectionName, Result);
-		if CLOUD_OPERATION_OK = OperationResult then
-			FConnections.AddOrSetValue(ConnectionName, Result)
-		else
-			Result := nil; {если подключиться не удалось, все функции облака будут возвращать негативный результат, но без AV}
+		Result := Init(ConnectionName);
+		FConnections.AddOrSetValue(ConnectionName, Result);
 	end;
 end;
 
-function TConnectionManager.Init(ConnectionName: WideString; out Cloud: TCloudMailRu): Integer;
+function TConnectionManager.Init(ConnectionName: WideString): TCloudMailRu;
 var
 	CloudSettings: TCloudSettings;
 	AuthStrategy: IAuthStrategy;
 	Cipher: ICipher;
 	FileCipherInstance: TFileCipher;
 begin
-	Result := CLOUD_OPERATION_OK;
-
 	{Create CloudSettings using factory method - combines plugin settings with account settings}
 	CloudSettings := TCloudSettings.CreateFromSettings(FPluginSettingsManager.GetSettings, FAccountsManager.GetAccountSettings(ConnectionName));
 
 	{For non-public accounts, get files and proxy passwords. Account password is retrieved by TCloudMailRu.Authorize()}
-	if not CloudSettings.AccountSettings.PublicAccount and (not GetFilesPassword(ConnectionName, CloudSettings) or not GetProxyPassword) then
-		exit(CLOUD_OPERATION_ERROR_STATUS_UNKNOWN); //INVALID_HANDLE_VALUE
+	if not CloudSettings.AccountSettings.PublicAccount then
+	begin
+		GetFilesPassword(ConnectionName, CloudSettings);
+		GetProxyPassword;
+	end;
 
 	FLogger.Log(LOG_LEVEL_CONNECT, MSGTYPE_CONNECT, 'CONNECT \%s', [ConnectionName]);
 
@@ -181,13 +179,8 @@ begin
 	{Create appropriate auth strategy via factory - enables DI and testability}
 	AuthStrategy := FAuthStrategyFactory.CreateDefaultStrategy;
 
-	Cloud := TCloudMailRu.Create(CloudSettings, FHTTPManager, function: TThreadID begin Result := GetCurrentThreadID; end, AuthStrategy, FFileSystem, FLogger, FProgress, FRequest, FTCHandler, Cipher, FOpenSSLProvider, FAccountCredentialsProvider);
-
-	if not Cloud.Authorize then
-	begin
-		Result := CLOUD_OPERATION_FAILED;
-		Cloud.Free;
-	end;
+	{Create cloud instance - authorization happens later via Cloud.Authorize()}
+	Result := TCloudMailRu.Create(CloudSettings, FHTTPManager, function: TThreadID begin Result := GetCurrentThreadID; end, AuthStrategy, FFileSystem, FLogger, FProgress, FRequest, FTCHandler, Cipher, FOpenSSLProvider, FAccountCredentialsProvider);
 end;
 
 {Depending on the account settings, initializes and retrieves the files encryption password.

@@ -25,7 +25,7 @@ type
 		procedure SetCloud(const AccountName: WideString; Cloud: TCloudMailRu);
 
 		{IConnectionManager implementation}
-		function Get(ConnectionName: WideString; var OperationResult: Integer): TCloudMailRu;
+		function Get(ConnectionName: WideString): TCloudMailRu;
 		procedure Free(ConnectionName: WideString);
 
 		{Test inspection}
@@ -54,11 +54,9 @@ begin
 	FCloudInstances.AddOrSetValue(AccountName, Cloud);
 end;
 
-function TMockConnectionManager.Get(ConnectionName: WideString; var OperationResult: Integer): TCloudMailRu;
+function TMockConnectionManager.Get(ConnectionName: WideString): TCloudMailRu;
 begin
 	Inc(FGetCallCount);
-	OperationResult := CLOUD_OPERATION_OK;
-
 	if not FCloudInstances.TryGetValue(ConnectionName, Result) then
 		Result := nil;
 end;

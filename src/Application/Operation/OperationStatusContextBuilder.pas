@@ -42,8 +42,6 @@ begin
 end;
 
 function TOperationStatusContextBuilder.BuildContext(const Path: TRealPath; Operation: Integer): TOperationContext;
-var
-	getResult: Integer;
 begin
 	Result.Operation := Operation;
 	Result.IsInAccount := Path.IsInAccount();
@@ -52,7 +50,7 @@ begin
 
 	{Public account check only needed when in account context}
 	if Result.IsInAccount then
-		Result.IsPublicAccount := FConnectionManager.Get(Path.account, getResult).IsPublicAccount
+		Result.IsPublicAccount := FConnectionManager.Get(Path.account).IsPublicAccount
 	else
 		Result.IsPublicAccount := False;
 end;

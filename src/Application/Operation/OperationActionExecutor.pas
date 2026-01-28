@@ -133,21 +133,18 @@ begin
 end;
 
 procedure TOperationActionExecutor.ExecuteUserSpaceLogging(Actions: TOperationActions; const RealPath: TRealPath);
-var
-	getResult: Integer;
 begin
 	if oaLogUserSpaceInfo in Actions then
-		FConnectionManager.Get(RealPath.account, getResult).logUserSpaceInfo;
+		FConnectionManager.Get(RealPath.account).logUserSpaceInfo;
 end;
 
 procedure TOperationActionExecutor.ExecuteDescriptionLoading(Actions: TOperationActions; const RealPath: TRealPath);
 var
-	getResult: Integer;
 	DescOps: ICloudDescriptionOps;
 begin
 	if oaLoadDescriptions in Actions then
 	begin
-		DescOps := TCloudDescriptionOperationsAdapter.Create(FConnectionManager.Get(RealPath.account, getResult));
+		DescOps := TCloudDescriptionOperationsAdapter.Create(FConnectionManager.Get(RealPath.account));
 		if DescOps.GetDescriptionFile(IncludeTrailingBackslash(RealPath.Path) + FSettingsManager.GetSettings.DescriptionFileName, FDescriptions.ionFilename) then
 			FDescriptions.Read
 		else

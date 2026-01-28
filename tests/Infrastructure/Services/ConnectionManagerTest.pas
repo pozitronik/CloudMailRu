@@ -95,16 +95,16 @@ type
 	TConnectionManagerGetTest = class
 	public
 		[Test]
-		{Verifies Get returns nil when password UI cancels (TNullPasswordUIProvider returns mrCancel)}
-		procedure TestGetReturnsNilWhenPasswordCancelled;
+		{Verifies Get always returns a valid instance (never nil)}
+		procedure TestGetAlwaysReturnsValidInstance;
 
 		[Test]
-		{Verifies Get sets OperationResult to error when password UI cancels}
-		procedure TestGetSetsErrorResultWhenPasswordCancelled;
+		{Verifies Get returns the same instance for the same connection name (caching)}
+		procedure TestGetReturnsCachedInstance;
 
 		[Test]
-		{Verifies Get returns nil for same connection on repeated calls when init fails}
-		procedure TestGetReturnsNilConsistently;
+		{Verifies Get returns different instances for different connection names}
+		procedure TestGetReturnsDifferentInstancesForDifferentNames;
 	end;
 
 	[TestFixture]
@@ -352,7 +352,7 @@ end;
 
 {TConnectionManagerGetTest}
 
-procedure TConnectionManagerGetTest.TestGetReturnsNilWhenPasswordCancelled;
+procedure TConnectionManagerGetTest.TestGetAlwaysReturnsValidInstance;
 var
 	Manager: TConnectionManager;
 	PluginSettings: IPluginSettingsManager;
@@ -366,52 +366,10 @@ var
 	Request: IRequest;
 	PasswordManager: IPasswordManager;
 	Cloud: TCloudMailRu;
-	OperationResult: Integer;
 begin
-	{Create mock that returns non-public account (requires password)}
+	{Create mock that returns public account (simplest case)}
 	AccountsManager := TMockAccountsManager.Create;
-	AccountsManager.FAccountSettings.PublicAccount := False;
-	AccountsManager.FAccountSettings.Password := ''; {Empty password will trigger UI prompt}
-
-	PluginSettings := TMockPluginSettingsManager.Create;
-	HTTPManager := TNullHTTPManager.Create;
-	PasswordUI := TNullPasswordUIProvider.Create; {Returns mrCancel}
-	CipherValidator := TNullCipherValidator.Create;
-	FileSystem := TNullFileSystem.Create;
-	Progress := TNullProgress.Create;
-	Logger := TNullLogger.Create;
-	Request := TNullRequest.Create;
-	PasswordManager := TNullPasswordManager.Create;
-
-	Manager := TConnectionManager.Create(PluginSettings, AccountsManager, HTTPManager,
-		PasswordUI, CipherValidator, FileSystem, Progress, Logger, Request, PasswordManager, TNullTCHandler.Create, TNullAuthStrategyFactory.Create, TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create);
-	try
-		Cloud := Manager.Get('test_connection', OperationResult);
-		Assert.IsNull(Cloud, 'Get should return nil when password UI is cancelled');
-	finally
-		Manager.Destroy;
-	end;
-end;
-
-procedure TConnectionManagerGetTest.TestGetSetsErrorResultWhenPasswordCancelled;
-var
-	Manager: TConnectionManager;
-	PluginSettings: IPluginSettingsManager;
-	AccountsManager: TMockAccountsManager;
-	HTTPManager: IHTTPManager;
-	PasswordUI: IPasswordUIProvider;
-	CipherValidator: ICipherValidator;
-	FileSystem: IFileSystem;
-	Progress: IProgress;
-	Logger: ILogger;
-	Request: IRequest;
-	PasswordManager: IPasswordManager;
-	Cloud: TCloudMailRu;
-	OperationResult: Integer;
-begin
-	AccountsManager := TMockAccountsManager.Create;
-	AccountsManager.FAccountSettings.PublicAccount := False;
-	AccountsManager.FAccountSettings.Password := '';
+	AccountsManager.FAccountSettings.PublicAccount := True;
 
 	PluginSettings := TMockPluginSettingsManager.Create;
 	HTTPManager := TNullHTTPManager.Create;
@@ -426,16 +384,14 @@ begin
 	Manager := TConnectionManager.Create(PluginSettings, AccountsManager, HTTPManager,
 		PasswordUI, CipherValidator, FileSystem, Progress, Logger, Request, PasswordManager, TNullTCHandler.Create, TNullAuthStrategyFactory.Create, TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create);
 	try
-		Cloud := Manager.Get('test_connection', OperationResult);
-		Assert.IsNull(Cloud, 'Cloud should be nil when password retrieval fails');
-		Assert.AreNotEqual(CLOUD_OPERATION_OK, OperationResult,
-			'OperationResult should not be OK when password retrieval fails');
+		Cloud := Manager.Get('test_connection');
+		Assert.IsNotNull(Cloud, 'Get should always return a valid instance');
 	finally
 		Manager.Destroy;
 	end;
 end;
 
-procedure TConnectionManagerGetTest.TestGetReturnsNilConsistently;
+procedure TConnectionManagerGetTest.TestGetReturnsCachedInstance;
 var
 	Manager: TConnectionManager;
 	PluginSettings: IPluginSettingsManager;
@@ -449,11 +405,9 @@ var
 	Request: IRequest;
 	PasswordManager: IPasswordManager;
 	Cloud1, Cloud2: TCloudMailRu;
-	Result1, Result2: Integer;
 begin
 	AccountsManager := TMockAccountsManager.Create;
-	AccountsManager.FAccountSettings.PublicAccount := False;
-	AccountsManager.FAccountSettings.Password := '';
+	AccountsManager.FAccountSettings.PublicAccount := True;
 
 	PluginSettings := TMockPluginSettingsManager.Create;
 	HTTPManager := TNullHTTPManager.Create;
@@ -468,11 +422,50 @@ begin
 	Manager := TConnectionManager.Create(PluginSettings, AccountsManager, HTTPManager,
 		PasswordUI, CipherValidator, FileSystem, Progress, Logger, Request, PasswordManager, TNullTCHandler.Create, TNullAuthStrategyFactory.Create, TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create);
 	try
-		Cloud1 := Manager.Get('test_connection', Result1);
-		Cloud2 := Manager.Get('test_connection', Result2);
+		Cloud1 := Manager.Get('test_connection');
+		Cloud2 := Manager.Get('test_connection');
 
-		Assert.IsNull(Cloud1, 'First Get should return nil');
-		Assert.IsNull(Cloud2, 'Second Get should also return nil');
+		Assert.AreSame(Cloud1, Cloud2, 'Get should return the same cached instance');
+	finally
+		Manager.Destroy;
+	end;
+end;
+
+procedure TConnectionManagerGetTest.TestGetReturnsDifferentInstancesForDifferentNames;
+var
+	Manager: TConnectionManager;
+	PluginSettings: IPluginSettingsManager;
+	AccountsManager: TMockAccountsManager;
+	HTTPManager: IHTTPManager;
+	PasswordUI: IPasswordUIProvider;
+	CipherValidator: ICipherValidator;
+	FileSystem: IFileSystem;
+	Progress: IProgress;
+	Logger: ILogger;
+	Request: IRequest;
+	PasswordManager: IPasswordManager;
+	Cloud1, Cloud2: TCloudMailRu;
+begin
+	AccountsManager := TMockAccountsManager.Create;
+	AccountsManager.FAccountSettings.PublicAccount := True;
+
+	PluginSettings := TMockPluginSettingsManager.Create;
+	HTTPManager := TNullHTTPManager.Create;
+	PasswordUI := TNullPasswordUIProvider.Create;
+	CipherValidator := TNullCipherValidator.Create;
+	FileSystem := TNullFileSystem.Create;
+	Progress := TNullProgress.Create;
+	Logger := TNullLogger.Create;
+	Request := TNullRequest.Create;
+	PasswordManager := TNullPasswordManager.Create;
+
+	Manager := TConnectionManager.Create(PluginSettings, AccountsManager, HTTPManager,
+		PasswordUI, CipherValidator, FileSystem, Progress, Logger, Request, PasswordManager, TNullTCHandler.Create, TNullAuthStrategyFactory.Create, TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create);
+	try
+		Cloud1 := Manager.Get('connection1');
+		Cloud2 := Manager.Get('connection2');
+
+		Assert.AreNotSame(Cloud1, Cloud2, 'Get should return different instances for different names');
 	finally
 		Manager.Destroy;
 	end;

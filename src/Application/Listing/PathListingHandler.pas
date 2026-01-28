@@ -86,7 +86,6 @@ end;
 
 function TPathListingHandler.Execute(const Path: WideString): TPathListingResult;
 var
-	getResult: Integer;
 	CurrentCloud: TCloudMailRu;
 	ValidationResult: TListingValidationResult;
 begin
@@ -96,13 +95,7 @@ begin
 	Result.RealPath.FromPath(Path);
 
 	{Get cloud connection}
-	CurrentCloud := FConnectionManager.Get(Result.RealPath.account, getResult);
-
-	if getResult <> CLOUD_OPERATION_OK then
-	begin
-		Result.ErrorCode := ERROR_ACCESS_DENIED;
-		Exit;
-	end;
+	CurrentCloud := FConnectionManager.Get(Result.RealPath.account);
 
 	if not Assigned(CurrentCloud) then
 	begin
