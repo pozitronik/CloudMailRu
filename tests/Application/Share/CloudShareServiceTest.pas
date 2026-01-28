@@ -27,7 +27,7 @@ type
 		FMockHTTP: TMockCloudHTTP;
 		FIsPublicAccount: Boolean;
 		FUnitedParams: WideString;
-		FRetryOperation: TRetryOperation;
+		FRetryOperation: IRetryOperation;
 		FVideoShard: WideString;
 
 		function GetHTTP: ICloudHTTP;
@@ -168,8 +168,7 @@ procedure TCloudShareServiceTest.TearDown;
 begin
 	FService := nil;
 	FShardManager := nil;
-	if Assigned(FRetryOperation) then
-		FRetryOperation.Free;
+		FRetryOperation := nil;
 end;
 
 function TCloudShareServiceTest.GetHTTP: ICloudHTTP;

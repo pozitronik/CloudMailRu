@@ -59,7 +59,7 @@ type
 		FHTTP: ICloudHTTP;
 		FCipher: ICipher;
 		FLogger: ILogger;
-		FRetryOperation: TRetryOperation;
+		FRetryOperation: IRetryOperation;
 		FIsPublicAccount: TGetBoolFunc;
 		FGetUnitedParams: TGetUnitedParamsFunc;
 		FGetPublicLink: TGetStringFunc;
@@ -67,7 +67,7 @@ type
 		FCloudResultToBooleanFromResult: TCloudResultToBooleanFromResultFunc;
 		FDoCryptFilenames: Boolean;
 	public
-		constructor Create(HTTP: ICloudHTTP; Cipher: ICipher; Logger: ILogger; RetryOperation: TRetryOperation; IsPublicAccount: TGetBoolFunc; GetUnitedParams: TGetUnitedParamsFunc; GetPublicLink: TGetStringFunc; CloudResultToBoolean: TCloudResultToBooleanFunc; CloudResultToBooleanFromResult: TCloudResultToBooleanFromResultFunc; DoCryptFilenames: Boolean);
+		constructor Create(HTTP: ICloudHTTP; Cipher: ICipher; Logger: ILogger; RetryOperation: IRetryOperation; IsPublicAccount: TGetBoolFunc; GetUnitedParams: TGetUnitedParamsFunc; GetPublicLink: TGetStringFunc; CloudResultToBoolean: TCloudResultToBooleanFunc; CloudResultToBooleanFromResult: TCloudResultToBooleanFromResultFunc; DoCryptFilenames: Boolean);
 
 		{ICloudListingService implementation}
 		function GetDirectory(Path: WideString; var Listing: TCloudDirItemList; ShowProgress: Boolean = False): Boolean;
@@ -86,7 +86,7 @@ implementation
 
 {TCloudListingService}
 
-constructor TCloudListingService.Create(HTTP: ICloudHTTP; Cipher: ICipher; Logger: ILogger; RetryOperation: TRetryOperation; IsPublicAccount: TGetBoolFunc; GetUnitedParams: TGetUnitedParamsFunc; GetPublicLink: TGetStringFunc; CloudResultToBoolean: TCloudResultToBooleanFunc; CloudResultToBooleanFromResult: TCloudResultToBooleanFromResultFunc; DoCryptFilenames: Boolean);
+constructor TCloudListingService.Create(HTTP: ICloudHTTP; Cipher: ICipher; Logger: ILogger; RetryOperation: IRetryOperation; IsPublicAccount: TGetBoolFunc; GetUnitedParams: TGetUnitedParamsFunc; GetPublicLink: TGetStringFunc; CloudResultToBoolean: TCloudResultToBooleanFunc; CloudResultToBooleanFromResult: TCloudResultToBooleanFromResultFunc; DoCryptFilenames: Boolean);
 begin
 	inherited Create;
 	FHTTP := HTTP;

@@ -66,7 +66,7 @@ type
 		FSettings: TUploadSettings;
 		FTempDir: string;
 		FOAuthToken: TCloudOAuth;
-		FRetryOperation: TRetryOperation;
+		FRetryOperation: IRetryOperation;
 		FIsPublicAccount: Boolean;
 		FAddByIdentityFirstResult: Integer;  {Result for first call - used to control CloudResultToFsResult}
 		FAddByIdentityNextResult: Integer;   {Result for subsequent calls}
@@ -248,8 +248,7 @@ begin
 	FreeAndNil(FUploader);
 	FShardManager := nil;
 	FHashCalculator := nil;
-	if Assigned(FRetryOperation) then
-		FRetryOperation.Free;
+	FRetryOperation := nil;
 	FMockHTTP := nil;
 	FMockHTTPRef := nil; {Release interface reference - triggers destruction}
 	CleanupTempFiles;
@@ -272,7 +271,7 @@ begin
 		TNullTCHandler.Create,
 		function: TCloudOAuth begin Result := TestSelf.FOAuthToken; end,
 		function: Boolean begin Result := TestSelf.FIsPublicAccount; end,
-		function: TRetryOperation begin Result := TestSelf.FRetryOperation; end,
+		function: IRetryOperation begin Result := TestSelf.FRetryOperation; end,
 		function: WideString begin Result := 'token=test&x-email=test@mail.ru'; end,
 		function(JSON: WideString; ErrorPrefix: WideString): Integer
 		begin

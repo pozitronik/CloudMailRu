@@ -39,12 +39,12 @@ type
 		FOAuthToken: TCloudOAuth;
 		FSettings: TUploadSettings;
 		FDeleteFileCalled: Boolean;
-		FRetryOperation: TRetryOperation;
+		FRetryOperation: IRetryOperation;
 
 		function GetHTTP: ICloudHTTP;
 		function GetOAuthToken: TCloudOAuth;
 		function IsPublicAccount: Boolean;
-		function GetRetryOperation: TRetryOperation;
+		function GetRetryOperation: IRetryOperation;
 		function GetUnitedParams: WideString;
 		function CloudResultToFsResult(JSON: WideString; ErrorPrefix: WideString): Integer;
 		function DeleteFile(Path: WideString): Boolean;
@@ -150,8 +150,7 @@ begin
 	FUploader := nil;
 	FShardManager := nil;
 	FHashCalculator := nil;
-	if Assigned(FRetryOperation) then
-		FRetryOperation.Free;
+		FRetryOperation := nil;
 end;
 
 function TCloudFileUploaderTest.GetHTTP: ICloudHTTP;
@@ -169,7 +168,7 @@ begin
 	Result := FIsPublicAccount;
 end;
 
-function TCloudFileUploaderTest.GetRetryOperation: TRetryOperation;
+function TCloudFileUploaderTest.GetRetryOperation: IRetryOperation;
 begin
 	Result := FRetryOperation;
 end;

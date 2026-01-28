@@ -76,7 +76,7 @@ type
 		FCipher: ICipher; {The encryption instance}
 		FAuthStrategy: IAuthStrategy; {Authentication strategy}
 		FFileSystem: IFileSystem; {File system abstraction for testability}
-		FRetryOperation: TRetryOperation; {Token refresh retry handler}
+		FRetryOperation: IRetryOperation; {Token refresh retry handler}
 		FHashCalculator: ICloudHashCalculator; {Cloud hash calculation service}
 		FDownloader: ICloudFileDownloader; {File download service}
 		FUploader: ICloudFileUploader; {File upload service}
@@ -302,7 +302,7 @@ begin
 			begin
 				Result := Self.IsPublicAccount;
 			end,
-			function: TRetryOperation
+			function: IRetryOperation
 			begin
 				Result := Self.FRetryOperation;
 			end,
@@ -388,10 +388,9 @@ destructor TCloudMailRu.Destroy;
 begin
 	//HTTP.Destroy;
 
-	FCookieManager.Destroy;
+	FCookieManager.Free;
 
-	FRetryOperation.Free;
-
+	FRetryOperation := nil; {Release interface reference}
 	FCipher := nil; {Release interface reference}
 	FHashCalculator := nil; {Release interface reference}
 	FShardManager := nil; {Release interface reference}

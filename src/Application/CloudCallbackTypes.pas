@@ -29,7 +29,7 @@ type
 	THashStreamFunc = reference to function(Stream: TStream; Path: WideString): WideString;
 	THashFileFunc = reference to function(Path: WideString): WideString;
 	TDeleteFileFunc = reference to function(Path: WideString): Boolean;
-	TGetRetryOperationFunc = reference to function: TRetryOperation;
+	TGetRetryOperationFunc = reference to function: IRetryOperation;
 	TCloudResultToFsResultFunc = reference to function(JSON: WideString; ErrorPrefix: WideString): Integer;
 	TCloudResultToBooleanFunc = reference to function(JSON: WideString; ErrorPrefix: WideString): Boolean;
 	TCloudResultToBooleanFromResultFunc = reference to function(OperationResult: TCloudOperationResult; ErrorPrefix: WideString): Boolean;

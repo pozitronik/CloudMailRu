@@ -23,7 +23,7 @@ type
 		FMockHTTP: TMockCloudHTTP;
 		FIsPublicAccount: Boolean;
 		FUnitedParams: WideString;
-		FRetryOperation: TRetryOperation;
+		FRetryOperation: IRetryOperation;
 
 		function GetHTTP: ICloudHTTP;
 		function IsPublicAccount: Boolean;
@@ -125,8 +125,7 @@ end;
 procedure TCloudFileOperationsTest.TearDown;
 begin
 	FService := nil;
-	if Assigned(FRetryOperation) then
-		FRetryOperation.Free;
+		FRetryOperation := nil;
 end;
 
 function TCloudFileOperationsTest.GetHTTP: ICloudHTTP;

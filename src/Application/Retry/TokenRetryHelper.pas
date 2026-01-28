@@ -36,10 +36,30 @@ type
 	TResultToBooleanFunc = reference to function(const JSON, ErrorPrefix: WideString): Boolean;
 	TResultToIntegerFunc = reference to function(const JSON, ErrorPrefix: WideString): Integer;
 
+	{Interface for API operations with automatic token refresh retry}
+	IRetryOperation = interface
+		['{A7B3C8D1-E2F4-4A5B-9C6D-7E8F90A1B2C3}']
+
+		{Generic execute for complex operations that need custom logic}
+		function Execute(Operation: TAPIOperation): TAPICallResult;
+
+		{POST form and return Boolean success}
+		function PostFormBoolean(const URL, Params, ErrorPrefix: WideString): Boolean;
+
+		{POST form and return FS result code}
+		function PostFormInteger(const URL, Params, ErrorPrefix: WideString): Integer;
+
+		{GET page and return Boolean success. Returns JSON for further processing.}
+		function GetPageBoolean(const URL, ErrorPrefix: WideString; out JSON: WideString; ShowProgress: Boolean = False): Boolean;
+
+		{GET page without error prefix - for operations that handle errors themselves}
+		function GetPage(const URL: WideString; out JSON: WideString; ShowProgress: Boolean = False): Boolean;
+	end;
+
 	{Handles API operations with automatic token refresh retry.
 		Initialize once with callbacks, then use specialized methods for common patterns
 		or Execute() for complex operations.}
-	TRetryOperation = class
+	TRetryOperation = class(TInterfacedObject, IRetryOperation)
 	private
 		FRefreshToken: TTokenRefreshFunc;
 		FPostForm: THTTPPostFormFunc;

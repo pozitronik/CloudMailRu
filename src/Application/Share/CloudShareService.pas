@@ -53,14 +53,14 @@ type
 	private
 		FHTTP: ICloudHTTP;
 		FLogger: ILogger;
-		FRetryOperation: TRetryOperation;
+		FRetryOperation: IRetryOperation;
 		FIsPublicAccount: TGetBoolFunc;
 		FGetUnitedParams: TGetUnitedParamsFunc;
 		FCloudResultToBoolean: TCloudResultToBooleanFunc;
 		FCloudResultToFsResult: TCloudResultToFsResultFunc;
 		FShardManager: ICloudShardManager;
 	public
-		constructor Create(HTTP: ICloudHTTP; Logger: ILogger; RetryOperation: TRetryOperation; IsPublicAccount: TGetBoolFunc; GetUnitedParams: TGetUnitedParamsFunc; CloudResultToBoolean: TCloudResultToBooleanFunc; CloudResultToFsResult: TCloudResultToFsResultFunc; ShardManager: ICloudShardManager);
+		constructor Create(HTTP: ICloudHTTP; Logger: ILogger; RetryOperation: IRetryOperation; IsPublicAccount: TGetBoolFunc; GetUnitedParams: TGetUnitedParamsFunc; CloudResultToBoolean: TCloudResultToBooleanFunc; CloudResultToFsResult: TCloudResultToFsResultFunc; ShardManager: ICloudShardManager);
 
 		{ICloudShareService implementation}
 		function Publish(Path: WideString; var PublicLink: WideString): Boolean;
@@ -79,7 +79,7 @@ implementation
 
 {TCloudShareService}
 
-constructor TCloudShareService.Create(HTTP: ICloudHTTP; Logger: ILogger; RetryOperation: TRetryOperation; IsPublicAccount: TGetBoolFunc; GetUnitedParams: TGetUnitedParamsFunc; CloudResultToBoolean: TCloudResultToBooleanFunc; CloudResultToFsResult: TCloudResultToFsResultFunc; ShardManager: ICloudShardManager);
+constructor TCloudShareService.Create(HTTP: ICloudHTTP; Logger: ILogger; RetryOperation: IRetryOperation; IsPublicAccount: TGetBoolFunc; GetUnitedParams: TGetUnitedParamsFunc; CloudResultToBoolean: TCloudResultToBooleanFunc; CloudResultToFsResult: TCloudResultToFsResultFunc; ShardManager: ICloudShardManager);
 begin
 	inherited Create;
 	FHTTP := HTTP;

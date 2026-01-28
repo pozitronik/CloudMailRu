@@ -30,7 +30,7 @@ type
 		FIsPublicAccount: Boolean;
 		FUnitedParams: WideString;
 		FPublicLink: WideString;
-		FRetryOperation: TRetryOperation;
+		FRetryOperation: IRetryOperation;
 
 		function GetHTTP: ICloudHTTP;
 		function IsPublicAccount: Boolean;
@@ -147,8 +147,7 @@ end;
 procedure TCloudListingServiceTest.TearDown;
 begin
 	FService := nil;
-	if Assigned(FRetryOperation) then
-		FRetryOperation.Free;
+		FRetryOperation := nil;
 end;
 
 function TCloudListingServiceTest.GetHTTP: ICloudHTTP;

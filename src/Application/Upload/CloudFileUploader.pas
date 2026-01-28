@@ -163,7 +163,7 @@ var
 	UnitedParams: WideString;
 	CloudResultToFsResult: TCloudResultToFsResultFunc;
 	Logger: ILogger;
-	RetryOp: TRetryOperation;
+	RetryOp: IRetryOperation;
 begin
 	if FIsPublicAccount() then
 		Exit(FS_FILE_NOTSUPPORTED);
