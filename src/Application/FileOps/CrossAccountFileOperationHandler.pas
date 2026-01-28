@@ -7,15 +7,13 @@ interface
 
 uses
 	CloudMailRu,
+	CloudCallbackTypes,
 	CloudErrorMapper,
 	RealPath,
 	RetryHandler,
 	TCLogger;
 
 type
-	{Callback for checking if operation was aborted by user}
-	TAbortCheckFunc = reference to function: Boolean;
-
 	ICrossAccountFileOperationHandler = interface
 		['{2C8C695B-1FCA-418D-9650-B1764F40EB30}']
 

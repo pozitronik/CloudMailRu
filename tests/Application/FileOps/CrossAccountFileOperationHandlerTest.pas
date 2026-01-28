@@ -8,6 +8,7 @@ interface
 uses
 	DUnitX.TestFramework,
 	SysUtils,
+	CloudCallbackTypes,
 	CrossAccountFileOperationHandler,
 	RetryHandler,
 	FileCipher,
@@ -38,7 +39,7 @@ type
 			OperationType: TRetryOperationType;
 			const AskMessage, AskTitle, RetryLogMessage, FormatParam: WideString;
 			RetryOperation: TRetryOperation;
-			AbortCheck: TAbortCheck
+			AbortCheck: TAbortCheckFunc
 		): Integer;
 		property HandleErrorCalled: Boolean read FHandleErrorCalled;
 	end;
@@ -194,7 +195,7 @@ function TMockRetryHandler.HandleOperationError(
 	OperationType: TRetryOperationType;
 	const AskMessage, AskTitle, RetryLogMessage, FormatParam: WideString;
 	RetryOperation: TRetryOperation;
-	AbortCheck: TAbortCheck
+	AbortCheck: TAbortCheckFunc
 ): Integer;
 begin
 	FHandleErrorCalled := True;

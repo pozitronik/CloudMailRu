@@ -56,9 +56,9 @@ type
 		FLogger: ILogger;
 		FPostForm: TShardPostFormFunc;
 		FResultToBoolean: TShardResultToBooleanFunc;
-		FGetParams: TGetUnitedParamsFunc;
+		FGetParams: TGetStringFunc;
 	public
-		constructor Create(Logger: ILogger; PostForm: TShardPostFormFunc; ResultToBoolean: TShardResultToBooleanFunc; GetParams: TGetUnitedParamsFunc; DownloadOverride: WideString = ''; UploadOverride: WideString = '');
+		constructor Create(Logger: ILogger; PostForm: TShardPostFormFunc; ResultToBoolean: TShardResultToBooleanFunc; GetParams: TGetStringFunc; DownloadOverride: WideString = ''; UploadOverride: WideString = '');
 
 		function ResolveShard(var Shard: WideString; ShardType: WideString): Boolean;
 		function GetDownloadShard: WideString;
@@ -103,7 +103,7 @@ uses
 
 {TCloudShardManager}
 
-constructor TCloudShardManager.Create(Logger: ILogger; PostForm: TShardPostFormFunc; ResultToBoolean: TShardResultToBooleanFunc; GetParams: TGetUnitedParamsFunc; DownloadOverride: WideString; UploadOverride: WideString);
+constructor TCloudShardManager.Create(Logger: ILogger; PostForm: TShardPostFormFunc; ResultToBoolean: TShardResultToBooleanFunc; GetParams: TGetStringFunc; DownloadOverride: WideString; UploadOverride: WideString);
 begin
 	inherited Create;
 	FLogger := Logger;

@@ -174,7 +174,7 @@ end;
 constructor TCloudMailRu.Create(CloudSettings: TCloudSettings; ConnectionManager: IHTTPManager; GetThreadID: TGetThreadIDFunc; AuthStrategy: IAuthStrategy; FileSystem: IFileSystem; Logger: ILogger; Progress: IProgress; Request: IRequest; TCHandler: ITCHandler; Cipher: ICipher; OpenSSLProvider: IOpenSSLProvider);
 var
 	IsPublicAccountCallback: TGetBoolFunc;
-	GetUnitedParamsCallback: TGetUnitedParamsFunc;
+	GetUnitedParamsCallback: TGetStringFunc;
 begin
 	try
 		FAuthorizationState := asPending;

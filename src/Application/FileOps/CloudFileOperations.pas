@@ -44,9 +44,9 @@ type
 		FLogger: ILogger;
 		FRetryOperation: IRetryOperation;
 		FIsPublicAccount: TGetBoolFunc;
-		FGetUnitedParams: TGetUnitedParamsFunc;
+		FGetUnitedParams: TGetStringFunc;
 	public
-		constructor Create(HTTP: ICloudHTTP; Logger: ILogger; RetryOperation: IRetryOperation; IsPublicAccount: TGetBoolFunc; GetUnitedParams: TGetUnitedParamsFunc);
+		constructor Create(HTTP: ICloudHTTP; Logger: ILogger; RetryOperation: IRetryOperation; IsPublicAccount: TGetBoolFunc; GetUnitedParams: TGetStringFunc);
 
 		{ICloudFileOperations implementation}
 		function CreateDirectory(Path: WideString): Boolean;
@@ -63,7 +63,7 @@ implementation
 
 {TCloudFileOperations}
 
-constructor TCloudFileOperations.Create(HTTP: ICloudHTTP; Logger: ILogger; RetryOperation: IRetryOperation; IsPublicAccount: TGetBoolFunc; GetUnitedParams: TGetUnitedParamsFunc);
+constructor TCloudFileOperations.Create(HTTP: ICloudHTTP; Logger: ILogger; RetryOperation: IRetryOperation; IsPublicAccount: TGetBoolFunc; GetUnitedParams: TGetStringFunc);
 begin
 	inherited Create;
 	FHTTP := HTTP;

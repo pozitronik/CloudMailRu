@@ -52,7 +52,7 @@ type
 		FGetOAuthToken: TGetOAuthTokenFunc;
 		FIsPublicAccount: TGetBoolFunc;
 		FGetPublicLink: TGetStringFunc;
-		FRefreshToken: TRefreshTokenFunc;
+		FRefreshToken: TGetBoolFunc;
 		FDoCryptFiles: Boolean;
 		FDoCryptFilenames: Boolean;
 
@@ -60,7 +60,7 @@ type
 		function DownloadRegular(RemotePath, LocalPath: WideString; var ResultHash: WideString; LogErrors: Boolean): Integer;
 		function DownloadShared(RemotePath, LocalPath: WideString; var ResultHash: WideString; LogErrors: Boolean): Integer;
 	public
-		constructor Create(GetHTTP: TGetHTTPFunc; ShardManager: ICloudShardManager; HashCalculator: ICloudHashCalculator; Cipher: ICipher; FileSystem: IFileSystem; Logger: ILogger; Progress: IProgress; Request: IRequest; GetOAuthToken: TGetOAuthTokenFunc; IsPublicAccount: TGetBoolFunc; GetPublicLink: TGetStringFunc; RefreshToken: TRefreshTokenFunc; DoCryptFiles, DoCryptFilenames: Boolean);
+		constructor Create(GetHTTP: TGetHTTPFunc; ShardManager: ICloudShardManager; HashCalculator: ICloudHashCalculator; Cipher: ICipher; FileSystem: IFileSystem; Logger: ILogger; Progress: IProgress; Request: IRequest; GetOAuthToken: TGetOAuthTokenFunc; IsPublicAccount: TGetBoolFunc; GetPublicLink: TGetStringFunc; RefreshToken: TGetBoolFunc; DoCryptFiles, DoCryptFilenames: Boolean);
 
 		{ICloudFileDownloader}
 		function Download(RemotePath, LocalPath: WideString; var ResultHash: WideString; LogErrors: Boolean = True): Integer;
@@ -75,7 +75,7 @@ uses
 
 {TCloudFileDownloader}
 
-constructor TCloudFileDownloader.Create(GetHTTP: TGetHTTPFunc; ShardManager: ICloudShardManager; HashCalculator: ICloudHashCalculator; Cipher: ICipher; FileSystem: IFileSystem; Logger: ILogger; Progress: IProgress; Request: IRequest; GetOAuthToken: TGetOAuthTokenFunc; IsPublicAccount: TGetBoolFunc; GetPublicLink: TGetStringFunc; RefreshToken: TRefreshTokenFunc; DoCryptFiles, DoCryptFilenames: Boolean);
+constructor TCloudFileDownloader.Create(GetHTTP: TGetHTTPFunc; ShardManager: ICloudShardManager; HashCalculator: ICloudHashCalculator; Cipher: ICipher; FileSystem: IFileSystem; Logger: ILogger; Progress: IProgress; Request: IRequest; GetOAuthToken: TGetOAuthTokenFunc; IsPublicAccount: TGetBoolFunc; GetPublicLink: TGetStringFunc; RefreshToken: TGetBoolFunc; DoCryptFiles, DoCryptFilenames: Boolean);
 begin
 	inherited Create;
 	FGetHTTP := GetHTTP;

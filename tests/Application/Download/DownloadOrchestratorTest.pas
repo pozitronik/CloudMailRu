@@ -8,6 +8,7 @@ interface
 uses
 	System.Classes,
 	DUnitX.TestFramework,
+	CloudCallbackTypes,
 	DownloadOrchestrator,
 	DownloadPreparationValidator,
 	LocalFileConflictResolver,
@@ -114,7 +115,7 @@ type
 			OperationType: TRetryOperationType;
 			const AskMessage, AskTitle, RetryLogMessage, FormatParam: WideString;
 			RetryOperation: TRetryOperation;
-			AbortCheck: TAbortCheck
+			AbortCheck: TAbortCheckFunc
 		): Integer;
 		property WasCalled: Boolean read FWasCalled;
 	end;
@@ -189,7 +190,7 @@ function TMockRetryHandler.HandleOperationError(
 	OperationType: TRetryOperationType;
 	const AskMessage, AskTitle, RetryLogMessage, FormatParam: WideString;
 	RetryOperation: TRetryOperation;
-	AbortCheck: TAbortCheck
+	AbortCheck: TAbortCheckFunc
 ): Integer;
 begin
 	FWasCalled := True;

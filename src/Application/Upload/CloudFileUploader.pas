@@ -81,7 +81,7 @@ type
 		FGetOAuthToken: TGetOAuthTokenFunc;
 		FIsPublicAccount: TGetBoolFunc;
 		FGetRetryOperation: TGetRetryOperationFunc;
-		FGetUnitedParams: TGetUnitedParamsFunc;
+		FGetUnitedParams: TGetStringFunc;
 		FCloudResultToFsResult: TCloudResultToFsResultFunc;
 		FDeleteFile: TDeleteFileFunc;
 		FGetUserSpace: TGetUserSpaceFunc;
@@ -105,7 +105,7 @@ type
 		{Protected for testability - tests need direct access to split upload logic}
 		function PutFileSplit(LocalPath, RemotePath, ConflictMode: WideString; ChunkOverwriteMode: Integer): Integer;
 	public
-		constructor Create(GetHTTP: TGetHTTPFunc; ShardManager: ICloudShardManager; HashCalculator: ICloudHashCalculator; Cipher: ICipher; FileSystem: IFileSystem; Logger: ILogger; Progress: IProgress; Request: IRequest; TCHandler: ITCHandler; GetOAuthToken: TGetOAuthTokenFunc; IsPublicAccount: TGetBoolFunc; GetRetryOperation: TGetRetryOperationFunc; GetUnitedParams: TGetUnitedParamsFunc; CloudResultToFsResult: TCloudResultToFsResultFunc; DeleteFile: TDeleteFileFunc; GetUserSpace: TGetUserSpaceFunc; DoCryptFiles, DoCryptFilenames: Boolean; Settings: TUploadSettings);
+		constructor Create(GetHTTP: TGetHTTPFunc; ShardManager: ICloudShardManager; HashCalculator: ICloudHashCalculator; Cipher: ICipher; FileSystem: IFileSystem; Logger: ILogger; Progress: IProgress; Request: IRequest; TCHandler: ITCHandler; GetOAuthToken: TGetOAuthTokenFunc; IsPublicAccount: TGetBoolFunc; GetRetryOperation: TGetRetryOperationFunc; GetUnitedParams: TGetStringFunc; CloudResultToFsResult: TCloudResultToFsResultFunc; DeleteFile: TDeleteFileFunc; GetUserSpace: TGetUserSpaceFunc; DoCryptFiles, DoCryptFilenames: Boolean; Settings: TUploadSettings);
 
 		{ICloudFileUploader}
 		function Upload(LocalPath, RemotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; ChunkOverwriteMode: Integer = 0): Integer;
@@ -119,7 +119,7 @@ uses
 
 {TCloudFileUploader}
 
-constructor TCloudFileUploader.Create(GetHTTP: TGetHTTPFunc; ShardManager: ICloudShardManager; HashCalculator: ICloudHashCalculator; Cipher: ICipher; FileSystem: IFileSystem; Logger: ILogger; Progress: IProgress; Request: IRequest; TCHandler: ITCHandler; GetOAuthToken: TGetOAuthTokenFunc; IsPublicAccount: TGetBoolFunc; GetRetryOperation: TGetRetryOperationFunc; GetUnitedParams: TGetUnitedParamsFunc; CloudResultToFsResult: TCloudResultToFsResultFunc; DeleteFile: TDeleteFileFunc; GetUserSpace: TGetUserSpaceFunc; DoCryptFiles, DoCryptFilenames: Boolean; Settings: TUploadSettings);
+constructor TCloudFileUploader.Create(GetHTTP: TGetHTTPFunc; ShardManager: ICloudShardManager; HashCalculator: ICloudHashCalculator; Cipher: ICipher; FileSystem: IFileSystem; Logger: ILogger; Progress: IProgress; Request: IRequest; TCHandler: ITCHandler; GetOAuthToken: TGetOAuthTokenFunc; IsPublicAccount: TGetBoolFunc; GetRetryOperation: TGetRetryOperationFunc; GetUnitedParams: TGetStringFunc; CloudResultToFsResult: TCloudResultToFsResultFunc; DeleteFile: TDeleteFileFunc; GetUserSpace: TGetUserSpaceFunc; DoCryptFiles, DoCryptFilenames: Boolean; Settings: TUploadSettings);
 begin
 	inherited Create;
 	FGetHTTP := GetHTTP;

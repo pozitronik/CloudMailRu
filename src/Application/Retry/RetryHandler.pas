@@ -7,6 +7,7 @@ interface
 
 uses
 	SysUtils,
+	CloudCallbackTypes,
 	ThreadStateManager,
 	PluginSettingsManager,
 	TCHandler;
@@ -17,9 +18,6 @@ type
 
 	{Callback type for the operation to retry}
 	TRetryOperation = reference to function: Integer;
-
-	{Callback type for checking if user aborted}
-	TAbortCheck = reference to function: Boolean;
 
 	IRetryHandler = interface
 		['{1360F478-B642-4EBB-AD57-20ECDFF67C8F}']
@@ -35,7 +33,7 @@ type
 			@param RetryOperation Callback that performs the actual operation
 			@param AbortCheck Callback that checks if user requested abort
 			@return Final operation result after handling}
-		function HandleOperationError(CurrentResult: Integer; OperationType: TRetryOperationType; const AskMessage, AskTitle, RetryLogMessage, FormatParam: WideString; RetryOperation: TRetryOperation; AbortCheck: TAbortCheck): Integer;
+		function HandleOperationError(CurrentResult: Integer; OperationType: TRetryOperationType; const AskMessage, AskTitle, RetryLogMessage, FormatParam: WideString; RetryOperation: TRetryOperation; AbortCheck: TAbortCheckFunc): Integer;
 	end;
 
 	{Callback for showing message box - injectable for testing}
@@ -58,7 +56,7 @@ type
 
 		function HandleAskMode(CurrentResult: Integer; const AskMessage, AskTitle, FormatParam: WideString; RetryOperation: TRetryOperation): Integer;
 
-		function HandleRetryMode(CurrentResult: Integer; OperationType: TRetryOperationType; const RetryLogMessage, FormatParam: WideString; RetryOperation: TRetryOperation; AbortCheck: TAbortCheck): Integer;
+		function HandleRetryMode(CurrentResult: Integer; OperationType: TRetryOperationType; const RetryLogMessage, FormatParam: WideString; RetryOperation: TRetryOperation; AbortCheck: TAbortCheckFunc): Integer;
 	public
 		{Create with required dependencies.
 			@param ThreadState Thread state manager for retry counters
@@ -68,7 +66,7 @@ type
 			@param LogCallback Callback for logging retry operations}
 		constructor Create(ThreadState: IThreadStateManager; SettingsManager: IPluginSettingsManager; TCHandler: ITCHandler; MsgBoxCallback: TMsgBoxCallback; LogCallback: TLogCallback);
 
-		function HandleOperationError(CurrentResult: Integer; OperationType: TRetryOperationType; const AskMessage, AskTitle, RetryLogMessage, FormatParam: WideString; RetryOperation: TRetryOperation; AbortCheck: TAbortCheck): Integer;
+		function HandleOperationError(CurrentResult: Integer; OperationType: TRetryOperationType; const AskMessage, AskTitle, RetryLogMessage, FormatParam: WideString; RetryOperation: TRetryOperation; AbortCheck: TAbortCheckFunc): Integer;
 	end;
 
 implementation
@@ -149,7 +147,7 @@ begin
 	end;
 end;
 
-function TRetryHandler.HandleRetryMode(CurrentResult: Integer; OperationType: TRetryOperationType; const RetryLogMessage, FormatParam: WideString; RetryOperation: TRetryOperation; AbortCheck: TAbortCheck): Integer;
+function TRetryHandler.HandleRetryMode(CurrentResult: Integer; OperationType: TRetryOperationType; const RetryLogMessage, FormatParam: WideString; RetryOperation: TRetryOperation; AbortCheck: TAbortCheckFunc): Integer;
 var
 	RetryAttempts, CurrentCount: Integer;
 begin
@@ -175,7 +173,7 @@ begin
 	end;
 end;
 
-function TRetryHandler.HandleOperationError(CurrentResult: Integer; OperationType: TRetryOperationType; const AskMessage, AskTitle, RetryLogMessage, FormatParam: WideString; RetryOperation: TRetryOperation; AbortCheck: TAbortCheck): Integer;
+function TRetryHandler.HandleOperationError(CurrentResult: Integer; OperationType: TRetryOperationType; const AskMessage, AskTitle, RetryLogMessage, FormatParam: WideString; RetryOperation: TRetryOperation; AbortCheck: TAbortCheckFunc): Integer;
 begin
 	Result := CurrentResult;
 

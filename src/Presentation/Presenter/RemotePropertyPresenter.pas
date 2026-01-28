@@ -33,9 +33,6 @@ type
 	{Tabs available in RemoteProperty dialog}
 	TRemotePropertyTab = (rptFolderAccess, rptDownloadLinks, rptDescription, rptHashesList);
 
-	{Callback for checking if operation should be cancelled}
-	TCancelCheckFunc = reference to function: Boolean;
-
 	{Callback for logging status messages}
 	TLogMessageProc = reference to procedure(Message: WideString);
 

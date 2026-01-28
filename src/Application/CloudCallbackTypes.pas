@@ -23,10 +23,11 @@ type
 	TGetInt64Func = reference to function: Int64;
 	TGetStringFunc = reference to function: WideString;
 	TGetThreadIDFunc = reference to function: TThreadID;
-	TRefreshTokenFunc = reference to function: Boolean;
+
+	{Semantic aliases - same signature as TGetBoolFunc but with specific meaning}
+	TAbortCheckFunc = TGetBoolFunc; {For checking if operation was aborted/cancelled by user}
 
 	{Specialized callbacks - used by specific services}
-	TGetUnitedParamsFunc = reference to function: WideString;
 	THashStreamFunc = reference to function(Stream: TStream; Path: WideString): WideString;
 	THashFileFunc = reference to function(Path: WideString): WideString;
 	TDeleteFileFunc = reference to function(Path: WideString): Boolean;
