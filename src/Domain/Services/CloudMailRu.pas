@@ -379,7 +379,9 @@ begin
 	except
 		on E: Exception do
 		begin
-			FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, '%s%s', [PREFIX_ERR_FILE_UPLOADING, E.Message]);
+			FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, '%s%s', [PREFIX_ERR_CLOUD_INIT, E.Message]);
+			FAuthorizationState := asFailed;
+			FAuthorizationError := TAuthorizationError.Create(aecInitFailed, E.Message);
 		end;
 	end;
 end;
@@ -562,7 +564,7 @@ begin
 	else
 	begin
 		FAuthorizationState := asFailed;
-		FAuthorizationError := TAuthorizationError.Create(CLOUD_OPERATION_FAILED, ERR_AUTH_FAILURE);
+		FAuthorizationError := TAuthorizationError.Create(aecAuthFailed, ERR_AUTH_FAILURE);
 	end;
 end;
 
