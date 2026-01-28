@@ -5,6 +5,7 @@ interface
 uses
 	SysUtils,
 	ParsingHelper,
+	PathHelper,
 	CloudConstants,
 	SettingsConstants;
 
@@ -21,7 +22,6 @@ type
 		UnlimitedFileSize: Boolean;
 		SplitLargeFiles: Boolean;
 		PublicAccount: Boolean;
-		PublicUrl: WideString;
 		Description: WideString;
 		EncryptFilesMode: Integer;
 		EncryptFileNames: Boolean;
@@ -33,13 +33,16 @@ type
 	private
 		FUser: WideString;
 		FDomain: WideString;
+		FPublicUrl: WideString;
 		function GetAccountType: EAccountType;
 		function GetIsRemoteDescriptionsSupported: Boolean;
 		function GetDomain: WideString;
 		function GetUser: WideString;
+		function GetPublicUrl: WideString;
 	public
 		property User: WideString read GetUser;
 		property Domain: WideString read GetDomain;
+		property PublicUrl: WideString read GetPublicUrl write FPublicUrl;
 		property IsRemoteDescriptionsSupported: Boolean read GetIsRemoteDescriptionsSupported;
 		property AccountType: EAccountType read GetAccountType;
 	end;
@@ -72,6 +75,14 @@ begin
 	if FUser = EmptyWideStr then
 		ExtractEmailParts(Email, FUser, FDomain);
 	result := FUser;
+end;
+
+{Returns PublicUrl with guaranteed trailing slash for consistent URL handling}
+function TAccountSettings.GetPublicUrl: WideString;
+begin
+	if FPublicUrl = EmptyWideStr then
+		Exit(EmptyWideStr);
+	Result := IncludeSlash(FPublicUrl);
 end;
 
 end.

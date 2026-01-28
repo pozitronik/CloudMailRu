@@ -412,6 +412,7 @@ begin
 		Result.SetCSRFToken(FAuthToken);
 end;
 
+{Extracts link identifier from public URL (removes PUBLIC_ACCESS_URL prefix and trailing slash)}
 function TCloudMailRu.GetPublicLink: WideString;
 begin
 	if FPublicLink <> '' then
@@ -420,7 +421,6 @@ begin
 	if IsPublicAccount and (FSettings.AccountSettings.PublicUrl <> EmptyWideStr) then
 	begin
 		FPublicLink := FSettings.AccountSettings.PublicUrl;
-		FSettings.AccountSettings.PublicUrl := IncludeSlash(FSettings.AccountSettings.PublicUrl);
 		Delete(FPublicLink, 1, length(PUBLIC_ACCESS_URL));
 		if (FPublicLink <> EmptyWideStr) and (FPublicLink[length(FPublicLink)] = '/') then
 			Delete(FPublicLink, length(FPublicLink), 1);
