@@ -87,7 +87,7 @@ type
 		property Uploader: ICloudFileUploader read GetUploader;
 		property ShareService: ICloudShareService read GetShareService;
 		property ListingService: ICloudListingService read GetListingService;
-		property FileOperations: ICloudFileOperations read GetFileOps;
+		property FileOps: ICloudFileOperations read GetFileOps;
 		property IsPublicAccount: Boolean read GetIsPublicAccount;
 	end;
 

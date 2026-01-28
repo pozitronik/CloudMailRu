@@ -132,7 +132,7 @@ var
 	getResult: Integer;
 begin
 	Path.FromPath(RemoteName + Parameter);
-	if FConnectionManager.Get(Path.Account, getResult).FileOperations.RemoveDirectory(Path.Path) then
+	if FConnectionManager.Get(Path.Account, getResult).FileOps.RemoveDirectory(Path.Path) then
 		Result := TCommandResult.OK
 	else
 		Result := TCommandResult.Error;

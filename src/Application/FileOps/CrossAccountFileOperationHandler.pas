@@ -102,7 +102,7 @@ var
 begin
 	Result := FS_FILE_NOTSUPPORTED;
 
-	if OverWrite and not NewCloud.FileOperations.Delete(NewRealPath.Path) then
+	if OverWrite and not NewCloud.FileOps.Delete(NewRealPath.Path) then
 		Exit;
 
 	if not OldCloud.ListingService.StatusFile(OldRealPath.Path, CurrentItem) then
@@ -127,7 +127,7 @@ begin
 			end);
 
 	{Delete source if move operation succeeded}
-	if (Result = CLOUD_OPERATION_OK) and Move and not OldCloud.FileOperations.Delete(OldRealPath.Path) then
+	if (Result = CLOUD_OPERATION_OK) and Move and not OldCloud.FileOps.Delete(OldRealPath.Path) then
 		FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_DELETE, [CurrentItem.Home]);
 end;
 
@@ -140,7 +140,7 @@ begin
 	Result := FS_FILE_NOTSUPPORTED;
 	NeedUnpublish := False;
 
-	if OverWrite and not NewCloud.FileOperations.Delete(NewRealPath.Path) then
+	if OverWrite and not NewCloud.FileOps.Delete(NewRealPath.Path) then
 		Exit;
 
 	if not OldCloud.ListingService.StatusFile(OldRealPath.Path, CurrentItem) then
@@ -173,7 +173,7 @@ begin
 			end);
 
 	{Delete source if move operation succeeded}
-	if (Result = CLOUD_OPERATION_OK) and Move and not OldCloud.FileOperations.Delete(OldRealPath.Path) then
+	if (Result = CLOUD_OPERATION_OK) and Move and not OldCloud.FileOps.Delete(OldRealPath.Path) then
 		FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_DELETE, [CurrentItem.Home]);
 end;
 

@@ -570,7 +570,7 @@ begin
 		Form.parentWindow := parentWindow;
 
 		{Create presenter with cloud services}
-		Form.FPresenter := TRemotePropertyPresenter.Create(Form, Cloud.Downloader, Cloud.Uploader, Cloud.FileOperations, Cloud.ListingService, Cloud.ShareService, FileSystem, TPublicCloudFactory.Create, TCHandler, Cloud.IsPublicAccount);
+		Form.FPresenter := TRemotePropertyPresenter.Create(Form, Cloud.Downloader, Cloud.Uploader, Cloud.FileOps, Cloud.ListingService, Cloud.ShareService, FileSystem, TPublicCloudFactory.Create, TCHandler, Cloud.IsPublicAccount);
 
 		{Configure and initialize presenter}
 		Config.DoUrlEncode := DoUrlEncode;
