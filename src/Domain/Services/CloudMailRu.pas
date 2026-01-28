@@ -77,8 +77,6 @@ type
 		function GetHTTPConnection: ICloudHTTP;
 		function RefreshCSRFToken: Boolean;
 	protected
-		FUser: WideString;
-		FDomain: WideString;
 		FDoCryptFiles: Boolean;
 		FDoCryptFilenames: Boolean;
 		FPublicLink: WideString; {Holder for GetPublicLink() value - protected for testability}
@@ -180,7 +178,6 @@ begin
 		FAuthorizationState := asPending;
 		FAuthorizationError := TAuthorizationError.Empty;
 		FSettings := CloudSettings;
-		ExtractEmailParts(Email, FUser, FDomain);
 
 		FHTTPManager := ConnectionManager;
 		FAuthStrategy := AuthStrategy;
@@ -471,7 +468,7 @@ begin
 	FLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, Format(LOGIN_TO, [Email]));
 
 	{Build credentials from account settings}
-	Credentials := TAuthCredentials.Create(Email, Password, FUser, FDomain);
+	Credentials := TAuthCredentials.Create(Email, Password, FSettings.AccountSettings.User, FSettings.AccountSettings.Domain);
 
 	{Delegate to auth strategy}
 	AuthResult := FAuthStrategy.Authenticate(Credentials, HTTP, FLogger);
