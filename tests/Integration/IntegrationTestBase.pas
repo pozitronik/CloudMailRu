@@ -221,7 +221,10 @@ begin
 
 	{Override CloudMaxFileSize for chunked upload testing if configured}
 	if FConfig.CloudMaxFileSizeOverride > 0 then
+	begin
 		Result.CloudMaxFileSize := FConfig.CloudMaxFileSizeOverride;
+		Result.AccountSettings.SplitLargeFiles := True; {Enable chunking when size override is set}
+	end;
 end;
 
 function TIntegrationTestBase.CreatePrimaryCloud(Encrypted: Boolean; EncryptFilenames: Boolean): TCloudMailRu;
