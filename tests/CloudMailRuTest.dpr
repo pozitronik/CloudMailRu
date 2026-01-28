@@ -99,7 +99,6 @@ uses
 	CloudAccessMapperTest in 'Domain\Services\CloudAccessMapperTest.pas',
 	CloudMailRuInstanceTest in 'Domain\Services\CloudMailRuInstanceTest.pas',
 	CloudMailRuFactoryTest in 'Domain\Services\CloudMailRuFactoryTest.pas',
-	CloudMailRuHashTest in 'Domain\Services\CloudMailRuHashTest.pas',
 	ChunkedFileStreamTest in 'Infrastructure\IO\ChunkedFileStreamTest.pas',
 	DescriptionTest in 'Domain\Services\DescriptionTest.pas',
 	FileSplitInfoTest in 'Infrastructure\IO\FileSplitInfoTest.pas',

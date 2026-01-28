@@ -88,9 +88,6 @@ type
 		FOAuthToken: TCloudOAuth; {OAuth token data}
 		{HTTP REQUESTS WRAPPERS - protected for testability}
 		function GetUserSpace(var SpaceInfo: TCloudSpace): Boolean;
-		{HASHING - exposed for testing via subclass}
-		function CloudHash(Path: WideString): WideString; overload; //get cloud hash for specified file
-		function CloudHash(Stream: TStream; Path: WideString = CALCULATING_HASH): WideString; overload; //get cloud hash for data in stream
 		{Those properties are simple shortcuts to settings fields}
 		property Password: WideString read FSettings.AccountSettings.Password;
 		property Email: WideString read FSettings.AccountSettings.Email;
@@ -514,18 +511,6 @@ begin
 		Result := FShareService.Share(Path, Email, Access)
 	else
 		Result := FShareService.Unshare(Path, Email);
-end;
-
-{Delegates to FHashCalculator - protected for testability}
-function TCloudMailRu.CloudHash(Path: WideString): WideString;
-begin
-	Result := FHashCalculator.CalculateHash(Path);
-end;
-
-{Delegates to FHashCalculator - protected for testability}
-function TCloudMailRu.CloudHash(Stream: TStream; Path: WideString = CALCULATING_HASH): WideString;
-begin
-	Result := FHashCalculator.CalculateHash(Stream, Path);
 end;
 
 {Authorization state machine}
