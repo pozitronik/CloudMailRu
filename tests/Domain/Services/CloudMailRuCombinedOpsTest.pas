@@ -154,6 +154,7 @@ begin
 	Result := TTestableCloudMailRu.Create(
 		FSettings,
 		FMockHTTPManager,
+		TestThreadID(),
 		TNullAuthStrategy.Create,
 		TNullFileSystem.Create,
 		TNullLogger.Create,

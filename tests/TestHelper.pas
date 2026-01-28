@@ -4,11 +4,14 @@ interface
 
 uses
 	IOUtils,
-	SysUtils;
+	SysUtils,
+	CloudCallbackTypes;
 
 function DataPath(Path: WideString): WideString;
 procedure DataFileContents(DataFileName: WideString; out VarName: WideString);
 function RandomString(const Len: Integer): WideString;
+{Returns a fixed thread ID callback for tests - avoids Windows API dependency}
+function TestThreadID: TGetThreadIDFunc;
 
 implementation
 
@@ -36,6 +39,11 @@ begin
 
 	for I := 1 to Len do
 		Result := Result + CharSet[Random(Length(CharSet)) + 1];
+end;
+
+function TestThreadID: TGetThreadIDFunc;
+begin
+	Result := function: TThreadID begin Result := 1; end;
 end;
 
 end.

@@ -28,7 +28,8 @@ uses
 	TCRequest,
 	TCHandler,
 	OpenSSLProvider,
-	StreamingSettings;
+	StreamingSettings,
+	TestHelper;
 
 type
 	{Mock settings manager}
@@ -322,6 +323,7 @@ begin
 	Result := TCloudMailRu.Create(
 		Settings,
 		TNullHTTPManager.Create,
+		TestThreadID(),
 		TNullAuthStrategy.Create,
 		TNullFileSystem.Create,
 		TNullLogger.Create,

@@ -22,6 +22,7 @@ type
 	TGetIntFunc = reference to function: Integer;
 	TGetInt64Func = reference to function: Int64;
 	TGetStringFunc = reference to function: WideString;
+	TGetThreadIDFunc = reference to function: TThreadID;
 	TRefreshTokenFunc = reference to function: Boolean;
 
 	{Specialized callbacks - used by specific services}

@@ -25,7 +25,8 @@ uses
 	TCProgress,
 	TCRequest,
 	TCHandler,
-	OpenSSLProvider;
+	OpenSSLProvider,
+	TestHelper;
 
 type
 	{Mock thread state manager for skip-path testing}
@@ -332,6 +333,7 @@ begin
 	Result := TTestableCloudMailRu.Create(
 		Settings,
 		FMockHTTPManager,
+		TestThreadID(),
 		TNullAuthStrategy.Create,
 		TNullFileSystem.Create,
 		TNullLogger.Create,

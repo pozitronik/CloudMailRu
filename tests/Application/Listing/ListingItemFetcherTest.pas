@@ -25,7 +25,8 @@ uses
 	MockCloudHTTP,
 	MockHTTPManager,
 	ListingItemFetcher,
-	OpenSSLProvider;
+	OpenSSLProvider,
+	TestHelper;
 
 type
 	{Mock logger}
@@ -159,6 +160,7 @@ begin
 	Result := TCloudMailRu.Create(
 		Settings,
 		FMockHTTPManager,
+		TestThreadID(),
 		TNullAuthStrategy.Create,
 		TNullFileSystem.Create,
 		TNullLogger.Create,

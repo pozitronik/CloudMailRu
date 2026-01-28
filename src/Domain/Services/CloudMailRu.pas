@@ -18,7 +18,6 @@ uses
 	System.SysUtils,
 	SettingsConstants,
 	WFXTypes,
-	Winapi.Windows,
 	PathHelper,
 	StringHelper,
 	TCLogger,
@@ -52,6 +51,7 @@ type
 		FAuthorizationError: TAuthorizationError; {Last authorization error}
 
 		FHTTPManager: IHTTPManager; {HTTP connection manager - required, provides connections per thread}
+		FGetThreadID: TGetThreadIDFunc; {Thread identity callback - injectable for testability}
 
 		FCookieManager: TIdCookieManager; {The auth cookie, should be stored separately, because it associated with a cloud instance, not a connection}
 
@@ -111,6 +111,7 @@ type
 		{SHARED WEBFOLDERS}
 		function LoginShared: Boolean;
 		function GetPublicLink(): WideString;
+		procedure InitPublicLink;
 	public
 		{Authorization state machine}
 		function Authorize: Boolean;
@@ -131,7 +132,7 @@ type
 		function CloudResultToBoolean(CloudResult: TCloudOperationResult; ErrorPrefix: WideString = ''): Boolean; overload;
 		function CloudResultToBoolean(JSON: WideString; ErrorPrefix: WideString = ''): Boolean; overload;
 		{CONSTRUCTOR/DESTRUCTOR}
-		constructor Create(CloudSettings: TCloudSettings; ConnectionManager: IHTTPManager; AuthStrategy: IAuthStrategy; FileSystem: IFileSystem; Logger: ILogger; Progress: IProgress; Request: IRequest; TCHandler: ITCHandler; Cipher: ICipher; OpenSSLProvider: IOpenSSLProvider);
+		constructor Create(CloudSettings: TCloudSettings; ConnectionManager: IHTTPManager; GetThreadID: TGetThreadIDFunc; AuthStrategy: IAuthStrategy; FileSystem: IFileSystem; Logger: ILogger; Progress: IProgress; Request: IRequest; TCHandler: ITCHandler; Cipher: ICipher; OpenSSLProvider: IOpenSSLProvider);
 		destructor Destroy; override;
 		{CLOUD INTERFACE METHODS}
 		function Login: Boolean;
@@ -170,7 +171,7 @@ begin
 	Result := TCloudErrorMapper.ToFsResult(CloudResult, FLogger, ErrorPrefix);
 end;
 
-constructor TCloudMailRu.Create(CloudSettings: TCloudSettings; ConnectionManager: IHTTPManager; AuthStrategy: IAuthStrategy; FileSystem: IFileSystem; Logger: ILogger; Progress: IProgress; Request: IRequest; TCHandler: ITCHandler; Cipher: ICipher; OpenSSLProvider: IOpenSSLProvider);
+constructor TCloudMailRu.Create(CloudSettings: TCloudSettings; ConnectionManager: IHTTPManager; GetThreadID: TGetThreadIDFunc; AuthStrategy: IAuthStrategy; FileSystem: IFileSystem; Logger: ILogger; Progress: IProgress; Request: IRequest; TCHandler: ITCHandler; Cipher: ICipher; OpenSSLProvider: IOpenSSLProvider);
 var
 	IsPublicAccountCallback: TGetBoolFunc;
 	GetUnitedParamsCallback: TGetStringFunc;
@@ -181,6 +182,7 @@ begin
 		FSettings := CloudSettings;
 
 		FHTTPManager := ConnectionManager;
+		FGetThreadID := GetThreadID;
 		FAuthStrategy := AuthStrategy;
 		FFileSystem := FileSystem;
 
@@ -357,26 +359,28 @@ end;
 
 function TCloudMailRu.GetHTTPConnection: ICloudHTTP;
 begin
-	Result := FHTTPManager.Get(GetCurrentThreadID());
+	Result := FHTTPManager.Get(FGetThreadID());
 	Result.AuthCookie := FCookieManager;
 	if EmptyWideStr <> FAuthToken then
 		Result.SetCSRFToken(FAuthToken);
 end;
 
-{Extracts link identifier from public URL (removes PUBLIC_ACCESS_URL prefix and trailing slash)}
+{Simple getter - FPublicLink is initialized in InitPublicLink during LoginShared}
 function TCloudMailRu.GetPublicLink: WideString;
 begin
-	if FPublicLink <> '' then
-		Exit(FPublicLink); {Already have a public link}
+	Result := FPublicLink;
+end;
 
-	if IsPublicAccount and (FSettings.AccountSettings.PublicUrl <> EmptyWideStr) then
-	begin
-		FPublicLink := FSettings.AccountSettings.PublicUrl;
-		Delete(FPublicLink, 1, length(PUBLIC_ACCESS_URL));
-		if (FPublicLink <> EmptyWideStr) and (FPublicLink[length(FPublicLink)] = '/') then
-			Delete(FPublicLink, length(FPublicLink), 1);
-	end;
-	Exit(FPublicLink)
+{Extracts link identifier from public URL (removes PUBLIC_ACCESS_URL prefix and trailing slash)}
+procedure TCloudMailRu.InitPublicLink;
+begin
+	if FSettings.AccountSettings.PublicUrl = EmptyWideStr then
+		Exit;
+
+	FPublicLink := FSettings.AccountSettings.PublicUrl;
+	Delete(FPublicLink, 1, length(PUBLIC_ACCESS_URL));
+	if (FPublicLink <> EmptyWideStr) and (FPublicLink[length(FPublicLink)] = '/') then
+		Delete(FPublicLink, length(FPublicLink), 1);
 end;
 
 function TCloudMailRu.RefreshCSRFToken: Boolean;
@@ -408,6 +412,7 @@ begin
 			Exit(False);
 		end;
 		FShardManager.SetPublicShard(PublicShard);
+		InitPublicLink;
 	end;
 end;
 

@@ -118,6 +118,7 @@ begin
 	Result := TTestableShardCloud.Create(
 		FSettings,
 		FMockHTTPManager,
+		TestThreadID(),
 		TNullAuthStrategy.Create,
 		TNullFileSystem.Create,
 		TNullLogger.Create,

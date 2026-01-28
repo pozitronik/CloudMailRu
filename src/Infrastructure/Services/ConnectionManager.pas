@@ -177,7 +177,7 @@ begin
 	{Create appropriate auth strategy via factory - enables DI and testability}
 	AuthStrategy := FAuthStrategyFactory.CreateDefaultStrategy;
 
-	Cloud := TCloudMailRu.Create(CloudSettings, FHTTPManager, AuthStrategy, FFileSystem, FLogger, FProgress, FRequest, FTCHandler, Cipher, FOpenSSLProvider);
+	Cloud := TCloudMailRu.Create(CloudSettings, FHTTPManager, function: TThreadID begin Result := GetCurrentThreadID; end, AuthStrategy, FFileSystem, FLogger, FProgress, FRequest, FTCHandler, Cipher, FOpenSSLProvider);
 
 	if not Cloud.Login then
 	begin

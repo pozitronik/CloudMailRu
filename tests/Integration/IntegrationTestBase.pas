@@ -19,6 +19,7 @@ uses
 	CloudDirItemList,
 	IntegrationTestConfig,
 	TestDataGenerator,
+	TestHelper,
 	AuthStrategy,
 	OAuthAppAuthStrategy,
 	WindowsFileSystem,
@@ -255,6 +256,7 @@ begin
 	Result := TCloudMailRu.Create(
 		Settings,
 		TSingleThreadHTTPManager.Create(Settings.ConnectionSettings, Logger, Progress),
+		TestThreadID(),
 		AuthStrategy,
 		TWindowsFileSystem.Create,
 		Logger,
@@ -289,6 +291,7 @@ begin
 	Result := TCloudMailRu.Create(
 		Settings,
 		TSingleThreadHTTPManager.Create(Settings.ConnectionSettings, Logger, Progress),
+		TestThreadID(),
 		AuthStrategy,
 		TWindowsFileSystem.Create,
 		Logger,
@@ -314,6 +317,7 @@ begin
 	Result := TCloudMailRu.Create(
 		Settings,
 		TSingleThreadHTTPManager.Create(Settings.ConnectionSettings, Logger, Progress),
+		TestThreadID(),
 		TNullAuthStrategy.Create,
 		TWindowsFileSystem.Create,
 		Logger,

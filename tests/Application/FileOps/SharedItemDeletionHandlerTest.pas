@@ -23,7 +23,8 @@ uses
 	MockCloudHTTP,
 	MockHTTPManager,
 	SharedItemDeletionHandler,
-	OpenSSLProvider;
+	OpenSSLProvider,
+	TestHelper;
 
 type
 	[TestFixture]
@@ -96,6 +97,7 @@ begin
 	Result := TCloudMailRu.Create(
 		Settings,
 		FMockHTTPManager,
+		TestThreadID(),
 		TNullAuthStrategy.Create,
 		TNullFileSystem.Create,
 		TNullLogger.Create,

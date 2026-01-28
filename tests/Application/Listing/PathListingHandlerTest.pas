@@ -30,7 +30,8 @@ uses
 	TCProgress,
 	TCRequest,
 	TCHandler,
-	OpenSSLProvider;
+	OpenSSLProvider,
+	TestHelper;
 
 type
 	{Mock listing provider with configurable results}
@@ -206,6 +207,7 @@ begin
 	Result := TTestableCloudMailRu.Create(
 		Settings,
 		FMockHTTPManager,
+		TestThreadID(),
 		TNullAuthStrategy.Create,
 		TNullFileSystem.Create,
 		TNullLogger.Create,

@@ -154,6 +154,7 @@ begin
 	Result := TTestableLoginCloud.Create(
 		FSettings,
 		FMockHTTPManager,
+		TestThreadID(),
 		AuthStrategy,
 		TNullFileSystem.Create,
 		TNullLogger.Create,
@@ -172,6 +173,7 @@ begin
 	Result := TTestableLoginCloud.Create(
 		FSettings,
 		FMockHTTPManager,
+		TestThreadID(),
 		TNullAuthStrategy.Create,
 		TNullFileSystem.Create,
 		TNullLogger.Create,
@@ -268,6 +270,7 @@ begin
 	FCloud := TTestableLoginCloud.Create(
 		FSettings,
 		FMockHTTPManager,
+		TestThreadID(),
 		AuthStrategy,
 		TNullFileSystem.Create,
 		TNullLogger.Create,

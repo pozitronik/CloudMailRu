@@ -34,6 +34,7 @@ type
 	public
 		procedure SetUnitedParams(const Value: WideString);
 		procedure SetPublicLink(const Value: WideString);
+		procedure TestInitPublicLink;
 		function TestGetPublicLink: WideString;
 	end;
 
@@ -120,6 +121,11 @@ begin
 	FPublicLink := Value;
 end;
 
+procedure TTestableCloudMailRu.TestInitPublicLink;
+begin
+	InitPublicLink;
+end;
+
 function TTestableCloudMailRu.TestGetPublicLink: WideString;
 begin
 	Result := GetPublicLink;
@@ -149,6 +155,7 @@ begin
 	Result := TTestableCloudMailRu.Create(
 		FSettings,
 		FMockHTTPManager,
+		TestThreadID(),
 		TNullAuthStrategy.Create,
 		TNullFileSystem.Create,
 		TNullLogger.Create,
@@ -176,6 +183,7 @@ begin
 	FCloud := TTestableCloudMailRu.Create(
 		FSettings,
 		FMockHTTPManager,
+		TestThreadID(),
 		TNullAuthStrategy.Create,
 		TNullFileSystem.Create,
 		TNullLogger.Create,
@@ -193,6 +201,7 @@ procedure TCloudMailRuPublicAccountTest.TestGetPublicLink_ReturnsLinkFromSetting
 begin
 	FCloud := CreatePublicCloud(TEST_PUBLIC_URL);
 	FCloud.SetPublicLink(''); {Clear any cached value}
+	FCloud.TestInitPublicLink; {Initialize from settings - normally done during LoginShared}
 
 	var Link := FCloud.TestGetPublicLink;
 
@@ -203,6 +212,7 @@ procedure TCloudMailRuPublicAccountTest.TestGetPublicLink_StripsPublicAccessUrl;
 begin
 	FCloud := CreatePublicCloud(TEST_PUBLIC_URL);
 	FCloud.SetPublicLink(''); {Clear any cached value}
+	FCloud.TestInitPublicLink; {Initialize from settings - normally done during LoginShared}
 
 	var Link := FCloud.TestGetPublicLink;
 

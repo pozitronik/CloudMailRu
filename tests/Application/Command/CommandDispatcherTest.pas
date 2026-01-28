@@ -28,7 +28,8 @@ uses
 	TCHandler,
 	CloudConstants,
 	WFXTypes,
-	OpenSSLProvider;
+	OpenSSLProvider,
+	TestHelper;
 
 type
 	{Mock settings manager for testing}
@@ -343,6 +344,7 @@ begin
 	Result := TTestableCloudMailRu.Create(
 		Settings,
 		FMockHTTPManager,
+		TestThreadID(),
 		TNullAuthStrategy.Create,
 		TNullFileSystem.Create,
 		TNullLogger.Create,

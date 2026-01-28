@@ -173,6 +173,7 @@ begin
 	Result := TCloudMailRu.Create(
 		FSettings,
 		FMockHTTPManager,
+		TestThreadID(),
 		TNullAuthStrategy.Create,
 		TNullFileSystem.Create,
 		TNullLogger.Create,

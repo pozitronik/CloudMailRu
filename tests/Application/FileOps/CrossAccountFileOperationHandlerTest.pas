@@ -22,7 +22,8 @@ uses
 	MockHTTPManager,
 	AuthStrategy,
 	WindowsFileSystem,
-	OpenSSLProvider;
+	OpenSSLProvider,
+	TestHelper;
 
 type
 	{Mock retry handler that tracks calls}
@@ -255,6 +256,7 @@ begin
 	Result := TTestableCloudMailRu.Create(
 		Settings,
 		FMockHTTPManager,
+		TestThreadID(),
 		TNullAuthStrategy.Create,
 		TNullFileSystem.Create,
 		TNullLogger.Create,

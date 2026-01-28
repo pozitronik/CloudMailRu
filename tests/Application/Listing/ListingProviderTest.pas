@@ -26,7 +26,8 @@ uses
 	CloudIncomingInviteList,
 	CloudConstants,
 	SettingsConstants,
-	OpenSSLProvider;
+	OpenSSLProvider,
+	TestHelper;
 
 type
 	{Testable CloudMailRu for listing tests}
@@ -153,6 +154,7 @@ begin
 	Result := TTestableCloudMailRu.Create(
 		Settings,
 		FMockHTTPManager,
+		TestThreadID(),
 		TNullAuthStrategy.Create,
 		TNullFileSystem.Create,
 		TNullLogger.Create,

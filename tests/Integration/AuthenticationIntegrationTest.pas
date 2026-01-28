@@ -43,7 +43,8 @@ uses
 	TCRequest,
 	TCHandler,
 	CloudConstants,
-	OpenSSLProvider;
+	OpenSSLProvider,
+	TestHelper;
 
 {TAuthenticationIntegrationTest}
 
@@ -71,6 +72,7 @@ begin
 	Cloud := TCloudMailRu.Create(
 		Settings,
 		TSingleThreadHTTPManager.Create(Settings.ConnectionSettings, Logger, Progress),
+		TestThreadID(),
 		TOAuthAppAuthStrategy.Create,
 		TWindowsFileSystem.Create,
 		Logger,

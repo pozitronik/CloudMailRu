@@ -42,6 +42,7 @@ type
 implementation
 
 uses
+	Winapi.Windows,
 	CloudSettings,
 	AuthStrategy,
 	FileCipher,
@@ -76,6 +77,7 @@ begin
 	TempCloud := TCloudMailRu.Create(
 		Settings,
 		TSingleThreadHTTPManager.Create(Settings.ConnectionSettings, Logger, Progress),
+		function: TThreadID begin Result := GetCurrentThreadID; end,
 		TNullAuthStrategy.Create,
 		TWindowsFileSystem.Create,
 		Logger,
