@@ -109,16 +109,14 @@ end;
 procedure TOverwritePreparationHandlerTest.Prepare_WhenOverwriteRequired_CallsConnectionManager;
 var
 	Path: TRealPath;
+	Result: TOverwritePreparationResult;
 begin
 	Path.FromPath('\account\test.txt');
-	{Note: Will fail at deleteFile since no cloud configured, but we can verify Get was called}
+	{No cloud configured - Get returns nil, Prepare handles gracefully}
 
-	try
-		FHandler.Prepare(Path, True);
-	except
-		{Expected to fail without proper mock}
-	end;
+	Result := FHandler.Prepare(Path, True);
 
+	Assert.IsFalse(Result.Success, 'Should fail when cloud not available');
 	Assert.AreEqual(1, FMockConnectionManager.GetCallCount, 'Should call connection manager when overwrite required');
 end;
 

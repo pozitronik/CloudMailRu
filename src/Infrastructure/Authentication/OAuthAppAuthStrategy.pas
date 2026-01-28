@@ -46,6 +46,12 @@ var
 begin
 	Result := TAuthResult.CreateFailure('OAuth authentication failed');
 
+	if HTTP = nil then
+	begin
+		Result := TAuthResult.CreateFailure('HTTP client is not initialized');
+		Exit;
+	end;
+
 	Logger.Log(LOG_LEVEL_DEBUG, msgtype_details, REQUESTING_OAUTH_TOKEN, [Credentials.Email]);
 
 	{OAuth password grant request}

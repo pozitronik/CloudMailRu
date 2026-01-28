@@ -7,6 +7,7 @@ interface
 
 uses
 	ConnectionManager,
+	CloudMailRu,
 	RealPath,
 	WFXTypes;
 
@@ -45,6 +46,7 @@ end;
 function TOverwritePreparationHandler.Prepare(const Path: TRealPath; RequiresOverwrite: Boolean): TOverwritePreparationResult;
 var
 	getResult: Integer;
+	Cloud: TCloudMailRu;
 begin
 	Result.Success := True;
 	Result.ResultCode := FS_FILE_OK;
@@ -53,7 +55,15 @@ begin
 		Exit;
 
 	{Cloud API doesn't support overwrite, delete existing file first}
-	if not FConnectionManager.Get(Path.account, getResult).FileOps.Delete(Path.Path) then
+	Cloud := FConnectionManager.Get(Path.account, getResult);
+	if Cloud = nil then
+	begin
+		Result.Success := False;
+		Result.ResultCode := FS_FILE_NOTSUPPORTED;
+		Exit;
+	end;
+
+	if not Cloud.FileOps.Delete(Path.Path) then
 	begin
 		Result.Success := False;
 		Result.ResultCode := FS_FILE_NOTSUPPORTED;

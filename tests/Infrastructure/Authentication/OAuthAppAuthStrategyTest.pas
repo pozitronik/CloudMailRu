@@ -85,17 +85,11 @@ var
 	Credentials: TAuthCredentials;
 	Result: TAuthResult;
 begin
-	{Calling with nil HTTP should fail gracefully - cannot make actual HTTP call}
+	{Calling with nil HTTP should fail gracefully - returns failure instead of crashing}
 	Credentials := TAuthCredentials.Create('test@mail.ru', 'password', 'test', 'mail.ru');
 
-	{This will raise an exception or return failure when HTTP is nil}
-	try
-		Result := FStrategy.Authenticate(Credentials, nil, TNullLogger.Create);
-		Assert.IsFalse(Result.Success);
-	except
-		{Expected - nil HTTP cannot be used}
-		Assert.Pass('Exception expected when HTTP is nil');
-	end;
+	Result := FStrategy.Authenticate(Credentials, nil, TNullLogger.Create);
+	Assert.IsFalse(Result.Success);
 end;
 
 procedure TOAuthAppAuthStrategyTest.TestAuthenticate_WithNilHTTP_HasErrorMessage;
@@ -105,13 +99,8 @@ var
 begin
 	Credentials := TAuthCredentials.Create('test@mail.ru', 'password', 'test', 'mail.ru');
 
-	try
-		Result := FStrategy.Authenticate(Credentials, nil, TNullLogger.Create);
-		Assert.IsNotEmpty(Result.ErrorMessage);
-	except
-		{Expected - nil HTTP cannot be used}
-		Assert.Pass('Exception expected when HTTP is nil');
-	end;
+	Result := FStrategy.Authenticate(Credentials, nil, TNullLogger.Create);
+	Assert.IsNotEmpty(Result.ErrorMessage);
 end;
 
 procedure TOAuthAppAuthStrategyTest.TestImplementsInterface;
