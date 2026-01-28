@@ -109,3 +109,5 @@
 /Win64/Debug/MailRuCloud.ini
 /tests/Win64/Debug/x64/libeay32.dll
 /tests/Win64/Debug/x64/ssleay32.dll
+/.claude/
+/CLAUDE.md
