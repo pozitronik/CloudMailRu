@@ -223,8 +223,10 @@ end;
 function TCloudFileDownloader.GetSharedFileUrl(RemotePath: WideString; ShardType: WideString = SHARD_TYPE_DEFAULT): WideString;
 var
 	usedShard: WideString;
-	ProgressEnabled: Boolean;
 begin
+	if not FIsPublicAccount() then
+		Exit(EmptyWideStr); {Only valid for public accounts; private accounts use TempPublicCloud}
+
 	if ShardType = SHARD_TYPE_DEFAULT then
 		usedShard := FShardManager.GetPublicShard
 	else if not FShardManager.ResolveShard(usedShard, ShardType) then
@@ -232,18 +234,8 @@ begin
 		FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_DETAILS, 'Failed to resolve shard: %s', [ShardType]);
 		Exit(EmptyWideStr);
 	end;
-	if (FIsPublicAccount()) then
-		Exit(Format('%s%s%s', [IncludeSlash(usedShard), IncludeSlash(FGetPublicLink()), PathToUrl(RemotePath, True, True)]));
 
-	if (TRealPath.GetRealPath(RemotePath).isDir = ID_True) then {для ссылок внутри каталогов перебираются файлы внутри «публичной ссылки» на каталог}
-	begin
-		Result := Format('%s%s%s', [IncludeSlash(usedShard), FGetPublicLink(), PathToUrl(RemotePath, True, True)]);
-	end else begin {для прямых ссылок берутся публичные ссылки файлов}
-		Result := Format('%s%s', [IncludeSlash(usedShard), FGetPublicLink()])
-	end;
-
-	ProgressEnabled := False;
-	FGetHTTP().GetRedirection(Result, Result, ProgressEnabled);
+	Result := Format('%s%s%s', [IncludeSlash(usedShard), IncludeSlash(FGetPublicLink()), PathToUrl(RemotePath, True, True)]);
 end;
 
 function TCloudFileDownloader.DownloadShared(RemotePath, LocalPath: WideString; var ResultHash: WideString; LogErrors: Boolean): Integer;

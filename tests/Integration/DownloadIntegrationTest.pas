@@ -34,9 +34,6 @@ type
 		procedure TestDownload_NonExistent_Fails;
 
 		[Test]
-		procedure TestGetStreamingUrl_ReturnsValidUrl;
-
-		[Test]
 		procedure TestStatusFile_ReturnsMetadata;
 	end;
 
@@ -309,22 +306,6 @@ begin
 		if TFile.Exists(LocalFile) then
 			TFile.Delete(LocalFile);
 	end;
-end;
-
-procedure TDownloadIntegrationTest.TestGetStreamingUrl_ReturnsValidUrl;
-var
-	RemotePath: WideString;
-	StreamingUrl: WideString;
-begin
-	{First upload a file}
-	RemotePath := UploadTestFile(1024, 'StreamingTest');
-	TrackForCleanup(RemotePath);
-
-	{Get streaming URL}
-	StreamingUrl := FPrimaryCloud.Downloader.GetSharedFileUrl(RemotePath);
-
-	Assert.IsNotEmpty(String(StreamingUrl), 'Streaming URL should not be empty');
-	Assert.IsTrue(Pos('http', LowerCase(StreamingUrl)) = 1, 'Streaming URL should start with http');
 end;
 
 procedure TDownloadIntegrationTest.TestStatusFile_ReturnsMetadata;
