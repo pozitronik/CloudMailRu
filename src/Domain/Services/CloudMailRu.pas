@@ -276,6 +276,17 @@ begin
 				Result := Self.RefreshCSRFToken;
 			end, FDoCryptFiles, FDoCryptFilenames);
 
+		{Initialize file operations service - must be before FUploader which uses it}
+		FFileOperations := TCloudFileOperations.Create(Self.HTTP, FLogger, FRetryOperation,
+			function: Boolean
+			begin
+				Result := Self.IsPublicAccount;
+			end,
+			function: WideString
+			begin
+				Result := Self.FUnitedParams;
+			end);
+
 		{Initialize file uploader service with callbacks and settings}
 		var
 			UploadSettings: TUploadSettings;
@@ -364,17 +375,6 @@ begin
 			begin
 				Result := Self.CloudResultToBoolean(OperationResult, ErrorPrefix);
 			end, FDoCryptFilenames);
-
-		{Initialize file operations service with callbacks for dynamic state}
-		FFileOperations := TCloudFileOperations.Create(Self.HTTP, FLogger, FRetryOperation,
-			function: Boolean
-			begin
-				Result := Self.IsPublicAccount;
-			end,
-			function: WideString
-			begin
-				Result := Self.FUnitedParams;
-			end);
 
 	except
 		on E: Exception do
