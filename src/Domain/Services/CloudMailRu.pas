@@ -41,7 +41,8 @@ uses
 	CloudListingService,
 	CloudFileOperations,
 	CloudAuthorizationState,
-	OpenSSLProvider;
+	OpenSSLProvider,
+	CloudCallbackTypes;
 
 type
 	TCloudMailRu = class(TInterfacedObject)
@@ -170,6 +171,9 @@ begin
 end;
 
 constructor TCloudMailRu.Create(CloudSettings: TCloudSettings; ConnectionManager: IHTTPManager; AuthStrategy: IAuthStrategy; FileSystem: IFileSystem; Logger: ILogger; Progress: IProgress; Request: IRequest; TCHandler: ITCHandler; Cipher: ICipher; OpenSSLProvider: IOpenSSLProvider);
+var
+	IsPublicAccountCallback: TGetBoolFunc;
+	GetUnitedParamsCallback: TGetStringFunc;
 begin
 	try
 		FAuthorizationState := asPending;
@@ -187,6 +191,10 @@ begin
 
 		FCookieManager := TIdCookieManager.Create();
 
+		{Reusable callbacks - avoid duplicating anonymous functions}
+		IsPublicAccountCallback := function: Boolean begin Result := Self.IsPublicAccount; end;
+		GetUnitedParamsCallback := function: WideString begin Result := Self.FUnitedParams; end;
+
 		{Initialize hash calculator service using strategy from settings and centralized OpenSSL provider}
 		FHashCalculator := CreateHashCalculator(CloudSettings.HashCalculatorStrategy, Progress, FileSystem, OpenSSLProvider);
 
@@ -200,10 +208,7 @@ begin
 			begin
 				Result := Self.CloudResultToBoolean(JSON, ErrorPrefix);
 			end,
-			function: WideString
-			begin
-				Result := Self.FUnitedParams;
-			end, FSettings.AccountSettings.ShardOverride, FSettings.AccountSettings.UploadUrlOverride);
+			GetUnitedParamsCallback, FSettings.AccountSettings.ShardOverride, FSettings.AccountSettings.UploadUrlOverride);
 
 		{Initialize retry operation handler with HTTP callbacks}
 		FRetryOperation := TRetryOperation.Create(
@@ -243,10 +248,7 @@ begin
 			begin
 				Result := Self.FOAuthToken;
 			end,
-			function: Boolean
-			begin
-				Result := Self.IsPublicAccount;
-			end,
+			IsPublicAccountCallback,
 			function: WideString
 			begin
 				Result := Self.GetPublicLink;
@@ -257,15 +259,7 @@ begin
 			end, FDoCryptFiles, FDoCryptFilenames);
 
 		{Initialize file operations service - must be before FUploader which uses it}
-		FFileOperations := TCloudFileOperations.Create(Self.HTTP, FLogger, FRetryOperation,
-			function: Boolean
-			begin
-				Result := Self.IsPublicAccount;
-			end,
-			function: WideString
-			begin
-				Result := Self.FUnitedParams;
-			end);
+		FFileOperations := TCloudFileOperations.Create(Self.HTTP, FLogger, FRetryOperation, IsPublicAccountCallback, GetUnitedParamsCallback);
 
 		{Initialize file uploader service with callbacks and settings}
 		var
@@ -289,18 +283,12 @@ begin
 			begin
 				Result := Self.FOAuthToken;
 			end,
-			function: Boolean
-			begin
-				Result := Self.IsPublicAccount;
-			end,
+			IsPublicAccountCallback,
 			function: IRetryOperation
 			begin
 				Result := Self.FRetryOperation;
 			end,
-			function: WideString
-			begin
-				Result := Self.FUnitedParams;
-			end,
+			GetUnitedParamsCallback,
 			function(JSON: WideString; ErrorPrefix: WideString): Integer
 			begin
 				Result := Self.CloudResultToFsResult(JSON, ErrorPrefix);
@@ -315,15 +303,7 @@ begin
 			end, FDoCryptFiles, FDoCryptFilenames, UploadSettings);
 
 		{Initialize share service with callbacks for dynamic state}
-		FShareService := TCloudShareService.Create(Self.HTTP, FLogger, FRetryOperation,
-			function: Boolean
-			begin
-				Result := Self.IsPublicAccount;
-			end,
-			function: WideString
-			begin
-				Result := Self.FUnitedParams;
-			end,
+		FShareService := TCloudShareService.Create(Self.HTTP, FLogger, FRetryOperation, IsPublicAccountCallback, GetUnitedParamsCallback,
 			function(JSON: WideString; ErrorPrefix: WideString): Boolean
 			begin
 				Result := Self.CloudResultToBoolean(JSON, ErrorPrefix);
@@ -334,15 +314,7 @@ begin
 			end, FShardManager);
 
 		{Initialize listing service with callbacks for dynamic state}
-		FListingService := TCloudListingService.Create(Self.HTTP, FCipher, FLogger, FRetryOperation,
-			function: Boolean
-			begin
-				Result := Self.IsPublicAccount;
-			end,
-			function: WideString
-			begin
-				Result := Self.FUnitedParams;
-			end,
+		FListingService := TCloudListingService.Create(Self.HTTP, FCipher, FLogger, FRetryOperation, IsPublicAccountCallback, GetUnitedParamsCallback,
 			function: WideString
 			begin
 				Result := Self.GetPublicLink;
