@@ -87,7 +87,7 @@ type
 		property Uploader: ICloudFileUploader read GetUploader;
 		property ShareService: ICloudShareService read GetShareService;
 		property ListingService: ICloudListingService read GetListingService;
-		property FileOps: ICloudFileOperations read GetFileOps; //Todo: rename property to FileOperations
+		property FileOperations: ICloudFileOperations read GetFileOps;
 		property IsPublicAccount: Boolean read GetIsPublicAccount;
 	end;
 
@@ -184,7 +184,7 @@ type
 		property Uploader: ICloudFileUploader read FUploader;
 		property ShareService: ICloudShareService read FShareService;
 		property ListingService: ICloudListingService read FListingService;
-		property FileOps: ICloudFileOperations read FFileOps;
+		property FileOperations: ICloudFileOperations read FFileOps;
 		{ERROR RESULT MAPPING - exposed for testing and external use}
 		function CloudResultToFsResult(CloudResult: TCloudOperationResult; ErrorPrefix: WideString = ''): Integer; overload;
 		function CloudResultToFsResult(JSON: WideString; ErrorPrefix: WideString = ''): Integer; overload;

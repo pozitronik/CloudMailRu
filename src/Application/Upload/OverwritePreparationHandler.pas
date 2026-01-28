@@ -63,7 +63,7 @@ begin
 		Exit;
 	end;
 
-	if not Cloud.FileOps.Delete(Path.Path) then
+	if not Cloud.FileOperations.Delete(Path.Path) then
 	begin
 		Result.Success := False;
 		Result.ResultCode := FS_FILE_NOTSUPPORTED;

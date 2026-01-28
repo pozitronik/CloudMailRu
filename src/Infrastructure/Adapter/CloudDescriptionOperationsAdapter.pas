@@ -113,7 +113,7 @@ end;
 
 function TCloudFileOperationsAdapter.DeleteFile(Path: WideString): Boolean;
 begin
-	Result := FCloud.FileOps.Delete(Path);
+	Result := FCloud.FileOperations.Delete(Path);
 end;
 
 {TCloudDescriptionOperationsAdapter}
