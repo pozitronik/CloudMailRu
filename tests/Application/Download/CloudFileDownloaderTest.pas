@@ -70,14 +70,8 @@ type
 		procedure TestGetSharedFileUrl_WithShardType_UsesCorrectShard;
 		[Test]
 		procedure TestGetSharedFileUrl_DefaultShardType_UsesPublicShard;
-
-		{GetSharedFileUrl tests - non-public account}
 		[Test]
-		procedure TestGetSharedFileUrl_NonPublicAccount_DirectoryPath_IncludesPublicLink;
-		[Test]
-		procedure TestGetSharedFileUrl_NonPublicAccount_FilePath_UsesPublicLinkOnly;
-		[Test]
-		procedure TestGetSharedFileUrl_NonPublicAccount_CallsGetRedirection;
+		procedure TestGetSharedFileUrl_NonPublicAccount_ReturnsEmpty;
 
 		{Download tests - regular account}
 		[Test]
@@ -294,41 +288,14 @@ begin
 	Assert.Contains(URL, 'public.shard', 'Default shard type should use public shard');
 end;
 
-{GetSharedFileUrl tests - non-public account}
-
-procedure TCloudFileDownloaderTest.TestGetSharedFileUrl_NonPublicAccount_DirectoryPath_IncludesPublicLink;
-begin
-	FIsPublicAccount := False;
-	FPublicLink := 'dirlink';
-	FMockHTTP.SetResponse('public.shard', True, 'https://redirected.url/');
-
-	FDownloader.GetSharedFileUrl('/subdir/:d');
-
-	Assert.IsTrue(FMockHTTP.WasURLCalled('dirlink'), 'GetRedirection should be called with URL containing public link');
-end;
-
-procedure TCloudFileDownloaderTest.TestGetSharedFileUrl_NonPublicAccount_FilePath_UsesPublicLinkOnly;
-begin
-	FIsPublicAccount := False;
-	FPublicLink := 'filelink';
-	FMockHTTP.SetResponse('public.shard', True, 'https://redirected.url/');
-
-	FDownloader.GetSharedFileUrl('/file.txt');
-
-	Assert.IsTrue(FMockHTTP.WasURLCalled('filelink'), 'GetRedirection should be called with URL containing public link');
-end;
-
-procedure TCloudFileDownloaderTest.TestGetSharedFileUrl_NonPublicAccount_CallsGetRedirection;
+procedure TCloudFileDownloaderTest.TestGetSharedFileUrl_NonPublicAccount_ReturnsEmpty;
 var
-	CallCount: Integer;
+	URL: WideString;
 begin
+	{GetSharedFileUrl only works for public accounts; private accounts use TempPublicCloud pattern}
 	FIsPublicAccount := False;
-	FMockHTTP.SetResponse('public.shard', True, 'https://final.redirect.url/');
-
-	CallCount := FMockHTTP.GetCallCount;
-	FDownloader.GetSharedFileUrl('/file.txt');
-
-	Assert.IsTrue(FMockHTTP.GetCallCount > CallCount, 'Should call GetRedirection');
+	URL := FDownloader.GetSharedFileUrl('/test/file.txt');
+	Assert.IsEmpty(URL, 'Non-public account should return empty string');
 end;
 
 {Download tests - regular account}

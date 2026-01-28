@@ -35,9 +35,6 @@ type
 
 		[Test]
 		procedure TestListIncomingInvites_ReturnsInvites;
-
-		[Test]
-		procedure TestGetSharedFileUrl_ReturnsDownloadUrl;
 	end;
 
 implementation
@@ -92,8 +89,8 @@ begin
 	PublishResult := FPrimaryCloud.PublishFile(FilePath, PublicLink, CLOUD_PUBLISH);
 
 	Assert.IsTrue(PublishResult, 'Publish should succeed');
-	Assert.IsNotEmpty(String(PublicLink), 'Public link should be returned');
-	Assert.IsTrue(Pos('cloud.mail.ru', LowerCase(PublicLink)) > 0, 'Link should be cloud.mail.ru URL');
+	Assert.IsNotEmpty(String(PublicLink), 'Public link (weblink ID) should be returned');
+	{Note: PublicLink is just the weblink ID, not full URL. Full URL = PUBLIC_ACCESS_URL + PublicLink}
 
 	{Unpublish for cleanup}
 	FPrimaryCloud.PublishFile(FilePath, PublicLink, CLOUD_UNPUBLISH);
@@ -319,36 +316,6 @@ begin
 
 	{Note: We can't guarantee invites exist, but operation should work}
 	Assert.Pass('Incoming invites listed successfully (count: ' + IntToStr(Length(Invites)) + ')');
-end;
-
-procedure TSharingIntegrationTest.TestGetSharedFileUrl_ReturnsDownloadUrl;
-var
-	FilePath: WideString;
-	PublicLink: WideString;
-	DownloadUrl: WideString;
-	PublishResult: Boolean;
-begin
-	{Upload and publish a file}
-	FilePath := UploadTestFile(1024, 'SharedUrlTest');
-	TrackForCleanup(FilePath);
-
-	PublicLink := '';
-	PublishResult := FPrimaryCloud.PublishFile(FilePath, PublicLink, CLOUD_PUBLISH);
-
-	if not PublishResult then
-	begin
-		Assert.Pass('SKIPPED: Cannot test shared URL - publish failed');
-		Exit;
-	end;
-
-	{Get the direct download URL for the file}
-	DownloadUrl := FPrimaryCloud.Downloader.GetSharedFileUrl(FilePath);
-
-	{Unpublish for cleanup}
-	FPrimaryCloud.PublishFile(FilePath, PublicLink, CLOUD_UNPUBLISH);
-
-	Assert.IsNotEmpty(String(DownloadUrl), 'Download URL should be returned');
-	Assert.IsTrue(Pos('http', LowerCase(DownloadUrl)) = 1, 'URL should start with http');
 end;
 
 initialization
