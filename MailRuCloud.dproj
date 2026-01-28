@@ -215,8 +215,10 @@
         <DCCReference Include="src\Presentation\Localization\LanguageStrings.pas"/>
         <DCCReference Include="src\Domain\ValueObjects\CloudTwostep.pas"/>
         <DCCReference Include="src\Infrastructure\IO\ChunkedFileStream.pas"/>
+        <DCCReference Include="src\Domain\Services\CloudAuthorizationState.pas"/>
         <DCCReference Include="src\Domain\Services\CloudMailRu.pas"/>
         <DCCReference Include="src\Domain\Services\CloudMailRuFactory.pas"/>
+        <DCCReference Include="src\Domain\Services\CloudMailRuInterface.pas"/>
         <DCCReference Include="src\Infrastructure\HTTP\CloudHTTP.pas"/>
         <DCCReference Include="src\Infrastructure\Settings\CloudSettings.pas"/>
         <DCCReference Include="src\Infrastructure\Services\ConnectionManager.pas"/>
@@ -233,6 +235,7 @@
         </DCCReference>
         <DCCReference Include="src\Domain\Services\Description.pas"/>
         <DCCReference Include="src\Infrastructure\Cipher\FileCipher.pas"/>
+        <DCCReference Include="src\Infrastructure\Cipher\CipherStreams.pas"/>
         <DCCReference Include="src\Infrastructure\IO\FileHelper.pas"/>
         <DCCReference Include="src\Infrastructure\IO\FileSplitInfo.pas"/>
         <DCCReference Include="src\Infrastructure\HTTP\HTTPManager.pas"/>
@@ -340,6 +343,7 @@
         <DCCReference Include="src\Presentation\Presenter\InvitePropertyPresenter.pas"/>
         <DCCReference Include="src\Presentation\Presenter\DeletedPropertyPresenter.pas"/>
         <DCCReference Include="src\Presentation\Presenter\AskPasswordPresenter.pas"/>
+        <DCCReference Include="src\Infrastructure\OpenSSL\OpenSSLProvider.pas"/>
         <RcItem Include="icons\icon.ico">
             <ResourceType>ICON</ResourceType>
             <ResourceId>base_icon</ResourceId>
@@ -403,6 +407,12 @@
                 <DeployFile LocalName="$(BDS)\Redist\osx32\libcgunwind.1.0.dylib" Class="DependencyModule"/>
                 <DeployFile LocalName="MailRuCloud.dll" Configuration="Canary" Class="ProjectOutput"/>
                 <DeployFile LocalName="MailRuCloud.dll" Configuration="Debug" Class="ProjectOutput"/>
+                <DeployFile LocalName="Win64\Debug\MailRuCloud.dll" Configuration="Debug" Class="ProjectOutput">
+                    <Platform Name="Win64">
+                        <RemoteName>MailRuCloud.dll</RemoteName>
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
                 <DeployClass Name="AdditionalDebugSymbols">
                     <Platform Name="OSX32">
                         <Operation>1</Operation>
