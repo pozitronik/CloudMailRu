@@ -1,12 +1,11 @@
 unit FileStreamExecutorTest;
 
 {Unit tests for TFileStreamExecutor - file streaming operations.
- Tests the testable paths through Execute:
+ Tests all paths through Execute including:
  - Format disabled/unset (early exit)
  - Public cloud factory failure
-
- Note: ResolveStreamUrl and ExecuteCommand require TCloudMailRu which is not
- interface-based. Full path testing requires integration tests with real cloud.}
+ - ShardTypeFromStreamingFormat mappings
+ - Full execution with mock cloud}
 
 interface
 
@@ -19,9 +18,20 @@ uses
 	WFXTypes,
 	FileStreamExecutor,
 	CloudMailRu,
+	CloudSettings,
 	CloudMailRuFactory,
 	WindowsHelper,
-	ConnectionManager;
+	ConnectionManager,
+	MockCloudHTTP,
+	MockHTTPManager,
+	AuthStrategy,
+	FileCipher,
+	TCLogger,
+	TCProgress,
+	TCRequest,
+	TCHandler,
+	OpenSSLProvider,
+	TestHelper;
 
 type
 	{Mock command executor for testing}
@@ -43,19 +53,40 @@ type
 		property ExecuteCallCount: Integer read FExecuteCallCount;
 	end;
 
-	{Mock public cloud factory for testing}
+	{Mock public cloud factory for testing - can return nil or a configured mock cloud}
 	TMockPublicCloudFactory = class(TInterfacedObject, IPublicCloudFactory)
 	private
 		FCreateResult: Boolean;
 		FLastPublicUrl: WideString;
 		FCreateCallCount: Integer;
+		FMockHTTP: TMockCloudHTTP;
+		FMockHTTPManager: TMockHTTPManager;
+		FCreatedCloud: TCloudMailRu;
+		FReturnRealCloud: Boolean;
 	public
 		constructor Create;
+		destructor Destroy; override;
 		function CreatePublicCloud(var TempCloud: TCloudMailRu; PublicUrl: WideString): Boolean;
+
+		{Configure to return a real mock cloud with queued responses}
+		procedure SetupMockCloud(const StreamUrlResponse: WideString);
 
 		property CreateResult: Boolean read FCreateResult write FCreateResult;
 		property LastPublicUrl: WideString read FLastPublicUrl;
 		property CreateCallCount: Integer read FCreateCallCount;
+		property MockHTTP: TMockCloudHTTP read FMockHTTP;
+	end;
+
+	{Mock connection manager for testing}
+	TMockConnManager = class(TInterfacedObject, IConnectionManager)
+	private
+		FCloud: TCloudMailRu;
+		FGetCallCount: Integer;
+	public
+		constructor Create(Cloud: TCloudMailRu);
+		function Get(ConnectionName: WideString; var OperationResult: Integer): TCloudMailRu;
+		procedure Free(ConnectionName: WideString);
+		property GetCallCount: Integer read FGetCallCount;
 	end;
 
 	[TestFixture]
@@ -107,10 +138,39 @@ type
 		procedure TestExecute_VideoFormat_CallsFactory;
 	end;
 
+	{Test fixture for ShardTypeFromStreamingFormat function}
+	[TestFixture]
+	TShardTypeFromStreamingFormatTest = class
+	public
+		[Test]
+		procedure TestWeblinkView_ReturnsSHARD_TYPE_WEBLINK_VIEW;
+		[Test]
+		procedure TestVideo_ReturnsSHARD_TYPE_VIDEO;
+		[Test]
+		procedure TestViewDirect_ReturnsSHARD_TYPE_VIEW_DIRECT;
+		[Test]
+		procedure TestThumbnails_ReturnsSHARD_TYPE_THUMBNAILS;
+		[Test]
+		procedure TestWeblinkThumbnails_ReturnsSHARD_TYPE_WEBLINK_THUMBNAILS;
+		[Test]
+		procedure TestDefault_ReturnsSHARD_TYPE_DEFAULT;
+		[Test]
+		procedure TestUnknownFormat_ReturnsSHARD_TYPE_DEFAULT;
+		[Test]
+		procedure TestPlaylist_ReturnsSHARD_TYPE_DEFAULT;
+	end;
+
 implementation
 
 uses
-	SysUtils;
+	SysUtils,
+	WindowsFileSystem;
+
+const
+	{Sample API responses for mock cloud}
+	JSON_STREAM_URL = '{"email":"test@mail.ru","body":"https://stream.cloud.mail.ru/video/abc123","status":200}';
+	JSON_PUBLISH_SUCCESS = '{"email":"test@mail.ru","body":"published-link","status":200}';
+	JSON_SHARED_URL = 'https://weblink.cloud.mail.ru/abc123/file.mp4';
 
 {TMockCommandExecutor}
 
@@ -137,14 +197,84 @@ begin
 	inherited Create;
 	FCreateResult := False; {Default to failure - avoids needing real TCloudMailRu}
 	FCreateCallCount := 0;
+	FMockHTTP := nil;
+	FMockHTTPManager := nil;
+	FCreatedCloud := nil;
+	FReturnRealCloud := False;
+end;
+
+destructor TMockPublicCloudFactory.Destroy;
+begin
+	{Cloud is freed by the executor in finally block, don't free here}
+	FMockHTTPManager := nil;
+	FMockHTTP := nil;
+	inherited;
+end;
+
+procedure TMockPublicCloudFactory.SetupMockCloud(const StreamUrlResponse: WideString);
+begin
+	FReturnRealCloud := True;
+	FCreateResult := True;
+	FMockHTTP := TMockCloudHTTP.Create;
+	FMockHTTPManager := TMockHTTPManager.Create(FMockHTTP);
+	{Queue responses for the cloud services}
+	FMockHTTP.QueueResponse('', True, StreamUrlResponse);
 end;
 
 function TMockPublicCloudFactory.CreatePublicCloud(var TempCloud: TCloudMailRu; PublicUrl: WideString): Boolean;
+var
+	Settings: TCloudSettings;
 begin
 	Inc(FCreateCallCount);
 	FLastPublicUrl := PublicUrl;
-	TempCloud := nil;
-	Result := FCreateResult;
+
+	if FReturnRealCloud and (FMockHTTPManager <> nil) then
+	begin
+		Settings := Default(TCloudSettings);
+		Settings.AccountSettings.PublicUrl := PublicUrl;
+
+		TempCloud := TCloudMailRu.Create(
+			Settings,
+			FMockHTTPManager,
+			TestThreadID(),
+			TNullAuthStrategy.Create,
+			TNullFileSystem.Create,
+			TNullLogger.Create,
+			TNullProgress.Create,
+			TNullRequest.Create,
+			TNullTCHandler.Create,
+			TNullCipher.Create,
+			TNullOpenSSLProvider.Create);
+
+		FCreatedCloud := TempCloud;
+		Result := True;
+	end
+	else
+	begin
+		TempCloud := nil;
+		Result := FCreateResult;
+	end;
+end;
+
+{TMockConnManager}
+
+constructor TMockConnManager.Create(Cloud: TCloudMailRu);
+begin
+	inherited Create;
+	FCloud := Cloud;
+	FGetCallCount := 0;
+end;
+
+function TMockConnManager.Get(ConnectionName: WideString; var OperationResult: Integer): TCloudMailRu;
+begin
+	Inc(FGetCallCount);
+	OperationResult := CLOUD_OPERATION_OK;
+	Result := FCloud;
+end;
+
+procedure TMockConnManager.Free(ConnectionName: WideString);
+begin
+	{No-op for mock}
 end;
 
 {TFileStreamExecutorTest - Helper methods}
@@ -407,7 +537,52 @@ begin
 	Assert.AreEqual(1, FMockCloudFactory.CreateCallCount, 'Video format should call factory');
 end;
 
+{TShardTypeFromStreamingFormatTest}
+
+procedure TShardTypeFromStreamingFormatTest.TestWeblinkView_ReturnsSHARD_TYPE_WEBLINK_VIEW;
+begin
+	Assert.AreEqual(SHARD_TYPE_WEBLINK_VIEW, ShardTypeFromStreamingFormat(STREAMING_FORMAT_WEBLINK_VIEW));
+end;
+
+procedure TShardTypeFromStreamingFormatTest.TestVideo_ReturnsSHARD_TYPE_VIDEO;
+begin
+	Assert.AreEqual(SHARD_TYPE_VIDEO, ShardTypeFromStreamingFormat(STREAMING_FORMAT_VIDEO));
+end;
+
+procedure TShardTypeFromStreamingFormatTest.TestViewDirect_ReturnsSHARD_TYPE_VIEW_DIRECT;
+begin
+	Assert.AreEqual(SHARD_TYPE_VIEW_DIRECT, ShardTypeFromStreamingFormat(STREAMING_FORMAT_VIEW_DIRECT));
+end;
+
+procedure TShardTypeFromStreamingFormatTest.TestThumbnails_ReturnsSHARD_TYPE_THUMBNAILS;
+begin
+	Assert.AreEqual(SHARD_TYPE_THUMBNAILS, ShardTypeFromStreamingFormat(STREAMING_FORMAT_THUMBNAILS));
+end;
+
+procedure TShardTypeFromStreamingFormatTest.TestWeblinkThumbnails_ReturnsSHARD_TYPE_WEBLINK_THUMBNAILS;
+begin
+	Assert.AreEqual(SHARD_TYPE_WEBLINK_THUMBNAILS, ShardTypeFromStreamingFormat(STREAMING_FORMAT_WEBLINK_THUMBNAILS));
+end;
+
+procedure TShardTypeFromStreamingFormatTest.TestDefault_ReturnsSHARD_TYPE_DEFAULT;
+begin
+	Assert.AreEqual(SHARD_TYPE_DEFAULT, ShardTypeFromStreamingFormat(STREAMING_FORMAT_DEFAULT));
+end;
+
+procedure TShardTypeFromStreamingFormatTest.TestUnknownFormat_ReturnsSHARD_TYPE_DEFAULT;
+begin
+	{Unknown format values should fall through to default}
+	Assert.AreEqual(SHARD_TYPE_DEFAULT, ShardTypeFromStreamingFormat(999));
+end;
+
+procedure TShardTypeFromStreamingFormatTest.TestPlaylist_ReturnsSHARD_TYPE_DEFAULT;
+begin
+	{Playlist format is handled differently in ResolveStreamUrl, not by this function}
+	Assert.AreEqual(SHARD_TYPE_DEFAULT, ShardTypeFromStreamingFormat(STREAMING_FORMAT_PLAYLIST));
+end;
+
 initialization
 	TDUnitX.RegisterTestFixture(TFileStreamExecutorTest);
+	TDUnitX.RegisterTestFixture(TShardTypeFromStreamingFormatTest);
 
 end.

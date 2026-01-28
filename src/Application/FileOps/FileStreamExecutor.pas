@@ -17,6 +17,10 @@ uses
 	CloudMailRuFactory,
 	WindowsHelper;
 
+{Maps streaming format to corresponding shard type for URL resolution.
+	Exposed for testability.}
+function ShardTypeFromStreamingFormat(StreamingFormat: Integer): string;
+
 type
 	IFileStreamExecutor = interface
 		['{B8E5D3A1-7C9F-4E2B-A6D8-9F1C3E5B7A2D}']
@@ -59,7 +63,6 @@ uses
 	SysUtils,
 	WFXTypes;
 
-{Maps streaming format to corresponding shard type for URL resolution}
 function ShardTypeFromStreamingFormat(StreamingFormat: Integer): string;
 begin
 	case StreamingFormat of
