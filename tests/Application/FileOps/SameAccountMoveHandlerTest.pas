@@ -85,6 +85,7 @@ type
 		function HasActiveBackgroundJobs(const Account: WideString): Boolean;
 		function HasFsStatusInfo: Boolean;
 		function HasBackgroundThread: Boolean;
+		function HasAnyActiveOperations: Boolean;
 	end;
 
 	{Mock description sync guard}
@@ -265,6 +266,7 @@ procedure TMockMoveThreadState.DecrementBackgroundJobs(const Account: WideString
 function TMockMoveThreadState.HasActiveBackgroundJobs(const Account: WideString): Boolean; begin Result := False; end;
 function TMockMoveThreadState.HasFsStatusInfo: Boolean; begin Result := False; end;
 function TMockMoveThreadState.HasBackgroundThread: Boolean; begin Result := False; end;
+function TMockMoveThreadState.HasAnyActiveOperations: Boolean; begin Result := False; end;
 
 {TMockDescriptionSyncGuard}
 

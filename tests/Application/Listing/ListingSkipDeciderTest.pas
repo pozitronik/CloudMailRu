@@ -72,6 +72,7 @@ type
 		function HasActiveBackgroundJobs(const Account: WideString): Boolean;
 		function HasFsStatusInfo: Boolean;
 		function HasBackgroundThread: Boolean;
+		function HasAnyActiveOperations: Boolean;
 	end;
 
 	{Mock progress}
@@ -240,6 +241,7 @@ function TMockThreadState.HasActiveBackgroundJobs(const Account: WideString): Bo
 function TMockThreadState.GetRemoveDirSkippedPath: TStringList; begin Result := nil; end;
 function TMockThreadState.HasFsStatusInfo: Boolean; begin Result := False; end;
 function TMockThreadState.HasBackgroundThread: Boolean; begin Result := False; end;
+function TMockThreadState.HasAnyActiveOperations: Boolean; begin Result := False; end;
 
 {TMockProgress}
 

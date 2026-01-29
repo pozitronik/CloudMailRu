@@ -276,6 +276,17 @@ end;
 
 procedure FreePluginData();
 begin
+	{Skip cleanup if background operations are active - process is likely terminating,
+		OS will clean up all resources. Attempting cleanup while threads are running
+		causes access violations when threads try to use freed objects.}
+	if MailRuCloudWFX.HasActiveOperations then
+	begin
+		{Force immediate process termination to prevent Indy's finalization from
+			clearing SSL function pointers while background threads are still using them.
+			Without this, background HTTPS threads crash when calling nil function pointers.
+			Process is terminating anyway - OS will clean up all resources.}
+		ExitProcess(0);
+	end;
 	FreeAndNil(MailRuCloudWFX);
 end;
 

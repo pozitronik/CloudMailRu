@@ -104,6 +104,16 @@ type
 		procedure TestBackgroundJobs_HasActiveJobs;
 		[Test]
 		procedure TestBackgroundJobs_AccountIsolation;
+
+		{ HasAnyActiveOperations tests }
+		[Test]
+		procedure TestHasAnyActiveOperations_FalseWhenEmpty;
+		[Test]
+		procedure TestHasAnyActiveOperations_TrueWithBackgroundThread;
+		[Test]
+		procedure TestHasAnyActiveOperations_TrueWithActiveBackgroundJobs;
+		[Test]
+		procedure TestHasAnyActiveOperations_FalseWithZeroJobCount;
 	end;
 
 implementation
@@ -410,6 +420,49 @@ begin
 	Assert.AreEqual(2, FManager.GetBackgroundJobsCount('account1@mail.ru'));
 	Assert.AreEqual(1, FManager.GetBackgroundJobsCount('account2@mail.ru'));
 	Assert.AreEqual(0, FManager.GetBackgroundJobsCount('account3@mail.ru'));
+end;
+
+{ HasAnyActiveOperations tests }
+
+procedure TThreadStateManagerTest.TestHasAnyActiveOperations_FalseWhenEmpty;
+begin
+	{ Fresh manager has no active operations }
+	Assert.IsFalse(FManager.HasAnyActiveOperations);
+end;
+
+procedure TThreadStateManagerTest.TestHasAnyActiveOperations_TrueWithBackgroundThread;
+begin
+	Assert.IsFalse(FManager.HasAnyActiveOperations);
+
+	{ Adding a background thread makes operations active }
+	FManager.SetBackgroundThreadStatus(1);
+	Assert.IsTrue(FManager.HasAnyActiveOperations);
+
+	{ Removing it clears active state }
+	FManager.RemoveBackgroundThread;
+	Assert.IsFalse(FManager.HasAnyActiveOperations);
+end;
+
+procedure TThreadStateManagerTest.TestHasAnyActiveOperations_TrueWithActiveBackgroundJobs;
+begin
+	Assert.IsFalse(FManager.HasAnyActiveOperations);
+
+	{ Adding background jobs makes operations active }
+	FManager.IncrementBackgroundJobs('test@mail.ru');
+	Assert.IsTrue(FManager.HasAnyActiveOperations);
+
+	{ Decrementing to zero clears active state }
+	FManager.DecrementBackgroundJobs('test@mail.ru');
+	Assert.IsFalse(FManager.HasAnyActiveOperations);
+end;
+
+procedure TThreadStateManagerTest.TestHasAnyActiveOperations_FalseWithZeroJobCount;
+begin
+	{ An account entry with zero count should not be considered active }
+	FManager.IncrementBackgroundJobs('test@mail.ru');
+	FManager.DecrementBackgroundJobs('test@mail.ru');
+	{ Now there's an entry in the dictionary with value 0 }
+	Assert.IsFalse(FManager.HasAnyActiveOperations);
 end;
 
 initialization

@@ -213,6 +213,9 @@ type
 		function FsContentGetValue(FileName: PWideChar; FieldIndex: Integer; UnitIndex: Integer; FieldValue: Pointer; MaxLen: Integer; Flags: Integer): Integer;
 		function FsExtractCustomIcon(RemoteName: PWideChar; ExtractFlags: Integer; var TheIcon: hIcon): Integer;
 
+		{Shutdown safety check - returns True if no background operations are active}
+		function HasActiveOperations: Boolean;
+
 	end;
 
 implementation
@@ -1047,6 +1050,11 @@ begin
 		CompletionContext.Cloud := Cloud;
 		Result := FUploadCompletionHandler.HandleCompletion(CompletionContext);
 	end;
+end;
+
+function TWFXApplication.HasActiveOperations: Boolean;
+begin
+	Result := FThreadState.HasAnyActiveOperations;
 end;
 
 end.

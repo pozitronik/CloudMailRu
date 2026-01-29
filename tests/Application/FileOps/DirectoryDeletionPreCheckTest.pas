@@ -70,6 +70,7 @@ type
 		function HasActiveBackgroundJobs(const Account: WideString): Boolean;
 		function HasFsStatusInfo: Boolean;
 		function HasBackgroundThread: Boolean;
+		function HasAnyActiveOperations: Boolean;
 	end;
 
 	[TestFixture]
@@ -197,6 +198,7 @@ procedure TMockThreadStateForDeletion.DecrementBackgroundJobs(const Account: Wid
 function TMockThreadStateForDeletion.HasActiveBackgroundJobs(const Account: WideString): Boolean; begin Result := False; end;
 function TMockThreadStateForDeletion.HasFsStatusInfo: Boolean; begin Result := False; end;
 function TMockThreadStateForDeletion.HasBackgroundThread: Boolean; begin Result := False; end;
+function TMockThreadStateForDeletion.HasAnyActiveOperations: Boolean; begin Result := False; end;
 
 {TDirectoryDeletionPreCheckTest}
 

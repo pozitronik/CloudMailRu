@@ -17,6 +17,10 @@ type
 	IThreadStateManager = interface
 		['{30E7A013-7529-4A45-B122-99A218FCCE6C}']
 
+		{Check if any background operations are active (threads or jobs).
+			Used to determine if it's safe to perform cleanup during DLL unload.}
+		function HasAnyActiveOperations: Boolean;
+
 		{Skip listing flags - prevent directory enumeration during bulk operations}
 		function GetSkipListDelete: Boolean;
 		procedure SetSkipListDelete(Value: Boolean);
@@ -94,6 +98,9 @@ type
 	public
 		constructor Create;
 		destructor Destroy; override;
+
+		{Check if any background operations are active}
+		function HasAnyActiveOperations: Boolean;
 
 		{Skip listing flags}
 		function GetSkipListDelete: Boolean;
@@ -189,6 +196,20 @@ begin
 	FreeAndNil(FSkipListRenMov);
 	FreeAndNil(FSkipListDelete);
 	inherited;
+end;
+
+function TThreadStateManager.HasAnyActiveOperations: Boolean;
+var
+	JobCount: Int32;
+begin
+	{Check if any background threads are tracked}
+	if FBackgroundThreads.Count > 0 then
+		Exit(True);
+	{Check if any background jobs are active (count > 0 for any account)}
+	for JobCount in FBackgroundJobs.Values do
+		if JobCount > 0 then
+			Exit(True);
+	Result := False;
 end;
 
 {Skip listing flags}

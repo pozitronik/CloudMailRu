@@ -64,6 +64,7 @@ type
 		function HasActiveBackgroundJobs(const Account: WideString): Boolean;
 		function HasFsStatusInfo: Boolean;
 		function HasBackgroundThread: Boolean;
+		function HasAnyActiveOperations: Boolean;
 	end;
 
 	[TestFixture]
@@ -173,6 +174,7 @@ procedure TMockThreadStateForMove.DecrementBackgroundJobs(const Account: WideStr
 function TMockThreadStateForMove.HasActiveBackgroundJobs(const Account: WideString): Boolean; begin Result := False; end;
 function TMockThreadStateForMove.HasFsStatusInfo: Boolean; begin Result := FFsStatusInfo <> 0; end;
 function TMockThreadStateForMove.HasBackgroundThread: Boolean; begin Result := False; end;
+function TMockThreadStateForMove.HasAnyActiveOperations: Boolean; begin Result := False; end;
 
 {TMoveOperationContextTrackerTest}
 
