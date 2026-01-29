@@ -403,6 +403,14 @@
         <DCCReference Include="Integration\InviteIntegrationTest.pas"/>
         <DCCReference Include="..\src\Infrastructure\OpenSSL\OpenSSLProvider.pas"/>
         <DCCReference Include="Infrastructure\OpenSSL\OpenSSLProviderTest.pas"/>
+        <DCCReference Include="..\src\Infrastructure\Password\AccountCredentialsProvider.pas"/>
+        <DCCReference Include="Infrastructure\Password\AccountCredentialsProviderTest.pas"/>
+        <DCCReference Include="..\src\Application\Thumbnail\ThumbnailSizeSelector.pas"/>
+        <DCCReference Include="Application\Thumbnail\ThumbnailSizeSelectorTest.pas"/>
+        <DCCReference Include="..\src\Application\Thumbnail\CloudThumbnailService.pas"/>
+        <DCCReference Include="Application\Thumbnail\CloudThumbnailServiceTest.pas"/>
+        <DCCReference Include="..\src\Application\Thumbnail\ThumbnailBitmapConverter.pas"/>
+        <DCCReference Include="Application\Thumbnail\ThumbnailBitmapConverterTest.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

@@ -176,7 +176,8 @@ type
 implementation
 
 uses
-	CloudThumbnailService;
+	CloudThumbnailService,
+	ThumbnailBitmapConverter;
 
 {TCloudMailRu}
 
@@ -359,7 +360,7 @@ function TCloudMailRu.GetThumbnail(const CloudPath: WideString; RequestedWidth, 
 var
 	ThumbnailService: ICloudThumbnailService;
 begin
-	ThumbnailService := TCloudThumbnailService.Create(HTTP, FShardManager, FLogger, FOAuthToken);
+	ThumbnailService := TCloudThumbnailService.Create(HTTP, FShardManager, FLogger, FOAuthToken, TThumbnailBitmapConverter.Create);
 	Result := ThumbnailService.GetThumbnail(CloudPath, RequestedWidth, RequestedHeight);
 end;
 

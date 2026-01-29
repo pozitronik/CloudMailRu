@@ -12,6 +12,7 @@ uses
 	System.Generics.Collections,
 	DUnitX.TestFramework,
 	CloudThumbnailService,
+	ThumbnailBitmapConverter,
 	CloudHTTP,
 	CloudShardManager,
 	CloudOAuth,
@@ -241,7 +242,7 @@ begin
 	FMockShardManager := TMockThumbnailShardManager.Create;
 	FMockLogger := TNullLogger.Create;
 	FTestOAuthToken.access_token := 'test-token-12345';
-	FService := TCloudThumbnailService.Create(FMockHTTP, FMockShardManager, FMockLogger, FTestOAuthToken);
+	FService := TCloudThumbnailService.Create(FMockHTTP, FMockShardManager, FMockLogger, FTestOAuthToken, TThumbnailBitmapConverter.Create);
 end;
 
 procedure TCloudThumbnailServiceTest.TearDown;

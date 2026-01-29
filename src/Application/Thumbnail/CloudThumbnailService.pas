@@ -10,6 +10,7 @@ uses
 	CloudHTTP,
 	CloudShardManager,
 	CloudOAuth,
+	ThumbnailBitmapConverter,
 	TCLogger;
 
 type
@@ -30,6 +31,7 @@ type
 		FShardManager: ICloudShardManager;
 		FLogger: ILogger;
 		FOAuthToken: TCloudOAuth;
+		FConverter: IThumbnailBitmapConverter;
 
 		{Build thumbnail URL with authentication parameters}
 		function BuildThumbnailURL(const ShardURL, SizePreset, CloudPath: WideString): WideString;
@@ -37,7 +39,7 @@ type
 		{Get thumbnail shard URL, resolving from dispatcher if needed}
 		function GetThumbnailShard: WideString;
 	public
-		constructor Create(HTTP: ICloudHTTP; ShardManager: ICloudShardManager; Logger: ILogger; OAuthToken: TCloudOAuth);
+		constructor Create(HTTP: ICloudHTTP; ShardManager: ICloudShardManager; Logger: ILogger; OAuthToken: TCloudOAuth; Converter: IThumbnailBitmapConverter);
 
 		function GetThumbnail(const CloudPath: WideString; RequestedWidth, RequestedHeight: Integer): HBITMAP;
 	end;
@@ -47,10 +49,6 @@ implementation
 uses
 	System.SysUtils,
 	System.Classes,
-	Vcl.Graphics,
-	Vcl.Imaging.jpeg,
-	Vcl.Imaging.pngimage,
-	Vcl.Imaging.GIFImg,
 	CloudConstants,
 	WFXTypes,
 	PathHelper,
@@ -58,13 +56,14 @@ uses
 
 {TCloudThumbnailService}
 
-constructor TCloudThumbnailService.Create(HTTP: ICloudHTTP; ShardManager: ICloudShardManager; Logger: ILogger; OAuthToken: TCloudOAuth);
+constructor TCloudThumbnailService.Create(HTTP: ICloudHTTP; ShardManager: ICloudShardManager; Logger: ILogger; OAuthToken: TCloudOAuth; Converter: IThumbnailBitmapConverter);
 begin
 	inherited Create;
 	FHTTP := HTTP;
 	FShardManager := ShardManager;
 	FLogger := Logger;
 	FOAuthToken := OAuthToken;
+	FConverter := Converter;
 end;
 
 function TCloudThumbnailService.GetThumbnailShard: WideString;
@@ -79,35 +78,18 @@ begin
 end;
 
 function TCloudThumbnailService.BuildThumbnailURL(const ShardURL, SizePreset, CloudPath: WideString): WideString;
-var
-	Path: WideString;
 begin
-	//Shard URL from dispatcher already includes /thumb/ path
-	//URL format: <shard>/<size>/<path>?client_id=...&token=...
-	//Example: https://thumb.cloud.mail.ru/thumb/xw14/folder/image.jpg?client_id=...&token=...
-	Path := CloudPath;
-	if (Length(Path) > 0) and (Path[1] = '/') then
-		Delete(Path, 1, 1);
-
-	Result := Format('%s%s/%s?client_id=%s&token=%s', [
-		IncludeSlash(ShardURL),
-		SizePreset,
-		Path,
-		OAUTH_CLIENT_ID,
-		FOAuthToken.access_token
-	]);
+	{URL format: <shard>/<size><encoded_path>?client_id=...&token=...
+		PathToUrl handles backslash-to-slash conversion, URL encoding, and preserves leading '/'.
+		Example: https://thumb.cloud.mail.ru/thumb/xw14/folder/image.jpg?client_id=...&token=...}
+	Result := Format('%s%s/%s?client_id=%s&token=%s', [IncludeSlash(ShardURL), SizePreset, PathToUrl(CloudPath), OAUTH_CLIENT_ID, FOAuthToken.access_token]);
 end;
 
 function TCloudThumbnailService.GetThumbnail(const CloudPath: WideString; RequestedWidth, RequestedHeight: Integer): HBITMAP;
 var
 	SizePreset, ShardURL, ThumbnailURL: WideString;
 	ImageStream: TMemoryStream;
-	Bitmap: TBitmap;
-	JPEGImage: TJPEGImage;
-	pngimage: TPngImage;
-	GIFImage: TGIFImage;
 	DownloadResult: Integer;
-	ImageType: string;
 begin
 	Result := 0;
 
@@ -130,53 +112,13 @@ begin
 		DownloadResult := FHTTP.GetFile(ThumbnailURL, ImageStream, False);
 		if (DownloadResult <> FS_FILE_OK) or (ImageStream.Size = 0) then
 		begin
-			FLogger.Log(LOG_LEVEL_DEBUG, MSGTYPE_DETAILS, 'Thumbnail download failed for: %s', [CloudPath]);
+			{Missing thumbnails for unsupported types are expected, not errors}
+			FLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, 'Thumbnail download failed for: %s', [CloudPath]);
 			Exit;
 		end;
 
 		ImageStream.Position := 0;
-
-		{Create bitmap to hold the result}
-		Bitmap := TBitmap.Create;
-		try
-			{Determine image type and load accordingly.
-				Server typically returns JPEG, but we handle others too.}
-			ImageType := LowerCase(ExtractFileExt(CloudPath));
-
-			if (ImageType = '.png') then
-			begin
-				pngimage := TPngImage.Create;
-				try
-					pngimage.LoadFromStream(ImageStream);
-					Bitmap.Assign(pngimage);
-				finally
-					pngimage.Free;
-				end;
-			end else if (ImageType = '.gif') then
-			begin
-				GIFImage := TGIFImage.Create;
-				try
-					GIFImage.LoadFromStream(ImageStream);
-					Bitmap.Assign(GIFImage);
-				finally
-					GIFImage.Free;
-				end;
-			end else begin
-				{Default: treat as JPEG (thumbnail server usually returns JPEG regardless of source format)}
-				JPEGImage := TJPEGImage.Create;
-				try
-					JPEGImage.LoadFromStream(ImageStream);
-					Bitmap.Assign(JPEGImage);
-				finally
-					JPEGImage.Free;
-				end;
-			end;
-
-			{Release bitmap handle to caller - caller is responsible for cleanup}
-			Result := Bitmap.ReleaseHandle;
-		finally
-			Bitmap.Free;
-		end;
+		Result := FConverter.ConvertToBitmap(ImageStream);
 	finally
 		ImageStream.Free;
 	end;

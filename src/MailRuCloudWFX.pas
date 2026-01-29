@@ -739,6 +739,10 @@ begin
 	if RealPath.IsVirtual or RealPath.upDirItem or (RealPath.Path = '') then
 		Exit;
 
+	{Skip directories - cloud directories never have file extensions}
+	if ExtractFileExt(RealPath.Path) = '' then
+		Exit;
+
 	{Get cloud connection}
 	Cloud := ConnectionManager.Get(RealPath.account);
 	if not EnsureAuthorized(Cloud) then

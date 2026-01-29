@@ -312,7 +312,9 @@ uses
 	ThumbnailSizeSelector in '..\src\Application\Thumbnail\ThumbnailSizeSelector.pas',
 	ThumbnailSizeSelectorTest in 'Application\Thumbnail\ThumbnailSizeSelectorTest.pas',
 	CloudThumbnailService in '..\src\Application\Thumbnail\CloudThumbnailService.pas',
-	CloudThumbnailServiceTest in 'Application\Thumbnail\CloudThumbnailServiceTest.pas';
+	CloudThumbnailServiceTest in 'Application\Thumbnail\CloudThumbnailServiceTest.pas',
+	ThumbnailBitmapConverter in '..\src\Application\Thumbnail\ThumbnailBitmapConverter.pas',
+	ThumbnailBitmapConverterTest in 'Application\Thumbnail\ThumbnailBitmapConverterTest.pas';
 
 {keep comment here to protect the following conditional from being removed by the IDE when adding a unit}
 {$IFNDEF TESTINSIGHT}
