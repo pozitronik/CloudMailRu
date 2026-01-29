@@ -106,6 +106,7 @@ uses
 	IconHelper in '..\src\Presentation\Icon\IconHelper.pas',
 	IconHelperTest in 'Presentation\Icon\IconHelperTest.pas',
 	CloudAuthorizationState in '..\src\Domain\Services\CloudAuthorizationState.pas',
+	CloudContext in '..\src\Domain\Services\CloudContext.pas',
 	CloudMailRu in '..\src\Domain\Services\CloudMailRu.pas',
 	CloudMailRuFactory in '..\src\Domain\Services\CloudMailRuFactory.pas',
 	CloudFileIdentity in '..\src\Domain\ValueObjects\CloudFileIdentity.pas',

@@ -216,6 +216,7 @@
         <DCCReference Include="src\Domain\ValueObjects\CloudTwostep.pas"/>
         <DCCReference Include="src\Infrastructure\IO\ChunkedFileStream.pas"/>
         <DCCReference Include="src\Domain\Services\CloudAuthorizationState.pas"/>
+        <DCCReference Include="src\Domain\Services\CloudContext.pas"/>
         <DCCReference Include="src\Domain\Services\CloudMailRu.pas"/>
         <DCCReference Include="src\Domain\Services\CloudMailRuFactory.pas"/>
         <DCCReference Include="src\Infrastructure\HTTP\CloudHTTP.pas"/>

@@ -31,7 +31,8 @@ type
 		{Cloud operation result mapping - converts API responses to standardized results}
 		function CloudResultToBoolean(const JSON, ErrorPrefix: WideString): Boolean; overload;
 		function CloudResultToBoolean(const OperationResult: TCloudOperationResult; const ErrorPrefix: WideString): Boolean; overload;
-		function CloudResultToFsResult(const JSON, ErrorPrefix: WideString): Integer;
+		function CloudResultToFsResult(const JSON, ErrorPrefix: WideString): Integer; overload;
+		function CloudResultToFsResult(const OperationResult: TCloudOperationResult; const ErrorPrefix: WideString): Integer; overload;
 
 		{Cloud operations - high-level operations that services may need}
 		function GetUserSpace(var SpaceInfo: TCloudSpace): Boolean;

@@ -26,6 +26,7 @@ uses
 	ChunkedFileStream in 'src\Infrastructure\IO\ChunkedFileStream.pas',
 	Classes,
 	CloudAuthorizationState in 'src\Domain\Services\CloudAuthorizationState.pas',
+	CloudContext in 'src\Domain\Services\CloudContext.pas',
 	CloudMailRu in 'src\Domain\Services\CloudMailRu.pas',
 	CloudMailRuFactory in 'src\Domain\Services\CloudMailRuFactory.pas',
 	CloudHTTP in 'src\Infrastructure\HTTP\CloudHTTP.pas',

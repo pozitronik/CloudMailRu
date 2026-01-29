@@ -42,10 +42,11 @@ uses
 	CloudAuthorizationState,
 	OpenSSLProvider,
 	CloudCallbackTypes,
-	AccountCredentialsProvider;
+	AccountCredentialsProvider,
+	CloudContext;
 
 type
-	TCloudMailRu = class(TInterfacedObject)
+	TCloudMailRu = class(TInterfacedObject, ICloudContext)
 	private
 		FSettings: TCloudSettings; {Current options set for the cloud instance}
 		FAuthorizationState: TAuthorizationState; {Authorization state machine}
@@ -77,7 +78,7 @@ type
 		function InitSharedConnectionParameters(): Boolean;
 
 		{OTHER ROUTINES}
-		function GetHTTPConnection: ICloudHTTP;
+		function GetHTTP: ICloudHTTP;
 		function RefreshCSRFToken: Boolean;
 	protected
 		FDoCryptFiles: Boolean;
@@ -108,7 +109,7 @@ type
 		property RetryAttempts: Integer read FSettings.RetryAttempts;
 		property AttemptWait: Integer read FSettings.AttemptWait;
 		{Also shortcut properties}
-		property HTTP: ICloudHTTP read GetHTTPConnection;
+		property HTTP: ICloudHTTP read GetHTTP;
 
 		{REGULAR CLOUD}
 		function LoginRegular: Boolean;
@@ -124,17 +125,21 @@ type
 		property AuthorizationError: TAuthorizationError read FAuthorizationError;
 
 		{Service accessors}
-		property IsPublicAccount: Boolean read FSettings.AccountSettings.PublicAccount;
 		property Downloader: ICloudFileDownloader read FDownloader;
 		property Uploader: ICloudFileUploader read FUploader;
 		property ShareService: ICloudShareService read FShareService;
 		property ListingService: ICloudListingService read FListingService;
 		property FileOperations: ICloudFileOperations read FFileOperations;
-		{ERROR RESULT MAPPING - exposed for testing and external use}
-		function CloudResultToFsResult(CloudResult: TCloudOperationResult; ErrorPrefix: WideString = ''): Integer; overload;
-		function CloudResultToFsResult(JSON: WideString; ErrorPrefix: WideString = ''): Integer; overload;
-		function CloudResultToBoolean(CloudResult: TCloudOperationResult; ErrorPrefix: WideString = ''): Boolean; overload;
-		function CloudResultToBoolean(JSON: WideString; ErrorPrefix: WideString = ''): Boolean; overload;
+
+		{ICloudContext implementation - provides access to cloud state for services}
+		function IsPublicAccount: Boolean;
+		function GetOAuthToken: TCloudOAuth;
+		function GetUnitedParams: WideString;
+		function DeleteFile(const Path: WideString): Boolean;
+		function CloudResultToFsResult(const JSON, ErrorPrefix: WideString): Integer; overload;
+		function CloudResultToFsResult(const OperationResult: TCloudOperationResult; const ErrorPrefix: WideString): Integer; overload;
+		function CloudResultToBoolean(const JSON, ErrorPrefix: WideString): Boolean; overload;
+		function CloudResultToBoolean(const OperationResult: TCloudOperationResult; const ErrorPrefix: WideString): Boolean; overload;
 		{CONSTRUCTOR/DESTRUCTOR}
 		constructor Create(CloudSettings: TCloudSettings; ConnectionManager: IHTTPManager; GetThreadID: TGetThreadIDFunc; AuthStrategy: IAuthStrategy; FileSystem: IFileSystem; Logger: ILogger; Progress: IProgress; Request: IRequest; TCHandler: ITCHandler; Cipher: ICipher; OpenSSLProvider: IOpenSSLProvider; AccountCredentialsProvider: IAccountCredentialsProvider);
 		destructor Destroy; override;
@@ -151,28 +156,45 @@ implementation
 
 {TCloudMailRu}
 
-{Delegates to TCloudErrorMapper - used in constructor callbacks}
-function TCloudMailRu.CloudResultToBoolean(JSON, ErrorPrefix: WideString): Boolean;
+{ICloudContext implementation - delegates to TCloudErrorMapper}
+function TCloudMailRu.CloudResultToBoolean(const JSON, ErrorPrefix: WideString): Boolean;
 begin
 	Result := TCloudErrorMapper.ToBoolean(JSON, FLogger, ErrorPrefix);
 end;
 
-{Delegates to TCloudErrorMapper - kept for backward compatibility}
-function TCloudMailRu.CloudResultToBoolean(CloudResult: TCloudOperationResult; ErrorPrefix: WideString): Boolean;
+function TCloudMailRu.CloudResultToBoolean(const OperationResult: TCloudOperationResult; const ErrorPrefix: WideString): Boolean;
 begin
-	Result := TCloudErrorMapper.ToBoolean(CloudResult, FLogger, ErrorPrefix);
+	Result := TCloudErrorMapper.ToBoolean(OperationResult, FLogger, ErrorPrefix);
 end;
 
-{Delegates to TCloudErrorMapper - kept for backward compatibility}
-function TCloudMailRu.CloudResultToFsResult(JSON, ErrorPrefix: WideString): Integer;
+function TCloudMailRu.CloudResultToFsResult(const JSON, ErrorPrefix: WideString): Integer;
 begin
 	Result := TCloudErrorMapper.ToFsResult(JSON, FLogger, ErrorPrefix);
 end;
 
-{Delegates to TCloudErrorMapper - used in constructor callbacks}
-function TCloudMailRu.CloudResultToFsResult(CloudResult: TCloudOperationResult; ErrorPrefix: WideString): Integer;
+function TCloudMailRu.CloudResultToFsResult(const OperationResult: TCloudOperationResult; const ErrorPrefix: WideString): Integer;
 begin
-	Result := TCloudErrorMapper.ToFsResult(CloudResult, FLogger, ErrorPrefix);
+	Result := TCloudErrorMapper.ToFsResult(OperationResult, FLogger, ErrorPrefix);
+end;
+
+function TCloudMailRu.DeleteFile(const Path: WideString): Boolean;
+begin
+	Result := FFileOperations.Delete(Path);
+end;
+
+function TCloudMailRu.GetOAuthToken: TCloudOAuth;
+begin
+	Result := FOAuthToken;
+end;
+
+function TCloudMailRu.GetUnitedParams: WideString;
+begin
+	Result := FUnitedParams;
+end;
+
+function TCloudMailRu.IsPublicAccount: Boolean;
+begin
+	Result := FSettings.AccountSettings.PublicAccount;
 end;
 
 constructor TCloudMailRu.Create(CloudSettings: TCloudSettings; ConnectionManager: IHTTPManager; GetThreadID: TGetThreadIDFunc; AuthStrategy: IAuthStrategy; FileSystem: IFileSystem; Logger: ILogger; Progress: IProgress; Request: IRequest; TCHandler: ITCHandler; Cipher: ICipher; OpenSSLProvider: IOpenSSLProvider; AccountCredentialsProvider: IAccountCredentialsProvider);
@@ -364,7 +386,7 @@ begin
 	inherited;
 end;
 
-function TCloudMailRu.GetHTTPConnection: ICloudHTTP;
+function TCloudMailRu.GetHTTP: ICloudHTTP;
 begin
 	Result := FHTTPManager.Get(FGetThreadID());
 	Result.AuthCookie := FCookieManager;
