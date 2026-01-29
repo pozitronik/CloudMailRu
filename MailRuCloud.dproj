@@ -343,6 +343,7 @@
         <DCCReference Include="src\Presentation\Presenter\DeletedPropertyPresenter.pas"/>
         <DCCReference Include="src\Presentation\Presenter\AskPasswordPresenter.pas"/>
         <DCCReference Include="src\Infrastructure\OpenSSL\OpenSSLProvider.pas"/>
+        <DCCReference Include="src\Infrastructure\Password\AccountCredentialsProvider.pas"/>
         <RcItem Include="icons\icon.ico">
             <ResourceType>ICON</ResourceType>
             <ResourceId>base_icon</ResourceId>
