@@ -126,32 +126,14 @@ begin
 	FMockContext.SetIsPublicAccount(False);
 	FMockContext.SetUnitedParams('token=test&x-email=test@mail.ru');
 
-	{Create shard manager with mock that returns FVideoShard for video shard type}
-	FShardManager := TCloudShardManager.Create(TNullLogger.Create,
-		function(const URL, Data: WideString; var Answer: WideString): Boolean
-		begin
-			{Return JSON with video shard URL}
-			Answer := '{"status":200,"body":{"weblink_video":[{"url":"' + Self.FVideoShard + '"}]}}';
-			Result := Self.FVideoShard <> '';
-		end,
-		function(const JSON, ErrorPrefix: WideString): Boolean
-		begin
-			Result := Pos(WideString('"status":200'), JSON) > 0;
-		end,
-		function: WideString
-		begin
-			Result := 'token=test&x-email=test@mail.ru';
-		end);
+	{Configure HTTP mock for shard resolution - returns video shard URL}
+	FMockHTTP.SetResponse('dispatcher', True, '{"status":200,"body":{"weblink_video":[{"url":"' + FVideoShard + '"}]}}');
 
-	{Create retry operation for tests}
-	FRetryOperation := TRetryOperation.Create(
-		function: Boolean begin Result := True; end, {RefreshToken}
-		function(const URL, Data: WideString; var Answer: WideString): Boolean begin Result := FMockHTTP.PostForm(URL, Data, Answer); end, {PostForm}
-		function(const URL: WideString; var JSON: WideString; var ShowProgress: Boolean): Boolean begin Result := FMockHTTP.GetPage(URL, JSON, ShowProgress); end, {GetPage}
-		function(const JSON, ErrorPrefix: WideString): Boolean begin Result := Pos(WideString('"status":200'), JSON) > 0; end, {ToBoolean}
-		function(const JSON, ErrorPrefix: WideString): Integer begin Result := FS_FILE_OK; end, {ToInteger}
-		3 {MaxRetries}
-	);
+	{Create shard manager with mock context}
+	FShardManager := TCloudShardManager.Create(TNullLogger.Create, FMockContext);
+
+	{Create retry operation with mock context}
+	FRetryOperation := TRetryOperation.Create(FMockContext, 3);
 
 	FService := TCloudShareService.Create(FMockContext, TNullLogger.Create, FRetryOperation, FShardManager);
 end;
@@ -354,20 +336,18 @@ var
 	FileItem: TCloudDirItem;
 	StreamUrl: WideString;
 	Result: Boolean;
-	CallCountBefore: Integer;
 begin
 	FileItem := Default(TCloudDirItem);
 	FileItem.weblink := 'existing_weblink_456';
 	FileItem.Home := '/test/video.mp4';
 
-	CallCountBefore := FMockHTTP.GetCallCount;
 	Result := FService.GetPublishedFileStreamUrl(FileItem, StreamUrl);
 
 	Assert.IsTrue(Result, 'GetPublishedFileStreamUrl should succeed with existing weblink');
 	Assert.IsTrue(Pos(WideString('video.shard'), StreamUrl) > 0, 'StreamUrl should contain video shard');
 	Assert.IsTrue(Pos(WideString('.m3u8'), StreamUrl) > 0, 'StreamUrl should be m3u8 format');
-	{No HTTP calls should be made for publish when weblink exists}
-	Assert.AreEqual(CallCountBefore, FMockHTTP.GetCallCount, 'No HTTP calls expected when weblink exists');
+	{Verify publish was not called - weblink already exists}
+	Assert.IsFalse(FMockHTTP.WasURLCalled('publish'), 'Should not call publish API when weblink exists');
 end;
 
 procedure TCloudShareServiceTest.TestGetPublishedFileStreamUrl_NoWeblink_PublishesFirst;

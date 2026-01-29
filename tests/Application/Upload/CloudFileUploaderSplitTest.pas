@@ -220,22 +220,12 @@ begin
 	FTempDir := TPath.Combine(TPath.GetTempPath, 'CloudFileUploaderTest_' + TGUID.NewGuid.ToString);
 	TDirectory.CreateDirectory(FTempDir);
 
-	FShardManager := TCloudShardManager.Create(TNullLogger.Create,
-		function(const URL, Data: WideString; var Answer: WideString): Boolean begin Result := True; end,
-		function(const JSON, ErrorPrefix: WideString): Boolean begin Result := True; end,
-		function: WideString begin Result := ''; end, '', '');
+	FShardManager := TCloudShardManager.Create(TNullLogger.Create, FMockContext, '', '');
 	FShardManager.SetUploadShard('https://upload.shard/');
 	FHashCalculator := TCloudHashCalculator.Create(TNullProgress.Create, TWindowsFileSystem.Create);
 
-	{Create retry operation - callbacks for token refresh and result mapping}
-	FRetryOperation := TRetryOperation.Create(
-		function: Boolean begin Result := True; end,
-		function(const URL, Data: WideString; var Answer: WideString): Boolean begin Result := True; end,
-		function(const URL: WideString; var JSON: WideString; var ShowProgress: Boolean): Boolean begin Result := True; end,
-		function(const JSON, ErrorPrefix: WideString): Boolean begin Result := True; end,
-		function(const JSON, ErrorPrefix: WideString): Integer begin Result := FS_FILE_OK; end,
-		3
-	);
+	{Create retry operation with mock context for token refresh and result mapping}
+	FRetryOperation := TRetryOperation.Create(FMockContext, 3);
 
 	{Default settings for split upload}
 	FSettings.CloudMaxFileSize := 1024; {1KB chunks}

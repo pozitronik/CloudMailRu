@@ -95,10 +95,7 @@ begin
 	{Return False for GetUserSpace to skip quota check in tests}
 	FMockContext.SetGetUserSpaceResult(False, Default(TCloudSpace));
 
-	FShardManager := TCloudShardManager.Create(TNullLogger.Create,
-		function(const URL, Data: WideString; var Answer: WideString): Boolean begin Result := True; end,
-		function(const JSON, ErrorPrefix: WideString): Boolean begin Result := True; end,
-		function: WideString begin Result := ''; end, '', '');
+	FShardManager := TCloudShardManager.Create(TNullLogger.Create, FMockContext, '', '');
 	FShardManager.SetUploadShard('https://upload.shard/');
 
 	FHashCalculator := TCloudHashCalculator.Create(TNullProgress.Create, TWindowsFileSystem.Create);
@@ -114,15 +111,8 @@ begin
 	FSettings.SplitLargeFiles := False;
 	FSettings.CloudMaxFileSize := 1024 * 1024; {1 MB for testing}
 
-	{Create retry operation for tests - matching TRetryOperation.Create signature}
-	FRetryOperation := TRetryOperation.Create(
-		function: Boolean begin Result := True; end, {RefreshToken}
-		function(const URL, Data: WideString; var Answer: WideString): Boolean begin Result := FMockHTTP.PostForm(URL, Data, Answer); end, {PostForm}
-		function(const URL: WideString; var JSON: WideString; var ShowProgress: Boolean): Boolean begin Result := FMockHTTP.GetPage(URL, JSON, ShowProgress); end, {GetPage}
-		function(const JSON, ErrorPrefix: WideString): Boolean begin Result := Pos(WideString('"status":200'), JSON) > 0; end, {ToBoolean}
-		function(const JSON, ErrorPrefix: WideString): Integer begin Result := FS_FILE_OK; end, {ToInteger}
-		3 {MaxRetries}
-	);
+	{Create retry operation with mock context for token refresh and result mapping}
+	FRetryOperation := TRetryOperation.Create(FMockContext, 3);
 
 	FUploader := TCloudFileUploader.Create(
 		FMockContext,

@@ -4,6 +4,7 @@ interface
 
 uses
 	CloudShardManager,
+	CloudContext,
 	CloudConstants,
 	TCLogger,
 	TestHelper,
@@ -11,20 +12,34 @@ uses
 	DUnitX.TestFramework;
 
 type
+	{Mock implementation of IShardContext for shard manager tests}
+	TMockShardContext = class(TInterfacedObject, IShardContext)
+	private
+		FPostFormResult: Boolean;
+		FPostFormResponse: WideString;
+		FPostFormCalled: Boolean;
+		FResultToBooleanResult: Boolean;
+		FUnitedParams: WideString;
+	public
+		constructor Create;
+		procedure SetPostFormResult(Value: Boolean; const Response: WideString);
+		procedure SetResultToBooleanResult(Value: Boolean);
+		procedure SetUnitedParams(const Value: WideString);
+		function WasPostFormCalled: Boolean;
+
+		{IShardContext implementation}
+		function PostForm(const URL, Data: WideString; var Answer: WideString): Boolean;
+		function CloudResultToBoolean(const JSON, ErrorPrefix: WideString): Boolean;
+		function GetUnitedParams: WideString;
+	end;
+
 	{Tests for TCloudShardManager.
 	 The shard manager caches shard URLs and handles override configuration.}
 	[TestFixture]
 	TCloudShardManagerTest = class
 	private
 		FManager: ICloudShardManager;
-		FPostFormCalled: Boolean;
-		FPostFormResult: Boolean;
-		FPostFormResponse: WideString;
-		FParamsResult: WideString;
-
-		function NullPostForm(const URL, Data: WideString; var Answer: WideString): Boolean;
-		function NullResultToBoolean(const JSON, ErrorPrefix: WideString): Boolean;
-		function NullGetParams: WideString;
+		FMockContext: TMockShardContext;
 	public
 		[Setup]
 		procedure Setup;
@@ -95,6 +110,7 @@ type
 	TCloudShardManagerWithOverridesTest = class
 	private
 		FManager: ICloudShardManager;
+		FMockContext: TMockShardContext;
 		const
 			DownloadOverrideUrl = 'https://custom.download.url/';
 			UploadOverrideUrl = 'https://custom.upload.url/';
@@ -143,50 +159,72 @@ type
 
 implementation
 
-{ TCloudShardManagerTest }
+{ TMockShardContext }
 
-function TCloudShardManagerTest.NullPostForm(const URL, Data: WideString; var Answer: WideString): Boolean;
+constructor TMockShardContext.Create;
+begin
+	inherited Create;
+	FPostFormResult := True;
+	FPostFormResponse := '';
+	FPostFormCalled := False;
+	FResultToBooleanResult := True;
+	FUnitedParams := 'token=test';
+end;
+
+procedure TMockShardContext.SetPostFormResult(Value: Boolean; const Response: WideString);
+begin
+	FPostFormResult := Value;
+	FPostFormResponse := Response;
+end;
+
+procedure TMockShardContext.SetResultToBooleanResult(Value: Boolean);
+begin
+	FResultToBooleanResult := Value;
+end;
+
+procedure TMockShardContext.SetUnitedParams(const Value: WideString);
+begin
+	FUnitedParams := Value;
+end;
+
+function TMockShardContext.WasPostFormCalled: Boolean;
+begin
+	Result := FPostFormCalled;
+end;
+
+function TMockShardContext.PostForm(const URL, Data: WideString; var Answer: WideString): Boolean;
 begin
 	FPostFormCalled := True;
 	Answer := FPostFormResponse;
 	Result := FPostFormResult;
 end;
 
-function TCloudShardManagerTest.NullResultToBoolean(const JSON, ErrorPrefix: WideString): Boolean;
+function TMockShardContext.CloudResultToBoolean(const JSON, ErrorPrefix: WideString): Boolean;
 begin
-	Result := Pos(WideString('"status":200'), JSON) > 0;
+	{Check JSON for status:200 when configured to do so, otherwise return configured result}
+	if FResultToBooleanResult then
+		Result := Pos(WideString('"status":200'), JSON) > 0
+	else
+		Result := False;
 end;
 
-function TCloudShardManagerTest.NullGetParams: WideString;
+function TMockShardContext.GetUnitedParams: WideString;
 begin
-	Result := FParamsResult;
+	Result := FUnitedParams;
 end;
+
+{ TCloudShardManagerTest }
 
 procedure TCloudShardManagerTest.Setup;
 begin
-	FPostFormCalled := False;
-	FPostFormResult := True;
-	FPostFormResponse := '';
-	FParamsResult := 'token=test';
-
-	FManager := TCloudShardManager.Create(TNullLogger.Create,
-		function(const URL, Data: WideString; var Answer: WideString): Boolean
-		begin
-			Result := Self.NullPostForm(URL, Data, Answer);
-		end,
-		function(const JSON, ErrorPrefix: WideString): Boolean
-		begin
-			Result := Self.NullResultToBoolean(JSON, ErrorPrefix);
-		end,
-		function: WideString
-		begin
-			Result := Self.NullGetParams;
-		end);
+	FMockContext := TMockShardContext.Create;
+	FManager := TCloudShardManager.Create(TNullLogger.Create, FMockContext);
 end;
 
 procedure TCloudShardManagerTest.TearDown;
 begin
 	FManager := nil;
+	FMockContext := nil;
 end;
 
 { Initial state tests }
@@ -313,11 +351,7 @@ procedure TCloudShardManagerTest.TestHasDownloadOverride_TrueWhenSet;
 var
 	ManagerWithOverride: ICloudShardManager;
 begin
-	ManagerWithOverride := TCloudShardManager.Create(TNullLogger.Create,
-		function(const URL, Data: WideString; var Answer: WideString): Boolean begin Result := True; end,
-		function(const JSON, ErrorPrefix: WideString): Boolean begin Result := True; end,
-		function: WideString begin Result := ''; end,
-		'https://override.url/');
+	ManagerWithOverride := TCloudShardManager.Create(TNullLogger.Create, FMockContext, 'https://override.url/');
 	Assert.IsTrue(ManagerWithOverride.HasDownloadOverride);
 end;
 
@@ -330,11 +364,7 @@ procedure TCloudShardManagerTest.TestHasUploadOverride_TrueWhenSet;
 var
 	ManagerWithOverride: ICloudShardManager;
 begin
-	ManagerWithOverride := TCloudShardManager.Create(TNullLogger.Create,
-		function(const URL, Data: WideString; var Answer: WideString): Boolean begin Result := True; end,
-		function(const JSON, ErrorPrefix: WideString): Boolean begin Result := True; end,
-		function: WideString begin Result := ''; end,
-		'', 'https://override.url/');
+	ManagerWithOverride := TCloudShardManager.Create(TNullLogger.Create, FMockContext, '', 'https://override.url/');
 	Assert.IsTrue(ManagerWithOverride.HasUploadOverride);
 end;
 
@@ -344,11 +374,7 @@ const
 var
 	ManagerWithOverride: ICloudShardManager;
 begin
-	ManagerWithOverride := TCloudShardManager.Create(TNullLogger.Create,
-		function(const URL, Data: WideString; var Answer: WideString): Boolean begin Result := True; end,
-		function(const JSON, ErrorPrefix: WideString): Boolean begin Result := True; end,
-		function: WideString begin Result := ''; end,
-		OverrideUrl);
+	ManagerWithOverride := TCloudShardManager.Create(TNullLogger.Create, FMockContext, OverrideUrl);
 	Assert.AreEqual(OverrideUrl, ManagerWithOverride.GetDownloadShardOverride);
 end;
 
@@ -358,11 +384,7 @@ const
 var
 	ManagerWithOverride: ICloudShardManager;
 begin
-	ManagerWithOverride := TCloudShardManager.Create(TNullLogger.Create,
-		function(const URL, Data: WideString; var Answer: WideString): Boolean begin Result := True; end,
-		function(const JSON, ErrorPrefix: WideString): Boolean begin Result := True; end,
-		function: WideString begin Result := ''; end,
-		'', OverrideUrl);
+	ManagerWithOverride := TCloudShardManager.Create(TNullLogger.Create, FMockContext, '', OverrideUrl);
 	Assert.AreEqual(OverrideUrl, ManagerWithOverride.GetUploadShardOverride);
 end;
 
@@ -375,11 +397,10 @@ var
 	Shard: WideString;
 	Success: Boolean;
 begin
-	FPostFormResult := True;
-	FPostFormResponse := '{"status":200,"body":{"get":[{"url":"' + TestShardUrl + '"}]}}';
+	FMockContext.SetPostFormResult(True, '{"status":200,"body":{"get":[{"url":"' + TestShardUrl + '"}]}}');
 	Shard := '';
 	Success := FManager.ResolveShard(Shard, SHARD_TYPE_GET);
-	Assert.IsTrue(FPostFormCalled, 'PostForm should have been called');
+	Assert.IsTrue(FMockContext.WasPostFormCalled, 'PostForm should have been called');
 	Assert.IsTrue(Success, 'ResolveShard should return true on success');
 	Assert.AreEqual(TestShardUrl, Shard, 'Shard URL should be extracted from response');
 end;
@@ -389,7 +410,7 @@ var
 	Shard: WideString;
 	Success: Boolean;
 begin
-	FPostFormResult := False;
+	FMockContext.SetPostFormResult(False, '');
 	Shard := '';
 	Success := FManager.ResolveShard(Shard, SHARD_TYPE_GET);
 	Assert.IsFalse(Success, 'ResolveShard should return false when PostForm fails');
@@ -400,8 +421,7 @@ var
 	Shard: WideString;
 	Success: Boolean;
 begin
-	FPostFormResult := True;
-	FPostFormResponse := '{"status":500,"error":"internal error"}';
+	FMockContext.SetPostFormResult(True, '{"status":500,"error":"internal error"}');
 	Shard := '';
 	Success := FManager.ResolveShard(Shard, SHARD_TYPE_GET);
 	Assert.IsFalse(Success, 'ResolveShard should return false when JSON status is not 200');
@@ -411,16 +431,14 @@ end;
 
 procedure TCloudShardManagerWithOverridesTest.Setup;
 begin
-	FManager := TCloudShardManager.Create(TNullLogger.Create,
-		function(const URL, Data: WideString; var Answer: WideString): Boolean begin Result := True; end,
-		function(const JSON, ErrorPrefix: WideString): Boolean begin Result := True; end,
-		function: WideString begin Result := ''; end,
-		DownloadOverrideUrl, UploadOverrideUrl);
+	FMockContext := TMockShardContext.Create;
+	FManager := TCloudShardManager.Create(TNullLogger.Create, FMockContext, DownloadOverrideUrl, UploadOverrideUrl);
 end;
 
 procedure TCloudShardManagerWithOverridesTest.TearDown;
 begin
 	FManager := nil;
+	FMockContext := nil;
 end;
 
 procedure TCloudShardManagerWithOverridesTest.TestHasDownloadOverride_ReturnsTrue;

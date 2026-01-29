@@ -4,14 +4,10 @@ interface
 
 uses
 	CloudConstants,
-	CloudCallbackTypes,
+	CloudContext,
 	TCLogger;
 
 type
-	{Callback types for shard resolution}
-	TShardPostFormFunc = reference to function(const URL, Data: WideString; var Answer: WideString): Boolean;
-	TShardResultToBooleanFunc = reference to function(const JSON, ErrorPrefix: WideString): Boolean;
-
 	{Interface for managing cloud shard URLs.
 		Shards are server endpoints for specific operations (download, upload, etc.).
 		This interface abstracts shard caching, resolution, and override handling.}
@@ -54,11 +50,9 @@ type
 		FDownloadOverride: WideString;
 		FUploadOverride: WideString;
 		FLogger: ILogger;
-		FPostForm: TShardPostFormFunc;
-		FResultToBoolean: TShardResultToBooleanFunc;
-		FGetParams: TGetStringFunc;
+		FContext: IShardContext;
 	public
-		constructor Create(Logger: ILogger; PostForm: TShardPostFormFunc; ResultToBoolean: TShardResultToBooleanFunc; GetParams: TGetStringFunc; DownloadOverride: WideString = ''; UploadOverride: WideString = '');
+		constructor Create(Logger: ILogger; Context: IShardContext; DownloadOverride: WideString = ''; UploadOverride: WideString = '');
 
 		function ResolveShard(var Shard: WideString; ShardType: WideString): Boolean;
 		function GetDownloadShard: WideString;
@@ -103,13 +97,11 @@ uses
 
 {TCloudShardManager}
 
-constructor TCloudShardManager.Create(Logger: ILogger; PostForm: TShardPostFormFunc; ResultToBoolean: TShardResultToBooleanFunc; GetParams: TGetStringFunc; DownloadOverride: WideString; UploadOverride: WideString);
+constructor TCloudShardManager.Create(Logger: ILogger; Context: IShardContext; DownloadOverride: WideString; UploadOverride: WideString);
 begin
 	inherited Create;
 	FLogger := Logger;
-	FPostForm := PostForm;
-	FResultToBoolean := ResultToBoolean;
-	FGetParams := GetParams;
+	FContext := Context;
 	FDownloadOverride := DownloadOverride;
 	FUploadOverride := UploadOverride;
 	FDownloadShard := EmptyWideStr;
@@ -121,7 +113,7 @@ function TCloudShardManager.ResolveShard(var Shard: WideString; ShardType: WideS
 var
 	JSON: WideString;
 begin
-	Result := FPostForm(API_DISPATCHER + '?' + FGetParams(), '', JSON) and FResultToBoolean(JSON, PREFIX_ERR_SHARD_RECEIVE);
+	Result := FContext.PostForm(API_DISPATCHER + '?' + FContext.GetUnitedParams, '', JSON) and FContext.CloudResultToBoolean(JSON, PREFIX_ERR_SHARD_RECEIVE);
 	if Result then
 	begin
 		Result := JSONHelper.GetShard(JSON, Shard, ShardType) and (Shard <> EmptyWideStr);

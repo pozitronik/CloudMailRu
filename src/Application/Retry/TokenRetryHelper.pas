@@ -7,7 +7,8 @@ unit TokenRetryHelper;
 interface
 
 uses
-	System.SysUtils;
+	System.SysUtils,
+	CloudContext;
 
 type
 	{Result of an API operation that may need token refresh}
@@ -24,17 +25,8 @@ type
 		class function FromInteger(AResultCode: Integer; const AJSON: WideString = ''): TAPICallResult; static;
 	end;
 
-	{Callback types}
+	{Callback type for custom API operations}
 	TAPIOperation = reference to function: TAPICallResult;
-	TTokenRefreshFunc = reference to function: Boolean;
-
-	{HTTP operation callbacks - abstracts HTTP layer from retry logic}
-	THTTPPostFormFunc = reference to function(const URL, Params: WideString; var JSON: WideString): Boolean;
-	THTTPGetPageFunc = reference to function(const URL: WideString; var JSON: WideString; var ShowProgress: Boolean): Boolean;
-
-	{Result conversion callbacks}
-	TResultToBooleanFunc = reference to function(const JSON, ErrorPrefix: WideString): Boolean;
-	TResultToIntegerFunc = reference to function(const JSON, ErrorPrefix: WideString): Integer;
 
 	{Interface for API operations with automatic token refresh retry}
 	IRetryOperation = interface
@@ -57,18 +49,13 @@ type
 	end;
 
 	{Handles API operations with automatic token refresh retry.
-		Initialize once with callbacks, then use specialized methods for common patterns
-		or Execute() for complex operations.}
+		Uses IRetryContext for HTTP operations and result mapping.}
 	TRetryOperation = class(TInterfacedObject, IRetryOperation)
 	private
-		FRefreshToken: TTokenRefreshFunc;
-		FPostForm: THTTPPostFormFunc;
-		FGetPage: THTTPGetPageFunc;
-		FToBoolean: TResultToBooleanFunc;
-		FToInteger: TResultToIntegerFunc;
+		FContext: IRetryContext;
 		FMaxRetries: Integer;
 	public
-		constructor Create(RefreshToken: TTokenRefreshFunc; PostForm: THTTPPostFormFunc; GetPage: THTTPGetPageFunc; ToBoolean: TResultToBooleanFunc; ToInteger: TResultToIntegerFunc; MaxRetries: Integer = 1);
+		constructor Create(Context: IRetryContext; MaxRetries: Integer = 1);
 
 		{Generic execute for complex operations that need custom logic}
 		function Execute(Operation: TAPIOperation): TAPICallResult;
@@ -86,7 +73,7 @@ type
 		function GetPage(const URL: WideString; out JSON: WideString; ShowProgress: Boolean = False): Boolean;
 	end;
 
-	{Check if JSON response indicates token expiration}
+{Check if JSON response indicates token expiration}
 function IsTokenExpiredInJSON(const JSON: WideString): Boolean;
 
 {Check if result code indicates token expiration}
@@ -134,14 +121,10 @@ end;
 
 {TRetryOperation}
 
-constructor TRetryOperation.Create(RefreshToken: TTokenRefreshFunc; PostForm: THTTPPostFormFunc; GetPage: THTTPGetPageFunc; ToBoolean: TResultToBooleanFunc; ToInteger: TResultToIntegerFunc; MaxRetries: Integer);
+constructor TRetryOperation.Create(Context: IRetryContext; MaxRetries: Integer);
 begin
 	inherited Create;
-	FRefreshToken := RefreshToken;
-	FPostForm := PostForm;
-	FGetPage := GetPage;
-	FToBoolean := ToBoolean;
-	FToInteger := ToInteger;
+	FContext := Context;
 	FMaxRetries := MaxRetries;
 end;
 
@@ -152,7 +135,7 @@ begin
 	RetryCount := 0;
 	repeat
 		Result := Operation();
-		if Result.NeedsTokenRefresh and (RetryCount < FMaxRetries) and FRefreshToken() then
+		if Result.NeedsTokenRefresh and (RetryCount < FMaxRetries) and FContext.RefreshToken then
 			Inc(RetryCount)
 		else
 			Break;
@@ -162,14 +145,16 @@ end;
 function TRetryOperation.PostFormBoolean(const URL, Params, ErrorPrefix: WideString): Boolean;
 var
 	CallResult: TAPICallResult;
+	Context: IRetryContext;
 begin
+	Context := FContext;
 	CallResult := Execute(
 		function: TAPICallResult
 		var
 			JSON: WideString;
 			Success: Boolean;
 		begin
-			Success := FPostForm(URL, Params, JSON) and FToBoolean(JSON, ErrorPrefix);
+			Success := Context.PostForm(URL, Params, JSON) and Context.ResultToBoolean(JSON, ErrorPrefix);
 			Result := TAPICallResult.FromBoolean(Success, JSON);
 		end);
 	Result := CallResult.Success;
@@ -178,15 +163,17 @@ end;
 function TRetryOperation.PostFormInteger(const URL, Params, ErrorPrefix: WideString): Integer;
 var
 	CallResult: TAPICallResult;
+	Context: IRetryContext;
 begin
+	Context := FContext;
 	CallResult := Execute(
 		function: TAPICallResult
 		var
 			JSON: WideString;
 			ResultCode: Integer;
 		begin
-			if FPostForm(URL, Params, JSON) then
-				ResultCode := FToInteger(JSON, ErrorPrefix)
+			if Context.PostForm(URL, Params, JSON) then
+				ResultCode := Context.ResultToInteger(JSON, ErrorPrefix)
 			else
 				ResultCode := FS_FILE_WRITEERROR;
 			Result := TAPICallResult.FromInteger(ResultCode, JSON);
@@ -199,17 +186,19 @@ var
 	CallResult: TAPICallResult;
 	LocalJSON: WideString;
 	Progress: Boolean;
+	Context: IRetryContext;
 begin
 	Progress := ShowProgress;
 	LocalJSON := '';
+	Context := FContext;
 	CallResult := Execute(
 		function: TAPICallResult
 		var
 			Success: Boolean;
 		begin
-			Success := FGetPage(URL, LocalJSON, Progress);
+			Success := Context.GetPage(URL, LocalJSON, Progress);
 			if Success then
-				Success := FToBoolean(LocalJSON, ErrorPrefix);
+				Success := Context.ResultToBoolean(LocalJSON, ErrorPrefix);
 			Result := TAPICallResult.FromBoolean(Success, LocalJSON);
 		end);
 	JSON := LocalJSON;
@@ -221,15 +210,17 @@ var
 	CallResult: TAPICallResult;
 	LocalJSON: WideString;
 	Progress: Boolean;
+	Context: IRetryContext;
 begin
 	Progress := ShowProgress;
 	LocalJSON := '';
+	Context := FContext;
 	CallResult := Execute(
 		function: TAPICallResult
 		var
 			Success: Boolean;
 		begin
-			Success := FGetPage(URL, LocalJSON, Progress);
+			Success := Context.GetPage(URL, LocalJSON, Progress);
 			Result := TAPICallResult.FromBoolean(Success, LocalJSON);
 		end);
 	JSON := LocalJSON;

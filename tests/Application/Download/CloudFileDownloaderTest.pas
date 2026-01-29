@@ -124,8 +124,8 @@ var
 begin
 	FMockHTTP := TMockCloudHTTP.Create;
 	FMockHTTPRef := FMockHTTP; {Keep interface reference to prevent premature freeing}
-	FMockHTTP.SetDefaultResponse(True, '');
-	FMockHTTP.SetResponse('', True, 'https://redirect.url/file');
+	FMockHTTP.SetDefaultResponse(True, '{"status":200,"body":{}}');
+	{Note: Empty pattern '' matches everything, avoid using it to prevent interference with specific patterns}
 
 	{Setup mock context}
 	FMockContext := TMockCloudContext.Create;
@@ -141,20 +141,10 @@ begin
 	FResolveShardResult := True;
 	FResolvedShardUrl := 'https://requested.shard/';
 
-	FShardManager := TCloudShardManager.Create(TNullLogger.Create,
-		function(const URL, Data: WideString; var Answer: WideString): Boolean
-		begin
-			Answer := '{"status":200,"body":{"get":[{"url":"' + Self.FResolvedShardUrl + '"}],"upload":[{"url":"' + Self.FResolvedShardUrl + '"}],"video":[{"url":"' + Self.FResolvedShardUrl + '"}]}}';
-			Result := Self.FResolveShardResult;
-		end,
-		function(const JSON, ErrorPrefix: WideString): Boolean
-		begin
-			Result := Pos(WideString('"status":200'), JSON) > 0;
-		end,
-		function: WideString
-		begin
-			Result := 'token=test';
-		end, '', '');
+	{Configure HTTP mock for shard resolution}
+	FMockHTTP.SetResponse('dispatcher', True, '{"status":200,"body":{"get":[{"url":"' + FResolvedShardUrl + '"}],"upload":[{"url":"' + FResolvedShardUrl + '"}],"video":[{"url":"' + FResolvedShardUrl + '"}]}}');
+
+	FShardManager := TCloudShardManager.Create(TNullLogger.Create, FMockContext, '', '');
 	FShardManager.SetPublicShard('https://public.shard/');
 	FShardManager.SetDownloadShard('https://download.shard/');
 
@@ -433,21 +423,11 @@ begin
 	FMockContext.SetIsPublicAccount(False);
 	LocalPath := GetTempFilePath('dispatcher_resolve.txt');
 
+	{Configure mock context for shard resolution}
+	FMockContext.SetPostFormResult(True, '{"status":200,"body":{"get":[{"url":"https://resolved.shard/"}]}}');
+
 	{Create new shard manager without download shard set}
-	NewShardManager := TCloudShardManager.Create(TNullLogger.Create,
-		function(const URL, Data: WideString; var Answer: WideString): Boolean
-		begin
-			Answer := '{"status":200,"body":{"get":[{"url":"https://resolved.shard/"}]}}';
-			Result := True;
-		end,
-		function(const JSON, ErrorPrefix: WideString): Boolean
-		begin
-			Result := Pos(WideString('"status":200'), JSON) > 0;
-		end,
-		function: WideString
-		begin
-			Result := 'token=test';
-		end, '', '');
+	NewShardManager := TCloudShardManager.Create(TNullLogger.Create, FMockContext, '', '');
 
 	{OAuth dispatcher returns plain text URL}
 	FMockHTTP.SetResponse('dispatcher', True, 'https://new.shard.url/ 127.0.0.1 1');
@@ -484,24 +464,11 @@ begin
 	FMockContext.SetIsPublicAccount(False);
 	LocalPath := GetTempFilePath('override_test.txt');
 
+	{Configure mock context - shard resolution fails, but override is used}
+	FMockContext.SetPostFormResult(False, '');
+
 	{Create shard manager with download override but no shard set}
-	OverrideManager := TCloudShardManager.Create(TNullLogger.Create,
-		function(const URL, Data: WideString; var Answer: WideString): Boolean
-		begin
-			Answer := '';
-			Result := False;
-		end,
-		function(const JSON, ErrorPrefix: WideString): Boolean
-		begin
-			Result := False;
-		end,
-		function: WideString
-		begin
-			Result := 'token=test';
-		end,
-		'https://override.shard/',
-		''
-	);
+	OverrideManager := TCloudShardManager.Create(TNullLogger.Create, FMockContext, 'https://override.shard/', '');
 
 	FileContent := TEncoding.UTF8.GetBytes('Override content');
 	FMockHTTP.SetStreamResponse('override.shard', FileContent, FS_FILE_OK);

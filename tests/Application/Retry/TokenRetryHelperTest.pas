@@ -6,6 +6,7 @@ interface
 
 uses
 	TokenRetryHelper,
+	CloudContext,
 	DUnitX.TestFramework;
 
 type
@@ -72,11 +73,9 @@ type
 		procedure TestNeedsTokenRefresh_IntegerOK;
 	end;
 
-	{Tests for TRetryOperation}
-	[TestFixture]
-	TRetryOperationTest = class
+	{Mock implementation of IRetryContext for testing TRetryOperation}
+	TMockRetryContext = class(TInterfacedObject, IRetryContext)
 	private
-		FRetryOp: TRetryOperation;
 		FRefreshCount: Integer;
 		FPostFormCount: Integer;
 		FGetPageCount: Integer;
@@ -86,12 +85,37 @@ type
 		FReturnTokenError: Boolean;
 		FLastPostedURL: WideString;
 		FLastPostedParams: WideString;
+	public
+		constructor Create;
 
-		function MockRefreshToken: Boolean;
-		function MockPostForm(const URL, Params: WideString; var JSON: WideString): Boolean;
-		function MockGetPage(const URL: WideString; var JSON: WideString; var ShowProgress: Boolean): Boolean;
-		function MockToBoolean(const JSON, ErrorPrefix: WideString): Boolean;
-		function MockToInteger(const JSON, ErrorPrefix: WideString): Integer;
+		{IRetryContext implementation}
+		function RefreshToken: Boolean;
+		function PostForm(const URL, Params: WideString; var JSON: WideString): Boolean;
+		function GetPage(const URL: WideString; var JSON: WideString; var ShowProgress: Boolean): Boolean;
+		function ResultToBoolean(const JSON, ErrorPrefix: WideString): Boolean;
+		function ResultToInteger(const JSON, ErrorPrefix: WideString): Integer;
+
+		{Test configuration}
+		property RefreshShouldSucceed: Boolean read FRefreshShouldSucceed write FRefreshShouldSucceed;
+		property PostFormShouldSucceed: Boolean read FPostFormShouldSucceed write FPostFormShouldSucceed;
+		property GetPageShouldSucceed: Boolean read FGetPageShouldSucceed write FGetPageShouldSucceed;
+		property ReturnTokenError: Boolean read FReturnTokenError write FReturnTokenError;
+
+		{Test inspection}
+		property RefreshCount: Integer read FRefreshCount;
+		property PostFormCount: Integer read FPostFormCount;
+		property GetPageCount: Integer read FGetPageCount;
+		property LastPostedURL: WideString read FLastPostedURL;
+		property LastPostedParams: WideString read FLastPostedParams;
+	end;
+
+	{Tests for TRetryOperation}
+	[TestFixture]
+	TRetryOperationTest = class
+	private
+		FRetryOp: TRetryOperation;
+		FMockContext: TMockRetryContext;
+		FMockContextRef: IRetryContext;
 	public
 		[Setup]
 		procedure Setup;
@@ -298,10 +322,11 @@ begin
 	Assert.IsFalse(R.NeedsTokenRefresh, 'OK result should not need refresh');
 end;
 
-{ TRetryOperationTest }
+{ TMockRetryContext }
 
-procedure TRetryOperationTest.Setup;
+constructor TMockRetryContext.Create;
 begin
+	inherited Create;
 	FRefreshCount := 0;
 	FPostFormCount := 0;
 	FGetPageCount := 0;
@@ -311,27 +336,15 @@ begin
 	FReturnTokenError := False;
 	FLastPostedURL := '';
 	FLastPostedParams := '';
-
-	FRetryOp := TRetryOperation.Create(
-		MockRefreshToken,
-		MockPostForm,
-		MockGetPage,
-		MockToBoolean,
-		MockToInteger);
 end;
 
-procedure TRetryOperationTest.TearDown;
-begin
-	FRetryOp.Free;
-end;
-
-function TRetryOperationTest.MockRefreshToken: Boolean;
+function TMockRetryContext.RefreshToken: Boolean;
 begin
 	Inc(FRefreshCount);
 	Result := FRefreshShouldSucceed;
 end;
 
-function TRetryOperationTest.MockPostForm(const URL, Params: WideString; var JSON: WideString): Boolean;
+function TMockRetryContext.PostForm(const URL, Params: WideString; var JSON: WideString): Boolean;
 begin
 	Inc(FPostFormCount);
 	FLastPostedURL := URL;
@@ -354,7 +367,7 @@ begin
 	end;
 end;
 
-function TRetryOperationTest.MockGetPage(const URL: WideString; var JSON: WideString; var ShowProgress: Boolean): Boolean;
+function TMockRetryContext.GetPage(const URL: WideString; var JSON: WideString; var ShowProgress: Boolean): Boolean;
 begin
 	Inc(FGetPageCount);
 
@@ -375,17 +388,32 @@ begin
 	end;
 end;
 
-function TRetryOperationTest.MockToBoolean(const JSON, ErrorPrefix: WideString): Boolean;
+function TMockRetryContext.ResultToBoolean(const JSON, ErrorPrefix: WideString): Boolean;
 begin
 	Result := (JSON = JSON_SUCCESS);
 end;
 
-function TRetryOperationTest.MockToInteger(const JSON, ErrorPrefix: WideString): Integer;
+function TMockRetryContext.ResultToInteger(const JSON, ErrorPrefix: WideString): Integer;
 begin
 	if JSON = JSON_SUCCESS then
 		Result := FS_FILE_OK
 	else
 		Result := FS_FILE_WRITEERROR;
+end;
+
+{ TRetryOperationTest }
+
+procedure TRetryOperationTest.Setup;
+begin
+	FMockContext := TMockRetryContext.Create;
+	FMockContextRef := FMockContext;
+	FRetryOp := TRetryOperation.Create(FMockContext);
+end;
+
+procedure TRetryOperationTest.TearDown;
+begin
+	FRetryOp.Free;
+	FMockContextRef := nil;
 end;
 
 { Execute tests }
@@ -405,7 +433,7 @@ begin
 
 	Assert.IsTrue(R.Success);
 	Assert.AreEqual(1, CallCount, 'Should call operation once');
-	Assert.AreEqual(0, FRefreshCount, 'Should not refresh token');
+	Assert.AreEqual(0, FMockContext.RefreshCount, 'Should not refresh token');
 end;
 
 procedure TRetryOperationTest.TestExecute_RetriesOnTokenError;
@@ -426,7 +454,7 @@ begin
 
 	Assert.IsTrue(R.Success);
 	Assert.AreEqual(2, CallCount, 'Should call operation twice');
-	Assert.AreEqual(1, FRefreshCount, 'Should refresh token once');
+	Assert.AreEqual(1, FMockContext.RefreshCount, 'Should refresh token once');
 end;
 
 procedure TRetryOperationTest.TestExecute_StopsWhenRefreshFails;
@@ -434,7 +462,7 @@ var
 	CallCount: Integer;
 	R: TAPICallResult;
 begin
-	FRefreshShouldSucceed := False;
+	FMockContext.RefreshShouldSucceed := False;
 	CallCount := 0;
 	R := FRetryOp.Execute(
 		function: TAPICallResult
@@ -445,7 +473,7 @@ begin
 
 	Assert.IsFalse(R.Success);
 	Assert.AreEqual(1, CallCount, 'Should call operation once');
-	Assert.AreEqual(1, FRefreshCount, 'Should attempt refresh once');
+	Assert.AreEqual(1, FMockContext.RefreshCount, 'Should attempt refresh once');
 end;
 
 { PostFormBoolean tests }
@@ -457,16 +485,16 @@ begin
 	R := FRetryOp.PostFormBoolean('http://test/api', 'param=value', 'Error: ');
 
 	Assert.IsTrue(R);
-	Assert.AreEqual(1, FPostFormCount);
-	Assert.AreEqual(WideString('http://test/api'), FLastPostedURL);
-	Assert.AreEqual(WideString('param=value'), FLastPostedParams);
+	Assert.AreEqual(1, FMockContext.PostFormCount);
+	Assert.AreEqual(WideString('http://test/api'), FMockContext.LastPostedURL);
+	Assert.AreEqual(WideString('param=value'), FMockContext.LastPostedParams);
 end;
 
 procedure TRetryOperationTest.TestPostFormBoolean_Failure;
 var
 	R: Boolean;
 begin
-	FPostFormShouldSucceed := False;
+	FMockContext.PostFormShouldSucceed := False;
 	R := FRetryOp.PostFormBoolean('http://test/api', 'param=value', 'Error: ');
 
 	Assert.IsFalse(R);
@@ -476,12 +504,12 @@ procedure TRetryOperationTest.TestPostFormBoolean_RetriesOnTokenError;
 var
 	R: Boolean;
 begin
-	FReturnTokenError := True;
+	FMockContext.ReturnTokenError := True;
 	R := FRetryOp.PostFormBoolean('http://test/api', 'param=value', 'Error: ');
 
 	Assert.IsTrue(R);
-	Assert.AreEqual(2, FPostFormCount, 'Should call PostForm twice');
-	Assert.AreEqual(1, FRefreshCount, 'Should refresh token once');
+	Assert.AreEqual(2, FMockContext.PostFormCount, 'Should call PostForm twice');
+	Assert.AreEqual(1, FMockContext.RefreshCount, 'Should refresh token once');
 end;
 
 { PostFormInteger tests }
@@ -499,7 +527,7 @@ procedure TRetryOperationTest.TestPostFormInteger_Failure;
 var
 	R: Integer;
 begin
-	FPostFormShouldSucceed := False;
+	FMockContext.PostFormShouldSucceed := False;
 	R := FRetryOp.PostFormInteger('http://test/api', 'param=value', 'Error: ');
 
 	Assert.AreEqual(FS_FILE_WRITEERROR, R);
@@ -509,12 +537,12 @@ procedure TRetryOperationTest.TestPostFormInteger_RetriesOnTokenError;
 var
 	R: Integer;
 begin
-	FReturnTokenError := True;
+	FMockContext.ReturnTokenError := True;
 	R := FRetryOp.PostFormInteger('http://test/api', 'param=value', 'Error: ');
 
 	Assert.AreEqual(FS_FILE_OK, R);
-	Assert.AreEqual(2, FPostFormCount, 'Should call PostForm twice');
-	Assert.AreEqual(1, FRefreshCount, 'Should refresh token once');
+	Assert.AreEqual(2, FMockContext.PostFormCount, 'Should call PostForm twice');
+	Assert.AreEqual(1, FMockContext.RefreshCount, 'Should refresh token once');
 end;
 
 { GetPageBoolean tests }
@@ -527,7 +555,7 @@ begin
 	R := FRetryOp.GetPageBoolean('http://test/api', 'Error: ', JSON);
 
 	Assert.IsTrue(R);
-	Assert.AreEqual(1, FGetPageCount);
+	Assert.AreEqual(1, FMockContext.GetPageCount);
 end;
 
 procedure TRetryOperationTest.TestGetPageBoolean_Failure;
@@ -535,7 +563,7 @@ var
 	R: Boolean;
 	JSON: WideString;
 begin
-	FGetPageShouldSucceed := False;
+	FMockContext.GetPageShouldSucceed := False;
 	R := FRetryOp.GetPageBoolean('http://test/api', 'Error: ', JSON);
 
 	Assert.IsFalse(R);
@@ -546,12 +574,12 @@ var
 	R: Boolean;
 	JSON: WideString;
 begin
-	FReturnTokenError := True;
+	FMockContext.ReturnTokenError := True;
 	R := FRetryOp.GetPageBoolean('http://test/api', 'Error: ', JSON);
 
 	Assert.IsTrue(R);
-	Assert.AreEqual(2, FGetPageCount, 'Should call GetPage twice');
-	Assert.AreEqual(1, FRefreshCount, 'Should refresh token once');
+	Assert.AreEqual(2, FMockContext.GetPageCount, 'Should call GetPage twice');
+	Assert.AreEqual(1, FMockContext.RefreshCount, 'Should refresh token once');
 end;
 
 procedure TRetryOperationTest.TestGetPageBoolean_ReturnsJSON;
@@ -575,7 +603,7 @@ begin
 	R := FRetryOp.GetPage('http://test/api', JSON);
 
 	Assert.IsTrue(R);
-	Assert.AreEqual(1, FGetPageCount);
+	Assert.AreEqual(1, FMockContext.GetPageCount);
 end;
 
 procedure TRetryOperationTest.TestGetPage_ReturnsJSON;

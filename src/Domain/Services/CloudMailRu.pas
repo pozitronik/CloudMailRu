@@ -49,7 +49,7 @@ type
 	{TCloudMailRu implements ICloudContext but disables automatic reference counting.
 		This allows the class to be used both as a direct object reference (by tests and external code)
 		and as ICloudContext provider for internal services without causing premature destruction.}
-	TCloudMailRu = class(TInterfacedObject, ICloudContext)
+	TCloudMailRu = class(TInterfacedObject, ICloudContext, IShardContext, IRetryContext)
 	protected
 		function _AddRef: Integer; stdcall;
 		function _Release: Integer; stdcall;
@@ -146,6 +146,16 @@ type
 		function CloudResultToFsResult(const OperationResult: TCloudOperationResult; const ErrorPrefix: WideString): Integer; overload;
 		function CloudResultToBoolean(const JSON, ErrorPrefix: WideString): Boolean; overload;
 		function CloudResultToBoolean(const OperationResult: TCloudOperationResult; const ErrorPrefix: WideString): Boolean; overload;
+
+		{IShardContext implementation - PostForm, CloudResultToBoolean, GetUnitedParams already declared above}
+		function PostForm(const URL, Data: WideString; var Answer: WideString): Boolean;
+
+		{IRetryContext implementation - PostForm already declared above}
+		function RefreshToken: Boolean;
+		function GetPage(const URL: WideString; var JSON: WideString; var ShowProgress: Boolean): Boolean;
+		function ResultToBoolean(const JSON, ErrorPrefix: WideString): Boolean;
+		function ResultToInteger(const JSON, ErrorPrefix: WideString): Integer;
+
 		{CONSTRUCTOR/DESTRUCTOR}
 		constructor Create(CloudSettings: TCloudSettings; ConnectionManager: IHTTPManager; GetThreadID: TGetThreadIDFunc; AuthStrategy: IAuthStrategy; FileSystem: IFileSystem; Logger: ILogger; Progress: IProgress; Request: IRequest; TCHandler: ITCHandler; Cipher: ICipher; OpenSSLProvider: IOpenSSLProvider; AccountCredentialsProvider: IAccountCredentialsProvider);
 		destructor Destroy; override;
@@ -214,9 +224,34 @@ begin
 	Result := FSettings.AccountSettings.PublicAccount;
 end;
 
+{IShardContext and IRetryContext implementation}
+
+function TCloudMailRu.PostForm(const URL, Data: WideString; var Answer: WideString): Boolean;
+begin
+	Result := HTTP.PostForm(URL, Data, Answer);
+end;
+
+function TCloudMailRu.RefreshToken: Boolean;
+begin
+	Result := RefreshCSRFToken;
+end;
+
+function TCloudMailRu.GetPage(const URL: WideString; var JSON: WideString; var ShowProgress: Boolean): Boolean;
+begin
+	Result := HTTP.GetPage(URL, JSON, ShowProgress);
+end;
+
+function TCloudMailRu.ResultToBoolean(const JSON, ErrorPrefix: WideString): Boolean;
+begin
+	Result := CloudResultToBoolean(JSON, ErrorPrefix);
+end;
+
+function TCloudMailRu.ResultToInteger(const JSON, ErrorPrefix: WideString): Integer;
+begin
+	Result := CloudResultToFsResult(JSON, ErrorPrefix);
+end;
+
 constructor TCloudMailRu.Create(CloudSettings: TCloudSettings; ConnectionManager: IHTTPManager; GetThreadID: TGetThreadIDFunc; AuthStrategy: IAuthStrategy; FileSystem: IFileSystem; Logger: ILogger; Progress: IProgress; Request: IRequest; TCHandler: ITCHandler; Cipher: ICipher; OpenSSLProvider: IOpenSSLProvider; AccountCredentialsProvider: IAccountCredentialsProvider);
-var
-	GetUnitedParamsCallback: TGetStringFunc;
 begin
 	try
 		FAuthorizationState := asPending;
@@ -236,48 +271,14 @@ begin
 
 		FCookieManager := TIdCookieManager.Create();
 
-		{Reusable callbacks - avoid duplicating anonymous functions}
-		GetUnitedParamsCallback := function: WideString
-			begin
-				Result := Self.FUnitedParams;
-			end;
-
 		{Initialize hash calculator service using strategy from settings and centralized OpenSSL provider}
 		FHashCalculator := CreateHashCalculator(CloudSettings.HashCalculatorStrategy, Progress, FileSystem, OpenSSLProvider);
 
-		{Initialize shard manager with HTTP callbacks for resolution}
-		FShardManager := TCloudShardManager.Create(Logger,
-			function(const URL, Data: WideString; var Answer: WideString): Boolean
-			begin
-				Result := Self.HTTP.PostForm(URL, Data, Answer);
-			end,
-			function(const JSON, ErrorPrefix: WideString): Boolean
-			begin
-				Result := Self.CloudResultToBoolean(JSON, ErrorPrefix);
-			end, GetUnitedParamsCallback, FSettings.AccountSettings.ShardOverride, FSettings.AccountSettings.UploadUrlOverride);
+		{Initialize shard manager - uses Self as IShardContext}
+		FShardManager := TCloudShardManager.Create(Logger, Self, FSettings.AccountSettings.ShardOverride, FSettings.AccountSettings.UploadUrlOverride);
 
-		{Initialize retry operation handler with HTTP callbacks}
-		FRetryOperation := TRetryOperation.Create(
-			function: Boolean
-			begin
-				Result := RefreshCSRFToken;
-			end,
-			function(const URL, Params: WideString; var JSON: WideString): Boolean
-			begin
-				Result := HTTP.PostForm(URL, Params, JSON);
-			end,
-			function(const URL: WideString; var JSON: WideString; var ShowProgress: Boolean): Boolean
-			begin
-				Result := HTTP.GetPage(URL, JSON, ShowProgress);
-			end,
-			function(const JSON, ErrorPrefix: WideString): Boolean
-			begin
-				Result := CloudResultToBoolean(JSON, ErrorPrefix);
-			end,
-			function(const JSON, ErrorPrefix: WideString): Integer
-			begin
-				Result := CloudResultToFsResult(JSON, ErrorPrefix);
-			end);
+		{Initialize retry operation handler - uses Self as IRetryContext}
+		FRetryOperation := TRetryOperation.Create(Self);
 
 		{Use injected cipher for encryption operations (NullCipher when encryption disabled)}
 		FCipher := Cipher;
