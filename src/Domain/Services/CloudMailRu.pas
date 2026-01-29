@@ -3,6 +3,7 @@
 interface
 
 uses
+	Windows,
 	DebugHelper,
 	CloudDirItemList,
 	CloudDirItem,
@@ -130,12 +131,16 @@ type
 		property AuthorizationState: TAuthorizationState read FAuthorizationState;
 		property AuthorizationError: TAuthorizationError read FAuthorizationError;
 
+		{Thumbnail support}
+		function GetThumbnail(const CloudPath: WideString; RequestedWidth, RequestedHeight: Integer): HBITMAP;
+
 		{Service accessors}
 		property Downloader: ICloudFileDownloader read FDownloader;
 		property Uploader: ICloudFileUploader read FUploader;
 		property ShareService: ICloudShareService read FShareService;
 		property ListingService: ICloudListingService read FListingService;
 		property FileOperations: ICloudFileOperations read FFileOperations;
+		property ShardManager: ICloudShardManager read FShardManager;
 
 		{ICloudContext implementation - provides access to cloud state for services}
 		function IsPublicAccount: Boolean;
@@ -169,6 +174,9 @@ type
 	end;
 
 implementation
+
+uses
+	CloudThumbnailService;
 
 {TCloudMailRu}
 
@@ -345,6 +353,14 @@ begin
 	Result.AuthCookie := FCookieManager;
 	if EmptyWideStr <> FAuthToken then
 		Result.SetCSRFToken(FAuthToken);
+end;
+
+function TCloudMailRu.GetThumbnail(const CloudPath: WideString; RequestedWidth, RequestedHeight: Integer): HBITMAP;
+var
+	ThumbnailService: ICloudThumbnailService;
+begin
+	ThumbnailService := TCloudThumbnailService.Create(HTTP, FShardManager, FLogger, FOAuthToken);
+	Result := ThumbnailService.GetThumbnail(CloudPath, RequestedWidth, RequestedHeight);
 end;
 
 {Simple getter - FPublicLink is initialized in InitPublicLink during LoginShared}

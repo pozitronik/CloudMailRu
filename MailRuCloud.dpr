@@ -158,7 +158,9 @@ uses
 	DeletedPropertyPresenter in 'src\Presentation\Presenter\DeletedPropertyPresenter.pas',
 	AskPasswordPresenter in 'src\Presentation\Presenter\AskPasswordPresenter.pas',
 	OpenSSLProvider in 'src\Infrastructure\OpenSSL\OpenSSLProvider.pas',
-	AccountCredentialsProvider in 'src\Infrastructure\Password\AccountCredentialsProvider.pas';
+	AccountCredentialsProvider in 'src\Infrastructure\Password\AccountCredentialsProvider.pas',
+	ThumbnailSizeSelector in 'src\Application\Thumbnail\ThumbnailSizeSelector.pas',
+	CloudThumbnailService in 'src\Application\Thumbnail\CloudThumbnailService.pas';
 
 {$IFDEF WIN64}
 {$E wfx64}
@@ -269,6 +271,11 @@ begin
 	Exit(MailRuCloudWFX.FsExtractCustomIcon(RemoteName, ExtractFlags, TheIcon));
 end;
 
+function FsGetPreviewBitmapW(RemoteName: PWideChar; Width, Height: Integer; var ReturnedBitmap: HBITMAP): Integer; stdcall;
+begin
+	Exit(MailRuCloudWFX.FsGetPreviewBitmap(RemoteName, Width, Height, ReturnedBitmap));
+end;
+
 procedure InitPluginData;
 begin
 	MailRuCloudWFX := TWFXApplication.Create();
@@ -307,7 +314,7 @@ begin
 end;
 
 exports
-	FsGetDefRootName, FsInit, FsInitW, FsFindFirst, FsFindFirstW, FsFindNext, FsFindNextW, FsFindClose, FsGetFile, FsGetFileW, FsDisconnect, FsDisconnectW, FsStatusInfo, FsStatusInfoW, FsPutFile, FsPutFileW, FsDeleteFile, FsDeleteFileW, FsMkDir, FsMkDirW, FsRemoveDir, FsRemoveDirW, FsSetCryptCallback, FsSetCryptCallbackW, FsExecuteFileW, FsRenMovFile, FsRenMovFileW, FsGetBackgroundFlags, FsContentGetSupportedField, FsContentGetValue, FsContentGetValueW, FsExtractCustomIcon, FsExtractCustomIconW;
+	FsGetDefRootName, FsInit, FsInitW, FsFindFirst, FsFindFirstW, FsFindNext, FsFindNextW, FsFindClose, FsGetFile, FsGetFileW, FsDisconnect, FsDisconnectW, FsStatusInfo, FsStatusInfoW, FsPutFile, FsPutFileW, FsDeleteFile, FsDeleteFileW, FsMkDir, FsMkDirW, FsRemoveDir, FsRemoveDirW, FsSetCryptCallback, FsSetCryptCallbackW, FsExecuteFileW, FsRenMovFile, FsRenMovFileW, FsGetBackgroundFlags, FsContentGetSupportedField, FsContentGetValue, FsContentGetValueW, FsExtractCustomIcon, FsExtractCustomIconW, FsGetPreviewBitmap, FsGetPreviewBitmapW;
 
 begin
 	DllProc := @DllInit;

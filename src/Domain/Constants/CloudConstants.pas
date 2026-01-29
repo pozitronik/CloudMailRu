@@ -6,6 +6,7 @@ const
 	PUBLIC_ACCESS_URL = 'https://cloud.mail.ru/public/';
 	OAUTH_TOKEN_URL = 'https://o2.mail.ru/token';
 	OAUTH_DISPATCHER_URL = 'https://dispatcher.cloud.mail.ru';
+	THUMB_CLOUD_URL = 'https://thumb.cloud.mail.ru/thumb'; {Thumbnail server - fallback if dispatcher doesn't return shard}
 	TOKEN_HOME_URL = 'https://cloud.mail.ru/home';
 	TOKEN_URL = 'https://cloud.mail.ru/?from=promo&from=authpopup';
 	LOGIN_URL = 'https://auth.mail.ru/cgi-bin/auth?from=splash';

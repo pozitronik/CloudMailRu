@@ -308,7 +308,11 @@ uses
 	OpenSSLProvider in '..\src\Infrastructure\OpenSSL\OpenSSLProvider.pas',
 	OpenSSLProviderTest in 'Infrastructure\OpenSSL\OpenSSLProviderTest.pas',
 	AccountCredentialsProvider in '..\src\Infrastructure\Password\AccountCredentialsProvider.pas',
-	AccountCredentialsProviderTest in 'Infrastructure\Password\AccountCredentialsProviderTest.pas';
+	AccountCredentialsProviderTest in 'Infrastructure\Password\AccountCredentialsProviderTest.pas',
+	ThumbnailSizeSelector in '..\src\Application\Thumbnail\ThumbnailSizeSelector.pas',
+	ThumbnailSizeSelectorTest in 'Application\Thumbnail\ThumbnailSizeSelectorTest.pas',
+	CloudThumbnailService in '..\src\Application\Thumbnail\CloudThumbnailService.pas',
+	CloudThumbnailServiceTest in 'Application\Thumbnail\CloudThumbnailServiceTest.pas';
 
 {keep comment here to protect the following conditional from being removed by the IDE when adding a unit}
 {$IFNDEF TESTINSIGHT}

@@ -213,6 +213,9 @@ type
 		function FsContentGetValue(FileName: PWideChar; FieldIndex: Integer; UnitIndex: Integer; FieldValue: Pointer; MaxLen: Integer; Flags: Integer): Integer;
 		function FsExtractCustomIcon(RemoteName: PWideChar; ExtractFlags: Integer; var TheIcon: hIcon): Integer;
 
+		{Thumbnail support - TC 7.0+}
+		function FsGetPreviewBitmap(RemoteName: PWideChar; Width, Height: Integer; var ReturnedBitmap: HBITMAP): Integer;
+
 		{Shutdown safety check - returns True if no background operations are active}
 		function HasActiveOperations: Boolean;
 
@@ -720,6 +723,31 @@ begin
 	{For internal resources, TC expects resource name in RemoteName buffer}
 	if RenderResult.ResourceName <> '' then
 		strpcopy(RemoteName, RenderResult.ResourceName);
+end;
+
+function TWFXApplication.FsGetPreviewBitmap(RemoteName: PWideChar; Width, Height: Integer; var ReturnedBitmap: HBITMAP): Integer;
+var
+	RealPath: TRealPath;
+	Cloud: TCloudMailRu;
+begin
+	Result := FS_BITMAP_NONE;
+	ReturnedBitmap := 0;
+
+	RealPath.FromPath(RemoteName);
+
+	{Skip non-file paths (root, virtual folders, etc.)}
+	if RealPath.IsVirtual or RealPath.upDirItem or (RealPath.Path = '') then
+		Exit;
+
+	{Get cloud connection}
+	Cloud := ConnectionManager.Get(RealPath.account);
+	if not EnsureAuthorized(Cloud) then
+		Exit;
+
+	{Let cloud API decide if file supports thumbnails}
+	ReturnedBitmap := Cloud.GetThumbnail(RealPath.Path, Width, Height);
+	if ReturnedBitmap <> 0 then
+		Result := FS_BITMAP_EXTRACTED or FS_BITMAP_CACHE;
 end;
 
 function TWFXApplication.FsFindClose(Hdl: THandle): Integer;
