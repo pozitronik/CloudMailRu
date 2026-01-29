@@ -34,7 +34,7 @@ type
 
 		{Write-if-not-default operations - writes value only if different from default,
 			otherwise deletes the key to keep INI files clean}
-		procedure WriteStringIfNotDefault(const Section, Ident, Value, Default: string);
+		procedure WriteStringIfNotDefault(const Section, Ident: string; Value, Default: string);
 		procedure WriteBoolIfNotDefault(const Section, Ident: string; Value, Default: Boolean);
 		procedure WriteIntegerIfNotDefault(const Section, Ident: string; Value, Default: Integer);
 		procedure WriteInt64IfNotDefault(const Section, Ident: string; Value, Default: Int64);
@@ -62,7 +62,7 @@ type
 		procedure WriteInteger(const Section, Ident: string; Value: Integer);
 		procedure WriteInt64(const Section, Ident: string; Value: Int64);
 
-		procedure WriteStringIfNotDefault(const Section, Ident, Value, Default: string);
+		procedure WriteStringIfNotDefault(const Section, Ident: string; Value, Default: string);
 		procedure WriteBoolIfNotDefault(const Section, Ident: string; Value, Default: Boolean);
 		procedure WriteIntegerIfNotDefault(const Section, Ident: string; Value, Default: Integer);
 		procedure WriteInt64IfNotDefault(const Section, Ident: string; Value, Default: Int64);
@@ -98,7 +98,7 @@ type
 		procedure WriteInteger(const Section, Ident: string; Value: Integer);
 		procedure WriteInt64(const Section, Ident: string; Value: Int64);
 
-		procedure WriteStringIfNotDefault(const Section, Ident, Value, Default: string);
+		procedure WriteStringIfNotDefault(const Section, Ident: string; Value, Default: string);
 		procedure WriteBoolIfNotDefault(const Section, Ident: string; Value, Default: Boolean);
 		procedure WriteIntegerIfNotDefault(const Section, Ident: string; Value, Default: Integer);
 		procedure WriteInt64IfNotDefault(const Section, Ident: string; Value, Default: Int64);
@@ -113,37 +113,17 @@ type
 		procedure Clear;
 	end;
 
-	{TIniFile wrapper implementing IConfigFile interface for production use.
-		Each operation opens and closes the file to match original behavior pattern.}
-	TIniConfigFile = class(TInterfacedObject, IConfigFile)
+	{TIniFile subclass implementing IConfigFile interface for production use.
+		Inherits all INI operations from TIniFile, only adds interface support and GetFilePath.}
+	TIniConfigFile = class(TIniFile, IConfigFile)
 	private
-		FFilePath: string;
+		FRefCount: Integer;
+	protected
+		function QueryInterface(const IID: TGUID; out Obj): HResult; stdcall;
+		function _AddRef: Integer; stdcall;
+		function _Release: Integer; stdcall;
 	public
-		constructor Create(const FilePath: string);
-
 		function GetFilePath: string;
-		function ReadString(const Section, Ident, Default: string): string;
-		function ReadBool(const Section, Ident: string; Default: Boolean): Boolean;
-		function ReadInteger(const Section, Ident: string; Default: Integer): Integer;
-		function ReadInt64(const Section, Ident: string; Default: Int64): Int64;
-
-		procedure WriteString(const Section, Ident, Value: string);
-		procedure WriteBool(const Section, Ident: string; Value: Boolean);
-		procedure WriteInteger(const Section, Ident: string; Value: Integer);
-		procedure WriteInt64(const Section, Ident: string; Value: Int64);
-
-		procedure WriteStringIfNotDefault(const Section, Ident, Value, Default: string);
-		procedure WriteBoolIfNotDefault(const Section, Ident: string; Value, Default: Boolean);
-		procedure WriteIntegerIfNotDefault(const Section, Ident: string; Value, Default: Integer);
-		procedure WriteInt64IfNotDefault(const Section, Ident: string; Value, Default: Int64);
-
-		procedure ReadSections(Strings: TStrings);
-		function SectionExists(const Section: string): Boolean;
-		procedure EraseSection(const Section: string);
-
-		procedure DeleteKey(const Section, Ident: string);
-
-		property FilePath: string read FFilePath;
 	end;
 
 implementation
@@ -195,7 +175,7 @@ begin
 	{No-op}
 end;
 
-procedure TNullConfigFile.WriteStringIfNotDefault(const Section, Ident, Value, Default: string);
+procedure TNullConfigFile.WriteStringIfNotDefault(const Section, Ident: string; Value, Default: string);
 begin
 	{No-op}
 end;
@@ -344,7 +324,7 @@ begin
 	WriteString(Section, Ident, IntToStr(Value));
 end;
 
-procedure TMemoryConfigFile.WriteStringIfNotDefault(const Section, Ident, Value, Default: string);
+procedure TMemoryConfigFile.WriteStringIfNotDefault(const Section, Ident: string; Value, Default: string);
 begin
 	if Value <> Default then
 		WriteString(Section, Ident, Value)
@@ -411,207 +391,29 @@ end;
 
 {TIniConfigFile}
 
-constructor TIniConfigFile.Create(const FilePath: string);
+function TIniConfigFile.QueryInterface(const IID: TGUID; out Obj): HResult;
 begin
-	inherited Create;
-	FFilePath := FilePath;
+	if GetInterface(IID, Obj) then
+		Result := S_OK
+	else
+		Result := E_NOINTERFACE;
+end;
+
+function TIniConfigFile._AddRef: Integer;
+begin
+	Result := AtomicIncrement(FRefCount);
+end;
+
+function TIniConfigFile._Release: Integer;
+begin
+	Result := AtomicDecrement(FRefCount);
+	if Result = 0 then
+		Destroy;
 end;
 
 function TIniConfigFile.GetFilePath: string;
 begin
-	Result := FFilePath;
-end;
-
-function TIniConfigFile.ReadString(const Section, Ident, Default: string): string;
-var
-	IniFile: TIniFile;
-begin
-	IniFile := TIniFile.Create(FFilePath);
-	try
-		Result := IniFile.ReadString(Section, Ident, Default);
-	finally
-		IniFile.Free;
-	end;
-end;
-
-function TIniConfigFile.ReadBool(const Section, Ident: string; Default: Boolean): Boolean;
-var
-	IniFile: TIniFile;
-begin
-	IniFile := TIniFile.Create(FFilePath);
-	try
-		Result := IniFile.ReadBool(Section, Ident, Default);
-	finally
-		IniFile.Free;
-	end;
-end;
-
-function TIniConfigFile.ReadInteger(const Section, Ident: string; Default: Integer): Integer;
-var
-	IniFile: TIniFile;
-begin
-	IniFile := TIniFile.Create(FFilePath);
-	try
-		Result := IniFile.ReadInteger(Section, Ident, Default);
-	finally
-		IniFile.Free;
-	end;
-end;
-
-function TIniConfigFile.ReadInt64(const Section, Ident: string; Default: Int64): Int64;
-var
-	IniFile: TIniFile;
-begin
-	IniFile := TIniFile.Create(FFilePath);
-	try
-		Result := IniFile.ReadInt64(Section, Ident, Default);
-	finally
-		IniFile.Free;
-	end;
-end;
-
-procedure TIniConfigFile.WriteString(const Section, Ident, Value: string);
-var
-	IniFile: TIniFile;
-begin
-	IniFile := TIniFile.Create(FFilePath);
-	try
-		IniFile.WriteString(Section, Ident, Value);
-	finally
-		IniFile.Free;
-	end;
-end;
-
-procedure TIniConfigFile.WriteBool(const Section, Ident: string; Value: Boolean);
-var
-	IniFile: TIniFile;
-begin
-	IniFile := TIniFile.Create(FFilePath);
-	try
-		IniFile.WriteBool(Section, Ident, Value);
-	finally
-		IniFile.Free;
-	end;
-end;
-
-procedure TIniConfigFile.WriteInteger(const Section, Ident: string; Value: Integer);
-var
-	IniFile: TIniFile;
-begin
-	IniFile := TIniFile.Create(FFilePath);
-	try
-		IniFile.WriteInteger(Section, Ident, Value);
-	finally
-		IniFile.Free;
-	end;
-end;
-
-procedure TIniConfigFile.WriteInt64(const Section, Ident: string; Value: Int64);
-var
-	IniFile: TIniFile;
-begin
-	IniFile := TIniFile.Create(FFilePath);
-	try
-		IniFile.WriteInt64(Section, Ident, Value);
-	finally
-		IniFile.Free;
-	end;
-end;
-
-procedure TIniConfigFile.WriteStringIfNotDefault(const Section, Ident, Value, Default: string);
-var
-	IniFile: TIniFile;
-begin
-	IniFile := TIniFile.Create(FFilePath);
-	try
-		IniFile.WriteStringIfNotDefault(Section, Ident, Value, Default);
-	finally
-		IniFile.Free;
-	end;
-end;
-
-procedure TIniConfigFile.WriteBoolIfNotDefault(const Section, Ident: string; Value, Default: Boolean);
-var
-	IniFile: TIniFile;
-begin
-	IniFile := TIniFile.Create(FFilePath);
-	try
-		IniFile.WriteBoolIfNotDefault(Section, Ident, Value, Default);
-	finally
-		IniFile.Free;
-	end;
-end;
-
-procedure TIniConfigFile.WriteIntegerIfNotDefault(const Section, Ident: string; Value, Default: Integer);
-var
-	IniFile: TIniFile;
-begin
-	IniFile := TIniFile.Create(FFilePath);
-	try
-		IniFile.WriteIntegerIfNotDefault(Section, Ident, Value, Default);
-	finally
-		IniFile.Free;
-	end;
-end;
-
-procedure TIniConfigFile.WriteInt64IfNotDefault(const Section, Ident: string; Value, Default: Int64);
-var
-	IniFile: TIniFile;
-begin
-	IniFile := TIniFile.Create(FFilePath);
-	try
-		IniFile.WriteInt64IfNotDefault(Section, Ident, Value, Default);
-	finally
-		IniFile.Free;
-	end;
-end;
-
-procedure TIniConfigFile.ReadSections(Strings: TStrings);
-var
-	IniFile: TIniFile;
-begin
-	IniFile := TIniFile.Create(FFilePath);
-	try
-		IniFile.ReadSections(Strings);
-	finally
-		IniFile.Free;
-	end;
-end;
-
-function TIniConfigFile.SectionExists(const Section: string): Boolean;
-var
-	IniFile: TIniFile;
-begin
-	IniFile := TIniFile.Create(FFilePath);
-	try
-		Result := IniFile.SectionExists(Section);
-	finally
-		IniFile.Free;
-	end;
-end;
-
-procedure TIniConfigFile.EraseSection(const Section: string);
-var
-	IniFile: TIniFile;
-begin
-	IniFile := TIniFile.Create(FFilePath);
-	try
-		IniFile.EraseSection(Section);
-	finally
-		IniFile.Free;
-	end;
-end;
-
-procedure TIniConfigFile.DeleteKey(const Section, Ident: string);
-var
-	IniFile: TIniFile;
-begin
-	IniFile := TIniFile.Create(FFilePath);
-	try
-		IniFile.DeleteKey(Section, Ident);
-	finally
-		IniFile.Free;
-	end;
+	Result := FileName;
 end;
 
 end.
