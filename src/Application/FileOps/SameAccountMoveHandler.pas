@@ -45,7 +45,9 @@ type
 implementation
 
 uses
-	WFXTypes;
+	WFXTypes,
+	PathHelper,
+	CloudDirItem;
 
 constructor TSameAccountMoveHandler.Create(ThreadState: IThreadStateManager; DescriptionSyncGuard: IDescriptionSyncGuard);
 begin
@@ -69,6 +71,8 @@ begin
 end;
 
 function TSameAccountMoveHandler.Execute(Cloud: TCloudMailRu; const OldPath, NewPath: TRealPath; Move, OverWrite: Boolean): Integer;
+var
+	DummyItem: TCloudDirItem;
 begin
 	{Handle overwrite by deleting existing file first}
 	if OverWrite and not Cloud.FileOperations.Delete(NewPath.Path) then
@@ -83,7 +87,17 @@ begin
 			FDescriptionSyncGuard.OnFileRenamed(OldPath, NewPath, Cloud);
 	end
 	else
+	begin
+		{Issue #219: For copy with rename, check if final target exists before copying.
+			Without this check, copy creates intermediate file which is left orphaned
+			if subsequent rename fails due to existing target.
+			Only check when: rename needed AND overwrite not allowed.}
+		if not OverWrite and (ExtractUniversalFileName(OldPath.Path) <> ExtractUniversalFileName(NewPath.Path)) then
+			if Cloud.ListingService.StatusFile(NewPath.Path, DummyItem) then
+				Exit(FS_FILE_EXISTS);
+
 		Result := Cloud.FileOperations.Copy(OldPath.Path, NewPath.Path);
+	end;
 end;
 
 end.

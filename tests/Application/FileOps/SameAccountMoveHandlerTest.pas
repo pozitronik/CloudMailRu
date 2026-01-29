@@ -158,6 +158,16 @@ type
 		procedure TestExecute_MoveOK_RemovesFromSkipPath;
 		[Test]
 		procedure TestExecute_NoSkipPathList_DoesNotAddPath;
+
+		{Issue #219 - Copy with rename target existence check}
+		[Test]
+		procedure TestExecute_CopyWithRename_TargetExists_ReturnsExists;
+		[Test]
+		procedure TestExecute_CopyWithRename_TargetExists_DoesNotCallCopyAPI;
+		[Test]
+		procedure TestExecute_CopySameName_TargetExists_ProceedsWithCopy;
+		[Test]
+		procedure TestExecute_CopyWithRename_OverwriteTrue_SkipsExistenceCheck;
 	end;
 
 implementation
@@ -173,6 +183,8 @@ const
 	JSON_DELETE_SUCCESS = '{"email":"test@mail.ru","body":"ok","status":200}';
 	JSON_OPERATION_EXISTS = '{"email":"test@mail.ru","body":{"home":{"error":"exists"}},"status":400}';
 	JSON_OPERATION_FAIL = '{"email":"test@mail.ru","body":{"home":{"error":"not_exists"}},"status":400}';
+	{StatusFile response for existing file - used in Issue #219 tests}
+	JSON_FILE_EXISTS = '{"email":"test@mail.ru","body":{"name":"existing.txt","kind":"file","type":"file","home":"/folder/existing.txt","size":1024},"status":200}';
 
 {TMockMoveThreadState}
 
@@ -557,6 +569,97 @@ begin
 
 	Assert.AreEqual(0, FThreadState.GetSkippedPathCount,
 		'Should not add to skip list when feature is disabled');
+end;
+
+{Issue #219 - Copy with rename target existence check}
+
+procedure TSameAccountMoveHandlerTest.TestExecute_CopyWithRename_TargetExists_ReturnsExists;
+var
+	OldPath, NewPath: TRealPath;
+	Result: Integer;
+begin
+	{Issue #219: Copy source.txt to target.txt when target.txt exists should return EXISTS,
+		not proceed with copy+rename which leaves orphaned intermediate file.
+		Note: Paths must be in different directories since same-dir copy is unsupported.}
+	FCloud := CreateCloud;
+	OldPath.FromPath('\account\srcfolder\source.txt');
+	NewPath.FromPath('\account\dstfolder\target.txt'); {Different dir + different filename = rename needed}
+
+	{StatusFile returns true - target file exists}
+	FMockHTTP.SetResponse(API_FILE, True, JSON_FILE_EXISTS);
+
+	Result := FHandler.Execute(FCloud, OldPath, NewPath, False, False); {Copy, no overwrite}
+
+	Assert.AreEqual(FS_FILE_EXISTS, Result,
+		'Should return EXISTS when copy target exists and overwrite is false');
+end;
+
+procedure TSameAccountMoveHandlerTest.TestExecute_CopyWithRename_TargetExists_DoesNotCallCopyAPI;
+var
+	OldPath, NewPath: TRealPath;
+begin
+	{Issue #219: When target exists and overwrite is false, should not call copy API.
+		This prevents creating orphaned intermediate files.
+		Note: Paths must be in different directories since same-dir copy is unsupported.}
+	FCloud := CreateCloud;
+	OldPath.FromPath('\account\srcfolder\source.txt');
+	NewPath.FromPath('\account\dstfolder\target.txt'); {Different dir + different filename = rename needed}
+
+	{StatusFile returns true - target file exists}
+	FMockHTTP.SetResponse(API_FILE, True, JSON_FILE_EXISTS);
+
+	FHandler.Execute(FCloud, OldPath, NewPath, False, False); {Copy, no overwrite}
+
+	Assert.IsFalse(FMockHTTP.WasURLCalled(API_FILE_COPY),
+		'Should NOT call copy API when target exists - prevents orphaned files');
+end;
+
+procedure TSameAccountMoveHandlerTest.TestExecute_CopySameName_TargetExists_ProceedsWithCopy;
+var
+	OldPath, NewPath: TRealPath;
+begin
+	{When copying to different folder with SAME filename, no rename is needed.
+		StatusFile check is skipped because cloud API handles this case correctly.}
+	FCloud := CreateCloud;
+	OldPath.FromPath('\account\folder\file.txt');
+	NewPath.FromPath('\account\otherfolder\file.txt'); {Same filename, different folder}
+
+	{Copy succeeds - no StatusFile check needed for same-name copies}
+	FMockHTTP.SetResponse(API_FILE_COPY, True, JSON_COPY_SUCCESS);
+
+	FHandler.Execute(FCloud, OldPath, NewPath, False, False); {Copy, no overwrite}
+
+	{StatusFile uses 'api/v2/file?' pattern - check this specific endpoint was NOT called.
+		Note: Using 'file?' suffix to avoid matching file/copy, file/move, etc.}
+	Assert.IsFalse(FMockHTTP.WasURLCalled('api/v2/file?'),
+		'Should not check target existence when filenames match');
+	Assert.IsTrue(FMockHTTP.WasURLCalled(API_FILE_COPY),
+		'Should proceed with copy when filenames match');
+end;
+
+procedure TSameAccountMoveHandlerTest.TestExecute_CopyWithRename_OverwriteTrue_SkipsExistenceCheck;
+var
+	OldPath, NewPath: TRealPath;
+begin
+	{When overwrite is true, we want to overwrite anyway, so existence check is skipped.
+		Note: Paths must be in different directories since same-dir copy is unsupported.}
+	FCloud := CreateCloud;
+	OldPath.FromPath('\account\srcfolder\source.txt');
+	NewPath.FromPath('\account\dstfolder\target.txt'); {Different dir + different filename = rename needed}
+
+	{Delete succeeds, then copy succeeds, then rename succeeds}
+	FMockHTTP.SetResponse(API_FILE_REMOVE, True, JSON_DELETE_SUCCESS);
+	FMockHTTP.SetResponse(API_FILE_COPY, True, JSON_COPY_SUCCESS);
+	FMockHTTP.SetResponse(API_FILE_RENAME, True, JSON_RENAME_SUCCESS);
+
+	FHandler.Execute(FCloud, OldPath, NewPath, False, True); {Copy, with overwrite}
+
+	{StatusFile uses 'api/v2/file?' pattern - check this specific endpoint was NOT called.
+		Note: Using 'file?' suffix to avoid matching file/copy, file/move, etc.}
+	Assert.IsFalse(FMockHTTP.WasURLCalled('api/v2/file?'),
+		'Should not check target existence when overwrite is true');
+	Assert.IsTrue(FMockHTTP.WasURLCalled(API_FILE_COPY),
+		'Should proceed with copy when overwrite is true');
 end;
 
 initialization
