@@ -23,6 +23,7 @@ function FsRemoveDir(RemoteName: PAnsiChar): Bool; stdcall;
 procedure FsSetCryptCallback(PCryptProc: TCryptProcW; CryptoNr: integer; Flags: integer); stdcall;
 function FsContentGetValue(FileName: PAnsiChar; FieldIndex: integer; UnitIndex: integer; FieldValue: Pointer; maxlen: integer; Flags: integer): integer; stdcall;
 function FsExtractCustomIcon(RemoteName: pchar; ExtractFlags: integer; var TheIcon: hicon): integer; stdcall;
+function FsGetPreviewBitmap(RemoteName: pchar; Width, Height: integer; var ReturnedBitmap: HBITMAP): integer; stdcall;
 
 implementation
 
@@ -111,6 +112,13 @@ function FsExtractCustomIcon(RemoteName: pchar; ExtractFlags: integer; var TheIc
 begin
 	SetLastError(ERROR_INVALID_FUNCTION);
 	Result := FS_FILE_NOTSUPPORTED; //Ansi-заглушка
+end;
+
+function FsGetPreviewBitmap(RemoteName: pchar; Width, Height: integer; var ReturnedBitmap: HBITMAP): integer; stdcall;
+begin
+	SetLastError(ERROR_INVALID_FUNCTION);
+	ReturnedBitmap := 0;
+	Result := FS_BITMAP_NONE; //Ansi-заглушка
 end;
 
 end.

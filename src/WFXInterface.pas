@@ -36,6 +36,9 @@ type
 		function FsContentGetSupportedField(FieldIndex: Integer; FieldName: PAnsiChar; Units: PAnsiChar; MaxLen: Integer): Integer;
 		function FsContentGetValue(FileName: PWideChar; FieldIndex: Integer; UnitIndex: Integer; FieldValue: Pointer; MaxLen: Integer; Flags: Integer): Integer;
 		function FsExtractCustomIcon(RemoteName: PWideChar; ExtractFlags: Integer; var TheIcon: hIcon): Integer;
+
+		{Thumbnail support - TC 7.0+}
+		function FsGetPreviewBitmap(RemoteName: PWideChar; Width, Height: Integer; var ReturnedBitmap: HBITMAP): Integer;
 	end;
 
 implementation

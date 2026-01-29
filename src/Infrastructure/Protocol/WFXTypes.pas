@@ -85,6 +85,13 @@ const
 	FS_ICON_EXTRACTED_DESTROY = 2;
 	FS_ICON_DELAYED = 3;
 
+	{FsGetPreviewBitmap return values}
+	FS_BITMAP_NONE = 0;
+	FS_BITMAP_EXTRACTED = 1;
+	FS_BITMAP_EXTRACT_YOURSELF = 2;
+	FS_BITMAP_EXTRACT_YOURSELF_ANDDELETE = 3;
+	FS_BITMAP_CACHE = $100; {Add to above values to enable caching}
+
 	{Flags for crypto callback function}
 	FS_CRYPT_SAVE_PASSWORD = 1;
 	FS_CRYPT_LOAD_PASSWORD = 2;
