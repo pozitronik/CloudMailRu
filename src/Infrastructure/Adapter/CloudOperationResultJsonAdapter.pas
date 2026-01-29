@@ -23,46 +23,43 @@ uses
 	CloudConstants,
 	SafeJSON;
 
+type
+	TErrorMapping = record
+		ErrorName: string;
+		ResultCode: Integer;
+	end;
+
+const
+	{API error string to result code mapping table}
+	ErrorMappings: array[0..17] of TErrorMapping = (
+		(ErrorName: 'exists'; ResultCode: CLOUD_ERROR_EXISTS),
+		(ErrorName: 'required'; ResultCode: CLOUD_ERROR_REQUIRED),
+		(ErrorName: 'readonly'; ResultCode: CLOUD_ERROR_READONLY),
+		(ErrorName: 'read_only'; ResultCode: CLOUD_ERROR_READONLY),
+		(ErrorName: 'name_length_exceeded'; ResultCode: CLOUD_ERROR_NAME_LENGTH_EXCEEDED),
+		(ErrorName: 'unknown'; ResultCode: CLOUD_ERROR_UNKNOWN),
+		(ErrorName: 'overquota'; ResultCode: CLOUD_ERROR_OVERQUOTA),
+		(ErrorName: 'quota_exceeded'; ResultCode: CLOUD_ERROR_OVERQUOTA),
+		(ErrorName: 'invalid'; ResultCode: CLOUD_ERROR_INVALID),
+		(ErrorName: 'not_exists'; ResultCode: CLOUD_ERROR_NOT_EXISTS),
+		(ErrorName: 'own'; ResultCode: CLOUD_ERROR_OWN),
+		(ErrorName: 'name_too_long'; ResultCode: CLOUD_ERROR_NAME_TOO_LONG),
+		(ErrorName: 'virus_scan_fail'; ResultCode: CLOUD_ERROR_VIRUS_SCAN_FAIL),
+		(ErrorName: 'owner'; ResultCode: CLOUD_ERROR_OWNER),
+		(ErrorName: 'trees_conflict'; ResultCode: CLOUD_ERROR_TREES_CONFLICT),
+		(ErrorName: 'user_limit_exceeded'; ResultCode: CLOUD_ERROR_USER_LIMIT_EXCEEDED),
+		(ErrorName: 'export_limit_exceeded'; ResultCode: CLOUD_ERROR_EXPORT_LIMIT_EXCEEDED),
+		(ErrorName: 'unprocessable_entry'; ResultCode: CLOUD_ERROR_UNPROCESSABLE_ENTRY)
+	);
+
 class function TCloudOperationResultJsonAdapter.MapErrorToResult(const Error: WideString): Integer;
+var
+	I: Integer;
 begin
-	if Error = 'exists' then
-		Result := CLOUD_ERROR_EXISTS
-	else if Error = 'required' then
-		Result := CLOUD_ERROR_REQUIRED
-	else if Error = 'readonly' then
-		Result := CLOUD_ERROR_READONLY
-	else if Error = 'read_only' then
-		Result := CLOUD_ERROR_READONLY
-	else if Error = 'name_length_exceeded' then
-		Result := CLOUD_ERROR_NAME_LENGTH_EXCEEDED
-	else if Error = 'unknown' then
-		Result := CLOUD_ERROR_UNKNOWN
-	else if Error = 'overquota' then
-		Result := CLOUD_ERROR_OVERQUOTA
-	else if Error = 'quota_exceeded' then
-		Result := CLOUD_ERROR_OVERQUOTA
-	else if Error = 'invalid' then
-		Result := CLOUD_ERROR_INVALID
-	else if Error = 'not_exists' then
-		Result := CLOUD_ERROR_NOT_EXISTS
-	else if Error = 'own' then
-		Result := CLOUD_ERROR_OWN
-	else if Error = 'name_too_long' then
-		Result := CLOUD_ERROR_NAME_TOO_LONG
-	else if Error = 'virus_scan_fail' then
-		Result := CLOUD_ERROR_VIRUS_SCAN_FAIL
-	else if Error = 'owner' then
-		Result := CLOUD_ERROR_OWNER
-	else if Error = 'trees_conflict' then
-		Result := CLOUD_ERROR_TREES_CONFLICT
-	else if Error = 'user_limit_exceeded' then
-		Result := CLOUD_ERROR_USER_LIMIT_EXCEEDED
-	else if Error = 'export_limit_exceeded' then
-		Result := CLOUD_ERROR_EXPORT_LIMIT_EXCEEDED
-	else if Error = 'unprocessable_entry' then
-		Result := CLOUD_ERROR_UNPROCESSABLE_ENTRY
-	else
-		Result := CLOUD_ERROR_UNKNOWN;
+	for I := Low(ErrorMappings) to High(ErrorMappings) do
+		if Error = ErrorMappings[I].ErrorName then
+			Exit(ErrorMappings[I].ResultCode);
+	Result := CLOUD_ERROR_UNKNOWN;
 end;
 
 class procedure TCloudOperationResultJsonAdapter.Parse(const JSON: WideString; out OperationResult: TCloudOperationResult);
