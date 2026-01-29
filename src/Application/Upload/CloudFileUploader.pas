@@ -28,7 +28,7 @@ uses
 	CloudHashCalculator,
 	CloudHTTP,
 	CloudErrorMapper,
-	CloudCallbackTypes,
+	CloudContext,
 	WindowsFileSystem,
 	FileSplitInfo,
 	ChunkedFileStream,
@@ -68,8 +68,7 @@ type
 	{File upload service - handles whole file and chunked uploads}
 	TCloudFileUploader = class(TInterfacedObject, ICloudFileUploader)
 	private
-		{Callbacks for CloudMailRu state access}
-		FGetHTTP: TGetHTTPFunc;
+		FContext: ICloudContext;
 		FShardManager: ICloudShardManager;
 		FHashCalculator: ICloudHashCalculator;
 		FCipher: ICipher;
@@ -78,13 +77,7 @@ type
 		FProgress: IProgress;
 		FRequest: IRequest;
 		FTCHandler: ITCHandler;
-		FGetOAuthToken: TGetOAuthTokenFunc;
-		FIsPublicAccount: TGetBoolFunc;
-		FGetRetryOperation: TGetRetryOperationFunc;
-		FGetUnitedParams: TGetStringFunc;
-		FCloudResultToFsResult: TCloudResultToFsResultFunc;
-		FDeleteFile: TDeleteFileFunc;
-		FGetUserSpace: TGetUserSpaceFunc;
+		FRetryOperation: IRetryOperation;
 		FDoCryptFiles: Boolean;
 		FDoCryptFilenames: Boolean;
 		FSettings: TUploadSettings;
@@ -105,7 +98,7 @@ type
 		{Protected for testability - tests need direct access to split upload logic}
 		function PutFileSplit(LocalPath, RemotePath, ConflictMode: WideString; ChunkOverwriteMode: Integer): Integer;
 	public
-		constructor Create(GetHTTP: TGetHTTPFunc; ShardManager: ICloudShardManager; HashCalculator: ICloudHashCalculator; Cipher: ICipher; FileSystem: IFileSystem; Logger: ILogger; Progress: IProgress; Request: IRequest; TCHandler: ITCHandler; GetOAuthToken: TGetOAuthTokenFunc; IsPublicAccount: TGetBoolFunc; GetRetryOperation: TGetRetryOperationFunc; GetUnitedParams: TGetStringFunc; CloudResultToFsResult: TCloudResultToFsResultFunc; DeleteFile: TDeleteFileFunc; GetUserSpace: TGetUserSpaceFunc; DoCryptFiles, DoCryptFilenames: Boolean; Settings: TUploadSettings);
+		constructor Create(Context: ICloudContext; ShardManager: ICloudShardManager; HashCalculator: ICloudHashCalculator; Cipher: ICipher; FileSystem: IFileSystem; Logger: ILogger; Progress: IProgress; Request: IRequest; TCHandler: ITCHandler; RetryOperation: IRetryOperation; DoCryptFiles, DoCryptFilenames: Boolean; Settings: TUploadSettings);
 
 		{ICloudFileUploader}
 		function Upload(LocalPath, RemotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; ChunkOverwriteMode: Integer = 0): Integer;
@@ -119,10 +112,10 @@ uses
 
 {TCloudFileUploader}
 
-constructor TCloudFileUploader.Create(GetHTTP: TGetHTTPFunc; ShardManager: ICloudShardManager; HashCalculator: ICloudHashCalculator; Cipher: ICipher; FileSystem: IFileSystem; Logger: ILogger; Progress: IProgress; Request: IRequest; TCHandler: ITCHandler; GetOAuthToken: TGetOAuthTokenFunc; IsPublicAccount: TGetBoolFunc; GetRetryOperation: TGetRetryOperationFunc; GetUnitedParams: TGetStringFunc; CloudResultToFsResult: TCloudResultToFsResultFunc; DeleteFile: TDeleteFileFunc; GetUserSpace: TGetUserSpaceFunc; DoCryptFiles, DoCryptFilenames: Boolean; Settings: TUploadSettings);
+constructor TCloudFileUploader.Create(Context: ICloudContext; ShardManager: ICloudShardManager; HashCalculator: ICloudHashCalculator; Cipher: ICipher; FileSystem: IFileSystem; Logger: ILogger; Progress: IProgress; Request: IRequest; TCHandler: ITCHandler; RetryOperation: IRetryOperation; DoCryptFiles, DoCryptFilenames: Boolean; Settings: TUploadSettings);
 begin
 	inherited Create;
-	FGetHTTP := GetHTTP;
+	FContext := Context;
 	FShardManager := ShardManager;
 	FHashCalculator := HashCalculator;
 	FCipher := Cipher;
@@ -131,13 +124,7 @@ begin
 	FProgress := Progress;
 	FRequest := Request;
 	FTCHandler := TCHandler;
-	FGetOAuthToken := GetOAuthToken;
-	FIsPublicAccount := IsPublicAccount;
-	FGetRetryOperation := GetRetryOperation;
-	FGetUnitedParams := GetUnitedParams;
-	FCloudResultToFsResult := CloudResultToFsResult;
-	FDeleteFile := DeleteFile;
-	FGetUserSpace := GetUserSpace;
+	FRetryOperation := RetryOperation;
 	FDoCryptFiles := DoCryptFiles;
 	FDoCryptFilenames := DoCryptFilenames;
 	FSettings := Settings;
@@ -161,11 +148,10 @@ var
 	{Explicit Self capture for anonymous function closure}
 	HTTP: ICloudHTTP;
 	UnitedParams: WideString;
-	CloudResultToFsResult: TCloudResultToFsResultFunc;
+	Context: ICloudContext;
 	Logger: ILogger;
-	RetryOp: IRetryOperation;
 begin
-	if FIsPublicAccount() then
+	if FContext.IsPublicAccount then
 		Exit(FS_FILE_NOTSUPPORTED);
 
 	if FDoCryptFilenames then
@@ -176,13 +162,12 @@ begin
 	end;
 
 	{Capture values before anonymous function to avoid Self capture issues}
-	HTTP := FGetHTTP();
-	UnitedParams := FGetUnitedParams();
-	CloudResultToFsResult := FCloudResultToFsResult;
+	HTTP := FContext.GetHTTP;
+	UnitedParams := FContext.GetUnitedParams;
+	Context := FContext;
 	Logger := FLogger;
-	RetryOp := FGetRetryOperation();
 
-	CallResult := RetryOp.Execute(
+	CallResult := FRetryOperation.Execute(
 		function: TAPICallResult
 		var
 			JSON: WideString;
@@ -192,7 +177,7 @@ begin
 			if HTTP.PostForm(API_FILE_ADD + '?' + UnitedParams, Format('api=2&conflict=%s&home=/%s&hash=%s&size=%d', [ConflictMode, PathToUrl(RemotePath), FileIdentity.Hash, FileIdentity.size]), JSON, 'application/x-www-form-urlencoded', LogErrors, False) then
 			begin
 				TCloudOperationResultJsonAdapter.Parse(JSON, OperationResult);
-				ResultCode := CloudResultToFsResult(JSON, PREFIX_ERR_FILE_UPLOADING);
+				ResultCode := Context.CloudResultToFsResult(JSON, PREFIX_ERR_FILE_UPLOADING);
 				if (CLOUD_OPERATION_OK = OperationResult.OperationResult) and LogSuccess then
 					Logger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, FILE_FOUND_BY_HASH, [RemotePath]);
 			end else begin
@@ -206,9 +191,9 @@ end;
 
 function TCloudFileUploader.Upload(LocalPath, RemotePath: WideString; ConflictMode: WideString; ChunkOverwriteMode: Integer): Integer;
 begin
-	if FIsPublicAccount() then
+	if FContext.IsPublicAccount then
 		Exit(FS_FILE_NOTSUPPORTED);
-	FGetHTTP().SetProgressNames(LocalPath, RemotePath);
+	FContext.GetHTTP.SetProgressNames(LocalPath, RemotePath);
 	if (not FSettings.UnlimitedFileSize) and (FFileSystem.GetFileSize(GetUNCFilePath(LocalPath)) > FSettings.CloudMaxFileSize) then
 	begin
 		if FSettings.SplitLargeFiles then
@@ -323,11 +308,12 @@ var
 	Progress: Boolean;
 	UploadShard: WideString;
 	OAuthToken: TCloudOAuth;
+	HTTP: ICloudHTTP;
 begin
 	FileIdentity.Hash := EmptyWideStr;
 	FileIdentity.size := -1;
 	Result := CLOUD_OPERATION_FAILED;
-	if FIsPublicAccount() then
+	if FContext.IsPublicAccount then
 		Exit;
 	UploadShard := FShardManager.GetUploadShard;
 	if (EmptyWideStr = UploadShard) then
@@ -341,8 +327,8 @@ begin
 		end else begin
 			{OAuth uses different dispatcher endpoint that returns plain text URL}
 			Progress := False;
-			OAuthToken := FGetOAuthToken();
-			if FGetHTTP().GetPage(Format('%s/u?token=%s', [OAUTH_DISPATCHER_URL, OAuthToken.access_token]), DispatcherResponse, Progress) then
+			OAuthToken := FContext.GetOAuthToken;
+			if FContext.GetHTTP.GetPage(Format('%s/u?token=%s', [OAUTH_DISPATCHER_URL, OAuthToken.access_token]), DispatcherResponse, Progress) then
 			begin
 				{Response format: "URL IP COUNT", extract the URL (first word)}
 				UploadShard := Trim(Copy(DispatcherResponse, 1, Pos(' ', DispatcherResponse) - 1));
@@ -353,8 +339,9 @@ begin
 
 	LocalIdentity.Hash := EmptyWideStr;
 	LocalIdentity.size := -1;
-	OAuthToken := FGetOAuthToken();
-	CallResult := FGetRetryOperation().Execute(
+	OAuthToken := FContext.GetOAuthToken;
+	HTTP := FContext.GetHTTP;
+	CallResult := FRetryOperation.Execute(
 		function: TAPICallResult
 		var
 			PostAnswer: WideString;
@@ -363,7 +350,7 @@ begin
 		begin
 			{OAuth requires only client_id and token parameters for upload authentication}
 			UploadUrl := Format('%s?client_id=%s&token=%s', [FShardManager.GetUploadShard, OAUTH_CLIENT_ID, OAuthToken.access_token]);
-			ResultCode := FGetHTTP().PutFile(UploadUrl, FileName, FileStream, PostAnswer);
+			ResultCode := HTTP.PutFile(UploadUrl, FileName, FileStream, PostAnswer);
 			if (ResultCode = CLOUD_OPERATION_OK) then
 			begin
 				if length(PostAnswer) <> SHA1_HEX_LENGTH then
@@ -389,7 +376,7 @@ begin
 		ChunkOverwrite: {Silently overwrite chunk by deleting first}
 			begin
 				FLogger.Log(LOG_LEVEL_WARNING, MSGTYPE_DETAILS, CHUNK_OVERWRITE, [ChunkRemotePath]);
-				if not FDeleteFile(ChunkRemotePath) then
+				if not FContext.DeleteFile(ChunkRemotePath) then
 				begin
 					ResultCode := FS_FILE_WRITEERROR;
 					Result := caAbort;
@@ -482,7 +469,7 @@ var
 	CRCStream: TStringStream;
 begin
 	CRCRemotePath := ExtractFilePath(RemotePath) + SplitFileInfo.CRCFileName;
-	FGetHTTP().SetProgressNames(LocalPath, CRCRemotePath);
+	FContext.GetHTTP.SetProgressNames(LocalPath, CRCRemotePath);
 	CRCStream := TStringStream.Create;
 	try
 		SplitFileInfo.GetCRCData(CRCStream);
@@ -508,11 +495,11 @@ begin
 	Result := True;
 
 	{Skip check for public accounts - they don't have quota}
-	if FIsPublicAccount() then
+	if FContext.IsPublicAccount then
 		Exit;
 
 	{Get available space}
-	if not FGetUserSpace(SpaceInfo) then
+	if not FContext.GetUserSpace(SpaceInfo) then
 		Exit; {Can't get space info - proceed anyway}
 
 	AvailableSpace := SpaceInfo.total - SpaceInfo.used;
@@ -589,7 +576,7 @@ begin
 
 		{Create scaled progress decorator to show overall file progress instead of per-chunk progress}
 		ScaledProgress := TScaledProgress.Create(FProgress);
-		FGetHTTP().SetProgress(ScaledProgress);
+		FContext.GetHTTP.SetProgress(ScaledProgress);
 
 		{Upload each chunk - iterate all chunks, but limit ACTUAL uploads (not skips) by quota.
 			Skipped chunks (already exist with matching hash) don't count toward quota.}
@@ -597,7 +584,7 @@ begin
 		begin
 			ChunkRemotePath := Format('%s%s', [ExtractFilePath(RemotePath), SplitFileInfo.GetChunks[ChunkIndex].name]);
 			{Show original filename with chunk position for user-friendly progress display}
-			FGetHTTP().SetProgressNames(LocalPath, Format('%s [%d of %d]', [ExtractFileName(RemotePath), ChunkIndex + 1, SplitFileInfo.ChunksCount]));
+			FContext.GetHTTP.SetProgressNames(LocalPath, Format('%s [%d of %d]', [ExtractFileName(RemotePath), ChunkIndex + 1, SplitFileInfo.ChunksCount]));
 			{Update scale for current chunk position}
 			ScaledProgress.SetScale(ChunkIndex, SplitFileInfo.ChunksCount);
 			FLogger.Log(LOG_LEVEL_DEBUG, MSGTYPE_DETAILS, PARTIAL_UPLOAD_INFO, [LocalPath, ChunkIndex + 1, SplitFileInfo.ChunksCount, ChunkRemotePath]);
@@ -675,7 +662,7 @@ begin
 		end;
 
 		{Restore original progress for subsequent operations}
-		FGetHTTP().SetProgress(FProgress);
+		FContext.GetHTTP.SetProgress(FProgress);
 
 		{Generate and upload CRC file only after ALL chunks are on cloud.
 			ChunkIndex = total means all chunks were processed (uploaded or skipped).

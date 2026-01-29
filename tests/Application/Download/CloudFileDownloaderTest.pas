@@ -8,6 +8,7 @@ uses
 	CloudHashCalculator,
 	CloudOAuth,
 	CloudConstants,
+	CloudContext,
 	WFXTypes,
 	TCLogger,
 	TCProgress,
@@ -16,6 +17,7 @@ uses
 	CloudHTTP,
 	WindowsFileSystem,
 	MockCloudHTTP,
+	MockCloudContext,
 	TestHelper,
 	System.Classes,
 	System.SysUtils,
@@ -33,20 +35,11 @@ type
 		FHashCalculator: ICloudHashCalculator;
 		FMockHTTP: TMockCloudHTTP;
 		FMockHTTPRef: ICloudHTTP; {Prevents premature freeing due to TInterfacedObject reference counting}
-		FIsPublicAccount: Boolean;
-		FPublicLink: WideString;
-		FOAuthToken: TCloudOAuth;
+		FMockContext: TMockCloudContext;
+		FMockContextRef: ICloudContext; {Prevents premature freeing}
 		FResolveShardResult: Boolean;
 		FResolvedShardUrl: WideString;
 		FTempDir: string;
-		FRefreshTokenCalled: Boolean;
-		FRefreshTokenResult: Boolean;
-
-		function GetHTTP: ICloudHTTP;
-		function GetOAuthToken: TCloudOAuth;
-		function IsPublicAccount: Boolean;
-		function GetPublicLink: WideString;
-		function RefreshToken: Boolean;
 
 		procedure CreateDownloader(DoCryptFiles: Boolean = False; DoCryptFilenames: Boolean = False; Cipher: ICipher = nil);
 		function GetTempFilePath(const FileName: string): string;
@@ -126,11 +119,24 @@ uses
 {TCloudFileDownloaderTest}
 
 procedure TCloudFileDownloaderTest.Setup;
+var
+	OAuthToken: TCloudOAuth;
 begin
 	FMockHTTP := TMockCloudHTTP.Create;
 	FMockHTTPRef := FMockHTTP; {Keep interface reference to prevent premature freeing}
 	FMockHTTP.SetDefaultResponse(True, '');
 	FMockHTTP.SetResponse('', True, 'https://redirect.url/file');
+
+	{Setup mock context}
+	FMockContext := TMockCloudContext.Create;
+	FMockContextRef := FMockContext; {Keep interface reference}
+	FMockContext.SetHTTP(FMockHTTP);
+	FMockContext.SetIsPublicAccount(False);
+	FMockContext.SetPublicLink('testpubliclink');
+	OAuthToken.access_token := 'test_token';
+	OAuthToken.refresh_token := 'test_refresh';
+	FMockContext.SetOAuthToken(OAuthToken);
+	FMockContext.SetRefreshCSRFTokenResult(True);
 
 	FResolveShardResult := True;
 	FResolvedShardUrl := 'https://requested.shard/';
@@ -154,13 +160,6 @@ begin
 
 	FHashCalculator := TCloudHashCalculator.Create(TNullProgress.Create, TWindowsFileSystem.Create);
 
-	FIsPublicAccount := False;
-	FPublicLink := 'testpubliclink';
-	FOAuthToken.access_token := 'test_token';
-	FOAuthToken.refresh_token := 'test_refresh';
-	FRefreshTokenCalled := False;
-	FRefreshTokenResult := True;
-
 	FTempDir := TPath.Combine(TPath.GetTempPath, 'CloudFileDownloaderTest_' + IntToStr(GetCurrentThreadId));
 	if not TDirectory.Exists(FTempDir) then
 		TDirectory.CreateDirectory(FTempDir);
@@ -174,6 +173,7 @@ begin
 	FShardManager := nil;
 	FHashCalculator := nil;
 	FMockHTTPRef := nil; {Release interface reference, allows FMockHTTP to be freed}
+	FMockContextRef := nil;
 	CleanupTempFiles;
 end;
 
@@ -183,7 +183,7 @@ begin
 		Cipher := TNullCipher.Create;
 
 	FDownloader := TCloudFileDownloader.Create(
-		GetHTTP,
+		FMockContext,
 		FShardManager,
 		FHashCalculator,
 		Cipher,
@@ -191,10 +191,6 @@ begin
 		TNullLogger.Create,
 		TNullProgress.Create,
 		TNullRequest.Create,
-		GetOAuthToken,
-		IsPublicAccount,
-		GetPublicLink,
-		RefreshToken,
 		DoCryptFiles,
 		DoCryptFilenames
 	);
@@ -215,32 +211,6 @@ begin
 	end;
 end;
 
-function TCloudFileDownloaderTest.GetHTTP: ICloudHTTP;
-begin
-	Result := FMockHTTP;
-end;
-
-function TCloudFileDownloaderTest.GetOAuthToken: TCloudOAuth;
-begin
-	Result := FOAuthToken;
-end;
-
-function TCloudFileDownloaderTest.IsPublicAccount: Boolean;
-begin
-	Result := FIsPublicAccount;
-end;
-
-function TCloudFileDownloaderTest.GetPublicLink: WideString;
-begin
-	Result := FPublicLink;
-end;
-
-function TCloudFileDownloaderTest.RefreshToken: Boolean;
-begin
-	FRefreshTokenCalled := True;
-	Result := FRefreshTokenResult;
-end;
-
 {Construction tests}
 
 procedure TCloudFileDownloaderTest.TestCreate_InitializesCorrectly;
@@ -254,8 +224,8 @@ procedure TCloudFileDownloaderTest.TestGetSharedFileUrl_PublicAccount_IncludesPu
 var
 	URL: WideString;
 begin
-	FIsPublicAccount := True;
-	FPublicLink := 'mypubliclink';
+	FMockContext.SetIsPublicAccount(True);
+	FMockContext.SetPublicLink('mypubliclink');
 	URL := FDownloader.GetSharedFileUrl('/test/file.txt');
 	Assert.Contains(URL, 'mypubliclink', 'URL should contain public link');
 end;
@@ -264,8 +234,8 @@ procedure TCloudFileDownloaderTest.TestGetSharedFileUrl_PublicAccount_EncodesPat
 var
 	URL: WideString;
 begin
-	FIsPublicAccount := True;
-	FPublicLink := 'link';
+	FMockContext.SetIsPublicAccount(True);
+	FMockContext.SetPublicLink('link');
 	URL := FDownloader.GetSharedFileUrl('/path with spaces/file.txt');
 	Assert.Contains(URL, '%20', 'URL should encode spaces');
 end;
@@ -274,7 +244,7 @@ procedure TCloudFileDownloaderTest.TestGetSharedFileUrl_WithShardType_UsesCorrec
 var
 	URL: WideString;
 begin
-	FIsPublicAccount := True;
+	FMockContext.SetIsPublicAccount(True);
 	URL := FDownloader.GetSharedFileUrl('/test/file.txt', SHARD_TYPE_VIDEO);
 	Assert.Contains(URL, 'requested.shard', 'URL should use shard from ShardManager.ResolveShard');
 end;
@@ -283,7 +253,7 @@ procedure TCloudFileDownloaderTest.TestGetSharedFileUrl_DefaultShardType_UsesPub
 var
 	URL: WideString;
 begin
-	FIsPublicAccount := True;
+	FMockContext.SetIsPublicAccount(True);
 	URL := FDownloader.GetSharedFileUrl('/test/file.txt');
 	Assert.Contains(URL, 'public.shard', 'Default shard type should use public shard');
 end;
@@ -293,7 +263,7 @@ var
 	URL: WideString;
 begin
 	{GetSharedFileUrl only works for public accounts; private accounts use TempPublicCloud pattern}
-	FIsPublicAccount := False;
+	FMockContext.SetIsPublicAccount(False);
 	URL := FDownloader.GetSharedFileUrl('/test/file.txt');
 	Assert.IsEmpty(URL, 'Non-public account should return empty string');
 end;
@@ -307,7 +277,7 @@ var
 	DownloadResult: Integer;
 	FileContent: TBytes;
 begin
-	FIsPublicAccount := False;
+	FMockContext.SetIsPublicAccount(False);
 	LocalPath := GetTempFilePath('downloaded.txt');
 
 	FileContent := TEncoding.UTF8.GetBytes('Test file content');
@@ -325,7 +295,7 @@ var
 	FileContent: TBytes;
 	WrittenContent: string;
 begin
-	FIsPublicAccount := False;
+	FMockContext.SetIsPublicAccount(False);
 	LocalPath := GetTempFilePath('content_test.txt');
 
 	FileContent := TEncoding.UTF8.GetBytes('Expected content');
@@ -344,7 +314,7 @@ var
 	ResultHash: WideString;
 	FileContent: TBytes;
 begin
-	FIsPublicAccount := False;
+	FMockContext.SetIsPublicAccount(False);
 	LocalPath := GetTempFilePath('hash_test.txt');
 
 	FileContent := TEncoding.UTF8.GetBytes('Hash me');
@@ -362,7 +332,7 @@ var
 	ResultHash: WideString;
 	DownloadResult: Integer;
 begin
-	FIsPublicAccount := False;
+	FMockContext.SetIsPublicAccount(False);
 	LocalPath := GetTempFilePath('error_test.txt');
 
 	FMockHTTP.SetStreamResponse('download.shard', nil, FS_FILE_READERROR);
@@ -377,7 +347,7 @@ var
 	LocalPath: string;
 	ResultHash: WideString;
 begin
-	FIsPublicAccount := False;
+	FMockContext.SetIsPublicAccount(False);
 	LocalPath := GetTempFilePath('partial_delete.txt');
 
 	FMockHTTP.SetStreamResponse('download.shard', nil, FS_FILE_READERROR);
@@ -392,7 +362,7 @@ var
 	ResultHash: WideString;
 	DownloadResult: Integer;
 begin
-	FIsPublicAccount := False;
+	FMockContext.SetIsPublicAccount(False);
 
 	{Use invalid path that cannot be created}
 	DownloadResult := FDownloader.Download('/remote/file.txt', 'Z:\nonexistent\path\file.txt', ResultHash);
@@ -409,7 +379,7 @@ var
 	DownloadResult: Integer;
 	FileContent: TBytes;
 begin
-	FIsPublicAccount := True;
+	FMockContext.SetIsPublicAccount(True);
 	LocalPath := GetTempFilePath('shared_download.txt');
 
 	FileContent := TEncoding.UTF8.GetBytes('Shared content');
@@ -426,7 +396,7 @@ var
 	ResultHash: WideString;
 	DownloadResult: Integer;
 begin
-	FIsPublicAccount := True;
+	FMockContext.SetIsPublicAccount(True);
 	FShardManager.SetPublicShard('');
 	LocalPath := GetTempFilePath('no_shard.txt');
 
@@ -440,7 +410,7 @@ var
 	LocalPath: string;
 	ResultHash: WideString;
 begin
-	FIsPublicAccount := True;
+	FMockContext.SetIsPublicAccount(True);
 	LocalPath := GetTempFilePath('shared_error.txt');
 
 	FMockHTTP.SetStreamResponse('public.shard', nil, FS_FILE_READERROR);
@@ -460,7 +430,7 @@ var
 	NewShardManager: ICloudShardManager;
 	NewDownloader: ICloudFileDownloader;
 begin
-	FIsPublicAccount := False;
+	FMockContext.SetIsPublicAccount(False);
 	LocalPath := GetTempFilePath('dispatcher_resolve.txt');
 
 	{Create new shard manager without download shard set}
@@ -486,7 +456,7 @@ begin
 	FMockHTTP.SetStreamResponse('new.shard.url', FileContent, FS_FILE_OK);
 
 	NewDownloader := TCloudFileDownloader.Create(
-		GetHTTP,
+		FMockContext,
 		NewShardManager,
 		FHashCalculator,
 		TNullCipher.Create,
@@ -494,10 +464,6 @@ begin
 		TNullLogger.Create,
 		TNullProgress.Create,
 		TNullRequest.Create,
-		GetOAuthToken,
-		IsPublicAccount,
-		GetPublicLink,
-		RefreshToken,
 		False,
 		False
 	);
@@ -515,7 +481,7 @@ var
 	ResultHash: WideString;
 	FileContent: TBytes;
 begin
-	FIsPublicAccount := False;
+	FMockContext.SetIsPublicAccount(False);
 	LocalPath := GetTempFilePath('override_test.txt');
 
 	{Create shard manager with download override but no shard set}
@@ -541,7 +507,7 @@ begin
 	FMockHTTP.SetStreamResponse('override.shard', FileContent, FS_FILE_OK);
 
 	OverrideDownloader := TCloudFileDownloader.Create(
-		GetHTTP,
+		FMockContext,
 		OverrideManager,
 		FHashCalculator,
 		TNullCipher.Create,
@@ -549,10 +515,6 @@ begin
 		TNullLogger.Create,
 		TNullProgress.Create,
 		TNullRequest.Create,
-		GetOAuthToken,
-		IsPublicAccount,
-		GetPublicLink,
-		RefreshToken,
 		False,
 		False
 	);
@@ -572,7 +534,7 @@ var
 	FileContent: TBytes;
 	WrittenContent: string;
 begin
-	FIsPublicAccount := False;
+	FMockContext.SetIsPublicAccount(False);
 	LocalPath := GetTempFilePath('encrypted_test.txt');
 
 	{TNullCipher passes through content unchanged}
@@ -596,7 +558,7 @@ var
 	ResultHash: WideString;
 	FileContent: TBytes;
 begin
-	FIsPublicAccount := False;
+	FMockContext.SetIsPublicAccount(False);
 	{TNullCipher.DecryptFileName returns the filename unchanged}
 	CreateDownloader(False, True, TNullCipher.Create);
 
@@ -622,7 +584,7 @@ var
 	ResultHash: WideString;
 	FileContent: TBytes;
 begin
-	FIsPublicAccount := False;
+	FMockContext.SetIsPublicAccount(False);
 	LocalPath := GetTempFilePath('token_refresh.txt');
 
 	{First call returns token error, second succeeds}
@@ -633,7 +595,7 @@ begin
 
 	FDownloader.Download('/remote/file.txt', LocalPath, ResultHash);
 
-	Assert.IsTrue(FRefreshTokenCalled, 'RefreshToken should be called on token error');
+	Assert.IsTrue(FMockContext.WasRefreshCSRFTokenCalled, 'RefreshCSRFToken should be called on token error');
 end;
 
 {Download tests - HTTP calls verification}
@@ -644,7 +606,7 @@ var
 	ResultHash: WideString;
 	FileContent: TBytes;
 begin
-	FIsPublicAccount := False;
+	FMockContext.SetIsPublicAccount(False);
 	LocalPath := GetTempFilePath('progress_test.txt');
 
 	FileContent := TEncoding.UTF8.GetBytes('Content');
@@ -661,9 +623,12 @@ var
 	LocalPath: string;
 	ResultHash: WideString;
 	FileContent: TBytes;
+	OAuthToken: TCloudOAuth;
 begin
-	FIsPublicAccount := False;
-	FOAuthToken.access_token := 'my_oauth_token';
+	FMockContext.SetIsPublicAccount(False);
+	OAuthToken.access_token := 'my_oauth_token';
+	OAuthToken.refresh_token := '';
+	FMockContext.SetOAuthToken(OAuthToken);
 	LocalPath := GetTempFilePath('oauth_test.txt');
 
 	FileContent := TEncoding.UTF8.GetBytes('Content');

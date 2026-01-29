@@ -11,6 +11,7 @@ uses
 	CloudFileUploader,
 	CloudShardManager,
 	CloudHashCalculator,
+	CloudContext,
 	CloudOAuth,
 	CloudSpace,
 	CloudConstants,
@@ -24,6 +25,7 @@ uses
 	WindowsFileSystem,
 	CloudHTTP,
 	MockCloudHTTP,
+	MockCloudContext,
 	TokenRetryHelper,
 	TestHelper,
 	System.Classes,
@@ -60,19 +62,14 @@ type
 	private
 		FMockHTTP: TMockCloudHTTP;
 		FMockHTTPRef: ICloudHTTP; {Prevents premature destruction via interface refcounting}
+		FMockContext: TMockCloudContext;
+		FMockContextRef: ICloudContext;
 		FUploader: TTestableCloudFileUploader;
 		FShardManager: ICloudShardManager;
 		FHashCalculator: ICloudHashCalculator;
 		FSettings: TUploadSettings;
 		FTempDir: string;
-		FOAuthToken: TCloudOAuth;
 		FRetryOperation: IRetryOperation;
-		FIsPublicAccount: Boolean;
-		FAddByIdentityFirstResult: Integer;  {Result for first call - used to control CloudResultToFsResult}
-		FAddByIdentityNextResult: Integer;   {Result for subsequent calls}
-		FAddByIdentityCallCount: Integer;
-		FDeleteFileResult: Boolean;
-		FDeleteFileCalled: Boolean;
 
 		{Creates TTestableCloudFileUploader instance with test settings}
 		function CreateUploader: TTestableCloudFileUploader;
@@ -195,12 +192,31 @@ const
 {TCloudFileUploaderSplitTest}
 
 procedure TCloudFileUploaderSplitTest.Setup;
+var
+	OAuthToken: TCloudOAuth;
 begin
 	FMockHTTP := TMockCloudHTTP.Create;
 	FMockHTTPRef := FMockHTTP; {Hold interface reference to prevent premature destruction}
 	FMockHTTP.SetDefaultResponse(True, 'https://upload.shard/path 127.0.0.1 1');
 	{Set up response for /file/add endpoint used by AddFileByIdentity - needs valid JSON}
 	FMockHTTP.SetResponse('/file/add', True, '{"status":200,"body":"ok"}');
+
+	{Setup mock context}
+	FMockContext := TMockCloudContext.Create;
+	FMockContextRef := FMockContext;
+	FMockContext.SetHTTP(FMockHTTP);
+	FMockContext.SetIsPublicAccount(False);
+	FMockContext.SetUnitedParams('token=test&x-email=test@mail.ru');
+	FMockContext.SetCloudResultToFsResultResult(FS_FILE_OK);
+	FMockContext.SetDeleteFileResult(True);
+
+	OAuthToken.access_token := 'test_token';
+	OAuthToken.refresh_token := 'test_refresh';
+	FMockContext.SetOAuthToken(OAuthToken);
+
+	{Return False for GetUserSpace to skip quota check in tests}
+	FMockContext.SetGetUserSpaceResult(False, Default(TCloudSpace));
+
 	FTempDir := TPath.Combine(TPath.GetTempPath, 'CloudFileUploaderTest_' + TGUID.NewGuid.ToString);
 	TDirectory.CreateDirectory(FTempDir);
 
@@ -210,16 +226,6 @@ begin
 		function: WideString begin Result := ''; end, '', '');
 	FShardManager.SetUploadShard('https://upload.shard/');
 	FHashCalculator := TCloudHashCalculator.Create(TNullProgress.Create, TWindowsFileSystem.Create);
-
-	FOAuthToken.access_token := 'test_token';
-	FOAuthToken.refresh_token := 'test_refresh';
-
-	FIsPublicAccount := False;
-	FAddByIdentityFirstResult := FS_FILE_OK;
-	FAddByIdentityNextResult := FS_FILE_OK;
-	FAddByIdentityCallCount := 0;
-	FDeleteFileResult := True;
-	FDeleteFileCalled := False;
 
 	{Create retry operation - callbacks for token refresh and result mapping}
 	FRetryOperation := TRetryOperation.Create(
@@ -251,16 +257,14 @@ begin
 	FRetryOperation := nil;
 	FMockHTTP := nil;
 	FMockHTTPRef := nil; {Release interface reference - triggers destruction}
+	FMockContextRef := nil;
 	CleanupTempFiles;
 end;
 
 function TCloudFileUploaderSplitTest.CreateUploader: TTestableCloudFileUploader;
-var
-	TestSelf: TCloudFileUploaderSplitTest;
 begin
-	TestSelf := Self;
 	Result := TTestableCloudFileUploader.Create(
-		function: ICloudHTTP begin Result := TestSelf.FMockHTTP; end,
+		FMockContext,
 		FShardManager,
 		FHashCalculator,
 		TNullCipher.Create,
@@ -269,20 +273,7 @@ begin
 		TNullProgress.Create,
 		TNullRequest.Create,
 		TNullTCHandler.Create,
-		function: TCloudOAuth begin Result := TestSelf.FOAuthToken; end,
-		function: Boolean begin Result := TestSelf.FIsPublicAccount; end,
-		function: IRetryOperation begin Result := TestSelf.FRetryOperation; end,
-		function: WideString begin Result := 'token=test&x-email=test@mail.ru'; end,
-		function(JSON: WideString; ErrorPrefix: WideString): Integer
-		begin
-			Inc(TestSelf.FAddByIdentityCallCount);
-			if TestSelf.FAddByIdentityCallCount = 1 then
-				Result := TestSelf.FAddByIdentityFirstResult
-			else
-				Result := TestSelf.FAddByIdentityNextResult;
-		end,
-		function(Path: WideString): Boolean begin TestSelf.FDeleteFileCalled := True; Result := TestSelf.FDeleteFileResult; end,
-		function(var SpaceInfo: TCloudSpace): Boolean begin Result := False; end, {Skip quota check in tests}
+		FRetryOperation,
 		False, {DoCryptFiles}
 		False, {DoCryptFilenames}
 		FSettings);
@@ -329,7 +320,7 @@ var
 begin
 	{Enable hash precalculation so dedup is checked first}
 	FSettings.PrecalculateHash := True;
-	FAddByIdentityFirstResult := FS_FILE_OK; {Hash match found - file already exists}
+	FMockContext.SetCloudResultToFsResultResult(FS_FILE_OK); {Hash match found - file already exists}
 
 	FUploader := CreateUploader;
 	LocalPath := CreateTestFile('dedup.txt', 512);
@@ -338,7 +329,7 @@ begin
 
 	{When hash dedup succeeds, no upload should occur}
 	Assert.AreEqual(CLOUD_OPERATION_OK, ResultCode, 'Hash dedup should return OK');
-	Assert.IsTrue(FAddByIdentityCallCount > 0, 'AddFileByIdentity should have been called for dedup check');
+	Assert.IsTrue(FMockContext.GetCloudResultToFsResultCallCount > 0, 'AddFileByIdentity should have been called for dedup check');
 	Assert.AreEqual(0, FMockHTTP.GetUploadCount, 'No actual upload should occur when dedup succeeds');
 end;
 
@@ -372,8 +363,8 @@ begin
 
 	{Upload succeeds, but AddFileByIdentity returns EXISTS for chunk, OK for CRC}
 	FMockHTTP.SetPutFileResponse('', SHA1_HASH_40, FS_FILE_OK);
-	FAddByIdentityFirstResult := FS_FILE_EXISTS;
-	FAddByIdentityNextResult := FS_FILE_OK; {CRC file registration succeeds}
+	FMockContext.QueueCloudResultToFsResult(FS_FILE_EXISTS); {First call returns EXISTS}
+	FMockContext.SetCloudResultToFsResultResult(FS_FILE_OK); {Subsequent calls return OK}
 
 	ResultCode := FUploader.TestPutFileSplit(LocalPath, '/remote/ignorechunk.txt', CLOUD_CONFLICT_STRICT, ChunkOverwriteIgnore);
 
@@ -391,7 +382,7 @@ begin
 
 	{Upload succeeds, but AddFileByIdentity returns EXISTS}
 	FMockHTTP.SetPutFileResponse('', SHA1_HASH_40, FS_FILE_OK);
-	FAddByIdentityFirstResult := FS_FILE_EXISTS;
+	FMockContext.SetCloudResultToFsResultResult(FS_FILE_EXISTS);
 
 	ResultCode := FUploader.TestPutFileSplit(LocalPath, '/remote/abortchunk.txt', CLOUD_CONFLICT_STRICT, ChunkOverwriteAbort);
 
@@ -410,14 +401,14 @@ begin
 	{Upload succeeds, AddFileByIdentity returns EXISTS first, then OK after delete}
 	FMockHTTP.SetPutFileResponse('', SHA1_HASH_40, FS_FILE_OK);
 	{First call returns EXISTS triggering delete, subsequent calls return OK after successful delete}
-	FAddByIdentityFirstResult := FS_FILE_EXISTS;
-	FAddByIdentityNextResult := FS_FILE_OK;
-	FDeleteFileResult := True;
+	FMockContext.QueueCloudResultToFsResult(FS_FILE_EXISTS);
+	FMockContext.SetCloudResultToFsResultResult(FS_FILE_OK);
+	FMockContext.SetDeleteFileResult(True);
 
 	ResultCode := FUploader.TestPutFileSplit(LocalPath, '/remote/overwrite.txt', CLOUD_CONFLICT_STRICT, ChunkOverwrite);
 
 	{In overwrite mode, should delete existing and retry successfully}
-	Assert.IsTrue(FDeleteFileCalled, 'Should call delete when EXISTS returned');
+	Assert.IsTrue(FMockContext.WasDeleteFileCalled, 'Should call delete when EXISTS returned');
 	Assert.AreEqual(FS_FILE_OK, ResultCode, 'Should succeed after delete and retry');
 end;
 
@@ -431,9 +422,8 @@ begin
 
 	{Upload succeeds, but AddFileByIdentity returns EXISTS and delete fails}
 	FMockHTTP.SetPutFileResponse('', SHA1_HASH_40, FS_FILE_OK);
-	FAddByIdentityFirstResult := FS_FILE_EXISTS;
-	FAddByIdentityNextResult := FS_FILE_EXISTS; {Won't be reached - aborts on delete failure}
-	FDeleteFileResult := False; {Delete will fail}
+	FMockContext.SetCloudResultToFsResultResult(FS_FILE_EXISTS);
+	FMockContext.SetDeleteFileResult(False); {Delete will fail}
 
 	ResultCode := FUploader.TestPutFileSplit(LocalPath, '/remote/deletefail.txt', CLOUD_CONFLICT_STRICT, ChunkOverwrite);
 
@@ -455,8 +445,7 @@ begin
 
 	{First upload fails, but Ignore mode continues}
 	FMockHTTP.SetPutFileResponse('', '', FS_FILE_WRITEERROR);
-	FAddByIdentityFirstResult := FS_FILE_OK; {Registration succeeds after ignored error}
-	FAddByIdentityNextResult := FS_FILE_OK;
+	FMockContext.SetCloudResultToFsResultResult(FS_FILE_OK); {Registration succeeds after ignored error}
 
 	ResultCode := FUploader.TestPutFileSplit(LocalPath, '/remote/ignoreerror.txt', CLOUD_CONFLICT_STRICT, ChunkOverwrite);
 
@@ -500,8 +489,7 @@ begin
 	FMockHTTP.QueuePutFileResponse('', '', FS_FILE_WRITEERROR);
 	FMockHTTP.QueuePutFileResponse('', SHA1_HASH_40, FS_FILE_OK);
 	FMockHTTP.QueuePutFileResponse('', SHA1_HASH_40, FS_FILE_OK); {CRC file upload}
-	FAddByIdentityFirstResult := FS_FILE_OK;
-	FAddByIdentityNextResult := FS_FILE_OK;
+	FMockContext.SetCloudResultToFsResultResult(FS_FILE_OK);
 
 	ResultCode := FUploader.TestPutFileSplit(LocalPath, '/remote/retryok.txt', CLOUD_CONFLICT_STRICT, ChunkOverwrite);
 

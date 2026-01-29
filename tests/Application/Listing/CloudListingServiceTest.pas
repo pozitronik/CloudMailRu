@@ -4,6 +4,7 @@ interface
 
 uses
 	CloudListingService,
+	CloudContext,
 	CloudDirItem,
 	CloudDirItemList,
 	CloudIncomingInviteList,
@@ -15,6 +16,7 @@ uses
 	CloudHTTP,
 	FileCipher,
 	MockCloudHTTP,
+	MockCloudContext,
 	TokenRetryHelper,
 	TestHelper,
 	System.SysUtils,
@@ -27,17 +29,9 @@ type
 	private
 		FService: ICloudListingService;
 		FMockHTTP: TMockCloudHTTP;
-		FIsPublicAccount: Boolean;
-		FUnitedParams: WideString;
-		FPublicLink: WideString;
+		FMockContext: TMockCloudContext;
+		FMockContextRef: ICloudContext;
 		FRetryOperation: IRetryOperation;
-
-		function GetHTTP: ICloudHTTP;
-		function IsPublicAccount: Boolean;
-		function GetUnitedParams: WideString;
-		function GetPublicLink: WideString;
-		function CloudResultToBoolean(JSON: WideString; ErrorPrefix: WideString): Boolean;
-		function CloudResultToBooleanFromResult(OperationResult: TCloudOperationResult; ErrorPrefix: WideString): Boolean;
 	public
 		[Setup]
 		procedure Setup;
@@ -116,9 +110,13 @@ begin
 	FMockHTTP := TMockCloudHTTP.Create;
 	FMockHTTP.SetDefaultResponse(True, '{"status":200,"body":{"list":[]}}');
 
-	FIsPublicAccount := False;
-	FUnitedParams := 'token=test&x-email=test@mail.ru';
-	FPublicLink := 'public_weblink_123';
+	{Setup mock context}
+	FMockContext := TMockCloudContext.Create;
+	FMockContextRef := FMockContext;
+	FMockContext.SetHTTP(FMockHTTP);
+	FMockContext.SetIsPublicAccount(False);
+	FMockContext.SetUnitedParams('token=test&x-email=test@mail.ru');
+	FMockContext.SetPublicLink('public_weblink_123');
 
 	{Create retry operation for tests}
 	FRetryOperation := TRetryOperation.Create(
@@ -130,54 +128,14 @@ begin
 		3 {MaxRetries}
 	);
 
-	FService := TCloudListingService.Create(
-		GetHTTP,
-		TNullCipher.Create,
-		TNullLogger.Create,
-		FRetryOperation,
-		IsPublicAccount,
-		GetUnitedParams,
-		GetPublicLink,
-		CloudResultToBoolean,
-		CloudResultToBooleanFromResult,
-		False {DoCryptFilenames}
-	);
+	FService := TCloudListingService.Create(FMockContext, TNullCipher.Create, TNullLogger.Create, FRetryOperation, False);
 end;
 
 procedure TCloudListingServiceTest.TearDown;
 begin
 	FService := nil;
-		FRetryOperation := nil;
-end;
-
-function TCloudListingServiceTest.GetHTTP: ICloudHTTP;
-begin
-	Result := FMockHTTP;
-end;
-
-function TCloudListingServiceTest.IsPublicAccount: Boolean;
-begin
-	Result := FIsPublicAccount;
-end;
-
-function TCloudListingServiceTest.GetUnitedParams: WideString;
-begin
-	Result := FUnitedParams;
-end;
-
-function TCloudListingServiceTest.GetPublicLink: WideString;
-begin
-	Result := FPublicLink;
-end;
-
-function TCloudListingServiceTest.CloudResultToBoolean(JSON: WideString; ErrorPrefix: WideString): Boolean;
-begin
-	Result := Pos(WideString('"status":200'), JSON) > 0;
-end;
-
-function TCloudListingServiceTest.CloudResultToBooleanFromResult(OperationResult: TCloudOperationResult; ErrorPrefix: WideString): Boolean;
-begin
-	Result := OperationResult.OperationStatus = 200;
+	FRetryOperation := nil;
+	FMockContextRef := nil;
 end;
 
 {Construction tests}
@@ -208,7 +166,7 @@ var
 	Listing: TCloudDirItemList;
 	Success: Boolean;
 begin
-	FIsPublicAccount := True;
+	FMockContext.SetIsPublicAccount(True);
 	FMockHTTP.SetDefaultResponse(True, '{"status":200,"body":{"list":[]}}');
 
 	Success := FService.GetDirectory('/test', Listing);
@@ -225,7 +183,7 @@ var
 	Listing: TCloudDirItemList;
 	Success: Boolean;
 begin
-	FIsPublicAccount := True;
+	FMockContext.SetIsPublicAccount(True);
 
 	Success := FService.GetSharedLinks(Listing);
 
@@ -252,7 +210,7 @@ var
 	Listing: TCloudIncomingInviteList;
 	Success: Boolean;
 begin
-	FIsPublicAccount := True;
+	FMockContext.SetIsPublicAccount(True);
 
 	Success := FService.GetIncomingInvites(Listing);
 
@@ -298,7 +256,7 @@ var
 	Listing: TCloudDirItemList;
 	Success: Boolean;
 begin
-	FIsPublicAccount := True;
+	FMockContext.SetIsPublicAccount(True);
 
 	Success := FService.GetTrashbin(Listing);
 
@@ -339,7 +297,7 @@ var
 	FileInfo: TCloudDirItem;
 	Success: Boolean;
 begin
-	FIsPublicAccount := True;
+	FMockContext.SetIsPublicAccount(True);
 	FMockHTTP.SetDefaultResponse(True,
 		'{"status":200,"body":{"name":"test.txt","size":1024,"type":"file"}}');
 
@@ -356,7 +314,7 @@ procedure TCloudListingServiceTest.TestTrashbinRestore_PublicAccount_ReturnsFals
 var
 	Success: Boolean;
 begin
-	FIsPublicAccount := True;
+	FMockContext.SetIsPublicAccount(True);
 
 	Success := FService.TrashbinRestore('/deleted/file.txt', 12345);
 
@@ -380,7 +338,7 @@ procedure TCloudListingServiceTest.TestTrashbinEmpty_PublicAccount_ReturnsFalse;
 var
 	Success: Boolean;
 begin
-	FIsPublicAccount := True;
+	FMockContext.SetIsPublicAccount(True);
 
 	Success := FService.TrashbinEmpty();
 
@@ -432,7 +390,7 @@ end;
 
 procedure TCloudListingServiceTest.TestLogUserSpaceInfo_PublicAccount_DoesNotLog;
 begin
-	FIsPublicAccount := True;
+	FMockContext.SetIsPublicAccount(True);
 
 	{Should not throw, just exit early for public accounts}
 	FService.LogUserSpaceInfo('test@mail.ru');
@@ -445,7 +403,7 @@ procedure TCloudListingServiceTest.TestLogUserSpaceInfo_Success_LogsSpaceInfo;
 begin
 	{Set up response for GetUserSpace}
 	FMockHTTP.SetDefaultResponse(True, '{"status":200,"body":{"bytes_total":10737418240,"bytes_used":5368709120,"overquota":false}}');
-	FIsPublicAccount := False;
+	FMockContext.SetIsPublicAccount(False);
 
 	{Should log space info without throwing}
 	FService.LogUserSpaceInfo('test@mail.ru');

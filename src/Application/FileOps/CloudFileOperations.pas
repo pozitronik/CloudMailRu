@@ -5,8 +5,8 @@ unit CloudFileOperations;
 interface
 
 uses
-	CloudCallbackTypes,
 	CloudConstants,
+	CloudContext,
 	CloudHTTP,
 	LanguageStrings,
 	WFXTypes,
@@ -40,13 +40,11 @@ type
 	{Implementation of file operations service}
 	TCloudFileOperations = class(TInterfacedObject, ICloudFileOperations)
 	private
-		FHTTP: ICloudHTTP;
+		FContext: ICloudContext;
 		FLogger: ILogger;
 		FRetryOperation: IRetryOperation;
-		FIsPublicAccount: TGetBoolFunc;
-		FGetUnitedParams: TGetStringFunc;
 	public
-		constructor Create(HTTP: ICloudHTTP; Logger: ILogger; RetryOperation: IRetryOperation; IsPublicAccount: TGetBoolFunc; GetUnitedParams: TGetStringFunc);
+		constructor Create(Context: ICloudContext; Logger: ILogger; RetryOperation: IRetryOperation);
 
 		{ICloudFileOperations implementation}
 		function CreateDirectory(Path: WideString): Boolean;
@@ -63,65 +61,63 @@ implementation
 
 {TCloudFileOperations}
 
-constructor TCloudFileOperations.Create(HTTP: ICloudHTTP; Logger: ILogger; RetryOperation: IRetryOperation; IsPublicAccount: TGetBoolFunc; GetUnitedParams: TGetStringFunc);
+constructor TCloudFileOperations.Create(Context: ICloudContext; Logger: ILogger; RetryOperation: IRetryOperation);
 begin
 	inherited Create;
-	FHTTP := HTTP;
+	FContext := Context;
 	FLogger := Logger;
 	FRetryOperation := RetryOperation;
-	FIsPublicAccount := IsPublicAccount;
-	FGetUnitedParams := GetUnitedParams;
 end;
 
 function TCloudFileOperations.CreateDirectory(Path: WideString): Boolean;
 begin
 	Result := False;
-	if FIsPublicAccount() then
+	if FContext.IsPublicAccount then
 		Exit;
-	FHTTP.SetProgressNames(CREATE_DIRECTORY, Path);
-	Result := FRetryOperation.PostFormBoolean(API_FOLDER_ADD + '?' + FGetUnitedParams(), Format('home=/%s&conflict', [PathToUrl(Path)]), EmptyWideStr);
+	FContext.GetHTTP.SetProgressNames(CREATE_DIRECTORY, Path);
+	Result := FRetryOperation.PostFormBoolean(API_FOLDER_ADD + '?' + FContext.GetUnitedParams, Format('home=/%s&conflict', [PathToUrl(Path)]), EmptyWideStr);
 end;
 
 function TCloudFileOperations.RemoveDirectory(Path: WideString): Boolean;
 begin
 	Result := False;
-	if FIsPublicAccount() then
+	if FContext.IsPublicAccount then
 		Exit;
-	FHTTP.SetProgressNames(DELETE_DIR, Path);
+	FContext.GetHTTP.SetProgressNames(DELETE_DIR, Path);
 	{API always returns true even if path doesn't exist}
-	Result := FRetryOperation.PostFormBoolean(API_FILE_REMOVE + '?' + FGetUnitedParams(), Format('home=/%s&conflict', [IncludeSlash(PathToUrl(Path))]), PREFIX_ERR_DELETE_DIR);
+	Result := FRetryOperation.PostFormBoolean(API_FILE_REMOVE + '?' + FContext.GetUnitedParams, Format('home=/%s&conflict', [IncludeSlash(PathToUrl(Path))]), PREFIX_ERR_DELETE_DIR);
 end;
 
 function TCloudFileOperations.Delete(Path: WideString): Boolean;
 begin
 	Result := False;
-	if FIsPublicAccount() then
+	if FContext.IsPublicAccount then
 		Exit;
-	FHTTP.SetProgressNames(DELETE_FILE, Path);
-	Result := FRetryOperation.PostFormBoolean(API_FILE_REMOVE + '?' + FGetUnitedParams(), Format('home=/%s&conflict', [PathToUrl(Path)]), PREFIX_ERR_DELETE_FILE);
+	FContext.GetHTTP.SetProgressNames(DELETE_FILE, Path);
+	Result := FRetryOperation.PostFormBoolean(API_FILE_REMOVE + '?' + FContext.GetUnitedParams, Format('home=/%s&conflict', [PathToUrl(Path)]), PREFIX_ERR_DELETE_FILE);
 end;
 
 function TCloudFileOperations.Rename(OldName, NewName: WideString): Integer;
 begin
 	Result := FS_FILE_WRITEERROR;
-	if FIsPublicAccount() then
+	if FContext.IsPublicAccount then
 		Exit;
-	Result := FRetryOperation.PostFormInteger(API_FILE_RENAME + '?' + FGetUnitedParams(), Format('home=%s&name=%s', [PathToUrl(OldName), PathToUrl(NewName)]), PREFIX_ERR_FILE_RENAME);
+	Result := FRetryOperation.PostFormInteger(API_FILE_RENAME + '?' + FContext.GetUnitedParams, Format('home=%s&name=%s', [PathToUrl(OldName), PathToUrl(NewName)]), PREFIX_ERR_FILE_RENAME);
 end;
 
 function TCloudFileOperations.MoveToPath(OldName, ToPath: WideString): Integer;
 begin
-	if FIsPublicAccount() then
+	if FContext.IsPublicAccount then
 		Exit(FS_FILE_NOTSUPPORTED);
-	Result := FRetryOperation.PostFormInteger(API_FILE_MOVE + '?' + FGetUnitedParams(), Format('home=%s&folder=%s&conflict', [PathToUrl(OldName), PathToUrl(ToPath)]), PREFIX_ERR_FILE_MOVE);
+	Result := FRetryOperation.PostFormInteger(API_FILE_MOVE + '?' + FContext.GetUnitedParams, Format('home=%s&folder=%s&conflict', [PathToUrl(OldName), PathToUrl(ToPath)]), PREFIX_ERR_FILE_MOVE);
 end;
 
 function TCloudFileOperations.CopyToPath(OldName, ToPath: WideString): Integer;
 begin
-	if FIsPublicAccount() then
+	if FContext.IsPublicAccount then
 		Exit(FS_FILE_NOTSUPPORTED);
-	FHTTP.SetProgressNames(OldName, Format('%s%s', [IncludeSlash(ToPath), ExtractUniversalFileName(OldName)]));
-	Result := FRetryOperation.PostFormInteger(API_FILE_COPY + '?' + FGetUnitedParams(), Format('home=/%s&folder=/%s&conflict', [PathToUrl(OldName), PathToUrl(ToPath)]), PREFIX_ERR_FILE_COPY);
+	FContext.GetHTTP.SetProgressNames(OldName, Format('%s%s', [IncludeSlash(ToPath), ExtractUniversalFileName(OldName)]));
+	Result := FRetryOperation.PostFormInteger(API_FILE_COPY + '?' + FContext.GetUnitedParams, Format('home=/%s&folder=/%s&conflict', [PathToUrl(OldName), PathToUrl(ToPath)]), PREFIX_ERR_FILE_COPY);
 end;
 
 function TCloudFileOperations.Move(OldName, NewName: WideString): Integer;

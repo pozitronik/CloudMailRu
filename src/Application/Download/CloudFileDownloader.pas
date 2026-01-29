@@ -21,7 +21,7 @@ uses
 	CloudHashCalculator,
 	CloudHTTP,
 	CloudErrorMapper,
-	CloudCallbackTypes,
+	CloudContext,
 	WindowsFileSystem,
 	DCPbase64;
 
@@ -40,8 +40,7 @@ type
 	{File download service - handles both regular and shared account downloads}
 	TCloudFileDownloader = class(TInterfacedObject, ICloudFileDownloader)
 	private
-		{Callbacks for CloudMailRu state access}
-		FGetHTTP: TGetHTTPFunc;
+		FContext: ICloudContext;
 		FShardManager: ICloudShardManager;
 		FHashCalculator: ICloudHashCalculator;
 		FCipher: ICipher;
@@ -49,10 +48,6 @@ type
 		FLogger: ILogger;
 		FProgress: IProgress;
 		FRequest: IRequest;
-		FGetOAuthToken: TGetOAuthTokenFunc;
-		FIsPublicAccount: TGetBoolFunc;
-		FGetPublicLink: TGetStringFunc;
-		FRefreshToken: TGetBoolFunc;
 		FDoCryptFiles: Boolean;
 		FDoCryptFilenames: Boolean;
 
@@ -60,7 +55,7 @@ type
 		function DownloadRegular(RemotePath, LocalPath: WideString; var ResultHash: WideString; LogErrors: Boolean): Integer;
 		function DownloadShared(RemotePath, LocalPath: WideString; var ResultHash: WideString; LogErrors: Boolean): Integer;
 	public
-		constructor Create(GetHTTP: TGetHTTPFunc; ShardManager: ICloudShardManager; HashCalculator: ICloudHashCalculator; Cipher: ICipher; FileSystem: IFileSystem; Logger: ILogger; Progress: IProgress; Request: IRequest; GetOAuthToken: TGetOAuthTokenFunc; IsPublicAccount: TGetBoolFunc; GetPublicLink: TGetStringFunc; RefreshToken: TGetBoolFunc; DoCryptFiles, DoCryptFilenames: Boolean);
+		constructor Create(Context: ICloudContext; ShardManager: ICloudShardManager; HashCalculator: ICloudHashCalculator; Cipher: ICipher; FileSystem: IFileSystem; Logger: ILogger; Progress: IProgress; Request: IRequest; DoCryptFiles, DoCryptFilenames: Boolean);
 
 		{ICloudFileDownloader}
 		function Download(RemotePath, LocalPath: WideString; var ResultHash: WideString; LogErrors: Boolean = True): Integer;
@@ -75,10 +70,10 @@ uses
 
 {TCloudFileDownloader}
 
-constructor TCloudFileDownloader.Create(GetHTTP: TGetHTTPFunc; ShardManager: ICloudShardManager; HashCalculator: ICloudHashCalculator; Cipher: ICipher; FileSystem: IFileSystem; Logger: ILogger; Progress: IProgress; Request: IRequest; GetOAuthToken: TGetOAuthTokenFunc; IsPublicAccount: TGetBoolFunc; GetPublicLink: TGetStringFunc; RefreshToken: TGetBoolFunc; DoCryptFiles, DoCryptFilenames: Boolean);
+constructor TCloudFileDownloader.Create(Context: ICloudContext; ShardManager: ICloudShardManager; HashCalculator: ICloudHashCalculator; Cipher: ICipher; FileSystem: IFileSystem; Logger: ILogger; Progress: IProgress; Request: IRequest; DoCryptFiles, DoCryptFilenames: Boolean);
 begin
 	inherited Create;
-	FGetHTTP := GetHTTP;
+	FContext := Context;
 	FShardManager := ShardManager;
 	FHashCalculator := HashCalculator;
 	FCipher := Cipher;
@@ -86,18 +81,14 @@ begin
 	FLogger := Logger;
 	FProgress := Progress;
 	FRequest := Request;
-	FGetOAuthToken := GetOAuthToken;
-	FIsPublicAccount := IsPublicAccount;
-	FGetPublicLink := GetPublicLink;
-	FRefreshToken := RefreshToken;
 	FDoCryptFiles := DoCryptFiles;
 	FDoCryptFilenames := DoCryptFilenames;
 end;
 
 function TCloudFileDownloader.Download(RemotePath, LocalPath: WideString; var ResultHash: WideString; LogErrors: Boolean): Integer;
 begin
-	FGetHTTP().SetProgressNames(RemotePath, LocalPath);
-	if FIsPublicAccount() then
+	FContext.GetHTTP.SetProgressNames(RemotePath, LocalPath);
+	if FContext.IsPublicAccount then
 		Result := DownloadShared(RemotePath, LocalPath, ResultHash, LogErrors)
 	else
 		Result := DownloadRegular(RemotePath, LocalPath, ResultHash, LogErrors);
@@ -128,8 +119,8 @@ begin
 		end else begin
 			{OAuth uses different dispatcher endpoint that returns plain text URL}
 			Progress := False;
-			OAuthToken := FGetOAuthToken();
-			if FGetHTTP().GetPage(Format('%s/d?token=%s', [OAUTH_DISPATCHER_URL, OAuthToken.access_token]), DispatcherResponse, Progress) then
+			OAuthToken := FContext.GetOAuthToken;
+			if FContext.GetHTTP.GetPage(Format('%s/d?token=%s', [OAUTH_DISPATCHER_URL, OAuthToken.access_token]), DispatcherResponse, Progress) then
 			begin
 				{Response format: "URL IP COUNT", extract the URL (first word)}
 				DownloadShard := Trim(Copy(DispatcherResponse, 1, Pos(' ', DispatcherResponse) - 1));
@@ -157,19 +148,19 @@ begin
 	end;
 
 	{OAuth download endpoint blocks browser-like User-Agents (Mozilla/*)}
-	SavedUserAgent := FGetHTTP().HTTP.Request.UserAgent;
-	FGetHTTP().HTTP.Request.UserAgent := OAUTH_CLIENT_ID;
+	SavedUserAgent := FContext.GetHTTP.HTTP.Request.UserAgent;
+	FContext.GetHTTP.HTTP.Request.UserAgent := OAUTH_CLIENT_ID;
 	try
-		OAuthToken := FGetOAuthToken();
+		OAuthToken := FContext.GetOAuthToken;
 		if FDoCryptFiles then //Загрузка файла в память, дешифрация в файл
 		begin
 			MemoryStream := TMemoryStream.Create;
 			try
 				{OAuth requires client_id and token parameters for download authentication}
 				URL := Format('%s%s?client_id=%s&token=%s', [DownloadShard, PathToUrl(RemotePath, False), OAUTH_CLIENT_ID, OAuthToken.access_token]);
-				Result := FGetHTTP().GetFile(URL, MemoryStream, LogErrors);
+				Result := FContext.GetHTTP.GetFile(URL, MemoryStream, LogErrors);
 
-				if (CLOUD_ERROR_TOKEN_OUTDATED = Result) and FRefreshToken() then
+				if (CLOUD_ERROR_TOKEN_OUTDATED = Result) and FContext.RefreshCSRFToken then
 					Exit(DownloadRegular(RemotePath, LocalPath, ResultHash, LogErrors));
 
 				if Result in [FS_FILE_NOTSUPPORTED] then //this code returned on shard connection error
@@ -202,8 +193,8 @@ begin
 			end;
 		end else begin
 			{OAuth requires client_id and token parameters for download authentication}
-			Result := FGetHTTP().GetFile(Format('%s%s?client_id=%s&token=%s', [DownloadShard, PathToUrl(RemotePath, False), OAUTH_CLIENT_ID, OAuthToken.access_token]), FileStream, LogErrors);
-			if (CLOUD_ERROR_TOKEN_OUTDATED = Result) and FRefreshToken() then
+			Result := FContext.GetHTTP.GetFile(Format('%s%s?client_id=%s&token=%s', [DownloadShard, PathToUrl(RemotePath, False), OAUTH_CLIENT_ID, OAuthToken.access_token]), FileStream, LogErrors);
+			if (CLOUD_ERROR_TOKEN_OUTDATED = Result) and FContext.RefreshCSRFToken then
 				Exit(DownloadRegular(RemotePath, LocalPath, ResultHash, LogErrors));
 			if ((Result in [FS_FILE_OK]) and (EmptyWideStr = ResultHash)) then
 				ResultHash := FHashCalculator.CalculateHash(FileStream, CALCULATING_HASH);
@@ -211,7 +202,7 @@ begin
 
 		FlushFileBuffers(FileStream.Handle);
 	finally
-		FGetHTTP().HTTP.Request.UserAgent := SavedUserAgent;
+		FContext.GetHTTP.HTTP.Request.UserAgent := SavedUserAgent;
 		FileStream.Free;
 	end;
 
@@ -224,7 +215,7 @@ function TCloudFileDownloader.GetSharedFileUrl(RemotePath: WideString; ShardType
 var
 	usedShard: WideString;
 begin
-	if not FIsPublicAccount() then
+	if not FContext.IsPublicAccount then
 		Exit(EmptyWideStr); {Only valid for public accounts; private accounts use TempPublicCloud}
 
 	if ShardType = SHARD_TYPE_DEFAULT then
@@ -235,7 +226,7 @@ begin
 		Exit(EmptyWideStr);
 	end;
 
-	Result := Format('%s%s%s', [IncludeSlash(usedShard), IncludeSlash(FGetPublicLink()), PathToUrl(RemotePath, True, True)]);
+	Result := Format('%s%s%s', [IncludeSlash(usedShard), IncludeSlash(FContext.GetPublicLink), PathToUrl(RemotePath, True, True)]);
 end;
 
 function TCloudFileDownloader.DownloadShared(RemotePath, LocalPath: WideString; var ResultHash: WideString; LogErrors: Boolean): Integer;
@@ -255,7 +246,7 @@ begin
 		end;
 	end;
 	try
-		Result := FGetHTTP().GetFile(GetSharedFileUrl(RemotePath), FileStream, LogErrors);
+		Result := FContext.GetHTTP.GetFile(GetSharedFileUrl(RemotePath), FileStream, LogErrors);
 		if ((Result in [FS_FILE_OK]) and (EmptyWideStr = ResultHash)) then
 			ResultHash := FHashCalculator.CalculateHash(FileStream, CALCULATING_HASH);
 		FlushFileBuffers(FileStream.Handle);

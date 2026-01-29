@@ -6,6 +6,7 @@ uses
 	CloudFileUploader,
 	CloudShardManager,
 	CloudHashCalculator,
+	CloudContext,
 	CloudOAuth,
 	CloudSpace,
 	CloudFileIdentity,
@@ -20,6 +21,7 @@ uses
 	CloudHTTP,
 	WindowsFileSystem,
 	MockCloudHTTP,
+	MockCloudContext,
 	TokenRetryHelper,
 	TestHelper,
 	System.Classes,
@@ -35,20 +37,10 @@ type
 		FShardManager: ICloudShardManager;
 		FHashCalculator: ICloudHashCalculator;
 		FMockHTTP: TMockCloudHTTP;
-		FIsPublicAccount: Boolean;
-		FOAuthToken: TCloudOAuth;
+		FMockContext: TMockCloudContext;
+		FMockContextRef: ICloudContext;
 		FSettings: TUploadSettings;
-		FDeleteFileCalled: Boolean;
 		FRetryOperation: IRetryOperation;
-
-		function GetHTTP: ICloudHTTP;
-		function GetOAuthToken: TCloudOAuth;
-		function IsPublicAccount: Boolean;
-		function GetRetryOperation: IRetryOperation;
-		function GetUnitedParams: WideString;
-		function CloudResultToFsResult(JSON: WideString; ErrorPrefix: WideString): Integer;
-		function DeleteFile(Path: WideString): Boolean;
-		function GetUserSpace(var SpaceInfo: TCloudSpace): Boolean;
 	public
 		[Setup]
 		procedure Setup;
@@ -81,11 +73,27 @@ implementation
 { TCloudFileUploaderTest }
 
 procedure TCloudFileUploaderTest.Setup;
+var
+	OAuthToken: TCloudOAuth;
 begin
 	FMockHTTP := TMockCloudHTTP.Create;
 	FMockHTTP.SetDefaultResponse(True, 'https://upload.shard/path 127.0.0.1 1');
 	{Set up successful upload response - returns 40-char hash}
 	FMockHTTP.SetPutFileResponse('', 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', FS_FILE_OK);
+
+	{Setup mock context}
+	FMockContext := TMockCloudContext.Create;
+	FMockContextRef := FMockContext;
+	FMockContext.SetHTTP(FMockHTTP);
+	FMockContext.SetIsPublicAccount(False);
+	FMockContext.SetUnitedParams('token=test&x-email=test@mail.ru');
+
+	OAuthToken.access_token := 'test_token';
+	OAuthToken.refresh_token := 'test_refresh';
+	FMockContext.SetOAuthToken(OAuthToken);
+
+	{Return False for GetUserSpace to skip quota check in tests}
+	FMockContext.SetGetUserSpaceResult(False, Default(TCloudSpace));
 
 	FShardManager := TCloudShardManager.Create(TNullLogger.Create,
 		function(const URL, Data: WideString; var Answer: WideString): Boolean begin Result := True; end,
@@ -94,12 +102,6 @@ begin
 	FShardManager.SetUploadShard('https://upload.shard/');
 
 	FHashCalculator := TCloudHashCalculator.Create(TNullProgress.Create, TWindowsFileSystem.Create);
-
-	FIsPublicAccount := False;
-	FOAuthToken.access_token := 'test_token';
-	FOAuthToken.refresh_token := 'test_refresh';
-
-	FDeleteFileCalled := False;
 
 	{Default settings}
 	FSettings.PrecalculateHash := False;
@@ -115,15 +117,15 @@ begin
 	{Create retry operation for tests - matching TRetryOperation.Create signature}
 	FRetryOperation := TRetryOperation.Create(
 		function: Boolean begin Result := True; end, {RefreshToken}
-		function(const URL, Data: WideString; var Answer: WideString): Boolean begin Result := True; end, {PostForm}
-		function(const URL: WideString; var JSON: WideString; var ShowProgress: Boolean): Boolean begin Result := True; end, {GetPage}
-		function(const JSON, ErrorPrefix: WideString): Boolean begin Result := True; end, {ToBoolean}
+		function(const URL, Data: WideString; var Answer: WideString): Boolean begin Result := FMockHTTP.PostForm(URL, Data, Answer); end, {PostForm}
+		function(const URL: WideString; var JSON: WideString; var ShowProgress: Boolean): Boolean begin Result := FMockHTTP.GetPage(URL, JSON, ShowProgress); end, {GetPage}
+		function(const JSON, ErrorPrefix: WideString): Boolean begin Result := Pos(WideString('"status":200'), JSON) > 0; end, {ToBoolean}
 		function(const JSON, ErrorPrefix: WideString): Integer begin Result := FS_FILE_OK; end, {ToInteger}
 		3 {MaxRetries}
 	);
 
 	FUploader := TCloudFileUploader.Create(
-		GetHTTP,
+		FMockContext,
 		FShardManager,
 		FHashCalculator,
 		TNullCipher.Create,
@@ -132,13 +134,7 @@ begin
 		TNullProgress.Create,
 		TNullRequest.Create,
 		TNullTCHandler.Create,
-		GetOAuthToken,
-		IsPublicAccount,
-		GetRetryOperation,
-		GetUnitedParams,
-		CloudResultToFsResult,
-		DeleteFile,
-		GetUserSpace,
+		FRetryOperation,
 		False, {DoCryptFiles}
 		False, {DoCryptFilenames}
 		FSettings
@@ -150,52 +146,8 @@ begin
 	FUploader := nil;
 	FShardManager := nil;
 	FHashCalculator := nil;
-		FRetryOperation := nil;
-end;
-
-function TCloudFileUploaderTest.GetHTTP: ICloudHTTP;
-begin
-	Result := FMockHTTP;
-end;
-
-function TCloudFileUploaderTest.GetOAuthToken: TCloudOAuth;
-begin
-	Result := FOAuthToken;
-end;
-
-function TCloudFileUploaderTest.IsPublicAccount: Boolean;
-begin
-	Result := FIsPublicAccount;
-end;
-
-function TCloudFileUploaderTest.GetRetryOperation: IRetryOperation;
-begin
-	Result := FRetryOperation;
-end;
-
-function TCloudFileUploaderTest.GetUnitedParams: WideString;
-begin
-	Result := 'token=test&x-email=test@mail.ru';
-end;
-
-function TCloudFileUploaderTest.CloudResultToFsResult(JSON: WideString; ErrorPrefix: WideString): Integer;
-begin
-	if Pos(WideString('"status":200'), JSON) > 0 then
-		Result := FS_FILE_OK
-	else
-		Result := FS_FILE_WRITEERROR;
-end;
-
-function TCloudFileUploaderTest.DeleteFile(Path: WideString): Boolean;
-begin
-	FDeleteFileCalled := True;
-	Result := True;
-end;
-
-function TCloudFileUploaderTest.GetUserSpace(var SpaceInfo: TCloudSpace): Boolean;
-begin
-	{Return False to skip quota check in tests}
-	Result := False;
+	FRetryOperation := nil;
+	FMockContextRef := nil;
 end;
 
 { Construction tests }
@@ -211,7 +163,7 @@ procedure TCloudFileUploaderTest.TestUpload_PublicAccount_ReturnsNotSupported;
 var
 	Result: Integer;
 begin
-	FIsPublicAccount := True;
+	FMockContext.SetIsPublicAccount(True);
 	Result := FUploader.Upload('test.txt', '/test.txt');
 	Assert.AreEqual(FS_FILE_NOTSUPPORTED, Result, 'Public account should return FS_FILE_NOTSUPPORTED');
 end;
@@ -227,7 +179,7 @@ begin
 
 	{Recreate uploader with new settings}
 	FUploader := TCloudFileUploader.Create(
-		GetHTTP,
+		FMockContext,
 		FShardManager,
 		FHashCalculator,
 		nil,
@@ -236,13 +188,7 @@ begin
 		TNullProgress.Create,
 		TNullRequest.Create,
 		TNullTCHandler.Create,
-		GetOAuthToken,
-		IsPublicAccount,
-		GetRetryOperation,
-		GetUnitedParams,
-		CloudResultToFsResult,
-		DeleteFile,
-		GetUserSpace,
+		FRetryOperation,
 		False,
 		False,
 		FSettings
@@ -270,7 +216,7 @@ begin
 
 	{Recreate uploader with split enabled}
 	FUploader := TCloudFileUploader.Create(
-		GetHTTP,
+		FMockContext,
 		FShardManager,
 		FHashCalculator,
 		TNullCipher.Create,
@@ -279,13 +225,7 @@ begin
 		TNullProgress.Create,
 		TNullRequest.Create,
 		TNullTCHandler.Create,
-		GetOAuthToken,
-		IsPublicAccount,
-		GetRetryOperation,
-		GetUnitedParams,
-		CloudResultToFsResult,
-		DeleteFile,
-		GetUserSpace,
+		FRetryOperation,
 		False,
 		False,
 		FSettings
@@ -304,7 +244,7 @@ var
 	Identity: TCloudFileIdentity;
 	Result: Integer;
 begin
-	FIsPublicAccount := True;
+	FMockContext.SetIsPublicAccount(True);
 	Identity.Hash := 'ABCD1234567890ABCD1234567890ABCD12345678';
 	Identity.size := 1000;
 

@@ -5,7 +5,7 @@ unit CloudListingService;
 interface
 
 uses
-	CloudCallbackTypes,
+	CloudContext,
 	CloudDirItem,
 	CloudDirItemList,
 	CloudDirItemJsonAdapter,
@@ -56,18 +56,13 @@ type
 	{Implementation of listing service}
 	TCloudListingService = class(TInterfacedObject, ICloudListingService)
 	private
-		FHTTP: ICloudHTTP;
+		FContext: ICloudContext;
 		FCipher: ICipher;
 		FLogger: ILogger;
 		FRetryOperation: IRetryOperation;
-		FIsPublicAccount: TGetBoolFunc;
-		FGetUnitedParams: TGetStringFunc;
-		FGetPublicLink: TGetStringFunc;
-		FCloudResultToBoolean: TCloudResultToBooleanFunc;
-		FCloudResultToBooleanFromResult: TCloudResultToBooleanFromResultFunc;
 		FDoCryptFilenames: Boolean;
 	public
-		constructor Create(HTTP: ICloudHTTP; Cipher: ICipher; Logger: ILogger; RetryOperation: IRetryOperation; IsPublicAccount: TGetBoolFunc; GetUnitedParams: TGetStringFunc; GetPublicLink: TGetStringFunc; CloudResultToBoolean: TCloudResultToBooleanFunc; CloudResultToBooleanFromResult: TCloudResultToBooleanFromResultFunc; DoCryptFilenames: Boolean);
+		constructor Create(Context: ICloudContext; Cipher: ICipher; Logger: ILogger; RetryOperation: IRetryOperation; DoCryptFilenames: Boolean);
 
 		{ICloudListingService implementation}
 		function GetDirectory(Path: WideString; var Listing: TCloudDirItemList; ShowProgress: Boolean = False): Boolean;
@@ -86,18 +81,13 @@ implementation
 
 {TCloudListingService}
 
-constructor TCloudListingService.Create(HTTP: ICloudHTTP; Cipher: ICipher; Logger: ILogger; RetryOperation: IRetryOperation; IsPublicAccount: TGetBoolFunc; GetUnitedParams: TGetStringFunc; GetPublicLink: TGetStringFunc; CloudResultToBoolean: TCloudResultToBooleanFunc; CloudResultToBooleanFromResult: TCloudResultToBooleanFromResultFunc; DoCryptFilenames: Boolean);
+constructor TCloudListingService.Create(Context: ICloudContext; Cipher: ICipher; Logger: ILogger; RetryOperation: IRetryOperation; DoCryptFilenames: Boolean);
 begin
 	inherited Create;
-	FHTTP := HTTP;
+	FContext := Context;
 	FCipher := Cipher;
 	FLogger := Logger;
 	FRetryOperation := RetryOperation;
-	FIsPublicAccount := IsPublicAccount;
-	FGetUnitedParams := GetUnitedParams;
-	FGetPublicLink := GetPublicLink;
-	FCloudResultToBoolean := CloudResultToBoolean;
-	FCloudResultToBooleanFromResult := CloudResultToBooleanFromResult;
 	FDoCryptFilenames := DoCryptFilenames;
 end;
 
@@ -108,20 +98,20 @@ var
 	UnitedParams: WideString;
 begin
 	SetLength(Listing, 0);
-	UnitedParams := FGetUnitedParams();
+	UnitedParams := FContext.GetUnitedParams;
 
 	{Public accounts use different API endpoint}
-	if FIsPublicAccount() then
+	if FContext.IsPublicAccount then
 	begin
 		var
 			JSON: WideString;
 		var
 			OperationResult: TCloudOperationResult;
-		Result := FHTTP.GetPage(Format('%s&weblink=%s%s&%s', [API_FOLDER, IncludeSlash(FGetPublicLink()), PathToUrl(Path, False), UnitedParams]), JSON, ShowProgress);
+		Result := FContext.GetHTTP.GetPage(Format('%s&weblink=%s%s&%s', [API_FOLDER, IncludeSlash(FContext.GetPublicLink), PathToUrl(Path, False), UnitedParams]), JSON, ShowProgress);
 		if Result then
 		begin
 			TCloudOperationResultJsonAdapter.Parse(JSON, OperationResult);
-			Result := FCloudResultToBooleanFromResult(OperationResult, PREFIX_ERR_DIR_LISTING);
+			Result := FContext.CloudResultToBoolean(OperationResult, PREFIX_ERR_DIR_LISTING);
 			if Result then
 			begin
 				Result := TCloudDirItemListJsonAdapter.Parse(JSON, Listing);
@@ -133,7 +123,7 @@ begin
 		Exit;
 	end;
 
-	FHTTP.SetProgressNames(DIR_LISTING, Path);
+	FContext.GetHTTP.SetProgressNames(DIR_LISTING, Path);
 	SetLength(LocalListing, 0);
 
 	CallResult := FRetryOperation.Execute(
@@ -143,11 +133,11 @@ begin
 			OperationResult: TCloudOperationResult;
 			Success: Boolean;
 		begin
-			Success := FHTTP.GetPage(Format('%s&home=%s&%s', [API_FOLDER, PathToUrl(Path), UnitedParams]), JSON, ShowProgress);
+			Success := FContext.GetHTTP.GetPage(Format('%s&home=%s&%s', [API_FOLDER, PathToUrl(Path), UnitedParams]), JSON, ShowProgress);
 			if Success then
 			begin
 				TCloudOperationResultJsonAdapter.Parse(JSON, OperationResult);
-				Success := FCloudResultToBooleanFromResult(OperationResult, PREFIX_ERR_DIR_LISTING);
+				Success := FContext.CloudResultToBoolean(OperationResult, PREFIX_ERR_DIR_LISTING);
 				if Success then
 				begin
 					Success := TCloudDirItemListJsonAdapter.Parse(JSON, LocalListing);
@@ -173,13 +163,13 @@ begin
 	Result := False;
 	SetLength(Listing, 0);
 
-	if FIsPublicAccount() then
+	if FContext.IsPublicAccount then
 		Exit;
 
-	UnitedParams := FGetUnitedParams();
+	UnitedParams := FContext.GetUnitedParams;
 
 	if ShowProgress then
-		FHTTP.SetProgressNames(SHARED_LINKS_LISTING, UNKNOWN_ITEM);
+		FContext.GetHTTP.SetProgressNames(SHARED_LINKS_LISTING, UNKNOWN_ITEM);
 
 	SetLength(LocalListing, 0);
 	CallResult := FRetryOperation.Execute(
@@ -188,9 +178,9 @@ begin
 			JSON: WideString;
 			Success: Boolean;
 		begin
-			Success := FHTTP.GetPage(Format('%s?%s', [API_FOLDER_SHARED_LINKS, UnitedParams]), JSON, ShowProgress);
+			Success := FContext.GetHTTP.GetPage(Format('%s?%s', [API_FOLDER_SHARED_LINKS, UnitedParams]), JSON, ShowProgress);
 			if Success then
-				Success := FCloudResultToBoolean(JSON, PREFIX_ERR_SHARED_LINKS_LISTING) and TCloudDirItemListJsonAdapter.Parse(JSON, LocalListing);
+				Success := FContext.CloudResultToBoolean(JSON, PREFIX_ERR_SHARED_LINKS_LISTING) and TCloudDirItemListJsonAdapter.Parse(JSON, LocalListing);
 			Result := TAPICallResult.FromBoolean(Success, JSON);
 		end);
 
@@ -208,13 +198,13 @@ begin
 	Result := False;
 	SetLength(Listing, 0);
 
-	if FIsPublicAccount() then
+	if FContext.IsPublicAccount then
 		Exit;
 
-	UnitedParams := FGetUnitedParams();
+	UnitedParams := FContext.GetUnitedParams;
 
 	if ShowProgress then
-		FHTTP.SetProgressNames(INCOMING_LINKS_LISTING, UNKNOWN_ITEM);
+		FContext.GetHTTP.SetProgressNames(INCOMING_LINKS_LISTING, UNKNOWN_ITEM);
 
 	SetLength(LocalListing, 0);
 	CallResult := FRetryOperation.Execute(
@@ -223,9 +213,9 @@ begin
 			JSON: WideString;
 			Success: Boolean;
 		begin
-			Success := FHTTP.GetPage(Format('%s?%s', [API_FOLDER_SHARED_INCOMING, UnitedParams]), JSON, ShowProgress);
+			Success := FContext.GetHTTP.GetPage(Format('%s?%s', [API_FOLDER_SHARED_INCOMING, UnitedParams]), JSON, ShowProgress);
 			if Success then
-				Success := FCloudResultToBoolean(JSON, PREFIX_ERR_INCOMING_REQUESTS_LISTING) and TCloudIncomingInviteListJsonAdapter.Parse(JSON, LocalListing);
+				Success := FContext.CloudResultToBoolean(JSON, PREFIX_ERR_INCOMING_REQUESTS_LISTING) and TCloudIncomingInviteListJsonAdapter.Parse(JSON, LocalListing);
 			Result := TAPICallResult.FromBoolean(Success, JSON);
 		end);
 
@@ -261,13 +251,13 @@ begin
 	Result := False;
 	SetLength(Listing, 0);
 
-	if FIsPublicAccount() then
+	if FContext.IsPublicAccount then
 		Exit;
 
-	UnitedParams := FGetUnitedParams();
+	UnitedParams := FContext.GetUnitedParams;
 
 	if ShowProgress then
-		FHTTP.SetProgressNames(TRASH_LISTING, UNKNOWN_ITEM);
+		FContext.GetHTTP.SetProgressNames(TRASH_LISTING, UNKNOWN_ITEM);
 
 	SetLength(LocalListing, 0);
 	CallResult := FRetryOperation.Execute(
@@ -276,9 +266,9 @@ begin
 			JSON: WideString;
 			Success: Boolean;
 		begin
-			Success := FHTTP.GetPage(Format('%s?%s', [API_TRASHBIN, UnitedParams]), JSON, ShowProgress);
+			Success := FContext.GetHTTP.GetPage(Format('%s?%s', [API_TRASHBIN, UnitedParams]), JSON, ShowProgress);
 			if Success then
-				Success := FCloudResultToBoolean(JSON, PREFIX_ERR_TRASH_LISTING) and TCloudDirItemListJsonAdapter.Parse(JSON, LocalListing);
+				Success := FContext.CloudResultToBoolean(JSON, PREFIX_ERR_TRASH_LISTING) and TCloudDirItemListJsonAdapter.Parse(JSON, LocalListing);
 			Result := TAPICallResult.FromBoolean(Success, JSON);
 		end);
 
@@ -293,18 +283,18 @@ var
 	LocalInfo: TCloudDirItem;
 	UnitedParams: WideString;
 begin
-	UnitedParams := FGetUnitedParams();
+	UnitedParams := FContext.GetUnitedParams;
 
 	{Public accounts use different API endpoint}
-	if FIsPublicAccount() then
+	if FContext.IsPublicAccount then
 	begin
 		var
 			JSON: WideString;
 		var
 			Progress: Boolean := False;
-		Result := FHTTP.GetPage(Format('%s?weblink=%s%s&%s', [API_FILE, IncludeSlash(FGetPublicLink()), PathToUrl(Path), UnitedParams]), JSON, Progress);
+		Result := FContext.GetHTTP.GetPage(Format('%s?weblink=%s%s&%s', [API_FILE, IncludeSlash(FContext.GetPublicLink), PathToUrl(Path), UnitedParams]), JSON, Progress);
 		if Result then
-			Result := FCloudResultToBoolean(JSON, PREFIX_ERR_FILE_STATUS) and TCloudDirItemJsonAdapter.Parse(JSON, FileInfo);
+			Result := FContext.CloudResultToBoolean(JSON, PREFIX_ERR_FILE_STATUS) and TCloudDirItemJsonAdapter.Parse(JSON, FileInfo);
 		Exit;
 	end;
 
@@ -317,9 +307,9 @@ begin
 			Success: Boolean;
 		begin
 			Progress := False;
-			Success := FHTTP.GetPage(Format('%s?home=%s&%s', [API_FILE, PathToUrl(Path), UnitedParams]), JSON, Progress);
+			Success := FContext.GetHTTP.GetPage(Format('%s?home=%s&%s', [API_FILE, PathToUrl(Path), UnitedParams]), JSON, Progress);
 			if Success then
-				Success := FCloudResultToBoolean(JSON, PREFIX_ERR_FILE_STATUS) and TCloudDirItemJsonAdapter.Parse(JSON, LocalInfo);
+				Success := FContext.CloudResultToBoolean(JSON, PREFIX_ERR_FILE_STATUS) and TCloudDirItemJsonAdapter.Parse(JSON, LocalInfo);
 			Result := TAPICallResult.FromBoolean(Success, JSON);
 		end);
 
@@ -331,17 +321,17 @@ end;
 function TCloudListingService.TrashbinRestore(Path: WideString; RestoreRevision: Integer; ConflictMode: WideString): Boolean;
 begin
 	Result := False;
-	if FIsPublicAccount() then
+	if FContext.IsPublicAccount then
 		Exit;
-	Result := FRetryOperation.PostFormBoolean(API_TRASHBIN_RESTORE + '?' + FGetUnitedParams(), Format('path=%s&restore_revision=%d&conflict=%s', [PathToUrl(Path), RestoreRevision, ConflictMode]), PREFIX_ERR_FILE_RESTORE);
+	Result := FRetryOperation.PostFormBoolean(API_TRASHBIN_RESTORE + '?' + FContext.GetUnitedParams, Format('path=%s&restore_revision=%d&conflict=%s', [PathToUrl(Path), RestoreRevision, ConflictMode]), PREFIX_ERR_FILE_RESTORE);
 end;
 
 function TCloudListingService.TrashbinEmpty(): Boolean;
 begin
 	Result := False;
-	if FIsPublicAccount() then
+	if FContext.IsPublicAccount then
 		Exit;
-	Result := FRetryOperation.PostFormBoolean(API_TRASHBIN_EMPTY + '?' + FGetUnitedParams(), EmptyWideStr, PREFIX_ERR_TRASH_CLEAN);
+	Result := FRetryOperation.PostFormBoolean(API_TRASHBIN_EMPTY + '?' + FContext.GetUnitedParams, EmptyWideStr, PREFIX_ERR_TRASH_CLEAN);
 end;
 
 function TCloudListingService.GetUserSpace(var SpaceInfo: TCloudSpace): Boolean;
@@ -358,9 +348,9 @@ begin
 			Success: Boolean;
 		begin
 			Progress := False;
-			Success := FHTTP.GetPage(Format('%s?%s', [API_USER_SPACE, FGetUnitedParams()]), JSON, Progress);
+			Success := FContext.GetHTTP.GetPage(Format('%s?%s', [API_USER_SPACE, FContext.GetUnitedParams]), JSON, Progress);
 			if Success then
-				Success := FCloudResultToBoolean(JSON, PREFIX_ERR_GET_USER_SPACE) and TCloudSpaceJsonAdapter.Parse(JSON, LocalSpace);
+				Success := FContext.CloudResultToBoolean(JSON, PREFIX_ERR_GET_USER_SPACE) and TCloudSpaceJsonAdapter.Parse(JSON, LocalSpace);
 			Result := TAPICallResult.FromBoolean(Success, JSON);
 		end);
 
@@ -374,7 +364,7 @@ var
 	US: TCloudSpace;
 	QuotaInfo: WideString;
 begin
-	if FIsPublicAccount() then
+	if FContext.IsPublicAccount then
 		Exit;
 	if GetUserSpace(US) then
 	begin

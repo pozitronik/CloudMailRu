@@ -5,6 +5,7 @@ interface
 uses
 	CloudShareService,
 	CloudShardManager,
+	CloudContext,
 	CloudDirItem,
 	CloudInviteList,
 	CloudConstants,
@@ -12,6 +13,7 @@ uses
 	TCLogger,
 	CloudHTTP,
 	MockCloudHTTP,
+	MockCloudContext,
 	TokenRetryHelper,
 	TestHelper,
 	System.SysUtils,
@@ -25,16 +27,10 @@ type
 		FService: ICloudShareService;
 		FShardManager: ICloudShardManager;
 		FMockHTTP: TMockCloudHTTP;
-		FIsPublicAccount: Boolean;
-		FUnitedParams: WideString;
+		FMockContext: TMockCloudContext;
+		FMockContextRef: ICloudContext;
 		FRetryOperation: IRetryOperation;
 		FVideoShard: WideString;
-
-		function GetHTTP: ICloudHTTP;
-		function IsPublicAccount: Boolean;
-		function GetUnitedParams: WideString;
-		function CloudResultToBoolean(JSON: WideString; ErrorPrefix: WideString): Boolean;
-		function CloudResultToFsResult(JSON: WideString; ErrorPrefix: WideString): Integer;
 	public
 		[Setup]
 		procedure Setup;
@@ -121,9 +117,14 @@ begin
 	FMockHTTP := TMockCloudHTTP.Create;
 	FMockHTTP.SetDefaultResponse(True, '{"status":200,"body":"ok"}');
 
-	FIsPublicAccount := False;
-	FUnitedParams := 'token=test&x-email=test@mail.ru';
 	FVideoShard := 'https://video.shard/';
+
+	{Setup mock context}
+	FMockContext := TMockCloudContext.Create;
+	FMockContextRef := FMockContext;
+	FMockContext.SetHTTP(FMockHTTP);
+	FMockContext.SetIsPublicAccount(False);
+	FMockContext.SetUnitedParams('token=test&x-email=test@mail.ru');
 
 	{Create shard manager with mock that returns FVideoShard for video shard type}
 	FShardManager := TCloudShardManager.Create(TNullLogger.Create,
@@ -139,7 +140,7 @@ begin
 		end,
 		function: WideString
 		begin
-			Result := Self.FUnitedParams;
+			Result := 'token=test&x-email=test@mail.ru';
 		end);
 
 	{Create retry operation for tests}
@@ -152,51 +153,15 @@ begin
 		3 {MaxRetries}
 	);
 
-	FService := TCloudShareService.Create(
-		GetHTTP,
-		TNullLogger.Create,
-		FRetryOperation,
-		IsPublicAccount,
-		GetUnitedParams,
-		CloudResultToBoolean,
-		CloudResultToFsResult,
-		FShardManager
-	);
+	FService := TCloudShareService.Create(FMockContext, TNullLogger.Create, FRetryOperation, FShardManager);
 end;
 
 procedure TCloudShareServiceTest.TearDown;
 begin
 	FService := nil;
 	FShardManager := nil;
-		FRetryOperation := nil;
-end;
-
-function TCloudShareServiceTest.GetHTTP: ICloudHTTP;
-begin
-	Result := FMockHTTP;
-end;
-
-function TCloudShareServiceTest.IsPublicAccount: Boolean;
-begin
-	Result := FIsPublicAccount;
-end;
-
-function TCloudShareServiceTest.GetUnitedParams: WideString;
-begin
-	Result := FUnitedParams;
-end;
-
-function TCloudShareServiceTest.CloudResultToBoolean(JSON: WideString; ErrorPrefix: WideString): Boolean;
-begin
-	Result := Pos(WideString('"status":200'), JSON) > 0;
-end;
-
-function TCloudShareServiceTest.CloudResultToFsResult(JSON: WideString; ErrorPrefix: WideString): Integer;
-begin
-	if Pos(WideString('"status":200'), JSON) > 0 then
-		Result := FS_FILE_OK
-	else
-		Result := FS_FILE_WRITEERROR;
+	FRetryOperation := nil;
+	FMockContextRef := nil;
 end;
 
 {Construction tests}
@@ -213,7 +178,7 @@ var
 	Link: WideString;
 	Result: Boolean;
 begin
-	FIsPublicAccount := True;
+	FMockContext.SetIsPublicAccount(True);
 	Link := '';
 	Result := FService.Publish('/test/file.txt', Link);
 	Assert.IsFalse(Result, 'Publish should return false for public account');
@@ -248,7 +213,7 @@ procedure TCloudShareServiceTest.TestUnpublish_PublicAccount_ReturnsFalse;
 var
 	Result: Boolean;
 begin
-	FIsPublicAccount := True;
+	FMockContext.SetIsPublicAccount(True);
 	Result := FService.Unpublish('/test/file.txt', 'weblink123');
 	Assert.IsFalse(Result, 'Unpublish should return false for public account');
 end;
@@ -323,7 +288,7 @@ procedure TCloudShareServiceTest.TestMount_PublicAccount_ReturnsFalse;
 var
 	Result: Boolean;
 begin
-	FIsPublicAccount := True;
+	FMockContext.SetIsPublicAccount(True);
 	Result := FService.Mount('/home/shared', 'invite_token_123');
 	Assert.IsFalse(Result, 'Mount should return false for public account');
 end;
@@ -342,7 +307,7 @@ procedure TCloudShareServiceTest.TestUnmount_PublicAccount_ReturnsFalse;
 var
 	Result: Boolean;
 begin
-	FIsPublicAccount := True;
+	FMockContext.SetIsPublicAccount(True);
 	Result := FService.Unmount('/home/shared', False);
 	Assert.IsFalse(Result, 'Unmount should return false for public account');
 end;
@@ -369,7 +334,7 @@ procedure TCloudShareServiceTest.TestRejectInvite_PublicAccount_ReturnsFalse;
 var
 	Result: Boolean;
 begin
-	FIsPublicAccount := True;
+	FMockContext.SetIsPublicAccount(True);
 	Result := FService.RejectInvite('invite_token_123');
 	Assert.IsFalse(Result, 'RejectInvite should return false for public account');
 end;
@@ -449,7 +414,7 @@ procedure TCloudShareServiceTest.TestCloneWeblink_PublicAccount_ReturnsNotSuppor
 var
 	ResultCode: Integer;
 begin
-	FIsPublicAccount := True;
+	FMockContext.SetIsPublicAccount(True);
 	ResultCode := FService.CloneWeblink('/dest/folder', 'weblink123');
 	Assert.AreEqual(FS_FILE_NOTSUPPORTED, ResultCode, 'CloneWeblink should return NOTSUPPORTED for public account');
 end;

@@ -46,7 +46,13 @@ uses
 	CloudContext;
 
 type
+	{TCloudMailRu implements ICloudContext but disables automatic reference counting.
+		This allows the class to be used both as a direct object reference (by tests and external code)
+		and as ICloudContext provider for internal services without causing premature destruction.}
 	TCloudMailRu = class(TInterfacedObject, ICloudContext)
+	protected
+		function _AddRef: Integer; stdcall;
+		function _Release: Integer; stdcall;
 	private
 		FSettings: TCloudSettings; {Current options set for the cloud instance}
 		FAuthorizationState: TAuthorizationState; {Authorization state machine}
@@ -156,6 +162,17 @@ implementation
 
 {TCloudMailRu}
 
+{Disable automatic reference counting - TCloudMailRu lifetime is managed externally}
+function TCloudMailRu._AddRef: Integer;
+begin
+	Result := -1;
+end;
+
+function TCloudMailRu._Release: Integer;
+begin
+	Result := -1;
+end;
+
 {ICloudContext implementation - delegates to TCloudErrorMapper}
 function TCloudMailRu.CloudResultToBoolean(const JSON, ErrorPrefix: WideString): Boolean;
 begin
@@ -199,7 +216,6 @@ end;
 
 constructor TCloudMailRu.Create(CloudSettings: TCloudSettings; ConnectionManager: IHTTPManager; GetThreadID: TGetThreadIDFunc; AuthStrategy: IAuthStrategy; FileSystem: IFileSystem; Logger: ILogger; Progress: IProgress; Request: IRequest; TCHandler: ITCHandler; Cipher: ICipher; OpenSSLProvider: IOpenSSLProvider; AccountCredentialsProvider: IAccountCredentialsProvider);
 var
-	IsPublicAccountCallback: TGetBoolFunc;
 	GetUnitedParamsCallback: TGetStringFunc;
 begin
 	try
@@ -221,10 +237,6 @@ begin
 		FCookieManager := TIdCookieManager.Create();
 
 		{Reusable callbacks - avoid duplicating anonymous functions}
-		IsPublicAccountCallback := function: Boolean
-			begin
-				Result := Self.IsPublicAccount;
-			end;
 		GetUnitedParamsCallback := function: WideString
 			begin
 				Result := Self.FUnitedParams;
@@ -272,27 +284,11 @@ begin
 		FDoCryptFiles := FSettings.AccountSettings.EncryptFilesMode <> EncryptModeNone;
 		FDoCryptFilenames := FDoCryptFiles and FSettings.AccountSettings.EncryptFilenames;
 
-		{Initialize file downloader service with callbacks for dynamic state}
-		FDownloader := TCloudFileDownloader.Create(
-			function: ICloudHTTP
-			begin
-				Result := Self.HTTP;
-			end, FShardManager, FHashCalculator, FCipher, FFileSystem, FLogger, FProgress, FRequest,
-			function: TCloudOAuth
-			begin
-				Result := Self.FOAuthToken;
-			end, IsPublicAccountCallback,
-			function: WideString
-			begin
-				Result := Self.GetPublicLink;
-			end,
-			function: Boolean
-			begin
-				Result := Self.RefreshCSRFToken;
-			end, FDoCryptFiles, FDoCryptFilenames);
+		{Initialize file downloader service}
+		FDownloader := TCloudFileDownloader.Create(Self, FShardManager, FHashCalculator, FCipher, FFileSystem, FLogger, FProgress, FRequest, FDoCryptFiles, FDoCryptFilenames);
 
 		{Initialize file operations service - must be before FUploader which uses it}
-		FFileOperations := TCloudFileOperations.Create(Self.HTTP, FLogger, FRetryOperation, IsPublicAccountCallback, GetUnitedParamsCallback);
+		FFileOperations := TCloudFileOperations.Create(Self, FLogger, FRetryOperation);
 
 		{Initialize file uploader service with callbacks and settings}
 		var
@@ -307,57 +303,13 @@ begin
 		UploadSettings.SplitLargeFiles := Self.SplitLargeFiles;
 		UploadSettings.CloudMaxFileSize := Self.CloudMaxFileSize;
 
-		FUploader := TCloudFileUploader.Create(
-			function: ICloudHTTP
-			begin
-				Result := Self.HTTP;
-			end, FShardManager, FHashCalculator, FCipher, FFileSystem, FLogger, FProgress, FRequest, FTCHandler,
-			function: TCloudOAuth
-			begin
-				Result := Self.FOAuthToken;
-			end, IsPublicAccountCallback,
-			function: IRetryOperation
-			begin
-				Result := Self.FRetryOperation;
-			end, GetUnitedParamsCallback,
-			function(JSON: WideString; ErrorPrefix: WideString): Integer
-			begin
-				Result := Self.CloudResultToFsResult(JSON, ErrorPrefix);
-			end,
-			function(Path: WideString): Boolean
-			begin
-				Result := Self.FFileOperations.Delete(Path);
-			end,
-			function(var SpaceInfo: TCloudSpace): Boolean
-			begin
-				Result := Self.GetUserSpace(SpaceInfo);
-			end, FDoCryptFiles, FDoCryptFilenames, UploadSettings);
+		FUploader := TCloudFileUploader.Create(Self, FShardManager, FHashCalculator, FCipher, FFileSystem, FLogger, FProgress, FRequest, FTCHandler, FRetryOperation, FDoCryptFiles, FDoCryptFilenames, UploadSettings);
 
-		{Initialize share service with callbacks for dynamic state}
-		FShareService := TCloudShareService.Create(Self.HTTP, FLogger, FRetryOperation, IsPublicAccountCallback, GetUnitedParamsCallback,
-			function(JSON: WideString; ErrorPrefix: WideString): Boolean
-			begin
-				Result := Self.CloudResultToBoolean(JSON, ErrorPrefix);
-			end,
-			function(JSON: WideString; ErrorPrefix: WideString): Integer
-			begin
-				Result := Self.CloudResultToFsResult(JSON, ErrorPrefix);
-			end, FShardManager);
+		{Initialize share service}
+		FShareService := TCloudShareService.Create(Self, FLogger, FRetryOperation, FShardManager);
 
-		{Initialize listing service with callbacks for dynamic state}
-		FListingService := TCloudListingService.Create(Self.HTTP, FCipher, FLogger, FRetryOperation, IsPublicAccountCallback, GetUnitedParamsCallback,
-			function: WideString
-			begin
-				Result := Self.GetPublicLink;
-			end,
-			function(JSON: WideString; ErrorPrefix: WideString): Boolean
-			begin
-				Result := Self.CloudResultToBoolean(JSON, ErrorPrefix);
-			end,
-			function(OperationResult: TCloudOperationResult; ErrorPrefix: WideString): Boolean
-			begin
-				Result := Self.CloudResultToBoolean(OperationResult, ErrorPrefix);
-			end, FDoCryptFilenames);
+		{Initialize listing service}
+		FListingService := TCloudListingService.Create(Self, FCipher, FLogger, FRetryOperation, FDoCryptFilenames);
 
 	except
 		on E: Exception do

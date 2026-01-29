@@ -247,6 +247,7 @@
         <DCCReference Include="..\src\Infrastructure\Authentication\OldOAuthStrategy.pas"/>
         <DCCReference Include="Infrastructure\Authentication\DeprecatedStrategiesTest.pas"/>
         <DCCReference Include="mocks\MockCloudHTTP.pas"/>
+        <DCCReference Include="mocks\MockCloudContext.pas"/>
         <DCCReference Include="mocks\MockHTTPManager.pas"/>
         <DCCReference Include="mocks\MockConnectionManager.pas"/>
         <DCCReference Include="mocks\MockShardHelper.pas"/>

@@ -151,6 +151,7 @@ uses
 	OldOAuthStrategy in '..\src\Infrastructure\Authentication\OldOAuthStrategy.pas',
 	DeprecatedStrategiesTest in 'Infrastructure\Authentication\DeprecatedStrategiesTest.pas',
 	MockCloudHTTP in 'mocks\MockCloudHTTP.pas',
+	MockCloudContext in 'mocks\MockCloudContext.pas',
 	MockHTTPManager in 'mocks\MockHTTPManager.pas',
 	MockConnectionManager in 'mocks\MockConnectionManager.pas',
 	MockShardHelper in 'mocks\MockShardHelper.pas',

@@ -5,10 +5,12 @@ interface
 uses
 	CloudFileOperations,
 	CloudConstants,
+	CloudContext,
 	WFXTypes,
 	TCLogger,
 	CloudHTTP,
 	MockCloudHTTP,
+	MockCloudContext,
 	TokenRetryHelper,
 	TestHelper,
 	System.SysUtils,
@@ -21,13 +23,9 @@ type
 	private
 		FService: ICloudFileOperations;
 		FMockHTTP: TMockCloudHTTP;
-		FIsPublicAccount: Boolean;
-		FUnitedParams: WideString;
+		FMockContext: TMockCloudContext;
+		FMockContextRef: ICloudContext;
 		FRetryOperation: IRetryOperation;
-
-		function GetHTTP: ICloudHTTP;
-		function IsPublicAccount: Boolean;
-		function GetUnitedParams: WideString;
 	public
 		[Setup]
 		procedure Setup;
@@ -100,8 +98,12 @@ begin
 	FMockHTTP := TMockCloudHTTP.Create;
 	FMockHTTP.SetDefaultResponse(True, '{"status":200,"body":{}}');
 
-	FIsPublicAccount := False;
-	FUnitedParams := 'token=test&x-email=test@mail.ru';
+	{Setup mock context}
+	FMockContext := TMockCloudContext.Create;
+	FMockContextRef := FMockContext;
+	FMockContext.SetHTTP(FMockHTTP);
+	FMockContext.SetIsPublicAccount(False);
+	FMockContext.SetUnitedParams('token=test&x-email=test@mail.ru');
 
 	{Create retry operation for tests}
 	FRetryOperation := TRetryOperation.Create(
@@ -113,34 +115,14 @@ begin
 		3 {MaxRetries}
 	);
 
-	FService := TCloudFileOperations.Create(
-		GetHTTP,
-		TNullLogger.Create,
-		FRetryOperation,
-		IsPublicAccount,
-		GetUnitedParams
-	);
+	FService := TCloudFileOperations.Create(FMockContext, TNullLogger.Create, FRetryOperation);
 end;
 
 procedure TCloudFileOperationsTest.TearDown;
 begin
 	FService := nil;
-		FRetryOperation := nil;
-end;
-
-function TCloudFileOperationsTest.GetHTTP: ICloudHTTP;
-begin
-	Result := FMockHTTP;
-end;
-
-function TCloudFileOperationsTest.IsPublicAccount: Boolean;
-begin
-	Result := FIsPublicAccount;
-end;
-
-function TCloudFileOperationsTest.GetUnitedParams: WideString;
-begin
-	Result := FUnitedParams;
+	FRetryOperation := nil;
+	FMockContextRef := nil;
 end;
 
 {Construction tests}
@@ -156,7 +138,7 @@ procedure TCloudFileOperationsTest.TestCreateDirectory_PublicAccount_ReturnsFals
 var
 	Success: Boolean;
 begin
-	FIsPublicAccount := True;
+	FMockContext.SetIsPublicAccount(True);
 
 	Success := FService.CreateDirectory('/test/newdir');
 
@@ -180,7 +162,7 @@ procedure TCloudFileOperationsTest.TestRemoveDirectory_PublicAccount_ReturnsFals
 var
 	Success: Boolean;
 begin
-	FIsPublicAccount := True;
+	FMockContext.SetIsPublicAccount(True);
 
 	Success := FService.RemoveDirectory('/test/dir');
 
@@ -204,7 +186,7 @@ procedure TCloudFileOperationsTest.TestDelete_PublicAccount_ReturnsFalse;
 var
 	Success: Boolean;
 begin
-	FIsPublicAccount := True;
+	FMockContext.SetIsPublicAccount(True);
 
 	Success := FService.Delete('/test/file.txt');
 
@@ -228,7 +210,7 @@ procedure TCloudFileOperationsTest.TestRename_PublicAccount_ReturnsWriteError;
 var
 	ResultCode: Integer;
 begin
-	FIsPublicAccount := True;
+	FMockContext.SetIsPublicAccount(True);
 
 	ResultCode := FService.Rename('/test/old.txt', 'new.txt');
 
@@ -252,7 +234,7 @@ procedure TCloudFileOperationsTest.TestMoveToPath_PublicAccount_ReturnsNotSuppor
 var
 	ResultCode: Integer;
 begin
-	FIsPublicAccount := True;
+	FMockContext.SetIsPublicAccount(True);
 
 	ResultCode := FService.MoveToPath('/test/file.txt', '/other/');
 
@@ -276,7 +258,7 @@ procedure TCloudFileOperationsTest.TestCopyToPath_PublicAccount_ReturnsNotSuppor
 var
 	ResultCode: Integer;
 begin
-	FIsPublicAccount := True;
+	FMockContext.SetIsPublicAccount(True);
 
 	ResultCode := FService.CopyToPath('/test/file.txt', '/other/');
 
