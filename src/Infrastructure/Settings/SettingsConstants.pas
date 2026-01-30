@@ -63,6 +63,10 @@ const
 	HashStrategyBCrypt = 2; {Use Windows BCrypt/CNG API (hardware-accelerated)}
 	HashStrategyOpenSSL = 3; {Use OpenSSL EVP functions (already loaded for HTTPS)}
 
+	{Extensions for which the plugin requests cloud thumbnail previews.
+		Comma-separated, with leading dots. Configurable via INI ThumbnailExtensions key.}
+	DEFAULT_THUMBNAIL_EXTENSIONS = '.jpg,.jpeg,.png,.gif,.bmp,.heic,.heif,.webp,.tiff,.tif,.mp4,.avi,.mov,.mkv,.wmv,.flv,.3gp,.m4v,.mpg,.mpeg';
+
 	DOT = '.'; {Just a dot, it used to trail files extensions in some situations}
 
 	TrashPostfix = '.trash';

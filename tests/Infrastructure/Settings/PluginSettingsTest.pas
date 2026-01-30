@@ -5,6 +5,7 @@ interface
 uses
 	PluginSettings,
 	AccountSettings,
+	SettingsConstants,
 	DUnitX.TestFramework;
 
 type
@@ -25,6 +26,26 @@ type
 		procedure TestEnabledVirtualTypesTrashAndShared;
 		[Test]
 		procedure TestEnabledVirtualTypesAll;
+
+		{ IsThumbnailExtension tests }
+		[Test]
+		procedure TestIsThumbnailExtension_MatchesJpg;
+		[Test]
+		procedure TestIsThumbnailExtension_MatchesPng;
+		[Test]
+		procedure TestIsThumbnailExtension_MatchesMp4;
+		[Test]
+		procedure TestIsThumbnailExtension_CaseInsensitive;
+		[Test]
+		procedure TestIsThumbnailExtension_RejectsUnknown;
+		[Test]
+		procedure TestIsThumbnailExtension_RejectsEmpty;
+		[Test]
+		procedure TestIsThumbnailExtension_EmptyList;
+		[Test]
+		procedure TestIsThumbnailExtension_CustomList;
+		[Test]
+		procedure TestIsThumbnailExtension_NoSubstringMatch;
 	end;
 
 implementation
@@ -112,6 +133,106 @@ begin
 	Assert.IsTrue(VTTrash in Settings.EnabledVirtualTypes);
 	Assert.IsTrue(VTShared in Settings.EnabledVirtualTypes);
 	Assert.IsTrue(VTInvites in Settings.EnabledVirtualTypes);
+end;
+
+{ IsThumbnailExtension tests }
+
+procedure TPluginSettingsTest.TestIsThumbnailExtension_MatchesJpg;
+var
+	Settings: TPluginSettings;
+begin
+	Settings := Default(TPluginSettings);
+	Settings.ThumbnailExtensions := DEFAULT_THUMBNAIL_EXTENSIONS;
+	Settings.BuildThumbnailExtList;
+	Assert.IsTrue(Settings.IsThumbnailExtension('.jpg'));
+end;
+
+procedure TPluginSettingsTest.TestIsThumbnailExtension_MatchesPng;
+var
+	Settings: TPluginSettings;
+begin
+	Settings := Default(TPluginSettings);
+	Settings.ThumbnailExtensions := DEFAULT_THUMBNAIL_EXTENSIONS;
+	Settings.BuildThumbnailExtList;
+	Assert.IsTrue(Settings.IsThumbnailExtension('.png'));
+end;
+
+procedure TPluginSettingsTest.TestIsThumbnailExtension_MatchesMp4;
+var
+	Settings: TPluginSettings;
+begin
+	Settings := Default(TPluginSettings);
+	Settings.ThumbnailExtensions := DEFAULT_THUMBNAIL_EXTENSIONS;
+	Settings.BuildThumbnailExtList;
+	Assert.IsTrue(Settings.IsThumbnailExtension('.mp4'));
+end;
+
+procedure TPluginSettingsTest.TestIsThumbnailExtension_CaseInsensitive;
+var
+	Settings: TPluginSettings;
+begin
+	Settings := Default(TPluginSettings);
+	Settings.ThumbnailExtensions := DEFAULT_THUMBNAIL_EXTENSIONS;
+	Settings.BuildThumbnailExtList;
+	Assert.IsTrue(Settings.IsThumbnailExtension('.JPG'));
+	Assert.IsTrue(Settings.IsThumbnailExtension('.Png'));
+	Assert.IsTrue(Settings.IsThumbnailExtension('.HEIC'));
+end;
+
+procedure TPluginSettingsTest.TestIsThumbnailExtension_RejectsUnknown;
+var
+	Settings: TPluginSettings;
+begin
+	Settings := Default(TPluginSettings);
+	Settings.ThumbnailExtensions := DEFAULT_THUMBNAIL_EXTENSIONS;
+	Settings.BuildThumbnailExtList;
+	Assert.IsFalse(Settings.IsThumbnailExtension('.txt'));
+	Assert.IsFalse(Settings.IsThumbnailExtension('.doc'));
+	Assert.IsFalse(Settings.IsThumbnailExtension('.zip'));
+end;
+
+procedure TPluginSettingsTest.TestIsThumbnailExtension_RejectsEmpty;
+var
+	Settings: TPluginSettings;
+begin
+	Settings := Default(TPluginSettings);
+	Settings.ThumbnailExtensions := DEFAULT_THUMBNAIL_EXTENSIONS;
+	Settings.BuildThumbnailExtList;
+	Assert.IsFalse(Settings.IsThumbnailExtension(''));
+end;
+
+procedure TPluginSettingsTest.TestIsThumbnailExtension_EmptyList;
+var
+	Settings: TPluginSettings;
+begin
+	Settings := Default(TPluginSettings);
+	Settings.ThumbnailExtensions := '';
+	Settings.BuildThumbnailExtList;
+	Assert.IsFalse(Settings.IsThumbnailExtension('.jpg'));
+end;
+
+procedure TPluginSettingsTest.TestIsThumbnailExtension_NoSubstringMatch;
+var
+	Settings: TPluginSettings;
+begin
+	Settings := Default(TPluginSettings);
+	Settings.ThumbnailExtensions := '.jpg,.png';
+	Settings.BuildThumbnailExtList;
+	{.jpga contains .jpg as substring but must not match}
+	Assert.IsFalse(Settings.IsThumbnailExtension('.jpga'));
+	Assert.IsFalse(Settings.IsThumbnailExtension('.pngo'));
+end;
+
+procedure TPluginSettingsTest.TestIsThumbnailExtension_CustomList;
+var
+	Settings: TPluginSettings;
+begin
+	Settings := Default(TPluginSettings);
+	Settings.ThumbnailExtensions := '.svg,.psd';
+	Settings.BuildThumbnailExtList;
+	Assert.IsTrue(Settings.IsThumbnailExtension('.svg'));
+	Assert.IsTrue(Settings.IsThumbnailExtension('.psd'));
+	Assert.IsFalse(Settings.IsThumbnailExtension('.jpg'));
 end;
 
 initialization

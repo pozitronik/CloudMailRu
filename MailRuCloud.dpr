@@ -160,7 +160,8 @@ uses
 	OpenSSLProvider in 'src\Infrastructure\OpenSSL\OpenSSLProvider.pas',
 	AccountCredentialsProvider in 'src\Infrastructure\Password\AccountCredentialsProvider.pas',
 	ThumbnailSizeSelector in 'src\Application\Thumbnail\ThumbnailSizeSelector.pas',
-	CloudThumbnailService in 'src\Application\Thumbnail\CloudThumbnailService.pas';
+	CloudThumbnailService in 'src\Application\Thumbnail\CloudThumbnailService.pas',
+	ThumbnailBitmapConverter in 'src\Application\Thumbnail\ThumbnailBitmapConverter.pas';
 
 {$IFDEF WIN64}
 {$E wfx64}

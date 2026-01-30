@@ -40,11 +40,17 @@ type
 		ForcePrecalculateSize: int64;
 		CheckCRC: boolean;
 		HashCalculatorStrategy: integer;
+		ThumbnailExtensions: WideString;
 	private
 		FIniFilePath: WideString;
 		FAccountsIniFilePath: WideString;
+		FThumbnailExtList: TArray<string>; {Pre-parsed, lowercased, sorted for binary search}
 		function GetEnabledVirtualTypes: EVirtualType;
 	public
+		{Parse ThumbnailExtensions string into sorted lookup array. Call after setting ThumbnailExtensions.}
+		procedure BuildThumbnailExtList;
+		{Check if the given file extension is in the thumbnail extensions list. O(log n).}
+		function IsThumbnailExtension(const Ext: WideString): boolean;
 		property IniFilePath: WideString read FIniFilePath write FIniFilePath;
 		property AccountsIniFilePath: WideString read FAccountsIniFilePath write FAccountsIniFilePath;
 		property EnabledVirtualTypes: EVirtualType read GetEnabledVirtualTypes;
@@ -52,17 +58,42 @@ type
 
 implementation
 
+uses
+	SysUtils,
+	Generics.Collections;
+
 {TPluginSettings}
+
+procedure TPluginSettings.BuildThumbnailExtList;
+var
+	Raw: TArray<string>;
+	I: integer;
+begin
+	Raw := string(ThumbnailExtensions).Split([',']);
+	SetLength(FThumbnailExtList, Length(Raw));
+	for I := 0 to High(Raw) do
+		FThumbnailExtList[I] := LowerCase(Trim(Raw[I]));
+	TArray.Sort<string>(FThumbnailExtList);
+end;
+
+function TPluginSettings.IsThumbnailExtension(const Ext: WideString): boolean;
+var
+	FoundIndex: integer;
+begin
+	if (Ext = '') or (Length(FThumbnailExtList) = 0) then
+		Exit(False);
+	Result := TArray.BinarySearch<string>(FThumbnailExtList, LowerCase(Ext), FoundIndex);
+end;
 
 function TPluginSettings.GetEnabledVirtualTypes: EVirtualType;
 begin
-	result := [];
+	Result := [];
 	if ShowTrashFolders then
-		result := result + [VTTrash];
+		Result := Result + [VTTrash];
 	if ShowSharedFolders then
-		result := result + [VTShared];
+		Result := Result + [VTShared];
 	if ShowInvitesFolders then
-		result := result + [VTInvites];
+		Result := Result + [VTInvites];
 end;
 
 end.
