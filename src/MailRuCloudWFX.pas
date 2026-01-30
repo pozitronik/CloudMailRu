@@ -748,10 +748,13 @@ begin
 	if not EnsureAuthorized(Cloud) then
 		Exit;
 
-	{Let cloud API decide if file supports thumbnails}
+	{NOTE: FS_BITMAP_CACHE tells TC to write thumbnails to tcthumbs.idb, and TC does write them.
+		However, TC always re-requests thumbnails from WFX plugins on every directory entry
+		regardless of this flag - it never reads cached bitmaps back for virtual file systems.
+		The flag is kept in case future TC versions fix this behavior.}
 	ReturnedBitmap := Cloud.GetThumbnail(RealPath.Path, Width, Height);
 	if ReturnedBitmap <> 0 then
-		Result := FS_BITMAP_EXTRACTED or FS_BITMAP_CACHE;
+		Result := FS_BITMAP_EXTRACTED + FS_BITMAP_CACHE;
 end;
 
 function TWFXApplication.FsFindClose(Hdl: THandle): Integer;
