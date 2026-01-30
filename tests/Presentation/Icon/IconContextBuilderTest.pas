@@ -342,8 +342,15 @@ var
 	DirListing: TCloudDirItemList;
 	InviteListing: TCloudIncomingInviteList;
 	Context: TIconContext;
+	TestItem: TCloudDirItem;
 begin
-	{TODO: Requires ConnectionManager mocking to test properly}
+	{ConnectionManager returns nil for 'account' -- mock fetcher ignores Cloud parameter}
+	TestItem := Default(TCloudDirItem);
+	TestItem.name := 'test.txt';
+	TestItem.type_ := 'file';
+	TestItem.size := 42;
+	FMockItemFetcher.SetReturnItem(TestItem);
+
 	Input.Path.FromPath('\account\folder\test.txt');
 	Input.IconsMode := 1;
 	SetLength(DirListing, 0);
@@ -353,6 +360,9 @@ begin
 
 	Assert.IsTrue(Context.HasItem, 'Regular path should set HasItem');
 	Assert.IsFalse(Context.HasInviteItem, 'Regular path should not set HasInviteItem');
+	Assert.IsTrue(FMockItemFetcher.FetchCalled, 'Should call fetcher for regular path');
+	Assert.AreEqual('test.txt', string(Context.Item.name));
+	Assert.AreEqual(Int64(42), Context.Item.size);
 end;
 
 procedure TIconContextBuilderTest.TestBuildContext_RegularPath_SetsHasItemTrue;
@@ -361,8 +371,14 @@ var
 	DirListing: TCloudDirItemList;
 	InviteListing: TCloudIncomingInviteList;
 	Context: TIconContext;
+	TestItem: TCloudDirItem;
 begin
-	{TODO: Requires ConnectionManager mocking to test properly}
+	{ConnectionManager returns nil for 'account' -- mock fetcher ignores Cloud parameter}
+	TestItem := Default(TCloudDirItem);
+	TestItem.name := 'file.txt';
+	TestItem.type_ := 'file';
+	FMockItemFetcher.SetReturnItem(TestItem);
+
 	Input.Path.FromPath('\account\file.txt');
 	Input.IconsMode := 1;
 	SetLength(DirListing, 0);
@@ -371,6 +387,8 @@ begin
 	Context := FBuilder.BuildContext(Input, DirListing, InviteListing);
 
 	Assert.IsTrue(Context.HasItem);
+	Assert.IsTrue(FMockItemFetcher.FetchCalled, 'Should call fetcher for regular path');
+	Assert.AreEqual('file.txt', string(Context.Item.name));
 end;
 
 procedure TIconContextBuilderTest.TestBuildContext_AccountRoot_SkipsDirItemLookup;
