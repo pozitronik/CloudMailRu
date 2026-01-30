@@ -87,6 +87,8 @@ type
 		{OTHER ROUTINES}
 		function GetHTTP: ICloudHTTP;
 		function RefreshCSRFToken: Boolean;
+		{Builds credentials, runs auth strategy, applies result to connection state}
+		function PerformAuthentication: Boolean;
 		{Re-runs auth strategy when CSRF refresh fails (e.g. expired OAuth session)}
 		function ReAuthenticate: Boolean;
 	protected
@@ -399,14 +401,12 @@ begin
 		FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_TOKEN_UPDATE)
 end;
 
-function TCloudMailRu.ReAuthenticate: Boolean;
+function TCloudMailRu.PerformAuthentication: Boolean;
 var
 	Credentials: TAuthCredentials;
 	AuthResult: TAuthResult;
 begin
 	Result := False;
-	FLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, SESSION_EXPIRED);
-
 	Credentials := TAuthCredentials.Create(Email, Password, FSettings.AccountSettings.User, FSettings.AccountSettings.Domain);
 	AuthResult := FAuthStrategy.Authenticate(Credentials, HTTP, FLogger);
 
@@ -415,9 +415,16 @@ begin
 		FAuthToken := AuthResult.AuthToken;
 		FOAuthToken := AuthResult.OAuthToken;
 		FUnitedParams := AuthResult.UnitedParams;
-		FLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, SESSION_REAUTHENTICATED);
 		Result := True;
 	end;
+end;
+
+function TCloudMailRu.ReAuthenticate: Boolean;
+begin
+	FLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, SESSION_EXPIRED);
+	Result := PerformAuthentication;
+	if Result then
+		FLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, SESSION_REAUTHENTICATED);
 end;
 
 function TCloudMailRu.InitSharedConnectionParameters(): Boolean;
@@ -457,29 +464,13 @@ end;
 {Delegates authentication to the injected IAuthStrategy.
 	The strategy is responsible for obtaining auth tokens and setting up connection parameters.}
 function TCloudMailRu.LoginRegular: Boolean;
-var
-	Credentials: TAuthCredentials;
-	AuthResult: TAuthResult;
 begin
-	Result := False;
-
 	FLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, Format(LOGIN_TO, [Email]));
-
-	{Build credentials from account settings}
-	Credentials := TAuthCredentials.Create(Email, Password, FSettings.AccountSettings.User, FSettings.AccountSettings.Domain);
-
-	{Delegate to auth strategy}
-	AuthResult := FAuthStrategy.Authenticate(Credentials, HTTP, FLogger);
-
-	if AuthResult.Success then
+	Result := PerformAuthentication;
+	if Result then
 	begin
-		{Apply auth result to connection state}
-		FAuthToken := AuthResult.AuthToken;
-		FOAuthToken := AuthResult.OAuthToken;
-		FUnitedParams := AuthResult.UnitedParams;
 		FLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, CONNECTED_TO, [Email]);
 		LogUserSpaceInfo;
-		Result := true;
 	end;
 end;
 
