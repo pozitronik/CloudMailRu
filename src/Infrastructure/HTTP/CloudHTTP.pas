@@ -293,7 +293,7 @@ begin
 	HTTP.AllowCookies := True;
 	HTTP.HTTPOptions := [hoForceEncodeParams, hoNoParseMetaHTTPEquiv, hoKeepOrigProtocol, hoTreat302Like303];
 	HTTP.HandleRedirects := True;
-	if (Settings.SocketTimeout < 0) then
+	if (Settings.SocketTimeout <> 0) then
 	begin
 		HTTP.ConnectTimeout := Settings.SocketTimeout;
 		HTTP.ReadTimeout := Settings.SocketTimeout;

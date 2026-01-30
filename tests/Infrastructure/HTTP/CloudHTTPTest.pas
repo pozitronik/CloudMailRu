@@ -125,7 +125,9 @@ type
 		[Test]
 		procedure TestCreate_NegativeTimeout_SetsTimeouts;
 		[Test]
-		procedure TestCreate_PositiveTimeout_DoesNotSetTimeouts;
+		procedure TestCreate_PositiveTimeout_SetsTimeouts;
+		[Test]
+		procedure TestCreate_ZeroTimeout_DoesNotSetTimeouts;
 
 		{Throttle tests}
 		[Test]
@@ -617,20 +619,42 @@ begin
 	end;
 end;
 
-procedure TCloudMailRuHTTPConstructorTest.TestCreate_PositiveTimeout_DoesNotSetTimeouts;
+procedure TCloudMailRuHTTPConstructorTest.TestCreate_PositiveTimeout_SetsTimeouts;
 var
 	Settings: TConnectionSettings;
 	HTTP: TCloudMailRuHTTP;
 begin
-	{Positive timeout means "use default" per the code logic}
 	Settings := Default(TConnectionSettings);
 	Settings.SocketTimeout := 5000;
 	HTTP := TCloudMailRuHTTP.Create(Settings, FLogger, FProgress);
 	try
-		{Default TIdHTTP timeout is 0 (infinite)}
-		Assert.AreEqual(0, HTTP.HTTP.ConnectTimeout, 'Positive timeout should not override default');
+		Assert.AreEqual(5000, HTTP.HTTP.ConnectTimeout, 'Positive timeout should be applied');
+		Assert.AreEqual(5000, HTTP.HTTP.ReadTimeout, 'Positive timeout should be applied');
 	finally
 		HTTP.Free;
+	end;
+end;
+
+procedure TCloudMailRuHTTPConstructorTest.TestCreate_ZeroTimeout_DoesNotSetTimeouts;
+var
+	Settings: TConnectionSettings;
+	HTTP: TCloudMailRuHTTP;
+	DefaultHTTP: TIdHTTP;
+begin
+	{Zero means "use Indy default" - do not override}
+	DefaultHTTP := TIdHTTP.Create();
+	try
+		Settings := Default(TConnectionSettings);
+		Settings.SocketTimeout := 0;
+		HTTP := TCloudMailRuHTTP.Create(Settings, FLogger, FProgress);
+		try
+			Assert.AreEqual(DefaultHTTP.ConnectTimeout, HTTP.HTTP.ConnectTimeout, 'ConnectTimeout should stay at Indy default');
+			Assert.AreEqual(DefaultHTTP.ReadTimeout, HTTP.HTTP.ReadTimeout, 'ReadTimeout should stay at Indy default');
+		finally
+			HTTP.Free;
+		end;
+	finally
+		DefaultHTTP.Free;
 	end;
 end;
 
