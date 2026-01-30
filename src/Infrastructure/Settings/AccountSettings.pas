@@ -26,7 +26,7 @@ type
 		EncryptFilesMode: Integer;
 		EncryptFileNames: Boolean;
 		ShardOverride: WideString; //hidden option, allows to override working shard for account
-		UploadUrlOverride: WideString; //hidden option, alows to override upload server for account
+		UploadUrlOverride: WideString; //hidden option, allows to override upload server for account
 		CryptedGUIDFiles: WideString; //The hash of files encryption password to check its validity
 		AuthMethod: Integer; //Authentication method: 0=classic web, 4=OAuth app password
 		UseAppPassword: Boolean; //True if password is an app password (for OAuth)
