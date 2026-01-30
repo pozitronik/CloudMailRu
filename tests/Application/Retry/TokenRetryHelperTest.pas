@@ -24,6 +24,10 @@ type
 		procedure TestEmptyJSON_ReturnsFalse;
 		[Test]
 		procedure TestInvalidJSON_ReturnsFalse;
+		[Test]
+		procedure TestNotAuthorizedError_ReturnsTrue;
+		[Test]
+		procedure TestNotAuthorizedError_DifferentValue_ReturnsFalse;
 	end;
 
 	{Tests for IsTokenExpiredResult}
@@ -71,6 +75,8 @@ type
 		procedure TestNeedsTokenRefresh_IntegerTokenOutdated;
 		[Test]
 		procedure TestNeedsTokenRefresh_IntegerOK;
+		[Test]
+		procedure TestNeedsTokenRefresh_BooleanWithNotAuthorizedError;
 	end;
 
 	{Mock implementation of IRetryContext for testing TRetryOperation}
@@ -174,6 +180,7 @@ const
 	JSON_SUCCESS = '{"status":200,"body":{"home":"/test"}}';
 	JSON_TOKEN_ERROR = '{"status":400,"body":"token"}';
 	JSON_OTHER_ERROR = '{"status":400,"body":"exists"}';
+	JSON_NOT_AUTHORIZED = '{"error":"NOT/AUTHORIZED"}';
 
 { TIsTokenExpiredInJSONTest }
 
@@ -200,6 +207,16 @@ end;
 procedure TIsTokenExpiredInJSONTest.TestInvalidJSON_ReturnsFalse;
 begin
 	Assert.IsFalse(IsTokenExpiredInJSON('not valid json'));
+end;
+
+procedure TIsTokenExpiredInJSONTest.TestNotAuthorizedError_ReturnsTrue;
+begin
+	Assert.IsTrue(IsTokenExpiredInJSON(JSON_NOT_AUTHORIZED));
+end;
+
+procedure TIsTokenExpiredInJSONTest.TestNotAuthorizedError_DifferentValue_ReturnsFalse;
+begin
+	Assert.IsFalse(IsTokenExpiredInJSON('{"error":"SOME_OTHER_ERROR"}'));
 end;
 
 { TIsTokenExpiredResultTest }
@@ -320,6 +337,14 @@ var
 begin
 	R := TAPICallResult.FromInteger(CLOUD_OPERATION_OK, JSON_SUCCESS);
 	Assert.IsFalse(R.NeedsTokenRefresh, 'OK result should not need refresh');
+end;
+
+procedure TAPICallResultTest.TestNeedsTokenRefresh_BooleanWithNotAuthorizedError;
+var
+	R: TAPICallResult;
+begin
+	R := TAPICallResult.FromBoolean(False, JSON_NOT_AUTHORIZED);
+	Assert.IsTrue(R.NeedsTokenRefresh, 'Failed Boolean with NOT/AUTHORIZED should need refresh');
 end;
 
 { TMockRetryContext }

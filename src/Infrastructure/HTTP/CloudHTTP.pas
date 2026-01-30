@@ -432,7 +432,7 @@ begin
 						{These are "expected" API responses, not transport errors:
 							- 400: Often means "hash not found" for deduplication checks (see AddFileByIdentity)
 							- 507: Storage quota exceeded
-						Write response body so caller can parse the actual API error.}
+							Write response body so caller can parse the actual API error.}
 						begin
 							ResultData.WriteString((E as EIdHTTPProtocolException).ErrorMessage);
 							Result := CLOUD_OPERATION_OK;
@@ -663,10 +663,13 @@ begin
 				Result := CLOUD_OPERATION_FAILED; //Для всех Post-запросов
 			end;
 	end;
-	if (E is EIdHTTPProtocolException and (NAME_TOKEN = JSONHelper.getBodyError((E as EIdHTTPProtocolException).ErrorMessage))) then
+	if E is EIdHTTPProtocolException then
 	begin
-		Logger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, CSRF_UPDATE_REQUIRED, [method_string, URL]);
-		exit(CLOUD_ERROR_TOKEN_OUTDATED);
+		if (NAME_TOKEN = JSONHelper.getBodyError((E as EIdHTTPProtocolException).ErrorMessage)) or JSONHelper.isNotAuthorizedError((E as EIdHTTPProtocolException).ErrorMessage) then
+		begin
+			Logger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, CSRF_UPDATE_REQUIRED, [method_string, URL]);
+			exit(CLOUD_ERROR_TOKEN_OUTDATED);
+		end;
 	end;
 
 	if E is EAbort then

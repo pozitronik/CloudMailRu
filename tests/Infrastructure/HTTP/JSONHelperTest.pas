@@ -44,6 +44,17 @@ type
 		procedure TestGetRegistrationBodyValid;
 		[Test]
 		procedure TestGetRegistrationBodyInvalid;
+		{isNotAuthorizedError tests}
+		[Test]
+		procedure TestIsNotAuthorizedError_ValidResponse;
+		[Test]
+		procedure TestIsNotAuthorizedError_DifferentError;
+		[Test]
+		procedure TestIsNotAuthorizedError_EmptyString;
+		[Test]
+		procedure TestIsNotAuthorizedError_InvalidJSON;
+		[Test]
+		procedure TestIsNotAuthorizedError_BodyTokenError;
 	end;
 
 implementation
@@ -177,6 +188,32 @@ var
 	Body: WideString;
 begin
 	Assert.IsFalse(getRegistrationBody('invalid', Body));
+end;
+
+procedure TJSONHelperTest.TestIsNotAuthorizedError_ValidResponse;
+begin
+	Assert.IsTrue(isNotAuthorizedError('{"error":"NOT/AUTHORIZED"}'));
+end;
+
+procedure TJSONHelperTest.TestIsNotAuthorizedError_DifferentError;
+begin
+	Assert.IsFalse(isNotAuthorizedError('{"error":"SOME_OTHER_ERROR"}'));
+end;
+
+procedure TJSONHelperTest.TestIsNotAuthorizedError_EmptyString;
+begin
+	Assert.IsFalse(isNotAuthorizedError(''));
+end;
+
+procedure TJSONHelperTest.TestIsNotAuthorizedError_InvalidJSON;
+begin
+	Assert.IsFalse(isNotAuthorizedError('not valid json'));
+end;
+
+procedure TJSONHelperTest.TestIsNotAuthorizedError_BodyTokenError;
+begin
+	{The old-style token error should NOT match isNotAuthorizedError}
+	Assert.IsFalse(isNotAuthorizedError('{"body":"token"}'));
 end;
 
 initialization

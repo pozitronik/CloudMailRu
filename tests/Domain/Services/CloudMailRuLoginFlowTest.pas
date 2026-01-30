@@ -97,6 +97,31 @@ type
 		procedure TestGetUserSpace_PublicAccount_Works;
 	end;
 
+	{Tests for RefreshToken fallback to ReAuthenticate when CSRF refresh fails}
+	[TestFixture]
+	TCloudMailRuRefreshTokenTest = class
+	private
+		FMockHTTP: TMockCloudHTTP;
+		FMockHTTPManager: TMockHTTPManager;
+		FCloud: TTestableLoginCloud;
+	public
+		[Setup]
+		procedure Setup;
+		[TearDown]
+		procedure TearDown;
+
+		[Test]
+		procedure TestRefreshToken_CSRFSucceeds_ReturnsTrue;
+		[Test]
+		procedure TestRefreshToken_CSRFFails_ReAuthSucceeds_ReturnsTrue;
+		[Test]
+		procedure TestRefreshToken_CSRFFails_ReAuthFails_ReturnsFalse;
+		[Test]
+		procedure TestRefreshToken_CSRFFails_ReAuth_UpdatesAuthToken;
+		[Test]
+		procedure TestRefreshToken_CSRFFails_ReAuth_CallsAuthStrategy;
+	end;
+
 implementation
 
 const
@@ -407,7 +432,134 @@ begin
 	Assert.IsTrue(FMockHTTP.WasURLCalled(API_USER_SPACE), 'Should call user space API');
 end;
 
+{TCloudMailRuRefreshTokenTest}
+
+procedure TCloudMailRuRefreshTokenTest.Setup;
+begin
+	FMockHTTP := TMockCloudHTTP.Create;
+	FMockHTTPManager := TMockHTTPManager.Create(FMockHTTP);
+end;
+
+procedure TCloudMailRuRefreshTokenTest.TearDown;
+begin
+	FreeAndNil(FCloud);
+	FMockHTTPManager := nil;
+	FMockHTTP := nil;
+end;
+
+procedure TCloudMailRuRefreshTokenTest.TestRefreshToken_CSRFSucceeds_ReturnsTrue;
+var
+	Settings: TCloudSettings;
+begin
+	Settings := Default(TCloudSettings);
+	Settings.AccountSettings.Email := 'test@mail.ru';
+	Settings.AccountSettings.Password := 'pass';
+
+	FCloud := TTestableLoginCloud.Create(Settings, FMockHTTPManager, TestThreadID(),
+		TMockAuthStrategy.CreateSuccess('initial_token'),
+		TNullFileSystem.Create, TNullLogger.Create, TNullProgress.Create,
+		TNullRequest.Create, TNullTCHandler.Create, TNullCipher.Create,
+		TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create);
+
+	{CSRF refresh succeeds - returns new token in body.token}
+	FMockHTTP.SetResponse(API_CSRF, True, '{"status":200,"body":{"token":"new_csrf_token"}}');
+
+	Assert.IsTrue(FCloud.RefreshToken, 'RefreshToken should succeed when CSRF refresh works');
+end;
+
+procedure TCloudMailRuRefreshTokenTest.TestRefreshToken_CSRFFails_ReAuthSucceeds_ReturnsTrue;
+var
+	Settings: TCloudSettings;
+begin
+	Settings := Default(TCloudSettings);
+	Settings.AccountSettings.Email := 'test@mail.ru';
+	Settings.AccountSettings.Password := 'pass';
+
+	FCloud := TTestableLoginCloud.Create(Settings, FMockHTTPManager, TestThreadID(),
+		TMockAuthStrategy.CreateSuccess('reauth_token'),
+		TNullFileSystem.Create, TNullLogger.Create, TNullProgress.Create,
+		TNullRequest.Create, TNullTCHandler.Create, TNullCipher.Create,
+		TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create);
+
+	{CSRF refresh fails - empty response}
+	FMockHTTP.SetResponse(API_CSRF, True, '');
+
+	Assert.IsTrue(FCloud.RefreshToken, 'RefreshToken should succeed via ReAuthenticate fallback');
+end;
+
+procedure TCloudMailRuRefreshTokenTest.TestRefreshToken_CSRFFails_ReAuthFails_ReturnsFalse;
+var
+	Settings: TCloudSettings;
+begin
+	Settings := Default(TCloudSettings);
+	Settings.AccountSettings.Email := 'test@mail.ru';
+	Settings.AccountSettings.Password := 'pass';
+
+	FCloud := TTestableLoginCloud.Create(Settings, FMockHTTPManager, TestThreadID(),
+		TMockAuthStrategy.CreateFailure('Auth failed'),
+		TNullFileSystem.Create, TNullLogger.Create, TNullProgress.Create,
+		TNullRequest.Create, TNullTCHandler.Create, TNullCipher.Create,
+		TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create);
+
+	{CSRF refresh fails}
+	FMockHTTP.SetResponse(API_CSRF, True, '');
+
+	Assert.IsFalse(FCloud.RefreshToken, 'RefreshToken should fail when both CSRF and ReAuthenticate fail');
+end;
+
+procedure TCloudMailRuRefreshTokenTest.TestRefreshToken_CSRFFails_ReAuth_UpdatesAuthToken;
+var
+	Settings: TCloudSettings;
+begin
+	Settings := Default(TCloudSettings);
+	Settings.AccountSettings.Email := 'test@mail.ru';
+	Settings.AccountSettings.Password := 'pass';
+
+	FCloud := TTestableLoginCloud.Create(Settings, FMockHTTPManager, TestThreadID(),
+		TMockAuthStrategy.CreateSuccess('fresh_oauth_token'),
+		TNullFileSystem.Create, TNullLogger.Create, TNullProgress.Create,
+		TNullRequest.Create, TNullTCHandler.Create, TNullCipher.Create,
+		TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create);
+
+	{CSRF refresh fails}
+	FMockHTTP.SetResponse(API_CSRF, True, '');
+
+	FCloud.RefreshToken;
+
+	Assert.AreEqual(String('fresh_oauth_token'), String(FCloud.GetAuthToken),
+		'ReAuthenticate should update AuthToken with new value');
+end;
+
+procedure TCloudMailRuRefreshTokenTest.TestRefreshToken_CSRFFails_ReAuth_CallsAuthStrategy;
+var
+	Settings: TCloudSettings;
+	AuthStrategy: TMockAuthStrategy;
+begin
+	Settings := Default(TCloudSettings);
+	Settings.AccountSettings.Email := 'test@mail.ru';
+	Settings.AccountSettings.Password := 'pass';
+
+	AuthStrategy := TMockAuthStrategy.CreateSuccess('token');
+
+	FCloud := TTestableLoginCloud.Create(Settings, FMockHTTPManager, TestThreadID(),
+		AuthStrategy,
+		TNullFileSystem.Create, TNullLogger.Create, TNullProgress.Create,
+		TNullRequest.Create, TNullTCHandler.Create, TNullCipher.Create,
+		TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create);
+
+	{CSRF refresh fails}
+	FMockHTTP.SetResponse(API_CSRF, True, '');
+
+	AuthStrategy.Reset;
+	FCloud.RefreshToken;
+
+	Assert.IsTrue(AuthStrategy.AuthenticateCalled, 'ReAuthenticate should call auth strategy');
+	Assert.AreEqual(String('test@mail.ru'), String(AuthStrategy.LastCredentials.Email),
+		'ReAuthenticate should pass correct email');
+end;
+
 initialization
 	TDUnitX.RegisterTestFixture(TCloudMailRuLoginFlowTest);
+	TDUnitX.RegisterTestFixture(TCloudMailRuRefreshTokenTest);
 
 end.

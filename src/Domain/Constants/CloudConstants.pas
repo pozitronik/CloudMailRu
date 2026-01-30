@@ -193,6 +193,9 @@ const
 	NAME_CSRF = 'csrf';
 	NAME_DEVICE = 'device';
 
+	{Error values from API responses}
+	NAME_ERROR_NOT_AUTHORIZED = 'NOT/AUTHORIZED';
+
 	{Streaming formats}
 	STREAMING_FORMAT_UNSET = -1; {not a format, it set when the streaming settings cannot be retrieved for an extension}
 	STREAMING_FORMAT_NONE = 0;

@@ -208,6 +208,10 @@ type
 		{Token outdated handling}
 		[Test]
 		procedure TestExceptionHandler_TokenOutdated_ReturnsTokenOutdatedError;
+		[Test]
+		procedure TestExceptionHandler_NotAuthorized_ReturnsTokenOutdatedError;
+		[Test]
+		procedure TestExceptionHandler_OtherHTTPError_DoesNotReturnTokenOutdated;
 
 		{Logging tests}
 		[Test]
@@ -882,6 +886,32 @@ begin
 	E := EIdHTTPProtocolException.CreateError(403, 'Forbidden', '{"body":"token"}');
 	try
 		Assert.AreEqual(CLOUD_ERROR_TOKEN_OUTDATED, FHTTP.ExceptionHandler(E, 'http://test.com', HTTP_METHOD_POST, False));
+	finally
+		E.Free;
+	end;
+end;
+
+procedure TCloudMailRuHTTPExceptionHandlerTest.TestExceptionHandler_NotAuthorized_ReturnsTokenOutdatedError;
+var
+	E: EIdHTTPProtocolException;
+begin
+	//OAuth session expiry returns "error":"NOT/AUTHORIZED" with HTTP 403
+	E := EIdHTTPProtocolException.CreateError(403, 'Forbidden', '{"error":"NOT/AUTHORIZED"}');
+	try
+		Assert.AreEqual(CLOUD_ERROR_TOKEN_OUTDATED, FHTTP.ExceptionHandler(E, 'http://test.com', HTTP_METHOD_POST, False));
+	finally
+		E.Free;
+	end;
+end;
+
+procedure TCloudMailRuHTTPExceptionHandlerTest.TestExceptionHandler_OtherHTTPError_DoesNotReturnTokenOutdated;
+var
+	E: EIdHTTPProtocolException;
+begin
+	//Other HTTP errors should not trigger token outdated
+	E := EIdHTTPProtocolException.CreateError(500, 'Internal Server Error', '{"error":"INTERNAL"}');
+	try
+		Assert.AreNotEqual(CLOUD_ERROR_TOKEN_OUTDATED, FHTTP.ExceptionHandler(E, 'http://test.com', HTTP_METHOD_POST, False));
 	finally
 		E.Free;
 	end;

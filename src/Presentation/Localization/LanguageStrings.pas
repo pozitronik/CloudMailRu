@@ -200,6 +200,8 @@ const
 	SPLIT_PARTIAL_UPLOAD_TITLE = 'Insufficient cloud storage';
 	SPLIT_PARTIAL_UPLOAD_MSG = 'Not enough space for the entire file.'#13#10'Available: %s, File size: %s'#13#10#13#10'Only %d of %d chunks can be uploaded.'#13#10'Continue with partial upload?';
 	SPLIT_NO_SPACE_MSG = 'Not enough space to upload.'#13#10'Available: %s, Required: %s';
+	SESSION_EXPIRED = 'OAuth session expired, attempting re-authentication';
+	SESSION_REAUTHENTICATED = 'Successfully re-authenticated after session expiry';
 	TOKEN_UPDATED = 'Token updated';
 	TRASH_LISTING = 'Trash bin listing';
 	TRY_ANOTHER_SHARD = 'Try with another shard?';

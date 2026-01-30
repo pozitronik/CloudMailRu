@@ -87,6 +87,8 @@ type
 		{OTHER ROUTINES}
 		function GetHTTP: ICloudHTTP;
 		function RefreshCSRFToken: Boolean;
+		{Re-runs auth strategy when CSRF refresh fails (e.g. expired OAuth session)}
+		function ReAuthenticate: Boolean;
 	protected
 		FDoCryptFiles: Boolean;
 		FDoCryptFilenames: Boolean;
@@ -243,6 +245,8 @@ end;
 function TCloudMailRu.RefreshToken: Boolean;
 begin
 	Result := RefreshCSRFToken;
+	if not Result then
+		Result := ReAuthenticate;
 end;
 
 function TCloudMailRu.GetPage(const URL: WideString; var JSON: WideString; var ShowProgress: Boolean): Boolean;
@@ -393,6 +397,27 @@ begin
 		FLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, TOKEN_UPDATED)
 	else
 		FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_TOKEN_UPDATE)
+end;
+
+function TCloudMailRu.ReAuthenticate: Boolean;
+var
+	Credentials: TAuthCredentials;
+	AuthResult: TAuthResult;
+begin
+	Result := False;
+	FLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, SESSION_EXPIRED);
+
+	Credentials := TAuthCredentials.Create(Email, Password, FSettings.AccountSettings.User, FSettings.AccountSettings.Domain);
+	AuthResult := FAuthStrategy.Authenticate(Credentials, HTTP, FLogger);
+
+	if AuthResult.Success then
+	begin
+		FAuthToken := AuthResult.AuthToken;
+		FOAuthToken := AuthResult.OAuthToken;
+		FUnitedParams := AuthResult.UnitedParams;
+		FLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, SESSION_REAUTHENTICATED);
+		Result := True;
+	end;
 end;
 
 function TCloudMailRu.InitSharedConnectionParameters(): Boolean;

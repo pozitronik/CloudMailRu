@@ -13,6 +13,8 @@ function getShard(JSON: WideString; var Shard: WideString; ShardType: WideString
 function getBodyError(JSON: WideString): WideString;
 function getBodyToken(JSON: WideString; var Token: WideString): Boolean;
 function getRegistrationBody(JSON: WideString; var Body: WideString): Boolean;
+//Checks if JSON contains "error": "NOT/AUTHORIZED" - the OAuth session expiry response
+function isNotAuthorizedError(JSON: WideString): Boolean;
 
 implementation
 
@@ -102,6 +104,18 @@ begin
 			Body := ExtractedBody;
 			Result := True;
 		end;
+	finally
+		SafeVal.Free;
+	end;
+end;
+
+function isNotAuthorizedError(JSON: WideString): Boolean;
+var
+	SafeVal: TSafeJSON;
+begin
+	SafeVal := TSafeJSON.Parse(JSON);
+	try
+		Result := SafeVal.Get(NAME_ERROR).AsString = NAME_ERROR_NOT_AUTHORIZED;
 	finally
 		SafeVal.Free;
 	end;
