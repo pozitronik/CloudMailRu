@@ -29,7 +29,7 @@ const
 
 type
 
-	TDescription = class {todo: class rename and interface extraction}
+	TDescription = class
 
 	private
 	var
