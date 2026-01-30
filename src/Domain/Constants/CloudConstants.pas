@@ -132,7 +132,7 @@ const
 	SHARD_TYPE_WEB = 'web';
 	SHARD_TYPE_UPLOAD = 'upload';
 	SHARD_TYPE_GET = 'get';
-	SHARD_TYPE_THUMBNAILS = 'thumbnails'; {todo: thumbnails mode for tc maybe?}
+	SHARD_TYPE_THUMBNAILS = 'thumbnails';
 
 	{JSON names}
 	NAME_TOKEN = 'token';
