@@ -959,8 +959,7 @@ begin
 	OldRealPath.FromPath(OldName);
 	NewRealPath.FromPath(NewName);
 
-	{TODO: Check the behavior inside virtual directories}
-	if OldRealPath.TrashDir or NewRealPath.TrashDir or OldRealPath.sharedDir or NewRealPath.sharedDir then
+	if OldRealPath.IsVirtual or NewRealPath.IsVirtual then
 		exit(FS_FILE_NOTSUPPORTED);
 
 	OldCloud := ConnectionManager.Get(OldRealPath.account);
