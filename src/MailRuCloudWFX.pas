@@ -198,23 +198,23 @@ type
 		function FsFindClose(Hdl: THandle): Integer;
 		{Optional filesystem methods}
 		procedure FsStatusInfo(RemoteDir: WideString; InfoStartEnd, InfoOperation: Integer);
-		function FsExecuteFile(MainWin: THandle; RemoteName, Verb: PWideChar): Integer;
+		function FsExecuteFile(MainWin: THandle; RemoteName: PWideChar; Verb: WideString): Integer;
 		function FsGetFile(RemoteName, LocalName: WideString; CopyFlags: Integer; RemoteInfo: pRemoteInfo): Integer;
 		function FsPutFile(LocalName, RemoteName: WideString; CopyFlags: Integer): Integer;
 		function FsDeleteFile(RemoteName: WideString): Boolean;
 		function FsMkDir(Path: WideString): Boolean;
 		function FsRemoveDir(RemoteName: WideString): Boolean;
-		function FsRenMovFile(OldName: PWideChar; NewName: PWideChar; Move: Boolean; OverWrite: Boolean; ri: pRemoteInfo): Integer;
+		function FsRenMovFile(OldName: WideString; NewName: WideString; Move: Boolean; OverWrite: Boolean; ri: pRemoteInfo): Integer;
 
-		function FsDisconnect(DisconnectRoot: PWideChar): Boolean;
+		function FsDisconnect(DisconnectRoot: WideString): Boolean;
 
 		{Content methods}
 		function FsContentGetSupportedField(FieldIndex: Integer; FieldName: PAnsiChar; Units: PAnsiChar; MaxLen: Integer): Integer;
-		function FsContentGetValue(FileName: PWideChar; FieldIndex: Integer; UnitIndex: Integer; FieldValue: Pointer; MaxLen: Integer; Flags: Integer): Integer;
+		function FsContentGetValue(FileName: WideString; FieldIndex: Integer; UnitIndex: Integer; FieldValue: Pointer; MaxLen: Integer; Flags: Integer): Integer;
 		function FsExtractCustomIcon(RemoteName: PWideChar; ExtractFlags: Integer; var TheIcon: hIcon): Integer;
 
 		{Thumbnail support - TC 7.0+}
-		function FsGetPreviewBitmap(RemoteName: PWideChar; Width, Height: Integer; var ReturnedBitmap: HBITMAP): Integer;
+		function FsGetPreviewBitmap(RemoteName: WideString; Width, Height: Integer; var ReturnedBitmap: HBITMAP): Integer;
 
 		{Shutdown safety check - returns True if no background operations are active}
 		function HasActiveOperations: Boolean;
@@ -587,7 +587,7 @@ begin
 	Result := FContentFieldProvider.GetSupportedField(FieldIndex, FieldName, MaxLen);
 end;
 
-function TWFXApplication.FsContentGetValue(FileName: PWideChar; FieldIndex, UnitIndex: Integer; FieldValue: Pointer; MaxLen, Flags: Integer): Integer;
+function TWFXApplication.FsContentGetValue(FileName: WideString; FieldIndex, UnitIndex: Integer; FieldValue: Pointer; MaxLen, Flags: Integer): Integer;
 var
 	Item: TCloudDirItem;
 	RealPath: TRealPath;
@@ -645,7 +645,7 @@ begin
 		FDescriptionSyncGuard.OnFileDeleted(RealPath, Cloud);
 end;
 
-function TWFXApplication.FsDisconnect(DisconnectRoot: PWideChar): Boolean;
+function TWFXApplication.FsDisconnect(DisconnectRoot: WideString): Boolean;
 begin
 	if not FThreadState.HasActiveBackgroundJobs(ExtractFileName(DisconnectRoot)) then
 	begin
@@ -656,7 +656,7 @@ begin
 	end;
 end;
 
-function TWFXApplication.FsExecuteFile(MainWin: THandle; RemoteName, Verb: PWideChar): Integer;
+function TWFXApplication.FsExecuteFile(MainWin: THandle; RemoteName: PWideChar; Verb: WideString): Integer;
 var
 	Action: TExecutionAction;
 begin
@@ -725,7 +725,7 @@ begin
 		strpcopy(RemoteName, RenderResult.ResourceName);
 end;
 
-function TWFXApplication.FsGetPreviewBitmap(RemoteName: PWideChar; Width, Height: Integer; var ReturnedBitmap: HBITMAP): Integer;
+function TWFXApplication.FsGetPreviewBitmap(RemoteName: WideString; Width, Height: Integer; var ReturnedBitmap: HBITMAP): Integer;
 var
 	RealPath: TRealPath;
 	Cloud: TCloudMailRu;
@@ -948,7 +948,7 @@ begin
 	end;
 end;
 
-function TWFXApplication.FsRenMovFile(OldName, NewName: PWideChar; Move, OverWrite: Boolean; ri: pRemoteInfo): Integer;
+function TWFXApplication.FsRenMovFile(OldName, NewName: WideString; Move, OverWrite: Boolean; ri: pRemoteInfo): Integer;
 var
 	OldRealPath: TRealPath;
 	NewRealPath: TRealPath;
@@ -956,8 +956,8 @@ var
 begin
 	TCProgress.Progress(OldName, NewName, 0);
 
-	OldRealPath.FromPath(WideString(OldName));
-	NewRealPath.FromPath(WideString(NewName));
+	OldRealPath.FromPath(OldName);
+	NewRealPath.FromPath(NewName);
 
 	{TODO: Check the behavior inside virtual directories}
 	if OldRealPath.TrashDir or NewRealPath.TrashDir or OldRealPath.sharedDir or NewRealPath.sharedDir then
