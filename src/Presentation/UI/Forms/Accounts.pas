@@ -698,7 +698,7 @@ end;
 
 function TAccountsForm.GetSocketTimeout: Integer;
 begin
-	Result := StrToIntDef(SocketTimeoutEdit.Text, 30000);
+	Result := StrToIntDef(SocketTimeoutEdit.Text, DEFAULT_SOCKET_TIMEOUT);
 end;
 
 procedure TAccountsForm.SetUploadBPS(Value: Integer);

@@ -254,7 +254,7 @@ begin
 		DisableMultiThreading := FConfigFile.ReadBool('Main', 'DisableMultiThreading', False);
 		LogUserSpace := FConfigFile.ReadBool('Main', 'LogUserSpace', True);
 		IconsMode := FConfigFile.ReadInteger('Main', 'IconsMode', IconsModeDisabled);
-		ConnectionSettings.SocketTimeout := FConfigFile.ReadInteger('Main', 'SocketTimeout', -1);
+		ConnectionSettings.SocketTimeout := FConfigFile.ReadInteger('Main', 'SocketTimeout', DEFAULT_SOCKET_TIMEOUT);
 		ConnectionSettings.UploadBPS := FConfigFile.ReadInteger('Main', 'UploadBPS', -1);
 		ConnectionSettings.DownloadBPS := FConfigFile.ReadInteger('Main', 'DownloadBPS', -1);
 		CloudMaxFileSize := FConfigFile.ReadInt64('Main', 'CloudMaxFileSize', CLOUD_MAX_FILESIZE_DEFAULT);
@@ -305,7 +305,7 @@ begin
 		FConfigFile.WriteBoolIfNotDefault('Main', 'DisableMultiThreading', DisableMultiThreading, False);
 		FConfigFile.WriteBoolIfNotDefault('Main', 'LogUserSpace', LogUserSpace, True);
 		FConfigFile.WriteIntegerIfNotDefault('Main', 'IconsMode', IconsMode, IconsModeDisabled);
-		FConfigFile.WriteIntegerIfNotDefault('Main', 'SocketTimeout', ConnectionSettings.SocketTimeout, -1);
+		FConfigFile.WriteIntegerIfNotDefault('Main', 'SocketTimeout', ConnectionSettings.SocketTimeout, DEFAULT_SOCKET_TIMEOUT);
 		FConfigFile.WriteIntegerIfNotDefault('Main', 'UploadBPS', ConnectionSettings.UploadBPS, -1);
 		FConfigFile.WriteIntegerIfNotDefault('Main', 'DownloadBPS', ConnectionSettings.DownloadBPS, -1);
 		FConfigFile.WriteInt64IfNotDefault('Main', 'CloudMaxFileSize', CloudMaxFileSize, CLOUD_MAX_FILESIZE_DEFAULT);

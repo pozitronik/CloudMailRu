@@ -728,8 +728,8 @@ object AccountsForm: TAccountsForm
         Top = 11
         Width = 228
         Height = 13
-        Hint = 'Default: 30000ms (30 seconds). Use -1 for system default'
-        Caption = 'Network operations timeout, ms (-1 to default):'
+        Hint = 'Default: 30000ms (30 seconds). Set 0 for unlimited'
+        Caption = 'Network operations timeout, ms (0 = unlimited):'
         ParentShowHint = False
         ShowHint = True
       end
@@ -853,7 +853,7 @@ object AccountsForm: TAccountsForm
         MaxValue = 0
         MinValue = 0
         TabOrder = 0
-        Value = -1
+        Value = 30000
       end
       object SpeedLimitGB: TGroupBox
         Left = 5
