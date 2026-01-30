@@ -158,7 +158,6 @@ begin
 		FLogger.Log(LOG_LEVEL_WARNING, MSGTYPE_IMPORTANTERROR, ERR_COPY_SAME_DIR_NOT_SUPPORTED);
 		Exit(FS_FILE_NOTSUPPORTED);
 	end else begin
-		{TODO: issue #219 - handle existing file case}
 		Result := CopyToPath(OldName, NewPath);
 		if Result <> CLOUD_OPERATION_OK then
 			Exit;
