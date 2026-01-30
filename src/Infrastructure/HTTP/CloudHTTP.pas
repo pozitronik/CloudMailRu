@@ -360,16 +360,6 @@ begin
 					begin
 						ProgressEnabled := false; //сообщаем об отмене
 					end;
-				CLOUD_OPERATION_FAILED:
-					begin
-						case HTTP.ResponseCode of
-							HTTP_ERROR_BAD_REQUEST, HTTP_ERROR_OVERQUOTA:
-								{Expected API responses - see Post method comments}
-								begin
-									//Answer := (E as EIdHTTPProtocolException).ErrorMessage; //TODO: нужно протестировать, наверняка тут не json
-								end;
-						end;
-					end;
 			end;
 		end;
 	end;
@@ -641,7 +631,7 @@ begin
 	HTTP.Request.CustomHeaders.Values['X-CSRF-Token'] := Token;
 end;
 
-function TCloudMailRuHTTP.ExceptionHandler(E: Exception; URL: WideString; HTTPMethod: Integer; LogErrors: Boolean): Integer; //todo: handle OPTIONS method
+function TCloudMailRuHTTP.ExceptionHandler(E: Exception; URL: WideString; HTTPMethod: Integer; LogErrors: Boolean): Integer;
 var
 	method_string: WideString; //в зависимости от метода исходного запроса меняется текст сообщения
 begin
@@ -660,7 +650,7 @@ begin
 		HTTP_METHOD_OPTIONS:
 			begin
 				method_string := METHOD_STR_OPTIONS;
-				Result := CLOUD_OPERATION_FAILED; //Для всех Post-запросов
+				Result := CLOUD_OPERATION_FAILED;
 			end;
 	end;
 	if E is EIdHTTPProtocolException then
@@ -682,7 +672,7 @@ begin
 		else if E is EIdSocketerror then
 			Logger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_SOCKET_GENERAL, [E.ClassName, E.Message, method_string, URL])
 		else
-			Logger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_OTHER_GENERAL, [E.ClassName, E.Message, method_string, URL]);;
+			Logger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_OTHER_GENERAL, [E.ClassName, E.Message, method_string, URL]);
 	end;
 end;
 
