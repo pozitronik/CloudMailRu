@@ -99,6 +99,12 @@ type
 		procedure TestLogUserSpaceInfo_PublicAccount_DoesNotLog;
 		[Test]
 		procedure TestLogUserSpaceInfo_Success_LogsSpaceInfo;
+
+		{Pagination tests}
+		[Test]
+		procedure TestGetDirectory_Pagination_AccumulatesMultiplePages;
+		[Test]
+		procedure TestGetDirectory_SinglePage_NoExtraRequests;
 	end;
 
 implementation
@@ -403,6 +409,56 @@ begin
 
 	{No assertions needed - verify method completes without exception}
 	Assert.Pass('LogUserSpaceInfo should log space information successfully');
+end;
+
+{Pagination tests}
+
+procedure TCloudListingServiceTest.TestGetDirectory_Pagination_AccumulatesMultiplePages;
+var
+	Listing: TCloudDirItemList;
+	Success: Boolean;
+begin
+	{Queue two page responses: page 1 has 2 items, page 2 has 1 item, total expected = 3}
+	FMockHTTP.QueueResponse('folder', True,
+		'{"status":200,"body":{"count":{"folders":0,"files":3},"list":[' +
+		'{"name":"file1.txt","size":100,"type":"file","home":"/dir/file1.txt"},' +
+		'{"name":"file2.txt","size":200,"type":"file","home":"/dir/file2.txt"}' +
+		']}}');
+	FMockHTTP.QueueResponse('folder', True,
+		'{"status":200,"body":{"count":{"folders":0,"files":3},"list":[' +
+		'{"name":"file3.txt","size":300,"type":"file","home":"/dir/file3.txt"}' +
+		']}}');
+
+	Success := FService.GetDirectory('/dir', Listing);
+
+	Assert.IsTrue(Success, 'Paginated GetDirectory should succeed');
+	Assert.AreEqual(Integer(3), Integer(Length(Listing)), 'Should accumulate all 3 items from 2 pages');
+	Assert.AreEqual('file1.txt', Listing[0].name, 'First item from page 1');
+	Assert.AreEqual('file2.txt', Listing[1].name, 'Second item from page 1');
+	Assert.AreEqual('file3.txt', Listing[2].name, 'Item from page 2');
+end;
+
+procedure TCloudListingServiceTest.TestGetDirectory_SinglePage_NoExtraRequests;
+var
+	Listing: TCloudDirItemList;
+	Success: Boolean;
+	CallCountBefore, CallCountAfter: Integer;
+begin
+	{Single page: count matches list length, so no second request}
+	FMockHTTP.QueueResponse('folder', True,
+		'{"status":200,"body":{"count":{"folders":0,"files":2},"list":[' +
+		'{"name":"a.txt","size":10,"type":"file","home":"/dir/a.txt"},' +
+		'{"name":"b.txt","size":20,"type":"file","home":"/dir/b.txt"}' +
+		']}}');
+
+	CallCountBefore := FMockHTTP.GetCallCount;
+	Success := FService.GetDirectory('/dir', Listing);
+	CallCountAfter := FMockHTTP.GetCallCount;
+
+	Assert.IsTrue(Success, 'Single-page GetDirectory should succeed');
+	Assert.AreEqual(Integer(2), Integer(Length(Listing)), 'Should return all 2 items');
+	{Only 1 HTTP request should have been made (no second page request)}
+	Assert.AreEqual(Integer(1), CallCountAfter - CallCountBefore, 'Should make exactly 1 HTTP request');
 end;
 
 initialization

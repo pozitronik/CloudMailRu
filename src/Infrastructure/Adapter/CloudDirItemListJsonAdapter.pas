@@ -11,25 +11,34 @@ uses
 type
 	TCloudDirItemListJsonAdapter = class
 	public
-		{Parses JSON response into TCloudDirItemList array.
+		{Parses JSON response into TCloudDirItemList array, returning expected total from body.count.
+		 @param JSON The JSON string from API response (expects body.list structure)
+		 @param List Output parameter that receives parsed array
+		 @param ExpectedCount Output: expected total items (files + folders) from body.count; 0 if absent
+		 @return True if parsing succeeded, False otherwise}
+		class function Parse(const JSON: WideString; var List: TCloudDirItemList; out ExpectedCount: Integer): Boolean; overload; static;
+
+		{Parses JSON response into TCloudDirItemList array (ignores expected count).
 		 @param JSON The JSON string from API response (expects body.list structure)
 		 @param List Output parameter that receives parsed array
 		 @return True if parsing succeeded, False otherwise}
-		class function Parse(const JSON: WideString; var List: TCloudDirItemList): Boolean; static;
+		class function Parse(const JSON: WideString; var List: TCloudDirItemList): Boolean; overload; static;
 	end;
 
 implementation
 
 uses
+	SysUtils,
 	CloudConstants,
 	SafeJSON;
 
-class function TCloudDirItemListJsonAdapter.Parse(const JSON: WideString; var List: TCloudDirItemList): Boolean;
+class function TCloudDirItemListJsonAdapter.Parse(const JSON: WideString; var List: TCloudDirItemList; out ExpectedCount: Integer): Boolean;
 var
-	Root, ListArray, Item, CountNode: TSafeJSON;
+	Root, Body, ListArray, Item, CountNode: TSafeJSON;
 	I: Integer;
 begin
 	Result := False;
+	ExpectedCount := 0;
 	SetLength(List, 0);
 
 	Root := TSafeJSON.Parse(JSON);
@@ -37,9 +46,14 @@ begin
 		if Root.IsNull then
 			Exit;
 
-		ListArray := Root.Get(NAME_BODY).Get(NAME_LIST);
+		Body := Root.Get(NAME_BODY);
+		ListArray := Body.Get(NAME_LIST);
 		if ListArray.IsNull or not ListArray.IsArray then
 			Exit;
+
+		{Extract expected total from body.count (files + folders)}
+		CountNode := Body.Get(NAME_COUNT);
+		ExpectedCount := CountNode.Get(NAME_FILES).AsInt + CountNode.Get(NAME_FOLDERS).AsInt;
 
 		SetLength(List, ListArray.Count);
 		for I := 0 to ListArray.Count - 1 do
@@ -85,6 +99,13 @@ begin
 	finally
 		Root.Free;
 	end;
+end;
+
+class function TCloudDirItemListJsonAdapter.Parse(const JSON: WideString; var List: TCloudDirItemList): Boolean;
+var
+	Ignored: Integer;
+begin
+	Result := Parse(JSON, List, Ignored);
 end;
 
 end.

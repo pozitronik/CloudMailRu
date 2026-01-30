@@ -14,6 +14,8 @@ type
 	public
 		function FindByName(ItemName: WideString): TCloudDirItem;
 		function FindByHomePath(HomePath: WideString): TCloudDirItem;
+		{Appends all items from Source to the end of self}
+		procedure Append(const Source: TCloudDirItemList);
 	end;
 
 implementation
@@ -40,6 +42,18 @@ begin
 		if CurrentItem.name = ItemName then
 			exit(CurrentItem);
 	exit(CurrentItem.None);
+end;
+
+procedure TCloudDirItemListHelper.Append(const Source: TCloudDirItemList);
+var
+	OldLen, I: Integer;
+begin
+	if Length(Source) = 0 then
+		Exit;
+	OldLen := Length(self);
+	SetLength(self, OldLen + Length(Source));
+	for I := 0 to High(Source) do
+		self[OldLen + I] := Source[I];
 end;
 
 end.

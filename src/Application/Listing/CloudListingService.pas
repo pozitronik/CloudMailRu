@@ -94,8 +94,9 @@ end;
 function TCloudListingService.GetDirectory(Path: WideString; var Listing: TCloudDirItemList; ShowProgress: Boolean = False): Boolean;
 var
 	CallResult: TAPICallResult;
-	LocalListing: TCloudDirItemList;
+	PageListing: TCloudDirItemList;
 	UnitedParams: WideString;
+	Offset, ExpectedCount, PageExpectedCount: Integer;
 begin
 	SetLength(Listing, 0);
 	UnitedParams := FContext.GetUnitedParams;
@@ -107,7 +108,7 @@ begin
 			JSON: WideString;
 		var
 			OperationResult: TCloudOperationResult;
-		Result := FContext.GetHTTP.GetPage(Format('%s&weblink=%s%s&%s', [API_FOLDER, IncludeSlash(FContext.GetPublicLink), PathToUrl(Path, False), UnitedParams]), JSON, ShowProgress);
+		Result := FContext.GetHTTP.GetPage(Format('%s&offset=0&limit=%d&weblink=%s%s&%s', [API_FOLDER, API_FOLDER_LIMIT, IncludeSlash(FContext.GetPublicLink), PathToUrl(Path, False), UnitedParams]), JSON, ShowProgress);
 		if Result then
 		begin
 			TCloudOperationResultJsonAdapter.Parse(JSON, OperationResult);
@@ -124,34 +125,56 @@ begin
 	end;
 
 	FContext.GetHTTP.SetProgressNames(DIR_LISTING, Path);
-	SetLength(LocalListing, 0);
 
-	CallResult := FRetryOperation.Execute(
-		function: TAPICallResult
-		var
-			JSON: WideString;
-			OperationResult: TCloudOperationResult;
-			Success: Boolean;
-		begin
-			Success := FContext.GetHTTP.GetPage(Format('%s&home=%s&%s', [API_FOLDER, PathToUrl(Path), UnitedParams]), JSON, ShowProgress);
-			if Success then
+	{Pagination loop: API silently caps responses at ~8000 items per request}
+	Offset := 0;
+	ExpectedCount := 0;
+
+	repeat
+		SetLength(PageListing, 0);
+		PageExpectedCount := 0;
+
+		CallResult := FRetryOperation.Execute(
+			function: TAPICallResult
+			var
+				JSON: WideString;
+				OperationResult: TCloudOperationResult;
+				Success: Boolean;
 			begin
-				TCloudOperationResultJsonAdapter.Parse(JSON, OperationResult);
-				Success := FContext.CloudResultToBoolean(OperationResult, PREFIX_ERR_DIR_LISTING);
+				Success := FContext.GetHTTP.GetPage(Format('%s&offset=%d&limit=%d&home=%s&%s', [API_FOLDER, Offset, API_FOLDER_LIMIT, PathToUrl(Path), UnitedParams]), JSON, ShowProgress);
 				if Success then
 				begin
-					Success := TCloudDirItemListJsonAdapter.Parse(JSON, LocalListing);
-					if Success and FDoCryptFilenames then
-						FCipher.DecryptDirListing(LocalListing);
-				end else if OperationResult.OperationResult = CLOUD_ERROR_NOT_EXISTS then
-					FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, '%s%s', [PREFIX_ERR_PATH_NOT_EXISTS, Path]);
-			end;
-			Result := TAPICallResult.FromBoolean(Success, JSON);
-		end);
+					TCloudOperationResultJsonAdapter.Parse(JSON, OperationResult);
+					Success := FContext.CloudResultToBoolean(OperationResult, PREFIX_ERR_DIR_LISTING);
+					if Success then
+					begin
+						Success := TCloudDirItemListJsonAdapter.Parse(JSON, PageListing, PageExpectedCount);
+						if Success and FDoCryptFilenames then
+							FCipher.DecryptDirListing(PageListing);
+					end else if OperationResult.OperationResult = CLOUD_ERROR_NOT_EXISTS then
+						FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, '%s%s', [PREFIX_ERR_PATH_NOT_EXISTS, Path]);
+				end;
+				Result := TAPICallResult.FromBoolean(Success, JSON);
+			end);
 
-	Result := CallResult.Success;
-	if Result then
-		Listing := LocalListing;
+		if not CallResult.Success then
+		begin
+			{First page failed -- return failure; subsequent page failed -- return what we have}
+			Result := Length(Listing) > 0;
+			Exit;
+		end;
+
+		{Use expected count from the first page (all pages report the same total)}
+		if Offset = 0 then
+			ExpectedCount := PageExpectedCount;
+
+		Listing.Append(PageListing);
+		Offset := Length(Listing);
+
+	{Stop when: all items received, or empty page (safety), or no count info (single-page fallback)}
+	until (Length(PageListing) = 0) or (ExpectedCount = 0) or (Length(Listing) >= ExpectedCount);
+
+	Result := True;
 end;
 
 function TCloudListingService.GetSharedLinks(var Listing: TCloudDirItemList; ShowProgress: Boolean = False): Boolean;

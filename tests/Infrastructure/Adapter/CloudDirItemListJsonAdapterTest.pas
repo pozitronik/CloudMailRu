@@ -79,6 +79,18 @@ type
 			JSON_LARGE_SIZE = '{"status":200,"body":{"list":[' +
 				'{"name":"huge.bin","type":"file","home":"/huge.bin","size":9223372036854775807}' +
 				']}}';
+
+			{Directory listing with body.count for ExpectedCount tests}
+			JSON_WITH_COUNT = '{"status":200,"body":{"count":{"folders":1,"files":2},"list":[' +
+				'{"name":"dir1","type":"folder","home":"/dir1"},' +
+				'{"name":"a.txt","type":"file","home":"/a.txt"},' +
+				'{"name":"b.txt","type":"file","home":"/b.txt"}' +
+				']}}';
+
+			{Directory listing without body.count}
+			JSON_WITHOUT_COUNT = '{"status":200,"body":{"list":[' +
+				'{"name":"file.txt","type":"file","home":"/file.txt"}' +
+				']}}';
 	public
 		[Test]
 		procedure TestParse_DirectoryListing_ReturnsTrue;
@@ -119,6 +131,13 @@ type
 		procedure TestParse_UnicodeNames_ParsedCorrectly;
 		[Test]
 		procedure TestParse_LargeSize_ParsedCorrectly;
+		{ExpectedCount tests}
+		[Test]
+		procedure TestParse_WithCount_ReturnsExpectedCount;
+		[Test]
+		procedure TestParse_WithoutCount_ReturnsZeroExpectedCount;
+		[Test]
+		procedure TestParse_WithCount_InvalidJSON_ReturnsZeroExpectedCount;
 	end;
 
 implementation
@@ -328,6 +347,37 @@ begin
 
 	{Max Int64 value}
 	Assert.AreEqual(Int64(9223372036854775807), List[0].size);
+end;
+
+{ExpectedCount tests}
+
+procedure TCloudDirItemListJsonAdapterTest.TestParse_WithCount_ReturnsExpectedCount;
+var
+	List: TCloudDirItemList;
+	ExpectedCount: Integer;
+begin
+	Assert.IsTrue(TCloudDirItemListJsonAdapter.Parse(JSON_WITH_COUNT, List, ExpectedCount));
+	Assert.AreEqual(Integer(3), Integer(Length(List)), 'Should parse all 3 items');
+	Assert.AreEqual(Integer(3), ExpectedCount, 'ExpectedCount should be files + folders = 2 + 1');
+end;
+
+procedure TCloudDirItemListJsonAdapterTest.TestParse_WithoutCount_ReturnsZeroExpectedCount;
+var
+	List: TCloudDirItemList;
+	ExpectedCount: Integer;
+begin
+	Assert.IsTrue(TCloudDirItemListJsonAdapter.Parse(JSON_WITHOUT_COUNT, List, ExpectedCount));
+	Assert.AreEqual(Integer(1), Integer(Length(List)), 'Should parse 1 item');
+	Assert.AreEqual(Integer(0), ExpectedCount, 'ExpectedCount should be 0 when body.count is absent');
+end;
+
+procedure TCloudDirItemListJsonAdapterTest.TestParse_WithCount_InvalidJSON_ReturnsZeroExpectedCount;
+var
+	List: TCloudDirItemList;
+	ExpectedCount: Integer;
+begin
+	Assert.IsFalse(TCloudDirItemListJsonAdapter.Parse(JSON_INVALID, List, ExpectedCount));
+	Assert.AreEqual(Integer(0), ExpectedCount, 'ExpectedCount should be 0 on parse failure');
 end;
 
 initialization

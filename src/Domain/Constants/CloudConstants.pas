@@ -21,7 +21,8 @@ const
 	API_FILE_ADD = 'https://cloud.mail.ru/api/v2/file/add';
 	API_FILE_REMOVE = 'https://cloud.mail.ru/api/v2/file/remove';
 	API_FILE_COPY = 'https://cloud.mail.ru/api/v2/file/copy';
-	API_FOLDER = 'https://cloud.mail.ru/api/v2/folder?sort={%22type%22%3A%22name%22%2C%22order%22%3A%22asc%22}&offset=0&limit=65535';
+	API_FOLDER = 'https://cloud.mail.ru/api/v2/folder?sort={%22type%22%3A%22name%22%2C%22order%22%3A%22asc%22}';
+	API_FOLDER_LIMIT = 65535;
 	API_FOLDER_ADD = 'https://cloud.mail.ru/api/v2/folder/add';
 	API_FOLDER_SHARED_INFO = 'https://cloud.mail.ru/api/v2/folder/shared/info'; //get
 	API_FOLDER_INVITES = 'https://cloud.mail.ru/api/v2/folder/invites';

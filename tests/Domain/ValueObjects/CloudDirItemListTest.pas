@@ -41,6 +41,15 @@ type
 		procedure TestFindByHomePathEmptyList;
 		[Test]
 		procedure TestFromJSONMultipleItems;
+		{Append tests}
+		[Test]
+		procedure TestAppend_EmptyToEmpty_StaysEmpty;
+		[Test]
+		procedure TestAppend_ItemsToEmpty_CopiesAll;
+		[Test]
+		procedure TestAppend_ItemsToExisting_Accumulates;
+		[Test]
+		procedure TestAppend_EmptyToExisting_NoChange;
 	end;
 
 implementation
@@ -248,6 +257,66 @@ begin
 	Assert.AreEqual('first.txt', List[0].name);
 	Assert.AreEqual('second.txt', List[1].name);
 	Assert.AreEqual('third.txt', List[2].name);
+end;
+
+{Append tests}
+
+procedure TCloudDirItemListTest.TestAppend_EmptyToEmpty_StaysEmpty;
+var
+	List, Source: TCloudDirItemList;
+begin
+	SetLength(List, 0);
+	SetLength(Source, 0);
+
+	List.Append(Source);
+
+	Assert.AreEqual(Integer(0), Integer(Length(List)));
+end;
+
+procedure TCloudDirItemListTest.TestAppend_ItemsToEmpty_CopiesAll;
+var
+	List, Source: TCloudDirItemList;
+begin
+	SetLength(List, 0);
+	TCloudDirItemListJsonAdapter.Parse(JSON_MULTIPLE_ITEMS, Source);
+
+	List.Append(Source);
+
+	Assert.AreEqual(Integer(3), Integer(Length(List)));
+	Assert.AreEqual('first.txt', List[0].name);
+	Assert.AreEqual('second.txt', List[1].name);
+	Assert.AreEqual('third.txt', List[2].name);
+end;
+
+procedure TCloudDirItemListTest.TestAppend_ItemsToExisting_Accumulates;
+var
+	List, Source: TCloudDirItemList;
+begin
+	{Start with 1 file item}
+	TCloudDirItemListJsonAdapter.Parse(JSON_FILE_ITEM, List);
+	Assert.AreEqual(Integer(1), Integer(Length(List)));
+
+	{Append 3 more items}
+	TCloudDirItemListJsonAdapter.Parse(JSON_MULTIPLE_ITEMS, Source);
+	List.Append(Source);
+
+	Assert.AreEqual(Integer(4), Integer(Length(List)), 'Should have 1 + 3 = 4 items');
+	Assert.AreEqual('test.txt', List[0].name, 'Original item preserved');
+	Assert.AreEqual('first.txt', List[1].name, 'First appended item');
+	Assert.AreEqual('third.txt', List[3].name, 'Last appended item');
+end;
+
+procedure TCloudDirItemListTest.TestAppend_EmptyToExisting_NoChange;
+var
+	List, Source: TCloudDirItemList;
+begin
+	TCloudDirItemListJsonAdapter.Parse(JSON_FILE_ITEM, List);
+	SetLength(Source, 0);
+
+	List.Append(Source);
+
+	Assert.AreEqual(Integer(1), Integer(Length(List)), 'Length unchanged');
+	Assert.AreEqual('test.txt', List[0].name, 'Content preserved');
 end;
 
 initialization
