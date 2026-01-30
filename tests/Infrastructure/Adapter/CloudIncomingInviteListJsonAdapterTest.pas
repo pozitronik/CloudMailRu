@@ -272,10 +272,8 @@ begin
 	{Email should still parse correctly}
 	Assert.AreEqual('owner@mail.ru', List[0].owner.email);
 
-	{CURRENT BEHAVIOR: Unicode escape sequences are not decoded properly
-	 TODO: TSafeJSON should handle Unicode correctly
-	 For now, just verify name is non-empty}
-	Assert.IsTrue(Length(List[0].owner.name) > 0);
+	{Delphi System.JSON decodes \uXXXX escape sequences natively}
+	Assert.AreEqual(#$0418#$0432#$0430#$043D, List[0].owner.name);
 end;
 
 initialization

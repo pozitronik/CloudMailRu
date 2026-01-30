@@ -332,10 +332,9 @@ begin
 	Assert.IsTrue(TCloudDirItemListJsonAdapter.Parse(JSON_UNICODE_NAMES, List));
 	Assert.AreEqual(Integer(1), Integer(Length(List)));
 
-	{CURRENT BEHAVIOR: Unicode escape sequences are not decoded properly
-	 TODO: TSafeJSON should handle Unicode correctly
-	 For now, just verify parsing succeeded and name is non-empty}
-	Assert.IsTrue(Length(List[0].name) > 0);
+	{Delphi System.JSON decodes \uXXXX escape sequences natively}
+	Assert.AreEqual(#$0424#$0430#$0439#$043B + '.txt', List[0].name);
+	Assert.AreEqual('/' + #$0424#$0430#$0439#$043B + '.txt', List[0].home);
 end;
 
 procedure TCloudDirItemListJsonAdapterTest.TestParse_LargeSize_ParsedCorrectly;
