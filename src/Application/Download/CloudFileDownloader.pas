@@ -49,13 +49,11 @@ type
 		FProgress: IProgress;
 		FRequest: IRequest;
 		FDoCryptFiles: Boolean;
-		FDoCryptFilenames: Boolean;
-
 		{Internal download methods}
 		function DownloadRegular(RemotePath, LocalPath: WideString; var ResultHash: WideString; LogErrors: Boolean): Integer;
 		function DownloadShared(RemotePath, LocalPath: WideString; var ResultHash: WideString; LogErrors: Boolean): Integer;
 	public
-		constructor Create(Context: ICloudContext; ShardManager: ICloudShardManager; HashCalculator: ICloudHashCalculator; Cipher: ICipher; FileSystem: IFileSystem; Logger: ILogger; Progress: IProgress; Request: IRequest; DoCryptFiles, DoCryptFilenames: Boolean);
+		constructor Create(Context: ICloudContext; ShardManager: ICloudShardManager; HashCalculator: ICloudHashCalculator; Cipher: ICipher; FileSystem: IFileSystem; Logger: ILogger; Progress: IProgress; Request: IRequest; DoCryptFiles: Boolean);
 
 		{ICloudFileDownloader}
 		function Download(RemotePath, LocalPath: WideString; var ResultHash: WideString; LogErrors: Boolean = True): Integer;
@@ -70,7 +68,7 @@ uses
 
 {TCloudFileDownloader}
 
-constructor TCloudFileDownloader.Create(Context: ICloudContext; ShardManager: ICloudShardManager; HashCalculator: ICloudHashCalculator; Cipher: ICipher; FileSystem: IFileSystem; Logger: ILogger; Progress: IProgress; Request: IRequest; DoCryptFiles, DoCryptFilenames: Boolean);
+constructor TCloudFileDownloader.Create(Context: ICloudContext; ShardManager: ICloudShardManager; HashCalculator: ICloudHashCalculator; Cipher: ICipher; FileSystem: IFileSystem; Logger: ILogger; Progress: IProgress; Request: IRequest; DoCryptFiles: Boolean);
 begin
 	inherited Create;
 	FContext := Context;
@@ -82,7 +80,6 @@ begin
 	FProgress := Progress;
 	FRequest := Request;
 	FDoCryptFiles := DoCryptFiles;
-	FDoCryptFilenames := DoCryptFilenames;
 end;
 
 function TCloudFileDownloader.Download(RemotePath, LocalPath: WideString; var ResultHash: WideString; LogErrors: Boolean): Integer;
@@ -97,7 +94,7 @@ end;
 function TCloudFileDownloader.DownloadRegular(RemotePath, LocalPath: WideString; var ResultHash: WideString; LogErrors: Boolean): Integer;
 var
 	FileStream: TBufferedFileStream;
-	URL, FileName: WideString;
+	URL: WideString;
 	MemoryStream: TMemoryStream;
 	DecryptingStream: TStream;
 	DispatcherResponse: WideString;
@@ -130,13 +127,6 @@ begin
 				Exit;
 		end;
 	end;
-	if FDoCryptFilenames then
-	begin
-		FileName := ExtractUniversalFileName(RemotePath);
-		FileName := FCipher.DecryptFileName(FileName);
-		LocalPath := ChangePathFileName(LocalPath, FileName);
-	end;
-
 	try
 		FileStream := TBufferedFileStream.Create(GetUNCFilePath(LocalPath), fmCreate);
 	except

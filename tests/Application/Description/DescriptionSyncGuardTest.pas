@@ -12,13 +12,10 @@ uses
 	DescriptionSyncGuard,
 	DescriptionSyncManager,
 	PluginSettingsManager,
-	AccountsManager,
 	CloudDescriptionOperationsAdapter,
 	PluginSettings,
-	AccountSettings,
 	RealPath,
-	StreamingSettings,
-	WSList;
+	StreamingSettings;
 
 type
 	{Mock sync manager that tracks calls}
@@ -63,30 +60,12 @@ type
 		procedure SetDescriptionCopyToCloud(Value: Boolean);
 	end;
 
-	{Mock accounts manager}
-	TMockAccountsManager = class(TInterfacedObject, IAccountsManager)
-	private
-		FIsRemoteDescriptionsSupported: Boolean;
-	public
-		constructor Create;
-		function GetAccountsList(const AccountTypes: EAccountType = [ATPrivate, ATPublic]; const VirtualTypes: EVirtualType = []): TWSList;
-		function GetAccountSettings(Account: WideString): TAccountSettings;
-		procedure SetAccountSettings(Account: WideString; Settings: TAccountSettings); overload;
-		procedure SetAccountSettings(Settings: TAccountSettings); overload;
-		procedure DeleteAccount(Account: WideString);
-		procedure SwitchPasswordStorage(Account: WideString);
-		procedure SetCryptedGUID(Account: WideString; GUID: WideString);
-
-		procedure SetRemoteDescriptionsSupported(Value: Boolean);
-	end;
-
 	[TestFixture]
 	TDescriptionSyncGuardTest = class
 	private
 		FGuard: IDescriptionSyncGuard;
 		FSyncManager: TMockDescriptionSyncManager;
 		FSettingsManager: TMockSettingsManager;
-		FAccountsManager: TMockAccountsManager;
 	public
 		[Setup]
 		procedure Setup;
@@ -98,8 +77,6 @@ type
 		procedure TestOnFileDeleted_WhenEnabled_CallsSyncManager;
 		[Test]
 		procedure TestOnFileDeleted_WhenTrackingDisabled_DoesNotCall;
-		[Test]
-		procedure TestOnFileDeleted_WhenAccountNotSupported_DoesNotCall;
 
 		{OnFileRenamed tests}
 		[Test]
@@ -120,8 +97,6 @@ type
 		procedure TestOnFileUploaded_WhenEnabled_CallsSyncManager;
 		[Test]
 		procedure TestOnFileUploaded_WhenDisabled_DoesNotCall;
-		[Test]
-		procedure TestOnFileUploaded_WhenAccountNotSupported_DoesNotCall;
 	end;
 
 implementation
@@ -242,64 +217,13 @@ begin
 	FSettings.DescriptionCopyToCloud := Value;
 end;
 
-{TMockAccountsManager}
-
-constructor TMockAccountsManager.Create;
-begin
-	inherited Create;
-	FIsRemoteDescriptionsSupported := False;
-end;
-
-function TMockAccountsManager.GetAccountsList(const AccountTypes: EAccountType; const VirtualTypes: EVirtualType): TWSList;
-begin
-	Result.Clear;
-end;
-
-function TMockAccountsManager.GetAccountSettings(Account: WideString): TAccountSettings;
-begin
-	Result := Default(TAccountSettings);
-	{IsRemoteDescriptionsSupported is computed: not((EncryptFilesMode <> 0) and EncryptFileNames)}
-	if FIsRemoteDescriptionsSupported then
-		Result.EncryptFilesMode := 0 {EncryptModeNone - makes IsRemoteDescriptionsSupported = True}
-	else begin
-		Result.EncryptFilesMode := 1; {Any non-zero mode}
-		Result.EncryptFileNames := True; {Combined with non-zero mode makes IsRemoteDescriptionsSupported = False}
-	end;
-end;
-
-procedure TMockAccountsManager.SetAccountSettings(Account: WideString; Settings: TAccountSettings);
-begin
-end;
-
-procedure TMockAccountsManager.SetAccountSettings(Settings: TAccountSettings);
-begin
-end;
-
-procedure TMockAccountsManager.DeleteAccount(Account: WideString);
-begin
-end;
-
-procedure TMockAccountsManager.SwitchPasswordStorage(Account: WideString);
-begin
-end;
-
-procedure TMockAccountsManager.SetCryptedGUID(Account: WideString; GUID: WideString);
-begin
-end;
-
-procedure TMockAccountsManager.SetRemoteDescriptionsSupported(Value: Boolean);
-begin
-	FIsRemoteDescriptionsSupported := Value;
-end;
-
 {TDescriptionSyncGuardTest}
 
 procedure TDescriptionSyncGuardTest.Setup;
 begin
 	FSyncManager := TMockDescriptionSyncManager.Create;
 	FSettingsManager := TMockSettingsManager.Create;
-	FAccountsManager := TMockAccountsManager.Create;
-	FGuard := TDescriptionSyncGuard.Create(FSyncManager, FSettingsManager, FAccountsManager);
+	FGuard := TDescriptionSyncGuard.Create(FSyncManager, FSettingsManager);
 end;
 
 procedure TDescriptionSyncGuardTest.TearDown;
@@ -307,7 +231,6 @@ begin
 	FGuard := nil;
 	FSyncManager := nil;
 	FSettingsManager := nil;
-	FAccountsManager := nil;
 end;
 
 {OnFileDeleted tests}
@@ -317,7 +240,6 @@ var
 	Path: TRealPath;
 begin
 	FSettingsManager.SetDescriptionTrackCloudFS(True);
-	FAccountsManager.SetRemoteDescriptionsSupported(True);
 	Path.FromPath('\account\file.txt');
 
 	FGuard.OnFileDeleted(Path, nil);
@@ -330,20 +252,6 @@ var
 	Path: TRealPath;
 begin
 	FSettingsManager.SetDescriptionTrackCloudFS(False);
-	FAccountsManager.SetRemoteDescriptionsSupported(True);
-	Path.FromPath('\account\file.txt');
-
-	FGuard.OnFileDeleted(Path, nil);
-
-	Assert.AreEqual(0, FSyncManager.DeletedCalls, 'Should not call sync manager');
-end;
-
-procedure TDescriptionSyncGuardTest.TestOnFileDeleted_WhenAccountNotSupported_DoesNotCall;
-var
-	Path: TRealPath;
-begin
-	FSettingsManager.SetDescriptionTrackCloudFS(True);
-	FAccountsManager.SetRemoteDescriptionsSupported(False);
 	Path.FromPath('\account\file.txt');
 
 	FGuard.OnFileDeleted(Path, nil);
@@ -358,7 +266,6 @@ var
 	OldPath, NewPath: TRealPath;
 begin
 	FSettingsManager.SetDescriptionTrackCloudFS(True);
-	FAccountsManager.SetRemoteDescriptionsSupported(True);
 	OldPath.FromPath('\account\old.txt');
 	NewPath.FromPath('\account\new.txt');
 
@@ -372,7 +279,6 @@ var
 	OldPath, NewPath: TRealPath;
 begin
 	FSettingsManager.SetDescriptionTrackCloudFS(False);
-	FAccountsManager.SetRemoteDescriptionsSupported(True);
 	OldPath.FromPath('\account\old.txt');
 	NewPath.FromPath('\account\new.txt');
 
@@ -412,7 +318,6 @@ var
 	Path: TRealPath;
 begin
 	FSettingsManager.SetDescriptionCopyFromCloud(True);
-	FAccountsManager.SetRemoteDescriptionsSupported(False); {Account doesn't support, but should still work}
 	Path.FromPath('\account\file.txt');
 
 	FGuard.OnFileDownloaded(Path, 'C:\local\file.txt', nil);
@@ -427,7 +332,6 @@ var
 	Path: TRealPath;
 begin
 	FSettingsManager.SetDescriptionCopyToCloud(True);
-	FAccountsManager.SetRemoteDescriptionsSupported(True);
 	Path.FromPath('\account\file.txt');
 
 	FGuard.OnFileUploaded(Path, 'C:\local\file.txt', nil);
@@ -440,20 +344,6 @@ var
 	Path: TRealPath;
 begin
 	FSettingsManager.SetDescriptionCopyToCloud(False);
-	FAccountsManager.SetRemoteDescriptionsSupported(True);
-	Path.FromPath('\account\file.txt');
-
-	FGuard.OnFileUploaded(Path, 'C:\local\file.txt', nil);
-
-	Assert.AreEqual(0, FSyncManager.UploadedCalls, 'Should not call sync manager');
-end;
-
-procedure TDescriptionSyncGuardTest.TestOnFileUploaded_WhenAccountNotSupported_DoesNotCall;
-var
-	Path: TRealPath;
-begin
-	FSettingsManager.SetDescriptionCopyToCloud(True);
-	FAccountsManager.SetRemoteDescriptionsSupported(False);
 	Path.FromPath('\account\file.txt');
 
 	FGuard.OnFileUploaded(Path, 'C:\local\file.txt', nil);

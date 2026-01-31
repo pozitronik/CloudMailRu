@@ -93,7 +93,6 @@ type
 		function ReAuthenticate: Boolean;
 	protected
 		FDoCryptFiles: Boolean;
-		FDoCryptFilenames: Boolean;
 		FPublicLink: WideString; {Holder for GetPublicLink() value - protected for testability}
 		FUnitedParams: WideString; {The set of required authentification attributes united to the string}
 
@@ -298,10 +297,9 @@ begin
 		{Use injected cipher for encryption operations (NullCipher when encryption disabled)}
 		FCipher := Cipher;
 		FDoCryptFiles := FSettings.AccountSettings.EncryptFilesMode <> EncryptModeNone;
-		FDoCryptFilenames := FDoCryptFiles and FSettings.AccountSettings.EncryptFilenames;
 
 		{Initialize file downloader service}
-		FDownloader := TCloudFileDownloader.Create(Self, FShardManager, FHashCalculator, FCipher, FFileSystem, FLogger, FProgress, FRequest, FDoCryptFiles, FDoCryptFilenames);
+		FDownloader := TCloudFileDownloader.Create(Self, FShardManager, FHashCalculator, FCipher, FFileSystem, FLogger, FProgress, FRequest, FDoCryptFiles);
 
 		{Initialize file operations service - must be before FUploader which uses it}
 		FFileOperations := TCloudFileOperations.Create(Self, FLogger, FRetryOperation);
@@ -319,13 +317,13 @@ begin
 		UploadSettings.SplitLargeFiles := Self.SplitLargeFiles;
 		UploadSettings.CloudMaxFileSize := Self.CloudMaxFileSize;
 
-		FUploader := TCloudFileUploader.Create(Self, FShardManager, FHashCalculator, FCipher, FFileSystem, FLogger, FProgress, FRequest, FTCHandler, FRetryOperation, FDoCryptFiles, FDoCryptFilenames, UploadSettings);
+		FUploader := TCloudFileUploader.Create(Self, FShardManager, FHashCalculator, FCipher, FFileSystem, FLogger, FProgress, FRequest, FTCHandler, FRetryOperation, FDoCryptFiles, UploadSettings);
 
 		{Initialize share service}
 		FShareService := TCloudShareService.Create(Self, FLogger, FRetryOperation, FShardManager);
 
 		{Initialize listing service}
-		FListingService := TCloudListingService.Create(Self, FCipher, FLogger, FRetryOperation, FDoCryptFilenames);
+		FListingService := TCloudListingService.Create(Self, FCipher, FLogger, FRetryOperation);
 
 	except
 		on E: Exception do

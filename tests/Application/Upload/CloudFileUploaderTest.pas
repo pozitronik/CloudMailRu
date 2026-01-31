@@ -126,7 +126,6 @@ begin
 		TNullTCHandler.Create,
 		FRetryOperation,
 		False, {DoCryptFiles}
-		False, {DoCryptFilenames}
 		FSettings
 	);
 end;
@@ -180,7 +179,6 @@ begin
 		TNullTCHandler.Create,
 		FRetryOperation,
 		False,
-		False,
 		FSettings
 	);
 
@@ -216,7 +214,6 @@ begin
 		TNullRequest.Create,
 		TNullTCHandler.Create,
 		FRetryOperation,
-		False,
 		False,
 		FSettings
 	);

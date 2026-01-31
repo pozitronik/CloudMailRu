@@ -10,7 +10,6 @@ interface
 
 uses
 	Classes,
-	CloudDirItemList,
 	System.SysUtils,
 	BlockCipher,
 	FileCipher,
@@ -47,21 +46,15 @@ type
 		FProvider: IBCryptProvider;
 		FKey: TBytes;
 		FIV: TBytes;
-		FDoFilenameCipher: Boolean;
 		FPasswordIsWrong: Boolean;
-		function Base64ToSafe(const Base64: WideString): WideString;
-		function Base64FromSafe(const Safe: WideString): WideString;
 	public
-		constructor Create(const Password: WideString; const Provider: IBCryptProvider; const PasswordControl: WideString = ''; DoFilenameCipher: Boolean = false);
+		constructor Create(const Password: WideString; const Provider: IBCryptProvider; const PasswordControl: WideString = '');
 		destructor Destroy; override;
 
 		function CryptFile(SourceFileName, DestinationFilename: WideString): Integer;
 		function CryptStream(SourceStream, DestinationStream: TStream): Integer;
-		function CryptFileName(const FileName: WideString): WideString;
 		function DecryptFile(SourceFileName, DestinationFilename: WideString): Integer;
 		function DecryptStream(SourceStream, DestinationStream: TStream): Integer;
-		function DecryptFileName(const FileName: WideString): WideString;
-		procedure DecryptDirListing(var CloudMailRuDirListing: TCloudDirItemList);
 		function GetEncryptingStream(Source: TStream): TStream;
 		function GetDecryptingStream(Source: TStream): TStream;
 
@@ -73,8 +66,7 @@ implementation
 uses
 	System.Math,
 	CloudConstants,
-	CipherStreams,
-	DCPbase64;
+	CipherStreams;
 
 {TBCryptBlockCipher}
 
@@ -184,12 +176,11 @@ end;
 
 {TBCryptCipher}
 
-constructor TBCryptCipher.Create(const Password: WideString; const Provider: IBCryptProvider; const PasswordControl: WideString = ''; DoFilenameCipher: Boolean = false);
+constructor TBCryptCipher.Create(const Password: WideString; const Provider: IBCryptProvider; const PasswordControl: WideString = '');
 begin
 	inherited Create;
 	FPassword := Password;
 	FProvider := Provider;
-	FDoFilenameCipher := DoFilenameCipher;
 
 	FKey := FProvider.DeriveKey(Password);
 
@@ -209,20 +200,6 @@ begin
 	if Length(FIV) > 0 then
 		FillChar(FIV[0], Length(FIV), 0);
 	inherited;
-end;
-
-function TBCryptCipher.Base64ToSafe(const Base64: WideString): WideString;
-begin
-	Result := Base64;
-	Result := StringReplace(Result, '+', '-', [rfReplaceAll]);
-	Result := StringReplace(Result, '/', '_', [rfReplaceAll]);
-end;
-
-function TBCryptCipher.Base64FromSafe(const Safe: WideString): WideString;
-begin
-	Result := Safe;
-	Result := StringReplace(Result, '-', '+', [rfReplaceAll]);
-	Result := StringReplace(Result, '_', '/', [rfReplaceAll]);
 end;
 
 function TBCryptCipher.CryptFile(SourceFileName, DestinationFilename: WideString): Integer;
@@ -275,31 +252,6 @@ begin
 	end;
 end;
 
-function TBCryptCipher.CryptFileName(const FileName: WideString): WideString;
-var
-	Cipher: IBlockCipher;
-	NameBytes: TBytes;
-	EncryptedStr: AnsiString;
-begin
-	Result := ExtractFileName(FileName);
-	if Result = EmptyWideStr then
-		Exit;
-
-	if FDoFilenameCipher then
-	begin
-		Cipher := TBCryptBlockCipher.Create(FProvider, FKey, FIV);
-		try
-			NameBytes := TEncoding.UTF8.GetBytes(Result);
-			Cipher.EncryptCFB8bit(NameBytes[0], NameBytes[0], Length(NameBytes));
-			SetLength(EncryptedStr, Length(NameBytes));
-			Move(NameBytes[0], EncryptedStr[1], Length(NameBytes));
-			Result := Base64ToSafe(Base64EncodeStr(EncryptedStr));
-		finally
-			Cipher.Burn;
-		end;
-	end;
-end;
-
 function TBCryptCipher.DecryptFile(SourceFileName, DestinationFilename: WideString): Integer;
 var
 	SourceStream, DestinationStream: TBufferedFileStream;
@@ -348,39 +300,6 @@ begin
 	finally
 		Cipher.Burn;
 	end;
-end;
-
-function TBCryptCipher.DecryptFileName(const FileName: WideString): WideString;
-var
-	Cipher: IBlockCipher;
-	DecodedStr: AnsiString;
-	NameBytes: TBytes;
-begin
-	Result := ExtractFileName(FileName);
-	if Result = EmptyWideStr then
-		Exit;
-
-	if FDoFilenameCipher then
-	begin
-		Cipher := TBCryptBlockCipher.Create(FProvider, FKey, FIV);
-		try
-			DecodedStr := Base64DecodeStr(AnsiString(Base64FromSafe(FileName)));
-			SetLength(NameBytes, Length(DecodedStr));
-			Move(DecodedStr[1], NameBytes[0], Length(DecodedStr));
-			Cipher.DecryptCFB8bit(NameBytes[0], NameBytes[0], Length(NameBytes));
-			Result := TEncoding.UTF8.GetString(NameBytes);
-		finally
-			Cipher.Burn;
-		end;
-	end;
-end;
-
-procedure TBCryptCipher.DecryptDirListing(var CloudMailRuDirListing: TCloudDirItemList);
-var
-	i: Integer;
-begin
-	for i := 0 to Length(CloudMailRuDirListing) - 1 do
-		CloudMailRuDirListing[i].visible_name := self.DecryptFileName(CloudMailRuDirListing[i].name);
 end;
 
 function TBCryptCipher.GetEncryptingStream(Source: TStream): TStream;

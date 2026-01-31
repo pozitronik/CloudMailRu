@@ -353,7 +353,7 @@ var
 begin
 	RequireEncryption;
 
-	Cloud := CreatePrimaryCloud(True, False); {Encrypted, no filename encryption}
+	Cloud := CreatePrimaryCloud(True); {Encrypted}
 	try
 		Assert.IsTrue(Cloud.Login, 'Encrypted cloud login should succeed');
 
@@ -395,7 +395,7 @@ begin
 		Exit;
 	end;
 
-	Cloud := CreatePrimaryCloud(True, True); {Encrypted, with filename encryption}
+	Cloud := CreatePrimaryCloud(True); {Encrypted}
 	try
 		Assert.IsTrue(Cloud.Login, 'Encrypted cloud login should succeed');
 

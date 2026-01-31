@@ -29,8 +29,6 @@ type
 		procedure TestFindById_AES256SHA256_ReturnsTrue;
 		[Test]
 		procedure TestFindById_Twofish256SHA256_ReturnsTrue;
-		[Test]
-		procedure TestFindById_Serpent256SHA256_ReturnsTrue;
 
 		{FindById -- unknown}
 		[Test]
@@ -74,7 +72,7 @@ end;
 
 procedure TCipherProfileRegistryTest.TestRegistryCount_Returns4Profiles;
 begin
-	Assert.AreEqual(4, TCipherProfileRegistry.Count);
+	Assert.AreEqual(3, TCipherProfileRegistry.Count);
 end;
 
 procedure TCipherProfileRegistryTest.TestGetProfiles_ReturnsNonEmptyArray;
@@ -108,14 +106,6 @@ begin
 	Assert.AreEqual('Twofish-256 / SHA-256 KDF', Profile.DisplayName);
 end;
 
-procedure TCipherProfileRegistryTest.TestFindById_Serpent256SHA256_ReturnsTrue;
-var
-	Profile: TCipherProfile;
-begin
-	Assert.IsTrue(TCipherProfileRegistry.FindById('dcpcrypt-serpent256-cfb8-sha256', Profile));
-	Assert.AreEqual('Serpent-256 / SHA-256 KDF', Profile.DisplayName);
-end;
-
 {FindById -- unknown}
 
 procedure TCipherProfileRegistryTest.TestFindById_UnknownId_ReturnsFalse;
@@ -143,7 +133,7 @@ procedure TCipherProfileRegistryTest.TestGetDefaultProfile_FactoryCreatesValidCi
 var
 	Cipher: ICipher;
 begin
-	Cipher := TCipherProfileRegistry.GetDefaultProfile.CreateCipher('testpass', '', False);
+	Cipher := TCipherProfileRegistry.GetDefaultProfile.CreateCipher('testpass', '');
 	Assert.IsNotNull(Cipher, 'Default profile factory returned nil');
 end;
 
@@ -172,7 +162,7 @@ begin
 	Profiles := TCipherProfileRegistry.GetProfiles;
 	for I := 0 to High(Profiles) do
 	begin
-		Cipher := Profiles[I].CreateCipher('testpass', '', False);
+		Cipher := Profiles[I].CreateCipher('testpass', '');
 		Assert.IsNotNull(Cipher,
 			Format('Profile %s factory returned nil', [Profiles[I].Id]));
 	end;
@@ -188,7 +178,7 @@ var
 begin
 	{Verify encrypt/decrypt roundtrip through the legacy profile factory}
 	Assert.IsTrue(TCipherProfileRegistry.FindById(CIPHER_PROFILE_LEGACY_DEFAULT, Profile));
-	Cipher := Profile.CreateCipher('roundtrip-password', '', False);
+	Cipher := Profile.CreateCipher('roundtrip-password', '');
 
 	Source := TMemoryStream.Create;
 	Encrypted := TMemoryStream.Create;
@@ -202,7 +192,7 @@ begin
 		Assert.IsTrue(Encrypted.Size > 0, 'Encrypted stream should not be empty');
 
 		{Need a fresh cipher instance for decryption -- cipher state is consumed}
-		Cipher := Profile.CreateCipher('roundtrip-password', '', False);
+		Cipher := Profile.CreateCipher('roundtrip-password', '');
 		Encrypted.Position := 0;
 		Cipher.DecryptStream(Encrypted, Decrypted);
 

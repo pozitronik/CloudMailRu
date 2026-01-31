@@ -10,56 +10,18 @@ uses
 	DCPsha1,
 	DCPsha256,
 	DCPtwofish,
-	DCPserpent,
 	System.SysUtils,
 	System.IOUtils,
 	System.Classes,
 	DUnitX.TestFramework;
 
 type
-	{ Test helper class to expose protected methods }
-	TFileCipherTestHelper = class(TFileCipher)
-	public
-		function TestBase64ToSafe(const Base64: WideString): WideString;
-		function TestBase64FromSafe(const Safe: WideString): WideString;
-	end;
-
 	[TestFixture]
 	TFileCipherTest = class
 	public
 		{ Interface implementation test }
 		[Test]
 		procedure TestImplementsICipher;
-
-		{ Base64ToSafe tests }
-		[Test]
-		procedure TestBase64ToSafePlusToMinus;
-		[Test]
-		procedure TestBase64ToSafeSlashToUnderscore;
-		[Test]
-		procedure TestBase64ToSafeMixedCharacters;
-		[Test]
-		procedure TestBase64ToSafeNoSpecialChars;
-		[Test]
-		procedure TestBase64ToSafeEmptyString;
-
-		{ Base64FromSafe tests }
-		[Test]
-		procedure TestBase64FromSafeMinusToPlus;
-		[Test]
-		procedure TestBase64FromSafeUnderscoreToSlash;
-		[Test]
-		procedure TestBase64FromSafeMixedCharacters;
-		[Test]
-		procedure TestBase64FromSafeNoSpecialChars;
-		[Test]
-		procedure TestBase64FromSafeEmptyString;
-
-		{ Roundtrip tests }
-		[Test]
-		procedure TestBase64RoundtripToSafeAndBack;
-		[Test]
-		procedure TestBase64RoundtripFromSafeAndBack;
 
 		{ GetCryptedGUID tests }
 		[Test]
@@ -76,16 +38,6 @@ type
 		procedure TestCheckPasswordGUIDWrongPassword;
 		[Test]
 		procedure TestCheckPasswordGUIDEmptyPassword;
-
-		{ CryptFileName/DecryptFileName empty input tests - verify early exit cleanup }
-		[Test]
-		procedure TestCryptFileNameEmptyInput;
-		[Test]
-		procedure TestDecryptFileNameEmptyInput;
-		[Test]
-		procedure TestCryptFileNameValidInput;
-		[Test]
-		procedure TestDecryptFileNameValidInput;
 
 		{ CryptFile/DecryptFile tests - verify stream cleanup on exceptions }
 		[Test]
@@ -111,9 +63,6 @@ type
 		[Test]
 		procedure TestConstructWithTwofishProfile;
 		[Test]
-		[Ignore('DCPSerpent uses longword pointer casts -- AV on Win64')]
-		procedure TestConstructWithSerpentProfile;
-		[Test]
 		procedure TestConstructWithSHA256Profile;
 		[Test]
 		procedure TestDifferentProfilesProduceDifferentCiphertext;
@@ -125,18 +74,6 @@ type
 
 implementation
 
-{ TFileCipherTestHelper }
-
-function TFileCipherTestHelper.TestBase64ToSafe(const Base64: WideString): WideString;
-begin
-	Result := Self.Base64ToSafe(Base64);
-end;
-
-function TFileCipherTestHelper.TestBase64FromSafe(const Safe: WideString): WideString;
-begin
-	Result := Self.Base64FromSafe(Safe);
-end;
-
 { Interface implementation test }
 
 procedure TFileCipherTest.TestImplementsICipher;
@@ -145,166 +82,6 @@ var
 begin
 	Cipher := TFileCipher.Create('testpassword', TDCP_rijndael, TDCP_sha1);
 	Assert.IsNotNull(Cipher);
-end;
-
-{ Base64ToSafe tests - converts + to - and / to _ for URL/filename safety }
-
-procedure TFileCipherTest.TestBase64ToSafePlusToMinus;
-var
-	Cipher: TFileCipherTestHelper;
-begin
-	Cipher := TFileCipherTestHelper.Create('testpassword', TDCP_rijndael, TDCP_sha1);
-	try
-		Assert.AreEqual('abc-def', Cipher.TestBase64ToSafe('abc+def'));
-	finally
-		Cipher.Free;
-	end;
-end;
-
-procedure TFileCipherTest.TestBase64ToSafeSlashToUnderscore;
-var
-	Cipher: TFileCipherTestHelper;
-begin
-	Cipher := TFileCipherTestHelper.Create('testpassword', TDCP_rijndael, TDCP_sha1);
-	try
-		Assert.AreEqual('abc_def', Cipher.TestBase64ToSafe('abc/def'));
-	finally
-		Cipher.Free;
-	end;
-end;
-
-procedure TFileCipherTest.TestBase64ToSafeMixedCharacters;
-var
-	Cipher: TFileCipherTestHelper;
-begin
-	Cipher := TFileCipherTestHelper.Create('testpassword', TDCP_rijndael, TDCP_sha1);
-	try
-		Assert.AreEqual('a-b_c-d_e', Cipher.TestBase64ToSafe('a+b/c+d/e'));
-	finally
-		Cipher.Free;
-	end;
-end;
-
-procedure TFileCipherTest.TestBase64ToSafeNoSpecialChars;
-var
-	Cipher: TFileCipherTestHelper;
-begin
-	Cipher := TFileCipherTestHelper.Create('testpassword', TDCP_rijndael, TDCP_sha1);
-	try
-		{ String without + or / should remain unchanged }
-		Assert.AreEqual('abcdefgh', Cipher.TestBase64ToSafe('abcdefgh'));
-	finally
-		Cipher.Free;
-	end;
-end;
-
-procedure TFileCipherTest.TestBase64ToSafeEmptyString;
-var
-	Cipher: TFileCipherTestHelper;
-begin
-	Cipher := TFileCipherTestHelper.Create('testpassword', TDCP_rijndael, TDCP_sha1);
-	try
-		Assert.AreEqual('', Cipher.TestBase64ToSafe(''));
-	finally
-		Cipher.Free;
-	end;
-end;
-
-{ Base64FromSafe tests - converts - to + and _ to / }
-
-procedure TFileCipherTest.TestBase64FromSafeMinusToPlus;
-var
-	Cipher: TFileCipherTestHelper;
-begin
-	Cipher := TFileCipherTestHelper.Create('testpassword', TDCP_rijndael, TDCP_sha1);
-	try
-		Assert.AreEqual('abc+def', Cipher.TestBase64FromSafe('abc-def'));
-	finally
-		Cipher.Free;
-	end;
-end;
-
-procedure TFileCipherTest.TestBase64FromSafeUnderscoreToSlash;
-var
-	Cipher: TFileCipherTestHelper;
-begin
-	Cipher := TFileCipherTestHelper.Create('testpassword', TDCP_rijndael, TDCP_sha1);
-	try
-		Assert.AreEqual('abc/def', Cipher.TestBase64FromSafe('abc_def'));
-	finally
-		Cipher.Free;
-	end;
-end;
-
-procedure TFileCipherTest.TestBase64FromSafeMixedCharacters;
-var
-	Cipher: TFileCipherTestHelper;
-begin
-	Cipher := TFileCipherTestHelper.Create('testpassword', TDCP_rijndael, TDCP_sha1);
-	try
-		Assert.AreEqual('a+b/c+d/e', Cipher.TestBase64FromSafe('a-b_c-d_e'));
-	finally
-		Cipher.Free;
-	end;
-end;
-
-procedure TFileCipherTest.TestBase64FromSafeNoSpecialChars;
-var
-	Cipher: TFileCipherTestHelper;
-begin
-	Cipher := TFileCipherTestHelper.Create('testpassword', TDCP_rijndael, TDCP_sha1);
-	try
-		{ String without - or _ should remain unchanged }
-		Assert.AreEqual('abcdefgh', Cipher.TestBase64FromSafe('abcdefgh'));
-	finally
-		Cipher.Free;
-	end;
-end;
-
-procedure TFileCipherTest.TestBase64FromSafeEmptyString;
-var
-	Cipher: TFileCipherTestHelper;
-begin
-	Cipher := TFileCipherTestHelper.Create('testpassword', TDCP_rijndael, TDCP_sha1);
-	try
-		Assert.AreEqual('', Cipher.TestBase64FromSafe(''));
-	finally
-		Cipher.Free;
-	end;
-end;
-
-{ Roundtrip tests }
-
-procedure TFileCipherTest.TestBase64RoundtripToSafeAndBack;
-var
-	Cipher: TFileCipherTestHelper;
-	Original, Safe, Restored: WideString;
-begin
-	Cipher := TFileCipherTestHelper.Create('testpassword', TDCP_rijndael, TDCP_sha1);
-	try
-		Original := 'abc+def/ghi+jkl/mno';
-		Safe := Cipher.TestBase64ToSafe(Original);
-		Restored := Cipher.TestBase64FromSafe(Safe);
-		Assert.AreEqual(Original, Restored);
-	finally
-		Cipher.Free;
-	end;
-end;
-
-procedure TFileCipherTest.TestBase64RoundtripFromSafeAndBack;
-var
-	Cipher: TFileCipherTestHelper;
-	Original, Base64, Restored: WideString;
-begin
-	Cipher := TFileCipherTestHelper.Create('testpassword', TDCP_rijndael, TDCP_sha1);
-	try
-		Original := 'abc-def_ghi-jkl_mno';
-		Base64 := Cipher.TestBase64FromSafe(Original);
-		Restored := Cipher.TestBase64ToSafe(Base64);
-		Assert.AreEqual(Original, Restored);
-	finally
-		Cipher.Free;
-	end;
 end;
 
 { GetCryptedGUID tests }
@@ -364,70 +141,6 @@ begin
 	{ Empty password should still work consistently }
 	StoredGUID := TFileCipher.GetCryptedGUID('');
 	Assert.IsTrue(TFileCipher.CheckPasswordGUID('', StoredGUID));
-end;
-
-{ CryptFileName/DecryptFileName tests - verify early exit cleanup }
-
-procedure TFileCipherTest.TestCryptFileNameEmptyInput;
-var
-	Cipher: TFileCipher;
-	Result: WideString;
-begin
-	{ Empty filename should return empty string without leaking cipher resources }
-	Cipher := TFileCipher.Create('testpassword', TDCP_rijndael, TDCP_sha1, '', true);
-	try
-		Result := Cipher.CryptFileName('');
-		Assert.AreEqual('', Result);
-	finally
-		Cipher.Free;
-	end;
-end;
-
-procedure TFileCipherTest.TestDecryptFileNameEmptyInput;
-var
-	Cipher: TFileCipher;
-	Result: WideString;
-begin
-	{ Empty filename should return empty string without leaking cipher resources }
-	Cipher := TFileCipher.Create('testpassword', TDCP_rijndael, TDCP_sha1, '', true);
-	try
-		Result := Cipher.DecryptFileName('');
-		Assert.AreEqual('', Result);
-	finally
-		Cipher.Free;
-	end;
-end;
-
-procedure TFileCipherTest.TestCryptFileNameValidInput;
-var
-	Cipher: TFileCipher;
-	Encrypted: WideString;
-begin
-	{ Valid filename should be encrypted when DoFilenameCipher is true }
-	Cipher := TFileCipher.Create('testpassword', TDCP_rijndael, TDCP_sha1, '', true);
-	try
-		Encrypted := Cipher.CryptFileName('testfile.txt');
-		Assert.IsNotEmpty(Encrypted);
-		Assert.AreNotEqual('testfile.txt', Encrypted, 'Filename should be encrypted');
-	finally
-		Cipher.Free;
-	end;
-end;
-
-procedure TFileCipherTest.TestDecryptFileNameValidInput;
-var
-	Cipher: TFileCipher;
-	Encrypted, Decrypted: WideString;
-begin
-	{ Encrypted filename should decrypt back to original }
-	Cipher := TFileCipher.Create('testpassword', TDCP_rijndael, TDCP_sha1, '', true);
-	try
-		Encrypted := Cipher.CryptFileName('myfile.dat');
-		Decrypted := Cipher.DecryptFileName(Encrypted);
-		Assert.AreEqual('myfile.dat', Decrypted);
-	finally
-		Cipher.Free;
-	end;
 end;
 
 { CryptFile/DecryptFile tests - these prove stream leak fix works }
@@ -675,41 +388,6 @@ begin
 
 			DecryptedContent := TFile.ReadAllText(DecryptedFile);
 			Assert.AreEqual(OriginalContent, DecryptedContent, 'Twofish decrypted content should match original');
-		finally
-			Cipher.Free;
-		end;
-	finally
-		if TFile.Exists(SourceFile) then TFile.Delete(SourceFile);
-		if TFile.Exists(EncryptedFile) then TFile.Delete(EncryptedFile);
-		if TFile.Exists(DecryptedFile) then TFile.Delete(DecryptedFile);
-	end;
-end;
-
-procedure TFileCipherTest.TestConstructWithSerpentProfile;
-var
-	Cipher: TFileCipher;
-	SourceFile, EncryptedFile, DecryptedFile: string;
-	OriginalContent, DecryptedContent: string;
-	CryptResult, DecryptResult: Integer;
-begin
-	{ Serpent-256 profile should encrypt and decrypt a file correctly }
-	SourceFile := TPath.GetTempFileName;
-	EncryptedFile := TPath.GetTempFileName;
-	DecryptedFile := TPath.GetTempFileName;
-	try
-		OriginalContent := 'Serpent profile roundtrip test content 1234567890';
-		TFile.WriteAllText(SourceFile, OriginalContent);
-
-		Cipher := TFileCipher.Create('testpassword', TDCP_serpent, TDCP_sha256);
-		try
-			CryptResult := Cipher.CryptFile(SourceFile, EncryptedFile);
-			Assert.AreEqual(CIPHER_OK, CryptResult, 'Serpent encryption should succeed');
-
-			DecryptResult := Cipher.DecryptFile(EncryptedFile, DecryptedFile);
-			Assert.AreEqual(CIPHER_OK, DecryptResult, 'Serpent decryption should succeed');
-
-			DecryptedContent := TFile.ReadAllText(DecryptedFile);
-			Assert.AreEqual(OriginalContent, DecryptedContent, 'Serpent decrypted content should match original');
 		finally
 			Cipher.Free;
 		end;

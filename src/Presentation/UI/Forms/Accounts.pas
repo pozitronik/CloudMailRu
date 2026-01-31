@@ -142,7 +142,6 @@ type
 		EncryptFilesLabel: TLabel;
 		EncryptFilesCombo: TComboBox;
 		EncryptFilesPwdButton: TButton;
-		EncryptFilenamesCB: TCheckBox;
 		SharesPanel: TPanel;
 		PublicUrlLabel: TLabel;
 		PublicUrlEdit: TEdit;
@@ -328,10 +327,7 @@ type
 		function GetPublicUrl: WideString;
 		procedure SetEncryptFilesMode(Value: Integer);
 		function GetEncryptFilesMode: Integer;
-		procedure SetEncryptFilenames(Value: Boolean);
-		function GetEncryptFilenames: Boolean;
 		procedure SetEncryptPasswordButtonEnabled(Value: Boolean);
-		procedure SetEncryptFilenamesCBEnabled(Value: Boolean);
 		procedure SetAccountsPanelVisible(Value: Boolean);
 		procedure SetSharesPanelVisible(Value: Boolean);
 		procedure SetApplyButtonEnabled(Value: Boolean);
@@ -1087,24 +1083,9 @@ begin
 	Result := EncryptFilesCombo.ItemIndex;
 end;
 
-procedure TAccountsForm.SetEncryptFilenames(Value: Boolean);
-begin
-	EncryptFilenamesCB.Checked := Value;
-end;
-
-function TAccountsForm.GetEncryptFilenames: Boolean;
-begin
-	Result := EncryptFilenamesCB.Checked;
-end;
-
 procedure TAccountsForm.SetEncryptPasswordButtonEnabled(Value: Boolean);
 begin
 	EncryptFilesPwdButton.Enabled := Value;
-end;
-
-procedure TAccountsForm.SetEncryptFilenamesCBEnabled(Value: Boolean);
-begin
-	EncryptFilenamesCB.Enabled := Value;
 end;
 
 procedure TAccountsForm.SetAccountsPanelVisible(Value: Boolean);

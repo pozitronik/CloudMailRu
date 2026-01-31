@@ -222,7 +222,7 @@ var
 begin
 	RequireEncryption;
 
-	Cloud := CreatePrimaryCloud(True, False);
+	Cloud := CreatePrimaryCloud(True);
 	try
 		Assert.IsTrue(Cloud.Login, 'Encrypted cloud login should succeed');
 

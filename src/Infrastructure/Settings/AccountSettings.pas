@@ -24,7 +24,6 @@ type
 		PublicAccount: Boolean;
 		Description: WideString;
 		EncryptFilesMode: Integer;
-		EncryptFileNames: Boolean;
 		CipherProfileId: WideString; //Cipher profile identifier for encryption backend selection
 		ShardOverride: WideString; //hidden option, allows to override working shard for account
 		UploadUrlOverride: WideString; //hidden option, allows to override upload server for account
@@ -36,7 +35,6 @@ type
 		FDomain: WideString;
 		FPublicUrl: WideString;
 		function GetAccountType: EAccountType;
-		function GetIsRemoteDescriptionsSupported: Boolean;
 		function GetDomain: WideString;
 		function GetUser: WideString;
 		function GetPublicUrl: WideString;
@@ -44,7 +42,6 @@ type
 		property User: WideString read GetUser;
 		property Domain: WideString read GetDomain;
 		property PublicUrl: WideString read GetPublicUrl write FPublicUrl;
-		property IsRemoteDescriptionsSupported: Boolean read GetIsRemoteDescriptionsSupported;
 		property AccountType: EAccountType read GetAccountType;
 	end;
 
@@ -64,11 +61,6 @@ begin
 	if FDomain = EmptyWideStr then
 		ExtractEmailParts(Email, FUser, FDomain);
 	result := FDomain;
-end;
-
-function TAccountSettings.GetIsRemoteDescriptionsSupported: Boolean;
-begin
-	result := not((EncryptFilesMode <> EncryptModeNone) and EncryptFileNames);
 end;
 
 function TAccountSettings.GetUser: WideString;

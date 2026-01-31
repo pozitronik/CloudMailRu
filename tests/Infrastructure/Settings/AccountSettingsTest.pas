@@ -5,7 +5,6 @@ interface
 uses
 	AccountSettings,
 	CloudConstants,
-	SettingsConstants,
 	DUnitX.TestFramework;
 
 type
@@ -28,16 +27,6 @@ type
 		{ GetUser tests }
 		[Test]
 		procedure TestGetUserFromEmail;
-
-		{ GetIsRemoteDescriptionsSupported tests }
-		[Test]
-		procedure TestIsRemoteDescriptionsSupportedNoEncryption;
-		[Test]
-		procedure TestIsRemoteDescriptionsSupportedEncryptFilesOnly;
-		[Test]
-		procedure TestIsRemoteDescriptionsSupportedEncryptFilenames;
-		[Test]
-		procedure TestIsRemoteDescriptionsSupportedAskOnceNoFilenames;
 
 		{ AuthMethod tests }
 		[Test]
@@ -118,56 +107,6 @@ begin
 	{ Expected: 'testuser', but bug returns 'mail.ru' }
 	{ When the bug is fixed, this test will pass }
 	Assert.AreEqual('testuser', Settings.User);
-end;
-
-{ GetIsRemoteDescriptionsSupported tests }
-
-procedure TAccountSettingsTest.TestIsRemoteDescriptionsSupportedNoEncryption;
-var
-	Settings: TAccountSettings;
-begin
-	{ No encryption = descriptions supported }
-	Settings := Default(TAccountSettings);
-	Settings.EncryptFilesMode := EncryptModeNone;
-	Settings.EncryptFileNames := False;
-
-	Assert.IsTrue(Settings.IsRemoteDescriptionsSupported);
-end;
-
-procedure TAccountSettingsTest.TestIsRemoteDescriptionsSupportedEncryptFilesOnly;
-var
-	Settings: TAccountSettings;
-begin
-	{ Encrypt files but NOT filenames = descriptions supported }
-	Settings := Default(TAccountSettings);
-	Settings.EncryptFilesMode := EncryptModeAlways;
-	Settings.EncryptFileNames := False;
-
-	Assert.IsTrue(Settings.IsRemoteDescriptionsSupported);
-end;
-
-procedure TAccountSettingsTest.TestIsRemoteDescriptionsSupportedEncryptFilenames;
-var
-	Settings: TAccountSettings;
-begin
-	{ Encrypt files AND filenames = descriptions NOT supported }
-	Settings := Default(TAccountSettings);
-	Settings.EncryptFilesMode := EncryptModeAlways;
-	Settings.EncryptFileNames := True;
-
-	Assert.IsFalse(Settings.IsRemoteDescriptionsSupported);
-end;
-
-procedure TAccountSettingsTest.TestIsRemoteDescriptionsSupportedAskOnceNoFilenames;
-var
-	Settings: TAccountSettings;
-begin
-	{ EncryptModeAskOnce without filename encryption = supported }
-	Settings := Default(TAccountSettings);
-	Settings.EncryptFilesMode := EncryptModeAskOnce;
-	Settings.EncryptFileNames := False;
-
-	Assert.IsTrue(Settings.IsRemoteDescriptionsSupported);
 end;
 
 { AuthMethod tests }

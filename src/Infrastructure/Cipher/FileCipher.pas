@@ -1,14 +1,13 @@
 unit FileCipher;
 
 {Combined unit for encryption operations: interface, null implementation, and profile-based implementation.
-	Cipher profiles allow selecting different algorithms (AES, Twofish, Serpent) and KDF hashes per account.
+	Cipher profiles allow selecting different algorithms (AES, Twofish) and KDF hashes per account.
 	BCrypt/OpenSSL backends can be added as additional profiles without changing this unit.}
 
 interface
 
 uses
 	Classes,
-	CloudDirItemList,
 	System.SysUtils,
 	CloudConstants,
 	DCPcrypt2,
@@ -17,7 +16,6 @@ uses
 	DCPSha1,
 	DCPsha256,
 	DCPtwofish,
-	DCPserpent,
 	DCPbase64;
 
 const
@@ -34,11 +32,8 @@ type
 		['{54C0EBB7-5186-4D89-A2D6-050D4A6CD58B}']
 		function CryptFile(SourceFileName, DestinationFilename: WideString): Integer;
 		function CryptStream(SourceStream, DestinationStream: TStream): Integer;
-		function CryptFileName(const FileName: WideString): WideString;
 		function DecryptFile(SourceFileName, DestinationFilename: WideString): Integer;
 		function DecryptStream(SourceStream, DestinationStream: TStream): Integer;
-		function DecryptFileName(const FileName: WideString): WideString;
-		procedure DecryptDirListing(var CloudMailRuDirListing: TCloudDirItemList);
 
 		{Stream wrapper methods - return streams that transform data on-the-fly.
 			Caller must free the returned stream. Wrapper does not own/free source.}
@@ -66,11 +61,8 @@ type
 	public
 		function CryptFile(SourceFileName, DestinationFilename: WideString): Integer;
 		function CryptStream(SourceStream, DestinationStream: TStream): Integer;
-		function CryptFileName(const FileName: WideString): WideString;
 		function DecryptFile(SourceFileName, DestinationFilename: WideString): Integer;
 		function DecryptStream(SourceStream, DestinationStream: TStream): Integer;
-		function DecryptFileName(const FileName: WideString): WideString;
-		procedure DecryptDirListing(var CloudMailRuDirListing: TCloudDirItemList);
 		function GetEncryptingStream(Source: TStream): TStream;
 		function GetDecryptingStream(Source: TStream): TStream;
 	end;
@@ -84,28 +76,20 @@ type
 		FCipherClass: TDCP_blockcipher128class;
 		FHashClass: TDCP_hashclass;
 		FFileCipher: TDCP_blockcipher128; {The cipher used to encrypt files and streams}
-		FilenameCipher: TDCP_blockcipher128; {The cipher used to encrypt filenames}
-		DoFilenameCipher: Boolean; {Do filenames encryption}
 		PasswordIsWrong: Boolean; {The wrong password flag}
 
 		procedure CiphersInit();
 		procedure CiphersDestroy();
 
-	protected
-		function Base64ToSafe(const Base64: WideString): WideString; {Safely converts Base64-encoded string to URL and filename (RFC 4648)}
-		function Base64FromSafe(const Safe: WideString): WideString; {Converts a string (assuming to be an url or a filename) to a Base64 format}
 	public
-		constructor Create(Password: WideString; CipherClass: TDCP_blockcipher128class; HashClass: TDCP_hashclass; PasswordControl: WideString = ''; DoFilenameCipher: Boolean = false);
+		constructor Create(Password: WideString; CipherClass: TDCP_blockcipher128class; HashClass: TDCP_hashclass; PasswordControl: WideString = '');
 		destructor Destroy; override;
 
 		function CryptFile(SourceFileName, DestinationFilename: WideString): Integer;
 		function CryptStream(SourceStream, DestinationStream: TStream): Integer;
-		function CryptFileName(const FileName: WideString): WideString;
 
 		function DecryptFile(SourceFileName, DestinationFilename: WideString): Integer;
 		function DecryptStream(SourceStream, DestinationStream: TStream): Integer;
-		function DecryptFileName(const FileName: WideString): WideString;
-		procedure DecryptDirListing(var CloudMailRuDirListing: TCloudDirItemList);
 		function GetEncryptingStream(Source: TStream): TStream;
 		function GetDecryptingStream(Source: TStream): TStream;
 
@@ -185,11 +169,6 @@ begin
 	end;
 end;
 
-function TNullCipher.CryptFileName(const FileName: WideString): WideString;
-begin
-	Result := ExtractFileName(FileName);
-end;
-
 function TNullCipher.DecryptFile(SourceFileName, DestinationFilename: WideString): Integer;
 begin
 	{Decryption is same as encryption for null cipher - just copy}
@@ -200,20 +179,6 @@ function TNullCipher.DecryptStream(SourceStream, DestinationStream: TStream): In
 begin
 	{Decryption is same as encryption for null cipher - just copy}
 	Result := CryptStream(SourceStream, DestinationStream);
-end;
-
-function TNullCipher.DecryptFileName(const FileName: WideString): WideString;
-begin
-	Result := ExtractFileName(FileName);
-end;
-
-procedure TNullCipher.DecryptDirListing(var CloudMailRuDirListing: TCloudDirItemList);
-var
-	i: Integer;
-begin
-	{Set visible_name to name for all items - no decryption needed}
-	for i := 0 to Length(CloudMailRuDirListing) - 1 do
-		CloudMailRuDirListing[i].visible_name := CloudMailRuDirListing[i].name;
 end;
 
 function TNullCipher.GetEncryptingStream(Source: TStream): TStream;
@@ -229,20 +194,6 @@ begin
 end;
 
 {TFileCipher - AES/Rijndael implementation}
-
-function TFileCipher.Base64FromSafe(const Safe: WideString): WideString;
-begin
-	Result := Safe;
-	Result := StringReplace(Result, '-', '+', [rfReplaceAll]);
-	Result := StringReplace(Result, '_', '/', [rfReplaceAll]);
-end;
-
-function TFileCipher.Base64ToSafe(const Base64: WideString): WideString;
-begin
-	Result := Base64;
-	Result := StringReplace(Result, '+', '-', [rfReplaceAll]);
-	Result := StringReplace(Result, '/', '_', [rfReplaceAll]);
-end;
 
 class function TFileCipher.GetCryptedGUID(const Password: WideString): WideString;
 var
@@ -264,30 +215,17 @@ procedure TFileCipher.CiphersDestroy;
 begin
 	self.FFileCipher.Burn;
 	self.FFileCipher.Destroy;
-
-	if self.DoFilenameCipher then
-	begin
-		self.FilenameCipher.Burn;
-		self.FilenameCipher.Destroy;
-	end;
-
 end;
 
 procedure TFileCipher.CiphersInit;
 begin
 	self.FFileCipher := self.FCipherClass.Create(nil);
 	self.FFileCipher.InitStr(self.Password, self.FHashClass);
-	if self.DoFilenameCipher then
-	begin
-		self.FilenameCipher := self.FCipherClass.Create(nil);
-		self.FilenameCipher.InitStr(self.Password, self.FHashClass);
-	end;
 end;
 
-constructor TFileCipher.Create(Password: WideString; CipherClass: TDCP_blockcipher128class; HashClass: TDCP_hashclass; PasswordControl: WideString = ''; DoFilenameCipher: Boolean = false);
+constructor TFileCipher.Create(Password: WideString; CipherClass: TDCP_blockcipher128class; HashClass: TDCP_hashclass; PasswordControl: WideString = '');
 begin
 	self.Password := Password;
-	self.DoFilenameCipher := DoFilenameCipher;
 	self.FCipherClass := CipherClass;
 	self.FHashClass := HashClass;
 
@@ -326,20 +264,6 @@ begin
 	end;
 end;
 
-function TFileCipher.CryptFileName(const FileName: WideString): WideString;
-begin
-	self.CiphersInit();
-	try
-		Result := ExtractFileName(FileName);
-		if EmptyWideStr = Result then
-			exit;
-		if DoFilenameCipher then
-			Result := Base64ToSafe(self.FilenameCipher.EncryptString(Result));
-	finally
-		self.CiphersDestroy;
-	end;
-end;
-
 function TFileCipher.CryptStream(SourceStream, DestinationStream: TStream): Integer;
 begin
 	self.CiphersInit();
@@ -352,16 +276,6 @@ begin
 		end;
 	finally
 		self.CiphersDestroy;
-	end;
-end;
-
-procedure TFileCipher.DecryptDirListing(var CloudMailRuDirListing: TCloudDirItemList);
-var
-	i: Integer;
-begin
-	for i := 0 to Length(CloudMailRuDirListing) - 1 do
-	begin
-		CloudMailRuDirListing[i].visible_name := self.DecryptFileName(CloudMailRuDirListing[i].name);
 	end;
 end;
 
@@ -384,20 +298,6 @@ begin
 	finally
 		SourceStream.Free;
 		DestinationStream.Free;
-	end;
-end;
-
-function TFileCipher.DecryptFileName(const FileName: WideString): WideString;
-begin
-	self.CiphersInit();
-	try
-		Result := ExtractFileName(FileName);
-		if EmptyWideStr = Result then
-			exit;
-		if DoFilenameCipher then
-			Result := self.FilenameCipher.DecryptString(Base64FromSafe(FileName));
-	finally
-		self.CiphersDestroy();
 	end;
 end;
 

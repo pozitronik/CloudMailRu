@@ -41,7 +41,7 @@ type
 		FResolvedShardUrl: WideString;
 		FTempDir: string;
 
-		procedure CreateDownloader(DoCryptFiles: Boolean = False; DoCryptFilenames: Boolean = False; Cipher: ICipher = nil);
+		procedure CreateDownloader(DoCryptFiles: Boolean = False; Cipher: ICipher = nil);
 		function GetTempFilePath(const FileName: string): string;
 		procedure CleanupTempFiles;
 	public
@@ -97,8 +97,6 @@ type
 		{Download tests - encryption}
 		[Test]
 		procedure TestDownload_WithEncryption_DecryptsContent;
-		[Test]
-		procedure TestDownload_WithFilenameEncryption_DecryptsFilename;
 
 		{Download tests - token refresh}
 		[Test]
@@ -167,7 +165,7 @@ begin
 	CleanupTempFiles;
 end;
 
-procedure TCloudFileDownloaderTest.CreateDownloader(DoCryptFiles: Boolean; DoCryptFilenames: Boolean; Cipher: ICipher);
+procedure TCloudFileDownloaderTest.CreateDownloader(DoCryptFiles: Boolean; Cipher: ICipher);
 begin
 	if Cipher = nil then
 		Cipher := TNullCipher.Create;
@@ -181,8 +179,7 @@ begin
 		TNullLogger.Create,
 		TNullProgress.Create,
 		TNullRequest.Create,
-		DoCryptFiles,
-		DoCryptFilenames
+		DoCryptFiles
 	);
 end;
 
@@ -444,7 +441,6 @@ begin
 		TNullLogger.Create,
 		TNullProgress.Create,
 		TNullRequest.Create,
-		False,
 		False
 	);
 
@@ -482,7 +478,6 @@ begin
 		TNullLogger.Create,
 		TNullProgress.Create,
 		TNullRequest.Create,
-		False,
 		False
 	);
 
@@ -505,7 +500,7 @@ begin
 	LocalPath := GetTempFilePath('encrypted_test.txt');
 
 	{TNullCipher passes through content unchanged}
-	CreateDownloader(True, False, TNullCipher.Create);
+	CreateDownloader(True, TNullCipher.Create);
 
 	FileContent := TEncoding.UTF8.GetBytes('Decrypted content');
 	FMockHTTP.SetStreamResponse('download.shard', FileContent, FS_FILE_OK);
@@ -517,30 +512,6 @@ begin
 
 	WrittenContent := TFile.ReadAllText(LocalPath, TEncoding.UTF8);
 	Assert.AreEqual('Decrypted content', WrittenContent, 'Content should be decrypted (pass-through with NullCipher)');
-end;
-
-procedure TCloudFileDownloaderTest.TestDownload_WithFilenameEncryption_DecryptsFilename;
-var
-	LocalPath, ExpectedPath: string;
-	ResultHash: WideString;
-	FileContent: TBytes;
-begin
-	FMockContext.SetIsPublicAccount(False);
-	{TNullCipher.DecryptFileName returns the filename unchanged}
-	CreateDownloader(False, True, TNullCipher.Create);
-
-	{When filename decryption is enabled, the downloader extracts filename from remote path
-	 and uses it for the local file. TNullCipher returns the name unchanged.}
-	LocalPath := GetTempFilePath('original_local.txt');
-	ExpectedPath := GetTempFilePath('encrypted_name.txt'); {Filename from remote path}
-
-	FileContent := TEncoding.UTF8.GetBytes('Content');
-	FMockHTTP.SetStreamResponse('download.shard', FileContent, FS_FILE_OK);
-
-	FDownloader.Download('/remote/encrypted_name.txt', LocalPath, ResultHash);
-
-	{File is created with the decrypted filename (which is same as remote due to TNullCipher)}
-	Assert.IsTrue(TFile.Exists(ExpectedPath), 'File should be created with decrypted filename from remote path');
 end;
 
 {Download tests - token refresh}

@@ -9,7 +9,6 @@ uses
 	System.Classes,
 	DCPrijndael,
 	DCPtwofish,
-	DCPserpent,
 	DCPblockciphers,
 	DUnitX.TestFramework;
 
@@ -22,7 +21,6 @@ type
 			TEST_IV = '1234567890ABCDEF';
 		function CreateInitializedCipher: IBlockCipher;
 		function CreateInitializedTwofishCipher: IBlockCipher;
-		function CreateInitializedSerpentCipher: IBlockCipher;
 		function CreateTestData(Size: Integer): TBytes;
 	public
 		{TEncryptingStream - Basic functionality}
@@ -117,13 +115,7 @@ type
 		[Test]
 		procedure TestRoundtrip_Twofish_PreservesContent;
 		[Test]
-		[Ignore('DCPSerpent uses longword pointer casts -- AV on Win64')]
-		procedure TestRoundtrip_Serpent_PreservesContent;
-		[Test]
 		procedure TestEncryptingStream_Twofish_SeekReset;
-		[Test]
-		[Ignore('DCPSerpent uses longword pointer casts -- AV on Win64')]
-		procedure TestDecryptingStream_Serpent_SeekReset;
 	end;
 
 implementation
@@ -144,16 +136,6 @@ var
 	Cipher: TDCP_twofish;
 begin
 	Cipher := TDCP_twofish.Create(nil);
-	Cipher.Init(TEST_PASSWORD[1], Length(TEST_PASSWORD) * SizeOf(Char) * 8, @TEST_IV[1]);
-	Result := TDCPCryptBlockCipher.Create(Cipher);
-end;
-
-{Helper to create initialized Serpent cipher for alternative cipher testing}
-function TCipherStreamsTest.CreateInitializedSerpentCipher: IBlockCipher;
-var
-	Cipher: TDCP_serpent;
-begin
-	Cipher := TDCP_serpent.Create(nil);
 	Cipher.Init(TEST_PASSWORD[1], Length(TEST_PASSWORD) * SizeOf(Char) * 8, @TEST_IV[1]);
 	Result := TDCPCryptBlockCipher.Create(Cipher);
 end;
@@ -1279,53 +1261,6 @@ begin
 	Assert.AreEqual(OriginalData, DecryptedData, 'Twofish roundtrip: decrypted data should match original');
 end;
 
-procedure TCipherStreamsTest.TestRoundtrip_Serpent_PreservesContent;
-var
-	OriginalData, EncryptedData, DecryptedData: TBytes;
-	SourceStream, EncryptedStream: TMemoryStream;
-	EncStream: TEncryptingStream;
-	DecStream: TDecryptingStream;
-begin
-	OriginalData := CreateTestData(200);
-
-	{Step 1: Encrypt with Serpent}
-	SourceStream := TMemoryStream.Create;
-	try
-		SourceStream.WriteBuffer(OriginalData[0], Length(OriginalData));
-		SourceStream.Position := 0;
-
-		EncStream := TEncryptingStream.Create(SourceStream, CreateInitializedSerpentCipher);
-		try
-			SetLength(EncryptedData, 200);
-			EncStream.Read(EncryptedData[0], 200);
-		finally
-			EncStream.Free;
-		end;
-	finally
-		SourceStream.Free;
-	end;
-
-	{Step 2: Decrypt with Serpent}
-	EncryptedStream := TMemoryStream.Create;
-	try
-		EncryptedStream.WriteBuffer(EncryptedData[0], Length(EncryptedData));
-		EncryptedStream.Position := 0;
-
-		DecStream := TDecryptingStream.Create(EncryptedStream, CreateInitializedSerpentCipher);
-		try
-			SetLength(DecryptedData, 200);
-			DecStream.Read(DecryptedData[0], 200);
-		finally
-			DecStream.Free;
-		end;
-	finally
-		EncryptedStream.Free;
-	end;
-
-	{Verify}
-	Assert.AreEqual(OriginalData, DecryptedData, 'Serpent roundtrip: decrypted data should match original');
-end;
-
 procedure TCipherStreamsTest.TestEncryptingStream_Twofish_SeekReset;
 var
 	Source: TMemoryStream;
@@ -1353,39 +1288,6 @@ begin
 			Assert.AreEqual(FirstRead, SecondRead, 'Twofish: re-reading after seek should produce same data');
 		finally
 			EncStream.Free;
-		end;
-	finally
-		Source.Free;
-	end;
-end;
-
-procedure TCipherStreamsTest.TestDecryptingStream_Serpent_SeekReset;
-var
-	Source: TMemoryStream;
-	DecStream: TDecryptingStream;
-	FirstRead, SecondRead: TBytes;
-begin
-	Source := TMemoryStream.Create;
-	try
-		Source.WriteBuffer(CreateTestData(200)[0], 200);
-		Source.Position := 0;
-
-		DecStream := TDecryptingStream.Create(Source, CreateInitializedSerpentCipher);
-		try
-			{Read decrypted data}
-			SetLength(FirstRead, 200);
-			DecStream.Read(FirstRead[0], 200);
-
-			{Seek back to beginning}
-			Assert.AreEqual(Int64(0), DecStream.Seek(0, soBeginning), 'Seek should return 0');
-
-			{Read again - should get same decrypted data}
-			SetLength(SecondRead, 200);
-			DecStream.Read(SecondRead[0], 200);
-
-			Assert.AreEqual(FirstRead, SecondRead, 'Serpent: re-reading after seek should produce same data');
-		finally
-			DecStream.Free;
 		end;
 	finally
 		Source.Free;

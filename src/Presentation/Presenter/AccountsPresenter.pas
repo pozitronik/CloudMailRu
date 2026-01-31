@@ -183,10 +183,7 @@ type
 		function GetPublicUrl: WideString;
 		procedure SetEncryptFilesMode(Value: Integer);
 		function GetEncryptFilesMode: Integer;
-		procedure SetEncryptFilenames(Value: Boolean);
-		function GetEncryptFilenames: Boolean;
 		procedure SetEncryptPasswordButtonEnabled(Value: Boolean);
-		procedure SetEncryptFilenamesCBEnabled(Value: Boolean);
 		procedure SetAccountsPanelVisible(Value: Boolean);
 		procedure SetSharesPanelVisible(Value: Boolean);
 		procedure SetApplyButtonEnabled(Value: Boolean);
@@ -562,7 +559,6 @@ begin
 		FView.SetSplitLargeFiles(AccSettings.SplitLargeFiles);
 		FView.SetPublicUrl(AccSettings.PublicUrl);
 		FView.SetEncryptFilesMode(AccSettings.EncryptFilesMode);
-		FView.SetEncryptFilenames(AccSettings.EncryptFilenames);
 		FView.SetCipherProfileIndex(CipherProfileIdToIndex(AccSettings.CipherProfileId));
 		FPreviousCipherProfileIndex := FView.GetCipherProfileIndex;
 
@@ -593,11 +589,9 @@ begin
 		FView.SetSplitLargeFiles(False);
 		FView.SetPublicUrl('');
 		FView.SetEncryptFilesMode(EncryptModeNone);
-		FView.SetEncryptFilenames(False);
 		FView.SetCipherProfileIndex(0);
 		FPreviousCipherProfileIndex := 0;
 		FView.SetEncryptPasswordButtonEnabled(False);
-		FView.SetEncryptFilenamesCBEnabled(False);
 		FView.SetCipherProfileEnabled(False);
 		OnAccountTypeChanged;
 	finally
@@ -637,7 +631,6 @@ begin
 	AccSettings.SplitLargeFiles := FView.GetSplitLargeFiles;
 	AccSettings.PublicUrl := FView.GetPublicUrl;
 	AccSettings.EncryptFilesMode := FView.GetEncryptFilesMode;
-	AccSettings.EncryptFilenames := FView.GetEncryptFilenames;
 	AccSettings.CipherProfileId := IndexToCipherProfileId(FView.GetCipherProfileIndex);
 	AccSettings.TwostepAuth := False; {Deprecated}
 	AccSettings.AuthMethod := CLOUD_AUTH_METHOD_OAUTH_APP;
@@ -791,7 +784,6 @@ end;
 procedure TAccountsPresenter.OnEncryptModeChanged;
 begin
 	FView.SetEncryptPasswordButtonEnabled(FView.GetEncryptFilesMode = EncryptModeAlways);
-	FView.SetEncryptFilenamesCBEnabled(FView.GetEncryptFilesMode <> EncryptModeNone);
 	FView.SetCipherProfileEnabled(FView.GetEncryptFilesMode <> EncryptModeNone);
 	OnFieldChanged;
 end;

@@ -70,14 +70,6 @@ type
 		[Test]
 		procedure TestCryptFileNonExistentSource;
 
-		{Filename encryption}
-		[Test]
-		procedure TestCryptDecryptFileNameRoundtrip;
-		[Test]
-		procedure TestCryptFileNameEmptyInput;
-		[Test]
-		procedure TestCryptFileName_NoEncryption_ReturnsPlain;
-
 		{Different passwords produce different output}
 		[Test]
 		procedure TestDifferentPasswords_DifferentCiphertext;
@@ -424,70 +416,6 @@ begin
 	try
 		ResultCode := Cipher.CryptFile('C:\NonExistent\File\That\Does\Not\Exist.txt', TPath.GetTempFileName);
 		Assert.AreEqual(CIPHER_IO_ERROR, ResultCode);
-	finally
-		Cipher.Free;
-	end;
-end;
-
-procedure TBCryptCipherTest.TestCryptDecryptFileNameRoundtrip;
-var
-	Cipher: TBCryptCipher;
-	Encrypted, Decrypted: WideString;
-begin
-	if not ProviderAvailable then
-	begin
-		Assert.Pass('Skipped - BCrypt not available');
-		Exit;
-	end;
-
-	Cipher := TBCryptCipher.Create('testpassword', FProvider, '', True);
-	try
-		Encrypted := Cipher.CryptFileName('myfile.dat');
-		Assert.IsNotEmpty(Encrypted, 'Encrypted filename should not be empty');
-		Assert.AreNotEqual('myfile.dat', Encrypted, 'Filename should be encrypted');
-
-		Decrypted := Cipher.DecryptFileName(Encrypted);
-		Assert.AreEqual('myfile.dat', Decrypted, 'Decrypted filename should match original');
-	finally
-		Cipher.Free;
-	end;
-end;
-
-procedure TBCryptCipherTest.TestCryptFileNameEmptyInput;
-var
-	Cipher: TBCryptCipher;
-	Result: WideString;
-begin
-	if not ProviderAvailable then
-	begin
-		Assert.Pass('Skipped - BCrypt not available');
-		Exit;
-	end;
-
-	Cipher := TBCryptCipher.Create('testpassword', FProvider, '', True);
-	try
-		Result := Cipher.CryptFileName('');
-		Assert.AreEqual('', Result, 'Empty filename should return empty');
-	finally
-		Cipher.Free;
-	end;
-end;
-
-procedure TBCryptCipherTest.TestCryptFileName_NoEncryption_ReturnsPlain;
-var
-	Cipher: TBCryptCipher;
-	Result: WideString;
-begin
-	if not ProviderAvailable then
-	begin
-		Assert.Pass('Skipped - BCrypt not available');
-		Exit;
-	end;
-
-	Cipher := TBCryptCipher.Create('testpassword', FProvider, '', False);
-	try
-		Result := Cipher.CryptFileName('somefile.txt');
-		Assert.AreEqual('somefile.txt', Result, 'Without filename cipher, should return plain name');
 	finally
 		Cipher.Free;
 	end;

@@ -101,9 +101,7 @@ type
 		FIsPrivate: Boolean;
 		FPublicUrl: WideString;
 		FEncryptFilesMode: Integer;
-		FEncryptFilenames: Boolean;
 		FEncryptPasswordButtonEnabled: Boolean;
-		FEncryptFilenamesCBEnabled: Boolean;
 		FAccountsPanelVisible: Boolean;
 		FSharesPanelVisible: Boolean;
 		FApplyButtonEnabled: Boolean;
@@ -269,10 +267,7 @@ type
 		function GetPublicUrl: WideString;
 		procedure SetEncryptFilesMode(Value: Integer);
 		function GetEncryptFilesMode: Integer;
-		procedure SetEncryptFilenames(Value: Boolean);
-		function GetEncryptFilenames: Boolean;
 		procedure SetEncryptPasswordButtonEnabled(Value: Boolean);
-		procedure SetEncryptFilenamesCBEnabled(Value: Boolean);
 		procedure SetAccountsPanelVisible(Value: Boolean);
 		procedure SetSharesPanelVisible(Value: Boolean);
 		procedure SetApplyButtonEnabled(Value: Boolean);
@@ -289,7 +284,6 @@ type
 		property AccountsListItems: TArray<TAccountDisplayItem> read FAccountsListItems;
 		property SelectedAccountIndex: Integer read FSelectedAccountIndex write FSelectedAccountIndex;
 		property EncryptPasswordButtonEnabled: Boolean read FEncryptPasswordButtonEnabled;
-		property EncryptFilenamesCBEnabled: Boolean read FEncryptFilenamesCBEnabled;
 		property AccountsPanelVisible: Boolean read FAccountsPanelVisible;
 		property SharesPanelVisible: Boolean read FSharesPanelVisible;
 		property ApplyButtonEnabled: Boolean read FApplyButtonEnabled;
@@ -473,10 +467,6 @@ type
 		procedure TestOnEncryptModeChangedEnablesPasswordButton;
 		[Test]
 		procedure TestOnEncryptModeChangedDisablesPasswordButton;
-		[Test]
-		procedure TestOnEncryptModeChangedEnablesFilenamesCB;
-		[Test]
-		procedure TestOnEncryptModeChangedDisablesFilenamesCB;
 		[Test]
 		procedure TestOnEncryptModeChangedWithAskOnce;
 		[Test]
@@ -1243,24 +1233,9 @@ begin
 	Result := FEncryptFilesMode;
 end;
 
-procedure TMockAccountsView.SetEncryptFilenames(Value: Boolean);
-begin
-	FEncryptFilenames := Value;
-end;
-
-function TMockAccountsView.GetEncryptFilenames: Boolean;
-begin
-	Result := FEncryptFilenames;
-end;
-
 procedure TMockAccountsView.SetEncryptPasswordButtonEnabled(Value: Boolean);
 begin
 	FEncryptPasswordButtonEnabled := Value;
-end;
-
-procedure TMockAccountsView.SetEncryptFilenamesCBEnabled(Value: Boolean);
-begin
-	FEncryptFilenamesCBEnabled := Value;
 end;
 
 procedure TMockAccountsView.SetAccountsPanelVisible(Value: Boolean);
@@ -2173,7 +2148,6 @@ begin
 	AccSettings.SplitLargeFiles := True;
 	AccSettings.PublicAccount := False;
 	AccSettings.EncryptFilesMode := EncryptModeAlways;
-	AccSettings.EncryptFilenames := True;
 	FAccountsManager.SetAccountSettings(AccSettings);
 
 	FPresenter.Initialize('LoadTest');
@@ -2186,7 +2160,6 @@ begin
 	Assert.IsTrue(FView.GetSplitLargeFiles, 'Split large files should be set');
 	Assert.IsTrue(FView.GetIsPrivate, 'Should be private');
 	Assert.AreEqual(EncryptModeAlways, FView.GetEncryptFilesMode, 'Encrypt mode should match');
-	Assert.IsTrue(FView.GetEncryptFilenames, 'Encrypt filenames should be set');
 end;
 
 procedure TAccountsPresenterTest.TestOnAccountSelectedClearsWhenEmpty;
@@ -2400,26 +2373,6 @@ begin
 	FPresenter.OnEncryptModeChanged;
 
 	Assert.IsFalse(FView.EncryptPasswordButtonEnabled, 'Password button should be disabled for EncryptModeNone');
-end;
-
-procedure TAccountsPresenterTest.TestOnEncryptModeChangedEnablesFilenamesCB;
-begin
-	FPresenter.Initialize('');
-	FView.SetEncryptFilesMode(EncryptModeAlways);
-
-	FPresenter.OnEncryptModeChanged;
-
-	Assert.IsTrue(FView.EncryptFilenamesCBEnabled, 'Filenames checkbox should be enabled when encryption is on');
-end;
-
-procedure TAccountsPresenterTest.TestOnEncryptModeChangedDisablesFilenamesCB;
-begin
-	FPresenter.Initialize('');
-	FView.SetEncryptFilesMode(EncryptModeNone);
-
-	FPresenter.OnEncryptModeChanged;
-
-	Assert.IsFalse(FView.EncryptFilenamesCBEnabled, 'Filenames checkbox should be disabled when encryption is off');
 end;
 
 procedure TAccountsPresenterTest.TestOnEncryptModeChangedWithAskOnce;
@@ -2979,7 +2932,7 @@ procedure TAccountsPresenterTest.TestCipherProfileComboPopulatedOnInitialize;
 begin
 	{Initialize populates cipher profile combo via PopulateCipherProfiles}
 	FPresenter.Initialize('');
-	Assert.AreEqual(Integer(4), Integer(Length(FView.CipherProfileItems)), 'Should have 4 cipher profiles');
+	Assert.AreEqual(Integer(3), Integer(Length(FView.CipherProfileItems)), 'Should have 3 cipher profiles');
 end;
 
 procedure TAccountsPresenterTest.TestCipherProfileDisabledWhenEncryptModeNone;

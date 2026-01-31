@@ -60,9 +60,8 @@ type
 		FCipher: ICipher;
 		FLogger: ILogger;
 		FRetryOperation: IRetryOperation;
-		FDoCryptFilenames: Boolean;
 	public
-		constructor Create(Context: ICloudContext; Cipher: ICipher; Logger: ILogger; RetryOperation: IRetryOperation; DoCryptFilenames: Boolean);
+		constructor Create(Context: ICloudContext; Cipher: ICipher; Logger: ILogger; RetryOperation: IRetryOperation);
 
 		{ICloudListingService implementation}
 		function GetDirectory(Path: WideString; var Listing: TCloudDirItemList; ShowProgress: Boolean = False): Boolean;
@@ -81,14 +80,13 @@ implementation
 
 {TCloudListingService}
 
-constructor TCloudListingService.Create(Context: ICloudContext; Cipher: ICipher; Logger: ILogger; RetryOperation: IRetryOperation; DoCryptFilenames: Boolean);
+constructor TCloudListingService.Create(Context: ICloudContext; Cipher: ICipher; Logger: ILogger; RetryOperation: IRetryOperation);
 begin
 	inherited Create;
 	FContext := Context;
 	FCipher := Cipher;
 	FLogger := Logger;
 	FRetryOperation := RetryOperation;
-	FDoCryptFilenames := DoCryptFilenames;
 end;
 
 function TCloudListingService.GetDirectory(Path: WideString; var Listing: TCloudDirItemList; ShowProgress: Boolean = False): Boolean;
@@ -116,8 +114,6 @@ begin
 			if Result then
 			begin
 				Result := TCloudDirItemListJsonAdapter.Parse(JSON, Listing);
-				if Result and FDoCryptFilenames then
-					FCipher.DecryptDirListing(Listing);
 			end else if OperationResult.OperationResult = CLOUD_ERROR_NOT_EXISTS then
 				FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, '%s%s', [PREFIX_ERR_PATH_NOT_EXISTS, Path]);
 		end;
@@ -149,8 +145,6 @@ begin
 					if Success then
 					begin
 						Success := TCloudDirItemListJsonAdapter.Parse(JSON, PageListing, PageExpectedCount);
-						if Success and FDoCryptFilenames then
-							FCipher.DecryptDirListing(PageListing);
 					end else if OperationResult.OperationResult = CLOUD_ERROR_NOT_EXISTS then
 						FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, '%s%s', [PREFIX_ERR_PATH_NOT_EXISTS, Path]);
 				end;

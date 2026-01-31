@@ -79,7 +79,6 @@ type
 		FTCHandler: ITCHandler;
 		FRetryOperation: IRetryOperation;
 		FDoCryptFiles: Boolean;
-		FDoCryptFilenames: Boolean;
 		FSettings: TUploadSettings;
 
 		{Internal upload methods}
@@ -98,7 +97,7 @@ type
 		{Protected for testability - tests need direct access to split upload logic}
 		function PutFileSplit(LocalPath, RemotePath, ConflictMode: WideString; ChunkOverwriteMode: Integer): Integer;
 	public
-		constructor Create(Context: ICloudContext; ShardManager: ICloudShardManager; HashCalculator: ICloudHashCalculator; Cipher: ICipher; FileSystem: IFileSystem; Logger: ILogger; Progress: IProgress; Request: IRequest; TCHandler: ITCHandler; RetryOperation: IRetryOperation; DoCryptFiles, DoCryptFilenames: Boolean; Settings: TUploadSettings);
+		constructor Create(Context: ICloudContext; ShardManager: ICloudShardManager; HashCalculator: ICloudHashCalculator; Cipher: ICipher; FileSystem: IFileSystem; Logger: ILogger; Progress: IProgress; Request: IRequest; TCHandler: ITCHandler; RetryOperation: IRetryOperation; DoCryptFiles: Boolean; Settings: TUploadSettings);
 
 		{ICloudFileUploader}
 		function Upload(LocalPath, RemotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; ChunkOverwriteMode: Integer = 0): Integer;
@@ -112,7 +111,7 @@ uses
 
 {TCloudFileUploader}
 
-constructor TCloudFileUploader.Create(Context: ICloudContext; ShardManager: ICloudShardManager; HashCalculator: ICloudHashCalculator; Cipher: ICipher; FileSystem: IFileSystem; Logger: ILogger; Progress: IProgress; Request: IRequest; TCHandler: ITCHandler; RetryOperation: IRetryOperation; DoCryptFiles, DoCryptFilenames: Boolean; Settings: TUploadSettings);
+constructor TCloudFileUploader.Create(Context: ICloudContext; ShardManager: ICloudShardManager; HashCalculator: ICloudHashCalculator; Cipher: ICipher; FileSystem: IFileSystem; Logger: ILogger; Progress: IProgress; Request: IRequest; TCHandler: ITCHandler; RetryOperation: IRetryOperation; DoCryptFiles: Boolean; Settings: TUploadSettings);
 begin
 	inherited Create;
 	FContext := Context;
@@ -126,7 +125,6 @@ begin
 	FTCHandler := TCHandler;
 	FRetryOperation := RetryOperation;
 	FDoCryptFiles := DoCryptFiles;
-	FDoCryptFilenames := DoCryptFilenames;
 	FSettings := Settings;
 end;
 
@@ -143,7 +141,6 @@ end;
 	handled, but may trigger debugger breaks during development.}
 function TCloudFileUploader.AddFileByIdentity(FileIdentity: TCloudFileIdentity; RemotePath: WideString; ConflictMode: WideString; LogErrors: Boolean; LogSuccess: Boolean): Integer;
 var
-	FileName: WideString;
 	CallResult: TAPICallResult;
 	{Explicit Self capture for anonymous function closure}
 	HTTP: ICloudHTTP;
@@ -153,13 +150,6 @@ var
 begin
 	if FContext.IsPublicAccount then
 		Exit(FS_FILE_NOTSUPPORTED);
-
-	if FDoCryptFilenames then
-	begin
-		FileName := ExtractUniversalFileName(RemotePath);
-		FileName := FCipher.CryptFileName(FileName);
-		RemotePath := ChangePathFileName(RemotePath, FileName);
-	end;
 
 	{Capture values before anonymous function to avoid Self capture issues}
 	HTTP := FContext.GetHTTP;

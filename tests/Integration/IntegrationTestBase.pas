@@ -48,9 +48,8 @@ type
 
 		{Create a cloud instance for the primary account.
 			@param Encrypted If True, enables file encryption
-			@param EncryptFilenames If True, enables filename encryption (requires Encrypted=True)
 			@return Configured TCloudMailRu instance (caller owns it)}
-		function CreatePrimaryCloud(Encrypted: Boolean = False; EncryptFilenames: Boolean = False): TCloudMailRu;
+		function CreatePrimaryCloud(Encrypted: Boolean = False): TCloudMailRu;
 
 		{Create a cloud instance for the secondary account.
 			@return Configured TCloudMailRu instance (caller owns it)
@@ -85,10 +84,9 @@ type
 			@param Password Account password
 			@param UseAppPassword True if using app password (OAuth)
 			@param Encrypted Enable encryption
-			@param EncryptFilenames Enable filename encryption
 			@return Configured TCloudSettings record}
 		function CreateCloudSettings(const Email, Password: WideString; UseAppPassword: Boolean;
-			Encrypted: Boolean = False; EncryptFilenames: Boolean = False): TCloudSettings;
+			Encrypted: Boolean = False): TCloudSettings;
 
 		{Check if test should be skipped due to missing configuration.
 			Use at the start of tests that require specific config.}
@@ -181,7 +179,7 @@ begin
 end;
 
 function TIntegrationTestBase.CreateCloudSettings(const Email, Password: WideString; UseAppPassword: Boolean;
-	Encrypted: Boolean; EncryptFilenames: Boolean): TCloudSettings;
+	Encrypted: Boolean): TCloudSettings;
 begin
 	Result := Default(TCloudSettings);
 
@@ -199,13 +197,11 @@ begin
 	if Encrypted and FConfig.HasEncryptionConfig then
 	begin
 		Result.AccountSettings.EncryptFilesMode := EncryptModeAlways;
-		Result.AccountSettings.EncryptFileNames := EncryptFilenames;
 		Result.CryptFilesPassword := FConfig.EncryptionPassword;
 	end
 	else
 	begin
 		Result.AccountSettings.EncryptFilesMode := EncryptModeNone;
-		Result.AccountSettings.EncryptFileNames := False;
 	end;
 
 	{Connection settings - use reasonable defaults}
@@ -231,7 +227,7 @@ begin
 	end;
 end;
 
-function TIntegrationTestBase.CreatePrimaryCloud(Encrypted: Boolean; EncryptFilenames: Boolean): TCloudMailRu;
+function TIntegrationTestBase.CreatePrimaryCloud(Encrypted: Boolean): TCloudMailRu;
 var
 	Settings: TCloudSettings;
 	AuthStrategy: IAuthStrategy;
@@ -241,8 +237,7 @@ begin
 		FConfig.PrimaryEmail,
 		FConfig.PrimaryPassword,
 		FConfig.PrimaryUseAppPassword,
-		Encrypted,
-		EncryptFilenames);
+		Encrypted);
 
 	if FConfig.PrimaryUseAppPassword then
 		AuthStrategy := TOAuthAppAuthStrategy.Create
@@ -282,7 +277,6 @@ begin
 		FConfig.SecondaryEmail,
 		FConfig.SecondaryPassword,
 		FConfig.SecondaryUseAppPassword,
-		False,
 		False);
 
 	if FConfig.SecondaryUseAppPassword then

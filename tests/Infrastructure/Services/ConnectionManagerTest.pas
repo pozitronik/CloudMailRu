@@ -158,7 +158,6 @@ begin
 	FAccountSettings.PublicAccount := True; {Public account skips password retrieval}
 	FAccountSettings.PublicUrl := '';
 	FAccountSettings.EncryptFilesMode := EncryptModeNone;
-	FAccountSettings.EncryptFileNames := False;
 	FAccountSettings.CryptedGUIDFiles := '';
 	FAccountSettings.ShardOverride := '';
 	FAccountSettings.UploadUrlOverride := '';

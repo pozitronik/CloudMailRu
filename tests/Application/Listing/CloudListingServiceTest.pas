@@ -127,7 +127,7 @@ begin
 	{Create retry operation with mock context}
 	FRetryOperation := TRetryOperation.Create(FMockContext, 3);
 
-	FService := TCloudListingService.Create(FMockContext, TNullCipher.Create, TNullLogger.Create, FRetryOperation, False);
+	FService := TCloudListingService.Create(FMockContext, TNullCipher.Create, TNullLogger.Create, FRetryOperation);
 end;
 
 procedure TCloudListingServiceTest.TearDown;

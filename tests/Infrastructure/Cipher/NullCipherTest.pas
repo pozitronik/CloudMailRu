@@ -4,8 +4,6 @@ interface
 
 uses
 	FileCipher,
-	CloudDirItemList,
-	CloudDirItem,
 	System.SysUtils,
 	System.IOUtils,
 	System.Classes,
@@ -36,18 +34,6 @@ type
 		procedure TestDecryptStreamCopiesUnchanged;
 
 		[Test]
-		{Verifies CryptFileName returns filename unchanged}
-		procedure TestCryptFileNameReturnsUnchanged;
-
-		[Test]
-		{Verifies DecryptFileName returns filename unchanged}
-		procedure TestDecryptFileNameReturnsUnchanged;
-
-		[Test]
-		{Verifies DecryptDirListing sets visible_name to name for all items}
-		procedure TestDecryptDirListingSetsVisibleName;
-
-		[Test]
 		{Verifies CryptFile returns CIPHER_IO_ERROR for non-existent source}
 		procedure TestCryptFileNonExistentSource;
 
@@ -58,10 +44,6 @@ type
 		[Test]
 		{Verifies CryptStream handles empty stream}
 		procedure TestCryptStreamEmptyStream;
-
-		[Test]
-		{Verifies CryptFileName extracts filename from path}
-		procedure TestCryptFileNameExtractsFromPath;
 	end;
 
 implementation
@@ -188,43 +170,6 @@ begin
 	end;
 end;
 
-procedure TNullCipherTest.TestCryptFileNameReturnsUnchanged;
-var
-	Cipher: ICipher;
-begin
-	Cipher := TNullCipher.Create;
-	Assert.AreEqual('testfile.txt', Cipher.CryptFileName('testfile.txt'));
-end;
-
-procedure TNullCipherTest.TestDecryptFileNameReturnsUnchanged;
-var
-	Cipher: ICipher;
-begin
-	Cipher := TNullCipher.Create;
-	Assert.AreEqual('testfile.txt', Cipher.DecryptFileName('testfile.txt'));
-end;
-
-procedure TNullCipherTest.TestDecryptDirListingSetsVisibleName;
-var
-	Cipher: ICipher;
-	DirListing: TCloudDirItemList;
-begin
-	SetLength(DirListing, 3);
-	DirListing[0].name := 'file1.txt';
-	DirListing[0].visible_name := '';
-	DirListing[1].name := 'file2.doc';
-	DirListing[1].visible_name := '';
-	DirListing[2].name := 'folder';
-	DirListing[2].visible_name := '';
-
-	Cipher := TNullCipher.Create;
-	Cipher.DecryptDirListing(DirListing);
-
-	Assert.AreEqual('file1.txt', DirListing[0].visible_name);
-	Assert.AreEqual('file2.doc', DirListing[1].visible_name);
-	Assert.AreEqual('folder', DirListing[2].visible_name);
-end;
-
 procedure TNullCipherTest.TestCryptFileNonExistentSource;
 var
 	Cipher: ICipher;
@@ -259,15 +204,6 @@ begin
 		SourceStream.Free;
 		DestStream.Free;
 	end;
-end;
-
-procedure TNullCipherTest.TestCryptFileNameExtractsFromPath;
-var
-	Cipher: ICipher;
-begin
-	Cipher := TNullCipher.Create;
-	Assert.AreEqual('testfile.txt', Cipher.CryptFileName('C:\Some\Path\testfile.txt'));
-	Assert.AreEqual('document.pdf', Cipher.CryptFileName('D:\Documents\document.pdf'));
 end;
 
 initialization

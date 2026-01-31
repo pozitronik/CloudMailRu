@@ -160,8 +160,6 @@ object AccountsForm: TAccountsForm
     ActivePage = AccountsTab
     Align = alClient
     TabOrder = 0
-    ExplicitWidth = 616
-    ExplicitHeight = 459
     object AccountsTab: TTabSheet
       Caption = 'Accounts'
       ImageIndex = 5
@@ -185,8 +183,6 @@ object AccountsForm: TAccountsForm
         ShowCaption = False
         TabOrder = 6
         Visible = False
-        ExplicitWidth = 332
-        ExplicitHeight = 305
         DesignSize = (
           338
           322)
@@ -205,7 +201,6 @@ object AccountsForm: TAccountsForm
           Anchors = [akLeft, akTop, akRight]
           TabOrder = 0
           OnChange = FieldChanged
-          ExplicitWidth = 332
         end
       end
       object AccountsListView: TListView
@@ -239,7 +234,6 @@ object AccountsForm: TAccountsForm
         Caption = 'New'
         TabOrder = 1
         OnClick = AddButtonClick
-        ExplicitTop = 402
       end
       object DeleteButton: TButton
         Left = 141
@@ -250,7 +244,6 @@ object AccountsForm: TAccountsForm
         Caption = 'Delete'
         TabOrder = 2
         OnClick = DeleteButtonClick
-        ExplicitTop = 402
       end
       object AccountNameEdit: TEdit
         Left = 272
@@ -260,7 +253,6 @@ object AccountsForm: TAccountsForm
         Anchors = [akLeft, akTop, akRight]
         TabOrder = 3
         OnChange = FieldChanged
-        ExplicitWidth = 332
       end
       object AccountTypeGB: TGroupBox
         Left = 272
@@ -270,7 +262,6 @@ object AccountsForm: TAccountsForm
         Anchors = [akLeft, akTop, akRight]
         Caption = 'Account type'
         TabOrder = 4
-        ExplicitWidth = 332
         object PrivateRB: TRadioButton
           Left = 8
           Top = 18
@@ -301,8 +292,6 @@ object AccountsForm: TAccountsForm
         BevelOuter = bvNone
         ShowCaption = False
         TabOrder = 5
-        ExplicitWidth = 332
-        ExplicitHeight = 305
         DesignSize = (
           338
           322)
@@ -328,7 +317,6 @@ object AccountsForm: TAccountsForm
           Anchors = [akLeft, akTop, akRight]
           TabOrder = 0
           OnChange = FieldChanged
-          ExplicitWidth = 332
         end
         object PasswordEdit: TEdit
           Left = 0
@@ -339,7 +327,6 @@ object AccountsForm: TAccountsForm
           PasswordChar = '*'
           TabOrder = 1
           OnChange = FieldChanged
-          ExplicitWidth = 332
         end
         object UseTCPwdMngrCB: TCheckBox
           Left = 0
@@ -350,7 +337,6 @@ object AccountsForm: TAccountsForm
           Caption = 'Store password in TC password manager'
           TabOrder = 2
           OnClick = FieldChanged
-          ExplicitWidth = 332
         end
         object FileSizeGB: TGroupBox
           Left = 0
@@ -360,7 +346,6 @@ object AccountsForm: TAccountsForm
           Anchors = [akLeft, akTop, akRight]
           Caption = 'File size'
           TabOrder = 3
-          ExplicitWidth = 332
           DesignSize = (
             338
             58)
@@ -373,7 +358,6 @@ object AccountsForm: TAccountsForm
             Caption = 'Ignore 2Gb limit (paid account)'
             TabOrder = 0
             OnClick = FieldChanged
-            ExplicitWidth = 319
           end
           object SplitLargeFilesCB: TCheckBox
             Left = 8
@@ -384,21 +368,19 @@ object AccountsForm: TAccountsForm
             Caption = 'Split large files'
             TabOrder = 1
             OnClick = FieldChanged
-            ExplicitWidth = 319
           end
         end
         object EncryptGB: TGroupBox
           Left = 0
           Top = 170
           Width = 338
-          Height = 143
+          Height = 119
           Anchors = [akLeft, akTop, akRight]
           Caption = 'Encryption'
           TabOrder = 4
-          ExplicitWidth = 332
           DesignSize = (
             338
-            143)
+            119)
           object EncryptFilesLabel: TLabel
             Left = 8
             Top = 20
@@ -428,7 +410,6 @@ object AccountsForm: TAccountsForm
               'No'
               'Always'
               'Ask once')
-            ExplicitWidth = 214
           end
           object EncryptFilesPwdButton: TButton
             Left = 233
@@ -440,19 +421,6 @@ object AccountsForm: TAccountsForm
             Enabled = False
             TabOrder = 1
             OnClick = EncryptFilesPwdButtonClick
-            ExplicitLeft = 227
-          end
-          object EncryptFilenamesCB: TCheckBox
-            Left = 8
-            Top = 110
-            Width = 322
-            Height = 17
-            Anchors = [akLeft, akTop, akRight]
-            Caption = 'Also encrypt filenames'
-            Enabled = False
-            TabOrder = 3
-            OnClick = FieldChanged
-            ExplicitWidth = 316
           end
           object CipherProfileCombo: TComboBox
             Left = 8
@@ -476,8 +444,6 @@ object AccountsForm: TAccountsForm
         Enabled = False
         TabOrder = 7
         OnClick = ApplyButtonClick
-        ExplicitLeft = 480
-        ExplicitTop = 402
       end
     end
     object GlobalTab: TTabSheet

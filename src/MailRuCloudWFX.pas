@@ -272,7 +272,7 @@ begin
 	FFileSystem := TWindowsFileSystem.Create;
 	FTCHandler := TTCHandler.Create(TWindowsEnvironment.Create);
 	FDescriptionSync := TDescriptionSyncManager.Create(SettingsManager.GetSettings.DescriptionFileName, FFileSystem, FTCHandler);
-	FDescriptionSyncGuard := TDescriptionSyncGuard.Create(FDescriptionSync, SettingsManager, AccountSettings);
+	FDescriptionSyncGuard := TDescriptionSyncGuard.Create(FDescriptionSync, SettingsManager);
 end;
 
 function TWFXApplication.FsInit(PluginNr: Integer; pProgressProc: TProgressProcW; pLogProc: TLogProcW; pRequestProc: TRequestProcW): Integer;

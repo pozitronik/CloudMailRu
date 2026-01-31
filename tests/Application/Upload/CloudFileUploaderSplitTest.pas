@@ -265,7 +265,6 @@ begin
 		TNullTCHandler.Create,
 		FRetryOperation,
 		False, {DoCryptFiles}
-		False, {DoCryptFilenames}
 		FSettings);
 end;
 

@@ -64,14 +64,6 @@ type
 		[Test]
 		procedure TestCryptFileNonExistentSource;
 
-		{Filename encryption}
-		[Test]
-		procedure TestCryptDecryptFileNameRoundtrip;
-		[Test]
-		procedure TestCryptFileNameEmptyInput;
-		[Test]
-		procedure TestCryptFileName_NoEncryption_ReturnsPlain;
-
 		{Different passwords produce different output}
 		[Test]
 		procedure TestDifferentPasswords_DifferentCiphertext;
@@ -372,71 +364,6 @@ begin
 	try
 		ResultCode := Cipher.CryptFile('C:\NonExistent\File\That\Does\Not\Exist.txt', TPath.GetTempFileName);
 		Assert.AreEqual(CIPHER_IO_ERROR, ResultCode);
-	finally
-		Cipher.Free;
-	end;
-end;
-
-procedure TOpenSSLCipherTest.TestCryptDecryptFileNameRoundtrip;
-var
-	Cipher: TOpenSSLCipher;
-	Encrypted, Decrypted: WideString;
-begin
-	if not CipherAvailable then
-	begin
-		Assert.Pass('Skipped - OpenSSL cipher functions not available');
-		Exit;
-	end;
-
-	Cipher := TOpenSSLCipher.Create('testpassword', FProvider.GetFunctions, '', True);
-	try
-		Encrypted := Cipher.CryptFileName('myfile.dat');
-		Assert.IsNotEmpty(Encrypted, 'Encrypted filename should not be empty');
-		Assert.AreNotEqual('myfile.dat', Encrypted, 'Filename should be encrypted');
-
-		Decrypted := Cipher.DecryptFileName(Encrypted);
-		Assert.AreEqual('myfile.dat', Decrypted, 'Decrypted filename should match original');
-	finally
-		Cipher.Free;
-	end;
-end;
-
-procedure TOpenSSLCipherTest.TestCryptFileNameEmptyInput;
-var
-	Cipher: TOpenSSLCipher;
-	Result: WideString;
-begin
-	if not CipherAvailable then
-	begin
-		Assert.Pass('Skipped - OpenSSL cipher functions not available');
-		Exit;
-	end;
-
-	Cipher := TOpenSSLCipher.Create('testpassword', FProvider.GetFunctions, '', True);
-	try
-		Result := Cipher.CryptFileName('');
-		Assert.AreEqual('', Result, 'Empty filename should return empty');
-	finally
-		Cipher.Free;
-	end;
-end;
-
-procedure TOpenSSLCipherTest.TestCryptFileName_NoEncryption_ReturnsPlain;
-var
-	Cipher: TOpenSSLCipher;
-	Result: WideString;
-begin
-	if not CipherAvailable then
-	begin
-		Assert.Pass('Skipped - OpenSSL cipher functions not available');
-		Exit;
-	end;
-
-	{DoFilenameCipher = false -- should return plain filename}
-	Cipher := TOpenSSLCipher.Create('testpassword', FProvider.GetFunctions, '', False);
-	try
-		Result := Cipher.CryptFileName('somefile.txt');
-		Assert.AreEqual('somefile.txt', Result, 'Without filename cipher, should return plain name');
 	finally
 		Cipher.Free;
 	end;
