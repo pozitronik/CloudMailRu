@@ -27,6 +27,12 @@ type
 		EncryptionLabel: WideString;
 	end;
 
+	{Display data for the streaming extensions TListView}
+	TStreamingDisplayItem = record
+		Extension: WideString;
+		TypeLabel: WideString;
+	end;
+
 	{Result of the confirm-discard-changes dialog}
 	TConfirmSaveResult = (csrSave, csrDiscard, csrCancel);
 
@@ -122,9 +128,10 @@ type
 		function GetDescriptionFileName: WideString;
 
 		{Streaming extensions}
-		procedure SetStreamingExtensionsList(Extensions: TStrings);
+		procedure SetStreamingExtensionsList(const Items: TArray<TStreamingDisplayItem>);
 		function GetSelectedStreamingExtensionIndex: Integer;
-		function GetSelectedStreamingExtension: WideString;
+		function GetSelectedStreamingExtensionName: WideString;
+		procedure SelectStreamingExtension(Index: Integer);
 		procedure SetStreamingExtension(Value: WideString);
 		function GetStreamingExtension: WideString;
 		procedure SetStreamingCommand(Value: WideString);
@@ -135,7 +142,8 @@ type
 		function GetStreamingStartPath: WideString;
 		procedure SetStreamingType(Value: Integer);
 		function GetStreamingType: Integer;
-		procedure ClearStreamingFields;
+		procedure SetStreamingApplyButtonEnabled(Value: Boolean);
+		function ConfirmDiscardStreamingChanges: TConfirmSaveResult;
 
 		{UI actions}
 		procedure ShowDescriptionFileNameError(Message: WideString);
@@ -193,11 +201,17 @@ type
 		FParentWindow: THandle;
 		FSettingsApplied: Boolean;
 
-		{Dirty tracking state}
+		{Dirty tracking state - accounts tab}
 		FSelectedAccount: WideString;
 		FDirty: Boolean;
 		FUpdating: Boolean;
 		FCancellingSwitch: Boolean;
+
+		{Dirty tracking state - streaming tab}
+		FStreamingSelectedExtension: WideString;
+		FStreamingDirty: Boolean;
+		FStreamingUpdating: Boolean;
+		FStreamingCancellingSwitch: Boolean;
 
 		function SavePasswordToManager(const AccountKey, Password: WideString): Boolean;
 		function ValidateGlobalSettings: Boolean;
@@ -211,13 +225,22 @@ type
 		function SaveAccountFromView: Boolean;
 		procedure SelectAccountByName(const Name: WideString);
 		function CheckDirty: Boolean;
+
+		{Streaming tab helpers}
+		procedure SetStreamingDirty(Value: Boolean);
+		procedure LoadStreamingExtensionToView(const ExtName: WideString);
+		procedure ClearStreamingFields;
+		function SaveStreamingExtensionFromView: Boolean;
+		procedure SelectStreamingExtensionByName(const Name: WideString);
+		function CheckStreamingDirty: Boolean;
+		function StreamingFormatToLabel(Format: Integer): WideString;
 	public
 		constructor Create(AView: IAccountsView; AAccountsManager: IAccountsManager; ASettingsManager: IPluginSettingsManager; AConfig: TAccountsPresenterConfig);
 
 		{Initialization}
 		procedure Initialize(const InitialAccount: WideString = '');
 		procedure LoadGlobalSettingsToView;
-		procedure LoadStreamingExtensionsToView;
+		procedure RefreshStreamingExtensionsList;
 
 		{Account operations}
 		procedure OnAccountSelected;
@@ -237,8 +260,10 @@ type
 
 		{Streaming extensions operations}
 		procedure OnStreamingExtensionSelected;
+		procedure OnAddStreamingExtensionClick;
 		procedure OnApplyStreamingExtensionClick;
 		procedure OnDeleteStreamingExtensionClick;
+		procedure OnStreamingFieldChanged;
 
 		{Properties}
 		property SettingsApplied: Boolean read FSettingsApplied;
@@ -271,6 +296,10 @@ begin
 	FDirty := False;
 	FUpdating := False;
 	FCancellingSwitch := False;
+	FStreamingSelectedExtension := '';
+	FStreamingDirty := False;
+	FStreamingUpdating := False;
+	FStreamingCancellingSwitch := False;
 end;
 
 procedure TAccountsPresenter.Initialize(const InitialAccount: WideString);
@@ -294,7 +323,7 @@ begin
 	LoadGlobalSettingsToView;
 
 	{Load streaming extensions}
-	LoadStreamingExtensionsToView;
+	RefreshStreamingExtensionsList;
 
 	{Initialize accounts tab}
 	FUpdating := True;
@@ -378,14 +407,24 @@ begin
 	FView.SetDescriptionFileName(Settings.DescriptionFileName);
 end;
 
-procedure TAccountsPresenter.LoadStreamingExtensionsToView;
+procedure TAccountsPresenter.RefreshStreamingExtensionsList;
 var
 	ExtList: TStringList;
+	Items: TArray<TStreamingDisplayItem>;
+	ExtSettings: TStreamingSettings;
+	I: Integer;
 begin
 	ExtList := TStringList.Create;
 	try
 		FSettingsManager.GetStreamingExtensionsList(ExtList);
-		FView.SetStreamingExtensionsList(ExtList);
+		SetLength(Items, ExtList.Count);
+		for I := 0 to ExtList.Count - 1 do
+		begin
+			Items[I].Extension := ExtList[I];
+			ExtSettings := FSettingsManager.GetStreamingSettings(DOT + ExtList[I]);
+			Items[I].TypeLabel := StreamingFormatToLabel(ExtSettings.Format);
+		end;
+		FView.SetStreamingExtensionsList(Items);
 	finally
 		ExtList.Free;
 	end;
@@ -816,30 +855,75 @@ begin
 	FView.SetUserAgentReadOnly(not FView.GetChangeUserAgent);
 end;
 
-procedure TAccountsPresenter.OnStreamingExtensionSelected;
-var
-	ExtName: WideString;
-	ExtSettings: TStreamingSettings;
+{Streaming tab helpers}
+
+function TAccountsPresenter.StreamingFormatToLabel(Format: Integer): WideString;
 begin
-	ExtName := FView.GetSelectedStreamingExtension;
-	if ExtName <> '' then
-	begin
+	case Format of
+		0: Result := 'None';
+		1: Result := 'Off';
+		2: Result := 'M3U8';
+		3: Result := 'Link';
+		4: Result := 'Web';
+	else
+		Result := '?';
+	end;
+end;
+
+procedure TAccountsPresenter.SetStreamingDirty(Value: Boolean);
+begin
+	FStreamingDirty := Value;
+	FView.SetStreamingApplyButtonEnabled(Value);
+end;
+
+procedure TAccountsPresenter.LoadStreamingExtensionToView(const ExtName: WideString);
+var
+	ExtSettings: TStreamingSettings;
+	WasUpdating: Boolean;
+begin
+	WasUpdating := FStreamingUpdating;
+	FStreamingUpdating := True;
+	try
 		ExtSettings := FSettingsManager.GetStreamingSettings(DOT + ExtName);
+		FStreamingSelectedExtension := ExtName;
+
 		FView.SetStreamingExtension(ExtName);
 		FView.SetStreamingCommand(ExtSettings.Command);
 		FView.SetStreamingParameters(ExtSettings.Parameters);
 		FView.SetStreamingStartPath(ExtSettings.StartPath);
 		FView.SetStreamingType(ExtSettings.Format);
-	end
-	else
-		FView.ClearStreamingFields;
+	finally
+		FStreamingUpdating := WasUpdating;
+	end;
+	SetStreamingDirty(False);
 end;
 
-procedure TAccountsPresenter.OnApplyStreamingExtensionClick;
+procedure TAccountsPresenter.ClearStreamingFields;
+var
+	WasUpdating: Boolean;
+begin
+	WasUpdating := FStreamingUpdating;
+	FStreamingUpdating := True;
+	try
+		FStreamingSelectedExtension := '';
+		FView.SetStreamingExtension('');
+		FView.SetStreamingCommand('');
+		FView.SetStreamingParameters('');
+		FView.SetStreamingStartPath('');
+		FView.SetStreamingType(0);
+	finally
+		FStreamingUpdating := WasUpdating;
+	end;
+	SetStreamingDirty(False);
+end;
+
+function TAccountsPresenter.SaveStreamingExtensionFromView: Boolean;
 var
 	ExtSettings: TStreamingSettings;
 	ExtName: WideString;
 begin
+	Result := False;
+
 	ExtName := FView.GetStreamingExtension;
 	if ExtName = '' then
 		Exit;
@@ -850,19 +934,140 @@ begin
 	ExtSettings.Format := FView.GetStreamingType;
 
 	FSettingsManager.SetStreamingSettings(DOT + ExtName, ExtSettings);
-	LoadStreamingExtensionsToView;
+	Result := True;
+end;
+
+procedure TAccountsPresenter.SelectStreamingExtensionByName(const Name: WideString);
+var
+	ExtList: TStringList;
+	I: Integer;
+begin
+	if Name = '' then
+		Exit;
+
+	ExtList := TStringList.Create;
+	try
+		FSettingsManager.GetStreamingExtensionsList(ExtList);
+		for I := 0 to ExtList.Count - 1 do
+			if ExtList[I] = Name then
+			begin
+				FView.SelectStreamingExtension(I);
+				Exit;
+			end;
+	finally
+		ExtList.Free;
+	end;
+end;
+
+function TAccountsPresenter.CheckStreamingDirty: Boolean;
+begin
+	{Returns True if it is safe to proceed (not dirty, or user chose Save/Discard).
+	 Returns False if user chose Cancel (abort the operation).}
+	Result := True;
+	if not FStreamingDirty then
+		Exit;
+
+	FStreamingUpdating := True;
+	try
+		case FView.ConfirmDiscardStreamingChanges of
+			csrSave:
+				SaveStreamingExtensionFromView;
+			csrCancel:
+			begin
+				FStreamingCancellingSwitch := True;
+				SelectStreamingExtensionByName(FStreamingSelectedExtension);
+				Result := False;
+			end;
+			{csrDiscard: just proceed}
+		end;
+	finally
+		FStreamingUpdating := False;
+	end;
+end;
+
+{Streaming extensions operations}
+
+procedure TAccountsPresenter.OnStreamingFieldChanged;
+begin
+	if not FStreamingUpdating then
+		SetStreamingDirty(True);
+end;
+
+procedure TAccountsPresenter.OnStreamingExtensionSelected;
+var
+	ExtName: WideString;
+begin
+	if FStreamingUpdating then
+		Exit;
+
+	{Suppress spurious post-handler event after Cancel}
+	if FStreamingCancellingSwitch then
+	begin
+		FStreamingCancellingSwitch := False;
+		FStreamingUpdating := True;
+		try
+			SelectStreamingExtensionByName(FStreamingSelectedExtension);
+		finally
+			FStreamingUpdating := False;
+		end;
+		Exit;
+	end;
+
+	if not CheckStreamingDirty then
+		Exit;
+
+	ExtName := FView.GetSelectedStreamingExtensionName;
+	if ExtName <> '' then
+		LoadStreamingExtensionToView(ExtName)
+	else
+		ClearStreamingFields;
+end;
+
+procedure TAccountsPresenter.OnAddStreamingExtensionClick;
+begin
+	if not CheckStreamingDirty then
+		Exit;
+
+	{Deselect list and clear fields for new extension entry}
+	FView.SelectStreamingExtension(-1);
+	ClearStreamingFields;
+end;
+
+procedure TAccountsPresenter.OnApplyStreamingExtensionClick;
+var
+	SavedName: WideString;
+begin
+	SavedName := FView.GetStreamingExtension;
+	if not SaveStreamingExtensionFromView then
+		Exit;
+
+	SetStreamingDirty(False);
+
+	{Refresh list and reselect the saved extension}
+	RefreshStreamingExtensionsList;
+
+	FStreamingUpdating := True;
+	try
+		SelectStreamingExtensionByName(SavedName);
+	finally
+		FStreamingUpdating := False;
+	end;
+	OnStreamingExtensionSelected;
 end;
 
 procedure TAccountsPresenter.OnDeleteStreamingExtensionClick;
 var
 	ExtName: WideString;
 begin
-	ExtName := FView.GetSelectedStreamingExtension;
+	ExtName := FView.GetSelectedStreamingExtensionName;
 	if ExtName = '' then
 		Exit;
 
 	FSettingsManager.RemoveStreamingExtension(ExtName);
-	LoadStreamingExtensionsToView;
+	SetStreamingDirty(False);
+
+	RefreshStreamingExtensionsList;
+	OnStreamingExtensionSelected;
 end;
 
 end.

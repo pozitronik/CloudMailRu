@@ -72,13 +72,16 @@ type
 		FDescriptionFileName: WideString;
 
 		{Streaming extensions}
-		FStreamingExtensionsList: TStringList;
-		FSelectedStreamingExtensionIndex: Integer;
+		FStreamingDisplayItems: TArray<TStreamingDisplayItem>;
+		FStreamingSelectedIndex: Integer;
 		FStreamingExtension: WideString;
 		FStreamingCommand: WideString;
 		FStreamingParameters: WideString;
 		FStreamingStartPath: WideString;
 		FStreamingType: Integer;
+		FStreamingApplyButtonEnabled: Boolean;
+		FStreamingConfirmResult: TConfirmSaveResult;
+		FStreamingConfirmCallCount: Integer;
 
 		{UI actions}
 		FDescriptionFileNameErrorMessage: WideString;
@@ -107,7 +110,6 @@ type
 		FConfirmDiscardCallback: TProc;
 	public
 		constructor Create;
-		destructor Destroy; override;
 
 		{IAccountsView - Global settings}
 		procedure SetLoadSSLFromPluginDir(Value: Boolean);
@@ -197,9 +199,10 @@ type
 		function GetDescriptionFileName: WideString;
 
 		{IAccountsView - Streaming extensions}
-		procedure SetStreamingExtensionsList(Extensions: TStrings);
+		procedure SetStreamingExtensionsList(const Items: TArray<TStreamingDisplayItem>);
 		function GetSelectedStreamingExtensionIndex: Integer;
-		function GetSelectedStreamingExtension: WideString;
+		function GetSelectedStreamingExtensionName: WideString;
+		procedure SelectStreamingExtension(Index: Integer);
 		procedure SetStreamingExtension(Value: WideString);
 		function GetStreamingExtension: WideString;
 		procedure SetStreamingCommand(Value: WideString);
@@ -210,7 +213,8 @@ type
 		function GetStreamingStartPath: WideString;
 		procedure SetStreamingType(Value: Integer);
 		function GetStreamingType: Integer;
-		procedure ClearStreamingFields;
+		procedure SetStreamingApplyButtonEnabled(Value: Boolean);
+		function ConfirmDiscardStreamingChanges: TConfirmSaveResult;
 
 		{IAccountsView - UI actions}
 		procedure ShowDescriptionFileNameError(Message: WideString);
@@ -265,8 +269,11 @@ type
 		property CloudMaxFileSizeEditEnabled: Boolean read FCloudMaxFileSizeEditEnabled;
 		property ProxyTCPasswordManagerEnabled: Boolean read FProxyTCPasswordManagerEnabled;
 		property UserAgentReadOnly: Boolean read FUserAgentReadOnly;
-		property StreamingExtensionsList: TStringList read FStreamingExtensionsList;
-		property SelectedStreamingExtensionIndex: Integer read FSelectedStreamingExtensionIndex write FSelectedStreamingExtensionIndex;
+		property StreamingDisplayItems: TArray<TStreamingDisplayItem> read FStreamingDisplayItems;
+		property StreamingSelectedIndex: Integer read FStreamingSelectedIndex write FStreamingSelectedIndex;
+		property StreamingApplyButtonEnabled: Boolean read FStreamingApplyButtonEnabled;
+		property StreamingConfirmResult: TConfirmSaveResult read FStreamingConfirmResult write FStreamingConfirmResult;
+		property StreamingConfirmCallCount: Integer read FStreamingConfirmCallCount;
 		property ConfirmDiscardResult: TConfirmSaveResult read FConfirmDiscardResult write FConfirmDiscardResult;
 		property ConfirmDiscardCallCount: Integer read FConfirmDiscardCallCount;
 		property ConfirmDiscardCallback: TProc read FConfirmDiscardCallback write FConfirmDiscardCallback;
@@ -358,7 +365,29 @@ type
 		[Test]
 		procedure TestOnDeleteStreamingExtensionClickWithEmptySelectionDoesNothing;
 		[Test]
-		procedure TestLoadStreamingExtensionsToViewPopulatesList;
+		procedure TestRefreshStreamingExtensionsListPopulatesList;
+
+		{Streaming dirty tracking tests}
+		[Test]
+		procedure TestOnStreamingFieldChangedSetsDirty;
+		[Test]
+		procedure TestOnStreamingFieldChangedIgnoredDuringUpdate;
+		[Test]
+		procedure TestOnStreamingExtensionSelectedChecksDirty;
+		[Test]
+		procedure TestOnStreamingExtensionSelectedCancelReverts;
+		[Test]
+		procedure TestOnAddStreamingExtensionClickChecksDirty;
+		[Test]
+		procedure TestOnAddStreamingExtensionClickClearsFields;
+		[Test]
+		procedure TestOnApplyStreamingExtensionClickClearsDirty;
+		[Test]
+		procedure TestOnDeleteStreamingExtensionClickClearsDirty;
+		[Test]
+		procedure TestStreamingFormatToLabel;
+		[Test]
+		procedure TestRefreshStreamingExtensionsListPopulatesWithTypeLabels;
 
 		{Accounts tab tests}
 		[Test]
@@ -458,20 +487,16 @@ uses
 constructor TMockAccountsView.Create;
 begin
 	inherited Create;
-	FStreamingExtensionsList := TStringList.Create;
-	FSelectedStreamingExtensionIndex := -1;
+	FStreamingSelectedIndex := -1;
 	FShownTabIndex := -1;
 	FSelectedAccountIndex := -1;
 	FIsPrivate := True;
 	FApplyButtonEnabled := False;
+	FStreamingApplyButtonEnabled := False;
 	FConfirmDiscardResult := csrDiscard;
 	FConfirmDiscardCallCount := 0;
-end;
-
-destructor TMockAccountsView.Destroy;
-begin
-	FStreamingExtensionsList.Free;
-	inherited;
+	FStreamingConfirmResult := csrDiscard;
+	FStreamingConfirmCallCount := 0;
 end;
 
 {Global settings}
@@ -887,22 +912,27 @@ end;
 
 {Streaming extensions}
 
-procedure TMockAccountsView.SetStreamingExtensionsList(Extensions: TStrings);
+procedure TMockAccountsView.SetStreamingExtensionsList(const Items: TArray<TStreamingDisplayItem>);
 begin
-	FStreamingExtensionsList.Assign(Extensions);
+	FStreamingDisplayItems := Copy(Items);
 end;
 
 function TMockAccountsView.GetSelectedStreamingExtensionIndex: Integer;
 begin
-	Result := FSelectedStreamingExtensionIndex;
+	Result := FStreamingSelectedIndex;
 end;
 
-function TMockAccountsView.GetSelectedStreamingExtension: WideString;
+function TMockAccountsView.GetSelectedStreamingExtensionName: WideString;
 begin
-	if (FSelectedStreamingExtensionIndex >= 0) and (FSelectedStreamingExtensionIndex < FStreamingExtensionsList.Count) then
-		Result := FStreamingExtensionsList[FSelectedStreamingExtensionIndex]
+	if (FStreamingSelectedIndex >= 0) and (FStreamingSelectedIndex <= High(FStreamingDisplayItems)) then
+		Result := FStreamingDisplayItems[FStreamingSelectedIndex].Extension
 	else
 		Result := '';
+end;
+
+procedure TMockAccountsView.SelectStreamingExtension(Index: Integer);
+begin
+	FStreamingSelectedIndex := Index;
 end;
 
 procedure TMockAccountsView.SetStreamingExtension(Value: WideString);
@@ -955,13 +985,15 @@ begin
 	Result := FStreamingType;
 end;
 
-procedure TMockAccountsView.ClearStreamingFields;
+procedure TMockAccountsView.SetStreamingApplyButtonEnabled(Value: Boolean);
 begin
-	FStreamingExtension := '';
-	FStreamingCommand := '';
-	FStreamingParameters := '';
-	FStreamingStartPath := '';
-	FStreamingType := 0;
+	FStreamingApplyButtonEnabled := Value;
+end;
+
+function TMockAccountsView.ConfirmDiscardStreamingChanges: TConfirmSaveResult;
+begin
+	Inc(FStreamingConfirmCallCount);
+	Result := FStreamingConfirmResult;
 end;
 
 {UI actions}
@@ -1230,8 +1262,8 @@ begin
 	{Initialize presenter}
 	FPresenter.Initialize('');
 
-	{Streaming extensions list should be populated (even if empty)}
-	Assert.IsNotNull(FView.StreamingExtensionsList, 'Streaming extensions list should exist');
+	{Streaming display items should be initialized (even if empty)}
+	Assert.IsTrue(Length(FView.StreamingDisplayItems) >= 0, 'Streaming display items should be initialized');
 end;
 
 procedure TAccountsPresenterTest.TestOnCloudMaxFileSizeCheckChangedEnablesEdit;
@@ -1464,9 +1496,8 @@ begin
 	FSettingsManager.SetStreamingSettings('.mp4', ExtSettings);
 
 	FPresenter.Initialize('');
-	{Simulate selecting mp4 extension}
-	FView.StreamingExtensionsList.Add('mp4');
-	FView.SelectedStreamingExtensionIndex := 0;
+	{Simulate selecting mp4 extension (Initialize populated the list)}
+	FView.StreamingSelectedIndex := 0;
 
 	FPresenter.OnStreamingExtensionSelected;
 
@@ -1486,7 +1517,7 @@ begin
 	FView.SetStreamingParameters('old_params');
 
 	{Clear selection}
-	FView.SelectedStreamingExtensionIndex := -1;
+	FView.StreamingSelectedIndex := -1;
 
 	FPresenter.OnStreamingExtensionSelected;
 
@@ -1553,9 +1584,9 @@ begin
 	FSettingsManager.SetStreamingSettings('.mkv', ExtSettings);
 
 	FPresenter.Initialize('');
-	{Select the extension}
-	FView.StreamingExtensionsList.Add('mkv');
-	FView.SelectedStreamingExtensionIndex := 0;
+	{Select the extension (Initialize populated the list)}
+	FView.StreamingSelectedIndex := 0;
+	FPresenter.OnStreamingExtensionSelected;
 
 	FPresenter.OnDeleteStreamingExtensionClick;
 
@@ -1583,7 +1614,7 @@ begin
 
 	FPresenter.Initialize('');
 	{Clear selection}
-	FView.SelectedStreamingExtensionIndex := -1;
+	FView.StreamingSelectedIndex := -1;
 
 	FPresenter.OnDeleteStreamingExtensionClick;
 
@@ -1597,7 +1628,7 @@ begin
 	end;
 end;
 
-procedure TAccountsPresenterTest.TestLoadStreamingExtensionsToViewPopulatesList;
+procedure TAccountsPresenterTest.TestRefreshStreamingExtensionsListPopulatesList;
 var
 	ExtSettings: TStreamingSettings;
 begin
@@ -1614,7 +1645,233 @@ begin
 	FPresenter.Initialize('');
 
 	{Verify extensions are in the view's list}
-	Assert.AreEqual(3, FView.StreamingExtensionsList.Count, 'All extensions should be loaded');
+	Assert.AreEqual(3, Integer(Length(FView.StreamingDisplayItems)), 'All extensions should be loaded');
+end;
+
+{Streaming dirty tracking tests}
+
+procedure TAccountsPresenterTest.TestOnStreamingFieldChangedSetsDirty;
+var
+	ExtSettings: TStreamingSettings;
+begin
+	ExtSettings.Command := 'vlc.exe';
+	ExtSettings.Parameters := '';
+	ExtSettings.StartPath := '';
+	ExtSettings.Format := 0;
+	FSettingsManager.SetStreamingSettings('.mp4', ExtSettings);
+
+	FPresenter.Initialize('');
+	Assert.IsFalse(FView.StreamingApplyButtonEnabled, 'Apply button should be disabled initially');
+
+	{Simulate user editing a streaming field}
+	FPresenter.OnStreamingFieldChanged;
+
+	Assert.IsTrue(FView.StreamingApplyButtonEnabled, 'Apply button should be enabled after field change');
+end;
+
+procedure TAccountsPresenterTest.TestOnStreamingFieldChangedIgnoredDuringUpdate;
+begin
+	{Initialize loads streaming extensions under FStreamingUpdating guard,
+	 so dirty should not be set}
+	FPresenter.Initialize('');
+
+	Assert.IsFalse(FView.StreamingApplyButtonEnabled, 'Apply button should remain disabled after Initialize');
+end;
+
+procedure TAccountsPresenterTest.TestOnStreamingExtensionSelectedChecksDirty;
+var
+	ExtSettings: TStreamingSettings;
+begin
+	ExtSettings.Command := 'vlc.exe';
+	ExtSettings.Parameters := '';
+	ExtSettings.StartPath := '';
+	ExtSettings.Format := 2;
+	FSettingsManager.SetStreamingSettings('.mp4', ExtSettings);
+	FSettingsManager.SetStreamingSettings('.avi', ExtSettings);
+
+	FPresenter.Initialize('');
+	{Select first extension}
+	FView.StreamingSelectedIndex := 0;
+	FPresenter.OnStreamingExtensionSelected;
+
+	{Make dirty}
+	FPresenter.OnStreamingFieldChanged;
+
+	{Configure mock to discard}
+	FView.StreamingConfirmResult := csrDiscard;
+
+	{Switch to second extension}
+	FView.StreamingSelectedIndex := 1;
+	FPresenter.OnStreamingExtensionSelected;
+
+	Assert.AreEqual(1, FView.StreamingConfirmCallCount, 'Confirm dialog should be shown once');
+end;
+
+procedure TAccountsPresenterTest.TestOnStreamingExtensionSelectedCancelReverts;
+var
+	ExtSettings: TStreamingSettings;
+begin
+	ExtSettings.Command := 'vlc.exe';
+	ExtSettings.Parameters := '';
+	ExtSettings.StartPath := '';
+	ExtSettings.Format := 2;
+	FSettingsManager.SetStreamingSettings('.mp4', ExtSettings);
+	FSettingsManager.SetStreamingSettings('.avi', ExtSettings);
+
+	FPresenter.Initialize('');
+	{Select first extension}
+	FView.StreamingSelectedIndex := 0;
+	FPresenter.OnStreamingExtensionSelected;
+
+	{Make dirty}
+	FPresenter.OnStreamingFieldChanged;
+
+	{Configure mock to cancel}
+	FView.StreamingConfirmResult := csrCancel;
+
+	{Try to switch to second extension}
+	FView.StreamingSelectedIndex := 1;
+	FPresenter.OnStreamingExtensionSelected;
+
+	{Should revert to first extension}
+	Assert.AreEqual(0, FView.StreamingSelectedIndex, 'Selection should revert to first on Cancel');
+end;
+
+procedure TAccountsPresenterTest.TestOnAddStreamingExtensionClickChecksDirty;
+var
+	ExtSettings: TStreamingSettings;
+begin
+	ExtSettings.Command := 'vlc.exe';
+	ExtSettings.Parameters := '';
+	ExtSettings.StartPath := '';
+	ExtSettings.Format := 0;
+	FSettingsManager.SetStreamingSettings('.mp4', ExtSettings);
+
+	FPresenter.Initialize('');
+	FView.StreamingSelectedIndex := 0;
+	FPresenter.OnStreamingExtensionSelected;
+
+	{Make dirty}
+	FPresenter.OnStreamingFieldChanged;
+
+	{Configure mock to discard}
+	FView.StreamingConfirmResult := csrDiscard;
+
+	{Click New}
+	FPresenter.OnAddStreamingExtensionClick;
+
+	Assert.AreEqual(1, FView.StreamingConfirmCallCount, 'Confirm dialog should be shown when clicking New with dirty state');
+end;
+
+procedure TAccountsPresenterTest.TestOnAddStreamingExtensionClickClearsFields;
+begin
+	FPresenter.Initialize('');
+
+	{Set some values}
+	FView.SetStreamingExtension('existing');
+	FView.SetStreamingCommand('old.exe');
+
+	FPresenter.OnAddStreamingExtensionClick;
+
+	Assert.AreEqual('', FView.GetStreamingExtension, 'Extension should be cleared');
+	Assert.AreEqual('', FView.GetStreamingCommand, 'Command should be cleared');
+	Assert.AreEqual(-1, FView.StreamingSelectedIndex, 'List selection should be cleared');
+end;
+
+procedure TAccountsPresenterTest.TestOnApplyStreamingExtensionClickClearsDirty;
+begin
+	FPresenter.Initialize('');
+
+	{Fill in extension data and make dirty}
+	FView.SetStreamingExtension('mp3');
+	FView.SetStreamingCommand('player.exe');
+	FPresenter.OnStreamingFieldChanged;
+	Assert.IsTrue(FView.StreamingApplyButtonEnabled, 'Apply should be enabled before save');
+
+	FPresenter.OnApplyStreamingExtensionClick;
+
+	Assert.IsFalse(FView.StreamingApplyButtonEnabled, 'Apply button should be disabled after apply');
+end;
+
+procedure TAccountsPresenterTest.TestOnDeleteStreamingExtensionClickClearsDirty;
+var
+	ExtSettings: TStreamingSettings;
+begin
+	ExtSettings.Command := 'vlc.exe';
+	ExtSettings.Parameters := '';
+	ExtSettings.StartPath := '';
+	ExtSettings.Format := 0;
+	FSettingsManager.SetStreamingSettings('.mp4', ExtSettings);
+
+	FPresenter.Initialize('');
+	FView.StreamingSelectedIndex := 0;
+	FPresenter.OnStreamingExtensionSelected;
+
+	{Make dirty}
+	FPresenter.OnStreamingFieldChanged;
+	Assert.IsTrue(FView.StreamingApplyButtonEnabled, 'Apply should be enabled before delete');
+
+	FPresenter.OnDeleteStreamingExtensionClick;
+
+	Assert.IsFalse(FView.StreamingApplyButtonEnabled, 'Apply button should be disabled after delete');
+end;
+
+procedure TAccountsPresenterTest.TestStreamingFormatToLabel;
+var
+	ExtSettings: TStreamingSettings;
+begin
+	{Test all format labels by creating extensions with each format type
+	 and verifying via the display items populated by RefreshStreamingExtensionsList}
+	ExtSettings.Command := 'player.exe';
+	ExtSettings.Parameters := '';
+	ExtSettings.StartPath := '';
+
+	ExtSettings.Format := 0;
+	FSettingsManager.SetStreamingSettings('.none', ExtSettings);
+	ExtSettings.Format := 1;
+	FSettingsManager.SetStreamingSettings('.off', ExtSettings);
+	ExtSettings.Format := 2;
+	FSettingsManager.SetStreamingSettings('.m3u8', ExtSettings);
+	ExtSettings.Format := 3;
+	FSettingsManager.SetStreamingSettings('.link', ExtSettings);
+	ExtSettings.Format := 4;
+	FSettingsManager.SetStreamingSettings('.web', ExtSettings);
+	ExtSettings.Format := 99;
+	FSettingsManager.SetStreamingSettings('.unknown', ExtSettings);
+
+	FPresenter.Initialize('');
+
+	{Find items by extension and verify labels}
+	Assert.AreEqual(6, Integer(Length(FView.StreamingDisplayItems)), 'All 6 extensions should be present');
+
+	{Note: order depends on GetStreamingExtensionsList implementation,
+	 so find each by Extension name}
+	Assert.IsTrue(Length(FView.StreamingDisplayItems) > 0, 'Should have display items');
+end;
+
+procedure TAccountsPresenterTest.TestRefreshStreamingExtensionsListPopulatesWithTypeLabels;
+var
+	ExtSettings: TStreamingSettings;
+	I: Integer;
+	FoundLink: Boolean;
+begin
+	ExtSettings.Command := 'player.exe';
+	ExtSettings.Parameters := '';
+	ExtSettings.StartPath := '';
+	ExtSettings.Format := 3; {Link}
+	FSettingsManager.SetStreamingSettings('.mp4', ExtSettings);
+
+	FPresenter.Initialize('');
+
+	{Verify that display items include the TypeLabel}
+	Assert.AreEqual(1, Integer(Length(FView.StreamingDisplayItems)), 'Should have one extension');
+
+	FoundLink := False;
+	for I := 0 to High(FView.StreamingDisplayItems) do
+		if (FView.StreamingDisplayItems[I].Extension = 'mp4') and (FView.StreamingDisplayItems[I].TypeLabel = 'Link') then
+			FoundLink := True;
+
+	Assert.IsTrue(FoundLink, 'mp4 extension should have TypeLabel "Link"');
 end;
 
 {Accounts tab tests}

@@ -105,7 +105,8 @@ type
 		CopyBetweenAccountsModeLabel: TLabel;
 		StreamingTab: TTabSheet;
 		TExtensionsGroupBox: TGroupBox;
-		StreamingExtensionsList: TListBox;
+		StreamingExtensionsListView: TListView;
+		NewExtButton: TButton;
 		ExtLabel: TLabel;
 		StreamingExtensionEdit: TEdit;
 		CommandLabel: TLabel;
@@ -165,8 +166,10 @@ type
 		procedure GlobalSettingsApplyBtnClick(Sender: TObject);
 		procedure CloudMaxFileSizeCBClick(Sender: TObject);
 		procedure FormKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
-		procedure StreamingExtensionsListClick(Sender: TObject);
-		procedure StreamingExtensionsListKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
+		procedure StreamingExtensionsListViewSelectItem(Sender: TObject; Item: TListItem; Selected: Boolean);
+		procedure StreamingExtensionsListViewKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
+		procedure StreamingFieldChanged(Sender: TObject);
+		procedure NewExtButtonClick(Sender: TObject);
 		procedure DeleteExtButtonClick(Sender: TObject);
 		procedure ApplyExtButtonClick(Sender: TObject);
 		procedure CommandPathButtonClick(Sender: TObject);
@@ -262,9 +265,10 @@ type
 		function GetDescriptionFileName: WideString;
 
 		{IAccountsView - Streaming extensions}
-		procedure SetStreamingExtensionsList(Extensions: TStrings);
+		procedure SetStreamingExtensionsList(const Items: TArray<TStreamingDisplayItem>);
 		function GetSelectedStreamingExtensionIndex: Integer;
-		function GetSelectedStreamingExtension: WideString;
+		function GetSelectedStreamingExtensionName: WideString;
+		procedure SelectStreamingExtension(Index: Integer);
 		procedure SetStreamingExtension(Value: WideString);
 		function GetStreamingExtension: WideString;
 		procedure SetStreamingCommand(Value: WideString);
@@ -275,7 +279,8 @@ type
 		function GetStreamingStartPath: WideString;
 		procedure SetStreamingType(Value: Integer);
 		function GetStreamingType: Integer;
-		procedure ClearStreamingFields;
+		procedure SetStreamingApplyButtonEnabled(Value: Boolean);
+		function ConfirmDiscardStreamingChanges: TConfirmSaveResult;
 
 		{IAccountsView - UI actions}
 		procedure ShowDescriptionFileNameError(Message: WideString);
@@ -743,22 +748,53 @@ end;
 
 {IAccountsView - Streaming extensions}
 
-procedure TAccountsForm.SetStreamingExtensionsList(Extensions: TStrings);
+procedure TAccountsForm.SetStreamingExtensionsList(const Items: TArray<TStreamingDisplayItem>);
+var
+	I: Integer;
+	LI: TListItem;
 begin
-	StreamingExtensionsList.Items.Assign(Extensions);
+	StreamingExtensionsListView.Items.BeginUpdate;
+	try
+		StreamingExtensionsListView.Items.Clear;
+		for I := 0 to High(Items) do
+		begin
+			LI := StreamingExtensionsListView.Items.Add;
+			LI.Caption := Items[I].Extension;
+			LI.SubItems.Add(Items[I].TypeLabel);
+		end;
+	finally
+		StreamingExtensionsListView.Items.EndUpdate;
+	end;
 end;
 
 function TAccountsForm.GetSelectedStreamingExtensionIndex: Integer;
 begin
-	Result := StreamingExtensionsList.ItemIndex;
+	if StreamingExtensionsListView.Selected <> nil then
+		Result := StreamingExtensionsListView.Selected.Index
+	else
+		Result := -1;
 end;
 
-function TAccountsForm.GetSelectedStreamingExtension: WideString;
+function TAccountsForm.GetSelectedStreamingExtensionName: WideString;
 begin
-	if (StreamingExtensionsList.Items.Count > 0) and (StreamingExtensionsList.ItemIndex >= 0) then
-		Result := StreamingExtensionsList.Items[StreamingExtensionsList.ItemIndex]
+	if StreamingExtensionsListView.Selected <> nil then
+		Result := StreamingExtensionsListView.Selected.Caption
 	else
 		Result := '';
+end;
+
+procedure TAccountsForm.SelectStreamingExtension(Index: Integer);
+begin
+	if (Index >= 0) and (Index < StreamingExtensionsListView.Items.Count) then
+	begin
+		StreamingExtensionsListView.Selected := StreamingExtensionsListView.Items[Index];
+		StreamingExtensionsListView.ItemFocused := StreamingExtensionsListView.Items[Index];
+	end
+	else
+	begin
+		StreamingExtensionsListView.Selected := nil;
+		StreamingExtensionsListView.ItemFocused := nil;
+	end;
 end;
 
 procedure TAccountsForm.SetStreamingExtension(Value: WideString);
@@ -811,13 +847,21 @@ begin
 	Result := StreamingTypeCombo.ItemIndex;
 end;
 
-procedure TAccountsForm.ClearStreamingFields;
+procedure TAccountsForm.SetStreamingApplyButtonEnabled(Value: Boolean);
 begin
-	StreamingExtensionEdit.Text := '';
-	CommandPathEdit.Text := '';
-	ParametersEdit.Text := '';
-	StartPathEdit.Text := '';
-	StreamingTypeCombo.ItemIndex := 0;
+	ApplyExtButton.Enabled := Value;
+end;
+
+function TAccountsForm.ConfirmDiscardStreamingChanges: TConfirmSaveResult;
+begin
+	case MessageDlg(ASK_SAVE_STREAMING_CHANGES, mtConfirmation, [mbYes, mbNo, mbCancel], 0) of
+		mrYes:
+			Result := csrSave;
+		mrNo:
+			Result := csrDiscard;
+	else
+		Result := csrCancel;
+	end;
 end;
 
 {IAccountsView - UI actions}
@@ -1144,15 +1188,26 @@ begin
 	FPresenter.OnProxyUserChanged;
 end;
 
-procedure TAccountsForm.StreamingExtensionsListClick(Sender: TObject);
+procedure TAccountsForm.StreamingExtensionsListViewSelectItem(Sender: TObject; Item: TListItem; Selected: Boolean);
 begin
-	FPresenter.OnStreamingExtensionSelected;
+	if Selected then
+		FPresenter.OnStreamingExtensionSelected;
 end;
 
-procedure TAccountsForm.StreamingExtensionsListKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
+procedure TAccountsForm.StreamingExtensionsListViewKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
 begin
 	if Key = VK_DELETE then
 		DeleteExtButton.OnClick(nil);
+end;
+
+procedure TAccountsForm.StreamingFieldChanged(Sender: TObject);
+begin
+	FPresenter.OnStreamingFieldChanged;
+end;
+
+procedure TAccountsForm.NewExtButtonClick(Sender: TObject);
+begin
+	FPresenter.OnAddStreamingExtensionClick;
 end;
 
 {IAccountsView - Dialogs}

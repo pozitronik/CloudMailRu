@@ -1219,18 +1219,47 @@ object AccountsForm: TAccountsForm
         DesignSize = (
           225
           449)
-        object StreamingExtensionsList: TListBox
+        object StreamingExtensionsListView: TListView
           Left = 4
           Top = 17
           Width = 218
-          Height = 429
-          Style = lbVirtual
+          Height = 399
           Anchors = [akLeft, akTop, akRight, akBottom]
-          ExtendedSelect = False
-          ItemHeight = 13
+          Columns = <
+            item
+              Caption = 'Extension'
+              Width = 120
+            end
+            item
+              Caption = 'Type'
+              Width = 80
+            end>
+          ReadOnly = True
+          RowSelect = True
           TabOrder = 0
-          OnClick = StreamingExtensionsListClick
-          OnKeyUp = StreamingExtensionsListKeyUp
+          ViewStyle = vsReport
+          OnSelectItem = StreamingExtensionsListViewSelectItem
+          OnKeyUp = StreamingExtensionsListViewKeyUp
+        end
+        object NewExtButton: TButton
+          Left = 4
+          Top = 421
+          Width = 105
+          Height = 25
+          Anchors = [akLeft, akBottom]
+          Caption = 'New'
+          TabOrder = 1
+          OnClick = NewExtButtonClick
+        end
+        object DeleteExtButton: TButton
+          Left = 115
+          Top = 421
+          Width = 105
+          Height = 25
+          Anchors = [akLeft, akBottom]
+          Caption = 'Delete'
+          TabOrder = 2
+          OnClick = DeleteExtButtonClick
         end
       end
       object StreamingExtensionEdit: TEdit
@@ -1240,6 +1269,7 @@ object AccountsForm: TAccountsForm
         Height = 21
         Anchors = [akLeft, akTop, akRight]
         TabOrder = 1
+        OnChange = StreamingFieldChanged
       end
       object CommandPathEdit: TEdit
         Left = 225
@@ -1248,6 +1278,7 @@ object AccountsForm: TAccountsForm
         Height = 21
         Anchors = [akLeft, akTop, akRight]
         TabOrder = 2
+        OnChange = StreamingFieldChanged
       end
       object CommandPathButton: TButton
         Left = 453
@@ -1266,6 +1297,7 @@ object AccountsForm: TAccountsForm
         Height = 21
         Anchors = [akLeft, akTop, akRight]
         TabOrder = 4
+        OnChange = StreamingFieldChanged
       end
       object StartPathEdit: TEdit
         Left = 225
@@ -1274,6 +1306,7 @@ object AccountsForm: TAccountsForm
         Height = 21
         Anchors = [akLeft, akTop, akRight]
         TabOrder = 5
+        OnChange = StreamingFieldChanged
       end
       object StreamingTypeCombo: TComboBox
         Left = 225
@@ -1284,6 +1317,7 @@ object AccountsForm: TAccountsForm
         ItemIndex = 0
         TabOrder = 6
         Text = 'None (download and open file)'
+        OnChange = StreamingFieldChanged
         Items.Strings = (
           'None (download and open file)'
           'Disabled (no action)'
@@ -1296,18 +1330,11 @@ object AccountsForm: TAccountsForm
         Top = 222
         Width = 75
         Height = 25
-        Caption = 'Add/Apply'
+        Anchors = [akLeft, akTop]
+        Caption = 'Apply'
+        Enabled = False
         TabOrder = 7
         OnClick = ApplyExtButtonClick
-      end
-      object DeleteExtButton: TButton
-        Left = 405
-        Top = 222
-        Width = 75
-        Height = 25
-        Caption = 'Delete'
-        TabOrder = 8
-        OnClick = DeleteExtButtonClick
       end
     end
   end
