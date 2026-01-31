@@ -19,15 +19,28 @@ uses
 	Windows;
 
 type
-	{EVP function pointers for SHA1 hashing operations}
+	{EVP function pointers for hashing and cipher operations}
 	TOpenSSLFunctions = record
+		{Hash functions (SHA1)}
 		EVP_MD_CTX_new: function: Pointer; cdecl;
 		EVP_MD_CTX_free: procedure(ctx: Pointer); cdecl;
 		EVP_sha1: function: Pointer; cdecl;
 		EVP_DigestInit_ex: function(ctx, md, impl: Pointer): Integer; cdecl;
 		EVP_DigestUpdate: function(ctx: Pointer; d: Pointer; cnt: NativeUInt): Integer; cdecl;
 		EVP_DigestFinal_ex: function(ctx: Pointer; md: PByte; var s: Cardinal): Integer; cdecl;
-		Loaded: Boolean;
+		Loaded: Boolean; {True if all hash functions resolved}
+
+		{Cipher functions (AES-256 CFB-8 + PBKDF2)}
+		EVP_CIPHER_CTX_new: function: Pointer; cdecl;
+		EVP_CIPHER_CTX_free: procedure(ctx: Pointer); cdecl;
+		EVP_aes_256_cfb8: function: Pointer; cdecl;
+		EVP_EncryptInit_ex: function(ctx, cipher_type, impl, key, iv: Pointer): Integer; cdecl;
+		EVP_EncryptUpdate: function(ctx: Pointer; outbuf: PByte; var outlen: Integer; inbuf: PByte; inlen: Integer): Integer; cdecl;
+		EVP_DecryptInit_ex: function(ctx, cipher_type, impl, key, iv: Pointer): Integer; cdecl;
+		EVP_DecryptUpdate: function(ctx: Pointer; outbuf: PByte; var outlen: Integer; inbuf: PByte; inlen: Integer): Integer; cdecl;
+		EVP_sha256: function: Pointer; cdecl;
+		PKCS5_PBKDF2_HMAC: function(pass: PAnsiChar; passlen: Integer; salt: PByte; saltlen: Integer; iter: Integer; digest: Pointer; keylen: Integer; outkey: PByte): Integer; cdecl;
+		CipherLoaded: Boolean; {True if all cipher functions resolved}
 	end;
 
 	{Interface for OpenSSL library access - allows dependency injection}
@@ -223,6 +236,27 @@ begin
 		Assigned(FFunctions.EVP_DigestInit_ex) and
 		Assigned(FFunctions.EVP_DigestUpdate) and
 		Assigned(FFunctions.EVP_DigestFinal_ex);
+
+	{Resolve cipher functions -- separate flag so hash-only usage is unaffected}
+	@FFunctions.EVP_CIPHER_CTX_new := GetProcAddress(FHandle, 'EVP_CIPHER_CTX_new');
+	@FFunctions.EVP_CIPHER_CTX_free := GetProcAddress(FHandle, 'EVP_CIPHER_CTX_free');
+	@FFunctions.EVP_aes_256_cfb8 := GetProcAddress(FHandle, 'EVP_aes_256_cfb8');
+	@FFunctions.EVP_EncryptInit_ex := GetProcAddress(FHandle, 'EVP_EncryptInit_ex');
+	@FFunctions.EVP_EncryptUpdate := GetProcAddress(FHandle, 'EVP_EncryptUpdate');
+	@FFunctions.EVP_DecryptInit_ex := GetProcAddress(FHandle, 'EVP_DecryptInit_ex');
+	@FFunctions.EVP_DecryptUpdate := GetProcAddress(FHandle, 'EVP_DecryptUpdate');
+	@FFunctions.EVP_sha256 := GetProcAddress(FHandle, 'EVP_sha256');
+	@FFunctions.PKCS5_PBKDF2_HMAC := GetProcAddress(FHandle, 'PKCS5_PBKDF2_HMAC');
+
+	FFunctions.CipherLoaded := Assigned(FFunctions.EVP_CIPHER_CTX_new) and
+		Assigned(FFunctions.EVP_CIPHER_CTX_free) and
+		Assigned(FFunctions.EVP_aes_256_cfb8) and
+		Assigned(FFunctions.EVP_EncryptInit_ex) and
+		Assigned(FFunctions.EVP_EncryptUpdate) and
+		Assigned(FFunctions.EVP_DecryptInit_ex) and
+		Assigned(FFunctions.EVP_DecryptUpdate) and
+		Assigned(FFunctions.EVP_sha256) and
+		Assigned(FFunctions.PKCS5_PBKDF2_HMAC);
 end;
 
 function TOpenSSLProvider.IsAvailable: Boolean;

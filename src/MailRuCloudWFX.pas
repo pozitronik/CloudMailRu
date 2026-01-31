@@ -51,6 +51,8 @@ uses
 	PasswordUIProvider,
 	HTTPManager,
 	CipherValidator,
+	CipherProfile,
+	BCryptProvider,
 	WindowsFileSystem,
 	WindowsEnvironment,
 	OAuthAppAuthStrategy,
@@ -247,6 +249,9 @@ begin
 
 	{Create centralized OpenSSL provider for hash calculation - respects same settings as Indy}
 	FOpenSSLProvider := TOpenSSLProvider.Create(PluginPath, SettingsManager.GetSettings.LoadSSLDLLOnlyFromPluginDir);
+
+	{Register cipher profiles with available backends}
+	TCipherProfileRegistry.Initialize(FOpenSSLProvider, TBCryptProvider.Create);
 
 	IsMultiThread := not(SettingsManager.GetSettings.DisableMultiThreading);
 	FThreadState := TThreadStateManager.Create;

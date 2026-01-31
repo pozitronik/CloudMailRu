@@ -2978,7 +2978,8 @@ end;
 procedure TAccountsPresenterTest.TestCipherProfileComboPopulatedOnInitialize;
 begin
 	{Initialize populates cipher profile combo via PopulateCipherProfiles}
-	Assert.AreEqual(4, Length(FView.CipherProfileItems), 'Should have 4 cipher profiles');
+	FPresenter.Initialize('');
+	Assert.AreEqual(Integer(4), Integer(Length(FView.CipherProfileItems)), 'Should have 4 cipher profiles');
 end;
 
 procedure TAccountsPresenterTest.TestCipherProfileDisabledWhenEncryptModeNone;

@@ -7,7 +7,9 @@ unit CipherProfile;
 interface
 
 uses
-	FileCipher;
+	FileCipher,
+	OpenSSLProvider,
+	BCryptProvider;
 
 type
 	{Factory type: creates a fully initialized ICipher from parameters}
@@ -32,7 +34,7 @@ type
 		FProfiles: TArray<TCipherProfile>;
 		FInitialized: Boolean;
 	public
-		class procedure Initialize;
+		class procedure Initialize(OpenSSLProvider: IOpenSSLProvider = nil; BCryptProvider: IBCryptProvider = nil);
 		class function GetProfiles: TArray<TCipherProfile>;
 		class function FindById(const ProfileId: WideString; out Profile: TCipherProfile): Boolean;
 		class function GetDefaultProfile: TCipherProfile;
@@ -49,14 +51,29 @@ uses
 	DCPsha1,
 	DCPsha256,
 	DCPtwofish,
-	DCPserpent;
+	DCPserpent,
+	OpenSSLCipher,
+	BCryptCipher;
 
-class procedure TCipherProfileRegistry.Initialize;
+class procedure TCipherProfileRegistry.Initialize(OpenSSLProvider: IOpenSSLProvider = nil; BCryptProvider: IBCryptProvider = nil);
+var
+	NextIndex: Integer;
+	HasOpenSSL, HasBCrypt: Boolean;
+	CapturedFunctions: TOpenSSLFunctions;
+	CapturedBCryptProvider: IBCryptProvider;
 begin
 	if FInitialized then
 		Exit;
 
-	SetLength(FProfiles, 4);
+	{Detect available backends}
+	HasOpenSSL := (OpenSSLProvider <> nil) and OpenSSLProvider.IsAvailable and OpenSSLProvider.GetFunctions.CipherLoaded;
+	HasBCrypt := (BCryptProvider <> nil) and BCryptProvider.IsAvailable;
+
+	{Base: 4 DCPCrypt profiles, plus conditional backends}
+	NextIndex := 4;
+	if HasOpenSSL then Inc(NextIndex);
+	if HasBCrypt then Inc(NextIndex);
+	SetLength(FProfiles, NextIndex);
 
 	FProfiles[0].Id := CIPHER_PROFILE_LEGACY_DEFAULT;
 	FProfiles[0].DisplayName := 'AES-256 / SHA-1 KDF (Legacy)';
@@ -92,6 +109,38 @@ begin
 	FProfiles[3].CreateCipher := function(const Password, PasswordControl: WideString; DoFilenameCipher: Boolean): ICipher
 	begin
 		Result := TFileCipher.Create(Password, TDCP_serpent, TDCP_sha256, PasswordControl, DoFilenameCipher);
+	end;
+
+	{Dynamic index for conditional backends}
+	NextIndex := 4;
+
+	{OpenSSL backend -- only registered when cipher functions are available}
+	if HasOpenSSL then
+	begin
+		CapturedFunctions := OpenSSLProvider.GetFunctions;
+		FProfiles[NextIndex].Id := 'openssl-aes256-cfb8-pbkdf2';
+		FProfiles[NextIndex].DisplayName := 'AES-256 / PBKDF2 (OpenSSL)';
+		FProfiles[NextIndex].BackendName := 'OpenSSL';
+		FProfiles[NextIndex].KeySizeBits := 256;
+		FProfiles[NextIndex].CreateCipher := function(const Password, PasswordControl: WideString; DoFilenameCipher: Boolean): ICipher
+		begin
+			Result := TOpenSSLCipher.Create(Password, CapturedFunctions, PasswordControl, DoFilenameCipher);
+		end;
+		Inc(NextIndex);
+	end;
+
+	{BCrypt backend -- available on Windows Vista+ via bcrypt.dll}
+	if HasBCrypt then
+	begin
+		CapturedBCryptProvider := BCryptProvider;
+		FProfiles[NextIndex].Id := 'bcrypt-aes256-cfb8-pbkdf2';
+		FProfiles[NextIndex].DisplayName := 'AES-256 / PBKDF2 (BCrypt)';
+		FProfiles[NextIndex].BackendName := 'Windows CNG';
+		FProfiles[NextIndex].KeySizeBits := 256;
+		FProfiles[NextIndex].CreateCipher := function(const Password, PasswordControl: WideString; DoFilenameCipher: Boolean): ICipher
+		begin
+			Result := TBCryptCipher.Create(Password, CapturedBCryptProvider, PasswordControl, DoFilenameCipher);
+		end;
 	end;
 
 	FInitialized := True;

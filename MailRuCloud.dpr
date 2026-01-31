@@ -49,6 +49,10 @@ uses
 	FileCipher in 'src\Infrastructure\Cipher\FileCipher.pas',
 	CipherProfile in 'src\Infrastructure\Cipher\CipherProfile.pas',
 	CipherStreams in 'src\Infrastructure\Cipher\CipherStreams.pas',
+	BlockCipher in 'src\Infrastructure\Cipher\BlockCipher.pas',
+	OpenSSLCipher in 'src\Infrastructure\Cipher\OpenSSLCipher.pas',
+	BCryptProvider in 'src\Infrastructure\Cipher\BCryptProvider.pas',
+	BCryptCipher in 'src\Infrastructure\Cipher\BCryptCipher.pas',
 	FileHelper in 'src\Infrastructure\IO\FileHelper.pas',
 	FileSplitInfo in 'src\Infrastructure\IO\FileSplitInfo.pas',
 	HTTPManager in 'src\Infrastructure\HTTP\HTTPManager.pas',
@@ -283,7 +287,6 @@ end;
 
 procedure InitPluginData;
 begin
-	TCipherProfileRegistry.Initialize;
 	MailRuCloudWFX := TWFXApplication.Create();
 end;
 
