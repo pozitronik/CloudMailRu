@@ -10,6 +10,7 @@ uses
 	Classes,
 	System.SysUtils,
 	CloudConstants,
+	BlockCipher,
 	DCPcrypt2,
 	DCPblockciphers,
 	DCPrijndael,
@@ -67,43 +68,43 @@ type
 		function GetDecryptingStream(Source: TStream): TStream;
 	end;
 
-	TDCP_blockcipher128class = class of TDCP_blockcipher128;
-
-	{Production implementation using configurable cipher profiles}
-	TFileCipher = class(TInterfacedObject, ICipher)
-	private
-		Password: WideString;
-		FCipherClass: TDCP_blockcipher128class;
-		FHashClass: TDCP_hashclass;
-		FFileCipher: TDCP_blockcipher128; {The cipher used to encrypt files and streams}
-		PasswordIsWrong: Boolean; {The wrong password flag}
-
-		procedure CiphersInit();
-		procedure CiphersDestroy();
-
+	{Abstract base for ICipher implementations that delegate to IBlockCipher.
+		Subclasses override CreateBlockCipher to provide backend-specific cipher instances.
+		Template Method pattern: shared file/stream logic lives here, backend creation is deferred.}
+	TBaseCipher = class(TInterfacedObject, ICipher)
+	protected
+		FPasswordIsWrong: Boolean;
+		function CreateBlockCipher: IBlockCipher; virtual; abstract;
 	public
-		constructor Create(Password: WideString; CipherClass: TDCP_blockcipher128class; HashClass: TDCP_hashclass; PasswordControl: WideString = '');
-		destructor Destroy; override;
-
 		function CryptFile(SourceFileName, DestinationFilename: WideString): Integer;
 		function CryptStream(SourceStream, DestinationStream: TStream): Integer;
-
 		function DecryptFile(SourceFileName, DestinationFilename: WideString): Integer;
 		function DecryptStream(SourceStream, DestinationStream: TStream): Integer;
 		function GetEncryptingStream(Source: TStream): TStream;
 		function GetDecryptingStream(Source: TStream): TStream;
+		property IsWrongPassword: Boolean read FPasswordIsWrong;
+	end;
 
-		property IsWrongPassword: Boolean read PasswordIsWrong;
+	TDCP_blockcipher128class = class of TDCP_blockcipher128;
+
+	{Production implementation using configurable cipher profiles (DCPCrypt backend)}
+	TFileCipher = class(TBaseCipher)
+	private
+		Password: WideString;
+		FCipherClass: TDCP_blockcipher128class;
+		FHashClass: TDCP_hashclass;
+	protected
+		function CreateBlockCipher: IBlockCipher; override;
+	public
+		constructor Create(Password: WideString; CipherClass: TDCP_blockcipher128class; HashClass: TDCP_hashclass; PasswordControl: WideString = '');
 
 		class function GetCryptedGUID(const Password: WideString): WideString; {Get an unique GUID on a password, used to check the passwords validity before login}
 		class function CheckPasswordGUID(const Password, ControlGUID: WideString): Boolean; {Check if a password is valid by compare with a saved GUID}
-
 	end;
 
 implementation
 
 uses
-	BlockCipher,
 	CipherStreams;
 
 {TPassThroughStream - lightweight read-only wrapper}
@@ -193,56 +194,9 @@ begin
 	Result := TPassThroughStream.Create(Source);
 end;
 
-{TFileCipher - AES/Rijndael implementation}
+{TBaseCipher - shared ICipher logic delegating to IBlockCipher via CreateBlockCipher}
 
-class function TFileCipher.GetCryptedGUID(const Password: WideString): WideString;
-var
-	tmpCipher: TDCP_rijndael;
-begin
-	tmpCipher := TDCP_rijndael.Create(nil);
-	tmpCipher.InitStr(Password, TDCP_sha1);
-	Result := tmpCipher.EncryptString(CIPHER_CONTROL_GUID);
-	tmpCipher.Burn;
-	tmpCipher.Destroy;
-end;
-
-class function TFileCipher.CheckPasswordGUID(const Password, ControlGUID: WideString): Boolean;
-begin
-	Result := self.GetCryptedGUID(Password) = ControlGUID;
-end;
-
-procedure TFileCipher.CiphersDestroy;
-begin
-	self.FFileCipher.Burn;
-	self.FFileCipher.Destroy;
-end;
-
-procedure TFileCipher.CiphersInit;
-begin
-	self.FFileCipher := self.FCipherClass.Create(nil);
-	self.FFileCipher.InitStr(self.Password, self.FHashClass);
-end;
-
-constructor TFileCipher.Create(Password: WideString; CipherClass: TDCP_blockcipher128class; HashClass: TDCP_hashclass; PasswordControl: WideString = '');
-begin
-	self.Password := Password;
-	self.FCipherClass := CipherClass;
-	self.FHashClass := HashClass;
-
-	{Password validation always uses legacy AES-256/SHA-1 regardless of profile,
-		because CryptedGUID was generated with that combination}
-	if EmptyWideStr <> PasswordControl then
-	begin
-		PasswordIsWrong := not CheckPasswordGUID(Password, PasswordControl);
-	end;
-end;
-
-destructor TFileCipher.Destroy;
-begin
-	inherited;
-end;
-
-function TFileCipher.CryptFile(SourceFileName, DestinationFilename: WideString): Integer;
+function TBaseCipher.CryptFile(SourceFileName, DestinationFilename: WideString): Integer;
 var
 	SourceStream, DestinationStream: TBufferedFileStream;
 begin
@@ -264,22 +218,35 @@ begin
 	end;
 end;
 
-function TFileCipher.CryptStream(SourceStream, DestinationStream: TStream): Integer;
+function TBaseCipher.CryptStream(SourceStream, DestinationStream: TStream): Integer;
+var
+	Cipher: IBlockCipher;
+	Buffer: TBytes;
+	BytesRead: Integer;
 begin
-	self.CiphersInit();
+	Result := 0;
+	if SourceStream.Size <= 0 then
+		Exit;
+
+	SourceStream.Position := 0;
+	Cipher := CreateBlockCipher;
 	try
-		Result := 0;
-		if SourceStream.Size > 0 then
-		begin
-			SourceStream.Position := 0;
-			Result := self.FFileCipher.EncryptStream(SourceStream, DestinationStream, SourceStream.Size);
-		end;
+		SetLength(Buffer, CIPHER_BUFFER_SIZE);
+		repeat
+			BytesRead := SourceStream.Read(Buffer[0], CIPHER_BUFFER_SIZE);
+			if BytesRead > 0 then
+			begin
+				Cipher.EncryptCFB8bit(Buffer[0], Buffer[0], BytesRead);
+				DestinationStream.WriteBuffer(Buffer[0], BytesRead);
+				Inc(Result, BytesRead);
+			end;
+		until BytesRead = 0;
 	finally
-		self.CiphersDestroy;
+		Cipher.Burn;
 	end;
 end;
 
-function TFileCipher.DecryptFile(SourceFileName, DestinationFilename: WideString): Integer;
+function TBaseCipher.DecryptFile(SourceFileName, DestinationFilename: WideString): Integer;
 var
 	SourceStream, DestinationStream: TBufferedFileStream;
 begin
@@ -301,36 +268,81 @@ begin
 	end;
 end;
 
-function TFileCipher.DecryptStream(SourceStream, DestinationStream: TStream): Integer;
+function TBaseCipher.DecryptStream(SourceStream, DestinationStream: TStream): Integer;
+var
+	Cipher: IBlockCipher;
+	Buffer: TBytes;
+	BytesRead: Integer;
 begin
-	self.CiphersInit();
+	Result := 0;
+	if SourceStream.Size <= 0 then
+		Exit;
+
+	SourceStream.Position := 0;
+	Cipher := CreateBlockCipher;
 	try
-		Result := 0;
-		if SourceStream.Size > 0 then
-			Result := self.FFileCipher.DecryptStream(SourceStream, DestinationStream, SourceStream.Size);
+		SetLength(Buffer, CIPHER_BUFFER_SIZE);
+		repeat
+			BytesRead := SourceStream.Read(Buffer[0], CIPHER_BUFFER_SIZE);
+			if BytesRead > 0 then
+			begin
+				Cipher.DecryptCFB8bit(Buffer[0], Buffer[0], BytesRead);
+				DestinationStream.WriteBuffer(Buffer[0], BytesRead);
+				Inc(Result, BytesRead);
+			end;
+		until BytesRead = 0;
 	finally
-		self.CiphersDestroy();
+		Cipher.Burn;
 	end;
 end;
 
-function TFileCipher.GetEncryptingStream(Source: TStream): TStream;
-var
-	Cipher: TDCP_blockcipher128;
+function TBaseCipher.GetEncryptingStream(Source: TStream): TStream;
 begin
-	{Create fresh cipher instance, wrap in IBlockCipher adapter - stream takes ownership}
-	Cipher := self.FCipherClass.Create(nil);
-	Cipher.InitStr(self.Password, self.FHashClass);
-	Result := TEncryptingStream.Create(Source, TDCPCryptBlockCipher.Create(Cipher));
+	Result := TEncryptingStream.Create(Source, CreateBlockCipher);
 end;
 
-function TFileCipher.GetDecryptingStream(Source: TStream): TStream;
+function TBaseCipher.GetDecryptingStream(Source: TStream): TStream;
+begin
+	Result := TDecryptingStream.Create(Source, CreateBlockCipher);
+end;
+
+{TFileCipher - DCPCrypt backend}
+
+class function TFileCipher.GetCryptedGUID(const Password: WideString): WideString;
+var
+	tmpCipher: TDCP_rijndael;
+begin
+	tmpCipher := TDCP_rijndael.Create(nil);
+	tmpCipher.InitStr(Password, TDCP_sha1);
+	Result := tmpCipher.EncryptString(CIPHER_CONTROL_GUID);
+	tmpCipher.Burn;
+	tmpCipher.Destroy;
+end;
+
+class function TFileCipher.CheckPasswordGUID(const Password, ControlGUID: WideString): Boolean;
+begin
+	Result := self.GetCryptedGUID(Password) = ControlGUID;
+end;
+
+constructor TFileCipher.Create(Password: WideString; CipherClass: TDCP_blockcipher128class; HashClass: TDCP_hashclass; PasswordControl: WideString = '');
+begin
+	self.Password := Password;
+	self.FCipherClass := CipherClass;
+	self.FHashClass := HashClass;
+
+	{Password validation always uses legacy AES-256/SHA-1 regardless of profile,
+		because CryptedGUID was generated with that combination}
+	if EmptyWideStr <> PasswordControl then
+		FPasswordIsWrong := not CheckPasswordGUID(Password, PasswordControl);
+end;
+
+function TFileCipher.CreateBlockCipher: IBlockCipher;
 var
 	Cipher: TDCP_blockcipher128;
 begin
-	{Create fresh cipher instance, wrap in IBlockCipher adapter - stream takes ownership}
-	Cipher := self.FCipherClass.Create(nil);
-	Cipher.InitStr(self.Password, self.FHashClass);
-	Result := TDecryptingStream.Create(Source, TDCPCryptBlockCipher.Create(Cipher));
+	Cipher := FCipherClass.Create(nil);
+	Cipher.InitStr(Password, FHashClass);
+	Result := TDCPCryptBlockCipher.Create(Cipher);
 end;
 
 end.

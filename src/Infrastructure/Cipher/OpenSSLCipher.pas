@@ -43,37 +43,26 @@ type
 	end;
 
 	{ICipher implementation using OpenSSL backend.
-		Creates TOpenSSLBlockCipher instances for streaming operations.
-		Bulk encrypt/decrypt uses CFB8 chunked loop via IBlockCipher.
+		Creates TOpenSSLBlockCipher instances via CreateBlockCipher.
 		Password validation delegates to TFileCipher.CheckPasswordGUID (hardcoded AES/SHA-1).}
-	TOpenSSLCipher = class(TInterfacedObject, ICipher)
+	TOpenSSLCipher = class(TBaseCipher)
 	private
-		FPassword: WideString;
 		FFunctions: TOpenSSLFunctions;
 		FKey: TBytes;
 		FIV: TBytes;
-		FPasswordIsWrong: Boolean;
 		function DeriveKey(const Password: WideString): TBytes;
+	protected
+		function CreateBlockCipher: IBlockCipher; override;
 	public
 		constructor Create(const Password: WideString; const Functions: TOpenSSLFunctions; const PasswordControl: WideString = '');
 		destructor Destroy; override;
-
-		function CryptFile(SourceFileName, DestinationFilename: WideString): Integer;
-		function CryptStream(SourceStream, DestinationStream: TStream): Integer;
-		function DecryptFile(SourceFileName, DestinationFilename: WideString): Integer;
-		function DecryptStream(SourceStream, DestinationStream: TStream): Integer;
-		function GetEncryptingStream(Source: TStream): TStream;
-		function GetDecryptingStream(Source: TStream): TStream;
-
-		property IsWrongPassword: Boolean read FPasswordIsWrong;
 	end;
 
 implementation
 
 uses
 	System.Math,
-	CloudConstants,
-	CipherStreams;
+	CloudConstants;
 
 {TOpenSSLBlockCipher}
 
@@ -158,7 +147,6 @@ end;
 constructor TOpenSSLCipher.Create(const Password: WideString; const Functions: TOpenSSLFunctions; const PasswordControl: WideString = '');
 begin
 	inherited Create;
-	FPassword := Password;
 	FFunctions := Functions;
 
 	FKey := DeriveKey(Password);
@@ -202,114 +190,9 @@ begin
 		FillChar(PassBytes[0], Length(PassBytes), 0);
 end;
 
-function TOpenSSLCipher.CryptFile(SourceFileName, DestinationFilename: WideString): Integer;
-var
-	SourceStream, DestinationStream: TBufferedFileStream;
+function TOpenSSLCipher.CreateBlockCipher: IBlockCipher;
 begin
-	Result := CIPHER_OK;
-	SourceStream := nil;
-	DestinationStream := nil;
-	try
-		try
-			SourceStream := TBufferedFileStream.Create(SourceFileName, fmOpenRead or fmShareDenyWrite);
-			DestinationStream := TBufferedFileStream.Create(DestinationFilename, fmCreate);
-			if SourceStream.Size > 0 then
-				self.CryptStream(SourceStream, DestinationStream);
-		except
-			Result := CIPHER_IO_ERROR;
-		end;
-	finally
-		SourceStream.Free;
-		DestinationStream.Free;
-	end;
-end;
-
-function TOpenSSLCipher.CryptStream(SourceStream, DestinationStream: TStream): Integer;
-var
-	BlockCipher: IBlockCipher;
-	Buffer: TBytes;
-	BytesRead: Integer;
-begin
-	Result := 0;
-	if SourceStream.Size <= 0 then
-		Exit;
-
-	SourceStream.Position := 0;
-	BlockCipher := TOpenSSLBlockCipher.Create(FFunctions, FKey, FIV);
-	try
-		SetLength(Buffer, CIPHER_BUFFER_SIZE);
-		repeat
-			BytesRead := SourceStream.Read(Buffer[0], CIPHER_BUFFER_SIZE);
-			if BytesRead > 0 then
-			begin
-				BlockCipher.EncryptCFB8bit(Buffer[0], Buffer[0], BytesRead);
-				DestinationStream.WriteBuffer(Buffer[0], BytesRead);
-				Inc(Result, BytesRead);
-			end;
-		until BytesRead = 0;
-	finally
-		BlockCipher.Burn;
-	end;
-end;
-
-function TOpenSSLCipher.DecryptFile(SourceFileName, DestinationFilename: WideString): Integer;
-var
-	SourceStream, DestinationStream: TBufferedFileStream;
-begin
-	Result := CIPHER_OK;
-	SourceStream := nil;
-	DestinationStream := nil;
-	try
-		try
-			SourceStream := TBufferedFileStream.Create(SourceFileName, fmOpenRead or fmShareDenyWrite);
-			DestinationStream := TBufferedFileStream.Create(DestinationFilename, fmCreate);
-			if SourceStream.Size > 0 then
-				self.DecryptStream(SourceStream, DestinationStream);
-		except
-			Result := CIPHER_IO_ERROR;
-		end;
-	finally
-		SourceStream.Free;
-		DestinationStream.Free;
-	end;
-end;
-
-function TOpenSSLCipher.DecryptStream(SourceStream, DestinationStream: TStream): Integer;
-var
-	BlockCipher: IBlockCipher;
-	Buffer: TBytes;
-	BytesRead: Integer;
-begin
-	Result := 0;
-	if SourceStream.Size <= 0 then
-		Exit;
-
-	SourceStream.Position := 0;
-	BlockCipher := TOpenSSLBlockCipher.Create(FFunctions, FKey, FIV);
-	try
-		SetLength(Buffer, CIPHER_BUFFER_SIZE);
-		repeat
-			BytesRead := SourceStream.Read(Buffer[0], CIPHER_BUFFER_SIZE);
-			if BytesRead > 0 then
-			begin
-				BlockCipher.DecryptCFB8bit(Buffer[0], Buffer[0], BytesRead);
-				DestinationStream.WriteBuffer(Buffer[0], BytesRead);
-				Inc(Result, BytesRead);
-			end;
-		until BytesRead = 0;
-	finally
-		BlockCipher.Burn;
-	end;
-end;
-
-function TOpenSSLCipher.GetEncryptingStream(Source: TStream): TStream;
-begin
-	Result := TEncryptingStream.Create(Source, TOpenSSLBlockCipher.Create(FFunctions, FKey, FIV));
-end;
-
-function TOpenSSLCipher.GetDecryptingStream(Source: TStream): TStream;
-begin
-	Result := TDecryptingStream.Create(Source, TOpenSSLBlockCipher.Create(FFunctions, FKey, FIV));
+	Result := TOpenSSLBlockCipher.Create(FFunctions, FKey, FIV);
 end;
 
 end.

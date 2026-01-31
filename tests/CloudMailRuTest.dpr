@@ -103,6 +103,7 @@ uses
 	CipherStreamsTest in 'Infrastructure\Cipher\CipherStreamsTest.pas',
 	CipherProfileTest in 'Infrastructure\Cipher\CipherProfileTest.pas',
 	BlockCipherTest in 'Infrastructure\Cipher\BlockCipherTest.pas',
+	BaseCipherTest in 'Infrastructure\Cipher\BaseCipherTest.pas',
 	OpenSSLCipherTest in 'Infrastructure\Cipher\OpenSSLCipherTest.pas',
 	BCryptProviderTest in 'Infrastructure\Cipher\BCryptProviderTest.pas',
 	BCryptCipherTest in 'Infrastructure\Cipher\BCryptCipherTest.pas',

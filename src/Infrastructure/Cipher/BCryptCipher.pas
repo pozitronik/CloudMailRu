@@ -37,36 +37,25 @@ type
 	end;
 
 	{ICipher implementation using BCrypt backend.
-		Creates TBCryptBlockCipher instances for streaming operations.
-		Bulk encrypt/decrypt uses CFB8 chunked loop via IBlockCipher.
+		Creates TBCryptBlockCipher instances via CreateBlockCipher.
 		Password validation delegates to TFileCipher.CheckPasswordGUID (hardcoded AES/SHA-1).}
-	TBCryptCipher = class(TInterfacedObject, ICipher)
+	TBCryptCipher = class(TBaseCipher)
 	private
-		FPassword: WideString;
 		FProvider: IBCryptProvider;
 		FKey: TBytes;
 		FIV: TBytes;
-		FPasswordIsWrong: Boolean;
+	protected
+		function CreateBlockCipher: IBlockCipher; override;
 	public
 		constructor Create(const Password: WideString; const Provider: IBCryptProvider; const PasswordControl: WideString = '');
 		destructor Destroy; override;
-
-		function CryptFile(SourceFileName, DestinationFilename: WideString): Integer;
-		function CryptStream(SourceStream, DestinationStream: TStream): Integer;
-		function DecryptFile(SourceFileName, DestinationFilename: WideString): Integer;
-		function DecryptStream(SourceStream, DestinationStream: TStream): Integer;
-		function GetEncryptingStream(Source: TStream): TStream;
-		function GetDecryptingStream(Source: TStream): TStream;
-
-		property IsWrongPassword: Boolean read FPasswordIsWrong;
 	end;
 
 implementation
 
 uses
 	System.Math,
-	CloudConstants,
-	CipherStreams;
+	CloudConstants;
 
 {TBCryptBlockCipher}
 
@@ -179,7 +168,6 @@ end;
 constructor TBCryptCipher.Create(const Password: WideString; const Provider: IBCryptProvider; const PasswordControl: WideString = '');
 begin
 	inherited Create;
-	FPassword := Password;
 	FProvider := Provider;
 
 	FKey := FProvider.DeriveKey(Password);
@@ -202,114 +190,9 @@ begin
 	inherited;
 end;
 
-function TBCryptCipher.CryptFile(SourceFileName, DestinationFilename: WideString): Integer;
-var
-	SourceStream, DestinationStream: TBufferedFileStream;
+function TBCryptCipher.CreateBlockCipher: IBlockCipher;
 begin
-	Result := CIPHER_OK;
-	SourceStream := nil;
-	DestinationStream := nil;
-	try
-		try
-			SourceStream := TBufferedFileStream.Create(SourceFileName, fmOpenRead or fmShareDenyWrite);
-			DestinationStream := TBufferedFileStream.Create(DestinationFilename, fmCreate);
-			if SourceStream.Size > 0 then
-				self.CryptStream(SourceStream, DestinationStream);
-		except
-			Result := CIPHER_IO_ERROR;
-		end;
-	finally
-		SourceStream.Free;
-		DestinationStream.Free;
-	end;
-end;
-
-function TBCryptCipher.CryptStream(SourceStream, DestinationStream: TStream): Integer;
-var
-	Cipher: IBlockCipher;
-	Buffer: TBytes;
-	BytesRead: Integer;
-begin
-	Result := 0;
-	if SourceStream.Size <= 0 then
-		Exit;
-
-	SourceStream.Position := 0;
-	Cipher := TBCryptBlockCipher.Create(FProvider, FKey, FIV);
-	try
-		SetLength(Buffer, CIPHER_BUFFER_SIZE);
-		repeat
-			BytesRead := SourceStream.Read(Buffer[0], CIPHER_BUFFER_SIZE);
-			if BytesRead > 0 then
-			begin
-				Cipher.EncryptCFB8bit(Buffer[0], Buffer[0], BytesRead);
-				DestinationStream.WriteBuffer(Buffer[0], BytesRead);
-				Inc(Result, BytesRead);
-			end;
-		until BytesRead = 0;
-	finally
-		Cipher.Burn;
-	end;
-end;
-
-function TBCryptCipher.DecryptFile(SourceFileName, DestinationFilename: WideString): Integer;
-var
-	SourceStream, DestinationStream: TBufferedFileStream;
-begin
-	Result := CIPHER_OK;
-	SourceStream := nil;
-	DestinationStream := nil;
-	try
-		try
-			SourceStream := TBufferedFileStream.Create(SourceFileName, fmOpenRead or fmShareDenyWrite);
-			DestinationStream := TBufferedFileStream.Create(DestinationFilename, fmCreate);
-			if SourceStream.Size > 0 then
-				self.DecryptStream(SourceStream, DestinationStream);
-		except
-			Result := CIPHER_IO_ERROR;
-		end;
-	finally
-		SourceStream.Free;
-		DestinationStream.Free;
-	end;
-end;
-
-function TBCryptCipher.DecryptStream(SourceStream, DestinationStream: TStream): Integer;
-var
-	Cipher: IBlockCipher;
-	Buffer: TBytes;
-	BytesRead: Integer;
-begin
-	Result := 0;
-	if SourceStream.Size <= 0 then
-		Exit;
-
-	SourceStream.Position := 0;
-	Cipher := TBCryptBlockCipher.Create(FProvider, FKey, FIV);
-	try
-		SetLength(Buffer, CIPHER_BUFFER_SIZE);
-		repeat
-			BytesRead := SourceStream.Read(Buffer[0], CIPHER_BUFFER_SIZE);
-			if BytesRead > 0 then
-			begin
-				Cipher.DecryptCFB8bit(Buffer[0], Buffer[0], BytesRead);
-				DestinationStream.WriteBuffer(Buffer[0], BytesRead);
-				Inc(Result, BytesRead);
-			end;
-		until BytesRead = 0;
-	finally
-		Cipher.Burn;
-	end;
-end;
-
-function TBCryptCipher.GetEncryptingStream(Source: TStream): TStream;
-begin
-	Result := TEncryptingStream.Create(Source, TBCryptBlockCipher.Create(FProvider, FKey, FIV));
-end;
-
-function TBCryptCipher.GetDecryptingStream(Source: TStream): TStream;
-begin
-	Result := TDecryptingStream.Create(Source, TBCryptBlockCipher.Create(FProvider, FKey, FIV));
+	Result := TBCryptBlockCipher.Create(FProvider, FKey, FIV);
 end;
 
 end.
