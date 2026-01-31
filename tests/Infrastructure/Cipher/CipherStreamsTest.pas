@@ -4,6 +4,7 @@ interface
 
 uses
 	CipherStreams,
+	BlockCipher,
 	System.SysUtils,
 	System.Classes,
 	DCPrijndael,
@@ -19,9 +20,9 @@ type
 		const
 			TEST_PASSWORD = 'TestPassword123!';
 			TEST_IV = '1234567890ABCDEF';
-		function CreateInitializedCipher: TDCP_rijndael;
-		function CreateInitializedTwofishCipher: TDCP_twofish;
-		function CreateInitializedSerpentCipher: TDCP_serpent;
+		function CreateInitializedCipher: IBlockCipher;
+		function CreateInitializedTwofishCipher: IBlockCipher;
+		function CreateInitializedSerpentCipher: IBlockCipher;
 		function CreateTestData(Size: Integer): TBytes;
 	public
 		{TEncryptingStream - Basic functionality}
@@ -126,24 +127,33 @@ type
 implementation
 
 {Helper to create initialized cipher with consistent key/IV for testing}
-function TCipherStreamsTest.CreateInitializedCipher: TDCP_rijndael;
+function TCipherStreamsTest.CreateInitializedCipher: IBlockCipher;
+var
+	Cipher: TDCP_rijndael;
 begin
-	Result := TDCP_rijndael.Create(nil);
-	Result.Init(TEST_PASSWORD[1], Length(TEST_PASSWORD) * SizeOf(Char), @TEST_IV[1]);
+	Cipher := TDCP_rijndael.Create(nil);
+	Cipher.Init(TEST_PASSWORD[1], Length(TEST_PASSWORD) * SizeOf(Char), @TEST_IV[1]);
+	Result := TDCPCryptBlockCipher.Create(Cipher);
 end;
 
 {Helper to create initialized Twofish cipher for alternative cipher testing}
-function TCipherStreamsTest.CreateInitializedTwofishCipher: TDCP_twofish;
+function TCipherStreamsTest.CreateInitializedTwofishCipher: IBlockCipher;
+var
+	Cipher: TDCP_twofish;
 begin
-	Result := TDCP_twofish.Create(nil);
-	Result.Init(TEST_PASSWORD[1], Length(TEST_PASSWORD) * SizeOf(Char), @TEST_IV[1]);
+	Cipher := TDCP_twofish.Create(nil);
+	Cipher.Init(TEST_PASSWORD[1], Length(TEST_PASSWORD) * SizeOf(Char), @TEST_IV[1]);
+	Result := TDCPCryptBlockCipher.Create(Cipher);
 end;
 
 {Helper to create initialized Serpent cipher for alternative cipher testing}
-function TCipherStreamsTest.CreateInitializedSerpentCipher: TDCP_serpent;
+function TCipherStreamsTest.CreateInitializedSerpentCipher: IBlockCipher;
+var
+	Cipher: TDCP_serpent;
 begin
-	Result := TDCP_serpent.Create(nil);
-	Result.Init(TEST_PASSWORD[1], Length(TEST_PASSWORD) * SizeOf(Char), @TEST_IV[1]);
+	Cipher := TDCP_serpent.Create(nil);
+	Cipher.Init(TEST_PASSWORD[1], Length(TEST_PASSWORD) * SizeOf(Char), @TEST_IV[1]);
+	Result := TDCPCryptBlockCipher.Create(Cipher);
 end;
 
 {Helper to create test data of specified size}
@@ -162,16 +172,14 @@ procedure TCipherStreamsTest.TestEncryptingStream_Create_InitializesCorrectly;
 var
 	Source: TMemoryStream;
 	EncStream: TEncryptingStream;
-	Cipher: TDCP_rijndael;
 begin
 	Source := TMemoryStream.Create;
 	try
 		Source.WriteBuffer(CreateTestData(100)[0], 100);
 		Source.Position := 0;
 
-		Cipher := CreateInitializedCipher;
-		{Cipher ownership transfers to EncStream}
-		EncStream := TEncryptingStream.Create(Source, Cipher);
+		{Cipher ownership transfers to EncStream via interface ref counting}
+		EncStream := TEncryptingStream.Create(Source, CreateInitializedCipher);
 		try
 			Assert.IsNotNull(EncStream);
 			Assert.AreEqual(Int64(100), EncStream.Size);

@@ -1,25 +1,28 @@
 unit CipherProfile;
 
-{Cipher profile registry -- maps profile IDs to concrete DCPCrypt cipher+hash class pairs.
-	Each profile defines a complete encryption configuration (algorithm, key size, KDF hash).
-	Only the Software/DCPCrypt backend is populated now; BCrypt/OpenSSL backends can be added later.}
+{Cipher profile registry -- maps profile IDs to backend-agnostic cipher factories.
+	Each profile defines a complete encryption configuration.
+	Supports DCPCrypt, OpenSSL, and BCrypt backends via factory closures.}
 
 interface
 
 uses
-	DCPcrypt2,
-	DCPblockciphers;
+	FileCipher;
 
 type
-	TDCP_blockcipher128class = class of TDCP_blockcipher128;
+	{Factory type: creates a fully initialized ICipher from parameters}
+	TCipherFactory = reference to function(
+		const Password: WideString;
+		const PasswordControl: WideString;
+		DoFilenameCipher: Boolean
+	): ICipher;
 
 	TCipherProfile = record
 		Id: WideString;
 		DisplayName: WideString;
 		BackendName: WideString;
-		CipherClass: TDCP_blockcipher128class;
-		HashClass: TDCP_hashclass;
 		KeySizeBits: Integer;
+		CreateCipher: TCipherFactory;
 	end;
 
 	{Class-level registry of available cipher profiles.
@@ -58,30 +61,38 @@ begin
 	FProfiles[0].Id := CIPHER_PROFILE_LEGACY_DEFAULT;
 	FProfiles[0].DisplayName := 'AES-256 / SHA-1 KDF (Legacy)';
 	FProfiles[0].BackendName := 'Software (DCPCrypt)';
-	FProfiles[0].CipherClass := TDCP_rijndael;
-	FProfiles[0].HashClass := TDCP_sha1;
 	FProfiles[0].KeySizeBits := 256;
+	FProfiles[0].CreateCipher := function(const Password, PasswordControl: WideString; DoFilenameCipher: Boolean): ICipher
+	begin
+		Result := TFileCipher.Create(Password, TDCP_rijndael, TDCP_sha1, PasswordControl, DoFilenameCipher);
+	end;
 
 	FProfiles[1].Id := 'dcpcrypt-aes256-cfb8-sha256';
 	FProfiles[1].DisplayName := 'AES-256 / SHA-256 KDF';
 	FProfiles[1].BackendName := 'Software (DCPCrypt)';
-	FProfiles[1].CipherClass := TDCP_rijndael;
-	FProfiles[1].HashClass := TDCP_sha256;
 	FProfiles[1].KeySizeBits := 256;
+	FProfiles[1].CreateCipher := function(const Password, PasswordControl: WideString; DoFilenameCipher: Boolean): ICipher
+	begin
+		Result := TFileCipher.Create(Password, TDCP_rijndael, TDCP_sha256, PasswordControl, DoFilenameCipher);
+	end;
 
 	FProfiles[2].Id := 'dcpcrypt-twofish256-cfb8-sha256';
 	FProfiles[2].DisplayName := 'Twofish-256 / SHA-256 KDF';
 	FProfiles[2].BackendName := 'Software (DCPCrypt)';
-	FProfiles[2].CipherClass := TDCP_twofish;
-	FProfiles[2].HashClass := TDCP_sha256;
 	FProfiles[2].KeySizeBits := 256;
+	FProfiles[2].CreateCipher := function(const Password, PasswordControl: WideString; DoFilenameCipher: Boolean): ICipher
+	begin
+		Result := TFileCipher.Create(Password, TDCP_twofish, TDCP_sha256, PasswordControl, DoFilenameCipher);
+	end;
 
 	FProfiles[3].Id := 'dcpcrypt-serpent256-cfb8-sha256';
 	FProfiles[3].DisplayName := 'Serpent-256 / SHA-256 KDF';
 	FProfiles[3].BackendName := 'Software (DCPCrypt)';
-	FProfiles[3].CipherClass := TDCP_serpent;
-	FProfiles[3].HashClass := TDCP_sha256;
 	FProfiles[3].KeySizeBits := 256;
+	FProfiles[3].CreateCipher := function(const Password, PasswordControl: WideString; DoFilenameCipher: Boolean): ICipher
+	begin
+		Result := TFileCipher.Create(Password, TDCP_serpent, TDCP_sha256, PasswordControl, DoFilenameCipher);
+	end;
 
 	FInitialized := True;
 end;

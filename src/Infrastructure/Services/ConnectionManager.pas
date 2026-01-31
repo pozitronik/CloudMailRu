@@ -28,6 +28,7 @@ uses
 	TCPasswordManager,
 	HTTPManager,
 	CipherValidator,
+	CipherProfile,
 	FileCipher,
 	AuthStrategy,
 	OpenSSLProvider,
@@ -148,7 +149,7 @@ var
 	CloudSettings: TCloudSettings;
 	AuthStrategy: IAuthStrategy;
 	Cipher: ICipher;
-	FileCipherInstance: TFileCipher;
+	Profile: TCipherProfile;
 begin
 	{Create CloudSettings using factory method - combines plugin settings with account settings}
 	CloudSettings := TCloudSettings.CreateFromSettings(FPluginSettingsManager.GetSettings, FAccountsManager.GetAccountSettings(ConnectionName));
@@ -166,14 +167,20 @@ begin
 	Cipher := TNullCipher.Create;
 	if CloudSettings.AccountSettings.EncryptFilesMode <> EncryptModeNone then
 	begin
-		FileCipherInstance := TFileCipher.Create(CloudSettings.CryptFilesPassword, CloudSettings.AccountSettings.CipherProfileId, CloudSettings.AccountSettings.CryptedGUIDFiles, CloudSettings.AccountSettings.EncryptFilenames);
-		if FileCipherInstance.IsWrongPassword then
+		{Validate password before creating cipher - GUID check always uses legacy AES/SHA-1}
+		if (CloudSettings.AccountSettings.CryptedGUIDFiles <> EmptyWideStr) and
+			not FCipherValidator.CheckPasswordGUID(CloudSettings.CryptFilesPassword, CloudSettings.AccountSettings.CryptedGUIDFiles) then
 		begin
 			FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_WRONG_ENCRYPT_PASSWORD);
-			FileCipherInstance.Free;
 		end
 		else
-			Cipher := FileCipherInstance;
+		begin
+			{Resolve cipher profile -- empty or unknown falls back to legacy default}
+			if not TCipherProfileRegistry.FindById(CloudSettings.AccountSettings.CipherProfileId, Profile) then
+				Profile := TCipherProfileRegistry.GetDefaultProfile;
+
+			Cipher := Profile.CreateCipher(CloudSettings.CryptFilesPassword, CloudSettings.AccountSettings.CryptedGUIDFiles, CloudSettings.AccountSettings.EncryptFilenames);
+		end;
 	end;
 
 	{Create appropriate auth strategy via factory - enables DI and testability}

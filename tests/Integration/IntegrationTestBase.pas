@@ -29,6 +29,8 @@ uses
 	TCRequest,
 	TCHandler,
 	FileCipher,
+	DCPrijndael,
+	DCPsha1,
 	SettingsConstants,
 	OpenSSLProvider,
 	AccountCredentialsProvider;
@@ -248,7 +250,7 @@ begin
 		AuthStrategy := TNullAuthStrategy.Create;
 
 	if Encrypted and FConfig.HasEncryptionConfig then
-		Cipher := TFileCipher.Create(FConfig.EncryptionPassword)
+		Cipher := TFileCipher.Create(FConfig.EncryptionPassword, TDCP_rijndael, TDCP_sha1)
 	else
 		Cipher := TNullCipher.Create;
 

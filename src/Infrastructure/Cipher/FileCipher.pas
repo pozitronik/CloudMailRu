@@ -18,8 +18,7 @@ uses
 	DCPsha256,
 	DCPtwofish,
 	DCPserpent,
-	DCPbase64,
-	CipherProfile;
+	DCPbase64;
 
 const
 	{Cipher operation result codes}
@@ -76,6 +75,8 @@ type
 		function GetDecryptingStream(Source: TStream): TStream;
 	end;
 
+	TDCP_blockcipher128class = class of TDCP_blockcipher128;
+
 	{Production implementation using configurable cipher profiles}
 	TFileCipher = class(TInterfacedObject, ICipher)
 	private
@@ -94,7 +95,7 @@ type
 		function Base64ToSafe(const Base64: WideString): WideString; {Safely converts Base64-encoded string to URL and filename (RFC 4648)}
 		function Base64FromSafe(const Safe: WideString): WideString; {Converts a string (assuming to be an url or a filename) to a Base64 format}
 	public
-		constructor Create(Password: WideString; CipherProfileId: WideString = ''; PasswordControl: WideString = ''; DoFilenameCipher: Boolean = false);
+		constructor Create(Password: WideString; CipherClass: TDCP_blockcipher128class; HashClass: TDCP_hashclass; PasswordControl: WideString = ''; DoFilenameCipher: Boolean = false);
 		destructor Destroy; override;
 
 		function CryptFile(SourceFileName, DestinationFilename: WideString): Integer;
@@ -118,6 +119,7 @@ type
 implementation
 
 uses
+	BlockCipher,
 	CipherStreams;
 
 {TPassThroughStream - lightweight read-only wrapper}
@@ -282,19 +284,12 @@ begin
 	end;
 end;
 
-constructor TFileCipher.Create(Password: WideString; CipherProfileId: WideString = ''; PasswordControl: WideString = ''; DoFilenameCipher: Boolean = false);
-var
-	Profile: TCipherProfile;
+constructor TFileCipher.Create(Password: WideString; CipherClass: TDCP_blockcipher128class; HashClass: TDCP_hashclass; PasswordControl: WideString = ''; DoFilenameCipher: Boolean = false);
 begin
 	self.Password := Password;
 	self.DoFilenameCipher := DoFilenameCipher;
-
-	{Resolve cipher profile -- empty or unknown falls back to legacy default}
-	if (CipherProfileId = EmptyWideStr) or not TCipherProfileRegistry.FindById(CipherProfileId, Profile) then
-		Profile := TCipherProfileRegistry.GetDefaultProfile;
-
-	self.FCipherClass := Profile.CipherClass;
-	self.FHashClass := Profile.HashClass;
+	self.FCipherClass := CipherClass;
+	self.FHashClass := HashClass;
 
 	{Password validation always uses legacy AES-256/SHA-1 regardless of profile,
 		because CryptedGUID was generated with that combination}
@@ -422,20 +417,20 @@ function TFileCipher.GetEncryptingStream(Source: TStream): TStream;
 var
 	Cipher: TDCP_blockcipher128;
 begin
-	{Create fresh cipher instance - stream takes ownership}
+	{Create fresh cipher instance, wrap in IBlockCipher adapter - stream takes ownership}
 	Cipher := self.FCipherClass.Create(nil);
 	Cipher.InitStr(self.Password, self.FHashClass);
-	Result := TEncryptingStream.Create(Source, Cipher);
+	Result := TEncryptingStream.Create(Source, TDCPCryptBlockCipher.Create(Cipher));
 end;
 
 function TFileCipher.GetDecryptingStream(Source: TStream): TStream;
 var
 	Cipher: TDCP_blockcipher128;
 begin
-	{Create fresh cipher instance - stream takes ownership}
+	{Create fresh cipher instance, wrap in IBlockCipher adapter - stream takes ownership}
 	Cipher := self.FCipherClass.Create(nil);
 	Cipher.InitStr(self.Password, self.FHashClass);
-	Result := TDecryptingStream.Create(Source, Cipher);
+	Result := TDecryptingStream.Create(Source, TDCPCryptBlockCipher.Create(Cipher));
 end;
 
 end.

@@ -406,7 +406,7 @@ object AccountsForm: TAccountsForm
             Height = 13
             Caption = 'Encrypt/decrypt files'
           end
-          object EncryptBackendLabel: TLabel
+          object CipherProfileLabel: TLabel
             Left = 8
             Top = 61
             Width = 94
@@ -454,7 +454,7 @@ object AccountsForm: TAccountsForm
             OnClick = FieldChanged
             ExplicitWidth = 316
           end
-          object EncryptBackendCombo: TComboBox
+          object CipherProfileCombo: TComboBox
             Left = 8
             Top = 80
             Width = 325
@@ -462,7 +462,7 @@ object AccountsForm: TAccountsForm
             Style = csDropDownList
             Anchors = [akLeft, akTop, akRight]
             TabOrder = 2
-            OnChange = EncryptBackendComboChange
+            OnChange = CipherProfileComboChange
           end
         end
       end

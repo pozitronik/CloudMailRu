@@ -8,8 +8,7 @@ uses
 	Classes,
 	System.SysUtils,
 	System.Math,
-	DCPcrypt2,
-	DCPblockciphers;
+	BlockCipher;
 
 const
 	{Buffer size for streaming encryption/decryption - 64KB for optimal I/O}
@@ -18,11 +17,11 @@ const
 type
 	{Stream wrapper that encrypts data on-the-fly during Read operations.
 		Uses CFB8 mode for byte-granular encryption with constant memory.
-		Takes ownership of the Cipher instance and frees it on destroy.}
+		Takes ownership of the Cipher instance (via interface ref counting).}
 	TEncryptingStream = class(TStream)
 	private
 		FSource: TStream;
-		FCipher: TDCP_blockcipher128;
+		FCipher: IBlockCipher;
 		FBuffer: TBytes;
 		FBufferPos: Integer;
 		FBufferLen: Integer;
@@ -31,7 +30,7 @@ type
 	protected
 		function GetSize: Int64; override;
 	public
-		constructor Create(Source: TStream; Cipher: TDCP_blockcipher128);
+		constructor Create(Source: TStream; Cipher: IBlockCipher);
 		destructor Destroy; override;
 		function Read(var Buffer; Count: Longint): Longint; override;
 		function Write(const Buffer; Count: Longint): Longint; override;
@@ -40,11 +39,11 @@ type
 
 	{Stream wrapper that decrypts data on-the-fly during Read operations.
 		Uses CFB8 mode for byte-granular decryption with constant memory.
-		Takes ownership of the Cipher instance and frees it on destroy.}
+		Takes ownership of the Cipher instance (via interface ref counting).}
 	TDecryptingStream = class(TStream)
 	private
 		FSource: TStream;
-		FCipher: TDCP_blockcipher128;
+		FCipher: IBlockCipher;
 		FBuffer: TBytes;
 		FBufferPos: Integer;
 		FBufferLen: Integer;
@@ -53,7 +52,7 @@ type
 	protected
 		function GetSize: Int64; override;
 	public
-		constructor Create(Source: TStream; Cipher: TDCP_blockcipher128);
+		constructor Create(Source: TStream; Cipher: IBlockCipher);
 		destructor Destroy; override;
 		function Read(var Buffer; Count: Longint): Longint; override;
 		function Write(const Buffer; Count: Longint): Longint; override;
@@ -64,7 +63,7 @@ implementation
 
 {TEncryptingStream - on-the-fly encryption wrapper}
 
-constructor TEncryptingStream.Create(Source: TStream; Cipher: TDCP_blockcipher128);
+constructor TEncryptingStream.Create(Source: TStream; Cipher: IBlockCipher);
 begin
 	inherited Create;
 	FSource := Source;
@@ -78,7 +77,7 @@ end;
 destructor TEncryptingStream.Destroy;
 begin
 	FCipher.Burn;
-	FCipher.Free;
+	FCipher := nil;
 	SetLength(FBuffer, 0);
 	inherited;
 end;
@@ -150,7 +149,7 @@ end;
 
 {TDecryptingStream - on-the-fly decryption wrapper}
 
-constructor TDecryptingStream.Create(Source: TStream; Cipher: TDCP_blockcipher128);
+constructor TDecryptingStream.Create(Source: TStream; Cipher: IBlockCipher);
 begin
 	inherited Create;
 	FSource := Source;
@@ -164,7 +163,7 @@ end;
 destructor TDecryptingStream.Destroy;
 begin
 	FCipher.Burn;
-	FCipher.Free;
+	FCipher := nil;
 	SetLength(FBuffer, 0);
 	inherited;
 end;

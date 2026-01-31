@@ -150,8 +150,8 @@ type
     NewExtButton: TButton;
     DeleteExtButton: TButton;
     StreamingExtensionsListView: TListView;
-    EncryptBackendLabel: TLabel;
-    EncryptBackendCombo: TComboBox;
+    CipherProfileLabel: TLabel;
+    CipherProfileCombo: TComboBox;
 		procedure FormShow(Sender: TObject);
 		procedure AccountsListViewKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
 		procedure AccountsListViewSelectItem(Sender: TObject; Item: TListItem; Selected: Boolean);
@@ -161,7 +161,7 @@ type
 		procedure PrivateRBClick(Sender: TObject);
 		procedure PublicRBClick(Sender: TObject);
 		procedure EncryptFilesComboChange(Sender: TObject);
-		procedure EncryptBackendComboChange(Sender: TObject);
+		procedure CipherProfileComboChange(Sender: TObject);
 		procedure EncryptFilesPwdButtonClick(Sender: TObject);
 		procedure FieldChanged(Sender: TObject);
 		class function ShowAccounts(ParentWindow: HWND; PasswordManager: IPasswordManager; Account: WideString): Boolean;
@@ -1140,31 +1140,31 @@ procedure TAccountsForm.SetCipherProfileItems(const Items: TArray<WideString>);
 var
 	I: Integer;
 begin
-	EncryptBackendCombo.Items.BeginUpdate;
+	CipherProfileCombo.Items.BeginUpdate;
 	try
-		EncryptBackendCombo.Items.Clear;
+		CipherProfileCombo.Items.Clear;
 		for I := 0 to High(Items) do
-			EncryptBackendCombo.Items.Add(Items[I]);
+			CipherProfileCombo.Items.Add(Items[I]);
 	finally
-		EncryptBackendCombo.Items.EndUpdate;
+		CipherProfileCombo.Items.EndUpdate;
 	end;
-	if EncryptBackendCombo.Items.Count > 0 then
-		EncryptBackendCombo.ItemIndex := 0;
+	if CipherProfileCombo.Items.Count > 0 then
+		CipherProfileCombo.ItemIndex := 0;
 end;
 
 procedure TAccountsForm.SetCipherProfileIndex(Value: Integer);
 begin
-	EncryptBackendCombo.ItemIndex := Value;
+	CipherProfileCombo.ItemIndex := Value;
 end;
 
 function TAccountsForm.GetCipherProfileIndex: Integer;
 begin
-	Result := EncryptBackendCombo.ItemIndex;
+	Result := CipherProfileCombo.ItemIndex;
 end;
 
 procedure TAccountsForm.SetCipherProfileEnabled(Value: Boolean);
 begin
-	EncryptBackendCombo.Enabled := Value;
+	CipherProfileCombo.Enabled := Value;
 end;
 
 function TAccountsForm.ShowCipherChangeWarning: Boolean;
@@ -1216,7 +1216,7 @@ begin
 	FPresenter.OnEncryptModeChanged;
 end;
 
-procedure TAccountsForm.EncryptBackendComboChange(Sender: TObject);
+procedure TAccountsForm.CipherProfileComboChange(Sender: TObject);
 begin
 	FPresenter.OnCipherProfileChanged;
 end;

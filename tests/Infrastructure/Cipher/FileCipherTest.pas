@@ -4,7 +4,13 @@ interface
 
 uses
 	FileCipher,
-	CipherProfile,
+	DCPcrypt2,
+	DCPblockciphers,
+	DCPrijndael,
+	DCPsha1,
+	DCPsha256,
+	DCPtwofish,
+	DCPserpent,
 	System.SysUtils,
 	System.IOUtils,
 	System.Classes,
@@ -21,9 +27,6 @@ type
 	[TestFixture]
 	TFileCipherTest = class
 	public
-		[SetupFixture]
-		class procedure SetupFixture;
-
 		{ Interface implementation test }
 		[Test]
 		procedure TestImplementsICipher;
@@ -104,7 +107,7 @@ type
 		[Test]
 		procedure TestCryptDecryptStreamEmptyStream;
 
-		{ Cipher profile tests }
+		{ Cipher algorithm tests }
 		[Test]
 		procedure TestConstructWithTwofishProfile;
 		[Test]
@@ -115,10 +118,6 @@ type
 		procedure TestDifferentProfilesProduceDifferentCiphertext;
 		[Test]
 		procedure TestLegacyProfileBackwardCompatibility;
-		[Test]
-		procedure TestEmptyProfileFallsBackToDefault;
-		[Test]
-		procedure TestUnknownProfileFallsBackToDefault;
 		[Test]
 		procedure TestGUIDValidationStableAcrossProfiles;
 	end;
@@ -143,7 +142,7 @@ procedure TFileCipherTest.TestImplementsICipher;
 var
 	Cipher: ICipher;
 begin
-	Cipher := TFileCipher.Create('testpassword');
+	Cipher := TFileCipher.Create('testpassword', TDCP_rijndael, TDCP_sha1);
 	Assert.IsNotNull(Cipher);
 end;
 
@@ -153,7 +152,7 @@ procedure TFileCipherTest.TestBase64ToSafePlusToMinus;
 var
 	Cipher: TFileCipherTestHelper;
 begin
-	Cipher := TFileCipherTestHelper.Create('testpassword');
+	Cipher := TFileCipherTestHelper.Create('testpassword', TDCP_rijndael, TDCP_sha1);
 	try
 		Assert.AreEqual('abc-def', Cipher.TestBase64ToSafe('abc+def'));
 	finally
@@ -165,7 +164,7 @@ procedure TFileCipherTest.TestBase64ToSafeSlashToUnderscore;
 var
 	Cipher: TFileCipherTestHelper;
 begin
-	Cipher := TFileCipherTestHelper.Create('testpassword');
+	Cipher := TFileCipherTestHelper.Create('testpassword', TDCP_rijndael, TDCP_sha1);
 	try
 		Assert.AreEqual('abc_def', Cipher.TestBase64ToSafe('abc/def'));
 	finally
@@ -177,7 +176,7 @@ procedure TFileCipherTest.TestBase64ToSafeMixedCharacters;
 var
 	Cipher: TFileCipherTestHelper;
 begin
-	Cipher := TFileCipherTestHelper.Create('testpassword');
+	Cipher := TFileCipherTestHelper.Create('testpassword', TDCP_rijndael, TDCP_sha1);
 	try
 		Assert.AreEqual('a-b_c-d_e', Cipher.TestBase64ToSafe('a+b/c+d/e'));
 	finally
@@ -189,7 +188,7 @@ procedure TFileCipherTest.TestBase64ToSafeNoSpecialChars;
 var
 	Cipher: TFileCipherTestHelper;
 begin
-	Cipher := TFileCipherTestHelper.Create('testpassword');
+	Cipher := TFileCipherTestHelper.Create('testpassword', TDCP_rijndael, TDCP_sha1);
 	try
 		{ String without + or / should remain unchanged }
 		Assert.AreEqual('abcdefgh', Cipher.TestBase64ToSafe('abcdefgh'));
@@ -202,7 +201,7 @@ procedure TFileCipherTest.TestBase64ToSafeEmptyString;
 var
 	Cipher: TFileCipherTestHelper;
 begin
-	Cipher := TFileCipherTestHelper.Create('testpassword');
+	Cipher := TFileCipherTestHelper.Create('testpassword', TDCP_rijndael, TDCP_sha1);
 	try
 		Assert.AreEqual('', Cipher.TestBase64ToSafe(''));
 	finally
@@ -216,7 +215,7 @@ procedure TFileCipherTest.TestBase64FromSafeMinusToPlus;
 var
 	Cipher: TFileCipherTestHelper;
 begin
-	Cipher := TFileCipherTestHelper.Create('testpassword');
+	Cipher := TFileCipherTestHelper.Create('testpassword', TDCP_rijndael, TDCP_sha1);
 	try
 		Assert.AreEqual('abc+def', Cipher.TestBase64FromSafe('abc-def'));
 	finally
@@ -228,7 +227,7 @@ procedure TFileCipherTest.TestBase64FromSafeUnderscoreToSlash;
 var
 	Cipher: TFileCipherTestHelper;
 begin
-	Cipher := TFileCipherTestHelper.Create('testpassword');
+	Cipher := TFileCipherTestHelper.Create('testpassword', TDCP_rijndael, TDCP_sha1);
 	try
 		Assert.AreEqual('abc/def', Cipher.TestBase64FromSafe('abc_def'));
 	finally
@@ -240,7 +239,7 @@ procedure TFileCipherTest.TestBase64FromSafeMixedCharacters;
 var
 	Cipher: TFileCipherTestHelper;
 begin
-	Cipher := TFileCipherTestHelper.Create('testpassword');
+	Cipher := TFileCipherTestHelper.Create('testpassword', TDCP_rijndael, TDCP_sha1);
 	try
 		Assert.AreEqual('a+b/c+d/e', Cipher.TestBase64FromSafe('a-b_c-d_e'));
 	finally
@@ -252,7 +251,7 @@ procedure TFileCipherTest.TestBase64FromSafeNoSpecialChars;
 var
 	Cipher: TFileCipherTestHelper;
 begin
-	Cipher := TFileCipherTestHelper.Create('testpassword');
+	Cipher := TFileCipherTestHelper.Create('testpassword', TDCP_rijndael, TDCP_sha1);
 	try
 		{ String without - or _ should remain unchanged }
 		Assert.AreEqual('abcdefgh', Cipher.TestBase64FromSafe('abcdefgh'));
@@ -265,7 +264,7 @@ procedure TFileCipherTest.TestBase64FromSafeEmptyString;
 var
 	Cipher: TFileCipherTestHelper;
 begin
-	Cipher := TFileCipherTestHelper.Create('testpassword');
+	Cipher := TFileCipherTestHelper.Create('testpassword', TDCP_rijndael, TDCP_sha1);
 	try
 		Assert.AreEqual('', Cipher.TestBase64FromSafe(''));
 	finally
@@ -280,7 +279,7 @@ var
 	Cipher: TFileCipherTestHelper;
 	Original, Safe, Restored: WideString;
 begin
-	Cipher := TFileCipherTestHelper.Create('testpassword');
+	Cipher := TFileCipherTestHelper.Create('testpassword', TDCP_rijndael, TDCP_sha1);
 	try
 		Original := 'abc+def/ghi+jkl/mno';
 		Safe := Cipher.TestBase64ToSafe(Original);
@@ -296,7 +295,7 @@ var
 	Cipher: TFileCipherTestHelper;
 	Original, Base64, Restored: WideString;
 begin
-	Cipher := TFileCipherTestHelper.Create('testpassword');
+	Cipher := TFileCipherTestHelper.Create('testpassword', TDCP_rijndael, TDCP_sha1);
 	try
 		Original := 'abc-def_ghi-jkl_mno';
 		Base64 := Cipher.TestBase64FromSafe(Original);
@@ -374,7 +373,7 @@ var
 	Result: WideString;
 begin
 	{ Empty filename should return empty string without leaking cipher resources }
-	Cipher := TFileCipher.Create('testpassword', '', true);
+	Cipher := TFileCipher.Create('testpassword', TDCP_rijndael, TDCP_sha1, '', true);
 	try
 		Result := Cipher.CryptFileName('');
 		Assert.AreEqual('', Result);
@@ -389,7 +388,7 @@ var
 	Result: WideString;
 begin
 	{ Empty filename should return empty string without leaking cipher resources }
-	Cipher := TFileCipher.Create('testpassword', '', true);
+	Cipher := TFileCipher.Create('testpassword', TDCP_rijndael, TDCP_sha1, '', true);
 	try
 		Result := Cipher.DecryptFileName('');
 		Assert.AreEqual('', Result);
@@ -404,7 +403,7 @@ var
 	Encrypted: WideString;
 begin
 	{ Valid filename should be encrypted when DoFilenameCipher is true }
-	Cipher := TFileCipher.Create('testpassword', '', true);
+	Cipher := TFileCipher.Create('testpassword', TDCP_rijndael, TDCP_sha1, '', true);
 	try
 		Encrypted := Cipher.CryptFileName('testfile.txt');
 		Assert.IsNotEmpty(Encrypted);
@@ -420,7 +419,7 @@ var
 	Encrypted, Decrypted: WideString;
 begin
 	{ Encrypted filename should decrypt back to original }
-	Cipher := TFileCipher.Create('testpassword', '', true);
+	Cipher := TFileCipher.Create('testpassword', TDCP_rijndael, TDCP_sha1, '', true);
 	try
 		Encrypted := Cipher.CryptFileName('myfile.dat');
 		Decrypted := Cipher.DecryptFileName(Encrypted);
@@ -439,7 +438,7 @@ var
 begin
 	{ Non-existent source file should return CIPHER_IO_ERROR without leaking streams.
 	  Before the fix, streams would leak on exception because Free was not in finally block. }
-	Cipher := TFileCipher.Create('testpassword');
+	Cipher := TFileCipher.Create('testpassword', TDCP_rijndael, TDCP_sha1);
 	try
 		ResultCode := Cipher.CryptFile('C:\NonExistent\File\That\Does\Not\Exist.txt', TPath.GetTempFileName);
 		Assert.AreEqual(CIPHER_IO_ERROR, ResultCode);
@@ -459,7 +458,7 @@ begin
 	SourceFile := TPath.GetTempFileName;
 	try
 		TFile.WriteAllText(SourceFile, 'test content');
-		Cipher := TFileCipher.Create('testpassword');
+		Cipher := TFileCipher.Create('testpassword', TDCP_rijndael, TDCP_sha1);
 		try
 			ResultCode := Cipher.CryptFile(SourceFile, 'Z:\Invalid\Path\That\Cannot\Be\Created\output.enc');
 			Assert.AreEqual(CIPHER_IO_ERROR, ResultCode);
@@ -479,7 +478,7 @@ var
 begin
 	{ Non-existent source file should return CIPHER_IO_ERROR without leaking streams.
 	  Before the fix, streams would leak on exception because Free was not in finally block. }
-	Cipher := TFileCipher.Create('testpassword');
+	Cipher := TFileCipher.Create('testpassword', TDCP_rijndael, TDCP_sha1);
 	try
 		ResultCode := Cipher.DecryptFile('C:\NonExistent\File\That\Does\Not\Exist.enc', TPath.GetTempFileName);
 		Assert.AreEqual(CIPHER_IO_ERROR, ResultCode);
@@ -499,7 +498,7 @@ begin
 	SourceFile := TPath.GetTempFileName;
 	try
 		TFile.WriteAllText(SourceFile, 'encrypted content placeholder');
-		Cipher := TFileCipher.Create('testpassword');
+		Cipher := TFileCipher.Create('testpassword', TDCP_rijndael, TDCP_sha1);
 		try
 			ResultCode := Cipher.DecryptFile(SourceFile, 'Z:\Invalid\Path\That\Cannot\Be\Created\output.txt');
 			Assert.AreEqual(CIPHER_IO_ERROR, ResultCode);
@@ -527,7 +526,7 @@ begin
 		OriginalContent := 'This is test content for encryption roundtrip testing. 1234567890!@#$%';
 		TFile.WriteAllText(SourceFile, OriginalContent);
 
-		Cipher := TFileCipher.Create('testpassword');
+		Cipher := TFileCipher.Create('testpassword', TDCP_rijndael, TDCP_sha1);
 		try
 			CryptResult := Cipher.CryptFile(SourceFile, EncryptedFile);
 			Assert.AreEqual(CIPHER_OK, CryptResult, 'Encryption should succeed');
@@ -560,7 +559,7 @@ begin
 	try
 		TFile.WriteAllText(SourceFile, ''); { Empty file }
 
-		Cipher := TFileCipher.Create('testpassword');
+		Cipher := TFileCipher.Create('testpassword', TDCP_rijndael, TDCP_sha1);
 		try
 			CryptResult := Cipher.CryptFile(SourceFile, EncryptedFile);
 			Assert.AreEqual(CIPHER_OK, CryptResult, 'Empty file encryption should succeed');
@@ -596,7 +595,7 @@ begin
 		SourceStream.WriteBuffer(OriginalBytes[0], Length(OriginalBytes));
 		SourceStream.Position := 0;
 
-		Cipher := TFileCipher.Create('testpassword');
+		Cipher := TFileCipher.Create('testpassword', TDCP_rijndael, TDCP_sha1);
 		try
 			Cipher.CryptStream(SourceStream, EncryptedStream);
 			Assert.IsTrue(EncryptedStream.Size > 0, 'Encrypted stream should have content');
@@ -634,7 +633,7 @@ begin
 	EncryptedStream := TMemoryStream.Create;
 	try
 		{ SourceStream is empty (Size = 0) }
-		Cipher := TFileCipher.Create('testpassword');
+		Cipher := TFileCipher.Create('testpassword', TDCP_rijndael, TDCP_sha1);
 		try
 			BytesEncrypted := Cipher.CryptStream(SourceStream, EncryptedStream);
 			Assert.AreEqual(0, BytesEncrypted, 'Empty stream should encrypt 0 bytes');
@@ -648,14 +647,7 @@ begin
 	end;
 end;
 
-{ SetupFixture - initialize cipher profile registry before any tests run }
-
-class procedure TFileCipherTest.SetupFixture;
-begin
-	TCipherProfileRegistry.Initialize;
-end;
-
-{ Cipher profile tests }
+{ Cipher algorithm tests }
 
 procedure TFileCipherTest.TestConstructWithTwofishProfile;
 var
@@ -672,7 +664,7 @@ begin
 		OriginalContent := 'Twofish profile roundtrip test content 1234567890';
 		TFile.WriteAllText(SourceFile, OriginalContent);
 
-		Cipher := TFileCipher.Create('testpassword', 'dcpcrypt-twofish256-cfb8-sha256');
+		Cipher := TFileCipher.Create('testpassword', TDCP_twofish, TDCP_sha256);
 		try
 			CryptResult := Cipher.CryptFile(SourceFile, EncryptedFile);
 			Assert.AreEqual(CIPHER_OK, CryptResult, 'Twofish encryption should succeed');
@@ -707,7 +699,7 @@ begin
 		OriginalContent := 'Serpent profile roundtrip test content 1234567890';
 		TFile.WriteAllText(SourceFile, OriginalContent);
 
-		Cipher := TFileCipher.Create('testpassword', 'dcpcrypt-serpent256-cfb8-sha256');
+		Cipher := TFileCipher.Create('testpassword', TDCP_serpent, TDCP_sha256);
 		try
 			CryptResult := Cipher.CryptFile(SourceFile, EncryptedFile);
 			Assert.AreEqual(CIPHER_OK, CryptResult, 'Serpent encryption should succeed');
@@ -742,7 +734,7 @@ begin
 		OriginalContent := 'AES-256/SHA-256 profile roundtrip test content 1234567890';
 		TFile.WriteAllText(SourceFile, OriginalContent);
 
-		Cipher := TFileCipher.Create('testpassword', 'dcpcrypt-aes256-cfb8-sha256');
+		Cipher := TFileCipher.Create('testpassword', TDCP_rijndael, TDCP_sha256);
 		try
 			CryptResult := Cipher.CryptFile(SourceFile, EncryptedFile);
 			Assert.AreEqual(CIPHER_OK, CryptResult, 'AES-256/SHA-256 encryption should succeed');
@@ -777,14 +769,14 @@ begin
 		OriginalContent := 'Content to verify different profiles produce different ciphertext';
 		TFile.WriteAllText(SourceFile, OriginalContent);
 
-		CipherAES := TFileCipher.Create('testpassword', 'dcpcrypt-aes256-cfb8-sha256');
+		CipherAES := TFileCipher.Create('testpassword', TDCP_rijndael, TDCP_sha256);
 		try
 			Assert.AreEqual(CIPHER_OK, CipherAES.CryptFile(SourceFile, EncryptedAES), 'AES encryption should succeed');
 		finally
 			CipherAES.Free;
 		end;
 
-		CipherTwofish := TFileCipher.Create('testpassword', 'dcpcrypt-twofish256-cfb8-sha256');
+		CipherTwofish := TFileCipher.Create('testpassword', TDCP_twofish, TDCP_sha256);
 		try
 			Assert.AreEqual(CIPHER_OK, CipherTwofish.CryptFile(SourceFile, EncryptedTwofish), 'Twofish encryption should succeed');
 		finally
@@ -807,118 +799,47 @@ end;
 
 procedure TFileCipherTest.TestLegacyProfileBackwardCompatibility;
 var
-	CipherExplicit, CipherEmpty: TFileCipher;
-	SourceFile, EncryptedExplicit, EncryptedEmpty: string;
+	CipherFirst, CipherSecond: TFileCipher;
+	SourceFile, EncryptedFirst, EncryptedSecond: string;
 	OriginalContent: string;
-	ExplicitBytes, EmptyBytes: TBytes;
+	FirstBytes, SecondBytes: TBytes;
 begin
-	{ Explicit legacy profile ID must produce byte-identical output to empty profile ID }
+	{ Two separate AES/SHA-1 instances with same password must produce byte-identical output,
+		ensuring deterministic encryption behavior for backward compatibility }
 	SourceFile := TPath.GetTempFileName;
-	EncryptedExplicit := TPath.GetTempFileName;
-	EncryptedEmpty := TPath.GetTempFileName;
+	EncryptedFirst := TPath.GetTempFileName;
+	EncryptedSecond := TPath.GetTempFileName;
 	try
 		OriginalContent := 'Legacy backward compatibility test content';
 		TFile.WriteAllText(SourceFile, OriginalContent);
 
-		CipherExplicit := TFileCipher.Create('testpassword', 'dcpcrypt-aes256-cfb8-sha1');
+		CipherFirst := TFileCipher.Create('testpassword', TDCP_rijndael, TDCP_sha1);
 		try
-			Assert.AreEqual(CIPHER_OK, CipherExplicit.CryptFile(SourceFile, EncryptedExplicit),
-				'Explicit legacy profile encryption should succeed');
+			Assert.AreEqual(CIPHER_OK, CipherFirst.CryptFile(SourceFile, EncryptedFirst),
+				'First instance encryption should succeed');
 		finally
-			CipherExplicit.Free;
+			CipherFirst.Free;
 		end;
 
-		CipherEmpty := TFileCipher.Create('testpassword', '');
+		CipherSecond := TFileCipher.Create('testpassword', TDCP_rijndael, TDCP_sha1);
 		try
-			Assert.AreEqual(CIPHER_OK, CipherEmpty.CryptFile(SourceFile, EncryptedEmpty),
-				'Empty profile encryption should succeed');
+			Assert.AreEqual(CIPHER_OK, CipherSecond.CryptFile(SourceFile, EncryptedSecond),
+				'Second instance encryption should succeed');
 		finally
-			CipherEmpty.Free;
+			CipherSecond.Free;
 		end;
 
-		ExplicitBytes := TFile.ReadAllBytes(EncryptedExplicit);
-		EmptyBytes := TFile.ReadAllBytes(EncryptedEmpty);
+		FirstBytes := TFile.ReadAllBytes(EncryptedFirst);
+		SecondBytes := TFile.ReadAllBytes(EncryptedSecond);
 
-		Assert.AreEqual(Length(ExplicitBytes), Length(EmptyBytes),
+		Assert.AreEqual(Length(FirstBytes), Length(SecondBytes),
 			'Encrypted files should have identical length');
-		Assert.AreEqual(TEncoding.ANSI.GetString(ExplicitBytes), TEncoding.ANSI.GetString(EmptyBytes),
-			'Explicit legacy profile and empty profile must produce byte-identical output');
+		Assert.AreEqual(TEncoding.ANSI.GetString(FirstBytes), TEncoding.ANSI.GetString(SecondBytes),
+			'Same cipher class refs must produce byte-identical output across instances');
 	finally
 		if TFile.Exists(SourceFile) then TFile.Delete(SourceFile);
-		if TFile.Exists(EncryptedExplicit) then TFile.Delete(EncryptedExplicit);
-		if TFile.Exists(EncryptedEmpty) then TFile.Delete(EncryptedEmpty);
-	end;
-end;
-
-procedure TFileCipherTest.TestEmptyProfileFallsBackToDefault;
-var
-	Cipher: TFileCipher;
-	SourceFile, EncryptedFile, DecryptedFile: string;
-	OriginalContent, DecryptedContent: string;
-	CryptResult, DecryptResult: Integer;
-begin
-	{ Empty profile ID should fall back to legacy default and work correctly }
-	SourceFile := TPath.GetTempFileName;
-	EncryptedFile := TPath.GetTempFileName;
-	DecryptedFile := TPath.GetTempFileName;
-	try
-		OriginalContent := 'Empty profile fallback test content 1234567890';
-		TFile.WriteAllText(SourceFile, OriginalContent);
-
-		Cipher := TFileCipher.Create('testpassword', '');
-		try
-			CryptResult := Cipher.CryptFile(SourceFile, EncryptedFile);
-			Assert.AreEqual(CIPHER_OK, CryptResult, 'Empty profile encryption should succeed');
-
-			DecryptResult := Cipher.DecryptFile(EncryptedFile, DecryptedFile);
-			Assert.AreEqual(CIPHER_OK, DecryptResult, 'Empty profile decryption should succeed');
-
-			DecryptedContent := TFile.ReadAllText(DecryptedFile);
-			Assert.AreEqual(OriginalContent, DecryptedContent,
-				'Empty profile decrypted content should match original');
-		finally
-			Cipher.Free;
-		end;
-	finally
-		if TFile.Exists(SourceFile) then TFile.Delete(SourceFile);
-		if TFile.Exists(EncryptedFile) then TFile.Delete(EncryptedFile);
-		if TFile.Exists(DecryptedFile) then TFile.Delete(DecryptedFile);
-	end;
-end;
-
-procedure TFileCipherTest.TestUnknownProfileFallsBackToDefault;
-var
-	Cipher: TFileCipher;
-	SourceFile, EncryptedFile, DecryptedFile: string;
-	OriginalContent, DecryptedContent: string;
-	CryptResult, DecryptResult: Integer;
-begin
-	{ Unknown profile ID should fall back to legacy default and work correctly }
-	SourceFile := TPath.GetTempFileName;
-	EncryptedFile := TPath.GetTempFileName;
-	DecryptedFile := TPath.GetTempFileName;
-	try
-		OriginalContent := 'Unknown profile fallback test content 1234567890';
-		TFile.WriteAllText(SourceFile, OriginalContent);
-
-		Cipher := TFileCipher.Create('testpassword', 'nonexistent-profile');
-		try
-			CryptResult := Cipher.CryptFile(SourceFile, EncryptedFile);
-			Assert.AreEqual(CIPHER_OK, CryptResult, 'Unknown profile encryption should succeed');
-
-			DecryptResult := Cipher.DecryptFile(EncryptedFile, DecryptedFile);
-			Assert.AreEqual(CIPHER_OK, DecryptResult, 'Unknown profile decryption should succeed');
-
-			DecryptedContent := TFile.ReadAllText(DecryptedFile);
-			Assert.AreEqual(OriginalContent, DecryptedContent,
-				'Unknown profile decrypted content should match original');
-		finally
-			Cipher.Free;
-		end;
-	finally
-		if TFile.Exists(SourceFile) then TFile.Delete(SourceFile);
-		if TFile.Exists(EncryptedFile) then TFile.Delete(EncryptedFile);
-		if TFile.Exists(DecryptedFile) then TFile.Delete(DecryptedFile);
+		if TFile.Exists(EncryptedFirst) then TFile.Delete(EncryptedFirst);
+		if TFile.Exists(EncryptedSecond) then TFile.Delete(EncryptedSecond);
 	end;
 end;
 
@@ -932,7 +853,7 @@ begin
 		instance was created with a different profile (Twofish). }
 	StoredGUID := TFileCipher.GetCryptedGUID('testpassword');
 
-	Cipher := TFileCipher.Create('testpassword', 'dcpcrypt-twofish256-cfb8-sha256', StoredGUID);
+	Cipher := TFileCipher.Create('testpassword', TDCP_twofish, TDCP_sha256, StoredGUID);
 	try
 		Assert.IsFalse(Cipher.IsWrongPassword,
 			'GUID validation should succeed regardless of cipher profile');

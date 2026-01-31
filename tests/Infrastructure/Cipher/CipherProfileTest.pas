@@ -4,13 +4,8 @@ interface
 
 uses
 	CipherProfile,
-	DCPcrypt2,
-	DCPblockciphers,
-	DCPrijndael,
-	DCPsha1,
-	DCPsha256,
-	DCPtwofish,
-	DCPserpent,
+	FileCipher,
+	Classes,
 	System.SysUtils,
 	DUnitX.TestFramework;
 
@@ -47,19 +42,17 @@ type
 		[Test]
 		procedure TestGetDefaultProfile_ReturnsLegacyProfile;
 		[Test]
-		procedure TestGetDefaultProfile_HasCorrectCipherClass;
-		[Test]
-		procedure TestGetDefaultProfile_HasCorrectHashClass;
+		procedure TestGetDefaultProfile_FactoryCreatesValidCipher;
 
 		{Profile ID uniqueness}
 		[Test]
 		procedure TestAllProfileIds_AreUnique;
 
-		{Class references are valid (can instantiate)}
+		{Factory functions produce valid ciphers}
 		[Test]
-		procedure TestAllProfiles_HaveValidCipherClasses;
+		procedure TestAllProfiles_HaveValidFactories;
 		[Test]
-		procedure TestAllProfiles_HaveValidHashClasses;
+		procedure TestFactory_LegacyProfile_CreatesWorkingCipher;
 
 		{Profile field completeness}
 		[Test]
@@ -146,14 +139,12 @@ begin
 	Assert.AreEqual(CIPHER_PROFILE_LEGACY_DEFAULT, TCipherProfileRegistry.GetDefaultProfile.Id);
 end;
 
-procedure TCipherProfileRegistryTest.TestGetDefaultProfile_HasCorrectCipherClass;
+procedure TCipherProfileRegistryTest.TestGetDefaultProfile_FactoryCreatesValidCipher;
+var
+	Cipher: ICipher;
 begin
-	Assert.AreEqual(TClass(TDCP_rijndael), TClass(TCipherProfileRegistry.GetDefaultProfile.CipherClass));
-end;
-
-procedure TCipherProfileRegistryTest.TestGetDefaultProfile_HasCorrectHashClass;
-begin
-	Assert.AreEqual(TClass(TDCP_sha1), TClass(TCipherProfileRegistry.GetDefaultProfile.HashClass));
+	Cipher := TCipherProfileRegistry.GetDefaultProfile.CreateCipher('testpass', '', False);
+	Assert.IsNotNull(Cipher, 'Default profile factory returned nil');
 end;
 
 {Profile ID uniqueness}
@@ -170,39 +161,62 @@ begin
 				Format('Profiles %d and %d have duplicate ID: %s', [I, J, Profiles[I].Id]));
 end;
 
-{Class references are valid}
+{Factory functions produce valid ciphers}
 
-procedure TCipherProfileRegistryTest.TestAllProfiles_HaveValidCipherClasses;
+procedure TCipherProfileRegistryTest.TestAllProfiles_HaveValidFactories;
 var
 	Profiles: TArray<TCipherProfile>;
 	I: Integer;
-	Cipher: TDCP_blockcipher128;
+	Cipher: ICipher;
 begin
 	Profiles := TCipherProfileRegistry.GetProfiles;
 	for I := 0 to High(Profiles) do
 	begin
-		Assert.IsNotNull(TObject(Profiles[I].CipherClass),
-			Format('Profile %s has nil CipherClass', [Profiles[I].Id]));
-		{Verify we can instantiate the cipher class}
-		Cipher := Profiles[I].CipherClass.Create(nil);
-		try
-			Assert.IsTrue(Cipher.MaxKeySize >= Profiles[I].KeySizeBits,
-				Format('Profile %s: MaxKeySize %d < declared %d', [Profiles[I].Id, Cipher.MaxKeySize, Profiles[I].KeySizeBits]));
-		finally
-			Cipher.Free;
-		end;
+		Cipher := Profiles[I].CreateCipher('testpass', '', False);
+		Assert.IsNotNull(Cipher,
+			Format('Profile %s factory returned nil', [Profiles[I].Id]));
 	end;
 end;
 
-procedure TCipherProfileRegistryTest.TestAllProfiles_HaveValidHashClasses;
+procedure TCipherProfileRegistryTest.TestFactory_LegacyProfile_CreatesWorkingCipher;
 var
-	Profiles: TArray<TCipherProfile>;
-	I: Integer;
+	Profile: TCipherProfile;
+	Cipher: ICipher;
+	Source, Encrypted, Decrypted: TMemoryStream;
+	TestData: AnsiString;
+	ResultData: AnsiString;
 begin
-	Profiles := TCipherProfileRegistry.GetProfiles;
-	for I := 0 to High(Profiles) do
-		Assert.IsNotNull(TObject(Profiles[I].HashClass),
-			Format('Profile %s has nil HashClass', [Profiles[I].Id]));
+	{Verify encrypt/decrypt roundtrip through the legacy profile factory}
+	Assert.IsTrue(TCipherProfileRegistry.FindById(CIPHER_PROFILE_LEGACY_DEFAULT, Profile));
+	Cipher := Profile.CreateCipher('roundtrip-password', '', False);
+
+	Source := TMemoryStream.Create;
+	Encrypted := TMemoryStream.Create;
+	Decrypted := TMemoryStream.Create;
+	try
+		TestData := 'Hello, cipher roundtrip test!';
+		Source.WriteBuffer(TestData[1], Length(TestData));
+		Source.Position := 0;
+
+		Cipher.CryptStream(Source, Encrypted);
+		Assert.IsTrue(Encrypted.Size > 0, 'Encrypted stream should not be empty');
+
+		{Need a fresh cipher instance for decryption -- cipher state is consumed}
+		Cipher := Profile.CreateCipher('roundtrip-password', '', False);
+		Encrypted.Position := 0;
+		Cipher.DecryptStream(Encrypted, Decrypted);
+
+		Assert.AreEqual(Int64(Length(TestData)), Decrypted.Size, 'Decrypted size must match original');
+
+		SetLength(ResultData, Decrypted.Size);
+		Decrypted.Position := 0;
+		Decrypted.ReadBuffer(ResultData[1], Decrypted.Size);
+		Assert.AreEqual(String(TestData), String(ResultData), 'Decrypted content must match original');
+	finally
+		Source.Free;
+		Encrypted.Free;
+		Decrypted.Free;
+	end;
 end;
 
 {Profile field completeness}
