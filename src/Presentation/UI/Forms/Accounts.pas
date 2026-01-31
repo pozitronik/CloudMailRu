@@ -176,8 +176,11 @@ type
 		procedure ApplyExtButtonClick(Sender: TObject);
 		procedure CommandPathButtonClick(Sender: TObject);
 		procedure ChangeUserAgentCBClick(Sender: TObject);
+		procedure GlobalSettingsFieldChanged(Sender: TObject);
+		procedure ProxyCBChange(Sender: TObject);
 	private
 		FPresenter: TAccountsPresenter;
+		procedure AutoFitListViewColumns(LV: TListView);
 
 		{IAccountsView - Global settings}
 		procedure SetLoadSSLFromPluginDir(Value: Boolean);
@@ -283,6 +286,12 @@ type
 		function GetStreamingType: Integer;
 		procedure SetStreamingApplyButtonEnabled(Value: Boolean);
 		function ConfirmDiscardStreamingChanges(const ExtensionName: WideString): TConfirmSaveResult;
+
+		{IAccountsView - Global settings apply state}
+		procedure SetGlobalSettingsApplyEnabled(Value: Boolean);
+
+		{IAccountsView - Proxy controls state}
+		procedure SetProxyControlsEnabled(Value: Boolean);
 
 		{IAccountsView - UI actions}
 		procedure ShowDescriptionFileNameError(Message: WideString);
@@ -767,6 +776,7 @@ begin
 	finally
 		StreamingExtensionsListView.Items.EndUpdate;
 	end;
+	AutoFitListViewColumns(StreamingExtensionsListView);
 end;
 
 function TAccountsForm.GetSelectedStreamingExtensionIndex: Integer;
@@ -866,6 +876,34 @@ begin
 	end;
 end;
 
+{IAccountsView - Global settings apply state}
+
+procedure TAccountsForm.SetGlobalSettingsApplyEnabled(Value: Boolean);
+begin
+	GlobalSettingsApplyBtn.Enabled := Value;
+	NetworkSettingsApplyBtn.Enabled := Value;
+	CommentsSettingsApplyBtn.Enabled := Value;
+end;
+
+{IAccountsView - Proxy controls state}
+
+procedure TAccountsForm.SetProxyControlsEnabled(Value: Boolean);
+begin
+	ProxyServerEdit.Enabled := Value;
+	ProxyPortEdit.Enabled := Value;
+	ProxyUserEdit.Enabled := Value;
+	ProxyPwd.Enabled := Value;
+	{ProxyTCPwdMngrCB state is refined by OnProxyUserChanged}
+end;
+
+{AutoFitListViewColumns - fills first column to remaining width}
+
+procedure TAccountsForm.AutoFitListViewColumns(LV: TListView);
+begin
+	if LV.Columns.Count >= 2 then
+		LV.Column[0].Width := LV.ClientWidth - LV.Column[1].Width;
+end;
+
 {IAccountsView - UI actions}
 
 procedure TAccountsForm.ShowDescriptionFileNameError(Message: WideString);
@@ -909,6 +947,7 @@ begin
 	finally
 		AccountsListView.Items.EndUpdate;
 	end;
+	AutoFitListViewColumns(AccountsListView);
 end;
 
 function TAccountsForm.GetSelectedAccountIndex: Integer;
@@ -1143,6 +1182,16 @@ end;
 procedure TAccountsForm.ChangeUserAgentCBClick(Sender: TObject);
 begin
 	FPresenter.OnChangeUserAgentChanged;
+end;
+
+procedure TAccountsForm.GlobalSettingsFieldChanged(Sender: TObject);
+begin
+	FPresenter.OnGlobalSettingsFieldChanged;
+end;
+
+procedure TAccountsForm.ProxyCBChange(Sender: TObject);
+begin
+	FPresenter.OnProxyTypeChanged;
 end;
 
 procedure TAccountsForm.CloudMaxFileSizeCBClick(Sender: TObject);

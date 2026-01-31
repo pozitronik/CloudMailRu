@@ -108,6 +108,12 @@ type
 		FConfirmDiscardResult: TConfirmSaveResult;
 		FConfirmDiscardCallCount: Integer;
 		FConfirmDiscardCallback: TProc;
+
+		{Global settings apply state}
+		FGlobalSettingsApplyEnabled: Boolean;
+
+		{Proxy controls state}
+		FProxyControlsEnabled: Boolean;
 	public
 		constructor Create;
 
@@ -216,6 +222,12 @@ type
 		procedure SetStreamingApplyButtonEnabled(Value: Boolean);
 		function ConfirmDiscardStreamingChanges(const ExtensionName: WideString): TConfirmSaveResult;
 
+		{IAccountsView - Global settings apply state}
+		procedure SetGlobalSettingsApplyEnabled(Value: Boolean);
+
+		{IAccountsView - Proxy controls state}
+		procedure SetProxyControlsEnabled(Value: Boolean);
+
 		{IAccountsView - UI actions}
 		procedure ShowDescriptionFileNameError(Message: WideString);
 		procedure ShowTab(TabIndex: Integer);
@@ -277,6 +289,8 @@ type
 		property ConfirmDiscardResult: TConfirmSaveResult read FConfirmDiscardResult write FConfirmDiscardResult;
 		property ConfirmDiscardCallCount: Integer read FConfirmDiscardCallCount;
 		property ConfirmDiscardCallback: TProc read FConfirmDiscardCallback write FConfirmDiscardCallback;
+		property GlobalSettingsApplyEnabled: Boolean read FGlobalSettingsApplyEnabled;
+		property ProxyControlsEnabled: Boolean read FProxyControlsEnabled;
 	end;
 
 	{Mock password manager for testing}
@@ -472,6 +486,32 @@ type
 		procedure TestLoadGlobalSettingsWithCustomUserAgent;
 		[Test]
 		procedure TestLoadGlobalSettingsWithProxyUser;
+
+		{Global settings dirty tracking tests}
+		[Test]
+		procedure TestGlobalSettingsApplyDisabledAfterInitialize;
+		[Test]
+		procedure TestGlobalSettingsApplyEnabledAfterFieldChanged;
+		[Test]
+		procedure TestGlobalSettingsApplyDisabledAfterApply;
+		[Test]
+		procedure TestGlobalSettingsFieldChangedIgnoredDuringLoad;
+		[Test]
+		procedure TestOnCloudMaxFileSizeCheckChangedMarksDirty;
+
+		{Proxy controls tests}
+		[Test]
+		procedure TestProxyControlsDisabledWhenNoProxy;
+		[Test]
+		procedure TestProxyControlsEnabledWhenSocks5;
+		[Test]
+		procedure TestProxyTypeChangeMarksDirty;
+		[Test]
+		procedure TestProxyTCPwdMngrDisabledWhenNoProxy;
+
+		{Speed limit default test}
+		[Test]
+		procedure TestSpeedLimitDefaultIsZero;
 	end;
 
 implementation
@@ -497,6 +537,8 @@ begin
 	FConfirmDiscardCallCount := 0;
 	FStreamingConfirmResult := csrDiscard;
 	FStreamingConfirmCallCount := 0;
+	FGlobalSettingsApplyEnabled := False;
+	FProxyControlsEnabled := True;
 end;
 
 {Global settings}
@@ -996,6 +1038,20 @@ begin
 	Result := FStreamingConfirmResult;
 end;
 
+{Global settings apply state}
+
+procedure TMockAccountsView.SetGlobalSettingsApplyEnabled(Value: Boolean);
+begin
+	FGlobalSettingsApplyEnabled := Value;
+end;
+
+{Proxy controls state}
+
+procedure TMockAccountsView.SetProxyControlsEnabled(Value: Boolean);
+begin
+	FProxyControlsEnabled := Value;
+end;
+
 {UI actions}
 
 procedure TMockAccountsView.ShowDescriptionFileNameError(Message: WideString);
@@ -1289,11 +1345,12 @@ end;
 procedure TAccountsPresenterTest.TestOnProxyUserChangedEnablesPasswordManager;
 begin
 	FPresenter.Initialize('');
+	FView.SetProxyType(ProxySocks5);
 	FView.SetProxyUser('testuser');
 
 	FPresenter.OnProxyUserChanged;
 
-	Assert.IsTrue(FView.ProxyTCPasswordManagerEnabled, 'Password manager checkbox should be enabled when user is set');
+	Assert.IsTrue(FView.ProxyTCPasswordManagerEnabled, 'Password manager checkbox should be enabled when user is set and proxy active');
 end;
 
 procedure TAccountsPresenterTest.TestOnProxyUserChangedDisablesPasswordManager;
@@ -1944,8 +2001,8 @@ begin
 
 	FPresenter.Initialize('');
 
-	Assert.AreEqual('Priv', FView.AccountsListItems[0].TypeLabel, 'Private account should show Priv');
-	Assert.AreEqual('Pub', FView.AccountsListItems[1].TypeLabel, 'Public account should show Pub');
+	Assert.AreEqual('Private', FView.AccountsListItems[0].TypeLabel, 'Private account should show Private');
+	Assert.AreEqual('Public', FView.AccountsListItems[1].TypeLabel, 'Public account should show Public');
 end;
 
 procedure TAccountsPresenterTest.TestAccountsListShowsCorrectEncryptionLabels;
@@ -2660,8 +2717,9 @@ procedure TAccountsPresenterTest.TestLoadGlobalSettingsWithProxyUser;
 var
 	Settings: TPluginSettings;
 begin
-	{Setup: Set proxy user}
+	{Setup: Set proxy user with active proxy type}
 	Settings := FSettingsManager.GetSettings;
+	Settings.ConnectionSettings.ProxySettings.ProxyType := ProxySocks5;
 	Settings.ConnectionSettings.ProxySettings.User := 'proxyuser';
 	Settings.ConnectionSettings.ProxySettings.Password := 'proxypass';
 	Settings.ConnectionSettings.ProxySettings.UseTCPasswordManager := True;
@@ -2673,6 +2731,120 @@ begin
 	Assert.AreEqual('proxypass', FView.GetProxyPassword, 'Proxy password should be loaded');
 	Assert.IsTrue(FView.GetProxyUseTCPasswordManager, 'Proxy TC password manager should be loaded');
 	Assert.IsTrue(FView.ProxyTCPasswordManagerEnabled, 'Proxy TC password manager checkbox should be enabled');
+	Assert.IsTrue(FView.ProxyControlsEnabled, 'Proxy controls should be enabled for Socks5');
+end;
+
+{Global settings dirty tracking tests}
+
+procedure TAccountsPresenterTest.TestGlobalSettingsApplyDisabledAfterInitialize;
+begin
+	FPresenter.Initialize('');
+
+	Assert.IsFalse(FView.GlobalSettingsApplyEnabled, 'Global settings Apply buttons should be disabled after Initialize');
+end;
+
+procedure TAccountsPresenterTest.TestGlobalSettingsApplyEnabledAfterFieldChanged;
+begin
+	FPresenter.Initialize('');
+
+	{Simulate user editing a global settings field}
+	FPresenter.OnGlobalSettingsFieldChanged;
+
+	Assert.IsTrue(FView.GlobalSettingsApplyEnabled, 'Global settings Apply buttons should be enabled after field change');
+end;
+
+procedure TAccountsPresenterTest.TestGlobalSettingsApplyDisabledAfterApply;
+begin
+	FPresenter.Initialize('');
+
+	{Mark dirty then apply}
+	FPresenter.OnGlobalSettingsFieldChanged;
+	Assert.IsTrue(FView.GlobalSettingsApplyEnabled, 'Apply should be enabled before save');
+
+	FView.SetDescriptionFileName('valid.txt');
+	FPresenter.OnApplyGlobalSettingsClick;
+
+	Assert.IsFalse(FView.GlobalSettingsApplyEnabled, 'Global settings Apply buttons should be disabled after successful Apply');
+end;
+
+procedure TAccountsPresenterTest.TestGlobalSettingsFieldChangedIgnoredDuringLoad;
+begin
+	{LoadGlobalSettingsToView sets many view fields, which would normally
+	 trigger dirty via OnChange handlers. The FGlobalSettingsUpdating guard
+	 must suppress this.}
+	FPresenter.Initialize('');
+
+	Assert.IsFalse(FView.GlobalSettingsApplyEnabled, 'Apply should remain disabled after LoadGlobalSettingsToView');
+end;
+
+procedure TAccountsPresenterTest.TestOnCloudMaxFileSizeCheckChangedMarksDirty;
+begin
+	FPresenter.Initialize('');
+	Assert.IsFalse(FView.GlobalSettingsApplyEnabled, 'Apply should start disabled');
+
+	FView.SetCloudMaxFileSizeEnabled(True);
+	FPresenter.OnCloudMaxFileSizeCheckChanged;
+
+	Assert.IsTrue(FView.GlobalSettingsApplyEnabled, 'Apply should be enabled after CloudMaxFileSize checkbox change');
+end;
+
+{Proxy controls tests}
+
+procedure TAccountsPresenterTest.TestProxyControlsDisabledWhenNoProxy;
+begin
+	FPresenter.Initialize('');
+
+	FView.SetProxyType(ProxyNone);
+	FPresenter.OnProxyTypeChanged;
+
+	Assert.IsFalse(FView.ProxyControlsEnabled, 'Proxy controls should be disabled when proxy type is None');
+end;
+
+procedure TAccountsPresenterTest.TestProxyControlsEnabledWhenSocks5;
+begin
+	FPresenter.Initialize('');
+
+	FView.SetProxyType(ProxySocks5);
+	FPresenter.OnProxyTypeChanged;
+
+	Assert.IsTrue(FView.ProxyControlsEnabled, 'Proxy controls should be enabled when proxy type is Socks5');
+end;
+
+procedure TAccountsPresenterTest.TestProxyTypeChangeMarksDirty;
+begin
+	FPresenter.Initialize('');
+	Assert.IsFalse(FView.GlobalSettingsApplyEnabled, 'Apply should start disabled');
+
+	FView.SetProxyType(ProxySocks5);
+	FPresenter.OnProxyTypeChanged;
+
+	Assert.IsTrue(FView.GlobalSettingsApplyEnabled, 'Apply should be enabled after proxy type change');
+end;
+
+procedure TAccountsPresenterTest.TestProxyTCPwdMngrDisabledWhenNoProxy;
+begin
+	FPresenter.Initialize('');
+
+	{Even with a proxy user set, password manager should be disabled
+	 when proxy type is None}
+	FView.SetProxyType(ProxyNone);
+	FView.SetProxyUser('testuser');
+	FPresenter.OnProxyTypeChanged;
+
+	Assert.IsFalse(FView.ProxyTCPasswordManagerEnabled, 'TC password manager should be disabled when proxy type is None');
+end;
+
+{Speed limit default test}
+
+procedure TAccountsPresenterTest.TestSpeedLimitDefaultIsZero;
+var
+	Settings: TPluginSettings;
+begin
+	{Verify that default speed limits are 0 (unlimited) rather than -1}
+	Settings := FSettingsManager.GetSettings;
+
+	Assert.AreEqual(0, Settings.ConnectionSettings.UploadBPS, 'Default UploadBPS should be 0');
+	Assert.AreEqual(0, Settings.ConnectionSettings.DownloadBPS, 'Default DownloadBPS should be 0');
 end;
 
 initialization

@@ -145,6 +145,12 @@ type
 		procedure SetStreamingApplyButtonEnabled(Value: Boolean);
 		function ConfirmDiscardStreamingChanges(const ExtensionName: WideString): TConfirmSaveResult;
 
+		{Global settings apply state}
+		procedure SetGlobalSettingsApplyEnabled(Value: Boolean);
+
+		{Proxy controls state}
+		procedure SetProxyControlsEnabled(Value: Boolean);
+
 		{UI actions}
 		procedure ShowDescriptionFileNameError(Message: WideString);
 		procedure ShowTab(TabIndex: Integer);
@@ -207,6 +213,10 @@ type
 		FUpdating: Boolean;
 		FCancellingSwitch: Boolean;
 
+		{Dirty tracking state - global settings (shared across Global/Network/Comments tabs)}
+		FGlobalSettingsDirty: Boolean;
+		FGlobalSettingsUpdating: Boolean;
+
 		{Dirty tracking state - streaming tab}
 		FStreamingSelectedExtension: WideString;
 		FStreamingDirty: Boolean;
@@ -225,6 +235,9 @@ type
 		function SaveAccountFromView: Boolean;
 		procedure SelectAccountByName(const Name: WideString);
 		function CheckDirty: Boolean;
+
+		{Global settings dirty tracking}
+		procedure SetGlobalSettingsDirty(Value: Boolean);
 
 		{Streaming tab helpers}
 		procedure SetStreamingDirty(Value: Boolean);
@@ -256,7 +269,9 @@ type
 		procedure OnApplyGlobalSettingsClick;
 		procedure OnCloudMaxFileSizeCheckChanged;
 		procedure OnProxyUserChanged;
+		procedure OnProxyTypeChanged;
 		procedure OnChangeUserAgentChanged;
+		procedure OnGlobalSettingsFieldChanged;
 
 		{Streaming extensions operations}
 		procedure OnStreamingExtensionSelected;
@@ -296,6 +311,8 @@ begin
 	FDirty := False;
 	FUpdating := False;
 	FCancellingSwitch := False;
+	FGlobalSettingsDirty := False;
+	FGlobalSettingsUpdating := False;
 	FStreamingSelectedExtension := '';
 	FStreamingDirty := False;
 	FStreamingUpdating := False;
@@ -344,67 +361,77 @@ procedure TAccountsPresenter.LoadGlobalSettingsToView;
 var
 	Settings: TPluginSettings;
 begin
-	Settings := FSettingsManager.GetSettings;
+	FGlobalSettingsUpdating := True;
+	try
+		Settings := FSettingsManager.GetSettings;
 
-	{General settings}
-	FView.SetLoadSSLFromPluginDir(Settings.LoadSSLDLLOnlyFromPluginDir);
-	FView.SetPreserveFileTime(Settings.PreserveFileTime);
-	FView.SetCopyBetweenAccountsMode(Settings.CopyBetweenAccountsMode);
+		{General settings}
+		FView.SetLoadSSLFromPluginDir(Settings.LoadSSLDLLOnlyFromPluginDir);
+		FView.SetPreserveFileTime(Settings.PreserveFileTime);
+		FView.SetCopyBetweenAccountsMode(Settings.CopyBetweenAccountsMode);
 
-	{Cloud max file size}
-	FView.SetCloudMaxFileSize(Settings.CloudMaxFileSize);
-	FView.SetCloudMaxFileSizeEnabled(Settings.CloudMaxFileSize <> CLOUD_MAX_FILESIZE_DEFAULT);
-	FView.SetCloudMaxFileSizeEditEnabled(Settings.CloudMaxFileSize <> CLOUD_MAX_FILESIZE_DEFAULT);
+		{Cloud max file size}
+		FView.SetCloudMaxFileSize(Settings.CloudMaxFileSize);
+		FView.SetCloudMaxFileSizeEnabled(Settings.CloudMaxFileSize <> CLOUD_MAX_FILESIZE_DEFAULT);
+		FView.SetCloudMaxFileSizeEditEnabled(Settings.CloudMaxFileSize <> CLOUD_MAX_FILESIZE_DEFAULT);
 
-	{Operation modes}
-	FView.SetChunkOverwriteMode(Settings.ChunkOverwriteMode);
-	FView.SetDeleteFailOnUploadMode(Settings.DeleteFailOnUploadMode);
-	FView.SetOverwriteLocalMode(Settings.OverwriteLocalMode);
-	FView.SetOperationErrorMode(Settings.OperationErrorMode);
-	FView.SetRetryAttempts(Settings.RetryAttempts);
-	FView.SetAttemptWait(Settings.AttemptWait);
+		{Operation modes}
+		FView.SetChunkOverwriteMode(Settings.ChunkOverwriteMode);
+		FView.SetDeleteFailOnUploadMode(Settings.DeleteFailOnUploadMode);
+		FView.SetOverwriteLocalMode(Settings.OverwriteLocalMode);
+		FView.SetOperationErrorMode(Settings.OperationErrorMode);
+		FView.SetRetryAttempts(Settings.RetryAttempts);
+		FView.SetAttemptWait(Settings.AttemptWait);
 
-	{Threading and logging}
-	FView.SetDisableMultiThreading(Settings.DisableMultiThreading);
-	FView.SetLogUserSpace(Settings.LogUserSpace);
-	FView.SetIconsMode(Settings.IconsMode);
+		{Threading and logging}
+		FView.SetDisableMultiThreading(Settings.DisableMultiThreading);
+		FView.SetLogUserSpace(Settings.LogUserSpace);
+		FView.SetIconsMode(Settings.IconsMode);
 
-	{Download/display settings}
-	FView.SetDownloadLinksEncode(Settings.DownloadLinksEncode);
-	FView.SetAutoUpdateDownloadListing(Settings.AutoUpdateDownloadListing);
-	FView.SetShowTrashFolders(Settings.ShowTrashFolders);
-	FView.SetShowSharedFolders(Settings.ShowSharedFolders);
-	FView.SetShowInvitesFolders(Settings.ShowInvitesFolders);
-	FView.SetPrecalculateHash(Settings.PrecalculateHash);
-	FView.SetCheckCRC(Settings.CheckCRC);
-	FView.SetHashCalculatorStrategy(Settings.HashCalculatorStrategy);
+		{Download/display settings}
+		FView.SetDownloadLinksEncode(Settings.DownloadLinksEncode);
+		FView.SetAutoUpdateDownloadListing(Settings.AutoUpdateDownloadListing);
+		FView.SetShowTrashFolders(Settings.ShowTrashFolders);
+		FView.SetShowSharedFolders(Settings.ShowSharedFolders);
+		FView.SetShowInvitesFolders(Settings.ShowInvitesFolders);
+		FView.SetPrecalculateHash(Settings.PrecalculateHash);
+		FView.SetCheckCRC(Settings.CheckCRC);
+		FView.SetHashCalculatorStrategy(Settings.HashCalculatorStrategy);
 
-	{Network settings}
-	FView.SetSocketTimeout(Settings.ConnectionSettings.SocketTimeout);
-	FView.SetUploadBPS(Settings.ConnectionSettings.UploadBPS);
-	FView.SetDownloadBPS(Settings.ConnectionSettings.DownloadBPS);
+		{Network settings}
+		FView.SetSocketTimeout(Settings.ConnectionSettings.SocketTimeout);
+		FView.SetUploadBPS(Settings.ConnectionSettings.UploadBPS);
+		FView.SetDownloadBPS(Settings.ConnectionSettings.DownloadBPS);
 
-	{Proxy settings}
-	FView.SetProxyType(Settings.ConnectionSettings.ProxySettings.ProxyType);
-	FView.SetProxyServer(Settings.ConnectionSettings.ProxySettings.Server);
-	FView.SetProxyPort(Settings.ConnectionSettings.ProxySettings.Port);
-	FView.SetProxyUser(Settings.ConnectionSettings.ProxySettings.User);
-	FView.SetProxyPassword(Settings.ConnectionSettings.ProxySettings.Password);
-	FView.SetProxyUseTCPasswordManager(Settings.ConnectionSettings.ProxySettings.UseTCPasswordManager);
-	FView.SetProxyTCPasswordManagerEnabled(Settings.ConnectionSettings.ProxySettings.User <> '');
+		{Proxy settings}
+		FView.SetProxyType(Settings.ConnectionSettings.ProxySettings.ProxyType);
+		FView.SetProxyServer(Settings.ConnectionSettings.ProxySettings.Server);
+		FView.SetProxyPort(Settings.ConnectionSettings.ProxySettings.Port);
+		FView.SetProxyUser(Settings.ConnectionSettings.ProxySettings.User);
+		FView.SetProxyPassword(Settings.ConnectionSettings.ProxySettings.Password);
+		FView.SetProxyUseTCPasswordManager(Settings.ConnectionSettings.ProxySettings.UseTCPasswordManager);
+		FView.SetProxyTCPasswordManagerEnabled(
+			(Settings.ConnectionSettings.ProxySettings.User <> '') and
+			(Settings.ConnectionSettings.ProxySettings.ProxyType <> ProxyNone)
+		);
+		FView.SetProxyControlsEnabled(Settings.ConnectionSettings.ProxySettings.ProxyType <> ProxyNone);
 
-	{User agent}
-	FView.SetUserAgent(Settings.ConnectionSettings.UserAgent);
-	FView.SetChangeUserAgent(Settings.ConnectionSettings.UserAgent <> DEFAULT_USERAGENT);
-	FView.SetUserAgentReadOnly(Settings.ConnectionSettings.UserAgent = DEFAULT_USERAGENT);
+		{User agent}
+		FView.SetUserAgent(Settings.ConnectionSettings.UserAgent);
+		FView.SetChangeUserAgent(Settings.ConnectionSettings.UserAgent <> DEFAULT_USERAGENT);
+		FView.SetUserAgentReadOnly(Settings.ConnectionSettings.UserAgent = DEFAULT_USERAGENT);
 
-	{Description settings}
-	FView.SetDescriptionEnabled(Settings.DescriptionEnabled);
-	FView.SetDescriptionEditorEnabled(Settings.DescriptionEditorEnabled);
-	FView.SetDescriptionCopyToCloud(Settings.DescriptionCopyToCloud);
-	FView.SetDescriptionCopyFromCloud(Settings.DescriptionCopyFromCloud);
-	FView.SetDescriptionTrackCloudFS(Settings.DescriptionTrackCloudFS);
-	FView.SetDescriptionFileName(Settings.DescriptionFileName);
+		{Description settings}
+		FView.SetDescriptionEnabled(Settings.DescriptionEnabled);
+		FView.SetDescriptionEditorEnabled(Settings.DescriptionEditorEnabled);
+		FView.SetDescriptionCopyToCloud(Settings.DescriptionCopyToCloud);
+		FView.SetDescriptionCopyFromCloud(Settings.DescriptionCopyFromCloud);
+		FView.SetDescriptionTrackCloudFS(Settings.DescriptionTrackCloudFS);
+		FView.SetDescriptionFileName(Settings.DescriptionFileName);
+	finally
+		FGlobalSettingsUpdating := False;
+	end;
+	SetGlobalSettingsDirty(False);
 end;
 
 procedure TAccountsPresenter.RefreshStreamingExtensionsList;
@@ -483,9 +510,9 @@ begin
 		AccSettings := FAccountsManager.GetAccountSettings(AccountsArray[I]);
 		Items[I].Name := AccountsArray[I];
 		if AccSettings.PublicAccount then
-			Items[I].TypeLabel := 'Pub'
+			Items[I].TypeLabel := 'Public'
 		else
-			Items[I].TypeLabel := 'Priv';
+			Items[I].TypeLabel := 'Private';
 		Items[I].EncryptionLabel := EncryptionModeToLabel(AccSettings.EncryptFilesMode);
 	end;
 	FView.SetAccountsList(Items);
@@ -826,6 +853,7 @@ begin
 	FSettingsManager.SetSettings(Settings);
 	FSettingsManager.Save;
 	FSettingsApplied := True;
+	SetGlobalSettingsDirty(False);
 
 	{Handle proxy password with TC password manager}
 	if FView.GetProxyUseTCPasswordManager then
@@ -840,19 +868,42 @@ begin
 	end;
 end;
 
+procedure TAccountsPresenter.SetGlobalSettingsDirty(Value: Boolean);
+begin
+	FGlobalSettingsDirty := Value;
+	FView.SetGlobalSettingsApplyEnabled(Value);
+end;
+
+procedure TAccountsPresenter.OnGlobalSettingsFieldChanged;
+begin
+	if not FGlobalSettingsUpdating then
+		SetGlobalSettingsDirty(True);
+end;
+
 procedure TAccountsPresenter.OnCloudMaxFileSizeCheckChanged;
 begin
 	FView.SetCloudMaxFileSizeEditEnabled(FView.GetCloudMaxFileSizeEnabled);
+	OnGlobalSettingsFieldChanged;
 end;
 
 procedure TAccountsPresenter.OnProxyUserChanged;
 begin
-	FView.SetProxyTCPasswordManagerEnabled(FView.GetProxyUser <> '');
+	FView.SetProxyTCPasswordManagerEnabled(
+		(FView.GetProxyUser <> '') and (FView.GetProxyType <> ProxyNone)
+	);
+	OnGlobalSettingsFieldChanged;
+end;
+
+procedure TAccountsPresenter.OnProxyTypeChanged;
+begin
+	FView.SetProxyControlsEnabled(FView.GetProxyType <> ProxyNone);
+	OnProxyUserChanged;
 end;
 
 procedure TAccountsPresenter.OnChangeUserAgentChanged;
 begin
 	FView.SetUserAgentReadOnly(not FView.GetChangeUserAgent);
+	OnGlobalSettingsFieldChanged;
 end;
 
 {Streaming tab helpers}

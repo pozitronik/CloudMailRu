@@ -255,8 +255,8 @@ begin
 		LogUserSpace := FConfigFile.ReadBool('Main', 'LogUserSpace', True);
 		IconsMode := FConfigFile.ReadInteger('Main', 'IconsMode', IconsModeDisabled);
 		ConnectionSettings.SocketTimeout := FConfigFile.ReadInteger('Main', 'SocketTimeout', DEFAULT_SOCKET_TIMEOUT);
-		ConnectionSettings.UploadBPS := FConfigFile.ReadInteger('Main', 'UploadBPS', -1);
-		ConnectionSettings.DownloadBPS := FConfigFile.ReadInteger('Main', 'DownloadBPS', -1);
+		ConnectionSettings.UploadBPS := FConfigFile.ReadInteger('Main', 'UploadBPS', DEFAULT_SPEED_LIMIT);
+		ConnectionSettings.DownloadBPS := FConfigFile.ReadInteger('Main', 'DownloadBPS', DEFAULT_SPEED_LIMIT);
 		CloudMaxFileSize := FConfigFile.ReadInt64('Main', 'CloudMaxFileSize', CLOUD_MAX_FILESIZE_DEFAULT);
 		ChunkOverwriteMode := FConfigFile.ReadInteger('Main', 'ChunkOverwriteMode', ChunkOverwrite);
 		DeleteFailOnUploadMode := FConfigFile.ReadInteger('Main', 'DeleteFailOnUploadMode', DeleteFailOnUploadAsk);
@@ -306,8 +306,8 @@ begin
 		FConfigFile.WriteBoolIfNotDefault('Main', 'LogUserSpace', LogUserSpace, True);
 		FConfigFile.WriteIntegerIfNotDefault('Main', 'IconsMode', IconsMode, IconsModeDisabled);
 		FConfigFile.WriteIntegerIfNotDefault('Main', 'SocketTimeout', ConnectionSettings.SocketTimeout, DEFAULT_SOCKET_TIMEOUT);
-		FConfigFile.WriteIntegerIfNotDefault('Main', 'UploadBPS', ConnectionSettings.UploadBPS, -1);
-		FConfigFile.WriteIntegerIfNotDefault('Main', 'DownloadBPS', ConnectionSettings.DownloadBPS, -1);
+		FConfigFile.WriteIntegerIfNotDefault('Main', 'UploadBPS', ConnectionSettings.UploadBPS, DEFAULT_SPEED_LIMIT);
+		FConfigFile.WriteIntegerIfNotDefault('Main', 'DownloadBPS', ConnectionSettings.DownloadBPS, DEFAULT_SPEED_LIMIT);
 		FConfigFile.WriteInt64IfNotDefault('Main', 'CloudMaxFileSize', CloudMaxFileSize, CLOUD_MAX_FILESIZE_DEFAULT);
 		FConfigFile.WriteIntegerIfNotDefault('Main', 'ChunkOverwriteMode', ChunkOverwriteMode, ChunkOverwrite);
 		FConfigFile.WriteIntegerIfNotDefault('Main', 'DeleteFailOnUploadMode', DeleteFailOnUploadMode, DeleteFailOnUploadAsk);

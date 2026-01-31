@@ -19,6 +19,7 @@ const
 	CLOUD_MAX_FILESIZE_DEFAULT = 2147483392; //$80000000-256
 	CLOUD_PRECALCULATE_LIMIT_DEFAULT = 20; //issue #231
 	DEFAULT_SOCKET_TIMEOUT = 30000; {30 seconds; 0 = unlimited}
+	DEFAULT_SPEED_LIMIT = 0; {0 = unlimited; positive value = bits per second}
 
 	ChunkOverwrite = 0;
 	ChunkOverwriteIgnore = 1;
