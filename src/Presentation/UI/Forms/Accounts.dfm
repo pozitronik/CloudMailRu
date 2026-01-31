@@ -530,7 +530,7 @@ object AccountsForm: TAccountsForm
         Caption = 'On downloads/uploads error:'
       end
       object RetryAttemptsLabel: TLabel
-        Left = 392
+        Left = 294
         Top = 121
         Width = 77
         Height = 13
@@ -542,7 +542,7 @@ object AccountsForm: TAccountsForm
         ShowHint = True
       end
       object RetryWaitLabel: TLabel
-        Left = 571
+        Left = 452
         Top = 121
         Width = 20
         Height = 13
@@ -552,7 +552,7 @@ object AccountsForm: TAccountsForm
         ShowHint = True
       end
       object msLabel: TLabel
-        Left = 697
+        Left = 562
         Top = 120
         Width = 13
         Height = 13
@@ -736,7 +736,6 @@ object AccountsForm: TAccountsForm
         Width = 126
         Height = 21
         Style = csDropDownList
-        Anchors = [akLeft, akTop, akRight]
         ItemIndex = 0
         TabOrder = 8
         Text = 'Ask user'
@@ -746,12 +745,11 @@ object AccountsForm: TAccountsForm
           'Ignore file'
           'Abort operation'
           'Retry with this file')
-        ExplicitWidth = 117
       end
       object AttemptWaitValue: TSpinEdit
-        Left = 597
+        Left = 478
         Top = 118
-        Width = 96
+        Width = 80
         Height = 22
         MaxValue = 2147483647
         MinValue = 0
@@ -760,9 +758,9 @@ object AccountsForm: TAccountsForm
         OnChange = GlobalSettingsFieldChanged
       end
       object RetryAttemptsValue: TSpinEdit
-        Left = 473
+        Left = 374
         Top = 118
-        Width = 96
+        Width = 72
         Height = 22
         MaxValue = 2147483647
         MinValue = -1
@@ -857,9 +855,9 @@ object AccountsForm: TAccountsForm
         ExplicitWidth = 416
       end
       object PrecalculateHashStrategyCombo: TComboBox
-        Left = 234
+        Left = 236
         Top = 349
-        Width = 376
+        Width = 374
         Height = 21
         Style = csDropDownList
         Anchors = [akLeft, akTop, akRight]
@@ -950,8 +948,8 @@ object AccountsForm: TAccountsForm
           Left = 5
           Top = 37
           Width = 596
-          Height = 22
-          Style = csOwnerDrawFixed
+          Height = 21
+          Style = csDropDownList
           Anchors = [akLeft, akTop, akRight]
           TabOrder = 0
           OnChange = ProxyCBChange
@@ -1115,6 +1113,15 @@ object AccountsForm: TAccountsForm
         Caption = 'Change plugin UserAgent'
         TabOrder = 3
         OnClick = ChangeUserAgentCBClick
+      end
+      object ResetUserAgentButton: TButton
+        Left = 162
+        Top = 321
+        Width = 80
+        Height = 21
+        Caption = 'Reset'
+        TabOrder = 6
+        OnClick = ResetUserAgentButtonClick
       end
     end
     object CommentsTab: TTabSheet

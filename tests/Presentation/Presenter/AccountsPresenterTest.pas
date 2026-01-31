@@ -62,6 +62,7 @@ type
 		FUserAgent: WideString;
 		FChangeUserAgent: Boolean;
 		FUserAgentReadOnly: Boolean;
+		FResetUserAgentEnabled: Boolean;
 
 		{Description settings}
 		FDescriptionEnabled: Boolean;
@@ -189,6 +190,7 @@ type
 		procedure SetChangeUserAgent(Value: Boolean);
 		function GetChangeUserAgent: Boolean;
 		procedure SetUserAgentReadOnly(Value: Boolean);
+		procedure SetResetUserAgentEnabled(Value: Boolean);
 
 		{IAccountsView - Description settings}
 		procedure SetDescriptionEnabled(Value: Boolean);
@@ -281,6 +283,7 @@ type
 		property CloudMaxFileSizeEditEnabled: Boolean read FCloudMaxFileSizeEditEnabled;
 		property ProxyTCPasswordManagerEnabled: Boolean read FProxyTCPasswordManagerEnabled;
 		property UserAgentReadOnly: Boolean read FUserAgentReadOnly;
+		property ResetUserAgentEnabled: Boolean read FResetUserAgentEnabled;
 		property StreamingDisplayItems: TArray<TStreamingDisplayItem> read FStreamingDisplayItems;
 		property StreamingSelectedIndex: Integer read FStreamingSelectedIndex write FStreamingSelectedIndex;
 		property StreamingApplyButtonEnabled: Boolean read FStreamingApplyButtonEnabled;
@@ -346,6 +349,14 @@ type
 		procedure TestOnChangeUserAgentChangedEnablesEdit;
 		[Test]
 		procedure TestOnChangeUserAgentChangedDisablesEdit;
+		[Test]
+		procedure TestOnResetUserAgentClickResetsToDefault;
+		[Test]
+		procedure TestResetUserAgentButtonDisabledAfterReset;
+		[Test]
+		procedure TestResetUserAgentButtonEnabledForCustomUA;
+		[Test]
+		procedure TestResetUserAgentButtonDisabledForDefaultUA;
 
 		{Global settings apply tests}
 		[Test]
@@ -890,6 +901,11 @@ begin
 	FUserAgentReadOnly := Value;
 end;
 
+procedure TMockAccountsView.SetResetUserAgentEnabled(Value: Boolean);
+begin
+	FResetUserAgentEnabled := Value;
+end;
+
 {Description settings}
 
 procedure TMockAccountsView.SetDescriptionEnabled(Value: Boolean);
@@ -1383,6 +1399,51 @@ begin
 	Assert.IsTrue(FView.UserAgentReadOnly, 'User agent edit should be read-only when checkbox is unchecked');
 end;
 
+procedure TAccountsPresenterTest.TestOnResetUserAgentClickResetsToDefault;
+begin
+	FPresenter.Initialize('');
+	FView.SetUserAgent('CustomAgent/1.0');
+	FView.SetChangeUserAgent(True);
+
+	FPresenter.OnResetUserAgentClick;
+
+	Assert.AreEqual(DEFAULT_USERAGENT, FView.GetUserAgent, 'User agent should be reset to default');
+	Assert.IsFalse(FView.GetChangeUserAgent, 'ChangeUserAgent checkbox should be unchecked after reset');
+	Assert.IsTrue(FView.UserAgentReadOnly, 'User agent edit should be read-only after reset');
+end;
+
+procedure TAccountsPresenterTest.TestResetUserAgentButtonDisabledAfterReset;
+begin
+	FPresenter.Initialize('');
+	FView.SetUserAgent('CustomAgent/1.0');
+	FView.SetChangeUserAgent(True);
+
+	FPresenter.OnResetUserAgentClick;
+
+	Assert.IsFalse(FView.ResetUserAgentEnabled, 'Reset button should be disabled after reset');
+end;
+
+procedure TAccountsPresenterTest.TestResetUserAgentButtonEnabledForCustomUA;
+var
+	OriginalSettings: TPluginSettings;
+begin
+	{Setup: Set a custom user agent}
+	OriginalSettings := FSettingsManager.GetSettings;
+	OriginalSettings.ConnectionSettings.UserAgent := 'CustomBrowser/2.0';
+	FSettingsManager.SetSettings(OriginalSettings);
+
+	FPresenter.Initialize('');
+
+	Assert.IsTrue(FView.ResetUserAgentEnabled, 'Reset button should be enabled for custom user agent');
+end;
+
+procedure TAccountsPresenterTest.TestResetUserAgentButtonDisabledForDefaultUA;
+begin
+	FPresenter.Initialize('');
+
+	Assert.IsFalse(FView.ResetUserAgentEnabled, 'Reset button should be disabled for default user agent');
+end;
+
 {Global settings apply tests}
 
 procedure TAccountsPresenterTest.TestOnApplyGlobalSettingsClickSavesSettings;
@@ -1526,7 +1587,7 @@ begin
 
 	FPresenter.Initialize('');
 
-	{Uncheck change user agent - should preserve existing}
+	{Uncheck change user agent - should reset to default}
 	FView.SetChangeUserAgent(False);
 	FView.SetUserAgent('Ignored/1.0');
 	FView.SetDescriptionFileName('valid.txt');
@@ -1534,9 +1595,9 @@ begin
 	FPresenter.OnApplyGlobalSettingsClick;
 
 	Settings := FSettingsManager.GetSettings;
-	{When ChangeUserAgent is False, the presenter doesn't update UserAgent}
-	Assert.AreEqual('OriginalAgent/1.0', Settings.ConnectionSettings.UserAgent,
-		'User agent should not be changed when ChangeUserAgent is unchecked');
+	{When ChangeUserAgent is False, the presenter resets UserAgent to default}
+	Assert.AreEqual(DEFAULT_USERAGENT, Settings.ConnectionSettings.UserAgent,
+		'User agent should be reset to default when ChangeUserAgent is unchecked');
 end;
 
 {Streaming extension tests}

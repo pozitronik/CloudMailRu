@@ -112,6 +112,7 @@ type
 		procedure SetChangeUserAgent(Value: Boolean);
 		function GetChangeUserAgent: Boolean;
 		procedure SetUserAgentReadOnly(Value: Boolean);
+		procedure SetResetUserAgentEnabled(Value: Boolean);
 
 		{Description settings}
 		procedure SetDescriptionEnabled(Value: Boolean);
@@ -271,6 +272,7 @@ type
 		procedure OnProxyUserChanged;
 		procedure OnProxyTypeChanged;
 		procedure OnChangeUserAgentChanged;
+		procedure OnResetUserAgentClick;
 		procedure OnGlobalSettingsFieldChanged;
 
 		{Streaming extensions operations}
@@ -420,6 +422,7 @@ begin
 		FView.SetUserAgent(Settings.ConnectionSettings.UserAgent);
 		FView.SetChangeUserAgent(Settings.ConnectionSettings.UserAgent <> DEFAULT_USERAGENT);
 		FView.SetUserAgentReadOnly(Settings.ConnectionSettings.UserAgent = DEFAULT_USERAGENT);
+		FView.SetResetUserAgentEnabled(Settings.ConnectionSettings.UserAgent <> DEFAULT_USERAGENT);
 
 		{Description settings}
 		FView.SetDescriptionEnabled(Settings.DescriptionEnabled);
@@ -839,7 +842,9 @@ begin
 
 	{User agent}
 	if FView.GetChangeUserAgent then
-		Settings.ConnectionSettings.UserAgent := FView.GetUserAgent;
+		Settings.ConnectionSettings.UserAgent := FView.GetUserAgent
+	else
+		Settings.ConnectionSettings.UserAgent := DEFAULT_USERAGENT;
 
 	{Description settings}
 	Settings.DescriptionEnabled := FView.GetDescriptionEnabled;
@@ -903,6 +908,16 @@ end;
 procedure TAccountsPresenter.OnChangeUserAgentChanged;
 begin
 	FView.SetUserAgentReadOnly(not FView.GetChangeUserAgent);
+	FView.SetResetUserAgentEnabled(FView.GetUserAgent <> DEFAULT_USERAGENT);
+	OnGlobalSettingsFieldChanged;
+end;
+
+procedure TAccountsPresenter.OnResetUserAgentClick;
+begin
+	FView.SetUserAgent(DEFAULT_USERAGENT);
+	FView.SetChangeUserAgent(False);
+	FView.SetUserAgentReadOnly(True);
+	FView.SetResetUserAgentEnabled(False);
 	OnGlobalSettingsFieldChanged;
 end;
 

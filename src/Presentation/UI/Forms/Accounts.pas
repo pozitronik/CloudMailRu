@@ -119,6 +119,7 @@ type
 		CommandPathOpenDialog: TOpenDialog;
 		UserAgentEdit: TEdit;
 		ChangeUserAgentCB: TCheckBox;
+		ResetUserAgentButton: TButton;
 		PrecalculateHashStrategyCombo: TComboBox;
 		AccountsListView: TListView;
 		AddButton: TButton;
@@ -176,6 +177,7 @@ type
 		procedure ApplyExtButtonClick(Sender: TObject);
 		procedure CommandPathButtonClick(Sender: TObject);
 		procedure ChangeUserAgentCBClick(Sender: TObject);
+		procedure ResetUserAgentButtonClick(Sender: TObject);
 		procedure GlobalSettingsFieldChanged(Sender: TObject);
 		procedure ProxyCBChange(Sender: TObject);
 	private
@@ -254,6 +256,7 @@ type
 		procedure SetChangeUserAgent(Value: Boolean);
 		function GetChangeUserAgent: Boolean;
 		procedure SetUserAgentReadOnly(Value: Boolean);
+		procedure SetResetUserAgentEnabled(Value: Boolean);
 
 		{IAccountsView - Description settings}
 		procedure SetDescriptionEnabled(Value: Boolean);
@@ -693,6 +696,11 @@ end;
 procedure TAccountsForm.SetUserAgentReadOnly(Value: Boolean);
 begin
 	UserAgentEdit.ReadOnly := Value;
+end;
+
+procedure TAccountsForm.SetResetUserAgentEnabled(Value: Boolean);
+begin
+	ResetUserAgentButton.Enabled := Value;
 end;
 
 {IAccountsView - Description settings}
@@ -1182,6 +1190,11 @@ end;
 procedure TAccountsForm.ChangeUserAgentCBClick(Sender: TObject);
 begin
 	FPresenter.OnChangeUserAgentChanged;
+end;
+
+procedure TAccountsForm.ResetUserAgentButtonClick(Sender: TObject);
+begin
+	FPresenter.OnResetUserAgentClick;
 end;
 
 procedure TAccountsForm.GlobalSettingsFieldChanged(Sender: TObject);
