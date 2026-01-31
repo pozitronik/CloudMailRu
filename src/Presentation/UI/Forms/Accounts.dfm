@@ -577,8 +577,8 @@ object AccountsForm: TAccountsForm
       end
       object GlobalSettingsApplyBtn: TButton
         Left = 586
-        Top = 417
-        Width = 126
+        Top = 419
+        Width = 124
         Height = 25
         Anchors = [akRight, akBottom]
         Caption = 'Apply'
@@ -950,8 +950,8 @@ object AccountsForm: TAccountsForm
       end
       object NetworkSettingsApplyBtn: TButton
         Left = 586
-        Top = 417
-        Width = 125
+        Top = 419
+        Width = 124
         Height = 25
         Anchors = [akRight, akBottom]
         Caption = 'Apply'
@@ -1077,8 +1077,8 @@ object AccountsForm: TAccountsForm
       end
       object CommentsSettingsApplyBtn: TButton
         Left = 586
-        Top = 417
-        Width = 125
+        Top = 419
+        Width = 124
         Height = 25
         Anchors = [akRight, akBottom]
         Caption = 'Apply'
