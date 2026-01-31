@@ -143,7 +143,7 @@ type
 		procedure SetStreamingType(Value: Integer);
 		function GetStreamingType: Integer;
 		procedure SetStreamingApplyButtonEnabled(Value: Boolean);
-		function ConfirmDiscardStreamingChanges: TConfirmSaveResult;
+		function ConfirmDiscardStreamingChanges(const ExtensionName: WideString): TConfirmSaveResult;
 
 		{UI actions}
 		procedure ShowDescriptionFileNameError(Message: WideString);
@@ -183,7 +183,7 @@ type
 		procedure SetAccountsPanelVisible(Value: Boolean);
 		procedure SetSharesPanelVisible(Value: Boolean);
 		procedure SetApplyButtonEnabled(Value: Boolean);
-		function ConfirmDiscardAccountChanges: TConfirmSaveResult;
+		function ConfirmDiscardAccountChanges(const AccountName: WideString): TConfirmSaveResult;
 	end;
 
 	{Configuration for accounts presenter - injected dependencies}
@@ -627,7 +627,7 @@ begin
 	 branch) survives beyond this method to block a post-handler comctl32 event.}
 	FUpdating := True;
 	try
-		case FView.ConfirmDiscardAccountChanges of
+		case FView.ConfirmDiscardAccountChanges(FSelectedAccount) of
 			csrSave:
 				SaveAccountFromView;
 			csrCancel:
@@ -969,7 +969,7 @@ begin
 
 	FStreamingUpdating := True;
 	try
-		case FView.ConfirmDiscardStreamingChanges of
+		case FView.ConfirmDiscardStreamingChanges(FStreamingSelectedExtension) of
 			csrSave:
 				SaveStreamingExtensionFromView;
 			csrCancel:

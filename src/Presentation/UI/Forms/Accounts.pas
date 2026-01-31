@@ -280,7 +280,7 @@ type
 		procedure SetStreamingType(Value: Integer);
 		function GetStreamingType: Integer;
 		procedure SetStreamingApplyButtonEnabled(Value: Boolean);
-		function ConfirmDiscardStreamingChanges: TConfirmSaveResult;
+		function ConfirmDiscardStreamingChanges(const ExtensionName: WideString): TConfirmSaveResult;
 
 		{IAccountsView - UI actions}
 		procedure ShowDescriptionFileNameError(Message: WideString);
@@ -320,7 +320,7 @@ type
 		procedure SetAccountsPanelVisible(Value: Boolean);
 		procedure SetSharesPanelVisible(Value: Boolean);
 		procedure SetApplyButtonEnabled(Value: Boolean);
-		function ConfirmDiscardAccountChanges: TConfirmSaveResult;
+		function ConfirmDiscardAccountChanges(const AccountName: WideString): TConfirmSaveResult;
 	public
 
 	end;
@@ -852,9 +852,9 @@ begin
 	ApplyExtButton.Enabled := Value;
 end;
 
-function TAccountsForm.ConfirmDiscardStreamingChanges: TConfirmSaveResult;
+function TAccountsForm.ConfirmDiscardStreamingChanges(const ExtensionName: WideString): TConfirmSaveResult;
 begin
-	case MessageDlg(ASK_SAVE_STREAMING_CHANGES, mtConfirmation, [mbYes, mbNo, mbCancel], 0) of
+	case MessageDlg(Format(ASK_SAVE_STREAMING_CHANGES, [ExtensionName]), mtConfirmation, [mbYes, mbNo, mbCancel], 0) of
 		mrYes:
 			Result := csrSave;
 		mrNo:
@@ -1066,9 +1066,9 @@ begin
 	ApplyButton.Enabled := Value;
 end;
 
-function TAccountsForm.ConfirmDiscardAccountChanges: TConfirmSaveResult;
+function TAccountsForm.ConfirmDiscardAccountChanges(const AccountName: WideString): TConfirmSaveResult;
 begin
-	case MessageDlg(ASK_SAVE_ACCOUNT_CHANGES, mtConfirmation, [mbYes, mbNo, mbCancel], 0) of
+	case MessageDlg(Format(ASK_SAVE_ACCOUNT_CHANGES, [AccountName]), mtConfirmation, [mbYes, mbNo, mbCancel], 0) of
 		mrYes:
 			Result := csrSave;
 		mrNo:

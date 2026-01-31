@@ -214,7 +214,7 @@ type
 		procedure SetStreamingType(Value: Integer);
 		function GetStreamingType: Integer;
 		procedure SetStreamingApplyButtonEnabled(Value: Boolean);
-		function ConfirmDiscardStreamingChanges: TConfirmSaveResult;
+		function ConfirmDiscardStreamingChanges(const ExtensionName: WideString): TConfirmSaveResult;
 
 		{IAccountsView - UI actions}
 		procedure ShowDescriptionFileNameError(Message: WideString);
@@ -254,7 +254,7 @@ type
 		procedure SetAccountsPanelVisible(Value: Boolean);
 		procedure SetSharesPanelVisible(Value: Boolean);
 		procedure SetApplyButtonEnabled(Value: Boolean);
-		function ConfirmDiscardAccountChanges: TConfirmSaveResult;
+		function ConfirmDiscardAccountChanges(const AccountName: WideString): TConfirmSaveResult;
 
 		{Test access properties}
 		property AccountsListItems: TArray<TAccountDisplayItem> read FAccountsListItems;
@@ -990,7 +990,7 @@ begin
 	FStreamingApplyButtonEnabled := Value;
 end;
 
-function TMockAccountsView.ConfirmDiscardStreamingChanges: TConfirmSaveResult;
+function TMockAccountsView.ConfirmDiscardStreamingChanges(const ExtensionName: WideString): TConfirmSaveResult;
 begin
 	Inc(FStreamingConfirmCallCount);
 	Result := FStreamingConfirmResult;
@@ -1170,7 +1170,7 @@ begin
 	FApplyButtonEnabled := Value;
 end;
 
-function TMockAccountsView.ConfirmDiscardAccountChanges: TConfirmSaveResult;
+function TMockAccountsView.ConfirmDiscardAccountChanges(const AccountName: WideString): TConfirmSaveResult;
 begin
 	Inc(FConfirmDiscardCallCount);
 	{Callback simulates VCL focus-change events that fire when a modal dialog

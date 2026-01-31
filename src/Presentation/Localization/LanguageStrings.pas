@@ -9,8 +9,8 @@ const
 	ASK_AUTH_KEY = 'Enter auth key';
 	ASK_CONTINUE = 'Continue operation?';
 	ASK_ENCRYPTION_PASSWORD = '%s encryption password';
-	ASK_SAVE_ACCOUNT_CHANGES = 'Save changes to the current account?';
-	ASK_SAVE_STREAMING_CHANGES = 'Save changes to the current streaming extension?';
+	ASK_SAVE_ACCOUNT_CHANGES = 'Save changes to account "%s"?';
+	ASK_SAVE_STREAMING_CHANGES = 'Save changes to streaming extension "%s"?';
 	ASK_PASSWORD = '%s password';
 	ASK_PROXY_PASSWORD = 'User %s proxy password';
 	ASK_SENT_CODE = 'Enter code sent to %s.';
