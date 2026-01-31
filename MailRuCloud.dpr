@@ -38,12 +38,16 @@ uses
 	DCPconst in 'src\libs\DCPCrypt\DCPconst.pas',
 	DCPcrypt2 in 'src\libs\DCPCrypt\DCPcrypt2.pas',
 	DCPrijndael in 'src\libs\DCPCrypt\Ciphers\DCPrijndael.pas',
+	DCPtwofish in 'src\libs\DCPCrypt\Ciphers\DCPtwofish.pas',
+	DCPserpent in 'src\libs\DCPCrypt\Ciphers\DCPserpent.pas',
 	DCPsha1 in 'src\libs\DCPCrypt\Hashes\DCPsha1.pas',
+	DCPsha256 in 'src\libs\DCPCrypt\Hashes\DCPsha256.pas',
 	DCPtypes in 'src\libs\DCPCrypt\DCPtypes.pas',
 	DateUtils,
 	DeletedProperty in 'src\Presentation\UI\Forms\DeletedProperty.pas' {DeletedPropertyForm} ,
 	Description in 'src\Domain\Services\Description.pas',
 	FileCipher in 'src\Infrastructure\Cipher\FileCipher.pas',
+	CipherProfile in 'src\Infrastructure\Cipher\CipherProfile.pas',
 	CipherStreams in 'src\Infrastructure\Cipher\CipherStreams.pas',
 	FileHelper in 'src\Infrastructure\IO\FileHelper.pas',
 	FileSplitInfo in 'src\Infrastructure\IO\FileSplitInfo.pas',
@@ -279,6 +283,7 @@ end;
 
 procedure InitPluginData;
 begin
+	TCipherProfileRegistry.Initialize;
 	MailRuCloudWFX := TWFXApplication.Create();
 end;
 

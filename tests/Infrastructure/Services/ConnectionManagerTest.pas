@@ -119,6 +119,18 @@ type
 		procedure TestFreeMultipleTimes;
 	end;
 
+	[TestFixture]
+	TConnectionManagerCipherProfileTest = class
+	public
+		[Test]
+		{Verifies account with CipherProfileId can create connection without errors (public account, encryption disabled)}
+		procedure TestConnectionCreatedWithCipherProfileInSettings;
+
+		[Test]
+		{Verifies account with empty CipherProfileId creates connection without errors}
+		procedure TestConnectionCreatedWithEmptyCipherProfileInSettings;
+	end;
+
 implementation
 
 uses
@@ -545,10 +557,95 @@ begin
 	end;
 end;
 
+{TConnectionManagerCipherProfileTest}
+
+procedure TConnectionManagerCipherProfileTest.TestConnectionCreatedWithCipherProfileInSettings;
+var
+	Manager: TConnectionManager;
+	PluginSettings: IPluginSettingsManager;
+	AccountsManager: TMockAccountsManager;
+	HTTPManager: IHTTPManager;
+	PasswordUI: IPasswordUIProvider;
+	CipherValidator: ICipherValidator;
+	FileSystem: IFileSystem;
+	Progress: IProgress;
+	Logger: ILogger;
+	Request: IRequest;
+	PasswordManager: IPasswordManager;
+	Cloud: TCloudMailRu;
+begin
+	{CipherProfileId in account settings should not break connection creation.
+		Uses public account (encryption path is skipped), but the field is still
+		present in TCloudSettings -- verifying no crash from stale/unexpected value.}
+	AccountsManager := TMockAccountsManager.Create;
+	AccountsManager.FAccountSettings.PublicAccount := True;
+	AccountsManager.FAccountSettings.CipherProfileId := 'dcpcrypt-twofish256-cfb8-sha256';
+
+	PluginSettings := TMockPluginSettingsManager.Create;
+	HTTPManager := TNullHTTPManager.Create;
+	PasswordUI := TNullPasswordUIProvider.Create;
+	CipherValidator := TNullCipherValidator.Create;
+	FileSystem := TNullFileSystem.Create;
+	Progress := TNullProgress.Create;
+	Logger := TNullLogger.Create;
+	Request := TNullRequest.Create;
+	PasswordManager := TNullPasswordManager.Create;
+
+	Manager := TConnectionManager.Create(PluginSettings, AccountsManager, HTTPManager,
+		PasswordUI, CipherValidator, FileSystem, Progress, Logger, Request, PasswordManager, TNullTCHandler.Create, TNullAuthStrategyFactory.Create, TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create);
+	try
+		Cloud := Manager.Get('cipher_profile_test');
+		Assert.IsNotNull(Cloud, 'Connection should be created despite CipherProfileId in settings');
+	finally
+		Manager.Destroy;
+	end;
+end;
+
+procedure TConnectionManagerCipherProfileTest.TestConnectionCreatedWithEmptyCipherProfileInSettings;
+var
+	Manager: TConnectionManager;
+	PluginSettings: IPluginSettingsManager;
+	AccountsManager: TMockAccountsManager;
+	HTTPManager: IHTTPManager;
+	PasswordUI: IPasswordUIProvider;
+	CipherValidator: ICipherValidator;
+	FileSystem: IFileSystem;
+	Progress: IProgress;
+	Logger: ILogger;
+	Request: IRequest;
+	PasswordManager: IPasswordManager;
+	Cloud: TCloudMailRu;
+begin
+	{Empty CipherProfileId (default for existing accounts) should not cause errors}
+	AccountsManager := TMockAccountsManager.Create;
+	AccountsManager.FAccountSettings.PublicAccount := True;
+	AccountsManager.FAccountSettings.CipherProfileId := '';
+
+	PluginSettings := TMockPluginSettingsManager.Create;
+	HTTPManager := TNullHTTPManager.Create;
+	PasswordUI := TNullPasswordUIProvider.Create;
+	CipherValidator := TNullCipherValidator.Create;
+	FileSystem := TNullFileSystem.Create;
+	Progress := TNullProgress.Create;
+	Logger := TNullLogger.Create;
+	Request := TNullRequest.Create;
+	PasswordManager := TNullPasswordManager.Create;
+
+	Manager := TConnectionManager.Create(PluginSettings, AccountsManager, HTTPManager,
+		PasswordUI, CipherValidator, FileSystem, Progress, Logger, Request, PasswordManager, TNullTCHandler.Create, TNullAuthStrategyFactory.Create, TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create);
+	try
+		Cloud := Manager.Get('empty_cipher_profile_test');
+		Assert.IsNotNull(Cloud, 'Connection should be created with empty CipherProfileId');
+	finally
+		Manager.Destroy;
+	end;
+end;
+
 initialization
 
 TDUnitX.RegisterTestFixture(TConnectionManagerConstructorTest);
 TDUnitX.RegisterTestFixture(TConnectionManagerGetTest);
 TDUnitX.RegisterTestFixture(TConnectionManagerFreeTest);
+TDUnitX.RegisterTestFixture(TConnectionManagerCipherProfileTest);
 
 end.

@@ -146,6 +146,7 @@ begin
 	Result.Description := FConfigFile.ReadString(Account, 'description', EmptyWideStr);
 	Result.EncryptFilesMode := FConfigFile.ReadInteger(Account, 'encrypt_files_mode', EncryptModeNone);
 	Result.EncryptFileNames := FConfigFile.ReadBool(Account, 'encrypt_filenames', False);
+	Result.CipherProfileId := FConfigFile.ReadString(Account, 'encrypt_cipher_profile', EmptyWideStr);
 	Result.ShardOverride := FConfigFile.ReadString(Account, 'shard_override', EmptyWideStr);
 	Result.UploadUrlOverride := FConfigFile.ReadString(Account, 'upload_url_override', EmptyWideStr);
 	Result.CryptedGUIDFiles := FConfigFile.ReadString(Account, 'CryptedGUID_files', EmptyWideStr);
@@ -166,6 +167,7 @@ begin
 	FConfigFile.WriteStringIfNotDefault(Account, 'description', AccountSettings.Description, EmptyWideStr);
 	FConfigFile.WriteIntegerIfNotDefault(Account, 'encrypt_files_mode', AccountSettings.EncryptFilesMode, EncryptModeNone);
 	FConfigFile.WriteBoolIfNotDefault(Account, 'encrypt_filenames', AccountSettings.EncryptFileNames, False);
+	FConfigFile.WriteStringIfNotDefault(Account, 'encrypt_cipher_profile', AccountSettings.CipherProfileId, EmptyWideStr);
 	FConfigFile.WriteIntegerIfNotDefault(Account, 'auth_method', AccountSettings.AuthMethod, 0);
 	FConfigFile.WriteBoolIfNotDefault(Account, 'use_app_password', AccountSettings.UseAppPassword, False);
 end;

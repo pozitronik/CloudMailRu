@@ -1,12 +1,8 @@
 unit FileCipher;
 
-{Combined unit for encryption operations: interface, null implementation, and AES/Rijndael implementation}
-
-{TODO: Consider implementing alternative cipher backends for hardware acceleration:
-	- BCrypt/CNG (Windows native, AES-NI support, CFB-8 via BCRYPT_MESSAGE_BLOCK_LENGTH)
-	- OpenSSL EVP (cross-platform, hardware acceleration)
-	Current DCPCrypt implementation works but lacks hardware acceleration.
-	Key challenge: maintaining byte-identical output for backward compatibility with existing encrypted files.}
+{Combined unit for encryption operations: interface, null implementation, and profile-based implementation.
+	Cipher profiles allow selecting different algorithms (AES, Twofish, Serpent) and KDF hashes per account.
+	BCrypt/OpenSSL backends can be added as additional profiles without changing this unit.}
 
 interface
 
@@ -19,7 +15,11 @@ uses
 	DCPblockciphers,
 	DCPrijndael,
 	DCPSha1,
-	DCPbase64;
+	DCPsha256,
+	DCPtwofish,
+	DCPserpent,
+	DCPbase64,
+	CipherProfile;
 
 const
 	{Cipher operation result codes}
@@ -76,12 +76,14 @@ type
 		function GetDecryptingStream(Source: TStream): TStream;
 	end;
 
-	{Production implementation using AES/Rijndael encryption}
+	{Production implementation using configurable cipher profiles}
 	TFileCipher = class(TInterfacedObject, ICipher)
 	private
 		Password: WideString;
-		FFileCipher: TDCP_rijndael; {The cipher used to encrypt files and streams}
-		FilenameCipher: TDCP_rijndael; {The cipher used to encrypt filenames}
+		FCipherClass: TDCP_blockcipher128class;
+		FHashClass: TDCP_hashclass;
+		FFileCipher: TDCP_blockcipher128; {The cipher used to encrypt files and streams}
+		FilenameCipher: TDCP_blockcipher128; {The cipher used to encrypt filenames}
 		DoFilenameCipher: Boolean; {Do filenames encryption}
 		PasswordIsWrong: Boolean; {The wrong password flag}
 
@@ -92,7 +94,7 @@ type
 		function Base64ToSafe(const Base64: WideString): WideString; {Safely converts Base64-encoded string to URL and filename (RFC 4648)}
 		function Base64FromSafe(const Safe: WideString): WideString; {Converts a string (assuming to be an url or a filename) to a Base64 format}
 	public
-		constructor Create(Password: WideString; PasswordControl: WideString = ''; DoFilenameCipher: Boolean = false);
+		constructor Create(Password: WideString; CipherProfileId: WideString = ''; PasswordControl: WideString = ''; DoFilenameCipher: Boolean = false);
 		destructor Destroy; override;
 
 		function CryptFile(SourceFileName, DestinationFilename: WideString): Integer;
@@ -271,25 +273,35 @@ end;
 
 procedure TFileCipher.CiphersInit;
 begin
-	self.FFileCipher := TDCP_rijndael.Create(nil);
-	self.FFileCipher.InitStr(self.Password, TDCP_sha1);
+	self.FFileCipher := self.FCipherClass.Create(nil);
+	self.FFileCipher.InitStr(self.Password, self.FHashClass);
 	if self.DoFilenameCipher then
 	begin
-		self.FilenameCipher := TDCP_rijndael.Create(nil);
-		self.FilenameCipher.InitStr(self.Password, TDCP_sha1);
+		self.FilenameCipher := self.FCipherClass.Create(nil);
+		self.FilenameCipher.InitStr(self.Password, self.FHashClass);
 	end;
-
 end;
 
-constructor TFileCipher.Create(Password: WideString; PasswordControl: WideString = ''; DoFilenameCipher: Boolean = false);
+constructor TFileCipher.Create(Password: WideString; CipherProfileId: WideString = ''; PasswordControl: WideString = ''; DoFilenameCipher: Boolean = false);
+var
+	Profile: TCipherProfile;
 begin
 	self.Password := Password;
 	self.DoFilenameCipher := DoFilenameCipher;
 
-	self.CiphersInit();
+	{Resolve cipher profile -- empty or unknown falls back to legacy default}
+	if (CipherProfileId = EmptyWideStr) or not TCipherProfileRegistry.FindById(CipherProfileId, Profile) then
+		Profile := TCipherProfileRegistry.GetDefaultProfile;
+
+	self.FCipherClass := Profile.CipherClass;
+	self.FHashClass := Profile.HashClass;
+
+	{Password validation always uses legacy AES-256/SHA-1 regardless of profile,
+		because CryptedGUID was generated with that combination}
 	if EmptyWideStr <> PasswordControl then
-		PasswordIsWrong := not(self.FFileCipher.EncryptString(CIPHER_CONTROL_GUID) = PasswordControl);
-	self.CiphersDestroy;
+	begin
+		PasswordIsWrong := not CheckPasswordGUID(Password, PasswordControl);
+	end;
 end;
 
 destructor TFileCipher.Destroy;
@@ -408,21 +420,21 @@ end;
 
 function TFileCipher.GetEncryptingStream(Source: TStream): TStream;
 var
-	Cipher: TDCP_rijndael;
+	Cipher: TDCP_blockcipher128;
 begin
 	{Create fresh cipher instance - stream takes ownership}
-	Cipher := TDCP_rijndael.Create(nil);
-	Cipher.InitStr(self.Password, TDCP_sha1);
+	Cipher := self.FCipherClass.Create(nil);
+	Cipher.InitStr(self.Password, self.FHashClass);
 	Result := TEncryptingStream.Create(Source, Cipher);
 end;
 
 function TFileCipher.GetDecryptingStream(Source: TStream): TStream;
 var
-	Cipher: TDCP_rijndael;
+	Cipher: TDCP_blockcipher128;
 begin
 	{Create fresh cipher instance - stream takes ownership}
-	Cipher := TDCP_rijndael.Create(nil);
-	Cipher.InitStr(self.Password, TDCP_sha1);
+	Cipher := self.FCipherClass.Create(nil);
+	Cipher.InitStr(self.Password, self.FHashClass);
 	Result := TDecryptingStream.Create(Source, Cipher);
 end;
 

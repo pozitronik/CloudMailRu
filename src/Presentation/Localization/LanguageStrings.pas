@@ -218,6 +218,8 @@ const
 	VERB_SET = 'Set';
 	VERB_UPDATE = 'Update';
 	WAIT = 'Wait for it...';
+	WARN_CIPHER_CHANGE = 'Changing the encryption profile will make previously encrypted files unreadable with the new profile. Only newly encrypted files will use the selected profile. Continue?';
+	PREFIX_WARN_CIPHER_CHANGE = 'Cipher profile change';
 	WARN_PROXY_PASSWORD_IGNORED = 'Warning: proxy password input skipped ignored, parameter will be ignored!';
 	WARN_QUOTA_EXHAUSTED = 'Warning: space quota exhausted!';
 

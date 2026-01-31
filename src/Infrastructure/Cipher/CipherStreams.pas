@@ -9,8 +9,7 @@ uses
 	System.SysUtils,
 	System.Math,
 	DCPcrypt2,
-	DCPblockciphers,
-	DCPrijndael;
+	DCPblockciphers;
 
 const
 	{Buffer size for streaming encryption/decryption - 64KB for optimal I/O}
@@ -23,7 +22,7 @@ type
 	TEncryptingStream = class(TStream)
 	private
 		FSource: TStream;
-		FCipher: TDCP_rijndael;
+		FCipher: TDCP_blockcipher128;
 		FBuffer: TBytes;
 		FBufferPos: Integer;
 		FBufferLen: Integer;
@@ -32,7 +31,7 @@ type
 	protected
 		function GetSize: Int64; override;
 	public
-		constructor Create(Source: TStream; Cipher: TDCP_rijndael);
+		constructor Create(Source: TStream; Cipher: TDCP_blockcipher128);
 		destructor Destroy; override;
 		function Read(var Buffer; Count: Longint): Longint; override;
 		function Write(const Buffer; Count: Longint): Longint; override;
@@ -45,7 +44,7 @@ type
 	TDecryptingStream = class(TStream)
 	private
 		FSource: TStream;
-		FCipher: TDCP_rijndael;
+		FCipher: TDCP_blockcipher128;
 		FBuffer: TBytes;
 		FBufferPos: Integer;
 		FBufferLen: Integer;
@@ -54,7 +53,7 @@ type
 	protected
 		function GetSize: Int64; override;
 	public
-		constructor Create(Source: TStream; Cipher: TDCP_rijndael);
+		constructor Create(Source: TStream; Cipher: TDCP_blockcipher128);
 		destructor Destroy; override;
 		function Read(var Buffer; Count: Longint): Longint; override;
 		function Write(const Buffer; Count: Longint): Longint; override;
@@ -65,7 +64,7 @@ implementation
 
 {TEncryptingStream - on-the-fly encryption wrapper}
 
-constructor TEncryptingStream.Create(Source: TStream; Cipher: TDCP_rijndael);
+constructor TEncryptingStream.Create(Source: TStream; Cipher: TDCP_blockcipher128);
 begin
 	inherited Create;
 	FSource := Source;
@@ -151,7 +150,7 @@ end;
 
 {TDecryptingStream - on-the-fly decryption wrapper}
 
-constructor TDecryptingStream.Create(Source: TStream; Cipher: TDCP_rijndael);
+constructor TDecryptingStream.Create(Source: TStream; Cipher: TDCP_blockcipher128);
 begin
 	inherited Create;
 	FSource := Source;

@@ -7,6 +7,9 @@ uses
 	System.SysUtils,
 	System.Classes,
 	DCPrijndael,
+	DCPtwofish,
+	DCPserpent,
+	DCPblockciphers,
 	DUnitX.TestFramework;
 
 type
@@ -17,6 +20,8 @@ type
 			TEST_PASSWORD = 'TestPassword123!';
 			TEST_IV = '1234567890ABCDEF';
 		function CreateInitializedCipher: TDCP_rijndael;
+		function CreateInitializedTwofishCipher: TDCP_twofish;
+		function CreateInitializedSerpentCipher: TDCP_serpent;
 		function CreateTestData(Size: Integer): TBytes;
 	public
 		{TEncryptingStream - Basic functionality}
@@ -106,6 +111,16 @@ type
 		procedure TestEncryptingStream_PositionTracking_AfterPartialRead;
 		[Test]
 		procedure TestDecryptingStream_PositionTracking_AfterPartialRead;
+
+		{Alternative cipher tests - verify widened TDCP_blockcipher128 type}
+		[Test]
+		procedure TestRoundtrip_Twofish_PreservesContent;
+		[Test]
+		procedure TestRoundtrip_Serpent_PreservesContent;
+		[Test]
+		procedure TestEncryptingStream_Twofish_SeekReset;
+		[Test]
+		procedure TestDecryptingStream_Serpent_SeekReset;
 	end;
 
 implementation
@@ -114,6 +129,20 @@ implementation
 function TCipherStreamsTest.CreateInitializedCipher: TDCP_rijndael;
 begin
 	Result := TDCP_rijndael.Create(nil);
+	Result.Init(TEST_PASSWORD[1], Length(TEST_PASSWORD) * SizeOf(Char), @TEST_IV[1]);
+end;
+
+{Helper to create initialized Twofish cipher for alternative cipher testing}
+function TCipherStreamsTest.CreateInitializedTwofishCipher: TDCP_twofish;
+begin
+	Result := TDCP_twofish.Create(nil);
+	Result.Init(TEST_PASSWORD[1], Length(TEST_PASSWORD) * SizeOf(Char), @TEST_IV[1]);
+end;
+
+{Helper to create initialized Serpent cipher for alternative cipher testing}
+function TCipherStreamsTest.CreateInitializedSerpentCipher: TDCP_serpent;
+begin
+	Result := TDCP_serpent.Create(nil);
 	Result.Init(TEST_PASSWORD[1], Length(TEST_PASSWORD) * SizeOf(Char), @TEST_IV[1]);
 end;
 
@@ -1183,6 +1212,168 @@ begin
 			DecStream.Read(Buffer[0], 75);
 			Pos2 := DecStream.Seek(0, soCurrent);
 			Assert.AreEqual(Int64(75), Pos2);
+		finally
+			DecStream.Free;
+		end;
+	finally
+		Source.Free;
+	end;
+end;
+
+{Alternative cipher tests - verify widened TDCP_blockcipher128 type}
+
+procedure TCipherStreamsTest.TestRoundtrip_Twofish_PreservesContent;
+var
+	OriginalData, EncryptedData, DecryptedData: TBytes;
+	SourceStream, EncryptedStream: TMemoryStream;
+	EncStream: TEncryptingStream;
+	DecStream: TDecryptingStream;
+begin
+	OriginalData := CreateTestData(200);
+
+	{Step 1: Encrypt with Twofish}
+	SourceStream := TMemoryStream.Create;
+	try
+		SourceStream.WriteBuffer(OriginalData[0], Length(OriginalData));
+		SourceStream.Position := 0;
+
+		EncStream := TEncryptingStream.Create(SourceStream, CreateInitializedTwofishCipher);
+		try
+			SetLength(EncryptedData, 200);
+			EncStream.Read(EncryptedData[0], 200);
+		finally
+			EncStream.Free;
+		end;
+	finally
+		SourceStream.Free;
+	end;
+
+	{Step 2: Decrypt with Twofish}
+	EncryptedStream := TMemoryStream.Create;
+	try
+		EncryptedStream.WriteBuffer(EncryptedData[0], Length(EncryptedData));
+		EncryptedStream.Position := 0;
+
+		DecStream := TDecryptingStream.Create(EncryptedStream, CreateInitializedTwofishCipher);
+		try
+			SetLength(DecryptedData, 200);
+			DecStream.Read(DecryptedData[0], 200);
+		finally
+			DecStream.Free;
+		end;
+	finally
+		EncryptedStream.Free;
+	end;
+
+	{Verify}
+	Assert.AreEqual(OriginalData, DecryptedData, 'Twofish roundtrip: decrypted data should match original');
+end;
+
+procedure TCipherStreamsTest.TestRoundtrip_Serpent_PreservesContent;
+var
+	OriginalData, EncryptedData, DecryptedData: TBytes;
+	SourceStream, EncryptedStream: TMemoryStream;
+	EncStream: TEncryptingStream;
+	DecStream: TDecryptingStream;
+begin
+	OriginalData := CreateTestData(200);
+
+	{Step 1: Encrypt with Serpent}
+	SourceStream := TMemoryStream.Create;
+	try
+		SourceStream.WriteBuffer(OriginalData[0], Length(OriginalData));
+		SourceStream.Position := 0;
+
+		EncStream := TEncryptingStream.Create(SourceStream, CreateInitializedSerpentCipher);
+		try
+			SetLength(EncryptedData, 200);
+			EncStream.Read(EncryptedData[0], 200);
+		finally
+			EncStream.Free;
+		end;
+	finally
+		SourceStream.Free;
+	end;
+
+	{Step 2: Decrypt with Serpent}
+	EncryptedStream := TMemoryStream.Create;
+	try
+		EncryptedStream.WriteBuffer(EncryptedData[0], Length(EncryptedData));
+		EncryptedStream.Position := 0;
+
+		DecStream := TDecryptingStream.Create(EncryptedStream, CreateInitializedSerpentCipher);
+		try
+			SetLength(DecryptedData, 200);
+			DecStream.Read(DecryptedData[0], 200);
+		finally
+			DecStream.Free;
+		end;
+	finally
+		EncryptedStream.Free;
+	end;
+
+	{Verify}
+	Assert.AreEqual(OriginalData, DecryptedData, 'Serpent roundtrip: decrypted data should match original');
+end;
+
+procedure TCipherStreamsTest.TestEncryptingStream_Twofish_SeekReset;
+var
+	Source: TMemoryStream;
+	EncStream: TEncryptingStream;
+	FirstRead, SecondRead: TBytes;
+begin
+	Source := TMemoryStream.Create;
+	try
+		Source.WriteBuffer(CreateTestData(200)[0], 200);
+		Source.Position := 0;
+
+		EncStream := TEncryptingStream.Create(Source, CreateInitializedTwofishCipher);
+		try
+			{Read encrypted data}
+			SetLength(FirstRead, 200);
+			EncStream.Read(FirstRead[0], 200);
+
+			{Seek back to beginning}
+			Assert.AreEqual(Int64(0), EncStream.Seek(0, soBeginning), 'Seek should return 0');
+
+			{Read again - should get same encrypted data}
+			SetLength(SecondRead, 200);
+			EncStream.Read(SecondRead[0], 200);
+
+			Assert.AreEqual(FirstRead, SecondRead, 'Twofish: re-reading after seek should produce same data');
+		finally
+			EncStream.Free;
+		end;
+	finally
+		Source.Free;
+	end;
+end;
+
+procedure TCipherStreamsTest.TestDecryptingStream_Serpent_SeekReset;
+var
+	Source: TMemoryStream;
+	DecStream: TDecryptingStream;
+	FirstRead, SecondRead: TBytes;
+begin
+	Source := TMemoryStream.Create;
+	try
+		Source.WriteBuffer(CreateTestData(200)[0], 200);
+		Source.Position := 0;
+
+		DecStream := TDecryptingStream.Create(Source, CreateInitializedSerpentCipher);
+		try
+			{Read decrypted data}
+			SetLength(FirstRead, 200);
+			DecStream.Read(FirstRead[0], 200);
+
+			{Seek back to beginning}
+			Assert.AreEqual(Int64(0), DecStream.Seek(0, soBeginning), 'Seek should return 0');
+
+			{Read again - should get same decrypted data}
+			SetLength(SecondRead, 200);
+			DecStream.Read(SecondRead[0], 200);
+
+			Assert.AreEqual(FirstRead, SecondRead, 'Serpent: re-reading after seek should produce same data');
 		finally
 			DecStream.Free;
 		end;

@@ -161,6 +161,7 @@ type
 		procedure PrivateRBClick(Sender: TObject);
 		procedure PublicRBClick(Sender: TObject);
 		procedure EncryptFilesComboChange(Sender: TObject);
+		procedure EncryptBackendComboChange(Sender: TObject);
 		procedure EncryptFilesPwdButtonClick(Sender: TObject);
 		procedure FieldChanged(Sender: TObject);
 		class function ShowAccounts(ParentWindow: HWND; PasswordManager: IPasswordManager; Account: WideString): Boolean;
@@ -335,6 +336,13 @@ type
 		procedure SetSharesPanelVisible(Value: Boolean);
 		procedure SetApplyButtonEnabled(Value: Boolean);
 		function ConfirmDiscardAccountChanges(const AccountName: WideString): TConfirmSaveResult;
+
+		{IAccountsView - Cipher profile}
+		procedure SetCipherProfileItems(const Items: TArray<WideString>);
+		procedure SetCipherProfileIndex(Value: Integer);
+		function GetCipherProfileIndex: Integer;
+		procedure SetCipherProfileEnabled(Value: Boolean);
+		function ShowCipherChangeWarning: Boolean;
 	public
 
 	end;
@@ -1126,6 +1134,44 @@ begin
 	end;
 end;
 
+{IAccountsView - Cipher profile}
+
+procedure TAccountsForm.SetCipherProfileItems(const Items: TArray<WideString>);
+var
+	I: Integer;
+begin
+	EncryptBackendCombo.Items.BeginUpdate;
+	try
+		EncryptBackendCombo.Items.Clear;
+		for I := 0 to High(Items) do
+			EncryptBackendCombo.Items.Add(Items[I]);
+	finally
+		EncryptBackendCombo.Items.EndUpdate;
+	end;
+	if EncryptBackendCombo.Items.Count > 0 then
+		EncryptBackendCombo.ItemIndex := 0;
+end;
+
+procedure TAccountsForm.SetCipherProfileIndex(Value: Integer);
+begin
+	EncryptBackendCombo.ItemIndex := Value;
+end;
+
+function TAccountsForm.GetCipherProfileIndex: Integer;
+begin
+	Result := EncryptBackendCombo.ItemIndex;
+end;
+
+procedure TAccountsForm.SetCipherProfileEnabled(Value: Boolean);
+begin
+	EncryptBackendCombo.Enabled := Value;
+end;
+
+function TAccountsForm.ShowCipherChangeWarning: Boolean;
+begin
+	Result := MessageDlg(WARN_CIPHER_CHANGE, mtWarning, [mbYes, mbNo], 0) = mrYes;
+end;
+
 {Event handlers - Accounts tab}
 
 procedure TAccountsForm.AccountsListViewKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -1168,6 +1214,11 @@ end;
 procedure TAccountsForm.EncryptFilesComboChange(Sender: TObject);
 begin
 	FPresenter.OnEncryptModeChanged;
+end;
+
+procedure TAccountsForm.EncryptBackendComboChange(Sender: TObject);
+begin
+	FPresenter.OnCipherProfileChanged;
 end;
 
 procedure TAccountsForm.EncryptFilesPwdButtonClick(Sender: TObject);

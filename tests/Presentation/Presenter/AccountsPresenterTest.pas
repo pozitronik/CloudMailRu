@@ -13,6 +13,7 @@ uses
 	TCPasswordManager,
 	AccountsManager,
 	PluginSettingsManager,
+	CipherProfile,
 	WFXTypes,
 	System.Classes,
 	System.SysUtils,
@@ -115,6 +116,13 @@ type
 
 		{Proxy controls state}
 		FProxyControlsEnabled: Boolean;
+
+		{Cipher profile}
+		FCipherProfileItems: TArray<WideString>;
+		FCipherProfileIndex: Integer;
+		FCipherProfileEnabled: Boolean;
+		FCipherChangeWarningResult: Boolean;
+		FCipherChangeWarningCallCount: Integer;
 	public
 		constructor Create;
 
@@ -270,6 +278,13 @@ type
 		procedure SetApplyButtonEnabled(Value: Boolean);
 		function ConfirmDiscardAccountChanges(const AccountName: WideString): TConfirmSaveResult;
 
+		{IAccountsView - Cipher profile}
+		procedure SetCipherProfileItems(const Items: TArray<WideString>);
+		procedure SetCipherProfileIndex(Value: Integer);
+		function GetCipherProfileIndex: Integer;
+		procedure SetCipherProfileEnabled(Value: Boolean);
+		function ShowCipherChangeWarning: Boolean;
+
 		{Test access properties}
 		property AccountsListItems: TArray<TAccountDisplayItem> read FAccountsListItems;
 		property SelectedAccountIndex: Integer read FSelectedAccountIndex write FSelectedAccountIndex;
@@ -294,6 +309,11 @@ type
 		property ConfirmDiscardCallback: TProc read FConfirmDiscardCallback write FConfirmDiscardCallback;
 		property GlobalSettingsApplyEnabled: Boolean read FGlobalSettingsApplyEnabled;
 		property ProxyControlsEnabled: Boolean read FProxyControlsEnabled;
+		property CipherProfileItems: TArray<WideString> read FCipherProfileItems;
+		property CipherProfileIndex: Integer read FCipherProfileIndex write FCipherProfileIndex;
+		property CipherProfileEnabled: Boolean read FCipherProfileEnabled;
+		property CipherChangeWarningResult: Boolean read FCipherChangeWarningResult write FCipherChangeWarningResult;
+		property CipherChangeWarningCallCount: Integer read FCipherChangeWarningCallCount;
 	end;
 
 	{Mock password manager for testing}
@@ -523,6 +543,18 @@ type
 		{Speed limit default test}
 		[Test]
 		procedure TestSpeedLimitDefaultIsZero;
+
+		{Cipher profile tests}
+		[Test]
+		procedure TestCipherProfileComboPopulatedOnInitialize;
+		[Test]
+		procedure TestCipherProfileDisabledWhenEncryptModeNone;
+		[Test]
+		procedure TestCipherProfileEnabledWhenEncryptModeAlways;
+		[Test]
+		procedure TestCipherProfileSavedOnApply;
+		[Test]
+		procedure TestCipherProfileLoadedForAccount;
 	end;
 
 implementation
@@ -550,6 +582,10 @@ begin
 	FStreamingConfirmCallCount := 0;
 	FGlobalSettingsApplyEnabled := False;
 	FProxyControlsEnabled := True;
+	FCipherProfileIndex := 0;
+	FCipherProfileEnabled := False;
+	FCipherChangeWarningResult := True;
+	FCipherChangeWarningCallCount := 0;
 end;
 
 {Global settings}
@@ -1252,6 +1288,34 @@ begin
 	Result := FConfirmDiscardResult;
 end;
 
+{TMockAccountsView - Cipher profile}
+
+procedure TMockAccountsView.SetCipherProfileItems(const Items: TArray<WideString>);
+begin
+	FCipherProfileItems := Items;
+end;
+
+procedure TMockAccountsView.SetCipherProfileIndex(Value: Integer);
+begin
+	FCipherProfileIndex := Value;
+end;
+
+function TMockAccountsView.GetCipherProfileIndex: Integer;
+begin
+	Result := FCipherProfileIndex;
+end;
+
+procedure TMockAccountsView.SetCipherProfileEnabled(Value: Boolean);
+begin
+	FCipherProfileEnabled := Value;
+end;
+
+function TMockAccountsView.ShowCipherChangeWarning: Boolean;
+begin
+	Inc(FCipherChangeWarningCallCount);
+	Result := FCipherChangeWarningResult;
+end;
+
 {TMockPasswordManager}
 
 constructor TMockPasswordManager.Create;
@@ -1289,6 +1353,7 @@ procedure TAccountsPresenterTest.Setup;
 var
 	Config: TAccountsPresenterConfig;
 begin
+	TCipherProfileRegistry.Initialize;
 	FView := TMockAccountsView.Create;
 	FViewRef := FView;
 	FPasswordManager := TMockPasswordManager.Create;
@@ -2906,6 +2971,62 @@ begin
 
 	Assert.AreEqual(0, Settings.ConnectionSettings.UploadBPS, 'Default UploadBPS should be 0');
 	Assert.AreEqual(0, Settings.ConnectionSettings.DownloadBPS, 'Default DownloadBPS should be 0');
+end;
+
+{Cipher profile tests}
+
+procedure TAccountsPresenterTest.TestCipherProfileComboPopulatedOnInitialize;
+begin
+	{Initialize populates cipher profile combo via PopulateCipherProfiles}
+	Assert.AreEqual(4, Length(FView.CipherProfileItems), 'Should have 4 cipher profiles');
+end;
+
+procedure TAccountsPresenterTest.TestCipherProfileDisabledWhenEncryptModeNone;
+begin
+	{When encrypt mode is None, cipher profile combo should be disabled}
+	FView.SetEncryptFilesMode(EncryptModeNone);
+	FPresenter.OnEncryptModeChanged;
+	Assert.IsFalse(FView.CipherProfileEnabled, 'Cipher profile should be disabled when encryption is off');
+end;
+
+procedure TAccountsPresenterTest.TestCipherProfileEnabledWhenEncryptModeAlways;
+begin
+	{When encrypt mode is Always, cipher profile combo should be enabled}
+	FView.SetEncryptFilesMode(EncryptModeAlways);
+	FPresenter.OnEncryptModeChanged;
+	Assert.IsTrue(FView.CipherProfileEnabled, 'Cipher profile should be enabled when encryption is on');
+end;
+
+procedure TAccountsPresenterTest.TestCipherProfileSavedOnApply;
+begin
+	{Verify cipher profile ID is saved when applying account settings}
+	FView.SetAccountName('TestCipherAccount');
+	FView.SetIsPrivate(True);
+	FView.SetEmail('cipher@mail.ru');
+	FView.SetCipherProfileIndex(2); {Third profile}
+	FView.SetEncryptFilesMode(EncryptModeAlways);
+	FPresenter.OnApplyAccountClick;
+
+	{Reload and verify}
+	var Settings := FAccountsManager.GetAccountSettings('TestCipherAccount');
+	Assert.IsNotEmpty(Settings.CipherProfileId, 'CipherProfileId should be saved');
+end;
+
+procedure TAccountsPresenterTest.TestCipherProfileLoadedForAccount;
+begin
+	{Setup: save an account with a specific cipher profile}
+	var Settings := Default(TAccountSettings);
+	Settings.Account := 'CipherLoadTest';
+	Settings.Email := 'cipherload@mail.ru';
+	Settings.CipherProfileId := 'dcpcrypt-twofish256-cfb8-sha256';
+	Settings.EncryptFilesMode := EncryptModeAlways;
+	FAccountsManager.SetAccountSettings(Settings);
+
+	{Trigger loading}
+	FPresenter.Initialize('CipherLoadTest');
+
+	{Verify the profile index was set (Twofish is index 2)}
+	Assert.AreEqual(2, FView.CipherProfileIndex, 'Cipher profile should be set to Twofish index');
 end;
 
 initialization

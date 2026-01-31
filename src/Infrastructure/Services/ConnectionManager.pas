@@ -166,7 +166,7 @@ begin
 	Cipher := TNullCipher.Create;
 	if CloudSettings.AccountSettings.EncryptFilesMode <> EncryptModeNone then
 	begin
-		FileCipherInstance := TFileCipher.Create(CloudSettings.CryptFilesPassword, CloudSettings.AccountSettings.CryptedGUIDFiles, CloudSettings.AccountSettings.EncryptFilenames);
+		FileCipherInstance := TFileCipher.Create(CloudSettings.CryptFilesPassword, CloudSettings.AccountSettings.CipherProfileId, CloudSettings.AccountSettings.CryptedGUIDFiles, CloudSettings.AccountSettings.EncryptFilenames);
 		if FileCipherInstance.IsWrongPassword then
 		begin
 			FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_WRONG_ENCRYPT_PASSWORD);

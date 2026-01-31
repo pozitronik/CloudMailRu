@@ -191,6 +191,13 @@ type
 		procedure SetSharesPanelVisible(Value: Boolean);
 		procedure SetApplyButtonEnabled(Value: Boolean);
 		function ConfirmDiscardAccountChanges(const AccountName: WideString): TConfirmSaveResult;
+
+		{Cipher profile combo}
+		procedure SetCipherProfileItems(const Items: TArray<WideString>);
+		procedure SetCipherProfileIndex(Value: Integer);
+		function GetCipherProfileIndex: Integer;
+		procedure SetCipherProfileEnabled(Value: Boolean);
+		function ShowCipherChangeWarning: Boolean;
 	end;
 
 	{Configuration for accounts presenter - injected dependencies}
@@ -224,6 +231,10 @@ type
 		FStreamingUpdating: Boolean;
 		FStreamingCancellingSwitch: Boolean;
 
+		{Cipher profile state}
+		FCipherProfileIds: TArray<WideString>;
+		FPreviousCipherProfileIndex: Integer;
+
 		function SavePasswordToManager(const AccountKey, Password: WideString): Boolean;
 		function ValidateGlobalSettings: Boolean;
 
@@ -236,6 +247,11 @@ type
 		function SaveAccountFromView: Boolean;
 		procedure SelectAccountByName(const Name: WideString);
 		function CheckDirty: Boolean;
+
+		{Cipher profile helpers}
+		procedure PopulateCipherProfiles;
+		function CipherProfileIdToIndex(const ProfileId: WideString): Integer;
+		function IndexToCipherProfileId(Index: Integer): WideString;
 
 		{Global settings dirty tracking}
 		procedure SetGlobalSettingsDirty(Value: Boolean);
@@ -264,6 +280,7 @@ type
 		procedure OnAccountTypeChanged;
 		procedure OnEncryptModeChanged;
 		procedure OnEncryptPasswordClick;
+		procedure OnCipherProfileChanged;
 		procedure OnFieldChanged;
 
 		{Global settings operations}
@@ -294,6 +311,7 @@ uses
 	CloudConstants,
 	LanguageStrings,
 	SettingsConstants,
+	CipherProfile,
 	System.IOUtils,
 	WSList;
 
@@ -337,6 +355,9 @@ begin
 				Index := I;
 				Break;
 			end;
+
+	{Populate cipher profile combo}
+	PopulateCipherProfiles;
 
 	{Load global settings}
 	LoadGlobalSettingsToView;
@@ -542,6 +563,8 @@ begin
 		FView.SetPublicUrl(AccSettings.PublicUrl);
 		FView.SetEncryptFilesMode(AccSettings.EncryptFilesMode);
 		FView.SetEncryptFilenames(AccSettings.EncryptFilenames);
+		FView.SetCipherProfileIndex(CipherProfileIdToIndex(AccSettings.CipherProfileId));
+		FPreviousCipherProfileIndex := FView.GetCipherProfileIndex;
 
 		{Update encrypt controls state}
 		OnEncryptModeChanged;
@@ -571,8 +594,11 @@ begin
 		FView.SetPublicUrl('');
 		FView.SetEncryptFilesMode(EncryptModeNone);
 		FView.SetEncryptFilenames(False);
+		FView.SetCipherProfileIndex(0);
+		FPreviousCipherProfileIndex := 0;
 		FView.SetEncryptPasswordButtonEnabled(False);
 		FView.SetEncryptFilenamesCBEnabled(False);
+		FView.SetCipherProfileEnabled(False);
 		OnAccountTypeChanged;
 	finally
 		FUpdating := WasUpdating;
@@ -612,6 +638,7 @@ begin
 	AccSettings.PublicUrl := FView.GetPublicUrl;
 	AccSettings.EncryptFilesMode := FView.GetEncryptFilesMode;
 	AccSettings.EncryptFilenames := FView.GetEncryptFilenames;
+	AccSettings.CipherProfileId := IndexToCipherProfileId(FView.GetCipherProfileIndex);
 	AccSettings.TwostepAuth := False; {Deprecated}
 	AccSettings.AuthMethod := CLOUD_AUTH_METHOD_OAUTH_APP;
 	AccSettings.UseAppPassword := True;
@@ -765,6 +792,7 @@ procedure TAccountsPresenter.OnEncryptModeChanged;
 begin
 	FView.SetEncryptPasswordButtonEnabled(FView.GetEncryptFilesMode = EncryptModeAlways);
 	FView.SetEncryptFilenamesCBEnabled(FView.GetEncryptFilesMode <> EncryptModeNone);
+	FView.SetCipherProfileEnabled(FView.GetEncryptFilesMode <> EncryptModeNone);
 	OnFieldChanged;
 end;
 
@@ -919,6 +947,75 @@ begin
 	FView.SetUserAgentReadOnly(True);
 	FView.SetResetUserAgentEnabled(False);
 	OnGlobalSettingsFieldChanged;
+end;
+
+{Cipher profile helpers}
+
+procedure TAccountsPresenter.PopulateCipherProfiles;
+var
+	Profiles: TArray<TCipherProfile>;
+	DisplayNames: TArray<WideString>;
+	I: Integer;
+begin
+	Profiles := TCipherProfileRegistry.GetProfiles;
+	SetLength(FCipherProfileIds, Length(Profiles));
+	SetLength(DisplayNames, Length(Profiles));
+	for I := 0 to High(Profiles) do
+	begin
+		FCipherProfileIds[I] := Profiles[I].Id;
+		DisplayNames[I] := Profiles[I].DisplayName;
+	end;
+	FView.SetCipherProfileItems(DisplayNames);
+end;
+
+function TAccountsPresenter.CipherProfileIdToIndex(const ProfileId: WideString): Integer;
+var
+	I: Integer;
+begin
+	for I := 0 to High(FCipherProfileIds) do
+		if FCipherProfileIds[I] = ProfileId then
+			Exit(I);
+	{Unknown or empty => default (first) profile}
+	Result := 0;
+end;
+
+function TAccountsPresenter.IndexToCipherProfileId(Index: Integer): WideString;
+begin
+	if (Index >= 0) and (Index <= High(FCipherProfileIds)) then
+		Result := FCipherProfileIds[Index]
+	else
+		Result := CIPHER_PROFILE_LEGACY_DEFAULT;
+end;
+
+procedure TAccountsPresenter.OnCipherProfileChanged;
+var
+	AccSettings: TAccountSettings;
+begin
+	if FUpdating then
+		Exit;
+
+	{Warn when changing profile on an account that already has encrypted files}
+	if FSelectedAccount <> '' then
+	begin
+		AccSettings := FAccountsManager.GetAccountSettings(FSelectedAccount);
+		if (AccSettings.CryptedGUIDFiles <> '') and (FView.GetCipherProfileIndex <> FPreviousCipherProfileIndex) then
+		begin
+			if not FView.ShowCipherChangeWarning then
+			begin
+				{User cancelled -- revert to previous selection}
+				FUpdating := True;
+				try
+					FView.SetCipherProfileIndex(FPreviousCipherProfileIndex);
+				finally
+					FUpdating := False;
+				end;
+				Exit;
+			end;
+		end;
+	end;
+
+	FPreviousCipherProfileIndex := FView.GetCipherProfileIndex;
+	OnFieldChanged;
 end;
 
 {Streaming tab helpers}

@@ -4,6 +4,7 @@ interface
 
 uses
 	FileCipher,
+	CipherProfile,
 	System.SysUtils,
 	System.IOUtils,
 	System.Classes,
@@ -20,6 +21,9 @@ type
 	[TestFixture]
 	TFileCipherTest = class
 	public
+		[SetupFixture]
+		class procedure SetupFixture;
+
 		{ Interface implementation test }
 		[Test]
 		procedure TestImplementsICipher;
@@ -99,6 +103,24 @@ type
 		procedure TestCryptDecryptStreamRoundtrip;
 		[Test]
 		procedure TestCryptDecryptStreamEmptyStream;
+
+		{ Cipher profile tests }
+		[Test]
+		procedure TestConstructWithTwofishProfile;
+		[Test]
+		procedure TestConstructWithSerpentProfile;
+		[Test]
+		procedure TestConstructWithSHA256Profile;
+		[Test]
+		procedure TestDifferentProfilesProduceDifferentCiphertext;
+		[Test]
+		procedure TestLegacyProfileBackwardCompatibility;
+		[Test]
+		procedure TestEmptyProfileFallsBackToDefault;
+		[Test]
+		procedure TestUnknownProfileFallsBackToDefault;
+		[Test]
+		procedure TestGUIDValidationStableAcrossProfiles;
 	end;
 
 implementation
@@ -623,6 +645,299 @@ begin
 	finally
 		SourceStream.Free;
 		EncryptedStream.Free;
+	end;
+end;
+
+{ SetupFixture - initialize cipher profile registry before any tests run }
+
+class procedure TFileCipherTest.SetupFixture;
+begin
+	TCipherProfileRegistry.Initialize;
+end;
+
+{ Cipher profile tests }
+
+procedure TFileCipherTest.TestConstructWithTwofishProfile;
+var
+	Cipher: TFileCipher;
+	SourceFile, EncryptedFile, DecryptedFile: string;
+	OriginalContent, DecryptedContent: string;
+	CryptResult, DecryptResult: Integer;
+begin
+	{ Twofish-256 profile should encrypt and decrypt a file correctly }
+	SourceFile := TPath.GetTempFileName;
+	EncryptedFile := TPath.GetTempFileName;
+	DecryptedFile := TPath.GetTempFileName;
+	try
+		OriginalContent := 'Twofish profile roundtrip test content 1234567890';
+		TFile.WriteAllText(SourceFile, OriginalContent);
+
+		Cipher := TFileCipher.Create('testpassword', 'dcpcrypt-twofish256-cfb8-sha256');
+		try
+			CryptResult := Cipher.CryptFile(SourceFile, EncryptedFile);
+			Assert.AreEqual(CIPHER_OK, CryptResult, 'Twofish encryption should succeed');
+
+			DecryptResult := Cipher.DecryptFile(EncryptedFile, DecryptedFile);
+			Assert.AreEqual(CIPHER_OK, DecryptResult, 'Twofish decryption should succeed');
+
+			DecryptedContent := TFile.ReadAllText(DecryptedFile);
+			Assert.AreEqual(OriginalContent, DecryptedContent, 'Twofish decrypted content should match original');
+		finally
+			Cipher.Free;
+		end;
+	finally
+		if TFile.Exists(SourceFile) then TFile.Delete(SourceFile);
+		if TFile.Exists(EncryptedFile) then TFile.Delete(EncryptedFile);
+		if TFile.Exists(DecryptedFile) then TFile.Delete(DecryptedFile);
+	end;
+end;
+
+procedure TFileCipherTest.TestConstructWithSerpentProfile;
+var
+	Cipher: TFileCipher;
+	SourceFile, EncryptedFile, DecryptedFile: string;
+	OriginalContent, DecryptedContent: string;
+	CryptResult, DecryptResult: Integer;
+begin
+	{ Serpent-256 profile should encrypt and decrypt a file correctly }
+	SourceFile := TPath.GetTempFileName;
+	EncryptedFile := TPath.GetTempFileName;
+	DecryptedFile := TPath.GetTempFileName;
+	try
+		OriginalContent := 'Serpent profile roundtrip test content 1234567890';
+		TFile.WriteAllText(SourceFile, OriginalContent);
+
+		Cipher := TFileCipher.Create('testpassword', 'dcpcrypt-serpent256-cfb8-sha256');
+		try
+			CryptResult := Cipher.CryptFile(SourceFile, EncryptedFile);
+			Assert.AreEqual(CIPHER_OK, CryptResult, 'Serpent encryption should succeed');
+
+			DecryptResult := Cipher.DecryptFile(EncryptedFile, DecryptedFile);
+			Assert.AreEqual(CIPHER_OK, DecryptResult, 'Serpent decryption should succeed');
+
+			DecryptedContent := TFile.ReadAllText(DecryptedFile);
+			Assert.AreEqual(OriginalContent, DecryptedContent, 'Serpent decrypted content should match original');
+		finally
+			Cipher.Free;
+		end;
+	finally
+		if TFile.Exists(SourceFile) then TFile.Delete(SourceFile);
+		if TFile.Exists(EncryptedFile) then TFile.Delete(EncryptedFile);
+		if TFile.Exists(DecryptedFile) then TFile.Delete(DecryptedFile);
+	end;
+end;
+
+procedure TFileCipherTest.TestConstructWithSHA256Profile;
+var
+	Cipher: TFileCipher;
+	SourceFile, EncryptedFile, DecryptedFile: string;
+	OriginalContent, DecryptedContent: string;
+	CryptResult, DecryptResult: Integer;
+begin
+	{ AES-256 with SHA-256 KDF should encrypt and decrypt a file correctly }
+	SourceFile := TPath.GetTempFileName;
+	EncryptedFile := TPath.GetTempFileName;
+	DecryptedFile := TPath.GetTempFileName;
+	try
+		OriginalContent := 'AES-256/SHA-256 profile roundtrip test content 1234567890';
+		TFile.WriteAllText(SourceFile, OriginalContent);
+
+		Cipher := TFileCipher.Create('testpassword', 'dcpcrypt-aes256-cfb8-sha256');
+		try
+			CryptResult := Cipher.CryptFile(SourceFile, EncryptedFile);
+			Assert.AreEqual(CIPHER_OK, CryptResult, 'AES-256/SHA-256 encryption should succeed');
+
+			DecryptResult := Cipher.DecryptFile(EncryptedFile, DecryptedFile);
+			Assert.AreEqual(CIPHER_OK, DecryptResult, 'AES-256/SHA-256 decryption should succeed');
+
+			DecryptedContent := TFile.ReadAllText(DecryptedFile);
+			Assert.AreEqual(OriginalContent, DecryptedContent, 'AES-256/SHA-256 decrypted content should match original');
+		finally
+			Cipher.Free;
+		end;
+	finally
+		if TFile.Exists(SourceFile) then TFile.Delete(SourceFile);
+		if TFile.Exists(EncryptedFile) then TFile.Delete(EncryptedFile);
+		if TFile.Exists(DecryptedFile) then TFile.Delete(DecryptedFile);
+	end;
+end;
+
+procedure TFileCipherTest.TestDifferentProfilesProduceDifferentCiphertext;
+var
+	CipherAES, CipherTwofish: TFileCipher;
+	SourceFile, EncryptedAES, EncryptedTwofish: string;
+	OriginalContent: string;
+	AESBytes, TwofishBytes: TBytes;
+begin
+	{ Same plaintext encrypted with different profiles must produce different ciphertext }
+	SourceFile := TPath.GetTempFileName;
+	EncryptedAES := TPath.GetTempFileName;
+	EncryptedTwofish := TPath.GetTempFileName;
+	try
+		OriginalContent := 'Content to verify different profiles produce different ciphertext';
+		TFile.WriteAllText(SourceFile, OriginalContent);
+
+		CipherAES := TFileCipher.Create('testpassword', 'dcpcrypt-aes256-cfb8-sha256');
+		try
+			Assert.AreEqual(CIPHER_OK, CipherAES.CryptFile(SourceFile, EncryptedAES), 'AES encryption should succeed');
+		finally
+			CipherAES.Free;
+		end;
+
+		CipherTwofish := TFileCipher.Create('testpassword', 'dcpcrypt-twofish256-cfb8-sha256');
+		try
+			Assert.AreEqual(CIPHER_OK, CipherTwofish.CryptFile(SourceFile, EncryptedTwofish), 'Twofish encryption should succeed');
+		finally
+			CipherTwofish.Free;
+		end;
+
+		AESBytes := TFile.ReadAllBytes(EncryptedAES);
+		TwofishBytes := TFile.ReadAllBytes(EncryptedTwofish);
+
+		Assert.AreNotEqual(0, Length(AESBytes), 'AES encrypted file should not be empty');
+		Assert.AreNotEqual(0, Length(TwofishBytes), 'Twofish encrypted file should not be empty');
+		Assert.AreNotEqual(TEncoding.ANSI.GetString(AESBytes), TEncoding.ANSI.GetString(TwofishBytes),
+			'Different profiles must produce different ciphertext');
+	finally
+		if TFile.Exists(SourceFile) then TFile.Delete(SourceFile);
+		if TFile.Exists(EncryptedAES) then TFile.Delete(EncryptedAES);
+		if TFile.Exists(EncryptedTwofish) then TFile.Delete(EncryptedTwofish);
+	end;
+end;
+
+procedure TFileCipherTest.TestLegacyProfileBackwardCompatibility;
+var
+	CipherExplicit, CipherEmpty: TFileCipher;
+	SourceFile, EncryptedExplicit, EncryptedEmpty: string;
+	OriginalContent: string;
+	ExplicitBytes, EmptyBytes: TBytes;
+begin
+	{ Explicit legacy profile ID must produce byte-identical output to empty profile ID }
+	SourceFile := TPath.GetTempFileName;
+	EncryptedExplicit := TPath.GetTempFileName;
+	EncryptedEmpty := TPath.GetTempFileName;
+	try
+		OriginalContent := 'Legacy backward compatibility test content';
+		TFile.WriteAllText(SourceFile, OriginalContent);
+
+		CipherExplicit := TFileCipher.Create('testpassword', 'dcpcrypt-aes256-cfb8-sha1');
+		try
+			Assert.AreEqual(CIPHER_OK, CipherExplicit.CryptFile(SourceFile, EncryptedExplicit),
+				'Explicit legacy profile encryption should succeed');
+		finally
+			CipherExplicit.Free;
+		end;
+
+		CipherEmpty := TFileCipher.Create('testpassword', '');
+		try
+			Assert.AreEqual(CIPHER_OK, CipherEmpty.CryptFile(SourceFile, EncryptedEmpty),
+				'Empty profile encryption should succeed');
+		finally
+			CipherEmpty.Free;
+		end;
+
+		ExplicitBytes := TFile.ReadAllBytes(EncryptedExplicit);
+		EmptyBytes := TFile.ReadAllBytes(EncryptedEmpty);
+
+		Assert.AreEqual(Length(ExplicitBytes), Length(EmptyBytes),
+			'Encrypted files should have identical length');
+		Assert.AreEqual(TEncoding.ANSI.GetString(ExplicitBytes), TEncoding.ANSI.GetString(EmptyBytes),
+			'Explicit legacy profile and empty profile must produce byte-identical output');
+	finally
+		if TFile.Exists(SourceFile) then TFile.Delete(SourceFile);
+		if TFile.Exists(EncryptedExplicit) then TFile.Delete(EncryptedExplicit);
+		if TFile.Exists(EncryptedEmpty) then TFile.Delete(EncryptedEmpty);
+	end;
+end;
+
+procedure TFileCipherTest.TestEmptyProfileFallsBackToDefault;
+var
+	Cipher: TFileCipher;
+	SourceFile, EncryptedFile, DecryptedFile: string;
+	OriginalContent, DecryptedContent: string;
+	CryptResult, DecryptResult: Integer;
+begin
+	{ Empty profile ID should fall back to legacy default and work correctly }
+	SourceFile := TPath.GetTempFileName;
+	EncryptedFile := TPath.GetTempFileName;
+	DecryptedFile := TPath.GetTempFileName;
+	try
+		OriginalContent := 'Empty profile fallback test content 1234567890';
+		TFile.WriteAllText(SourceFile, OriginalContent);
+
+		Cipher := TFileCipher.Create('testpassword', '');
+		try
+			CryptResult := Cipher.CryptFile(SourceFile, EncryptedFile);
+			Assert.AreEqual(CIPHER_OK, CryptResult, 'Empty profile encryption should succeed');
+
+			DecryptResult := Cipher.DecryptFile(EncryptedFile, DecryptedFile);
+			Assert.AreEqual(CIPHER_OK, DecryptResult, 'Empty profile decryption should succeed');
+
+			DecryptedContent := TFile.ReadAllText(DecryptedFile);
+			Assert.AreEqual(OriginalContent, DecryptedContent,
+				'Empty profile decrypted content should match original');
+		finally
+			Cipher.Free;
+		end;
+	finally
+		if TFile.Exists(SourceFile) then TFile.Delete(SourceFile);
+		if TFile.Exists(EncryptedFile) then TFile.Delete(EncryptedFile);
+		if TFile.Exists(DecryptedFile) then TFile.Delete(DecryptedFile);
+	end;
+end;
+
+procedure TFileCipherTest.TestUnknownProfileFallsBackToDefault;
+var
+	Cipher: TFileCipher;
+	SourceFile, EncryptedFile, DecryptedFile: string;
+	OriginalContent, DecryptedContent: string;
+	CryptResult, DecryptResult: Integer;
+begin
+	{ Unknown profile ID should fall back to legacy default and work correctly }
+	SourceFile := TPath.GetTempFileName;
+	EncryptedFile := TPath.GetTempFileName;
+	DecryptedFile := TPath.GetTempFileName;
+	try
+		OriginalContent := 'Unknown profile fallback test content 1234567890';
+		TFile.WriteAllText(SourceFile, OriginalContent);
+
+		Cipher := TFileCipher.Create('testpassword', 'nonexistent-profile');
+		try
+			CryptResult := Cipher.CryptFile(SourceFile, EncryptedFile);
+			Assert.AreEqual(CIPHER_OK, CryptResult, 'Unknown profile encryption should succeed');
+
+			DecryptResult := Cipher.DecryptFile(EncryptedFile, DecryptedFile);
+			Assert.AreEqual(CIPHER_OK, DecryptResult, 'Unknown profile decryption should succeed');
+
+			DecryptedContent := TFile.ReadAllText(DecryptedFile);
+			Assert.AreEqual(OriginalContent, DecryptedContent,
+				'Unknown profile decrypted content should match original');
+		finally
+			Cipher.Free;
+		end;
+	finally
+		if TFile.Exists(SourceFile) then TFile.Delete(SourceFile);
+		if TFile.Exists(EncryptedFile) then TFile.Delete(EncryptedFile);
+		if TFile.Exists(DecryptedFile) then TFile.Delete(DecryptedFile);
+	end;
+end;
+
+procedure TFileCipherTest.TestGUIDValidationStableAcrossProfiles;
+var
+	Cipher: TFileCipher;
+	StoredGUID: WideString;
+begin
+	{ GetCryptedGUID uses hardcoded AES/SHA-1 regardless of profile.
+		A GUID generated the standard way must validate even when the cipher
+		instance was created with a different profile (Twofish). }
+	StoredGUID := TFileCipher.GetCryptedGUID('testpassword');
+
+	Cipher := TFileCipher.Create('testpassword', 'dcpcrypt-twofish256-cfb8-sha256', StoredGUID);
+	try
+		Assert.IsFalse(Cipher.IsWrongPassword,
+			'GUID validation should succeed regardless of cipher profile');
+	finally
+		Cipher.Free;
 	end;
 end;
 

@@ -25,6 +25,7 @@ type
 		Description: WideString;
 		EncryptFilesMode: Integer;
 		EncryptFileNames: Boolean;
+		CipherProfileId: WideString; //Cipher profile identifier for encryption backend selection
 		ShardOverride: WideString; //hidden option, allows to override working shard for account
 		UploadUrlOverride: WideString; //hidden option, allows to override upload server for account
 		CryptedGUIDFiles: WideString; //The hash of files encryption password to check its validity

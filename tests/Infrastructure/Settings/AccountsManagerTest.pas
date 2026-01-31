@@ -40,6 +40,15 @@ type
 		procedure TestListAccountsEmpty;
 		[Test]
 		procedure TestAuthMethodPersistence;
+		[Test]
+		{Verifies CipherProfileId is correctly saved and restored from INI file}
+		procedure TestCipherProfileIdPersistence;
+		[Test]
+		{Verifies CipherProfileId defaults to empty string for accounts without it}
+		procedure TestCipherProfileIdEmptyByDefault;
+		[Test]
+		{Verifies CipherProfileId survives write-read-write-read cycle across different accounts}
+		procedure TestCipherProfileIdRoundtrip;
 
 	end;
 
@@ -259,6 +268,116 @@ begin
 		Assert.AreEqual('oauth_test@mail.ru', LoadedSettings.Email);
 		Assert.AreEqual(CLOUD_AUTH_METHOD_OAUTH_APP, LoadedSettings.AuthMethod);
 		Assert.IsTrue(LoadedSettings.UseAppPassword);
+	finally
+		TestAccountsManager.Free;
+	end;
+end;
+
+procedure TAccountsManagerTest.TestCipherProfileIdPersistence;
+var
+	TestAccountsManager: TAccountsManager;
+	TestAccountSettings: TAccountSettings;
+	LoadedSettings: TAccountSettings;
+begin
+	{ Save account with CipherProfileId set }
+	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(self.AppDir + FP_ACCOUNTS_INI));
+	try
+		TestAccountSettings := Default(TAccountSettings);
+		TestAccountSettings.Account := 'CIPHER_PROFILE_ACCOUNT';
+		TestAccountSettings.Email := 'cipher_test@mail.ru';
+		TestAccountSettings.CipherProfileId := 'dcpcrypt-twofish256-cfb8-sha256';
+
+		TestAccountsManager.SetAccountSettings(TestAccountSettings);
+	finally
+		TestAccountsManager.Free;
+	end;
+
+	{ Reload from file and verify CipherProfileId was preserved }
+	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(self.AppDir + FP_ACCOUNTS_INI));
+	try
+		LoadedSettings := TestAccountsManager.GetAccountSettings('CIPHER_PROFILE_ACCOUNT');
+
+		Assert.AreEqual('cipher_test@mail.ru', LoadedSettings.Email);
+		Assert.AreEqual('dcpcrypt-twofish256-cfb8-sha256', LoadedSettings.CipherProfileId);
+	finally
+		TestAccountsManager.Free;
+	end;
+end;
+
+procedure TAccountsManagerTest.TestCipherProfileIdEmptyByDefault;
+var
+	TestAccountsManager: TAccountsManager;
+	TestAccountSettings: TAccountSettings;
+	LoadedSettings: TAccountSettings;
+begin
+	{ Save account without setting CipherProfileId }
+	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(self.AppDir + FP_ACCOUNTS_INI));
+	try
+		TestAccountSettings := Default(TAccountSettings);
+		TestAccountSettings.Account := 'NO_CIPHER_PROFILE_ACCOUNT';
+		TestAccountSettings.Email := 'no_cipher@mail.ru';
+		{ CipherProfileId intentionally not set - should remain default empty }
+
+		TestAccountsManager.SetAccountSettings(TestAccountSettings);
+	finally
+		TestAccountsManager.Free;
+	end;
+
+	{ Reload and verify CipherProfileId defaults to empty string }
+	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(self.AppDir + FP_ACCOUNTS_INI));
+	try
+		LoadedSettings := TestAccountsManager.GetAccountSettings('NO_CIPHER_PROFILE_ACCOUNT');
+
+		Assert.AreEqual('no_cipher@mail.ru', LoadedSettings.Email);
+		Assert.IsEmpty(LoadedSettings.CipherProfileId);
+	finally
+		TestAccountsManager.Free;
+	end;
+end;
+
+procedure TAccountsManagerTest.TestCipherProfileIdRoundtrip;
+var
+	TestAccountsManager: TAccountsManager;
+	TestAccountSettings: TAccountSettings;
+	FirstLoaded, SecondLoaded: TAccountSettings;
+begin
+	{ Write first account with CipherProfileId }
+	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(self.AppDir + FP_ACCOUNTS_INI));
+	try
+		TestAccountSettings := Default(TAccountSettings);
+		TestAccountSettings.Account := 'ROUNDTRIP_FIRST';
+		TestAccountSettings.Email := 'roundtrip_first@mail.ru';
+		TestAccountSettings.CipherProfileId := 'dcpcrypt-twofish256-cfb8-sha256';
+
+		TestAccountsManager.SetAccountSettings(TestAccountSettings);
+	finally
+		TestAccountsManager.Free;
+	end;
+
+	{ Read first account back, then write its CipherProfileId to a second account }
+	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(self.AppDir + FP_ACCOUNTS_INI));
+	try
+		FirstLoaded := TestAccountsManager.GetAccountSettings('ROUNDTRIP_FIRST');
+
+		TestAccountSettings := Default(TAccountSettings);
+		TestAccountSettings.Account := 'ROUNDTRIP_SECOND';
+		TestAccountSettings.Email := 'roundtrip_second@mail.ru';
+		TestAccountSettings.CipherProfileId := FirstLoaded.CipherProfileId;
+
+		TestAccountsManager.SetAccountSettings(TestAccountSettings);
+	finally
+		TestAccountsManager.Free;
+	end;
+
+	{ Reload both accounts and verify CipherProfileId matches }
+	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(self.AppDir + FP_ACCOUNTS_INI));
+	try
+		FirstLoaded := TestAccountsManager.GetAccountSettings('ROUNDTRIP_FIRST');
+		SecondLoaded := TestAccountsManager.GetAccountSettings('ROUNDTRIP_SECOND');
+
+		Assert.AreEqual('dcpcrypt-twofish256-cfb8-sha256', FirstLoaded.CipherProfileId);
+		Assert.AreEqual('dcpcrypt-twofish256-cfb8-sha256', SecondLoaded.CipherProfileId);
+		Assert.AreEqual(FirstLoaded.CipherProfileId, SecondLoaded.CipherProfileId);
 	finally
 		TestAccountsManager.Free;
 	end;
