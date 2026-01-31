@@ -15,10 +15,11 @@ const
 	CIPHER_BUFFER_SIZE = 65536;
 
 type
-	{Stream wrapper that encrypts data on-the-fly during Read operations.
-		Uses CFB8 mode for byte-granular encryption with constant memory.
+	{Base class for on-the-fly cipher stream wrappers with constant memory usage.
+		Reads source in buffered chunks, applies TransformBuffer (encrypt or decrypt),
+		and serves transformed data via Read. Subclasses override TransformBuffer only.
 		Takes ownership of the Cipher instance (via interface ref counting).}
-	TEncryptingStream = class(TStream)
+	TBaseCipherStream = class(TStream)
 	private
 		FSource: TStream;
 		FCipher: IBlockCipher;
@@ -29,6 +30,7 @@ type
 		procedure RefillBuffer;
 	protected
 		function GetSize: Int64; override;
+		procedure TransformBuffer(var Buffer; Size: Integer); virtual; abstract;
 	public
 		constructor Create(Source: TStream; Cipher: IBlockCipher);
 		destructor Destroy; override;
@@ -37,33 +39,23 @@ type
 		function Seek(const Offset: Int64; Origin: TSeekOrigin): Int64; override;
 	end;
 
-	{Stream wrapper that decrypts data on-the-fly during Read operations.
-		Uses CFB8 mode for byte-granular decryption with constant memory.
-		Takes ownership of the Cipher instance (via interface ref counting).}
-	TDecryptingStream = class(TStream)
-	private
-		FSource: TStream;
-		FCipher: IBlockCipher;
-		FBuffer: TBytes;
-		FBufferPos: Integer;
-		FBufferLen: Integer;
-		FSourceSize: Int64;
-		procedure RefillBuffer;
+	{Encrypts data on-the-fly during Read operations via CFB8 mode.}
+	TEncryptingStream = class(TBaseCipherStream)
 	protected
-		function GetSize: Int64; override;
-	public
-		constructor Create(Source: TStream; Cipher: IBlockCipher);
-		destructor Destroy; override;
-		function Read(var Buffer; Count: Longint): Longint; override;
-		function Write(const Buffer; Count: Longint): Longint; override;
-		function Seek(const Offset: Int64; Origin: TSeekOrigin): Int64; override;
+		procedure TransformBuffer(var Buffer; Size: Integer); override;
+	end;
+
+	{Decrypts data on-the-fly during Read operations via CFB8 mode.}
+	TDecryptingStream = class(TBaseCipherStream)
+	protected
+		procedure TransformBuffer(var Buffer; Size: Integer); override;
 	end;
 
 implementation
 
-{TEncryptingStream - on-the-fly encryption wrapper}
+{TBaseCipherStream}
 
-constructor TEncryptingStream.Create(Source: TStream; Cipher: IBlockCipher);
+constructor TBaseCipherStream.Create(Source: TStream; Cipher: IBlockCipher);
 begin
 	inherited Create;
 	FSource := Source;
@@ -74,7 +66,7 @@ begin
 	FBufferLen := 0;
 end;
 
-destructor TEncryptingStream.Destroy;
+destructor TBaseCipherStream.Destroy;
 begin
 	FCipher.Burn;
 	FCipher := nil;
@@ -82,24 +74,24 @@ begin
 	inherited;
 end;
 
-function TEncryptingStream.GetSize: Int64;
+function TBaseCipherStream.GetSize: Int64;
 begin
 	{CFB mode produces same size output as input}
 	Result := FSourceSize;
 end;
 
-procedure TEncryptingStream.RefillBuffer;
+procedure TBaseCipherStream.RefillBuffer;
 var
 	BytesRead: Integer;
 begin
 	BytesRead := FSource.Read(FBuffer[0], CIPHER_BUFFER_SIZE);
 	if BytesRead > 0 then
-		FCipher.EncryptCFB8bit(FBuffer[0], FBuffer[0], BytesRead);
+		TransformBuffer(FBuffer[0], BytesRead);
 	FBufferLen := BytesRead;
 	FBufferPos := 0;
 end;
 
-function TEncryptingStream.Read(var Buffer; Count: Longint): Longint;
+function TBaseCipherStream.Read(var Buffer; Count: Longint): Longint;
 var
 	BytesToCopy: Integer;
 	Dest: PByte;
@@ -123,20 +115,20 @@ begin
 	end;
 end;
 
-function TEncryptingStream.Write(const Buffer; Count: Longint): Longint;
+function TBaseCipherStream.Write(const Buffer; Count: Longint): Longint;
 begin
-	{Encrypting stream is read-only - used for upload where we read encrypted data}
-	raise Exception.Create('TEncryptingStream is read-only');
+	{Cipher streams are read-only - used for upload/download where we read transformed data}
+	raise Exception.Create(ClassName + ' is read-only');
 end;
 
-function TEncryptingStream.Seek(const Offset: Int64; Origin: TSeekOrigin): Int64;
+function TBaseCipherStream.Seek(const Offset: Int64; Origin: TSeekOrigin): Int64;
 begin
 	if (Offset = 0) and (Origin = soCurrent) then
 		{Return current logical position}
 		Result := FSource.Position - FBufferLen + FBufferPos
 	else if (Offset = 0) and (Origin = soBeginning) then
 	begin
-		{Reset to beginning - required by Indy HTTP for uploads}
+		{Reset to beginning - required by Indy HTTP for uploads/downloads}
 		FSource.Position := 0;
 		FCipher.Reset; {Restore cipher to state just after Init}
 		FBufferPos := 0;
@@ -144,93 +136,21 @@ begin
 		Result := 0;
 	end
 	else
-		raise Exception.Create('TEncryptingStream does not support arbitrary seeking');
+		raise Exception.Create(ClassName + ' does not support arbitrary seeking');
 end;
 
-{TDecryptingStream - on-the-fly decryption wrapper}
+{TEncryptingStream}
 
-constructor TDecryptingStream.Create(Source: TStream; Cipher: IBlockCipher);
+procedure TEncryptingStream.TransformBuffer(var Buffer; Size: Integer);
 begin
-	inherited Create;
-	FSource := Source;
-	FCipher := Cipher;
-	FSourceSize := Source.Size;
-	SetLength(FBuffer, CIPHER_BUFFER_SIZE);
-	FBufferPos := 0;
-	FBufferLen := 0;
+	FCipher.EncryptCFB8bit(Buffer, Buffer, Size);
 end;
 
-destructor TDecryptingStream.Destroy;
-begin
-	FCipher.Burn;
-	FCipher := nil;
-	SetLength(FBuffer, 0);
-	inherited;
-end;
+{TDecryptingStream}
 
-function TDecryptingStream.GetSize: Int64;
+procedure TDecryptingStream.TransformBuffer(var Buffer; Size: Integer);
 begin
-	{CFB mode produces same size output as input}
-	Result := FSourceSize;
-end;
-
-procedure TDecryptingStream.RefillBuffer;
-var
-	BytesRead: Integer;
-begin
-	BytesRead := FSource.Read(FBuffer[0], CIPHER_BUFFER_SIZE);
-	if BytesRead > 0 then
-		FCipher.DecryptCFB8bit(FBuffer[0], FBuffer[0], BytesRead);
-	FBufferLen := BytesRead;
-	FBufferPos := 0;
-end;
-
-function TDecryptingStream.Read(var Buffer; Count: Longint): Longint;
-var
-	BytesToCopy: Integer;
-	Dest: PByte;
-begin
-	Result := 0;
-	Dest := @Buffer;
-	while Count > 0 do
-	begin
-		if FBufferPos >= FBufferLen then
-		begin
-			RefillBuffer;
-			if FBufferLen = 0 then
-				Break;
-		end;
-		BytesToCopy := Min(Count, FBufferLen - FBufferPos);
-		Move(FBuffer[FBufferPos], Dest^, BytesToCopy);
-		Inc(FBufferPos, BytesToCopy);
-		Inc(Dest, BytesToCopy);
-		Inc(Result, BytesToCopy);
-		Dec(Count, BytesToCopy);
-	end;
-end;
-
-function TDecryptingStream.Write(const Buffer; Count: Longint): Longint;
-begin
-	{Decrypting stream is read-only - used for download where we read decrypted data}
-	raise Exception.Create('TDecryptingStream is read-only');
-end;
-
-function TDecryptingStream.Seek(const Offset: Int64; Origin: TSeekOrigin): Int64;
-begin
-	if (Offset = 0) and (Origin = soCurrent) then
-		{Return current logical position}
-		Result := FSource.Position - FBufferLen + FBufferPos
-	else if (Offset = 0) and (Origin = soBeginning) then
-	begin
-		{Reset to beginning - required by Indy HTTP for downloads}
-		FSource.Position := 0;
-		FCipher.Reset; {Restore cipher to state just after Init}
-		FBufferPos := 0;
-		FBufferLen := 0;
-		Result := 0;
-	end
-	else
-		raise Exception.Create('TDecryptingStream does not support arbitrary seeking');
+	FCipher.DecryptCFB8bit(Buffer, Buffer, Size);
 end;
 
 end.
