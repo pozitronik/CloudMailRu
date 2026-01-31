@@ -133,7 +133,7 @@ procedure TCipherProfileRegistryTest.TestGetDefaultProfile_FactoryCreatesValidCi
 var
 	Cipher: ICipher;
 begin
-	Cipher := TCipherProfileRegistry.GetDefaultProfile.CreateCipher('testpass', '');
+	Cipher := TCipherProfileRegistry.GetDefaultProfile.CreateCipher('testpass');
 	Assert.IsNotNull(Cipher, 'Default profile factory returned nil');
 end;
 
@@ -162,7 +162,7 @@ begin
 	Profiles := TCipherProfileRegistry.GetProfiles;
 	for I := 0 to High(Profiles) do
 	begin
-		Cipher := Profiles[I].CreateCipher('testpass', '');
+		Cipher := Profiles[I].CreateCipher('testpass');
 		Assert.IsNotNull(Cipher,
 			Format('Profile %s factory returned nil', [Profiles[I].Id]));
 	end;
@@ -178,7 +178,7 @@ var
 begin
 	{Verify encrypt/decrypt roundtrip through the legacy profile factory}
 	Assert.IsTrue(TCipherProfileRegistry.FindById(CIPHER_PROFILE_LEGACY_DEFAULT, Profile));
-	Cipher := Profile.CreateCipher('roundtrip-password', '');
+	Cipher := Profile.CreateCipher('roundtrip-password');
 
 	Source := TMemoryStream.Create;
 	Encrypted := TMemoryStream.Create;
@@ -192,7 +192,7 @@ begin
 		Assert.IsTrue(Encrypted.Size > 0, 'Encrypted stream should not be empty');
 
 		{Need a fresh cipher instance for decryption -- cipher state is consumed}
-		Cipher := Profile.CreateCipher('roundtrip-password', '');
+		Cipher := Profile.CreateCipher('roundtrip-password');
 		Encrypted.Position := 0;
 		Cipher.DecryptStream(Encrypted, Decrypted);
 

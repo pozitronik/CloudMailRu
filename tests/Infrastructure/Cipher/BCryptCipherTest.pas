@@ -74,10 +74,6 @@ type
 		[Test]
 		procedure TestDifferentPasswords_DifferentCiphertext;
 
-		{GUID validation uses legacy AES/SHA-1}
-		[Test]
-		procedure TestGUIDValidation_UsesLegacyAlgorithm;
-
 		{Interface compliance}
 		[Test]
 		procedure TestImplementsICipher;
@@ -474,28 +470,6 @@ begin
 		Source2.Free;
 		Enc1.Free;
 		Enc2.Free;
-	end;
-end;
-
-procedure TBCryptCipherTest.TestGUIDValidation_UsesLegacyAlgorithm;
-var
-	Cipher: TBCryptCipher;
-	StoredGUID: WideString;
-begin
-	if not ProviderAvailable then
-	begin
-		Assert.Pass('Skipped - BCrypt not available');
-		Exit;
-	end;
-
-	{GUID generated with legacy AES/SHA-1 must validate in BCrypt backend}
-	StoredGUID := TFileCipher.GetCryptedGUID('testpassword');
-
-	Cipher := TBCryptCipher.Create('testpassword', FProvider, StoredGUID);
-	try
-		Assert.IsFalse(Cipher.IsWrongPassword, 'GUID validation should succeed with correct password');
-	finally
-		Cipher.Free;
 	end;
 end;
 

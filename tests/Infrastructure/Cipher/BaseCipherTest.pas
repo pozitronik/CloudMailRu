@@ -68,10 +68,6 @@ type
 		{CryptStream transforms data (output differs from input)}
 		[Test]
 		procedure TestCryptStreamTransformsData;
-
-		{IsWrongPassword defaults to False}
-		[Test]
-		procedure TestIsWrongPasswordDefaultsFalse;
 	end;
 
 implementation
@@ -340,18 +336,6 @@ begin
 	finally
 		SourceStream.Free;
 		EncryptedStream.Free;
-	end;
-end;
-
-procedure TBaseCipherTest.TestIsWrongPasswordDefaultsFalse;
-var
-	Cipher: TTestCipher;
-begin
-	Cipher := TTestCipher.Create($AB);
-	try
-		Assert.IsFalse(Cipher.IsWrongPassword, 'FPasswordIsWrong should default to False');
-	finally
-		Cipher.Free;
 	end;
 end;
 

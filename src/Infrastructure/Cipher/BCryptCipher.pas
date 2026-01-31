@@ -37,8 +37,7 @@ type
 	end;
 
 	{ICipher implementation using BCrypt backend.
-		Creates TBCryptBlockCipher instances via CreateBlockCipher.
-		Password validation delegates to TFileCipher.CheckPasswordGUID (hardcoded AES/SHA-1).}
+		Creates TBCryptBlockCipher instances via CreateBlockCipher.}
 	TBCryptCipher = class(TBaseCipher)
 	private
 		FProvider: IBCryptProvider;
@@ -47,7 +46,7 @@ type
 	protected
 		function CreateBlockCipher: IBlockCipher; override;
 	public
-		constructor Create(const Password: WideString; const Provider: IBCryptProvider; const PasswordControl: WideString = '');
+		constructor Create(const Password: WideString; const Provider: IBCryptProvider);
 		destructor Destroy; override;
 	end;
 
@@ -165,7 +164,7 @@ end;
 
 {TBCryptCipher}
 
-constructor TBCryptCipher.Create(const Password: WideString; const Provider: IBCryptProvider; const PasswordControl: WideString = '');
+constructor TBCryptCipher.Create(const Password: WideString; const Provider: IBCryptProvider);
 begin
 	inherited Create;
 	FProvider := Provider;
@@ -175,10 +174,6 @@ begin
 	{Zero IV for deterministic encryption}
 	SetLength(FIV, BCRYPT_AES_BLOCK_SIZE);
 	FillChar(FIV[0], BCRYPT_AES_BLOCK_SIZE, 0);
-
-	{Password validation always uses legacy AES-256/SHA-1 regardless of backend}
-	if PasswordControl <> EmptyWideStr then
-		FPasswordIsWrong := not TFileCipher.CheckPasswordGUID(Password, PasswordControl);
 end;
 
 destructor TBCryptCipher.Destroy;

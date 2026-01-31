@@ -12,11 +12,8 @@ uses
 	BCryptProvider;
 
 type
-	{Factory type: creates a fully initialized ICipher from parameters}
-	TCipherFactory = reference to function(
-		const Password: WideString;
-		const PasswordControl: WideString
-	): ICipher;
+	{Factory type: creates a fully initialized ICipher from a password}
+	TCipherFactory = reference to function(const Password: WideString): ICipher;
 
 	TCipherProfile = record
 		Id: WideString;
@@ -77,27 +74,27 @@ begin
 	FProfiles[0].DisplayName := 'AES-256 / SHA-1 KDF (Legacy)';
 	FProfiles[0].BackendName := 'Software (DCPCrypt)';
 	FProfiles[0].KeySizeBits := 256;
-	FProfiles[0].CreateCipher := function(const Password, PasswordControl: WideString): ICipher
+	FProfiles[0].CreateCipher := function(const Password: WideString): ICipher
 	begin
-		Result := TFileCipher.Create(Password, TDCP_rijndael, TDCP_sha1, PasswordControl);
+		Result := TFileCipher.Create(Password, TDCP_rijndael, TDCP_sha1);
 	end;
 
 	FProfiles[1].Id := 'dcpcrypt-aes256-cfb8-sha256';
 	FProfiles[1].DisplayName := 'AES-256 / SHA-256 KDF';
 	FProfiles[1].BackendName := 'Software (DCPCrypt)';
 	FProfiles[1].KeySizeBits := 256;
-	FProfiles[1].CreateCipher := function(const Password, PasswordControl: WideString): ICipher
+	FProfiles[1].CreateCipher := function(const Password: WideString): ICipher
 	begin
-		Result := TFileCipher.Create(Password, TDCP_rijndael, TDCP_sha256, PasswordControl);
+		Result := TFileCipher.Create(Password, TDCP_rijndael, TDCP_sha256);
 	end;
 
 	FProfiles[2].Id := 'dcpcrypt-twofish256-cfb8-sha256';
 	FProfiles[2].DisplayName := 'Twofish-256 / SHA-256 KDF';
 	FProfiles[2].BackendName := 'Software (DCPCrypt)';
 	FProfiles[2].KeySizeBits := 256;
-	FProfiles[2].CreateCipher := function(const Password, PasswordControl: WideString): ICipher
+	FProfiles[2].CreateCipher := function(const Password: WideString): ICipher
 	begin
-		Result := TFileCipher.Create(Password, TDCP_twofish, TDCP_sha256, PasswordControl);
+		Result := TFileCipher.Create(Password, TDCP_twofish, TDCP_sha256);
 	end;
 
 	{Dynamic index for conditional backends}
@@ -111,9 +108,9 @@ begin
 		FProfiles[NextIndex].DisplayName := 'AES-256 / PBKDF2 (OpenSSL)';
 		FProfiles[NextIndex].BackendName := 'OpenSSL';
 		FProfiles[NextIndex].KeySizeBits := 256;
-		FProfiles[NextIndex].CreateCipher := function(const Password, PasswordControl: WideString): ICipher
+		FProfiles[NextIndex].CreateCipher := function(const Password: WideString): ICipher
 		begin
-			Result := TOpenSSLCipher.Create(Password, CapturedFunctions, PasswordControl);
+			Result := TOpenSSLCipher.Create(Password, CapturedFunctions);
 		end;
 		Inc(NextIndex);
 	end;
@@ -126,9 +123,9 @@ begin
 		FProfiles[NextIndex].DisplayName := 'AES-256 / PBKDF2 (BCrypt)';
 		FProfiles[NextIndex].BackendName := 'Windows CNG';
 		FProfiles[NextIndex].KeySizeBits := 256;
-		FProfiles[NextIndex].CreateCipher := function(const Password, PasswordControl: WideString): ICipher
+		FProfiles[NextIndex].CreateCipher := function(const Password: WideString): ICipher
 		begin
-			Result := TBCryptCipher.Create(Password, CapturedBCryptProvider, PasswordControl);
+			Result := TBCryptCipher.Create(Password, CapturedBCryptProvider);
 		end;
 	end;
 

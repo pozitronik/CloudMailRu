@@ -68,10 +68,6 @@ type
 		[Test]
 		procedure TestDifferentPasswords_DifferentCiphertext;
 
-		{GUID validation uses legacy AES/SHA-1}
-		[Test]
-		procedure TestGUIDValidation_UsesLegacyAlgorithm;
-
 		{Interface compliance}
 		[Test]
 		procedure TestImplementsICipher;
@@ -422,28 +418,6 @@ begin
 		Source2.Free;
 		Enc1.Free;
 		Enc2.Free;
-	end;
-end;
-
-procedure TOpenSSLCipherTest.TestGUIDValidation_UsesLegacyAlgorithm;
-var
-	Cipher: TOpenSSLCipher;
-	StoredGUID: WideString;
-begin
-	if not CipherAvailable then
-	begin
-		Assert.Pass('Skipped - OpenSSL cipher functions not available');
-		Exit;
-	end;
-
-	{GUID generated with legacy AES/SHA-1 must validate in OpenSSL backend}
-	StoredGUID := TFileCipher.GetCryptedGUID('testpassword');
-
-	Cipher := TOpenSSLCipher.Create('testpassword', FProvider.GetFunctions, StoredGUID);
-	try
-		Assert.IsFalse(Cipher.IsWrongPassword, 'GUID validation should succeed with correct password');
-	finally
-		Cipher.Free;
 	end;
 end;
 

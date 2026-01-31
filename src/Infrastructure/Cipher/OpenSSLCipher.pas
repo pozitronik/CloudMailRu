@@ -43,8 +43,7 @@ type
 	end;
 
 	{ICipher implementation using OpenSSL backend.
-		Creates TOpenSSLBlockCipher instances via CreateBlockCipher.
-		Password validation delegates to TFileCipher.CheckPasswordGUID (hardcoded AES/SHA-1).}
+		Creates TOpenSSLBlockCipher instances via CreateBlockCipher.}
 	TOpenSSLCipher = class(TBaseCipher)
 	private
 		FFunctions: TOpenSSLFunctions;
@@ -54,7 +53,7 @@ type
 	protected
 		function CreateBlockCipher: IBlockCipher; override;
 	public
-		constructor Create(const Password: WideString; const Functions: TOpenSSLFunctions; const PasswordControl: WideString = '');
+		constructor Create(const Password: WideString; const Functions: TOpenSSLFunctions);
 		destructor Destroy; override;
 	end;
 
@@ -144,7 +143,7 @@ end;
 
 {TOpenSSLCipher}
 
-constructor TOpenSSLCipher.Create(const Password: WideString; const Functions: TOpenSSLFunctions; const PasswordControl: WideString = '');
+constructor TOpenSSLCipher.Create(const Password: WideString; const Functions: TOpenSSLFunctions);
 begin
 	inherited Create;
 	FFunctions := Functions;
@@ -154,11 +153,6 @@ begin
 	{Zero IV for deterministic encryption}
 	SetLength(FIV, OPENSSL_AES256_IV_SIZE);
 	FillChar(FIV[0], OPENSSL_AES256_IV_SIZE, 0);
-
-	{Password validation always uses legacy AES-256/SHA-1 regardless of backend,
-		because CryptedGUID was generated with that combination}
-	if PasswordControl <> EmptyWideStr then
-		FPasswordIsWrong := not TFileCipher.CheckPasswordGUID(Password, PasswordControl);
 end;
 
 destructor TOpenSSLCipher.Destroy;

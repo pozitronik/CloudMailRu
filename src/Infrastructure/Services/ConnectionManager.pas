@@ -179,7 +179,7 @@ begin
 			if not TCipherProfileRegistry.FindById(CloudSettings.AccountSettings.CipherProfileId, Profile) then
 				Profile := TCipherProfileRegistry.GetDefaultProfile;
 
-			Cipher := Profile.CreateCipher(CloudSettings.CryptFilesPassword, CloudSettings.AccountSettings.CryptedGUIDFiles);
+			Cipher := Profile.CreateCipher(CloudSettings.CryptFilesPassword);
 		end;
 	end;
 

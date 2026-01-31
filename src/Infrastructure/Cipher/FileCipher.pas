@@ -73,7 +73,6 @@ type
 		Template Method pattern: shared file/stream logic lives here, backend creation is deferred.}
 	TBaseCipher = class(TInterfacedObject, ICipher)
 	protected
-		FPasswordIsWrong: Boolean;
 		function CreateBlockCipher: IBlockCipher; virtual; abstract;
 	public
 		function CryptFile(SourceFileName, DestinationFilename: WideString): Integer;
@@ -82,7 +81,6 @@ type
 		function DecryptStream(SourceStream, DestinationStream: TStream): Integer;
 		function GetEncryptingStream(Source: TStream): TStream;
 		function GetDecryptingStream(Source: TStream): TStream;
-		property IsWrongPassword: Boolean read FPasswordIsWrong;
 	end;
 
 	TDCP_blockcipher128class = class of TDCP_blockcipher128;
@@ -96,7 +94,7 @@ type
 	protected
 		function CreateBlockCipher: IBlockCipher; override;
 	public
-		constructor Create(Password: WideString; CipherClass: TDCP_blockcipher128class; HashClass: TDCP_hashclass; PasswordControl: WideString = '');
+		constructor Create(Password: WideString; CipherClass: TDCP_blockcipher128class; HashClass: TDCP_hashclass);
 
 		class function GetCryptedGUID(const Password: WideString): WideString; {Get an unique GUID on a password, used to check the passwords validity before login}
 		class function CheckPasswordGUID(const Password, ControlGUID: WideString): Boolean; {Check if a password is valid by compare with a saved GUID}
@@ -324,16 +322,11 @@ begin
 	Result := self.GetCryptedGUID(Password) = ControlGUID;
 end;
 
-constructor TFileCipher.Create(Password: WideString; CipherClass: TDCP_blockcipher128class; HashClass: TDCP_hashclass; PasswordControl: WideString = '');
+constructor TFileCipher.Create(Password: WideString; CipherClass: TDCP_blockcipher128class; HashClass: TDCP_hashclass);
 begin
 	self.Password := Password;
 	self.FCipherClass := CipherClass;
 	self.FHashClass := HashClass;
-
-	{Password validation always uses legacy AES-256/SHA-1 regardless of profile,
-		because CryptedGUID was generated with that combination}
-	if EmptyWideStr <> PasswordControl then
-		FPasswordIsWrong := not CheckPasswordGUID(Password, PasswordControl);
 end;
 
 function TFileCipher.CreateBlockCipher: IBlockCipher;

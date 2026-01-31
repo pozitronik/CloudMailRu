@@ -68,8 +68,6 @@ type
 		procedure TestDifferentProfilesProduceDifferentCiphertext;
 		[Test]
 		procedure TestLegacyProfileBackwardCompatibility;
-		[Test]
-		procedure TestGUIDValidationStableAcrossProfiles;
 	end;
 
 implementation
@@ -519,25 +517,6 @@ begin
 		if TFile.Exists(SourceFile) then TFile.Delete(SourceFile);
 		if TFile.Exists(EncryptedFirst) then TFile.Delete(EncryptedFirst);
 		if TFile.Exists(EncryptedSecond) then TFile.Delete(EncryptedSecond);
-	end;
-end;
-
-procedure TFileCipherTest.TestGUIDValidationStableAcrossProfiles;
-var
-	Cipher: TFileCipher;
-	StoredGUID: WideString;
-begin
-	{ GetCryptedGUID uses hardcoded AES/SHA-1 regardless of profile.
-		A GUID generated the standard way must validate even when the cipher
-		instance was created with a different profile (Twofish). }
-	StoredGUID := TFileCipher.GetCryptedGUID('testpassword');
-
-	Cipher := TFileCipher.Create('testpassword', TDCP_twofish, TDCP_sha256, StoredGUID);
-	try
-		Assert.IsFalse(Cipher.IsWrongPassword,
-			'GUID validation should succeed regardless of cipher profile');
-	finally
-		Cipher.Free;
 	end;
 end;
 
