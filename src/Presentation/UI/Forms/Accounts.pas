@@ -104,9 +104,6 @@ type
 		CopyBetweenAccountsModeCombo: TComboBox;
 		CopyBetweenAccountsModeLabel: TLabel;
 		StreamingTab: TTabSheet;
-		TExtensionsGroupBox: TGroupBox;
-		StreamingExtensionsListView: TListView;
-		NewExtButton: TButton;
 		ExtLabel: TLabel;
 		StreamingExtensionEdit: TEdit;
 		CommandLabel: TLabel;
@@ -119,7 +116,6 @@ type
 		StreamingTypeLabel: TLabel;
 		StreamingTypeCombo: TComboBox;
 		ApplyExtButton: TButton;
-		DeleteExtButton: TButton;
 		CommandPathOpenDialog: TOpenDialog;
 		UserAgentEdit: TEdit;
 		ChangeUserAgentCB: TCheckBox;
@@ -150,7 +146,13 @@ type
 		PublicUrlLabel: TLabel;
 		PublicUrlEdit: TEdit;
 		ApplyButton: TButton;
+    NewExtButton: TButton;
+    DeleteExtButton: TButton;
+    StreamingExtensionsListView: TListView;
+    EncryptBackendLabel: TLabel;
+    EncryptBackendCombo: TComboBox;
 		procedure FormShow(Sender: TObject);
+		procedure AccountsListViewKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
 		procedure AccountsListViewSelectItem(Sender: TObject; Item: TListItem; Selected: Boolean);
 		procedure AddButtonClick(Sender: TObject);
 		procedure DeleteButtonClick(Sender: TObject);
@@ -903,7 +905,6 @@ begin
 			LI := AccountsListView.Items.Add;
 			LI.Caption := Items[I].Name;
 			LI.SubItems.Add(Items[I].TypeLabel);
-			LI.SubItems.Add(Items[I].EncryptionLabel);
 		end;
 	finally
 		AccountsListView.Items.EndUpdate;
@@ -1079,6 +1080,12 @@ begin
 end;
 
 {Event handlers - Accounts tab}
+
+procedure TAccountsForm.AccountsListViewKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
+begin
+	if Key = VK_DELETE then
+		DeleteButton.OnClick(nil);
+end;
 
 procedure TAccountsForm.AccountsListViewSelectItem(Sender: TObject; Item: TListItem; Selected: Boolean);
 begin

@@ -4,7 +4,7 @@ object AccountsForm: TAccountsForm
   BorderStyle = bsDialog
   Caption = 'Cloud Accounts'
   ClientHeight = 476
-  ClientWidth = 495
+  ClientWidth = 722
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -155,30 +155,61 @@ object AccountsForm: TAccountsForm
   object OptionPages: TPageControl
     Left = 0
     Top = 0
-    Width = 495
+    Width = 722
     Height = 476
     ActivePage = AccountsTab
     Align = alClient
     TabOrder = 0
-    ExplicitWidth = 489
+    ExplicitWidth = 716
     ExplicitHeight = 459
     object AccountsTab: TTabSheet
       Caption = 'Accounts'
       ImageIndex = 5
       DesignSize = (
-        487
+        714
         448)
       object AccountNameLabel: TLabel
-        Left = 214
+        Left = 272
         Top = 4
         Width = 68
         Height = 13
+        Anchors = [akLeft, akTop, akRight]
         Caption = 'Account name'
+      end
+      object SharesPanel: TPanel
+        Left = 272
+        Top = 90
+        Width = 438
+        Height = 322
+        Anchors = [akLeft, akTop, akRight, akBottom]
+        BevelOuter = bvNone
+        ShowCaption = False
+        TabOrder = 6
+        Visible = False
+        DesignSize = (
+          438
+          322)
+        object PublicUrlLabel: TLabel
+          Left = 0
+          Top = 0
+          Width = 46
+          Height = 13
+          Caption = 'Public url:'
+        end
+        object PublicUrlEdit: TEdit
+          Left = 0
+          Top = 16
+          Width = 438
+          Height = 21
+          Anchors = [akLeft, akTop, akRight]
+          TabOrder = 0
+          OnChange = FieldChanged
+        end
       end
       object AccountsListView: TListView
         Left = 4
         Top = 4
-        Width = 202
+        Width = 262
         Height = 410
         Anchors = [akLeft, akTop, akBottom]
         Columns = <
@@ -189,61 +220,54 @@ object AccountsForm: TAccountsForm
           item
             Caption = 'Type'
             Width = 46
-          end
-          item
-            Caption = 'Enc'
-            Width = 36
           end>
         ReadOnly = True
         RowSelect = True
         TabOrder = 0
         ViewStyle = vsReport
+        OnKeyUp = AccountsListViewKeyUp
         OnSelectItem = AccountsListViewSelectItem
       end
       object AddButton: TButton
         Left = 4
         Top = 419
-        Width = 98
+        Width = 125
         Height = 25
         Anchors = [akLeft, akBottom]
         Caption = 'New'
         TabOrder = 1
         OnClick = AddButtonClick
-        ExplicitTop = 402
       end
       object DeleteButton: TButton
-        Left = 108
+        Left = 141
         Top = 419
-        Width = 98
+        Width = 125
         Height = 25
         Anchors = [akLeft, akBottom]
         Caption = 'Delete'
         TabOrder = 2
         OnClick = DeleteButtonClick
-        ExplicitTop = 402
       end
       object AccountNameEdit: TEdit
-        Left = 214
+        Left = 272
         Top = 20
-        Width = 267
+        Width = 438
         Height = 21
         Anchors = [akLeft, akTop, akRight]
         TabOrder = 3
         OnChange = FieldChanged
-        ExplicitWidth = 261
       end
       object AccountTypeGB: TGroupBox
-        Left = 214
+        Left = 272
         Top = 46
-        Width = 267
+        Width = 438
         Height = 40
         Anchors = [akLeft, akTop, akRight]
         Caption = 'Account type'
         TabOrder = 4
-        ExplicitWidth = 261
         object PrivateRB: TRadioButton
-          Left = 10
-          Top = 17
+          Left = 8
+          Top = 18
           Width = 115
           Height = 17
           Caption = 'Private'
@@ -263,29 +287,27 @@ object AccountsForm: TAccountsForm
         end
       end
       object AccountsPanel: TPanel
-        Left = 214
+        Left = 272
         Top = 90
-        Width = 267
+        Width = 438
         Height = 322
         Anchors = [akLeft, akTop, akRight, akBottom]
         BevelOuter = bvNone
         ShowCaption = False
         TabOrder = 5
-        ExplicitWidth = 261
-        ExplicitHeight = 305
         DesignSize = (
-          267
+          438
           322)
         object EmailLabel: TLabel
           Left = 0
-          Top = 0
+          Top = -3
           Width = 28
           Height = 13
           Caption = 'Email:'
         end
         object PasswordLabel: TLabel
           Left = 0
-          Top = 42
+          Top = 39
           Width = 174
           Height = 13
           Caption = 'App password (create at id.mail.ru):'
@@ -293,82 +315,75 @@ object AccountsForm: TAccountsForm
         object EmailEdit: TEdit
           Left = 0
           Top = 16
-          Width = 267
+          Width = 438
           Height = 21
           Anchors = [akLeft, akTop, akRight]
           TabOrder = 0
           OnChange = FieldChanged
-          ExplicitWidth = 261
         end
         object PasswordEdit: TEdit
           Left = 0
           Top = 58
-          Width = 267
+          Width = 438
           Height = 21
           Anchors = [akLeft, akTop, akRight]
           PasswordChar = '*'
           TabOrder = 1
           OnChange = FieldChanged
-          ExplicitWidth = 261
         end
         object UseTCPwdMngrCB: TCheckBox
           Left = 0
           Top = 84
-          Width = 267
+          Width = 438
           Height = 17
           Anchors = [akLeft, akTop, akRight]
           Caption = 'Store password in TC password manager'
           TabOrder = 2
           OnClick = FieldChanged
-          ExplicitWidth = 261
         end
         object FileSizeGB: TGroupBox
           Left = 0
           Top = 106
-          Width = 267
+          Width = 438
           Height = 58
           Anchors = [akLeft, akTop, akRight]
           Caption = 'File size'
           TabOrder = 3
-          ExplicitWidth = 261
           DesignSize = (
-            267
+            438
             58)
           object UnlimitedFileSizeCB: TCheckBox
             Left = 8
             Top = 17
-            Width = 254
+            Width = 425
             Height = 17
             Anchors = [akLeft, akTop, akRight]
             Caption = 'Ignore 2Gb limit (paid account)'
             TabOrder = 0
             OnClick = FieldChanged
-            ExplicitWidth = 248
           end
           object SplitLargeFilesCB: TCheckBox
             Left = 8
             Top = 36
-            Width = 254
+            Width = 425
             Height = 17
             Anchors = [akLeft, akTop, akRight]
-            Caption = 'Split large files to 2Gb parts'
+            Caption = 'Split large files'
             TabOrder = 1
             OnClick = FieldChanged
-            ExplicitWidth = 248
           end
         end
         object EncryptGB: TGroupBox
           Left = 0
           Top = 170
-          Width = 267
-          Height = 100
+          Width = 438
+          Height = 143
           Anchors = [akLeft, akTop, akRight]
-          Caption = 'Encryption (experimental)'
+          Caption = 'Encryption'
           TabOrder = 4
-          ExplicitWidth = 261
           DesignSize = (
-            267
-            100)
+            438
+            143)
           object EncryptFilesLabel: TLabel
             Left = 8
             Top = 20
@@ -376,10 +391,17 @@ object AccountsForm: TAccountsForm
             Height = 13
             Caption = 'Encrypt/decrypt files'
           end
+          object EncryptBackendLabel: TLabel
+            Left = 8
+            Top = 61
+            Width = 94
+            Height = 13
+            Caption = 'Encryption backend'
+          end
           object EncryptFilesCombo: TComboBox
             Left = 8
             Top = 36
-            Width = 149
+            Width = 320
             Height = 21
             Style = csDropDownList
             Anchors = [akLeft, akTop, akRight]
@@ -391,10 +413,9 @@ object AccountsForm: TAccountsForm
               'No'
               'Always'
               'Ask once')
-            ExplicitWidth = 143
           end
           object EncryptFilesPwdButton: TButton
-            Left = 162
+            Left = 333
             Top = 36
             Width = 97
             Height = 21
@@ -403,74 +424,47 @@ object AccountsForm: TAccountsForm
             Enabled = False
             TabOrder = 1
             OnClick = EncryptFilesPwdButtonClick
-            ExplicitLeft = 156
           end
           object EncryptFilenamesCB: TCheckBox
             Left = 8
-            Top = 64
-            Width = 251
+            Top = 110
+            Width = 422
             Height = 17
             Anchors = [akLeft, akTop, akRight]
             Caption = 'Also encrypt filenames'
             Enabled = False
-            TabOrder = 2
+            TabOrder = 3
             OnClick = FieldChanged
-            ExplicitWidth = 245
+          end
+          object EncryptBackendCombo: TComboBox
+            Left = 8
+            Top = 80
+            Width = 320
+            Height = 21
+            Style = csDropDownList
+            Anchors = [akLeft, akTop, akRight]
+            TabOrder = 2
+            OnChange = EncryptFilesComboChange
           end
         end
       end
-      object SharesPanel: TPanel
-        Left = 214
-        Top = 90
-        Width = 267
-        Height = 322
-        Anchors = [akLeft, akTop, akRight, akBottom]
-        BevelOuter = bvNone
-        ShowCaption = False
-        TabOrder = 6
-        Visible = False
-        ExplicitWidth = 261
-        ExplicitHeight = 305
-        DesignSize = (
-          267
-          322)
-        object PublicUrlLabel: TLabel
-          Left = 0
-          Top = 0
-          Width = 46
-          Height = 13
-          Caption = 'Public url:'
-        end
-        object PublicUrlEdit: TEdit
-          Left = 0
-          Top = 16
-          Width = 267
-          Height = 21
-          Anchors = [akLeft, akTop, akRight]
-          TabOrder = 0
-          OnChange = FieldChanged
-          ExplicitWidth = 261
-        end
-      end
       object ApplyButton: TButton
-        Left = 406
+        Left = 586
         Top = 419
-        Width = 75
+        Width = 124
         Height = 25
         Anchors = [akRight, akBottom]
         Caption = 'Apply'
         Enabled = False
         TabOrder = 7
         OnClick = ApplyButtonClick
-        ExplicitLeft = 400
-        ExplicitTop = 402
       end
     end
     object GlobalTab: TTabSheet
       Caption = 'Global settings'
       ImageIndex = 1
       DesignSize = (
-        487
+        714
         448)
       object CloudMaxFileSizeLabelBytes: TLabel
         Left = 313
@@ -566,38 +560,35 @@ object AccountsForm: TAccountsForm
       object PreserveFileTimeCB: TCheckBox
         Left = 5
         Top = 47
-        Width = 469
+        Width = 691
         Height = 17
         Anchors = [akLeft, akTop, akRight]
         Caption = 'Preserve file creation time'
         TabOrder = 2
-        ExplicitWidth = 475
       end
       object UseDLLFromPluginDir: TCheckBox
         Left = 5
         Top = 3
-        Width = 469
+        Width = 691
         Height = 17
         Anchors = [akLeft, akTop, akRight]
         Caption = 'Load SSL libraries only from plugin directory'
         TabOrder = 0
-        ExplicitWidth = 475
       end
       object GlobalSettingsApplyBtn: TButton
-        Left = 399
+        Left = 586
         Top = 417
-        Width = 75
+        Width = 126
         Height = 25
         Anchors = [akRight, akBottom]
         Caption = 'Apply'
         TabOrder = 22
         OnClick = GlobalSettingsApplyBtnClick
-        ExplicitLeft = 405
       end
       object CloudMaxFileSizeValue: TEdit
         Left = 160
         Top = 93
-        Width = 146
+        Width = 147
         Height = 21
         Enabled = False
         NumbersOnly = True
@@ -606,7 +597,7 @@ object AccountsForm: TAccountsForm
       object CloudMaxFileSizeCB: TCheckBox
         Left = 5
         Top = 95
-        Width = 145
+        Width = 146
         Height = 17
         Hint = 
           'Default: 2147483392 bytes (~2GB). Files larger than this are spl' +
@@ -620,7 +611,7 @@ object AccountsForm: TAccountsForm
       object ChunkOverwriteModeCombo: TComboBox
         Left = 183
         Top = 197
-        Width = 291
+        Width = 513
         Height = 21
         Style = csDropDownList
         Anchors = [akLeft, akTop, akRight]
@@ -635,7 +626,7 @@ object AccountsForm: TAccountsForm
       object DeleteFailOnUploadModeCombo: TComboBox
         Left = 183
         Top = 223
-        Width = 291
+        Width = 513
         Height = 21
         Style = csDropDownList
         Anchors = [akLeft, akTop, akRight]
@@ -652,7 +643,7 @@ object AccountsForm: TAccountsForm
       object OverwriteLocalModeCombo: TComboBox
         Left = 183
         Top = 249
-        Width = 291
+        Width = 513
         Height = 21
         Style = csDropDownList
         Anchors = [akLeft, akTop, akRight]
@@ -667,17 +658,16 @@ object AccountsForm: TAccountsForm
       object DisableMultiThreadingCB: TCheckBox
         Left = 5
         Top = 302
-        Width = 469
+        Width = 691
         Height = 17
         Anchors = [akLeft, akTop, akRight]
         Caption = 'Disable background operations support'
         TabOrder = 16
-        ExplicitWidth = 475
       end
       object IconsModeCombo: TComboBox
         Left = 183
         Top = 275
-        Width = 291
+        Width = 513
         Height = 21
         Style = csDropDownList
         Anchors = [akLeft, akTop, akRight]
@@ -694,17 +684,16 @@ object AccountsForm: TAccountsForm
       object SpaceInfoLoggingCB: TCheckBox
         Left = 5
         Top = 25
-        Width = 469
+        Width = 691
         Height = 17
         Anchors = [akLeft, akTop, akRight]
         Caption = 'Enable space info logging'
         TabOrder = 1
-        ExplicitWidth = 475
       end
       object OperationErrorModeCombo: TComboBox
         Left = 160
         Top = 118
-        Width = 314
+        Width = 536
         Height = 21
         Style = csDropDownList
         Anchors = [akLeft, akTop, akRight]
@@ -720,7 +709,7 @@ object AccountsForm: TAccountsForm
       object AttemptWaitValue: TSpinEdit
         Left = 365
         Top = 145
-        Width = 95
+        Width = 96
         Height = 22
         MaxValue = 2147483647
         MinValue = 0
@@ -730,7 +719,7 @@ object AccountsForm: TAccountsForm
       object RetryAttemptsValue: TSpinEdit
         Left = 241
         Top = 145
-        Width = 95
+        Width = 96
         Height = 22
         MaxValue = 2147483647
         MinValue = -1
@@ -740,27 +729,25 @@ object AccountsForm: TAccountsForm
       object DownloadLinksEncodeCB: TCheckBox
         Left = 5
         Top = 324
-        Width = 469
+        Width = 691
         Height = 17
         Anchors = [akLeft, akTop, akRight]
         Caption = 'URL encode direct download links'
         TabOrder = 17
-        ExplicitWidth = 475
       end
       object AutoUpdateDownloadListingCB: TCheckBox
         Left = 5
         Top = 347
-        Width = 469
+        Width = 691
         Height = 17
         Anchors = [akLeft, akTop, akRight]
         Caption = 'Update direct download links immediately'
         TabOrder = 18
-        ExplicitWidth = 475
       end
       object ShowTrashFoldersCB: TCheckBox
         Left = 87
         Top = 70
-        Width = 88
+        Width = 89
         Height = 17
         Caption = 'Trash folders'
         TabOrder = 3
@@ -768,7 +755,7 @@ object AccountsForm: TAccountsForm
       object ShowSharedFoldersCB: TCheckBox
         Left = 181
         Top = 70
-        Width = 118
+        Width = 119
         Height = 17
         Caption = 'Shared links folders'
         TabOrder = 4
@@ -776,7 +763,7 @@ object AccountsForm: TAccountsForm
       object ShowInvitesFoldersCB: TCheckBox
         Left = 305
         Top = 70
-        Width = 98
+        Width = 99
         Height = 17
         Caption = 'Invites folders'
         TabOrder = 5
@@ -784,7 +771,7 @@ object AccountsForm: TAccountsForm
       object PrecalculateHashCB: TCheckBox
         Left = 5
         Top = 370
-        Width = 230
+        Width = 231
         Height = 17
         Caption = 'Try to find files by hash before uploading'
         TabOrder = 19
@@ -792,17 +779,16 @@ object AccountsForm: TAccountsForm
       object CheckCRCCB: TCheckBox
         Left = 5
         Top = 394
-        Width = 468
+        Width = 690
         Height = 17
         Anchors = [akLeft, akTop, akRight]
         Caption = 'Check uploads/downloads CRC'
         TabOrder = 21
-        ExplicitWidth = 474
       end
       object CopyBetweenAccountsModeCombo: TComboBox
         Left = 183
         Top = 170
-        Width = 291
+        Width = 513
         Height = 21
         Style = csDropDownList
         Anchors = [akLeft, akTop, akRight]
@@ -817,7 +803,7 @@ object AccountsForm: TAccountsForm
       object PrecalculateHashStrategyCombo: TComboBox
         Left = 241
         Top = 366
-        Width = 232
+        Width = 454
         Height = 21
         Style = csDropDownList
         Anchors = [akLeft, akTop, akRight]
@@ -833,7 +819,7 @@ object AccountsForm: TAccountsForm
       Caption = 'Network settings'
       ImageIndex = 2
       DesignSize = (
-        487
+        714
         448)
       object SocketTimeoutLabel: TLabel
         Left = 5
@@ -848,14 +834,13 @@ object AccountsForm: TAccountsForm
       object ProxyGB: TGroupBox
         Left = 5
         Top = 30
-        Width = 469
+        Width = 690
         Height = 209
         Anchors = [akLeft, akTop, akRight]
         Caption = 'Proxy settings'
         TabOrder = 1
-        ExplicitWidth = 475
         DesignSize = (
-          469
+          690
           209)
         object ProxyTypeLabel: TLabel
           Left = 5
@@ -865,7 +850,7 @@ object AccountsForm: TAccountsForm
           Caption = 'Proxy type'
         end
         object ProxyDivLabel: TLabel
-          Left = 386
+          Left = 607
           Top = 87
           Width = 4
           Height = 13
@@ -874,7 +859,7 @@ object AccountsForm: TAccountsForm
           ExplicitLeft = 392
         end
         object ProxyPortLabel: TLabel
-          Left = 393
+          Left = 614
           Top = 68
           Width = 20
           Height = 13
@@ -906,7 +891,7 @@ object AccountsForm: TAccountsForm
         object ProxyCB: TComboBox
           Left = 5
           Top = 37
-          Width = 459
+          Width = 680
           Height = 22
           Style = csOwnerDrawFixed
           Anchors = [akLeft, akTop, akRight]
@@ -920,64 +905,58 @@ object AccountsForm: TAccountsForm
         object ProxyServerEdit: TEdit
           Left = 5
           Top = 84
-          Width = 379
+          Width = 600
           Height = 21
           Anchors = [akLeft, akTop, akRight]
           TabOrder = 1
-          ExplicitWidth = 385
         end
         object ProxyPortEdit: TEdit
-          Left = 392
+          Left = 613
           Top = 84
           Width = 72
           Height = 21
           Anchors = [akTop, akRight]
           NumbersOnly = True
           TabOrder = 2
-          ExplicitLeft = 398
         end
         object ProxyUserEdit: TEdit
           Left = 5
           Top = 130
-          Width = 459
+          Width = 680
           Height = 21
           Anchors = [akLeft, akTop, akRight]
           TabOrder = 3
           OnChange = ProxyUserEditChange
-          ExplicitWidth = 465
         end
         object ProxyPwd: TMaskEdit
           Left = 5
           Top = 176
-          Width = 459
+          Width = 680
           Height = 21
           Anchors = [akLeft, akTop, akRight]
           PasswordChar = '*'
           TabOrder = 5
           Text = ''
-          ExplicitWidth = 465
         end
         object ProxyTCPwdMngrCB: TCheckBox
           Left = 161
           Top = 156
-          Width = 303
+          Width = 524
           Height = 17
           Anchors = [akLeft, akTop, akRight]
           Caption = 'Store proxy password in TC password manager'
           TabOrder = 4
-          ExplicitWidth = 309
         end
       end
       object NetworkSettingsApplyBtn: TButton
-        Left = 399
+        Left = 586
         Top = 417
-        Width = 75
+        Width = 125
         Height = 25
         Anchors = [akRight, akBottom]
         Caption = 'Apply'
         TabOrder = 5
         OnClick = GlobalSettingsApplyBtnClick
-        ExplicitLeft = 405
       end
       object SocketTimeoutEdit: TSpinEdit
         Left = 239
@@ -992,14 +971,13 @@ object AccountsForm: TAccountsForm
       object SpeedLimitGB: TGroupBox
         Left = 5
         Top = 246
-        Width = 469
+        Width = 690
         Height = 78
         Anchors = [akLeft, akTop, akRight]
         Caption = 'Speed limits'
         TabOrder = 2
-        ExplicitWidth = 475
         DesignSize = (
-          469
+          690
           78)
         object UploadsBPSLabel: TLabel
           Left = 5
@@ -1024,54 +1002,50 @@ object AccountsForm: TAccountsForm
         object UploadBPSEdit: TSpinEdit
           Left = 230
           Top = 18
-          Width = 166
+          Width = 387
           Height = 22
           Anchors = [akLeft, akTop, akRight]
           MaxValue = 0
           MinValue = 0
           TabOrder = 0
           Value = -1
-          ExplicitWidth = 172
         end
         object DownloadBPSEdit: TSpinEdit
           Left = 230
           Top = 46
-          Width = 166
+          Width = 387
           Height = 22
           Anchors = [akLeft, akTop, akRight]
           MaxValue = 0
           MinValue = 0
           TabOrder = 1
           Value = -1
-          ExplicitWidth = 172
         end
       end
       object UserAgentEdit: TEdit
         Left = 5
         Top = 349
-        Width = 469
+        Width = 690
         Height = 21
         Anchors = [akLeft, akTop, akRight]
         TabOrder = 4
-        ExplicitWidth = 475
       end
       object ChangeUserAgentCB: TCheckBox
         Left = 5
         Top = 326
-        Width = 469
+        Width = 690
         Height = 17
         Anchors = [akLeft, akTop, akRight]
         Caption = 'Change plugin UserAgent'
         TabOrder = 3
         OnClick = ChangeUserAgentCBClick
-        ExplicitWidth = 475
       end
     end
     object CommentsTab: TTabSheet
       Caption = 'File comments support'
       ImageIndex = 3
       DesignSize = (
-        487
+        714
         448)
       object DescriptionFileNameLabel: TLabel
         Left = 5
@@ -1086,67 +1060,61 @@ object AccountsForm: TAccountsForm
       object DescriptionEnabledCB: TCheckBox
         Left = 5
         Top = 3
-        Width = 469
+        Width = 690
         Height = 17
         Anchors = [akLeft, akTop, akRight]
         Caption = 'Read descript.ion comments from cloud filesystem'
         TabOrder = 0
-        ExplicitWidth = 475
       end
       object DescriptionEditorEnabledCB: TCheckBox
         Left = 5
         Top = 25
-        Width = 469
+        Width = 690
         Height = 17
         Anchors = [akLeft, akTop, akRight]
         Caption = 'Enable descript.ion editor (experimental)'
         TabOrder = 1
-        ExplicitWidth = 475
       end
       object CommentsSettingsApplyBtn: TButton
-        Left = 399
+        Left = 586
         Top = 417
-        Width = 75
+        Width = 125
         Height = 25
         Anchors = [akRight, akBottom]
         Caption = 'Apply'
         TabOrder = 6
         OnClick = GlobalSettingsApplyBtnClick
-        ExplicitLeft = 405
       end
       object DescriptionCopyToCloudCB: TCheckBox
         Left = 5
         Top = 47
-        Width = 469
+        Width = 690
         Height = 17
         Anchors = [akLeft, akTop, akRight]
         Caption = 'Copy descript.ion comments to cloud (experimental)'
         TabOrder = 2
-        ExplicitWidth = 475
       end
       object DescriptionCopyFromCloudCB: TCheckBox
         Left = 5
         Top = 70
-        Width = 469
+        Width = 690
         Height = 17
         Anchors = [akLeft, akTop, akRight]
         Caption = 'Copy descript.ion comments from cloud (experimental)'
         TabOrder = 3
-        ExplicitWidth = 475
       end
       object DescriptionFileNameEdit: TEdit
         Left = 191
         Top = 115
-        Width = 283
+        Width = 504
         Height = 21
         Anchors = [akLeft, akTop, akRight]
         TabOrder = 5
-        ExplicitWidth = 289
       end
       object DescriptionTrackCloudFSCB: TCheckBox
         Left = 5
         Top = 93
-        Width = 469
+        Width = 690
         Height = 17
         Hint = 'Updates descript.ion when files are renamed or deleted in cloud'
         Anchors = [akLeft, akTop, akRight]
@@ -1154,168 +1122,114 @@ object AccountsForm: TAccountsForm
         ParentShowHint = False
         ShowHint = True
         TabOrder = 4
-        ExplicitWidth = 475
       end
     end
     object StreamingTab: TTabSheet
       Caption = 'Streaming settings'
       ImageIndex = 4
       DesignSize = (
-        487
+        714
         448)
       object ExtLabel: TLabel
-        Left = 225
-        Top = 10
-        Width = 60
+        Left = 272
+        Top = 4
+        Width = 66
         Height = 13
         Anchors = [akLeft, akTop, akRight]
         Caption = 'File extension'
-        ExplicitWidth = 66
       end
       object CommandLabel: TLabel
-        Left = 225
-        Top = 52
-        Width = 41
+        Left = 272
+        Top = 46
+        Width = 47
         Height = 13
         Anchors = [akLeft, akTop, akRight]
         Caption = 'Command'
-        ExplicitWidth = 47
       end
       object ParametersLabel: TLabel
-        Left = 225
-        Top = 93
-        Width = 221
+        Left = 272
+        Top = 86
+        Width = 227
         Height = 13
         Anchors = [akLeft, akTop, akRight]
         Caption = 'Parameters (%url% for stream url substitution)'
-        ExplicitWidth = 227
       end
       object StartPathLabel: TLabel
-        Left = 225
-        Top = 134
-        Width = 43
+        Left = 272
+        Top = 127
+        Width = 49
         Height = 13
         Anchors = [akLeft, akTop, akRight]
         Caption = 'Start path'
-        ExplicitWidth = 49
       end
       object StreamingTypeLabel: TLabel
-        Left = 225
-        Top = 177
-        Width = 67
+        Left = 272
+        Top = 170
+        Width = 73
         Height = 13
         Anchors = [akLeft, akTop, akRight]
         Caption = 'Streaming type'
-        ExplicitWidth = 73
-      end
-      object TExtensionsGroupBox: TGroupBox
-        Left = 0
-        Top = 0
-        Width = 225
-        Height = 449
-        Anchors = [akLeft, akTop, akBottom]
-        Caption = 'Registered extensions'
-        TabOrder = 0
-        DesignSize = (
-          225
-          449)
-        object StreamingExtensionsListView: TListView
-          Left = 4
-          Top = 17
-          Width = 218
-          Height = 399
-          Anchors = [akLeft, akTop, akRight, akBottom]
-          Columns = <
-            item
-              Caption = 'Extension'
-              Width = 120
-            end
-            item
-              Caption = 'Type'
-              Width = 80
-            end>
-          ReadOnly = True
-          RowSelect = True
-          TabOrder = 0
-          ViewStyle = vsReport
-          OnSelectItem = StreamingExtensionsListViewSelectItem
-          OnKeyUp = StreamingExtensionsListViewKeyUp
-        end
-        object NewExtButton: TButton
-          Left = 4
-          Top = 421
-          Width = 105
-          Height = 25
-          Anchors = [akLeft, akBottom]
-          Caption = 'New'
-          TabOrder = 1
-          OnClick = NewExtButtonClick
-        end
-        object DeleteExtButton: TButton
-          Left = 115
-          Top = 421
-          Width = 105
-          Height = 25
-          Anchors = [akLeft, akBottom]
-          Caption = 'Delete'
-          TabOrder = 2
-          OnClick = DeleteExtButtonClick
-        end
       end
       object StreamingExtensionEdit: TEdit
-        Left = 225
-        Top = 27
-        Width = 234
+        Left = 272
+        Top = 20
+        Width = 438
+        Height = 21
+        Anchors = [akLeft, akTop, akRight]
+        TabOrder = 0
+        OnChange = StreamingFieldChanged
+        ExplicitWidth = 432
+      end
+      object CommandPathEdit: TEdit
+        Left = 272
+        Top = 59
+        Width = 408
         Height = 21
         Anchors = [akLeft, akTop, akRight]
         TabOrder = 1
         OnChange = StreamingFieldChanged
-      end
-      object CommandPathEdit: TEdit
-        Left = 225
-        Top = 69
-        Width = 213
-        Height = 21
-        Anchors = [akLeft, akTop, akRight]
-        TabOrder = 2
-        OnChange = StreamingFieldChanged
+        ExplicitWidth = 402
       end
       object CommandPathButton: TButton
-        Left = 453
-        Top = 69
-        Width = 21
+        Left = 689
+        Top = 59
+        Width = 22
         Height = 21
         Anchors = [akTop, akRight]
         Caption = '...'
-        TabOrder = 3
+        TabOrder = 2
         OnClick = CommandPathButtonClick
+        ExplicitLeft = 683
       end
       object ParametersEdit: TEdit
-        Left = 225
-        Top = 110
-        Width = 234
+        Left = 272
+        Top = 103
+        Width = 438
+        Height = 21
+        Anchors = [akLeft, akTop, akRight]
+        TabOrder = 3
+        OnChange = StreamingFieldChanged
+        ExplicitWidth = 432
+      end
+      object StartPathEdit: TEdit
+        Left = 272
+        Top = 144
+        Width = 438
         Height = 21
         Anchors = [akLeft, akTop, akRight]
         TabOrder = 4
         OnChange = StreamingFieldChanged
-      end
-      object StartPathEdit: TEdit
-        Left = 225
-        Top = 151
-        Width = 234
-        Height = 21
-        Anchors = [akLeft, akTop, akRight]
-        TabOrder = 5
-        OnChange = StreamingFieldChanged
+        ExplicitWidth = 432
       end
       object StreamingTypeCombo: TComboBox
-        Left = 225
-        Top = 195
-        Width = 255
+        Left = 272
+        Top = 188
+        Width = 438
         Height = 21
         Style = csDropDownList
+        Anchors = [akLeft, akTop, akRight]
         ItemIndex = 0
-        TabOrder = 6
+        TabOrder = 5
         Text = 'None (download and open file)'
         OnChange = StreamingFieldChanged
         Items.Strings = (
@@ -1324,17 +1238,64 @@ object AccountsForm: TAccountsForm
           'M3U8 playlist (useful for media files)'
           'Default (publish file & get download link)'
           'Weblink (publish file & get web link)')
+        ExplicitWidth = 432
       end
       object ApplyExtButton: TButton
-        Left = 225
-        Top = 222
-        Width = 75
+        Left = 586
+        Top = 419
+        Width = 124
         Height = 25
-        Anchors = [akLeft, akTop]
+        Anchors = [akRight, akBottom]
         Caption = 'Apply'
         Enabled = False
-        TabOrder = 7
+        TabOrder = 6
         OnClick = ApplyExtButtonClick
+        ExplicitLeft = 580
+        ExplicitTop = 402
+      end
+      object NewExtButton: TButton
+        Left = 4
+        Top = 419
+        Width = 125
+        Height = 25
+        Anchors = [akLeft, akBottom]
+        Caption = 'New'
+        TabOrder = 7
+        OnClick = NewExtButtonClick
+        ExplicitTop = 402
+      end
+      object DeleteExtButton: TButton
+        Left = 141
+        Top = 419
+        Width = 125
+        Height = 25
+        Anchors = [akLeft, akBottom]
+        Caption = 'Delete'
+        TabOrder = 8
+        OnClick = DeleteExtButtonClick
+        ExplicitTop = 402
+      end
+      object StreamingExtensionsListView: TListView
+        Left = 4
+        Top = 4
+        Width = 262
+        Height = 410
+        Anchors = [akLeft, akTop, akBottom]
+        Columns = <
+          item
+            Caption = 'Extension'
+            Width = 120
+          end
+          item
+            Caption = 'Type'
+            Width = 80
+          end>
+        ReadOnly = True
+        RowSelect = True
+        TabOrder = 9
+        ViewStyle = vsReport
+        OnKeyUp = StreamingExtensionsListViewKeyUp
+        OnSelectItem = StreamingExtensionsListViewSelectItem
       end
     end
   end
