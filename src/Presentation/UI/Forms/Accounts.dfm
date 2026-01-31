@@ -162,158 +162,184 @@ object AccountsForm: TAccountsForm
     TabOrder = 0
     object AccountsTab: TTabSheet
       Caption = 'Accounts'
-      DesignSize = (
-        487
-        448)
+      ImageIndex = 5
       object AccountNameLabel: TLabel
-        Left = 225
-        Top = 10
+        Left = 214
+        Top = 4
         Width = 68
         Height = 13
-        Anchors = [akLeft, akTop, akRight]
         Caption = 'Account name'
       end
-      object AccountsGroupBox: TGroupBox
-        Left = 0
-        Top = 0
-        Width = 225
-        Height = 449
-        Anchors = [akLeft, akTop, akBottom]
-        Caption = 'Accounts'
+      object AccountsListView: TListView
+        Left = 4
+        Top = 4
+        Width = 202
+        Height = 410
+        Columns = <
+          item
+            Caption = 'Account'
+            Width = 100
+          end
+          item
+            Caption = 'Type'
+            Width = 46
+          end
+          item
+            Caption = 'Enc'
+            Width = 36
+          end>
+        ReadOnly = True
+        RowSelect = True
         TabOrder = 0
-        DesignSize = (
-          225
-          449)
-        object AccountsList: TListBox
-          Left = 4
-          Top = 17
-          Width = 218
-          Height = 429
-          Anchors = [akLeft, akTop, akRight, akBottom]
-          ExtendedSelect = False
-          ItemHeight = 13
-          TabOrder = 0
-          OnClick = AccountsListClick
-          OnKeyUp = AccountsListKeyUp
-        end
+        ViewStyle = vsReport
+        OnSelectItem = AccountsListViewSelectItem
       end
-      object ApplyButton: TButton
-        Left = 225
-        Top = 417
-        Width = 75
+      object AddButton: TButton
+        Left = 4
+        Top = 419
+        Width = 98
         Height = 25
-        Caption = 'Add/Apply'
-        TabOrder = 5
-        OnClick = ApplyButtonClick
+        Caption = 'New'
+        TabOrder = 1
+        OnClick = AddButtonClick
       end
       object DeleteButton: TButton
-        Left = 405
-        Top = 417
-        Width = 75
+        Left = 108
+        Top = 419
+        Width = 98
         Height = 25
         Caption = 'Delete'
-        TabOrder = 6
+        TabOrder = 2
         OnClick = DeleteButtonClick
       end
-      object AccountsPanel: TPanel
-        Left = 222
-        Top = 78
-        Width = 262
-        Height = 333
-        BevelOuter = bvNone
-        Ctl3D = True
-        ParentCtl3D = False
-        ShowCaption = False
+      object AccountNameEdit: TEdit
+        Left = 214
+        Top = 20
+        Width = 273
+        Height = 21
         TabOrder = 3
-        DesignSize = (
-          262
-          333)
-        object PasswordLabel: TLabel
-          Left = 3
-          Top = 46
-          Width = 174
-          Height = 13
-          Anchors = [akLeft, akTop, akRight]
-          Caption = 'App password (create at id.mail.ru):'
+        OnChange = FieldChanged
+      end
+      object AccountTypeGB: TGroupBox
+        Left = 214
+        Top = 46
+        Width = 273
+        Height = 40
+        Caption = 'Account type'
+        TabOrder = 4
+        object PrivateRB: TRadioButton
+          Left = 10
+          Top = 17
+          Width = 115
+          Height = 17
+          Caption = 'Private'
+          Checked = True
+          TabOrder = 0
+          TabStop = True
+          OnClick = PrivateRBClick
         end
-        object UsernameLabel: TLabel
-          Left = 3
+        object PublicRB: TRadioButton
+          Left = 140
+          Top = 17
+          Width = 115
+          Height = 17
+          Caption = 'Public'
+          TabOrder = 1
+          OnClick = PublicRBClick
+        end
+      end
+      object AccountsPanel: TPanel
+        Left = 214
+        Top = 90
+        Width = 273
+        Height = 322
+        BevelOuter = bvNone
+        ShowCaption = False
+        TabOrder = 5
+        object EmailLabel: TLabel
+          Left = 0
           Top = 0
           Width = 28
           Height = 13
-          Anchors = [akLeft, akTop, akRight]
           Caption = 'Email:'
         end
-        object SplitLargeFilesCB: TCheckBox
-          Left = 3
-          Top = 138
-          Width = 253
-          Height = 17
-          Anchors = [akLeft, akTop, akRight]
-          Caption = 'Split large files to 2Gb parts'
-          TabOrder = 4
-        end
-        object UnlimitedFileSizeCB: TCheckBox
-          Left = 3
-          Top = 115
-          Width = 253
-          Height = 17
-          Anchors = [akLeft, akTop, akRight]
-          Caption = 'Ignore 2Gb limit (paid account)'
-          TabOrder = 3
-        end
-        object UseTCPwdMngrCB: TCheckBox
-          Left = 3
-          Top = 92
-          Width = 253
-          Height = 17
-          Anchors = [akLeft, akTop, akRight]
-          Caption = 'Store password in TC password manager'
-          TabOrder = 2
-        end
-        object PasswordEdit: TEdit
-          Left = 3
-          Top = 65
-          Width = 253
-          Height = 21
-          Anchors = [akLeft, akTop, akRight]
-          PasswordChar = '*'
-          TabOrder = 1
+        object PasswordLabel: TLabel
+          Left = 0
+          Top = 42
+          Width = 174
+          Height = 13
+          Caption = 'App password (create at id.mail.ru):'
         end
         object EmailEdit: TEdit
-          Left = 3
-          Top = 19
-          Width = 253
+          Left = 0
+          Top = 16
+          Width = 273
           Height = 21
-          Anchors = [akLeft, akTop, akRight]
           TabOrder = 0
+          OnChange = FieldChanged
+        end
+        object PasswordEdit: TEdit
+          Left = 0
+          Top = 58
+          Width = 273
+          Height = 21
+          PasswordChar = '*'
+          TabOrder = 1
+          OnChange = FieldChanged
+        end
+        object UseTCPwdMngrCB: TCheckBox
+          Left = 0
+          Top = 84
+          Width = 273
+          Height = 17
+          Caption = 'Store password in TC password manager'
+          TabOrder = 2
+          OnClick = FieldChanged
+        end
+        object FileSizeGB: TGroupBox
+          Left = 0
+          Top = 106
+          Width = 273
+          Height = 58
+          Caption = 'File size'
+          TabOrder = 3
+          object UnlimitedFileSizeCB: TCheckBox
+            Left = 8
+            Top = 17
+            Width = 260
+            Height = 17
+            Caption = 'Ignore 2Gb limit (paid account)'
+            TabOrder = 0
+            OnClick = FieldChanged
+          end
+          object SplitLargeFilesCB: TCheckBox
+            Left = 8
+            Top = 36
+            Width = 260
+            Height = 17
+            Caption = 'Split large files to 2Gb parts'
+            TabOrder = 1
+            OnClick = FieldChanged
+          end
         end
         object EncryptGB: TGroupBox
-          Left = 2
-          Top = 161
-          Width = 254
+          Left = 0
+          Top = 170
+          Width = 273
           Height = 100
           Caption = 'Encryption (experimental)'
-          TabOrder = 5
+          TabOrder = 4
           object EncryptFilesLabel: TLabel
-            Left = 7
+            Left = 8
             Top = 20
             Width = 100
             Height = 13
             Caption = 'Encrypt/decrypt files'
           end
-          object EncryptFilenamesCB: TCheckBox
-            Left = 7
-            Top = 66
-            Width = 244
-            Height = 17
-            Caption = 'Also encrypt filenames'
-            TabOrder = 2
-          end
           object EncryptFilesCombo: TComboBox
-            Left = 7
-            Top = 39
-            Width = 152
+            Left = 8
+            Top = 36
+            Width = 155
             Height = 21
             Style = csDropDownList
             ItemIndex = 0
@@ -326,61 +352,61 @@ object AccountsForm: TAccountsForm
               'Ask once')
           end
           object EncryptFilesPwdButton: TButton
-            Left = 164
-            Top = 39
-            Width = 84
+            Left = 168
+            Top = 36
+            Width = 97
             Height = 21
-            Hint = 'Enabled when encryption mode is set'
             Caption = 'Set password'
             Enabled = False
-            ParentShowHint = False
-            ShowHint = True
             TabOrder = 1
             OnClick = EncryptFilesPwdButtonClick
           end
+          object EncryptFilenamesCB: TCheckBox
+            Left = 8
+            Top = 64
+            Width = 257
+            Height = 17
+            Caption = 'Also encrypt filenames'
+            Enabled = False
+            TabOrder = 2
+            OnClick = FieldChanged
+          end
         end
       end
-      object AccountNameEdit: TEdit
-        Left = 225
-        Top = 27
-        Width = 253
-        Height = 21
-        Anchors = [akLeft, akTop, akRight]
-        TabOrder = 1
-      end
-      object PublicAccountCB: TCheckBox
-        Left = 225
-        Top = 55
-        Width = 253
-        Height = 17
-        Caption = 'Public account'
-        TabOrder = 2
-        OnClick = PublicAccountCBClick
-      end
       object SharesPanel: TPanel
-        Left = 224
-        Top = 78
-        Width = 262
-        Height = 45
+        Left = 214
+        Top = 90
+        Width = 273
+        Height = 322
         BevelOuter = bvNone
-        Ctl3D = True
-        ParentCtl3D = False
         ShowCaption = False
-        TabOrder = 4
+        TabOrder = 6
+        Visible = False
         object PublicUrlLabel: TLabel
-          Left = 3
+          Left = 0
           Top = 0
           Width = 46
           Height = 13
           Caption = 'Public url:'
         end
         object PublicUrlEdit: TEdit
-          Left = 3
-          Top = 19
-          Width = 251
+          Left = 0
+          Top = 16
+          Width = 273
           Height = 21
           TabOrder = 0
+          OnChange = FieldChanged
         end
+      end
+      object ApplyButton: TButton
+        Left = 412
+        Top = 419
+        Width = 75
+        Height = 25
+        Caption = 'Apply'
+        Enabled = False
+        TabOrder = 7
+        OnClick = ApplyButtonClick
       end
     end
     object GlobalTab: TTabSheet
@@ -433,7 +459,7 @@ object AccountsForm: TAccountsForm
         Top = 148
         Width = 77
         Height = 13
-        Hint = 
+        Hint =
           'Number of retry attempts on error (-1 for infinite, 0 to disable' +
           ')'
         Caption = 'Retry attempts:'
@@ -516,7 +542,7 @@ object AccountsForm: TAccountsForm
         Top = 95
         Width = 145
         Height = 17
-        Hint = 
+        Hint =
           'Default: 2147483392 bytes (~2GB). Files larger than this are spl' +
           'it into chunks'
         Caption = 'Override split file size to'

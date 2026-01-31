@@ -39,27 +39,9 @@ type
 		OptionPages: TPageControl;
 		AccountsTab: TTabSheet;
 		GlobalTab: TTabSheet;
-		AccountsGroupBox: TGroupBox;
-		AccountsList: TListBox;
-		ApplyButton: TButton;
-		DeleteButton: TButton;
 		PreserveFileTimeCB: TCheckBox;
 		UseDLLFromPluginDir: TCheckBox;
 		GlobalSettingsApplyBtn: TButton;
-		AccountsPanel: TPanel;
-		AccountNameEdit: TEdit;
-		AccountNameLabel: TLabel;
-		SplitLargeFilesCB: TCheckBox;
-		UnlimitedFileSizeCB: TCheckBox;
-		UseTCPwdMngrCB: TCheckBox;
-		PasswordEdit: TEdit;
-		PasswordLabel: TLabel;
-		EmailEdit: TEdit;
-		UsernameLabel: TLabel;
-		PublicAccountCB: TCheckBox;
-		SharesPanel: TPanel;
-		PublicUrlEdit: TEdit;
-		PublicUrlLabel: TLabel;
 		NetworkTab: TTabSheet;
 		ProxyGB: TGroupBox;
 		ProxyTypeLabel: TLabel;
@@ -112,11 +94,6 @@ type
 		DescriptionFileNameLabel: TLabel;
 		DescriptionFileNameEdit: TEdit;
 		DescriptionTrackCloudFSCB: TCheckBox;
-		EncryptGB: TGroupBox;
-		EncryptFilenamesCB: TCheckBox;
-		EncryptFilesCombo: TComboBox;
-		EncryptFilesLabel: TLabel;
-		EncryptFilesPwdButton: TButton;
 		PrecalculateHashCB: TCheckBox;
 		CheckCRCCB: TCheckBox;
 		SpeedLimitGB: TGroupBox;
@@ -146,19 +123,47 @@ type
 		UserAgentEdit: TEdit;
 		ChangeUserAgentCB: TCheckBox;
 		PrecalculateHashStrategyCombo: TComboBox;
+		AccountsListView: TListView;
+		AddButton: TButton;
+		DeleteButton: TButton;
+		AccountNameLabel: TLabel;
+		AccountNameEdit: TEdit;
+		AccountTypeGB: TGroupBox;
+		PrivateRB: TRadioButton;
+		PublicRB: TRadioButton;
+		AccountsPanel: TPanel;
+		EmailLabel: TLabel;
+		EmailEdit: TEdit;
+		PasswordLabel: TLabel;
+		PasswordEdit: TEdit;
+		UseTCPwdMngrCB: TCheckBox;
+		FileSizeGB: TGroupBox;
+		UnlimitedFileSizeCB: TCheckBox;
+		SplitLargeFilesCB: TCheckBox;
+		EncryptGB: TGroupBox;
+		EncryptFilesLabel: TLabel;
+		EncryptFilesCombo: TComboBox;
+		EncryptFilesPwdButton: TButton;
+		EncryptFilenamesCB: TCheckBox;
+		SharesPanel: TPanel;
+		PublicUrlLabel: TLabel;
+		PublicUrlEdit: TEdit;
+		ApplyButton: TButton;
 		procedure FormShow(Sender: TObject);
-		procedure AccountsListClick(Sender: TObject);
-		procedure ApplyButtonClick(Sender: TObject);
+		procedure AccountsListViewSelectItem(Sender: TObject; Item: TListItem; Selected: Boolean);
+		procedure AddButtonClick(Sender: TObject);
 		procedure DeleteButtonClick(Sender: TObject);
-		procedure AccountsListKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
+		procedure ApplyButtonClick(Sender: TObject);
+		procedure PrivateRBClick(Sender: TObject);
+		procedure PublicRBClick(Sender: TObject);
+		procedure EncryptFilesComboChange(Sender: TObject);
+		procedure EncryptFilesPwdButtonClick(Sender: TObject);
+		procedure FieldChanged(Sender: TObject);
 		class function ShowAccounts(ParentWindow: HWND; PasswordManager: IPasswordManager; Account: WideString): Boolean;
 		procedure FormActivate(Sender: TObject);
 		procedure ProxyUserEditChange(Sender: TObject);
 		procedure GlobalSettingsApplyBtnClick(Sender: TObject);
-		procedure PublicAccountCBClick(Sender: TObject);
 		procedure CloudMaxFileSizeCBClick(Sender: TObject);
-		procedure EncryptFilesComboChange(Sender: TObject);
-		procedure EncryptFilesPwdButtonClick(Sender: TObject);
 		procedure FormKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
 		procedure StreamingExtensionsListClick(Sender: TObject);
 		procedure StreamingExtensionsListKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -168,35 +173,6 @@ type
 		procedure ChangeUserAgentCBClick(Sender: TObject);
 	private
 		FPresenter: TAccountsPresenter;
-
-		{IAccountsView - Account tab controls}
-		procedure SetAccountsList(Accounts: TStrings);
-		function GetSelectedAccountIndex: Integer;
-		function GetSelectedAccountName: WideString;
-		procedure SelectAccount(Index: Integer);
-		procedure SetAccountName(Value: WideString);
-		function GetAccountName: WideString;
-		procedure SetEmail(Value: WideString);
-		function GetEmail: WideString;
-		procedure SetPassword(Value: WideString);
-		function GetPassword: WideString;
-		procedure SetUseTCPasswordManager(Value: Boolean);
-		function GetUseTCPasswordManager: Boolean;
-		procedure SetUnlimitedFileSize(Value: Boolean);
-		function GetUnlimitedFileSize: Boolean;
-		procedure SetSplitLargeFiles(Value: Boolean);
-		function GetSplitLargeFiles: Boolean;
-		procedure SetPublicAccount(Value: Boolean);
-		function GetPublicAccount: Boolean;
-		procedure SetPublicUrl(Value: WideString);
-		function GetPublicUrl: WideString;
-		procedure SetEncryptFilesMode(Value: Integer);
-		function GetEncryptFilesMode: Integer;
-		procedure SetEncryptFilenames(Value: Boolean);
-		function GetEncryptFilenames: Boolean;
-		procedure SetEncryptPasswordButtonEnabled(Value: Boolean);
-		procedure SetAccountsPanelVisible(Value: Boolean);
-		procedure SetSharesPanelVisible(Value: Boolean);
 
 		{IAccountsView - Global settings}
 		procedure SetLoadSSLFromPluginDir(Value: Boolean);
@@ -308,6 +284,38 @@ type
 
 		{IAccountsView - Dialogs}
 		function ShowEncryptionPasswordDialog(const AccountName: WideString; var CryptedGUID: WideString): Boolean;
+
+		{IAccountsView - Accounts tab}
+		procedure SetAccountsList(const Items: TArray<TAccountDisplayItem>);
+		function GetSelectedAccountIndex: Integer;
+		function GetSelectedAccountName: WideString;
+		procedure SelectAccount(Index: Integer);
+		procedure SetAccountName(Value: WideString);
+		function GetAccountName: WideString;
+		procedure SetEmail(Value: WideString);
+		function GetEmail: WideString;
+		procedure SetPassword(Value: WideString);
+		function GetPassword: WideString;
+		procedure SetUseTCPasswordManager(Value: Boolean);
+		function GetUseTCPasswordManager: Boolean;
+		procedure SetUnlimitedFileSize(Value: Boolean);
+		function GetUnlimitedFileSize: Boolean;
+		procedure SetSplitLargeFiles(Value: Boolean);
+		function GetSplitLargeFiles: Boolean;
+		procedure SetIsPrivate(Value: Boolean);
+		function GetIsPrivate: Boolean;
+		procedure SetPublicUrl(Value: WideString);
+		function GetPublicUrl: WideString;
+		procedure SetEncryptFilesMode(Value: Integer);
+		function GetEncryptFilesMode: Integer;
+		procedure SetEncryptFilenames(Value: Boolean);
+		function GetEncryptFilenames: Boolean;
+		procedure SetEncryptPasswordButtonEnabled(Value: Boolean);
+		procedure SetEncryptFilenamesCBEnabled(Value: Boolean);
+		procedure SetAccountsPanelVisible(Value: Boolean);
+		procedure SetSharesPanelVisible(Value: Boolean);
+		procedure SetApplyButtonEnabled(Value: Boolean);
+		function ConfirmDiscardAccountChanges: TConfirmSaveResult;
 	public
 
 	end;
@@ -317,150 +325,10 @@ implementation
 {$R *.dfm}
 
 uses
+	System.UITypes,
 	ProxySettings,
 	CloudConstants,
 	IniConfigFile;
-
-{IAccountsView - Account tab controls}
-
-procedure TAccountsForm.SetAccountsList(Accounts: TStrings);
-begin
-	AccountsList.Items.Assign(Accounts);
-end;
-
-function TAccountsForm.GetSelectedAccountIndex: Integer;
-begin
-	Result := AccountsList.ItemIndex;
-end;
-
-function TAccountsForm.GetSelectedAccountName: WideString;
-begin
-	if (AccountsList.Items.Count > 0) and (AccountsList.ItemIndex >= 0) then
-		Result := AccountsList.Items[AccountsList.ItemIndex]
-	else
-		Result := '';
-end;
-
-procedure TAccountsForm.SelectAccount(Index: Integer);
-begin
-	if (Index >= 0) and (Index < AccountsList.Items.Count) then
-		AccountsList.Selected[Index] := True;
-end;
-
-procedure TAccountsForm.SetAccountName(Value: WideString);
-begin
-	AccountNameEdit.Text := Value;
-end;
-
-function TAccountsForm.GetAccountName: WideString;
-begin
-	Result := AccountNameEdit.Text;
-end;
-
-procedure TAccountsForm.SetEmail(Value: WideString);
-begin
-	EmailEdit.Text := Value;
-end;
-
-function TAccountsForm.GetEmail: WideString;
-begin
-	Result := EmailEdit.Text;
-end;
-
-procedure TAccountsForm.SetPassword(Value: WideString);
-begin
-	PasswordEdit.Text := Value;
-end;
-
-function TAccountsForm.GetPassword: WideString;
-begin
-	Result := PasswordEdit.Text;
-end;
-
-procedure TAccountsForm.SetUseTCPasswordManager(Value: Boolean);
-begin
-	UseTCPwdMngrCB.Checked := Value;
-end;
-
-function TAccountsForm.GetUseTCPasswordManager: Boolean;
-begin
-	Result := UseTCPwdMngrCB.Checked;
-end;
-
-procedure TAccountsForm.SetUnlimitedFileSize(Value: Boolean);
-begin
-	UnlimitedFileSizeCB.Checked := Value;
-end;
-
-function TAccountsForm.GetUnlimitedFileSize: Boolean;
-begin
-	Result := UnlimitedFileSizeCB.Checked;
-end;
-
-procedure TAccountsForm.SetSplitLargeFiles(Value: Boolean);
-begin
-	SplitLargeFilesCB.Checked := Value;
-end;
-
-function TAccountsForm.GetSplitLargeFiles: Boolean;
-begin
-	Result := SplitLargeFilesCB.Checked;
-end;
-
-procedure TAccountsForm.SetPublicAccount(Value: Boolean);
-begin
-	PublicAccountCB.Checked := Value;
-end;
-
-function TAccountsForm.GetPublicAccount: Boolean;
-begin
-	Result := PublicAccountCB.Checked;
-end;
-
-procedure TAccountsForm.SetPublicUrl(Value: WideString);
-begin
-	PublicUrlEdit.Text := Value;
-end;
-
-function TAccountsForm.GetPublicUrl: WideString;
-begin
-	Result := PublicUrlEdit.Text;
-end;
-
-procedure TAccountsForm.SetEncryptFilesMode(Value: Integer);
-begin
-	EncryptFilesCombo.ItemIndex := Value;
-end;
-
-function TAccountsForm.GetEncryptFilesMode: Integer;
-begin
-	Result := EncryptFilesCombo.ItemIndex;
-end;
-
-procedure TAccountsForm.SetEncryptFilenames(Value: Boolean);
-begin
-	EncryptFilenamesCB.Checked := Value;
-end;
-
-function TAccountsForm.GetEncryptFilenames: Boolean;
-begin
-	Result := EncryptFilenamesCB.Checked;
-end;
-
-procedure TAccountsForm.SetEncryptPasswordButtonEnabled(Value: Boolean);
-begin
-	EncryptFilesPwdButton.Enabled := Value;
-end;
-
-procedure TAccountsForm.SetAccountsPanelVisible(Value: Boolean);
-begin
-	AccountsPanel.Visible := Value;
-end;
-
-procedure TAccountsForm.SetSharesPanelVisible(Value: Boolean);
-begin
-	SharesPanel.Visible := Value;
-end;
 
 {IAccountsView - Global settings}
 
@@ -976,23 +844,245 @@ begin
 	Result := Self.Handle;
 end;
 
-{Event handlers - delegate to presenter}
+{IAccountsView - Accounts tab}
 
-procedure TAccountsForm.AccountsListClick(Sender: TObject);
+procedure TAccountsForm.SetAccountsList(const Items: TArray<TAccountDisplayItem>);
+var
+	I: Integer;
+	LI: TListItem;
 begin
-	FPresenter.OnAccountSelected;
+	AccountsListView.Items.BeginUpdate;
+	try
+		AccountsListView.Items.Clear;
+		for I := 0 to High(Items) do
+		begin
+			LI := AccountsListView.Items.Add;
+			LI.Caption := Items[I].Name;
+			LI.SubItems.Add(Items[I].TypeLabel);
+			LI.SubItems.Add(Items[I].EncryptionLabel);
+		end;
+	finally
+		AccountsListView.Items.EndUpdate;
+	end;
 end;
 
-procedure TAccountsForm.AccountsListKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
+function TAccountsForm.GetSelectedAccountIndex: Integer;
 begin
-	if Key = VK_DELETE then
-		DeleteButtonClick(nil);
+	if AccountsListView.Selected <> nil then
+		Result := AccountsListView.Selected.Index
+	else
+		Result := -1;
+end;
+
+function TAccountsForm.GetSelectedAccountName: WideString;
+begin
+	if AccountsListView.Selected <> nil then
+		Result := AccountsListView.Selected.Caption
+	else
+		Result := '';
+end;
+
+procedure TAccountsForm.SelectAccount(Index: Integer);
+begin
+	if (Index >= 0) and (Index < AccountsListView.Items.Count) then
+	begin
+		AccountsListView.Selected := AccountsListView.Items[Index];
+		AccountsListView.ItemFocused := AccountsListView.Items[Index];
+	end
+	else
+	begin
+		AccountsListView.Selected := nil;
+		AccountsListView.ItemFocused := nil;
+	end;
+end;
+
+procedure TAccountsForm.SetAccountName(Value: WideString);
+begin
+	AccountNameEdit.Text := Value;
+end;
+
+function TAccountsForm.GetAccountName: WideString;
+begin
+	Result := AccountNameEdit.Text;
+end;
+
+procedure TAccountsForm.SetEmail(Value: WideString);
+begin
+	EmailEdit.Text := Value;
+end;
+
+function TAccountsForm.GetEmail: WideString;
+begin
+	Result := EmailEdit.Text;
+end;
+
+procedure TAccountsForm.SetPassword(Value: WideString);
+begin
+	PasswordEdit.Text := Value;
+end;
+
+function TAccountsForm.GetPassword: WideString;
+begin
+	Result := PasswordEdit.Text;
+end;
+
+procedure TAccountsForm.SetUseTCPasswordManager(Value: Boolean);
+begin
+	UseTCPwdMngrCB.Checked := Value;
+end;
+
+function TAccountsForm.GetUseTCPasswordManager: Boolean;
+begin
+	Result := UseTCPwdMngrCB.Checked;
+end;
+
+procedure TAccountsForm.SetUnlimitedFileSize(Value: Boolean);
+begin
+	UnlimitedFileSizeCB.Checked := Value;
+end;
+
+function TAccountsForm.GetUnlimitedFileSize: Boolean;
+begin
+	Result := UnlimitedFileSizeCB.Checked;
+end;
+
+procedure TAccountsForm.SetSplitLargeFiles(Value: Boolean);
+begin
+	SplitLargeFilesCB.Checked := Value;
+end;
+
+function TAccountsForm.GetSplitLargeFiles: Boolean;
+begin
+	Result := SplitLargeFilesCB.Checked;
+end;
+
+procedure TAccountsForm.SetIsPrivate(Value: Boolean);
+begin
+	PrivateRB.Checked := Value;
+	PublicRB.Checked := not Value;
+end;
+
+function TAccountsForm.GetIsPrivate: Boolean;
+begin
+	Result := PrivateRB.Checked;
+end;
+
+procedure TAccountsForm.SetPublicUrl(Value: WideString);
+begin
+	PublicUrlEdit.Text := Value;
+end;
+
+function TAccountsForm.GetPublicUrl: WideString;
+begin
+	Result := PublicUrlEdit.Text;
+end;
+
+procedure TAccountsForm.SetEncryptFilesMode(Value: Integer);
+begin
+	EncryptFilesCombo.ItemIndex := Value;
+end;
+
+function TAccountsForm.GetEncryptFilesMode: Integer;
+begin
+	Result := EncryptFilesCombo.ItemIndex;
+end;
+
+procedure TAccountsForm.SetEncryptFilenames(Value: Boolean);
+begin
+	EncryptFilenamesCB.Checked := Value;
+end;
+
+function TAccountsForm.GetEncryptFilenames: Boolean;
+begin
+	Result := EncryptFilenamesCB.Checked;
+end;
+
+procedure TAccountsForm.SetEncryptPasswordButtonEnabled(Value: Boolean);
+begin
+	EncryptFilesPwdButton.Enabled := Value;
+end;
+
+procedure TAccountsForm.SetEncryptFilenamesCBEnabled(Value: Boolean);
+begin
+	EncryptFilenamesCB.Enabled := Value;
+end;
+
+procedure TAccountsForm.SetAccountsPanelVisible(Value: Boolean);
+begin
+	AccountsPanel.Visible := Value;
+end;
+
+procedure TAccountsForm.SetSharesPanelVisible(Value: Boolean);
+begin
+	SharesPanel.Visible := Value;
+end;
+
+procedure TAccountsForm.SetApplyButtonEnabled(Value: Boolean);
+begin
+	ApplyButton.Enabled := Value;
+end;
+
+function TAccountsForm.ConfirmDiscardAccountChanges: TConfirmSaveResult;
+begin
+	case MessageDlg(ASK_SAVE_ACCOUNT_CHANGES, mtConfirmation, [mbYes, mbNo, mbCancel], 0) of
+		mrYes:
+			Result := csrSave;
+		mrNo:
+			Result := csrDiscard;
+	else
+		Result := csrCancel;
+	end;
+end;
+
+{Event handlers - Accounts tab}
+
+procedure TAccountsForm.AccountsListViewSelectItem(Sender: TObject; Item: TListItem; Selected: Boolean);
+begin
+	if Selected then
+		FPresenter.OnAccountSelected;
+end;
+
+procedure TAccountsForm.AddButtonClick(Sender: TObject);
+begin
+	FPresenter.OnAddAccountClick;
+end;
+
+procedure TAccountsForm.DeleteButtonClick(Sender: TObject);
+begin
+	FPresenter.OnDeleteAccountClick;
 end;
 
 procedure TAccountsForm.ApplyButtonClick(Sender: TObject);
 begin
 	FPresenter.OnApplyAccountClick;
 end;
+
+procedure TAccountsForm.PrivateRBClick(Sender: TObject);
+begin
+	FPresenter.OnAccountTypeChanged;
+end;
+
+procedure TAccountsForm.PublicRBClick(Sender: TObject);
+begin
+	FPresenter.OnAccountTypeChanged;
+end;
+
+procedure TAccountsForm.EncryptFilesComboChange(Sender: TObject);
+begin
+	FPresenter.OnEncryptModeChanged;
+end;
+
+procedure TAccountsForm.EncryptFilesPwdButtonClick(Sender: TObject);
+begin
+	FPresenter.OnEncryptPasswordClick;
+end;
+
+procedure TAccountsForm.FieldChanged(Sender: TObject);
+begin
+	FPresenter.OnFieldChanged;
+end;
+
+{Event handlers - other tabs}
 
 procedure TAccountsForm.ApplyExtButtonClick(Sender: TObject);
 begin
@@ -1021,24 +1111,9 @@ begin
 		CommandPathEdit.Text := CommandPathOpenDialog.FileName;
 end;
 
-procedure TAccountsForm.DeleteButtonClick(Sender: TObject);
-begin
-	FPresenter.OnDeleteAccountClick;
-end;
-
 procedure TAccountsForm.DeleteExtButtonClick(Sender: TObject);
 begin
 	FPresenter.OnDeleteStreamingExtensionClick;
-end;
-
-procedure TAccountsForm.EncryptFilesComboChange(Sender: TObject);
-begin
-	FPresenter.OnEncryptModeChanged;
-end;
-
-procedure TAccountsForm.EncryptFilesPwdButtonClick(Sender: TObject);
-begin
-	FPresenter.OnEncryptPasswordClick;
 end;
 
 procedure TAccountsForm.FormActivate(Sender: TObject);
@@ -1056,7 +1131,7 @@ end;
 
 procedure TAccountsForm.FormShow(Sender: TObject);
 begin
-	AccountsList.SetFocus;
+	AccountsListView.SetFocus;
 end;
 
 procedure TAccountsForm.GlobalSettingsApplyBtnClick(Sender: TObject);
@@ -1067,11 +1142,6 @@ end;
 procedure TAccountsForm.ProxyUserEditChange(Sender: TObject);
 begin
 	FPresenter.OnProxyUserChanged;
-end;
-
-procedure TAccountsForm.PublicAccountCBClick(Sender: TObject);
-begin
-	FPresenter.OnPublicAccountChanged;
 end;
 
 procedure TAccountsForm.StreamingExtensionsListClick(Sender: TObject);

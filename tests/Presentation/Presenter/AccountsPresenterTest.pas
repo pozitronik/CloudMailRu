@@ -23,22 +23,6 @@ type
 	{Mock implementation of IAccountsView for testing}
 	TMockAccountsView = class(TInterfacedObject, IAccountsView)
 	private
-		FAccountsList: TStringList;
-		FSelectedAccountIndex: Integer;
-		FAccountName: WideString;
-		FEmail: WideString;
-		FPassword: WideString;
-		FUseTCPasswordManager: Boolean;
-		FUnlimitedFileSize: Boolean;
-		FSplitLargeFiles: Boolean;
-		FPublicAccount: Boolean;
-		FPublicUrl: WideString;
-		FEncryptFilesMode: Integer;
-		FEncryptFilenames: Boolean;
-		FEncryptPasswordButtonEnabled: Boolean;
-		FAccountsPanelVisible: Boolean;
-		FSharesPanelVisible: Boolean;
-
 		{Global settings}
 		FLoadSSLFromPluginDir: Boolean;
 		FPreserveFileTime: Boolean;
@@ -99,38 +83,31 @@ type
 		{UI actions}
 		FDescriptionFileNameErrorMessage: WideString;
 		FShownTabIndex: Integer;
+
+		{Accounts tab}
+		FAccountsListItems: TArray<TAccountDisplayItem>;
+		FSelectedAccountIndex: Integer;
+		FAccountName: WideString;
+		FEmail: WideString;
+		FPassword: WideString;
+		FUseTCPasswordManager: Boolean;
+		FUnlimitedFileSize: Boolean;
+		FSplitLargeFiles: Boolean;
+		FIsPrivate: Boolean;
+		FPublicUrl: WideString;
+		FEncryptFilesMode: Integer;
+		FEncryptFilenames: Boolean;
+		FEncryptPasswordButtonEnabled: Boolean;
+		FEncryptFilenamesCBEnabled: Boolean;
+		FAccountsPanelVisible: Boolean;
+		FSharesPanelVisible: Boolean;
+		FApplyButtonEnabled: Boolean;
+		FConfirmDiscardResult: TConfirmSaveResult;
+		FConfirmDiscardCallCount: Integer;
+		FConfirmDiscardCallback: TProc;
 	public
 		constructor Create;
 		destructor Destroy; override;
-
-		{IAccountsView - Account tab controls}
-		procedure SetAccountsList(Accounts: TStrings);
-		function GetSelectedAccountIndex: Integer;
-		function GetSelectedAccountName: WideString;
-		procedure SelectAccount(Index: Integer);
-		procedure SetAccountName(Value: WideString);
-		function GetAccountName: WideString;
-		procedure SetEmail(Value: WideString);
-		function GetEmail: WideString;
-		procedure SetPassword(Value: WideString);
-		function GetPassword: WideString;
-		procedure SetUseTCPasswordManager(Value: Boolean);
-		function GetUseTCPasswordManager: Boolean;
-		procedure SetUnlimitedFileSize(Value: Boolean);
-		function GetUnlimitedFileSize: Boolean;
-		procedure SetSplitLargeFiles(Value: Boolean);
-		function GetSplitLargeFiles: Boolean;
-		procedure SetPublicAccount(Value: Boolean);
-		function GetPublicAccount: Boolean;
-		procedure SetPublicUrl(Value: WideString);
-		function GetPublicUrl: WideString;
-		procedure SetEncryptFilesMode(Value: Integer);
-		function GetEncryptFilesMode: Integer;
-		procedure SetEncryptFilenames(Value: Boolean);
-		function GetEncryptFilenames: Boolean;
-		procedure SetEncryptPasswordButtonEnabled(Value: Boolean);
-		procedure SetAccountsPanelVisible(Value: Boolean);
-		procedure SetSharesPanelVisible(Value: Boolean);
 
 		{IAccountsView - Global settings}
 		procedure SetLoadSSLFromPluginDir(Value: Boolean);
@@ -243,12 +220,46 @@ type
 		{IAccountsView - Dialogs}
 		function ShowEncryptionPasswordDialog(const AccountName: WideString; var CryptedGUID: WideString): Boolean;
 
+		{IAccountsView - Accounts tab}
+		procedure SetAccountsList(const Items: TArray<TAccountDisplayItem>);
+		function GetSelectedAccountIndex: Integer;
+		function GetSelectedAccountName: WideString;
+		procedure SelectAccount(Index: Integer);
+		procedure SetAccountName(Value: WideString);
+		function GetAccountName: WideString;
+		procedure SetEmail(Value: WideString);
+		function GetEmail: WideString;
+		procedure SetPassword(Value: WideString);
+		function GetPassword: WideString;
+		procedure SetUseTCPasswordManager(Value: Boolean);
+		function GetUseTCPasswordManager: Boolean;
+		procedure SetUnlimitedFileSize(Value: Boolean);
+		function GetUnlimitedFileSize: Boolean;
+		procedure SetSplitLargeFiles(Value: Boolean);
+		function GetSplitLargeFiles: Boolean;
+		procedure SetIsPrivate(Value: Boolean);
+		function GetIsPrivate: Boolean;
+		procedure SetPublicUrl(Value: WideString);
+		function GetPublicUrl: WideString;
+		procedure SetEncryptFilesMode(Value: Integer);
+		function GetEncryptFilesMode: Integer;
+		procedure SetEncryptFilenames(Value: Boolean);
+		function GetEncryptFilenames: Boolean;
+		procedure SetEncryptPasswordButtonEnabled(Value: Boolean);
+		procedure SetEncryptFilenamesCBEnabled(Value: Boolean);
+		procedure SetAccountsPanelVisible(Value: Boolean);
+		procedure SetSharesPanelVisible(Value: Boolean);
+		procedure SetApplyButtonEnabled(Value: Boolean);
+		function ConfirmDiscardAccountChanges: TConfirmSaveResult;
+
 		{Test access properties}
-		property AccountsList: TStringList read FAccountsList;
+		property AccountsListItems: TArray<TAccountDisplayItem> read FAccountsListItems;
 		property SelectedAccountIndex: Integer read FSelectedAccountIndex write FSelectedAccountIndex;
+		property EncryptPasswordButtonEnabled: Boolean read FEncryptPasswordButtonEnabled;
+		property EncryptFilenamesCBEnabled: Boolean read FEncryptFilenamesCBEnabled;
 		property AccountsPanelVisible: Boolean read FAccountsPanelVisible;
 		property SharesPanelVisible: Boolean read FSharesPanelVisible;
-		property EncryptPasswordButtonEnabled: Boolean read FEncryptPasswordButtonEnabled;
+		property ApplyButtonEnabled: Boolean read FApplyButtonEnabled;
 		property DescriptionFileNameErrorMessage: WideString read FDescriptionFileNameErrorMessage;
 		property ShownTabIndex: Integer read FShownTabIndex;
 		property CloudMaxFileSizeEditEnabled: Boolean read FCloudMaxFileSizeEditEnabled;
@@ -256,6 +267,9 @@ type
 		property UserAgentReadOnly: Boolean read FUserAgentReadOnly;
 		property StreamingExtensionsList: TStringList read FStreamingExtensionsList;
 		property SelectedStreamingExtensionIndex: Integer read FSelectedStreamingExtensionIndex write FSelectedStreamingExtensionIndex;
+		property ConfirmDiscardResult: TConfirmSaveResult read FConfirmDiscardResult write FConfirmDiscardResult;
+		property ConfirmDiscardCallCount: Integer read FConfirmDiscardCallCount;
+		property ConfirmDiscardCallback: TProc read FConfirmDiscardCallback write FConfirmDiscardCallback;
 	end;
 
 	{Mock password manager for testing}
@@ -298,16 +312,6 @@ type
 		[Test]
 		procedure TestInitializeLoadsStreamingExtensions;
 
-		{Account operations tests}
-		[Test]
-		procedure TestOnPublicAccountChangedShowsSharesPanel;
-		[Test]
-		procedure TestOnPublicAccountChangedHidesAccountsPanel;
-		[Test]
-		procedure TestOnEncryptModeChangedEnablesPasswordButton;
-		[Test]
-		procedure TestOnEncryptModeChangedDisablesPasswordButton;
-
 		{Global settings tests}
 		[Test]
 		procedure TestOnCloudMaxFileSizeCheckChangedEnablesEdit;
@@ -321,38 +325,6 @@ type
 		procedure TestOnChangeUserAgentChangedEnablesEdit;
 		[Test]
 		procedure TestOnChangeUserAgentChangedDisablesEdit;
-
-		{Account selection and loading tests}
-		[Test]
-		procedure TestInitializeWithInitialAccountSelectsIt;
-		[Test]
-		procedure TestInitializeWithUnknownAccountSelectsFirst;
-		[Test]
-		procedure TestOnAccountSelectedLoadsAccountData;
-		[Test]
-		procedure TestOnAccountSelectedClearsFieldsWhenEmpty;
-
-		{Account CRUD tests}
-		[Test]
-		procedure TestOnApplyAccountClickSavesAccount;
-		[Test]
-		procedure TestOnApplyAccountClickWithEmptyNameDoesNothing;
-		[Test]
-		procedure TestOnApplyAccountClickWithTCPasswordManager;
-		[Test]
-		procedure TestOnApplyAccountClickWithTCPasswordManagerFailure;
-		[Test]
-		procedure TestOnDeleteAccountClickRemovesAccount;
-		[Test]
-		procedure TestOnDeleteAccountClickWithEmptySelectionDoesNothing;
-
-		{Encryption tests}
-		[Test]
-		procedure TestOnEncryptPasswordClickSetsGUID;
-		[Test]
-		procedure TestOnEncryptPasswordClickCancelledDoesNothing;
-		[Test]
-		procedure TestOnEncryptModeChangedWithAskOnce;
 
 		{Global settings apply tests}
 		[Test]
@@ -388,6 +360,80 @@ type
 		[Test]
 		procedure TestLoadStreamingExtensionsToViewPopulatesList;
 
+		{Accounts tab tests}
+		[Test]
+		procedure TestInitializePopulatesAccountsList;
+		[Test]
+		procedure TestInitializeSelectsAccount;
+		[Test]
+		procedure TestInitializeWithUnknownAccountSelectsFirst;
+		[Test]
+		procedure TestAccountsListShowsCorrectTypeLabels;
+		[Test]
+		procedure TestAccountsListShowsCorrectEncryptionLabels;
+		[Test]
+		procedure TestOnAccountSelectedLoadsAccountData;
+		[Test]
+		procedure TestOnAccountSelectedClearsWhenEmpty;
+		[Test]
+		procedure TestOnAddAccountClickClearsFields;
+		[Test]
+		procedure TestOnDeleteAccountClickRemovesAccount;
+		[Test]
+		procedure TestOnDeleteAccountClickWithEmptySelectionDoesNothing;
+		[Test]
+		procedure TestOnApplyAccountClickSavesPrivateAccount;
+		[Test]
+		procedure TestOnApplyAccountClickSavesPublicAccount;
+		[Test]
+		procedure TestOnApplyAccountClickWithEmptyNameDoesNothing;
+		[Test]
+		procedure TestOnApplyAccountClickWithTCPasswordManager;
+		[Test]
+		procedure TestOnApplyAccountClickWithTCPasswordManagerFailure;
+		[Test]
+		procedure TestOnAccountTypeChangedShowsPrivatePanel;
+		[Test]
+		procedure TestOnAccountTypeChangedShowsPublicPanel;
+		[Test]
+		procedure TestOnEncryptModeChangedEnablesPasswordButton;
+		[Test]
+		procedure TestOnEncryptModeChangedDisablesPasswordButton;
+		[Test]
+		procedure TestOnEncryptModeChangedEnablesFilenamesCB;
+		[Test]
+		procedure TestOnEncryptModeChangedDisablesFilenamesCB;
+		[Test]
+		procedure TestOnEncryptModeChangedWithAskOnce;
+		[Test]
+		procedure TestOnEncryptPasswordClickSetsGUID;
+		[Test]
+		procedure TestOnEncryptPasswordClickCancelledDoesNothing;
+
+		{Dirty tracking and selection preservation tests}
+		[Test]
+		procedure TestApplyButtonDisabledAfterInitialize;
+		[Test]
+		procedure TestApplyButtonEnabledAfterFieldChanged;
+		[Test]
+		procedure TestApplyButtonDisabledAfterSuccessfulApply;
+		[Test]
+		procedure TestSelectionPreservedAfterApply;
+		[Test]
+		procedure TestConfirmDialogShownOnAccountSwitchWithDirtyState;
+		[Test]
+		procedure TestCancelOnConfirmKeepsCurrentSelection;
+		[Test]
+		procedure TestSaveOnConfirmSavesAndSwitches;
+		[Test]
+		procedure TestDiscardOnConfirmSwitchesWithoutSaving;
+		[Test]
+		procedure TestNewButtonWithDirtyStateTriggersConfirm;
+		[Test]
+		procedure TestProgrammaticUpdatesDoNotTriggerDirty;
+		[Test]
+		procedure TestRepeatedSelectSameAccountDoesNotTriggerConfirm;
+
 		{LoadGlobalSettingsToView tests}
 		[Test]
 		procedure TestLoadGlobalSettingsLoadsAllSettings;
@@ -412,156 +458,20 @@ uses
 constructor TMockAccountsView.Create;
 begin
 	inherited Create;
-	FAccountsList := TStringList.Create;
 	FStreamingExtensionsList := TStringList.Create;
-	FSelectedAccountIndex := -1;
 	FSelectedStreamingExtensionIndex := -1;
 	FShownTabIndex := -1;
+	FSelectedAccountIndex := -1;
+	FIsPrivate := True;
+	FApplyButtonEnabled := False;
+	FConfirmDiscardResult := csrDiscard;
+	FConfirmDiscardCallCount := 0;
 end;
 
 destructor TMockAccountsView.Destroy;
 begin
-	FAccountsList.Free;
 	FStreamingExtensionsList.Free;
 	inherited;
-end;
-
-procedure TMockAccountsView.SetAccountsList(Accounts: TStrings);
-begin
-	FAccountsList.Assign(Accounts);
-end;
-
-function TMockAccountsView.GetSelectedAccountIndex: Integer;
-begin
-	Result := FSelectedAccountIndex;
-end;
-
-function TMockAccountsView.GetSelectedAccountName: WideString;
-begin
-	if (FSelectedAccountIndex >= 0) and (FSelectedAccountIndex < FAccountsList.Count) then
-		Result := FAccountsList[FSelectedAccountIndex]
-	else
-		Result := '';
-end;
-
-procedure TMockAccountsView.SelectAccount(Index: Integer);
-begin
-	FSelectedAccountIndex := Index;
-end;
-
-procedure TMockAccountsView.SetAccountName(Value: WideString);
-begin
-	FAccountName := Value;
-end;
-
-function TMockAccountsView.GetAccountName: WideString;
-begin
-	Result := FAccountName;
-end;
-
-procedure TMockAccountsView.SetEmail(Value: WideString);
-begin
-	FEmail := Value;
-end;
-
-function TMockAccountsView.GetEmail: WideString;
-begin
-	Result := FEmail;
-end;
-
-procedure TMockAccountsView.SetPassword(Value: WideString);
-begin
-	FPassword := Value;
-end;
-
-function TMockAccountsView.GetPassword: WideString;
-begin
-	Result := FPassword;
-end;
-
-procedure TMockAccountsView.SetUseTCPasswordManager(Value: Boolean);
-begin
-	FUseTCPasswordManager := Value;
-end;
-
-function TMockAccountsView.GetUseTCPasswordManager: Boolean;
-begin
-	Result := FUseTCPasswordManager;
-end;
-
-procedure TMockAccountsView.SetUnlimitedFileSize(Value: Boolean);
-begin
-	FUnlimitedFileSize := Value;
-end;
-
-function TMockAccountsView.GetUnlimitedFileSize: Boolean;
-begin
-	Result := FUnlimitedFileSize;
-end;
-
-procedure TMockAccountsView.SetSplitLargeFiles(Value: Boolean);
-begin
-	FSplitLargeFiles := Value;
-end;
-
-function TMockAccountsView.GetSplitLargeFiles: Boolean;
-begin
-	Result := FSplitLargeFiles;
-end;
-
-procedure TMockAccountsView.SetPublicAccount(Value: Boolean);
-begin
-	FPublicAccount := Value;
-end;
-
-function TMockAccountsView.GetPublicAccount: Boolean;
-begin
-	Result := FPublicAccount;
-end;
-
-procedure TMockAccountsView.SetPublicUrl(Value: WideString);
-begin
-	FPublicUrl := Value;
-end;
-
-function TMockAccountsView.GetPublicUrl: WideString;
-begin
-	Result := FPublicUrl;
-end;
-
-procedure TMockAccountsView.SetEncryptFilesMode(Value: Integer);
-begin
-	FEncryptFilesMode := Value;
-end;
-
-function TMockAccountsView.GetEncryptFilesMode: Integer;
-begin
-	Result := FEncryptFilesMode;
-end;
-
-procedure TMockAccountsView.SetEncryptFilenames(Value: Boolean);
-begin
-	FEncryptFilenames := Value;
-end;
-
-function TMockAccountsView.GetEncryptFilenames: Boolean;
-begin
-	Result := FEncryptFilenames;
-end;
-
-procedure TMockAccountsView.SetEncryptPasswordButtonEnabled(Value: Boolean);
-begin
-	FEncryptPasswordButtonEnabled := Value;
-end;
-
-procedure TMockAccountsView.SetAccountsPanelVisible(Value: Boolean);
-begin
-	FAccountsPanelVisible := Value;
-end;
-
-procedure TMockAccountsView.SetSharesPanelVisible(Value: Boolean);
-begin
-	FSharesPanelVisible := Value;
 end;
 
 {Global settings}
@@ -1078,6 +988,166 @@ begin
 	Result := False;
 end;
 
+{Accounts tab}
+
+procedure TMockAccountsView.SetAccountsList(const Items: TArray<TAccountDisplayItem>);
+begin
+	FAccountsListItems := Copy(Items);
+end;
+
+function TMockAccountsView.GetSelectedAccountIndex: Integer;
+begin
+	Result := FSelectedAccountIndex;
+end;
+
+function TMockAccountsView.GetSelectedAccountName: WideString;
+begin
+	if (FSelectedAccountIndex >= 0) and (FSelectedAccountIndex <= High(FAccountsListItems)) then
+		Result := FAccountsListItems[FSelectedAccountIndex].Name
+	else
+		Result := '';
+end;
+
+procedure TMockAccountsView.SelectAccount(Index: Integer);
+begin
+	FSelectedAccountIndex := Index;
+end;
+
+procedure TMockAccountsView.SetAccountName(Value: WideString);
+begin
+	FAccountName := Value;
+end;
+
+function TMockAccountsView.GetAccountName: WideString;
+begin
+	Result := FAccountName;
+end;
+
+procedure TMockAccountsView.SetEmail(Value: WideString);
+begin
+	FEmail := Value;
+end;
+
+function TMockAccountsView.GetEmail: WideString;
+begin
+	Result := FEmail;
+end;
+
+procedure TMockAccountsView.SetPassword(Value: WideString);
+begin
+	FPassword := Value;
+end;
+
+function TMockAccountsView.GetPassword: WideString;
+begin
+	Result := FPassword;
+end;
+
+procedure TMockAccountsView.SetUseTCPasswordManager(Value: Boolean);
+begin
+	FUseTCPasswordManager := Value;
+end;
+
+function TMockAccountsView.GetUseTCPasswordManager: Boolean;
+begin
+	Result := FUseTCPasswordManager;
+end;
+
+procedure TMockAccountsView.SetUnlimitedFileSize(Value: Boolean);
+begin
+	FUnlimitedFileSize := Value;
+end;
+
+function TMockAccountsView.GetUnlimitedFileSize: Boolean;
+begin
+	Result := FUnlimitedFileSize;
+end;
+
+procedure TMockAccountsView.SetSplitLargeFiles(Value: Boolean);
+begin
+	FSplitLargeFiles := Value;
+end;
+
+function TMockAccountsView.GetSplitLargeFiles: Boolean;
+begin
+	Result := FSplitLargeFiles;
+end;
+
+procedure TMockAccountsView.SetIsPrivate(Value: Boolean);
+begin
+	FIsPrivate := Value;
+end;
+
+function TMockAccountsView.GetIsPrivate: Boolean;
+begin
+	Result := FIsPrivate;
+end;
+
+procedure TMockAccountsView.SetPublicUrl(Value: WideString);
+begin
+	FPublicUrl := Value;
+end;
+
+function TMockAccountsView.GetPublicUrl: WideString;
+begin
+	Result := FPublicUrl;
+end;
+
+procedure TMockAccountsView.SetEncryptFilesMode(Value: Integer);
+begin
+	FEncryptFilesMode := Value;
+end;
+
+function TMockAccountsView.GetEncryptFilesMode: Integer;
+begin
+	Result := FEncryptFilesMode;
+end;
+
+procedure TMockAccountsView.SetEncryptFilenames(Value: Boolean);
+begin
+	FEncryptFilenames := Value;
+end;
+
+function TMockAccountsView.GetEncryptFilenames: Boolean;
+begin
+	Result := FEncryptFilenames;
+end;
+
+procedure TMockAccountsView.SetEncryptPasswordButtonEnabled(Value: Boolean);
+begin
+	FEncryptPasswordButtonEnabled := Value;
+end;
+
+procedure TMockAccountsView.SetEncryptFilenamesCBEnabled(Value: Boolean);
+begin
+	FEncryptFilenamesCBEnabled := Value;
+end;
+
+procedure TMockAccountsView.SetAccountsPanelVisible(Value: Boolean);
+begin
+	FAccountsPanelVisible := Value;
+end;
+
+procedure TMockAccountsView.SetSharesPanelVisible(Value: Boolean);
+begin
+	FSharesPanelVisible := Value;
+end;
+
+procedure TMockAccountsView.SetApplyButtonEnabled(Value: Boolean);
+begin
+	FApplyButtonEnabled := Value;
+end;
+
+function TMockAccountsView.ConfirmDiscardAccountChanges: TConfirmSaveResult;
+begin
+	Inc(FConfirmDiscardCallCount);
+	{Callback simulates VCL focus-change events that fire when a modal dialog
+	 opens (focus transfers from ListView to dialog, triggering OnSelectItem)}
+	if Assigned(FConfirmDiscardCallback) then
+		FConfirmDiscardCallback();
+	Result := FConfirmDiscardResult;
+end;
+
 {TMockPasswordManager}
 
 constructor TMockPasswordManager.Create;
@@ -1164,46 +1234,6 @@ begin
 	Assert.IsNotNull(FView.StreamingExtensionsList, 'Streaming extensions list should exist');
 end;
 
-procedure TAccountsPresenterTest.TestOnPublicAccountChangedShowsSharesPanel;
-begin
-	FPresenter.Initialize('');
-	FView.SetPublicAccount(True);
-
-	FPresenter.OnPublicAccountChanged;
-
-	Assert.IsTrue(FView.SharesPanelVisible, 'Shares panel should be visible for public account');
-end;
-
-procedure TAccountsPresenterTest.TestOnPublicAccountChangedHidesAccountsPanel;
-begin
-	FPresenter.Initialize('');
-	FView.SetPublicAccount(True);
-
-	FPresenter.OnPublicAccountChanged;
-
-	Assert.IsFalse(FView.AccountsPanelVisible, 'Accounts panel should be hidden for public account');
-end;
-
-procedure TAccountsPresenterTest.TestOnEncryptModeChangedEnablesPasswordButton;
-begin
-	FPresenter.Initialize('');
-	FView.SetEncryptFilesMode(EncryptModeAlways);
-
-	FPresenter.OnEncryptModeChanged;
-
-	Assert.IsTrue(FView.EncryptPasswordButtonEnabled, 'Password button should be enabled for EncryptModeAlways');
-end;
-
-procedure TAccountsPresenterTest.TestOnEncryptModeChangedDisablesPasswordButton;
-begin
-	FPresenter.Initialize('');
-	FView.SetEncryptFilesMode(EncryptModeNone);
-
-	FPresenter.OnEncryptModeChanged;
-
-	Assert.IsFalse(FView.EncryptPasswordButtonEnabled, 'Password button should be disabled for EncryptModeNone');
-end;
-
 procedure TAccountsPresenterTest.TestOnCloudMaxFileSizeCheckChangedEnablesEdit;
 begin
 	FPresenter.Initialize('');
@@ -1262,272 +1292,6 @@ begin
 	FPresenter.OnChangeUserAgentChanged;
 
 	Assert.IsTrue(FView.UserAgentReadOnly, 'User agent edit should be read-only when checkbox is unchecked');
-end;
-
-{Account selection and loading tests}
-
-procedure TAccountsPresenterTest.TestInitializeWithInitialAccountSelectsIt;
-var
-	AccSettings: TAccountSettings;
-begin
-	{Setup: Create two accounts}
-	AccSettings := Default(TAccountSettings);
-	AccSettings.Account := 'Account1';
-	AccSettings.Email := 'user1@mail.ru';
-	FAccountsManager.SetAccountSettings(AccSettings);
-
-	AccSettings.Account := 'Account2';
-	AccSettings.Email := 'user2@mail.ru';
-	FAccountsManager.SetAccountSettings(AccSettings);
-
-	{Initialize with second account as initial}
-	FPresenter.Initialize('Account2');
-
-	{Verify second account is selected}
-	Assert.AreEqual(1, FView.SelectedAccountIndex, 'Second account should be selected');
-	Assert.AreEqual('user2@mail.ru', FView.GetEmail, 'Email should be from Account2');
-end;
-
-procedure TAccountsPresenterTest.TestInitializeWithUnknownAccountSelectsFirst;
-var
-	AccSettings: TAccountSettings;
-begin
-	{Setup: Create an account}
-	AccSettings := Default(TAccountSettings);
-	AccSettings.Account := 'Account1';
-	AccSettings.Email := 'user1@mail.ru';
-	FAccountsManager.SetAccountSettings(AccSettings);
-
-	{Initialize with unknown account}
-	FPresenter.Initialize('UnknownAccount');
-
-	{Verify first account is selected as fallback}
-	Assert.AreEqual(0, FView.SelectedAccountIndex, 'First account should be selected as fallback');
-end;
-
-procedure TAccountsPresenterTest.TestOnAccountSelectedLoadsAccountData;
-var
-	AccSettings: TAccountSettings;
-begin
-	{Setup: Create account with specific settings}
-	AccSettings := Default(TAccountSettings);
-	AccSettings.Account := 'TestAccount';
-	AccSettings.Email := 'test@mail.ru';
-	AccSettings.Password := 'secret';
-	AccSettings.UseTCPasswordManager := True;
-	AccSettings.UnlimitedFilesize := True;
-	AccSettings.SplitLargeFiles := True;
-	AccSettings.PublicAccount := False;
-	AccSettings.EncryptFilesMode := EncryptModeAlways;
-	AccSettings.EncryptFilenames := True;
-	FAccountsManager.SetAccountSettings(AccSettings);
-
-	FPresenter.Initialize('TestAccount');
-
-	{Verify all fields are loaded}
-	Assert.AreEqual('TestAccount', FView.GetAccountName, 'Account name should match');
-	Assert.AreEqual('test@mail.ru', FView.GetEmail, 'Email should match');
-	Assert.AreEqual('secret', FView.GetPassword, 'Password should match');
-	Assert.IsTrue(FView.GetUseTCPasswordManager, 'TC password manager should be enabled');
-	Assert.IsTrue(FView.GetUnlimitedFileSize, 'Unlimited file size should be enabled');
-	Assert.IsTrue(FView.GetSplitLargeFiles, 'Split large files should be enabled');
-	Assert.IsFalse(FView.GetPublicAccount, 'Public account should be disabled');
-	Assert.AreEqual(EncryptModeAlways, FView.GetEncryptFilesMode, 'Encrypt mode should match');
-	Assert.IsTrue(FView.GetEncryptFilenames, 'Encrypt filenames should be enabled');
-end;
-
-procedure TAccountsPresenterTest.TestOnAccountSelectedClearsFieldsWhenEmpty;
-begin
-	{Initialize with no accounts}
-	FPresenter.Initialize('');
-
-	{Verify fields are cleared}
-	Assert.AreEqual('', FView.GetAccountName, 'Account name should be empty');
-	Assert.AreEqual('', FView.GetEmail, 'Email should be empty');
-	Assert.AreEqual('', FView.GetPassword, 'Password should be empty');
-	Assert.IsFalse(FView.GetUseTCPasswordManager, 'TC password manager should be disabled');
-	Assert.IsFalse(FView.EncryptPasswordButtonEnabled, 'Encrypt button should be disabled');
-end;
-
-{Account CRUD tests}
-
-procedure TAccountsPresenterTest.TestOnApplyAccountClickSavesAccount;
-var
-	SavedSettings: TAccountSettings;
-begin
-	FPresenter.Initialize('');
-
-	{Fill in account data via view}
-	FView.SetAccountName('NewAccount');
-	FView.SetEmail('new@mail.ru');
-	FView.SetPassword('newpassword');
-	FView.SetUseTCPasswordManager(False);
-	FView.SetUnlimitedFileSize(True);
-	FView.SetSplitLargeFiles(True);
-	FView.SetPublicAccount(False);
-	FView.SetEncryptFilesMode(EncryptModeNone);
-
-	FPresenter.OnApplyAccountClick;
-
-	{Verify account was saved}
-	SavedSettings := FAccountsManager.GetAccountSettings('NewAccount');
-	Assert.AreEqual('NewAccount', SavedSettings.Account, 'Account name should be saved');
-	Assert.AreEqual('new@mail.ru', SavedSettings.Email, 'Email should be saved');
-	Assert.AreEqual('newpassword', SavedSettings.Password, 'Password should be saved');
-	Assert.IsTrue(SavedSettings.UnlimitedFilesize, 'Unlimited filesize should be saved');
-	Assert.IsTrue(SavedSettings.SplitLargeFiles, 'Split large files should be saved');
-end;
-
-procedure TAccountsPresenterTest.TestOnApplyAccountClickWithEmptyNameDoesNothing;
-var
-	AccountsList: TWSList;
-begin
-	FPresenter.Initialize('');
-
-	{Try to apply with empty name}
-	FView.SetAccountName('');
-	FView.SetEmail('test@mail.ru');
-
-	FPresenter.OnApplyAccountClick;
-
-	{Verify no account was created}
-	AccountsList := FAccountsManager.GetAccountsList;
-	Assert.AreEqual(0, AccountsList.Count, 'No account should be created with empty name');
-end;
-
-procedure TAccountsPresenterTest.TestOnApplyAccountClickWithTCPasswordManager;
-var
-	SavedSettings: TAccountSettings;
-begin
-	FPresenter.Initialize('');
-
-	{Fill in account data with TC password manager enabled}
-	FView.SetAccountName('TCAccount');
-	FView.SetEmail('tc@mail.ru');
-	FView.SetPassword('tcpassword');
-	FView.SetUseTCPasswordManager(True);
-
-	FPresenter.OnApplyAccountClick;
-
-	{Verify password was stored in password manager}
-	Assert.IsTrue(FPasswordManager.Passwords.ContainsKey('TCAccount'), 'Password should be in manager');
-	Assert.AreEqual('tcpassword', FPasswordManager.Passwords['TCAccount'], 'Password value should match');
-
-	{Verify password is cleared in saved settings}
-	SavedSettings := FAccountsManager.GetAccountSettings('TCAccount');
-	Assert.AreEqual('', SavedSettings.Password, 'Password in settings should be empty');
-	Assert.IsTrue(SavedSettings.UseTCPasswordManager, 'TC password manager flag should be set');
-end;
-
-procedure TAccountsPresenterTest.TestOnApplyAccountClickWithTCPasswordManagerFailure;
-var
-	AccountsList: TWSList;
-begin
-	{Configure password manager to fail}
-	FPasswordManager.SetPasswordResult := FS_FILE_WRITEERROR;
-
-	FPresenter.Initialize('');
-
-	{Try to save account with TC password manager}
-	FView.SetAccountName('FailAccount');
-	FView.SetEmail('fail@mail.ru');
-	FView.SetPassword('failpassword');
-	FView.SetUseTCPasswordManager(True);
-
-	FPresenter.OnApplyAccountClick;
-
-	{Verify account was NOT saved due to password manager failure}
-	AccountsList := FAccountsManager.GetAccountsList;
-	Assert.AreEqual(0, AccountsList.Count, 'Account should not be saved when password manager fails');
-end;
-
-procedure TAccountsPresenterTest.TestOnDeleteAccountClickRemovesAccount;
-var
-	AccSettings: TAccountSettings;
-	AccountsList: TWSList;
-begin
-	{Setup: Create account}
-	AccSettings := Default(TAccountSettings);
-	AccSettings.Account := 'ToDelete';
-	AccSettings.Email := 'delete@mail.ru';
-	FAccountsManager.SetAccountSettings(AccSettings);
-
-	FPresenter.Initialize('ToDelete');
-
-	{Delete the account}
-	FPresenter.OnDeleteAccountClick;
-
-	{Verify account was removed}
-	AccountsList := FAccountsManager.GetAccountsList;
-	Assert.AreEqual(0, AccountsList.Count, 'Account should be deleted');
-end;
-
-procedure TAccountsPresenterTest.TestOnDeleteAccountClickWithEmptySelectionDoesNothing;
-var
-	AccSettings: TAccountSettings;
-	AccountsList: TWSList;
-begin
-	{Setup: Create account}
-	AccSettings := Default(TAccountSettings);
-	AccSettings.Account := 'KeepMe';
-	AccSettings.Email := 'keep@mail.ru';
-	FAccountsManager.SetAccountSettings(AccSettings);
-
-	FPresenter.Initialize('');
-	{Clear selection}
-	FView.SelectedAccountIndex := -1;
-
-	FPresenter.OnDeleteAccountClick;
-
-	{Verify account still exists}
-	AccountsList := FAccountsManager.GetAccountsList;
-	Assert.AreEqual(1, AccountsList.Count, 'Account should not be deleted with empty selection');
-end;
-
-{Encryption tests}
-
-procedure TAccountsPresenterTest.TestOnEncryptPasswordClickSetsGUID;
-begin
-	{Note: The mock dialog always returns False, so we can only test
-	 that the method doesn't crash. A more sophisticated mock would
-	 simulate setting the GUID.}
-	FPresenter.Initialize('');
-
-	{Should not crash}
-	FPresenter.OnEncryptPasswordClick;
-	Assert.Pass('OnEncryptPasswordClick should complete without error');
-end;
-
-procedure TAccountsPresenterTest.TestOnEncryptPasswordClickCancelledDoesNothing;
-var
-	AccSettings: TAccountSettings;
-begin
-	{Setup: Create account with GUID (GUID is saved separately via SetCryptedGUID)}
-	AccSettings := Default(TAccountSettings);
-	AccSettings.Account := 'EncryptTest';
-	AccSettings.Email := 'encrypt@mail.ru';
-	FAccountsManager.SetAccountSettings(AccSettings);
-	FAccountsManager.SetCryptedGUID('EncryptTest', 'original-guid');
-
-	FPresenter.Initialize('EncryptTest');
-
-	{Dialog returns False, GUID should remain unchanged}
-	FPresenter.OnEncryptPasswordClick;
-
-	{Verify GUID is unchanged}
-	AccSettings := FAccountsManager.GetAccountSettings('EncryptTest');
-	Assert.AreEqual('original-guid', AccSettings.CryptedGUIDFiles, 'GUID should be unchanged when dialog cancelled');
-end;
-
-procedure TAccountsPresenterTest.TestOnEncryptModeChangedWithAskOnce;
-begin
-	FPresenter.Initialize('');
-	FView.SetEncryptFilesMode(EncryptModeAskOnce);
-
-	FPresenter.OnEncryptModeChanged;
-
-	{AskOnce mode should NOT enable the password button (only Always does)}
-	Assert.IsFalse(FView.EncryptPasswordButtonEnabled, 'Password button should be disabled for EncryptModeAskOnce');
 end;
 
 {Global settings apply tests}
@@ -1851,6 +1615,712 @@ begin
 
 	{Verify extensions are in the view's list}
 	Assert.AreEqual(3, FView.StreamingExtensionsList.Count, 'All extensions should be loaded');
+end;
+
+{Accounts tab tests}
+
+procedure TAccountsPresenterTest.TestInitializePopulatesAccountsList;
+var
+	AccSettings: TAccountSettings;
+begin
+	AccSettings := Default(TAccountSettings);
+	AccSettings.Account := 'TestAcc';
+	AccSettings.Email := 'test@mail.ru';
+	FAccountsManager.SetAccountSettings(AccSettings);
+
+	FPresenter.Initialize('');
+
+	Assert.AreEqual(1, Integer(Length(FView.AccountsListItems)), 'Accounts list should have one item');
+	Assert.AreEqual('TestAcc', FView.AccountsListItems[0].Name, 'Account name should match');
+end;
+
+procedure TAccountsPresenterTest.TestInitializeSelectsAccount;
+var
+	AccSettings: TAccountSettings;
+begin
+	AccSettings := Default(TAccountSettings);
+	AccSettings.Account := 'First';
+	AccSettings.Email := 'first@mail.ru';
+	FAccountsManager.SetAccountSettings(AccSettings);
+
+	AccSettings.Account := 'Second';
+	AccSettings.Email := 'second@mail.ru';
+	FAccountsManager.SetAccountSettings(AccSettings);
+
+	FPresenter.Initialize('Second');
+
+	Assert.AreEqual(1, FView.SelectedAccountIndex, 'Second account should be selected');
+end;
+
+procedure TAccountsPresenterTest.TestInitializeWithUnknownAccountSelectsFirst;
+var
+	AccSettings: TAccountSettings;
+begin
+	{Setup: Create an account}
+	AccSettings := Default(TAccountSettings);
+	AccSettings.Account := 'Account1';
+	AccSettings.Email := 'user1@mail.ru';
+	FAccountsManager.SetAccountSettings(AccSettings);
+
+	{Initialize with unknown account}
+	FPresenter.Initialize('UnknownAccount');
+
+	{Verify first account is selected as fallback}
+	Assert.AreEqual(0, FView.SelectedAccountIndex, 'First account should be selected as fallback');
+end;
+
+procedure TAccountsPresenterTest.TestAccountsListShowsCorrectTypeLabels;
+var
+	AccSettings: TAccountSettings;
+begin
+	AccSettings := Default(TAccountSettings);
+	AccSettings.Account := 'Private1';
+	AccSettings.Email := 'priv@mail.ru';
+	AccSettings.PublicAccount := False;
+	FAccountsManager.SetAccountSettings(AccSettings);
+
+	AccSettings := Default(TAccountSettings);
+	AccSettings.Account := 'Public1';
+	AccSettings.PublicAccount := True;
+	AccSettings.PublicUrl := 'https://cloud.mail.ru/public/test';
+	FAccountsManager.SetAccountSettings(AccSettings);
+
+	FPresenter.Initialize('');
+
+	Assert.AreEqual('Priv', FView.AccountsListItems[0].TypeLabel, 'Private account should show Priv');
+	Assert.AreEqual('Pub', FView.AccountsListItems[1].TypeLabel, 'Public account should show Pub');
+end;
+
+procedure TAccountsPresenterTest.TestAccountsListShowsCorrectEncryptionLabels;
+var
+	AccSettings: TAccountSettings;
+begin
+	AccSettings := Default(TAccountSettings);
+	AccSettings.Account := 'NoEnc';
+	AccSettings.Email := 'no@mail.ru';
+	AccSettings.EncryptFilesMode := EncryptModeNone;
+	FAccountsManager.SetAccountSettings(AccSettings);
+
+	AccSettings := Default(TAccountSettings);
+	AccSettings.Account := 'AlwaysEnc';
+	AccSettings.Email := 'always@mail.ru';
+	AccSettings.EncryptFilesMode := EncryptModeAlways;
+	FAccountsManager.SetAccountSettings(AccSettings);
+
+	AccSettings := Default(TAccountSettings);
+	AccSettings.Account := 'AskEnc';
+	AccSettings.Email := 'ask@mail.ru';
+	AccSettings.EncryptFilesMode := EncryptModeAskOnce;
+	FAccountsManager.SetAccountSettings(AccSettings);
+
+	FPresenter.Initialize('');
+
+	Assert.AreEqual('No', FView.AccountsListItems[0].EncryptionLabel, 'EncryptModeNone should show No');
+	Assert.AreEqual('Alw', FView.AccountsListItems[1].EncryptionLabel, 'EncryptModeAlways should show Alw');
+	Assert.AreEqual('Ask', FView.AccountsListItems[2].EncryptionLabel, 'EncryptModeAskOnce should show Ask');
+end;
+
+procedure TAccountsPresenterTest.TestOnAccountSelectedLoadsAccountData;
+var
+	AccSettings: TAccountSettings;
+begin
+	AccSettings := Default(TAccountSettings);
+	AccSettings.Account := 'LoadTest';
+	AccSettings.Email := 'load@mail.ru';
+	AccSettings.Password := 'secret';
+	AccSettings.UseTCPasswordManager := True;
+	AccSettings.UnlimitedFilesize := True;
+	AccSettings.SplitLargeFiles := True;
+	AccSettings.PublicAccount := False;
+	AccSettings.EncryptFilesMode := EncryptModeAlways;
+	AccSettings.EncryptFilenames := True;
+	FAccountsManager.SetAccountSettings(AccSettings);
+
+	FPresenter.Initialize('LoadTest');
+
+	Assert.AreEqual('LoadTest', FView.GetAccountName, 'Account name should match');
+	Assert.AreEqual('load@mail.ru', FView.GetEmail, 'Email should match');
+	Assert.AreEqual('secret', FView.GetPassword, 'Password should match');
+	Assert.IsTrue(FView.GetUseTCPasswordManager, 'TC password manager should be set');
+	Assert.IsTrue(FView.GetUnlimitedFileSize, 'Unlimited file size should be set');
+	Assert.IsTrue(FView.GetSplitLargeFiles, 'Split large files should be set');
+	Assert.IsTrue(FView.GetIsPrivate, 'Should be private');
+	Assert.AreEqual(EncryptModeAlways, FView.GetEncryptFilesMode, 'Encrypt mode should match');
+	Assert.IsTrue(FView.GetEncryptFilenames, 'Encrypt filenames should be set');
+end;
+
+procedure TAccountsPresenterTest.TestOnAccountSelectedClearsWhenEmpty;
+begin
+	FPresenter.Initialize('');
+
+	Assert.AreEqual('', FView.GetAccountName, 'Account name should be empty');
+	Assert.AreEqual('', FView.GetEmail, 'Email should be empty');
+	Assert.AreEqual('', FView.GetPassword, 'Password should be empty');
+	Assert.IsTrue(FView.GetIsPrivate, 'Should default to private');
+end;
+
+procedure TAccountsPresenterTest.TestOnAddAccountClickClearsFields;
+var
+	AccSettings: TAccountSettings;
+begin
+	AccSettings := Default(TAccountSettings);
+	AccSettings.Account := 'Existing';
+	AccSettings.Email := 'existing@mail.ru';
+	FAccountsManager.SetAccountSettings(AccSettings);
+
+	FPresenter.Initialize('Existing');
+
+	{Fields should be populated from Existing account}
+	Assert.AreEqual('Existing', FView.GetAccountName, 'Should show existing account');
+
+	{Click New}
+	FPresenter.OnAddAccountClick;
+
+	Assert.AreEqual('', FView.GetAccountName, 'Account name should be cleared');
+	Assert.AreEqual('', FView.GetEmail, 'Email should be cleared');
+	Assert.AreEqual(-1, FView.SelectedAccountIndex, 'List selection should be cleared');
+end;
+
+procedure TAccountsPresenterTest.TestOnDeleteAccountClickRemovesAccount;
+var
+	AccSettings: TAccountSettings;
+	AccountsList: TWSList;
+begin
+	AccSettings := Default(TAccountSettings);
+	AccSettings.Account := 'ToDelete';
+	AccSettings.Email := 'delete@mail.ru';
+	FAccountsManager.SetAccountSettings(AccSettings);
+
+	FPresenter.Initialize('ToDelete');
+
+	FPresenter.OnDeleteAccountClick;
+
+	AccountsList := FAccountsManager.GetAccountsList;
+	Assert.AreEqual(0, AccountsList.Count, 'Account should be deleted');
+end;
+
+procedure TAccountsPresenterTest.TestOnDeleteAccountClickWithEmptySelectionDoesNothing;
+var
+	AccSettings: TAccountSettings;
+	AccountsList: TWSList;
+begin
+	AccSettings := Default(TAccountSettings);
+	AccSettings.Account := 'KeepMe';
+	AccSettings.Email := 'keep@mail.ru';
+	FAccountsManager.SetAccountSettings(AccSettings);
+
+	FPresenter.Initialize('');
+	FView.SelectedAccountIndex := -1;
+
+	FPresenter.OnDeleteAccountClick;
+
+	AccountsList := FAccountsManager.GetAccountsList;
+	Assert.AreEqual(1, AccountsList.Count, 'Account should not be deleted with empty selection');
+end;
+
+procedure TAccountsPresenterTest.TestOnApplyAccountClickSavesPrivateAccount;
+var
+	SavedSettings: TAccountSettings;
+begin
+	FPresenter.Initialize('');
+
+	FView.SetAccountName('NewPrivate');
+	FView.SetIsPrivate(True);
+	FView.SetEmail('new@mail.ru');
+	FView.SetPassword('pass123');
+	FView.SetUseTCPasswordManager(False);
+	FView.SetUnlimitedFileSize(True);
+	FView.SetSplitLargeFiles(True);
+	FView.SetEncryptFilesMode(EncryptModeNone);
+
+	FPresenter.OnApplyAccountClick;
+
+	SavedSettings := FAccountsManager.GetAccountSettings('NewPrivate');
+	Assert.AreEqual('NewPrivate', SavedSettings.Account, 'Account name should be saved');
+	Assert.AreEqual('new@mail.ru', SavedSettings.Email, 'Email should be saved');
+	Assert.AreEqual('pass123', SavedSettings.Password, 'Password should be saved');
+	Assert.IsFalse(SavedSettings.PublicAccount, 'Should be private');
+	Assert.IsTrue(SavedSettings.UnlimitedFilesize, 'Unlimited filesize should be saved');
+	Assert.IsTrue(SavedSettings.SplitLargeFiles, 'Split large files should be saved');
+end;
+
+procedure TAccountsPresenterTest.TestOnApplyAccountClickSavesPublicAccount;
+var
+	SavedSettings: TAccountSettings;
+begin
+	FPresenter.Initialize('');
+
+	FView.SetAccountName('NewPublic');
+	FView.SetIsPrivate(False);
+	FView.SetPublicUrl('https://cloud.mail.ru/public/test/');
+
+	FPresenter.OnApplyAccountClick;
+
+	SavedSettings := FAccountsManager.GetAccountSettings('NewPublic');
+	Assert.AreEqual('NewPublic', SavedSettings.Account, 'Account name should be saved');
+	Assert.IsTrue(SavedSettings.PublicAccount, 'Should be public');
+	Assert.AreEqual('https://cloud.mail.ru/public/test/', SavedSettings.PublicUrl, 'Public URL should be saved');
+end;
+
+procedure TAccountsPresenterTest.TestOnApplyAccountClickWithEmptyNameDoesNothing;
+var
+	AccountsList: TWSList;
+begin
+	FPresenter.Initialize('');
+
+	FView.SetAccountName('');
+	FView.SetEmail('test@mail.ru');
+
+	FPresenter.OnApplyAccountClick;
+
+	AccountsList := FAccountsManager.GetAccountsList;
+	Assert.AreEqual(0, AccountsList.Count, 'No account should be created with empty name');
+end;
+
+procedure TAccountsPresenterTest.TestOnApplyAccountClickWithTCPasswordManager;
+var
+	SavedSettings: TAccountSettings;
+begin
+	FPresenter.Initialize('');
+
+	FView.SetAccountName('TCAccount');
+	FView.SetEmail('tc@mail.ru');
+	FView.SetPassword('tcpass');
+	FView.SetUseTCPasswordManager(True);
+
+	FPresenter.OnApplyAccountClick;
+
+	Assert.IsTrue(FPasswordManager.Passwords.ContainsKey('TCAccount'), 'Password should be in manager');
+	Assert.AreEqual('tcpass', FPasswordManager.Passwords['TCAccount'], 'Password value should match');
+
+	SavedSettings := FAccountsManager.GetAccountSettings('TCAccount');
+	Assert.AreEqual('', SavedSettings.Password, 'Password in settings should be empty');
+	Assert.IsTrue(SavedSettings.UseTCPasswordManager, 'TC password manager flag should be set');
+end;
+
+procedure TAccountsPresenterTest.TestOnApplyAccountClickWithTCPasswordManagerFailure;
+var
+	AccountsList: TWSList;
+begin
+	{Configure password manager to fail}
+	FPasswordManager.SetPasswordResult := FS_FILE_WRITEERROR;
+
+	FPresenter.Initialize('');
+
+	{Try to save account with TC password manager}
+	FView.SetAccountName('FailAccount');
+	FView.SetEmail('fail@mail.ru');
+	FView.SetPassword('failpassword');
+	FView.SetUseTCPasswordManager(True);
+
+	FPresenter.OnApplyAccountClick;
+
+	{Verify account was NOT saved due to password manager failure}
+	AccountsList := FAccountsManager.GetAccountsList;
+	Assert.AreEqual(0, AccountsList.Count, 'Account should not be saved when password manager fails');
+end;
+
+procedure TAccountsPresenterTest.TestOnAccountTypeChangedShowsPrivatePanel;
+begin
+	FPresenter.Initialize('');
+	FView.SetIsPrivate(True);
+
+	FPresenter.OnAccountTypeChanged;
+
+	Assert.IsTrue(FView.AccountsPanelVisible, 'Private panel should be visible');
+	Assert.IsFalse(FView.SharesPanelVisible, 'Public panel should be hidden');
+end;
+
+procedure TAccountsPresenterTest.TestOnAccountTypeChangedShowsPublicPanel;
+begin
+	FPresenter.Initialize('');
+	FView.SetIsPrivate(False);
+
+	FPresenter.OnAccountTypeChanged;
+
+	Assert.IsFalse(FView.AccountsPanelVisible, 'Private panel should be hidden');
+	Assert.IsTrue(FView.SharesPanelVisible, 'Public panel should be visible');
+end;
+
+procedure TAccountsPresenterTest.TestOnEncryptModeChangedEnablesPasswordButton;
+begin
+	FPresenter.Initialize('');
+	FView.SetEncryptFilesMode(EncryptModeAlways);
+
+	FPresenter.OnEncryptModeChanged;
+
+	Assert.IsTrue(FView.EncryptPasswordButtonEnabled, 'Password button should be enabled for EncryptModeAlways');
+end;
+
+procedure TAccountsPresenterTest.TestOnEncryptModeChangedDisablesPasswordButton;
+begin
+	FPresenter.Initialize('');
+	FView.SetEncryptFilesMode(EncryptModeNone);
+
+	FPresenter.OnEncryptModeChanged;
+
+	Assert.IsFalse(FView.EncryptPasswordButtonEnabled, 'Password button should be disabled for EncryptModeNone');
+end;
+
+procedure TAccountsPresenterTest.TestOnEncryptModeChangedEnablesFilenamesCB;
+begin
+	FPresenter.Initialize('');
+	FView.SetEncryptFilesMode(EncryptModeAlways);
+
+	FPresenter.OnEncryptModeChanged;
+
+	Assert.IsTrue(FView.EncryptFilenamesCBEnabled, 'Filenames checkbox should be enabled when encryption is on');
+end;
+
+procedure TAccountsPresenterTest.TestOnEncryptModeChangedDisablesFilenamesCB;
+begin
+	FPresenter.Initialize('');
+	FView.SetEncryptFilesMode(EncryptModeNone);
+
+	FPresenter.OnEncryptModeChanged;
+
+	Assert.IsFalse(FView.EncryptFilenamesCBEnabled, 'Filenames checkbox should be disabled when encryption is off');
+end;
+
+procedure TAccountsPresenterTest.TestOnEncryptModeChangedWithAskOnce;
+begin
+	FPresenter.Initialize('');
+	FView.SetEncryptFilesMode(EncryptModeAskOnce);
+
+	FPresenter.OnEncryptModeChanged;
+
+	{AskOnce mode should NOT enable the password button (only Always does)}
+	Assert.IsFalse(FView.EncryptPasswordButtonEnabled, 'Password button should be disabled for EncryptModeAskOnce');
+end;
+
+procedure TAccountsPresenterTest.TestOnEncryptPasswordClickSetsGUID;
+begin
+	{Note: The mock dialog always returns False, so we can only test
+	 that the method doesn't crash. A more sophisticated mock would
+	 simulate setting the GUID.}
+	FPresenter.Initialize('');
+
+	{Should not crash}
+	FPresenter.OnEncryptPasswordClick;
+	Assert.Pass('OnEncryptPasswordClick should complete without error');
+end;
+
+procedure TAccountsPresenterTest.TestOnEncryptPasswordClickCancelledDoesNothing;
+var
+	AccSettings: TAccountSettings;
+begin
+	{Setup: Create account with GUID (GUID is saved separately via SetCryptedGUID)}
+	AccSettings := Default(TAccountSettings);
+	AccSettings.Account := 'EncryptTest';
+	AccSettings.Email := 'encrypt@mail.ru';
+	FAccountsManager.SetAccountSettings(AccSettings);
+	FAccountsManager.SetCryptedGUID('EncryptTest', 'original-guid');
+
+	FPresenter.Initialize('EncryptTest');
+
+	{Dialog returns False, GUID should remain unchanged}
+	FPresenter.OnEncryptPasswordClick;
+
+	{Verify GUID is unchanged}
+	AccSettings := FAccountsManager.GetAccountSettings('EncryptTest');
+	Assert.AreEqual('original-guid', AccSettings.CryptedGUIDFiles, 'GUID should be unchanged when dialog cancelled');
+end;
+
+{Dirty tracking and selection preservation tests}
+
+procedure TAccountsPresenterTest.TestApplyButtonDisabledAfterInitialize;
+var
+	AccSettings: TAccountSettings;
+begin
+	AccSettings := Default(TAccountSettings);
+	AccSettings.Account := 'TestAcc';
+	AccSettings.Email := 'test@mail.ru';
+	FAccountsManager.SetAccountSettings(AccSettings);
+
+	FPresenter.Initialize('TestAcc');
+
+	Assert.IsFalse(FView.ApplyButtonEnabled, 'Apply button should be disabled after Initialize');
+end;
+
+procedure TAccountsPresenterTest.TestApplyButtonEnabledAfterFieldChanged;
+var
+	AccSettings: TAccountSettings;
+begin
+	AccSettings := Default(TAccountSettings);
+	AccSettings.Account := 'TestAcc';
+	AccSettings.Email := 'test@mail.ru';
+	FAccountsManager.SetAccountSettings(AccSettings);
+
+	FPresenter.Initialize('TestAcc');
+
+	{Simulate user editing a field}
+	FPresenter.OnFieldChanged;
+
+	Assert.IsTrue(FView.ApplyButtonEnabled, 'Apply button should be enabled after field changed');
+end;
+
+procedure TAccountsPresenterTest.TestApplyButtonDisabledAfterSuccessfulApply;
+var
+	AccSettings: TAccountSettings;
+begin
+	AccSettings := Default(TAccountSettings);
+	AccSettings.Account := 'TestAcc';
+	AccSettings.Email := 'test@mail.ru';
+	FAccountsManager.SetAccountSettings(AccSettings);
+
+	FPresenter.Initialize('TestAcc');
+
+	{Make dirty then apply}
+	FView.SetAccountName('TestAcc');
+	FView.SetEmail('test@mail.ru');
+	FPresenter.OnFieldChanged;
+	Assert.IsTrue(FView.ApplyButtonEnabled, 'Apply should be enabled before save');
+
+	FPresenter.OnApplyAccountClick;
+
+	Assert.IsFalse(FView.ApplyButtonEnabled, 'Apply button should be disabled after successful Apply');
+end;
+
+procedure TAccountsPresenterTest.TestSelectionPreservedAfterApply;
+var
+	AccSettings: TAccountSettings;
+begin
+	AccSettings := Default(TAccountSettings);
+	AccSettings.Account := 'First';
+	AccSettings.Email := 'first@mail.ru';
+	FAccountsManager.SetAccountSettings(AccSettings);
+
+	AccSettings := Default(TAccountSettings);
+	AccSettings.Account := 'Second';
+	AccSettings.Email := 'second@mail.ru';
+	FAccountsManager.SetAccountSettings(AccSettings);
+
+	FPresenter.Initialize('Second');
+	Assert.AreEqual(1, FView.SelectedAccountIndex, 'Second should be selected initially');
+
+	{Modify and apply}
+	FView.SetAccountName('Second');
+	FView.SetEmail('updated@mail.ru');
+	FPresenter.OnApplyAccountClick;
+
+	{Selection should still be on Second}
+	Assert.AreEqual(1, FView.SelectedAccountIndex, 'Second should still be selected after Apply');
+	Assert.AreEqual('Second', FView.GetAccountName, 'Account name should still show Second');
+end;
+
+procedure TAccountsPresenterTest.TestConfirmDialogShownOnAccountSwitchWithDirtyState;
+var
+	AccSettings: TAccountSettings;
+begin
+	AccSettings := Default(TAccountSettings);
+	AccSettings.Account := 'First';
+	AccSettings.Email := 'first@mail.ru';
+	FAccountsManager.SetAccountSettings(AccSettings);
+
+	AccSettings := Default(TAccountSettings);
+	AccSettings.Account := 'Second';
+	AccSettings.Email := 'second@mail.ru';
+	FAccountsManager.SetAccountSettings(AccSettings);
+
+	FPresenter.Initialize('First');
+
+	{Make dirty}
+	FPresenter.OnFieldChanged;
+
+	{Configure mock to discard}
+	FView.ConfirmDiscardResult := csrDiscard;
+
+	{Switch to Second account}
+	FView.SelectedAccountIndex := 1;
+	FPresenter.OnAccountSelected;
+
+	Assert.AreEqual(1, FView.ConfirmDiscardCallCount, 'Confirm dialog should be shown once');
+end;
+
+procedure TAccountsPresenterTest.TestCancelOnConfirmKeepsCurrentSelection;
+var
+	AccSettings: TAccountSettings;
+begin
+	AccSettings := Default(TAccountSettings);
+	AccSettings.Account := 'First';
+	AccSettings.Email := 'first@mail.ru';
+	FAccountsManager.SetAccountSettings(AccSettings);
+
+	AccSettings := Default(TAccountSettings);
+	AccSettings.Account := 'Second';
+	AccSettings.Email := 'second@mail.ru';
+	FAccountsManager.SetAccountSettings(AccSettings);
+
+	FPresenter.Initialize('First');
+
+	{Make dirty}
+	FPresenter.OnFieldChanged;
+
+	{Configure mock to cancel}
+	FView.ConfirmDiscardResult := csrCancel;
+
+	{Try to switch to Second}
+	FView.SelectedAccountIndex := 1;
+	FPresenter.OnAccountSelected;
+
+	{Should reselect First (index 0)}
+	Assert.AreEqual(0, FView.SelectedAccountIndex, 'Selection should revert to First on Cancel');
+end;
+
+procedure TAccountsPresenterTest.TestSaveOnConfirmSavesAndSwitches;
+var
+	AccSettings, SavedSettings: TAccountSettings;
+begin
+	AccSettings := Default(TAccountSettings);
+	AccSettings.Account := 'First';
+	AccSettings.Email := 'first@mail.ru';
+	FAccountsManager.SetAccountSettings(AccSettings);
+
+	AccSettings := Default(TAccountSettings);
+	AccSettings.Account := 'Second';
+	AccSettings.Email := 'second@mail.ru';
+	FAccountsManager.SetAccountSettings(AccSettings);
+
+	FPresenter.Initialize('First');
+
+	{User edits email}
+	FView.SetEmail('modified@mail.ru');
+	FPresenter.OnFieldChanged;
+
+	{Configure mock to save}
+	FView.ConfirmDiscardResult := csrSave;
+
+	{Switch to Second}
+	FView.SelectedAccountIndex := 1;
+	FPresenter.OnAccountSelected;
+
+	{Verify First account was saved with modified email}
+	SavedSettings := FAccountsManager.GetAccountSettings('First');
+	Assert.AreEqual('modified@mail.ru', SavedSettings.Email, 'First account email should be saved');
+
+	{Verify Second is now loaded}
+	Assert.AreEqual('second@mail.ru', FView.GetEmail, 'Second account email should be loaded');
+end;
+
+procedure TAccountsPresenterTest.TestDiscardOnConfirmSwitchesWithoutSaving;
+var
+	AccSettings, SavedSettings: TAccountSettings;
+begin
+	AccSettings := Default(TAccountSettings);
+	AccSettings.Account := 'First';
+	AccSettings.Email := 'first@mail.ru';
+	FAccountsManager.SetAccountSettings(AccSettings);
+
+	AccSettings := Default(TAccountSettings);
+	AccSettings.Account := 'Second';
+	AccSettings.Email := 'second@mail.ru';
+	FAccountsManager.SetAccountSettings(AccSettings);
+
+	FPresenter.Initialize('First');
+
+	{User edits email}
+	FView.SetEmail('unsaved@mail.ru');
+	FPresenter.OnFieldChanged;
+
+	{Configure mock to discard}
+	FView.ConfirmDiscardResult := csrDiscard;
+
+	{Switch to Second}
+	FView.SelectedAccountIndex := 1;
+	FPresenter.OnAccountSelected;
+
+	{Verify First account was NOT saved with modified email}
+	SavedSettings := FAccountsManager.GetAccountSettings('First');
+	Assert.AreEqual('first@mail.ru', SavedSettings.Email, 'First account email should NOT be modified');
+
+	{Verify Second is now loaded}
+	Assert.AreEqual('second@mail.ru', FView.GetEmail, 'Second account email should be loaded');
+end;
+
+procedure TAccountsPresenterTest.TestNewButtonWithDirtyStateTriggersConfirm;
+var
+	AccSettings: TAccountSettings;
+begin
+	AccSettings := Default(TAccountSettings);
+	AccSettings.Account := 'TestAcc';
+	AccSettings.Email := 'test@mail.ru';
+	FAccountsManager.SetAccountSettings(AccSettings);
+
+	FPresenter.Initialize('TestAcc');
+
+	{Make dirty}
+	FPresenter.OnFieldChanged;
+
+	{Configure mock to discard}
+	FView.ConfirmDiscardResult := csrDiscard;
+
+	{Click New}
+	FPresenter.OnAddAccountClick;
+
+	Assert.AreEqual(1, FView.ConfirmDiscardCallCount, 'Confirm dialog should be shown when clicking New with dirty state');
+end;
+
+procedure TAccountsPresenterTest.TestRepeatedSelectSameAccountDoesNotTriggerConfirm;
+var
+	AccSettings: TAccountSettings;
+begin
+	{FCancellingSwitch is True during the entire CheckDirty execution.
+	 The callback simulates a spurious OnSelectItem that fires during the dialog
+	 (focus transfer) or during SelectAccountByName (programmatic reselection).}
+	AccSettings := Default(TAccountSettings);
+	AccSettings.Account := 'First';
+	AccSettings.Email := 'first@mail.ru';
+	FAccountsManager.SetAccountSettings(AccSettings);
+
+	AccSettings := Default(TAccountSettings);
+	AccSettings.Account := 'Second';
+	AccSettings.Email := 'second@mail.ru';
+	FAccountsManager.SetAccountSettings(AccSettings);
+
+	FPresenter.Initialize('First');
+
+	{Make dirty}
+	FPresenter.OnFieldChanged;
+
+	{Configure Cancel with callback simulating spurious OnSelectItem}
+	FView.ConfirmDiscardResult := csrCancel;
+	FView.ConfirmDiscardCallback :=
+		procedure
+		begin
+			FPresenter.OnAccountSelected;
+		end;
+
+	{Switch to Second — triggers CheckDirty -> dialog (callback fires) -> Cancel}
+	FView.SelectedAccountIndex := 1;
+	FPresenter.OnAccountSelected;
+
+	{Simulate the comctl32 post-handler event that re-selects B after our handler returns}
+	FPresenter.OnAccountSelected;
+
+	{The dialog must have been shown exactly once despite both spurious calls}
+	Assert.AreEqual(1, FView.ConfirmDiscardCallCount, 'Confirm dialog should appear exactly once');
+
+	{First account should be reselected}
+	Assert.AreEqual('First', FView.GetSelectedAccountName, 'First account should remain selected after Cancel');
+end;
+
+procedure TAccountsPresenterTest.TestProgrammaticUpdatesDoNotTriggerDirty;
+var
+	AccSettings: TAccountSettings;
+begin
+	AccSettings := Default(TAccountSettings);
+	AccSettings.Account := 'TestAcc';
+	AccSettings.Email := 'test@mail.ru';
+	FAccountsManager.SetAccountSettings(AccSettings);
+
+	{Initialize triggers LoadAccountToView which sets fields programmatically}
+	FPresenter.Initialize('TestAcc');
+
+	{Apply button should remain disabled -- programmatic updates are guarded}
+	Assert.IsFalse(FView.ApplyButtonEnabled, 'Apply button should be disabled after programmatic field updates');
+
+	{Confirm dialog should not have been called}
+	Assert.AreEqual(0, FView.ConfirmDiscardCallCount, 'Confirm dialog should not be triggered by programmatic updates');
 end;
 
 {LoadGlobalSettingsToView tests}

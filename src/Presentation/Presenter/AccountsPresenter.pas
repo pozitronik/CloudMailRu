@@ -20,37 +20,19 @@ uses
 	WFXTypes;
 
 type
+	{Display data for the accounts tab TListView}
+	TAccountDisplayItem = record
+		Name: WideString;
+		TypeLabel: WideString;
+		EncryptionLabel: WideString;
+	end;
+
+	{Result of the confirm-discard-changes dialog}
+	TConfirmSaveResult = (csrSave, csrDiscard, csrCancel);
+
 	{View interface for the Accounts dialog}
 	IAccountsView = interface
-		['{B2C3D4E5-F6A7-8901-BCDE-F23456789012}']
-		{Account tab controls}
-		procedure SetAccountsList(Accounts: TStrings);
-		function GetSelectedAccountIndex: Integer;
-		function GetSelectedAccountName: WideString;
-		procedure SelectAccount(Index: Integer);
-		procedure SetAccountName(Value: WideString);
-		function GetAccountName: WideString;
-		procedure SetEmail(Value: WideString);
-		function GetEmail: WideString;
-		procedure SetPassword(Value: WideString);
-		function GetPassword: WideString;
-		procedure SetUseTCPasswordManager(Value: Boolean);
-		function GetUseTCPasswordManager: Boolean;
-		procedure SetUnlimitedFileSize(Value: Boolean);
-		function GetUnlimitedFileSize: Boolean;
-		procedure SetSplitLargeFiles(Value: Boolean);
-		function GetSplitLargeFiles: Boolean;
-		procedure SetPublicAccount(Value: Boolean);
-		function GetPublicAccount: Boolean;
-		procedure SetPublicUrl(Value: WideString);
-		function GetPublicUrl: WideString;
-		procedure SetEncryptFilesMode(Value: Integer);
-		function GetEncryptFilesMode: Integer;
-		procedure SetEncryptFilenames(Value: Boolean);
-		function GetEncryptFilenames: Boolean;
-		procedure SetEncryptPasswordButtonEnabled(Value: Boolean);
-		procedure SetAccountsPanelVisible(Value: Boolean);
-		procedure SetSharesPanelVisible(Value: Boolean);
+		['{6C670119-9EF1-441B-8FB1-7997531C92F2}']
 
 		{Global settings - General tab}
 		procedure SetLoadSSLFromPluginDir(Value: Boolean);
@@ -162,6 +144,38 @@ type
 
 		{Dialogs - view is responsible for showing dialogs}
 		function ShowEncryptionPasswordDialog(const AccountName: WideString; var CryptedGUID: WideString): Boolean;
+
+		{Accounts tab}
+		procedure SetAccountsList(const Items: TArray<TAccountDisplayItem>);
+		function GetSelectedAccountIndex: Integer;
+		function GetSelectedAccountName: WideString;
+		procedure SelectAccount(Index: Integer);
+		procedure SetAccountName(Value: WideString);
+		function GetAccountName: WideString;
+		procedure SetEmail(Value: WideString);
+		function GetEmail: WideString;
+		procedure SetPassword(Value: WideString);
+		function GetPassword: WideString;
+		procedure SetUseTCPasswordManager(Value: Boolean);
+		function GetUseTCPasswordManager: Boolean;
+		procedure SetUnlimitedFileSize(Value: Boolean);
+		function GetUnlimitedFileSize: Boolean;
+		procedure SetSplitLargeFiles(Value: Boolean);
+		function GetSplitLargeFiles: Boolean;
+		procedure SetIsPrivate(Value: Boolean);
+		function GetIsPrivate: Boolean;
+		procedure SetPublicUrl(Value: WideString);
+		function GetPublicUrl: WideString;
+		procedure SetEncryptFilesMode(Value: Integer);
+		function GetEncryptFilesMode: Integer;
+		procedure SetEncryptFilenames(Value: Boolean);
+		function GetEncryptFilenames: Boolean;
+		procedure SetEncryptPasswordButtonEnabled(Value: Boolean);
+		procedure SetEncryptFilenamesCBEnabled(Value: Boolean);
+		procedure SetAccountsPanelVisible(Value: Boolean);
+		procedure SetSharesPanelVisible(Value: Boolean);
+		procedure SetApplyButtonEnabled(Value: Boolean);
+		function ConfirmDiscardAccountChanges: TConfirmSaveResult;
 	end;
 
 	{Configuration for accounts presenter - injected dependencies}
@@ -177,14 +191,26 @@ type
 		FSettingsManager: IPluginSettingsManager;
 		FPasswordManager: IPasswordManager;
 		FParentWindow: THandle;
-		FSelectedAccount: WideString;
 		FSettingsApplied: Boolean;
 
-		procedure LoadAccountToView(const AccountName: WideString);
-		procedure ClearAccountFields;
-		procedure RefreshAccountsList;
+		{Dirty tracking state}
+		FSelectedAccount: WideString;
+		FDirty: Boolean;
+		FUpdating: Boolean;
+		FCancellingSwitch: Boolean;
+
 		function SavePasswordToManager(const AccountKey, Password: WideString): Boolean;
 		function ValidateGlobalSettings: Boolean;
+
+		{Accounts tab helpers}
+		procedure RefreshAccountsList;
+		procedure LoadAccountToView(const AccountName: WideString);
+		procedure ClearAccountFields;
+		function EncryptionModeToLabel(Mode: Integer): WideString;
+		procedure SetDirty(Value: Boolean);
+		function SaveAccountFromView: Boolean;
+		procedure SelectAccountByName(const Name: WideString);
+		function CheckDirty: Boolean;
 	public
 		constructor Create(AView: IAccountsView; AAccountsManager: IAccountsManager; ASettingsManager: IPluginSettingsManager; AConfig: TAccountsPresenterConfig);
 
@@ -195,11 +221,13 @@ type
 
 		{Account operations}
 		procedure OnAccountSelected;
-		procedure OnApplyAccountClick;
+		procedure OnAddAccountClick;
 		procedure OnDeleteAccountClick;
-		procedure OnPublicAccountChanged;
+		procedure OnApplyAccountClick;
+		procedure OnAccountTypeChanged;
 		procedure OnEncryptModeChanged;
 		procedure OnEncryptPasswordClick;
+		procedure OnFieldChanged;
 
 		{Global settings operations}
 		procedure OnApplyGlobalSettingsClick;
@@ -238,47 +266,29 @@ begin
 	FSettingsManager := ASettingsManager;
 	FPasswordManager := AConfig.PasswordManager;
 	FParentWindow := AConfig.ParentWindow;
-	FSelectedAccount := '';
 	FSettingsApplied := False;
+	FSelectedAccount := '';
+	FDirty := False;
+	FUpdating := False;
+	FCancellingSwitch := False;
 end;
 
 procedure TAccountsPresenter.Initialize(const InitialAccount: WideString);
 var
-	AccountsList: TStringList;
 	AccountsArray: TWSList;
 	I, Index: Integer;
 begin
-	FSelectedAccount := InitialAccount;
-
-	{Load accounts list}
 	AccountsArray := FAccountsManager.GetAccountsList;
-	AccountsList := TStringList.Create;
-	try
-		for I := 0 to AccountsArray.Count - 1 do
-			AccountsList.Add(AccountsArray[I]);
-		FView.SetAccountsList(AccountsList);
-	finally
-		AccountsList.Free;
-	end;
 
-	{Select initial account}
+	{Find initial account index}
 	Index := -1;
-	if FSelectedAccount <> '' then
-	begin
+	if InitialAccount <> '' then
 		for I := 0 to AccountsArray.Count - 1 do
-			if AccountsArray[I] = FSelectedAccount then
+			if AccountsArray[I] = InitialAccount then
 			begin
 				Index := I;
 				Break;
 			end;
-
-		if Index >= 0 then
-			FView.SelectAccount(Index)
-		else if AccountsArray.Count > 0 then
-			FView.SelectAccount(0);
-	end
-	else if AccountsArray.Count > 0 then
-		FView.SelectAccount(0);
 
 	{Load global settings}
 	LoadGlobalSettingsToView;
@@ -286,8 +296,19 @@ begin
 	{Load streaming extensions}
 	LoadStreamingExtensionsToView;
 
-	{Trigger account selection to populate fields}
+	{Initialize accounts tab}
+	FUpdating := True;
+	try
+		RefreshAccountsList;
+		if Index >= 0 then
+			FView.SelectAccount(Index)
+		else if AccountsArray.Count > 0 then
+			FView.SelectAccount(0);
+	finally
+		FUpdating := False;
+	end;
 	OnAccountSelected;
+	SetDirty(False);
 end;
 
 procedure TAccountsPresenter.LoadGlobalSettingsToView;
@@ -370,56 +391,6 @@ begin
 	end;
 end;
 
-procedure TAccountsPresenter.LoadAccountToView(const AccountName: WideString);
-var
-	AccSettings: TAccountSettings;
-begin
-	AccSettings := FAccountsManager.GetAccountSettings(AccountName);
-	FSelectedAccount := AccSettings.User;
-
-	FView.SetAccountName(AccSettings.Account);
-	FView.SetEmail(AccSettings.Email);
-	FView.SetPassword(AccSettings.Password);
-	FView.SetUseTCPasswordManager(AccSettings.UseTCPasswordManager);
-	FView.SetUnlimitedFileSize(AccSettings.UnlimitedFilesize);
-	FView.SetSplitLargeFiles(AccSettings.SplitLargeFiles);
-	FView.SetPublicAccount(AccSettings.PublicAccount);
-	FView.SetPublicUrl(AccSettings.PublicUrl);
-	FView.SetEncryptFilesMode(AccSettings.EncryptFilesMode);
-	FView.SetEncryptFilenames(AccSettings.EncryptFilenames);
-
-	{Update encrypt button state}
-	OnEncryptModeChanged;
-	{Update panels visibility}
-	OnPublicAccountChanged;
-end;
-
-procedure TAccountsPresenter.ClearAccountFields;
-begin
-	FView.SetAccountName('');
-	FView.SetEmail('');
-	FView.SetPassword('');
-	FView.SetUseTCPasswordManager(False);
-	FView.SetEncryptPasswordButtonEnabled(False);
-end;
-
-procedure TAccountsPresenter.RefreshAccountsList;
-var
-	AccountsList: TStringList;
-	AccountsArray: TWSList;
-	I: Integer;
-begin
-	AccountsArray := FAccountsManager.GetAccountsList;
-	AccountsList := TStringList.Create;
-	try
-		for I := 0 to AccountsArray.Count - 1 do
-			AccountsList.Add(AccountsArray[I]);
-		FView.SetAccountsList(AccountsList);
-	finally
-		AccountsList.Free;
-	end;
-end;
-
 function TAccountsPresenter.SavePasswordToManager(const AccountKey, Password: WideString): Boolean;
 begin
 	Result := False;
@@ -447,42 +418,135 @@ begin
 	Result := True;
 end;
 
-procedure TAccountsPresenter.OnAccountSelected;
-var
-	AccountName: WideString;
-begin
-	AccountName := FView.GetSelectedAccountName;
-	if AccountName <> '' then
-		LoadAccountToView(AccountName)
-	else
-		ClearAccountFields;
+{Accounts tab helpers}
 
-	OnPublicAccountChanged;
+function TAccountsPresenter.EncryptionModeToLabel(Mode: Integer): WideString;
+begin
+	case Mode of
+		EncryptModeAlways: Result := 'Alw';
+		EncryptModeAskOnce: Result := 'Ask';
+	else
+		Result := 'No';
+	end;
 end;
 
-procedure TAccountsPresenter.OnApplyAccountClick;
+procedure TAccountsPresenter.RefreshAccountsList;
+var
+	AccountsArray: TWSList;
+	Items: TArray<TAccountDisplayItem>;
+	AccSettings: TAccountSettings;
+	I: Integer;
+begin
+	AccountsArray := FAccountsManager.GetAccountsList;
+	SetLength(Items, AccountsArray.Count);
+	for I := 0 to AccountsArray.Count - 1 do
+	begin
+		AccSettings := FAccountsManager.GetAccountSettings(AccountsArray[I]);
+		Items[I].Name := AccountsArray[I];
+		if AccSettings.PublicAccount then
+			Items[I].TypeLabel := 'Pub'
+		else
+			Items[I].TypeLabel := 'Priv';
+		Items[I].EncryptionLabel := EncryptionModeToLabel(AccSettings.EncryptFilesMode);
+	end;
+	FView.SetAccountsList(Items);
+end;
+
+procedure TAccountsPresenter.LoadAccountToView(const AccountName: WideString);
+var
+	AccSettings: TAccountSettings;
+	WasUpdating: Boolean;
+begin
+	WasUpdating := FUpdating;
+	FUpdating := True;
+	try
+		AccSettings := FAccountsManager.GetAccountSettings(AccountName);
+		FSelectedAccount := AccountName;
+
+		FView.SetAccountName(AccSettings.Account);
+		FView.SetIsPrivate(not AccSettings.PublicAccount);
+		FView.SetEmail(AccSettings.Email);
+		FView.SetPassword(AccSettings.Password);
+		FView.SetUseTCPasswordManager(AccSettings.UseTCPasswordManager);
+		FView.SetUnlimitedFileSize(AccSettings.UnlimitedFilesize);
+		FView.SetSplitLargeFiles(AccSettings.SplitLargeFiles);
+		FView.SetPublicUrl(AccSettings.PublicUrl);
+		FView.SetEncryptFilesMode(AccSettings.EncryptFilesMode);
+		FView.SetEncryptFilenames(AccSettings.EncryptFilenames);
+
+		{Update encrypt controls state}
+		OnEncryptModeChanged;
+		{Update panels visibility}
+		OnAccountTypeChanged;
+	finally
+		FUpdating := WasUpdating;
+	end;
+	SetDirty(False);
+end;
+
+procedure TAccountsPresenter.ClearAccountFields;
+var
+	WasUpdating: Boolean;
+begin
+	WasUpdating := FUpdating;
+	FUpdating := True;
+	try
+		FSelectedAccount := '';
+		FView.SetAccountName('');
+		FView.SetIsPrivate(True);
+		FView.SetEmail('');
+		FView.SetPassword('');
+		FView.SetUseTCPasswordManager(False);
+		FView.SetUnlimitedFileSize(False);
+		FView.SetSplitLargeFiles(False);
+		FView.SetPublicUrl('');
+		FView.SetEncryptFilesMode(EncryptModeNone);
+		FView.SetEncryptFilenames(False);
+		FView.SetEncryptPasswordButtonEnabled(False);
+		FView.SetEncryptFilenamesCBEnabled(False);
+		OnAccountTypeChanged;
+	finally
+		FUpdating := WasUpdating;
+	end;
+	SetDirty(False);
+end;
+
+procedure TAccountsPresenter.SetDirty(Value: Boolean);
+begin
+	FDirty := Value;
+	FView.SetApplyButtonEnabled(Value);
+end;
+
+procedure TAccountsPresenter.OnFieldChanged;
+begin
+	if not FUpdating then
+		SetDirty(True);
+end;
+
+function TAccountsPresenter.SaveAccountFromView: Boolean;
 var
 	AccSettings: TAccountSettings;
 begin
+	Result := False;
+
 	if FView.GetAccountName = '' then
 		Exit;
 
-	{Build account settings from view}
+	AccSettings := Default(TAccountSettings);
 	AccSettings.Account := FView.GetAccountName;
+	AccSettings.PublicAccount := not FView.GetIsPrivate;
 	AccSettings.Email := FView.GetEmail;
 	AccSettings.Password := FView.GetPassword;
 	AccSettings.UseTCPasswordManager := FView.GetUseTCPasswordManager;
 	AccSettings.UnlimitedFilesize := FView.GetUnlimitedFileSize;
 	AccSettings.SplitLargeFiles := FView.GetSplitLargeFiles;
-	AccSettings.TwostepAuth := False; {Deprecated}
-	AccSettings.PublicAccount := FView.GetPublicAccount;
 	AccSettings.PublicUrl := FView.GetPublicUrl;
 	AccSettings.EncryptFilesMode := FView.GetEncryptFilesMode;
 	AccSettings.EncryptFilenames := FView.GetEncryptFilenames;
+	AccSettings.TwostepAuth := False; {Deprecated}
 	AccSettings.AuthMethod := CLOUD_AUTH_METHOD_OAUTH_APP;
 	AccSettings.UseAppPassword := True;
 
-	{Handle TC password manager}
 	if AccSettings.UseTCPasswordManager then
 	begin
 		if not SavePasswordToManager(AccSettings.Account, AccSettings.Password) then
@@ -490,13 +554,98 @@ begin
 		AccSettings.Password := '';
 	end;
 
-	{Save account}
 	FAccountsManager.SetAccountSettings(AccSettings);
+	Result := True;
+end;
 
-	{Refresh list}
-	RefreshAccountsList;
+procedure TAccountsPresenter.SelectAccountByName(const Name: WideString);
+var
+	AccountsArray: TWSList;
+	I: Integer;
+begin
+	if Name = '' then
+		Exit;
 
-	OnAccountSelected;
+	AccountsArray := FAccountsManager.GetAccountsList;
+	for I := 0 to AccountsArray.Count - 1 do
+		if AccountsArray[I] = Name then
+		begin
+			FView.SelectAccount(I);
+			Exit;
+		end;
+end;
+
+function TAccountsPresenter.CheckDirty: Boolean;
+begin
+	{Returns True if it is safe to proceed (not dirty, or user chose Save/Discard).
+	 Returns False if user chose Cancel (abort the operation).}
+	Result := True;
+	if not FDirty then
+		Exit;
+
+	{FUpdating blocks re-entrant OnAccountSelected during dialog focus
+	 transfer and SelectAccountByName. FCancellingSwitch (set in Cancel
+	 branch) survives beyond this method to block a post-handler comctl32 event.}
+	FUpdating := True;
+	try
+		case FView.ConfirmDiscardAccountChanges of
+			csrSave:
+				SaveAccountFromView;
+			csrCancel:
+			begin
+				FCancellingSwitch := True;
+				SelectAccountByName(FSelectedAccount);
+				Result := False;
+			end;
+			{csrDiscard: just proceed}
+		end;
+	finally
+		FUpdating := False;
+	end;
+end;
+
+{Account operations}
+
+procedure TAccountsPresenter.OnAccountSelected;
+var
+	AccountName: WideString;
+begin
+	{Skip when called re-entrantly from programmatic selection changes}
+	if FUpdating then
+		Exit;
+
+	{Suppress the post-handler comctl32 event that re-selects the clicked item
+	 after Cancel in CheckDirty. Reselect the previous account.}
+	if FCancellingSwitch then
+	begin
+		FCancellingSwitch := False;
+		FUpdating := True;
+		try
+			SelectAccountByName(FSelectedAccount);
+		finally
+			FUpdating := False;
+		end;
+		Exit;
+	end;
+
+	if not CheckDirty then
+		Exit;
+
+	AccountName := FView.GetSelectedAccountName;
+	if AccountName <> '' then
+		LoadAccountToView(AccountName)
+	else
+		ClearAccountFields;
+end;
+
+procedure TAccountsPresenter.OnAddAccountClick;
+begin
+	if not CheckDirty then
+		Exit;
+
+	{Deselect list and clear fields for new account entry}
+	FView.SelectAccount(-1);
+	ClearAccountFields;
 end;
 
 procedure TAccountsPresenter.OnDeleteAccountClick;
@@ -508,37 +657,61 @@ begin
 		Exit;
 
 	FAccountsManager.DeleteAccount(AccountName);
+	SetDirty(False);
 
-	{Refresh list}
 	RefreshAccountsList;
-
 	OnAccountSelected;
 end;
 
-procedure TAccountsPresenter.OnPublicAccountChanged;
+procedure TAccountsPresenter.OnApplyAccountClick;
+var
+	SavedName: WideString;
 begin
-	FView.SetSharesPanelVisible(FView.GetPublicAccount);
-	FView.SetAccountsPanelVisible(not FView.GetPublicAccount);
+	SavedName := FView.GetAccountName;
+	if not SaveAccountFromView then
+		Exit;
+
+	SetDirty(False);
+
+	{Refresh list and reselect the saved account}
+	RefreshAccountsList;
+
+	FUpdating := True;
+	try
+		SelectAccountByName(SavedName);
+	finally
+		FUpdating := False;
+	end;
+	OnAccountSelected;
+end;
+
+procedure TAccountsPresenter.OnAccountTypeChanged;
+begin
+	FView.SetSharesPanelVisible(not FView.GetIsPrivate);
+	FView.SetAccountsPanelVisible(FView.GetIsPrivate);
+	OnFieldChanged;
 end;
 
 procedure TAccountsPresenter.OnEncryptModeChanged;
 begin
 	FView.SetEncryptPasswordButtonEnabled(FView.GetEncryptFilesMode = EncryptModeAlways);
+	FView.SetEncryptFilenamesCBEnabled(FView.GetEncryptFilesMode <> EncryptModeNone);
+	OnFieldChanged;
 end;
 
 procedure TAccountsPresenter.OnEncryptPasswordClick;
 var
 	CryptedGUID: WideString;
-	AccSettings: TAccountSettings;
+	AccountName: WideString;
 begin
-	if FView.ShowEncryptionPasswordDialog(FSelectedAccount, CryptedGUID) then
+	AccountName := FView.GetSelectedAccountName;
+	if AccountName = '' then
+		Exit;
+
+	if FView.ShowEncryptionPasswordDialog(AccountName, CryptedGUID) then
 	begin
 		if CryptedGUID <> '' then
-		begin
-			AccSettings := FAccountsManager.GetAccountSettings(FSelectedAccount);
-			AccSettings.CryptedGUIDFiles := CryptedGUID;
-			FAccountsManager.SetAccountSettings(AccSettings);
-		end;
+			FAccountsManager.SetCryptedGUID(AccountName, CryptedGUID);
 	end;
 end;
 
