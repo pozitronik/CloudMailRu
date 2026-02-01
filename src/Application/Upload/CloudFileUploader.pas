@@ -276,7 +276,7 @@ begin
 	end;
 	if OperationResult = CLOUD_OPERATION_OK then
 	begin
-		if FSettings.CheckCRC then
+		if FSettings.CheckCRC and (not FDoCryptFiles) then
 		begin
 			if not LocalFileIdentity.IsEqualTo(RemoteFileIdentity) then {При включённой проверке CRC сравниваем хеши и размеры}
 				Exit(CLOUD_OPERATION_FAILED);
