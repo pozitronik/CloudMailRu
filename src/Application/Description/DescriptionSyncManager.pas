@@ -89,6 +89,8 @@ function TDescriptionSyncManager.DownloadRemoteDescription(const RemoteIonPath: 
 begin
 	LocalTempPath := GetTmpFileName(DESCRIPTION_TEMP_EXT);
 	Result := Cloud.GetDescriptionFile(RemoteIonPath, LocalTempPath);
+	if not Result then
+		FFileSystem.DeleteFile(LocalTempPath);
 end;
 
 procedure TDescriptionSyncManager.OnFileDeleted(const RemotePath: TRealPath; Cloud: ICloudDescriptionOps);
@@ -169,8 +171,8 @@ begin
 						if NewRemoteIonExists then
 							NewDescriptions.Read;
 
-						NewDescriptions.SetValue(ExtractFileName(NewPath.Path), OldDescriptions.GetValue(ExtractFileName(OldPath.Path)));
-						OldDescriptions.DeleteValue(ExtractFileName(OldPath.Path));
+						NewDescriptions.SetValue(NewItem, OldDescriptions.GetValue(OldItem));
+						OldDescriptions.DeleteValue(OldItem);
 						OldDescriptions.Write();
 						NewDescriptions.Write();
 
