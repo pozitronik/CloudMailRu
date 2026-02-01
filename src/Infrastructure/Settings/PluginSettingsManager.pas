@@ -6,7 +6,6 @@ interface
 
 uses
 	SysUtils,
-	FileHelper,
 	PathHelper,
 	Windows,
 	SettingsConstants,
@@ -363,12 +362,14 @@ function ExtractStreamingExt(const FileName: WideString): WideString;
 {Extracts extension from filename or extension-only input.
  Handles both 'file.mp4' -> 'mp4' and '.mp4' -> 'mp4'}
 var
-	Ext: WideString;
+	I: Integer;
+	S: string;
 begin
 	{First try standard extraction for normal filenames}
-	Ext := ExtractUniversalFileExt(FileName, True);
-	if Ext <> EmptyWideStr then
-		Exit(Ext);
+	S := FileName;
+	I := S.LastDelimiter('.' + '/' + '\' + DriveDelim);
+	if (I > 0) and (S.Chars[I] = '.') then
+		Exit(S.Substring(I + 1));
 
 	{Handle extension-only input like '.mp4': strip leading dot}
 	if (Length(FileName) > 1) and (FileName[1] = '.') then

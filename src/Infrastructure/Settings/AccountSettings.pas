@@ -4,7 +4,6 @@ interface
 
 uses
 	SysUtils,
-	ParsingHelper,
 	PathHelper,
 	CloudConstants,
 	SettingsConstants;
@@ -33,6 +32,7 @@ type
 		FUser: WideString;
 		FDomain: WideString;
 		FPublicUrl: WideString;
+		procedure ParseEmailParts;
 		function GetAccountType: EAccountType;
 		function GetDomain: WideString;
 		function GetUser: WideString;
@@ -48,6 +48,19 @@ implementation
 
 {TAccountSettings}
 
+procedure TAccountSettings.ParseEmailParts;
+var
+	AtPos: Integer;
+begin
+	AtPos := Pos('@', Email);
+	if (AtPos > 0) and (AtPos < Length(Email)) then
+	begin
+		{Copy with position 0 is valid in Delphi - verified by tests}
+		FUser := Copy(Email, 0, AtPos - 1);
+		FDomain := Copy(Email, AtPos + 1, Length(Email) - AtPos);
+	end;
+end;
+
 function TAccountSettings.GetAccountType: EAccountType;
 begin
 	if self.PublicAccount then
@@ -58,14 +71,14 @@ end;
 function TAccountSettings.GetDomain: WideString;
 begin
 	if FDomain = EmptyWideStr then
-		ExtractEmailParts(Email, FUser, FDomain);
+		ParseEmailParts;
 	result := FDomain;
 end;
 
 function TAccountSettings.GetUser: WideString;
 begin
 	if FUser = EmptyWideStr then
-		ExtractEmailParts(Email, FUser, FDomain);
+		ParseEmailParts;
 	result := FUser;
 end;
 

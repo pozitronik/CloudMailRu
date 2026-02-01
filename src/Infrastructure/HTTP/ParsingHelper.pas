@@ -7,8 +7,6 @@ uses
 
 function extractPublicShard(Text: WideString; var Shard: WideString): Boolean;
 
-function ExtractEmailParts(const Email: WideString; out Username, Domain: WideString): Boolean;
-
 implementation
 
 function extractNearValue(Text, Anchor: WideString; StartChar: WideChar = '"'; EndChar: WideChar = '"'): WideString;
@@ -35,20 +33,6 @@ begin
 	Shard := extractNearValue(Text, '"weblink_get":', '{', '}');
 	Shard := extractNearValue(Shard, '"url":');
 	result := EmptyWideStr <> Shard;
-end;
-
-function ExtractEmailParts(const Email: WideString; out Username, Domain: WideString): Boolean;
-var
-	AtPos: integer;
-begin
-	AtPos := Pos('@', Email);
-	result := (AtPos > 0) and (AtPos < length(Email));
-	if result then
-	begin
-		{Copy with position 0 is valid in Delphi - verified by tests}
-		Username := copy(Email, 0, AtPos - 1);
-		Domain := copy(Email, AtPos + 1, length(Email) - AtPos);
-	end;
 end;
 
 end.

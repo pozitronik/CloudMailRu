@@ -96,8 +96,6 @@ uses
 	System.Hash,
 	System.SysUtils,
 	Windows,
-	FileHelper,
-	PathHelper,
 	LanguageStrings,
 	SettingsConstants;
 
@@ -188,6 +186,13 @@ begin
 	inherited Create;
 	FProgress := Progress;
 	FFileSystem := FileSystem;
+end;
+
+function GetLFCFilePath(FilePath: WideString): WideString; //UNC => LFC
+begin
+	Result := FilePath;
+	if Pos(WideString('\\?\'), Result) = 1 then
+		Result := Copy(FilePath, 5, Length(FilePath) - 4);
 end;
 
 function TCloudHashCalculatorBase.CalculateHash(Path: WideString): WideString;

@@ -41,6 +41,8 @@ type
 	end;
 
 	TSharedItemActionHandler = class(TInterfacedObject, ISharedItemActionHandler)
+	private
+		class function UrlToPath(URL: WideString): WideString;
 	public
 		function HandleAction(const RealPath: TRealPath; ActionOpen: Boolean; const CurrentListing: TCloudDirItemList): TSharedItemActionResult;
 	end;
@@ -49,8 +51,7 @@ implementation
 
 uses
 	SysUtils,
-	CloudConstants,
-	PathHelper;
+	CloudConstants;
 
 class function TSharedItemActionResult.Symlink(const APath: WideString): TSharedItemActionResult;
 begin
@@ -76,6 +77,11 @@ class function TSharedItemActionResult.None: TSharedItemActionResult;
 begin
 	Result := Default (TSharedItemActionResult);
 	Result.ActionType := satNone;
+end;
+
+class function TSharedItemActionHandler.UrlToPath(URL: WideString): WideString;
+begin
+	Result := StringReplace(URL, WideString('/'), WideString('\'), [rfReplaceAll, rfIgnoreCase]);
 end;
 
 function TSharedItemActionHandler.HandleAction(const RealPath: TRealPath; ActionOpen: Boolean; const CurrentListing: TCloudDirItemList): TSharedItemActionResult;

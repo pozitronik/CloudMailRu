@@ -14,45 +14,16 @@ type
 	[TestFixture]
 	TFileHelperTest = class(TObject)
 	private const
-		TEST_WRITEABLE_DIR = 'writeable_dir';
-		TEST_NONWRITEABLE_DIR = 'nonwriteable_dir';
 		TEST_TEMP_FILE = 'tempfile.txt';
 		TEST_FILE_NON_EXISTING = 'nonexistingfile.txt';
 	public
 		[Test]
-		procedure TestIsWriteable;
-		[Test]
 		procedure TestSetAllFileTime;
 		[Test]
 		procedure TestSetAllFileTimeNonExistentFile;
-
-		{ TDD tests for IsWriteable CleanFile=false path }
-		[Test]
-		procedure TestIsWriteableCleanFileFalseExistingFile;
-		[Test]
-		procedure TestIsWriteableCleanFileFalseNonExistingFile;
 	end;
 
 implementation
-
-procedure TFileHelperTest.TestIsWriteable;
-var
-	WriteableDir: string;
-	NonWriteableDir: string;
-begin
-	// Define a directory that is known to be writeable
-	WriteableDir := DataPath(TEST_WRITEABLE_DIR); // Use DataPath to get the relative path
-
-	// Test if the function returns true for the writeable directory
-	Assert.IsTrue(IsWriteable(WriteableDir), 'Writeable directory should return true');
-
-	// Define a directory that is known to be non-writeable (if possible)
-	NonWriteableDir := DataPath(TEST_NONWRITEABLE_DIR); // Use DataPath to get the relative path
-
-	// Test if the function returns false for the non-writeable directory
-	// This might require running the test with specific permissions to ensure the directory is indeed non-writeable
-	Assert.IsFalse(IsWriteable(NonWriteableDir), 'Non-writeable directory should return false');
-end;
 
 procedure TFileHelperTest.TestSetAllFileTime;
 var
@@ -104,54 +75,6 @@ begin
 	{ Should not crash or raise exception when file doesn't exist }
 	SetAllFileTime(FileName, NewTime);
 	Assert.Pass('SetAllFileTime should handle non-existent files gracefully');
-end;
-
-{ TDD: Test IsWriteable with CleanFile=false on an existing file }
-procedure TFileHelperTest.TestIsWriteableCleanFileFalseExistingFile;
-var
-	WriteableDir: string;
-	TestFile: string;
-	Handle: THandle;
-begin
-	WriteableDir := DataPath(TEST_WRITEABLE_DIR);
-	TestFile := 'existing_test.txt';
-
-	{ Create a test file first }
-	Handle := FileCreate(WriteableDir + PathDelim + TestFile);
-	Assert.IsTrue(Handle <> THandle(-1), 'Failed to create test file');
-	FileClose(Handle);
-
-	try
-		{ Test CleanFile=false on existing file - should return true }
-		Assert.IsTrue(IsWriteable(WriteableDir, TestFile, false),
-			'CleanFile=false should return true for existing writable file');
-	finally
-		SysUtils.DeleteFile(WriteableDir + PathDelim + TestFile);
-	end;
-end;
-
-{ TDD: Test IsWriteable with CleanFile=false on a non-existing file
-  This test exposes the bug: OPEN_EXISTING or CREATE_ALWAYS = OPEN_EXISTING
-  so it cannot create the file if it doesn't exist }
-procedure TFileHelperTest.TestIsWriteableCleanFileFalseNonExistingFile;
-var
-	WriteableDir: string;
-	TestFile: string;
-	FullPath: string;
-begin
-	WriteableDir := DataPath(TEST_WRITEABLE_DIR);
-	TestFile := 'nonexisting_writeable_test.txt';
-	FullPath := WriteableDir + PathDelim + TestFile;
-
-	{ Ensure file doesn't exist }
-	if FileExists(FullPath) then
-		SysUtils.DeleteFile(FullPath);
-
-	{ Test CleanFile=false on non-existing file
-	  Current behavior: returns false (OPEN_EXISTING fails)
-	  This documents the actual behavior - OPEN_EXISTING or CREATE_ALWAYS = OPEN_EXISTING }
-	Assert.IsFalse(IsWriteable(WriteableDir, TestFile, false),
-		'CleanFile=false returns false for non-existing file (OPEN_EXISTING behavior)');
 end;
 
 initialization

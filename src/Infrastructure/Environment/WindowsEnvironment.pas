@@ -88,7 +88,6 @@ type
 implementation
 
 uses
-	FileHelper,
 	PathHelper;
 
 {TNullEnvironment}
@@ -250,8 +249,15 @@ begin
 end;
 
 function TWindowsEnvironment.IsDirectoryWriteable(const Path: WideString): Boolean;
+var
+	TestFilePath: WideString;
+	H: THandle;
 begin
-	Result := FileHelper.IsWriteable(Path);
+	TestFilePath := IncludeTrailingPathDelimiter(Path) + 'delete.me';
+	H := CreateFile(PChar(TestFilePath), GENERIC_READ or GENERIC_WRITE, 0, nil, CREATE_NEW, FILE_ATTRIBUTE_TEMPORARY or FILE_FLAG_DELETE_ON_CLOSE, 0);
+	Result := H <> INVALID_HANDLE_VALUE;
+	if Result then
+		CloseHandle(H);
 end;
 
 procedure TWindowsEnvironment.CreateDirectory(const Path: WideString);
