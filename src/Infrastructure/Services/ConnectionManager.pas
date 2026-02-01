@@ -296,7 +296,8 @@ begin
 					Result := False;
 				end;
 			end;
-		end;
+		end else
+			Result := True; {Password already available from INI settings}
 	end;
 
 	if Result = True then {update proxy password in the httpmanager to not ask it again}
