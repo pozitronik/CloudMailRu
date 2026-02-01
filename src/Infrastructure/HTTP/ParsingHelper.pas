@@ -5,7 +5,6 @@ interface
 uses
 	System.SysUtils;
 
-function extractNearValue(Text, Anchor: WideString; StartChar: WideChar = '"'; EndChar: WideChar = '"'): WideString;
 function extractPublicShard(Text: WideString; var Shard: WideString): Boolean;
 
 function ExtractEmailParts(const Email: WideString; out Username, Domain: WideString): Boolean;

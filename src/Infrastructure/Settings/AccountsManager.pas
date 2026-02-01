@@ -10,7 +10,6 @@ uses
 	Classes,
 	WindowsHelper,
 	Windows,
-	ParsingHelper,
 	LanguageStrings,
 	SettingsConstants,
 	WSList,
