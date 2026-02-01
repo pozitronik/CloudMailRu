@@ -101,15 +101,19 @@ begin
 	if not DownloadRemoteDescription(RemoteIonPath, Cloud, LocalTempPath) then
 		exit; {No description file exists}
 
-	RemoteDescriptions := CreateDescription(LocalTempPath);
 	try
-		RemoteDescriptions.Read;
-		RemoteDescriptions.DeleteValue(ExtractFileName(RemotePath.Path));
-		RemoteDescriptions.Write();
-		Cloud.DeleteFile(RemoteIonPath);
-		Cloud.PutDescriptionFile(RemoteIonPath, RemoteDescriptions.ionFilename);
+		RemoteDescriptions := CreateDescription(LocalTempPath);
+		try
+			RemoteDescriptions.Read;
+			RemoteDescriptions.DeleteValue(ExtractFileName(RemotePath.Path));
+			RemoteDescriptions.Write();
+			Cloud.DeleteFile(RemoteIonPath);
+			Cloud.PutDescriptionFile(RemoteIonPath, RemoteDescriptions.ionFilename);
+		finally
+			RemoteDescriptions.Free;
+		end;
 	finally
-		RemoteDescriptions.Free;
+		FFileSystem.DeleteFile(LocalTempPath);
 	end;
 end;
 
@@ -131,50 +135,62 @@ begin
 		if not DownloadRemoteDescription(OldRemoteIonPath, Cloud, OldLocalTempPath) then
 			exit; {No description file exists}
 
-		OldDescriptions := CreateDescription(OldLocalTempPath);
 		try
-			OldDescriptions.Read;
-			if OldDescriptions.RenameItem(OldItem, NewItem) then
-			begin
-				OldDescriptions.Write();
-				Cloud.DeleteFile(OldRemoteIonPath);
-				Cloud.PutDescriptionFile(OldRemoteIonPath, OldDescriptions.ionFilename);
+			OldDescriptions := CreateDescription(OldLocalTempPath);
+			try
+				OldDescriptions.Read;
+				if OldDescriptions.RenameItem(OldItem, NewItem) then
+				begin
+					OldDescriptions.Write();
+					Cloud.DeleteFile(OldRemoteIonPath);
+					Cloud.PutDescriptionFile(OldRemoteIonPath, OldDescriptions.ionFilename);
+				end;
+			finally
+				OldDescriptions.Free;
 			end;
 		finally
-			OldDescriptions.Free;
+			FFileSystem.DeleteFile(OldLocalTempPath);
 		end;
 	end else begin
 		{Move between directories - transfer entry between two description files}
 		if not DownloadRemoteDescription(OldRemoteIonPath, Cloud, OldLocalTempPath) then
 			exit; {No source description file exists}
 
-		OldDescriptions := CreateDescription(OldLocalTempPath);
 		try
-			OldDescriptions.Read;
-
-			NewLocalTempPath := GetTmpFileName(DESCRIPTION_TEMP_EXT);
-			NewRemoteIonExists := Cloud.GetDescriptionFile(NewRemoteIonPath, NewLocalTempPath);
-			NewDescriptions := CreateDescription(NewLocalTempPath);
+			OldDescriptions := CreateDescription(OldLocalTempPath);
 			try
-				if NewRemoteIonExists then
-					NewDescriptions.Read;
+				OldDescriptions.Read;
 
-				NewDescriptions.SetValue(ExtractFileName(NewPath.Path), OldDescriptions.GetValue(ExtractFileName(OldPath.Path)));
-				OldDescriptions.DeleteValue(ExtractFileName(OldPath.Path));
-				OldDescriptions.Write();
-				NewDescriptions.Write();
+				NewLocalTempPath := GetTmpFileName(DESCRIPTION_TEMP_EXT);
+				try
+					NewRemoteIonExists := Cloud.GetDescriptionFile(NewRemoteIonPath, NewLocalTempPath);
+					NewDescriptions := CreateDescription(NewLocalTempPath);
+					try
+						if NewRemoteIonExists then
+							NewDescriptions.Read;
 
-				Cloud.DeleteFile(OldRemoteIonPath);
-				Cloud.PutDescriptionFile(OldRemoteIonPath, OldDescriptions.ionFilename);
+						NewDescriptions.SetValue(ExtractFileName(NewPath.Path), OldDescriptions.GetValue(ExtractFileName(OldPath.Path)));
+						OldDescriptions.DeleteValue(ExtractFileName(OldPath.Path));
+						OldDescriptions.Write();
+						NewDescriptions.Write();
 
-				if NewRemoteIonExists then
-					Cloud.DeleteFile(NewRemoteIonPath);
-				Cloud.PutDescriptionFile(NewRemoteIonPath, NewDescriptions.ionFilename);
+						Cloud.DeleteFile(OldRemoteIonPath);
+						Cloud.PutDescriptionFile(OldRemoteIonPath, OldDescriptions.ionFilename);
+
+						if NewRemoteIonExists then
+							Cloud.DeleteFile(NewRemoteIonPath);
+						Cloud.PutDescriptionFile(NewRemoteIonPath, NewDescriptions.ionFilename);
+					finally
+						NewDescriptions.Free;
+					end;
+				finally
+					FFileSystem.DeleteFile(NewLocalTempPath);
+				end;
 			finally
-				NewDescriptions.Free;
+				OldDescriptions.Free;
 			end;
 		finally
-			OldDescriptions.Free;
+			FFileSystem.DeleteFile(OldLocalTempPath);
 		end;
 	end;
 end;
@@ -189,19 +205,23 @@ begin
 	if not DownloadRemoteDescription(RemoteIonPath, Cloud, LocalTempPath) then
 		exit; {No remote description file exists}
 
-	RemoteDescriptions := CreateDescription(LocalTempPath);
 	try
-		RemoteDescriptions.Read;
-		LocalDescriptions := CreateDescription(GetLocalDescriptionPath(LocalFilePath));
+		RemoteDescriptions := CreateDescription(LocalTempPath);
 		try
-			LocalDescriptions.Read;
-			LocalDescriptions.CopyFrom(RemoteDescriptions, ExtractFileName(LocalFilePath));
-			LocalDescriptions.Write();
+			RemoteDescriptions.Read;
+			LocalDescriptions := CreateDescription(GetLocalDescriptionPath(LocalFilePath));
+			try
+				LocalDescriptions.Read;
+				LocalDescriptions.CopyFrom(RemoteDescriptions, ExtractFileName(LocalFilePath));
+				LocalDescriptions.Write();
+			finally
+				LocalDescriptions.Free;
+			end;
 		finally
-			LocalDescriptions.Free;
+			RemoteDescriptions.Free;
 		end;
 	finally
-		RemoteDescriptions.Free;
+		FFileSystem.DeleteFile(LocalTempPath);
 	end;
 end;
 
@@ -222,21 +242,25 @@ begin
 
 		RemoteIonPath := GetRemoteDescriptionPath(ExtractFileDir(RemotePath.Path));
 		LocalTempPath := GetTmpFileName(DESCRIPTION_TEMP_EXT);
-		RemoteIonExists := Cloud.GetDescriptionFile(RemoteIonPath, LocalTempPath);
-
-		RemoteDescriptions := CreateDescription(LocalTempPath);
 		try
-			if RemoteIonExists then
-				RemoteDescriptions.Read;
+			RemoteIonExists := Cloud.GetDescriptionFile(RemoteIonPath, LocalTempPath);
 
-			RemoteDescriptions.CopyFrom(LocalDescriptions, ExtractFileName(RemotePath.Path));
-			RemoteDescriptions.Write();
+			RemoteDescriptions := CreateDescription(LocalTempPath);
+			try
+				if RemoteIonExists then
+					RemoteDescriptions.Read;
 
-			if RemoteIonExists then
-				Cloud.DeleteFile(RemoteIonPath);
-			Cloud.PutDescriptionFile(RemoteIonPath, RemoteDescriptions.ionFilename);
+				RemoteDescriptions.CopyFrom(LocalDescriptions, ExtractFileName(RemotePath.Path));
+				RemoteDescriptions.Write();
+
+				if RemoteIonExists then
+					Cloud.DeleteFile(RemoteIonPath);
+				Cloud.PutDescriptionFile(RemoteIonPath, RemoteDescriptions.ionFilename);
+			finally
+				RemoteDescriptions.Free;
+			end;
 		finally
-			RemoteDescriptions.Free;
+			FFileSystem.DeleteFile(LocalTempPath);
 		end;
 	finally
 		LocalDescriptions.Free;

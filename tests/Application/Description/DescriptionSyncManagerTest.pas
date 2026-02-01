@@ -70,6 +70,10 @@ type
 		procedure TestOnFileUploaded_NoLocalDescription_DoesNothing;
 		[Test]
 		procedure TestOnFileUploaded_CopiesEntryToRemoteDescription;
+
+		{Temp file cleanup tests}
+		[Test]
+		procedure TestOnFileDeleted_CleansTempFile;
 	end;
 
 implementation
@@ -380,6 +384,28 @@ begin
 		'Should DELETE old remote description');
 	Assert.IsTrue(FMockCloud.WasOperationPerformed('PUT', TEST_DESCRIPTION_FILE),
 		'Should PUT updated remote description');
+end;
+
+{Temp file cleanup tests}
+
+procedure TDescriptionSyncManagerTest.TestOnFileDeleted_CleansTempFile;
+var
+	Path: TRealPath;
+	TempFilePath: WideString;
+begin
+	{Arrange - remote has description file}
+	FMockCloud.SetGetFileResponse('folder\' + TEST_DESCRIPTION_FILE, DESCRIPTION_CONTENT, True);
+	FMockCloud.SetDefaultResults(True, True, True);
+	Path := CreatePath('\account\folder\file2.txt');
+
+	{Act}
+	FManager.OnFileDeleted(Path, FMockCloud);
+
+	{Assert - temp file created by DownloadRemoteDescription should be cleaned up.
+		The GET operation's LocalPath is the temp file path.}
+	TempFilePath := FMockCloud.GetOperation(0).LocalPath;
+	Assert.IsFalse(System.SysUtils.FileExists(TempFilePath),
+		'Temp file should be deleted after operation completes');
 end;
 
 initialization

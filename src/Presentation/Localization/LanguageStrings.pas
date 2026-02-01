@@ -206,6 +206,7 @@ const
 	PREFIX_WARN_CIPHER_CHANGE = 'Cipher profile change';
 	WARN_PROXY_PASSWORD_IGNORED = 'Warning: proxy password input skipped ignored, parameter will be ignored!';
 	WARN_QUOTA_EXHAUSTED = 'Warning: space quota exhausted!';
+	WARN_DISPATCHER_UNEXPECTED_FORMAT = 'OAuth dispatcher returned unexpected response format: %s';
 
 implementation
 
