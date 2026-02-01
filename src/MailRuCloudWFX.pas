@@ -34,6 +34,7 @@ uses
 	TCRequest,
 	PathHelper,
 	WindowsHelper,
+	CommandExecutor,
 	TCHandler,
 	CloudIncomingInvite,
 	AccountSettings,

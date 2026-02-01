@@ -20,7 +20,7 @@ uses
 	CloudMailRu,
 	CloudSettings,
 	CloudMailRuFactory,
-	WindowsHelper,
+	CommandExecutor,
 	ConnectionManager,
 	MockCloudHTTP,
 	MockHTTPManager,

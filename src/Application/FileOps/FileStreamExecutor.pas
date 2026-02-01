@@ -15,7 +15,7 @@ uses
 	ConnectionManager,
 	CloudMailRu,
 	CloudMailRuFactory,
-	WindowsHelper;
+	CommandExecutor;
 
 {Maps streaming format to corresponding shard type for URL resolution.
 	Exposed for testability.}

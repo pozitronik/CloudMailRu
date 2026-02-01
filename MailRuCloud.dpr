@@ -91,6 +91,7 @@ uses
 	WSList in 'src\Domain\ValueObjects\WSList.pas',
 	Windows,
 	WindowsHelper in 'src\Infrastructure\OS\WindowsHelper.pas',
+	CommandExecutor in 'src\Infrastructure\OS\CommandExecutor.pas',
 	MailRuCloudWFX in 'src\MailRuCloudWFX.pas',
 	WFXInterface in 'src\WFXInterface.pas',
 	PasswordUIProvider in 'src\Infrastructure\Password\PasswordUIProvider.pas',

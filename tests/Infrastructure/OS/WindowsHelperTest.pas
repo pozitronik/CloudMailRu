@@ -42,9 +42,6 @@ type
 		[Test]
 		procedure TestGetFolderIconDefaultSize;
 
-		{ TWindowsCommandExecutor tests }
-		[Test]
-		procedure TestWindowsCommandExecutorImplementsInterface;
 	end;
 
 implementation
@@ -166,16 +163,6 @@ begin
 	Icon := GetFolderIcon;
 	Assert.AreNotEqual(HIcon(INVALID_HANDLE_VALUE), Icon,
 		'Default folder icon should be retrievable');
-end;
-
-{ TWindowsCommandExecutor tests }
-
-procedure TWindowsHelperTest.TestWindowsCommandExecutorImplementsInterface;
-var
-	Executor: ICommandExecutor;
-begin
-	Executor := TWindowsCommandExecutor.Create;
-	Assert.IsNotNull(Executor, 'TWindowsCommandExecutor should implement ICommandExecutor');
 end;
 
 initialization
