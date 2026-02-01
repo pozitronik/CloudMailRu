@@ -25,21 +25,11 @@ type
 		[Test]
 		procedure TestImplodeMultipleItems;
 		[Test]
-		procedure TestExplodeSimple;
-		[Test]
-		procedure TestExplodeEmpty;
-		[Test]
 		procedure TestTrimExSingleChar;
 		[Test]
 		procedure TestTrimExMultipleChars;
 		[Test]
 		procedure TestTrimExNoMatch;
-		[Test]
-		procedure TestPosLastSingle;
-		[Test]
-		procedure TestPosLastMultiple;
-		[Test]
-		procedure TestPosLastNotFound;
 		[Test]
 		procedure TestExtractLinkFromUrlFull;
 		[Test]
@@ -64,11 +54,6 @@ type
 		procedure TestMyExtractStringsSimple;
 		[Test]
 		procedure TestMyExtractStringsQuoted;
-		{ TDD: Tests for bug fixes - these should fail before fix }
-		[Test]
-		procedure TestExplodeSemicolonDelimiter;
-		[Test]
-		procedure TestExplodeCommaDelimiter;
 		[Test]
 		procedure TestImplodeMultiCharDelimiter;
 
@@ -170,30 +155,6 @@ begin
 	end;
 end;
 
-procedure TStringHelperTest.TestExplodeSimple;
-var
-	List: TStringList;
-begin
-	List := Explode('a b c', ' ');
-	try
-		Assert.AreEqual(3, List.Count);
-	finally
-		List.Free;
-	end;
-end;
-
-procedure TStringHelperTest.TestExplodeEmpty;
-var
-	List: TStringList;
-begin
-	List := Explode('', ' ');
-	try
-		Assert.AreEqual(0, List.Count);
-	finally
-		List.Free;
-	end;
-end;
-
 procedure TStringHelperTest.TestTrimExSingleChar;
 begin
 	Assert.AreEqual('hello', TrimEx('/hello/', '/'));
@@ -207,23 +168,6 @@ end;
 procedure TStringHelperTest.TestTrimExNoMatch;
 begin
 	Assert.AreEqual('hello', TrimEx('hello', '/'));
-end;
-
-procedure TStringHelperTest.TestPosLastSingle;
-begin
-	{ In 'a/b/c/d': '/' at positions 2, 4, 6. Last is 6. }
-	Assert.AreEqual(6, PosLast('/', 'a/b/c/d'));
-end;
-
-procedure TStringHelperTest.TestPosLastMultiple;
-begin
-	{ Last occurrence of '/' in 'path/to/file' is at position 8 }
-	Assert.AreEqual(8, PosLast('/', 'path/to/file'));
-end;
-
-procedure TStringHelperTest.TestPosLastNotFound;
-begin
-	Assert.AreEqual(0, PosLast('/', 'nodelimiters'));
 end;
 
 procedure TStringHelperTest.TestExtractLinkFromUrlFull;
@@ -317,39 +261,6 @@ begin
 	end;
 end;
 
-{ TDD: This test exposes the Explode bug - delimiter must be set BEFORE DelimitedText }
-procedure TStringHelperTest.TestExplodeSemicolonDelimiter;
-var
-	List: TStringList;
-begin
-	List := Explode('a;b;c', ';');
-	try
-		Assert.AreEqual(3, List.Count, 'Explode with semicolon delimiter should split into 3 items');
-		Assert.AreEqual('a', List[0]);
-		Assert.AreEqual('b', List[1]);
-		Assert.AreEqual('c', List[2]);
-	finally
-		List.Free;
-	end;
-end;
-
-{ TDD: Comma delimiter test - works by accident with buggy code (comma is default) }
-procedure TStringHelperTest.TestExplodeCommaDelimiter;
-var
-	List: TStringList;
-begin
-	List := Explode('x,y,z', ',');
-	try
-		Assert.AreEqual(3, List.Count, 'Explode with comma delimiter should split into 3 items');
-		Assert.AreEqual('x', List[0]);
-		Assert.AreEqual('y', List[1]);
-		Assert.AreEqual('z', List[2]);
-	finally
-		List.Free;
-	end;
-end;
-
-{ TDD: This test exposes the Implode bug - multi-char delimiter deletion }
 procedure TStringHelperTest.TestImplodeMultiCharDelimiter;
 var
 	List: TStringList;

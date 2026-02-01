@@ -15,10 +15,8 @@ function GetWord(command: WideString; WordIndex: integer = 0): WideString; //В�
 function FormatSize(size: Int64; SizeType: Integer = SIZE_TYPE_AUTO): WideString;
 function ExtractLinkFromUrl(URL: WideString): WideString; //При необходимости преобразует адрес публичной ссылки к нужному виду
 function Implode(S: TStringList; Delimiter: WideString): WideString;
-function Explode(S: WideString; Delimiter: char): TStringList;
 function MyExtractStrings(Separators, WhiteSpace: TSysCharSet; Content: PWideChar; Strings: TStrings): integer;
 function TrimEx(const Str: WideString; TrimChar: WideChar): WideString;
-function PosLast(Substring, S: WideString; Offset: integer = 0): integer;
 function UrlEncode(URL: WideString): WideString;
 
 implementation
@@ -115,17 +113,6 @@ begin
 	while (E >= 1) and (Str[E] = TrimChar) do
 		Dec(E);
 	SetString(Result, PChar(@Str[S]), E - S + 1);
-end;
-
-function PosLast(Substring, S: WideString; Offset: integer = 0): integer;
-var
-	tmp: integer;
-begin
-	tmp := Offset;
-	Repeat
-		Result := tmp;
-		tmp := Pos(Substring, S, tmp + 1);
-	until tmp = 0;
 end;
 
 function ExtractLinkFromUrl(URL: WideString): WideString; //При необходимости преобразует адрес публичной ссылки к нужному виду
