@@ -216,7 +216,12 @@ begin
 	if FContext.GetPage(Format('%s/%s?token=%s', [OAUTH_DISPATCHER_URL, ShardSuffix, FContext.GetOAuthAccessToken]), DispatcherResponse, ShowProgress) then
 	begin
 		{Response format: "URL IP COUNT", extract the URL (first word)}
-		Result := Trim(Copy(DispatcherResponse, 1, Pos(' ', DispatcherResponse) - 1));
+		if Pos(' ', DispatcherResponse) > 0 then
+			Result := Trim(Copy(DispatcherResponse, 1, Pos(' ', DispatcherResponse) - 1))
+		else begin
+			FLogger.Log(LOG_LEVEL_WARNING, MSGTYPE_DETAILS, WARN_DISPATCHER_UNEXPECTED_FORMAT, [DispatcherResponse]);
+			Result := Trim(DispatcherResponse);
+		end;
 	end;
 end;
 

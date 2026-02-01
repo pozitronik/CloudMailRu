@@ -120,6 +120,8 @@ type
 		procedure TestEnsureDownloadShard_DispatcherFails_ReturnsEmpty;
 		[Test]
 		procedure TestEnsureDownloadShard_CachesResolvedValue;
+		[Test]
+		procedure TestEnsureDownloadShard_ResponseWithoutSpace_ReturnsUrl;
 
 		{ EnsureUploadShard tests }
 		[Test]
@@ -521,6 +523,15 @@ begin
 	FMockContext.SetGetPageResult(True, DispatcherShard + ' 127.0.0.1 1');
 	FManager.EnsureDownloadShard;
 	Assert.AreEqual(DispatcherShard, FManager.GetDownloadShard, 'Resolved shard should be cached');
+end;
+
+procedure TCloudShardManagerTest.TestEnsureDownloadShard_ResponseWithoutSpace_ReturnsUrl;
+const
+	DispatcherShard = 'https://dispatcher.download.shard/';
+begin
+	{Dispatcher returns URL only, no "IP COUNT" suffix}
+	FMockContext.SetGetPageResult(True, DispatcherShard);
+	Assert.AreEqual(DispatcherShard, FManager.EnsureDownloadShard, 'Should handle response without space separator');
 end;
 
 { EnsureUploadShard tests }
