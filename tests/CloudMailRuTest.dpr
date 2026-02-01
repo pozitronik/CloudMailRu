@@ -28,7 +28,6 @@ uses
 	TCRequestTest in 'Infrastructure\Request\TCRequestTest.pas',
 	TCPasswordManager in '..\src\Infrastructure\Password\TCPasswordManager.pas',
 	TCPasswordManagerTest in 'Infrastructure\Password\TCPasswordManagerTest.pas',
-	DebugHelper in '..\src\Infrastructure\Logger\DebugHelper.pas',
 	FileHelper in '..\src\Infrastructure\IO\FileHelper.pas',
 	PathHelper in '..\src\Infrastructure\IO\PathHelper.pas',
 	WindowsHelper in '..\src\Infrastructure\OS\WindowsHelper.pas',

@@ -3,7 +3,6 @@
 {$R *.dres}
 
 uses
-	DebugHelper in 'src\Infrastructure\Logger\DebugHelper.pas',
 	ANSICompatibility in 'src\Infrastructure\Protocol\ANSICompatibility.pas',
 	AccountSettings in 'src\Infrastructure\Settings\AccountSettings.pas',
 	Accounts in 'src\Presentation\UI\Forms\Accounts.pas' {AccountsForm} ,
