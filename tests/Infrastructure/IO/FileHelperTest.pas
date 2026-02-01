@@ -17,17 +17,12 @@ type
 		TEST_WRITEABLE_DIR = 'writeable_dir';
 		TEST_NONWRITEABLE_DIR = 'nonwriteable_dir';
 		TEST_TEMP_FILE = 'tempfile.txt';
-		TEST_SIZE_FILE = 'Settings.ini';
 		TEST_FILE_NON_EXISTING = 'nonexistingfile.txt';
 	public
 		[Test]
 		procedure TestIsWriteable;
 		[Test]
 		procedure TestSetAllFileTime;
-		[Test]
-		procedure TestSizeOfFileWithExistingFile;
-		[Test]
-		procedure TestSizeOfFileWithNonExistingFile;
 		[Test]
 		procedure TestSetAllFileTimeNonExistentFile;
 
@@ -94,25 +89,6 @@ begin
 		// Clean up: Delete the temporary file
 		SysUtils.DeleteFile(FileName);
 	end;
-end;
-
-procedure TFileHelperTest.TestSizeOfFileWithExistingFile;
-var
-	FileName: String;
-	FileSize: Int64;
-begin
-	FileName := DataPath(TEST_SIZE_FILE);
-	FileSize := 817;
-
-	Assert.AreEqual(FileSize, SizeOfFile(FileName), 'Size of existing file should be correctly returned');
-end;
-
-procedure TFileHelperTest.TestSizeOfFileWithNonExistingFile;
-var
-	FileName: String;
-begin
-	FileName := DataPath(TEST_FILE_NON_EXISTING);
-	Assert.IsTrue(-1 = SizeOfFile(FileName), 'Size of non-existing file should return -1');
 end;
 
 { TDD: Test that SetAllFileTime handles non-existent files gracefully without crashing }

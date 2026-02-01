@@ -512,7 +512,7 @@ var
 	ScaledProgress: TScaledProgress;
 begin
 	{Create split info first to determine chunk count for quota check}
-	SplitFileInfo := TFileSplitInfo.Create(GetUNCFilePath(LocalPath), FSettings.CloudMaxFileSize);
+	SplitFileInfo := TFileSplitInfo.Create(GetUNCFilePath(LocalPath), FSettings.CloudMaxFileSize, FFileSystem.GetFileSize(GetUNCFilePath(LocalPath)));
 	try
 		{Check available space BEFORE expensive hash calculation}
 		if not CheckQuotaForSplitUpload(SplitFileInfo, ChunksToUpload) then

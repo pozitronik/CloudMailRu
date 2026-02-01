@@ -5,7 +5,6 @@ interface
 uses
 	System.SysUtils,
 	System.Classes,
-	FileHelper,
 	LanguageStrings,
 	Winapi.Windows;
 
@@ -47,7 +46,7 @@ type
 		property GetChunks: AFileChunkInfo read Chunks;
 		property CRCFileName: WideString read GetCRCFileName;
 		property FileSize: Int64 read FFileSize;
-		constructor Create(filename: WideString; ChunkSize: Int64);
+		constructor Create(filename: WideString; ChunkSize: Int64; FileSize: Int64);
 		destructor Destroy; override;
 
 		procedure GetCRCData(DataStream: TStringStream);
@@ -58,7 +57,7 @@ implementation
 
 {TFileSplitter}
 
-constructor TFileSplitInfo.Create(filename: WideString; ChunkSize: Int64);
+constructor TFileSplitInfo.Create(filename: WideString; ChunkSize: Int64; FileSize: Int64);
 var
 	partCount: Integer;
 begin
@@ -67,7 +66,7 @@ begin
 
 	self.ChunkSize := ChunkSize;
 	self.filename := filename;
-	self.FFileSize := SizeOfFile(filename);
+	self.FFileSize := FileSize;
 
 	self.TotalChunksCount := self.FFileSize div self.ChunkSize;
 	if (self.FFileSize mod self.ChunkSize) <> 0 then

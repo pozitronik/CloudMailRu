@@ -119,8 +119,8 @@ type
 implementation
 
 uses
+	Windows,
 	FileSplitInfo,
-	FileHelper,
 	FileCipher;
 
 {TRealSizeFileSystem - only implements GetFileSize with real file access}
@@ -131,9 +131,19 @@ begin
 end;
 
 function TRealSizeFileSystem.GetFileSize(const Path: WideString): Int64;
+var
+	Handle: THandle;
 begin
 	{Use real file size for accurate test behavior}
-	Result := SizeOfFile(Path);
+	Handle := CreateFile(PChar(Path), 0, 0, nil, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+	if Handle = INVALID_HANDLE_VALUE then
+		Result := -1
+	else
+		try
+			Int64Rec(Result).Lo := Windows.GetFileSize(Handle, @Int64Rec(Result).Hi);
+		finally
+			CloseHandle(Handle);
+		end;
 end;
 
 procedure TRealSizeFileSystem.CreateEmptyFile(const Path: WideString);

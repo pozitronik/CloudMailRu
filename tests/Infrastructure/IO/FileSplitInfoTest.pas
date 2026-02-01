@@ -14,6 +14,7 @@ type
 	TFileSplitInfoTest = class
 	private
 		FTempFile: string;
+		FFileSize: Int64;
 		procedure CreateTestFile(Size: Integer);
 	public
 		[Setup]
@@ -112,6 +113,7 @@ var
 	Buffer: TBytes;
 	i: Integer;
 begin
+	FFileSize := Size;
 	F := TFileStream.Create(FTempFile, fmCreate);
 	try
 		if Size > 0 then
@@ -135,7 +137,7 @@ var
 begin
 	RaisedException := False;
 	try
-		TFileSplitInfo.Create('Z:\NonExistent\File.dat', 1000).Free;
+		TFileSplitInfo.Create('Z:\NonExistent\File.dat', 1000, 0).Free;
 	except
 		on E: Exception do
 			RaisedException := True;
@@ -149,7 +151,7 @@ var
 begin
 	{ File size 500 with chunk size 1000 = 1 chunk }
 	CreateTestFile(500);
-	SplitInfo := TFileSplitInfo.Create(FTempFile, 1000);
+	SplitInfo := TFileSplitInfo.Create(FTempFile, 1000, FFileSize);
 	try
 		Assert.AreEqual(Int64(1), SplitInfo.ChunksCount);
 	finally
@@ -163,7 +165,7 @@ var
 begin
 	{ File size 1000 with chunk size 250 = 4 chunks exactly }
 	CreateTestFile(1000);
-	SplitInfo := TFileSplitInfo.Create(FTempFile, 250);
+	SplitInfo := TFileSplitInfo.Create(FTempFile, 250, FFileSize);
 	try
 		Assert.AreEqual(Int64(4), SplitInfo.ChunksCount);
 	finally
@@ -177,7 +179,7 @@ var
 begin
 	{ File size 1000 with chunk size 300 = 4 chunks (300+300+300+100) }
 	CreateTestFile(1000);
-	SplitInfo := TFileSplitInfo.Create(FTempFile, 300);
+	SplitInfo := TFileSplitInfo.Create(FTempFile, 300, FFileSize);
 	try
 		Assert.AreEqual(Int64(4), SplitInfo.ChunksCount);
 	finally
@@ -192,7 +194,7 @@ var
 	SplitInfo: TFileSplitInfo;
 begin
 	CreateTestFile(100);
-	SplitInfo := TFileSplitInfo.Create(FTempFile, 1000);
+	SplitInfo := TFileSplitInfo.Create(FTempFile, 1000, FFileSize);
 	try
 		Assert.AreEqual(Int64(1), SplitInfo.ChunksCount);
 	finally
@@ -206,7 +208,7 @@ var
 begin
 	{ 900 bytes / 300 = 3 chunks }
 	CreateTestFile(900);
-	SplitInfo := TFileSplitInfo.Create(FTempFile, 300);
+	SplitInfo := TFileSplitInfo.Create(FTempFile, 300, FFileSize);
 	try
 		Assert.AreEqual(Int64(3), SplitInfo.ChunksCount);
 	finally
@@ -220,7 +222,7 @@ var
 begin
 	{ 1000 bytes / 400 = 2.5, so 3 chunks }
 	CreateTestFile(1000);
-	SplitInfo := TFileSplitInfo.Create(FTempFile, 400);
+	SplitInfo := TFileSplitInfo.Create(FTempFile, 400, FFileSize);
 	try
 		Assert.AreEqual(Int64(3), SplitInfo.ChunksCount);
 	finally
@@ -237,7 +239,7 @@ var
 	BaseName: string;
 begin
 	CreateTestFile(500);
-	SplitInfo := TFileSplitInfo.Create(FTempFile, 200);
+	SplitInfo := TFileSplitInfo.Create(FTempFile, 200, FFileSize);
 	try
 		Chunks := SplitInfo.GetChunks;
 		BaseName := ChangeFileExt(ExtractFileName(FTempFile), '');
@@ -256,7 +258,7 @@ var
 begin
 	{ Create enough chunks to verify leading zeros }
 	CreateTestFile(1000);
-	SplitInfo := TFileSplitInfo.Create(FTempFile, 100);
+	SplitInfo := TFileSplitInfo.Create(FTempFile, 100, FFileSize);
 	try
 		Chunks := SplitInfo.GetChunks;
 		BaseName := ChangeFileExt(ExtractFileName(FTempFile), '');
@@ -276,7 +278,7 @@ var
 	Chunks: AFileChunkInfo;
 begin
 	CreateTestFile(900);
-	SplitInfo := TFileSplitInfo.Create(FTempFile, 300);
+	SplitInfo := TFileSplitInfo.Create(FTempFile, 300, FFileSize);
 	try
 		Chunks := SplitInfo.GetChunks;
 		Assert.AreEqual(Int64(0), Chunks[0].start);
@@ -294,7 +296,7 @@ var
 begin
 	{ 900 bytes / 300 = 3 equal chunks }
 	CreateTestFile(900);
-	SplitInfo := TFileSplitInfo.Create(FTempFile, 300);
+	SplitInfo := TFileSplitInfo.Create(FTempFile, 300, FFileSize);
 	try
 		Chunks := SplitInfo.GetChunks;
 		Assert.AreEqual(Int64(300), Chunks[0].size);
@@ -312,7 +314,7 @@ var
 begin
 	{ 1000 bytes / 400 = 2 full + 1 partial (200 bytes) }
 	CreateTestFile(1000);
-	SplitInfo := TFileSplitInfo.Create(FTempFile, 400);
+	SplitInfo := TFileSplitInfo.Create(FTempFile, 400, FFileSize);
 	try
 		Chunks := SplitInfo.GetChunks;
 		Assert.AreEqual(Int64(400), Chunks[0].size);
@@ -330,7 +332,7 @@ var
 begin
 	{ 1001 bytes / 500 = 500 + 500 + 1 }
 	CreateTestFile(1001);
-	SplitInfo := TFileSplitInfo.Create(FTempFile, 500);
+	SplitInfo := TFileSplitInfo.Create(FTempFile, 500, FFileSize);
 	try
 		Chunks := SplitInfo.GetChunks;
 		Assert.AreEqual(Int64(3), SplitInfo.ChunksCount);
@@ -347,7 +349,7 @@ var
 	SplitInfo: TFileSplitInfo;
 begin
 	CreateTestFile(100);
-	SplitInfo := TFileSplitInfo.Create(FTempFile, 1000);
+	SplitInfo := TFileSplitInfo.Create(FTempFile, 1000, FFileSize);
 	try
 		Assert.AreEqual('.crc', ExtractFileExt(SplitInfo.CRCFileName));
 	finally
@@ -361,7 +363,7 @@ var
 	ExpectedBaseName: string;
 begin
 	CreateTestFile(100);
-	SplitInfo := TFileSplitInfo.Create(FTempFile, 1000);
+	SplitInfo := TFileSplitInfo.Create(FTempFile, 1000, FFileSize);
 	try
 		ExpectedBaseName := ChangeFileExt(ExtractFileName(FTempFile), '');
 		Assert.AreEqual(ExpectedBaseName + '.crc', SplitInfo.CRCFileName);
@@ -379,7 +381,7 @@ var
 	Data: string;
 begin
 	CreateTestFile(100);
-	SplitInfo := TFileSplitInfo.Create(FTempFile, 1000);
+	SplitInfo := TFileSplitInfo.Create(FTempFile, 1000, FFileSize);
 	try
 		DataStream := TStringStream.Create;
 		try
@@ -404,7 +406,7 @@ var
 	Data: string;
 begin
 	CreateTestFile(100);
-	SplitInfo := TFileSplitInfo.Create(FTempFile, 1000);
+	SplitInfo := TFileSplitInfo.Create(FTempFile, 1000, FFileSize);
 	try
 		DataStream := TStringStream.Create;
 		try
@@ -426,7 +428,7 @@ var
 	Data: string;
 begin
 	CreateTestFile(12345);
-	SplitInfo := TFileSplitInfo.Create(FTempFile, 10000);
+	SplitInfo := TFileSplitInfo.Create(FTempFile, 10000, FFileSize);
 	try
 		DataStream := TStringStream.Create;
 		try
@@ -448,7 +450,7 @@ var
 	Data: string;
 begin
 	CreateTestFile(100);
-	SplitInfo := TFileSplitInfo.Create(FTempFile, 1000);
+	SplitInfo := TFileSplitInfo.Create(FTempFile, 1000, FFileSize);
 	try
 		DataStream := TStringStream.Create;
 		try
@@ -478,6 +480,7 @@ var
 begin
 	{ Create file with 'abc' content }
 	Content := 'abc';
+	FFileSize := Length(Content);
 	F := TFileStream.Create(FTempFile, fmCreate);
 	try
 		F.WriteBuffer(Content[1], Length(Content));
@@ -485,7 +488,7 @@ begin
 		F.Free;
 	end;
 
-	SplitInfo := TFileSplitInfo.Create(FTempFile, 1000);
+	SplitInfo := TFileSplitInfo.Create(FTempFile, 1000, FFileSize);
 	try
 		DataStream := TStringStream.Create;
 		try
@@ -509,7 +512,7 @@ var
 	Data: string;
 begin
 	CreateTestFile(0);
-	SplitInfo := TFileSplitInfo.Create(FTempFile, 1000);
+	SplitInfo := TFileSplitInfo.Create(FTempFile, 1000, FFileSize);
 	try
 		DataStream := TStringStream.Create;
 		try
@@ -538,7 +541,7 @@ begin
 	 FileSplitInfo, then deletes the file before calling GetCRCData to trigger the
 	 exception path. FastMM will catch any stream leak.}
 	CreateTestFile(100);
-	SplitInfo := TFileSplitInfo.Create(FTempFile, 1000);
+	SplitInfo := TFileSplitInfo.Create(FTempFile, 1000, FFileSize);
 	try
 		{ Delete the file after construction to trigger error in GetCRC32File }
 		System.SysUtils.DeleteFile(FTempFile);

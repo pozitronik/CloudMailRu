@@ -10,8 +10,6 @@ uses
 
 function IsWriteable(const DirName: WideString; FileName: WideString = 'delete.me'; CleanFile: Boolean = True): Boolean;
 procedure SetAllFileTime(const FileName: string; const FileTime: TFileTime);
-function SizeOfFile(const FileName: String): Int64;
-
 implementation
 
 function IsWriteable(const DirName: WideString; FileName: WideString = 'delete.me'; CleanFile: Boolean = True): Boolean;
@@ -46,21 +44,6 @@ begin
 		if Handle <> INVALID_HANDLE_VALUE then
 			CloseHandle(Handle);
 	end;
-end;
-
-function SizeOfFile(const FileName: String): Int64;
-var
-	FHandle: THandle;
-begin
-	FHandle := CreateFile(PChar(FileName), 0, 0, nil, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
-	if FHandle = INVALID_HANDLE_VALUE then
-		Result := -1
-	else
-		try
-			Int64Rec(Result).Lo := GetFileSize(FHandle, @Int64Rec(Result).Hi);
-		finally
-			CloseHandle(FHandle);
-		end;
 end;
 
 end.
