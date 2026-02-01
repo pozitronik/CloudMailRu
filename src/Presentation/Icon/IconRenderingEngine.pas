@@ -65,7 +65,6 @@ implementation
 uses
 	SysUtils,
 	WFXTypes,
-	WindowsHelper,
 	IconHelper;
 
 {TIconRenderResult}

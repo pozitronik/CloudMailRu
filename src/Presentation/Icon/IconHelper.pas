@@ -6,10 +6,20 @@ interface
 uses
 	SysUtils,
 	Graphics,
-	Windows;
+	Windows,
+	ShlObj,
+	ShellApi,
+	ActiveX;
+
+const
+	IconSizeSmall = 0; //SHGFI_SMALLICON
+	IconSizeNormal = 1; //SHGFI_ICON
+	IconSizeLarge = 2; //SHGFI_LARGEICON
 
 function CombineIcons(FrontIcon, BackIcon: Hicon): Hicon; //taken from http://www.swissdelphicenter.ch/en/showcode.php?id=1636
 function LoadPluginIcon(const path: WideString; identifier: WideString): Hicon;
+function GetFolderIcon(const size: integer = IconSizeSmall): Hicon;
+function GetSystemIcon(ParentWindow: HWND; const size: integer = IconSizeSmall; ItemType: integer = CSIDL_BITBUCKET): Hicon;
 
 implementation
 
@@ -75,6 +85,53 @@ end;
 function LoadPluginIcon(const path: WideString; identifier: WideString): Hicon;
 begin
 	exit(LoadIcon(IncludeTrailingBackslash(path) + identifier + '.ico'));
+end;
+
+function GetFolderIcon(const size: integer = IconSizeSmall): Hicon;
+var
+	SFI: TSHFileInfo;
+	uFlags: uint;
+begin
+	Result := INVALID_HANDLE_VALUE;
+	uFlags := SHGFI_ICON;
+	FillChar(SFI, SizeOf(SFI), 0);
+	case size of
+		IconSizeSmall:
+			uFlags := SHGFI_ICON or SHGFI_SMALLICON;
+		IconSizeNormal:
+			uFlags := SHGFI_ICON;
+		IconSizeLarge:
+			uFlags := SHGFI_ICON or SHGFI_LARGEICON; //not working with SHGetFileInfo
+	end;
+
+	if SHGetFileInfo('booya', FILE_ATTRIBUTE_DIRECTORY, SFI, SizeOf(SFI), uFlags or SHGFI_USEFILEATTRIBUTES) <> 0 then
+		Result := SFI.Hicon;
+
+end;
+
+function GetSystemIcon(ParentWindow: HWND; const size: integer = IconSizeSmall; ItemType: integer = CSIDL_BITBUCKET): Hicon;
+var
+	SFI: TSHFileInfo;
+	PIDL: PItemIDList;
+	uFlags: uint;
+begin
+	Result := INVALID_HANDLE_VALUE;
+	uFlags := SHGFI_ICON;
+	case size of
+		IconSizeSmall:
+			uFlags := SHGFI_ICON or SHGFI_SMALLICON;
+		IconSizeNormal:
+			uFlags := SHGFI_ICON;
+		IconSizeLarge:
+			uFlags := SHGFI_ICON or SHGFI_LARGEICON; //not working with SHGetFileInfo
+	end;
+	SHGetSpecialFolderLocation(ParentWindow, ItemType, PIDL);
+	try
+		if SHGetFileInfo(PChar(PIDL), 0, SFI, SizeOf(SFI), SHGFI_PIDL or SHGFI_SYSICONINDEX or uFlags) <> 0 then
+			Result := SFI.Hicon;
+	finally
+		CoTaskMemFree(PIDL);
+	end;
 end;
 
 end.
