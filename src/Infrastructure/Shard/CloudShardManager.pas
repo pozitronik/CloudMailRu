@@ -59,6 +59,8 @@ type
 		FContext: IShardContext;
 		{Resolve shard via OAuth dispatcher endpoint (plain text "URL IP COUNT" format)}
 		function ResolveOAuthDispatcherShard(const ShardSuffix: WideString): WideString;
+		{Common logic for EnsureDownloadShard/EnsureUploadShard}
+		function EnsureShard(var CachedShard: WideString; const Override, UndefinedMsg, OverrideMsg, DispatcherSuffix: WideString): WideString;
 	public
 		constructor Create(Logger: ILogger; Context: IShardContext; DownloadOverride: WideString = ''; UploadOverride: WideString = '');
 
@@ -218,40 +220,32 @@ begin
 	end;
 end;
 
-function TCloudShardManager.EnsureDownloadShard: WideString;
+function TCloudShardManager.EnsureShard(var CachedShard: WideString; const Override, UndefinedMsg, OverrideMsg, DispatcherSuffix: WideString): WideString;
 begin
-	Result := FDownloadShard;
+	Result := CachedShard;
 	if Result <> EmptyWideStr then
 		Exit;
 
-	FLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, UNDEFINED_DOWNLOAD_SHARD);
-	if FDownloadOverride <> EmptyWideStr then
+	FLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, UndefinedMsg);
+	if Override <> EmptyWideStr then
 	begin
-		FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_DETAILS, SHARD_OVERRIDDEN);
-		Result := FDownloadOverride;
+		FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_DETAILS, OverrideMsg);
+		Result := Override;
 	end else
-		Result := ResolveOAuthDispatcherShard('d');
+		Result := ResolveOAuthDispatcherShard(DispatcherSuffix);
 
 	if Result <> EmptyWideStr then
-		FDownloadShard := Result;
+		CachedShard := Result;
+end;
+
+function TCloudShardManager.EnsureDownloadShard: WideString;
+begin
+	Result := EnsureShard(FDownloadShard, FDownloadOverride, UNDEFINED_DOWNLOAD_SHARD, SHARD_OVERRIDDEN, 'd');
 end;
 
 function TCloudShardManager.EnsureUploadShard: WideString;
 begin
-	Result := FUploadShard;
-	if Result <> EmptyWideStr then
-		Exit;
-
-	FLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, UNDEFINED_UPLOAD_SHARD);
-	if FUploadOverride <> EmptyWideStr then
-	begin
-		FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_DETAILS, UPLOAD_URL_OVERRIDDEN);
-		Result := FUploadOverride;
-	end else
-		Result := ResolveOAuthDispatcherShard('u');
-
-	if Result <> EmptyWideStr then
-		FUploadShard := Result;
+	Result := EnsureShard(FUploadShard, FUploadOverride, UNDEFINED_UPLOAD_SHARD, UPLOAD_URL_OVERRIDDEN, 'u');
 end;
 
 {TNullShardManager}
