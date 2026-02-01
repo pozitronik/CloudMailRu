@@ -45,7 +45,7 @@ function TIniFilesHelper.ValidateIdentName(const Ident: string): boolean;
 var
 	RegEx: TRegEx;
 begin
-	RegEx := TRegEx.Create('^([a-z]|[A-Z]|\.|\$|\:)([a-z]|[A-Z]|[0-9]|_|~|-|\.|:|\$|\s)+');
+	RegEx := TRegEx.Create('^([a-z]|[A-Z]|\.|\$|\:)([a-z]|[A-Z]|[0-9]|_|~|-|\.|:|\$|\s)*');
 	result := RegEx.Match(Ident).Success;
 end;
 

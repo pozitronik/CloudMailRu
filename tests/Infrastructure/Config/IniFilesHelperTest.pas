@@ -36,6 +36,8 @@ type
 		[Test]
 		procedure TestValidateIdentNameEmpty;
 		[Test]
+		procedure TestValidateIdentNameSingleChar;
+		[Test]
 		procedure TestReadInt64Valid;
 		[Test]
 		procedure TestReadInt64Hex;
@@ -118,6 +120,14 @@ end;
 procedure TIniFilesHelperTest.TestValidateIdentNameEmpty;
 begin
 	Assert.IsFalse(FIniFile.ValidateIdentName(''));
+end;
+
+procedure TIniFilesHelperTest.TestValidateIdentNameSingleChar;
+begin
+	{Single-character identifiers should be valid}
+	Assert.IsTrue(FIniFile.ValidateIdentName('x'), 'Single lowercase letter should be valid');
+	Assert.IsTrue(FIniFile.ValidateIdentName('Z'), 'Single uppercase letter should be valid');
+	Assert.IsTrue(FIniFile.ValidateIdentName('$'), 'Single $ should be valid');
 end;
 
 procedure TIniFilesHelperTest.TestReadInt64Valid;
