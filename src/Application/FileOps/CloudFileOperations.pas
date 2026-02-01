@@ -153,7 +153,7 @@ begin
 	NewPath := ExtractUniversalFilePath(NewName);
 	SameDir := ExtractUniversalFilePath(OldName) = ExtractUniversalFilePath(NewName);
 	SameName := ExtractUniversalFileName(OldName) = ExtractUniversalFileName(NewName);
-	if (SameDir) then
+	if SameDir then
 	begin {Copy to same directory not supported - would need temp dir workaround}
 		FLogger.Log(LOG_LEVEL_WARNING, MSGTYPE_IMPORTANTERROR, ERR_COPY_SAME_DIR_NOT_SUPPORTED);
 		Exit(FS_FILE_NOTSUPPORTED);
