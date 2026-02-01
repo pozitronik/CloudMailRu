@@ -600,6 +600,10 @@ begin
 	SetDirty(False);
 end;
 
+{Accounts dirty-tracking block (SetDirty..OnDeleteAccountClick) mirrors
+ the Streaming block below. The duplication is intentional: both tabs
+ manage independent UI state with subtle comctl32 focus-transfer quirks,
+ and keeping them explicit avoids fragile abstraction over visual form logic.}
 procedure TAccountsPresenter.SetDirty(Value: Boolean);
 begin
 	FDirty := Value;
@@ -1025,6 +1029,8 @@ begin
 	end;
 end;
 
+{Streaming dirty-tracking block -- mirrors the Accounts block above.
+ See comment there for why the duplication is intentional.}
 procedure TAccountsPresenter.SetStreamingDirty(Value: Boolean);
 begin
 	FStreamingDirty := Value;
