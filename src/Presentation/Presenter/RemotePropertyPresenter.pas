@@ -171,8 +171,7 @@ implementation
 uses
 	Winapi.Windows,
 	Winapi.Messages,
-	PathHelper,
-	WindowsHelper;
+	PathHelper;
 
 const
 	{Default filename for descriptions - matches TC convention}
@@ -556,7 +555,7 @@ function TRemotePropertyPresenter.DownloadDescriptionFile(var LocalPath: WideStr
 var
 	ResultHash: WideString;
 begin
-	LocalPath := GetTmpFileName(DESCRIPTION_TEMP_EXT);
+	LocalPath := FFileSystem.GetTmpFileName(DESCRIPTION_TEMP_EXT);
 	{Download without logging errors - file may not exist}
 	Result := FDownloader.Download(GetDescriptionFilePath, LocalPath, ResultHash, False) = FS_FILE_OK;
 end;
@@ -590,7 +589,7 @@ var
 	ResultHash: WideString;
 begin
 	RemotePath := GetDescriptionFilePath;
-	LocalPath := GetTmpFileName(DESCRIPTION_TEMP_EXT);
+	LocalPath := FFileSystem.GetTmpFileName(DESCRIPTION_TEMP_EXT);
 
 	{Download existing description file (if any) without logging errors}
 	RemoteFileExists := FDownloader.Download(RemotePath, LocalPath, ResultHash, False) = FS_FILE_OK;

@@ -58,7 +58,6 @@ type
 implementation
 
 uses
-	WindowsHelper,
 	PathHelper,
 	CloudConstants;
 
@@ -87,7 +86,7 @@ end;
 
 function TDescriptionSyncManager.DownloadRemoteDescription(const RemoteIonPath: WideString; Cloud: ICloudDescriptionOps; out LocalTempPath: WideString): Boolean;
 begin
-	LocalTempPath := GetTmpFileName(DESCRIPTION_TEMP_EXT);
+	LocalTempPath := FFileSystem.GetTmpFileName(DESCRIPTION_TEMP_EXT);
 	Result := Cloud.GetDescriptionFile(RemoteIonPath, LocalTempPath);
 	if not Result then
 		FFileSystem.DeleteFile(LocalTempPath);
@@ -163,7 +162,7 @@ begin
 			try
 				OldDescriptions.Read;
 
-				NewLocalTempPath := GetTmpFileName(DESCRIPTION_TEMP_EXT);
+				NewLocalTempPath := FFileSystem.GetTmpFileName(DESCRIPTION_TEMP_EXT);
 				try
 					NewRemoteIonExists := Cloud.GetDescriptionFile(NewRemoteIonPath, NewLocalTempPath);
 					NewDescriptions := CreateDescription(NewLocalTempPath);
@@ -243,7 +242,7 @@ begin
 		LocalDescriptions.Read;
 
 		RemoteIonPath := GetRemoteDescriptionPath(ExtractFileDir(RemotePath.Path));
-		LocalTempPath := GetTmpFileName(DESCRIPTION_TEMP_EXT);
+		LocalTempPath := FFileSystem.GetTmpFileName(DESCRIPTION_TEMP_EXT);
 		try
 			RemoteIonExists := Cloud.GetDescriptionFile(RemoteIonPath, LocalTempPath);
 

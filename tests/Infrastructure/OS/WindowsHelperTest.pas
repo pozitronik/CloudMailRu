@@ -12,24 +12,6 @@ type
 	[TestFixture]
 	TWindowsHelperTest = class
 	public
-		{ GetTmpDir tests }
-		[Test]
-		procedure TestGetTmpDirNotEmpty;
-		[Test]
-		procedure TestGetTmpDirEndsWithBackslash;
-		[Test]
-		procedure TestGetTmpDirExists;
-
-		{ GetTmpFileName tests }
-		[Test]
-		procedure TestGetTmpFileNameNotEmpty;
-		[Test]
-		procedure TestGetTmpFileNameCreatesFile;
-		[Test]
-		procedure TestGetTmpFileNameWithPrefix;
-		[Test]
-		procedure TestGetTmpFileNameUnique;
-
 		{ GetFindDataEmptyDir tests }
 		[Test]
 		procedure TestGetFindDataEmptyDirDefaultName;
@@ -70,91 +52,6 @@ implementation
 uses
 	SysUtils,
 	ShlObj;
-
-{ GetTmpDir tests }
-
-procedure TWindowsHelperTest.TestGetTmpDirNotEmpty;
-begin
-	{ Temp directory path should never be empty }
-	Assert.IsNotEmpty(GetTmpDir);
-end;
-
-procedure TWindowsHelperTest.TestGetTmpDirEndsWithBackslash;
-var
-	TmpDir: WideString;
-begin
-	{ Path should end with trailing backslash for easy concatenation }
-	TmpDir := GetTmpDir;
-	Assert.AreEqual('\', TmpDir[Length(TmpDir)]);
-end;
-
-procedure TWindowsHelperTest.TestGetTmpDirExists;
-begin
-	{ Returned directory should actually exist }
-	Assert.IsTrue(SysUtils.DirectoryExists(GetTmpDir));
-end;
-
-{ GetTmpFileName tests }
-
-procedure TWindowsHelperTest.TestGetTmpFileNameNotEmpty;
-var
-	TmpFile: string;
-begin
-	TmpFile := GetTmpFileName;
-	try
-		Assert.IsNotEmpty(TmpFile);
-	finally
-		{ Clean up - GetTmpFileName creates the file }
-		if SysUtils.FileExists(TmpFile) then
-			SysUtils.DeleteFile(TmpFile);
-	end;
-end;
-
-procedure TWindowsHelperTest.TestGetTmpFileNameCreatesFile;
-var
-	TmpFile: string;
-begin
-	{ GetTmpFileName actually creates a zero-byte file }
-	TmpFile := GetTmpFileName;
-	try
-		Assert.IsTrue(SysUtils.FileExists(TmpFile));
-	finally
-		if SysUtils.FileExists(TmpFile) then
-			SysUtils.DeleteFile(TmpFile);
-	end;
-end;
-
-procedure TWindowsHelperTest.TestGetTmpFileNameWithPrefix;
-var
-	TmpFile: string;
-begin
-	{ Prefix should be incorporated into the filename }
-	TmpFile := GetTmpFileName('TST');
-	try
-		{ Windows API uses first 3 chars of prefix }
-		Assert.StartsWith('TST', ExtractFileName(TmpFile));
-	finally
-		if SysUtils.FileExists(TmpFile) then
-			SysUtils.DeleteFile(TmpFile);
-	end;
-end;
-
-procedure TWindowsHelperTest.TestGetTmpFileNameUnique;
-var
-	TmpFile1, TmpFile2: string;
-begin
-	{ Each call should generate a unique filename }
-	TmpFile1 := GetTmpFileName;
-	TmpFile2 := GetTmpFileName;
-	try
-		Assert.AreNotEqual(TmpFile1, TmpFile2);
-	finally
-		if SysUtils.FileExists(TmpFile1) then
-			SysUtils.DeleteFile(TmpFile1);
-		if SysUtils.FileExists(TmpFile2) then
-			SysUtils.DeleteFile(TmpFile2);
-	end;
-end;
 
 { GetFindDataEmptyDir tests }
 

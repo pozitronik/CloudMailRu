@@ -45,6 +45,8 @@ type
 		[Test]
 		procedure TestOpenTextReader_ReturnsEmptyReader;
 		[Test]
+		procedure TestGetTmpFileName_ReturnsEmpty;
+		[Test]
 		procedure TestImplementsIFileSystem;
 	end;
 
@@ -119,6 +121,14 @@ type
 		{ OpenTextReader tests }
 		[Test]
 		procedure TestOpenTextReader_ReturnsWorkingReader;
+
+		{ GetTmpFileName tests }
+		[Test]
+		procedure TestGetTmpFileName_ReturnsUniquePaths;
+		[Test]
+		procedure TestGetTmpFileName_CreatesFile;
+		[Test]
+		procedure TestGetTmpFileName_IncludesPrefix;
 
 		{ Helper methods tests }
 		[Test]
@@ -205,6 +215,16 @@ type
 		{ OpenTextReader tests }
 		[Test]
 		procedure TestOpenTextReader_ReturnsWorkingReader;
+
+		{ GetTmpFileName tests }
+		[Test]
+		procedure TestGetTmpFileName_ReturnsNonEmpty;
+		[Test]
+		procedure TestGetTmpFileName_CreatesFile;
+		[Test]
+		procedure TestGetTmpFileName_WithPrefix;
+		[Test]
+		procedure TestGetTmpFileName_ReturnsUniquePaths;
 
 		[Test]
 		procedure TestImplementsIFileSystem;
@@ -320,6 +340,11 @@ begin
 	finally
 		Reader.Free;
 	end;
+end;
+
+procedure TNullFileSystemTest.TestGetTmpFileName_ReturnsEmpty;
+begin
+	Assert.AreEqual('', String(FFileSystem.GetTmpFileName));
 end;
 
 procedure TNullFileSystemTest.TestImplementsIFileSystem;
@@ -504,6 +529,31 @@ begin
 	finally
 		Reader.Free;
 	end;
+end;
+
+procedure TMemoryFileSystemTest.TestGetTmpFileName_ReturnsUniquePaths;
+var
+	Path1, Path2: WideString;
+begin
+	Path1 := FFileSystem.GetTmpFileName('TST');
+	Path2 := FFileSystem.GetTmpFileName('TST');
+	Assert.AreNotEqual(String(Path1), String(Path2), 'Each call should return a unique path');
+end;
+
+procedure TMemoryFileSystemTest.TestGetTmpFileName_CreatesFile;
+var
+	TmpPath: WideString;
+begin
+	TmpPath := FFileSystem.GetTmpFileName;
+	Assert.IsTrue(FFileSystem.FileExists(TmpPath), 'Temp file should exist after creation');
+end;
+
+procedure TMemoryFileSystemTest.TestGetTmpFileName_IncludesPrefix;
+var
+	TmpPath: WideString;
+begin
+	TmpPath := FFileSystem.GetTmpFileName('PFX');
+	Assert.StartsWith('PFX', String(TmpPath), 'Path should start with prefix');
 end;
 
 procedure TMemoryFileSystemTest.TestSetFileContent_GetFileContent_RoundTrip;
@@ -771,6 +821,45 @@ begin
 	finally
 		Reader.Free;
 	end;
+end;
+
+procedure TWindowsFileSystemTest.TestGetTmpFileName_ReturnsNonEmpty;
+var
+	TmpFile: string;
+begin
+	TmpFile := FFileSystem.GetTmpFileName;
+	FTempFiles.Add(TmpFile);
+	Assert.IsNotEmpty(TmpFile);
+end;
+
+procedure TWindowsFileSystemTest.TestGetTmpFileName_CreatesFile;
+var
+	TmpFile: string;
+begin
+	TmpFile := FFileSystem.GetTmpFileName;
+	FTempFiles.Add(TmpFile);
+	Assert.IsTrue(System.SysUtils.FileExists(TmpFile), 'GetTmpFileName should create a zero-byte file');
+end;
+
+procedure TWindowsFileSystemTest.TestGetTmpFileName_WithPrefix;
+var
+	TmpFile: string;
+begin
+	TmpFile := FFileSystem.GetTmpFileName('TST');
+	FTempFiles.Add(TmpFile);
+	{Windows API uses first 3 chars of prefix}
+	Assert.StartsWith('TST', ExtractFileName(TmpFile));
+end;
+
+procedure TWindowsFileSystemTest.TestGetTmpFileName_ReturnsUniquePaths;
+var
+	TmpFile1, TmpFile2: string;
+begin
+	TmpFile1 := FFileSystem.GetTmpFileName;
+	TmpFile2 := FFileSystem.GetTmpFileName;
+	FTempFiles.Add(TmpFile1);
+	FTempFiles.Add(TmpFile2);
+	Assert.AreNotEqual(TmpFile1, TmpFile2, 'Each call should return a unique path');
 end;
 
 procedure TWindowsFileSystemTest.TestImplementsIFileSystem;

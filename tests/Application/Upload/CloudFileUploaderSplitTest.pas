@@ -49,6 +49,7 @@ type
 		procedure WriteAllText(const Path: WideString; const Content: WideString; Encoding: TEncoding);
 		procedure WriteAllLines(const Path: WideString; Lines: TStrings; Encoding: TEncoding);
 		function OpenTextReader(const Path: WideString; Encoding: TEncoding): TStreamReader;
+		function GetTmpFileName(const Prefix: WideString = ''): WideString;
 	end;
 
 	{Testable subclass that exposes protected PutFileSplit method}
@@ -177,6 +178,11 @@ begin
 	{Return reader over empty stream}
 	Stream := TStringStream.Create('', Encoding);
 	Result := TStreamReader.Create(Stream, Encoding, False);
+end;
+
+function TRealSizeFileSystem.GetTmpFileName(const Prefix: WideString): WideString;
+begin
+	Result := '';
 end;
 
 {TTestableCloudFileUploader}

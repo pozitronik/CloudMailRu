@@ -283,7 +283,7 @@ begin
 	TCLogger := TTCLogger.Create(pLogProc, PluginNr, SettingsManager.GetSettings.LogLevel);
 	TCProgress := TTCProgress.Create(pProgressProc, PluginNr);
 	TCRequest := TTCRequest.Create(pRequestProc, PluginNr);
-	CurrentDescriptions := TDescription.Create(GetTmpFileName(DESCRIPTION_TEMP_EXT), FFileSystem, FTCHandler.GetTCCommentPreferredFormat);
+	CurrentDescriptions := TDescription.Create(FFileSystem.GetTmpFileName(DESCRIPTION_TEMP_EXT), FFileSystem, FTCHandler.GetTCCommentPreferredFormat);
 
 	{Create retry handler with callbacks for message boxes and logging}
 	Logger := TCLogger;

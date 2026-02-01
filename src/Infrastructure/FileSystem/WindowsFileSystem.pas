@@ -54,6 +54,9 @@ type
 
 		{Opens a text reader for streaming line-by-line access. Caller must free the returned reader.}
 		function OpenTextReader(const Path: WideString; Encoding: TEncoding): TStreamReader;
+
+		{Creates a unique temporary file and returns its path. Caller must delete it when done.}
+		function GetTmpFileName(const Prefix: WideString = ''): WideString;
 	end;
 
 	{Null implementation for testing - simulates empty/non-existent files}
@@ -69,12 +72,14 @@ type
 		procedure WriteAllText(const Path: WideString; const Content: WideString; Encoding: TEncoding);
 		procedure WriteAllLines(const Path: WideString; Lines: TStrings; Encoding: TEncoding);
 		function OpenTextReader(const Path: WideString; Encoding: TEncoding): TStreamReader;
+		function GetTmpFileName(const Prefix: WideString = ''): WideString;
 	end;
 
 	{In-memory file system for testing - stores files in dictionary}
 	TMemoryFileSystem = class(TInterfacedObject, IFileSystem)
 	private
 		FFiles: TStringList; {Path -> Content mapping}
+		FTmpCounter: Integer;
 	public
 		constructor Create;
 		destructor Destroy; override;
@@ -89,6 +94,7 @@ type
 		procedure WriteAllText(const Path: WideString; const Content: WideString; Encoding: TEncoding);
 		procedure WriteAllLines(const Path: WideString; Lines: TStrings; Encoding: TEncoding);
 		function OpenTextReader(const Path: WideString; Encoding: TEncoding): TStreamReader;
+		function GetTmpFileName(const Prefix: WideString = ''): WideString;
 
 		{Test helper: set file content directly}
 		procedure SetFileContent(const Path: WideString; const Content: WideString);
@@ -111,6 +117,7 @@ type
 		procedure WriteAllText(const Path: WideString; const Content: WideString; Encoding: TEncoding);
 		procedure WriteAllLines(const Path: WideString; Lines: TStrings; Encoding: TEncoding);
 		function OpenTextReader(const Path: WideString; Encoding: TEncoding): TStreamReader;
+		function GetTmpFileName(const Prefix: WideString = ''): WideString;
 	end;
 
 implementation
@@ -193,6 +200,11 @@ begin
 	end;
 end;
 
+function TNullFileSystem.GetTmpFileName(const Prefix: WideString): WideString;
+begin
+	Result := '';
+end;
+
 {TMemoryFileSystem}
 
 constructor TMemoryFileSystem.Create;
@@ -200,6 +212,7 @@ begin
 	inherited Create;
 	FFiles := TStringList.Create;
 	FFiles.CaseSensitive := False; {Windows-like behavior}
+	FTmpCounter := 0;
 end;
 
 destructor TMemoryFileSystem.Destroy;
@@ -320,6 +333,13 @@ begin
 		Stream.Free;
 		raise;
 	end;
+end;
+
+function TMemoryFileSystem.GetTmpFileName(const Prefix: WideString): WideString;
+begin
+	Inc(FTmpCounter);
+	Result := Format('%s_tmp_%d', [Prefix, FTmpCounter]);
+	CreateEmptyFile(Result);
 end;
 
 {TWindowsFileSystem}
@@ -456,6 +476,16 @@ end;
 function TWindowsFileSystem.OpenTextReader(const Path: WideString; Encoding: TEncoding): TStreamReader;
 begin
 	Result := TStreamReader.Create(GetUNCFilePath(Path), Encoding, False);
+end;
+
+function TWindowsFileSystem.GetTmpFileName(const Prefix: WideString): WideString;
+var
+	TempDir: array [0 .. MAX_PATH] of WideChar;
+	TempFile: array [0 .. MAX_PATH] of WideChar;
+begin
+	GetTempPathW(MAX_PATH, @TempDir);
+	GetTempFileNameW(TempDir, PWideChar(Prefix), 0, TempFile);
+	Result := StrPas(TempFile);
 end;
 
 end.

@@ -43,8 +43,6 @@ function Run(path, ParamString, StartDir: WideString; SubstituteVariables: boole
 procedure CenterWindow(WindowToStay, WindowToCenter: HWND);
 function GetFolderIcon(const size: integer = IconSizeSmall): Hicon;
 function GetSystemIcon(ParentWindow: HWND; const size: integer = IconSizeSmall; ItemType: integer = CSIDL_BITBUCKET): Hicon;
-function GetTmpDir: WideString;
-function GetTmpFileName(Prefix: WideString = ''): WideString;
 function GetFindDataEmptyDir(DirName: WideString = '.'): tWIN32FINDDATAW;
 function MsgBox(Window: HWND; Text, Caption: WideString; MsgType: integer): integer; overload;
 function MsgBox(Window: HWND; Text: WideString; const TextArgs: array of const; Caption: WideString; MsgType: integer): integer; overload;
@@ -154,22 +152,6 @@ begin
 	finally
 		CoTaskMemFree(PIDL);
 	end;
-end;
-
-function GetTmpDir: WideString;
-var
-	tempFolder: array [0 .. MAX_UNC_PATH] of WideChar;
-begin
-	GetTempPathW(MAX_PATH, @tempFolder);
-	Result := IncludeTrailingBackslash(StrPas(tempFolder));
-end;
-
-function GetTmpFileName(Prefix: WideString = ''): WideString;
-var
-	tempFile: array [0 .. MAX_UNC_PATH] of WideChar;
-begin
-	GetTempFileNameW(PWideChar(GetTmpDir), PWideChar(Prefix), 0, tempFile);
-	Result := StrPas(tempFile);
 end;
 
 function GetFindDataEmptyDir(DirName: WideString = '.'): tWIN32FINDDATAW;
