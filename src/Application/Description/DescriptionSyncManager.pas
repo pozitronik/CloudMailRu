@@ -235,7 +235,7 @@ var
 begin
 	LocalIonPath := GetLocalDescriptionPath(LocalFilePath);
 
-	if not FileExists(GetUNCFilePath(LocalIonPath)) then
+	if not FFileSystem.FileExists(LocalIonPath) then
 		exit; {No local description file exists}
 
 	LocalDescriptions := CreateDescription(LocalIonPath);

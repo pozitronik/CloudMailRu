@@ -115,6 +115,9 @@ type
 
 implementation
 
+uses
+	PathHelper;
+
 {TOwningStreamReader}
 
 constructor TOwningStreamReader.Create(AStream: TStream; Encoding: TEncoding);
@@ -323,14 +326,14 @@ end;
 
 function TWindowsFileSystem.FileExists(const Path: WideString): Boolean;
 begin
-	Result := System.SysUtils.FileExists(Path);
+	Result := System.SysUtils.FileExists(GetUNCFilePath(Path));
 end;
 
 function TWindowsFileSystem.GetFileSize(const Path: WideString): Int64;
 var
 	Handle: THandle;
 begin
-	Handle := CreateFileW(PWideChar(Path), 0, 0, nil, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+	Handle := CreateFileW(PWideChar(GetUNCFilePath(Path)), 0, 0, nil, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
 	if Handle = INVALID_HANDLE_VALUE then
 		Exit(-1);
 	try
@@ -344,31 +347,33 @@ procedure TWindowsFileSystem.CreateEmptyFile(const Path: WideString);
 var
 	Handle: THandle;
 begin
-	Handle := CreateFileW(PWideChar(Path), GENERIC_WRITE, 0, nil, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
+	Handle := CreateFileW(PWideChar(GetUNCFilePath(Path)), GENERIC_WRITE, 0, nil, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
 	if Handle <> INVALID_HANDLE_VALUE then
 		CloseHandle(Handle);
 end;
 
 procedure TWindowsFileSystem.DeleteFile(const Path: WideString);
 begin
-	DeleteFileW(PWideChar(Path));
+	DeleteFileW(PWideChar(GetUNCFilePath(Path)));
 end;
 
 function TWindowsFileSystem.ReadFileHeader(const Path: WideString; ByteCount: Integer): TBytes;
 var
 	F: File;
 	BytesRead: Integer;
+	UNCPath: WideString;
 begin
 	SetLength(Result, ByteCount);
 	FillChar(Result[0], ByteCount, 0);
+	UNCPath := GetUNCFilePath(Path);
 
-	if not System.SysUtils.FileExists(Path) then
+	if not System.SysUtils.FileExists(UNCPath) then
 	begin
 		SetLength(Result, 0);
 		Exit;
 	end;
 
-	AssignFile(F, Path);
+	AssignFile(F, UNCPath);
 	try
 		Reset(F, 1);
 		try
@@ -386,12 +391,14 @@ end;
 function TWindowsFileSystem.ReadAllText(const Path: WideString; Encoding: TEncoding): WideString;
 var
 	Stream: TStreamReader;
+	UNCPath: WideString;
 begin
 	Result := '';
-	if not System.SysUtils.FileExists(Path) then
+	UNCPath := GetUNCFilePath(Path);
+	if not System.SysUtils.FileExists(UNCPath) then
 		Exit;
 
-	Stream := TStreamReader.Create(Path, Encoding, False);
+	Stream := TStreamReader.Create(UNCPath, Encoding, False);
 	try
 		Result := Stream.ReadToEnd;
 	finally
@@ -402,12 +409,14 @@ end;
 function TWindowsFileSystem.ReadAllLines(const Path: WideString; Encoding: TEncoding): TStringList;
 var
 	Stream: TStreamReader;
+	UNCPath: WideString;
 begin
 	Result := TStringList.Create;
-	if not System.SysUtils.FileExists(Path) then
+	UNCPath := GetUNCFilePath(Path);
+	if not System.SysUtils.FileExists(UNCPath) then
 		Exit;
 
-	Stream := TStreamReader.Create(Path, Encoding, False);
+	Stream := TStreamReader.Create(UNCPath, Encoding, False);
 	try
 		while not Stream.EndOfStream do
 			Result.Add(Stream.ReadLine);
@@ -420,7 +429,7 @@ procedure TWindowsFileSystem.WriteAllText(const Path: WideString; const Content:
 var
 	Stream: TStreamWriter;
 begin
-	Stream := TStreamWriter.Create(Path, False, Encoding);
+	Stream := TStreamWriter.Create(GetUNCFilePath(Path), False, Encoding);
 	try
 		Stream.Write(Content);
 		Stream.Flush;
@@ -434,7 +443,7 @@ var
 	Stream: TStreamWriter;
 	I: Integer;
 begin
-	Stream := TStreamWriter.Create(Path, False, Encoding);
+	Stream := TStreamWriter.Create(GetUNCFilePath(Path), False, Encoding);
 	try
 		for I := 0 to Lines.Count - 1 do
 			Stream.WriteLine(Lines[I]);
@@ -446,7 +455,7 @@ end;
 
 function TWindowsFileSystem.OpenTextReader(const Path: WideString; Encoding: TEncoding): TStreamReader;
 begin
-	Result := TStreamReader.Create(Path, Encoding, False);
+	Result := TStreamReader.Create(GetUNCFilePath(Path), Encoding, False);
 end;
 
 end.
