@@ -70,8 +70,7 @@ end;
 
 function TCloudDirItem.None: TCloudDirItem;
 begin
-	FillChar(self, sizeof(self), 0);
-	Result := self;
+	Result := Default(TCloudDirItem);
 end;
 
 function TCloudDirItem.ToFindData(DirsAsSymlinks: Boolean): tWIN32FINDDATAW;

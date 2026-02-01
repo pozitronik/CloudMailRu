@@ -40,8 +40,7 @@ end;
 
 function TCloudIncomingInvite.None: TCloudIncomingInvite;
 begin
-	FillChar(self, sizeof(self), 0);
-	result := self;
+	Result := Default(TCloudIncomingInvite);
 end;
 
 end.
