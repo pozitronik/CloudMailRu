@@ -291,7 +291,7 @@ begin
 	FRetryHandler := TRetryHandler.Create(FThreadState, SettingsManager, FTCHandler,
 		function(const Text: WideString; const Args: array of const; const Caption: WideString; Flags: Integer): Integer
 		begin
-			Result := MsgBox(FTCHandler.FindTCWindow, Text, Args, Caption, Flags);
+			Result := MessageBoxW(FTCHandler.FindTCWindow, PWideChar(Format(Text, Args)), PWideChar(Caption), Flags);
 		end,
 		procedure(LogLevel, MsgType: Integer; const Msg: WideString; const Args: array of const)
 		begin
@@ -314,7 +314,7 @@ begin
 		end,
 		function(const FileName: WideString): Integer
 		begin
-			Result := MsgBox(FTCHandler.FindTCWindow, ERR_DELETE_FILE_ASK, [FileName], ERR_DELETE_FILE, MB_ABORTRETRYIGNORE + MB_ICONQUESTION);
+			Result := MessageBoxW(FTCHandler.FindTCWindow, PWideChar(Format(ERR_DELETE_FILE_ASK, [FileName])), PWideChar(ERR_DELETE_FILE), MB_ABORTRETRYIGNORE + MB_ICONQUESTION);
 		end);
 
 	{Create download success handler for post-download operations}

@@ -23,7 +23,6 @@ uses
 	PathHelper,
 	StringHelper,
 	SystemHelper,
-	WindowsHelper,
 	CloudShardManager,
 	CloudHashCalculator,
 	CloudHTTP,
@@ -375,7 +374,7 @@ begin
 	case FSettings.OperationErrorMode of
 		OperationErrorModeAsk:
 			begin
-				case MsgBox(FTCHandler.FindTCWindow, ERR_PARTIAL_UPLOAD_ASK, [UploadResult, ChunkRemotePath], ERR_UPLOAD, MB_ABORTRETRYIGNORE + MB_ICONERROR) of
+				case MessageBoxW(FTCHandler.FindTCWindow, PWideChar(Format(ERR_PARTIAL_UPLOAD_ASK, [UploadResult, ChunkRemotePath])), PWideChar(ERR_UPLOAD), MB_ABORTRETRYIGNORE + MB_ICONERROR) of
 					ID_ABORT:
 						begin
 							ResultCode := FS_FILE_USERABORT;
