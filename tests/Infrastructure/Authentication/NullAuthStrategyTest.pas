@@ -34,12 +34,6 @@ type
 	TAuthResultTest = class
 	public
 		[Test]
-		procedure TestCreateSuccess_SetsSuccessTrue;
-
-		[Test]
-		procedure TestCreateSuccess_SetsTokenAndParams;
-
-		[Test]
 		procedure TestCreateFailure_SetsSuccessFalse;
 
 		[Test]
@@ -50,9 +44,6 @@ type
 
 		[Test]
 		procedure TestCreateOAuthSuccess_FormatsUnitedParams;
-
-		[Test]
-		procedure TestCreateSharedSuccess_SetsShard;
 	end;
 
 	[TestFixture]
@@ -60,12 +51,6 @@ type
 	public
 		[Test]
 		procedure TestCreate_SetsAllFields;
-
-		[Test]
-		procedure TestCreatePublic_SetsPublicUrl;
-
-		[Test]
-		procedure TestCreatePublic_LeavesCredentialsEmpty;
 	end;
 
 implementation
@@ -124,25 +109,6 @@ end;
 
 {TAuthResultTest}
 
-procedure TAuthResultTest.TestCreateSuccess_SetsSuccessTrue;
-var
-	Result: TAuthResult;
-begin
-	Result := TAuthResult.CreateSuccess('token123', 'param=value');
-
-	Assert.IsTrue(Result.Success);
-end;
-
-procedure TAuthResultTest.TestCreateSuccess_SetsTokenAndParams;
-var
-	Result: TAuthResult;
-begin
-	Result := TAuthResult.CreateSuccess('mytoken', 'access_token=mytoken');
-
-	Assert.AreEqual('mytoken', Result.AuthToken);
-	Assert.AreEqual('access_token=mytoken', Result.UnitedParams);
-end;
-
 procedure TAuthResultTest.TestCreateFailure_SetsSuccessFalse;
 var
 	Result: TAuthResult;
@@ -189,17 +155,6 @@ begin
 	Assert.AreEqual('access_token=token123', Result.UnitedParams);
 end;
 
-procedure TAuthResultTest.TestCreateSharedSuccess_SetsShard;
-var
-	Result: TAuthResult;
-begin
-	Result := TAuthResult.CreateSharedSuccess('https://shard.url/', 'ABC123');
-
-	Assert.IsTrue(Result.Success);
-	Assert.AreEqual('https://shard.url/', Result.PublicShard);
-	Assert.AreEqual('ABC123', Result.PublicLink);
-end;
-
 {TAuthCredentialsTest}
 
 procedure TAuthCredentialsTest.TestCreate_SetsAllFields;
@@ -212,27 +167,6 @@ begin
 	Assert.AreEqual('secret', Creds.Password);
 	Assert.AreEqual('user', Creds.User);
 	Assert.AreEqual('domain.com', Creds.Domain);
-end;
-
-procedure TAuthCredentialsTest.TestCreatePublic_SetsPublicUrl;
-var
-	Creds: TAuthCredentials;
-begin
-	Creds := TAuthCredentials.CreatePublic('https://cloud.mail.ru/public/ABC123');
-
-	Assert.AreEqual('https://cloud.mail.ru/public/ABC123', Creds.PublicUrl);
-end;
-
-procedure TAuthCredentialsTest.TestCreatePublic_LeavesCredentialsEmpty;
-var
-	Creds: TAuthCredentials;
-begin
-	Creds := TAuthCredentials.CreatePublic('https://cloud.mail.ru/public/ABC123');
-
-	Assert.IsEmpty(Creds.Email);
-	Assert.IsEmpty(Creds.Password);
-	Assert.IsEmpty(Creds.User);
-	Assert.IsEmpty(Creds.Domain);
 end;
 
 initialization

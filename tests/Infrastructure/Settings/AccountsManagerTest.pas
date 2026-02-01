@@ -223,7 +223,6 @@ begin
 	TestAccountsManager.Free;
 
 	Assert.AreEqual(TestAccountSettings.Email, TestAccountSettingsNew.Email);
-	Assert.AreEqual(TestAccountSettings.TwostepAuth, TestAccountSettingsNew.TwostepAuth);
 	Assert.AreEqual(TestAccountSettings.UseTCPasswordManager, TestAccountSettingsNew.UseTCPasswordManager);
 	Assert.AreEqual('', TestAccountSettingsNew.CryptedGUIDFiles);
 end;

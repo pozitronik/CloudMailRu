@@ -5,16 +5,12 @@ interface
 (*NOTE: Those can be converted to resourcestrings  when i18n applied*)
 const
 	ACCOUNT_TRASH = '%s trash';
-	ASK_AUTH_APP_CODE = 'Enter code from authentication app.';
-	ASK_AUTH_KEY = 'Enter auth key';
 	ASK_CONTINUE = 'Continue operation?';
 	ASK_ENCRYPTION_PASSWORD = '%s encryption password';
 	ASK_SAVE_ACCOUNT_CHANGES = 'Save changes to account "%s"?';
 	ASK_SAVE_STREAMING_CHANGES = 'Save changes to streaming extension "%s"?';
 	ASK_PASSWORD = '%s password';
 	ASK_PROXY_PASSWORD = 'User %s proxy password';
-	ASK_SENT_CODE = 'Enter code sent to %s.';
-	AWAIT_SECURITY_KEY = 'Awaiting for security key...';
 	CALCULATING_HASH = 'Calculating cloud hash';
 	CALCULATING_HASH_FOR = 'Calculating cloud hash for %s';
 	CANCEL = 'Cancel';
@@ -76,8 +72,6 @@ const
 	ERR_ENCRYPT_FAILED = '%s: CryptProc returns an error: Encrypt failed';
 	ERR_FILE_NOT_EXISTS = 'File not exists';
 	ERR_FILE_OPEN = 'Cannot open file %s: %s';
-	ERR_GET_AUTH_TOKEN = 'error: getting auth token for %s';
-	ERR_GET_FIRST_STEP_AUTH_TOKEN = 'error: getting first step auth token for %s';
 	ERR_GET_PUBLIC_SHARE = 'Can''t get public share download share';
 	ERR_GET_TEMP_PUBLIC_LINK = 'Can''t get temporary public link on %s';
 	ERR_GET_USER_SPACE = 'error: getting user space information for %s';
@@ -96,9 +90,7 @@ const
 	ERR_NO_PASSWORDS_STORED = 'CryptProc returns an error: No password found in the password store';
 	ERR_OPERATION = 'Operation error';
 	ERR_OTHER_GENERAL = '%s error with message: %s at %s %s';
-	ERR_PARSE_AUTH_DATA = 'error: parsing authorization data';
 	ERR_PARSING_ANSWER = 'Parsing answer';
-	ERR_PARSING_AUTH_TOKEN = 'error: parsing auth token for %s';
 	ERR_PARTIAL_UPLOAD_ABORT = 'Partial upload error, code: %d, aborted';
 	ERR_PARTIAL_UPLOAD_ASK = 'Partial upload error, code: %d' + SLineBreak + 'part name: %s' + SLineBreak + ASK_CONTINUE;
 	ERR_PARTIAL_UPLOAD_IGNORE = 'Partial upload error, code: %d, ignored';
@@ -110,11 +102,9 @@ const
 	ERR_PUBLISH_MSG = 'Error while publishing file %s, see the main log';
 	ERR_READ_BYTES_FROM = 'Can''t read from %s %d bytes at %d';
 	ERR_REGISTRATION = 'Registration error';
-	ERR_SECURITY_KEY = 'error: security key not provided';
 	ERR_SHARE_FOLDER_MSG = 'Error while share access to %s from %s folder, see the main log';
 	ERR_SOCKET_GENERAL = '%s network error: %s at %s %s';
 	ERR_TOKEN_UPDATE = 'Token update error!';
-	ERR_TWOSTEP_AUTH = 'error: two-step auth failed';
 	ERR_UNPUBLISH_FILE = 'File unpublishing error';
 	ERR_UNPUBLISH_MSG = 'Error while unpublishing file %s, see the main log';
 	ERR_UNSHARE_FOLDER_MSG = 'Error while remove access to %s to %s folder, see the main log';
@@ -142,8 +132,6 @@ const
 	MULTIPLE_ITEMS = '<Multiple items>';
 	MULTIPLE_ITEMS_DELETED = 'Multiple deleted items';
 	OK = 'Ok';
-	PARSING_AUTH_DATA = 'Parsing authorization data...';
-	PARSING_TOKEN_DATA = 'Parsing token data...';
 	PARTIAL_UPLOAD_ABORTED = 'Partial upload aborted';
 	PARTIAL_UPLOAD_INFO = 'Partial upload of %s part %d of %d => %s';
 	PASSWORD_SAVED = '%s: the password saved in the TC password manager';
@@ -190,13 +178,9 @@ const
 	PROCEED_UPDATE = 'Use the new password';
 	PUBLISH_FILE_RETRY = 'File publish error: %s, retry attempt %d of %d';
 	REDIRECTION_LIMIT = 'Redirection limit';
-	REQUESTING_AUTH_TOKEN = 'Requesting auth token for %s';
-	REQUESTING_FIRST_STEP_AUTH_TOKEN = 'Requesting first step auth token for %s';
 	REQUESTING_OAUTH_TOKEN = 'Requesting OAuth token for %s';
-	SECOND_STEP_AUTH = 'Performing second step auth...';
 	SHARD_OVERRIDDEN = 'Shard is overridden via config!';
 	SHARED_LINKS_LISTING = 'Shared links listing';
-	SMS_TIMEOUT = 'SMS timeout to %s (%d sec).';
 	SPLIT_LARGE_FILE = 'File size > %d bytes, file will be split';
 	SPLIT_LARGE_FILE_IGNORE = 'File size > %d bytes, ignored';
 	SPLIT_PARTIAL_UPLOAD_TITLE = 'Insufficient cloud storage';

@@ -18,12 +18,8 @@ type
 		OAuthToken: TCloudOAuth; {Full OAuth response structure}
 		UnitedParams: WideString; {Formatted API request parameters string}
 		ErrorMessage: WideString; {Error details if authentication failed}
-		PublicShard: WideString; {Public shard URL for shared account auth}
-		PublicLink: WideString; {Extracted public link for shared accounts}
-		class function CreateSuccess(const Token, Params: WideString): TAuthResult; static;
 		class function CreateFailure(const Error: WideString): TAuthResult; static;
 		class function CreateOAuthSuccess(const OAuth: TCloudOAuth): TAuthResult; static;
-		class function CreateSharedSuccess(const Shard, Link: WideString): TAuthResult; static;
 	end;
 
 	{Authentication credentials container}
@@ -32,9 +28,7 @@ type
 		Password: WideString;
 		User: WideString; {Username part of email (before @)}
 		Domain: WideString; {Domain part of email (after @)}
-		PublicUrl: WideString; {For shared account authentication}
-		class function Create(const AEmail, APassword, AUser, ADomain: WideString): TAuthCredentials; overload; static;
-		class function CreatePublic(const APublicUrl: WideString): TAuthCredentials; overload; static;
+		class function Create(const AEmail, APassword, AUser, ADomain: WideString): TAuthCredentials; static;
 	end;
 
 	{Strategy interface for cloud authentication.
@@ -80,14 +74,6 @@ uses
 
 {TAuthResult}
 
-class function TAuthResult.CreateSuccess(const Token, Params: WideString): TAuthResult;
-begin
-	Result := Default (TAuthResult);
-	Result.Success := True;
-	Result.AuthToken := Token;
-	Result.UnitedParams := Params;
-end;
-
 class function TAuthResult.CreateFailure(const Error: WideString): TAuthResult;
 begin
 	Result := Default (TAuthResult);
@@ -104,14 +90,6 @@ begin
 	Result.UnitedParams := Format('access_token=%s', [OAuth.access_token]);
 end;
 
-class function TAuthResult.CreateSharedSuccess(const Shard, Link: WideString): TAuthResult;
-begin
-	Result := Default (TAuthResult);
-	Result.Success := True;
-	Result.PublicShard := Shard;
-	Result.PublicLink := Link;
-end;
-
 {TAuthCredentials}
 
 class function TAuthCredentials.Create(const AEmail, APassword, AUser, ADomain: WideString): TAuthCredentials;
@@ -121,12 +99,6 @@ begin
 	Result.Password := APassword;
 	Result.User := AUser;
 	Result.Domain := ADomain;
-end;
-
-class function TAuthCredentials.CreatePublic(const APublicUrl: WideString): TAuthCredentials;
-begin
-	Result := Default (TAuthCredentials);
-	Result.PublicUrl := APublicUrl;
 end;
 
 {TNullAuthStrategy}

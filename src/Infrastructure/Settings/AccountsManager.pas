@@ -140,7 +140,6 @@ begin
 	Result.UseTCPasswordManager := FConfigFile.ReadBool(Account, 'tc_pwd_mngr', False);
 	Result.UnlimitedFileSize := FConfigFile.ReadBool(Account, 'unlimited_filesize', False);
 	Result.SplitLargeFiles := FConfigFile.ReadBool(Account, 'split_large_files', False);
-	Result.TwostepAuth := FConfigFile.ReadBool(Account, 'twostep_auth', False);
 	Result.PublicAccount := FConfigFile.ReadBool(Account, 'public_account', False);
 	Result.PublicUrl := FConfigFile.ReadString(Account, 'public_url', EmptyWideStr);
 	Result.Description := FConfigFile.ReadString(Account, 'description', EmptyWideStr);
@@ -160,7 +159,6 @@ begin
 	FConfigFile.WriteBoolIfNotDefault(Account, 'tc_pwd_mngr', AccountSettings.UseTCPasswordManager, False);
 	FConfigFile.WriteBoolIfNotDefault(Account, 'unlimited_filesize', AccountSettings.UnlimitedFileSize, False);
 	FConfigFile.WriteBoolIfNotDefault(Account, 'split_large_files', AccountSettings.SplitLargeFiles, False);
-	FConfigFile.WriteBoolIfNotDefault(Account, 'twostep_auth', AccountSettings.TwostepAuth, False);
 	FConfigFile.WriteBoolIfNotDefault(Account, 'public_account', AccountSettings.PublicAccount, False);
 	FConfigFile.WriteStringIfNotDefault(Account, 'public_url', AccountSettings.PublicUrl, EmptyWideStr);
 	FConfigFile.WriteStringIfNotDefault(Account, 'description', AccountSettings.Description, EmptyWideStr);

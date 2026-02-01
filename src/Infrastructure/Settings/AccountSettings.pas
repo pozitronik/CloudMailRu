@@ -18,7 +18,6 @@ type
 		Email: WideString;
 		Password: WideString;
 		UseTCPasswordManager: Boolean;
-		TwostepAuth: Boolean;
 		UnlimitedFileSize: Boolean;
 		SplitLargeFiles: Boolean;
 		PublicAccount: Boolean;

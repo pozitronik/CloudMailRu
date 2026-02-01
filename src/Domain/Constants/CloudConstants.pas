@@ -7,10 +7,6 @@ const
 	OAUTH_TOKEN_URL = 'https://o2.mail.ru/token';
 	OAUTH_DISPATCHER_URL = 'https://dispatcher.cloud.mail.ru';
 	THUMB_CLOUD_URL = 'https://thumb.cloud.mail.ru/thumb'; {Thumbnail server - fallback if dispatcher doesn't return shard}
-	TOKEN_HOME_URL = 'https://cloud.mail.ru/home';
-	TOKEN_URL = 'https://cloud.mail.ru/?from=promo&from=authpopup';
-	LOGIN_URL = 'https://auth.mail.ru/cgi-bin/auth?from=splash';
-	SECSTEP_URL = 'https://auth.mail.ru/cgi-bin/secstep';
 
 	API_CSRF = 'https://cloud.mail.ru/api/v2/tokens/csrf';
 	API_FILE = 'https://cloud.mail.ru/api/v2/file';
@@ -90,18 +86,11 @@ const
 	CLOUD_SHARE_RO = 1;
 	CLOUD_SHARE_NO = 2;
 
-	{Поддерживаемые методы авторизации}
-	CLOUD_AUTH_METHOD_WEB = 0; //Через парсинг HTTP-страницы (устаревший)
-	CLOUD_AUTH_METHOD_TWO_STEP = 1; //Через парсинг HTTP-страницы, двухфакторная (устаревший)
-	CLOUD_AUTH_METHOD_OAUTH = 2; //Через сервер OAuth-авторизации (устаревший)
-	CLOUD_AUTH_METHOD_API = 3; //Новый двухступенчатоый метод авторизации (устаревший)
+	{Метод авторизации}
 	CLOUD_AUTH_METHOD_OAUTH_APP = 4; //OAuth с паролем приложения (рекомендуемый)
 
 	{OAuth client credentials for app password auth}
 	OAUTH_CLIENT_ID = 'cloud-win';
-
-	{Константа использования мобильного аутентификатора для двухфакторной авторизации}
-	AUTH_APP_USED = -1;
 
 	HTTP_FOUND_REDIRECT = 302;
 	HTTP_ERROR_NOT_FOUND = 404;
@@ -175,23 +164,6 @@ const
 	NAME_INVITE_EMAIL = 'invite_email';
 	NAME_GET = 'get';
 	NAME_URL = 'url';
-	NAME_FORM_NAME = 'form_name';
-	NAME_AUTH_HOST = 'auth_host';
-	NAME_SECSTEP_PHONE = 'secstep_phone';
-	NAME_SECSTEP_PAGE = 'secstep_page';
-	NAME_SECSTEP_CODE_FAIL = 'secstep_code_fail';
-	NAME_SECSTEP_RESEND_FAIL = 'secstep_resend_fail';
-	NAME_SECSTEP_RESEND_SUCCESS = 'secstep_resend_success';
-	NAME_SECSTEP_TIMEOUT = 'secstep_timeout';
-	NAME_SECSTEP_LOGIN = 'secstep_login';
-	NAME_SECSTEP_DISPOSABLE_FAIL = 'secstep_disposable_fail';
-	NAME_SECSTEP_SMSAPI_ERROR = 'secstep_smsapi_error';
-	NAME_SECSTEP_CAPTCHA = 'secstep_captcha';
-	NAME_TOTP_ENABLED = 'totp_enabled';
-	NAME_LOCALE = 'locale';
-	NAME_CLIENT = 'client';
-	NAME_CSRF = 'csrf';
-	NAME_DEVICE = 'device';
 
 	{Error values from API responses}
 	NAME_ERROR_NOT_AUTHORIZED = 'NOT/AUTHORIZED';

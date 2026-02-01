@@ -33,8 +33,6 @@ type
 		[Test]
 		procedure TestMockAuthStrategy_SetAccessToken_ChangesToken;
 		[Test]
-		procedure TestMockAuthStrategy_CreateSharedSuccess_ReturnsShardAndLink;
-		[Test]
 		procedure TestMockAuthStrategy_GetName_ReturnsMock;
 
 		{TMockAuthStrategySequence tests}
@@ -193,25 +191,6 @@ begin
 
 		Result := Strategy.Authenticate(Credentials, nil, TNullLogger.Create);
 		Assert.AreEqual(String('new_token'), String(Result.AuthToken), 'Should have new token');
-	finally
-		Strategy.Free;
-	end;
-end;
-
-procedure TCloudMailRuLoginTest.TestMockAuthStrategy_CreateSharedSuccess_ReturnsShardAndLink;
-var
-	Strategy: TMockAuthStrategy;
-	Result: TAuthResult;
-	Credentials: TAuthCredentials;
-begin
-	Strategy := TMockAuthStrategy.CreateSharedSuccess('https://public.shard/', 'abc123');
-	try
-		Credentials := TAuthCredentials.Create('', '', '', '');
-		Result := Strategy.Authenticate(Credentials, nil, TNullLogger.Create);
-
-		Assert.IsTrue(Result.Success, 'Should succeed');
-		Assert.AreEqual(String('https://public.shard/'), String(Result.PublicShard), 'Should have public shard');
-		Assert.AreEqual(String('abc123'), String(Result.PublicLink), 'Should have public link');
 	finally
 		Strategy.Free;
 	end;

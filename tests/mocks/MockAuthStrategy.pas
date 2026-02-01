@@ -21,8 +21,6 @@ type
 		FRefreshToken: WideString;
 		FExpiresIn: Integer;
 		FErrorMessage: WideString;
-		FPublicShard: WideString;
-		FPublicLink: WideString;
 		FUnitedParams: WideString;
 		FAuthenticateCalled: Boolean;
 		FLastCredentials: TAuthCredentials;
@@ -34,9 +32,6 @@ type
 
 		{Create a mock that fails with specified error}
 		constructor CreateFailure(const ErrorMessage: WideString = 'Mock authentication failed');
-
-		{Create a mock for shared account authentication}
-		constructor CreateSharedSuccess(const PublicShard, PublicLink: WideString);
 
 		{Create a mock that succeeds with full OAuth configuration}
 		constructor CreateOAuthSuccess(const AccessToken, RefreshToken: WideString; ExpiresIn: Integer);
@@ -106,16 +101,6 @@ begin
 	FCallCount := 0;
 end;
 
-constructor TMockAuthStrategy.CreateSharedSuccess(const PublicShard, PublicLink: WideString);
-begin
-	inherited Create;
-	FShouldSucceed := True;
-	FPublicShard := PublicShard;
-	FPublicLink := PublicLink;
-	FAuthenticateCalled := False;
-	FCallCount := 0;
-end;
-
 constructor TMockAuthStrategy.CreateOAuthSuccess(const AccessToken, RefreshToken: WideString;
 	ExpiresIn: Integer);
 begin
@@ -139,10 +124,6 @@ begin
 
 	if not FShouldSucceed then
 		Exit(TAuthResult.CreateFailure(FErrorMessage));
-
-	{Return shared account result if configured}
-	if (FPublicShard <> '') or (FPublicLink <> '') then
-		Exit(TAuthResult.CreateSharedSuccess(FPublicShard, FPublicLink));
 
 	{Return OAuth result}
 	OAuth := Default(TCloudOAuth);

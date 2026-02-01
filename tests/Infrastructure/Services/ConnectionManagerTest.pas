@@ -154,7 +154,6 @@ begin
 	FAccountSettings.Email := 'test@mail.ru';
 	FAccountSettings.Password := '';
 	FAccountSettings.UseTCPasswordManager := False;
-	FAccountSettings.TwostepAuth := False;
 	FAccountSettings.PublicAccount := True; {Public account skips password retrieval}
 	FAccountSettings.PublicUrl := '';
 	FAccountSettings.EncryptFilesMode := EncryptModeNone;

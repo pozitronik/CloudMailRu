@@ -636,7 +636,6 @@ begin
 	AccSettings.PublicUrl := FView.GetPublicUrl;
 	AccSettings.EncryptFilesMode := FView.GetEncryptFilesMode;
 	AccSettings.CipherProfileId := IndexToCipherProfileId(FView.GetCipherProfileIndex);
-	AccSettings.TwostepAuth := False; {Deprecated}
 	AccSettings.AuthMethod := CLOUD_AUTH_METHOD_OAUTH_APP;
 	AccSettings.UseAppPassword := True;
 

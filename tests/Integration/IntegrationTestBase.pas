@@ -187,10 +187,7 @@ begin
 	Result.AccountSettings.Email := Email;
 	Result.AccountSettings.Password := Password;
 	Result.AccountSettings.UseAppPassword := UseAppPassword;
-	if UseAppPassword then
-		Result.AccountSettings.AuthMethod := CLOUD_AUTH_METHOD_OAUTH_APP
-	else
-		Result.AccountSettings.AuthMethod := CLOUD_AUTH_METHOD_API;
+	Result.AccountSettings.AuthMethod := CLOUD_AUTH_METHOD_OAUTH_APP;
 	Result.AccountSettings.PublicAccount := False;
 
 	{Encryption settings}
