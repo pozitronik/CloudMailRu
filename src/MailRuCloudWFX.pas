@@ -33,7 +33,6 @@ uses
 	TCProgress,
 	TCRequest,
 	PathHelper,
-	WindowsHelper,
 	CommandExecutor,
 	TCHandler,
 	CloudIncomingInvite,
@@ -817,7 +816,7 @@ begin
 	begin
 		if (Accounts.Count > FileCounter) then
 		begin
-			FindData := GetFindDataEmptyDir(Accounts[FileCounter]);
+			FindData.InitAsEmptyDir(Accounts[FileCounter]);
 			inc(FileCounter);
 			Result := true;
 		end

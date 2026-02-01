@@ -130,6 +130,11 @@ const
 	VERB_QUOTE = 'quote';
 
 type
+	TWin32FindDataHelper = record helper for tWIN32FINDDATAW
+		{Initializes as empty directory entry for TC listing}
+		procedure InitAsEmptyDir(DirName: WideString = '.');
+	end;
+
 	tRemoteInfo = record
 		SizeLow, SizeHigh: longint;
 		LastWriteTime: TFileTime;
@@ -166,5 +171,15 @@ type
 	TCryptHandler = function(mode: integer; ConnectionName, Password: pwidechar; maxlen: integer): integer; stdcall;
 
 implementation
+
+uses
+	SysUtils;
+
+procedure TWin32FindDataHelper.InitAsEmptyDir(DirName: WideString);
+begin
+	FillChar(Self, SizeOf(tWIN32FINDDATAW), 0);
+	strpcopy(Self.cFileName, DirName);
+	Self.dwFileAttributes := FILE_ATTRIBUTE_DIRECTORY;
+end;
 
 end.

@@ -9,8 +9,7 @@ uses
 	Windows,
 	WFXTypes,
 	WSList,
-	CloudConstants,
-	WindowsHelper;
+	CloudConstants;
 
 type
 	{Result of root listing operation}
@@ -65,7 +64,7 @@ begin
 
 	if Result.Accounts.Count > 0 then
 	begin
-		Result.FindData := GetFindDataEmptyDir(Result.Accounts[0]);
+		Result.FindData.InitAsEmptyDir(Result.Accounts[0]);
 		Result.FileCounter := 1;
 		Result.Handle := FIND_ROOT_DIRECTORY;
 	end else begin

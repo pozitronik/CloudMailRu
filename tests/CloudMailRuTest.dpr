@@ -88,7 +88,7 @@ uses
 	SafeJSONTest in 'Infrastructure\HTTP\SafeJSONTest.pas',
 	IniFilesHelperTest in 'Infrastructure\Config\IniFilesHelperTest.pas',
 	IniConfigFileTest in 'Infrastructure\Config\IniConfigFileTest.pas',
-	WindowsHelperTest in 'Infrastructure\OS\WindowsHelperTest.pas',
+	WFXTypesTest in 'Infrastructure\Protocol\WFXTypesTest.pas',
 	CommandExecutor in '..\src\Infrastructure\OS\CommandExecutor.pas',
 	CommandExecutorTest in 'Infrastructure\OS\CommandExecutorTest.pas',
 	CloudDirItemListTest in 'Domain\ValueObjects\CloudDirItemListTest.pas',

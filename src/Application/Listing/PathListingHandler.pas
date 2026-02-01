@@ -13,7 +13,6 @@ uses
 	CloudIncomingInviteList,
 	CloudConstants,
 	CloudAuthorizationState,
-	WindowsHelper,
 	ConnectionManager,
 	ListingProvider,
 	ListingPathValidator;
@@ -70,7 +69,7 @@ end;
 
 procedure TPathListingHandler.HandleEmptyListing(var Result: TPathListingResult);
 begin
-	Result.FindData := GetFindDataEmptyDir();
+	Result.FindData.InitAsEmptyDir();
 	Result.Handle := FIND_NO_MORE_FILES;
 	Result.ErrorCode := ERROR_NO_MORE_FILES;
 end;
