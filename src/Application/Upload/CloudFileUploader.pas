@@ -265,7 +265,7 @@ begin
 	except
 		on E: Exception do
 		begin
-			if E.ClassName = 'EAbort' then
+			if E is EAbort then
 			begin
 				Result := FS_FILE_USERABORT;
 			end else begin
