@@ -38,7 +38,7 @@ type
 
 	{View interface for RemoteProperty dialog}
 	IRemotePropertyView = interface
-		['{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}']
+		['{08CEFDE0-5411-455E-8537-CC53EBB279DF}']
 		{Item display}
 		procedure SetCaption(Caption: WideString);
 		procedure SetWebLink(Link: WideString);

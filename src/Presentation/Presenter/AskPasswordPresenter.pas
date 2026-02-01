@@ -20,7 +20,7 @@ type
 
 	{View interface for AskPassword dialog}
 	IAskPasswordView = interface
-		['{D4E5F6A7-B8C9-0123-DEFA-456789012345}']
+		['{3D57E60B-BC87-4742-A15A-43EDFFC59D9B}']
 		{Form display}
 		procedure SetCaption(Caption: WideString);
 		procedure SetLabelText(Text: WideString);
