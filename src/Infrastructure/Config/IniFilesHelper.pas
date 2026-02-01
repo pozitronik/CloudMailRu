@@ -5,7 +5,6 @@ interface
 uses
 	IniFiles,
 	System.RegularExpressions,
-	Variants,
 	SysUtils,
 	Windows,
 	IOUtils,
@@ -23,8 +22,6 @@ type
 		procedure WriteInt64IfNotDefault(const Section, Ident: string; Value, Default: int64); overload;
 		procedure WriteStringIfNotDefault(const Section, Ident: string; Value, Default: String);
 		procedure WriteBoolIfNotDefault(const Section, Ident: string; Value, Default: boolean);
-
-		procedure SetSingleOptionValue(const Section, Ident: WideString; OptionValue: Variant);
 	end;
 
 implementation
@@ -100,24 +97,6 @@ begin
 	if not(self.ValidateIdentName(Ident)) then
 		raise EIniFileException.CreateFmt(ERR_INVALID_IDENTIFIER_NAME, [Ident]);
 	inherited WriteString(Section, Ident, Value);
-end;
-
-procedure TIniFilesHelper.SetSingleOptionValue(const Section, Ident: WideString; OptionValue: Variant);
-var
-	basicType: Integer;
-begin
-	basicType := VarType(OptionValue);
-	case basicType of
-		varNull:
-			self.DeleteKey(Section, Ident); //remove value in that case
-		varInteger:
-			self.WriteInteger(Section, Ident, OptionValue);
-		varString, varUString, varOleStr:
-			self.WriteString(Section, Ident, OptionValue);
-		varBoolean:
-			self.WriteBool(Section, Ident, OptionValue);
-	end;
-
 end;
 
 procedure TIniFilesHelper.WriteBoolIfNotDefault(const Section, Ident: string; Value, Default: boolean);
