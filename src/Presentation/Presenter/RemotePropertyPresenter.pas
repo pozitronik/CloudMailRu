@@ -122,7 +122,9 @@ type
 		FConfig: TRemotePropertyConfig;
 		FInvitesListing: TCloudInviteList;
 
-		{Internal recursive listing helpers}
+		{Internal recursive listing helpers -- structurally similar by design.
+			Merging into a generic method with callbacks was attempted but rejected:
+			the call sites become harder to read than the duplication they eliminate.}
 		function FillRecursiveDownloadListing(const Path: WideString; Downloader: ICloudFileDownloader; ListingService: ICloudListingService): Boolean;
 		function FillRecursiveHashListing(const Path: WideString; ListingService: ICloudListingService; const BaseDir: WideString): Boolean;
 
