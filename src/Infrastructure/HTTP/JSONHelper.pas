@@ -12,7 +12,6 @@ function getPublicLink(JSON: WideString; var PublicLink: WideString): Boolean;
 function getShard(JSON: WideString; var Shard: WideString; ShardType: WideString = SHARD_TYPE_GET): Boolean;
 function getBodyError(JSON: WideString): WideString;
 function getBodyToken(JSON: WideString; var Token: WideString): Boolean;
-function getRegistrationBody(JSON: WideString; var Body: WideString): Boolean;
 //Checks if JSON contains "error": "NOT/AUTHORIZED" - the OAuth session expiry response
 function isNotAuthorizedError(JSON: WideString): Boolean;
 
@@ -83,25 +82,6 @@ begin
 		if ExtractedToken <> '' then
 		begin
 			Token := ExtractedToken;
-			Result := True;
-		end;
-	finally
-		SafeVal.Free;
-	end;
-end;
-
-function getRegistrationBody(JSON: WideString; var Body: WideString): Boolean;
-var
-	SafeVal: TSafeJSON;
-	ExtractedBody: WideString;
-begin
-	Result := False;
-	SafeVal := TSafeJSON.Parse(JSON);
-	try
-		ExtractedBody := SafeVal.Get(NAME_BODY).AsString;
-		if ExtractedBody <> '' then
-		begin
-			Body := ExtractedBody;
 			Result := True;
 		end;
 	finally

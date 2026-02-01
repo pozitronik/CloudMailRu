@@ -40,10 +40,6 @@ type
 		procedure TestGetBodyTokenInvalid;
 		[Test]
 		procedure TestGetBodyTokenMissingToken;
-		[Test]
-		procedure TestGetRegistrationBodyValid;
-		[Test]
-		procedure TestGetRegistrationBodyInvalid;
 		{isNotAuthorizedError tests}
 		[Test]
 		procedure TestIsNotAuthorizedError_ValidResponse;
@@ -65,7 +61,6 @@ const
 	JSON_SHARD_UPLOAD = '{"status":200,"body":{"upload":[{"url":"https://cloclo1.cloud.mail.ru/upload/"}]}}';
 	JSON_BODY_ERROR = '{"status":400,"body":"token"}';
 	JSON_BODY_TOKEN = '{"status":200,"body":{"token":"csrf_token_value"}}';
-	JSON_REGISTRATION_BODY = '{"status":200,"body":"registration_data"}';
 
 procedure TJSONHelperTest.TestGetPublicLinkValid;
 var
@@ -173,21 +168,6 @@ var
 begin
 	{Body exists but token field is missing}
 	Assert.IsFalse(getBodyToken('{"status":200,"body":{"other":"value"}}', Token));
-end;
-
-procedure TJSONHelperTest.TestGetRegistrationBodyValid;
-var
-	Body: WideString;
-begin
-	Assert.IsTrue(getRegistrationBody(JSON_REGISTRATION_BODY, Body));
-	Assert.AreEqual('registration_data', Body);
-end;
-
-procedure TJSONHelperTest.TestGetRegistrationBodyInvalid;
-var
-	Body: WideString;
-begin
-	Assert.IsFalse(getRegistrationBody('invalid', Body));
 end;
 
 procedure TJSONHelperTest.TestIsNotAuthorizedError_ValidResponse;
