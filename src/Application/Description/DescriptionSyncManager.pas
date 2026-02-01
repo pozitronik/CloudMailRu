@@ -129,7 +129,6 @@ begin
 	OldItem := ExtractFileName(OldPath.Path);
 	NewItem := ExtractFileName(NewPath.Path);
 	OldRemoteIonPath := GetRemoteDescriptionPath(ExtractFileDir(OldPath.Path));
-	NewRemoteIonPath := GetRemoteDescriptionPath(ExtractFileDir(NewPath.Path));
 
 	if ExtractFileDir(OldPath.Path) = ExtractFileDir(NewPath.Path) then
 	begin
@@ -155,6 +154,7 @@ begin
 		end;
 	end else begin
 		{Move between directories - transfer entry between two description files}
+		NewRemoteIonPath := GetRemoteDescriptionPath(ExtractFileDir(NewPath.Path));
 		if not DownloadRemoteDescription(OldRemoteIonPath, Cloud, OldLocalTempPath) then
 			exit; {No source description file exists}
 
