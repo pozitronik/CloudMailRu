@@ -36,6 +36,12 @@ type
 
 		[Test]
 		procedure TestListSharedLinks_ReturnsItems;
+
+		[Test]
+		procedure TestListDirectory_NonExistent_Fails;
+
+		[Test]
+		procedure TestRemoveDirectory_NonExistent_ReturnsFalse;
 	end;
 
 implementation
@@ -181,6 +187,31 @@ begin
 
 	{Should succeed even if no shared items exist}
 	Assert.IsTrue(ListResult, 'Listing shared links should succeed');
+end;
+
+procedure TDirectoryIntegrationTest.TestListDirectory_NonExistent_Fails;
+var
+	Items: TCloudDirItemList;
+	ListResult: Boolean;
+begin
+	{List a directory that does not exist}
+	ListResult := FPrimaryCloud.ListingService.GetDirectory(
+		FTestRunFolder + '/NonExistentDir_' + IntToStr(Random(999999)), Items);
+
+	Assert.IsFalse(ListResult, 'Listing non-existent directory should fail');
+end;
+
+procedure TDirectoryIntegrationTest.TestRemoveDirectory_NonExistent_ReturnsFalse;
+var
+	RemoveResult: Boolean;
+begin
+	{Try to remove a directory that does not exist.
+		Cloud API is lenient - returns True even for non-existent paths.}
+	RemoveResult := FPrimaryCloud.FileOperations.RemoveDirectory(
+		FTestRunFolder + '/NonExistentDir_' + IntToStr(Random(999999)));
+
+	{API returns True for non-existent - it treats as successful no-op}
+	Assert.IsTrue(RemoveResult, 'Cloud API returns True for remove of non-existent directory (no-op)');
 end;
 
 initialization

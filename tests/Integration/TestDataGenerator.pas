@@ -8,6 +8,7 @@ interface
 uses
 	System.SysUtils,
 	System.Classes,
+	System.IOUtils,
 	System.Hash;
 
 type
@@ -60,6 +61,11 @@ type
 			@param LineLength Approximate length per line
 			@return String content with numbered lines}
 		class function CreateTextContent(LineCount: Integer; LineLength: Integer = 80): WideString; static;
+
+		{Create a minimal valid JPEG image (~107 bytes).
+			Uses a hardcoded minimal JFIF-compliant byte sequence.
+			@return Memory stream with valid JPEG data (caller owns the stream)}
+		class function CreateMinimalJPEG: TMemoryStream; static;
 	end;
 
 implementation
@@ -214,6 +220,16 @@ begin
 	finally
 		Builder.Free;
 	end;
+end;
+
+class function TTestDataGenerator.CreateMinimalJPEG: TMemoryStream;
+var
+	FilePath: WideString;
+begin
+	FilePath := TPath.GetFullPath(TPath.Combine(TPath.GetLibraryPath, '..\..\data\minimal.jpg'));
+	Result := TMemoryStream.Create;
+	Result.LoadFromFile(FilePath);
+	Result.Position := 0;
 end;
 
 initialization

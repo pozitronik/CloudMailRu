@@ -99,8 +99,6 @@ type
 		FShardManager: ICloudShardManager; {Shard URL caching and management}
 		FAuthToken: WideString; {The current (constantly refreshing) connection token}
 		FOAuthToken: TCloudOAuth; {OAuth token data}
-		{HTTP REQUESTS WRAPPERS - protected for testability}
-		function GetUserSpace(var SpaceInfo: TCloudSpace): Boolean;
 		{Protected for testability - allows tests to set authorization state}
 		procedure SetAuthorizationState(State: TAuthorizationState);
 		{Those properties are simple shortcuts to settings fields}
@@ -174,6 +172,7 @@ type
 		function ShareFolder(Path, Email: WideString; Access: Integer): Boolean;
 		{OTHER ROUTINES}
 		procedure LogUserSpaceInfo();
+		function GetUserSpace(var SpaceInfo: TCloudSpace): Boolean;
 	end;
 
 implementation

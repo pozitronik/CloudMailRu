@@ -18,12 +18,16 @@ type
 
 		[Test]
 		procedure TestLogUserSpaceInfo_LogsCorrectly;
+
+		[Test]
+		procedure TestGetUserSpace_ReturnsValidSpaceInfo;
 	end;
 
 implementation
 
 uses
-	System.SysUtils;
+	System.SysUtils,
+	CloudSpace;
 
 {TQuotaIntegrationTest}
 
@@ -52,6 +56,20 @@ begin
 
 	{If we reach here without exception, logging works}
 	Assert.Pass('LogUserSpaceInfo executed successfully');
+end;
+
+procedure TQuotaIntegrationTest.TestGetUserSpace_ReturnsValidSpaceInfo;
+var
+	SpaceInfo: TCloudSpace;
+	GetResult: Boolean;
+begin
+	{Call GetUserSpace directly (now public)}
+	GetResult := FPrimaryCloud.GetUserSpace(SpaceInfo);
+
+	Assert.IsTrue(GetResult, 'GetUserSpace should succeed');
+	Assert.IsTrue(SpaceInfo.total > 0, 'Total space should be > 0');
+	Assert.IsTrue(SpaceInfo.used >= 0, 'Used space should be >= 0');
+	Assert.IsTrue(SpaceInfo.used <= SpaceInfo.total, 'Used space should not exceed total');
 end;
 
 initialization

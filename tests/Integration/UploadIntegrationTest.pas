@@ -43,6 +43,12 @@ type
 
 		[Test]
 		procedure TestUpload_ConflictRename_CreatesNewName;
+
+		[Test]
+		procedure TestUploadZeroByteFile_Succeeds;
+
+		[Test]
+		procedure TestUploadUnicodeFilename_Succeeds;
 	end;
 
 implementation
@@ -513,6 +519,95 @@ begin
 	finally
 		TFile.Delete(LocalFile1);
 		TFile.Delete(LocalFile2);
+	end;
+end;
+
+procedure TUploadIntegrationTest.TestUploadZeroByteFile_Succeeds;
+var
+	LocalFile: WideString;
+	RemotePath: WideString;
+	UploadResult: Integer;
+	Items: TCloudDirItemList;
+	I: Integer;
+	FoundSize: Int64;
+begin
+	LocalFile := TPath.Combine(TPath.GetTempPath, TTestDataGenerator.GenerateUniqueFilename('zerobyte', '.bin'));
+	RemotePath := UniqueCloudPath('ZeroByteFile') + '.bin';
+	TrackForCleanup(RemotePath);
+
+	{Create an empty file}
+	TFile.WriteAllBytes(LocalFile, nil);
+
+	try
+		UploadResult := FPrimaryCloud.Uploader.Upload(LocalFile, RemotePath);
+
+		if UploadResult = FS_FILE_OK then
+		begin
+			{Verify file exists in listing with size 0}
+			FPrimaryCloud.ListingService.GetDirectory(FTestRunFolder, Items);
+
+			FoundSize := -1;
+			for I := 0 to Length(Items) - 1 do
+			begin
+				if Pos(WideString('ZeroByteFile'), Items[I].Name) > 0 then
+				begin
+					FoundSize := Items[I].Size;
+					Break;
+				end;
+			end;
+
+			Assert.AreEqual(Int64(0), FoundSize, 'Zero-byte file should have size 0 in listing');
+		end
+		else
+			Assert.Pass('SKIPPED: Upload of zero-byte file returned: ' + IntToStr(UploadResult));
+	finally
+		if TFile.Exists(LocalFile) then
+			TFile.Delete(LocalFile);
+	end;
+end;
+
+procedure TUploadIntegrationTest.TestUploadUnicodeFilename_Succeeds;
+var
+	LocalFile: WideString;
+	RemotePath: WideString;
+	TestData: TMemoryStream;
+	UploadResult: Integer;
+	Items: TCloudDirItemList;
+	Found: Boolean;
+	I: Integer;
+begin
+	LocalFile := TPath.Combine(TPath.GetTempPath, TTestDataGenerator.GenerateUniqueFilename('unicode', '.bin'));
+	RemotePath := FTestRunFolder + '/' + WideString(#$0422#$0435#$0441#$0442) + '_' + IntToStr(Random(999999)) + '.bin'; {Cyrillic "Тест"}
+	TrackForCleanup(RemotePath);
+
+	TestData := TTestDataGenerator.CreateSmallTestFile(1024);
+	try
+		TestData.SaveToFile(LocalFile);
+	finally
+		TestData.Free;
+	end;
+
+	try
+		UploadResult := FPrimaryCloud.Uploader.Upload(LocalFile, RemotePath);
+		Assert.AreEqual(FS_FILE_OK, UploadResult, 'Upload with unicode filename should succeed');
+
+		{Verify file appears in listing}
+		FPrimaryCloud.ListingService.GetDirectory(FTestRunFolder, Items);
+
+		Found := False;
+		for I := 0 to Length(Items) - 1 do
+		begin
+			if Pos(WideString(#$0422#$0435#$0441#$0442), Items[I].Name) > 0 then
+			begin
+				Found := True;
+				Break;
+			end;
+		end;
+
+		Assert.IsTrue(Found, 'File with unicode name should appear in listing');
+	finally
+		if TFile.Exists(LocalFile) then
+			TFile.Delete(LocalFile);
 	end;
 end;
 

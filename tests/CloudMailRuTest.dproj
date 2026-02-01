@@ -401,6 +401,9 @@
         <DCCReference Include="Integration\TrashIntegrationTest.pas"/>
         <DCCReference Include="Integration\SharingIntegrationTest.pas"/>
         <DCCReference Include="Integration\InviteIntegrationTest.pas"/>
+        <DCCReference Include="Integration\ThumbnailIntegrationTest.pas"/>
+        <DCCReference Include="Integration\StreamingIntegrationTest.pas"/>
+        <DCCReference Include="Integration\DescriptionSyncIntegrationTest.pas"/>
         <DCCReference Include="..\src\Infrastructure\OpenSSL\OpenSSLProvider.pas"/>
         <DCCReference Include="Infrastructure\OpenSSL\OpenSSLProviderTest.pas"/>
         <DCCReference Include="..\src\Infrastructure\Password\AccountCredentialsProvider.pas"/>

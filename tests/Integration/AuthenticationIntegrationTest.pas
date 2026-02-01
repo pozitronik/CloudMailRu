@@ -24,6 +24,12 @@ type
 
 		[Test]
 		procedure TestLogin_PublicAccount_Succeeds;
+
+		[Test]
+		procedure TestInvalidateAuthorization_ResetsState;
+
+		[Test]
+		procedure TestOperationsAfterReLogin_Succeed;
 	end;
 
 implementation
@@ -43,6 +49,8 @@ uses
 	Request,
 	TCHandler,
 	CloudConstants,
+	CloudAuthorizationState,
+	CloudDirItemList,
 	OpenSSLProvider,
 	AccountCredentialsProvider,
 	TestHelper;
@@ -119,6 +127,50 @@ begin
 	try
 		Assert.IsTrue(Cloud.Login, 'Public account login should succeed');
 		Assert.IsTrue(Cloud.IsPublicAccount, 'Should be marked as public account');
+	finally
+		Cloud.Free;
+	end;
+end;
+
+procedure TAuthenticationIntegrationTest.TestInvalidateAuthorization_ResetsState;
+var
+	Cloud: TCloudMailRu;
+begin
+	Cloud := CreatePrimaryCloud;
+	try
+		Assert.IsTrue(Cloud.Login, 'Initial login should succeed');
+
+		{Invalidate resets state to asPending}
+		Cloud.InvalidateAuthorization;
+		Assert.AreEqual(asPending, Cloud.AuthorizationState, 'State should be asPending after invalidation');
+
+		{Re-login should succeed after invalidation}
+		Assert.IsTrue(Cloud.Login, 'Re-login after invalidation should succeed');
+	finally
+		Cloud.Free;
+	end;
+end;
+
+procedure TAuthenticationIntegrationTest.TestOperationsAfterReLogin_Succeed;
+var
+	Cloud: TCloudMailRu;
+	Items: TCloudDirItemList;
+	ListResult: Boolean;
+begin
+	Cloud := CreatePrimaryCloud;
+	try
+		{Login and perform an operation}
+		Assert.IsTrue(Cloud.Login, 'Initial login should succeed');
+		ListResult := Cloud.ListingService.GetDirectory('/', Items);
+		Assert.IsTrue(ListResult, 'First listing should succeed');
+
+		{Invalidate and re-login}
+		Cloud.InvalidateAuthorization;
+		Assert.IsTrue(Cloud.Login, 'Re-login should succeed');
+
+		{Operations after re-login should still work}
+		ListResult := Cloud.ListingService.GetDirectory('/', Items);
+		Assert.IsTrue(ListResult, 'Listing after re-login should succeed');
 	finally
 		Cloud.Free;
 	end;

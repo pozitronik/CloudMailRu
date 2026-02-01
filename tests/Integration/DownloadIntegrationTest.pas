@@ -35,6 +35,9 @@ type
 
 		[Test]
 		procedure TestStatusFile_ReturnsMetadata;
+
+		[Test]
+		procedure TestDownloadUnicodeFilename_Succeeds;
 	end;
 
 implementation
@@ -324,6 +327,59 @@ begin
 	Assert.IsTrue(StatusResult, 'Getting file status should succeed');
 	Assert.AreEqual(Int64(2048), Item.Size, 'File size should match');
 	Assert.IsFalse(Item.IsDir, 'Item should be a file, not directory');
+end;
+
+procedure TDownloadIntegrationTest.TestDownloadUnicodeFilename_Succeeds;
+var
+	LocalUploadFile, LocalDownloadFile: WideString;
+	RemotePath: WideString;
+	OriginalData, DownloadedData: TMemoryStream;
+	OriginalHash, DownloadedHash, ResultHash: WideString;
+	UploadResult, DownloadResult: Integer;
+begin
+	{Upload a file with cyrillic name}
+	RemotePath := FTestRunFolder + '/' + WideString(#$0424#$0430#$0439#$043B) + '_' + IntToStr(Random(999999)) + '.bin'; {Cyrillic "Файл"}
+	TrackForCleanup(RemotePath);
+
+	LocalUploadFile := TPath.Combine(TPath.GetTempPath, TTestDataGenerator.GenerateUniqueFilename('unicodedl', '.bin'));
+
+	OriginalData := TTestDataGenerator.CreateSmallTestFile(2048, 54321);
+	try
+		OriginalHash := TTestDataGenerator.CalculateSHA1Hash(OriginalData);
+		OriginalData.SaveToFile(LocalUploadFile);
+	finally
+		OriginalData.Free;
+	end;
+
+	try
+		UploadResult := FPrimaryCloud.Uploader.Upload(LocalUploadFile, RemotePath);
+		Assert.AreEqual(FS_FILE_OK, UploadResult, 'Upload with unicode filename should succeed');
+
+		{Download and verify hash matches}
+		LocalDownloadFile := TPath.Combine(TPath.GetTempPath, TTestDataGenerator.GenerateUniqueFilename('unicodedl_down', '.bin'));
+
+		try
+			ResultHash := '';
+			DownloadResult := FPrimaryCloud.Downloader.Download(RemotePath, LocalDownloadFile, ResultHash);
+			Assert.AreEqual(FS_FILE_OK, DownloadResult, 'Download with unicode filename should succeed');
+
+			DownloadedData := TMemoryStream.Create;
+			try
+				DownloadedData.LoadFromFile(LocalDownloadFile);
+				DownloadedHash := TTestDataGenerator.CalculateSHA1Hash(DownloadedData);
+			finally
+				DownloadedData.Free;
+			end;
+
+			Assert.AreEqual(OriginalHash, DownloadedHash, 'Downloaded file hash should match original');
+		finally
+			if TFile.Exists(LocalDownloadFile) then
+				TFile.Delete(LocalDownloadFile);
+		end;
+	finally
+		if TFile.Exists(LocalUploadFile) then
+			TFile.Delete(LocalUploadFile);
+	end;
 end;
 
 initialization

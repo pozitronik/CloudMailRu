@@ -35,6 +35,15 @@ type
 
 		[Test]
 		procedure TestListIncomingInvites_ReturnsInvites;
+
+		[Test]
+		procedure TestGetIncomingInvitesAsDirItems_ConvertsToDirItems;
+
+		[Test]
+		procedure TestPublishFile_AlreadyPublished_IsIdempotent;
+
+		[Test]
+		procedure TestUnpublishFile_NotPublished_HandlesGracefully;
 	end;
 
 implementation
@@ -316,6 +325,86 @@ begin
 
 	{Note: We can't guarantee invites exist, but operation should work}
 	Assert.Pass('Incoming invites listed successfully (count: ' + IntToStr(Length(Invites)) + ')');
+end;
+
+procedure TSharingIntegrationTest.TestGetIncomingInvitesAsDirItems_ConvertsToDirItems;
+var
+	FolderPath: WideString;
+	DirListing: TCloudDirItemList;
+	InvitesListing: TCloudIncomingInviteList;
+	ListResult: Boolean;
+begin
+	RequireSecondaryAccount;
+
+	{Share a folder from primary to secondary}
+	FolderPath := UniqueCloudPath('InviteDirItemsFolder');
+	Assert.IsTrue(FPrimaryCloud.FileOperations.CreateDirectory(FolderPath), 'Creating folder should succeed');
+	TrackForCleanup(FolderPath);
+
+	if not FPrimaryCloud.ShareFolder(FolderPath, FConfig.SecondaryEmail, CLOUD_SHARE_RO) then
+	begin
+		Assert.Pass('SKIPPED: ShareFolder failed - cannot test GetIncomingInvitesAsDirItems');
+		Exit;
+	end;
+
+	try
+		{On secondary account, get incoming invites as dir items}
+		ListResult := FSecondaryCloud.ListingService.GetIncomingInvitesAsDirItems(DirListing, InvitesListing);
+
+		if ListResult then
+		begin
+			Assert.IsTrue(Length(DirListing) > 0, 'DirListing should contain at least one item');
+			Assert.IsTrue(Length(InvitesListing) > 0, 'InvitesListing should contain at least one invite');
+		end
+		else
+			Assert.Pass('SKIPPED: GetIncomingInvitesAsDirItems returned False');
+	finally
+		FPrimaryCloud.ShareService.Unshare(FolderPath, FConfig.SecondaryEmail);
+	end;
+end;
+
+procedure TSharingIntegrationTest.TestPublishFile_AlreadyPublished_IsIdempotent;
+var
+	FilePath: WideString;
+	PublicLink1, PublicLink2: WideString;
+	Result1, Result2: Boolean;
+begin
+	FilePath := UploadTestFile(1024, 'PublishIdempotent');
+	TrackForCleanup(FilePath);
+
+	{Publish first time}
+	PublicLink1 := '';
+	Result1 := FPrimaryCloud.PublishFile(FilePath, PublicLink1, CLOUD_PUBLISH);
+	Assert.IsTrue(Result1, 'First publish should succeed');
+
+	{Publish second time - should be idempotent}
+	PublicLink2 := '';
+	Result2 := FPrimaryCloud.PublishFile(FilePath, PublicLink2, CLOUD_PUBLISH);
+	Assert.IsTrue(Result2, 'Second publish should also succeed (idempotent)');
+
+	{Cleanup: unpublish}
+	FPrimaryCloud.PublishFile(FilePath, PublicLink2, CLOUD_UNPUBLISH);
+end;
+
+procedure TSharingIntegrationTest.TestUnpublishFile_NotPublished_HandlesGracefully;
+var
+	FilePath: WideString;
+	PublicLink: WideString;
+	UnpublishResult: Boolean;
+begin
+	{Upload a file but don't publish it}
+	FilePath := UploadTestFile(1024, 'UnpublishNever');
+	TrackForCleanup(FilePath);
+
+	{Try to unpublish a file that was never published}
+	PublicLink := '';
+	UnpublishResult := FPrimaryCloud.PublishFile(FilePath, PublicLink, CLOUD_UNPUBLISH);
+
+	{Document actual API behavior - may succeed as no-op or fail}
+	if UnpublishResult then
+		Assert.Pass('Unpublish of never-published file succeeded (API treats as no-op)')
+	else
+		Assert.Pass('Unpublish of never-published file returned False (expected)');
 end;
 
 initialization

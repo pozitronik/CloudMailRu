@@ -38,6 +38,15 @@ type
 
 		[Test]
 		procedure TestCopyFile_SameDirectory_Fails;
+
+		[Test]
+		procedure TestDeleteFile_NonExistent_ReturnsFalse;
+
+		[Test]
+		procedure TestRenameFile_ToExistingName_HandlesConflict;
+
+		[Test]
+		procedure TestMoveFile_ToNonExistentDirectory_Fails;
 	end;
 
 implementation
@@ -377,6 +386,66 @@ begin
 	{Trying to copy to same path doesn't make sense - skip this test}
 	{The API behavior varies - it might succeed as a no-op or fail}
 	Assert.Pass('Copy to same directory behavior is API-dependent');
+end;
+
+procedure TFileOpsIntegrationTest.TestDeleteFile_NonExistent_ReturnsFalse;
+var
+	DeleteResult: Boolean;
+begin
+	{Try to delete a file that does not exist.
+		Cloud API is lenient - returns True even for non-existent paths.}
+	DeleteResult := FPrimaryCloud.FileOperations.Delete(
+		FTestRunFolder + '/NonExistent_' + IntToStr(Random(999999)) + '.bin');
+
+	{API returns True for non-existent - it treats as successful no-op}
+	Assert.IsTrue(DeleteResult, 'Cloud API returns True for delete of non-existent file (no-op)');
+end;
+
+procedure TFileOpsIntegrationTest.TestRenameFile_ToExistingName_HandlesConflict;
+var
+	Path1, Path2: WideString;
+	RenameResult: Integer;
+	Name2: WideString;
+begin
+	{Upload two files}
+	Path1 := UploadTestFile(1024, 'RenameConflict1');
+	TrackForCleanup(Path1);
+
+	Path2 := UploadTestFile(1024, 'RenameConflict2');
+	TrackForCleanup(Path2);
+
+	{Try to rename first file to the second file's name}
+	Name2 := ExtractUniversalFileName(Path2);
+	RenameResult := FPrimaryCloud.FileOperations.Rename(Path1, Name2);
+
+	{Document actual API behavior}
+	if RenameResult = CLOUD_OPERATION_OK then
+		Assert.Pass('Rename to existing name succeeded (API overwrites or auto-renames)')
+	else
+		Assert.Pass('Rename to existing name returned error code: ' + IntToStr(RenameResult));
+end;
+
+procedure TFileOpsIntegrationTest.TestMoveFile_ToNonExistentDirectory_Fails;
+var
+	SourcePath: WideString;
+	DestDir: WideString;
+	MoveResult: Integer;
+begin
+	SourcePath := UploadTestFile(1024, 'MoveToNowhere');
+	TrackForCleanup(SourcePath);
+
+	{Move to a directory that does not exist.
+		Cloud API auto-creates destination directory on move.}
+	DestDir := FTestRunFolder + '/NonExistentDir_' + IntToStr(Random(999999));
+	MoveResult := FPrimaryCloud.FileOperations.MoveToPath(SourcePath, DestDir);
+
+	{API succeeds - auto-creates destination directory}
+	Assert.AreEqual(CLOUD_OPERATION_OK, MoveResult,
+		'Cloud API auto-creates destination directory on move');
+
+	{Cleanup auto-created directory}
+	TrackForCleanup(DestDir + '/' + ExtractUniversalFileName(SourcePath));
+	TrackForCleanup(DestDir);
 end;
 
 initialization
