@@ -10,40 +10,6 @@ uses
 	DUnitX.TestFramework;
 
 type
-	{Tests for IsTokenExpiredInJSON}
-	[TestFixture]
-	TIsTokenExpiredInJSONTest = class
-	public
-		[Test]
-		procedure TestTokenError_ReturnsTrue;
-		[Test]
-		procedure TestOtherError_ReturnsFalse;
-		[Test]
-		procedure TestSuccessResponse_ReturnsFalse;
-		[Test]
-		procedure TestEmptyJSON_ReturnsFalse;
-		[Test]
-		procedure TestInvalidJSON_ReturnsFalse;
-		[Test]
-		procedure TestNotAuthorizedError_ReturnsTrue;
-		[Test]
-		procedure TestNotAuthorizedError_DifferentValue_ReturnsFalse;
-	end;
-
-	{Tests for IsTokenExpiredResult}
-	[TestFixture]
-	TIsTokenExpiredResultTest = class
-	public
-		[Test]
-		procedure TestTokenOutdated_ReturnsTrue;
-		[Test]
-		procedure TestOK_ReturnsFalse;
-		[Test]
-		procedure TestOtherError_ReturnsFalse;
-		[Test]
-		procedure TestZero_ReturnsFalse;
-	end;
-
 	{Tests for TAPICallResult}
 	[TestFixture]
 	TAPICallResultTest = class
@@ -181,66 +147,6 @@ const
 	JSON_TOKEN_ERROR = '{"status":400,"body":"token"}';
 	JSON_OTHER_ERROR = '{"status":400,"body":"exists"}';
 	JSON_NOT_AUTHORIZED = '{"error":"NOT/AUTHORIZED"}';
-
-{ TIsTokenExpiredInJSONTest }
-
-procedure TIsTokenExpiredInJSONTest.TestTokenError_ReturnsTrue;
-begin
-	Assert.IsTrue(IsTokenExpiredInJSON(JSON_TOKEN_ERROR));
-end;
-
-procedure TIsTokenExpiredInJSONTest.TestOtherError_ReturnsFalse;
-begin
-	Assert.IsFalse(IsTokenExpiredInJSON(JSON_OTHER_ERROR));
-end;
-
-procedure TIsTokenExpiredInJSONTest.TestSuccessResponse_ReturnsFalse;
-begin
-	Assert.IsFalse(IsTokenExpiredInJSON(JSON_SUCCESS));
-end;
-
-procedure TIsTokenExpiredInJSONTest.TestEmptyJSON_ReturnsFalse;
-begin
-	Assert.IsFalse(IsTokenExpiredInJSON(''));
-end;
-
-procedure TIsTokenExpiredInJSONTest.TestInvalidJSON_ReturnsFalse;
-begin
-	Assert.IsFalse(IsTokenExpiredInJSON('not valid json'));
-end;
-
-procedure TIsTokenExpiredInJSONTest.TestNotAuthorizedError_ReturnsTrue;
-begin
-	Assert.IsTrue(IsTokenExpiredInJSON(JSON_NOT_AUTHORIZED));
-end;
-
-procedure TIsTokenExpiredInJSONTest.TestNotAuthorizedError_DifferentValue_ReturnsFalse;
-begin
-	Assert.IsFalse(IsTokenExpiredInJSON('{"error":"SOME_OTHER_ERROR"}'));
-end;
-
-{ TIsTokenExpiredResultTest }
-
-procedure TIsTokenExpiredResultTest.TestTokenOutdated_ReturnsTrue;
-begin
-	Assert.IsTrue(IsTokenExpiredResult(CLOUD_ERROR_TOKEN_OUTDATED));
-end;
-
-procedure TIsTokenExpiredResultTest.TestOK_ReturnsFalse;
-begin
-	Assert.IsFalse(IsTokenExpiredResult(CLOUD_OPERATION_OK));
-end;
-
-procedure TIsTokenExpiredResultTest.TestOtherError_ReturnsFalse;
-begin
-	Assert.IsFalse(IsTokenExpiredResult(CLOUD_ERROR_EXISTS));
-	Assert.IsFalse(IsTokenExpiredResult(CLOUD_OPERATION_FAILED));
-end;
-
-procedure TIsTokenExpiredResultTest.TestZero_ReturnsFalse;
-begin
-	Assert.IsFalse(IsTokenExpiredResult(0));
-end;
 
 { TAPICallResultTest }
 
@@ -644,8 +550,6 @@ end;
 
 initialization
 
-TDUnitX.RegisterTestFixture(TIsTokenExpiredInJSONTest);
-TDUnitX.RegisterTestFixture(TIsTokenExpiredResultTest);
 TDUnitX.RegisterTestFixture(TAPICallResultTest);
 TDUnitX.RegisterTestFixture(TRetryOperationTest);
 

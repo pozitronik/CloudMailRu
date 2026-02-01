@@ -73,12 +73,6 @@ type
 		function GetPage(const URL: WideString; out JSON: WideString; ShowProgress: Boolean = False): Boolean;
 	end;
 
-{Check if JSON response indicates token expiration}
-function IsTokenExpiredInJSON(const JSON: WideString): Boolean;
-
-{Check if result code indicates token expiration}
-function IsTokenExpiredResult(ResultCode: Integer): Boolean;
-
 implementation
 
 uses
