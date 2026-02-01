@@ -24,6 +24,10 @@ type
 		function CloudResultToBoolean(const JSON, ErrorPrefix: WideString): Boolean;
 		{Get authentication parameters for API calls}
 		function GetUnitedParams: WideString;
+		{Fetch a page by URL, used for OAuth dispatcher resolution}
+		function GetPage(const URL: WideString; var Response: WideString; var ShowProgress: Boolean): Boolean;
+		{Get the current OAuth access token string for dispatcher authentication}
+		function GetOAuthAccessToken: WideString;
 	end;
 
 	{Context for retry operations with token refresh.

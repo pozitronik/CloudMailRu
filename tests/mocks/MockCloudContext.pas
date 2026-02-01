@@ -83,6 +83,7 @@ type
 
 		{IShardContext implementation - reuses ICloudContext methods where applicable}
 		function PostForm(const URL, Data: WideString; var Answer: WideString): Boolean;
+		function GetOAuthAccessToken: WideString;
 
 		{IRetryContext implementation}
 		function RefreshToken: Boolean;
@@ -303,6 +304,11 @@ begin
 		Answer := FPostFormResponse;
 		Result := FPostFormResult;
 	end;
+end;
+
+function TMockCloudContext.GetOAuthAccessToken: WideString;
+begin
+	Result := FOAuthToken.access_token;
 end;
 
 {IRetryContext implementation}

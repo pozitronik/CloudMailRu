@@ -294,9 +294,6 @@ function TCloudFileUploader.PutFileToCloud(FileName: WideString; FileStream: TSt
 var
 	CallResult: TAPICallResult;
 	LocalIdentity: TCloudFileIdentity;
-	DispatcherResponse: WideString;
-	Progress: Boolean;
-	UploadShard: WideString;
 	OAuthToken: TCloudOAuth;
 	HTTP: ICloudHTTP;
 begin
@@ -305,27 +302,7 @@ begin
 	Result := CLOUD_OPERATION_FAILED;
 	if FContext.IsPublicAccount then
 		Exit;
-	UploadShard := FShardManager.GetUploadShard;
-	if (EmptyWideStr = UploadShard) then
-	begin
-		FLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, UNDEFINED_UPLOAD_SHARD);
-		if FShardManager.HasUploadOverride then
-		begin
-			FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_DETAILS, UPLOAD_URL_OVERRIDDEN);
-			UploadShard := FShardManager.GetUploadShardOverride;
-			FShardManager.SetUploadShard(UploadShard);
-		end else begin
-			{OAuth uses different dispatcher endpoint that returns plain text URL}
-			Progress := False;
-			OAuthToken := FContext.GetOAuthToken;
-			if FContext.GetHTTP.GetPage(Format('%s/u?token=%s', [OAUTH_DISPATCHER_URL, OAuthToken.access_token]), DispatcherResponse, Progress) then
-			begin
-				{Response format: "URL IP COUNT", extract the URL (first word)}
-				UploadShard := Trim(Copy(DispatcherResponse, 1, Pos(' ', DispatcherResponse) - 1));
-				FShardManager.SetUploadShard(UploadShard);
-			end;
-		end
-	end;
+	FShardManager.EnsureUploadShard;
 
 	LocalIdentity.Hash := EmptyWideStr;
 	LocalIdentity.size := -1;

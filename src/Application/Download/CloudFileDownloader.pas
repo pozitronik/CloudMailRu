@@ -97,36 +97,14 @@ var
 	URL: WideString;
 	MemoryStream: TMemoryStream;
 	DecryptingStream: TStream;
-	DispatcherResponse: WideString;
-	Progress: Boolean;
 	DownloadShard: WideString;
 	OAuthToken: TCloudOAuth;
 	SavedUserAgent: string;
 begin
 	Result := FS_FILE_NOTSUPPORTED;
-	DownloadShard := FShardManager.GetDownloadShard;
+	DownloadShard := FShardManager.EnsureDownloadShard;
 	if DownloadShard = EmptyWideStr then
-	begin
-		FLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, UNDEFINED_DOWNLOAD_SHARD);
-		if FShardManager.HasDownloadOverride then
-		begin
-			FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_DETAILS, SHARD_OVERRIDDEN);
-			DownloadShard := FShardManager.GetDownloadShardOverride;
-			FShardManager.SetDownloadShard(DownloadShard);
-		end else begin
-			{OAuth uses different dispatcher endpoint that returns plain text URL}
-			Progress := False;
-			OAuthToken := FContext.GetOAuthToken;
-			if FContext.GetHTTP.GetPage(Format('%s/d?token=%s', [OAUTH_DISPATCHER_URL, OAuthToken.access_token]), DispatcherResponse, Progress) then
-			begin
-				{Response format: "URL IP COUNT", extract the URL (first word)}
-				DownloadShard := Trim(Copy(DispatcherResponse, 1, Pos(' ', DispatcherResponse) - 1));
-				FShardManager.SetDownloadShard(DownloadShard);
-			end
-			else
-				Exit;
-		end;
-	end;
+		Exit;
 	try
 		FileStream := TBufferedFileStream.Create(GetUNCFilePath(LocalPath), fmCreate);
 	except

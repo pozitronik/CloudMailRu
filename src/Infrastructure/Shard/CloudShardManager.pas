@@ -39,6 +39,12 @@ type
 		procedure InvalidateShard(ShardType: WideString);
 		{Clear all cached shards}
 		procedure InvalidateAll;
+		{Ensure download shard is resolved: returns cached, override, or OAuth-dispatched URL.
+			Returns empty string if resolution fails.}
+		function EnsureDownloadShard: WideString;
+		{Ensure upload shard is resolved: returns cached, override, or OAuth-dispatched URL.
+			Returns empty string if resolution fails.}
+		function EnsureUploadShard: WideString;
 	end;
 
 	{Shard manager implementation that caches shard URLs and handles resolution.}
@@ -51,6 +57,8 @@ type
 		FUploadOverride: WideString;
 		FLogger: ILogger;
 		FContext: IShardContext;
+		{Resolve shard via OAuth dispatcher endpoint (plain text "URL IP COUNT" format)}
+		function ResolveOAuthDispatcherShard(const ShardSuffix: WideString): WideString;
 	public
 		constructor Create(Logger: ILogger; Context: IShardContext; DownloadOverride: WideString = ''; UploadOverride: WideString = '');
 
@@ -67,6 +75,8 @@ type
 		function HasUploadOverride: Boolean;
 		procedure InvalidateShard(ShardType: WideString);
 		procedure InvalidateAll;
+		function EnsureDownloadShard: WideString;
+		function EnsureUploadShard: WideString;
 	end;
 
 	{Null implementation for testing}
@@ -85,6 +95,8 @@ type
 		function HasUploadOverride: Boolean;
 		procedure InvalidateShard(ShardType: WideString);
 		procedure InvalidateAll;
+		function EnsureDownloadShard: WideString;
+		function EnsureUploadShard: WideString;
 	end;
 
 implementation
@@ -192,6 +204,56 @@ begin
 	FPublicShard := EmptyWideStr;
 end;
 
+function TCloudShardManager.ResolveOAuthDispatcherShard(const ShardSuffix: WideString): WideString;
+var
+	DispatcherResponse: WideString;
+	ShowProgress: Boolean;
+begin
+	Result := EmptyWideStr;
+	ShowProgress := False;
+	if FContext.GetPage(Format('%s/%s?token=%s', [OAUTH_DISPATCHER_URL, ShardSuffix, FContext.GetOAuthAccessToken]), DispatcherResponse, ShowProgress) then
+	begin
+		{Response format: "URL IP COUNT", extract the URL (first word)}
+		Result := Trim(Copy(DispatcherResponse, 1, Pos(' ', DispatcherResponse) - 1));
+	end;
+end;
+
+function TCloudShardManager.EnsureDownloadShard: WideString;
+begin
+	Result := FDownloadShard;
+	if Result <> EmptyWideStr then
+		Exit;
+
+	FLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, UNDEFINED_DOWNLOAD_SHARD);
+	if FDownloadOverride <> EmptyWideStr then
+	begin
+		FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_DETAILS, SHARD_OVERRIDDEN);
+		Result := FDownloadOverride;
+	end else
+		Result := ResolveOAuthDispatcherShard('d');
+
+	if Result <> EmptyWideStr then
+		FDownloadShard := Result;
+end;
+
+function TCloudShardManager.EnsureUploadShard: WideString;
+begin
+	Result := FUploadShard;
+	if Result <> EmptyWideStr then
+		Exit;
+
+	FLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, UNDEFINED_UPLOAD_SHARD);
+	if FUploadOverride <> EmptyWideStr then
+	begin
+		FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_DETAILS, UPLOAD_URL_OVERRIDDEN);
+		Result := FUploadOverride;
+	end else
+		Result := ResolveOAuthDispatcherShard('u');
+
+	if Result <> EmptyWideStr then
+		FUploadShard := Result;
+end;
+
 {TNullShardManager}
 
 function TNullShardManager.ResolveShard(var Shard: WideString; ShardType: WideString): Boolean;
@@ -258,6 +320,16 @@ end;
 procedure TNullShardManager.InvalidateAll;
 begin
 	{No-op}
+end;
+
+function TNullShardManager.EnsureDownloadShard: WideString;
+begin
+	Result := EmptyWideStr;
+end;
+
+function TNullShardManager.EnsureUploadShard: WideString;
+begin
+	Result := EmptyWideStr;
 end;
 
 end.

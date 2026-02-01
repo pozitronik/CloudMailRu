@@ -80,6 +80,8 @@ type
 		function HasUploadOverride: Boolean;
 		procedure InvalidateShard(ShardType: WideString);
 		procedure InvalidateAll;
+		function EnsureDownloadShard: WideString;
+		function EnsureUploadShard: WideString;
 	end;
 
 	[TestFixture]
@@ -233,6 +235,10 @@ procedure TMockThumbnailShardManager.InvalidateShard(ShardType: WideString);
 begin end;
 procedure TMockThumbnailShardManager.InvalidateAll;
 begin end;
+function TMockThumbnailShardManager.EnsureDownloadShard: WideString;
+begin Result := ''; end;
+function TMockThumbnailShardManager.EnsureUploadShard: WideString;
+begin Result := ''; end;
 
 {TCloudThumbnailServiceTest}
 

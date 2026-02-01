@@ -20,17 +20,24 @@ type
 		FPostFormCalled: Boolean;
 		FResultToBooleanResult: Boolean;
 		FUnitedParams: WideString;
+		FGetPageResult: Boolean;
+		FGetPageResponse: WideString;
+		FOAuthAccessToken: WideString;
 	public
 		constructor Create;
 		procedure SetPostFormResult(Value: Boolean; const Response: WideString);
 		procedure SetResultToBooleanResult(Value: Boolean);
 		procedure SetUnitedParams(const Value: WideString);
+		procedure SetGetPageResult(Value: Boolean; const Response: WideString);
+		procedure SetOAuthAccessToken(const Value: WideString);
 		function WasPostFormCalled: Boolean;
 
 		{IShardContext implementation}
 		function PostForm(const URL, Data: WideString; var Answer: WideString): Boolean;
 		function CloudResultToBoolean(const JSON, ErrorPrefix: WideString): Boolean;
 		function GetUnitedParams: WideString;
+		function GetPage(const URL: WideString; var Response: WideString; var ShowProgress: Boolean): Boolean;
+		function GetOAuthAccessToken: WideString;
 	end;
 
 	{Tests for TCloudShardManager.
@@ -103,6 +110,26 @@ type
 		procedure TestResolveShard_PostFormFails_ReturnsFalse;
 		[Test]
 		procedure TestResolveShard_InvalidJSON_ReturnsFalse;
+
+		{ EnsureDownloadShard tests }
+		[Test]
+		procedure TestEnsureDownloadShard_Cached_ReturnsCachedValue;
+		[Test]
+		procedure TestEnsureDownloadShard_ResolvesViaDispatcher;
+		[Test]
+		procedure TestEnsureDownloadShard_DispatcherFails_ReturnsEmpty;
+		[Test]
+		procedure TestEnsureDownloadShard_CachesResolvedValue;
+
+		{ EnsureUploadShard tests }
+		[Test]
+		procedure TestEnsureUploadShard_Cached_ReturnsCachedValue;
+		[Test]
+		procedure TestEnsureUploadShard_ResolvesViaDispatcher;
+		[Test]
+		procedure TestEnsureUploadShard_DispatcherFails_ReturnsEmpty;
+		[Test]
+		procedure TestEnsureUploadShard_CachesResolvedValue;
 	end;
 
 	{Tests for TCloudShardManager with overrides configured}
@@ -128,6 +155,12 @@ type
 		procedure TestGetDownloadOverride_ReturnsConfiguredUrl;
 		[Test]
 		procedure TestGetUploadOverride_ReturnsConfiguredUrl;
+
+		{EnsureShard with overrides}
+		[Test]
+		procedure TestEnsureDownloadShard_UsesOverride;
+		[Test]
+		procedure TestEnsureUploadShard_UsesOverride;
 	end;
 
 	{Tests for TNullShardManager}
@@ -155,6 +188,10 @@ type
 		procedure TestHasDownloadOverride_AlwaysFalse;
 		[Test]
 		procedure TestHasUploadOverride_AlwaysFalse;
+		[Test]
+		procedure TestEnsureDownloadShard_AlwaysEmpty;
+		[Test]
+		procedure TestEnsureUploadShard_AlwaysEmpty;
 	end;
 
 implementation
@@ -169,6 +206,9 @@ begin
 	FPostFormCalled := False;
 	FResultToBooleanResult := True;
 	FUnitedParams := 'token=test';
+	FGetPageResult := True;
+	FGetPageResponse := '';
+	FOAuthAccessToken := 'test-token';
 end;
 
 procedure TMockShardContext.SetPostFormResult(Value: Boolean; const Response: WideString);
@@ -211,6 +251,28 @@ end;
 function TMockShardContext.GetUnitedParams: WideString;
 begin
 	Result := FUnitedParams;
+end;
+
+procedure TMockShardContext.SetGetPageResult(Value: Boolean; const Response: WideString);
+begin
+	FGetPageResult := Value;
+	FGetPageResponse := Response;
+end;
+
+procedure TMockShardContext.SetOAuthAccessToken(const Value: WideString);
+begin
+	FOAuthAccessToken := Value;
+end;
+
+function TMockShardContext.GetPage(const URL: WideString; var Response: WideString; var ShowProgress: Boolean): Boolean;
+begin
+	Response := FGetPageResponse;
+	Result := FGetPageResult;
+end;
+
+function TMockShardContext.GetOAuthAccessToken: WideString;
+begin
+	Result := FOAuthAccessToken;
 end;
 
 { TCloudShardManagerTest }
@@ -427,6 +489,73 @@ begin
 	Assert.IsFalse(Success, 'ResolveShard should return false when JSON status is not 200');
 end;
 
+{ EnsureDownloadShard tests }
+
+procedure TCloudShardManagerTest.TestEnsureDownloadShard_Cached_ReturnsCachedValue;
+const
+	CachedShard = 'https://cached.download.shard/';
+begin
+	FManager.SetDownloadShard(CachedShard);
+	Assert.AreEqual(CachedShard, FManager.EnsureDownloadShard, 'Should return cached value without resolution');
+end;
+
+procedure TCloudShardManagerTest.TestEnsureDownloadShard_ResolvesViaDispatcher;
+const
+	DispatcherShard = 'https://dispatcher.download.shard/';
+begin
+	{OAuth dispatcher returns "URL IP COUNT" format}
+	FMockContext.SetGetPageResult(True, DispatcherShard + ' 127.0.0.1 1');
+	Assert.AreEqual(DispatcherShard, FManager.EnsureDownloadShard, 'Should resolve via OAuth dispatcher');
+end;
+
+procedure TCloudShardManagerTest.TestEnsureDownloadShard_DispatcherFails_ReturnsEmpty;
+begin
+	FMockContext.SetGetPageResult(False, '');
+	Assert.AreEqual('', FManager.EnsureDownloadShard, 'Should return empty when dispatcher fails');
+end;
+
+procedure TCloudShardManagerTest.TestEnsureDownloadShard_CachesResolvedValue;
+const
+	DispatcherShard = 'https://resolved.download.shard/';
+begin
+	FMockContext.SetGetPageResult(True, DispatcherShard + ' 127.0.0.1 1');
+	FManager.EnsureDownloadShard;
+	Assert.AreEqual(DispatcherShard, FManager.GetDownloadShard, 'Resolved shard should be cached');
+end;
+
+{ EnsureUploadShard tests }
+
+procedure TCloudShardManagerTest.TestEnsureUploadShard_Cached_ReturnsCachedValue;
+const
+	CachedShard = 'https://cached.upload.shard/';
+begin
+	FManager.SetUploadShard(CachedShard);
+	Assert.AreEqual(CachedShard, FManager.EnsureUploadShard, 'Should return cached value without resolution');
+end;
+
+procedure TCloudShardManagerTest.TestEnsureUploadShard_ResolvesViaDispatcher;
+const
+	DispatcherShard = 'https://dispatcher.upload.shard/';
+begin
+	FMockContext.SetGetPageResult(True, DispatcherShard + ' 127.0.0.1 1');
+	Assert.AreEqual(DispatcherShard, FManager.EnsureUploadShard, 'Should resolve via OAuth dispatcher');
+end;
+
+procedure TCloudShardManagerTest.TestEnsureUploadShard_DispatcherFails_ReturnsEmpty;
+begin
+	FMockContext.SetGetPageResult(False, '');
+	Assert.AreEqual('', FManager.EnsureUploadShard, 'Should return empty when dispatcher fails');
+end;
+
+procedure TCloudShardManagerTest.TestEnsureUploadShard_CachesResolvedValue;
+const
+	DispatcherShard = 'https://resolved.upload.shard/';
+begin
+	FMockContext.SetGetPageResult(True, DispatcherShard + ' 127.0.0.1 1');
+	FManager.EnsureUploadShard;
+	Assert.AreEqual(DispatcherShard, FManager.GetUploadShard, 'Resolved shard should be cached');
+end;
+
 { TCloudShardManagerWithOverridesTest }
 
 procedure TCloudShardManagerWithOverridesTest.Setup;
@@ -459,6 +588,16 @@ end;
 procedure TCloudShardManagerWithOverridesTest.TestGetUploadOverride_ReturnsConfiguredUrl;
 begin
 	Assert.AreEqual(UploadOverrideUrl, FManager.GetUploadShardOverride);
+end;
+
+procedure TCloudShardManagerWithOverridesTest.TestEnsureDownloadShard_UsesOverride;
+begin
+	Assert.AreEqual(DownloadOverrideUrl, FManager.EnsureDownloadShard, 'Should use download override when configured');
+end;
+
+procedure TCloudShardManagerWithOverridesTest.TestEnsureUploadShard_UsesOverride;
+begin
+	Assert.AreEqual(UploadOverrideUrl, FManager.EnsureUploadShard, 'Should use upload override when configured');
 end;
 
 { TNullShardManagerTest }
@@ -513,6 +652,16 @@ end;
 procedure TNullShardManagerTest.TestHasUploadOverride_AlwaysFalse;
 begin
 	Assert.IsFalse(FManager.HasUploadOverride);
+end;
+
+procedure TNullShardManagerTest.TestEnsureDownloadShard_AlwaysEmpty;
+begin
+	Assert.AreEqual('', FManager.EnsureDownloadShard, 'Null manager EnsureDownloadShard should return empty');
+end;
+
+procedure TNullShardManagerTest.TestEnsureUploadShard_AlwaysEmpty;
+begin
+	Assert.AreEqual('', FManager.EnsureUploadShard, 'Null manager EnsureUploadShard should return empty');
 end;
 
 initialization

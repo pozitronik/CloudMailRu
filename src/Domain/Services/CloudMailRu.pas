@@ -155,8 +155,9 @@ type
 		function CloudResultToBoolean(const JSON, ErrorPrefix: WideString): Boolean; overload;
 		function CloudResultToBoolean(const OperationResult: TCloudOperationResult; const ErrorPrefix: WideString): Boolean; overload;
 
-		{IShardContext implementation - PostForm, CloudResultToBoolean, GetUnitedParams already declared above}
+		{IShardContext implementation - PostForm, CloudResultToBoolean, GetUnitedParams, GetPage already declared above}
 		function PostForm(const URL, Data: WideString; var Answer: WideString): Boolean;
+		function GetOAuthAccessToken: WideString;
 
 		{IRetryContext implementation - PostForm already declared above}
 		function RefreshToken: Boolean;
@@ -241,6 +242,11 @@ end;
 function TCloudMailRu.PostForm(const URL, Data: WideString; var Answer: WideString): Boolean;
 begin
 	Result := HTTP.PostForm(URL, Data, Answer);
+end;
+
+function TCloudMailRu.GetOAuthAccessToken: WideString;
+begin
+	Result := FOAuthToken.access_token;
 end;
 
 function TCloudMailRu.RefreshToken: Boolean;
