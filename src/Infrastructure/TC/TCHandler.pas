@@ -11,7 +11,7 @@ uses
 	IniFiles,
 	MultiMon,
 	Description,
-	WindowsEnvironment;
+	Environment;
 
 const
 	{Total Commander panel refresh message constants}

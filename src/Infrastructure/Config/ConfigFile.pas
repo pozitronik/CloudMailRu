@@ -1,4 +1,4 @@
-unit IniConfigFile;
+unit ConfigFile;
 
 {Abstraction for INI-style configuration file operations, enabling testability
 	without actual disk I/O. Used by AccountsManager and PluginSettingsManager.}

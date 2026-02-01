@@ -15,7 +15,7 @@ uses
 	Windows,
 	SysUtils,
 	PluginSettingsManager,
-	TCLogger,
+	Logger,
 	WFXTypes,
 	CloudConstants,
 	SettingsConstants,

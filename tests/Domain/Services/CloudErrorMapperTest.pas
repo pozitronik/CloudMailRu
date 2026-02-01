@@ -7,7 +7,7 @@ uses
 	CloudOperationResult,
 	CloudConstants,
 	WFXTypes,
-	TCLogger,
+	Logger,
 	TestHelper,
 	System.SysUtils,
 	DUnitX.TestFramework;

@@ -10,7 +10,7 @@ uses
 	CloudInviteList,
 	CloudConstants,
 	WFXTypes,
-	TCLogger,
+	Logger,
 	CloudHTTP,
 	MockCloudHTTP,
 	MockCloudContext,

@@ -9,8 +9,8 @@ interface
 uses
 	DUnitX.TestFramework,
 	UploadCompletionHandler,
-	TCLogger,
-	TCProgress,
+	Logger,
+	Progress,
 	LocalFileDeletionHandler,
 	DescriptionSyncGuard,
 	RealPath,

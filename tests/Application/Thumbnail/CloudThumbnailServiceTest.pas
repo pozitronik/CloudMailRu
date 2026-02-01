@@ -17,8 +17,8 @@ uses
 	CloudShardManager,
 	CloudOAuth,
 	CloudConstants,
-	TCLogger,
-	TCProgress,
+	Logger,
+	Progress,
 	IdCookieManager,
 	IdHTTP,
 	WFXTypes;

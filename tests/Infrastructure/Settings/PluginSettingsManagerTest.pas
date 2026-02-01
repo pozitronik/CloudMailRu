@@ -13,8 +13,8 @@ uses
 	IOUtils,
 	Classes,
 	ConnectionSettings,
-	IniConfigFile,
-	WindowsEnvironment,
+	ConfigFile,
+	Environment,
 	DUnitX.TestFramework;
 
 type

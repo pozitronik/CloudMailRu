@@ -25,10 +25,10 @@ uses
 	MockCloudHTTP,
 	MockHTTPManager,
 	AuthStrategy,
-	FileCipher,
-	TCLogger,
-	TCProgress,
-	TCRequest,
+	Cipher,
+	Logger,
+	Progress,
+	Request,
 	TCHandler,
 	OpenSSLProvider,
 	AccountCredentialsProvider,
@@ -165,7 +165,7 @@ implementation
 
 uses
 	SysUtils,
-	WindowsFileSystem;
+	FileSystem;
 
 const
 	{Sample API responses for mock cloud}

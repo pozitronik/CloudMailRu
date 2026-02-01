@@ -8,7 +8,7 @@ interface
 uses
 	CloudOAuth,
 	CloudHTTP,
-	TCLogger;
+	Logger;
 
 type
 	{Result of authentication attempt}

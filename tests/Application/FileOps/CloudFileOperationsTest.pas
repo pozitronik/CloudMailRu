@@ -7,7 +7,7 @@ uses
 	CloudConstants,
 	CloudContext,
 	WFXTypes,
-	TCLogger,
+	Logger,
 	CloudHTTP,
 	MockCloudHTTP,
 	MockCloudContext,

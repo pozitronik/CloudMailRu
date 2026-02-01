@@ -1,12 +1,12 @@
-unit WindowsFileSystemTest;
+unit FileSystemTest;
 
-{Tests for WindowsFileSystem unit - IFileSystem implementations.
+{Tests for FileSystem unit - IFileSystem implementations.
  Tests TNullFileSystem, TMemoryFileSystem, TWindowsFileSystem, and TOwningStreamReader.}
 
 interface
 
 uses
-	WindowsFileSystem,
+	FileSystem,
 	System.SysUtils,
 	System.Classes,
 	DUnitX.TestFramework;

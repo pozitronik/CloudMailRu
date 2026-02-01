@@ -17,8 +17,8 @@ uses
 	SettingsConstants,
 	WFXTypes,
 	CloudConstants,
-	TCLogger,
-	TCProgress,
+	Logger,
+	Progress,
 	IdCookieManager,
 	IdHTTP;
 

@@ -4,7 +4,7 @@ interface
 
 uses
 	Description,
-	WindowsFileSystem,
+	FileSystem,
 	System.Classes,
 	Windows,
 	DUnitX.TestFramework;

@@ -1,13 +1,13 @@
 unit CloudDescriptionOperationsAdapterTest;
 
-{Tests for CloudDescriptionOperationsAdapter - adapter for description file operations.
- Tests both TCloudDescriptionOperationsAdapter and TCloudFileOperationsAdapter classes.}
+{Tests for CloudDescriptionOperationsAdapter - adapter for description file operations.}
 
 interface
 
 uses
 	CloudDescriptionOperationsAdapter,
-	WindowsFileSystem,
+	CloudFileOperationsAdapter,
+	FileSystem,
 	WFXTypes,
 	DUnitX.TestFramework;
 
@@ -104,15 +104,6 @@ type
 		{ Interface implementation test }
 		[Test]
 		procedure TestImplementsICloudDescriptionOps;
-	end;
-
-	{Tests for TCloudFileOperationsAdapter}
-	[TestFixture]
-	TCloudFileOperationsAdapterTest = class
-	public
-		{ Interface implementation test }
-		[Test]
-		procedure TestImplementsICloudFileOperations;
 	end;
 
 implementation
@@ -326,21 +317,8 @@ begin
 	Assert.IsNotNull(Intf, 'Should implement ICloudDescriptionOps interface');
 end;
 
-{ TCloudFileOperationsAdapterTest }
-
-procedure TCloudFileOperationsAdapterTest.TestImplementsICloudFileOperations;
-var
-	Adapter: ICloudFileOperations;
-begin
-	{Cannot test actual delegation without TCloudMailRu instance,
-	 but we can verify interface implementation}
-	Adapter := TCloudFileOperationsAdapter.Create(nil);
-	Assert.IsNotNull(Adapter, 'Should implement ICloudFileOperations interface');
-end;
-
 initialization
 
 TDUnitX.RegisterTestFixture(TCloudDescriptionOperationsAdapterTest);
-TDUnitX.RegisterTestFixture(TCloudFileOperationsAdapterTest);
 
 end.

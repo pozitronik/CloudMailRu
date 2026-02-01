@@ -5,7 +5,7 @@ interface
 uses
 	CloudOperationResult,
 	CloudOperationResultJsonAdapter,
-	TCLogger;
+	Logger;
 
 type
 	{Static helper class for mapping cloud API results to file system results.

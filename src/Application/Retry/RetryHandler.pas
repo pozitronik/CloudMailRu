@@ -76,7 +76,7 @@ uses
 	WFXTypes,
 	SettingsConstants,
 	CloudConstants,
-	TCLogger,
+	Logger,
 	SystemHelper;
 
 const

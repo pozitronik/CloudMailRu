@@ -39,7 +39,7 @@ uses
 	Vcl.ImgList,
 	Clipbrd,
 	HashInfo,
-	WindowsFileSystem,
+	FileSystem,
 	RemotePropertyPresenter;
 
 const

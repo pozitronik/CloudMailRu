@@ -1,9 +1,9 @@
-unit IniConfigFileTest;
+unit ConfigFileTest;
 
 interface
 
 uses
-	IniConfigFile,
+	ConfigFile,
 	SysUtils,
 	IOUtils,
 	Classes,

@@ -7,8 +7,8 @@ unit UploadCompletionHandler;
 interface
 
 uses
-	TCLogger,
-	TCProgress,
+	Logger,
+	Progress,
 	LocalFileDeletionHandler,
 	DescriptionSyncGuard,
 	WFXTypes,

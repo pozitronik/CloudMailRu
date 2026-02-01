@@ -8,9 +8,9 @@ interface
 
 uses
 	AccountSettings,
-	TCPasswordManager,
+	PasswordManager,
 	PasswordUIProvider,
-	TCLogger,
+	Logger,
 	TCHandler,
 	AccountsManager;
 

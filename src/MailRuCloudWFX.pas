@@ -28,10 +28,10 @@ uses
 	ConnectionSettings,
 	IdSSLOpenSSLHeaders,
 	Description,
-	TCPasswordManager,
-	TCLogger,
-	TCProgress,
-	TCRequest,
+	PasswordManager,
+	Logger,
+	Progress,
+	Request,
 	PathHelper,
 	CommandExecutor,
 	TCHandler,
@@ -51,10 +51,10 @@ uses
 	CipherValidator,
 	CipherProfile,
 	BCryptProvider,
-	WindowsFileSystem,
-	WindowsEnvironment,
+	FileSystem,
+	Environment,
 	OAuthAppAuthStrategy,
-	IniConfigFile,
+	ConfigFile,
 	ThreadStateManager,
 	ContentFieldProvider,
 	IconProvider,
@@ -165,9 +165,9 @@ type
 		PasswordUI: IPasswordUIProvider;
 		HTTPMgr: IHTTPManager;
 		CipherVal: ICipherValidator;
-		TCLogger: ILogger;
-		TCProgress: IProgress;
-		TCRequest: IRequest;
+		Logger: ILogger;
+		Progress: IProgress;
+		Request: IRequest;
 		FFileSystem: IFileSystem;
 	protected
 		{Ensures cloud is authorized. Returns True if authorized, False otherwise.
@@ -278,13 +278,13 @@ var
 	Logger: ILogger;
 begin
 	PluginNum := PluginNr;
-	TCLogger := TTCLogger.Create(pLogProc, PluginNr, SettingsManager.GetSettings.LogLevel);
-	TCProgress := TTCProgress.Create(pProgressProc, PluginNr);
-	TCRequest := TTCRequest.Create(pRequestProc, PluginNr);
+	Logger := TTCLogger.Create(pLogProc, PluginNr, SettingsManager.GetSettings.LogLevel);
+	Progress := TTCProgress.Create(pProgressProc, PluginNr);
+	Request := TTCRequest.Create(pRequestProc, PluginNr);
 	CurrentDescriptions := TDescription.Create(FFileSystem.GetTmpFileName(DESCRIPTION_TEMP_EXT), FFileSystem, FTCHandler.GetTCCommentPreferredFormat);
 
 	{Create retry handler with callbacks for message boxes and logging}
-	Logger := TCLogger;
+	Logger := Logger;
 	FRetryHandler := TRetryHandler.Create(FThreadState, SettingsManager, FTCHandler,
 		function(const Text: WideString; const Args: array of const; const Caption: WideString; Flags: Integer): Integer
 		begin
@@ -296,7 +296,7 @@ begin
 		end);
 
 	{Create local file deletion handler with callbacks for file operations and user dialogs}
-	FLocalFileDeletionHandler := TLocalFileDeletionHandler.Create(SettingsManager, TCLogger,
+	FLocalFileDeletionHandler := TLocalFileDeletionHandler.Create(SettingsManager, Logger,
 		function(const Path: WideString): Boolean
 		begin
 			Result := DeleteFileW(PWideChar(Path));
@@ -315,10 +315,10 @@ begin
 		end);
 
 	{Create download success handler for post-download operations}
-	FDownloadSuccessHandler := TDownloadSuccessHandler.Create(SettingsManager, TCLogger, TCProgress, FDescriptionSyncGuard, FFileSystem);
+	FDownloadSuccessHandler := TDownloadSuccessHandler.Create(SettingsManager, Logger, Progress, FDescriptionSyncGuard, FFileSystem);
 
 	{Create listing skip decider for FsFindFirst skip logic}
-	FListingSkipDecider := TListingSkipDecider.Create(FThreadState, TCProgress);
+	FListingSkipDecider := TListingSkipDecider.Create(FThreadState, Progress);
 
 	{Create listing path validator for FsFindFirst path validation}
 	FListingPathValidator := TListingPathValidator.Create;
@@ -330,10 +330,10 @@ begin
 	FFileStreamExecutor := TFileStreamExecutor.Create(TPublicCloudFactory.Create, TWindowsCommandExecutor.Create);
 
 	{Create local file conflict resolver for FsGetFile}
-	FLocalFileConflictResolver := TLocalFileConflictResolver.Create(TCLogger);
+	FLocalFileConflictResolver := TLocalFileConflictResolver.Create(Logger);
 
 	{Create listing item fetcher for FindListingItemByPath}
-	FListingItemFetcher := TListingItemFetcher.Create(TCLogger);
+	FListingItemFetcher := TListingItemFetcher.Create(Logger);
 
 	{Create shared item deletion handler for FsDeleteFile}
 	FSharedItemDeletionHandler := TSharedItemDeletionHandler.Create;
@@ -345,7 +345,7 @@ begin
 	FInviteOperationHandler := TInviteOperationHandler.Create;
 
 	{Create cross-account file operation handler for FsRenMovFile}
-	FCrossAccountFileOperationHandler := TCrossAccountFileOperationHandler.Create(FRetryHandler, TCLogger);
+	FCrossAccountFileOperationHandler := TCrossAccountFileOperationHandler.Create(FRetryHandler, Logger);
 
 	{Create icon rendering engine for FsExtractCustomIcon}
 	FIconRenderingEngine := TIconRenderingEngine.Create;
@@ -357,7 +357,7 @@ begin
 	FSharedItemActionHandler := TSharedItemActionHandler.Create;
 
 	{Create upload completion handler for PutRemoteFile}
-	FUploadCompletionHandler := TUploadCompletionHandler.Create(TCLogger, TCProgress, FLocalFileDeletionHandler, FDescriptionSyncGuard);
+	FUploadCompletionHandler := TUploadCompletionHandler.Create(Logger, Progress, FLocalFileDeletionHandler, FDescriptionSyncGuard);
 
 	{Create listing handlers for FsFindFirst}
 	FRootListingHandler := TRootListingHandler.Create;
@@ -428,9 +428,9 @@ begin
 	SettingsManager := nil; {IPluginSettingsManager is reference-counted, setting to nil releases it}
 	AccountSettings := nil; {IAccountsManager is reference-counted, setting to nil releases it}
 	PasswordManager := nil; {IPasswordManager is reference-counted, setting to nil releases it}
-	TCLogger := nil; {ILogger is reference-counted, setting to nil releases it}
-	TCProgress := nil; {IProgress is reference-counted, setting to nil releases it}
-	TCRequest := nil; {IRequest is reference-counted, setting to nil releases it}
+	Logger := nil; {ILogger is reference-counted, setting to nil releases it}
+	Progress := nil; {IProgress is reference-counted, setting to nil releases it}
+	Request := nil; {IRequest is reference-counted, setting to nil releases it}
 	inherited;
 end;
 
@@ -858,7 +858,7 @@ begin
 		end,
 		function(const Source, Target: WideString; PercentDone: Integer): Boolean
 		begin
-			Result := TCProgress.Progress(PWideChar(Source), PWideChar(Target), PercentDone);
+			Result := Progress.Progress(PWideChar(Source), PWideChar(Target), PercentDone);
 		end);
 end;
 
@@ -901,7 +901,7 @@ begin
 	if not ValidationResult.ShouldProceed then
 		exit(ValidationResult.ResultCode);
 
-	TCProgress.Progress(LocalName, PWideChar(RealPath.Path), 0);
+	Progress.Progress(LocalName, PWideChar(RealPath.Path), 0);
 
 	{Prepare for overwrite if required (cloud API doesn't support overwrite, so delete first)}
 	OverwriteResult := FOverwritePreparationHandler.Prepare(RealPath, ValidationResult.RequiresOverwrite);
@@ -920,7 +920,7 @@ begin
 		end,
 		function: Boolean
 		begin
-			Result := TCProgress.Progress(PWideChar(LocalName), RemoteName, 0);
+			Result := Progress.Progress(PWideChar(LocalName), RemoteName, 0);
 		end);
 end;
 
@@ -957,7 +957,7 @@ var
 	NewRealPath: TRealPath;
 	OldCloud, NewCloud: TCloudMailRu;
 begin
-	TCProgress.Progress(OldName, NewName, 0);
+	Progress.Progress(OldName, NewName, 0);
 
 	OldRealPath.FromPath(OldName);
 	NewRealPath.FromPath(NewName);
@@ -977,26 +977,26 @@ begin
 		Result := FCrossAccountFileOperationHandler.Execute(OldCloud, NewCloud, OldRealPath, NewRealPath, Move, OverWrite, SettingsManager.GetSettings.CopyBetweenAccountsMode, OldCloud.IsPublicAccount,
 			function: Boolean
 			begin
-				Result := TCProgress.Aborted();
+				Result := Progress.Aborted();
 			end)
 	else {Same account - delegate to handler}
 		Result := FSameAccountMoveHandler.Execute(OldCloud, OldRealPath, NewRealPath, Move, OverWrite);
 
-	TCProgress.Progress(OldName, NewName, 100);
+	Progress.Progress(OldName, NewName, 100);
 end;
 
 procedure TWFXApplication.FsSetCryptCallback(PCryptProc: TCryptProcW; CryptoNr, Flags: Integer);
 begin
-	PasswordManager := TTCPasswordManager.Create(PCryptProc, PluginNum, CryptoNr, TCLogger, FTCHandler);
+	PasswordManager := TTCPasswordManager.Create(PCryptProc, PluginNum, CryptoNr, Logger, FTCHandler);
 	PasswordUI := TPasswordUIProvider.Create;
-	HTTPMgr := THTTPManager.Create(SettingsManager.GetSettings.ConnectionSettings, TCLogger, TCProgress, TCloudHTTPFactory.Create);
+	HTTPMgr := THTTPManager.Create(SettingsManager.GetSettings.ConnectionSettings, Logger, Progress, TCloudHTTPFactory.Create);
 	CipherVal := TCipherValidator.Create;
 	{TODO: ConnectionManager and dependent components are created here because they require
 	PasswordManager, which needs PCryptProc from this callback. This makes FsSetCryptCallback
 	a de-facto "second initialization phase", which is not its intended purpose.
 	Investigate alternatives: lazy initialization, dependency restructuring, or deferred injection.}
-	ConnectionManager := TConnectionManager.Create(SettingsManager, AccountSettings, HTTPMgr, PasswordUI, CipherVal, TWindowsFileSystem.Create, TCProgress, TCLogger, TCRequest, PasswordManager, FTCHandler, TDefaultAuthStrategyFactory.Create, FOpenSSLProvider, TAccountCredentialsProvider.Create(PasswordManager, PasswordUI, TCLogger, FTCHandler, AccountSettings));
-	FCommandDispatcher := TCommandDispatcher.Create(ConnectionManager, TCLogger, SettingsManager);
+	ConnectionManager := TConnectionManager.Create(SettingsManager, AccountSettings, HTTPMgr, PasswordUI, CipherVal, TWindowsFileSystem.Create, Progress, Logger, Request, PasswordManager, FTCHandler, TDefaultAuthStrategyFactory.Create, FOpenSSLProvider, TAccountCredentialsProvider.Create(PasswordManager, PasswordUI, Logger, FTCHandler, AccountSettings));
+	FCommandDispatcher := TCommandDispatcher.Create(ConnectionManager, Logger, SettingsManager);
 
 	{Create icon context builder for FsExtractCustomIcon}
 	FIconContextBuilder := TIconContextBuilder.Create(AccountSettings, ConnectionManager, FListingItemFetcher);
@@ -1005,7 +1005,7 @@ begin
 	FOperationStatusContextBuilder := TOperationStatusContextBuilder.Create(SettingsManager, ConnectionManager);
 
 	{Create operation action executor for lifecycle event handling - requires ConnectionManager}
-	FActionExecutor := TOperationActionExecutor.Create(FThreadState, ConnectionManager, SettingsManager, CurrentDescriptions, TCLogger);
+	FActionExecutor := TOperationActionExecutor.Create(FThreadState, ConnectionManager, SettingsManager, CurrentDescriptions, Logger);
 
 	{Create path listing handler for FsFindFirst - requires ConnectionManager}
 	FPathListingHandler := TPathListingHandler.Create(ConnectionManager, FListingProvider, FListingPathValidator);

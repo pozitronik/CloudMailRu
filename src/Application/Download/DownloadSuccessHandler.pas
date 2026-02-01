@@ -11,15 +11,15 @@ uses
 	SysUtils,
 	DateUtils,
 	PluginSettingsManager,
-	TCLogger,
-	TCProgress,
+	Logger,
+	Progress,
 	DescriptionSyncGuard,
 	WFXTypes,
 	CloudConstants,
 	RealPath,
 	CloudDirItem,
 	CloudMailRu,
-	WindowsFileSystem,
+	FileSystem,
 	DateTimeUtils;
 
 type

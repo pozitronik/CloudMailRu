@@ -110,16 +110,16 @@
         </DelphiCompile>
         <DCCReference Include="FastMM5\FastMM5.pas"/>
         <DCCReference Include="TestHelper.pas"/>
-        <DCCReference Include="..\src\Infrastructure\Logger\TCLogger.pas"/>
-        <DCCReference Include="Infrastructure\Logger\TCLoggerTest.pas"/>
+        <DCCReference Include="..\src\Infrastructure\Logger\Logger.pas"/>
+        <DCCReference Include="Infrastructure\Logger\LoggerTest.pas"/>
         <DCCReference Include="..\src\Infrastructure\Protocol\WFXTypes.pas"/>
         <DCCReference Include="..\src\Infrastructure\OS\SystemHelper.pas"/>
-        <DCCReference Include="..\src\Infrastructure\Progress\TCProgress.pas"/>
-        <DCCReference Include="Infrastructure\Progress\TCProgressTest.pas"/>
-        <DCCReference Include="..\src\Infrastructure\Request\TCRequest.pas"/>
-        <DCCReference Include="Infrastructure\Request\TCRequestTest.pas"/>
-        <DCCReference Include="..\src\Infrastructure\Password\TCPasswordManager.pas"/>
-        <DCCReference Include="Infrastructure\Password\TCPasswordManagerTest.pas"/>
+        <DCCReference Include="..\src\Infrastructure\Progress\Progress.pas"/>
+        <DCCReference Include="Infrastructure\Progress\ProgressTest.pas"/>
+        <DCCReference Include="..\src\Infrastructure\Request\Request.pas"/>
+        <DCCReference Include="Infrastructure\Request\RequestTest.pas"/>
+        <DCCReference Include="..\src\Infrastructure\Password\PasswordManager.pas"/>
+        <DCCReference Include="Infrastructure\Password\PasswordManagerTest.pas"/>
         <DCCReference Include="..\src\Infrastructure\Logger\DebugHelper.pas"/>
         <DCCReference Include="..\src\Infrastructure\IO\PathHelper.pas"/>
         <DCCReference Include="..\src\Presentation\UI\PluginForm.pas"/>
@@ -137,7 +137,7 @@
         <DCCReference Include="..\src\Domain\ValueObjects\WSList.pas"/>
         <DCCReference Include="..\src\Infrastructure\Settings\AccountSettings.pas"/>
         <DCCReference Include="..\src\Infrastructure\Settings\AccountsManager.pas"/>
-        <DCCReference Include="..\src\Infrastructure\Cipher\FileCipher.pas"/>
+        <DCCReference Include="..\src\Infrastructure\Cipher\Cipher.pas"/>
         <DCCReference Include="..\src\Infrastructure\Cipher\CipherStreams.pas"/>
         <DCCReference Include="..\src\Domain\ValueObjects\CloudDirItemList.pas"/>
         <DCCReference Include="..\src\Domain\ValueObjects\CloudDirItem.pas"/>
@@ -169,7 +169,7 @@
         <DCCReference Include="..\src\Infrastructure\HTTP\SafeJSON.pas"/>
         <DCCReference Include="Infrastructure\HTTP\SafeJSONTest.pas"/>
         <DCCReference Include="Infrastructure\Config\IniFilesHelperTest.pas"/>
-        <DCCReference Include="Infrastructure\Config\IniConfigFileTest.pas"/>
+        <DCCReference Include="Infrastructure\Config\ConfigFileTest.pas"/>
         <DCCReference Include="Infrastructure\Protocol\WFXTypesTest.pas"/>
         <DCCReference Include="Domain\ValueObjects\CloudDirItemListTest.pas"/>
         <DCCReference Include="Domain\ValueObjects\CloudOAuthTest.pas"/>
@@ -180,7 +180,7 @@
         <DCCReference Include="Domain\ValueObjects\CloudFileIdentityTest.pas"/>
         <DCCReference Include="Infrastructure\Settings\AccountSettingsTest.pas"/>
         <DCCReference Include="Infrastructure\Settings\PluginSettingsTest.pas"/>
-        <DCCReference Include="Infrastructure\Cipher\FileCipherTest.pas"/>
+        <DCCReference Include="Infrastructure\Cipher\CipherTest.pas"/>
         <DCCReference Include="Infrastructure\Cipher\NullCipherTest.pas"/>
         <DCCReference Include="Infrastructure\Cipher\CipherStreamsTest.pas"/>
         <DCCReference Include="Domain\Services\CloudMailRuResourceTest.pas"/>
@@ -226,11 +226,11 @@
         <DCCReference Include="Infrastructure\Cipher\CipherValidatorTest.pas"/>
         <DCCReference Include="Infrastructure\Services\ConnectionManagerTest.pas"/>
         <DCCReference Include="..\src\Infrastructure\Services\ConnectionManager.pas"/>
-        <DCCReference Include="..\src\Infrastructure\FileSystem\WindowsFileSystem.pas"/>
-        <DCCReference Include="Infrastructure\FileSystem\WindowsFileSystemTest.pas"/>
-        <DCCReference Include="..\src\Infrastructure\Config\IniConfigFile.pas"/>
-        <DCCReference Include="..\src\Infrastructure\Environment\WindowsEnvironment.pas"/>
-        <DCCReference Include="Infrastructure\Environment\WindowsEnvironmentTest.pas"/>
+        <DCCReference Include="..\src\Infrastructure\FileSystem\FileSystem.pas"/>
+        <DCCReference Include="Infrastructure\FileSystem\FileSystemTest.pas"/>
+        <DCCReference Include="..\src\Infrastructure\Config\ConfigFile.pas"/>
+        <DCCReference Include="..\src\Infrastructure\Environment\Environment.pas"/>
+        <DCCReference Include="Infrastructure\Environment\EnvironmentTest.pas"/>
         <DCCReference Include="..\src\Presentation\UI\Forms\AskPassword.pas">
             <Form>AskPasswordForm</Form>
         </DCCReference>
@@ -275,6 +275,8 @@
         <DCCReference Include="..\src\Application\Operation\OperationLifecycleHandler.pas"/>
         <DCCReference Include="Application\Operation\OperationLifecycleHandlerTest.pas"/>
         <DCCReference Include="..\src\Application\Description\DescriptionSyncManager.pas"/>
+        <DCCReference Include="..\src\Infrastructure\Adapter\CloudFileOperationsAdapter.pas"/>
+        <DCCReference Include="Infrastructure\Adapter\CloudFileOperationsAdapterTest.pas"/>
         <DCCReference Include="..\src\Infrastructure\Adapter\CloudDescriptionOperationsAdapter.pas"/>
         <DCCReference Include="Infrastructure\Adapter\CloudDescriptionOperationsAdapterTest.pas"/>
         <DCCReference Include="..\src\Infrastructure\Adapter\CloudDirItemJsonAdapter.pas"/>

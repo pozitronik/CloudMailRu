@@ -3,7 +3,7 @@ unit NullCipherTest;
 interface
 
 uses
-	FileCipher,
+	Cipher,
 	System.SysUtils,
 	System.IOUtils,
 	System.Classes,

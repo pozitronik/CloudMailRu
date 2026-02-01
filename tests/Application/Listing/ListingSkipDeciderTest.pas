@@ -9,7 +9,7 @@ uses
 	Classes,
 	DUnitX.TestFramework,
 	ThreadStateManager,
-	TCProgress,
+	Progress,
 	ListingSkipDecider;
 
 type

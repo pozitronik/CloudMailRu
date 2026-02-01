@@ -11,7 +11,7 @@ uses
 	CloudShardManager,
 	CloudOAuth,
 	ThumbnailBitmapConverter,
-	TCLogger;
+	Logger;
 
 type
 	ICloudThumbnailService = interface

@@ -15,8 +15,8 @@ interface
 
 uses
 	System.Classes,
-	TCProgress,
-	WindowsFileSystem,
+	Progress,
+	FileSystem,
 	OpenSSLProvider;
 
 type

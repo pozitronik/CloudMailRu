@@ -1,4 +1,4 @@
-unit WindowsEnvironment;
+unit Environment;
 
 {Abstraction for environment and directory operations, enabling testability
 	of path detection logic without real file system access.

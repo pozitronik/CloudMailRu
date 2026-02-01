@@ -1,4 +1,4 @@
-unit FileCipher;
+unit Cipher;
 
 {Combined unit for encryption operations: interface, null implementation, and profile-based implementation.
 	Cipher profiles allow selecting different algorithms (AES, Twofish) and KDF hashes per account.

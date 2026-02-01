@@ -11,7 +11,7 @@ uses
 	SysUtils,
 	DUnitX.TestFramework,
 	PluginSettingsManager,
-	TCLogger,
+	Logger,
 	LocalFileDeletionHandler,
 	PluginSettings,
 	WFXTypes,

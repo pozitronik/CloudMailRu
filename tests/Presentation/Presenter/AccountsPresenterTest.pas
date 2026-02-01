@@ -10,7 +10,7 @@ uses
 	PluginSettings,
 	ConnectionSettings,
 	ProxySettings,
-	TCPasswordManager,
+	PasswordManager,
 	AccountsManager,
 	PluginSettingsManager,
 	CipherProfile,
@@ -550,7 +550,7 @@ type
 implementation
 
 uses
-	IniConfigFile,
+	ConfigFile,
 	CloudConstants,
 	SettingsConstants,
 	WSList;

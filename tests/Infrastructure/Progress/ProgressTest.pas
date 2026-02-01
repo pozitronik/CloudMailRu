@@ -1,9 +1,9 @@
-unit TCProgressTest;
+unit ProgressTest;
 
 interface
 
 uses
-	TCProgress,
+	Progress,
 	TestHelper,
 	WFXTypes,
 	SysUtils,

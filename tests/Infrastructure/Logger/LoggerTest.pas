@@ -1,9 +1,9 @@
-unit TCLoggerTest;
+unit LoggerTest;
 
 interface
 
 uses
-	TCLogger,
+	Logger,
 	WFXTypes,
 	CloudConstants,
 	TestHelper,

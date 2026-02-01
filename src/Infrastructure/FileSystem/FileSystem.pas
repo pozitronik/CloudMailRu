@@ -1,4 +1,4 @@
-unit WindowsFileSystem;
+unit FileSystem;
 
 {Abstraction for file system operations, enabling testability without actual disk I/O.
 	Used primarily by TDescription for description file handling.}

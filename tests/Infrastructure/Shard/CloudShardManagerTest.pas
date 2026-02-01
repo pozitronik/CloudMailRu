@@ -6,7 +6,7 @@ uses
 	CloudShardManager,
 	CloudContext,
 	CloudConstants,
-	TCLogger,
+	Logger,
 	TestHelper,
 	System.SysUtils,
 	DUnitX.TestFramework;

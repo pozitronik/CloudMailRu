@@ -18,12 +18,12 @@ uses
 	CloudSpaceJsonAdapter,
 	CloudConstants,
 	CloudHTTP,
-	FileCipher,
+	Cipher,
 	PathHelper,
 	StringHelper, {FormatSize}
 	LanguageStrings,
 	WFXTypes,
-	TCLogger,
+	Logger,
 	TokenRetryHelper,
 	System.SysUtils;
 

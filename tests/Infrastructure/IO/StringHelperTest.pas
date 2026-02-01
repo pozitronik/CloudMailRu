@@ -57,7 +57,7 @@ type
 implementation
 
 { Verifies that SizeOf(WideString) returns pointer size, not string content size.
-  This proves why TCPasswordManager.SetPassword needed fixing. }
+  This proves why PasswordManager.SetPassword needed fixing. }
 procedure TStringHelperTest.TestWideStringSizeOfReturnsPointerSize;
 var
 	ShortStr: WideString;

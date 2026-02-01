@@ -9,7 +9,7 @@ uses
 	Generics.Collections,
 	System.SysUtils,
 	System.WideStrUtils,
-	WindowsFileSystem,
+	FileSystem,
 	Windows;
 
 const

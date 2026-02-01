@@ -5,7 +5,7 @@ interface
 uses
 	CloudConstants,
 	CloudContext,
-	TCLogger;
+	Logger;
 
 type
 	{Interface for managing cloud shard URLs.

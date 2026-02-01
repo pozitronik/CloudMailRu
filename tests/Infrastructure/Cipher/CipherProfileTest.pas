@@ -4,7 +4,7 @@ interface
 
 uses
 	CipherProfile,
-	FileCipher,
+	Cipher,
 	Classes,
 	System.SysUtils,
 	DUnitX.TestFramework;

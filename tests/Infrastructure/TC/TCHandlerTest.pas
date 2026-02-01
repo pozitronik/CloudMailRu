@@ -4,7 +4,7 @@ interface
 
 uses
 	TCHandler,
-	WindowsEnvironment,
+	Environment,
 	Description,
 	IniFiles,
 	Windows,

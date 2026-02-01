@@ -7,7 +7,7 @@ unit CipherProfile;
 interface
 
 uses
-	FileCipher,
+	Cipher,
 	OpenSSLProvider,
 	BCryptProvider;
 

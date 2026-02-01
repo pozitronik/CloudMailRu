@@ -22,7 +22,7 @@ uses
 	CloudAccessMapper,
 	Description,
 	HashInfo,
-	WindowsFileSystem,
+	FileSystem,
 	TCHandler,
 	LanguageStrings,
 	WFXTypes,

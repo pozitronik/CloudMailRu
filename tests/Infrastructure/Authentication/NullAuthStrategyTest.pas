@@ -4,7 +4,7 @@ interface
 
 uses
 	AuthStrategy,
-	TCLogger,
+	Logger,
 	DUnitX.TestFramework;
 
 type

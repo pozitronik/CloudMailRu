@@ -1,9 +1,9 @@
-unit WindowsEnvironmentTest;
+unit EnvironmentTest;
 
 interface
 
 uses
-	WindowsEnvironment,
+	Environment,
 	DUnitX.TestFramework;
 
 type

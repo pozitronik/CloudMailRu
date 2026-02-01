@@ -14,7 +14,7 @@ uses
 	PluginSettings,
 	ConnectionSettings,
 	ProxySettings,
-	TCPasswordManager,
+	PasswordManager,
 	AccountsManager,
 	PluginSettingsManager,
 	WFXTypes;

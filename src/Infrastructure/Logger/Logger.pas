@@ -1,4 +1,4 @@
-unit TCLogger;
+unit Logger;
 
 interface
 

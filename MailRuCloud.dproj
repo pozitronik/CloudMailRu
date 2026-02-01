@@ -234,7 +234,7 @@
             <Form>DeletedPropertyForm</Form>
         </DCCReference>
         <DCCReference Include="src\Domain\Services\Description.pas"/>
-        <DCCReference Include="src\Infrastructure\Cipher\FileCipher.pas"/>
+        <DCCReference Include="src\Infrastructure\Cipher\Cipher.pas"/>
         <DCCReference Include="src\Infrastructure\Cipher\CipherStreams.pas"/>
         <DCCReference Include="src\Infrastructure\IO\FileSplitInfo.pas"/>
         <DCCReference Include="src\Infrastructure\HTTP\HTTPManager.pas"/>
@@ -264,19 +264,19 @@
         <DCCReference Include="src\Application\Retry\TokenRetryHelper.pas"/>
         <DCCReference Include="src\Infrastructure\OS\SystemHelper.pas"/>
         <DCCReference Include="src\Infrastructure\TC\TCHandler.pas"/>
-        <DCCReference Include="src\Infrastructure\Logger\TCLogger.pas"/>
-        <DCCReference Include="src\Infrastructure\Password\TCPasswordManager.pas"/>
-        <DCCReference Include="src\Infrastructure\Progress\TCProgress.pas"/>
-        <DCCReference Include="src\Infrastructure\Request\TCRequest.pas"/>
+        <DCCReference Include="src\Infrastructure\Logger\Logger.pas"/>
+        <DCCReference Include="src\Infrastructure\Password\PasswordManager.pas"/>
+        <DCCReference Include="src\Infrastructure\Progress\Progress.pas"/>
+        <DCCReference Include="src\Infrastructure\Request\Request.pas"/>
         <DCCReference Include="src\Domain\ValueObjects\WSList.pas"/>
         <DCCReference Include="src\Presentation\UI\PluginForm.pas"/>
         <DCCReference Include="src\MailRuCloudWFX.pas"/>
         <DCCReference Include="src\WFXInterface.pas"/>
         <DCCReference Include="src\Infrastructure\Password\PasswordUIProvider.pas"/>
         <DCCReference Include="src\Infrastructure\Cipher\CipherValidator.pas"/>
-        <DCCReference Include="src\Infrastructure\FileSystem\WindowsFileSystem.pas"/>
-        <DCCReference Include="src\Infrastructure\Config\IniConfigFile.pas"/>
-        <DCCReference Include="src\Infrastructure\Environment\WindowsEnvironment.pas"/>
+        <DCCReference Include="src\Infrastructure\FileSystem\FileSystem.pas"/>
+        <DCCReference Include="src\Infrastructure\Config\ConfigFile.pas"/>
+        <DCCReference Include="src\Infrastructure\Environment\Environment.pas"/>
         <DCCReference Include="src\Infrastructure\Authentication\AuthStrategy.pas"/>
         <DCCReference Include="src\Infrastructure\Authentication\OAuthAppAuthStrategy.pas"/>
         <DCCReference Include="src\Infrastructure\Authentication\SharedAccountAuthStrategy.pas"/>
@@ -289,6 +289,7 @@
         <DCCReference Include="src\Application\Operation\OperationLifecycleHandler.pas"/>
         <DCCReference Include="src\Application\Description\DescriptionSyncManager.pas"/>
         <DCCReference Include="src\Domain\Services\CloudAccessMapper.pas"/>
+        <DCCReference Include="src\Infrastructure\Adapter\CloudFileOperationsAdapter.pas"/>
         <DCCReference Include="src\Infrastructure\Adapter\CloudDescriptionOperationsAdapter.pas"/>
         <DCCReference Include="src\Infrastructure\Adapter\CloudDirItemJsonAdapter.pas"/>
         <DCCReference Include="src\Infrastructure\Adapter\CloudDirItemListJsonAdapter.pas"/>

@@ -9,8 +9,8 @@ uses
 	CloudConstants,
 	WFXTypes,
 	ConnectionSettings,
-	TCLogger,
-	TCProgress,
+	Logger,
+	Progress,
 	System.Generics.Collections,
 	SysUtils,
 	IdCookieManager;

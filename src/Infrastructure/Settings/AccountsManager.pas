@@ -13,7 +13,7 @@ uses
 	SettingsConstants,
 	WSList,
 	AccountSettings,
-	IniConfigFile;
+	ConfigFile;
 
 type
 	IAccountsManager = interface

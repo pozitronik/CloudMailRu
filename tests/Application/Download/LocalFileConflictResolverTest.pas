@@ -9,7 +9,7 @@ uses
 	DUnitX.TestFramework,
 	WFXTypes,
 	SettingsConstants,
-	TCLogger,
+	Logger,
 	LocalFileConflictResolver;
 
 type

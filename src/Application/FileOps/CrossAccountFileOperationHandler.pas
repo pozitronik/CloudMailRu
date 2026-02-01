@@ -11,7 +11,7 @@ uses
 	CloudErrorMapper,
 	RealPath,
 	RetryHandler,
-	TCLogger;
+	Logger;
 
 type
 	ICrossAccountFileOperationHandler = interface

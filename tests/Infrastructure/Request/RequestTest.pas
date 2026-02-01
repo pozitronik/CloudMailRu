@@ -1,9 +1,9 @@
-unit TCRequestTest;
+unit RequestTest;
 
 interface
 
 uses
-	TCRequest,
+	Request,
 	TestHelper,
 	WFXTypes,
 	SysUtils,

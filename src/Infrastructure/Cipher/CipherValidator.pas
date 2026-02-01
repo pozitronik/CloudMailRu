@@ -35,7 +35,7 @@ type
 implementation
 
 uses
-	FileCipher;
+	Cipher;
 
 {TNullCipherValidator}
 

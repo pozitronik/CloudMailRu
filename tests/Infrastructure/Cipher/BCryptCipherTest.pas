@@ -9,7 +9,7 @@ uses
 	BCryptCipher,
 	BCryptProvider,
 	BlockCipher,
-	FileCipher,
+	Cipher,
 	System.SysUtils,
 	System.IOUtils,
 	System.Classes,

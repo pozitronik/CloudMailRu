@@ -10,7 +10,7 @@ uses
 	AuthStrategy,
 	CloudOAuth,
 	CloudHTTP,
-	TCLogger;
+	Logger;
 
 type
 	TOAuthAppAuthStrategy = class(TInterfacedObject, IAuthStrategy)

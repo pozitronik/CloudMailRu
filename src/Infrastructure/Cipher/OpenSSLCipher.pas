@@ -11,7 +11,7 @@ uses
 	Classes,
 	System.SysUtils,
 	BlockCipher,
-	FileCipher,
+	Cipher,
 	OpenSSLProvider;
 
 const

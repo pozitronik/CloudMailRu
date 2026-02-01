@@ -57,7 +57,7 @@ implementation
 uses
 	SysUtils,
 	CloudConstants,
-	TCLogger;
+	Logger;
 
 {TOAuthAppAuthStrategyTest}
 

@@ -9,7 +9,7 @@ uses
 	OpenSSLCipher,
 	OpenSSLProvider,
 	BlockCipher,
-	FileCipher,
+	Cipher,
 	System.SysUtils,
 	System.IOUtils,
 	System.Classes,

@@ -1,10 +1,10 @@
-unit TCPasswordManagerTest;
+unit PasswordManagerTest;
 
 interface
 
 uses
-	TCPasswordManager,
-	TCLogger,
+	PasswordManager,
+	Logger,
 	TCHandler,
 	WFXTypes,
 	Windows,

@@ -1,9 +1,9 @@
-unit FileCipherTest;
+unit CipherTest;
 
 interface
 
 uses
-	FileCipher,
+	Cipher,
 	DCPcrypt2,
 	DCPblockciphers,
 	DCPrijndael,

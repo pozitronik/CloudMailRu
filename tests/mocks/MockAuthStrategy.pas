@@ -8,7 +8,7 @@ interface
 uses
 	AuthStrategy,
 	CloudHTTP,
-	TCLogger,
+	Logger,
 	CloudOAuth,
 	System.SysUtils;
 

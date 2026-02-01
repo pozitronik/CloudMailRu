@@ -17,7 +17,7 @@ uses
 	PathHelper,
 	WFXTypes,
 	StringHelper,
-	TCLogger,
+	Logger,
 	TokenRetryHelper,
 	DCPbase64,
 	System.SysUtils;

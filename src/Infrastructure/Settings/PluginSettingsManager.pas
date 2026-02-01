@@ -14,8 +14,8 @@ uses
 	Classes,
 	PluginSettings,
 	StreamingSettings,
-	IniConfigFile,
-	WindowsEnvironment;
+	ConfigFile,
+	Environment;
 
 type
 

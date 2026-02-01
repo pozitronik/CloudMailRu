@@ -10,10 +10,10 @@ uses
 	CloudOperationResult,
 	WFXTypes,
 	LanguageStrings,
-	TCLogger,
-	TCProgress,
-	TCRequest,
-	FileCipher,
+	Logger,
+	Progress,
+	Request,
+	Cipher,
 	PathHelper,
 	StringHelper,
 	RealPath,
@@ -22,7 +22,7 @@ uses
 	CloudHTTP,
 	CloudErrorMapper,
 	CloudContext,
-	WindowsFileSystem,
+	FileSystem,
 	DCPbase64;
 
 type

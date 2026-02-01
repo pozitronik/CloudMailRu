@@ -9,7 +9,7 @@ uses
 	AuthStrategy,
 	MockAuthStrategy,
 	CloudOAuth,
-	TCLogger,
+	Logger,
 	System.SysUtils,
 	DUnitX.TestFramework;
 

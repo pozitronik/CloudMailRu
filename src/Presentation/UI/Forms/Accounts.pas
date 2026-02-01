@@ -23,12 +23,12 @@ uses
 	Vcl.Samples.Spin,
 	System.IOUtils,
 	AskPassword,
-	TCPasswordManager,
+	PasswordManager,
 	LanguageStrings,
 	WSList,
 	StreamingSettings,
 	PluginSettingsManager,
-	FileCipher,
+	Cipher,
 	AccountSettings,
 	ConnectionSettings,
 	AccountsManager,
@@ -350,7 +350,7 @@ uses
 	System.UITypes,
 	ProxySettings,
 	CloudConstants,
-	IniConfigFile;
+	ConfigFile;
 
 {IAccountsView - Global settings}
 

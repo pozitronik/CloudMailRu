@@ -11,7 +11,7 @@ uses
 	System.SysUtils,
 	System.Generics.Collections,
 	CloudHTTP,
-	TCProgress,
+	Progress,
 	WFXTypes,
 	IdCookieManager,
 	IdHTTP;

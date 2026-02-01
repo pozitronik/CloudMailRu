@@ -10,7 +10,7 @@ uses
 	CloudHTTP,
 	LanguageStrings,
 	WFXTypes,
-	TCLogger,
+	Logger,
 	TokenRetryHelper,
 	PathHelper,
 	System.SysUtils;

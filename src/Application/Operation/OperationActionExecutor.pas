@@ -11,7 +11,7 @@ uses
 	OperationLifecycleHandler,
 	ThreadStateManager,
 	PluginSettingsManager,
-	TCLogger,
+	Logger,
 	ConnectionManager,
 	CloudDescriptionOperationsAdapter,
 	Description,

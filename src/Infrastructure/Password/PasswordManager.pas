@@ -1,4 +1,4 @@
-unit TCPasswordManager;
+unit PasswordManager;
 
 {Total Commander password manager wrapper implementing IPasswordManager}
 
@@ -12,7 +12,7 @@ uses
 	AskPassword,
 	TCHandler,
 	CloudConstants,
-	TCLogger;
+	Logger;
 
 const
 	{Password manager key constants}

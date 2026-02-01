@@ -7,7 +7,7 @@ interface
 
 uses
 	WFXTypes,
-	TCLogger;
+	Logger;
 
 type
 	{Result of conflict resolution}

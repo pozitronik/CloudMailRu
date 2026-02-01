@@ -18,11 +18,11 @@ uses
 	CloudFileIdentity,
 	WFXTypes,
 	SettingsConstants,
-	TCLogger,
-	TCProgress,
-	TCRequest,
+	Logger,
+	Progress,
+	Request,
 	TCHandler,
-	WindowsFileSystem,
+	FileSystem,
 	CloudHTTP,
 	MockCloudHTTP,
 	MockCloudContext,
@@ -122,7 +122,7 @@ implementation
 
 uses
 	FileSplitInfo,
-	FileCipher;
+	Cipher;
 
 {TRealSizeFileSystem - only implements GetFileSize with real file access}
 

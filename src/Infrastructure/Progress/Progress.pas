@@ -1,4 +1,4 @@
-unit TCProgress;
+unit Progress;
 
 {Interface for progress reporting, abstracting the concrete implementation from consumers.
 	This enables dependency injection and testability by allowing mock implementations.}

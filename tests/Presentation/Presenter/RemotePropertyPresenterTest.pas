@@ -20,7 +20,7 @@ uses
 	CloudShareService,
 	CloudMailRuFactory,
 	CloudMailRu,
-	WindowsFileSystem,
+	FileSystem,
 	TCHandler,
 	WFXTypes,
 	System.Classes,

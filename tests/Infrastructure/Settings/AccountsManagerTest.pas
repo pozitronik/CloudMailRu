@@ -9,9 +9,9 @@ uses
 	TestHelper,
 	SysUtils,
 	WSList,
-	FileCipher,
+	Cipher,
 	SettingsConstants,
-	IniConfigFile,
+	ConfigFile,
 	DUnitX.TestFramework;
 
 type

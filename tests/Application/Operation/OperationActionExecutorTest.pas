@@ -14,7 +14,7 @@ uses
 	OperationActionExecutor,
 	ThreadStateManager,
 	PluginSettingsManager,
-	TCLogger,
+	Logger,
 	PluginSettings,
 	RealPath,
 	StreamingSettings;

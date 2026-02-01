@@ -11,7 +11,7 @@ uses
 	DUnitX.TestFramework,
 	RealPath,
 	Description,
-	WindowsFileSystem,
+	FileSystem,
 	TCHandler,
 	CloudDescriptionOperationsAdapter,
 	DescriptionSyncManager,

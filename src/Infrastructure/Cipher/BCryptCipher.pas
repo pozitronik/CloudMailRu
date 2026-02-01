@@ -12,7 +12,7 @@ uses
 	Classes,
 	System.SysUtils,
 	BlockCipher,
-	FileCipher,
+	Cipher,
 	BCryptProvider;
 
 type
