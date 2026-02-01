@@ -12,12 +12,6 @@ type
 	[TestFixture]
 	TIconHelperTest = class
 	public
-		{ LoadIcon tests }
-		[Test]
-		procedure TestLoadIconNonExistentFile;
-		[Test]
-		procedure TestLoadIconEmptyPath;
-
 		{ LoadPluginIcon tests }
 		[Test]
 		procedure TestLoadPluginIconNonExistentFile;
@@ -31,26 +25,6 @@ uses
 	System.SysUtils;
 
 { TIconHelperTest }
-
-{ LoadIcon tests }
-
-procedure TIconHelperTest.TestLoadIconNonExistentFile;
-var
-	Icon: HIcon;
-begin
-	{ Loading non-existent file should return INVALID_HANDLE_VALUE }
-	Icon := IconHelper.LoadIcon('Z:\NonExistent\Path\icon.ico');
-	Assert.IsTrue(Icon = INVALID_HANDLE_VALUE, 'Expected INVALID_HANDLE_VALUE for non-existent file');
-end;
-
-procedure TIconHelperTest.TestLoadIconEmptyPath;
-var
-	Icon: HIcon;
-begin
-	{ Empty path should return INVALID_HANDLE_VALUE }
-	Icon := IconHelper.LoadIcon('');
-	Assert.IsTrue(Icon = INVALID_HANDLE_VALUE, 'Expected INVALID_HANDLE_VALUE for empty path');
-end;
 
 { LoadPluginIcon tests }
 

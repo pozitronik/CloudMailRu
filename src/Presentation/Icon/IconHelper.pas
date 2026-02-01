@@ -9,7 +9,6 @@ uses
 	Windows;
 
 function CombineIcons(FrontIcon, BackIcon: Hicon): Hicon; //taken from http://www.swissdelphicenter.ch/en/showcode.php?id=1636
-function LoadIcon(const FileName: WideString): Hicon;
 function LoadPluginIcon(const path: WideString; identifier: WideString): Hicon;
 
 implementation
