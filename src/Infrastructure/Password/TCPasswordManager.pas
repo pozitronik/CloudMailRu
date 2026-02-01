@@ -107,6 +107,7 @@ begin
 	begin
 		Logger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_DECRYPT_FAILED);
 	end;
+	ZeroMemory(buf, 1024);
 	FreeMemory(buf);
 end;
 
