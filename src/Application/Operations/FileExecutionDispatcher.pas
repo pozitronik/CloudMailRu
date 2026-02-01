@@ -64,7 +64,6 @@ implementation
 uses
 	SysUtils,
 	PathHelper,
-	StringHelper,
 	CloudConstants,
 	WFXTypes;
 
@@ -130,6 +129,7 @@ function TFileExecutionDispatcher.GetAction(const RemoteName, Verb: WideString; 
 var
 	RealPath: TRealPath;
 	TargetStreamingSettings: TStreamingSettings;
+	Words: TArray<string>;
 begin
 	RealPath.FromPath(RemoteName);
 	TargetStreamingSettings := Default (TStreamingSettings);
@@ -171,7 +171,15 @@ begin
 
 	{Quote commands - parse command and parameter}
 	if Copy(Verb, 1, 5) = VERB_QUOTE then
-		Exit(TExecutionAction.QuoteCommand(RealPath, LowerCase(GetWord(Verb, 1)), GetWord(Verb, 2)));
+	begin
+		Words := string(Verb).Split([' ']);
+		if Length(Words) > 2 then
+			Exit(TExecutionAction.QuoteCommand(RealPath, LowerCase(Words[1]), Words[2]))
+		else if Length(Words) > 1 then
+			Exit(TExecutionAction.QuoteCommand(RealPath, LowerCase(Words[1]), ''))
+		else
+			Exit(TExecutionAction.QuoteCommand(RealPath, '', ''));
+	end;
 
 	{Unknown verb - no action needed}
 	Result := TExecutionAction.None;

@@ -5,7 +5,6 @@ interface
 uses
 	CloudFileIdentity,
 	system.sysutils,
-	StringHelper,
 	CloudConstants,
 	LanguageStrings;
 
@@ -50,7 +49,7 @@ begin
 		if (1 = Pos(WideString('hash '), parameter)) then //это команда, чистим
 		begin
 			parameter := copy(parameter, 6, length(parameter) - 5);
-			parameter := TrimEx(parameter, '"');
+			parameter := string(parameter).Trim(['"']);
 		end;
 
 	end;

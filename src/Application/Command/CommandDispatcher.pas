@@ -16,8 +16,7 @@ uses
 	CloudConstants,
 	SettingsConstants,
 	LanguageStrings,
-	WFXTypes,
-	StringHelper;
+	WFXTypes;
 
 type
 	{Result of command execution with optional symlink path for navigation commands}
@@ -64,6 +63,16 @@ type
 	end;
 
 implementation
+
+{При необходимости преобразует адрес публичной ссылки к нужному виду}
+function ExtractLinkFromUrl(URL: WideString): WideString;
+const
+	pulicPrefix = 'https://cloud.mail.ru/public';
+begin
+	Result := URL;
+	if Pos(WideString(pulicPrefix), URL) <> 0 then
+		Result := Copy(URL, Length(pulicPrefix) + 1, Length(URL) - Length(pulicPrefix));
+end;
 
 class function TCommandResult.OK: TCommandResult;
 begin

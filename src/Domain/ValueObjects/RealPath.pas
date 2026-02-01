@@ -5,8 +5,7 @@ interface
 uses
 	Classes,
 	SysUtils,
-	SettingsConstants,
-	StringHelper;
+	SettingsConstants;
 
 type
 	TIsDir = (ID_True, ID_False, ID_Unset);
@@ -43,6 +42,7 @@ implementation
 procedure TRealPath.FromPath(VirtualPath: WideString; isDir: TIsDir);
 var
 	List: TStringList;
+	I: Integer;
 begin
 	self.account := EmptyWideStr;
 	self.path := EmptyWideStr;
@@ -60,7 +60,12 @@ begin
 
 	List := TStringList.Create;
 	try
-		MyExtractStrings(['\'], [], PWideChar(VirtualPath), List);
+		List.Delimiter := '\';
+		List.StrictDelimiter := True;
+		List.DelimitedText := VirtualPath;
+		for I := List.Count - 1 downto 0 do
+			if List[I] = '' then
+				List.Delete(I);
 
 		if (List.Count > 0) and (List.Strings[List.Count - 1] = '..') then
 			self.upDirItem := true;
@@ -78,7 +83,7 @@ begin
 		begin
 			self.account := List.Strings[0];
 			List.Delete(0);
-			self.path := Implode(List, '\');
+			self.path := string.Join('\', List.ToStringArray);
 		end;
 	finally
 		List.Free;
