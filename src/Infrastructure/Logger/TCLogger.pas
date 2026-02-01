@@ -4,8 +4,7 @@ interface
 
 uses
 	SysUtils,
-	WFXTypes,
-	SystemHelper;
+	WFXTypes;
 
 type
 	{Generic logging interface for dependency injection.
@@ -89,7 +88,7 @@ end;
 
 procedure TTCLogger.Log(LogLevel, MsgType: Integer; LogString: WideString; const Args: array of const);
 begin
-	if CheckFlag(LogLevel, self.LogLevel) then
+	if (self.LogLevel and LogLevel) <> 0 then
 	begin
 		LogString := Format(LogString, Args);
 		Log(LogLevel, MsgType, LogString);
@@ -99,7 +98,7 @@ end;
 
 procedure TTCLogger.Log(LogLevel, MsgType: Integer; LogString: WideString);
 begin
-	if CheckFlag(LogLevel, self.LogLevel) then
+	if (self.LogLevel and LogLevel) <> 0 then
 		LogProc(PluginNum, MsgType, PWideChar(LogString));
 end;
 

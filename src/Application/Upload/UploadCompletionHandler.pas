@@ -14,8 +14,7 @@ uses
 	WFXTypes,
 	CloudConstants,
 	RealPath,
-	CloudMailRu,
-	SystemHelper;
+	CloudMailRu;
 
 type
 	{Context for upload completion handling}
@@ -101,7 +100,7 @@ begin
 	ReportCompletion(Context.LocalName, Context.RemoteName);
 
 	{Delete local file if this is a move operation}
-	if CheckFlag(FS_COPYFLAGS_MOVE, Context.CopyFlags) then
+	if (Context.CopyFlags and FS_COPYFLAGS_MOVE) <> 0 then
 	begin
 		Result := HandleMoveOperation(Context.LocalName);
 		if Result <> FS_FILE_OK then

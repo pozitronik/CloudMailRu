@@ -47,7 +47,6 @@ implementation
 
 uses
 	WFXTypes,
-	SystemHelper,
 	PathHelper;
 
 constructor TUploadPreparationValidator.Create(FileExistsFunc: TFileExistsFunc);
@@ -77,21 +76,21 @@ begin
 	end;
 
 	{Resume is not supported by cloud API}
-	if CheckFlag(FS_COPYFLAGS_RESUME, CopyFlags) then
+	if (CopyFlags and FS_COPYFLAGS_RESUME) <> 0 then
 	begin
 		Result.ResultCode := FS_FILE_NOTSUPPORTED;
 		Exit;
 	end;
 
 	{Облако не поддерживает разные регистры - cloud doesn't support case-different names}
-	if (CheckFlag(FS_COPYFLAGS_EXISTS_SAMECASE, CopyFlags) or CheckFlag(FS_COPYFLAGS_EXISTS_DIFFERENTCASE, CopyFlags)) and not CheckFlag(FS_COPYFLAGS_OVERWRITE, CopyFlags) then
+	if (((CopyFlags and FS_COPYFLAGS_EXISTS_SAMECASE) <> 0) or ((CopyFlags and FS_COPYFLAGS_EXISTS_DIFFERENTCASE) <> 0)) and ((CopyFlags and FS_COPYFLAGS_OVERWRITE) = 0) then
 	begin
 		Result.ResultCode := FS_FILE_EXISTS;
 		Exit;
 	end;
 
 	{Check if overwrite is required}
-	Result.RequiresOverwrite := CheckFlag(FS_COPYFLAGS_OVERWRITE, CopyFlags);
+	Result.RequiresOverwrite := (CopyFlags and FS_COPYFLAGS_OVERWRITE) <> 0;
 
 	Result.ShouldProceed := True;
 end;

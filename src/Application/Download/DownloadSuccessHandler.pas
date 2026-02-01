@@ -20,8 +20,7 @@ uses
 	CloudDirItem,
 	CloudMailRu,
 	FileHelper,
-	DateTimeUtils,
-	SystemHelper;
+	DateTimeUtils;
 
 type
 	{Context for download success handling}
@@ -135,7 +134,7 @@ begin
 		PreserveFileTime(Context.LocalName, Context.Item.mtime);
 
 	{Delete remote file if this is a move operation}
-	if CheckFlag(FS_COPYFLAGS_MOVE, Context.CopyFlags) then
+	if (Context.CopyFlags and FS_COPYFLAGS_MOVE) <> 0 then
 		HandleMoveOperation(Context);
 
 	{Report progress and log completion}

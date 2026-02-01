@@ -43,7 +43,6 @@ uses
 	CloudConstants,
 	LanguageStrings,
 	SettingsConstants,
-	SystemHelper,
 	PathHelper;
 
 constructor TLocalFileConflictResolver.Create(Logger: ILogger);
@@ -58,7 +57,7 @@ begin
 	Result.ResultCode := FS_FILE_OK;
 
 	{If overwrite flag is set, always proceed}
-	if CheckFlag(FS_COPYFLAGS_OVERWRITE, CopyFlags) then
+	if (CopyFlags and FS_COPYFLAGS_OVERWRITE) <> 0 then
 		Exit;
 
 	{If file doesn't exist, proceed}

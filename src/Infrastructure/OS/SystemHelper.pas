@@ -4,11 +4,9 @@
 interface
 
 uses
-	SysUtils,
 	Windows;
 
 procedure ProcessMessages;
-function CheckFlag(Check: byte; Flags: LongInt): boolean; //Определяет, установлен ли указанный бит
 
 implementation
 
@@ -26,11 +24,6 @@ begin
 			DispatchMessage(Msg);
 		end;
 	end;
-end;
-
-function CheckFlag(Check: byte; Flags: LongInt): boolean; //Определяет, установлен ли указанный бит
-begin
-	Result := (Flags and Check) <> 0;
 end;
 
 end.

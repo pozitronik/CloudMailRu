@@ -38,8 +38,7 @@ type
 implementation
 
 uses
-	WFXTypes,
-	SystemHelper;
+	WFXTypes;
 
 function TDownloadPreparationValidator.Validate(const RemotePath: TRealPath; CopyFlags: Integer): TDownloadValidationResult;
 begin
@@ -47,7 +46,7 @@ begin
 	Result.ResultCode := FS_FILE_NOTSUPPORTED;
 
 	{Resume is not supported - NEVER CALLED HERE}
-	if CheckFlag(FS_COPYFLAGS_RESUME, CopyFlags) then
+	if (CopyFlags and FS_COPYFLAGS_RESUME) <> 0 then
 		Exit;
 
 	{Can't download from virtual directories}
