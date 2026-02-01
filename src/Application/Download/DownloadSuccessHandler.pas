@@ -19,7 +19,7 @@ uses
 	RealPath,
 	CloudDirItem,
 	CloudMailRu,
-	FileHelper,
+	WindowsFileSystem,
 	DateTimeUtils;
 
 type
@@ -55,6 +55,7 @@ type
 		FLogger: ILogger;
 		FProgress: IProgress;
 		FDescriptionSyncGuard: IDescriptionSyncGuard;
+		FFileSystem: IFileSystem;
 
 		{Verifies downloaded file hash matches expected hash.
 			@return True if hash matches or verification disabled/skipped}
@@ -69,7 +70,7 @@ type
 		{Reports completion progress and logs transfer}
 		procedure ReportCompletion(const LocalName, RemoteName: WideString);
 	public
-		constructor Create(Settings: IPluginSettingsManager; Logger: ILogger; Progress: IProgress; DescriptionSyncGuard: IDescriptionSyncGuard);
+		constructor Create(Settings: IPluginSettingsManager; Logger: ILogger; Progress: IProgress; DescriptionSyncGuard: IDescriptionSyncGuard; FileSystem: IFileSystem);
 
 		function HandleSuccess(const Context: TDownloadContext): Integer;
 	end;
@@ -85,13 +86,14 @@ end;
 
 {TDownloadSuccessHandler}
 
-constructor TDownloadSuccessHandler.Create(Settings: IPluginSettingsManager; Logger: ILogger; Progress: IProgress; DescriptionSyncGuard: IDescriptionSyncGuard);
+constructor TDownloadSuccessHandler.Create(Settings: IPluginSettingsManager; Logger: ILogger; Progress: IProgress; DescriptionSyncGuard: IDescriptionSyncGuard; FileSystem: IFileSystem);
 begin
 	inherited Create;
 	FSettings := Settings;
 	FLogger := Logger;
 	FProgress := Progress;
 	FDescriptionSyncGuard := DescriptionSyncGuard;
+	FFileSystem := FileSystem;
 end;
 
 function TDownloadSuccessHandler.VerifyCRC(const ResultHash, ExpectedHash: WideString): Boolean;
@@ -103,7 +105,7 @@ end;
 procedure TDownloadSuccessHandler.PreserveFileTime(const LocalName: WideString; UnixTime: Int64);
 begin
 	if UnixTime <> 0 then
-		SetAllFileTime(ExpandUNCFileName(LocalName), DateTimeToFileTime(UnixToDateTime(UnixTime)));
+		FFileSystem.SetFileTime(ExpandUNCFileName(LocalName), DateTimeToFileTime(UnixToDateTime(UnixTime)));
 end;
 
 procedure TDownloadSuccessHandler.HandleMoveOperation(const Context: TDownloadContext);

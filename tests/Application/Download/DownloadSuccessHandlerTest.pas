@@ -94,6 +94,7 @@ type
 		FLogger: TMockLogger;
 		FProgress: TMockProgress;
 		FSyncGuard: TMockDescriptionSyncGuard;
+		FFileSystem: IFileSystem;
 		FMockCloud: TCloudMailRu;
 
 		function CreateContext(const Hash, ExpectedHash: WideString; MoveFlag: Boolean): TDownloadContext;
@@ -304,6 +305,7 @@ begin
 	FLogger := TMockLogger.Create;
 	FProgress := TMockProgress.Create;
 	FSyncGuard := TMockDescriptionSyncGuard.Create;
+	FFileSystem := TNullFileSystem.Create;
 end;
 
 procedure TDownloadSuccessHandlerTest.TearDown;
@@ -313,6 +315,7 @@ begin
 	FLogger := nil;
 	FProgress := nil;
 	FSyncGuard := nil;
+	FFileSystem := nil;
 	FreeAndNil(FMockCloud);
 end;
 
@@ -354,7 +357,7 @@ end;
 
 procedure TDownloadSuccessHandlerTest.CreateHandler;
 begin
-	FHandler := TDownloadSuccessHandler.Create(FSettings, FLogger, FProgress, FSyncGuard);
+	FHandler := TDownloadSuccessHandler.Create(FSettings, FLogger, FProgress, FSyncGuard, FFileSystem);
 end;
 
 {Basic success}
@@ -503,6 +506,8 @@ begin
 	CloseHandle(FileHandle);
 
 	try
+		{Use real file system for file time modification test}
+		FFileSystem := TWindowsFileSystem.Create;
 		FSettings.SetPreserveFileTime(True);
 		CreateHandler;
 		Context := CreateContext('', '', False);
@@ -511,7 +516,7 @@ begin
 
 		FHandler.HandleSuccess(Context);
 
-		{Verify file still exists - SetAllFileTime was called}
+		{Verify file still exists - SetFileTime was called}
 		Assert.IsTrue(FileExists(TempFile), 'File should still exist after time modification');
 	finally
 		DeleteFile(TempFile);

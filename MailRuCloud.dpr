@@ -52,7 +52,6 @@ uses
 	OpenSSLCipher in 'src\Infrastructure\Cipher\OpenSSLCipher.pas',
 	BCryptProvider in 'src\Infrastructure\Cipher\BCryptProvider.pas',
 	BCryptCipher in 'src\Infrastructure\Cipher\BCryptCipher.pas',
-	FileHelper in 'src\Infrastructure\IO\FileHelper.pas',
 	FileSplitInfo in 'src\Infrastructure\IO\FileSplitInfo.pas',
 	HTTPManager in 'src\Infrastructure\HTTP\HTTPManager.pas',
 	HashInfo in 'src\Domain\ValueObjects\HashInfo.pas',

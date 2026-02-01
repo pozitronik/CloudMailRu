@@ -236,7 +236,6 @@
         <DCCReference Include="src\Domain\Services\Description.pas"/>
         <DCCReference Include="src\Infrastructure\Cipher\FileCipher.pas"/>
         <DCCReference Include="src\Infrastructure\Cipher\CipherStreams.pas"/>
-        <DCCReference Include="src\Infrastructure\IO\FileHelper.pas"/>
         <DCCReference Include="src\Infrastructure\IO\FileSplitInfo.pas"/>
         <DCCReference Include="src\Infrastructure\HTTP\HTTPManager.pas"/>
         <DCCReference Include="src\Domain\ValueObjects\HashInfo.pas"/>

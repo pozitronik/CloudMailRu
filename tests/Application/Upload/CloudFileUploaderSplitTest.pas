@@ -31,6 +31,7 @@ uses
 	System.Classes,
 	System.SysUtils,
 	System.IOUtils,
+	Winapi.Windows,
 	DUnitX.TestFramework;
 
 type
@@ -50,6 +51,7 @@ type
 		procedure WriteAllLines(const Path: WideString; Lines: TStrings; Encoding: TEncoding);
 		function OpenTextReader(const Path: WideString; Encoding: TEncoding): TStreamReader;
 		function GetTmpFileName(const Prefix: WideString = ''): WideString;
+		procedure SetFileTime(const Path: WideString; const FileTime: TFileTime);
 	end;
 
 	{Testable subclass that exposes protected PutFileSplit method}
@@ -119,7 +121,6 @@ type
 implementation
 
 uses
-	Windows,
 	FileSplitInfo,
 	FileCipher;
 
@@ -140,7 +141,7 @@ begin
 		Result := -1
 	else
 		try
-			Int64Rec(Result).Lo := Windows.GetFileSize(Handle, @Int64Rec(Result).Hi);
+			Int64Rec(Result).Lo := Winapi.Windows.GetFileSize(Handle, @Int64Rec(Result).Hi);
 		finally
 			CloseHandle(Handle);
 		end;
@@ -193,6 +194,11 @@ end;
 function TRealSizeFileSystem.GetTmpFileName(const Prefix: WideString): WideString;
 begin
 	Result := '';
+end;
+
+procedure TRealSizeFileSystem.SetFileTime(const Path: WideString; const FileTime: TFileTime);
+begin
+	{No-op - not needed for upload split tests}
 end;
 
 {TTestableCloudFileUploader}

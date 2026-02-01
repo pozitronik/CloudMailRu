@@ -57,6 +57,9 @@ type
 
 		{Creates a unique temporary file and returns its path. Caller must delete it when done.}
 		function GetTmpFileName(const Prefix: WideString = ''): WideString;
+
+		{Sets creation, access, and modification times on a file}
+		procedure SetFileTime(const Path: WideString; const FileTime: TFileTime);
 	end;
 
 	{Null implementation for testing - simulates empty/non-existent files}
@@ -73,6 +76,7 @@ type
 		procedure WriteAllLines(const Path: WideString; Lines: TStrings; Encoding: TEncoding);
 		function OpenTextReader(const Path: WideString; Encoding: TEncoding): TStreamReader;
 		function GetTmpFileName(const Prefix: WideString = ''): WideString;
+		procedure SetFileTime(const Path: WideString; const FileTime: TFileTime);
 	end;
 
 	{In-memory file system for testing - stores files in dictionary}
@@ -81,6 +85,8 @@ type
 		FFiles: TStringList; {Path -> Content mapping}
 		FTmpCounter: Integer;
 	public
+		SetFileTimeCalls: Integer; {Test helper: tracks SetFileTime invocations}
+
 		constructor Create;
 		destructor Destroy; override;
 
@@ -95,6 +101,7 @@ type
 		procedure WriteAllLines(const Path: WideString; Lines: TStrings; Encoding: TEncoding);
 		function OpenTextReader(const Path: WideString; Encoding: TEncoding): TStreamReader;
 		function GetTmpFileName(const Prefix: WideString = ''): WideString;
+		procedure SetFileTime(const Path: WideString; const FileTime: TFileTime);
 
 		{Test helper: set file content directly}
 		procedure SetFileContent(const Path: WideString; const Content: WideString);
@@ -118,6 +125,7 @@ type
 		procedure WriteAllLines(const Path: WideString; Lines: TStrings; Encoding: TEncoding);
 		function OpenTextReader(const Path: WideString; Encoding: TEncoding): TStreamReader;
 		function GetTmpFileName(const Prefix: WideString = ''): WideString;
+		procedure SetFileTime(const Path: WideString; const FileTime: TFileTime);
 	end;
 
 implementation
@@ -205,6 +213,11 @@ begin
 	Result := '';
 end;
 
+procedure TNullFileSystem.SetFileTime(const Path: WideString; const FileTime: TFileTime);
+begin
+	{No-op}
+end;
+
 {TMemoryFileSystem}
 
 constructor TMemoryFileSystem.Create;
@@ -213,6 +226,7 @@ begin
 	FFiles := TStringList.Create;
 	FFiles.CaseSensitive := False; {Windows-like behavior}
 	FTmpCounter := 0;
+	SetFileTimeCalls := 0;
 end;
 
 destructor TMemoryFileSystem.Destroy;
@@ -315,9 +329,15 @@ begin
 		Result := '';
 end;
 
+procedure TMemoryFileSystem.SetFileTime(const Path: WideString; const FileTime: TFileTime);
+begin
+	Inc(SetFileTimeCalls);
+end;
+
 procedure TMemoryFileSystem.Clear;
 begin
 	FFiles.Clear;
+	SetFileTimeCalls := 0;
 end;
 
 function TMemoryFileSystem.OpenTextReader(const Path: WideString; Encoding: TEncoding): TStreamReader;
@@ -486,6 +506,23 @@ begin
 	GetTempPathW(MAX_PATH, @TempDir);
 	GetTempFileNameW(TempDir, PWideChar(Prefix), 0, TempFile);
 	Result := StrPas(TempFile);
+end;
+
+procedure TWindowsFileSystem.SetFileTime(const Path: WideString; const FileTime: TFileTime);
+var
+	Handle: THandle;
+begin
+	Handle := INVALID_HANDLE_VALUE;
+	try
+		Handle := CreateFileW(PWideChar(GetUNCFilePath(Path)), FILE_WRITE_ATTRIBUTES, FILE_SHARE_READ or FILE_SHARE_WRITE, nil, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+		if Handle = INVALID_HANDLE_VALUE then
+			Exit;
+
+		Windows.SetFileTime(Handle, @FileTime, @FileTime, @FileTime);
+	finally
+		if Handle <> INVALID_HANDLE_VALUE then
+			CloseHandle(Handle);
+	end;
 end;
 
 end.

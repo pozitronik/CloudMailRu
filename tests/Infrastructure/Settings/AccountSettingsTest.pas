@@ -28,6 +28,14 @@ type
 		[Test]
 		procedure TestGetUserFromEmail;
 
+		{ Email parsing edge cases }
+		[Test]
+		procedure TestGetDomainFromEmailWithoutAt;
+		[Test]
+		procedure TestGetDomainFromEmailAtEnd;
+		[Test]
+		procedure TestGetUserFromEmailAtStart;
+
 		{ AuthMethod tests }
 		[Test]
 		procedure TestAuthMethodDefaultValue;
@@ -107,6 +115,42 @@ begin
 	{ Expected: 'testuser', but bug returns 'mail.ru' }
 	{ When the bug is fixed, this test will pass }
 	Assert.AreEqual('testuser', Settings.User);
+end;
+
+{ Email parsing edge cases }
+
+procedure TAccountSettingsTest.TestGetDomainFromEmailWithoutAt;
+var
+	Settings: TAccountSettings;
+begin
+	{ Email without @ should return empty domain }
+	Settings := Default(TAccountSettings);
+	Settings.Email := 'invalidemail';
+
+	Assert.AreEqual('', Settings.Domain);
+end;
+
+procedure TAccountSettingsTest.TestGetDomainFromEmailAtEnd;
+var
+	Settings: TAccountSettings;
+begin
+	{ @ at end means empty domain - parsing should not set it }
+	Settings := Default(TAccountSettings);
+	Settings.Email := 'user@';
+
+	Assert.AreEqual('', Settings.Domain);
+end;
+
+procedure TAccountSettingsTest.TestGetUserFromEmailAtStart;
+var
+	Settings: TAccountSettings;
+begin
+	{ @ at the start means empty username }
+	Settings := Default(TAccountSettings);
+	Settings.Email := '@domain.com';
+
+	Assert.AreEqual('', Settings.User);
+	Assert.AreEqual('domain.com', Settings.Domain);
 end;
 
 { AuthMethod tests }

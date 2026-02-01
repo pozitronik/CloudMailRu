@@ -44,7 +44,6 @@ uses
 	Controls,
 	Messages,
 	StringHelper,
-	FileHelper,
 	IconHelper,
 	StreamingSettings,
 	PasswordUIProvider,
@@ -316,7 +315,7 @@ begin
 		end);
 
 	{Create download success handler for post-download operations}
-	FDownloadSuccessHandler := TDownloadSuccessHandler.Create(SettingsManager, TCLogger, TCProgress, FDescriptionSyncGuard);
+	FDownloadSuccessHandler := TDownloadSuccessHandler.Create(SettingsManager, TCLogger, TCProgress, FDescriptionSyncGuard, FFileSystem);
 
 	{Create listing skip decider for FsFindFirst skip logic}
 	FListingSkipDecider := TListingSkipDecider.Create(FThreadState, TCProgress);

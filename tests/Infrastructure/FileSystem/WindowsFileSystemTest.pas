@@ -47,6 +47,8 @@ type
 		[Test]
 		procedure TestGetTmpFileName_ReturnsEmpty;
 		[Test]
+		procedure TestSetFileTime_NoOp;
+		[Test]
 		procedure TestImplementsIFileSystem;
 	end;
 
@@ -138,6 +140,8 @@ type
 		[Test]
 		procedure TestCaseInsensitive;
 		[Test]
+		procedure TestSetFileTime_TracksCalls;
+		[Test]
 		procedure TestImplementsIFileSystem;
 	end;
 
@@ -225,6 +229,12 @@ type
 		procedure TestGetTmpFileName_WithPrefix;
 		[Test]
 		procedure TestGetTmpFileName_ReturnsUniquePaths;
+
+		{ SetFileTime tests }
+		[Test]
+		procedure TestSetFileTime_SetsTimestamp;
+		[Test]
+		procedure TestSetFileTime_NonExistentFile_NoError;
 
 		[Test]
 		procedure TestImplementsIFileSystem;
@@ -345,6 +355,17 @@ end;
 procedure TNullFileSystemTest.TestGetTmpFileName_ReturnsEmpty;
 begin
 	Assert.AreEqual('', String(FFileSystem.GetTmpFileName));
+end;
+
+procedure TNullFileSystemTest.TestSetFileTime_NoOp;
+var
+	FileTime: TFileTime;
+begin
+	FileTime.dwLowDateTime := 0;
+	FileTime.dwHighDateTime := 0;
+	{Should not raise exception}
+	FFileSystem.SetFileTime('C:\any\file.txt', FileTime);
+	Assert.Pass('SetFileTime should complete without error');
 end;
 
 procedure TNullFileSystemTest.TestImplementsIFileSystem;
@@ -576,6 +597,19 @@ begin
 	FFileSystem.SetFileContent('C:\Test.txt', 'content');
 	Assert.IsTrue(FFileSystem.FileExists('C:\TEST.TXT'), 'Should be case insensitive');
 	Assert.IsTrue(FFileSystem.FileExists('C:\test.txt'), 'Should be case insensitive');
+end;
+
+procedure TMemoryFileSystemTest.TestSetFileTime_TracksCalls;
+var
+	FileTime: TFileTime;
+begin
+	FileTime.dwLowDateTime := 0;
+	FileTime.dwHighDateTime := 0;
+	Assert.AreEqual(0, FFileSystem.SetFileTimeCalls, 'Should start at zero');
+	FFileSystem.SetFileTime('C:\test.txt', FileTime);
+	Assert.AreEqual(1, FFileSystem.SetFileTimeCalls, 'Should track call');
+	FFileSystem.SetFileTime('C:\test2.txt', FileTime);
+	Assert.AreEqual(2, FFileSystem.SetFileTimeCalls, 'Should track second call');
 end;
 
 procedure TMemoryFileSystemTest.TestImplementsIFileSystem;
@@ -860,6 +894,45 @@ begin
 	FTempFiles.Add(TmpFile1);
 	FTempFiles.Add(TmpFile2);
 	Assert.AreNotEqual(TmpFile1, TmpFile2, 'Each call should return a unique path');
+end;
+
+procedure TWindowsFileSystemTest.TestSetFileTime_SetsTimestamp;
+var
+	TempFile: String;
+	NewTime, RetrievedTime: TFileTime;
+	SystemTime: TSystemTime;
+	Handle: THandle;
+begin
+	TempFile := CreateTempFile('test');
+
+	{Set a specific timestamp}
+	DateTimeToSystemTime(Now, SystemTime);
+	SystemTimeToFileTime(SystemTime, NewTime);
+
+	FFileSystem.SetFileTime(TempFile, NewTime);
+
+	{Verify timestamp was set}
+	Handle := FileOpen(TempFile, fmOpenRead);
+	Assert.IsTrue(Handle <> THandle(-1), 'Failed to open test file');
+	try
+		Assert.IsTrue(Windows.GetFileTime(Handle, @RetrievedTime, nil, nil), 'Failed to get file time');
+		Assert.IsTrue(CompareFileTime(NewTime, RetrievedTime) = 0, 'File creation time should match');
+	finally
+		FileClose(Handle);
+	end;
+end;
+
+procedure TWindowsFileSystemTest.TestSetFileTime_NonExistentFile_NoError;
+var
+	NewTime: TFileTime;
+	SystemTime: TSystemTime;
+begin
+	DateTimeToSystemTime(Now, SystemTime);
+	SystemTimeToFileTime(SystemTime, NewTime);
+
+	{Should not raise exception for non-existent file}
+	FFileSystem.SetFileTime(FTempDir + 'nonexistent_file_12345.txt', NewTime);
+	Assert.Pass('SetFileTime should handle non-existent files gracefully');
 end;
 
 procedure TWindowsFileSystemTest.TestImplementsIFileSystem;

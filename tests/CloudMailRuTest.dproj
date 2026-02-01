@@ -121,7 +121,6 @@
         <DCCReference Include="..\src\Infrastructure\Password\TCPasswordManager.pas"/>
         <DCCReference Include="Infrastructure\Password\TCPasswordManagerTest.pas"/>
         <DCCReference Include="..\src\Infrastructure\Logger\DebugHelper.pas"/>
-        <DCCReference Include="..\src\Infrastructure\IO\FileHelper.pas"/>
         <DCCReference Include="..\src\Infrastructure\IO\PathHelper.pas"/>
         <DCCReference Include="..\src\Presentation\UI\PluginForm.pas"/>
         <DCCReference Include="..\src\Infrastructure\Settings\ConnectionSettings.pas"/>
@@ -154,7 +153,6 @@
         <DCCReference Include="..\src\Infrastructure\Settings\PluginSettings.pas"/>
         <DCCReference Include="..\src\Infrastructure\Config\IniFilesHelper.pas"/>
         <DCCReference Include="..\src\Infrastructure\Settings\StreamingSettings.pas"/>
-        <DCCReference Include="Infrastructure\IO\FileHelperTest.pas"/>
         <DCCReference Include="Infrastructure\IO\PathHelperTest.pas"/>
         <DCCReference Include="Infrastructure\IO\StringHelperTest.pas"/>
         <DCCReference Include="..\src\Application\Retry\TokenRetryHelper.pas"/>
