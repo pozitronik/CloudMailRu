@@ -127,14 +127,14 @@ var
 begin
 	{Rename and move are different operations in the cloud API}
 	NewPath := ExtractUniversalFilePath(NewName);
-	SameDir := ExtractUniversalFilePath(OldName) = ExtractUniversalFilePath(NewName);
+	SameDir := ExtractUniversalFilePath(OldName) = NewPath;
 	SameName := ExtractUniversalFileName(OldName) = ExtractUniversalFileName(NewName);
 	if SameDir then
 	begin {Same directory - just rename}
 		Result := Rename(OldName, ExtractUniversalFileName(NewName));
 	end else begin
 		{Move will fail if file with old name exists in target directory}
-		Result := MoveToPath(OldName, ExtractUniversalFilePath(NewName));
+		Result := MoveToPath(OldName, NewPath);
 		if Result <> CLOUD_OPERATION_OK then
 			Exit;
 		if not(SameName) then
@@ -151,7 +151,7 @@ var
 begin
 	{Cloud can copy files but cannot rename during copy - workaround needed}
 	NewPath := ExtractUniversalFilePath(NewName);
-	SameDir := ExtractUniversalFilePath(OldName) = ExtractUniversalFilePath(NewName);
+	SameDir := ExtractUniversalFilePath(OldName) = NewPath;
 	SameName := ExtractUniversalFileName(OldName) = ExtractUniversalFileName(NewName);
 	if SameDir then
 	begin {Copy to same directory not supported - would need temp dir workaround}
