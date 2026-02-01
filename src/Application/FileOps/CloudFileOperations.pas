@@ -123,13 +123,10 @@ end;
 function TCloudFileOperations.Move(OldName, NewName: WideString): Integer;
 var
 	NewPath: WideString;
-	SameDir, SameName: Boolean;
 begin
 	{Rename and move are different operations in the cloud API}
 	NewPath := ExtractUniversalFilePath(NewName);
-	SameDir := ExtractUniversalFilePath(OldName) = NewPath;
-	SameName := ExtractUniversalFileName(OldName) = ExtractUniversalFileName(NewName);
-	if SameDir then
+	if (ExtractUniversalFilePath(OldName) = NewPath) then
 	begin {Same directory - just rename}
 		Result := Rename(OldName, ExtractUniversalFileName(NewName));
 	end else begin
@@ -137,7 +134,7 @@ begin
 		Result := MoveToPath(OldName, NewPath);
 		if Result <> CLOUD_OPERATION_OK then
 			Exit;
-		if not(SameName) then
+		if (ExtractUniversalFileName(OldName) <> ExtractUniversalFileName(NewName)) then
 		begin {File now sits in new directory with old name - rename it}
 			Result := Rename(Format('%s%s', [NewPath, ExtractUniversalFileName(OldName)]), ExtractUniversalFileName(NewName));
 		end;
@@ -147,13 +144,10 @@ end;
 function TCloudFileOperations.Copy(OldName, NewName: WideString): Integer;
 var
 	NewPath: WideString;
-	SameDir, SameName: Boolean;
 begin
 	{Cloud can copy files but cannot rename during copy - workaround needed}
 	NewPath := ExtractUniversalFilePath(NewName);
-	SameDir := ExtractUniversalFilePath(OldName) = NewPath;
-	SameName := ExtractUniversalFileName(OldName) = ExtractUniversalFileName(NewName);
-	if SameDir then
+	if (ExtractUniversalFilePath(OldName) = NewPath) then
 	begin {Copy to same directory not supported - would need temp dir workaround}
 		FLogger.Log(LOG_LEVEL_WARNING, MSGTYPE_IMPORTANTERROR, ERR_COPY_SAME_DIR_NOT_SUPPORTED);
 		Exit(FS_FILE_NOTSUPPORTED);
@@ -162,7 +156,7 @@ begin
 		if Result <> CLOUD_OPERATION_OK then
 			Exit;
 	end;
-	if not(SameName) then
+	if (ExtractUniversalFileName(OldName) <> ExtractUniversalFileName(NewName)) then
 	begin {Copied file now sits in new directory with old name - rename it}
 		Result := Rename(Format('%s%s', [NewPath, ExtractUniversalFileName(OldName)]), ExtractUniversalFileName(NewName));
 	end;
