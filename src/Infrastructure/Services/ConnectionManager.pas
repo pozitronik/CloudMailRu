@@ -232,10 +232,10 @@ var
 	ActionsList: TDictionary<Int32, WideString>;
 begin
 	Result := True;
-	PasswordActionRetry := False;
 	if CloudSettings.AccountSettings.EncryptFilesMode <> EncryptModeNone then
 	begin
 		repeat
+			PasswordActionRetry := False;
 			if not InitCloudCryptPasswords(ConnectionName, CloudSettings) then
 				exit(False);
 			if not FCipherValidator.CheckPasswordGUID(CloudSettings.CryptFilesPassword, CloudSettings.AccountSettings.CryptedGUIDFiles) then
