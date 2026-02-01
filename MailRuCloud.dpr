@@ -10,6 +10,7 @@ uses
 	AskPassword in 'src\Presentation\UI\Forms\AskPassword.pas' {AskPasswordForm} ,
 	CloudConstants in 'src\Domain\Constants\CloudConstants.pas',
 	CloudDirItem in 'src\Domain\ValueObjects\CloudDirItem.pas',
+	DateTimeUtils in 'src\Domain\Utils\DateTimeUtils.pas',
 	CloudDirItemList in 'src\Domain\ValueObjects\CloudDirItemList.pas',
 	CloudFileIdentity in 'src\Domain\ValueObjects\CloudFileIdentity.pas',
 	CloudIncomingInvite in 'src\Domain\ValueObjects\CloudIncomingInvite.pas',

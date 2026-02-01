@@ -23,11 +23,6 @@ type
 		[Test]
 		procedure TestCheckFlagZeroFlags;
 
-		{ DateTimeToFileTime tests }
-		[Test]
-		procedure TestDateTimeToFileTimeNotZero;
-		[Test]
-		procedure TestDateTimeToFileTimeKnownValue;
 	end;
 
 implementation
@@ -74,37 +69,6 @@ begin
 	Assert.IsFalse(CheckFlag(1, 0));
 	Assert.IsFalse(CheckFlag(2, 0));
 	Assert.IsFalse(CheckFlag(255, 0));
-end;
-
-{ DateTimeToFileTime tests }
-
-procedure TSystemHelperTest.TestDateTimeToFileTimeNotZero;
-var
-	TestDate: TDateTime;
-	FileTime: TFileTime;
-begin
-	{ Valid date should produce non-zero file time }
-	TestDate := EncodeDate(2020, 6, 15) + EncodeTime(12, 30, 0, 0);
-	FileTime := DateTimeToFileTime(TestDate);
-	Assert.IsTrue((FileTime.dwLowDateTime <> 0) or (FileTime.dwHighDateTime <> 0),
-		'DateTimeToFileTime should return non-zero value for valid date');
-end;
-
-procedure TSystemHelperTest.TestDateTimeToFileTimeKnownValue;
-var
-	TestDate: TDateTime;
-	FileTime: TFileTime;
-	SystemTime: TSystemTime;
-begin
-	{ Convert file time back to system time to verify }
-	TestDate := EncodeDate(2020, 1, 1) + EncodeTime(0, 0, 0, 0);
-	FileTime := DateTimeToFileTime(TestDate);
-
-	{ Convert back and verify the date components }
-	FileTimeToSystemTime(FileTime, SystemTime);
-	Assert.AreEqual(Word(2020), SystemTime.wYear);
-	Assert.AreEqual(Word(1), SystemTime.wMonth);
-	Assert.AreEqual(Word(1), SystemTime.wDay);
 end;
 
 initialization

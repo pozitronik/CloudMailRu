@@ -53,6 +53,8 @@ uses
 	BCryptCipher in '..\src\Infrastructure\Cipher\BCryptCipher.pas',
 	CloudDirItemList in '..\src\Domain\ValueObjects\CloudDirItemList.pas',
 	CloudDirItem in '..\src\Domain\ValueObjects\CloudDirItem.pas',
+	DateTimeUtils in '..\src\Domain\Utils\DateTimeUtils.pas',
+	DateTimeUtilsTest in 'Domain\Utils\DateTimeUtilsTest.pas',
 	JSONHelper in '..\src\Infrastructure\HTTP\JSONHelper.pas',
 	DCPblockciphers in '..\src\libs\DCPCrypt\DCPblockciphers.pas',
 	DCPcrypt2 in '..\src\libs\DCPCrypt\DCPcrypt2.pas',

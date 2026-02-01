@@ -9,7 +9,7 @@ interface
 uses
 	Windows, SysUtils, AnsiStrings, DateUtils,
 	CloudDirItem, CloudConstants, WFXTypes,
-	SystemHelper;
+	DateTimeUtils;
 
 type
 	{Context for fields that need external state (e.g., description field).
