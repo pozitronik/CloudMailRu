@@ -10,8 +10,6 @@ uses
 function GetUNCFilePath(FilePath: WideString): WideString;
 function GetLFCFilePath(FilePath: WideString): WideString; //UNC => LFC
 function IncludeSlash(const URL: WideString): WideString;
-function ChangePathFileName(const FilePath, NewFileName: WideString): WideString;
-function CopyExt(FromFilename, ToFilename: WideString): WideString;
 function PathToUrl(path: WideString; RestrictEmptyUrl: boolean = true; DoUrlEncode: boolean = true): WideString;
 function UrlToPath(URL: WideString): WideString;
 function ExtractUniversalFilePath(const FileName: string): string;
@@ -28,16 +26,6 @@ begin
 	Result := URL;
 	if not(Result[High(Result)] = '/') then
 		Result := Result + '/';
-end;
-
-function ChangePathFileName(const FilePath, NewFileName: WideString): WideString;
-begin
-	Result := ExtractUniversalFilePath(FilePath) + NewFileName;
-end;
-
-function CopyExt(FromFilename, ToFilename: WideString): WideString;
-begin
-	Result := ChangeFileExt(ToFilename, ExtractFileExt(FromFilename));
 end;
 
 function GetUNCFilePath(FilePath: WideString): WideString;

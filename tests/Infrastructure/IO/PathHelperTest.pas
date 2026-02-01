@@ -14,10 +14,6 @@ type
 		[Test]
 		procedure TestIncludeSlash;
 		[Test]
-		procedure TestChangePathFileName;
-		[Test]
-		procedure TestCopyExt;
-		[Test]
 		procedure TestGetUNCFilePath;
 		[Test]
 		procedure TestGetLFCFilePath;
@@ -36,24 +32,6 @@ type
 implementation
 
 {TPathHelperTest}
-
-procedure TPathHelperTest.TestCopyExt;
-var
-	FromFilename, ToFilename, ExpectedFilename: string;
-begin
-	// Case 1: Copying an extension to a filename without an extension
-	FromFilename := 'source.txt';
-	ToFilename := 'target';
-	ExpectedFilename := 'target.txt';
-	Assert.AreEqual(ExpectedFilename, CopyExt(FromFilename, ToFilename), 'CopyExt should copy the extension from source to target');
-
-	// Case 2: Overwriting an existing extension in the target filename
-	FromFilename := 'document.pdf';
-	ToFilename := 'report.doc';
-	ExpectedFilename := 'report.pdf';
-	Assert.AreEqual(ExpectedFilename, CopyExt(FromFilename, ToFilename), 'CopyExt should overwrite the existing extension in the target filename');
-
-end;
 
 procedure TPathHelperTest.TestExtractUniversalFileExt;
 var
@@ -343,17 +321,6 @@ begin
 	URL := '';
 	ExpectedResult := '';
 	Assert.AreEqual(ExpectedResult, UrlToPath(URL), 'Empty URL should return an empty string');
-end;
-
-procedure TPathHelperTest.TestChangePathFileName;
-var
-	FilePath, NewFileName, ExpectedResult: string;
-begin
-	FilePath := 'C:\TestDirectory\OldFileName.txt';
-	NewFileName := 'NewFileName.txt';
-	ExpectedResult := 'C:\TestDirectory\NewFileName.txt';
-
-	Assert.AreEqual(ExpectedResult, ChangePathFileName(FilePath, NewFileName), 'ChangePathFileName should correctly change the file name');
 end;
 
 initialization
