@@ -13,14 +13,6 @@ type
 	[TestFixture]
 	TSystemHelperTest = class
 	public
-		{ DateTimeToUnix tests }
-		[Test]
-		procedure TestDateTimeToUnixEpoch;
-		[Test]
-		procedure TestDateTimeToUnixKnownDate;
-		[Test]
-		procedure TestDateTimeToUnixYear2000;
-
 		{ CheckFlag tests }
 		[Test]
 		procedure TestCheckFlagSingleBitSet;
@@ -43,30 +35,6 @@ implementation
 {TSystemHelperTest}
 
 { DateTimeToUnix tests }
-
-procedure TSystemHelperTest.TestDateTimeToUnixEpoch;
-begin
-	{ Unix epoch is 1970-01-01 00:00:00 UTC, which is Delphi date 25569.0 }
-	Assert.AreEqual(0, DateTimeToUnix(25569.0));
-end;
-
-procedure TSystemHelperTest.TestDateTimeToUnixKnownDate;
-var
-	TestDate: TDateTime;
-begin
-	{ 2020-01-01 00:00:00 UTC = 1577836800 }
-	TestDate := EncodeDate(2020, 1, 1);
-	Assert.AreEqual(1577836800, DateTimeToUnix(TestDate));
-end;
-
-procedure TSystemHelperTest.TestDateTimeToUnixYear2000;
-var
-	TestDate: TDateTime;
-begin
-	{ 2000-01-01 00:00:00 UTC = 946684800 }
-	TestDate := EncodeDate(2000, 1, 1);
-	Assert.AreEqual(946684800, DateTimeToUnix(TestDate));
-end;
 
 { CheckFlag tests }
 

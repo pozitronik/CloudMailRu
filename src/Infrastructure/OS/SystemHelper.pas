@@ -8,7 +8,6 @@ uses
 	Windows;
 
 procedure ProcessMessages;
-function DateTimeToUnix(ConvDate: TDateTime): integer;
 function CheckFlag(Check: byte; Flags: LongInt): boolean; //Определяет, установлен ли указанный бит
 function DateTimeToFileTime(FileTime: TDateTime): TFileTime;
 
@@ -28,13 +27,6 @@ begin
 			DispatchMessage(Msg);
 		end;
 	end;
-end;
-
-function DateTimeToUnix(ConvDate: TDateTime): integer;
-const
-	UnixStartDate: TDateTime = 25569.0;
-begin
-	Result := Round((ConvDate - UnixStartDate) * 86400);
 end;
 
 function CheckFlag(Check: byte; Flags: LongInt): boolean; //Определяет, установлен ли указанный бит
