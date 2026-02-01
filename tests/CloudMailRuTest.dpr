@@ -30,7 +30,7 @@ uses
 	TCPasswordManagerTest in 'Infrastructure\Password\TCPasswordManagerTest.pas',
 	FileHelper in '..\src\Infrastructure\IO\FileHelper.pas',
 	PathHelper in '..\src\Infrastructure\IO\PathHelper.pas',
-	WindowsHelper in '..\src\Infrastructure\OS\WindowsHelper.pas',
+	PluginForm in '..\src\Presentation\UI\PluginForm.pas',
 	ConnectionSettings in '..\src\Infrastructure\Settings\ConnectionSettings.pas',
 	SettingsConstants in '..\src\Infrastructure\Settings\SettingsConstants.pas',
 	CloudConstants in '..\src\Domain\Constants\CloudConstants.pas',

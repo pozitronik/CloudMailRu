@@ -80,8 +80,7 @@ implementation
 
 uses
 	Windows,
-	IOUtils,
-	WindowsHelper;
+	IOUtils;
 
 const
 	TEST_DESCRIPTION_FILE = 'descript.ion';

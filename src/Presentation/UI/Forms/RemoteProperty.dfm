@@ -14,7 +14,6 @@ object PropertyForm: TPropertyForm
   Font.Style = []
   KeyPreview = True
   Position = poMainFormCenter
-  OnActivate = FormActivate
   OnKeyUp = FormKeyUp
   OnShow = FormShow
   DesignSize = (

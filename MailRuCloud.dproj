@@ -270,7 +270,7 @@
         <DCCReference Include="src\Infrastructure\Progress\TCProgress.pas"/>
         <DCCReference Include="src\Infrastructure\Request\TCRequest.pas"/>
         <DCCReference Include="src\Domain\ValueObjects\WSList.pas"/>
-        <DCCReference Include="src\Infrastructure\OS\WindowsHelper.pas"/>
+        <DCCReference Include="src\Presentation\UI\PluginForm.pas"/>
         <DCCReference Include="src\MailRuCloudWFX.pas"/>
         <DCCReference Include="src\WFXInterface.pas"/>
         <DCCReference Include="src\Infrastructure\Password\PasswordUIProvider.pas"/>

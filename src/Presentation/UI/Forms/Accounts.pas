@@ -14,7 +14,7 @@ uses
 	Vcl.StdCtrls,
 	IniFiles,
 	PathHelper,
-	WindowsHelper,
+	PluginForm,
 	SettingsConstants,
 	WFXTypes,
 	Vcl.ComCtrls,
@@ -35,7 +35,7 @@ uses
 	AccountsPresenter;
 
 type
-	TAccountsForm = class(TForm, IAccountsView)
+	TAccountsForm = class(TPluginForm, IAccountsView)
 		OptionPages: TPageControl;
 		AccountsTab: TTabSheet;
 		GlobalTab: TTabSheet;
@@ -146,11 +146,11 @@ type
 		PublicUrlLabel: TLabel;
 		PublicUrlEdit: TEdit;
 		ApplyButton: TButton;
-    NewExtButton: TButton;
-    DeleteExtButton: TButton;
-    StreamingExtensionsListView: TListView;
-    CipherProfileLabel: TLabel;
-    CipherProfileCombo: TComboBox;
+		NewExtButton: TButton;
+		DeleteExtButton: TButton;
+		StreamingExtensionsListView: TListView;
+		CipherProfileLabel: TLabel;
+		CipherProfileCombo: TComboBox;
 		procedure FormShow(Sender: TObject);
 		procedure AccountsListViewKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
 		procedure AccountsListViewSelectItem(Sender: TObject; Item: TListItem; Selected: Boolean);
@@ -164,7 +164,6 @@ type
 		procedure EncryptFilesPwdButtonClick(Sender: TObject);
 		procedure FieldChanged(Sender: TObject);
 		class function ShowAccounts(ParentWindow: HWND; PasswordManager: IPasswordManager; Account: WideString): Boolean;
-		procedure FormActivate(Sender: TObject);
 		procedure ProxyUserEditChange(Sender: TObject);
 		procedure GlobalSettingsApplyBtnClick(Sender: TObject);
 		procedure CloudMaxFileSizeCBClick(Sender: TObject);
@@ -813,9 +812,7 @@ begin
 	begin
 		StreamingExtensionsListView.Selected := StreamingExtensionsListView.Items[Index];
 		StreamingExtensionsListView.ItemFocused := StreamingExtensionsListView.Items[Index];
-	end
-	else
-	begin
+	end else begin
 		StreamingExtensionsListView.Selected := nil;
 		StreamingExtensionsListView.ItemFocused := nil;
 	end;
@@ -883,8 +880,8 @@ begin
 			Result := csrSave;
 		mrNo:
 			Result := csrDiscard;
-	else
-		Result := csrCancel;
+		else
+			Result := csrCancel;
 	end;
 end;
 
@@ -984,9 +981,7 @@ begin
 	begin
 		AccountsListView.Selected := AccountsListView.Items[Index];
 		AccountsListView.ItemFocused := AccountsListView.Items[Index];
-	end
-	else
-	begin
+	end else begin
 		AccountsListView.Selected := nil;
 		AccountsListView.ItemFocused := nil;
 	end;
@@ -1110,8 +1105,8 @@ begin
 			Result := csrSave;
 		mrNo:
 			Result := csrDiscard;
-	else
-		Result := csrCancel;
+		else
+			Result := csrCancel;
 	end;
 end;
 
@@ -1259,11 +1254,6 @@ end;
 procedure TAccountsForm.DeleteExtButtonClick(Sender: TObject);
 begin
 	FPresenter.OnDeleteStreamingExtensionClick;
-end;
-
-procedure TAccountsForm.FormActivate(Sender: TObject);
-begin
-	CenterWindow(Self.ParentWindow, Self.Handle);
 end;
 
 procedure TAccountsForm.FormKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);

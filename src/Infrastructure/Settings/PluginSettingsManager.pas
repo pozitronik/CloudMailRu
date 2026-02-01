@@ -8,7 +8,6 @@ uses
 	SysUtils,
 	FileHelper,
 	PathHelper,
-	WindowsHelper,
 	Windows,
 	SettingsConstants,
 	LanguageStrings,

@@ -14,10 +14,11 @@ uses
 	Vcl.Controls,
 	Vcl.Forms,
 	Vcl.Dialogs,
-	Vcl.StdCtrls;
+	Vcl.StdCtrls,
+	PluginForm;
 
 type
-	TInvitePropertyForm = class(TForm, IInvitePropertyView)
+	TInvitePropertyForm = class(TPluginForm, IInvitePropertyView)
 		InviteNameLB: TLabel;
 		InviteOwnerEmailLB: TLabel;
 		InviteOwnerNameLB: TLabel;

@@ -13,14 +13,14 @@ uses
 	Vcl.Forms,
 	Vcl.Dialogs,
 	Vcl.StdCtrls,
-	WindowsHelper,
+	PluginForm,
 	System.Generics.Collections,
 	AskPasswordPresenter,
 	LanguageStrings;
 
 type
 
-	TAskPasswordForm = class(TForm, IAskPasswordView)
+	TAskPasswordForm = class(TPluginForm, IAskPasswordView)
 		PasswordEditLabel: TLabel;
 		PasswordEdit: TEdit;
 		OkButton: TButton;
@@ -28,7 +28,6 @@ type
 
 		procedure PasswordEditChange(Sender: TObject);
 		procedure FormShow(Sender: TObject);
-		procedure FormActivate(Sender: TObject);
 		procedure FormKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
 	protected
 		FPresenter: TAskPasswordPresenter;
@@ -195,11 +194,6 @@ begin
 	finally
 		FreeAndNil(AskPasswordForm);
 	end;
-end;
-
-procedure TAskPasswordForm.FormActivate(Sender: TObject);
-begin
-	CenterWindow(Self.ParentWindow, Self.Handle);
 end;
 
 procedure TAskPasswordForm.FormKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);

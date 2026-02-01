@@ -123,7 +123,7 @@
         <DCCReference Include="..\src\Infrastructure\Logger\DebugHelper.pas"/>
         <DCCReference Include="..\src\Infrastructure\IO\FileHelper.pas"/>
         <DCCReference Include="..\src\Infrastructure\IO\PathHelper.pas"/>
-        <DCCReference Include="..\src\Infrastructure\OS\WindowsHelper.pas"/>
+        <DCCReference Include="..\src\Presentation\UI\PluginForm.pas"/>
         <DCCReference Include="..\src\Infrastructure\Settings\ConnectionSettings.pas"/>
         <DCCReference Include="..\src\Infrastructure\Settings\SettingsConstants.pas"/>
         <DCCReference Include="..\src\Domain\Constants\CloudConstants.pas"/>
@@ -172,7 +172,7 @@
         <DCCReference Include="Infrastructure\HTTP\SafeJSONTest.pas"/>
         <DCCReference Include="Infrastructure\Config\IniFilesHelperTest.pas"/>
         <DCCReference Include="Infrastructure\Config\IniConfigFileTest.pas"/>
-        <DCCReference Include="Infrastructure\OS\WindowsHelperTest.pas"/>
+        <DCCReference Include="Infrastructure\Protocol\WFXTypesTest.pas"/>
         <DCCReference Include="Domain\ValueObjects\CloudDirItemListTest.pas"/>
         <DCCReference Include="Domain\ValueObjects\CloudOAuthTest.pas"/>
         <DCCReference Include="Domain\ValueObjects\CloudIncomingInviteTest.pas"/>

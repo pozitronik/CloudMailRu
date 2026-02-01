@@ -13,7 +13,6 @@ object AskPasswordForm: TAskPasswordForm
   Font.Style = []
   KeyPreview = True
   Position = poOwnerFormCenter
-  OnActivate = FormActivate
   OnKeyUp = FormKeyUp
   OnShow = FormShow
   TextHeight = 13

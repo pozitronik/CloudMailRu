@@ -27,7 +27,7 @@ uses
 	CloudMailRu,
 	CloudMailRuFactory,
 	CloudAccessMapper,
-	WindowsHelper,
+	PluginForm,
 	TCHandler,
 	SystemHelper,
 	Vcl.Grids,
@@ -47,7 +47,7 @@ const
 
 type
 	{Properties dialog form implementing IRemotePropertyView}
-	TPropertyForm = class(TForm, IRemotePropertyView)
+	TPropertyForm = class(TPluginForm, IRemotePropertyView)
 		PublicLinkLabel: TLabel;
 		WebLink: TEdit;
 		AccessCB: TCheckBox;
@@ -91,7 +91,6 @@ type
 		ApplyHashesTB: TToolButton;
 		procedure AccessCBClick(Sender: TObject);
 		class function ShowProperty(parentWindow: HWND; RemoteName: WideString; RemoteProperty: TCloudDirItem; Cloud: TCloudMailRu; FileSystem: IFileSystem; TCHandler: ITCHandler; DoUrlEncode: Boolean = true; AutoUpdateDownloadListing: Boolean = true; ShowDescription: Boolean = true; EditDescription: Boolean = true; PluginIonFileName: WideString = 'descript.ion'): Integer;
-		procedure FormActivate(Sender: TObject);
 		procedure InviteBtnClick(Sender: TObject);
 		procedure ItemDeleteClick(Sender: TObject);
 		procedure ItemRefreshClick(Sender: TObject);
@@ -408,11 +407,6 @@ end;
 procedure TPropertyForm.AccessCBClick(Sender: TObject);
 begin
 	FPresenter.OnPublishChanged(AccessCB.Checked);
-end;
-
-procedure TPropertyForm.FormActivate(Sender: TObject);
-begin
-	CenterWindow(parentWindow, Handle);
 end;
 
 procedure TPropertyForm.FormKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);

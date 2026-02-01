@@ -1,18 +1,25 @@
-unit WindowsHelper;
+unit PluginForm;
 
-{Windows & Shell & related stuff helper methods}
+{Base form class for all plugin dialog forms.
+	Provides automatic centering relative to the TC parent window.}
+
 interface
 
 uses
+	Vcl.Forms,
 	Windows,
 	Math,
 	MultiMon;
 
-procedure CenterWindow(WindowToStay, WindowToCenter: HWND);
+type
+	TPluginForm = class(TForm)
+	protected
+		procedure Activate; override;
+	end;
 
 implementation
 
-procedure CenterWindow(WindowToStay, WindowToCenter: HWND);
+procedure TPluginForm.Activate;
 var
 	R1: TRect;
 	R2: TRect;
@@ -22,9 +29,12 @@ var
 	x: integer;
 	Y: integer;
 begin
-	GetWindowRect(WindowToStay, R1);
-	GetWindowRect(WindowToCenter, R2);
-	Monitor := MonitorFromWindow(WindowToStay, MONITOR_DEFAULTTONEAREST);
+	inherited;
+	if ParentWindow = 0 then
+		Exit;
+	GetWindowRect(ParentWindow, R1);
+	GetWindowRect(Handle, R2);
+	Monitor := MonitorFromWindow(ParentWindow, MONITOR_DEFAULTTONEAREST);
 	MonInfo.cbSize := SizeOf(MonInfo);
 	GetMonitorInfo(Monitor, @MonInfo);
 	MonRect := MonInfo.rcWork;
@@ -35,7 +45,7 @@ begin
 	end;
 	x := Max(MonRect.Left, Min(x, MonRect.Right - R2.Right + R2.Left));
 	Y := Max(MonRect.Top, Min(Y, MonRect.Bottom - R2.Bottom + R2.Top));
-	SetWindowPos(WindowToCenter, 0, x, Y, 0, 0, SWP_NOACTIVATE or SWP_NOOWNERZORDER or SWP_NOSIZE or SWP_NOZORDER);
+	SetWindowPos(Handle, 0, x, Y, 0, 0, SWP_NOACTIVATE or SWP_NOOWNERZORDER or SWP_NOSIZE or SWP_NOZORDER);
 end;
 
 end.

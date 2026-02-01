@@ -8,7 +8,6 @@ uses
 	SysUtils,
 	Variants,
 	Classes,
-	WindowsHelper,
 	Windows,
 	LanguageStrings,
 	SettingsConstants,

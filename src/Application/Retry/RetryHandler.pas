@@ -77,7 +77,6 @@ uses
 	SettingsConstants,
 	CloudConstants,
 	TCLogger,
-	WindowsHelper,
 	SystemHelper;
 
 const

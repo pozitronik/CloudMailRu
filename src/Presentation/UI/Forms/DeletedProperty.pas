@@ -15,10 +15,11 @@ uses
 	Vcl.Controls,
 	Vcl.Forms,
 	Vcl.Dialogs,
-	Vcl.StdCtrls;
+	Vcl.StdCtrls,
+	PluginForm;
 
 type
-	TDeletedPropertyForm = class(TForm, IDeletedPropertyView)
+	TDeletedPropertyForm = class(TPluginForm, IDeletedPropertyView)
 		DelNameLB: TLabel;
 		DelFromLB: TLabel;
 		DelAtLB: TLabel;

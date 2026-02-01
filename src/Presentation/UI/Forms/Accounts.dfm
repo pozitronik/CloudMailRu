@@ -148,7 +148,6 @@ object AccountsForm: TAccountsForm
     000000000000000000000000000000000000000000000000000000000000}
   KeyPreview = True
   Position = poOwnerFormCenter
-  OnActivate = FormActivate
   OnKeyUp = FormKeyUp
   OnShow = FormShow
   TextHeight = 13
