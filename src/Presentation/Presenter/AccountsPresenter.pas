@@ -646,6 +646,10 @@ begin
 		AccSettings.Password := '';
 	end;
 
+	{Detect account rename: old section must be replaced with the new one}
+	if (FSelectedAccount <> '') and (FSelectedAccount <> AccSettings.Account) then
+		FAccountsManager.RenameAccount(FSelectedAccount, AccSettings.Account);
+
 	FAccountsManager.SetAccountSettings(AccSettings);
 	Result := True;
 end;

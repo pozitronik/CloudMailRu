@@ -23,6 +23,7 @@ type
 		procedure SetAccountSettings(Account: WideString; AccountSettings: TAccountSettings); overload;
 		procedure SetAccountSettings(AccountSettings: TAccountSettings); overload;
 		procedure DeleteAccount(Account: WideString);
+		procedure RenameAccount(const OldName, NewName: WideString);
 		procedure SwitchPasswordStorage(Account: WideString);
 		procedure SetCryptedGUID(Account: WideString; GUID: WideString);
 	end;
@@ -35,6 +36,7 @@ type
 		procedure SetAccountSettings(Account: WideString; AccountSettings: TAccountSettings); overload;
 		procedure SetAccountSettings(AccountSettings: TAccountSettings); overload;
 		procedure DeleteAccount(Account: WideString);
+		procedure RenameAccount(const OldName, NewName: WideString);
 		procedure SwitchPasswordStorage(Account: WideString);
 		procedure SetCryptedGUID(Account: WideString; GUID: WideString);
 	end;
@@ -51,6 +53,7 @@ type
 		procedure SetAccountSettings(Account: WideString; AccountSettings: TAccountSettings); overload;
 		procedure SetAccountSettings(AccountSettings: TAccountSettings); overload;
 		procedure DeleteAccount(Account: WideString);
+		procedure RenameAccount(const OldName, NewName: WideString);
 		procedure SetCryptedGUID(Account: WideString; GUID: WideString);
 		procedure SwitchPasswordStorage(Account: WideString); //clears the account password from INI for account and sets 'managed by TC' flag
 
@@ -82,6 +85,11 @@ begin
 end;
 
 procedure TNullAccountsManager.DeleteAccount(Account: WideString);
+begin
+	{No-op for null implementation}
+end;
+
+procedure TNullAccountsManager.RenameAccount(const OldName, NewName: WideString);
 begin
 	{No-op for null implementation}
 end;
@@ -128,6 +136,29 @@ end;
 procedure TAccountsManager.DeleteAccount(Account: WideString);
 begin
 	FConfigFile.EraseSection(Account);
+end;
+
+procedure TAccountsManager.RenameAccount(const OldName, NewName: WideString);
+var
+	Settings: TAccountSettings;
+begin
+	if OldName = NewName then
+		Exit;
+
+	{Copy all persisted fields to new section, then remove the old one.
+	 SetAccountSettings does not write read-only fields (CryptedGUID, shard/upload
+	 overrides), so we transfer them explicitly.}
+	Settings := GetAccountSettings(OldName);
+	SetAccountSettings(NewName, Settings);
+
+	if Settings.CryptedGUIDFiles <> '' then
+		FConfigFile.WriteString(NewName, 'CryptedGUID_files', Settings.CryptedGUIDFiles);
+	if Settings.ShardOverride <> '' then
+		FConfigFile.WriteString(NewName, 'shard_override', Settings.ShardOverride);
+	if Settings.UploadUrlOverride <> '' then
+		FConfigFile.WriteString(NewName, 'upload_url_override', Settings.UploadUrlOverride);
+
+	FConfigFile.EraseSection(OldName);
 end;
 
 function TAccountsManager.GetAccountSettings(Account: WideString): TAccountSettings;

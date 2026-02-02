@@ -64,6 +64,7 @@ type
 		procedure SetAccountSettings(Account: WideString; Settings: TAccountSettings); overload;
 		procedure SetAccountSettings(Settings: TAccountSettings); overload;
 		procedure DeleteAccount(Account: WideString);
+		procedure RenameAccount(const OldName, NewName: WideString);
 		procedure SwitchPasswordStorage(Account: WideString);
 		procedure SetCryptedGUID(Account: WideString; GUID: WideString);
 		property SwitchPasswordStorageCalled: Boolean read FSwitchPasswordStorageCalled;
@@ -190,6 +191,10 @@ begin
 end;
 
 procedure TMockAccountsManagerForCredentials.DeleteAccount(Account: WideString);
+begin
+end;
+
+procedure TMockAccountsManagerForCredentials.RenameAccount(const OldName, NewName: WideString);
 begin
 end;
 

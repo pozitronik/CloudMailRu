@@ -50,6 +50,16 @@ type
 		{Verifies CipherProfileId survives write-read-write-read cycle across different accounts}
 		procedure TestCipherProfileIdRoundtrip;
 
+		[Test]
+		{Verifies all settings are accessible under the new name after rename}
+		procedure TestRenameAccount_PreservesSettings;
+		[Test]
+		{Verifies old section no longer exists after rename}
+		procedure TestRenameAccount_DeletesOldSection;
+		[Test]
+		{Verifies renaming to the same name does not crash or lose data}
+		procedure TestRenameAccount_SameName_NoError;
+
 	end;
 
 	[TestFixture]
@@ -377,6 +387,90 @@ begin
 		Assert.AreEqual('dcpcrypt-twofish256-cfb8-sha256', FirstLoaded.CipherProfileId);
 		Assert.AreEqual('dcpcrypt-twofish256-cfb8-sha256', SecondLoaded.CipherProfileId);
 		Assert.AreEqual(FirstLoaded.CipherProfileId, SecondLoaded.CipherProfileId);
+	finally
+		TestAccountsManager.Free;
+	end;
+end;
+
+procedure TAccountsManagerTest.TestRenameAccount_PreservesSettings;
+var
+	TestAccountsManager: TAccountsManager;
+	Original, Loaded: TAccountSettings;
+begin
+	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(self.AppDir + FP_ACCOUNTS_INI));
+	try
+		Original := Default(TAccountSettings);
+		Original.Account := 'OLD_NAME';
+		Original.Email := 'rename@mail.ru';
+		Original.Password := 'secret';
+		Original.UseTCPasswordManager := True;
+		Original.UnlimitedFileSize := True;
+		Original.SplitLargeFiles := True;
+		Original.EncryptFilesMode := EncryptModeAlways;
+
+		TestAccountsManager.SetAccountSettings(Original);
+		TestAccountsManager.SetCryptedGUID('OLD_NAME', 'test-guid-value');
+
+		TestAccountsManager.RenameAccount('OLD_NAME', 'NEW_NAME');
+
+		Loaded := TestAccountsManager.GetAccountSettings('NEW_NAME');
+		Assert.AreEqual('rename@mail.ru', Loaded.Email, 'Email should be preserved');
+		Assert.AreEqual('secret', Loaded.Password, 'Password should be preserved');
+		Assert.IsTrue(Loaded.UseTCPasswordManager, 'UseTCPasswordManager should be preserved');
+		Assert.IsTrue(Loaded.UnlimitedFileSize, 'UnlimitedFileSize should be preserved');
+		Assert.IsTrue(Loaded.SplitLargeFiles, 'SplitLargeFiles should be preserved');
+		Assert.AreEqual(EncryptModeAlways, Loaded.EncryptFilesMode, 'EncryptFilesMode should be preserved');
+		Assert.AreEqual('test-guid-value', Loaded.CryptedGUIDFiles, 'CryptedGUID should be preserved');
+	finally
+		TestAccountsManager.Free;
+	end;
+end;
+
+procedure TAccountsManagerTest.TestRenameAccount_DeletesOldSection;
+var
+	TestAccountsManager: TAccountsManager;
+	Original, Loaded: TAccountSettings;
+	AccountsList: TWSList;
+begin
+	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(self.AppDir + FP_ACCOUNTS_INI));
+	try
+		Original := Default(TAccountSettings);
+		Original.Account := 'BEFORE_RENAME';
+		Original.Email := 'before@mail.ru';
+		TestAccountsManager.SetAccountSettings(Original);
+
+		TestAccountsManager.RenameAccount('BEFORE_RENAME', 'AFTER_RENAME');
+
+		{Old name should return empty defaults}
+		Loaded := TestAccountsManager.GetAccountSettings('BEFORE_RENAME');
+		Assert.IsEmpty(Loaded.Email, 'Old section should be deleted');
+
+		{Old name should not appear in accounts list}
+		AccountsList := TestAccountsManager.GetAccountsList;
+		Assert.IsFalse(AccountsList.Contains('BEFORE_RENAME'), 'Old account should not be in list');
+		Assert.IsTrue(AccountsList.Contains('AFTER_RENAME'), 'New account should be in list');
+	finally
+		TestAccountsManager.Free;
+	end;
+end;
+
+procedure TAccountsManagerTest.TestRenameAccount_SameName_NoError;
+var
+	TestAccountsManager: TAccountsManager;
+	Original, Loaded: TAccountSettings;
+begin
+	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(self.AppDir + FP_ACCOUNTS_INI));
+	try
+		Original := Default(TAccountSettings);
+		Original.Account := 'SAME_NAME';
+		Original.Email := 'same@mail.ru';
+		TestAccountsManager.SetAccountSettings(Original);
+
+		{Renaming to same name should be a no-op}
+		TestAccountsManager.RenameAccount('SAME_NAME', 'SAME_NAME');
+
+		Loaded := TestAccountsManager.GetAccountSettings('SAME_NAME');
+		Assert.AreEqual('same@mail.ru', Loaded.Email, 'Data should be intact after identity rename');
 	finally
 		TestAccountsManager.Free;
 	end;

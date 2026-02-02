@@ -46,6 +46,7 @@ type
 		procedure SetAccountSettings(Account: WideString; Settings: TAccountSettings); overload;
 		procedure SetAccountSettings(Settings: TAccountSettings); overload;
 		procedure DeleteAccount(Account: WideString);
+		procedure RenameAccount(const OldName, NewName: WideString);
 		procedure SwitchPasswordStorage(Account: WideString);
 		procedure SetCryptedGUID(Account: WideString; GUID: WideString);
 		property AccountSettings: TAccountSettings read FAccountSettings write FAccountSettings;
@@ -190,6 +191,11 @@ end;
 procedure TMockAccountsManager.DeleteAccount(Account: WideString);
 begin
 	FDeleteAccountCalled := True;
+end;
+
+procedure TMockAccountsManager.RenameAccount(const OldName, NewName: WideString);
+begin
+	{No-op for mock}
 end;
 
 procedure TMockAccountsManager.SwitchPasswordStorage(Account: WideString);

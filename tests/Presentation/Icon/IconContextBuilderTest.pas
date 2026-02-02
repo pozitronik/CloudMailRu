@@ -36,6 +36,7 @@ type
 		procedure SetAccountSettings(Account: WideString; AccountSettings: TAccountSettings); overload;
 		procedure SetAccountSettings(AccountSettings: TAccountSettings); overload;
 		procedure DeleteAccount(Account: WideString);
+		procedure RenameAccount(const OldName, NewName: WideString);
 		procedure SwitchPasswordStorage(Account: WideString);
 		procedure SetCryptedGUID(Account: WideString; GUID: WideString);
 	end;
@@ -145,6 +146,11 @@ begin
 end;
 
 procedure TMockAccountsManager.DeleteAccount(Account: WideString);
+begin
+	{No-op for mock}
+end;
+
+procedure TMockAccountsManager.RenameAccount(const OldName, NewName: WideString);
 begin
 	{No-op for mock}
 end;

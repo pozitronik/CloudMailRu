@@ -545,6 +545,14 @@ type
 		procedure TestCipherProfileSavedOnApply;
 		[Test]
 		procedure TestCipherProfileLoadedForAccount;
+
+		{Account rename tests}
+		[Test]
+		{Verifies Apply with a changed name renames the old section and keeps data under the new name}
+		procedure TestApplyAccount_WithChangedName_RenamesAccount;
+		[Test]
+		{Verifies Apply with the same name does not delete anything}
+		procedure TestApplyAccount_SameName_DoesNotRename;
 	end;
 
 implementation
@@ -2981,6 +2989,62 @@ begin
 
 	{Verify the profile index was set (Twofish is index 2)}
 	Assert.AreEqual(2, FView.CipherProfileIndex, 'Cipher profile should be set to Twofish index');
+end;
+
+procedure TAccountsPresenterTest.TestApplyAccount_WithChangedName_RenamesAccount;
+var
+	AccSettings: TAccountSettings;
+	AccountsList: TWSList;
+begin
+	{Create account under original name}
+	AccSettings := Default(TAccountSettings);
+	AccSettings.Account := 'OriginalName';
+	AccSettings.Email := 'orig@mail.ru';
+	FAccountsManager.SetAccountSettings(AccSettings);
+
+	{Initialize and select the account so FSelectedAccount is set}
+	FPresenter.Initialize('OriginalName');
+
+	{Change name in the view and apply}
+	FView.SetAccountName('RenamedAccount');
+	FView.SetEmail('orig@mail.ru');
+	FPresenter.OnApplyAccountClick;
+
+	{Old section should be gone}
+	AccountsList := FAccountsManager.GetAccountsList;
+	Assert.IsFalse(AccountsList.Contains('OriginalName'), 'Old account should be deleted');
+
+	{New section should exist with correct data}
+	Assert.IsTrue(AccountsList.Contains('RenamedAccount'), 'New account should exist');
+	AccSettings := FAccountsManager.GetAccountSettings('RenamedAccount');
+	Assert.AreEqual('orig@mail.ru', AccSettings.Email, 'Email should be preserved under new name');
+end;
+
+procedure TAccountsPresenterTest.TestApplyAccount_SameName_DoesNotRename;
+var
+	AccSettings: TAccountSettings;
+	AccountsList: TWSList;
+begin
+	{Create account}
+	AccSettings := Default(TAccountSettings);
+	AccSettings.Account := 'KeepName';
+	AccSettings.Email := 'keep@mail.ru';
+	FAccountsManager.SetAccountSettings(AccSettings);
+
+	{Initialize and select the account}
+	FPresenter.Initialize('KeepName');
+
+	{Apply without changing name}
+	FView.SetAccountName('KeepName');
+	FView.SetEmail('updated@mail.ru');
+	FPresenter.OnApplyAccountClick;
+
+	{Account should still exist under the same name}
+	AccountsList := FAccountsManager.GetAccountsList;
+	Assert.IsTrue(AccountsList.Contains('KeepName'), 'Account should still exist');
+	Assert.AreEqual(1, AccountsList.Count, 'Should still be exactly one account');
+	AccSettings := FAccountsManager.GetAccountSettings('KeepName');
+	Assert.AreEqual('updated@mail.ru', AccSettings.Email, 'Email should be updated');
 end;
 
 initialization
