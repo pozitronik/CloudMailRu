@@ -63,9 +63,13 @@ begin
 end;
 
 class procedure TCloudOperationResultJsonAdapter.Parse(const JSON: WideString; out OperationResult: TCloudOperationResult);
+const
+	{Cloud API returns errors under different body keys depending on the operation type}
+	BodyErrorKeys: array[0..2] of WideString = (NAME_HOME, NAME_WEBLINK, NAME_INVITE_EMAIL);
 var
 	Root, Body, ErrorNode: TSafeJSON;
 	Error: WideString;
+	I: Integer;
 begin
 	OperationResult := Default(TCloudOperationResult);
 	OperationResult.OperationResult := CLOUD_ERROR_UNKNOWN;
@@ -108,39 +112,17 @@ begin
 		if Body.IsNull or not Body.IsObject then
 			Exit;
 
-		{Try body.home.error}
-		ErrorNode := Body.Get(NAME_HOME);
-		if not ErrorNode.IsNull then
+ 		for I := Low(BodyErrorKeys) to High(BodyErrorKeys) do
 		begin
-			Error := ErrorNode.Get(NAME_ERROR).AsString;
-			if Error <> '' then
+			ErrorNode := Body.Get(BodyErrorKeys[I]);
+			if not ErrorNode.IsNull then
 			begin
-				OperationResult.OperationResult := MapErrorToResult(Error);
-				Exit;
-			end;
-		end;
-
-		{Try body.weblink.error}
-		ErrorNode := Body.Get(NAME_WEBLINK);
-		if not ErrorNode.IsNull then
-		begin
-			Error := ErrorNode.Get(NAME_ERROR).AsString;
-			if Error <> '' then
-			begin
-				OperationResult.OperationResult := MapErrorToResult(Error);
-				Exit;
-			end;
-		end;
-
-		{Try body.invite_email.error}
-		ErrorNode := Body.Get(NAME_INVITE_EMAIL);
-		if not ErrorNode.IsNull then
-		begin
-			Error := ErrorNode.Get(NAME_ERROR).AsString;
-			if Error <> '' then
-			begin
-				OperationResult.OperationResult := MapErrorToResult(Error);
-				Exit;
+				Error := ErrorNode.Get(NAME_ERROR).AsString;
+				if Error <> '' then
+				begin
+					OperationResult.OperationResult := MapErrorToResult(Error);
+					Exit;
+				end;
 			end;
 		end;
 
