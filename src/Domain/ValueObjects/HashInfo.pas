@@ -33,10 +33,7 @@ type
 implementation
 
 {THashInfo}
-(*Парсер параметров команды hash. Корректный формат параметра:
-	hash:size:name
-	hash:size
-*)
+{Hash command parameter parser. Valid format: hash:size:name or hash:size}
 constructor THashInfo.Create(parameter: WideString; doClean: boolean = true);
 const
 	divisor = ':';
@@ -44,9 +41,9 @@ var
 	divisor_position: integer;
 	sizeString: WideString;
 begin
-	if doClean then //команда может быть передана полностью, нужно определить и выпарсить параметр
+	if doClean then {Command may be passed in full; need to detect and extract the parameter}
 	begin
-		if (1 = Pos(WideString('hash '), parameter)) then //это команда, чистим
+		if (1 = Pos(WideString('hash '), parameter)) then {This is a command, strip prefix}
 		begin
 			parameter := copy(parameter, 6, length(parameter) - 5);
 			parameter := string(parameter).Trim(['"']);

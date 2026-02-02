@@ -144,16 +144,16 @@ type
 		{MAIN ROUTINES}
 		procedure Head(URL: WideString);
 
-		function GetPage(URL: WideString; var Answer: WideString; var ProgressEnabled: Boolean): Boolean; //если ProgressEnabled - включаем обработчик onWork, возвращаем ProgressEnabled=false при отмене
+		function GetPage(URL: WideString; var Answer: WideString; var ProgressEnabled: Boolean): Boolean; {If ProgressEnabled, enable onWork handler; returns ProgressEnabled=false on cancel}
 		function GetFile(URL: WideString; FileStream: TStream; LogErrors: Boolean = True): Integer;
 		function GetRedirection(URL: WideString; var RedirectionURL: WideString; var ProgressEnabled: Boolean): Boolean;
 
-		function PostForm(URL: WideString; PostDataString: WideString; var Answer: WideString; ContentType: WideString = 'application/x-www-form-urlencoded'; LogErrors: Boolean = True; ProgressEnabled: Boolean = True): Boolean; //Постинг данных с возможным получением ответа.
+		function PostForm(URL: WideString; PostDataString: WideString; var Answer: WideString; ContentType: WideString = 'application/x-www-form-urlencoded'; LogErrors: Boolean = True; ProgressEnabled: Boolean = True): Boolean; {Post data with optional response}
 		function PostMultipart(URL: WideString; Params: TDictionary<WideString, WideString>; var Answer: WideString): Boolean;
-		function PostFile(URL: WideString; FileName: WideString; FileStream: TStream; var Answer: WideString): Integer; overload; //Постинг потока данных как файла
+		function PostFile(URL: WideString; FileName: WideString; FileStream: TStream; var Answer: WideString): Integer; overload; {Post data stream as file}
 
-		function Post(URL: WideString; PostData, ResultData: TStringStream; UnderstandResponseCode: Boolean = false; ContentType: WideString = ''; LogErrors: Boolean = True; ProgressEnabled: Boolean = True): Integer; overload; //Постинг подготовленных данных, отлов ошибок
-		function Post(URL: WideString; var PostData: TIdMultiPartFormDataStream; ResultData: TStringStream): Integer; overload; //TIdMultiPartFormDataStream should be passed via var
+		function Post(URL: WideString; PostData, ResultData: TStringStream; UnderstandResponseCode: Boolean = false; ContentType: WideString = ''; LogErrors: Boolean = True; ProgressEnabled: Boolean = True): Integer; overload; {Post prepared data with error handling}
+		function Post(URL: WideString; var PostData: TIdMultiPartFormDataStream; ResultData: TStringStream): Integer; overload; {TIdMultiPartFormDataStream should be passed via var}
 
 		function OptionsMethod(URL: WideString; var Answer: WideString; var ProgressEnabled: Boolean): Boolean;
 		function PutFile(URL: WideString; FileName: WideString; FileStream: TStream; var Answer: WideString): Integer;
@@ -342,7 +342,7 @@ begin
 	Result := false;
 	try
 		if ProgressEnabled then
-			HTTP.OnWork := self.HTTPProgress //Вызов прогресса ведёт к возможности отменить получение списка каталогов и других операций, поэтому он нужен не всегда
+			HTTP.OnWork := self.HTTPProgress {Progress callback enables cancellation of listing and other operations, so not always needed}
 		else
 			HTTP.OnWork := nil;
 		Answer := HTTP.Get(URL);
@@ -353,18 +353,18 @@ begin
 			case self.ExceptionHandler(E, URL) of
 				CLOUD_ERROR_TOKEN_OUTDATED:
 					begin
-						Answer := (E as EIdHTTPProtocolException).ErrorMessage; //на протухание токена возвращаем JSON ответа для дальнейшего парсинга в базовом классе
+						Answer := (E as EIdHTTPProtocolException).ErrorMessage; {Return response JSON for token expiry parsing in the base class}
 					end;
 				CLOUD_OPERATION_CANCELLED:
 					begin
-						ProgressEnabled := false; //сообщаем об отмене
+						ProgressEnabled := false; {Signal cancellation}
 					end;
 			end;
 		end;
 	end;
 end;
 
-{Проверяет редирект с указанного адреса}
+{Checks redirect from the specified URL}
 function TCloudMailRuHTTP.GetRedirection(URL: WideString; var RedirectionURL: WideString; var ProgressEnabled: Boolean): Boolean;
 var
 	Answer: WideString;
@@ -547,11 +547,11 @@ begin
 	if AWorkMode = wmRead then
 		ContentLength := HTTP.Response.ContentLength
 	else
-		ContentLength := HTTP.Request.ContentLength; //Считаем размер обработанных данных в зависимости от того, скачивание это или загрузка
+		ContentLength := HTTP.Request.ContentLength; {Calculate processed data size depending on download or upload}
 	if (Pos('chunked', LowerCase(HTTP.Response.TransferEncoding)) = 0) and (ContentLength > 0) then
 	begin
 		Percent := 100 * AWorkCount div ContentLength;
-		if self.Progress.Progress(self.ExternalSourceName, self.ExternalTargetName, Percent) then {При передаче nil прогресс оставляет предыдущие значения}
+		if self.Progress.Progress(self.ExternalSourceName, self.ExternalTargetName, Percent) then {When nil is passed, progress keeps previous values}
 			abort;
 	end;
 end;
@@ -632,19 +632,19 @@ end;
 
 function TCloudMailRuHTTP.ExceptionHandler(E: Exception; URL: WideString; HTTPMethod: Integer; LogErrors: Boolean): Integer;
 var
-	method_string: WideString; //в зависимости от метода исходного запроса меняется текст сообщения
+	method_string: WideString; {Message text depends on the original request method}
 begin
-	Result := FS_FILE_OK; //just to avoid compiler warning
+	Result := FS_FILE_OK; {just to avoid compiler warning}
 	case HTTPMethod of
 		HTTP_METHOD_GET:
 			begin
 				method_string := METHOD_STR_RECEIVE;
-				Result := FS_FILE_READERROR; //для GetFile, GetForm не интересует код ошибки
+				Result := FS_FILE_READERROR; {For GetFile/GetForm, error code doesn't matter}
 			end;
 		HTTP_METHOD_POST, HTTP_METHOD_PUT:
 			begin
 				method_string := METHOD_STR_POST;
-				Result := CLOUD_OPERATION_FAILED; //Для всех Post-запросов
+				Result := CLOUD_OPERATION_FAILED; {For all POST requests}
 			end;
 		HTTP_METHOD_OPTIONS:
 			begin
@@ -664,7 +664,7 @@ begin
 	if E is EAbort then
 	begin
 		Result := CLOUD_OPERATION_CANCELLED;
-	end else if LogErrors then //разбирать ошибку дальше имеет смысл только для логирования - что вернуть уже понятно
+	end else if LogErrors then {Further error analysis only makes sense for logging -- return value is already determined}
 	begin
 		if E is EIdHTTPProtocolException then
 			Logger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_HTTP_GENERAL, [E.ClassName, E.Message, method_string, URL, (E as EIdHTTPProtocolException).ErrorMessage])

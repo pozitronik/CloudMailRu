@@ -277,7 +277,7 @@ begin
 	begin
 		if FSettings.CheckCRC and (not FDoCryptFiles) then
 		begin
-			if not LocalFileIdentity.IsEqualTo(RemoteFileIdentity) then {При включённой проверке CRC сравниваем хеши и размеры}
+			if not LocalFileIdentity.IsEqualTo(RemoteFileIdentity) then {When CRC check is enabled, compare hashes and sizes}
 				Exit(CLOUD_OPERATION_FAILED);
 		end;
 	end else if OperationResult = CLOUD_OPERATION_CANCELLED then

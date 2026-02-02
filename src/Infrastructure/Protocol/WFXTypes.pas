@@ -1,6 +1,6 @@
 ﻿unit WFXTypes;
 
-{Типы и константы, используемые в плагине}
+{Types and constants used by the plugin}
 interface
 
 uses
@@ -120,7 +120,7 @@ const
 	ft_datetime = 10;
 	ft_stringw = 11;
 
-	//for ContentGetValue
+	{for ContentGetValue}
 	ft_nosuchfield = -1;
 	ft_fileerror = -2;
 

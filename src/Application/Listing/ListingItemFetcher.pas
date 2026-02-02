@@ -60,7 +60,7 @@ end;
 
 function TListingItemFetcher.SearchListing(const Listing: TCloudDirItemList; const Path: TRealPath; IsPublicAccount: Boolean): TCloudDirItem;
 begin
-	//сначала попробуем найти поле в имеющемся списке
+	{Try to find the item in the existing listing first}
 	if Path.HasHomePath and not IsPublicAccount then
 		Result := Listing.FindByHomePath(Path.Path)
 	else
@@ -71,14 +71,14 @@ function TListingItemFetcher.RefreshAndSearch(var Listing: TCloudDirItemList; co
 begin
 	Result := Result.None;
 
-	//если там его нет (нажали пробел на папке, например), то запросим в облаке напрямую
-	if Path.trashDir then //корзина - обновим CurrentListing, поищем в нём
+	{If not found (e.g. pressed Space on a folder), query cloud directly}
+	if Path.trashDir then {Trash -- refresh listing, search there}
 	begin
 		if Cloud.ListingService.GetTrashbin(Listing) then
 			Exit(Listing.FindByName(Path.Path));
 	end;
 
-	if Path.sharedDir then //ссылки - обновим список
+	if Path.sharedDir then {Shared links -- refresh listing}
 	begin
 		if Cloud.ListingService.GetSharedLinks(Listing) then
 			Exit(Listing.FindByName(Path.Path));
@@ -86,17 +86,17 @@ begin
 
 	if Path.invitesDir then
 	begin
-		//FindIncomingInviteItemByPath in that case!
+		{FindIncomingInviteItemByPath in that case!}
 		Exit;
 	end;
 
-	//Обычный каталог
+	{Regular directory}
 	if Cloud.ListingService.StatusFile(Path.Path, Result) then
 	begin
 		if (Result.home = EmptyWideStr) and not Cloud.IsPublicAccount then
-			FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_WHERE_IS_THE_FILE, [Path.Path]); {Такого быть не может, но...}
+			FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_WHERE_IS_THE_FILE, [Path.Path]); {Should never happen, but...}
 	end;
-	//Не рапортуем, это будет уровнем выше
+	{Don't report here, will be handled by caller}
 end;
 
 function TListingItemFetcher.FetchItem(var Listing: TCloudDirItemList; const Path: TRealPath; Cloud: TCloudMailRu; UpdateListing: Boolean): TCloudDirItem;

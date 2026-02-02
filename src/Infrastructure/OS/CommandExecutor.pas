@@ -46,9 +46,9 @@ begin
 	if Result then
 		with lpProcessInformation do
 		begin
-			WaitForInputIdle(hProcess, INFINITE); //ждем завершения инициализации
-			CloseHandle(hThread); //закрываем дескриптор процесса
-			CloseHandle(hProcess); //закрываем дескриптор потока
+			WaitForInputIdle(hProcess, INFINITE); {Wait for initialization to complete}
+			CloseHandle(hThread); {Close thread handle}
+			CloseHandle(hProcess); {Close process handle}
 		end
 end;
 

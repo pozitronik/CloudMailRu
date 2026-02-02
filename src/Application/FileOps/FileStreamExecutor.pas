@@ -106,7 +106,7 @@ begin
 		begin
 			CurrentCloud := ConnManager.Get(RealPath.account);
 			Result := CurrentCloud.PublishFile(MutableItem.home, MutableItem.weblink);
-			//Здесь можно бы обновить листинг
+			{Could refresh the listing here}
 		end;
 
 		if Result then

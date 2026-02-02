@@ -16,8 +16,8 @@ const
 
 	SocksProxyTypes = [ProxySocks5, ProxySocks4];
 
-	CLOUD_MAX_FILESIZE_DEFAULT = 2147483392; //$80000000-256
-	CLOUD_PRECALCULATE_LIMIT_DEFAULT = 20; //issue #231
+	CLOUD_MAX_FILESIZE_DEFAULT = 2147483392; { $80000000-256 }
+	CLOUD_PRECALCULATE_LIMIT_DEFAULT = 20; {issue #231}
 	DEFAULT_SOCKET_TIMEOUT = 30000; {30 seconds; 0 = unlimited}
 	DEFAULT_SPEED_LIMIT = 0; {0 = unlimited; positive value = bits per second}
 
@@ -31,13 +31,13 @@ const
 	DeleteFailOnUploadDeleteIgnore = 3;
 	DeleteFailOnUploadDeleteAbort = 4;
 
-	OverwriteLocalModeAsk = 0; //default
+	OverwriteLocalModeAsk = 0; {default}
 	OverwriteLocalModeIgnore = 1;
 	OverwriteLocalModeOverwrite = 2;
 
 	CopyBetweenAccountsModeDisabled = 0;
-	CopyBetweenAccountsModeViaHash = 1; //default
-	CopyBetweenAccountsModeViaPublicLink = 2; //old mode
+	CopyBetweenAccountsModeViaHash = 1; {default}
+	CopyBetweenAccountsModeViaPublicLink = 2; {old mode}
 
 	OperationErrorModeAsk = 0;
 	OperationErrorModeIgnore = 1;
@@ -50,14 +50,14 @@ const
 	IconsModeExternal = 3;
 	IconsModeExternalOverlay = 4;
 
-	INI_DIR_PLUGIN = 0; //use ini files only from the plugin dir
-	INI_DIR_APPDATA = 1; //use ini files only from %AppData%
-	INI_DIR_AUTO = 2; // plugin dir, if writeable, else %AppData%
+	INI_DIR_PLUGIN = 0; {Use INI files only from the plugin dir}
+	INI_DIR_APPDATA = 1; {Use INI files only from %AppData%}
+	INI_DIR_AUTO = 2; {Plugin dir if writeable, else %AppData%}
 
-	EncryptModeNone = 0; //Без шифрования
-	EncryptModeAlways = 1; //С прозрачным шифрованием
-	EncryptModeAskOnce = 2; //С прозрачным шифрованием, без хранения пароля
-	//EncryptModeAskAlways = 3; //не буду поддерживать без необходимости
+	EncryptModeNone = 0; {No encryption}
+	EncryptModeAlways = 1; {Transparent encryption}
+	EncryptModeAskOnce = 2; {Transparent encryption, password not stored}
+	{EncryptModeAskAlways = 3; not supporting unless needed}
 
 	{Hash calculator strategy selection - allows choosing between different SHA1 implementations}
 	HashStrategyAuto = 0; {Auto-select best available (BCrypt > OpenSSL > Delphi)}
@@ -77,8 +77,8 @@ const
 
 	StreamingPrefix = 'Streaming:';
 
-	APPDATA_DIR_NAME = 'MailRuCloud'; //the name of %AppData% subdirectory to use for config search
-	PLUGIN_CONFIG_FILE_NAME = 'MailRuCloud.global.ini'; //default filenames should be changes to avoid confusions (current names are bad design)
+	APPDATA_DIR_NAME = 'MailRuCloud'; {The name of %AppData% subdirectory to use for config search}
+	PLUGIN_CONFIG_FILE_NAME = 'MailRuCloud.global.ini'; {Default filenames should be changed to avoid confusions (current names are bad design)}
 	ACCOUNTS_CONFIG_FILE_NAME = 'MailRuCloud.ini';
 
 	{User-Agent handling:

@@ -217,7 +217,6 @@ var
 	Context: TIconContext;
 begin
 	Input.Path.FromPath('\account');
-	// RemoteName removed := '\account';
 	Input.IconsMode := 3;
 	SetLength(DirListing, 0);
 	SetLength(InviteListing, 0);
@@ -235,7 +234,6 @@ var
 	Context: TIconContext;
 begin
 	Input.Path.FromPath('\account');
-	// RemoteName removed := '\account';
 	Input.IconsMode := 1;
 	SetLength(DirListing, 0);
 	SetLength(InviteListing, 0);
@@ -253,7 +251,6 @@ var
 	Context: TIconContext;
 begin
 	Input.Path.FromPath('\account');
-	// RemoteName removed := '\account';
 	Input.IconsMode := 1;
 	SetLength(DirListing, 0);
 	SetLength(InviteListing, 0);
@@ -292,7 +289,6 @@ var
 begin
 	FMockAccountSettings.AddPublicAccount('public_acc');
 	Input.Path.FromPath('\public_acc');
-	// RemoteName removed := '\public_acc';
 	Input.IconsMode := 1;
 	SetLength(DirListing, 0);
 	SetLength(InviteListing, 0);
@@ -310,7 +306,6 @@ var
 	Context: TIconContext;
 begin
 	Input.Path.FromPath('\private_acc');
-	// RemoteName removed := '\private_acc';
 	Input.IconsMode := 1;
 	SetLength(DirListing, 0);
 	SetLength(InviteListing, 0);
@@ -329,7 +324,6 @@ var
 begin
 	FMockAccountSettings.AddPublicAccount('account');
 	Input.Path.FromPath('\account.trash');
-	// RemoteName removed := '\account.trash';
 	Input.IconsMode := 1;
 	SetLength(DirListing, 0);
 	SetLength(InviteListing, 0);
@@ -405,7 +399,6 @@ var
 	Context: TIconContext;
 begin
 	Input.Path.FromPath('\account');
-	// RemoteName removed := '\account';
 	Input.IconsMode := 1;
 	SetLength(DirListing, 0);
 	SetLength(InviteListing, 0);
@@ -426,7 +419,6 @@ var
 	Context: TIconContext;
 begin
 	Input.Path.FromPath('\account.invites\shared_folder');
-	// RemoteName removed := '\account.invites\shared_folder';
 	Input.IconsMode := 1;
 	SetLength(DirListing, 0);
 	SetLength(InviteListing, 1);
@@ -445,7 +437,6 @@ var
 	Context: TIconContext;
 begin
 	Input.Path.FromPath('\account.invites\folder');
-	// RemoteName removed := '\account.invites\folder';
 	Input.IconsMode := 1;
 	SetLength(DirListing, 0);
 	SetLength(InviteListing, 1);
@@ -464,7 +455,6 @@ var
 	Context: TIconContext;
 begin
 	Input.Path.FromPath('\account.invites');
-	// RemoteName removed := '\account.invites';
 	Input.IconsMode := 1;
 	SetLength(DirListing, 0);
 	SetLength(InviteListing, 0);

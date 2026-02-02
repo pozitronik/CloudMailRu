@@ -20,7 +20,7 @@ const
 	API_FOLDER = 'https://cloud.mail.ru/api/v2/folder?sort={%22type%22%3A%22name%22%2C%22order%22%3A%22asc%22}';
 	API_FOLDER_LIMIT = 65535;
 	API_FOLDER_ADD = 'https://cloud.mail.ru/api/v2/folder/add';
-	API_FOLDER_SHARED_INFO = 'https://cloud.mail.ru/api/v2/folder/shared/info'; //get
+	API_FOLDER_SHARED_INFO = 'https://cloud.mail.ru/api/v2/folder/shared/info'; {GET}
 	API_FOLDER_INVITES = 'https://cloud.mail.ru/api/v2/folder/invites';
 	API_FOLDER_SHARE = 'https://cloud.mail.ru/api/v2/folder/share';
 	API_FOLDER_UNSHARE = 'https://cloud.mail.ru/api/v2/folder/unshare';
@@ -31,7 +31,7 @@ const
 	API_TRASHBIN = 'https://cloud.mail.ru/api/v2/trashbin';
 	API_TRASHBIN_RESTORE = 'https://cloud.mail.ru/api/v2/trashbin/restore';
 	API_TRASHBIN_EMPTY = 'https://cloud.mail.ru/api/v2/trashbin/empty';
-	API_AB_CONTACTS = ''; //
+	API_AB_CONTACTS = '';
 	API_DISPATCHER = 'https://cloud.mail.ru/api/v2/dispatcher/';
 	API_USER_SPACE = 'https://cloud.mail.ru/api/v2/user/space';
 	API_CLONE = 'https://cloud.mail.ru/api/v2/clone';
@@ -41,39 +41,39 @@ const
 	TYPE_FILE = 'file';
 
 	KIND_SHARED = 'shared';
-	{Константы для обозначения ошибок, возвращаемых при парсинге ответов облака. Дополняем по мере обнаружения}
-	CLOUD_ERROR_TOKEN_OUTDATED = -3; //протух токен (ввел самостоятельно)
-	CLOUD_ERROR_UNKNOWN = -2; //unknown: 'Ошибка на сервере'
+	{Error codes returned when parsing cloud responses. Extended as new errors are discovered}
+	CLOUD_ERROR_TOKEN_OUTDATED = -3; {Token expired (custom code)}
+	CLOUD_ERROR_UNKNOWN = -2; {unknown: server error}
 	CLOUD_OPERATION_ERROR_STATUS_UNKNOWN = -1;
 	CLOUD_OPERATION_OK = 0;
 	CLOUD_OPERATION_FAILED = 1;
 	CLOUD_OPERATION_CANCELLED = 5;
 
-	CLOUD_ERROR_EXISTS = 1; //exists: 'Папка с таким названием уже существует. Попробуйте другое название'
-	CLOUD_ERROR_REQUIRED = 2; //required: 'Название папки не может быть пустым'
-	CLOUD_ERROR_INVALID = 3; //invalid: '&laquo;' + app.escapeHTML(name) + '&raquo; это неправильное название папки. В названии папок нельзя использовать символы «" * / : < > ?  \\ |»'
-	CLOUD_ERROR_READONLY = 4; //readonly|read_only: 'Невозможно создать. Доступ только для просмотра'
-	CLOUD_ERROR_NAME_LENGTH_EXCEEDED = 5; //name_length_exceeded: 'Ошибка: Превышена длина имени папки. <a href="https://help.mail.ru/cloud_web/confines" target="_blank">Подробнее…</a>'
-	CLOUD_ERROR_OVERQUOTA = 7; //overquota: 'Невозможно скопировать, в вашем Облаке недостаточно места'
-	CLOUD_ERROR_QUOTA_EXCEEDED = 7; //"quota_exceeded": 'Невозможно скопировать, в вашем Облаке недостаточно места'
-	CLOUD_ERROR_NOT_EXISTS = 8; //"not_exists": 'Копируемая ссылка не существует'
-	CLOUD_ERROR_OWN = 9; //"own": 'Невозможно клонировать собственную ссылку'
-	CLOUD_ERROR_NAME_TOO_LONG = 10; //"name_too_long": 'Превышен размер имени файла'
-	CLOUD_ERROR_VIRUS_SCAN_FAIL = 11; //"virus_scan_fail": 'Файл заражен вирусом'
-	CLOUD_ERROR_OWNER = 12; //Нельзя использовать собственный email
-	CLOUD_ERROR_FAHRENHEIT = 451; //Публикация контента заблокирована по требованию правообладателя или уполномоченного государственного ведомства.
-	CLOUD_ERROR_BAD_REQUEST = 400; //
-	CLOUD_ERROR_TREES_CONFLICT = 15; //Нельзя сделать папку общей, если она содержит другие общие папки или находится в общей папке
-	CLOUD_ERROR_UNPROCESSABLE_ENTRY = 16; //Нельзя открыть доступ к файлу
-	CLOUD_ERROR_USER_LIMIT_EXCEEDED = 17; //Невозможно добавить пользователя. Вы можете иметь не более 200 пользователей в одной общей папке
-	CLOUD_ERROR_EXPORT_LIMIT_EXCEEDED = 18; //Невозможно добавить пользователя. Вы можете создать не более 50 общих папок
-	CLOUD_ERROR_NOT_ACCEPTABLE = 406; //Нельзя добавить этого пользователя
+	CLOUD_ERROR_EXISTS = 1; {exists: folder with this name already exists}
+	CLOUD_ERROR_REQUIRED = 2; {required: folder name cannot be empty}
+	CLOUD_ERROR_INVALID = 3; {invalid: invalid folder name, forbidden characters}
+	CLOUD_ERROR_READONLY = 4; {readonly|read_only: read-only access}
+	CLOUD_ERROR_NAME_LENGTH_EXCEEDED = 5; {name_length_exceeded: folder name too long}
+	CLOUD_ERROR_OVERQUOTA = 7; {overquota: not enough cloud space}
+	CLOUD_ERROR_QUOTA_EXCEEDED = 7; {quota_exceeded: not enough cloud space}
+	CLOUD_ERROR_NOT_EXISTS = 8; {not_exists: copied link does not exist}
+	CLOUD_ERROR_OWN = 9; {own: cannot clone your own link}
+	CLOUD_ERROR_NAME_TOO_LONG = 10; {name_too_long: file name too long}
+	CLOUD_ERROR_VIRUS_SCAN_FAIL = 11; {virus_scan_fail: file is infected}
+	CLOUD_ERROR_OWNER = 12; {Cannot use your own email}
+	CLOUD_ERROR_FAHRENHEIT = 451; {Content blocked by rights holder or authorized state authority}
+	CLOUD_ERROR_BAD_REQUEST = 400;
+	CLOUD_ERROR_TREES_CONFLICT = 15; {Cannot share a folder that contains or resides in shared folders}
+	CLOUD_ERROR_UNPROCESSABLE_ENTRY = 16; {Cannot grant access to the file}
+	CLOUD_ERROR_USER_LIMIT_EXCEEDED = 17; {User limit: max 200 users per shared folder}
+	CLOUD_ERROR_EXPORT_LIMIT_EXCEEDED = 18; {Export limit: max 50 shared folders}
+	CLOUD_ERROR_NOT_ACCEPTABLE = 406; {Cannot add this user}
 
-	{Режимы работы при конфликтах копирования}
-	CLOUD_CONFLICT_STRICT = 'strict'; //возвращаем ошибку при существовании файла
-	CLOUD_CONFLICT_IGNORE = 'ignore'; //В API, видимо, не реализовано
-	CLOUD_CONFLICT_RENAME = 'rename'; //Переименуем новый файл
-	//CLOUD_CONFLICT_REPLACE = 'overwrite'; // хз, этот ключ не вскрыт
+	{Copy conflict modes}
+	CLOUD_CONFLICT_STRICT = 'strict'; {Return error if file exists}
+	CLOUD_CONFLICT_IGNORE = 'ignore'; {Apparently not implemented in API}
+	CLOUD_CONFLICT_RENAME = 'rename'; {Rename the new file}
+	{CLOUD_CONFLICT_REPLACE = 'overwrite'; unknown, this key is not documented}
 
 	CLOUD_SHARE_ACCESS_READ_ONLY = 'read_only';
 	CLOUD_SHARE_ACCESS_READ_WRITE = 'read_write';
@@ -86,20 +86,20 @@ const
 	CLOUD_SHARE_RO = 1;
 	CLOUD_SHARE_NO = 2;
 
-	{Метод авторизации}
-	CLOUD_AUTH_METHOD_OAUTH_APP = 4; //OAuth с паролем приложения (рекомендуемый)
+	{Authentication method}
+	CLOUD_AUTH_METHOD_OAUTH_APP = 4; {OAuth with app password (recommended)}
 
 	{OAuth client credentials for app password auth}
 	OAUTH_CLIENT_ID = 'cloud-win';
 
 	HTTP_FOUND_REDIRECT = 302;
 	HTTP_ERROR_NOT_FOUND = 404;
-	{Коды HTTP-ошибок при постинге запросов}
+	{HTTP error codes for POST requests}
 	HTTP_ERROR_BAD_REQUEST = 400;
 	HTTP_ERROR_OVERQUOTA = 507;
 	HTTP_ERROR_EXISTS = 500;
 
-	{Методы HTTP}
+	{HTTP methods}
 	HTTP_METHOD_GET = 0;
 	HTTP_METHOD_POST = 1;
 	HTTP_METHOD_PUT = 2;
@@ -107,8 +107,8 @@ const
 
 	HTTP_METHODS = [HTTP_METHOD_GET, HTTP_METHOD_POST, HTTP_METHOD_PUT, HTTP_METHOD_OPTIONS];
 
-	{Типы шардов}
-	SHARD_TYPE_DEFAULT = ''; //несистемный шард, в нашей логике означает использование того шарда, что получен при инициализации
+	{Shard types}
+	SHARD_TYPE_DEFAULT = ''; {Non-system shard, means use the shard obtained during initialization}
 	SHARD_TYPE_VIDEO = 'video';
 	SHARD_TYPE_VIEW_DIRECT = 'view_direct';
 	SHARD_TYPE_WEBLINK_VIEW = 'weblink_view';
@@ -132,7 +132,7 @@ const
 	NAME_WEBLINK = 'weblink';
 	NAME_TYPE = 'type';
 	NAME_HOME = 'home';
-	NAME_NAME = 'name'; //funny
+	NAME_NAME = 'name'; {funny}
 	NAME_DELETED_AT = 'deleted_at';
 	NAME_DELETED_FROM = 'deleted_from';
 	NAME_DELETED_BY = 'deleted_by';
@@ -175,25 +175,25 @@ const
 	STREAMING_FORMAT_PLAYLIST = 2;
 	STREAMING_FORMAT_DEFAULT = 3;
 	STREAMING_FORMAT_WEBLINK_VIEW = 4;
-	//Не работает вовне
+	{Does not work externally}
 	STREAMING_FORMAT_VIEW_DIRECT = 5;
 	STREAMING_FORMAT_VIDEO = 6;
 	STREAMING_FORMAT_THUMBNAILS = 7;
 	STREAMING_FORMAT_WEBLINK_THUMBNAILS = 8;
 
-	//Уровни логирования (по степеням двойки)
-	LOG_LEVEL_CONNECT = 1; //connection
-	LOG_LEVEL_FILE_OPERATION = 2; //file operations && free space
-	LOG_LEVEL_DETAIL = 4; //some detailed info (i.e. retry data or smth)
-	LOG_LEVEL_WARNING = 8; //non-critical warnings
-	LOG_LEVEL_ERROR = 16; //error details
-	LOG_LEVEL_DEBUG = 32; //also same internal debugging info
+	{Log levels (powers of two)}
+	LOG_LEVEL_CONNECT = 1; {connection}
+	LOG_LEVEL_FILE_OPERATION = 2; {file operations and free space}
+	LOG_LEVEL_DETAIL = 4; {detailed info (retries etc.)}
+	LOG_LEVEL_WARNING = 8; {non-critical warnings}
+	LOG_LEVEL_ERROR = 16; {error details}
+	LOG_LEVEL_DEBUG = 32; {internal debugging info}
 
-	//FsFindFirst* success return codes (INVALID_HANDLE_VALUE returns on error)
+	{FsFindFirst* success return codes (INVALID_HANDLE_VALUE on error)}
 	FIND_NO_MORE_FILES = 0;
 	FIND_OK = 1;
 	FIND_ROOT_DIRECTORY = 2;
-	FIND_SHARED_LINKS = 3; //.shared folder
+	FIND_SHARED_LINKS = 3; {.shared folder}
 
 	TYPE_BYTES = 0;
 

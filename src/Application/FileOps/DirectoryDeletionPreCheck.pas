@@ -49,7 +49,6 @@ end;
 
 function TDirectoryDeletionPreCheck.ShouldProceed(const RemoteName: WideString): Boolean;
 begin
-	{Файлы по удаляемому пути есть в блек-листе}
 	{Files at the path being deleted are in the blacklist (issue #168)}
 	if FThreadState.IsPathSkipped(RemoteName) then
 		Exit(False);

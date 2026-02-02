@@ -8,13 +8,13 @@ uses
 	WFXTypes,
 	AnsiStrings;
 
-procedure FsGetDefRootName(DefRootName: PAnsiChar; maxlen: integer); stdcall; //Процедура вызывается один раз при установке плагина
+procedure FsGetDefRootName(DefRootName: PAnsiChar; maxlen: integer); stdcall; {Called once during plugin installation}
 procedure FsStatusInfo(RemoteDir: PAnsiChar; InfoStartEnd, InfoOperation: integer); stdcall;
 function FsFindFirst(path: PAnsiChar; var FindData: tWIN32FINDDATAA): THandle; stdcall;
 function FsFindNext(Hdl: THandle; var FindData: tWIN32FINDDATAA): Bool; stdcall;
-function FsExecuteFile(MainWin: THandle; RemoteName, Verb: PAnsiChar): integer; stdcall; //Запуск файла
-function FsGetFile(RemoteName, LocalName: PAnsiChar; CopyFlags: integer; RemoteInfo: pRemoteInfo): integer; stdcall; //Копирование файла из файловой системы плагина
-function FsPutFile(LocalName, RemoteName: PAnsiChar; CopyFlags: integer): integer; stdcall; //Копирование файла в файловую систему плагина
+function FsExecuteFile(MainWin: THandle; RemoteName, Verb: PAnsiChar): integer; stdcall; {Execute file}
+function FsGetFile(RemoteName, LocalName: PAnsiChar; CopyFlags: integer; RemoteInfo: pRemoteInfo): integer; stdcall; {Copy file from plugin filesystem}
+function FsPutFile(LocalName, RemoteName: PAnsiChar; CopyFlags: integer): integer; stdcall; {Copy file to plugin filesystem}
 function FsDeleteFile(RemoteName: PAnsiChar): Bool; stdcall;
 function FsRenMovFile(OldName: PAnsiChar; NewName: PAnsiChar; Move: Boolean; OverWrite: Boolean; ri: pRemoteInfo): integer;
 function FsDisconnect(DisconnectRoot: PAnsiChar): Bool; stdcall;
@@ -27,7 +27,7 @@ function FsGetPreviewBitmap(RemoteName: pchar; Width, Height: integer; var Retur
 
 implementation
 
-procedure FsGetDefRootName(DefRootName: PAnsiChar; maxlen: integer); stdcall; //Процедура вызывается один раз при установке плагина
+procedure FsGetDefRootName(DefRootName: PAnsiChar; maxlen: integer); stdcall; {Called once during plugin installation}
 Begin
 	AnsiStrings.StrLCopy(DefRootName, PAnsiChar('CloudMailRu'), maxlen);
 End;
@@ -40,61 +40,61 @@ end;
 function FsFindFirst(path: PAnsiChar; var FindData: tWIN32FINDDATAA): THandle; stdcall;
 begin
 	SetLastError(ERROR_INVALID_FUNCTION);
-	Result := ERROR_INVALID_HANDLE; //Ansi-заглушка
+	Result := ERROR_INVALID_HANDLE; {ANSI stub}
 end;
 
 function FsFindNext(Hdl: THandle; var FindData: tWIN32FINDDATAA): Bool; stdcall;
 begin
 	SetLastError(ERROR_INVALID_FUNCTION);
-	Result := false; //Ansi-заглушка
+	Result := false; {ANSI stub}
 end;
 
-function FsExecuteFile(MainWin: THandle; RemoteName, Verb: PAnsiChar): integer; stdcall; //Запуск файла
+function FsExecuteFile(MainWin: THandle; RemoteName, Verb: PAnsiChar): integer; stdcall; {Execute file}
 Begin
 	SetLastError(ERROR_INVALID_FUNCTION);
-	Result := FS_EXEC_ERROR; //Ansi-заглушка
+	Result := FS_EXEC_ERROR; {ANSI stub}
 End;
 
-function FsGetFile(RemoteName, LocalName: PAnsiChar; CopyFlags: integer; RemoteInfo: pRemoteInfo): integer; stdcall; //Копирование файла из файловой системы плагина
+function FsGetFile(RemoteName, LocalName: PAnsiChar; CopyFlags: integer; RemoteInfo: pRemoteInfo): integer; stdcall; {Copy file from plugin filesystem}
 begin
 	SetLastError(ERROR_INVALID_FUNCTION);
-	Result := FS_FILE_NOTSUPPORTED; //Ansi-заглушка
+	Result := FS_FILE_NOTSUPPORTED; {ANSI stub}
 end;
 
-function FsPutFile(LocalName, RemoteName: PAnsiChar; CopyFlags: integer): integer; stdcall; //Копирование файла в файловую систему плагина
+function FsPutFile(LocalName, RemoteName: PAnsiChar; CopyFlags: integer): integer; stdcall; {Copy file to plugin filesystem}
 begin
 	SetLastError(ERROR_INVALID_FUNCTION);
-	Result := FS_FILE_NOTSUPPORTED; //Ansi-заглушка
+	Result := FS_FILE_NOTSUPPORTED; {ANSI stub}
 end;
 
-function FsDeleteFile(RemoteName: PAnsiChar): Bool; stdcall; //Удаление файла из файловой ссистемы плагина
+function FsDeleteFile(RemoteName: PAnsiChar): Bool; stdcall; {Delete file from plugin filesystem}
 Begin
-	SetLastError(ERROR_INVALID_FUNCTION); //Ansi-заглушка
+	SetLastError(ERROR_INVALID_FUNCTION); {ANSI stub}
 	Result := false;
 End;
 
 function FsRenMovFile(OldName: PAnsiChar; NewName: PAnsiChar; Move: Boolean; OverWrite: Boolean; ri: pRemoteInfo): integer;
 begin
 	SetLastError(ERROR_INVALID_FUNCTION);
-	Result := FS_FILE_NOTSUPPORTED; //Ansi-заглушка
+	Result := FS_FILE_NOTSUPPORTED; {ANSI stub}
 end;
 
 function FsDisconnect(DisconnectRoot: PAnsiChar): Bool; stdcall;
 begin
 	SetLastError(ERROR_INVALID_FUNCTION);
-	Result := false; //ansi-заглушка
+	Result := false; {ANSI stub}
 end;
 
 function FsMkDir(path: PAnsiChar): Bool; stdcall;
 begin
 	SetLastError(ERROR_INVALID_FUNCTION);
-	Result := false; //ansi-заглушка
+	Result := false; {ANSI stub}
 end;
 
 function FsRemoveDir(RemoteName: PAnsiChar): Bool; stdcall;
 begin
 	SetLastError(ERROR_INVALID_FUNCTION);
-	Result := false; //ansi-заглушка
+	Result := false; {ANSI stub}
 end;
 
 procedure FsSetCryptCallback(PCryptProc: TCryptProcW; CryptoNr: integer; Flags: integer); stdcall;
@@ -111,14 +111,14 @@ end;
 function FsExtractCustomIcon(RemoteName: pchar; ExtractFlags: integer; var TheIcon: hicon): integer; stdcall;
 begin
 	SetLastError(ERROR_INVALID_FUNCTION);
-	Result := FS_FILE_NOTSUPPORTED; //Ansi-заглушка
+	Result := FS_FILE_NOTSUPPORTED; {ANSI stub}
 end;
 
 function FsGetPreviewBitmap(RemoteName: pchar; Width, Height: integer; var ReturnedBitmap: HBITMAP): integer; stdcall;
 begin
 	SetLastError(ERROR_INVALID_FUNCTION);
 	ReturnedBitmap := 0;
-	Result := FS_BITMAP_NONE; //Ansi-заглушка
+	Result := FS_BITMAP_NONE; {ANSI stub}
 end;
 
 end.

@@ -120,7 +120,7 @@ begin
 	FContext.GetHTTP.HTTP.Request.UserAgent := OAUTH_CLIENT_ID;
 	try
 		OAuthToken := FContext.GetOAuthToken;
-		if FDoCryptFiles then //Загрузка файла в память, дешифрация в файл
+		if FDoCryptFiles then {Download file to memory, decrypt to file}
 		begin
 			MemoryStream := TMemoryStream.Create;
 			try
@@ -131,7 +131,7 @@ begin
 				if (CLOUD_ERROR_TOKEN_OUTDATED = Result) and FContext.RefreshCSRFToken then
 					Exit(DownloadRegular(RemotePath, LocalPath, ResultHash, LogErrors));
 
-				if Result in [FS_FILE_NOTSUPPORTED] then //this code returned on shard connection error
+				if Result in [FS_FILE_NOTSUPPORTED] then {This code returned on shard connection error}
 				begin
 					FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, '%s%s', [PREFIX_REDIRECTION_LIMIT, URL]);
 					DownloadShard := EmptyWideStr;
@@ -178,7 +178,7 @@ begin
 		FFileSystem.DeleteFile(GetUNCFilePath(LocalPath));
 end;
 
-{since 29.07.2022: изменена логика получения ссылок, см. issue #285. URL теперь всегда должны быть кодированы, иначе в некоторых случаях приходит 400}
+{Since 29.07.2022: changed link retrieval logic, see issue #285. URLs must always be encoded, otherwise 400 is returned in some cases}
 function TCloudFileDownloader.GetSharedFileUrl(RemotePath: WideString; ShardType: WideString = SHARD_TYPE_DEFAULT): WideString;
 var
 	usedShard: WideString;

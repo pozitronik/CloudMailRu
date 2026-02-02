@@ -61,7 +61,8 @@ type
 		procedure DeleteAccount(Account: WideString);
 		procedure RenameAccount(const OldName, NewName: WideString);
 		procedure SetCryptedGUID(Account: WideString; GUID: WideString);
-		procedure SwitchPasswordStorage(Account: WideString); //clears the account password from INI for account and sets 'managed by TC' flag
+		{Clears the account password from INI and sets 'managed by TC' flag}
+		procedure SwitchPasswordStorage(Account: WideString);
 
 	end;
 

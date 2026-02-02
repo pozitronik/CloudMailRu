@@ -31,7 +31,8 @@ type
 		procedure FromPath(VirtualPath: WideString; isDir: TIsDir = ID_Unset);
 		class function GetRealPath(VirtualPath: WideString; isDir: TIsDir = ID_Unset): TRealPath; static;
 		function ToPath: WideString;
-		function IsInAccount(ignoreVirtual: boolean = true): boolean; //проверка, находится ли путь внутри аккаунта. ignoreVirtual - не считать виртуальные каталоги облачными
+		{Checks whether the path is inside an account. ignoreVirtual: do not treat virtual directories as cloud paths}
+		function IsInAccount(ignoreVirtual: boolean = true): boolean;
 
 	end;
 
@@ -128,7 +129,7 @@ end;
 
 function TRealPath.GetHasHomePath: boolean;
 begin
-	{Виртуальные каталоги не имеют HomePath. Почему тут не включается invitesDir - я не помню}
+	{Virtual directories do not have HomePath. Why invitesDir is not included here is unknown}
 	result := not(self.trashDir or self.sharedDir);
 end;
 

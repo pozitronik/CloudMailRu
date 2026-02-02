@@ -20,7 +20,7 @@ type
 
 	[TestFixture]
 	TAccountsManagerTest = class
-		AppDir: WideString; //the current test binary directory
+		AppDir: WideString; {The current test binary directory}
 	private const
 		FP_ACCOUNTS_INI = 'Accounts.ini';
 	public
@@ -134,7 +134,7 @@ var
 	TestAccountsManager: TAccountsManager;
 	TestAccountSettings: TAccountSettings;
 begin
-	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(self.AppDir + FP_ACCOUNTS_INI), TNullLogger.Create); //Uses a new file in the test exe dir
+	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(self.AppDir + FP_ACCOUNTS_INI), TNullLogger.Create); {Uses a new file in the test exe dir}
 
 	TestAccountSettings.Password := 'cjhjrnsczxj,tpmzyd;jgeceyekb,fyfy';
 	TestAccountsManager.SetAccountSettings('NEW_ACCOUNT', TestAccountSettings);
@@ -152,7 +152,7 @@ var
 	TestAccountsManager: TAccountsManager;
 	TestAccountSettings: TAccountSettings;
 begin
-	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(self.AppDir + FP_ACCOUNTS_INI), TNullLogger.Create); //Uses a new file in the test exe dir
+	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(self.AppDir + FP_ACCOUNTS_INI), TNullLogger.Create); {Uses a new file in the test exe dir}
 
 	TestAccountSettings.Email := 'deleted_account@mail.ru';
 	TestAccountsManager.SetAccountSettings('NEW_ACCOUNT', TestAccountSettings);
@@ -176,7 +176,7 @@ var
 	TestAccountsManager: TAccountsManager;
 	TestAccountSettings: TAccountSettings;
 begin
-	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(DataPath(FP_ACCOUNTS_INI)), TNullLogger.Create); //Uses a test file
+	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(DataPath(FP_ACCOUNTS_INI)), TNullLogger.Create); {Uses a test file}
 	TestAccountSettings := TestAccountsManager.GetAccountSettings('TEST_ACCOUNT_TWO');
 
 	Assert.AreEqual('test_fake_email_two@mail.ru', TestAccountSettings.Email);
@@ -193,7 +193,7 @@ var
 	AccountsList: TWSList;
 begin
 	AccountsList := TWSList.Create();
-	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(DataPath(FP_ACCOUNTS_INI)), TNullLogger.Create); //Uses a test file
+	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(DataPath(FP_ACCOUNTS_INI)), TNullLogger.Create); {Uses a test file}
 
 	AccountsList := TestAccountsManager.GetAccountsList();
 	Assert.IsTrue(AccountsList.Contains('TEST_ACCOUNT_ONE'));
@@ -232,7 +232,7 @@ var
 	AccountsList: TWSList;
 begin
 	AccountsList := TWSList.Create();
-	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(self.AppDir + FP_ACCOUNTS_INI), TNullLogger.Create); //Uses a new file in the test exe dir
+	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(self.AppDir + FP_ACCOUNTS_INI), TNullLogger.Create); {Uses a new file in the test exe dir}
 	AccountsList := TestAccountsManager.GetAccountsList();
 
 	Assert.IsTrue(AccountsList.Count = 0);
@@ -246,11 +246,11 @@ var
 	TestAccountSettings: TAccountSettings;
 	TestAccountSettingsNew: TAccountSettings;
 begin
-	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(DataPath(FP_ACCOUNTS_INI)), TNullLogger.Create); //Uses a test file
+	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(DataPath(FP_ACCOUNTS_INI)), TNullLogger.Create); {Uses a test file}
 	TestAccountSettings := TestAccountsManager.GetAccountSettings('TEST_ACCOUNT_TWO');
 	TestAccountsManager.Free;
 
-	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(self.AppDir + FP_ACCOUNTS_INI), TNullLogger.Create); //Uses a new file in the test exe dir
+	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(self.AppDir + FP_ACCOUNTS_INI), TNullLogger.Create); {Uses a new file in the test exe dir}
 	TestAccountsManager.SetAccountSettings('NEW_ACCOUNT', TestAccountSettings);
 	TestAccountsManager.Free;
 
@@ -267,7 +267,7 @@ procedure TAccountsManagerTest.TestSetCryptedGUID;
 var
 	TestAccountsManager: TAccountsManager;
 begin
-	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(self.AppDir + FP_ACCOUNTS_INI), TNullLogger.Create); //Uses a new file in the test exe dir
+	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(self.AppDir + FP_ACCOUNTS_INI), TNullLogger.Create); {Uses a new file in the test exe dir}
 	Assert.IsEmpty(TestAccountsManager.GetAccountSettings('NEW_ACCOUNT').CryptedGUIDFiles);
 	TestAccountsManager.SetCryptedGUID('NEW_ACCOUNT', TFileCipher.GetCryptedGUID('cjhjrnsczxj,tpmzyd;jgeceyekb,fyfy'));
 

@@ -453,11 +453,11 @@ var
 begin
 	Result := FS_EXEC_OK;
 	Cloud := ConnectionManager.Get(RealPath.account);
-	if RealPath.isInAccountsList then //main invites folder properties
-	begin
+	if RealPath.isInAccountsList then
+	begin {Main invites folder properties}
 		if TAccountsForm.ShowAccounts(MainWin, PasswordManager, RealPath.account) then
 			SettingsManager.Refresh;
-	end else begin //one invite item - delegate to handler
+	end else begin {One invite item - delegate to handler}
 		if not EnsureAuthorized(Cloud) then
 			exit(FS_EXEC_ERROR);
 		CurrentInvite := FindIncomingInviteItemByPath(CurrentIncomingInvitesListing, RealPath);
@@ -471,7 +471,7 @@ begin
 			end);
 	end;
 
-	PostMessage(MainWin, WM_USER + TC_REFRESH_MESSAGE, TC_REFRESH_PARAM, 0); //TC does not update current panel, so we should do it this way
+	PostMessage(MainWin, WM_USER + TC_REFRESH_MESSAGE, TC_REFRESH_PARAM, 0); {TC does not auto-refresh the current panel}
 end;
 
 function TWFXApplication.ExecProperties(MainWin: THandle; RealPath: TRealPath): Integer;
@@ -482,15 +482,15 @@ begin
 	Result := FS_EXEC_OK;
 	if RealPath.isInAccountsList then
 	begin
-		if TAccountsForm.ShowAccounts(MainWin, PasswordManager, RealPath.account) then //show account properties
+		if TAccountsForm.ShowAccounts(MainWin, PasswordManager, RealPath.account) then
 			SettingsManager.Refresh;
 	end else begin
 		Cloud := ConnectionManager.Get(RealPath.account);
 		if not EnsureAuthorized(Cloud) then
 			exit(FS_EXEC_ERROR);
-		//всегда нужно обновлять статус на сервере, CurrentListing может быть изменён в другой панели
+		{Always refresh status from server -- CurrentListing may have been changed in another panel}
 		if (Cloud.ListingService.StatusFile(RealPath.Path, CurrentItem)) and (idContinue = TPropertyForm.ShowProperty(MainWin, RealPath.Path, CurrentItem, Cloud, FFileSystem, FTCHandler, SettingsManager.GetSettings.DownloadLinksEncode, SettingsManager.GetSettings.AutoUpdateDownloadListing, SettingsManager.GetSettings.DescriptionEnabled, SettingsManager.GetSettings.DescriptionEditorEnabled, SettingsManager.GetSettings.DescriptionFileName)) then
-			PostMessage(MainWin, WM_USER + TC_REFRESH_MESSAGE, TC_REFRESH_PARAM, 0); //refresh tc panel if description edited
+			PostMessage(MainWin, WM_USER + TC_REFRESH_MESSAGE, TC_REFRESH_PARAM, 0); {Refresh TC panel if description was edited}
 	end;
 end;
 
@@ -539,13 +539,14 @@ begin
 		exit(FS_EXEC_ERROR);
 	IsTrashDir := RealPath.isInAccountsList;
 
-	if IsTrashDir then //main trashbin folder properties
-	begin
+	if IsTrashDir then
+	begin {Main trashbin folder properties}
 		if not Cloud.ListingService.GetTrashbin(CurrentListing) then
 			exit(FS_EXEC_ERROR);
 		CurrentItem := CurrentItem.None;
-	end else begin //one item in trashbin
-		CurrentItem := FindListingItemByPath(CurrentListing, RealPath); //для одинаково именованных файлов в корзине будут показываться свойства первого, сорян
+	end else begin {One item in trashbin}
+		{For identically named files in trash, properties of the first match are shown}
+		CurrentItem := FindListingItemByPath(CurrentListing, RealPath);
 	end;
 
 	Result := FTrashBinOperationHandler.Execute(MainWin, Cloud.ListingService, CurrentListing, CurrentItem, IsTrashDir, RealPath.account,
@@ -554,15 +555,15 @@ begin
 			Result := TDeletedPropertyForm.ShowProperties(ParentWindow, Items, TrashDir, AccountName);
 		end);
 
-	PostMessage(MainWin, WM_USER + TC_REFRESH_MESSAGE, TC_REFRESH_PARAM, 0); //TC does not update current panel, so we should do it this way
+	PostMessage(MainWin, WM_USER + TC_REFRESH_MESSAGE, TC_REFRESH_PARAM, 0); {TC does not auto-refresh the current panel}
 end;
 
 function TWFXApplication.ExecuteFileStream(RealPath: TRealPath; StreamingSettings: TStreamingSettings): Integer;
 var
 	CurrentItem: TCloudDirItem;
 begin
-	//может быть разница в атрибутах настоящих и полученных из листинга (они не рефрешатся)
-	CurrentItem := FindListingItemByPath(CurrentListing, RealPath); //внутри публичного облака веблинк есть автоматически
+	{Real attributes may differ from listing cache (listing is not auto-refreshed)}
+	CurrentItem := FindListingItemByPath(CurrentListing, RealPath); {Inside public cloud, weblink is available automatically}
 
 	{Delegate streaming execution to handler}
 	Result := FFileStreamExecutor.Execute(RealPath, CurrentItem, StreamingSettings, ConnectionManager);
@@ -654,7 +655,7 @@ begin
 	begin
 		ConnectionManager.Free(ExtractFileName(DisconnectRoot));
 		Result := true;
-	end else begin //здесь можно добавить механизм ожидания завершения фоновой операции
+	end else begin {Could add a wait mechanism for background operation completion here}
 		Result := false;
 	end;
 end;
@@ -822,7 +823,7 @@ begin
 			Result := false;
 
 	end else begin
-		//Получение последующих файлов в папке (вызывается до тех пор, пока не вернёт false).
+		{Get subsequent files in directory (called until returns false)}
 		if (Length(CurrentListing) > FileCounter) then
 		begin
 			FindData := CurrentListing[FileCounter].ToFindData(Hdl = FIND_SHARED_LINKS);
@@ -841,7 +842,7 @@ begin
 	if SettingsManager.GetSettings.DisableMultiThreading then
 		Result := 0
 	else
-		Result := BG_DOWNLOAD + BG_UPLOAD; //+ BG_ASK_USER;
+		Result := BG_DOWNLOAD + BG_UPLOAD; {+ BG_ASK_USER}
 end;
 
 procedure TWFXApplication.FsGetDefRootName(DefRootName: PAnsiChar; MaxLen: Integer);
@@ -870,10 +871,10 @@ var
 begin
 	SkipListRenMov := FThreadState.GetSkipListRenMov;
 	if SkipListRenMov then
-		exit(false); //skip create directory if this flag set on
+		exit(false); {Skip directory creation when flag is set}
 
 	RealPath.FromPath(WideString(Path));
-	if RealPath.isInAccountsList then //accounts list - registration not supported
+	if RealPath.isInAccountsList then {Accounts list - registration not supported}
 		Exit(False);
 	if (RealPath.isAccountEmpty) or RealPath.isVirtual then
 		exit(false);

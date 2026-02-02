@@ -64,7 +64,7 @@ type
 
 implementation
 
-{При необходимости преобразует адрес публичной ссылки к нужному виду}
+{Converts public link URL to the required format if needed}
 function ExtractLinkFromUrl(URL: WideString): WideString;
 const
 	pulicPrefix = 'https://cloud.mail.ru/public';

@@ -2,7 +2,7 @@
 
 interface
 
-(*NOTE: Those can be converted to resourcestrings  when i18n applied*)
+{NOTE: Those can be converted to resourcestrings when i18n is applied}
 const
 	ACCOUNT_TRASH = '%s trash';
 	ASK_CONTINUE = 'Continue operation?';

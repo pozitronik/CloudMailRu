@@ -15,7 +15,7 @@ var
 begin
 	result := EmptyWideStr;
 
-	Text := StringReplace(Text, #$A, EmptyWideStr, [rfReplaceAll]); //так нам проще ковыряться в тексте
+	Text := StringReplace(Text, #$A, EmptyWideStr, [rfReplaceAll]); {Makes text parsing easier}
 	Text := StringReplace(Text, #$D, EmptyWideStr, [rfReplaceAll]);
 	Text := StringReplace(Text, #9, EmptyWideStr, [rfReplaceAll]);
 	Text := StringReplace(Text, #$20, EmptyWideStr, [rfReplaceAll]);

@@ -82,7 +82,7 @@ begin
 		Exit;
 	end;
 
-	{Облако не поддерживает разные регистры - cloud doesn't support case-different names}
+	{Cloud doesn't support case-different names}
 	if (((CopyFlags and FS_COPYFLAGS_EXISTS_SAMECASE) <> 0) or ((CopyFlags and FS_COPYFLAGS_EXISTS_DIFFERENTCASE) <> 0)) and ((CopyFlags and FS_COPYFLAGS_OVERWRITE) = 0) then
 	begin
 		Result.ResultCode := FS_FILE_EXISTS;
