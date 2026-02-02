@@ -229,7 +229,7 @@ begin
 
 	ResultHandle := FApplier.Apply(Base, FindData, FileCounter);
 
-	Assert.AreEqual(INVALID_HANDLE_VALUE, ResultHandle, 'Should handle INVALID_HANDLE_VALUE');
+	Assert.AreEqual(THandle(INVALID_HANDLE_VALUE), ResultHandle, 'Should handle INVALID_HANDLE_VALUE');
 end;
 
 initialization
