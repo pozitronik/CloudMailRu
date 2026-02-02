@@ -99,6 +99,14 @@ type
 		procedure TestLogUserSpaceInfo_PublicAccount_DoesNotLog;
 		[Test]
 		procedure TestLogUserSpaceInfo_Success_LogsSpaceInfo;
+		[Test]
+		procedure TestLogUserSpaceInfo_Overquota_LogsWarning;
+		[Test]
+		procedure TestLogUserSpaceInfo_Failure_LogsError;
+
+		{Directory listing error tests}
+		[Test]
+		procedure TestGetDirectory_NotExists_ReturnsFalse;
 
 		{Pagination tests}
 		[Test]
@@ -459,6 +467,43 @@ begin
 	Assert.AreEqual(Integer(2), Integer(Length(Listing)), 'Should return all 2 items');
 	{Only 1 HTTP request should have been made (no second page request)}
 	Assert.AreEqual(Integer(1), CallCountAfter - CallCountBefore, 'Should make exactly 1 HTTP request');
+end;
+
+procedure TCloudListingServiceTest.TestLogUserSpaceInfo_Overquota_LogsWarning;
+begin
+	{ overquota=true triggers the warning path }
+	FMockHTTP.SetDefaultResponse(True,
+		'{"status":200,"body":{"bytes_total":10737418240,"bytes_used":10737418240,"overquota":true}}');
+	FMockContext.SetIsPublicAccount(False);
+
+	FService.LogUserSpaceInfo('test@mail.ru');
+
+	Assert.Pass('LogUserSpaceInfo should handle overquota state');
+end;
+
+procedure TCloudListingServiceTest.TestLogUserSpaceInfo_Failure_LogsError;
+begin
+	{ GetUserSpace failure triggers error logging }
+	FMockHTTP.SetDefaultResponse(False, '');
+	FMockContext.SetIsPublicAccount(False);
+
+	FService.LogUserSpaceInfo('test@mail.ru');
+
+	Assert.Pass('LogUserSpaceInfo should handle failure gracefully');
+end;
+
+procedure TCloudListingServiceTest.TestGetDirectory_NotExists_ReturnsFalse;
+var
+	Listing: TCloudDirItemList;
+	Success: Boolean;
+begin
+	{ NOT_EXISTS error triggers the error logging path }
+	FMockHTTP.SetDefaultResponse(True,
+		'{"status":400,"body":{"home":{"error":"not_exists"}}}');
+
+	Success := FService.GetDirectory('/nonexistent', Listing);
+
+	Assert.IsFalse(Success, 'GetDirectory should fail for non-existent path');
 end;
 
 initialization

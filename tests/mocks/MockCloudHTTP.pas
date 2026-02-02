@@ -24,6 +24,8 @@ type
 		ResultCode: Integer;
 		{For file operations - data to write to stream}
 		FileData: TBytes;
+		{Simulate user cancellation by setting ProgressEnabled to False in GetPage}
+		CancelProgress: Boolean;
 	end;
 
 	{Stream response configuration for GetFile/PutFile testing}
@@ -74,6 +76,8 @@ type
 		{Configure single responses}
 		procedure SetResponse(URLPattern: WideString; Success: Boolean; Answer: WideString;
 			ResultCode: Integer = FS_FILE_OK);
+		procedure SetResponseWithCancel(URLPattern: WideString; Success: Boolean;
+			Answer: WideString; CancelProgress: Boolean);
 		procedure SetFileResponse(URLPattern: WideString; Data: TBytes; ResultCode: Integer = FS_FILE_OK);
 		procedure SetDefaultResponse(Success: Boolean; Answer: WideString;
 			ResultCode: Integer = FS_FILE_READERROR);
@@ -298,6 +302,20 @@ begin
 	Response.Success := Success;
 	Response.Answer := Answer;
 	Response.ResultCode := ResultCode;
+	Response.CancelProgress := False;
+	SetLength(Response.FileData, 0);
+	FResponses.AddOrSetValue(URLPattern, Response);
+end;
+
+procedure TMockCloudHTTP.SetResponseWithCancel(URLPattern: WideString;
+	Success: Boolean; Answer: WideString; CancelProgress: Boolean);
+var
+	Response: TMockResponse;
+begin
+	Response.Success := Success;
+	Response.Answer := Answer;
+	Response.ResultCode := FS_FILE_OK;
+	Response.CancelProgress := CancelProgress;
 	SetLength(Response.FileData, 0);
 	FResponses.AddOrSetValue(URLPattern, Response);
 end;
@@ -566,6 +584,8 @@ begin
 	FCalls.Add('GET:' + URL);
 	Response := FindResponse(URL);
 	Answer := Response.Answer;
+	if Response.CancelProgress then
+		ProgressEnabled := False;
 	Result := Response.Success;
 end;
 

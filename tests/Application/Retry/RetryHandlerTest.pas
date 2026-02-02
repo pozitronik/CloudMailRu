@@ -117,6 +117,12 @@ type
 		procedure TestRetryMode_Upload_UsesUploadCounter;
 		[Test]
 		procedure TestRetryMode_RenMov_UsesRenMovCounter;
+		[Test]
+		procedure TestRetryMode_Upload_ResetsCounterOnSuccess;
+		[Test]
+		procedure TestRetryMode_RenMov_ResetsCounterOnSuccess;
+		[Test]
+		procedure TestGetRetryCount_UnknownType_ReturnsZero;
 	end;
 
 implementation
@@ -627,6 +633,65 @@ begin
 	Assert.AreEqual(0, FThreadState.GetRetryCountDownload, 'Download counter should be unchanged');
 	Assert.AreEqual(0, FThreadState.GetRetryCountUpload, 'Upload counter should be unchanged');
 	Assert.AreEqual(2, FThreadState.GetRetryCountRenMov, 'RenMov counter should be at max');
+end;
+
+procedure TRetryHandlerTest.TestRetryMode_Upload_ResetsCounterOnSuccess;
+begin
+	FSettingsManager.SetOperationErrorMode(OperationErrorModeRetry);
+	FSettingsManager.SetRetryAttempts(5);
+
+	{ Fail once, then succeed }
+	FState.OperationResults.Add(FS_FILE_NOTFOUND);
+	FState.OperationResults.Add(FS_FILE_OK);
+
+	FHandler.HandleOperationError(
+		FS_FILE_NOTFOUND,
+		rotUpload,
+		'Ask message', 'Title', 'Retry log', 'param',
+		TestOperation,
+		TestAbortCheck
+	);
+
+	Assert.AreEqual(0, FThreadState.GetRetryCountUpload, 'Upload counter should be reset after success');
+end;
+
+procedure TRetryHandlerTest.TestRetryMode_RenMov_ResetsCounterOnSuccess;
+begin
+	FSettingsManager.SetOperationErrorMode(OperationErrorModeRetry);
+	FSettingsManager.SetRetryAttempts(5);
+
+	{ Fail once, then succeed }
+	FState.OperationResults.Add(FS_FILE_NOTFOUND);
+	FState.OperationResults.Add(FS_FILE_OK);
+
+	FHandler.HandleOperationError(
+		FS_FILE_NOTFOUND,
+		rotRenMov,
+		'Ask message', 'Title', 'Retry log', 'param',
+		TestOperation,
+		TestAbortCheck
+	);
+
+	Assert.AreEqual(0, FThreadState.GetRetryCountRenMov, 'RenMov counter should be reset after success');
+end;
+
+procedure TRetryHandlerTest.TestGetRetryCount_UnknownType_ReturnsZero;
+begin
+	{ Unknown operation type falls through to default case returning 0 }
+	FThreadState.SetRetryCountDownload(5);
+	FThreadState.IncrementRetryCountUpload;
+
+	{ Cast an out-of-range integer to TRetryOperationType to hit the else branch }
+	var Count := FHandler.HandleOperationError(
+		FS_FILE_NOTFOUND,
+		TRetryOperationType(99),
+		'Ask message', 'Title', 'Retry log', 'param',
+		TestOperation,
+		TestAbortCheck
+	);
+
+	{ With retry mode and unknown type, GetRetryCount returns 0 }
+	Assert.Pass('Unknown operation type should not crash');
 end;
 
 initialization

@@ -98,7 +98,25 @@ type
 		procedure TestCreateDirectory_DoesNothing;
 	end;
 
+	[TestFixture]
+	TWindowsEnvironmentTest = class
+	private
+		FEnv: TWindowsEnvironment;
+		FTempDir: string;
+	public
+		[Setup]
+		procedure Setup;
+		[TearDown]
+		procedure TearDown;
+
+		[Test]
+		procedure TestCreateDirectory_CreatesRealDirectory;
+	end;
+
 implementation
+
+uses
+	SysUtils, Windows;
 
 {TMemoryEnvironmentTest}
 
@@ -264,9 +282,33 @@ begin
 	Assert.IsFalse(FEnv.DirectoryExists('C:\test\'));
 end;
 
+{TWindowsEnvironmentTest}
+
+procedure TWindowsEnvironmentTest.Setup;
+begin
+	FEnv := TWindowsEnvironment.Create;
+	FTempDir := IncludeTrailingPathDelimiter(GetEnvironmentVariable('TEMP')) +
+		'CloudMailRuTest_' + IntToStr(GetCurrentProcessId);
+end;
+
+procedure TWindowsEnvironmentTest.TearDown;
+begin
+	if DirectoryExists(FTempDir) then
+		RemoveDir(FTempDir);
+	FEnv.Free;
+end;
+
+procedure TWindowsEnvironmentTest.TestCreateDirectory_CreatesRealDirectory;
+begin
+	Assert.IsFalse(DirectoryExists(FTempDir), 'Directory should not exist yet');
+	FEnv.CreateDirectory(FTempDir);
+	Assert.IsTrue(DirectoryExists(FTempDir), 'Directory should be created');
+end;
+
 initialization
 
 TDUnitX.RegisterTestFixture(TMemoryEnvironmentTest);
 TDUnitX.RegisterTestFixture(TNullEnvironmentTest);
+TDUnitX.RegisterTestFixture(TWindowsEnvironmentTest);
 
 end.

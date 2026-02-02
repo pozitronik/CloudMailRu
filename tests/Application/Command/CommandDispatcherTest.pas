@@ -159,6 +159,10 @@ type
 		[Test]
 		procedure TestInvites_PublicAccount_ReturnsError;
 
+		{Virtual navigation from plugin root (not in any account)}
+		[Test]
+		procedure TestTrash_PluginRoot_ReturnsOK;
+
 		{Unknown command tests}
 		[Test]
 		procedure TestUnknownCommand_ReturnsOK;
@@ -609,6 +613,21 @@ begin
 	var Result := FDispatcher.Execute('\testaccount\folder', 'invites', '');
 
 	Assert.AreEqual(FS_EXEC_ERROR, Result.ResultCode);
+end;
+
+{Virtual navigation from plugin root - IsInAccount returns False}
+
+procedure TCommandDispatcherTest.TestTrash_PluginRoot_ReturnsOK;
+begin
+	{ Register cloud under empty account key to simulate root-level navigation }
+	FCloud := CreateCloud;
+	FMockConnectionManager.SetCloud('', FCloud);
+	SetupDispatcher;
+
+	{ When path is '\' (plugin root), account is empty, IsInAccount=False, returns OK }
+	var Result := FDispatcher.Execute('\', 'trash', '');
+
+	Assert.AreEqual(FS_EXEC_OK, Result.ResultCode);
 end;
 
 {Unknown command tests}

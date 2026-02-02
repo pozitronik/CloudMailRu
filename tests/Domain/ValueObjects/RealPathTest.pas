@@ -42,6 +42,8 @@ type
 		procedure TestUpDirItem;
 		[Test]
 		procedure TestGetRealPathStaticMethod;
+		[Test]
+		procedure TestFromPathWithEmptySegments;
 	end;
 
 implementation
@@ -249,6 +251,17 @@ begin
 	Assert.AreEqual('Account', RP.account);
 	Assert.AreEqual('folder', RP.path);
 	Assert.AreEqual(ID_True, RP.isDir);
+end;
+
+procedure TRealPathTest.TestFromPathWithEmptySegments;
+var
+	RP: TRealPath;
+begin
+	{ Consecutive backslashes produce empty segments that are stripped }
+	RP.FromPath('\Account\\folder');
+
+	Assert.AreEqual('Account', RP.account);
+	Assert.AreEqual('folder', RP.path);
 end;
 
 initialization

@@ -39,6 +39,8 @@ type
 		[Test]
 		procedure TestConvertToBitmap_InvalidData_ReturnsZero;
 		[Test]
+		procedure TestConvertToBitmap_CorruptJPEG_ReturnsZero;
+		[Test]
 		procedure TestConvertToBitmap_ValidJPEG_ReturnsBitmap;
 		[Test]
 		procedure TestConvertToBitmap_ValidPNG_ReturnsBitmap;
@@ -189,6 +191,28 @@ begin
 		Stream.WriteBuffer(Data, SizeOf(Data));
 		Stream.Position := 0;
 		{Unknown format returns 0 without attempting any loader}
+		Assert.AreEqual(HBITMAP(0), FConverter.ConvertToBitmap(Stream));
+	finally
+		Stream.Free;
+	end;
+end;
+
+procedure TThumbnailBitmapConverterTest.TestConvertToBitmap_CorruptJPEG_ReturnsZero;
+var
+	Stream: TMemoryStream;
+	Data: array[0..31] of Byte;
+	I: Integer;
+begin
+	{ JPEG magic bytes followed by garbage - triggers exception in loader }
+	Data[0] := $FF;
+	Data[1] := $D8;
+	Data[2] := $FF;
+	for I := 3 to High(Data) do
+		Data[I] := Byte(I);
+	Stream := TMemoryStream.Create;
+	try
+		Stream.WriteBuffer(Data, SizeOf(Data));
+		Stream.Position := 0;
 		Assert.AreEqual(HBITMAP(0), FConverter.ConvertToBitmap(Stream));
 	finally
 		Stream.Free;

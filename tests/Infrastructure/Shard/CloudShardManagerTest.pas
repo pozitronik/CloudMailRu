@@ -191,6 +191,18 @@ type
 		procedure TestEnsureDownloadShard_AlwaysEmpty;
 		[Test]
 		procedure TestEnsureUploadShard_AlwaysEmpty;
+		[Test]
+		procedure TestSetUploadShard_NoOp;
+		[Test]
+		procedure TestSetPublicShard_NoOp;
+		[Test]
+		procedure TestGetDownloadShardOverride_AlwaysEmpty;
+		[Test]
+		procedure TestGetUploadShardOverride_AlwaysEmpty;
+		[Test]
+		procedure TestInvalidateShard_NoOp;
+		[Test]
+		procedure TestInvalidateAll_NoOp;
 	end;
 
 implementation
@@ -659,6 +671,42 @@ end;
 procedure TNullShardManagerTest.TestEnsureUploadShard_AlwaysEmpty;
 begin
 	Assert.AreEqual('', FManager.EnsureUploadShard, 'Null manager EnsureUploadShard should return empty');
+end;
+
+procedure TNullShardManagerTest.TestSetUploadShard_NoOp;
+begin
+	FManager.SetUploadShard('https://some.url/');
+	Assert.AreEqual('', FManager.GetUploadShard, 'Null manager should ignore set upload shard');
+end;
+
+procedure TNullShardManagerTest.TestSetPublicShard_NoOp;
+begin
+	FManager.SetPublicShard('https://some.url/');
+	Assert.AreEqual('', FManager.GetPublicShard, 'Null manager should ignore set public shard');
+end;
+
+procedure TNullShardManagerTest.TestGetDownloadShardOverride_AlwaysEmpty;
+begin
+	Assert.AreEqual('', FManager.GetDownloadShardOverride);
+end;
+
+procedure TNullShardManagerTest.TestGetUploadShardOverride_AlwaysEmpty;
+begin
+	Assert.AreEqual('', FManager.GetUploadShardOverride);
+end;
+
+procedure TNullShardManagerTest.TestInvalidateShard_NoOp;
+begin
+	{ InvalidateShard should not throw on null manager }
+	FManager.InvalidateShard(SHARD_TYPE_GET);
+	Assert.AreEqual('', FManager.GetDownloadShard);
+end;
+
+procedure TNullShardManagerTest.TestInvalidateAll_NoOp;
+begin
+	{ InvalidateAll should not throw on null manager }
+	FManager.InvalidateAll;
+	Assert.AreEqual('', FManager.GetDownloadShard);
 end;
 
 initialization

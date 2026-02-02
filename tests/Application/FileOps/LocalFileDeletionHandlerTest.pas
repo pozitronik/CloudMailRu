@@ -78,6 +78,10 @@ type
 		[Setup]
 		procedure Setup;
 		[TearDown]
+
+		{TNullLocalFileDeletionHandler tests}
+		[Test]
+		procedure TestNullHandler_ReturnsOK;
 		procedure TearDown;
 
 		{Success cases}
@@ -489,6 +493,16 @@ begin
 
 	Assert.AreEqual(FS_FILE_OK, FHandler.DeleteLocalFile('C:\test.txt'));
 	Assert.AreEqual(2, Attempts, 'Should succeed on second attempt');
+end;
+
+{TNullLocalFileDeletionHandler tests}
+
+procedure TLocalFileDeletionHandlerTest.TestNullHandler_ReturnsOK;
+var
+	NullHandler: ILocalFileDeletionHandler;
+begin
+	NullHandler := TNullLocalFileDeletionHandler.Create;
+	Assert.AreEqual(FS_FILE_OK, NullHandler.DeleteLocalFile('C:\any\path.txt'));
 end;
 
 initialization

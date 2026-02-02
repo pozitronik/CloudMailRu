@@ -7,6 +7,7 @@ uses
 	CloudSettings,
 	CloudConstants,
 	CloudOperationResult,
+	CloudAuthorizationState,
 	Cipher,
 	HTTPManager,
 	Logger,
@@ -94,6 +95,10 @@ type
 		procedure TestCloudResultToFsResult_WithErrorPrefix;
 		[Test]
 		procedure TestCloudResultToFsResult_WithoutErrorPrefix;
+
+		{ TAuthorizationError tests }
+		[Test]
+		procedure TestAuthorizationError_CreateWithMessageOnly;
 	end;
 
 implementation
@@ -268,6 +273,15 @@ procedure TCloudMailRuInstanceTest.TestCloudResultToFsResult_WithoutErrorPrefix;
 begin
 	{ Without error prefix (empty string), no logging but result is the same }
 	Assert.AreEqual(FS_FILE_WRITEERROR, FCloud.CloudResultToFsResult(CreateResult(CLOUD_ERROR_FAHRENHEIT), ''));
+end;
+
+procedure TCloudMailRuInstanceTest.TestAuthorizationError_CreateWithMessageOnly;
+var
+	Err: TAuthorizationError;
+begin
+	Err := TAuthorizationError.Create('Something went wrong');
+	Assert.AreEqual(aecUnknown, Err.ErrorCode);
+	Assert.AreEqual('Something went wrong', Err.ErrorMessage);
 end;
 
 initialization

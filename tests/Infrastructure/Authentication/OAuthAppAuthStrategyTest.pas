@@ -50,6 +50,10 @@ type
 		procedure TestAuthenticate_PostsToCorrectURL;
 		[Test]
 		procedure TestAuthenticate_PostsCorrectCredentials;
+
+		{Factory tests}
+		[Test]
+		procedure TestDefaultFactory_CreatesOAuthStrategy;
 	end;
 
 implementation
@@ -224,6 +228,18 @@ begin
 	Assert.Contains(PostedData, 'username=myuser@inbox.ru');
 	{Password is URL-encoded in the request}
 	Assert.Contains(PostedData, 'password=mypass123');
+end;
+
+procedure TOAuthAppAuthStrategyTest.TestDefaultFactory_CreatesOAuthStrategy;
+var
+	Factory: IAuthStrategyFactory;
+	Strategy: IAuthStrategy;
+begin
+	Factory := TDefaultAuthStrategyFactory.Create;
+	Strategy := Factory.CreateDefaultStrategy;
+
+	Assert.IsNotNull(Strategy);
+	Assert.AreEqual('OAuth App Password', Strategy.GetName);
 end;
 
 initialization

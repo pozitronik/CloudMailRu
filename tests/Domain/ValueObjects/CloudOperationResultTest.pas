@@ -43,6 +43,8 @@ type
 		procedure TestParseRegistration200;
 		[Test]
 		procedure TestParseRegistration400;
+		[Test]
+		procedure TestParseRegistrationUnknownStatus;
 	end;
 
 implementation
@@ -210,6 +212,20 @@ begin
 
 	Assert.AreEqual(400, Result.OperationStatus);
 	Assert.AreEqual(CLOUD_ERROR_BAD_REQUEST, Result.OperationResult);
+end;
+
+procedure TCloudOperationResultTest.TestParseRegistrationUnknownStatus;
+var
+	OpResult: TCloudOperationResult;
+	ReturnValue: Boolean;
+begin
+	{ Status other than 200 or 400 should hit the else branch, returning CLOUD_ERROR_UNKNOWN }
+	ReturnValue := TCloudOperationResultJsonAdapter.ParseRegistration(
+		'{"status":500,"body":"server error"}', OpResult);
+
+	Assert.IsFalse(ReturnValue);
+	Assert.AreEqual(500, OpResult.OperationStatus);
+	Assert.AreEqual(CLOUD_ERROR_UNKNOWN, OpResult.OperationResult);
 end;
 
 initialization

@@ -114,6 +114,19 @@ type
 		[Test]
 		{Verifies multiple calls work correctly}
 		procedure TestMultipleCalls;
+
+		[Test]
+		{Verifies GetAccountsList returns empty list}
+		procedure TestGetAccountsList_ReturnsEmpty;
+		[Test]
+		{Verifies SetAccountSettings completes without exception}
+		procedure TestSetAccountSettings_NoOp;
+		[Test]
+		{Verifies DeleteAccount completes without exception}
+		procedure TestDeleteAccount_NoOp;
+		[Test]
+		{Verifies RenameAccount completes without exception}
+		procedure TestRenameAccount_NoOp;
 	end;
 
 implementation
@@ -654,6 +667,46 @@ begin
 	AccountsManager.SetCryptedGUID('account2', 'guid');
 
 	Assert.Pass('Multiple calls completed without exception');
+end;
+
+procedure TNullAccountsManagerTest.TestGetAccountsList_ReturnsEmpty;
+var
+	AccountsManager: IAccountsManager;
+	List: TWSList;
+begin
+	AccountsManager := TNullAccountsManager.Create;
+	List := AccountsManager.GetAccountsList;
+	Assert.AreEqual(Integer(0), Integer(List.Count));
+end;
+
+procedure TNullAccountsManagerTest.TestSetAccountSettings_NoOp;
+var
+	AccountsManager: IAccountsManager;
+	Settings: TAccountSettings;
+begin
+	AccountsManager := TNullAccountsManager.Create;
+	Settings := Default(TAccountSettings);
+	Settings.Account := 'test';
+	AccountsManager.SetAccountSettings(Settings);
+	Assert.Pass;
+end;
+
+procedure TNullAccountsManagerTest.TestDeleteAccount_NoOp;
+var
+	AccountsManager: IAccountsManager;
+begin
+	AccountsManager := TNullAccountsManager.Create;
+	AccountsManager.DeleteAccount('test');
+	Assert.Pass;
+end;
+
+procedure TNullAccountsManagerTest.TestRenameAccount_NoOp;
+var
+	AccountsManager: IAccountsManager;
+begin
+	AccountsManager := TNullAccountsManager.Create;
+	AccountsManager.RenameAccount('old', 'new');
+	Assert.Pass;
 end;
 
 initialization

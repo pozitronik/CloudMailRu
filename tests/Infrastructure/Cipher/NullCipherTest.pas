@@ -44,6 +44,10 @@ type
 		[Test]
 		{Verifies CryptStream handles empty stream}
 		procedure TestCryptStreamEmptyStream;
+
+		[Test]
+		{Verifies TPassThroughStream.Write delegates to source stream}
+		procedure TestPassThroughStreamWrite;
 	end;
 
 implementation
@@ -203,6 +207,30 @@ begin
 	finally
 		SourceStream.Free;
 		DestStream.Free;
+	end;
+end;
+
+procedure TNullCipherTest.TestPassThroughStreamWrite;
+var
+	Source: TMemoryStream;
+	Wrapper: TPassThroughStream;
+	Buffer: TBytes;
+	Written: Integer;
+begin
+	Source := TMemoryStream.Create;
+	try
+		Wrapper := TPassThroughStream.Create(Source);
+		try
+			Buffer := TEncoding.UTF8.GetBytes('write test');
+			Written := Wrapper.Write(Buffer[0], Length(Buffer));
+			{ Write delegates to source TMemoryStream, which accepts writes }
+			Assert.AreEqual(Integer(Length(Buffer)), Written);
+			Assert.AreEqual(Int64(Length(Buffer)), Source.Size);
+		finally
+			Wrapper.Free;
+		end;
+	finally
+		Source.Free;
 	end;
 end;
 

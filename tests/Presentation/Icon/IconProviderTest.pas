@@ -90,6 +90,8 @@ type
 		procedure TestGetIcon_IconsModeExternal_ReturnsExternal;
 		[Test]
 		procedure TestGetIcon_IconsModeExternalOverlay_ReturnsExternalOverlay;
+		[Test]
+		procedure TestGetIcon_UnknownIconsMode_ReturnsUseDefault;
 	end;
 
 implementation
@@ -526,6 +528,21 @@ begin
 	Info := FProvider.GetIcon(Path, Context);
 
 	Assert.AreEqual(itExternalOverlay, Info.IconType);
+end;
+
+procedure TIconProviderTest.TestGetIcon_UnknownIconsMode_ReturnsUseDefault;
+var
+	Path: TRealPath;
+	Context: TIconContext;
+	Info: TIconInfo;
+begin
+	Path.FromPath('\account');
+	Context := CreateEmptyContext;
+	Context.IconsMode := 999; { Invalid mode triggers default else branch }
+
+	Info := FProvider.GetIcon(Path, Context);
+
+	Assert.AreEqual(itUseDefault, Info.IconType);
 end;
 
 initialization

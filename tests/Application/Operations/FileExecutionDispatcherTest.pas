@@ -60,6 +60,10 @@ type
 		procedure TestDispatch_QuoteVerb_ReturnsCommand;
 		[Test]
 		procedure TestDispatch_QuoteVerb_ParsesCommandAndParameter;
+		[Test]
+		procedure TestDispatch_QuoteVerb_CommandOnly_NoParameter;
+		[Test]
+		procedure TestDispatch_QuoteVerb_QuoteAlone_EmptyCommand;
 
 		{Unknown verb tests}
 		[Test]
@@ -373,6 +377,29 @@ begin
 	Action := TExecutionAction.OpenYourself;
 
 	Assert.AreEqual(eatOpenYourself, Action.ActionType);
+end;
+
+procedure TFileExecutionDispatcherTest.TestDispatch_QuoteVerb_CommandOnly_NoParameter;
+var
+	Action: TExecutionAction;
+begin
+	{ Quote with command but no parameter: "quote trash" }
+	Action := FDispatcher.GetAction('\account\folder', 'quote trash', StreamingGetterEmpty);
+
+	Assert.AreEqual(eatCommand, Action.ActionType);
+	Assert.AreEqual('trash', Action.Command);
+	Assert.AreEqual('', Action.Parameter);
+end;
+
+procedure TFileExecutionDispatcherTest.TestDispatch_QuoteVerb_QuoteAlone_EmptyCommand;
+var
+	Action: TExecutionAction;
+begin
+	{ Quote alone with no command: "quote" }
+	Action := FDispatcher.GetAction('\account\folder', 'quote', StreamingGetterEmpty);
+
+	Assert.AreEqual(eatCommand, Action.ActionType);
+	Assert.AreEqual('', Action.Command);
 end;
 
 initialization

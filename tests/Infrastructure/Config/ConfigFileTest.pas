@@ -245,6 +245,12 @@ type
 		{Key operations}
 		[Test]
 		procedure Test_DeleteKey_RemovesKey;
+
+		{QueryInterface tests}
+		[Test]
+		procedure Test_QueryInterface_ValidIID_ReturnsSOK;
+		[Test]
+		procedure Test_QueryInterface_InvalidIID_ReturnsENoInterface;
 	end;
 
 implementation
@@ -772,6 +778,27 @@ begin
 
 	Assert.AreEqual('default', FConfig.ReadString('Section', 'Key1', 'default'));
 	Assert.AreEqual('Value2', FConfig.ReadString('Section', 'Key2', 'default'));
+end;
+
+procedure TIniConfigFileTest.Test_QueryInterface_ValidIID_ReturnsSOK;
+var
+	Intf: IConfigFile;
+	HR: HResult;
+begin
+	{IConfigFile inherits from IInterface, so QueryInterface is accessible directly}
+	HR := FConfig.QueryInterface(IConfigFile, Intf);
+	Assert.AreEqual(Integer(S_OK), Integer(HR));
+end;
+
+procedure TIniConfigFileTest.Test_QueryInterface_InvalidIID_ReturnsENoInterface;
+var
+	Intf: IInterface;
+	HR: HResult;
+	FakeGUID: TGUID;
+begin
+	FakeGUID := StringToGUID('{00000000-0000-0000-0000-000000000001}');
+	HR := FConfig.QueryInterface(FakeGUID, Intf);
+	Assert.AreEqual(Integer(E_NOINTERFACE), Integer(HR));
 end;
 
 initialization

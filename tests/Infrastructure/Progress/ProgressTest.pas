@@ -29,6 +29,9 @@ type
 		procedure TestProgressNoSourceTarget;
 		[Test]
 		procedure TestProgressNoParams;
+		[Test]
+		{Verifies Aborted() delegates to ProgressProc with nil parameters}
+		procedure TestAborted;
 	end;
 
 	[TestFixture]
@@ -93,6 +96,14 @@ type
 		[Test]
 		{Aborted delegates to inner progress}
 		procedure TestAborted_Delegates;
+
+		[Test]
+		{TScaledProgress.Progress(SourceName, PercentDone) delegates with scaling}
+		procedure TestScaledProgress_TwoParamOverload;
+
+		[Test]
+		{TScaledProgress.Progress(PercentDone) delegates with scaling}
+		procedure TestScaledProgress_OneParamOverload;
 	end;
 
 var
@@ -102,6 +113,7 @@ var
 	PercentDone: Integer;
 
 function TestProgressProc(Plugin_Nr: Integer; Source_Name, Target_Name: PWideChar; Percent_Done: Integer): Integer; stdcall;
+function AbortedProgressProc(Plugin_Nr: Integer; Source_Name, Target_Name: PWideChar; Percent_Done: Integer): Integer; stdcall;
 
 implementation
 
@@ -114,6 +126,12 @@ begin
 	TargetName := Target_Name;
 	PercentDone := Percent_Done;
 	result := 0;
+end;
+
+function AbortedProgressProc(Plugin_Nr: Integer; Source_Name, Target_Name: PWideChar; Percent_Done: Integer): Integer;
+begin
+	{Simulates TC returning 1 (user cancelled)}
+	result := 1;
 end;
 
 procedure TTCProgressTest.Setup;
@@ -240,6 +258,19 @@ begin
 	Assert.AreEqual(RandomSourceName, SourceName);
 	Assert.AreEqual('', TargetName);
 
+end;
+
+procedure TTCProgressTest.TestAborted;
+var
+	TestTCProgress: TTCProgress;
+begin
+	{Test with non-aborted proc}
+	TestTCProgress := TTCProgress.Create(TestProgressProc, 1);
+	Assert.IsFalse(TestTCProgress.Aborted, 'Non-aborting proc should return False');
+
+	{Test with aborted proc - simulates user cancellation}
+	TestTCProgress := TTCProgress.Create(AbortedProgressProc, 1);
+	Assert.IsTrue(TestTCProgress.Aborted, 'Aborting proc should return True');
 end;
 
 {TNullProgressTest}
@@ -388,6 +419,32 @@ begin
 	Scaled := TScaledProgress.Create(TNullProgress.Create);
 	{TNullProgress.Aborted returns False}
 	Assert.IsFalse(Scaled.Aborted);
+end;
+
+procedure TScaledProgressTest.TestScaledProgress_TwoParamOverload;
+var
+	Scaled: TScaledProgress;
+begin
+	PercentDone := 0;
+	SourceName := '';
+	Scaled := TScaledProgress.Create(TTCProgress.Create(TestProgressProc, 1));
+	Scaled.SetScale(1, 4); {Second part of 4}
+	Scaled.Progress('myfile.txt', 60);
+	{Expected: (1*100 + 60) / 4 = 40}
+	Assert.AreEqual(40, PercentDone);
+	Assert.AreEqual('myfile.txt', SourceName);
+end;
+
+procedure TScaledProgressTest.TestScaledProgress_OneParamOverload;
+var
+	Scaled: TScaledProgress;
+begin
+	PercentDone := 0;
+	Scaled := TScaledProgress.Create(TTCProgress.Create(TestProgressProc, 1));
+	Scaled.SetScale(3, 5); {Fourth part of 5}
+	Scaled.Progress(80);
+	{Expected: (3*100 + 80) / 5 = 76}
+	Assert.AreEqual(76, PercentDone);
 end;
 
 initialization

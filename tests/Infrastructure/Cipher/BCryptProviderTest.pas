@@ -41,6 +41,15 @@ type
 		procedure TestNullProvider_IsAvailable_ReturnsFalse;
 		[Test]
 		procedure TestNullProvider_DeriveKey_ReturnsEmpty;
+		[Test]
+		{Verifies CreateAESKeyHandle returns 0 (null handle)}
+		procedure TestNullProvider_CreateAESKeyHandle_ReturnsZero;
+		[Test]
+		{Verifies EncryptBlock completes without error}
+		procedure TestNullProvider_EncryptBlock_NoOp;
+		[Test]
+		{Verifies DestroyKeyHandle completes without error}
+		procedure TestNullProvider_DestroyKeyHandle_NoOp;
 
 		{Interface compliance}
 		[Test]
@@ -212,6 +221,39 @@ begin
 	Provider := TNullBCryptProvider.Create;
 	Key := Provider.DeriveKey('test');
 	Assert.AreEqual(Integer(0), Integer(Length(Key)));
+end;
+
+procedure TBCryptProviderTest.TestNullProvider_CreateAESKeyHandle_ReturnsZero;
+var
+	Provider: IBCryptProvider;
+	Key: TBytes;
+	Handle: BCRYPT_KEY_HANDLE;
+begin
+	Provider := TNullBCryptProvider.Create;
+	SetLength(Key, 32);
+	Handle := Provider.CreateAESKeyHandle(Key);
+	Assert.AreEqual(THandle(0), Handle);
+end;
+
+procedure TBCryptProviderTest.TestNullProvider_EncryptBlock_NoOp;
+var
+	Provider: IBCryptProvider;
+	InBlock, OutBlock: array[0..15] of Byte;
+begin
+	Provider := TNullBCryptProvider.Create;
+	FillChar(InBlock, SizeOf(InBlock), $AA);
+	FillChar(OutBlock, SizeOf(OutBlock), 0);
+	Provider.EncryptBlock(0, InBlock, OutBlock);
+	Assert.Pass('EncryptBlock completed without error');
+end;
+
+procedure TBCryptProviderTest.TestNullProvider_DestroyKeyHandle_NoOp;
+var
+	Provider: IBCryptProvider;
+begin
+	Provider := TNullBCryptProvider.Create;
+	Provider.DestroyKeyHandle(0);
+	Assert.Pass('DestroyKeyHandle completed without error');
 end;
 
 {Interface compliance}

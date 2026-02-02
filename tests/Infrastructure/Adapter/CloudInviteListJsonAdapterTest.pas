@@ -57,6 +57,8 @@ type
 		procedure TestParse_InvalidJSON_ReturnsFalse;
 		[Test]
 		procedure TestParse_EmptyString_ReturnsFalse;
+		[Test]
+		procedure TestParse_InvitedNotArray_ReturnsTrue;
 	end;
 
 implementation
@@ -146,6 +148,16 @@ var
 	List: TCloudInviteList;
 begin
 	Assert.IsFalse(TCloudInviteListJsonAdapter.Parse(JSON_EMPTY, List));
+end;
+
+procedure TCloudInviteListJsonAdapterTest.TestParse_InvitedNotArray_ReturnsTrue;
+var
+	List: TCloudInviteList;
+begin
+	{ When "invited" exists but is not an array (e.g. a string), early exit with True }
+	Assert.IsTrue(TCloudInviteListJsonAdapter.Parse(
+		'{"status":200,"body":{"invited":"unexpected_string"}}', List));
+	Assert.AreEqual(Integer(0), Integer(Length(List)));
 end;
 
 initialization

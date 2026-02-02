@@ -106,6 +106,8 @@ type
 		procedure TestCloneWeblink_Success_ReturnsOK;
 		[Test]
 		procedure TestCloneWeblink_HTTPFailure_ReturnsWriteError;
+		[Test]
+		procedure TestCloneWeblink_UserAbort_ReturnsUserAbort;
 	end;
 
 implementation
@@ -415,6 +417,19 @@ begin
 	FMockHTTP.SetDefaultResponse(False, '');
 	ResultCode := FService.CloneWeblink('/dest/folder', 'weblink123');
 	Assert.AreEqual(FS_FILE_WRITEERROR, ResultCode, 'CloneWeblink should return WRITEERROR on HTTP failure');
+end;
+
+procedure TCloudShareServiceTest.TestCloneWeblink_UserAbort_ReturnsUserAbort;
+var
+	ResultCode: Integer;
+begin
+	{ GetPage succeeds but Progress is set to False (user cancelled).
+		CloudResultToFsResult returns an error, combined with Progress=False triggers USERABORT. }
+	FMockHTTP.SetResponseWithCancel(API_CLONE, True,
+		'{"status":400,"body":{"home":{"error":"exists"}}}', True);
+	FMockContext.SetCloudResultToFsResultResult(FS_FILE_WRITEERROR);
+	ResultCode := FService.CloneWeblink('/dest/folder', 'weblink123');
+	Assert.AreEqual(FS_FILE_USERABORT, ResultCode, 'CloneWeblink should return USERABORT on user cancellation');
 end;
 
 initialization

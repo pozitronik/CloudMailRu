@@ -60,6 +60,14 @@ type
 		procedure TestSeekFromEnd;
 		[Test]
 		procedure TestSeekBeyondChunkClamps;
+		[Test]
+		procedure TestSeekNegativeFromCurrentClamps;
+		[Test]
+		procedure TestSeekInvalidOriginReturnsNegative;
+
+		{ Write tests }
+		[Test]
+		procedure TestWriteReturnsZero;
 
 		{ Resource cleanup tests }
 		[Test]
@@ -367,6 +375,56 @@ begin
 		{ Seek 1000 bytes from current (0) - should clamp to chunk size }
 		NewPos := Stream.Seek(1000, soCurrent);
 		Assert.AreEqual(Int64(200), NewPos);
+	finally
+		Stream.Free;
+	end;
+end;
+
+procedure TChunkedFileStreamTest.TestSeekNegativeFromCurrentClamps;
+var
+	Stream: TChunkedFileStream;
+	NewPos: Int64;
+begin
+	CreateTestFile(1000);
+	Stream := TChunkedFileStream.Create(FTempFile, fmOpenRead, 100, 200);
+	try
+		{ Seek far before start from current position (0) - should clamp to 0 }
+		NewPos := Stream.Seek(-500, soCurrent);
+		Assert.AreEqual(Int64(0), NewPos);
+	finally
+		Stream.Free;
+	end;
+end;
+
+procedure TChunkedFileStreamTest.TestSeekInvalidOriginReturnsNegative;
+var
+	Stream: TChunkedFileStream;
+	NewPos: Int64;
+begin
+	CreateTestFile(1000);
+	Stream := TChunkedFileStream.Create(FTempFile, fmOpenRead, 100, 200);
+	try
+		{ Invalid origin value hits the else branch returning -1 }
+		NewPos := Stream.Seek(0, TSeekOrigin(99));
+		Assert.AreEqual(Int64(-1), NewPos);
+	finally
+		Stream.Free;
+	end;
+end;
+
+procedure TChunkedFileStreamTest.TestWriteReturnsZero;
+var
+	Stream: TChunkedFileStream;
+	Buffer: TBytes;
+	Written: Integer;
+begin
+	CreateTestFile(1000);
+	Stream := TChunkedFileStream.Create(FTempFile, fmOpenRead, 0, 200);
+	try
+		SetLength(Buffer, 50);
+		{ Write is a stub that always returns 0 }
+		Written := Stream.Write(Buffer[0], 50);
+		Assert.AreEqual(0, Written);
 	finally
 		Stream.Free;
 	end;

@@ -41,6 +41,10 @@ type
 		procedure TestAddEmptyString;
 		[Test]
 		procedure TestContainsEmptyString;
+
+		{TStringsHelper.AddStrings tests}
+		[Test]
+		procedure TestAddStringsToStringList;
 	end;
 
 implementation
@@ -194,6 +198,33 @@ begin
 	List.Add('another');
 
 	Assert.IsTrue(List.Contains(''));
+end;
+
+{TStringsHelper.AddStrings tests}
+
+procedure TWSListTest.TestAddStringsToStringList;
+var
+	List: TWSList;
+	SL: TStringList;
+	Strings: TStrings;
+begin
+	List.Add('alpha');
+	List.Add('beta');
+	List.Add('gamma');
+
+	SL := TStringList.Create;
+	try
+		{Class helper method is hidden by TStringList's own AddStrings,
+		 so we use a TStrings variable to reach TStringsHelper.AddStrings}
+		Strings := SL;
+		Strings.AddStrings(List);
+		Assert.AreEqual(3, SL.Count);
+		Assert.AreEqual('alpha', SL[0]);
+		Assert.AreEqual('beta', SL[1]);
+		Assert.AreEqual('gamma', SL[2]);
+	finally
+		SL.Free;
+	end;
 end;
 
 initialization

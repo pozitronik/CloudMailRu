@@ -114,6 +114,12 @@ type
 		procedure TestHasAnyActiveOperations_TrueWithActiveBackgroundJobs;
 		[Test]
 		procedure TestHasAnyActiveOperations_FalseWithZeroJobCount;
+
+		{ Edge cases }
+		[Test]
+		procedure TestIsPathSkipped_NoSkippedPathList_ReturnsFalse;
+		[Test]
+		procedure TestDecrementBackgroundJobs_UnknownAccount_SetsNegative;
 	end;
 
 implementation
@@ -463,6 +469,21 @@ begin
 	FManager.DecrementBackgroundJobs('test@mail.ru');
 	{ Now there's an entry in the dictionary with value 0 }
 	Assert.IsFalse(FManager.HasAnyActiveOperations);
+end;
+
+{ Edge cases }
+
+procedure TThreadStateManagerTest.TestIsPathSkipped_NoSkippedPathList_ReturnsFalse;
+begin
+	{ IsPathSkipped should return False when no skipped path list was created }
+	Assert.IsFalse(FManager.IsPathSkipped('\some\path'));
+end;
+
+procedure TThreadStateManagerTest.TestDecrementBackgroundJobs_UnknownAccount_SetsNegative;
+begin
+	{ Decrementing on unknown account starts from 0, resulting in -1 }
+	FManager.DecrementBackgroundJobs('unknown@mail.ru');
+	Assert.AreEqual(-1, FManager.GetBackgroundJobsCount('unknown@mail.ru'));
 end;
 
 initialization

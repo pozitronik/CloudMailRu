@@ -76,6 +76,33 @@ type
 		procedure TestWriteResourceCleanupOnError;
 		[Test]
 		procedure TestReadResourceCleanupOnError;
+
+		{ CopyFrom tests }
+		[Test]
+		{CopyFrom nil source returns 1}
+		procedure TestCopyFromNil;
+		[Test]
+		{CopyFrom with move=true deletes source entry}
+		procedure TestCopyFromWithMove;
+		[Test]
+		{CopyFrom with move=false copies without deleting}
+		procedure TestCopyFromWithoutMove;
+
+		{ Additional encoding tests }
+		[Test]
+		{DetermineEncoding detects BigEndianUnicode BOM}
+		procedure TestDetermineEncodingBigEndianUnicode;
+		[Test]
+		{Constructor with ENCODING_DEFAULT uses ANSI}
+		procedure TestCreateWithDefaultEncoding;
+		[Test]
+		{Constructor with ENCODING_UNCODE_BE uses BigEndianUnicode}
+		procedure TestCreateWithBigEndianEncoding;
+
+		{ Multiline tests }
+		[Test]
+		{Write/Read round-trip with multiline values}
+		procedure TestWriteMultilineValue;
 	end;
 
 	[TestFixture]
@@ -366,6 +393,131 @@ begin
 		Assert.AreEqual(0, ReadResult, 'Read should return 0 on success');
 		Assert.AreEqual('value1', Description2.GetValue('key1'));
 		Assert.AreEqual('value2', Description2.GetValue('key2'));
+	finally
+		Description2.Free;
+	end;
+end;
+
+{ CopyFrom tests }
+
+procedure TDescriptionTest.TestCopyFromNil;
+begin
+	Assert.AreEqual(1, FDescription.CopyFrom(nil, 'anyitem'));
+end;
+
+procedure TDescriptionTest.TestCopyFromWithMove;
+var
+	SourceTempFile: string;
+	Source: TDescription;
+begin
+	SourceTempFile := IncludeTrailingPathDelimiter(GetEnvironmentVariable('TEMP')) +
+		'DescriptionTest_src_' + IntToStr(GetCurrentThreadId) + '.ion';
+	Source := TDescription.Create(SourceTempFile, FFileSystem, ENCODING_UTF8);
+	try
+		Source.SetValue('testfile.txt', 'source description');
+		Source.Write;
+		Assert.AreEqual(0, FDescription.CopyFrom(Source, 'testfile.txt', True));
+		Assert.AreEqual('source description', FDescription.GetValue('testfile.txt'));
+		{Source entry should be deleted after move}
+		Assert.AreEqual('', Source.GetValue('testfile.txt'));
+	finally
+		Source.Free;
+		if FileExists(SourceTempFile) then
+			System.SysUtils.DeleteFile(SourceTempFile);
+	end;
+end;
+
+procedure TDescriptionTest.TestCopyFromWithoutMove;
+var
+	SourceTempFile: string;
+	Source: TDescription;
+begin
+	SourceTempFile := IncludeTrailingPathDelimiter(GetEnvironmentVariable('TEMP')) +
+		'DescriptionTest_src2_' + IntToStr(GetCurrentThreadId) + '.ion';
+	Source := TDescription.Create(SourceTempFile, FFileSystem, ENCODING_UTF8);
+	try
+		Source.SetValue('testfile.txt', 'keep this');
+		Assert.AreEqual(0, FDescription.CopyFrom(Source, 'testfile.txt', False));
+		Assert.AreEqual('keep this', FDescription.GetValue('testfile.txt'));
+		{Source entry should still exist}
+		Assert.AreEqual('keep this', Source.GetValue('testfile.txt'));
+	finally
+		Source.Free;
+		if FileExists(SourceTempFile) then
+			System.SysUtils.DeleteFile(SourceTempFile);
+	end;
+end;
+
+{ Additional encoding tests }
+
+procedure TDescriptionTest.TestDetermineEncodingBigEndianUnicode;
+var
+	F: TFileStream;
+	BOM: array[0..1] of Byte;
+	Encoding: TEncoding;
+	Description2: TDescription;
+begin
+	{Write BigEndian Unicode BOM (FE FF)}
+	BOM[0] := $FE;
+	BOM[1] := $FF;
+	F := TFileStream.Create(FTempFile, fmCreate);
+	try
+		F.WriteBuffer(BOM[0], 2);
+	finally
+		F.Free;
+	end;
+
+	Description2 := TDescription.Create(FTempFile, FFileSystem, ENCODING_UNCODE_BE);
+	try
+		Encoding := Description2.DetermineEncoding;
+		Assert.AreSame(TEncoding.BigEndianUnicode, Encoding);
+	finally
+		Description2.Free;
+	end;
+end;
+
+procedure TDescriptionTest.TestCreateWithDefaultEncoding;
+var
+	Description2: TDescription;
+begin
+	Description2 := TDescription.Create(FTempFile, FFileSystem, ENCODING_DEFAULT);
+	try
+		Description2.SetValue('key', 'value');
+		Assert.AreEqual('value', Description2.GetValue('key'));
+	finally
+		Description2.Free;
+	end;
+end;
+
+procedure TDescriptionTest.TestCreateWithBigEndianEncoding;
+var
+	Description2: TDescription;
+begin
+	Description2 := TDescription.Create(FTempFile, FFileSystem, ENCODING_UNCODE_BE);
+	try
+		Description2.SetValue('key', 'value');
+		Assert.AreEqual('value', Description2.GetValue('key'));
+	finally
+		Description2.Free;
+	end;
+end;
+
+{ Multiline tests }
+
+procedure TDescriptionTest.TestWriteMultilineValue;
+var
+	Description2: TDescription;
+begin
+	{Set a value containing actual line breaks}
+	FDescription.SetValue('multikey', 'line1' + sLineBreak + 'line2');
+	FDescription.Write;
+
+	{Read back and verify}
+	Description2 := TDescription.Create(FTempFile, FFileSystem, ENCODING_UTF8);
+	try
+		Description2.Read;
+		{FORMAT_CLEAR should restore line breaks}
+		Assert.AreEqual('line1' + sLineBreak + 'line2', Description2.GetValue('multikey', FORMAT_CLEAR));
 	finally
 		Description2.Free;
 	end;

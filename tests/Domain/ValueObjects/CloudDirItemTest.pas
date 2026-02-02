@@ -43,6 +43,8 @@ type
 		[Test]
 		procedure TestToFindData_TrashBinItem;
 		[Test]
+		procedure TestToFindData_TrashBinDirectory;
+		[Test]
 		procedure TestToFindData_SharedFolder;
 		[Test]
 		procedure TestToFindData_LargeFileSize;
@@ -208,6 +210,26 @@ begin
 
 	{Deleted file should have creation time set}
 	Assert.AreNotEqual(Int64(0), Int64(FindData.ftCreationTime.dwLowDateTime) or Int64(FindData.ftCreationTime.dwHighDateTime shl 32));
+end;
+
+procedure TCloudDirItemTest.TestToFindData_TrashBinDirectory;
+var
+	Item: TCloudDirItem;
+	FindData: tWIN32FINDDATAW;
+begin
+	Item := Item.None;
+	Item.name := 'deleted_folder';
+	Item.type_ := TYPE_DIR;
+	Item.deleted_from := '/original/path';
+	Item.deleted_at := 1700000000;
+
+	FindData := Item.ToFindData;
+
+	{ Deleted directories should have FILE_ATTRIBUTE_DIRECTORY set }
+	Assert.AreEqual(FILE_ATTRIBUTE_DIRECTORY, FindData.dwFileAttributes and FILE_ATTRIBUTE_DIRECTORY);
+	{ And should have creation time set from deleted_at }
+	Assert.AreNotEqual(Int64(0), Int64(FindData.ftCreationTime.dwLowDateTime) or
+		Int64(FindData.ftCreationTime.dwHighDateTime shl 32));
 end;
 
 procedure TCloudDirItemTest.TestToFindData_SharedFolder;
