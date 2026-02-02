@@ -120,7 +120,8 @@ var
 	Loaded: Boolean;
 begin
 	Result := 0;
-	if (ImageStream = nil) or (ImageStream.Size = 0) then
+	{No image format can be identified in fewer than 3 bytes}
+	if (ImageStream = nil) or (ImageStream.Size < 3) then
 		Exit;
 
 	Format := DetectImageFormat(ImageStream);
