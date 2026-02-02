@@ -17,7 +17,7 @@ implementation
 
 function DataPath(Path: WideString): WideString;
 begin
-	Exit(TPath.GetFullPath(TPath.Combine(TPath.GetLibraryPath, '..\..\data', Path))); //up to two levels, due binary is in subdir
+	Exit(TPath.GetFullPath(TPath.Combine(TPath.Combine(TPath.GetLibraryPath, '..\..\data'), Path))); //up to two levels, due binary is in subdir
 end;
 
 procedure DataFileContents(DataFileName: WideString; out VarName: WideString);
