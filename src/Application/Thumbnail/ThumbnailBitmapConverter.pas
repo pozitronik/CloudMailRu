@@ -130,11 +130,12 @@ begin
 	try
 		try
 			case Format of
+				ifJPEG: Loaded := LoadJPEG(ImageStream, Bitmap);
 				ifPNG:  Loaded := LoadPNG(ImageStream, Bitmap);
 				ifGIF:  Loaded := LoadGIF(ImageStream, Bitmap);
 			else
-				{JPEG and Unknown: try JPEG since server transcodes uncommon formats to JPEG}
-				Loaded := LoadJPEG(ImageStream, Bitmap);
+				{Unrecognized format - valid images are always detected by magic bytes}
+				Loaded := False;
 			end;
 		except
 			{Corrupt or unrecognized data - silently return 0}

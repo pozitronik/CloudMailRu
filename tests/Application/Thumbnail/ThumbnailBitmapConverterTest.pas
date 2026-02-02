@@ -188,7 +188,7 @@ begin
 	try
 		Stream.WriteBuffer(Data, SizeOf(Data));
 		Stream.Position := 0;
-		{Unknown format falls through to JPEG loader which should fail on garbage data}
+		{Unknown format returns 0 without attempting any loader}
 		Assert.AreEqual(HBITMAP(0), FConverter.ConvertToBitmap(Stream));
 	finally
 		Stream.Free;
