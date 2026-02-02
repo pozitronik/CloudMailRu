@@ -87,13 +87,11 @@ function TCloudShareService.Publish(Path: WideString; var PublicLink: WideString
 var
 	CallResult: TAPICallResult;
 	ExtractedLink: WideString;
-	UnitedParams: WideString;
 begin
 	Result := False;
 	if FContext.IsPublicAccount then
 		Exit;
 
-	UnitedParams := FContext.GetUnitedParams;
 	ExtractedLink := '';
 
 	CallResult := FRetryOperation.Execute(
@@ -102,7 +100,7 @@ begin
 			JSON: WideString;
 			Success: Boolean;
 		begin
-			Success := FContext.GetHTTP.PostForm(API_FILE_PUBLISH + '?' + UnitedParams, Format('home=/%s&conflict', [PathToUrl(Path)]), JSON, 'application/x-www-form-urlencoded', true, False);
+			Success := FContext.GetHTTP.PostForm(API_FILE_PUBLISH + '?' + FContext.GetUnitedParams, Format('home=/%s&conflict', [PathToUrl(Path)]), JSON, 'application/x-www-form-urlencoded', true, False);
 
 			if Success then
 				Success := FContext.CloudResultToBoolean(JSON, PREFIX_ERR_FILE_PUBLISH);
@@ -121,14 +119,12 @@ end;
 function TCloudShareService.Unpublish(Path: WideString; PublicLink: WideString): Boolean;
 var
 	CallResult: TAPICallResult;
-	UnitedParams: WideString;
 	CurrentLink: WideString;
 begin
 	Result := False;
 	if FContext.IsPublicAccount then
 		Exit;
 
-	UnitedParams := FContext.GetUnitedParams;
 	CurrentLink := PublicLink;
 
 	CallResult := FRetryOperation.Execute(
@@ -137,7 +133,7 @@ begin
 			JSON: WideString;
 			Success: Boolean;
 		begin
-			Success := FContext.GetHTTP.PostForm(API_FILE_UNPUBLISH + '?' + UnitedParams, Format('weblink=%s&conflict', [CurrentLink]), JSON, 'application/x-www-form-urlencoded', true, False);
+			Success := FContext.GetHTTP.PostForm(API_FILE_UNPUBLISH + '?' + FContext.GetUnitedParams, Format('weblink=%s&conflict', [CurrentLink]), JSON, 'application/x-www-form-urlencoded', true, False);
 
 			if Success then
 				Success := FContext.CloudResultToBoolean(JSON, PREFIX_ERR_FILE_PUBLISH);
@@ -152,9 +148,7 @@ function TCloudShareService.GetShareInfo(Path: WideString; var InviteListing: TC
 var
 	CallResult: TAPICallResult;
 	LocalListing: TCloudInviteList;
-	UnitedParams: WideString;
 begin
-	UnitedParams := FContext.GetUnitedParams;
 	SetLength(LocalListing, 0);
 
 	CallResult := FRetryOperation.Execute(
@@ -165,7 +159,7 @@ begin
 			Success: Boolean;
 		begin
 			Progress := False;
-			Success := FContext.GetHTTP.GetPage(Format('%s?home=%s&%s', [API_FOLDER_SHARED_INFO, PathToUrl(Path), UnitedParams]), JSON, Progress);
+			Success := FContext.GetHTTP.GetPage(Format('%s?home=%s&%s', [API_FOLDER_SHARED_INFO, PathToUrl(Path), FContext.GetUnitedParams]), JSON, Progress);
 			if Success then
 				Success := TCloudInviteListJsonAdapter.Parse(JSON, LocalListing);
 			Result := TAPICallResult.FromBoolean(Success, JSON);
@@ -180,12 +174,9 @@ function TCloudShareService.Share(Path, Email: WideString; Access: Integer): Boo
 var
 	CallResult: TAPICallResult;
 	AccessString: WideString;
-	UnitedParams: WideString;
 begin
 	if not(Access in [CLOUD_SHARE_RW, CLOUD_SHARE_RO]) then
 		Exit(False);
-
-	UnitedParams := FContext.GetUnitedParams;
 
 	if Access = CLOUD_SHARE_RW then
 		AccessString := CLOUD_SHARE_ACCESS_READ_WRITE
@@ -198,7 +189,7 @@ begin
 			JSON: WideString;
 			Success: Boolean;
 		begin
-			Success := FContext.GetHTTP.PostForm(API_FOLDER_SHARE + '?' + UnitedParams, Format('home=/%s&invite={"email":"%s","access":"%s"}', [PathToUrl(Path), Email, AccessString]), JSON);
+			Success := FContext.GetHTTP.PostForm(API_FOLDER_SHARE + '?' + FContext.GetUnitedParams, Format('home=/%s&invite={"email":"%s","access":"%s"}', [PathToUrl(Path), Email, AccessString]), JSON);
 
 			if Success then
 				Success := FContext.CloudResultToBoolean(JSON, PREFIX_ERR_INVITE_MEMBER);
@@ -211,17 +202,14 @@ end;
 function TCloudShareService.Unshare(Path, Email: WideString): Boolean;
 var
 	CallResult: TAPICallResult;
-	UnitedParams: WideString;
 begin
-	UnitedParams := FContext.GetUnitedParams;
-
 	CallResult := FRetryOperation.Execute(
 		function: TAPICallResult
 		var
 			JSON: WideString;
 			Success: Boolean;
 		begin
-			Success := FContext.GetHTTP.PostForm(API_FOLDER_UNSHARE + '?' + UnitedParams, Format('home=/%s&invite={"email":"%s"}', [PathToUrl(Path), Email]), JSON);
+			Success := FContext.GetHTTP.PostForm(API_FOLDER_UNSHARE + '?' + FContext.GetUnitedParams, Format('home=/%s&invite={"email":"%s"}', [PathToUrl(Path), Email]), JSON);
 
 			if Success then
 				Success := FContext.CloudResultToBoolean(JSON, PREFIX_ERR_INVITE_MEMBER);
@@ -237,7 +225,7 @@ begin
 	if FContext.IsPublicAccount then
 		Exit;
 
-	Result := FRetryOperation.PostFormBoolean(API_FOLDER_MOUNT + '?' + FContext.GetUnitedParams, Format('home=%s&invite_token=%s&conflict=%s', [UrlEncode(Home), InviteToken, ConflictMode]), PREFIX_ERR_FOLDER_MOUNT);
+	Result := FRetryOperation.PostFormBoolean(API_FOLDER_MOUNT, Format('home=%s&invite_token=%s&conflict=%s', [UrlEncode(Home), InviteToken, ConflictMode]), PREFIX_ERR_FOLDER_MOUNT);
 end;
 
 function TCloudShareService.Unmount(Home: WideString; CloneCopy: Boolean): Boolean;
@@ -253,7 +241,7 @@ begin
 	else
 		CopyStr := 'false';
 
-	Result := FRetryOperation.PostFormBoolean(API_FOLDER_UNMOUNT + '?' + FContext.GetUnitedParams, Format('home=%s&clone_copy=%s', [UrlEncode(Home), CopyStr]), PREFIX_ERR_FOLDER_UNMOUNT);
+	Result := FRetryOperation.PostFormBoolean(API_FOLDER_UNMOUNT, Format('home=%s&clone_copy=%s', [UrlEncode(Home), CopyStr]), PREFIX_ERR_FOLDER_UNMOUNT);
 end;
 
 function TCloudShareService.RejectInvite(InviteToken: WideString): Boolean;
@@ -262,7 +250,7 @@ begin
 	if FContext.IsPublicAccount then
 		Exit;
 
-	Result := FRetryOperation.PostFormBoolean(API_INVITE_REJECT + '?' + FContext.GetUnitedParams, Format('invite_token=%s', [InviteToken]), PREFIX_ERR_INVITE_REJECT);
+	Result := FRetryOperation.PostFormBoolean(API_INVITE_REJECT, Format('invite_token=%s', [InviteToken]), PREFIX_ERR_INVITE_REJECT);
 end;
 
 function TCloudShareService.GetPublishedFileStreamUrl(FileIdentity: TCloudDirItem; var StreamUrl: WideString; ShardType: WideString = SHARD_TYPE_WEBLINK_VIDEO; Publish: Boolean = CLOUD_PUBLISH): Boolean;
@@ -292,12 +280,9 @@ end;
 function TCloudShareService.CloneWeblink(Path, Link, ConflictMode: WideString): Integer;
 var
 	CallResult: TAPICallResult;
-	UnitedParams: WideString;
 begin
 	if FContext.IsPublicAccount then
 		Exit(FS_FILE_NOTSUPPORTED);
-
-	UnitedParams := FContext.GetUnitedParams;
 
 	CallResult := FRetryOperation.Execute(
 		function: TAPICallResult
@@ -307,7 +292,7 @@ begin
 			ResultCode: Integer;
 		begin
 			Progress := true;
-			if FContext.GetHTTP.GetPage(Format('%s?folder=/%s&weblink=%s&conflict=%s&%s', [API_CLONE, PathToUrl(Path), Link, ConflictMode, UnitedParams]), JSON, Progress) then
+			if FContext.GetHTTP.GetPage(Format('%s?folder=/%s&weblink=%s&conflict=%s&%s', [API_CLONE, PathToUrl(Path), Link, ConflictMode, FContext.GetUnitedParams]), JSON, Progress) then
 			begin
 				ResultCode := FContext.CloudResultToFsResult(JSON, PREFIX_ERR_FILE_PUBLISH);
 				if (ResultCode <> FS_FILE_OK) and not(Progress) then

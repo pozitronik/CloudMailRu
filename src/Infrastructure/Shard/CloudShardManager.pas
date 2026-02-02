@@ -127,7 +127,7 @@ function TCloudShardManager.ResolveShard(var Shard: WideString; ShardType: WideS
 var
 	JSON: WideString;
 begin
-	Result := FContext.PostForm(API_DISPATCHER + '?' + FContext.GetUnitedParams, '', JSON) and FContext.CloudResultToBoolean(JSON, PREFIX_ERR_SHARD_RECEIVE);
+	Result := FContext.PostForm(API_DISPATCHER, '', JSON) and FContext.CloudResultToBoolean(JSON, PREFIX_ERR_SHARD_RECEIVE);
 	if Result then
 	begin
 		Result := JSONHelper.GetShard(JSON, Shard, ShardType) and (Shard <> EmptyWideStr);

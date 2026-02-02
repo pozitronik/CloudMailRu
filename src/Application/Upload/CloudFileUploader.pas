@@ -143,7 +143,6 @@ var
 	CallResult: TAPICallResult;
 	{Explicit Self capture for anonymous function closure}
 	HTTP: ICloudHTTP;
-	UnitedParams: WideString;
 	Context: ICloudContext;
 	Logger: ILogger;
 begin
@@ -152,7 +151,6 @@ begin
 
 	{Capture values before anonymous function to avoid Self capture issues}
 	HTTP := FContext.GetHTTP;
-	UnitedParams := FContext.GetUnitedParams;
 	Context := FContext;
 	Logger := FLogger;
 
@@ -163,7 +161,7 @@ begin
 			OperationResult: TCloudOperationResult;
 			ResultCode: Integer;
 		begin
-			if HTTP.PostForm(API_FILE_ADD + '?' + UnitedParams, Format('api=2&conflict=%s&home=/%s&hash=%s&size=%d', [ConflictMode, PathToUrl(RemotePath), FileIdentity.Hash, FileIdentity.size]), JSON, 'application/x-www-form-urlencoded', LogErrors, False) then
+			if HTTP.PostForm(API_FILE_ADD + '?' + Context.GetUnitedParams, Format('api=2&conflict=%s&home=/%s&hash=%s&size=%d', [ConflictMode, PathToUrl(RemotePath), FileIdentity.Hash, FileIdentity.size]), JSON, 'application/x-www-form-urlencoded', LogErrors, False) then
 			begin
 				TCloudOperationResultJsonAdapter.Parse(JSON, OperationResult);
 				ResultCode := Context.CloudResultToFsResult(JSON, PREFIX_ERR_FILE_UPLOADING);

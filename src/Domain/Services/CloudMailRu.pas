@@ -239,7 +239,9 @@ end;
 
 function TCloudMailRu.PostForm(const URL, Data: WideString; var Answer: WideString): Boolean;
 begin
-	Result := HTTP.PostForm(URL, Data, Answer);
+	{Append fresh authentication parameters before each request,
+		so retries after token refresh automatically use the new token}
+	Result := HTTP.PostForm(URL + '?' + GetUnitedParams, Data, Answer);
 end;
 
 function TCloudMailRu.GetOAuthAccessToken: WideString;

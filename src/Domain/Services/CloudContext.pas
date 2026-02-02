@@ -18,12 +18,11 @@ type
 		Used by TCloudShardManager to resolve and cache shard URLs.}
 	IShardContext = interface
 		['{12D84BC0-5D2F-467C-93B7-A81DBBF5256C}']
-		{POST form data to URL and return response}
+		{POST form data to URL and return response.
+			Authentication parameters are appended automatically by the implementation.}
 		function PostForm(const URL, Data: WideString; var Answer: WideString): Boolean;
 		{Convert API JSON response to boolean success}
 		function CloudResultToBoolean(const JSON, ErrorPrefix: WideString): Boolean;
-		{Get authentication parameters for API calls}
-		function GetUnitedParams: WideString;
 		{Fetch a page by URL, used for OAuth dispatcher resolution}
 		function GetPage(const URL: WideString; var Response: WideString; var ShowProgress: Boolean): Boolean;
 		{Get the current OAuth access token string for dispatcher authentication}
@@ -36,7 +35,8 @@ type
 		['{CE9C36B4-DB4D-4882-AFB1-F0A3D62D11FF}']
 		{Refresh authentication token}
 		function RefreshToken: Boolean;
-		{POST form data to URL and return JSON response}
+		{POST form data to URL and return JSON response.
+			Authentication parameters are appended automatically by the implementation.}
 		function PostForm(const URL, Params: WideString; var JSON: WideString): Boolean;
 		{GET page content and return JSON response}
 		function GetPage(const URL: WideString; var JSON: WideString; var ShowProgress: Boolean): Boolean;

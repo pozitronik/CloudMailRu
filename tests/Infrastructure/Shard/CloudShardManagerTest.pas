@@ -19,7 +19,6 @@ type
 		FPostFormResponse: WideString;
 		FPostFormCalled: Boolean;
 		FResultToBooleanResult: Boolean;
-		FUnitedParams: WideString;
 		FGetPageResult: Boolean;
 		FGetPageResponse: WideString;
 		FOAuthAccessToken: WideString;
@@ -27,7 +26,6 @@ type
 		constructor Create;
 		procedure SetPostFormResult(Value: Boolean; const Response: WideString);
 		procedure SetResultToBooleanResult(Value: Boolean);
-		procedure SetUnitedParams(const Value: WideString);
 		procedure SetGetPageResult(Value: Boolean; const Response: WideString);
 		procedure SetOAuthAccessToken(const Value: WideString);
 		function WasPostFormCalled: Boolean;
@@ -35,7 +33,6 @@ type
 		{IShardContext implementation}
 		function PostForm(const URL, Data: WideString; var Answer: WideString): Boolean;
 		function CloudResultToBoolean(const JSON, ErrorPrefix: WideString): Boolean;
-		function GetUnitedParams: WideString;
 		function GetPage(const URL: WideString; var Response: WideString; var ShowProgress: Boolean): Boolean;
 		function GetOAuthAccessToken: WideString;
 	end;
@@ -207,7 +204,6 @@ begin
 	FPostFormResponse := '';
 	FPostFormCalled := False;
 	FResultToBooleanResult := True;
-	FUnitedParams := 'token=test';
 	FGetPageResult := True;
 	FGetPageResponse := '';
 	FOAuthAccessToken := 'test-token';
@@ -222,11 +218,6 @@ end;
 procedure TMockShardContext.SetResultToBooleanResult(Value: Boolean);
 begin
 	FResultToBooleanResult := Value;
-end;
-
-procedure TMockShardContext.SetUnitedParams(const Value: WideString);
-begin
-	FUnitedParams := Value;
 end;
 
 function TMockShardContext.WasPostFormCalled: Boolean;
@@ -248,11 +239,6 @@ begin
 		Result := Pos(WideString('"status":200'), JSON) > 0
 	else
 		Result := False;
-end;
-
-function TMockShardContext.GetUnitedParams: WideString;
-begin
-	Result := FUnitedParams;
 end;
 
 procedure TMockShardContext.SetGetPageResult(Value: Boolean; const Response: WideString);
