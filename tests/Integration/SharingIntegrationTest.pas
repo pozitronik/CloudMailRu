@@ -336,6 +336,13 @@ var
 begin
 	RequireSecondaryAccount;
 
+	{Create secondary cloud instance if not yet created}
+	if not Assigned(FSecondaryCloud) then
+	begin
+		FSecondaryCloud := CreateSecondaryCloud;
+		Assert.IsTrue(FSecondaryCloud.Login, 'Secondary account login failed');
+	end;
+
 	{Share a folder from primary to secondary}
 	FolderPath := UniqueCloudPath('InviteDirItemsFolder');
 	Assert.IsTrue(FPrimaryCloud.FileOperations.CreateDirectory(FolderPath), 'Creating folder should succeed');
