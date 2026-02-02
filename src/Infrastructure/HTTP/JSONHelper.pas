@@ -12,8 +12,10 @@ function getPublicLink(JSON: WideString; var PublicLink: WideString): Boolean;
 function getShard(JSON: WideString; var Shard: WideString; ShardType: WideString = SHARD_TYPE_GET): Boolean;
 function getBodyError(JSON: WideString): WideString;
 function getBodyToken(JSON: WideString; var Token: WideString): Boolean;
-//Checks if JSON contains "error": "NOT/AUTHORIZED" - the OAuth session expiry response
+{Checks if JSON contains "error": "NOT/AUTHORIZED" — the OAuth session expiry response}
 function isNotAuthorizedError(JSON: WideString): Boolean;
+{Checks if JSON contains "status": 403 — the HTTP-level authentication failure indicator}
+function isHttpForbiddenStatus(JSON: WideString): Boolean;
 
 implementation
 
@@ -96,6 +98,18 @@ begin
 	SafeVal := TSafeJSON.Parse(JSON);
 	try
 		Result := SafeVal.Get(NAME_ERROR).AsString = NAME_ERROR_NOT_AUTHORIZED;
+	finally
+		SafeVal.Free;
+	end;
+end;
+
+function isHttpForbiddenStatus(JSON: WideString): Boolean;
+var
+	SafeVal: TSafeJSON;
+begin
+	SafeVal := TSafeJSON.Parse(JSON);
+	try
+		Result := SafeVal.Get(NAME_STATUS).AsInt(-1) = HTTP_ERROR_FORBIDDEN;
 	finally
 		SafeVal.Free;
 	end;

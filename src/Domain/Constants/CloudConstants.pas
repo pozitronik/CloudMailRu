@@ -93,6 +93,7 @@ const
 	OAUTH_CLIENT_ID = 'cloud-win';
 
 	HTTP_FOUND_REDIRECT = 302;
+	HTTP_ERROR_FORBIDDEN = 403; {Authentication failure — token expired or session invalid}
 	HTTP_ERROR_NOT_FOUND = 404;
 	{HTTP error codes for POST requests}
 	HTTP_ERROR_BAD_REQUEST = 400;

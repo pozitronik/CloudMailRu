@@ -82,7 +82,7 @@ uses
 
 function IsTokenExpiredInJSON(const JSON: WideString): Boolean;
 begin
-	Result := (NAME_TOKEN = getBodyError(JSON)) or isNotAuthorizedError(JSON);
+	Result := (NAME_TOKEN = getBodyError(JSON)) or isNotAuthorizedError(JSON) or isHttpForbiddenStatus(JSON);
 end;
 
 function IsTokenExpiredResult(ResultCode: Integer): Boolean;

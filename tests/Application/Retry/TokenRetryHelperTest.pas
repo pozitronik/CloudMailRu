@@ -43,6 +43,12 @@ type
 		procedure TestNeedsTokenRefresh_IntegerOK;
 		[Test]
 		procedure TestNeedsTokenRefresh_BooleanWithNotAuthorizedError;
+		[Test]
+		procedure TestNeedsTokenRefresh_BooleanWithForbiddenStatus;
+		[Test]
+		procedure TestNeedsTokenRefresh_BooleanWithBodyUserForbidden;
+		[Test]
+		procedure TestNeedsTokenRefresh_BooleanSuccessWithForbiddenStatus;
 	end;
 
 	{Mock implementation of IRetryContext for testing TRetryOperation}
@@ -147,6 +153,8 @@ const
 	JSON_TOKEN_ERROR = '{"status":400,"body":"token"}';
 	JSON_OTHER_ERROR = '{"status":400,"body":"exists"}';
 	JSON_NOT_AUTHORIZED = '{"error":"NOT/AUTHORIZED"}';
+	JSON_FORBIDDEN_BODY_TOKEN = '{"body":"token","time":1770040782303,"status":403}';
+	JSON_FORBIDDEN_BODY_USER = '{"body":"user","time":1770040782303,"status":403}';
 
 { TAPICallResultTest }
 
@@ -251,6 +259,33 @@ var
 begin
 	R := TAPICallResult.FromBoolean(False, JSON_NOT_AUTHORIZED);
 	Assert.IsTrue(R.NeedsTokenRefresh, 'Failed Boolean with NOT/AUTHORIZED should need refresh');
+end;
+
+procedure TAPICallResultTest.TestNeedsTokenRefresh_BooleanWithForbiddenStatus;
+var
+	R: TAPICallResult;
+begin
+	{Standard "body":"token" with status 403 — should trigger refresh via both body and status checks}
+	R := TAPICallResult.FromBoolean(False, JSON_FORBIDDEN_BODY_TOKEN);
+	Assert.IsTrue(R.NeedsTokenRefresh, 'Failed Boolean with status 403 and body "token" should need refresh');
+end;
+
+procedure TAPICallResultTest.TestNeedsTokenRefresh_BooleanWithBodyUserForbidden;
+var
+	R: TAPICallResult;
+begin
+	{The previously unrecognized pattern: "body":"user" with status 403}
+	R := TAPICallResult.FromBoolean(False, JSON_FORBIDDEN_BODY_USER);
+	Assert.IsTrue(R.NeedsTokenRefresh, 'Failed Boolean with status 403 and body "user" should need refresh');
+end;
+
+procedure TAPICallResultTest.TestNeedsTokenRefresh_BooleanSuccessWithForbiddenStatus;
+var
+	R: TAPICallResult;
+begin
+	{Success=true should never need refresh, even if JSON contains status 403}
+	R := TAPICallResult.FromBoolean(True, JSON_FORBIDDEN_BODY_USER);
+	Assert.IsFalse(R.NeedsTokenRefresh, 'Successful Boolean should not need refresh regardless of JSON');
 end;
 
 { TMockRetryContext }

@@ -428,6 +428,12 @@ begin
 						end;
 				end;
 			end;
+			{Pass error body on token expiry so retry layer can detect it via IsTokenExpiredInJSON}
+			if (Result = CLOUD_ERROR_TOKEN_OUTDATED) and (E is EIdHTTPProtocolException) then
+			begin
+				ResultData.Size := 0;
+				ResultData.WriteString((E as EIdHTTPProtocolException).ErrorMessage);
+			end;
 
 		end;
 	end;
@@ -654,7 +660,11 @@ begin
 	end;
 	if E is EIdHTTPProtocolException then
 	begin
-		if (NAME_TOKEN = JSONHelper.getBodyError((E as EIdHTTPProtocolException).ErrorMessage)) or JSONHelper.isNotAuthorizedError((E as EIdHTTPProtocolException).ErrorMessage) then
+		{HTTP 403 from cloud API always means authentication failure (expired token or invalid session).
+			Also check JSON body patterns for non-403 cases that still indicate token issues.}
+		if ((E as EIdHTTPProtocolException).ErrorCode = HTTP_ERROR_FORBIDDEN)
+			or (NAME_TOKEN = JSONHelper.getBodyError((E as EIdHTTPProtocolException).ErrorMessage))
+			or JSONHelper.isNotAuthorizedError((E as EIdHTTPProtocolException).ErrorMessage) then
 		begin
 			Logger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, CSRF_UPDATE_REQUIRED, [method_string, URL]);
 			exit(CLOUD_ERROR_TOKEN_OUTDATED);

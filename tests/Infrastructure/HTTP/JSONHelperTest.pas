@@ -51,6 +51,19 @@ type
 		procedure TestIsNotAuthorizedError_InvalidJSON;
 		[Test]
 		procedure TestIsNotAuthorizedError_BodyTokenError;
+		{isHttpForbiddenStatus tests}
+		[Test]
+		procedure TestIsHttpForbiddenStatus_Status403;
+		[Test]
+		procedure TestIsHttpForbiddenStatus_BodyUser_Status403;
+		[Test]
+		procedure TestIsHttpForbiddenStatus_Status200;
+		[Test]
+		procedure TestIsHttpForbiddenStatus_NoStatusField;
+		[Test]
+		procedure TestIsHttpForbiddenStatus_EmptyString;
+		[Test]
+		procedure TestIsHttpForbiddenStatus_InvalidJSON;
 	end;
 
 implementation
@@ -194,6 +207,38 @@ procedure TJSONHelperTest.TestIsNotAuthorizedError_BodyTokenError;
 begin
 	{The old-style token error should NOT match isNotAuthorizedError}
 	Assert.IsFalse(isNotAuthorizedError('{"body":"token"}'));
+end;
+
+procedure TJSONHelperTest.TestIsHttpForbiddenStatus_Status403;
+begin
+	{Standard token error response with "body":"token" and status 403}
+	Assert.IsTrue(isHttpForbiddenStatus('{"body":"token","time":1770040782303,"status":403}'));
+end;
+
+procedure TJSONHelperTest.TestIsHttpForbiddenStatus_BodyUser_Status403;
+begin
+	{The response pattern that was not recognized before: "body":"user" with status 403}
+	Assert.IsTrue(isHttpForbiddenStatus('{"body":"user","time":1770040782303,"status":403}'));
+end;
+
+procedure TJSONHelperTest.TestIsHttpForbiddenStatus_Status200;
+begin
+	Assert.IsFalse(isHttpForbiddenStatus('{"body":{"home":"/test"},"status":200}'));
+end;
+
+procedure TJSONHelperTest.TestIsHttpForbiddenStatus_NoStatusField;
+begin
+	Assert.IsFalse(isHttpForbiddenStatus('{"body":"token"}'));
+end;
+
+procedure TJSONHelperTest.TestIsHttpForbiddenStatus_EmptyString;
+begin
+	Assert.IsFalse(isHttpForbiddenStatus(''));
+end;
+
+procedure TJSONHelperTest.TestIsHttpForbiddenStatus_InvalidJSON;
+begin
+	Assert.IsFalse(isHttpForbiddenStatus('not valid json'));
 end;
 
 initialization
