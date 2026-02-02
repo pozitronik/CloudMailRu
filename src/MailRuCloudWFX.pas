@@ -266,7 +266,6 @@ begin
 	FOperationLifecycle := TOperationLifecycleHandler.Create;
 	FListingProvider := TListingProvider.Create;
 
-	AccountSettings := TAccountsManager.Create(TIniConfigFile.Create(SettingsManager.GetAccountsIniFilePath));
 	FFileSystem := TWindowsFileSystem.Create;
 	FTCHandler := TTCHandler.Create(TWindowsEnvironment.Create);
 	FDescriptionSync := TDescriptionSyncManager.Create(SettingsManager.GetSettings.DescriptionFileName, FFileSystem, FTCHandler);
@@ -285,6 +284,7 @@ begin
 
 	{Create retry handler with callbacks for message boxes and logging}
 	Self.Logger := Logger;
+	AccountSettings := TAccountsManager.Create(TIniConfigFile.Create(SettingsManager.GetAccountsIniFilePath), Logger);
 	FRetryHandler := TRetryHandler.Create(FThreadState, SettingsManager, FTCHandler,
 		function(const Text: WideString; const Args: array of const; const Caption: WideString; Flags: Integer): Integer
 		begin

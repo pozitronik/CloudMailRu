@@ -33,7 +33,7 @@ const
 	DOWNLOAD_FILE_RETRY = 'Error downloading file %s, retry attempt %d of %d';
 	EMPTY = 'Empty';
 	ERR_ACCOUNT_HAS_INVALID_SYMBOL = 'File name must contain only valid symbols';
-	ERR_ACCOUNT_NAME_INVALID_CHARS = 'Account name cannot contain "[" or "]" characters';
+	ERR_ACCOUNT_NAME_INVALID_CHARS = 'Account name cannot contain \, /, [, ] characters or end with .trash, .shared, .invites';
 	ERR_AUTH_FAILURE = 'Authorization failed';
 	ERR_PASSWORD_CANCELLED = 'Password entry cancelled';
 	ERR_CLONE_BY_HASH = 'Error clone by hash: %s, parameter: %s';
@@ -206,6 +206,7 @@ const
 	WAIT = 'Wait for it...';
 	WARN_CIPHER_CHANGE = 'Changing the encryption profile will make previously encrypted files unreadable with the new profile. Only newly encrypted files will use the selected profile. Continue?';
 	PREFIX_WARN_CIPHER_CHANGE = 'Cipher profile change';
+	WARN_ACCOUNT_NAME_SKIPPED = 'Account "%s" skipped: name contains invalid characters (\, /, [, ]) or ends with a reserved suffix';
 	WARN_PROXY_PASSWORD_IGNORED = 'Warning: proxy password input skipped ignored, parameter will be ignored!';
 	WARN_QUOTA_EXHAUSTED = 'Warning: space quota exhausted!';
 	WARN_DISPATCHER_UNEXPECTED_FORMAT = 'OAuth dispatcher returned unexpected response format: %s';

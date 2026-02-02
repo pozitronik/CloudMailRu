@@ -8,10 +8,12 @@ uses
 	CloudConstants,
 	TestHelper,
 	SysUtils,
+	Classes,
 	WSList,
 	Cipher,
 	SettingsConstants,
 	ConfigFile,
+	Logger,
 	DUnitX.TestFramework;
 
 type
@@ -59,6 +61,30 @@ type
 		[Test]
 		{Verifies renaming to the same name does not crash or lose data}
 		procedure TestRenameAccount_SameName_NoError;
+
+		{IsValidAccountName tests}
+		[Test]
+		{Verifies normal account names pass validation}
+		procedure TestIsValidAccountName_ValidNames;
+		[Test]
+		{Verifies backslash in account name fails validation}
+		procedure TestIsValidAccountName_Backslash;
+		[Test]
+		{Verifies forward slash in account name fails validation}
+		procedure TestIsValidAccountName_ForwardSlash;
+		[Test]
+		{Verifies square brackets in account name fail validation}
+		procedure TestIsValidAccountName_Brackets;
+		[Test]
+		{Verifies reserved virtual directory postfixes fail validation}
+		procedure TestIsValidAccountName_ReservedPostfix;
+		[Test]
+		{Verifies empty account name fails validation}
+		procedure TestIsValidAccountName_Empty;
+
+		[Test]
+		{Verifies GetAccountsList silently skips accounts with invalid names}
+		procedure TestGetAccountsList_SkipsInvalidNames;
 
 	end;
 
@@ -108,13 +134,13 @@ var
 	TestAccountsManager: TAccountsManager;
 	TestAccountSettings: TAccountSettings;
 begin
-	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(self.AppDir + FP_ACCOUNTS_INI)); //Uses a new file in the test exe dir
+	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(self.AppDir + FP_ACCOUNTS_INI), TNullLogger.Create); //Uses a new file in the test exe dir
 
 	TestAccountSettings.Password := 'cjhjrnsczxj,tpmzyd;jgeceyekb,fyfy';
 	TestAccountsManager.SetAccountSettings('NEW_ACCOUNT', TestAccountSettings);
 	TestAccountsManager.Free;
 
-	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(self.AppDir + FP_ACCOUNTS_INI));
+	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(self.AppDir + FP_ACCOUNTS_INI), TNullLogger.Create);
 	Assert.IsNotEmpty(TestAccountsManager.GetAccountSettings('NEW_ACCOUNT').Password);
 	TestAccountsManager.SwitchPasswordStorage('NEW_ACCOUNT');
 	Assert.IsEmpty(TestAccountsManager.GetAccountSettings('NEW_ACCOUNT').Password);
@@ -126,7 +152,7 @@ var
 	TestAccountsManager: TAccountsManager;
 	TestAccountSettings: TAccountSettings;
 begin
-	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(self.AppDir + FP_ACCOUNTS_INI)); //Uses a new file in the test exe dir
+	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(self.AppDir + FP_ACCOUNTS_INI), TNullLogger.Create); //Uses a new file in the test exe dir
 
 	TestAccountSettings.Email := 'deleted_account@mail.ru';
 	TestAccountsManager.SetAccountSettings('NEW_ACCOUNT', TestAccountSettings);
@@ -134,13 +160,13 @@ begin
 
 	TestAccountSettings.Email := EmptyWideStr;
 
-	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(self.AppDir + FP_ACCOUNTS_INI));
+	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(self.AppDir + FP_ACCOUNTS_INI), TNullLogger.Create);
 	TestAccountSettings := TestAccountsManager.GetAccountSettings('NEW_ACCOUNT');
 	Assert.AreEqual('deleted_account@mail.ru', TestAccountSettings.Email);
 	TestAccountsManager.DeleteAccount('NEW_ACCOUNT');
 	TestAccountsManager.Free;
 
-	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(self.AppDir + FP_ACCOUNTS_INI));
+	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(self.AppDir + FP_ACCOUNTS_INI), TNullLogger.Create);
 	Assert.IsEmpty(TestAccountsManager.GetAccountSettings('NEW_ACCOUNT').Email);
 	TestAccountsManager.Free;
 end;
@@ -150,7 +176,7 @@ var
 	TestAccountsManager: TAccountsManager;
 	TestAccountSettings: TAccountSettings;
 begin
-	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(DataPath(FP_ACCOUNTS_INI))); //Uses a test file
+	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(DataPath(FP_ACCOUNTS_INI)), TNullLogger.Create); //Uses a test file
 	TestAccountSettings := TestAccountsManager.GetAccountSettings('TEST_ACCOUNT_TWO');
 
 	Assert.AreEqual('test_fake_email_two@mail.ru', TestAccountSettings.Email);
@@ -167,7 +193,7 @@ var
 	AccountsList: TWSList;
 begin
 	AccountsList := TWSList.Create();
-	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(DataPath(FP_ACCOUNTS_INI))); //Uses a test file
+	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(DataPath(FP_ACCOUNTS_INI)), TNullLogger.Create); //Uses a test file
 
 	AccountsList := TestAccountsManager.GetAccountsList();
 	Assert.IsTrue(AccountsList.Contains('TEST_ACCOUNT_ONE'));
@@ -206,7 +232,7 @@ var
 	AccountsList: TWSList;
 begin
 	AccountsList := TWSList.Create();
-	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(self.AppDir + FP_ACCOUNTS_INI)); //Uses a new file in the test exe dir
+	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(self.AppDir + FP_ACCOUNTS_INI), TNullLogger.Create); //Uses a new file in the test exe dir
 	AccountsList := TestAccountsManager.GetAccountsList();
 
 	Assert.IsTrue(AccountsList.Count = 0);
@@ -220,15 +246,15 @@ var
 	TestAccountSettings: TAccountSettings;
 	TestAccountSettingsNew: TAccountSettings;
 begin
-	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(DataPath(FP_ACCOUNTS_INI))); //Uses a test file
+	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(DataPath(FP_ACCOUNTS_INI)), TNullLogger.Create); //Uses a test file
 	TestAccountSettings := TestAccountsManager.GetAccountSettings('TEST_ACCOUNT_TWO');
 	TestAccountsManager.Free;
 
-	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(self.AppDir + FP_ACCOUNTS_INI)); //Uses a new file in the test exe dir
+	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(self.AppDir + FP_ACCOUNTS_INI), TNullLogger.Create); //Uses a new file in the test exe dir
 	TestAccountsManager.SetAccountSettings('NEW_ACCOUNT', TestAccountSettings);
 	TestAccountsManager.Free;
 
-	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(self.AppDir + FP_ACCOUNTS_INI));
+	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(self.AppDir + FP_ACCOUNTS_INI), TNullLogger.Create);
 	TestAccountSettingsNew := TestAccountsManager.GetAccountSettings('NEW_ACCOUNT');
 	TestAccountsManager.Free;
 
@@ -241,7 +267,7 @@ procedure TAccountsManagerTest.TestSetCryptedGUID;
 var
 	TestAccountsManager: TAccountsManager;
 begin
-	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(self.AppDir + FP_ACCOUNTS_INI)); //Uses a new file in the test exe dir
+	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(self.AppDir + FP_ACCOUNTS_INI), TNullLogger.Create); //Uses a new file in the test exe dir
 	Assert.IsEmpty(TestAccountsManager.GetAccountSettings('NEW_ACCOUNT').CryptedGUIDFiles);
 	TestAccountsManager.SetCryptedGUID('NEW_ACCOUNT', TFileCipher.GetCryptedGUID('cjhjrnsczxj,tpmzyd;jgeceyekb,fyfy'));
 
@@ -256,7 +282,7 @@ var
 	LoadedSettings: TAccountSettings;
 begin
 	{ Test that AuthMethod and UseAppPassword are properly saved and loaded }
-	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(self.AppDir + FP_ACCOUNTS_INI));
+	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(self.AppDir + FP_ACCOUNTS_INI), TNullLogger.Create);
 	try
 		TestAccountSettings := Default(TAccountSettings);
 		TestAccountSettings.Account := 'OAUTH_TEST_ACCOUNT';
@@ -270,7 +296,7 @@ begin
 	end;
 
 	{ Reload and verify }
-	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(self.AppDir + FP_ACCOUNTS_INI));
+	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(self.AppDir + FP_ACCOUNTS_INI), TNullLogger.Create);
 	try
 		LoadedSettings := TestAccountsManager.GetAccountSettings('OAUTH_TEST_ACCOUNT');
 
@@ -289,7 +315,7 @@ var
 	LoadedSettings: TAccountSettings;
 begin
 	{ Save account with CipherProfileId set }
-	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(self.AppDir + FP_ACCOUNTS_INI));
+	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(self.AppDir + FP_ACCOUNTS_INI), TNullLogger.Create);
 	try
 		TestAccountSettings := Default(TAccountSettings);
 		TestAccountSettings.Account := 'CIPHER_PROFILE_ACCOUNT';
@@ -302,7 +328,7 @@ begin
 	end;
 
 	{ Reload from file and verify CipherProfileId was preserved }
-	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(self.AppDir + FP_ACCOUNTS_INI));
+	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(self.AppDir + FP_ACCOUNTS_INI), TNullLogger.Create);
 	try
 		LoadedSettings := TestAccountsManager.GetAccountSettings('CIPHER_PROFILE_ACCOUNT');
 
@@ -320,7 +346,7 @@ var
 	LoadedSettings: TAccountSettings;
 begin
 	{ Save account without setting CipherProfileId }
-	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(self.AppDir + FP_ACCOUNTS_INI));
+	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(self.AppDir + FP_ACCOUNTS_INI), TNullLogger.Create);
 	try
 		TestAccountSettings := Default(TAccountSettings);
 		TestAccountSettings.Account := 'NO_CIPHER_PROFILE_ACCOUNT';
@@ -333,7 +359,7 @@ begin
 	end;
 
 	{ Reload and verify CipherProfileId defaults to empty string }
-	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(self.AppDir + FP_ACCOUNTS_INI));
+	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(self.AppDir + FP_ACCOUNTS_INI), TNullLogger.Create);
 	try
 		LoadedSettings := TestAccountsManager.GetAccountSettings('NO_CIPHER_PROFILE_ACCOUNT');
 
@@ -351,7 +377,7 @@ var
 	FirstLoaded, SecondLoaded: TAccountSettings;
 begin
 	{ Write first account with CipherProfileId }
-	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(self.AppDir + FP_ACCOUNTS_INI));
+	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(self.AppDir + FP_ACCOUNTS_INI), TNullLogger.Create);
 	try
 		TestAccountSettings := Default(TAccountSettings);
 		TestAccountSettings.Account := 'ROUNDTRIP_FIRST';
@@ -364,7 +390,7 @@ begin
 	end;
 
 	{ Read first account back, then write its CipherProfileId to a second account }
-	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(self.AppDir + FP_ACCOUNTS_INI));
+	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(self.AppDir + FP_ACCOUNTS_INI), TNullLogger.Create);
 	try
 		FirstLoaded := TestAccountsManager.GetAccountSettings('ROUNDTRIP_FIRST');
 
@@ -379,7 +405,7 @@ begin
 	end;
 
 	{ Reload both accounts and verify CipherProfileId matches }
-	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(self.AppDir + FP_ACCOUNTS_INI));
+	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(self.AppDir + FP_ACCOUNTS_INI), TNullLogger.Create);
 	try
 		FirstLoaded := TestAccountsManager.GetAccountSettings('ROUNDTRIP_FIRST');
 		SecondLoaded := TestAccountsManager.GetAccountSettings('ROUNDTRIP_SECOND');
@@ -397,7 +423,7 @@ var
 	TestAccountsManager: TAccountsManager;
 	Original, Loaded: TAccountSettings;
 begin
-	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(self.AppDir + FP_ACCOUNTS_INI));
+	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(self.AppDir + FP_ACCOUNTS_INI), TNullLogger.Create);
 	try
 		Original := Default(TAccountSettings);
 		Original.Account := 'OLD_NAME';
@@ -432,7 +458,7 @@ var
 	Original, Loaded: TAccountSettings;
 	AccountsList: TWSList;
 begin
-	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(self.AppDir + FP_ACCOUNTS_INI));
+	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(self.AppDir + FP_ACCOUNTS_INI), TNullLogger.Create);
 	try
 		Original := Default(TAccountSettings);
 		Original.Account := 'BEFORE_RENAME';
@@ -459,7 +485,7 @@ var
 	TestAccountsManager: TAccountsManager;
 	Original, Loaded: TAccountSettings;
 begin
-	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(self.AppDir + FP_ACCOUNTS_INI));
+	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(self.AppDir + FP_ACCOUNTS_INI), TNullLogger.Create);
 	try
 		Original := Default(TAccountSettings);
 		Original.Account := 'SAME_NAME';
@@ -471,6 +497,88 @@ begin
 
 		Loaded := TestAccountsManager.GetAccountSettings('SAME_NAME');
 		Assert.AreEqual('same@mail.ru', Loaded.Email, 'Data should be intact after identity rename');
+	finally
+		TestAccountsManager.Free;
+	end;
+end;
+
+procedure TAccountsManagerTest.TestIsValidAccountName_ValidNames;
+begin
+	Assert.IsTrue(TAccountsManager.IsValidAccountName('MyAccount'), 'Simple name should be valid');
+	Assert.IsTrue(TAccountsManager.IsValidAccountName('Account With Spaces'), 'Name with spaces should be valid');
+	Assert.IsTrue(TAccountsManager.IsValidAccountName('user@mail.ru'), 'Name with @ and dots should be valid');
+	Assert.IsTrue(TAccountsManager.IsValidAccountName('Account-123_test'), 'Name with dashes and underscores should be valid');
+	Assert.IsTrue(TAccountsManager.IsValidAccountName('trashcan'), 'Name containing "trash" substring should be valid');
+end;
+
+procedure TAccountsManagerTest.TestIsValidAccountName_Backslash;
+begin
+	Assert.IsFalse(TAccountsManager.IsValidAccountName('TEST\TEST'), 'Backslash should be rejected');
+	Assert.IsFalse(TAccountsManager.IsValidAccountName('\leading'), 'Leading backslash should be rejected');
+	Assert.IsFalse(TAccountsManager.IsValidAccountName('trailing\'), 'Trailing backslash should be rejected');
+end;
+
+procedure TAccountsManagerTest.TestIsValidAccountName_ForwardSlash;
+begin
+	Assert.IsFalse(TAccountsManager.IsValidAccountName('TEST/TEST'), 'Forward slash should be rejected');
+	Assert.IsFalse(TAccountsManager.IsValidAccountName('/leading'), 'Leading slash should be rejected');
+	Assert.IsFalse(TAccountsManager.IsValidAccountName('trailing/'), 'Trailing slash should be rejected');
+end;
+
+procedure TAccountsManagerTest.TestIsValidAccountName_Brackets;
+begin
+	Assert.IsFalse(TAccountsManager.IsValidAccountName('TEST[1]'), 'Square brackets should be rejected');
+	Assert.IsFalse(TAccountsManager.IsValidAccountName('[section]'), 'INI section format should be rejected');
+	Assert.IsFalse(TAccountsManager.IsValidAccountName('only[open'), 'Opening bracket should be rejected');
+	Assert.IsFalse(TAccountsManager.IsValidAccountName('only]close'), 'Closing bracket should be rejected');
+end;
+
+procedure TAccountsManagerTest.TestIsValidAccountName_ReservedPostfix;
+begin
+	Assert.IsFalse(TAccountsManager.IsValidAccountName('MyAccount.trash'), '.trash postfix should be rejected');
+	Assert.IsFalse(TAccountsManager.IsValidAccountName('MyAccount.shared'), '.shared postfix should be rejected');
+	Assert.IsFalse(TAccountsManager.IsValidAccountName('MyAccount.invites'), '.invites postfix should be rejected');
+	Assert.IsFalse(TAccountsManager.IsValidAccountName('MyAccount.TRASH'), '.TRASH (case-insensitive) should be rejected');
+	Assert.IsFalse(TAccountsManager.IsValidAccountName('MyAccount.Shared'), '.Shared (case-insensitive) should be rejected');
+end;
+
+procedure TAccountsManagerTest.TestIsValidAccountName_Empty;
+begin
+	Assert.IsFalse(TAccountsManager.IsValidAccountName(''), 'Empty name should be rejected');
+end;
+
+procedure TAccountsManagerTest.TestGetAccountsList_SkipsInvalidNames;
+var
+	TestAccountsManager: TAccountsManager;
+	AccountsList: TWSList;
+	IniContent: TStringList;
+	IniPath: WideString;
+begin
+	IniPath := self.AppDir + FP_ACCOUNTS_INI;
+
+	{Write INI file directly to simulate manual edit with invalid section names.
+		TIniConfigFile validates section names, so we bypass it for the bad entries.}
+	IniContent := TStringList.Create;
+	try
+		IniContent.Add('[VALID_ACCOUNT]');
+		IniContent.Add('email=valid@mail.ru');
+		IniContent.Add('');
+		IniContent.Add('[TEST\SLASH]');
+		IniContent.Add('email=slash@mail.ru');
+		IniContent.Add('');
+		IniContent.Add('[MyAccount.trash]');
+		IniContent.Add('email=trash@mail.ru');
+		IniContent.SaveToFile(IniPath);
+	finally
+		IniContent.Free;
+	end;
+
+	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(IniPath), TNullLogger.Create);
+	try
+		AccountsList := TestAccountsManager.GetAccountsList;
+		Assert.IsTrue(AccountsList.Contains('VALID_ACCOUNT'), 'Valid account should be listed');
+		Assert.IsFalse(AccountsList.Contains('TEST\SLASH'), 'Account with backslash should be skipped');
+		Assert.IsFalse(AccountsList.Contains('MyAccount.trash'), 'Account with reserved postfix should be skipped');
 	finally
 		TestAccountsManager.Free;
 	end;

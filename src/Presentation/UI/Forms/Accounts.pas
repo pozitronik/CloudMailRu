@@ -32,7 +32,8 @@ uses
 	AccountSettings,
 	ConnectionSettings,
 	AccountsManager,
-	AccountsPresenter;
+	AccountsPresenter,
+	Logger;
 
 type
 	TAccountsForm = class(TPluginForm, IAccountsView)
@@ -1369,7 +1370,7 @@ begin
 		{Create managers - interface reference counting handles cleanup}
 		PluginSettingsMgr := TPluginSettingsManager.Create();
 		SettingsManager := PluginSettingsMgr;
-		AccountsMgr := TAccountsManager.Create(TIniConfigFile.Create(PluginSettingsMgr.AccountsIniFilePath));
+		AccountsMgr := TAccountsManager.Create(TIniConfigFile.Create(PluginSettingsMgr.AccountsIniFilePath), TNullLogger.Create);
 
 		{Create presenter config}
 		Config.PasswordManager := PasswordManager;

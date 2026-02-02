@@ -631,8 +631,7 @@ begin
 	if AccountName = '' then
 		Exit;
 
-	{INI section names cannot contain bracket characters}
-	if (Pos('[', AccountName) > 0) or (Pos(']', AccountName) > 0) then
+	if not TAccountsManager.IsValidAccountName(AccountName) then
 	begin
 		FView.ShowAccountNameError(ERR_ACCOUNT_NAME_INVALID_CHARS);
 		Exit;

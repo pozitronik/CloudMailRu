@@ -580,6 +580,7 @@ uses
 	ConfigFile,
 	CloudConstants,
 	SettingsConstants,
+	Logger,
 	WSList;
 
 {TMockAccountsView}
@@ -1377,7 +1378,7 @@ begin
 
 	{Create settings manager with memory config to avoid file access}
 	FSettingsManager := TPluginSettingsManager.Create(TMemoryConfigFile.Create);
-	FAccountsManager := TAccountsManager.Create(TMemoryConfigFile.Create);
+	FAccountsManager := TAccountsManager.Create(TMemoryConfigFile.Create, TNullLogger.Create);
 
 	Config.PasswordManager := FPasswordManagerRef;
 	Config.ParentWindow := 0;
@@ -3084,17 +3085,38 @@ procedure TAccountsPresenterTest.TestApplyAccount_ForbiddenChars_ShowsError;
 var
 	AccountsList: TWSList;
 begin
+	{Test brackets}
 	FPresenter.Initialize('');
-
 	FView.SetAccountName('Test[bad]name');
 	FView.SetEmail('bad@mail.ru');
-
 	FPresenter.OnApplyAccountClick;
-
-	{Account should not be created}
 	AccountsList := FAccountsManager.GetAccountsList;
-	Assert.AreEqual(0, AccountsList.Count, 'Account with forbidden chars should not be saved');
-	Assert.IsNotEmpty(FView.AccountNameErrorMessage, 'Error message should be shown');
+	Assert.AreEqual(0, AccountsList.Count, 'Account with brackets should not be saved');
+	Assert.IsNotEmpty(FView.AccountNameErrorMessage, 'Error message should be shown for brackets');
+
+	{Test backslash}
+	FView.FAccountNameErrorMessage := '';
+	FView.SetAccountName('Test\name');
+	FPresenter.OnApplyAccountClick;
+	AccountsList := FAccountsManager.GetAccountsList;
+	Assert.AreEqual(0, AccountsList.Count, 'Account with backslash should not be saved');
+	Assert.IsNotEmpty(FView.AccountNameErrorMessage, 'Error message should be shown for backslash');
+
+	{Test forward slash}
+	FView.FAccountNameErrorMessage := '';
+	FView.SetAccountName('Test/name');
+	FPresenter.OnApplyAccountClick;
+	AccountsList := FAccountsManager.GetAccountsList;
+	Assert.AreEqual(0, AccountsList.Count, 'Account with forward slash should not be saved');
+	Assert.IsNotEmpty(FView.AccountNameErrorMessage, 'Error message should be shown for forward slash');
+
+	{Test reserved postfix}
+	FView.FAccountNameErrorMessage := '';
+	FView.SetAccountName('MyAccount.trash');
+	FPresenter.OnApplyAccountClick;
+	AccountsList := FAccountsManager.GetAccountsList;
+	Assert.AreEqual(0, AccountsList.Count, 'Account with reserved postfix should not be saved');
+	Assert.IsNotEmpty(FView.AccountNameErrorMessage, 'Error message should be shown for reserved postfix');
 end;
 
 procedure TAccountsPresenterTest.TestApplyAccount_DuplicateName_ConfirmsOverwrite;

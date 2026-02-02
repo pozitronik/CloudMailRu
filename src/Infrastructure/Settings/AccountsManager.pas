@@ -13,7 +13,8 @@ uses
 	SettingsConstants,
 	WSList,
 	AccountSettings,
-	ConfigFile;
+	ConfigFile,
+	Logger;
 
 type
 	IAccountsManager = interface
@@ -44,10 +45,15 @@ type
 	TAccountsManager = class(TInterfacedObject, IAccountsManager)
 	private
 		FConfigFile: IConfigFile;
+		FLogger: ILogger;
 
 		function Accounts: TWSList;
 	public
-		constructor Create(ConfigFile: IConfigFile);
+		constructor Create(ConfigFile: IConfigFile; Logger: ILogger);
+		{Validates account name against WFX path protocol and INI format constraints.
+		Rejects names containing path separators (\, /), INI delimiters ([, ]),
+		and names ending with reserved virtual directory postfixes (.trash, .shared, .invites).}
+		class function IsValidAccountName(const Name: WideString): Boolean;
 		function GetAccountsList(const AccountTypes: EAccountType = [ATPrivate, ATPublic]; const VirtualTypes: EVirtualType = []): TWSList;
 		function GetAccountSettings(Account: WideString): TAccountSettings;
 		procedure SetAccountSettings(Account: WideString; AccountSettings: TAccountSettings); overload;
@@ -60,6 +66,33 @@ type
 	end;
 
 implementation
+
+uses
+	StrUtils,
+	CloudConstants,
+	WFXTypes;
+
+{TAccountsManager.IsValidAccountName}
+
+class function TAccountsManager.IsValidAccountName(const Name: WideString): Boolean;
+begin
+	if Name = '' then
+		Exit(False);
+
+	{WFX path separators}
+	if (Pos('\', Name) > 0) or (Pos('/', Name) > 0) then
+		Exit(False);
+
+	{INI section delimiters}
+	if (Pos('[', Name) > 0) or (Pos(']', Name) > 0) then
+		Exit(False);
+
+	{Reserved virtual directory postfixes (case-insensitive via StrUtils.EndsText)}
+	if EndsText(TrashPostfix, Name) or EndsText(SharedPostfix, Name) or EndsText(InvitesPostfix, Name) then
+		Exit(False);
+
+	Result := True;
+end;
 
 {TNullAccountsManager}
 
@@ -122,9 +155,10 @@ begin
 	end;
 end;
 
-constructor TAccountsManager.Create(ConfigFile: IConfigFile);
+constructor TAccountsManager.Create(ConfigFile: IConfigFile; Logger: ILogger);
 begin
 	FConfigFile := ConfigFile;
+	FLogger := Logger;
 end;
 
 procedure TAccountsManager.SwitchPasswordStorage(Account: WideString);
@@ -206,6 +240,13 @@ begin
 
 	for CurrentAccount in self.Accounts do
 	begin
+		{Skip accounts with names that would break WFX paths or INI format}
+		if not TAccountsManager.IsValidAccountName(CurrentAccount) then
+		begin
+			FLogger.Log(LOG_LEVEL_WARNING, msgtype_details, WARN_ACCOUNT_NAME_SKIPPED, [CurrentAccount]);
+			Continue;
+		end;
+
 		TempAccountSettings := self.GetAccountSettings(CurrentAccount);
 		if TempAccountSettings.AccountType <= AccountTypes then {current account type is in requested accounts types}
 			Result.Add(CurrentAccount);
