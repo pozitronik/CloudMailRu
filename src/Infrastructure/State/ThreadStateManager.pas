@@ -332,10 +332,14 @@ begin
 end;
 
 procedure TThreadStateManager.IncrementRetryCountDownload;
+var
+	Current: Int32;
 begin
 	FLock.Enter;
 	try
-		SetRetryCountDownload(GetRetryCountDownload + 1);
+		if not FRetryCountDownload.TryGetValue(GetCurrentThreadID(), Current) then
+			Current := 0;
+		FRetryCountDownload.AddOrSetValue(GetCurrentThreadID(), Current + 1);
 	finally
 		FLock.Leave;
 	end;
@@ -345,7 +349,7 @@ procedure TThreadStateManager.ResetRetryCountDownload;
 begin
 	FLock.Enter;
 	try
-		SetRetryCountDownload(0);
+		FRetryCountDownload.AddOrSetValue(GetCurrentThreadID(), 0);
 	finally
 		FLock.Leave;
 	end;
@@ -373,10 +377,14 @@ begin
 end;
 
 procedure TThreadStateManager.IncrementRetryCountUpload;
+var
+	Current: Int32;
 begin
 	FLock.Enter;
 	try
-		SetRetryCountUpload(GetRetryCountUpload + 1);
+		if not FRetryCountUpload.TryGetValue(GetCurrentThreadID(), Current) then
+			Current := 0;
+		FRetryCountUpload.AddOrSetValue(GetCurrentThreadID(), Current + 1);
 	finally
 		FLock.Leave;
 	end;
@@ -386,7 +394,7 @@ procedure TThreadStateManager.ResetRetryCountUpload;
 begin
 	FLock.Enter;
 	try
-		SetRetryCountUpload(0);
+		FRetryCountUpload.AddOrSetValue(GetCurrentThreadID(), 0);
 	finally
 		FLock.Leave;
 	end;
@@ -414,10 +422,14 @@ begin
 end;
 
 procedure TThreadStateManager.IncrementRetryCountRenMov;
+var
+	Current: Int32;
 begin
 	FLock.Enter;
 	try
-		SetRetryCountRenMov(GetRetryCountRenMov + 1);
+		if not FRetryCountRenMov.TryGetValue(GetCurrentThreadID(), Current) then
+			Current := 0;
+		FRetryCountRenMov.AddOrSetValue(GetCurrentThreadID(), Current + 1);
 	finally
 		FLock.Leave;
 	end;
@@ -427,7 +439,7 @@ procedure TThreadStateManager.ResetRetryCountRenMov;
 begin
 	FLock.Enter;
 	try
-		SetRetryCountRenMov(0);
+		FRetryCountRenMov.AddOrSetValue(GetCurrentThreadID(), 0);
 	finally
 		FLock.Leave;
 	end;
@@ -628,30 +640,42 @@ begin
 end;
 
 procedure TThreadStateManager.IncrementBackgroundJobs(const Account: WideString);
+var
+	Current: Int32;
 begin
 	FLock.Enter;
 	try
-		FBackgroundJobs.AddOrSetValue(Account, GetBackgroundJobsCount(Account) + 1);
+		if not FBackgroundJobs.TryGetValue(Account, Current) then
+			Current := 0;
+		FBackgroundJobs.AddOrSetValue(Account, Current + 1);
 	finally
 		FLock.Leave;
 	end;
 end;
 
 procedure TThreadStateManager.DecrementBackgroundJobs(const Account: WideString);
+var
+	Current: Int32;
 begin
 	FLock.Enter;
 	try
-		FBackgroundJobs.AddOrSetValue(Account, GetBackgroundJobsCount(Account) - 1);
+		if not FBackgroundJobs.TryGetValue(Account, Current) then
+			Current := 0;
+		FBackgroundJobs.AddOrSetValue(Account, Current - 1);
 	finally
 		FLock.Leave;
 	end;
 end;
 
 function TThreadStateManager.HasActiveBackgroundJobs(const Account: WideString): Boolean;
+var
+	Current: Int32;
 begin
 	FLock.Enter;
 	try
-		Result := GetBackgroundJobsCount(Account) > 0;
+		if not FBackgroundJobs.TryGetValue(Account, Current) then
+			Current := 0;
+		Result := Current > 0;
 	finally
 		FLock.Leave;
 	end;
