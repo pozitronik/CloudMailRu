@@ -284,7 +284,7 @@ begin
 	CurrentDescriptions := TDescription.Create(FFileSystem.GetTmpFileName(DESCRIPTION_TEMP_EXT), FFileSystem, FTCHandler.GetTCCommentPreferredFormat);
 
 	{Create retry handler with callbacks for message boxes and logging}
-	Logger := Logger;
+	Self.Logger := Logger;
 	FRetryHandler := TRetryHandler.Create(FThreadState, SettingsManager, FTCHandler,
 		function(const Text: WideString; const Args: array of const; const Caption: WideString; Flags: Integer): Integer
 		begin
