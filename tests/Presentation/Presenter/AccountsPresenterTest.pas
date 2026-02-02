@@ -108,6 +108,9 @@ type
 		FConfirmDiscardResult: TConfirmSaveResult;
 		FConfirmDiscardCallCount: Integer;
 		FConfirmDiscardCallback: TProc;
+		FAccountNameErrorMessage: WideString;
+		FConfirmAccountOverwriteResult: Boolean;
+		FConfirmAccountOverwriteCallCount: Integer;
 
 		{Global settings apply state}
 		FGlobalSettingsApplyEnabled: Boolean;
@@ -272,6 +275,8 @@ type
 		procedure SetSharesPanelVisible(Value: Boolean);
 		procedure SetApplyButtonEnabled(Value: Boolean);
 		function ConfirmDiscardAccountChanges(const AccountName: WideString): TConfirmSaveResult;
+		procedure ShowAccountNameError(Message: WideString);
+		function ConfirmAccountOverwrite(const AccountName: WideString): Boolean;
 
 		{IAccountsView - Cipher profile}
 		procedure SetCipherProfileItems(const Items: TArray<WideString>);
@@ -301,6 +306,9 @@ type
 		property ConfirmDiscardResult: TConfirmSaveResult read FConfirmDiscardResult write FConfirmDiscardResult;
 		property ConfirmDiscardCallCount: Integer read FConfirmDiscardCallCount;
 		property ConfirmDiscardCallback: TProc read FConfirmDiscardCallback write FConfirmDiscardCallback;
+		property AccountNameErrorMessage: WideString read FAccountNameErrorMessage;
+		property ConfirmAccountOverwriteResult: Boolean read FConfirmAccountOverwriteResult write FConfirmAccountOverwriteResult;
+		property ConfirmAccountOverwriteCallCount: Integer read FConfirmAccountOverwriteCallCount;
 		property GlobalSettingsApplyEnabled: Boolean read FGlobalSettingsApplyEnabled;
 		property ProxyControlsEnabled: Boolean read FProxyControlsEnabled;
 		property CipherProfileItems: TArray<WideString> read FCipherProfileItems;
@@ -553,6 +561,17 @@ type
 		[Test]
 		{Verifies Apply with the same name does not delete anything}
 		procedure TestApplyAccount_SameName_DoesNotRename;
+
+		{Account name validation tests}
+		[Test]
+		{Verifies Apply rejects account name containing bracket characters}
+		procedure TestApplyAccount_ForbiddenChars_ShowsError;
+		[Test]
+		{Verifies Apply shows overwrite confirmation when target name already exists}
+		procedure TestApplyAccount_DuplicateName_ConfirmsOverwrite;
+		[Test]
+		{Verifies Apply aborts when user declines overwrite confirmation}
+		procedure TestApplyAccount_DuplicateName_DeclinedOverwrite;
 	end;
 
 implementation
@@ -576,6 +595,9 @@ begin
 	FStreamingApplyButtonEnabled := False;
 	FConfirmDiscardResult := csrDiscard;
 	FConfirmDiscardCallCount := 0;
+	FAccountNameErrorMessage := '';
+	FConfirmAccountOverwriteResult := False;
+	FConfirmAccountOverwriteCallCount := 0;
 	FStreamingConfirmResult := csrDiscard;
 	FStreamingConfirmCallCount := 0;
 	FGlobalSettingsApplyEnabled := False;
@@ -1269,6 +1291,17 @@ begin
 	if Assigned(FConfirmDiscardCallback) then
 		FConfirmDiscardCallback();
 	Result := FConfirmDiscardResult;
+end;
+
+procedure TMockAccountsView.ShowAccountNameError(Message: WideString);
+begin
+	FAccountNameErrorMessage := Message;
+end;
+
+function TMockAccountsView.ConfirmAccountOverwrite(const AccountName: WideString): Boolean;
+begin
+	Inc(FConfirmAccountOverwriteCallCount);
+	Result := FConfirmAccountOverwriteResult;
 end;
 
 {TMockAccountsView - Cipher profile}
@@ -3045,6 +3078,87 @@ begin
 	Assert.AreEqual(1, AccountsList.Count, 'Should still be exactly one account');
 	AccSettings := FAccountsManager.GetAccountSettings('KeepName');
 	Assert.AreEqual('updated@mail.ru', AccSettings.Email, 'Email should be updated');
+end;
+
+procedure TAccountsPresenterTest.TestApplyAccount_ForbiddenChars_ShowsError;
+var
+	AccountsList: TWSList;
+begin
+	FPresenter.Initialize('');
+
+	FView.SetAccountName('Test[bad]name');
+	FView.SetEmail('bad@mail.ru');
+
+	FPresenter.OnApplyAccountClick;
+
+	{Account should not be created}
+	AccountsList := FAccountsManager.GetAccountsList;
+	Assert.AreEqual(0, AccountsList.Count, 'Account with forbidden chars should not be saved');
+	Assert.IsNotEmpty(FView.AccountNameErrorMessage, 'Error message should be shown');
+end;
+
+procedure TAccountsPresenterTest.TestApplyAccount_DuplicateName_ConfirmsOverwrite;
+var
+	AccSettings: TAccountSettings;
+	AccountsList: TWSList;
+begin
+	{Create two accounts}
+	AccSettings := Default(TAccountSettings);
+	AccSettings.Account := 'AccountA';
+	AccSettings.Email := 'a@mail.ru';
+	FAccountsManager.SetAccountSettings(AccSettings);
+
+	AccSettings := Default(TAccountSettings);
+	AccSettings.Account := 'AccountB';
+	AccSettings.Email := 'b@mail.ru';
+	FAccountsManager.SetAccountSettings(AccSettings);
+
+	{Select AccountA and rename to AccountB}
+	FPresenter.Initialize('AccountA');
+	FView.SetAccountName('AccountB');
+	FView.SetEmail('a@mail.ru');
+	FView.ConfirmAccountOverwriteResult := True;
+
+	FPresenter.OnApplyAccountClick;
+
+	{Overwrite confirmed: only AccountB should remain, with AccountA's data}
+	AccountsList := FAccountsManager.GetAccountsList;
+	Assert.AreEqual(1, AccountsList.Count, 'Should have one account after overwrite');
+	Assert.IsTrue(AccountsList.Contains('AccountB'), 'AccountB should exist');
+	AccSettings := FAccountsManager.GetAccountSettings('AccountB');
+	Assert.AreEqual('a@mail.ru', AccSettings.Email, 'AccountB should have AccountA email');
+	Assert.AreEqual(1, FView.ConfirmAccountOverwriteCallCount, 'Overwrite should be confirmed');
+end;
+
+procedure TAccountsPresenterTest.TestApplyAccount_DuplicateName_DeclinedOverwrite;
+var
+	AccSettings: TAccountSettings;
+	AccountsList: TWSList;
+begin
+	{Create two accounts}
+	AccSettings := Default(TAccountSettings);
+	AccSettings.Account := 'KeepA';
+	AccSettings.Email := 'keepa@mail.ru';
+	FAccountsManager.SetAccountSettings(AccSettings);
+
+	AccSettings := Default(TAccountSettings);
+	AccSettings.Account := 'KeepB';
+	AccSettings.Email := 'keepb@mail.ru';
+	FAccountsManager.SetAccountSettings(AccSettings);
+
+	{Select KeepA and try to rename to KeepB, but decline}
+	FPresenter.Initialize('KeepA');
+	FView.SetAccountName('KeepB');
+	FView.SetEmail('keepa@mail.ru');
+	FView.ConfirmAccountOverwriteResult := False;
+
+	FPresenter.OnApplyAccountClick;
+
+	{Declined: both accounts should remain unchanged}
+	AccountsList := FAccountsManager.GetAccountsList;
+	Assert.AreEqual(2, AccountsList.Count, 'Both accounts should still exist');
+	AccSettings := FAccountsManager.GetAccountSettings('KeepB');
+	Assert.AreEqual('keepb@mail.ru', AccSettings.Email, 'KeepB should retain its original data');
 end;
 
 initialization

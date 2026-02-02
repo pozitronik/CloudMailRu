@@ -188,6 +188,8 @@ type
 		procedure SetSharesPanelVisible(Value: Boolean);
 		procedure SetApplyButtonEnabled(Value: Boolean);
 		function ConfirmDiscardAccountChanges(const AccountName: WideString): TConfirmSaveResult;
+		procedure ShowAccountNameError(Message: WideString);
+		function ConfirmAccountOverwrite(const AccountName: WideString): Boolean;
 
 		{Cipher profile combo}
 		procedure SetCipherProfileItems(const Items: TArray<WideString>);
@@ -619,14 +621,41 @@ end;
 function TAccountsPresenter.SaveAccountFromView: Boolean;
 var
 	AccSettings: TAccountSettings;
+	AccountName: WideString;
+	IsRename, IsDuplicate: Boolean;
+	AccountsList: TWSList;
 begin
 	Result := False;
 
-	if FView.GetAccountName = '' then
+	AccountName := FView.GetAccountName;
+	if AccountName = '' then
 		Exit;
 
+	{INI section names cannot contain bracket characters}
+	if (Pos('[', AccountName) > 0) or (Pos(']', AccountName) > 0) then
+	begin
+		FView.ShowAccountNameError(ERR_ACCOUNT_NAME_INVALID_CHARS);
+		Exit;
+	end;
+
+	IsRename := (FSelectedAccount <> '') and (FSelectedAccount <> AccountName);
+
+	{Check if target name collides with an existing account (not ourselves)}
+	IsDuplicate := False;
+	AccountsList := FAccountsManager.GetAccountsList;
+	if AccountsList.Contains(AccountName) and (AccountName <> FSelectedAccount) then
+		IsDuplicate := True;
+
+	if IsDuplicate then
+	begin
+		if not FView.ConfirmAccountOverwrite(AccountName) then
+			Exit;
+		{User confirmed: delete the target before rename/save so it is cleanly replaced}
+		FAccountsManager.DeleteAccount(AccountName);
+	end;
+
 	AccSettings := Default(TAccountSettings);
-	AccSettings.Account := FView.GetAccountName;
+	AccSettings.Account := AccountName;
 	AccSettings.PublicAccount := not FView.GetIsPrivate;
 	AccSettings.Email := FView.GetEmail;
 	AccSettings.Password := FView.GetPassword;
@@ -647,7 +676,7 @@ begin
 	end;
 
 	{Detect account rename: old section must be replaced with the new one}
-	if (FSelectedAccount <> '') and (FSelectedAccount <> AccSettings.Account) then
+	if IsRename then
 		FAccountsManager.RenameAccount(FSelectedAccount, AccSettings.Account);
 
 	FAccountsManager.SetAccountSettings(AccSettings);

@@ -7,6 +7,7 @@ const
 	ACCOUNT_TRASH = '%s trash';
 	ASK_CONTINUE = 'Continue operation?';
 	ASK_ENCRYPTION_PASSWORD = '%s encryption password';
+	ASK_OVERWRITE_ACCOUNT = 'Account "%s" already exists. Overwrite it?';
 	ASK_SAVE_ACCOUNT_CHANGES = 'Save changes to account "%s"?';
 	ASK_SAVE_STREAMING_CHANGES = 'Save changes to streaming extension "%s"?';
 	ASK_PASSWORD = '%s password';
@@ -32,6 +33,7 @@ const
 	DOWNLOAD_FILE_RETRY = 'Error downloading file %s, retry attempt %d of %d';
 	EMPTY = 'Empty';
 	ERR_ACCOUNT_HAS_INVALID_SYMBOL = 'File name must contain only valid symbols';
+	ERR_ACCOUNT_NAME_INVALID_CHARS = 'Account name cannot contain "[" or "]" characters';
 	ERR_AUTH_FAILURE = 'Authorization failed';
 	ERR_PASSWORD_CANCELLED = 'Password entry cancelled';
 	ERR_CLONE_BY_HASH = 'Error clone by hash: %s, parameter: %s';

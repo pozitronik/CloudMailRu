@@ -331,6 +331,8 @@ type
 		procedure SetSharesPanelVisible(Value: Boolean);
 		procedure SetApplyButtonEnabled(Value: Boolean);
 		function ConfirmDiscardAccountChanges(const AccountName: WideString): TConfirmSaveResult;
+		procedure ShowAccountNameError(Message: WideString);
+		function ConfirmAccountOverwrite(const AccountName: WideString): Boolean;
 
 		{IAccountsView - Cipher profile}
 		procedure SetCipherProfileItems(const Items: TArray<WideString>);
@@ -1108,6 +1110,22 @@ begin
 		else
 			Result := csrCancel;
 	end;
+end;
+
+procedure TAccountsForm.ShowAccountNameError(Message: WideString);
+var
+	MessageBalloon: TBalloonHint;
+begin
+	MessageBalloon := TBalloonHint.Create(Self);
+	MessageBalloon.HideAfter := 5000;
+	MessageBalloon.Delay := 0;
+	MessageBalloon.Description := Message;
+	MessageBalloon.ShowHint(AccountNameEdit);
+end;
+
+function TAccountsForm.ConfirmAccountOverwrite(const AccountName: WideString): Boolean;
+begin
+	Result := MessageDlg(Format(ASK_OVERWRITE_ACCOUNT, [AccountName]), mtConfirmation, [mbYes, mbNo], 0) = mrYes;
 end;
 
 {IAccountsView - Cipher profile}
