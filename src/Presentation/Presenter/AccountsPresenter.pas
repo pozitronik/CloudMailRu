@@ -19,6 +19,7 @@ uses
 	PluginSettingsManager,
 	ServerProfileManager,
 	ServerProfile,
+	ServerConfigFetcher,
 	CloudEndpoints,
 	WFXTypes;
 
@@ -257,6 +258,7 @@ type
 	{Configuration for accounts presenter - injected dependencies}
 	TAccountsPresenterConfig = record
 		PasswordManager: IPasswordManager;
+		ServerConfigFetcher: IServerConfigFetcher;
 		ParentWindow: THandle;
 		LanguageDir: WideString; {Path to language\ directory for translation files}
 	end;
@@ -293,6 +295,7 @@ type
 		FServerUpdating: Boolean;
 		FServerCancellingSwitch: Boolean;
 		FServerProfileManager: IServerProfileManager;
+		FServerConfigFetcher: IServerConfigFetcher;
 		FServerComboNames: TArray<WideString>; {Parallel to combo items: index 0 = empty (default)}
 
 		{Cipher profile state}
@@ -420,6 +423,7 @@ begin
 	FSettingsManager := ASettingsManager;
 	FServerProfileManager := AServerProfileManager;
 	FPasswordManager := AConfig.PasswordManager;
+	FServerConfigFetcher := AConfig.ServerConfigFetcher;
 	FParentWindow := AConfig.ParentWindow;
 	FTranslationLanguageDir := AConfig.LanguageDir;
 	FSettingsApplied := False;
@@ -1654,7 +1658,7 @@ end;
 
 procedure TAccountsPresenter.OnSelfConfigureClick;
 var
-	ServerUrl: WideString;
+	ServerUrl, ErrorMsg: WideString;
 	Endpoints: TCloudEndpoints;
 begin
 	ServerUrl := FView.GetServerUrl;
@@ -1664,8 +1668,9 @@ begin
 		Exit;
 	end;
 
-	{Infer default endpoints from the server URL and populate fields}
-	Endpoints := TServerProfileManager.InferEndpointsFromServerUrl(ServerUrl);
+	{Fetch endpoints from server root, falling back to URL inference}
+	Endpoints := TCloudEndpoints.CreateDefaults;
+	FServerConfigFetcher.Fetch(ServerUrl, Endpoints, ErrorMsg);
 
 	FServerUpdating := True;
 	try
@@ -1674,7 +1679,12 @@ begin
 		FView.SetServerDispatcherUrl(Endpoints.DispatcherUrl);
 		FView.SetServerThumbnailUrl(Endpoints.ThumbnailUrl);
 		FView.SetServerPublicUrl(Endpoints.PublicUrl);
-		FView.SetServerStatus('Endpoints inferred from URL');
+		FView.SetServerDownloadUrl(Endpoints.DownloadUrl);
+		FView.SetServerUploadUrl(Endpoints.UploadUrl);
+		if ErrorMsg <> '' then
+			FView.SetServerStatus(ErrorMsg)
+		else
+			FView.SetServerStatus('Endpoints loaded from server');
 	finally
 		FServerUpdating := False;
 	end;

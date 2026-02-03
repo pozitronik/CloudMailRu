@@ -1,6 +1,6 @@
 unit ServerConfigFetcher;
 
-{Fetches server endpoint configuration from a self-configure URL.
+{Fetches server endpoint configuration via HTTP GET to the server root URL.
 	Used by the Servers tab Self-Configure button to auto-populate
 	endpoint fields from a remote server's self-description endpoint.}
 
@@ -12,13 +12,13 @@ uses
 type
 	IServerConfigFetcher = interface
 		['{7399F029-36D5-455C-832F-F46DA4504CBC}']
-		{Fetches endpoint configuration from ServerUrl + /self-configure.
+		{Fetches endpoint configuration from the server root URL.
 			On success, returns True and populates Endpoints.
 			On failure, returns False and sets ErrorMsg.}
 		function Fetch(const ServerUrl: WideString; var Endpoints: TCloudEndpoints; var ErrorMsg: WideString): Boolean;
 	end;
 
-	{Implementation using IHTTPManager for actual HTTP requests}
+	{Production implementation -- HTTP GET to server root, fallback to URL inference}
 	TServerConfigFetcher = class(TInterfacedObject, IServerConfigFetcher)
 	public
 		function Fetch(const ServerUrl: WideString; var Endpoints: TCloudEndpoints; var ErrorMsg: WideString): Boolean;
@@ -34,6 +34,10 @@ implementation
 
 uses
 	SysUtils,
+	StrUtils,
+	Classes,
+	IdHTTP,
+	IdSSLOpenSSL,
 	CloudEndpointsJsonAdapter,
 	ServerProfileManager;
 
@@ -42,6 +46,9 @@ uses
 function TServerConfigFetcher.Fetch(const ServerUrl: WideString; var Endpoints: TCloudEndpoints; var ErrorMsg: WideString): Boolean;
 var
 	BaseUrl: WideString;
+	HTTP: TIdHTTP;
+	SSLHandler: TIdSSLIOHandlerSocketOpenSSL;
+	ResponseStream: TStringStream;
 begin
 	Result := False;
 	ErrorMsg := '';
@@ -52,14 +59,44 @@ begin
 		Exit;
 	end;
 
-	{Infer endpoints from the server URL as a baseline.
-		Real HTTP fetch to /self-configure would happen here when servers support it.
-		For now, use URL pattern inference which covers the common case.}
 	BaseUrl := ServerUrl;
+	if Pos(string('://'), string(BaseUrl)) = 0 then
+		BaseUrl := 'http://' + BaseUrl;
 	if (Length(BaseUrl) > 0) and (BaseUrl[Length(BaseUrl)] = '/') then
 		Delete(BaseUrl, Length(BaseUrl), 1);
 
+	{Start with inferred endpoints as baseline}
 	Endpoints := TServerProfileManager.InferEndpointsFromServerUrl(BaseUrl);
+
+	{HTTP GET to server root for endpoint configuration}
+	HTTP := TIdHTTP.Create(nil);
+	try
+		HTTP.ConnectTimeout := 5000;
+		HTTP.ReadTimeout := 5000;
+
+		if StartsText('https://', string(BaseUrl)) then
+		begin
+			SSLHandler := TIdSSLIOHandlerSocketOpenSSL.Create(HTTP);
+			HTTP.IOHandler := SSLHandler;
+		end;
+
+		ResponseStream := TStringStream.Create('', TEncoding.UTF8);
+		try
+			try
+				HTTP.Get(string(BaseUrl) + '/', ResponseStream);
+				{Merge server-provided endpoints over inferred baseline}
+				TCloudEndpointsJsonAdapter.Merge(ResponseStream.DataString, Endpoints);
+			except
+				on E: Exception do
+					ErrorMsg := E.Message;
+			end;
+		finally
+			ResponseStream.Free;
+		end;
+	finally
+		HTTP.Free;
+	end;
+
 	Result := True;
 end;
 

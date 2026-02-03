@@ -14,6 +14,7 @@ uses
 	AccountsManager,
 	PluginSettingsManager,
 	ServerProfileManager,
+	ServerConfigFetcher,
 	CipherProfile,
 	WFXTypes,
 	System.Classes,
@@ -1682,6 +1683,7 @@ begin
 	FServerProfileManager := TServerProfileManager.Create(TMemoryConfigFile.Create);
 
 	Config.PasswordManager := FPasswordManagerRef;
+	Config.ServerConfigFetcher := TNullServerConfigFetcher.Create;
 	Config.ParentWindow := 0;
 
 	FPresenter := TAccountsPresenter.Create(

@@ -442,7 +442,8 @@ uses
 	ProxySettings,
 	CloudConstants,
 	ConfigFile,
-	ServerProfileManager;
+	ServerProfileManager,
+	ServerConfigFetcher;
 
 {IAccountsView - Global settings}
 
@@ -1925,6 +1926,7 @@ begin
 
 		{Create presenter config}
 		Config.PasswordManager := PasswordManager;
+		Config.ServerConfigFetcher := TServerConfigFetcher.Create;
 		Config.ParentWindow := ParentWindow;
 		Config.LanguageDir := PluginSettingsMgr.ApplicationPath + 'language\';
 
