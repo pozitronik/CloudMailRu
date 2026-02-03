@@ -9,7 +9,7 @@ interface
 uses
 	Windows, SysUtils, AnsiStrings, DateUtils,
 	CloudDirItem, CloudConstants, WFXTypes,
-	DateTimeUtils;
+	DateTimeUtils, LanguageStrings;
 
 type
 	{Context for fields that need external state (e.g., description field).
@@ -120,7 +120,7 @@ begin
 	begin
 		StrPCopy(FieldValue, Context.FileDescription);
 	end else begin
-		StrPCopy(FieldValue, '<disabled>');
+		StrPCopy(FieldValue, CONTENT_FIELD_DISABLED);
 	end;
 	Result := ft_stringw;
 end;

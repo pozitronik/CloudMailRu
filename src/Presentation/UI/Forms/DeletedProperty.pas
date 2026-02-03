@@ -6,6 +6,7 @@ uses
 	CloudDirItemList,
 	CloudDirItem,
 	DeletedPropertyPresenter,
+	LanguageStrings,
 	Winapi.Windows,
 	Winapi.Messages,
 	System.SysUtils,
@@ -36,6 +37,7 @@ type
 		DelSizeLB: TLabel;
 	private
 		FPresenter: TDeletedPropertyPresenter;
+		procedure UpdateFormCaptions;
 
 		{IDeletedPropertyView implementation}
 		procedure SetCaption(Caption: WideString);
@@ -103,6 +105,19 @@ begin
 	EmptyBTN.Enabled := Enabled;
 end;
 
+procedure TDeletedPropertyForm.UpdateFormCaptions;
+begin
+	NameLB.Caption := DFM_DEL_LBL_NAME;
+	FromLB.Caption := DFM_DEL_LBL_FROM;
+	AtLB.Caption := DFM_DEL_LBL_AT;
+	ByLB.Caption := DFM_DEL_LBL_BY;
+	SizeLB.Caption := DFM_DEL_LBL_SIZE;
+	RestoreBTN.Caption := DFM_DEL_BTN_RESTORE;
+	CancelBTN.Caption := DFM_DEL_BTN_CANCEL;
+	RestoreAllBTN.Caption := DFM_DEL_BTN_RESTORE_ALL;
+	EmptyBTN.Caption := DFM_DEL_BTN_CLEAR_TRASH;
+end;
+
 {TDeletedPropertyForm}
 
 destructor TDeletedPropertyForm.Destroy;
@@ -118,6 +133,7 @@ begin
 	DeletedPropertyForm := TDeletedPropertyForm.Create(nil);
 	try
 		DeletedPropertyForm.parentWindow := parentWindow;
+		DeletedPropertyForm.UpdateFormCaptions;
 		DeletedPropertyForm.FPresenter := TDeletedPropertyPresenter.Create(DeletedPropertyForm);
 		DeletedPropertyForm.FPresenter.Initialize(Items, TrashDir, AccountName);
 		result := DeletedPropertyForm.ShowModal;

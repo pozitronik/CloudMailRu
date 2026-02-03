@@ -5,6 +5,7 @@ interface
 uses
 	CloudIncomingInvite,
 	InvitePropertyPresenter,
+	LanguageStrings,
 	Winapi.Windows,
 	Winapi.Messages,
 	System.SysUtils,
@@ -38,6 +39,7 @@ type
 		UnmountDeleteBTN: TButton;
 	private
 		FPresenter: TInvitePropertyPresenter;
+		procedure UpdateFormCaptions;
 
 		{IInvitePropertyView implementation}
 		procedure SetCaption(Caption: WideString);
@@ -123,6 +125,21 @@ begin
 	UnmountDeleteBTN.Enabled := Enabled;
 end;
 
+procedure TInvitePropertyForm.UpdateFormCaptions;
+begin
+	NameLB.Caption := DFM_INV_LBL_NAME;
+	OwnerEmailLB.Caption := DFM_INV_LBL_OWNER_EMAIL;
+	OwnerNameLB.Caption := DFM_INV_LBL_OWNER_NAME;
+	AccessLB.Caption := DFM_INV_LBL_ACCESS;
+	SizeLB.Caption := DFM_INV_LBL_SIZE;
+	TokenLB.Caption := DFM_INV_LBL_INVITE_TOKEN;
+	MountBTN.Caption := DFM_INV_BTN_MOUNT;
+	CancelBTN.Caption := DFM_INV_BTN_CANCEL;
+	RejectBTN.Caption := DFM_INV_BTN_REJECT;
+	UnmountCopyBTN.Caption := DFM_INV_BTN_UNMOUNT_COPY;
+	UnmountDeleteBTN.Caption := DFM_INV_BTN_UNMOUNT_DELETE;
+end;
+
 {TInvitePropertyForm}
 
 destructor TInvitePropertyForm.Destroy;
@@ -138,6 +155,7 @@ begin
 	InvitePropertyForm := TInvitePropertyForm.Create(nil);
 	try
 		InvitePropertyForm.parentWindow := parentWindow;
+		InvitePropertyForm.UpdateFormCaptions;
 		InvitePropertyForm.FPresenter := TInvitePropertyPresenter.Create(InvitePropertyForm);
 		InvitePropertyForm.FPresenter.Initialize(Item, AccountName);
 		result := InvitePropertyForm.ShowModal;

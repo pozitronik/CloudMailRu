@@ -5,7 +5,7 @@ interface
 uses
 	Windows, SysUtils, AnsiStrings,
 	CloudDirItem, CloudConstants, WFXTypes,
-	ContentFieldProvider,
+	ContentFieldProvider, LanguageStrings,
 	DUnitX.TestFramework;
 
 type
@@ -579,7 +579,7 @@ begin
 
 	FProvider.GetValue(14, Item, @Value[0], Context);
 
-	Assert.AreEqual('<disabled>', string(Value));
+	Assert.AreEqual(CONTENT_FIELD_DISABLED, string(Value));
 end;
 
 procedure TContentFieldProviderTest.TestGetValue_DescriptionField_AccountRoot;

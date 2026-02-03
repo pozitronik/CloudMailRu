@@ -58,10 +58,6 @@ type
 
 implementation
 
-const
-	{Default label for invite token - matches DFM default value}
-	INVITE_TOKEN_LABEL = 'Invite token:';
-
 	{TInvitePropertyPresenter}
 
 constructor TInvitePropertyPresenter.Create(View: IInvitePropertyView);
@@ -95,7 +91,7 @@ begin
 		FView.SetUnmountDeleteEnabled(True);
 	end else begin
 		{Not mounted: show invite token, disable unmount buttons}
-		FView.SetTokenLabel(INVITE_TOKEN_LABEL);
+		FView.SetTokenLabel(DFM_INV_LBL_INVITE_TOKEN);
 		FView.SetTokenValue(Item.invite_token);
 		FView.SetMountEnabled(True);
 		FView.SetRejectEnabled(True);

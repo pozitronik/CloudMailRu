@@ -117,6 +117,7 @@ type
 		{Cancellation flags}
 		FDownloadLinksCancelled: Boolean;
 		FHashesCancelled: Boolean;
+		procedure UpdateFormCaptions;
 		{Post-show initialization}
 		procedure WMAfterShow(var Message: TMessage); message WM_AFTER_SHOW;
 	protected
@@ -396,6 +397,40 @@ begin
 	Result := InviteAcessCB.ItemIndex;
 end;
 
+procedure TPropertyForm.UpdateFormCaptions;
+begin
+	PublicLinkLabel.Caption := DFM_REM_LBL_PUBLIC_LINK;
+	AccessCB.Caption := DFM_REM_CB_PUBLIC_ACCESS;
+	OkButton.Caption := DFM_REM_BTN_OK;
+	FolderAccessTS.Caption := DFM_REM_TAB_FOLDER_ACCESS;
+	DownloadLinksTS.Caption := DFM_REM_TAB_DOWNLOAD_LINKS;
+	HashesListTS.Caption := DFM_REM_TAB_HASHES_LIST;
+	DescriptionTS.Caption := DFM_REM_TAB_DESCRIPTION;
+	InviteEmailLabel.Caption := DFM_REM_LBL_NEW_MEMBER;
+	AccessLabel.Caption := DFM_REM_LBL_ACCESS;
+	InviteBtn.Caption := DFM_REM_BTN_ADD;
+	DescriptionSaveButton.Caption := DFM_REM_BTN_F2_OK;
+	ItemChangeAccess.Caption := DFM_REM_MI_CHANGE_ACCESS;
+	ItemDelete.Caption := DFM_REM_MI_DROP_ACCESS;
+	ItemRefresh.Caption := DFM_REM_MI_REFRESH;
+	{Toolbar buttons - hints serve as visible tooltips}
+	SaveLinksTb.Hint := DFM_REM_BTN_SAVE_AS;
+	WrapLinksTb.Hint := DFM_REM_BTN_WRAP;
+	CancelLinksScanTb.Hint := DFM_REM_BTN_CANCEL_SCAN;
+	RefreshLinksScanTb.Hint := DFM_REM_BTN_RESCAN;
+	SaveHashesTb.Hint := DFM_REM_BTN_SAVE_AS;
+	LoadHashesTb.Hint := DFM_REM_BTN_LOAD_FILE;
+	ApplyHashesTB.Hint := DFM_REM_BTN_APPLY_HASHES;
+	WrapHashesTb.Hint := DFM_REM_BTN_WRAP;
+	CancelHashesScanTb.Hint := DFM_REM_BTN_CANCEL_SCAN;
+	RefreshHashesScanTb.Hint := DFM_REM_BTN_RESCAN;
+	{Access combobox items}
+	InviteAcessCB.Items.Clear;
+	InviteAcessCB.Items.Add(DFM_REM_OPT_READ_WRITE);
+	InviteAcessCB.Items.Add(DFM_REM_OPT_READ_ONLY);
+	InviteAcessCB.ItemIndex := 0;
+end;
+
 destructor TPropertyForm.Destroy;
 begin
 	FPresenter.Free;
@@ -562,6 +597,7 @@ begin
 	Form := TPropertyForm.Create(nil);
 	try
 		Form.parentWindow := parentWindow;
+		Form.UpdateFormCaptions;
 
 		{Create presenter with cloud services}
 		Form.FPresenter := TRemotePropertyPresenter.Create(Form, Cloud.Downloader, Cloud.Uploader, Cloud.FileOperations, Cloud.ListingService, Cloud.ShareService, FileSystem, TPublicCloudFactory.Create, TCHandler, Cloud.IsPublicAccount);

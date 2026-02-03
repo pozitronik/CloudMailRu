@@ -345,6 +345,65 @@ var
 	DFM_LV_STREAM_M3U8: WideString;
 	DFM_LV_STREAM_LINK: WideString;
 	DFM_LV_STREAM_WEB: WideString;
+	{AskPassword form}
+	DFM_ASK_FORM_TITLE: WideString;
+	DFM_ASK_LBL_PASSWORD: WideString;
+	DFM_ASK_BTN_OK: WideString;
+	DFM_ASK_CB_STORE_PWD: WideString;
+	{DeletedProperty form}
+	DFM_DEL_LBL_NAME: WideString;
+	DFM_DEL_LBL_FROM: WideString;
+	DFM_DEL_LBL_AT: WideString;
+	DFM_DEL_LBL_BY: WideString;
+	DFM_DEL_LBL_SIZE: WideString;
+	DFM_DEL_BTN_RESTORE: WideString;
+	DFM_DEL_BTN_CANCEL: WideString;
+	DFM_DEL_BTN_RESTORE_ALL: WideString;
+	DFM_DEL_BTN_CLEAR_TRASH: WideString;
+	{InviteProperty form}
+	DFM_INV_LBL_NAME: WideString;
+	DFM_INV_LBL_OWNER_EMAIL: WideString;
+	DFM_INV_LBL_OWNER_NAME: WideString;
+	DFM_INV_LBL_ACCESS: WideString;
+	DFM_INV_LBL_SIZE: WideString;
+	DFM_INV_LBL_INVITE_TOKEN: WideString;
+	DFM_INV_BTN_MOUNT: WideString;
+	DFM_INV_BTN_CANCEL: WideString;
+	DFM_INV_BTN_REJECT: WideString;
+	DFM_INV_BTN_UNMOUNT_COPY: WideString;
+	DFM_INV_BTN_UNMOUNT_DELETE: WideString;
+	{RemoteProperty form}
+	DFM_REM_LBL_PUBLIC_LINK: WideString;
+	DFM_REM_CB_PUBLIC_ACCESS: WideString;
+	DFM_REM_BTN_OK: WideString;
+	DFM_REM_TAB_FOLDER_ACCESS: WideString;
+	DFM_REM_TAB_DOWNLOAD_LINKS: WideString;
+	DFM_REM_TAB_HASHES_LIST: WideString;
+	DFM_REM_TAB_DESCRIPTION: WideString;
+	DFM_REM_LBL_NEW_MEMBER: WideString;
+	DFM_REM_LBL_ACCESS: WideString;
+	DFM_REM_BTN_ADD: WideString;
+	DFM_REM_BTN_SAVE_AS: WideString;
+	DFM_REM_BTN_WRAP: WideString;
+	DFM_REM_BTN_CANCEL_SCAN: WideString;
+	DFM_REM_BTN_RESCAN: WideString;
+	DFM_REM_BTN_LOAD_FILE: WideString;
+	DFM_REM_BTN_APPLY_HASHES: WideString;
+	DFM_REM_BTN_F2_OK: WideString;
+	DFM_REM_MI_CHANGE_ACCESS: WideString;
+	DFM_REM_MI_DROP_ACCESS: WideString;
+	DFM_REM_MI_REFRESH: WideString;
+	DFM_REM_OPT_READ_WRITE: WideString;
+	DFM_REM_OPT_READ_ONLY: WideString;
+
+	{Translation tab status messages}
+	DFM_TRANS_DEFAULT: WideString;
+	DFM_TRANS_RESTORED: WideString;
+	DFM_TRANS_APPLIED: WideString;
+	DFM_TRANS_ERROR: WideString;
+
+	{Content field}
+	CONTENT_FIELD_DISABLED: WideString;
 
 	{Translation registry: maps key names to pointers to the corresponding vars}
 	TranslationRegistry: TDictionary<string, PWideString>;
@@ -692,6 +751,63 @@ begin
 	DFM_LV_STREAM_M3U8 := 'M3U8';
 	DFM_LV_STREAM_LINK := 'Link';
 	DFM_LV_STREAM_WEB := 'Web';
+	{AskPassword form}
+	DFM_ASK_FORM_TITLE := 'Password';
+	DFM_ASK_LBL_PASSWORD := 'Enter account password:';
+	DFM_ASK_BTN_OK := 'OK';
+	DFM_ASK_CB_STORE_PWD := 'Store password in TC password manager';
+	{DeletedProperty form}
+	DFM_DEL_LBL_NAME := 'Name:';
+	DFM_DEL_LBL_FROM := 'Deleted from:';
+	DFM_DEL_LBL_AT := 'Deleted at:';
+	DFM_DEL_LBL_BY := 'Deleted by';
+	DFM_DEL_LBL_SIZE := 'Summary size:';
+	DFM_DEL_BTN_RESTORE := 'Restore';
+	DFM_DEL_BTN_CANCEL := 'Cancel';
+	DFM_DEL_BTN_RESTORE_ALL := 'Restore all';
+	DFM_DEL_BTN_CLEAR_TRASH := 'Clear trash';
+	{InviteProperty form}
+	DFM_INV_LBL_NAME := 'Name:';
+	DFM_INV_LBL_OWNER_EMAIL := 'Owner email:';
+	DFM_INV_LBL_OWNER_NAME := 'Owner name:';
+	DFM_INV_LBL_ACCESS := 'Access:';
+	DFM_INV_LBL_SIZE := 'Summary size:';
+	DFM_INV_LBL_INVITE_TOKEN := 'Invite token:';
+	DFM_INV_BTN_MOUNT := 'Mount';
+	DFM_INV_BTN_CANCEL := 'Cancel';
+	DFM_INV_BTN_REJECT := 'Reject';
+	DFM_INV_BTN_UNMOUNT_COPY := 'Unmount (save copy)';
+	DFM_INV_BTN_UNMOUNT_DELETE := 'Unmount and delete';
+	{RemoteProperty form}
+	DFM_REM_LBL_PUBLIC_LINK := 'Public link:';
+	DFM_REM_CB_PUBLIC_ACCESS := 'Public access enabled';
+	DFM_REM_BTN_OK := 'OK';
+	DFM_REM_TAB_FOLDER_ACCESS := 'Folder access';
+	DFM_REM_TAB_DOWNLOAD_LINKS := 'Download links';
+	DFM_REM_TAB_HASHES_LIST := 'Hashes list';
+	DFM_REM_TAB_DESCRIPTION := 'Description';
+	DFM_REM_LBL_NEW_MEMBER := 'New member email:';
+	DFM_REM_LBL_ACCESS := 'Access:';
+	DFM_REM_BTN_ADD := 'Add';
+	DFM_REM_BTN_SAVE_AS := 'Save as';
+	DFM_REM_BTN_WRAP := 'Wrap';
+	DFM_REM_BTN_CANCEL_SCAN := 'Cancel scan';
+	DFM_REM_BTN_RESCAN := 'Rescan';
+	DFM_REM_BTN_LOAD_FILE := 'Load from file';
+	DFM_REM_BTN_APPLY_HASHES := 'Apply hashes';
+	DFM_REM_BTN_F2_OK := 'F2 OK';
+	DFM_REM_MI_CHANGE_ACCESS := 'Change access';
+	DFM_REM_MI_DROP_ACCESS := 'Drop access';
+	DFM_REM_MI_REFRESH := 'Refresh';
+	DFM_REM_OPT_READ_WRITE := 'Read and write';
+	DFM_REM_OPT_READ_ONLY := 'Read only';
+
+	DFM_TRANS_DEFAULT := '(Default)';
+	DFM_TRANS_RESTORED := 'Defaults restored';
+	DFM_TRANS_APPLIED := 'Translation applied: %s';
+	DFM_TRANS_ERROR := 'Error: %s';
+
+	CONTENT_FIELD_DISABLED := '<disabled>';
 end;
 
 procedure BuildTranslationRegistry;
@@ -1029,6 +1145,59 @@ begin
 	TranslationRegistry.Add('DFM_LV_STREAM_M3U8', @DFM_LV_STREAM_M3U8);
 	TranslationRegistry.Add('DFM_LV_STREAM_LINK', @DFM_LV_STREAM_LINK);
 	TranslationRegistry.Add('DFM_LV_STREAM_WEB', @DFM_LV_STREAM_WEB);
+	TranslationRegistry.Add('DFM_ASK_FORM_TITLE', @DFM_ASK_FORM_TITLE);
+	TranslationRegistry.Add('DFM_ASK_LBL_PASSWORD', @DFM_ASK_LBL_PASSWORD);
+	TranslationRegistry.Add('DFM_ASK_BTN_OK', @DFM_ASK_BTN_OK);
+	TranslationRegistry.Add('DFM_ASK_CB_STORE_PWD', @DFM_ASK_CB_STORE_PWD);
+	TranslationRegistry.Add('DFM_DEL_LBL_NAME', @DFM_DEL_LBL_NAME);
+	TranslationRegistry.Add('DFM_DEL_LBL_FROM', @DFM_DEL_LBL_FROM);
+	TranslationRegistry.Add('DFM_DEL_LBL_AT', @DFM_DEL_LBL_AT);
+	TranslationRegistry.Add('DFM_DEL_LBL_BY', @DFM_DEL_LBL_BY);
+	TranslationRegistry.Add('DFM_DEL_LBL_SIZE', @DFM_DEL_LBL_SIZE);
+	TranslationRegistry.Add('DFM_DEL_BTN_RESTORE', @DFM_DEL_BTN_RESTORE);
+	TranslationRegistry.Add('DFM_DEL_BTN_CANCEL', @DFM_DEL_BTN_CANCEL);
+	TranslationRegistry.Add('DFM_DEL_BTN_RESTORE_ALL', @DFM_DEL_BTN_RESTORE_ALL);
+	TranslationRegistry.Add('DFM_DEL_BTN_CLEAR_TRASH', @DFM_DEL_BTN_CLEAR_TRASH);
+	TranslationRegistry.Add('DFM_INV_LBL_NAME', @DFM_INV_LBL_NAME);
+	TranslationRegistry.Add('DFM_INV_LBL_OWNER_EMAIL', @DFM_INV_LBL_OWNER_EMAIL);
+	TranslationRegistry.Add('DFM_INV_LBL_OWNER_NAME', @DFM_INV_LBL_OWNER_NAME);
+	TranslationRegistry.Add('DFM_INV_LBL_ACCESS', @DFM_INV_LBL_ACCESS);
+	TranslationRegistry.Add('DFM_INV_LBL_SIZE', @DFM_INV_LBL_SIZE);
+	TranslationRegistry.Add('DFM_INV_LBL_INVITE_TOKEN', @DFM_INV_LBL_INVITE_TOKEN);
+	TranslationRegistry.Add('DFM_INV_BTN_MOUNT', @DFM_INV_BTN_MOUNT);
+	TranslationRegistry.Add('DFM_INV_BTN_CANCEL', @DFM_INV_BTN_CANCEL);
+	TranslationRegistry.Add('DFM_INV_BTN_REJECT', @DFM_INV_BTN_REJECT);
+	TranslationRegistry.Add('DFM_INV_BTN_UNMOUNT_COPY', @DFM_INV_BTN_UNMOUNT_COPY);
+	TranslationRegistry.Add('DFM_INV_BTN_UNMOUNT_DELETE', @DFM_INV_BTN_UNMOUNT_DELETE);
+	TranslationRegistry.Add('DFM_REM_LBL_PUBLIC_LINK', @DFM_REM_LBL_PUBLIC_LINK);
+	TranslationRegistry.Add('DFM_REM_CB_PUBLIC_ACCESS', @DFM_REM_CB_PUBLIC_ACCESS);
+	TranslationRegistry.Add('DFM_REM_BTN_OK', @DFM_REM_BTN_OK);
+	TranslationRegistry.Add('DFM_REM_TAB_FOLDER_ACCESS', @DFM_REM_TAB_FOLDER_ACCESS);
+	TranslationRegistry.Add('DFM_REM_TAB_DOWNLOAD_LINKS', @DFM_REM_TAB_DOWNLOAD_LINKS);
+	TranslationRegistry.Add('DFM_REM_TAB_HASHES_LIST', @DFM_REM_TAB_HASHES_LIST);
+	TranslationRegistry.Add('DFM_REM_TAB_DESCRIPTION', @DFM_REM_TAB_DESCRIPTION);
+	TranslationRegistry.Add('DFM_REM_LBL_NEW_MEMBER', @DFM_REM_LBL_NEW_MEMBER);
+	TranslationRegistry.Add('DFM_REM_LBL_ACCESS', @DFM_REM_LBL_ACCESS);
+	TranslationRegistry.Add('DFM_REM_BTN_ADD', @DFM_REM_BTN_ADD);
+	TranslationRegistry.Add('DFM_REM_BTN_SAVE_AS', @DFM_REM_BTN_SAVE_AS);
+	TranslationRegistry.Add('DFM_REM_BTN_WRAP', @DFM_REM_BTN_WRAP);
+	TranslationRegistry.Add('DFM_REM_BTN_CANCEL_SCAN', @DFM_REM_BTN_CANCEL_SCAN);
+	TranslationRegistry.Add('DFM_REM_BTN_RESCAN', @DFM_REM_BTN_RESCAN);
+	TranslationRegistry.Add('DFM_REM_BTN_LOAD_FILE', @DFM_REM_BTN_LOAD_FILE);
+	TranslationRegistry.Add('DFM_REM_BTN_APPLY_HASHES', @DFM_REM_BTN_APPLY_HASHES);
+	TranslationRegistry.Add('DFM_REM_BTN_F2_OK', @DFM_REM_BTN_F2_OK);
+	TranslationRegistry.Add('DFM_REM_MI_CHANGE_ACCESS', @DFM_REM_MI_CHANGE_ACCESS);
+	TranslationRegistry.Add('DFM_REM_MI_DROP_ACCESS', @DFM_REM_MI_DROP_ACCESS);
+	TranslationRegistry.Add('DFM_REM_MI_REFRESH', @DFM_REM_MI_REFRESH);
+	TranslationRegistry.Add('DFM_REM_OPT_READ_WRITE', @DFM_REM_OPT_READ_WRITE);
+	TranslationRegistry.Add('DFM_REM_OPT_READ_ONLY', @DFM_REM_OPT_READ_ONLY);
+
+	TranslationRegistry.Add('DFM_TRANS_DEFAULT', @DFM_TRANS_DEFAULT);
+	TranslationRegistry.Add('DFM_TRANS_RESTORED', @DFM_TRANS_RESTORED);
+	TranslationRegistry.Add('DFM_TRANS_APPLIED', @DFM_TRANS_APPLIED);
+	TranslationRegistry.Add('DFM_TRANS_ERROR', @DFM_TRANS_ERROR);
+
+	TranslationRegistry.Add('CONTENT_FIELD_DISABLED', @CONTENT_FIELD_DISABLED);
 end;
 
 initialization

@@ -46,6 +46,7 @@ type
 		procedure SetCheckboxChecked(Checked: Boolean);
 		function GetCheckboxChecked: Boolean;
 		procedure AddActionButton(Title: WideString; ResultCode: Integer);
+		procedure UpdateFormCaptions;
 	public
 		destructor Destroy; override;
 		class function AskPassword(CustomTitle, CustomText: WideString; var Password: WideString; var UseTCPwdMngr: Boolean; DisablePWDManagerCB: Boolean; ParentWindow: HWND): integer;
@@ -129,6 +130,12 @@ begin
 	FNextButtonLeft := FNextButtonLeft + Btn.Width + 7;
 end;
 
+procedure TAskPasswordForm.UpdateFormCaptions;
+begin
+	OkButton.Caption := DFM_ASK_BTN_OK;
+	UseTCPwdMngrCB.Caption := DFM_ASK_CB_STORE_PWD;
+end;
+
 {TAskPasswordForm}
 
 destructor TAskPasswordForm.Destroy;
@@ -144,6 +151,7 @@ begin
 	AskPasswordForm := TAskPasswordForm.Create(nil);
 	try
 		AskPasswordForm.ParentWindow := ParentWindow;
+		AskPasswordForm.UpdateFormCaptions;
 		AskPasswordForm.FNextButtonLeft := 7;
 		AskPasswordForm.FPresenter := TAskPasswordPresenter.Create(AskPasswordForm);
 		AskPasswordForm.FPresenter.InitializeActionMode(CustomTitle, CustomText, ActionsList);
@@ -160,6 +168,7 @@ begin
 	AskPasswordForm := TAskPasswordForm.Create(nil);
 	try
 		AskPasswordForm.ParentWindow := ParentWindow;
+		AskPasswordForm.UpdateFormCaptions;
 		AskPasswordForm.FPresenter := TAskPasswordPresenter.Create(AskPasswordForm);
 		AskPasswordForm.FPresenter.InitializePasswordMode(CustomTitle, CustomText, UseTCPwdMngr, DisablePWDManagerCB);
 
@@ -182,6 +191,7 @@ begin
 	AskPasswordForm := TAskPasswordForm.Create(nil);
 	try
 		AskPasswordForm.ParentWindow := ParentWindow;
+		AskPasswordForm.UpdateFormCaptions;
 		AskPasswordForm.FNextButtonLeft := 7;
 		AskPasswordForm.FPresenter := TAskPasswordPresenter.Create(AskPasswordForm);
 		AskPasswordForm.FPresenter.InitializeTextMode(CustomTitle, CustomText);

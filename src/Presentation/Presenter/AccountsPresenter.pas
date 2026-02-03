@@ -1309,7 +1309,7 @@ begin
 		SetLength(FLanguageFileNames, Length(Translations) + 1);
 		SetLength(DisplayNames, Length(Translations) + 1);
 		FLanguageFileNames[0] := '';
-		DisplayNames[0] := '(Default)';
+		DisplayNames[0] := DFM_TRANS_DEFAULT;
 		for I := 0 to High(Translations) do
 		begin
 			FLanguageFileNames[I + 1] := Translations[I];
@@ -1358,13 +1358,13 @@ begin
 		if SelectedLang = '' then
 		begin
 			Manager.Reset;
-			FView.SetTranslationStatus('Defaults restored');
+			FView.SetTranslationStatus(DFM_TRANS_RESTORED);
 		end else begin
 			if Manager.Apply(SelectedLang, ErrorMsg) then
-				FView.SetTranslationStatus('Translation applied: ' + SelectedLang)
+				FView.SetTranslationStatus(Format(DFM_TRANS_APPLIED, [SelectedLang]))
 			else
 			begin
-				FView.SetTranslationStatus('Error: ' + ErrorMsg);
+				FView.SetTranslationStatus(Format(DFM_TRANS_ERROR, [ErrorMsg]));
 				Exit;
 			end;
 		end;
