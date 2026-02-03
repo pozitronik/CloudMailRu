@@ -60,6 +60,9 @@ type
 
 		{Sets creation, access, and modification times on a file}
 		procedure SetFileTime(const Path: WideString; const FileTime: TFileTime);
+
+		{Lists files matching a pattern (e.g. 'C:\dir\*.lng'). Returns full paths.}
+		function FindFiles(const Pattern: WideString): TStringList;
 	end;
 
 	{Null implementation for testing - simulates empty/non-existent files}
@@ -77,6 +80,7 @@ type
 		function OpenTextReader(const Path: WideString; Encoding: TEncoding): TStreamReader;
 		function GetTmpFileName(const Prefix: WideString = ''): WideString;
 		procedure SetFileTime(const Path: WideString; const FileTime: TFileTime);
+		function FindFiles(const Pattern: WideString): TStringList;
 	end;
 
 	{In-memory file system for testing - stores files in dictionary}
@@ -102,6 +106,7 @@ type
 		function OpenTextReader(const Path: WideString; Encoding: TEncoding): TStreamReader;
 		function GetTmpFileName(const Prefix: WideString = ''): WideString;
 		procedure SetFileTime(const Path: WideString; const FileTime: TFileTime);
+		function FindFiles(const Pattern: WideString): TStringList;
 
 		{Test helper: set file content directly}
 		procedure SetFileContent(const Path: WideString; const Content: WideString);
@@ -126,11 +131,13 @@ type
 		function OpenTextReader(const Path: WideString; Encoding: TEncoding): TStreamReader;
 		function GetTmpFileName(const Prefix: WideString = ''): WideString;
 		procedure SetFileTime(const Path: WideString; const FileTime: TFileTime);
+		function FindFiles(const Pattern: WideString): TStringList;
 	end;
 
 implementation
 
 uses
+	Masks,
 	PathHelper;
 
 {TOwningStreamReader}
@@ -216,6 +223,11 @@ end;
 procedure TNullFileSystem.SetFileTime(const Path: WideString; const FileTime: TFileTime);
 begin
 	{No-op}
+end;
+
+function TNullFileSystem.FindFiles(const Pattern: WideString): TStringList;
+begin
+	Result := TStringList.Create;
 end;
 
 {TMemoryFileSystem}
@@ -338,6 +350,22 @@ procedure TMemoryFileSystem.Clear;
 begin
 	FFiles.Clear;
 	SetFileTimeCalls := 0;
+end;
+
+function TMemoryFileSystem.FindFiles(const Pattern: WideString): TStringList;
+var
+	I: Integer;
+	FilePath: WideString;
+	Mask: WideString;
+begin
+	Result := TStringList.Create;
+	Mask := ExtractFileName(Pattern);
+	for I := 0 to FFiles.Count - 1 do
+	begin
+		FilePath := FFiles.Names[I];
+		if MatchesMask(ExtractFileName(FilePath), Mask) then
+			Result.Add(FilePath);
+	end;
 end;
 
 function TMemoryFileSystem.OpenTextReader(const Path: WideString; Encoding: TEncoding): TStreamReader;
@@ -522,6 +550,23 @@ begin
 	finally
 		if Handle <> INVALID_HANDLE_VALUE then
 			CloseHandle(Handle);
+	end;
+end;
+
+function TWindowsFileSystem.FindFiles(const Pattern: WideString): TStringList;
+var
+	SR: TSearchRec;
+	Dir: WideString;
+begin
+	Result := TStringList.Create;
+	Dir := ExtractFilePath(Pattern);
+	if FindFirst(Pattern, faAnyFile and not faDirectory, SR) = 0 then
+	try
+		repeat
+			Result.Add(Dir + SR.Name);
+		until FindNext(SR) <> 0;
+	finally
+		System.SysUtils.FindClose(SR);
 	end;
 end;
 

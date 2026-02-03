@@ -156,7 +156,7 @@ object AccountsForm: TAccountsForm
     Top = 0
     Width = 622
     Height = 476
-    ActivePage = AccountsTab
+    ActivePage = TranslationTab
     Align = alClient
     TabOrder = 0
     object AccountsTab: TTabSheet
@@ -1312,6 +1312,46 @@ object AccountsForm: TAccountsForm
         ViewStyle = vsReport
         OnKeyUp = StreamingExtensionsListViewKeyUp
         OnSelectItem = StreamingExtensionsListViewSelectItem
+      end
+    end
+    object TranslationTab: TTabSheet
+      Caption = 'Translation'
+      ImageIndex = 5
+      DesignSize = (
+        614
+        448)
+      object LanguageLabel: TLabel
+        Left = 16
+        Top = 16
+        Width = 47
+        Height = 13
+        Caption = 'Language'
+      end
+      object TranslationStatusLabel: TLabel
+        Left = 16
+        Top = 340
+        Width = 3
+        Height = 13
+        Anchors = [akLeft, akBottom]
+      end
+      object LanguageList: TListBox
+        Left = 16
+        Top = 32
+        Width = 580
+        Height = 300
+        Anchors = [akLeft, akTop, akRight, akBottom]
+        ItemHeight = 13
+        TabOrder = 0
+      end
+      object ApplyTranslationBtn: TButton
+        Left = 486
+        Top = 419
+        Width = 124
+        Height = 25
+        Anchors = [akRight, akBottom]
+        Caption = 'Apply'
+        TabOrder = 1
+        OnClick = ApplyTranslationBtnClick
       end
     end
   end

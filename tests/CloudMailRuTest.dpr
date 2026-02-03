@@ -324,7 +324,9 @@ uses
 	CloudThumbnailService in '..\src\Application\Thumbnail\CloudThumbnailService.pas',
 	CloudThumbnailServiceTest in 'Application\Thumbnail\CloudThumbnailServiceTest.pas',
 	ThumbnailBitmapConverter in '..\src\Application\Thumbnail\ThumbnailBitmapConverter.pas',
-	ThumbnailBitmapConverterTest in 'Application\Thumbnail\ThumbnailBitmapConverterTest.pas';
+	ThumbnailBitmapConverterTest in 'Application\Thumbnail\ThumbnailBitmapConverterTest.pas',
+	TranslationManager in '..\src\Infrastructure\Localization\TranslationManager.pas',
+	TranslationManagerTest in 'Infrastructure\Localization\TranslationManagerTest.pas';
 
 {keep comment here to protect the following conditional from being removed by the IDE when adding a unit}
 {$IFNDEF TESTINSIGHT}

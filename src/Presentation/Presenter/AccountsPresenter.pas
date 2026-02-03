@@ -197,12 +197,22 @@ type
 		function GetCipherProfileIndex: Integer;
 		procedure SetCipherProfileEnabled(Value: Boolean);
 		function ShowCipherChangeWarning: Boolean;
+
+		{Translation tab}
+		procedure SetAvailableLanguages(const DisplayNames: TArray<WideString>);
+		function GetSelectedLanguageIndex: Integer;
+		procedure SetSelectedLanguageIndex(Value: Integer);
+		procedure SetTranslationStatus(const Status: WideString);
+
+		{Refreshes all visible control captions from translated LanguageStrings vars}
+		procedure UpdateFormCaptions;
 	end;
 
 	{Configuration for accounts presenter - injected dependencies}
 	TAccountsPresenterConfig = record
 		PasswordManager: IPasswordManager;
 		ParentWindow: THandle;
+		LanguageDir: WideString; {Path to language\ directory for translation files}
 	end;
 
 	TAccountsPresenter = class
@@ -213,6 +223,7 @@ type
 		FPasswordManager: IPasswordManager;
 		FParentWindow: THandle;
 		FSettingsApplied: Boolean;
+		FTranslationLanguageDir: WideString;
 
 		{Dirty tracking state - accounts tab}
 		FSelectedAccount: WideString;
@@ -233,6 +244,9 @@ type
 		{Cipher profile state}
 		FCipherProfileIds: TArray<WideString>;
 		FPreviousCipherProfileIndex: Integer;
+
+		{Translation tab state: file names parallel to display names in the view}
+		FLanguageFileNames: TArray<WideString>;
 
 		function SavePasswordToManager(const AccountKey, Password: WideString): Boolean;
 		function ValidateGlobalSettings: Boolean;
@@ -298,6 +312,10 @@ type
 		procedure OnDeleteStreamingExtensionClick;
 		procedure OnStreamingFieldChanged;
 
+		{Translation operations}
+		procedure LoadTranslationSettingsToView;
+		procedure OnApplyTranslationClick;
+
 		{Properties}
 		property SettingsApplied: Boolean read FSettingsApplied;
 		property SelectedAccount: WideString read FSelectedAccount;
@@ -311,6 +329,8 @@ uses
 	LanguageStrings,
 	SettingsConstants,
 	CipherProfile,
+	FileSystem,
+	TranslationManager,
 	System.IOUtils,
 	WSList;
 
@@ -325,6 +345,7 @@ begin
 	FSettingsManager := ASettingsManager;
 	FPasswordManager := AConfig.PasswordManager;
 	FParentWindow := AConfig.ParentWindow;
+	FTranslationLanguageDir := AConfig.LanguageDir;
 	FSettingsApplied := False;
 	FSelectedAccount := '';
 	FDirty := False;
@@ -364,6 +385,9 @@ begin
 	{Load streaming extensions}
 	RefreshStreamingExtensionsList;
 
+	{Load translation settings}
+	LoadTranslationSettingsToView;
+
 	{Initialize accounts tab}
 	FUpdating := True;
 	try
@@ -377,6 +401,9 @@ begin
 	end;
 	OnAccountSelected;
 	SetDirty(False);
+
+	{Apply translated captions (startup translation may already be loaded)}
+	FView.UpdateFormCaptions;
 end;
 
 procedure TAccountsPresenter.LoadGlobalSettingsToView;
@@ -1260,6 +1287,98 @@ begin
 
 	RefreshStreamingExtensionsList;
 	OnStreamingExtensionSelected;
+end;
+
+{Translation operations}
+
+procedure TAccountsPresenter.LoadTranslationSettingsToView;
+var
+	Manager: TTranslationManager;
+	Translations: TArray<WideString>;
+	DisplayNames: TArray<WideString>;
+	TranslationName: WideString;
+	Settings: TPluginSettings;
+	I, SelectedIndex: Integer;
+begin
+	Manager := TTranslationManager.Create(TWindowsFileSystem.Create, FTranslationLanguageDir);
+	try
+		Translations := Manager.GetAvailableTranslations;
+
+		{Build parallel arrays: file names and display names.
+			Index 0 is always "(Default)" with empty file name.}
+		SetLength(FLanguageFileNames, Length(Translations) + 1);
+		SetLength(DisplayNames, Length(Translations) + 1);
+		FLanguageFileNames[0] := '';
+		DisplayNames[0] := '(Default)';
+		for I := 0 to High(Translations) do
+		begin
+			FLanguageFileNames[I + 1] := Translations[I];
+			TranslationName := Manager.ReadTranslationName(Translations[I]);
+			if TranslationName <> '' then
+				DisplayNames[I + 1] := TranslationName
+			else
+				DisplayNames[I + 1] := Translations[I];
+		end;
+	finally
+		Manager.Free;
+	end;
+
+	FView.SetAvailableLanguages(DisplayNames);
+
+	{Select current language by matching file name}
+	Settings := FSettingsManager.GetSettings;
+	SelectedIndex := 0;
+	for I := 0 to High(FLanguageFileNames) do
+		if FLanguageFileNames[I] = Settings.Language then
+		begin
+			SelectedIndex := I;
+			Break;
+		end;
+	FView.SetSelectedLanguageIndex(SelectedIndex);
+end;
+
+procedure TAccountsPresenter.OnApplyTranslationClick;
+var
+	Manager: TTranslationManager;
+	SelectedIndex: Integer;
+	SelectedLang: WideString;
+	ErrorMsg: WideString;
+	Settings: TPluginSettings;
+begin
+	SelectedIndex := FView.GetSelectedLanguageIndex;
+	if (SelectedIndex >= 0) and (SelectedIndex <= High(FLanguageFileNames)) then
+		SelectedLang := FLanguageFileNames[SelectedIndex]
+	else
+		SelectedLang := '';
+
+	Manager := TTranslationManager.Create(TWindowsFileSystem.Create, FTranslationLanguageDir);
+	try
+		if SelectedLang = '' then
+		begin
+			Manager.Reset;
+			FView.SetTranslationStatus('Defaults restored');
+		end else begin
+			if Manager.Apply(SelectedLang, ErrorMsg) then
+				FView.SetTranslationStatus('Translation applied: ' + SelectedLang)
+			else
+			begin
+				FView.SetTranslationStatus('Error: ' + ErrorMsg);
+				Exit;
+			end;
+		end;
+	finally
+		Manager.Free;
+	end;
+
+	{Refresh form control captions from newly translated vars}
+	FView.UpdateFormCaptions;
+
+	{Save language choice to settings}
+	Settings := FSettingsManager.GetSettings;
+	Settings.Language := SelectedLang;
+	FSettingsManager.SetSettings(Settings);
+	FSettingsManager.Save;
+	FSettingsApplied := True;
 end;
 
 end.

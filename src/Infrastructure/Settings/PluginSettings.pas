@@ -41,6 +41,7 @@ type
 		CheckCRC: boolean;
 		HashCalculatorStrategy: integer;
 		ThumbnailExtensions: WideString;
+		Language: WideString; {Selected translation name, empty = English default}
 	private
 		FIniFilePath: WideString;
 		FAccountsIniFilePath: WideString;

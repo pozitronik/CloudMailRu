@@ -50,6 +50,8 @@ type
 		procedure TestSetFileTime_NoOp;
 		[Test]
 		procedure TestImplementsIFileSystem;
+		[Test]
+		procedure TestFindFiles_ReturnsEmptyList;
 	end;
 
 	{Tests for TMemoryFileSystem - in-memory implementation for testing}
@@ -143,6 +145,14 @@ type
 		procedure TestSetFileTime_TracksCalls;
 		[Test]
 		procedure TestImplementsIFileSystem;
+
+		{ FindFiles tests }
+		[Test]
+		procedure TestFindFiles_MatchesPattern;
+		[Test]
+		procedure TestFindFiles_NoMatches_ReturnsEmpty;
+		[Test]
+		procedure TestFindFiles_MultipleMatches;
 	end;
 
 	{Tests for TWindowsFileSystem - actual file system implementation}
@@ -374,6 +384,18 @@ var
 begin
 	Intf := TNullFileSystem.Create;
 	Assert.IsNotNull(Intf, 'Should implement IFileSystem');
+end;
+
+procedure TNullFileSystemTest.TestFindFiles_ReturnsEmptyList;
+var
+	Files: TStringList;
+begin
+	Files := FFileSystem.FindFiles('C:\any\*.lng');
+	try
+		Assert.AreEqual(0, Files.Count, 'Null implementation should return empty list');
+	finally
+		Files.Free;
+	end;
 end;
 
 { TMemoryFileSystemTest }
@@ -618,6 +640,49 @@ var
 begin
 	Intf := TMemoryFileSystem.Create;
 	Assert.IsNotNull(Intf, 'Should implement IFileSystem');
+end;
+
+procedure TMemoryFileSystemTest.TestFindFiles_MatchesPattern;
+var
+	Files: TStringList;
+begin
+	FFileSystem.SetFileContent('C:\lang\english.lng', 'content');
+	FFileSystem.SetFileContent('C:\lang\readme.txt', 'content');
+	Files := FFileSystem.FindFiles('C:\lang\*.lng');
+	try
+		Assert.AreEqual(1, Files.Count);
+		Assert.AreEqual('C:\lang\english.lng', Files[0]);
+	finally
+		Files.Free;
+	end;
+end;
+
+procedure TMemoryFileSystemTest.TestFindFiles_NoMatches_ReturnsEmpty;
+var
+	Files: TStringList;
+begin
+	FFileSystem.SetFileContent('C:\lang\readme.txt', 'content');
+	Files := FFileSystem.FindFiles('C:\lang\*.lng');
+	try
+		Assert.AreEqual(0, Files.Count);
+	finally
+		Files.Free;
+	end;
+end;
+
+procedure TMemoryFileSystemTest.TestFindFiles_MultipleMatches;
+var
+	Files: TStringList;
+begin
+	FFileSystem.SetFileContent('C:\lang\english.lng', 'content1');
+	FFileSystem.SetFileContent('C:\lang\russian.lng', 'content2');
+	FFileSystem.SetFileContent('C:\lang\readme.txt', 'content3');
+	Files := FFileSystem.FindFiles('C:\lang\*.lng');
+	try
+		Assert.AreEqual(2, Files.Count);
+	finally
+		Files.Free;
+	end;
 end;
 
 { TWindowsFileSystemTest }

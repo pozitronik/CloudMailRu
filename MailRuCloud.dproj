@@ -348,6 +348,7 @@
         <DCCReference Include="src\Application\Thumbnail\ThumbnailSizeSelector.pas"/>
         <DCCReference Include="src\Application\Thumbnail\CloudThumbnailService.pas"/>
         <DCCReference Include="src\Application\Thumbnail\ThumbnailBitmapConverter.pas"/>
+        <DCCReference Include="src\Infrastructure\Localization\TranslationManager.pas"/>
         <RcItem Include="icons\icon.ico">
             <ResourceType>ICON</ResourceType>
             <ResourceId>base_icon</ResourceId>

@@ -52,6 +52,7 @@ type
 		function OpenTextReader(const Path: WideString; Encoding: TEncoding): TStreamReader;
 		function GetTmpFileName(const Prefix: WideString = ''): WideString;
 		procedure SetFileTime(const Path: WideString; const FileTime: TFileTime);
+		function FindFiles(const Pattern: WideString): TStringList;
 	end;
 
 	{Testable subclass that exposes protected PutFileSplit method}
@@ -199,6 +200,11 @@ end;
 procedure TRealSizeFileSystem.SetFileTime(const Path: WideString; const FileTime: TFileTime);
 begin
 	{No-op - not needed for upload split tests}
+end;
+
+function TRealSizeFileSystem.FindFiles(const Pattern: WideString): TStringList;
+begin
+	Result := TStringList.Create;
 end;
 
 {TTestableCloudFileUploader}

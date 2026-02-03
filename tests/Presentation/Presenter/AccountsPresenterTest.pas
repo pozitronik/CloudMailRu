@@ -285,6 +285,13 @@ type
 		procedure SetCipherProfileEnabled(Value: Boolean);
 		function ShowCipherChangeWarning: Boolean;
 
+		{IAccountsView - Translation}
+		procedure SetAvailableLanguages(const DisplayNames: TArray<WideString>);
+		function GetSelectedLanguageIndex: Integer;
+		procedure SetSelectedLanguageIndex(Value: Integer);
+		procedure SetTranslationStatus(const Status: WideString);
+		procedure UpdateFormCaptions;
+
 		{Test access properties}
 		property AccountsListItems: TArray<TAccountDisplayItem> read FAccountsListItems;
 		property SelectedAccountIndex: Integer read FSelectedAccountIndex write FSelectedAccountIndex;
@@ -1331,6 +1338,31 @@ function TMockAccountsView.ShowCipherChangeWarning: Boolean;
 begin
 	Inc(FCipherChangeWarningCallCount);
 	Result := FCipherChangeWarningResult;
+end;
+
+procedure TMockAccountsView.SetAvailableLanguages(const DisplayNames: TArray<WideString>);
+begin
+	{No-op for tests}
+end;
+
+function TMockAccountsView.GetSelectedLanguageIndex: Integer;
+begin
+	Result := 0;
+end;
+
+procedure TMockAccountsView.SetSelectedLanguageIndex(Value: Integer);
+begin
+	{No-op for tests}
+end;
+
+procedure TMockAccountsView.SetTranslationStatus(const Status: WideString);
+begin
+	{No-op for tests}
+end;
+
+procedure TMockAccountsView.UpdateFormCaptions;
+begin
+	{No-op for tests}
 end;
 
 {TMockPasswordManager}

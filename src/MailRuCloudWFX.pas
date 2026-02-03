@@ -96,7 +96,8 @@ uses
 	CloudMailRuFactory,
 	OpenSSLProvider,
 	AccountCredentialsProvider,
-	CloudAuthorizationState;
+	CloudAuthorizationState,
+	TranslationManager;
 
 type
 	TWFXApplication = class(TInterfacedObject, IWFXInterface)
@@ -169,6 +170,8 @@ type
 		Progress: IProgress;
 		Request: IRequest;
 		FFileSystem: IFileSystem;
+
+		procedure LoadTranslationOnStartup;
 	protected
 		{Ensures cloud is authorized. Returns True if authorized, False otherwise.
 			Attempts authorization if not yet authorized. Sets LastError on failure.}
@@ -225,6 +228,23 @@ implementation
 
 {TWFXApplication}
 
+procedure TWFXApplication.LoadTranslationOnStartup;
+var
+	Manager: TTranslationManager;
+	ErrorMsg: WideString;
+begin
+	if SettingsManager.GetSettings.Language = '' then
+		Exit;
+
+	Manager := TTranslationManager.Create(TWindowsFileSystem.Create, PluginPath + 'language\');
+	try
+		Manager.Apply(SettingsManager.GetSettings.Language, ErrorMsg);
+		{Silently ignore errors on startup}
+	finally
+		Manager.Free;
+	end;
+end;
+
 constructor TWFXApplication.Create();
 begin
 
@@ -232,6 +252,9 @@ begin
 	PluginPath := IncludeTrailingBackslash(ExtractFilePath(PluginPath));
 
 	SettingsManager := TPluginSettingsManager.Create();
+
+	{Load saved translation if configured}
+	LoadTranslationOnStartup;
 
 	{Configure Indy's OpenSSL library path for HTTPS connections}
 	if SettingsManager.GetSettings.LoadSSLDLLOnlyFromPluginDir then

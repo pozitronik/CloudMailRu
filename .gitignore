@@ -111,3 +111,5 @@
 /tests/Win64/Debug/x64/ssleay32.dll
 /.claude/
 /CLAUDE.md
+/Win64/Debug/language/english.lng
+/Win64/Debug/language/russian.lng

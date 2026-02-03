@@ -280,6 +280,7 @@ begin
 		CheckCRC := FConfigFile.ReadBool('Main', 'CheckCRC', True);
 		HashCalculatorStrategy := FConfigFile.ReadInteger('Main', 'HashCalculatorStrategy', HashStrategyAuto);
 		ThumbnailExtensions := FConfigFile.ReadString('Main', 'ThumbnailExtensions', DEFAULT_THUMBNAIL_EXTENSIONS);
+		Language := FConfigFile.ReadString('Main', 'Language', EmptyWideStr);
 	end;
 	Settings.BuildThumbnailExtList;
 	Settings.IniFilePath := FIniFilePath;
@@ -331,6 +332,7 @@ begin
 		FConfigFile.WriteBoolIfNotDefault('Main', 'CheckCRC', CheckCRC, True);
 		FConfigFile.WriteIntegerIfNotDefault('Main', 'HashCalculatorStrategy', HashCalculatorStrategy, HashStrategyAuto);
 		FConfigFile.WriteStringIfNotDefault('Main', 'ThumbnailExtensions', ThumbnailExtensions, DEFAULT_THUMBNAIL_EXTENSIONS);
+		FConfigFile.WriteStringIfNotDefault('Main', 'Language', Language, EmptyWideStr);
 	end;
 end;
 

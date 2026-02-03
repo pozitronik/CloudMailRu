@@ -152,6 +152,11 @@ type
 		StreamingExtensionsListView: TListView;
 		CipherProfileLabel: TLabel;
 		CipherProfileCombo: TComboBox;
+		TranslationTab: TTabSheet;
+		LanguageLabel: TLabel;
+		LanguageList: TListBox;
+		ApplyTranslationBtn: TButton;
+		TranslationStatusLabel: TLabel;
 		procedure FormShow(Sender: TObject);
 		procedure AccountsListViewKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
 		procedure AccountsListViewSelectItem(Sender: TObject; Item: TListItem; Selected: Boolean);
@@ -180,6 +185,7 @@ type
 		procedure ResetUserAgentButtonClick(Sender: TObject);
 		procedure GlobalSettingsFieldChanged(Sender: TObject);
 		procedure ProxyCBChange(Sender: TObject);
+		procedure ApplyTranslationBtnClick(Sender: TObject);
 	private
 		FPresenter: TAccountsPresenter;
 		procedure AutoFitListViewColumns(LV: TListView);
@@ -341,6 +347,15 @@ type
 		function GetCipherProfileIndex: Integer;
 		procedure SetCipherProfileEnabled(Value: Boolean);
 		function ShowCipherChangeWarning: Boolean;
+
+		{IAccountsView - Translation tab}
+		procedure SetAvailableLanguages(const DisplayNames: TArray<WideString>);
+		function GetSelectedLanguageIndex: Integer;
+		procedure SetSelectedLanguageIndex(Value: Integer);
+		procedure SetTranslationStatus(const Status: WideString);
+
+		{IAccountsView - Translation support}
+		procedure UpdateFormCaptions;
 	public
 
 	end;
@@ -1320,6 +1335,158 @@ begin
 	FPresenter.OnAddStreamingExtensionClick;
 end;
 
+{IAccountsView - Translation tab}
+
+procedure TAccountsForm.SetAvailableLanguages(const DisplayNames: TArray<WideString>);
+var
+	I: Integer;
+begin
+	LanguageList.Items.BeginUpdate;
+	try
+		LanguageList.Items.Clear;
+		for I := 0 to High(DisplayNames) do
+			LanguageList.Items.Add(DisplayNames[I]);
+	finally
+		LanguageList.Items.EndUpdate;
+	end;
+	if LanguageList.Items.Count > 0 then
+		LanguageList.ItemIndex := 0;
+end;
+
+function TAccountsForm.GetSelectedLanguageIndex: Integer;
+begin
+	Result := LanguageList.ItemIndex;
+end;
+
+procedure TAccountsForm.SetSelectedLanguageIndex(Value: Integer);
+begin
+	if (Value >= 0) and (Value < LanguageList.Items.Count) then
+		LanguageList.ItemIndex := Value
+	else if LanguageList.Items.Count > 0 then
+		LanguageList.ItemIndex := 0;
+end;
+
+procedure TAccountsForm.SetTranslationStatus(const Status: WideString);
+begin
+	TranslationStatusLabel.Caption := Status;
+end;
+
+{IAccountsView - Translation support}
+
+procedure TAccountsForm.UpdateFormCaptions;
+begin
+	{Form title}
+	Caption := DFM_FORM_TITLE;
+
+	{Tab captions}
+	AccountsTab.Caption := DFM_TAB_ACCOUNTS;
+	GlobalTab.Caption := DFM_TAB_GLOBAL_SETTINGS;
+	NetworkTab.Caption := DFM_TAB_NETWORK_SETTINGS;
+	CommentsTab.Caption := DFM_TAB_FILE_COMMENTS;
+	StreamingTab.Caption := DFM_TAB_STREAMING;
+	TranslationTab.Caption := DFM_TAB_TRANSLATION;
+
+	{Apply buttons - all share the same translated label}
+	ApplyButton.Caption := DFM_BTN_APPLY;
+	GlobalSettingsApplyBtn.Caption := DFM_BTN_APPLY;
+	NetworkSettingsApplyBtn.Caption := DFM_BTN_APPLY;
+	CommentsSettingsApplyBtn.Caption := DFM_BTN_APPLY;
+	ApplyExtButton.Caption := DFM_BTN_APPLY;
+	ApplyTranslationBtn.Caption := DFM_BTN_APPLY;
+
+	{New/Delete buttons}
+	AddButton.Caption := DFM_BTN_NEW;
+	DeleteButton.Caption := DFM_BTN_DELETE;
+	NewExtButton.Caption := DFM_BTN_NEW;
+	DeleteExtButton.Caption := DFM_BTN_DELETE;
+	EncryptFilesPwdButton.Caption := DFM_BTN_SET_PASSWORD;
+	ResetUserAgentButton.Caption := DFM_BTN_RESET_UA;
+
+	{Accounts tab - labels, groups, radios, checkboxes}
+	AccountNameLabel.Caption := DFM_LBL_ACCOUNT_NAME;
+	PublicUrlLabel.Caption := DFM_LBL_PUBLIC_URL;
+	EmailLabel.Caption := DFM_LBL_EMAIL;
+	PasswordLabel.Caption := DFM_LBL_APP_PASSWORD;
+	AccountTypeGB.Caption := DFM_GB_ACCOUNT_TYPE;
+	PrivateRB.Caption := DFM_RB_PRIVATE;
+	PublicRB.Caption := DFM_RB_PUBLIC;
+	UseTCPwdMngrCB.Caption := DFM_CB_TC_PASSWORD;
+	FileSizeGB.Caption := DFM_GB_FILE_SIZE;
+	UnlimitedFileSizeCB.Caption := DFM_CB_UNLIMITED_SIZE;
+	SplitLargeFilesCB.Caption := DFM_CB_SPLIT_FILES;
+	EncryptGB.Caption := DFM_GB_ENCRYPTION;
+	EncryptFilesLabel.Caption := DFM_LBL_ENCRYPT_FILES;
+	CipherProfileLabel.Caption := DFM_LBL_ENCRYPT_BACKEND;
+	AccountsListView.Columns[0].Caption := DFM_COL_ACCOUNT;
+	AccountsListView.Columns[1].Caption := DFM_COL_TYPE;
+
+	{Global settings tab}
+	CloudMaxFileSizeLabelBytes.Caption := DFM_LBL_BYTES;
+	ChunkOverwriteModeLabel.Caption := DFM_LBL_CHUNK_OVERWRITE;
+	DeleteFailOnUploadModeLabel.Caption := DFM_LBL_DELETE_FAIL_UPLOAD;
+	OverwriteLocalModeLabel.Caption := DFM_LBL_OVERWRITE_LOCAL;
+	IconsModeLabel.Caption := DFM_LBL_ICONS_MODE;
+	OperationErrorModeLabel.Caption := DFM_LBL_OPERATION_ERROR;
+	RetryAttemptsLabel.Caption := DFM_LBL_RETRY_ATTEMPTS;
+	RetryWaitLabel.Caption := DFM_LBL_RETRY_WAIT;
+	msLabel.Caption := DFM_LBL_MS;
+	ShowAccountsLabel.Caption := DFM_LBL_SHOW_ACCOUNTS;
+	CopyBetweenAccountsModeLabel.Caption := DFM_LBL_COPY_BETWEEN;
+	PreserveFileTimeCB.Caption := DFM_CB_PRESERVE_TIME;
+	UseDLLFromPluginDir.Caption := DFM_CB_LOAD_SSL;
+	SpaceInfoLoggingCB.Caption := DFM_CB_LOG_SPACE;
+	CloudMaxFileSizeCB.Caption := DFM_CB_OVERRIDE_SPLIT;
+	DisableMultiThreadingCB.Caption := DFM_CB_DISABLE_MT;
+	DownloadLinksEncodeCB.Caption := DFM_CB_URL_ENCODE;
+	AutoUpdateDownloadListingCB.Caption := DFM_CB_AUTO_UPDATE;
+	ShowTrashFoldersCB.Caption := DFM_CB_TRASH;
+	ShowSharedFoldersCB.Caption := DFM_CB_SHARED;
+	ShowInvitesFoldersCB.Caption := DFM_CB_INVITES;
+	PrecalculateHashCB.Caption := DFM_CB_PRECALC_HASH;
+	CheckCRCCB.Caption := DFM_CB_CHECK_CRC;
+
+	{Network settings tab}
+	SocketTimeoutLabel.Caption := DFM_LBL_SOCKET_TIMEOUT;
+	ProxyGB.Caption := DFM_GB_PROXY;
+	ProxyTypeLabel.Caption := DFM_LBL_PROXY_TYPE;
+	ProxyPortLabel.Caption := DFM_LBL_PROXY_PORT;
+	ProxyUserLabel.Caption := DFM_LBL_PROXY_USER;
+	ProxyPWDLabel.Caption := DFM_LBL_PROXY_PASSWORD;
+	ProxyServerLabel.Caption := DFM_LBL_PROXY_SERVER;
+	ProxyTCPwdMngrCB.Caption := DFM_CB_PROXY_TC_PASSWORD;
+	SpeedLimitGB.Caption := DFM_GB_SPEED_LIMITS;
+	UploadsBPSLabel.Caption := DFM_LBL_UPLOAD_BPS;
+	DownloadsBPSLabel.Caption := DFM_LBL_DOWNLOAD_BPS;
+	ChangeUserAgentCB.Caption := DFM_CB_CHANGE_UA;
+
+	{File comments tab}
+	DescriptionFileNameLabel.Caption := DFM_LBL_DESC_FILENAME;
+	DescriptionEnabledCB.Caption := DFM_CB_DESC_ENABLED;
+	DescriptionEditorEnabledCB.Caption := DFM_CB_DESC_EDITOR;
+	DescriptionCopyToCloudCB.Caption := DFM_CB_DESC_COPY_TO;
+	DescriptionCopyFromCloudCB.Caption := DFM_CB_DESC_COPY_FROM;
+	DescriptionTrackCloudFSCB.Caption := DFM_CB_DESC_TRACK;
+
+	{Streaming tab}
+	ExtLabel.Caption := DFM_LBL_FILE_EXT;
+	CommandLabel.Caption := DFM_LBL_COMMAND;
+	ParametersLabel.Caption := DFM_LBL_PARAMETERS;
+	StartPathLabel.Caption := DFM_LBL_START_PATH;
+	StreamingTypeLabel.Caption := DFM_LBL_STREAMING_TYPE;
+	StreamingExtensionsListView.Columns[0].Caption := DFM_COL_EXTENSION;
+	StreamingExtensionsListView.Columns[1].Caption := DFM_COL_TYPE;
+
+	{Translation tab}
+	LanguageLabel.Caption := DFM_LBL_LANGUAGE;
+end;
+
+{Event handlers - Translation tab}
+
+procedure TAccountsForm.ApplyTranslationBtnClick(Sender: TObject);
+begin
+	FPresenter.OnApplyTranslationClick;
+end;
+
 {IAccountsView - Dialogs}
 
 function TAccountsForm.ShowEncryptionPasswordDialog(const AccountName: WideString; var CryptedGUID: WideString): Boolean;
@@ -1375,6 +1542,7 @@ begin
 		{Create presenter config}
 		Config.PasswordManager := PasswordManager;
 		Config.ParentWindow := ParentWindow;
+		Config.LanguageDir := PluginSettingsMgr.ApplicationPath + 'language\';
 
 		{Create presenter}
 		Form.FPresenter := TAccountsPresenter.Create(Form, AccountsMgr, SettingsManager, Config);

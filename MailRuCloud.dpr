@@ -164,7 +164,8 @@ uses
 	AccountCredentialsProvider in 'src\Infrastructure\Password\AccountCredentialsProvider.pas',
 	ThumbnailSizeSelector in 'src\Application\Thumbnail\ThumbnailSizeSelector.pas',
 	CloudThumbnailService in 'src\Application\Thumbnail\CloudThumbnailService.pas',
-	ThumbnailBitmapConverter in 'src\Application\Thumbnail\ThumbnailBitmapConverter.pas';
+	ThumbnailBitmapConverter in 'src\Application\Thumbnail\ThumbnailBitmapConverter.pas',
+	TranslationManager in 'src\Infrastructure\Localization\TranslationManager.pas';
 
 {$IFDEF WIN64}
 {$E wfx64}
