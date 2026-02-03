@@ -4,6 +4,7 @@ interface
 
 uses
 	CloudConstants,
+	CloudEndpoints,
 	CloudContext,
 	Logger;
 
@@ -53,8 +54,7 @@ type
 		FDownloadShard: WideString;
 		FUploadShard: WideString;
 		FPublicShard: WideString;
-		FDownloadOverride: WideString;
-		FUploadOverride: WideString;
+		FEndpoints: TCloudEndpoints;
 		FLogger: ILogger;
 		FContext: IShardContext;
 		{Resolve shard via OAuth dispatcher endpoint (plain text "URL IP COUNT" format)}
@@ -62,7 +62,7 @@ type
 		{Common logic for EnsureDownloadShard/EnsureUploadShard}
 		function EnsureShard(var CachedShard: WideString; const Override, UndefinedMsg, OverrideMsg, DispatcherSuffix: WideString): WideString;
 	public
-		constructor Create(Logger: ILogger; Context: IShardContext; DownloadOverride: WideString = ''; UploadOverride: WideString = '');
+		constructor Create(Logger: ILogger; Context: IShardContext; const Endpoints: TCloudEndpoints);
 
 		function ResolveShard(var Shard: WideString; ShardType: WideString): Boolean;
 		function GetDownloadShard: WideString;
@@ -111,13 +111,12 @@ uses
 
 {TCloudShardManager}
 
-constructor TCloudShardManager.Create(Logger: ILogger; Context: IShardContext; DownloadOverride: WideString; UploadOverride: WideString);
+constructor TCloudShardManager.Create(Logger: ILogger; Context: IShardContext; const Endpoints: TCloudEndpoints);
 begin
 	inherited Create;
 	FLogger := Logger;
 	FContext := Context;
-	FDownloadOverride := DownloadOverride;
-	FUploadOverride := UploadOverride;
+	FEndpoints := Endpoints;
 	FDownloadShard := EmptyWideStr;
 	FUploadShard := EmptyWideStr;
 	FPublicShard := EmptyWideStr;
@@ -127,7 +126,7 @@ function TCloudShardManager.ResolveShard(var Shard: WideString; ShardType: WideS
 var
 	JSON: WideString;
 begin
-	Result := FContext.PostForm(API_DISPATCHER, '', JSON) and FContext.CloudResultToBoolean(JSON, PREFIX_ERR_SHARD_RECEIVE);
+	Result := FContext.PostForm(FEndpoints.ApiDispatcher, '', JSON) and FContext.CloudResultToBoolean(JSON, PREFIX_ERR_SHARD_RECEIVE);
 	if Result then
 	begin
 		Result := JSONHelper.GetShard(JSON, Shard, ShardType) and (Shard <> EmptyWideStr);
@@ -171,22 +170,22 @@ end;
 
 function TCloudShardManager.GetDownloadShardOverride: WideString;
 begin
-	Result := FDownloadOverride;
+	Result := FEndpoints.DownloadUrl;
 end;
 
 function TCloudShardManager.GetUploadShardOverride: WideString;
 begin
-	Result := FUploadOverride;
+	Result := FEndpoints.UploadUrl;
 end;
 
 function TCloudShardManager.HasDownloadOverride: Boolean;
 begin
-	Result := FDownloadOverride <> EmptyWideStr;
+	Result := FEndpoints.DownloadUrl <> EmptyWideStr;
 end;
 
 function TCloudShardManager.HasUploadOverride: Boolean;
 begin
-	Result := FUploadOverride <> EmptyWideStr;
+	Result := FEndpoints.UploadUrl <> EmptyWideStr;
 end;
 
 procedure TCloudShardManager.InvalidateShard(ShardType: WideString);
@@ -213,7 +212,7 @@ var
 begin
 	Result := EmptyWideStr;
 	ShowProgress := False;
-	if FContext.GetPage(Format('%s/%s?token=%s', [OAUTH_DISPATCHER_URL, ShardSuffix, FContext.GetOAuthAccessToken]), DispatcherResponse, ShowProgress) then
+	if FContext.GetPage(Format('%s/%s?token=%s', [FEndpoints.DispatcherUrl, ShardSuffix, FContext.GetOAuthAccessToken]), DispatcherResponse, ShowProgress) then
 	begin
 		{Response format: "URL IP COUNT", extract the URL (first word)}
 		if Pos(' ', DispatcherResponse) > 0 then
@@ -245,12 +244,12 @@ end;
 
 function TCloudShardManager.EnsureDownloadShard: WideString;
 begin
-	Result := EnsureShard(FDownloadShard, FDownloadOverride, UNDEFINED_DOWNLOAD_SHARD, SHARD_OVERRIDDEN, 'd');
+	Result := EnsureShard(FDownloadShard, FEndpoints.DownloadUrl, UNDEFINED_DOWNLOAD_SHARD, SHARD_OVERRIDDEN, 'd');
 end;
 
 function TCloudShardManager.EnsureUploadShard: WideString;
 begin
-	Result := EnsureShard(FUploadShard, FUploadOverride, UNDEFINED_UPLOAD_SHARD, UPLOAD_URL_OVERRIDDEN, 'u');
+	Result := EnsureShard(FUploadShard, FEndpoints.UploadUrl, UNDEFINED_UPLOAD_SHARD, UPLOAD_URL_OVERRIDDEN, 'u');
 end;
 
 {TNullShardManager}

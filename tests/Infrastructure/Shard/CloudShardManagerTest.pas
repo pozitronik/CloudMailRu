@@ -4,6 +4,7 @@ interface
 
 uses
 	CloudShardManager,
+	CloudEndpoints,
 	CloudContext,
 	CloudConstants,
 	Logger,
@@ -280,7 +281,7 @@ end;
 procedure TCloudShardManagerTest.Setup;
 begin
 	FMockContext := TMockShardContext.Create;
-	FManager := TCloudShardManager.Create(TNullLogger.Create, FMockContext);
+	FManager := TCloudShardManager.Create(TNullLogger.Create, FMockContext, TCloudEndpoints.CreateDefaults);
 end;
 
 procedure TCloudShardManagerTest.TearDown;
@@ -412,8 +413,11 @@ end;
 procedure TCloudShardManagerTest.TestHasDownloadOverride_TrueWhenSet;
 var
 	ManagerWithOverride: ICloudShardManager;
+	Endpoints: TCloudEndpoints;
 begin
-	ManagerWithOverride := TCloudShardManager.Create(TNullLogger.Create, FMockContext, 'https://override.url/');
+	Endpoints := TCloudEndpoints.CreateDefaults;
+	Endpoints.DownloadUrl := 'https://override.url/';
+	ManagerWithOverride := TCloudShardManager.Create(TNullLogger.Create, FMockContext, Endpoints);
 	Assert.IsTrue(ManagerWithOverride.HasDownloadOverride);
 end;
 
@@ -425,8 +429,11 @@ end;
 procedure TCloudShardManagerTest.TestHasUploadOverride_TrueWhenSet;
 var
 	ManagerWithOverride: ICloudShardManager;
+	Endpoints: TCloudEndpoints;
 begin
-	ManagerWithOverride := TCloudShardManager.Create(TNullLogger.Create, FMockContext, '', 'https://override.url/');
+	Endpoints := TCloudEndpoints.CreateDefaults;
+	Endpoints.UploadUrl := 'https://override.url/';
+	ManagerWithOverride := TCloudShardManager.Create(TNullLogger.Create, FMockContext, Endpoints);
 	Assert.IsTrue(ManagerWithOverride.HasUploadOverride);
 end;
 
@@ -435,8 +442,11 @@ const
 	OverrideUrl = 'https://custom.override.url/';
 var
 	ManagerWithOverride: ICloudShardManager;
+	Endpoints: TCloudEndpoints;
 begin
-	ManagerWithOverride := TCloudShardManager.Create(TNullLogger.Create, FMockContext, OverrideUrl);
+	Endpoints := TCloudEndpoints.CreateDefaults;
+	Endpoints.DownloadUrl := OverrideUrl;
+	ManagerWithOverride := TCloudShardManager.Create(TNullLogger.Create, FMockContext, Endpoints);
 	Assert.AreEqual(OverrideUrl, ManagerWithOverride.GetDownloadShardOverride);
 end;
 
@@ -445,8 +455,11 @@ const
 	OverrideUrl = 'https://custom.upload.override.url/';
 var
 	ManagerWithOverride: ICloudShardManager;
+	Endpoints: TCloudEndpoints;
 begin
-	ManagerWithOverride := TCloudShardManager.Create(TNullLogger.Create, FMockContext, '', OverrideUrl);
+	Endpoints := TCloudEndpoints.CreateDefaults;
+	Endpoints.UploadUrl := OverrideUrl;
+	ManagerWithOverride := TCloudShardManager.Create(TNullLogger.Create, FMockContext, Endpoints);
 	Assert.AreEqual(OverrideUrl, ManagerWithOverride.GetUploadShardOverride);
 end;
 
@@ -568,9 +581,14 @@ end;
 { TCloudShardManagerWithOverridesTest }
 
 procedure TCloudShardManagerWithOverridesTest.Setup;
+var
+	Endpoints: TCloudEndpoints;
 begin
 	FMockContext := TMockShardContext.Create;
-	FManager := TCloudShardManager.Create(TNullLogger.Create, FMockContext, DownloadOverrideUrl, UploadOverrideUrl);
+	Endpoints := TCloudEndpoints.CreateDefaults;
+	Endpoints.DownloadUrl := DownloadOverrideUrl;
+	Endpoints.UploadUrl := UploadOverrideUrl;
+	FManager := TCloudShardManager.Create(TNullLogger.Create, FMockContext, Endpoints);
 end;
 
 procedure TCloudShardManagerWithOverridesTest.TearDown;

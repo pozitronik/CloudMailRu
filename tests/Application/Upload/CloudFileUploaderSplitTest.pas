@@ -10,6 +10,7 @@ interface
 uses
 	CloudFileUploader,
 	CloudShardManager,
+	CloudEndpoints,
 	CloudHashCalculator,
 	CloudContext,
 	CloudOAuth,
@@ -248,7 +249,7 @@ begin
 	FTempDir := TPath.Combine(TPath.GetTempPath, 'CloudFileUploaderTest_' + TGUID.NewGuid.ToString);
 	TDirectory.CreateDirectory(FTempDir);
 
-	FShardManager := TCloudShardManager.Create(TNullLogger.Create, FMockContext, '', '');
+	FShardManager := TCloudShardManager.Create(TNullLogger.Create, FMockContext, TCloudEndpoints.CreateDefaults);
 	FShardManager.SetUploadShard('https://upload.shard/');
 	FHashCalculator := TCloudHashCalculator.Create(TNullProgress.Create, TWindowsFileSystem.Create);
 

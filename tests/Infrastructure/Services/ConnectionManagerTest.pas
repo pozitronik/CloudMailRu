@@ -29,7 +29,8 @@ uses
 	System.Generics.Collections,
 	DUnitX.TestFramework,
 	OpenSSLProvider,
-	AccountCredentialsProvider;
+	AccountCredentialsProvider,
+	ServerProfileManager;
 
 type
 	{Mock implementation of IAccountsManager that returns test settings}
@@ -287,8 +288,7 @@ begin
 	FAccountSettings.PublicUrl := '';
 	FAccountSettings.EncryptFilesMode := EncryptModeNone;
 	FAccountSettings.CryptedGUIDFiles := '';
-	FAccountSettings.ShardOverride := '';
-	FAccountSettings.UploadUrlOverride := '';
+	FAccountSettings.Server := '';
 	FAccountSettings.SplitLargeFiles := True;
 	FAccountSettings.UnlimitedFileSize := False;
 end;
@@ -454,7 +454,7 @@ begin
 	PasswordManager := TNullPasswordManager.Create;
 
 	Manager := TConnectionManager.Create(PluginSettings, AccountsManager, HTTPManager,
-		PasswordUI, CipherValidator, FileSystem, Progress, Logger, Request, PasswordManager, TNullTCHandler.Create, TNullAuthStrategyFactory.Create, TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create);
+		PasswordUI, CipherValidator, FileSystem, Progress, Logger, Request, PasswordManager, TNullTCHandler.Create, TNullAuthStrategyFactory.Create, TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create, TNullServerProfileManager.Create);
 	try
 		Assert.IsNotNull(Manager, 'ConnectionManager should be created successfully');
 	finally
@@ -488,7 +488,7 @@ begin
 	PasswordManager := TNullPasswordManager.Create;
 
 	Manager := TConnectionManager.Create(PluginSettings, AccountsManager, HTTPManager,
-		PasswordUI, CipherValidator, FileSystem, Progress, Logger, Request, PasswordManager, TNullTCHandler.Create, TNullAuthStrategyFactory.Create, TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create);
+		PasswordUI, CipherValidator, FileSystem, Progress, Logger, Request, PasswordManager, TNullTCHandler.Create, TNullAuthStrategyFactory.Create, TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create, TNullServerProfileManager.Create);
 	Manager.Destroy;
 
 	Assert.Pass('ConnectionManager destroyed without errors');
@@ -526,7 +526,7 @@ begin
 	PasswordManager := TNullPasswordManager.Create;
 
 	Manager := TConnectionManager.Create(PluginSettings, AccountsManager, HTTPManager,
-		PasswordUI, CipherValidator, FileSystem, Progress, Logger, Request, PasswordManager, TNullTCHandler.Create, TNullAuthStrategyFactory.Create, TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create);
+		PasswordUI, CipherValidator, FileSystem, Progress, Logger, Request, PasswordManager, TNullTCHandler.Create, TNullAuthStrategyFactory.Create, TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create, TNullServerProfileManager.Create);
 	try
 		Cloud := Manager.Get('test_connection');
 		Assert.IsNotNull(Cloud, 'Get should always return a valid instance');
@@ -564,7 +564,7 @@ begin
 	PasswordManager := TNullPasswordManager.Create;
 
 	Manager := TConnectionManager.Create(PluginSettings, AccountsManager, HTTPManager,
-		PasswordUI, CipherValidator, FileSystem, Progress, Logger, Request, PasswordManager, TNullTCHandler.Create, TNullAuthStrategyFactory.Create, TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create);
+		PasswordUI, CipherValidator, FileSystem, Progress, Logger, Request, PasswordManager, TNullTCHandler.Create, TNullAuthStrategyFactory.Create, TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create, TNullServerProfileManager.Create);
 	try
 		Cloud1 := Manager.Get('test_connection');
 		Cloud2 := Manager.Get('test_connection');
@@ -604,7 +604,7 @@ begin
 	PasswordManager := TNullPasswordManager.Create;
 
 	Manager := TConnectionManager.Create(PluginSettings, AccountsManager, HTTPManager,
-		PasswordUI, CipherValidator, FileSystem, Progress, Logger, Request, PasswordManager, TNullTCHandler.Create, TNullAuthStrategyFactory.Create, TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create);
+		PasswordUI, CipherValidator, FileSystem, Progress, Logger, Request, PasswordManager, TNullTCHandler.Create, TNullAuthStrategyFactory.Create, TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create, TNullServerProfileManager.Create);
 	try
 		Cloud1 := Manager.Get('connection1');
 		Cloud2 := Manager.Get('connection2');
@@ -643,7 +643,7 @@ begin
 	PasswordManager := TNullPasswordManager.Create;
 
 	Manager := TConnectionManager.Create(PluginSettings, AccountsManager, HTTPManager,
-		PasswordUI, CipherValidator, FileSystem, Progress, Logger, Request, PasswordManager, TNullTCHandler.Create, TNullAuthStrategyFactory.Create, TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create);
+		PasswordUI, CipherValidator, FileSystem, Progress, Logger, Request, PasswordManager, TNullTCHandler.Create, TNullAuthStrategyFactory.Create, TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create, TNullServerProfileManager.Create);
 	try
 		Manager.Free('non_existent_connection');
 		Assert.Pass('Free non-existent connection should not throw');
@@ -678,7 +678,7 @@ begin
 	PasswordManager := TNullPasswordManager.Create;
 
 	Manager := TConnectionManager.Create(PluginSettings, AccountsManager, HTTPManager,
-		PasswordUI, CipherValidator, FileSystem, Progress, Logger, Request, PasswordManager, TNullTCHandler.Create, TNullAuthStrategyFactory.Create, TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create);
+		PasswordUI, CipherValidator, FileSystem, Progress, Logger, Request, PasswordManager, TNullTCHandler.Create, TNullAuthStrategyFactory.Create, TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create, TNullServerProfileManager.Create);
 	try
 		Manager.Free('connection1');
 		Manager.Free('connection1');
@@ -724,7 +724,7 @@ begin
 	PasswordManager := TNullPasswordManager.Create;
 
 	Manager := TConnectionManager.Create(PluginSettings, AccountsManager, HTTPManager,
-		PasswordUI, CipherValidator, FileSystem, Progress, Logger, Request, PasswordManager, TNullTCHandler.Create, TNullAuthStrategyFactory.Create, TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create);
+		PasswordUI, CipherValidator, FileSystem, Progress, Logger, Request, PasswordManager, TNullTCHandler.Create, TNullAuthStrategyFactory.Create, TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create, TNullServerProfileManager.Create);
 	try
 		Cloud := Manager.Get('cipher_profile_test');
 		Assert.IsNotNull(Cloud, 'Connection should be created despite CipherProfileId in settings');
@@ -764,7 +764,7 @@ begin
 	PasswordManager := TNullPasswordManager.Create;
 
 	Manager := TConnectionManager.Create(PluginSettings, AccountsManager, HTTPManager,
-		PasswordUI, CipherValidator, FileSystem, Progress, Logger, Request, PasswordManager, TNullTCHandler.Create, TNullAuthStrategyFactory.Create, TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create);
+		PasswordUI, CipherValidator, FileSystem, Progress, Logger, Request, PasswordManager, TNullTCHandler.Create, TNullAuthStrategyFactory.Create, TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create, TNullServerProfileManager.Create);
 	try
 		Cloud := Manager.Get('empty_cipher_profile_test');
 		Assert.IsNotNull(Cloud, 'Connection should be created with empty CipherProfileId');
@@ -929,7 +929,7 @@ begin
 		TNullCipherValidator.Create, TNullFileSystem.Create,
 		TNullProgress.Create, TNullLogger.Create, TNullRequest.Create,
 		PasswordMgr, TNullTCHandler.Create, TNullAuthStrategyFactory.Create,
-		TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create);
+		TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create, TNullServerProfileManager.Create);
 	try
 		Cloud := Manager.Get('encrypt_test');
 		Assert.IsNotNull(Cloud, 'Connection should be created with encryption enabled');
@@ -965,7 +965,7 @@ begin
 		TNullCipherValidator.Create, TNullFileSystem.Create,
 		TNullProgress.Create, TNullLogger.Create, TNullRequest.Create,
 		PasswordMgr, TNullTCHandler.Create, TNullAuthStrategyFactory.Create,
-		TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create);
+		TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create, TNullServerProfileManager.Create);
 	try
 		Cloud := Manager.Get('encrypt_unsupported_test');
 		Assert.IsNotNull(Cloud, 'Connection should be created even when password unsupported');
@@ -989,7 +989,7 @@ begin
 		TNullCipherValidator.Create, TNullFileSystem.Create,
 		TNullProgress.Create, TNullLogger.Create, TNullRequest.Create,
 		TNullPasswordManager.Create, TNullTCHandler.Create, TNullAuthStrategyFactory.Create,
-		TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create);
+		TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create, TNullServerProfileManager.Create);
 	try
 		Cloud := Manager.Get('free_test');
 		Assert.IsNotNull(Cloud, 'First Get should create connection');
@@ -1030,7 +1030,7 @@ begin
 		TNullCipherValidator.Create, TNullFileSystem.Create,
 		TNullProgress.Create, TNullLogger.Create, TNullRequest.Create,
 		TNullPasswordManager.Create, TNullTCHandler.Create, TNullAuthStrategyFactory.Create,
-		TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create);
+		TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create, TNullServerProfileManager.Create);
 	try
 		Cloud := Manager.Get('proxy_test');
 		Assert.IsNotNull(Cloud, 'Connection should be created with proxy password from INI');
@@ -1065,7 +1065,7 @@ begin
 		TNullCipherValidator.Create, TNullFileSystem.Create,
 		TNullProgress.Create, TNullLogger.Create, TNullRequest.Create,
 		PasswordMgr, TNullTCHandler.Create, TNullAuthStrategyFactory.Create,
-		TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create);
+		TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create, TNullServerProfileManager.Create);
 	try
 		Cloud := Manager.Get('readerror_test');
 		Assert.IsNotNull(Cloud, 'Connection should be created even when password retrieval fails');
@@ -1107,7 +1107,7 @@ begin
 		MockValidator, TNullFileSystem.Create,
 		TNullProgress.Create, MockLog, TNullRequest.Create,
 		PasswordMgr, TNullTCHandler.Create, TNullAuthStrategyFactory.Create,
-		TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create);
+		TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create, TNullServerProfileManager.Create);
 	try
 		Cloud := Manager.Get('guid_mismatch_log_test');
 		Assert.IsNotNull(Cloud, 'Connection should be created despite GUID mismatch');
@@ -1156,7 +1156,7 @@ begin
 		MockValidator, TNullFileSystem.Create,
 		TNullProgress.Create, TNullLogger.Create, TNullRequest.Create,
 		PasswordMgr, TNullTCHandler.Create, TNullAuthStrategyFactory.Create,
-		TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create);
+		TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create, TNullServerProfileManager.Create);
 	try
 		Cloud := Manager.Get('guid_update_test');
 		Assert.IsNotNull(Cloud, 'Connection should be created after GUID update');
@@ -1200,7 +1200,7 @@ begin
 		MockValidator, TNullFileSystem.Create,
 		TNullProgress.Create, TNullLogger.Create, TNullRequest.Create,
 		PasswordMgr, TNullTCHandler.Create, TNullAuthStrategyFactory.Create,
-		TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create);
+		TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create, TNullServerProfileManager.Create);
 	try
 		Cloud := Manager.Get('guid_ignore_test');
 		Assert.IsNotNull(Cloud, 'Connection should be created when user ignores GUID mismatch');
@@ -1248,7 +1248,7 @@ begin
 		MockValidator, TNullFileSystem.Create,
 		TNullProgress.Create, TNullLogger.Create, TNullRequest.Create,
 		PasswordMgr, TNullTCHandler.Create, TNullAuthStrategyFactory.Create,
-		TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create);
+		TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create, TNullServerProfileManager.Create);
 	try
 		Cloud := Manager.Get('guid_retry_test');
 		Assert.IsNotNull(Cloud, 'Connection should be created after retry with correct password');
@@ -1287,7 +1287,7 @@ begin
 		TNullCipherValidator.Create, TNullFileSystem.Create,
 		TNullProgress.Create, TNullLogger.Create, TNullRequest.Create,
 		PasswordMgr, TNullTCHandler.Create, TNullAuthStrategyFactory.Create,
-		TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create);
+		TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create, TNullServerProfileManager.Create);
 	try
 		Cloud := Manager.Get('proxy_tc_test');
 		Assert.IsNotNull(Cloud, 'Connection should be created with proxy password from TC manager');
@@ -1335,7 +1335,7 @@ begin
 		TNullCipherValidator.Create, TNullFileSystem.Create,
 		TNullProgress.Create, TNullLogger.Create, TNullRequest.Create,
 		PasswordMgr, TNullTCHandler.Create, TNullAuthStrategyFactory.Create,
-		TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create);
+		TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create, TNullServerProfileManager.Create);
 	try
 		Cloud := Manager.Get('proxy_save_ok_test');
 		Assert.IsNotNull(Cloud, 'Connection should be created after user enters proxy password');
@@ -1383,7 +1383,7 @@ begin
 		TNullCipherValidator.Create, TNullFileSystem.Create,
 		TNullProgress.Create, TNullLogger.Create, TNullRequest.Create,
 		PasswordMgr, TNullTCHandler.Create, TNullAuthStrategyFactory.Create,
-		TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create);
+		TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create, TNullServerProfileManager.Create);
 	try
 		Cloud := Manager.Get('proxy_save_fail_test');
 		Assert.IsNotNull(Cloud, 'Connection should be created even when password save fails');

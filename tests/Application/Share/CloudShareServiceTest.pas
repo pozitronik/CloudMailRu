@@ -5,6 +5,7 @@ interface
 uses
 	CloudShareService,
 	CloudShardManager,
+	CloudEndpoints,
 	CloudContext,
 	CloudDirItem,
 	CloudInviteList,
@@ -132,7 +133,7 @@ begin
 	FMockHTTP.SetResponse('dispatcher', True, '{"status":200,"body":{"weblink_video":[{"url":"' + FVideoShard + '"}]}}');
 
 	{Create shard manager with mock context}
-	FShardManager := TCloudShardManager.Create(TNullLogger.Create, FMockContext);
+	FShardManager := TCloudShardManager.Create(TNullLogger.Create, FMockContext, TCloudEndpoints.CreateDefaults);
 
 	{Create retry operation with mock context}
 	FRetryOperation := TRetryOperation.Create(FMockContext, 3);

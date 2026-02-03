@@ -121,6 +121,7 @@ type
 		FRemotePath: WideString;
 		FConfig: TRemotePropertyConfig;
 		FInvitesListing: TCloudInviteList;
+		FPublicUrl: WideString;
 
 		{Internal recursive listing helpers -- structurally similar by design.
 			Merging into a generic method with callbacks was attempted but rejected:
@@ -132,7 +133,7 @@ type
 		function GetDescriptionFilePath: WideString;
 		function DownloadDescriptionFile(var LocalPath: WideString): Boolean;
 	public
-		constructor Create(View: IRemotePropertyView; Downloader: ICloudFileDownloader; Uploader: ICloudFileUploader; FileOps: ICloudFileOperations; ListingService: ICloudListingService; ShareService: ICloudShareService; FileSystem: IFileSystem; PublicCloudFactory: IPublicCloudFactory; TCHandler: ITCHandler; IsPublicAccount: Boolean);
+		constructor Create(View: IRemotePropertyView; Downloader: ICloudFileDownloader; Uploader: ICloudFileUploader; FileOps: ICloudFileOperations; ListingService: ICloudListingService; ShareService: ICloudShareService; FileSystem: IFileSystem; PublicCloudFactory: IPublicCloudFactory; TCHandler: ITCHandler; IsPublicAccount: Boolean; const PublicUrl: WideString = '');
 
 		{Initialize view state based on item properties}
 		procedure Initialize(Props: TCloudDirItem; RemotePath: WideString; Config: TRemotePropertyConfig);
@@ -179,7 +180,7 @@ const
 
 	{TRemotePropertyPresenter}
 
-constructor TRemotePropertyPresenter.Create(View: IRemotePropertyView; Downloader: ICloudFileDownloader; Uploader: ICloudFileUploader; FileOps: ICloudFileOperations; ListingService: ICloudListingService; ShareService: ICloudShareService; FileSystem: IFileSystem; PublicCloudFactory: IPublicCloudFactory; TCHandler: ITCHandler; IsPublicAccount: Boolean);
+constructor TRemotePropertyPresenter.Create(View: IRemotePropertyView; Downloader: ICloudFileDownloader; Uploader: ICloudFileUploader; FileOps: ICloudFileOperations; ListingService: ICloudListingService; ShareService: ICloudShareService; FileSystem: IFileSystem; PublicCloudFactory: IPublicCloudFactory; TCHandler: ITCHandler; IsPublicAccount: Boolean; const PublicUrl: WideString);
 begin
 	inherited Create;
 	FView := View;
@@ -192,6 +193,10 @@ begin
 	FPublicCloudFactory := PublicCloudFactory;
 	FTCHandler := TCHandler;
 	FIsPublicAccount := IsPublicAccount;
+	if PublicUrl <> '' then
+		FPublicUrl := PublicUrl
+	else
+		FPublicUrl := PUBLIC_ACCESS_URL;
 end;
 
 procedure TRemotePropertyPresenter.Initialize(Props: TCloudDirItem; RemotePath: WideString; Config: TRemotePropertyConfig);
@@ -230,7 +235,7 @@ begin
 		FView.SetWebLinkEnabled(Props.WebLink <> EmptyWideStr);
 
 		if Props.WebLink <> EmptyWideStr then
-			FView.SetWebLink(PUBLIC_ACCESS_URL + Props.WebLink);
+			FView.SetWebLink(FPublicUrl + Props.WebLink);
 
 		{Show folder access tab for directories or shared items}
 		if (Props.type_ = TYPE_DIR) or (Props.kind = KIND_SHARED) then
@@ -272,7 +277,7 @@ begin
 	begin
 		if FShareService.Publish(FProps.home, PublicLink) then
 		begin
-			FView.SetWebLink(PUBLIC_ACCESS_URL + PublicLink);
+			FView.SetWebLink(FPublicUrl + PublicLink);
 			FProps.WebLink := PublicLink;
 			FView.SetWebLinkEnabled(True);
 			FView.SetExtPropertiesVisible(True);
@@ -381,7 +386,7 @@ begin
 				FView.AddDownloadLink(FDownloader.GetSharedFileUrl(FRemotePath));
 		end else begin
 			{Private account with published item: create temp public cloud}
-			if FPublicCloudFactory.CreatePublicCloud(TempPublicCloud, PUBLIC_ACCESS_URL + FProps.WebLink) then
+			if FPublicCloudFactory.CreatePublicCloud(TempPublicCloud, FPublicUrl + FProps.WebLink) then
 				try
 					if FProps.type_ = TYPE_DIR then
 						FillRecursiveDownloadListing(EmptyWideStr, TempPublicCloud.Downloader, TempPublicCloud.ListingService)

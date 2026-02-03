@@ -203,7 +203,7 @@ begin
 
 	Assert.AreEqual('test_fake_email_two@mail.ru', TestAccountSettings.Email);
 	Assert.IsTrue(TestAccountSettings.UseTCPasswordManager);
-	Assert.AreEqual('https://cloclo44.datacloudmail.ru/get/', TestAccountSettings.ShardOverride);
+	Assert.AreEqual('MyTestServer', TestAccountSettings.Server);
 	Assert.AreEqual('1MXM1IaThcWdCXnOJuCJMMWHr1wzLJMYTpsMEdJixqomW0F6C7UaOqAJKFTNMzgKvKIlB8KoWZBRWraXhU9mwF+6tIKTRr0l', TestAccountSettings.CryptedGUIDFiles);
 
 	TestAccountsManager.Free;
@@ -630,13 +630,12 @@ var
 begin
 	IniPath := self.AppDir + FP_ACCOUNTS_INI;
 
-	{Write INI file directly because SetAccountSettings does not persist shard/upload overrides}
+	{Write INI file with server profile reference to verify rename preserves it}
 	IniContent := TStringList.Create;
 	try
 		IniContent.Add('[OVERRIDE_ACC]');
 		IniContent.Add('email=override@mail.ru');
-		IniContent.Add('shard_override=https://custom-shard.mail.ru/');
-		IniContent.Add('upload_url_override=https://custom-upload.mail.ru/');
+		IniContent.Add('server=MyCustomServer');
 		IniContent.SaveToFile(IniPath);
 	finally
 		IniContent.Free;
@@ -648,8 +647,7 @@ begin
 
 		Loaded := TestAccountsManager.GetAccountSettings('RENAMED_ACC');
 		Assert.AreEqual('override@mail.ru', Loaded.Email, 'Email should be preserved');
-		Assert.AreEqual('https://custom-shard.mail.ru/', Loaded.ShardOverride, 'ShardOverride should be preserved');
-		Assert.AreEqual('https://custom-upload.mail.ru/', Loaded.UploadUrlOverride, 'UploadUrlOverride should be preserved');
+		Assert.AreEqual('MyCustomServer', Loaded.Server, 'Server should be preserved');
 	finally
 		TestAccountsManager.Free;
 	end;

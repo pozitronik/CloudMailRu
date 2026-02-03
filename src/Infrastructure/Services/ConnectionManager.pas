@@ -9,6 +9,7 @@ interface
 uses
 	CloudMailRu,
 	CloudConstants,
+	CloudEndpoints,
 	LanguageStrings,
 	TCHandler,
 	Logger,
@@ -33,6 +34,7 @@ uses
 	AuthStrategy,
 	OpenSSLProvider,
 	AccountCredentialsProvider,
+	ServerProfileManager,
 	System.Generics.Collections,
 	SysUtils;
 
@@ -58,6 +60,7 @@ type
 		FHTTPManager: IHTTPManager;
 		FPluginSettingsManager: IPluginSettingsManager;
 		FAccountsManager: IAccountsManager;
+		FServerProfileManager: IServerProfileManager;
 		FPasswordUI: IPasswordUIProvider;
 		FCipherValidator: ICipherValidator;
 		FFileSystem: IFileSystem;
@@ -76,7 +79,7 @@ type
 		function GetProxyPassword(): Boolean;
 		function InitCloudCryptPasswords(const ConnectionName: WideString; var CloudSettings: TCloudSettings): Boolean;
 	public
-		constructor Create(PluginSettingsManager: IPluginSettingsManager; AccountsManager: IAccountsManager; HTTPManager: IHTTPManager; PasswordUI: IPasswordUIProvider; CipherValidator: ICipherValidator; FileSystem: IFileSystem; Progress: IProgress; Logger: ILogger; Request: IRequest; PasswordManager: IPasswordManager; TCHandler: ITCHandler; AuthStrategyFactory: IAuthStrategyFactory; OpenSSLProvider: IOpenSSLProvider; AccountCredentialsProvider: IAccountCredentialsProvider);
+		constructor Create(PluginSettingsManager: IPluginSettingsManager; AccountsManager: IAccountsManager; HTTPManager: IHTTPManager; PasswordUI: IPasswordUIProvider; CipherValidator: ICipherValidator; FileSystem: IFileSystem; Progress: IProgress; Logger: ILogger; Request: IRequest; PasswordManager: IPasswordManager; TCHandler: ITCHandler; AuthStrategyFactory: IAuthStrategyFactory; OpenSSLProvider: IOpenSSLProvider; AccountCredentialsProvider: IAccountCredentialsProvider; ServerProfileManager: IServerProfileManager);
 		destructor Destroy(); override;
 		function Get(ConnectionName: WideString): TCloudMailRu; {Return the cloud connection by its name, always returns a valid instance}
 		procedure Free(ConnectionName: WideString); {Free a connection by its name, if present}
@@ -85,11 +88,12 @@ type
 implementation
 
 {TConnectionManager}
-constructor TConnectionManager.Create(PluginSettingsManager: IPluginSettingsManager; AccountsManager: IAccountsManager; HTTPManager: IHTTPManager; PasswordUI: IPasswordUIProvider; CipherValidator: ICipherValidator; FileSystem: IFileSystem; Progress: IProgress; Logger: ILogger; Request: IRequest; PasswordManager: IPasswordManager; TCHandler: ITCHandler; AuthStrategyFactory: IAuthStrategyFactory; OpenSSLProvider: IOpenSSLProvider; AccountCredentialsProvider: IAccountCredentialsProvider);
+constructor TConnectionManager.Create(PluginSettingsManager: IPluginSettingsManager; AccountsManager: IAccountsManager; HTTPManager: IHTTPManager; PasswordUI: IPasswordUIProvider; CipherValidator: ICipherValidator; FileSystem: IFileSystem; Progress: IProgress; Logger: ILogger; Request: IRequest; PasswordManager: IPasswordManager; TCHandler: ITCHandler; AuthStrategyFactory: IAuthStrategyFactory; OpenSSLProvider: IOpenSSLProvider; AccountCredentialsProvider: IAccountCredentialsProvider; ServerProfileManager: IServerProfileManager);
 begin
 	FConnections := TDictionary<WideString, TCloudMailRu>.Create;
 	FPluginSettingsManager := PluginSettingsManager;
 	FAccountsManager := AccountsManager;
+	FServerProfileManager := ServerProfileManager;
 	FHTTPManager := HTTPManager;
 	FPasswordUI := PasswordUI;
 	FCipherValidator := CipherValidator;
@@ -117,6 +121,7 @@ begin
 	FHTTPManager := nil;
 	FPluginSettingsManager := nil;
 	FAccountsManager := nil;
+	FServerProfileManager := nil;
 	FPasswordUI := nil;
 	FCipherValidator := nil;
 	FAuthStrategyFactory := nil;
@@ -150,9 +155,15 @@ var
 	AuthStrategy: IAuthStrategy;
 	Cipher: ICipher;
 	Profile: TCipherProfile;
+	AccountSettingsData: TAccountSettings;
+	Endpoints: TCloudEndpoints;
 begin
-	{Create CloudSettings using factory method - combines plugin settings with account settings}
-	CloudSettings := TCloudSettings.CreateFromSettings(FPluginSettingsManager.GetSettings, FAccountsManager.GetAccountSettings(ConnectionName));
+	{Resolve endpoints from account's server profile before creating CloudSettings}
+	AccountSettingsData := FAccountsManager.GetAccountSettings(ConnectionName);
+	Endpoints := FServerProfileManager.ResolveEndpoints(AccountSettingsData.Server);
+
+	{Create CloudSettings using factory method - combines plugin settings, account settings and endpoints}
+	CloudSettings := TCloudSettings.CreateFromSettings(FPluginSettingsManager.GetSettings, AccountSettingsData, Endpoints);
 
 	{For non-public accounts, get files and proxy passwords. Account password is retrieved by TCloudMailRu.Authorize()}
 	if not CloudSettings.AccountSettings.PublicAccount then

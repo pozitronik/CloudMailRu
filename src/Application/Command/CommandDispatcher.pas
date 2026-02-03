@@ -64,14 +64,20 @@ type
 
 implementation
 
-{Converts public link URL to the required format if needed}
-function ExtractLinkFromUrl(URL: WideString): WideString;
-const
-	pulicPrefix = 'https://cloud.mail.ru/public';
+{Converts public link URL to the required format if needed.
+	Strips the public URL prefix from the full URL to get the link path.}
+function ExtractLinkFromUrl(URL: WideString; const PublicUrl: WideString): WideString;
+var
+	Prefix: WideString;
 begin
 	Result := URL;
-	if Pos(WideString(pulicPrefix), URL) <> 0 then
-		Result := Copy(URL, Length(pulicPrefix) + 1, Length(URL) - Length(pulicPrefix));
+	{Remove trailing slash for prefix matching}
+	Prefix := PublicUrl;
+	if (Prefix <> '') and (Prefix[Length(Prefix)] = '/') then
+		Delete(Prefix, Length(Prefix), 1);
+
+	if Pos(Prefix, URL) <> 0 then
+		Result := Copy(URL, Length(Prefix) + 1, Length(URL) - Length(Prefix));
 end;
 
 class function TCommandResult.OK: TCommandResult;
@@ -148,7 +154,7 @@ end;
 function TCommandDispatcher.ExecuteShare(Cloud: TCloudMailRu; const Path, Parameter: WideString): TCommandResult;
 begin
 	{Undocumented command: share current folder to email}
-	if Cloud.shareFolder(Path, ExtractLinkFromUrl(Parameter), CLOUD_SHARE_RW) then
+	if Cloud.shareFolder(Path, ExtractLinkFromUrl(Parameter, Cloud.GetEndpoints.PublicUrl), CLOUD_SHARE_RW) then
 		Result := TCommandResult.OK
 	else
 		Result := TCommandResult.Error;
@@ -177,7 +183,7 @@ end;
 function TCommandDispatcher.ExecuteClone(Cloud: TCloudMailRu; const Path, Parameter: WideString): TCommandResult;
 begin
 	{Clone file by weblink}
-	if Cloud.ShareService.CloneWeblink(Path, ExtractLinkFromUrl(Parameter)) = CLOUD_OPERATION_OK then
+	if Cloud.ShareService.CloneWeblink(Path, ExtractLinkFromUrl(Parameter, Cloud.GetEndpoints.PublicUrl)) = CLOUD_OPERATION_OK then
 	begin
 		if FSettingsManager.GetSettings.LogUserSpace then
 			Cloud.logUserSpaceInfo;

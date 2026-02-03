@@ -128,6 +128,8 @@ uses
 	CloudInviteList in '..\src\Domain\ValueObjects\CloudInviteList.pas',
 	CloudOAuth in '..\src\Domain\ValueObjects\CloudOAuth.pas',
 	CloudOperationResult in '..\src\Domain\ValueObjects\CloudOperationResult.pas',
+	CloudEndpoints in '..\src\Domain\ValueObjects\CloudEndpoints.pas',
+	CloudEndpointsTest in 'Domain\ValueObjects\CloudEndpointsTest.pas',
 	CloudSpace in '..\src\Domain\ValueObjects\CloudSpace.pas',
 	CloudHTTP in '..\src\Infrastructure\HTTP\CloudHTTP.pas',
 	CloudInvite in '..\src\Domain\ValueObjects\CloudInvite.pas',
@@ -204,6 +206,8 @@ uses
 	CloudSpaceJsonAdapterTest in 'Infrastructure\Adapter\CloudSpaceJsonAdapterTest.pas',
 	CloudInviteListJsonAdapter in '..\src\Infrastructure\Adapter\CloudInviteListJsonAdapter.pas',
 	CloudInviteListJsonAdapterTest in 'Infrastructure\Adapter\CloudInviteListJsonAdapterTest.pas',
+	CloudEndpointsJsonAdapter in '..\src\Infrastructure\Adapter\CloudEndpointsJsonAdapter.pas',
+	CloudEndpointsJsonAdapterTest in 'Infrastructure\Adapter\CloudEndpointsJsonAdapterTest.pas',
 	CloudIncomingInviteListJsonAdapter in '..\src\Infrastructure\Adapter\CloudIncomingInviteListJsonAdapter.pas',
 	CloudIncomingInviteListJsonAdapterTest in 'Infrastructure\Adapter\CloudIncomingInviteListJsonAdapterTest.pas',
 	MockCloudDescriptionOps in 'mocks\MockCloudDescriptionOps.pas',
@@ -325,6 +329,10 @@ uses
 	CloudThumbnailServiceTest in 'Application\Thumbnail\CloudThumbnailServiceTest.pas',
 	ThumbnailBitmapConverter in '..\src\Application\Thumbnail\ThumbnailBitmapConverter.pas',
 	ThumbnailBitmapConverterTest in 'Application\Thumbnail\ThumbnailBitmapConverterTest.pas',
+	ServerProfile in '..\src\Domain\ValueObjects\ServerProfile.pas',
+	ServerProfileTest in 'Domain\ValueObjects\ServerProfileTest.pas',
+	ServerProfileManager in '..\src\Infrastructure\Settings\ServerProfileManager.pas',
+	ServerProfileManagerTest in 'Infrastructure\Settings\ServerProfileManagerTest.pas',
 	TranslationManager in '..\src\Infrastructure\Localization\TranslationManager.pas',
 	TranslationManagerTest in 'Infrastructure\Localization\TranslationManagerTest.pas';
 

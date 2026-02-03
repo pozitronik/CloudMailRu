@@ -54,8 +54,15 @@ begin
 
 	Logger.Log(LOG_LEVEL_DEBUG, msgtype_details, REQUESTING_OAUTH_TOKEN, [Credentials.Email]);
 
+	{Determine OAuth URL: use credential-specific URL if set, otherwise fall back to constant}
+	var OAuthUrl: WideString;
+	if Credentials.OAuthUrl <> '' then
+		OAuthUrl := Credentials.OAuthUrl
+	else
+		OAuthUrl := OAUTH_TOKEN_URL;
+
 	{OAuth password grant request}
-	if HTTP.PostForm(OAUTH_TOKEN_URL, Format('client_id=%s&grant_type=password&username=%s@%s&password=%s', [OAUTH_CLIENT_ID, Credentials.User, Credentials.Domain, UrlEncode(Credentials.Password)]), PostAnswer) then
+	if HTTP.PostForm(OAuthUrl, Format('client_id=%s&grant_type=password&username=%s@%s&password=%s', [OAUTH_CLIENT_ID, Credentials.User, Credentials.Domain, UrlEncode(Credentials.Password)]), PostAnswer) then
 	begin
 		if not TCloudOAuthJsonAdapter.Parse(PostAnswer, OAuthToken) then
 		begin

@@ -32,6 +32,7 @@ type
 		FLogger: ILogger;
 		FOAuthToken: TCloudOAuth;
 		FConverter: IThumbnailBitmapConverter;
+		FThumbnailUrl: WideString;
 
 		{Build thumbnail URL with authentication parameters}
 		function BuildThumbnailURL(const ShardURL, SizePreset, CloudPath: WideString): WideString;
@@ -39,7 +40,7 @@ type
 		{Get thumbnail shard URL, resolving from dispatcher if needed}
 		function GetThumbnailShard: WideString;
 	public
-		constructor Create(HTTP: ICloudHTTP; ShardManager: ICloudShardManager; Logger: ILogger; OAuthToken: TCloudOAuth; Converter: IThumbnailBitmapConverter);
+		constructor Create(HTTP: ICloudHTTP; ShardManager: ICloudShardManager; Logger: ILogger; OAuthToken: TCloudOAuth; Converter: IThumbnailBitmapConverter; const ThumbnailUrl: WideString = '');
 
 		function GetThumbnail(const CloudPath: WideString; RequestedWidth, RequestedHeight: Integer): HBITMAP;
 	end;
@@ -56,7 +57,7 @@ uses
 
 {TCloudThumbnailService}
 
-constructor TCloudThumbnailService.Create(HTTP: ICloudHTTP; ShardManager: ICloudShardManager; Logger: ILogger; OAuthToken: TCloudOAuth; Converter: IThumbnailBitmapConverter);
+constructor TCloudThumbnailService.Create(HTTP: ICloudHTTP; ShardManager: ICloudShardManager; Logger: ILogger; OAuthToken: TCloudOAuth; Converter: IThumbnailBitmapConverter; const ThumbnailUrl: WideString);
 begin
 	inherited Create;
 	FHTTP := HTTP;
@@ -64,6 +65,7 @@ begin
 	FLogger := Logger;
 	FOAuthToken := OAuthToken;
 	FConverter := Converter;
+	FThumbnailUrl := ThumbnailUrl;
 end;
 
 function TCloudThumbnailService.GetThumbnailShard: WideString;
@@ -71,8 +73,11 @@ begin
 	{Try to resolve thumbnail shard from dispatcher}
 	if not FShardManager.ResolveShard(Result, SHARD_TYPE_THUMBNAILS) then
 	begin
-		{Fallback to hardcoded URL if dispatcher doesn't provide thumbnail shard}
-		Result := THUMB_CLOUD_URL;
+		{Fallback to configured thumbnail URL if dispatcher doesn't provide thumbnail shard}
+		if FThumbnailUrl <> '' then
+			Result := FThumbnailUrl
+		else
+			Result := THUMB_CLOUD_URL;
 		FLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, 'Using fallback thumbnail URL: %s', [Result]);
 	end;
 end;

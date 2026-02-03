@@ -181,17 +181,13 @@ begin
 		Exit;
 
 	{Copy all persisted fields to new section, then remove the old one.
-	 SetAccountSettings does not write read-only fields (CryptedGUID, shard/upload
-	 overrides), so we transfer them explicitly.}
+	 SetAccountSettings does not write read-only fields (CryptedGUID),
+	 so we transfer them explicitly.}
 	Settings := GetAccountSettings(OldName);
 	SetAccountSettings(NewName, Settings);
 
 	if Settings.CryptedGUIDFiles <> '' then
 		FConfigFile.WriteString(NewName, 'CryptedGUID_files', Settings.CryptedGUIDFiles);
-	if Settings.ShardOverride <> '' then
-		FConfigFile.WriteString(NewName, 'shard_override', Settings.ShardOverride);
-	if Settings.UploadUrlOverride <> '' then
-		FConfigFile.WriteString(NewName, 'upload_url_override', Settings.UploadUrlOverride);
 
 	FConfigFile.EraseSection(OldName);
 end;
@@ -209,8 +205,7 @@ begin
 	Result.Description := FConfigFile.ReadString(Account, 'description', EmptyWideStr);
 	Result.EncryptFilesMode := FConfigFile.ReadInteger(Account, 'encrypt_files_mode', EncryptModeNone);
 	Result.CipherProfileId := FConfigFile.ReadString(Account, 'encrypt_cipher_profile', EmptyWideStr);
-	Result.ShardOverride := FConfigFile.ReadString(Account, 'shard_override', EmptyWideStr);
-	Result.UploadUrlOverride := FConfigFile.ReadString(Account, 'upload_url_override', EmptyWideStr);
+	Result.Server := FConfigFile.ReadString(Account, 'server', EmptyWideStr);
 	Result.CryptedGUIDFiles := FConfigFile.ReadString(Account, 'CryptedGUID_files', EmptyWideStr);
 	Result.AuthMethod := FConfigFile.ReadInteger(Account, 'auth_method', 0);
 	Result.UseAppPassword := FConfigFile.ReadBool(Account, 'use_app_password', False);
@@ -228,6 +223,7 @@ begin
 	FConfigFile.WriteStringIfNotDefault(Account, 'description', AccountSettings.Description, EmptyWideStr);
 	FConfigFile.WriteIntegerIfNotDefault(Account, 'encrypt_files_mode', AccountSettings.EncryptFilesMode, EncryptModeNone);
 	FConfigFile.WriteStringIfNotDefault(Account, 'encrypt_cipher_profile', AccountSettings.CipherProfileId, EmptyWideStr);
+	FConfigFile.WriteStringIfNotDefault(Account, 'server', AccountSettings.Server, EmptyWideStr);
 	FConfigFile.WriteIntegerIfNotDefault(Account, 'auth_method', AccountSettings.AuthMethod, 0);
 	FConfigFile.WriteBoolIfNotDefault(Account, 'use_app_password', AccountSettings.UseAppPassword, False);
 end;

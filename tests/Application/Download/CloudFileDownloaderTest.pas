@@ -5,6 +5,7 @@ interface
 uses
 	CloudFileDownloader,
 	CloudShardManager,
+	CloudEndpoints,
 	CloudHashCalculator,
 	CloudOAuth,
 	CloudConstants,
@@ -154,7 +155,7 @@ begin
 	{Configure HTTP mock for shard resolution}
 	FMockHTTP.SetResponse('dispatcher', True, '{"status":200,"body":{"get":[{"url":"' + FResolvedShardUrl + '"}],"upload":[{"url":"' + FResolvedShardUrl + '"}],"video":[{"url":"' + FResolvedShardUrl + '"}]}}');
 
-	FShardManager := TCloudShardManager.Create(TNullLogger.Create, FMockContext, '', '');
+	FShardManager := TCloudShardManager.Create(TNullLogger.Create, FMockContext, TCloudEndpoints.CreateDefaults);
 	FShardManager.SetPublicShard('https://public.shard/');
 	FShardManager.SetDownloadShard('https://download.shard/');
 
@@ -436,7 +437,7 @@ begin
 	FMockContext.SetPostFormResult(True, '{"status":200,"body":{"get":[{"url":"https://resolved.shard/"}]}}');
 
 	{Create new shard manager without download shard set}
-	NewShardManager := TCloudShardManager.Create(TNullLogger.Create, FMockContext, '', '');
+	NewShardManager := TCloudShardManager.Create(TNullLogger.Create, FMockContext, TCloudEndpoints.CreateDefaults);
 
 	{OAuth dispatcher returns plain text URL}
 	FMockHTTP.SetResponse('dispatcher', True, 'https://new.shard.url/ 127.0.0.1 1');
@@ -468,6 +469,7 @@ var
 	LocalPath: string;
 	ResultHash: WideString;
 	FileContent: TBytes;
+	Endpoints: TCloudEndpoints;
 begin
 	FMockContext.SetIsPublicAccount(False);
 	LocalPath := GetTempFilePath('override_test.txt');
@@ -476,7 +478,9 @@ begin
 	FMockContext.SetPostFormResult(False, '');
 
 	{Create shard manager with download override but no shard set}
-	OverrideManager := TCloudShardManager.Create(TNullLogger.Create, FMockContext, 'https://override.shard/', '');
+	Endpoints := TCloudEndpoints.CreateDefaults;
+	Endpoints.DownloadUrl := 'https://override.shard/';
+	OverrideManager := TCloudShardManager.Create(TNullLogger.Create, FMockContext, Endpoints);
 
 	FileContent := TEncoding.UTF8.GetBytes('Override content');
 	FMockHTTP.SetStreamResponse('override.shard', FileContent, FS_FILE_OK);

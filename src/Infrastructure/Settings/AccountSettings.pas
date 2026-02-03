@@ -23,8 +23,7 @@ type
 		Description: WideString;
 		EncryptFilesMode: Integer;
 		CipherProfileId: WideString; //Cipher profile identifier for encryption backend selection
-		ShardOverride: WideString; //hidden option, allows to override working shard for account
-		UploadUrlOverride: WideString; //hidden option, allows to override upload server for account
+		Server: WideString; //Server profile name, empty = cloud.mail.ru default
 		CryptedGUIDFiles: WideString; //The hash of files encryption password to check its validity
 		AuthMethod: Integer; //Authentication method: 0=classic web, 4=OAuth app password
 		UseAppPassword: Boolean; //True if password is an app password (for OAuth)

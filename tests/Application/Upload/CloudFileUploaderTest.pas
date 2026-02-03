@@ -5,6 +5,7 @@ interface
 uses
 	CloudFileUploader,
 	CloudShardManager,
+	CloudEndpoints,
 	CloudHashCalculator,
 	CloudContext,
 	CloudOAuth,
@@ -111,7 +112,7 @@ begin
 	{Return False for GetUserSpace to skip quota check in tests}
 	FMockContext.SetGetUserSpaceResult(False, Default(TCloudSpace));
 
-	FShardManager := TCloudShardManager.Create(TNullLogger.Create, FMockContext, '', '');
+	FShardManager := TCloudShardManager.Create(TNullLogger.Create, FMockContext, TCloudEndpoints.CreateDefaults);
 	FShardManager.SetUploadShard('https://upload.shard/');
 
 	FHashCalculator := TCloudHashCalculator.Create(TNullProgress.Create, TWindowsFileSystem.Create);

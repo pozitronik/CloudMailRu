@@ -20,6 +20,7 @@ uses
 	CloudOAuth in 'src\Domain\ValueObjects\CloudOAuth.pas',
 	CloudOperationResult in 'src\Domain\ValueObjects\CloudOperationResult.pas',
 	CloudOwner in 'src\Domain\ValueObjects\CloudOwner.pas',
+	CloudEndpoints in 'src\Domain\ValueObjects\CloudEndpoints.pas',
 	CloudSpace in 'src\Domain\ValueObjects\CloudSpace.pas',
 	LanguageStrings in 'src\Presentation\Localization\LanguageStrings.pas',
 	ChunkedFileStream in 'src\Infrastructure\IO\ChunkedFileStream.pas',
@@ -115,6 +116,7 @@ uses
 	CloudOperationResultJsonAdapter in 'src\Infrastructure\Adapter\CloudOperationResultJsonAdapter.pas',
 	CloudSpaceJsonAdapter in 'src\Infrastructure\Adapter\CloudSpaceJsonAdapter.pas',
 	CloudInviteListJsonAdapter in 'src\Infrastructure\Adapter\CloudInviteListJsonAdapter.pas',
+	CloudEndpointsJsonAdapter in 'src\Infrastructure\Adapter\CloudEndpointsJsonAdapter.pas',
 	CloudIncomingInviteListJsonAdapter in 'src\Infrastructure\Adapter\CloudIncomingInviteListJsonAdapter.pas',
 	RetryHandler in 'src\Application\Retry\RetryHandler.pas',
 	CommandDispatcher in 'src\Application\Command\CommandDispatcher.pas',
@@ -165,6 +167,8 @@ uses
 	ThumbnailSizeSelector in 'src\Application\Thumbnail\ThumbnailSizeSelector.pas',
 	CloudThumbnailService in 'src\Application\Thumbnail\CloudThumbnailService.pas',
 	ThumbnailBitmapConverter in 'src\Application\Thumbnail\ThumbnailBitmapConverter.pas',
+	ServerProfile in 'src\Domain\ValueObjects\ServerProfile.pas',
+	ServerProfileManager in 'src\Infrastructure\Settings\ServerProfileManager.pas',
 	TranslationManager in 'src\Infrastructure\Localization\TranslationManager.pas';
 
 {$IFDEF WIN64}

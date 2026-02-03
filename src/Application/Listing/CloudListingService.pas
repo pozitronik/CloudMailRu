@@ -104,7 +104,7 @@ begin
 			JSON: WideString;
 		var
 			OperationResult: TCloudOperationResult;
-		Result := FContext.GetHTTP.GetPage(Format('%s&offset=0&limit=%d&weblink=%s%s&%s', [API_FOLDER, API_FOLDER_LIMIT, IncludeSlash(FContext.GetPublicLink), PathToUrl(Path, False), FContext.GetUnitedParams]), JSON, ShowProgress);
+		Result := FContext.GetHTTP.GetPage(Format('%s&offset=0&limit=%d&weblink=%s%s&%s', [FContext.GetEndpoints.ApiFolder, API_FOLDER_LIMIT, IncludeSlash(FContext.GetPublicLink), PathToUrl(Path, False), FContext.GetUnitedParams]), JSON, ShowProgress);
 		if Result then
 		begin
 			TCloudOperationResultJsonAdapter.Parse(JSON, OperationResult);
@@ -135,7 +135,7 @@ begin
 				OperationResult: TCloudOperationResult;
 				Success: Boolean;
 			begin
-				Success := FContext.GetHTTP.GetPage(Format('%s&offset=%d&limit=%d&home=%s&%s', [API_FOLDER, Offset, API_FOLDER_LIMIT, PathToUrl(Path), FContext.GetUnitedParams]), JSON, ShowProgress);
+				Success := FContext.GetHTTP.GetPage(Format('%s&offset=%d&limit=%d&home=%s&%s', [FContext.GetEndpoints.ApiFolder, Offset, API_FOLDER_LIMIT, PathToUrl(Path), FContext.GetUnitedParams]), JSON, ShowProgress);
 				if Success then
 				begin
 					TCloudOperationResultJsonAdapter.Parse(JSON, OperationResult);
@@ -190,7 +190,7 @@ begin
 			JSON: WideString;
 			Success: Boolean;
 		begin
-			Success := FContext.GetHTTP.GetPage(Format('%s?%s', [API_FOLDER_SHARED_LINKS, FContext.GetUnitedParams]), JSON, ShowProgress);
+			Success := FContext.GetHTTP.GetPage(Format('%s?%s', [FContext.GetEndpoints.ApiFolderSharedLinks, FContext.GetUnitedParams]), JSON, ShowProgress);
 			if Success then
 				Success := FContext.CloudResultToBoolean(JSON, PREFIX_ERR_SHARED_LINKS_LISTING) and TCloudDirItemListJsonAdapter.Parse(JSON, LocalListing);
 			Result := TAPICallResult.FromBoolean(Success, JSON);
@@ -222,7 +222,7 @@ begin
 			JSON: WideString;
 			Success: Boolean;
 		begin
-			Success := FContext.GetHTTP.GetPage(Format('%s?%s', [API_FOLDER_SHARED_INCOMING, FContext.GetUnitedParams]), JSON, ShowProgress);
+			Success := FContext.GetHTTP.GetPage(Format('%s?%s', [FContext.GetEndpoints.ApiFolderSharedIncoming, FContext.GetUnitedParams]), JSON, ShowProgress);
 			if Success then
 				Success := FContext.CloudResultToBoolean(JSON, PREFIX_ERR_INCOMING_REQUESTS_LISTING) and TCloudIncomingInviteListJsonAdapter.Parse(JSON, LocalListing);
 			Result := TAPICallResult.FromBoolean(Success, JSON);
@@ -272,7 +272,7 @@ begin
 			JSON: WideString;
 			Success: Boolean;
 		begin
-			Success := FContext.GetHTTP.GetPage(Format('%s?%s', [API_TRASHBIN, FContext.GetUnitedParams]), JSON, ShowProgress);
+			Success := FContext.GetHTTP.GetPage(Format('%s?%s', [FContext.GetEndpoints.ApiTrashbin, FContext.GetUnitedParams]), JSON, ShowProgress);
 			if Success then
 				Success := FContext.CloudResultToBoolean(JSON, PREFIX_ERR_TRASH_LISTING) and TCloudDirItemListJsonAdapter.Parse(JSON, LocalListing);
 			Result := TAPICallResult.FromBoolean(Success, JSON);
@@ -295,7 +295,7 @@ begin
 			JSON: WideString;
 		var
 			Progress: Boolean := False;
-		Result := FContext.GetHTTP.GetPage(Format('%s?weblink=%s%s&%s', [API_FILE, IncludeSlash(FContext.GetPublicLink), PathToUrl(Path), FContext.GetUnitedParams]), JSON, Progress);
+		Result := FContext.GetHTTP.GetPage(Format('%s?weblink=%s%s&%s', [FContext.GetEndpoints.ApiFile, IncludeSlash(FContext.GetPublicLink), PathToUrl(Path), FContext.GetUnitedParams]), JSON, Progress);
 		if Result then
 			Result := FContext.CloudResultToBoolean(JSON, PREFIX_ERR_FILE_STATUS) and TCloudDirItemJsonAdapter.Parse(JSON, FileInfo);
 		Exit;
@@ -310,7 +310,7 @@ begin
 			Success: Boolean;
 		begin
 			Progress := False;
-			Success := FContext.GetHTTP.GetPage(Format('%s?home=%s&%s', [API_FILE, PathToUrl(Path), FContext.GetUnitedParams]), JSON, Progress);
+			Success := FContext.GetHTTP.GetPage(Format('%s?home=%s&%s', [FContext.GetEndpoints.ApiFile, PathToUrl(Path), FContext.GetUnitedParams]), JSON, Progress);
 			if Success then
 				Success := FContext.CloudResultToBoolean(JSON, PREFIX_ERR_FILE_STATUS) and TCloudDirItemJsonAdapter.Parse(JSON, LocalInfo);
 			Result := TAPICallResult.FromBoolean(Success, JSON);
@@ -326,7 +326,7 @@ begin
 	Result := False;
 	if FContext.IsPublicAccount then
 		Exit;
-	Result := FRetryOperation.PostFormBoolean(API_TRASHBIN_RESTORE, Format('path=%s&restore_revision=%d&conflict=%s', [PathToUrl(Path), RestoreRevision, ConflictMode]), PREFIX_ERR_FILE_RESTORE);
+	Result := FRetryOperation.PostFormBoolean(FContext.GetEndpoints.ApiTrashbinRestore, Format('path=%s&restore_revision=%d&conflict=%s', [PathToUrl(Path), RestoreRevision, ConflictMode]), PREFIX_ERR_FILE_RESTORE);
 end;
 
 function TCloudListingService.TrashbinEmpty(): Boolean;
@@ -334,7 +334,7 @@ begin
 	Result := False;
 	if FContext.IsPublicAccount then
 		Exit;
-	Result := FRetryOperation.PostFormBoolean(API_TRASHBIN_EMPTY, EmptyWideStr, PREFIX_ERR_TRASH_CLEAN);
+	Result := FRetryOperation.PostFormBoolean(FContext.GetEndpoints.ApiTrashbinEmpty, EmptyWideStr, PREFIX_ERR_TRASH_CLEAN);
 end;
 
 function TCloudListingService.GetUserSpace(var SpaceInfo: TCloudSpace): Boolean;
@@ -351,7 +351,7 @@ begin
 			Success: Boolean;
 		begin
 			Progress := False;
-			Success := FContext.GetHTTP.GetPage(Format('%s?%s', [API_USER_SPACE, FContext.GetUnitedParams]), JSON, Progress);
+			Success := FContext.GetHTTP.GetPage(Format('%s?%s', [FContext.GetEndpoints.ApiUserSpace, FContext.GetUnitedParams]), JSON, Progress);
 			if Success then
 				Success := FContext.CloudResultToBoolean(JSON, PREFIX_ERR_GET_USER_SPACE) and TCloudSpaceJsonAdapter.Parse(JSON, LocalSpace);
 			Result := TAPICallResult.FromBoolean(Success, JSON);

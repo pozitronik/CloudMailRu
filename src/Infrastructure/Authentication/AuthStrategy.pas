@@ -28,7 +28,9 @@ type
 		Password: WideString;
 		User: WideString; {Username part of email (before @)}
 		Domain: WideString; {Domain part of email (after @)}
-		class function Create(const AEmail, APassword, AUser, ADomain: WideString): TAuthCredentials; static;
+		OAuthUrl: WideString; {OAuth token endpoint URL, empty = use default}
+		class function Create(const AEmail, APassword, AUser, ADomain: WideString): TAuthCredentials; overload; static;
+		class function Create(const AEmail, APassword, AUser, ADomain, AOAuthUrl: WideString): TAuthCredentials; overload; static;
 	end;
 
 	{Strategy interface for cloud authentication.
@@ -94,11 +96,17 @@ end;
 
 class function TAuthCredentials.Create(const AEmail, APassword, AUser, ADomain: WideString): TAuthCredentials;
 begin
+	Result := TAuthCredentials.Create(AEmail, APassword, AUser, ADomain, '');
+end;
+
+class function TAuthCredentials.Create(const AEmail, APassword, AUser, ADomain, AOAuthUrl: WideString): TAuthCredentials;
+begin
 	Result := Default (TAuthCredentials);
 	Result.Email := AEmail;
 	Result.Password := APassword;
 	Result.User := AUser;
 	Result.Domain := ADomain;
+	Result.OAuthUrl := AOAuthUrl;
 end;
 
 {TNullAuthStrategy}

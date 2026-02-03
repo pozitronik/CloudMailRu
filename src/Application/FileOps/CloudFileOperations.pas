@@ -5,8 +5,8 @@ unit CloudFileOperations;
 interface
 
 uses
-	CloudConstants,
 	CloudContext,
+	CloudConstants,
 	CloudHTTP,
 	LanguageStrings,
 	WFXTypes,
@@ -75,7 +75,7 @@ begin
 	if FContext.IsPublicAccount then
 		Exit;
 	FContext.GetHTTP.SetProgressNames(CREATE_DIRECTORY, Path);
-	Result := FRetryOperation.PostFormBoolean(API_FOLDER_ADD, Format('home=/%s&conflict', [PathToUrl(Path)]), EmptyWideStr);
+	Result := FRetryOperation.PostFormBoolean(FContext.GetEndpoints.ApiFolderAdd, Format('home=/%s&conflict', [PathToUrl(Path)]), EmptyWideStr);
 end;
 
 function TCloudFileOperations.RemoveDirectory(Path: WideString): Boolean;
@@ -85,7 +85,7 @@ begin
 		Exit;
 	FContext.GetHTTP.SetProgressNames(DELETE_DIR, Path);
 	{API always returns true even if path doesn't exist}
-	Result := FRetryOperation.PostFormBoolean(API_FILE_REMOVE, Format('home=/%s&conflict', [IncludeSlash(PathToUrl(Path))]), PREFIX_ERR_DELETE_DIR);
+	Result := FRetryOperation.PostFormBoolean(FContext.GetEndpoints.ApiFileRemove, Format('home=/%s&conflict', [IncludeSlash(PathToUrl(Path))]), PREFIX_ERR_DELETE_DIR);
 end;
 
 function TCloudFileOperations.Delete(Path: WideString): Boolean;
@@ -94,7 +94,7 @@ begin
 	if FContext.IsPublicAccount then
 		Exit;
 	FContext.GetHTTP.SetProgressNames(DELETE_FILE, Path);
-	Result := FRetryOperation.PostFormBoolean(API_FILE_REMOVE, Format('home=/%s&conflict', [PathToUrl(Path)]), PREFIX_ERR_DELETE_FILE);
+	Result := FRetryOperation.PostFormBoolean(FContext.GetEndpoints.ApiFileRemove, Format('home=/%s&conflict', [PathToUrl(Path)]), PREFIX_ERR_DELETE_FILE);
 end;
 
 function TCloudFileOperations.Rename(OldName, NewName: WideString): Integer;
@@ -102,14 +102,14 @@ begin
 	Result := FS_FILE_WRITEERROR;
 	if FContext.IsPublicAccount then
 		Exit;
-	Result := FRetryOperation.PostFormInteger(API_FILE_RENAME, Format('home=%s&name=%s', [PathToUrl(OldName), PathToUrl(NewName)]), PREFIX_ERR_FILE_RENAME);
+	Result := FRetryOperation.PostFormInteger(FContext.GetEndpoints.ApiFileRename, Format('home=%s&name=%s', [PathToUrl(OldName), PathToUrl(NewName)]), PREFIX_ERR_FILE_RENAME);
 end;
 
 function TCloudFileOperations.MoveToPath(OldName, ToPath: WideString): Integer;
 begin
 	if FContext.IsPublicAccount then
 		Exit(FS_FILE_NOTSUPPORTED);
-	Result := FRetryOperation.PostFormInteger(API_FILE_MOVE, Format('home=%s&folder=%s&conflict', [PathToUrl(OldName), PathToUrl(ToPath)]), PREFIX_ERR_FILE_MOVE);
+	Result := FRetryOperation.PostFormInteger(FContext.GetEndpoints.ApiFileMove, Format('home=%s&folder=%s&conflict', [PathToUrl(OldName), PathToUrl(ToPath)]), PREFIX_ERR_FILE_MOVE);
 end;
 
 function TCloudFileOperations.CopyToPath(OldName, ToPath: WideString): Integer;
@@ -117,7 +117,7 @@ begin
 	if FContext.IsPublicAccount then
 		Exit(FS_FILE_NOTSUPPORTED);
 	FContext.GetHTTP.SetProgressNames(OldName, Format('%s%s', [IncludeSlash(ToPath), ExtractUniversalFileName(OldName)]));
-	Result := FRetryOperation.PostFormInteger(API_FILE_COPY, Format('home=/%s&folder=/%s&conflict', [PathToUrl(OldName), PathToUrl(ToPath)]), PREFIX_ERR_FILE_COPY);
+	Result := FRetryOperation.PostFormInteger(FContext.GetEndpoints.ApiFileCopy, Format('home=/%s&folder=/%s&conflict', [PathToUrl(OldName), PathToUrl(ToPath)]), PREFIX_ERR_FILE_COPY);
 end;
 
 function TCloudFileOperations.Move(OldName, NewName: WideString): Integer;

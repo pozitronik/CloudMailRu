@@ -9,6 +9,7 @@ uses
 	CloudOAuth,
 	CloudSpace,
 	CloudOperationResult,
+	CloudEndpoints,
 	JSONHelper,
 	ParsingHelper,
 	CloudConstants,
@@ -104,8 +105,6 @@ type
 		{Those properties are simple shortcuts to settings fields}
 		property Password: WideString read FSettings.AccountSettings.Password;
 		property Email: WideString read FSettings.AccountSettings.Email;
-		property DownloadShardOverride: WideString read FSettings.AccountSettings.ShardOverride;
-		property UploadShardOverride: WideString read FSettings.AccountSettings.UploadUrlOverride;
 		property UnlimitedFileSize: Boolean read FSettings.AccountSettings.UnlimitedFileSize;
 		property SplitLargeFiles: Boolean read FSettings.AccountSettings.SplitLargeFiles;
 		property CloudMaxFileSize: Int64 read FSettings.CloudMaxFileSize;
@@ -146,6 +145,7 @@ type
 		function IsPublicAccount: Boolean;
 		function GetOAuthToken: TCloudOAuth;
 		function GetUnitedParams: WideString;
+		function GetEndpoints: TCloudEndpoints;
 		function DeleteFile(const Path: WideString): Boolean;
 		function CloudResultToFsResult(const JSON, ErrorPrefix: WideString): Integer; overload;
 		function CloudResultToFsResult(const OperationResult: TCloudOperationResult; const ErrorPrefix: WideString): Integer; overload;
@@ -235,6 +235,11 @@ begin
 	Result := FSettings.AccountSettings.PublicAccount;
 end;
 
+function TCloudMailRu.GetEndpoints: TCloudEndpoints;
+begin
+	Result := FSettings.Endpoints;
+end;
+
 {IShardContext and IRetryContext implementation}
 
 function TCloudMailRu.PostForm(const URL, Data: WideString; var Answer: WideString): Boolean;
@@ -278,6 +283,10 @@ begin
 		FAuthorizationError := TAuthorizationError.Empty;
 		FSettings := CloudSettings;
 
+		{Ensure endpoints are initialized with defaults when not explicitly set}
+		if FSettings.Endpoints.ApiBase = '' then
+			FSettings.Endpoints := TCloudEndpoints.CreateDefaults;
+
 		FHTTPManager := ConnectionManager;
 		FGetThreadID := GetThreadID;
 		FAuthStrategy := AuthStrategy;
@@ -295,7 +304,7 @@ begin
 		FHashCalculator := CreateHashCalculator(CloudSettings.HashCalculatorStrategy, Progress, FileSystem, OpenSSLProvider);
 
 		{Initialize shard manager - uses Self as IShardContext}
-		FShardManager := TCloudShardManager.Create(Logger, Self, FSettings.AccountSettings.ShardOverride, FSettings.AccountSettings.UploadUrlOverride);
+		FShardManager := TCloudShardManager.Create(Logger, Self, FSettings.Endpoints);
 
 		{Initialize retry operation handler - uses Self as IRetryContext}
 		FRetryOperation := TRetryOperation.Create(Self);
@@ -370,7 +379,7 @@ function TCloudMailRu.GetThumbnail(const CloudPath: WideString; RequestedWidth, 
 var
 	ThumbnailService: ICloudThumbnailService;
 begin
-	ThumbnailService := TCloudThumbnailService.Create(HTTP, FShardManager, FLogger, FOAuthToken, TThumbnailBitmapConverter.Create);
+	ThumbnailService := TCloudThumbnailService.Create(HTTP, FShardManager, FLogger, FOAuthToken, TThumbnailBitmapConverter.Create, FSettings.Endpoints.ThumbnailUrl);
 	Result := ThumbnailService.GetThumbnail(CloudPath, RequestedWidth, RequestedHeight);
 end;
 
@@ -380,14 +389,14 @@ begin
 	Result := FPublicLink;
 end;
 
-{Extracts link identifier from public URL (removes PUBLIC_ACCESS_URL prefix and trailing slash)}
+{Extracts link identifier from public URL (removes PublicUrl endpoint prefix and trailing slash)}
 procedure TCloudMailRu.InitPublicLink;
 begin
 	if FSettings.AccountSettings.PublicUrl = EmptyWideStr then
 		Exit;
 
 	FPublicLink := FSettings.AccountSettings.PublicUrl;
-	Delete(FPublicLink, 1, length(PUBLIC_ACCESS_URL));
+	Delete(FPublicLink, 1, length(FSettings.Endpoints.PublicUrl));
 	if (FPublicLink <> EmptyWideStr) and (FPublicLink[length(FPublicLink)] = '/') then
 		Delete(FPublicLink, length(FPublicLink), 1);
 end;
@@ -397,7 +406,7 @@ var
 	JSON: WideString;
 	Progress: Boolean;
 begin
-	HTTP.GetPage(API_CSRF, JSON, Progress);
+	HTTP.GetPage(FSettings.Endpoints.ApiCsrf, JSON, Progress);
 	Result := getBodyToken(JSON, FAuthToken);
 	if Result then
 		FLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, TOKEN_UPDATED)
@@ -411,7 +420,7 @@ var
 	AuthResult: TAuthResult;
 begin
 	Result := False;
-	Credentials := TAuthCredentials.Create(Email, Password, FSettings.AccountSettings.User, FSettings.AccountSettings.Domain);
+	Credentials := TAuthCredentials.Create(Email, Password, FSettings.AccountSettings.User, FSettings.AccountSettings.Domain, FSettings.Endpoints.OAuthUrl);
 	AuthResult := FAuthStrategy.Authenticate(Credentials, HTTP, FLogger);
 
 	if AuthResult.Success then

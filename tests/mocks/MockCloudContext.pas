@@ -7,6 +7,7 @@ interface
 
 uses
 	CloudContext,
+	CloudEndpoints,
 	CloudOAuth,
 	CloudOperationResult,
 	CloudSpace,
@@ -78,6 +79,7 @@ type
 		function CloudResultToBoolean(const OperationResult: TCloudOperationResult; const ErrorPrefix: WideString): Boolean; overload;
 		function CloudResultToFsResult(const JSON, ErrorPrefix: WideString): Integer; overload;
 		function CloudResultToFsResult(const OperationResult: TCloudOperationResult; const ErrorPrefix: WideString): Integer; overload;
+		function GetEndpoints: TCloudEndpoints;
 		function GetUserSpace(var SpaceInfo: TCloudSpace): Boolean;
 		function DeleteFile(const Path: WideString): Boolean;
 
@@ -255,6 +257,11 @@ begin
 		Result := FCloudResultToFsResultQueue.Dequeue
 	else
 		Result := FCloudResultToFsResultResult;
+end;
+
+function TMockCloudContext.GetEndpoints: TCloudEndpoints;
+begin
+	Result := TCloudEndpoints.CreateDefaults;
 end;
 
 function TMockCloudContext.GetUserSpace(var SpaceInfo: TCloudSpace): Boolean;

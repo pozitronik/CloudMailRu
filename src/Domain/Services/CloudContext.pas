@@ -11,7 +11,8 @@ uses
 	CloudHTTP,
 	CloudOAuth,
 	CloudOperationResult,
-	CloudSpace;
+	CloudSpace,
+	CloudEndpoints;
 
 type
 	{Context for shard resolution operations.
@@ -67,6 +68,9 @@ type
 		function CloudResultToBoolean(const OperationResult: TCloudOperationResult; const ErrorPrefix: WideString): Boolean; overload;
 		function CloudResultToFsResult(const JSON, ErrorPrefix: WideString): Integer; overload;
 		function CloudResultToFsResult(const OperationResult: TCloudOperationResult; const ErrorPrefix: WideString): Integer; overload;
+
+		{Endpoint configuration for this cloud instance}
+		function GetEndpoints: TCloudEndpoints;
 
 		{Cloud operations - high-level operations that services may need}
 		function GetUserSpace(var SpaceInfo: TCloudSpace): Boolean;

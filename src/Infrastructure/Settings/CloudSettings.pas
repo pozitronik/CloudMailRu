@@ -5,7 +5,8 @@ interface
 uses
 	AccountSettings,
 	ConnectionSettings,
-	PluginSettings;
+	PluginSettings,
+	CloudEndpoints;
 
 type
 	{Aggregated settings required by the cloud class}
@@ -25,13 +26,21 @@ type
 
 		CryptFilesPassword: WideString;
 
+		Endpoints: TCloudEndpoints; {Resolved endpoints for this cloud instance}
+
 		{Factory method to create CloudSettings from plugin and account settings}
-		class function CreateFromSettings(const PluginSettings: TPluginSettings; const AccSettings: TAccountSettings): TCloudSettings; static;
+		class function CreateFromSettings(const PluginSettings: TPluginSettings; const AccSettings: TAccountSettings): TCloudSettings; overload; static;
+		class function CreateFromSettings(const PluginSettings: TPluginSettings; const AccSettings: TAccountSettings; const AEndpoints: TCloudEndpoints): TCloudSettings; overload; static;
 	end;
 
 implementation
 
 class function TCloudSettings.CreateFromSettings(const PluginSettings: TPluginSettings; const AccSettings: TAccountSettings): TCloudSettings;
+begin
+	Result := CreateFromSettings(PluginSettings, AccSettings, TCloudEndpoints.CreateDefaults);
+end;
+
+class function TCloudSettings.CreateFromSettings(const PluginSettings: TPluginSettings; const AccSettings: TAccountSettings; const AEndpoints: TCloudEndpoints): TCloudSettings;
 begin
 	Result := Default (TCloudSettings);
 	Result.ConnectionSettings := PluginSettings.ConnectionSettings;
@@ -44,6 +53,7 @@ begin
 	Result.OperationErrorMode := PluginSettings.OperationErrorMode;
 	Result.RetryAttempts := PluginSettings.RetryAttempts;
 	Result.AttemptWait := PluginSettings.AttemptWait;
+	Result.Endpoints := AEndpoints;
 	{CryptFilesPassword is set separately at runtime after password retrieval}
 end;
 

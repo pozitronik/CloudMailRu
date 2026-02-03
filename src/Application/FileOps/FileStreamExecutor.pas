@@ -130,6 +130,7 @@ function TFileStreamExecutor.Execute(const RealPath: TRealPath; const Item: TClo
 var
 	StreamUrl: WideString;
 	TempPublicCloud: TCloudMailRu;
+	PublicBaseUrl: WideString;
 begin
 	Result := FS_EXEC_OK;
 
@@ -137,8 +138,14 @@ begin
 	if (STREAMING_FORMAT_DISABLED = Settings.Format) or (STREAMING_FORMAT_UNSET = Settings.Format) then
 		Exit;
 
+	{Resolve public URL prefix from account's endpoints}
+	if (ConnManager <> nil) and (ConnManager.Get(RealPath.Account) <> nil) then
+		PublicBaseUrl := ConnManager.Get(RealPath.Account).GetEndpoints.PublicUrl
+	else
+		PublicBaseUrl := PUBLIC_ACCESS_URL;
+
 	{Initialize temporary public cloud for URL resolution}
-	if not FCloudFactory.CreatePublicCloud(TempPublicCloud, PUBLIC_ACCESS_URL + Item.weblink) then
+	if not FCloudFactory.CreatePublicCloud(TempPublicCloud, PublicBaseUrl + Item.weblink) then
 		Exit(FS_EXEC_ERROR);
 
 	try
