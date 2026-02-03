@@ -6,6 +6,7 @@ uses
 	CipherProfile,
 	Cipher,
 	BCryptProvider,
+	OpenSSLProvider,
 	Classes,
 	System.SysUtils,
 	DUnitX.TestFramework;
@@ -63,6 +64,30 @@ type
 		procedure TestAllProfiles_HaveNonEmptyBackendName;
 		[Test]
 		procedure TestAllProfiles_Have256BitKeySize;
+	end;
+
+	{Mock OpenSSL provider for testing cipher profile OpenSSL registration}
+	TMockOpenSSLProviderForCipher = class(TInterfacedObject, IOpenSSLProvider)
+	private
+		FFunctions: TOpenSSLFunctions;
+	public
+		constructor Create;
+		function IsAvailable: Boolean;
+		function GetFunctions: TOpenSSLFunctions;
+		function GetLibraryHandle: THandle;
+	end;
+
+	{Tests for CipherProfile with OpenSSL backend registered}
+	[TestFixture]
+	TCipherProfileOpenSSLTest = class
+	public
+		[SetupFixture]
+		procedure SetupFixture;
+
+		[Test]
+		procedure TestRegistryCount_Returns5Profiles;
+		[Test]
+		procedure TestFindById_OpenSSLAES256_ReturnsTrue;
 	end;
 
 implementation
@@ -261,8 +286,57 @@ begin
 			Format('Profile %s has unexpected key size', [Profiles[I].Id]));
 end;
 
+{TMockOpenSSLProviderForCipher}
+
+constructor TMockOpenSSLProviderForCipher.Create;
+begin
+	inherited Create;
+	FillChar(FFunctions, SizeOf(FFunctions), 0);
+	FFunctions.CipherLoaded := True;
+end;
+
+function TMockOpenSSLProviderForCipher.IsAvailable: Boolean;
+begin
+	Result := True;
+end;
+
+function TMockOpenSSLProviderForCipher.GetFunctions: TOpenSSLFunctions;
+begin
+	Result := FFunctions;
+end;
+
+function TMockOpenSSLProviderForCipher.GetLibraryHandle: THandle;
+begin
+	Result := 0;
+end;
+
+{TCipherProfileOpenSSLTest}
+
+procedure TCipherProfileOpenSSLTest.SetupFixture;
+begin
+	TCipherProfileRegistry.Reset;
+	TCipherProfileRegistry.Initialize(TMockOpenSSLProviderForCipher.Create, TBCryptProvider.Create);
+end;
+
+procedure TCipherProfileOpenSSLTest.TestRegistryCount_Returns5Profiles;
+begin
+	{3 DCPCrypt + 1 OpenSSL + 1 BCrypt}
+	Assert.AreEqual(5, TCipherProfileRegistry.Count);
+end;
+
+procedure TCipherProfileOpenSSLTest.TestFindById_OpenSSLAES256_ReturnsTrue;
+var
+	Profile: TCipherProfile;
+begin
+	Assert.IsTrue(TCipherProfileRegistry.FindById('openssl-aes256-cfb8-pbkdf2', Profile));
+	Assert.AreEqual('AES-256 / PBKDF2 (OpenSSL)', Profile.DisplayName);
+	Assert.AreEqual('OpenSSL', Profile.BackendName);
+	Assert.AreEqual(256, Profile.KeySizeBits);
+end;
+
 initialization
 
 TDUnitX.RegisterTestFixture(TCipherProfileRegistryTest);
+TDUnitX.RegisterTestFixture(TCipherProfileOpenSSLTest);
 
 end.

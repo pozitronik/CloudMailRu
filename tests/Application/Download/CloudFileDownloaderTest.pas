@@ -102,6 +102,18 @@ type
 		[Test]
 		procedure TestDownload_TokenOutdated_RefreshesAndRetries;
 
+		{Download tests - encrypted token refresh}
+		[Test]
+		procedure TestDownload_Encrypted_TokenOutdated_RefreshesAndRetries;
+
+		{Download tests - shard resolution failure}
+		[Test]
+		procedure TestGetSharedFileUrl_ShardResolutionFails_ReturnsEmpty;
+
+		{Download tests - shared account error paths}
+		[Test]
+		procedure TestDownload_SharedAccount_InvalidPath_ReturnsWriteError;
+
 		{Download tests - HTTP calls verification}
 		[Test]
 		procedure TestDownload_SetsProgressNames;
@@ -575,6 +587,58 @@ begin
 	FDownloader.Download('/remote/file.txt', LocalPath, ResultHash);
 
 	Assert.IsTrue(FMockHTTP.WasURLCalled('token=my_oauth_token'), 'URL should contain OAuth token');
+end;
+
+{Encrypted token refresh — covers line 132 (encrypted path token retry)}
+
+procedure TCloudFileDownloaderTest.TestDownload_Encrypted_TokenOutdated_RefreshesAndRetries;
+var
+	LocalPath: string;
+	ResultHash: WideString;
+	FileContent: TBytes;
+begin
+	FMockContext.SetIsPublicAccount(False);
+	CreateDownloader(True, TNullCipher.Create);
+	LocalPath := GetTempFilePath('encrypted_token_refresh.txt');
+
+	{First call returns token error, second succeeds}
+	FMockHTTP.QueueStreamResponse('download.shard', nil, CLOUD_ERROR_TOKEN_OUTDATED);
+	FileContent := TEncoding.UTF8.GetBytes('After encrypted refresh');
+	FMockHTTP.QueueStreamResponse('download.shard', FileContent, FS_FILE_OK);
+
+	FDownloader.Download('/remote/file.txt', LocalPath, ResultHash);
+
+	Assert.IsTrue(FMockContext.WasRefreshCSRFTokenCalled, 'RefreshCSRFToken should be called on encrypted token error');
+end;
+
+{Shard resolution failure — covers lines 193-194}
+
+procedure TCloudFileDownloaderTest.TestGetSharedFileUrl_ShardResolutionFails_ReturnsEmpty;
+var
+	URL: WideString;
+begin
+	FMockContext.SetIsPublicAccount(True);
+
+	{Override dispatcher to return failure so ResolveShard fails}
+	FMockHTTP.SetResponse('dispatcher', False, '');
+
+	URL := FDownloader.GetSharedFileUrl('/test/file.txt', SHARD_TYPE_VIDEO);
+
+	Assert.IsEmpty(URL, 'Should return empty when shard resolution fails');
+end;
+
+{Shared account error paths — covers lines 210-213}
+
+procedure TCloudFileDownloaderTest.TestDownload_SharedAccount_InvalidPath_ReturnsWriteError;
+var
+	ResultHash: WideString;
+	DownloadResult: Integer;
+begin
+	FMockContext.SetIsPublicAccount(True);
+
+	DownloadResult := FDownloader.Download('/shared/file.txt', 'Z:\nonexistent\path\file.txt', ResultHash);
+
+	Assert.AreEqual(FS_FILE_WRITEERROR, DownloadResult, 'Invalid path should return write error for shared download');
 end;
 
 initialization
