@@ -210,8 +210,13 @@ begin
 	if ServerUrl = '' then
 		Exit;
 
-	{Strip trailing slash for consistent concatenation}
 	BaseUrl := ServerUrl;
+
+	{Assume http:// when no scheme is provided}
+	if (Pos(string('://'), string(BaseUrl)) = 0) then
+		BaseUrl := 'http://' + BaseUrl;
+
+	{Strip trailing slash for consistent concatenation}
 	if (Length(BaseUrl) > 0) and (BaseUrl[Length(BaseUrl)] = '/') then
 		Delete(BaseUrl, Length(BaseUrl), 1);
 

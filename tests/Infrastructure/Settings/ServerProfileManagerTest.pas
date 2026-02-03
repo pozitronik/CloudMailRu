@@ -58,6 +58,8 @@ type
 		[Test]
 		procedure TestInferEndpointsFromServerUrl_TrailingSlash;
 		[Test]
+		procedure TestInferEndpointsFromServerUrl_NoScheme;
+		[Test]
 		procedure TestMultipleProfiles;
 		[Test]
 		procedure TestNullManager_ReturnsDefaults;
@@ -273,6 +275,19 @@ var
 begin
 	Endpoints := TServerProfileManager.InferEndpointsFromServerUrl('http://localhost:8080/');
 	Assert.AreEqual('http://localhost:8080/api/v2', Endpoints.ApiBase);
+end;
+
+procedure TServerProfileManagerTest.TestInferEndpointsFromServerUrl_NoScheme;
+var
+	Endpoints: TCloudEndpoints;
+begin
+	{User enters just host:port without http:// -- should assume http://}
+	Endpoints := TServerProfileManager.InferEndpointsFromServerUrl('localhost:8080');
+	Assert.AreEqual('http://localhost:8080/api/v2', Endpoints.ApiBase);
+	Assert.AreEqual('http://localhost:8080/token', Endpoints.OAuthUrl);
+	Assert.AreEqual('http://localhost:8080/dispatcher', Endpoints.DispatcherUrl);
+	Assert.AreEqual('http://localhost:8080/thumb', Endpoints.ThumbnailUrl);
+	Assert.AreEqual('http://localhost:8080/public/', Endpoints.PublicUrl);
 end;
 
 procedure TServerProfileManagerTest.TestMultipleProfiles;
