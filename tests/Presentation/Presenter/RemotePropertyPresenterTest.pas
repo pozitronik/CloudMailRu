@@ -237,6 +237,7 @@ type
 	private
 		FUploadResult: Integer;
 		FAddByIdentityResult: Integer;
+		FAddByIdentityCallCount: Integer;
 		FLastAddedIdentity: TCloudFileIdentity;
 		FLastAddedPath: WideString;
 	public
@@ -245,6 +246,7 @@ type
 
 		property UploadResult: Integer read FUploadResult write FUploadResult;
 		property AddByIdentityResult: Integer read FAddByIdentityResult write FAddByIdentityResult;
+		property AddByIdentityCallCount: Integer read FAddByIdentityCallCount;
 		property LastAddedIdentity: TCloudFileIdentity read FLastAddedIdentity;
 		property LastAddedPath: WideString read FLastAddedPath;
 	end;
@@ -393,6 +395,12 @@ type
 		procedure TestApplyHashCommandsMultipleCommands;
 		[Test]
 		procedure TestApplyHashCommandsForDirectory;
+		[Test]
+		procedure TestApplyHashCommandsSkipsCommentLines;
+		[Test]
+		procedure TestApplyHashCommandsSkipsEmptyLines;
+		[Test]
+		procedure TestApplyHashCommandsWithInlineComments;
 
 		{Description tests}
 		[Test]
@@ -841,6 +849,7 @@ end;
 
 function TMockUploader.AddFileByIdentity(FileIdentity: TCloudFileIdentity; RemotePath: WideString; ConflictMode: WideString; LogErrors, LogSuccess: Boolean): Integer;
 begin
+	Inc(FAddByIdentityCallCount);
 	FLastAddedIdentity := FileIdentity;
 	FLastAddedPath := RemotePath;
 	Result := FAddByIdentityResult;
@@ -1669,6 +1678,72 @@ begin
 	{For directories, target path should be folder/filename}
 	Assert.Contains(FUploader.LastAddedPath, 'folder', 'Path should contain folder name');
 	Assert.Contains(FUploader.LastAddedPath, 'newfile.txt', 'Path should contain filename');
+end;
+
+{Comment and empty line handling tests (#315)}
+
+procedure TRemotePropertyPresenterTest.TestApplyHashCommandsSkipsCommentLines;
+var
+	Item: TCloudDirItem;
+begin
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
+
+	Item := CreateTestItem('test.txt');
+	FPresenter.Initialize(Item, '/test.txt', CreateConfig(False, False));
+
+	{Mix comments with a valid command}
+	FView.Hashes.Add('# This is a block comment');
+	FView.Hashes.Add('hash "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA:100:file1.txt"');
+	FView.Hashes.Add('  # Indented comment');
+	FUploader.AddByIdentityResult := FS_FILE_OK;
+
+	FPresenter.ApplyHashCommands;
+
+	{Only the valid command should be processed}
+	Assert.AreEqual(1, FUploader.AddByIdentityCallCount, 'Should process exactly one command');
+	Assert.AreEqual('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', String(FUploader.LastAddedIdentity.hash));
+	Assert.IsEmpty(FView.HashesLogMessage, 'Comments should not produce error messages');
+end;
+
+procedure TRemotePropertyPresenterTest.TestApplyHashCommandsSkipsEmptyLines;
+var
+	Item: TCloudDirItem;
+begin
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
+
+	Item := CreateTestItem('test.txt');
+	FPresenter.Initialize(Item, '/test.txt', CreateConfig(False, False));
+
+	FView.Hashes.Add('');
+	FView.Hashes.Add('   ');
+	FView.Hashes.Add('hash "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB:200:file2.txt"');
+	FView.Hashes.Add('');
+	FUploader.AddByIdentityResult := FS_FILE_OK;
+
+	FPresenter.ApplyHashCommands;
+
+	Assert.AreEqual(1, FUploader.AddByIdentityCallCount, 'Should process exactly one command');
+	Assert.IsEmpty(FView.HashesLogMessage, 'Empty lines should not produce error messages');
+end;
+
+procedure TRemotePropertyPresenterTest.TestApplyHashCommandsWithInlineComments;
+var
+	Item: TCloudDirItem;
+begin
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
+
+	Item := CreateTestItem('test.txt');
+	FPresenter.Initialize(Item, '/test.txt', CreateConfig(False, False));
+
+	{Command with inline comment after closing quote}
+	FView.Hashes.Add('hash "DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD:400:photo.jpg" #vacation photo');
+	FUploader.AddByIdentityResult := FS_FILE_OK;
+
+	FPresenter.ApplyHashCommands;
+
+	Assert.AreEqual(1, FUploader.AddByIdentityCallCount, 'Should process the command');
+	Assert.AreEqual('DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD', String(FUploader.LastAddedIdentity.hash));
+	Assert.AreEqual(Int64(400), FUploader.LastAddedIdentity.size);
 end;
 
 {Description tests}

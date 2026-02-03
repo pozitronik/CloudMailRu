@@ -35,6 +35,18 @@ type
 		[Test]
 		procedure TestDoCleanFalse;
 
+		{Inline comment support (#315)}
+		[Test]
+		procedure TestValidWithInlineComment;
+		[Test]
+		procedure TestValidWithInlineCommentNoSpace;
+		[Test]
+		procedure TestValidWithInlineCommentPreservesName;
+		[Test]
+		procedure TestCommentOnlyLine;
+		[Test]
+		procedure TestEmptyLine;
+
 		{Zero-based Copy behavior verification - Delphi supports zero-based strings}
 		[Test]
 		procedure TestCopyWithZeroPosition_WorksCorrectly;
@@ -198,6 +210,78 @@ begin
 	HI := THashInfo.Create('hash ' + VALID_HASH + ':1000', false);
 	try
 		{ Should fail because 'hash ' is not stripped }
+		Assert.IsFalse(HI.valid);
+	finally
+		HI.Free;
+	end;
+end;
+
+procedure THashInfoTest.TestValidWithInlineComment;
+var
+	HI: THashInfo;
+begin
+	{Inline # comment after closing quote should be ignored}
+	HI := THashInfo.Create('hash "' + VALID_HASH + ':2000:image.jpg" #uploaded 2024-01-15');
+	try
+		Assert.IsTrue(HI.valid);
+		Assert.AreEqual(VALID_HASH, HI.hash);
+		Assert.AreEqual(Int64(2000), HI.size);
+		Assert.AreEqual('image.jpg', HI.name);
+	finally
+		HI.Free;
+	end;
+end;
+
+procedure THashInfoTest.TestValidWithInlineCommentNoSpace;
+var
+	HI: THashInfo;
+begin
+	{Comment immediately after closing quote (no space) should also work}
+	HI := THashInfo.Create('hash "' + VALID_HASH + ':500:doc.pdf"#my note');
+	try
+		Assert.IsTrue(HI.valid);
+		Assert.AreEqual(VALID_HASH, HI.hash);
+		Assert.AreEqual(Int64(500), HI.size);
+		Assert.AreEqual('doc.pdf', HI.name);
+	finally
+		HI.Free;
+	end;
+end;
+
+procedure THashInfoTest.TestValidWithInlineCommentPreservesName;
+var
+	HI: THashInfo;
+begin
+	{Filename containing # inside quotes should be preserved as-is}
+	HI := THashInfo.Create('hash "' + VALID_HASH + ':100:file#1.txt"');
+	try
+		Assert.IsTrue(HI.valid);
+		Assert.AreEqual('file#1.txt', HI.name, 'Hash inside quotes is part of filename');
+	finally
+		HI.Free;
+	end;
+end;
+
+procedure THashInfoTest.TestCommentOnlyLine;
+var
+	HI: THashInfo;
+begin
+	{A line starting with # has no valid hash data}
+	HI := THashInfo.Create('# this is a block comment');
+	try
+		Assert.IsFalse(HI.valid);
+	finally
+		HI.Free;
+	end;
+end;
+
+procedure THashInfoTest.TestEmptyLine;
+var
+	HI: THashInfo;
+begin
+	{An empty string has no valid hash data}
+	HI := THashInfo.Create('');
+	try
 		Assert.IsFalse(HI.valid);
 	finally
 		HI.Free;

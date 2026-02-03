@@ -494,6 +494,7 @@ var
 	i: Integer;
 	CurrentCommand: THashInfo;
 	TargetPath: WideString;
+	TrimmedLine: string;
 begin
 	FView.SetApplyHashesEnabled(False);
 	Commands := FView.GetHashCommands;
@@ -502,6 +503,12 @@ begin
 		for i := 0 to Commands.Count - 1 do
 		begin
 			FView.ProcessMessages;
+
+			{Skip empty lines and comment lines (# at the start)}
+			TrimmedLine := Trim(Commands[i]);
+			if (TrimmedLine = '') or (TrimmedLine[1] = '#') then
+				Continue;
+
 			CurrentCommand := THashInfo.Create(Commands[i]);
 
 			if CurrentCommand.valid then

@@ -40,13 +40,24 @@ const
 var
 	divisor_position: integer;
 	sizeString: WideString;
+	QuoteEnd: Integer;
 begin
 	if doClean then {Command may be passed in full; need to detect and extract the parameter}
 	begin
 		if (1 = Pos(WideString('hash '), parameter)) then {This is a command, strip prefix}
 		begin
 			parameter := copy(parameter, 6, length(parameter) - 5);
-			parameter := string(parameter).Trim(['"']);
+			parameter := Trim(parameter);
+
+			{Extract content between quotes, ignoring trailing text (e.g. inline # comments)}
+			if (Length(parameter) >= 2) and (parameter[1] = '"') then
+			begin
+				QuoteEnd := LastDelimiter('"', string(parameter));
+				if QuoteEnd > 1 then
+					parameter := Copy(parameter, 2, QuoteEnd - 2)
+				else
+					parameter := Copy(parameter, 2);
+			end;
 		end;
 
 	end;
