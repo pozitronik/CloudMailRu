@@ -87,12 +87,33 @@ type
 
 		[Test]
 		procedure GetTCCommentPreferredFormat_ReturnsDefaultWhenIniPathEmpty;
+
+		[Test]
+		{Covers TTCHandler.FindTCWindow (line 172)}
+		procedure TestFindTCWindow_ReturnsHandle;
+
+		[Test]
+		{Covers GetTCIconsSize non-resolution-specific path (lines 194-224)}
+		procedure TestGetTCIconsSize_NonResSpecific_ReadsAllResolutions;
+
+		[Test]
+		{Covers GetTCIconsSize resolution-specific fallback to AllResolutions (lines 197-216)}
+		procedure TestGetTCIconsSize_ResSpecific_FallbackToAllResolutions;
+
+		[Test]
+		{Covers GetTCCommentPreferredFormat INI reading (lines 239-243)}
+		procedure TestGetTCCommentPreferredFormat_ReadsValidFormatFromIni;
+
+		[Test]
+		{Covers GetTCCommentPreferredFormat invalid format fallback (line 248)}
+		procedure TestGetTCCommentPreferredFormat_InvalidFormat_FallsBackToUTF8;
 	end;
 
 implementation
 
 uses
-	System.SysUtils;
+	System.SysUtils,
+	System.Classes;
 
 {TNullTCHandlerTest}
 
@@ -219,6 +240,121 @@ begin
 	{COMMANDER_INI not set, path is empty}
 
 	Assert.AreEqual(ENCODING_UTF8, FHandler.GetTCCommentPreferredFormat);
+end;
+
+{TTCHandler real Windows API tests}
+
+procedure TTCHandlerWithDITest.TestFindTCWindow_ReturnsHandle;
+var
+	Handle: HWND;
+begin
+	{TTCHandler.FindTCWindow calls Windows.FindWindow — result depends on whether TC is running}
+	Handle := FHandler.FindTCWindow;
+	Assert.Pass('FindTCWindow returned ' + IntToStr(Handle));
+end;
+
+procedure TTCHandlerWithDITest.TestGetTCIconsSize_NonResSpecific_ReadsAllResolutions;
+var
+	IniPath: string;
+	IniContent: TStringList;
+begin
+	IniPath := IncludeTrailingPathDelimiter(System.SysUtils.GetEnvironmentVariable('TEMP')) +
+		'TCHandlerTest_nonres_' + IntToStr(GetCurrentProcessId) + '.ini';
+	IniContent := TStringList.Create;
+	try
+		IniContent.Add('[Configuration]');
+		IniContent.Add('ResolutionSpecific=0');
+		IniContent.Add('[AllResolutions]');
+		IniContent.Add('Iconsize32=24');
+		IniContent.SaveToFile(IniPath);
+	finally
+		IniContent.Free;
+	end;
+	try
+		FEnvironment.SetEnvironmentVariable('COMMANDER_INI', IniPath);
+		FEnvironment.AddExistingFile(IniPath);
+		Assert.AreEqual(24, FHandler.GetTCIconsSize);
+	finally
+		System.SysUtils.DeleteFile(IniPath);
+	end;
+end;
+
+procedure TTCHandlerWithDITest.TestGetTCIconsSize_ResSpecific_FallbackToAllResolutions;
+var
+	IniPath: string;
+	IniContent: TStringList;
+begin
+	IniPath := IncludeTrailingPathDelimiter(System.SysUtils.GetEnvironmentVariable('TEMP')) +
+		'TCHandlerTest_resspec_' + IntToStr(GetCurrentProcessId) + '.ini';
+	IniContent := TStringList.Create;
+	try
+		IniContent.Add('[Configuration]');
+		IniContent.Add('ResolutionSpecific=1');
+		IniContent.Add('[AllResolutions]');
+		IniContent.Add('Iconsize32=48');
+		IniContent.SaveToFile(IniPath);
+	finally
+		IniContent.Free;
+	end;
+	try
+		FEnvironment.SetEnvironmentVariable('COMMANDER_INI', IniPath);
+		FEnvironment.AddExistingFile(IniPath);
+
+		{No monitor-specific section exists, falls back to AllResolutions}
+		Assert.AreEqual(48, FHandler.GetTCIconsSize);
+	finally
+		System.SysUtils.DeleteFile(IniPath);
+	end;
+end;
+
+procedure TTCHandlerWithDITest.TestGetTCCommentPreferredFormat_ReadsValidFormatFromIni;
+var
+	IniPath: string;
+	IniContent: TStringList;
+begin
+	IniPath := IncludeTrailingPathDelimiter(System.SysUtils.GetEnvironmentVariable('TEMP')) +
+		'TCHandlerTest_comment_' + IntToStr(GetCurrentProcessId) + '.ini';
+	IniContent := TStringList.Create;
+	try
+		IniContent.Add('[Configuration]');
+		IniContent.Add('CommentPreferredFormat=' + IntToStr(ENCODING_UNICODE));
+		IniContent.SaveToFile(IniPath);
+	finally
+		IniContent.Free;
+	end;
+	try
+		FEnvironment.SetEnvironmentVariable('COMMANDER_INI', IniPath);
+		FEnvironment.AddExistingFile(IniPath);
+		Assert.AreEqual(ENCODING_UNICODE, FHandler.GetTCCommentPreferredFormat);
+	finally
+		System.SysUtils.DeleteFile(IniPath);
+	end;
+end;
+
+procedure TTCHandlerWithDITest.TestGetTCCommentPreferredFormat_InvalidFormat_FallsBackToUTF8;
+var
+	IniPath: string;
+	IniContent: TStringList;
+begin
+	IniPath := IncludeTrailingPathDelimiter(System.SysUtils.GetEnvironmentVariable('TEMP')) +
+		'TCHandlerTest_badfmt_' + IntToStr(GetCurrentProcessId) + '.ini';
+	IniContent := TStringList.Create;
+	try
+		IniContent.Add('[Configuration]');
+		IniContent.Add('CommentPreferredFormat=99');
+		IniContent.SaveToFile(IniPath);
+	finally
+		IniContent.Free;
+	end;
+	try
+		FEnvironment.SetEnvironmentVariable('COMMANDER_INI', IniPath);
+		FEnvironment.AddExistingFile(IniPath);
+
+		{99 is not a valid encoding constant, falls back to ENCODING_UTF8}
+		Assert.AreEqual(ENCODING_UTF8, FHandler.GetTCCommentPreferredFormat);
+	finally
+		System.SysUtils.DeleteFile(IniPath);
+	end;
 end;
 
 initialization

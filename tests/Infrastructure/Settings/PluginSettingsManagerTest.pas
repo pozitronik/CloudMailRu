@@ -167,6 +167,10 @@ type
 
 		[Test]
 		procedure Test_IniFilePath_ReturnsConfigFilePath;
+
+		[Test]
+		{Covers ERangeError handler in Refresh when IniPath is out of TIniDirTypes range (lines 238, 240)}
+		procedure Test_Refresh_InvalidIniDir_DefaultsToPlugin;
 	end;
 
 	[TestFixture]
@@ -188,6 +192,18 @@ type
 
 		[Test]
 		procedure Test_Create_CreatesDirectoryIfNotExists;
+
+		[Test]
+		{Covers INI_DIR_PLUGIN case in constructor when config file exists (line 191)}
+		procedure Test_Create_ConfigWithPluginDir_UsesPluginDir;
+
+		[Test]
+		{Covers INI_DIR_AUTO writable branch in constructor (lines 199-200)}
+		procedure Test_Create_ConfigWithAutoDir_Writeable_UsesPluginDir;
+
+		[Test]
+		{Covers INI_DIR_AUTO non-writable branch in constructor (line 202)}
+		procedure Test_Create_ConfigWithAutoDir_NotWriteable_UsesAppData;
 	end;
 
 	[TestFixture]
@@ -867,6 +883,129 @@ begin
 	SettingsManager := TNullPluginSettingsManager.Create;
 	SettingsManager.Refresh;
 	Assert.Pass;
+end;
+
+{Config-based environment tests}
+
+procedure TPluginSettingsManagerEnvironmentTest.Test_Create_ConfigWithPluginDir_UsesPluginDir;
+var
+	Manager: TPluginSettingsManager;
+	TempDir, ConfigFilePath: string;
+	IniContent: TStringList;
+begin
+	TempDir := IncludeTrailingPathDelimiter(SysUtils.GetEnvironmentVariable('TEMP')) + 'PSMTest_PluginDir\';
+	ForceDirectories(TempDir);
+	ConfigFilePath := TempDir + PLUGIN_CONFIG_FILE_NAME;
+	IniContent := TStringList.Create;
+	try
+		IniContent.Add('[Main]');
+		IniContent.Add('IniPath=' + IntToStr(INI_DIR_PLUGIN));
+		IniContent.SaveToFile(ConfigFilePath);
+	finally
+		IniContent.Free;
+	end;
+	try
+		FMockEnv.ModulePath := TempDir;
+		FMockEnv.PluginConfigExists := True;
+
+		Manager := TPluginSettingsManager.Create(FMockEnvRef);
+		try
+			Assert.AreEqual(WideString(TempDir), Manager.IniFileDir);
+		finally
+			Manager.Free;
+		end;
+	finally
+		if FileExists(ConfigFilePath) then
+			SysUtils.DeleteFile(ConfigFilePath);
+		RemoveDir(TempDir);
+	end;
+end;
+
+procedure TPluginSettingsManagerEnvironmentTest.Test_Create_ConfigWithAutoDir_Writeable_UsesPluginDir;
+var
+	Manager: TPluginSettingsManager;
+	TempDir, ConfigFilePath: string;
+	IniContent: TStringList;
+begin
+	TempDir := IncludeTrailingPathDelimiter(SysUtils.GetEnvironmentVariable('TEMP')) + 'PSMTest_AutoWrite\';
+	ForceDirectories(TempDir);
+	ConfigFilePath := TempDir + PLUGIN_CONFIG_FILE_NAME;
+	IniContent := TStringList.Create;
+	try
+		IniContent.Add('[Main]');
+		IniContent.Add('IniPath=' + IntToStr(INI_DIR_AUTO));
+		IniContent.SaveToFile(ConfigFilePath);
+	finally
+		IniContent.Free;
+	end;
+	try
+		FMockEnv.ModulePath := TempDir;
+		FMockEnv.PluginConfigExists := True;
+		FMockEnv.DirectoryWriteable := True;
+
+		Manager := TPluginSettingsManager.Create(FMockEnvRef);
+		try
+			Assert.AreEqual(WideString(TempDir), Manager.IniFileDir);
+		finally
+			Manager.Free;
+		end;
+	finally
+		if FileExists(ConfigFilePath) then
+			SysUtils.DeleteFile(ConfigFilePath);
+		RemoveDir(TempDir);
+	end;
+end;
+
+procedure TPluginSettingsManagerEnvironmentTest.Test_Create_ConfigWithAutoDir_NotWriteable_UsesAppData;
+var
+	Manager: TPluginSettingsManager;
+	TempDir, ConfigFilePath: string;
+	ExpectedDir: WideString;
+	IniContent: TStringList;
+begin
+	TempDir := IncludeTrailingPathDelimiter(SysUtils.GetEnvironmentVariable('TEMP')) + 'PSMTest_AutoNoWrite\';
+	ForceDirectories(TempDir);
+	ConfigFilePath := TempDir + PLUGIN_CONFIG_FILE_NAME;
+	IniContent := TStringList.Create;
+	try
+		IniContent.Add('[Main]');
+		IniContent.Add('IniPath=' + IntToStr(INI_DIR_AUTO));
+		IniContent.SaveToFile(ConfigFilePath);
+	finally
+		IniContent.Free;
+	end;
+	try
+		FMockEnv.ModulePath := TempDir;
+		FMockEnv.PluginConfigExists := True;
+		FMockEnv.DirectoryWriteable := False;
+		FMockEnv.AppData := 'C:\Users\TestAuto\AppData\Roaming';
+		ExpectedDir := 'C:\Users\TestAuto\AppData\Roaming\' + APPDATA_DIR_NAME + '\';
+
+		Manager := TPluginSettingsManager.Create(FMockEnvRef);
+		try
+			Assert.AreEqual(ExpectedDir, Manager.IniFileDir);
+		finally
+			Manager.Free;
+		end;
+	finally
+		if FileExists(ConfigFilePath) then
+			SysUtils.DeleteFile(ConfigFilePath);
+		RemoveDir(TempDir);
+	end;
+end;
+
+procedure TPluginSettingsManagerMiscTest.Test_Refresh_InvalidIniDir_DefaultsToPlugin;
+begin
+	{First set to a valid non-default value to prove the value changes}
+	FConfigFile.WriteInteger('Main', 'IniPath', INI_DIR_APPDATA);
+	FManager.Refresh;
+	Assert.IsTrue(FManager.GetSettings.IniDir = INI_DIR_APPDATA, 'Precondition: should be APPDATA');
+
+	{Now set to invalid value — ERangeError handler should reset to INI_DIR_PLUGIN}
+	FConfigFile.WriteInteger('Main', 'IniPath', 99);
+	FManager.Refresh;
+	Assert.IsTrue(FManager.GetSettings.IniDir = INI_DIR_PLUGIN,
+		'Invalid IniDir should fall back to INI_DIR_PLUGIN via ERangeError handler');
 end;
 
 initialization
