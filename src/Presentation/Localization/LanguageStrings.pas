@@ -336,6 +336,15 @@ var
 	DFM_OPT_STREAM_M3U8: WideString;
 	DFM_OPT_STREAM_DEFAULT: WideString;
 	DFM_OPT_STREAM_WEB: WideString;
+	{Short labels for listview Type columns}
+	DFM_LV_ENCRYPT_ALWAYS: WideString;
+	DFM_LV_ENCRYPT_ASK: WideString;
+	DFM_LV_ENCRYPT_NO: WideString;
+	DFM_LV_STREAM_NONE: WideString;
+	DFM_LV_STREAM_OFF: WideString;
+	DFM_LV_STREAM_M3U8: WideString;
+	DFM_LV_STREAM_LINK: WideString;
+	DFM_LV_STREAM_WEB: WideString;
 
 	{Translation registry: maps key names to pointers to the corresponding vars}
 	TranslationRegistry: TDictionary<string, PWideString>;
@@ -674,6 +683,15 @@ begin
 	DFM_OPT_STREAM_M3U8 := 'M3U8 playlist (useful for media files)';
 	DFM_OPT_STREAM_DEFAULT := 'Default (publish file & get download link)';
 	DFM_OPT_STREAM_WEB := 'Weblink (publish file & get web link)';
+	{Short labels for listview Type columns}
+	DFM_LV_ENCRYPT_ALWAYS := 'Alw';
+	DFM_LV_ENCRYPT_ASK := 'Ask';
+	DFM_LV_ENCRYPT_NO := 'No';
+	DFM_LV_STREAM_NONE := 'None';
+	DFM_LV_STREAM_OFF := 'Off';
+	DFM_LV_STREAM_M3U8 := 'M3U8';
+	DFM_LV_STREAM_LINK := 'Link';
+	DFM_LV_STREAM_WEB := 'Web';
 end;
 
 procedure BuildTranslationRegistry;
@@ -1003,6 +1021,14 @@ begin
 	TranslationRegistry.Add('DFM_OPT_STREAM_M3U8', @DFM_OPT_STREAM_M3U8);
 	TranslationRegistry.Add('DFM_OPT_STREAM_DEFAULT', @DFM_OPT_STREAM_DEFAULT);
 	TranslationRegistry.Add('DFM_OPT_STREAM_WEB', @DFM_OPT_STREAM_WEB);
+	TranslationRegistry.Add('DFM_LV_ENCRYPT_ALWAYS', @DFM_LV_ENCRYPT_ALWAYS);
+	TranslationRegistry.Add('DFM_LV_ENCRYPT_ASK', @DFM_LV_ENCRYPT_ASK);
+	TranslationRegistry.Add('DFM_LV_ENCRYPT_NO', @DFM_LV_ENCRYPT_NO);
+	TranslationRegistry.Add('DFM_LV_STREAM_NONE', @DFM_LV_STREAM_NONE);
+	TranslationRegistry.Add('DFM_LV_STREAM_OFF', @DFM_LV_STREAM_OFF);
+	TranslationRegistry.Add('DFM_LV_STREAM_M3U8', @DFM_LV_STREAM_M3U8);
+	TranslationRegistry.Add('DFM_LV_STREAM_LINK', @DFM_LV_STREAM_LINK);
+	TranslationRegistry.Add('DFM_LV_STREAM_WEB', @DFM_LV_STREAM_WEB);
 end;
 
 initialization

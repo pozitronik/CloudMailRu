@@ -586,6 +586,7 @@ implementation
 uses
 	ConfigFile,
 	CloudConstants,
+	LanguageStrings,
 	SettingsConstants,
 	Logger,
 	WSList;
@@ -2100,7 +2101,7 @@ begin
 
 	FoundLink := False;
 	for I := 0 to High(FView.StreamingDisplayItems) do
-		if (FView.StreamingDisplayItems[I].Extension = 'mp4') and (FView.StreamingDisplayItems[I].TypeLabel = 'Link') then
+		if (FView.StreamingDisplayItems[I].Extension = 'mp4') and (FView.StreamingDisplayItems[I].TypeLabel = DFM_LV_STREAM_LINK) then
 			FoundLink := True;
 
 	Assert.IsTrue(FoundLink, 'mp4 extension should have TypeLabel "Link"');
@@ -2176,8 +2177,8 @@ begin
 
 	FPresenter.Initialize('');
 
-	Assert.AreEqual('Private', FView.AccountsListItems[0].TypeLabel, 'Private account should show Private');
-	Assert.AreEqual('Public', FView.AccountsListItems[1].TypeLabel, 'Public account should show Public');
+	Assert.AreEqual(DFM_RB_PRIVATE, FView.AccountsListItems[0].TypeLabel, 'Private account should show Private');
+	Assert.AreEqual(DFM_RB_PUBLIC, FView.AccountsListItems[1].TypeLabel, 'Public account should show Public');
 end;
 
 procedure TAccountsPresenterTest.TestAccountsListShowsCorrectEncryptionLabels;
@@ -2204,9 +2205,9 @@ begin
 
 	FPresenter.Initialize('');
 
-	Assert.AreEqual('No', FView.AccountsListItems[0].EncryptionLabel, 'EncryptModeNone should show No');
-	Assert.AreEqual('Alw', FView.AccountsListItems[1].EncryptionLabel, 'EncryptModeAlways should show Alw');
-	Assert.AreEqual('Ask', FView.AccountsListItems[2].EncryptionLabel, 'EncryptModeAskOnce should show Ask');
+	Assert.AreEqual(DFM_LV_ENCRYPT_NO, FView.AccountsListItems[0].EncryptionLabel, 'EncryptModeNone should show No');
+	Assert.AreEqual(DFM_LV_ENCRYPT_ALWAYS, FView.AccountsListItems[1].EncryptionLabel, 'EncryptModeAlways should show Alw');
+	Assert.AreEqual(DFM_LV_ENCRYPT_ASK, FView.AccountsListItems[2].EncryptionLabel, 'EncryptModeAskOnce should show Ask');
 end;
 
 procedure TAccountsPresenterTest.TestOnAccountSelectedLoadsAccountData;

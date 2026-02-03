@@ -539,10 +539,10 @@ end;
 function TAccountsPresenter.EncryptionModeToLabel(Mode: Integer): WideString;
 begin
 	case Mode of
-		EncryptModeAlways: Result := 'Alw';
-		EncryptModeAskOnce: Result := 'Ask';
+		EncryptModeAlways: Result := DFM_LV_ENCRYPT_ALWAYS;
+		EncryptModeAskOnce: Result := DFM_LV_ENCRYPT_ASK;
 	else
-		Result := 'No';
+		Result := DFM_LV_ENCRYPT_NO;
 	end;
 end;
 
@@ -560,9 +560,9 @@ begin
 		AccSettings := FAccountsManager.GetAccountSettings(AccountsArray[I]);
 		Items[I].Name := AccountsArray[I];
 		if AccSettings.PublicAccount then
-			Items[I].TypeLabel := 'Public'
+			Items[I].TypeLabel := DFM_RB_PUBLIC
 		else
-			Items[I].TypeLabel := 'Private';
+			Items[I].TypeLabel := DFM_RB_PRIVATE;
 		Items[I].EncryptionLabel := EncryptionModeToLabel(AccSettings.EncryptFilesMode);
 	end;
 	FView.SetAccountsList(Items);
@@ -1077,11 +1077,11 @@ end;
 function TAccountsPresenter.StreamingFormatToLabel(Format: Integer): WideString;
 begin
 	case Format of
-		0: Result := 'None';
-		1: Result := 'Off';
-		2: Result := 'M3U8';
-		3: Result := 'Link';
-		4: Result := 'Web';
+		0: Result := DFM_LV_STREAM_NONE;
+		1: Result := DFM_LV_STREAM_OFF;
+		2: Result := DFM_LV_STREAM_M3U8;
+		3: Result := DFM_LV_STREAM_LINK;
+		4: Result := DFM_LV_STREAM_WEB;
 	else
 		Result := '?';
 	end;
@@ -1341,6 +1341,8 @@ procedure TAccountsPresenter.OnApplyTranslationClick;
 var
 	Manager: TTranslationManager;
 	SelectedIndex: Integer;
+	SavedAccountIndex: Integer;
+	SavedStreamingIndex: Integer;
 	SelectedLang: WideString;
 	ErrorMsg: WideString;
 	Settings: TPluginSettings;
@@ -1372,6 +1374,19 @@ begin
 
 	{Refresh form control captions from newly translated vars}
 	FView.UpdateFormCaptions;
+
+	{Refresh listview items with translated type labels}
+	SavedAccountIndex := FView.GetSelectedAccountIndex;
+	SavedStreamingIndex := FView.GetSelectedStreamingExtensionIndex;
+	FUpdating := True;
+	try
+		RefreshAccountsList;
+		FView.SelectAccount(SavedAccountIndex);
+		RefreshStreamingExtensionsList;
+		FView.SelectStreamingExtension(SavedStreamingIndex);
+	finally
+		FUpdating := False;
+	end;
 
 	{Save language choice to settings}
 	Settings := FSettingsManager.GetSettings;
