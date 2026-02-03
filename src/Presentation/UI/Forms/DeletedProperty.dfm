@@ -14,33 +14,33 @@ object DeletedPropertyForm: TDeletedPropertyForm
   Position = poOwnerFormCenter
   TextHeight = 13
   object DelNameLB: TLabel
-    Left = 83
+    Left = 90
     Top = 8
-    Width = 431
+    Width = 424
     Height = 13
     AutoSize = False
     EllipsisPosition = epPathEllipsis
   end
   object DelFromLB: TLabel
-    Left = 83
+    Left = 90
     Top = 27
-    Width = 431
+    Width = 424
     Height = 13
     AutoSize = False
     EllipsisPosition = epPathEllipsis
   end
   object DelAtLB: TLabel
-    Left = 83
+    Left = 90
     Top = 46
-    Width = 431
+    Width = 424
     Height = 13
     AutoSize = False
     EllipsisPosition = epPathEllipsis
   end
   object DelByLB: TLabel
-    Left = 83
+    Left = 90
     Top = 65
-    Width = 431
+    Width = 424
     Height = 13
     AutoSize = False
     EllipsisPosition = epPathEllipsis
@@ -81,9 +81,9 @@ object DeletedPropertyForm: TDeletedPropertyForm
     Caption = 'Summary size:'
   end
   object DelSizeLB: TLabel
-    Left = 83
+    Left = 90
     Top = 84
-    Width = 431
+    Width = 424
     Height = 13
     AutoSize = False
     EllipsisPosition = epPathEllipsis
@@ -91,16 +91,16 @@ object DeletedPropertyForm: TDeletedPropertyForm
   object RestoreBTN: TButton
     Left = 8
     Top = 111
-    Width = 75
+    Width = 100
     Height = 25
     Caption = 'Restore'
     ModalResult = 6
     TabOrder = 0
   end
   object CancelBTN: TButton
-    Left = 439
+    Left = 414
     Top = 111
-    Width = 75
+    Width = 100
     Height = 25
     Cancel = True
     Caption = 'Cancel'
@@ -108,18 +108,18 @@ object DeletedPropertyForm: TDeletedPropertyForm
     TabOrder = 1
   end
   object RestoreAllBTN: TButton
-    Left = 89
+    Left = 113
     Top = 111
-    Width = 75
+    Width = 100
     Height = 25
     Caption = 'Restore all'
     ModalResult = 14
     TabOrder = 2
   end
   object EmptyBTN: TButton
-    Left = 170
+    Left = 217
     Top = 111
-    Width = 75
+    Width = 100
     Height = 25
     Caption = 'Clear trash'
     ModalResult = 7

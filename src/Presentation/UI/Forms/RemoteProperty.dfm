@@ -5,7 +5,7 @@ object PropertyForm: TPropertyForm
   BorderStyle = bsDialog
   BorderWidth = 5
   ClientHeight = 337
-  ClientWidth = 836
+  ClientWidth = 842
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -17,7 +17,7 @@ object PropertyForm: TPropertyForm
   OnKeyUp = FormKeyUp
   OnShow = FormShow
   DesignSize = (
-    836
+    842
     337)
   TextHeight = 13
   object PublicLinkLabel: TLabel
@@ -31,7 +31,7 @@ object PropertyForm: TPropertyForm
   object WebLink: TEdit
     Left = 55
     Top = 27
-    Width = 781
+    Width = 787
     Height = 21
     Anchors = [akLeft, akTop, akRight]
     ReadOnly = True
@@ -47,7 +47,7 @@ object PropertyForm: TPropertyForm
     OnClick = AccessCBClick
   end
   object OkButton: TButton
-    Left = 745
+    Left = 751
     Top = 0
     Width = 91
     Height = 21
