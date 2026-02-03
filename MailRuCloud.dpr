@@ -169,6 +169,7 @@ uses
 	ThumbnailBitmapConverter in 'src\Application\Thumbnail\ThumbnailBitmapConverter.pas',
 	ServerProfile in 'src\Domain\ValueObjects\ServerProfile.pas',
 	ServerProfileManager in 'src\Infrastructure\Settings\ServerProfileManager.pas',
+	ServerConfigFetcher in 'src\Infrastructure\HTTP\ServerConfigFetcher.pas',
 	TranslationManager in 'src\Infrastructure\Localization\TranslationManager.pas';
 
 {$IFDEF WIN64}

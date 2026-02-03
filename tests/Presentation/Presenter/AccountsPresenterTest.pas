@@ -13,6 +13,7 @@ uses
 	PasswordManager,
 	AccountsManager,
 	PluginSettingsManager,
+	ServerProfileManager,
 	CipherProfile,
 	WFXTypes,
 	System.Classes,
@@ -124,6 +125,27 @@ type
 		FCipherProfileEnabled: Boolean;
 		FCipherChangeWarningResult: Boolean;
 		FCipherChangeWarningCallCount: Integer;
+
+		{Server combobox on accounts tab}
+		FServerComboItems: TArray<WideString>;
+		FServerComboIndex: Integer;
+
+		{Servers tab}
+		FServerDisplayItems: TArray<TServerDisplayItem>;
+		FServerSelectedIndex: Integer;
+		FServerName: WideString;
+		FServerUrl: WideString;
+		FServerApiUrl: WideString;
+		FServerOAuthUrl: WideString;
+		FServerDispatcherUrl: WideString;
+		FServerThumbnailUrl: WideString;
+		FServerPublicUrl: WideString;
+		FServerDownloadUrl: WideString;
+		FServerUploadUrl: WideString;
+		FServerStatus: WideString;
+		FServerApplyButtonEnabled: Boolean;
+		FServerConfirmResult: TConfirmSaveResult;
+		FServerConfirmCallCount: Integer;
 	public
 		constructor Create;
 
@@ -285,6 +307,43 @@ type
 		procedure SetCipherProfileEnabled(Value: Boolean);
 		function ShowCipherChangeWarning: Boolean;
 
+		{IAccountsView - Server combobox on accounts tab}
+		procedure SetServerComboItems(const Items: TArray<WideString>);
+		procedure SetServerComboIndex(Value: Integer);
+		function GetServerComboIndex: Integer;
+		function GetServerComboName: WideString;
+
+		{IAccountsView - Servers tab list}
+		procedure SetServersList(const Items: TArray<TServerDisplayItem>);
+		function GetSelectedServerIndex: Integer;
+		function GetSelectedServerName: WideString;
+		procedure SelectServer(Index: Integer);
+
+		{IAccountsView - Servers tab detail fields}
+		procedure SetServerName(Value: WideString);
+		function GetServerName: WideString;
+		procedure SetServerUrl(Value: WideString);
+		function GetServerUrl: WideString;
+		procedure SetServerApiUrl(Value: WideString);
+		function GetServerApiUrl: WideString;
+		procedure SetServerOAuthUrl(Value: WideString);
+		function GetServerOAuthUrl: WideString;
+		procedure SetServerDispatcherUrl(Value: WideString);
+		function GetServerDispatcherUrl: WideString;
+		procedure SetServerThumbnailUrl(Value: WideString);
+		function GetServerThumbnailUrl: WideString;
+		procedure SetServerPublicUrl(Value: WideString);
+		function GetServerPublicUrl: WideString;
+		procedure SetServerDownloadUrl(Value: WideString);
+		function GetServerDownloadUrl: WideString;
+		procedure SetServerUploadUrl(Value: WideString);
+		function GetServerUploadUrl: WideString;
+		procedure SetServerStatus(Value: WideString);
+
+		{IAccountsView - Servers tab buttons}
+		procedure SetServerApplyButtonEnabled(Value: Boolean);
+		function ConfirmDiscardServerChanges(const ServerName: WideString): TConfirmSaveResult;
+
 		{IAccountsView - Translation}
 		procedure SetAvailableLanguages(const DisplayNames: TArray<WideString>);
 		function GetSelectedLanguageIndex: Integer;
@@ -323,6 +382,14 @@ type
 		property CipherProfileEnabled: Boolean read FCipherProfileEnabled;
 		property CipherChangeWarningResult: Boolean read FCipherChangeWarningResult write FCipherChangeWarningResult;
 		property CipherChangeWarningCallCount: Integer read FCipherChangeWarningCallCount;
+		property ServerComboItems: TArray<WideString> read FServerComboItems;
+		property ServerComboIndex: Integer read FServerComboIndex write FServerComboIndex;
+		property ServerDisplayItems: TArray<TServerDisplayItem> read FServerDisplayItems;
+		property ServerSelectedIndex: Integer read FServerSelectedIndex write FServerSelectedIndex;
+		property ServerApplyButtonEnabled: Boolean read FServerApplyButtonEnabled;
+		property ServerStatus: WideString read FServerStatus;
+		property ServerConfirmResult: TConfirmSaveResult read FServerConfirmResult write FServerConfirmResult;
+		property ServerConfirmCallCount: Integer read FServerConfirmCallCount;
 	end;
 
 	{Mock password manager for testing}
@@ -353,6 +420,7 @@ type
 		FPresenter: TAccountsPresenter;
 		FAccountsManager: IAccountsManager;
 		FSettingsManager: IPluginSettingsManager;
+		FServerProfileManager: IServerProfileManager;
 	public
 		[Setup]
 		procedure Setup;
@@ -579,6 +647,38 @@ type
 		[Test]
 		{Verifies Apply aborts when user declines overwrite confirmation}
 		procedure TestApplyAccount_DuplicateName_DeclinedOverwrite;
+
+		{Server profile CRUD tests}
+		[Test]
+		{Verifies that server combo is populated with "(Default)" on initialize}
+		procedure TestInitializePopulatesServerCombo;
+		[Test]
+		{Verifies adding a new server profile clears detail fields}
+		procedure TestOnAddServerClickClearsFields;
+		[Test]
+		{Verifies applying a server profile persists it}
+		procedure TestOnApplyServerClickSavesProfile;
+		[Test]
+		{Verifies deleting a server profile removes it from the list}
+		procedure TestOnDeleteServerClickRemovesProfile;
+		[Test]
+		{Verifies server field change marks dirty state}
+		procedure TestOnServerFieldChangedSetsDirty;
+		[Test]
+		{Verifies server field change is ignored during programmatic updates}
+		procedure TestOnServerFieldChangedIgnoredDuringUpdate;
+		[Test]
+		{Verifies apply button is disabled after initialize}
+		procedure TestServerApplyDisabledAfterInitialize;
+		[Test]
+		{Verifies applying clears the dirty flag}
+		procedure TestOnApplyServerClickClearsDirty;
+		[Test]
+		{Verifies that server combo change is treated as account field change}
+		procedure TestOnServerComboChangedMarksAccountDirty;
+		[Test]
+		{Verifies selecting a server when dirty prompts for save confirmation}
+		procedure TestOnServerSelectedChecksDirty;
 	end;
 
 implementation
@@ -615,6 +715,11 @@ begin
 	FCipherProfileEnabled := False;
 	FCipherChangeWarningResult := True;
 	FCipherChangeWarningCallCount := 0;
+	FServerComboIndex := 0;
+	FServerSelectedIndex := -1;
+	FServerApplyButtonEnabled := False;
+	FServerConfirmResult := csrDiscard;
+	FServerConfirmCallCount := 0;
 end;
 
 {Global settings}
@@ -1341,6 +1446,168 @@ begin
 	Result := FCipherChangeWarningResult;
 end;
 
+{TMockAccountsView - Server combobox}
+
+procedure TMockAccountsView.SetServerComboItems(const Items: TArray<WideString>);
+begin
+	FServerComboItems := Copy(Items);
+end;
+
+procedure TMockAccountsView.SetServerComboIndex(Value: Integer);
+begin
+	FServerComboIndex := Value;
+end;
+
+function TMockAccountsView.GetServerComboIndex: Integer;
+begin
+	Result := FServerComboIndex;
+end;
+
+function TMockAccountsView.GetServerComboName: WideString;
+begin
+	if (FServerComboIndex >= 0) and (FServerComboIndex <= High(FServerComboItems)) then
+		Result := FServerComboItems[FServerComboIndex]
+	else
+		Result := '';
+end;
+
+{TMockAccountsView - Servers tab list}
+
+procedure TMockAccountsView.SetServersList(const Items: TArray<TServerDisplayItem>);
+begin
+	FServerDisplayItems := Copy(Items);
+end;
+
+function TMockAccountsView.GetSelectedServerIndex: Integer;
+begin
+	Result := FServerSelectedIndex;
+end;
+
+function TMockAccountsView.GetSelectedServerName: WideString;
+begin
+	if (FServerSelectedIndex >= 0) and (FServerSelectedIndex <= High(FServerDisplayItems)) then
+		Result := FServerDisplayItems[FServerSelectedIndex].Name
+	else
+		Result := '';
+end;
+
+procedure TMockAccountsView.SelectServer(Index: Integer);
+begin
+	FServerSelectedIndex := Index;
+end;
+
+{TMockAccountsView - Servers tab detail fields}
+
+procedure TMockAccountsView.SetServerName(Value: WideString);
+begin
+	FServerName := Value;
+end;
+
+function TMockAccountsView.GetServerName: WideString;
+begin
+	Result := FServerName;
+end;
+
+procedure TMockAccountsView.SetServerUrl(Value: WideString);
+begin
+	FServerUrl := Value;
+end;
+
+function TMockAccountsView.GetServerUrl: WideString;
+begin
+	Result := FServerUrl;
+end;
+
+procedure TMockAccountsView.SetServerApiUrl(Value: WideString);
+begin
+	FServerApiUrl := Value;
+end;
+
+function TMockAccountsView.GetServerApiUrl: WideString;
+begin
+	Result := FServerApiUrl;
+end;
+
+procedure TMockAccountsView.SetServerOAuthUrl(Value: WideString);
+begin
+	FServerOAuthUrl := Value;
+end;
+
+function TMockAccountsView.GetServerOAuthUrl: WideString;
+begin
+	Result := FServerOAuthUrl;
+end;
+
+procedure TMockAccountsView.SetServerDispatcherUrl(Value: WideString);
+begin
+	FServerDispatcherUrl := Value;
+end;
+
+function TMockAccountsView.GetServerDispatcherUrl: WideString;
+begin
+	Result := FServerDispatcherUrl;
+end;
+
+procedure TMockAccountsView.SetServerThumbnailUrl(Value: WideString);
+begin
+	FServerThumbnailUrl := Value;
+end;
+
+function TMockAccountsView.GetServerThumbnailUrl: WideString;
+begin
+	Result := FServerThumbnailUrl;
+end;
+
+procedure TMockAccountsView.SetServerPublicUrl(Value: WideString);
+begin
+	FServerPublicUrl := Value;
+end;
+
+function TMockAccountsView.GetServerPublicUrl: WideString;
+begin
+	Result := FServerPublicUrl;
+end;
+
+procedure TMockAccountsView.SetServerDownloadUrl(Value: WideString);
+begin
+	FServerDownloadUrl := Value;
+end;
+
+function TMockAccountsView.GetServerDownloadUrl: WideString;
+begin
+	Result := FServerDownloadUrl;
+end;
+
+procedure TMockAccountsView.SetServerUploadUrl(Value: WideString);
+begin
+	FServerUploadUrl := Value;
+end;
+
+function TMockAccountsView.GetServerUploadUrl: WideString;
+begin
+	Result := FServerUploadUrl;
+end;
+
+procedure TMockAccountsView.SetServerStatus(Value: WideString);
+begin
+	FServerStatus := Value;
+end;
+
+{TMockAccountsView - Servers tab buttons}
+
+procedure TMockAccountsView.SetServerApplyButtonEnabled(Value: Boolean);
+begin
+	FServerApplyButtonEnabled := Value;
+end;
+
+function TMockAccountsView.ConfirmDiscardServerChanges(const ServerName: WideString): TConfirmSaveResult;
+begin
+	Inc(FServerConfirmCallCount);
+	Result := FServerConfirmResult;
+end;
+
+{TMockAccountsView - Translation}
+
 procedure TMockAccountsView.SetAvailableLanguages(const DisplayNames: TArray<WideString>);
 begin
 	{No-op for tests}
@@ -1412,6 +1679,7 @@ begin
 	{Create settings manager with memory config to avoid file access}
 	FSettingsManager := TPluginSettingsManager.Create(TMemoryConfigFile.Create);
 	FAccountsManager := TAccountsManager.Create(TMemoryConfigFile.Create, TNullLogger.Create);
+	FServerProfileManager := TServerProfileManager.Create(TMemoryConfigFile.Create);
 
 	Config.PasswordManager := FPasswordManagerRef;
 	Config.ParentWindow := 0;
@@ -1420,6 +1688,7 @@ begin
 		FViewRef,
 		FAccountsManager,
 		FSettingsManager,
+		FServerProfileManager,
 		Config
 	);
 end;
@@ -1428,6 +1697,7 @@ procedure TAccountsPresenterTest.TearDown;
 begin
 	FPresenter.Free;
 	{Interface references - let reference counting handle cleanup}
+	FServerProfileManager := nil;
 	FAccountsManager := nil;
 	FSettingsManager := nil;
 	FViewRef := nil;
@@ -3214,6 +3484,177 @@ begin
 	Assert.AreEqual(2, AccountsList.Count, 'Both accounts should still exist');
 	AccSettings := FAccountsManager.GetAccountSettings('KeepB');
 	Assert.AreEqual('keepb@mail.ru', AccSettings.Email, 'KeepB should retain its original data');
+end;
+
+{Server profile CRUD tests}
+
+procedure TAccountsPresenterTest.TestInitializePopulatesServerCombo;
+begin
+	FPresenter.Initialize('');
+
+	{Server combo should have at least "(Default)" entry}
+	Assert.IsTrue(Length(FView.ServerComboItems) >= 1, 'Server combo should have at least one item');
+	Assert.AreEqual(DFM_COMBO_DEFAULT_SERVER, FView.ServerComboItems[0], 'First item should be "(Default)"');
+end;
+
+procedure TAccountsPresenterTest.TestOnAddServerClickClearsFields;
+begin
+	FPresenter.Initialize('');
+
+	{Pre-set some values to verify they get cleared}
+	FView.SetServerName('OldName');
+	FView.SetServerUrl('http://old');
+
+	FPresenter.OnAddServerClick;
+
+	Assert.AreEqual('', FView.GetServerName, 'Server name should be cleared');
+	Assert.AreEqual('', FView.GetServerUrl, 'Server URL should be cleared');
+	Assert.AreEqual('', FView.GetServerApiUrl, 'API URL should be cleared');
+end;
+
+procedure TAccountsPresenterTest.TestOnApplyServerClickSavesProfile;
+begin
+	FPresenter.Initialize('');
+
+	{Fill in server profile fields}
+	FView.SetServerName('TestServer');
+	FView.SetServerUrl('http://testserver:8080');
+	FView.SetServerApiUrl('http://testserver:8080/api/v2');
+
+	FPresenter.OnAddServerClick;
+	FView.SetServerName('TestServer');
+	FView.SetServerUrl('http://testserver:8080');
+	FView.SetServerApiUrl('http://testserver:8080/api/v2');
+
+	FPresenter.OnApplyServerClick;
+
+	{Verify the profile was persisted}
+	Assert.IsTrue(Length(FView.ServerDisplayItems) > 0, 'Server list should have at least one entry');
+	Assert.AreEqual('TestServer', FView.ServerDisplayItems[0].Name, 'Server name should match');
+end;
+
+procedure TAccountsPresenterTest.TestOnDeleteServerClickRemovesProfile;
+begin
+	FPresenter.Initialize('');
+
+	{Create a server profile first}
+	FPresenter.OnAddServerClick;
+	FView.SetServerName('ToDelete');
+	FView.SetServerUrl('http://todelete:8080');
+	FPresenter.OnApplyServerClick;
+	Assert.AreEqual(1, Integer(Length(FView.ServerDisplayItems)), 'Should have one server profile');
+
+	{Select it and delete}
+	FView.ServerSelectedIndex := 0;
+	FPresenter.OnDeleteServerClick;
+
+	Assert.AreEqual(0, Integer(Length(FView.ServerDisplayItems)), 'Server list should be empty after deletion');
+end;
+
+procedure TAccountsPresenterTest.TestOnServerFieldChangedSetsDirty;
+begin
+	FPresenter.Initialize('');
+
+	{Create and save a server profile}
+	FPresenter.OnAddServerClick;
+	FView.SetServerName('DirtyTest');
+	FView.SetServerUrl('http://dirtytest');
+	FPresenter.OnApplyServerClick;
+
+	{Verify apply button is disabled after save}
+	Assert.IsFalse(FView.ServerApplyButtonEnabled, 'Apply should be disabled after save');
+
+	{Select the profile}
+	FView.ServerSelectedIndex := 0;
+	FPresenter.OnServerSelected;
+
+	{Change a field - should mark dirty}
+	FPresenter.OnServerFieldChanged;
+
+	Assert.IsTrue(FView.ServerApplyButtonEnabled, 'Apply should be enabled after field change');
+end;
+
+procedure TAccountsPresenterTest.TestOnServerFieldChangedIgnoredDuringUpdate;
+begin
+	FPresenter.Initialize('');
+
+	{During initialization, field changes should not mark dirty}
+	Assert.IsFalse(FView.ServerApplyButtonEnabled, 'Apply should be disabled during initialization');
+end;
+
+procedure TAccountsPresenterTest.TestServerApplyDisabledAfterInitialize;
+begin
+	FPresenter.Initialize('');
+
+	Assert.IsFalse(FView.ServerApplyButtonEnabled, 'Server apply button should be disabled after initialize');
+end;
+
+procedure TAccountsPresenterTest.TestOnApplyServerClickClearsDirty;
+begin
+	FPresenter.Initialize('');
+
+	{Create a profile, make it dirty, then apply}
+	FPresenter.OnAddServerClick;
+	FView.SetServerName('ApplyTest');
+	FView.SetServerUrl('http://applytest');
+	FPresenter.OnServerFieldChanged;
+	Assert.IsTrue(FView.ServerApplyButtonEnabled, 'Apply should be enabled when dirty');
+
+	FPresenter.OnApplyServerClick;
+
+	Assert.IsFalse(FView.ServerApplyButtonEnabled, 'Apply should be disabled after successful apply');
+end;
+
+procedure TAccountsPresenterTest.TestOnServerComboChangedMarksAccountDirty;
+begin
+	FPresenter.Initialize('');
+
+	{Create an account first}
+	FPresenter.OnAddAccountClick;
+	FView.SetAccountName('ComboTest');
+	FView.SetEmail('combo@mail.ru');
+	FView.SetPassword('pass');
+	FPresenter.OnApplyAccountClick;
+
+	{Select the account}
+	FView.SelectedAccountIndex := 0;
+	FPresenter.OnAccountSelected;
+
+	{Verify apply is disabled after loading}
+	Assert.IsFalse(FView.ApplyButtonEnabled, 'Account apply should be disabled after loading');
+
+	{Change server combo -- should mark account dirty}
+	FPresenter.OnServerComboChanged;
+
+	Assert.IsTrue(FView.ApplyButtonEnabled, 'Account apply should be enabled after server combo change');
+end;
+
+procedure TAccountsPresenterTest.TestOnServerSelectedChecksDirty;
+begin
+	FPresenter.Initialize('');
+
+	{Create two server profiles}
+	FPresenter.OnAddServerClick;
+	FView.SetServerName('Server1');
+	FView.SetServerUrl('http://server1');
+	FPresenter.OnApplyServerClick;
+
+	FPresenter.OnAddServerClick;
+	FView.SetServerName('Server2');
+	FView.SetServerUrl('http://server2');
+	FPresenter.OnApplyServerClick;
+
+	{Select first server and modify a field}
+	FView.ServerSelectedIndex := 0;
+	FPresenter.OnServerSelected;
+	FPresenter.OnServerFieldChanged;
+
+	{Switch to second - should trigger confirm dialog}
+	FView.ServerConfirmResult := csrDiscard;
+	FView.ServerSelectedIndex := 1;
+	FPresenter.OnServerSelected;
+
+	Assert.IsTrue(FView.ServerConfirmCallCount > 0, 'Confirm dialog should be shown when switching with dirty state');
 end;
 
 initialization

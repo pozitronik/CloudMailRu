@@ -421,6 +421,8 @@
         <DCCReference Include="Application\Thumbnail\ThumbnailBitmapConverterTest.pas"/>
         <DCCReference Include="..\src\Infrastructure\Localization\TranslationManager.pas"/>
         <DCCReference Include="Infrastructure\Localization\TranslationManagerTest.pas"/>
+        <DCCReference Include="..\src\Infrastructure\HTTP\ServerConfigFetcher.pas"/>
+        <DCCReference Include="Infrastructure\HTTP\ServerConfigFetcherTest.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

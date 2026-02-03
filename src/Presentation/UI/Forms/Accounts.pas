@@ -152,6 +152,33 @@ type
 		StreamingExtensionsListView: TListView;
 		CipherProfileLabel: TLabel;
 		CipherProfileCombo: TComboBox;
+		ServerLabel: TLabel;
+		ServerCombo: TComboBox;
+		ServersTab: TTabSheet;
+		ServerNameLabel: TLabel;
+		ServerUrlLabel: TLabel;
+		ApiUrlLabel: TLabel;
+		OAuthUrlLabel: TLabel;
+		DispatcherUrlLabel: TLabel;
+		ThumbnailUrlLabel: TLabel;
+		ServerPublicUrlLabel: TLabel;
+		DownloadUrlLabel: TLabel;
+		UploadUrlLabel: TLabel;
+		ServerStatusLabel: TLabel;
+		ServersListView: TListView;
+		ServerNameEdit: TEdit;
+		ServerUrlEdit: TEdit;
+		SelfConfigureButton: TButton;
+		ApiUrlEdit: TEdit;
+		OAuthUrlEdit: TEdit;
+		DispatcherUrlEdit: TEdit;
+		ThumbnailUrlEdit: TEdit;
+		ServerPublicUrlEdit: TEdit;
+		DownloadUrlEdit: TEdit;
+		UploadUrlEdit: TEdit;
+		AddServerButton: TButton;
+		DeleteServerButton: TButton;
+		ApplyServerButton: TButton;
 		TranslationTab: TTabSheet;
 		LanguageLabel: TLabel;
 		LanguageList: TListBox;
@@ -185,6 +212,14 @@ type
 		procedure ResetUserAgentButtonClick(Sender: TObject);
 		procedure GlobalSettingsFieldChanged(Sender: TObject);
 		procedure ProxyCBChange(Sender: TObject);
+		procedure ServerComboChange(Sender: TObject);
+		procedure ServersListViewSelectItem(Sender: TObject; Item: TListItem; Selected: Boolean);
+		procedure ServersListViewKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
+		procedure ServerFieldChanged(Sender: TObject);
+		procedure AddServerButtonClick(Sender: TObject);
+		procedure DeleteServerButtonClick(Sender: TObject);
+		procedure ApplyServerButtonClick(Sender: TObject);
+		procedure SelfConfigureButtonClick(Sender: TObject);
 		procedure ApplyTranslationBtnClick(Sender: TObject);
 	private
 		FPresenter: TAccountsPresenter;
@@ -349,6 +384,43 @@ type
 		procedure SetCipherProfileEnabled(Value: Boolean);
 		function ShowCipherChangeWarning: Boolean;
 
+		{IAccountsView - Server combobox on accounts tab}
+		procedure SetServerComboItems(const Items: TArray<WideString>);
+		procedure SetServerComboIndex(Value: Integer);
+		function GetServerComboIndex: Integer;
+		function GetServerComboName: WideString;
+
+		{IAccountsView - Servers tab list}
+		procedure SetServersList(const Items: TArray<TServerDisplayItem>);
+		function GetSelectedServerIndex: Integer;
+		function GetSelectedServerName: WideString;
+		procedure SelectServer(Index: Integer);
+
+		{IAccountsView - Servers tab detail fields}
+		procedure SetServerName(Value: WideString);
+		function GetServerName: WideString;
+		procedure SetServerUrl(Value: WideString);
+		function GetServerUrl: WideString;
+		procedure SetServerApiUrl(Value: WideString);
+		function GetServerApiUrl: WideString;
+		procedure SetServerOAuthUrl(Value: WideString);
+		function GetServerOAuthUrl: WideString;
+		procedure SetServerDispatcherUrl(Value: WideString);
+		function GetServerDispatcherUrl: WideString;
+		procedure SetServerThumbnailUrl(Value: WideString);
+		function GetServerThumbnailUrl: WideString;
+		procedure SetServerPublicUrl(Value: WideString);
+		function GetServerPublicUrl: WideString;
+		procedure SetServerDownloadUrl(Value: WideString);
+		function GetServerDownloadUrl: WideString;
+		procedure SetServerUploadUrl(Value: WideString);
+		function GetServerUploadUrl: WideString;
+		procedure SetServerStatus(Value: WideString);
+
+		{IAccountsView - Servers tab buttons}
+		procedure SetServerApplyButtonEnabled(Value: Boolean);
+		function ConfirmDiscardServerChanges(const ServerName: WideString): TConfirmSaveResult;
+
 		{IAccountsView - Translation tab}
 		procedure SetAvailableLanguages(const DisplayNames: TArray<WideString>);
 		function GetSelectedLanguageIndex: Integer;
@@ -369,7 +441,8 @@ uses
 	System.UITypes,
 	ProxySettings,
 	CloudConstants,
-	ConfigFile;
+	ConfigFile,
+	ServerProfileManager;
 
 {IAccountsView - Global settings}
 
@@ -1183,6 +1256,208 @@ begin
 	Result := MessageDlg(WARN_CIPHER_CHANGE, mtWarning, [mbYes, mbNo], 0) = mrYes;
 end;
 
+{IAccountsView - Server combobox on accounts tab}
+
+procedure TAccountsForm.SetServerComboItems(const Items: TArray<WideString>);
+var
+	I: Integer;
+begin
+	ServerCombo.Items.BeginUpdate;
+	try
+		ServerCombo.Items.Clear;
+		for I := 0 to High(Items) do
+			ServerCombo.Items.Add(Items[I]);
+	finally
+		ServerCombo.Items.EndUpdate;
+	end;
+	if ServerCombo.Items.Count > 0 then
+		ServerCombo.ItemIndex := 0;
+end;
+
+procedure TAccountsForm.SetServerComboIndex(Value: Integer);
+begin
+	ServerCombo.ItemIndex := Value;
+end;
+
+function TAccountsForm.GetServerComboIndex: Integer;
+begin
+	Result := ServerCombo.ItemIndex;
+end;
+
+function TAccountsForm.GetServerComboName: WideString;
+begin
+	if (ServerCombo.ItemIndex >= 0) and (ServerCombo.ItemIndex < ServerCombo.Items.Count) then
+		Result := ServerCombo.Items[ServerCombo.ItemIndex]
+	else
+		Result := '';
+end;
+
+{IAccountsView - Servers tab list}
+
+procedure TAccountsForm.SetServersList(const Items: TArray<TServerDisplayItem>);
+var
+	I: Integer;
+	LI: TListItem;
+begin
+	ServersListView.Items.BeginUpdate;
+	try
+		ServersListView.Items.Clear;
+		for I := 0 to High(Items) do
+		begin
+			LI := ServersListView.Items.Add;
+			LI.Caption := Items[I].Name;
+			LI.SubItems.Add(Items[I].Url);
+		end;
+	finally
+		ServersListView.Items.EndUpdate;
+	end;
+	AutoFitListViewColumns(ServersListView);
+end;
+
+function TAccountsForm.GetSelectedServerIndex: Integer;
+begin
+	if ServersListView.Selected <> nil then
+		Result := ServersListView.Selected.Index
+	else
+		Result := -1;
+end;
+
+function TAccountsForm.GetSelectedServerName: WideString;
+begin
+	if ServersListView.Selected <> nil then
+		Result := ServersListView.Selected.Caption
+	else
+		Result := '';
+end;
+
+procedure TAccountsForm.SelectServer(Index: Integer);
+begin
+	if (Index >= 0) and (Index < ServersListView.Items.Count) then
+	begin
+		ServersListView.Selected := ServersListView.Items[Index];
+		ServersListView.ItemFocused := ServersListView.Items[Index];
+	end else begin
+		ServersListView.Selected := nil;
+		ServersListView.ItemFocused := nil;
+	end;
+end;
+
+{IAccountsView - Servers tab detail fields}
+
+procedure TAccountsForm.SetServerName(Value: WideString);
+begin
+	ServerNameEdit.Text := Value;
+end;
+
+function TAccountsForm.GetServerName: WideString;
+begin
+	Result := ServerNameEdit.Text;
+end;
+
+procedure TAccountsForm.SetServerUrl(Value: WideString);
+begin
+	ServerUrlEdit.Text := Value;
+end;
+
+function TAccountsForm.GetServerUrl: WideString;
+begin
+	Result := ServerUrlEdit.Text;
+end;
+
+procedure TAccountsForm.SetServerApiUrl(Value: WideString);
+begin
+	ApiUrlEdit.Text := Value;
+end;
+
+function TAccountsForm.GetServerApiUrl: WideString;
+begin
+	Result := ApiUrlEdit.Text;
+end;
+
+procedure TAccountsForm.SetServerOAuthUrl(Value: WideString);
+begin
+	OAuthUrlEdit.Text := Value;
+end;
+
+function TAccountsForm.GetServerOAuthUrl: WideString;
+begin
+	Result := OAuthUrlEdit.Text;
+end;
+
+procedure TAccountsForm.SetServerDispatcherUrl(Value: WideString);
+begin
+	DispatcherUrlEdit.Text := Value;
+end;
+
+function TAccountsForm.GetServerDispatcherUrl: WideString;
+begin
+	Result := DispatcherUrlEdit.Text;
+end;
+
+procedure TAccountsForm.SetServerThumbnailUrl(Value: WideString);
+begin
+	ThumbnailUrlEdit.Text := Value;
+end;
+
+function TAccountsForm.GetServerThumbnailUrl: WideString;
+begin
+	Result := ThumbnailUrlEdit.Text;
+end;
+
+procedure TAccountsForm.SetServerPublicUrl(Value: WideString);
+begin
+	ServerPublicUrlEdit.Text := Value;
+end;
+
+function TAccountsForm.GetServerPublicUrl: WideString;
+begin
+	Result := ServerPublicUrlEdit.Text;
+end;
+
+procedure TAccountsForm.SetServerDownloadUrl(Value: WideString);
+begin
+	DownloadUrlEdit.Text := Value;
+end;
+
+function TAccountsForm.GetServerDownloadUrl: WideString;
+begin
+	Result := DownloadUrlEdit.Text;
+end;
+
+procedure TAccountsForm.SetServerUploadUrl(Value: WideString);
+begin
+	UploadUrlEdit.Text := Value;
+end;
+
+function TAccountsForm.GetServerUploadUrl: WideString;
+begin
+	Result := UploadUrlEdit.Text;
+end;
+
+procedure TAccountsForm.SetServerStatus(Value: WideString);
+begin
+	ServerStatusLabel.Caption := Value;
+end;
+
+{IAccountsView - Servers tab buttons}
+
+procedure TAccountsForm.SetServerApplyButtonEnabled(Value: Boolean);
+begin
+	ApplyServerButton.Enabled := Value;
+end;
+
+function TAccountsForm.ConfirmDiscardServerChanges(const ServerName: WideString): TConfirmSaveResult;
+begin
+	case MessageDlg(Format(ASK_SAVE_SERVER_CHANGES, [ServerName]), mtConfirmation, [mbYes, mbNo, mbCancel], 0) of
+		mrYes:
+			Result := csrSave;
+		mrNo:
+			Result := csrDiscard;
+		else
+			Result := csrCancel;
+	end;
+end;
+
 {Event handlers - Accounts tab}
 
 procedure TAccountsForm.AccountsListViewKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -1334,6 +1609,52 @@ end;
 procedure TAccountsForm.NewExtButtonClick(Sender: TObject);
 begin
 	FPresenter.OnAddStreamingExtensionClick;
+end;
+
+{Event handlers - Server combobox on accounts tab}
+
+procedure TAccountsForm.ServerComboChange(Sender: TObject);
+begin
+	FPresenter.OnServerComboChanged;
+end;
+
+{Event handlers - Servers tab}
+
+procedure TAccountsForm.ServersListViewSelectItem(Sender: TObject; Item: TListItem; Selected: Boolean);
+begin
+	if Selected then
+		FPresenter.OnServerSelected;
+end;
+
+procedure TAccountsForm.ServersListViewKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
+begin
+	if Key = VK_DELETE then
+		DeleteServerButton.OnClick(nil);
+end;
+
+procedure TAccountsForm.ServerFieldChanged(Sender: TObject);
+begin
+	FPresenter.OnServerFieldChanged;
+end;
+
+procedure TAccountsForm.AddServerButtonClick(Sender: TObject);
+begin
+	FPresenter.OnAddServerClick;
+end;
+
+procedure TAccountsForm.DeleteServerButtonClick(Sender: TObject);
+begin
+	FPresenter.OnDeleteServerClick;
+end;
+
+procedure TAccountsForm.ApplyServerButtonClick(Sender: TObject);
+begin
+	FPresenter.OnApplyServerClick;
+end;
+
+procedure TAccountsForm.SelfConfigureButtonClick(Sender: TObject);
+begin
+	FPresenter.OnSelfConfigureClick;
 end;
 
 {IAccountsView - Translation tab}
@@ -1506,6 +1827,25 @@ begin
 	StreamingExtensionsListView.Columns[0].Caption := DFM_COL_EXTENSION;
 	StreamingExtensionsListView.Columns[1].Caption := DFM_COL_TYPE;
 
+	{Servers tab}
+	ServersTab.Caption := DFM_TAB_SERVERS;
+	ServerLabel.Caption := DFM_LBL_SERVER;
+	ServerNameLabel.Caption := DFM_LBL_SERVER_NAME;
+	ServerUrlLabel.Caption := DFM_LBL_SERVER_URL;
+	ApiUrlLabel.Caption := DFM_LBL_API_URL;
+	OAuthUrlLabel.Caption := DFM_LBL_OAUTH_URL;
+	DispatcherUrlLabel.Caption := DFM_LBL_DISPATCHER_URL;
+	ThumbnailUrlLabel.Caption := DFM_LBL_THUMBNAIL_URL;
+	ServerPublicUrlLabel.Caption := DFM_LBL_PUBLIC_URL_SERVER;
+	DownloadUrlLabel.Caption := DFM_LBL_DOWNLOAD_URL;
+	UploadUrlLabel.Caption := DFM_LBL_UPLOAD_URL;
+	SelfConfigureButton.Caption := DFM_BTN_SELF_CONFIGURE;
+	AddServerButton.Caption := DFM_BTN_SERVER_NEW;
+	DeleteServerButton.Caption := DFM_BTN_SERVER_DELETE;
+	ApplyServerButton.Caption := DFM_BTN_SERVER_APPLY;
+	ServersListView.Columns[0].Caption := DFM_COL_SERVER_NAME;
+	ServersListView.Columns[1].Caption := DFM_COL_SERVER_URL;
+
 	{Translation tab}
 	LanguageLabel.Caption := DFM_LBL_LANGUAGE;
 
@@ -1569,6 +1909,7 @@ var
 	Form: TAccountsForm;
 	SettingsManager: IPluginSettingsManager;
 	AccountsMgr: IAccountsManager;
+	ServerProfileMgr: IServerProfileManager;
 	Config: TAccountsPresenterConfig;
 	PluginSettingsMgr: TPluginSettingsManager;
 begin
@@ -1580,6 +1921,7 @@ begin
 		PluginSettingsMgr := TPluginSettingsManager.Create();
 		SettingsManager := PluginSettingsMgr;
 		AccountsMgr := TAccountsManager.Create(TIniConfigFile.Create(PluginSettingsMgr.AccountsIniFilePath), TNullLogger.Create);
+		ServerProfileMgr := TServerProfileManager.Create(TIniConfigFile.Create(PluginSettingsMgr.AccountsIniFilePath));
 
 		{Create presenter config}
 		Config.PasswordManager := PasswordManager;
@@ -1587,7 +1929,7 @@ begin
 		Config.LanguageDir := PluginSettingsMgr.ApplicationPath + 'language\';
 
 		{Create presenter}
-		Form.FPresenter := TAccountsPresenter.Create(Form, AccountsMgr, SettingsManager, Config);
+		Form.FPresenter := TAccountsPresenter.Create(Form, AccountsMgr, SettingsManager, ServerProfileMgr, Config);
 
 		try
 			{Initialize presenter - loads all settings to view}

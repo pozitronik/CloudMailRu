@@ -333,6 +333,8 @@ uses
 	ServerProfileTest in 'Domain\ValueObjects\ServerProfileTest.pas',
 	ServerProfileManager in '..\src\Infrastructure\Settings\ServerProfileManager.pas',
 	ServerProfileManagerTest in 'Infrastructure\Settings\ServerProfileManagerTest.pas',
+	ServerConfigFetcher in '..\src\Infrastructure\HTTP\ServerConfigFetcher.pas',
+	ServerConfigFetcherTest in 'Infrastructure\HTTP\ServerConfigFetcherTest.pas',
 	TranslationManager in '..\src\Infrastructure\Localization\TranslationManager.pas',
 	TranslationManagerTest in 'Infrastructure\Localization\TranslationManagerTest.pas';
 

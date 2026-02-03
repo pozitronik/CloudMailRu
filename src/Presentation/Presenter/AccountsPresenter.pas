@@ -17,6 +17,9 @@ uses
 	PasswordManager,
 	AccountsManager,
 	PluginSettingsManager,
+	ServerProfileManager,
+	ServerProfile,
+	CloudEndpoints,
 	WFXTypes;
 
 type
@@ -31,6 +34,12 @@ type
 	TStreamingDisplayItem = record
 		Extension: WideString;
 		TypeLabel: WideString;
+	end;
+
+	{Display data for the servers tab TListView}
+	TServerDisplayItem = record
+		Name: WideString;
+		Url: WideString;
 	end;
 
 	{Result of the confirm-discard-changes dialog}
@@ -204,6 +213,43 @@ type
 		procedure SetSelectedLanguageIndex(Value: Integer);
 		procedure SetTranslationStatus(const Status: WideString);
 
+		{Server combobox on accounts tab}
+		procedure SetServerComboItems(const Items: TArray<WideString>);
+		procedure SetServerComboIndex(Value: Integer);
+		function GetServerComboIndex: Integer;
+		function GetServerComboName: WideString;
+
+		{Servers tab - list}
+		procedure SetServersList(const Items: TArray<TServerDisplayItem>);
+		function GetSelectedServerIndex: Integer;
+		function GetSelectedServerName: WideString;
+		procedure SelectServer(Index: Integer);
+
+		{Servers tab - detail fields}
+		procedure SetServerName(Value: WideString);
+		function GetServerName: WideString;
+		procedure SetServerUrl(Value: WideString);
+		function GetServerUrl: WideString;
+		procedure SetServerApiUrl(Value: WideString);
+		function GetServerApiUrl: WideString;
+		procedure SetServerOAuthUrl(Value: WideString);
+		function GetServerOAuthUrl: WideString;
+		procedure SetServerDispatcherUrl(Value: WideString);
+		function GetServerDispatcherUrl: WideString;
+		procedure SetServerThumbnailUrl(Value: WideString);
+		function GetServerThumbnailUrl: WideString;
+		procedure SetServerPublicUrl(Value: WideString);
+		function GetServerPublicUrl: WideString;
+		procedure SetServerDownloadUrl(Value: WideString);
+		function GetServerDownloadUrl: WideString;
+		procedure SetServerUploadUrl(Value: WideString);
+		function GetServerUploadUrl: WideString;
+		procedure SetServerStatus(Value: WideString);
+
+		{Servers tab - buttons}
+		procedure SetServerApplyButtonEnabled(Value: Boolean);
+		function ConfirmDiscardServerChanges(const ServerName: WideString): TConfirmSaveResult;
+
 		{Refreshes all visible control captions from translated LanguageStrings vars}
 		procedure UpdateFormCaptions;
 	end;
@@ -241,6 +287,14 @@ type
 		FStreamingUpdating: Boolean;
 		FStreamingCancellingSwitch: Boolean;
 
+		{Dirty tracking state - servers tab}
+		FServerSelectedName: WideString;
+		FServerDirty: Boolean;
+		FServerUpdating: Boolean;
+		FServerCancellingSwitch: Boolean;
+		FServerProfileManager: IServerProfileManager;
+		FServerComboNames: TArray<WideString>; {Parallel to combo items: index 0 = empty (default)}
+
 		{Cipher profile state}
 		FCipherProfileIds: TArray<WideString>;
 		FPreviousCipherProfileIndex: Integer;
@@ -277,13 +331,25 @@ type
 		procedure SelectStreamingExtensionByName(const Name: WideString);
 		function CheckStreamingDirty: Boolean;
 		function StreamingFormatToLabel(Format: Integer): WideString;
+
+		{Servers tab helpers}
+		procedure SetServerDirty(Value: Boolean);
+		procedure LoadServerProfileToView(const ProfileName: WideString);
+		procedure ClearServerFields;
+		function SaveServerProfileFromView: Boolean;
+		procedure SelectServerByName(const Name: WideString);
+		function CheckServerDirty: Boolean;
+		procedure RefreshServerComboItems;
+		function ServerNameToComboIndex(const ServerName: WideString): Integer;
+		function ComboIndexToServerName(Index: Integer): WideString;
 	public
-		constructor Create(AView: IAccountsView; AAccountsManager: IAccountsManager; ASettingsManager: IPluginSettingsManager; AConfig: TAccountsPresenterConfig);
+		constructor Create(AView: IAccountsView; AAccountsManager: IAccountsManager; ASettingsManager: IPluginSettingsManager; AServerProfileManager: IServerProfileManager; AConfig: TAccountsPresenterConfig);
 
 		{Initialization}
 		procedure Initialize(const InitialAccount: WideString = '');
 		procedure LoadGlobalSettingsToView;
 		procedure RefreshStreamingExtensionsList;
+		procedure RefreshServersList;
 
 		{Account operations}
 		procedure OnAccountSelected;
@@ -312,6 +378,15 @@ type
 		procedure OnDeleteStreamingExtensionClick;
 		procedure OnStreamingFieldChanged;
 
+		{Server profile operations}
+		procedure OnServerSelected;
+		procedure OnAddServerClick;
+		procedure OnDeleteServerClick;
+		procedure OnApplyServerClick;
+		procedure OnSelfConfigureClick;
+		procedure OnServerFieldChanged;
+		procedure OnServerComboChanged;
+
 		{Translation operations}
 		procedure LoadTranslationSettingsToView;
 		procedure OnApplyTranslationClick;
@@ -337,12 +412,13 @@ uses
 const
 	DOT = '.';
 
-constructor TAccountsPresenter.Create(AView: IAccountsView; AAccountsManager: IAccountsManager; ASettingsManager: IPluginSettingsManager; AConfig: TAccountsPresenterConfig);
+constructor TAccountsPresenter.Create(AView: IAccountsView; AAccountsManager: IAccountsManager; ASettingsManager: IPluginSettingsManager; AServerProfileManager: IServerProfileManager; AConfig: TAccountsPresenterConfig);
 begin
 	inherited Create;
 	FView := AView;
 	FAccountsManager := AAccountsManager;
 	FSettingsManager := ASettingsManager;
+	FServerProfileManager := AServerProfileManager;
 	FPasswordManager := AConfig.PasswordManager;
 	FParentWindow := AConfig.ParentWindow;
 	FTranslationLanguageDir := AConfig.LanguageDir;
@@ -357,6 +433,10 @@ begin
 	FStreamingDirty := False;
 	FStreamingUpdating := False;
 	FStreamingCancellingSwitch := False;
+	FServerSelectedName := '';
+	FServerDirty := False;
+	FServerUpdating := False;
+	FServerCancellingSwitch := False;
 end;
 
 procedure TAccountsPresenter.Initialize(const InitialAccount: WideString);
@@ -384,6 +464,10 @@ begin
 
 	{Load streaming extensions}
 	RefreshStreamingExtensionsList;
+
+	{Load server profiles}
+	RefreshServersList;
+	RefreshServerComboItems;
 
 	{Load translation settings}
 	LoadTranslationSettingsToView;
@@ -591,6 +675,9 @@ begin
 		FView.SetCipherProfileIndex(CipherProfileIdToIndex(AccSettings.CipherProfileId));
 		FPreviousCipherProfileIndex := FView.GetCipherProfileIndex;
 
+		{Server combo: find index matching account's server profile name}
+		FView.SetServerComboIndex(ServerNameToComboIndex(AccSettings.Server));
+
 		{Update encrypt controls state}
 		OnEncryptModeChanged;
 		{Update panels visibility}
@@ -622,6 +709,7 @@ begin
 		FPreviousCipherProfileIndex := 0;
 		FView.SetEncryptPasswordButtonEnabled(False);
 		FView.SetCipherProfileEnabled(False);
+		FView.SetServerComboIndex(0);
 		OnAccountTypeChanged;
 	finally
 		FUpdating := WasUpdating;
@@ -691,6 +779,7 @@ begin
 	AccSettings.PublicUrl := FView.GetPublicUrl;
 	AccSettings.EncryptFilesMode := FView.GetEncryptFilesMode;
 	AccSettings.CipherProfileId := IndexToCipherProfileId(FView.GetCipherProfileIndex);
+	AccSettings.Server := ComboIndexToServerName(FView.GetServerComboIndex);
 	AccSettings.AuthMethod := CLOUD_AUTH_METHOD_OAUTH_APP;
 	AccSettings.UseAppPassword := True;
 
@@ -1289,6 +1378,315 @@ begin
 	OnStreamingExtensionSelected;
 end;
 
+{Server tab helpers}
+
+procedure TAccountsPresenter.SetServerDirty(Value: Boolean);
+begin
+	FServerDirty := Value;
+	FView.SetServerApplyButtonEnabled(Value);
+end;
+
+procedure TAccountsPresenter.RefreshServersList;
+var
+	Names: TWSList;
+	Items: TArray<TServerDisplayItem>;
+	Profile: TServerProfile;
+	I: Integer;
+begin
+	Names := FServerProfileManager.GetProfileNames;
+	SetLength(Items, Names.Count);
+	for I := 0 to Names.Count - 1 do
+	begin
+		Profile := FServerProfileManager.GetProfile(Names[I]);
+		Items[I].Name := Names[I];
+		Items[I].Url := Profile.ServerUrl;
+	end;
+	FView.SetServersList(Items);
+end;
+
+procedure TAccountsPresenter.RefreshServerComboItems;
+var
+	Names: TWSList;
+	ComboItems: TArray<WideString>;
+	I: Integer;
+begin
+	Names := FServerProfileManager.GetProfileNames;
+
+	{Index 0 = "(Default)" with empty server name}
+	SetLength(FServerComboNames, Names.Count + 1);
+	SetLength(ComboItems, Names.Count + 1);
+	FServerComboNames[0] := '';
+	ComboItems[0] := DFM_COMBO_DEFAULT_SERVER;
+	for I := 0 to Names.Count - 1 do
+	begin
+		FServerComboNames[I + 1] := Names[I];
+		ComboItems[I + 1] := Names[I];
+	end;
+	FView.SetServerComboItems(ComboItems);
+end;
+
+function TAccountsPresenter.ServerNameToComboIndex(const ServerName: WideString): Integer;
+var
+	I: Integer;
+begin
+	for I := 0 to High(FServerComboNames) do
+		if FServerComboNames[I] = ServerName then
+			Exit(I);
+	Result := 0; {Default}
+end;
+
+function TAccountsPresenter.ComboIndexToServerName(Index: Integer): WideString;
+begin
+	if (Index >= 0) and (Index <= High(FServerComboNames)) then
+		Result := FServerComboNames[Index]
+	else
+		Result := '';
+end;
+
+procedure TAccountsPresenter.LoadServerProfileToView(const ProfileName: WideString);
+var
+	Profile: TServerProfile;
+	WasUpdating: Boolean;
+begin
+	WasUpdating := FServerUpdating;
+	FServerUpdating := True;
+	try
+		Profile := FServerProfileManager.GetProfile(ProfileName);
+		FServerSelectedName := ProfileName;
+
+		FView.SetServerName(ProfileName);
+		FView.SetServerUrl(Profile.ServerUrl);
+		FView.SetServerApiUrl(Profile.Endpoints.ApiBase);
+		FView.SetServerOAuthUrl(Profile.Endpoints.OAuthUrl);
+		FView.SetServerDispatcherUrl(Profile.Endpoints.DispatcherUrl);
+		FView.SetServerThumbnailUrl(Profile.Endpoints.ThumbnailUrl);
+		FView.SetServerPublicUrl(Profile.Endpoints.PublicUrl);
+		FView.SetServerDownloadUrl(Profile.Endpoints.DownloadUrl);
+		FView.SetServerUploadUrl(Profile.Endpoints.UploadUrl);
+		FView.SetServerStatus('');
+	finally
+		FServerUpdating := WasUpdating;
+	end;
+	SetServerDirty(False);
+end;
+
+procedure TAccountsPresenter.ClearServerFields;
+var
+	WasUpdating: Boolean;
+begin
+	WasUpdating := FServerUpdating;
+	FServerUpdating := True;
+	try
+		FServerSelectedName := '';
+		FView.SetServerName('');
+		FView.SetServerUrl('');
+		FView.SetServerApiUrl('');
+		FView.SetServerOAuthUrl('');
+		FView.SetServerDispatcherUrl('');
+		FView.SetServerThumbnailUrl('');
+		FView.SetServerPublicUrl('');
+		FView.SetServerDownloadUrl('');
+		FView.SetServerUploadUrl('');
+		FView.SetServerStatus('');
+	finally
+		FServerUpdating := WasUpdating;
+	end;
+	SetServerDirty(False);
+end;
+
+function TAccountsPresenter.SaveServerProfileFromView: Boolean;
+var
+	Profile: TServerProfile;
+	ProfileName: WideString;
+	IsRename: Boolean;
+begin
+	Result := False;
+
+	ProfileName := FView.GetServerName;
+	if ProfileName = '' then
+		Exit;
+
+	IsRename := (FServerSelectedName <> '') and (FServerSelectedName <> ProfileName);
+
+	Profile := Default(TServerProfile);
+	Profile.Name := ProfileName;
+	Profile.ServerUrl := FView.GetServerUrl;
+	Profile.Endpoints.ApiBase := FView.GetServerApiUrl;
+	Profile.Endpoints.OAuthUrl := FView.GetServerOAuthUrl;
+	Profile.Endpoints.DispatcherUrl := FView.GetServerDispatcherUrl;
+	Profile.Endpoints.ThumbnailUrl := FView.GetServerThumbnailUrl;
+	Profile.Endpoints.PublicUrl := FView.GetServerPublicUrl;
+	Profile.Endpoints.DownloadUrl := FView.GetServerDownloadUrl;
+	Profile.Endpoints.UploadUrl := FView.GetServerUploadUrl;
+
+	if IsRename then
+		FServerProfileManager.RenameProfile(FServerSelectedName, ProfileName);
+
+	FServerProfileManager.SetProfile(Profile);
+	Result := True;
+end;
+
+procedure TAccountsPresenter.SelectServerByName(const Name: WideString);
+var
+	Names: TWSList;
+	I: Integer;
+begin
+	if Name = '' then
+		Exit;
+
+	Names := FServerProfileManager.GetProfileNames;
+	for I := 0 to Names.Count - 1 do
+		if Names[I] = Name then
+		begin
+			FView.SelectServer(I);
+			Exit;
+		end;
+end;
+
+function TAccountsPresenter.CheckServerDirty: Boolean;
+begin
+	Result := True;
+	if not FServerDirty then
+		Exit;
+
+	FServerUpdating := True;
+	try
+		case FView.ConfirmDiscardServerChanges(FServerSelectedName) of
+			csrSave:
+				SaveServerProfileFromView;
+			csrCancel:
+			begin
+				FServerCancellingSwitch := True;
+				SelectServerByName(FServerSelectedName);
+				Result := False;
+			end;
+			{csrDiscard: just proceed}
+		end;
+	finally
+		FServerUpdating := False;
+	end;
+end;
+
+{Server profile operations}
+
+procedure TAccountsPresenter.OnServerFieldChanged;
+begin
+	if not FServerUpdating then
+		SetServerDirty(True);
+end;
+
+procedure TAccountsPresenter.OnServerSelected;
+var
+	ServerName: WideString;
+begin
+	if FServerUpdating then
+		Exit;
+
+	if FServerCancellingSwitch then
+	begin
+		FServerCancellingSwitch := False;
+		FServerUpdating := True;
+		try
+			SelectServerByName(FServerSelectedName);
+		finally
+			FServerUpdating := False;
+		end;
+		Exit;
+	end;
+
+	if not CheckServerDirty then
+		Exit;
+
+	ServerName := FView.GetSelectedServerName;
+	if ServerName <> '' then
+		LoadServerProfileToView(ServerName)
+	else
+		ClearServerFields;
+end;
+
+procedure TAccountsPresenter.OnAddServerClick;
+begin
+	if not CheckServerDirty then
+		Exit;
+
+	FView.SelectServer(-1);
+	ClearServerFields;
+end;
+
+procedure TAccountsPresenter.OnDeleteServerClick;
+var
+	ServerName: WideString;
+begin
+	ServerName := FView.GetSelectedServerName;
+	if ServerName = '' then
+		Exit;
+
+	FServerProfileManager.DeleteProfile(ServerName);
+	SetServerDirty(False);
+
+	RefreshServersList;
+	RefreshServerComboItems;
+	OnServerSelected;
+end;
+
+procedure TAccountsPresenter.OnApplyServerClick;
+var
+	SavedName: WideString;
+begin
+	SavedName := FView.GetServerName;
+	if not SaveServerProfileFromView then
+		Exit;
+
+	SetServerDirty(False);
+	FSettingsApplied := True;
+
+	RefreshServersList;
+	RefreshServerComboItems;
+
+	FServerUpdating := True;
+	try
+		SelectServerByName(SavedName);
+	finally
+		FServerUpdating := False;
+	end;
+	OnServerSelected;
+end;
+
+procedure TAccountsPresenter.OnSelfConfigureClick;
+var
+	ServerUrl: WideString;
+	Endpoints: TCloudEndpoints;
+begin
+	ServerUrl := FView.GetServerUrl;
+	if ServerUrl = '' then
+	begin
+		FView.SetServerStatus('Server URL is required');
+		Exit;
+	end;
+
+	{Infer default endpoints from the server URL and populate fields}
+	Endpoints := TServerProfileManager.InferEndpointsFromServerUrl(ServerUrl);
+
+	FServerUpdating := True;
+	try
+		FView.SetServerApiUrl(Endpoints.ApiBase);
+		FView.SetServerOAuthUrl(Endpoints.OAuthUrl);
+		FView.SetServerDispatcherUrl(Endpoints.DispatcherUrl);
+		FView.SetServerThumbnailUrl(Endpoints.ThumbnailUrl);
+		FView.SetServerPublicUrl(Endpoints.PublicUrl);
+		FView.SetServerStatus('Endpoints inferred from URL');
+	finally
+		FServerUpdating := False;
+	end;
+	SetServerDirty(True);
+end;
+
+procedure TAccountsPresenter.OnServerComboChanged;
+begin
+	{Server combo change on accounts tab is treated as a field change}
+	OnFieldChanged;
+end;
+
 {Translation operations}
 
 procedure TAccountsPresenter.LoadTranslationSettingsToView;
@@ -1384,6 +1782,7 @@ begin
 		FView.SelectAccount(SavedAccountIndex);
 		RefreshStreamingExtensionsList;
 		FView.SelectStreamingExtension(SavedStreamingIndex);
+		RefreshServerComboItems;
 	finally
 		FUpdating := False;
 	end;

@@ -176,9 +176,9 @@ object AccountsForm: TAccountsForm
       end
       object SharesPanel: TPanel
         Left = 272
-        Top = 90
+        Top = 114
         Width = 338
-        Height = 322
+        Height = 298
         Anchors = [akLeft, akTop, akRight, akBottom]
         BevelOuter = bvNone
         ShowCaption = False
@@ -284,11 +284,30 @@ object AccountsForm: TAccountsForm
           OnClick = PublicRBClick
         end
       end
+      object ServerLabel: TLabel
+        Left = 272
+        Top = 91
+        Width = 31
+        Height = 13
+        Caption = 'Server'
+      end
+      object ServerCombo: TComboBox
+        Left = 310
+        Top = 88
+        Width = 300
+        Height = 21
+        Style = csDropDownList
+        Anchors = [akLeft, akTop, akRight]
+        TabOrder = 8
+        OnChange = ServerComboChange
+        Items.Strings = (
+          '(Default)')
+      end
       object AccountsPanel: TPanel
         Left = 272
-        Top = 90
+        Top = 114
         Width = 338
-        Height = 322
+        Height = 298
         Anchors = [akLeft, akTop, akRight, akBottom]
         BevelOuter = bvNone
         ShowCaption = False
@@ -1314,6 +1333,227 @@ object AccountsForm: TAccountsForm
         ViewStyle = vsReport
         OnKeyUp = StreamingExtensionsListViewKeyUp
         OnSelectItem = StreamingExtensionsListViewSelectItem
+      end
+    end
+    object ServersTab: TTabSheet
+      Caption = 'Servers'
+      ImageIndex = 6
+      DesignSize = (
+        614
+        448)
+      object ServerNameLabel: TLabel
+        Left = 272
+        Top = 4
+        Width = 62
+        Height = 13
+        Caption = 'Server name'
+      end
+      object ServerUrlLabel: TLabel
+        Left = 272
+        Top = 42
+        Width = 54
+        Height = 13
+        Caption = 'Server URL'
+      end
+      object ApiUrlLabel: TLabel
+        Left = 272
+        Top = 98
+        Width = 36
+        Height = 13
+        Caption = 'API URL'
+      end
+      object OAuthUrlLabel: TLabel
+        Left = 272
+        Top = 138
+        Width = 52
+        Height = 13
+        Caption = 'OAuth URL'
+      end
+      object DispatcherUrlLabel: TLabel
+        Left = 272
+        Top = 178
+        Width = 75
+        Height = 13
+        Caption = 'Dispatcher URL'
+      end
+      object ThumbnailUrlLabel: TLabel
+        Left = 272
+        Top = 218
+        Width = 72
+        Height = 13
+        Caption = 'Thumbnail URL'
+      end
+      object ServerPublicUrlLabel: TLabel
+        Left = 272
+        Top = 258
+        Width = 51
+        Height = 13
+        Caption = 'Public URL'
+      end
+      object DownloadUrlLabel: TLabel
+        Left = 272
+        Top = 298
+        Width = 67
+        Height = 13
+        Caption = 'Download URL'
+      end
+      object UploadUrlLabel: TLabel
+        Left = 272
+        Top = 338
+        Width = 55
+        Height = 13
+        Caption = 'Upload URL'
+      end
+      object ServerStatusLabel: TLabel
+        Left = 272
+        Top = 380
+        Width = 3
+        Height = 13
+        Anchors = [akLeft, akBottom]
+      end
+      object ServersListView: TListView
+        Left = 4
+        Top = 4
+        Width = 262
+        Height = 410
+        Anchors = [akLeft, akTop, akBottom]
+        Columns = <
+          item
+            Caption = 'Name'
+            Width = 120
+          end
+          item
+            Caption = 'URL'
+            Width = 120
+          end>
+        ReadOnly = True
+        RowSelect = True
+        TabOrder = 0
+        ViewStyle = vsReport
+        OnKeyUp = ServersListViewKeyUp
+        OnSelectItem = ServersListViewSelectItem
+      end
+      object ServerNameEdit: TEdit
+        Left = 272
+        Top = 18
+        Width = 338
+        Height = 21
+        Anchors = [akLeft, akTop, akRight]
+        TabOrder = 3
+        OnChange = ServerFieldChanged
+      end
+      object ServerUrlEdit: TEdit
+        Left = 272
+        Top = 56
+        Width = 240
+        Height = 21
+        Anchors = [akLeft, akTop, akRight]
+        TabOrder = 4
+        OnChange = ServerFieldChanged
+      end
+      object SelfConfigureButton: TButton
+        Left = 518
+        Top = 56
+        Width = 92
+        Height = 21
+        Anchors = [akTop, akRight]
+        Caption = 'Self-Configure'
+        TabOrder = 5
+        OnClick = SelfConfigureButtonClick
+      end
+      object ApiUrlEdit: TEdit
+        Left = 272
+        Top = 114
+        Width = 338
+        Height = 21
+        Anchors = [akLeft, akTop, akRight]
+        TabOrder = 6
+        OnChange = ServerFieldChanged
+      end
+      object OAuthUrlEdit: TEdit
+        Left = 272
+        Top = 154
+        Width = 338
+        Height = 21
+        Anchors = [akLeft, akTop, akRight]
+        TabOrder = 7
+        OnChange = ServerFieldChanged
+      end
+      object DispatcherUrlEdit: TEdit
+        Left = 272
+        Top = 194
+        Width = 338
+        Height = 21
+        Anchors = [akLeft, akTop, akRight]
+        TabOrder = 8
+        OnChange = ServerFieldChanged
+      end
+      object ThumbnailUrlEdit: TEdit
+        Left = 272
+        Top = 234
+        Width = 338
+        Height = 21
+        Anchors = [akLeft, akTop, akRight]
+        TabOrder = 9
+        OnChange = ServerFieldChanged
+      end
+      object ServerPublicUrlEdit: TEdit
+        Left = 272
+        Top = 274
+        Width = 338
+        Height = 21
+        Anchors = [akLeft, akTop, akRight]
+        TabOrder = 10
+        OnChange = ServerFieldChanged
+      end
+      object DownloadUrlEdit: TEdit
+        Left = 272
+        Top = 314
+        Width = 338
+        Height = 21
+        Anchors = [akLeft, akTop, akRight]
+        TabOrder = 11
+        OnChange = ServerFieldChanged
+      end
+      object UploadUrlEdit: TEdit
+        Left = 272
+        Top = 354
+        Width = 338
+        Height = 21
+        Anchors = [akLeft, akTop, akRight]
+        TabOrder = 12
+        OnChange = ServerFieldChanged
+      end
+      object AddServerButton: TButton
+        Left = 4
+        Top = 419
+        Width = 125
+        Height = 25
+        Anchors = [akLeft, akBottom]
+        Caption = 'New'
+        TabOrder = 1
+        OnClick = AddServerButtonClick
+      end
+      object DeleteServerButton: TButton
+        Left = 141
+        Top = 419
+        Width = 125
+        Height = 25
+        Anchors = [akLeft, akBottom]
+        Caption = 'Delete'
+        TabOrder = 2
+        OnClick = DeleteServerButtonClick
+      end
+      object ApplyServerButton: TButton
+        Left = 486
+        Top = 419
+        Width = 124
+        Height = 25
+        Anchors = [akRight, akBottom]
+        Caption = 'Apply'
+        Enabled = False
+        TabOrder = 13
+        OnClick = ApplyServerButtonClick
       end
     end
     object TranslationTab: TTabSheet
