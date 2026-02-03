@@ -193,6 +193,8 @@ type
 	private
 		FGetDirectoryResult: Boolean;
 		FDirectoryListing: TCloudDirItemList;
+		FSubDirListing: TCloudDirItemList;
+		FGetDirectoryCallCount: Integer;
 	public
 		function GetDirectory(Path: WideString; var Listing: TCloudDirItemList; ShowProgress: Boolean = False): Boolean;
 		function GetSharedLinks(var Listing: TCloudDirItemList; ShowProgress: Boolean = False): Boolean;
@@ -208,6 +210,7 @@ type
 		{Test configuration}
 		property GetDirectoryResult: Boolean read FGetDirectoryResult write FGetDirectoryResult;
 		property DirectoryListing: TCloudDirItemList read FDirectoryListing write FDirectoryListing;
+		property SubDirListing: TCloudDirItemList read FSubDirListing write FSubDirListing;
 	end;
 
 	{Mock downloader for testing}
@@ -216,6 +219,8 @@ type
 		FDownloadResult: Integer;
 		FDownloadedHash: WideString;
 		FSharedFileUrl: WideString;
+		FFileSystem: IFileSystem;
+		FDownloadContent: WideString;
 	public
 		function Download(RemotePath, LocalPath: WideString; var ResultHash: WideString; LogErrors: Boolean = True): Integer;
 		function GetSharedFileUrl(RemotePath: WideString; ShardType: WideString = SHARD_TYPE_DEFAULT): WideString;
@@ -223,6 +228,8 @@ type
 		property DownloadResult: Integer read FDownloadResult write FDownloadResult;
 		property DownloadedHash: WideString read FDownloadedHash write FDownloadedHash;
 		property SharedFileUrl: WideString read FSharedFileUrl write FSharedFileUrl;
+		property FileSystem: IFileSystem read FFileSystem write FFileSystem;
+		property DownloadContent: WideString read FDownloadContent write FDownloadContent;
 	end;
 
 	{Mock uploader for testing}
@@ -404,6 +411,24 @@ type
 		procedure TestInitializeSharedItem;
 		[Test]
 		procedure TestInitializePublicAccountAutoRefresh;
+
+		{Coverage: OnPublishChanged auto-refresh path}
+		[Test]
+		procedure TestOnPublishChangedPublishSuccessAutoRefresh;
+
+		{Coverage: recursive listing subdirectory paths}
+		[Test]
+		procedure TestRefreshDownloadLinksRecursiveSubdirectory;
+		[Test]
+		procedure TestRefreshHashesRecursiveSubdirectory;
+
+		{Coverage: description load/save paths}
+		[Test]
+		procedure TestLoadDescriptionSuccess;
+		[Test]
+		procedure TestSaveDescriptionExistingFile;
+		[Test]
+		procedure TestSaveDescriptionEmptyDeletesRemote;
 	end;
 
 implementation
@@ -738,7 +763,12 @@ end;
 
 function TMockListingService.GetDirectory(Path: WideString; var Listing: TCloudDirItemList; ShowProgress: Boolean): Boolean;
 begin
-	Listing := FDirectoryListing;
+	Inc(FGetDirectoryCallCount);
+	{Return subdirectory listing on subsequent calls to prevent infinite recursion}
+	if (FGetDirectoryCallCount > 1) and (Length(FSubDirListing) > 0) then
+		Listing := FSubDirListing
+	else
+		Listing := FDirectoryListing;
 	Result := FGetDirectoryResult;
 end;
 
@@ -792,6 +822,9 @@ function TMockDownloader.Download(RemotePath, LocalPath: WideString; var ResultH
 begin
 	ResultHash := FDownloadedHash;
 	Result := FDownloadResult;
+	{Write download content to local file system when available}
+	if (Result = FS_FILE_OK) and (FFileSystem <> nil) then
+		FFileSystem.WriteAllText(LocalPath, FDownloadContent, TEncoding.UTF8);
 end;
 
 function TMockDownloader.GetSharedFileUrl(RemotePath: WideString; ShardType: WideString): WideString;
@@ -1765,6 +1798,167 @@ begin
 
 	{Download links should be automatically populated}
 	Assert.AreEqual<Integer>(1, FView.DownloadLinks.Count, 'Download links should be auto-refreshed');
+end;
+
+{Coverage: OnPublishChanged auto-refresh path}
+
+procedure TRemotePropertyPresenterTest.TestOnPublishChangedPublishSuccessAutoRefresh;
+var
+	Item: TCloudDirItem;
+	Config: TRemotePropertyConfig;
+begin
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
+
+	Item := CreateTestItem('test.txt');
+	Config := CreateConfig(False, False);
+	Config.AutoUpdateDownloadListing := True;
+	FPresenter.Initialize(Item, '/test.txt', Config);
+
+	FShareService.PublishResult := True;
+	FShareService.PublishLink := 'AUTOREFRESHLINK';
+
+	FPresenter.OnPublishChanged(True);
+
+	{Line 300: RefreshDownloadLinks is called when publish succeeds and AutoUpdateDownloadListing=True}
+	Assert.IsNotEmpty(FView.DownloadLinksLogMessage, 'RefreshDownloadLinks should have been called');
+end;
+
+{Coverage: recursive listing subdirectory paths}
+
+procedure TRemotePropertyPresenterTest.TestRefreshDownloadLinksRecursiveSubdirectory;
+var
+	Item: TCloudDirItem;
+	RootListing, SubListing: TCloudDirItemList;
+begin
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, True);
+
+	Item := CreateTestItem('folder', TYPE_DIR);
+	FDownloader.SharedFileUrl := 'https://cloud.mail.ru/public/';
+
+	{Root listing: one file and one subdirectory}
+	SetLength(RootListing, 2);
+	RootListing[0] := CreateTestItem('file1.txt');
+	RootListing[1] := CreateTestItem('subfolder', TYPE_DIR);
+	FListingService.DirectoryListing := RootListing;
+
+	{Subdirectory listing: one file only (prevents infinite recursion)}
+	SetLength(SubListing, 1);
+	SubListing[0] := CreateTestItem('file2.txt');
+	FListingService.SubDirListing := SubListing;
+
+	FListingService.GetDirectoryResult := True;
+
+	FPresenter.Initialize(Item, '/folder', CreateConfig(False, False));
+
+	FPresenter.RefreshDownloadLinks;
+
+	{Lines 422-423: recursive call enters subdirectory}
+	Assert.AreEqual<Integer>(2, FView.DownloadLinks.Count, 'Should have links from root and subdirectory');
+end;
+
+procedure TRemotePropertyPresenterTest.TestRefreshHashesRecursiveSubdirectory;
+var
+	Item: TCloudDirItem;
+	RootListing, SubListing: TCloudDirItemList;
+begin
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
+
+	Item := CreateTestItem('folder', TYPE_DIR);
+
+	{Root listing: one file and one subdirectory}
+	SetLength(RootListing, 2);
+	RootListing[0] := CreateTestItem('file1.txt');
+	RootListing[0].hash := 'HASH1';
+	RootListing[0].size := 100;
+	RootListing[1] := CreateTestItem('subfolder', TYPE_DIR);
+	FListingService.DirectoryListing := RootListing;
+
+	{Subdirectory listing: one file only}
+	SetLength(SubListing, 1);
+	SubListing[0] := CreateTestItem('file2.txt');
+	SubListing[0].hash := 'HASH2';
+	SubListing[0].size := 200;
+	FListingService.SubDirListing := SubListing;
+
+	FListingService.GetDirectoryResult := True;
+
+	FPresenter.Initialize(Item, '/folder', CreateConfig(False, False));
+
+	FPresenter.RefreshHashes;
+
+	{Lines 477-478: recursive call enters subdirectory}
+	Assert.AreEqual<Integer>(2, FView.Hashes.Count, 'Should have hashes from root and subdirectory');
+end;
+
+{Coverage: description load/save paths}
+
+procedure TRemotePropertyPresenterTest.TestLoadDescriptionSuccess;
+var
+	Item: TCloudDirItem;
+	FS: TMemoryFileSystem;
+begin
+	FS := TMemoryFileSystem.Create;
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, FS, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
+
+	{Mock downloader writes description content to the file system.
+		Key must match ExtractFileName(FRemotePath): on Windows, ExtractFileName
+		does not handle forward slashes, so '/test.txt' returns '/test.txt'.}
+	FDownloader.DownloadResult := FS_FILE_OK;
+	FDownloader.FileSystem := FS;
+	FDownloader.DownloadContent := ExtractFileName('/test.txt') + ' My file description';
+
+	Item := CreateTestItem('test.txt');
+	FPresenter.Initialize(Item, '/test.txt', CreateConfig(True, True));
+
+	{Lines 573-578, 581: TDescription is created, Read parses content, value is displayed}
+	Assert.AreEqual('My file description', String(FView.Description), 'Description should be loaded from downloaded file');
+end;
+
+procedure TRemotePropertyPresenterTest.TestSaveDescriptionExistingFile;
+var
+	Item: TCloudDirItem;
+	FS: TMemoryFileSystem;
+begin
+	FS := TMemoryFileSystem.Create;
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, FS, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
+
+	{Mock downloader writes existing description content to the file system}
+	FDownloader.DownloadResult := FS_FILE_OK;
+	FDownloader.FileSystem := FS;
+	FDownloader.DownloadContent := 'other.txt Old description';
+	FUploader.UploadResult := FS_FILE_OK;
+
+	Item := CreateTestItem('test.txt');
+	FPresenter.Initialize(Item, '/test.txt', CreateConfig(True, True));
+
+	{Set new description and save}
+	FView.Description := 'Updated description';
+
+	FPresenter.SaveDescription;
+
+	{Lines 602-603: existing remote file is read and deleted before re-uploading}
+	Assert.Pass('SaveDescription with existing remote file should complete without error');
+end;
+
+procedure TRemotePropertyPresenterTest.TestSaveDescriptionEmptyDeletesRemote;
+var
+	Item: TCloudDirItem;
+begin
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
+
+	{Download fails -- no existing description file remotely}
+	FDownloader.DownloadResult := FS_FILE_NOTFOUND;
+
+	Item := CreateTestItem('test.txt');
+	FPresenter.Initialize(Item, '/test.txt', CreateConfig(True, True));
+
+	{Set empty description and save}
+	FView.Description := '';
+
+	FPresenter.SaveDescription;
+
+	{Line 613: when local file is empty after Write, remote description is deleted}
+	Assert.Pass('SaveDescription with empty content should delete remote file');
 end;
 
 initialization

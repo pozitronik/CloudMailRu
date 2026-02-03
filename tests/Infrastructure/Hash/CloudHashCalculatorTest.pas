@@ -182,6 +182,8 @@ type
 		procedure TestAllStrategies_ProduceSameHashForBoundary;
 		[Test]
 		procedure TestAllStrategies_ProduceSameHashFor1MB;
+		[Test]
+		procedure TestCalculateHashPath_FileOpenException_ReturnsEmpty;
 	end;
 
 	{Tests for IsOpenSSLAvailable helper function}
@@ -206,6 +208,8 @@ type
 		procedure TestOpenSSL_NullContext_FallsBackToDelphi;
 		[Test]
 		procedure TestOpenSSL_DigestInitFailure_FallsBackToDelphi;
+		[Test]
+		procedure TestOpenSSL_SuccessfulDigest_ProducesHash;
 	end;
 
 	{Tests for CreateHashCalculator factory with mock OpenSSL}
@@ -1623,6 +1627,24 @@ begin
 	end;
 end;
 
+procedure THashCalculatorFactoryTest.TestCalculateHashPath_FileOpenException_ReturnsEmpty;
+var
+	FS: TMemoryFileSystem;
+	Calculator: ICloudHashCalculator;
+	Hash: WideString;
+begin
+	{When FileExists returns True but TBufferedFileStream.Create throws,
+		CalculateHash(Path) should catch the exception and return empty.
+		Covers line 209 in CloudHashCalculator.pas}
+	FS := TMemoryFileSystem.Create;
+	FS.SetFileContent('fake_file.txt', 'content');
+
+	Calculator := TCloudHashCalculator.Create(TNullProgress.Create, FS);
+	Hash := Calculator.CalculateHash('fake_file.txt');
+
+	Assert.AreEqual('', Hash, 'File open exception should return empty hash');
+end;
+
 { TIsOpenSSLAvailableTest }
 
 procedure TIsOpenSSLAvailableTest.TestIsOpenSSLAvailable_NilProvider_ReturnsFalse;
@@ -1743,6 +1765,35 @@ begin
 		DelphiHash := DelphiCalc.CalculateHash(Stream, 'test');
 
 		Assert.AreEqual(DelphiHash, OpenSSLHash, 'DigestInit failure fallback must produce same hash as Delphi');
+	finally
+		Stream.Free;
+	end;
+end;
+
+procedure TOpenSSLFallbackTest.TestOpenSSL_SuccessfulDigest_ProducesHash;
+var
+	OpenSSLCalc: ICloudHashCalculator;
+	Stream: TMemoryStream;
+	Hash: WideString;
+	Data: AnsiString;
+	MockProvider: TMockOpenSSLProvider;
+begin
+	{When all OpenSSL functions succeed, the EVP digest pipeline completes.
+		Covers lines 408-439 in CloudHashCalculator.pas}
+	MockProvider := TMockOpenSSLProvider.Create(True);
+	OpenSSLCalc := TCloudHashCalculatorOpenSSL.Create(TNullProgress.Create, TWindowsFileSystem.Create, MockProvider);
+
+	Stream := TMemoryStream.Create;
+	try
+		Data := 'Test content for OpenSSL happy path test!';
+		Stream.Write(Data[1], Length(Data));
+		Stream.Position := 0;
+
+		Hash := OpenSSLCalc.CalculateHash(Stream, 'test');
+
+		{Mock stubs produce non-deterministic hash values, but the code path is exercised.
+			Verify we get a 40-char hex string (20 bytes as hex).}
+		Assert.AreEqual(40, Length(Hash), 'OpenSSL digest should produce 40-char hex string');
 	finally
 		Stream.Free;
 	end;
