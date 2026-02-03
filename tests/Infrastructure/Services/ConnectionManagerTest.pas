@@ -134,19 +134,56 @@ type
 		procedure TestConnectionCreatedWithEmptyCipherProfileInSettings;
 	end;
 
-	{Mock password manager returning configurable GetPassword results}
+	{Mock password manager returning configurable GetPassword results.
+		Supports a queue for returning different results on successive calls.}
 	TMockPasswordManagerForConn = class(TInterfacedObject, IPasswordManager)
 	private
 		FGetPasswordResult: Integer;
 		FGetPasswordValue: WideString;
 		FSetPasswordResult: Integer;
 		FSetPasswordCalled: Boolean;
+		FGetPasswordQueue: TList<TPair<Integer, WideString>>;
 	public
 		constructor Create(GetPasswordResult: Integer; const PasswordValue: WideString = '');
+		destructor Destroy; override;
 		function GetPassword(Key: WideString; var Password: WideString): Integer;
 		function SetPassword(Key, Password: WideString): Integer;
+		{Enqueues a (ResultCode, PasswordValue) pair for GetPassword to dequeue on the next call}
+		procedure QueueGetPassword(ResultCode: Integer; const PasswordValue: WideString);
 		property SetPasswordResult: Integer read FSetPasswordResult write FSetPasswordResult;
 		property SetPasswordCalled: Boolean read FSetPasswordCalled;
+	end;
+
+	{Mock cipher validator with queue-based CheckPasswordGUID results}
+	TMockCipherValidatorForConn = class(TInterfacedObject, ICipherValidator)
+	private
+		FCheckQueue: TList<Boolean>;
+		FCryptedGUIDResult: WideString;
+	public
+		constructor Create;
+		destructor Destroy; override;
+		function GetCryptedGUID(const Password: WideString): WideString;
+		function CheckPasswordGUID(const Password, ControlGUID: WideString): Boolean;
+		{Enqueues a Boolean result for the next CheckPasswordGUID call}
+		procedure QueueCheckResult(Value: Boolean);
+		property CryptedGUIDResult: WideString read FCryptedGUIDResult write FCryptedGUIDResult;
+	end;
+
+	{Mock logger that captures log calls for assertion}
+	TMockLoggerForConn = class(TInterfacedObject, ILogger)
+	private
+		FLogCalls: Integer;
+		FLastLogLevel: Integer;
+		FLastMsgType: Integer;
+		FLastLogString: WideString;
+	public
+		constructor Create;
+		procedure Log(LogLevel, MsgType: Integer; LogString: WideString); overload;
+		procedure Log(LogLevel, MsgType: Integer; LogString: WideString; const Args: array of const); overload;
+		property LogCalls: Integer read FLogCalls;
+		property LastLogLevel: Integer read FLastLogLevel;
+		property LastMsgType: Integer read FLastMsgType;
+		property LastLogString: WideString read FLastLogString;
 	end;
 
 	{Mock password UI returning configurable AskPassword/AskAction results}
@@ -181,6 +218,38 @@ type
 		[Test]
 		{Non-public account with proxy configured -> exercises GetProxyPassword}
 		procedure TestInit_NonPublicWithProxy_PasswordFromINI;
+
+		[Test]
+		{EncryptModeAlways + FS_FILE_READERROR falls through to AskOnce, user cancels}
+		procedure TestInit_EncryptAlways_ReadError_FallsToAskOnce;
+
+		[Test]
+		{GUID mismatch in Init logs wrong-password error via logger}
+		procedure TestInit_GUIDMismatch_LogsWrongPassword;
+
+		[Test]
+		{GUID mismatch in GetFilesPassword, user chooses to update GUID}
+		procedure TestGetFilesPassword_GUIDMismatch_UserUpdatesGUID;
+
+		[Test]
+		{GUID mismatch in GetFilesPassword, user ignores mismatch}
+		procedure TestGetFilesPassword_GUIDMismatch_UserIgnores;
+
+		[Test]
+		{GUID mismatch in GetFilesPassword, user retries password entry}
+		procedure TestGetFilesPassword_GUIDMismatch_UserRetries;
+
+		[Test]
+		{Proxy password from TC password manager -> sets HTTPManager proxy password}
+		procedure TestGetProxyPassword_TCManagerFound;
+
+		[Test]
+		{Proxy with empty password, user enters, SetPassword succeeds -> SwitchProxyPasswordStorage called}
+		procedure TestGetProxyPassword_EmptyPwd_UserEnters_SaveOK;
+
+		[Test]
+		{Proxy with empty password, user enters, SetPassword fails -> SwitchProxyPasswordStorage not called}
+		procedure TestGetProxyPassword_EmptyPwd_UserEnters_SaveFails;
 	end;
 
 implementation
@@ -188,6 +257,7 @@ implementation
 uses
 	CloudConstants,
 	SettingsConstants,
+	LanguageStrings,
 	WFXTypes,
 	CipherProfile,
 	BCryptProvider,
@@ -195,6 +265,7 @@ uses
 	MockCloudHTTP,
 	CloudHTTP,
 	Vcl.Controls,
+	System.UITypes,
 	System.SysUtils;
 
 {TMockAccountsManager}
@@ -711,18 +782,102 @@ begin
 	FGetPasswordValue := PasswordValue;
 	FSetPasswordResult := FS_FILE_OK;
 	FSetPasswordCalled := False;
+	FGetPasswordQueue := TList<TPair<Integer, WideString>>.Create;
+end;
+
+destructor TMockPasswordManagerForConn.Destroy;
+begin
+	FreeAndNil(FGetPasswordQueue);
+	inherited;
 end;
 
 function TMockPasswordManagerForConn.GetPassword(Key: WideString; var Password: WideString): Integer;
+var
+	Pair: TPair<Integer, WideString>;
 begin
-	Password := FGetPasswordValue;
-	Result := FGetPasswordResult;
+	{Dequeue from queue if available, otherwise use fixed values}
+	if FGetPasswordQueue.Count > 0 then
+	begin
+		Pair := FGetPasswordQueue[0];
+		FGetPasswordQueue.Delete(0);
+		Password := Pair.Value;
+		Result := Pair.Key;
+	end else
+	begin
+		Password := FGetPasswordValue;
+		Result := FGetPasswordResult;
+	end;
 end;
 
 function TMockPasswordManagerForConn.SetPassword(Key, Password: WideString): Integer;
 begin
 	FSetPasswordCalled := True;
 	Result := FSetPasswordResult;
+end;
+
+procedure TMockPasswordManagerForConn.QueueGetPassword(ResultCode: Integer; const PasswordValue: WideString);
+begin
+	FGetPasswordQueue.Add(TPair<Integer, WideString>.Create(ResultCode, PasswordValue));
+end;
+
+{TMockCipherValidatorForConn}
+
+constructor TMockCipherValidatorForConn.Create;
+begin
+	inherited Create;
+	FCheckQueue := TList<Boolean>.Create;
+	FCryptedGUIDResult := '';
+end;
+
+destructor TMockCipherValidatorForConn.Destroy;
+begin
+	FreeAndNil(FCheckQueue);
+	inherited;
+end;
+
+function TMockCipherValidatorForConn.GetCryptedGUID(const Password: WideString): WideString;
+begin
+	Result := FCryptedGUIDResult;
+end;
+
+function TMockCipherValidatorForConn.CheckPasswordGUID(const Password, ControlGUID: WideString): Boolean;
+begin
+	{Dequeue from queue if available, otherwise return True}
+	if FCheckQueue.Count > 0 then
+	begin
+		Result := FCheckQueue[0];
+		FCheckQueue.Delete(0);
+	end else
+		Result := True;
+end;
+
+procedure TMockCipherValidatorForConn.QueueCheckResult(Value: Boolean);
+begin
+	FCheckQueue.Add(Value);
+end;
+
+{TMockLoggerForConn}
+
+constructor TMockLoggerForConn.Create;
+begin
+	inherited Create;
+	FLogCalls := 0;
+	FLastLogLevel := 0;
+	FLastMsgType := 0;
+	FLastLogString := '';
+end;
+
+procedure TMockLoggerForConn.Log(LogLevel, MsgType: Integer; LogString: WideString);
+begin
+	Inc(FLogCalls);
+	FLastLogLevel := LogLevel;
+	FLastMsgType := MsgType;
+	FLastLogString := LogString;
+end;
+
+procedure TMockLoggerForConn.Log(LogLevel, MsgType: Integer; LogString: WideString; const Args: array of const);
+begin
+	Log(LogLevel, MsgType, Format(LogString, Args));
 end;
 
 {TMockPasswordUIForConn}
@@ -879,6 +1034,362 @@ begin
 	try
 		Cloud := Manager.Get('proxy_test');
 		Assert.IsNotNull(Cloud, 'Connection should be created with proxy password from INI');
+	finally
+		Manager.Destroy;
+	end;
+end;
+
+procedure TConnectionManagerEncryptionTest.TestInit_EncryptAlways_ReadError_FallsToAskOnce;
+var
+	Manager: TConnectionManager;
+	AccountsMgr: TMockAccountsManager;
+	PasswordMgr: TMockPasswordManagerForConn;
+	PasswordUI: TMockPasswordUIForConn;
+	Cloud: TCloudMailRu;
+begin
+	{FS_FILE_READERROR from TC password store switches to AskOnce mode.
+	 User cancels AskPassword -> GetFilesPassword returns False, but Init still completes.}
+	AccountsMgr := TMockAccountsManager.Create;
+	AccountsMgr.FAccountSettings.PublicAccount := False;
+	AccountsMgr.FAccountSettings.EncryptFilesMode := EncryptModeAlways;
+	AccountsMgr.FAccountSettings.CryptedGUIDFiles := '';
+
+	PasswordMgr := TMockPasswordManagerForConn.Create(FS_FILE_READERROR, '');
+	PasswordUI := TMockPasswordUIForConn.Create(mrCancel);
+
+	TCipherProfileRegistry.Reset;
+	TCipherProfileRegistry.Initialize(nil, TBCryptProvider.Create);
+
+	Manager := TConnectionManager.Create(TMockPluginSettingsManager.Create, AccountsMgr,
+		TNullHTTPManager.Create, PasswordUI,
+		TNullCipherValidator.Create, TNullFileSystem.Create,
+		TNullProgress.Create, TNullLogger.Create, TNullRequest.Create,
+		PasswordMgr, TNullTCHandler.Create, TNullAuthStrategyFactory.Create,
+		TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create);
+	try
+		Cloud := Manager.Get('readerror_test');
+		Assert.IsNotNull(Cloud, 'Connection should be created even when password retrieval fails');
+	finally
+		Manager.Destroy;
+	end;
+end;
+
+procedure TConnectionManagerEncryptionTest.TestInit_GUIDMismatch_LogsWrongPassword;
+var
+	Manager: TConnectionManager;
+	AccountsMgr: TMockAccountsManager;
+	PasswordMgr: TMockPasswordManagerForConn;
+	MockValidator: TMockCipherValidatorForConn;
+	MockLog: TMockLoggerForConn;
+	Cloud: TCloudMailRu;
+begin
+	{When GUID check fails in Init (line 172), logger receives ERR_WRONG_ENCRYPT_PASSWORD.
+	 CipherValidator queue: [True, False] -- True for GetFilesPassword (line 241),
+	 False for Init (line 172).}
+	AccountsMgr := TMockAccountsManager.Create;
+	AccountsMgr.FAccountSettings.PublicAccount := False;
+	AccountsMgr.FAccountSettings.EncryptFilesMode := EncryptModeAlways;
+	AccountsMgr.FAccountSettings.CryptedGUIDFiles := 'stored-guid';
+
+	PasswordMgr := TMockPasswordManagerForConn.Create(FS_FILE_OK, 'test-password');
+
+	MockValidator := TMockCipherValidatorForConn.Create;
+	MockValidator.QueueCheckResult(True); {GetFilesPassword line 241 -- passes}
+	MockValidator.QueueCheckResult(False); {Init line 172 -- fails -> logs error}
+
+	MockLog := TMockLoggerForConn.Create;
+
+	TCipherProfileRegistry.Reset;
+	TCipherProfileRegistry.Initialize(nil, TBCryptProvider.Create);
+
+	Manager := TConnectionManager.Create(TMockPluginSettingsManager.Create, AccountsMgr,
+		TNullHTTPManager.Create, TNullPasswordUIProvider.Create,
+		MockValidator, TNullFileSystem.Create,
+		TNullProgress.Create, MockLog, TNullRequest.Create,
+		PasswordMgr, TNullTCHandler.Create, TNullAuthStrategyFactory.Create,
+		TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create);
+	try
+		Cloud := Manager.Get('guid_mismatch_log_test');
+		Assert.IsNotNull(Cloud, 'Connection should be created despite GUID mismatch');
+		{The CONNECT log + the error log}
+		Assert.IsTrue(MockLog.LogCalls >= 2, 'Logger should have received at least 2 calls');
+		Assert.AreEqual(LOG_LEVEL_ERROR, MockLog.LastLogLevel, 'Last log should be error level');
+		Assert.AreEqual(msgtype_importanterror, MockLog.LastMsgType, 'Last log should be important error');
+		Assert.AreEqual(ERR_WRONG_ENCRYPT_PASSWORD, MockLog.LastLogString, 'Last log should be wrong password message');
+	finally
+		Manager.Destroy;
+	end;
+end;
+
+procedure TConnectionManagerEncryptionTest.TestGetFilesPassword_GUIDMismatch_UserUpdatesGUID;
+var
+	Manager: TConnectionManager;
+	AccountsMgr: TMockAccountsManager;
+	PasswordMgr: TMockPasswordManagerForConn;
+	MockValidator: TMockCipherValidatorForConn;
+	PasswordUI: TMockPasswordUIForConn;
+	Cloud: TCloudMailRu;
+begin
+	{GUID mismatch in GetFilesPassword, user selects mrYes (update GUID).
+	 CipherValidator queue: [False, True] -- False triggers AskAction dialog,
+	 True for Init's GUID check (line 172). GetCryptedGUID returns 'new-guid'.}
+	AccountsMgr := TMockAccountsManager.Create;
+	AccountsMgr.FAccountSettings.PublicAccount := False;
+	AccountsMgr.FAccountSettings.EncryptFilesMode := EncryptModeAlways;
+	AccountsMgr.FAccountSettings.CryptedGUIDFiles := 'old-guid';
+
+	PasswordMgr := TMockPasswordManagerForConn.Create(FS_FILE_OK, 'test-password');
+
+	MockValidator := TMockCipherValidatorForConn.Create;
+	MockValidator.QueueCheckResult(False); {GetFilesPassword line 241 -- mismatch}
+	MockValidator.QueueCheckResult(True); {Init line 172 -- passes after GUID update}
+	MockValidator.CryptedGUIDResult := 'new-guid';
+
+	PasswordUI := TMockPasswordUIForConn.Create(mrCancel);
+	PasswordUI.AskActionResult := mrYes;
+
+	TCipherProfileRegistry.Reset;
+	TCipherProfileRegistry.Initialize(nil, TBCryptProvider.Create);
+
+	Manager := TConnectionManager.Create(TMockPluginSettingsManager.Create, AccountsMgr,
+		TNullHTTPManager.Create, PasswordUI,
+		MockValidator, TNullFileSystem.Create,
+		TNullProgress.Create, TNullLogger.Create, TNullRequest.Create,
+		PasswordMgr, TNullTCHandler.Create, TNullAuthStrategyFactory.Create,
+		TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create);
+	try
+		Cloud := Manager.Get('guid_update_test');
+		Assert.IsNotNull(Cloud, 'Connection should be created after GUID update');
+		Assert.IsTrue(AccountsMgr.SetCryptedGUIDCalled, 'SetCryptedGUID should have been called');
+		Assert.AreEqual('new-guid', string(AccountsMgr.LastCryptedGUID), 'GUID should be updated to new value');
+	finally
+		Manager.Destroy;
+	end;
+end;
+
+procedure TConnectionManagerEncryptionTest.TestGetFilesPassword_GUIDMismatch_UserIgnores;
+var
+	Manager: TConnectionManager;
+	AccountsMgr: TMockAccountsManager;
+	PasswordMgr: TMockPasswordManagerForConn;
+	MockValidator: TMockCipherValidatorForConn;
+	PasswordUI: TMockPasswordUIForConn;
+	Cloud: TCloudMailRu;
+begin
+	{GUID mismatch in GetFilesPassword, user selects mrNo (ignore).
+	 CipherValidator queue: [False, False] -- both calls fail (GetFilesPassword and Init).}
+	AccountsMgr := TMockAccountsManager.Create;
+	AccountsMgr.FAccountSettings.PublicAccount := False;
+	AccountsMgr.FAccountSettings.EncryptFilesMode := EncryptModeAlways;
+	AccountsMgr.FAccountSettings.CryptedGUIDFiles := 'old-guid';
+
+	PasswordMgr := TMockPasswordManagerForConn.Create(FS_FILE_OK, 'test-password');
+
+	MockValidator := TMockCipherValidatorForConn.Create;
+	MockValidator.QueueCheckResult(False); {GetFilesPassword line 241 -- mismatch}
+	MockValidator.QueueCheckResult(False); {Init line 172 -- also fails -> logs error}
+
+	PasswordUI := TMockPasswordUIForConn.Create(mrCancel);
+	PasswordUI.AskActionResult := mrNo;
+
+	TCipherProfileRegistry.Reset;
+	TCipherProfileRegistry.Initialize(nil, TBCryptProvider.Create);
+
+	Manager := TConnectionManager.Create(TMockPluginSettingsManager.Create, AccountsMgr,
+		TNullHTTPManager.Create, PasswordUI,
+		MockValidator, TNullFileSystem.Create,
+		TNullProgress.Create, TNullLogger.Create, TNullRequest.Create,
+		PasswordMgr, TNullTCHandler.Create, TNullAuthStrategyFactory.Create,
+		TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create);
+	try
+		Cloud := Manager.Get('guid_ignore_test');
+		Assert.IsNotNull(Cloud, 'Connection should be created when user ignores GUID mismatch');
+		Assert.IsFalse(AccountsMgr.SetCryptedGUIDCalled, 'SetCryptedGUID should not be called on ignore');
+	finally
+		Manager.Destroy;
+	end;
+end;
+
+procedure TConnectionManagerEncryptionTest.TestGetFilesPassword_GUIDMismatch_UserRetries;
+var
+	Manager: TConnectionManager;
+	AccountsMgr: TMockAccountsManager;
+	PasswordMgr: TMockPasswordManagerForConn;
+	MockValidator: TMockCipherValidatorForConn;
+	PasswordUI: TMockPasswordUIForConn;
+	Cloud: TCloudMailRu;
+begin
+	{GUID mismatch in GetFilesPassword, user selects mrRetry.
+	 1st iteration: CheckPasswordGUID=False -> AskAction=mrRetry -> PasswordActionRetry=True.
+	 2nd iteration: new password fetched from queue, CheckPasswordGUID=True -> loop exits.
+	 Init's GUID check also passes.}
+	AccountsMgr := TMockAccountsManager.Create;
+	AccountsMgr.FAccountSettings.PublicAccount := False;
+	AccountsMgr.FAccountSettings.EncryptFilesMode := EncryptModeAlways;
+	AccountsMgr.FAccountSettings.CryptedGUIDFiles := 'stored-guid';
+
+	PasswordMgr := TMockPasswordManagerForConn.Create(FS_FILE_OK, 'correct-password');
+	{Queue: 1st GetPassword returns 'wrong' password, fallback returns 'correct-password'}
+	PasswordMgr.QueueGetPassword(FS_FILE_OK, 'wrong-password');
+
+	MockValidator := TMockCipherValidatorForConn.Create;
+	MockValidator.QueueCheckResult(False); {1st iteration GetFilesPassword -- mismatch with 'wrong'}
+	MockValidator.QueueCheckResult(True); {2nd iteration GetFilesPassword -- matches with 'correct'}
+	MockValidator.QueueCheckResult(True); {Init line 172 -- passes}
+
+	PasswordUI := TMockPasswordUIForConn.Create(mrCancel);
+	PasswordUI.AskActionResult := mrRetry;
+
+	TCipherProfileRegistry.Reset;
+	TCipherProfileRegistry.Initialize(nil, TBCryptProvider.Create);
+
+	Manager := TConnectionManager.Create(TMockPluginSettingsManager.Create, AccountsMgr,
+		TNullHTTPManager.Create, PasswordUI,
+		MockValidator, TNullFileSystem.Create,
+		TNullProgress.Create, TNullLogger.Create, TNullRequest.Create,
+		PasswordMgr, TNullTCHandler.Create, TNullAuthStrategyFactory.Create,
+		TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create);
+	try
+		Cloud := Manager.Get('guid_retry_test');
+		Assert.IsNotNull(Cloud, 'Connection should be created after retry with correct password');
+	finally
+		Manager.Destroy;
+	end;
+end;
+
+procedure TConnectionManagerEncryptionTest.TestGetProxyPassword_TCManagerFound;
+var
+	Manager: TConnectionManager;
+	AccountsMgr: TMockAccountsManager;
+	MockHTTPMgr: TMockHTTPManager;
+	PasswordMgr: TMockPasswordManagerForConn;
+	ProxyConnSettings: TConnectionSettings;
+	Cloud: TCloudMailRu;
+begin
+	{Non-public account, proxy with UseTCPasswordManager=True and password found in TC store.
+	 GetProxyPassword retrieves password and sets it on HTTPManager.}
+	AccountsMgr := TMockAccountsManager.Create;
+	AccountsMgr.FAccountSettings.PublicAccount := False;
+	AccountsMgr.FAccountSettings.EncryptFilesMode := EncryptModeNone;
+
+	MockHTTPMgr := TMockHTTPManager.Create(TNullCloudHTTP.Create);
+	ProxyConnSettings := Default(TConnectionSettings);
+	ProxyConnSettings.ProxySettings.ProxyType := ProxyHTTP;
+	ProxyConnSettings.ProxySettings.User := 'user';
+	ProxyConnSettings.ProxySettings.Password := '';
+	ProxyConnSettings.ProxySettings.UseTCPasswordManager := True;
+	MockHTTPMgr.SetConnectionSettings(ProxyConnSettings);
+
+	PasswordMgr := TMockPasswordManagerForConn.Create(FS_FILE_OK, 'tc-proxy-pass');
+
+	Manager := TConnectionManager.Create(TMockPluginSettingsManager.Create, AccountsMgr,
+		MockHTTPMgr, TNullPasswordUIProvider.Create,
+		TNullCipherValidator.Create, TNullFileSystem.Create,
+		TNullProgress.Create, TNullLogger.Create, TNullRequest.Create,
+		PasswordMgr, TNullTCHandler.Create, TNullAuthStrategyFactory.Create,
+		TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create);
+	try
+		Cloud := Manager.Get('proxy_tc_test');
+		Assert.IsNotNull(Cloud, 'Connection should be created with proxy password from TC manager');
+		Assert.AreEqual('tc-proxy-pass', string(MockHTTPMgr.GetConnectionSettings.ProxySettings.Password),
+			'Proxy password should be set on HTTPManager');
+	finally
+		Manager.Destroy;
+	end;
+end;
+
+procedure TConnectionManagerEncryptionTest.TestGetProxyPassword_EmptyPwd_UserEnters_SaveOK;
+var
+	Manager: TConnectionManager;
+	AccountsMgr: TMockAccountsManager;
+	MockHTTPMgr: TMockHTTPManager;
+	PasswordMgr: TMockPasswordManagerForConn;
+	PasswordUI: TMockPasswordUIForConn;
+	PluginSettingsMgr: TMockPluginSettingsManager;
+	ProxyConnSettings: TConnectionSettings;
+	Cloud: TCloudMailRu;
+begin
+	{Proxy with empty password, not using TC password manager.
+	 User enters password via AskPassword, SetPassword succeeds -> SwitchProxyPasswordStorage called.}
+	AccountsMgr := TMockAccountsManager.Create;
+	AccountsMgr.FAccountSettings.PublicAccount := False;
+	AccountsMgr.FAccountSettings.EncryptFilesMode := EncryptModeNone;
+
+	MockHTTPMgr := TMockHTTPManager.Create(TNullCloudHTTP.Create);
+	ProxyConnSettings := Default(TConnectionSettings);
+	ProxyConnSettings.ProxySettings.ProxyType := ProxyHTTP;
+	ProxyConnSettings.ProxySettings.User := 'user';
+	ProxyConnSettings.ProxySettings.Password := '';
+	ProxyConnSettings.ProxySettings.UseTCPasswordManager := False;
+	MockHTTPMgr.SetConnectionSettings(ProxyConnSettings);
+
+	PasswordMgr := TMockPasswordManagerForConn.Create(FS_FILE_NOTFOUND, '');
+	PasswordMgr.SetPasswordResult := FS_FILE_OK;
+
+	PasswordUI := TMockPasswordUIForConn.Create(mrOk, 'user-proxy-pass');
+
+	PluginSettingsMgr := TMockPluginSettingsManager.Create;
+
+	Manager := TConnectionManager.Create(PluginSettingsMgr, AccountsMgr,
+		MockHTTPMgr, PasswordUI,
+		TNullCipherValidator.Create, TNullFileSystem.Create,
+		TNullProgress.Create, TNullLogger.Create, TNullRequest.Create,
+		PasswordMgr, TNullTCHandler.Create, TNullAuthStrategyFactory.Create,
+		TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create);
+	try
+		Cloud := Manager.Get('proxy_save_ok_test');
+		Assert.IsNotNull(Cloud, 'Connection should be created after user enters proxy password');
+		Assert.IsTrue(PasswordMgr.SetPasswordCalled, 'SetPassword should have been called');
+		Assert.IsTrue(PluginSettingsMgr.SwitchProxyPasswordStorageCalled,
+			'SwitchProxyPasswordStorage should be called when password saved to TC store');
+	finally
+		Manager.Destroy;
+	end;
+end;
+
+procedure TConnectionManagerEncryptionTest.TestGetProxyPassword_EmptyPwd_UserEnters_SaveFails;
+var
+	Manager: TConnectionManager;
+	AccountsMgr: TMockAccountsManager;
+	MockHTTPMgr: TMockHTTPManager;
+	PasswordMgr: TMockPasswordManagerForConn;
+	PasswordUI: TMockPasswordUIForConn;
+	PluginSettingsMgr: TMockPluginSettingsManager;
+	ProxyConnSettings: TConnectionSettings;
+	Cloud: TCloudMailRu;
+begin
+	{Same as SaveOK but SetPassword returns FS_FILE_WRITEERROR -> SwitchProxyPasswordStorage not called.}
+	AccountsMgr := TMockAccountsManager.Create;
+	AccountsMgr.FAccountSettings.PublicAccount := False;
+	AccountsMgr.FAccountSettings.EncryptFilesMode := EncryptModeNone;
+
+	MockHTTPMgr := TMockHTTPManager.Create(TNullCloudHTTP.Create);
+	ProxyConnSettings := Default(TConnectionSettings);
+	ProxyConnSettings.ProxySettings.ProxyType := ProxyHTTP;
+	ProxyConnSettings.ProxySettings.User := 'user';
+	ProxyConnSettings.ProxySettings.Password := '';
+	ProxyConnSettings.ProxySettings.UseTCPasswordManager := False;
+	MockHTTPMgr.SetConnectionSettings(ProxyConnSettings);
+
+	PasswordMgr := TMockPasswordManagerForConn.Create(FS_FILE_NOTFOUND, '');
+	PasswordMgr.SetPasswordResult := FS_FILE_WRITEERROR;
+
+	PasswordUI := TMockPasswordUIForConn.Create(mrOk, 'user-proxy-pass');
+
+	PluginSettingsMgr := TMockPluginSettingsManager.Create;
+
+	Manager := TConnectionManager.Create(PluginSettingsMgr, AccountsMgr,
+		MockHTTPMgr, PasswordUI,
+		TNullCipherValidator.Create, TNullFileSystem.Create,
+		TNullProgress.Create, TNullLogger.Create, TNullRequest.Create,
+		PasswordMgr, TNullTCHandler.Create, TNullAuthStrategyFactory.Create,
+		TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create);
+	try
+		Cloud := Manager.Get('proxy_save_fail_test');
+		Assert.IsNotNull(Cloud, 'Connection should be created even when password save fails');
+		Assert.IsTrue(PasswordMgr.SetPasswordCalled, 'SetPassword should have been called');
+		Assert.IsFalse(PluginSettingsMgr.SwitchProxyPasswordStorageCalled,
+			'SwitchProxyPasswordStorage should NOT be called when password save fails');
 	finally
 		Manager.Destroy;
 	end;
