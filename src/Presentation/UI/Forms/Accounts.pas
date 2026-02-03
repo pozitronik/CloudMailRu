@@ -189,6 +189,7 @@ type
 	private
 		FPresenter: TAccountsPresenter;
 		procedure AutoFitListViewColumns(LV: TListView);
+		procedure RepopulateCombo(Combo: TComboBox; const Items: array of WideString);
 
 		{IAccountsView - Global settings}
 		procedure SetLoadSSLFromPluginDir(Value: Boolean);
@@ -1371,6 +1372,35 @@ begin
 	TranslationStatusLabel.Caption := Status;
 end;
 
+{Combo repopulation helper: preserves ItemIndex, suppresses OnChange}
+
+procedure TAccountsForm.RepopulateCombo(Combo: TComboBox; const Items: array of WideString);
+var
+	SavedIndex: Integer;
+	SavedOnChange: TNotifyEvent;
+	I: Integer;
+begin
+	SavedIndex := Combo.ItemIndex;
+	SavedOnChange := Combo.OnChange;
+	Combo.OnChange := nil;
+	try
+		Combo.Items.BeginUpdate;
+		try
+			Combo.Items.Clear;
+			for I := 0 to High(Items) do
+				Combo.Items.Add(Items[I]);
+		finally
+			Combo.Items.EndUpdate;
+		end;
+		if (SavedIndex >= 0) and (SavedIndex < Combo.Items.Count) then
+			Combo.ItemIndex := SavedIndex
+		else if Combo.Items.Count > 0 then
+			Combo.ItemIndex := 0;
+	finally
+		Combo.OnChange := SavedOnChange;
+	end;
+end;
+
 {IAccountsView - Translation support}
 
 procedure TAccountsForm.UpdateFormCaptions;
@@ -1478,6 +1508,18 @@ begin
 
 	{Translation tab}
 	LanguageLabel.Caption := DFM_LBL_LANGUAGE;
+
+	{Combobox items}
+	RepopulateCombo(EncryptFilesCombo, [DFM_OPT_ENCRYPT_NO, DFM_OPT_ENCRYPT_ALWAYS, DFM_OPT_ENCRYPT_ASK_ONCE]);
+	RepopulateCombo(ChunkOverwriteModeCombo, [DFM_OPT_SILENTLY_OVERWRITE, DFM_OPT_IGNORE, DFM_OPT_ABORT_OPERATION]);
+	RepopulateCombo(DeleteFailOnUploadModeCombo, [DFM_OPT_ASK_USER, DFM_OPT_IGNORE_FILE, DFM_OPT_ABORT_OPERATION, DFM_OPT_UNSET_RO_IGNORE, DFM_OPT_UNSET_RO_ABORT]);
+	RepopulateCombo(OverwriteLocalModeCombo, [DFM_OPT_ASK_USER, DFM_OPT_IGNORE_FILE, DFM_OPT_SILENTLY_OVERWRITE]);
+	RepopulateCombo(IconsModeCombo, [DFM_OPT_ICONS_DEFAULT, DFM_OPT_ICONS_INTERNAL, DFM_OPT_ICONS_INTERNAL_OVERLAY, DFM_OPT_ICONS_EXTERNAL, DFM_OPT_ICONS_EXTERNAL_OVERLAY]);
+	RepopulateCombo(OperationErrorModeCombo, [DFM_OPT_ASK_USER, DFM_OPT_IGNORE_FILE, DFM_OPT_ABORT_OPERATION, DFM_OPT_RETRY]);
+	RepopulateCombo(CopyBetweenAccountsModeCombo, [DFM_OPT_COPY_DISABLED, DFM_OPT_COPY_VIA_HASH, DFM_OPT_COPY_VIA_LINK]);
+	RepopulateCombo(PrecalculateHashStrategyCombo, [DFM_OPT_HASH_AUTO, DFM_OPT_HASH_DELPHI, DFM_OPT_HASH_BCRYPT, DFM_OPT_HASH_OPENSSL]);
+	RepopulateCombo(ProxyCB, [DFM_OPT_NO_PROXY, DFM_OPT_SOCKS5, DFM_OPT_SOCKS4, DFM_OPT_HTTP]);
+	RepopulateCombo(StreamingTypeCombo, [DFM_OPT_STREAM_NONE, DFM_OPT_STREAM_DISABLED, DFM_OPT_STREAM_M3U8, DFM_OPT_STREAM_DEFAULT, DFM_OPT_STREAM_WEB]);
 end;
 
 {Event handlers - Translation tab}
