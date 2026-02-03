@@ -105,8 +105,9 @@ const
 	HTTP_METHOD_POST = 1;
 	HTTP_METHOD_PUT = 2;
 	HTTP_METHOD_OPTIONS = 3;
+	HTTP_METHOD_HEAD = 4;
 
-	HTTP_METHODS = [HTTP_METHOD_GET, HTTP_METHOD_POST, HTTP_METHOD_PUT, HTTP_METHOD_OPTIONS];
+	HTTP_METHODS = [HTTP_METHOD_GET, HTTP_METHOD_POST, HTTP_METHOD_PUT, HTTP_METHOD_OPTIONS, HTTP_METHOD_HEAD];
 
 	{Shard types}
 	SHARD_TYPE_DEFAULT = ''; {Non-system shard, means use the shard obtained during initialization}
@@ -189,6 +190,7 @@ const
 	LOG_LEVEL_WARNING = 8; {non-critical warnings}
 	LOG_LEVEL_ERROR = 16; {error details}
 	LOG_LEVEL_DEBUG = 32; {internal debugging info}
+	LOG_LEVEL_HTTP = 64; {HTTP request/response tracing}
 
 	{FsFindFirst* success return codes (INVALID_HANDLE_VALUE on error)}
 	FIND_NO_MORE_FILES = 0;

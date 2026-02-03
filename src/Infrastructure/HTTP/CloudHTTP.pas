@@ -122,6 +122,7 @@ type
 		Progress: IProgress;
 
 		{PROCEDURES}
+		function TruncateForLog(const S: WideString): WideString;
 		procedure SetCookie(const Value: TIdCookieManager);
 		procedure SetExternalSourceName(const Value: WideString);
 		procedure SetExternalTargetName(const Value: WideString);
@@ -167,6 +168,9 @@ type
 	end;
 
 implementation
+
+const
+	MAX_LOG_BODY_LENGTH = 4096; {Truncate response bodies beyond this length in HTTP trace logs}
 
 {TNullCloudHTTP}
 
@@ -316,15 +320,25 @@ begin
 	inherited;
 end;
 
+function TCloudMailRuHTTP.TruncateForLog(const S: WideString): WideString;
+begin
+	if Length(S) > MAX_LOG_BODY_LENGTH then
+		Result := Copy(S, 1, MAX_LOG_BODY_LENGTH) + '... [truncated]'
+	else
+		Result := S;
+end;
+
 function TCloudMailRuHTTP.GetFile(URL: WideString; FileStream: TStream; LogErrors: Boolean): Integer;
 begin
 	Result := FS_FILE_OK;
+	Logger.Log(LOG_LEVEL_HTTP, MSGTYPE_DETAILS, HTTP_REQUEST, ['GET', URL]);
 	try
 		HTTP.Intercept := Throttle;
 		HTTP.Request.ContentType := 'application/octet-stream';
 		HTTP.Response.KeepAlive := True;
 		HTTP.OnWork := self.HTTPProgress;
 		HTTP.Get(URL, FileStream);
+		Logger.Log(LOG_LEVEL_HTTP, MSGTYPE_DETAILS, HTTP_RESPONSE, [URL, HTTP.ResponseCode, FileStream.Size]);
 		if (HTTP.RedirectCount = HTTP.RedirectMaximum) and (FileStream.size = 0) then
 		begin
 			Result := FS_FILE_NOTSUPPORTED;
@@ -340,12 +354,15 @@ end;
 function TCloudMailRuHTTP.GetPage(URL: WideString; var Answer: WideString; var ProgressEnabled: Boolean): Boolean;
 begin
 	Result := false;
+	Logger.Log(LOG_LEVEL_HTTP, MSGTYPE_DETAILS, HTTP_REQUEST, ['GET', URL]);
 	try
 		if ProgressEnabled then
 			HTTP.OnWork := self.HTTPProgress {Progress callback enables cancellation of listing and other operations, so not always needed}
 		else
 			HTTP.OnWork := nil;
 		Answer := HTTP.Get(URL);
+		Logger.Log(LOG_LEVEL_HTTP, MSGTYPE_DETAILS, HTTP_RESPONSE, [URL, HTTP.ResponseCode, Length(Answer)]);
+		Logger.Log(LOG_LEVEL_HTTP, MSGTYPE_DETAILS, HTTP_RESPONSE_BODY, [TruncateForLog(Answer)]);
 		Result := Answer <> EmptyWideStr;
 	Except
 		on E: Exception do
@@ -370,6 +387,7 @@ var
 	Answer: WideString;
 begin
 	Result := false;
+	Logger.Log(LOG_LEVEL_HTTP, MSGTYPE_DETAILS, HTTP_REQUEST, ['GET (redirect)', URL]);
 	HTTP.HandleRedirects := false;
 	try
 		try
@@ -380,6 +398,7 @@ begin
 				if (HTTP_FOUND_REDIRECT = HTTP.ResponseCode) then
 				begin
 					RedirectionURL := HTTP.Response.Location;
+					Logger.Log(LOG_LEVEL_HTTP, MSGTYPE_DETAILS, HTTP_REDIRECT, [URL, RedirectionURL]);
 					Result := True;
 				end else begin
 					self.ExceptionHandler(E, URL, HTTP_METHOD_GET);
@@ -393,7 +412,9 @@ end;
 
 procedure TCloudMailRuHTTP.Head(URL: WideString);
 begin
+	Logger.Log(LOG_LEVEL_HTTP, MSGTYPE_DETAILS, HTTP_REQUEST, ['HEAD', URL]);
 	HTTP.Head(URL);
+	Logger.Log(LOG_LEVEL_HTTP, MSGTYPE_DETAILS, HTTP_RESPONSE, [URL, HTTP.ResponseCode, 0]);
 	HTTP.Request.Referer := URL;
 end;
 
@@ -460,6 +481,7 @@ var
 	PostData: TIdMultiPartFormDataStream;
 	ResultStream: TStringStream;
 begin
+	Logger.Log(LOG_LEVEL_HTTP, MSGTYPE_DETAILS, HTTP_REQUEST_BODY, ['POST (file)', URL, FileStream.Size]);
 	ResultStream := TStringStream.Create;
 	try
 		PostData := TIdMultiPartFormDataStream.Create;
@@ -467,6 +489,8 @@ begin
 			PostData.AddFormField('file', 'application/octet-stream', EmptyWideStr, FileStream, FileName);
 			Result := self.Post(URL, PostData, ResultStream);
 			Answer := ResultStream.DataString;
+			Logger.Log(LOG_LEVEL_HTTP, MSGTYPE_DETAILS, HTTP_RESPONSE, [URL, HTTP.ResponseCode, Length(Answer)]);
+			Logger.Log(LOG_LEVEL_HTTP, MSGTYPE_DETAILS, HTTP_RESPONSE_BODY, [TruncateForLog(Answer)]);
 		finally
 			PostData.free;
 		end;
@@ -480,6 +504,7 @@ var
 	ResultStream, PostData: TStringStream;
 	PostResult: Integer;
 begin
+	Logger.Log(LOG_LEVEL_HTTP, MSGTYPE_DETAILS, HTTP_REQUEST, ['POST', URL]);
 	ResultStream := TStringStream.Create;
 	try
 		PostData := TStringStream.Create(PostDataString, TEncoding.UTF8);
@@ -487,6 +512,8 @@ begin
 			PostResult := self.Post(URL, PostData, ResultStream, True, ContentType, LogErrors, ProgressEnabled);
 			Result := PostResult = CLOUD_OPERATION_OK;
 			Answer := ResultStream.DataString;
+			Logger.Log(LOG_LEVEL_HTTP, MSGTYPE_DETAILS, HTTP_RESPONSE, [URL, HTTP.ResponseCode, Length(Answer)]);
+			Logger.Log(LOG_LEVEL_HTTP, MSGTYPE_DETAILS, HTTP_RESPONSE_BODY, [TruncateForLog(Answer)]);
 		finally
 			PostData.free;
 		end;
@@ -502,6 +529,7 @@ var
 	ParamItem: TPair<WideString, WideString>;
 	PostResult: Integer;
 begin
+	Logger.Log(LOG_LEVEL_HTTP, MSGTYPE_DETAILS, HTTP_REQUEST, ['POST (multipart)', URL]);
 	ResultStream := TStringStream.Create;
 	try
 		PostData := TIdMultiPartFormDataStream.Create;
@@ -512,6 +540,8 @@ begin
 			PostResult := self.Post(URL, PostData, ResultStream);
 			Result := PostResult = CLOUD_OPERATION_OK;
 			Answer := ResultStream.DataString;
+			Logger.Log(LOG_LEVEL_HTTP, MSGTYPE_DETAILS, HTTP_RESPONSE, [URL, HTTP.ResponseCode, Length(Answer)]);
+			Logger.Log(LOG_LEVEL_HTTP, MSGTYPE_DETAILS, HTTP_RESPONSE_BODY, [TruncateForLog(Answer)]);
 		finally
 			PostData.free;
 		end;
@@ -525,6 +555,7 @@ var
 	ResultStream: TStringStream;
 begin
 	Result := True;
+	Logger.Log(LOG_LEVEL_HTTP, MSGTYPE_DETAILS, HTTP_REQUEST, ['OPTIONS', URL]);
 	ResultStream := TStringStream.Create;
 	try
 		try
@@ -532,6 +563,8 @@ begin
 			HTTP.OnWork := self.HTTPProgress;
 			HTTP.Options(URL, ResultStream);
 			Answer := ResultStream.DataString;
+			Logger.Log(LOG_LEVEL_HTTP, MSGTYPE_DETAILS, HTTP_RESPONSE, [URL, HTTP.ResponseCode, Length(Answer)]);
+			Logger.Log(LOG_LEVEL_HTTP, MSGTYPE_DETAILS, HTTP_RESPONSE_BODY, [TruncateForLog(Answer)]);
 		except
 			On E: Exception do
 			begin
@@ -586,10 +619,13 @@ function TCloudMailRuHTTP.PutFile(URL, FileName: WideString; FileStream: TStream
 var
 	ResultStream: TStringStream;
 begin
+	Logger.Log(LOG_LEVEL_HTTP, MSGTYPE_DETAILS, HTTP_REQUEST_BODY, ['PUT', URL, FileStream.Size]);
 	ResultStream := TStringStream.Create;
 	try
 		Result := self.Put(URL, FileStream, ResultStream);
 		Answer := ResultStream.DataString;
+		Logger.Log(LOG_LEVEL_HTTP, MSGTYPE_DETAILS, HTTP_RESPONSE, [URL, HTTP.ResponseCode, Length(Answer)]);
+		Logger.Log(LOG_LEVEL_HTTP, MSGTYPE_DETAILS, HTTP_RESPONSE_BODY, [TruncateForLog(Answer)]);
 	finally
 		ResultStream.free;
 	end;
@@ -655,6 +691,11 @@ begin
 		HTTP_METHOD_OPTIONS:
 			begin
 				method_string := METHOD_STR_OPTIONS;
+				Result := CLOUD_OPERATION_FAILED;
+			end;
+		HTTP_METHOD_HEAD:
+			begin
+				method_string := METHOD_STR_HEAD;
 				Result := CLOUD_OPERATION_FAILED;
 			end;
 	end;

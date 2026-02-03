@@ -26,6 +26,8 @@ type
 		[Test]
 		procedure TestFilterLevel;
 		[Test]
+		procedure TestFilterLevel_HTTP;
+		[Test]
 		{Verifies TTCLogger implements ILogger interface}
 		procedure TestImplementsILogger;
 	end;
@@ -103,6 +105,22 @@ begin
 	Assert.AreEqual(0, MsgType);
 	Assert.AreEqual('', LogString);
 
+end;
+
+procedure TTCLoggerTest.TestFilterLevel_HTTP;
+var
+	TestLogger: TTCLogger;
+begin
+	{LOG_LEVEL_HTTP (64) should be filtered when not in bitmask}
+	TestLogger := TTCLogger.Create(@TestLoggerProc, 1, LOG_LEVEL_CONNECT + LOG_LEVEL_ERROR);
+
+	TestLogger.Log(LOG_LEVEL_HTTP, msgtype_details, 'http trace');
+	Assert.AreEqual('', LogString, 'HTTP log should be filtered out');
+
+	{Now include LOG_LEVEL_HTTP in the bitmask}
+	TestLogger := TTCLogger.Create(@TestLoggerProc, 1, LOG_LEVEL_HTTP);
+	TestLogger.Log(LOG_LEVEL_HTTP, msgtype_details, 'http trace visible');
+	Assert.AreEqual('http trace visible', LogString, 'HTTP log should pass when level is enabled');
 end;
 
 procedure TTCLoggerTest.TestLog;

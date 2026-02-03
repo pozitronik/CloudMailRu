@@ -120,6 +120,11 @@ const
 	ERR_WRONG_FORMAT = 'Parameter should be in hash:size:name or hash:size format.';
 	ERR_WRONG_HASH_LENGTH = 'Hash length should be exactly 40 symbols.';
 	ERR_WRONG_SIZE_FORMAT = 'Size should be in numeric format.';
+	HTTP_REQUEST = '>> %s %s';
+	HTTP_REQUEST_BODY = '>> %s %s [%d bytes]';
+	HTTP_RESPONSE = '<< %s %d [%d bytes]';
+	HTTP_RESPONSE_BODY = '<< %s';
+	HTTP_REDIRECT = '<< %s -> %s';
 	FILE_EXISTS_IGNORE = 'Local file %s exists, ignored';
 	FILE_EXISTS_OVERWRITE = 'Local file %s exists, and will be overwritten';
 	FILE_FOUND_BY_HASH = 'File "%s" found by hash';
@@ -127,6 +132,7 @@ const
 	INVITE_FORM_TITLE = '%s invite: %s';
 	LOGIN_IN_PROGRESS = 'Login to account...';
 	LOGIN_TO = 'Login to %s';
+	METHOD_STR_HEAD = 'check';
 	METHOD_STR_OPTIONS = 'request parameters from';
 	METHOD_STR_POST = 'post data to';
 	METHOD_STR_RECEIVE = 'receive data from';

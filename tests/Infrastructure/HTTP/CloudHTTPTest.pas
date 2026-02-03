@@ -23,6 +23,29 @@ uses
 	IdHTTP;
 
 type
+	TLogEntry = record
+		LogLevel: Integer;
+		Message: WideString;
+	end;
+
+	{Mock logger that tracks log calls}
+	TMockLoggerForHTTP = class(TInterfacedObject, ILogger)
+	private
+		FLogCalled: Boolean;
+		FLastLogLevel: Integer;
+		FLastMessage: WideString;
+		FEntries: TArray<TLogEntry>;
+	public
+		constructor Create;
+		procedure Log(LogLevel, MsgType: Integer; LogString: WideString); overload;
+		procedure Log(LogLevel, MsgType: Integer; LogString: WideString; const Args: array of const); overload;
+		function HasLogWithLevel(Level: Integer): Boolean;
+		property LogCalled: Boolean read FLogCalled;
+		property LastLogLevel: Integer read FLastLogLevel;
+		property LastMessage: WideString read FLastMessage;
+		property Entries: TArray<TLogEntry> read FEntries;
+	end;
+
 	[TestFixture]
 	TNullCloudHTTPTest = class
 	private
@@ -208,6 +231,8 @@ type
 		procedure TestExceptionHandler_PUTMethod_ReturnsOperationFailed;
 		[Test]
 		procedure TestExceptionHandler_OPTIONSMethod_ReturnsOperationFailed;
+		[Test]
+		procedure TestExceptionHandler_HEADMethod_ReturnsOperationFailed;
 
 		{EAbort handling}
 		[Test]
@@ -340,6 +365,38 @@ type
 		procedure TestPutFile_FailedConnection_ReturnsError;
 	end;
 
+	{Tests that HTTP methods emit LOG_LEVEL_HTTP entry logs before network operations}
+	[TestFixture]
+	TCloudMailRuHTTPLoggingTest = class
+	private
+		FHTTP: TCloudMailRuHTTP;
+		FMockLogger: TMockLoggerForHTTP;
+	public
+		[Setup]
+		procedure Setup;
+		[TearDown]
+		procedure TearDown;
+
+		[Test]
+		procedure TestGetPage_LogsHTTPRequest;
+		[Test]
+		procedure TestGetFile_LogsHTTPRequest;
+		[Test]
+		procedure TestGetRedirection_LogsHTTPRequest;
+		[Test]
+		procedure TestHead_LogsHTTPRequest;
+		[Test]
+		procedure TestPostForm_LogsHTTPRequest;
+		[Test]
+		procedure TestPostMultipart_LogsHTTPRequest;
+		[Test]
+		procedure TestPostFile_LogsHTTPRequest;
+		[Test]
+		procedure TestPutFile_LogsHTTPRequest;
+		[Test]
+		procedure TestOptionsMethod_LogsHTTPRequest;
+	end;
+
 implementation
 
 uses
@@ -349,40 +406,47 @@ uses
 	IdHTTPHeaderInfo,
 	IdComponent;
 
-type
-	{Mock logger that tracks log calls}
-	TMockLoggerForHTTP = class(TInterfacedObject, ILogger)
-	private
-		FLogCalled: Boolean;
-		FLastLogLevel: Integer;
-		FLastMessage: WideString;
-	public
-		constructor Create;
-		procedure Log(LogLevel, MsgType: Integer; LogString: WideString); overload;
-		procedure Log(LogLevel, MsgType: Integer; LogString: WideString; const Args: array of const); overload;
-		property LogCalled: Boolean read FLogCalled;
-		property LastLogLevel: Integer read FLastLogLevel;
-		property LastMessage: WideString read FLastMessage;
-	end;
-
 constructor TMockLoggerForHTTP.Create;
 begin
 	inherited Create;
 	FLogCalled := False;
+	FEntries := nil;
 end;
 
 procedure TMockLoggerForHTTP.Log(LogLevel, MsgType: Integer; LogString: WideString);
+var
+	Entry: TLogEntry;
 begin
 	FLogCalled := True;
 	FLastLogLevel := LogLevel;
 	FLastMessage := LogString;
+	Entry.LogLevel := LogLevel;
+	Entry.Message := LogString;
+	SetLength(FEntries, Length(FEntries) + 1);
+	FEntries[High(FEntries)] := Entry;
 end;
 
 procedure TMockLoggerForHTTP.Log(LogLevel, MsgType: Integer; LogString: WideString; const Args: array of const);
+var
+	Entry: TLogEntry;
 begin
 	FLogCalled := True;
 	FLastLogLevel := LogLevel;
-	FLastMessage := LogString;
+	FLastMessage := Format(LogString, Args);
+	Entry.LogLevel := LogLevel;
+	Entry.Message := FLastMessage;
+	SetLength(FEntries, Length(FEntries) + 1);
+	FEntries[High(FEntries)] := Entry;
+end;
+
+function TMockLoggerForHTTP.HasLogWithLevel(Level: Integer): Boolean;
+var
+	i: Integer;
+begin
+	Result := False;
+	for i := 0 to High(FEntries) do
+		if FEntries[i].LogLevel = Level then
+			Exit(True);
 end;
 
 {TNullCloudHTTPTest}
@@ -977,6 +1041,18 @@ begin
 	end;
 end;
 
+procedure TCloudMailRuHTTPExceptionHandlerTest.TestExceptionHandler_HEADMethod_ReturnsOperationFailed;
+var
+	E: Exception;
+begin
+	E := Exception.Create('Test error');
+	try
+		Assert.AreEqual(CLOUD_OPERATION_FAILED, FHTTP.ExceptionHandler(E, 'http://test.com', HTTP_METHOD_HEAD, False));
+	finally
+		E.Free;
+	end;
+end;
+
 procedure TCloudMailRuHTTPExceptionHandlerTest.TestExceptionHandler_EAbort_ReturnsCancelled;
 var
 	E: EAbort;
@@ -1365,6 +1441,131 @@ begin
 	end;
 end;
 
+{TCloudMailRuHTTPLoggingTest}
+
+const
+	LOG_FAIL_URL = 'http://127.0.0.1:1/test';
+
+procedure TCloudMailRuHTTPLoggingTest.Setup;
+var
+	Settings: TConnectionSettings;
+begin
+	FMockLogger := TMockLoggerForHTTP.Create;
+	Settings := Default(TConnectionSettings);
+	Settings.SocketTimeout := 500;
+	FHTTP := TCloudMailRuHTTP.Create(Settings, FMockLogger, TNullProgress.Create);
+end;
+
+procedure TCloudMailRuHTTPLoggingTest.TearDown;
+begin
+	FHTTP.Free;
+end;
+
+procedure TCloudMailRuHTTPLoggingTest.TestGetPage_LogsHTTPRequest;
+var
+	Answer: WideString;
+	ProgressEnabled: Boolean;
+begin
+	ProgressEnabled := False;
+	FHTTP.GetPage(LOG_FAIL_URL, Answer, ProgressEnabled);
+	Assert.IsTrue(FMockLogger.HasLogWithLevel(LOG_LEVEL_HTTP), 'GetPage should log at LOG_LEVEL_HTTP');
+end;
+
+procedure TCloudMailRuHTTPLoggingTest.TestGetFile_LogsHTTPRequest;
+var
+	Stream: TMemoryStream;
+begin
+	Stream := TMemoryStream.Create;
+	try
+		FHTTP.GetFile(LOG_FAIL_URL, Stream);
+		Assert.IsTrue(FMockLogger.HasLogWithLevel(LOG_LEVEL_HTTP), 'GetFile should log at LOG_LEVEL_HTTP');
+	finally
+		Stream.Free;
+	end;
+end;
+
+procedure TCloudMailRuHTTPLoggingTest.TestGetRedirection_LogsHTTPRequest;
+var
+	RedirectURL: WideString;
+	ProgressEnabled: Boolean;
+begin
+	ProgressEnabled := True;
+	FHTTP.GetRedirection(LOG_FAIL_URL, RedirectURL, ProgressEnabled);
+	Assert.IsTrue(FMockLogger.HasLogWithLevel(LOG_LEVEL_HTTP), 'GetRedirection should log at LOG_LEVEL_HTTP');
+end;
+
+procedure TCloudMailRuHTTPLoggingTest.TestHead_LogsHTTPRequest;
+begin
+	{Head propagates exceptions, so we catch it}
+	try
+		FHTTP.Head(LOG_FAIL_URL);
+	except
+		{Expected -- connection failure}
+	end;
+	Assert.IsTrue(FMockLogger.HasLogWithLevel(LOG_LEVEL_HTTP), 'Head should log at LOG_LEVEL_HTTP');
+end;
+
+procedure TCloudMailRuHTTPLoggingTest.TestPostForm_LogsHTTPRequest;
+var
+	Answer: WideString;
+begin
+	FHTTP.PostForm(LOG_FAIL_URL, 'data=value', Answer);
+	Assert.IsTrue(FMockLogger.HasLogWithLevel(LOG_LEVEL_HTTP), 'PostForm should log at LOG_LEVEL_HTTP');
+end;
+
+procedure TCloudMailRuHTTPLoggingTest.TestPostMultipart_LogsHTTPRequest;
+var
+	Params: TDictionary<WideString, WideString>;
+	Answer: WideString;
+begin
+	Params := TDictionary<WideString, WideString>.Create;
+	try
+		Params.Add('key', 'value');
+		FHTTP.PostMultipart(LOG_FAIL_URL, Params, Answer);
+		Assert.IsTrue(FMockLogger.HasLogWithLevel(LOG_LEVEL_HTTP), 'PostMultipart should log at LOG_LEVEL_HTTP');
+	finally
+		Params.Free;
+	end;
+end;
+
+procedure TCloudMailRuHTTPLoggingTest.TestPostFile_LogsHTTPRequest;
+var
+	Stream: TMemoryStream;
+	Answer: WideString;
+begin
+	Stream := TMemoryStream.Create;
+	try
+		FHTTP.PostFile(LOG_FAIL_URL, 'file.txt', Stream, Answer);
+		Assert.IsTrue(FMockLogger.HasLogWithLevel(LOG_LEVEL_HTTP), 'PostFile should log at LOG_LEVEL_HTTP');
+	finally
+		Stream.Free;
+	end;
+end;
+
+procedure TCloudMailRuHTTPLoggingTest.TestPutFile_LogsHTTPRequest;
+var
+	Stream: TMemoryStream;
+	Answer: WideString;
+begin
+	Stream := TMemoryStream.Create;
+	try
+		FHTTP.PutFile(LOG_FAIL_URL, 'file.txt', Stream, Answer);
+		Assert.IsTrue(FMockLogger.HasLogWithLevel(LOG_LEVEL_HTTP), 'PutFile should log at LOG_LEVEL_HTTP');
+	finally
+		Stream.Free;
+	end;
+end;
+
+procedure TCloudMailRuHTTPLoggingTest.TestOptionsMethod_LogsHTTPRequest;
+var
+	Answer: WideString;
+	ProgressEnabled: Boolean;
+begin
+	ProgressEnabled := True;
+	FHTTP.OptionsMethod(LOG_FAIL_URL, Answer, ProgressEnabled);
+	Assert.IsTrue(FMockLogger.HasLogWithLevel(LOG_LEVEL_HTTP), 'OptionsMethod should log at LOG_LEVEL_HTTP');
+end;
+
 initialization
 	TDUnitX.RegisterTestFixture(TNullCloudHTTPTest);
 	TDUnitX.RegisterTestFixture(TCloudMailRuHTTPConstructorTest);
@@ -1374,5 +1575,6 @@ initialization
 	TDUnitX.RegisterTestFixture(TCloudMailRuHTTPSetProgressTest);
 	TDUnitX.RegisterTestFixture(TCloudMailRuHTTPProgressTest);
 	TDUnitX.RegisterTestFixture(TCloudMailRuHTTPNetworkMethodsTest);
+	TDUnitX.RegisterTestFixture(TCloudMailRuHTTPLoggingTest);
 
 end.
