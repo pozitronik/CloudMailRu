@@ -128,6 +128,11 @@ type
 		procedure TestCreateDir_AlreadyExists_ReturnsFalse;
 		[Test]
 		procedure TestDeleteFile_NotExists_ReturnsFalse;
+
+		{Wrapper method tests}
+		[Test]
+		{TCloudMailRu.DeleteFile delegates to FFileOperations.Delete}
+		procedure TestDeleteFileWrapper_DelegatesToFileOperations;
 	end;
 
 implementation
@@ -591,6 +596,19 @@ begin
 	Success := FCloud.FileOperations.Delete('/nonexistent.txt');
 
 	Assert.IsFalse(Success, 'DeleteFile should return False when file does not exist');
+end;
+
+procedure TCloudMailRuFileOperationsTest.TestDeleteFileWrapper_DelegatesToFileOperations;
+var
+	Success: Boolean;
+begin
+	FCloud := CreateCloud;
+	FMockHTTP.SetResponse(API_FILE_REMOVE, True, JSON_SUCCESS);
+
+	{Call through the TCloudMailRu.DeleteFile wrapper method}
+	Success := FCloud.DeleteFile('/file.txt');
+
+	Assert.IsTrue(Success, 'DeleteFile wrapper should delegate to FileOperations.Delete');
 end;
 
 initialization

@@ -204,6 +204,31 @@ type
 
 		[Test]
 		procedure TestMultipleCalls;
+
+		[Test]
+		{Verifies SetSettings stores and retrieves the value}
+		procedure TestSetSettings_StoresValue;
+		[Test]
+		{Verifies Save completes without exception}
+		procedure TestSave_NoOp;
+		[Test]
+		{Verifies GetStreamingSettings returns default record}
+		procedure TestGetStreamingSettings_ReturnsDefault;
+		[Test]
+		{Verifies SetStreamingSettings completes without exception}
+		procedure TestSetStreamingSettings_NoOp;
+		[Test]
+		{Verifies GetStreamingExtensionsList clears the list}
+		procedure TestGetStreamingExtensionsList_ClearsList;
+		[Test]
+		{Verifies RemoveStreamingExtension completes without exception}
+		procedure TestRemoveStreamingExtension_NoOp;
+		[Test]
+		{Verifies GetAccountsIniFilePath returns empty string}
+		procedure TestGetAccountsIniFilePath_ReturnsEmpty;
+		[Test]
+		{Verifies Refresh completes without exception}
+		procedure TestRefresh_NoOp;
 	end;
 
 implementation
@@ -757,6 +782,90 @@ begin
 	Settings2 := SettingsManager.GetSettings;
 
 	Assert.AreEqual(Settings1.LogLevel, Settings2.LogLevel);
+	Assert.Pass;
+end;
+
+procedure TNullPluginSettingsManagerTest.TestSetSettings_StoresValue;
+var
+	SettingsManager: IPluginSettingsManager;
+	Settings: TPluginSettings;
+begin
+	SettingsManager := TNullPluginSettingsManager.Create;
+	Settings := Default(TPluginSettings);
+	Settings.LogLevel := 5;
+	SettingsManager.SetSettings(Settings);
+	Assert.AreEqual(5, SettingsManager.GetSettings.LogLevel);
+end;
+
+procedure TNullPluginSettingsManagerTest.TestSave_NoOp;
+var
+	SettingsManager: IPluginSettingsManager;
+begin
+	SettingsManager := TNullPluginSettingsManager.Create;
+	SettingsManager.Save;
+	Assert.Pass;
+end;
+
+procedure TNullPluginSettingsManagerTest.TestGetStreamingSettings_ReturnsDefault;
+var
+	SettingsManager: IPluginSettingsManager;
+	StreamSettings: TStreamingSettings;
+begin
+	SettingsManager := TNullPluginSettingsManager.Create;
+	StreamSettings := SettingsManager.GetStreamingSettings('test.mp3');
+	Assert.AreEqual(EmptyWideStr, StreamSettings.Command);
+end;
+
+procedure TNullPluginSettingsManagerTest.TestSetStreamingSettings_NoOp;
+var
+	SettingsManager: IPluginSettingsManager;
+	StreamSettings: TStreamingSettings;
+begin
+	SettingsManager := TNullPluginSettingsManager.Create;
+	StreamSettings := Default(TStreamingSettings);
+	SettingsManager.SetStreamingSettings('test.mp3', StreamSettings);
+	Assert.Pass;
+end;
+
+procedure TNullPluginSettingsManagerTest.TestGetStreamingExtensionsList_ClearsList;
+var
+	SettingsManager: IPluginSettingsManager;
+	Extensions: TStringList;
+begin
+	SettingsManager := TNullPluginSettingsManager.Create;
+	Extensions := TStringList.Create;
+	try
+		Extensions.Add('pre-existing');
+		SettingsManager.GetStreamingExtensionsList(Extensions);
+		Assert.AreEqual(0, Extensions.Count, 'List should be cleared');
+	finally
+		Extensions.Free;
+	end;
+end;
+
+procedure TNullPluginSettingsManagerTest.TestRemoveStreamingExtension_NoOp;
+var
+	SettingsManager: IPluginSettingsManager;
+begin
+	SettingsManager := TNullPluginSettingsManager.Create;
+	SettingsManager.RemoveStreamingExtension('mp3');
+	Assert.Pass;
+end;
+
+procedure TNullPluginSettingsManagerTest.TestGetAccountsIniFilePath_ReturnsEmpty;
+var
+	SettingsManager: IPluginSettingsManager;
+begin
+	SettingsManager := TNullPluginSettingsManager.Create;
+	Assert.AreEqual(EmptyWideStr, SettingsManager.GetAccountsIniFilePath);
+end;
+
+procedure TNullPluginSettingsManagerTest.TestRefresh_NoOp;
+var
+	SettingsManager: IPluginSettingsManager;
+begin
+	SettingsManager := TNullPluginSettingsManager.Create;
+	SettingsManager.Refresh;
 	Assert.Pass;
 end;
 

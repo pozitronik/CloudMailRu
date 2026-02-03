@@ -50,6 +50,22 @@ type
 		[Test]
 		procedure TestRender_ExternalOverlay_MissingFile_ReturnsUseDefault;
 
+		{Size-dependent rendering -- GetFolderIconSize branches}
+		[Test]
+		{Covers GetFolderIconSize small branch (PixelSize <= 16)}
+		procedure TestRender_SystemTrash_SmallSize_ReturnsValidResult;
+		[Test]
+		{Covers GetFolderIconSize large branch (PixelSize > 32)}
+		procedure TestRender_SystemTrash_LargeSize_ReturnsValidResult;
+
+		{External icon with real file}
+		[Test]
+		{Covers RenderExternal success path (line 143) using a real .ico file}
+		procedure TestRender_External_ValidFile_ReturnsExtractedDestroy;
+		[Test]
+		{Covers RenderExternalOverlay success path (lines 153-156) using a real .ico file}
+		procedure TestRender_ExternalOverlay_ValidFile_ReturnsExtractedDestroy;
+
 		{Edge cases}
 		[Test]
 		procedure TestRender_UnknownIconType_ReturnsUseDefault;
@@ -69,6 +85,8 @@ implementation
 
 uses
 	SysUtils,
+	Graphics,
+	IconHelper,
 	WFXTypes;
 
 procedure TIconRenderingEngineTest.Setup;
@@ -214,6 +232,112 @@ begin
 	RenderResult := FEngine.Render(IconInfo, 32, 'C:\NonExistentPath\');
 
 	Assert.AreEqual(FS_ICON_USEDEFAULT, RenderResult.ResultCode);
+end;
+
+{Size-dependent rendering}
+
+procedure TIconRenderingEngineTest.TestRender_SystemTrash_SmallSize_ReturnsValidResult;
+var
+	IconInfo: TIconInfo;
+	RenderResult: TIconRenderResult;
+begin
+	IconInfo := TIconInfo.SystemTrash;
+	{Size 16 hits GetFolderIconSize <= 16 branch -> IconSizeSmall}
+	RenderResult := FEngine.Render(IconInfo, 16, 'C:\Test\');
+	Assert.AreEqual(FS_ICON_EXTRACTED_DESTROY, RenderResult.ResultCode);
+	if RenderResult.IconHandle <> 0 then
+		DeleteObject(RenderResult.IconHandle);
+end;
+
+procedure TIconRenderingEngineTest.TestRender_SystemTrash_LargeSize_ReturnsValidResult;
+var
+	IconInfo: TIconInfo;
+	RenderResult: TIconRenderResult;
+begin
+	IconInfo := TIconInfo.SystemTrash;
+	{Size 64 hits GetFolderIconSize > 32 branch -> IconSizeLarge}
+	RenderResult := FEngine.Render(IconInfo, 64, 'C:\Test\');
+	Assert.AreEqual(FS_ICON_EXTRACTED_DESTROY, RenderResult.ResultCode);
+	if RenderResult.IconHandle <> 0 then
+		DeleteObject(RenderResult.IconHandle);
+end;
+
+{External icon with real file}
+
+procedure TIconRenderingEngineTest.TestRender_External_ValidFile_ReturnsExtractedDestroy;
+var
+	IconInfo: TIconInfo;
+	RenderResult: TIconRenderResult;
+	TempDir, IconsDir, IconFile: string;
+	Icon: TIcon;
+	FolderIcon: HICON;
+begin
+	TempDir := IncludeTrailingPathDelimiter(GetEnvironmentVariable('TEMP')) +
+		'IconRenderTest_' + IntToStr(GetCurrentProcessId);
+	IconsDir := IncludeTrailingPathDelimiter(TempDir) + 'icons';
+	IconFile := IncludeTrailingPathDelimiter(IconsDir) + 'test_ext.ico';
+	ForceDirectories(IconsDir);
+	try
+		{Create a real .ico file}
+		FolderIcon := GetFolderIcon(IconSizeSmall);
+		Icon := TIcon.Create;
+		try
+			Icon.Handle := FolderIcon;
+			Icon.SaveToFile(IconFile);
+		finally
+			Icon.Free;
+		end;
+
+		IconInfo := TIconInfo.Create(itExternal, 'test_ext');
+		{PluginPath must have trailing backslash: production code does PluginPath + 'icons'}
+		RenderResult := FEngine.Render(IconInfo, 32, IncludeTrailingPathDelimiter(TempDir));
+
+		Assert.AreEqual(FS_ICON_EXTRACTED_DESTROY, RenderResult.ResultCode);
+		if RenderResult.IconHandle <> 0 then
+			DestroyIcon(RenderResult.IconHandle);
+	finally
+		if FileExists(IconFile) then DeleteFile(IconFile);
+		RemoveDir(IconsDir);
+		RemoveDir(TempDir);
+	end;
+end;
+
+procedure TIconRenderingEngineTest.TestRender_ExternalOverlay_ValidFile_ReturnsExtractedDestroy;
+var
+	IconInfo: TIconInfo;
+	RenderResult: TIconRenderResult;
+	TempDir, IconsDir, IconFile: string;
+	Icon: TIcon;
+	FolderIcon: HICON;
+begin
+	TempDir := IncludeTrailingPathDelimiter(GetEnvironmentVariable('TEMP')) +
+		'IconRenderTest2_' + IntToStr(GetCurrentProcessId);
+	IconsDir := IncludeTrailingPathDelimiter(TempDir) + 'icons';
+	IconFile := IncludeTrailingPathDelimiter(IconsDir) + 'test_overlay.ico';
+	ForceDirectories(IconsDir);
+	try
+		{Create a real .ico file}
+		FolderIcon := GetFolderIcon(IconSizeSmall);
+		Icon := TIcon.Create;
+		try
+			Icon.Handle := FolderIcon;
+			Icon.SaveToFile(IconFile);
+		finally
+			Icon.Free;
+		end;
+
+		IconInfo := TIconInfo.Create(itExternalOverlay, 'test_overlay');
+		{PluginPath must have trailing backslash}
+		RenderResult := FEngine.Render(IconInfo, 32, IncludeTrailingPathDelimiter(TempDir));
+
+		Assert.AreEqual(FS_ICON_EXTRACTED_DESTROY, RenderResult.ResultCode);
+		if RenderResult.IconHandle <> 0 then
+			DestroyIcon(RenderResult.IconHandle);
+	finally
+		if FileExists(IconFile) then DeleteFile(IconFile);
+		RemoveDir(IconsDir);
+		RemoveDir(TempDir);
+	end;
 end;
 
 {Edge cases}

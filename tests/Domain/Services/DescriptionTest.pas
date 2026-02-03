@@ -103,6 +103,11 @@ type
 		[Test]
 		{Write/Read round-trip with multiline values}
 		procedure TestWriteMultilineValue;
+
+		{ ANSI encoding round-trip }
+		[Test]
+		{Write/Read with ENCODING_DEFAULT exercises ANSI divider path}
+		procedure TestWriteReadWithDefaultEncoding;
 	end;
 
 	[TestFixture]
@@ -520,6 +525,34 @@ begin
 		Assert.AreEqual('line1' + sLineBreak + 'line2', Description2.GetValue('multikey', FORMAT_CLEAR));
 	finally
 		Description2.Free;
+	end;
+end;
+
+{ ANSI encoding round-trip - covers DetermineDivider ANSI branch (line 137) }
+
+procedure TDescriptionTest.TestWriteReadWithDefaultEncoding;
+var
+	TempFileAnsi: string;
+	DescAnsi, DescAnsi2: TDescription;
+begin
+	TempFileAnsi := IncludeTrailingPathDelimiter(GetEnvironmentVariable('TEMP')) +
+		'DescriptionTest_ansi_' + IntToStr(GetCurrentThreadId) + '.ion';
+	DescAnsi := TDescription.Create(TempFileAnsi, FFileSystem, ENCODING_DEFAULT);
+	try
+		DescAnsi.SetValue('ansikey', 'ansivalue');
+		Assert.AreEqual(0, DescAnsi.Write);
+
+		DescAnsi2 := TDescription.Create(TempFileAnsi, FFileSystem, ENCODING_DEFAULT);
+		try
+			Assert.AreEqual(0, DescAnsi2.Read);
+			Assert.AreEqual('ansivalue', DescAnsi2.GetValue('ansikey'));
+		finally
+			DescAnsi2.Free;
+		end;
+	finally
+		DescAnsi.Free;
+		if FileExists(TempFileAnsi) then
+			System.SysUtils.DeleteFile(TempFileAnsi);
 	end;
 end;
 

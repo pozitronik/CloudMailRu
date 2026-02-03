@@ -31,6 +31,7 @@ type
 		FInitialized: Boolean;
 	public
 		class procedure Initialize(OpenSSLProvider: IOpenSSLProvider = nil; BCryptProvider: IBCryptProvider = nil);
+		class procedure Reset;
 		class function GetProfiles: TArray<TCipherProfile>;
 		class function FindById(const ProfileId: WideString; out Profile: TCipherProfile): Boolean;
 		class function GetDefaultProfile: TCipherProfile;
@@ -130,6 +131,12 @@ begin
 	end;
 
 	FInitialized := True;
+end;
+
+class procedure TCipherProfileRegistry.Reset;
+begin
+	FProfiles := nil;
+	FInitialized := False;
 end;
 
 class function TCipherProfileRegistry.GetProfiles: TArray<TCipherProfile>;

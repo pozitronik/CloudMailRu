@@ -5,6 +5,7 @@ interface
 uses
 	CipherProfile,
 	Cipher,
+	BCryptProvider,
 	Classes,
 	System.SysUtils,
 	DUnitX.TestFramework;
@@ -29,6 +30,9 @@ type
 		procedure TestFindById_AES256SHA256_ReturnsTrue;
 		[Test]
 		procedure TestFindById_Twofish256SHA256_ReturnsTrue;
+
+		[Test]
+		procedure TestFindById_BCryptAES256_ReturnsTrue;
 
 		{FindById -- unknown}
 		[Test]
@@ -65,14 +69,18 @@ implementation
 
 procedure TCipherProfileRegistryTest.SetupFixture;
 begin
-	TCipherProfileRegistry.Initialize;
+	{Reset to ensure clean state, then initialize with BCrypt provider
+	 to cover BCrypt backend registration code paths}
+	TCipherProfileRegistry.Reset;
+	TCipherProfileRegistry.Initialize(nil, TBCryptProvider.Create);
 end;
 
 {Registry initialization}
 
 procedure TCipherProfileRegistryTest.TestRegistryCount_Returns4Profiles;
 begin
-	Assert.AreEqual(3, TCipherProfileRegistry.Count);
+	{3 DCPCrypt profiles + 1 BCrypt profile}
+	Assert.AreEqual(4, TCipherProfileRegistry.Count);
 end;
 
 procedure TCipherProfileRegistryTest.TestGetProfiles_ReturnsNonEmptyArray;
@@ -104,6 +112,15 @@ var
 begin
 	Assert.IsTrue(TCipherProfileRegistry.FindById('dcpcrypt-twofish256-cfb8-sha256', Profile));
 	Assert.AreEqual('Twofish-256 / SHA-256 KDF', Profile.DisplayName);
+end;
+
+procedure TCipherProfileRegistryTest.TestFindById_BCryptAES256_ReturnsTrue;
+var
+	Profile: TCipherProfile;
+begin
+	Assert.IsTrue(TCipherProfileRegistry.FindById('bcrypt-aes256-cfb8-pbkdf2', Profile));
+	Assert.AreEqual('AES-256 / PBKDF2 (BCrypt)', Profile.DisplayName);
+	Assert.AreEqual('Windows CNG', Profile.BackendName);
 end;
 
 {FindById -- unknown}

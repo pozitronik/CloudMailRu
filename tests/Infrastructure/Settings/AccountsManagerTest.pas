@@ -85,6 +85,12 @@ type
 		[Test]
 		{Verifies GetAccountsList silently skips accounts with invalid names}
 		procedure TestGetAccountsList_SkipsInvalidNames;
+		[Test]
+		{Verifies GetAccountsList includes SharedPostfix virtual directories}
+		procedure TestGetAccountsList_IncludesSharedPostfix;
+		[Test]
+		{Verifies RenameAccount preserves shard and upload URL overrides}
+		procedure TestRenameAccount_PreservesOverrides;
 
 	end;
 
@@ -119,8 +125,11 @@ type
 		{Verifies GetAccountsList returns empty list}
 		procedure TestGetAccountsList_ReturnsEmpty;
 		[Test]
-		{Verifies SetAccountSettings completes without exception}
+		{Verifies 1-param SetAccountSettings completes without exception}
 		procedure TestSetAccountSettings_NoOp;
+		[Test]
+		{Verifies 2-param SetAccountSettings completes without exception}
+		procedure TestSetAccountSettingsTwoParam_NoOp;
 		[Test]
 		{Verifies DeleteAccount completes without exception}
 		procedure TestDeleteAccount_NoOp;
@@ -597,6 +606,55 @@ begin
 	end;
 end;
 
+procedure TAccountsManagerTest.TestGetAccountsList_IncludesSharedPostfix;
+var
+	TestAccountsManager: TAccountsManager;
+	AccountsList: TWSList;
+begin
+	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(DataPath(FP_ACCOUNTS_INI)), TNullLogger.Create);
+	try
+		AccountsList := TestAccountsManager.GetAccountsList([ATPrivate, ATPublic], [VTShared]);
+		Assert.IsTrue(AccountsList.Contains('TEST_ACCOUNT_ONE' + SharedPostfix),
+			'Shared virtual directory should be included');
+	finally
+		TestAccountsManager.Free;
+	end;
+end;
+
+procedure TAccountsManagerTest.TestRenameAccount_PreservesOverrides;
+var
+	TestAccountsManager: TAccountsManager;
+	IniContent: TStringList;
+	IniPath: WideString;
+	Loaded: TAccountSettings;
+begin
+	IniPath := self.AppDir + FP_ACCOUNTS_INI;
+
+	{Write INI file directly because SetAccountSettings does not persist shard/upload overrides}
+	IniContent := TStringList.Create;
+	try
+		IniContent.Add('[OVERRIDE_ACC]');
+		IniContent.Add('email=override@mail.ru');
+		IniContent.Add('shard_override=https://custom-shard.mail.ru/');
+		IniContent.Add('upload_url_override=https://custom-upload.mail.ru/');
+		IniContent.SaveToFile(IniPath);
+	finally
+		IniContent.Free;
+	end;
+
+	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(IniPath), TNullLogger.Create);
+	try
+		TestAccountsManager.RenameAccount('OVERRIDE_ACC', 'RENAMED_ACC');
+
+		Loaded := TestAccountsManager.GetAccountSettings('RENAMED_ACC');
+		Assert.AreEqual('override@mail.ru', Loaded.Email, 'Email should be preserved');
+		Assert.AreEqual('https://custom-shard.mail.ru/', Loaded.ShardOverride, 'ShardOverride should be preserved');
+		Assert.AreEqual('https://custom-upload.mail.ru/', Loaded.UploadUrlOverride, 'UploadUrlOverride should be preserved');
+	finally
+		TestAccountsManager.Free;
+	end;
+end;
+
 {TNullAccountsManagerTest}
 
 procedure TNullAccountsManagerTest.TestImplementsIAccountsManager;
@@ -688,6 +746,18 @@ begin
 	Settings := Default(TAccountSettings);
 	Settings.Account := 'test';
 	AccountsManager.SetAccountSettings(Settings);
+	Assert.Pass;
+end;
+
+procedure TNullAccountsManagerTest.TestSetAccountSettingsTwoParam_NoOp;
+var
+	AccountsManager: IAccountsManager;
+	Settings: TAccountSettings;
+begin
+	AccountsManager := TNullAccountsManager.Create;
+	Settings := Default(TAccountSettings);
+	Settings.Account := 'test';
+	AccountsManager.SetAccountSettings('test', Settings);
 	Assert.Pass;
 end;
 
