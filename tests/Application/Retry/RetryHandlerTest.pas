@@ -681,7 +681,8 @@ begin
 	FThreadState.SetRetryCountDownload(5);
 	FThreadState.IncrementRetryCountUpload;
 
-	{ Cast an out-of-range integer to TRetryOperationType to hit the else branch }
+	{ Cast an out-of-range integer to TRetryOperationType to hit the else branch.
+	  GetRetryCount returns 0 for unknown type, so no retries occur and the original error propagates. }
 	var Count := FHandler.HandleOperationError(
 		FS_FILE_NOTFOUND,
 		TRetryOperationType(99),
@@ -690,8 +691,7 @@ begin
 		TestAbortCheck
 	);
 
-	{ With retry mode and unknown type, GetRetryCount returns 0 }
-	Assert.Pass('Unknown operation type should not crash');
+	Assert.AreEqual(FS_FILE_NOTFOUND, Count, 'Unknown operation type should return original error');
 end;
 
 initialization
