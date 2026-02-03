@@ -1,4 +1,4 @@
-﻿unit FileStreamExecutor;
+unit FileStreamExecutor;
 
 {Executes file streaming operations.
 	Handles streaming URL resolution based on format (playlist vs direct),
@@ -8,14 +8,14 @@
 interface
 
 uses
-	RealPath,
 	CloudDirItem,
 	CloudConstants,
 	StreamingSettings,
-	ConnectionManager,
+	RealPath,
 	CloudMailRu,
 	CloudMailRuFactory,
-	CommandExecutor;
+	CommandExecutor,
+	ConnectionManager;
 
 {Maps streaming format to corresponding shard type for URL resolution.
 	Exposed for testability.}
@@ -28,10 +28,10 @@ type
 		{Executes file streaming for the given item.
 			Resolves streaming URL based on format, publishes file if needed,
 			and launches the configured streaming command.
-			@param RealPath Path to the file
+			@param RealPath Parsed path with account info (for connection lookup)
 			@param Item Directory item with weblink info
 			@param Settings Streaming configuration (command, parameters, format)
-			@param ConnManager Connection manager for account access
+			@param ConnManager Connection manager for resolving cloud instances
 			@return FS_EXEC_OK on success, FS_EXEC_ERROR on failure}
 		function Execute(const RealPath: TRealPath; const Item: TCloudDirItem; var Settings: TStreamingSettings; ConnManager: IConnectionManager): Integer;
 	end;
@@ -44,7 +44,7 @@ type
 		{Resolves streaming URL based on format.
 			For playlist: gets HLS stream URL.
 			For other formats: publishes file if needed and gets shared URL.}
-		function ResolveStreamUrl(const RealPath: TRealPath; const Item: TCloudDirItem; Format: Integer; TempCloud: TCloudMailRu; ConnManager: IConnectionManager; out StreamUrl: WideString): Boolean;
+		function ResolveStreamUrl(Cloud: TCloudMailRu; const Item: TCloudDirItem; Format: Integer; TempCloud: TCloudMailRu; out StreamUrl: WideString): Boolean;
 
 		{Executes streaming command with URL substitution.}
 		function ExecuteCommand(var Settings: TStreamingSettings; const StreamUrl: WideString): Boolean;
@@ -88,9 +88,8 @@ begin
 	FCommandExecutor := CommandExecutor;
 end;
 
-function TFileStreamExecutor.ResolveStreamUrl(const RealPath: TRealPath; const Item: TCloudDirItem; Format: Integer; TempCloud: TCloudMailRu; ConnManager: IConnectionManager; out StreamUrl: WideString): Boolean;
+function TFileStreamExecutor.ResolveStreamUrl(Cloud: TCloudMailRu; const Item: TCloudDirItem; Format: Integer; TempCloud: TCloudMailRu; out StreamUrl: WideString): Boolean;
 var
-	CurrentCloud: TCloudMailRu;
 	MutableItem: TCloudDirItem;
 begin
 	Result := True;
@@ -104,8 +103,7 @@ begin
 		{Other formats - ensure file is published first}
 		if not Item.isPublished then
 		begin
-			CurrentCloud := ConnManager.Get(RealPath.account);
-			Result := CurrentCloud.PublishFile(MutableItem.home, MutableItem.weblink);
+			Result := Cloud.PublishFile(MutableItem.home, MutableItem.weblink);
 			{Could refresh the listing here}
 		end;
 
@@ -130,7 +128,7 @@ function TFileStreamExecutor.Execute(const RealPath: TRealPath; const Item: TClo
 var
 	StreamUrl: WideString;
 	TempPublicCloud: TCloudMailRu;
-	PublicBaseUrl: WideString;
+	Cloud: TCloudMailRu;
 begin
 	Result := FS_EXEC_OK;
 
@@ -138,19 +136,15 @@ begin
 	if (STREAMING_FORMAT_DISABLED = Settings.Format) or (STREAMING_FORMAT_UNSET = Settings.Format) then
 		Exit;
 
-	{Resolve public URL prefix from account's endpoints}
-	if (ConnManager <> nil) and (ConnManager.Get(RealPath.Account) <> nil) then
-		PublicBaseUrl := ConnManager.Get(RealPath.Account).GetEndpoints.PublicUrl
-	else
-		PublicBaseUrl := PUBLIC_ACCESS_URL;
+	Cloud := ConnManager.Get(RealPath.Account);
 
 	{Initialize temporary public cloud for URL resolution}
-	if not FCloudFactory.CreatePublicCloud(TempPublicCloud, PublicBaseUrl + Item.weblink) then
+	if not FCloudFactory.CreatePublicCloud(TempPublicCloud, Cloud.GetEndpoints.PublicUrl + Item.weblink) then
 		Exit(FS_EXEC_ERROR);
 
 	try
 		{Resolve streaming URL based on format}
-		if not ResolveStreamUrl(RealPath, Item, Settings.Format, TempPublicCloud, ConnManager, StreamUrl) then
+		if not ResolveStreamUrl(Cloud, Item, Settings.Format, TempPublicCloud, StreamUrl) then
 			Exit(FS_EXEC_ERROR);
 
 		{Execute streaming command}

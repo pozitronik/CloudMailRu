@@ -172,7 +172,8 @@ implementation
 uses
 	Winapi.Windows,
 	Winapi.Messages,
-	PathHelper;
+	PathHelper,
+	StringHelper;
 
 const
 	{Default filename for descriptions - matches TC convention}
@@ -193,10 +194,7 @@ begin
 	FPublicCloudFactory := PublicCloudFactory;
 	FTCHandler := TCHandler;
 	FIsPublicAccount := IsPublicAccount;
-	if PublicUrl <> '' then
-		FPublicUrl := PublicUrl
-	else
-		FPublicUrl := PUBLIC_ACCESS_URL;
+	FPublicUrl := IfEmpty(PublicUrl, PUBLIC_ACCESS_URL);
 end;
 
 procedure TRemotePropertyPresenter.Initialize(Props: TCloudDirItem; RemotePath: WideString; Config: TRemotePropertyConfig);

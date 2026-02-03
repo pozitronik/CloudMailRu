@@ -53,6 +53,7 @@ uses
 	CloudConstants,
 	WFXTypes,
 	PathHelper,
+	StringHelper,
 	ThumbnailSizeSelector;
 
 {TCloudThumbnailService}
@@ -74,10 +75,7 @@ begin
 	if not FShardManager.ResolveShard(Result, SHARD_TYPE_THUMBNAILS) then
 	begin
 		{Fallback to configured thumbnail URL if dispatcher doesn't provide thumbnail shard}
-		if FThumbnailUrl <> '' then
-			Result := FThumbnailUrl
-		else
-			Result := THUMB_CLOUD_URL;
+		Result := IfEmpty(FThumbnailUrl, THUMB_CLOUD_URL);
 		FLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, 'Using fallback thumbnail URL: %s', [Result]);
 	end;
 end;

@@ -78,7 +78,7 @@ type
 		property MockHTTP: TMockCloudHTTP read FMockHTTP;
 	end;
 
-	{Mock connection manager for testing}
+	{Mock connection manager that returns a preconfigured cloud instance}
 	TMockConnManager = class(TInterfacedObject, IConnectionManager)
 	private
 		FCloud: TCloudMailRu;
@@ -96,6 +96,8 @@ type
 		FExecutor: IFileStreamExecutor;
 		FMockCloudFactory: TMockPublicCloudFactory;
 		FMockCommandExecutor: TMockCommandExecutor;
+		FCloud: TCloudMailRu;
+		FConnManager: IConnectionManager;
 
 		function CreateItem(const Name, Weblink: WideString): TCloudDirItem;
 		function CreatePath(const Account, Path: WideString): TRealPath;
@@ -137,6 +139,12 @@ type
 		procedure TestExecute_WeblinkViewFormat_CallsFactory;
 		[Test]
 		procedure TestExecute_VideoFormat_CallsFactory;
+
+		{Connection manager tests}
+		[Test]
+		procedure TestExecute_ConnManagerGetCalledWithAccountName;
+		[Test]
+		procedure TestExecute_FormatDisabled_ConnManagerNotCalled;
 
 		{Full execution path tests}
 		[Test]
@@ -313,15 +321,37 @@ end;
 {Setup/TearDown}
 
 procedure TFileStreamExecutorTest.Setup;
+var
+	Settings: TCloudSettings;
 begin
 	FMockCloudFactory := TMockPublicCloudFactory.Create;
 	FMockCommandExecutor := TMockCommandExecutor.Create;
 	FExecutor := TFileStreamExecutor.Create(FMockCloudFactory, FMockCommandExecutor);
+
+	{Cloud instance with default endpoints for connection manager}
+	Settings := Default(TCloudSettings);
+	FCloud := TCloudMailRu.Create(
+		Settings,
+		TMockHTTPManager.Create(TMockCloudHTTP.Create),
+		TestThreadID(),
+		TNullAuthStrategy.Create,
+		TNullFileSystem.Create,
+		TNullLogger.Create,
+		TNullProgress.Create,
+		TNullRequest.Create,
+		TNullTCHandler.Create,
+		TNullCipher.Create,
+		TNullOpenSSLProvider.Create,
+		TNullAccountCredentialsProvider.Create);
+
+	FConnManager := TMockConnManager.Create(FCloud);
 end;
 
 procedure TFileStreamExecutorTest.TearDown;
 begin
+	FConnManager := nil;
 	FExecutor := nil;
+	FreeAndNil(FCloud);
 	{Mocks are released via interface reference counting}
 end;
 
@@ -339,7 +369,7 @@ begin
 	Item := CreateItem('file.mp4', 'abc123');
 	Settings := CreateSettings(STREAMING_FORMAT_DISABLED);
 
-	ExecResult := FExecutor.Execute(Path, Item, Settings, nil);
+	ExecResult := FExecutor.Execute(Path, Item, Settings, FConnManager);
 
 	Assert.AreEqual(FS_EXEC_OK, ExecResult, 'Should return OK when streaming disabled');
 end;
@@ -356,7 +386,7 @@ begin
 	Item := CreateItem('file.mp4', 'abc123');
 	Settings := CreateSettings(STREAMING_FORMAT_UNSET);
 
-	ExecResult := FExecutor.Execute(Path, Item, Settings, nil);
+	ExecResult := FExecutor.Execute(Path, Item, Settings, FConnManager);
 
 	Assert.AreEqual(FS_EXEC_OK, ExecResult, 'Should return OK when format unset');
 end;
@@ -372,7 +402,7 @@ begin
 	Item := CreateItem('file.mp4', 'abc123');
 	Settings := CreateSettings(STREAMING_FORMAT_DISABLED);
 
-	FExecutor.Execute(Path, Item, Settings, nil);
+	FExecutor.Execute(Path, Item, Settings, FConnManager);
 
 	Assert.AreEqual(0, FMockCloudFactory.CreateCallCount, 'Factory should not be called when format disabled');
 end;
@@ -388,7 +418,7 @@ begin
 	Item := CreateItem('file.mp4', 'abc123');
 	Settings := CreateSettings(STREAMING_FORMAT_UNSET);
 
-	FExecutor.Execute(Path, Item, Settings, nil);
+	FExecutor.Execute(Path, Item, Settings, FConnManager);
 
 	Assert.AreEqual(0, FMockCloudFactory.CreateCallCount, 'Factory should not be called when format unset');
 end;
@@ -404,7 +434,7 @@ begin
 	Item := CreateItem('file.mp4', 'abc123');
 	Settings := CreateSettings(STREAMING_FORMAT_NONE);
 
-	FExecutor.Execute(Path, Item, Settings, nil);
+	FExecutor.Execute(Path, Item, Settings, FConnManager);
 
 	Assert.AreEqual(1, FMockCloudFactory.CreateCallCount, 'Format NONE should call factory');
 end;
@@ -424,7 +454,7 @@ begin
 	Item := CreateItem('file.mp4', 'abc123');
 	Settings := CreateSettings(STREAMING_FORMAT_DEFAULT);
 
-	ExecResult := FExecutor.Execute(Path, Item, Settings, nil);
+	ExecResult := FExecutor.Execute(Path, Item, Settings, FConnManager);
 
 	Assert.AreEqual(FS_EXEC_ERROR, ExecResult, 'Should return error when factory fails');
 end;
@@ -441,7 +471,7 @@ begin
 	Item := CreateItem('file.mp4', 'abc123');
 	Settings := CreateSettings(STREAMING_FORMAT_DEFAULT);
 
-	FExecutor.Execute(Path, Item, Settings, nil);
+	FExecutor.Execute(Path, Item, Settings, FConnManager);
 
 	Assert.AreEqual(0, FMockCommandExecutor.ExecuteCallCount, 'Command executor should not be called when factory fails');
 end;
@@ -452,13 +482,13 @@ var
 	Item: TCloudDirItem;
 	Settings: TStreamingSettings;
 begin
-	{Factory should receive the correct public URL constructed from weblink}
+	{Factory should receive the correct public URL constructed from endpoints + weblink}
 	FMockCloudFactory.CreateResult := False;
 	Path := CreatePath('account', '\file.mp4');
 	Item := CreateItem('file.mp4', 'test-weblink-123');
 	Settings := CreateSettings(STREAMING_FORMAT_DEFAULT);
 
-	FExecutor.Execute(Path, Item, Settings, nil);
+	FExecutor.Execute(Path, Item, Settings, FConnManager);
 
 	Assert.AreEqual(PUBLIC_ACCESS_URL + 'test-weblink-123', FMockCloudFactory.LastPublicUrl, 'Factory should receive correct public URL');
 end;
@@ -475,7 +505,7 @@ begin
 	Item := CreateItem('video.mp4', 'any-weblink');
 	Settings := CreateSettings(STREAMING_FORMAT_PLAYLIST);
 
-	FExecutor.Execute(Path, Item, Settings, nil);
+	FExecutor.Execute(Path, Item, Settings, FConnManager);
 
 	Assert.StartsWith(PUBLIC_ACCESS_URL, FMockCloudFactory.LastPublicUrl, 'URL should start with PUBLIC_ACCESS_URL');
 end;
@@ -493,7 +523,7 @@ begin
 	Item := CreateItem('stream.m3u8', 'playlist-link');
 	Settings := CreateSettings(STREAMING_FORMAT_PLAYLIST);
 
-	FExecutor.Execute(Path, Item, Settings, nil);
+	FExecutor.Execute(Path, Item, Settings, FConnManager);
 
 	Assert.AreEqual(1, FMockCloudFactory.CreateCallCount, 'Playlist format should call factory');
 end;
@@ -509,7 +539,7 @@ begin
 	Item := CreateItem('file.mp4', 'default-link');
 	Settings := CreateSettings(STREAMING_FORMAT_DEFAULT);
 
-	FExecutor.Execute(Path, Item, Settings, nil);
+	FExecutor.Execute(Path, Item, Settings, FConnManager);
 
 	Assert.AreEqual(1, FMockCloudFactory.CreateCallCount, 'Default format should call factory');
 end;
@@ -525,7 +555,7 @@ begin
 	Item := CreateItem('document.pdf', 'weblink-view');
 	Settings := CreateSettings(STREAMING_FORMAT_WEBLINK_VIEW);
 
-	FExecutor.Execute(Path, Item, Settings, nil);
+	FExecutor.Execute(Path, Item, Settings, FConnManager);
 
 	Assert.AreEqual(1, FMockCloudFactory.CreateCallCount, 'Weblink view format should call factory');
 end;
@@ -541,9 +571,43 @@ begin
 	Item := CreateItem('movie.avi', 'video-link');
 	Settings := CreateSettings(STREAMING_FORMAT_VIDEO);
 
-	FExecutor.Execute(Path, Item, Settings, nil);
+	FExecutor.Execute(Path, Item, Settings, FConnManager);
 
 	Assert.AreEqual(1, FMockCloudFactory.CreateCallCount, 'Video format should call factory');
+end;
+
+{Connection manager tests - verify proper delegation}
+
+procedure TFileStreamExecutorTest.TestExecute_ConnManagerGetCalledWithAccountName;
+var
+	Path: TRealPath;
+	Item: TCloudDirItem;
+	Settings: TStreamingSettings;
+begin
+	{Execute should resolve cloud via ConnManager.Get with account from path}
+	Path := CreatePath('account', '\file.mp4');
+	Item := CreateItem('file.mp4', 'abc123');
+	Settings := CreateSettings(STREAMING_FORMAT_DEFAULT);
+
+	FExecutor.Execute(Path, Item, Settings, FConnManager);
+
+	Assert.AreEqual(1, (FConnManager as TMockConnManager).GetCallCount, 'ConnManager.Get should be called once');
+end;
+
+procedure TFileStreamExecutorTest.TestExecute_FormatDisabled_ConnManagerNotCalled;
+var
+	Path: TRealPath;
+	Item: TCloudDirItem;
+	Settings: TStreamingSettings;
+begin
+	{Early exit paths should not touch ConnManager}
+	Path := CreatePath('account', '\file.mp4');
+	Item := CreateItem('file.mp4', 'abc123');
+	Settings := CreateSettings(STREAMING_FORMAT_DISABLED);
+
+	FExecutor.Execute(Path, Item, Settings, FConnManager);
+
+	Assert.AreEqual(0, (FConnManager as TMockConnManager).GetCallCount, 'ConnManager.Get should not be called when format disabled');
 end;
 
 {TShardTypeFromStreamingFormatTest}
@@ -607,7 +671,7 @@ begin
 	Item.weblink := 'published-link'; {Non-empty weblink = already published}
 	Settings := CreateSettings(STREAMING_FORMAT_DEFAULT, 'player.exe', '%url%');
 
-	ExecResult := FExecutor.Execute(Path, Item, Settings, TMockConnManager.Create(nil));
+	ExecResult := FExecutor.Execute(Path, Item, Settings, FConnManager);
 	Assert.AreEqual(FS_EXEC_OK, ExecResult, 'Published file streaming should succeed');
 	Assert.AreEqual(1, FMockCommandExecutor.ExecuteCallCount, 'Command should be executed');
 end;
@@ -628,7 +692,7 @@ begin
 	Item.weblink := 'published-link';
 	Settings := CreateSettings(STREAMING_FORMAT_DEFAULT, 'player.exe', '%url%');
 
-	ExecResult := FExecutor.Execute(Path, Item, Settings, TMockConnManager.Create(nil));
+	ExecResult := FExecutor.Execute(Path, Item, Settings, FConnManager);
 	Assert.AreEqual(FS_EXEC_ERROR, ExecResult, 'Failed command should return error');
 end;
 
@@ -646,7 +710,7 @@ begin
 	Item.weblink := 'published-link';
 	Settings := CreateSettings(STREAMING_FORMAT_DEFAULT, 'player.exe', '');
 
-	FExecutor.Execute(Path, Item, Settings, TMockConnManager.Create(nil));
+	FExecutor.Execute(Path, Item, Settings, FConnManager);
 	Assert.AreEqual(1, FMockCommandExecutor.ExecuteCallCount, 'Command should be executed with default params');
 end;
 

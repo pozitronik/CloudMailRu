@@ -52,6 +52,16 @@ type
 		procedure TestFormatSizeExplicitKilobytes;
 		[Test]
 		procedure TestFormatSizeExplicitMegabytes;
+
+		{ IfEmpty tests }
+		[Test]
+		procedure TestIfEmpty_NonEmptyValue_ReturnsValue;
+		[Test]
+		procedure TestIfEmpty_EmptyValue_ReturnsDefault;
+		[Test]
+		procedure TestIfEmpty_BothEmpty_ReturnsEmpty;
+		[Test]
+		procedure TestIfEmpty_EmptyDefault_ReturnsValue;
 	end;
 
 implementation
@@ -206,6 +216,28 @@ begin
 	Assert.AreEqual('2 Mb', FormatSize(2097152, SIZE_TYPE_MEGABYTES), 'SIZE_TYPE_MEGABYTES should show Mb suffix');
 	{ 10485760 bytes = 10 Mb }
 	Assert.AreEqual('10 Mb', FormatSize(10485760, SIZE_TYPE_MEGABYTES), 'SIZE_TYPE_MEGABYTES should divide by 1024 twice');
+end;
+
+{ IfEmpty tests }
+
+procedure TStringHelperTest.TestIfEmpty_NonEmptyValue_ReturnsValue;
+begin
+	Assert.AreEqual('custom', IfEmpty('custom', 'default'));
+end;
+
+procedure TStringHelperTest.TestIfEmpty_EmptyValue_ReturnsDefault;
+begin
+	Assert.AreEqual('default', IfEmpty('', 'default'));
+end;
+
+procedure TStringHelperTest.TestIfEmpty_BothEmpty_ReturnsEmpty;
+begin
+	Assert.AreEqual('', IfEmpty('', ''));
+end;
+
+procedure TStringHelperTest.TestIfEmpty_EmptyDefault_ReturnsValue;
+begin
+	Assert.AreEqual('value', IfEmpty('value', ''));
 end;
 
 initialization

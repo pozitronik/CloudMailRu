@@ -12,6 +12,8 @@ const
 
 function FormatSize(size: Int64; SizeType: Integer = SIZE_TYPE_AUTO): WideString;
 function UrlEncode(URL: WideString): WideString;
+{Returns Value if non-empty, otherwise returns Default}
+function IfEmpty(const Value, Default: WideString): WideString;
 
 implementation
 
@@ -56,6 +58,14 @@ begin
 	end;
 
 	Result := Format('%d %s', [Round(FloatSize), Postfixes[Iteration]]);
+end;
+
+function IfEmpty(const Value, Default: WideString): WideString;
+begin
+	if Value <> '' then
+		Result := Value
+	else
+		Result := Default;
 end;
 
 end.
