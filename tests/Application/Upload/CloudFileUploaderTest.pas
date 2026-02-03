@@ -66,6 +66,22 @@ type
 		procedure TestAddFileByIdentity_Success_ReturnsOK;
 		[Test]
 		procedure TestAddFileByIdentity_PostFormFails_ReturnsWriteError;
+
+		{ PutFileWhole tests }
+		[Test]
+		procedure TestUpload_NormalFile_ReturnsOK;
+		[Test]
+		procedure TestUpload_FileOpenError_ReturnsReadError;
+
+		{ CRC check tests }
+		[Test]
+		procedure TestUpload_CRCMismatch_ReturnsFailed;
+
+		{ Hash precalculation dedup tests }
+		[Test]
+		procedure TestUpload_PrecalculateHash_DedupeSuccess_SkipsUpload;
+		[Test]
+		procedure TestUpload_PrecalculateHash_DedupeExists_ReturnsExists;
 	end;
 
 implementation
@@ -270,6 +286,107 @@ begin
 	Result := FUploader.AddFileByIdentity(Identity, '/test/file.txt');
 
 	Assert.AreEqual(FS_FILE_WRITEERROR, Result, 'Failed POST should return FS_FILE_WRITEERROR');
+end;
+
+{ PutFileWhole tests }
+
+procedure TCloudFileUploaderTest.TestUpload_NormalFile_ReturnsOK;
+var
+	UploadResult: Integer;
+begin
+	{Normal upload: file size <= CloudMaxFileSize -> PutFileWhole -> PutFileStream -> PutFileToCloud}
+	FSettings.CloudMaxFileSize := 100 * 1024 * 1024;
+	FMockHTTP.SetResponse('/file/add', True, '{"status":200,"body":{"home":"/test/file.txt"}}');
+
+	FUploader := TCloudFileUploader.Create(
+		FMockContext, FShardManager, FHashCalculator,
+		TNullCipher.Create, TWindowsFileSystem.Create,
+		TNullLogger.Create, TNullProgress.Create, TNullRequest.Create,
+		TNullTCHandler.Create, FRetryOperation, False, FSettings);
+
+	UploadResult := FUploader.Upload(DataPath('SIMPLE.JSON'), '/test/file.txt');
+	Assert.AreEqual(FS_FILE_OK, UploadResult, 'Normal file upload should succeed');
+end;
+
+procedure TCloudFileUploaderTest.TestUpload_FileOpenError_ReturnsReadError;
+var
+	UploadResult: Integer;
+begin
+	{Non-existent file -> file open exception in PutFileWhole}
+	FSettings.CloudMaxFileSize := 100 * 1024 * 1024;
+
+	UploadResult := FUploader.Upload('C:\nonexistent_dir\missing_file.txt', '/test/missing.txt');
+	Assert.AreEqual(FS_FILE_READERROR, UploadResult, 'File open error should return READERROR');
+end;
+
+{ CRC check tests }
+
+procedure TCloudFileUploaderTest.TestUpload_CRCMismatch_ReturnsFailed;
+var
+	UploadResult: Integer;
+begin
+	{CRC check enabled: upload succeeds but returned hash differs from local hash}
+	FSettings.CloudMaxFileSize := 100 * 1024 * 1024;
+	FSettings.CheckCRC := True;
+	FSettings.PrecalculateHash := False;
+
+	{Mock returns a hash that differs from the real file SHA1}
+	FMockHTTP.SetPutFileResponse('', 'BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB', FS_FILE_OK);
+	FMockHTTP.SetResponse('/file/add', True, '{"status":200,"body":{"home":"/test/file.txt"}}');
+
+	FUploader := TCloudFileUploader.Create(
+		FMockContext, FShardManager, FHashCalculator,
+		TNullCipher.Create, TWindowsFileSystem.Create,
+		TNullLogger.Create, TNullProgress.Create, TNullRequest.Create,
+		TNullTCHandler.Create, FRetryOperation, False, FSettings);
+
+	UploadResult := FUploader.Upload(DataPath('SIMPLE.JSON'), '/test/file.txt');
+	Assert.AreEqual(CLOUD_OPERATION_FAILED, UploadResult, 'CRC mismatch should return CLOUD_OPERATION_FAILED');
+end;
+
+procedure TCloudFileUploaderTest.TestUpload_PrecalculateHash_DedupeSuccess_SkipsUpload;
+var
+	UploadResult: Integer;
+begin
+	{PrecalculateHash=True causes hash to be computed, then AddFileByIdentity tries dedup.
+	 If server recognizes hash -> FS_FILE_OK -> early exit without actual upload.}
+	FSettings.CloudMaxFileSize := 100 * 1024 * 1024;
+	FSettings.PrecalculateHash := True;
+
+	{Mock: /file/add succeeds (hash recognized); CloudResultToFsResult returns OK}
+	FMockHTTP.SetResponse('/file/add', True, '{"status":200,"body":{"home":"/test/file.txt"}}');
+	FMockContext.SetCloudResultToFsResultResult(FS_FILE_OK);
+
+	FUploader := TCloudFileUploader.Create(
+		FMockContext, FShardManager, FHashCalculator,
+		TNullCipher.Create, TWindowsFileSystem.Create,
+		TNullLogger.Create, TNullProgress.Create, TNullRequest.Create,
+		TNullTCHandler.Create, FRetryOperation, False, FSettings);
+
+	UploadResult := FUploader.Upload(DataPath('SIMPLE.JSON'), '/test/dedup.txt');
+	Assert.AreEqual(FS_FILE_OK, UploadResult, 'Dedup success should skip upload and return OK');
+end;
+
+procedure TCloudFileUploaderTest.TestUpload_PrecalculateHash_DedupeExists_ReturnsExists;
+var
+	UploadResult: Integer;
+begin
+	{PrecalculateHash dedup where server returns EXISTS (path conflict).}
+	FSettings.CloudMaxFileSize := 100 * 1024 * 1024;
+	FSettings.PrecalculateHash := True;
+
+	{Mock: /file/add succeeds at HTTP level but CloudResultToFsResult returns EXISTS}
+	FMockHTTP.SetResponse('/file/add', True, '{"status":200,"body":"exists"}');
+	FMockContext.SetCloudResultToFsResultResult(FS_FILE_EXISTS);
+
+	FUploader := TCloudFileUploader.Create(
+		FMockContext, FShardManager, FHashCalculator,
+		TNullCipher.Create, TWindowsFileSystem.Create,
+		TNullLogger.Create, TNullProgress.Create, TNullRequest.Create,
+		TNullTCHandler.Create, FRetryOperation, False, FSettings);
+
+	UploadResult := FUploader.Upload(DataPath('SIMPLE.JSON'), '/test/existing.txt');
+	Assert.AreEqual(FS_FILE_EXISTS, UploadResult, 'Dedup with EXISTS conflict should return EXISTS');
 end;
 
 initialization

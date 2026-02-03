@@ -172,6 +172,20 @@ type
 		{HTTP property tests}
 		[Test]
 		procedure TestHTTP_IsNotNil;
+
+		{SourceName/TargetName property setters}
+		[Test]
+		procedure TestSourceName_SetsWithoutError;
+		[Test]
+		procedure TestTargetName_SetsWithoutError;
+
+		{GetHTTP via interface}
+		[Test]
+		procedure TestGetHTTP_ViaInterface_ReturnsHTTP;
+
+		{Head request - fails on localhost:1}
+		[Test]
+		procedure TestHead_FailedConnection_HandlesGracefully;
 	end;
 
 	[TestFixture]
@@ -261,13 +275,79 @@ type
 		procedure TestSetProgress_AcceptsNullProgress;
 	end;
 
+	{Mock progress that tracks calls and can simulate user cancellation}
+	TMockProgressForHTTP = class(TInterfacedObject, IProgress)
+	private
+		FProgressResult: Boolean;
+		FLastPercent: Integer;
+		FProgressCalled: Boolean;
+	public
+		constructor Create;
+		function Progress(SourceName, TargetName: WideString; PercentDone: Integer): Boolean; overload;
+		function Progress(SourceName: WideString; PercentDone: Integer): Boolean; overload;
+		function Progress(PercentDone: Integer): Boolean; overload;
+		function Aborted(): Boolean;
+		property ProgressResult: Boolean read FProgressResult write FProgressResult;
+		property LastPercent: Integer read FLastPercent;
+		property ProgressCalled: Boolean read FProgressCalled;
+	end;
+
+	{Tests for HTTPProgress callback -- direct invocation without network}
+	[TestFixture]
+	TCloudMailRuHTTPProgressTest = class
+	private
+		FHTTP: TCloudMailRuHTTP;
+		FMockProgress: TMockProgressForHTTP;
+		FProgressRef: IProgress;
+	public
+		[Setup]
+		procedure Setup;
+		[TearDown]
+		procedure TearDown;
+
+		[Test]
+		procedure TestHTTPProgress_ReadMode_CalculatesPercent;
+		[Test]
+		procedure TestHTTPProgress_WriteMode_UsesRequestContentLength;
+		[Test]
+		procedure TestHTTPProgress_AbortOnCancel_RaisesEAbort;
+	end;
+
+	{Tests for production HTTP methods -- uses localhost:1 for immediate connection failure}
+	[TestFixture]
+	TCloudMailRuHTTPNetworkMethodsTest = class
+	private
+		FHTTP: TCloudMailRuHTTP;
+	public
+		[Setup]
+		procedure Setup;
+		[TearDown]
+		procedure TearDown;
+
+		[Test]
+		procedure TestGetFile_FailedConnection_ReturnsError;
+		[Test]
+		procedure TestGetRedirection_FailedConnection_ReturnsFalse;
+		[Test]
+		procedure TestPostForm_FailedConnection_ReturnsFalse;
+		[Test]
+		procedure TestPostMultipart_FailedConnection_ReturnsFalse;
+		[Test]
+		procedure TestPostFile_FailedConnection_ReturnsError;
+		[Test]
+		procedure TestOptionsMethod_FailedConnection_ReturnsFalse;
+		[Test]
+		procedure TestPutFile_FailedConnection_ReturnsError;
+	end;
+
 implementation
 
 uses
 	IdException,
 	IdExceptionCore,
 	IdStack,
-	IdHTTPHeaderInfo;
+	IdHTTPHeaderInfo,
+	IdComponent;
 
 type
 	{Mock logger that tracks log calls}
@@ -804,6 +884,38 @@ begin
 	Assert.IsNotNull(FHTTP.HTTP);
 end;
 
+procedure TCloudMailRuHTTPSetterTest.TestSourceName_SetsWithoutError;
+begin
+	{SourceName property uses SetExternalSourceName setter}
+	FHTTP.SourceName := 'test_source.txt';
+	Assert.Pass;
+end;
+
+procedure TCloudMailRuHTTPSetterTest.TestTargetName_SetsWithoutError;
+begin
+	{TargetName property uses SetExternalTargetName setter}
+	FHTTP.TargetName := 'test_target.txt';
+	Assert.Pass;
+end;
+
+procedure TCloudMailRuHTTPSetterTest.TestGetHTTP_ViaInterface_ReturnsHTTP;
+var
+	Intf: ICloudHTTP;
+begin
+	{Access GetHTTP through the ICloudHTTP interface, not the public field}
+	Intf := TCloudMailRuHTTP.Create(FSettings, TNullLogger.Create, TNullProgress.Create);
+	Assert.IsNotNull(Intf.HTTP);
+end;
+
+procedure TCloudMailRuHTTPSetterTest.TestHead_FailedConnection_HandlesGracefully;
+begin
+	{Head on unreachable host raises exception -- verify it propagates}
+	Assert.WillRaise(
+		procedure begin
+			FHTTP.Head('http://127.0.0.1:1/test');
+		end);
+end;
+
 {TCloudMailRuHTTPExceptionHandlerTest}
 
 procedure TCloudMailRuHTTPExceptionHandlerTest.Setup;
@@ -1066,6 +1178,193 @@ begin
 	Assert.Pass;
 end;
 
+{TMockProgressForHTTP}
+
+constructor TMockProgressForHTTP.Create;
+begin
+	inherited Create;
+	FProgressResult := False;
+	FLastPercent := -1;
+	FProgressCalled := False;
+end;
+
+function TMockProgressForHTTP.Progress(SourceName, TargetName: WideString; PercentDone: Integer): Boolean;
+begin
+	FProgressCalled := True;
+	FLastPercent := PercentDone;
+	Result := FProgressResult;
+end;
+
+function TMockProgressForHTTP.Progress(SourceName: WideString; PercentDone: Integer): Boolean;
+begin
+	FProgressCalled := True;
+	FLastPercent := PercentDone;
+	Result := FProgressResult;
+end;
+
+function TMockProgressForHTTP.Progress(PercentDone: Integer): Boolean;
+begin
+	FProgressCalled := True;
+	FLastPercent := PercentDone;
+	Result := FProgressResult;
+end;
+
+function TMockProgressForHTTP.Aborted(): Boolean;
+begin
+	Result := FProgressResult;
+end;
+
+{TCloudMailRuHTTPProgressTest}
+
+procedure TCloudMailRuHTTPProgressTest.Setup;
+begin
+	FMockProgress := TMockProgressForHTTP.Create;
+	FProgressRef := FMockProgress;
+	FHTTP := TCloudMailRuHTTP.Create(Default(TConnectionSettings), TNullLogger.Create, FProgressRef);
+end;
+
+procedure TCloudMailRuHTTPProgressTest.TearDown;
+begin
+	FHTTP.Free;
+	FProgressRef := nil;
+end;
+
+procedure TCloudMailRuHTTPProgressTest.TestHTTPProgress_ReadMode_CalculatesPercent;
+begin
+	{Direct callback test: wmRead mode uses Response.ContentLength}
+	FHTTP.SetProgressNames('source', 'target');
+	FHTTP.HTTP.Response.ContentLength := 1000;
+	FHTTP.HTTPProgress(FHTTP.HTTP, wmRead, 500);
+	Assert.IsTrue(FMockProgress.ProgressCalled, 'Progress should be called');
+	Assert.AreEqual(50, FMockProgress.LastPercent, 'Percent should be 50 for 500/1000');
+end;
+
+procedure TCloudMailRuHTTPProgressTest.TestHTTPProgress_WriteMode_UsesRequestContentLength;
+begin
+	{Direct callback test: wmWrite mode uses Request.ContentLength}
+	FHTTP.SetProgressNames('source', 'target');
+	FHTTP.HTTP.Request.ContentLength := 2000;
+	FHTTP.HTTPProgress(FHTTP.HTTP, wmWrite, 1000);
+	Assert.IsTrue(FMockProgress.ProgressCalled, 'Progress should be called for write mode');
+	Assert.AreEqual(50, FMockProgress.LastPercent, 'Percent should be 50 for 1000/2000');
+end;
+
+procedure TCloudMailRuHTTPProgressTest.TestHTTPProgress_AbortOnCancel_RaisesEAbort;
+begin
+	{When progress returns True (user wants abort), HTTPProgress raises EAbort}
+	FMockProgress.ProgressResult := True;
+	FHTTP.SetProgressNames('source', 'target');
+	FHTTP.HTTP.Response.ContentLength := 1000;
+	Assert.WillRaise(
+		procedure begin
+			FHTTP.HTTPProgress(FHTTP.HTTP, wmRead, 500);
+		end,
+		EAbort);
+end;
+
+{TCloudMailRuHTTPNetworkMethodsTest}
+
+const
+	{Localhost port 1 is typically not bound -- connection fails immediately with RST}
+	FAIL_URL = 'http://127.0.0.1:1/test';
+
+procedure TCloudMailRuHTTPNetworkMethodsTest.Setup;
+var
+	Settings: TConnectionSettings;
+begin
+	Settings := Default(TConnectionSettings);
+	Settings.SocketTimeout := 500;
+	FHTTP := TCloudMailRuHTTP.Create(Settings, TNullLogger.Create, TNullProgress.Create);
+end;
+
+procedure TCloudMailRuHTTPNetworkMethodsTest.TearDown;
+begin
+	FHTTP.Free;
+end;
+
+procedure TCloudMailRuHTTPNetworkMethodsTest.TestGetFile_FailedConnection_ReturnsError;
+var
+	Stream: TMemoryStream;
+	ResultCode: Integer;
+begin
+	Stream := TMemoryStream.Create;
+	try
+		ResultCode := FHTTP.GetFile(FAIL_URL, Stream);
+		Assert.AreEqual(FS_FILE_READERROR, ResultCode);
+	finally
+		Stream.Free;
+	end;
+end;
+
+procedure TCloudMailRuHTTPNetworkMethodsTest.TestGetRedirection_FailedConnection_ReturnsFalse;
+var
+	RedirectURL: WideString;
+	ProgressEnabled: Boolean;
+begin
+	ProgressEnabled := True;
+	Assert.IsFalse(FHTTP.GetRedirection(FAIL_URL, RedirectURL, ProgressEnabled));
+end;
+
+procedure TCloudMailRuHTTPNetworkMethodsTest.TestPostForm_FailedConnection_ReturnsFalse;
+var
+	Answer: WideString;
+begin
+	Assert.IsFalse(FHTTP.PostForm(FAIL_URL, 'data=value', Answer));
+end;
+
+procedure TCloudMailRuHTTPNetworkMethodsTest.TestPostMultipart_FailedConnection_ReturnsFalse;
+var
+	Params: TDictionary<WideString, WideString>;
+	Answer: WideString;
+begin
+	Params := TDictionary<WideString, WideString>.Create;
+	try
+		Params.Add('key', 'value');
+		Assert.IsFalse(FHTTP.PostMultipart(FAIL_URL, Params, Answer));
+	finally
+		Params.Free;
+	end;
+end;
+
+procedure TCloudMailRuHTTPNetworkMethodsTest.TestPostFile_FailedConnection_ReturnsError;
+var
+	Stream: TMemoryStream;
+	Answer: WideString;
+	ResultCode: Integer;
+begin
+	Stream := TMemoryStream.Create;
+	try
+		ResultCode := FHTTP.PostFile(FAIL_URL, 'file.txt', Stream, Answer);
+		Assert.AreNotEqual(FS_FILE_OK, ResultCode, 'PostFile should fail on connection error');
+	finally
+		Stream.Free;
+	end;
+end;
+
+procedure TCloudMailRuHTTPNetworkMethodsTest.TestOptionsMethod_FailedConnection_ReturnsFalse;
+var
+	Answer: WideString;
+	ProgressEnabled: Boolean;
+begin
+	ProgressEnabled := True;
+	Assert.IsFalse(FHTTP.OptionsMethod(FAIL_URL, Answer, ProgressEnabled));
+end;
+
+procedure TCloudMailRuHTTPNetworkMethodsTest.TestPutFile_FailedConnection_ReturnsError;
+var
+	Stream: TMemoryStream;
+	Answer: WideString;
+	ResultCode: Integer;
+begin
+	Stream := TMemoryStream.Create;
+	try
+		ResultCode := FHTTP.PutFile(FAIL_URL, 'file.txt', Stream, Answer);
+		Assert.AreNotEqual(FS_FILE_OK, ResultCode, 'PutFile should fail on connection error');
+	finally
+		Stream.Free;
+	end;
+end;
+
 initialization
 	TDUnitX.RegisterTestFixture(TNullCloudHTTPTest);
 	TDUnitX.RegisterTestFixture(TCloudMailRuHTTPConstructorTest);
@@ -1073,9 +1372,7 @@ initialization
 	TDUnitX.RegisterTestFixture(TCloudMailRuHTTPExceptionHandlerTest);
 	TDUnitX.RegisterTestFixture(TCloudMailRuHTTPCSRFTokenTest);
 	TDUnitX.RegisterTestFixture(TCloudMailRuHTTPSetProgressTest);
-	TDUnitX.RegisterTestFixture(TNullCloudHTTPTest);
-	TDUnitX.RegisterTestFixture(TCloudMailRuHTTPConstructorTest);
-	TDUnitX.RegisterTestFixture(TCloudMailRuHTTPSetterTest);
-	TDUnitX.RegisterTestFixture(TCloudMailRuHTTPExceptionHandlerTest);
+	TDUnitX.RegisterTestFixture(TCloudMailRuHTTPProgressTest);
+	TDUnitX.RegisterTestFixture(TCloudMailRuHTTPNetworkMethodsTest);
 
 end.

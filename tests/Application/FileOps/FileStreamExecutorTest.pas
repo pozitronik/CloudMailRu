@@ -137,6 +137,14 @@ type
 		procedure TestExecute_WeblinkViewFormat_CallsFactory;
 		[Test]
 		procedure TestExecute_VideoFormat_CallsFactory;
+
+		{Full execution path tests}
+		[Test]
+		procedure TestExecute_NonPlaylistPublished_CommandExecuted;
+		[Test]
+		procedure TestExecute_CommandFails_ReturnsError;
+		[Test]
+		procedure TestExecute_EmptyParameters_DefaultsToUrlPlaceholder;
 	end;
 
 	{Test fixture for ShardTypeFromStreamingFormat function}
@@ -580,6 +588,66 @@ procedure TShardTypeFromStreamingFormatTest.TestPlaylist_ReturnsSHARD_TYPE_DEFAU
 begin
 	{Playlist format is handled differently in ResolveStreamUrl, not by this function}
 	Assert.AreEqual(SHARD_TYPE_DEFAULT, ShardTypeFromStreamingFormat(STREAMING_FORMAT_PLAYLIST));
+end;
+
+{Full execution path tests -- use SetupMockCloud to create a real TCloudMailRu with mock HTTP}
+
+procedure TFileStreamExecutorTest.TestExecute_NonPlaylistPublished_CommandExecuted;
+var
+	Path: TRealPath;
+	Item: TCloudDirItem;
+	Settings: TStreamingSettings;
+	ExecResult: Integer;
+begin
+	{Non-playlist format with already-published file -> resolves shared URL -> executes command}
+	FMockCloudFactory.SetupMockCloud(JSON_STREAM_URL);
+
+	Path := CreatePath('account', '\file.mp4');
+	Item := CreateItem('file.mp4', 'published-link');
+	Item.weblink := 'published-link'; {Non-empty weblink = already published}
+	Settings := CreateSettings(STREAMING_FORMAT_DEFAULT, 'player.exe', '%url%');
+
+	ExecResult := FExecutor.Execute(Path, Item, Settings, TMockConnManager.Create(nil));
+	Assert.AreEqual(FS_EXEC_OK, ExecResult, 'Published file streaming should succeed');
+	Assert.AreEqual(1, FMockCommandExecutor.ExecuteCallCount, 'Command should be executed');
+end;
+
+procedure TFileStreamExecutorTest.TestExecute_CommandFails_ReturnsError;
+var
+	Path: TRealPath;
+	Item: TCloudDirItem;
+	Settings: TStreamingSettings;
+	ExecResult: Integer;
+begin
+	{Command executor returns False -> Execute returns error}
+	FMockCloudFactory.SetupMockCloud(JSON_STREAM_URL);
+	FMockCommandExecutor.ExecuteResult := False;
+
+	Path := CreatePath('account', '\file.mp4');
+	Item := CreateItem('file.mp4', 'published-link');
+	Item.weblink := 'published-link';
+	Settings := CreateSettings(STREAMING_FORMAT_DEFAULT, 'player.exe', '%url%');
+
+	ExecResult := FExecutor.Execute(Path, Item, Settings, TMockConnManager.Create(nil));
+	Assert.AreEqual(FS_EXEC_ERROR, ExecResult, 'Failed command should return error');
+end;
+
+procedure TFileStreamExecutorTest.TestExecute_EmptyParameters_DefaultsToUrlPlaceholder;
+var
+	Path: TRealPath;
+	Item: TCloudDirItem;
+	Settings: TStreamingSettings;
+begin
+	{Empty parameters -> ExecuteCommand defaults to %url% before substitution}
+	FMockCloudFactory.SetupMockCloud(JSON_STREAM_URL);
+
+	Path := CreatePath('account', '\file.mp4');
+	Item := CreateItem('file.mp4', 'published-link');
+	Item.weblink := 'published-link';
+	Settings := CreateSettings(STREAMING_FORMAT_DEFAULT, 'player.exe', '');
+
+	FExecutor.Execute(Path, Item, Settings, TMockConnManager.Create(nil));
+	Assert.AreEqual(1, FMockCommandExecutor.ExecuteCallCount, 'Command should be executed with default params');
 end;
 
 initialization

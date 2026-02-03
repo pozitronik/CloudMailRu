@@ -24,7 +24,9 @@ uses
 	StreamingSettings,
 	AuthStrategy,
 	WSList,
+	Winapi.Windows,
 	System.Classes,
+	System.Generics.Collections,
 	DUnitX.TestFramework,
 	OpenSSLProvider,
 	AccountCredentialsProvider;
@@ -132,13 +134,68 @@ type
 		procedure TestConnectionCreatedWithEmptyCipherProfileInSettings;
 	end;
 
+	{Mock password manager returning configurable GetPassword results}
+	TMockPasswordManagerForConn = class(TInterfacedObject, IPasswordManager)
+	private
+		FGetPasswordResult: Integer;
+		FGetPasswordValue: WideString;
+		FSetPasswordResult: Integer;
+		FSetPasswordCalled: Boolean;
+	public
+		constructor Create(GetPasswordResult: Integer; const PasswordValue: WideString = '');
+		function GetPassword(Key: WideString; var Password: WideString): Integer;
+		function SetPassword(Key, Password: WideString): Integer;
+		property SetPasswordResult: Integer read FSetPasswordResult write FSetPasswordResult;
+		property SetPasswordCalled: Boolean read FSetPasswordCalled;
+	end;
+
+	{Mock password UI returning configurable AskPassword/AskAction results}
+	TMockPasswordUIForConn = class(TInterfacedObject, IPasswordUIProvider)
+	private
+		FAskPasswordResult: Integer;
+		FAskPasswordValue: WideString;
+		FAskActionResult: Integer;
+	public
+		constructor Create(AskPasswordResult: Integer; const PasswordValue: WideString = '');
+		function AskPassword(Title, Text: WideString; var Password: WideString; var UseTCPwdMngr: Boolean; DisablePWDManagerCB: Boolean; ParentWindow: HWND): Integer;
+		function AskAction(Title, Text: WideString; ActionsList: TDictionary<Int32, WideString>; ParentWindow: HWND): Integer;
+		property AskActionResult: Integer read FAskActionResult write FAskActionResult;
+	end;
+
+	{Tests for non-public account initialization with encryption}
+	[TestFixture]
+	TConnectionManagerEncryptionTest = class
+	public
+		[Test]
+		{EncryptModeAlways + password found in TC store -> creates cipher}
+		procedure TestInit_EncryptAlways_PasswordFound_CreatesCipher;
+
+		[Test]
+		{EncryptModeAlways + TC store returns unsupported -> Init still creates connection}
+		procedure TestInit_EncryptAlways_PasswordUnsupported_SkipsEncryption;
+
+		[Test]
+		{Free connection that was created via Get -> removes from pool}
+		procedure TestFree_ExistingConnection_RemovesFromPool;
+
+		[Test]
+		{Non-public account with proxy configured -> exercises GetProxyPassword}
+		procedure TestInit_NonPublicWithProxy_PasswordFromINI;
+	end;
+
 implementation
 
 uses
 	CloudConstants,
 	SettingsConstants,
-	System.SysUtils,
-	System.Generics.Collections;
+	WFXTypes,
+	CipherProfile,
+	BCryptProvider,
+	MockHTTPManager,
+	MockCloudHTTP,
+	CloudHTTP,
+	Vcl.Controls,
+	System.SysUtils;
 
 {TMockAccountsManager}
 
@@ -645,11 +702,194 @@ begin
 	end;
 end;
 
+{TMockPasswordManagerForConn}
+
+constructor TMockPasswordManagerForConn.Create(GetPasswordResult: Integer; const PasswordValue: WideString);
+begin
+	inherited Create;
+	FGetPasswordResult := GetPasswordResult;
+	FGetPasswordValue := PasswordValue;
+	FSetPasswordResult := FS_FILE_OK;
+	FSetPasswordCalled := False;
+end;
+
+function TMockPasswordManagerForConn.GetPassword(Key: WideString; var Password: WideString): Integer;
+begin
+	Password := FGetPasswordValue;
+	Result := FGetPasswordResult;
+end;
+
+function TMockPasswordManagerForConn.SetPassword(Key, Password: WideString): Integer;
+begin
+	FSetPasswordCalled := True;
+	Result := FSetPasswordResult;
+end;
+
+{TMockPasswordUIForConn}
+
+constructor TMockPasswordUIForConn.Create(AskPasswordResult: Integer; const PasswordValue: WideString);
+begin
+	inherited Create;
+	FAskPasswordResult := AskPasswordResult;
+	FAskPasswordValue := PasswordValue;
+	FAskActionResult := mrCancel;
+end;
+
+function TMockPasswordUIForConn.AskPassword(Title, Text: WideString; var Password: WideString; var UseTCPwdMngr: Boolean; DisablePWDManagerCB: Boolean; ParentWindow: HWND): Integer;
+begin
+	Password := FAskPasswordValue;
+	Result := FAskPasswordResult;
+end;
+
+function TMockPasswordUIForConn.AskAction(Title, Text: WideString; ActionsList: TDictionary<Int32, WideString>; ParentWindow: HWND): Integer;
+begin
+	Result := FAskActionResult;
+end;
+
+{TConnectionManagerEncryptionTest}
+
+procedure TConnectionManagerEncryptionTest.TestInit_EncryptAlways_PasswordFound_CreatesCipher;
+var
+	Manager: TConnectionManager;
+	AccountsMgr: TMockAccountsManager;
+	PluginSettingsMgr: TMockPluginSettingsManager;
+	PasswordMgr: TMockPasswordManagerForConn;
+	Cloud: TCloudMailRu;
+begin
+	{Non-public account, EncryptModeAlways, password manager returns OK -> cipher is created}
+	AccountsMgr := TMockAccountsManager.Create;
+	AccountsMgr.FAccountSettings.PublicAccount := False;
+	AccountsMgr.FAccountSettings.EncryptFilesMode := EncryptModeAlways;
+	AccountsMgr.FAccountSettings.CryptedGUIDFiles := '';
+
+	PluginSettingsMgr := TMockPluginSettingsManager.Create;
+	PasswordMgr := TMockPasswordManagerForConn.Create(FS_FILE_OK, 'test-crypt-password');
+
+	{Ensure cipher profiles are initialized}
+	TCipherProfileRegistry.Reset;
+	TCipherProfileRegistry.Initialize(nil, TBCryptProvider.Create);
+
+	Manager := TConnectionManager.Create(PluginSettingsMgr, AccountsMgr,
+		TNullHTTPManager.Create, TNullPasswordUIProvider.Create,
+		TNullCipherValidator.Create, TNullFileSystem.Create,
+		TNullProgress.Create, TNullLogger.Create, TNullRequest.Create,
+		PasswordMgr, TNullTCHandler.Create, TNullAuthStrategyFactory.Create,
+		TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create);
+	try
+		Cloud := Manager.Get('encrypt_test');
+		Assert.IsNotNull(Cloud, 'Connection should be created with encryption enabled');
+	finally
+		Manager.Destroy;
+	end;
+end;
+
+procedure TConnectionManagerEncryptionTest.TestInit_EncryptAlways_PasswordUnsupported_SkipsEncryption;
+var
+	Manager: TConnectionManager;
+	AccountsMgr: TMockAccountsManager;
+	PluginSettingsMgr: TMockPluginSettingsManager;
+	PasswordMgr: TMockPasswordManagerForConn;
+	Cloud: TCloudMailRu;
+begin
+	{Non-public account, EncryptModeAlways, password manager returns NOTSUPPORTED -> encryption skipped}
+	AccountsMgr := TMockAccountsManager.Create;
+	AccountsMgr.FAccountSettings.PublicAccount := False;
+	AccountsMgr.FAccountSettings.EncryptFilesMode := EncryptModeAlways;
+	AccountsMgr.FAccountSettings.CryptedGUIDFiles := '';
+
+	PluginSettingsMgr := TMockPluginSettingsManager.Create;
+	{FS_FILE_NOTSUPPORTED: user doesn't know master password -> InitCloudCryptPasswords returns False}
+	PasswordMgr := TMockPasswordManagerForConn.Create(FS_FILE_NOTSUPPORTED, '');
+
+	{Cipher registry needed because Init creates cipher with empty password as fallback}
+	TCipherProfileRegistry.Reset;
+	TCipherProfileRegistry.Initialize(nil, TBCryptProvider.Create);
+
+	Manager := TConnectionManager.Create(PluginSettingsMgr, AccountsMgr,
+		TNullHTTPManager.Create, TNullPasswordUIProvider.Create,
+		TNullCipherValidator.Create, TNullFileSystem.Create,
+		TNullProgress.Create, TNullLogger.Create, TNullRequest.Create,
+		PasswordMgr, TNullTCHandler.Create, TNullAuthStrategyFactory.Create,
+		TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create);
+	try
+		Cloud := Manager.Get('encrypt_unsupported_test');
+		Assert.IsNotNull(Cloud, 'Connection should be created even when password unsupported');
+	finally
+		Manager.Destroy;
+	end;
+end;
+
+procedure TConnectionManagerEncryptionTest.TestFree_ExistingConnection_RemovesFromPool;
+var
+	Manager: TConnectionManager;
+	AccountsMgr: TMockAccountsManager;
+	Cloud: TCloudMailRu;
+begin
+	{Get creates connection, Free destroys and removes it, next Get recreates}
+	AccountsMgr := TMockAccountsManager.Create;
+	AccountsMgr.FAccountSettings.PublicAccount := True;
+
+	Manager := TConnectionManager.Create(TMockPluginSettingsManager.Create, AccountsMgr,
+		TNullHTTPManager.Create, TNullPasswordUIProvider.Create,
+		TNullCipherValidator.Create, TNullFileSystem.Create,
+		TNullProgress.Create, TNullLogger.Create, TNullRequest.Create,
+		TNullPasswordManager.Create, TNullTCHandler.Create, TNullAuthStrategyFactory.Create,
+		TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create);
+	try
+		Cloud := Manager.Get('free_test');
+		Assert.IsNotNull(Cloud, 'First Get should create connection');
+		Manager.Free('free_test');
+		{After Free, the connection is destroyed and removed from pool.
+		 Next Get must re-create it without error.}
+		Cloud := Manager.Get('free_test');
+		Assert.IsNotNull(Cloud, 'Get after Free should recreate connection');
+	finally
+		Manager.Destroy;
+	end;
+end;
+
+procedure TConnectionManagerEncryptionTest.TestInit_NonPublicWithProxy_PasswordFromINI;
+var
+	Manager: TConnectionManager;
+	AccountsMgr: TMockAccountsManager;
+	MockHTTPMgr: TMockHTTPManager;
+	ProxyConnSettings: TConnectionSettings;
+	Cloud: TCloudMailRu;
+begin
+	{Non-public account with HTTP proxy that has password in HTTPManager settings.
+	 GetProxyPassword reads from FHTTPManager.ConnectionSettings, not plugin settings.}
+	AccountsMgr := TMockAccountsManager.Create;
+	AccountsMgr.FAccountSettings.PublicAccount := False;
+	AccountsMgr.FAccountSettings.EncryptFilesMode := EncryptModeNone;
+
+	MockHTTPMgr := TMockHTTPManager.Create(TNullCloudHTTP.Create);
+	{Proxy settings must be on the HTTPManager -- GetProxyPassword reads them from there}
+	ProxyConnSettings := Default(TConnectionSettings);
+	ProxyConnSettings.ProxySettings.ProxyType := ProxyHTTP;
+	ProxyConnSettings.ProxySettings.User := 'proxyuser';
+	ProxyConnSettings.ProxySettings.Password := 'proxypass';
+	MockHTTPMgr.SetConnectionSettings(ProxyConnSettings);
+
+	Manager := TConnectionManager.Create(TMockPluginSettingsManager.Create, AccountsMgr,
+		MockHTTPMgr, TNullPasswordUIProvider.Create,
+		TNullCipherValidator.Create, TNullFileSystem.Create,
+		TNullProgress.Create, TNullLogger.Create, TNullRequest.Create,
+		TNullPasswordManager.Create, TNullTCHandler.Create, TNullAuthStrategyFactory.Create,
+		TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create);
+	try
+		Cloud := Manager.Get('proxy_test');
+		Assert.IsNotNull(Cloud, 'Connection should be created with proxy password from INI');
+	finally
+		Manager.Destroy;
+	end;
+end;
+
 initialization
 
 TDUnitX.RegisterTestFixture(TConnectionManagerConstructorTest);
 TDUnitX.RegisterTestFixture(TConnectionManagerGetTest);
 TDUnitX.RegisterTestFixture(TConnectionManagerFreeTest);
 TDUnitX.RegisterTestFixture(TConnectionManagerCipherProfileTest);
+TDUnitX.RegisterTestFixture(TConnectionManagerEncryptionTest);
 
 end.
