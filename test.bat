@@ -11,15 +11,15 @@ cd /d "%~dp0"
 :: ============================================
 :: Step 1: Parse mode argument
 :: ============================================
-set TEST_FILTER=--exclude:Integration
-set MODE_LABEL=unit tests only
+set TEST_FILTER=
+set MODE_LABEL=all tests
 
-if /i "%~1"=="integration" (
+if /i "%~1"=="unit" (
+    set TEST_FILTER=--exclude:Integration
+    set MODE_LABEL=unit tests only
+) else if /i "%~1"=="integration" (
     set TEST_FILTER=--include:Integration
     set MODE_LABEL=integration tests only
-) else if /i "%~1"=="all" (
-    set TEST_FILTER=
-    set MODE_LABEL=all tests
 )
 
 :: ============================================
