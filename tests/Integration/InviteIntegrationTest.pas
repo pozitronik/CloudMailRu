@@ -19,6 +19,9 @@ type
 		procedure TestMountSharedFolder_Succeeds;
 
 		[Test]
+		procedure TestMountSharedFolder_ContentsVisible;
+
+		[Test]
 		procedure TestUnmountSharedFolder_KeepsCopy;
 
 		[Test]
@@ -32,7 +35,10 @@ implementation
 
 uses
 	System.SysUtils,
+	System.Classes,
+	System.IOUtils,
 	CloudMailRu,
+	CloudDirItemList,
 	CloudIncomingInviteList,
 	WFXTypes,
 	CloudConstants,
@@ -118,6 +124,113 @@ begin
 	end;
 
 	{Unshare for cleanup}
+	FPrimaryCloud.ShareService.Unshare(FolderPath, FConfig.SecondaryEmail);
+end;
+
+procedure TInviteIntegrationTest.TestMountSharedFolder_ContentsVisible;
+var
+	FolderPath, FilePath: WideString;
+	CreateResult, ShareResult, MountResult: Boolean;
+	SecondaryCloud: TCloudMailRu;
+	Invites: TCloudIncomingInviteList;
+	InviteToken, MountPath: WideString;
+	Items: TCloudDirItemList;
+	Found: Boolean;
+	I: Integer;
+begin
+	RequireSecondaryAccount;
+
+	{Create folder with a file inside on primary account}
+	FolderPath := UniqueCloudPath('MountContentFolder');
+	CreateResult := FPrimaryCloud.FileOperations.CreateDirectory(FolderPath);
+	Assert.IsTrue(CreateResult, 'Creating folder should succeed');
+	TrackForCleanup(FolderPath);
+
+	FilePath := FolderPath + '/' + TTestDataGenerator.GenerateUniqueFilename('SharedFile', '.bin');
+	var LocalFile := TPath.Combine(TPath.GetTempPath, TTestDataGenerator.GenerateUniqueFilename('temp', '.bin'));
+	var TestData := TTestDataGenerator.CreateSmallTestFile(2048);
+	try
+		TestData.SaveToFile(LocalFile);
+	finally
+		TestData.Free;
+	end;
+
+	try
+		FPrimaryCloud.Uploader.Upload(LocalFile, FilePath);
+		TrackForCleanup(FilePath);
+	finally
+		TFile.Delete(LocalFile);
+	end;
+
+	{Share with secondary account}
+	ShareResult := FPrimaryCloud.ShareFolder(FolderPath, FConfig.SecondaryEmail, CLOUD_SHARE_RO);
+	if not ShareResult then
+	begin
+		Assert.Pass('SKIPPED: Cannot test mount contents - share failed');
+		Exit;
+	end;
+
+	SecondaryCloud := CreateSecondaryCloud;
+	try
+		Assert.IsTrue(SecondaryCloud.Login, 'Secondary account login should succeed');
+
+		{Find and accept the invite}
+		if not SecondaryCloud.ListingService.GetIncomingInvites(Invites) then
+		begin
+			Assert.Pass('SKIPPED: Cannot list invites in secondary account');
+			Exit;
+		end;
+
+		InviteToken := '';
+		for I := 0 to Length(Invites) - 1 do
+		begin
+			if Pos(WideString('MountContentFolder'), Invites[I].Name) > 0 then
+			begin
+				InviteToken := Invites[I].invite_token;
+				Break;
+			end;
+		end;
+
+		if InviteToken = '' then
+		begin
+			Assert.Pass('SKIPPED: Invite not found in secondary account');
+			Exit;
+		end;
+
+		MountPath := '/MountedContent_' + TTestDataGenerator.GenerateUniqueFolderName('');
+		MountResult := SecondaryCloud.ShareService.Mount(MountPath, InviteToken);
+
+		if not MountResult then
+		begin
+			Assert.Pass('SKIPPED: Mount failed');
+			Exit;
+		end;
+
+		try
+			{List the mounted folder from the secondary account}
+			Assert.IsTrue(SecondaryCloud.ListingService.GetDirectory(MountPath, Items),
+				'Listing mounted shared folder should succeed');
+
+			{Verify the uploaded file is visible}
+			Found := False;
+			for I := 0 to Length(Items) - 1 do
+			begin
+				if Pos(WideString('SharedFile'), Items[I].Name) > 0 then
+				begin
+					Found := True;
+					Assert.AreEqual(Int64(2048), Items[I].Size, 'Shared file size should match');
+					Break;
+				end;
+			end;
+
+			Assert.IsTrue(Found, 'Uploaded file should be visible in mounted shared folder');
+		finally
+			SecondaryCloud.ShareService.Unmount(MountPath, False);
+		end;
+	finally
+		SecondaryCloud.Free;
+	end;
+
 	FPrimaryCloud.ShareService.Unshare(FolderPath, FConfig.SecondaryEmail);
 end;
 
