@@ -11,6 +11,7 @@ uses
 
 type
 	{No [TestFixture] attribute - registered conditionally in initialization}
+	[Category('Integration')]
 	TSharingIntegrationTest = class(TIntegrationTestBase)
 	private
 		function UploadTestFile(SizeBytes: Integer; const NamePrefix: WideString): WideString;

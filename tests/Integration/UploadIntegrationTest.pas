@@ -12,6 +12,7 @@ uses
 
 type
 	{No [TestFixture] attribute - registered conditionally in initialization}
+	[Category('Integration')]
 	TUploadIntegrationTest = class(TIntegrationTestBase)
 	public
 		[Test]

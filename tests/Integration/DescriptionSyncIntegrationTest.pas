@@ -14,6 +14,7 @@ uses
 
 type
 	{No [TestFixture] attribute - registered conditionally in initialization}
+	[Category('Integration')]
 	TDescriptionSyncIntegrationTest = class(TIntegrationTestBase)
 	private
 		{Convert cloud API path (e.g., /Dir/File.bin) to WFX virtual path

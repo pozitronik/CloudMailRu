@@ -11,6 +11,7 @@ uses
 
 type
 	{No [TestFixture] attribute - registered conditionally in initialization}
+	[Category('Integration')]
 	TTrashIntegrationTest = class(TIntegrationTestBase)
 	private
 		function UploadAndDeleteFile(const NamePrefix: WideString): WideString;

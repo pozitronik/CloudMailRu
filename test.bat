@@ -9,7 +9,21 @@ echo ============================================
 cd /d "%~dp0"
 
 :: ============================================
-:: Step 1: Compile Tests
+:: Step 1: Parse mode argument
+:: ============================================
+set TEST_FILTER=--exclude:Integration
+set MODE_LABEL=unit tests only
+
+if /i "%~1"=="integration" (
+    set TEST_FILTER=--include:Integration
+    set MODE_LABEL=integration tests only
+) else if /i "%~1"=="all" (
+    set TEST_FILTER=
+    set MODE_LABEL=all tests
+)
+
+:: ============================================
+:: Step 2: Compile Tests
 :: ============================================
 echo.
 echo [1/2] Compiling tests...
@@ -32,13 +46,13 @@ if errorlevel 1 (
 echo Build successful.
 
 :: ============================================
-:: Step 2: Run Tests
+:: Step 3: Run Tests
 :: ============================================
 echo.
-echo [2/2] Running tests...
+echo [2/2] Running tests (%MODE_LABEL%)...
 echo.
 
-tests\Win64\Debug\CloudMailRuTest.exe --exit:Continue %*
+tests\Win64\Debug\CloudMailRuTest.exe --exit:Continue %TEST_FILTER%
 set TEST_RESULT=%errorlevel%
 
 echo.

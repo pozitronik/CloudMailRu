@@ -11,6 +11,7 @@ uses
 
 type
 	{No [TestFixture] attribute - registered conditionally in initialization}
+	[Category('Integration')]
 	TAuthenticationIntegrationTest = class(TIntegrationTestBase)
 	public
 		[Test]

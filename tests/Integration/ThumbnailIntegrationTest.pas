@@ -13,6 +13,7 @@ uses
 
 type
 	{No [TestFixture] attribute - registered conditionally in initialization}
+	[Category('Integration')]
 	TThumbnailIntegrationTest = class(TIntegrationTestBase)
 	private
 		function UploadTestFile(SizeBytes: Integer; const NamePrefix, Extension: WideString): WideString;

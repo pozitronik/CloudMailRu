@@ -11,6 +11,7 @@ uses
 
 type
 	{No [TestFixture] attribute - registered conditionally in initialization}
+	[Category('Integration')]
 	TDirectoryIntegrationTest = class(TIntegrationTestBase)
 	public
 		[Test]

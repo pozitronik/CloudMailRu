@@ -19,6 +19,7 @@ uses
 	CloudConstants,
 	CloudDirItemList,
 	ServerProfileManager,
+	ServerConfigFetcher,
 	IntegrationTestConfig,
 	TestDataGenerator,
 	TestHelper,
@@ -153,11 +154,18 @@ begin
 
 	{Create primary cloud and ensure test folder exists}
 	FPrimaryCloud := CreatePrimaryCloud;
-	Assert.IsTrue(FPrimaryCloud.Login, 'Primary account login failed');
+	if not FPrimaryCloud.Login then
+	begin
+		Assert.Fail('Primary account login failed');
+		Exit;
+	end;
 
 	{Create test run folder in cloud}
 	if not FPrimaryCloud.FileOperations.CreateDirectory(FTestRunFolder) then
+	begin
 		Assert.Fail('Failed to create test run folder: ' + FTestRunFolder);
+		Exit;
+	end;
 end;
 
 procedure TIntegrationTestBase.TearDownFixture;
@@ -188,9 +196,20 @@ begin
 end;
 
 function TIntegrationTestBase.ResolveEndpoints(const ServerUrl: WideString): TCloudEndpoints;
+var
+	Fetcher: TServerConfigFetcher;
+	ErrorMsg: WideString;
 begin
 	if ServerUrl <> '' then
-		Result := TServerProfileManager.InferEndpointsFromServerUrl(ServerUrl)
+	begin
+		Fetcher := TServerConfigFetcher.Create;
+		try
+			if not Fetcher.Fetch(ServerUrl, Result, ErrorMsg) then
+				Assert.Fail('Failed to resolve endpoints from ' + ServerUrl + ': ' + ErrorMsg);
+		finally
+			Fetcher.Free;
+		end;
+	end
 	else
 		Result := TCloudEndpoints.CreateDefaults;
 end;
