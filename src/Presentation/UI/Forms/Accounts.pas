@@ -168,7 +168,7 @@ type
 		ServersListView: TListView;
 		ServerNameEdit: TEdit;
 		ServerUrlEdit: TEdit;
-		SelfConfigureButton: TButton;
+		TestServerButton: TButton;
 		ApiUrlEdit: TEdit;
 		OAuthUrlEdit: TEdit;
 		DispatcherUrlEdit: TEdit;
@@ -179,6 +179,7 @@ type
 		AddServerButton: TButton;
 		DeleteServerButton: TButton;
 		ApplyServerButton: TButton;
+		ServersButton: TButton;
 		TranslationTab: TTabSheet;
 		LanguageLabel: TLabel;
 		LanguageList: TListBox;
@@ -219,7 +220,8 @@ type
 		procedure AddServerButtonClick(Sender: TObject);
 		procedure DeleteServerButtonClick(Sender: TObject);
 		procedure ApplyServerButtonClick(Sender: TObject);
-		procedure SelfConfigureButtonClick(Sender: TObject);
+		procedure TestServerButtonClick(Sender: TObject);
+		procedure ServersButtonClick(Sender: TObject);
 		procedure ApplyTranslationBtnClick(Sender: TObject);
 	private
 		FPresenter: TAccountsPresenter;
@@ -415,7 +417,7 @@ type
 		function GetServerDownloadUrl: WideString;
 		procedure SetServerUploadUrl(Value: WideString);
 		function GetServerUploadUrl: WideString;
-		procedure SetServerStatus(Value: WideString);
+		procedure SetServerStatus(const Value: WideString; IsSuccess: Boolean);
 
 		{IAccountsView - Servers tab buttons}
 		procedure SetServerApplyButtonEnabled(Value: Boolean);
@@ -1001,9 +1003,15 @@ end;
 {AutoFitListViewColumns - fills first column to remaining width}
 
 procedure TAccountsForm.AutoFitListViewColumns(LV: TListView);
+var
+	I, OtherColumnsWidth: Integer;
 begin
-	if LV.Columns.Count >= 2 then
-		LV.Column[0].Width := LV.ClientWidth - LV.Column[1].Width;
+	if LV.Columns.Count < 2 then
+		Exit;
+	OtherColumnsWidth := 0;
+	for I := 1 to LV.Columns.Count - 1 do
+		OtherColumnsWidth := OtherColumnsWidth + LV.Column[I].Width;
+	LV.Column[0].Width := LV.ClientWidth - OtherColumnsWidth;
 end;
 
 {IAccountsView - UI actions}
@@ -1045,6 +1053,7 @@ begin
 			LI := AccountsListView.Items.Add;
 			LI.Caption := Items[I].Name;
 			LI.SubItems.Add(Items[I].TypeLabel);
+			LI.SubItems.Add(Items[I].ServerLabel);
 		end;
 	finally
 		AccountsListView.Items.EndUpdate;
@@ -1435,9 +1444,13 @@ begin
 	Result := UploadUrlEdit.Text;
 end;
 
-procedure TAccountsForm.SetServerStatus(Value: WideString);
+procedure TAccountsForm.SetServerStatus(const Value: WideString; IsSuccess: Boolean);
 begin
 	ServerStatusLabel.Caption := Value;
+	if IsSuccess then
+		ServerStatusLabel.Font.Color := clGreen
+	else
+		ServerStatusLabel.Font.Color := clRed;
 end;
 
 {IAccountsView - Servers tab buttons}
@@ -1653,9 +1666,14 @@ begin
 	FPresenter.OnApplyServerClick;
 end;
 
-procedure TAccountsForm.SelfConfigureButtonClick(Sender: TObject);
+procedure TAccountsForm.TestServerButtonClick(Sender: TObject);
 begin
-	FPresenter.OnSelfConfigureClick;
+	FPresenter.OnTestServerClick;
+end;
+
+procedure TAccountsForm.ServersButtonClick(Sender: TObject);
+begin
+	FPresenter.OnServersButtonClick;
 end;
 
 {IAccountsView - Translation tab}
@@ -1771,6 +1789,7 @@ begin
 	CipherProfileLabel.Caption := DFM_LBL_ENCRYPT_BACKEND;
 	AccountsListView.Columns[0].Caption := DFM_COL_ACCOUNT;
 	AccountsListView.Columns[1].Caption := DFM_COL_TYPE;
+	AccountsListView.Columns[2].Caption := DFM_COL_ACCOUNT_SERVER;
 
 	{Global settings tab}
 	CloudMaxFileSizeLabelBytes.Caption := DFM_LBL_BYTES;
@@ -1840,7 +1859,8 @@ begin
 	ServerPublicUrlLabel.Caption := DFM_LBL_PUBLIC_URL_SERVER;
 	DownloadUrlLabel.Caption := DFM_LBL_DOWNLOAD_URL;
 	UploadUrlLabel.Caption := DFM_LBL_UPLOAD_URL;
-	SelfConfigureButton.Caption := DFM_BTN_SELF_CONFIGURE;
+	TestServerButton.Caption := DFM_BTN_TEST_SERVER;
+	ServersButton.Caption := DFM_BTN_SERVERS;
 	AddServerButton.Caption := DFM_BTN_SERVER_NEW;
 	DeleteServerButton.Caption := DFM_BTN_SERVER_DELETE;
 	ApplyServerButton.Caption := DFM_BTN_SERVER_APPLY;

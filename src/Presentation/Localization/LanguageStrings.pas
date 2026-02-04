@@ -283,7 +283,8 @@ var
 	DFM_LBL_PUBLIC_URL_SERVER: WideString;
 	DFM_LBL_DOWNLOAD_URL: WideString;
 	DFM_LBL_UPLOAD_URL: WideString;
-	DFM_BTN_SELF_CONFIGURE: WideString;
+	DFM_BTN_TEST_SERVER: WideString;
+	DFM_BTN_SERVERS: WideString;
 	DFM_BTN_SERVER_NEW: WideString;
 	DFM_BTN_SERVER_DELETE: WideString;
 	DFM_BTN_SERVER_APPLY: WideString;
@@ -292,6 +293,7 @@ var
 	DFM_COMBO_DEFAULT_SERVER: WideString;
 	DFM_COL_ACCOUNT: WideString;
 	DFM_COL_TYPE: WideString;
+	DFM_COL_ACCOUNT_SERVER: WideString;
 	DFM_COL_EXTENSION: WideString;
 	DFM_GB_ACCOUNT_TYPE: WideString;
 	DFM_GB_FILE_SIZE: WideString;
@@ -708,7 +710,8 @@ begin
 	DFM_LBL_PUBLIC_URL_SERVER := 'Public URL';
 	DFM_LBL_DOWNLOAD_URL := 'Download URL';
 	DFM_LBL_UPLOAD_URL := 'Upload URL';
-	DFM_BTN_SELF_CONFIGURE := 'Self-Configure';
+	DFM_BTN_TEST_SERVER := 'Test';
+	DFM_BTN_SERVERS := 'Configure';
 	DFM_BTN_SERVER_NEW := 'New';
 	DFM_BTN_SERVER_DELETE := 'Delete';
 	DFM_BTN_SERVER_APPLY := 'Apply';
@@ -717,6 +720,7 @@ begin
 	DFM_COMBO_DEFAULT_SERVER := '(Default)';
 	DFM_COL_ACCOUNT := 'Account';
 	DFM_COL_TYPE := 'Type';
+	DFM_COL_ACCOUNT_SERVER := 'Server';
 	DFM_COL_EXTENSION := 'Extension';
 	DFM_GB_ACCOUNT_TYPE := 'Account type';
 	DFM_GB_FILE_SIZE := 'File size';
@@ -1123,7 +1127,8 @@ begin
 	TranslationRegistry.Add('DFM_LBL_PUBLIC_URL_SERVER', @DFM_LBL_PUBLIC_URL_SERVER);
 	TranslationRegistry.Add('DFM_LBL_DOWNLOAD_URL', @DFM_LBL_DOWNLOAD_URL);
 	TranslationRegistry.Add('DFM_LBL_UPLOAD_URL', @DFM_LBL_UPLOAD_URL);
-	TranslationRegistry.Add('DFM_BTN_SELF_CONFIGURE', @DFM_BTN_SELF_CONFIGURE);
+	TranslationRegistry.Add('DFM_BTN_TEST_SERVER', @DFM_BTN_TEST_SERVER);
+	TranslationRegistry.Add('DFM_BTN_SERVERS', @DFM_BTN_SERVERS);
 	TranslationRegistry.Add('DFM_BTN_SERVER_NEW', @DFM_BTN_SERVER_NEW);
 	TranslationRegistry.Add('DFM_BTN_SERVER_DELETE', @DFM_BTN_SERVER_DELETE);
 	TranslationRegistry.Add('DFM_BTN_SERVER_APPLY', @DFM_BTN_SERVER_APPLY);
@@ -1132,6 +1137,7 @@ begin
 	TranslationRegistry.Add('DFM_COMBO_DEFAULT_SERVER', @DFM_COMBO_DEFAULT_SERVER);
 	TranslationRegistry.Add('DFM_COL_ACCOUNT', @DFM_COL_ACCOUNT);
 	TranslationRegistry.Add('DFM_COL_TYPE', @DFM_COL_TYPE);
+	TranslationRegistry.Add('DFM_COL_ACCOUNT_SERVER', @DFM_COL_ACCOUNT_SERVER);
 	TranslationRegistry.Add('DFM_COL_EXTENSION', @DFM_COL_EXTENSION);
 	TranslationRegistry.Add('DFM_GB_ACCOUNT_TYPE', @DFM_GB_ACCOUNT_TYPE);
 	TranslationRegistry.Add('DFM_GB_FILE_SIZE', @DFM_GB_FILE_SIZE);

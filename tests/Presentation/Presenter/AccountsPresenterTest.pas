@@ -339,7 +339,7 @@ type
 		function GetServerDownloadUrl: WideString;
 		procedure SetServerUploadUrl(Value: WideString);
 		function GetServerUploadUrl: WideString;
-		procedure SetServerStatus(Value: WideString);
+		procedure SetServerStatus(const Value: WideString; IsSuccess: Boolean);
 
 		{IAccountsView - Servers tab buttons}
 		procedure SetServerApplyButtonEnabled(Value: Boolean);
@@ -1589,7 +1589,7 @@ begin
 	Result := FServerUploadUrl;
 end;
 
-procedure TMockAccountsView.SetServerStatus(Value: WideString);
+procedure TMockAccountsView.SetServerStatus(const Value: WideString; IsSuccess: Boolean);
 begin
 	FServerStatus := Value;
 end;

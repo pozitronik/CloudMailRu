@@ -213,11 +213,15 @@ object AccountsForm: TAccountsForm
         Columns = <
           item
             Caption = 'Account'
-            Width = 100
+            Width = 84
           end
           item
             Caption = 'Type'
             Width = 58
+          end
+          item
+            Caption = 'Server'
+            Width = 80
           end>
         ReadOnly = True
         RowSelect = True
@@ -294,7 +298,7 @@ object AccountsForm: TAccountsForm
       object ServerCombo: TComboBox
         Left = 310
         Top = 88
-        Width = 300
+        Width = 224
         Height = 21
         Style = csDropDownList
         Anchors = [akLeft, akTop, akRight]
@@ -302,6 +306,16 @@ object AccountsForm: TAccountsForm
         OnChange = ServerComboChange
         Items.Strings = (
           '(Default)')
+      end
+      object ServersButton: TButton
+        Left = 540
+        Top = 88
+        Width = 70
+        Height = 21
+        Anchors = [akTop, akRight]
+        Caption = 'Configure'
+        TabOrder = 9
+        OnClick = ServersButtonClick
       end
       object AccountsPanel: TPanel
         Left = 272
@@ -1445,21 +1459,21 @@ object AccountsForm: TAccountsForm
       object ServerUrlEdit: TEdit
         Left = 272
         Top = 56
-        Width = 240
+        Width = 278
         Height = 21
         Anchors = [akLeft, akTop, akRight]
         TabOrder = 4
         OnChange = ServerFieldChanged
       end
-      object SelfConfigureButton: TButton
-        Left = 518
+      object TestServerButton: TButton
+        Left = 556
         Top = 56
-        Width = 92
+        Width = 54
         Height = 21
         Anchors = [akTop, akRight]
-        Caption = 'Self-Configure'
+        Caption = 'Test'
         TabOrder = 5
-        OnClick = SelfConfigureButtonClick
+        OnClick = TestServerButtonClick
       end
       object ApiUrlEdit: TEdit
         Left = 272

@@ -29,6 +29,7 @@ type
 		Name: WideString;
 		TypeLabel: WideString;
 		EncryptionLabel: WideString;
+		ServerLabel: WideString;
 	end;
 
 	{Display data for the streaming extensions TListView}
@@ -245,7 +246,7 @@ type
 		function GetServerDownloadUrl: WideString;
 		procedure SetServerUploadUrl(Value: WideString);
 		function GetServerUploadUrl: WideString;
-		procedure SetServerStatus(Value: WideString);
+		procedure SetServerStatus(const Value: WideString; IsSuccess: Boolean);
 
 		{Servers tab - buttons}
 		procedure SetServerApplyButtonEnabled(Value: Boolean);
@@ -386,8 +387,9 @@ type
 		procedure OnAddServerClick;
 		procedure OnDeleteServerClick;
 		procedure OnApplyServerClick;
-		procedure OnSelfConfigureClick;
+		procedure OnTestServerClick;
 		procedure OnServerFieldChanged;
+		procedure OnServersButtonClick;
 		procedure OnServerComboChanged;
 
 		{Translation operations}
@@ -652,6 +654,10 @@ begin
 		else
 			Items[I].TypeLabel := DFM_RB_PRIVATE;
 		Items[I].EncryptionLabel := EncryptionModeToLabel(AccSettings.EncryptFilesMode);
+		if AccSettings.Server <> '' then
+			Items[I].ServerLabel := AccSettings.Server
+		else
+			Items[I].ServerLabel := '';
 	end;
 	FView.SetAccountsList(Items);
 end;
@@ -1467,7 +1473,7 @@ begin
 		FView.SetServerPublicUrl(Profile.Endpoints.PublicUrl);
 		FView.SetServerDownloadUrl(Profile.Endpoints.DownloadUrl);
 		FView.SetServerUploadUrl(Profile.Endpoints.UploadUrl);
-		FView.SetServerStatus('');
+		FView.SetServerStatus('', True);
 	finally
 		FServerUpdating := WasUpdating;
 	end;
@@ -1491,7 +1497,7 @@ begin
 		FView.SetServerPublicUrl('');
 		FView.SetServerDownloadUrl('');
 		FView.SetServerUploadUrl('');
-		FView.SetServerStatus('');
+		FView.SetServerStatus('', True);
 	finally
 		FServerUpdating := WasUpdating;
 	end;
@@ -1656,7 +1662,7 @@ begin
 	OnServerSelected;
 end;
 
-procedure TAccountsPresenter.OnSelfConfigureClick;
+procedure TAccountsPresenter.OnTestServerClick;
 var
 	ServerUrl, ErrorMsg: WideString;
 	Endpoints: TCloudEndpoints;
@@ -1664,14 +1670,20 @@ begin
 	ServerUrl := FView.GetServerUrl;
 	if ServerUrl = '' then
 	begin
-		FView.SetServerStatus('Server URL is required');
+		FView.SetServerStatus('Server URL is required', False);
 		Exit;
 	end;
 
-	{Fetch endpoints from server root, falling back to URL inference}
 	Endpoints := TCloudEndpoints.CreateDefaults;
 	FServerConfigFetcher.Fetch(ServerUrl, Endpoints, ErrorMsg);
 
+	if ErrorMsg <> '' then
+	begin
+		FView.SetServerStatus(ErrorMsg, False);
+		Exit;
+	end;
+
+	{Server responded -- populate endpoint fields}
 	FServerUpdating := True;
 	try
 		FView.SetServerApiUrl(Endpoints.ApiBase);
@@ -1681,14 +1693,20 @@ begin
 		FView.SetServerPublicUrl(Endpoints.PublicUrl);
 		FView.SetServerDownloadUrl(Endpoints.DownloadUrl);
 		FView.SetServerUploadUrl(Endpoints.UploadUrl);
-		if ErrorMsg <> '' then
-			FView.SetServerStatus(ErrorMsg)
-		else
-			FView.SetServerStatus('Endpoints loaded from server');
+		FView.SetServerStatus('OK', True);
 	finally
 		FServerUpdating := False;
 	end;
 	SetServerDirty(True);
+end;
+
+procedure TAccountsPresenter.OnServersButtonClick;
+var
+	ServerName: WideString;
+begin
+	ServerName := ComboIndexToServerName(FView.GetServerComboIndex);
+	FView.ShowTab(5); {ServersTab index}
+	SelectServerByName(ServerName);
 end;
 
 procedure TAccountsPresenter.OnServerComboChanged;
