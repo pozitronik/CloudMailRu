@@ -1922,7 +1922,7 @@ begin
 		PluginSettingsMgr := TPluginSettingsManager.Create();
 		SettingsManager := PluginSettingsMgr;
 		AccountsMgr := TAccountsManager.Create(TIniConfigFile.Create(PluginSettingsMgr.AccountsIniFilePath), TNullLogger.Create);
-		ServerProfileMgr := TServerProfileManager.Create(TIniConfigFile.Create(PluginSettingsMgr.AccountsIniFilePath));
+		ServerProfileMgr := TServerProfileManager.Create(TIniConfigFile.Create(PluginSettingsMgr.IniFilePath));
 
 		{Create presenter config}
 		Config.PasswordManager := PasswordManager;

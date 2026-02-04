@@ -1020,7 +1020,7 @@ begin
 	PasswordManager, which needs PCryptProc from this callback. This makes FsSetCryptCallback
 	a de-facto "second initialization phase", which is not its intended purpose.
 	Investigate alternatives: lazy initialization, dependency restructuring, or deferred injection.}
-	ConnectionManager := TConnectionManager.Create(SettingsManager, AccountSettings, HTTPMgr, PasswordUI, CipherVal, TWindowsFileSystem.Create, Progress, Logger, Request, PasswordManager, FTCHandler, TDefaultAuthStrategyFactory.Create, FOpenSSLProvider, TAccountCredentialsProvider.Create(PasswordManager, PasswordUI, Logger, FTCHandler, AccountSettings), TServerProfileManager.Create(TIniConfigFile.Create(SettingsManager.GetSettings.AccountsIniFilePath)));
+	ConnectionManager := TConnectionManager.Create(SettingsManager, AccountSettings, HTTPMgr, PasswordUI, CipherVal, TWindowsFileSystem.Create, Progress, Logger, Request, PasswordManager, FTCHandler, TDefaultAuthStrategyFactory.Create, FOpenSSLProvider, TAccountCredentialsProvider.Create(PasswordManager, PasswordUI, Logger, FTCHandler, AccountSettings), TServerProfileManager.Create(TIniConfigFile.Create(SettingsManager.GetSettings.IniFilePath)));
 	FCommandDispatcher := TCommandDispatcher.Create(ConnectionManager, Logger, SettingsManager);
 
 	{Create icon context builder for FsExtractCustomIcon}
