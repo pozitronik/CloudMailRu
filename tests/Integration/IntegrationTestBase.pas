@@ -13,10 +13,12 @@ uses
 	DUnitX.TestFramework,
 	CloudMailRu,
 	CloudSettings,
+	CloudEndpoints,
 	AccountSettings,
 	ConnectionSettings,
 	CloudConstants,
 	CloudDirItemList,
+	ServerProfileManager,
 	IntegrationTestConfig,
 	TestDataGenerator,
 	TestHelper,
@@ -79,14 +81,21 @@ type
 			@return True if deleted or not found, False on error}
 		function SafeDeleteCloudItem(Cloud: TCloudMailRu; const Path: WideString): Boolean;
 
+		{Resolve cloud endpoints from a server URL.
+			When ServerUrl is empty, returns default cloud.mail.ru endpoints.
+			@param ServerUrl Custom server base URL (may be empty)
+			@return Resolved TCloudEndpoints record}
+		function ResolveEndpoints(const ServerUrl: WideString): TCloudEndpoints;
+
 		{Create cloud settings for a given account.
 			@param Email Account email
 			@param Password Account password
 			@param UseAppPassword True if using app password (OAuth)
 			@param Encrypted Enable encryption
+			@param ServerUrl Custom server URL for endpoint resolution (empty = defaults)
 			@return Configured TCloudSettings record}
 		function CreateCloudSettings(const Email, Password: WideString; UseAppPassword: Boolean;
-			Encrypted: Boolean = False): TCloudSettings;
+			Encrypted: Boolean = False; const ServerUrl: WideString = ''): TCloudSettings;
 
 		{Check if test should be skipped due to missing configuration.
 			Use at the start of tests that require specific config.}
@@ -178,10 +187,19 @@ begin
 	CleanupTrackedPaths;
 end;
 
+function TIntegrationTestBase.ResolveEndpoints(const ServerUrl: WideString): TCloudEndpoints;
+begin
+	if ServerUrl <> '' then
+		Result := TServerProfileManager.InferEndpointsFromServerUrl(ServerUrl)
+	else
+		Result := TCloudEndpoints.CreateDefaults;
+end;
+
 function TIntegrationTestBase.CreateCloudSettings(const Email, Password: WideString; UseAppPassword: Boolean;
-	Encrypted: Boolean): TCloudSettings;
+	Encrypted: Boolean; const ServerUrl: WideString): TCloudSettings;
 begin
 	Result := Default(TCloudSettings);
+	Result.Endpoints := ResolveEndpoints(ServerUrl);
 
 	{Account settings}
 	Result.AccountSettings.Email := Email;
@@ -234,7 +252,8 @@ begin
 		FConfig.PrimaryEmail,
 		FConfig.PrimaryPassword,
 		FConfig.PrimaryUseAppPassword,
-		Encrypted);
+		Encrypted,
+		FConfig.ServerUrl);
 
 	if FConfig.PrimaryUseAppPassword then
 		AuthStrategy := TOAuthAppAuthStrategy.Create
@@ -274,7 +293,8 @@ begin
 		FConfig.SecondaryEmail,
 		FConfig.SecondaryPassword,
 		FConfig.SecondaryUseAppPassword,
-		False);
+		False,
+		FConfig.GetEffectiveSecondaryServerUrl);
 
 	if FConfig.SecondaryUseAppPassword then
 		AuthStrategy := TOAuthAppAuthStrategy.Create
@@ -305,6 +325,7 @@ begin
 	Assert.IsTrue(FConfig.HasPublicUrl, 'Public URL not configured');
 
 	Settings := Default(TCloudSettings);
+	Settings.Endpoints := ResolveEndpoints(FConfig.ServerUrl);
 	Settings.AccountSettings.PublicAccount := True;
 	Settings.AccountSettings.PublicUrl := FConfig.PublicUrl;
 

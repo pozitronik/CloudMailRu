@@ -58,3 +58,15 @@ CloudMaxFileSizeOverride=1048576
 ; Size of test file for chunked upload tests
 ; Default: 3145728 (3MB) - creates 3 chunks with 1MB override
 TestChunkedFileSize=3145728
+
+[Server]
+; Custom server URL for primary account (e.g. http://localhost:8080)
+; Leave empty to use default cloud.mail.ru
+; Endpoints are auto-inferred: {url}/api/v2, {url}/token, {url}/dispatcher, etc.
+ServerUrl=
+
+[SecondaryServer]
+; Custom server URL for secondary account (for inter-server testing)
+; Leave empty to use the primary server URL
+; When both are empty, defaults to cloud.mail.ru
+ServerUrl=

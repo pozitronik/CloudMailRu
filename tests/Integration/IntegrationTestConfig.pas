@@ -41,6 +41,10 @@ type
 		FCloudMaxFileSizeOverride: Int64;
 		FTestChunkedFileSize: Int64;
 
+		{Custom server settings}
+		FServerUrl: WideString;
+		FSecondaryServerUrl: WideString;
+
 		class var FInstance: TIntegrationTestConfig;
 		class var FConfigLoaded: Boolean;
 		class var FConfigValid: Boolean;
@@ -88,6 +92,9 @@ type
 		property CloudMaxFileSizeOverride: Int64 read FCloudMaxFileSizeOverride;
 		property TestChunkedFileSize: Int64 read FTestChunkedFileSize;
 
+		property ServerUrl: WideString read FServerUrl;
+		property SecondaryServerUrl: WideString read FSecondaryServerUrl;
+
 		{Check if secondary account is configured}
 		function HasSecondaryAccount: Boolean;
 
@@ -96,6 +103,16 @@ type
 
 		{Check if encryption testing is configured}
 		function HasEncryptionConfig: Boolean;
+
+		{Check if a custom server URL is configured for the primary account}
+		function HasCustomServer: Boolean;
+
+		{Check if a custom server URL is configured specifically for the secondary account}
+		function HasSecondaryServer: Boolean;
+
+		{Get the effective server URL for the secondary account.
+			Falls back to primary server URL when secondary is not explicitly configured.}
+		function GetEffectiveSecondaryServerUrl: WideString;
 	end;
 
 const
@@ -181,6 +198,10 @@ begin
 		FInstance.FCloudMaxFileSizeOverride := IniFile.ReadInteger('ChunkedUpload', 'CloudMaxFileSizeOverride', DEFAULT_CLOUD_MAX_FILE_SIZE_OVERRIDE);
 		FInstance.FTestChunkedFileSize := IniFile.ReadInteger('ChunkedUpload', 'TestChunkedFileSize', DEFAULT_TEST_CHUNKED_FILE_SIZE);
 
+		{Custom server}
+		FInstance.FServerUrl := IniFile.ReadString('Server', 'ServerUrl', '');
+		FInstance.FSecondaryServerUrl := IniFile.ReadString('SecondaryServer', 'ServerUrl', '');
+
 		FConfigValid := FInstance.Validate;
 
 		if not FInstance.FEnabled then
@@ -251,6 +272,24 @@ end;
 function TIntegrationTestConfig.HasEncryptionConfig: Boolean;
 begin
 	Result := FEncryptionPassword <> '';
+end;
+
+function TIntegrationTestConfig.HasCustomServer: Boolean;
+begin
+	Result := FServerUrl <> '';
+end;
+
+function TIntegrationTestConfig.HasSecondaryServer: Boolean;
+begin
+	Result := FSecondaryServerUrl <> '';
+end;
+
+function TIntegrationTestConfig.GetEffectiveSecondaryServerUrl: WideString;
+begin
+	if FSecondaryServerUrl <> '' then
+		Result := FSecondaryServerUrl
+	else
+		Result := FServerUrl;
 end;
 
 initialization
