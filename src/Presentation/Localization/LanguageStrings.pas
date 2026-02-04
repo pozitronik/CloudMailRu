@@ -276,6 +276,7 @@ var
 	DFM_LBL_SERVER: WideString;
 	DFM_LBL_SERVER_NAME: WideString;
 	DFM_LBL_SERVER_URL: WideString;
+	DFM_GB_SERVER_PARAMETERS: WideString;
 	DFM_LBL_API_URL: WideString;
 	DFM_LBL_OAUTH_URL: WideString;
 	DFM_LBL_DISPATCHER_URL: WideString;
@@ -702,7 +703,8 @@ begin
 	DFM_LBL_LANGUAGE := 'Language';
 	DFM_LBL_SERVER := 'Server';
 	DFM_LBL_SERVER_NAME := 'Server name';
-	DFM_LBL_SERVER_URL := 'Server URL';
+	DFM_LBL_SERVER_URL := 'Server URL (http[s]://server:port)';
+	DFM_GB_SERVER_PARAMETERS := 'Server parameters';
 	DFM_LBL_API_URL := 'API URL';
 	DFM_LBL_OAUTH_URL := 'OAuth URL';
 	DFM_LBL_DISPATCHER_URL := 'Dispatcher URL';
@@ -1120,6 +1122,7 @@ begin
 	TranslationRegistry.Add('DFM_LBL_SERVER', @DFM_LBL_SERVER);
 	TranslationRegistry.Add('DFM_LBL_SERVER_NAME', @DFM_LBL_SERVER_NAME);
 	TranslationRegistry.Add('DFM_LBL_SERVER_URL', @DFM_LBL_SERVER_URL);
+	TranslationRegistry.Add('DFM_GB_SERVER_PARAMETERS', @DFM_GB_SERVER_PARAMETERS);
 	TranslationRegistry.Add('DFM_LBL_API_URL', @DFM_LBL_API_URL);
 	TranslationRegistry.Add('DFM_LBL_OAUTH_URL', @DFM_LBL_OAUTH_URL);
 	TranslationRegistry.Add('DFM_LBL_DISPATCHER_URL', @DFM_LBL_DISPATCHER_URL);

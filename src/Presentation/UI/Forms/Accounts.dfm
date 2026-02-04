@@ -1437,66 +1437,17 @@ object AccountsForm: TAccountsForm
       object ServerUrlLabel: TLabel
         Left = 272
         Top = 42
-        Width = 54
+        Width = 165
         Height = 13
-        Caption = 'Server URL'
-      end
-      object ApiUrlLabel: TLabel
-        Left = 272
-        Top = 98
-        Width = 39
-        Height = 13
-        Caption = 'API URL'
-      end
-      object OAuthUrlLabel: TLabel
-        Left = 272
-        Top = 138
-        Width = 53
-        Height = 13
-        Caption = 'OAuth URL'
-      end
-      object DispatcherUrlLabel: TLabel
-        Left = 272
-        Top = 178
-        Width = 73
-        Height = 13
-        Caption = 'Dispatcher URL'
-      end
-      object ThumbnailUrlLabel: TLabel
-        Left = 272
-        Top = 218
-        Width = 70
-        Height = 13
-        Caption = 'Thumbnail URL'
-      end
-      object ServerPublicUrlLabel: TLabel
-        Left = 272
-        Top = 258
-        Width = 49
-        Height = 13
-        Caption = 'Public URL'
-      end
-      object DownloadUrlLabel: TLabel
-        Left = 272
-        Top = 298
-        Width = 69
-        Height = 13
-        Caption = 'Download URL'
-      end
-      object UploadUrlLabel: TLabel
-        Left = 272
-        Top = 338
-        Width = 55
-        Height = 13
-        Caption = 'Upload URL'
+        Caption = 'Server URL (http[s]://server:port)'
       end
       object ServerStatusLabel: TLabel
-        Left = 272
-        Top = 378
-        Width = 3
-        Height = 13
+        Left = 603
+        Top = 42
+        Width = 80
+        Height = 10
+        Alignment = taRightJustify
         Anchors = [akLeft, akBottom]
-        ExplicitTop = 380
       end
       object ServersListView: TListView
         Left = 4
@@ -1523,104 +1474,31 @@ object AccountsForm: TAccountsForm
       end
       object ServerNameEdit: TEdit
         Left = 272
-        Top = 18
+        Top = 20
         Width = 411
         Height = 21
         Anchors = [akLeft, akTop, akRight]
         TabOrder = 3
         OnChange = ServerFieldChanged
-        ExplicitWidth = 338
       end
       object ServerUrlEdit: TEdit
         Left = 272
-        Top = 56
-        Width = 351
+        Top = 58
+        Width = 325
         Height = 21
         Anchors = [akLeft, akTop, akRight]
         TabOrder = 4
         OnChange = ServerFieldChanged
-        ExplicitWidth = 278
       end
       object TestServerButton: TButton
-        Left = 629
-        Top = 56
-        Width = 54
+        Left = 603
+        Top = 58
+        Width = 80
         Height = 21
         Anchors = [akTop, akRight]
         Caption = 'Test'
         TabOrder = 5
         OnClick = TestServerButtonClick
-        ExplicitLeft = 556
-      end
-      object ApiUrlEdit: TEdit
-        Left = 272
-        Top = 114
-        Width = 411
-        Height = 21
-        Anchors = [akLeft, akTop, akRight]
-        TabOrder = 6
-        OnChange = ServerFieldChanged
-        ExplicitWidth = 338
-      end
-      object OAuthUrlEdit: TEdit
-        Left = 272
-        Top = 154
-        Width = 411
-        Height = 21
-        Anchors = [akLeft, akTop, akRight]
-        TabOrder = 7
-        OnChange = ServerFieldChanged
-        ExplicitWidth = 338
-      end
-      object DispatcherUrlEdit: TEdit
-        Left = 272
-        Top = 194
-        Width = 411
-        Height = 21
-        Anchors = [akLeft, akTop, akRight]
-        TabOrder = 8
-        OnChange = ServerFieldChanged
-        ExplicitWidth = 338
-      end
-      object ThumbnailUrlEdit: TEdit
-        Left = 272
-        Top = 234
-        Width = 411
-        Height = 21
-        Anchors = [akLeft, akTop, akRight]
-        TabOrder = 9
-        OnChange = ServerFieldChanged
-        ExplicitWidth = 338
-      end
-      object ServerPublicUrlEdit: TEdit
-        Left = 272
-        Top = 274
-        Width = 411
-        Height = 21
-        Anchors = [akLeft, akTop, akRight]
-        TabOrder = 10
-        OnChange = ServerFieldChanged
-        ExplicitWidth = 338
-      end
-      object DownloadUrlEdit: TEdit
-        Left = 272
-        Top = 314
-        Width = 411
-        Height = 21
-        Anchors = [akLeft, akTop, akRight]
-        TabOrder = 11
-        OnChange = ServerFieldChanged
-        ExplicitWidth = 338
-      end
-      object UploadUrlEdit: TEdit
-        Left = 272
-        Top = 354
-        Width = 411
-        Height = 21
-        Anchors = [akLeft, akTop, akRight]
-        TabOrder = 12
-        OnChange = ServerFieldChanged
-        ExplicitWidth = 338
       end
       object AddServerButton: TButton
         Left = 4
@@ -1652,10 +1530,133 @@ object AccountsForm: TAccountsForm
         Anchors = [akRight, akBottom]
         Caption = 'Apply'
         Enabled = False
-        TabOrder = 13
+        TabOrder = 6
         OnClick = ApplyServerButtonClick
         ExplicitLeft = 486
         ExplicitTop = 419
+      end
+      object ServerParametersGB: TGroupBox
+        Left = 272
+        Top = 85
+        Width = 411
+        Height = 327
+        Caption = 'Server parameters'
+        TabOrder = 7
+        DesignSize = (
+          411
+          327)
+        object ApiUrlLabel: TLabel
+          Left = 8
+          Top = 17
+          Width = 395
+          Height = 13
+          Caption = 'API URL'
+        end
+        object OAuthUrlLabel: TLabel
+          Left = 8
+          Top = 60
+          Width = 395
+          Height = 13
+          Caption = 'OAuth URL'
+        end
+        object DispatcherUrlLabel: TLabel
+          Left = 8
+          Top = 103
+          Width = 395
+          Height = 13
+          Caption = 'Dispatcher URL'
+        end
+        object ThumbnailUrlLabel: TLabel
+          Left = 8
+          Top = 143
+          Width = 395
+          Height = 13
+          Caption = 'Thumbnail URL'
+        end
+        object ServerPublicUrlLabel: TLabel
+          Left = 8
+          Top = 183
+          Width = 395
+          Height = 13
+          Caption = 'Public URL'
+        end
+        object DownloadUrlLabel: TLabel
+          Left = 8
+          Top = 226
+          Width = 395
+          Height = 13
+          Caption = 'Download URL'
+        end
+        object UploadUrlLabel: TLabel
+          Left = 8
+          Top = 271
+          Width = 395
+          Height = 13
+          Caption = 'Upload URL'
+        end
+        object ApiUrlEdit: TEdit
+          Left = 8
+          Top = 33
+          Width = 395
+          Height = 21
+          Anchors = [akLeft, akTop, akRight]
+          TabOrder = 0
+          OnChange = ServerFieldChanged
+        end
+        object OAuthUrlEdit: TEdit
+          Left = 8
+          Top = 77
+          Width = 395
+          Height = 21
+          Anchors = [akLeft, akTop, akRight]
+          TabOrder = 1
+          OnChange = ServerFieldChanged
+        end
+        object DispatcherUrlEdit: TEdit
+          Left = 8
+          Top = 119
+          Width = 395
+          Height = 21
+          Anchors = [akLeft, akTop, akRight]
+          TabOrder = 2
+          OnChange = ServerFieldChanged
+        end
+        object ThumbnailUrlEdit: TEdit
+          Left = 8
+          Top = 159
+          Width = 395
+          Height = 21
+          Anchors = [akLeft, akTop, akRight]
+          TabOrder = 3
+          OnChange = ServerFieldChanged
+        end
+        object ServerPublicUrlEdit: TEdit
+          Left = 8
+          Top = 199
+          Width = 395
+          Height = 21
+          Anchors = [akLeft, akTop, akRight]
+          TabOrder = 4
+          OnChange = ServerFieldChanged
+        end
+        object DownloadUrlEdit: TEdit
+          Left = 8
+          Top = 244
+          Width = 395
+          Height = 21
+          Anchors = [akLeft, akTop, akRight]
+          TabOrder = 5
+          OnChange = ServerFieldChanged
+        end
+        object UploadUrlEdit: TEdit
+          Left = 8
+          Top = 289
+          Width = 395
+          Height = 21
+          Anchors = [akLeft, akTop, akRight]
+          TabOrder = 6
+          OnChange = ServerFieldChanged
+        end
       end
     end
     object TranslationTab: TTabSheet
