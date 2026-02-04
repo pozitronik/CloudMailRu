@@ -105,6 +105,7 @@ implementation
 
 uses
 	System.SysUtils,
+	PathHelper,
 	WFXTypes,
 	LanguageStrings,
 	JSONHelper;
@@ -212,7 +213,7 @@ var
 begin
 	Result := EmptyWideStr;
 	ShowProgress := False;
-	if FContext.GetPage(Format('%s/%s?token=%s', [FEndpoints.DispatcherUrl, ShardSuffix, FContext.GetOAuthAccessToken]), DispatcherResponse, ShowProgress) then
+	if FContext.GetPage(Format('%s%s?token=%s', [IncludeSlash(FEndpoints.DispatcherUrl), ShardSuffix, FContext.GetOAuthAccessToken]), DispatcherResponse, ShowProgress) then
 	begin
 		{Response format: "URL IP COUNT", extract the URL (first word)}
 		if Pos(' ', DispatcherResponse) > 0 then

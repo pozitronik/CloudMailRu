@@ -125,7 +125,7 @@ begin
 			MemoryStream := TMemoryStream.Create;
 			try
 				{OAuth requires client_id and token parameters for download authentication}
-				URL := Format('%s%s?client_id=%s&token=%s', [DownloadShard, PathToUrl(RemotePath, False), OAUTH_CLIENT_ID, OAuthToken.access_token]);
+				URL := Format('%s%s?client_id=%s&token=%s', [IncludeSlash(DownloadShard), PathToUrl(RemotePath, False), OAUTH_CLIENT_ID, OAuthToken.access_token]);
 				Result := FContext.GetHTTP.GetFile(URL, MemoryStream, LogErrors);
 
 				if (CLOUD_ERROR_TOKEN_OUTDATED = Result) and FContext.RefreshCSRFToken then
@@ -161,7 +161,7 @@ begin
 			end;
 		end else begin
 			{OAuth requires client_id and token parameters for download authentication}
-			Result := FContext.GetHTTP.GetFile(Format('%s%s?client_id=%s&token=%s', [DownloadShard, PathToUrl(RemotePath, False), OAUTH_CLIENT_ID, OAuthToken.access_token]), FileStream, LogErrors);
+			Result := FContext.GetHTTP.GetFile(Format('%s%s?client_id=%s&token=%s', [IncludeSlash(DownloadShard), PathToUrl(RemotePath, False), OAUTH_CLIENT_ID, OAuthToken.access_token]), FileStream, LogErrors);
 			if (CLOUD_ERROR_TOKEN_OUTDATED = Result) and FContext.RefreshCSRFToken then
 				Exit(DownloadRegular(RemotePath, LocalPath, ResultHash, LogErrors));
 			if ((Result in [FS_FILE_OK]) and (EmptyWideStr = ResultHash)) then

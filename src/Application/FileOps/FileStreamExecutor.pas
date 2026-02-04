@@ -61,6 +61,7 @@ implementation
 
 uses
 	SysUtils,
+	PathHelper,
 	WFXTypes;
 
 function ShardTypeFromStreamingFormat(StreamingFormat: Integer): string;
@@ -139,7 +140,7 @@ begin
 	Cloud := ConnManager.Get(RealPath.Account);
 
 	{Initialize temporary public cloud for URL resolution}
-	if not FCloudFactory.CreatePublicCloud(TempPublicCloud, Cloud.GetEndpoints.PublicUrl + Item.weblink) then
+	if not FCloudFactory.CreatePublicCloud(TempPublicCloud, IncludeSlash(Cloud.GetEndpoints.PublicUrl) + Item.weblink) then
 		Exit(FS_EXEC_ERROR);
 
 	try
