@@ -120,6 +120,8 @@ type
 		procedure TestIsPathSkipped_NoSkippedPathList_ReturnsFalse;
 		[Test]
 		procedure TestDecrementBackgroundJobs_UnknownAccount_SetsNegative;
+		[Test]
+		procedure TestCreateRemoveDirSkippedPath_DoubleCreate_NoLeak;
 	end;
 
 implementation
@@ -484,6 +486,25 @@ begin
 	{ Decrementing on unknown account starts from 0, resulting in -1 }
 	FManager.DecrementBackgroundJobs('unknown@mail.ru');
 	Assert.AreEqual(-1, FManager.GetBackgroundJobsCount('unknown@mail.ru'));
+end;
+
+procedure TThreadStateManagerTest.TestCreateRemoveDirSkippedPath_DoubleCreate_NoLeak;
+begin
+	{Calling CreateRemoveDirSkippedPath twice must not leak the first TStringList.
+		We verify the second call replaces cleanly and the list is functional.}
+	FManager.CreateRemoveDirSkippedPath;
+	FManager.AddSkippedPath('\account\folder1');
+	Assert.AreEqual(1, FManager.GetRemoveDirSkippedPath.Count);
+
+	{Second create should free the old list and start fresh}
+	FManager.CreateRemoveDirSkippedPath;
+	Assert.AreEqual(0, FManager.GetRemoveDirSkippedPath.Count, 'Double-create should produce a fresh empty list');
+	Assert.IsTrue(FManager.HasRemoveDirSkippedPath);
+
+	{New list should be fully functional}
+	FManager.AddSkippedPath('\account\folder2');
+	Assert.IsTrue(FManager.IsPathSkipped('\account\folder2'));
+	Assert.IsFalse(FManager.IsPathSkipped('\account\folder1'), 'Old entries must not survive double-create');
 end;
 
 initialization

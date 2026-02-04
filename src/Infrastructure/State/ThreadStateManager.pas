@@ -545,9 +545,13 @@ begin
 end;
 
 procedure TThreadStateManager.CreateRemoveDirSkippedPath;
+var
+	Existing: TStringList;
 begin
 	FLock.Enter;
 	try
+		if FRemoveDirSkippedPath.TryGetValue(GetCurrentThreadID(), Existing) then
+			Existing.Free;
 		FRemoveDirSkippedPath.AddOrSetValue(GetCurrentThreadID(), TStringList.Create());
 	finally
 		FLock.Leave;
