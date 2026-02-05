@@ -50,6 +50,7 @@ type
 		FPrecalculateHash: Boolean;
 		FCheckCRC: Boolean;
 		FHashCalculatorStrategy: Integer;
+		FSSLBackend: Integer;
 
 		{Network settings}
 		FSocketTimeout: Integer;
@@ -206,6 +207,8 @@ type
 		function GetCheckCRC: Boolean;
 		procedure SetHashCalculatorStrategy(Value: Integer);
 		function GetHashCalculatorStrategy: Integer;
+		procedure SetSSLBackend(Value: Integer);
+		function GetSSLBackend: Integer;
 
 		{IAccountsView - Network settings}
 		procedure SetSocketTimeout(Value: Integer);
@@ -974,6 +977,16 @@ end;
 function TMockAccountsView.GetHashCalculatorStrategy: Integer;
 begin
 	Result := FHashCalculatorStrategy;
+end;
+
+procedure TMockAccountsView.SetSSLBackend(Value: Integer);
+begin
+	FSSLBackend := Value;
+end;
+
+function TMockAccountsView.GetSSLBackend: Integer;
+begin
+	Result := FSSLBackend;
 end;
 
 {Network settings}
@@ -1905,6 +1918,7 @@ begin
 	FView.SetRetryAttempts(5);
 	FView.SetAttemptWait(2000);
 	FView.SetIconsMode(2);
+	FView.SetSSLBackend(2);
 	FView.SetDescriptionEnabled(True);
 	FView.SetDescriptionFileName('descript.ion');
 
@@ -1917,6 +1931,7 @@ begin
 	Assert.AreEqual(5, Settings.RetryAttempts, 'RetryAttempts should be saved');
 	Assert.AreEqual(2000, Settings.AttemptWait, 'AttemptWait should be saved');
 	Assert.AreEqual(2, Settings.IconsMode, 'IconsMode should be saved');
+	Assert.AreEqual(2, Settings.SSLBackend, 'SSLBackend should be saved');
 	Assert.IsTrue(Settings.DescriptionEnabled, 'DescriptionEnabled should be saved');
 	Assert.AreEqual('descript.ion', Settings.DescriptionFileName, 'DescriptionFileName should be saved');
 end;
@@ -3142,6 +3157,7 @@ begin
 	Settings.ShowInvitesFolders := True;
 	Settings.PrecalculateHash := True;
 	Settings.CheckCRC := True;
+	Settings.SSLBackend := 2;
 	Settings.DescriptionEnabled := True;
 	Settings.DescriptionCopyToCloud := True;
 	Settings.DescriptionCopyFromCloud := True;
@@ -3161,6 +3177,7 @@ begin
 	Assert.IsTrue(FView.GetShowInvitesFolders, 'ShowInvitesFolders should be loaded');
 	Assert.IsTrue(FView.GetPrecalculateHash, 'PrecalculateHash should be loaded');
 	Assert.IsTrue(FView.GetCheckCRC, 'CheckCRC should be loaded');
+	Assert.AreEqual(2, FView.GetSSLBackend, 'SSLBackend should be loaded');
 	Assert.IsTrue(FView.GetDescriptionEnabled, 'DescriptionEnabled should be loaded');
 	Assert.IsTrue(FView.GetDescriptionCopyToCloud, 'DescriptionCopyToCloud should be loaded');
 	Assert.IsTrue(FView.GetDescriptionCopyFromCloud, 'DescriptionCopyFromCloud should be loaded');
