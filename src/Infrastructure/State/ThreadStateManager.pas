@@ -96,6 +96,14 @@ type
 		FBackgroundThreads: TDictionary<DWORD, Int32>;
 		FFsStatusInfo: TDictionary<DWORD, Int32>;
 		FRemoveDirSkippedPath: TDictionary<DWORD, TStringList>;
+
+		{Private helpers to reduce boilerplate - all use GetCurrentThreadID as key}
+		function GetThreadBoolean(Dict: TDictionary<DWORD, Boolean>): Boolean;
+		procedure SetThreadBoolean(Dict: TDictionary<DWORD, Boolean>; Value: Boolean);
+		function GetThreadInt32(Dict: TDictionary<DWORD, Int32>): Int32;
+		procedure SetThreadInt32(Dict: TDictionary<DWORD, Int32>; Value: Int32);
+		procedure IncrementThreadInt32(Dict: TDictionary<DWORD, Int32>);
+		procedure ResetThreadInt32(Dict: TDictionary<DWORD, Int32>);
 	public
 		constructor Create;
 		destructor Destroy; override;
@@ -201,6 +209,74 @@ begin
 	inherited;
 end;
 
+{Private helpers - consolidate thread-keyed dictionary operations}
+
+function TThreadStateManager.GetThreadBoolean(Dict: TDictionary<DWORD, Boolean>): Boolean;
+begin
+	FLock.Enter;
+	try
+		if not Dict.TryGetValue(GetCurrentThreadID(), Result) then
+			Result := False;
+	finally
+		FLock.Leave;
+	end;
+end;
+
+procedure TThreadStateManager.SetThreadBoolean(Dict: TDictionary<DWORD, Boolean>; Value: Boolean);
+begin
+	FLock.Enter;
+	try
+		Dict.AddOrSetValue(GetCurrentThreadID(), Value);
+	finally
+		FLock.Leave;
+	end;
+end;
+
+function TThreadStateManager.GetThreadInt32(Dict: TDictionary<DWORD, Int32>): Int32;
+begin
+	FLock.Enter;
+	try
+		if not Dict.TryGetValue(GetCurrentThreadID(), Result) then
+			Result := 0;
+	finally
+		FLock.Leave;
+	end;
+end;
+
+procedure TThreadStateManager.SetThreadInt32(Dict: TDictionary<DWORD, Int32>; Value: Int32);
+begin
+	FLock.Enter;
+	try
+		Dict.AddOrSetValue(GetCurrentThreadID(), Value);
+	finally
+		FLock.Leave;
+	end;
+end;
+
+procedure TThreadStateManager.IncrementThreadInt32(Dict: TDictionary<DWORD, Int32>);
+var
+	Current: Int32;
+begin
+	FLock.Enter;
+	try
+		if not Dict.TryGetValue(GetCurrentThreadID(), Current) then
+			Current := 0;
+		Dict.AddOrSetValue(GetCurrentThreadID(), Current + 1);
+	finally
+		FLock.Leave;
+	end;
+end;
+
+procedure TThreadStateManager.ResetThreadInt32(Dict: TDictionary<DWORD, Int32>);
+begin
+	FLock.Enter;
+	try
+		Dict.AddOrSetValue(GetCurrentThreadID(), 0);
+	finally
+		FLock.Leave;
+	end;
+end;
+
 function TThreadStateManager.HasAnyActiveOperations: Boolean;
 var
 	JobCount: Int32;
@@ -224,248 +300,118 @@ end;
 
 function TThreadStateManager.GetSkipListDelete: Boolean;
 begin
-	FLock.Enter;
-	try
-		if not FSkipListDelete.TryGetValue(GetCurrentThreadID(), Result) then
-			Result := False;
-	finally
-		FLock.Leave;
-	end;
+	Result := GetThreadBoolean(FSkipListDelete);
 end;
 
 procedure TThreadStateManager.SetSkipListDelete(Value: Boolean);
 begin
-	FLock.Enter;
-	try
-		FSkipListDelete.AddOrSetValue(GetCurrentThreadID(), Value);
-	finally
-		FLock.Leave;
-	end;
+	SetThreadBoolean(FSkipListDelete, Value);
 end;
 
 function TThreadStateManager.GetSkipListRenMov: Boolean;
 begin
-	FLock.Enter;
-	try
-		if not FSkipListRenMov.TryGetValue(GetCurrentThreadID(), Result) then
-			Result := False;
-	finally
-		FLock.Leave;
-	end;
+	Result := GetThreadBoolean(FSkipListRenMov);
 end;
 
 procedure TThreadStateManager.SetSkipListRenMov(Value: Boolean);
 begin
-	FLock.Enter;
-	try
-		FSkipListRenMov.AddOrSetValue(GetCurrentThreadID(), Value);
-	finally
-		FLock.Leave;
-	end;
+	SetThreadBoolean(FSkipListRenMov, Value);
 end;
 
 {Abort control}
 
 function TThreadStateManager.GetCanAbortRenMov: Boolean;
 begin
-	FLock.Enter;
-	try
-		if not FCanAbortRenMov.TryGetValue(GetCurrentThreadID(), Result) then
-			Result := False;
-	finally
-		FLock.Leave;
-	end;
+	Result := GetThreadBoolean(FCanAbortRenMov);
 end;
 
 procedure TThreadStateManager.SetCanAbortRenMov(Value: Boolean);
 begin
-	FLock.Enter;
-	try
-		FCanAbortRenMov.AddOrSetValue(GetCurrentThreadID(), Value);
-	finally
-		FLock.Leave;
-	end;
+	SetThreadBoolean(FCanAbortRenMov, Value);
 end;
 
 function TThreadStateManager.GetListingAborted: Boolean;
 begin
-	FLock.Enter;
-	try
-		if not FListingAborted.TryGetValue(GetCurrentThreadID(), Result) then
-			Result := False;
-	finally
-		FLock.Leave;
-	end;
+	Result := GetThreadBoolean(FListingAborted);
 end;
 
 procedure TThreadStateManager.SetListingAborted(Value: Boolean);
 begin
-	FLock.Enter;
-	try
-		FListingAborted.AddOrSetValue(GetCurrentThreadID(), Value);
-	finally
-		FLock.Leave;
-	end;
+	SetThreadBoolean(FListingAborted, Value);
 end;
 
 {Retry counters}
 
 function TThreadStateManager.GetRetryCountDownload: Int32;
 begin
-	FLock.Enter;
-	try
-		if not FRetryCountDownload.TryGetValue(GetCurrentThreadID(), Result) then
-			Result := 0;
-	finally
-		FLock.Leave;
-	end;
+	Result := GetThreadInt32(FRetryCountDownload);
 end;
 
 procedure TThreadStateManager.SetRetryCountDownload(Value: Int32);
 begin
-	FLock.Enter;
-	try
-		FRetryCountDownload.AddOrSetValue(GetCurrentThreadID(), Value);
-	finally
-		FLock.Leave;
-	end;
+	SetThreadInt32(FRetryCountDownload, Value);
 end;
 
 procedure TThreadStateManager.IncrementRetryCountDownload;
-var
-	Current: Int32;
 begin
-	FLock.Enter;
-	try
-		if not FRetryCountDownload.TryGetValue(GetCurrentThreadID(), Current) then
-			Current := 0;
-		FRetryCountDownload.AddOrSetValue(GetCurrentThreadID(), Current + 1);
-	finally
-		FLock.Leave;
-	end;
+	IncrementThreadInt32(FRetryCountDownload);
 end;
 
 procedure TThreadStateManager.ResetRetryCountDownload;
 begin
-	FLock.Enter;
-	try
-		FRetryCountDownload.AddOrSetValue(GetCurrentThreadID(), 0);
-	finally
-		FLock.Leave;
-	end;
+	ResetThreadInt32(FRetryCountDownload);
 end;
 
 function TThreadStateManager.GetRetryCountUpload: Int32;
 begin
-	FLock.Enter;
-	try
-		if not FRetryCountUpload.TryGetValue(GetCurrentThreadID(), Result) then
-			Result := 0;
-	finally
-		FLock.Leave;
-	end;
+	Result := GetThreadInt32(FRetryCountUpload);
 end;
 
 procedure TThreadStateManager.SetRetryCountUpload(Value: Int32);
 begin
-	FLock.Enter;
-	try
-		FRetryCountUpload.AddOrSetValue(GetCurrentThreadID(), Value);
-	finally
-		FLock.Leave;
-	end;
+	SetThreadInt32(FRetryCountUpload, Value);
 end;
 
 procedure TThreadStateManager.IncrementRetryCountUpload;
-var
-	Current: Int32;
 begin
-	FLock.Enter;
-	try
-		if not FRetryCountUpload.TryGetValue(GetCurrentThreadID(), Current) then
-			Current := 0;
-		FRetryCountUpload.AddOrSetValue(GetCurrentThreadID(), Current + 1);
-	finally
-		FLock.Leave;
-	end;
+	IncrementThreadInt32(FRetryCountUpload);
 end;
 
 procedure TThreadStateManager.ResetRetryCountUpload;
 begin
-	FLock.Enter;
-	try
-		FRetryCountUpload.AddOrSetValue(GetCurrentThreadID(), 0);
-	finally
-		FLock.Leave;
-	end;
+	ResetThreadInt32(FRetryCountUpload);
 end;
 
 function TThreadStateManager.GetRetryCountRenMov: Int32;
 begin
-	FLock.Enter;
-	try
-		if not FRetryCountRenMov.TryGetValue(GetCurrentThreadID(), Result) then
-			Result := 0;
-	finally
-		FLock.Leave;
-	end;
+	Result := GetThreadInt32(FRetryCountRenMov);
 end;
 
 procedure TThreadStateManager.SetRetryCountRenMov(Value: Int32);
 begin
-	FLock.Enter;
-	try
-		FRetryCountRenMov.AddOrSetValue(GetCurrentThreadID(), Value);
-	finally
-		FLock.Leave;
-	end;
+	SetThreadInt32(FRetryCountRenMov, Value);
 end;
 
 procedure TThreadStateManager.IncrementRetryCountRenMov;
-var
-	Current: Int32;
 begin
-	FLock.Enter;
-	try
-		if not FRetryCountRenMov.TryGetValue(GetCurrentThreadID(), Current) then
-			Current := 0;
-		FRetryCountRenMov.AddOrSetValue(GetCurrentThreadID(), Current + 1);
-	finally
-		FLock.Leave;
-	end;
+	IncrementThreadInt32(FRetryCountRenMov);
 end;
 
 procedure TThreadStateManager.ResetRetryCountRenMov;
 begin
-	FLock.Enter;
-	try
-		FRetryCountRenMov.AddOrSetValue(GetCurrentThreadID(), 0);
-	finally
-		FLock.Leave;
-	end;
+	ResetThreadInt32(FRetryCountRenMov);
 end;
 
 {Operation context}
 
 function TThreadStateManager.GetFsStatusInfo: Int32;
 begin
-	FLock.Enter;
-	try
-		if not FFsStatusInfo.TryGetValue(GetCurrentThreadID(), Result) then
-			Result := 0;
-	finally
-		FLock.Leave;
-	end;
+	Result := GetThreadInt32(FFsStatusInfo);
 end;
 
 procedure TThreadStateManager.SetFsStatusInfo(Value: Int32);
 begin
-	FLock.Enter;
-	try
-		FFsStatusInfo.AddOrSetValue(GetCurrentThreadID(), Value);
-	finally
-		FLock.Leave;
-	end;
+	SetThreadInt32(FFsStatusInfo, Value);
 end;
 
 procedure TThreadStateManager.RemoveFsStatusInfo;
@@ -492,23 +438,12 @@ end;
 
 function TThreadStateManager.GetBackgroundThreadStatus: Int32;
 begin
-	FLock.Enter;
-	try
-		if not FBackgroundThreads.TryGetValue(GetCurrentThreadID(), Result) then
-			Result := 0;
-	finally
-		FLock.Leave;
-	end;
+	Result := GetThreadInt32(FBackgroundThreads);
 end;
 
 procedure TThreadStateManager.SetBackgroundThreadStatus(Value: Int32);
 begin
-	FLock.Enter;
-	try
-		FBackgroundThreads.AddOrSetValue(GetCurrentThreadID(), Value);
-	finally
-		FLock.Leave;
-	end;
+	SetThreadInt32(FBackgroundThreads, Value);
 end;
 
 procedure TThreadStateManager.RemoveBackgroundThread;
