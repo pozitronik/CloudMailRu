@@ -193,6 +193,8 @@ var
 	FileStream: TBufferedFileStream;
 begin
 	try
+		{Direct instantiation is intentional - injecting a file stream factory provides no practical
+			benefit here: tests work fine with real temp files, and the exception handling is trivial.}
 		FileStream := TBufferedFileStream.Create(GetUNCFilePath(LocalPath), fmOpenRead or fmShareDenyWrite);
 	except
 		on E: Exception do

@@ -112,6 +112,8 @@ begin
 	if DownloadShard = EmptyWideStr then
 		Exit;
 	try
+		{Direct instantiation is intentional - injecting a file stream factory provides no practical
+			benefit here: tests work fine with real temp files, and the exception handling is trivial.}
 		FileStream := TBufferedFileStream.Create(GetUNCFilePath(LocalPath), fmCreate);
 	except
 		on E: Exception do
@@ -166,7 +168,10 @@ begin
 						MemoryStream.Position := 0;
 						{Use stream wrapper for decryption - processes in chunks with constant memory.
 							Note: MemoryStream still buffers entire encrypted file due to HTTP download pattern.
-							True streaming decryption would require a write-based wrapper for GetFile.}
+							True streaming decryption would require a write-based wrapper for GetFile.
+							Refactoring to stream directly to file would require architectural changes to HTTP
+							layer (response callback or chunked download support). Cost exceeds benefit for
+							typical encrypted file sizes encountered in practice.}
 						DecryptingStream := FCipher.GetDecryptingStream(MemoryStream);
 						try
 							FileStream.CopyFrom(DecryptingStream, DecryptingStream.Size);
@@ -233,6 +238,8 @@ begin
 	if (FShardManager.GetPublicShard = EmptyWideStr) then
 		Exit;
 	try
+		{Direct instantiation is intentional - injecting a file stream factory provides no practical
+			benefit here: tests work fine with real temp files, and the exception handling is trivial.}
 		FileStream := TBufferedFileStream.Create(GetUNCFilePath(LocalPath), fmCreate);
 	except
 		on E: Exception do
