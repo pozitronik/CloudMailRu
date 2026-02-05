@@ -71,6 +71,12 @@ type
 
 		[Test]
 		procedure Execute_WhenRetryHandlerReturnsError_ReturnsError;
+
+		{Retry handler callback coverage - verify closures passed to retry handler}
+		[Test]
+		procedure Execute_RetryCallback_InvokesDownloadOp;
+		[Test]
+		procedure Execute_AbortCheckCallback_InvokesProgressOp;
 	end;
 
 implementation
@@ -118,6 +124,25 @@ type
 			AbortCheck: TAbortCheckFunc
 		): Integer;
 		property WasCalled: Boolean read FWasCalled;
+	end;
+
+	{Mock retry handler that invokes the captured callbacks to exercise closure code}
+	TCallbackInvokingRetryHandler = class(TInterfacedObject, IRetryHandler)
+	private
+		FReturnValue: Integer;
+		FRetryOpResult: Integer;
+		FAbortCheckResult: Boolean;
+	public
+		constructor Create(ReturnValue: Integer);
+		function HandleOperationError(
+			CurrentResult: Integer;
+			OperationType: TRetryOperationType;
+			const AskMessage, AskTitle, RetryLogMessage, FormatParam: WideString;
+			RetryOperation: TRetryOperation;
+			AbortCheck: TAbortCheckFunc
+		): Integer;
+		property RetryOpResult: Integer read FRetryOpResult;
+		property AbortCheckResult: Boolean read FAbortCheckResult;
 	end;
 
 	{Mock settings manager}
@@ -194,6 +219,27 @@ function TMockRetryHandler.HandleOperationError(
 ): Integer;
 begin
 	FWasCalled := True;
+	Result := FReturnValue;
+end;
+
+{TCallbackInvokingRetryHandler}
+
+constructor TCallbackInvokingRetryHandler.Create(ReturnValue: Integer);
+begin
+	inherited Create;
+	FReturnValue := ReturnValue;
+end;
+
+function TCallbackInvokingRetryHandler.HandleOperationError(
+	CurrentResult: Integer;
+	OperationType: TRetryOperationType;
+	const AskMessage, AskTitle, RetryLogMessage, FormatParam: WideString;
+	RetryOperation: TRetryOperation;
+	AbortCheck: TAbortCheckFunc
+): Integer;
+begin
+	FRetryOpResult := RetryOperation();
+	FAbortCheckResult := AbortCheck();
 	Result := FReturnValue;
 end;
 
@@ -491,6 +537,58 @@ begin
 		end);
 
 	Assert.AreEqual(FS_FILE_USERABORT, Result, 'Should return error code from retry handler');
+end;
+
+procedure TDownloadOrchestratorTest.Execute_RetryCallback_InvokesDownloadOp;
+var
+	InvokingRetry: TCallbackInvokingRetryHandler;
+begin
+	InvokingRetry := TCallbackInvokingRetryHandler.Create(FS_FILE_OK);
+	FMockRetryHandler := InvokingRetry;
+	FOrchestrator := TDownloadOrchestrator.Create(
+		FMockValidator, FMockConflictResolver, FMockRetryHandler, FMockSettingsManager);
+
+	FOrchestrator.Execute('\account\test.txt', 'C:\local.txt', 0,
+		function(const Path: TRealPath; const LocalName, RemoteName: WideString; CopyFlags: Integer): Integer
+		begin
+			Inc(FDownloadCallCount);
+			Result := FS_FILE_READERROR;
+		end,
+		function(const Source, Target: WideString; PercentDone: Integer): Boolean
+		begin
+			Result := False;
+		end);
+
+	Assert.AreEqual(2, FDownloadCallCount,
+		'Download should be called twice: once normally, once via retry callback');
+	Assert.AreEqual(Integer(FS_FILE_READERROR), InvokingRetry.RetryOpResult,
+		'Retry callback should return same result as DownloadOp');
+end;
+
+procedure TDownloadOrchestratorTest.Execute_AbortCheckCallback_InvokesProgressOp;
+var
+	InvokingRetry: TCallbackInvokingRetryHandler;
+begin
+	InvokingRetry := TCallbackInvokingRetryHandler.Create(FS_FILE_OK);
+	FMockRetryHandler := InvokingRetry;
+	FOrchestrator := TDownloadOrchestrator.Create(
+		FMockValidator, FMockConflictResolver, FMockRetryHandler, FMockSettingsManager);
+
+	FOrchestrator.Execute('\account\test.txt', 'C:\local.txt', 0,
+		function(const Path: TRealPath; const LocalName, RemoteName: WideString; CopyFlags: Integer): Integer
+		begin
+			Result := FS_FILE_READERROR;
+		end,
+		function(const Source, Target: WideString; PercentDone: Integer): Boolean
+		begin
+			Inc(FProgressCallCount);
+			Result := True; {Simulates user abort}
+		end);
+
+	Assert.AreEqual(2, FProgressCallCount,
+		'Progress should be called twice: once before download, once via abort check');
+	Assert.IsTrue(InvokingRetry.AbortCheckResult,
+		'Abort check callback should return True when ProgressOp signals abort');
 end;
 
 initialization
