@@ -53,6 +53,9 @@ type
 		procedure LogUserSpaceInfo(Email: WideString);
 	end;
 
+	{Callback type for parsing JSON response into a result}
+	TListingParser<T> = reference to function(const JSON: WideString; var Output: T): Boolean;
+
 	{Implementation of listing service}
 	TCloudListingService = class(TInterfacedObject, ICloudListingService)
 	private
@@ -60,6 +63,10 @@ type
 		FCipher: ICipher;
 		FLogger: ILogger;
 		FRetryOperation: IRetryOperation;
+
+		{Generic helper for virtual folder listings (shared/invites/trash).
+		 Handles public account check, progress, retry, and result copying.}
+		function GetVirtualListing<T>(const Endpoint: WideString; const ProgressName: WideString; const ErrorPrefix: WideString; Parser:TListingParser<T>; var Listing: T; ShowProgress: Boolean): Boolean;
 	public
 		constructor Create(Context: ICloudContext; Cipher: ICipher; Logger: ILogger; RetryOperation: IRetryOperation);
 
@@ -169,30 +176,30 @@ begin
 	Result := True;
 end;
 
-function TCloudListingService.GetSharedLinks(var Listing: TCloudDirItemList; ShowProgress: Boolean = False): Boolean;
+function TCloudListingService.GetVirtualListing<T>(const Endpoint: WideString; const ProgressName: WideString; 	const ErrorPrefix: WideString; Parser: TListingParser<T>; var Listing: T; ShowProgress: Boolean): Boolean;
 var
 	CallResult: TAPICallResult;
-	LocalListing: TCloudDirItemList;
+	LocalListing: T;
 begin
 	Result := False;
-	SetLength(Listing, 0);
+	Listing := Default(T);
 
 	if FContext.IsPublicAccount then
 		Exit;
 
 	if ShowProgress then
-		FContext.GetHTTP.SetProgressNames(SHARED_LINKS_LISTING, UNKNOWN_ITEM);
+		FContext.GetHTTP.SetProgressNames(ProgressName, UNKNOWN_ITEM);
 
-	SetLength(LocalListing, 0);
+	LocalListing := Default(T);
 	CallResult := FRetryOperation.Execute(
 		function: TAPICallResult
 		var
 			JSON: WideString;
 			Success: Boolean;
 		begin
-			Success := FContext.GetHTTP.GetPage(Format('%s?%s', [FContext.GetEndpoints.ApiFolderSharedLinks, FContext.GetUnitedParams]), JSON, ShowProgress);
+			Success := FContext.GetHTTP.GetPage(Format('%s?%s', [Endpoint, FContext.GetUnitedParams]), JSON, ShowProgress);
 			if Success then
-				Success := FContext.CloudResultToBoolean(JSON, PREFIX_ERR_SHARED_LINKS_LISTING) and TCloudDirItemListJsonAdapter.Parse(JSON, LocalListing);
+				Success := FContext.CloudResultToBoolean(JSON, ErrorPrefix) and Parser(JSON, LocalListing);
 			Result := TAPICallResult.FromBoolean(Success, JSON);
 		end);
 
@@ -201,36 +208,32 @@ begin
 		Listing := LocalListing;
 end;
 
-function TCloudListingService.GetIncomingInvites(var Listing: TCloudIncomingInviteList; ShowProgress: Boolean = False): Boolean;
-var
-	CallResult: TAPICallResult;
-	LocalListing: TCloudIncomingInviteList;
+function TCloudListingService.GetSharedLinks(var Listing: TCloudDirItemList; ShowProgress: Boolean = False): Boolean;
 begin
-	Result := False;
-	SetLength(Listing, 0);
-
-	if FContext.IsPublicAccount then
-		Exit;
-
-	if ShowProgress then
-		FContext.GetHTTP.SetProgressNames(INCOMING_LINKS_LISTING, UNKNOWN_ITEM);
-
-	SetLength(LocalListing, 0);
-	CallResult := FRetryOperation.Execute(
-		function: TAPICallResult
-		var
-			JSON: WideString;
-			Success: Boolean;
+	Result := GetVirtualListing<TCloudDirItemList>(
+		FContext.GetEndpoints.ApiFolderSharedLinks,
+		SHARED_LINKS_LISTING,
+		PREFIX_ERR_SHARED_LINKS_LISTING,
+		function(const JSON: WideString; var Output: TCloudDirItemList): Boolean
 		begin
-			Success := FContext.GetHTTP.GetPage(Format('%s?%s', [FContext.GetEndpoints.ApiFolderSharedIncoming, FContext.GetUnitedParams]), JSON, ShowProgress);
-			if Success then
-				Success := FContext.CloudResultToBoolean(JSON, PREFIX_ERR_INCOMING_REQUESTS_LISTING) and TCloudIncomingInviteListJsonAdapter.Parse(JSON, LocalListing);
-			Result := TAPICallResult.FromBoolean(Success, JSON);
-		end);
+			Result := TCloudDirItemListJsonAdapter.Parse(JSON, Output);
+		end,
+		Listing,
+		ShowProgress);
+end;
 
-	Result := CallResult.Success;
-	if Result then
-		Listing := LocalListing;
+function TCloudListingService.GetIncomingInvites(var Listing: TCloudIncomingInviteList; ShowProgress: Boolean = False): Boolean;
+begin
+	Result := GetVirtualListing<TCloudIncomingInviteList>(
+		FContext.GetEndpoints.ApiFolderSharedIncoming,
+		INCOMING_LINKS_LISTING,
+		PREFIX_ERR_INCOMING_REQUESTS_LISTING,
+		function(const JSON: WideString; var Output: TCloudIncomingInviteList): Boolean
+		begin
+			Result := TCloudIncomingInviteListJsonAdapter.Parse(JSON, Output);
+		end,
+		Listing,
+		ShowProgress);
 end;
 
 function TCloudListingService.GetIncomingInvitesAsDirItems(var DirListing: TCloudDirItemList; var InvitesListing: TCloudIncomingInviteList; ShowProgress: Boolean = False): Boolean;
@@ -252,35 +255,17 @@ begin
 end;
 
 function TCloudListingService.GetTrashbin(var Listing: TCloudDirItemList; ShowProgress: Boolean = False): Boolean;
-var
-	CallResult: TAPICallResult;
-	LocalListing: TCloudDirItemList;
 begin
-	Result := False;
-	SetLength(Listing, 0);
-
-	if FContext.IsPublicAccount then
-		Exit;
-
-	if ShowProgress then
-		FContext.GetHTTP.SetProgressNames(TRASH_LISTING, UNKNOWN_ITEM);
-
-	SetLength(LocalListing, 0);
-	CallResult := FRetryOperation.Execute(
-		function: TAPICallResult
-		var
-			JSON: WideString;
-			Success: Boolean;
+	Result := GetVirtualListing<TCloudDirItemList>(
+		FContext.GetEndpoints.ApiTrashbin,
+		TRASH_LISTING,
+		PREFIX_ERR_TRASH_LISTING,
+		function(const JSON: WideString; var Output: TCloudDirItemList): Boolean
 		begin
-			Success := FContext.GetHTTP.GetPage(Format('%s?%s', [FContext.GetEndpoints.ApiTrashbin, FContext.GetUnitedParams]), JSON, ShowProgress);
-			if Success then
-				Success := FContext.CloudResultToBoolean(JSON, PREFIX_ERR_TRASH_LISTING) and TCloudDirItemListJsonAdapter.Parse(JSON, LocalListing);
-			Result := TAPICallResult.FromBoolean(Success, JSON);
-		end);
-
-	Result := CallResult.Success;
-	if Result then
-		Listing := LocalListing;
+			Result := TCloudDirItemListJsonAdapter.Parse(JSON, Output);
+		end,
+		Listing,
+		ShowProgress);
 end;
 
 function TCloudListingService.StatusFile(Path: WideString; var FileInfo: TCloudDirItem): Boolean;
