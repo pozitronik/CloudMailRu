@@ -97,6 +97,8 @@ type
 		function GetCheckCRC: Boolean;
 		procedure SetHashCalculatorStrategy(Value: Integer);
 		function GetHashCalculatorStrategy: Integer;
+		procedure SetSSLBackend(Value: Integer);
+		function GetSSLBackend: Integer;
 
 		{Network settings}
 		procedure SetSocketTimeout(Value: Integer);
@@ -557,6 +559,7 @@ begin
 		FView.SetPrecalculateHash(Settings.PrecalculateHash);
 		FView.SetCheckCRC(Settings.CheckCRC);
 		FView.SetHashCalculatorStrategy(Settings.HashCalculatorStrategy);
+		FView.SetSSLBackend(Settings.SSLBackend);
 
 		{Network settings}
 		FView.SetSocketTimeout(Settings.ConnectionSettings.SocketTimeout);
@@ -1158,6 +1161,7 @@ begin
 	Settings.PrecalculateHash := FView.GetPrecalculateHash;
 	Settings.CheckCRC := FView.GetCheckCRC;
 	Settings.HashCalculatorStrategy := FView.GetHashCalculatorStrategy;
+	Settings.SSLBackend := FView.GetSSLBackend;
 
 	{Network settings}
 	Settings.ConnectionSettings.SocketTimeout := FView.GetSocketTimeout;

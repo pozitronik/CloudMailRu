@@ -280,6 +280,8 @@ type
 		function GetCheckCRC: Boolean;
 		procedure SetHashCalculatorStrategy(Value: Integer);
 		function GetHashCalculatorStrategy: Integer;
+		procedure SetSSLBackend(Value: Integer);
+		function GetSSLBackend: Integer;
 
 		{IAccountsView - Network settings}
 		procedure SetSocketTimeout(Value: Integer);
@@ -684,6 +686,16 @@ end;
 function TAccountsForm.GetHashCalculatorStrategy: Integer;
 begin
 	Result := PrecalculateHashStrategyCombo.ItemIndex;
+end;
+
+procedure TAccountsForm.SetSSLBackend(Value: Integer);
+begin
+	SSLBackendCB.ItemIndex := Value;
+end;
+
+function TAccountsForm.GetSSLBackend: Integer;
+begin
+	Result := SSLBackendCB.ItemIndex;
 end;
 
 {IAccountsView - Network settings}
