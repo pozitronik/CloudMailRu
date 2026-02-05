@@ -706,6 +706,10 @@ begin
 	finally
 		FUpdating := WasUpdating;
 	end;
+	{Update test button state based on loaded credentials}
+	FView.SetTestAccountButtonEnabled(
+		(not AccSettings.PublicAccount) and (AccSettings.Email <> '') and (AccSettings.Password <> ''));
+	FView.SetTestAccountButtonCaption(DFM_BTN_TEST);
 	SetDirty(False);
 end;
 
@@ -735,6 +739,9 @@ begin
 	finally
 		FUpdating := WasUpdating;
 	end;
+	{Disable test button when fields are cleared}
+	FView.SetTestAccountButtonEnabled(False);
+	FView.SetTestAccountButtonCaption(DFM_BTN_TEST);
 	SetDirty(False);
 end;
 
@@ -825,8 +832,9 @@ begin
 	Strategy := TOAuthAppAuthStrategy.Create;
 	Credentials := TAuthCredentials.Create(Email, Password, User, Domain, Endpoints.OAuthUrl);
 
-	{Create HTTP client with default connection settings for authentication test}
+	{Create HTTP client with minimal connection settings for authentication test}
 	ConnSettings := Default(TConnectionSettings);
+	ConnSettings.UserAgent := DEFAULT_USERAGENT;
 	HTTP := TCloudMailRuHTTP.Create(ConnSettings, TNullLogger.Create, TNullProgress.Create);
 	try
 		AuthResult := Strategy.Authenticate(Credentials, HTTP, TNullLogger.Create);
