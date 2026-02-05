@@ -58,7 +58,8 @@
         <UsingDelphiRTL>true</UsingDelphiRTL>
         <Icon_MainIcon>$(BDS)\bin\delphi_PROJECTICON.ico</Icon_MainIcon>
         <Icns_MainIcns>$(BDS)\bin\delphi_PROJECTICNS.icns</Icns_MainIcns>
-        <DCC_UnitSearchPath>$(DUnitX);$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+        <DCC_UnitSearchPath>$(DUnitX);..\src\libs\IndySecOpenSSL\src;..\src\libs\IndySecOpenSSL\src\opensslHdrs;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+        <DCC_Define>USE_OPENSSL;$(DCC_Define)</DCC_Define>
         <SanitizedProjectName>CloudMailRuTest</SanitizedProjectName>
         <VerInfo_Locale>1049</VerInfo_Locale>
         <VerInfo_Keys>CompanyName=;FileDescription=$(MSBuildProjectName);FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProgramID=com.embarcadero.$(MSBuildProjectName);ProductName=$(MSBuildProjectName);ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
@@ -233,6 +234,7 @@
         <DCCReference Include="..\src\Infrastructure\HTTP\HTTPManager.pas"/>
         <DCCReference Include="..\src\Infrastructure\SSL\SSLHandlerFactory.pas"/>
         <DCCReference Include="..\src\Infrastructure\SSL\IndySSLHandlerFactory.pas"/>
+        <DCCReference Include="..\src\Infrastructure\SSL\IndySecSSLHandlerFactory.pas"/>
         <DCCReference Include="..\src\Domain\ValueObjects\RealPath.pas"/>
         <DCCReference Include="..\src\Infrastructure\Settings\CloudSettings.pas"/>
         <DCCReference Include="Infrastructure\Settings\CloudSettingsTest.pas"/>

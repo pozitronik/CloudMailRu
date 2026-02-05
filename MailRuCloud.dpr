@@ -57,6 +57,7 @@ uses
 	HTTPManager in 'src\Infrastructure\HTTP\HTTPManager.pas',
 	SSLHandlerFactory in 'src\Infrastructure\SSL\SSLHandlerFactory.pas',
 	IndySSLHandlerFactory in 'src\Infrastructure\SSL\IndySSLHandlerFactory.pas',
+	IndySecSSLHandlerFactory in 'src\Infrastructure\SSL\IndySecSSLHandlerFactory.pas',
 	HashInfo in 'src\Domain\ValueObjects\HashInfo.pas',
 	IconHelper in 'src\Presentation\Icon\IconHelper.pas',
 	IdSSLOpenSSLHeaders,

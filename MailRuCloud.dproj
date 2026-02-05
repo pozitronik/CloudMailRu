@@ -92,6 +92,8 @@
         <VerInfo_AutoGenVersion>true</VerInfo_AutoGenVersion>
         <DCC_DcuOutput>.\$(Platform)\$(Config)</DCC_DcuOutput>
         <DCC_ExeOutput>.\$(Platform)\$(Config)</DCC_ExeOutput>
+        <DCC_UnitSearchPath>src\libs\IndySecOpenSSL\src;src\libs\IndySecOpenSSL\src\opensslHdrs;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+        <DCC_Define>USE_OPENSSL;$(DCC_Define)</DCC_Define>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base_Win32)'!=''">
         <DCC_Namespace>System.Win;Data.Win;Datasnap.Win;Web.Win;Soap.Win;Xml.Win;Bde;$(DCC_Namespace)</DCC_Namespace>
@@ -248,6 +250,7 @@
         <DCCReference Include="src\Infrastructure\HTTP\ServerConfigFetcher.pas"/>
         <DCCReference Include="src\Infrastructure\SSL\SSLHandlerFactory.pas"/>
         <DCCReference Include="src\Infrastructure\SSL\IndySSLHandlerFactory.pas"/>
+        <DCCReference Include="src\Infrastructure\SSL\IndySecSSLHandlerFactory.pas"/>
         <DCCReference Include="src\Domain\ValueObjects\HashInfo.pas"/>
         <DCCReference Include="src\Presentation\Icon\IconHelper.pas"/>
         <DCCReference Include="src\Infrastructure\Config\IniFilesHelper.pas"/>

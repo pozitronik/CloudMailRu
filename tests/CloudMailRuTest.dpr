@@ -140,6 +140,7 @@ uses
 	HTTPManager in '..\src\Infrastructure\HTTP\HTTPManager.pas',
 	SSLHandlerFactory in '..\src\Infrastructure\SSL\SSLHandlerFactory.pas',
 	IndySSLHandlerFactory in '..\src\Infrastructure\SSL\IndySSLHandlerFactory.pas',
+	IndySecSSLHandlerFactory in '..\src\Infrastructure\SSL\IndySecSSLHandlerFactory.pas',
 	RealPath in '..\src\Domain\ValueObjects\RealPath.pas',
 	CloudSettings in '..\src\Infrastructure\Settings\CloudSettings.pas',
 	CloudSettingsTest in 'Infrastructure\Settings\CloudSettingsTest.pas',
