@@ -360,7 +360,6 @@ DFM_INV_BTN_REJECT="Отклонить"
 DFM_INV_BTN_UNMOUNT_COPY="Отключить (сохранить копию)"
 DFM_INV_BTN_UNMOUNT_DELETE="Отключить и удалить"
 # Форма свойств файла
-DFM_REM_LBL_PUBLIC_LINK="Публичная ссылка:"
 DFM_REM_CB_PUBLIC_ACCESS="Публичный доступ"
 DFM_REM_BTN_OK="OK"
 DFM_REM_TAB_FOLDER_ACCESS="Доступ к папке"

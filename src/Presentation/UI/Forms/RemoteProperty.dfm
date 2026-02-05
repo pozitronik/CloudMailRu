@@ -20,18 +20,10 @@ object PropertyForm: TPropertyForm
     842
     337)
   TextHeight = 13
-  object PublicLinkLabel: TLabel
+  object WebLink: TEdit
     Left = 0
     Top = 27
-    Width = 49
-    Height = 13
-    Caption = 'Public link:'
-    OnClick = PublicLinkLabelClick
-  end
-  object WebLink: TEdit
-    Left = 55
-    Top = 27
-    Width = 787
+    Width = 842
     Height = 21
     Anchors = [akLeft, akTop, akRight]
     ReadOnly = True

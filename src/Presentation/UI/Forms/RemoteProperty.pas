@@ -48,7 +48,6 @@ const
 type
 	{Properties dialog form implementing IRemotePropertyView}
 	TPropertyForm = class(TPluginForm, IRemotePropertyView)
-		PublicLinkLabel: TLabel;
 		WebLink: TEdit;
 		AccessCB: TCheckBox;
 		OkButton: TButton;
@@ -399,7 +398,6 @@ end;
 
 procedure TPropertyForm.UpdateFormCaptions;
 begin
-	PublicLinkLabel.Caption := DFM_REM_LBL_PUBLIC_LINK;
 	AccessCB.Caption := DFM_REM_CB_PUBLIC_ACCESS;
 	OkButton.Caption := DFM_REM_BTN_OK;
 	FolderAccessTS.Caption := DFM_REM_TAB_FOLDER_ACCESS;
