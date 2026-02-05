@@ -836,6 +836,7 @@ begin
 	ConnSettings := Default(TConnectionSettings);
 	ConnSettings.UserAgent := DEFAULT_USERAGENT;
 	HTTP := TCloudMailRuHTTP.Create(ConnSettings, TNullLogger.Create, TNullProgress.Create);
+	FView.SetTestAccountButtonCaption('...');
 	try
 		AuthResult := Strategy.Authenticate(Credentials, HTTP, TNullLogger.Create);
 
