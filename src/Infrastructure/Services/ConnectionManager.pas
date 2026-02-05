@@ -54,6 +54,13 @@ type
 		procedure Free(ConnectionName: WideString);
 	end;
 
+	{Result of password mismatch dialog - determines next action in password retrieval flow}
+	TPasswordMismatchResult = (
+		pmrAccepted,  {User accepted new password - update stored GUID}
+		pmrIgnored,   {User chose to continue without valid password}
+		pmrRetry      {User wants to re-enter password}
+	);
+
 	TConnectionManager = class(TInterfacedObject, IConnectionManager)
 	private
 		FConnections: TDictionary<WideString, TCloudMailRu>; {It is better to encapsulate the dictionary}
@@ -76,6 +83,7 @@ type
 
 		function Init(ConnectionName: WideString): TCloudMailRu; {Create a connection by its name}
 		function GetFilesPassword(const ConnectionName: WideString; var CloudSettings: TCloudSettings): Boolean;
+		function HandlePasswordMismatch(const ConnectionName: WideString; var CloudSettings: TCloudSettings): TPasswordMismatchResult;
 		function GetProxyPassword(): Boolean;
 		function InitCloudCryptPasswords(const ConnectionName: WideString; var CloudSettings: TCloudSettings): Boolean;
 	public
@@ -237,44 +245,54 @@ begin
 	end;
 end;
 
-function TConnectionManager.GetFilesPassword(const ConnectionName: WideString; var CloudSettings: TCloudSettings): Boolean;
+{Prompts user when entered password doesn't match stored GUID.
+	Returns user's choice: accept new password, ignore mismatch, or retry entry.}
+function TConnectionManager.HandlePasswordMismatch(const ConnectionName: WideString; var CloudSettings: TCloudSettings): TPasswordMismatchResult;
 var
-	PasswordActionRetry: Boolean;
 	ActionsList: TDictionary<Int32, WideString>;
 begin
-	Result := True;
-	if CloudSettings.AccountSettings.EncryptFilesMode <> EncryptModeNone then
-	begin
-		repeat
-			PasswordActionRetry := False;
-			if not InitCloudCryptPasswords(ConnectionName, CloudSettings) then
-				exit(False);
-			if not FCipherValidator.CheckPasswordGUID(CloudSettings.CryptFilesPassword, CloudSettings.AccountSettings.CryptedGUIDFiles) then
-			begin
-				ActionsList := TDictionary<Int32, WideString>.Create;
-				ActionsList.AddOrSetValue(mrYes, PROCEED_UPDATE);
-				ActionsList.AddOrSetValue(mrNo, PROCEED_IGNORE);
-				ActionsList.AddOrSetValue(mrRetry, PROCEED_RETYPE);
-				case FPasswordUI.AskAction(PREFIX_ERR_PASSWORD_MATCH, ERR_PASSWORD_MATCH, ActionsList, FTCHandler.FindTCWindow) of
-					mrYes: {store and use updated password}
-						begin
-							CloudSettings.AccountSettings.CryptedGUIDFiles := FCipherValidator.GetCryptedGUID(CloudSettings.CryptFilesPassword);
-							FAccountsManager.SetCryptedGUID(ConnectionName, CloudSettings.AccountSettings.CryptedGUIDFiles);
-						end;
-					mrNo:
-						begin
-							{continue without password}
-						end;
-					mrRetry:
-						begin
-							PasswordActionRetry := True;
-						end;
-				end;
-				FreeAndNil(ActionsList);
-			end;
+	Result := pmrIgnored;
+	ActionsList := TDictionary<Int32, WideString>.Create;
+	try
+		ActionsList.AddOrSetValue(mrYes, PROCEED_UPDATE);
+		ActionsList.AddOrSetValue(mrNo, PROCEED_IGNORE);
+		ActionsList.AddOrSetValue(mrRetry, PROCEED_RETYPE);
 
-		until not PasswordActionRetry;
+		case FPasswordUI.AskAction(PREFIX_ERR_PASSWORD_MATCH, ERR_PASSWORD_MATCH, ActionsList, FTCHandler.FindTCWindow) of
+			mrYes:
+				begin
+					CloudSettings.AccountSettings.CryptedGUIDFiles := FCipherValidator.GetCryptedGUID(CloudSettings.CryptFilesPassword);
+					FAccountsManager.SetCryptedGUID(ConnectionName, CloudSettings.AccountSettings.CryptedGUIDFiles);
+					Result := pmrAccepted;
+				end;
+			mrNo:
+				Result := pmrIgnored;
+			mrRetry:
+				Result := pmrRetry;
+		end;
+	finally
+		ActionsList.Free;
 	end;
+end;
+
+{Retrieves encryption password for files, validating against stored GUID.
+	Returns True if password obtained (or encryption disabled), False if user cancelled.}
+function TConnectionManager.GetFilesPassword(const ConnectionName: WideString; var CloudSettings: TCloudSettings): Boolean;
+var
+	PasswordValid: Boolean;
+begin
+	if CloudSettings.AccountSettings.EncryptFilesMode = EncryptModeNone then
+		Exit(True);
+
+	repeat
+		if not InitCloudCryptPasswords(ConnectionName, CloudSettings) then
+			Exit(False);
+
+		PasswordValid := FCipherValidator.CheckPasswordGUID(CloudSettings.CryptFilesPassword, CloudSettings.AccountSettings.CryptedGUIDFiles);
+
+	until PasswordValid or (HandlePasswordMismatch(ConnectionName, CloudSettings) <> pmrRetry);
+
+	Result := True;
 end;
 
 {Retrieves the proxy password, if required, from TC passwords storage, the settings file or user input. Returns true if password retrieved or not required, false otherwise.
