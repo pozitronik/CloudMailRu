@@ -114,3 +114,7 @@
 /Win64/Debug/language/english.lng
 /Win64/Debug/language/russian.lng
 /src/libs/IndySecOpenSSL/
+/x32/libcrypto-3.dll
+/x32/libssl-3.dll
+/x64/libssl-3-x64.dll
+/x64/libcrypto-3-x64.dll
