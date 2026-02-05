@@ -102,6 +102,12 @@ type
 
 		[Test]
 		procedure Test_HashCalculatorStrategy_DefaultsToAuto;
+
+		[Test]
+		procedure Test_Save_WritesSSLBackend;
+
+		[Test]
+		procedure Test_SSLBackend_DefaultsToAuto;
 	end;
 
 	[TestFixture]
@@ -484,6 +490,28 @@ begin
 	DefaultManager := TPluginSettingsManager.Create(TMemoryConfigFile.Create(''));
 	try
 		Assert.AreEqual(HashStrategyAuto, DefaultManager.Settings.HashCalculatorStrategy);
+	finally
+		DefaultManager.Free;
+	end;
+end;
+
+procedure TPluginSettingsManagerSaveTest.Test_Save_WritesSSLBackend;
+begin
+	FManager.Settings.SSLBackend := SSLBackendIndySec;
+
+	FManager.Save;
+
+	Assert.AreEqual(SSLBackendIndySec, FConfigFile.ReadInteger('Main', 'SSLBackend', 0));
+end;
+
+procedure TPluginSettingsManagerSaveTest.Test_SSLBackend_DefaultsToAuto;
+var
+	DefaultManager: TPluginSettingsManager;
+begin
+	{Create manager with empty config - should use defaults}
+	DefaultManager := TPluginSettingsManager.Create(TMemoryConfigFile.Create(''));
+	try
+		Assert.AreEqual(SSLBackendAuto, DefaultManager.Settings.SSLBackend);
 	finally
 		DefaultManager.Free;
 	end;

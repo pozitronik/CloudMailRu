@@ -65,6 +65,11 @@ const
 	HashStrategyBCrypt = 2; {Use Windows BCrypt/CNG API (hardware-accelerated)}
 	HashStrategyOpenSSL = 3; {Use OpenSSL EVP functions (already loaded for HTTPS)}
 
+	{SSL backend selection - allows switching between different SSL/TLS implementations}
+	SSLBackendAuto = 0; {Auto-detect best available (IndySec if OpenSSL 3.x found, else standard Indy)}
+	SSLBackendIndy = 1; {Standard Indy SSL (OpenSSL 1.0.x/1.1.x)}
+	SSLBackendIndySec = 2; {IndySecOpenSSL (OpenSSL 1.1.x/3.x with TLS 1.3 support)}
+
 	{Extensions for which the plugin requests cloud thumbnail previews.
 		Comma-separated, with leading dots. Configurable via INI ThumbnailExtensions key.}
 	DEFAULT_THUMBNAIL_EXTENSIONS = '.jpg,.jpeg,.png,.gif,.bmp,.heic,.heif,.webp,.tiff,.tif,.mp4,.avi,.mov,.mkv,.wmv,.flv,.3gp,.m4v,.mpg,.mpeg';

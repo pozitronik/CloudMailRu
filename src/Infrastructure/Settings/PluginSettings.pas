@@ -40,6 +40,7 @@ type
 		ForcePrecalculateSize: int64;
 		CheckCRC: boolean;
 		HashCalculatorStrategy: integer;
+		SSLBackend: integer; {See SSLBackend* constants - selects SSL/TLS implementation}
 		ThumbnailExtensions: WideString;
 		Language: WideString; {Selected translation name, empty = English default}
 	private

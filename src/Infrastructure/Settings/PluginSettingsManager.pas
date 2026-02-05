@@ -275,6 +275,7 @@ begin
 	Settings.ForcePrecalculateSize := FConfigFile.ReadInt64('Main', 'ForcePrecalculateSize', CLOUD_PRECALCULATE_LIMIT_DEFAULT);
 	Settings.CheckCRC := FConfigFile.ReadBool('Main', 'CheckCRC', True);
 	Settings.HashCalculatorStrategy := FConfigFile.ReadInteger('Main', 'HashCalculatorStrategy', HashStrategyAuto);
+	Settings.SSLBackend := FConfigFile.ReadInteger('Main', 'SSLBackend', SSLBackendAuto);
 	Settings.ThumbnailExtensions := FConfigFile.ReadString('Main', 'ThumbnailExtensions', DEFAULT_THUMBNAIL_EXTENSIONS);
 	Settings.Language := FConfigFile.ReadString('Main', 'Language', EmptyWideStr);
 	Settings.BuildThumbnailExtList;
@@ -324,6 +325,7 @@ begin
 	FConfigFile.WriteInt64IfNotDefault('Main', 'ForcePrecalculateSize', Settings.ForcePrecalculateSize, CLOUD_PRECALCULATE_LIMIT_DEFAULT);
 	FConfigFile.WriteBoolIfNotDefault('Main', 'CheckCRC', Settings.CheckCRC, True);
 	FConfigFile.WriteIntegerIfNotDefault('Main', 'HashCalculatorStrategy', Settings.HashCalculatorStrategy, HashStrategyAuto);
+	FConfigFile.WriteIntegerIfNotDefault('Main', 'SSLBackend', Settings.SSLBackend, SSLBackendAuto);
 	FConfigFile.WriteStringIfNotDefault('Main', 'ThumbnailExtensions', Settings.ThumbnailExtensions, DEFAULT_THUMBNAIL_EXTENSIONS);
 	FConfigFile.WriteStringIfNotDefault('Main', 'Language', Settings.Language, EmptyWideStr);
 end;

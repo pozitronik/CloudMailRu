@@ -97,6 +97,7 @@ uses
 	OpenSSLProvider,
 	SSLHandlerFactory,
 	IndySSLHandlerFactory,
+	IndySecSSLHandlerFactory,
 	AccountCredentialsProvider,
 	CloudAuthorizationState,
 	TranslationManager,
@@ -175,6 +176,9 @@ type
 		Request: IRequest;
 		FFileSystem: IFileSystem;
 
+		{Creates SSL handler factory based on backend setting.
+			Auto mode tries IndySec first (for OpenSSL 3.x support), falls back to standard Indy.}
+		function CreateSSLHandlerFactory(SSLBackend: Integer): ISSLHandlerFactory;
 		procedure LoadTranslationOnStartup;
 	protected
 		{Ensures cloud is authorized. Returns True if authorized, False otherwise.
@@ -232,6 +236,32 @@ implementation
 
 {TWFXApplication}
 
+function TWFXApplication.CreateSSLHandlerFactory(SSLBackend: Integer): ISSLHandlerFactory;
+begin
+	case SSLBackend of
+		SSLBackendIndy:
+			Result := TIndySSLHandlerFactory.Create;
+		SSLBackendIndySec:
+			Result := TIndySecSSLHandlerFactory.Create;
+		else {SSLBackendAuto}
+			{Auto-detection: prefer IndySec for OpenSSL 3.x support.
+				Try IndySec first - it supports OpenSSL 1.1.x and 3.x with TLS 1.3.
+				If it can load OpenSSL, use it. Otherwise fall back to standard Indy.}
+			try
+				Result := TIndySecSSLHandlerFactory.Create;
+				{Check if OpenSSL loaded successfully by attempting to get handle}
+				if Result.GetLibCryptoHandle = 0 then
+				begin
+					Result := nil;
+					Result := TIndySSLHandlerFactory.Create;
+				end;
+			except
+				{IndySec failed to initialize - fall back to standard Indy}
+				Result := TIndySSLHandlerFactory.Create;
+			end;
+	end;
+end;
+
 procedure TWFXApplication.LoadTranslationOnStartup;
 var
 	Manager: TTranslationManager;
@@ -275,8 +305,8 @@ begin
 	{Create centralized OpenSSL provider for hash calculation - respects same settings as Indy}
 	FOpenSSLProvider := TOpenSSLProvider.Create(PluginPath, SettingsManager.GetSettings.LoadSSLDLLOnlyFromPluginDir);
 
-	{Create SSL handler factory - currently uses standard Indy SSL}
-	FSSLHandlerFactory := TIndySSLHandlerFactory.Create;
+	{Create SSL handler factory based on settings}
+	FSSLHandlerFactory := CreateSSLHandlerFactory(SettingsManager.GetSettings.SSLBackend);
 
 	{Register cipher profiles with available backends}
 	TCipherProfileRegistry.Initialize(FOpenSSLProvider, TBCryptProvider.Create);
