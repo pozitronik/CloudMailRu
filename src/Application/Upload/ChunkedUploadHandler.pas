@@ -93,6 +93,10 @@ type
 
 		{Try whole-file deduplication before chunking}
 		function TryWholeFileDedup(AddByIdentityFunc: TAddByIdentityFunc; const LocalPath, RemotePath: WideString): Boolean;
+	protected
+		{Show error dialog for chunk upload failure; virtual to allow
+			tests to return canned result without showing UI}
+		function ShowChunkErrorDialog(UploadResult: Integer; const ChunkRemotePath: WideString): Integer; virtual;
 	public
 		constructor Create(
 			Context: ICloudContext;
@@ -175,12 +179,17 @@ begin
 	end;
 end;
 
+function TChunkedUploadHandler.ShowChunkErrorDialog(UploadResult: Integer; const ChunkRemotePath: WideString): Integer;
+begin
+	Result := MessageBoxW(FTCHandler.FindTCWindow, PWideChar(Format(ERR_PARTIAL_UPLOAD_ASK, [UploadResult, ChunkRemotePath])), PWideChar(ERR_UPLOAD), MB_ABORTRETRYIGNORE + MB_ICONERROR);
+end;
+
 function TChunkedUploadHandler.HandleChunkError(UploadResult: Integer; const ChunkRemotePath: WideString; var RetryAttemptsCount: Integer; var ResultCode: Integer): TChunkActionResult;
 begin
 	case FSettings.OperationErrorMode of
 		OperationErrorModeAsk:
 			begin
-				case MessageBoxW(FTCHandler.FindTCWindow, PWideChar(Format(ERR_PARTIAL_UPLOAD_ASK, [UploadResult, ChunkRemotePath])), PWideChar(ERR_UPLOAD), MB_ABORTRETRYIGNORE + MB_ICONERROR) of
+				case ShowChunkErrorDialog(UploadResult, ChunkRemotePath) of
 					ID_ABORT:
 						begin
 							ResultCode := FS_FILE_USERABORT;

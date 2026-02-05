@@ -289,6 +289,7 @@ uses
 	CloudFileDownloader in '..\src\Application\Download\CloudFileDownloader.pas',
 	CloudFileDownloaderTest in 'Application\Download\CloudFileDownloaderTest.pas',
 	ChunkedUploadHandler in '..\src\Application\Upload\ChunkedUploadHandler.pas',
+	ChunkedUploadHandlerTest in 'Application\Upload\ChunkedUploadHandlerTest.pas',
 	CloudFileUploader in '..\src\Application\Upload\CloudFileUploader.pas',
 	CloudFileUploaderTest in 'Application\Upload\CloudFileUploaderTest.pas',
 	CloudShareService in '..\src\Application\Share\CloudShareService.pas',
