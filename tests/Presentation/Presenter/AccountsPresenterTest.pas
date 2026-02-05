@@ -119,6 +119,11 @@ type
 		FTestAccountButtonCaption: WideString;
 		FTestAccountErrorMessage: WideString;
 
+		{Test share button}
+		FTestShareButtonEnabled: Boolean;
+		FTestShareButtonCaption: WideString;
+		FTestShareErrorMessage: WideString;
+
 		{Global settings apply state}
 		FGlobalSettingsApplyEnabled: Boolean;
 
@@ -311,6 +316,11 @@ type
 		procedure SetTestAccountButtonCaption(const Value: WideString);
 		procedure ShowTestAccountError(const Error: WideString);
 
+		{IAccountsView - Test share button}
+		procedure SetTestShareButtonEnabled(Value: Boolean);
+		procedure SetTestShareButtonCaption(const Value: WideString);
+		procedure ShowTestShareError(const Error: WideString);
+
 		{IAccountsView - Cipher profile}
 		procedure SetCipherProfileItems(const Items: TArray<WideString>);
 		procedure SetCipherProfileIndex(Value: Integer);
@@ -389,6 +399,9 @@ type
 		property TestAccountButtonEnabled: Boolean read FTestAccountButtonEnabled;
 		property TestAccountButtonCaption: WideString read FTestAccountButtonCaption;
 		property TestAccountErrorMessage: WideString read FTestAccountErrorMessage;
+		property TestShareButtonEnabled: Boolean read FTestShareButtonEnabled;
+		property TestShareButtonCaption: WideString read FTestShareButtonCaption;
+		property TestShareErrorMessage: WideString read FTestShareErrorMessage;
 		property GlobalSettingsApplyEnabled: Boolean read FGlobalSettingsApplyEnabled;
 		property ProxyControlsEnabled: Boolean read FProxyControlsEnabled;
 		property CipherProfileItems: TArray<WideString> read FCipherProfileItems;
@@ -1447,6 +1460,23 @@ end;
 procedure TMockAccountsView.ShowTestAccountError(const Error: WideString);
 begin
 	FTestAccountErrorMessage := Error;
+end;
+
+{TMockAccountsView - Test share button}
+
+procedure TMockAccountsView.SetTestShareButtonEnabled(Value: Boolean);
+begin
+	FTestShareButtonEnabled := Value;
+end;
+
+procedure TMockAccountsView.SetTestShareButtonCaption(const Value: WideString);
+begin
+	FTestShareButtonCaption := Value;
+end;
+
+procedure TMockAccountsView.ShowTestShareError(const Error: WideString);
+begin
+	FTestShareErrorMessage := Error;
 end;
 
 {TMockAccountsView - Cipher profile}

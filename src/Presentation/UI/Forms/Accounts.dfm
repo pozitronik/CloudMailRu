@@ -186,14 +186,14 @@ object AccountsForm: TAccountsForm
         Left = 272
         Top = 140
         Width = 411
-        Height = 38
+        Height = 40
         Anchors = [akLeft, akTop, akRight, akBottom]
         BevelOuter = bvNone
         ShowCaption = False
         TabOrder = 9
         DesignSize = (
           411
-          38)
+          40)
         object PublicUrlLabel: TLabel
           Left = 0
           Top = 0
@@ -209,12 +209,24 @@ object AccountsForm: TAccountsForm
         object PublicUrlEdit: TEdit
           Left = 0
           Top = 17
-          Width = 411
+          Width = 325
           Height = 21
           Anchors = [akLeft, akTop, akRight]
           TabOrder = 0
           OnChange = FieldChanged
-          ExplicitWidth = 393
+          ExplicitWidth = 319
+        end
+        object TestShareButton: TButton
+          Left = 331
+          Top = 17
+          Width = 80
+          Height = 21
+          Anchors = [akTop, akRight]
+          Caption = 'Test'
+          Enabled = False
+          TabOrder = 1
+          OnClick = TestShareButtonClick
+          ExplicitLeft = 325
         end
       end
       object AccountsPanel: TPanel
@@ -226,6 +238,7 @@ object AccountsForm: TAccountsForm
         BevelOuter = bvNone
         ShowCaption = False
         TabOrder = 7
+        ExplicitWidth = 405
         DesignSize = (
           411
           272)
@@ -251,7 +264,7 @@ object AccountsForm: TAccountsForm
           Anchors = [akLeft, akTop, akRight]
           TabOrder = 0
           OnChange = FieldChanged
-          ExplicitWidth = 393
+          ExplicitWidth = 405
         end
         object PasswordEdit: TEdit
           Left = 0
@@ -262,7 +275,7 @@ object AccountsForm: TAccountsForm
           PasswordChar = '*'
           TabOrder = 1
           OnChange = FieldChanged
-          ExplicitWidth = 393
+          ExplicitWidth = 405
         end
         object UseTCPwdMngrCB: TCheckBox
           Left = 0
@@ -273,7 +286,7 @@ object AccountsForm: TAccountsForm
           Caption = 'Store password in TC password manager'
           TabOrder = 2
           OnClick = FieldChanged
-          ExplicitWidth = 313
+          ExplicitWidth = 319
         end
         object FileSizeGB: TGroupBox
           Left = 0
@@ -283,7 +296,7 @@ object AccountsForm: TAccountsForm
           Align = alBottom
           Caption = 'File size'
           TabOrder = 4
-          ExplicitWidth = 393
+          ExplicitWidth = 405
           DesignSize = (
             411
             58)
@@ -296,7 +309,7 @@ object AccountsForm: TAccountsForm
             Caption = 'Ignore 2Gb limit (paid account)'
             TabOrder = 0
             OnClick = FieldChanged
-            ExplicitWidth = 380
+            ExplicitWidth = 392
           end
           object SplitLargeFilesCB: TCheckBox
             Left = 8
@@ -307,7 +320,7 @@ object AccountsForm: TAccountsForm
             Caption = 'Split large files'
             TabOrder = 1
             OnClick = FieldChanged
-            ExplicitWidth = 380
+            ExplicitWidth = 392
           end
         end
         object EncryptGB: TGroupBox
@@ -318,7 +331,7 @@ object AccountsForm: TAccountsForm
           Align = alBottom
           Caption = 'Encryption'
           TabOrder = 5
-          ExplicitWidth = 393
+          ExplicitWidth = 405
           DesignSize = (
             411
             113)
@@ -351,7 +364,7 @@ object AccountsForm: TAccountsForm
               'No'
               'Always'
               'Ask once')
-            ExplicitWidth = 293
+            ExplicitWidth = 305
           end
           object EncryptFilesPwdButton: TButton
             Left = 326
@@ -363,7 +376,7 @@ object AccountsForm: TAccountsForm
             Enabled = False
             TabOrder = 1
             OnClick = EncryptFilesPwdButtonClick
-            ExplicitLeft = 308
+            ExplicitLeft = 320
           end
           object CipherProfileCombo: TComboBox
             Left = 8
@@ -374,7 +387,7 @@ object AccountsForm: TAccountsForm
             Anchors = [akLeft, akTop, akRight]
             TabOrder = 2
             OnChange = CipherProfileComboChange
-            ExplicitWidth = 380
+            ExplicitWidth = 392
           end
         end
         object TestAccountButton: TButton
@@ -387,7 +400,7 @@ object AccountsForm: TAccountsForm
           Enabled = False
           TabOrder = 3
           OnClick = TestAccountButtonClick
-          ExplicitLeft = 319
+          ExplicitLeft = 325
         end
       end
       object AccountsListView: TListView
@@ -446,6 +459,7 @@ object AccountsForm: TAccountsForm
         Anchors = [akLeft, akTop, akRight]
         TabOrder = 3
         OnChange = FieldChanged
+        ExplicitWidth = 405
       end
       object AccountTypeGB: TGroupBox
         Left = 272
@@ -455,6 +469,7 @@ object AccountsForm: TAccountsForm
         Anchors = [akLeft, akTop, akRight]
         Caption = 'Account type'
         TabOrder = 6
+        ExplicitWidth = 405
         object PrivateRB: TRadioButton
           Left = 8
           Top = 14
@@ -487,6 +502,7 @@ object AccountsForm: TAccountsForm
         OnChange = ServerComboChange
         Items.Strings = (
           '(Default)')
+        ExplicitWidth = 319
       end
       object ServersButton: TButton
         Left = 603
@@ -497,6 +513,7 @@ object AccountsForm: TAccountsForm
         Caption = 'Configure'
         TabOrder = 5
         OnClick = ServersButtonClick
+        ExplicitLeft = 597
       end
       object ApplyButton: TButton
         Left = 559
@@ -508,6 +525,8 @@ object AccountsForm: TAccountsForm
         Enabled = False
         TabOrder = 8
         OnClick = ApplyButtonClick
+        ExplicitLeft = 553
+        ExplicitTop = 400
       end
     end
     object GlobalTab: TTabSheet
@@ -973,7 +992,6 @@ object AccountsForm: TAccountsForm
             'Socks5'
             'Socks4'
             'HTTP(S)')
-          ExplicitWidth = 657
         end
         object ProxyServerEdit: TEdit
           Left = 5
@@ -983,7 +1001,6 @@ object AccountsForm: TAccountsForm
           Anchors = [akLeft, akTop, akRight]
           TabOrder = 1
           OnChange = GlobalSettingsFieldChanged
-          ExplicitWidth = 577
         end
         object ProxyPortEdit: TEdit
           Left = 602
@@ -994,7 +1011,6 @@ object AccountsForm: TAccountsForm
           NumbersOnly = True
           TabOrder = 2
           OnChange = GlobalSettingsFieldChanged
-          ExplicitLeft = 590
         end
         object ProxyUserEdit: TEdit
           Left = 5
@@ -1004,7 +1020,6 @@ object AccountsForm: TAccountsForm
           Anchors = [akLeft, akTop, akRight]
           TabOrder = 3
           OnChange = ProxyUserEditChange
-          ExplicitWidth = 657
         end
         object ProxyPwd: TMaskEdit
           Left = 5
@@ -1016,7 +1031,6 @@ object AccountsForm: TAccountsForm
           TabOrder = 5
           Text = ''
           OnChange = GlobalSettingsFieldChanged
-          ExplicitWidth = 657
         end
         object ProxyTCPwdMngrCB: TCheckBox
           Left = 161
@@ -1027,7 +1041,6 @@ object AccountsForm: TAccountsForm
           Caption = 'Store proxy password in TC password manager'
           TabOrder = 4
           OnClick = GlobalSettingsFieldChanged
-          ExplicitWidth = 501
         end
       end
       object NetworkSettingsApplyBtn: TButton
@@ -1094,7 +1107,6 @@ object AccountsForm: TAccountsForm
           TabOrder = 0
           Value = 0
           OnChange = GlobalSettingsFieldChanged
-          ExplicitWidth = 432
         end
         object DownloadBPSEdit: TSpinEdit
           Left = 230
@@ -1107,7 +1119,6 @@ object AccountsForm: TAccountsForm
           TabOrder = 1
           Value = 0
           OnChange = GlobalSettingsFieldChanged
-          ExplicitWidth = 432
         end
       end
       object UserAgentEdit: TEdit
@@ -1147,7 +1158,7 @@ object AccountsForm: TAccountsForm
       object DescriptionFileNameLabel: TLabel
         Left = 4
         Top = 118
-        Width = 160
+        Width = 151
         Height = 13
         Hint = 'Leave empty to use default descript.ion'
         Caption = 'Override descript.ion file name:'

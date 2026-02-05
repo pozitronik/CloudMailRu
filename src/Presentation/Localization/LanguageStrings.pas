@@ -288,6 +288,8 @@ var
 	DFM_BTN_TEST: WideString;
 	DFM_BTN_TEST_OK: WideString;
 	ERR_ACCOUNT_CREDENTIALS_REQUIRED: WideString;
+	ERR_PUBLIC_URL_REQUIRED: WideString;
+	ERR_PUBLIC_URL_INVALID: WideString;
 	DFM_BTN_SERVERS: WideString;
 	DFM_BTN_SERVER_NEW: WideString;
 	DFM_BTN_SERVER_DELETE: WideString;
@@ -719,6 +721,8 @@ begin
 	DFM_BTN_TEST := 'Test';
 	DFM_BTN_TEST_OK := 'OK!';
 	ERR_ACCOUNT_CREDENTIALS_REQUIRED := 'Email/Login and password are required';
+	ERR_PUBLIC_URL_REQUIRED := 'Public URL is required';
+	ERR_PUBLIC_URL_INVALID := 'Public URL is invalid or inaccessible';
 	DFM_BTN_SERVERS := 'Configure';
 	DFM_BTN_SERVER_NEW := 'New';
 	DFM_BTN_SERVER_DELETE := 'Delete';
@@ -1140,6 +1144,8 @@ begin
 	TranslationRegistry.Add('DFM_BTN_TEST', @DFM_BTN_TEST);
 	TranslationRegistry.Add('DFM_BTN_TEST_OK', @DFM_BTN_TEST_OK);
 	TranslationRegistry.Add('ERR_ACCOUNT_CREDENTIALS_REQUIRED', @ERR_ACCOUNT_CREDENTIALS_REQUIRED);
+	TranslationRegistry.Add('ERR_PUBLIC_URL_REQUIRED', @ERR_PUBLIC_URL_REQUIRED);
+	TranslationRegistry.Add('ERR_PUBLIC_URL_INVALID', @ERR_PUBLIC_URL_INVALID);
 	TranslationRegistry.Add('DFM_BTN_SERVERS', @DFM_BTN_SERVERS);
 	TranslationRegistry.Add('DFM_BTN_SERVER_NEW', @DFM_BTN_SERVER_NEW);
 	TranslationRegistry.Add('DFM_BTN_SERVER_DELETE', @DFM_BTN_SERVER_DELETE);

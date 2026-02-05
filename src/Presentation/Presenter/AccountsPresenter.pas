@@ -207,6 +207,11 @@ type
 		procedure SetTestAccountButtonCaption(const Value: WideString);
 		procedure ShowTestAccountError(const Error: WideString);
 
+		{Test share button}
+		procedure SetTestShareButtonEnabled(Value: Boolean);
+		procedure SetTestShareButtonCaption(const Value: WideString);
+		procedure ShowTestShareError(const Error: WideString);
+
 		{Cipher profile combo}
 		procedure SetCipherProfileItems(const Items: TArray<WideString>);
 		procedure SetCipherProfileIndex(Value: Integer);
@@ -371,6 +376,7 @@ type
 		procedure OnCipherProfileChanged;
 		procedure OnFieldChanged;
 		procedure OnTestAccountClick;
+		procedure OnTestShareClick;
 
 		{Global settings operations}
 		procedure OnApplyGlobalSettingsClick;
@@ -422,6 +428,8 @@ uses
 	AuthStrategy,
 	OAuthAppAuthStrategy,
 	CloudHTTP,
+	CloudMailRu,
+	CloudMailRuFactory,
 	Logger,
 	Progress;
 
@@ -706,10 +714,12 @@ begin
 	finally
 		FUpdating := WasUpdating;
 	end;
-	{Update test button state based on loaded credentials}
+	{Update test buttons state based on loaded credentials}
 	FView.SetTestAccountButtonEnabled(
 		(not AccSettings.PublicAccount) and (AccSettings.Email <> '') and (AccSettings.Password <> ''));
 	FView.SetTestAccountButtonCaption(DFM_BTN_TEST);
+	FView.SetTestShareButtonEnabled(AccSettings.PublicAccount and (AccSettings.PublicUrl <> ''));
+	FView.SetTestShareButtonCaption(DFM_BTN_TEST);
 	SetDirty(False);
 end;
 
@@ -739,9 +749,11 @@ begin
 	finally
 		FUpdating := WasUpdating;
 	end;
-	{Disable test button when fields are cleared}
+	{Disable test buttons when fields are cleared}
 	FView.SetTestAccountButtonEnabled(False);
 	FView.SetTestAccountButtonCaption(DFM_BTN_TEST);
+	FView.SetTestShareButtonEnabled(False);
+	FView.SetTestShareButtonCaption(DFM_BTN_TEST);
 	SetDirty(False);
 end;
 
@@ -757,16 +769,19 @@ end;
 
 procedure TAccountsPresenter.OnFieldChanged;
 var
-	CanTest: Boolean;
+	CanTestAccount, CanTestShare: Boolean;
 begin
 	if not FUpdating then
 	begin
 		SetDirty(True);
 		{Enable test button when email and password are filled for private accounts}
-		CanTest := FView.GetIsPrivate and (FView.GetEmail <> '') and (FView.GetPassword <> '');
-		FView.SetTestAccountButtonEnabled(CanTest);
-		{Reset caption when fields change}
+		CanTestAccount := FView.GetIsPrivate and (FView.GetEmail <> '') and (FView.GetPassword <> '');
+		FView.SetTestAccountButtonEnabled(CanTestAccount);
 		FView.SetTestAccountButtonCaption(DFM_BTN_TEST);
+		{Enable test share button when public URL is filled for public accounts}
+		CanTestShare := (not FView.GetIsPrivate) and (FView.GetPublicUrl <> '');
+		FView.SetTestShareButtonEnabled(CanTestShare);
+		FView.SetTestShareButtonCaption(DFM_BTN_TEST);
 	end;
 end;
 
@@ -846,6 +861,34 @@ begin
 			FView.ShowTestAccountError(AuthResult.ErrorMessage);
 	finally
 		HTTP := nil;
+	end;
+end;
+
+procedure TAccountsPresenter.OnTestShareClick;
+var
+	PublicUrl: WideString;
+	TempCloud: TCloudMailRu;
+begin
+	PublicUrl := FView.GetPublicUrl;
+
+	if PublicUrl = '' then
+	begin
+		FView.ShowTestShareError(ERR_PUBLIC_URL_REQUIRED);
+		Exit;
+	end;
+
+	FView.SetTestShareButtonCaption('...');
+	try
+		if TCloudMailRuFactory.CreatePublicCloud(TempCloud, PublicUrl) then
+		begin
+			FView.SetTestShareButtonCaption(DFM_BTN_TEST_OK);
+			TempCloud.Free;
+		end
+		else
+			FView.ShowTestShareError(ERR_PUBLIC_URL_INVALID);
+	except
+		on E: Exception do
+			FView.ShowTestShareError(E.Message);
 	end;
 end;
 

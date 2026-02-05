@@ -187,6 +187,7 @@ type
 		DownloadUrlEdit: TEdit;
 		UploadUrlEdit: TEdit;
 		TestAccountButton: TButton;
+		TestShareButton: TButton;
 		procedure FormShow(Sender: TObject);
 		procedure AccountsListViewKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
 		procedure AccountsListViewSelectItem(Sender: TObject; Item: TListItem; Selected: Boolean);
@@ -224,6 +225,7 @@ type
 		procedure ApplyServerButtonClick(Sender: TObject);
 		procedure TestServerButtonClick(Sender: TObject);
 		procedure TestAccountButtonClick(Sender: TObject);
+		procedure TestShareButtonClick(Sender: TObject);
 		procedure ServersButtonClick(Sender: TObject);
 		procedure ApplyTranslationBtnClick(Sender: TObject);
 	private
@@ -381,6 +383,9 @@ type
 		procedure SetTestAccountButtonEnabled(Value: Boolean);
 		procedure SetTestAccountButtonCaption(const Value: WideString);
 		procedure ShowTestAccountError(const Error: WideString);
+		procedure SetTestShareButtonEnabled(Value: Boolean);
+		procedure SetTestShareButtonCaption(const Value: WideString);
+		procedure ShowTestShareError(const Error: WideString);
 		function ConfirmDiscardAccountChanges(const AccountName: WideString): TConfirmSaveResult;
 		procedure ShowAccountNameError(Message: WideString);
 		function ConfirmAccountOverwrite(const AccountName: WideString): Boolean;
@@ -1221,6 +1226,21 @@ begin
 	MessageDlg(Error, mtError, [mbOK], 0);
 end;
 
+procedure TAccountsForm.SetTestShareButtonEnabled(Value: Boolean);
+begin
+	TestShareButton.Enabled := Value;
+end;
+
+procedure TAccountsForm.SetTestShareButtonCaption(const Value: WideString);
+begin
+	TestShareButton.Caption := Value;
+end;
+
+procedure TAccountsForm.ShowTestShareError(const Error: WideString);
+begin
+	MessageDlg(Error, mtError, [mbOK], 0);
+end;
+
 function TAccountsForm.ConfirmDiscardAccountChanges(const AccountName: WideString): TConfirmSaveResult;
 begin
 	case MessageDlg(Format(ASK_SAVE_ACCOUNT_CHANGES, [AccountName]), mtConfirmation, [mbYes, mbNo, mbCancel], 0) of
@@ -1695,6 +1715,11 @@ end;
 procedure TAccountsForm.TestAccountButtonClick(Sender: TObject);
 begin
 	FPresenter.OnTestAccountClick;
+end;
+
+procedure TAccountsForm.TestShareButtonClick(Sender: TObject);
+begin
+	FPresenter.OnTestShareClick;
 end;
 
 procedure TAccountsForm.ServersButtonClick(Sender: TObject);
