@@ -156,7 +156,7 @@ object AccountsForm: TAccountsForm
     Top = 0
     Width = 695
     Height = 474
-    ActivePage = ServersTab
+    ActivePage = AccountsTab
     Align = alClient
     TabOrder = 0
     ExplicitWidth = 689
@@ -236,14 +236,14 @@ object AccountsForm: TAccountsForm
           Top = 0
           Width = 28
           Height = 13
-          Caption = 'Email:'
+          Caption = 'Email/Login:'
         end
         object PasswordLabel: TLabel
           Left = 0
           Top = 37
-          Width = 174
+          Width = 75
           Height = 13
-          Caption = 'App password (create at id.mail.ru):'
+          Caption = 'App password:'
         end
         object EmailEdit: TEdit
           Left = 0
