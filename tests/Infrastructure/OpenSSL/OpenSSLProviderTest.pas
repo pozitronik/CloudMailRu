@@ -137,6 +137,19 @@ implementation
 uses
 	IdSSLOpenSSLHeaders;
 
+type
+	{Test helper: overrides GetIndyCryptHandle to return 0,
+		forcing path-based DLL loading regardless of Indy state}
+	TTestableOpenSSLProvider = class(TOpenSSLProvider)
+	protected
+		function GetIndyCryptHandle: THandle; override;
+	end;
+
+function TTestableOpenSSLProvider.GetIndyCryptHandle: THandle;
+begin
+	Result := 0;
+end;
+
 {TNullOpenSSLProvider tests}
 
 procedure TOpenSSLProviderTest.TestNullProvider_ImplementsInterface;
@@ -730,74 +743,39 @@ end;
 procedure TOpenSSLProviderTest.TestProvider_NoIndy_NonExistentPath_NotAvailable;
 var
 	Provider: IOpenSSLProvider;
-	IndyHandle: THandle;
 begin
-	IndyHandle := GetCryptLibHandle();
-
-	if IndyHandle <> 0 then
-	begin
-		Assert.Pass('Test skipped - Indy has loaded OpenSSL');
-		Exit;
-	end;
-
-	Provider := TOpenSSLProvider.Create('C:\NonExistent_' + IntToStr(GetTickCount) + '\Path', True);
-	Assert.IsFalse(Provider.IsAvailable, 'Should not be available with non-existent path and no Indy');
+	{TTestableOpenSSLProvider forces GetIndyCryptHandle=0, so path-based loading is used}
+	Provider := TTestableOpenSSLProvider.Create('C:\NonExistent_' + IntToStr(GetTickCount) + '\Path', True);
+	Assert.IsFalse(Provider.IsAvailable, 'Should not be available with non-existent path');
 end;
 
 procedure TOpenSSLProviderTest.TestProvider_NoIndy_NonExistentPath_HandleZero;
 var
 	Provider: IOpenSSLProvider;
-	IndyHandle: THandle;
 begin
-	IndyHandle := GetCryptLibHandle();
-
-	if IndyHandle <> 0 then
-	begin
-		Assert.Pass('Test skipped - Indy has loaded OpenSSL');
-		Exit;
-	end;
-
-	Provider := TOpenSSLProvider.Create('C:\NonExistent_' + IntToStr(GetTickCount) + '\Path', True);
+	Provider := TTestableOpenSSLProvider.Create('C:\NonExistent_' + IntToStr(GetTickCount) + '\Path', True);
 	Assert.AreEqual(THandle(0), Provider.GetLibraryHandle,
-		'Handle should be zero with non-existent path and no Indy');
+		'Handle should be zero with non-existent path');
 end;
 
 procedure TOpenSSLProviderTest.TestProvider_NoIndy_NonExistentPath_FunctionsNotLoaded;
 var
 	Provider: IOpenSSLProvider;
 	Funcs: TOpenSSLFunctions;
-	IndyHandle: THandle;
 begin
-	IndyHandle := GetCryptLibHandle();
-
-	if IndyHandle <> 0 then
-	begin
-		Assert.Pass('Test skipped - Indy has loaded OpenSSL');
-		Exit;
-	end;
-
-	Provider := TOpenSSLProvider.Create('C:\NonExistent_' + IntToStr(GetTickCount) + '\Path', True);
+	Provider := TTestableOpenSSLProvider.Create('C:\NonExistent_' + IntToStr(GetTickCount) + '\Path', True);
 	Funcs := Provider.GetFunctions;
-	Assert.IsFalse(Funcs.Loaded, 'Loaded should be False with non-existent path and no Indy');
+	Assert.IsFalse(Funcs.Loaded, 'Loaded should be False with non-existent path');
 end;
 
 procedure TOpenSSLProviderTest.TestProvider_NoIndy_NonExistentPath_CipherNotLoaded;
 var
 	Provider: IOpenSSLProvider;
 	Funcs: TOpenSSLFunctions;
-	IndyHandle: THandle;
 begin
-	IndyHandle := GetCryptLibHandle();
-
-	if IndyHandle <> 0 then
-	begin
-		Assert.Pass('Test skipped - Indy has loaded OpenSSL');
-		Exit;
-	end;
-
-	Provider := TOpenSSLProvider.Create('C:\NonExistent_' + IntToStr(GetTickCount) + '\Path', True);
+	Provider := TTestableOpenSSLProvider.Create('C:\NonExistent_' + IntToStr(GetTickCount) + '\Path', True);
 	Funcs := Provider.GetFunctions;
-	Assert.IsFalse(Funcs.CipherLoaded, 'CipherLoaded should be False with non-existent path and no Indy');
+	Assert.IsFalse(Funcs.CipherLoaded, 'CipherLoaded should be False with non-existent path');
 end;
 
 {TOpenSSLProvider - path-based loading with controlled directories}
@@ -806,22 +784,14 @@ procedure TOpenSSLProviderTest.TestProvider_PluginDirOnly_EmptyTempDir_NoLoad;
 var
 	Provider: IOpenSSLProvider;
 	TempDir: string;
-	IndyHandle: THandle;
 begin
-	IndyHandle := GetCryptLibHandle();
-
-	if IndyHandle <> 0 then
-	begin
-		Assert.Pass('Test skipped - Indy has loaded OpenSSL');
-		Exit;
-	end;
-
-	{Create a real empty temp directory to exercise the path-based loading code}
+	{Create a real empty temp directory - exercises plugin root DLL search path
+		(no platform subdir => DirectoryExists=False, falls through to root dir attempts)}
 	TempDir := IncludeTrailingPathDelimiter(GetEnvironmentVariable('TEMP')) +
 		'OpenSSLProviderTest_' + IntToStr(GetTickCount);
 	ForceDirectories(TempDir);
 	try
-		Provider := TOpenSSLProvider.Create(IncludeTrailingPathDelimiter(TempDir), True);
+		Provider := TTestableOpenSSLProvider.Create(IncludeTrailingPathDelimiter(TempDir), True);
 		Assert.IsFalse(Provider.IsAvailable,
 			'Should not be available - empty temp dir has no OpenSSL DLLs');
 	finally
@@ -833,17 +803,9 @@ procedure TOpenSSLProviderTest.TestProvider_PluginDirOnly_TempDirWithPlatformSub
 var
 	Provider: IOpenSSLProvider;
 	TempDir, PlatformDir: string;
-	IndyHandle: THandle;
 begin
-	IndyHandle := GetCryptLibHandle();
-
-	if IndyHandle <> 0 then
-	begin
-		Assert.Pass('Test skipped - Indy has loaded OpenSSL');
-		Exit;
-	end;
-
-	{Create temp directory with platform subdirectory to exercise DirectoryExists branch}
+	{Create temp directory with platform subdirectory - exercises DirectoryExists=True branch,
+		then all TryLoadDLL calls within the platform subdir fail (no DLLs present)}
 	TempDir := IncludeTrailingPathDelimiter(GetEnvironmentVariable('TEMP')) +
 		'OpenSSLProviderTest_' + IntToStr(GetTickCount);
 {$IFDEF WIN64}
@@ -853,7 +815,7 @@ begin
 {$ENDIF}
 	ForceDirectories(PlatformDir);
 	try
-		Provider := TOpenSSLProvider.Create(IncludeTrailingPathDelimiter(TempDir), True);
+		Provider := TTestableOpenSSLProvider.Create(IncludeTrailingPathDelimiter(TempDir), True);
 		{Platform dir exists but is empty - TryLoadDLL should fail for all DLL names}
 		Assert.IsFalse(Provider.IsAvailable,
 			'Should not be available - platform subdir exists but has no DLLs');
@@ -866,21 +828,20 @@ end;
 procedure TOpenSSLProviderTest.TestProvider_SystemSearch_NoIndy_TriesSystemPath;
 var
 	Provider: IOpenSSLProvider;
-	IndyHandle: THandle;
 begin
-	IndyHandle := GetCryptLibHandle();
-
-	if IndyHandle <> 0 then
+	{FLoadFromPluginDirOnly = False exercises the system PATH search branch}
+	Provider := TTestableOpenSSLProvider.Create('', False);
+	{Result depends on whether OpenSSL is on the system PATH}
+	if Provider.IsAvailable then
 	begin
-		Assert.Pass('Test skipped - Indy has loaded OpenSSL');
-		Exit;
-	end;
-
-	{FLoadFromPluginDirOnly = False exercises the system path search branch}
-	Provider := TOpenSSLProvider.Create('', False);
-	{Result depends on whether OpenSSL is on the system PATH - just verify no exception}
-	Provider.IsAvailable;
-	Assert.Pass('System path search completed without exception');
+		Assert.AreNotEqual(THandle(0), Provider.GetLibraryHandle,
+			'Handle should be non-zero when system OpenSSL found');
+		Assert.IsTrue(Provider.GetFunctions.Loaded,
+			'Functions should be loaded when system OpenSSL found');
+	end
+	else
+		Assert.AreEqual(THandle(0), Provider.GetLibraryHandle,
+			'Handle should be zero when no system OpenSSL found');
 end;
 
 initialization

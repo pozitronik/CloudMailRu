@@ -75,6 +75,10 @@ type
 			@param DLLName Name of the DLL to load
 			@return True if library was loaded successfully}
 		function TryLoadDLL(const DLLName: string): Boolean;
+	protected
+		{Returns Indy's loaded crypto library handle; virtual to allow
+			tests to return 0 and force path-based loading}
+		function GetIndyCryptHandle: THandle; virtual;
 	public
 		{Create OpenSSL provider with path settings
 			@param PluginPath Path to the plugin directory
@@ -136,7 +140,7 @@ begin
 	FLoadAttempted := True;
 
 	{First check if Indy already loaded the crypto library}
-	FHandle := GetCryptLibHandle();
+	FHandle := GetIndyCryptHandle;
 	if FHandle <> 0 then
 	begin
 		LoadFunctionPointers;
@@ -194,6 +198,11 @@ begin
 		if TryLoadDLL('libcrypto.dll') then
 			Exit;
 	end;
+end;
+
+function TOpenSSLProvider.GetIndyCryptHandle: THandle;
+begin
+	Result := GetCryptLibHandle();
 end;
 
 function TOpenSSLProvider.TryLoadDLL(const DLLName: string): Boolean;
