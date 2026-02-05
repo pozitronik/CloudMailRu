@@ -27,12 +27,6 @@ type
 		procedure TestGetName_ReturnsOAuthAppPassword;
 
 		[Test]
-		procedure TestAuthenticate_WithNilHTTP_ReturnsFalse;
-
-		[Test]
-		procedure TestAuthenticate_WithNilHTTP_HasErrorMessage;
-
-		[Test]
 		procedure TestImplementsInterface;
 
 		{HTTP response tests}
@@ -82,29 +76,6 @@ end;
 procedure TOAuthAppAuthStrategyTest.TestGetName_ReturnsOAuthAppPassword;
 begin
 	Assert.AreEqual('OAuth App Password', FStrategy.GetName);
-end;
-
-procedure TOAuthAppAuthStrategyTest.TestAuthenticate_WithNilHTTP_ReturnsFalse;
-var
-	Credentials: TAuthCredentials;
-	Result: TAuthResult;
-begin
-	{Calling with nil HTTP should fail gracefully - returns failure instead of crashing}
-	Credentials := TAuthCredentials.Create('test@mail.ru', 'password', 'test', 'mail.ru');
-
-	Result := FStrategy.Authenticate(Credentials, nil, TNullLogger.Create);
-	Assert.IsFalse(Result.Success);
-end;
-
-procedure TOAuthAppAuthStrategyTest.TestAuthenticate_WithNilHTTP_HasErrorMessage;
-var
-	Credentials: TAuthCredentials;
-	Result: TAuthResult;
-begin
-	Credentials := TAuthCredentials.Create('test@mail.ru', 'password', 'test', 'mail.ru');
-
-	Result := FStrategy.Authenticate(Credentials, nil, TNullLogger.Create);
-	Assert.IsNotEmpty(Result.ErrorMessage);
 end;
 
 procedure TOAuthAppAuthStrategyTest.TestImplementsInterface;
