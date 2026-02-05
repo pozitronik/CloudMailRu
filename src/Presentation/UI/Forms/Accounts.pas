@@ -12,7 +12,6 @@ uses
 	Vcl.Forms,
 	Vcl.Dialogs,
 	Vcl.StdCtrls,
-	IniFiles,
 	PathHelper,
 	PluginForm,
 	SettingsConstants,
