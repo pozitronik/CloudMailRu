@@ -15,6 +15,8 @@ uses
 	ConnectionSettings,
 	ProxySettings,
 	SettingsConstants,
+	SSLHandlerFactory,
+	IndySSLHandlerFactory,
 	WFXTypes,
 	CloudConstants,
 	Logger,
@@ -696,7 +698,7 @@ var
 begin
 	Settings := Default(TConnectionSettings);
 	Settings.UserAgent := 'TestAgent/1.0';
-	HTTP := TCloudMailRuHTTP.Create(Settings, FLogger, FProgress);
+	HTTP := TCloudMailRuHTTP.Create(Settings, TIndySSLHandlerFactory.Create, FLogger, FProgress);
 	try
 		Assert.IsNotNull(HTTP.HTTP, 'Internal TIdHTTP should be created');
 	finally
@@ -711,7 +713,7 @@ var
 begin
 	Settings := Default(TConnectionSettings);
 	Settings.UserAgent := 'CustomUserAgent/2.0';
-	HTTP := TCloudMailRuHTTP.Create(Settings, FLogger, FProgress);
+	HTTP := TCloudMailRuHTTP.Create(Settings, TIndySSLHandlerFactory.Create, FLogger, FProgress);
 	try
 		Assert.AreEqual('CustomUserAgent/2.0', HTTP.HTTP.Request.UserAgent);
 	finally
@@ -725,7 +727,7 @@ var
 	HTTP: TCloudMailRuHTTP;
 begin
 	Settings := Default(TConnectionSettings);
-	HTTP := TCloudMailRuHTTP.Create(Settings, FLogger, FProgress);
+	HTTP := TCloudMailRuHTTP.Create(Settings, TIndySSLHandlerFactory.Create, FLogger, FProgress);
 	try
 		Assert.IsTrue(HTTP.HTTP.AllowCookies, 'Cookies should be enabled');
 	finally
@@ -739,7 +741,7 @@ var
 	HTTP: TCloudMailRuHTTP;
 begin
 	Settings := Default(TConnectionSettings);
-	HTTP := TCloudMailRuHTTP.Create(Settings, FLogger, FProgress);
+	HTTP := TCloudMailRuHTTP.Create(Settings, TIndySSLHandlerFactory.Create, FLogger, FProgress);
 	try
 		Assert.IsTrue(HTTP.HTTP.HandleRedirects, 'Redirects should be handled');
 	finally
@@ -754,7 +756,7 @@ var
 begin
 	Settings := Default(TConnectionSettings);
 	Settings.SocketTimeout := -5000;
-	HTTP := TCloudMailRuHTTP.Create(Settings, FLogger, FProgress);
+	HTTP := TCloudMailRuHTTP.Create(Settings, TIndySSLHandlerFactory.Create, FLogger, FProgress);
 	try
 		Assert.AreEqual(-5000, HTTP.HTTP.ConnectTimeout);
 		Assert.AreEqual(-5000, HTTP.HTTP.ReadTimeout);
@@ -770,7 +772,7 @@ var
 begin
 	Settings := Default(TConnectionSettings);
 	Settings.SocketTimeout := 5000;
-	HTTP := TCloudMailRuHTTP.Create(Settings, FLogger, FProgress);
+	HTTP := TCloudMailRuHTTP.Create(Settings, TIndySSLHandlerFactory.Create, FLogger, FProgress);
 	try
 		Assert.AreEqual(5000, HTTP.HTTP.ConnectTimeout, 'Positive timeout should be applied');
 		Assert.AreEqual(5000, HTTP.HTTP.ReadTimeout, 'Positive timeout should be applied');
@@ -790,7 +792,7 @@ begin
 	try
 		Settings := Default(TConnectionSettings);
 		Settings.SocketTimeout := 0;
-		HTTP := TCloudMailRuHTTP.Create(Settings, FLogger, FProgress);
+		HTTP := TCloudMailRuHTTP.Create(Settings, TIndySSLHandlerFactory.Create, FLogger, FProgress);
 		try
 			Assert.AreEqual(DefaultHTTP.ConnectTimeout, HTTP.HTTP.ConnectTimeout, 'ConnectTimeout should stay at Indy default');
 			Assert.AreEqual(DefaultHTTP.ReadTimeout, HTTP.HTTP.ReadTimeout, 'ReadTimeout should stay at Indy default');
@@ -810,7 +812,7 @@ begin
 	Settings := Default(TConnectionSettings);
 	Settings.UploadBPS := 1024;
 	Settings.DownloadBPS := 2048;
-	HTTP := TCloudMailRuHTTP.Create(Settings, FLogger, FProgress);
+	HTTP := TCloudMailRuHTTP.Create(Settings, TIndySSLHandlerFactory.Create, FLogger, FProgress);
 	try
 		{Throttle is private, but we can verify HTTP was created successfully}
 		Assert.IsNotNull(HTTP.HTTP);
@@ -828,7 +830,7 @@ begin
 	Settings.ProxySettings.ProxyType := ProxySocks5;
 	Settings.ProxySettings.Server := '127.0.0.1';
 	Settings.ProxySettings.Port := 1080;
-	HTTP := TCloudMailRuHTTP.Create(Settings, FLogger, FProgress);
+	HTTP := TCloudMailRuHTTP.Create(Settings, TIndySSLHandlerFactory.Create, FLogger, FProgress);
 	try
 		{Socks is private, verify HTTP created successfully with proxy config}
 		Assert.IsNotNull(HTTP.HTTP);
@@ -848,7 +850,7 @@ begin
 	Settings.ProxySettings.Port := 1080;
 	Settings.ProxySettings.User := 'proxyuser';
 	Settings.ProxySettings.Password := 'proxypass';
-	HTTP := TCloudMailRuHTTP.Create(Settings, FLogger, FProgress);
+	HTTP := TCloudMailRuHTTP.Create(Settings, TIndySSLHandlerFactory.Create, FLogger, FProgress);
 	try
 		Assert.IsNotNull(HTTP.HTTP);
 	finally
@@ -865,7 +867,7 @@ begin
 	Settings.ProxySettings.ProxyType := ProxySocks4;
 	Settings.ProxySettings.Server := '127.0.0.1';
 	Settings.ProxySettings.Port := 1080;
-	HTTP := TCloudMailRuHTTP.Create(Settings, FLogger, FProgress);
+	HTTP := TCloudMailRuHTTP.Create(Settings, TIndySSLHandlerFactory.Create, FLogger, FProgress);
 	try
 		Assert.IsNotNull(HTTP.HTTP);
 	finally
@@ -882,7 +884,7 @@ begin
 	Settings.ProxySettings.ProxyType := ProxyHTTP;
 	Settings.ProxySettings.Server := 'proxy.example.com';
 	Settings.ProxySettings.Port := 8080;
-	HTTP := TCloudMailRuHTTP.Create(Settings, FLogger, FProgress);
+	HTTP := TCloudMailRuHTTP.Create(Settings, TIndySSLHandlerFactory.Create, FLogger, FProgress);
 	try
 		Assert.AreEqual('proxy.example.com', HTTP.HTTP.ProxyParams.ProxyServer);
 		Assert.AreEqual(8080, HTTP.HTTP.ProxyParams.ProxyPort);
@@ -902,7 +904,7 @@ begin
 	Settings.ProxySettings.Port := 8080;
 	Settings.ProxySettings.User := 'httpuser';
 	Settings.ProxySettings.Password := 'httppass';
-	HTTP := TCloudMailRuHTTP.Create(Settings, FLogger, FProgress);
+	HTTP := TCloudMailRuHTTP.Create(Settings, TIndySSLHandlerFactory.Create, FLogger, FProgress);
 	try
 		Assert.IsTrue(HTTP.HTTP.ProxyParams.BasicAuthentication);
 		Assert.AreEqual('httpuser', HTTP.HTTP.ProxyParams.ProxyUsername);
@@ -917,7 +919,7 @@ end;
 procedure TCloudMailRuHTTPSetterTest.Setup;
 begin
 	FSettings := Default(TConnectionSettings);
-	FHTTP := TCloudMailRuHTTP.Create(FSettings, TNullLogger.Create, TNullProgress.Create);
+	FHTTP := TCloudMailRuHTTP.Create(FSettings, TIndySSLHandlerFactory.Create, TNullLogger.Create, TNullProgress.Create);
 end;
 
 procedure TCloudMailRuHTTPSetterTest.TearDown;
@@ -967,7 +969,7 @@ var
 	Intf: ICloudHTTP;
 begin
 	{Access GetHTTP through the ICloudHTTP interface, not the public field}
-	Intf := TCloudMailRuHTTP.Create(FSettings, TNullLogger.Create, TNullProgress.Create);
+	Intf := TCloudMailRuHTTP.Create(FSettings, TIndySSLHandlerFactory.Create, TNullLogger.Create, TNullProgress.Create);
 	Assert.IsNotNull(Intf.HTTP);
 end;
 
@@ -985,7 +987,7 @@ end;
 procedure TCloudMailRuHTTPExceptionHandlerTest.Setup;
 begin
 	FSettings := Default(TConnectionSettings);
-	FHTTP := TCloudMailRuHTTP.Create(FSettings, TNullLogger.Create, TNullProgress.Create);
+	FHTTP := TCloudMailRuHTTP.Create(FSettings, TIndySSLHandlerFactory.Create, TNullLogger.Create, TNullProgress.Create);
 end;
 
 procedure TCloudMailRuHTTPExceptionHandlerTest.TearDown;
@@ -1136,7 +1138,7 @@ var
 	HTTP: TCloudMailRuHTTP;
 begin
 	MockLogger := TMockLoggerForHTTP.Create;
-	HTTP := TCloudMailRuHTTP.Create(FSettings, MockLogger, TNullProgress.Create);
+	HTTP := TCloudMailRuHTTP.Create(FSettings, TIndySSLHandlerFactory.Create, MockLogger, TNullProgress.Create);
 	try
 		E := EIdHTTPProtocolException.CreateError(500, 'Internal Server Error', 'Server error details');
 		try
@@ -1157,7 +1159,7 @@ var
 	HTTP: TCloudMailRuHTTP;
 begin
 	MockLogger := TMockLoggerForHTTP.Create;
-	HTTP := TCloudMailRuHTTP.Create(FSettings, MockLogger, TNullProgress.Create);
+	HTTP := TCloudMailRuHTTP.Create(FSettings, TIndySSLHandlerFactory.Create, MockLogger, TNullProgress.Create);
 	try
 		E := EIdSocketError.Create('Connection refused');
 		try
@@ -1178,7 +1180,7 @@ var
 	HTTP: TCloudMailRuHTTP;
 begin
 	MockLogger := TMockLoggerForHTTP.Create;
-	HTTP := TCloudMailRuHTTP.Create(FSettings, MockLogger, TNullProgress.Create);
+	HTTP := TCloudMailRuHTTP.Create(FSettings, TIndySSLHandlerFactory.Create, MockLogger, TNullProgress.Create);
 	try
 		E := Exception.Create('Something went wrong');
 		try
@@ -1197,7 +1199,7 @@ end;
 procedure TCloudMailRuHTTPCSRFTokenTest.Setup;
 begin
 	FSettings := Default(TConnectionSettings);
-	FHTTP := TCloudMailRuHTTP.Create(FSettings, TNullLogger.Create, TNullProgress.Create);
+	FHTTP := TCloudMailRuHTTP.Create(FSettings, TIndySSLHandlerFactory.Create, TNullLogger.Create, TNullProgress.Create);
 	FHTTPInterface := FHTTP;
 end;
 
@@ -1232,7 +1234,7 @@ end;
 procedure TCloudMailRuHTTPSetProgressTest.Setup;
 begin
 	FSettings := Default(TConnectionSettings);
-	FHTTP := TCloudMailRuHTTP.Create(FSettings, TNullLogger.Create, TNullProgress.Create);
+	FHTTP := TCloudMailRuHTTP.Create(FSettings, TIndySSLHandlerFactory.Create, TNullLogger.Create, TNullProgress.Create);
 end;
 
 procedure TCloudMailRuHTTPSetProgressTest.TearDown;
@@ -1296,7 +1298,7 @@ procedure TCloudMailRuHTTPProgressTest.Setup;
 begin
 	FMockProgress := TMockProgressForHTTP.Create;
 	FProgressRef := FMockProgress;
-	FHTTP := TCloudMailRuHTTP.Create(Default(TConnectionSettings), TNullLogger.Create, FProgressRef);
+	FHTTP := TCloudMailRuHTTP.Create(Default(TConnectionSettings), TIndySSLHandlerFactory.Create, TNullLogger.Create, FProgressRef);
 end;
 
 procedure TCloudMailRuHTTPProgressTest.TearDown;
@@ -1350,7 +1352,7 @@ var
 begin
 	Settings := Default(TConnectionSettings);
 	Settings.SocketTimeout := 500;
-	FHTTP := TCloudMailRuHTTP.Create(Settings, TNullLogger.Create, TNullProgress.Create);
+	FHTTP := TCloudMailRuHTTP.Create(Settings, TIndySSLHandlerFactory.Create, TNullLogger.Create, TNullProgress.Create);
 end;
 
 procedure TCloudMailRuHTTPNetworkMethodsTest.TearDown;
@@ -1453,7 +1455,7 @@ begin
 	FMockLogger := TMockLoggerForHTTP.Create;
 	Settings := Default(TConnectionSettings);
 	Settings.SocketTimeout := 500;
-	FHTTP := TCloudMailRuHTTP.Create(Settings, FMockLogger, TNullProgress.Create);
+	FHTTP := TCloudMailRuHTTP.Create(Settings, TIndySSLHandlerFactory.Create, FMockLogger, TNullProgress.Create);
 end;
 
 procedure TCloudMailRuHTTPLoggingTest.TearDown;

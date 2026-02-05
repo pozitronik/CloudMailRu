@@ -55,6 +55,8 @@ uses
 	BCryptCipher in 'src\Infrastructure\Cipher\BCryptCipher.pas',
 	FileSplitInfo in 'src\Infrastructure\IO\FileSplitInfo.pas',
 	HTTPManager in 'src\Infrastructure\HTTP\HTTPManager.pas',
+	SSLHandlerFactory in 'src\Infrastructure\SSL\SSLHandlerFactory.pas',
+	IndySSLHandlerFactory in 'src\Infrastructure\SSL\IndySSLHandlerFactory.pas',
 	HashInfo in 'src\Domain\ValueObjects\HashInfo.pas',
 	IconHelper in 'src\Presentation\Icon\IconHelper.pas',
 	IdSSLOpenSSLHeaders,

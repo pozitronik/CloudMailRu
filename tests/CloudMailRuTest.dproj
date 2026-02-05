@@ -231,6 +231,8 @@
         <DCCReference Include="..\src\Infrastructure\IO\ChunkedFileStream.pas"/>
         <DCCReference Include="..\src\Infrastructure\IO\FileSplitInfo.pas"/>
         <DCCReference Include="..\src\Infrastructure\HTTP\HTTPManager.pas"/>
+        <DCCReference Include="..\src\Infrastructure\SSL\SSLHandlerFactory.pas"/>
+        <DCCReference Include="..\src\Infrastructure\SSL\IndySSLHandlerFactory.pas"/>
         <DCCReference Include="..\src\Domain\ValueObjects\RealPath.pas"/>
         <DCCReference Include="..\src\Infrastructure\Settings\CloudSettings.pas"/>
         <DCCReference Include="Infrastructure\Settings\CloudSettingsTest.pas"/>

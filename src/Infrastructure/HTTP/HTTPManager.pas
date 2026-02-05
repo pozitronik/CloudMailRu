@@ -9,6 +9,7 @@ uses
 	CloudConstants,
 	WFXTypes,
 	ConnectionSettings,
+	SSLHandlerFactory,
 	Logger,
 	Progress,
 	System.Generics.Collections,
@@ -21,13 +22,13 @@ type
 		Enables dependency injection and testing of HTTPManager without real connections.}
 	ICloudHTTPFactory = interface
 		['{E4A7C9D2-8B3F-4E1A-9D5C-7F2B8A6E4C1D}']
-		function CreateHTTP(Settings: TConnectionSettings; Logger: ILogger; Progress: IProgress): ICloudHTTP;
+		function CreateHTTP(Settings: TConnectionSettings; SSLFactory: ISSLHandlerFactory; Logger: ILogger; Progress: IProgress): ICloudHTTP;
 	end;
 
 	{Default factory implementation that creates real TCloudMailRuHTTP instances.}
 	TCloudHTTPFactory = class(TInterfacedObject, ICloudHTTPFactory)
 	public
-		function CreateHTTP(Settings: TConnectionSettings; Logger: ILogger; Progress: IProgress): ICloudHTTP;
+		function CreateHTTP(Settings: TConnectionSettings; SSLFactory: ISSLHandlerFactory; Logger: ILogger; Progress: IProgress): ICloudHTTP;
 	end;
 
 	{Interface for per-thread HTTP connection pooling}
@@ -65,7 +66,7 @@ type
 		FConnection: ICloudHTTP;
 		FConnectionSettings: TConnectionSettings;
 	public
-		constructor Create(Settings: TConnectionSettings; Logger: ILogger; Progress: IProgress);
+		constructor Create(Settings: TConnectionSettings; SSLFactory: ISSLHandlerFactory; Logger: ILogger; Progress: IProgress);
 		function Get(ThreadId: Cardinal): ICloudHTTP;
 		function GetConnectionSettings: TConnectionSettings;
 		procedure SetProxyPassword(Password: WideString);
@@ -77,12 +78,13 @@ type
 		FLogger: ILogger;
 		FProgress: IProgress;
 		FHTTPFactory: ICloudHTTPFactory;
+		FSSLFactory: ISSLHandlerFactory;
 
 		Connections: TDictionary<Cardinal, ICloudHTTP>; //<ThreadId, HTTP>
 
 	public
 		{Creates manager with injected dependencies for connection pooling}
-		constructor Create(Settings: TConnectionSettings; Logger: ILogger; Progress: IProgress; HTTPFactory: ICloudHTTPFactory);
+		constructor Create(Settings: TConnectionSettings; SSLFactory: ISSLHandlerFactory; Logger: ILogger; Progress: IProgress; HTTPFactory: ICloudHTTPFactory);
 		destructor Destroy; override;
 		function Get(ThreadId: Cardinal): ICloudHTTP;
 		function GetConnectionSettings: TConnectionSettings;
@@ -113,17 +115,17 @@ end;
 
 {TCloudHTTPFactory}
 
-function TCloudHTTPFactory.CreateHTTP(Settings: TConnectionSettings; Logger: ILogger; Progress: IProgress): ICloudHTTP;
+function TCloudHTTPFactory.CreateHTTP(Settings: TConnectionSettings; SSLFactory: ISSLHandlerFactory; Logger: ILogger; Progress: IProgress): ICloudHTTP;
 begin
-	Result := TCloudMailRuHTTP.Create(Settings, Logger, Progress);
+	Result := TCloudMailRuHTTP.Create(Settings, SSLFactory, Logger, Progress);
 end;
 
 {TSingleThreadHTTPManager}
 
-constructor TSingleThreadHTTPManager.Create(Settings: TConnectionSettings; Logger: ILogger; Progress: IProgress);
+constructor TSingleThreadHTTPManager.Create(Settings: TConnectionSettings; SSLFactory: ISSLHandlerFactory; Logger: ILogger; Progress: IProgress);
 begin
 	FConnectionSettings := Settings;
-	FConnection := TCloudMailRuHTTP.Create(Settings, Logger, Progress);
+	FConnection := TCloudMailRuHTTP.Create(Settings, SSLFactory, Logger, Progress);
 end;
 
 function TSingleThreadHTTPManager.Get(ThreadId: Cardinal): ICloudHTTP;
@@ -143,12 +145,13 @@ end;
 
 {THTTPManager}
 
-constructor THTTPManager.Create(Settings: TConnectionSettings; Logger: ILogger; Progress: IProgress; HTTPFactory: ICloudHTTPFactory);
+constructor THTTPManager.Create(Settings: TConnectionSettings; SSLFactory: ISSLHandlerFactory; Logger: ILogger; Progress: IProgress; HTTPFactory: ICloudHTTPFactory);
 begin
-	self.FConnectionSettings := Settings;
-	self.FProgress := Progress;
-	self.FLogger := Logger;
-	self.FHTTPFactory := HTTPFactory;
+	FConnectionSettings := Settings;
+	FSSLFactory := SSLFactory;
+	FProgress := Progress;
+	FLogger := Logger;
+	FHTTPFactory := HTTPFactory;
 	Connections := TDictionary<Cardinal, ICloudHTTP>.Create;
 end;
 
@@ -164,7 +167,7 @@ function THTTPManager.Get(ThreadId: Cardinal): ICloudHTTP;
 begin
 	if not Connections.TryGetValue(ThreadId, Result) then
 	begin
-		Result := FHTTPFactory.CreateHTTP(FConnectionSettings, FLogger, FProgress);
+		Result := FHTTPFactory.CreateHTTP(FConnectionSettings, FSSLFactory, FLogger, FProgress);
 		Connections.AddOrSetValue(ThreadId, Result);
 	end;
 end;

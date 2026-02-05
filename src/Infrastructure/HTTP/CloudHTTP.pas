@@ -20,6 +20,7 @@ uses
 	CloudConstants,
 	LanguageStrings,
 	JSONHelper,
+	SSLHandlerFactory,
 	IdStack,
 	IdCookieManager,
 	IdIOHandler,
@@ -113,8 +114,7 @@ type
 		ExternalSourceName: WideString;
 		ExternalTargetName: WideString;
 
-		SSL: TIdSSLIOHandlerSocketOpenSSL;
-		Socks: TIdSocksInfo;
+		SSL: TIdSSLIOHandlerSocketBase;
 		Throttle: TIdInterceptThrottler;
 		Settings: TConnectionSettings;
 
@@ -140,7 +140,7 @@ type
 		property SourceName: WideString write SetExternalSourceName;
 		property TargetName: WideString write SetExternalTargetName;
 		{CONSTRUCTOR/DESTRUCTOR}
-		constructor Create(Settings: TConnectionSettings; Logger: ILogger; Progress: IProgress);
+		constructor Create(Settings: TConnectionSettings; SSLFactory: ISSLHandlerFactory; Logger: ILogger; Progress: IProgress);
 		destructor Destroy; override;
 		{MAIN ROUTINES}
 		procedure Head(URL: WideString);
@@ -247,38 +247,14 @@ end;
 
 {TCloudMailRuHTTP}
 
-constructor TCloudMailRuHTTP.Create(Settings: TConnectionSettings; Logger: ILogger; Progress: IProgress);
+constructor TCloudMailRuHTTP.Create(Settings: TConnectionSettings; SSLFactory: ISSLHandlerFactory; Logger: ILogger; Progress: IProgress);
 begin
 	self.Progress := Progress;
 	self.Logger := Logger;
 	self.Throttle := TIdInterceptThrottler.Create();
-	self.Socks := TIdSocksInfo.Create();
-	SSL := TIdSSLIOHandlerSocketOpenSSL.Create();
-	SSL.SSLOptions.SSLVersions := [sslvSSLv23];
+	SSL := SSLFactory.CreateHandler;
+	SSLFactory.ConfigureSocksProxy(SSL, Settings.ProxySettings);
 	HTTP := TIdHTTP.Create();
-
-	if Settings.ProxySettings.ProxyType in SocksProxyTypes then
-	begin
-		self.Socks.Host := Settings.ProxySettings.Server;
-		self.Socks.Port := Settings.ProxySettings.Port;
-		if Settings.ProxySettings.User <> EmptyWideStr then
-		begin
-			self.Socks.Authentication := saUsernamePassword;
-			self.Socks.Username := Settings.ProxySettings.User;
-			self.Socks.password := Settings.ProxySettings.password;
-		end
-		else
-			self.Socks.Authentication := saNoAuthentication;
-
-		case Settings.ProxySettings.ProxyType of
-			ProxySocks5:
-				Socks.Version := svSocks5;
-			ProxySocks4:
-				Socks.Version := svSocks4;
-		end;
-		self.Socks.Enabled := True;
-		SSL.TransparentProxy := self.Socks;
-	end;
 
 	if Settings.ProxySettings.ProxyType = ProxyHTTP then
 	begin
@@ -313,10 +289,9 @@ end;
 
 destructor TCloudMailRuHTTP.Destroy;
 begin
-	HTTP.free;
-	SSL.free;
-	self.Throttle.free;
-	self.Socks.free;
+	HTTP.Free;
+	SSL.Free;
+	Throttle.Free;
 	inherited;
 end;
 

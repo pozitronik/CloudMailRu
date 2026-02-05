@@ -428,6 +428,8 @@ uses
 	AuthStrategy,
 	OAuthAppAuthStrategy,
 	CloudHTTP,
+	SSLHandlerFactory,
+	IndySSLHandlerFactory,
 	CloudMailRu,
 	CloudMailRuFactory,
 	Logger,
@@ -850,7 +852,7 @@ begin
 	{Create HTTP client with minimal connection settings for authentication test}
 	ConnSettings := Default(TConnectionSettings);
 	ConnSettings.UserAgent := DEFAULT_USERAGENT;
-	HTTP := TCloudMailRuHTTP.Create(ConnSettings, TNullLogger.Create, TNullProgress.Create);
+	HTTP := TCloudMailRuHTTP.Create(ConnSettings, TIndySSLHandlerFactory.Create, TNullLogger.Create, TNullProgress.Create);
 	FView.SetTestAccountButtonCaption('...');
 	try
 		AuthResult := Strategy.Authenticate(Credentials, HTTP, TNullLogger.Create);

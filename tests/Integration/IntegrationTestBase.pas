@@ -27,6 +27,8 @@ uses
 	OAuthAppAuthStrategy,
 	FileSystem,
 	HTTPManager,
+	SSLHandlerFactory,
+	IndySSLHandlerFactory,
 	Logger,
 	Progress,
 	Request,
@@ -288,7 +290,7 @@ begin
 	var Progress: IProgress := TNullProgress.Create;
 	Result := TCloudMailRu.Create(
 		Settings,
-		TSingleThreadHTTPManager.Create(Settings.ConnectionSettings, Logger, Progress),
+		TSingleThreadHTTPManager.Create(Settings.ConnectionSettings, TIndySSLHandlerFactory.Create, Logger, Progress),
 		TestThreadID(),
 		AuthStrategy,
 		TWindowsFileSystem.Create,
@@ -324,7 +326,7 @@ begin
 	var Progress: IProgress := TNullProgress.Create;
 	Result := TCloudMailRu.Create(
 		Settings,
-		TSingleThreadHTTPManager.Create(Settings.ConnectionSettings, Logger, Progress),
+		TSingleThreadHTTPManager.Create(Settings.ConnectionSettings, TIndySSLHandlerFactory.Create, Logger, Progress),
 		TestThreadID(),
 		AuthStrategy,
 		TWindowsFileSystem.Create,
@@ -352,7 +354,7 @@ begin
 	var Progress: IProgress := TNullProgress.Create;
 	Result := TCloudMailRu.Create(
 		Settings,
-		TSingleThreadHTTPManager.Create(Settings.ConnectionSettings, Logger, Progress),
+		TSingleThreadHTTPManager.Create(Settings.ConnectionSettings, TIndySSLHandlerFactory.Create, Logger, Progress),
 		TestThreadID(),
 		TNullAuthStrategy.Create,
 		TWindowsFileSystem.Create,

@@ -6,6 +6,8 @@ uses
 	HTTPManager,
 	CloudHTTP,
 	ConnectionSettings,
+	SSLHandlerFactory,
+	IndySSLHandlerFactory,
 	Logger,
 	Progress,
 	Classes,
@@ -46,7 +48,7 @@ type
 		FCreateCount: Integer;
 	public
 		constructor Create;
-		function CreateHTTP(Settings: TConnectionSettings; Logger: ILogger; Progress: IProgress): ICloudHTTP;
+		function CreateHTTP(Settings: TConnectionSettings; SSLFactory: ISSLHandlerFactory; Logger: ILogger; Progress: IProgress): ICloudHTTP;
 		property CreateCount: Integer read FCreateCount;
 	end;
 
@@ -210,7 +212,7 @@ begin
 	FCreateCount := 0;
 end;
 
-function TMockHTTPFactory.CreateHTTP(Settings: TConnectionSettings; Logger: ILogger; Progress: IProgress): ICloudHTTP;
+function TMockHTTPFactory.CreateHTTP(Settings: TConnectionSettings; SSLFactory: ISSLHandlerFactory; Logger: ILogger; Progress: IProgress): ICloudHTTP;
 begin
 	Inc(FCreateCount);
 	Result := TMockHTTPForPooling.Create(FCreateCount);
@@ -293,7 +295,7 @@ begin
 	FMockFactory := TMockHTTPFactory.Create;
 	FMockFactoryRef := FMockFactory;
 
-	FManager := THTTPManager.Create(FSettings, TNullLogger.Create, TNullProgress.Create, FMockFactoryRef);
+	FManager := THTTPManager.Create(FSettings, TIndySSLHandlerFactory.Create, TNullLogger.Create, TNullProgress.Create, FMockFactoryRef);
 	FManagerRef := FManager;
 end;
 
@@ -427,7 +429,7 @@ begin
 	Factory := TCloudHTTPFactory.Create;
 	Settings := Default(TConnectionSettings);
 
-	HTTP := Factory.CreateHTTP(Settings, TNullLogger.Create, TNullProgress.Create);
+	HTTP := Factory.CreateHTTP(Settings, TIndySSLHandlerFactory.Create, TNullLogger.Create, TNullProgress.Create);
 
 	Assert.IsNotNull(HTTP);
 end;

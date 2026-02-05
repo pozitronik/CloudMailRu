@@ -52,6 +52,8 @@ uses
 	Request,
 	TCHandler,
 	HTTPManager,
+	SSLHandlerFactory,
+	IndySSLHandlerFactory,
 	OpenSSLProvider,
 	AccountCredentialsProvider;
 
@@ -77,7 +79,7 @@ begin
 	Progress := TNullProgress.Create;
 	TempCloud := TCloudMailRu.Create(
 		Settings,
-		TSingleThreadHTTPManager.Create(Settings.ConnectionSettings, Logger, Progress),
+		TSingleThreadHTTPManager.Create(Settings.ConnectionSettings, TIndySSLHandlerFactory.Create, Logger, Progress),
 		function: TThreadID begin Result := GetCurrentThreadID; end,
 		TNullAuthStrategy.Create,
 		TWindowsFileSystem.Create,

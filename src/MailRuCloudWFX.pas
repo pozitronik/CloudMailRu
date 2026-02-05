@@ -95,6 +95,8 @@ uses
 	DownloadOrchestrator,
 	CloudMailRuFactory,
 	OpenSSLProvider,
+	SSLHandlerFactory,
+	IndySSLHandlerFactory,
 	AccountCredentialsProvider,
 	CloudAuthorizationState,
 	TranslationManager,
@@ -152,6 +154,7 @@ type
 		FDownloadOrchestrator: IDownloadOrchestrator;
 		FTCHandler: ITCHandler;
 		FOpenSSLProvider: IOpenSSLProvider;
+		FSSLHandlerFactory: ISSLHandlerFactory;
 
 		PluginNum: Integer;
 
@@ -271,6 +274,9 @@ begin
 
 	{Create centralized OpenSSL provider for hash calculation - respects same settings as Indy}
 	FOpenSSLProvider := TOpenSSLProvider.Create(PluginPath, SettingsManager.GetSettings.LoadSSLDLLOnlyFromPluginDir);
+
+	{Create SSL handler factory - currently uses standard Indy SSL}
+	FSSLHandlerFactory := TIndySSLHandlerFactory.Create;
 
 	{Register cipher profiles with available backends}
 	TCipherProfileRegistry.Initialize(FOpenSSLProvider, TBCryptProvider.Create);
@@ -1014,7 +1020,7 @@ procedure TWFXApplication.FsSetCryptCallback(PCryptProc: TCryptProcW; CryptoNr, 
 begin
 	PasswordManager := TTCPasswordManager.Create(PCryptProc, PluginNum, CryptoNr, Logger, FTCHandler);
 	PasswordUI := TPasswordUIProvider.Create;
-	HTTPMgr := THTTPManager.Create(SettingsManager.GetSettings.ConnectionSettings, Logger, Progress, TCloudHTTPFactory.Create);
+	HTTPMgr := THTTPManager.Create(SettingsManager.GetSettings.ConnectionSettings, FSSLHandlerFactory, Logger, Progress, TCloudHTTPFactory.Create);
 	CipherVal := TCipherValidator.Create;
 	{TODO: ConnectionManager and dependent components are created here because they require
 	PasswordManager, which needs PCryptProc from this callback. This makes FsSetCryptCallback
