@@ -256,9 +256,10 @@ var
 	DFM_LBL_RETRY_ATTEMPTS: WideString;
 	DFM_LBL_RETRY_WAIT: WideString;
 	DFM_LBL_MS: WideString;
-	DFM_LBL_SHOW_ACCOUNTS: WideString;
+	DFM_GB_SHOW_ACCOUNTS: WideString;
 	DFM_LBL_COPY_BETWEEN: WideString;
 	DFM_LBL_SOCKET_TIMEOUT: WideString;
+	DFM_LBL_SSL_BACKEND: WideString;
 	DFM_LBL_PROXY_TYPE: WideString;
 	DFM_LBL_PROXY_PORT: WideString;
 	DFM_LBL_PROXY_USER: WideString;
@@ -306,6 +307,7 @@ var
 	DFM_GB_ENCRYPTION: WideString;
 	DFM_GB_PROXY: WideString;
 	DFM_GB_SPEED_LIMITS: WideString;
+	DFM_GB_SSL: WideString;
 	DFM_RB_PRIVATE: WideString;
 	DFM_RB_PUBLIC: WideString;
 	DFM_CB_TC_PASSWORD: WideString;
@@ -358,6 +360,9 @@ var
 	DFM_OPT_SOCKS5: WideString;
 	DFM_OPT_SOCKS4: WideString;
 	DFM_OPT_HTTP: WideString;
+	DFM_OPT_SSL_AUTO: WideString;
+	DFM_OPT_SSL_INDY: WideString;
+	DFM_OPT_SSL_INDYSEC: WideString;
 	DFM_OPT_STREAM_NONE: WideString;
 	DFM_OPT_STREAM_DISABLED: WideString;
 	DFM_OPT_STREAM_M3U8: WideString;
@@ -689,9 +694,10 @@ begin
 	DFM_LBL_RETRY_ATTEMPTS := 'Retry attempts:';
 	DFM_LBL_RETRY_WAIT := 'wait';
 	DFM_LBL_MS := 'ms';
-	DFM_LBL_SHOW_ACCOUNTS := 'Show accounts:';
+	DFM_GB_SHOW_ACCOUNTS := 'Show accounts:';
 	DFM_LBL_COPY_BETWEEN := 'Copying/moving between accounts:';
 	DFM_LBL_SOCKET_TIMEOUT := 'Network operations timeout, ms (0 = unlimited):';
+	DFM_LBL_SSL_BACKEND := 'SSL Backend';
 	DFM_LBL_PROXY_TYPE := 'Proxy type';
 	DFM_LBL_PROXY_PORT := 'Port';
 	DFM_LBL_PROXY_USER := 'Proxy authentication username (blank for none)';
@@ -738,7 +744,8 @@ begin
 	DFM_GB_FILE_SIZE := 'File size';
 	DFM_GB_ENCRYPTION := 'Encryption';
 	DFM_GB_PROXY := 'Proxy settings';
-	DFM_GB_SPEED_LIMITS := 'Speed limits';
+	DFM_GB_SPEED_LIMITS := 'Limits and timeouts';
+	DFM_GB_SSL := 'SSL/TLS';
 	DFM_RB_PRIVATE := 'Private';
 	DFM_RB_PUBLIC := 'Public';
 	DFM_CB_TC_PASSWORD := 'Store password in TC password manager';
@@ -791,6 +798,9 @@ begin
 	DFM_OPT_SOCKS5 := 'Socks5';
 	DFM_OPT_SOCKS4 := 'Socks4';
 	DFM_OPT_HTTP := 'HTTP(S)';
+	DFM_OPT_SSL_AUTO := 'Auto (detect best available)';
+	DFM_OPT_SSL_INDY := 'Indy SSL (OpenSSL 1.x)';
+	DFM_OPT_SSL_INDYSEC := 'IndySecOpenSSL (OpenSSL 1.1+/3.x)';
 	DFM_OPT_STREAM_NONE := 'None (download and open file)';
 	DFM_OPT_STREAM_DISABLED := 'Disabled (no action)';
 	DFM_OPT_STREAM_M3U8 := 'M3U8 playlist (useful for media files)';
@@ -1112,9 +1122,10 @@ begin
 	TranslationRegistry.Add('DFM_LBL_RETRY_ATTEMPTS', @DFM_LBL_RETRY_ATTEMPTS);
 	TranslationRegistry.Add('DFM_LBL_RETRY_WAIT', @DFM_LBL_RETRY_WAIT);
 	TranslationRegistry.Add('DFM_LBL_MS', @DFM_LBL_MS);
-	TranslationRegistry.Add('DFM_LBL_SHOW_ACCOUNTS', @DFM_LBL_SHOW_ACCOUNTS);
+	TranslationRegistry.Add('DFM_LBL_SHOW_ACCOUNTS', @DFM_GB_SHOW_ACCOUNTS);
 	TranslationRegistry.Add('DFM_LBL_COPY_BETWEEN', @DFM_LBL_COPY_BETWEEN);
 	TranslationRegistry.Add('DFM_LBL_SOCKET_TIMEOUT', @DFM_LBL_SOCKET_TIMEOUT);
+	TranslationRegistry.Add('DFM_LBL_SSL_BACKEND', @DFM_LBL_SSL_BACKEND);
 	TranslationRegistry.Add('DFM_LBL_PROXY_TYPE', @DFM_LBL_PROXY_TYPE);
 	TranslationRegistry.Add('DFM_LBL_PROXY_PORT', @DFM_LBL_PROXY_PORT);
 	TranslationRegistry.Add('DFM_LBL_PROXY_USER', @DFM_LBL_PROXY_USER);
@@ -1162,6 +1173,7 @@ begin
 	TranslationRegistry.Add('DFM_GB_ENCRYPTION', @DFM_GB_ENCRYPTION);
 	TranslationRegistry.Add('DFM_GB_PROXY', @DFM_GB_PROXY);
 	TranslationRegistry.Add('DFM_GB_SPEED_LIMITS', @DFM_GB_SPEED_LIMITS);
+	TranslationRegistry.Add('DFM_GB_SSL', @DFM_GB_SSL);
 	TranslationRegistry.Add('DFM_RB_PRIVATE', @DFM_RB_PRIVATE);
 	TranslationRegistry.Add('DFM_RB_PUBLIC', @DFM_RB_PUBLIC);
 	TranslationRegistry.Add('DFM_CB_TC_PASSWORD', @DFM_CB_TC_PASSWORD);
@@ -1213,6 +1225,9 @@ begin
 	TranslationRegistry.Add('DFM_OPT_SOCKS5', @DFM_OPT_SOCKS5);
 	TranslationRegistry.Add('DFM_OPT_SOCKS4', @DFM_OPT_SOCKS4);
 	TranslationRegistry.Add('DFM_OPT_HTTP', @DFM_OPT_HTTP);
+	TranslationRegistry.Add('DFM_OPT_SSL_AUTO', @DFM_OPT_SSL_AUTO);
+	TranslationRegistry.Add('DFM_OPT_SSL_INDY', @DFM_OPT_SSL_INDY);
+	TranslationRegistry.Add('DFM_OPT_SSL_INDYSEC', @DFM_OPT_SSL_INDYSEC);
 	TranslationRegistry.Add('DFM_OPT_STREAM_NONE', @DFM_OPT_STREAM_NONE);
 	TranslationRegistry.Add('DFM_OPT_STREAM_DISABLED', @DFM_OPT_STREAM_DISABLED);
 	TranslationRegistry.Add('DFM_OPT_STREAM_M3U8', @DFM_OPT_STREAM_M3U8);

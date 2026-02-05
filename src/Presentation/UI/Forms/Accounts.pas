@@ -40,12 +40,10 @@ type
 		AccountsTab: TTabSheet;
 		GlobalTab: TTabSheet;
 		PreserveFileTimeCB: TCheckBox;
-		UseDLLFromPluginDir: TCheckBox;
 		GlobalSettingsApplyBtn: TButton;
 		NetworkTab: TTabSheet;
 		ProxyGB: TGroupBox;
 		ProxyTypeLabel: TLabel;
-		ProxyDivLabel: TLabel;
 		ProxyPortLabel: TLabel;
 		ProxyUserLabel: TLabel;
 		ProxyPWDLabel: TLabel;
@@ -56,7 +54,6 @@ type
 		ProxyUserEdit: TEdit;
 		ProxyPwd: TMaskEdit;
 		ProxyTCPwdMngrCB: TCheckBox;
-		SocketTimeoutLabel: TLabel;
 		NetworkSettingsApplyBtn: TButton;
 		CloudMaxFileSizeValue: TEdit;
 		CloudMaxFileSizeLabelBytes: TLabel;
@@ -78,13 +75,8 @@ type
 		msLabel: TLabel;
 		AttemptWaitValue: TSpinEdit;
 		RetryAttemptsValue: TSpinEdit;
-		SocketTimeoutEdit: TSpinEdit;
 		DownloadLinksEncodeCB: TCheckBox;
 		AutoUpdateDownloadListingCB: TCheckBox;
-		ShowTrashFoldersCB: TCheckBox;
-		ShowSharedFoldersCB: TCheckBox;
-		ShowInvitesFoldersCB: TCheckBox;
-		ShowAccountsLabel: TLabel;
 		CommentsTab: TTabSheet;
 		DescriptionEnabledCB: TCheckBox;
 		DescriptionEditorEnabledCB: TCheckBox;
@@ -187,6 +179,16 @@ type
 		UploadUrlEdit: TEdit;
 		TestAccountButton: TButton;
 		TestShareButton: TButton;
+		SSLParametersGroupbox: TGroupBox;
+		SocketTimeoutLabel: TLabel;
+		SocketTimeoutEdit: TSpinEdit;
+		SSLBackendCB: TComboBox;
+		SSLBackendLabel: TLabel;
+		UseDLLFromPluginDir: TCheckBox;
+		ShowAccountsGB: TGroupBox;
+		ShowInvitesFoldersCB: TCheckBox;
+		ShowSharedFoldersCB: TCheckBox;
+		ShowTrashFoldersCB: TCheckBox;
 		procedure FormShow(Sender: TObject);
 		procedure AccountsListViewKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
 		procedure AccountsListViewSelectItem(Sender: TObject; Item: TListItem; Selected: Boolean);
@@ -1851,7 +1853,7 @@ begin
 	RetryAttemptsLabel.Caption := DFM_LBL_RETRY_ATTEMPTS;
 	RetryWaitLabel.Caption := DFM_LBL_RETRY_WAIT;
 	msLabel.Caption := DFM_LBL_MS;
-	ShowAccountsLabel.Caption := DFM_LBL_SHOW_ACCOUNTS;
+	ShowAccountsGB.Caption := DFM_GB_SHOW_ACCOUNTS;
 	CopyBetweenAccountsModeLabel.Caption := DFM_LBL_COPY_BETWEEN;
 	PreserveFileTimeCB.Caption := DFM_CB_PRESERVE_TIME;
 	UseDLLFromPluginDir.Caption := DFM_CB_LOAD_SSL;
@@ -1867,6 +1869,8 @@ begin
 	CheckCRCCB.Caption := DFM_CB_CHECK_CRC;
 
 	{Network settings tab}
+	SSLParametersGroupbox.Caption := DFM_GB_SSL;
+	SSLBackendLabel.Caption := DFM_LBL_SSL_BACKEND;
 	SocketTimeoutLabel.Caption := DFM_LBL_SOCKET_TIMEOUT;
 	ProxyGB.Caption := DFM_GB_PROXY;
 	ProxyTypeLabel.Caption := DFM_LBL_PROXY_TYPE;
@@ -1922,6 +1926,7 @@ begin
 	LanguageLabel.Caption := DFM_LBL_LANGUAGE;
 
 	{Combobox items}
+	RepopulateCombo(SSLBackendCB, [DFM_OPT_SSL_AUTO, DFM_OPT_SSL_INDY, DFM_OPT_SSL_INDYSEC]);
 	RepopulateCombo(EncryptFilesCombo, [DFM_OPT_ENCRYPT_NO, DFM_OPT_ENCRYPT_ALWAYS, DFM_OPT_ENCRYPT_ASK_ONCE]);
 	RepopulateCombo(ChunkOverwriteModeCombo, [DFM_OPT_SILENTLY_OVERWRITE, DFM_OPT_IGNORE, DFM_OPT_ABORT_OPERATION]);
 	RepopulateCombo(DeleteFailOnUploadModeCombo, [DFM_OPT_ASK_USER, DFM_OPT_IGNORE_FILE, DFM_OPT_ABORT_OPERATION, DFM_OPT_UNSET_RO_IGNORE, DFM_OPT_UNSET_RO_ABORT]);
