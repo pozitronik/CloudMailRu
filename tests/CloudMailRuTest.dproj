@@ -437,6 +437,8 @@
         <DCCReference Include="Infrastructure\HTTP\ServerConfigFetcherTest.pas"/>
         <DCCReference Include="..\src\Infrastructure\Localization\TranslationManager.pas"/>
         <DCCReference Include="Infrastructure\Localization\TranslationManagerTest.pas"/>
+        <DCCReference Include="Infrastructure\SSL\IndySSLHandlerFactoryTest.pas"/>
+        <DCCReference Include="Infrastructure\SSL\IndySecSSLHandlerFactoryTest.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

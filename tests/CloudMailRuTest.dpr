@@ -340,7 +340,9 @@ uses
 	ServerConfigFetcher in '..\src\Infrastructure\HTTP\ServerConfigFetcher.pas',
 	ServerConfigFetcherTest in 'Infrastructure\HTTP\ServerConfigFetcherTest.pas',
 	TranslationManager in '..\src\Infrastructure\Localization\TranslationManager.pas',
-	TranslationManagerTest in 'Infrastructure\Localization\TranslationManagerTest.pas';
+	TranslationManagerTest in 'Infrastructure\Localization\TranslationManagerTest.pas',
+	IndySSLHandlerFactoryTest in 'Infrastructure\SSL\IndySSLHandlerFactoryTest.pas',
+	IndySecSSLHandlerFactoryTest in 'Infrastructure\SSL\IndySecSSLHandlerFactoryTest.pas';
 
 {keep comment here to protect the following conditional from being removed by the IDE when adding a unit}
 {$IFNDEF TESTINSIGHT}
