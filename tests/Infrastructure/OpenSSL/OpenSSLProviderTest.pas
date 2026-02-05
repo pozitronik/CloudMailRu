@@ -88,6 +88,48 @@ type
 		procedure TestProvider_DifferentPaths_AllWork;
 		[Test]
 		procedure TestProvider_BooleanSettings_Accepted;
+
+		{TNullOpenSSLProvider - cipher function coverage}
+		[Test]
+		procedure TestNullProvider_GetFunctions_CipherLoadedIsFalse;
+		[Test]
+		procedure TestNullProvider_GetFunctions_CipherPointersNil;
+
+		{TOpenSSLFunctions record - cipher field defaults}
+		[Test]
+		procedure TestFunctions_DefaultState_CipherLoadedFalse;
+		[Test]
+		procedure TestFunctions_DefaultState_CipherPointersNil;
+
+		{TOpenSSLProvider - cipher functions when Indy loaded}
+		[Test]
+		procedure TestProvider_WithIndyLoaded_CipherLoaded;
+		[Test]
+		procedure TestProvider_WithIndyLoaded_AllCipherPointersAssigned;
+		[Test]
+		procedure TestProvider_WithIndyLoaded_HandleNonZero;
+
+		{TOpenSSLProvider - cross-method consistency}
+		[Test]
+		procedure TestProvider_AllMethodsConsistent;
+
+		{TOpenSSLProvider - no library available (runs when Indy not loaded)}
+		[Test]
+		procedure TestProvider_NoIndy_NonExistentPath_NotAvailable;
+		[Test]
+		procedure TestProvider_NoIndy_NonExistentPath_HandleZero;
+		[Test]
+		procedure TestProvider_NoIndy_NonExistentPath_FunctionsNotLoaded;
+		[Test]
+		procedure TestProvider_NoIndy_NonExistentPath_CipherNotLoaded;
+
+		{TOpenSSLProvider - path-based loading with controlled directories}
+		[Test]
+		procedure TestProvider_PluginDirOnly_EmptyTempDir_NoLoad;
+		[Test]
+		procedure TestProvider_PluginDirOnly_TempDirWithPlatformSubdir_NoLoad;
+		[Test]
+		procedure TestProvider_SystemSearch_NoIndy_TriesSystemPath;
 	end;
 
 implementation
@@ -530,6 +572,315 @@ begin
 	Provider.IsAvailable;
 
 	Assert.Pass('Both LoadFromPluginDirOnly settings accepted');
+end;
+
+{TNullOpenSSLProvider - cipher function coverage}
+
+procedure TOpenSSLProviderTest.TestNullProvider_GetFunctions_CipherLoadedIsFalse;
+var
+	Provider: IOpenSSLProvider;
+	Funcs: TOpenSSLFunctions;
+begin
+	Provider := TNullOpenSSLProvider.Create;
+	Funcs := Provider.GetFunctions;
+	Assert.IsFalse(Funcs.CipherLoaded, 'CipherLoaded should be False for null provider');
+end;
+
+procedure TOpenSSLProviderTest.TestNullProvider_GetFunctions_CipherPointersNil;
+var
+	Provider: IOpenSSLProvider;
+	Funcs: TOpenSSLFunctions;
+begin
+	Provider := TNullOpenSSLProvider.Create;
+	Funcs := Provider.GetFunctions;
+
+	Assert.IsTrue(not Assigned(Funcs.EVP_CIPHER_CTX_new), 'EVP_CIPHER_CTX_new should be nil');
+	Assert.IsTrue(not Assigned(Funcs.EVP_CIPHER_CTX_free), 'EVP_CIPHER_CTX_free should be nil');
+	Assert.IsTrue(not Assigned(Funcs.EVP_aes_256_cfb8), 'EVP_aes_256_cfb8 should be nil');
+	Assert.IsTrue(not Assigned(Funcs.EVP_EncryptInit_ex), 'EVP_EncryptInit_ex should be nil');
+	Assert.IsTrue(not Assigned(Funcs.EVP_EncryptUpdate), 'EVP_EncryptUpdate should be nil');
+	Assert.IsTrue(not Assigned(Funcs.EVP_DecryptInit_ex), 'EVP_DecryptInit_ex should be nil');
+	Assert.IsTrue(not Assigned(Funcs.EVP_DecryptUpdate), 'EVP_DecryptUpdate should be nil');
+	Assert.IsTrue(not Assigned(Funcs.EVP_sha256), 'EVP_sha256 should be nil');
+	Assert.IsTrue(not Assigned(Funcs.PKCS5_PBKDF2_HMAC), 'PKCS5_PBKDF2_HMAC should be nil');
+end;
+
+{TOpenSSLFunctions record - cipher field defaults}
+
+procedure TOpenSSLProviderTest.TestFunctions_DefaultState_CipherLoadedFalse;
+var
+	Funcs: TOpenSSLFunctions;
+begin
+	FillChar(Funcs, SizeOf(Funcs), 0);
+	Assert.IsFalse(Funcs.CipherLoaded, 'CipherLoaded should be False in zeroed record');
+end;
+
+procedure TOpenSSLProviderTest.TestFunctions_DefaultState_CipherPointersNil;
+var
+	Funcs: TOpenSSLFunctions;
+begin
+	FillChar(Funcs, SizeOf(Funcs), 0);
+
+	Assert.IsTrue(not Assigned(Funcs.EVP_CIPHER_CTX_new), 'EVP_CIPHER_CTX_new');
+	Assert.IsTrue(not Assigned(Funcs.EVP_CIPHER_CTX_free), 'EVP_CIPHER_CTX_free');
+	Assert.IsTrue(not Assigned(Funcs.EVP_aes_256_cfb8), 'EVP_aes_256_cfb8');
+	Assert.IsTrue(not Assigned(Funcs.EVP_EncryptInit_ex), 'EVP_EncryptInit_ex');
+	Assert.IsTrue(not Assigned(Funcs.EVP_EncryptUpdate), 'EVP_EncryptUpdate');
+	Assert.IsTrue(not Assigned(Funcs.EVP_DecryptInit_ex), 'EVP_DecryptInit_ex');
+	Assert.IsTrue(not Assigned(Funcs.EVP_DecryptUpdate), 'EVP_DecryptUpdate');
+	Assert.IsTrue(not Assigned(Funcs.EVP_sha256), 'EVP_sha256');
+	Assert.IsTrue(not Assigned(Funcs.PKCS5_PBKDF2_HMAC), 'PKCS5_PBKDF2_HMAC');
+end;
+
+{TOpenSSLProvider - cipher functions when Indy loaded}
+
+procedure TOpenSSLProviderTest.TestProvider_WithIndyLoaded_CipherLoaded;
+var
+	Provider: IOpenSSLProvider;
+	Funcs: TOpenSSLFunctions;
+	IndyHandle: THandle;
+begin
+	IndyHandle := GetCryptLibHandle();
+
+	if IndyHandle = 0 then
+	begin
+		Assert.Pass('Test skipped - Indy has not loaded OpenSSL');
+		Exit;
+	end;
+
+	Provider := TOpenSSLProvider.Create('', False);
+	Funcs := Provider.GetFunctions;
+
+	Assert.IsTrue(Funcs.CipherLoaded, 'CipherLoaded should be True when Indy has OpenSSL');
+end;
+
+procedure TOpenSSLProviderTest.TestProvider_WithIndyLoaded_AllCipherPointersAssigned;
+var
+	Provider: IOpenSSLProvider;
+	Funcs: TOpenSSLFunctions;
+	IndyHandle: THandle;
+begin
+	IndyHandle := GetCryptLibHandle();
+
+	if IndyHandle = 0 then
+	begin
+		Assert.Pass('Test skipped - Indy has not loaded OpenSSL');
+		Exit;
+	end;
+
+	Provider := TOpenSSLProvider.Create('', False);
+	Funcs := Provider.GetFunctions;
+
+	Assert.IsTrue(Assigned(Funcs.EVP_CIPHER_CTX_new), 'EVP_CIPHER_CTX_new should be assigned');
+	Assert.IsTrue(Assigned(Funcs.EVP_CIPHER_CTX_free), 'EVP_CIPHER_CTX_free should be assigned');
+	Assert.IsTrue(Assigned(Funcs.EVP_aes_256_cfb8), 'EVP_aes_256_cfb8 should be assigned');
+	Assert.IsTrue(Assigned(Funcs.EVP_EncryptInit_ex), 'EVP_EncryptInit_ex should be assigned');
+	Assert.IsTrue(Assigned(Funcs.EVP_EncryptUpdate), 'EVP_EncryptUpdate should be assigned');
+	Assert.IsTrue(Assigned(Funcs.EVP_DecryptInit_ex), 'EVP_DecryptInit_ex should be assigned');
+	Assert.IsTrue(Assigned(Funcs.EVP_DecryptUpdate), 'EVP_DecryptUpdate should be assigned');
+	Assert.IsTrue(Assigned(Funcs.EVP_sha256), 'EVP_sha256 should be assigned');
+	Assert.IsTrue(Assigned(Funcs.PKCS5_PBKDF2_HMAC), 'PKCS5_PBKDF2_HMAC should be assigned');
+end;
+
+procedure TOpenSSLProviderTest.TestProvider_WithIndyLoaded_HandleNonZero;
+var
+	Provider: IOpenSSLProvider;
+	IndyHandle: THandle;
+begin
+	IndyHandle := GetCryptLibHandle();
+
+	if IndyHandle = 0 then
+	begin
+		Assert.Pass('Test skipped - Indy has not loaded OpenSSL');
+		Exit;
+	end;
+
+	Provider := TOpenSSLProvider.Create('', False);
+	Assert.AreNotEqual(THandle(0), Provider.GetLibraryHandle,
+		'Handle should be non-zero when Indy has OpenSSL');
+end;
+
+{TOpenSSLProvider - cross-method consistency}
+
+procedure TOpenSSLProviderTest.TestProvider_AllMethodsConsistent;
+var
+	Provider: IOpenSSLProvider;
+	Available: Boolean;
+	Handle: THandle;
+	Funcs: TOpenSSLFunctions;
+begin
+	Provider := TOpenSSLProvider.Create('', False);
+	Available := Provider.IsAvailable;
+	Handle := Provider.GetLibraryHandle;
+	Funcs := Provider.GetFunctions;
+
+	{IsAvailable returns FFunctions.Loaded, so these must always agree}
+	Assert.AreEqual(Available, Funcs.Loaded, 'IsAvailable and Funcs.Loaded must be consistent');
+
+	if Available then
+	begin
+		Assert.AreNotEqual(THandle(0), Handle, 'Handle should be non-zero when available');
+		{Standard OpenSSL builds include both hash and cipher functions}
+		Assert.IsTrue(Funcs.CipherLoaded, 'CipherLoaded should be True when Loaded is True');
+	end;
+end;
+
+{TOpenSSLProvider - no library available (runs when Indy not loaded)}
+
+procedure TOpenSSLProviderTest.TestProvider_NoIndy_NonExistentPath_NotAvailable;
+var
+	Provider: IOpenSSLProvider;
+	IndyHandle: THandle;
+begin
+	IndyHandle := GetCryptLibHandle();
+
+	if IndyHandle <> 0 then
+	begin
+		Assert.Pass('Test skipped - Indy has loaded OpenSSL');
+		Exit;
+	end;
+
+	Provider := TOpenSSLProvider.Create('C:\NonExistent_' + IntToStr(GetTickCount) + '\Path', True);
+	Assert.IsFalse(Provider.IsAvailable, 'Should not be available with non-existent path and no Indy');
+end;
+
+procedure TOpenSSLProviderTest.TestProvider_NoIndy_NonExistentPath_HandleZero;
+var
+	Provider: IOpenSSLProvider;
+	IndyHandle: THandle;
+begin
+	IndyHandle := GetCryptLibHandle();
+
+	if IndyHandle <> 0 then
+	begin
+		Assert.Pass('Test skipped - Indy has loaded OpenSSL');
+		Exit;
+	end;
+
+	Provider := TOpenSSLProvider.Create('C:\NonExistent_' + IntToStr(GetTickCount) + '\Path', True);
+	Assert.AreEqual(THandle(0), Provider.GetLibraryHandle,
+		'Handle should be zero with non-existent path and no Indy');
+end;
+
+procedure TOpenSSLProviderTest.TestProvider_NoIndy_NonExistentPath_FunctionsNotLoaded;
+var
+	Provider: IOpenSSLProvider;
+	Funcs: TOpenSSLFunctions;
+	IndyHandle: THandle;
+begin
+	IndyHandle := GetCryptLibHandle();
+
+	if IndyHandle <> 0 then
+	begin
+		Assert.Pass('Test skipped - Indy has loaded OpenSSL');
+		Exit;
+	end;
+
+	Provider := TOpenSSLProvider.Create('C:\NonExistent_' + IntToStr(GetTickCount) + '\Path', True);
+	Funcs := Provider.GetFunctions;
+	Assert.IsFalse(Funcs.Loaded, 'Loaded should be False with non-existent path and no Indy');
+end;
+
+procedure TOpenSSLProviderTest.TestProvider_NoIndy_NonExistentPath_CipherNotLoaded;
+var
+	Provider: IOpenSSLProvider;
+	Funcs: TOpenSSLFunctions;
+	IndyHandle: THandle;
+begin
+	IndyHandle := GetCryptLibHandle();
+
+	if IndyHandle <> 0 then
+	begin
+		Assert.Pass('Test skipped - Indy has loaded OpenSSL');
+		Exit;
+	end;
+
+	Provider := TOpenSSLProvider.Create('C:\NonExistent_' + IntToStr(GetTickCount) + '\Path', True);
+	Funcs := Provider.GetFunctions;
+	Assert.IsFalse(Funcs.CipherLoaded, 'CipherLoaded should be False with non-existent path and no Indy');
+end;
+
+{TOpenSSLProvider - path-based loading with controlled directories}
+
+procedure TOpenSSLProviderTest.TestProvider_PluginDirOnly_EmptyTempDir_NoLoad;
+var
+	Provider: IOpenSSLProvider;
+	TempDir: string;
+	IndyHandle: THandle;
+begin
+	IndyHandle := GetCryptLibHandle();
+
+	if IndyHandle <> 0 then
+	begin
+		Assert.Pass('Test skipped - Indy has loaded OpenSSL');
+		Exit;
+	end;
+
+	{Create a real empty temp directory to exercise the path-based loading code}
+	TempDir := IncludeTrailingPathDelimiter(GetEnvironmentVariable('TEMP')) +
+		'OpenSSLProviderTest_' + IntToStr(GetTickCount);
+	ForceDirectories(TempDir);
+	try
+		Provider := TOpenSSLProvider.Create(IncludeTrailingPathDelimiter(TempDir), True);
+		Assert.IsFalse(Provider.IsAvailable,
+			'Should not be available - empty temp dir has no OpenSSL DLLs');
+	finally
+		RemoveDir(TempDir);
+	end;
+end;
+
+procedure TOpenSSLProviderTest.TestProvider_PluginDirOnly_TempDirWithPlatformSubdir_NoLoad;
+var
+	Provider: IOpenSSLProvider;
+	TempDir, PlatformDir: string;
+	IndyHandle: THandle;
+begin
+	IndyHandle := GetCryptLibHandle();
+
+	if IndyHandle <> 0 then
+	begin
+		Assert.Pass('Test skipped - Indy has loaded OpenSSL');
+		Exit;
+	end;
+
+	{Create temp directory with platform subdirectory to exercise DirectoryExists branch}
+	TempDir := IncludeTrailingPathDelimiter(GetEnvironmentVariable('TEMP')) +
+		'OpenSSLProviderTest_' + IntToStr(GetTickCount);
+{$IFDEF WIN64}
+	PlatformDir := IncludeTrailingPathDelimiter(TempDir) + 'x64';
+{$ELSE}
+	PlatformDir := IncludeTrailingPathDelimiter(TempDir) + 'x32';
+{$ENDIF}
+	ForceDirectories(PlatformDir);
+	try
+		Provider := TOpenSSLProvider.Create(IncludeTrailingPathDelimiter(TempDir), True);
+		{Platform dir exists but is empty - TryLoadDLL should fail for all DLL names}
+		Assert.IsFalse(Provider.IsAvailable,
+			'Should not be available - platform subdir exists but has no DLLs');
+	finally
+		RemoveDir(PlatformDir);
+		RemoveDir(TempDir);
+	end;
+end;
+
+procedure TOpenSSLProviderTest.TestProvider_SystemSearch_NoIndy_TriesSystemPath;
+var
+	Provider: IOpenSSLProvider;
+	IndyHandle: THandle;
+begin
+	IndyHandle := GetCryptLibHandle();
+
+	if IndyHandle <> 0 then
+	begin
+		Assert.Pass('Test skipped - Indy has loaded OpenSSL');
+		Exit;
+	end;
+
+	{FLoadFromPluginDirOnly = False exercises the system path search branch}
+	Provider := TOpenSSLProvider.Create('', False);
+	{Result depends on whether OpenSSL is on the system PATH - just verify no exception}
+	Provider.IsAvailable;
+	Assert.Pass('System path search completed without exception');
 end;
 
 initialization
