@@ -285,6 +285,9 @@ var
 	DFM_LBL_DOWNLOAD_URL: WideString;
 	DFM_LBL_UPLOAD_URL: WideString;
 	DFM_BTN_TEST_SERVER: WideString;
+	DFM_BTN_TEST: WideString;
+	DFM_BTN_TEST_OK: WideString;
+	ERR_ACCOUNT_CREDENTIALS_REQUIRED: WideString;
 	DFM_BTN_SERVERS: WideString;
 	DFM_BTN_SERVER_NEW: WideString;
 	DFM_BTN_SERVER_DELETE: WideString;
@@ -713,6 +716,9 @@ begin
 	DFM_LBL_DOWNLOAD_URL := 'Download URL';
 	DFM_LBL_UPLOAD_URL := 'Upload URL';
 	DFM_BTN_TEST_SERVER := 'Test';
+	DFM_BTN_TEST := 'Test';
+	DFM_BTN_TEST_OK := 'OK!';
+	ERR_ACCOUNT_CREDENTIALS_REQUIRED := 'Email/Login and password are required';
 	DFM_BTN_SERVERS := 'Configure';
 	DFM_BTN_SERVER_NEW := 'New';
 	DFM_BTN_SERVER_DELETE := 'Delete';
@@ -1131,6 +1137,9 @@ begin
 	TranslationRegistry.Add('DFM_LBL_DOWNLOAD_URL', @DFM_LBL_DOWNLOAD_URL);
 	TranslationRegistry.Add('DFM_LBL_UPLOAD_URL', @DFM_LBL_UPLOAD_URL);
 	TranslationRegistry.Add('DFM_BTN_TEST_SERVER', @DFM_BTN_TEST_SERVER);
+	TranslationRegistry.Add('DFM_BTN_TEST', @DFM_BTN_TEST);
+	TranslationRegistry.Add('DFM_BTN_TEST_OK', @DFM_BTN_TEST_OK);
+	TranslationRegistry.Add('ERR_ACCOUNT_CREDENTIALS_REQUIRED', @ERR_ACCOUNT_CREDENTIALS_REQUIRED);
 	TranslationRegistry.Add('DFM_BTN_SERVERS', @DFM_BTN_SERVERS);
 	TranslationRegistry.Add('DFM_BTN_SERVER_NEW', @DFM_BTN_SERVER_NEW);
 	TranslationRegistry.Add('DFM_BTN_SERVER_DELETE', @DFM_BTN_SERVER_DELETE);

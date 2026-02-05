@@ -114,6 +114,11 @@ type
 		FConfirmAccountOverwriteResult: Boolean;
 		FConfirmAccountOverwriteCallCount: Integer;
 
+		{Test account button}
+		FTestAccountButtonEnabled: Boolean;
+		FTestAccountButtonCaption: WideString;
+		FTestAccountErrorMessage: WideString;
+
 		{Global settings apply state}
 		FGlobalSettingsApplyEnabled: Boolean;
 
@@ -301,6 +306,11 @@ type
 		procedure ShowAccountNameError(Message: WideString);
 		function ConfirmAccountOverwrite(const AccountName: WideString): Boolean;
 
+		{IAccountsView - Test account button}
+		procedure SetTestAccountButtonEnabled(Value: Boolean);
+		procedure SetTestAccountButtonCaption(const Value: WideString);
+		procedure ShowTestAccountError(const Error: WideString);
+
 		{IAccountsView - Cipher profile}
 		procedure SetCipherProfileItems(const Items: TArray<WideString>);
 		procedure SetCipherProfileIndex(Value: Integer);
@@ -376,6 +386,9 @@ type
 		property AccountNameErrorMessage: WideString read FAccountNameErrorMessage;
 		property ConfirmAccountOverwriteResult: Boolean read FConfirmAccountOverwriteResult write FConfirmAccountOverwriteResult;
 		property ConfirmAccountOverwriteCallCount: Integer read FConfirmAccountOverwriteCallCount;
+		property TestAccountButtonEnabled: Boolean read FTestAccountButtonEnabled;
+		property TestAccountButtonCaption: WideString read FTestAccountButtonCaption;
+		property TestAccountErrorMessage: WideString read FTestAccountErrorMessage;
 		property GlobalSettingsApplyEnabled: Boolean read FGlobalSettingsApplyEnabled;
 		property ProxyControlsEnabled: Boolean read FProxyControlsEnabled;
 		property CipherProfileItems: TArray<WideString> read FCipherProfileItems;
@@ -1417,6 +1430,23 @@ function TMockAccountsView.ConfirmAccountOverwrite(const AccountName: WideString
 begin
 	Inc(FConfirmAccountOverwriteCallCount);
 	Result := FConfirmAccountOverwriteResult;
+end;
+
+{TMockAccountsView - Test account button}
+
+procedure TMockAccountsView.SetTestAccountButtonEnabled(Value: Boolean);
+begin
+	FTestAccountButtonEnabled := Value;
+end;
+
+procedure TMockAccountsView.SetTestAccountButtonCaption(const Value: WideString);
+begin
+	FTestAccountButtonCaption := Value;
+end;
+
+procedure TMockAccountsView.ShowTestAccountError(const Error: WideString);
+begin
+	FTestAccountErrorMessage := Error;
 end;
 
 {TMockAccountsView - Cipher profile}

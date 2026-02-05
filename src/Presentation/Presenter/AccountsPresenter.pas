@@ -202,6 +202,11 @@ type
 		procedure ShowAccountNameError(Message: WideString);
 		function ConfirmAccountOverwrite(const AccountName: WideString): Boolean;
 
+		{Test account button}
+		procedure SetTestAccountButtonEnabled(Value: Boolean);
+		procedure SetTestAccountButtonCaption(const Value: WideString);
+		procedure ShowTestAccountError(const Error: WideString);
+
 		{Cipher profile combo}
 		procedure SetCipherProfileItems(const Items: TArray<WideString>);
 		procedure SetCipherProfileIndex(Value: Integer);
@@ -365,6 +370,7 @@ type
 		procedure OnEncryptPasswordClick;
 		procedure OnCipherProfileChanged;
 		procedure OnFieldChanged;
+		procedure OnTestAccountClick;
 
 		{Global settings operations}
 		procedure OnApplyGlobalSettingsClick;
@@ -412,7 +418,12 @@ uses
 	FileSystem,
 	TranslationManager,
 	System.IOUtils,
-	WSList;
+	WSList,
+	AuthStrategy,
+	OAuthAppAuthStrategy,
+	CloudHTTP,
+	Logger,
+	Progress;
 
 const
 	DOT = '.';
@@ -738,9 +749,95 @@ begin
 end;
 
 procedure TAccountsPresenter.OnFieldChanged;
+var
+	CanTest: Boolean;
 begin
 	if not FUpdating then
+	begin
 		SetDirty(True);
+		{Enable test button when email and password are filled for private accounts}
+		CanTest := FView.GetIsPrivate and (FView.GetEmail <> '') and (FView.GetPassword <> '');
+		FView.SetTestAccountButtonEnabled(CanTest);
+		{Reset caption when fields change}
+		FView.SetTestAccountButtonCaption(DFM_BTN_TEST);
+	end;
+end;
+
+procedure TAccountsPresenter.OnTestAccountClick;
+var
+	Email, Password: WideString;
+	User, Domain: WideString;
+	AtPos: Integer;
+	ServerName: WideString;
+	Profile: TServerProfile;
+	Endpoints: TCloudEndpoints;
+	ErrorMsg: WideString;
+	Strategy: IAuthStrategy;
+	Credentials: TAuthCredentials;
+	HTTP: ICloudHTTP;
+	AuthResult: TAuthResult;
+	ConnSettings: TConnectionSettings;
+begin
+	Email := FView.GetEmail;
+	Password := FView.GetPassword;
+
+	if (Email = '') or (Password = '') then
+	begin
+		FView.ShowTestAccountError(ERR_ACCOUNT_CREDENTIALS_REQUIRED);
+		Exit;
+	end;
+
+	{Parse email into user/domain parts - same logic as AccountSettings}
+	AtPos := Pos('@', Email);
+	if (AtPos > 0) and (AtPos < Length(Email)) then
+	begin
+		User := Copy(Email, 1, AtPos - 1);
+		Domain := Copy(Email, AtPos + 1, Length(Email) - AtPos);
+	end else begin
+		{No @ - treat entire string as username (self-hosted servers)}
+		User := Email;
+		Domain := '';
+	end;
+
+	{Get server profile endpoints}
+	ServerName := FView.GetServerComboName;
+	Endpoints := TCloudEndpoints.CreateDefaults;
+
+	if (ServerName <> '') and (ServerName <> DFM_COMBO_DEFAULT_SERVER) then
+	begin
+		Profile := FServerProfileManager.GetProfile(ServerName);
+		{If server has resolved endpoints, use them}
+		if Profile.Endpoints.OAuthUrl <> '' then
+			Endpoints := Profile.Endpoints
+		else if Profile.ServerUrl <> '' then
+		begin
+			{Try to fetch endpoints from server URL}
+			FServerConfigFetcher.Fetch(Profile.ServerUrl, Endpoints, ErrorMsg);
+			if ErrorMsg <> '' then
+			begin
+				FView.ShowTestAccountError(ErrorMsg);
+				Exit;
+			end;
+		end;
+	end;
+
+	{Create auth strategy and credentials}
+	Strategy := TOAuthAppAuthStrategy.Create;
+	Credentials := TAuthCredentials.Create(Email, Password, User, Domain, Endpoints.OAuthUrl);
+
+	{Create HTTP client with default connection settings for authentication test}
+	ConnSettings := Default(TConnectionSettings);
+	HTTP := TCloudMailRuHTTP.Create(ConnSettings, TNullLogger.Create, TNullProgress.Create);
+	try
+		AuthResult := Strategy.Authenticate(Credentials, HTTP, TNullLogger.Create);
+
+		if AuthResult.Success then
+			FView.SetTestAccountButtonCaption(DFM_BTN_TEST_OK)
+		else
+			FView.ShowTestAccountError(AuthResult.ErrorMessage);
+	finally
+		HTTP := nil;
+	end;
 end;
 
 function TAccountsPresenter.SaveAccountFromView: Boolean;

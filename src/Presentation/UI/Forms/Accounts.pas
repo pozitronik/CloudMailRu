@@ -223,6 +223,7 @@ type
 		procedure DeleteServerButtonClick(Sender: TObject);
 		procedure ApplyServerButtonClick(Sender: TObject);
 		procedure TestServerButtonClick(Sender: TObject);
+		procedure TestAccountButtonClick(Sender: TObject);
 		procedure ServersButtonClick(Sender: TObject);
 		procedure ApplyTranslationBtnClick(Sender: TObject);
 	private
@@ -377,6 +378,9 @@ type
 		procedure SetAccountsPanelVisible(Value: Boolean);
 		procedure SetSharesPanelVisible(Value: Boolean);
 		procedure SetApplyButtonEnabled(Value: Boolean);
+		procedure SetTestAccountButtonEnabled(Value: Boolean);
+		procedure SetTestAccountButtonCaption(const Value: WideString);
+		procedure ShowTestAccountError(const Error: WideString);
 		function ConfirmDiscardAccountChanges(const AccountName: WideString): TConfirmSaveResult;
 		procedure ShowAccountNameError(Message: WideString);
 		function ConfirmAccountOverwrite(const AccountName: WideString): Boolean;
@@ -1202,6 +1206,21 @@ begin
 	ApplyButton.Enabled := Value;
 end;
 
+procedure TAccountsForm.SetTestAccountButtonEnabled(Value: Boolean);
+begin
+	TestAccountButton.Enabled := Value;
+end;
+
+procedure TAccountsForm.SetTestAccountButtonCaption(const Value: WideString);
+begin
+	TestAccountButton.Caption := Value;
+end;
+
+procedure TAccountsForm.ShowTestAccountError(const Error: WideString);
+begin
+	MessageDlg(Error, mtError, [mbOK], 0);
+end;
+
 function TAccountsForm.ConfirmDiscardAccountChanges(const AccountName: WideString): TConfirmSaveResult;
 begin
 	case MessageDlg(Format(ASK_SAVE_ACCOUNT_CHANGES, [AccountName]), mtConfirmation, [mbYes, mbNo, mbCancel], 0) of
@@ -1671,6 +1690,11 @@ end;
 procedure TAccountsForm.TestServerButtonClick(Sender: TObject);
 begin
 	FPresenter.OnTestServerClick;
+end;
+
+procedure TAccountsForm.TestAccountButtonClick(Sender: TObject);
+begin
+	FPresenter.OnTestAccountClick;
 end;
 
 procedure TAccountsForm.ServersButtonClick(Sender: TObject);

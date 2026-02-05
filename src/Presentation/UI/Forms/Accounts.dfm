@@ -384,8 +384,9 @@ object AccountsForm: TAccountsForm
           Height = 21
           Anchors = [akTop, akRight]
           Caption = 'Test'
+          Enabled = False
           TabOrder = 3
-          OnClick = ServersButtonClick
+          OnClick = TestAccountButtonClick
           ExplicitLeft = 319
         end
       end
