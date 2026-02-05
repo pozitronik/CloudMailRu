@@ -43,13 +43,20 @@ function TOAuthAppAuthStrategy.Authenticate(const Credentials: TAuthCredentials;
 var
 	OAuthToken: TCloudOAuth;
 	PostAnswer: WideString;
+	Username: WideString;
 begin
 	Result := TAuthResult.CreateFailure('OAuth authentication failed');
 
 	Logger.Log(LOG_LEVEL_DEBUG, msgtype_details, REQUESTING_OAUTH_TOKEN, [Credentials.Email]);
 
+	{Build username: use user@domain for email logins, just user for self-hosted arbitrary logins}
+	if Credentials.Domain <> '' then
+		Username := Credentials.User + '@' + Credentials.Domain
+	else
+		Username := Credentials.User;
+
 	{OAuth password grant request}
-	if HTTP.PostForm(IfEmpty(Credentials.OAuthUrl, OAUTH_TOKEN_URL), Format('client_id=%s&grant_type=password&username=%s@%s&password=%s', [OAUTH_CLIENT_ID, Credentials.User, Credentials.Domain, UrlEncode(Credentials.Password)]), PostAnswer) then
+	if HTTP.PostForm(IfEmpty(Credentials.OAuthUrl, OAUTH_TOKEN_URL), Format('client_id=%s&grant_type=password&username=%s&password=%s', [OAUTH_CLIENT_ID, Username, UrlEncode(Credentials.Password)]), PostAnswer) then
 	begin
 		if not TCloudOAuthJsonAdapter.Parse(PostAnswer, OAuthToken) then
 		begin

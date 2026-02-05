@@ -44,6 +44,8 @@ type
 		procedure TestAuthenticate_PostsToCorrectURL;
 		[Test]
 		procedure TestAuthenticate_PostsCorrectCredentials;
+		[Test]
+		procedure TestAuthenticate_SelfHostedLogin_PostsUsernameWithoutAt;
 
 		{Factory tests}
 		[Test]
@@ -199,6 +201,26 @@ begin
 	Assert.Contains(PostedData, 'username=myuser@inbox.ru');
 	{Password is URL-encoded in the request}
 	Assert.Contains(PostedData, 'password=mypass123');
+end;
+
+procedure TOAuthAppAuthStrategyTest.TestAuthenticate_SelfHostedLogin_PostsUsernameWithoutAt;
+var
+	Credentials: TAuthCredentials;
+	ValidJSON: WideString;
+	PostedData: WideString;
+begin
+	{Self-hosted servers allow arbitrary logins without @ symbol.
+		When Domain is empty, username should be posted without @ suffix.}
+	Credentials := TAuthCredentials.Create('admin', 'secretpass', 'admin', '');
+	ValidJSON := '{"access_token":"token","refresh_token":"refresh","expires_in":3600,"error_code":0}';
+	FMockHTTP.SetResponse(OAUTH_TOKEN_URL, True, ValidJSON);
+
+	FStrategy.Authenticate(Credentials, FMockHTTPIntf, TNullLogger.Create);
+
+	PostedData := FMockHTTP.GetLastPostedData;
+	Assert.Contains(PostedData, 'username=admin');
+	{Verify no @ is appended - username should NOT be 'admin@'}
+	Assert.IsFalse(Pos(WideString('username=admin@'), PostedData) > 0, 'Username should not have @ suffix when domain is empty');
 end;
 
 procedure TOAuthAppAuthStrategyTest.TestDefaultFactory_CreatesOAuthStrategy;

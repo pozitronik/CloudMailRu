@@ -54,9 +54,13 @@ begin
 	AtPos := Pos('@', Email);
 	if (AtPos > 0) and (AtPos < Length(Email)) then
 	begin
-		{Copy with position 0 is valid in Delphi - verified by tests}
+		{Standard email format: split into user and domain parts}
 		FUser := Copy(Email, 0, AtPos - 1);
 		FDomain := Copy(Email, AtPos + 1, Length(Email) - AtPos);
+	end else begin
+		{No @ found - treat entire string as username (self-hosted servers allow arbitrary logins)}
+		FUser := Email;
+		FDomain := EmptyWideStr;
 	end;
 end;
 

@@ -32,6 +32,8 @@ type
 		[Test]
 		procedure TestGetDomainFromEmailWithoutAt;
 		[Test]
+		procedure TestGetUserFromEmailWithoutAt;
+		[Test]
 		procedure TestGetDomainFromEmailAtEnd;
 		[Test]
 		procedure TestGetUserFromEmailAtStart;
@@ -123,11 +125,22 @@ procedure TAccountSettingsTest.TestGetDomainFromEmailWithoutAt;
 var
 	Settings: TAccountSettings;
 begin
-	{ Email without @ should return empty domain }
+	{Self-hosted servers allow arbitrary logins without @ - domain should be empty}
 	Settings := Default(TAccountSettings);
-	Settings.Email := 'invalidemail';
+	Settings.Email := 'admin';
 
 	Assert.AreEqual('', Settings.Domain);
+end;
+
+procedure TAccountSettingsTest.TestGetUserFromEmailWithoutAt;
+var
+	Settings: TAccountSettings;
+begin
+	{Self-hosted servers allow arbitrary logins without @ - entire string becomes username}
+	Settings := Default(TAccountSettings);
+	Settings.Email := 'admin';
+
+	Assert.AreEqual('admin', Settings.User);
 end;
 
 procedure TAccountSettingsTest.TestGetDomainFromEmailAtEnd;
