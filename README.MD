@@ -353,6 +353,22 @@ TCx64 поддерживается полностью.
 Также можно принудительно использовать только библиотеки, находящиеся в каталоге плагина (например, во избежание проблем совместимости). Для этого включите в настройках плагина опцию "Load SSL libraries only from plugin directory".<br/>
 **Полезно:** для разделения x32 и x64-версий библиотек поместите их в подкаталоги x32 и x64 соответственно.
 
+### Использование OpenSSL 3.x
+Плагин поддерживает OpenSSL 3.x через бэкенд [IndySecOpenSSL](https://github.com/MWASoftware/IndySecOpenSSL), который обеспечивает поддержку TLS 1.3 и обратную совместимость с OpenSSL 1.1.x.
+
+**Установка OpenSSL 3:**
+1. Скачайте OpenSSL 3.x для Windows с https://slproweb.com/products/Win32OpenSSL.html (выберите "Win64 OpenSSL v3.x.x Light" или полную версию).
+2. Скопируйте `libcrypto-3-x64.dll` и `libssl-3-x64.dll` (для 64-битного плагина) или `libcrypto-3.dll` и `libssl-3.dll` (для 32-битного) в подкаталог `x64/` или `x32/` каталога плагина соответственно.
+
+**Настройка SSL-бэкенда:**
+1. Откройте настройки плагина (Alt+Enter на корне плагина).
+2. Перейдите на вкладку "Network".
+3. В секции "SSL/TLS" выберите "IndySecOpenSSL (OpenSSL 1.1+/3.x)" в выпадающем списке SSL Backend.
+4. Нажмите OK.
+
+**Режим "Auto":**
+По умолчанию плагин использует автоматический выбор SSL-бэкенда. В этом режиме сначала проверяется доступность IndySecOpenSSL (OpenSSL 1.1.x/3.x), и при неудаче происходит откат на стандартный Indy SSL.
+
 ### Плагин требует msvcr110.dll или другую библиотеку.
 Используемая сборка SSL-библиотек собрана с зависимостью от библиотек Microsoft C++ run-time. Если они отсутствуют в системе, вам понадобится установить в систему соответствующий распространяемый пакет Microsoft Visual C++, либо заменить SSL-библиотеки на собранные без этой зависимости.
 
@@ -366,6 +382,8 @@ TCx64 поддерживается полностью.
 В плагине используются некоторые иконки набора [Snipicons](http://snipicons.com/), доступного под лицензией [Creative Commons Attribution-NoDerivatives 4.0 International License](https://creativecommons.org/licenses/by-nd/4.0/).
 
 Поддержка шифрования реализована с помощью библиотеки компонентов [DCPcrypt Cryptographic Component Library v2](http://www.cityinthesky.co.uk/) by David Barton (crypto@cityinthesky.co.uk), доступного под лицензией [MIT](https://opensource.org/licenses/MIT).
+
+Поддержка OpenSSL 3.x реализована с помощью библиотеки [IndySecOpenSSL](https://github.com/MWASoftware/IndySecOpenSSL) by MWA Software, доступной под лицензией Indy Modified BSD / MPL-1.1.
 
 # Licence
 GNU GPL v3.0
