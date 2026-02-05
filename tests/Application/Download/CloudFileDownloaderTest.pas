@@ -107,6 +107,10 @@ type
 		[Test]
 		procedure TestDownload_Encrypted_TokenOutdated_RefreshesAndRetries;
 
+		{Download tests - token refresh retry limit}
+		[Test]
+		procedure TestDownload_TokenOutdated_RetriesOnlyOnce;
+
 		{Download tests - shard resolution failure}
 		[Test]
 		procedure TestGetSharedFileUrl_ShardResolutionFails_ReturnsEmpty;
@@ -613,6 +617,29 @@ begin
 	FDownloader.Download('/remote/file.txt', LocalPath, ResultHash);
 
 	Assert.IsTrue(FMockContext.WasRefreshCSRFTokenCalled, 'RefreshCSRFToken should be called on encrypted token error');
+end;
+
+{Token refresh retry limit — verifies loop-based retry has bounded attempts}
+
+procedure TCloudFileDownloaderTest.TestDownload_TokenOutdated_RetriesOnlyOnce;
+var
+	LocalPath: string;
+	ResultHash: WideString;
+	DownloadResult: Integer;
+begin
+	FMockContext.SetIsPublicAccount(False);
+	LocalPath := GetTempFilePath('token_retry_limit.txt');
+
+	{Queue multiple token errors - should only retry once then fail}
+	FMockHTTP.QueueStreamResponse('download.shard', nil, CLOUD_ERROR_TOKEN_OUTDATED);
+	FMockHTTP.QueueStreamResponse('download.shard', nil, CLOUD_ERROR_TOKEN_OUTDATED);
+	FMockHTTP.QueueStreamResponse('download.shard', nil, CLOUD_ERROR_TOKEN_OUTDATED);
+
+	DownloadResult := FDownloader.Download('/remote/file.txt', LocalPath, ResultHash);
+
+	{Should return error after exhausting retry attempts (1 retry = 2 total attempts)}
+	Assert.AreEqual(CLOUD_ERROR_TOKEN_OUTDATED, DownloadResult, 'Should return token error after retry limit');
+	Assert.IsTrue(FMockContext.WasRefreshCSRFTokenCalled, 'Should have attempted token refresh');
 end;
 
 {Shard resolution failure — covers lines 193-194}

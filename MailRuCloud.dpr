@@ -155,6 +155,7 @@ uses
 	CloudErrorMapper in 'src\Domain\Services\CloudErrorMapper.pas',
 	CloudCallbackTypes in 'src\Application\CloudCallbackTypes.pas',
 	CloudFileDownloader in 'src\Application\Download\CloudFileDownloader.pas',
+	ChunkedUploadHandler in 'src\Application\Upload\ChunkedUploadHandler.pas',
 	CloudFileUploader in 'src\Application\Upload\CloudFileUploader.pas',
 	CloudShareService in 'src\Application\Share\CloudShareService.pas',
 	CloudListingService in 'src\Application\Listing\CloudListingService.pas',

@@ -91,7 +91,11 @@ begin
 		Result := DownloadRegular(RemotePath, LocalPath, ResultHash, LogErrors);
 end;
 
+{Downloads file with automatic retry for token refresh and shard failover.
+	Uses loop-based retry instead of recursion to avoid stack growth.}
 function TCloudFileDownloader.DownloadRegular(RemotePath, LocalPath: WideString; var ResultHash: WideString; LogErrors: Boolean): Integer;
+const
+	MAX_TOKEN_RETRIES = 1;
 var
 	FileStream: TBufferedFileStream;
 	URL: WideString;
@@ -100,6 +104,8 @@ var
 	DownloadShard: WideString;
 	OAuthToken: TCloudOAuth;
 	SavedUserAgent: string;
+	TokenRetryCount: Integer;
+	NeedRetry: Boolean;
 begin
 	Result := FS_FILE_NOTSUPPORTED;
 	DownloadShard := FShardManager.EnsureDownloadShard;
@@ -119,54 +125,76 @@ begin
 	SavedUserAgent := FContext.GetHTTP.HTTP.Request.UserAgent;
 	FContext.GetHTTP.HTTP.Request.UserAgent := OAUTH_CLIENT_ID;
 	try
-		OAuthToken := FContext.GetOAuthToken;
-		if FDoCryptFiles then {Download file to memory, decrypt to file}
-		begin
-			MemoryStream := TMemoryStream.Create;
-			try
+		TokenRetryCount := 0;
+
+		repeat
+			NeedRetry := False;
+			OAuthToken := FContext.GetOAuthToken;
+
+			if FDoCryptFiles then {Download file to memory, decrypt to file}
+			begin
+				MemoryStream := TMemoryStream.Create;
+				try
+					{OAuth requires client_id and token parameters for download authentication}
+					URL := Format('%s%s?client_id=%s&token=%s', [IncludeSlash(DownloadShard), PathToUrl(RemotePath, False), OAUTH_CLIENT_ID, OAuthToken.access_token]);
+					Result := FContext.GetHTTP.GetFile(URL, MemoryStream, LogErrors);
+
+					{Handle token expiration - refresh and retry}
+					if (CLOUD_ERROR_TOKEN_OUTDATED = Result) and (TokenRetryCount < MAX_TOKEN_RETRIES) and FContext.RefreshCSRFToken then
+					begin
+						Inc(TokenRetryCount);
+						NeedRetry := True;
+						Continue;
+					end;
+
+					{Handle shard connection error - try another shard}
+					if Result in [FS_FILE_NOTSUPPORTED] then
+					begin
+						FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, '%s%s', [PREFIX_REDIRECTION_LIMIT, URL]);
+						if (FRequest.Request(RT_MsgYesNo, REDIRECTION_LIMIT, TRY_ANOTHER_SHARD, EmptyWideStr, 0)) and
+							(FShardManager.ResolveShard(DownloadShard, SHARD_TYPE_GET)) then
+						begin
+							FShardManager.SetDownloadShard(DownloadShard);
+							NeedRetry := True;
+							Continue;
+						end;
+					end;
+
+					if Result in [FS_FILE_OK] then
+					begin
+						ResultHash := FHashCalculator.CalculateHash(MemoryStream, CALCULATING_HASH);
+						MemoryStream.Position := 0;
+						{Use stream wrapper for decryption - processes in chunks with constant memory.
+							Note: MemoryStream still buffers entire encrypted file due to HTTP download pattern.
+							True streaming decryption would require a write-based wrapper for GetFile.}
+						DecryptingStream := FCipher.GetDecryptingStream(MemoryStream);
+						try
+							FileStream.CopyFrom(DecryptingStream, DecryptingStream.Size);
+						finally
+							DecryptingStream.Free;
+						end;
+					end;
+				finally
+					MemoryStream.Free;
+				end;
+			end else begin
 				{OAuth requires client_id and token parameters for download authentication}
 				URL := Format('%s%s?client_id=%s&token=%s', [IncludeSlash(DownloadShard), PathToUrl(RemotePath, False), OAUTH_CLIENT_ID, OAuthToken.access_token]);
-				Result := FContext.GetHTTP.GetFile(URL, MemoryStream, LogErrors);
+				Result := FContext.GetHTTP.GetFile(URL, FileStream, LogErrors);
 
-				if (CLOUD_ERROR_TOKEN_OUTDATED = Result) and FContext.RefreshCSRFToken then
-					Exit(DownloadRegular(RemotePath, LocalPath, ResultHash, LogErrors));
-
-				if Result in [FS_FILE_NOTSUPPORTED] then {This code returned on shard connection error}
+				{Handle token expiration - refresh and retry}
+				if (CLOUD_ERROR_TOKEN_OUTDATED = Result) and (TokenRetryCount < MAX_TOKEN_RETRIES) and FContext.RefreshCSRFToken then
 				begin
-					FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, '%s%s', [PREFIX_REDIRECTION_LIMIT, URL]);
-					DownloadShard := EmptyWideStr;
-					if (FRequest.Request(RT_MsgYesNo, REDIRECTION_LIMIT, TRY_ANOTHER_SHARD, EmptyWideStr, 0)) and (FShardManager.ResolveShard(DownloadShard, SHARD_TYPE_GET)) then
-					begin
-						FShardManager.SetDownloadShard(DownloadShard);
-						Exit(DownloadRegular(RemotePath, LocalPath, ResultHash, LogErrors));
-					end;
+					Inc(TokenRetryCount);
+					FileStream.Size := 0; {Reset stream for retry}
+					NeedRetry := True;
+					Continue;
 				end;
 
-				if Result in [FS_FILE_OK] then
-				begin
-					ResultHash := FHashCalculator.CalculateHash(MemoryStream, CALCULATING_HASH);
-					MemoryStream.Position := 0;
-					{Use stream wrapper for decryption - processes in chunks with constant memory.
-						Note: MemoryStream still buffers entire encrypted file due to HTTP download pattern.
-						True streaming decryption would require a write-based wrapper for GetFile.}
-					DecryptingStream := FCipher.GetDecryptingStream(MemoryStream);
-					try
-						FileStream.CopyFrom(DecryptingStream, DecryptingStream.Size);
-					finally
-						DecryptingStream.Free;
-					end;
-				end;
-			finally
-				MemoryStream.Free;
+				if ((Result in [FS_FILE_OK]) and (EmptyWideStr = ResultHash)) then
+					ResultHash := FHashCalculator.CalculateHash(FileStream, CALCULATING_HASH);
 			end;
-		end else begin
-			{OAuth requires client_id and token parameters for download authentication}
-			Result := FContext.GetHTTP.GetFile(Format('%s%s?client_id=%s&token=%s', [IncludeSlash(DownloadShard), PathToUrl(RemotePath, False), OAUTH_CLIENT_ID, OAuthToken.access_token]), FileStream, LogErrors);
-			if (CLOUD_ERROR_TOKEN_OUTDATED = Result) and FContext.RefreshCSRFToken then
-				Exit(DownloadRegular(RemotePath, LocalPath, ResultHash, LogErrors));
-			if ((Result in [FS_FILE_OK]) and (EmptyWideStr = ResultHash)) then
-				ResultHash := FHashCalculator.CalculateHash(FileStream, CALCULATING_HASH);
-		end;
+		until not NeedRetry;
 
 		FlushFileBuffers(FileStream.Handle);
 	finally

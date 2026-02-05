@@ -380,6 +380,7 @@
         <DCCReference Include="..\src\Application\CloudCallbackTypes.pas"/>
         <DCCReference Include="..\src\Application\Download\CloudFileDownloader.pas"/>
         <DCCReference Include="Application\Download\CloudFileDownloaderTest.pas"/>
+        <DCCReference Include="..\src\Application\Upload\ChunkedUploadHandler.pas"/>
         <DCCReference Include="..\src\Application\Upload\CloudFileUploader.pas"/>
         <DCCReference Include="Application\Upload\CloudFileUploaderTest.pas"/>
         <DCCReference Include="..\src\Application\Share\CloudShareService.pas"/>
