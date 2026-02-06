@@ -13,7 +13,6 @@ uses
 	CloudFileIdentity,
 	CloudConstants,
 	CloudMailRu,
-	CloudMailRuFactory,
 	CloudFileDownloader,
 	CloudFileUploader,
 	CloudFileOperations,
@@ -31,7 +30,7 @@ uses
 
 type
 	{Tabs available in RemoteProperty dialog}
-	TRemotePropertyTab = (rptFolderAccess, rptDownloadLinks, rptDescription, rptHashesList);
+	TRemotePropertyTab = (rptFolderAccess, rptDescription, rptHashesList);
 
 	{Callback for logging status messages}
 	TLogMessageProc = reference to procedure(Message: WideString);
@@ -57,13 +56,6 @@ type
 		function GetSelectedInviteEmail: WideString;
 		function GetSelectedInviteAccess: WideString;
 
-		{Download links}
-		procedure ClearDownloadLinks;
-		procedure AddDownloadLink(Link: WideString);
-		procedure SetDownloadLinksLogMessage(Message: WideString);
-		procedure SetDownloadLinksCancelEnabled(Enabled: Boolean);
-		procedure SetDownloadLinksRefreshEnabled(Enabled: Boolean);
-
 		{Hashes}
 		procedure ClearHashes;
 		procedure AddHash(HashCommand: WideString);
@@ -85,9 +77,7 @@ type
 		{User interaction}
 		procedure ShowError(Title, Message: WideString);
 		procedure ProcessMessages;
-		function IsDownloadLinksCancelled: Boolean;
 		function IsHashesCancelled: Boolean;
-		procedure ResetDownloadLinksCancelled;
 		procedure ResetHashesCancelled;
 
 		{Invite input}
@@ -97,7 +87,6 @@ type
 
 	{Configuration for RemoteProperty presenter}
 	TRemotePropertyConfig = record
-		AutoUpdateDownloadListing: Boolean;
 		ShowDescription: Boolean;
 		EditDescription: Boolean;
 		PluginIonFileName: WideString;
@@ -113,7 +102,6 @@ type
 		FListingService: ICloudListingService;
 		FShareService: ICloudShareService;
 		FFileSystem: IFileSystem;
-		FPublicCloudFactory: IPublicCloudFactory;
 		FTCHandler: ITCHandler;
 		FIsPublicAccount: Boolean;
 		FProps: TCloudDirItem;
@@ -122,17 +110,13 @@ type
 		FInvitesListing: TCloudInviteList;
 		FPublicUrl: WideString;
 
-		{Internal recursive listing helpers -- structurally similar by design.
-			Merging into a generic method with callbacks was attempted but rejected:
-			the call sites become harder to read than the duplication they eliminate.}
-		function FillRecursiveDownloadListing(const Path: WideString; Downloader: ICloudFileDownloader; ListingService: ICloudListingService): Boolean;
 		function FillRecursiveHashListing(const Path: WideString; ListingService: ICloudListingService; const BaseDir: WideString): Boolean;
 
 		{Description file operations}
 		function GetDescriptionFilePath: WideString;
 		function DownloadDescriptionFile(var LocalPath: WideString): Boolean;
 	public
-		constructor Create(View: IRemotePropertyView; Downloader: ICloudFileDownloader; Uploader: ICloudFileUploader; FileOps: ICloudFileOperations; ListingService: ICloudListingService; ShareService: ICloudShareService; FileSystem: IFileSystem; PublicCloudFactory: IPublicCloudFactory; TCHandler: ITCHandler; IsPublicAccount: Boolean; const PublicUrl: WideString = '');
+		constructor Create(View: IRemotePropertyView; Downloader: ICloudFileDownloader; Uploader: ICloudFileUploader; FileOps: ICloudFileOperations; ListingService: ICloudListingService; ShareService: ICloudShareService; FileSystem: IFileSystem; TCHandler: ITCHandler; IsPublicAccount: Boolean; const PublicUrl: WideString = '');
 
 		{Initialize view state based on item properties}
 		procedure Initialize(Props: TCloudDirItem; RemotePath: WideString; Config: TRemotePropertyConfig);
@@ -145,9 +129,6 @@ type
 		procedure OnInviteClick;
 		procedure OnInviteDeleteClick;
 		procedure OnInviteChangeAccessClick;
-
-		{Download links operations}
-		procedure RefreshDownloadLinks;
 
 		{Hashes operations}
 		procedure RefreshHashes;
@@ -180,7 +161,7 @@ const
 
 	{TRemotePropertyPresenter}
 
-constructor TRemotePropertyPresenter.Create(View: IRemotePropertyView; Downloader: ICloudFileDownloader; Uploader: ICloudFileUploader; FileOps: ICloudFileOperations; ListingService: ICloudListingService; ShareService: ICloudShareService; FileSystem: IFileSystem; PublicCloudFactory: IPublicCloudFactory; TCHandler: ITCHandler; IsPublicAccount: Boolean; const PublicUrl: WideString);
+constructor TRemotePropertyPresenter.Create(View: IRemotePropertyView; Downloader: ICloudFileDownloader; Uploader: ICloudFileUploader; FileOps: ICloudFileOperations; ListingService: ICloudListingService; ShareService: ICloudShareService; FileSystem: IFileSystem; TCHandler: ITCHandler; IsPublicAccount: Boolean; const PublicUrl: WideString);
 begin
 	inherited Create;
 	FView := View;
@@ -190,7 +171,6 @@ begin
 	FListingService := ListingService;
 	FShareService := ShareService;
 	FFileSystem := FileSystem;
-	FPublicCloudFactory := PublicCloudFactory;
 	FTCHandler := TCHandler;
 	FIsPublicAccount := IsPublicAccount;
 	FPublicUrl := IfEmpty(PublicUrl, PUBLIC_ACCESS_URL);
@@ -207,7 +187,6 @@ begin
 	{Initialize tabs visibility}
 	FView.SetExtPropertiesVisible(False);
 	FView.HideTab(rptFolderAccess);
-	FView.HideTab(rptDownloadLinks);
 	FView.HideTab(rptDescription);
 	FView.HideTab(rptHashesList);
 
@@ -217,15 +196,10 @@ begin
 
 	if FIsPublicAccount then
 	begin
-		{Public account: always show download links, cannot change publish state}
+		{Public account: cannot change publish state}
 		FView.SetPublishEnabled(False);
 		FView.SetPublishChecked(True);
-		FView.SetExtPropertiesVisible(True);
-		FView.ShowTab(rptDownloadLinks);
 		FView.SetHashesMemoReadOnly(True);
-
-		if FConfig.AutoUpdateDownloadListing then
-			RefreshDownloadLinks;
 	end else begin
 		{Private account: show weblink if published}
 		FView.SetPublishChecked(Props.WebLink <> EmptyWideStr);
@@ -277,8 +251,6 @@ begin
 			FView.SetWebLink(FPublicUrl + PublicLink);
 			FProps.WebLink := PublicLink;
 			FView.SetWebLinkEnabled(True);
-			FView.SetExtPropertiesVisible(True);
-			FView.ShowTab(rptDownloadLinks);
 		end else begin
 			FView.ShowError(ERR_PUBLISH_FILE, Format(ERR_PUBLISH_MSG, [FProps.home]));
 			FView.SetPublishChecked(False);
@@ -289,7 +261,6 @@ begin
 			FView.SetWebLink(EmptyWideStr);
 			FProps.WebLink := EmptyWideStr;
 			FView.SetWebLinkEnabled(False);
-			FView.HideTab(rptDownloadLinks);
 		end else begin
 			FView.ShowError(ERR_UNPUBLISH_FILE, Format(ERR_PUBLISH_MSG, [FProps.home]));
 			FView.SetPublishChecked(True);
@@ -297,9 +268,6 @@ begin
 	end;
 
 	FView.SetPublishEnabled(True);
-
-	if Publish and FConfig.AutoUpdateDownloadListing then
-		RefreshDownloadLinks;
 end;
 
 procedure TRemotePropertyPresenter.RefreshInvites;
@@ -362,72 +330,6 @@ begin
 		RefreshInvites
 	else
 		FView.ShowError(PREFIX_ERR_SHARE_FOLDER, Format(ERR_SHARE_FOLDER_MSG, [Email, FProps.home]));
-end;
-
-procedure TRemotePropertyPresenter.RefreshDownloadLinks;
-var
-	TempPublicCloud: TCloudMailRu;
-begin
-	FView.ClearDownloadLinks;
-	FView.SetDownloadLinksCancelEnabled(True);
-	FView.SetDownloadLinksRefreshEnabled(False);
-	FView.ResetDownloadLinksCancelled;
-
-	try
-		if FIsPublicAccount then
-		begin
-			{Public account: use main cloud services directly}
-			if FProps.type_ = TYPE_DIR then
-				FillRecursiveDownloadListing(IncludeTrailingPathDelimiter(FRemotePath), FDownloader, FListingService)
-			else
-				FView.AddDownloadLink(FDownloader.GetSharedFileUrl(FRemotePath));
-		end else begin
-			{Private account with published item: create temp public cloud}
-			if FPublicCloudFactory.CreatePublicCloud(TempPublicCloud, FPublicUrl + FProps.WebLink) then
-				try
-					if FProps.type_ = TYPE_DIR then
-						FillRecursiveDownloadListing(EmptyWideStr, TempPublicCloud.Downloader, TempPublicCloud.ListingService)
-					else
-						FView.AddDownloadLink(TempPublicCloud.Downloader.GetSharedFileUrl(FRemotePath));
-				finally
-					TempPublicCloud.Free;
-				end;
-		end;
-
-		FView.SetDownloadLinksLogMessage(DONE);
-	finally
-		FView.SetDownloadLinksRefreshEnabled(True);
-		FView.SetDownloadLinksCancelEnabled(False);
-	end;
-end;
-
-function TRemotePropertyPresenter.FillRecursiveDownloadListing(const Path: WideString; Downloader: ICloudFileDownloader; ListingService: ICloudListingService): Boolean;
-var
-	CurrentDirListing: TCloudDirItemList;
-	i: Integer;
-begin
-	Result := True;
-
-	FView.SetDownloadLinksLogMessage(Format(PREFIX_SCAN, [IncludeTrailingPathDelimiter(Path)]));
-	FView.ProcessMessages;
-
-	if FView.IsDownloadLinksCancelled then
-		Exit(False);
-
-	if not ListingService.GetDirectory(Path, CurrentDirListing) then
-		Exit;
-
-	for i := 0 to Length(CurrentDirListing) - 1 do
-	begin
-		if CurrentDirListing[i].type_ = TYPE_DIR then
-		begin
-			Result := FillRecursiveDownloadListing(IncludeTrailingPathDelimiter(Path) + CurrentDirListing[i].name, Downloader, ListingService);
-			if not Result then
-				Break;
-		end
-		else
-			FView.AddDownloadLink(Downloader.GetSharedFileUrl(IncludeTrailingPathDelimiter(Path) + CurrentDirListing[i].name));
-	end;
 end;
 
 procedure TRemotePropertyPresenter.RefreshHashes;

@@ -318,7 +318,6 @@ var
 	DFM_CB_LOG_SPACE: WideString;
 	DFM_CB_OVERRIDE_SPLIT: WideString;
 	DFM_CB_DISABLE_MT: WideString;
-	DFM_CB_AUTO_UPDATE: WideString;
 	DFM_CB_TRASH: WideString;
 	DFM_CB_SHARED: WideString;
 	DFM_CB_INVITES: WideString;
@@ -417,7 +416,6 @@ var
 	DFM_REM_CB_PUBLIC_ACCESS: WideString;
 	DFM_REM_BTN_OK: WideString;
 	DFM_REM_TAB_FOLDER_ACCESS: WideString;
-	DFM_REM_TAB_DOWNLOAD_LINKS: WideString;
 	DFM_REM_TAB_HASHES_LIST: WideString;
 	DFM_REM_TAB_DESCRIPTION: WideString;
 	DFM_REM_LBL_NEW_MEMBER: WideString;
@@ -764,7 +762,6 @@ begin
 	DFM_CB_LOG_SPACE := 'Enable space info logging';
 	DFM_CB_OVERRIDE_SPLIT := 'Override split file size to';
 	DFM_CB_DISABLE_MT := 'Disable background operations support';
-	DFM_CB_AUTO_UPDATE := 'Update direct download links immediately';
 	DFM_CB_TRASH := 'Trash folders';
 	DFM_CB_SHARED := 'Shared links folders';
 	DFM_CB_INVITES := 'Invites folders';
@@ -863,7 +860,6 @@ begin
 	DFM_REM_CB_PUBLIC_ACCESS := 'Public access enabled';
 	DFM_REM_BTN_OK := 'OK';
 	DFM_REM_TAB_FOLDER_ACCESS := 'Folder access';
-	DFM_REM_TAB_DOWNLOAD_LINKS := 'Download links';
 	DFM_REM_TAB_HASHES_LIST := 'Hashes list';
 	DFM_REM_TAB_DESCRIPTION := 'Description';
 	DFM_REM_LBL_NEW_MEMBER := 'New member email:';
@@ -1198,7 +1194,6 @@ begin
 	TranslationRegistry.Add('DFM_CB_LOG_SPACE', @DFM_CB_LOG_SPACE);
 	TranslationRegistry.Add('DFM_CB_OVERRIDE_SPLIT', @DFM_CB_OVERRIDE_SPLIT);
 	TranslationRegistry.Add('DFM_CB_DISABLE_MT', @DFM_CB_DISABLE_MT);
-	TranslationRegistry.Add('DFM_CB_AUTO_UPDATE', @DFM_CB_AUTO_UPDATE);
 	TranslationRegistry.Add('DFM_CB_TRASH', @DFM_CB_TRASH);
 	TranslationRegistry.Add('DFM_CB_SHARED', @DFM_CB_SHARED);
 	TranslationRegistry.Add('DFM_CB_INVITES', @DFM_CB_INVITES);
@@ -1291,7 +1286,6 @@ begin
 	TranslationRegistry.Add('DFM_REM_CB_PUBLIC_ACCESS', @DFM_REM_CB_PUBLIC_ACCESS);
 	TranslationRegistry.Add('DFM_REM_BTN_OK', @DFM_REM_BTN_OK);
 	TranslationRegistry.Add('DFM_REM_TAB_FOLDER_ACCESS', @DFM_REM_TAB_FOLDER_ACCESS);
-	TranslationRegistry.Add('DFM_REM_TAB_DOWNLOAD_LINKS', @DFM_REM_TAB_DOWNLOAD_LINKS);
 	TranslationRegistry.Add('DFM_REM_TAB_HASHES_LIST', @DFM_REM_TAB_HASHES_LIST);
 	TranslationRegistry.Add('DFM_REM_TAB_DESCRIPTION', @DFM_REM_TAB_DESCRIPTION);
 	TranslationRegistry.Add('DFM_REM_LBL_NEW_MEMBER', @DFM_REM_LBL_NEW_MEMBER);

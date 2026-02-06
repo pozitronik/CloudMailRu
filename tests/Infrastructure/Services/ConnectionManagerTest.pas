@@ -363,7 +363,6 @@ begin
 	FPluginSettings.ForcePrecalculateSize := 0;
 	FPluginSettings.CheckCRC := False;
 	FPluginSettings.CopyBetweenAccountsMode := 0;
-	FPluginSettings.AutoUpdateDownloadListing := False;
 	FPluginSettings.DisableMultiThreading := False;
 	FPluginSettings.IconsMode := 0;
 	FPluginSettings.OverwriteLocalMode := 0;

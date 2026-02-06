@@ -42,7 +42,6 @@ type
 		FLogUserSpace: Boolean;
 		FIconsMode: Integer;
 		FCopyBetweenAccountsMode: Integer;
-		FAutoUpdateDownloadListing: Boolean;
 		FShowTrashFolders: Boolean;
 		FShowSharedFolders: Boolean;
 		FShowInvitesFolders: Boolean;
@@ -197,8 +196,6 @@ type
 		function GetIconsMode: Integer;
 		procedure SetCopyBetweenAccountsMode(Value: Integer);
 		function GetCopyBetweenAccountsMode: Integer;
-		procedure SetAutoUpdateDownloadListing(Value: Boolean);
-		function GetAutoUpdateDownloadListing: Boolean;
 		procedure SetShowTrashFolders(Value: Boolean);
 		function GetShowTrashFolders: Boolean;
 		procedure SetShowSharedFolders(Value: Boolean);
@@ -913,16 +910,6 @@ end;
 function TMockAccountsView.GetCopyBetweenAccountsMode: Integer;
 begin
 	Result := FCopyBetweenAccountsMode;
-end;
-
-procedure TMockAccountsView.SetAutoUpdateDownloadListing(Value: Boolean);
-begin
-	FAutoUpdateDownloadListing := Value;
-end;
-
-function TMockAccountsView.GetAutoUpdateDownloadListing: Boolean;
-begin
-	Result := FAutoUpdateDownloadListing;
 end;
 
 procedure TMockAccountsView.SetShowTrashFolders(Value: Boolean);

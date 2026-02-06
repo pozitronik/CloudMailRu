@@ -599,12 +599,12 @@ object AccountsForm: TAccountsForm
       end
       object PreserveFileTimeCB: TCheckBox
         Left = 4
-        Top = 361
+        Top = 344
         Width = 683
         Height = 17
         Anchors = [akLeft, akTop, akRight]
         Caption = 'Preserve file creation time'
-        TabOrder = 18
+        TabOrder = 15
         OnClick = GlobalSettingsFieldChanged
       end
       object GlobalSettingsApplyBtn: TButton
@@ -694,7 +694,7 @@ object AccountsForm: TAccountsForm
       end
       object DisableMultiThreadingCB: TCheckBox
         Left = 4
-        Top = 294
+        Top = 297
         Width = 683
         Height = 17
         Anchors = [akLeft, akTop, akRight]
@@ -722,7 +722,7 @@ object AccountsForm: TAccountsForm
       end
       object SpaceInfoLoggingCB: TCheckBox
         Left = 4
-        Top = 272
+        Top = 273
         Width = 683
         Height = 17
         Anchors = [akLeft, akTop, akRight]
@@ -768,16 +768,6 @@ object AccountsForm: TAccountsForm
         Value = 0
         OnChange = GlobalSettingsFieldChanged
       end
-      object AutoUpdateDownloadListingCB: TCheckBox
-        Left = 4
-        Top = 317
-        Width = 683
-        Height = 17
-        Anchors = [akLeft, akTop, akRight]
-        Caption = 'Update direct download links immediately'
-        TabOrder = 15
-        OnClick = GlobalSettingsFieldChanged
-      end
       object PrecalculateHashCB: TCheckBox
         Left = 4
         Top = 222
@@ -789,7 +779,7 @@ object AccountsForm: TAccountsForm
       end
       object CheckCRCCB: TCheckBox
         Left = 4
-        Top = 339
+        Top = 321
         Width = 683
         Height = 17
         Anchors = [akLeft, akTop, akRight]

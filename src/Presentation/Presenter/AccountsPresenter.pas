@@ -81,8 +81,6 @@ type
 		function GetIconsMode: Integer;
 		procedure SetCopyBetweenAccountsMode(Value: Integer);
 		function GetCopyBetweenAccountsMode: Integer;
-		procedure SetAutoUpdateDownloadListing(Value: Boolean);
-		function GetAutoUpdateDownloadListing: Boolean;
 		procedure SetShowTrashFolders(Value: Boolean);
 		function GetShowTrashFolders: Boolean;
 		procedure SetShowSharedFolders(Value: Boolean);
@@ -560,8 +558,7 @@ begin
 		FView.SetLogUserSpace(Settings.LogUserSpace);
 		FView.SetIconsMode(Settings.IconsMode);
 
-		{Download/display settings}
-		FView.SetAutoUpdateDownloadListing(Settings.AutoUpdateDownloadListing);
+		{Display settings}
 		FView.SetShowTrashFolders(Settings.ShowTrashFolders);
 		FView.SetShowSharedFolders(Settings.ShowSharedFolders);
 		FView.SetShowInvitesFolders(Settings.ShowInvitesFolders);
@@ -1168,8 +1165,7 @@ begin
 	Settings.LogUserSpace := FView.GetLogUserSpace;
 	Settings.IconsMode := FView.GetIconsMode;
 
-	{Download/display settings}
-	Settings.AutoUpdateDownloadListing := FView.GetAutoUpdateDownloadListing;
+	{Display settings}
 	Settings.ShowTrashFolders := FView.GetShowTrashFolders;
 	Settings.ShowSharedFolders := FView.GetShowSharedFolders;
 	Settings.ShowInvitesFolders := FView.GetShowInvitesFolders;

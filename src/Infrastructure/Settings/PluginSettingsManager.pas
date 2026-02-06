@@ -270,7 +270,6 @@ begin
 	Settings.ConnectionSettings.ProxySettings.UseTCPasswordManager := FConfigFile.ReadBool('Main', 'ProxyTCPwdMngr', False);
 	Settings.ConnectionSettings.ProxySettings.Password := FConfigFile.ReadString('Main', 'ProxyPassword', EmptyWideStr);
 	Settings.ConnectionSettings.UserAgent := FConfigFile.ReadString('Main', 'UserAgent', DEFAULT_USERAGENT);
-	Settings.AutoUpdateDownloadListing := FConfigFile.ReadBool('Main', 'AutoUpdateDownloadListing', True);
 	Settings.ShowTrashFolders := FConfigFile.ReadBool('Main', 'ShowTrashFolders', True);
 	Settings.ShowSharedFolders := FConfigFile.ReadBool('Main', 'ShowSharedFolders', True);
 	Settings.ShowInvitesFolders := FConfigFile.ReadBool('Main', 'ShowInvitesFolders', True);
@@ -324,7 +323,6 @@ begin
 	FConfigFile.WriteBoolIfNotDefault('Main', 'ProxyTCPwdMngr', Settings.ConnectionSettings.ProxySettings.UseTCPasswordManager, False);
 	FConfigFile.WriteStringIfNotDefault('Main', 'ProxyPassword', Settings.ConnectionSettings.ProxySettings.Password, EmptyWideStr);
 	FConfigFile.WriteStringIfNotDefault('Main', 'UserAgent', Settings.ConnectionSettings.UserAgent, DEFAULT_USERAGENT);
-	FConfigFile.WriteBoolIfNotDefault('Main', 'AutoUpdateDownloadListing', Settings.AutoUpdateDownloadListing, True);
 	FConfigFile.WriteBoolIfNotDefault('Main', 'ShowTrashFolders', Settings.ShowTrashFolders, True);
 	FConfigFile.WriteBoolIfNotDefault('Main', 'ShowSharedFolders', Settings.ShowSharedFolders, True);
 	FConfigFile.WriteBoolIfNotDefault('Main', 'ShowInvitesFolders', Settings.ShowInvitesFolders, True);

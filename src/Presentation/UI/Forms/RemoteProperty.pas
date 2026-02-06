@@ -57,22 +57,14 @@ type
 		N1: TMenuItem;
 		ExtPropertiesPC: TPageControl;
 		FolderAccessTS: TTabSheet;
-		DownloadLinksTS: TTabSheet;
 		InviteEmailLabel: TLabel;
 		AccessLabel: TLabel;
 		InviteEmailEdit: TEdit;
 		InviteAcessCB: TComboBox;
 		InviteBtn: TButton;
 		InvitesLE: TValueListEditor;
-		DownloadLinksMemo: TMemo;
-		DownloadLinksTB: TToolBar;
-		SaveLinksTb: TToolButton;
 		DownloadLinksIL: TImageList;
-		WrapLinksTb: TToolButton;
 		SaveDialogSD: TSaveDialog;
-		LinksLogLabel: TLabel;
-		CancelLinksScanTb: TToolButton;
-		RefreshLinksScanTb: TToolButton;
 		DescriptionTS: TTabSheet;
 		DescriptionEditMemo: TMemo;
 		DescriptionSaveButton: TButton;
@@ -88,17 +80,13 @@ type
 		OpenDialogOD: TOpenDialog;
 		ApplyHashesTB: TToolButton;
 		procedure AccessCBClick(Sender: TObject);
-		class function ShowProperty(parentWindow: HWND; RemoteName: WideString; RemoteProperty: TCloudDirItem; Cloud: TCloudMailRu; FileSystem: IFileSystem; TCHandler: ITCHandler; AutoUpdateDownloadListing: Boolean = true; ShowDescription: Boolean = true; EditDescription: Boolean = true; PluginIonFileName: WideString = 'descript.ion'): Integer;
+		class function ShowProperty(parentWindow: HWND; RemoteName: WideString; RemoteProperty: TCloudDirItem; Cloud: TCloudMailRu; FileSystem: IFileSystem; TCHandler: ITCHandler; ShowDescription: Boolean = true; EditDescription: Boolean = true; PluginIonFileName: WideString = 'descript.ion'): Integer;
 		procedure InviteBtnClick(Sender: TObject);
 		procedure ItemDeleteClick(Sender: TObject);
 		procedure ItemRefreshClick(Sender: TObject);
 		procedure InvitesPopupPopup(Sender: TObject);
 		procedure ItemChangeAccessClick(Sender: TObject);
-		procedure WrapLinksTbClick(Sender: TObject);
-		procedure SaveLinksTbClick(Sender: TObject);
 		procedure FormShow(Sender: TObject);
-		procedure CancelLinksScanTbClick(Sender: TObject);
-		procedure RefreshLinksScanTbClick(Sender: TObject);
 		procedure DescriptionSaveButtonClick(Sender: TObject);
 		procedure FormKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
 		procedure PublicLinkLabelClick(Sender: TObject);
@@ -113,7 +101,6 @@ type
 		{Presenter handles business logic}
 		FPresenter: TRemotePropertyPresenter;
 		{Cancellation flags}
-		FDownloadLinksCancelled: Boolean;
 		FHashesCancelled: Boolean;
 		procedure UpdateFormCaptions;
 		{Post-show initialization}
@@ -132,11 +119,6 @@ type
 		procedure AddInvite(Email, Access: WideString);
 		function GetSelectedInviteEmail: WideString;
 		function GetSelectedInviteAccess: WideString;
-		procedure ClearDownloadLinks;
-		procedure AddDownloadLink(Link: WideString);
-		procedure SetDownloadLinksLogMessage(Message: WideString);
-		procedure SetDownloadLinksCancelEnabled(Enabled: Boolean);
-		procedure SetDownloadLinksRefreshEnabled(Enabled: Boolean);
 		procedure ClearHashes;
 		procedure AddHash(HashCommand: WideString);
 		procedure SetHashesLogMessage(Message: WideString);
@@ -153,9 +135,7 @@ type
 		procedure SetDescriptionTabCaption(ACaption: WideString);
 		procedure ShowError(Title, Message: WideString);
 		procedure ProcessMessages;
-		function IsDownloadLinksCancelled: Boolean;
 		function IsHashesCancelled: Boolean;
-		procedure ResetDownloadLinksCancelled;
 		procedure ResetHashesCancelled;
 		function GetInviteEmailInput: WideString;
 		function GetInviteAccessInput: Integer;
@@ -211,8 +191,6 @@ begin
 	case Tab of
 		rptFolderAccess:
 			FolderAccessTS.TabVisible := true;
-		rptDownloadLinks:
-			DownloadLinksTS.TabVisible := true;
 		rptDescription:
 			DescriptionTS.TabVisible := true;
 		rptHashesList:
@@ -225,8 +203,6 @@ begin
 	case Tab of
 		rptFolderAccess:
 			FolderAccessTS.TabVisible := False;
-		rptDownloadLinks:
-			DownloadLinksTS.TabVisible := False;
 		rptDescription:
 			DescriptionTS.TabVisible := False;
 		rptHashesList:
@@ -258,31 +234,6 @@ end;
 function TPropertyForm.GetSelectedInviteAccess: WideString;
 begin
 	Result := InvitesLE.Values[GetSelectedInviteEmail];
-end;
-
-procedure TPropertyForm.ClearDownloadLinks;
-begin
-	DownloadLinksMemo.Lines.Clear;
-end;
-
-procedure TPropertyForm.AddDownloadLink(Link: WideString);
-begin
-	DownloadLinksMemo.Lines.Add(Link);
-end;
-
-procedure TPropertyForm.SetDownloadLinksLogMessage(Message: WideString);
-begin
-	LinksLogLabel.Caption := Message;
-end;
-
-procedure TPropertyForm.SetDownloadLinksCancelEnabled(Enabled: Boolean);
-begin
-	CancelLinksScanTb.Enabled := Enabled;
-end;
-
-procedure TPropertyForm.SetDownloadLinksRefreshEnabled(Enabled: Boolean);
-begin
-	RefreshLinksScanTb.Enabled := Enabled;
 end;
 
 procedure TPropertyForm.ClearHashes;
@@ -365,19 +316,9 @@ begin
 	SystemHelper.ProcessMessages;
 end;
 
-function TPropertyForm.IsDownloadLinksCancelled: Boolean;
-begin
-	Result := FDownloadLinksCancelled;
-end;
-
 function TPropertyForm.IsHashesCancelled: Boolean;
 begin
 	Result := FHashesCancelled;
-end;
-
-procedure TPropertyForm.ResetDownloadLinksCancelled;
-begin
-	FDownloadLinksCancelled := False;
 end;
 
 procedure TPropertyForm.ResetHashesCancelled;
@@ -400,7 +341,6 @@ begin
 	AccessCB.Caption := DFM_REM_CB_PUBLIC_ACCESS;
 	OkButton.Caption := DFM_REM_BTN_OK;
 	FolderAccessTS.Caption := DFM_REM_TAB_FOLDER_ACCESS;
-	DownloadLinksTS.Caption := DFM_REM_TAB_DOWNLOAD_LINKS;
 	HashesListTS.Caption := DFM_REM_TAB_HASHES_LIST;
 	DescriptionTS.Caption := DFM_REM_TAB_DESCRIPTION;
 	InviteEmailLabel.Caption := DFM_REM_LBL_NEW_MEMBER;
@@ -411,10 +351,6 @@ begin
 	ItemDelete.Caption := DFM_REM_MI_DROP_ACCESS;
 	ItemRefresh.Caption := DFM_REM_MI_REFRESH;
 	{Toolbar buttons - hints serve as visible tooltips}
-	SaveLinksTb.Hint := DFM_REM_BTN_SAVE_AS;
-	WrapLinksTb.Hint := DFM_REM_BTN_WRAP;
-	CancelLinksScanTb.Hint := DFM_REM_BTN_CANCEL_SCAN;
-	RefreshLinksScanTb.Hint := DFM_REM_BTN_RESCAN;
 	SaveHashesTb.Hint := DFM_REM_BTN_SAVE_AS;
 	LoadHashesTb.Hint := DFM_REM_BTN_LOAD_FILE;
 	ApplyHashesTB.Hint := DFM_REM_BTN_APPLY_HASHES;
@@ -506,16 +442,6 @@ begin
 	FPresenter.OnInviteChangeAccessClick;
 end;
 
-procedure TPropertyForm.RefreshLinksScanTbClick(Sender: TObject);
-begin
-	FPresenter.RefreshDownloadLinks;
-end;
-
-procedure TPropertyForm.CancelLinksScanTbClick(Sender: TObject);
-begin
-	FDownloadLinksCancelled := true;
-end;
-
 procedure TPropertyForm.RefreshHashesScanTbClick(Sender: TObject);
 begin
 	FPresenter.RefreshHashes;
@@ -548,21 +474,6 @@ begin
 		Clipboard.AsText := WebLink.Text;
 end;
 
-procedure TPropertyForm.WrapLinksTbClick(Sender: TObject);
-begin
-	if WrapLinksTb.Down then
-		DownloadLinksMemo.ScrollBars := ssVertical
-	else
-		DownloadLinksMemo.ScrollBars := ssBoth;
-	DownloadLinksMemo.WordWrap := WrapLinksTb.Down;
-end;
-
-procedure TPropertyForm.SaveLinksTbClick(Sender: TObject);
-begin
-	if SaveDialogSD.Execute(Handle) then
-		DownloadLinksMemo.Lines.SaveToFile(SaveDialogSD.FileName);
-end;
-
 procedure TPropertyForm.WrapHashesTbClick(Sender: TObject);
 begin
 	if WrapHashesTb.Down then
@@ -586,7 +497,7 @@ end;
 
 {TPropertyForm - Static factory method}
 
-class function TPropertyForm.ShowProperty(parentWindow: HWND; RemoteName: WideString; RemoteProperty: TCloudDirItem; Cloud: TCloudMailRu; FileSystem: IFileSystem; TCHandler: ITCHandler; AutoUpdateDownloadListing: Boolean; ShowDescription: Boolean; EditDescription: Boolean; PluginIonFileName: WideString): Integer;
+class function TPropertyForm.ShowProperty(parentWindow: HWND; RemoteName: WideString; RemoteProperty: TCloudDirItem; Cloud: TCloudMailRu; FileSystem: IFileSystem; TCHandler: ITCHandler; ShowDescription: Boolean; EditDescription: Boolean; PluginIonFileName: WideString): Integer;
 var
 	Form: TPropertyForm;
 	Config: TRemotePropertyConfig;
@@ -597,10 +508,9 @@ begin
 		Form.UpdateFormCaptions;
 
 		{Create presenter with cloud services}
-		Form.FPresenter := TRemotePropertyPresenter.Create(Form, Cloud.Downloader, Cloud.Uploader, Cloud.FileOperations, Cloud.ListingService, Cloud.ShareService, FileSystem, TPublicCloudFactory.Create, TCHandler, Cloud.IsPublicAccount, Cloud.GetEndpoints.PublicUrl);
+		Form.FPresenter := TRemotePropertyPresenter.Create(Form, Cloud.Downloader, Cloud.Uploader, Cloud.FileOperations, Cloud.ListingService, Cloud.ShareService, FileSystem, TCHandler, Cloud.IsPublicAccount, Cloud.GetEndpoints.PublicUrl);
 
 		{Configure and initialize presenter}
-		Config.AutoUpdateDownloadListing := AutoUpdateDownloadListing;
 		Config.ShowDescription := ShowDescription;
 		Config.EditDescription := EditDescription;
 		Config.PluginIonFileName := PluginIonFileName;

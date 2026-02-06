@@ -18,8 +18,6 @@ uses
 	CloudFileOperations,
 	CloudListingService,
 	CloudShareService,
-	CloudMailRuFactory,
-	CloudMailRu,
 	FileSystem,
 	TCHandler,
 	WFXTypes,
@@ -42,16 +40,12 @@ type
 		FExtPropertiesVisible: Boolean;
 		FVisibleTabs: TRemotePropertyTabSet;
 		FInvites: TDictionary<WideString, WideString>;
-		FDownloadLinks: TStringList;
 		FHashes: TStringList;
 		FDescription: WideString;
 		FDescriptionReadOnly: Boolean;
 		FDescriptionSaveEnabled: Boolean;
 		FDescriptionTabCaption: WideString;
-		FDownloadLinksLogMessage: WideString;
 		FHashesLogMessage: WideString;
-		FDownloadLinksCancelEnabled: Boolean;
-		FDownloadLinksRefreshEnabled: Boolean;
 		FHashesCancelEnabled: Boolean;
 		FHashesRefreshEnabled: Boolean;
 		FHashesMemoReadOnly: Boolean;
@@ -59,13 +53,11 @@ type
 		FLoadHashesEnabled: Boolean;
 		FInviteEmailInput: WideString;
 		FInviteAccessInput: Integer;
-		FDownloadLinksCancelled: Boolean;
 		FHashesCancelled: Boolean;
 		FErrorTitle: WideString;
 		FErrorMessage: WideString;
 		FProcessMessagesCalled: Boolean;
-		{Flags to set cancellation during ProcessMessages}
-		FCancelDownloadLinksOnProcess: Boolean;
+		{Flag to set cancellation during ProcessMessages}
 		FCancelHashesOnProcess: Boolean;
 	public
 		constructor Create;
@@ -84,11 +76,6 @@ type
 		procedure AddInvite(Email, Access: WideString);
 		function GetSelectedInviteEmail: WideString;
 		function GetSelectedInviteAccess: WideString;
-		procedure ClearDownloadLinks;
-		procedure AddDownloadLink(Link: WideString);
-		procedure SetDownloadLinksLogMessage(Message: WideString);
-		procedure SetDownloadLinksCancelEnabled(Enabled: Boolean);
-		procedure SetDownloadLinksRefreshEnabled(Enabled: Boolean);
 		procedure ClearHashes;
 		procedure AddHash(HashCommand: WideString);
 		procedure SetHashesLogMessage(Message: WideString);
@@ -105,9 +92,7 @@ type
 		procedure SetDescriptionTabCaption(ACaption: WideString);
 		procedure ShowError(Title, Message: WideString);
 		procedure ProcessMessages;
-		function IsDownloadLinksCancelled: Boolean;
 		function IsHashesCancelled: Boolean;
-		procedure ResetDownloadLinksCancelled;
 		procedure ResetHashesCancelled;
 		function GetInviteEmailInput: WideString;
 		function GetInviteAccessInput: Integer;
@@ -121,13 +106,11 @@ type
 		property ExtPropertiesVisible: Boolean read FExtPropertiesVisible;
 		property VisibleTabs: TRemotePropertyTabSet read FVisibleTabs;
 		property Invites: TDictionary<WideString, WideString> read FInvites;
-		property DownloadLinks: TStringList read FDownloadLinks;
 		property Hashes: TStringList read FHashes;
 		property Description: WideString read FDescription write FDescription;
 		property DescriptionReadOnly: Boolean read FDescriptionReadOnly;
 		property DescriptionSaveEnabled: Boolean read FDescriptionSaveEnabled;
 		property DescriptionTabCaption: WideString read FDescriptionTabCaption;
-		property DownloadLinksLogMessage: WideString read FDownloadLinksLogMessage;
 		property HashesLogMessage: WideString read FHashesLogMessage;
 		property ErrorTitle: WideString read FErrorTitle;
 		property ErrorMessage: WideString read FErrorMessage;
@@ -140,10 +123,8 @@ type
 		{Test helpers - input simulation}
 		property InviteEmailInput: WideString read FInviteEmailInput write FInviteEmailInput;
 		property InviteAccessInput: Integer read FInviteAccessInput write FInviteAccessInput;
-		property DownloadLinksCancelled: Boolean read FDownloadLinksCancelled write FDownloadLinksCancelled;
 		property HashesCancelled: Boolean read FHashesCancelled write FHashesCancelled;
 		{Simulate user clicking Cancel during ProcessMessages}
-		property CancelDownloadLinksOnProcess: Boolean read FCancelDownloadLinksOnProcess write FCancelDownloadLinksOnProcess;
 		property CancelHashesOnProcess: Boolean read FCancelHashesOnProcess write FCancelHashesOnProcess;
 
 		function IsTabVisible(Tab: TRemotePropertyTab): Boolean;
@@ -268,15 +249,6 @@ type
 		property DeleteResult: Boolean read FDeleteResult write FDeleteResult;
 	end;
 
-	{Mock public cloud factory}
-	TMockPublicCloudFactory = class(TInterfacedObject, IPublicCloudFactory)
-	private
-		FCreateResult: Boolean;
-	public
-		function CreatePublicCloud(var TempCloud: TCloudMailRu; PublicUrl: WideString): Boolean;
-		property CreateResult: Boolean read FCreateResult write FCreateResult;
-	end;
-
 	[TestFixture]
 	TRemotePropertyPresenterTest = class
 	private
@@ -292,8 +264,6 @@ type
 		FUploaderRef: ICloudFileUploader;
 		FFileOps: TMockFileOps;
 		FFileOpsRef: ICloudFileOperations;
-		FPublicCloudFactory: TMockPublicCloudFactory;
-		FPublicCloudFactoryRef: IPublicCloudFactory;
 		FPresenter: TRemotePropertyPresenter;
 
 		function CreateTestItem(const Name: WideString; ItemType: WideString = TYPE_FILE; ItemKind: WideString = ''; WebLink: WideString = ''): TCloudDirItem;
@@ -368,14 +338,6 @@ type
 		[Test]
 		procedure TestOnInviteDeleteClickFailed;
 
-		{RefreshDownloadLinks tests}
-		[Test]
-		procedure TestRefreshDownloadLinksForFile;
-		[Test]
-		procedure TestRefreshDownloadLinksForDirectoryPublicAccount;
-		[Test]
-		procedure TestRefreshDownloadLinksCancellation;
-
 		{RefreshHashes tests}
 		[Test]
 		procedure TestRefreshHashesForFile;
@@ -417,16 +379,8 @@ type
 		{Additional Initialize tests}
 		[Test]
 		procedure TestInitializeSharedItem;
-		[Test]
-		procedure TestInitializePublicAccountAutoRefresh;
-
-		{Coverage: OnPublishChanged auto-refresh path}
-		[Test]
-		procedure TestOnPublishChangedPublishSuccessAutoRefresh;
 
 		{Coverage: recursive listing subdirectory paths}
-		[Test]
-		procedure TestRefreshDownloadLinksRecursiveSubdirectory;
 		[Test]
 		procedure TestRefreshHashesRecursiveSubdirectory;
 
@@ -447,7 +401,6 @@ constructor TMockRemotePropertyView.Create;
 begin
 	inherited;
 	FInvites := TDictionary<WideString, WideString>.Create;
-	FDownloadLinks := TStringList.Create;
 	FHashes := TStringList.Create;
 	FVisibleTabs := [];
 end;
@@ -455,7 +408,6 @@ end;
 destructor TMockRemotePropertyView.Destroy;
 begin
 	FInvites.Free;
-	FDownloadLinks.Free;
 	FHashes.Free;
 	inherited;
 end;
@@ -533,31 +485,6 @@ begin
 		Result := FInvites[Email]
 	else
 		Result := '';
-end;
-
-procedure TMockRemotePropertyView.ClearDownloadLinks;
-begin
-	FDownloadLinks.Clear;
-end;
-
-procedure TMockRemotePropertyView.AddDownloadLink(Link: WideString);
-begin
-	FDownloadLinks.Add(Link);
-end;
-
-procedure TMockRemotePropertyView.SetDownloadLinksLogMessage(Message: WideString);
-begin
-	FDownloadLinksLogMessage := Message;
-end;
-
-procedure TMockRemotePropertyView.SetDownloadLinksCancelEnabled(Enabled: Boolean);
-begin
-	FDownloadLinksCancelEnabled := Enabled;
-end;
-
-procedure TMockRemotePropertyView.SetDownloadLinksRefreshEnabled(Enabled: Boolean);
-begin
-	FDownloadLinksRefreshEnabled := Enabled;
 end;
 
 procedure TMockRemotePropertyView.ClearHashes;
@@ -640,25 +567,13 @@ procedure TMockRemotePropertyView.ProcessMessages;
 begin
 	FProcessMessagesCalled := True;
 	{Set cancellation during processing if requested - simulates user clicking Cancel}
-	if FCancelDownloadLinksOnProcess then
-		FDownloadLinksCancelled := True;
 	if FCancelHashesOnProcess then
 		FHashesCancelled := True;
-end;
-
-function TMockRemotePropertyView.IsDownloadLinksCancelled: Boolean;
-begin
-	Result := FDownloadLinksCancelled;
 end;
 
 function TMockRemotePropertyView.IsHashesCancelled: Boolean;
 begin
 	Result := FHashesCancelled;
-end;
-
-procedure TMockRemotePropertyView.ResetDownloadLinksCancelled;
-begin
-	FDownloadLinksCancelled := False;
 end;
 
 procedure TMockRemotePropertyView.ResetHashesCancelled;
@@ -691,20 +606,16 @@ begin
 	FExtPropertiesVisible := False;
 	FVisibleTabs := [];
 	FInvites.Clear;
-	FDownloadLinks.Clear;
 	FHashes.Clear;
 	FDescription := '';
 	FDescriptionReadOnly := False;
 	FDescriptionSaveEnabled := False;
 	FDescriptionTabCaption := '';
-	FDownloadLinksLogMessage := '';
 	FHashesLogMessage := '';
 	FErrorTitle := '';
 	FErrorMessage := '';
 	FProcessMessagesCalled := False;
-	FDownloadLinksCancelled := False;
 	FHashesCancelled := False;
-	FCancelDownloadLinksOnProcess := False;
 	FCancelHashesOnProcess := False;
 end;
 
@@ -897,14 +808,6 @@ begin
 	Result := FS_FILE_OK;
 end;
 
-{TMockPublicCloudFactory}
-
-function TMockPublicCloudFactory.CreatePublicCloud(var TempCloud: TCloudMailRu; PublicUrl: WideString): Boolean;
-begin
-	TempCloud := nil;
-	Result := FCreateResult;
-end;
-
 {TRemotePropertyPresenterTest}
 
 procedure TRemotePropertyPresenterTest.Setup;
@@ -936,9 +839,6 @@ begin
 	FFileOpsRef := FFileOps;
 	FFileOps.DeleteResult := True;
 
-	FPublicCloudFactory := TMockPublicCloudFactory.Create;
-	FPublicCloudFactoryRef := FPublicCloudFactory;
-	FPublicCloudFactory.CreateResult := False; {Default to false - no temp cloud}
 end;
 
 procedure TRemotePropertyPresenterTest.TearDown;
@@ -951,7 +851,6 @@ begin
 	FDownloaderRef := nil;
 	FUploaderRef := nil;
 	FFileOpsRef := nil;
-	FPublicCloudFactoryRef := nil;
 end;
 
 function TRemotePropertyPresenterTest.CreateTestItem(const Name: WideString; ItemType, ItemKind, WebLink: WideString): TCloudDirItem;
@@ -968,7 +867,6 @@ end;
 
 function TRemotePropertyPresenterTest.CreateConfig(ShowDescription, EditDescription: Boolean): TRemotePropertyConfig;
 begin
-	Result.AutoUpdateDownloadListing := False;
 	Result.ShowDescription := ShowDescription;
 	Result.EditDescription := EditDescription;
 	Result.PluginIonFileName := 'descript.ion';
@@ -1026,7 +924,7 @@ procedure TRemotePropertyPresenterTest.TestInitializePrivateAccountNoWebLink;
 var
 	Item: TCloudDirItem;
 begin
-	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, TNullTCHandler.Create, False);
 
 	Item := CreateTestItem('test.txt');
 
@@ -1043,7 +941,7 @@ procedure TRemotePropertyPresenterTest.TestInitializePrivateAccountWithWebLink;
 var
 	Item: TCloudDirItem;
 begin
-	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, TNullTCHandler.Create, False);
 
 	Item := CreateTestItem('test.txt', TYPE_FILE, '', 'ABC123XYZ');
 
@@ -1058,7 +956,7 @@ procedure TRemotePropertyPresenterTest.TestInitializePrivateAccountDirectory;
 var
 	Item: TCloudDirItem;
 begin
-	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, TNullTCHandler.Create, False);
 
 	Item := CreateTestItem('folder', TYPE_DIR);
 
@@ -1072,7 +970,7 @@ procedure TRemotePropertyPresenterTest.TestInitializePublicAccount;
 var
 	Item: TCloudDirItem;
 begin
-	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, True);
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, TNullTCHandler.Create, True);
 
 	Item := CreateTestItem('test.txt');
 
@@ -1080,7 +978,6 @@ begin
 
 	Assert.IsFalse(FView.PublishEnabled, 'Publish checkbox should be disabled for public account');
 	Assert.IsTrue(FView.PublishChecked, 'Should show as published');
-	Assert.IsTrue(FView.IsTabVisible(rptDownloadLinks), 'DownloadLinks tab should be visible');
 	Assert.IsFalse(FPresenter.CanApplyHashes, 'Should not be able to apply hashes');
 end;
 
@@ -1088,7 +985,7 @@ procedure TRemotePropertyPresenterTest.TestInitializeShowsHashesTab;
 var
 	Item: TCloudDirItem;
 begin
-	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, TNullTCHandler.Create, False);
 
 	Item := CreateTestItem('test.txt');
 
@@ -1103,7 +1000,7 @@ procedure TRemotePropertyPresenterTest.TestOnPublishChangedPublishSuccess;
 var
 	Item: TCloudDirItem;
 begin
-	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, TNullTCHandler.Create, False);
 
 	Item := CreateTestItem('test.txt');
 	FPresenter.Initialize(Item, '/test.txt', CreateConfig(False, False));
@@ -1115,14 +1012,13 @@ begin
 
 	Assert.Contains(FView.WebLink, 'NEWLINK123', 'WebLink should contain new link');
 	Assert.IsTrue(FView.WebLinkEnabled, 'WebLink should be enabled');
-	Assert.IsTrue(FView.IsTabVisible(rptDownloadLinks), 'DownloadLinks tab should become visible');
 end;
 
 procedure TRemotePropertyPresenterTest.TestOnPublishChangedPublishFailed;
 var
 	Item: TCloudDirItem;
 begin
-	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, TNullTCHandler.Create, False);
 
 	Item := CreateTestItem('test.txt');
 	FPresenter.Initialize(Item, '/test.txt', CreateConfig(False, False));
@@ -1139,7 +1035,7 @@ procedure TRemotePropertyPresenterTest.TestOnPublishChangedUnpublishSuccess;
 var
 	Item: TCloudDirItem;
 begin
-	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, TNullTCHandler.Create, False);
 
 	Item := CreateTestItem('test.txt', TYPE_FILE, '', 'EXISTINGLINK');
 	FPresenter.Initialize(Item, '/test.txt', CreateConfig(False, False));
@@ -1150,14 +1046,13 @@ begin
 
 	Assert.IsEmpty(FView.WebLink, 'WebLink should be cleared');
 	Assert.IsFalse(FView.WebLinkEnabled, 'WebLink should be disabled');
-	Assert.IsFalse(FView.IsTabVisible(rptDownloadLinks), 'DownloadLinks tab should be hidden');
 end;
 
 procedure TRemotePropertyPresenterTest.TestOnPublishChangedUnpublishFailed;
 var
 	Item: TCloudDirItem;
 begin
-	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, TNullTCHandler.Create, False);
 
 	Item := CreateTestItem('test.txt', TYPE_FILE, '', 'EXISTINGLINK');
 	FPresenter.Initialize(Item, '/test.txt', CreateConfig(False, False));
@@ -1174,7 +1069,7 @@ procedure TRemotePropertyPresenterTest.TestOnPublishChangedIgnoredForPublicAccou
 var
 	Item: TCloudDirItem;
 begin
-	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, True);
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, TNullTCHandler.Create, True);
 
 	Item := CreateTestItem('test.txt');
 	FPresenter.Initialize(Item, '/test.txt', CreateConfig(False, False));
@@ -1196,7 +1091,7 @@ var
 	Item: TCloudDirItem;
 	Invites: TCloudInviteList;
 begin
-	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, TNullTCHandler.Create, False);
 
 	Item := CreateTestItem('folder', TYPE_DIR);
 
@@ -1219,7 +1114,7 @@ procedure TRemotePropertyPresenterTest.TestRefreshInvitesFailed;
 var
 	Item: TCloudDirItem;
 begin
-	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, TNullTCHandler.Create, False);
 
 	Item := CreateTestItem('folder', TYPE_DIR);
 	FShareService.ShareInfoResult := False;
@@ -1234,7 +1129,7 @@ procedure TRemotePropertyPresenterTest.TestOnInviteClickSuccess;
 var
 	Item: TCloudDirItem;
 begin
-	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, TNullTCHandler.Create, False);
 
 	Item := CreateTestItem('folder', TYPE_DIR);
 	FShareService.ShareInfoResult := True;
@@ -1255,7 +1150,7 @@ procedure TRemotePropertyPresenterTest.TestOnInviteClickFailed;
 var
 	Item: TCloudDirItem;
 begin
-	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, TNullTCHandler.Create, False);
 
 	Item := CreateTestItem('folder', TYPE_DIR);
 	FShareService.ShareInfoResult := True;
@@ -1276,7 +1171,7 @@ var
 	Item: TCloudDirItem;
 	Invites: TCloudInviteList;
 begin
-	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, TNullTCHandler.Create, False);
 
 	Item := CreateTestItem('folder', TYPE_DIR);
 
@@ -1301,7 +1196,7 @@ procedure TRemotePropertyPresenterTest.TestCanApplyHashesPrivateAccount;
 var
 	Item: TCloudDirItem;
 begin
-	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, TNullTCHandler.Create, False);
 
 	Item := CreateTestItem('test.txt');
 	FPresenter.Initialize(Item, '/test.txt', CreateConfig(False, False));
@@ -1313,7 +1208,7 @@ procedure TRemotePropertyPresenterTest.TestCanApplyHashesPublicAccount;
 var
 	Item: TCloudDirItem;
 begin
-	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, True);
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, TNullTCHandler.Create, True);
 
 	Item := CreateTestItem('test.txt');
 	FPresenter.Initialize(Item, '/test.txt', CreateConfig(False, False));
@@ -1328,7 +1223,7 @@ var
 	Item: TCloudDirItem;
 	Invites: TCloudInviteList;
 begin
-	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, TNullTCHandler.Create, False);
 
 	Item := CreateTestItem('folder', TYPE_DIR);
 
@@ -1355,7 +1250,7 @@ var
 	Item: TCloudDirItem;
 	Invites: TCloudInviteList;
 begin
-	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, TNullTCHandler.Create, False);
 
 	Item := CreateTestItem('folder', TYPE_DIR);
 
@@ -1379,7 +1274,7 @@ procedure TRemotePropertyPresenterTest.TestOnInviteChangeAccessClickEmptySelecti
 var
 	Item: TCloudDirItem;
 begin
-	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, TNullTCHandler.Create, False);
 
 	Item := CreateTestItem('folder', TYPE_DIR);
 	FShareService.ShareInfoResult := True;
@@ -1399,7 +1294,7 @@ procedure TRemotePropertyPresenterTest.TestOnInviteDeleteClickEmptySelection;
 var
 	Item: TCloudDirItem;
 begin
-	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, TNullTCHandler.Create, False);
 
 	Item := CreateTestItem('folder', TYPE_DIR);
 	FShareService.ShareInfoResult := True;
@@ -1417,7 +1312,7 @@ var
 	Item: TCloudDirItem;
 	Invites: TCloudInviteList;
 begin
-	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, TNullTCHandler.Create, False);
 
 	Item := CreateTestItem('folder', TYPE_DIR);
 
@@ -1437,83 +1332,13 @@ begin
 	Assert.IsNotEmpty(FView.ErrorTitle, 'Error should be shown on failure');
 end;
 
-{RefreshDownloadLinks tests}
-
-procedure TRemotePropertyPresenterTest.TestRefreshDownloadLinksForFile;
-var
-	Item: TCloudDirItem;
-begin
-	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, True);
-
-	Item := CreateTestItem('test.txt');
-	FDownloader.SharedFileUrl := 'https://cloud.mail.ru/public/';
-
-	FPresenter.Initialize(Item, '/test.txt', CreateConfig(False, False));
-
-	FPresenter.RefreshDownloadLinks;
-
-	Assert.AreEqual<Integer>(1, FView.DownloadLinks.Count, 'Should have one download link');
-	Assert.Contains(FView.DownloadLinks[0], '/test.txt', 'Link should contain file path');
-end;
-
-procedure TRemotePropertyPresenterTest.TestRefreshDownloadLinksForDirectoryPublicAccount;
-var
-	Item: TCloudDirItem;
-	DirListing: TCloudDirItemList;
-begin
-	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, True);
-
-	Item := CreateTestItem('folder', TYPE_DIR);
-	FDownloader.SharedFileUrl := 'https://cloud.mail.ru/public/';
-
-	{Setup directory listing with two files}
-	SetLength(DirListing, 2);
-	DirListing[0] := CreateTestItem('file1.txt');
-	DirListing[1] := CreateTestItem('file2.txt');
-	FListingService.DirectoryListing := DirListing;
-	FListingService.GetDirectoryResult := True;
-
-	FPresenter.Initialize(Item, '/folder', CreateConfig(False, False));
-
-	FPresenter.RefreshDownloadLinks;
-
-	Assert.AreEqual<Integer>(2, FView.DownloadLinks.Count, 'Should have two download links');
-end;
-
-procedure TRemotePropertyPresenterTest.TestRefreshDownloadLinksCancellation;
-var
-	Item: TCloudDirItem;
-	DirListing: TCloudDirItemList;
-begin
-	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, True);
-
-	Item := CreateTestItem('folder', TYPE_DIR);
-
-	{Setup directory listing}
-	SetLength(DirListing, 2);
-	DirListing[0] := CreateTestItem('file1.txt');
-	DirListing[1] := CreateTestItem('file2.txt');
-	FListingService.DirectoryListing := DirListing;
-	FListingService.GetDirectoryResult := True;
-
-	FPresenter.Initialize(Item, '/folder', CreateConfig(False, False));
-
-	{Set flag to cancel during ProcessMessages (simulates user clicking Cancel button)}
-	FView.CancelDownloadLinksOnProcess := True;
-
-	FPresenter.RefreshDownloadLinks;
-
-	{Should stop early due to cancellation}
-	Assert.AreEqual<Integer>(0, FView.DownloadLinks.Count, 'Should have no links after cancellation');
-end;
-
 {RefreshHashes tests}
 
 procedure TRemotePropertyPresenterTest.TestRefreshHashesForFile;
 var
 	Item: TCloudDirItem;
 begin
-	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, TNullTCHandler.Create, False);
 
 	Item := CreateTestItem('test.txt');
 	Item.hash := 'ABCDEF123456';
@@ -1534,7 +1359,7 @@ var
 	Item: TCloudDirItem;
 	DirListing: TCloudDirItemList;
 begin
-	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, TNullTCHandler.Create, False);
 
 	Item := CreateTestItem('folder', TYPE_DIR);
 
@@ -1563,7 +1388,7 @@ var
 	Item: TCloudDirItem;
 	DirListing: TCloudDirItemList;
 begin
-	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, TNullTCHandler.Create, False);
 
 	Item := CreateTestItem('folder', TYPE_DIR);
 
@@ -1587,7 +1412,7 @@ procedure TRemotePropertyPresenterTest.TestRefreshHashesButtonStates;
 var
 	Item: TCloudDirItem;
 begin
-	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, TNullTCHandler.Create, False);
 
 	Item := CreateTestItem('test.txt');
 
@@ -1606,7 +1431,7 @@ procedure TRemotePropertyPresenterTest.TestApplyHashCommandsValidCommand;
 var
 	Item: TCloudDirItem;
 begin
-	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, TNullTCHandler.Create, False);
 
 	Item := CreateTestItem('test.txt');
 	FPresenter.Initialize(Item, '/test.txt', CreateConfig(False, False));
@@ -1625,7 +1450,7 @@ procedure TRemotePropertyPresenterTest.TestApplyHashCommandsInvalidCommand;
 var
 	Item: TCloudDirItem;
 begin
-	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, TNullTCHandler.Create, False);
 
 	Item := CreateTestItem('test.txt');
 	FPresenter.Initialize(Item, '/test.txt', CreateConfig(False, False));
@@ -1643,7 +1468,7 @@ procedure TRemotePropertyPresenterTest.TestApplyHashCommandsMultipleCommands;
 var
 	Item: TCloudDirItem;
 begin
-	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, TNullTCHandler.Create, False);
 
 	Item := CreateTestItem('test.txt');
 	FPresenter.Initialize(Item, '/test.txt', CreateConfig(False, False));
@@ -1663,7 +1488,7 @@ procedure TRemotePropertyPresenterTest.TestApplyHashCommandsForDirectory;
 var
 	Item: TCloudDirItem;
 begin
-	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, TNullTCHandler.Create, False);
 
 	Item := CreateTestItem('folder', TYPE_DIR);
 	Item.kind := TYPE_DIR;
@@ -1685,7 +1510,7 @@ procedure TRemotePropertyPresenterTest.TestApplyHashCommandsSkipsCommentLines;
 var
 	Item: TCloudDirItem;
 begin
-	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, TNullTCHandler.Create, False);
 
 	Item := CreateTestItem('test.txt');
 	FPresenter.Initialize(Item, '/test.txt', CreateConfig(False, False));
@@ -1708,7 +1533,7 @@ procedure TRemotePropertyPresenterTest.TestApplyHashCommandsSkipsEmptyLines;
 var
 	Item: TCloudDirItem;
 begin
-	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, TNullTCHandler.Create, False);
 
 	Item := CreateTestItem('test.txt');
 	FPresenter.Initialize(Item, '/test.txt', CreateConfig(False, False));
@@ -1729,7 +1554,7 @@ procedure TRemotePropertyPresenterTest.TestApplyHashCommandsWithInlineComments;
 var
 	Item: TCloudDirItem;
 begin
-	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, TNullTCHandler.Create, False);
 
 	Item := CreateTestItem('test.txt');
 	FPresenter.Initialize(Item, '/test.txt', CreateConfig(False, False));
@@ -1751,7 +1576,7 @@ procedure TRemotePropertyPresenterTest.TestInitializeWithDescriptionEnabled;
 var
 	Item: TCloudDirItem;
 begin
-	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, TNullTCHandler.Create, False);
 
 	{Download returns error - no description file exists}
 	FDownloader.DownloadResult := FS_FILE_NOTFOUND;
@@ -1768,7 +1593,7 @@ procedure TRemotePropertyPresenterTest.TestInitializeWithDescriptionReadOnly;
 var
 	Item: TCloudDirItem;
 begin
-	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, TNullTCHandler.Create, False);
 
 	FDownloader.DownloadResult := FS_FILE_NOTFOUND;
 
@@ -1785,7 +1610,7 @@ var
 	Item: TCloudDirItem;
 	Config: TRemotePropertyConfig;
 begin
-	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, TNullTCHandler.Create, False);
 
 	FDownloader.DownloadResult := FS_FILE_NOTFOUND;
 
@@ -1803,7 +1628,7 @@ procedure TRemotePropertyPresenterTest.TestLoadDescriptionFileNotFound;
 var
 	Item: TCloudDirItem;
 begin
-	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, TNullTCHandler.Create, False);
 
 	{Download fails - no description file}
 	FDownloader.DownloadResult := FS_FILE_NOTFOUND;
@@ -1819,7 +1644,7 @@ procedure TRemotePropertyPresenterTest.TestSaveDescriptionNewFile;
 var
 	Item: TCloudDirItem;
 begin
-	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, TNullTCHandler.Create, False);
 
 	{Download fails - no existing description file}
 	FDownloader.DownloadResult := FS_FILE_NOTFOUND;
@@ -1844,7 +1669,7 @@ procedure TRemotePropertyPresenterTest.TestInitializeSharedItem;
 var
 	Item: TCloudDirItem;
 begin
-	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, TNullTCHandler.Create, False);
 
 	{Shared items (kind=shared) should show FolderAccess tab even for files}
 	Item := CreateTestItem('sharedfile.txt', TYPE_FILE, KIND_SHARED);
@@ -1854,88 +1679,12 @@ begin
 	Assert.IsTrue(FView.IsTabVisible(rptFolderAccess), 'FolderAccess tab should be visible for shared items');
 end;
 
-procedure TRemotePropertyPresenterTest.TestInitializePublicAccountAutoRefresh;
-var
-	Item: TCloudDirItem;
-begin
-	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, True);
-
-	FDownloader.SharedFileUrl := 'https://cloud.mail.ru/public/';
-
-	Item := CreateTestItem('test.txt');
-
-	{Enable auto-refresh}
-	var Config := CreateConfig(False, False);
-	Config.AutoUpdateDownloadListing := True;
-
-	FPresenter.Initialize(Item, '/test.txt', Config);
-
-	{Download links should be automatically populated}
-	Assert.AreEqual<Integer>(1, FView.DownloadLinks.Count, 'Download links should be auto-refreshed');
-end;
-
-{Coverage: OnPublishChanged auto-refresh path}
-
-procedure TRemotePropertyPresenterTest.TestOnPublishChangedPublishSuccessAutoRefresh;
-var
-	Item: TCloudDirItem;
-	Config: TRemotePropertyConfig;
-begin
-	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
-
-	Item := CreateTestItem('test.txt');
-	Config := CreateConfig(False, False);
-	Config.AutoUpdateDownloadListing := True;
-	FPresenter.Initialize(Item, '/test.txt', Config);
-
-	FShareService.PublishResult := True;
-	FShareService.PublishLink := 'AUTOREFRESHLINK';
-
-	FPresenter.OnPublishChanged(True);
-
-	{Line 300: RefreshDownloadLinks is called when publish succeeds and AutoUpdateDownloadListing=True}
-	Assert.IsNotEmpty(FView.DownloadLinksLogMessage, 'RefreshDownloadLinks should have been called');
-end;
-
-{Coverage: recursive listing subdirectory paths}
-
-procedure TRemotePropertyPresenterTest.TestRefreshDownloadLinksRecursiveSubdirectory;
-var
-	Item: TCloudDirItem;
-	RootListing, SubListing: TCloudDirItemList;
-begin
-	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, True);
-
-	Item := CreateTestItem('folder', TYPE_DIR);
-	FDownloader.SharedFileUrl := 'https://cloud.mail.ru/public/';
-
-	{Root listing: one file and one subdirectory}
-	SetLength(RootListing, 2);
-	RootListing[0] := CreateTestItem('file1.txt');
-	RootListing[1] := CreateTestItem('subfolder', TYPE_DIR);
-	FListingService.DirectoryListing := RootListing;
-
-	{Subdirectory listing: one file only (prevents infinite recursion)}
-	SetLength(SubListing, 1);
-	SubListing[0] := CreateTestItem('file2.txt');
-	FListingService.SubDirListing := SubListing;
-
-	FListingService.GetDirectoryResult := True;
-
-	FPresenter.Initialize(Item, '/folder', CreateConfig(False, False));
-
-	FPresenter.RefreshDownloadLinks;
-
-	{Lines 422-423: recursive call enters subdirectory}
-	Assert.AreEqual<Integer>(2, FView.DownloadLinks.Count, 'Should have links from root and subdirectory');
-end;
-
 procedure TRemotePropertyPresenterTest.TestRefreshHashesRecursiveSubdirectory;
 var
 	Item: TCloudDirItem;
 	RootListing, SubListing: TCloudDirItemList;
 begin
-	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, TNullTCHandler.Create, False);
 
 	Item := CreateTestItem('folder', TYPE_DIR);
 
@@ -1972,7 +1721,7 @@ var
 	FS: TMemoryFileSystem;
 begin
 	FS := TMemoryFileSystem.Create;
-	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, FS, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, FS, TNullTCHandler.Create, False);
 
 	{Mock downloader writes description content to the file system.
 		Key must match ExtractFileName(FRemotePath): on Windows, ExtractFileName
@@ -1994,7 +1743,7 @@ var
 	FS: TMemoryFileSystem;
 begin
 	FS := TMemoryFileSystem.Create;
-	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, FS, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, FS, TNullTCHandler.Create, False);
 
 	{Mock downloader writes existing description content to the file system}
 	FDownloader.DownloadResult := FS_FILE_OK;
@@ -2018,7 +1767,7 @@ procedure TRemotePropertyPresenterTest.TestSaveDescriptionEmptyDeletesRemote;
 var
 	Item: TCloudDirItem;
 begin
-	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, FPublicCloudFactoryRef, TNullTCHandler.Create, False);
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, TNullTCHandler.Create, False);
 
 	{Download fails -- no existing description file remotely}
 	FDownloader.DownloadResult := FS_FILE_NOTFOUND;
