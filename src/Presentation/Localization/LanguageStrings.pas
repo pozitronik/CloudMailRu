@@ -894,8 +894,6 @@ end;
 
 procedure BuildTranslationRegistry;
 begin
-	if TranslationRegistry <> nil then
-		TranslationRegistry.Free;
 	TranslationRegistry := TDictionary<string, PWideString>.Create;
 
 	TranslationRegistry.Add('ACCOUNT_TRASH', @ACCOUNT_TRASH);
