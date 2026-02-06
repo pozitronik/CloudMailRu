@@ -332,6 +332,7 @@ uses
 	ThumbnailIntegrationTest in 'Integration\ThumbnailIntegrationTest.pas',
 	StreamingIntegrationTest in 'Integration\StreamingIntegrationTest.pas',
 	DescriptionSyncIntegrationTest in 'Integration\DescriptionSyncIntegrationTest.pas',
+	TimestampSyncIntegrationTest in 'Integration\TimestampSyncIntegrationTest.pas',
 	OpenSSLProvider in '..\src\Infrastructure\OpenSSL\OpenSSLProvider.pas',
 	OpenSSLProviderTest in 'Infrastructure\OpenSSL\OpenSSLProviderTest.pas',
 	AccountCredentialsProvider in '..\src\Infrastructure\Password\AccountCredentialsProvider.pas',

@@ -428,6 +428,7 @@
         <DCCReference Include="Integration\ThumbnailIntegrationTest.pas"/>
         <DCCReference Include="Integration\StreamingIntegrationTest.pas"/>
         <DCCReference Include="Integration\DescriptionSyncIntegrationTest.pas"/>
+        <DCCReference Include="Integration\TimestampSyncIntegrationTest.pas"/>
         <DCCReference Include="..\src\Infrastructure\OpenSSL\OpenSSLProvider.pas"/>
         <DCCReference Include="Infrastructure\OpenSSL\OpenSSLProviderTest.pas"/>
         <DCCReference Include="..\src\Infrastructure\Password\AccountCredentialsProvider.pas"/>
