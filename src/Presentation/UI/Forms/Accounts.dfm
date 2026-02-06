@@ -1559,7 +1559,7 @@ object AccountsForm: TAccountsForm
       object ServerNameEdit: TEdit
         Left = 272
         Top = 20
-        Width = 399
+        Width = 411
         Height = 21
         Anchors = [akLeft, akTop, akRight]
         TabOrder = 3
@@ -1568,14 +1568,14 @@ object AccountsForm: TAccountsForm
       object ServerUrlEdit: TEdit
         Left = 272
         Top = 58
-        Width = 313
+        Width = 325
         Height = 21
         Anchors = [akLeft, akTop, akRight]
         TabOrder = 4
         OnChange = ServerFieldChanged
       end
       object TestServerButton: TButton
-        Left = 591
+        Left = 603
         Top = 58
         Width = 80
         Height = 21
