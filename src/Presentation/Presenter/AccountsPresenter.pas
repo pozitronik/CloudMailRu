@@ -141,6 +141,18 @@ type
 		procedure SetDescriptionFileName(Value: WideString);
 		function GetDescriptionFileName: WideString;
 
+		{Timestamp settings}
+		procedure SetTimestampCopyToCloud(Value: Boolean);
+		function GetTimestampCopyToCloud: Boolean;
+		procedure SetTimestampCopyFromCloud(Value: Boolean);
+		function GetTimestampCopyFromCloud: Boolean;
+		procedure SetTimestampTrackCloudFS(Value: Boolean);
+		function GetTimestampTrackCloudFS: Boolean;
+		procedure SetTimestampFileName(Value: WideString);
+		function GetTimestampFileName: WideString;
+		procedure SetTimestampConflictMode(Value: Integer);
+		function GetTimestampConflictMode: Integer;
+
 		{Streaming extensions}
 		procedure SetStreamingExtensionsList(const Items: TArray<TStreamingDisplayItem>);
 		function GetSelectedStreamingExtensionIndex: Integer;
@@ -592,6 +604,13 @@ begin
 		FView.SetDescriptionCopyFromCloud(Settings.DescriptionCopyFromCloud);
 		FView.SetDescriptionTrackCloudFS(Settings.DescriptionTrackCloudFS);
 		FView.SetDescriptionFileName(Settings.DescriptionFileName);
+
+		{Timestamp settings}
+		FView.SetTimestampCopyToCloud(Settings.TimestampCopyToCloud);
+		FView.SetTimestampCopyFromCloud(Settings.TimestampCopyFromCloud);
+		FView.SetTimestampTrackCloudFS(Settings.TimestampTrackCloudFS);
+		FView.SetTimestampFileName(Settings.TimestampFileName);
+		FView.SetTimestampConflictMode(Settings.TimestampConflictMode);
 	finally
 		FGlobalSettingsUpdating := False;
 	end;
@@ -1189,6 +1208,13 @@ begin
 	Settings.DescriptionCopyFromCloud := FView.GetDescriptionCopyFromCloud;
 	Settings.DescriptionTrackCloudFS := FView.GetDescriptionTrackCloudFS;
 	Settings.DescriptionFileName := FView.GetDescriptionFileName;
+
+	{Timestamp settings}
+	Settings.TimestampCopyToCloud := FView.GetTimestampCopyToCloud;
+	Settings.TimestampCopyFromCloud := FView.GetTimestampCopyFromCloud;
+	Settings.TimestampTrackCloudFS := FView.GetTimestampTrackCloudFS;
+	Settings.TimestampFileName := FView.GetTimestampFileName;
+	Settings.TimestampConflictMode := FView.GetTimestampConflictMode;
 
 	{Save settings}
 	FSettingsManager.SetSettings(Settings);

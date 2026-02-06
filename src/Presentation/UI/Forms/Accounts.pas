@@ -78,14 +78,7 @@ type
 		DownloadLinksEncodeCB: TCheckBox;
 		AutoUpdateDownloadListingCB: TCheckBox;
 		CommentsTab: TTabSheet;
-		DescriptionEnabledCB: TCheckBox;
-		DescriptionEditorEnabledCB: TCheckBox;
 		CommentsSettingsApplyBtn: TButton;
-		DescriptionCopyToCloudCB: TCheckBox;
-		DescriptionCopyFromCloudCB: TCheckBox;
-		DescriptionFileNameLabel: TLabel;
-		DescriptionFileNameEdit: TEdit;
-		DescriptionTrackCloudFSCB: TCheckBox;
 		PrecalculateHashCB: TCheckBox;
 		CheckCRCCB: TCheckBox;
 		SpeedLimitGB: TGroupBox;
@@ -189,6 +182,22 @@ type
 		ShowInvitesFoldersCB: TCheckBox;
 		ShowSharedFoldersCB: TCheckBox;
 		ShowTrashFoldersCB: TCheckBox;
+    FileCommentsCB: TGroupBox;
+    DescriptionFileNameLabel: TLabel;
+    DescriptionEnabledCB: TCheckBox;
+    DescriptionEditorEnabledCB: TCheckBox;
+    DescriptionCopyToCloudCB: TCheckBox;
+    DescriptionCopyFromCloudCB: TCheckBox;
+    DescriptionFileNameEdit: TEdit;
+    DescriptionTrackCloudFSCB: TCheckBox;
+    FileTimestampsCB: TGroupBox;
+    TimestampCopyToCloudCB: TCheckBox;
+    TimestampCopyFromCloudCB: TCheckBox;
+    TimestampTrackCloudFSCB: TCheckBox;
+    TimestampFileNameLabel: TLabel;
+    TimestampFileNameEdit: TEdit;
+    TimestampConflictModeLabel: TLabel;
+    TimestampConflictModeCB: TComboBox;
 		procedure FormShow(Sender: TObject);
 		procedure AccountsListViewKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
 		procedure AccountsListViewSelectItem(Sender: TObject; Item: TListItem; Selected: Boolean);
@@ -323,6 +332,18 @@ type
 		function GetDescriptionTrackCloudFS: Boolean;
 		procedure SetDescriptionFileName(Value: WideString);
 		function GetDescriptionFileName: WideString;
+
+		{IAccountsView - Timestamp settings}
+		procedure SetTimestampCopyToCloud(Value: Boolean);
+		function GetTimestampCopyToCloud: Boolean;
+		procedure SetTimestampCopyFromCloud(Value: Boolean);
+		function GetTimestampCopyFromCloud: Boolean;
+		procedure SetTimestampTrackCloudFS(Value: Boolean);
+		function GetTimestampTrackCloudFS: Boolean;
+		procedure SetTimestampFileName(Value: WideString);
+		function GetTimestampFileName: WideString;
+		procedure SetTimestampConflictMode(Value: Integer);
+		function GetTimestampConflictMode: Integer;
 
 		{IAccountsView - Streaming extensions}
 		procedure SetStreamingExtensionsList(const Items: TArray<TStreamingDisplayItem>);
@@ -885,6 +906,58 @@ end;
 function TAccountsForm.GetDescriptionFileName: WideString;
 begin
 	Result := DescriptionFileNameEdit.Text;
+end;
+
+{IAccountsView - Timestamp settings}
+
+procedure TAccountsForm.SetTimestampCopyToCloud(Value: Boolean);
+begin
+	TimestampCopyToCloudCB.Checked := Value;
+end;
+
+function TAccountsForm.GetTimestampCopyToCloud: Boolean;
+begin
+	Result := TimestampCopyToCloudCB.Checked;
+end;
+
+procedure TAccountsForm.SetTimestampCopyFromCloud(Value: Boolean);
+begin
+	TimestampCopyFromCloudCB.Checked := Value;
+end;
+
+function TAccountsForm.GetTimestampCopyFromCloud: Boolean;
+begin
+	Result := TimestampCopyFromCloudCB.Checked;
+end;
+
+procedure TAccountsForm.SetTimestampTrackCloudFS(Value: Boolean);
+begin
+	TimestampTrackCloudFSCB.Checked := Value;
+end;
+
+function TAccountsForm.GetTimestampTrackCloudFS: Boolean;
+begin
+	Result := TimestampTrackCloudFSCB.Checked;
+end;
+
+procedure TAccountsForm.SetTimestampFileName(Value: WideString);
+begin
+	TimestampFileNameEdit.Text := Value;
+end;
+
+function TAccountsForm.GetTimestampFileName: WideString;
+begin
+	Result := TimestampFileNameEdit.Text;
+end;
+
+procedure TAccountsForm.SetTimestampConflictMode(Value: Integer);
+begin
+	TimestampConflictModeCB.ItemIndex := Value;
+end;
+
+function TAccountsForm.GetTimestampConflictMode: Integer;
+begin
+	Result := TimestampConflictModeCB.ItemIndex;
 end;
 
 {IAccountsView - Streaming extensions}
@@ -1816,7 +1889,7 @@ begin
 	AccountsTab.Caption := DFM_TAB_ACCOUNTS;
 	GlobalTab.Caption := DFM_TAB_GLOBAL_SETTINGS;
 	NetworkTab.Caption := DFM_TAB_NETWORK_SETTINGS;
-	CommentsTab.Caption := DFM_TAB_FILE_COMMENTS;
+	CommentsTab.Caption := DFM_TAB_METADATA;
 	StreamingTab.Caption := DFM_TAB_STREAMING;
 	TranslationTab.Caption := DFM_TAB_TRANSLATION;
 
@@ -1896,13 +1969,23 @@ begin
 	DownloadsBPSLabel.Caption := DFM_LBL_DOWNLOAD_BPS;
 	ChangeUserAgentCB.Caption := DFM_CB_CHANGE_UA;
 
-	{File comments tab}
+	{Metadata tab - File comments groupbox}
+	FileCommentsCB.Caption := DFM_GB_FILE_COMMENTS;
 	DescriptionFileNameLabel.Caption := DFM_LBL_DESC_FILENAME;
 	DescriptionEnabledCB.Caption := DFM_CB_DESC_ENABLED;
 	DescriptionEditorEnabledCB.Caption := DFM_CB_DESC_EDITOR;
 	DescriptionCopyToCloudCB.Caption := DFM_CB_DESC_COPY_TO;
 	DescriptionCopyFromCloudCB.Caption := DFM_CB_DESC_COPY_FROM;
 	DescriptionTrackCloudFSCB.Caption := DFM_CB_DESC_TRACK;
+
+	{Metadata tab - File timestamps groupbox}
+	FileTimestampsCB.Caption := DFM_GB_FILE_TIMESTAMPS;
+	TimestampCopyToCloudCB.Caption := DFM_CB_TS_COPY_TO;
+	TimestampCopyFromCloudCB.Caption := DFM_CB_TS_COPY_FROM;
+	TimestampTrackCloudFSCB.Caption := DFM_CB_TS_TRACK;
+	TimestampFileNameLabel.Caption := DFM_LBL_TS_FILENAME;
+	TimestampConflictModeLabel.Caption := DFM_LBL_TS_CONFLICT;
+	RepopulateCombo(TimestampConflictModeCB, [DFM_OPT_TS_USE_STORED, DFM_OPT_TS_USE_SERVER]);
 
 	{Streaming tab}
 	ExtLabel.Caption := DFM_LBL_FILE_EXT;

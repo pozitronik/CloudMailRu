@@ -232,7 +232,7 @@ var
 	DFM_TAB_ACCOUNTS: WideString;
 	DFM_TAB_GLOBAL_SETTINGS: WideString;
 	DFM_TAB_NETWORK_SETTINGS: WideString;
-	DFM_TAB_FILE_COMMENTS: WideString;
+	DFM_TAB_METADATA: WideString;
 	DFM_TAB_STREAMING: WideString;
 	DFM_TAB_SERVERS: WideString;
 	DFM_TAB_TRANSLATION: WideString;
@@ -332,6 +332,15 @@ var
 	DFM_CB_DESC_COPY_TO: WideString;
 	DFM_CB_DESC_COPY_FROM: WideString;
 	DFM_CB_DESC_TRACK: WideString;
+	DFM_GB_FILE_COMMENTS: WideString;
+	DFM_GB_FILE_TIMESTAMPS: WideString;
+	DFM_CB_TS_COPY_TO: WideString;
+	DFM_CB_TS_COPY_FROM: WideString;
+	DFM_CB_TS_TRACK: WideString;
+	DFM_LBL_TS_FILENAME: WideString;
+	DFM_LBL_TS_CONFLICT: WideString;
+	DFM_OPT_TS_USE_STORED: WideString;
+	DFM_OPT_TS_USE_SERVER: WideString;
 	{Combobox option strings}
 	DFM_OPT_ASK_USER: WideString;
 	DFM_OPT_IGNORE_FILE: WideString;
@@ -670,7 +679,7 @@ begin
 	DFM_TAB_ACCOUNTS := 'Accounts';
 	DFM_TAB_GLOBAL_SETTINGS := 'Global settings';
 	DFM_TAB_NETWORK_SETTINGS := 'Network settings';
-	DFM_TAB_FILE_COMMENTS := 'File comments support';
+	DFM_TAB_METADATA := 'Metadata';
 	DFM_TAB_STREAMING := 'Streaming settings';
 	DFM_TAB_SERVERS := 'Servers';
 	DFM_TAB_TRANSLATION := 'Translation';
@@ -770,6 +779,15 @@ begin
 	DFM_CB_DESC_COPY_TO := 'Copy descript.ion comments to cloud';
 	DFM_CB_DESC_COPY_FROM := 'Copy descript.ion comments from cloud';
 	DFM_CB_DESC_TRACK := 'Track cloud filesystem changes';
+	DFM_GB_FILE_COMMENTS := 'File comments';
+	DFM_GB_FILE_TIMESTAMPS := 'File timestamps';
+	DFM_CB_TS_COPY_TO := 'Store file timestamps to cloud';
+	DFM_CB_TS_COPY_FROM := 'Restore file timestamps from cloud';
+	DFM_CB_TS_TRACK := 'Track cloud filesystem timestamp changes';
+	DFM_LBL_TS_FILENAME := 'Override timestamp metadata file name:';
+	DFM_LBL_TS_CONFLICT := 'Timestamp conflict mode:';
+	DFM_OPT_TS_USE_STORED := 'Use stored local time';
+	DFM_OPT_TS_USE_SERVER := 'Use server time on conflict';
 	{Combobox option strings}
 	DFM_OPT_ASK_USER := 'Ask user';
 	DFM_OPT_IGNORE_FILE := 'Ignore file';
@@ -1098,7 +1116,7 @@ begin
 	TranslationRegistry.Add('DFM_TAB_ACCOUNTS', @DFM_TAB_ACCOUNTS);
 	TranslationRegistry.Add('DFM_TAB_GLOBAL_SETTINGS', @DFM_TAB_GLOBAL_SETTINGS);
 	TranslationRegistry.Add('DFM_TAB_NETWORK_SETTINGS', @DFM_TAB_NETWORK_SETTINGS);
-	TranslationRegistry.Add('DFM_TAB_FILE_COMMENTS', @DFM_TAB_FILE_COMMENTS);
+	TranslationRegistry.Add('DFM_TAB_METADATA', @DFM_TAB_METADATA);
 	TranslationRegistry.Add('DFM_TAB_STREAMING', @DFM_TAB_STREAMING);
 	TranslationRegistry.Add('DFM_TAB_SERVERS', @DFM_TAB_SERVERS);
 	TranslationRegistry.Add('DFM_TAB_TRANSLATION', @DFM_TAB_TRANSLATION);
@@ -1198,6 +1216,15 @@ begin
 	TranslationRegistry.Add('DFM_CB_DESC_COPY_TO', @DFM_CB_DESC_COPY_TO);
 	TranslationRegistry.Add('DFM_CB_DESC_COPY_FROM', @DFM_CB_DESC_COPY_FROM);
 	TranslationRegistry.Add('DFM_CB_DESC_TRACK', @DFM_CB_DESC_TRACK);
+	TranslationRegistry.Add('DFM_GB_FILE_COMMENTS', @DFM_GB_FILE_COMMENTS);
+	TranslationRegistry.Add('DFM_GB_FILE_TIMESTAMPS', @DFM_GB_FILE_TIMESTAMPS);
+	TranslationRegistry.Add('DFM_CB_TS_COPY_TO', @DFM_CB_TS_COPY_TO);
+	TranslationRegistry.Add('DFM_CB_TS_COPY_FROM', @DFM_CB_TS_COPY_FROM);
+	TranslationRegistry.Add('DFM_CB_TS_TRACK', @DFM_CB_TS_TRACK);
+	TranslationRegistry.Add('DFM_LBL_TS_FILENAME', @DFM_LBL_TS_FILENAME);
+	TranslationRegistry.Add('DFM_LBL_TS_CONFLICT', @DFM_LBL_TS_CONFLICT);
+	TranslationRegistry.Add('DFM_OPT_TS_USE_STORED', @DFM_OPT_TS_USE_STORED);
+	TranslationRegistry.Add('DFM_OPT_TS_USE_SERVER', @DFM_OPT_TS_USE_SERVER);
 	TranslationRegistry.Add('DFM_OPT_ASK_USER', @DFM_OPT_ASK_USER);
 	TranslationRegistry.Add('DFM_OPT_IGNORE_FILE', @DFM_OPT_IGNORE_FILE);
 	TranslationRegistry.Add('DFM_OPT_ABORT_OPERATION', @DFM_OPT_ABORT_OPERATION);

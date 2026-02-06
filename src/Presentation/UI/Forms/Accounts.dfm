@@ -567,9 +567,9 @@ object AccountsForm: TAccountsForm
         ShowHint = True
       end
       object RetryWaitLabel: TLabel
-        Left = 535
+        Left = 564
         Top = 194
-        Width = 49
+        Width = 20
         Height = 13
         Hint = 'Delay between retry attempts in milliseconds'
         Alignment = taRightJustify
@@ -857,7 +857,6 @@ object AccountsForm: TAccountsForm
           Caption = 'Invites folders'
           TabOrder = 0
           OnClick = GlobalSettingsFieldChanged
-          ExplicitHeight = 27
         end
         object ShowSharedFoldersCB: TCheckBox
           Left = 185
@@ -868,7 +867,6 @@ object AccountsForm: TAccountsForm
           Caption = 'Shared links folders'
           TabOrder = 1
           OnClick = GlobalSettingsFieldChanged
-          ExplicitHeight = 27
         end
         object ShowTrashFoldersCB: TCheckBox
           Left = 365
@@ -879,7 +877,6 @@ object AccountsForm: TAccountsForm
           Caption = 'Trash folders'
           TabOrder = 2
           OnClick = GlobalSettingsFieldChanged
-          ExplicitHeight = 27
         end
       end
     end
@@ -1103,7 +1100,7 @@ object AccountsForm: TAccountsForm
       object ChangeUserAgentCB: TCheckBox
         Left = 0
         Top = 345
-        Width = 150
+        Width = 289
         Height = 17
         Caption = 'Change plugin UserAgent'
         TabOrder = 3
@@ -1159,41 +1156,11 @@ object AccountsForm: TAccountsForm
       end
     end
     object CommentsTab: TTabSheet
-      Caption = 'File comments support'
+      Caption = 'Metadata'
       ImageIndex = 3
       DesignSize = (
         687
         446)
-      object DescriptionFileNameLabel: TLabel
-        Left = 4
-        Top = 118
-        Width = 151
-        Height = 13
-        Hint = 'Leave empty to use default descript.ion'
-        Caption = 'Override descript.ion file name:'
-        ParentShowHint = False
-        ShowHint = True
-      end
-      object DescriptionEnabledCB: TCheckBox
-        Left = 4
-        Top = 3
-        Width = 679
-        Height = 17
-        Anchors = [akLeft, akTop, akRight]
-        Caption = 'Read descript.ion comments from cloud filesystem'
-        TabOrder = 0
-        OnClick = GlobalSettingsFieldChanged
-      end
-      object DescriptionEditorEnabledCB: TCheckBox
-        Left = 4
-        Top = 25
-        Width = 679
-        Height = 17
-        Anchors = [akLeft, akTop, akRight]
-        Caption = 'Enable descript.ion editor'
-        TabOrder = 1
-        OnClick = GlobalSettingsFieldChanged
-      end
       object CommentsSettingsApplyBtn: TButton
         Left = 559
         Top = 417
@@ -1202,50 +1169,176 @@ object AccountsForm: TAccountsForm
         Anchors = [akRight, akBottom]
         Caption = 'Apply'
         Enabled = False
-        TabOrder = 6
+        TabOrder = 0
         OnClick = GlobalSettingsApplyBtnClick
       end
-      object DescriptionCopyToCloudCB: TCheckBox
-        Left = 4
-        Top = 47
-        Width = 679
-        Height = 17
-        Anchors = [akLeft, akTop, akRight]
-        Caption = 'Copy descript.ion comments to cloud'
+      object FileCommentsCB: TGroupBox
+        Left = 0
+        Top = 0
+        Width = 687
+        Height = 168
+        Align = alTop
+        Caption = 'File comments'
+        TabOrder = 1
+        DesignSize = (
+          687
+          168)
+        object DescriptionFileNameLabel: TLabel
+          Left = 4
+          Top = 137
+          Width = 151
+          Height = 13
+          Hint = 'Leave empty to use default descript.ion'
+          Caption = 'Override descript.ion file name:'
+          ParentShowHint = False
+          ShowHint = True
+        end
+        object DescriptionEnabledCB: TCheckBox
+          Left = 4
+          Top = 17
+          Width = 679
+          Height = 17
+          Anchors = [akLeft, akTop, akRight]
+          Caption = 'Read descript.ion comments from cloud filesystem'
+          TabOrder = 0
+          OnClick = GlobalSettingsFieldChanged
+        end
+        object DescriptionEditorEnabledCB: TCheckBox
+          Left = 4
+          Top = 40
+          Width = 679
+          Height = 17
+          Anchors = [akLeft, akTop, akRight]
+          Caption = 'Enable descript.ion editor'
+          TabOrder = 1
+          OnClick = GlobalSettingsFieldChanged
+        end
+        object DescriptionCopyToCloudCB: TCheckBox
+          Left = 4
+          Top = 63
+          Width = 679
+          Height = 17
+          Anchors = [akLeft, akTop, akRight]
+          Caption = 'Copy descript.ion comments to cloud'
+          TabOrder = 2
+          OnClick = GlobalSettingsFieldChanged
+        end
+        object DescriptionCopyFromCloudCB: TCheckBox
+          Left = 4
+          Top = 86
+          Width = 679
+          Height = 17
+          Anchors = [akLeft, akTop, akRight]
+          Caption = 'Copy descript.ion comments from cloud'
+          TabOrder = 3
+          OnClick = GlobalSettingsFieldChanged
+        end
+        object DescriptionFileNameEdit: TEdit
+          Left = 251
+          Top = 134
+          Width = 432
+          Height = 21
+          Anchors = [akLeft, akTop, akRight]
+          TabOrder = 4
+          OnChange = GlobalSettingsFieldChanged
+        end
+        object DescriptionTrackCloudFSCB: TCheckBox
+          Left = 4
+          Top = 109
+          Width = 679
+          Height = 17
+          Hint = 'Updates descript.ion when files are renamed or deleted in cloud'
+          Anchors = [akLeft, akTop, akRight]
+          Caption = 'Track cloud filesystem changes'
+          ParentShowHint = False
+          ShowHint = True
+          TabOrder = 5
+          OnClick = GlobalSettingsFieldChanged
+        end
+      end
+      object FileTimestampsCB: TGroupBox
+        Left = 0
+        Top = 168
+        Width = 687
+        Height = 154
+        Align = alTop
+        Caption = 'File timestamps'
         TabOrder = 2
-        OnClick = GlobalSettingsFieldChanged
-      end
-      object DescriptionCopyFromCloudCB: TCheckBox
-        Left = 4
-        Top = 70
-        Width = 679
-        Height = 17
-        Anchors = [akLeft, akTop, akRight]
-        Caption = 'Copy descript.ion comments from cloud'
-        TabOrder = 3
-        OnClick = GlobalSettingsFieldChanged
-      end
-      object DescriptionFileNameEdit: TEdit
-        Left = 162
-        Top = 115
-        Width = 521
-        Height = 21
-        Anchors = [akLeft, akTop, akRight]
-        TabOrder = 5
-        OnChange = GlobalSettingsFieldChanged
-      end
-      object DescriptionTrackCloudFSCB: TCheckBox
-        Left = 4
-        Top = 93
-        Width = 679
-        Height = 17
-        Hint = 'Updates descript.ion when files are renamed or deleted in cloud'
-        Anchors = [akLeft, akTop, akRight]
-        Caption = 'Track cloud filesystem changes'
-        ParentShowHint = False
-        ShowHint = True
-        TabOrder = 4
-        OnClick = GlobalSettingsFieldChanged
+        DesignSize = (
+          687
+          154)
+        object TimestampFileNameLabel: TLabel
+          Left = 4
+          Top = 122
+          Width = 193
+          Height = 13
+          Hint = 'Leave empty to use default .cloud_timestamps'
+          Caption = 'Override timestamp metadata file name:'
+          ParentShowHint = False
+          ShowHint = True
+        end
+        object TimestampConflictModeLabel: TLabel
+          Left = 4
+          Top = 92
+          Width = 121
+          Height = 13
+          Hint = 'How to handle conflicting timestamps on download'
+          Caption = 'Timestamp conflict mode:'
+          ParentShowHint = False
+          ShowHint = True
+        end
+        object TimestampCopyToCloudCB: TCheckBox
+          Left = 4
+          Top = 17
+          Width = 679
+          Height = 17
+          Anchors = [akLeft, akTop, akRight]
+          Caption = 'Store file timestamps to cloud'
+          TabOrder = 0
+          OnClick = GlobalSettingsFieldChanged
+        end
+        object TimestampCopyFromCloudCB: TCheckBox
+          Left = 4
+          Top = 40
+          Width = 679
+          Height = 17
+          Anchors = [akLeft, akTop, akRight]
+          Caption = 'Restore file timestamps from cloud'
+          TabOrder = 1
+          OnClick = GlobalSettingsFieldChanged
+        end
+        object TimestampTrackCloudFSCB: TCheckBox
+          Left = 4
+          Top = 63
+          Width = 679
+          Height = 17
+          Anchors = [akLeft, akTop, akRight]
+          Caption = 'Track cloud filesystem timestamp changes'
+          TabOrder = 2
+          OnClick = GlobalSettingsFieldChanged
+        end
+        object TimestampFileNameEdit: TEdit
+          Left = 251
+          Top = 119
+          Width = 432
+          Height = 21
+          Anchors = [akLeft, akTop, akRight]
+          TabOrder = 4
+          OnChange = GlobalSettingsFieldChanged
+        end
+        object TimestampConflictModeCB: TComboBox
+          Left = 251
+          Top = 89
+          Width = 432
+          Height = 21
+          Style = csDropDownList
+          Anchors = [akLeft, akTop, akRight]
+          TabOrder = 3
+          OnChange = GlobalSettingsFieldChanged
+          Items.Strings = (
+            'Use stored local time'
+            'Use server time on conflict')
+        end
       end
     end
     object StreamingTab: TTabSheet

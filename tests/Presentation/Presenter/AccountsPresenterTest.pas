@@ -76,6 +76,13 @@ type
 		FDescriptionTrackCloudFS: Boolean;
 		FDescriptionFileName: WideString;
 
+		{Timestamp settings}
+		FTimestampCopyToCloud: Boolean;
+		FTimestampCopyFromCloud: Boolean;
+		FTimestampTrackCloudFS: Boolean;
+		FTimestampFileName: WideString;
+		FTimestampConflictMode: Integer;
+
 		{Streaming extensions}
 		FStreamingDisplayItems: TArray<TStreamingDisplayItem>;
 		FStreamingSelectedIndex: Integer;
@@ -250,6 +257,18 @@ type
 		function GetDescriptionTrackCloudFS: Boolean;
 		procedure SetDescriptionFileName(Value: WideString);
 		function GetDescriptionFileName: WideString;
+
+		{IAccountsView - Timestamp settings}
+		procedure SetTimestampCopyToCloud(Value: Boolean);
+		function GetTimestampCopyToCloud: Boolean;
+		procedure SetTimestampCopyFromCloud(Value: Boolean);
+		function GetTimestampCopyFromCloud: Boolean;
+		procedure SetTimestampTrackCloudFS(Value: Boolean);
+		function GetTimestampTrackCloudFS: Boolean;
+		procedure SetTimestampFileName(Value: WideString);
+		function GetTimestampFileName: WideString;
+		procedure SetTimestampConflictMode(Value: Integer);
+		function GetTimestampConflictMode: Integer;
 
 		{IAccountsView - Streaming extensions}
 		procedure SetStreamingExtensionsList(const Items: TArray<TStreamingDisplayItem>);
@@ -1178,6 +1197,58 @@ begin
 	Result := FDescriptionFileName;
 end;
 
+{Timestamp settings}
+
+procedure TMockAccountsView.SetTimestampCopyToCloud(Value: Boolean);
+begin
+	FTimestampCopyToCloud := Value;
+end;
+
+function TMockAccountsView.GetTimestampCopyToCloud: Boolean;
+begin
+	Result := FTimestampCopyToCloud;
+end;
+
+procedure TMockAccountsView.SetTimestampCopyFromCloud(Value: Boolean);
+begin
+	FTimestampCopyFromCloud := Value;
+end;
+
+function TMockAccountsView.GetTimestampCopyFromCloud: Boolean;
+begin
+	Result := FTimestampCopyFromCloud;
+end;
+
+procedure TMockAccountsView.SetTimestampTrackCloudFS(Value: Boolean);
+begin
+	FTimestampTrackCloudFS := Value;
+end;
+
+function TMockAccountsView.GetTimestampTrackCloudFS: Boolean;
+begin
+	Result := FTimestampTrackCloudFS;
+end;
+
+procedure TMockAccountsView.SetTimestampFileName(Value: WideString);
+begin
+	FTimestampFileName := Value;
+end;
+
+function TMockAccountsView.GetTimestampFileName: WideString;
+begin
+	Result := FTimestampFileName;
+end;
+
+procedure TMockAccountsView.SetTimestampConflictMode(Value: Integer);
+begin
+	FTimestampConflictMode := Value;
+end;
+
+function TMockAccountsView.GetTimestampConflictMode: Integer;
+begin
+	Result := FTimestampConflictMode;
+end;
+
 {Streaming extensions}
 
 procedure TMockAccountsView.SetStreamingExtensionsList(const Items: TArray<TStreamingDisplayItem>);
@@ -1921,6 +1992,11 @@ begin
 	FView.SetSSLBackend(2);
 	FView.SetDescriptionEnabled(True);
 	FView.SetDescriptionFileName('descript.ion');
+	FView.SetTimestampCopyToCloud(True);
+	FView.SetTimestampCopyFromCloud(True);
+	FView.SetTimestampTrackCloudFS(True);
+	FView.SetTimestampFileName('.my_timestamps');
+	FView.SetTimestampConflictMode(1);
 
 	FPresenter.OnApplyGlobalSettingsClick;
 
@@ -1934,6 +2010,11 @@ begin
 	Assert.AreEqual(2, Settings.SSLBackend, 'SSLBackend should be saved');
 	Assert.IsTrue(Settings.DescriptionEnabled, 'DescriptionEnabled should be saved');
 	Assert.AreEqual('descript.ion', Settings.DescriptionFileName, 'DescriptionFileName should be saved');
+	Assert.IsTrue(Settings.TimestampCopyToCloud, 'TimestampCopyToCloud should be saved');
+	Assert.IsTrue(Settings.TimestampCopyFromCloud, 'TimestampCopyFromCloud should be saved');
+	Assert.IsTrue(Settings.TimestampTrackCloudFS, 'TimestampTrackCloudFS should be saved');
+	Assert.AreEqual('.my_timestamps', Settings.TimestampFileName, 'TimestampFileName should be saved');
+	Assert.AreEqual(1, Settings.TimestampConflictMode, 'TimestampConflictMode should be saved');
 end;
 
 procedure TAccountsPresenterTest.TestOnApplyGlobalSettingsClickSetsAppliedFlag;
@@ -3161,6 +3242,11 @@ begin
 	Settings.DescriptionEnabled := True;
 	Settings.DescriptionCopyToCloud := True;
 	Settings.DescriptionCopyFromCloud := True;
+	Settings.TimestampCopyToCloud := True;
+	Settings.TimestampCopyFromCloud := True;
+	Settings.TimestampTrackCloudFS := True;
+	Settings.TimestampFileName := '.my_timestamps';
+	Settings.TimestampConflictMode := 1;
 	FSettingsManager.SetSettings(Settings);
 
 	FPresenter.Initialize('');
@@ -3181,6 +3267,11 @@ begin
 	Assert.IsTrue(FView.GetDescriptionEnabled, 'DescriptionEnabled should be loaded');
 	Assert.IsTrue(FView.GetDescriptionCopyToCloud, 'DescriptionCopyToCloud should be loaded');
 	Assert.IsTrue(FView.GetDescriptionCopyFromCloud, 'DescriptionCopyFromCloud should be loaded');
+	Assert.IsTrue(FView.GetTimestampCopyToCloud, 'TimestampCopyToCloud should be loaded');
+	Assert.IsTrue(FView.GetTimestampCopyFromCloud, 'TimestampCopyFromCloud should be loaded');
+	Assert.IsTrue(FView.GetTimestampTrackCloudFS, 'TimestampTrackCloudFS should be loaded');
+	Assert.AreEqual('.my_timestamps', FView.GetTimestampFileName, 'TimestampFileName should be loaded');
+	Assert.AreEqual(1, FView.GetTimestampConflictMode, 'TimestampConflictMode should be loaded');
 end;
 
 procedure TAccountsPresenterTest.TestLoadGlobalSettingsWithCustomCloudMaxFileSize;
