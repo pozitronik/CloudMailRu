@@ -81,8 +81,6 @@ type
 		function GetIconsMode: Integer;
 		procedure SetCopyBetweenAccountsMode(Value: Integer);
 		function GetCopyBetweenAccountsMode: Integer;
-		procedure SetDownloadLinksEncode(Value: Boolean);
-		function GetDownloadLinksEncode: Boolean;
 		procedure SetAutoUpdateDownloadListing(Value: Boolean);
 		function GetAutoUpdateDownloadListing: Boolean;
 		procedure SetShowTrashFolders(Value: Boolean);
@@ -563,7 +561,6 @@ begin
 		FView.SetIconsMode(Settings.IconsMode);
 
 		{Download/display settings}
-		FView.SetDownloadLinksEncode(Settings.DownloadLinksEncode);
 		FView.SetAutoUpdateDownloadListing(Settings.AutoUpdateDownloadListing);
 		FView.SetShowTrashFolders(Settings.ShowTrashFolders);
 		FView.SetShowSharedFolders(Settings.ShowSharedFolders);
@@ -1172,7 +1169,6 @@ begin
 	Settings.IconsMode := FView.GetIconsMode;
 
 	{Download/display settings}
-	Settings.DownloadLinksEncode := FView.GetDownloadLinksEncode;
 	Settings.AutoUpdateDownloadListing := FView.GetAutoUpdateDownloadListing;
 	Settings.ShowTrashFolders := FView.GetShowTrashFolders;
 	Settings.ShowSharedFolders := FView.GetShowSharedFolders;

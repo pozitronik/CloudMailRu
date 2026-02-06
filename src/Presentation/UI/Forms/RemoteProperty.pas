@@ -88,7 +88,7 @@ type
 		OpenDialogOD: TOpenDialog;
 		ApplyHashesTB: TToolButton;
 		procedure AccessCBClick(Sender: TObject);
-		class function ShowProperty(parentWindow: HWND; RemoteName: WideString; RemoteProperty: TCloudDirItem; Cloud: TCloudMailRu; FileSystem: IFileSystem; TCHandler: ITCHandler; DoUrlEncode: Boolean = true; AutoUpdateDownloadListing: Boolean = true; ShowDescription: Boolean = true; EditDescription: Boolean = true; PluginIonFileName: WideString = 'descript.ion'): Integer;
+		class function ShowProperty(parentWindow: HWND; RemoteName: WideString; RemoteProperty: TCloudDirItem; Cloud: TCloudMailRu; FileSystem: IFileSystem; TCHandler: ITCHandler; AutoUpdateDownloadListing: Boolean = true; ShowDescription: Boolean = true; EditDescription: Boolean = true; PluginIonFileName: WideString = 'descript.ion'): Integer;
 		procedure InviteBtnClick(Sender: TObject);
 		procedure ItemDeleteClick(Sender: TObject);
 		procedure ItemRefreshClick(Sender: TObject);
@@ -586,7 +586,7 @@ end;
 
 {TPropertyForm - Static factory method}
 
-class function TPropertyForm.ShowProperty(parentWindow: HWND; RemoteName: WideString; RemoteProperty: TCloudDirItem; Cloud: TCloudMailRu; FileSystem: IFileSystem; TCHandler: ITCHandler; DoUrlEncode: Boolean; AutoUpdateDownloadListing: Boolean; ShowDescription: Boolean; EditDescription: Boolean; PluginIonFileName: WideString): Integer;
+class function TPropertyForm.ShowProperty(parentWindow: HWND; RemoteName: WideString; RemoteProperty: TCloudDirItem; Cloud: TCloudMailRu; FileSystem: IFileSystem; TCHandler: ITCHandler; AutoUpdateDownloadListing: Boolean; ShowDescription: Boolean; EditDescription: Boolean; PluginIonFileName: WideString): Integer;
 var
 	Form: TPropertyForm;
 	Config: TRemotePropertyConfig;
@@ -600,7 +600,6 @@ begin
 		Form.FPresenter := TRemotePropertyPresenter.Create(Form, Cloud.Downloader, Cloud.Uploader, Cloud.FileOperations, Cloud.ListingService, Cloud.ShareService, FileSystem, TPublicCloudFactory.Create, TCHandler, Cloud.IsPublicAccount, Cloud.GetEndpoints.PublicUrl);
 
 		{Configure and initialize presenter}
-		Config.DoUrlEncode := DoUrlEncode;
 		Config.AutoUpdateDownloadListing := AutoUpdateDownloadListing;
 		Config.ShowDescription := ShowDescription;
 		Config.EditDescription := EditDescription;

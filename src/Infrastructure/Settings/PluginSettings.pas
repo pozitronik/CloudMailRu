@@ -35,7 +35,6 @@ type
 		DisableMultiThreading: boolean;
 		LogUserSpace: boolean;
 		IconsMode: integer;
-		DownloadLinksEncode: boolean;
 		AutoUpdateDownloadListing: boolean;
 		ShowTrashFolders: boolean;
 		ShowSharedFolders: boolean;

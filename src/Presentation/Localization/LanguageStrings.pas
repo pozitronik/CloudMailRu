@@ -318,7 +318,6 @@ var
 	DFM_CB_LOG_SPACE: WideString;
 	DFM_CB_OVERRIDE_SPLIT: WideString;
 	DFM_CB_DISABLE_MT: WideString;
-	DFM_CB_URL_ENCODE: WideString;
 	DFM_CB_AUTO_UPDATE: WideString;
 	DFM_CB_TRASH: WideString;
 	DFM_CB_SHARED: WideString;
@@ -765,7 +764,6 @@ begin
 	DFM_CB_LOG_SPACE := 'Enable space info logging';
 	DFM_CB_OVERRIDE_SPLIT := 'Override split file size to';
 	DFM_CB_DISABLE_MT := 'Disable background operations support';
-	DFM_CB_URL_ENCODE := 'URL encode direct download links';
 	DFM_CB_AUTO_UPDATE := 'Update direct download links immediately';
 	DFM_CB_TRASH := 'Trash folders';
 	DFM_CB_SHARED := 'Shared links folders';
@@ -1200,7 +1198,6 @@ begin
 	TranslationRegistry.Add('DFM_CB_LOG_SPACE', @DFM_CB_LOG_SPACE);
 	TranslationRegistry.Add('DFM_CB_OVERRIDE_SPLIT', @DFM_CB_OVERRIDE_SPLIT);
 	TranslationRegistry.Add('DFM_CB_DISABLE_MT', @DFM_CB_DISABLE_MT);
-	TranslationRegistry.Add('DFM_CB_URL_ENCODE', @DFM_CB_URL_ENCODE);
 	TranslationRegistry.Add('DFM_CB_AUTO_UPDATE', @DFM_CB_AUTO_UPDATE);
 	TranslationRegistry.Add('DFM_CB_TRASH', @DFM_CB_TRASH);
 	TranslationRegistry.Add('DFM_CB_SHARED', @DFM_CB_SHARED);

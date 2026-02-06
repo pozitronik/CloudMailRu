@@ -968,7 +968,6 @@ end;
 
 function TRemotePropertyPresenterTest.CreateConfig(ShowDescription, EditDescription: Boolean): TRemotePropertyConfig;
 begin
-	Result.DoUrlEncode := True;
 	Result.AutoUpdateDownloadListing := False;
 	Result.ShowDescription := ShowDescription;
 	Result.EditDescription := EditDescription;

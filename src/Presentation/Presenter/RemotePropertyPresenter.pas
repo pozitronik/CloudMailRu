@@ -97,7 +97,6 @@ type
 
 	{Configuration for RemoteProperty presenter}
 	TRemotePropertyConfig = record
-		DoUrlEncode: Boolean;
 		AutoUpdateDownloadListing: Boolean;
 		ShowDescription: Boolean;
 		EditDescription: Boolean;

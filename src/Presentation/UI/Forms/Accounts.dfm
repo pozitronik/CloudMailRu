@@ -599,7 +599,7 @@ object AccountsForm: TAccountsForm
       end
       object PreserveFileTimeCB: TCheckBox
         Left = 4
-        Top = 383
+        Top = 361
         Width = 683
         Height = 17
         Anchors = [akLeft, akTop, akRight]
@@ -615,7 +615,7 @@ object AccountsForm: TAccountsForm
         Anchors = [akRight, akBottom]
         Caption = 'Apply'
         Enabled = False
-        TabOrder = 19
+        TabOrder = 17
         OnClick = GlobalSettingsApplyBtnClick
       end
       object CloudMaxFileSizeValue: TEdit
@@ -768,24 +768,14 @@ object AccountsForm: TAccountsForm
         Value = 0
         OnChange = GlobalSettingsFieldChanged
       end
-      object DownloadLinksEncodeCB: TCheckBox
-        Left = 4
-        Top = 316
-        Width = 683
-        Height = 17
-        Anchors = [akLeft, akTop, akRight]
-        Caption = 'URL encode direct download links'
-        TabOrder = 15
-        OnClick = GlobalSettingsFieldChanged
-      end
       object AutoUpdateDownloadListingCB: TCheckBox
         Left = 4
-        Top = 339
+        Top = 317
         Width = 683
         Height = 17
         Anchors = [akLeft, akTop, akRight]
         Caption = 'Update direct download links immediately'
-        TabOrder = 16
+        TabOrder = 15
         OnClick = GlobalSettingsFieldChanged
       end
       object PrecalculateHashCB: TCheckBox
@@ -799,12 +789,12 @@ object AccountsForm: TAccountsForm
       end
       object CheckCRCCB: TCheckBox
         Left = 4
-        Top = 361
+        Top = 339
         Width = 683
         Height = 17
         Anchors = [akLeft, akTop, akRight]
         Caption = 'Check uploads/downloads CRC'
-        TabOrder = 17
+        TabOrder = 16
         OnClick = GlobalSettingsFieldChanged
       end
       object CopyBetweenAccountsModeCombo: TComboBox

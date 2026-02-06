@@ -75,7 +75,6 @@ type
 		msLabel: TLabel;
 		AttemptWaitValue: TSpinEdit;
 		RetryAttemptsValue: TSpinEdit;
-		DownloadLinksEncodeCB: TCheckBox;
 		AutoUpdateDownloadListingCB: TCheckBox;
 		CommentsTab: TTabSheet;
 		CommentsSettingsApplyBtn: TButton;
@@ -273,8 +272,6 @@ type
 		function GetIconsMode: Integer;
 		procedure SetCopyBetweenAccountsMode(Value: Integer);
 		function GetCopyBetweenAccountsMode: Integer;
-		procedure SetDownloadLinksEncode(Value: Boolean);
-		function GetDownloadLinksEncode: Boolean;
 		procedure SetAutoUpdateDownloadListing(Value: Boolean);
 		function GetAutoUpdateDownloadListing: Boolean;
 		procedure SetShowTrashFolders(Value: Boolean);
@@ -627,16 +624,6 @@ end;
 function TAccountsForm.GetCopyBetweenAccountsMode: Integer;
 begin
 	Result := CopyBetweenAccountsModeCombo.ItemIndex;
-end;
-
-procedure TAccountsForm.SetDownloadLinksEncode(Value: Boolean);
-begin
-	DownloadLinksEncodeCB.Checked := Value;
-end;
-
-function TAccountsForm.GetDownloadLinksEncode: Boolean;
-begin
-	Result := DownloadLinksEncodeCB.Checked;
 end;
 
 procedure TAccountsForm.SetAutoUpdateDownloadListing(Value: Boolean);
@@ -1945,7 +1932,6 @@ begin
 	SpaceInfoLoggingCB.Caption := DFM_CB_LOG_SPACE;
 	CloudMaxFileSizeCB.Caption := DFM_CB_OVERRIDE_SPLIT;
 	DisableMultiThreadingCB.Caption := DFM_CB_DISABLE_MT;
-	DownloadLinksEncodeCB.Caption := DFM_CB_URL_ENCODE;
 	AutoUpdateDownloadListingCB.Caption := DFM_CB_AUTO_UPDATE;
 	ShowTrashFoldersCB.Caption := DFM_CB_TRASH;
 	ShowSharedFoldersCB.Caption := DFM_CB_SHARED;
