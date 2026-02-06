@@ -676,22 +676,31 @@ begin
 end;
 
 procedure TRetryHandlerTest.TestGetRetryCount_UnknownType_ReturnsZero;
+var
+	UnknownType: TRetryOperationType;
+	Count: Integer;
 begin
-	{ Unknown operation type falls through to default case returning 0 }
-	FThreadState.SetRetryCountDownload(5);
-	FThreadState.IncrementRetryCountUpload;
+	{Unknown operation type falls through to default case returning 0.
+	 RetryAttempts=0 so the while loop condition (GetRetryCount <> RetryAttempts)
+	 evaluates to (0 <> 0) = False and exits immediately.}
+	FSettingsManager.SetOperationErrorMode(OperationErrorModeRetry);
+	FSettingsManager.SetRetryAttempts(0);
 
-	{ Cast an out-of-range integer to TRetryOperationType to hit the else branch.
-	  GetRetryCount returns 0 for unknown type, so no retries occur and the original error propagates. }
-	var Count := FHandler.HandleOperationError(
+	{Range check must be disabled to cast out-of-range integer to enum}
+	{$RANGECHECKS OFF}
+	UnknownType := TRetryOperationType(99);
+	{$RANGECHECKS ON}
+
+	Count := FHandler.HandleOperationError(
 		FS_FILE_NOTFOUND,
-		TRetryOperationType(99),
+		UnknownType,
 		'Ask message', 'Title', 'Retry log', 'param',
 		TestOperation,
 		TestAbortCheck
 	);
 
 	Assert.AreEqual(FS_FILE_NOTFOUND, Count, 'Unknown operation type should return original error');
+	Assert.AreEqual(0, FState.OperationCalls, 'Should not retry when GetRetryCount returns 0');
 end;
 
 initialization

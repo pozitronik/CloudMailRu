@@ -5,6 +5,7 @@ interface
 uses
 	Description,
 	FileSystem,
+	System.SysUtils,
 	System.Classes,
 	Windows,
 	DUnitX.TestFramework;
@@ -108,6 +109,11 @@ type
 		[Test]
 		{Write/Read with ENCODING_DEFAULT exercises ANSI divider path}
 		procedure TestWriteReadWithDefaultEncoding;
+
+		{ Exception handling }
+		[Test]
+		{Duplicate keys in file trigger Read except handler returning -1}
+		procedure TestRead_DuplicateKeys_ReturnsMinusOne;
 	end;
 
 	[TestFixture]
@@ -139,9 +145,6 @@ type
 	end;
 
 implementation
-
-uses
-	System.SysUtils;
 
 { TDescriptionTest - Setup and TearDown }
 
@@ -553,6 +556,32 @@ begin
 		DescAnsi.Free;
 		if FileExists(TempFileAnsi) then
 			System.SysUtils.DeleteFile(TempFileAnsi);
+	end;
+end;
+
+{ Exception handling }
+
+procedure TDescriptionTest.TestRead_DuplicateKeys_ReturnsMinusOne;
+var
+	Description2: TDescription;
+	F: TFileStream;
+	Content: UTF8String;
+begin
+	{Write a file with duplicate keys - TDictionary.Add throws on second insertion,
+	 triggering the except handler that returns -1}
+	Content := UTF8String('same.txt value1' + sLineBreak + 'same.txt value2' + sLineBreak);
+	F := TFileStream.Create(FTempFile, fmCreate);
+	try
+		F.WriteBuffer(Content[1], Length(Content));
+	finally
+		F.Free;
+	end;
+
+	Description2 := TDescription.Create(FTempFile, FFileSystem, ENCODING_UTF8);
+	try
+		Assert.AreEqual(-1, Description2.Read, 'Read should return -1 when duplicate keys cause exception');
+	finally
+		Description2.Free;
 	end;
 end;
 

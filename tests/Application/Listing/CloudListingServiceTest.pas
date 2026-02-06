@@ -497,9 +497,11 @@ var
 	Listing: TCloudDirItemList;
 	Success: Boolean;
 begin
-	{ NOT_EXISTS error triggers the error logging path }
+	{NOT_EXISTS error triggers the error logging path.
+	 CloudResultToBoolean must return False so the else-if branch is reached.}
 	FMockHTTP.SetDefaultResponse(True,
 		'{"status":400,"body":{"home":{"error":"not_exists"}}}');
+	FMockContext.SetCloudResultToBooleanResult(False);
 
 	Success := FService.GetDirectory('/nonexistent', Listing);
 

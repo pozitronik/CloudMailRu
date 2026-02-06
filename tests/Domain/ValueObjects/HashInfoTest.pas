@@ -50,6 +50,10 @@ type
 		{Zero-based Copy behavior verification - Delphi supports zero-based strings}
 		[Test]
 		procedure TestCopyWithZeroPosition_WorksCorrectly;
+
+		{Opening quote without closing quote - else branch in quote extraction}
+		[Test]
+		procedure TestValidWithOpeningQuoteOnly;
 	end;
 
 implementation
@@ -302,6 +306,23 @@ begin
 		Assert.AreEqual(VALID_HASH, HI.hash, 'Hash should be extracted correctly via Copy(str, 0, n)');
 		Assert.AreEqual(Int64(12345), HI.size, 'Size should be extracted correctly');
 		Assert.AreEqual('testfile.txt', HI.name, 'Name should be extracted correctly');
+	finally
+		HI.Free;
+	end;
+end;
+
+procedure THashInfoTest.TestValidWithOpeningQuoteOnly;
+var
+	HI: THashInfo;
+begin
+	{When parameter starts with " but has no closing quote, LastDelimiter returns 1,
+	 triggering the else branch: Copy(parameter, 2) strips the leading quote}
+	HI := THashInfo.Create('hash "' + VALID_HASH + ':3000:noquote.txt');
+	try
+		Assert.IsTrue(HI.valid);
+		Assert.AreEqual(VALID_HASH, HI.hash);
+		Assert.AreEqual(Int64(3000), HI.size);
+		Assert.AreEqual('noquote.txt', HI.name);
 	finally
 		HI.Free;
 	end;

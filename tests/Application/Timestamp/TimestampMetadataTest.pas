@@ -7,11 +7,38 @@ interface
 
 uses
 	DUnitX.TestFramework,
+	System.SysUtils,
+	System.Classes,
+	Windows,
 	TimestampMetadata,
 	TimestampEntry,
 	FileSystem;
 
 type
+	{Filesystem mock that throws on WriteAllLines/OpenTextReader for testing exception handlers}
+	TThrowingFileSystem = class(TInterfacedObject, IFileSystem)
+	private
+		FInner: TMemoryFileSystem;
+		FThrowOnWrite: Boolean;
+		FThrowOnRead: Boolean;
+	public
+		constructor Create(Inner: TMemoryFileSystem; ThrowOnWrite: Boolean = False; ThrowOnRead: Boolean = False);
+		function FileExists(const Path: WideString): Boolean;
+		function GetFileSize(const Path: WideString): Int64;
+		procedure CreateEmptyFile(const Path: WideString);
+		procedure DeleteFile(const Path: WideString);
+		function ReadFileHeader(const Path: WideString; ByteCount: Integer): TBytes;
+		function ReadAllText(const Path: WideString; Encoding: TEncoding): WideString;
+		function ReadAllLines(const Path: WideString; Encoding: TEncoding): TStringList;
+		procedure WriteAllText(const Path: WideString; const Content: WideString; Encoding: TEncoding);
+		procedure WriteAllLines(const Path: WideString; Lines: TStrings; Encoding: TEncoding);
+		function OpenTextReader(const Path: WideString; Encoding: TEncoding): TStreamReader;
+		function GetTmpFileName(const Prefix: WideString = ''): WideString;
+		procedure SetFileTime(const Path: WideString; const FileTime: TFileTime);
+		function FindFiles(const Pattern: WideString): TStringList;
+		function GetFileModTime(const Path: WideString): Int64;
+	end;
+
 	[TestFixture]
 	TTimestampMetadataTest = class
 	private
@@ -70,12 +97,17 @@ type
 		{Multiple entries}
 		[Test]
 		procedure TestMultipleEntries_ReadWrite;
+
+		{Write with explicit TargetFileName}
+		[Test]
+		procedure TestWrite_WithTargetFileName_WritesToTarget;
+
+		{Exception handling - Write exception path}
+		[Test]
+		procedure TestWrite_FileSystemThrows_ReturnsMinusOne;
 	end;
 
 implementation
-
-uses
-	SysUtils;
 
 procedure TTimestampMetadataTest.Setup;
 begin
@@ -400,6 +432,141 @@ begin
 	finally
 		Reader.Free;
 	end;
+end;
+
+procedure TTimestampMetadataTest.TestWrite_WithTargetFileName_WritesToTarget;
+var
+	Writer, Reader: TTimestampMetadata;
+	Entry: TTimestampEntry;
+begin
+	{Write with explicit TargetFileName exercises OutputPath := TargetFileName branch}
+	Writer := TTimestampMetadata.Create('test.ts', FFileSystemIntf);
+	try
+		Entry.LocalMTime := 777;
+		Entry.CloudMTime := 888;
+		Writer.SetEntry('photo.jpg', Entry);
+		Assert.AreEqual(0, Writer.Write('other.ts'));
+	finally
+		Writer.Free;
+	end;
+
+	{Verify data was written to the target file, not the default}
+	Reader := TTimestampMetadata.Create('other.ts', FFileSystemIntf);
+	try
+		Reader.Read;
+		Assert.IsTrue(Reader.HasEntry('photo.jpg'));
+		Entry := Reader.GetEntry('photo.jpg');
+		Assert.AreEqual(Int64(777), Entry.LocalMTime);
+		Assert.AreEqual(Int64(888), Entry.CloudMTime);
+	finally
+		Reader.Free;
+	end;
+end;
+
+procedure TTimestampMetadataTest.TestWrite_FileSystemThrows_ReturnsMinusOne;
+var
+	InnerFS: TMemoryFileSystem;
+	ThrowingFS: IFileSystem;
+	Metadata: TTimestampMetadata;
+	Entry: TTimestampEntry;
+begin
+	{WriteAllLines throwing triggers except handler returning -1}
+	InnerFS := TMemoryFileSystem.Create;
+	ThrowingFS := TThrowingFileSystem.Create(InnerFS, True, False);
+
+	Metadata := TTimestampMetadata.Create('test.ts', ThrowingFS);
+	try
+		Entry.LocalMTime := 100;
+		Entry.CloudMTime := 200;
+		Metadata.SetEntry('file.txt', Entry);
+		Assert.AreEqual(-1, Metadata.Write, 'Write should return -1 when filesystem throws');
+	finally
+		Metadata.Free;
+	end;
+end;
+
+{ TThrowingFileSystem }
+
+constructor TThrowingFileSystem.Create(Inner: TMemoryFileSystem; ThrowOnWrite: Boolean; ThrowOnRead: Boolean);
+begin
+	inherited Create;
+	FInner := Inner;
+	FThrowOnWrite := ThrowOnWrite;
+	FThrowOnRead := ThrowOnRead;
+end;
+
+function TThrowingFileSystem.FileExists(const Path: WideString): Boolean;
+begin
+	Result := FInner.FileExists(Path);
+end;
+
+function TThrowingFileSystem.GetFileSize(const Path: WideString): Int64;
+begin
+	Result := FInner.GetFileSize(Path);
+end;
+
+procedure TThrowingFileSystem.CreateEmptyFile(const Path: WideString);
+begin
+	FInner.CreateEmptyFile(Path);
+end;
+
+procedure TThrowingFileSystem.DeleteFile(const Path: WideString);
+begin
+	FInner.DeleteFile(Path);
+end;
+
+function TThrowingFileSystem.ReadFileHeader(const Path: WideString; ByteCount: Integer): TBytes;
+begin
+	Result := FInner.ReadFileHeader(Path, ByteCount);
+end;
+
+function TThrowingFileSystem.ReadAllText(const Path: WideString; Encoding: TEncoding): WideString;
+begin
+	Result := FInner.ReadAllText(Path, Encoding);
+end;
+
+function TThrowingFileSystem.ReadAllLines(const Path: WideString; Encoding: TEncoding): TStringList;
+begin
+	Result := FInner.ReadAllLines(Path, Encoding);
+end;
+
+procedure TThrowingFileSystem.WriteAllText(const Path: WideString; const Content: WideString; Encoding: TEncoding);
+begin
+	FInner.WriteAllText(Path, Content, Encoding);
+end;
+
+procedure TThrowingFileSystem.WriteAllLines(const Path: WideString; Lines: TStrings; Encoding: TEncoding);
+begin
+	if FThrowOnWrite then
+		raise EWriteError.Create('Simulated write error');
+	FInner.WriteAllLines(Path, Lines, Encoding);
+end;
+
+function TThrowingFileSystem.OpenTextReader(const Path: WideString; Encoding: TEncoding): TStreamReader;
+begin
+	if FThrowOnRead then
+		raise EReadError.Create('Simulated read error');
+	Result := FInner.OpenTextReader(Path, Encoding);
+end;
+
+function TThrowingFileSystem.GetTmpFileName(const Prefix: WideString): WideString;
+begin
+	Result := FInner.GetTmpFileName(Prefix);
+end;
+
+procedure TThrowingFileSystem.SetFileTime(const Path: WideString; const FileTime: TFileTime);
+begin
+	FInner.SetFileTime(Path, FileTime);
+end;
+
+function TThrowingFileSystem.FindFiles(const Pattern: WideString): TStringList;
+begin
+	Result := FInner.FindFiles(Pattern);
+end;
+
+function TThrowingFileSystem.GetFileModTime(const Path: WideString): Int64;
+begin
+	Result := FInner.GetFileModTime(Path);
 end;
 
 initialization
