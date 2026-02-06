@@ -11,6 +11,7 @@ uses
 	CloudConstants,
 	CloudOAuth,
 	CloudSpace,
+	CloudAuthorizationState,
 	Cipher,
 	WFXTypes,
 	SettingsConstants,
@@ -71,6 +72,10 @@ type
 		procedure TestLogin_RegularAccount_SetsUnitedParams;
 		[Test]
 		procedure TestLogin_RegularAccount_CallsAuthStrategy;
+		[Test]
+		procedure TestLogin_RegularAccount_AuthFails_SetsAuthorizationError;
+		[Test]
+		procedure TestLogin_RegularAccount_Success_ClearsAuthorizationError;
 
 		{LoginShared tests}
 		[Test]
@@ -312,6 +317,35 @@ begin
 	Assert.IsTrue(AuthStrategy.AuthenticateCalled, 'Auth strategy should be called');
 	Assert.AreEqual(String('test@mail.ru'), String(AuthStrategy.LastCredentials.Email), 'Should pass email to strategy');
 	Assert.AreEqual(String('secret'), String(AuthStrategy.LastCredentials.Password), 'Should pass password to strategy');
+end;
+
+procedure TCloudMailRuLoginFlowTest.TestLogin_RegularAccount_AuthFails_SetsAuthorizationError;
+var
+	AuthStrategy: TMockAuthStrategy;
+begin
+	AuthStrategy := TMockAuthStrategy.CreateFailure('Connection refused by server');
+	FCloud := CreateRegularCloud(AuthStrategy);
+
+	FCloud.Login;
+
+	Assert.AreEqual(aecAuthFailed, FCloud.AuthorizationError.ErrorCode, 'ErrorCode should be aecAuthFailed');
+	Assert.AreEqual(String('Connection refused by server'), String(FCloud.AuthorizationError.ErrorMessage),
+		'ErrorMessage should contain the detailed error from auth strategy');
+end;
+
+procedure TCloudMailRuLoginFlowTest.TestLogin_RegularAccount_Success_ClearsAuthorizationError;
+var
+	AuthStrategy: TMockAuthStrategy;
+begin
+	AuthStrategy := TMockAuthStrategy.CreateSuccess('token');
+	FCloud := CreateRegularCloud(AuthStrategy);
+	FMockHTTP.SetResponse(API_USER_SPACE, True, JSON_USER_SPACE);
+
+	FCloud.Login;
+
+	Assert.AreEqual(aecNone, FCloud.AuthorizationError.ErrorCode, 'ErrorCode should be aecNone after successful login');
+	Assert.AreEqual(String(''), String(FCloud.AuthorizationError.ErrorMessage),
+		'ErrorMessage should be empty after successful login');
 end;
 
 {LoginShared tests}

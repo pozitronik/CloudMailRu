@@ -362,7 +362,7 @@ begin
 
 	Cloud := CreatePrimaryCloud(True); {Encrypted}
 	try
-		Assert.IsTrue(Cloud.Login, 'Encrypted cloud login should succeed');
+		Assert.IsTrue(Cloud.Login, 'Encrypted cloud login should succeed: ' + Cloud.AuthorizationError.ErrorMessage);
 
 		LocalFile := TPath.Combine(TPath.GetTempPath, TTestDataGenerator.GenerateUniqueFilename('encrypted', '.bin'));
 		RemotePath := UniqueCloudPath('EncryptedFile') + '.bin';
@@ -404,7 +404,7 @@ begin
 
 	Cloud := CreatePrimaryCloud(True); {Encrypted}
 	try
-		Assert.IsTrue(Cloud.Login, 'Encrypted cloud login should succeed');
+		Assert.IsTrue(Cloud.Login, 'Encrypted cloud login should succeed: ' + Cloud.AuthorizationError.ErrorMessage);
 
 		LocalFile := TPath.Combine(TPath.GetTempPath, TTestDataGenerator.GenerateUniqueFilename('encname', '.bin'));
 		RemotePath := UniqueCloudPath('EncryptedNameFile') + '.bin';

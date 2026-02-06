@@ -341,7 +341,7 @@ begin
 	if not Assigned(FSecondaryCloud) then
 	begin
 		FSecondaryCloud := CreateSecondaryCloud;
-		Assert.IsTrue(FSecondaryCloud.Login, 'Secondary account login failed');
+		Assert.IsTrue(FSecondaryCloud.Login, 'Secondary account login failed: ' + FSecondaryCloud.AuthorizationError.ErrorMessage);
 	end;
 
 	{Share a folder from primary to secondary}

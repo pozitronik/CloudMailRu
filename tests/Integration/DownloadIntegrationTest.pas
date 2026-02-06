@@ -167,7 +167,7 @@ begin
 
 	Cloud := CreatePublicCloud;
 	try
-		Assert.IsTrue(Cloud.Login, 'Public cloud login should succeed');
+		Assert.IsTrue(Cloud.Login, 'Public cloud login should succeed: ' + Cloud.AuthorizationError.ErrorMessage);
 
 		{List public folder to find a file}
 		if not Cloud.ListingService.GetDirectory('/', Items) then
@@ -228,7 +228,7 @@ begin
 
 	Cloud := CreatePrimaryCloud(True);
 	try
-		Assert.IsTrue(Cloud.Login, 'Encrypted cloud login should succeed');
+		Assert.IsTrue(Cloud.Login, 'Encrypted cloud login should succeed: ' + Cloud.AuthorizationError.ErrorMessage);
 
 		RemotePath := UniqueCloudPath('EncryptedDownload') + '.bin';
 		TrackForCleanup(RemotePath);

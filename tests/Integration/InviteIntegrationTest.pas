@@ -78,7 +78,7 @@ begin
 	{Login to secondary account}
 	SecondaryCloud := CreateSecondaryCloud;
 	try
-		Assert.IsTrue(SecondaryCloud.Login, 'Secondary account login should succeed');
+		Assert.IsTrue(SecondaryCloud.Login, 'Secondary account login should succeed: ' + SecondaryCloud.AuthorizationError.ErrorMessage);
 
 		{List incoming invites in secondary account}
 		if not SecondaryCloud.ListingService.GetIncomingInvites(Invites) then
@@ -172,7 +172,7 @@ begin
 
 	SecondaryCloud := CreateSecondaryCloud;
 	try
-		Assert.IsTrue(SecondaryCloud.Login, 'Secondary account login should succeed');
+		Assert.IsTrue(SecondaryCloud.Login, 'Secondary account login should succeed: ' + SecondaryCloud.AuthorizationError.ErrorMessage);
 
 		{Find and accept the invite}
 		if not SecondaryCloud.ListingService.GetIncomingInvites(Invites) then
@@ -264,7 +264,7 @@ begin
 
 	SecondaryCloud := CreateSecondaryCloud;
 	try
-		Assert.IsTrue(SecondaryCloud.Login, 'Secondary account login should succeed');
+		Assert.IsTrue(SecondaryCloud.Login, 'Secondary account login should succeed: ' + SecondaryCloud.AuthorizationError.ErrorMessage);
 
 		{Find and mount the invite}
 		if not SecondaryCloud.ListingService.GetIncomingInvites(Invites) then
@@ -342,7 +342,7 @@ begin
 
 	SecondaryCloud := CreateSecondaryCloud;
 	try
-		Assert.IsTrue(SecondaryCloud.Login, 'Secondary account login should succeed');
+		Assert.IsTrue(SecondaryCloud.Login, 'Secondary account login should succeed: ' + SecondaryCloud.AuthorizationError.ErrorMessage);
 
 		if not SecondaryCloud.ListingService.GetIncomingInvites(Invites) then
 		begin
@@ -418,7 +418,7 @@ begin
 
 	SecondaryCloud := CreateSecondaryCloud;
 	try
-		Assert.IsTrue(SecondaryCloud.Login, 'Secondary account login should succeed');
+		Assert.IsTrue(SecondaryCloud.Login, 'Secondary account login should succeed: ' + SecondaryCloud.AuthorizationError.ErrorMessage);
 
 		{Find the invite}
 		if not SecondaryCloud.ListingService.GetIncomingInvites(Invites) then

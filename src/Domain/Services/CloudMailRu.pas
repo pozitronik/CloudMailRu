@@ -428,8 +428,10 @@ begin
 		FAuthToken := AuthResult.AuthToken;
 		FOAuthToken := AuthResult.OAuthToken;
 		FUnitedParams := AuthResult.UnitedParams;
+		FAuthorizationError := TAuthorizationError.Empty;
 		Result := True;
-	end;
+	end else
+		FAuthorizationError := TAuthorizationError.Create(aecAuthFailed, AuthResult.ErrorMessage);
 end;
 
 function TCloudMailRu.ReAuthenticate: Boolean;
@@ -546,7 +548,9 @@ begin
 	else
 	begin
 		FAuthorizationState := asFailed;
-		FAuthorizationError := TAuthorizationError.Create(aecAuthFailed, ERR_AUTH_FAILURE);
+		{Preserve specific error from PerformAuthentication; only set generic fallback if no error was recorded}
+		if FAuthorizationError.ErrorCode = aecNone then
+			FAuthorizationError := TAuthorizationError.Create(aecAuthFailed, ERR_AUTH_FAILURE);
 	end;
 end;
 

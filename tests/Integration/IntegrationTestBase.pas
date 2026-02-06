@@ -158,7 +158,7 @@ begin
 	FPrimaryCloud := CreatePrimaryCloud;
 	if not FPrimaryCloud.Login then
 	begin
-		Assert.Fail('Primary account login failed');
+		Assert.Fail('Primary account login failed: ' + FPrimaryCloud.AuthorizationError.ErrorMessage);
 		Exit;
 	end;
 

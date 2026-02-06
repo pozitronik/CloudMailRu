@@ -64,7 +64,7 @@ procedure TAuthenticationIntegrationTest.TestLogin_ValidCredentials_Succeeds;
 begin
 	{Already logged in during SetupFixture, verify state}
 	Assert.IsNotNull(FPrimaryCloud, 'Primary cloud should be initialized');
-	Assert.IsTrue(FPrimaryCloud.Login, 'Login with valid credentials should succeed');
+	Assert.IsTrue(FPrimaryCloud.Login, 'Login with valid credentials should succeed: ' + FPrimaryCloud.AuthorizationError.ErrorMessage);
 end;
 
 procedure TAuthenticationIntegrationTest.TestLogin_InvalidPassword_Fails;
@@ -110,11 +110,11 @@ begin
 	Cloud := CreatePrimaryCloud;
 	try
 		LoginResult1 := Cloud.Login;
-		Assert.IsTrue(LoginResult1, 'First login should succeed');
+		Assert.IsTrue(LoginResult1, 'First login should succeed: ' + Cloud.AuthorizationError.ErrorMessage);
 
 		{Login again - should work with existing or refreshed token}
 		LoginResult2 := Cloud.Login;
-		Assert.IsTrue(LoginResult2, 'Second login should succeed (token refresh path)');
+		Assert.IsTrue(LoginResult2, 'Second login should succeed (token refresh path): ' + Cloud.AuthorizationError.ErrorMessage);
 	finally
 		Cloud.Free;
 	end;
@@ -128,7 +128,7 @@ begin
 
 	Cloud := CreatePublicCloud;
 	try
-		Assert.IsTrue(Cloud.Login, 'Public account login should succeed');
+		Assert.IsTrue(Cloud.Login, 'Public account login should succeed: ' + Cloud.AuthorizationError.ErrorMessage);
 		Assert.IsTrue(Cloud.IsPublicAccount, 'Should be marked as public account');
 	finally
 		Cloud.Free;
@@ -141,14 +141,14 @@ var
 begin
 	Cloud := CreatePrimaryCloud;
 	try
-		Assert.IsTrue(Cloud.Login, 'Initial login should succeed');
+		Assert.IsTrue(Cloud.Login, 'Initial login should succeed: ' + Cloud.AuthorizationError.ErrorMessage);
 
 		{Invalidate resets state to asPending}
 		Cloud.InvalidateAuthorization;
 		Assert.AreEqual(asPending, Cloud.AuthorizationState, 'State should be asPending after invalidation');
 
 		{Re-login should succeed after invalidation}
-		Assert.IsTrue(Cloud.Login, 'Re-login after invalidation should succeed');
+		Assert.IsTrue(Cloud.Login, 'Re-login after invalidation should succeed: ' + Cloud.AuthorizationError.ErrorMessage);
 	finally
 		Cloud.Free;
 	end;
@@ -163,13 +163,13 @@ begin
 	Cloud := CreatePrimaryCloud;
 	try
 		{Login and perform an operation}
-		Assert.IsTrue(Cloud.Login, 'Initial login should succeed');
+		Assert.IsTrue(Cloud.Login, 'Initial login should succeed: ' + Cloud.AuthorizationError.ErrorMessage);
 		ListResult := Cloud.ListingService.GetDirectory('/', Items);
 		Assert.IsTrue(ListResult, 'First listing should succeed');
 
 		{Invalidate and re-login}
 		Cloud.InvalidateAuthorization;
-		Assert.IsTrue(Cloud.Login, 'Re-login should succeed');
+		Assert.IsTrue(Cloud.Login, 'Re-login should succeed: ' + Cloud.AuthorizationError.ErrorMessage);
 
 		{Operations after re-login should still work}
 		ListResult := Cloud.ListingService.GetDirectory('/', Items);
