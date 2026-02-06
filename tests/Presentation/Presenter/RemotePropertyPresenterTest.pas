@@ -370,6 +370,8 @@ type
 		[Test]
 		procedure TestInitializeWithDescriptionReadOnly;
 		[Test]
+		procedure TestInitializeWithDescriptionEditorOnlyShowsTab;
+		[Test]
 		procedure TestInitializeWithCustomDescriptionFileName;
 		[Test]
 		procedure TestLoadDescriptionFileNotFound;
@@ -1603,6 +1605,23 @@ begin
 	Assert.IsTrue(FView.IsTabVisible(rptDescription), 'Description tab should be visible');
 	Assert.IsTrue(FView.DescriptionReadOnly, 'Description should be read-only');
 	Assert.IsFalse(FView.DescriptionSaveEnabled, 'Save button should be disabled');
+end;
+
+procedure TRemotePropertyPresenterTest.TestInitializeWithDescriptionEditorOnlyShowsTab;
+var
+	Item: TCloudDirItem;
+begin
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, TNullTCHandler.Create, False);
+
+	FDownloader.DownloadResult := FS_FILE_NOTFOUND;
+
+	Item := CreateTestItem('test.txt');
+	{EditDescription=True but ShowDescription=False: tab should still be visible and editable}
+	FPresenter.Initialize(Item, '/test.txt', CreateConfig(False, True));
+
+	Assert.IsTrue(FView.IsTabVisible(rptDescription), 'Description tab should be visible when only editor is enabled');
+	Assert.IsFalse(FView.DescriptionReadOnly, 'Description should be editable');
+	Assert.IsTrue(FView.DescriptionSaveEnabled, 'Save button should be enabled');
 end;
 
 procedure TRemotePropertyPresenterTest.TestInitializeWithCustomDescriptionFileName;

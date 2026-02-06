@@ -217,8 +217,8 @@ begin
 		end;
 	end;
 
-	{Description tab}
-	if FConfig.ShowDescription then
+	{Description tab: visible when either reading or editing descriptions is enabled}
+	if FConfig.ShowDescription or FConfig.EditDescription then
 	begin
 		FView.SetExtPropertiesVisible(True);
 		FView.ShowTab(rptDescription);
