@@ -101,6 +101,8 @@ uses
 	IndySSLHandlerFactory,
 	IndySecSSLHandlerFactory,
 	AccountCredentialsProvider,
+	FileEncryptionResolver,
+	ProxyPasswordResolver,
 	CloudAuthorizationState,
 	TranslationManager,
 	ServerProfileManager;
@@ -1073,7 +1075,13 @@ begin
 	PasswordManager, which needs PCryptProc from this callback. This makes FsSetCryptCallback
 	a de-facto "second initialization phase", which is not its intended purpose.
 	Investigate alternatives: lazy initialization, dependency restructuring, or deferred injection.}
-	ConnectionManager := TConnectionManager.Create(SettingsManager, AccountSettings, HTTPMgr, PasswordUI, CipherVal, TWindowsFileSystem.Create, Progress, Logger, Request, PasswordManager, FTCHandler, TDefaultAuthStrategyFactory.Create, FOpenSSLProvider, TAccountCredentialsProvider.Create(PasswordManager, PasswordUI, Logger, FTCHandler, AccountSettings), TServerProfileManager.Create(TIniConfigFile.Create(SettingsManager.GetSettings.IniFilePath)));
+	ConnectionManager := TConnectionManager.Create(SettingsManager, AccountSettings, HTTPMgr,
+		TFileEncryptionResolver.Create(PasswordManager, PasswordUI, CipherVal, AccountSettings, FTCHandler, Logger),
+		TProxyPasswordResolver.Create(HTTPMgr, PasswordManager, PasswordUI, SettingsManager, FTCHandler, Logger),
+		TWindowsFileSystem.Create, Progress, Logger, Request,
+		FTCHandler, TDefaultAuthStrategyFactory.Create, FOpenSSLProvider,
+		TAccountCredentialsProvider.Create(PasswordManager, PasswordUI, Logger, FTCHandler, AccountSettings),
+		TServerProfileManager.Create(TIniConfigFile.Create(SettingsManager.GetSettings.IniFilePath)));
 	FCommandDispatcher := TCommandDispatcher.Create(ConnectionManager, Logger, SettingsManager);
 
 	{Create icon context builder for FsExtractCustomIcon}

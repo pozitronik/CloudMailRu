@@ -433,6 +433,10 @@
         <DCCReference Include="Infrastructure\OpenSSL\OpenSSLProviderTest.pas"/>
         <DCCReference Include="..\src\Infrastructure\Password\AccountCredentialsProvider.pas"/>
         <DCCReference Include="Infrastructure\Password\AccountCredentialsProviderTest.pas"/>
+        <DCCReference Include="..\src\Infrastructure\Password\FileEncryptionResolver.pas"/>
+        <DCCReference Include="Infrastructure\Password\FileEncryptionResolverTest.pas"/>
+        <DCCReference Include="..\src\Infrastructure\Password\ProxyPasswordResolver.pas"/>
+        <DCCReference Include="Infrastructure\Password\ProxyPasswordResolverTest.pas"/>
         <DCCReference Include="..\src\Application\Thumbnail\ThumbnailSizeSelector.pas"/>
         <DCCReference Include="Application\Thumbnail\ThumbnailSizeSelectorTest.pas"/>
         <DCCReference Include="..\src\Application\Thumbnail\CloudThumbnailService.pas"/>

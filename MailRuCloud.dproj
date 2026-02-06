@@ -359,6 +359,8 @@
         <DCCReference Include="src\Presentation\Presenter\AskPasswordPresenter.pas"/>
         <DCCReference Include="src\Infrastructure\OpenSSL\OpenSSLProvider.pas"/>
         <DCCReference Include="src\Infrastructure\Password\AccountCredentialsProvider.pas"/>
+        <DCCReference Include="src\Infrastructure\Password\FileEncryptionResolver.pas"/>
+        <DCCReference Include="src\Infrastructure\Password\ProxyPasswordResolver.pas"/>
         <DCCReference Include="src\Application\Thumbnail\ThumbnailSizeSelector.pas"/>
         <DCCReference Include="src\Application\Thumbnail\CloudThumbnailService.pas"/>
         <DCCReference Include="src\Application\Thumbnail\ThumbnailBitmapConverter.pas"/>

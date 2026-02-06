@@ -172,6 +172,8 @@ uses
 	AskPasswordPresenter in 'src\Presentation\Presenter\AskPasswordPresenter.pas',
 	OpenSSLProvider in 'src\Infrastructure\OpenSSL\OpenSSLProvider.pas',
 	AccountCredentialsProvider in 'src\Infrastructure\Password\AccountCredentialsProvider.pas',
+	FileEncryptionResolver in 'src\Infrastructure\Password\FileEncryptionResolver.pas',
+	ProxyPasswordResolver in 'src\Infrastructure\Password\ProxyPasswordResolver.pas',
 	ThumbnailSizeSelector in 'src\Application\Thumbnail\ThumbnailSizeSelector.pas',
 	CloudThumbnailService in 'src\Application\Thumbnail\CloudThumbnailService.pas',
 	ThumbnailBitmapConverter in 'src\Application\Thumbnail\ThumbnailBitmapConverter.pas',
