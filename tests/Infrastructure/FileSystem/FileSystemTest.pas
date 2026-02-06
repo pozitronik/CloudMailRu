@@ -52,6 +52,8 @@ type
 		procedure TestImplementsIFileSystem;
 		[Test]
 		procedure TestFindFiles_ReturnsEmptyList;
+		[Test]
+		procedure TestGetFileModTime_ReturnsZero;
 	end;
 
 	{Tests for TMemoryFileSystem - in-memory implementation for testing}
@@ -153,6 +155,14 @@ type
 		procedure TestFindFiles_NoMatches_ReturnsEmpty;
 		[Test]
 		procedure TestFindFiles_MultipleMatches;
+
+		{ GetFileModTime tests }
+		[Test]
+		procedure TestGetFileModTime_NoValue_ReturnsZero;
+		[Test]
+		procedure TestGetFileModTime_WithValue_ReturnsStored;
+		[Test]
+		procedure TestGetFileModTime_ClearedByReset;
 	end;
 
 	{Tests for TWindowsFileSystem - actual file system implementation}
@@ -248,6 +258,12 @@ type
 
 		[Test]
 		procedure TestImplementsIFileSystem;
+
+		{ GetFileModTime tests }
+		[Test]
+		procedure TestGetFileModTime_NonExistent_ReturnsZero;
+		[Test]
+		procedure TestGetFileModTime_ExistingFile_ReturnsNonZero;
 	end;
 
 	{Tests for TOwningStreamReader - stream reader that owns its stream}
@@ -396,6 +412,11 @@ begin
 	finally
 		Files.Free;
 	end;
+end;
+
+procedure TNullFileSystemTest.TestGetFileModTime_ReturnsZero;
+begin
+	Assert.AreEqual(Int64(0), FFileSystem.GetFileModTime('C:\any\file.txt'));
 end;
 
 { TMemoryFileSystemTest }
@@ -683,6 +704,24 @@ begin
 	finally
 		Files.Free;
 	end;
+end;
+
+procedure TMemoryFileSystemTest.TestGetFileModTime_NoValue_ReturnsZero;
+begin
+	Assert.AreEqual(Int64(0), FFileSystem.GetFileModTime('C:\nonexistent.txt'));
+end;
+
+procedure TMemoryFileSystemTest.TestGetFileModTime_WithValue_ReturnsStored;
+begin
+	FFileSystem.SetFileModTimeValue('C:\test.txt', 1704067200);
+	Assert.AreEqual(Int64(1704067200), FFileSystem.GetFileModTime('C:\test.txt'));
+end;
+
+procedure TMemoryFileSystemTest.TestGetFileModTime_ClearedByReset;
+begin
+	FFileSystem.SetFileModTimeValue('C:\test.txt', 1704067200);
+	FFileSystem.Clear;
+	Assert.AreEqual(Int64(0), FFileSystem.GetFileModTime('C:\test.txt'));
 end;
 
 { TWindowsFileSystemTest }
@@ -1006,6 +1045,19 @@ var
 begin
 	Intf := TWindowsFileSystem.Create;
 	Assert.IsNotNull(Intf, 'Should implement IFileSystem');
+end;
+
+procedure TWindowsFileSystemTest.TestGetFileModTime_NonExistent_ReturnsZero;
+begin
+	Assert.AreEqual(Int64(0), FFileSystem.GetFileModTime(FTempDir + 'nonexistent_file_12345.txt'));
+end;
+
+procedure TWindowsFileSystemTest.TestGetFileModTime_ExistingFile_ReturnsNonZero;
+var
+	TempFile: String;
+begin
+	TempFile := CreateTempFile('test content');
+	Assert.IsTrue(FFileSystem.GetFileModTime(TempFile) > 0, 'Existing file should have non-zero modification time');
 end;
 
 { TOwningStreamReaderTest }

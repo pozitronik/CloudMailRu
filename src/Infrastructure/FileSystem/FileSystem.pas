@@ -63,6 +63,9 @@ type
 
 		{Lists files matching a pattern (e.g. 'C:\dir\*.lng'). Returns full paths.}
 		function FindFiles(const Pattern: WideString): TStringList;
+
+		{Returns the last write time of a file as Unix timestamp, 0 on error}
+		function GetFileModTime(const Path: WideString): Int64;
 	end;
 
 	{Null implementation for testing - simulates empty/non-existent files}
@@ -81,12 +84,14 @@ type
 		function GetTmpFileName(const Prefix: WideString = ''): WideString;
 		procedure SetFileTime(const Path: WideString; const FileTime: TFileTime);
 		function FindFiles(const Pattern: WideString): TStringList;
+		function GetFileModTime(const Path: WideString): Int64;
 	end;
 
 	{In-memory file system for testing - stores files in dictionary}
 	TMemoryFileSystem = class(TInterfacedObject, IFileSystem)
 	private
 		FFiles: TStringList; {Path -> Content mapping}
+		FModTimes: TStringList; {Path -> Unix timestamp mapping for GetFileModTime}
 		FTmpCounter: Integer;
 	public
 		SetFileTimeCalls: Integer; {Test helper: tracks SetFileTime invocations}
@@ -107,11 +112,14 @@ type
 		function GetTmpFileName(const Prefix: WideString = ''): WideString;
 		procedure SetFileTime(const Path: WideString; const FileTime: TFileTime);
 		function FindFiles(const Pattern: WideString): TStringList;
+		function GetFileModTime(const Path: WideString): Int64;
 
 		{Test helper: set file content directly}
 		procedure SetFileContent(const Path: WideString; const Content: WideString);
 		{Test helper: get file content}
 		function GetFileContent(const Path: WideString): WideString;
+		{Test helper: set file modification time (Unix timestamp)}
+		procedure SetFileModTimeValue(const Path: WideString; UnixTime: Int64);
 		{Test helper: clear all files}
 		procedure Clear;
 	end;
@@ -132,11 +140,13 @@ type
 		function GetTmpFileName(const Prefix: WideString = ''): WideString;
 		procedure SetFileTime(const Path: WideString; const FileTime: TFileTime);
 		function FindFiles(const Pattern: WideString): TStringList;
+		function GetFileModTime(const Path: WideString): Int64; virtual;
 	end;
 
 implementation
 
 uses
+	DateUtils,
 	Masks,
 	PathHelper;
 
@@ -230,6 +240,11 @@ begin
 	Result := TStringList.Create;
 end;
 
+function TNullFileSystem.GetFileModTime(const Path: WideString): Int64;
+begin
+	Result := 0;
+end;
+
 {TMemoryFileSystem}
 
 constructor TMemoryFileSystem.Create;
@@ -237,12 +252,15 @@ begin
 	inherited Create;
 	FFiles := TStringList.Create;
 	FFiles.CaseSensitive := False; {Windows-like behavior}
+	FModTimes := TStringList.Create;
+	FModTimes.CaseSensitive := False;
 	FTmpCounter := 0;
 	SetFileTimeCalls := 0;
 end;
 
 destructor TMemoryFileSystem.Destroy;
 begin
+	FModTimes.Free;
 	FFiles.Free;
 	inherited;
 end;
@@ -349,6 +367,7 @@ end;
 procedure TMemoryFileSystem.Clear;
 begin
 	FFiles.Clear;
+	FModTimes.Clear;
 	SetFileTimeCalls := 0;
 end;
 
@@ -366,6 +385,28 @@ begin
 		if MatchesMask(ExtractFileName(FilePath), Mask) then
 			Result.Add(FilePath);
 	end;
+end;
+
+function TMemoryFileSystem.GetFileModTime(const Path: WideString): Int64;
+var
+	Index: Integer;
+begin
+	Index := FModTimes.IndexOfName(Path);
+	if Index >= 0 then
+		Result := StrToInt64Def(FModTimes.ValueFromIndex[Index], 0)
+	else
+		Result := 0;
+end;
+
+procedure TMemoryFileSystem.SetFileModTimeValue(const Path: WideString; UnixTime: Int64);
+var
+	Index: Integer;
+begin
+	Index := FModTimes.IndexOfName(Path);
+	if Index >= 0 then
+		FModTimes.ValueFromIndex[Index] := IntToStr(UnixTime)
+	else
+		FModTimes.AddPair(Path, IntToStr(UnixTime));
 end;
 
 function TMemoryFileSystem.OpenTextReader(const Path: WideString; Encoding: TEncoding): TStreamReader;
@@ -568,6 +609,26 @@ begin
 	finally
 		System.SysUtils.FindClose(SR);
 	end;
+end;
+
+function TWindowsFileSystem.GetFileModTime(const Path: WideString): Int64;
+var
+	FileData: TWin32FileAttributeData;
+	SystemTime: TSystemTime;
+	LocalFileTime: TFileTime;
+begin
+	Result := 0;
+	if not GetFileAttributesExW(PWideChar(GetUNCFilePath(Path)), GetFileExInfoStandard, @FileData) then
+		Exit;
+
+	{Convert FILETIME -> local -> SystemTime -> Unix timestamp}
+	if not FileTimeToLocalFileTime(FileData.ftLastWriteTime, LocalFileTime) then
+		Exit;
+	if not FileTimeToSystemTime(LocalFileTime, SystemTime) then
+		Exit;
+
+	Result := DateTimeToUnix(EncodeDate(SystemTime.wYear, SystemTime.wMonth, SystemTime.wDay) +
+		EncodeTime(SystemTime.wHour, SystemTime.wMinute, SystemTime.wSecond, SystemTime.wMilliseconds));
 end;
 
 end.

@@ -65,6 +65,8 @@ uses
 	CommandDispatcher,
 	ListingProvider,
 	DescriptionSyncGuard,
+	TimestampSyncManager,
+	TimestampSyncGuard,
 	LocalFileDeletionHandler,
 	DownloadSuccessHandler,
 	OperationActionExecutor,
@@ -126,6 +128,8 @@ type
 		FOperationLifecycle: IOperationLifecycleHandler;
 		FDescriptionSync: IDescriptionSyncManager;
 		FDescriptionSyncGuard: IDescriptionSyncGuard;
+		FTimestampSync: ITimestampSyncManager;
+		FTimestampSyncGuard: ITimestampSyncGuard;
 		FRetryHandler: IRetryHandler;
 		FCommandDispatcher: ICommandDispatcher;
 		FListingProvider: IListingProvider;
@@ -330,6 +334,8 @@ begin
 	FTCHandler := TTCHandler.Create(TWindowsEnvironment.Create);
 	FDescriptionSync := TDescriptionSyncManager.Create(SettingsManager.GetSettings.DescriptionFileName, FFileSystem, FTCHandler);
 	FDescriptionSyncGuard := TDescriptionSyncGuard.Create(FDescriptionSync, SettingsManager);
+	FTimestampSync := TTimestampSyncManager.Create(SettingsManager.GetSettings.TimestampFileName, FFileSystem, SettingsManager.GetSettings.TimestampConflictMode);
+	FTimestampSyncGuard := TTimestampSyncGuard.Create(FTimestampSync, SettingsManager);
 end;
 
 function TWFXApplication.FsInit(PluginNr: Integer; pProgressProc: TProgressProcW; pLogProc: TLogProcW; pRequestProc: TRequestProcW): Integer;
@@ -375,7 +381,7 @@ begin
 		end);
 
 	{Create download success handler for post-download operations}
-	FDownloadSuccessHandler := TDownloadSuccessHandler.Create(SettingsManager, Logger, Progress, FDescriptionSyncGuard, FFileSystem);
+	FDownloadSuccessHandler := TDownloadSuccessHandler.Create(SettingsManager, Logger, Progress, FDescriptionSyncGuard, FTimestampSyncGuard, FFileSystem);
 
 	{Create listing skip decider for FsFindFirst skip logic}
 	FListingSkipDecider := TListingSkipDecider.Create(FThreadState, Progress);
@@ -384,7 +390,7 @@ begin
 	FListingPathValidator := TListingPathValidator.Create;
 
 	{Create same-account move handler for FsRenMovFile}
-	FSameAccountMoveHandler := TSameAccountMoveHandler.Create(FThreadState, FDescriptionSyncGuard);
+	FSameAccountMoveHandler := TSameAccountMoveHandler.Create(FThreadState, FDescriptionSyncGuard, FTimestampSyncGuard);
 
 	{Create file stream executor for ExecuteFileStream}
 	FFileStreamExecutor := TFileStreamExecutor.Create(TPublicCloudFactory.Create, TWindowsCommandExecutor.Create);
@@ -417,7 +423,7 @@ begin
 	FSharedItemActionHandler := TSharedItemActionHandler.Create;
 
 	{Create upload completion handler for PutRemoteFile}
-	FUploadCompletionHandler := TUploadCompletionHandler.Create(Logger, Progress, FLocalFileDeletionHandler, FDescriptionSyncGuard);
+	FUploadCompletionHandler := TUploadCompletionHandler.Create(Logger, Progress, FLocalFileDeletionHandler, FDescriptionSyncGuard, FTimestampSyncGuard);
 
 	{Create listing handlers for FsFindFirst}
 	FRootListingHandler := TRootListingHandler.Create;
@@ -455,6 +461,8 @@ begin
 	FListingProvider := nil;
 	FDescriptionSyncGuard := nil;
 	FDescriptionSync := nil;
+	FTimestampSyncGuard := nil;
+	FTimestampSync := nil;
 	FLocalFileDeletionHandler := nil;
 	FDownloadSuccessHandler := nil;
 	FActionExecutor := nil;
@@ -706,7 +714,10 @@ begin
 	else
 		Result := Cloud.FileOperations.Delete(RealPath.Path);
 	if Result then
+	begin
 		FDescriptionSyncGuard.OnFileDeleted(RealPath, Cloud);
+		FTimestampSyncGuard.OnFileDeleted(RealPath, Cloud);
+	end;
 end;
 
 function TWFXApplication.FsDisconnect(DisconnectRoot: WideString): Boolean;
@@ -1006,9 +1017,15 @@ begin
 	begin
 		{Directory can be deleted after moving operation - use tracker to check context}
 		if FMoveOperationTracker.IsMoveOperation then
-			FDescriptionSyncGuard.OnFileRenamed(RealPath, FMoveOperationTracker.GetMoveTarget, Cloud)
+		begin
+			FDescriptionSyncGuard.OnFileRenamed(RealPath, FMoveOperationTracker.GetMoveTarget, Cloud);
+			FTimestampSyncGuard.OnFileRenamed(RealPath, FMoveOperationTracker.GetMoveTarget, Cloud);
+		end
 		else
+		begin
 			FDescriptionSyncGuard.OnFileDeleted(RealPath, Cloud);
+			FTimestampSyncGuard.OnFileDeleted(RealPath, Cloud);
+		end;
 	end;
 end;
 

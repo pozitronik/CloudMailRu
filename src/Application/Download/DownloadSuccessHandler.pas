@@ -14,6 +14,7 @@ uses
 	Logger,
 	Progress,
 	DescriptionSyncGuard,
+	TimestampSyncGuard,
 	WFXTypes,
 	CloudConstants,
 	RealPath,
@@ -55,6 +56,7 @@ type
 		FLogger: ILogger;
 		FProgress: IProgress;
 		FDescriptionSyncGuard: IDescriptionSyncGuard;
+		FTimestampSyncGuard: ITimestampSyncGuard;
 		FFileSystem: IFileSystem;
 
 		{Verifies downloaded file hash matches expected hash.
@@ -70,7 +72,7 @@ type
 		{Reports completion progress and logs transfer}
 		procedure ReportCompletion(const LocalName, RemoteName: WideString);
 	public
-		constructor Create(Settings: IPluginSettingsManager; Logger: ILogger; Progress: IProgress; DescriptionSyncGuard: IDescriptionSyncGuard; FileSystem: IFileSystem);
+		constructor Create(Settings: IPluginSettingsManager; Logger: ILogger; Progress: IProgress; DescriptionSyncGuard: IDescriptionSyncGuard; TimestampSyncGuard: ITimestampSyncGuard; FileSystem: IFileSystem);
 
 		function HandleSuccess(const Context: TDownloadContext): Integer;
 	end;
@@ -86,13 +88,14 @@ end;
 
 {TDownloadSuccessHandler}
 
-constructor TDownloadSuccessHandler.Create(Settings: IPluginSettingsManager; Logger: ILogger; Progress: IProgress; DescriptionSyncGuard: IDescriptionSyncGuard; FileSystem: IFileSystem);
+constructor TDownloadSuccessHandler.Create(Settings: IPluginSettingsManager; Logger: ILogger; Progress: IProgress; DescriptionSyncGuard: IDescriptionSyncGuard; TimestampSyncGuard: ITimestampSyncGuard; FileSystem: IFileSystem);
 begin
 	inherited Create;
 	FSettings := Settings;
 	FLogger := Logger;
 	FProgress := Progress;
 	FDescriptionSyncGuard := DescriptionSyncGuard;
+	FTimestampSyncGuard := TimestampSyncGuard;
 	FFileSystem := FileSystem;
 end;
 
@@ -121,6 +124,8 @@ begin
 end;
 
 function TDownloadSuccessHandler.HandleSuccess(const Context: TDownloadContext): Integer;
+var
+	StoredMTime: Int64;
 begin
 	Result := FS_FILE_OK;
 
@@ -131,8 +136,12 @@ begin
 			Exit(FS_FILE_READERROR);
 	end;
 
-	{Preserve file modification time if enabled}
-	if FSettings.GetSettings.PreserveFileTime then
+	{Restore stored local mtime from timestamp metadata, or fall back to server mtime}
+	StoredMTime := FTimestampSyncGuard.OnFileDownloaded(
+		Context.RemotePath, Context.LocalName, Context.Item.mtime, Context.Cloud);
+	if StoredMTime > 0 then
+		PreserveFileTime(Context.LocalName, StoredMTime)
+	else if FSettings.GetSettings.PreserveFileTime then
 		PreserveFileTime(Context.LocalName, Context.Item.mtime);
 
 	{Delete remote file if this is a move operation}

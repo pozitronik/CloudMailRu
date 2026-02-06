@@ -312,6 +312,10 @@
         <DCCReference Include="src\Application\Command\CommandDispatcher.pas"/>
         <DCCReference Include="src\Application\Listing\ListingProvider.pas"/>
         <DCCReference Include="src\Application\Description\DescriptionSyncGuard.pas"/>
+        <DCCReference Include="src\Domain\ValueObjects\TimestampEntry.pas"/>
+        <DCCReference Include="src\Application\Timestamp\TimestampMetadata.pas"/>
+        <DCCReference Include="src\Application\Timestamp\TimestampSyncManager.pas"/>
+        <DCCReference Include="src\Application\Timestamp\TimestampSyncGuard.pas"/>
         <DCCReference Include="src\Application\FileOps\LocalFileDeletionHandler.pas"/>
         <DCCReference Include="src\Application\Download\DownloadSuccessHandler.pas"/>
         <DCCReference Include="src\Application\Operation\OperationActionExecutor.pas"/>

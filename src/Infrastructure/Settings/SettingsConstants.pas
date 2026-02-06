@@ -74,6 +74,13 @@ const
 		Comma-separated, with leading dots. Configurable via INI ThumbnailExtensions key.}
 	DEFAULT_THUMBNAIL_EXTENSIONS = '.jpg,.jpeg,.png,.gif,.bmp,.heic,.heif,.webp,.tiff,.tif,.mp4,.avi,.mov,.mkv,.wmv,.flv,.3gp,.m4v,.mpg,.mpeg';
 
+	{Timestamp sync conflict resolution - what to do when cloud mtime differs from stored value}
+	TimestampConflictUseStored = 0; {Default: apply stored local mtime regardless of cloud changes}
+	TimestampConflictUseServer = 1; {Use cloud server mtime when conflict detected}
+
+	DEFAULT_TIMESTAMP_FILENAME = '.cloud_timestamps';
+	TIMESTAMP_TEMP_EXT = 'ts';
+
 	DOT = '.'; {Just a dot, it used to trail files extensions in some situations}
 
 	TrashPostfix = '.trash';

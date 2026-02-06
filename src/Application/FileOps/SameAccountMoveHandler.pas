@@ -11,7 +11,8 @@ uses
 	RealPath,
 	CloudMailRu,
 	ThreadStateManager,
-	DescriptionSyncGuard;
+	DescriptionSyncGuard,
+	TimestampSyncGuard;
 
 type
 	ISameAccountMoveHandler = interface
@@ -31,13 +32,14 @@ type
 	private
 		FThreadState: IThreadStateManager;
 		FDescriptionSyncGuard: IDescriptionSyncGuard;
+		FTimestampSyncGuard: ITimestampSyncGuard;
 
 		{Updates skip-path blacklist based on move result.
 			Adds path on FS_FILE_EXISTS (TC will try to delete source dir).
 			Removes path on FS_FILE_OK (successful overwrite).}
 		procedure UpdateSkipPath(MoveResult: Integer; const OldPath: TRealPath);
 	public
-		constructor Create(ThreadState: IThreadStateManager; DescriptionSyncGuard: IDescriptionSyncGuard);
+		constructor Create(ThreadState: IThreadStateManager; DescriptionSyncGuard: IDescriptionSyncGuard; TimestampSyncGuard: ITimestampSyncGuard);
 
 		function Execute(Cloud: TCloudMailRu; const OldPath, NewPath: TRealPath; Move, OverWrite: Boolean): Integer;
 	end;
@@ -49,11 +51,12 @@ uses
 	PathHelper,
 	CloudDirItem;
 
-constructor TSameAccountMoveHandler.Create(ThreadState: IThreadStateManager; DescriptionSyncGuard: IDescriptionSyncGuard);
+constructor TSameAccountMoveHandler.Create(ThreadState: IThreadStateManager; DescriptionSyncGuard: IDescriptionSyncGuard; TimestampSyncGuard: ITimestampSyncGuard);
 begin
 	inherited Create;
 	FThreadState := ThreadState;
 	FDescriptionSyncGuard := DescriptionSyncGuard;
+	FTimestampSyncGuard := TimestampSyncGuard;
 end;
 
 procedure TSameAccountMoveHandler.UpdateSkipPath(MoveResult: Integer; const OldPath: TRealPath);
@@ -84,7 +87,10 @@ begin
 		UpdateSkipPath(Result, OldPath);
 
 		if Result = FS_FILE_OK then
+		begin
 			FDescriptionSyncGuard.OnFileRenamed(OldPath, NewPath, Cloud);
+			FTimestampSyncGuard.OnFileRenamed(OldPath, NewPath, Cloud);
+		end;
 	end
 	else
 	begin

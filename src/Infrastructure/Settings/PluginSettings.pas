@@ -19,6 +19,11 @@ type
 		DescriptionCopyFromCloud: boolean;
 		DescriptionTrackCloudFS: boolean;
 		DescriptionFileName: WideString;
+		TimestampCopyToCloud: boolean;       {Store local mtime in metadata on upload}
+		TimestampCopyFromCloud: boolean;     {Restore stored mtime on download}
+		TimestampTrackCloudFS: boolean;      {Track renames/deletes in timestamp metadata}
+		TimestampFileName: WideString;       {Metadata filename, default: .cloud_timestamps}
+		TimestampConflictMode: integer;      {See TimestampConflict* constants}
 		CopyBetweenAccountsMode: integer;
 		CloudMaxFileSize: int64;
 		ChunkOverwriteMode: integer;

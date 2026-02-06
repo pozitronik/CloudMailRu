@@ -16,6 +16,7 @@ uses
 	CloudConstants,
 	ThreadStateManager,
 	DescriptionSyncGuard,
+	TimestampSyncGuard,
 	SameAccountMoveHandler,
 	MockCloudHTTP,
 	MockHTTPManager,
@@ -104,6 +105,17 @@ type
 		procedure OnFileUploaded(const RealPath: TRealPath; const LocalPath: WideString; Cloud: TCloudMailRu);
 	end;
 
+	{Mock timestamp sync guard}
+	TMockTimestampSyncGuard = class(TInterfacedObject, ITimestampSyncGuard)
+	public
+		OnFileRenamedCalled: Boolean;
+		constructor Create;
+		procedure OnFileUploaded(const RemotePath: TRealPath; const LocalPath: WideString; Cloud: TCloudMailRu);
+		function OnFileDownloaded(const RemotePath: TRealPath; const LocalPath: WideString; CloudMTime: Int64; Cloud: TCloudMailRu): Int64;
+		procedure OnFileDeleted(const RealPath: TRealPath; Cloud: TCloudMailRu);
+		procedure OnFileRenamed(const OldPath, NewPath: TRealPath; Cloud: TCloudMailRu);
+	end;
+
 	{Testable CloudMailRu for same-account operation tests}
 	TTestableCloudMailRu = class(TCloudMailRu)
 	public
@@ -116,6 +128,7 @@ type
 		FHandler: ISameAccountMoveHandler;
 		FThreadState: TMockMoveThreadState;
 		FDescriptionSyncGuard: TMockDescriptionSyncGuard;
+		FTimestampSyncGuard: TMockTimestampSyncGuard;
 		FMockHTTP: TMockCloudHTTP;
 		FMockHTTPManager: TMockHTTPManager;
 		FCloud: TTestableCloudMailRu;
@@ -132,6 +145,8 @@ type
 		procedure TestExecute_MoveSuccess_ReturnsOK;
 		[Test]
 		procedure TestExecute_MoveSuccess_NotifiesDescriptionSync;
+		[Test]
+		procedure TestExecute_MoveSuccess_NotifiesTimestampSync;
 		[Test]
 		procedure TestExecute_MoveSuccess_CallsMoveAPI;
 		[Test]
@@ -311,6 +326,32 @@ procedure TMockDescriptionSyncGuard.OnFileUploaded(const RealPath: TRealPath; co
 begin
 end;
 
+{TMockTimestampSyncGuard}
+
+constructor TMockTimestampSyncGuard.Create;
+begin
+	inherited Create;
+	OnFileRenamedCalled := False;
+end;
+
+procedure TMockTimestampSyncGuard.OnFileUploaded(const RemotePath: TRealPath; const LocalPath: WideString; Cloud: TCloudMailRu);
+begin
+end;
+
+function TMockTimestampSyncGuard.OnFileDownloaded(const RemotePath: TRealPath; const LocalPath: WideString; CloudMTime: Int64; Cloud: TCloudMailRu): Int64;
+begin
+	Result := 0;
+end;
+
+procedure TMockTimestampSyncGuard.OnFileDeleted(const RealPath: TRealPath; Cloud: TCloudMailRu);
+begin
+end;
+
+procedure TMockTimestampSyncGuard.OnFileRenamed(const OldPath, NewPath: TRealPath; Cloud: TCloudMailRu);
+begin
+	OnFileRenamedCalled := True;
+end;
+
 {TTestableCloudMailRu}
 
 procedure TTestableCloudMailRu.SetUnitedParams(const Value: WideString);
@@ -326,7 +367,8 @@ begin
 	FMockHTTPManager := TMockHTTPManager.Create(FMockHTTP);
 	FThreadState := TMockMoveThreadState.Create;
 	FDescriptionSyncGuard := TMockDescriptionSyncGuard.Create;
-	FHandler := TSameAccountMoveHandler.Create(FThreadState, FDescriptionSyncGuard);
+	FTimestampSyncGuard := TMockTimestampSyncGuard.Create;
+	FHandler := TSameAccountMoveHandler.Create(FThreadState, FDescriptionSyncGuard, FTimestampSyncGuard);
 	FCloud := nil;
 end;
 
@@ -334,6 +376,7 @@ procedure TSameAccountMoveHandlerTest.TearDown;
 begin
 	FHandler := nil;
 	FCloud.Free;
+	FTimestampSyncGuard := nil;
 	FDescriptionSyncGuard := nil;
 	FThreadState := nil;
 	FMockHTTPManager := nil;
@@ -376,6 +419,22 @@ begin
 	Result := FHandler.Execute(FCloud, OldPath, NewPath, True, False);
 
 	Assert.AreEqual(FS_FILE_OK, Result, 'Should return OK on successful move');
+end;
+
+procedure TSameAccountMoveHandlerTest.TestExecute_MoveSuccess_NotifiesTimestampSync;
+var
+	OldPath, NewPath: TRealPath;
+begin
+	FCloud := CreateCloud;
+	OldPath.FromPath('\account\folder\file.txt');
+	NewPath.FromPath('\account\newfolder\file.txt');
+
+	FMockHTTP.SetResponse(API_FILE_MOVE, True, JSON_MOVE_SUCCESS);
+
+	FHandler.Execute(FCloud, OldPath, NewPath, True, False);
+
+	Assert.IsTrue(FTimestampSyncGuard.OnFileRenamedCalled,
+		'Should notify timestamp sync on successful move');
 end;
 
 procedure TSameAccountMoveHandlerTest.TestExecute_MoveSuccess_NotifiesDescriptionSync;

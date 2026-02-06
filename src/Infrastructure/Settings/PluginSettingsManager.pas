@@ -244,6 +244,11 @@ begin
 	Settings.DescriptionCopyFromCloud := FConfigFile.ReadBool('Main', 'DescriptionCopyFromCloud', False);
 	Settings.DescriptionTrackCloudFS := FConfigFile.ReadBool('Main', 'DescriptionTrackCloudFS', False);
 	Settings.DescriptionFileName := FConfigFile.ReadString('Main', 'DescriptionFileName', 'descript.ion');
+	Settings.TimestampCopyToCloud := FConfigFile.ReadBool('Main', 'TimestampCopyToCloud', False);
+	Settings.TimestampCopyFromCloud := FConfigFile.ReadBool('Main', 'TimestampCopyFromCloud', False);
+	Settings.TimestampTrackCloudFS := FConfigFile.ReadBool('Main', 'TimestampTrackCloudFS', False);
+	Settings.TimestampFileName := FConfigFile.ReadString('Main', 'TimestampFileName', DEFAULT_TIMESTAMP_FILENAME);
+	Settings.TimestampConflictMode := FConfigFile.ReadInteger('Main', 'TimestampConflictMode', TimestampConflictUseStored);
 	Settings.CopyBetweenAccountsMode := FConfigFile.ReadInteger('Main', 'CopyBetweenAccountsMode', CopyBetweenAccountsModeDisabled);
 	Settings.DisableMultiThreading := FConfigFile.ReadBool('Main', 'DisableMultiThreading', False);
 	Settings.LogUserSpace := FConfigFile.ReadBool('Main', 'LogUserSpace', True);
@@ -294,6 +299,11 @@ begin
 	FConfigFile.WriteBoolIfNotDefault('Main', 'DescriptionCopyFromCloud', Settings.DescriptionCopyFromCloud, False);
 	FConfigFile.WriteBoolIfNotDefault('Main', 'DescriptionTrackCloudFS', Settings.DescriptionTrackCloudFS, False);
 	FConfigFile.WriteStringIfNotDefault('Main', 'DescriptionFileName', Settings.DescriptionFileName, 'descript.ion');
+	FConfigFile.WriteBoolIfNotDefault('Main', 'TimestampCopyToCloud', Settings.TimestampCopyToCloud, False);
+	FConfigFile.WriteBoolIfNotDefault('Main', 'TimestampCopyFromCloud', Settings.TimestampCopyFromCloud, False);
+	FConfigFile.WriteBoolIfNotDefault('Main', 'TimestampTrackCloudFS', Settings.TimestampTrackCloudFS, False);
+	FConfigFile.WriteStringIfNotDefault('Main', 'TimestampFileName', Settings.TimestampFileName, DEFAULT_TIMESTAMP_FILENAME);
+	FConfigFile.WriteIntegerIfNotDefault('Main', 'TimestampConflictMode', Settings.TimestampConflictMode, TimestampConflictUseStored);
 	FConfigFile.WriteIntegerIfNotDefault('Main', 'CopyBetweenAccountsMode', Settings.CopyBetweenAccountsMode, CopyBetweenAccountsModeDisabled);
 	FConfigFile.WriteBoolIfNotDefault('Main', 'DisableMultiThreading', Settings.DisableMultiThreading, False);
 	FConfigFile.WriteBoolIfNotDefault('Main', 'LogUserSpace', Settings.LogUserSpace, True);

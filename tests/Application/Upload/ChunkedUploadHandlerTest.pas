@@ -48,6 +48,7 @@ type
 		function GetTmpFileName(const Prefix: WideString = ''): WideString;
 		procedure SetFileTime(const Path: WideString; const FileTime: TFileTime);
 		function FindFiles(const Pattern: WideString): TStringList;
+		function GetFileModTime(const Path: WideString): Int64;
 	end;
 
 	{Configurable IRequest mock - returns configured result for dialog prompts}
@@ -215,6 +216,11 @@ end;
 function TRealSizeFileSystem.FindFiles(const Pattern: WideString): TStringList;
 begin
 	Result := TStringList.Create;
+end;
+
+function TRealSizeFileSystem.GetFileModTime(const Path: WideString): Int64;
+begin
+	Result := 0;
 end;
 
 {TConfigurableRequest}

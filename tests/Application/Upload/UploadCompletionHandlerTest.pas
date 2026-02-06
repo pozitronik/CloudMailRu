@@ -13,6 +13,7 @@ uses
 	Progress,
 	LocalFileDeletionHandler,
 	DescriptionSyncGuard,
+	TimestampSyncGuard,
 	RealPath,
 	CloudMailRu,
 	WFXTypes;
@@ -69,6 +70,17 @@ type
 		procedure OnFileUploaded(const RealPath: TRealPath; const LocalPath: WideString; Cloud: TCloudMailRu);
 	end;
 
+	{Mock timestamp sync guard that tracks OnFileUploaded calls}
+	TMockTimestampSyncGuard = class(TInterfacedObject, ITimestampSyncGuard)
+	public
+		UploadedCalls: Integer;
+		constructor Create;
+		procedure OnFileUploaded(const RemotePath: TRealPath; const LocalPath: WideString; Cloud: TCloudMailRu);
+		function OnFileDownloaded(const RemotePath: TRealPath; const LocalPath: WideString; CloudMTime: Int64; Cloud: TCloudMailRu): Int64;
+		procedure OnFileDeleted(const RealPath: TRealPath; Cloud: TCloudMailRu);
+		procedure OnFileRenamed(const OldPath, NewPath: TRealPath; Cloud: TCloudMailRu);
+	end;
+
 	[TestFixture]
 	TUploadCompletionHandlerTest = class
 	private
@@ -77,6 +89,7 @@ type
 		FProgress: TMockProgress;
 		FLocalFileDeletionHandler: TMockLocalFileDeletionHandler;
 		FDescriptionSyncGuard: TMockDescriptionSyncGuard;
+		FTimestampSyncGuard: TMockTimestampSyncGuard;
 
 		function CreateContext(const LocalName, RemoteName: WideString; CopyFlags: Integer): TUploadCompletionContext;
 	public
@@ -104,6 +117,12 @@ type
 		procedure TestHandleCompletion_CallsDescriptionSync;
 		[Test]
 		procedure TestHandleCompletion_WhenMoveDeleteFails_DoesNotCallDescriptionSync;
+
+		{Timestamp sync tests}
+		[Test]
+		procedure TestHandleCompletion_CallsTimestampSync;
+		[Test]
+		procedure TestHandleCompletion_TimestampSyncCalledBeforeMove;
 
 		{Result tests}
 		[Test]
@@ -204,6 +223,32 @@ begin
 	LastLocalPath := LocalPath;
 end;
 
+{TMockTimestampSyncGuard}
+
+constructor TMockTimestampSyncGuard.Create;
+begin
+	inherited Create;
+	UploadedCalls := 0;
+end;
+
+procedure TMockTimestampSyncGuard.OnFileUploaded(const RemotePath: TRealPath; const LocalPath: WideString; Cloud: TCloudMailRu);
+begin
+	Inc(UploadedCalls);
+end;
+
+function TMockTimestampSyncGuard.OnFileDownloaded(const RemotePath: TRealPath; const LocalPath: WideString; CloudMTime: Int64; Cloud: TCloudMailRu): Int64;
+begin
+	Result := 0;
+end;
+
+procedure TMockTimestampSyncGuard.OnFileDeleted(const RealPath: TRealPath; Cloud: TCloudMailRu);
+begin
+end;
+
+procedure TMockTimestampSyncGuard.OnFileRenamed(const OldPath, NewPath: TRealPath; Cloud: TCloudMailRu);
+begin
+end;
+
 {TUploadCompletionHandlerTest}
 
 function TUploadCompletionHandlerTest.CreateContext(const LocalName, RemoteName: WideString; CopyFlags: Integer): TUploadCompletionContext;
@@ -221,12 +266,14 @@ begin
 	FProgress := TMockProgress.Create;
 	FLocalFileDeletionHandler := TMockLocalFileDeletionHandler.Create;
 	FDescriptionSyncGuard := TMockDescriptionSyncGuard.Create;
+	FTimestampSyncGuard := TMockTimestampSyncGuard.Create;
 
 	FHandler := TUploadCompletionHandler.Create(
 		FLogger,
 		FProgress,
 		FLocalFileDeletionHandler,
-		FDescriptionSyncGuard
+		FDescriptionSyncGuard,
+		FTimestampSyncGuard
 	);
 end;
 
@@ -301,7 +348,8 @@ begin
 		FLogger,
 		FProgress,
 		FLocalFileDeletionHandler,
-		FDescriptionSyncGuard
+		FDescriptionSyncGuard,
+		FTimestampSyncGuard
 	);
 
 	Context := CreateContext('C:\local\file.txt', '\account\remote\file.txt', FS_COPYFLAGS_MOVE);
@@ -332,11 +380,13 @@ begin
 	{Recreate handler with failing deletion handler}
 	FLocalFileDeletionHandler := TMockLocalFileDeletionHandler.Create(FS_FILE_NOTSUPPORTED);
 	FDescriptionSyncGuard := TMockDescriptionSyncGuard.Create;
+	FTimestampSyncGuard := TMockTimestampSyncGuard.Create;
 	FHandler := TUploadCompletionHandler.Create(
 		FLogger,
 		FProgress,
 		FLocalFileDeletionHandler,
-		FDescriptionSyncGuard
+		FDescriptionSyncGuard,
+		FTimestampSyncGuard
 	);
 
 	Context := CreateContext('C:\local\file.txt', '\account\remote\file.txt', FS_COPYFLAGS_MOVE);
@@ -359,6 +409,35 @@ begin
 
 	Assert.AreEqual(FS_FILE_OK, ResultCode);
 end;
+
+{Timestamp sync tests}
+
+procedure TUploadCompletionHandlerTest.TestHandleCompletion_CallsTimestampSync;
+var
+	Context: TUploadCompletionContext;
+begin
+	Context := CreateContext('C:\local\file.txt', '\account\remote\file.txt', 0);
+
+	FHandler.HandleCompletion(Context);
+
+	Assert.AreEqual(1, FTimestampSyncGuard.UploadedCalls, 'Should call timestamp sync once');
+end;
+
+procedure TUploadCompletionHandlerTest.TestHandleCompletion_TimestampSyncCalledBeforeMove;
+var
+	Context: TUploadCompletionContext;
+begin
+	{Timestamp sync must be called before move deletion (reads local file mtime)}
+	Context := CreateContext('C:\local\file.txt', '\account\remote\file.txt', FS_COPYFLAGS_MOVE);
+
+	FHandler.HandleCompletion(Context);
+
+	{Both should be called - timestamp sync before move, deletion after}
+	Assert.AreEqual(1, FTimestampSyncGuard.UploadedCalls, 'Timestamp sync should be called even with move flag');
+	Assert.IsTrue(FLocalFileDeletionHandler.DeleteCalled, 'Local file should be deleted for move');
+end;
+
+{Null handler tests}
 
 procedure TUploadCompletionHandlerTest.TestNullHandler_ReturnsOK;
 var

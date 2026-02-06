@@ -15,6 +15,7 @@ uses
 	Logger,
 	Progress,
 	DescriptionSyncGuard,
+	TimestampSyncGuard,
 	PluginSettings,
 	WFXTypes,
 	RealPath,
@@ -86,6 +87,18 @@ type
 		procedure OnFileUploaded(const RealPath: TRealPath; const LocalPath: WideString; Cloud: TCloudMailRu);
 	end;
 
+	{Mock timestamp sync guard with configurable download return value}
+	TMockTimestampSyncGuard = class(TInterfacedObject, ITimestampSyncGuard)
+	public
+		DownloadReturnValue: Int64;
+		DownloadedCalls: Integer;
+		constructor Create;
+		procedure OnFileUploaded(const RemotePath: TRealPath; const LocalPath: WideString; Cloud: TCloudMailRu);
+		function OnFileDownloaded(const RemotePath: TRealPath; const LocalPath: WideString; CloudMTime: Int64; Cloud: TCloudMailRu): Int64;
+		procedure OnFileDeleted(const RealPath: TRealPath; Cloud: TCloudMailRu);
+		procedure OnFileRenamed(const OldPath, NewPath: TRealPath; Cloud: TCloudMailRu);
+	end;
+
 	[TestFixture]
 	TDownloadSuccessHandlerTest = class
 	private
@@ -94,6 +107,7 @@ type
 		FLogger: TMockLogger;
 		FProgress: TMockProgress;
 		FSyncGuard: TMockDescriptionSyncGuard;
+		FTimestampSyncGuard: TMockTimestampSyncGuard;
 		FFileSystem: IFileSystem;
 		FMockCloud: TCloudMailRu;
 
@@ -141,6 +155,14 @@ type
 		procedure TestHandleSuccess_PreserveTimeEnabled_NonZeroMtime_SetsFileTime;
 		[Test]
 		procedure TestHandleSuccess_PreserveTimeDisabled_NonZeroMtime_DoesNotSetFileTime;
+
+		{Timestamp sync tests}
+		[Test]
+		procedure TestHandleSuccess_TimestampReturnsStoredMTime_UsesStoredMTime;
+		[Test]
+		procedure TestHandleSuccess_TimestampReturnsZero_FallsBackToPreserveFileTime;
+		[Test]
+		procedure TestHandleSuccess_TimestampReturnsZero_PreserveDisabled_NoFileTimeSet;
 
 		{Null handler tests}
 		[Test]
@@ -297,6 +319,33 @@ procedure TMockDescriptionSyncGuard.OnFileUploaded(const RealPath: TRealPath; co
 begin
 end;
 
+{TMockTimestampSyncGuard}
+
+constructor TMockTimestampSyncGuard.Create;
+begin
+	inherited Create;
+	DownloadReturnValue := 0;
+	DownloadedCalls := 0;
+end;
+
+procedure TMockTimestampSyncGuard.OnFileUploaded(const RemotePath: TRealPath; const LocalPath: WideString; Cloud: TCloudMailRu);
+begin
+end;
+
+function TMockTimestampSyncGuard.OnFileDownloaded(const RemotePath: TRealPath; const LocalPath: WideString; CloudMTime: Int64; Cloud: TCloudMailRu): Int64;
+begin
+	Inc(DownloadedCalls);
+	Result := DownloadReturnValue;
+end;
+
+procedure TMockTimestampSyncGuard.OnFileDeleted(const RealPath: TRealPath; Cloud: TCloudMailRu);
+begin
+end;
+
+procedure TMockTimestampSyncGuard.OnFileRenamed(const OldPath, NewPath: TRealPath; Cloud: TCloudMailRu);
+begin
+end;
+
 {TDownloadSuccessHandlerTest}
 
 procedure TDownloadSuccessHandlerTest.Setup;
@@ -305,6 +354,7 @@ begin
 	FLogger := TMockLogger.Create;
 	FProgress := TMockProgress.Create;
 	FSyncGuard := TMockDescriptionSyncGuard.Create;
+	FTimestampSyncGuard := TMockTimestampSyncGuard.Create;
 	FFileSystem := TNullFileSystem.Create;
 end;
 
@@ -315,6 +365,7 @@ begin
 	FLogger := nil;
 	FProgress := nil;
 	FSyncGuard := nil;
+	FTimestampSyncGuard := nil;
 	FFileSystem := nil;
 	FreeAndNil(FMockCloud);
 end;
@@ -357,7 +408,7 @@ end;
 
 procedure TDownloadSuccessHandlerTest.CreateHandler;
 begin
-	FHandler := TDownloadSuccessHandler.Create(FSettings, FLogger, FProgress, FSyncGuard, FFileSystem);
+	FHandler := TDownloadSuccessHandler.Create(FSettings, FLogger, FProgress, FSyncGuard, FTimestampSyncGuard, FFileSystem);
 end;
 
 {Basic success}
@@ -534,6 +585,93 @@ begin
 	Context.Item.mtime := 1700000000; {Non-zero but won't be used}
 
 	{Should not throw even with non-existent file since PreserveFileTime is disabled}
+	Assert.AreEqual(FS_FILE_OK, FHandler.HandleSuccess(Context));
+end;
+
+{Timestamp sync tests}
+
+procedure TDownloadSuccessHandlerTest.TestHandleSuccess_TimestampReturnsStoredMTime_UsesStoredMTime;
+var
+	Context: TDownloadContext;
+	TempFile: WideString;
+	FileHandle: THandle;
+begin
+	{When timestamp sync returns a stored mtime, use it instead of server mtime}
+	TempFile := GetEnvironmentVariable('TEMP') + '\DownloadTimestampTest_' + IntToStr(GetTickCount) + '.tmp';
+	FileHandle := CreateFileW(PWideChar(TempFile), GENERIC_WRITE, 0, nil, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
+	if FileHandle = INVALID_HANDLE_VALUE then
+	begin
+		Assert.Pass('Cannot create temp file, skipping test');
+		Exit;
+	end;
+	CloseHandle(FileHandle);
+
+	try
+		FFileSystem := TWindowsFileSystem.Create;
+		FTimestampSyncGuard := TMockTimestampSyncGuard.Create;
+		FTimestampSyncGuard.DownloadReturnValue := 1704067200; {Stored local mtime}
+		FSettings.SetPreserveFileTime(False); {PreserveFileTime disabled - but stored mtime takes priority}
+		CreateHandler;
+		Context := CreateContext('', '', False);
+		Context.LocalName := TempFile;
+		Context.Item.mtime := 1700000000; {Server mtime - should be ignored}
+
+		FHandler.HandleSuccess(Context);
+
+		Assert.AreEqual(1, FTimestampSyncGuard.DownloadedCalls, 'Should call timestamp sync');
+		Assert.IsTrue(FileExists(TempFile), 'File should exist after time modification');
+	finally
+		DeleteFile(TempFile);
+	end;
+end;
+
+procedure TDownloadSuccessHandlerTest.TestHandleSuccess_TimestampReturnsZero_FallsBackToPreserveFileTime;
+var
+	Context: TDownloadContext;
+	TempFile: WideString;
+	FileHandle: THandle;
+begin
+	{When timestamp sync returns 0, fall back to PreserveFileTime behavior}
+	TempFile := GetEnvironmentVariable('TEMP') + '\DownloadTimestampFallback_' + IntToStr(GetTickCount) + '.tmp';
+	FileHandle := CreateFileW(PWideChar(TempFile), GENERIC_WRITE, 0, nil, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
+	if FileHandle = INVALID_HANDLE_VALUE then
+	begin
+		Assert.Pass('Cannot create temp file, skipping test');
+		Exit;
+	end;
+	CloseHandle(FileHandle);
+
+	try
+		FFileSystem := TWindowsFileSystem.Create;
+		FTimestampSyncGuard := TMockTimestampSyncGuard.Create;
+		FTimestampSyncGuard.DownloadReturnValue := 0; {No stored mtime}
+		FSettings.SetPreserveFileTime(True); {Fall back to server mtime}
+		CreateHandler;
+		Context := CreateContext('', '', False);
+		Context.LocalName := TempFile;
+		Context.Item.mtime := 1700000000; {Server mtime - should be used}
+
+		FHandler.HandleSuccess(Context);
+
+		Assert.IsTrue(FileExists(TempFile), 'File should exist after time modification');
+	finally
+		DeleteFile(TempFile);
+	end;
+end;
+
+procedure TDownloadSuccessHandlerTest.TestHandleSuccess_TimestampReturnsZero_PreserveDisabled_NoFileTimeSet;
+var
+	Context: TDownloadContext;
+begin
+	{When both timestamp and PreserveFileTime are inactive, no file time should be set}
+	FTimestampSyncGuard := TMockTimestampSyncGuard.Create;
+	FTimestampSyncGuard.DownloadReturnValue := 0;
+	FSettings.SetPreserveFileTime(False);
+	CreateHandler;
+	Context := CreateContext('', '', False);
+	Context.Item.mtime := 1700000000;
+
+	{Should succeed without trying to access file (NullFileSystem)}
 	Assert.AreEqual(FS_FILE_OK, FHandler.HandleSuccess(Context));
 end;
 

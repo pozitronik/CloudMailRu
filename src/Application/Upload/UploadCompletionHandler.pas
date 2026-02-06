@@ -11,6 +11,7 @@ uses
 	Progress,
 	LocalFileDeletionHandler,
 	DescriptionSyncGuard,
+	TimestampSyncGuard,
 	WFXTypes,
 	CloudConstants,
 	RealPath,
@@ -49,6 +50,7 @@ type
 		FProgress: IProgress;
 		FLocalFileDeletionHandler: ILocalFileDeletionHandler;
 		FDescriptionSyncGuard: IDescriptionSyncGuard;
+		FTimestampSyncGuard: ITimestampSyncGuard;
 
 		{Reports completion progress and logs transfer}
 		procedure ReportCompletion(const LocalName, RemoteName: WideString);
@@ -56,7 +58,7 @@ type
 		{Handles move operation - deletes local file after upload}
 		function HandleMoveOperation(const LocalName: WideString): Integer;
 	public
-		constructor Create(Logger: ILogger; Progress: IProgress; LocalFileDeletionHandler: ILocalFileDeletionHandler; DescriptionSyncGuard: IDescriptionSyncGuard);
+		constructor Create(Logger: ILogger; Progress: IProgress; LocalFileDeletionHandler: ILocalFileDeletionHandler; DescriptionSyncGuard: IDescriptionSyncGuard; TimestampSyncGuard: ITimestampSyncGuard);
 
 		function HandleCompletion(const Context: TUploadCompletionContext): Integer;
 	end;
@@ -72,13 +74,14 @@ end;
 
 {TUploadCompletionHandler}
 
-constructor TUploadCompletionHandler.Create(Logger: ILogger; Progress: IProgress; LocalFileDeletionHandler: ILocalFileDeletionHandler; DescriptionSyncGuard: IDescriptionSyncGuard);
+constructor TUploadCompletionHandler.Create(Logger: ILogger; Progress: IProgress; LocalFileDeletionHandler: ILocalFileDeletionHandler; DescriptionSyncGuard: IDescriptionSyncGuard; TimestampSyncGuard: ITimestampSyncGuard);
 begin
 	inherited Create;
 	FLogger := Logger;
 	FProgress := Progress;
 	FLocalFileDeletionHandler := LocalFileDeletionHandler;
 	FDescriptionSyncGuard := DescriptionSyncGuard;
+	FTimestampSyncGuard := TimestampSyncGuard;
 end;
 
 procedure TUploadCompletionHandler.ReportCompletion(const LocalName, RemoteName: WideString);
@@ -98,6 +101,9 @@ begin
 
 	{Report progress and log completion}
 	ReportCompletion(Context.LocalName, Context.RemoteName);
+
+	{Sync timestamp before move - must read local file mtime before deletion}
+	FTimestampSyncGuard.OnFileUploaded(Context.RemotePath, Context.LocalName, Context.Cloud);
 
 	{Delete local file if this is a move operation}
 	if (Context.CopyFlags and FS_COPYFLAGS_MOVE) <> 0 then

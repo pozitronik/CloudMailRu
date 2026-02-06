@@ -319,6 +319,14 @@
         <DCCReference Include="Application\Listing\ListingProviderTest.pas"/>
         <DCCReference Include="..\src\Application\Description\DescriptionSyncGuard.pas"/>
         <DCCReference Include="Application\Description\DescriptionSyncGuardTest.pas"/>
+        <DCCReference Include="..\src\Domain\ValueObjects\TimestampEntry.pas"/>
+        <DCCReference Include="Domain\ValueObjects\TimestampEntryTest.pas"/>
+        <DCCReference Include="..\src\Application\Timestamp\TimestampMetadata.pas"/>
+        <DCCReference Include="Application\Timestamp\TimestampMetadataTest.pas"/>
+        <DCCReference Include="..\src\Application\Timestamp\TimestampSyncManager.pas"/>
+        <DCCReference Include="Application\Timestamp\TimestampSyncManagerTest.pas"/>
+        <DCCReference Include="..\src\Application\Timestamp\TimestampSyncGuard.pas"/>
+        <DCCReference Include="Application\Timestamp\TimestampSyncGuardTest.pas"/>
         <DCCReference Include="..\src\Application\FileOps\LocalFileDeletionHandler.pas"/>
         <DCCReference Include="Application\FileOps\LocalFileDeletionHandlerTest.pas"/>
         <DCCReference Include="..\src\Application\Download\DownloadSuccessHandler.pas"/>
