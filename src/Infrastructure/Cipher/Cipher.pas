@@ -29,17 +29,24 @@ const
 	CIPHER_CONTROL_GUID = '2b580ce6-e72f-433d-9788-3ecb6b0d9580';
 
 type
+	{Slim interface for stream-based encryption used by CloudMailRu plugin.
+		Only exposes wrapping stream methods needed for upload/download.}
 	ICipher = interface
 		['{54C0EBB7-5186-4D89-A2D6-050D4A6CD58B}']
-		function CryptFile(SourceFileName, DestinationFilename: WideString): Integer;
-		function CryptStream(SourceStream, DestinationStream: TStream): Integer;
-		function DecryptFile(SourceFileName, DestinationFilename: WideString): Integer;
-		function DecryptStream(SourceStream, DestinationStream: TStream): Integer;
-
 		{Stream wrapper methods - return streams that transform data on-the-fly.
 			Caller must free the returned stream. Wrapper does not own/free source.}
 		function GetEncryptingStream(Source: TStream): TStream;
 		function GetDecryptingStream(Source: TStream): TStream;
+	end;
+
+	{Extended interface for file/stream-level operations used by CloudCrypt tool.
+		Adds whole-file and whole-stream encrypt/decrypt on top of ICipher.}
+	IFileCipher = interface(ICipher)
+		['{54C0EBB7-5186-4D89-A2D6-050D4A6CD58C}']
+		function CryptFile(SourceFileName, DestinationFilename: WideString): Integer;
+		function CryptStream(SourceStream, DestinationStream: TStream): Integer;
+		function DecryptFile(SourceFileName, DestinationFilename: WideString): Integer;
+		function DecryptStream(SourceStream, DestinationStream: TStream): Integer;
 	end;
 
 	{Lightweight read-only stream wrapper that delegates to source without copying.
@@ -58,7 +65,7 @@ type
 
 	{Null implementation - pass-through without encryption.
 		Use when encryption is not needed. Zero overhead for stream operations.}
-	TNullCipher = class(TInterfacedObject, ICipher)
+	TNullCipher = class(TInterfacedObject, ICipher, IFileCipher)
 	public
 		function CryptFile(SourceFileName, DestinationFilename: WideString): Integer;
 		function CryptStream(SourceStream, DestinationStream: TStream): Integer;
@@ -68,10 +75,10 @@ type
 		function GetDecryptingStream(Source: TStream): TStream;
 	end;
 
-	{Abstract base for ICipher implementations that delegate to IBlockCipher.
+	{Abstract base for IFileCipher implementations that delegate to IBlockCipher.
 		Subclasses override CreateBlockCipher to provide backend-specific cipher instances.
 		Template Method pattern: shared file/stream logic lives here, backend creation is deferred.}
-	TBaseCipher = class(TInterfacedObject, ICipher)
+	TBaseCipher = class(TInterfacedObject, ICipher, IFileCipher)
 	protected
 		function CreateBlockCipher: IBlockCipher; virtual; abstract;
 	public
@@ -192,7 +199,7 @@ begin
 	Result := TPassThroughStream.Create(Source);
 end;
 
-{TBaseCipher - shared ICipher logic delegating to IBlockCipher via CreateBlockCipher}
+{TBaseCipher - shared IFileCipher logic delegating to IBlockCipher via CreateBlockCipher}
 
 function TBaseCipher.CryptFile(SourceFileName, DestinationFilename: WideString): Integer;
 var

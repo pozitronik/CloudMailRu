@@ -214,40 +214,50 @@ procedure TCipherProfileRegistryTest.TestFactory_LegacyProfile_CreatesWorkingCip
 var
 	Profile: TCipherProfile;
 	Cipher: ICipher;
-	Source, Encrypted, Decrypted: TMemoryStream;
+	Source, EncryptedBuf: TMemoryStream;
+	EncStream, DecStream: TStream;
 	TestData: AnsiString;
-	ResultData: AnsiString;
+	EncryptedBytes, DecryptedBytes: TBytes;
+	BytesRead: Integer;
 begin
 	{Verify encrypt/decrypt roundtrip through the legacy profile factory}
 	Assert.IsTrue(TCipherProfileRegistry.FindById(CIPHER_PROFILE_LEGACY_DEFAULT, Profile));
 	Cipher := Profile.CreateCipher('roundtrip-password');
 
 	Source := TMemoryStream.Create;
-	Encrypted := TMemoryStream.Create;
-	Decrypted := TMemoryStream.Create;
+	EncryptedBuf := TMemoryStream.Create;
 	try
 		TestData := 'Hello, cipher roundtrip test!';
 		Source.WriteBuffer(TestData[1], Length(TestData));
 		Source.Position := 0;
 
-		Cipher.CryptStream(Source, Encrypted);
-		Assert.IsTrue(Encrypted.Size > 0, 'Encrypted stream should not be empty');
+		EncStream := Cipher.GetEncryptingStream(Source);
+		try
+			SetLength(EncryptedBytes, EncStream.Size);
+			BytesRead := EncStream.Read(EncryptedBytes[0], Length(EncryptedBytes));
+			Assert.IsTrue(BytesRead > 0, 'Encrypted stream should not be empty');
+			EncryptedBuf.WriteBuffer(EncryptedBytes[0], BytesRead);
+		finally
+			EncStream.Free;
+		end;
 
 		{Need a fresh cipher instance for decryption -- cipher state is consumed}
 		Cipher := Profile.CreateCipher('roundtrip-password');
-		Encrypted.Position := 0;
-		Cipher.DecryptStream(Encrypted, Decrypted);
+		EncryptedBuf.Position := 0;
+		DecStream := Cipher.GetDecryptingStream(EncryptedBuf);
+		try
+			SetLength(DecryptedBytes, DecStream.Size);
+			BytesRead := DecStream.Read(DecryptedBytes[0], Length(DecryptedBytes));
 
-		Assert.AreEqual(Int64(Length(TestData)), Decrypted.Size, 'Decrypted size must match original');
-
-		SetLength(ResultData, Decrypted.Size);
-		Decrypted.Position := 0;
-		Decrypted.ReadBuffer(ResultData[1], Decrypted.Size);
-		Assert.AreEqual(String(TestData), String(ResultData), 'Decrypted content must match original');
+			Assert.AreEqual(Length(TestData), BytesRead, 'Decrypted size must match original');
+			Assert.AreEqual(String(TestData), TEncoding.ANSI.GetString(Copy(DecryptedBytes, 0, BytesRead)),
+				'Decrypted content must match original');
+		finally
+			DecStream.Free;
+		end;
 	finally
 		Source.Free;
-		Encrypted.Free;
-		Decrypted.Free;
+		EncryptedBuf.Free;
 	end;
 end;
 

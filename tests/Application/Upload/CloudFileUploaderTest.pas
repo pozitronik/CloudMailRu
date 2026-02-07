@@ -33,10 +33,6 @@ type
 	{Mock cipher that throws EAbort on GetEncryptingStream}
 	TAbortCipher = class(TInterfacedObject, ICipher)
 	public
-		function CryptFile(SourceFileName, DestinationFilename: WideString): Integer;
-		function CryptStream(SourceStream, DestinationStream: TStream): Integer;
-		function DecryptFile(SourceFileName, DestinationFilename: WideString): Integer;
-		function DecryptStream(SourceStream, DestinationStream: TStream): Integer;
 		function GetEncryptingStream(Source: TStream): TStream;
 		function GetDecryptingStream(Source: TStream): TStream;
 	end;
@@ -44,10 +40,6 @@ type
 	{Mock cipher that throws a general exception on GetEncryptingStream}
 	TErrorCipher = class(TInterfacedObject, ICipher)
 	public
-		function CryptFile(SourceFileName, DestinationFilename: WideString): Integer;
-		function CryptStream(SourceStream, DestinationStream: TStream): Integer;
-		function DecryptFile(SourceFileName, DestinationFilename: WideString): Integer;
-		function DecryptStream(SourceStream, DestinationStream: TStream): Integer;
 		function GetEncryptingStream(Source: TStream): TStream;
 		function GetDecryptingStream(Source: TStream): TStream;
 	end;
@@ -553,18 +545,6 @@ end;
 
 { TAbortCipher }
 
-function TAbortCipher.CryptFile(SourceFileName, DestinationFilename: WideString): Integer;
-begin Result := 0; end;
-
-function TAbortCipher.CryptStream(SourceStream, DestinationStream: TStream): Integer;
-begin Result := 0; end;
-
-function TAbortCipher.DecryptFile(SourceFileName, DestinationFilename: WideString): Integer;
-begin Result := 0; end;
-
-function TAbortCipher.DecryptStream(SourceStream, DestinationStream: TStream): Integer;
-begin Result := 0; end;
-
 function TAbortCipher.GetEncryptingStream(Source: TStream): TStream;
 begin
 	Abort; {Raises EAbort}
@@ -574,18 +554,6 @@ function TAbortCipher.GetDecryptingStream(Source: TStream): TStream;
 begin Result := TPassThroughStream.Create(Source); end;
 
 { TErrorCipher }
-
-function TErrorCipher.CryptFile(SourceFileName, DestinationFilename: WideString): Integer;
-begin Result := 0; end;
-
-function TErrorCipher.CryptStream(SourceStream, DestinationStream: TStream): Integer;
-begin Result := 0; end;
-
-function TErrorCipher.DecryptFile(SourceFileName, DestinationFilename: WideString): Integer;
-begin Result := 0; end;
-
-function TErrorCipher.DecryptStream(SourceStream, DestinationStream: TStream): Integer;
-begin Result := 0; end;
 
 function TErrorCipher.GetEncryptingStream(Source: TStream): TStream;
 begin

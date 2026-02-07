@@ -12,8 +12,10 @@ uses
 	BCryptProvider;
 
 type
-	{Factory type: creates a fully initialized ICipher from a password}
-	TCipherFactory = reference to function(const Password: WideString): ICipher;
+	{Factory type: creates a fully initialized IFileCipher from a password.
+		Returns IFileCipher so callers needing file ops get them directly;
+		callers needing only ICipher can assign IFileCipher to ICipher variable.}
+	TCipherFactory = reference to function(const Password: WideString): IFileCipher;
 
 	TCipherProfile = record
 		Id: WideString;
@@ -75,7 +77,7 @@ begin
 	FProfiles[0].DisplayName := 'AES-256 / SHA-1 KDF (Legacy)';
 	FProfiles[0].BackendName := 'Software (DCPCrypt)';
 	FProfiles[0].KeySizeBits := 256;
-	FProfiles[0].CreateCipher := function(const Password: WideString): ICipher
+	FProfiles[0].CreateCipher := function(const Password: WideString): IFileCipher
 	begin
 		Result := TFileCipher.Create(Password, TDCP_rijndael, TDCP_sha1);
 	end;
@@ -84,7 +86,7 @@ begin
 	FProfiles[1].DisplayName := 'AES-256 / SHA-256 KDF';
 	FProfiles[1].BackendName := 'Software (DCPCrypt)';
 	FProfiles[1].KeySizeBits := 256;
-	FProfiles[1].CreateCipher := function(const Password: WideString): ICipher
+	FProfiles[1].CreateCipher := function(const Password: WideString): IFileCipher
 	begin
 		Result := TFileCipher.Create(Password, TDCP_rijndael, TDCP_sha256);
 	end;
@@ -93,7 +95,7 @@ begin
 	FProfiles[2].DisplayName := 'Twofish-256 / SHA-256 KDF';
 	FProfiles[2].BackendName := 'Software (DCPCrypt)';
 	FProfiles[2].KeySizeBits := 256;
-	FProfiles[2].CreateCipher := function(const Password: WideString): ICipher
+	FProfiles[2].CreateCipher := function(const Password: WideString): IFileCipher
 	begin
 		Result := TFileCipher.Create(Password, TDCP_twofish, TDCP_sha256);
 	end;
@@ -109,7 +111,7 @@ begin
 		FProfiles[NextIndex].DisplayName := 'AES-256 / PBKDF2 (OpenSSL)';
 		FProfiles[NextIndex].BackendName := 'OpenSSL';
 		FProfiles[NextIndex].KeySizeBits := 256;
-		FProfiles[NextIndex].CreateCipher := function(const Password: WideString): ICipher
+		FProfiles[NextIndex].CreateCipher := function(const Password: WideString): IFileCipher
 		begin
 			Result := TOpenSSLCipher.Create(Password, CapturedFunctions);
 		end;
@@ -124,7 +126,7 @@ begin
 		FProfiles[NextIndex].DisplayName := 'AES-256 / PBKDF2 (BCrypt)';
 		FProfiles[NextIndex].BackendName := 'Windows CNG';
 		FProfiles[NextIndex].KeySizeBits := 256;
-		FProfiles[NextIndex].CreateCipher := function(const Password: WideString): ICipher
+		FProfiles[NextIndex].CreateCipher := function(const Password: WideString): IFileCipher
 		begin
 			Result := TBCryptCipher.Create(Password, CapturedBCryptProvider);
 		end;
