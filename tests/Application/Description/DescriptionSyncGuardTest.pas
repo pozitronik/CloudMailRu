@@ -11,11 +11,10 @@ uses
 	DUnitX.TestFramework,
 	DescriptionSyncGuard,
 	DescriptionSyncManager,
-	PluginSettingsManager,
+	MockSettingsManager,
 	CloudDescriptionOperationsAdapter,
 	PluginSettings,
-	RealPath,
-	StreamingSettings;
+	RealPath;
 
 type
 	{Mock sync manager that tracks calls}
@@ -36,28 +35,6 @@ type
 		procedure OnFileRenamed(const OldPath, NewPath: TRealPath; CloudOps: ICloudDescriptionOps);
 		procedure OnFileDownloaded(const RealPath: TRealPath; const LocalPath: WideString; CloudOps: ICloudDescriptionOps);
 		procedure OnFileUploaded(const RealPath: TRealPath; const LocalPath: WideString; CloudOps: ICloudDescriptionOps);
-	end;
-
-	{Mock settings manager}
-	TMockSettingsManager = class(TInterfacedObject, IPluginSettingsManager)
-	private
-		FSettings: TPluginSettings;
-	public
-		constructor Create;
-		function GetSettings: TPluginSettings;
-		procedure SetSettings(Value: TPluginSettings);
-		procedure Save;
-		procedure SwitchProxyPasswordStorage;
-		function GetStreamingSettings(const FileName: WideString): TStreamingSettings;
-		procedure SetStreamingSettings(const FileName: WideString; StreamSettings: TStreamingSettings);
-		procedure GetStreamingExtensionsList(ExtensionsList: TStrings);
-		procedure RemoveStreamingExtension(const Extension: WideString);
-		function GetAccountsIniFilePath: WideString;
-		procedure Refresh;
-
-		procedure SetDescriptionTrackCloudFS(Value: Boolean);
-		procedure SetDescriptionCopyFromCloud(Value: Boolean);
-		procedure SetDescriptionCopyToCloud(Value: Boolean);
 	end;
 
 	[TestFixture]
@@ -141,80 +118,6 @@ end;
 procedure TMockDescriptionSyncManager.OnFileUploaded(const RealPath: TRealPath; const LocalPath: WideString; CloudOps: ICloudDescriptionOps);
 begin
 	Inc(UploadedCalls);
-end;
-
-{TMockSettingsManager}
-
-constructor TMockSettingsManager.Create;
-begin
-	inherited Create;
-	FSettings.DescriptionTrackCloudFS := False;
-	FSettings.DescriptionCopyFromCloud := False;
-	FSettings.DescriptionCopyToCloud := False;
-end;
-
-function TMockSettingsManager.GetSettings: TPluginSettings;
-begin
-	Result := FSettings;
-end;
-
-procedure TMockSettingsManager.SetSettings(Value: TPluginSettings);
-begin
-	FSettings := Value;
-end;
-
-procedure TMockSettingsManager.Save;
-begin
-	{No-op}
-end;
-
-procedure TMockSettingsManager.SwitchProxyPasswordStorage;
-begin
-end;
-
-function TMockSettingsManager.GetStreamingSettings(const FileName: WideString): TStreamingSettings;
-begin
-	Result := Default(TStreamingSettings);
-end;
-
-procedure TMockSettingsManager.SetStreamingSettings(const FileName: WideString; StreamSettings: TStreamingSettings);
-begin
-	{No-op}
-end;
-
-procedure TMockSettingsManager.GetStreamingExtensionsList(ExtensionsList: TStrings);
-begin
-	ExtensionsList.Clear;
-end;
-
-procedure TMockSettingsManager.RemoveStreamingExtension(const Extension: WideString);
-begin
-	{No-op}
-end;
-
-function TMockSettingsManager.GetAccountsIniFilePath: WideString;
-begin
-	Result := EmptyWideStr;
-end;
-
-procedure TMockSettingsManager.Refresh;
-begin
-	{No-op}
-end;
-
-procedure TMockSettingsManager.SetDescriptionTrackCloudFS(Value: Boolean);
-begin
-	FSettings.DescriptionTrackCloudFS := Value;
-end;
-
-procedure TMockSettingsManager.SetDescriptionCopyFromCloud(Value: Boolean);
-begin
-	FSettings.DescriptionCopyFromCloud := Value;
-end;
-
-procedure TMockSettingsManager.SetDescriptionCopyToCloud(Value: Boolean);
-begin
-	FSettings.DescriptionCopyToCloud := Value;
 end;
 
 {TDescriptionSyncGuardTest}

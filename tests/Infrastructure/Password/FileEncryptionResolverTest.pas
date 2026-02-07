@@ -57,23 +57,6 @@ type
 		property CheckCallCount: Integer read FCheckCallCount;
 	end;
 
-	{Mock logger that captures log calls for assertion}
-	TMockLoggerForEncrypt = class(TInterfacedObject, ILogger)
-	private
-		FLogCalls: Integer;
-		FLastLogLevel: Integer;
-		FLastMsgType: Integer;
-		FLastLogString: WideString;
-	public
-		constructor Create;
-		procedure Log(LogLevel, MsgType: Integer; LogString: WideString); overload;
-		procedure Log(LogLevel, MsgType: Integer; LogString: WideString; const Args: array of const); overload;
-		property LogCalls: Integer read FLogCalls;
-		property LastLogLevel: Integer read FLastLogLevel;
-		property LastMsgType: Integer read FLastMsgType;
-		property LastLogString: WideString read FLastLogString;
-	end;
-
 	{Mock password UI returning configurable AskPassword/AskEncryptionPassword/AskAction results.
 		AskEncryptionPassword delegates to the same fields as AskPassword since
 		FileEncryptionResolver now calls AskEncryptionPassword instead of AskPassword.}
@@ -167,6 +150,7 @@ uses
 	WFXTypes,
 	CipherProfile,
 	BCryptProvider,
+	MockLogger,
 	Vcl.Controls,
 	System.UITypes,
 	System.SysUtils;
@@ -254,30 +238,6 @@ end;
 procedure TMockCipherValidatorForEncrypt.QueueCheckResult(Value: Boolean);
 begin
 	FCheckQueue.Add(Value);
-end;
-
-{TMockLoggerForEncrypt}
-
-constructor TMockLoggerForEncrypt.Create;
-begin
-	inherited Create;
-	FLogCalls := 0;
-	FLastLogLevel := 0;
-	FLastMsgType := 0;
-	FLastLogString := '';
-end;
-
-procedure TMockLoggerForEncrypt.Log(LogLevel, MsgType: Integer; LogString: WideString);
-begin
-	Inc(FLogCalls);
-	FLastLogLevel := LogLevel;
-	FLastMsgType := MsgType;
-	FLastLogString := LogString;
-end;
-
-procedure TMockLoggerForEncrypt.Log(LogLevel, MsgType: Integer; LogString: WideString; const Args: array of const);
-begin
-	Log(LogLevel, MsgType, Format(LogString, Args));
 end;
 
 {TMockPasswordUIForEncrypt}
@@ -443,7 +403,7 @@ var
 	Resolver: IFileEncryptionResolver;
 	PasswordMgr: TMockPasswordManagerForEncrypt;
 	MockValidator: TMockCipherValidatorForEncrypt;
-	MockLog: TMockLoggerForEncrypt;
+	MockLog: TMockLogger;
 	CloudSettings: TCloudSettings;
 	Cipher: ICipher;
 begin
@@ -456,7 +416,7 @@ begin
 	MockValidator.QueueCheckResult(True); {GetFilesPassword -- passes}
 	MockValidator.QueueCheckResult(False); {ResolveCipher -- fails -> logs error}
 
-	MockLog := TMockLoggerForEncrypt.Create;
+	MockLog := TMockLogger.Create;
 
 	TCipherProfileRegistry.Reset;
 	TCipherProfileRegistry.Initialize(nil, TBCryptProvider.Create);
@@ -476,7 +436,7 @@ begin
 	Assert.IsTrue(MockLog.LogCalls >= 1, 'Logger should have received at least 1 call');
 	Assert.AreEqual(LOG_LEVEL_ERROR, MockLog.LastLogLevel, 'Last log should be error level');
 	Assert.AreEqual(msgtype_importanterror, MockLog.LastMsgType, 'Last log should be important error');
-	Assert.AreEqual(ERR_WRONG_ENCRYPT_PASSWORD, MockLog.LastLogString, 'Last log should be wrong password message');
+	Assert.AreEqual(ERR_WRONG_ENCRYPT_PASSWORD, MockLog.LastMessage, 'Last log should be wrong password message');
 end;
 
 procedure TFileEncryptionResolverTest.TestResolveCipher_GUIDMismatch_UserUpdatesGUID;

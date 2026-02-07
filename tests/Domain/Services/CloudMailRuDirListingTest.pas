@@ -24,6 +24,7 @@ uses
 	HTTPManager,
 	MockCloudHTTP,
 	MockHTTPManager,
+	TestableCloudMailRu,
 	TestHelper,
 	System.SysUtils,
 	DUnitX.TestFramework,
@@ -31,13 +32,6 @@ uses
 	AccountCredentialsProvider;
 
 type
-	{Testable subclass that exposes protected members for testing}
-	TTestableCloudMailRu = class(TCloudMailRu)
-	public
-		procedure SetUnitedParams(const Value: WideString);
-		procedure SetPublicLink(const Value: WideString);
-	end;
-
 	[TestFixture]
 	TCloudMailRuDirListingTest = class
 	private
@@ -137,18 +131,6 @@ const
 		'{"name":"shared.txt","size":256,"hash":"GHI789","mtime":1700000000,"kind":"file","type":"file",' +
 		'"home":"/shared.txt","weblink":"abcdef123456"}' +
 		']},"status":200}';
-
-{TTestableCloudMailRu}
-
-procedure TTestableCloudMailRu.SetUnitedParams(const Value: WideString);
-begin
-	FUnitedParams := Value;
-end;
-
-procedure TTestableCloudMailRu.SetPublicLink(const Value: WideString);
-begin
-	FPublicLink := Value;
-end;
 
 {TCloudMailRuDirListingTest}
 

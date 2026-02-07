@@ -65,11 +65,11 @@ type
 implementation
 
 uses
-	SysUtils;
+	SysUtils,
+	TestJSONConstants;
 
 const
 	{Sample API responses}
-	JSON_SUCCESS = '{"email":"test@mail.ru","body":{},"status":200}';
 	JSON_SHARE_INFO_EMPTY = '{"email":"test@mail.ru","body":{"invited":[]},"status":200}';
 	JSON_SHARE_INFO_WITH_COLLABORATORS = '{"email":"test@mail.ru","body":{"invited":[{"email":"user1@mail.ru"},{"email":"user2@mail.ru"}]},"status":200}';
 

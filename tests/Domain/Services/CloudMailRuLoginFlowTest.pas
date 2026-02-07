@@ -129,10 +129,12 @@ type
 
 implementation
 
+uses
+	TestJSONConstants;
+
 const
 	JSON_USER_SPACE = '{"email":"test@mail.ru","body":{"bytes_total":10737418240,"bytes_used":5368709120,"overquota":false},"status":200}';
 	JSON_USER_SPACE_OVERQUOTA = '{"email":"test@mail.ru","body":{"bytes_total":10737418240,"bytes_used":12884901888,"overquota":true},"status":200}';
-	JSON_SUCCESS = '{"email":"test@mail.ru","body":{},"status":200}';
 
 	{Public page with shard URL embedded - matches extractPublicShard parsing}
 	PUBLIC_PAGE_WITH_SHARD = '"weblink_get":[{"count":1,"url":"https://cloclo123.datacloudmail.ru/weblink/"}]';

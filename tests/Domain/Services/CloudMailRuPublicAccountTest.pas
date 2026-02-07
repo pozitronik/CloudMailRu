@@ -23,6 +23,7 @@ uses
 	HTTPManager,
 	MockCloudHTTP,
 	MockHTTPManager,
+	TestableCloudMailRu,
 	TestHelper,
 	System.SysUtils,
 	DUnitX.TestFramework,
@@ -30,11 +31,9 @@ uses
 	AccountCredentialsProvider;
 
 type
-	{Testable subclass that exposes protected members}
-	TTestableCloudMailRu = class(TCloudMailRu)
+	{Testable subclass with extra public-account test methods}
+	TTestableCloudMailRu = class(TestableCloudMailRu.TTestableCloudMailRu)
 	public
-		procedure SetUnitedParams(const Value: WideString);
-		procedure SetPublicLink(const Value: WideString);
 		procedure TestInitPublicLink;
 		function TestGetPublicLink: WideString;
 	end;
@@ -111,16 +110,6 @@ const
 		']},"status":200}';
 
 {TTestableCloudMailRu}
-
-procedure TTestableCloudMailRu.SetUnitedParams(const Value: WideString);
-begin
-	FUnitedParams := Value;
-end;
-
-procedure TTestableCloudMailRu.SetPublicLink(const Value: WideString);
-begin
-	FPublicLink := Value;
-end;
 
 procedure TTestableCloudMailRu.TestInitPublicLink;
 begin

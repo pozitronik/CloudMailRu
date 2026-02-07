@@ -28,15 +28,10 @@ uses
 	SettingsConstants,
 	OpenSSLProvider,
 	AccountCredentialsProvider,
+	TestableCloudMailRu,
 	TestHelper;
 
 type
-	{Testable CloudMailRu for listing tests}
-	TTestableCloudMailRu = class(TCloudMailRu)
-	public
-		procedure SetUnitedParams(const Value: WideString);
-	end;
-
 	[TestFixture]
 	TListingProviderTest = class
 	private
@@ -122,13 +117,6 @@ const
 
 	JSON_FAILURE =
 		'{"email":"test@mail.ru","body":{"home":{"error":"not_exists"}},"status":400}';
-
-{TTestableCloudMailRu}
-
-procedure TTestableCloudMailRu.SetUnitedParams(const Value: WideString);
-begin
-	FUnitedParams := Value;
-end;
 
 {TListingProviderTest}
 

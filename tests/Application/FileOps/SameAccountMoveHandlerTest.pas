@@ -15,11 +15,11 @@ uses
 	WFXTypes,
 	CloudConstants,
 	ThreadStateManager,
-	DescriptionSyncGuard,
-	TimestampSyncGuard,
 	SameAccountMoveHandler,
 	MockCloudHTTP,
 	MockHTTPManager,
+	MockSyncGuards,
+	TestableCloudMailRu,
 	AuthStrategy,
 	FileSystem,
 	Logger,
@@ -80,39 +80,6 @@ type
 		procedure DecrementBackgroundJobs(const Account: WideString);
 		function HasActiveBackgroundJobs(const Account: WideString): Boolean;
 		function HasAnyActiveOperations: Boolean;
-	end;
-
-	{Mock description sync guard}
-	TMockDescriptionSyncGuard = class(TInterfacedObject, IDescriptionSyncGuard)
-	public
-		OnFileRenamedCalled: Boolean;
-		LastOldPath: TRealPath;
-		LastNewPath: TRealPath;
-
-		constructor Create;
-
-		procedure OnFileRenamed(const OldPath, NewPath: TRealPath; Cloud: TCloudMailRu);
-		procedure OnFileDeleted(const Path: TRealPath; Cloud: TCloudMailRu);
-		procedure OnDirectoryDeleted(const Path: TRealPath; Cloud: TCloudMailRu);
-		procedure OnFileDownloaded(const RealPath: TRealPath; const LocalPath: WideString; Cloud: TCloudMailRu);
-		procedure OnFileUploaded(const RealPath: TRealPath; const LocalPath: WideString; Cloud: TCloudMailRu);
-	end;
-
-	{Mock timestamp sync guard}
-	TMockTimestampSyncGuard = class(TInterfacedObject, ITimestampSyncGuard)
-	public
-		OnFileRenamedCalled: Boolean;
-		constructor Create;
-		procedure OnFileUploaded(const RemotePath: TRealPath; const LocalPath: WideString; Cloud: TCloudMailRu);
-		function OnFileDownloaded(const RemotePath: TRealPath; const LocalPath: WideString; CloudMTime: Int64; Cloud: TCloudMailRu): Int64;
-		procedure OnFileDeleted(const RealPath: TRealPath; Cloud: TCloudMailRu);
-		procedure OnFileRenamed(const OldPath, NewPath: TRealPath; Cloud: TCloudMailRu);
-	end;
-
-	{Testable CloudMailRu for same-account operation tests}
-	TTestableCloudMailRu = class(TCloudMailRu)
-	public
-		procedure SetUnitedParams(const Value: WideString);
 	end;
 
 	[TestFixture]
@@ -280,70 +247,6 @@ procedure TMockMoveThreadState.IncrementBackgroundJobs(const Account: WideString
 procedure TMockMoveThreadState.DecrementBackgroundJobs(const Account: WideString); begin end;
 function TMockMoveThreadState.HasActiveBackgroundJobs(const Account: WideString): Boolean; begin Result := False; end;
 function TMockMoveThreadState.HasAnyActiveOperations: Boolean; begin Result := False; end;
-
-{TMockDescriptionSyncGuard}
-
-constructor TMockDescriptionSyncGuard.Create;
-begin
-	inherited Create;
-	OnFileRenamedCalled := False;
-end;
-
-procedure TMockDescriptionSyncGuard.OnFileRenamed(const OldPath, NewPath: TRealPath; Cloud: TCloudMailRu);
-begin
-	OnFileRenamedCalled := True;
-	LastOldPath := OldPath;
-	LastNewPath := NewPath;
-end;
-
-procedure TMockDescriptionSyncGuard.OnFileDeleted(const Path: TRealPath; Cloud: TCloudMailRu);
-begin
-end;
-
-procedure TMockDescriptionSyncGuard.OnDirectoryDeleted(const Path: TRealPath; Cloud: TCloudMailRu);
-begin
-end;
-
-procedure TMockDescriptionSyncGuard.OnFileDownloaded(const RealPath: TRealPath; const LocalPath: WideString; Cloud: TCloudMailRu);
-begin
-end;
-
-procedure TMockDescriptionSyncGuard.OnFileUploaded(const RealPath: TRealPath; const LocalPath: WideString; Cloud: TCloudMailRu);
-begin
-end;
-
-{TMockTimestampSyncGuard}
-
-constructor TMockTimestampSyncGuard.Create;
-begin
-	inherited Create;
-	OnFileRenamedCalled := False;
-end;
-
-procedure TMockTimestampSyncGuard.OnFileUploaded(const RemotePath: TRealPath; const LocalPath: WideString; Cloud: TCloudMailRu);
-begin
-end;
-
-function TMockTimestampSyncGuard.OnFileDownloaded(const RemotePath: TRealPath; const LocalPath: WideString; CloudMTime: Int64; Cloud: TCloudMailRu): Int64;
-begin
-	Result := 0;
-end;
-
-procedure TMockTimestampSyncGuard.OnFileDeleted(const RealPath: TRealPath; Cloud: TCloudMailRu);
-begin
-end;
-
-procedure TMockTimestampSyncGuard.OnFileRenamed(const OldPath, NewPath: TRealPath; Cloud: TCloudMailRu);
-begin
-	OnFileRenamedCalled := True;
-end;
-
-{TTestableCloudMailRu}
-
-procedure TTestableCloudMailRu.SetUnitedParams(const Value: WideString);
-begin
-	FUnitedParams := Value;
-end;
 
 {TSameAccountMoveHandlerTest}
 

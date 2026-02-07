@@ -10,48 +10,14 @@ uses
 	System.Classes,
 	SysUtils,
 	DUnitX.TestFramework,
-	PluginSettingsManager,
-	Logger,
+	MockSettingsManager,
+	MockLogger,
 	LocalFileDeletionHandler,
 	PluginSettings,
 	WFXTypes,
-	SettingsConstants,
-	StreamingSettings;
+	SettingsConstants;
 
 type
-	{Mock settings manager for controlling delete mode}
-	TMockSettingsManager = class(TInterfacedObject, IPluginSettingsManager)
-	private
-		FSettings: TPluginSettings;
-	public
-		constructor Create;
-		function GetSettings: TPluginSettings;
-		procedure SetSettings(Value: TPluginSettings);
-		procedure Save;
-		procedure SwitchProxyPasswordStorage;
-		function GetStreamingSettings(const FileName: WideString): TStreamingSettings;
-		procedure SetStreamingSettings(const FileName: WideString; StreamSettings: TStreamingSettings);
-		procedure GetStreamingExtensionsList(ExtensionsList: TStrings);
-		procedure RemoveStreamingExtension(const Extension: WideString);
-		function GetAccountsIniFilePath: WideString;
-		procedure Refresh;
-		procedure SetDeleteMode(Mode: Integer);
-	end;
-
-	{Mock logger that tracks calls}
-	TMockLogger = class(TInterfacedObject, ILogger)
-	public
-		LogCalls: Integer;
-		LastLogLevel: Integer;
-		LastMsgType: Integer;
-		LastMessage: WideString;
-
-		constructor Create;
-		procedure Reset;
-		procedure Log(LogLevel, MsgType: Integer; LogString: WideString); overload;
-		procedure Log(LogLevel, MsgType: Integer; LogString: WideString; const Args: array of const); overload;
-	end;
-
 	[TestFixture]
 	TLocalFileDeletionHandlerTest = class
 	private
@@ -126,100 +92,6 @@ type
 	end;
 
 implementation
-
-{TMockSettingsManager}
-
-constructor TMockSettingsManager.Create;
-begin
-	inherited Create;
-	FSettings.DeleteFailOnUploadMode := DeleteFailOnUploadIgnore;
-end;
-
-function TMockSettingsManager.GetSettings: TPluginSettings;
-begin
-	Result := FSettings;
-end;
-
-procedure TMockSettingsManager.SetSettings(Value: TPluginSettings);
-begin
-	FSettings := Value;
-end;
-
-procedure TMockSettingsManager.Save;
-begin
-	{No-op}
-end;
-
-procedure TMockSettingsManager.SwitchProxyPasswordStorage;
-begin
-end;
-
-function TMockSettingsManager.GetStreamingSettings(const FileName: WideString): TStreamingSettings;
-begin
-	Result := Default(TStreamingSettings);
-end;
-
-procedure TMockSettingsManager.SetStreamingSettings(const FileName: WideString; StreamSettings: TStreamingSettings);
-begin
-	{No-op}
-end;
-
-procedure TMockSettingsManager.GetStreamingExtensionsList(ExtensionsList: TStrings);
-begin
-	ExtensionsList.Clear;
-end;
-
-procedure TMockSettingsManager.RemoveStreamingExtension(const Extension: WideString);
-begin
-	{No-op}
-end;
-
-function TMockSettingsManager.GetAccountsIniFilePath: WideString;
-begin
-	Result := EmptyWideStr;
-end;
-
-procedure TMockSettingsManager.Refresh;
-begin
-	{No-op}
-end;
-
-procedure TMockSettingsManager.SetDeleteMode(Mode: Integer);
-begin
-	FSettings.DeleteFailOnUploadMode := Mode;
-end;
-
-{TMockLogger}
-
-constructor TMockLogger.Create;
-begin
-	inherited Create;
-	Reset;
-end;
-
-procedure TMockLogger.Reset;
-begin
-	LogCalls := 0;
-	LastLogLevel := 0;
-	LastMsgType := 0;
-	LastMessage := '';
-end;
-
-procedure TMockLogger.Log(LogLevel, MsgType: Integer; LogString: WideString);
-begin
-	Inc(LogCalls);
-	LastLogLevel := LogLevel;
-	LastMsgType := MsgType;
-	LastMessage := LogString;
-end;
-
-procedure TMockLogger.Log(LogLevel, MsgType: Integer; LogString: WideString; const Args: array of const);
-begin
-	Inc(LogCalls);
-	LastLogLevel := LogLevel;
-	LastMsgType := MsgType;
-	LastMessage := LogString;
-end;
 
 {TLocalFileDeletionHandlerTest}
 

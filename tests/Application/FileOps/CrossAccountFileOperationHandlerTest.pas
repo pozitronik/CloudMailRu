@@ -13,7 +13,6 @@ uses
 	CrossServerFileOperationHandler,
 	RetryHandler,
 	Cipher,
-	Logger,
 	Progress,
 	Request,
 	TCHandler,
@@ -22,6 +21,9 @@ uses
 	CloudSettings,
 	MockCloudHTTP,
 	MockHTTPManager,
+	MockLogger,
+	Logger,
+	TestableCloudMailRu,
 	AuthStrategy,
 	FileSystem,
 	OpenSSLProvider,
@@ -50,20 +52,6 @@ type
 		property AbortCheckCalled: Boolean read FAbortCheckCalled;
 	end;
 
-	{Mock logger that tracks log calls}
-	TMockLogger = class(TInterfacedObject, ILogger)
-	private
-		FLogCalled: Boolean;
-		FLastLogLevel: Integer;
-		FLastMessage: WideString;
-	public
-		procedure Log(LogLevel, MsgType: Integer; LogString: WideString); overload;
-		procedure Log(LogLevel, MsgType: Integer; LogString: WideString; const Args: array of const); overload;
-		property LogCalled: Boolean read FLogCalled;
-		property LastLogLevel: Integer read FLastLogLevel;
-		property LastMessage: WideString read FLastMessage;
-	end;
-
 	{Mock cross-server handler that tracks delegation calls}
 	TMockCrossServerHandler = class(TInterfacedObject, ICrossServerFileOperationHandler)
 	private
@@ -73,12 +61,6 @@ type
 		constructor Create(ReturnValue: Integer = 0);
 		function Execute(OldCloud, NewCloud: TCloudMailRu; const OldRealPath, NewRealPath: TRealPath; Move, OverWrite: Boolean; AbortCheck: TAbortCheckFunc): Integer;
 		property ExecuteCalled: Boolean read FExecuteCalled;
-	end;
-
-	{Testable CloudMailRu for cross-account operation tests}
-	TTestableCloudMailRu = class(TCloudMailRu)
-	public
-		procedure SetUnitedParams(const Value: WideString);
 	end;
 
 	[TestFixture]
@@ -266,29 +248,6 @@ begin
 		Result := RetryOperation()
 	else
 		Result := FReturnValue;
-end;
-
-{TMockLogger}
-
-procedure TMockLogger.Log(LogLevel, MsgType: Integer; LogString: WideString);
-begin
-	FLogCalled := True;
-	FLastLogLevel := LogLevel;
-	FLastMessage := LogString;
-end;
-
-procedure TMockLogger.Log(LogLevel, MsgType: Integer; LogString: WideString; const Args: array of const);
-begin
-	FLogCalled := True;
-	FLastLogLevel := LogLevel;
-	FLastMessage := LogString;
-end;
-
-{TTestableCloudMailRu}
-
-procedure TTestableCloudMailRu.SetUnitedParams(const Value: WideString);
-begin
-	FUnitedParams := Value;
 end;
 
 {TCrossAccountFileOperationHandlerTest}

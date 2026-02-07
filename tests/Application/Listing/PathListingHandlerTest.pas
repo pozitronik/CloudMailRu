@@ -17,7 +17,6 @@ uses
 	MockHTTPManager,
 	CloudMailRu,
 	CloudSettings,
-	CloudAuthorizationState,
 	Cipher,
 	RealPath,
 	CloudDirItem,
@@ -33,6 +32,7 @@ uses
 	TCHandler,
 	OpenSSLProvider,
 	AccountCredentialsProvider,
+	TestableCloudMailRu,
 	TestHelper;
 
 type
@@ -60,13 +60,6 @@ type
 		function ValidatePath(isVirtual, isInAccountsList, IsPublicAccount: Boolean;
 			const Path: WideString; const Listing: TCloudDirItemList): TListingValidationResult;
 		property ValidateCalled: Boolean read FValidateCalled;
-	end;
-
-	{Testable CloudMailRu for path listing tests}
-	TTestableCloudMailRu = class(TCloudMailRu)
-	public
-		procedure SetUnitedParams(const Value: WideString);
-		procedure SetAuthorized;
 	end;
 
 	[TestFixture]
@@ -161,18 +154,6 @@ begin
 	FValidateCalled := True;
 	Result.IsValid := FIsValid;
 	Result.ErrorCode := FErrorCode;
-end;
-
-{TTestableCloudMailRu}
-
-procedure TTestableCloudMailRu.SetUnitedParams(const Value: WideString);
-begin
-	FUnitedParams := Value;
-end;
-
-procedure TTestableCloudMailRu.SetAuthorized;
-begin
-	SetAuthorizationState(asAuthorized);
 end;
 
 {TPathListingHandlerTest}
@@ -295,10 +276,24 @@ end;
 {TPathListingHandler.Execute tests}
 
 procedure TPathListingHandlerTest.TestExecute_AuthorizationFailed_ReturnsAccessDenied;
+var
+	Settings: TCloudSettings;
 begin
-	{Create cloud but don't authorize it (remains in asPending state)}
-	FCloud := CreateCloud;
-	FCloud.SetAuthorizationState(asPending); {Override the SetAuthorized from CreateCloud}
+	{Create cloud without authorization (remains in asPending state)}
+	Settings := Default(TCloudSettings);
+	FCloud := TTestableCloudMailRu.Create(
+		Settings,
+		FMockHTTPManager,
+		TestThreadID(),
+		TNullAuthStrategy.Create,
+		TNullFileSystem.Create,
+		TNullLogger.Create,
+		TNullProgress.Create,
+		TNullRequest.Create,
+		TNullTCHandler.Create,
+		TNullCipher.Create, TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create);
+	FCloud.SetUnitedParams('api=2&access_token=test_token');
+	{Do NOT call SetAuthorized -- cloud stays in asPending state}
 	FMockConnectionManager.SetCloud('testaccount', FCloud);
 	SetupHandler([], True, True);
 

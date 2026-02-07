@@ -27,6 +27,8 @@ uses
 	HTTPManager,
 	MockCloudHTTP,
 	MockHTTPManager,
+	TestableCloudMailRu,
+	TestJSONConstants,
 	TestHelper,
 	System.SysUtils,
 	System.Classes,
@@ -35,13 +37,6 @@ uses
 	AccountCredentialsProvider;
 
 type
-	{Testable subclass that exposes protected members}
-	TTestableCloudMailRu = class(TCloudMailRu)
-	public
-		procedure SetUnitedParams(const Value: WideString);
-		procedure SetPublicLink(const Value: WideString);
-	end;
-
 	[TestFixture]
 	TCloudMailRuCombinedOpsTest = class
 	private
@@ -101,7 +96,6 @@ type
 implementation
 
 const
-	JSON_SUCCESS = '{"email":"test@mail.ru","body":{},"status":200}';
 	JSON_FAILURE = '{"email":"test@mail.ru","body":{"home":{"error":"invalid"}},"status":400}';
 
 	JSON_SHARE_INFO_SUCCESS =
@@ -117,18 +111,6 @@ const
 		'"weblink_get":[{"url":"https://cloclo1.cloud.mail.ru/weblink/"}],' +
 		'"get":[{"url":"https://cloclo1.cloud.mail.ru/get/"}]' +
 		'},"status":200}';
-
-{TTestableCloudMailRu}
-
-procedure TTestableCloudMailRu.SetUnitedParams(const Value: WideString);
-begin
-	FUnitedParams := Value;
-end;
-
-procedure TTestableCloudMailRu.SetPublicLink(const Value: WideString);
-begin
-	FPublicLink := Value;
-end;
 
 {TCloudMailRuCombinedOpsTest}
 

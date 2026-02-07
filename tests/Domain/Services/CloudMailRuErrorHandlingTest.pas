@@ -23,6 +23,8 @@ uses
 	HTTPManager,
 	MockCloudHTTP,
 	MockHTTPManager,
+	TestableCloudMailRu,
+	TestJSONConstants,
 	TestHelper,
 	System.SysUtils,
 	DUnitX.TestFramework,
@@ -30,10 +32,9 @@ uses
 	AccountCredentialsProvider;
 
 type
-	{Testable subclass that exposes protected members}
-	TTestableCloudMailRu = class(TCloudMailRu)
+	{Testable subclass with extra error-handling test methods}
+	TTestableCloudMailRu = class(TestableCloudMailRu.TTestableCloudMailRu)
 	public
-		procedure SetUnitedParams(const Value: WideString);
 		{Expose CloudResultToFsResult for testing}
 		function TestCloudResultToFsResult(JSON: WideString): Integer;
 		function TestCloudResultToBoolean(JSON: WideString): Boolean;
@@ -116,7 +117,6 @@ implementation
 const
 	{JSON responses for different error scenarios.
 	 Note: Errors must be inside body.home.error structure for proper parsing.}
-	JSON_SUCCESS = '{"email":"test@mail.ru","body":{},"status":200}';
 	JSON_ERROR_EXISTS = '{"email":"test@mail.ru","body":{"home":{"error":"exists"}},"status":400}';
 	JSON_ERROR_NOT_EXISTS = '{"email":"test@mail.ru","body":{"home":{"error":"not_exists"}},"status":404}';
 	JSON_ERROR_REQUIRED = '{"email":"test@mail.ru","body":{"home":{"error":"required"}},"status":400}';
@@ -129,11 +129,6 @@ const
 	JSON_INVALID = 'not valid json {{{';
 
 {TTestableCloudMailRu}
-
-procedure TTestableCloudMailRu.SetUnitedParams(const Value: WideString);
-begin
-	FUnitedParams := Value;
-end;
 
 function TTestableCloudMailRu.TestCloudResultToFsResult(JSON: WideString): Integer;
 begin

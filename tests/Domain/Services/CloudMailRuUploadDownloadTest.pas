@@ -23,6 +23,7 @@ uses
 	HTTPManager,
 	MockCloudHTTP,
 	MockHTTPManager,
+	TestableCloudMailRu,
 	TestHelper,
 	System.SysUtils,
 	DUnitX.TestFramework,
@@ -30,13 +31,6 @@ uses
 	AccountCredentialsProvider;
 
 type
-	{Testable subclass that exposes protected members}
-	TTestableCloudMailRu = class(TCloudMailRu)
-	public
-		procedure SetUnitedParams(const Value: WideString);
-		procedure SetPublicLink(const Value: WideString);
-	end;
-
 	[TestFixture]
 	TCloudMailRuUploadDownloadTest = class
 	private
@@ -111,18 +105,6 @@ const
 
 	JSON_PUBLISH_FAILURE =
 		'{"email":"test@mail.ru","body":{"home":{"error":"invalid"}},"status":400}';
-
-{TTestableCloudMailRu}
-
-procedure TTestableCloudMailRu.SetUnitedParams(const Value: WideString);
-begin
-	FUnitedParams := Value;
-end;
-
-procedure TTestableCloudMailRu.SetPublicLink(const Value: WideString);
-begin
-	FPublicLink := Value;
-end;
 
 {TCloudMailRuUploadDownloadTest}
 

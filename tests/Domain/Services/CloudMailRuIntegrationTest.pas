@@ -136,10 +136,12 @@ type
 
 implementation
 
+uses
+	TestJSONConstants;
+
 const
 	SHA1_HASH_40 = 'ABCD1234567890ABCD1234567890ABCD12345678';
 
-	JSON_SUCCESS = '{"email":"test@mail.ru","body":{},"status":200}';
 	{File status must include type="file" for TCloudDirItem.FromJSON to parse correctly}
 	JSON_FILE_STATUS = '{"email":"test@mail.ru","body":{"name":"file.txt","type":"file","size":1024,"hash":"' + SHA1_HASH_40 + '","mtime":1609459200},"status":200}';
 	JSON_PUBLISH_SUCCESS = '{"email":"test@mail.ru","body":"https://cloud.mail.ru/public/abcd1234","status":200}';

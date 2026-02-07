@@ -9,8 +9,9 @@ interface
 uses
 	DUnitX.TestFramework,
 	UploadCompletionHandler,
-	Logger,
-	Progress,
+	MockLogger,
+	MockProgress,
+	MockSyncGuards,
 	LocalFileDeletionHandler,
 	DescriptionSyncGuard,
 	TimestampSyncGuard,
@@ -19,32 +20,6 @@ uses
 	WFXTypes;
 
 type
-	{Mock logger that tracks Log calls}
-	TMockLogger = class(TInterfacedObject, ILogger)
-	public
-		LogCalled: Boolean;
-		LastLogLevel: Integer;
-		LastMsgType: Integer;
-		LastMessage: WideString;
-
-		procedure Log(LogLevel, MsgType: Integer; LogString: WideString); overload;
-		procedure Log(LogLevel, MsgType: Integer; LogString: WideString; const Args: array of const); overload;
-	end;
-
-	{Mock progress that tracks Progress calls}
-	TMockProgress = class(TInterfacedObject, IProgress)
-	public
-		ProgressCalled: Boolean;
-		LastSourceName: WideString;
-		LastTargetName: WideString;
-		LastPercentDone: Integer;
-
-		function Progress(SourceName, TargetName: WideString; PercentDone: Integer): Boolean; overload;
-		function Progress(SourceName: WideString; PercentDone: Integer): Boolean; overload;
-		function Progress(PercentDone: Integer): Boolean; overload;
-		function Aborted(): Boolean;
-	end;
-
 	{Mock local file deletion handler with configurable result}
 	TMockLocalFileDeletionHandler = class(TInterfacedObject, ILocalFileDeletionHandler)
 	private
@@ -55,30 +30,6 @@ type
 
 		constructor Create(ResultCode: Integer = FS_FILE_OK);
 		function DeleteLocalFile(const LocalPath: WideString): Integer;
-	end;
-
-	{Mock description sync guard that tracks OnFileUploaded calls}
-	TMockDescriptionSyncGuard = class(TInterfacedObject, IDescriptionSyncGuard)
-	public
-		OnFileUploadedCalled: Boolean;
-		LastRemotePath: TRealPath;
-		LastLocalPath: WideString;
-
-		procedure OnFileDeleted(const RealPath: TRealPath; Cloud: TCloudMailRu);
-		procedure OnFileRenamed(const OldPath, NewPath: TRealPath; Cloud: TCloudMailRu);
-		procedure OnFileDownloaded(const RealPath: TRealPath; const LocalPath: WideString; Cloud: TCloudMailRu);
-		procedure OnFileUploaded(const RealPath: TRealPath; const LocalPath: WideString; Cloud: TCloudMailRu);
-	end;
-
-	{Mock timestamp sync guard that tracks OnFileUploaded calls}
-	TMockTimestampSyncGuard = class(TInterfacedObject, ITimestampSyncGuard)
-	public
-		UploadedCalls: Integer;
-		constructor Create;
-		procedure OnFileUploaded(const RemotePath: TRealPath; const LocalPath: WideString; Cloud: TCloudMailRu);
-		function OnFileDownloaded(const RemotePath: TRealPath; const LocalPath: WideString; CloudMTime: Int64; Cloud: TCloudMailRu): Int64;
-		procedure OnFileDeleted(const RealPath: TRealPath; Cloud: TCloudMailRu);
-		procedure OnFileRenamed(const OldPath, NewPath: TRealPath; Cloud: TCloudMailRu);
 	end;
 
 	[TestFixture]
@@ -139,50 +90,6 @@ uses
 	SysUtils,
 	CloudConstants;
 
-{TMockLogger}
-
-procedure TMockLogger.Log(LogLevel, MsgType: Integer; LogString: WideString);
-begin
-	LogCalled := True;
-	LastLogLevel := LogLevel;
-	LastMsgType := MsgType;
-	LastMessage := LogString;
-end;
-
-procedure TMockLogger.Log(LogLevel, MsgType: Integer; LogString: WideString; const Args: array of const);
-begin
-	LogCalled := True;
-	LastLogLevel := LogLevel;
-	LastMsgType := MsgType;
-	LastMessage := Format(LogString, Args);
-end;
-
-{TMockProgress}
-
-function TMockProgress.Progress(SourceName, TargetName: WideString; PercentDone: Integer): Boolean;
-begin
-	ProgressCalled := True;
-	LastSourceName := SourceName;
-	LastTargetName := TargetName;
-	LastPercentDone := PercentDone;
-	Result := False; {Not aborted}
-end;
-
-function TMockProgress.Progress(SourceName: WideString; PercentDone: Integer): Boolean;
-begin
-	Result := Progress(SourceName, '', PercentDone);
-end;
-
-function TMockProgress.Progress(PercentDone: Integer): Boolean;
-begin
-	Result := Progress('', '', PercentDone);
-end;
-
-function TMockProgress.Aborted: Boolean;
-begin
-	Result := False;
-end;
-
 {TMockLocalFileDeletionHandler}
 
 constructor TMockLocalFileDeletionHandler.Create(ResultCode: Integer);
@@ -197,56 +104,6 @@ begin
 	DeleteCalled := True;
 	LastLocalPath := LocalPath;
 	Result := FResultCode;
-end;
-
-{TMockDescriptionSyncGuard}
-
-procedure TMockDescriptionSyncGuard.OnFileDeleted(const RealPath: TRealPath; Cloud: TCloudMailRu);
-begin
-	{Not used in upload tests}
-end;
-
-procedure TMockDescriptionSyncGuard.OnFileRenamed(const OldPath, NewPath: TRealPath; Cloud: TCloudMailRu);
-begin
-	{Not used in upload tests}
-end;
-
-procedure TMockDescriptionSyncGuard.OnFileDownloaded(const RealPath: TRealPath; const LocalPath: WideString; Cloud: TCloudMailRu);
-begin
-	{Not used in upload tests}
-end;
-
-procedure TMockDescriptionSyncGuard.OnFileUploaded(const RealPath: TRealPath; const LocalPath: WideString; Cloud: TCloudMailRu);
-begin
-	OnFileUploadedCalled := True;
-	LastRemotePath := RealPath;
-	LastLocalPath := LocalPath;
-end;
-
-{TMockTimestampSyncGuard}
-
-constructor TMockTimestampSyncGuard.Create;
-begin
-	inherited Create;
-	UploadedCalls := 0;
-end;
-
-procedure TMockTimestampSyncGuard.OnFileUploaded(const RemotePath: TRealPath; const LocalPath: WideString; Cloud: TCloudMailRu);
-begin
-	Inc(UploadedCalls);
-end;
-
-function TMockTimestampSyncGuard.OnFileDownloaded(const RemotePath: TRealPath; const LocalPath: WideString; CloudMTime: Int64; Cloud: TCloudMailRu): Int64;
-begin
-	Result := 0;
-end;
-
-procedure TMockTimestampSyncGuard.OnFileDeleted(const RealPath: TRealPath; Cloud: TCloudMailRu);
-begin
-end;
-
-procedure TMockTimestampSyncGuard.OnFileRenamed(const OldPath, NewPath: TRealPath; Cloud: TCloudMailRu);
-begin
 end;
 
 {TUploadCompletionHandlerTest}

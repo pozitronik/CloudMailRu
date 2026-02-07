@@ -15,8 +15,7 @@ uses
 	CloudSettings,
 	Cipher,
 	PluginSettings,
-	PluginSettingsManager,
-	StreamingSettings,
+	MockSettingsManager,
 	MockConnectionManager,
 	MockCloudHTTP,
 	MockHTTPManager,
@@ -30,35 +29,11 @@ uses
 	WFXTypes,
 	OpenSSLProvider,
 	AccountCredentialsProvider,
+	TestableCloudMailRu,
+	TestJSONConstants,
 	TestHelper;
 
 type
-	{Mock settings manager for testing}
-	TMockSettingsManager = class(TInterfacedObject, IPluginSettingsManager)
-	private
-		FSettings: TPluginSettings;
-	public
-		constructor Create;
-		function GetSettings: TPluginSettings;
-		procedure SetSettings(Value: TPluginSettings);
-		procedure Save;
-		procedure SwitchProxyPasswordStorage;
-		function GetStreamingSettings(const FileName: WideString): TStreamingSettings;
-		procedure SetStreamingSettings(const FileName: WideString; StreamSettings: TStreamingSettings);
-		procedure GetStreamingExtensionsList(ExtensionsList: TStrings);
-		procedure RemoveStreamingExtension(const Extension: WideString);
-		function GetAccountsIniFilePath: WideString;
-		procedure Refresh;
-		procedure SetLogUserSpace(Value: Boolean);
-	end;
-
-	{Testable subclass that exposes protected members}
-	TTestableCloudMailRu = class(TCloudMailRu)
-	public
-		procedure SetUnitedParams(const Value: WideString);
-		procedure SetPublicLink(const Value: WideString);
-	end;
-
 	[TestFixture]
 	TCommandResultTest = class
 	public
@@ -171,85 +146,7 @@ type
 implementation
 
 const
-	JSON_SUCCESS = '{"email":"test@mail.ru","body":{},"status":200}';
-	JSON_FAILURE = '{"email":"test@mail.ru","body":{"home":{"error":"not_exists"}},"status":400}';
 	JSON_CLONE_SUCCESS = '{"email":"test@mail.ru","body":{"home":"/cloned"},"status":200}';
-
-{TMockSettingsManager}
-
-constructor TMockSettingsManager.Create;
-begin
-	inherited Create;
-	FSettings := Default(TPluginSettings);
-	FSettings.LogUserSpace := False;
-end;
-
-function TMockSettingsManager.GetSettings: TPluginSettings;
-begin
-	Result := FSettings;
-end;
-
-procedure TMockSettingsManager.SetSettings(Value: TPluginSettings);
-begin
-	FSettings := Value;
-end;
-
-procedure TMockSettingsManager.Save;
-begin
-	{No-op}
-end;
-
-procedure TMockSettingsManager.SwitchProxyPasswordStorage;
-begin
-	{Not used in these tests}
-end;
-
-function TMockSettingsManager.GetStreamingSettings(const FileName: WideString): TStreamingSettings;
-begin
-	Result := Default(TStreamingSettings);
-end;
-
-procedure TMockSettingsManager.SetStreamingSettings(const FileName: WideString; StreamSettings: TStreamingSettings);
-begin
-	{No-op}
-end;
-
-procedure TMockSettingsManager.GetStreamingExtensionsList(ExtensionsList: TStrings);
-begin
-	ExtensionsList.Clear;
-end;
-
-procedure TMockSettingsManager.RemoveStreamingExtension(const Extension: WideString);
-begin
-	{No-op}
-end;
-
-function TMockSettingsManager.GetAccountsIniFilePath: WideString;
-begin
-	Result := EmptyWideStr;
-end;
-
-procedure TMockSettingsManager.Refresh;
-begin
-	{No-op}
-end;
-
-procedure TMockSettingsManager.SetLogUserSpace(Value: Boolean);
-begin
-	FSettings.LogUserSpace := Value;
-end;
-
-{TTestableCloudMailRu}
-
-procedure TTestableCloudMailRu.SetUnitedParams(const Value: WideString);
-begin
-	FUnitedParams := Value;
-end;
-
-procedure TTestableCloudMailRu.SetPublicLink(const Value: WideString);
-begin
-	FPublicLink := Value;
-end;
 
 {TCommandResultTest}
 

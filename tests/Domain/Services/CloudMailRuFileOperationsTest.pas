@@ -21,6 +21,8 @@ uses
 	HTTPManager,
 	MockCloudHTTP,
 	MockHTTPManager,
+	TestableCloudMailRu,
+	TestJSONConstants,
 	TestHelper,
 	System.SysUtils,
 	DUnitX.TestFramework,
@@ -28,12 +30,6 @@ uses
 	AccountCredentialsProvider;
 
 type
-	{Testable subclass that exposes protected members for testing}
-	TTestableCloudMailRu = class(TCloudMailRu)
-	public
-		procedure SetUnitedParams(const Value: WideString);
-	end;
-
 	[TestFixture]
 	TCloudMailRuFileOperationsTest = class
 	private
@@ -139,17 +135,9 @@ implementation
 
 const
 	{Sample API responses}
-	JSON_SUCCESS = '{"email":"test@mail.ru","body":{},"status":200}';
 	JSON_FAILURE = '{"email":"test@mail.ru","body":{},"status":400,"error":"invalid"}';
 	JSON_EXISTS = '{"email":"test@mail.ru","body":{},"status":400,"error":"exists"}';
 	JSON_NOT_EXISTS = '{"email":"test@mail.ru","body":{},"status":404,"error":"not_exists"}';
-
-{TTestableCloudMailRu}
-
-procedure TTestableCloudMailRu.SetUnitedParams(const Value: WideString);
-begin
-	FUnitedParams := Value;
-end;
 
 {TCloudMailRuFileOperationsTest}
 

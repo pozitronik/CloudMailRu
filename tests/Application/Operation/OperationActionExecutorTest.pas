@@ -13,42 +13,12 @@ uses
 	OperationLifecycleHandler,
 	OperationActionExecutor,
 	ThreadStateManager,
-	PluginSettingsManager,
-	Logger,
+	MockSettingsManager,
+	MockLogger,
 	PluginSettings,
-	RealPath,
-	StreamingSettings;
+	RealPath;
 
 type
-	{Mock settings manager}
-	TMockSettingsManager = class(TInterfacedObject, IPluginSettingsManager)
-	private
-		FSettings: TPluginSettings;
-	public
-		constructor Create;
-		function GetSettings: TPluginSettings;
-		procedure SetSettings(Value: TPluginSettings);
-		procedure Save;
-		procedure SwitchProxyPasswordStorage;
-		function GetStreamingSettings(const FileName: WideString): TStreamingSettings;
-		procedure SetStreamingSettings(const FileName: WideString; StreamSettings: TStreamingSettings);
-		procedure GetStreamingExtensionsList(ExtensionsList: TStrings);
-		procedure RemoveStreamingExtension(const Extension: WideString);
-		function GetAccountsIniFilePath: WideString;
-		procedure Refresh;
-	end;
-
-	{Mock logger}
-	TMockLogger = class(TInterfacedObject, ILogger)
-	public
-		LogCalls: Integer;
-		LastLogLevel: Integer;
-		LastMessage: WideString;
-		constructor Create;
-		procedure Log(LogLevel, MsgType: Integer; LogString: WideString); overload;
-		procedure Log(LogLevel, MsgType: Integer; LogString: WideString; const Args: array of const); overload;
-	end;
-
 	[TestFixture]
 	TOperationActionExecutorTest = class
 	private
@@ -129,87 +99,6 @@ uses
 	SysUtils,
 	CloudConstants,
 	LanguageStrings;
-
-{TMockSettingsManager}
-
-constructor TMockSettingsManager.Create;
-begin
-	inherited Create;
-	FSettings.DescriptionFileName := 'descript.ion';
-end;
-
-function TMockSettingsManager.GetSettings: TPluginSettings;
-begin
-	Result := FSettings;
-end;
-
-procedure TMockSettingsManager.SetSettings(Value: TPluginSettings);
-begin
-	FSettings := Value;
-end;
-
-procedure TMockSettingsManager.Save;
-begin
-	{No-op}
-end;
-
-procedure TMockSettingsManager.SwitchProxyPasswordStorage;
-begin
-end;
-
-function TMockSettingsManager.GetStreamingSettings(const FileName: WideString): TStreamingSettings;
-begin
-	Result := Default(TStreamingSettings);
-end;
-
-procedure TMockSettingsManager.SetStreamingSettings(const FileName: WideString; StreamSettings: TStreamingSettings);
-begin
-	{No-op}
-end;
-
-procedure TMockSettingsManager.GetStreamingExtensionsList(ExtensionsList: TStrings);
-begin
-	ExtensionsList.Clear;
-end;
-
-procedure TMockSettingsManager.RemoveStreamingExtension(const Extension: WideString);
-begin
-	{No-op}
-end;
-
-function TMockSettingsManager.GetAccountsIniFilePath: WideString;
-begin
-	Result := EmptyWideStr;
-end;
-
-procedure TMockSettingsManager.Refresh;
-begin
-	{No-op}
-end;
-
-{TMockLogger}
-
-constructor TMockLogger.Create;
-begin
-	inherited Create;
-	LogCalls := 0;
-	LastLogLevel := 0;
-	LastMessage := '';
-end;
-
-procedure TMockLogger.Log(LogLevel, MsgType: Integer; LogString: WideString);
-begin
-	Inc(LogCalls);
-	LastLogLevel := LogLevel;
-	LastMessage := LogString;
-end;
-
-procedure TMockLogger.Log(LogLevel, MsgType: Integer; LogString: WideString; const Args: array of const);
-begin
-	Inc(LogCalls);
-	LastLogLevel := LogLevel;
-	LastMessage := LogString;
-end;
 
 {TOperationActionExecutorTest}
 

@@ -11,11 +11,12 @@ uses
 	SysUtils,
 	DUnitX.TestFramework,
 	DownloadSuccessHandler,
-	PluginSettingsManager,
+	MockSettingsManager,
+	MockLogger,
+	MockProgress,
 	Logger,
 	Progress,
-	DescriptionSyncGuard,
-	TimestampSyncGuard,
+	MockSyncGuards,
 	PluginSettings,
 	WFXTypes,
 	RealPath,
@@ -30,75 +31,9 @@ uses
 	TCHandler,
 	OpenSSLProvider,
 	AccountCredentialsProvider,
-	StreamingSettings,
 	TestHelper;
 
 type
-	{Mock settings manager}
-	TMockSettingsManager = class(TInterfacedObject, IPluginSettingsManager)
-	private
-		FSettings: TPluginSettings;
-	public
-		constructor Create;
-		function GetSettings: TPluginSettings;
-		procedure SetSettings(Value: TPluginSettings);
-		procedure Save;
-		procedure SwitchProxyPasswordStorage;
-		function GetStreamingSettings(const FileName: WideString): TStreamingSettings;
-		procedure SetStreamingSettings(const FileName: WideString; StreamSettings: TStreamingSettings);
-		procedure GetStreamingExtensionsList(ExtensionsList: TStrings);
-		procedure RemoveStreamingExtension(const Extension: WideString);
-		function GetAccountsIniFilePath: WideString;
-		procedure Refresh;
-		procedure SetCheckCRC(Value: Boolean);
-		procedure SetPreserveFileTime(Value: Boolean);
-	end;
-
-	{Mock logger}
-	TMockLogger = class(TInterfacedObject, ILogger)
-	public
-		LogCalls: Integer;
-		constructor Create;
-		procedure Log(LogLevel, MsgType: Integer; LogString: WideString); overload;
-		procedure Log(LogLevel, MsgType: Integer; LogString: WideString; const Args: array of const); overload;
-	end;
-
-	{Mock progress}
-	TMockProgress = class(TInterfacedObject, IProgress)
-	public
-		ProgressCalls: Integer;
-		LastPercent: Integer;
-		constructor Create;
-		function Progress(SourceName, TargetName: WideString; PercentDone: Integer): Boolean; overload;
-		function Progress(SourceName: WideString; PercentDone: Integer): Boolean; overload;
-		function Progress(PercentDone: Integer): Boolean; overload;
-		function Aborted: Boolean;
-	end;
-
-	{Mock description sync guard}
-	TMockDescriptionSyncGuard = class(TInterfacedObject, IDescriptionSyncGuard)
-	public
-		DeletedCalls: Integer;
-		DownloadedCalls: Integer;
-		constructor Create;
-		procedure OnFileDeleted(const RealPath: TRealPath; Cloud: TCloudMailRu);
-		procedure OnFileRenamed(const OldPath, NewPath: TRealPath; Cloud: TCloudMailRu);
-		procedure OnFileDownloaded(const RealPath: TRealPath; const LocalPath: WideString; Cloud: TCloudMailRu);
-		procedure OnFileUploaded(const RealPath: TRealPath; const LocalPath: WideString; Cloud: TCloudMailRu);
-	end;
-
-	{Mock timestamp sync guard with configurable download return value}
-	TMockTimestampSyncGuard = class(TInterfacedObject, ITimestampSyncGuard)
-	public
-		DownloadReturnValue: Int64;
-		DownloadedCalls: Integer;
-		constructor Create;
-		procedure OnFileUploaded(const RemotePath: TRealPath; const LocalPath: WideString; Cloud: TCloudMailRu);
-		function OnFileDownloaded(const RemotePath: TRealPath; const LocalPath: WideString; CloudMTime: Int64; Cloud: TCloudMailRu): Int64;
-		procedure OnFileDeleted(const RealPath: TRealPath; Cloud: TCloudMailRu);
-		procedure OnFileRenamed(const OldPath, NewPath: TRealPath; Cloud: TCloudMailRu);
-	end;
-
 	[TestFixture]
 	TDownloadSuccessHandlerTest = class
 	private
@@ -170,181 +105,6 @@ type
 	end;
 
 implementation
-
-{TMockSettingsManager}
-
-constructor TMockSettingsManager.Create;
-begin
-	inherited Create;
-	FSettings.CheckCRC := False;
-	FSettings.PreserveFileTime := False;
-end;
-
-function TMockSettingsManager.GetSettings: TPluginSettings;
-begin
-	Result := FSettings;
-end;
-
-procedure TMockSettingsManager.SetSettings(Value: TPluginSettings);
-begin
-	FSettings := Value;
-end;
-
-procedure TMockSettingsManager.Save;
-begin
-	{No-op}
-end;
-
-procedure TMockSettingsManager.SwitchProxyPasswordStorage;
-begin
-end;
-
-function TMockSettingsManager.GetStreamingSettings(const FileName: WideString): TStreamingSettings;
-begin
-	Result := Default(TStreamingSettings);
-end;
-
-procedure TMockSettingsManager.SetStreamingSettings(const FileName: WideString; StreamSettings: TStreamingSettings);
-begin
-	{No-op}
-end;
-
-procedure TMockSettingsManager.GetStreamingExtensionsList(ExtensionsList: TStrings);
-begin
-	ExtensionsList.Clear;
-end;
-
-procedure TMockSettingsManager.RemoveStreamingExtension(const Extension: WideString);
-begin
-	{No-op}
-end;
-
-function TMockSettingsManager.GetAccountsIniFilePath: WideString;
-begin
-	Result := EmptyWideStr;
-end;
-
-procedure TMockSettingsManager.Refresh;
-begin
-	{No-op}
-end;
-
-procedure TMockSettingsManager.SetCheckCRC(Value: Boolean);
-begin
-	FSettings.CheckCRC := Value;
-end;
-
-procedure TMockSettingsManager.SetPreserveFileTime(Value: Boolean);
-begin
-	FSettings.PreserveFileTime := Value;
-end;
-
-{TMockLogger}
-
-constructor TMockLogger.Create;
-begin
-	inherited Create;
-	LogCalls := 0;
-end;
-
-procedure TMockLogger.Log(LogLevel, MsgType: Integer; LogString: WideString);
-begin
-	Inc(LogCalls);
-end;
-
-procedure TMockLogger.Log(LogLevel, MsgType: Integer; LogString: WideString; const Args: array of const);
-begin
-	Inc(LogCalls);
-end;
-
-{TMockProgress}
-
-constructor TMockProgress.Create;
-begin
-	inherited Create;
-	ProgressCalls := 0;
-	LastPercent := 0;
-end;
-
-function TMockProgress.Progress(SourceName, TargetName: WideString; PercentDone: Integer): Boolean;
-begin
-	Inc(ProgressCalls);
-	LastPercent := PercentDone;
-	Result := False; {Not cancelled}
-end;
-
-function TMockProgress.Progress(SourceName: WideString; PercentDone: Integer): Boolean;
-begin
-	Inc(ProgressCalls);
-	LastPercent := PercentDone;
-	Result := False; {Not cancelled}
-end;
-
-function TMockProgress.Progress(PercentDone: Integer): Boolean;
-begin
-	Inc(ProgressCalls);
-	LastPercent := PercentDone;
-	Result := False; {Not cancelled}
-end;
-
-function TMockProgress.Aborted: Boolean;
-begin
-	Result := False; {Not aborted}
-end;
-
-{TMockDescriptionSyncGuard}
-
-constructor TMockDescriptionSyncGuard.Create;
-begin
-	inherited Create;
-	DeletedCalls := 0;
-	DownloadedCalls := 0;
-end;
-
-procedure TMockDescriptionSyncGuard.OnFileDeleted(const RealPath: TRealPath; Cloud: TCloudMailRu);
-begin
-	Inc(DeletedCalls);
-end;
-
-procedure TMockDescriptionSyncGuard.OnFileRenamed(const OldPath, NewPath: TRealPath; Cloud: TCloudMailRu);
-begin
-end;
-
-procedure TMockDescriptionSyncGuard.OnFileDownloaded(const RealPath: TRealPath; const LocalPath: WideString; Cloud: TCloudMailRu);
-begin
-	Inc(DownloadedCalls);
-end;
-
-procedure TMockDescriptionSyncGuard.OnFileUploaded(const RealPath: TRealPath; const LocalPath: WideString; Cloud: TCloudMailRu);
-begin
-end;
-
-{TMockTimestampSyncGuard}
-
-constructor TMockTimestampSyncGuard.Create;
-begin
-	inherited Create;
-	DownloadReturnValue := 0;
-	DownloadedCalls := 0;
-end;
-
-procedure TMockTimestampSyncGuard.OnFileUploaded(const RemotePath: TRealPath; const LocalPath: WideString; Cloud: TCloudMailRu);
-begin
-end;
-
-function TMockTimestampSyncGuard.OnFileDownloaded(const RemotePath: TRealPath; const LocalPath: WideString; CloudMTime: Int64; Cloud: TCloudMailRu): Int64;
-begin
-	Inc(DownloadedCalls);
-	Result := DownloadReturnValue;
-end;
-
-procedure TMockTimestampSyncGuard.OnFileDeleted(const RealPath: TRealPath; Cloud: TCloudMailRu);
-begin
-end;
-
-procedure TMockTimestampSyncGuard.OnFileRenamed(const OldPath, NewPath: TRealPath; Cloud: TCloudMailRu);
-begin
-end;
 
 {TDownloadSuccessHandlerTest}
 
@@ -481,7 +241,7 @@ begin
 	FHandler.HandleSuccess(Context);
 
 	Assert.AreEqual(1, FProgress.ProgressCalls, 'Should call progress once');
-	Assert.AreEqual(100, FProgress.LastPercent, 'Should report 100%');
+	Assert.AreEqual(100, FProgress.LastPercentDone, 'Should report 100%');
 end;
 
 procedure TDownloadSuccessHandlerTest.TestHandleSuccess_LogsTransfer;
