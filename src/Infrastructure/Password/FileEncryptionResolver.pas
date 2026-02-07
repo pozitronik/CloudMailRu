@@ -92,7 +92,9 @@ begin
 	if CloudSettings.AccountSettings.EncryptFilesMode = EncryptModeNone then
 		Exit;
 
-	GetFilesPassword(ConnectionName, CloudSettings);
+	{User skipped password entry - proceed without encryption}
+	if not GetFilesPassword(ConnectionName, CloudSettings) then
+		Exit;
 
 	{Create cipher when encryption is enabled}
 	if CloudSettings.AccountSettings.EncryptFilesMode <> EncryptModeNone then

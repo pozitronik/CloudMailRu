@@ -45,6 +45,7 @@ type
 	private
 		FCheckQueue: TList<Boolean>;
 		FCryptedGUIDResult: WideString;
+		FCheckCallCount: Integer;
 	public
 		constructor Create;
 		destructor Destroy; override;
@@ -53,6 +54,7 @@ type
 		{Enqueues a Boolean result for the next CheckPasswordGUID call}
 		procedure QueueCheckResult(Value: Boolean);
 		property CryptedGUIDResult: WideString read FCryptedGUIDResult write FCryptedGUIDResult;
+		property CheckCallCount: Integer read FCheckCallCount;
 	end;
 
 	{Mock logger that captures log calls for assertion}
@@ -136,6 +138,10 @@ type
 		procedure TestResolveCipher_GUIDMismatch_UserRetries;
 
 		[Test]
+		{User skips password -> returns null cipher without GUID check}
+		procedure TestResolveCipher_UserSkipsPassword_SkipsGUIDCheck;
+
+		[Test]
 		{EncryptModeNone -> returns null cipher without touching password manager}
 		procedure TestResolveCipher_EncryptModeNone_ReturnsNullCipher;
 	end;
@@ -216,6 +222,7 @@ begin
 	inherited Create;
 	FCheckQueue := TList<Boolean>.Create;
 	FCryptedGUIDResult := '';
+	FCheckCallCount := 0;
 end;
 
 destructor TMockCipherValidatorForEncrypt.Destroy;
@@ -231,6 +238,7 @@ end;
 
 function TMockCipherValidatorForEncrypt.CheckPasswordGUID(const Password, ControlGUID: WideString): Boolean;
 begin
+	Inc(FCheckCallCount);
 	{Dequeue from queue if available, otherwise return True}
 	if FCheckQueue.Count > 0 then
 	begin
@@ -580,6 +588,35 @@ begin
 
 	Cipher := Resolver.ResolveCipher('guid_retry_test', CloudSettings);
 	Assert.IsNotNull(Cipher, 'ResolveCipher should return a cipher after retry with correct password');
+end;
+
+procedure TFileEncryptionResolverTest.TestResolveCipher_UserSkipsPassword_SkipsGUIDCheck;
+var
+	Resolver: IFileEncryptionResolver;
+	PasswordMgr: TMockPasswordManagerForEncrypt;
+	PasswordUI: TMockPasswordUIForEncrypt;
+	MockValidator: TMockCipherValidatorForEncrypt;
+	CloudSettings: TCloudSettings;
+	Cipher: ICipher;
+begin
+	{EncryptModeAskOnce, user cancels password dialog -> skip without GUID check.
+	 Validator should NOT be called by ResolveCipher (only by GetFilesPassword if it gets that far).}
+	PasswordMgr := TMockPasswordManagerForEncrypt.Create(FS_FILE_READERROR, '');
+	PasswordUI := TMockPasswordUIForEncrypt.Create(mrCancel);
+	MockValidator := TMockCipherValidatorForEncrypt.Create;
+
+	Resolver := TFileEncryptionResolver.Create(
+		PasswordMgr, PasswordUI,
+		MockValidator, TMockAccountsManagerForEncrypt.Create,
+		TNullTCHandler.Create, TNullLogger.Create);
+
+	CloudSettings := Default(TCloudSettings);
+	CloudSettings.AccountSettings.EncryptFilesMode := EncryptModeAlways;
+	CloudSettings.AccountSettings.CryptedGUIDFiles := 'stored-guid';
+
+	Cipher := Resolver.ResolveCipher('skip_test', CloudSettings);
+	Assert.IsNotNull(Cipher, 'Should return null cipher when user skips');
+	Assert.AreEqual(0, MockValidator.CheckCallCount, 'GUID validator should not be called when user skips password');
 end;
 
 procedure TFileEncryptionResolverTest.TestResolveCipher_EncryptModeNone_ReturnsNullCipher;
