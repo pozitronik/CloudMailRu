@@ -2,11 +2,12 @@ unit BaseCipherTest;
 
 {Tests TBaseCipher in isolation using a trivial XOR-based IBlockCipher.
 	Verifies that the Template Method pattern correctly delegates to CreateBlockCipher
-	and that all shared stream logic works regardless of backend.}
+	and that all shared file/stream logic works regardless of backend.}
 
 interface
 
 uses
+	Windows,
 	BlockCipher,
 	Cipher,
 	System.SysUtils,
@@ -41,13 +42,31 @@ type
 	[TestFixture]
 	TBaseCipherTest = class
 	public
-		{GetEncryptingStream/GetDecryptingStream roundtrip}
+		{GetEncryptingStream/GetDecryptingStream}
 		[Test]
 		procedure TestGetEncryptingDecryptingStreamRoundtrip;
-
-		{GetEncryptingStream transforms data (output differs from input)}
 		[Test]
 		procedure TestGetEncryptingStreamTransformsData;
+
+		{CryptStream / DecryptStream}
+		[Test]
+		procedure TestCryptStreamRoundtrip;
+		[Test]
+		procedure TestCryptStreamEmptySourceReturnsZero;
+		[Test]
+		procedure TestDecryptStreamEmptySourceReturnsZero;
+		[Test]
+		procedure TestCryptStreamReturnsByteCount;
+
+		{CryptFile / DecryptFile}
+		[Test]
+		procedure TestCryptFileDecryptFileRoundtrip;
+		[Test]
+		procedure TestCryptFileNonexistentSourceReturnsIOError;
+		[Test]
+		procedure TestDecryptFileNonexistentSourceReturnsIOError;
+		[Test]
+		procedure TestCryptFileEmptySourceCreatesEmptyDest;
 	end;
 
 implementation
@@ -107,7 +126,7 @@ begin
 	Result := TXORBlockCipher.Create(FKeyByte);
 end;
 
-{TBaseCipherTest}
+{TBaseCipherTest - GetEncryptingStream/GetDecryptingStream}
 
 procedure TBaseCipherTest.TestGetEncryptingDecryptingStreamRoundtrip;
 var
@@ -191,6 +210,187 @@ begin
 		end;
 	finally
 		SourceStream.Free;
+	end;
+end;
+
+{TBaseCipherTest - CryptStream / DecryptStream}
+
+procedure TBaseCipherTest.TestCryptStreamRoundtrip;
+var
+	Cipher: IFileCipher;
+	Source, Encrypted, Decrypted: TMemoryStream;
+	OriginalBytes, DecryptedBytes: TBytes;
+begin
+	Source := TMemoryStream.Create;
+	Encrypted := TMemoryStream.Create;
+	Decrypted := TMemoryStream.Create;
+	try
+		OriginalBytes := TEncoding.UTF8.GetBytes('CryptStream/DecryptStream roundtrip test content');
+		Source.WriteBuffer(OriginalBytes[0], Length(OriginalBytes));
+
+		Cipher := TTestCipher.Create($5A);
+		Cipher.CryptStream(Source, Encrypted);
+
+		{Encrypted data should differ from original}
+		Assert.IsTrue(Encrypted.Size > 0, 'Encrypted stream should not be empty');
+
+		{Decrypt}
+		Cipher := TTestCipher.Create($5A);
+		Cipher.DecryptStream(Encrypted, Decrypted);
+
+		Decrypted.Position := 0;
+		SetLength(DecryptedBytes, Decrypted.Size);
+		Decrypted.ReadBuffer(DecryptedBytes[0], Decrypted.Size);
+
+		Assert.AreEqual(
+			TEncoding.UTF8.GetString(OriginalBytes),
+			TEncoding.UTF8.GetString(DecryptedBytes),
+			'Decrypted content should match original'
+		);
+	finally
+		Source.Free;
+		Encrypted.Free;
+		Decrypted.Free;
+	end;
+end;
+
+procedure TBaseCipherTest.TestCryptStreamEmptySourceReturnsZero;
+var
+	Cipher: IFileCipher;
+	Source, Dest: TMemoryStream;
+	BytesWritten: Integer;
+begin
+	Cipher := TTestCipher.Create($FF);
+	Source := TMemoryStream.Create;
+	Dest := TMemoryStream.Create;
+	try
+		BytesWritten := Cipher.CryptStream(Source, Dest);
+
+		Assert.AreEqual(0, BytesWritten, 'Empty source should return 0');
+		Assert.AreEqual(Int64(0), Dest.Size, 'Destination should remain empty');
+	finally
+		Source.Free;
+		Dest.Free;
+	end;
+end;
+
+procedure TBaseCipherTest.TestDecryptStreamEmptySourceReturnsZero;
+var
+	Cipher: IFileCipher;
+	Source, Dest: TMemoryStream;
+	BytesWritten: Integer;
+begin
+	Cipher := TTestCipher.Create($FF);
+	Source := TMemoryStream.Create;
+	Dest := TMemoryStream.Create;
+	try
+		BytesWritten := Cipher.DecryptStream(Source, Dest);
+
+		Assert.AreEqual(0, BytesWritten, 'Empty source should return 0');
+		Assert.AreEqual(Int64(0), Dest.Size, 'Destination should remain empty');
+	finally
+		Source.Free;
+		Dest.Free;
+	end;
+end;
+
+procedure TBaseCipherTest.TestCryptStreamReturnsByteCount;
+var
+	Cipher: IFileCipher;
+	Source, Dest: TMemoryStream;
+	Data: TBytes;
+	BytesWritten: Integer;
+begin
+	Cipher := TTestCipher.Create($33);
+	Source := TMemoryStream.Create;
+	Dest := TMemoryStream.Create;
+	try
+		Data := TEncoding.UTF8.GetBytes('Count these bytes precisely');
+		Source.WriteBuffer(Data[0], Length(Data));
+
+		BytesWritten := Cipher.CryptStream(Source, Dest);
+
+		Assert.AreEqual(Integer(Length(Data)), BytesWritten, 'Should return exact byte count');
+	finally
+		Source.Free;
+		Dest.Free;
+	end;
+end;
+
+{TBaseCipherTest - CryptFile / DecryptFile}
+
+procedure TBaseCipherTest.TestCryptFileDecryptFileRoundtrip;
+var
+	TempDir, SourceFile, EncryptedFile, DecryptedFile: string;
+	OriginalContent, DecryptedContent: string;
+	Cipher: IFileCipher;
+begin
+	TempDir := TPath.GetTempPath;
+	SourceFile := TPath.Combine(TempDir, 'BaseCipherTest_src_' + IntToStr(GetTickCount) + '.tmp');
+	EncryptedFile := TPath.Combine(TempDir, 'BaseCipherTest_enc_' + IntToStr(GetTickCount) + '.tmp');
+	DecryptedFile := TPath.Combine(TempDir, 'BaseCipherTest_dec_' + IntToStr(GetTickCount) + '.tmp');
+	try
+		OriginalContent := 'CryptFile/DecryptFile roundtrip test content for BaseCipher';
+		TFile.WriteAllText(SourceFile, OriginalContent);
+
+		Cipher := TTestCipher.Create($7B);
+		Assert.AreEqual(CIPHER_OK, Cipher.CryptFile(SourceFile, EncryptedFile), 'CryptFile should succeed');
+		Assert.IsTrue(TFile.Exists(EncryptedFile), 'Encrypted file should exist');
+
+		Cipher := TTestCipher.Create($7B);
+		Assert.AreEqual(CIPHER_OK, Cipher.DecryptFile(EncryptedFile, DecryptedFile), 'DecryptFile should succeed');
+
+		DecryptedContent := TFile.ReadAllText(DecryptedFile);
+		Assert.AreEqual(OriginalContent, DecryptedContent, 'Decrypted file content should match original');
+	finally
+		if TFile.Exists(SourceFile) then TFile.Delete(SourceFile);
+		if TFile.Exists(EncryptedFile) then TFile.Delete(EncryptedFile);
+		if TFile.Exists(DecryptedFile) then TFile.Delete(DecryptedFile);
+	end;
+end;
+
+procedure TBaseCipherTest.TestCryptFileNonexistentSourceReturnsIOError;
+var
+	Cipher: IFileCipher;
+begin
+	Cipher := TTestCipher.Create($AA);
+	Assert.AreEqual(CIPHER_IO_ERROR, Cipher.CryptFile('C:\nonexistent\no_file.tmp', 'C:\output.tmp'));
+end;
+
+procedure TBaseCipherTest.TestDecryptFileNonexistentSourceReturnsIOError;
+var
+	Cipher: IFileCipher;
+begin
+	Cipher := TTestCipher.Create($AA);
+	Assert.AreEqual(CIPHER_IO_ERROR, Cipher.DecryptFile('C:\nonexistent\no_file.tmp', 'C:\output.tmp'));
+end;
+
+procedure TBaseCipherTest.TestCryptFileEmptySourceCreatesEmptyDest;
+var
+	TempDir, SourceFile, DestFile: string;
+	Cipher: IFileCipher;
+	DestStream: TFileStream;
+begin
+	TempDir := TPath.GetTempPath;
+	SourceFile := TPath.Combine(TempDir, 'BaseCipherEmpty_src_' + IntToStr(GetTickCount) + '.tmp');
+	DestFile := TPath.Combine(TempDir, 'BaseCipherEmpty_dst_' + IntToStr(GetTickCount) + '.tmp');
+	try
+		{Create empty source file}
+		TFile.WriteAllText(SourceFile, '');
+
+		Cipher := TTestCipher.Create($42);
+		Assert.AreEqual(CIPHER_OK, Cipher.CryptFile(SourceFile, DestFile), 'Should handle empty file');
+		Assert.IsTrue(TFile.Exists(DestFile), 'Destination should exist');
+
+		DestStream := TFile.OpenRead(DestFile);
+		try
+			Assert.AreEqual(Int64(0), DestStream.Size, 'Destination should be empty');
+		finally
+			DestStream.Free;
+		end;
+	finally
+		if TFile.Exists(SourceFile) then TFile.Delete(SourceFile);
+		if TFile.Exists(DestFile) then TFile.Delete(DestFile);
 	end;
 end;
 
