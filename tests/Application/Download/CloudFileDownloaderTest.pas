@@ -124,6 +124,22 @@ type
 		procedure TestDownload_SetsProgressNames;
 		[Test]
 		procedure TestDownload_RegularAccount_UsesOAuthToken;
+
+		{DownloadToStream tests}
+		[Test]
+		procedure TestDownloadToStream_PublicAccount_ReturnsNotSupported;
+		[Test]
+		procedure TestDownloadToStream_NoShard_ReturnsNotSupported;
+		[Test]
+		procedure TestDownloadToStream_Success_WritesContentToStream;
+		[Test]
+		procedure TestDownloadToStream_WithEncryption_DecryptsContent;
+		[Test]
+		procedure TestDownloadToStream_TokenOutdated_RefreshesAndRetries;
+		[Test]
+		procedure TestDownloadToStream_Encrypted_TokenOutdated_RefreshesAndRetries;
+		[Test]
+		procedure TestDownloadToStream_TokenOutdated_RetriesOnlyOnce;
 	end;
 
 implementation
@@ -670,6 +686,159 @@ begin
 	DownloadResult := FDownloader.Download('/shared/file.txt', 'Z:\nonexistent\path\file.txt', ResultHash);
 
 	Assert.AreEqual(FS_FILE_WRITEERROR, DownloadResult, 'Invalid path should return write error for shared download');
+end;
+
+{DownloadToStream tests}
+
+procedure TCloudFileDownloaderTest.TestDownloadToStream_PublicAccount_ReturnsNotSupported;
+var
+	DestStream: TMemoryStream;
+	DownloadResult: Integer;
+begin
+	FMockContext.SetIsPublicAccount(True);
+	DestStream := TMemoryStream.Create;
+	try
+		DownloadResult := FDownloader.DownloadToStream('/remote/file.txt', DestStream, '\source\file.txt', '\target\file.txt');
+		Assert.AreEqual(FS_FILE_NOTSUPPORTED, DownloadResult, 'Public account should return FS_FILE_NOTSUPPORTED');
+	finally
+		DestStream.Free;
+	end;
+end;
+
+procedure TCloudFileDownloaderTest.TestDownloadToStream_NoShard_ReturnsNotSupported;
+var
+	DestStream: TMemoryStream;
+	DownloadResult: Integer;
+	NoShardManager: ICloudShardManager;
+	NoShardDownloader: ICloudFileDownloader;
+begin
+	FMockContext.SetIsPublicAccount(False);
+	{Create shard manager without download shard and failing dispatcher}
+	FMockHTTP.SetResponse('dispatcher', False, '');
+	NoShardManager := TCloudShardManager.Create(TNullLogger.Create, FMockContext, TCloudEndpoints.CreateDefaults);
+	NoShardDownloader := TCloudFileDownloader.Create(
+		FMockContext, NoShardManager, FHashCalculator,
+		TNullCipher.Create, TWindowsFileSystem.Create,
+		TNullLogger.Create, TNullProgress.Create, TNullRequest.Create, False);
+
+	DestStream := TMemoryStream.Create;
+	try
+		DownloadResult := NoShardDownloader.DownloadToStream('/remote/file.txt', DestStream, '\source\file.txt', '\target\file.txt');
+		Assert.AreEqual(FS_FILE_NOTSUPPORTED, DownloadResult, 'No shard should return FS_FILE_NOTSUPPORTED');
+	finally
+		DestStream.Free;
+	end;
+end;
+
+procedure TCloudFileDownloaderTest.TestDownloadToStream_Success_WritesContentToStream;
+var
+	DestStream: TMemoryStream;
+	DownloadResult: Integer;
+	FileContent: TBytes;
+	ReadContent: TBytes;
+begin
+	FMockContext.SetIsPublicAccount(False);
+	FileContent := TEncoding.UTF8.GetBytes('Stream content test');
+	FMockHTTP.SetStreamResponse('download.shard', FileContent, FS_FILE_OK);
+
+	DestStream := TMemoryStream.Create;
+	try
+		DownloadResult := FDownloader.DownloadToStream('/remote/file.txt', DestStream, '\source\file.txt', '\target\file.txt');
+		Assert.AreEqual(FS_FILE_OK, DownloadResult, 'Download to stream should return OK');
+		Assert.AreEqual(Int64(Length(FileContent)), DestStream.Size, 'Stream size should match content');
+		SetLength(ReadContent, DestStream.Size);
+		DestStream.Position := 0;
+		DestStream.Read(ReadContent[0], DestStream.Size);
+		Assert.AreEqual('Stream content test', TEncoding.UTF8.GetString(ReadContent), 'Stream content should match');
+	finally
+		DestStream.Free;
+	end;
+end;
+
+procedure TCloudFileDownloaderTest.TestDownloadToStream_WithEncryption_DecryptsContent;
+var
+	DestStream: TMemoryStream;
+	DownloadResult: Integer;
+	FileContent: TBytes;
+	ReadContent: TBytes;
+begin
+	FMockContext.SetIsPublicAccount(False);
+	CreateDownloader(True, TNullCipher.Create);
+	FileContent := TEncoding.UTF8.GetBytes('Encrypted stream test');
+	FMockHTTP.SetStreamResponse('download.shard', FileContent, FS_FILE_OK);
+
+	DestStream := TMemoryStream.Create;
+	try
+		DownloadResult := FDownloader.DownloadToStream('/remote/file.txt', DestStream, '\source\file.txt', '\target\file.txt');
+		Assert.AreEqual(FS_FILE_OK, DownloadResult, 'Encrypted download to stream should succeed');
+		SetLength(ReadContent, DestStream.Size);
+		DestStream.Position := 0;
+		DestStream.Read(ReadContent[0], DestStream.Size);
+		Assert.AreEqual('Encrypted stream test', TEncoding.UTF8.GetString(ReadContent), 'Content should be decrypted (pass-through with NullCipher)');
+	finally
+		DestStream.Free;
+	end;
+end;
+
+procedure TCloudFileDownloaderTest.TestDownloadToStream_TokenOutdated_RefreshesAndRetries;
+var
+	DestStream: TMemoryStream;
+	FileContent: TBytes;
+begin
+	FMockContext.SetIsPublicAccount(False);
+	{First call returns token error, second succeeds}
+	FMockHTTP.QueueStreamResponse('download.shard', nil, CLOUD_ERROR_TOKEN_OUTDATED);
+	FileContent := TEncoding.UTF8.GetBytes('After token refresh');
+	FMockHTTP.QueueStreamResponse('download.shard', FileContent, FS_FILE_OK);
+
+	DestStream := TMemoryStream.Create;
+	try
+		FDownloader.DownloadToStream('/remote/file.txt', DestStream, '\source\file.txt', '\target\file.txt');
+		Assert.IsTrue(FMockContext.WasRefreshCSRFTokenCalled, 'RefreshCSRFToken should be called on token error');
+	finally
+		DestStream.Free;
+	end;
+end;
+
+procedure TCloudFileDownloaderTest.TestDownloadToStream_Encrypted_TokenOutdated_RefreshesAndRetries;
+var
+	DestStream: TMemoryStream;
+	FileContent: TBytes;
+begin
+	FMockContext.SetIsPublicAccount(False);
+	CreateDownloader(True, TNullCipher.Create);
+	{First call returns token error, second succeeds}
+	FMockHTTP.QueueStreamResponse('download.shard', nil, CLOUD_ERROR_TOKEN_OUTDATED);
+	FileContent := TEncoding.UTF8.GetBytes('After encrypted token refresh');
+	FMockHTTP.QueueStreamResponse('download.shard', FileContent, FS_FILE_OK);
+
+	DestStream := TMemoryStream.Create;
+	try
+		FDownloader.DownloadToStream('/remote/file.txt', DestStream, '\source\file.txt', '\target\file.txt');
+		Assert.IsTrue(FMockContext.WasRefreshCSRFTokenCalled, 'RefreshCSRFToken should be called on encrypted token error');
+	finally
+		DestStream.Free;
+	end;
+end;
+
+procedure TCloudFileDownloaderTest.TestDownloadToStream_TokenOutdated_RetriesOnlyOnce;
+var
+	DestStream: TMemoryStream;
+	DownloadResult: Integer;
+begin
+	FMockContext.SetIsPublicAccount(False);
+	{Queue multiple token errors - should only retry once then fail}
+	FMockHTTP.QueueStreamResponse('download.shard', nil, CLOUD_ERROR_TOKEN_OUTDATED);
+	FMockHTTP.QueueStreamResponse('download.shard', nil, CLOUD_ERROR_TOKEN_OUTDATED);
+	FMockHTTP.QueueStreamResponse('download.shard', nil, CLOUD_ERROR_TOKEN_OUTDATED);
+
+	DestStream := TMemoryStream.Create;
+	try
+		DownloadResult := FDownloader.DownloadToStream('/remote/file.txt', DestStream, '\source\file.txt', '\target\file.txt');
+		Assert.AreEqual(CLOUD_ERROR_TOKEN_OUTDATED, DownloadResult, 'Should return token error after retry limit');
+	finally
+		DestStream.Free;
+	end;
 end;
 
 initialization

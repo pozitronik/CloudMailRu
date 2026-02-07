@@ -19,6 +19,7 @@ uses
 	RealPath,
 	CloudMailRu,
 	CloudSettings,
+	CloudOAuth,
 	MockCloudHTTP,
 	MockHTTPManager,
 	AuthStrategy,
@@ -28,13 +29,14 @@ uses
 	TestHelper;
 
 type
-	{Mock retry handler that tracks calls}
+	{Mock retry handler that tracks calls; optionally executes the retry callback}
 	TMockCrossServerRetryHandler = class(TInterfacedObject, IRetryHandler)
 	private
 		FHandleErrorCalled: Boolean;
 		FReturnValue: Integer;
+		FExecuteCallback: Boolean;
 	public
-		constructor Create(ReturnValue: Integer = 0);
+		constructor Create(ReturnValue: Integer = 0; ExecuteCallback: Boolean = False);
 		function HandleOperationError(
 			CurrentResult: Integer;
 			OperationType: TRetryOperationType;
@@ -59,10 +61,11 @@ type
 		property LastMessage: WideString read FLastMessage;
 	end;
 
-	{Testable CloudMailRu for cross-server tests -- allows setting server profile}
+	{Testable CloudMailRu for cross-server tests -- allows setting server profile and OAuth token}
 	TCrossServerTestableCloud = class(TCloudMailRu)
 	public
 		procedure SetUnitedParams(const Value: WideString);
+		procedure SetOAuthToken(const Token: TCloudOAuth);
 	end;
 
 	[TestFixture]
@@ -77,6 +80,8 @@ type
 		FNewCloud: TCrossServerTestableCloud;
 
 		function CreateCloud(const ServerName: WideString = ''): TCrossServerTestableCloud;
+		{Configure mock HTTP for full download+upload pipeline through TCloudMailRu}
+		procedure SetupTransferMocks(const FileContent: string);
 	public
 		[Setup]
 		procedure Setup;
@@ -118,6 +123,26 @@ type
 		{Move delete source fails -- logs error}
 		[Test]
 		procedure TestExecute_MoveDeleteSourceFails_LogsError;
+
+		{Full transfer: dedup fails, download+upload succeeds}
+		[Test]
+		procedure TestExecute_FullTransfer_Success;
+
+		{Full transfer with move: deletes source after download+upload}
+		[Test]
+		procedure TestExecute_FullTransfer_Move_DeletesSource;
+
+		{Upload fails, retry callback executes and succeeds}
+		[Test]
+		procedure TestExecute_UploadFails_RetryCallbackExecutesAndSucceeds;
+
+		{Move after successful retry: deletes source}
+		[Test]
+		procedure TestExecute_MoveAfterRetry_DeletesSource;
+
+		{Move after successful retry: delete source fails, logs error}
+		[Test]
+		procedure TestExecute_MoveAfterRetry_DeleteFails_LogsError;
 	end;
 
 implementation
@@ -149,11 +174,12 @@ const
 
 {TMockCrossServerRetryHandler}
 
-constructor TMockCrossServerRetryHandler.Create(ReturnValue: Integer);
+constructor TMockCrossServerRetryHandler.Create(ReturnValue: Integer; ExecuteCallback: Boolean);
 begin
 	inherited Create;
 	FHandleErrorCalled := False;
 	FReturnValue := ReturnValue;
+	FExecuteCallback := ExecuteCallback;
 end;
 
 function TMockCrossServerRetryHandler.HandleOperationError(
@@ -165,7 +191,10 @@ function TMockCrossServerRetryHandler.HandleOperationError(
 ): Integer;
 begin
 	FHandleErrorCalled := True;
-	Result := FReturnValue;
+	if FExecuteCallback then
+		Result := RetryOperation()
+	else
+		Result := FReturnValue;
 end;
 
 {TMockCrossServerLogger}
@@ -189,6 +218,11 @@ end;
 procedure TCrossServerTestableCloud.SetUnitedParams(const Value: WideString);
 begin
 	FUnitedParams := Value;
+end;
+
+procedure TCrossServerTestableCloud.SetOAuthToken(const Token: TCloudOAuth);
+begin
+	FOAuthToken := Token;
 end;
 
 {TCrossServerFileOperationHandlerTest}
@@ -218,6 +252,7 @@ end;
 function TCrossServerFileOperationHandlerTest.CreateCloud(const ServerName: WideString): TCrossServerTestableCloud;
 var
 	Settings: TCloudSettings;
+	OAuthToken: TCloudOAuth;
 begin
 	Settings := Default(TCloudSettings);
 	Settings.AccountSettings.Server := ServerName;
@@ -233,6 +268,23 @@ begin
 		TNullTCHandler.Create,
 		TNullCipher.Create, TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create);
 	Result.SetUnitedParams('api=2&access_token=test_token');
+	OAuthToken.access_token := 'test_token';
+	OAuthToken.refresh_token := 'test_refresh';
+	Result.SetOAuthToken(OAuthToken);
+end;
+
+procedure TCrossServerFileOperationHandlerTest.SetupTransferMocks(const FileContent: string);
+var
+	ContentBytes: TBytes;
+begin
+	ContentBytes := TEncoding.UTF8.GetBytes(FileContent);
+	{OAuth dispatcher returns shard URLs for download and upload}
+	FMockHTTP.SetResponse('dispatcher.cloud.mail.ru/d', True, 'https://dl.shard/ 127.0.0.1 1');
+	FMockHTTP.SetResponse('dispatcher.cloud.mail.ru/u', True, 'https://ul.shard/ 127.0.0.1 1');
+	{Download from shard writes file content to stream}
+	FMockHTTP.SetStreamResponse('dl.shard', ContentBytes, FS_FILE_OK);
+	{Upload to shard returns 40-char SHA1 hash}
+	FMockHTTP.SetPutFileResponse('ul.shard', 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', FS_FILE_OK);
 end;
 
 {Tests}
@@ -325,21 +377,17 @@ begin
 	OldPath.FromPath('\account1\file.txt');
 	NewPath.FromPath('\account2\file.txt');
 
-	{StatusFile succeeds, AddFileByIdentity fails (hash not found),
-		DownloadToStream needs shard + download URL, UploadStream needs shard + upload}
+	{StatusFile succeeds, dedup fails, download+upload needs full pipeline}
 	FMockHTTP.SetResponse(API_FILE, True, JSON_STATUS_FILE);
-	FMockHTTP.SetResponse(API_FILE_ADD, False, ''); {Dedup fails}
-	{DownloadToStream and UploadStream go through real cloud infrastructure,
-		which requires HTTP mocking at a deeper level. The test verifies the
-		retry handler is called when the full transfer pipeline returns error.}
+	SetupTransferMocks('cross-server content');
+	{Queue /file/add responses: first for dedup (fail), second for post-upload registration (success)}
+	FMockHTTP.QueueResponse(API_FILE_ADD, False, '');
+	FMockHTTP.QueueResponse(API_FILE_ADD, True, JSON_ADD_FILE_OK);
 
 	Result := FHandler.Execute(FOldCloud, FNewCloud, OldPath, NewPath, False, False,
 		function: Boolean begin Result := False; end);
 
-	{When dedup fails and download infrastructure is not fully mocked,
-		the handler should invoke retry handler on upload failure}
-	Assert.IsTrue(FMockRetryHandler.HandleErrorCalled or (Result <> FS_FILE_OK),
-		'Should attempt download+upload after dedup failure');
+	Assert.AreEqual(CLOUD_OPERATION_OK, Result, 'Full download+upload transfer should succeed');
 end;
 
 procedure TCrossServerFileOperationHandlerTest.TestExecute_DownloadFails_ReturnsError;
@@ -352,15 +400,18 @@ begin
 	OldPath.FromPath('\account1\file.txt');
 	NewPath.FromPath('\account2\file.txt');
 
-	{StatusFile succeeds, AddFileByIdentity fails, DownloadToStream fails
-		(no shard available, so download returns FS_FILE_NOTSUPPORTED)}
+	{StatusFile succeeds, dedup fails, download shard resolves but GetFile fails}
 	FMockHTTP.SetResponse(API_FILE, True, JSON_STATUS_FILE);
 	FMockHTTP.SetResponse(API_FILE_ADD, False, '');
+	FMockHTTP.SetResponse('dispatcher.cloud.mail.ru/d', True, 'https://dl.shard/ 127.0.0.1 1');
+	FMockHTTP.SetStreamResponse('dl.shard', nil, FS_FILE_READERROR);
 
 	Result := FHandler.Execute(FOldCloud, FNewCloud, OldPath, NewPath, False, False,
 		function: Boolean begin Result := False; end);
 
+	{Download fails at line 107, Exit skips retry handler (line 117) due to try/finally}
 	Assert.AreNotEqual(FS_FILE_OK, Result, 'Should return error when download fails');
+	Assert.IsFalse(FMockRetryHandler.HandleErrorCalled, 'Retry handler should not be called for download failures');
 end;
 
 procedure TCrossServerFileOperationHandlerTest.TestExecute_UploadFails_CallsRetryHandler;
@@ -372,18 +423,19 @@ begin
 	OldPath.FromPath('\account1\file.txt');
 	NewPath.FromPath('\account2\file.txt');
 
-	{StatusFile succeeds, AddFileByIdentity fails -- this triggers the memory stream path.
-		Since the mock HTTP doesn't fully support download/upload infrastructure,
-		the handler will encounter errors and should delegate to retry handler.}
+	{StatusFile succeeds, dedup fails, download succeeds, upload PutFile fails}
 	FMockHTTP.SetResponse(API_FILE, True, JSON_STATUS_FILE);
 	FMockHTTP.SetResponse(API_FILE_ADD, False, '');
+	FMockHTTP.SetResponse('dispatcher.cloud.mail.ru/d', True, 'https://dl.shard/ 127.0.0.1 1');
+	FMockHTTP.SetResponse('dispatcher.cloud.mail.ru/u', True, 'https://ul.shard/ 127.0.0.1 1');
+	FMockHTTP.SetStreamResponse('dl.shard', TEncoding.UTF8.GetBytes('content'), FS_FILE_OK);
+	FMockHTTP.SetPutFileResponse('ul.shard', '', FS_FILE_WRITEERROR);
 
 	FHandler.Execute(FOldCloud, FNewCloud, OldPath, NewPath, False, False,
 		function: Boolean begin Result := False; end);
 
-	{Retry handler should be called when upload fails}
-	Assert.IsTrue(FMockRetryHandler.HandleErrorCalled or True,
-		'Should call retry handler or fail gracefully when upload fails');
+	Assert.IsTrue(FMockRetryHandler.HandleErrorCalled,
+		'Should call retry handler when upload fails');
 end;
 
 procedure TCrossServerFileOperationHandlerTest.TestExecute_MoveSucceeds_DeletesSource;
@@ -424,6 +476,151 @@ begin
 		function: Boolean begin Result := False; end);
 
 	Assert.IsTrue(FMockLogger.LogCalled, 'Should log error when delete source fails');
+	Assert.AreEqual(LOG_LEVEL_ERROR, FMockLogger.LastLogLevel, 'Should log at error level');
+end;
+
+{Full transfer: dedup fails, download+upload pipeline succeeds end-to-end}
+
+procedure TCrossServerFileOperationHandlerTest.TestExecute_FullTransfer_Success;
+var
+	OldPath, NewPath: TRealPath;
+	Result: Integer;
+begin
+	FOldCloud := CreateCloud('server1');
+	FNewCloud := CreateCloud('server2');
+	OldPath.FromPath('\account1\file.txt');
+	NewPath.FromPath('\account2\file.txt');
+
+	FMockHTTP.SetResponse(API_FILE, True, JSON_STATUS_FILE);
+	SetupTransferMocks('full transfer content');
+	{Dedup fails, post-upload registration succeeds}
+	FMockHTTP.QueueResponse(API_FILE_ADD, False, '');
+	FMockHTTP.QueueResponse(API_FILE_ADD, True, JSON_ADD_FILE_OK);
+
+	Result := FHandler.Execute(FOldCloud, FNewCloud, OldPath, NewPath, False, False,
+		function: Boolean begin Result := False; end);
+
+	Assert.AreEqual(CLOUD_OPERATION_OK, Result, 'Full transfer should succeed');
+	Assert.IsFalse(FMockRetryHandler.HandleErrorCalled, 'Retry handler should not be called on success');
+end;
+
+{Full transfer with move: download+upload succeeds, then deletes source}
+
+procedure TCrossServerFileOperationHandlerTest.TestExecute_FullTransfer_Move_DeletesSource;
+var
+	OldPath, NewPath: TRealPath;
+begin
+	FOldCloud := CreateCloud('server1');
+	FNewCloud := CreateCloud('server2');
+	OldPath.FromPath('\account1\file.txt');
+	NewPath.FromPath('\account2\file.txt');
+
+	FMockHTTP.SetResponse(API_FILE, True, JSON_STATUS_FILE);
+	SetupTransferMocks('move content');
+	FMockHTTP.QueueResponse(API_FILE_ADD, False, '');
+	FMockHTTP.QueueResponse(API_FILE_ADD, True, JSON_ADD_FILE_OK);
+	FMockHTTP.SetResponse(API_FILE_REMOVE, True, JSON_DELETE_OK);
+
+	FHandler.Execute(FOldCloud, FNewCloud, OldPath, NewPath, True, False, {Move=True}
+		function: Boolean begin Result := False; end);
+
+	Assert.IsTrue(FMockHTTP.WasURLCalled(API_FILE_REMOVE), 'Should delete source after successful transfer move');
+end;
+
+{Upload fails, retry handler executes callback which re-downloads and re-uploads successfully}
+
+procedure TCrossServerFileOperationHandlerTest.TestExecute_UploadFails_RetryCallbackExecutesAndSucceeds;
+var
+	OldPath, NewPath: TRealPath;
+	Result: Integer;
+	RetryHandler: TMockCrossServerRetryHandler;
+begin
+	{Create handler with retry callback execution enabled}
+	RetryHandler := TMockCrossServerRetryHandler.Create(0, True);
+	FHandler := TCrossServerFileOperationHandler.Create(RetryHandler, FMockLogger);
+	FOldCloud := CreateCloud('server1');
+	FNewCloud := CreateCloud('server2');
+	OldPath.FromPath('\account1\file.txt');
+	NewPath.FromPath('\account2\file.txt');
+
+	FMockHTTP.SetResponse(API_FILE, True, JSON_STATUS_FILE);
+	{Download shard for both first attempt and retry}
+	FMockHTTP.SetResponse('dispatcher.cloud.mail.ru/d', True, 'https://dl.shard/ 127.0.0.1 1');
+	FMockHTTP.SetResponse('dispatcher.cloud.mail.ru/u', True, 'https://ul.shard/ 127.0.0.1 1');
+	{Download always succeeds (used by both initial attempt and retry callback)}
+	FMockHTTP.SetStreamResponse('dl.shard', TEncoding.UTF8.GetBytes('retry content'), FS_FILE_OK);
+	{First upload PutFile fails, retry upload PutFile succeeds}
+	FMockHTTP.QueuePutFileResponse('ul.shard', '', FS_FILE_WRITEERROR);
+	FMockHTTP.QueuePutFileResponse('ul.shard', 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', FS_FILE_OK);
+	{Dedup fails, retry AddFileByIdentity succeeds}
+	FMockHTTP.QueueResponse(API_FILE_ADD, False, '');
+	FMockHTTP.QueueResponse(API_FILE_ADD, True, JSON_ADD_FILE_OK);
+
+	Result := FHandler.Execute(FOldCloud, FNewCloud, OldPath, NewPath, False, False,
+		function: Boolean begin Result := False; end);
+
+	Assert.IsTrue(RetryHandler.HandleErrorCalled, 'Retry handler should be invoked');
+	Assert.AreEqual(CLOUD_OPERATION_OK, Result, 'Retry callback should succeed');
+end;
+
+{Move after successful retry: deletes source}
+
+procedure TCrossServerFileOperationHandlerTest.TestExecute_MoveAfterRetry_DeletesSource;
+var
+	OldPath, NewPath: TRealPath;
+	RetryHandler: TMockCrossServerRetryHandler;
+begin
+	RetryHandler := TMockCrossServerRetryHandler.Create(0, True);
+	FHandler := TCrossServerFileOperationHandler.Create(RetryHandler, FMockLogger);
+	FOldCloud := CreateCloud('server1');
+	FNewCloud := CreateCloud('server2');
+	OldPath.FromPath('\account1\file.txt');
+	NewPath.FromPath('\account2\file.txt');
+
+	FMockHTTP.SetResponse(API_FILE, True, JSON_STATUS_FILE);
+	FMockHTTP.SetResponse('dispatcher.cloud.mail.ru/d', True, 'https://dl.shard/ 127.0.0.1 1');
+	FMockHTTP.SetResponse('dispatcher.cloud.mail.ru/u', True, 'https://ul.shard/ 127.0.0.1 1');
+	FMockHTTP.SetStreamResponse('dl.shard', TEncoding.UTF8.GetBytes('move retry'), FS_FILE_OK);
+	FMockHTTP.QueuePutFileResponse('ul.shard', '', FS_FILE_WRITEERROR);
+	FMockHTTP.QueuePutFileResponse('ul.shard', 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', FS_FILE_OK);
+	FMockHTTP.QueueResponse(API_FILE_ADD, False, '');
+	FMockHTTP.QueueResponse(API_FILE_ADD, True, JSON_ADD_FILE_OK);
+	FMockHTTP.SetResponse(API_FILE_REMOVE, True, JSON_DELETE_OK);
+
+	FHandler.Execute(FOldCloud, FNewCloud, OldPath, NewPath, True, False, {Move=True}
+		function: Boolean begin Result := False; end);
+
+	Assert.IsTrue(FMockHTTP.WasURLCalled(API_FILE_REMOVE), 'Should delete source after successful retry move');
+end;
+
+{Move after successful retry: delete source fails, logs error}
+
+procedure TCrossServerFileOperationHandlerTest.TestExecute_MoveAfterRetry_DeleteFails_LogsError;
+var
+	OldPath, NewPath: TRealPath;
+	RetryHandler: TMockCrossServerRetryHandler;
+begin
+	RetryHandler := TMockCrossServerRetryHandler.Create(0, True);
+	FHandler := TCrossServerFileOperationHandler.Create(RetryHandler, FMockLogger);
+	FOldCloud := CreateCloud('server1');
+	FNewCloud := CreateCloud('server2');
+	OldPath.FromPath('\account1\file.txt');
+	NewPath.FromPath('\account2\file.txt');
+
+	FMockHTTP.SetResponse(API_FILE, True, JSON_STATUS_FILE);
+	FMockHTTP.SetResponse('dispatcher.cloud.mail.ru/d', True, 'https://dl.shard/ 127.0.0.1 1');
+	FMockHTTP.SetResponse('dispatcher.cloud.mail.ru/u', True, 'https://ul.shard/ 127.0.0.1 1');
+	FMockHTTP.SetStreamResponse('dl.shard', TEncoding.UTF8.GetBytes('move retry fail'), FS_FILE_OK);
+	FMockHTTP.QueuePutFileResponse('ul.shard', '', FS_FILE_WRITEERROR);
+	FMockHTTP.QueuePutFileResponse('ul.shard', 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', FS_FILE_OK);
+	FMockHTTP.QueueResponse(API_FILE_ADD, False, '');
+	FMockHTTP.QueueResponse(API_FILE_ADD, True, JSON_ADD_FILE_OK);
+	FMockHTTP.SetResponse(API_FILE_REMOVE, False, ''); {delete source fails}
+
+	FHandler.Execute(FOldCloud, FNewCloud, OldPath, NewPath, True, False, {Move=True}
+		function: Boolean begin Result := False; end);
+
+	Assert.IsTrue(FMockLogger.LogCalled, 'Should log error when delete source fails after retry');
 	Assert.AreEqual(LOG_LEVEL_ERROR, FMockLogger.LastLogLevel, 'Should log at error level');
 end;
 

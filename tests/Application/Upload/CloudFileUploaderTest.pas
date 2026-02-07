@@ -83,6 +83,12 @@ type
 		procedure TestUpload_PrecalculateHash_DedupeSuccess_SkipsUpload;
 		[Test]
 		procedure TestUpload_PrecalculateHash_DedupeExists_ReturnsExists;
+
+		{ UploadStream tests }
+		[Test]
+		procedure TestUploadStream_Success_ReturnsOK;
+		[Test]
+		procedure TestUploadStream_WithKnownHash_SkipsDedupAttempt;
 	end;
 
 implementation
@@ -388,6 +394,55 @@ begin
 
 	UploadResult := FUploader.Upload(DataPath('SIMPLE.JSON'), '/test/existing.txt');
 	Assert.AreEqual(FS_FILE_EXISTS, UploadResult, 'Dedup with EXISTS conflict should return EXISTS');
+end;
+
+{ UploadStream tests }
+
+procedure TCloudFileUploaderTest.TestUploadStream_Success_ReturnsOK;
+var
+	FileStream: TMemoryStream;
+	UploadResult: Integer;
+	Content: TBytes;
+begin
+	FMockHTTP.SetPutFileResponse('', 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', FS_FILE_OK);
+	FMockHTTP.SetResponse('/file/add', True, '{"status":200,"body":{"home":"/test/file.txt"}}');
+
+	Content := TEncoding.UTF8.GetBytes('Stream upload content');
+	FileStream := TMemoryStream.Create;
+	try
+		FileStream.Write(Content[0], Length(Content));
+		FileStream.Position := 0;
+		UploadResult := FUploader.UploadStream('file.txt', '/test/file.txt', FileStream,
+			CLOUD_CONFLICT_STRICT, '', '\source\file.txt', '\target\file.txt');
+		Assert.AreEqual(FS_FILE_OK, UploadResult, 'Stream upload should succeed');
+	finally
+		FileStream.Free;
+	end;
+end;
+
+procedure TCloudFileUploaderTest.TestUploadStream_WithKnownHash_SkipsDedupAttempt;
+var
+	FileStream: TMemoryStream;
+	UploadResult: Integer;
+	Content: TBytes;
+begin
+	{When KnownHash is provided, PutFileStream skips hash calculation and dedup attempt,
+		going straight to PutFileToCloud + AddFileByIdentity}
+	FMockHTTP.SetPutFileResponse('', 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', FS_FILE_OK);
+	FMockHTTP.SetResponse('/file/add', True, '{"status":200,"body":{"home":"/test/file.txt"}}');
+
+	Content := TEncoding.UTF8.GetBytes('Known hash content');
+	FileStream := TMemoryStream.Create;
+	try
+		FileStream.Write(Content[0], Length(Content));
+		FileStream.Position := 0;
+		UploadResult := FUploader.UploadStream('file.txt', '/test/file.txt', FileStream,
+			CLOUD_CONFLICT_STRICT, 'ABCD1234567890ABCD1234567890ABCD12345678',
+			'\source\file.txt', '\target\file.txt');
+		Assert.AreEqual(FS_FILE_OK, UploadResult, 'Stream upload with known hash should succeed');
+	finally
+		FileStream.Free;
+	end;
 end;
 
 initialization

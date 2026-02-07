@@ -29,13 +29,14 @@ uses
 	TestHelper;
 
 type
-	{Mock retry handler that tracks calls}
+	{Mock retry handler that tracks calls; optionally executes the retry callback}
 	TMockRetryHandler = class(TInterfacedObject, IRetryHandler)
 	private
 		FHandleErrorCalled: Boolean;
 		FReturnValue: Integer;
+		FExecuteCallback: Boolean;
 	public
-		constructor Create(ReturnValue: Integer = 0);
+		constructor Create(ReturnValue: Integer = 0; ExecuteCallback: Boolean = False);
 		function HandleOperationError(
 			CurrentResult: Integer;
 			OperationType: TRetryOperationType;
@@ -150,6 +151,12 @@ type
 		[Test]
 		procedure TestExecute_ViaPublicLink_MoveDeleteSourceFails_LogsError;
 
+		{Retry closure execution tests}
+		[Test]
+		procedure TestExecute_ViaHash_RetryCallbackExecutes;
+		[Test]
+		procedure TestExecute_ViaPublicLink_RetryCallbackExecutes;
+
 		{Cross-server delegation tests}
 		[Test]
 		procedure TestExecute_CrossServer_ViaHash_DelegatesToCrossServerHandler;
@@ -222,11 +229,12 @@ end;
 
 {TMockRetryHandler}
 
-constructor TMockRetryHandler.Create(ReturnValue: Integer);
+constructor TMockRetryHandler.Create(ReturnValue: Integer; ExecuteCallback: Boolean);
 begin
 	inherited Create;
 	FHandleErrorCalled := False;
 	FReturnValue := ReturnValue;
+	FExecuteCallback := ExecuteCallback;
 end;
 
 function TMockRetryHandler.HandleOperationError(
@@ -238,7 +246,10 @@ function TMockRetryHandler.HandleOperationError(
 ): Integer;
 begin
 	FHandleErrorCalled := True;
-	Result := FReturnValue;
+	if FExecuteCallback then
+		Result := RetryOperation()
+	else
+		Result := FReturnValue;
 end;
 
 {TMockLogger}
@@ -751,6 +762,62 @@ begin
 
 	Assert.IsTrue(FMockLogger.LogCalled, 'Should log error when delete source fails');
 	Assert.AreEqual(LOG_LEVEL_ERROR, FMockLogger.LastLogLevel, 'Should log at error level');
+end;
+
+{Retry closure execution tests -- exercises anonymous function bodies within retry handlers}
+
+procedure TCrossAccountFileOperationHandlerTest.TestExecute_ViaHash_RetryCallbackExecutes;
+var
+	OldPath, NewPath: TRealPath;
+	Result: Integer;
+	RetryMock: TMockRetryHandler;
+begin
+	{Create handler with retry callback execution enabled}
+	RetryMock := TMockRetryHandler.Create(0, True);
+	FHandler := TCrossAccountFileOperationHandler.Create(RetryMock, FMockLogger, FMockCrossServerHandler);
+	FOldCloud := CreateCloud;
+	FNewCloud := CreateCloud;
+	OldPath.FromPath('\account1\file.txt');
+	NewPath.FromPath('\account2\file.txt');
+
+	{StatusFile succeeds, first AddFileByIdentity fails, retry callback's AddFileByIdentity succeeds}
+	FMockHTTP.SetResponse(API_FILE, True, JSON_STATUS_FILE_SUCCESS);
+	FMockHTTP.QueueResponse(API_FILE_ADD, False, '');
+	FMockHTTP.QueueResponse(API_FILE_ADD, True, JSON_ADD_FILE_SUCCESS);
+
+	Result := FHandler.Execute(FOldCloud, FNewCloud, OldPath, NewPath, False, False,
+		CopyBetweenAccountsModeViaHash, False,
+		function: Boolean begin Result := False; end);
+
+	Assert.IsTrue(RetryMock.HandleErrorCalled, 'Retry handler should be called');
+	Assert.AreEqual(CLOUD_OPERATION_OK, Result, 'Retry callback should succeed on second attempt');
+end;
+
+procedure TCrossAccountFileOperationHandlerTest.TestExecute_ViaPublicLink_RetryCallbackExecutes;
+var
+	OldPath, NewPath: TRealPath;
+	Result: Integer;
+	RetryMock: TMockRetryHandler;
+begin
+	{Create handler with retry callback execution enabled}
+	RetryMock := TMockRetryHandler.Create(0, True);
+	FHandler := TCrossAccountFileOperationHandler.Create(RetryMock, FMockLogger, FMockCrossServerHandler);
+	FOldCloud := CreateCloud;
+	FNewCloud := CreateCloud;
+	OldPath.FromPath('\account1\file.txt');
+	NewPath.FromPath('\account2\file.txt');
+
+	{File already published. First clone fails, retry callback's clone succeeds}
+	FMockHTTP.SetResponse(API_FILE, True, JSON_STATUS_FILE_PUBLISHED);
+	FMockHTTP.QueueResponse(API_CLONE, False, '');
+	FMockHTTP.QueueResponse(API_CLONE, True, JSON_CLONE_SUCCESS);
+
+	Result := FHandler.Execute(FOldCloud, FNewCloud, OldPath, NewPath, False, False,
+		CopyBetweenAccountsModeViaPublicLink, False,
+		function: Boolean begin Result := False; end);
+
+	Assert.IsTrue(RetryMock.HandleErrorCalled, 'Retry handler should be called');
+	Assert.AreEqual(CLOUD_OPERATION_OK, Result, 'Retry callback should succeed on second attempt');
 end;
 
 {Cross-server delegation tests}
