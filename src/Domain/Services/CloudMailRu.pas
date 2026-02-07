@@ -126,7 +126,6 @@ type
 	public
 		{Authorization state machine}
 		function Authorize: Boolean;
-		procedure InvalidateAuthorization;
 		property AuthorizationState: TAuthorizationState read FAuthorizationState;
 		property AuthorizationError: TAuthorizationError read FAuthorizationError;
 
@@ -558,12 +557,6 @@ end;
 procedure TCloudMailRu.SetAuthorizationState(State: TAuthorizationState);
 begin
 	FAuthorizationState := State;
-end;
-
-procedure TCloudMailRu.InvalidateAuthorization;
-begin
-	FAuthorizationState := asPending;
-	FAuthorizationError := TAuthorizationError.Empty;
 end;
 
 end.
