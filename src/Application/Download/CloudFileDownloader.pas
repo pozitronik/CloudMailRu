@@ -37,8 +37,9 @@ type
 		function GetSharedFileUrl(RemotePath: WideString; ShardType: WideString = SHARD_TYPE_DEFAULT): WideString;
 		{Download file from cloud directly to a provided stream (no local file created).
 			Handles shard resolution, OAuth, token retry, and decryption.
+			ProgressSourceName/ProgressTargetName control the progress bar captions.
 			Returns FS_FILE_OK on success, or appropriate error code on failure.}
-		function DownloadToStream(RemotePath: WideString; DestStream: TStream): Integer;
+		function DownloadToStream(RemotePath: WideString; DestStream: TStream; ProgressSourceName, ProgressTargetName: WideString): Integer;
 	end;
 
 	{File download service - handles both regular and shared account downloads}
@@ -62,7 +63,7 @@ type
 		{ICloudFileDownloader}
 		function Download(RemotePath, LocalPath: WideString; var ResultHash: WideString; LogErrors: Boolean = True): Integer;
 		function GetSharedFileUrl(RemotePath: WideString; ShardType: WideString = SHARD_TYPE_DEFAULT): WideString;
-		function DownloadToStream(RemotePath: WideString; DestStream: TStream): Integer;
+		function DownloadToStream(RemotePath: WideString; DestStream: TStream; ProgressSourceName, ProgressTargetName: WideString): Integer;
 	end;
 
 implementation
@@ -238,7 +239,7 @@ end;
 {Downloads file directly to a provided stream without creating local files.
 	Same retry and shard failover logic as DownloadRegular, but writes to DestStream
 	instead of creating TBufferedFileStream. No hash calculation or file cleanup.}
-function TCloudFileDownloader.DownloadToStream(RemotePath: WideString; DestStream: TStream): Integer;
+function TCloudFileDownloader.DownloadToStream(RemotePath: WideString; DestStream: TStream; ProgressSourceName, ProgressTargetName: WideString): Integer;
 const
 	MAX_TOKEN_RETRIES = 1;
 var
@@ -259,7 +260,7 @@ begin
 	if DownloadShard = EmptyWideStr then
 		Exit;
 
-	FContext.GetHTTP.SetProgressNames(RemotePath, EmptyWideStr);
+	FContext.GetHTTP.SetProgressNames(ProgressSourceName, ProgressTargetName);
 	SavedUserAgent := FContext.GetHTTP.HTTP.Request.UserAgent;
 	FContext.GetHTTP.HTTP.Request.UserAgent := OAUTH_CLIENT_ID;
 	try

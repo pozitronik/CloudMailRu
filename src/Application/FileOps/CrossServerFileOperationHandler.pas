@@ -103,12 +103,12 @@ begin
 	{Hash dedup failed -- download to memory, upload from memory}
 	MemoryStream := TMemoryStream.Create;
 	try
-		Result := OldCloud.Downloader.DownloadToStream(OldRealPath.Path, MemoryStream);
+		Result := OldCloud.Downloader.DownloadToStream(OldRealPath.Path, MemoryStream, OldRealPath.ToPath, NewRealPath.ToPath);
 		if not (Result in [FS_FILE_OK]) then
 			Exit;
 
 		MemoryStream.Position := 0;
-		Result := NewCloud.Uploader.UploadStream(ExtractFileName(NewRealPath.Path), TargetPath, MemoryStream, CLOUD_CONFLICT_STRICT, FileIdentity.Hash);
+		Result := NewCloud.Uploader.UploadStream(ExtractFileName(NewRealPath.Path), TargetPath, MemoryStream, CLOUD_CONFLICT_STRICT, FileIdentity.Hash, OldRealPath.ToPath, NewRealPath.ToPath);
 	finally
 		MemoryStream.Free;
 	end;
@@ -122,11 +122,11 @@ begin
 			begin
 				RetryStream := TMemoryStream.Create;
 				try
-					Result := OldCloud.Downloader.DownloadToStream(OldRealPath.Path, RetryStream);
+					Result := OldCloud.Downloader.DownloadToStream(OldRealPath.Path, RetryStream, OldRealPath.ToPath, NewRealPath.ToPath);
 					if Result in [FS_FILE_OK] then
 					begin
 						RetryStream.Position := 0;
-						Result := NewCloud.Uploader.UploadStream(ExtractFileName(NewRealPath.Path), TargetPath, RetryStream, CLOUD_CONFLICT_STRICT, FileIdentity.Hash);
+						Result := NewCloud.Uploader.UploadStream(ExtractFileName(NewRealPath.Path), TargetPath, RetryStream, CLOUD_CONFLICT_STRICT, FileIdentity.Hash, OldRealPath.ToPath, NewRealPath.ToPath);
 					end;
 				finally
 					RetryStream.Free;

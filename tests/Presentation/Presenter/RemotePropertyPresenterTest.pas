@@ -206,7 +206,7 @@ type
 	public
 		function Download(RemotePath, LocalPath: WideString; var ResultHash: WideString; LogErrors: Boolean = True): Integer;
 		function GetSharedFileUrl(RemotePath: WideString; ShardType: WideString = SHARD_TYPE_DEFAULT): WideString;
-		function DownloadToStream(RemotePath: WideString; DestStream: TStream): Integer;
+		function DownloadToStream(RemotePath: WideString; DestStream: TStream; ProgressSourceName, ProgressTargetName: WideString): Integer;
 
 		property DownloadResult: Integer read FDownloadResult write FDownloadResult;
 		property DownloadedHash: WideString read FDownloadedHash write FDownloadedHash;
@@ -229,7 +229,7 @@ type
 	public
 		function Upload(LocalPath, RemotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; ChunkOverwriteMode: Integer = 0): Integer;
 		function AddFileByIdentity(FileIdentity: TCloudFileIdentity; RemotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; LogErrors: Boolean = True; LogSuccess: Boolean = False): Integer;
-		function UploadStream(FileName, RemotePath: WideString; FileStream: TStream; ConflictMode: WideString; KnownHash: WideString = ''): Integer;
+		function UploadStream(FileName, RemotePath: WideString; FileStream: TStream; ConflictMode, KnownHash, ProgressSourceName, ProgressTargetName: WideString): Integer;
 
 		property UploadResult: Integer read FUploadResult write FUploadResult;
 		property AddByIdentityResult: Integer read FAddByIdentityResult write FAddByIdentityResult;
@@ -761,7 +761,7 @@ begin
 	Result := FSharedFileUrl + RemotePath;
 end;
 
-function TMockDownloader.DownloadToStream(RemotePath: WideString; DestStream: TStream): Integer;
+function TMockDownloader.DownloadToStream(RemotePath: WideString; DestStream: TStream; ProgressSourceName, ProgressTargetName: WideString): Integer;
 begin
 	Result := FDownloadToStreamResult;
 end;
@@ -781,7 +781,7 @@ begin
 	Result := FAddByIdentityResult;
 end;
 
-function TMockUploader.UploadStream(FileName, RemotePath: WideString; FileStream: TStream; ConflictMode: WideString; KnownHash: WideString): Integer;
+function TMockUploader.UploadStream(FileName, RemotePath: WideString; FileStream: TStream; ConflictMode, KnownHash, ProgressSourceName, ProgressTargetName: WideString): Integer;
 begin
 	Inc(FUploadStreamCallCount);
 	Result := FUploadStreamResult;

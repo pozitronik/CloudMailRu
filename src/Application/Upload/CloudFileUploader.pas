@@ -57,8 +57,9 @@ type
 		function AddFileByIdentity(FileIdentity: TCloudFileIdentity; RemotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; LogErrors: Boolean = True; LogSuccess: Boolean = False): Integer;
 		{Upload from an arbitrary stream to cloud.
 			KnownHash skips redundant hash calculation and dedup when hash is already known.
+			ProgressSourceName/ProgressTargetName control the progress bar captions.
 			Returns FS_FILE_OK on success, or appropriate error code on failure.}
-		function UploadStream(FileName, RemotePath: WideString; FileStream: TStream; ConflictMode: WideString; KnownHash: WideString = ''): Integer;
+		function UploadStream(FileName, RemotePath: WideString; FileStream: TStream; ConflictMode, KnownHash, ProgressSourceName, ProgressTargetName: WideString): Integer;
 	end;
 
 	{File upload service - handles whole file and delegates chunked uploads}
@@ -94,7 +95,7 @@ type
 		{ICloudFileUploader}
 		function Upload(LocalPath, RemotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; ChunkOverwriteMode: Integer = 0): Integer;
 		function AddFileByIdentity(FileIdentity: TCloudFileIdentity; RemotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; LogErrors: Boolean = True; LogSuccess: Boolean = False): Integer;
-		function UploadStream(FileName, RemotePath: WideString; FileStream: TStream; ConflictMode: WideString; KnownHash: WideString = ''): Integer;
+		function UploadStream(FileName, RemotePath: WideString; FileStream: TStream; ConflictMode, KnownHash, ProgressSourceName, ProgressTargetName: WideString): Integer;
 	end;
 
 implementation
@@ -338,9 +339,9 @@ begin
 end;
 
 {Internal stream upload - delegates to PutFileStream}
-function TCloudFileUploader.UploadStream(FileName, RemotePath: WideString; FileStream: TStream; ConflictMode: WideString; KnownHash: WideString): Integer;
+function TCloudFileUploader.UploadStream(FileName, RemotePath: WideString; FileStream: TStream; ConflictMode, KnownHash, ProgressSourceName, ProgressTargetName: WideString): Integer;
 begin
-	FContext.GetHTTP.SetProgressNames(FileName, RemotePath);
+	FContext.GetHTTP.SetProgressNames(ProgressSourceName, ProgressTargetName);
 	Result := PutFileStream(FileName, RemotePath, FileStream, ConflictMode, KnownHash);
 end;
 
