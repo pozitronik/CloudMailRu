@@ -19,10 +19,6 @@ type
 		procedure SetPasswordChar(Value: Char);
 		function GetPassword: WideString;
 		procedure SetOkButtonEnabled(Value: Boolean);
-		procedure SetCheckboxVisible(Value: Boolean);
-		procedure SetCheckboxEnabled(Value: Boolean);
-		procedure SetCheckboxChecked(Value: Boolean);
-		function GetCheckboxChecked: Boolean;
 		procedure SetSkipButtonCaption(const Value: WideString);
 	end;
 
@@ -34,14 +30,13 @@ type
 		constructor Create(View: IAskEncryptionPasswordView);
 
 		{Initialize the dialog for encryption password entry}
-		procedure Initialize(Title, Text: WideString; UseTCPwdMngr, DisablePWDManagerCB: Boolean);
+		procedure Initialize(Title, Text: WideString);
 
 		{Called when password text changes - validates and enables/disables OK button}
 		procedure OnPasswordChanged(Password: WideString);
 
 		{Get dialog results}
 		function GetPassword: WideString;
-		function GetUseTCPwdMngr: Boolean;
 	end;
 
 implementation
@@ -54,15 +49,12 @@ begin
 	FView := View;
 end;
 
-procedure TAskEncryptionPasswordPresenter.Initialize(Title, Text: WideString; UseTCPwdMngr, DisablePWDManagerCB: Boolean);
+procedure TAskEncryptionPasswordPresenter.Initialize(Title, Text: WideString);
 begin
 	FView.SetCaption(Title);
 	FView.SetLabelText(Text);
 	FView.SetPasswordChar('*');
 	FView.SetOkButtonEnabled(False);
-	FView.SetCheckboxVisible(True);
-	FView.SetCheckboxEnabled(not DisablePWDManagerCB);
-	FView.SetCheckboxChecked(UseTCPwdMngr);
 	FView.SetSkipButtonCaption(DFM_ASKENC_BTN_SKIP);
 end;
 
@@ -74,11 +66,6 @@ end;
 function TAskEncryptionPasswordPresenter.GetPassword: WideString;
 begin
 	Result := FView.GetPassword;
-end;
-
-function TAskEncryptionPasswordPresenter.GetUseTCPwdMngr: Boolean;
-begin
-	Result := FView.GetCheckboxChecked;
 end;
 
 end.

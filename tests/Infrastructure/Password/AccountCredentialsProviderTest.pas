@@ -46,6 +46,7 @@ type
 	public
 		constructor Create;
 		function AskPassword(Title, Text: WideString; var Password: WideString; var UseTCPwdMngr: Boolean; DisablePWDManagerCB: Boolean; ParentWindow: HWND): Integer;
+		function AskEncryptionPassword(Title, Text: WideString; var Password: WideString; ParentWindow: HWND): Integer;
 		function AskAction(Title, Text: WideString; ActionsList: TDictionary<Int32, WideString>; ParentWindow: HWND): Integer;
 		property AskPasswordResult: Integer read FAskPasswordResult write FAskPasswordResult;
 		property ProvidedPassword: WideString read FProvidedPassword write FProvidedPassword;
@@ -109,6 +110,7 @@ uses
 	SysUtils,
 	WFXTypes,
 	Vcl.Controls,
+	System.UITypes,
 	SettingsConstants;
 
 {TMockPasswordManager}
@@ -156,6 +158,11 @@ begin
 	Result := FAskPasswordResult;
 	if Result = mrOk then
 		Password := FProvidedPassword;
+end;
+
+function TMockPasswordUI.AskEncryptionPassword(Title, Text: WideString; var Password: WideString; ParentWindow: HWND): Integer;
+begin
+	Result := mrNo;
 end;
 
 function TMockPasswordUI.AskAction(Title, Text: WideString; ActionsList: TDictionary<Int32, WideString>; ParentWindow: HWND): Integer;

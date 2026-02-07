@@ -30,7 +30,6 @@ type
 		function GetPasswordEdit: TEdit;
 		function GetOkButton: TButton;
 		function GetSkipButton: TButton;
-		function GetCheckbox: TCheckBox;
 		function GetLabel: TLabel;
 
 		{Expose event handlers for direct testing}
@@ -75,28 +74,6 @@ type
 		procedure SetOkButtonEnabled_True_EnablesButton;
 		[Test]
 		procedure SetOkButtonEnabled_False_DisablesButton;
-
-		{IAskEncryptionPasswordView - SetCheckboxVisible}
-		[Test]
-		procedure SetCheckboxVisible_True_ShowsCheckbox;
-		[Test]
-		procedure SetCheckboxVisible_False_HidesCheckbox;
-
-		{IAskEncryptionPasswordView - SetCheckboxEnabled}
-		[Test]
-		procedure SetCheckboxEnabled_True_EnablesCheckbox;
-		[Test]
-		procedure SetCheckboxEnabled_False_DisablesCheckbox;
-
-		{IAskEncryptionPasswordView - SetCheckboxChecked}
-		[Test]
-		procedure SetCheckboxChecked_True_ChecksBox;
-		[Test]
-		procedure SetCheckboxChecked_False_UnchecksBox;
-
-		{IAskEncryptionPasswordView - GetCheckboxChecked}
-		[Test]
-		procedure GetCheckboxChecked_ReturnsCheckedState;
 
 		{IAskEncryptionPasswordView - SetSkipButtonCaption}
 		[Test]
@@ -168,11 +145,6 @@ end;
 function TTestableAskEncryptionPasswordForm.GetSkipButton: TButton;
 begin
 	Result := SkipButton;
-end;
-
-function TTestableAskEncryptionPasswordForm.GetCheckbox: TCheckBox;
-begin
-	Result := UseTCPwdMngrCB;
 end;
 
 function TTestableAskEncryptionPasswordForm.GetLabel: TLabel;
@@ -283,77 +255,6 @@ begin
 	(FForm as IAskEncryptionPasswordView).SetOkButtonEnabled(False);
 
 	Assert.IsFalse(FForm.GetOkButton.Enabled);
-end;
-
-{SetCheckboxVisible tests}
-
-procedure TAskEncryptionPasswordFormTest.SetCheckboxVisible_True_ShowsCheckbox;
-begin
-	FForm.GetCheckbox.Visible := False;
-
-	(FForm as IAskEncryptionPasswordView).SetCheckboxVisible(True);
-
-	Assert.IsTrue(FForm.GetCheckbox.Visible);
-end;
-
-procedure TAskEncryptionPasswordFormTest.SetCheckboxVisible_False_HidesCheckbox;
-begin
-	FForm.GetCheckbox.Visible := True;
-
-	(FForm as IAskEncryptionPasswordView).SetCheckboxVisible(False);
-
-	Assert.IsFalse(FForm.GetCheckbox.Visible);
-end;
-
-{SetCheckboxEnabled tests}
-
-procedure TAskEncryptionPasswordFormTest.SetCheckboxEnabled_True_EnablesCheckbox;
-begin
-	FForm.GetCheckbox.Enabled := False;
-
-	(FForm as IAskEncryptionPasswordView).SetCheckboxEnabled(True);
-
-	Assert.IsTrue(FForm.GetCheckbox.Enabled);
-end;
-
-procedure TAskEncryptionPasswordFormTest.SetCheckboxEnabled_False_DisablesCheckbox;
-begin
-	FForm.GetCheckbox.Enabled := True;
-
-	(FForm as IAskEncryptionPasswordView).SetCheckboxEnabled(False);
-
-	Assert.IsFalse(FForm.GetCheckbox.Enabled);
-end;
-
-{SetCheckboxChecked tests}
-
-procedure TAskEncryptionPasswordFormTest.SetCheckboxChecked_True_ChecksBox;
-begin
-	FForm.GetCheckbox.Checked := False;
-
-	(FForm as IAskEncryptionPasswordView).SetCheckboxChecked(True);
-
-	Assert.IsTrue(FForm.GetCheckbox.Checked);
-end;
-
-procedure TAskEncryptionPasswordFormTest.SetCheckboxChecked_False_UnchecksBox;
-begin
-	FForm.GetCheckbox.Checked := True;
-
-	(FForm as IAskEncryptionPasswordView).SetCheckboxChecked(False);
-
-	Assert.IsFalse(FForm.GetCheckbox.Checked);
-end;
-
-{GetCheckboxChecked tests}
-
-procedure TAskEncryptionPasswordFormTest.GetCheckboxChecked_ReturnsCheckedState;
-begin
-	FForm.GetCheckbox.Checked := True;
-	Assert.IsTrue((FForm as IAskEncryptionPasswordView).GetCheckboxChecked);
-
-	FForm.GetCheckbox.Checked := False;
-	Assert.IsFalse((FForm as IAskEncryptionPasswordView).GetCheckboxChecked);
 end;
 
 {SetSkipButtonCaption tests}

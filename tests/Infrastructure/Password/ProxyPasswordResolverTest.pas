@@ -43,6 +43,7 @@ type
 	public
 		constructor Create(AskPasswordResult: Integer; const PasswordValue: WideString = '');
 		function AskPassword(Title, Text: WideString; var Password: WideString; var UseTCPwdMngr: Boolean; DisablePWDManagerCB: Boolean; ParentWindow: HWND): Integer;
+		function AskEncryptionPassword(Title, Text: WideString; var Password: WideString; ParentWindow: HWND): Integer;
 		function AskAction(Title, Text: WideString; ActionsList: TDictionary<Int32, WideString>; ParentWindow: HWND): Integer;
 	end;
 
@@ -108,6 +109,7 @@ uses
 	MockCloudHTTP,
 	CloudHTTP,
 	Vcl.Controls,
+	System.UITypes,
 	System.SysUtils;
 
 {TMockPasswordManagerForProxy}
@@ -146,6 +148,11 @@ function TMockPasswordUIForProxy.AskPassword(Title, Text: WideString; var Passwo
 begin
 	Password := FAskPasswordValue;
 	Result := FAskPasswordResult;
+end;
+
+function TMockPasswordUIForProxy.AskEncryptionPassword(Title, Text: WideString; var Password: WideString; ParentWindow: HWND): Integer;
+begin
+	Result := mrNo;
 end;
 
 function TMockPasswordUIForProxy.AskAction(Title, Text: WideString; ActionsList: TDictionary<Int32, WideString>; ParentWindow: HWND): Integer;

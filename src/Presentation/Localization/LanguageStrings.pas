@@ -389,6 +389,8 @@ var
 	DFM_ASK_LBL_PASSWORD: WideString;
 	DFM_ASK_BTN_OK: WideString;
 	DFM_ASK_CB_STORE_PWD: WideString;
+	{AskEncryptionPassword form}
+	DFM_ASKENC_BTN_SKIP: WideString;
 	{DeletedProperty form}
 	DFM_DEL_LBL_NAME: WideString;
 	DFM_DEL_LBL_FROM: WideString;
@@ -833,6 +835,8 @@ begin
 	DFM_ASK_LBL_PASSWORD := 'Enter account password:';
 	DFM_ASK_BTN_OK := 'OK';
 	DFM_ASK_CB_STORE_PWD := 'Store password in TC password manager';
+	{AskEncryptionPassword form}
+	DFM_ASKENC_BTN_SKIP := 'No encryption this time';
 	{DeletedProperty form}
 	DFM_DEL_LBL_NAME := 'Name:';
 	DFM_DEL_LBL_FROM := 'Deleted from:';
@@ -1262,6 +1266,7 @@ begin
 	TranslationRegistry.Add('DFM_ASK_LBL_PASSWORD', @DFM_ASK_LBL_PASSWORD);
 	TranslationRegistry.Add('DFM_ASK_BTN_OK', @DFM_ASK_BTN_OK);
 	TranslationRegistry.Add('DFM_ASK_CB_STORE_PWD', @DFM_ASK_CB_STORE_PWD);
+	TranslationRegistry.Add('DFM_ASKENC_BTN_SKIP', @DFM_ASKENC_BTN_SKIP);
 	TranslationRegistry.Add('DFM_DEL_LBL_NAME', @DFM_DEL_LBL_NAME);
 	TranslationRegistry.Add('DFM_DEL_LBL_FROM', @DFM_DEL_LBL_FROM);
 	TranslationRegistry.Add('DFM_DEL_LBL_AT', @DFM_DEL_LBL_AT);

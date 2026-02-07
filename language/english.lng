@@ -353,6 +353,8 @@ DFM_ASK_FORM_TITLE="Password"
 DFM_ASK_LBL_PASSWORD="Enter account password:"
 DFM_ASK_BTN_OK="OK"
 DFM_ASK_CB_STORE_PWD="Store password in TC password manager"
+# AskEncryptionPassword form
+DFM_ASKENC_BTN_SKIP="No encryption this time"
 # DeletedProperty form
 DFM_DEL_LBL_NAME="Name:"
 DFM_DEL_LBL_FROM="Deleted from:"

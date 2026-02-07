@@ -30,6 +30,14 @@ type
 		procedure TestAskPasswordDoesNotModifyUseTCPwdMngr;
 
 		[Test]
+		{Verifies AskEncryptionPassword returns mrNo (skip encryption)}
+		procedure TestAskEncryptionPasswordReturnsMrNo;
+
+		[Test]
+		{Verifies AskEncryptionPassword does not modify Password parameter}
+		procedure TestAskEncryptionPasswordDoesNotModifyPassword;
+
+		[Test]
 		{Verifies AskAction returns mrCancel}
 		procedure TestAskActionReturnsMrCancel;
 
@@ -92,6 +100,33 @@ begin
 	Provider.AskPassword('Title', 'Text', Password, UseTC, False, 0);
 
 	Assert.IsTrue(UseTC, 'UseTCPwdMngr should not be modified on cancel');
+end;
+
+procedure TNullPasswordUIProviderTest.TestAskEncryptionPasswordReturnsMrNo;
+var
+	Provider: IPasswordUIProvider;
+	Password: WideString;
+	Result: Integer;
+begin
+	Provider := TNullPasswordUIProvider.Create;
+	Password := '';
+
+	Result := Provider.AskEncryptionPassword('Title', 'Text', Password, 0);
+
+	Assert.AreEqual(mrNo, Result);
+end;
+
+procedure TNullPasswordUIProviderTest.TestAskEncryptionPasswordDoesNotModifyPassword;
+var
+	Provider: IPasswordUIProvider;
+	Password: WideString;
+begin
+	Provider := TNullPasswordUIProvider.Create;
+	Password := 'original_password';
+
+	Provider.AskEncryptionPassword('Title', 'Text', Password, 0);
+
+	Assert.AreEqual('original_password', Password, 'Password should not be modified on skip');
 end;
 
 procedure TNullPasswordUIProviderTest.TestAskActionReturnsMrCancel;

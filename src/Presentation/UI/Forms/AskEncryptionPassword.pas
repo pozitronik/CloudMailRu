@@ -27,7 +27,6 @@ type
 		PasswordEdit: TEdit;
 		OkButton: TButton;
 		SkipButton: TButton;
-		UseTCPwdMngrCB: TCheckBox;
 
 		procedure PasswordEditChange(Sender: TObject);
 		procedure FormShow(Sender: TObject);
@@ -42,15 +41,11 @@ type
 		procedure SetPasswordChar(Value: Char);
 		function GetPassword: WideString;
 		procedure SetOkButtonEnabled(Value: Boolean);
-		procedure SetCheckboxVisible(Value: Boolean);
-		procedure SetCheckboxEnabled(Value: Boolean);
-		procedure SetCheckboxChecked(Value: Boolean);
-		function GetCheckboxChecked: Boolean;
 		procedure SetSkipButtonCaption(const Value: WideString);
 		procedure UpdateFormCaptions;
 	public
 		destructor Destroy; override;
-		class function AskEncryptionPassword(Title, Text: WideString; var Password: WideString; var UseTCPwdMngr: Boolean; DisablePWDManagerCB: Boolean; ParentWindow: HWND): Integer;
+		class function AskEncryptionPassword(Title, Text: WideString; var Password: WideString; ParentWindow: HWND): Integer;
 	end;
 
 implementation
@@ -84,26 +79,6 @@ begin
 	OkButton.Enabled := Value;
 end;
 
-procedure TAskEncryptionPasswordForm.SetCheckboxVisible(Value: Boolean);
-begin
-	UseTCPwdMngrCB.Visible := Value;
-end;
-
-procedure TAskEncryptionPasswordForm.SetCheckboxEnabled(Value: Boolean);
-begin
-	UseTCPwdMngrCB.Enabled := Value;
-end;
-
-procedure TAskEncryptionPasswordForm.SetCheckboxChecked(Value: Boolean);
-begin
-	UseTCPwdMngrCB.Checked := Value;
-end;
-
-function TAskEncryptionPasswordForm.GetCheckboxChecked: Boolean;
-begin
-	Result := UseTCPwdMngrCB.Checked;
-end;
-
 procedure TAskEncryptionPasswordForm.SetSkipButtonCaption(const Value: WideString);
 begin
 	SkipButton.Caption := Value;
@@ -112,7 +87,6 @@ end;
 procedure TAskEncryptionPasswordForm.UpdateFormCaptions;
 begin
 	OkButton.Caption := DFM_ASK_BTN_OK;
-	UseTCPwdMngrCB.Caption := DFM_ASK_CB_STORE_PWD;
 	SkipButton.Caption := DFM_ASKENC_BTN_SKIP;
 end;
 
@@ -124,7 +98,7 @@ begin
 	inherited;
 end;
 
-class function TAskEncryptionPasswordForm.AskEncryptionPassword(Title, Text: WideString; var Password: WideString; var UseTCPwdMngr: Boolean; DisablePWDManagerCB: Boolean; ParentWindow: HWND): Integer;
+class function TAskEncryptionPasswordForm.AskEncryptionPassword(Title, Text: WideString; var Password: WideString; ParentWindow: HWND): Integer;
 var
 	Form: TAskEncryptionPasswordForm;
 begin
@@ -133,14 +107,11 @@ begin
 		Form.ParentWindow := ParentWindow;
 		Form.UpdateFormCaptions;
 		Form.FPresenter := TAskEncryptionPasswordPresenter.Create(Form);
-		Form.FPresenter.Initialize(Title, Text, UseTCPwdMngr, DisablePWDManagerCB);
+		Form.FPresenter.Initialize(Title, Text);
 
 		Result := Form.ShowModal;
 		if Result = mrOk then
-		begin
 			Password := Form.FPresenter.GetPassword;
-			UseTCPwdMngr := Form.FPresenter.GetUseTCPwdMngr;
-		end;
 	finally
 		FreeAndNil(Form);
 	end;

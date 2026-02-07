@@ -349,6 +349,8 @@ DFM_ASK_FORM_TITLE="Пароль"
 DFM_ASK_LBL_PASSWORD="Введите пароль аккаунта:"
 DFM_ASK_BTN_OK="OK"
 DFM_ASK_CB_STORE_PWD="Хранить пароль в менеджере паролей TC"
+# Форма пароля шифрования
+DFM_ASKENC_BTN_SKIP="Не шифровать"
 # Форма удалённых элементов
 DFM_DEL_LBL_NAME="Имя:"
 DFM_DEL_LBL_FROM="Удалено из:"

@@ -74,7 +74,9 @@ type
 		property LastLogString: WideString read FLastLogString;
 	end;
 
-	{Mock password UI returning configurable AskPassword/AskAction results}
+	{Mock password UI returning configurable AskPassword/AskEncryptionPassword/AskAction results.
+		AskEncryptionPassword delegates to the same fields as AskPassword since
+		FileEncryptionResolver now calls AskEncryptionPassword instead of AskPassword.}
 	TMockPasswordUIForEncrypt = class(TInterfacedObject, IPasswordUIProvider)
 	private
 		FAskPasswordResult: Integer;
@@ -83,6 +85,7 @@ type
 	public
 		constructor Create(AskPasswordResult: Integer; const PasswordValue: WideString = '');
 		function AskPassword(Title, Text: WideString; var Password: WideString; var UseTCPwdMngr: Boolean; DisablePWDManagerCB: Boolean; ParentWindow: HWND): Integer;
+		function AskEncryptionPassword(Title, Text: WideString; var Password: WideString; ParentWindow: HWND): Integer;
 		function AskAction(Title, Text: WideString; ActionsList: TDictionary<Int32, WideString>; ParentWindow: HWND): Integer;
 		property AskActionResult: Integer read FAskActionResult write FAskActionResult;
 	end;
@@ -288,6 +291,12 @@ begin
 end;
 
 function TMockPasswordUIForEncrypt.AskPassword(Title, Text: WideString; var Password: WideString; var UseTCPwdMngr: Boolean; DisablePWDManagerCB: Boolean; ParentWindow: HWND): Integer;
+begin
+	Password := FAskPasswordValue;
+	Result := FAskPasswordResult;
+end;
+
+function TMockPasswordUIForEncrypt.AskEncryptionPassword(Title, Text: WideString; var Password: WideString; ParentWindow: HWND): Integer;
 begin
 	Password := FAskPasswordValue;
 	Result := FAskPasswordResult;

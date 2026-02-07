@@ -44,23 +44,15 @@ object AskEncryptionPasswordForm: TAskEncryptionPasswordForm
     Caption = 'OK'
     Enabled = False
     ModalResult = 1
-    TabOrder = 2
+    TabOrder = 1
   end
   object SkipButton: TButton
-    Left = 178
+    Left = 7
     Top = 54
     Width = 168
     Height = 25
     Caption = 'No encryption this time'
     ModalResult = 7
-    TabOrder = 3
-  end
-  object UseTCPwdMngrCB: TCheckBox
-    Left = 7
-    Top = 58
-    Width = 165
-    Height = 17
-    Caption = 'Store password in TC password manager'
-    TabOrder = 1
+    TabOrder = 2
   end
 end

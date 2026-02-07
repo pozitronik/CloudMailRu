@@ -117,10 +117,8 @@ end;
 function TFileEncryptionResolver.InitCloudCryptPasswords(const ConnectionName: WideString; var CloudSettings: TCloudSettings): Boolean;
 var
 	crypt_id: WideString;
-	StorePassword: Boolean;
 begin
 	Result := True;
-	StorePassword := False;
 
 	{INI storage: password loaded from account settings}
 	if CryptPasswordStorageIniFile = CloudSettings.AccountSettings.CryptPasswordStorage then
@@ -146,8 +144,8 @@ begin
 		end;
 	end;
 
-	{No storage or TC fallback: ask user}
-	if mrOk <> FPasswordUI.AskPassword(Format(ASK_ENCRYPTION_PASSWORD, [ConnectionName]), PREFIX_ASK_ENCRYPTION_PASSWORD, CloudSettings.CryptFilesPassword, StorePassword, True, FTCHandler.FindTCWindow) then
+	{No storage or TC fallback: ask user via dedicated encryption dialog}
+	if mrOk <> FPasswordUI.AskEncryptionPassword(Format(ASK_ENCRYPTION_PASSWORD, [ConnectionName]), PREFIX_ASK_ENCRYPTION_PASSWORD, CloudSettings.CryptFilesPassword, FTCHandler.FindTCWindow) then
 		Result := False;
 end;
 

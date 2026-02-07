@@ -201,6 +201,9 @@
         <DCCReference Include="src\Presentation\UI\Forms\AskPassword.pas">
             <Form>AskPasswordForm</Form>
         </DCCReference>
+        <DCCReference Include="src\Presentation\UI\Forms\AskEncryptionPassword.pas">
+            <Form>AskEncryptionPasswordForm</Form>
+        </DCCReference>
         <DCCReference Include="src\Domain\Constants\CloudConstants.pas"/>
         <DCCReference Include="src\Domain\ValueObjects\CloudDirItem.pas"/>
         <DCCReference Include="src\Domain\Utils\DateTimeUtils.pas"/>
@@ -357,6 +360,7 @@
         <DCCReference Include="src\Presentation\Presenter\InvitePropertyPresenter.pas"/>
         <DCCReference Include="src\Presentation\Presenter\DeletedPropertyPresenter.pas"/>
         <DCCReference Include="src\Presentation\Presenter\AskPasswordPresenter.pas"/>
+        <DCCReference Include="src\Presentation\Presenter\AskEncryptionPasswordPresenter.pas"/>
         <DCCReference Include="src\Infrastructure\OpenSSL\OpenSSLProvider.pas"/>
         <DCCReference Include="src\Infrastructure\Password\AccountCredentialsProvider.pas"/>
         <DCCReference Include="src\Infrastructure\Password\FileEncryptionResolver.pas"/>
