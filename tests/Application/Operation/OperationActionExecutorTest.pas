@@ -54,6 +54,7 @@ type
 	private
 		FExecutor: IOperationActionExecutor;
 		FThreadState: IThreadStateManager;
+		FConcreteState: TThreadStateManager;
 		FSettings: TMockSettingsManager;
 		FLogger: TMockLogger;
 
@@ -214,7 +215,8 @@ end;
 
 procedure TOperationActionExecutorTest.Setup;
 begin
-	FThreadState := TThreadStateManager.Create;
+	FConcreteState := TThreadStateManager.Create;
+	FThreadState := FConcreteState;
 	FSettings := TMockSettingsManager.Create;
 	FLogger := TMockLogger.Create;
 end;
@@ -424,12 +426,12 @@ var
 	Actions: TOperationActions;
 begin
 	CreateExecutor;
-	Assert.AreEqual(0, FThreadState.GetBackgroundJobsCount('testaccount'), 'Precondition: count should be 0');
+	Assert.AreEqual(0, FConcreteState.GetBackgroundJobsCount('testaccount'), 'Precondition: count should be 0');
 
 	Actions := [oaIncrementBackgroundJobs];
 	FExecutor.Execute(Actions, CreatePath('testaccount', '/'), 0);
 
-	Assert.AreEqual(1, FThreadState.GetBackgroundJobsCount('testaccount'), 'Count should be incremented');
+	Assert.AreEqual(1, FConcreteState.GetBackgroundJobsCount('testaccount'), 'Count should be incremented');
 end;
 
 procedure TOperationActionExecutorTest.TestExecute_DecrementBackgroundJobs_DecrementsForAccount;
@@ -439,12 +441,12 @@ begin
 	CreateExecutor;
 	FThreadState.IncrementBackgroundJobs('testaccount');
 	FThreadState.IncrementBackgroundJobs('testaccount');
-	Assert.AreEqual(2, FThreadState.GetBackgroundJobsCount('testaccount'), 'Precondition: count should be 2');
+	Assert.AreEqual(2, FConcreteState.GetBackgroundJobsCount('testaccount'), 'Precondition: count should be 2');
 
 	Actions := [oaDecrementBackgroundJobs];
 	FExecutor.Execute(Actions, CreatePath('testaccount', '/'), 0);
 
-	Assert.AreEqual(1, FThreadState.GetBackgroundJobsCount('testaccount'), 'Count should be decremented');
+	Assert.AreEqual(1, FConcreteState.GetBackgroundJobsCount('testaccount'), 'Count should be decremented');
 end;
 
 {Background thread tests}
@@ -458,7 +460,7 @@ begin
 	Actions := [oaSetBackgroundThreadStatus];
 	FExecutor.Execute(Actions, CreatePath('test', '/'), 42);
 
-	Assert.AreEqual(42, FThreadState.GetBackgroundThreadStatus, 'Operation should be stored');
+	Assert.AreEqual(42, FConcreteState.GetBackgroundThreadStatus, 'Operation should be stored');
 end;
 
 procedure TOperationActionExecutorTest.TestExecute_RemoveBackgroundThread_RemovesThread;
@@ -467,12 +469,12 @@ var
 begin
 	CreateExecutor;
 	FThreadState.SetBackgroundThreadStatus(99);
-	Assert.AreEqual(99, FThreadState.GetBackgroundThreadStatus, 'Precondition: status should be set');
+	Assert.AreEqual(99, FConcreteState.GetBackgroundThreadStatus, 'Precondition: status should be set');
 
 	Actions := [oaRemoveBackgroundThread];
 	FExecutor.Execute(Actions, CreatePath('test', '/'), 0);
 
-	Assert.AreEqual(0, FThreadState.GetBackgroundThreadStatus, 'Status should be removed (returns 0)');
+	Assert.AreEqual(0, FConcreteState.GetBackgroundThreadStatus, 'Status should be removed (returns 0)');
 end;
 
 {Warning action tests}
@@ -529,7 +531,7 @@ begin
 	Assert.AreEqual(1, FThreadState.GetRetryCountUpload, 'Upload counter should be unchanged');
 	Assert.IsTrue(FThreadState.GetSkipListDelete, 'Skip delete flag should be set');
 	Assert.IsTrue(FThreadState.GetCanAbortRenMov, 'Abort flag should be set');
-	Assert.AreEqual(1, FThreadState.GetBackgroundJobsCount('account1'), 'Background jobs should be incremented');
+	Assert.AreEqual(1, FConcreteState.GetBackgroundJobsCount('account1'), 'Background jobs should be incremented');
 end;
 
 initialization

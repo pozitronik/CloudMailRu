@@ -41,21 +41,17 @@ type
 		function GetCanAbortRenMov: Boolean;
 		procedure SetCanAbortRenMov(Value: Boolean);
 		function GetRetryCountDownload: Integer;
-		procedure SetRetryCountDownload(Value: Integer);
 		procedure IncrementRetryCountDownload;
 		procedure ResetRetryCountDownload;
 		function GetRetryCountUpload: Integer;
-		procedure SetRetryCountUpload(Value: Integer);
 		procedure IncrementRetryCountUpload;
 		procedure ResetRetryCountUpload;
 		function GetRetryCountRenMov: Integer;
-		procedure SetRetryCountRenMov(Value: Integer);
 		procedure IncrementRetryCountRenMov;
 		procedure ResetRetryCountRenMov;
 		function GetFsStatusInfo: Integer;
 		procedure SetFsStatusInfo(Value: Integer);
 		procedure RemoveFsStatusInfo;
-		function GetBackgroundThreadStatus: Integer;
 		procedure SetBackgroundThreadStatus(Value: Integer);
 		procedure RemoveBackgroundThread;
 		function HasRemoveDirSkippedPath: Boolean;
@@ -63,13 +59,9 @@ type
 		procedure RemoveSkippedPath(const Path: WideString);
 		procedure CreateRemoveDirSkippedPath;
 		procedure ClearRemoveDirSkippedPath;
-		function GetRemoveDirSkippedPath: TStringList;
-		function GetBackgroundJobsCount(const Account: WideString): Integer;
 		procedure IncrementBackgroundJobs(const Account: WideString);
 		procedure DecrementBackgroundJobs(const Account: WideString);
 		function HasActiveBackgroundJobs(const Account: WideString): Boolean;
-		function HasFsStatusInfo: Boolean;
-		function HasBackgroundThread: Boolean;
 		function HasAnyActiveOperations: Boolean;
 	end;
 
@@ -169,21 +161,17 @@ procedure TMockThreadStateForDeletion.SetSkipListRenMov(Value: Boolean); begin e
 function TMockThreadStateForDeletion.GetCanAbortRenMov: Boolean; begin Result := False; end;
 procedure TMockThreadStateForDeletion.SetCanAbortRenMov(Value: Boolean); begin end;
 function TMockThreadStateForDeletion.GetRetryCountDownload: Integer; begin Result := 0; end;
-procedure TMockThreadStateForDeletion.SetRetryCountDownload(Value: Integer); begin end;
 procedure TMockThreadStateForDeletion.IncrementRetryCountDownload; begin end;
 procedure TMockThreadStateForDeletion.ResetRetryCountDownload; begin end;
 function TMockThreadStateForDeletion.GetRetryCountUpload: Integer; begin Result := 0; end;
-procedure TMockThreadStateForDeletion.SetRetryCountUpload(Value: Integer); begin end;
 procedure TMockThreadStateForDeletion.IncrementRetryCountUpload; begin end;
 procedure TMockThreadStateForDeletion.ResetRetryCountUpload; begin end;
 function TMockThreadStateForDeletion.GetRetryCountRenMov: Integer; begin Result := 0; end;
-procedure TMockThreadStateForDeletion.SetRetryCountRenMov(Value: Integer); begin end;
 procedure TMockThreadStateForDeletion.IncrementRetryCountRenMov; begin end;
 procedure TMockThreadStateForDeletion.ResetRetryCountRenMov; begin end;
 function TMockThreadStateForDeletion.GetFsStatusInfo: Integer; begin Result := 0; end;
 procedure TMockThreadStateForDeletion.SetFsStatusInfo(Value: Integer); begin end;
 procedure TMockThreadStateForDeletion.RemoveFsStatusInfo; begin end;
-function TMockThreadStateForDeletion.GetBackgroundThreadStatus: Integer; begin Result := 0; end;
 procedure TMockThreadStateForDeletion.SetBackgroundThreadStatus(Value: Integer); begin end;
 procedure TMockThreadStateForDeletion.RemoveBackgroundThread; begin end;
 function TMockThreadStateForDeletion.HasRemoveDirSkippedPath: Boolean; begin Result := False; end;
@@ -191,13 +179,9 @@ procedure TMockThreadStateForDeletion.AddSkippedPath(const Path: WideString); be
 procedure TMockThreadStateForDeletion.RemoveSkippedPath(const Path: WideString); begin end;
 procedure TMockThreadStateForDeletion.CreateRemoveDirSkippedPath; begin end;
 procedure TMockThreadStateForDeletion.ClearRemoveDirSkippedPath; begin end;
-function TMockThreadStateForDeletion.GetRemoveDirSkippedPath: TStringList; begin Result := nil; end;
-function TMockThreadStateForDeletion.GetBackgroundJobsCount(const Account: WideString): Integer; begin Result := 0; end;
 procedure TMockThreadStateForDeletion.IncrementBackgroundJobs(const Account: WideString); begin end;
 procedure TMockThreadStateForDeletion.DecrementBackgroundJobs(const Account: WideString); begin end;
 function TMockThreadStateForDeletion.HasActiveBackgroundJobs(const Account: WideString): Boolean; begin Result := False; end;
-function TMockThreadStateForDeletion.HasFsStatusInfo: Boolean; begin Result := False; end;
-function TMockThreadStateForDeletion.HasBackgroundThread: Boolean; begin Result := False; end;
 function TMockThreadStateForDeletion.HasAnyActiveOperations: Boolean; begin Result := False; end;
 
 {TDirectoryDeletionPreCheckTest}

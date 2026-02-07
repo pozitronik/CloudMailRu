@@ -11,7 +11,7 @@ type
 	[TestFixture]
 	TThreadStateManagerTest = class
 	private
-		FManager: IThreadStateManager;
+		FManager: TThreadStateManager;
 	public
 		[Setup]
 		procedure Setup;
@@ -133,7 +133,7 @@ end;
 
 procedure TThreadStateManagerTest.TearDown;
 begin
-	FManager := nil;
+	FManager.Free;
 end;
 
 { Boolean flag tests }

@@ -42,21 +42,17 @@ type
 
 		{Unused methods - minimal implementation}
 		function GetRetryCountDownload: Integer;
-		procedure SetRetryCountDownload(Value: Integer);
 		procedure IncrementRetryCountDownload;
 		procedure ResetRetryCountDownload;
 		function GetRetryCountUpload: Integer;
-		procedure SetRetryCountUpload(Value: Integer);
 		procedure IncrementRetryCountUpload;
 		procedure ResetRetryCountUpload;
 		function GetRetryCountRenMov: Integer;
-		procedure SetRetryCountRenMov(Value: Integer);
 		procedure IncrementRetryCountRenMov;
 		procedure ResetRetryCountRenMov;
 		function GetFsStatusInfo: Integer;
 		procedure SetFsStatusInfo(Value: Integer);
 		procedure RemoveFsStatusInfo;
-		function GetBackgroundThreadStatus: Integer;
 		procedure SetBackgroundThreadStatus(Value: Integer);
 		procedure RemoveBackgroundThread;
 		function HasRemoveDirSkippedPath: Boolean;
@@ -65,13 +61,9 @@ type
 		procedure RemoveSkippedPath(const Path: WideString);
 		procedure CreateRemoveDirSkippedPath;
 		procedure ClearRemoveDirSkippedPath;
-		function GetRemoveDirSkippedPath: TStringList;
-		function GetBackgroundJobsCount(const Account: WideString): Integer;
 		procedure IncrementBackgroundJobs(const Account: WideString);
 		procedure DecrementBackgroundJobs(const Account: WideString);
 		function HasActiveBackgroundJobs(const Account: WideString): Boolean;
-		function HasFsStatusInfo: Boolean;
-		function HasBackgroundThread: Boolean;
 		function HasAnyActiveOperations: Boolean;
 	end;
 
@@ -211,21 +203,17 @@ end;
 
 {Unused methods - minimal implementation}
 function TMockThreadState.GetRetryCountDownload: Integer; begin Result := 0; end;
-procedure TMockThreadState.SetRetryCountDownload(Value: Integer); begin end;
 procedure TMockThreadState.IncrementRetryCountDownload; begin end;
 procedure TMockThreadState.ResetRetryCountDownload; begin end;
 function TMockThreadState.GetRetryCountUpload: Integer; begin Result := 0; end;
-procedure TMockThreadState.SetRetryCountUpload(Value: Integer); begin end;
 procedure TMockThreadState.IncrementRetryCountUpload; begin end;
 procedure TMockThreadState.ResetRetryCountUpload; begin end;
 function TMockThreadState.GetRetryCountRenMov: Integer; begin Result := 0; end;
-procedure TMockThreadState.SetRetryCountRenMov(Value: Integer); begin end;
 procedure TMockThreadState.IncrementRetryCountRenMov; begin end;
 procedure TMockThreadState.ResetRetryCountRenMov; begin end;
 function TMockThreadState.GetFsStatusInfo: Integer; begin Result := 0; end;
 procedure TMockThreadState.SetFsStatusInfo(Value: Integer); begin end;
 procedure TMockThreadState.RemoveFsStatusInfo; begin end;
-function TMockThreadState.GetBackgroundThreadStatus: Integer; begin Result := 0; end;
 procedure TMockThreadState.SetBackgroundThreadStatus(Value: Integer); begin end;
 procedure TMockThreadState.RemoveBackgroundThread; begin end;
 function TMockThreadState.HasRemoveDirSkippedPath: Boolean; begin Result := False; end;
@@ -234,13 +222,9 @@ procedure TMockThreadState.AddSkippedPath(const Path: WideString); begin end;
 procedure TMockThreadState.RemoveSkippedPath(const Path: WideString); begin end;
 procedure TMockThreadState.CreateRemoveDirSkippedPath; begin end;
 procedure TMockThreadState.ClearRemoveDirSkippedPath; begin end;
-function TMockThreadState.GetBackgroundJobsCount(const Account: WideString): Integer; begin Result := 0; end;
 procedure TMockThreadState.IncrementBackgroundJobs(const Account: WideString); begin end;
 procedure TMockThreadState.DecrementBackgroundJobs(const Account: WideString); begin end;
 function TMockThreadState.HasActiveBackgroundJobs(const Account: WideString): Boolean; begin Result := False; end;
-function TMockThreadState.GetRemoveDirSkippedPath: TStringList; begin Result := nil; end;
-function TMockThreadState.HasFsStatusInfo: Boolean; begin Result := False; end;
-function TMockThreadState.HasBackgroundThread: Boolean; begin Result := False; end;
 function TMockThreadState.HasAnyActiveOperations: Boolean; begin Result := False; end;
 
 {TMockProgress}

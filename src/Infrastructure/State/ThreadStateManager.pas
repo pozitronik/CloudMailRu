@@ -35,17 +35,14 @@ type
 
 		{Retry counters - track retry attempts per operation type}
 		function GetRetryCountDownload: Int32;
-		procedure SetRetryCountDownload(Value: Int32);
 		procedure IncrementRetryCountDownload;
 		procedure ResetRetryCountDownload;
 
 		function GetRetryCountUpload: Int32;
-		procedure SetRetryCountUpload(Value: Int32);
 		procedure IncrementRetryCountUpload;
 		procedure ResetRetryCountUpload;
 
 		function GetRetryCountRenMov: Int32;
-		procedure SetRetryCountRenMov(Value: Int32);
 		procedure IncrementRetryCountRenMov;
 		procedure ResetRetryCountRenMov;
 
@@ -53,17 +50,13 @@ type
 		function GetFsStatusInfo: Int32;
 		procedure SetFsStatusInfo(Value: Int32);
 		procedure RemoveFsStatusInfo;
-		function HasFsStatusInfo: Boolean;
 
 		{Background thread tracking - track operation status per thread}
-		function GetBackgroundThreadStatus: Int32;
 		procedure SetBackgroundThreadStatus(Value: Int32);
 		procedure RemoveBackgroundThread;
-		function HasBackgroundThread: Boolean;
 
 		{Path blacklist - paths to skip during move operations (issue #168).
 			Ownership: TStringList created internally, caller should not free it.}
-		function GetRemoveDirSkippedPath: TStringList;
 		procedure CreateRemoveDirSkippedPath;
 		procedure ClearRemoveDirSkippedPath;
 		function HasRemoveDirSkippedPath: Boolean;
@@ -73,7 +66,6 @@ type
 
 		{Background jobs - track active jobs per account (keyed by account name, not thread ID).
 			Used to prevent connection pool cleanup while operations are in progress.}
-		function GetBackgroundJobsCount(const Account: WideString): Int32;
 		procedure IncrementBackgroundJobs(const Account: WideString);
 		procedure DecrementBackgroundJobs(const Account: WideString);
 		function HasActiveBackgroundJobs(const Account: WideString): Boolean;
