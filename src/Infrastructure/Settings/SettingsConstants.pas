@@ -54,10 +54,9 @@ const
 	INI_DIR_APPDATA = 1; {Use INI files only from %AppData%}
 	INI_DIR_AUTO = 2; {Plugin dir if writeable, else %AppData%}
 
-	EncryptModeNone = 0; {No encryption}
-	EncryptModeAlways = 1; {Transparent encryption}
-	EncryptModeAskOnce = 2; {Transparent encryption, password not stored}
-	{EncryptModeAskAlways = 3; not supporting unless needed}
+	CryptPasswordStorageNone = 0;       {Don't save -- ask each session}
+	CryptPasswordStorageTCPwdMngr = 1;  {TC Password Manager}
+	CryptPasswordStorageIniFile = 2;    {INI file (plaintext)}
 
 	{Hash calculator strategy selection - allows choosing between different SHA1 implementations}
 	HashStrategyAuto = 0; {Auto-select best available (BCrypt > OpenSSL > Delphi)}

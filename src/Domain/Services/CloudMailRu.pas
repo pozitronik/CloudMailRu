@@ -311,7 +311,7 @@ begin
 
 		{Use injected cipher for encryption operations (NullCipher when encryption disabled)}
 		FCipher := Cipher;
-		FDoCryptFiles := FSettings.AccountSettings.EncryptFilesMode <> EncryptModeNone;
+		FDoCryptFiles := FSettings.AccountSettings.EncryptFiles;
 
 		{Initialize file downloader service}
 		FDownloader := TCloudFileDownloader.Create(Self, FShardManager, FHashCalculator, FCipher, FFileSystem, FLogger, FProgress, FRequest, FDoCryptFiles);

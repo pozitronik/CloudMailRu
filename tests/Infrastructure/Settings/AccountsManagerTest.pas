@@ -92,6 +92,19 @@ type
 		{Verifies RenameAccount preserves shard and upload URL overrides}
 		procedure TestRenameAccount_PreservesOverrides;
 
+		[Test]
+		{Migration: old encrypt_files_mode=0 (None) -> EncryptFiles=False, CryptPasswordStorage=None}
+		procedure TestGetAccountSettings_MigratesOldEncryptFilesMode_None;
+		[Test]
+		{Migration: old encrypt_files_mode=1 (Always) -> EncryptFiles=True, CryptPasswordStorage=TCPwdMngr}
+		procedure TestGetAccountSettings_MigratesOldEncryptFilesMode_Always;
+		[Test]
+		{Migration: old encrypt_files_mode=2 (AskOnce) -> EncryptFiles=True, CryptPasswordStorage=None}
+		procedure TestGetAccountSettings_MigratesOldEncryptFilesMode_AskOnce;
+		[Test]
+		{Migration deletes old encrypt_files_mode key after migration}
+		procedure TestGetAccountSettings_MigrationDeletesOldKey;
+
 	end;
 
 	[TestFixture]
@@ -454,7 +467,8 @@ begin
 		Original.UseTCPasswordManager := True;
 		Original.UnlimitedFileSize := True;
 		Original.SplitLargeFiles := True;
-		Original.EncryptFilesMode := EncryptModeAlways;
+		Original.EncryptFiles := True;
+		Original.CryptPasswordStorage := CryptPasswordStorageTCPwdMngr;
 
 		TestAccountsManager.SetAccountSettings(Original);
 		TestAccountsManager.SetCryptedGUID('OLD_NAME', 'test-guid-value');
@@ -467,7 +481,8 @@ begin
 		Assert.IsTrue(Loaded.UseTCPasswordManager, 'UseTCPasswordManager should be preserved');
 		Assert.IsTrue(Loaded.UnlimitedFileSize, 'UnlimitedFileSize should be preserved');
 		Assert.IsTrue(Loaded.SplitLargeFiles, 'SplitLargeFiles should be preserved');
-		Assert.AreEqual(EncryptModeAlways, Loaded.EncryptFilesMode, 'EncryptFilesMode should be preserved');
+		Assert.IsTrue(Loaded.EncryptFiles, 'EncryptFiles should be preserved');
+		Assert.AreEqual(CryptPasswordStorageTCPwdMngr, Loaded.CryptPasswordStorage, 'CryptPasswordStorage should be preserved');
 		Assert.AreEqual('test-guid-value', Loaded.CryptedGUIDFiles, 'CryptedGUID should be preserved');
 	finally
 		TestAccountsManager.Free;
@@ -775,6 +790,93 @@ begin
 	AccountsManager := TNullAccountsManager.Create;
 	AccountsManager.RenameAccount('old', 'new');
 	Assert.Pass;
+end;
+
+{Migration tests: simulate old INI format with encrypt_files_mode key}
+
+procedure TAccountsManagerTest.TestGetAccountSettings_MigratesOldEncryptFilesMode_None;
+var
+	ConfigFile: IConfigFile;
+	TestAccountsManager: TAccountsManager;
+	Loaded: TAccountSettings;
+begin
+	ConfigFile := TMemoryConfigFile.Create;
+	ConfigFile.WriteString('MigrateNone', 'email', 'none@mail.ru');
+	ConfigFile.WriteInteger('MigrateNone', 'encrypt_files_mode', 0);
+
+	TestAccountsManager := TAccountsManager.Create(ConfigFile, TNullLogger.Create);
+	try
+		Loaded := TestAccountsManager.GetAccountSettings('MigrateNone');
+		Assert.IsFalse(Loaded.EncryptFiles, 'Mode 0 should migrate to EncryptFiles=False');
+		Assert.AreEqual(CryptPasswordStorageNone, Loaded.CryptPasswordStorage, 'Mode 0 should migrate to CryptPasswordStorage=None');
+	finally
+		TestAccountsManager.Free;
+	end;
+end;
+
+procedure TAccountsManagerTest.TestGetAccountSettings_MigratesOldEncryptFilesMode_Always;
+var
+	ConfigFile: IConfigFile;
+	TestAccountsManager: TAccountsManager;
+	Loaded: TAccountSettings;
+begin
+	ConfigFile := TMemoryConfigFile.Create;
+	ConfigFile.WriteString('MigrateAlways', 'email', 'always@mail.ru');
+	ConfigFile.WriteInteger('MigrateAlways', 'encrypt_files_mode', 1);
+
+	TestAccountsManager := TAccountsManager.Create(ConfigFile, TNullLogger.Create);
+	try
+		Loaded := TestAccountsManager.GetAccountSettings('MigrateAlways');
+		Assert.IsTrue(Loaded.EncryptFiles, 'Mode 1 should migrate to EncryptFiles=True');
+		Assert.AreEqual(CryptPasswordStorageTCPwdMngr, Loaded.CryptPasswordStorage, 'Mode 1 should migrate to CryptPasswordStorage=TCPwdMngr');
+	finally
+		TestAccountsManager.Free;
+	end;
+end;
+
+procedure TAccountsManagerTest.TestGetAccountSettings_MigratesOldEncryptFilesMode_AskOnce;
+var
+	ConfigFile: IConfigFile;
+	TestAccountsManager: TAccountsManager;
+	Loaded: TAccountSettings;
+begin
+	ConfigFile := TMemoryConfigFile.Create;
+	ConfigFile.WriteString('MigrateAskOnce', 'email', 'askonce@mail.ru');
+	ConfigFile.WriteInteger('MigrateAskOnce', 'encrypt_files_mode', 2);
+
+	TestAccountsManager := TAccountsManager.Create(ConfigFile, TNullLogger.Create);
+	try
+		Loaded := TestAccountsManager.GetAccountSettings('MigrateAskOnce');
+		Assert.IsTrue(Loaded.EncryptFiles, 'Mode 2 should migrate to EncryptFiles=True');
+		Assert.AreEqual(CryptPasswordStorageNone, Loaded.CryptPasswordStorage, 'Mode 2 should migrate to CryptPasswordStorage=None');
+	finally
+		TestAccountsManager.Free;
+	end;
+end;
+
+procedure TAccountsManagerTest.TestGetAccountSettings_MigrationDeletesOldKey;
+var
+	ConfigFile: IConfigFile;
+	TestAccountsManager: TAccountsManager;
+begin
+	ConfigFile := TMemoryConfigFile.Create;
+	ConfigFile.WriteString('MigrateDelete', 'email', 'del@mail.ru');
+	ConfigFile.WriteInteger('MigrateDelete', 'encrypt_files_mode', 1);
+
+	TestAccountsManager := TAccountsManager.Create(ConfigFile, TNullLogger.Create);
+	try
+		{First read triggers migration}
+		TestAccountsManager.GetAccountSettings('MigrateDelete');
+
+		{Old key should be gone, so reading it with sentinel returns -1}
+		Assert.AreEqual(-1, ConfigFile.ReadInteger('MigrateDelete', 'encrypt_files_mode', -1),
+			'Old encrypt_files_mode key should be deleted after migration');
+		{New keys should be present}
+		Assert.IsTrue(ConfigFile.ReadBool('MigrateDelete', 'encrypt_files', False),
+			'New encrypt_files key should be written');
+	finally
+		TestAccountsManager.Free;
+	end;
 end;
 
 initialization

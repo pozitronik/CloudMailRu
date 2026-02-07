@@ -3,7 +3,7 @@ object AccountsForm: TAccountsForm
   Top = 0
   BorderStyle = bsDialog
   Caption = 'Cloud Accounts'
-  ClientHeight = 474
+  ClientHeight = 496
   ClientWidth = 695
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -155,16 +155,17 @@ object AccountsForm: TAccountsForm
     Left = 0
     Top = 0
     Width = 695
-    Height = 474
+    Height = 496
     ActivePage = AccountsTab
     Align = alClient
     TabOrder = 0
+    ExplicitHeight = 474
     object AccountsTab: TTabSheet
       Caption = 'Accounts'
       ImageIndex = 5
       DesignSize = (
         687
-        446)
+        468)
       object AccountNameLabel: TLabel
         Left = 272
         Top = 4
@@ -184,14 +185,15 @@ object AccountsForm: TAccountsForm
         Left = 272
         Top = 140
         Width = 411
-        Height = 40
+        Height = 62
         Anchors = [akLeft, akTop, akRight, akBottom]
         BevelOuter = bvNone
         ShowCaption = False
         TabOrder = 9
+        ExplicitHeight = 40
         DesignSize = (
           411
-          40)
+          62)
         object PublicUrlLabel: TLabel
           Left = 0
           Top = 0
@@ -229,14 +231,14 @@ object AccountsForm: TAccountsForm
         Left = 272
         Top = 140
         Width = 411
-        Height = 272
+        Height = 294
         Anchors = [akLeft, akTop, akRight]
         BevelOuter = bvNone
         ShowCaption = False
         TabOrder = 7
         DesignSize = (
           411
-          272)
+          294)
         object EmailLabel: TLabel
           Left = 0
           Top = 0
@@ -263,7 +265,7 @@ object AccountsForm: TAccountsForm
         object PasswordEdit: TEdit
           Left = 0
           Top = 56
-          Width = 411
+          Width = 325
           Height = 21
           Anchors = [akLeft, akTop, akRight]
           PasswordChar = '*'
@@ -316,46 +318,40 @@ object AccountsForm: TAccountsForm
           Left = 0
           Top = 159
           Width = 411
-          Height = 113
+          Height = 135
           Align = alBottom
           Caption = 'Encryption'
           TabOrder = 5
           DesignSize = (
             411
-            113)
-          object EncryptFilesLabel: TLabel
+            135)
+          object CryptPasswordStorageLabel: TLabel
             Left = 8
-            Top = 20
-            Width = 100
+            Top = 40
+            Width = 86
             Height = 13
-            Caption = 'Encrypt/decrypt files'
+            Caption = 'Password storage'
           end
           object CipherProfileLabel: TLabel
             Left = 8
-            Top = 61
+            Top = 80
             Width = 94
             Height = 13
             Caption = 'Encryption backend'
           end
-          object EncryptFilesCombo: TComboBox
+          object EncryptFilesCB: TCheckBox
             Left = 8
-            Top = 36
+            Top = 17
             Width = 311
-            Height = 21
-            Style = csDropDownList
+            Height = 17
             Anchors = [akLeft, akTop, akRight]
-            ItemIndex = 0
+            Caption = 'Enable file encryption'
             TabOrder = 0
-            Text = 'No'
-            OnChange = EncryptFilesComboChange
-            Items.Strings = (
-              'No'
-              'Always'
-              'Ask once')
+            OnClick = EncryptFilesCBClick
           end
           object EncryptFilesPwdButton: TButton
             Left = 326
-            Top = 36
+            Top = 14
             Width = 80
             Height = 21
             Anchors = [akTop, akRight]
@@ -364,20 +360,36 @@ object AccountsForm: TAccountsForm
             TabOrder = 1
             OnClick = EncryptFilesPwdButtonClick
           end
-          object CipherProfileCombo: TComboBox
+          object CryptPasswordStorageCombo: TComboBox
             Left = 8
-            Top = 80
+            Top = 56
             Width = 398
             Height = 21
             Style = csDropDownList
             Anchors = [akLeft, akTop, akRight]
+            ItemIndex = 0
             TabOrder = 2
+            Text = 'Don'#39't save (ask each session)'
+            OnChange = CryptPasswordStorageComboChange
+            Items.Strings = (
+              'Don'#39't save (ask each session)'
+              'TC Password Manager'
+              'INI file (plaintext!)')
+          end
+          object CipherProfileCombo: TComboBox
+            Left = 8
+            Top = 99
+            Width = 398
+            Height = 21
+            Style = csDropDownList
+            Anchors = [akLeft, akTop, akRight]
+            TabOrder = 3
             OnChange = CipherProfileComboChange
           end
         end
         object TestAccountButton: TButton
           Left = 331
-          Top = 83
+          Top = 56
           Width = 80
           Height = 21
           Anchors = [akTop, akRight]
@@ -391,7 +403,7 @@ object AccountsForm: TAccountsForm
         Left = 4
         Top = 4
         Width = 262
-        Height = 408
+        Height = 430
         Anchors = [akLeft, akTop, akBottom]
         Columns = <
           item
@@ -412,26 +424,29 @@ object AccountsForm: TAccountsForm
         ViewStyle = vsReport
         OnKeyUp = AccountsListViewKeyUp
         OnSelectItem = AccountsListViewSelectItem
+        ExplicitHeight = 408
       end
       object AddButton: TButton
         Left = 4
-        Top = 417
+        Top = 439
         Width = 125
         Height = 25
         Anchors = [akLeft, akBottom]
         Caption = 'New'
         TabOrder = 1
         OnClick = AddButtonClick
+        ExplicitTop = 417
       end
       object DeleteButton: TButton
         Left = 141
-        Top = 417
+        Top = 439
         Width = 125
         Height = 25
         Anchors = [akLeft, akBottom]
         Caption = 'Delete'
         TabOrder = 2
         OnClick = DeleteButtonClick
+        ExplicitTop = 417
       end
       object AccountNameEdit: TEdit
         Left = 272
@@ -495,7 +510,7 @@ object AccountsForm: TAccountsForm
       end
       object ApplyButton: TButton
         Left = 559
-        Top = 417
+        Top = 439
         Width = 124
         Height = 25
         Anchors = [akRight, akBottom]
@@ -503,6 +518,7 @@ object AccountsForm: TAccountsForm
         Enabled = False
         TabOrder = 8
         OnClick = ApplyButtonClick
+        ExplicitTop = 417
       end
     end
     object GlobalTab: TTabSheet
@@ -510,7 +526,7 @@ object AccountsForm: TAccountsForm
       ImageIndex = 1
       DesignSize = (
         687
-        446)
+        468)
       object CloudMaxFileSizeLabelBytes: TLabel
         Left = 395
         Top = 250
@@ -609,7 +625,7 @@ object AccountsForm: TAccountsForm
       end
       object GlobalSettingsApplyBtn: TButton
         Left = 559
-        Top = 417
+        Top = 439
         Width = 124
         Height = 25
         Anchors = [akRight, akBottom]
@@ -865,7 +881,7 @@ object AccountsForm: TAccountsForm
       ImageIndex = 2
       DesignSize = (
         687
-        446)
+        468)
       object ProxyGB: TGroupBox
         Left = 0
         Top = 67
@@ -981,7 +997,7 @@ object AccountsForm: TAccountsForm
       end
       object NetworkSettingsApplyBtn: TButton
         Left = 559
-        Top = 417
+        Top = 439
         Width = 124
         Height = 25
         Anchors = [akRight, akBottom]
@@ -1140,10 +1156,10 @@ object AccountsForm: TAccountsForm
       ImageIndex = 3
       DesignSize = (
         687
-        446)
+        468)
       object CommentsSettingsApplyBtn: TButton
         Left = 559
-        Top = 417
+        Top = 439
         Width = 124
         Height = 25
         Anchors = [akRight, akBottom]
@@ -1326,7 +1342,7 @@ object AccountsForm: TAccountsForm
       ImageIndex = 4
       DesignSize = (
         687
-        446)
+        468)
       object ExtLabel: TLabel
         Left = 272
         Top = 4
@@ -1433,7 +1449,7 @@ object AccountsForm: TAccountsForm
       end
       object ApplyExtButton: TButton
         Left = 559
-        Top = 417
+        Top = 439
         Width = 124
         Height = 25
         Anchors = [akRight, akBottom]
@@ -1444,7 +1460,7 @@ object AccountsForm: TAccountsForm
       end
       object NewExtButton: TButton
         Left = 4
-        Top = 417
+        Top = 439
         Width = 125
         Height = 25
         Anchors = [akLeft, akBottom]
@@ -1454,7 +1470,7 @@ object AccountsForm: TAccountsForm
       end
       object DeleteExtButton: TButton
         Left = 141
-        Top = 417
+        Top = 439
         Width = 125
         Height = 25
         Anchors = [akLeft, akBottom]
@@ -1466,7 +1482,7 @@ object AccountsForm: TAccountsForm
         Left = 4
         Top = 4
         Width = 262
-        Height = 408
+        Height = 430
         Anchors = [akLeft, akTop, akBottom]
         Columns = <
           item
@@ -1490,7 +1506,7 @@ object AccountsForm: TAccountsForm
       ImageIndex = 6
       DesignSize = (
         687
-        446)
+        468)
       object ServerNameLabel: TLabel
         Left = 272
         Top = 4
@@ -1507,18 +1523,19 @@ object AccountsForm: TAccountsForm
       end
       object ServerStatusLabel: TLabel
         Left = 462
-        Top = 42
+        Top = 64
         Width = 221
         Height = 13
         Alignment = taRightJustify
         Anchors = [akLeft, akBottom]
         AutoSize = False
+        ExplicitTop = 42
       end
       object ServersListView: TListView
         Left = 4
         Top = 4
         Width = 262
-        Height = 408
+        Height = 430
         Anchors = [akLeft, akTop, akBottom]
         Columns = <
           item
@@ -1566,7 +1583,7 @@ object AccountsForm: TAccountsForm
       end
       object AddServerButton: TButton
         Left = 4
-        Top = 417
+        Top = 439
         Width = 125
         Height = 25
         Anchors = [akLeft, akBottom]
@@ -1576,7 +1593,7 @@ object AccountsForm: TAccountsForm
       end
       object DeleteServerButton: TButton
         Left = 141
-        Top = 417
+        Top = 439
         Width = 125
         Height = 25
         Anchors = [akLeft, akBottom]
@@ -1586,7 +1603,7 @@ object AccountsForm: TAccountsForm
       end
       object ApplyServerButton: TButton
         Left = 559
-        Top = 417
+        Top = 439
         Width = 124
         Height = 25
         Anchors = [akRight, akBottom]
@@ -1731,7 +1748,7 @@ object AccountsForm: TAccountsForm
       ImageIndex = 5
       DesignSize = (
         687
-        446)
+        468)
       object LanguageLabel: TLabel
         Left = 4
         Top = 3
@@ -1741,7 +1758,7 @@ object AccountsForm: TAccountsForm
       end
       object TranslationStatusLabel: TLabel
         Left = 16
-        Top = 338
+        Top = 360
         Width = 3
         Height = 13
         Anchors = [akLeft, akBottom]
@@ -1751,14 +1768,14 @@ object AccountsForm: TAccountsForm
         Left = 4
         Top = 26
         Width = 679
-        Height = 385
+        Height = 407
         Anchors = [akLeft, akTop, akRight, akBottom]
         ItemHeight = 13
         TabOrder = 0
       end
       object ApplyTranslationBtn: TButton
         Left = 559
-        Top = 417
+        Top = 439
         Width = 124
         Height = 25
         Anchors = [akRight, akBottom]

@@ -89,36 +89,31 @@ begin
 	Result := TNullCipher.Create;
 
 	{For non-encrypted accounts, skip password retrieval entirely}
-	if CloudSettings.AccountSettings.EncryptFilesMode = EncryptModeNone then
+	if not CloudSettings.AccountSettings.EncryptFiles then
 		Exit;
 
 	{User skipped password entry - proceed without encryption}
 	if not GetFilesPassword(ConnectionName, CloudSettings) then
 		Exit;
 
-	{Create cipher when encryption is enabled}
-	if CloudSettings.AccountSettings.EncryptFilesMode <> EncryptModeNone then
+	{Validate password before creating cipher - GUID check always uses legacy AES/SHA-1}
+	if (CloudSettings.AccountSettings.CryptedGUIDFiles <> EmptyWideStr) and
+		not FCipherValidator.CheckPasswordGUID(CloudSettings.CryptFilesPassword, CloudSettings.AccountSettings.CryptedGUIDFiles) then
 	begin
-		{Validate password before creating cipher - GUID check always uses legacy AES/SHA-1}
-		if (CloudSettings.AccountSettings.CryptedGUIDFiles <> EmptyWideStr) and
-			not FCipherValidator.CheckPasswordGUID(CloudSettings.CryptFilesPassword, CloudSettings.AccountSettings.CryptedGUIDFiles) then
-		begin
-			FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_WRONG_ENCRYPT_PASSWORD);
-		end
-		else
-		begin
-			{Resolve cipher profile -- empty or unknown falls back to legacy default}
-			if not TCipherProfileRegistry.FindById(CloudSettings.AccountSettings.CipherProfileId, Profile) then
-				Profile := TCipherProfileRegistry.GetDefaultProfile;
+		FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_WRONG_ENCRYPT_PASSWORD);
+	end
+	else
+	begin
+		{Resolve cipher profile -- empty or unknown falls back to legacy default}
+		if not TCipherProfileRegistry.FindById(CloudSettings.AccountSettings.CipherProfileId, Profile) then
+			Profile := TCipherProfileRegistry.GetDefaultProfile;
 
-			Result := Profile.CreateCipher(CloudSettings.CryptFilesPassword);
-		end;
+		Result := Profile.CreateCipher(CloudSettings.CryptFilesPassword);
 	end;
 end;
 
 {Depending on the account settings, initializes and retrieves the files encryption password.
-	The password retrieves from the TC passwords storage or user input. Returns true if password retrieved, false otherwise.
-	If file encryption is not enabled, immediately returns true.}
+	The password retrieves from INI, TC passwords storage or user input. Returns true if password retrieved, false otherwise.}
 function TFileEncryptionResolver.InitCloudCryptPasswords(const ConnectionName: WideString; var CloudSettings: TCloudSettings): Boolean;
 var
 	crypt_id: WideString;
@@ -126,30 +121,27 @@ var
 begin
 	Result := True;
 	StorePassword := False;
-	crypt_id := ConnectionName + PASSWORD_SUFFIX_FILECRYPT;
 
-	if EncryptModeAlways = CloudSettings.AccountSettings.EncryptFilesMode then {password must be taken from tc storage, otherwise ask user and store password}
+	{INI storage: password already loaded into CloudSettings by CreateFromSettings}
+	if CryptPasswordStorageIniFile = CloudSettings.AccountSettings.CryptPasswordStorage then
+		Exit(CloudSettings.CryptFilesPassword <> EmptyWideStr);
+
+	{TC Password Manager}
+	if CryptPasswordStorageTCPwdMngr = CloudSettings.AccountSettings.CryptPasswordStorage then
 	begin
+		crypt_id := ConnectionName + PASSWORD_SUFFIX_FILECRYPT;
 		case FPasswordManager.GetPassword(crypt_id, CloudSettings.CryptFilesPassword) of
 			FS_FILE_OK:
-				begin
-					exit(True);
-				end;
-			FS_FILE_READERROR: //password not found in store => act like EncryptModeAskOnce
-				begin
-					CloudSettings.AccountSettings.EncryptFilesMode := EncryptModeAskOnce;
-				end;
-			FS_FILE_NOTSUPPORTED: //user doesn't know master password
-				begin
-					exit(False);
-				end;
+				Exit(True);
+			FS_FILE_READERROR: ; {password not found in store => fall through to ask user}
+			FS_FILE_NOTSUPPORTED: {user doesn't know master password}
+				Exit(False);
 		end;
 	end;
-	if EncryptModeAskOnce = CloudSettings.AccountSettings.EncryptFilesMode then
-	begin
-		if mrOk <> FPasswordUI.AskPassword(Format(ASK_ENCRYPTION_PASSWORD, [ConnectionName]), PREFIX_ASK_ENCRYPTION_PASSWORD, CloudSettings.CryptFilesPassword, StorePassword, True, FTCHandler.FindTCWindow) then
-			Result := False
-	end;
+
+	{No storage or TC fallback: ask user}
+	if mrOk <> FPasswordUI.AskPassword(Format(ASK_ENCRYPTION_PASSWORD, [ConnectionName]), PREFIX_ASK_ENCRYPTION_PASSWORD, CloudSettings.CryptFilesPassword, StorePassword, True, FTCHandler.FindTCWindow) then
+		Result := False;
 end;
 
 {Prompts user when entered password doesn't match stored GUID.
@@ -188,7 +180,7 @@ function TFileEncryptionResolver.GetFilesPassword(const ConnectionName: WideStri
 var
 	PasswordValid: Boolean;
 begin
-	if CloudSettings.AccountSettings.EncryptFilesMode = EncryptModeNone then
+	if not CloudSettings.AccountSettings.EncryptFiles then
 		Exit(True);
 
 	repeat

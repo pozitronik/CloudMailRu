@@ -202,8 +202,11 @@ type
 		function GetIsPrivate: Boolean;
 		procedure SetPublicUrl(Value: WideString);
 		function GetPublicUrl: WideString;
-		procedure SetEncryptFilesMode(Value: Integer);
-		function GetEncryptFilesMode: Integer;
+		procedure SetEncryptFiles(Value: Boolean);
+		function GetEncryptFiles: Boolean;
+		procedure SetCryptPasswordStorage(Value: Integer);
+		function GetCryptPasswordStorage: Integer;
+		procedure SetCryptPasswordStorageEnabled(Value: Boolean);
 		procedure SetEncryptPasswordButtonEnabled(Value: Boolean);
 		procedure SetAccountsPanelVisible(Value: Boolean);
 		procedure SetSharesPanelVisible(Value: Boolean);
@@ -333,7 +336,7 @@ type
 		procedure RefreshAccountsList;
 		procedure LoadAccountToView(const AccountName: WideString);
 		procedure ClearAccountFields;
-		function EncryptionModeToLabel(Mode: Integer): WideString;
+		function EncryptionLabel(EncryptFiles: Boolean): WideString;
 		procedure SetDirty(Value: Boolean);
 		function SaveAccountFromView: Boolean;
 		procedure SelectAccountByName(const Name: WideString);
@@ -381,7 +384,8 @@ type
 		procedure OnDeleteAccountClick;
 		procedure OnApplyAccountClick;
 		procedure OnAccountTypeChanged;
-		procedure OnEncryptModeChanged;
+		procedure OnEncryptFilesChanged;
+		procedure OnCryptPasswordStorageChanged;
 		procedure OnEncryptPasswordClick;
 		procedure OnCipherProfileChanged;
 		procedure OnFieldChanged;
@@ -663,14 +667,12 @@ end;
 
 {Accounts tab helpers}
 
-function TAccountsPresenter.EncryptionModeToLabel(Mode: Integer): WideString;
+function TAccountsPresenter.EncryptionLabel(EncryptFiles: Boolean): WideString;
 begin
-	case Mode of
-		EncryptModeAlways: Result := DFM_LV_ENCRYPT_ALWAYS;
-		EncryptModeAskOnce: Result := DFM_LV_ENCRYPT_ASK;
+	if EncryptFiles then
+		Result := DFM_LV_ENCRYPT_YES
 	else
 		Result := DFM_LV_ENCRYPT_NO;
-	end;
 end;
 
 procedure TAccountsPresenter.RefreshAccountsList;
@@ -690,7 +692,7 @@ begin
 			Items[I].TypeLabel := DFM_RB_PUBLIC
 		else
 			Items[I].TypeLabel := DFM_RB_PRIVATE;
-		Items[I].EncryptionLabel := EncryptionModeToLabel(AccSettings.EncryptFilesMode);
+		Items[I].EncryptionLabel := EncryptionLabel(AccSettings.EncryptFiles);
 		if AccSettings.Server <> '' then
 			Items[I].ServerLabel := AccSettings.Server
 		else
@@ -718,7 +720,8 @@ begin
 		FView.SetUnlimitedFileSize(AccSettings.UnlimitedFilesize);
 		FView.SetSplitLargeFiles(AccSettings.SplitLargeFiles);
 		FView.SetPublicUrl(AccSettings.PublicUrl);
-		FView.SetEncryptFilesMode(AccSettings.EncryptFilesMode);
+		FView.SetEncryptFiles(AccSettings.EncryptFiles);
+		FView.SetCryptPasswordStorage(AccSettings.CryptPasswordStorage);
 		FView.SetCipherProfileIndex(CipherProfileIdToIndex(AccSettings.CipherProfileId));
 		FPreviousCipherProfileIndex := FView.GetCipherProfileIndex;
 
@@ -726,7 +729,7 @@ begin
 		FView.SetServerComboIndex(ServerNameToComboIndex(AccSettings.Server));
 
 		{Update encrypt controls state}
-		OnEncryptModeChanged;
+		OnEncryptFilesChanged;
 		{Update panels visibility}
 		OnAccountTypeChanged;
 	finally
@@ -757,10 +760,12 @@ begin
 		FView.SetUnlimitedFileSize(False);
 		FView.SetSplitLargeFiles(False);
 		FView.SetPublicUrl('');
-		FView.SetEncryptFilesMode(EncryptModeNone);
+		FView.SetEncryptFiles(False);
+		FView.SetCryptPasswordStorage(CryptPasswordStorageNone);
 		FView.SetCipherProfileIndex(0);
 		FPreviousCipherProfileIndex := 0;
 		FView.SetEncryptPasswordButtonEnabled(False);
+		FView.SetCryptPasswordStorageEnabled(False);
 		FView.SetCipherProfileEnabled(False);
 		FView.SetServerComboIndex(0);
 		OnAccountTypeChanged;
@@ -954,7 +959,8 @@ begin
 	AccSettings.UnlimitedFilesize := FView.GetUnlimitedFileSize;
 	AccSettings.SplitLargeFiles := FView.GetSplitLargeFiles;
 	AccSettings.PublicUrl := FView.GetPublicUrl;
-	AccSettings.EncryptFilesMode := FView.GetEncryptFilesMode;
+	AccSettings.EncryptFiles := FView.GetEncryptFiles;
+	AccSettings.CryptPasswordStorage := FView.GetCryptPasswordStorage;
 	AccSettings.CipherProfileId := IndexToCipherProfileId(FView.GetCipherProfileIndex);
 	AccSettings.Server := ComboIndexToServerName(FView.GetServerComboIndex);
 	AccSettings.AuthMethod := CLOUD_AUTH_METHOD_OAUTH_APP;
@@ -1109,10 +1115,19 @@ begin
 	OnFieldChanged;
 end;
 
-procedure TAccountsPresenter.OnEncryptModeChanged;
+procedure TAccountsPresenter.OnEncryptFilesChanged;
+var
+	IsEnabled: Boolean;
 begin
-	FView.SetEncryptPasswordButtonEnabled(FView.GetEncryptFilesMode = EncryptModeAlways);
-	FView.SetCipherProfileEnabled(FView.GetEncryptFilesMode <> EncryptModeNone);
+	IsEnabled := FView.GetEncryptFiles;
+	FView.SetEncryptPasswordButtonEnabled(IsEnabled);
+	FView.SetCryptPasswordStorageEnabled(IsEnabled);
+	FView.SetCipherProfileEnabled(IsEnabled);
+	OnFieldChanged;
+end;
+
+procedure TAccountsPresenter.OnCryptPasswordStorageChanged;
+begin
 	OnFieldChanged;
 end;
 

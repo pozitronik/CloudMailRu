@@ -232,12 +232,13 @@ begin
 	{Encryption settings}
 	if Encrypted and FConfig.HasEncryptionConfig then
 	begin
-		Result.AccountSettings.EncryptFilesMode := EncryptModeAlways;
+		Result.AccountSettings.EncryptFiles := True;
+		Result.AccountSettings.CryptPasswordStorage := CryptPasswordStorageTCPwdMngr;
 		Result.CryptFilesPassword := FConfig.EncryptionPassword;
 	end
 	else
 	begin
-		Result.AccountSettings.EncryptFilesMode := EncryptModeNone;
+		Result.AccountSettings.EncryptFiles := False;
 	end;
 
 	{Connection settings - use reasonable defaults}

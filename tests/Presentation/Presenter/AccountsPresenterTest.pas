@@ -108,7 +108,9 @@ type
 		FSplitLargeFiles: Boolean;
 		FIsPrivate: Boolean;
 		FPublicUrl: WideString;
-		FEncryptFilesMode: Integer;
+		FEncryptFiles: Boolean;
+		FCryptPasswordStorage: Integer;
+		FCryptPasswordStorageEnabled: Boolean;
 		FEncryptPasswordButtonEnabled: Boolean;
 		FAccountsPanelVisible: Boolean;
 		FSharesPanelVisible: Boolean;
@@ -317,8 +319,11 @@ type
 		function GetIsPrivate: Boolean;
 		procedure SetPublicUrl(Value: WideString);
 		function GetPublicUrl: WideString;
-		procedure SetEncryptFilesMode(Value: Integer);
-		function GetEncryptFilesMode: Integer;
+		procedure SetEncryptFiles(Value: Boolean);
+		function GetEncryptFiles: Boolean;
+		procedure SetCryptPasswordStorage(Value: Integer);
+		function GetCryptPasswordStorage: Integer;
+		procedure SetCryptPasswordStorageEnabled(Value: Boolean);
 		procedure SetEncryptPasswordButtonEnabled(Value: Boolean);
 		procedure SetAccountsPanelVisible(Value: Boolean);
 		procedure SetSharesPanelVisible(Value: Boolean);
@@ -590,11 +595,9 @@ type
 		[Test]
 		procedure TestOnAccountTypeChangedShowsPublicPanel;
 		[Test]
-		procedure TestOnEncryptModeChangedEnablesPasswordButton;
+		procedure TestOnEncryptFilesChangedEnablesControls;
 		[Test]
-		procedure TestOnEncryptModeChangedDisablesPasswordButton;
-		[Test]
-		procedure TestOnEncryptModeChangedWithAskOnce;
+		procedure TestOnEncryptFilesChangedDisablesControls;
 		[Test]
 		procedure TestOnEncryptPasswordClickSetsGUID;
 		[Test]
@@ -664,9 +667,9 @@ type
 		[Test]
 		procedure TestCipherProfileComboPopulatedOnInitialize;
 		[Test]
-		procedure TestCipherProfileDisabledWhenEncryptModeNone;
+		procedure TestCipherProfileDisabledWhenEncryptFilesOff;
 		[Test]
-		procedure TestCipherProfileEnabledWhenEncryptModeAlways;
+		procedure TestCipherProfileEnabledWhenEncryptFilesOn;
 		[Test]
 		procedure TestCipherProfileSavedOnApply;
 		[Test]
@@ -1452,14 +1455,29 @@ begin
 	Result := FPublicUrl;
 end;
 
-procedure TMockAccountsView.SetEncryptFilesMode(Value: Integer);
+procedure TMockAccountsView.SetEncryptFiles(Value: Boolean);
 begin
-	FEncryptFilesMode := Value;
+	FEncryptFiles := Value;
 end;
 
-function TMockAccountsView.GetEncryptFilesMode: Integer;
+function TMockAccountsView.GetEncryptFiles: Boolean;
 begin
-	Result := FEncryptFilesMode;
+	Result := FEncryptFiles;
+end;
+
+procedure TMockAccountsView.SetCryptPasswordStorage(Value: Integer);
+begin
+	FCryptPasswordStorage := Value;
+end;
+
+function TMockAccountsView.GetCryptPasswordStorage: Integer;
+begin
+	Result := FCryptPasswordStorage;
+end;
+
+procedure TMockAccountsView.SetCryptPasswordStorageEnabled(Value: Boolean);
+begin
+	FCryptPasswordStorageEnabled := Value;
 end;
 
 procedure TMockAccountsView.SetEncryptPasswordButtonEnabled(Value: Boolean);
@@ -2590,26 +2608,19 @@ begin
 	AccSettings := Default(TAccountSettings);
 	AccSettings.Account := 'NoEnc';
 	AccSettings.Email := 'no@mail.ru';
-	AccSettings.EncryptFilesMode := EncryptModeNone;
+	AccSettings.EncryptFiles := False;
 	FAccountsManager.SetAccountSettings(AccSettings);
 
 	AccSettings := Default(TAccountSettings);
-	AccSettings.Account := 'AlwaysEnc';
-	AccSettings.Email := 'always@mail.ru';
-	AccSettings.EncryptFilesMode := EncryptModeAlways;
-	FAccountsManager.SetAccountSettings(AccSettings);
-
-	AccSettings := Default(TAccountSettings);
-	AccSettings.Account := 'AskEnc';
-	AccSettings.Email := 'ask@mail.ru';
-	AccSettings.EncryptFilesMode := EncryptModeAskOnce;
+	AccSettings.Account := 'YesEnc';
+	AccSettings.Email := 'yes@mail.ru';
+	AccSettings.EncryptFiles := True;
 	FAccountsManager.SetAccountSettings(AccSettings);
 
 	FPresenter.Initialize('');
 
-	Assert.AreEqual(DFM_LV_ENCRYPT_NO, FView.AccountsListItems[0].EncryptionLabel, 'EncryptModeNone should show No');
-	Assert.AreEqual(DFM_LV_ENCRYPT_ALWAYS, FView.AccountsListItems[1].EncryptionLabel, 'EncryptModeAlways should show Alw');
-	Assert.AreEqual(DFM_LV_ENCRYPT_ASK, FView.AccountsListItems[2].EncryptionLabel, 'EncryptModeAskOnce should show Ask');
+	Assert.AreEqual(DFM_LV_ENCRYPT_NO, FView.AccountsListItems[0].EncryptionLabel, 'EncryptFiles=False should show No');
+	Assert.AreEqual(DFM_LV_ENCRYPT_YES, FView.AccountsListItems[1].EncryptionLabel, 'EncryptFiles=True should show Yes');
 end;
 
 procedure TAccountsPresenterTest.TestOnAccountSelectedLoadsAccountData;
@@ -2624,7 +2635,8 @@ begin
 	AccSettings.UnlimitedFilesize := True;
 	AccSettings.SplitLargeFiles := True;
 	AccSettings.PublicAccount := False;
-	AccSettings.EncryptFilesMode := EncryptModeAlways;
+	AccSettings.EncryptFiles := True;
+	AccSettings.CryptPasswordStorage := CryptPasswordStorageTCPwdMngr;
 	FAccountsManager.SetAccountSettings(AccSettings);
 
 	FPresenter.Initialize('LoadTest');
@@ -2636,7 +2648,8 @@ begin
 	Assert.IsTrue(FView.GetUnlimitedFileSize, 'Unlimited file size should be set');
 	Assert.IsTrue(FView.GetSplitLargeFiles, 'Split large files should be set');
 	Assert.IsTrue(FView.GetIsPrivate, 'Should be private');
-	Assert.AreEqual(EncryptModeAlways, FView.GetEncryptFilesMode, 'Encrypt mode should match');
+	Assert.IsTrue(FView.GetEncryptFiles, 'EncryptFiles should be set');
+	Assert.AreEqual(CryptPasswordStorageTCPwdMngr, FView.GetCryptPasswordStorage, 'CryptPasswordStorage should match');
 end;
 
 procedure TAccountsPresenterTest.TestOnAccountSelectedClearsWhenEmpty;
@@ -2721,7 +2734,8 @@ begin
 	FView.SetUseTCPasswordManager(False);
 	FView.SetUnlimitedFileSize(True);
 	FView.SetSplitLargeFiles(True);
-	FView.SetEncryptFilesMode(EncryptModeNone);
+	FView.SetEncryptFiles(False);
+	FView.SetCryptPasswordStorage(CryptPasswordStorageNone);
 
 	FPresenter.OnApplyAccountClick;
 
@@ -2832,35 +2846,28 @@ begin
 	Assert.IsTrue(FView.SharesPanelVisible, 'Public panel should be visible');
 end;
 
-procedure TAccountsPresenterTest.TestOnEncryptModeChangedEnablesPasswordButton;
+procedure TAccountsPresenterTest.TestOnEncryptFilesChangedEnablesControls;
 begin
 	FPresenter.Initialize('');
-	FView.SetEncryptFilesMode(EncryptModeAlways);
+	FView.SetEncryptFiles(True);
 
-	FPresenter.OnEncryptModeChanged;
+	FPresenter.OnEncryptFilesChanged;
 
-	Assert.IsTrue(FView.EncryptPasswordButtonEnabled, 'Password button should be enabled for EncryptModeAlways');
+	Assert.IsTrue(FView.EncryptPasswordButtonEnabled, 'Password button should be enabled when encryption is on');
+	Assert.IsTrue(FView.FCryptPasswordStorageEnabled, 'Password storage combo should be enabled when encryption is on');
+	Assert.IsTrue(FView.CipherProfileEnabled, 'Cipher profile should be enabled when encryption is on');
 end;
 
-procedure TAccountsPresenterTest.TestOnEncryptModeChangedDisablesPasswordButton;
+procedure TAccountsPresenterTest.TestOnEncryptFilesChangedDisablesControls;
 begin
 	FPresenter.Initialize('');
-	FView.SetEncryptFilesMode(EncryptModeNone);
+	FView.SetEncryptFiles(False);
 
-	FPresenter.OnEncryptModeChanged;
+	FPresenter.OnEncryptFilesChanged;
 
-	Assert.IsFalse(FView.EncryptPasswordButtonEnabled, 'Password button should be disabled for EncryptModeNone');
-end;
-
-procedure TAccountsPresenterTest.TestOnEncryptModeChangedWithAskOnce;
-begin
-	FPresenter.Initialize('');
-	FView.SetEncryptFilesMode(EncryptModeAskOnce);
-
-	FPresenter.OnEncryptModeChanged;
-
-	{AskOnce mode should NOT enable the password button (only Always does)}
-	Assert.IsFalse(FView.EncryptPasswordButtonEnabled, 'Password button should be disabled for EncryptModeAskOnce');
+	Assert.IsFalse(FView.EncryptPasswordButtonEnabled, 'Password button should be disabled when encryption is off');
+	Assert.IsFalse(FView.FCryptPasswordStorageEnabled, 'Password storage combo should be disabled when encryption is off');
+	Assert.IsFalse(FView.CipherProfileEnabled, 'Cipher profile should be disabled when encryption is off');
 end;
 
 procedure TAccountsPresenterTest.TestOnEncryptPasswordClickSetsGUID;
@@ -3424,19 +3431,19 @@ begin
 	Assert.AreEqual(Integer(3), Integer(Length(FView.CipherProfileItems)), 'Should have 3 cipher profiles');
 end;
 
-procedure TAccountsPresenterTest.TestCipherProfileDisabledWhenEncryptModeNone;
+procedure TAccountsPresenterTest.TestCipherProfileDisabledWhenEncryptFilesOff;
 begin
-	{When encrypt mode is None, cipher profile combo should be disabled}
-	FView.SetEncryptFilesMode(EncryptModeNone);
-	FPresenter.OnEncryptModeChanged;
+	{When encryption is disabled, cipher profile combo should be disabled}
+	FView.SetEncryptFiles(False);
+	FPresenter.OnEncryptFilesChanged;
 	Assert.IsFalse(FView.CipherProfileEnabled, 'Cipher profile should be disabled when encryption is off');
 end;
 
-procedure TAccountsPresenterTest.TestCipherProfileEnabledWhenEncryptModeAlways;
+procedure TAccountsPresenterTest.TestCipherProfileEnabledWhenEncryptFilesOn;
 begin
-	{When encrypt mode is Always, cipher profile combo should be enabled}
-	FView.SetEncryptFilesMode(EncryptModeAlways);
-	FPresenter.OnEncryptModeChanged;
+	{When encryption is enabled, cipher profile combo should be enabled}
+	FView.SetEncryptFiles(True);
+	FPresenter.OnEncryptFilesChanged;
 	Assert.IsTrue(FView.CipherProfileEnabled, 'Cipher profile should be enabled when encryption is on');
 end;
 
@@ -3447,7 +3454,7 @@ begin
 	FView.SetIsPrivate(True);
 	FView.SetEmail('cipher@mail.ru');
 	FView.SetCipherProfileIndex(2); {Third profile}
-	FView.SetEncryptFilesMode(EncryptModeAlways);
+	FView.SetEncryptFiles(True);
 	FPresenter.OnApplyAccountClick;
 
 	{Reload and verify}
@@ -3462,7 +3469,7 @@ begin
 	Settings.Account := 'CipherLoadTest';
 	Settings.Email := 'cipherload@mail.ru';
 	Settings.CipherProfileId := 'dcpcrypt-twofish256-cfb8-sha256';
-	Settings.EncryptFilesMode := EncryptModeAlways;
+	Settings.EncryptFiles := True;
 	FAccountsManager.SetAccountSettings(Settings);
 
 	{Trigger loading}

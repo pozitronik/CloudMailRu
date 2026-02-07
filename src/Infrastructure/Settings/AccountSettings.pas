@@ -21,7 +21,9 @@ type
 		SplitLargeFiles: Boolean;
 		PublicAccount: Boolean;
 		Description: WideString;
-		EncryptFilesMode: Integer;
+		EncryptFiles: Boolean;
+		CryptPasswordStorage: Integer;
+		CryptFilesPassword: WideString; {Only populated when storage = CryptPasswordStorageIniFile}
 		CipherProfileId: WideString; //Cipher profile identifier for encryption backend selection
 		Server: WideString; //Server profile name, empty = cloud.mail.ru default
 		CryptedGUIDFiles: WideString; //The hash of files encryption password to check its validity

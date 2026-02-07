@@ -166,7 +166,7 @@ begin
 	FAccountSettings.UseTCPasswordManager := False;
 	FAccountSettings.PublicAccount := True; {Public account skips password retrieval}
 	FAccountSettings.PublicUrl := '';
-	FAccountSettings.EncryptFilesMode := EncryptModeNone;
+	FAccountSettings.EncryptFiles := False;
 	FAccountSettings.CryptedGUIDFiles := '';
 	FAccountSettings.Server := '';
 	FAccountSettings.SplitLargeFiles := True;

@@ -203,7 +203,24 @@ begin
 	Result.PublicAccount := FConfigFile.ReadBool(Account, 'public_account', False);
 	Result.PublicUrl := FConfigFile.ReadString(Account, 'public_url', EmptyWideStr);
 	Result.Description := FConfigFile.ReadString(Account, 'description', EmptyWideStr);
-	Result.EncryptFilesMode := FConfigFile.ReadInteger(Account, 'encrypt_files_mode', EncryptModeNone);
+	{Migration from old encrypt_files_mode format (sentinel -1 means key absent)}
+	var OldMode := FConfigFile.ReadInteger(Account, 'encrypt_files_mode', -1);
+	if OldMode >= 0 then
+	begin
+		case OldMode of
+			1: begin Result.EncryptFiles := True; Result.CryptPasswordStorage := CryptPasswordStorageTCPwdMngr; end;
+			2: begin Result.EncryptFiles := True; Result.CryptPasswordStorage := CryptPasswordStorageNone; end;
+		else
+			begin Result.EncryptFiles := False; Result.CryptPasswordStorage := CryptPasswordStorageNone; end;
+		end;
+		FConfigFile.WriteBoolIfNotDefault(Account, 'encrypt_files', Result.EncryptFiles, False);
+		FConfigFile.WriteIntegerIfNotDefault(Account, 'crypt_password_storage', Result.CryptPasswordStorage, CryptPasswordStorageNone);
+		FConfigFile.DeleteKey(Account, 'encrypt_files_mode');
+	end else begin
+		Result.EncryptFiles := FConfigFile.ReadBool(Account, 'encrypt_files', False);
+		Result.CryptPasswordStorage := FConfigFile.ReadInteger(Account, 'crypt_password_storage', CryptPasswordStorageNone);
+	end;
+	Result.CryptFilesPassword := FConfigFile.ReadString(Account, 'crypt_files_password', EmptyWideStr);
 	Result.CipherProfileId := FConfigFile.ReadString(Account, 'encrypt_cipher_profile', EmptyWideStr);
 	Result.Server := FConfigFile.ReadString(Account, 'server', EmptyWideStr);
 	Result.CryptedGUIDFiles := FConfigFile.ReadString(Account, 'CryptedGUID_files', EmptyWideStr);
@@ -221,7 +238,9 @@ begin
 	FConfigFile.WriteBoolIfNotDefault(Account, 'public_account', AccountSettings.PublicAccount, False);
 	FConfigFile.WriteStringIfNotDefault(Account, 'public_url', AccountSettings.PublicUrl, EmptyWideStr);
 	FConfigFile.WriteStringIfNotDefault(Account, 'description', AccountSettings.Description, EmptyWideStr);
-	FConfigFile.WriteIntegerIfNotDefault(Account, 'encrypt_files_mode', AccountSettings.EncryptFilesMode, EncryptModeNone);
+	FConfigFile.WriteBoolIfNotDefault(Account, 'encrypt_files', AccountSettings.EncryptFiles, False);
+	FConfigFile.WriteIntegerIfNotDefault(Account, 'crypt_password_storage', AccountSettings.CryptPasswordStorage, CryptPasswordStorageNone);
+	FConfigFile.WriteStringIfNotDefault(Account, 'crypt_files_password', AccountSettings.CryptFilesPassword, EmptyWideStr);
 	FConfigFile.WriteStringIfNotDefault(Account, 'encrypt_cipher_profile', AccountSettings.CipherProfileId, EmptyWideStr);
 	FConfigFile.WriteStringIfNotDefault(Account, 'server', AccountSettings.Server, EmptyWideStr);
 	FConfigFile.WriteIntegerIfNotDefault(Account, 'auth_method', AccountSettings.AuthMethod, 0);

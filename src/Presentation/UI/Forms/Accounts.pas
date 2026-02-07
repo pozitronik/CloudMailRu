@@ -122,8 +122,9 @@ type
 		UnlimitedFileSizeCB: TCheckBox;
 		SplitLargeFilesCB: TCheckBox;
 		EncryptGB: TGroupBox;
-		EncryptFilesLabel: TLabel;
-		EncryptFilesCombo: TComboBox;
+		EncryptFilesCB: TCheckBox;
+		CryptPasswordStorageLabel: TLabel;
+		CryptPasswordStorageCombo: TComboBox;
 		EncryptFilesPwdButton: TButton;
 		SharesPanel: TPanel;
 		PublicUrlLabel: TLabel;
@@ -204,7 +205,8 @@ type
 		procedure ApplyButtonClick(Sender: TObject);
 		procedure PrivateRBClick(Sender: TObject);
 		procedure PublicRBClick(Sender: TObject);
-		procedure EncryptFilesComboChange(Sender: TObject);
+		procedure EncryptFilesCBClick(Sender: TObject);
+		procedure CryptPasswordStorageComboChange(Sender: TObject);
 		procedure CipherProfileComboChange(Sender: TObject);
 		procedure EncryptFilesPwdButtonClick(Sender: TObject);
 		procedure FieldChanged(Sender: TObject);
@@ -392,8 +394,11 @@ type
 		function GetIsPrivate: Boolean;
 		procedure SetPublicUrl(Value: WideString);
 		function GetPublicUrl: WideString;
-		procedure SetEncryptFilesMode(Value: Integer);
-		function GetEncryptFilesMode: Integer;
+		procedure SetEncryptFiles(Value: Boolean);
+		function GetEncryptFiles: Boolean;
+		procedure SetCryptPasswordStorage(Value: Integer);
+		function GetCryptPasswordStorage: Integer;
+		procedure SetCryptPasswordStorageEnabled(Value: Boolean);
 		procedure SetEncryptPasswordButtonEnabled(Value: Boolean);
 		procedure SetAccountsPanelVisible(Value: Boolean);
 		procedure SetSharesPanelVisible(Value: Boolean);
@@ -1241,14 +1246,30 @@ begin
 	Result := PublicUrlEdit.Text;
 end;
 
-procedure TAccountsForm.SetEncryptFilesMode(Value: Integer);
+procedure TAccountsForm.SetEncryptFiles(Value: Boolean);
 begin
-	EncryptFilesCombo.ItemIndex := Value;
+	EncryptFilesCB.Checked := Value;
 end;
 
-function TAccountsForm.GetEncryptFilesMode: Integer;
+function TAccountsForm.GetEncryptFiles: Boolean;
 begin
-	Result := EncryptFilesCombo.ItemIndex;
+	Result := EncryptFilesCB.Checked;
+end;
+
+procedure TAccountsForm.SetCryptPasswordStorage(Value: Integer);
+begin
+	CryptPasswordStorageCombo.ItemIndex := Value;
+end;
+
+function TAccountsForm.GetCryptPasswordStorage: Integer;
+begin
+	Result := CryptPasswordStorageCombo.ItemIndex;
+end;
+
+procedure TAccountsForm.SetCryptPasswordStorageEnabled(Value: Boolean);
+begin
+	CryptPasswordStorageCombo.Enabled := Value;
+	CryptPasswordStorageLabel.Enabled := Value;
 end;
 
 procedure TAccountsForm.SetEncryptPasswordButtonEnabled(Value: Boolean);
@@ -1612,9 +1633,14 @@ begin
 	FPresenter.OnAccountTypeChanged;
 end;
 
-procedure TAccountsForm.EncryptFilesComboChange(Sender: TObject);
+procedure TAccountsForm.EncryptFilesCBClick(Sender: TObject);
 begin
-	FPresenter.OnEncryptModeChanged;
+	FPresenter.OnEncryptFilesChanged;
+end;
+
+procedure TAccountsForm.CryptPasswordStorageComboChange(Sender: TObject);
+begin
+	FPresenter.OnCryptPasswordStorageChanged;
 end;
 
 procedure TAccountsForm.CipherProfileComboChange(Sender: TObject);
@@ -1896,7 +1922,8 @@ begin
 	UnlimitedFileSizeCB.Caption := DFM_CB_UNLIMITED_SIZE;
 	SplitLargeFilesCB.Caption := DFM_CB_SPLIT_FILES;
 	EncryptGB.Caption := DFM_GB_ENCRYPTION;
-	EncryptFilesLabel.Caption := DFM_LBL_ENCRYPT_FILES;
+	EncryptFilesCB.Caption := DFM_CB_ENCRYPT_FILES;
+	CryptPasswordStorageLabel.Caption := DFM_LBL_PASSWORD_STORAGE;
 	CipherProfileLabel.Caption := DFM_LBL_ENCRYPT_BACKEND;
 	AccountsListView.Columns[0].Caption := DFM_COL_ACCOUNT;
 	AccountsListView.Columns[1].Caption := DFM_COL_TYPE;
@@ -1994,7 +2021,7 @@ begin
 
 	{Combobox items}
 	RepopulateCombo(SSLBackendCB, [DFM_OPT_SSL_AUTO, DFM_OPT_SSL_INDY, DFM_OPT_SSL_INDYSEC]);
-	RepopulateCombo(EncryptFilesCombo, [DFM_OPT_ENCRYPT_NO, DFM_OPT_ENCRYPT_ALWAYS, DFM_OPT_ENCRYPT_ASK_ONCE]);
+	RepopulateCombo(CryptPasswordStorageCombo, [DFM_OPT_PWD_STORAGE_NONE, DFM_OPT_PWD_STORAGE_TC, DFM_OPT_PWD_STORAGE_INI]);
 	RepopulateCombo(ChunkOverwriteModeCombo, [DFM_OPT_SILENTLY_OVERWRITE, DFM_OPT_IGNORE, DFM_OPT_ABORT_OPERATION]);
 	RepopulateCombo(DeleteFailOnUploadModeCombo, [DFM_OPT_ASK_USER, DFM_OPT_IGNORE_FILE, DFM_OPT_ABORT_OPERATION, DFM_OPT_UNSET_RO_IGNORE, DFM_OPT_UNSET_RO_ABORT]);
 	RepopulateCombo(OverwriteLocalModeCombo, [DFM_OPT_ASK_USER, DFM_OPT_IGNORE_FILE, DFM_OPT_SILENTLY_OVERWRITE]);

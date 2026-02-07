@@ -6,7 +6,8 @@ uses
 	AccountSettings,
 	ConnectionSettings,
 	PluginSettings,
-	CloudEndpoints;
+	CloudEndpoints,
+	SettingsConstants;
 
 type
 	{Aggregated settings required by the cloud class}
@@ -54,7 +55,10 @@ begin
 	Result.RetryAttempts := PluginSettings.RetryAttempts;
 	Result.AttemptWait := PluginSettings.AttemptWait;
 	Result.Endpoints := AEndpoints;
-	{CryptFilesPassword is set separately at runtime after password retrieval}
+	{INI-stored password: load directly from account settings}
+	if AccSettings.CryptPasswordStorage = CryptPasswordStorageIniFile then
+		Result.CryptFilesPassword := AccSettings.CryptFilesPassword;
+	{Other storage modes: CryptFilesPassword is set at runtime after password retrieval}
 end;
 
 end.

@@ -245,7 +245,8 @@ var
 	DFM_LBL_PUBLIC_URL: WideString;
 	DFM_LBL_EMAIL: WideString;
 	DFM_LBL_APP_PASSWORD: WideString;
-	DFM_LBL_ENCRYPT_FILES: WideString;
+	DFM_CB_ENCRYPT_FILES: WideString;
+	DFM_LBL_PASSWORD_STORAGE: WideString;
 	DFM_LBL_ENCRYPT_BACKEND: WideString;
 	DFM_LBL_BYTES: WideString;
 	DFM_LBL_CHUNK_OVERWRITE: WideString;
@@ -348,9 +349,9 @@ var
 	DFM_OPT_RETRY: WideString;
 	DFM_OPT_UNSET_RO_IGNORE: WideString;
 	DFM_OPT_UNSET_RO_ABORT: WideString;
-	DFM_OPT_ENCRYPT_NO: WideString;
-	DFM_OPT_ENCRYPT_ALWAYS: WideString;
-	DFM_OPT_ENCRYPT_ASK_ONCE: WideString;
+	DFM_OPT_PWD_STORAGE_NONE: WideString;
+	DFM_OPT_PWD_STORAGE_TC: WideString;
+	DFM_OPT_PWD_STORAGE_INI: WideString;
 	DFM_OPT_ICONS_DEFAULT: WideString;
 	DFM_OPT_ICONS_INTERNAL: WideString;
 	DFM_OPT_ICONS_INTERNAL_OVERLAY: WideString;
@@ -376,8 +377,7 @@ var
 	DFM_OPT_STREAM_DEFAULT: WideString;
 	DFM_OPT_STREAM_WEB: WideString;
 	{Short labels for listview Type columns}
-	DFM_LV_ENCRYPT_ALWAYS: WideString;
-	DFM_LV_ENCRYPT_ASK: WideString;
+	DFM_LV_ENCRYPT_YES: WideString;
 	DFM_LV_ENCRYPT_NO: WideString;
 	DFM_LV_STREAM_NONE: WideString;
 	DFM_LV_STREAM_OFF: WideString;
@@ -689,7 +689,8 @@ begin
 	DFM_LBL_PUBLIC_URL := 'Public url:';
 	DFM_LBL_EMAIL := 'Email/Login:';
 	DFM_LBL_APP_PASSWORD := 'App password:';
-	DFM_LBL_ENCRYPT_FILES := 'Encrypt/decrypt files';
+	DFM_CB_ENCRYPT_FILES := 'Enable file encryption';
+	DFM_LBL_PASSWORD_STORAGE := 'Password storage';
 	DFM_LBL_ENCRYPT_BACKEND := 'Encryption backend';
 	DFM_LBL_BYTES := 'bytes';
 	DFM_LBL_CHUNK_OVERWRITE := 'Overwrite splitted chunk mode:';
@@ -792,9 +793,9 @@ begin
 	DFM_OPT_RETRY := 'Retry with this file';
 	DFM_OPT_UNSET_RO_IGNORE := 'Try to unset read only flag and delete, ignore file on error';
 	DFM_OPT_UNSET_RO_ABORT := 'Try to unset read only flag and delete, abort operation on error';
-	DFM_OPT_ENCRYPT_NO := 'No';
-	DFM_OPT_ENCRYPT_ALWAYS := 'Always';
-	DFM_OPT_ENCRYPT_ASK_ONCE := 'Ask once';
+	DFM_OPT_PWD_STORAGE_NONE := 'Don''t save (ask each session)';
+	DFM_OPT_PWD_STORAGE_TC := 'TC Password Manager';
+	DFM_OPT_PWD_STORAGE_INI := 'INI file (plaintext!)';
 	DFM_OPT_ICONS_DEFAULT := 'System default';
 	DFM_OPT_ICONS_INTERNAL := 'Internal icons';
 	DFM_OPT_ICONS_INTERNAL_OVERLAY := 'Internal icons overlay';
@@ -820,8 +821,7 @@ begin
 	DFM_OPT_STREAM_DEFAULT := 'Default (publish file & get download link)';
 	DFM_OPT_STREAM_WEB := 'Weblink (publish file & get web link)';
 	{Short labels for listview Type columns}
-	DFM_LV_ENCRYPT_ALWAYS := 'Alw';
-	DFM_LV_ENCRYPT_ASK := 'Ask';
+	DFM_LV_ENCRYPT_YES := 'Yes';
 	DFM_LV_ENCRYPT_NO := 'No';
 	DFM_LV_STREAM_NONE := 'None';
 	DFM_LV_STREAM_OFF := 'Off';
@@ -1121,7 +1121,8 @@ begin
 	TranslationRegistry.Add('DFM_LBL_PUBLIC_URL', @DFM_LBL_PUBLIC_URL);
 	TranslationRegistry.Add('DFM_LBL_EMAIL', @DFM_LBL_EMAIL);
 	TranslationRegistry.Add('DFM_LBL_APP_PASSWORD', @DFM_LBL_APP_PASSWORD);
-	TranslationRegistry.Add('DFM_LBL_ENCRYPT_FILES', @DFM_LBL_ENCRYPT_FILES);
+	TranslationRegistry.Add('DFM_CB_ENCRYPT_FILES', @DFM_CB_ENCRYPT_FILES);
+	TranslationRegistry.Add('DFM_LBL_PASSWORD_STORAGE', @DFM_LBL_PASSWORD_STORAGE);
 	TranslationRegistry.Add('DFM_LBL_ENCRYPT_BACKEND', @DFM_LBL_ENCRYPT_BACKEND);
 	TranslationRegistry.Add('DFM_LBL_BYTES', @DFM_LBL_BYTES);
 	TranslationRegistry.Add('DFM_LBL_CHUNK_OVERWRITE', @DFM_LBL_CHUNK_OVERWRITE);
@@ -1223,9 +1224,9 @@ begin
 	TranslationRegistry.Add('DFM_OPT_RETRY', @DFM_OPT_RETRY);
 	TranslationRegistry.Add('DFM_OPT_UNSET_RO_IGNORE', @DFM_OPT_UNSET_RO_IGNORE);
 	TranslationRegistry.Add('DFM_OPT_UNSET_RO_ABORT', @DFM_OPT_UNSET_RO_ABORT);
-	TranslationRegistry.Add('DFM_OPT_ENCRYPT_NO', @DFM_OPT_ENCRYPT_NO);
-	TranslationRegistry.Add('DFM_OPT_ENCRYPT_ALWAYS', @DFM_OPT_ENCRYPT_ALWAYS);
-	TranslationRegistry.Add('DFM_OPT_ENCRYPT_ASK_ONCE', @DFM_OPT_ENCRYPT_ASK_ONCE);
+	TranslationRegistry.Add('DFM_OPT_PWD_STORAGE_NONE', @DFM_OPT_PWD_STORAGE_NONE);
+	TranslationRegistry.Add('DFM_OPT_PWD_STORAGE_TC', @DFM_OPT_PWD_STORAGE_TC);
+	TranslationRegistry.Add('DFM_OPT_PWD_STORAGE_INI', @DFM_OPT_PWD_STORAGE_INI);
 	TranslationRegistry.Add('DFM_OPT_ICONS_DEFAULT', @DFM_OPT_ICONS_DEFAULT);
 	TranslationRegistry.Add('DFM_OPT_ICONS_INTERNAL', @DFM_OPT_ICONS_INTERNAL);
 	TranslationRegistry.Add('DFM_OPT_ICONS_INTERNAL_OVERLAY', @DFM_OPT_ICONS_INTERNAL_OVERLAY);
@@ -1250,8 +1251,7 @@ begin
 	TranslationRegistry.Add('DFM_OPT_STREAM_M3U8', @DFM_OPT_STREAM_M3U8);
 	TranslationRegistry.Add('DFM_OPT_STREAM_DEFAULT', @DFM_OPT_STREAM_DEFAULT);
 	TranslationRegistry.Add('DFM_OPT_STREAM_WEB', @DFM_OPT_STREAM_WEB);
-	TranslationRegistry.Add('DFM_LV_ENCRYPT_ALWAYS', @DFM_LV_ENCRYPT_ALWAYS);
-	TranslationRegistry.Add('DFM_LV_ENCRYPT_ASK', @DFM_LV_ENCRYPT_ASK);
+	TranslationRegistry.Add('DFM_LV_ENCRYPT_YES', @DFM_LV_ENCRYPT_YES);
 	TranslationRegistry.Add('DFM_LV_ENCRYPT_NO', @DFM_LV_ENCRYPT_NO);
 	TranslationRegistry.Add('DFM_LV_STREAM_NONE', @DFM_LV_STREAM_NONE);
 	TranslationRegistry.Add('DFM_LV_STREAM_OFF', @DFM_LV_STREAM_OFF);

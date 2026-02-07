@@ -110,15 +110,15 @@ type
 	TFileEncryptionResolverTest = class
 	public
 		[Test]
-		{EncryptModeAlways + password found in TC store -> creates real cipher}
+		{EncryptFiles=True, TC storage + password found -> creates real cipher}
 		procedure TestResolveCipher_EncryptAlways_PasswordFound_CreatesCipher;
 
 		[Test]
-		{EncryptModeAlways + TC store returns unsupported -> returns null cipher}
+		{EncryptFiles=True, TC storage + returns unsupported -> returns null cipher}
 		procedure TestResolveCipher_EncryptAlways_PasswordUnsupported_ReturnsNullCipher;
 
 		[Test]
-		{EncryptModeAlways + FS_FILE_READERROR falls through to AskOnce, user cancels -> null cipher}
+		{EncryptFiles=True, TC storage + FS_FILE_READERROR falls through to ask user, user cancels -> null cipher}
 		procedure TestResolveCipher_EncryptAlways_ReadError_FallsToAskOnce;
 
 		[Test]
@@ -142,7 +142,7 @@ type
 		procedure TestResolveCipher_UserSkipsPassword_SkipsGUIDCheck;
 
 		[Test]
-		{EncryptModeNone -> returns null cipher without touching password manager}
+		{EncryptFiles=False -> returns null cipher without touching password manager}
 		procedure TestResolveCipher_EncryptModeNone_ReturnsNullCipher;
 	end;
 
@@ -352,7 +352,7 @@ var
 	CloudSettings: TCloudSettings;
 	Cipher: ICipher;
 begin
-	{EncryptModeAlways, password manager returns OK -> cipher is created (not null)}
+	{EncryptFiles=True + TC storage, password manager returns OK -> cipher is created (not null)}
 	PasswordMgr := TMockPasswordManagerForEncrypt.Create(FS_FILE_OK, 'test-crypt-password');
 
 	TCipherProfileRegistry.Reset;
@@ -364,7 +364,8 @@ begin
 		TNullTCHandler.Create, TNullLogger.Create);
 
 	CloudSettings := Default(TCloudSettings);
-	CloudSettings.AccountSettings.EncryptFilesMode := EncryptModeAlways;
+	CloudSettings.AccountSettings.EncryptFiles := True;
+	CloudSettings.AccountSettings.CryptPasswordStorage := CryptPasswordStorageTCPwdMngr;
 	CloudSettings.AccountSettings.CryptedGUIDFiles := '';
 
 	Cipher := Resolver.ResolveCipher('encrypt_test', CloudSettings);
@@ -390,7 +391,8 @@ begin
 		TNullTCHandler.Create, TNullLogger.Create);
 
 	CloudSettings := Default(TCloudSettings);
-	CloudSettings.AccountSettings.EncryptFilesMode := EncryptModeAlways;
+	CloudSettings.AccountSettings.EncryptFiles := True;
+	CloudSettings.AccountSettings.CryptPasswordStorage := CryptPasswordStorageTCPwdMngr;
 	CloudSettings.AccountSettings.CryptedGUIDFiles := '';
 
 	Cipher := Resolver.ResolveCipher('encrypt_unsupported_test', CloudSettings);
@@ -405,8 +407,8 @@ var
 	CloudSettings: TCloudSettings;
 	Cipher: ICipher;
 begin
-	{FS_FILE_READERROR from TC password store switches to AskOnce mode.
-	 User cancels AskPassword -> GetFilesPassword returns False, but ResolveCipher still returns null cipher.}
+	{FS_FILE_READERROR from TC password store falls through to ask user.
+	 User cancels AskPassword -> GetFilesPassword returns False, ResolveCipher returns null cipher.}
 	PasswordMgr := TMockPasswordManagerForEncrypt.Create(FS_FILE_READERROR, '');
 	PasswordUI := TMockPasswordUIForEncrypt.Create(mrCancel);
 
@@ -419,7 +421,8 @@ begin
 		TNullTCHandler.Create, TNullLogger.Create);
 
 	CloudSettings := Default(TCloudSettings);
-	CloudSettings.AccountSettings.EncryptFilesMode := EncryptModeAlways;
+	CloudSettings.AccountSettings.EncryptFiles := True;
+	CloudSettings.AccountSettings.CryptPasswordStorage := CryptPasswordStorageTCPwdMngr;
 	CloudSettings.AccountSettings.CryptedGUIDFiles := '';
 
 	Cipher := Resolver.ResolveCipher('readerror_test', CloudSettings);
@@ -455,7 +458,8 @@ begin
 		TNullTCHandler.Create, MockLog);
 
 	CloudSettings := Default(TCloudSettings);
-	CloudSettings.AccountSettings.EncryptFilesMode := EncryptModeAlways;
+	CloudSettings.AccountSettings.EncryptFiles := True;
+	CloudSettings.AccountSettings.CryptPasswordStorage := CryptPasswordStorageTCPwdMngr;
 	CloudSettings.AccountSettings.CryptedGUIDFiles := 'stored-guid';
 
 	Cipher := Resolver.ResolveCipher('guid_mismatch_log_test', CloudSettings);
@@ -500,7 +504,8 @@ begin
 		TNullTCHandler.Create, TNullLogger.Create);
 
 	CloudSettings := Default(TCloudSettings);
-	CloudSettings.AccountSettings.EncryptFilesMode := EncryptModeAlways;
+	CloudSettings.AccountSettings.EncryptFiles := True;
+	CloudSettings.AccountSettings.CryptPasswordStorage := CryptPasswordStorageTCPwdMngr;
 	CloudSettings.AccountSettings.CryptedGUIDFiles := 'old-guid';
 
 	Cipher := Resolver.ResolveCipher('guid_update_test', CloudSettings);
@@ -541,7 +546,8 @@ begin
 		TNullTCHandler.Create, TNullLogger.Create);
 
 	CloudSettings := Default(TCloudSettings);
-	CloudSettings.AccountSettings.EncryptFilesMode := EncryptModeAlways;
+	CloudSettings.AccountSettings.EncryptFiles := True;
+	CloudSettings.AccountSettings.CryptPasswordStorage := CryptPasswordStorageTCPwdMngr;
 	CloudSettings.AccountSettings.CryptedGUIDFiles := 'old-guid';
 
 	Cipher := Resolver.ResolveCipher('guid_ignore_test', CloudSettings);
@@ -583,7 +589,8 @@ begin
 		TNullTCHandler.Create, TNullLogger.Create);
 
 	CloudSettings := Default(TCloudSettings);
-	CloudSettings.AccountSettings.EncryptFilesMode := EncryptModeAlways;
+	CloudSettings.AccountSettings.EncryptFiles := True;
+	CloudSettings.AccountSettings.CryptPasswordStorage := CryptPasswordStorageTCPwdMngr;
 	CloudSettings.AccountSettings.CryptedGUIDFiles := 'stored-guid';
 
 	Cipher := Resolver.ResolveCipher('guid_retry_test', CloudSettings);
@@ -599,7 +606,7 @@ var
 	CloudSettings: TCloudSettings;
 	Cipher: ICipher;
 begin
-	{EncryptModeAskOnce, user cancels password dialog -> skip without GUID check.
+	{TC storage, password not found (READERROR), user cancels dialog -> skip without GUID check.
 	 Validator should NOT be called by ResolveCipher (only by GetFilesPassword if it gets that far).}
 	PasswordMgr := TMockPasswordManagerForEncrypt.Create(FS_FILE_READERROR, '');
 	PasswordUI := TMockPasswordUIForEncrypt.Create(mrCancel);
@@ -611,7 +618,8 @@ begin
 		TNullTCHandler.Create, TNullLogger.Create);
 
 	CloudSettings := Default(TCloudSettings);
-	CloudSettings.AccountSettings.EncryptFilesMode := EncryptModeAlways;
+	CloudSettings.AccountSettings.EncryptFiles := True;
+	CloudSettings.AccountSettings.CryptPasswordStorage := CryptPasswordStorageTCPwdMngr;
 	CloudSettings.AccountSettings.CryptedGUIDFiles := 'stored-guid';
 
 	Cipher := Resolver.ResolveCipher('skip_test', CloudSettings);
@@ -625,14 +633,14 @@ var
 	CloudSettings: TCloudSettings;
 	Cipher: ICipher;
 begin
-	{EncryptModeNone -> returns null cipher without accessing password manager}
+	{EncryptFiles=False -> returns null cipher without accessing password manager}
 	Resolver := TFileEncryptionResolver.Create(
 		TNullPasswordManager.Create, TNullPasswordUIProvider.Create,
 		TNullCipherValidator.Create, TMockAccountsManagerForEncrypt.Create,
 		TNullTCHandler.Create, TNullLogger.Create);
 
 	CloudSettings := Default(TCloudSettings);
-	CloudSettings.AccountSettings.EncryptFilesMode := EncryptModeNone;
+	CloudSettings.AccountSettings.EncryptFiles := False;
 
 	Cipher := Resolver.ResolveCipher('no_encrypt_test', CloudSettings);
 	Assert.IsNotNull(Cipher, 'ResolveCipher should return a cipher (null cipher for no encryption)');
