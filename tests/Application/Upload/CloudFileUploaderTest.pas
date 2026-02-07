@@ -30,6 +30,28 @@ uses
 	DUnitX.TestFramework;
 
 type
+	{Mock cipher that throws EAbort on GetEncryptingStream}
+	TAbortCipher = class(TInterfacedObject, ICipher)
+	public
+		function CryptFile(SourceFileName, DestinationFilename: WideString): Integer;
+		function CryptStream(SourceStream, DestinationStream: TStream): Integer;
+		function DecryptFile(SourceFileName, DestinationFilename: WideString): Integer;
+		function DecryptStream(SourceStream, DestinationStream: TStream): Integer;
+		function GetEncryptingStream(Source: TStream): TStream;
+		function GetDecryptingStream(Source: TStream): TStream;
+	end;
+
+	{Mock cipher that throws a general exception on GetEncryptingStream}
+	TErrorCipher = class(TInterfacedObject, ICipher)
+	public
+		function CryptFile(SourceFileName, DestinationFilename: WideString): Integer;
+		function CryptStream(SourceStream, DestinationStream: TStream): Integer;
+		function DecryptFile(SourceFileName, DestinationFilename: WideString): Integer;
+		function DecryptStream(SourceStream, DestinationStream: TStream): Integer;
+		function GetEncryptingStream(Source: TStream): TStream;
+		function GetDecryptingStream(Source: TStream): TStream;
+	end;
+
 	{Tests for TCloudFileUploader service}
 	[TestFixture]
 	TCloudFileUploaderTest = class
@@ -89,6 +111,16 @@ type
 		procedure TestUploadStream_Success_ReturnsOK;
 		[Test]
 		procedure TestUploadStream_WithKnownHash_SkipsDedupAttempt;
+
+		{ PutFileToCloud error paths }
+		[Test]
+		procedure TestUpload_PutFileReturnsInvalidHash_ReturnsFailed;
+
+		{ Exception handling in PutFileStream }
+		[Test]
+		procedure TestUploadStream_EAbortException_ReturnsUserAbort;
+		[Test]
+		procedure TestUploadStream_GeneralException_ReturnsWriteError;
 	end;
 
 implementation
@@ -444,6 +476,124 @@ begin
 		FileStream.Free;
 	end;
 end;
+
+{ PutFileToCloud error paths }
+
+procedure TCloudFileUploaderTest.TestUpload_PutFileReturnsInvalidHash_ReturnsFailed;
+var
+	UploadResult: Integer;
+begin
+	{PutFile returns OK but with invalid hash (not 40 chars) -- covers line 326}
+	FSettings.CloudMaxFileSize := 100 * 1024 * 1024;
+	FMockHTTP.SetPutFileResponse('', 'SHORT', FS_FILE_OK);
+
+	FUploader := TCloudFileUploader.Create(
+		FMockContext, FShardManager, FHashCalculator,
+		TNullCipher.Create, TWindowsFileSystem.Create,
+		TNullLogger.Create, TNullProgress.Create, TNullRequest.Create,
+		TNullTCHandler.Create, FRetryOperation, False, FSettings);
+
+	UploadResult := FUploader.Upload(DataPath('SIMPLE.JSON'), '/test/file.txt');
+	Assert.AreEqual(FS_FILE_WRITEERROR, UploadResult, 'Invalid hash from server should result in write error');
+end;
+
+{ Exception handling in PutFileStream }
+
+procedure TCloudFileUploaderTest.TestUploadStream_EAbortException_ReturnsUserAbort;
+var
+	FileStream: TMemoryStream;
+	UploadResult: Integer;
+	Content: TBytes;
+begin
+	{EAbort from cipher GetEncryptingStream -- covers lines 270-272}
+	FUploader := TCloudFileUploader.Create(
+		FMockContext, FShardManager, FHashCalculator,
+		TAbortCipher.Create, TWindowsFileSystem.Create,
+		TNullLogger.Create, TNullProgress.Create, TNullRequest.Create,
+		TNullTCHandler.Create, FRetryOperation, False, FSettings);
+
+	Content := TEncoding.UTF8.GetBytes('abort test');
+	FileStream := TMemoryStream.Create;
+	try
+		FileStream.Write(Content[0], Length(Content));
+		FileStream.Position := 0;
+		UploadResult := FUploader.UploadStream('file.txt', '/test/file.txt', FileStream,
+			CLOUD_CONFLICT_STRICT, '', '\source\file.txt', '\target\file.txt');
+		Assert.AreEqual(FS_FILE_USERABORT, UploadResult, 'EAbort should return user abort');
+	finally
+		FileStream.Free;
+	end;
+end;
+
+procedure TCloudFileUploaderTest.TestUploadStream_GeneralException_ReturnsWriteError;
+var
+	FileStream: TMemoryStream;
+	UploadResult: Integer;
+	Content: TBytes;
+begin
+	{General exception from cipher GetEncryptingStream -- covers lines 274-275}
+	FUploader := TCloudFileUploader.Create(
+		FMockContext, FShardManager, FHashCalculator,
+		TErrorCipher.Create, TWindowsFileSystem.Create,
+		TNullLogger.Create, TNullProgress.Create, TNullRequest.Create,
+		TNullTCHandler.Create, FRetryOperation, False, FSettings);
+
+	Content := TEncoding.UTF8.GetBytes('error test');
+	FileStream := TMemoryStream.Create;
+	try
+		FileStream.Write(Content[0], Length(Content));
+		FileStream.Position := 0;
+		UploadResult := FUploader.UploadStream('file.txt', '/test/file.txt', FileStream,
+			CLOUD_CONFLICT_STRICT, '', '\source\file.txt', '\target\file.txt');
+		Assert.AreEqual(FS_FILE_WRITEERROR, UploadResult, 'General exception should return write error');
+	finally
+		FileStream.Free;
+	end;
+end;
+
+{ TAbortCipher }
+
+function TAbortCipher.CryptFile(SourceFileName, DestinationFilename: WideString): Integer;
+begin Result := 0; end;
+
+function TAbortCipher.CryptStream(SourceStream, DestinationStream: TStream): Integer;
+begin Result := 0; end;
+
+function TAbortCipher.DecryptFile(SourceFileName, DestinationFilename: WideString): Integer;
+begin Result := 0; end;
+
+function TAbortCipher.DecryptStream(SourceStream, DestinationStream: TStream): Integer;
+begin Result := 0; end;
+
+function TAbortCipher.GetEncryptingStream(Source: TStream): TStream;
+begin
+	Abort; {Raises EAbort}
+end;
+
+function TAbortCipher.GetDecryptingStream(Source: TStream): TStream;
+begin Result := TPassThroughStream.Create(Source); end;
+
+{ TErrorCipher }
+
+function TErrorCipher.CryptFile(SourceFileName, DestinationFilename: WideString): Integer;
+begin Result := 0; end;
+
+function TErrorCipher.CryptStream(SourceStream, DestinationStream: TStream): Integer;
+begin Result := 0; end;
+
+function TErrorCipher.DecryptFile(SourceFileName, DestinationFilename: WideString): Integer;
+begin Result := 0; end;
+
+function TErrorCipher.DecryptStream(SourceStream, DestinationStream: TStream): Integer;
+begin Result := 0; end;
+
+function TErrorCipher.GetEncryptingStream(Source: TStream): TStream;
+begin
+	raise Exception.Create('Simulated cipher error');
+end;
+
+function TErrorCipher.GetDecryptingStream(Source: TStream): TStream;
+begin Result := TPassThroughStream.Create(Source); end;
 
 initialization
 

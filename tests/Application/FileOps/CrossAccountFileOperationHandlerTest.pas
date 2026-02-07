@@ -29,14 +29,16 @@ uses
 	TestHelper;
 
 type
-	{Mock retry handler that tracks calls; optionally executes the retry callback}
+	{Mock retry handler that tracks calls; optionally executes the retry and/or abort callback}
 	TMockRetryHandler = class(TInterfacedObject, IRetryHandler)
 	private
 		FHandleErrorCalled: Boolean;
+		FAbortCheckCalled: Boolean;
 		FReturnValue: Integer;
 		FExecuteCallback: Boolean;
+		FCallAbortCheck: Boolean;
 	public
-		constructor Create(ReturnValue: Integer = 0; ExecuteCallback: Boolean = False);
+		constructor Create(ReturnValue: Integer = 0; ExecuteCallback: Boolean = False; CallAbortCheck: Boolean = False);
 		function HandleOperationError(
 			CurrentResult: Integer;
 			OperationType: TRetryOperationType;
@@ -45,6 +47,7 @@ type
 			AbortCheck: TAbortCheckFunc
 		): Integer;
 		property HandleErrorCalled: Boolean read FHandleErrorCalled;
+		property AbortCheckCalled: Boolean read FAbortCheckCalled;
 	end;
 
 	{Mock logger that tracks log calls}
@@ -157,6 +160,12 @@ type
 		[Test]
 		procedure TestExecute_ViaPublicLink_RetryCallbackExecutes;
 
+		{AbortCheck callback coverage tests}
+		[Test]
+		procedure TestExecute_ViaHash_RetryCallsAbortCheck;
+		[Test]
+		procedure TestExecute_ViaPublicLink_RetryCallsAbortCheck;
+
 		{Cross-server delegation tests}
 		[Test]
 		procedure TestExecute_CrossServer_ViaHash_DelegatesToCrossServerHandler;
@@ -229,12 +238,14 @@ end;
 
 {TMockRetryHandler}
 
-constructor TMockRetryHandler.Create(ReturnValue: Integer; ExecuteCallback: Boolean);
+constructor TMockRetryHandler.Create(ReturnValue: Integer; ExecuteCallback: Boolean; CallAbortCheck: Boolean);
 begin
 	inherited Create;
 	FHandleErrorCalled := False;
+	FAbortCheckCalled := False;
 	FReturnValue := ReturnValue;
 	FExecuteCallback := ExecuteCallback;
+	FCallAbortCheck := CallAbortCheck;
 end;
 
 function TMockRetryHandler.HandleOperationError(
@@ -246,6 +257,11 @@ function TMockRetryHandler.HandleOperationError(
 ): Integer;
 begin
 	FHandleErrorCalled := True;
+	if FCallAbortCheck then
+	begin
+		AbortCheck();
+		FAbortCheckCalled := True;
+	end;
 	if FExecuteCallback then
 		Result := RetryOperation()
 	else
@@ -897,6 +913,58 @@ begin
 
 	Assert.IsFalse(FMockCrossServerHandler.ExecuteCalled,
 		'Should NOT delegate to cross-server handler when servers are the same');
+end;
+
+{AbortCheck callback coverage -- covers lines 136-138 in ExecuteViaHash}
+
+procedure TCrossAccountFileOperationHandlerTest.TestExecute_ViaHash_RetryCallsAbortCheck;
+var
+	OldPath, NewPath: TRealPath;
+	RetryMock: TMockRetryHandler;
+begin
+	{Create handler with AbortCheck invocation enabled}
+	RetryMock := TMockRetryHandler.Create(FS_FILE_WRITEERROR, False, True);
+	FHandler := TCrossAccountFileOperationHandler.Create(RetryMock, FMockLogger, FMockCrossServerHandler);
+	FOldCloud := CreateCloud('same_server');
+	FNewCloud := CreateCloud('same_server');
+	OldPath.FromPath('\account1\file.txt');
+	NewPath.FromPath('\account2\file.txt');
+
+	FMockHTTP.SetResponse(API_FILE, True, JSON_STATUS_FILE_SUCCESS);
+	FMockHTTP.SetResponse(API_FILE_ADD, False, '');
+
+	FHandler.Execute(FOldCloud, FNewCloud, OldPath, NewPath, False, False,
+		CopyBetweenAccountsModeViaHash, False,
+		function: Boolean begin Result := False; end);
+
+	Assert.IsTrue(RetryMock.HandleErrorCalled, 'Retry handler should be called');
+	Assert.IsTrue(RetryMock.AbortCheckCalled, 'AbortCheck callback should be invoked in ViaHash path');
+end;
+
+{AbortCheck callback coverage -- covers lines 182-184 in ExecuteViaPublicLink}
+
+procedure TCrossAccountFileOperationHandlerTest.TestExecute_ViaPublicLink_RetryCallsAbortCheck;
+var
+	OldPath, NewPath: TRealPath;
+	RetryMock: TMockRetryHandler;
+begin
+	{Create handler with AbortCheck invocation enabled}
+	RetryMock := TMockRetryHandler.Create(FS_FILE_WRITEERROR, False, True);
+	FHandler := TCrossAccountFileOperationHandler.Create(RetryMock, FMockLogger, FMockCrossServerHandler);
+	FOldCloud := CreateCloud('same_server');
+	FNewCloud := CreateCloud('same_server');
+	OldPath.FromPath('\account1\file.txt');
+	NewPath.FromPath('\account2\file.txt');
+
+	FMockHTTP.SetResponse(API_FILE, True, JSON_STATUS_FILE_PUBLISHED);
+	FMockHTTP.SetResponse(API_CLONE, False, '');
+
+	FHandler.Execute(FOldCloud, FNewCloud, OldPath, NewPath, False, False,
+		CopyBetweenAccountsModeViaPublicLink, False,
+		function: Boolean begin Result := False; end);
+
+	Assert.IsTrue(RetryMock.HandleErrorCalled, 'Retry handler should be called');
+	Assert.IsTrue(RetryMock.AbortCheckCalled, 'AbortCheck callback should be invoked in ViaPublicLink path');
 end;
 
 initialization

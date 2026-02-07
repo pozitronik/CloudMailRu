@@ -29,14 +29,16 @@ uses
 	TestHelper;
 
 type
-	{Mock retry handler that tracks calls; optionally executes the retry callback}
+	{Mock retry handler that tracks calls; optionally executes the retry and/or abort callback}
 	TMockCrossServerRetryHandler = class(TInterfacedObject, IRetryHandler)
 	private
 		FHandleErrorCalled: Boolean;
+		FAbortCheckCalled: Boolean;
 		FReturnValue: Integer;
 		FExecuteCallback: Boolean;
+		FCallAbortCheck: Boolean;
 	public
-		constructor Create(ReturnValue: Integer = 0; ExecuteCallback: Boolean = False);
+		constructor Create(ReturnValue: Integer = 0; ExecuteCallback: Boolean = False; CallAbortCheck: Boolean = False);
 		function HandleOperationError(
 			CurrentResult: Integer;
 			OperationType: TRetryOperationType;
@@ -45,6 +47,7 @@ type
 			AbortCheck: TAbortCheckFunc
 		): Integer;
 		property HandleErrorCalled: Boolean read FHandleErrorCalled;
+		property AbortCheckCalled: Boolean read FAbortCheckCalled;
 	end;
 
 	{Mock logger that tracks log calls}
@@ -143,6 +146,10 @@ type
 		{Move after successful retry: delete source fails, logs error}
 		[Test]
 		procedure TestExecute_MoveAfterRetry_DeleteFails_LogsError;
+
+		{Upload fails, retry handler invokes AbortCheck callback}
+		[Test]
+		procedure TestExecute_RetryHandler_CallsAbortCheck;
 	end;
 
 implementation
@@ -174,12 +181,14 @@ const
 
 {TMockCrossServerRetryHandler}
 
-constructor TMockCrossServerRetryHandler.Create(ReturnValue: Integer; ExecuteCallback: Boolean);
+constructor TMockCrossServerRetryHandler.Create(ReturnValue: Integer; ExecuteCallback: Boolean; CallAbortCheck: Boolean);
 begin
 	inherited Create;
 	FHandleErrorCalled := False;
+	FAbortCheckCalled := False;
 	FReturnValue := ReturnValue;
 	FExecuteCallback := ExecuteCallback;
+	FCallAbortCheck := CallAbortCheck;
 end;
 
 function TMockCrossServerRetryHandler.HandleOperationError(
@@ -191,6 +200,11 @@ function TMockCrossServerRetryHandler.HandleOperationError(
 ): Integer;
 begin
 	FHandleErrorCalled := True;
+	if FCallAbortCheck then
+	begin
+		AbortCheck();
+		FAbortCheckCalled := True;
+	end;
 	if FExecuteCallback then
 		Result := RetryOperation()
 	else
@@ -622,6 +636,34 @@ begin
 
 	Assert.IsTrue(FMockLogger.LogCalled, 'Should log error when delete source fails after retry');
 	Assert.AreEqual(LOG_LEVEL_ERROR, FMockLogger.LastLogLevel, 'Should log at error level');
+end;
+
+{Upload fails, retry handler invokes AbortCheck callback -- covers lines 136-138}
+
+procedure TCrossServerFileOperationHandlerTest.TestExecute_RetryHandler_CallsAbortCheck;
+var
+	OldPath, NewPath: TRealPath;
+	RetryHandler: TMockCrossServerRetryHandler;
+begin
+	{Create handler with AbortCheck invocation enabled}
+	RetryHandler := TMockCrossServerRetryHandler.Create(FS_FILE_WRITEERROR, False, True);
+	FHandler := TCrossServerFileOperationHandler.Create(RetryHandler, FMockLogger);
+	FOldCloud := CreateCloud('server1');
+	FNewCloud := CreateCloud('server2');
+	OldPath.FromPath('\account1\file.txt');
+	NewPath.FromPath('\account2\file.txt');
+
+	{StatusFile succeeds, dedup fails, download+upload fails to trigger retry}
+	FMockHTTP.SetResponse(API_FILE, True, JSON_STATUS_FILE);
+	FMockHTTP.SetResponse(API_FILE_ADD, False, '');
+	SetupTransferMocks('abort check content');
+	FMockHTTP.SetPutFileResponse('ul.shard', '', FS_FILE_WRITEERROR);
+
+	FHandler.Execute(FOldCloud, FNewCloud, OldPath, NewPath, False, False,
+		function: Boolean begin Result := False; end);
+
+	Assert.IsTrue(RetryHandler.HandleErrorCalled, 'Retry handler should be called');
+	Assert.IsTrue(RetryHandler.AbortCheckCalled, 'AbortCheck callback should be invoked');
 end;
 
 initialization

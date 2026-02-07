@@ -27,6 +27,12 @@ uses
 	OpenSSLProvider;
 
 type
+	{Mock request that always returns True (user confirms)}
+	TMockAcceptRequest = class(TInterfacedObject, IRequest)
+	public
+		function Request(RequestType: Integer; CustomTitle, CustomText: WideString; var ReturnedText: WideString; maxlen: Integer): Boolean;
+	end;
+
 	{Tests for TCloudFileDownloader service}
 	[TestFixture]
 	TCloudFileDownloaderTest = class
@@ -42,7 +48,7 @@ type
 		FResolvedShardUrl: WideString;
 		FTempDir: string;
 
-		procedure CreateDownloader(DoCryptFiles: Boolean = False; Cipher: ICipher = nil);
+		procedure CreateDownloader(DoCryptFiles: Boolean = False; Cipher: ICipher = nil; Request: IRequest = nil);
 		function GetTempFilePath(const FileName: string): string;
 		procedure CleanupTempFiles;
 	public
@@ -140,12 +146,23 @@ type
 		procedure TestDownloadToStream_Encrypted_TokenOutdated_RefreshesAndRetries;
 		[Test]
 		procedure TestDownloadToStream_TokenOutdated_RetriesOnlyOnce;
+
+		{Download tests - shard failover on redirect limit}
+		[Test]
+		procedure TestDownload_Encrypted_ShardRedirectLimit_RetriesWithNewShard;
 	end;
 
 implementation
 
 uses
 	Winapi.Windows;
+
+{TMockAcceptRequest}
+
+function TMockAcceptRequest.Request(RequestType: Integer; CustomTitle, CustomText: WideString; var ReturnedText: WideString; maxlen: Integer): Boolean;
+begin
+	Result := True;
+end;
 
 {TCloudFileDownloaderTest}
 
@@ -198,10 +215,12 @@ begin
 	CleanupTempFiles;
 end;
 
-procedure TCloudFileDownloaderTest.CreateDownloader(DoCryptFiles: Boolean; Cipher: ICipher);
+procedure TCloudFileDownloaderTest.CreateDownloader(DoCryptFiles: Boolean; Cipher: ICipher; Request: IRequest);
 begin
 	if Cipher = nil then
 		Cipher := TNullCipher.Create;
+	if Request = nil then
+		Request := TNullRequest.Create;
 
 	FDownloader := TCloudFileDownloader.Create(
 		FMockContext,
@@ -211,7 +230,7 @@ begin
 		TWindowsFileSystem.Create,
 		TNullLogger.Create,
 		TNullProgress.Create,
-		TNullRequest.Create,
+		Request,
 		DoCryptFiles
 	);
 end;
@@ -839,6 +858,35 @@ begin
 	finally
 		DestStream.Free;
 	end;
+end;
+
+{Shard failover on redirect limit -- covers DownloadRegular lines 161-167}
+
+procedure TCloudFileDownloaderTest.TestDownload_Encrypted_ShardRedirectLimit_RetriesWithNewShard;
+var
+	LocalPath: string;
+	ResultHash: WideString;
+	DownloadResult: Integer;
+	FileContent: TBytes;
+	WrittenContent: string;
+begin
+	FMockContext.SetIsPublicAccount(False);
+	LocalPath := GetTempFilePath('shard_retry_test.txt');
+
+	{Create encrypted downloader with mock request that confirms shard switch}
+	CreateDownloader(True, TNullCipher.Create, TMockAcceptRequest.Create);
+
+	{First attempt returns FS_FILE_NOTSUPPORTED (redirect limit), second succeeds with new shard}
+	FMockHTTP.QueueStreamResponse('download.shard', nil, FS_FILE_NOTSUPPORTED);
+	FileContent := TEncoding.UTF8.GetBytes('Shard retry content');
+	FMockHTTP.SetStreamResponse('requested.shard', FileContent, FS_FILE_OK);
+
+	DownloadResult := FDownloader.Download('/remote/file.txt', LocalPath, ResultHash);
+
+	Assert.AreEqual(FS_FILE_OK, DownloadResult, 'Should succeed after shard failover');
+	Assert.IsTrue(TFile.Exists(LocalPath), 'File should be created');
+	WrittenContent := TFile.ReadAllText(LocalPath, TEncoding.UTF8);
+	Assert.AreEqual('Shard retry content', WrittenContent, 'Content should match after shard switch');
 end;
 
 initialization
