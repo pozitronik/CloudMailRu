@@ -140,8 +140,6 @@ var
 	LOG_CROSS_SERVER_FALLBACK: WideString;
 	LOGIN_IN_PROGRESS: WideString;
 	LOGIN_TO: WideString;
-	METHOD_STR_HEAD: WideString;
-	METHOD_STR_OPTIONS: WideString;
 	METHOD_STR_POST: WideString;
 	METHOD_STR_RECEIVE: WideString;
 	MOUNTED_AS: WideString;
@@ -580,8 +578,6 @@ begin
 	LOG_CROSS_SERVER_FALLBACK := 'Cross-server transfer: falling back to memory stream';
 	LOGIN_IN_PROGRESS := 'Login to account...';
 	LOGIN_TO := 'Login to %s';
-	METHOD_STR_HEAD := 'check';
-	METHOD_STR_OPTIONS := 'request parameters from';
 	METHOD_STR_POST := 'post data to';
 	METHOD_STR_RECEIVE := 'receive data from';
 	MOUNTED_AS := 'Mounted as:';
@@ -1026,8 +1022,6 @@ begin
 	TranslationRegistry.Add('LOG_CROSS_SERVER_FALLBACK', @LOG_CROSS_SERVER_FALLBACK);
 	TranslationRegistry.Add('LOGIN_IN_PROGRESS', @LOGIN_IN_PROGRESS);
 	TranslationRegistry.Add('LOGIN_TO', @LOGIN_TO);
-	TranslationRegistry.Add('METHOD_STR_HEAD', @METHOD_STR_HEAD);
-	TranslationRegistry.Add('METHOD_STR_OPTIONS', @METHOD_STR_OPTIONS);
 	TranslationRegistry.Add('METHOD_STR_POST', @METHOD_STR_POST);
 	TranslationRegistry.Add('METHOD_STR_RECEIVE', @METHOD_STR_RECEIVE);
 	TranslationRegistry.Add('MOUNTED_AS', @MOUNTED_AS);

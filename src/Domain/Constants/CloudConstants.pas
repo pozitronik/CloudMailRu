@@ -104,11 +104,6 @@ const
 	HTTP_METHOD_GET = 0;
 	HTTP_METHOD_POST = 1;
 	HTTP_METHOD_PUT = 2;
-	HTTP_METHOD_OPTIONS = 3;
-	HTTP_METHOD_HEAD = 4;
-
-	HTTP_METHODS = [HTTP_METHOD_GET, HTTP_METHOD_POST, HTTP_METHOD_PUT, HTTP_METHOD_OPTIONS, HTTP_METHOD_HEAD];
-
 	{Shard types}
 	SHARD_TYPE_DEFAULT = ''; {Non-system shard, means use the shard obtained during initialization}
 	SHARD_TYPE_VIDEO = 'video';

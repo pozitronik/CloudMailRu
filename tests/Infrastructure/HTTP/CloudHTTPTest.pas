@@ -10,7 +10,6 @@ uses
 	DUnitX.TestFramework,
 	System.SysUtils,
 	System.Classes,
-	System.Generics.Collections,
 	CloudHTTP,
 	ConnectionSettings,
 	ProxySettings,
@@ -70,39 +69,17 @@ type
 		[Test]
 		procedure TestGetFile_DoesNotWriteToStream;
 
-		{GetRedirection tests}
-		[Test]
-		procedure TestGetRedirection_ReturnsFalse;
-		[Test]
-		procedure TestGetRedirection_SetsRedirectionURLToEmpty;
-
 		{PostForm tests}
 		[Test]
 		procedure TestPostForm_ReturnsFalse;
 		[Test]
 		procedure TestPostForm_SetsAnswerToEmpty;
 
-		{PostMultipart tests}
-		[Test]
-		procedure TestPostMultipart_ReturnsFalse;
-		[Test]
-		procedure TestPostMultipart_SetsAnswerToEmpty;
-
-		{PostFile tests}
-		[Test]
-		procedure TestPostFile_ReturnsWriteError;
-		[Test]
-		procedure TestPostFile_SetsAnswerToEmpty;
-
 		{PutFile tests}
 		[Test]
 		procedure TestPutFile_ReturnsWriteError;
 		[Test]
 		procedure TestPutFile_SetsAnswerToEmpty;
-
-		{Head tests}
-		[Test]
-		procedure TestHead_DoesNotRaiseException;
 
 		{SetProgressNames tests}
 		[Test]
@@ -208,9 +185,6 @@ type
 		[Test]
 		procedure TestGetHTTP_ViaInterface_ReturnsHTTP;
 
-		{Head request - fails on localhost:1}
-		[Test]
-		procedure TestHead_FailedConnection_HandlesGracefully;
 	end;
 
 	[TestFixture]
@@ -231,11 +205,6 @@ type
 		procedure TestExceptionHandler_POSTMethod_ReturnsOperationFailed;
 		[Test]
 		procedure TestExceptionHandler_PUTMethod_ReturnsOperationFailed;
-		[Test]
-		procedure TestExceptionHandler_OPTIONSMethod_ReturnsOperationFailed;
-		[Test]
-		procedure TestExceptionHandler_HEADMethod_ReturnsOperationFailed;
-
 		{EAbort handling}
 		[Test]
 		procedure TestExceptionHandler_EAbort_ReturnsCancelled;
@@ -354,15 +323,7 @@ type
 		[Test]
 		procedure TestGetFile_FailedConnection_ReturnsError;
 		[Test]
-		procedure TestGetRedirection_FailedConnection_ReturnsFalse;
-		[Test]
 		procedure TestPostForm_FailedConnection_ReturnsFalse;
-		[Test]
-		procedure TestPostMultipart_FailedConnection_ReturnsFalse;
-		[Test]
-		procedure TestPostFile_FailedConnection_ReturnsError;
-		[Test]
-		procedure TestOptionsMethod_FailedConnection_ReturnsFalse;
 		[Test]
 		procedure TestPutFile_FailedConnection_ReturnsError;
 	end;
@@ -384,19 +345,9 @@ type
 		[Test]
 		procedure TestGetFile_LogsHTTPRequest;
 		[Test]
-		procedure TestGetRedirection_LogsHTTPRequest;
-		[Test]
-		procedure TestHead_LogsHTTPRequest;
-		[Test]
 		procedure TestPostForm_LogsHTTPRequest;
 		[Test]
-		procedure TestPostMultipart_LogsHTTPRequest;
-		[Test]
-		procedure TestPostFile_LogsHTTPRequest;
-		[Test]
 		procedure TestPutFile_LogsHTTPRequest;
-		[Test]
-		procedure TestOptionsMethod_LogsHTTPRequest;
 	end;
 
 implementation
@@ -508,26 +459,6 @@ begin
 	end;
 end;
 
-procedure TNullCloudHTTPTest.TestGetRedirection_ReturnsFalse;
-var
-	RedirectURL: WideString;
-	ProgressEnabled: Boolean;
-begin
-	ProgressEnabled := True;
-	Assert.IsFalse(FHTTP.GetRedirection('http://test.com', RedirectURL, ProgressEnabled));
-end;
-
-procedure TNullCloudHTTPTest.TestGetRedirection_SetsRedirectionURLToEmpty;
-var
-	RedirectURL: WideString;
-	ProgressEnabled: Boolean;
-begin
-	RedirectURL := 'http://initial.com';
-	ProgressEnabled := True;
-	FHTTP.GetRedirection('http://test.com', RedirectURL, ProgressEnabled);
-	Assert.AreEqual('', RedirectURL);
-end;
-
 procedure TNullCloudHTTPTest.TestPostForm_ReturnsFalse;
 var
 	Answer: WideString;
@@ -542,64 +473,6 @@ begin
 	Answer := 'initial';
 	FHTTP.PostForm('http://test.com', 'data=value', Answer);
 	Assert.AreEqual('', Answer);
-end;
-
-procedure TNullCloudHTTPTest.TestPostMultipart_ReturnsFalse;
-var
-	Params: TDictionary<WideString, WideString>;
-	Answer: WideString;
-begin
-	Params := TDictionary<WideString, WideString>.Create;
-	try
-		Params.Add('key', 'value');
-		Assert.IsFalse(FHTTP.PostMultipart('http://test.com', Params, Answer));
-	finally
-		Params.Free;
-	end;
-end;
-
-procedure TNullCloudHTTPTest.TestPostMultipart_SetsAnswerToEmpty;
-var
-	Params: TDictionary<WideString, WideString>;
-	Answer: WideString;
-begin
-	Params := TDictionary<WideString, WideString>.Create;
-	try
-		Params.Add('key', 'value');
-		Answer := 'initial';
-		FHTTP.PostMultipart('http://test.com', Params, Answer);
-		Assert.AreEqual('', Answer);
-	finally
-		Params.Free;
-	end;
-end;
-
-procedure TNullCloudHTTPTest.TestPostFile_ReturnsWriteError;
-var
-	Stream: TMemoryStream;
-	Answer: WideString;
-begin
-	Stream := TMemoryStream.Create;
-	try
-		Assert.AreEqual(FS_FILE_WRITEERROR, FHTTP.PostFile('http://test.com', 'file.txt', Stream, Answer));
-	finally
-		Stream.Free;
-	end;
-end;
-
-procedure TNullCloudHTTPTest.TestPostFile_SetsAnswerToEmpty;
-var
-	Stream: TMemoryStream;
-	Answer: WideString;
-begin
-	Stream := TMemoryStream.Create;
-	try
-		Answer := 'initial';
-		FHTTP.PostFile('http://test.com', 'file.txt', Stream, Answer);
-		Assert.AreEqual('', Answer);
-	finally
-		Stream.Free;
-	end;
 end;
 
 procedure TNullCloudHTTPTest.TestPutFile_ReturnsWriteError;
@@ -628,13 +501,6 @@ begin
 	finally
 		Stream.Free;
 	end;
-end;
-
-procedure TNullCloudHTTPTest.TestHead_DoesNotRaiseException;
-begin
-	{Should not raise}
-	FHTTP.Head('http://test.com');
-	Assert.Pass;
 end;
 
 procedure TNullCloudHTTPTest.TestSetProgressNames_DoesNotRaiseException;
@@ -973,15 +839,6 @@ begin
 	Assert.IsNotNull(Intf.HTTP);
 end;
 
-procedure TCloudMailRuHTTPSetterTest.TestHead_FailedConnection_HandlesGracefully;
-begin
-	{Head on unreachable host raises exception -- verify it propagates}
-	Assert.WillRaise(
-		procedure begin
-			FHTTP.Head('http://127.0.0.1:1/test');
-		end);
-end;
-
 {TCloudMailRuHTTPExceptionHandlerTest}
 
 procedure TCloudMailRuHTTPExceptionHandlerTest.Setup;
@@ -1026,30 +883,6 @@ begin
 	E := Exception.Create('Test error');
 	try
 		Assert.AreEqual(CLOUD_OPERATION_FAILED, FHTTP.ExceptionHandler(E, 'http://test.com', HTTP_METHOD_PUT, False));
-	finally
-		E.Free;
-	end;
-end;
-
-procedure TCloudMailRuHTTPExceptionHandlerTest.TestExceptionHandler_OPTIONSMethod_ReturnsOperationFailed;
-var
-	E: Exception;
-begin
-	E := Exception.Create('Test error');
-	try
-		Assert.AreEqual(CLOUD_OPERATION_FAILED, FHTTP.ExceptionHandler(E, 'http://test.com', HTTP_METHOD_OPTIONS, False));
-	finally
-		E.Free;
-	end;
-end;
-
-procedure TCloudMailRuHTTPExceptionHandlerTest.TestExceptionHandler_HEADMethod_ReturnsOperationFailed;
-var
-	E: Exception;
-begin
-	E := Exception.Create('Test error');
-	try
-		Assert.AreEqual(CLOUD_OPERATION_FAILED, FHTTP.ExceptionHandler(E, 'http://test.com', HTTP_METHOD_HEAD, False));
 	finally
 		E.Free;
 	end;
@@ -1374,58 +1207,11 @@ begin
 	end;
 end;
 
-procedure TCloudMailRuHTTPNetworkMethodsTest.TestGetRedirection_FailedConnection_ReturnsFalse;
-var
-	RedirectURL: WideString;
-	ProgressEnabled: Boolean;
-begin
-	ProgressEnabled := True;
-	Assert.IsFalse(FHTTP.GetRedirection(FAIL_URL, RedirectURL, ProgressEnabled));
-end;
-
 procedure TCloudMailRuHTTPNetworkMethodsTest.TestPostForm_FailedConnection_ReturnsFalse;
 var
 	Answer: WideString;
 begin
 	Assert.IsFalse(FHTTP.PostForm(FAIL_URL, 'data=value', Answer));
-end;
-
-procedure TCloudMailRuHTTPNetworkMethodsTest.TestPostMultipart_FailedConnection_ReturnsFalse;
-var
-	Params: TDictionary<WideString, WideString>;
-	Answer: WideString;
-begin
-	Params := TDictionary<WideString, WideString>.Create;
-	try
-		Params.Add('key', 'value');
-		Assert.IsFalse(FHTTP.PostMultipart(FAIL_URL, Params, Answer));
-	finally
-		Params.Free;
-	end;
-end;
-
-procedure TCloudMailRuHTTPNetworkMethodsTest.TestPostFile_FailedConnection_ReturnsError;
-var
-	Stream: TMemoryStream;
-	Answer: WideString;
-	ResultCode: Integer;
-begin
-	Stream := TMemoryStream.Create;
-	try
-		ResultCode := FHTTP.PostFile(FAIL_URL, 'file.txt', Stream, Answer);
-		Assert.AreNotEqual(FS_FILE_OK, ResultCode, 'PostFile should fail on connection error');
-	finally
-		Stream.Free;
-	end;
-end;
-
-procedure TCloudMailRuHTTPNetworkMethodsTest.TestOptionsMethod_FailedConnection_ReturnsFalse;
-var
-	Answer: WideString;
-	ProgressEnabled: Boolean;
-begin
-	ProgressEnabled := True;
-	Assert.IsFalse(FHTTP.OptionsMethod(FAIL_URL, Answer, ProgressEnabled));
 end;
 
 procedure TCloudMailRuHTTPNetworkMethodsTest.TestPutFile_FailedConnection_ReturnsError;
@@ -1486,62 +1272,12 @@ begin
 	end;
 end;
 
-procedure TCloudMailRuHTTPLoggingTest.TestGetRedirection_LogsHTTPRequest;
-var
-	RedirectURL: WideString;
-	ProgressEnabled: Boolean;
-begin
-	ProgressEnabled := True;
-	FHTTP.GetRedirection(LOG_FAIL_URL, RedirectURL, ProgressEnabled);
-	Assert.IsTrue(FMockLogger.HasLogWithLevel(LOG_LEVEL_HTTP), 'GetRedirection should log at LOG_LEVEL_HTTP');
-end;
-
-procedure TCloudMailRuHTTPLoggingTest.TestHead_LogsHTTPRequest;
-begin
-	{Head propagates exceptions, so we catch it}
-	try
-		FHTTP.Head(LOG_FAIL_URL);
-	except
-		{Expected -- connection failure}
-	end;
-	Assert.IsTrue(FMockLogger.HasLogWithLevel(LOG_LEVEL_HTTP), 'Head should log at LOG_LEVEL_HTTP');
-end;
-
 procedure TCloudMailRuHTTPLoggingTest.TestPostForm_LogsHTTPRequest;
 var
 	Answer: WideString;
 begin
 	FHTTP.PostForm(LOG_FAIL_URL, 'data=value', Answer);
 	Assert.IsTrue(FMockLogger.HasLogWithLevel(LOG_LEVEL_HTTP), 'PostForm should log at LOG_LEVEL_HTTP');
-end;
-
-procedure TCloudMailRuHTTPLoggingTest.TestPostMultipart_LogsHTTPRequest;
-var
-	Params: TDictionary<WideString, WideString>;
-	Answer: WideString;
-begin
-	Params := TDictionary<WideString, WideString>.Create;
-	try
-		Params.Add('key', 'value');
-		FHTTP.PostMultipart(LOG_FAIL_URL, Params, Answer);
-		Assert.IsTrue(FMockLogger.HasLogWithLevel(LOG_LEVEL_HTTP), 'PostMultipart should log at LOG_LEVEL_HTTP');
-	finally
-		Params.Free;
-	end;
-end;
-
-procedure TCloudMailRuHTTPLoggingTest.TestPostFile_LogsHTTPRequest;
-var
-	Stream: TMemoryStream;
-	Answer: WideString;
-begin
-	Stream := TMemoryStream.Create;
-	try
-		FHTTP.PostFile(LOG_FAIL_URL, 'file.txt', Stream, Answer);
-		Assert.IsTrue(FMockLogger.HasLogWithLevel(LOG_LEVEL_HTTP), 'PostFile should log at LOG_LEVEL_HTTP');
-	finally
-		Stream.Free;
-	end;
 end;
 
 procedure TCloudMailRuHTTPLoggingTest.TestPutFile_LogsHTTPRequest;
@@ -1556,16 +1292,6 @@ begin
 	finally
 		Stream.Free;
 	end;
-end;
-
-procedure TCloudMailRuHTTPLoggingTest.TestOptionsMethod_LogsHTTPRequest;
-var
-	Answer: WideString;
-	ProgressEnabled: Boolean;
-begin
-	ProgressEnabled := True;
-	FHTTP.OptionsMethod(LOG_FAIL_URL, Answer, ProgressEnabled);
-	Assert.IsTrue(FMockLogger.HasLogWithLevel(LOG_LEVEL_HTTP), 'OptionsMethod should log at LOG_LEVEL_HTTP');
 end;
 
 initialization

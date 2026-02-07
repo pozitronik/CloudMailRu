@@ -43,12 +43,6 @@ type
 		[Test]
 		procedure TestPutFile_GetCapturedUploadContent_FindsByPattern;
 
-		{PostFile capture tests}
-		[Test]
-		procedure TestPostFile_CapturesUpload;
-		[Test]
-		procedure TestPostFile_ReturnsConfiguredHash;
-
 		{Error simulation tests}
 		[Test]
 		procedure TestPutFile_SimulateError_ReturnsErrorCode;
@@ -242,47 +236,6 @@ begin
 	finally
 		Stream1.Free;
 		Stream2.Free;
-	end;
-end;
-
-{PostFile capture tests}
-
-procedure TCloudMailRuUploadTest.TestPostFile_CapturesUpload;
-var
-	Stream: TMemoryStream;
-	Content: TBytes;
-	Answer: WideString;
-begin
-	Content := TEncoding.UTF8.GetBytes('PostFile content');
-	FMockHTTP.SetPutFileResponse('https://post.test.com/', SHA1_HASH_40);
-
-	Stream := TMemoryStream.Create;
-	try
-		Stream.Write(Content[0], Length(Content));
-		Stream.Position := 0;
-
-		FMockHTTP.PostFile('https://post.test.com/', 'posted.txt', Stream, Answer);
-
-		Assert.AreEqual(1, FMockHTTP.GetUploadCount, 'Should capture PostFile upload');
-		Assert.AreEqual(String('posted.txt'), String(FMockHTTP.GetLastUploadCapture.FileName), 'Should capture filename');
-	finally
-		Stream.Free;
-	end;
-end;
-
-procedure TCloudMailRuUploadTest.TestPostFile_ReturnsConfiguredHash;
-var
-	Stream: TMemoryStream;
-	Answer: WideString;
-begin
-	FMockHTTP.SetPutFileResponse('https://post.test.com/', SHA1_HASH_40);
-
-	Stream := TMemoryStream.Create;
-	try
-		FMockHTTP.PostFile('https://post.test.com/', 'test.txt', Stream, Answer);
-		Assert.AreEqual(String(SHA1_HASH_40), String(Answer), 'PostFile should return configured hash');
-	finally
-		Stream.Free;
 	end;
 end;
 

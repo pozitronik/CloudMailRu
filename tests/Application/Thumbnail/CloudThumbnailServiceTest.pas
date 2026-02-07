@@ -41,12 +41,8 @@ type
 		{ICloudHTTP}
 		function GetPage(URL: WideString; var Answer: WideString; var ProgressEnabled: Boolean): Boolean;
 		function GetFile(URL: WideString; FileStream: TStream; LogErrors: Boolean = True): Integer;
-		function GetRedirection(URL: WideString; var RedirectionURL: WideString; var ProgressEnabled: Boolean): Boolean;
 		function PostForm(URL: WideString; PostDataString: WideString; var Answer: WideString; ContentType: WideString = 'application/x-www-form-urlencoded'; LogErrors: Boolean = True; ProgressEnabled: Boolean = True): Boolean;
-		function PostMultipart(URL: WideString; Params: TDictionary<WideString, WideString>; var Answer: WideString): Boolean;
-		function PostFile(URL: WideString; FileName: WideString; FileStream: TStream; var Answer: WideString): Integer;
 		function PutFile(URL: WideString; FileName: WideString; FileStream: TStream; var Answer: WideString): Integer;
-		procedure Head(URL: WideString);
 		procedure SetProgressNames(SourceName, TargetName: WideString);
 		procedure SetProgress(Progress: IProgress);
 		procedure SetAuthCookie(Value: TIdCookieManager);
@@ -157,18 +153,10 @@ end;
 
 function TMockThumbnailHTTP.GetPage(URL: WideString; var Answer: WideString; var ProgressEnabled: Boolean): Boolean;
 begin Result := False; end;
-function TMockThumbnailHTTP.GetRedirection(URL: WideString; var RedirectionURL: WideString; var ProgressEnabled: Boolean): Boolean;
-begin Result := False; end;
 function TMockThumbnailHTTP.PostForm(URL: WideString; PostDataString: WideString; var Answer: WideString; ContentType: WideString; LogErrors: Boolean; ProgressEnabled: Boolean): Boolean;
 begin Result := False; end;
-function TMockThumbnailHTTP.PostMultipart(URL: WideString; Params: TDictionary<WideString, WideString>; var Answer: WideString): Boolean;
-begin Result := False; end;
-function TMockThumbnailHTTP.PostFile(URL: WideString; FileName: WideString; FileStream: TStream; var Answer: WideString): Integer;
-begin Result := FS_FILE_NOTSUPPORTED; end;
 function TMockThumbnailHTTP.PutFile(URL: WideString; FileName: WideString; FileStream: TStream; var Answer: WideString): Integer;
 begin Result := FS_FILE_NOTSUPPORTED; end;
-procedure TMockThumbnailHTTP.Head(URL: WideString);
-begin end;
 procedure TMockThumbnailHTTP.SetProgressNames(SourceName, TargetName: WideString);
 begin end;
 procedure TMockThumbnailHTTP.SetProgress(Progress: IProgress);

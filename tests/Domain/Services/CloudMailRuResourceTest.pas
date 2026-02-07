@@ -46,7 +46,7 @@ type
 
 		{ HTTP stream cleanup patterns - demonstrates correct cleanup when
 		  multiple streams are created for HTTP POST operations.
-		  Pattern used in CloudHTTP.PostFile, PostForm, PostMultipart. }
+		  Pattern used in CloudHTTP.PostForm. }
 		[Test]
 		procedure TestMultipleStreamsCleanupOnException;
 

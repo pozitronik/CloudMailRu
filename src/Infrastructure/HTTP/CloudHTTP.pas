@@ -10,7 +10,6 @@ interface
 uses
 	System.SysUtils,
 	System.Classes,
-	System.Generics.Collections,
 	ChunkedFileStream,
 	FileSplitInfo,
 	Logger,
@@ -52,23 +51,11 @@ type
 		{GET request to download file to stream}
 		function GetFile(URL: WideString; FileStream: TStream; LogErrors: Boolean = True): Integer;
 
-		{GET request following redirects}
-		function GetRedirection(URL: WideString; var RedirectionURL: WideString; var ProgressEnabled: Boolean): Boolean;
-
 		{POST form data}
 		function PostForm(URL: WideString; PostDataString: WideString; var Answer: WideString; ContentType: WideString = 'application/x-www-form-urlencoded'; LogErrors: Boolean = True; ProgressEnabled: Boolean = True): Boolean;
 
-		{POST multipart form data}
-		function PostMultipart(URL: WideString; Params: TDictionary<WideString, WideString>; var Answer: WideString): Boolean;
-
-		{POST file stream}
-		function PostFile(URL: WideString; FileName: WideString; FileStream: TStream; var Answer: WideString): Integer;
-
 		{PUT file stream}
 		function PutFile(URL: WideString; FileName: WideString; FileStream: TStream; var Answer: WideString): Integer;
-
-		{HEAD request}
-		procedure Head(URL: WideString);
 
 		{Set progress display names}
 		procedure SetProgressNames(SourceName, TargetName: WideString);
@@ -94,12 +81,8 @@ type
 	public
 		function GetPage(URL: WideString; var Answer: WideString; var ProgressEnabled: Boolean): Boolean;
 		function GetFile(URL: WideString; FileStream: TStream; LogErrors: Boolean = True): Integer;
-		function GetRedirection(URL: WideString; var RedirectionURL: WideString; var ProgressEnabled: Boolean): Boolean;
 		function PostForm(URL: WideString; PostDataString: WideString; var Answer: WideString; ContentType: WideString = 'application/x-www-form-urlencoded'; LogErrors: Boolean = True; ProgressEnabled: Boolean = True): Boolean;
-		function PostMultipart(URL: WideString; Params: TDictionary<WideString, WideString>; var Answer: WideString): Boolean;
-		function PostFile(URL: WideString; FileName: WideString; FileStream: TStream; var Answer: WideString): Integer;
 		function PutFile(URL: WideString; FileName: WideString; FileStream: TStream; var Answer: WideString): Integer;
-		procedure Head(URL: WideString);
 		procedure SetProgressNames(SourceName, TargetName: WideString);
 		procedure SetProgress(Progress: IProgress);
 		procedure SetAuthCookie(Value: TIdCookieManager);
@@ -143,20 +126,14 @@ type
 		constructor Create(Settings: TConnectionSettings; SSLFactory: ISSLHandlerFactory; Logger: ILogger; Progress: IProgress);
 		destructor Destroy; override;
 		{MAIN ROUTINES}
-		procedure Head(URL: WideString);
-
 		function GetPage(URL: WideString; var Answer: WideString; var ProgressEnabled: Boolean): Boolean; {If ProgressEnabled, enable onWork handler; returns ProgressEnabled=false on cancel}
 		function GetFile(URL: WideString; FileStream: TStream; LogErrors: Boolean = True): Integer;
-		function GetRedirection(URL: WideString; var RedirectionURL: WideString; var ProgressEnabled: Boolean): Boolean;
 
 		function PostForm(URL: WideString; PostDataString: WideString; var Answer: WideString; ContentType: WideString = 'application/x-www-form-urlencoded'; LogErrors: Boolean = True; ProgressEnabled: Boolean = True): Boolean; {Post data with optional response}
-		function PostMultipart(URL: WideString; Params: TDictionary<WideString, WideString>; var Answer: WideString): Boolean;
-		function PostFile(URL: WideString; FileName: WideString; FileStream: TStream; var Answer: WideString): Integer; overload; {Post data stream as file}
 
 		function Post(URL: WideString; PostData, ResultData: TStringStream; UnderstandResponseCode: Boolean = false; ContentType: WideString = ''; LogErrors: Boolean = True; ProgressEnabled: Boolean = True): Integer; overload; {Post prepared data with error handling}
 		function Post(URL: WideString; var PostData: TIdMultiPartFormDataStream; ResultData: TStringStream): Integer; overload; {TIdMultiPartFormDataStream should be passed via var}
 
-		function OptionsMethod(URL: WideString; var Answer: WideString; var ProgressEnabled: Boolean): Boolean;
 		function PutFile(URL: WideString; FileName: WideString; FileStream: TStream; var Answer: WideString): Integer;
 		function Put(URL: WideString; var PostData: TStream; ResultData: TStringStream): Integer;
 
@@ -185,39 +162,16 @@ begin
 	Result := FS_FILE_READERROR;
 end;
 
-function TNullCloudHTTP.GetRedirection(URL: WideString; var RedirectionURL: WideString; var ProgressEnabled: Boolean): Boolean;
-begin
-	RedirectionURL := '';
-	Result := false;
-end;
-
 function TNullCloudHTTP.PostForm(URL: WideString; PostDataString: WideString; var Answer: WideString; ContentType: WideString; LogErrors: Boolean; ProgressEnabled: Boolean): Boolean;
 begin
 	Answer := '';
 	Result := false;
 end;
 
-function TNullCloudHTTP.PostMultipart(URL: WideString; Params: TDictionary<WideString, WideString>; var Answer: WideString): Boolean;
-begin
-	Answer := '';
-	Result := false;
-end;
-
-function TNullCloudHTTP.PostFile(URL: WideString; FileName: WideString; FileStream: TStream; var Answer: WideString): Integer;
-begin
-	Answer := '';
-	Result := FS_FILE_WRITEERROR;
-end;
-
 function TNullCloudHTTP.PutFile(URL: WideString; FileName: WideString; FileStream: TStream; var Answer: WideString): Integer;
 begin
 	Answer := '';
 	Result := FS_FILE_WRITEERROR;
-end;
-
-procedure TNullCloudHTTP.Head(URL: WideString);
-begin
-	{No-op}
 end;
 
 procedure TNullCloudHTTP.SetProgressNames(SourceName, TargetName: WideString);
@@ -356,43 +310,6 @@ begin
 	end;
 end;
 
-{Checks redirect from the specified URL}
-function TCloudMailRuHTTP.GetRedirection(URL: WideString; var RedirectionURL: WideString; var ProgressEnabled: Boolean): Boolean;
-var
-	Answer: WideString;
-begin
-	Result := false;
-	Logger.Log(LOG_LEVEL_HTTP, MSGTYPE_DETAILS, HTTP_REQUEST, ['GET (redirect)', URL]);
-	HTTP.HandleRedirects := false;
-	try
-		try
-			Answer := HTTP.Get(URL);
-		except
-			on E: Exception do
-			begin
-				if (HTTP_FOUND_REDIRECT = HTTP.ResponseCode) then
-				begin
-					RedirectionURL := HTTP.Response.Location;
-					Logger.Log(LOG_LEVEL_HTTP, MSGTYPE_DETAILS, HTTP_REDIRECT, [URL, RedirectionURL]);
-					Result := True;
-				end else begin
-					self.ExceptionHandler(E, URL, HTTP_METHOD_GET);
-				end;
-			end;
-		end;
-	finally
-		HTTP.HandleRedirects := True;
-	end;
-end;
-
-procedure TCloudMailRuHTTP.Head(URL: WideString);
-begin
-	Logger.Log(LOG_LEVEL_HTTP, MSGTYPE_DETAILS, HTTP_REQUEST, ['HEAD', URL]);
-	HTTP.Head(URL);
-	Logger.Log(LOG_LEVEL_HTTP, MSGTYPE_DETAILS, HTTP_RESPONSE, [URL, HTTP.ResponseCode, 0]);
-	HTTP.Request.Referer := URL;
-end;
-
 function TCloudMailRuHTTP.Post(URL: WideString; PostData, ResultData: TStringStream; UnderstandResponseCode: Boolean; ContentType: WideString; LogErrors, ProgressEnabled: Boolean): Integer;
 begin
 	Result := CLOUD_OPERATION_OK;
@@ -451,29 +368,6 @@ begin
 	end;
 end;
 
-function TCloudMailRuHTTP.PostFile(URL, FileName: WideString; FileStream: TStream; var Answer: WideString): Integer;
-var
-	PostData: TIdMultiPartFormDataStream;
-	ResultStream: TStringStream;
-begin
-	Logger.Log(LOG_LEVEL_HTTP, MSGTYPE_DETAILS, HTTP_REQUEST_BODY, ['POST (file)', URL, FileStream.Size]);
-	ResultStream := TStringStream.Create;
-	try
-		PostData := TIdMultiPartFormDataStream.Create;
-		try
-			PostData.AddFormField('file', 'application/octet-stream', EmptyWideStr, FileStream, FileName);
-			Result := self.Post(URL, PostData, ResultStream);
-			Answer := ResultStream.DataString;
-			Logger.Log(LOG_LEVEL_HTTP, MSGTYPE_DETAILS, HTTP_RESPONSE, [URL, HTTP.ResponseCode, Length(Answer)]);
-			Logger.Log(LOG_LEVEL_HTTP, MSGTYPE_DETAILS, HTTP_RESPONSE_BODY, [TruncateForLog(Answer)]);
-		finally
-			PostData.free;
-		end;
-	finally
-		ResultStream.free;
-	end;
-end;
-
 function TCloudMailRuHTTP.PostForm(URL, PostDataString: WideString; var Answer: WideString; ContentType: WideString; LogErrors, ProgressEnabled: Boolean): Boolean;
 var
 	ResultStream, PostData: TStringStream;
@@ -491,61 +385,6 @@ begin
 			Logger.Log(LOG_LEVEL_HTTP, MSGTYPE_DETAILS, HTTP_RESPONSE_BODY, [TruncateForLog(Answer)]);
 		finally
 			PostData.free;
-		end;
-	finally
-		ResultStream.free;
-	end;
-end;
-
-function TCloudMailRuHTTP.PostMultipart(URL: WideString; Params: TDictionary<WideString, WideString>; var Answer: WideString): Boolean;
-var
-	ResultStream: TStringStream;
-	PostData: TIdMultiPartFormDataStream;
-	ParamItem: TPair<WideString, WideString>;
-	PostResult: Integer;
-begin
-	Logger.Log(LOG_LEVEL_HTTP, MSGTYPE_DETAILS, HTTP_REQUEST, ['POST (multipart)', URL]);
-	ResultStream := TStringStream.Create;
-	try
-		PostData := TIdMultiPartFormDataStream.Create;
-		try
-			for ParamItem in Params do
-				PostData.AddFormField(ParamItem.Key, ParamItem.Value);
-
-			PostResult := self.Post(URL, PostData, ResultStream);
-			Result := PostResult = CLOUD_OPERATION_OK;
-			Answer := ResultStream.DataString;
-			Logger.Log(LOG_LEVEL_HTTP, MSGTYPE_DETAILS, HTTP_RESPONSE, [URL, HTTP.ResponseCode, Length(Answer)]);
-			Logger.Log(LOG_LEVEL_HTTP, MSGTYPE_DETAILS, HTTP_RESPONSE_BODY, [TruncateForLog(Answer)]);
-		finally
-			PostData.free;
-		end;
-	finally
-		ResultStream.free;
-	end;
-end;
-
-function TCloudMailRuHTTP.OptionsMethod(URL: WideString; var Answer: WideString; var ProgressEnabled: Boolean): Boolean;
-var
-	ResultStream: TStringStream;
-begin
-	Result := True;
-	Logger.Log(LOG_LEVEL_HTTP, MSGTYPE_DETAILS, HTTP_REQUEST, ['OPTIONS', URL]);
-	ResultStream := TStringStream.Create;
-	try
-		try
-			HTTP.Intercept := Throttle;
-			HTTP.OnWork := self.HTTPProgress;
-			HTTP.Options(URL, ResultStream);
-			Answer := ResultStream.DataString;
-			Logger.Log(LOG_LEVEL_HTTP, MSGTYPE_DETAILS, HTTP_RESPONSE, [URL, HTTP.ResponseCode, Length(Answer)]);
-			Logger.Log(LOG_LEVEL_HTTP, MSGTYPE_DETAILS, HTTP_RESPONSE_BODY, [TruncateForLog(Answer)]);
-		except
-			On E: Exception do
-			begin
-				self.ExceptionHandler(E, URL, HTTP_METHOD_OPTIONS);
-				Result := false;
-			end;
 		end;
 	finally
 		ResultStream.free;
@@ -662,16 +501,6 @@ begin
 			begin
 				method_string := METHOD_STR_POST;
 				Result := CLOUD_OPERATION_FAILED; {For all POST requests}
-			end;
-		HTTP_METHOD_OPTIONS:
-			begin
-				method_string := METHOD_STR_OPTIONS;
-				Result := CLOUD_OPERATION_FAILED;
-			end;
-		HTTP_METHOD_HEAD:
-			begin
-				method_string := METHOD_STR_HEAD;
-				Result := CLOUD_OPERATION_FAILED;
 			end;
 	end;
 	if E is EIdHTTPProtocolException then

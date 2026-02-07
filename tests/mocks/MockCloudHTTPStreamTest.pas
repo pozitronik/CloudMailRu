@@ -44,9 +44,6 @@ type
 		procedure TestPutFile_CapturesUploadContent;
 		[Test]
 		procedure TestPutFile_CapturesFileName;
-		[Test]
-		procedure TestPostFile_CapturesUpload;
-
 		{Upload capture inspection tests}
 		[Test]
 		procedure TestGetUploadCount_TracksMultipleUploads;
@@ -255,29 +252,6 @@ begin
 		FMockHTTP.PutFile('http://upload.test.com', 'myfile.dat', Stream, Answer);
 
 		Assert.AreEqual(String('myfile.dat'), String(FMockHTTP.GetLastUploadCapture.FileName), 'Should capture filename');
-	finally
-		Stream.Free;
-	end;
-end;
-
-procedure TMockCloudHTTPStreamTest.TestPostFile_CapturesUpload;
-var
-	Stream: TMemoryStream;
-	Content: TBytes;
-	Answer: WideString;
-begin
-	Content := TEncoding.UTF8.GetBytes('PostFile content');
-	FMockHTTP.SetResponse('http://post.test.com', True, 'OK');
-
-	Stream := TMemoryStream.Create;
-	try
-		Stream.Write(Content[0], Length(Content));
-		Stream.Position := 0;
-
-		FMockHTTP.PostFile('http://post.test.com', 'posted.txt', Stream, Answer);
-
-		Assert.AreEqual(1, FMockHTTP.GetUploadCount, 'Should have one upload captured');
-		Assert.AreEqual(String('posted.txt'), String(FMockHTTP.GetLastUploadCapture.FileName), 'Should capture filename');
 	finally
 		Stream.Free;
 	end;

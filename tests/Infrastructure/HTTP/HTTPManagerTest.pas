@@ -29,12 +29,8 @@ type
 		{ICloudHTTP implementation - minimal stubs}
 		function GetPage(URL: WideString; var Answer: WideString; var ProgressEnabled: Boolean): Boolean;
 		function GetFile(URL: WideString; FileStream: TStream; LogErrors: Boolean = True): Integer;
-		function GetRedirection(URL: WideString; var RedirectionURL: WideString; var ProgressEnabled: Boolean): Boolean;
 		function PostForm(URL: WideString; PostDataString: WideString; var Answer: WideString; ContentType: WideString = ''; LogErrors: Boolean = True; ProgressEnabled: Boolean = True): Boolean;
-		function PostMultipart(URL: WideString; Params: TDictionary<WideString, WideString>; var Answer: WideString): Boolean;
-		function PostFile(URL: WideString; FileName: WideString; FileStream: TStream; var Answer: WideString): Integer;
 		function PutFile(URL: WideString; FileName: WideString; FileStream: TStream; var Answer: WideString): Integer;
-		procedure Head(URL: WideString);
 		procedure SetProgressNames(SourceName, TargetName: WideString);
 		procedure SetProgress(Progress: IProgress);
 		procedure SetAuthCookie(Value: TIdCookieManager);
@@ -154,33 +150,14 @@ begin
 	Result := FS_FILE_READERROR;
 end;
 
-function TMockHTTPForPooling.GetRedirection(URL: WideString; var RedirectionURL: WideString; var ProgressEnabled: Boolean): Boolean;
-begin
-	Result := False;
-end;
-
 function TMockHTTPForPooling.PostForm(URL: WideString; PostDataString: WideString; var Answer: WideString; ContentType: WideString; LogErrors: Boolean; ProgressEnabled: Boolean): Boolean;
 begin
 	Result := False;
 end;
 
-function TMockHTTPForPooling.PostMultipart(URL: WideString; Params: TDictionary<WideString, WideString>; var Answer: WideString): Boolean;
-begin
-	Result := False;
-end;
-
-function TMockHTTPForPooling.PostFile(URL: WideString; FileName: WideString; FileStream: TStream; var Answer: WideString): Integer;
-begin
-	Result := FS_FILE_WRITEERROR;
-end;
-
 function TMockHTTPForPooling.PutFile(URL: WideString; FileName: WideString; FileStream: TStream; var Answer: WideString): Integer;
 begin
 	Result := FS_FILE_WRITEERROR;
-end;
-
-procedure TMockHTTPForPooling.Head(URL: WideString);
-begin
 end;
 
 procedure TMockHTTPForPooling.SetProgressNames(SourceName, TargetName: WideString);

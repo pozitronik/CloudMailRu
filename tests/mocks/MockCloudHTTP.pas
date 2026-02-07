@@ -121,14 +121,10 @@ type
 		{ICloudHTTP implementation}
 		function GetPage(URL: WideString; var Answer: WideString; var ProgressEnabled: Boolean): Boolean;
 		function GetFile(URL: WideString; FileStream: TStream; LogErrors: Boolean = True): Integer;
-		function GetRedirection(URL: WideString; var RedirectionURL: WideString; var ProgressEnabled: Boolean): Boolean;
 		function PostForm(URL: WideString; PostDataString: WideString; var Answer: WideString;
 			ContentType: WideString = 'application/x-www-form-urlencoded'; LogErrors: Boolean = True;
 			ProgressEnabled: Boolean = True): Boolean;
-		function PostMultipart(URL: WideString; Params: TDictionary<WideString, WideString>; var Answer: WideString): Boolean;
-		function PostFile(URL: WideString; FileName: WideString; FileStream: TStream; var Answer: WideString): Integer;
 		function PutFile(URL: WideString; FileName: WideString; FileStream: TStream; var Answer: WideString): Integer;
-		procedure Head(URL: WideString);
 		procedure SetProgressNames(SourceName, TargetName: WideString);
 		procedure SetProgress(Progress: IProgress);
 		procedure SetAuthCookie(Value: TIdCookieManager);
@@ -613,17 +609,6 @@ begin
 	Result := Response.ResultCode;
 end;
 
-function TMockCloudHTTP.GetRedirection(URL: WideString; var RedirectionURL: WideString;
-	var ProgressEnabled: Boolean): Boolean;
-var
-	Response: TMockResponse;
-begin
-	FCalls.Add('REDIRECT:' + URL);
-	Response := FindResponse(URL);
-	RedirectionURL := Response.Answer;
-	Result := Response.Success;
-end;
-
 function TMockCloudHTTP.PostForm(URL: WideString; PostDataString: WideString;
 	var Answer: WideString; ContentType: WideString; LogErrors: Boolean;
 	ProgressEnabled: Boolean): Boolean;
@@ -635,64 +620,6 @@ begin
 	Response := FindResponse(URL);
 	Answer := Response.Answer;
 	Result := Response.Success;
-end;
-
-function TMockCloudHTTP.PostMultipart(URL: WideString;
-	Params: TDictionary<WideString, WideString>; var Answer: WideString): Boolean;
-var
-	Response: TMockResponse;
-	ParamStr: WideString;
-	Key: WideString;
-begin
-	FCalls.Add('POSTMULTI:' + URL);
-	{Record params as string for inspection}
-	ParamStr := '';
-	for Key in Params.Keys do
-		ParamStr := ParamStr + Key + '=' + Params[Key] + '&';
-	FPostData.Add(ParamStr);
-	Response := FindResponse(URL);
-	Answer := Response.Answer;
-	Result := Response.Success;
-end;
-
-function TMockCloudHTTP.PostFile(URL: WideString; FileName: WideString;
-	FileStream: TStream; var Answer: WideString): Integer;
-var
-	Response: TMockResponse;
-	StreamResponse: TMockStreamResponse;
-	Capture: TMockUploadCapture;
-begin
-	FCalls.Add('POSTFILE:' + URL + ':' + FileName);
-
-	{Capture the uploaded content for verification}
-	Capture.URL := URL;
-	Capture.FileName := FileName;
-	if Assigned(FileStream) then
-	begin
-		SetLength(Capture.Content, FileStream.Size);
-		if FileStream.Size > 0 then
-		begin
-			FileStream.Position := 0;
-			FileStream.Read(Capture.Content[0], FileStream.Size);
-			FileStream.Position := 0;
-		end;
-	end
-	else
-		SetLength(Capture.Content, 0);
-	FUploadCaptures.Add(Capture);
-
-	{Check for stream response first}
-	if FindStreamResponse(URL, StreamResponse) then
-	begin
-		Answer := StreamResponse.ExpectedHash;
-		Result := StreamResponse.ResultCode;
-		Exit;
-	end;
-
-	{Fall back to regular response}
-	Response := FindResponse(URL);
-	Answer := Response.Answer;
-	Result := Response.ResultCode;
 end;
 
 function TMockCloudHTTP.PutFile(URL: WideString; FileName: WideString;
@@ -733,11 +660,6 @@ begin
 	Response := FindResponse(URL);
 	Answer := Response.Answer;
 	Result := Response.ResultCode;
-end;
-
-procedure TMockCloudHTTP.Head(URL: WideString);
-begin
-	FCalls.Add('HEAD:' + URL);
 end;
 
 procedure TMockCloudHTTP.SetProgressNames(SourceName, TargetName: WideString);
