@@ -258,6 +258,8 @@ uses
 	InviteOperationHandlerTest in 'Application\Operations\InviteOperationHandlerTest.pas',
 	CrossAccountFileOperationHandler in '..\src\Application\FileOps\CrossAccountFileOperationHandler.pas',
 	CrossAccountFileOperationHandlerTest in 'Application\FileOps\CrossAccountFileOperationHandlerTest.pas',
+	CrossServerFileOperationHandler in '..\src\Application\FileOps\CrossServerFileOperationHandler.pas',
+	CrossServerFileOperationHandlerTest in 'Application\FileOps\CrossServerFileOperationHandlerTest.pas',
 	IconRenderingEngine in '..\src\Presentation\Icon\IconRenderingEngine.pas',
 	IconRenderingEngineTest in 'Presentation\Icon\IconRenderingEngineTest.pas',
 	FileExecutionDispatcher in '..\src\Application\Operations\FileExecutionDispatcher.pas',

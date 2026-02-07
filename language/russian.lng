@@ -127,6 +127,7 @@ FILE_EXISTS_OVERWRITE="Локальный файл %s существует, бу
 FILE_FOUND_BY_HASH="Файл "%s" найден по хешу"
 INCOMING_LINKS_LISTING="Список входящих ссылок"
 INVITE_FORM_TITLE="Приглашение %s: %s"
+LOG_CROSS_SERVER_FALLBACK="Межсерверная передача: переключение на передачу через память"
 LOGIN_IN_PROGRESS="Вход в аккаунт..."
 LOGIN_TO="Вход в %s"
 METHOD_STR_HEAD="проверка"

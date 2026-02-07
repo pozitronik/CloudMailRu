@@ -80,6 +80,7 @@ uses
 	TrashBinOperationHandler,
 	InviteOperationHandler,
 	CrossAccountFileOperationHandler,
+	CrossServerFileOperationHandler,
 	IconRenderingEngine,
 	FileExecutionDispatcher,
 	SharedItemActionHandler,
@@ -413,7 +414,8 @@ begin
 	FInviteOperationHandler := TInviteOperationHandler.Create;
 
 	{Create cross-account file operation handler for FsRenMovFile}
-	FCrossAccountFileOperationHandler := TCrossAccountFileOperationHandler.Create(FRetryHandler, Logger);
+	FCrossAccountFileOperationHandler := TCrossAccountFileOperationHandler.Create(FRetryHandler, Logger,
+		TCrossServerFileOperationHandler.Create(FRetryHandler, Logger));
 
 	{Create icon rendering engine for FsExtractCustomIcon}
 	FIconRenderingEngine := TIconRenderingEngine.Create;

@@ -202,15 +202,18 @@ type
 		FSharedFileUrl: WideString;
 		FFileSystem: IFileSystem;
 		FDownloadContent: WideString;
+		FDownloadToStreamResult: Integer;
 	public
 		function Download(RemotePath, LocalPath: WideString; var ResultHash: WideString; LogErrors: Boolean = True): Integer;
 		function GetSharedFileUrl(RemotePath: WideString; ShardType: WideString = SHARD_TYPE_DEFAULT): WideString;
+		function DownloadToStream(RemotePath: WideString; DestStream: TStream): Integer;
 
 		property DownloadResult: Integer read FDownloadResult write FDownloadResult;
 		property DownloadedHash: WideString read FDownloadedHash write FDownloadedHash;
 		property SharedFileUrl: WideString read FSharedFileUrl write FSharedFileUrl;
 		property FileSystem: IFileSystem read FFileSystem write FFileSystem;
 		property DownloadContent: WideString read FDownloadContent write FDownloadContent;
+		property DownloadToStreamResult: Integer read FDownloadToStreamResult write FDownloadToStreamResult;
 	end;
 
 	{Mock uploader for testing}
@@ -221,15 +224,20 @@ type
 		FAddByIdentityCallCount: Integer;
 		FLastAddedIdentity: TCloudFileIdentity;
 		FLastAddedPath: WideString;
+		FUploadStreamResult: Integer;
+		FUploadStreamCallCount: Integer;
 	public
 		function Upload(LocalPath, RemotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; ChunkOverwriteMode: Integer = 0): Integer;
 		function AddFileByIdentity(FileIdentity: TCloudFileIdentity; RemotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; LogErrors: Boolean = True; LogSuccess: Boolean = False): Integer;
+		function UploadStream(FileName, RemotePath: WideString; FileStream: TStream; ConflictMode: WideString; KnownHash: WideString = ''): Integer;
 
 		property UploadResult: Integer read FUploadResult write FUploadResult;
 		property AddByIdentityResult: Integer read FAddByIdentityResult write FAddByIdentityResult;
 		property AddByIdentityCallCount: Integer read FAddByIdentityCallCount;
 		property LastAddedIdentity: TCloudFileIdentity read FLastAddedIdentity;
 		property LastAddedPath: WideString read FLastAddedPath;
+		property UploadStreamResult: Integer read FUploadStreamResult write FUploadStreamResult;
+		property UploadStreamCallCount: Integer read FUploadStreamCallCount;
 	end;
 
 	{Mock file operations for testing}
@@ -753,6 +761,11 @@ begin
 	Result := FSharedFileUrl + RemotePath;
 end;
 
+function TMockDownloader.DownloadToStream(RemotePath: WideString; DestStream: TStream): Integer;
+begin
+	Result := FDownloadToStreamResult;
+end;
+
 {TMockUploader}
 
 function TMockUploader.Upload(LocalPath, RemotePath: WideString; ConflictMode: WideString; ChunkOverwriteMode: Integer): Integer;
@@ -766,6 +779,12 @@ begin
 	FLastAddedIdentity := FileIdentity;
 	FLastAddedPath := RemotePath;
 	Result := FAddByIdentityResult;
+end;
+
+function TMockUploader.UploadStream(FileName, RemotePath: WideString; FileStream: TStream; ConflictMode: WideString; KnownHash: WideString): Integer;
+begin
+	Inc(FUploadStreamCallCount);
+	Result := FUploadStreamResult;
 end;
 
 {TMockFileOps}

@@ -140,6 +140,7 @@ type
 		property ListingService: ICloudListingService read FListingService;
 		property FileOperations: ICloudFileOperations read FFileOperations;
 		property ShardManager: ICloudShardManager read FShardManager;
+		property ServerProfileName: WideString read FSettings.AccountSettings.Server;
 
 		{ICloudContext implementation - provides access to cloud state for services}
 		function IsPublicAccount: Boolean;

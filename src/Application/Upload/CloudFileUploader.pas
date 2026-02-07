@@ -55,6 +55,10 @@ type
 		{Add file by its hash identity (fast upload if file already exists in cloud).
 			Returns FS_FILE_OK on success, or appropriate error code on failure.}
 		function AddFileByIdentity(FileIdentity: TCloudFileIdentity; RemotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; LogErrors: Boolean = True; LogSuccess: Boolean = False): Integer;
+		{Upload from an arbitrary stream to cloud.
+			KnownHash skips redundant hash calculation and dedup when hash is already known.
+			Returns FS_FILE_OK on success, or appropriate error code on failure.}
+		function UploadStream(FileName, RemotePath: WideString; FileStream: TStream; ConflictMode: WideString; KnownHash: WideString = ''): Integer;
 	end;
 
 	{File upload service - handles whole file and delegates chunked uploads}
@@ -76,7 +80,7 @@ type
 
 		{Internal upload methods}
 		function PutFileWhole(LocalPath, RemotePath, ConflictMode: WideString): Integer;
-		function PutFileStream(FileName, RemotePath: WideString; FileStream: TStream; ConflictMode: WideString): Integer;
+		function PutFileStream(FileName, RemotePath: WideString; FileStream: TStream; ConflictMode: WideString; KnownHash: WideString = ''): Integer;
 		function PutFileToCloud(FileName: WideString; FileStream: TStream; var FileIdentity: TCloudFileIdentity): Integer;
 
 		{Create chunked handler on demand}
@@ -90,9 +94,7 @@ type
 		{ICloudFileUploader}
 		function Upload(LocalPath, RemotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; ChunkOverwriteMode: Integer = 0): Integer;
 		function AddFileByIdentity(FileIdentity: TCloudFileIdentity; RemotePath: WideString; ConflictMode: WideString = CLOUD_CONFLICT_STRICT; LogErrors: Boolean = True; LogSuccess: Boolean = False): Integer;
-
-		{Upload stream - used internally by chunked upload}
-		function UploadStream(FileName, RemotePath: WideString; FileStream: TStream; ConflictMode: WideString): Integer;
+		function UploadStream(FileName, RemotePath: WideString; FileStream: TStream; ConflictMode: WideString; KnownHash: WideString = ''): Integer;
 	end;
 
 implementation
@@ -210,7 +212,7 @@ begin
 	end;
 end;
 
-function TCloudFileUploader.PutFileStream(FileName, RemotePath: WideString; FileStream: TStream; ConflictMode: WideString): Integer;
+function TCloudFileUploader.PutFileStream(FileName, RemotePath: WideString; FileStream: TStream; ConflictMode: WideString; KnownHash: WideString): Integer;
 var
 	LocalFileIdentity, RemoteFileIdentity: TCloudFileIdentity;
 	OperationResult: Integer;
@@ -221,26 +223,34 @@ begin
 	Result := FS_FILE_WRITEERROR;
 	OperationResult := CLOUD_OPERATION_FAILED;
 
-	UseHash := FSettings.PrecalculateHash or (FSettings.ForcePrecalculateSize >= FileStream.size); {issue #231}
-
-	if UseHash or FSettings.CheckCRC then
+	if KnownHash <> EmptyWideStr then
 	begin
-		LocalFileIdentity.Hash := FHashCalculator.CalculateHash(FileStream, FileName);
+		{Hash already known from caller (e.g. cross-server transfer) -- skip
+			expensive recalculation and redundant dedup attempt}
+		LocalFileIdentity.Hash := KnownHash;
 		LocalFileIdentity.size := FileStream.size;
-	end;
-	{Deduplication: try to create file by hash without uploading.
-		If hash exists on server, file is created instantly. If not, AddFileByIdentity
-		returns error (HTTP 400) and we proceed to actual upload. See AddFileByIdentity comments.}
-	if UseHash and (LocalFileIdentity.Hash <> EmptyWideStr) and (not FDoCryptFiles) then
-	begin
-		DedupeResult := AddFileByIdentity(LocalFileIdentity, RemotePath, CLOUD_CONFLICT_STRICT, False, True);
-		if DedupeResult = FS_FILE_OK then
-			Exit(CLOUD_OPERATION_OK) {issue #135}
-		else if DedupeResult = FS_FILE_EXISTS then
-			{Path already exists - return EXISTS so caller can decide (skip for resume scenario).
-				This avoids re-uploading data that's likely already there from previous attempt.}
-			Exit(FS_FILE_EXISTS);
-		{Other errors (hash not found on server): fall through to upload}
+	end else begin
+		UseHash := FSettings.PrecalculateHash or (FSettings.ForcePrecalculateSize >= FileStream.size); {issue #231}
+
+		if UseHash or FSettings.CheckCRC then
+		begin
+			LocalFileIdentity.Hash := FHashCalculator.CalculateHash(FileStream, FileName);
+			LocalFileIdentity.size := FileStream.size;
+		end;
+		{Deduplication: try to create file by hash without uploading.
+			If hash exists on server, file is created instantly. If not, AddFileByIdentity
+			returns error (HTTP 400) and we proceed to actual upload. See AddFileByIdentity comments.}
+		if UseHash and (LocalFileIdentity.Hash <> EmptyWideStr) and (not FDoCryptFiles) then
+		begin
+			DedupeResult := AddFileByIdentity(LocalFileIdentity, RemotePath, CLOUD_CONFLICT_STRICT, False, True);
+			if DedupeResult = FS_FILE_OK then
+				Exit(CLOUD_OPERATION_OK) {issue #135}
+			else if DedupeResult = FS_FILE_EXISTS then
+				{Path already exists - return EXISTS so caller can decide (skip for resume scenario).
+					This avoids re-uploading data that's likely already there from previous attempt.}
+				Exit(FS_FILE_EXISTS);
+			{Other errors (hash not found on server): fall through to upload}
+		end;
 	end;
 
 	try
@@ -328,9 +338,10 @@ begin
 end;
 
 {Internal stream upload - delegates to PutFileStream}
-function TCloudFileUploader.UploadStream(FileName, RemotePath: WideString; FileStream: TStream; ConflictMode: WideString): Integer;
+function TCloudFileUploader.UploadStream(FileName, RemotePath: WideString; FileStream: TStream; ConflictMode: WideString; KnownHash: WideString): Integer;
 begin
-	Result := PutFileStream(FileName, RemotePath, FileStream, ConflictMode);
+	FContext.GetHTTP.SetProgressNames(FileName, RemotePath);
+	Result := PutFileStream(FileName, RemotePath, FileStream, ConflictMode, KnownHash);
 end;
 
 {Create chunked handler on demand with current settings}

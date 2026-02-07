@@ -11,7 +11,8 @@ uses
 	CloudErrorMapper,
 	RealPath,
 	RetryHandler,
-	Logger;
+	Logger,
+	CrossServerFileOperationHandler;
 
 type
 	ICrossAccountFileOperationHandler = interface
@@ -35,6 +36,7 @@ type
 	private
 		FRetryHandler: IRetryHandler;
 		FLogger: ILogger;
+		FCrossServerHandler: ICrossServerFileOperationHandler;
 
 		{Transfers file by adding it via hash identity to target account}
 		function ExecuteViaHash(OldCloud, NewCloud: TCloudMailRu; const OldRealPath, NewRealPath: TRealPath; Move, OverWrite: Boolean; AbortCheck: TAbortCheckFunc): Integer;
@@ -45,7 +47,7 @@ type
 		{Clones weblink from source to target, unpublishes if needed}
 		function CloneWeblink(NewCloud, OldCloud: TCloudMailRu; const CloudPath, Weblink, Home: WideString; NeedUnpublish: Boolean): Integer;
 	public
-		constructor Create(RetryHandler: IRetryHandler; Logger: ILogger);
+		constructor Create(RetryHandler: IRetryHandler; Logger: ILogger; CrossServerHandler: ICrossServerFileOperationHandler);
 
 		function Execute(OldCloud, NewCloud: TCloudMailRu; const OldRealPath, NewRealPath: TRealPath; Move, OverWrite: Boolean; Mode: Integer; IsSourcePublicAccount: Boolean; AbortCheck: TAbortCheckFunc): Integer;
 	end;
@@ -61,11 +63,12 @@ uses
 	SettingsConstants,
 	LanguageStrings;
 
-constructor TCrossAccountFileOperationHandler.Create(RetryHandler: IRetryHandler; Logger: ILogger);
+constructor TCrossAccountFileOperationHandler.Create(RetryHandler: IRetryHandler; Logger: ILogger; CrossServerHandler: ICrossServerFileOperationHandler);
 begin
 	inherited Create;
 	FRetryHandler := RetryHandler;
 	FLogger := Logger;
+	FCrossServerHandler := CrossServerHandler;
 end;
 
 function TCrossAccountFileOperationHandler.Execute(OldCloud, NewCloud: TCloudMailRu; const OldRealPath, NewRealPath: TRealPath; Move, OverWrite: Boolean; Mode: Integer; IsSourcePublicAccount: Boolean; AbortCheck: TAbortCheckFunc): Integer;
@@ -83,10 +86,20 @@ begin
 				FLogger.Log(LOG_LEVEL_WARNING, MSGTYPE_IMPORTANTERROR, ERR_DIRECT_OPERATIONS_DISABLED);
 				Exit(FS_FILE_USERABORT);
 			end;
-		CopyBetweenAccountsModeViaHash:
-			Result := ExecuteViaHash(OldCloud, NewCloud, OldRealPath, NewRealPath, Move, OverWrite, AbortCheck);
-		CopyBetweenAccountsModeViaPublicLink:
-			Result := ExecuteViaPublicLink(OldCloud, NewCloud, OldRealPath, NewRealPath, Move, OverWrite, AbortCheck);
+		CopyBetweenAccountsModeViaHash, CopyBetweenAccountsModeViaPublicLink:
+			begin
+				{Cross-server: server-side operations (hash dedup, weblink clone) don't work
+					across different servers, so fall back to memory stream transfer}
+				if OldCloud.ServerProfileName <> NewCloud.ServerProfileName then
+				begin
+					FLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, LOG_CROSS_SERVER_FALLBACK);
+					Exit(FCrossServerHandler.Execute(OldCloud, NewCloud, OldRealPath, NewRealPath, Move, OverWrite, AbortCheck));
+				end;
+				if Mode = CopyBetweenAccountsModeViaHash then
+					Result := ExecuteViaHash(OldCloud, NewCloud, OldRealPath, NewRealPath, Move, OverWrite, AbortCheck)
+				else
+					Result := ExecuteViaPublicLink(OldCloud, NewCloud, OldRealPath, NewRealPath, Move, OverWrite, AbortCheck);
+			end;
 		else
 			Result := FS_FILE_WRITEERROR;
 	end;

@@ -332,6 +332,7 @@
         <DCCReference Include="src\Application\Operations\TrashBinOperationHandler.pas"/>
         <DCCReference Include="src\Application\Operations\InviteOperationHandler.pas"/>
         <DCCReference Include="src\Application\FileOps\CrossAccountFileOperationHandler.pas"/>
+        <DCCReference Include="src\Application\FileOps\CrossServerFileOperationHandler.pas"/>
         <DCCReference Include="src\Presentation\Icon\IconRenderingEngine.pas"/>
         <DCCReference Include="src\Application\Operations\FileExecutionDispatcher.pas"/>
         <DCCReference Include="src\Application\Operations\SharedItemActionHandler.pas"/>

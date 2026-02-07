@@ -143,6 +143,7 @@ uses
 	TrashBinOperationHandler in 'src\Application\Operations\TrashBinOperationHandler.pas',
 	InviteOperationHandler in 'src\Application\Operations\InviteOperationHandler.pas',
 	CrossAccountFileOperationHandler in 'src\Application\FileOps\CrossAccountFileOperationHandler.pas',
+	CrossServerFileOperationHandler in 'src\Application\FileOps\CrossServerFileOperationHandler.pas',
 	IconRenderingEngine in 'src\Presentation\Icon\IconRenderingEngine.pas',
 	FileExecutionDispatcher in 'src\Application\Operations\FileExecutionDispatcher.pas',
 	SharedItemActionHandler in 'src\Application\Operations\SharedItemActionHandler.pas',

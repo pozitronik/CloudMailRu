@@ -10,6 +10,7 @@ uses
 	SysUtils,
 	CloudCallbackTypes,
 	CrossAccountFileOperationHandler,
+	CrossServerFileOperationHandler,
 	RetryHandler,
 	Cipher,
 	Logger,
@@ -59,6 +60,17 @@ type
 		property LastMessage: WideString read FLastMessage;
 	end;
 
+	{Mock cross-server handler that tracks delegation calls}
+	TMockCrossServerHandler = class(TInterfacedObject, ICrossServerFileOperationHandler)
+	private
+		FExecuteCalled: Boolean;
+		FReturnValue: Integer;
+	public
+		constructor Create(ReturnValue: Integer = 0);
+		function Execute(OldCloud, NewCloud: TCloudMailRu; const OldRealPath, NewRealPath: TRealPath; Move, OverWrite: Boolean; AbortCheck: TAbortCheckFunc): Integer;
+		property ExecuteCalled: Boolean read FExecuteCalled;
+	end;
+
 	{Testable CloudMailRu for cross-account operation tests}
 	TTestableCloudMailRu = class(TCloudMailRu)
 	public
@@ -71,12 +83,13 @@ type
 		FHandler: ICrossAccountFileOperationHandler;
 		FMockRetryHandler: TMockRetryHandler;
 		FMockLogger: TMockLogger;
+		FMockCrossServerHandler: TMockCrossServerHandler;
 		FMockHTTP: TMockCloudHTTP;
 		FMockHTTPManager: TMockHTTPManager;
 		FOldCloud: TTestableCloudMailRu;
 		FNewCloud: TTestableCloudMailRu;
 
-		function CreateCloud: TTestableCloudMailRu;
+		function CreateCloud(const ServerName: WideString = ''): TTestableCloudMailRu;
 	public
 		[Setup]
 		procedure Setup;
@@ -136,6 +149,16 @@ type
 		procedure TestExecute_ViaPublicLink_UnpublishFails_LogsError;
 		[Test]
 		procedure TestExecute_ViaPublicLink_MoveDeleteSourceFails_LogsError;
+
+		{Cross-server delegation tests}
+		[Test]
+		procedure TestExecute_CrossServer_ViaHash_DelegatesToCrossServerHandler;
+		[Test]
+		procedure TestExecute_CrossServer_ViaPublicLink_DelegatesToCrossServerHandler;
+		[Test]
+		procedure TestExecute_CrossServer_LogsFallbackMessage;
+		[Test]
+		procedure TestExecute_SameServer_DoesNotDelegate;
 	end;
 
 implementation
@@ -181,6 +204,21 @@ const
 
 	JSON_CLONE_FAIL =
 		'{"email":"test@mail.ru","body":{"home":{"error":"not_exists"}},"status":400}';
+
+{TMockCrossServerHandler}
+
+constructor TMockCrossServerHandler.Create(ReturnValue: Integer);
+begin
+	inherited Create;
+	FExecuteCalled := False;
+	FReturnValue := ReturnValue;
+end;
+
+function TMockCrossServerHandler.Execute(OldCloud, NewCloud: TCloudMailRu; const OldRealPath, NewRealPath: TRealPath; Move, OverWrite: Boolean; AbortCheck: TAbortCheckFunc): Integer;
+begin
+	FExecuteCalled := True;
+	Result := FReturnValue;
+end;
 
 {TMockRetryHandler}
 
@@ -234,7 +272,8 @@ begin
 	FMockHTTPManager := TMockHTTPManager.Create(FMockHTTP);
 	FMockRetryHandler := TMockRetryHandler.Create;
 	FMockLogger := TMockLogger.Create;
-	FHandler := TCrossAccountFileOperationHandler.Create(FMockRetryHandler, FMockLogger);
+	FMockCrossServerHandler := TMockCrossServerHandler.Create;
+	FHandler := TCrossAccountFileOperationHandler.Create(FMockRetryHandler, FMockLogger, FMockCrossServerHandler);
 	FOldCloud := nil;
 	FNewCloud := nil;
 end;
@@ -246,15 +285,17 @@ begin
 	FNewCloud.Free;
 	FMockRetryHandler := nil;
 	FMockLogger := nil;
+	FMockCrossServerHandler := nil;
 	FMockHTTPManager := nil;
 	FMockHTTP := nil;
 end;
 
-function TCrossAccountFileOperationHandlerTest.CreateCloud: TTestableCloudMailRu;
+function TCrossAccountFileOperationHandlerTest.CreateCloud(const ServerName: WideString): TTestableCloudMailRu;
 var
 	Settings: TCloudSettings;
 begin
 	Settings := Default(TCloudSettings);
+	Settings.AccountSettings.Server := ServerName;
 	Result := TTestableCloudMailRu.Create(
 		Settings,
 		FMockHTTPManager,
@@ -710,6 +751,85 @@ begin
 
 	Assert.IsTrue(FMockLogger.LogCalled, 'Should log error when delete source fails');
 	Assert.AreEqual(LOG_LEVEL_ERROR, FMockLogger.LastLogLevel, 'Should log at error level');
+end;
+
+{Cross-server delegation tests}
+
+procedure TCrossAccountFileOperationHandlerTest.TestExecute_CrossServer_ViaHash_DelegatesToCrossServerHandler;
+var
+	OldPath, NewPath: TRealPath;
+	Result: Integer;
+begin
+	FOldCloud := CreateCloud('server1');
+	FNewCloud := CreateCloud('server2');
+	OldPath.FromPath('\account1\file.txt');
+	NewPath.FromPath('\account2\file.txt');
+
+	Result := FHandler.Execute(FOldCloud, FNewCloud, OldPath, NewPath, False, False,
+		CopyBetweenAccountsModeViaHash, False,
+		function: Boolean begin Result := False; end);
+
+	Assert.IsTrue(FMockCrossServerHandler.ExecuteCalled,
+		'Should delegate to cross-server handler when servers differ (ViaHash mode)');
+	Assert.AreEqual(CLOUD_OPERATION_OK, Result, 'Should return cross-server handler result');
+end;
+
+procedure TCrossAccountFileOperationHandlerTest.TestExecute_CrossServer_ViaPublicLink_DelegatesToCrossServerHandler;
+var
+	OldPath, NewPath: TRealPath;
+	Result: Integer;
+begin
+	FOldCloud := CreateCloud('server1');
+	FNewCloud := CreateCloud('server2');
+	OldPath.FromPath('\account1\file.txt');
+	NewPath.FromPath('\account2\file.txt');
+
+	Result := FHandler.Execute(FOldCloud, FNewCloud, OldPath, NewPath, False, False,
+		CopyBetweenAccountsModeViaPublicLink, False,
+		function: Boolean begin Result := False; end);
+
+	Assert.IsTrue(FMockCrossServerHandler.ExecuteCalled,
+		'Should delegate to cross-server handler when servers differ (ViaPublicLink mode)');
+	Assert.AreEqual(CLOUD_OPERATION_OK, Result, 'Should return cross-server handler result');
+end;
+
+procedure TCrossAccountFileOperationHandlerTest.TestExecute_CrossServer_LogsFallbackMessage;
+var
+	OldPath, NewPath: TRealPath;
+begin
+	FOldCloud := CreateCloud('server1');
+	FNewCloud := CreateCloud('server2');
+	OldPath.FromPath('\account1\file.txt');
+	NewPath.FromPath('\account2\file.txt');
+
+	FHandler.Execute(FOldCloud, FNewCloud, OldPath, NewPath, False, False,
+		CopyBetweenAccountsModeViaHash, False,
+		function: Boolean begin Result := False; end);
+
+	Assert.IsTrue(FMockLogger.LogCalled, 'Should log cross-server fallback message');
+	Assert.AreEqual(LOG_LEVEL_DETAIL, FMockLogger.LastLogLevel, 'Should log at detail level');
+	Assert.AreEqual(LOG_CROSS_SERVER_FALLBACK, FMockLogger.LastMessage, 'Should log correct fallback message');
+end;
+
+procedure TCrossAccountFileOperationHandlerTest.TestExecute_SameServer_DoesNotDelegate;
+var
+	OldPath, NewPath: TRealPath;
+begin
+	FOldCloud := CreateCloud('same_server');
+	FNewCloud := CreateCloud('same_server');
+	OldPath.FromPath('\account1\file.txt');
+	NewPath.FromPath('\account2\file.txt');
+
+	{StatusFile succeeds, AddFileByIdentity succeeds -- normal ViaHash path}
+	FMockHTTP.SetResponse(API_FILE, True, JSON_STATUS_FILE_SUCCESS);
+	FMockHTTP.SetResponse(API_FILE_ADD, True, JSON_ADD_FILE_SUCCESS);
+
+	FHandler.Execute(FOldCloud, FNewCloud, OldPath, NewPath, False, False,
+		CopyBetweenAccountsModeViaHash, False,
+		function: Boolean begin Result := False; end);
+
+	Assert.IsFalse(FMockCrossServerHandler.ExecuteCalled,
+		'Should NOT delegate to cross-server handler when servers are the same');
 end;
 
 initialization

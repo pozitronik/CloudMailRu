@@ -35,6 +35,10 @@ type
 		function Download(RemotePath, LocalPath: WideString; var ResultHash: WideString; LogErrors: Boolean = True): Integer;
 		{Get URL for shared/public file download.}
 		function GetSharedFileUrl(RemotePath: WideString; ShardType: WideString = SHARD_TYPE_DEFAULT): WideString;
+		{Download file from cloud directly to a provided stream (no local file created).
+			Handles shard resolution, OAuth, token retry, and decryption.
+			Returns FS_FILE_OK on success, or appropriate error code on failure.}
+		function DownloadToStream(RemotePath: WideString; DestStream: TStream): Integer;
 	end;
 
 	{File download service - handles both regular and shared account downloads}
@@ -58,6 +62,7 @@ type
 		{ICloudFileDownloader}
 		function Download(RemotePath, LocalPath: WideString; var ResultHash: WideString; LogErrors: Boolean = True): Integer;
 		function GetSharedFileUrl(RemotePath: WideString; ShardType: WideString = SHARD_TYPE_DEFAULT): WideString;
+		function DownloadToStream(RemotePath: WideString; DestStream: TStream): Integer;
 	end;
 
 implementation
@@ -228,6 +233,85 @@ begin
 	end;
 
 	Result := Format('%s%s%s', [IncludeSlash(usedShard), IncludeSlash(FContext.GetPublicLink), PathToUrl(RemotePath, True, True)]);
+end;
+
+{Downloads file directly to a provided stream without creating local files.
+	Same retry and shard failover logic as DownloadRegular, but writes to DestStream
+	instead of creating TBufferedFileStream. No hash calculation or file cleanup.}
+function TCloudFileDownloader.DownloadToStream(RemotePath: WideString; DestStream: TStream): Integer;
+const
+	MAX_TOKEN_RETRIES = 1;
+var
+	URL: WideString;
+	MemoryStream: TMemoryStream;
+	DecryptingStream: TStream;
+	DownloadShard: WideString;
+	OAuthToken: TCloudOAuth;
+	SavedUserAgent: string;
+	TokenRetryCount: Integer;
+	NeedRetry: Boolean;
+begin
+	Result := FS_FILE_NOTSUPPORTED;
+	if FContext.IsPublicAccount then
+		Exit;
+
+	DownloadShard := FShardManager.EnsureDownloadShard;
+	if DownloadShard = EmptyWideStr then
+		Exit;
+
+	FContext.GetHTTP.SetProgressNames(RemotePath, EmptyWideStr);
+	SavedUserAgent := FContext.GetHTTP.HTTP.Request.UserAgent;
+	FContext.GetHTTP.HTTP.Request.UserAgent := OAUTH_CLIENT_ID;
+	try
+		TokenRetryCount := 0;
+
+		repeat
+			NeedRetry := False;
+			OAuthToken := FContext.GetOAuthToken;
+
+			if FDoCryptFiles then
+			begin
+				MemoryStream := TMemoryStream.Create;
+				try
+					URL := Format('%s%s?client_id=%s&token=%s', [IncludeSlash(DownloadShard), PathToUrl(RemotePath, False), OAUTH_CLIENT_ID, OAuthToken.access_token]);
+					Result := FContext.GetHTTP.GetFile(URL, MemoryStream);
+
+					if (CLOUD_ERROR_TOKEN_OUTDATED = Result) and (TokenRetryCount < MAX_TOKEN_RETRIES) and FContext.RefreshCSRFToken then
+					begin
+						Inc(TokenRetryCount);
+						NeedRetry := True;
+						Continue;
+					end;
+
+					if Result in [FS_FILE_OK] then
+					begin
+						MemoryStream.Position := 0;
+						DecryptingStream := FCipher.GetDecryptingStream(MemoryStream);
+						try
+							DestStream.CopyFrom(DecryptingStream, DecryptingStream.Size);
+						finally
+							DecryptingStream.Free;
+						end;
+					end;
+				finally
+					MemoryStream.Free;
+				end;
+			end else begin
+				URL := Format('%s%s?client_id=%s&token=%s', [IncludeSlash(DownloadShard), PathToUrl(RemotePath, False), OAUTH_CLIENT_ID, OAuthToken.access_token]);
+				Result := FContext.GetHTTP.GetFile(URL, DestStream);
+
+				if (CLOUD_ERROR_TOKEN_OUTDATED = Result) and (TokenRetryCount < MAX_TOKEN_RETRIES) and FContext.RefreshCSRFToken then
+				begin
+					Inc(TokenRetryCount);
+					DestStream.Size := 0;
+					NeedRetry := True;
+					Continue;
+				end;
+			end;
+		until not NeedRetry;
+	finally
+		FContext.GetHTTP.HTTP.Request.UserAgent := SavedUserAgent;
+	end;
 end;
 
 function TCloudFileDownloader.DownloadShared(RemotePath, LocalPath: WideString; var ResultHash: WideString; LogErrors: Boolean): Integer;

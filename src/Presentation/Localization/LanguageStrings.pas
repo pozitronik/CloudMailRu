@@ -137,6 +137,7 @@ var
 	FILE_FOUND_BY_HASH: WideString;
 	INCOMING_LINKS_LISTING: WideString;
 	INVITE_FORM_TITLE: WideString;
+	LOG_CROSS_SERVER_FALLBACK: WideString;
 	LOGIN_IN_PROGRESS: WideString;
 	LOGIN_TO: WideString;
 	METHOD_STR_HEAD: WideString;
@@ -576,6 +577,7 @@ begin
 	FILE_FOUND_BY_HASH := 'File "%s" found by hash';
 	INCOMING_LINKS_LISTING := 'Incoming links listing';
 	INVITE_FORM_TITLE := '%s invite: %s';
+	LOG_CROSS_SERVER_FALLBACK := 'Cross-server transfer: falling back to memory stream';
 	LOGIN_IN_PROGRESS := 'Login to account...';
 	LOGIN_TO := 'Login to %s';
 	METHOD_STR_HEAD := 'check';
@@ -1021,6 +1023,7 @@ begin
 	TranslationRegistry.Add('FILE_FOUND_BY_HASH', @FILE_FOUND_BY_HASH);
 	TranslationRegistry.Add('INCOMING_LINKS_LISTING', @INCOMING_LINKS_LISTING);
 	TranslationRegistry.Add('INVITE_FORM_TITLE', @INVITE_FORM_TITLE);
+	TranslationRegistry.Add('LOG_CROSS_SERVER_FALLBACK', @LOG_CROSS_SERVER_FALLBACK);
 	TranslationRegistry.Add('LOGIN_IN_PROGRESS', @LOGIN_IN_PROGRESS);
 	TranslationRegistry.Add('LOGIN_TO', @LOGIN_TO);
 	TranslationRegistry.Add('METHOD_STR_HEAD', @METHOD_STR_HEAD);
