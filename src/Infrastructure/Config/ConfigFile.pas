@@ -45,6 +45,7 @@ type
 		procedure EraseSection(const Section: string);
 
 		{Key operations}
+		function ValueExists(const Section, Ident: string): Boolean;
 		procedure DeleteKey(const Section, Ident: string);
 	end;
 
@@ -71,6 +72,7 @@ type
 		function SectionExists(const Section: string): Boolean;
 		procedure EraseSection(const Section: string);
 
+		function ValueExists(const Section, Ident: string): Boolean;
 		procedure DeleteKey(const Section, Ident: string);
 	end;
 
@@ -107,6 +109,7 @@ type
 		function SectionExists(const Section: string): Boolean;
 		procedure EraseSection(const Section: string);
 
+		function ValueExists(const Section, Ident: string): Boolean;
 		procedure DeleteKey(const Section, Ident: string);
 
 		{Test helper: clear all data}
@@ -208,6 +211,11 @@ end;
 procedure TNullConfigFile.EraseSection(const Section: string);
 begin
 	{No-op}
+end;
+
+function TNullConfigFile.ValueExists(const Section, Ident: string): Boolean;
+begin
+	Result := False;
 end;
 
 procedure TNullConfigFile.DeleteKey(const Section, Ident: string);
@@ -373,6 +381,14 @@ end;
 procedure TMemoryConfigFile.EraseSection(const Section: string);
 begin
 	FData.Remove(Section);
+end;
+
+function TMemoryConfigFile.ValueExists(const Section, Ident: string): Boolean;
+var
+	SectionData: TDictionary<string, string>;
+begin
+	SectionData := GetSection(Section, False);
+	Result := (SectionData <> nil) and SectionData.ContainsKey(Ident);
 end;
 
 procedure TMemoryConfigFile.DeleteKey(const Section, Ident: string);

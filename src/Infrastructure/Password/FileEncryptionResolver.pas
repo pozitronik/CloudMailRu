@@ -122,9 +122,16 @@ begin
 	Result := True;
 	StorePassword := False;
 
-	{INI storage: password already loaded into CloudSettings by CreateFromSettings}
+	{INI storage: password loaded from account settings}
 	if CryptPasswordStorageIniFile = CloudSettings.AccountSettings.CryptPasswordStorage then
-		Exit(CloudSettings.CryptFilesPassword <> EmptyWideStr);
+	begin
+		if CloudSettings.AccountSettings.CryptFilesPassword <> EmptyWideStr then
+		begin
+			CloudSettings.CryptFilesPassword := CloudSettings.AccountSettings.CryptFilesPassword;
+			Exit(True);
+		end;
+		{Empty INI password: fall through to ask user}
+	end;
 
 	{TC Password Manager}
 	if CryptPasswordStorageTCPwdMngr = CloudSettings.AccountSettings.CryptPasswordStorage then

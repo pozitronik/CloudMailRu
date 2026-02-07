@@ -858,6 +858,7 @@ procedure TAccountsManagerTest.TestGetAccountSettings_MigrationDeletesOldKey;
 var
 	ConfigFile: IConfigFile;
 	TestAccountsManager: TAccountsManager;
+	Loaded: TAccountSettings;
 begin
 	ConfigFile := TMemoryConfigFile.Create;
 	ConfigFile.WriteString('MigrateDelete', 'email', 'del@mail.ru');
@@ -865,12 +866,13 @@ begin
 
 	TestAccountsManager := TAccountsManager.Create(ConfigFile, TNullLogger.Create);
 	try
-		{First read triggers migration}
-		TestAccountsManager.GetAccountSettings('MigrateDelete');
+		{Read triggers in-memory migration, then save persists new keys and deletes old}
+		Loaded := TestAccountsManager.GetAccountSettings('MigrateDelete');
+		TestAccountsManager.SetAccountSettings('MigrateDelete', Loaded);
 
-		{Old key should be gone, so reading it with sentinel returns -1}
-		Assert.AreEqual(-1, ConfigFile.ReadInteger('MigrateDelete', 'encrypt_files_mode', -1),
-			'Old encrypt_files_mode key should be deleted after migration');
+		{Old key should be gone}
+		Assert.IsFalse(ConfigFile.ValueExists('MigrateDelete', 'encrypt_files_mode'),
+			'Old encrypt_files_mode key should be deleted after save');
 		{New keys should be present}
 		Assert.IsTrue(ConfigFile.ReadBool('MigrateDelete', 'encrypt_files', False),
 			'New encrypt_files key should be written');

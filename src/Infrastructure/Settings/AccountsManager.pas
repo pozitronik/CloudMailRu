@@ -203,24 +203,29 @@ begin
 	Result.PublicAccount := FConfigFile.ReadBool(Account, 'public_account', False);
 	Result.PublicUrl := FConfigFile.ReadString(Account, 'public_url', EmptyWideStr);
 	Result.Description := FConfigFile.ReadString(Account, 'description', EmptyWideStr);
-	{Migration from old encrypt_files_mode format (sentinel -1 means key absent)}
-	var OldMode := FConfigFile.ReadInteger(Account, 'encrypt_files_mode', -1);
-	if OldMode >= 0 then
+	{Migration: old encrypt_files_mode (0/1/2) -> new encrypt_files + crypt_password_storage}
+	if FConfigFile.ValueExists(Account, 'encrypt_files_mode') and not FConfigFile.ValueExists(Account, 'encrypt_files') then
 	begin
+		var OldMode := FConfigFile.ReadInteger(Account, 'encrypt_files_mode', 0);
 		case OldMode of
-			1: begin Result.EncryptFiles := True; Result.CryptPasswordStorage := CryptPasswordStorageTCPwdMngr; end;
-			2: begin Result.EncryptFiles := True; Result.CryptPasswordStorage := CryptPasswordStorageNone; end;
-		else
-			begin Result.EncryptFiles := False; Result.CryptPasswordStorage := CryptPasswordStorageNone; end;
+			1: begin {EncryptModeAlways -> enabled + TC password manager}
+				Result.EncryptFiles := True;
+				Result.CryptPasswordStorage := CryptPasswordStorageTCPwdMngr;
+			end;
+			2: begin {EncryptModeAskOnce -> enabled + don't save}
+				Result.EncryptFiles := True;
+				Result.CryptPasswordStorage := CryptPasswordStorageNone;
+			end;
+		else {0 = EncryptModeNone -> disabled}
+			Result.EncryptFiles := False;
+			Result.CryptPasswordStorage := CryptPasswordStorageNone;
 		end;
-		FConfigFile.WriteBoolIfNotDefault(Account, 'encrypt_files', Result.EncryptFiles, False);
-		FConfigFile.WriteIntegerIfNotDefault(Account, 'crypt_password_storage', Result.CryptPasswordStorage, CryptPasswordStorageNone);
-		FConfigFile.DeleteKey(Account, 'encrypt_files_mode');
+		Result.CryptFilesPassword := EmptyWideStr;
 	end else begin
 		Result.EncryptFiles := FConfigFile.ReadBool(Account, 'encrypt_files', False);
 		Result.CryptPasswordStorage := FConfigFile.ReadInteger(Account, 'crypt_password_storage', CryptPasswordStorageNone);
+		Result.CryptFilesPassword := FConfigFile.ReadString(Account, 'crypt_files_password', EmptyWideStr);
 	end;
-	Result.CryptFilesPassword := FConfigFile.ReadString(Account, 'crypt_files_password', EmptyWideStr);
 	Result.CipherProfileId := FConfigFile.ReadString(Account, 'encrypt_cipher_profile', EmptyWideStr);
 	Result.Server := FConfigFile.ReadString(Account, 'server', EmptyWideStr);
 	Result.CryptedGUIDFiles := FConfigFile.ReadString(Account, 'CryptedGUID_files', EmptyWideStr);
@@ -245,6 +250,9 @@ begin
 	FConfigFile.WriteStringIfNotDefault(Account, 'server', AccountSettings.Server, EmptyWideStr);
 	FConfigFile.WriteIntegerIfNotDefault(Account, 'auth_method', AccountSettings.AuthMethod, 0);
 	FConfigFile.WriteBoolIfNotDefault(Account, 'use_app_password', AccountSettings.UseAppPassword, False);
+	{Remove old key after migration}
+	if FConfigFile.ValueExists(Account, 'encrypt_files_mode') then
+		FConfigFile.DeleteKey(Account, 'encrypt_files_mode');
 end;
 
 function TAccountsManager.GetAccountsList(const AccountTypes: EAccountType = [ATPrivate, ATPublic]; const VirtualTypes: EVirtualType = []): TWSList;
