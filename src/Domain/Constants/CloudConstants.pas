@@ -21,7 +21,7 @@ const
 	API_FOLDER_LIMIT = 65535;
 	API_FOLDER_ADD = 'https://cloud.mail.ru/api/v2/folder/add';
 	API_FOLDER_SHARED_INFO = 'https://cloud.mail.ru/api/v2/folder/shared/info'; {GET}
-	API_FOLDER_INVITES = 'https://cloud.mail.ru/api/v2/folder/invites';
+	API_FOLDER_INVITES = 'https://cloud.mail.ru/api/v2/folder/invites'; {TODO: not used in production code -- investigate if needed for invite listing vs /folder/shared/incoming}
 	API_FOLDER_SHARE = 'https://cloud.mail.ru/api/v2/folder/share';
 	API_FOLDER_UNSHARE = 'https://cloud.mail.ru/api/v2/folder/unshare';
 	API_FOLDER_MOUNT = 'https://cloud.mail.ru/api/v2/folder/mount';
