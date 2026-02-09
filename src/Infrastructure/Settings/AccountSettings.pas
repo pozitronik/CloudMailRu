@@ -19,6 +19,7 @@ type
 		UseTCPasswordManager: Boolean;
 		UnlimitedFileSize: Boolean;
 		SplitLargeFiles: Boolean;
+		CloudMaxFileSize: Int64;
 		PublicAccount: Boolean;
 		Description: WideString;
 		EncryptFiles: Boolean;

@@ -74,6 +74,14 @@ type
 		[Test]
 		procedure TestUpload_LargeFileWithSplit_CallsPutFileSplit;
 
+		{ Issue #322: SplitLargeFiles should work independently of UnlimitedFileSize }
+		[Test]
+		procedure TestUpload_UnlimitedFileSize_SplitStillWorks;
+		[Test]
+		procedure TestUpload_FileBelowThreshold_NoSplitRegardlessOfSetting;
+		[Test]
+		procedure TestUpload_UnlimitedNoSplit_LargeFileGoesToWhole;
+
 		{ AddFileByIdentity tests }
 		[Test]
 		procedure TestAddFileByIdentity_PublicAccount_ReturnsNotSupported;
@@ -269,6 +277,87 @@ begin
 	UploadResult := FUploader.Upload(LargeFilePath, '/test/large.txt');
 	{Split upload path should be exercised}
 	Assert.AreEqual(FS_FILE_OK, UploadResult, 'Large file with split enabled should succeed');
+end;
+
+{ Issue #322: SplitLargeFiles should work independently of UnlimitedFileSize }
+
+procedure TCloudFileUploaderTest.TestUpload_UnlimitedFileSize_SplitStillWorks;
+var
+	UploadResult: Integer;
+begin
+	{Issue #322: UnlimitedFileSize must NOT bypass SplitLargeFiles.
+		A paid account user with UnlimitedFileSize=True and SplitLargeFiles=True
+		expects files exceeding CloudMaxFileSize to be split — the two settings
+		are independent concerns (size rejection vs chunked upload).}
+	FSettings.CloudMaxFileSize := 1; {Tiny threshold — file will exceed this}
+	FSettings.SplitLargeFiles := True;
+	FSettings.UnlimitedFileSize := True;
+
+	FMockHTTP.SetPutFileResponse('', 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', FS_FILE_OK);
+	FMockHTTP.SetResponse('/file/add', True, '{"status":200,"body":{"home":"/test/file.txt"}}');
+
+	FUploader := TCloudFileUploader.Create(
+		FMockContext, FShardManager, FHashCalculator,
+		TNullCipher.Create, TWindowsFileSystem.Create,
+		TNullLogger.Create, TNullProgress.Create, TNullRequest.Create,
+		TNullTCHandler.Create, FRetryOperation, False, FSettings);
+
+	UploadResult := FUploader.Upload(DataPath('SIMPLE.JSON'), '/test/file.txt');
+	{Must go through PutFileSplit — not PutFileWhole}
+	Assert.AreEqual(FS_FILE_OK, UploadResult, 'UnlimitedFileSize + SplitLargeFiles should still split large files');
+	{Verify split path was taken by checking that multiple upload calls were made
+		(PutFileSplit uploads chunks individually, PutFileWhole does a single upload)}
+	Assert.IsTrue(FMockHTTP.GetUploadCount > 1,
+		'Split path should produce multiple upload calls, but only one was made (PutFileWhole was used instead)');
+end;
+
+procedure TCloudFileUploaderTest.TestUpload_FileBelowThreshold_NoSplitRegardlessOfSetting;
+var
+	UploadResult: Integer;
+begin
+	{File smaller than CloudMaxFileSize always goes through PutFileWhole.
+		SplitLargeFiles only applies when file exceeds the threshold — this is correct behavior.}
+	FSettings.CloudMaxFileSize := 100 * 1024 * 1024; {100 MB — larger than test file}
+	FSettings.SplitLargeFiles := True;
+	FSettings.UnlimitedFileSize := False;
+
+	FMockHTTP.SetPutFileResponse('', 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', FS_FILE_OK);
+	FMockHTTP.SetResponse('/file/add', True, '{"status":200,"body":{"home":"/test/file.txt"}}');
+
+	FUploader := TCloudFileUploader.Create(
+		FMockContext, FShardManager, FHashCalculator,
+		TNullCipher.Create, TWindowsFileSystem.Create,
+		TNullLogger.Create, TNullProgress.Create, TNullRequest.Create,
+		TNullTCHandler.Create, FRetryOperation, False, FSettings);
+
+	{SIMPLE.JSON is a few KB — well under 100 MB threshold}
+	UploadResult := FUploader.Upload(DataPath('SIMPLE.JSON'), '/test/small.txt');
+	Assert.AreEqual(FS_FILE_OK, UploadResult, 'Small file should go to PutFileWhole regardless of SplitLargeFiles');
+end;
+
+procedure TCloudFileUploaderTest.TestUpload_UnlimitedNoSplit_LargeFileGoesToWhole;
+var
+	UploadResult: Integer;
+begin
+	{UnlimitedFileSize=True, SplitLargeFiles=False, file exceeds threshold.
+		File should go through PutFileWhole (paid account can handle large files).
+		Must NOT be rejected with FS_FILE_NOTSUPPORTED.}
+	FSettings.CloudMaxFileSize := 1; {Tiny threshold — file will exceed this}
+	FSettings.SplitLargeFiles := False;
+	FSettings.UnlimitedFileSize := True;
+
+	FMockHTTP.SetPutFileResponse('', 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', FS_FILE_OK);
+	FMockHTTP.SetResponse('/file/add', True, '{"status":200,"body":{"home":"/test/file.txt"}}');
+
+	FUploader := TCloudFileUploader.Create(
+		FMockContext, FShardManager, FHashCalculator,
+		TNullCipher.Create, TWindowsFileSystem.Create,
+		TNullLogger.Create, TNullProgress.Create, TNullRequest.Create,
+		TNullTCHandler.Create, FRetryOperation, False, FSettings);
+
+	UploadResult := FUploader.Upload(DataPath('SIMPLE.JSON'), '/test/file.txt');
+	{Paid account without split — just upload the whole file}
+	Assert.AreEqual(FS_FILE_OK, UploadResult, 'Unlimited account without split should upload whole file');
 end;
 
 { AddFileByIdentity tests }

@@ -200,6 +200,7 @@ begin
 	Result.UseTCPasswordManager := FConfigFile.ReadBool(Account, 'tc_pwd_mngr', False);
 	Result.UnlimitedFileSize := FConfigFile.ReadBool(Account, 'unlimited_filesize', False);
 	Result.SplitLargeFiles := FConfigFile.ReadBool(Account, 'split_large_files', False);
+	Result.CloudMaxFileSize := FConfigFile.ReadInt64(Account, 'cloud_max_file_size', CLOUD_MAX_FILESIZE_DEFAULT);
 	Result.PublicAccount := FConfigFile.ReadBool(Account, 'public_account', False);
 	Result.PublicUrl := FConfigFile.ReadString(Account, 'public_url', EmptyWideStr);
 	Result.Description := FConfigFile.ReadString(Account, 'description', EmptyWideStr);
@@ -240,6 +241,7 @@ begin
 	FConfigFile.WriteBoolIfNotDefault(Account, 'tc_pwd_mngr', AccountSettings.UseTCPasswordManager, False);
 	FConfigFile.WriteBoolIfNotDefault(Account, 'unlimited_filesize', AccountSettings.UnlimitedFileSize, False);
 	FConfigFile.WriteBoolIfNotDefault(Account, 'split_large_files', AccountSettings.SplitLargeFiles, False);
+	FConfigFile.WriteInt64IfNotDefault(Account, 'cloud_max_file_size', AccountSettings.CloudMaxFileSize, CLOUD_MAX_FILESIZE_DEFAULT);
 	FConfigFile.WriteBoolIfNotDefault(Account, 'public_account', AccountSettings.PublicAccount, False);
 	FConfigFile.WriteStringIfNotDefault(Account, 'public_url', AccountSettings.PublicUrl, EmptyWideStr);
 	FConfigFile.WriteStringIfNotDefault(Account, 'description', AccountSettings.Description, EmptyWideStr);

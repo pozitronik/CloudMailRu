@@ -757,7 +757,7 @@ begin
 	DFM_RB_PUBLIC := 'Public';
 	DFM_CB_TC_PASSWORD := 'Store password in TC password manager';
 	DFM_CB_UNLIMITED_SIZE := 'Ignore 2Gb limit (paid account)';
-	DFM_CB_SPLIT_FILES := 'Split large files';
+	DFM_CB_SPLIT_FILES := 'Split files when '#8805' than';
 	DFM_CB_PRESERVE_TIME := 'Preserve file creation time';
 	DFM_CB_LOAD_SSL := 'Load SSL libraries only from plugin directory';
 	DFM_CB_LOG_SPACE := 'Enable space info logging';

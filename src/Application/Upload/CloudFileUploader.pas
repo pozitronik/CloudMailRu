@@ -176,13 +176,17 @@ begin
 	if FContext.IsPublicAccount then
 		Exit(FS_FILE_NOTSUPPORTED);
 	FContext.GetHTTP.SetProgressNames(LocalPath, RemotePath);
-	if (not FSettings.UnlimitedFileSize) and (FFileSystem.GetFileSize(GetUNCFilePath(LocalPath)) > FSettings.CloudMaxFileSize) then
+	if FFileSystem.GetFileSize(GetUNCFilePath(LocalPath)) > FSettings.CloudMaxFileSize then
 	begin
+		{Split is an independent feature — works regardless of UnlimitedFileSize (issue #322)}
 		if FSettings.SplitLargeFiles then
 		begin
 			FLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, SPLIT_LARGE_FILE, [FSettings.CloudMaxFileSize]);
 			Exit(PutFileSplit(LocalPath, RemotePath, ConflictMode, ChunkOverwriteMode));
-		end else begin
+		end;
+		{No split — reject oversized files on non-unlimited accounts}
+		if not FSettings.UnlimitedFileSize then
+		begin
 			FLogger.Log(LOG_LEVEL_WARNING, MSGTYPE_IMPORTANTERROR, SPLIT_LARGE_FILE_IGNORE, [FSettings.CloudMaxFileSize]);
 			Exit(FS_FILE_NOTSUPPORTED);
 		end;

@@ -145,8 +145,8 @@ var
 	Result: TCloudSettings;
 begin
 	PluginSettings := Default(TPluginSettings);
-	PluginSettings.CloudMaxFileSize := 2147483648;
 	AccSettings := Default(TAccountSettings);
+	AccSettings.CloudMaxFileSize := 2147483648;
 
 	Result := TCloudSettings.CreateFromSettings(PluginSettings, AccSettings);
 

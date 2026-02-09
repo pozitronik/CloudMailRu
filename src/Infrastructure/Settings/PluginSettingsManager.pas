@@ -256,7 +256,6 @@ begin
 	Settings.ConnectionSettings.SocketTimeout := FConfigFile.ReadInteger('Main', 'SocketTimeout', DEFAULT_SOCKET_TIMEOUT);
 	Settings.ConnectionSettings.UploadBPS := FConfigFile.ReadInteger('Main', 'UploadBPS', DEFAULT_SPEED_LIMIT);
 	Settings.ConnectionSettings.DownloadBPS := FConfigFile.ReadInteger('Main', 'DownloadBPS', DEFAULT_SPEED_LIMIT);
-	Settings.CloudMaxFileSize := FConfigFile.ReadInt64('Main', 'CloudMaxFileSize', CLOUD_MAX_FILESIZE_DEFAULT);
 	Settings.ChunkOverwriteMode := FConfigFile.ReadInteger('Main', 'ChunkOverwriteMode', ChunkOverwrite);
 	Settings.DeleteFailOnUploadMode := FConfigFile.ReadInteger('Main', 'DeleteFailOnUploadMode', DeleteFailOnUploadAsk);
 	Settings.OverwriteLocalMode := FConfigFile.ReadInteger('Main', 'OverwriteLocalMode', OverwriteLocalModeAsk);
@@ -309,7 +308,6 @@ begin
 	FConfigFile.WriteIntegerIfNotDefault('Main', 'SocketTimeout', Settings.ConnectionSettings.SocketTimeout, DEFAULT_SOCKET_TIMEOUT);
 	FConfigFile.WriteIntegerIfNotDefault('Main', 'UploadBPS', Settings.ConnectionSettings.UploadBPS, DEFAULT_SPEED_LIMIT);
 	FConfigFile.WriteIntegerIfNotDefault('Main', 'DownloadBPS', Settings.ConnectionSettings.DownloadBPS, DEFAULT_SPEED_LIMIT);
-	FConfigFile.WriteInt64IfNotDefault('Main', 'CloudMaxFileSize', Settings.CloudMaxFileSize, CLOUD_MAX_FILESIZE_DEFAULT);
 	FConfigFile.WriteIntegerIfNotDefault('Main', 'ChunkOverwriteMode', Settings.ChunkOverwriteMode, ChunkOverwrite);
 	FConfigFile.WriteIntegerIfNotDefault('Main', 'DeleteFailOnUploadMode', Settings.DeleteFailOnUploadMode, DeleteFailOnUploadAsk);
 	FConfigFile.WriteIntegerIfNotDefault('Main', 'OverwriteLocalMode', Settings.OverwriteLocalMode, OverwriteLocalModeAsk);

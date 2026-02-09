@@ -25,7 +25,6 @@ type
 		TimestampFileName: WideString;       {Metadata filename, default: .cloud_timestamps}
 		TimestampConflictMode: integer;      {See TimestampConflict* constants}
 		CopyBetweenAccountsMode: integer;
-		CloudMaxFileSize: int64;
 		ChunkOverwriteMode: integer;
 		DeleteFailOnUploadMode: integer;
 		OperationErrorMode: integer;

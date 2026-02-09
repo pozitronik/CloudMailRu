@@ -49,7 +49,7 @@ begin
 	Result.ForcePrecalculateSize := PluginSettings.ForcePrecalculateSize;
 	Result.CheckCRC := PluginSettings.CheckCRC;
 	Result.HashCalculatorStrategy := PluginSettings.HashCalculatorStrategy;
-	Result.CloudMaxFileSize := PluginSettings.CloudMaxFileSize;
+	Result.CloudMaxFileSize := AccSettings.CloudMaxFileSize;
 	Result.OperationErrorMode := PluginSettings.OperationErrorMode;
 	Result.RetryAttempts := PluginSettings.RetryAttempts;
 	Result.AttemptWait := PluginSettings.AttemptWait;

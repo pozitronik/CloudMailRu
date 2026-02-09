@@ -159,7 +159,6 @@ object AccountsForm: TAccountsForm
     ActivePage = AccountsTab
     Align = alClient
     TabOrder = 0
-    ExplicitHeight = 474
     object AccountsTab: TTabSheet
       Caption = 'Accounts'
       ImageIndex = 5
@@ -190,7 +189,6 @@ object AccountsForm: TAccountsForm
         BevelOuter = bvNone
         ShowCaption = False
         TabOrder = 9
-        ExplicitHeight = 40
         DesignSize = (
           411
           62)
@@ -284,15 +282,23 @@ object AccountsForm: TAccountsForm
         end
         object FileSizeGB: TGroupBox
           Left = 0
-          Top = 101
+          Top = 99
           Width = 411
-          Height = 58
+          Height = 68
           Align = alBottom
           Caption = 'File size'
           TabOrder = 4
           DesignSize = (
             411
-            58)
+            68)
+          object CloudMaxFileSizeLabelBytes: TLabel
+            Left = 379
+            Top = 46
+            Width = 27
+            Height = 13
+            Alignment = taRightJustify
+            Caption = 'bytes'
+          end
           object UnlimitedFileSizeCB: TCheckBox
             Left = 8
             Top = 17
@@ -301,30 +307,41 @@ object AccountsForm: TAccountsForm
             Anchors = [akLeft, akTop, akRight]
             Caption = 'Ignore 2Gb limit (paid account)'
             TabOrder = 0
-            OnClick = FieldChanged
+            OnClick = UnlimitedFileSizeCBClick
           end
           object SplitLargeFilesCB: TCheckBox
             Left = 8
-            Top = 36
-            Width = 398
+            Top = 42
+            Width = 172
             Height = 17
             Anchors = [akLeft, akTop, akRight]
-            Caption = 'Split large files'
+            Caption = 'Split files when '#8805' than'
             TabOrder = 1
-            OnClick = FieldChanged
+            OnClick = SplitLargeFilesCBClick
+          end
+          object CloudMaxFileSizeValue: TEdit
+            Left = 219
+            Top = 41
+            Width = 152
+            Height = 21
+            Enabled = False
+            NumbersOnly = True
+            TabOrder = 2
+            OnChange = FieldChanged
+            OnExit = CloudMaxFileSizeValueExit
           end
         end
         object EncryptGB: TGroupBox
           Left = 0
-          Top = 159
+          Top = 167
           Width = 411
-          Height = 135
+          Height = 127
           Align = alBottom
           Caption = 'Encryption'
           TabOrder = 5
           DesignSize = (
             411
-            135)
+            127)
           object CryptPasswordStorageLabel: TLabel
             Left = 8
             Top = 40
@@ -424,7 +441,6 @@ object AccountsForm: TAccountsForm
         ViewStyle = vsReport
         OnKeyUp = AccountsListViewKeyUp
         OnSelectItem = AccountsListViewSelectItem
-        ExplicitHeight = 408
       end
       object AddButton: TButton
         Left = 4
@@ -435,7 +451,6 @@ object AccountsForm: TAccountsForm
         Caption = 'New'
         TabOrder = 1
         OnClick = AddButtonClick
-        ExplicitTop = 417
       end
       object DeleteButton: TButton
         Left = 141
@@ -446,7 +461,6 @@ object AccountsForm: TAccountsForm
         Caption = 'Delete'
         TabOrder = 2
         OnClick = DeleteButtonClick
-        ExplicitTop = 417
       end
       object AccountNameEdit: TEdit
         Left = 272
@@ -518,7 +532,6 @@ object AccountsForm: TAccountsForm
         Enabled = False
         TabOrder = 8
         OnClick = ApplyButtonClick
-        ExplicitTop = 417
       end
     end
     object GlobalTab: TTabSheet
@@ -527,13 +540,6 @@ object AccountsForm: TAccountsForm
       DesignSize = (
         687
         468)
-      object CloudMaxFileSizeLabelBytes: TLabel
-        Left = 395
-        Top = 250
-        Width = 27
-        Height = 13
-        Caption = 'bytes'
-      end
       object ChunkOverwriteModeLabel: TLabel
         Left = 4
         Top = 87
@@ -615,12 +621,12 @@ object AccountsForm: TAccountsForm
       end
       object PreserveFileTimeCB: TCheckBox
         Left = 4
-        Top = 344
+        Top = 317
         Width = 683
         Height = 17
         Anchors = [akLeft, akTop, akRight]
         Caption = 'Preserve file creation time'
-        TabOrder = 15
+        TabOrder = 14
         OnClick = GlobalSettingsFieldChanged
       end
       object GlobalSettingsApplyBtn: TButton
@@ -631,32 +637,8 @@ object AccountsForm: TAccountsForm
         Anchors = [akRight, akBottom]
         Caption = 'Apply'
         Enabled = False
-        TabOrder = 17
+        TabOrder = 13
         OnClick = GlobalSettingsApplyBtnClick
-      end
-      object CloudMaxFileSizeValue: TEdit
-        Left = 237
-        Top = 247
-        Width = 152
-        Height = 21
-        Enabled = False
-        NumbersOnly = True
-        TabOrder = 12
-        OnChange = GlobalSettingsFieldChanged
-      end
-      object CloudMaxFileSizeCB: TCheckBox
-        Left = 4
-        Top = 249
-        Width = 226
-        Height = 17
-        Hint = 
-          'Default: 2147483392 bytes (~2GB). Files larger than this are spl' +
-          'it into chunks'
-        Caption = 'Override split file size to'
-        ParentShowHint = False
-        ShowHint = True
-        TabOrder = 11
-        OnClick = CloudMaxFileSizeCBClick
       end
       object ChunkOverwriteModeCombo: TComboBox
         Left = 237
@@ -710,12 +692,12 @@ object AccountsForm: TAccountsForm
       end
       object DisableMultiThreadingCB: TCheckBox
         Left = 4
-        Top = 297
+        Top = 270
         Width = 683
         Height = 17
         Anchors = [akLeft, akTop, akRight]
         Caption = 'Disable background operations support'
-        TabOrder = 14
+        TabOrder = 12
         OnClick = GlobalSettingsFieldChanged
       end
       object IconsModeCombo: TComboBox
@@ -738,12 +720,12 @@ object AccountsForm: TAccountsForm
       end
       object SpaceInfoLoggingCB: TCheckBox
         Left = 4
-        Top = 273
+        Top = 246
         Width = 683
         Height = 17
         Anchors = [akLeft, akTop, akRight]
         Caption = 'Enable space info logging'
-        TabOrder = 13
+        TabOrder = 11
         OnClick = GlobalSettingsFieldChanged
       end
       object OperationErrorModeCombo: TComboBox
@@ -795,12 +777,12 @@ object AccountsForm: TAccountsForm
       end
       object CheckCRCCB: TCheckBox
         Left = 4
-        Top = 321
+        Top = 294
         Width = 683
         Height = 17
         Anchors = [akLeft, akTop, akRight]
         Caption = 'Check uploads/downloads CRC'
-        TabOrder = 16
+        TabOrder = 15
         OnClick = GlobalSettingsFieldChanged
       end
       object CopyBetweenAccountsModeCombo: TComboBox

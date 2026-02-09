@@ -55,9 +55,6 @@ type
 		ProxyPwd: TMaskEdit;
 		ProxyTCPwdMngrCB: TCheckBox;
 		NetworkSettingsApplyBtn: TButton;
-		CloudMaxFileSizeValue: TEdit;
-		CloudMaxFileSizeLabelBytes: TLabel;
-		CloudMaxFileSizeCB: TCheckBox;
 		ChunkOverwriteModeLabel: TLabel;
 		ChunkOverwriteModeCombo: TComboBox;
 		DeleteFailOnUploadModeLabel: TLabel;
@@ -197,6 +194,8 @@ type
     TimestampFileNameEdit: TEdit;
     TimestampConflictModeLabel: TLabel;
     TimestampConflictModeCB: TComboBox;
+    CloudMaxFileSizeValue: TEdit;
+    CloudMaxFileSizeLabelBytes: TLabel;
 		procedure FormShow(Sender: TObject);
 		procedure AccountsListViewKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
 		procedure AccountsListViewSelectItem(Sender: TObject; Item: TListItem; Selected: Boolean);
@@ -213,7 +212,9 @@ type
 		class function ShowAccounts(ParentWindow: HWND; PasswordManager: IPasswordManager; Account: WideString): Boolean;
 		procedure ProxyUserEditChange(Sender: TObject);
 		procedure GlobalSettingsApplyBtnClick(Sender: TObject);
-		procedure CloudMaxFileSizeCBClick(Sender: TObject);
+		procedure SplitLargeFilesCBClick(Sender: TObject);
+		procedure UnlimitedFileSizeCBClick(Sender: TObject);
+		procedure CloudMaxFileSizeValueExit(Sender: TObject);
 		procedure FormKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
 		procedure StreamingExtensionsListViewSelectItem(Sender: TObject; Item: TListItem; Selected: Boolean);
 		procedure StreamingExtensionsListViewKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -248,10 +249,8 @@ type
 		function GetLoadSSLFromPluginDir: Boolean;
 		procedure SetPreserveFileTime(Value: Boolean);
 		function GetPreserveFileTime: Boolean;
-		procedure SetCloudMaxFileSize(Value: Integer);
-		function GetCloudMaxFileSize: Integer;
-		procedure SetCloudMaxFileSizeEnabled(Value: Boolean);
-		function GetCloudMaxFileSizeEnabled: Boolean;
+		procedure SetCloudMaxFileSize(Value: Int64);
+		function GetCloudMaxFileSize: Int64;
 		procedure SetCloudMaxFileSizeEditEnabled(Value: Boolean);
 		procedure SetChunkOverwriteMode(Value: Integer);
 		function GetChunkOverwriteMode: Integer;
@@ -503,24 +502,14 @@ begin
 	Result := PreserveFileTimeCB.Checked;
 end;
 
-procedure TAccountsForm.SetCloudMaxFileSize(Value: Integer);
+procedure TAccountsForm.SetCloudMaxFileSize(Value: Int64);
 begin
 	CloudMaxFileSizeValue.Text := IntToStr(Value);
 end;
 
-function TAccountsForm.GetCloudMaxFileSize: Integer;
+function TAccountsForm.GetCloudMaxFileSize: Int64;
 begin
-	Result := StrToIntDef(CloudMaxFileSizeValue.Text, CLOUD_MAX_FILESIZE_DEFAULT);
-end;
-
-procedure TAccountsForm.SetCloudMaxFileSizeEnabled(Value: Boolean);
-begin
-	CloudMaxFileSizeCB.Checked := Value;
-end;
-
-function TAccountsForm.GetCloudMaxFileSizeEnabled: Boolean;
-begin
-	Result := CloudMaxFileSizeCB.Checked;
+	Result := StrToInt64Def(CloudMaxFileSizeValue.Text, CLOUD_MAX_FILESIZE_DEFAULT);
 end;
 
 procedure TAccountsForm.SetCloudMaxFileSizeEditEnabled(Value: Boolean);
@@ -1685,9 +1674,19 @@ begin
 	FPresenter.OnProxyTypeChanged;
 end;
 
-procedure TAccountsForm.CloudMaxFileSizeCBClick(Sender: TObject);
+procedure TAccountsForm.SplitLargeFilesCBClick(Sender: TObject);
 begin
-	FPresenter.OnCloudMaxFileSizeCheckChanged;
+	FPresenter.OnSplitLargeFilesChanged;
+end;
+
+procedure TAccountsForm.UnlimitedFileSizeCBClick(Sender: TObject);
+begin
+	FPresenter.OnUnlimitedFileSizeChanged;
+end;
+
+procedure TAccountsForm.CloudMaxFileSizeValueExit(Sender: TObject);
+begin
+	FPresenter.OnCloudMaxFileSizeValidate;
 end;
 
 procedure TAccountsForm.CommandPathButtonClick(Sender: TObject);
@@ -1925,12 +1924,12 @@ begin
 	EncryptFilesCB.Caption := DFM_CB_ENCRYPT_FILES;
 	CryptPasswordStorageLabel.Caption := DFM_LBL_PASSWORD_STORAGE;
 	CipherProfileLabel.Caption := DFM_LBL_ENCRYPT_BACKEND;
+	CloudMaxFileSizeLabelBytes.Caption := DFM_LBL_BYTES;
 	AccountsListView.Columns[0].Caption := DFM_COL_ACCOUNT;
 	AccountsListView.Columns[1].Caption := DFM_COL_TYPE;
 	AccountsListView.Columns[2].Caption := DFM_COL_ACCOUNT_SERVER;
 
 	{Global settings tab}
-	CloudMaxFileSizeLabelBytes.Caption := DFM_LBL_BYTES;
 	ChunkOverwriteModeLabel.Caption := DFM_LBL_CHUNK_OVERWRITE;
 	DeleteFailOnUploadModeLabel.Caption := DFM_LBL_DELETE_FAIL_UPLOAD;
 	OverwriteLocalModeLabel.Caption := DFM_LBL_OVERWRITE_LOCAL;
@@ -1944,7 +1943,6 @@ begin
 	PreserveFileTimeCB.Caption := DFM_CB_PRESERVE_TIME;
 	UseDLLFromPluginDir.Caption := DFM_CB_LOAD_SSL;
 	SpaceInfoLoggingCB.Caption := DFM_CB_LOG_SPACE;
-	CloudMaxFileSizeCB.Caption := DFM_CB_OVERRIDE_SPLIT;
 	DisableMultiThreadingCB.Caption := DFM_CB_DISABLE_MT;
 	ShowTrashFoldersCB.Caption := DFM_CB_TRASH;
 	ShowSharedFoldersCB.Caption := DFM_CB_SHARED;

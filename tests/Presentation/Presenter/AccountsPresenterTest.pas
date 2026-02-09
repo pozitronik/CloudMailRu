@@ -29,8 +29,7 @@ type
 		{Global settings}
 		FLoadSSLFromPluginDir: Boolean;
 		FPreserveFileTime: Boolean;
-		FCloudMaxFileSize: Integer;
-		FCloudMaxFileSizeEnabled: Boolean;
+		FCloudMaxFileSize: Int64;
 		FCloudMaxFileSizeEditEnabled: Boolean;
 		FChunkOverwriteMode: Integer;
 		FDeleteFailOnUploadMode: Integer;
@@ -173,10 +172,8 @@ type
 		function GetLoadSSLFromPluginDir: Boolean;
 		procedure SetPreserveFileTime(Value: Boolean);
 		function GetPreserveFileTime: Boolean;
-		procedure SetCloudMaxFileSize(Value: Integer);
-		function GetCloudMaxFileSize: Integer;
-		procedure SetCloudMaxFileSizeEnabled(Value: Boolean);
-		function GetCloudMaxFileSizeEnabled: Boolean;
+		procedure SetCloudMaxFileSize(Value: Int64);
+		function GetCloudMaxFileSize: Int64;
 		procedure SetCloudMaxFileSizeEditEnabled(Value: Boolean);
 		procedure SetChunkOverwriteMode(Value: Integer);
 		function GetChunkOverwriteMode: Integer;
@@ -481,11 +478,29 @@ type
 		[Test]
 		procedure TestInitializeLoadsStreamingExtensions;
 
-		{Global settings tests}
+		{Account settings - split files}
 		[Test]
-		procedure TestOnCloudMaxFileSizeCheckChangedEnablesEdit;
+		procedure TestOnSplitLargeFilesChangedEnablesEdit;
 		[Test]
-		procedure TestOnCloudMaxFileSizeCheckChangedDisablesEdit;
+		procedure TestOnSplitLargeFilesChangedDisablesEdit;
+
+		{Account settings - file size validation}
+		[Test]
+		{Value exceeding 2GB is clamped when UnlimitedFileSize is unchecked}
+		procedure TestCloudMaxFileSizeValidateClampsWhenUnpaid;
+		[Test]
+		{Value exceeding 2GB is kept when UnlimitedFileSize is checked}
+		procedure TestCloudMaxFileSizeValidateAllowsWhenPaid;
+		[Test]
+		{Value at or below limit is not changed}
+		procedure TestCloudMaxFileSizeValidateKeepsValidValue;
+		[Test]
+		{Unchecking UnlimitedFileSize clamps an oversized value}
+		procedure TestUnlimitedFileSizeUncheckedClampsValue;
+		[Test]
+		{Unchecking UnlimitedFileSize marks dirty}
+		procedure TestUnlimitedFileSizeChangedMarksDirty;
+
 		[Test]
 		procedure TestOnProxyUserChangedEnablesPasswordManager;
 		[Test]
@@ -510,10 +525,6 @@ type
 		procedure TestOnApplyGlobalSettingsClickSetsAppliedFlag;
 		[Test]
 		procedure TestOnApplyGlobalSettingsClickWithInvalidDescriptionFileName;
-		[Test]
-		procedure TestOnApplyGlobalSettingsClickWithCustomMaxFileSize;
-		[Test]
-		procedure TestOnApplyGlobalSettingsClickWithDefaultMaxFileSize;
 		[Test]
 		procedure TestOnApplyGlobalSettingsClickWithProxyPasswordManager;
 		[Test]
@@ -631,8 +642,6 @@ type
 		[Test]
 		procedure TestLoadGlobalSettingsLoadsAllSettings;
 		[Test]
-		procedure TestLoadGlobalSettingsWithCustomCloudMaxFileSize;
-		[Test]
 		procedure TestLoadGlobalSettingsWithCustomUserAgent;
 		[Test]
 		procedure TestLoadGlobalSettingsWithProxyUser;
@@ -647,7 +656,7 @@ type
 		[Test]
 		procedure TestGlobalSettingsFieldChangedIgnoredDuringLoad;
 		[Test]
-		procedure TestOnCloudMaxFileSizeCheckChangedMarksDirty;
+		procedure TestOnSplitLargeFilesChangedMarksDirty;
 
 		{Proxy controls tests}
 		[Test]
@@ -790,24 +799,14 @@ begin
 	Result := FPreserveFileTime;
 end;
 
-procedure TMockAccountsView.SetCloudMaxFileSize(Value: Integer);
+procedure TMockAccountsView.SetCloudMaxFileSize(Value: Int64);
 begin
 	FCloudMaxFileSize := Value;
 end;
 
-function TMockAccountsView.GetCloudMaxFileSize: Integer;
+function TMockAccountsView.GetCloudMaxFileSize: Int64;
 begin
 	Result := FCloudMaxFileSize;
-end;
-
-procedure TMockAccountsView.SetCloudMaxFileSizeEnabled(Value: Boolean);
-begin
-	FCloudMaxFileSizeEnabled := Value;
-end;
-
-function TMockAccountsView.GetCloudMaxFileSizeEnabled: Boolean;
-begin
-	Result := FCloudMaxFileSizeEnabled;
 end;
 
 procedure TMockAccountsView.SetCloudMaxFileSizeEditEnabled(Value: Boolean);
@@ -1861,24 +1860,84 @@ begin
 	Assert.IsTrue(Length(FView.StreamingDisplayItems) >= 0, 'Streaming display items should be initialized');
 end;
 
-procedure TAccountsPresenterTest.TestOnCloudMaxFileSizeCheckChangedEnablesEdit;
+procedure TAccountsPresenterTest.TestOnSplitLargeFilesChangedEnablesEdit;
 begin
 	FPresenter.Initialize('');
-	FView.SetCloudMaxFileSizeEnabled(True);
+	FView.SetSplitLargeFiles(True);
 
-	FPresenter.OnCloudMaxFileSizeCheckChanged;
+	FPresenter.OnSplitLargeFilesChanged;
 
-	Assert.IsTrue(FView.CloudMaxFileSizeEditEnabled, 'Edit should be enabled when checkbox is checked');
+	Assert.IsTrue(FView.CloudMaxFileSizeEditEnabled, 'CloudMaxFileSize edit should be enabled when SplitLargeFiles is checked');
 end;
 
-procedure TAccountsPresenterTest.TestOnCloudMaxFileSizeCheckChangedDisablesEdit;
+procedure TAccountsPresenterTest.TestOnSplitLargeFilesChangedDisablesEdit;
 begin
 	FPresenter.Initialize('');
-	FView.SetCloudMaxFileSizeEnabled(False);
+	FView.SetSplitLargeFiles(False);
 
-	FPresenter.OnCloudMaxFileSizeCheckChanged;
+	FPresenter.OnSplitLargeFilesChanged;
 
-	Assert.IsFalse(FView.CloudMaxFileSizeEditEnabled, 'Edit should be disabled when checkbox is unchecked');
+	Assert.IsFalse(FView.CloudMaxFileSizeEditEnabled, 'CloudMaxFileSize edit should be disabled when SplitLargeFiles is unchecked');
+end;
+
+procedure TAccountsPresenterTest.TestCloudMaxFileSizeValidateClampsWhenUnpaid;
+begin
+	FPresenter.Initialize('');
+	FView.SetUnlimitedFileSize(False);
+	FView.SetCloudMaxFileSize(Int64(3000000000));
+
+	FPresenter.OnCloudMaxFileSizeValidate;
+
+	Assert.AreEqual(Int64(CLOUD_MAX_FILESIZE_DEFAULT), FView.GetCloudMaxFileSize,
+		'Value should be clamped to default when exceeding 2GB on unpaid account');
+end;
+
+procedure TAccountsPresenterTest.TestCloudMaxFileSizeValidateAllowsWhenPaid;
+begin
+	FPresenter.Initialize('');
+	FView.SetUnlimitedFileSize(True);
+	FView.SetCloudMaxFileSize(Int64(3000000000));
+
+	FPresenter.OnCloudMaxFileSizeValidate;
+
+	Assert.AreEqual(Int64(3000000000), FView.GetCloudMaxFileSize,
+		'Value should be kept when UnlimitedFileSize is checked');
+end;
+
+procedure TAccountsPresenterTest.TestCloudMaxFileSizeValidateKeepsValidValue;
+begin
+	FPresenter.Initialize('');
+	FView.SetUnlimitedFileSize(False);
+	FView.SetCloudMaxFileSize(Int64(1000000000));
+
+	FPresenter.OnCloudMaxFileSizeValidate;
+
+	Assert.AreEqual(Int64(1000000000), FView.GetCloudMaxFileSize,
+		'Value within limit should not be changed');
+end;
+
+procedure TAccountsPresenterTest.TestUnlimitedFileSizeUncheckedClampsValue;
+begin
+	FPresenter.Initialize('');
+	FView.SetUnlimitedFileSize(True);
+	FView.SetCloudMaxFileSize(Int64(5000000000));
+
+	{Simulate user unchecking the box}
+	FView.SetUnlimitedFileSize(False);
+	FPresenter.OnUnlimitedFileSizeChanged;
+
+	Assert.AreEqual(Int64(CLOUD_MAX_FILESIZE_DEFAULT), FView.GetCloudMaxFileSize,
+		'Value should be clamped when UnlimitedFileSize is unchecked');
+end;
+
+procedure TAccountsPresenterTest.TestUnlimitedFileSizeChangedMarksDirty;
+begin
+	FPresenter.Initialize('');
+	Assert.IsFalse(FView.ApplyButtonEnabled, 'Apply should start disabled');
+
+	FPresenter.OnUnlimitedFileSizeChanged;
+
+	Assert.IsTrue(FView.ApplyButtonEnabled, 'Apply should be enabled after UnlimitedFileSize change');
 end;
 
 procedure TAccountsPresenterTest.TestOnProxyUserChangedEnablesPasswordManager;
@@ -2033,40 +2092,6 @@ begin
 	Assert.IsNotEmpty(FView.DescriptionFileNameErrorMessage, 'Should show validation error for DescriptionFileName');
 	Assert.AreEqual(3, FView.ShownTabIndex, 'Should switch to Comments tab (index 3)');
 	Assert.IsFalse(FPresenter.SettingsApplied, 'SettingsApplied should remain False on validation error');
-end;
-
-procedure TAccountsPresenterTest.TestOnApplyGlobalSettingsClickWithCustomMaxFileSize;
-var
-	Settings: TPluginSettings;
-begin
-	FPresenter.Initialize('');
-
-	{Enable custom max file size}
-	FView.SetCloudMaxFileSizeEnabled(True);
-	FView.SetCloudMaxFileSize(1073741824); {1 GB}
-	FView.SetDescriptionFileName('valid.txt');
-
-	FPresenter.OnApplyGlobalSettingsClick;
-
-	Settings := FSettingsManager.GetSettings;
-	Assert.AreEqual(Int64(1073741824), Settings.CloudMaxFileSize, 'Custom CloudMaxFileSize should be saved');
-end;
-
-procedure TAccountsPresenterTest.TestOnApplyGlobalSettingsClickWithDefaultMaxFileSize;
-var
-	Settings: TPluginSettings;
-begin
-	FPresenter.Initialize('');
-
-	{Disable custom max file size (use default)}
-	FView.SetCloudMaxFileSizeEnabled(False);
-	FView.SetCloudMaxFileSize(1073741824); {This should be ignored}
-	FView.SetDescriptionFileName('valid.txt');
-
-	FPresenter.OnApplyGlobalSettingsClick;
-
-	Settings := FSettingsManager.GetSettings;
-	Assert.AreEqual(Int64(CLOUD_MAX_FILESIZE_DEFAULT), Settings.CloudMaxFileSize, 'Default CloudMaxFileSize should be used');
 end;
 
 procedure TAccountsPresenterTest.TestOnApplyGlobalSettingsClickWithProxyPasswordManager;
@@ -3255,23 +3280,6 @@ begin
 	Assert.AreEqual(1, FView.GetTimestampConflictMode, 'TimestampConflictMode should be loaded');
 end;
 
-procedure TAccountsPresenterTest.TestLoadGlobalSettingsWithCustomCloudMaxFileSize;
-var
-	Settings: TPluginSettings;
-begin
-	{Setup: Set custom max file size}
-	Settings := FSettingsManager.GetSettings;
-	Settings.CloudMaxFileSize := 1073741824; {1 GB}
-	FSettingsManager.SetSettings(Settings);
-
-	FPresenter.Initialize('');
-
-	{Verify custom size is loaded with checkbox enabled}
-	Assert.AreEqual(1073741824, FView.GetCloudMaxFileSize, 'CloudMaxFileSize should be loaded');
-	Assert.IsTrue(FView.GetCloudMaxFileSizeEnabled, 'CloudMaxFileSize checkbox should be enabled');
-	Assert.IsTrue(FView.CloudMaxFileSizeEditEnabled, 'CloudMaxFileSize edit should be enabled');
-end;
-
 procedure TAccountsPresenterTest.TestLoadGlobalSettingsWithCustomUserAgent;
 var
 	Settings: TPluginSettings;
@@ -3352,15 +3360,15 @@ begin
 	Assert.IsFalse(FView.GlobalSettingsApplyEnabled, 'Apply should remain disabled after LoadGlobalSettingsToView');
 end;
 
-procedure TAccountsPresenterTest.TestOnCloudMaxFileSizeCheckChangedMarksDirty;
+procedure TAccountsPresenterTest.TestOnSplitLargeFilesChangedMarksDirty;
 begin
 	FPresenter.Initialize('');
-	Assert.IsFalse(FView.GlobalSettingsApplyEnabled, 'Apply should start disabled');
+	Assert.IsFalse(FView.ApplyButtonEnabled, 'Apply should start disabled');
 
-	FView.SetCloudMaxFileSizeEnabled(True);
-	FPresenter.OnCloudMaxFileSizeCheckChanged;
+	FView.SetSplitLargeFiles(True);
+	FPresenter.OnSplitLargeFilesChanged;
 
-	Assert.IsTrue(FView.GlobalSettingsApplyEnabled, 'Apply should be enabled after CloudMaxFileSize checkbox change');
+	Assert.IsTrue(FView.ApplyButtonEnabled, 'Apply should be enabled after SplitLargeFiles checkbox change');
 end;
 
 {Proxy controls tests}

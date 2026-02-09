@@ -419,7 +419,6 @@ begin
 	{Set non-default values}
 	FManager.Settings.DescriptionEnabled := True;
 	FManager.Settings.DescriptionFileName := 'roundtrip.ion';
-	FManager.Settings.CloudMaxFileSize := 123456789;
 	FManager.Settings.IconsMode := IconsModeInternal;
 
 	FManager.Save;
@@ -427,7 +426,6 @@ begin
 	{Reset to defaults}
 	FManager.Settings.DescriptionEnabled := False;
 	FManager.Settings.DescriptionFileName := '';
-	FManager.Settings.CloudMaxFileSize := 0;
 	FManager.Settings.IconsMode := 0;
 
 	{Refresh should reload saved values}
@@ -435,7 +433,6 @@ begin
 
 	Assert.IsTrue(FManager.Settings.DescriptionEnabled);
 	Assert.AreEqual('roundtrip.ion', FManager.Settings.DescriptionFileName);
-	Assert.AreEqual(Int64(123456789), FManager.Settings.CloudMaxFileSize);
 	Assert.AreEqual(IconsModeInternal, FManager.Settings.IconsMode);
 end;
 
@@ -801,7 +798,6 @@ begin
 	SettingsManager := TNullPluginSettingsManager.Create;
 	Settings := SettingsManager.GetSettings;
 	Assert.AreEqual(0, Settings.LogLevel);
-	Assert.AreEqual(Int64(0), Settings.CloudMaxFileSize);
 	Assert.IsFalse(Settings.PrecalculateHash);
 end;
 

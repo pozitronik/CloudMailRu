@@ -56,10 +56,8 @@ type
 		function GetLoadSSLFromPluginDir: Boolean;
 		procedure SetPreserveFileTime(Value: Boolean);
 		function GetPreserveFileTime: Boolean;
-		procedure SetCloudMaxFileSize(Value: Integer);
-		function GetCloudMaxFileSize: Integer;
-		procedure SetCloudMaxFileSizeEnabled(Value: Boolean);
-		function GetCloudMaxFileSizeEnabled: Boolean;
+		procedure SetCloudMaxFileSize(Value: Int64);
+		function GetCloudMaxFileSize: Int64;
 		procedure SetCloudMaxFileSizeEditEnabled(Value: Boolean);
 		procedure SetChunkOverwriteMode(Value: Integer);
 		function GetChunkOverwriteMode: Integer;
@@ -394,7 +392,9 @@ type
 
 		{Global settings operations}
 		procedure OnApplyGlobalSettingsClick;
-		procedure OnCloudMaxFileSizeCheckChanged;
+		procedure OnSplitLargeFilesChanged;
+		procedure OnUnlimitedFileSizeChanged;
+		procedure OnCloudMaxFileSizeValidate;
 		procedure OnProxyUserChanged;
 		procedure OnProxyTypeChanged;
 		procedure OnChangeUserAgentChanged;
@@ -543,11 +543,6 @@ begin
 		FView.SetLoadSSLFromPluginDir(Settings.LoadSSLDLLOnlyFromPluginDir);
 		FView.SetPreserveFileTime(Settings.PreserveFileTime);
 		FView.SetCopyBetweenAccountsMode(Settings.CopyBetweenAccountsMode);
-
-		{Cloud max file size}
-		FView.SetCloudMaxFileSize(Settings.CloudMaxFileSize);
-		FView.SetCloudMaxFileSizeEnabled(Settings.CloudMaxFileSize <> CLOUD_MAX_FILESIZE_DEFAULT);
-		FView.SetCloudMaxFileSizeEditEnabled(Settings.CloudMaxFileSize <> CLOUD_MAX_FILESIZE_DEFAULT);
 
 		{Operation modes}
 		FView.SetChunkOverwriteMode(Settings.ChunkOverwriteMode);
@@ -719,6 +714,8 @@ begin
 		FView.SetUseTCPasswordManager(AccSettings.UseTCPasswordManager);
 		FView.SetUnlimitedFileSize(AccSettings.UnlimitedFilesize);
 		FView.SetSplitLargeFiles(AccSettings.SplitLargeFiles);
+		FView.SetCloudMaxFileSize(AccSettings.CloudMaxFileSize);
+		FView.SetCloudMaxFileSizeEditEnabled(AccSettings.SplitLargeFiles);
 		FView.SetPublicUrl(AccSettings.PublicUrl);
 		FView.SetEncryptFiles(AccSettings.EncryptFiles);
 		FView.SetCryptPasswordStorage(AccSettings.CryptPasswordStorage);
@@ -759,6 +756,8 @@ begin
 		FView.SetUseTCPasswordManager(False);
 		FView.SetUnlimitedFileSize(False);
 		FView.SetSplitLargeFiles(False);
+		FView.SetCloudMaxFileSize(CLOUD_MAX_FILESIZE_DEFAULT);
+		FView.SetCloudMaxFileSizeEditEnabled(False);
 		FView.SetPublicUrl('');
 		FView.SetEncryptFiles(False);
 		FView.SetCryptPasswordStorage(CryptPasswordStorageNone);
@@ -958,6 +957,7 @@ begin
 	AccSettings.UseTCPasswordManager := FView.GetUseTCPasswordManager;
 	AccSettings.UnlimitedFilesize := FView.GetUnlimitedFileSize;
 	AccSettings.SplitLargeFiles := FView.GetSplitLargeFiles;
+	AccSettings.CloudMaxFileSize := FView.GetCloudMaxFileSize;
 	AccSettings.PublicUrl := FView.GetPublicUrl;
 	AccSettings.EncryptFiles := FView.GetEncryptFiles;
 	AccSettings.CryptPasswordStorage := FView.GetCryptPasswordStorage;
@@ -1161,12 +1161,6 @@ begin
 	Settings.PreserveFileTime := FView.GetPreserveFileTime;
 	Settings.CopyBetweenAccountsMode := FView.GetCopyBetweenAccountsMode;
 
-	{Cloud max file size}
-	if FView.GetCloudMaxFileSizeEnabled then
-		Settings.CloudMaxFileSize := FView.GetCloudMaxFileSize
-	else
-		Settings.CloudMaxFileSize := CLOUD_MAX_FILESIZE_DEFAULT;
-
 	{Operation modes}
 	Settings.ChunkOverwriteMode := FView.GetChunkOverwriteMode;
 	Settings.DeleteFailOnUploadMode := FView.GetDeleteFailOnUploadMode;
@@ -1254,10 +1248,22 @@ begin
 		SetGlobalSettingsDirty(True);
 end;
 
-procedure TAccountsPresenter.OnCloudMaxFileSizeCheckChanged;
+procedure TAccountsPresenter.OnSplitLargeFilesChanged;
 begin
-	FView.SetCloudMaxFileSizeEditEnabled(FView.GetCloudMaxFileSizeEnabled);
-	OnGlobalSettingsFieldChanged;
+	FView.SetCloudMaxFileSizeEditEnabled(FView.GetSplitLargeFiles);
+	OnFieldChanged;
+end;
+
+procedure TAccountsPresenter.OnUnlimitedFileSizeChanged;
+begin
+	OnCloudMaxFileSizeValidate;
+	OnFieldChanged;
+end;
+
+procedure TAccountsPresenter.OnCloudMaxFileSizeValidate;
+begin
+	if (not FView.GetUnlimitedFileSize) and (FView.GetCloudMaxFileSize > CLOUD_MAX_FILESIZE_DEFAULT) then
+		FView.SetCloudMaxFileSize(CLOUD_MAX_FILESIZE_DEFAULT);
 end;
 
 procedure TAccountsPresenter.OnProxyUserChanged;
