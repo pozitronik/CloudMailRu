@@ -183,7 +183,9 @@ uses
 	ServerProfile in 'src\Domain\ValueObjects\ServerProfile.pas',
 	ServerProfileManager in 'src\Infrastructure\Settings\ServerProfileManager.pas',
 	ServerConfigFetcher in 'src\Infrastructure\HTTP\ServerConfigFetcher.pas',
-	TranslationManager in 'src\Infrastructure\Localization\TranslationManager.pas';
+	TranslationManager in 'src\Infrastructure\Localization\TranslationManager.pas',
+	CloudFileVersion in 'src\Domain\ValueObjects\CloudFileVersion.pas',
+	CloudFileVersionJsonAdapter in 'src\Infrastructure\Adapter\CloudFileVersionJsonAdapter.pas';
 
 {$IFDEF WIN64}
 {$E wfx64}

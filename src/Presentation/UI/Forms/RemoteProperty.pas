@@ -79,8 +79,12 @@ type
 		LoadHashesTb: TToolButton;
 		OpenDialogOD: TOpenDialog;
 		ApplyHashesTB: TToolButton;
+		HistoryTS: TTabSheet;
+		HistoryLV: TListView;
+		RestoreBtn: TButton;
+		RollbackBtn: TButton;
 		procedure AccessCBClick(Sender: TObject);
-		class function ShowProperty(parentWindow: HWND; RemoteName: WideString; RemoteProperty: TCloudDirItem; Cloud: TCloudMailRu; FileSystem: IFileSystem; TCHandler: ITCHandler; ShowDescription: Boolean = true; EditDescription: Boolean = true; PluginIonFileName: WideString = 'descript.ion'): Integer;
+		class function ShowProperty(parentWindow: HWND; RemoteName: WideString; RemoteProperty: TCloudDirItem; Cloud: TCloudMailRu; FileSystem: IFileSystem; TCHandler: ITCHandler; ShowDescription: Boolean = true; EditDescription: Boolean = true; PluginIonFileName: WideString = 'descript.ion'; ShowHistory: Boolean = false): Integer;
 		procedure InviteBtnClick(Sender: TObject);
 		procedure ItemDeleteClick(Sender: TObject);
 		procedure ItemRefreshClick(Sender: TObject);
@@ -97,6 +101,9 @@ type
 		procedure LoadHashesTbClick(Sender: TObject);
 		procedure ApplyHashesTBClick(Sender: TObject);
 		procedure HashesMemoExit(Sender: TObject);
+		procedure RestoreBtnClick(Sender: TObject);
+		procedure RollbackBtnClick(Sender: TObject);
+		procedure HistoryLVSelectItem(Sender: TObject; Item: TListItem; Selected: Boolean);
 	private
 		{Presenter handles business logic}
 		FPresenter: TRemotePropertyPresenter;
@@ -133,6 +140,12 @@ type
 		procedure SetDescriptionReadOnly(ReadOnly: Boolean);
 		procedure SetDescriptionSaveEnabled(Enabled: Boolean);
 		procedure SetDescriptionTabCaption(ACaption: WideString);
+		procedure ClearHistory;
+		procedure AddHistoryItem(const Date, Size, Hash: WideString; RawSize: Int64);
+		function GetSelectedHistoryHash: WideString;
+		function GetSelectedHistorySize: Int64;
+		procedure SetRestoreEnabled(Enabled: Boolean);
+		procedure SetRollbackEnabled(Enabled: Boolean);
 		procedure ShowError(Title, Message: WideString);
 		procedure ProcessMessages;
 		function IsHashesCancelled: Boolean;
@@ -195,6 +208,8 @@ begin
 			DescriptionTS.TabVisible := true;
 		rptHashesList:
 			HashesListTS.TabVisible := true;
+		rptHistory:
+			HistoryTS.TabVisible := true;
 	end;
 end;
 
@@ -207,6 +222,8 @@ begin
 			DescriptionTS.TabVisible := False;
 		rptHashesList:
 			HashesListTS.TabVisible := False;
+		rptHistory:
+			HistoryTS.TabVisible := False;
 	end;
 end;
 
@@ -336,6 +353,63 @@ begin
 	Result := InviteAcessCB.ItemIndex;
 end;
 
+procedure TPropertyForm.ClearHistory;
+begin
+	HistoryLV.Items.Clear;
+end;
+
+procedure TPropertyForm.AddHistoryItem(const Date, Size, Hash: WideString; RawSize: Int64);
+var
+	LI: TListItem;
+begin
+	LI := HistoryLV.Items.Add;
+	LI.Caption := Date;
+	LI.SubItems.Add(Size);
+	LI.SubItems.Add(Hash);
+	LI.Data := Pointer(RawSize);
+end;
+
+function TPropertyForm.GetSelectedHistoryHash: WideString;
+begin
+	Result := '';
+	if (HistoryLV.Selected <> nil) and (HistoryLV.Selected.SubItems.Count >= 2) then
+		Result := HistoryLV.Selected.SubItems[1];
+end;
+
+function TPropertyForm.GetSelectedHistorySize: Int64;
+begin
+	{Size stored as formatted string in column; need raw value.
+	 Store raw size in TListItem.Data pointer for retrieval.}
+	Result := 0;
+	if HistoryLV.Selected <> nil then
+		Result := Int64(HistoryLV.Selected.Data);
+end;
+
+procedure TPropertyForm.SetRestoreEnabled(Enabled: Boolean);
+begin
+	RestoreBtn.Enabled := Enabled;
+end;
+
+procedure TPropertyForm.SetRollbackEnabled(Enabled: Boolean);
+begin
+	RollbackBtn.Enabled := Enabled;
+end;
+
+procedure TPropertyForm.RestoreBtnClick(Sender: TObject);
+begin
+	FPresenter.OnRestoreClick;
+end;
+
+procedure TPropertyForm.RollbackBtnClick(Sender: TObject);
+begin
+	FPresenter.OnRollbackClick;
+end;
+
+procedure TPropertyForm.HistoryLVSelectItem(Sender: TObject; Item: TListItem; Selected: Boolean);
+begin
+	FPresenter.OnHistorySelectionChanged;
+end;
+
 procedure TPropertyForm.UpdateFormCaptions;
 begin
 	AccessCB.Caption := DFM_REM_CB_PUBLIC_ACCESS;
@@ -357,6 +431,13 @@ begin
 	WrapHashesTb.Hint := DFM_REM_BTN_WRAP;
 	CancelHashesScanTb.Hint := DFM_REM_BTN_CANCEL_SCAN;
 	RefreshHashesScanTb.Hint := DFM_REM_BTN_RESCAN;
+	{History tab}
+	HistoryTS.Caption := DFM_REM_TAB_HISTORY;
+	HistoryLV.Columns[0].Caption := DFM_REM_COL_DATE;
+	HistoryLV.Columns[1].Caption := DFM_REM_COL_SIZE;
+	HistoryLV.Columns[2].Caption := DFM_REM_COL_HASH;
+	RestoreBtn.Caption := DFM_REM_BTN_RESTORE;
+	RollbackBtn.Caption := DFM_REM_BTN_ROLLBACK;
 	{Access combobox items}
 	InviteAcessCB.Items.Clear;
 	InviteAcessCB.Items.Add(DFM_REM_OPT_READ_WRITE);
@@ -497,7 +578,7 @@ end;
 
 {TPropertyForm - Static factory method}
 
-class function TPropertyForm.ShowProperty(parentWindow: HWND; RemoteName: WideString; RemoteProperty: TCloudDirItem; Cloud: TCloudMailRu; FileSystem: IFileSystem; TCHandler: ITCHandler; ShowDescription: Boolean; EditDescription: Boolean; PluginIonFileName: WideString): Integer;
+class function TPropertyForm.ShowProperty(parentWindow: HWND; RemoteName: WideString; RemoteProperty: TCloudDirItem; Cloud: TCloudMailRu; FileSystem: IFileSystem; TCHandler: ITCHandler; ShowDescription: Boolean; EditDescription: Boolean; PluginIonFileName: WideString; ShowHistory: Boolean): Integer;
 var
 	Form: TPropertyForm;
 	Config: TRemotePropertyConfig;
@@ -514,6 +595,7 @@ begin
 		Config.ShowDescription := ShowDescription;
 		Config.EditDescription := EditDescription;
 		Config.PluginIonFileName := PluginIonFileName;
+		Config.ShowHistory := ShowHistory;
 
 		Form.FPresenter.Initialize(RemoteProperty, RemoteName, Config);
 

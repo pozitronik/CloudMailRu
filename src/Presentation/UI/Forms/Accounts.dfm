@@ -629,6 +629,16 @@ object AccountsForm: TAccountsForm
         TabOrder = 14
         OnClick = GlobalSettingsFieldChanged
       end
+      object FileHistoryCB: TCheckBox
+        Left = 4
+        Top = 340
+        Width = 683
+        Height = 17
+        Anchors = [akLeft, akTop, akRight]
+        Caption = 'Show file version history'
+        TabOrder = 16
+        OnClick = GlobalSettingsFieldChanged
+      end
       object GlobalSettingsApplyBtn: TButton
         Left = 559
         Top = 439

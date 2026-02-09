@@ -147,6 +147,10 @@ type
 		procedure SetTimestampConflictMode(Value: Integer);
 		function GetTimestampConflictMode: Integer;
 
+		{File history settings}
+		procedure SetFileHistoryEnabled(Value: Boolean);
+		function GetFileHistoryEnabled: Boolean;
+
 		{Streaming extensions}
 		procedure SetStreamingExtensionsList(const Items: TArray<TStreamingDisplayItem>);
 		function GetSelectedStreamingExtensionIndex: Integer;
@@ -604,6 +608,9 @@ begin
 		FView.SetTimestampTrackCloudFS(Settings.TimestampTrackCloudFS);
 		FView.SetTimestampFileName(Settings.TimestampFileName);
 		FView.SetTimestampConflictMode(Settings.TimestampConflictMode);
+
+		{File history settings}
+		FView.SetFileHistoryEnabled(Settings.FileHistoryEnabled);
 	finally
 		FGlobalSettingsUpdating := False;
 	end;
@@ -1216,6 +1223,9 @@ begin
 	Settings.TimestampTrackCloudFS := FView.GetTimestampTrackCloudFS;
 	Settings.TimestampFileName := FView.GetTimestampFileName;
 	Settings.TimestampConflictMode := FView.GetTimestampConflictMode;
+
+	{File history settings}
+	Settings.FileHistoryEnabled := FView.GetFileHistoryEnabled;
 
 	{Save settings}
 	FSettingsManager.SetSettings(Settings);

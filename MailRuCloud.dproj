@@ -370,6 +370,8 @@
         <DCCReference Include="src\Application\Thumbnail\CloudThumbnailService.pas"/>
         <DCCReference Include="src\Application\Thumbnail\ThumbnailBitmapConverter.pas"/>
         <DCCReference Include="src\Infrastructure\Localization\TranslationManager.pas"/>
+        <DCCReference Include="src\Domain\ValueObjects\CloudFileVersion.pas"/>
+        <DCCReference Include="src\Infrastructure\Adapter\CloudFileVersionJsonAdapter.pas"/>
         <RcItem Include="icons\icon.ico">
             <ResourceType>ICON</ResourceType>
             <ResourceId>base_icon</ResourceId>

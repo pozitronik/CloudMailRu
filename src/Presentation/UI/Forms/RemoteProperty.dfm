@@ -274,6 +274,61 @@ object PropertyForm: TPropertyForm
         OnClick = DescriptionSaveButtonClick
       end
     end
+    object HistoryTS: TTabSheet
+      Caption = 'History'
+      ImageIndex = 4
+      DesignSize = (
+        828
+        255)
+      object HistoryLV: TListView
+        Left = 0
+        Top = 0
+        Width = 828
+        Height = 222
+        Align = alTop
+        Anchors = [akLeft, akTop, akRight, akBottom]
+        Columns = <
+          item
+            Caption = 'Date'
+            Width = 180
+          end
+          item
+            Caption = 'Size'
+            Width = 120
+          end
+          item
+            Caption = 'Hash'
+            Width = 500
+          end>
+        ReadOnly = True
+        RowSelect = True
+        TabOrder = 0
+        ViewStyle = vsReport
+        OnSelectItem = HistoryLVSelectItem
+      end
+      object RestoreBtn: TButton
+        Left = 0
+        Top = 228
+        Width = 170
+        Height = 25
+        Anchors = [akLeft, akBottom]
+        Caption = 'Restore as copy'
+        Enabled = False
+        TabOrder = 1
+        OnClick = RestoreBtnClick
+      end
+      object RollbackBtn: TButton
+        Left = 176
+        Top = 228
+        Width = 110
+        Height = 25
+        Anchors = [akLeft, akBottom]
+        Caption = 'Rollback'
+        Enabled = False
+        TabOrder = 2
+        OnClick = RollbackBtnClick
+      end
+    end
   end
   object InvitesPopup: TPopupMenu
     OnPopup = InvitesPopupPopup

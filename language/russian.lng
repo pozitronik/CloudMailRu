@@ -429,5 +429,16 @@ DFM_TRANS_RESTORED="Перевод сброшен"
 DFM_TRANS_APPLIED="Перевод применён: %s"
 DFM_TRANS_ERROR="Ошибка: %s"
 
+# История версий файлов
+DFM_REM_TAB_HISTORY="История"
+DFM_REM_COL_DATE="Дата"
+DFM_REM_COL_SIZE="Размер"
+DFM_REM_COL_HASH="Хеш"
+DFM_REM_BTN_RESTORE="Восстановить как копию"
+DFM_REM_BTN_ROLLBACK="Откатить"
+DFM_CB_FILE_HISTORY="Показывать историю версий файлов"
+PREFIX_ERR_FILE_HISTORY="Ошибка истории файла: "
+ERR_FILE_HISTORY_MSG="Ошибка при получении истории версий файла %s"
+
 # Поле содержимого
 CONTENT_FIELD_DISABLED="<отключено>"

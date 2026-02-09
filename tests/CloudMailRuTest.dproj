@@ -331,6 +331,10 @@
         <DCCReference Include="Application\Description\DescriptionSyncGuardTest.pas"/>
         <DCCReference Include="..\src\Domain\ValueObjects\TimestampEntry.pas"/>
         <DCCReference Include="Domain\ValueObjects\TimestampEntryTest.pas"/>
+        <DCCReference Include="..\src\Domain\ValueObjects\CloudFileVersion.pas"/>
+        <DCCReference Include="Domain\ValueObjects\CloudFileVersionTest.pas"/>
+        <DCCReference Include="..\src\Infrastructure\Adapter\CloudFileVersionJsonAdapter.pas"/>
+        <DCCReference Include="Infrastructure\Adapter\CloudFileVersionJsonAdapterTest.pas"/>
         <DCCReference Include="..\src\Application\Timestamp\TimestampMetadata.pas"/>
         <DCCReference Include="Application\Timestamp\TimestampMetadataTest.pas"/>
         <DCCReference Include="..\src\Application\Timestamp\TimestampSyncManager.pas"/>

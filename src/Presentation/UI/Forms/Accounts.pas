@@ -194,6 +194,7 @@ type
     TimestampFileNameEdit: TEdit;
     TimestampConflictModeLabel: TLabel;
     TimestampConflictModeCB: TComboBox;
+    FileHistoryCB: TCheckBox;
     CloudMaxFileSizeValue: TEdit;
     CloudMaxFileSizeLabelBytes: TLabel;
 		procedure FormShow(Sender: TObject);
@@ -339,6 +340,10 @@ type
 		function GetTimestampFileName: WideString;
 		procedure SetTimestampConflictMode(Value: Integer);
 		function GetTimestampConflictMode: Integer;
+
+		{IAccountsView - File history settings}
+		procedure SetFileHistoryEnabled(Value: Boolean);
+		function GetFileHistoryEnabled: Boolean;
 
 		{IAccountsView - Streaming extensions}
 		procedure SetStreamingExtensionsList(const Items: TArray<TStreamingDisplayItem>);
@@ -926,6 +931,18 @@ end;
 function TAccountsForm.GetTimestampConflictMode: Integer;
 begin
 	Result := TimestampConflictModeCB.ItemIndex;
+end;
+
+{IAccountsView - File history settings}
+
+procedure TAccountsForm.SetFileHistoryEnabled(Value: Boolean);
+begin
+	FileHistoryCB.Checked := Value;
+end;
+
+function TAccountsForm.GetFileHistoryEnabled: Boolean;
+begin
+	Result := FileHistoryCB.Checked;
 end;
 
 {IAccountsView - Streaming extensions}
@@ -1949,6 +1966,7 @@ begin
 	ShowInvitesFoldersCB.Caption := DFM_CB_INVITES;
 	PrecalculateHashCB.Caption := DFM_CB_PRECALC_HASH;
 	CheckCRCCB.Caption := DFM_CB_CHECK_CRC;
+	FileHistoryCB.Caption := DFM_CB_FILE_HISTORY;
 
 	{Network settings tab}
 	SSLParametersGroupbox.Caption := DFM_GB_SSL;

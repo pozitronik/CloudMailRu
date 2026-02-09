@@ -7,6 +7,7 @@ uses
 	CloudContext,
 	CloudDirItem,
 	CloudDirItemList,
+	CloudFileVersion,
 	CloudIncomingInviteList,
 	CloudOperationResult,
 	CloudSpace,
@@ -113,6 +114,12 @@ type
 		procedure TestGetDirectory_Pagination_AccumulatesMultiplePages;
 		[Test]
 		procedure TestGetDirectory_SinglePage_NoExtraRequests;
+
+		{GetFileHistory tests}
+		[Test]
+		procedure TestGetFileHistory_Success_PopulatesVersions;
+		[Test]
+		procedure TestGetFileHistory_HTTPFailure_ReturnsFalse;
 	end;
 
 implementation
@@ -506,6 +513,35 @@ begin
 	Success := FService.GetDirectory('/nonexistent', Listing);
 
 	Assert.IsFalse(Success, 'GetDirectory should fail for non-existent path');
+end;
+
+{GetFileHistory tests}
+
+procedure TCloudListingServiceTest.TestGetFileHistory_Success_PopulatesVersions;
+var
+	Versions: TCloudFileVersionList;
+	Success: Boolean;
+begin
+	FMockHTTP.SetDefaultResponse(True,
+		'{"body":[{"hash":"ABC123","uid":1,"time":1700000000,"rev":2,"name":"test.txt","path":"/test.txt","size":1024}]}');
+
+	Success := FService.GetFileHistory('/test.txt', Versions);
+
+	Assert.IsTrue(Success, 'GetFileHistory should succeed');
+	Assert.AreEqual(Integer(1), Integer(Length(Versions)), 'Should return 1 version');
+	Assert.AreEqual('ABC123', Versions[0].Hash);
+end;
+
+procedure TCloudListingServiceTest.TestGetFileHistory_HTTPFailure_ReturnsFalse;
+var
+	Versions: TCloudFileVersionList;
+	Success: Boolean;
+begin
+	FMockHTTP.SetDefaultResponse(False, '');
+
+	Success := FService.GetFileHistory('/test.txt', Versions);
+
+	Assert.IsFalse(Success, 'GetFileHistory should fail on HTTP error');
 end;
 
 initialization

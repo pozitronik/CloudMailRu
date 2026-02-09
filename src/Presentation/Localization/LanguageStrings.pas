@@ -434,6 +434,16 @@ var
 	DFM_REM_MI_REFRESH: WideString;
 	DFM_REM_OPT_READ_WRITE: WideString;
 	DFM_REM_OPT_READ_ONLY: WideString;
+	{History tab}
+	DFM_REM_TAB_HISTORY: WideString;
+	DFM_REM_COL_DATE: WideString;
+	DFM_REM_COL_SIZE: WideString;
+	DFM_REM_COL_HASH: WideString;
+	DFM_REM_BTN_RESTORE: WideString;
+	DFM_REM_BTN_ROLLBACK: WideString;
+	DFM_CB_FILE_HISTORY: WideString;
+	PREFIX_ERR_FILE_HISTORY: WideString;
+	ERR_FILE_HISTORY_MSG: WideString;
 
 	{Translation tab status messages}
 	DFM_TRANS_DEFAULT: WideString;
@@ -879,6 +889,16 @@ begin
 	DFM_REM_MI_REFRESH := 'Refresh';
 	DFM_REM_OPT_READ_WRITE := 'Read and write';
 	DFM_REM_OPT_READ_ONLY := 'Read only';
+	{History tab}
+	DFM_REM_TAB_HISTORY := 'History';
+	DFM_REM_COL_DATE := 'Date';
+	DFM_REM_COL_SIZE := 'Size';
+	DFM_REM_COL_HASH := 'Hash';
+	DFM_REM_BTN_RESTORE := 'Restore as copy';
+	DFM_REM_BTN_ROLLBACK := 'Rollback';
+	DFM_CB_FILE_HISTORY := 'Show file version history';
+	PREFIX_ERR_FILE_HISTORY := 'File history error: ';
+	ERR_FILE_HISTORY_MSG := 'Error while retrieving file %s version history';
 
 	DFM_TRANS_DEFAULT := '(Default)';
 	DFM_TRANS_RESTORED := 'Defaults restored';
@@ -1305,6 +1325,15 @@ begin
 	TranslationRegistry.Add('DFM_REM_MI_REFRESH', @DFM_REM_MI_REFRESH);
 	TranslationRegistry.Add('DFM_REM_OPT_READ_WRITE', @DFM_REM_OPT_READ_WRITE);
 	TranslationRegistry.Add('DFM_REM_OPT_READ_ONLY', @DFM_REM_OPT_READ_ONLY);
+	TranslationRegistry.Add('DFM_REM_TAB_HISTORY', @DFM_REM_TAB_HISTORY);
+	TranslationRegistry.Add('DFM_REM_COL_DATE', @DFM_REM_COL_DATE);
+	TranslationRegistry.Add('DFM_REM_COL_SIZE', @DFM_REM_COL_SIZE);
+	TranslationRegistry.Add('DFM_REM_COL_HASH', @DFM_REM_COL_HASH);
+	TranslationRegistry.Add('DFM_REM_BTN_RESTORE', @DFM_REM_BTN_RESTORE);
+	TranslationRegistry.Add('DFM_REM_BTN_ROLLBACK', @DFM_REM_BTN_ROLLBACK);
+	TranslationRegistry.Add('DFM_CB_FILE_HISTORY', @DFM_CB_FILE_HISTORY);
+	TranslationRegistry.Add('PREFIX_ERR_FILE_HISTORY', @PREFIX_ERR_FILE_HISTORY);
+	TranslationRegistry.Add('ERR_FILE_HISTORY_MSG', @ERR_FILE_HISTORY_MSG);
 
 	TranslationRegistry.Add('DFM_TRANS_DEFAULT', @DFM_TRANS_DEFAULT);
 	TranslationRegistry.Add('DFM_TRANS_RESTORED', @DFM_TRANS_RESTORED);

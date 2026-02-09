@@ -12,6 +12,7 @@ uses
 	CloudIncomingInviteList,
 	CloudSpace,
 	CloudConstants,
+	CloudFileVersion,
 	CloudListingService,
 	TrashBinOperationHandler;
 
@@ -49,6 +50,7 @@ type
 		function TrashbinEmpty(): Boolean;
 		function GetUserSpace(var SpaceInfo: TCloudSpace): Boolean;
 		procedure LogUserSpaceInfo(Email: WideString);
+		function GetFileHistory(Path: WideString; var Versions: TCloudFileVersionList): Boolean;
 	end;
 
 	[TestFixture]
@@ -192,6 +194,11 @@ end;
 procedure TMockListingService.LogUserSpaceInfo(Email: WideString);
 begin
 	{No-op}
+end;
+
+function TMockListingService.GetFileHistory(Path: WideString; var Versions: TCloudFileVersionList): Boolean;
+begin
+	Result := False;
 end;
 
 {TTrashBinOperationHandlerTest}

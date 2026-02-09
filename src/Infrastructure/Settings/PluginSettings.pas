@@ -45,6 +45,7 @@ type
 		SSLBackend: integer; {See SSLBackend* constants - selects SSL/TLS implementation}
 		ThumbnailExtensions: WideString;
 		Language: WideString; {Selected translation name, empty = English default}
+		FileHistoryEnabled: boolean; {Show version history tab in file properties dialog}
 	private
 		FIniFilePath: WideString;
 		FAccountsIniFilePath: WideString;

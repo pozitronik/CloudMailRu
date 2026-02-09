@@ -11,6 +11,7 @@ uses
 	CloudDirItemList,
 	CloudInviteList,
 	CloudFileIdentity,
+	CloudFileVersion,
 	CloudConstants,
 	CloudMailRu,
 	CloudFileDownloader,
@@ -30,7 +31,7 @@ uses
 
 type
 	{Tabs available in RemoteProperty dialog}
-	TRemotePropertyTab = (rptFolderAccess, rptDescription, rptHashesList);
+	TRemotePropertyTab = (rptFolderAccess, rptDescription, rptHashesList, rptHistory);
 
 	{Callback for logging status messages}
 	TLogMessageProc = reference to procedure(Message: WideString);
@@ -74,6 +75,14 @@ type
 		procedure SetDescriptionSaveEnabled(Enabled: Boolean);
 		procedure SetDescriptionTabCaption(Caption: WideString);
 
+		{History tab}
+		procedure ClearHistory;
+		procedure AddHistoryItem(const Date, Size, Hash: WideString; RawSize: Int64);
+		function GetSelectedHistoryHash: WideString;
+		function GetSelectedHistorySize: Int64;
+		procedure SetRestoreEnabled(Enabled: Boolean);
+		procedure SetRollbackEnabled(Enabled: Boolean);
+
 		{User interaction}
 		procedure ShowError(Title, Message: WideString);
 		procedure ProcessMessages;
@@ -90,6 +99,7 @@ type
 		ShowDescription: Boolean;
 		EditDescription: Boolean;
 		PluginIonFileName: WideString;
+		ShowHistory: Boolean;
 	end;
 
 	{Presenter for RemoteProperty dialog}
@@ -109,6 +119,7 @@ type
 		FConfig: TRemotePropertyConfig;
 		FInvitesListing: TCloudInviteList;
 		FPublicUrl: WideString;
+		FHistoryVersions: TCloudFileVersionList;
 
 		function FillRecursiveHashListing(const Path: WideString; ListingService: ICloudListingService; const BaseDir: WideString): Boolean;
 
@@ -139,6 +150,12 @@ type
 		procedure LoadDescription;
 		procedure SaveDescription;
 
+		{History operations}
+		procedure LoadHistory;
+		procedure OnRestoreClick;
+		procedure OnRollbackClick;
+		procedure OnHistorySelectionChanged;
+
 		{Hash command generation - stateless, suitable for unit testing}
 		class function GenerateHashCommand(Item: TCloudDirItem; BaseDir: WideString = ''; Path: WideString = ''): WideString; static;
 
@@ -152,6 +169,7 @@ implementation
 uses
 	Winapi.Windows,
 	Winapi.Messages,
+	System.DateUtils,
 	PathHelper,
 	StringHelper;
 
@@ -189,6 +207,7 @@ begin
 	FView.HideTab(rptFolderAccess);
 	FView.HideTab(rptDescription);
 	FView.HideTab(rptHashesList);
+	FView.HideTab(rptHistory);
 
 	{Hash buttons depend on account type}
 	FView.SetApplyHashesEnabled(CanApplyHashes);
@@ -228,6 +247,14 @@ begin
 
 		if FConfig.PluginIonFileName <> DESCRIPTION_DEFAULT_FILENAME then
 			FView.SetDescriptionTabCaption(Format(DESCRIPTION_FROM, [FConfig.PluginIonFileName]));
+	end;
+
+	{History tab: visible for files (not directories) when enabled and not public account}
+	if FConfig.ShowHistory and (not FIsPublicAccount) and (FProps.type_ <> TYPE_DIR) then
+	begin
+		FView.SetExtPropertiesVisible(True);
+		FView.ShowTab(rptHistory);
+		LoadHistory;
 	end;
 
 	{Hashes tab is always visible}
@@ -525,6 +552,82 @@ begin
 	finally
 		CurrentDescriptions.Free;
 	end;
+end;
+
+procedure TRemotePropertyPresenter.LoadHistory;
+var
+	I: Integer;
+	DateStr, SizeStr, HashStr: WideString;
+begin
+	FView.ClearHistory;
+	FView.SetRestoreEnabled(False);
+	FView.SetRollbackEnabled(False);
+
+	if not FListingService.GetFileHistory(FRemotePath, FHistoryVersions) then
+	begin
+		FView.ShowError(PREFIX_ERR_FILE_HISTORY, Format(ERR_FILE_HISTORY_MSG, [FRemotePath]));
+		Exit;
+	end;
+
+	for I := 0 to Length(FHistoryVersions) - 1 do
+	begin
+		if FHistoryVersions[I].Time > 0 then
+			DateStr := DateTimeToStr(UnixToDateTime(FHistoryVersions[I].Time, False))
+		else
+			DateStr := UNSET_ITEM;
+		SizeStr := FormatSize(FHistoryVersions[I].Size);
+		HashStr := FHistoryVersions[I].Hash;
+		FView.AddHistoryItem(DateStr, SizeStr, HashStr, FHistoryVersions[I].Size);
+	end;
+end;
+
+procedure TRemotePropertyPresenter.OnHistorySelectionChanged;
+var
+	Hash: WideString;
+begin
+	Hash := FView.GetSelectedHistoryHash;
+	FView.SetRestoreEnabled(Hash <> '');
+	FView.SetRollbackEnabled(Hash <> '');
+end;
+
+procedure TRemotePropertyPresenter.OnRestoreClick;
+var
+	Hash: WideString;
+	Size: Int64;
+	Identity: TCloudFileIdentity;
+	RestorePath: WideString;
+begin
+	Hash := FView.GetSelectedHistoryHash;
+	Size := FView.GetSelectedHistorySize;
+	if Hash = '' then
+		Exit;
+
+	Identity.Hash := Hash;
+	Identity.Size := Size;
+
+	{Build restore path with _restored suffix before extension}
+	RestorePath := ChangeFileExt(FRemotePath, '') + '_restored' + ExtractFileExt(FRemotePath);
+
+	FUploader.AddFileByIdentity(Identity, RestorePath, CLOUD_CONFLICT_RENAME);
+	PostMessage(FTCHandler.FindTCWindow, WM_USER + TC_REFRESH_MESSAGE, TC_REFRESH_PARAM, 0);
+end;
+
+procedure TRemotePropertyPresenter.OnRollbackClick;
+var
+	Hash: WideString;
+	Size: Int64;
+	Identity: TCloudFileIdentity;
+begin
+	Hash := FView.GetSelectedHistoryHash;
+	Size := FView.GetSelectedHistorySize;
+	if Hash = '' then
+		Exit;
+
+	Identity.Hash := Hash;
+	Identity.Size := Size;
+
+	FUploader.AddFileByIdentity(Identity, FRemotePath, 'rewrite');
+	PostMessage(FTCHandler.FindTCWindow, WM_USER + TC_REFRESH_MESSAGE, TC_REFRESH_PARAM, 0);
 end;
 
 end.

@@ -16,6 +16,7 @@ uses
 	CloudFileDownloader,
 	CloudFileUploader,
 	CloudFileOperations,
+	CloudFileVersion,
 	CloudListingService,
 	CloudShareService,
 	FileSystem,
@@ -59,6 +60,14 @@ type
 		FProcessMessagesCalled: Boolean;
 		{Flag to set cancellation during ProcessMessages}
 		FCancelHashesOnProcess: Boolean;
+
+		{History tab}
+		FHistoryItems: TStringList;
+		FHistoryRawSizes: TList<Int64>;
+		FSelectedHistoryHash: WideString;
+		FSelectedHistorySize: Int64;
+		FRestoreEnabled: Boolean;
+		FRollbackEnabled: Boolean;
 	public
 		constructor Create;
 		destructor Destroy; override;
@@ -97,6 +106,14 @@ type
 		function GetInviteEmailInput: WideString;
 		function GetInviteAccessInput: Integer;
 
+		{History tab}
+		procedure ClearHistory;
+		procedure AddHistoryItem(const Date, Size, Hash: WideString; RawSize: Int64);
+		function GetSelectedHistoryHash: WideString;
+		function GetSelectedHistorySize: Int64;
+		procedure SetRestoreEnabled(Enabled: Boolean);
+		procedure SetRollbackEnabled(Enabled: Boolean);
+
 		{Test helpers - state access}
 		property Caption: WideString read FCaption;
 		property WebLink: WideString read FWebLink;
@@ -120,10 +137,18 @@ type
 		property ApplyHashesEnabled: Boolean read FApplyHashesEnabled;
 		property LoadHashesEnabled: Boolean read FLoadHashesEnabled;
 
+		{Test helpers - history state}
+		property HistoryItems: TStringList read FHistoryItems;
+		property HistoryRawSizes: TList<Int64> read FHistoryRawSizes;
+		property RestoreEnabled: Boolean read FRestoreEnabled;
+		property RollbackEnabled: Boolean read FRollbackEnabled;
+
 		{Test helpers - input simulation}
 		property InviteEmailInput: WideString read FInviteEmailInput write FInviteEmailInput;
 		property InviteAccessInput: Integer read FInviteAccessInput write FInviteAccessInput;
 		property HashesCancelled: Boolean read FHashesCancelled write FHashesCancelled;
+		property SelectedHistoryHash: WideString read FSelectedHistoryHash write FSelectedHistoryHash;
+		property SelectedHistorySize: Int64 read FSelectedHistorySize write FSelectedHistorySize;
 		{Simulate user clicking Cancel during ProcessMessages}
 		property CancelHashesOnProcess: Boolean read FCancelHashesOnProcess write FCancelHashesOnProcess;
 
@@ -176,6 +201,8 @@ type
 		FDirectoryListing: TCloudDirItemList;
 		FSubDirListing: TCloudDirItemList;
 		FGetDirectoryCallCount: Integer;
+		FGetFileHistoryResult: Boolean;
+		FFileHistoryVersions: TCloudFileVersionList;
 	public
 		function GetDirectory(Path: WideString; var Listing: TCloudDirItemList; ShowProgress: Boolean = False): Boolean;
 		function GetSharedLinks(var Listing: TCloudDirItemList; ShowProgress: Boolean = False): Boolean;
@@ -187,11 +214,14 @@ type
 		function TrashbinEmpty(): Boolean;
 		function GetUserSpace(var SpaceInfo: TCloudSpace): Boolean;
 		procedure LogUserSpaceInfo(Email: WideString);
+		function GetFileHistory(Path: WideString; var Versions: TCloudFileVersionList): Boolean;
 
 		{Test configuration}
 		property GetDirectoryResult: Boolean read FGetDirectoryResult write FGetDirectoryResult;
 		property DirectoryListing: TCloudDirItemList read FDirectoryListing write FDirectoryListing;
 		property SubDirListing: TCloudDirItemList read FSubDirListing write FSubDirListing;
+		property GetFileHistoryResult: Boolean read FGetFileHistoryResult write FGetFileHistoryResult;
+		property FileHistoryVersions: TCloudFileVersionList read FFileHistoryVersions write FFileHistoryVersions;
 	end;
 
 	{Mock downloader for testing}
@@ -275,7 +305,7 @@ type
 		FPresenter: TRemotePropertyPresenter;
 
 		function CreateTestItem(const Name: WideString; ItemType: WideString = TYPE_FILE; ItemKind: WideString = ''; WebLink: WideString = ''): TCloudDirItem;
-		function CreateConfig(ShowDescription: Boolean = True; EditDescription: Boolean = True): TRemotePropertyConfig;
+		function CreateConfig(ShowDescription: Boolean = True; EditDescription: Boolean = True; ShowHistory: Boolean = False): TRemotePropertyConfig;
 	public
 		[Setup]
 		procedure Setup;
@@ -401,6 +431,30 @@ type
 		procedure TestSaveDescriptionExistingFile;
 		[Test]
 		procedure TestSaveDescriptionEmptyDeletesRemote;
+
+		{History tab tests}
+		[Test]
+		procedure TestInitializeShowsHistoryTabForFile;
+		[Test]
+		procedure TestInitializeHidesHistoryTabForDirectory;
+		[Test]
+		procedure TestInitializeHidesHistoryTabWhenDisabled;
+		[Test]
+		procedure TestInitializeHidesHistoryTabForPublicAccount;
+		[Test]
+		procedure TestLoadHistoryPopulatesItems;
+		[Test]
+		procedure TestLoadHistoryEmptyResult;
+		[Test]
+		procedure TestLoadHistoryFailureShowsError;
+		[Test]
+		procedure TestHistorySelectionEnablesButtons;
+		[Test]
+		procedure TestHistorySelectionNoHashDisablesButtons;
+		[Test]
+		procedure TestOnRestoreClickCallsAddByIdentity;
+		[Test]
+		procedure TestOnRollbackClickCallsAddByIdentity;
 	end;
 
 implementation
@@ -412,6 +466,8 @@ begin
 	inherited;
 	FInvites := TDictionary<WideString, WideString>.Create;
 	FHashes := TStringList.Create;
+	FHistoryItems := TStringList.Create;
+	FHistoryRawSizes := TList<Int64>.Create;
 	FVisibleTabs := [];
 end;
 
@@ -419,6 +475,8 @@ destructor TMockRemotePropertyView.Destroy;
 begin
 	FInvites.Free;
 	FHashes.Free;
+	FHistoryItems.Free;
+	FHistoryRawSizes.Free;
 	inherited;
 end;
 
@@ -627,6 +685,46 @@ begin
 	FProcessMessagesCalled := False;
 	FHashesCancelled := False;
 	FCancelHashesOnProcess := False;
+	FHistoryItems.Clear;
+	FHistoryRawSizes.Clear;
+	FSelectedHistoryHash := '';
+	FSelectedHistorySize := 0;
+	FRestoreEnabled := False;
+	FRollbackEnabled := False;
+end;
+
+{History tab}
+
+procedure TMockRemotePropertyView.ClearHistory;
+begin
+	FHistoryItems.Clear;
+	FHistoryRawSizes.Clear;
+end;
+
+procedure TMockRemotePropertyView.AddHistoryItem(const Date, Size, Hash: WideString; RawSize: Int64);
+begin
+	FHistoryItems.Add(Date + '|' + Size + '|' + Hash);
+	FHistoryRawSizes.Add(RawSize);
+end;
+
+function TMockRemotePropertyView.GetSelectedHistoryHash: WideString;
+begin
+	Result := FSelectedHistoryHash;
+end;
+
+function TMockRemotePropertyView.GetSelectedHistorySize: Int64;
+begin
+	Result := FSelectedHistorySize;
+end;
+
+procedure TMockRemotePropertyView.SetRestoreEnabled(Enabled: Boolean);
+begin
+	FRestoreEnabled := Enabled;
+end;
+
+procedure TMockRemotePropertyView.SetRollbackEnabled(Enabled: Boolean);
+begin
+	FRollbackEnabled := Enabled;
 end;
 
 {TMockShareService}
@@ -743,6 +841,12 @@ end;
 
 procedure TMockListingService.LogUserSpaceInfo(Email: WideString);
 begin
+end;
+
+function TMockListingService.GetFileHistory(Path: WideString; var Versions: TCloudFileVersionList): Boolean;
+begin
+	Versions := FFileHistoryVersions;
+	Result := FGetFileHistoryResult;
 end;
 
 {TMockDownloader}
@@ -886,10 +990,11 @@ begin
 	Result.size := 1024;
 end;
 
-function TRemotePropertyPresenterTest.CreateConfig(ShowDescription, EditDescription: Boolean): TRemotePropertyConfig;
+function TRemotePropertyPresenterTest.CreateConfig(ShowDescription, EditDescription: Boolean; ShowHistory: Boolean): TRemotePropertyConfig;
 begin
 	Result.ShowDescription := ShowDescription;
 	Result.EditDescription := EditDescription;
+	Result.ShowHistory := ShowHistory;
 	Result.PluginIonFileName := 'descript.ion';
 end;
 
@@ -1820,6 +1925,192 @@ begin
 
 	{Line 613: when local file is empty after Write, remote description is deleted}
 	Assert.Pass('SaveDescription with empty content should delete remote file');
+end;
+
+{History tab tests}
+
+procedure TRemotePropertyPresenterTest.TestInitializeShowsHistoryTabForFile;
+var
+	Item: TCloudDirItem;
+begin
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, TNullTCHandler.Create, False);
+
+	Item := CreateTestItem('test.txt');
+	FPresenter.Initialize(Item, '/test.txt', CreateConfig(False, False, True));
+
+	Assert.IsTrue(FView.IsTabVisible(rptHistory), 'History tab should be visible for files when enabled');
+end;
+
+procedure TRemotePropertyPresenterTest.TestInitializeHidesHistoryTabForDirectory;
+var
+	Item: TCloudDirItem;
+begin
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, TNullTCHandler.Create, False);
+
+	Item := CreateTestItem('folder', TYPE_DIR);
+	FPresenter.Initialize(Item, '/folder', CreateConfig(False, False, True));
+
+	Assert.IsFalse(FView.IsTabVisible(rptHistory), 'History tab should be hidden for directories');
+end;
+
+procedure TRemotePropertyPresenterTest.TestInitializeHidesHistoryTabWhenDisabled;
+var
+	Item: TCloudDirItem;
+begin
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, TNullTCHandler.Create, False);
+
+	Item := CreateTestItem('test.txt');
+	FPresenter.Initialize(Item, '/test.txt', CreateConfig(False, False, False));
+
+	Assert.IsFalse(FView.IsTabVisible(rptHistory), 'History tab should be hidden when disabled');
+end;
+
+procedure TRemotePropertyPresenterTest.TestInitializeHidesHistoryTabForPublicAccount;
+var
+	Item: TCloudDirItem;
+begin
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, TNullTCHandler.Create, True);
+
+	Item := CreateTestItem('test.txt');
+	FPresenter.Initialize(Item, '/test.txt', CreateConfig(False, False, True));
+
+	Assert.IsFalse(FView.IsTabVisible(rptHistory), 'History tab should be hidden for public accounts');
+end;
+
+procedure TRemotePropertyPresenterTest.TestLoadHistoryPopulatesItems;
+var
+	Item: TCloudDirItem;
+	Versions: TCloudFileVersionList;
+begin
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, TNullTCHandler.Create, False);
+
+	SetLength(Versions, 2);
+	Versions[0].Hash := 'HASH1';
+	Versions[0].Size := 1024;
+	Versions[0].Time := 1700000000;
+	Versions[1].Hash := '';
+	Versions[1].Size := 2048;
+	Versions[1].Time := 1700100000;
+	FListingService.GetFileHistoryResult := True;
+	FListingService.FileHistoryVersions := Versions;
+
+	Item := CreateTestItem('test.txt');
+	FPresenter.Initialize(Item, '/test.txt', CreateConfig(False, False, True));
+	FPresenter.LoadHistory;
+
+	Assert.AreEqual(2, FView.HistoryItems.Count, 'Should display 2 history items');
+end;
+
+procedure TRemotePropertyPresenterTest.TestLoadHistoryEmptyResult;
+var
+	Item: TCloudDirItem;
+	Versions: TCloudFileVersionList;
+begin
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, TNullTCHandler.Create, False);
+
+	SetLength(Versions, 0);
+	FListingService.GetFileHistoryResult := True;
+	FListingService.FileHistoryVersions := Versions;
+
+	Item := CreateTestItem('test.txt');
+	FPresenter.Initialize(Item, '/test.txt', CreateConfig(False, False, True));
+	FPresenter.LoadHistory;
+
+	Assert.AreEqual(0, FView.HistoryItems.Count, 'Should display no history items');
+	Assert.IsFalse(FView.RestoreEnabled, 'Restore should be disabled');
+	Assert.IsFalse(FView.RollbackEnabled, 'Rollback should be disabled');
+end;
+
+procedure TRemotePropertyPresenterTest.TestLoadHistoryFailureShowsError;
+var
+	Item: TCloudDirItem;
+begin
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, TNullTCHandler.Create, False);
+
+	FListingService.GetFileHistoryResult := False;
+
+	Item := CreateTestItem('test.txt');
+	FPresenter.Initialize(Item, '/test.txt', CreateConfig(False, False, True));
+	FPresenter.LoadHistory;
+
+	Assert.AreEqual(0, FView.HistoryItems.Count, 'Should display no history items on failure');
+	Assert.IsNotEmpty(String(FView.ErrorTitle), 'Error title should be shown');
+end;
+
+procedure TRemotePropertyPresenterTest.TestHistorySelectionEnablesButtons;
+var
+	Item: TCloudDirItem;
+begin
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, TNullTCHandler.Create, False);
+
+	Item := CreateTestItem('test.txt');
+	FPresenter.Initialize(Item, '/test.txt', CreateConfig(False, False, True));
+
+	{Simulate selecting a history item with a hash}
+	FView.SelectedHistoryHash := 'HASH123';
+	FView.SelectedHistorySize := 1024;
+	FPresenter.OnHistorySelectionChanged;
+
+	Assert.IsTrue(FView.RestoreEnabled, 'Restore should be enabled when hash is available');
+	Assert.IsTrue(FView.RollbackEnabled, 'Rollback should be enabled when hash is available');
+end;
+
+procedure TRemotePropertyPresenterTest.TestHistorySelectionNoHashDisablesButtons;
+var
+	Item: TCloudDirItem;
+begin
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, TNullTCHandler.Create, False);
+
+	Item := CreateTestItem('test.txt');
+	FPresenter.Initialize(Item, '/test.txt', CreateConfig(False, False, True));
+
+	{Simulate selecting a history item without a hash (free account)}
+	FView.SelectedHistoryHash := '';
+	FView.SelectedHistorySize := 2048;
+	FPresenter.OnHistorySelectionChanged;
+
+	Assert.IsFalse(FView.RestoreEnabled, 'Restore should be disabled when no hash');
+	Assert.IsFalse(FView.RollbackEnabled, 'Rollback should be disabled when no hash');
+end;
+
+procedure TRemotePropertyPresenterTest.TestOnRestoreClickCallsAddByIdentity;
+var
+	Item: TCloudDirItem;
+begin
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, TNullTCHandler.Create, False);
+
+	Item := CreateTestItem('test.txt');
+	FPresenter.Initialize(Item, '/test.txt', CreateConfig(False, False, True));
+
+	FView.SelectedHistoryHash := 'RESTOREHASH';
+	FView.SelectedHistorySize := 4096;
+
+	FPresenter.OnRestoreClick;
+
+	Assert.AreEqual(1, FUploader.AddByIdentityCallCount, 'Should call AddFileByIdentity once');
+	Assert.AreEqual('RESTOREHASH', String(FUploader.LastAddedIdentity.Hash), 'Hash should match');
+	Assert.AreEqual(Int64(4096), FUploader.LastAddedIdentity.Size, 'Size should match');
+	Assert.Contains(String(FUploader.LastAddedPath), '_restored', 'Restore path should contain _restored suffix');
+end;
+
+procedure TRemotePropertyPresenterTest.TestOnRollbackClickCallsAddByIdentity;
+var
+	Item: TCloudDirItem;
+begin
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, TNullTCHandler.Create, False);
+
+	Item := CreateTestItem('test.txt');
+	FPresenter.Initialize(Item, '/test.txt', CreateConfig(False, False, True));
+
+	FView.SelectedHistoryHash := 'ROLLBACKHASH';
+	FView.SelectedHistorySize := 8192;
+
+	FPresenter.OnRollbackClick;
+
+	Assert.AreEqual(1, FUploader.AddByIdentityCallCount, 'Should call AddFileByIdentity once');
+	Assert.AreEqual('ROLLBACKHASH', String(FUploader.LastAddedIdentity.Hash), 'Hash should match');
+	Assert.AreEqual(Int64(8192), FUploader.LastAddedIdentity.Size, 'Size should match');
+	Assert.AreEqual('/test.txt', String(FUploader.LastAddedPath), 'Rollback should use original path');
 end;
 
 initialization

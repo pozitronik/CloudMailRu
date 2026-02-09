@@ -44,6 +44,7 @@ type
 		function ApiUserSpace: WideString;
 		function ApiClone: WideString;
 		function ApiInviteReject: WideString;
+		function ApiFileHistory: WideString;
 
 		class function CreateDefaults: TCloudEndpoints; static;
 	end;
@@ -183,6 +184,11 @@ end;
 function TCloudEndpoints.ApiInviteReject: WideString;
 begin
 	Result := ApiBase + '/folder/invites/reject';
+end;
+
+function TCloudEndpoints.ApiFileHistory: WideString;
+begin
+	Result := ApiBase + '/file/history';
 end;
 
 class function TCloudEndpoints.CreateDefaults: TCloudEndpoints;

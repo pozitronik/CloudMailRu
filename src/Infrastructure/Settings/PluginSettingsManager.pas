@@ -280,6 +280,7 @@ begin
 	Settings.SSLBackend := FConfigFile.ReadInteger('Main', 'SSLBackend', SSLBackendAuto);
 	Settings.ThumbnailExtensions := FConfigFile.ReadString('Main', 'ThumbnailExtensions', DEFAULT_THUMBNAIL_EXTENSIONS);
 	Settings.Language := FConfigFile.ReadString('Main', 'Language', EmptyWideStr);
+	Settings.FileHistoryEnabled := FConfigFile.ReadBool('Main', 'FileHistoryEnabled', False);
 	Settings.BuildThumbnailExtList;
 	Settings.IniFilePath := FIniFilePath;
 	Settings.AccountsIniFilePath := AccountsIniFilePath;
@@ -332,6 +333,7 @@ begin
 	FConfigFile.WriteIntegerIfNotDefault('Main', 'SSLBackend', Settings.SSLBackend, SSLBackendAuto);
 	FConfigFile.WriteStringIfNotDefault('Main', 'ThumbnailExtensions', Settings.ThumbnailExtensions, DEFAULT_THUMBNAIL_EXTENSIONS);
 	FConfigFile.WriteStringIfNotDefault('Main', 'Language', Settings.Language, EmptyWideStr);
+	FConfigFile.WriteBoolIfNotDefault('Main', 'FileHistoryEnabled', Settings.FileHistoryEnabled, False);
 end;
 
 procedure TPluginSettingsManager.GetStreamingExtensionsList(ExtensionsList: TStrings);

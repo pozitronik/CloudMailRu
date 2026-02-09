@@ -16,6 +16,8 @@ uses
 	CloudOperationResultJsonAdapter,
 	CloudSpace,
 	CloudSpaceJsonAdapter,
+	CloudFileVersion,
+	CloudFileVersionJsonAdapter,
 	CloudConstants,
 	CloudHTTP,
 	Cipher,
@@ -51,6 +53,8 @@ type
 		function GetUserSpace(var SpaceInfo: TCloudSpace): Boolean;
 		{Log user space information to logger}
 		procedure LogUserSpaceInfo(Email: WideString);
+		{Get file version history}
+		function GetFileHistory(Path: WideString; var Versions: TCloudFileVersionList): Boolean;
 	end;
 
 	{Callback type for parsing JSON response into a result}
@@ -81,6 +85,7 @@ type
 		function TrashbinEmpty(): Boolean;
 		function GetUserSpace(var SpaceInfo: TCloudSpace): Boolean;
 		procedure LogUserSpaceInfo(Email: WideString);
+		function GetFileHistory(Path: WideString; var Versions: TCloudFileVersionList): Boolean;
 	end;
 
 implementation
@@ -345,6 +350,37 @@ begin
 	Result := CallResult.Success;
 	if Result then
 		SpaceInfo := LocalSpace;
+end;
+
+function TCloudListingService.GetFileHistory(Path: WideString; var Versions: TCloudFileVersionList): Boolean;
+var
+	CallResult: TAPICallResult;
+	LocalVersions: TCloudFileVersionList;
+begin
+	Result := False;
+	SetLength(Versions, 0);
+
+	if FContext.IsPublicAccount then
+		Exit;
+
+	SetLength(LocalVersions, 0);
+	CallResult := FRetryOperation.Execute(
+		function: TAPICallResult
+		var
+			JSON: WideString;
+			Progress: Boolean;
+			Success: Boolean;
+		begin
+			Progress := False;
+			Success := FContext.GetHTTP.GetPage(Format('%s?home=%s&%s', [FContext.GetEndpoints.ApiFileHistory, PathToUrl(Path), FContext.GetUnitedParams]), JSON, Progress);
+			if Success then
+				Success := FContext.CloudResultToBoolean(JSON, PREFIX_ERR_FILE_STATUS) and TCloudFileVersionJsonAdapter.Parse(JSON, LocalVersions);
+			Result := TAPICallResult.FromBoolean(Success, JSON);
+		end);
+
+	Result := CallResult.Success;
+	if Result then
+		Versions := LocalVersions;
 end;
 
 procedure TCloudListingService.LogUserSpaceInfo(Email: WideString);

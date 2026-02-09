@@ -433,5 +433,16 @@ DFM_TRANS_RESTORED="Defaults restored"
 DFM_TRANS_APPLIED="Translation applied: %s"
 DFM_TRANS_ERROR="Error: %s"
 
+# File version history
+DFM_REM_TAB_HISTORY="History"
+DFM_REM_COL_DATE="Date"
+DFM_REM_COL_SIZE="Size"
+DFM_REM_COL_HASH="Hash"
+DFM_REM_BTN_RESTORE="Restore as copy"
+DFM_REM_BTN_ROLLBACK="Rollback"
+DFM_CB_FILE_HISTORY="Show file version history"
+PREFIX_ERR_FILE_HISTORY="File history error: "
+ERR_FILE_HISTORY_MSG="Error while retrieving file %s version history"
+
 # Content field
 CONTENT_FIELD_DISABLED="<disabled>"

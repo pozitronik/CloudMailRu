@@ -80,6 +80,9 @@ type
 		FTimestampFileName: WideString;
 		FTimestampConflictMode: Integer;
 
+		{File history settings}
+		FFileHistoryEnabled: Boolean;
+
 		{Streaming extensions}
 		FStreamingDisplayItems: TArray<TStreamingDisplayItem>;
 		FStreamingSelectedIndex: Integer;
@@ -262,6 +265,10 @@ type
 		function GetTimestampFileName: WideString;
 		procedure SetTimestampConflictMode(Value: Integer);
 		function GetTimestampConflictMode: Integer;
+
+		{IAccountsView - File history settings}
+		procedure SetFileHistoryEnabled(Value: Boolean);
+		function GetFileHistoryEnabled: Boolean;
 
 		{IAccountsView - Streaming extensions}
 		procedure SetStreamingExtensionsList(const Items: TArray<TStreamingDisplayItem>);
@@ -1225,6 +1232,18 @@ begin
 	Result := FTimestampConflictMode;
 end;
 
+{File history settings}
+
+procedure TMockAccountsView.SetFileHistoryEnabled(Value: Boolean);
+begin
+	FFileHistoryEnabled := Value;
+end;
+
+function TMockAccountsView.GetFileHistoryEnabled: Boolean;
+begin
+	Result := FFileHistoryEnabled;
+end;
+
 {Streaming extensions}
 
 procedure TMockAccountsView.SetStreamingExtensionsList(const Items: TArray<TStreamingDisplayItem>);
@@ -2048,6 +2067,7 @@ begin
 	FView.SetTimestampTrackCloudFS(True);
 	FView.SetTimestampFileName('.my_timestamps');
 	FView.SetTimestampConflictMode(1);
+	FView.SetFileHistoryEnabled(True);
 
 	FPresenter.OnApplyGlobalSettingsClick;
 
@@ -2066,6 +2086,7 @@ begin
 	Assert.IsTrue(Settings.TimestampTrackCloudFS, 'TimestampTrackCloudFS should be saved');
 	Assert.AreEqual('.my_timestamps', Settings.TimestampFileName, 'TimestampFileName should be saved');
 	Assert.AreEqual(1, Settings.TimestampConflictMode, 'TimestampConflictMode should be saved');
+	Assert.IsTrue(Settings.FileHistoryEnabled, 'FileHistoryEnabled should be saved');
 end;
 
 procedure TAccountsPresenterTest.TestOnApplyGlobalSettingsClickSetsAppliedFlag;
@@ -3253,6 +3274,7 @@ begin
 	Settings.TimestampTrackCloudFS := True;
 	Settings.TimestampFileName := '.my_timestamps';
 	Settings.TimestampConflictMode := 1;
+	Settings.FileHistoryEnabled := True;
 	FSettingsManager.SetSettings(Settings);
 
 	FPresenter.Initialize('');
@@ -3278,6 +3300,7 @@ begin
 	Assert.IsTrue(FView.GetTimestampTrackCloudFS, 'TimestampTrackCloudFS should be loaded');
 	Assert.AreEqual('.my_timestamps', FView.GetTimestampFileName, 'TimestampFileName should be loaded');
 	Assert.AreEqual(1, FView.GetTimestampConflictMode, 'TimestampConflictMode should be loaded');
+	Assert.IsTrue(FView.GetFileHistoryEnabled, 'FileHistoryEnabled should be loaded');
 end;
 
 procedure TAccountsPresenterTest.TestLoadGlobalSettingsWithCustomUserAgent;
