@@ -115,6 +115,7 @@ procedure TDownloadSuccessHandler.HandleMoveOperation(const Context: TDownloadCo
 begin
 	Context.Cloud.FileOperations.Delete(Context.RemotePath.Path);
 	FDescriptionSyncGuard.OnFileDeleted(Context.RemotePath, Context.Cloud);
+	FTimestampSyncGuard.OnFileDeleted(Context.RemotePath, Context.Cloud);
 end;
 
 procedure TDownloadSuccessHandler.ReportCompletion(const LocalName, RemoteName: WideString);

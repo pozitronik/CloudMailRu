@@ -79,6 +79,8 @@ type
 		[Test]
 		procedure TestHandleSuccess_MoveFlag_CallsDeleteSync;
 		[Test]
+		procedure TestHandleSuccess_MoveFlag_CallsTimestampDeleteSync;
+		[Test]
 		procedure TestHandleSuccess_NoMoveFlag_DoesNotCallDeleteSync;
 
 		{Description sync}
@@ -270,6 +272,20 @@ begin
 	FHandler.HandleSuccess(Context);
 
 	Assert.AreEqual(1, FSyncGuard.DeletedCalls, 'Should call OnFileDeleted for move');
+end;
+
+procedure TDownloadSuccessHandlerTest.TestHandleSuccess_MoveFlag_CallsTimestampDeleteSync;
+var
+	Context: TDownloadContext;
+begin
+	CreateHandler;
+	FMockCloud := CreateMockCloud;
+	Context := CreateContext('', '', True); {Move flag set}
+	Context.Cloud := FMockCloud;
+
+	FHandler.HandleSuccess(Context);
+
+	Assert.AreEqual(1, FTimestampSyncGuard.DeletedCalls, 'Should call timestamp OnFileDeleted for move');
 end;
 
 procedure TDownloadSuccessHandlerTest.TestHandleSuccess_NoMoveFlag_DoesNotCallDeleteSync;
