@@ -87,6 +87,7 @@ type
 		constructor Create(Cloud: TCloudMailRu);
 		function Get(ConnectionName: WideString): TCloudMailRu;
 		procedure Free(ConnectionName: WideString);
+		procedure InvalidateAll;
 		property GetCallCount: Integer read FGetCallCount;
 	end;
 
@@ -290,6 +291,11 @@ begin
 end;
 
 procedure TMockConnManager.Free(ConnectionName: WideString);
+begin
+	{No-op for mock}
+end;
+
+procedure TMockConnManager.InvalidateAll;
 begin
 	{No-op for mock}
 end;

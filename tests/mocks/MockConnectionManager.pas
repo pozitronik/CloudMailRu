@@ -27,6 +27,7 @@ type
 		{IConnectionManager implementation}
 		function Get(ConnectionName: WideString): TCloudMailRu;
 		procedure Free(ConnectionName: WideString);
+		procedure InvalidateAll;
 
 		{Test inspection}
 		property GetCallCount: Integer read FGetCallCount;
@@ -65,6 +66,11 @@ procedure TMockConnectionManager.Free(ConnectionName: WideString);
 begin
 	Inc(FFreeCallCount);
 	FCloudInstances.Remove(ConnectionName);
+end;
+
+procedure TMockConnectionManager.InvalidateAll;
+begin
+	{No-op for mock}
 end;
 
 end.

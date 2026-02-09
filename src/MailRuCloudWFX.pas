@@ -528,7 +528,10 @@ begin
 	if RealPath.isInAccountsList then
 	begin {Main invites folder properties}
 		if TAccountsForm.ShowAccounts(MainWin, PasswordManager, RealPath.account) then
+		begin
 			SettingsManager.Refresh;
+			ConnectionManager.InvalidateAll;
+		end;
 	end else begin {One invite item - delegate to handler}
 		if not EnsureAuthorized(Cloud) then
 			exit(FS_EXEC_ERROR);
@@ -555,7 +558,10 @@ begin
 	if RealPath.isInAccountsList then
 	begin
 		if TAccountsForm.ShowAccounts(MainWin, PasswordManager, RealPath.account) then
+		begin
 			SettingsManager.Refresh;
+			ConnectionManager.InvalidateAll;
+		end;
 	end else begin
 		Cloud := ConnectionManager.Get(RealPath.account);
 		if not EnsureAuthorized(Cloud) then
@@ -586,7 +592,10 @@ begin
 		satAccountSettings:
 			begin
 				if TAccountsForm.ShowAccounts(MainWin, PasswordManager, RealPath.account) then
+				begin
 					SettingsManager.Refresh;
+					ConnectionManager.InvalidateAll;
+				end;
 			end;
 		satPropertyDialog:
 			begin

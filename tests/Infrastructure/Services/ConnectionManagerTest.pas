@@ -41,6 +41,7 @@ type
 		FSetAccountSettingsCalled: Boolean;
 		FDeleteAccountCalled: Boolean;
 		FLastCryptedGUID: WideString;
+		FGetAccountSettingsCallCount: Integer;
 	public
 		constructor Create;
 		function GetAccountsList(const AccountTypes: EAccountType = [ATPrivate, ATPublic]; const VirtualTypes: EVirtualType = []): TWSList;
@@ -57,6 +58,7 @@ type
 		property SetCryptedGUIDCalled: Boolean read FSetCryptedGUIDCalled;
 		property DeleteAccountCalled: Boolean read FDeleteAccountCalled;
 		property LastCryptedGUID: WideString read FLastCryptedGUID;
+		property GetAccountSettingsCallCount: Integer read FGetAccountSettingsCallCount;
 	end;
 
 	{Mock implementation of IPluginSettingsManager that returns test settings}
@@ -138,6 +140,30 @@ type
 		procedure TestConnectionCreatedWithEmptyCipherProfileInSettings;
 	end;
 
+	[TestFixture]
+	TConnectionManagerInvalidateTest = class
+	public
+		[Test]
+		{InvalidateAll on empty pool does not crash}
+		procedure TestInvalidateAll_EmptyPool_NoCrash;
+
+		[Test]
+		{After InvalidateAll, Get recreates the connection (returns different instance)}
+		procedure TestInvalidateAll_GetReturns_NewInstance;
+
+		[Test]
+		{Connections created after InvalidateAll are not affected}
+		procedure TestInvalidateAll_DoesNotAffect_NewConnections;
+
+		[Test]
+		{Free clears stale entry -- no double-free on subsequent Get}
+		procedure TestFree_ClearsStaleEntry;
+
+		[Test]
+		{Multiple InvalidateAll calls are safe and idempotent}
+		procedure TestInvalidateAll_MultipleCalls_Idempotent;
+	end;
+
 implementation
 
 uses
@@ -158,6 +184,7 @@ begin
 	FSetCryptedGUIDCalled := False;
 	FDeleteAccountCalled := False;
 	FLastCryptedGUID := '';
+	FGetAccountSettingsCallCount := 0;
 
 	{Initialize with default test settings - public account to simplify testing}
 	FAccountSettings := Default(TAccountSettings);
@@ -180,6 +207,7 @@ end;
 
 function TMockAccountsManager.GetAccountSettings(Account: WideString): TAccountSettings;
 begin
+	Inc(FGetAccountSettingsCallCount);
 	FAccountSettings.Account := Account;
 	Result := FAccountSettings;
 end;
@@ -528,11 +556,152 @@ begin
 	end;
 end;
 
+{TConnectionManagerInvalidateTest}
+
+procedure TConnectionManagerInvalidateTest.TestInvalidateAll_EmptyPool_NoCrash;
+var
+	Manager: TConnectionManager;
+begin
+	Manager := TConnectionManager.Create(TMockPluginSettingsManager.Create, TMockAccountsManager.Create,
+		TNullHTTPManager.Create, TNullFileEncryptionResolver.Create, TNullProxyPasswordResolver.Create,
+		TNullFileSystem.Create, TNullProgress.Create, TNullLogger.Create, TNullRequest.Create,
+		TNullTCHandler.Create, TNullAuthStrategyFactory.Create, TNullOpenSSLProvider.Create,
+		TNullAccountCredentialsProvider.Create, TNullServerProfileManager.Create);
+	try
+		Manager.InvalidateAll;
+		Assert.Pass('InvalidateAll on empty pool should not crash');
+	finally
+		Manager.Destroy;
+	end;
+end;
+
+procedure TConnectionManagerInvalidateTest.TestInvalidateAll_GetReturns_NewInstance;
+var
+	Manager: TConnectionManager;
+	AccountsMgr: TMockAccountsManager;
+	Cloud: TCloudMailRu;
+	CallCountBefore: Integer;
+begin
+	{Verify that Get after InvalidateAll triggers Init (which calls GetAccountSettings again)}
+	AccountsMgr := TMockAccountsManager.Create;
+	AccountsMgr.FAccountSettings.PublicAccount := True;
+
+	Manager := TConnectionManager.Create(TMockPluginSettingsManager.Create, AccountsMgr,
+		TNullHTTPManager.Create, TNullFileEncryptionResolver.Create, TNullProxyPasswordResolver.Create,
+		TNullFileSystem.Create, TNullProgress.Create, TNullLogger.Create, TNullRequest.Create,
+		TNullTCHandler.Create, TNullAuthStrategyFactory.Create, TNullOpenSSLProvider.Create,
+		TNullAccountCredentialsProvider.Create, TNullServerProfileManager.Create);
+	try
+		Cloud := Manager.Get('test_conn');
+		Assert.IsNotNull(Cloud, 'First Get should return valid instance');
+		Assert.AreEqual(1, AccountsMgr.GetAccountSettingsCallCount, 'Init should be called once on first Get');
+
+		Manager.InvalidateAll;
+		CallCountBefore := AccountsMgr.GetAccountSettingsCallCount;
+
+		Cloud := Manager.Get('test_conn');
+		Assert.IsNotNull(Cloud, 'Get after InvalidateAll should return valid instance');
+		Assert.AreEqual(CallCountBefore + 1, AccountsMgr.GetAccountSettingsCallCount, 'Init should be called again after InvalidateAll');
+	finally
+		Manager.Destroy;
+	end;
+end;
+
+procedure TConnectionManagerInvalidateTest.TestInvalidateAll_DoesNotAffect_NewConnections;
+var
+	Manager: TConnectionManager;
+	AccountsMgr: TMockAccountsManager;
+	CloudB1, CloudB2: TCloudMailRu;
+begin
+	{Create A, invalidate, then create B (new). B should not be stale.}
+	AccountsMgr := TMockAccountsManager.Create;
+	AccountsMgr.FAccountSettings.PublicAccount := True;
+
+	Manager := TConnectionManager.Create(TMockPluginSettingsManager.Create, AccountsMgr,
+		TNullHTTPManager.Create, TNullFileEncryptionResolver.Create, TNullProxyPasswordResolver.Create,
+		TNullFileSystem.Create, TNullProgress.Create, TNullLogger.Create, TNullRequest.Create,
+		TNullTCHandler.Create, TNullAuthStrategyFactory.Create, TNullOpenSSLProvider.Create,
+		TNullAccountCredentialsProvider.Create, TNullServerProfileManager.Create);
+	try
+		Manager.Get('conn_a');
+		Manager.InvalidateAll; {Only conn_a is marked stale}
+
+		CloudB1 := Manager.Get('conn_b'); {Created after invalidation - not stale}
+		CloudB2 := Manager.Get('conn_b');
+		Assert.AreSame(CloudB1, CloudB2, 'Connection created after InvalidateAll should be cached normally');
+	finally
+		Manager.Destroy;
+	end;
+end;
+
+procedure TConnectionManagerInvalidateTest.TestFree_ClearsStaleEntry;
+var
+	Manager: TConnectionManager;
+	AccountsMgr: TMockAccountsManager;
+	Cloud: TCloudMailRu;
+	CallCountAfterFree: Integer;
+begin
+	{Invalidate A, then Free(A), then Get(A) -- should create fresh without double-free}
+	AccountsMgr := TMockAccountsManager.Create;
+	AccountsMgr.FAccountSettings.PublicAccount := True;
+
+	Manager := TConnectionManager.Create(TMockPluginSettingsManager.Create, AccountsMgr,
+		TNullHTTPManager.Create, TNullFileEncryptionResolver.Create, TNullProxyPasswordResolver.Create,
+		TNullFileSystem.Create, TNullProgress.Create, TNullLogger.Create, TNullRequest.Create,
+		TNullTCHandler.Create, TNullAuthStrategyFactory.Create, TNullOpenSSLProvider.Create,
+		TNullAccountCredentialsProvider.Create, TNullServerProfileManager.Create);
+	try
+		Manager.Get('free_stale');
+		Assert.AreEqual(1, AccountsMgr.GetAccountSettingsCallCount, 'Init called once on first Get');
+
+		Manager.InvalidateAll;
+		Manager.Free('free_stale'); {Destroys instance and clears stale entry}
+		CallCountAfterFree := AccountsMgr.GetAccountSettingsCallCount;
+
+		Cloud := Manager.Get('free_stale');
+		Assert.IsNotNull(Cloud, 'Get after Free of stale connection should return fresh instance');
+		Assert.AreEqual(CallCountAfterFree + 1, AccountsMgr.GetAccountSettingsCallCount, 'Init should be called again after Free+Get');
+	finally
+		Manager.Destroy;
+	end;
+end;
+
+procedure TConnectionManagerInvalidateTest.TestInvalidateAll_MultipleCalls_Idempotent;
+var
+	Manager: TConnectionManager;
+	AccountsMgr: TMockAccountsManager;
+	Cloud: TCloudMailRu;
+	CallCountBefore: Integer;
+begin
+	AccountsMgr := TMockAccountsManager.Create;
+	AccountsMgr.FAccountSettings.PublicAccount := True;
+
+	Manager := TConnectionManager.Create(TMockPluginSettingsManager.Create, AccountsMgr,
+		TNullHTTPManager.Create, TNullFileEncryptionResolver.Create, TNullProxyPasswordResolver.Create,
+		TNullFileSystem.Create, TNullProgress.Create, TNullLogger.Create, TNullRequest.Create,
+		TNullTCHandler.Create, TNullAuthStrategyFactory.Create, TNullOpenSSLProvider.Create,
+		TNullAccountCredentialsProvider.Create, TNullServerProfileManager.Create);
+	try
+		Manager.Get('multi_inv');
+		Manager.InvalidateAll;
+		Manager.InvalidateAll; {Second call should be safe}
+		Manager.InvalidateAll; {Third call should be safe}
+		CallCountBefore := AccountsMgr.GetAccountSettingsCallCount;
+
+		Cloud := Manager.Get('multi_inv');
+		Assert.IsNotNull(Cloud, 'Get after multiple InvalidateAll should return valid instance');
+		Assert.AreEqual(CallCountBefore + 1, AccountsMgr.GetAccountSettingsCallCount, 'Init should be called exactly once despite multiple InvalidateAll');
+	finally
+		Manager.Destroy;
+	end;
+end;
+
 initialization
 
 TDUnitX.RegisterTestFixture(TConnectionManagerConstructorTest);
 TDUnitX.RegisterTestFixture(TConnectionManagerGetTest);
 TDUnitX.RegisterTestFixture(TConnectionManagerFreeTest);
 TDUnitX.RegisterTestFixture(TConnectionManagerCipherProfileTest);
+TDUnitX.RegisterTestFixture(TConnectionManagerInvalidateTest);
 
 end.

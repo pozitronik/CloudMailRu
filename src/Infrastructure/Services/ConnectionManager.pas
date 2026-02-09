@@ -50,11 +50,17 @@ type
 		{Releases connection for account if it exists.
 			@param ConnectionName Account name to release connection for}
 		procedure Free(ConnectionName: WideString);
+
+		{Marks all current connections as stale.
+			On next Get(), stale connections are destroyed and recreated with fresh settings.
+			Active background operations continue safely with their existing instance references.}
+		procedure InvalidateAll;
 	end;
 
 	TConnectionManager = class(TInterfacedObject, IConnectionManager)
 	private
 		FConnections: TDictionary<WideString, TCloudMailRu>; {It is better to encapsulate the dictionary}
+		FStaleConnections: TList<WideString>; {Connection names marked for recreation on next Get()}
 		FHTTPManager: IHTTPManager;
 		FPluginSettingsManager: IPluginSettingsManager;
 		FAccountsManager: IAccountsManager;
@@ -77,6 +83,7 @@ type
 		destructor Destroy(); override;
 		function Get(ConnectionName: WideString): TCloudMailRu; {Return the cloud connection by its name, always returns a valid instance}
 		procedure Free(ConnectionName: WideString); {Free a connection by its name, if present}
+		procedure InvalidateAll; {Marks all current connections as stale}
 	end;
 
 implementation
@@ -85,6 +92,7 @@ implementation
 constructor TConnectionManager.Create(PluginSettingsManager: IPluginSettingsManager; AccountsManager: IAccountsManager; HTTPManager: IHTTPManager; FileEncryptionResolver: IFileEncryptionResolver; ProxyPasswordResolver: IProxyPasswordResolver; FileSystem: IFileSystem; Progress: IProgress; Logger: ILogger; Request: IRequest; TCHandler: ITCHandler; AuthStrategyFactory: IAuthStrategyFactory; OpenSSLProvider: IOpenSSLProvider; AccountCredentialsProvider: IAccountCredentialsProvider; ServerProfileManager: IServerProfileManager);
 begin
 	FConnections := TDictionary<WideString, TCloudMailRu>.Create;
+	FStaleConnections := TList<WideString>.Create;
 	FPluginSettingsManager := PluginSettingsManager;
 	FAccountsManager := AccountsManager;
 	FServerProfileManager := ServerProfileManager;
@@ -109,6 +117,7 @@ begin
 		Item.Value.Destroy;
 
 	FreeAndNil(FConnections);
+	FreeAndNil(FStaleConnections);
 
 	{Release interface references}
 	FHTTPManager := nil;
@@ -131,15 +140,31 @@ begin
 		FConnections.Items[ConnectionName].Free;
 		FConnections.Remove(ConnectionName);
 	end;
+	FStaleConnections.Remove(ConnectionName);
 end;
 
 function TConnectionManager.Get(ConnectionName: WideString): TCloudMailRu;
 begin
+	{Destroy stale connection so it gets recreated with fresh settings}
+	if FStaleConnections.Contains(ConnectionName) then
+	begin
+		Free(ConnectionName); {Also removes from FStaleConnections}
+	end;
+
 	if not FConnections.TryGetValue(ConnectionName, Result) then
 	begin
 		Result := Init(ConnectionName);
 		FConnections.AddOrSetValue(ConnectionName, Result);
 	end;
+end;
+
+procedure TConnectionManager.InvalidateAll;
+var
+	Key: WideString;
+begin
+	for Key in FConnections.Keys do
+		if not FStaleConnections.Contains(Key) then
+			FStaleConnections.Add(Key);
 end;
 
 function TConnectionManager.Init(ConnectionName: WideString): TCloudMailRu;
