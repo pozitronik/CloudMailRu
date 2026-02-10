@@ -4,7 +4,7 @@ object InvitePropertyForm: TInvitePropertyForm
   BorderStyle = bsDialog
   Caption = 'InvitePropertyForm'
   ClientHeight = 164
-  ClientWidth = 522
+  ClientWidth = 599
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -12,38 +12,49 @@ object InvitePropertyForm: TInvitePropertyForm
   Font.Name = 'Tahoma'
   Font.Style = []
   Position = poScreenCenter
+  DesignSize = (
+    599
+    164)
   TextHeight = 13
   object InviteNameLB: TLabel
-    Left = 83
+    Left = 144
     Top = 8
-    Width = 431
+    Width = 447
     Height = 13
+    Anchors = [akLeft, akTop, akRight]
     AutoSize = False
     EllipsisPosition = epPathEllipsis
+    ExplicitWidth = 370
   end
   object InviteOwnerEmailLB: TLabel
-    Left = 83
+    Left = 144
     Top = 27
-    Width = 431
+    Width = 447
     Height = 13
+    Anchors = [akLeft, akTop, akRight]
     AutoSize = False
     EllipsisPosition = epPathEllipsis
+    ExplicitWidth = 370
   end
   object InviteOwnerNameLB: TLabel
-    Left = 83
+    Left = 144
     Top = 46
-    Width = 431
+    Width = 447
     Height = 13
+    Anchors = [akLeft, akTop, akRight]
     AutoSize = False
     EllipsisPosition = epPathEllipsis
+    ExplicitWidth = 370
   end
   object InviteAccessLB: TLabel
-    Left = 83
+    Left = 144
     Top = 65
-    Width = 431
+    Width = 447
     Height = 13
+    Anchors = [akLeft, akTop, akRight]
     AutoSize = False
     EllipsisPosition = epPathEllipsis
+    ExplicitWidth = 370
   end
   object NameLB: TLabel
     Left = 8
@@ -81,12 +92,14 @@ object InvitePropertyForm: TInvitePropertyForm
     Caption = 'Summary size:'
   end
   object InviteSizeLB: TLabel
-    Left = 83
+    Left = 144
     Top = 84
-    Width = 431
+    Width = 447
     Height = 13
+    Anchors = [akLeft, akTop, akRight]
     AutoSize = False
     EllipsisPosition = epPathEllipsis
+    ExplicitWidth = 370
   end
   object TokenLB: TLabel
     Left = 8
@@ -96,43 +109,47 @@ object InvitePropertyForm: TInvitePropertyForm
     Caption = 'Invite token:'
   end
   object InviteTokenLB: TLabel
-    Left = 83
+    Left = 144
     Top = 104
-    Width = 431
+    Width = 447
     Height = 13
+    Anchors = [akLeft, akTop, akRight]
     AutoSize = False
     EllipsisPosition = epPathEllipsis
+    ExplicitWidth = 370
   end
   object MountBTN: TButton
     Left = 8
     Top = 131
-    Width = 75
+    Width = 100
     Height = 25
     Caption = 'Mount'
     ModalResult = 6
     TabOrder = 0
   end
   object CancelBTN: TButton
-    Left = 439
+    Left = 516
     Top = 131
     Width = 75
     Height = 25
+    Anchors = [akTop, akRight]
     Cancel = True
     Caption = 'Cancel'
     ModalResult = 2
     TabOrder = 1
+    ExplicitLeft = 439
   end
   object RejectBTN: TButton
-    Left = 341
+    Left = 366
     Top = 131
-    Width = 75
+    Width = 100
     Height = 25
     Caption = 'Reject'
     ModalResult = 7
     TabOrder = 2
   end
   object UnmountCopyBTN: TButton
-    Left = 89
+    Left = 114
     Top = 131
     Width = 120
     Height = 25
@@ -141,7 +158,7 @@ object InvitePropertyForm: TInvitePropertyForm
     TabOrder = 3
   end
   object UnmountDeleteBTN: TButton
-    Left = 215
+    Left = 240
     Top = 131
     Width = 120
     Height = 25

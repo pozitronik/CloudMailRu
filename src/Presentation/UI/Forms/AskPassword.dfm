@@ -15,12 +15,16 @@ object AskPasswordForm: TAskPasswordForm
   Position = poOwnerFormCenter
   OnKeyUp = FormKeyUp
   OnShow = FormShow
+  DesignSize = (
+    434
+    85)
   TextHeight = 13
   object PasswordEditLabel: TLabel
     Left = 7
     Top = 8
     Width = 420
     Height = 40
+    Anchors = [akLeft, akTop, akRight]
     AutoSize = False
     Caption = 'Enter account password:'
     WordWrap = True
@@ -30,6 +34,7 @@ object AskPasswordForm: TAskPasswordForm
     Top = 27
     Width = 420
     Height = 21
+    Anchors = [akLeft, akTop, akRight]
     PasswordChar = '*'
     TabOrder = 0
     OnChange = PasswordEditChange
@@ -39,13 +44,14 @@ object AskPasswordForm: TAskPasswordForm
     Top = 54
     Width = 75
     Height = 25
+    Anchors = [akTop, akRight]
     Caption = 'OK'
     Enabled = False
     ModalResult = 1
     TabOrder = 2
   end
   object UseTCPwdMngrCB: TCheckBox
-    Left = 7
+    Left = 8
     Top = 54
     Width = 337
     Height = 17

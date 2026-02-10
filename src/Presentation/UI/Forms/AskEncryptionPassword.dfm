@@ -1,8 +1,8 @@
 object AskEncryptionPasswordForm: TAskEncryptionPasswordForm
   Left = 0
   Top = 0
-  BorderStyle = bsDialog
   BorderIcons = []
+  BorderStyle = bsDialog
   Caption = 'Encryption password'
   ClientHeight = 85
   ClientWidth = 434
@@ -17,12 +17,16 @@ object AskEncryptionPasswordForm: TAskEncryptionPasswordForm
   OnCloseQuery = FormCloseQuery
   OnKeyUp = FormKeyUp
   OnShow = FormShow
+  DesignSize = (
+    434
+    85)
   TextHeight = 13
   object PasswordEditLabel: TLabel
     Left = 7
     Top = 8
     Width = 420
     Height = 40
+    Anchors = [akLeft, akTop, akRight]
     AutoSize = False
     Caption = 'Enter encryption password for current session:'
     WordWrap = True
@@ -32,6 +36,7 @@ object AskEncryptionPasswordForm: TAskEncryptionPasswordForm
     Top = 27
     Width = 420
     Height = 21
+    Anchors = [akLeft, akTop, akRight]
     PasswordChar = '*'
     TabOrder = 0
     OnChange = PasswordEditChange
@@ -41,6 +46,7 @@ object AskEncryptionPasswordForm: TAskEncryptionPasswordForm
     Top = 54
     Width = 75
     Height = 25
+    Anchors = [akLeft, akTop, akRight]
     Caption = 'OK'
     Enabled = False
     ModalResult = 1

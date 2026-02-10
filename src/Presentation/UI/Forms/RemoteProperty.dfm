@@ -5,7 +5,7 @@ object PropertyForm: TPropertyForm
   BorderStyle = bsDialog
   BorderWidth = 5
   ClientHeight = 337
-  ClientWidth = 842
+  ClientWidth = 846
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -13,24 +13,27 @@ object PropertyForm: TPropertyForm
   Font.Name = 'Tahoma'
   Font.Style = []
   KeyPreview = True
+  Padding.Left = 3
+  Padding.Right = 3
   Position = poMainFormCenter
   OnKeyUp = FormKeyUp
   OnShow = FormShow
   DesignSize = (
-    842
+    846
     337)
   TextHeight = 13
   object WebLink: TEdit
-    Left = 0
+    Left = 3
     Top = 27
-    Width = 842
+    Width = 840
     Height = 21
     Anchors = [akLeft, akTop, akRight]
     ReadOnly = True
     TabOrder = 2
+    ExplicitWidth = 838
   end
   object AccessCB: TCheckBox
-    Left = 0
+    Left = 3
     Top = 4
     Width = 131
     Height = 17
@@ -39,7 +42,7 @@ object PropertyForm: TPropertyForm
     OnClick = AccessCBClick
   end
   object OkButton: TButton
-    Left = 751
+    Left = 752
     Top = 0
     Width = 91
     Height = 21
@@ -47,18 +50,20 @@ object PropertyForm: TPropertyForm
     Caption = 'OK'
     ModalResult = 1
     TabOrder = 0
+    ExplicitLeft = 750
   end
   object ExtPropertiesPC: TPageControl
-    Left = 0
+    Left = 4
     Top = 54
-    Width = 836
+    Width = 839
     Height = 283
     ActivePage = FolderAccessTS
+    Anchors = [akLeft, akTop, akRight, akBottom]
     TabOrder = 3
     object FolderAccessTS: TTabSheet
       Caption = 'Folder access'
       DesignSize = (
-        828
+        831
         255)
       object InviteEmailLabel: TLabel
         Left = 5
@@ -68,7 +73,7 @@ object PropertyForm: TPropertyForm
         Caption = 'New member email:'
       end
       object AccessLabel: TLabel
-        Left = 632
+        Left = 635
         Top = 16
         Width = 37
         Height = 13
@@ -79,13 +84,14 @@ object PropertyForm: TPropertyForm
       object InviteEmailEdit: TEdit
         Left = 5
         Top = 35
-        Width = 626
+        Width = 629
         Height = 21
         Anchors = [akLeft, akTop, akRight]
         TabOrder = 0
+        ExplicitWidth = 626
       end
       object InviteAcessCB: TComboBox
-        Left = 632
+        Left = 635
         Top = 35
         Width = 115
         Height = 21
@@ -97,9 +103,10 @@ object PropertyForm: TPropertyForm
         Items.Strings = (
           'Read and write'
           'Read only')
+        ExplicitLeft = 632
       end
       object InviteBtn: TButton
-        Left = 753
+        Left = 756
         Top = 35
         Width = 75
         Height = 21
@@ -107,11 +114,12 @@ object PropertyForm: TPropertyForm
         Caption = 'Add'
         TabOrder = 2
         OnClick = InviteBtnClick
+        ExplicitLeft = 753
       end
       object InvitesLE: TValueListEditor
         Left = 0
         Top = 62
-        Width = 828
+        Width = 831
         Height = 193
         Align = alBottom
         Anchors = [akLeft, akTop, akRight, akBottom]
@@ -129,9 +137,10 @@ object PropertyForm: TPropertyForm
         TitleCaptions.Strings = (
           'Member'
           'Access')
+        ExplicitWidth = 828
         ColWidths = (
           269
-          557)
+          560)
         RowHeights = (
           18
           18)
@@ -143,7 +152,7 @@ object PropertyForm: TPropertyForm
       object HashesListTB: TToolBar
         Left = 0
         Top = 0
-        Width = 828
+        Width = 831
         Height = 40
         AutoSize = True
         ButtonHeight = 38
@@ -153,6 +162,7 @@ object PropertyForm: TPropertyForm
         TabOrder = 0
         Transparent = False
         Wrapable = False
+        ExplicitWidth = 828
         object SaveHashesTb: TToolButton
           Left = 0
           Top = 0
@@ -232,7 +242,7 @@ object PropertyForm: TPropertyForm
       object HashesMemo: TMemo
         Left = 0
         Top = 40
-        Width = 828
+        Width = 831
         Height = 215
         Align = alClient
         BevelInner = bvNone
@@ -242,18 +252,19 @@ object PropertyForm: TPropertyForm
         TabOrder = 1
         WordWrap = False
         OnExit = HashesMemoExit
+        ExplicitWidth = 828
       end
     end
     object DescriptionTS: TTabSheet
       Caption = 'Description'
       ImageIndex = 2
       DesignSize = (
-        828
+        831
         255)
       object DescriptionEditMemo: TMemo
         Left = 0
         Top = 0
-        Width = 828
+        Width = 831
         Height = 225
         Align = alTop
         BevelEdges = [beLeft, beRight, beBottom]
@@ -261,9 +272,10 @@ object PropertyForm: TPropertyForm
         BevelOuter = bvNone
         ScrollBars = ssVertical
         TabOrder = 0
+        ExplicitWidth = 828
       end
       object DescriptionSaveButton: TButton
-        Left = 0
+        Left = 3
         Top = 227
         Width = 91
         Height = 25
@@ -272,18 +284,19 @@ object PropertyForm: TPropertyForm
         ModalResult = 11
         TabOrder = 1
         OnClick = DescriptionSaveButtonClick
+        ExplicitLeft = 0
       end
     end
     object HistoryTS: TTabSheet
       Caption = 'History'
       ImageIndex = 4
       DesignSize = (
-        828
+        831
         255)
       object HistoryLV: TListView
         Left = 0
         Top = 0
-        Width = 828
+        Width = 831
         Height = 222
         Align = alTop
         Anchors = [akLeft, akTop, akRight, akBottom]
@@ -305,6 +318,7 @@ object PropertyForm: TPropertyForm
         TabOrder = 0
         ViewStyle = vsReport
         OnSelectItem = HistoryLVSelectItem
+        ExplicitWidth = 828
       end
       object RestoreBtn: TButton
         Left = 0

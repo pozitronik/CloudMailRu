@@ -12,36 +12,43 @@ object DeletedPropertyForm: TDeletedPropertyForm
   Font.Name = 'Tahoma'
   Font.Style = []
   Position = poOwnerFormCenter
+  DesignSize = (
+    522
+    144)
   TextHeight = 13
   object DelNameLB: TLabel
-    Left = 90
+    Left = 144
     Top = 8
-    Width = 424
+    Width = 370
     Height = 13
+    Anchors = [akLeft, akTop, akRight]
     AutoSize = False
     EllipsisPosition = epPathEllipsis
   end
   object DelFromLB: TLabel
-    Left = 90
+    Left = 144
     Top = 27
-    Width = 424
+    Width = 370
     Height = 13
+    Anchors = [akLeft, akTop, akRight]
     AutoSize = False
     EllipsisPosition = epPathEllipsis
   end
   object DelAtLB: TLabel
-    Left = 90
+    Left = 144
     Top = 46
-    Width = 424
+    Width = 370
     Height = 13
+    Anchors = [akLeft, akTop, akRight]
     AutoSize = False
     EllipsisPosition = epPathEllipsis
   end
   object DelByLB: TLabel
-    Left = 90
+    Left = 144
     Top = 65
-    Width = 424
+    Width = 370
     Height = 13
+    Anchors = [akLeft, akTop, akRight]
     AutoSize = False
     EllipsisPosition = epPathEllipsis
   end
@@ -81,10 +88,11 @@ object DeletedPropertyForm: TDeletedPropertyForm
     Caption = 'Summary size:'
   end
   object DelSizeLB: TLabel
-    Left = 90
+    Left = 144
     Top = 84
-    Width = 424
+    Width = 370
     Height = 13
+    Anchors = [akLeft, akTop, akRight]
     AutoSize = False
     EllipsisPosition = epPathEllipsis
   end
@@ -102,6 +110,7 @@ object DeletedPropertyForm: TDeletedPropertyForm
     Top = 111
     Width = 100
     Height = 25
+    Anchors = [akTop, akRight]
     Cancel = True
     Caption = 'Cancel'
     ModalResult = 2
