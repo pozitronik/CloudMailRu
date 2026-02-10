@@ -240,6 +240,7 @@ type
 		procedure TestShareButtonClick(Sender: TObject);
 		procedure ServersButtonClick(Sender: TObject);
 		procedure ApplyTranslationBtnClick(Sender: TObject);
+    procedure OptionPagesChange(Sender: TObject);
 	private
 		FPresenter: TAccountsPresenter;
 		procedure AutoFitListViewColumns(LV: TListView);
@@ -1766,6 +1767,11 @@ end;
 procedure TAccountsForm.NewExtButtonClick(Sender: TObject);
 begin
 	FPresenter.OnAddStreamingExtensionClick;
+end;
+
+procedure TAccountsForm.OptionPagesChange(Sender: TObject);
+begin
+
 end;
 
 {Event handlers - Server combobox on accounts tab}
