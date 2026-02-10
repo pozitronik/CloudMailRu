@@ -20,6 +20,10 @@ type
 		procedure TestDefaultValues_AllFieldsEmpty;
 		[Test]
 		procedure TestFieldAccess_StoresValues;
+		[Test]
+		procedure TestHasHash_WhenWhitespaceOnly_ReturnsTrue;
+		[Test]
+		procedure TestMultipleVersions_IndependentRecords;
 	end;
 
 implementation
@@ -78,6 +82,37 @@ begin
 	Assert.AreEqual(Int64(1700000000), Version.Time);
 	Assert.AreEqual(3, Version.Rev);
 	Assert.AreEqual(42, Version.UID);
+end;
+
+procedure TCloudFileVersionTest.TestHasHash_WhenWhitespaceOnly_ReturnsTrue;
+var
+	Version: TCloudFileVersion;
+begin
+	{Whitespace-only hash is non-empty, so HasHash returns True.
+	 This matches the implementation: HasHash checks Hash <> ''}
+	Version := Default(TCloudFileVersion);
+	Version.Hash := '   ';
+
+	Assert.IsTrue(Version.HasHash, 'HasHash should return True for whitespace-only hash (non-empty string)');
+end;
+
+procedure TCloudFileVersionTest.TestMultipleVersions_IndependentRecords;
+var
+	V1, V2: TCloudFileVersion;
+begin
+	{Records are value types - modifying one should not affect the other}
+	V1 := Default(TCloudFileVersion);
+	V1.Hash := 'HASH1';
+	V1.Size := 100;
+
+	V2 := V1;
+	V2.Hash := 'HASH2';
+	V2.Size := 200;
+
+	Assert.AreEqual('HASH1', V1.Hash, 'V1 hash should be unchanged');
+	Assert.AreEqual(Int64(100), V1.Size, 'V1 size should be unchanged');
+	Assert.AreEqual('HASH2', V2.Hash, 'V2 hash should be modified');
+	Assert.AreEqual(Int64(200), V2.Size, 'V2 size should be modified');
 end;
 
 initialization

@@ -455,6 +455,20 @@ type
 		procedure TestOnRestoreClickCallsAddByIdentity;
 		[Test]
 		procedure TestOnRollbackClickCallsAddByIdentity;
+		[Test]
+		procedure TestOnRestoreClickEmptyHash_DoesNothing;
+		[Test]
+		procedure TestOnRollbackClickEmptyHash_DoesNothing;
+		[Test]
+		procedure TestLoadHistoryZeroTimestamp_ShowsPlaceholder;
+		[Test]
+		procedure TestLoadHistoryStoresRawSizes;
+		[Test]
+		procedure TestLoadHistoryClearsPreviousItems;
+		[Test]
+		procedure TestRestorePathPreservesExtension;
+		[Test]
+		procedure TestInitializeHistoryAutoLoads;
 	end;
 
 implementation
@@ -2111,6 +2125,157 @@ begin
 	Assert.AreEqual('ROLLBACKHASH', String(FUploader.LastAddedIdentity.Hash), 'Hash should match');
 	Assert.AreEqual(Int64(8192), FUploader.LastAddedIdentity.Size, 'Size should match');
 	Assert.AreEqual('/test.txt', String(FUploader.LastAddedPath), 'Rollback should use original path');
+end;
+
+procedure TRemotePropertyPresenterTest.TestOnRestoreClickEmptyHash_DoesNothing;
+var
+	Item: TCloudDirItem;
+begin
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, TNullTCHandler.Create, False);
+
+	Item := CreateTestItem('test.txt');
+	FPresenter.Initialize(Item, '/test.txt', CreateConfig(False, False, True));
+
+	{Simulate no selection (empty hash)}
+	FView.SelectedHistoryHash := '';
+	FView.SelectedHistorySize := 1024;
+
+	FPresenter.OnRestoreClick;
+
+	Assert.AreEqual(0, FUploader.AddByIdentityCallCount, 'Should not call AddFileByIdentity when hash is empty');
+end;
+
+procedure TRemotePropertyPresenterTest.TestOnRollbackClickEmptyHash_DoesNothing;
+var
+	Item: TCloudDirItem;
+begin
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, TNullTCHandler.Create, False);
+
+	Item := CreateTestItem('test.txt');
+	FPresenter.Initialize(Item, '/test.txt', CreateConfig(False, False, True));
+
+	{Simulate no selection (empty hash)}
+	FView.SelectedHistoryHash := '';
+	FView.SelectedHistorySize := 2048;
+
+	FPresenter.OnRollbackClick;
+
+	Assert.AreEqual(0, FUploader.AddByIdentityCallCount, 'Should not call AddFileByIdentity when hash is empty');
+end;
+
+procedure TRemotePropertyPresenterTest.TestLoadHistoryZeroTimestamp_ShowsPlaceholder;
+var
+	Item: TCloudDirItem;
+	Versions: TCloudFileVersionList;
+begin
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, TNullTCHandler.Create, False);
+
+	SetLength(Versions, 1);
+	Versions[0].Hash := 'HASH1';
+	Versions[0].Size := 512;
+	Versions[0].Time := 0; {Zero timestamp}
+	FListingService.GetFileHistoryResult := True;
+	FListingService.FileHistoryVersions := Versions;
+
+	Item := CreateTestItem('test.txt');
+	FPresenter.Initialize(Item, '/test.txt', CreateConfig(False, False, True));
+	FPresenter.LoadHistory;
+
+	Assert.AreEqual(1, FView.HistoryItems.Count, 'Should display 1 history item');
+	{Zero timestamp should produce UNSET_ITEM placeholder ('-') in date column}
+	Assert.Contains(FView.HistoryItems[0], '-', 'Zero timestamp should show placeholder');
+end;
+
+procedure TRemotePropertyPresenterTest.TestLoadHistoryStoresRawSizes;
+var
+	Item: TCloudDirItem;
+	Versions: TCloudFileVersionList;
+begin
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, TNullTCHandler.Create, False);
+
+	SetLength(Versions, 2);
+	Versions[0].Hash := 'A'; Versions[0].Size := 1048576; Versions[0].Time := 1700000000;
+	Versions[1].Hash := 'B'; Versions[1].Size := 2097152; Versions[1].Time := 1700100000;
+	FListingService.GetFileHistoryResult := True;
+	FListingService.FileHistoryVersions := Versions;
+
+	Item := CreateTestItem('test.txt');
+	FPresenter.Initialize(Item, '/test.txt', CreateConfig(False, False, True));
+	FPresenter.LoadHistory;
+
+	Assert.AreEqual<Integer>(2, FView.HistoryRawSizes.Count, 'Should store 2 raw sizes');
+	Assert.AreEqual(Int64(1048576), FView.HistoryRawSizes[0], 'First raw size should match');
+	Assert.AreEqual(Int64(2097152), FView.HistoryRawSizes[1], 'Second raw size should match');
+end;
+
+procedure TRemotePropertyPresenterTest.TestLoadHistoryClearsPreviousItems;
+var
+	Item: TCloudDirItem;
+	Versions: TCloudFileVersionList;
+begin
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, TNullTCHandler.Create, False);
+
+	{First call: populate with 2 items}
+	SetLength(Versions, 2);
+	Versions[0].Hash := 'OLD1'; Versions[0].Size := 100; Versions[0].Time := 1700000000;
+	Versions[1].Hash := 'OLD2'; Versions[1].Size := 200; Versions[1].Time := 1700100000;
+	FListingService.GetFileHistoryResult := True;
+	FListingService.FileHistoryVersions := Versions;
+
+	Item := CreateTestItem('test.txt');
+	FPresenter.Initialize(Item, '/test.txt', CreateConfig(False, False, True));
+	FPresenter.LoadHistory;
+	Assert.AreEqual(2, FView.HistoryItems.Count, 'Should have 2 items after first load');
+
+	{Second call: replace with 1 item}
+	SetLength(Versions, 1);
+	Versions[0].Hash := 'NEW1'; Versions[0].Size := 300; Versions[0].Time := 1700200000;
+	FListingService.FileHistoryVersions := Versions;
+
+	FPresenter.LoadHistory;
+
+	Assert.AreEqual(1, FView.HistoryItems.Count, 'Should have 1 item after second load (old items cleared)');
+end;
+
+procedure TRemotePropertyPresenterTest.TestRestorePathPreservesExtension;
+var
+	Item: TCloudDirItem;
+begin
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, TNullTCHandler.Create, False);
+
+	{Use a file with double extension-like name}
+	Item := CreateTestItem('archive.tar.gz');
+	Item.home := '/archive.tar.gz';
+	FPresenter.Initialize(Item, '/archive.tar.gz', CreateConfig(False, False, True));
+
+	FView.SelectedHistoryHash := 'RESTOREHASH';
+	FView.SelectedHistorySize := 4096;
+
+	FPresenter.OnRestoreClick;
+
+	{Restore path should have _restored before the last extension}
+	Assert.Contains(String(FUploader.LastAddedPath), '_restored', 'Path should contain _restored suffix');
+	Assert.Contains(String(FUploader.LastAddedPath), '.gz', 'Path should preserve the file extension');
+end;
+
+procedure TRemotePropertyPresenterTest.TestInitializeHistoryAutoLoads;
+var
+	Item: TCloudDirItem;
+	Versions: TCloudFileVersionList;
+begin
+	{When history is enabled, Initialize should automatically call LoadHistory}
+	FPresenter := TRemotePropertyPresenter.Create(FViewRef, FDownloaderRef, FUploaderRef, FFileOpsRef, FListingServiceRef, FShareServiceRef, TMemoryFileSystem.Create, TNullTCHandler.Create, False);
+
+	SetLength(Versions, 1);
+	Versions[0].Hash := 'AUTO'; Versions[0].Size := 999; Versions[0].Time := 1700000000;
+	FListingService.GetFileHistoryResult := True;
+	FListingService.FileHistoryVersions := Versions;
+
+	Item := CreateTestItem('test.txt');
+	FPresenter.Initialize(Item, '/test.txt', CreateConfig(False, False, True));
+
+	{Initialize should have called LoadHistory automatically}
+	Assert.AreEqual(1, FView.HistoryItems.Count, 'History should be auto-loaded during Initialize');
 end;
 
 initialization

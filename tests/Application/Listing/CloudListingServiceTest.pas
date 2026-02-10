@@ -120,6 +120,14 @@ type
 		procedure TestGetFileHistory_Success_PopulatesVersions;
 		[Test]
 		procedure TestGetFileHistory_HTTPFailure_ReturnsFalse;
+		[Test]
+		procedure TestGetFileHistory_PublicAccount_ReturnsFalse;
+		[Test]
+		procedure TestGetFileHistory_Success_ParsesMultipleVersions;
+		[Test]
+		procedure TestGetFileHistory_Success_ParsesFreeAccountResponse;
+		[Test]
+		procedure TestGetFileHistory_EmptyBody_ReturnsEmptyArray;
 	end;
 
 implementation
@@ -542,6 +550,71 @@ begin
 	Success := FService.GetFileHistory('/test.txt', Versions);
 
 	Assert.IsFalse(Success, 'GetFileHistory should fail on HTTP error');
+end;
+
+procedure TCloudListingServiceTest.TestGetFileHistory_PublicAccount_ReturnsFalse;
+var
+	Versions: TCloudFileVersionList;
+	Success: Boolean;
+begin
+	FMockContext.SetIsPublicAccount(True);
+
+	Success := FService.GetFileHistory('/test.txt', Versions);
+
+	Assert.IsFalse(Success, 'GetFileHistory should return False for public accounts');
+	Assert.AreEqual(Integer(0), Integer(Length(Versions)), 'Versions should be empty');
+end;
+
+procedure TCloudListingServiceTest.TestGetFileHistory_Success_ParsesMultipleVersions;
+var
+	Versions: TCloudFileVersionList;
+	Success: Boolean;
+begin
+	FMockHTTP.SetDefaultResponse(True,
+		'{"body":[' +
+		'{"hash":"HASH1","uid":1,"time":1700000000,"rev":1,"name":"test.txt","path":"/test.txt","size":1024},' +
+		'{"hash":"HASH2","uid":2,"time":1700100000,"rev":2,"name":"test.txt","path":"/test.txt","size":2048},' +
+		'{"hash":"HASH3","uid":3,"time":1700200000,"rev":3,"name":"test.txt","path":"/test.txt","size":4096}' +
+		']}');
+
+	Success := FService.GetFileHistory('/test.txt', Versions);
+
+	Assert.IsTrue(Success, 'GetFileHistory should succeed');
+	Assert.AreEqual(Integer(3), Integer(Length(Versions)), 'Should return 3 versions');
+	Assert.AreEqual('HASH1', Versions[0].Hash);
+	Assert.AreEqual('HASH3', Versions[2].Hash);
+	Assert.AreEqual(Int64(4096), Versions[2].Size);
+end;
+
+procedure TCloudListingServiceTest.TestGetFileHistory_Success_ParsesFreeAccountResponse;
+var
+	Versions: TCloudFileVersionList;
+	Success: Boolean;
+begin
+	{Free accounts return versions without hash and rev fields}
+	FMockHTTP.SetDefaultResponse(True,
+		'{"body":[{"uid":1,"time":1700000000,"name":"test.txt","path":"/test.txt","size":1024}]}');
+
+	Success := FService.GetFileHistory('/test.txt', Versions);
+
+	Assert.IsTrue(Success, 'GetFileHistory should succeed for free account response');
+	Assert.AreEqual(Integer(1), Integer(Length(Versions)), 'Should return 1 version');
+	Assert.AreEqual('', Versions[0].Hash, 'Hash should be empty for free account');
+	Assert.IsFalse(Versions[0].HasHash, 'HasHash should be false');
+	Assert.AreEqual(Int64(1024), Versions[0].Size);
+end;
+
+procedure TCloudListingServiceTest.TestGetFileHistory_EmptyBody_ReturnsEmptyArray;
+var
+	Versions: TCloudFileVersionList;
+	Success: Boolean;
+begin
+	FMockHTTP.SetDefaultResponse(True, '{"body":[]}');
+
+	Success := FService.GetFileHistory('/test.txt', Versions);
+
+	Assert.IsTrue(Success, 'GetFileHistory with empty body should succeed');
+	Assert.AreEqual(Integer(0), Integer(Length(Versions)), 'Should return empty array');
 end;
 
 initialization

@@ -67,6 +67,14 @@ type
 		procedure TestParse_EmptyString_ReturnsFalse;
 		[Test]
 		procedure TestParse_InvalidJSON_SetsEmptyVersions;
+		[Test]
+		procedure TestParse_LargeNumbers_ParsesCorrectly;
+		[Test]
+		procedure TestParse_ExtraFields_IgnoredGracefully;
+		[Test]
+		procedure TestParse_NullBodyField_ReturnsFalse;
+		[Test]
+		procedure TestParse_MixedPaidFreeEntries_ParsesBoth;
 	end;
 
 implementation
@@ -206,6 +214,59 @@ var
 begin
 	TCloudFileVersionJsonAdapter.Parse(JSON_INVALID, Versions);
 	Assert.AreEqual(Integer(0), Integer(Length(Versions)), 'Invalid JSON should result in empty array');
+end;
+
+procedure TCloudFileVersionJsonAdapterTest.TestParse_LargeNumbers_ParsesCorrectly;
+var
+	Versions: TCloudFileVersionList;
+const
+	{File larger than 2GB, timestamp far in the future}
+	JSON_LARGE = '{"body":[{"hash":"BIG","uid":999,"time":4102444800,"rev":100,"name":"big.zip","path":"/big.zip","size":5368709120}]}';
+begin
+	TCloudFileVersionJsonAdapter.Parse(JSON_LARGE, Versions);
+
+	Assert.AreEqual(Int64(5368709120), Versions[0].Size, 'Should handle sizes larger than 2GB');
+	Assert.AreEqual(Int64(4102444800), Versions[0].Time, 'Should handle large timestamps (year 2100)');
+	Assert.AreEqual(100, Versions[0].Rev);
+end;
+
+procedure TCloudFileVersionJsonAdapterTest.TestParse_ExtraFields_IgnoredGracefully;
+var
+	Versions: TCloudFileVersionList;
+const
+	{Response with extra fields not in our record}
+	JSON_EXTRA = '{"body":[{"hash":"ABC","uid":1,"time":1700000000,"rev":1,"name":"test.txt","path":"/test.txt","size":100,"unknown_field":"value","nested":{"a":1}}]}';
+begin
+	Assert.IsTrue(TCloudFileVersionJsonAdapter.Parse(JSON_EXTRA, Versions), 'Should succeed with extra fields');
+	Assert.AreEqual(Integer(1), Integer(Length(Versions)), 'Should parse 1 entry');
+	Assert.AreEqual('ABC', Versions[0].Hash, 'Known fields should be parsed correctly');
+end;
+
+procedure TCloudFileVersionJsonAdapterTest.TestParse_NullBodyField_ReturnsFalse;
+var
+	Versions: TCloudFileVersionList;
+const
+	JSON_NULL_BODY = '{"body":null}';
+begin
+	Assert.IsFalse(TCloudFileVersionJsonAdapter.Parse(JSON_NULL_BODY, Versions), 'Null body should return False');
+end;
+
+procedure TCloudFileVersionJsonAdapterTest.TestParse_MixedPaidFreeEntries_ParsesBoth;
+var
+	Versions: TCloudFileVersionList;
+const
+	{First entry has hash (paid), second doesn't (simulating mixed response)}
+	JSON_MIXED = '{"body":[' +
+		'{"hash":"HASHVAL","uid":1,"time":1700000000,"rev":2,"name":"test.txt","path":"/test.txt","size":1024},' +
+		'{"uid":2,"time":1700100000,"name":"test.txt","path":"/test.txt","size":2048}' +
+		']}';
+begin
+	Assert.IsTrue(TCloudFileVersionJsonAdapter.Parse(JSON_MIXED, Versions));
+	Assert.AreEqual(Integer(2), Integer(Length(Versions)), 'Should parse both entries');
+	Assert.IsTrue(Versions[0].HasHash, 'First entry should have hash');
+	Assert.AreEqual('HASHVAL', Versions[0].Hash);
+	Assert.IsFalse(Versions[1].HasHash, 'Second entry should not have hash');
+	Assert.AreEqual('', Versions[1].Hash);
 end;
 
 initialization

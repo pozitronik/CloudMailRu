@@ -350,6 +350,7 @@ uses
 	StreamingIntegrationTest in 'Integration\StreamingIntegrationTest.pas',
 	DescriptionSyncIntegrationTest in 'Integration\DescriptionSyncIntegrationTest.pas',
 	TimestampSyncIntegrationTest in 'Integration\TimestampSyncIntegrationTest.pas',
+	FileHistoryIntegrationTest in 'Integration\FileHistoryIntegrationTest.pas',
 	OpenSSLProvider in '..\src\Infrastructure\OpenSSL\OpenSSLProvider.pas',
 	OpenSSLProviderTest in 'Infrastructure\OpenSSL\OpenSSLProviderTest.pas',
 	AccountCredentialsProvider in '..\src\Infrastructure\Password\AccountCredentialsProvider.pas',
