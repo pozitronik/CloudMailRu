@@ -300,6 +300,10 @@
         <DCCReference Include="src\Presentation\ContentField\ContentFieldProvider.pas"/>
         <DCCReference Include="src\Presentation\Icon\IconProvider.pas"/>
         <DCCReference Include="src\Application\Operation\OperationLifecycleHandler.pas"/>
+        <DCCReference Include="src\Application\Metadata\RemoteMetadataStore.pas"/>
+        <DCCReference Include="src\Application\Metadata\BaseRemoteMetadataSyncManager.pas"/>
+        <DCCReference Include="src\Application\Description\DescriptionStoreAdapter.pas"/>
+        <DCCReference Include="src\Application\Timestamp\TimestampStoreAdapter.pas"/>
         <DCCReference Include="src\Application\Description\DescriptionSyncManager.pas"/>
         <DCCReference Include="src\Domain\Services\CloudAccessMapper.pas"/>
         <DCCReference Include="src\Infrastructure\Adapter\CloudFileOperationsAdapter.pas"/>

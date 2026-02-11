@@ -1,8 +1,8 @@
 unit TimestampSyncManager;
 
 {Manages timestamp metadata synchronization between local and remote storage.
-	Mirrors TDescriptionSyncManager pattern but stores file modification times
-	instead of text descriptions, enabling mtime preservation across upload/download cycles.}
+	Stores file modification times to enable mtime preservation across upload/download cycles.
+	Inherits shared delete/rename lifecycle from TBaseRemoteMetadataSyncManager.}
 
 interface
 
@@ -12,6 +12,8 @@ uses
 	TimestampMetadata,
 	TimestampEntry,
 	FileSystem,
+	RemoteMetadataStore,
+	BaseRemoteMetadataSyncManager,
 	CloudDescriptionOperationsAdapter;
 
 type
@@ -34,15 +36,12 @@ type
 		procedure OnFileRenamed(const OldPath, NewPath: TRealPath; Cloud: ICloudDescriptionOps);
 	end;
 
-	TTimestampSyncManager = class(TInterfacedObject, ITimestampSyncManager)
+	TTimestampSyncManager = class(TBaseRemoteMetadataSyncManager, ITimestampSyncManager)
 	private
-		FTimestampFileName: WideString;
-		FFileSystem: IFileSystem;
 		FConflictMode: Integer;
-
-		function GetRemoteMetadataPath(const DirPath: WideString): WideString;
-		function DownloadRemoteMetadata(const RemoteMetaPath: WideString; Cloud: ICloudDescriptionOps;
-			out LocalTempPath: WideString): Boolean;
+	protected
+		function GetTempExt: WideString; override;
+		function CreateStore(const FilePath: WideString): IRemoteMetadataStore; override;
 	public
 		constructor Create(const TimestampFileName: WideString; FileSystem: IFileSystem;
 			ConflictMode: Integer);
@@ -59,29 +58,36 @@ implementation
 
 uses
 	PathHelper,
-	SettingsConstants;
+	SettingsConstants,
+	TimestampStoreAdapter;
 
 constructor TTimestampSyncManager.Create(const TimestampFileName: WideString;
 	FileSystem: IFileSystem; ConflictMode: Integer);
 begin
-	inherited Create;
-	FTimestampFileName := TimestampFileName;
-	FFileSystem := FileSystem;
+	inherited Create(TimestampFileName, FileSystem);
 	FConflictMode := ConflictMode;
 end;
 
-function TTimestampSyncManager.GetRemoteMetadataPath(const DirPath: WideString): WideString;
+function TTimestampSyncManager.GetTempExt: WideString;
 begin
-	Result := IncludeTrailingBackslash(DirPath) + FTimestampFileName;
+	Result := TIMESTAMP_TEMP_EXT;
 end;
 
-function TTimestampSyncManager.DownloadRemoteMetadata(const RemoteMetaPath: WideString;
-	Cloud: ICloudDescriptionOps; out LocalTempPath: WideString): Boolean;
+function TTimestampSyncManager.CreateStore(const FilePath: WideString): IRemoteMetadataStore;
 begin
-	LocalTempPath := FFileSystem.GetTmpFileName(TIMESTAMP_TEMP_EXT);
-	Result := Cloud.GetDescriptionFile(RemoteMetaPath, LocalTempPath);
-	if not Result then
-		FFileSystem.DeleteFile(LocalTempPath);
+	Result := TTimestampStoreAdapter.Create(TTimestampMetadata.Create(FilePath, FFileSystem));
+end;
+
+procedure TTimestampSyncManager.OnFileDeleted(const RemotePath: TRealPath;
+	Cloud: ICloudDescriptionOps);
+begin
+	HandleFileDeleted(RemotePath, Cloud);
+end;
+
+procedure TTimestampSyncManager.OnFileRenamed(const OldPath, NewPath: TRealPath;
+	Cloud: ICloudDescriptionOps);
+begin
+	HandleFileRenamed(OldPath, NewPath, Cloud);
 end;
 
 procedure TTimestampSyncManager.OnFileUploaded(const RemotePath: TRealPath;
@@ -98,7 +104,7 @@ begin
 		Exit; {Cannot read local file mtime, nothing to store}
 
 	RemoteMetaPath := GetRemoteMetadataPath(ExtractFileDir(RemotePath.Path));
-	LocalTempPath := FFileSystem.GetTmpFileName(TIMESTAMP_TEMP_EXT);
+	LocalTempPath := FFileSystem.GetTmpFileName(GetTempExt);
 	try
 		RemoteMetaExists := Cloud.GetDescriptionFile(RemoteMetaPath, LocalTempPath);
 
@@ -162,116 +168,6 @@ begin
 		end;
 	finally
 		FFileSystem.DeleteFile(LocalTempPath);
-	end;
-end;
-
-procedure TTimestampSyncManager.OnFileDeleted(const RemotePath: TRealPath;
-	Cloud: ICloudDescriptionOps);
-var
-	Metadata: TTimestampMetadata;
-	RemoteMetaPath, LocalTempPath: WideString;
-begin
-	RemoteMetaPath := GetRemoteMetadataPath(ExtractFileDir(RemotePath.Path));
-
-	if not DownloadRemoteMetadata(RemoteMetaPath, Cloud, LocalTempPath) then
-		Exit; {No metadata file exists}
-
-	try
-		Metadata := TTimestampMetadata.Create(LocalTempPath, FFileSystem);
-		try
-			Metadata.Read;
-			Metadata.DeleteEntry(ExtractFileName(RemotePath.Path));
-			Metadata.Write();
-			Cloud.DeleteFile(RemoteMetaPath);
-			Cloud.PutDescriptionFile(RemoteMetaPath, Metadata.MetadataFileName);
-		finally
-			Metadata.Free;
-		end;
-	finally
-		FFileSystem.DeleteFile(LocalTempPath);
-	end;
-end;
-
-procedure TTimestampSyncManager.OnFileRenamed(const OldPath, NewPath: TRealPath;
-	Cloud: ICloudDescriptionOps);
-var
-	OldMetadata, NewMetadata: TTimestampMetadata;
-	OldRemoteMetaPath, NewRemoteMetaPath, OldLocalTempPath, NewLocalTempPath: WideString;
-	NewRemoteMetaExists: Boolean;
-	OldItem, NewItem: WideString;
-	Entry: TTimestampEntry;
-begin
-	OldItem := ExtractFileName(OldPath.Path);
-	NewItem := ExtractFileName(NewPath.Path);
-	OldRemoteMetaPath := GetRemoteMetadataPath(ExtractFileDir(OldPath.Path));
-
-	if ExtractFileDir(OldPath.Path) = ExtractFileDir(NewPath.Path) then
-	begin
-		{Rename within same directory - modify single metadata file}
-		if not DownloadRemoteMetadata(OldRemoteMetaPath, Cloud, OldLocalTempPath) then
-			Exit;
-
-		try
-			OldMetadata := TTimestampMetadata.Create(OldLocalTempPath, FFileSystem);
-			try
-				OldMetadata.Read;
-				if OldMetadata.RenameEntry(OldItem, NewItem) then
-				begin
-					OldMetadata.Write();
-					Cloud.DeleteFile(OldRemoteMetaPath);
-					Cloud.PutDescriptionFile(OldRemoteMetaPath, OldMetadata.MetadataFileName);
-				end;
-			finally
-				OldMetadata.Free;
-			end;
-		finally
-			FFileSystem.DeleteFile(OldLocalTempPath);
-		end;
-	end else begin
-		{Move between directories - transfer entry between two metadata files}
-		NewRemoteMetaPath := GetRemoteMetadataPath(ExtractFileDir(NewPath.Path));
-		if not DownloadRemoteMetadata(OldRemoteMetaPath, Cloud, OldLocalTempPath) then
-			Exit;
-
-		try
-			OldMetadata := TTimestampMetadata.Create(OldLocalTempPath, FFileSystem);
-			try
-				OldMetadata.Read;
-				Entry := OldMetadata.GetEntry(OldItem);
-				if Entry.IsEmpty then
-					Exit; {No entry to transfer}
-
-				NewLocalTempPath := FFileSystem.GetTmpFileName(TIMESTAMP_TEMP_EXT);
-				try
-					NewRemoteMetaExists := Cloud.GetDescriptionFile(NewRemoteMetaPath, NewLocalTempPath);
-					NewMetadata := TTimestampMetadata.Create(NewLocalTempPath, FFileSystem);
-					try
-						if NewRemoteMetaExists then
-							NewMetadata.Read;
-
-						NewMetadata.SetEntry(NewItem, Entry);
-						OldMetadata.DeleteEntry(OldItem);
-						OldMetadata.Write();
-						NewMetadata.Write();
-
-						Cloud.DeleteFile(OldRemoteMetaPath);
-						Cloud.PutDescriptionFile(OldRemoteMetaPath, OldMetadata.MetadataFileName);
-
-						if NewRemoteMetaExists then
-							Cloud.DeleteFile(NewRemoteMetaPath);
-						Cloud.PutDescriptionFile(NewRemoteMetaPath, NewMetadata.MetadataFileName);
-					finally
-						NewMetadata.Free;
-					end;
-				finally
-					FFileSystem.DeleteFile(NewLocalTempPath);
-				end;
-			finally
-				OldMetadata.Free;
-			end;
-		finally
-			FFileSystem.DeleteFile(OldLocalTempPath);
-		end;
 	end;
 end;
 

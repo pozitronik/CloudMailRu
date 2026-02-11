@@ -298,6 +298,12 @@
         <DCCReference Include="Presentation\Icon\IconProviderTest.pas"/>
         <DCCReference Include="..\src\Application\Operation\OperationLifecycleHandler.pas"/>
         <DCCReference Include="Application\Operation\OperationLifecycleHandlerTest.pas"/>
+        <DCCReference Include="..\src\Application\Metadata\RemoteMetadataStore.pas"/>
+        <DCCReference Include="..\src\Application\Metadata\BaseRemoteMetadataSyncManager.pas"/>
+        <DCCReference Include="..\src\Application\Description\DescriptionStoreAdapter.pas"/>
+        <DCCReference Include="Application\Metadata\DescriptionStoreAdapterTest.pas"/>
+        <DCCReference Include="..\src\Application\Timestamp\TimestampStoreAdapter.pas"/>
+        <DCCReference Include="Application\Metadata\TimestampStoreAdapterTest.pas"/>
         <DCCReference Include="..\src\Application\Description\DescriptionSyncManager.pas"/>
         <DCCReference Include="..\src\Infrastructure\Adapter\CloudFileOperationsAdapter.pas"/>
         <DCCReference Include="Infrastructure\Adapter\CloudFileOperationsAdapterTest.pas"/>

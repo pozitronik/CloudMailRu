@@ -2,7 +2,8 @@ unit DescriptionSyncManager;
 
 {Manages file description synchronization between local and remote storage.
 	Handles description file (.ion) operations when files are created, deleted,
-	renamed, or transferred.}
+	renamed, or transferred.
+	Inherits shared delete/rename lifecycle from TBaseRemoteMetadataSyncManager.}
 
 interface
 
@@ -11,6 +12,8 @@ uses
 	RealPath,
 	Description,
 	FileSystem,
+	RemoteMetadataStore,
+	BaseRemoteMetadataSyncManager,
 	CloudDescriptionOperationsAdapter,
 	TCHandler;
 
@@ -34,18 +37,15 @@ type
 		procedure OnFileUploaded(const RemotePath: TRealPath; const LocalFilePath: WideString; Cloud: ICloudDescriptionOps);
 	end;
 
-	{Manages synchronization of file descriptions (.ion files) between local and remote storage.
-		Extracts description file manipulation logic from WFX to centralize and make testable.}
-	TDescriptionSyncManager = class(TInterfacedObject, IDescriptionSyncManager)
+	TDescriptionSyncManager = class(TBaseRemoteMetadataSyncManager, IDescriptionSyncManager)
 	private
-		FDescriptionFileName: WideString;
-		FFileSystem: IFileSystem;
 		FTCHandler: ITCHandler;
 
-		function GetRemoteDescriptionPath(const DirPath: WideString): WideString;
 		function GetLocalDescriptionPath(const LocalFilePath: WideString): WideString;
 		function CreateDescription(const FilePath: WideString): TDescription;
-		function DownloadRemoteDescription(const RemoteIonPath: WideString; Cloud: ICloudDescriptionOps; out LocalTempPath: WideString): Boolean;
+	protected
+		function GetTempExt: WideString; override;
+		function CreateStore(const FilePath: WideString): IRemoteMetadataStore; override;
 	public
 		constructor Create(const DescriptionFileName: WideString; FileSystem: IFileSystem; TCHandler: ITCHandler);
 
@@ -59,24 +59,28 @@ implementation
 
 uses
 	PathHelper,
-	CloudConstants;
+	DescriptionStoreAdapter;
 
-constructor TDescriptionSyncManager.Create(const DescriptionFileName: WideString; FileSystem: IFileSystem; TCHandler: ITCHandler);
+constructor TDescriptionSyncManager.Create(const DescriptionFileName: WideString;
+	FileSystem: IFileSystem; TCHandler: ITCHandler);
 begin
-	inherited Create;
-	FDescriptionFileName := DescriptionFileName;
-	FFileSystem := FileSystem;
+	inherited Create(DescriptionFileName, FileSystem);
 	FTCHandler := TCHandler;
 end;
 
-function TDescriptionSyncManager.GetRemoteDescriptionPath(const DirPath: WideString): WideString;
+function TDescriptionSyncManager.GetTempExt: WideString;
 begin
-	Result := IncludeTrailingBackslash(DirPath) + FDescriptionFileName;
+	Result := DESCRIPTION_TEMP_EXT;
+end;
+
+function TDescriptionSyncManager.CreateStore(const FilePath: WideString): IRemoteMetadataStore;
+begin
+	Result := TDescriptionStoreAdapter.Create(CreateDescription(FilePath));
 end;
 
 function TDescriptionSyncManager.GetLocalDescriptionPath(const LocalFilePath: WideString): WideString;
 begin
-	Result := IncludeTrailingPathDelimiter(ExtractFileDir(LocalFilePath)) + FDescriptionFileName;
+	Result := IncludeTrailingPathDelimiter(ExtractFileDir(LocalFilePath)) + FMetadataFileName;
 end;
 
 function TDescriptionSyncManager.CreateDescription(const FilePath: WideString): TDescription;
@@ -84,116 +88,14 @@ begin
 	Result := TDescription.Create(FilePath, FFileSystem, FTCHandler.GetTCCommentPreferredFormat);
 end;
 
-function TDescriptionSyncManager.DownloadRemoteDescription(const RemoteIonPath: WideString; Cloud: ICloudDescriptionOps; out LocalTempPath: WideString): Boolean;
-begin
-	LocalTempPath := FFileSystem.GetTmpFileName(DESCRIPTION_TEMP_EXT);
-	Result := Cloud.GetDescriptionFile(RemoteIonPath, LocalTempPath);
-	if not Result then
-		FFileSystem.DeleteFile(LocalTempPath);
-end;
-
 procedure TDescriptionSyncManager.OnFileDeleted(const RemotePath: TRealPath; Cloud: ICloudDescriptionOps);
-var
-	RemoteDescriptions: TDescription;
-	RemoteIonPath, LocalTempPath: WideString;
 begin
-	RemoteIonPath := GetRemoteDescriptionPath(ExtractFileDir(RemotePath.Path));
-
-	if not DownloadRemoteDescription(RemoteIonPath, Cloud, LocalTempPath) then
-		exit; {No description file exists}
-
-	try
-		RemoteDescriptions := CreateDescription(LocalTempPath);
-		try
-			RemoteDescriptions.Read;
-			RemoteDescriptions.DeleteValue(ExtractFileName(RemotePath.Path));
-			RemoteDescriptions.Write();
-			Cloud.DeleteFile(RemoteIonPath);
-			Cloud.PutDescriptionFile(RemoteIonPath, RemoteDescriptions.ionFilename);
-		finally
-			RemoteDescriptions.Free;
-		end;
-	finally
-		FFileSystem.DeleteFile(LocalTempPath);
-	end;
+	HandleFileDeleted(RemotePath, Cloud);
 end;
 
 procedure TDescriptionSyncManager.OnFileRenamed(const OldPath, NewPath: TRealPath; Cloud: ICloudDescriptionOps);
-var
-	OldDescriptions, NewDescriptions: TDescription;
-	OldRemoteIonPath, NewRemoteIonPath, OldLocalTempPath, NewLocalTempPath: WideString;
-	NewRemoteIonExists: Boolean;
-	OldItem, NewItem: WideString;
 begin
-	OldItem := ExtractFileName(OldPath.Path);
-	NewItem := ExtractFileName(NewPath.Path);
-	OldRemoteIonPath := GetRemoteDescriptionPath(ExtractFileDir(OldPath.Path));
-
-	if ExtractFileDir(OldPath.Path) = ExtractFileDir(NewPath.Path) then
-	begin
-		{Rename within same directory - modify single description file}
-		if not DownloadRemoteDescription(OldRemoteIonPath, Cloud, OldLocalTempPath) then
-			exit; {No description file exists}
-
-		try
-			OldDescriptions := CreateDescription(OldLocalTempPath);
-			try
-				OldDescriptions.Read;
-				if OldDescriptions.RenameItem(OldItem, NewItem) then
-				begin
-					OldDescriptions.Write();
-					Cloud.DeleteFile(OldRemoteIonPath);
-					Cloud.PutDescriptionFile(OldRemoteIonPath, OldDescriptions.ionFilename);
-				end;
-			finally
-				OldDescriptions.Free;
-			end;
-		finally
-			FFileSystem.DeleteFile(OldLocalTempPath);
-		end;
-	end else begin
-		{Move between directories - transfer entry between two description files}
-		NewRemoteIonPath := GetRemoteDescriptionPath(ExtractFileDir(NewPath.Path));
-		if not DownloadRemoteDescription(OldRemoteIonPath, Cloud, OldLocalTempPath) then
-			exit; {No source description file exists}
-
-		try
-			OldDescriptions := CreateDescription(OldLocalTempPath);
-			try
-				OldDescriptions.Read;
-
-				NewLocalTempPath := FFileSystem.GetTmpFileName(DESCRIPTION_TEMP_EXT);
-				try
-					NewRemoteIonExists := Cloud.GetDescriptionFile(NewRemoteIonPath, NewLocalTempPath);
-					NewDescriptions := CreateDescription(NewLocalTempPath);
-					try
-						if NewRemoteIonExists then
-							NewDescriptions.Read;
-
-						NewDescriptions.SetValue(NewItem, OldDescriptions.GetValue(OldItem));
-						OldDescriptions.DeleteValue(OldItem);
-						OldDescriptions.Write();
-						NewDescriptions.Write();
-
-						Cloud.DeleteFile(OldRemoteIonPath);
-						Cloud.PutDescriptionFile(OldRemoteIonPath, OldDescriptions.ionFilename);
-
-						if NewRemoteIonExists then
-							Cloud.DeleteFile(NewRemoteIonPath);
-						Cloud.PutDescriptionFile(NewRemoteIonPath, NewDescriptions.ionFilename);
-					finally
-						NewDescriptions.Free;
-					end;
-				finally
-					FFileSystem.DeleteFile(NewLocalTempPath);
-				end;
-			finally
-				OldDescriptions.Free;
-			end;
-		finally
-			FFileSystem.DeleteFile(OldLocalTempPath);
-		end;
-	end;
+	HandleFileRenamed(OldPath, NewPath, Cloud);
 end;
 
 procedure TDescriptionSyncManager.OnFileDownloaded(const RemotePath: TRealPath; const LocalFilePath: WideString; Cloud: ICloudDescriptionOps);
@@ -201,9 +103,9 @@ var
 	RemoteDescriptions, LocalDescriptions: TDescription;
 	RemoteIonPath, LocalTempPath: WideString;
 begin
-	RemoteIonPath := GetRemoteDescriptionPath(ExtractFileDir(RemotePath.Path));
+	RemoteIonPath := GetRemoteMetadataPath(ExtractFileDir(RemotePath.Path));
 
-	if not DownloadRemoteDescription(RemoteIonPath, Cloud, LocalTempPath) then
+	if not DownloadRemoteMetadata(RemoteIonPath, Cloud, LocalTempPath) then
 		exit; {No remote description file exists}
 
 	try
@@ -241,8 +143,8 @@ begin
 	try
 		LocalDescriptions.Read;
 
-		RemoteIonPath := GetRemoteDescriptionPath(ExtractFileDir(RemotePath.Path));
-		LocalTempPath := FFileSystem.GetTmpFileName(DESCRIPTION_TEMP_EXT);
+		RemoteIonPath := GetRemoteMetadataPath(ExtractFileDir(RemotePath.Path));
+		LocalTempPath := FFileSystem.GetTmpFileName(GetTempExt);
 		try
 			RemoteIonExists := Cloud.GetDescriptionFile(RemoteIonPath, LocalTempPath);
 
