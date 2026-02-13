@@ -29,7 +29,6 @@ object PropertyForm: TPropertyForm
     Anchors = [akLeft, akTop, akRight]
     ReadOnly = True
     TabOrder = 2
-    ExplicitWidth = 840
   end
   object AccessCB: TCheckBox
     Left = 3
@@ -49,18 +48,15 @@ object PropertyForm: TPropertyForm
     Caption = 'OK'
     ModalResult = 1
     TabOrder = 0
-    ExplicitLeft = 752
   end
   object ExtPropertiesPC: TPageControl
-    Left = 4
+    Left = 6
     Top = 54
     Width = 939
     Height = 342
     ActivePage = FolderAccessTS
     Anchors = [akLeft, akTop, akRight, akBottom]
     TabOrder = 3
-    ExplicitWidth = 839
-    ExplicitHeight = 283
     object FolderAccessTS: TTabSheet
       Caption = 'Folder access'
       DesignSize = (
@@ -89,7 +85,6 @@ object PropertyForm: TPropertyForm
         Height = 21
         Anchors = [akLeft, akTop, akRight]
         TabOrder = 0
-        ExplicitWidth = 629
       end
       object InviteAcessCB: TComboBox
         Left = 735
@@ -104,7 +99,6 @@ object PropertyForm: TPropertyForm
         Items.Strings = (
           'Read and write'
           'Read only')
-        ExplicitLeft = 635
       end
       object InviteBtn: TButton
         Left = 856
@@ -115,7 +109,6 @@ object PropertyForm: TPropertyForm
         Caption = 'Add'
         TabOrder = 2
         OnClick = InviteBtnClick
-        ExplicitLeft = 756
       end
       object InvitesLE: TValueListEditor
         Left = 0
@@ -138,8 +131,6 @@ object PropertyForm: TPropertyForm
         TitleCaptions.Strings = (
           'Member'
           'Access')
-        ExplicitWidth = 831
-        ExplicitHeight = 193
         ColWidths = (
           269
           660)
@@ -164,6 +155,9 @@ object PropertyForm: TPropertyForm
         TabOrder = 0
         Transparent = False
         Wrapable = False
+        DesignSize = (
+          931
+          38)
         object SaveHashesTb: TToolButton
           Left = 0
           Top = 0
@@ -213,15 +207,16 @@ object PropertyForm: TPropertyForm
         object HashesLogLabel: TLabel
           Left = 156
           Top = 0
-          Width = 596
+          Width = 695
           Height = 38
+          Anchors = [akLeft, akTop, akRight]
           AutoSize = False
           EllipsisPosition = epEndEllipsis
           Transparent = False
           Layout = tlCenter
         end
         object CancelHashesScanTb: TToolButton
-          Left = 752
+          Left = 851
           Top = 0
           Hint = 'Cancel scan'
           Caption = 'CancelScanTB'
@@ -232,10 +227,9 @@ object PropertyForm: TPropertyForm
           OnClick = CancelHashesScanTbClick
         end
         object RefreshHashesScanTb: TToolButton
-          Left = 791
+          Left = 890
           Top = 0
           Hint = 'Rescan'
-          Caption = 'RefreshScanTB'
           ImageIndex = 3
           OnClick = RefreshHashesScanTbClick
         end
@@ -265,8 +259,9 @@ object PropertyForm: TPropertyForm
         Left = 0
         Top = 0
         Width = 931
-        Height = 225
+        Height = 281
         Align = alTop
+        Anchors = [akLeft, akTop, akRight, akBottom]
         BevelEdges = [beLeft, beRight, beBottom]
         BevelInner = bvNone
         BevelOuter = bvNone
@@ -274,11 +269,11 @@ object PropertyForm: TPropertyForm
         TabOrder = 0
       end
       object DescriptionSaveButton: TButton
-        Left = 103
-        Top = 227
+        Left = 0
+        Top = 287
         Width = 91
         Height = 25
-        Anchors = [akTop, akRight]
+        Anchors = [akLeft, akBottom]
         Caption = 'F2 OK'
         ModalResult = 11
         TabOrder = 1
