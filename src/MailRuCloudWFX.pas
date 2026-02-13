@@ -106,7 +106,8 @@ uses
 	ProxyPasswordResolver,
 	CloudAuthorizationState,
 	TranslationManager,
-	ServerProfileManager;
+	ServerProfileManager,
+	PluginSettings;
 
 type
 	TWFXApplication = class(TInterfacedObject, IWFXInterface)
@@ -187,7 +188,7 @@ type
 			Auto mode tries IndySec first (for OpenSSL 3.x support), falls back to standard Indy.}
 		function CreateSSLHandlerFactory(SSLBackend: Integer): ISSLHandlerFactory;
 		procedure LoadTranslationOnStartup;
-		{Removes metadata files from listing based on ShowDescriptionFiles/ShowTimestampFiles settings}
+		{Removes metadata files from listing based on HideDescriptionFile/HideTimestampFile settings}
 		procedure FilterHiddenMetadataFiles(var Listing: TCloudDirItemList);
 	protected
 		{Ensures cloud is authorized. Returns True if authorized, False otherwise.
@@ -279,9 +280,9 @@ begin
 	Settings := SettingsManager.GetSettings;
 	for I := High(Listing) downto 0 do
 	begin
-		if (not Settings.ShowDescriptionFiles) and SameText(Listing[I].name, Settings.DescriptionFileName) then
+		if Settings.HideDescriptionFile and SameText(Listing[I].name, Settings.DescriptionFileName) then
 			Delete(Listing, I, 1)
-		else if (not Settings.ShowTimestampFiles) and SameText(Listing[I].name, Settings.TimestampFileName) then
+		else if Settings.HideTimestampFile and SameText(Listing[I].name, Settings.TimestampFileName) then
 			Delete(Listing, I, 1);
 	end;
 end;

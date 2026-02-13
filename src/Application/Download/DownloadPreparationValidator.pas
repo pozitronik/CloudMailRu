@@ -72,12 +72,12 @@ begin
 	{Skip metadata files when copy is disabled -- silent skip via FS_FILE_OK}
 	Settings := FSettingsManager.GetSettings;
 	FileName := ExtractFileName(RemotePath.Path);
-	if (not Settings.CopyDescriptionFiles) and SameText(FileName, Settings.DescriptionFileName) then
+	if Settings.SkipDescriptionDownload and SameText(FileName, Settings.DescriptionFileName) then
 	begin
 		Result.ResultCode := FS_FILE_OK;
 		Exit;
 	end;
-	if (not Settings.CopyTimestampFiles) and SameText(FileName, Settings.TimestampFileName) then
+	if Settings.SkipTimestampDownload and SameText(FileName, Settings.TimestampFileName) then
 	begin
 		Result.ResultCode := FS_FILE_OK;
 		Exit;

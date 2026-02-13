@@ -330,8 +330,8 @@ var
 	DFM_CB_DESC_COPY_TO: WideString;
 	DFM_CB_DESC_COPY_FROM: WideString;
 	DFM_CB_DESC_TRACK: WideString;
-	DFM_CB_SHOW_DESC_FILES: WideString;
-	DFM_CB_COPY_DESC_FILES: WideString;
+	DFM_CB_HIDE_DESC_FILE: WideString;
+	DFM_CB_SKIP_DESC_DOWNLOAD: WideString;
 	DFM_GB_FILE_COMMENTS: WideString;
 	DFM_GB_FILE_TIMESTAMPS: WideString;
 	DFM_OPT_TS_DISABLED: WideString;
@@ -339,8 +339,8 @@ var
 	DFM_OPT_TS_FULL_SYNC: WideString;
 	DFM_LBL_TS_FILENAME: WideString;
 	DFM_LBL_TS_CONFLICT: WideString;
-	DFM_CB_SHOW_TS_FILES: WideString;
-	DFM_CB_COPY_TS_FILES: WideString;
+	DFM_CB_HIDE_TS_FILE: WideString;
+	DFM_CB_SKIP_TS_DOWNLOAD: WideString;
 	DFM_OPT_TS_USE_STORED: WideString;
 	DFM_OPT_TS_USE_SERVER: WideString;
 	{Combobox option strings}
@@ -789,8 +789,8 @@ begin
 	DFM_CB_DESC_COPY_TO := 'Copy descript.ion comments to cloud';
 	DFM_CB_DESC_COPY_FROM := 'Copy descript.ion comments from cloud';
 	DFM_CB_DESC_TRACK := 'Track cloud filesystem changes';
-	DFM_CB_SHOW_DESC_FILES := 'Show description file in directory listing';
-	DFM_CB_COPY_DESC_FILES := 'Download description file';
+	DFM_CB_HIDE_DESC_FILE := 'Hide description file in directory listing';
+	DFM_CB_SKIP_DESC_DOWNLOAD := 'Skip description file when downloading';
 	DFM_GB_FILE_COMMENTS := 'File comments';
 	DFM_GB_FILE_TIMESTAMPS := 'File timestamps';
 	DFM_OPT_TS_DISABLED := 'Disabled';
@@ -798,8 +798,8 @@ begin
 	DFM_OPT_TS_FULL_SYNC := 'Full sync';
 	DFM_LBL_TS_FILENAME := 'Override timestamp metadata file name:';
 	DFM_LBL_TS_CONFLICT := 'Timestamp conflict mode:';
-	DFM_CB_SHOW_TS_FILES := 'Show timestamp file in directory listing';
-	DFM_CB_COPY_TS_FILES := 'Download timestamp file';
+	DFM_CB_HIDE_TS_FILE := 'Hide timestamp file in directory listing';
+	DFM_CB_SKIP_TS_DOWNLOAD := 'Skip timestamp file when downloading';
 	DFM_OPT_TS_USE_STORED := 'Use stored local time';
 	DFM_OPT_TS_USE_SERVER := 'Use server time on conflict';
 	{Combobox option strings}
@@ -1236,8 +1236,8 @@ begin
 	TranslationRegistry.Add('DFM_CB_DESC_COPY_TO', @DFM_CB_DESC_COPY_TO);
 	TranslationRegistry.Add('DFM_CB_DESC_COPY_FROM', @DFM_CB_DESC_COPY_FROM);
 	TranslationRegistry.Add('DFM_CB_DESC_TRACK', @DFM_CB_DESC_TRACK);
-	TranslationRegistry.Add('DFM_CB_SHOW_DESC_FILES', @DFM_CB_SHOW_DESC_FILES);
-	TranslationRegistry.Add('DFM_CB_COPY_DESC_FILES', @DFM_CB_COPY_DESC_FILES);
+	TranslationRegistry.Add('DFM_CB_HIDE_DESC_FILE', @DFM_CB_HIDE_DESC_FILE);
+	TranslationRegistry.Add('DFM_CB_SKIP_DESC_DOWNLOAD', @DFM_CB_SKIP_DESC_DOWNLOAD);
 	TranslationRegistry.Add('DFM_GB_FILE_COMMENTS', @DFM_GB_FILE_COMMENTS);
 	TranslationRegistry.Add('DFM_GB_FILE_TIMESTAMPS', @DFM_GB_FILE_TIMESTAMPS);
 	TranslationRegistry.Add('DFM_OPT_TS_DISABLED', @DFM_OPT_TS_DISABLED);
@@ -1245,8 +1245,8 @@ begin
 	TranslationRegistry.Add('DFM_OPT_TS_FULL_SYNC', @DFM_OPT_TS_FULL_SYNC);
 	TranslationRegistry.Add('DFM_LBL_TS_FILENAME', @DFM_LBL_TS_FILENAME);
 	TranslationRegistry.Add('DFM_LBL_TS_CONFLICT', @DFM_LBL_TS_CONFLICT);
-	TranslationRegistry.Add('DFM_CB_SHOW_TS_FILES', @DFM_CB_SHOW_TS_FILES);
-	TranslationRegistry.Add('DFM_CB_COPY_TS_FILES', @DFM_CB_COPY_TS_FILES);
+	TranslationRegistry.Add('DFM_CB_HIDE_TS_FILE', @DFM_CB_HIDE_TS_FILE);
+	TranslationRegistry.Add('DFM_CB_SKIP_TS_DOWNLOAD', @DFM_CB_SKIP_TS_DOWNLOAD);
 	TranslationRegistry.Add('DFM_OPT_TS_USE_STORED', @DFM_OPT_TS_USE_STORED);
 	TranslationRegistry.Add('DFM_OPT_TS_USE_SERVER', @DFM_OPT_TS_USE_SERVER);
 	TranslationRegistry.Add('DFM_OPT_ASK_USER', @DFM_OPT_ASK_USER);

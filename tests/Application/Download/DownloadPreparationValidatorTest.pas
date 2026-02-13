@@ -47,17 +47,17 @@ type
 		[Test]
 		procedure TestValidate_ResumeCheckedBeforeVirtualPath;
 
-		{Metadata file copy tests}
+		{Metadata file download skip tests}
 		[Test]
-		procedure TestValidate_DescriptionFile_CopyDisabled_SkipsWithOK;
+		procedure TestValidate_DescriptionFile_SkipEnabled_SkipsWithOK;
 		[Test]
-		procedure TestValidate_DescriptionFile_CopyEnabled_Proceeds;
+		procedure TestValidate_DescriptionFile_SkipDisabled_Proceeds;
 		[Test]
-		procedure TestValidate_TimestampFile_CopyDisabled_SkipsWithOK;
+		procedure TestValidate_TimestampFile_SkipEnabled_SkipsWithOK;
 		[Test]
-		procedure TestValidate_TimestampFile_CopyEnabled_Proceeds;
+		procedure TestValidate_TimestampFile_SkipDisabled_Proceeds;
 		[Test]
-		procedure TestValidate_RegularFile_CopyDisabled_Proceeds;
+		procedure TestValidate_RegularFile_SkipEnabled_Proceeds;
 		[Test]
 		procedure TestValidate_DescriptionFile_CaseInsensitive;
 	end;
@@ -181,62 +181,65 @@ begin
 	Assert.AreEqual(FS_FILE_NOTSUPPORTED, Result.ResultCode);
 end;
 
-{Metadata file copy tests}
+{Metadata file download skip tests}
 
-procedure TDownloadPreparationValidatorTest.TestValidate_DescriptionFile_CopyDisabled_SkipsWithOK;
+procedure TDownloadPreparationValidatorTest.TestValidate_DescriptionFile_SkipEnabled_SkipsWithOK;
 var
 	Result: TDownloadValidationResult;
 begin
-	{CopyDescriptionFiles defaults to False}
-	Result := FValidator.Validate(CreatePath('\account\folder\descript.ion'), 0);
-
-	Assert.IsFalse(Result.ShouldProceed, 'Should not proceed when copy is disabled');
-	Assert.AreEqual(FS_FILE_OK, Result.ResultCode, 'Should return FS_FILE_OK for silent skip');
-end;
-
-procedure TDownloadPreparationValidatorTest.TestValidate_DescriptionFile_CopyEnabled_Proceeds;
-var
-	Result: TDownloadValidationResult;
-begin
-	FMockSettings.SetCopyDescriptionFiles(True);
+	FMockSettings.SetSkipDescriptionDownload(True);
 
 	Result := FValidator.Validate(CreatePath('\account\folder\descript.ion'), 0);
 
-	Assert.IsTrue(Result.ShouldProceed, 'Should proceed when copy is enabled');
-	Assert.AreEqual(FS_FILE_OK, Result.ResultCode);
-end;
-
-procedure TDownloadPreparationValidatorTest.TestValidate_TimestampFile_CopyDisabled_SkipsWithOK;
-var
-	Result: TDownloadValidationResult;
-begin
-	{CopyTimestampFiles defaults to False}
-	Result := FValidator.Validate(CreatePath('\account\folder\.cloud_timestamps'), 0);
-
-	Assert.IsFalse(Result.ShouldProceed, 'Should not proceed when copy is disabled');
+	Assert.IsFalse(Result.ShouldProceed, 'Should not proceed when skip is enabled');
 	Assert.AreEqual(FS_FILE_OK, Result.ResultCode, 'Should return FS_FILE_OK for silent skip');
 end;
 
-procedure TDownloadPreparationValidatorTest.TestValidate_TimestampFile_CopyEnabled_Proceeds;
+procedure TDownloadPreparationValidatorTest.TestValidate_DescriptionFile_SkipDisabled_Proceeds;
 var
 	Result: TDownloadValidationResult;
 begin
-	FMockSettings.SetCopyTimestampFiles(True);
+	{SkipDescriptionDownload defaults to False}
+	Result := FValidator.Validate(CreatePath('\account\folder\descript.ion'), 0);
 
-	Result := FValidator.Validate(CreatePath('\account\folder\.cloud_timestamps'), 0);
-
-	Assert.IsTrue(Result.ShouldProceed, 'Should proceed when copy is enabled');
+	Assert.IsTrue(Result.ShouldProceed, 'Should proceed when skip is disabled');
 	Assert.AreEqual(FS_FILE_OK, Result.ResultCode);
 end;
 
-procedure TDownloadPreparationValidatorTest.TestValidate_RegularFile_CopyDisabled_Proceeds;
+procedure TDownloadPreparationValidatorTest.TestValidate_TimestampFile_SkipEnabled_SkipsWithOK;
 var
 	Result: TDownloadValidationResult;
 begin
-	{Both Copy*Files default to False, but regular files should not be affected}
+	FMockSettings.SetSkipTimestampDownload(True);
+
+	Result := FValidator.Validate(CreatePath('\account\folder\.cloud_timestamps'), 0);
+
+	Assert.IsFalse(Result.ShouldProceed, 'Should not proceed when skip is enabled');
+	Assert.AreEqual(FS_FILE_OK, Result.ResultCode, 'Should return FS_FILE_OK for silent skip');
+end;
+
+procedure TDownloadPreparationValidatorTest.TestValidate_TimestampFile_SkipDisabled_Proceeds;
+var
+	Result: TDownloadValidationResult;
+begin
+	{SkipTimestampDownload defaults to False}
+	Result := FValidator.Validate(CreatePath('\account\folder\.cloud_timestamps'), 0);
+
+	Assert.IsTrue(Result.ShouldProceed, 'Should proceed when skip is disabled');
+	Assert.AreEqual(FS_FILE_OK, Result.ResultCode);
+end;
+
+procedure TDownloadPreparationValidatorTest.TestValidate_RegularFile_SkipEnabled_Proceeds;
+var
+	Result: TDownloadValidationResult;
+begin
+	{Both Skip*Download enabled, but regular files should not be affected}
+	FMockSettings.SetSkipDescriptionDownload(True);
+	FMockSettings.SetSkipTimestampDownload(True);
+
 	Result := FValidator.Validate(CreatePath('\account\folder\document.txt'), 0);
 
-	Assert.IsTrue(Result.ShouldProceed, 'Regular files should not be affected by metadata copy settings');
+	Assert.IsTrue(Result.ShouldProceed, 'Regular files should not be affected by metadata skip settings');
 	Assert.AreEqual(FS_FILE_OK, Result.ResultCode);
 end;
 
@@ -245,6 +248,8 @@ var
 	Result: TDownloadValidationResult;
 begin
 	{Verify case-insensitive matching of metadata filenames}
+	FMockSettings.SetSkipDescriptionDownload(True);
+
 	Result := FValidator.Validate(CreatePath('\account\folder\DESCRIPT.ION'), 0);
 
 	Assert.IsFalse(Result.ShouldProceed, 'Case-insensitive match should skip the file');

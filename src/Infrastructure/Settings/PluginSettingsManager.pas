@@ -278,10 +278,10 @@ begin
 	Settings.ThumbnailExtensions := FConfigFile.ReadString('Main', 'ThumbnailExtensions', DEFAULT_THUMBNAIL_EXTENSIONS);
 	Settings.Language := FConfigFile.ReadString('Main', 'Language', EmptyWideStr);
 	Settings.FileHistoryEnabled := FConfigFile.ReadBool('Main', 'FileHistoryEnabled', False);
-	Settings.ShowDescriptionFiles := FConfigFile.ReadBool('Main', 'ShowDescriptionFiles', False);
-	Settings.ShowTimestampFiles := FConfigFile.ReadBool('Main', 'ShowTimestampFiles', False);
-	Settings.CopyDescriptionFiles := FConfigFile.ReadBool('Main', 'CopyDescriptionFiles', False);
-	Settings.CopyTimestampFiles := FConfigFile.ReadBool('Main', 'CopyTimestampFiles', False);
+	Settings.HideDescriptionFile := FConfigFile.ReadBool('Main', 'HideDescriptionFile', False);
+	Settings.HideTimestampFile := FConfigFile.ReadBool('Main', 'HideTimestampFile', False);
+	Settings.SkipDescriptionDownload := FConfigFile.ReadBool('Main', 'SkipDescriptionDownload', False);
+	Settings.SkipTimestampDownload := FConfigFile.ReadBool('Main', 'SkipTimestampDownload', False);
 	Settings.BuildThumbnailExtList;
 	Settings.IniFilePath := FIniFilePath;
 	Settings.AccountsIniFilePath := AccountsIniFilePath;
@@ -332,10 +332,10 @@ begin
 	FConfigFile.WriteStringIfNotDefault('Main', 'ThumbnailExtensions', Settings.ThumbnailExtensions, DEFAULT_THUMBNAIL_EXTENSIONS);
 	FConfigFile.WriteStringIfNotDefault('Main', 'Language', Settings.Language, EmptyWideStr);
 	FConfigFile.WriteBoolIfNotDefault('Main', 'FileHistoryEnabled', Settings.FileHistoryEnabled, False);
-	FConfigFile.WriteBoolIfNotDefault('Main', 'ShowDescriptionFiles', Settings.ShowDescriptionFiles, False);
-	FConfigFile.WriteBoolIfNotDefault('Main', 'ShowTimestampFiles', Settings.ShowTimestampFiles, False);
-	FConfigFile.WriteBoolIfNotDefault('Main', 'CopyDescriptionFiles', Settings.CopyDescriptionFiles, False);
-	FConfigFile.WriteBoolIfNotDefault('Main', 'CopyTimestampFiles', Settings.CopyTimestampFiles, False);
+	FConfigFile.WriteBoolIfNotDefault('Main', 'HideDescriptionFile', Settings.HideDescriptionFile, False);
+	FConfigFile.WriteBoolIfNotDefault('Main', 'HideTimestampFile', Settings.HideTimestampFile, False);
+	FConfigFile.WriteBoolIfNotDefault('Main', 'SkipDescriptionDownload', Settings.SkipDescriptionDownload, False);
+	FConfigFile.WriteBoolIfNotDefault('Main', 'SkipTimestampDownload', Settings.SkipTimestampDownload, False);
 end;
 
 procedure TPluginSettingsManager.GetStreamingExtensionsList(ExtensionsList: TStrings);

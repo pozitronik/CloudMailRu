@@ -44,10 +44,10 @@ type
 		procedure SetCheckCRC(Value: Boolean);
 		procedure SetDeleteMode(Mode: Integer);
 		procedure SetLogUserSpace(Value: Boolean);
-		procedure SetShowDescriptionFiles(Value: Boolean);
-		procedure SetShowTimestampFiles(Value: Boolean);
-		procedure SetCopyDescriptionFiles(Value: Boolean);
-		procedure SetCopyTimestampFiles(Value: Boolean);
+		procedure SetHideDescriptionFile(Value: Boolean);
+		procedure SetHideTimestampFile(Value: Boolean);
+		procedure SetSkipDescriptionDownload(Value: Boolean);
+		procedure SetSkipTimestampDownload(Value: Boolean);
 
 		{Observable state}
 		property SaveCalled: Boolean read FSaveCalled;
@@ -165,24 +165,24 @@ begin
 	FSettings.LogUserSpace := Value;
 end;
 
-procedure TMockSettingsManager.SetShowDescriptionFiles(Value: Boolean);
+procedure TMockSettingsManager.SetHideDescriptionFile(Value: Boolean);
 begin
-	FSettings.ShowDescriptionFiles := Value;
+	FSettings.HideDescriptionFile := Value;
 end;
 
-procedure TMockSettingsManager.SetShowTimestampFiles(Value: Boolean);
+procedure TMockSettingsManager.SetHideTimestampFile(Value: Boolean);
 begin
-	FSettings.ShowTimestampFiles := Value;
+	FSettings.HideTimestampFile := Value;
 end;
 
-procedure TMockSettingsManager.SetCopyDescriptionFiles(Value: Boolean);
+procedure TMockSettingsManager.SetSkipDescriptionDownload(Value: Boolean);
 begin
-	FSettings.CopyDescriptionFiles := Value;
+	FSettings.SkipDescriptionDownload := Value;
 end;
 
-procedure TMockSettingsManager.SetCopyTimestampFiles(Value: Boolean);
+procedure TMockSettingsManager.SetSkipTimestampDownload(Value: Boolean);
 begin
-	FSettings.CopyTimestampFiles := Value;
+	FSettings.SkipTimestampDownload := Value;
 end;
 
 end.

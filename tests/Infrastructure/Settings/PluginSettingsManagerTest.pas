@@ -331,10 +331,10 @@ begin
 	Assert.IsFalse(TempSettingsManager.Settings.ConnectionSettings.ProxySettings.UseTCPasswordManager);
 	Assert.AreEqual(DEFAULT_USERAGENT, TempSettingsManager.Settings.ConnectionSettings.UserAgent);
 	Assert.AreEqual(0, TempSettingsManager.Settings.ConnectionSettings.ProxySettings.Port);
-	Assert.IsFalse(TempSettingsManager.Settings.ShowDescriptionFiles, 'ShowDescriptionFiles should default to False');
-	Assert.IsFalse(TempSettingsManager.Settings.ShowTimestampFiles, 'ShowTimestampFiles should default to False');
-	Assert.IsFalse(TempSettingsManager.Settings.CopyDescriptionFiles, 'CopyDescriptionFiles should default to False');
-	Assert.IsFalse(TempSettingsManager.Settings.CopyTimestampFiles, 'CopyTimestampFiles should default to False');
+	Assert.IsFalse(TempSettingsManager.Settings.HideDescriptionFile, 'HideDescriptionFile should default to False');
+	Assert.IsFalse(TempSettingsManager.Settings.HideTimestampFile, 'HideTimestampFile should default to False');
+	Assert.IsFalse(TempSettingsManager.Settings.SkipDescriptionDownload, 'SkipDescriptionDownload should default to False');
+	Assert.IsFalse(TempSettingsManager.Settings.SkipTimestampDownload, 'SkipTimestampDownload should default to False');
 	TempSettingsManager.Free;
 end;
 

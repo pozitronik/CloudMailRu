@@ -185,8 +185,8 @@ type
     DescriptionCopyFromCloudCB: TCheckBox;
     DescriptionFileNameEdit: TEdit;
     DescriptionTrackCloudFSCB: TCheckBox;
-    ShowDescriptionFilesCB: TCheckBox;
-    CopyDescriptionFilesCB: TCheckBox;
+    HideDescriptionFileCB: TCheckBox;
+    SkipDescriptionDownloadCB: TCheckBox;
     FileTimestampsCB: TGroupBox;
     TimestampModeLabel: TLabel;
     TimestampModeCB: TComboBox;
@@ -194,8 +194,8 @@ type
     TimestampFileNameEdit: TEdit;
     TimestampConflictModeLabel: TLabel;
     TimestampConflictModeCB: TComboBox;
-    ShowTimestampFilesCB: TCheckBox;
-    CopyTimestampFilesCB: TCheckBox;
+    HideTimestampFileCB: TCheckBox;
+    SkipTimestampDownloadCB: TCheckBox;
     FileHistoryCB: TCheckBox;
     CloudMaxFileSizeValue: TEdit;
     CloudMaxFileSizeLabelBytes: TLabel;
@@ -242,7 +242,6 @@ type
 		procedure TestShareButtonClick(Sender: TObject);
 		procedure ServersButtonClick(Sender: TObject);
 		procedure ApplyTranslationBtnClick(Sender: TObject);
-    procedure OptionPagesChange(Sender: TObject);
     procedure TimestampModeCBChange(Sender: TObject);
 	private
 		FPresenter: TAccountsPresenter;
@@ -328,10 +327,10 @@ type
 		function GetDescriptionCopyFromCloud: Boolean;
 		procedure SetDescriptionTrackCloudFS(Value: Boolean);
 		function GetDescriptionTrackCloudFS: Boolean;
-		procedure SetShowDescriptionFiles(Value: Boolean);
-		function GetShowDescriptionFiles: Boolean;
-		procedure SetCopyDescriptionFiles(Value: Boolean);
-		function GetCopyDescriptionFiles: Boolean;
+		procedure SetHideDescriptionFile(Value: Boolean);
+		function GetHideDescriptionFile: Boolean;
+		procedure SetSkipDescriptionDownload(Value: Boolean);
+		function GetSkipDescriptionDownload: Boolean;
 		procedure SetDescriptionFileName(Value: WideString);
 		function GetDescriptionFileName: WideString;
 
@@ -342,10 +341,10 @@ type
 		function GetTimestampFileName: WideString;
 		procedure SetTimestampConflictMode(Value: Integer);
 		function GetTimestampConflictMode: Integer;
-		procedure SetShowTimestampFiles(Value: Boolean);
-		function GetShowTimestampFiles: Boolean;
-		procedure SetCopyTimestampFiles(Value: Boolean);
-		function GetCopyTimestampFiles: Boolean;
+		procedure SetHideTimestampFile(Value: Boolean);
+		function GetHideTimestampFile: Boolean;
+		procedure SetSkipTimestampDownload(Value: Boolean);
+		function GetSkipTimestampDownload: Boolean;
 
 		{IAccountsView - File history settings}
 		procedure SetFileHistoryEnabled(Value: Boolean);
@@ -867,24 +866,24 @@ begin
 	Result := DescriptionTrackCloudFSCB.Checked;
 end;
 
-procedure TAccountsForm.SetShowDescriptionFiles(Value: Boolean);
+procedure TAccountsForm.SetHideDescriptionFile(Value: Boolean);
 begin
-	ShowDescriptionFilesCB.Checked := Value;
+	HideDescriptionFileCB.Checked := Value;
 end;
 
-function TAccountsForm.GetShowDescriptionFiles: Boolean;
+function TAccountsForm.GetHideDescriptionFile: Boolean;
 begin
-	Result := ShowDescriptionFilesCB.Checked;
+	Result := HideDescriptionFileCB.Checked;
 end;
 
-procedure TAccountsForm.SetCopyDescriptionFiles(Value: Boolean);
+procedure TAccountsForm.SetSkipDescriptionDownload(Value: Boolean);
 begin
-	CopyDescriptionFilesCB.Checked := Value;
+	SkipDescriptionDownloadCB.Checked := Value;
 end;
 
-function TAccountsForm.GetCopyDescriptionFiles: Boolean;
+function TAccountsForm.GetSkipDescriptionDownload: Boolean;
 begin
-	Result := CopyDescriptionFilesCB.Checked;
+	Result := SkipDescriptionDownloadCB.Checked;
 end;
 
 procedure TAccountsForm.SetDescriptionFileName(Value: WideString);
@@ -930,24 +929,24 @@ begin
 	Result := TimestampConflictModeCB.ItemIndex;
 end;
 
-procedure TAccountsForm.SetShowTimestampFiles(Value: Boolean);
+procedure TAccountsForm.SetHideTimestampFile(Value: Boolean);
 begin
-	ShowTimestampFilesCB.Checked := Value;
+	HideTimestampFileCB.Checked := Value;
 end;
 
-function TAccountsForm.GetShowTimestampFiles: Boolean;
+function TAccountsForm.GetHideTimestampFile: Boolean;
 begin
-	Result := ShowTimestampFilesCB.Checked;
+	Result := HideTimestampFileCB.Checked;
 end;
 
-procedure TAccountsForm.SetCopyTimestampFiles(Value: Boolean);
+procedure TAccountsForm.SetSkipTimestampDownload(Value: Boolean);
 begin
-	CopyTimestampFilesCB.Checked := Value;
+	SkipTimestampDownloadCB.Checked := Value;
 end;
 
-function TAccountsForm.GetCopyTimestampFiles: Boolean;
+function TAccountsForm.GetSkipTimestampDownload: Boolean;
 begin
-	Result := CopyTimestampFilesCB.Checked;
+	Result := SkipTimestampDownloadCB.Checked;
 end;
 
 {IAccountsView - File history settings}
@@ -1785,11 +1784,6 @@ begin
 	FPresenter.OnAddStreamingExtensionClick;
 end;
 
-procedure TAccountsForm.OptionPagesChange(Sender: TObject);
-begin
-
-end;
-
 procedure TAccountsForm.TimestampModeCBChange(Sender: TObject);
 var
 	IsFullSync: Boolean;
@@ -2026,8 +2020,8 @@ begin
 	DescriptionCopyToCloudCB.Caption := DFM_CB_DESC_COPY_TO;
 	DescriptionCopyFromCloudCB.Caption := DFM_CB_DESC_COPY_FROM;
 	DescriptionTrackCloudFSCB.Caption := DFM_CB_DESC_TRACK;
-	ShowDescriptionFilesCB.Caption := DFM_CB_SHOW_DESC_FILES;
-	CopyDescriptionFilesCB.Caption := DFM_CB_COPY_DESC_FILES;
+	HideDescriptionFileCB.Caption := DFM_CB_HIDE_DESC_FILE;
+	SkipDescriptionDownloadCB.Caption := DFM_CB_SKIP_DESC_DOWNLOAD;
 
 	{Metadata tab - File timestamps groupbox}
 	FileTimestampsCB.Caption := DFM_GB_FILE_TIMESTAMPS;
@@ -2036,8 +2030,8 @@ begin
 	TimestampFileNameLabel.Caption := DFM_LBL_TS_FILENAME;
 	TimestampConflictModeLabel.Caption := DFM_LBL_TS_CONFLICT;
 	RepopulateCombo(TimestampConflictModeCB, [DFM_OPT_TS_USE_STORED, DFM_OPT_TS_USE_SERVER]);
-	ShowTimestampFilesCB.Caption := DFM_CB_SHOW_TS_FILES;
-	CopyTimestampFilesCB.Caption := DFM_CB_COPY_TS_FILES;
+	HideTimestampFileCB.Caption := DFM_CB_HIDE_TS_FILE;
+	SkipTimestampDownloadCB.Caption := DFM_CB_SKIP_TS_DOWNLOAD;
 
 	{Streaming tab}
 	ExtLabel.Caption := DFM_LBL_FILE_EXT;
