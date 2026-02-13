@@ -45,6 +45,10 @@ type
 		FServerUrl: WideString;
 		FSecondaryServerUrl: WideString;
 
+		{Mock server settings}
+		FTuchaPath: WideString;
+		FTuchaConfigPath: WideString;
+
 		class var FInstance: TIntegrationTestConfig;
 		class var FConfigLoaded: Boolean;
 		class var FConfigValid: Boolean;
@@ -95,6 +99,9 @@ type
 		property ServerUrl: WideString read FServerUrl;
 		property SecondaryServerUrl: WideString read FSecondaryServerUrl;
 
+		property TuchaPath: WideString read FTuchaPath;
+		property TuchaConfigPath: WideString read FTuchaConfigPath;
+
 		{Check if secondary account is configured}
 		function HasSecondaryAccount: Boolean;
 
@@ -109,6 +116,9 @@ type
 
 		{Check if a custom server URL is configured specifically for the secondary account}
 		function HasSecondaryServer: Boolean;
+
+		{Check if mock server (tucha) path is configured for automatic server management}
+		function HasMockServer: Boolean;
 
 		{Get the effective server URL for the secondary account.
 			Falls back to primary server URL when secondary is not explicitly configured.}
@@ -202,6 +212,10 @@ begin
 		FInstance.FServerUrl := IniFile.ReadString('Server', 'ServerUrl', '');
 		FInstance.FSecondaryServerUrl := IniFile.ReadString('SecondaryServer', 'ServerUrl', '');
 
+		{Mock server}
+		FInstance.FTuchaPath := IniFile.ReadString('MockServer', 'TuchaPath', '');
+		FInstance.FTuchaConfigPath := IniFile.ReadString('MockServer', 'TuchaConfigPath', '');
+
 		FConfigValid := FInstance.Validate;
 
 		if not FInstance.FEnabled then
@@ -282,6 +296,11 @@ end;
 function TIntegrationTestConfig.HasSecondaryServer: Boolean;
 begin
 	Result := FSecondaryServerUrl <> '';
+end;
+
+function TIntegrationTestConfig.HasMockServer: Boolean;
+begin
+	Result := FTuchaPath <> '';
 end;
 
 function TIntegrationTestConfig.GetEffectiveSecondaryServerUrl: WideString;

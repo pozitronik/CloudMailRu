@@ -440,6 +440,7 @@
         <DCCReference Include="Presentation\UI\Forms\AskEncryptionPasswordFormTest.pas"/>
         <DCCReference Include="Integration\IntegrationTestConfig.pas"/>
         <DCCReference Include="Integration\TestDataGenerator.pas"/>
+        <DCCReference Include="Integration\MockServerManager.pas"/>
         <DCCReference Include="Integration\IntegrationTestBase.pas"/>
         <DCCReference Include="Integration\AuthenticationIntegrationTest.pas"/>
         <DCCReference Include="Integration\QuotaIntegrationTest.pas"/>

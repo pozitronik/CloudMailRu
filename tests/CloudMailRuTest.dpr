@@ -342,6 +342,7 @@ uses
 	AskEncryptionPasswordFormTest in 'Presentation\UI\Forms\AskEncryptionPasswordFormTest.pas',
 	IntegrationTestConfig in 'Integration\IntegrationTestConfig.pas',
 	TestDataGenerator in 'Integration\TestDataGenerator.pas',
+	MockServerManager in 'Integration\MockServerManager.pas',
 	IntegrationTestBase in 'Integration\IntegrationTestBase.pas',
 	AuthenticationIntegrationTest in 'Integration\AuthenticationIntegrationTest.pas',
 	QuotaIntegrationTest in 'Integration\QuotaIntegrationTest.pas',

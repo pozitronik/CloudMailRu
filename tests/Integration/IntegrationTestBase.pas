@@ -38,7 +38,8 @@ uses
 	DCPsha1,
 	SettingsConstants,
 	OpenSSLProvider,
-	AccountCredentialsProvider;
+	AccountCredentialsProvider,
+	MockServerManager;
 
 type
 	{Base class for integration tests with cloud setup/teardown}
@@ -50,6 +51,12 @@ type
 		FPublicCloud: TCloudMailRu;
 		FTestRunFolder: WideString;
 		FCreatedPaths: TStringList;
+		FMockServer: TMockServerManager;
+
+		{Auto-created public share state}
+		FAutoPublicUrl: WideString;
+		FPublicShareFolder: WideString;
+		FAutoPublicShareCreated: Boolean;
 
 		{Create a cloud instance for the primary account.
 			@param Encrypted If True, enables file encryption
@@ -100,6 +107,18 @@ type
 		function CreateCloudSettings(const Email, Password: WideString; UseAppPassword: Boolean;
 			Encrypted: Boolean = False; const ServerUrl: WideString = ''): TCloudSettings;
 
+		{Get the effective public URL: manual config or auto-created share.
+			@return Public URL if available, empty string otherwise}
+		function GetEffectivePublicUrl: WideString;
+
+		{Upload a small test file into the auto-created public share folder}
+		procedure UploadPublicTestFile;
+
+		{Recursively delete a cloud folder and all its contents.
+			@param Cloud Cloud instance to use
+			@param Path Cloud folder path to delete recursively}
+		procedure RecursiveDeleteCloudFolder(Cloud: TCloudMailRu; const Path: WideString);
+
 		{Check if test should be skipped due to missing configuration.
 			Use at the start of tests that require specific config.}
 		procedure RequireSecondaryAccount;
@@ -126,6 +145,8 @@ type
 implementation
 
 uses
+	System.IOUtils,
+	CloudDirItem,
 	WFXTypes,
 	IdSSLOpenSSLHeaders;
 
@@ -134,6 +155,7 @@ uses
 procedure TIntegrationTestBase.SetupFixture;
 var
 	ExePath, SSLPath: string;
+	PublicLink: WideString;
 begin
 	{Set up SSL DLL path - tests run from Win64/Debug, DLLs are in Win64/Debug/x64}
 	ExePath := ExtractFilePath(ParamStr(0));
@@ -146,6 +168,22 @@ begin
 	FConfig := TIntegrationTestConfig.Instance;
 	Assert.IsNotNull(FConfig, 'Integration test config not loaded');
 
+	FAutoPublicShareCreated := False;
+
+	{Start mock server if configured -- must happen before any cloud operations}
+	if FConfig.HasMockServer then
+	begin
+		FMockServer := TMockServerManager.Create(
+			FConfig.TuchaPath, FConfig.TuchaConfigPath, FConfig.ServerUrl);
+		FMockServer.Start;
+
+		{Create required test accounts}
+		FMockServer.CreateUser(FConfig.PrimaryEmail, FConfig.PrimaryPassword);
+		FMockServer.EnableHistory(FConfig.PrimaryEmail);
+
+		if FConfig.HasSecondaryAccount then
+			FMockServer.CreateUser(FConfig.SecondaryEmail, FConfig.SecondaryPassword);
+	end;
 
 	{Create unique test run folder}
 	FTestRunFolder := FConfig.TestFolder + '/' + TTestDataGenerator.GenerateUniqueFolderName('Run');
@@ -168,21 +206,57 @@ begin
 		Assert.Fail('Failed to create test run folder: ' + FTestRunFolder);
 		Exit;
 	end;
+
+	{Auto-create public share if not manually configured}
+	if not FConfig.HasPublicUrl then
+	begin
+		FPublicShareFolder := FTestRunFolder + '/PublicShare';
+		if FPrimaryCloud.FileOperations.CreateDirectory(FPublicShareFolder) then
+		begin
+			UploadPublicTestFile;
+
+			PublicLink := '';
+			if FPrimaryCloud.PublishFile(FPublicShareFolder, PublicLink, CLOUD_PUBLISH) then
+			begin
+				{Build full public URL from server endpoints and link ID}
+				FAutoPublicUrl := FConfig.ServerUrl + '/public/' + PublicLink;
+				FAutoPublicShareCreated := True;
+				WriteLn('[IntegrationTest] Auto-created public share: ' + FAutoPublicUrl);
+			end
+			else
+				WriteLn('[IntegrationTest] WARNING: Failed to auto-publish folder');
+		end
+		else
+			WriteLn('[IntegrationTest] WARNING: Failed to create public share folder');
+	end;
 end;
 
 procedure TIntegrationTestBase.TearDownFixture;
+var
+	Link: WideString;
 begin
-	{Cleanup test run folder if configured}
-	if FConfig.CleanupAfterTests and Assigned(FPrimaryCloud) then
+	{Unpublish auto-created public share before deleting its folder}
+	if FAutoPublicShareCreated and Assigned(FPrimaryCloud) then
 	begin
-		{Delete the entire test run folder}
-		FPrimaryCloud.FileOperations.RemoveDirectory(FTestRunFolder);
+		Link := '';
+		FPrimaryCloud.PublishFile(FPublicShareFolder, Link, CLOUD_UNPUBLISH);
 	end;
+
+	{Delete test run folder recursively -- handles nested content that simple RemoveDirectory misses}
+	if FConfig.CleanupAfterTests and Assigned(FPrimaryCloud) then
+		RecursiveDeleteCloudFolder(FPrimaryCloud, FTestRunFolder);
 
 	FreeAndNil(FPrimaryCloud);
 	FreeAndNil(FSecondaryCloud);
 	FreeAndNil(FPublicCloud);
 	FreeAndNil(FCreatedPaths);
+
+	{Stop mock server last -- after all cloud operations are done}
+	if Assigned(FMockServer) then
+	begin
+		FMockServer.Stop;
+		FreeAndNil(FMockServer);
+	end;
 end;
 
 procedure TIntegrationTestBase.Setup;
@@ -343,13 +417,15 @@ end;
 function TIntegrationTestBase.CreatePublicCloud: TCloudMailRu;
 var
 	Settings: TCloudSettings;
+	EffectiveUrl: WideString;
 begin
-	Assert.IsTrue(FConfig.HasPublicUrl, 'Public URL not configured');
+	EffectiveUrl := GetEffectivePublicUrl;
+	Assert.IsTrue(EffectiveUrl <> '', 'Public URL not configured and auto-creation failed');
 
 	Settings := Default(TCloudSettings);
 	Settings.Endpoints := ResolveEndpoints(FConfig.ServerUrl);
 	Settings.AccountSettings.PublicAccount := True;
-	Settings.AccountSettings.PublicUrl := FConfig.PublicUrl;
+	Settings.AccountSettings.PublicUrl := EffectiveUrl;
 
 	var Logger: ILogger := TNullLogger.Create;
 	var Progress: IProgress := TNullProgress.Create;
@@ -413,9 +489,9 @@ end;
 
 procedure TIntegrationTestBase.RequirePublicUrl;
 begin
-	if not FConfig.HasPublicUrl then
+	if GetEffectivePublicUrl = '' then
 	begin
-		Assert.Pass('SKIPPED: Public URL not configured');
+		Assert.Pass('SKIPPED: Public URL not configured and auto-creation failed');
 		Abort;
 	end;
 end;
@@ -427,6 +503,56 @@ begin
 		Assert.Pass('SKIPPED: Encryption not configured');
 		Abort;
 	end;
+end;
+
+function TIntegrationTestBase.GetEffectivePublicUrl: WideString;
+begin
+	if FConfig.HasPublicUrl then
+		Result := FConfig.PublicUrl
+	else
+		Result := FAutoPublicUrl;
+end;
+
+procedure TIntegrationTestBase.UploadPublicTestFile;
+var
+	LocalFile: WideString;
+	RemotePath: WideString;
+	TestData: TMemoryStream;
+begin
+	RemotePath := FPublicShareFolder + '/public_test_file.bin';
+	LocalFile := TPath.Combine(TPath.GetTempPath, TTestDataGenerator.GenerateUniqueFilename('public_setup', '.bin'));
+
+	TestData := TTestDataGenerator.CreateSmallTestFile(1024);
+	try
+		TestData.SaveToFile(LocalFile);
+	finally
+		TestData.Free;
+	end;
+
+	try
+		FPrimaryCloud.Uploader.Upload(LocalFile, RemotePath);
+	finally
+		if TFile.Exists(LocalFile) then
+			TFile.Delete(LocalFile);
+	end;
+end;
+
+procedure TIntegrationTestBase.RecursiveDeleteCloudFolder(Cloud: TCloudMailRu; const Path: WideString);
+var
+	Items: TCloudDirItemList;
+	I: Integer;
+begin
+	if Cloud.ListingService.GetDirectory(Path, Items) then
+	begin
+		for I := 0 to Length(Items) - 1 do
+		begin
+			if Items[I].IsDir then
+				RecursiveDeleteCloudFolder(Cloud, Path + '/' + Items[I].Name)
+			else
+				Cloud.FileOperations.Delete(Path + '/' + Items[I].Name);
+		end;
+	end;
+	Cloud.FileOperations.RemoveDirectory(Path);
 end;
 
 end.

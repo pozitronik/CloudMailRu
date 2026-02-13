@@ -37,9 +37,9 @@ UseAppPassword=true
 
 [PublicAccount]
 ; Public URL for testing public/shared content access
-; Optional - public access tests will be skipped if not configured
-; Create a shared folder in your cloud and paste its public link here
-PublicUrl=https://cloud.mail.ru/public/xxxx/yyyy
+; Optional - when empty with a mock server, tests auto-create a published folder
+; When set, this URL is used directly (for testing against real cloud)
+PublicUrl=
 
 [Encryption]
 ; Password for encryption tests
@@ -70,3 +70,10 @@ ServerUrl=
 ; Leave empty to use the primary server URL
 ; When both are empty, defaults to cloud.mail.ru
 ServerUrl=
+
+[MockServer]
+; Path to tucha mock server executable
+; When set, tests automatically start/stop the server and create accounts
+; Leave empty to use a manually started server
+TuchaPath=
+TuchaConfigPath=
