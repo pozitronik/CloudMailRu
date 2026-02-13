@@ -1066,7 +1066,7 @@ object AccountsForm: TAccountsForm
           Width = 693
           Height = 17
           Anchors = [akLeft, akTop, akRight]
-          Caption = 'Read descript.ion comments from cloud filesystem'
+          Caption = 'Read comments from cloud filesystem'
           TabOrder = 0
           OnClick = GlobalSettingsFieldChanged
         end
@@ -1076,7 +1076,7 @@ object AccountsForm: TAccountsForm
           Width = 693
           Height = 17
           Anchors = [akLeft, akTop, akRight]
-          Caption = 'Enable descript.ion editor'
+          Caption = 'Enable comments editor'
           TabOrder = 1
           OnClick = GlobalSettingsFieldChanged
         end
@@ -1086,7 +1086,7 @@ object AccountsForm: TAccountsForm
           Width = 693
           Height = 17
           Anchors = [akLeft, akTop, akRight]
-          Caption = 'Copy descript.ion comments to cloud'
+          Caption = 'Copy comments to cloud'
           TabOrder = 2
           OnClick = GlobalSettingsFieldChanged
         end
@@ -1096,7 +1096,7 @@ object AccountsForm: TAccountsForm
           Width = 693
           Height = 17
           Anchors = [akLeft, akTop, akRight]
-          Caption = 'Copy descript.ion comments from cloud'
+          Caption = 'Copy comments from cloud'
           TabOrder = 3
           OnClick = GlobalSettingsFieldChanged
         end
@@ -1105,7 +1105,7 @@ object AccountsForm: TAccountsForm
           Top = 109
           Width = 693
           Height = 17
-          Hint = 'Updates descript.ion when files are renamed or deleted in cloud'
+          Hint = 'Updates comments when files are renamed or deleted in cloud'
           Anchors = [akLeft, akTop, akRight]
           Caption = 'Track cloud filesystem changes'
           ParentShowHint = False
@@ -1119,7 +1119,7 @@ object AccountsForm: TAccountsForm
           Width = 693
           Height = 17
           Anchors = [akLeft, akTop, akRight]
-          Caption = 'Hide description file in directory listing'
+          Caption = 'Hide comments file in directory listing'
           TabOrder = 5
           OnClick = GlobalSettingsFieldChanged
         end
@@ -1129,7 +1129,7 @@ object AccountsForm: TAccountsForm
           Width = 693
           Height = 17
           Anchors = [akLeft, akTop, akRight]
-          Caption = 'Skip description file when downloading'
+          Caption = 'Skip comments file when downloading'
           TabOrder = 6
           OnClick = GlobalSettingsFieldChanged
         end
