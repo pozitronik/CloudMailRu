@@ -11,6 +11,7 @@ uses
 	SysUtils,
 	DateUtils,
 	PluginSettingsManager,
+	SettingsConstants,
 	Logger,
 	Progress,
 	DescriptionSyncGuard,
@@ -142,7 +143,7 @@ begin
 		Context.RemotePath, Context.LocalName, Context.Item.mtime, Context.Cloud);
 	if StoredMTime > 0 then
 		PreserveFileTime(Context.LocalName, StoredMTime)
-	else if FSettings.GetSettings.PreserveFileTime then
+	else if FSettings.GetSettings.TimestampMode >= TimestampModeCloudTime then
 		PreserveFileTime(Context.LocalName, Context.Item.mtime);
 
 	{Delete remote file if this is a move operation}

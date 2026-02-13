@@ -54,8 +54,6 @@ type
 		{Global settings - General tab}
 		procedure SetLoadSSLFromPluginDir(Value: Boolean);
 		function GetLoadSSLFromPluginDir: Boolean;
-		procedure SetPreserveFileTime(Value: Boolean);
-		function GetPreserveFileTime: Boolean;
 		procedure SetCloudMaxFileSize(Value: Int64);
 		function GetCloudMaxFileSize: Int64;
 		procedure SetCloudMaxFileSizeEditEnabled(Value: Boolean);
@@ -136,12 +134,8 @@ type
 		function GetDescriptionFileName: WideString;
 
 		{Timestamp settings}
-		procedure SetTimestampCopyToCloud(Value: Boolean);
-		function GetTimestampCopyToCloud: Boolean;
-		procedure SetTimestampCopyFromCloud(Value: Boolean);
-		function GetTimestampCopyFromCloud: Boolean;
-		procedure SetTimestampTrackCloudFS(Value: Boolean);
-		function GetTimestampTrackCloudFS: Boolean;
+		procedure SetTimestampMode(Value: Integer);
+		function GetTimestampMode: Integer;
 		procedure SetTimestampFileName(Value: WideString);
 		function GetTimestampFileName: WideString;
 		procedure SetTimestampConflictMode(Value: Integer);
@@ -545,7 +539,6 @@ begin
 
 		{General settings}
 		FView.SetLoadSSLFromPluginDir(Settings.LoadSSLDLLOnlyFromPluginDir);
-		FView.SetPreserveFileTime(Settings.PreserveFileTime);
 		FView.SetCopyBetweenAccountsMode(Settings.CopyBetweenAccountsMode);
 
 		{Operation modes}
@@ -603,9 +596,7 @@ begin
 		FView.SetDescriptionFileName(Settings.DescriptionFileName);
 
 		{Timestamp settings}
-		FView.SetTimestampCopyToCloud(Settings.TimestampCopyToCloud);
-		FView.SetTimestampCopyFromCloud(Settings.TimestampCopyFromCloud);
-		FView.SetTimestampTrackCloudFS(Settings.TimestampTrackCloudFS);
+		FView.SetTimestampMode(Settings.TimestampMode);
 		FView.SetTimestampFileName(Settings.TimestampFileName);
 		FView.SetTimestampConflictMode(Settings.TimestampConflictMode);
 
@@ -1165,7 +1156,6 @@ begin
 
 	{General settings}
 	Settings.LoadSSLDLLOnlyFromPluginDir := FView.GetLoadSSLFromPluginDir;
-	Settings.PreserveFileTime := FView.GetPreserveFileTime;
 	Settings.CopyBetweenAccountsMode := FView.GetCopyBetweenAccountsMode;
 
 	{Operation modes}
@@ -1218,9 +1208,7 @@ begin
 	Settings.DescriptionFileName := FView.GetDescriptionFileName;
 
 	{Timestamp settings}
-	Settings.TimestampCopyToCloud := FView.GetTimestampCopyToCloud;
-	Settings.TimestampCopyFromCloud := FView.GetTimestampCopyFromCloud;
-	Settings.TimestampTrackCloudFS := FView.GetTimestampTrackCloudFS;
+	Settings.TimestampMode := FView.GetTimestampMode;
 	Settings.TimestampFileName := FView.GetTimestampFileName;
 	Settings.TimestampConflictMode := FView.GetTimestampConflictMode;
 

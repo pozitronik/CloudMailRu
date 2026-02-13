@@ -37,14 +37,11 @@ type
 		procedure SetDescriptionTrackCloudFS(Value: Boolean);
 		procedure SetDescriptionCopyFromCloud(Value: Boolean);
 		procedure SetDescriptionCopyToCloud(Value: Boolean);
-		procedure SetTimestampCopyToCloud(Value: Boolean);
-		procedure SetTimestampCopyFromCloud(Value: Boolean);
-		procedure SetTimestampTrackCloudFS(Value: Boolean);
+		procedure SetTimestampMode(Value: Integer);
 		procedure SetOperationErrorMode(Mode: Integer);
 		procedure SetRetryAttempts(Attempts: Integer);
 		procedure SetAttemptWait(WaitMs: Integer);
 		procedure SetCheckCRC(Value: Boolean);
-		procedure SetPreserveFileTime(Value: Boolean);
 		procedure SetDeleteMode(Mode: Integer);
 		procedure SetLogUserSpace(Value: Boolean);
 
@@ -129,19 +126,9 @@ begin
 	FSettings.DescriptionCopyToCloud := Value;
 end;
 
-procedure TMockSettingsManager.SetTimestampCopyToCloud(Value: Boolean);
+procedure TMockSettingsManager.SetTimestampMode(Value: Integer);
 begin
-	FSettings.TimestampCopyToCloud := Value;
-end;
-
-procedure TMockSettingsManager.SetTimestampCopyFromCloud(Value: Boolean);
-begin
-	FSettings.TimestampCopyFromCloud := Value;
-end;
-
-procedure TMockSettingsManager.SetTimestampTrackCloudFS(Value: Boolean);
-begin
-	FSettings.TimestampTrackCloudFS := Value;
+	FSettings.TimestampMode := Value;
 end;
 
 procedure TMockSettingsManager.SetOperationErrorMode(Mode: Integer);
@@ -162,11 +149,6 @@ end;
 procedure TMockSettingsManager.SetCheckCRC(Value: Boolean);
 begin
 	FSettings.CheckCRC := Value;
-end;
-
-procedure TMockSettingsManager.SetPreserveFileTime(Value: Boolean);
-begin
-	FSettings.PreserveFileTime := Value;
 end;
 
 procedure TMockSettingsManager.SetDeleteMode(Mode: Integer);

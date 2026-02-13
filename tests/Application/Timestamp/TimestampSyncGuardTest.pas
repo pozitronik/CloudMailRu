@@ -15,6 +15,7 @@ uses
 	PluginSettingsManager,
 	CloudDescriptionOperationsAdapter,
 	PluginSettings,
+	SettingsConstants,
 	RealPath,
 	StreamingSettings;
 
@@ -55,9 +56,7 @@ type
 		function GetAccountsIniFilePath: WideString;
 		procedure Refresh;
 
-		procedure SetTimestampCopyToCloud(Value: Boolean);
-		procedure SetTimestampCopyFromCloud(Value: Boolean);
-		procedure SetTimestampTrackCloudFS(Value: Boolean);
+		procedure SetTimestampMode(Value: Integer);
 	end;
 
 	[TestFixture]
@@ -144,9 +143,7 @@ end;
 constructor TMockTimestampSettingsManager.Create;
 begin
 	inherited Create;
-	FSettings.TimestampCopyToCloud := False;
-	FSettings.TimestampCopyFromCloud := False;
-	FSettings.TimestampTrackCloudFS := False;
+	FSettings.TimestampMode := TimestampModeDisabled;
 end;
 
 function TMockTimestampSettingsManager.GetSettings: TPluginSettings;
@@ -194,19 +191,9 @@ procedure TMockTimestampSettingsManager.Refresh;
 begin
 end;
 
-procedure TMockTimestampSettingsManager.SetTimestampCopyToCloud(Value: Boolean);
+procedure TMockTimestampSettingsManager.SetTimestampMode(Value: Integer);
 begin
-	FSettings.TimestampCopyToCloud := Value;
-end;
-
-procedure TMockTimestampSettingsManager.SetTimestampCopyFromCloud(Value: Boolean);
-begin
-	FSettings.TimestampCopyFromCloud := Value;
-end;
-
-procedure TMockTimestampSettingsManager.SetTimestampTrackCloudFS(Value: Boolean);
-begin
-	FSettings.TimestampTrackCloudFS := Value;
+	FSettings.TimestampMode := Value;
 end;
 
 {TTimestampSyncGuardTest}
@@ -231,7 +218,7 @@ procedure TTimestampSyncGuardTest.TestOnFileUploaded_WhenEnabled_CallsSyncManage
 var
 	Path: TRealPath;
 begin
-	FSettingsManager.SetTimestampCopyToCloud(True);
+	FSettingsManager.SetTimestampMode(TimestampModeFullSync);
 	Path.FromPath('\account\file.txt');
 
 	FGuard.OnFileUploaded(Path, 'C:\local\file.txt', nil);
@@ -243,7 +230,7 @@ procedure TTimestampSyncGuardTest.TestOnFileUploaded_WhenDisabled_DoesNotCall;
 var
 	Path: TRealPath;
 begin
-	FSettingsManager.SetTimestampCopyToCloud(False);
+	FSettingsManager.SetTimestampMode(TimestampModeDisabled);
 	Path.FromPath('\account\file.txt');
 
 	FGuard.OnFileUploaded(Path, 'C:\local\file.txt', nil);
@@ -257,7 +244,7 @@ procedure TTimestampSyncGuardTest.TestOnFileDownloaded_WhenEnabled_CallsSyncMana
 var
 	Path: TRealPath;
 begin
-	FSettingsManager.SetTimestampCopyFromCloud(True);
+	FSettingsManager.SetTimestampMode(TimestampModeFullSync);
 	Path.FromPath('\account\file.txt');
 
 	FGuard.OnFileDownloaded(Path, 'C:\local\file.txt', 0, nil);
@@ -270,7 +257,7 @@ var
 	Path: TRealPath;
 	StoredMTime: Int64;
 begin
-	FSettingsManager.SetTimestampCopyFromCloud(True);
+	FSettingsManager.SetTimestampMode(TimestampModeFullSync);
 	FSyncManager.DownloadReturnValue := 1704067200;
 	Path.FromPath('\account\file.txt');
 
@@ -284,7 +271,7 @@ var
 	Path: TRealPath;
 	StoredMTime: Int64;
 begin
-	FSettingsManager.SetTimestampCopyFromCloud(False);
+	FSettingsManager.SetTimestampMode(TimestampModeDisabled);
 	FSyncManager.DownloadReturnValue := 1704067200; {Would return this if enabled}
 	Path.FromPath('\account\file.txt');
 
@@ -300,7 +287,7 @@ procedure TTimestampSyncGuardTest.TestOnFileDeleted_WhenEnabled_CallsSyncManager
 var
 	Path: TRealPath;
 begin
-	FSettingsManager.SetTimestampTrackCloudFS(True);
+	FSettingsManager.SetTimestampMode(TimestampModeFullSync);
 	Path.FromPath('\account\file.txt');
 
 	FGuard.OnFileDeleted(Path, nil);
@@ -312,7 +299,7 @@ procedure TTimestampSyncGuardTest.TestOnFileDeleted_WhenDisabled_DoesNotCall;
 var
 	Path: TRealPath;
 begin
-	FSettingsManager.SetTimestampTrackCloudFS(False);
+	FSettingsManager.SetTimestampMode(TimestampModeDisabled);
 	Path.FromPath('\account\file.txt');
 
 	FGuard.OnFileDeleted(Path, nil);
@@ -326,7 +313,7 @@ procedure TTimestampSyncGuardTest.TestOnFileRenamed_WhenEnabled_CallsSyncManager
 var
 	OldPath, NewPath: TRealPath;
 begin
-	FSettingsManager.SetTimestampTrackCloudFS(True);
+	FSettingsManager.SetTimestampMode(TimestampModeFullSync);
 	OldPath.FromPath('\account\old.txt');
 	NewPath.FromPath('\account\new.txt');
 
@@ -339,7 +326,7 @@ procedure TTimestampSyncGuardTest.TestOnFileRenamed_WhenDisabled_DoesNotCall;
 var
 	OldPath, NewPath: TRealPath;
 begin
-	FSettingsManager.SetTimestampTrackCloudFS(False);
+	FSettingsManager.SetTimestampMode(TimestampModeDisabled);
 	OldPath.FromPath('\account\old.txt');
 	NewPath.FromPath('\account\new.txt');
 

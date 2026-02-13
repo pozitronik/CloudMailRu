@@ -258,7 +258,6 @@ begin
 	FPluginSettings.IniFilePath := '';
 	FPluginSettings.IniDir := INI_DIR_PLUGIN;
 	FPluginSettings.LoadSSLDLLOnlyFromPluginDir := False;
-	FPluginSettings.PreserveFileTime := True;
 	FPluginSettings.DescriptionEnabled := False;
 	FPluginSettings.DescriptionFileName := '';
 	FPluginSettings.DescriptionEditorEnabled := False;

@@ -18,6 +18,7 @@ uses
 	Progress,
 	MockSyncGuards,
 	PluginSettings,
+	SettingsConstants,
 	WFXTypes,
 	RealPath,
 	CloudDirItem,
@@ -89,17 +90,19 @@ type
 
 		{File time preservation tests}
 		[Test]
-		procedure TestHandleSuccess_PreserveTimeEnabled_NonZeroMtime_SetsFileTime;
+		procedure TestHandleSuccess_CloudTimeMode_NonZeroMtime_SetsFileTime;
 		[Test]
-		procedure TestHandleSuccess_PreserveTimeDisabled_NonZeroMtime_DoesNotSetFileTime;
+		procedure TestHandleSuccess_DisabledMode_NonZeroMtime_DoesNotSetFileTime;
 
 		{Timestamp sync tests}
 		[Test]
 		procedure TestHandleSuccess_TimestampReturnsStoredMTime_UsesStoredMTime;
 		[Test]
-		procedure TestHandleSuccess_TimestampReturnsZero_FallsBackToPreserveFileTime;
+		procedure TestHandleSuccess_TimestampReturnsZero_FallsBackToCloudTime;
 		[Test]
-		procedure TestHandleSuccess_TimestampReturnsZero_PreserveDisabled_NoFileTimeSet;
+		procedure TestHandleSuccess_TimestampReturnsZero_DisabledMode_NoFileTimeSet;
+		[Test]
+		procedure TestHandleSuccess_FullSyncMode_TimestampReturnsZero_FallsBackToCloudTime;
 
 		{Null handler tests}
 		[Test]
@@ -316,7 +319,7 @@ end;
 
 {File time preservation tests}
 
-procedure TDownloadSuccessHandlerTest.TestHandleSuccess_PreserveTimeEnabled_NonZeroMtime_SetsFileTime;
+procedure TDownloadSuccessHandlerTest.TestHandleSuccess_CloudTimeMode_NonZeroMtime_SetsFileTime;
 var
 	Context: TDownloadContext;
 	TempFile: WideString;
@@ -335,7 +338,7 @@ begin
 	try
 		{Use real file system for file time modification test}
 		FFileSystem := TWindowsFileSystem.Create;
-		FSettings.SetPreserveFileTime(True);
+		FSettings.SetTimestampMode(TimestampModeCloudTime);
 		CreateHandler;
 		Context := CreateContext('', '', False);
 		Context.LocalName := TempFile;
@@ -350,17 +353,17 @@ begin
 	end;
 end;
 
-procedure TDownloadSuccessHandlerTest.TestHandleSuccess_PreserveTimeDisabled_NonZeroMtime_DoesNotSetFileTime;
+procedure TDownloadSuccessHandlerTest.TestHandleSuccess_DisabledMode_NonZeroMtime_DoesNotSetFileTime;
 var
 	Context: TDownloadContext;
 begin
-	{When PreserveFileTime is disabled, mtime should be ignored - no file access}
-	FSettings.SetPreserveFileTime(False);
+	{When TimestampMode is disabled, mtime should be ignored - no file access}
+	FSettings.SetTimestampMode(TimestampModeDisabled);
 	CreateHandler;
 	Context := CreateContext('', '', False);
 	Context.Item.mtime := 1700000000; {Non-zero but won't be used}
 
-	{Should not throw even with non-existent file since PreserveFileTime is disabled}
+	{Should not throw even with non-existent file since TimestampMode is disabled}
 	Assert.AreEqual(FS_FILE_OK, FHandler.HandleSuccess(Context));
 end;
 
@@ -386,7 +389,7 @@ begin
 		FFileSystem := TWindowsFileSystem.Create;
 		FTimestampSyncGuard := TMockTimestampSyncGuard.Create;
 		FTimestampSyncGuard.DownloadReturnValue := 1704067200; {Stored local mtime}
-		FSettings.SetPreserveFileTime(False); {PreserveFileTime disabled - but stored mtime takes priority}
+		FSettings.SetTimestampMode(TimestampModeDisabled); {TimestampMode disabled - but stored mtime takes priority}
 		CreateHandler;
 		Context := CreateContext('', '', False);
 		Context.LocalName := TempFile;
@@ -401,13 +404,13 @@ begin
 	end;
 end;
 
-procedure TDownloadSuccessHandlerTest.TestHandleSuccess_TimestampReturnsZero_FallsBackToPreserveFileTime;
+procedure TDownloadSuccessHandlerTest.TestHandleSuccess_TimestampReturnsZero_FallsBackToCloudTime;
 var
 	Context: TDownloadContext;
 	TempFile: WideString;
 	FileHandle: THandle;
 begin
-	{When timestamp sync returns 0, fall back to PreserveFileTime behavior}
+	{When timestamp sync returns 0, fall back to cloud time behavior}
 	TempFile := GetEnvironmentVariable('TEMP') + '\DownloadTimestampFallback_' + IntToStr(GetTickCount) + '.tmp';
 	FileHandle := CreateFileW(PWideChar(TempFile), GENERIC_WRITE, 0, nil, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
 	if FileHandle = INVALID_HANDLE_VALUE then
@@ -421,7 +424,7 @@ begin
 		FFileSystem := TWindowsFileSystem.Create;
 		FTimestampSyncGuard := TMockTimestampSyncGuard.Create;
 		FTimestampSyncGuard.DownloadReturnValue := 0; {No stored mtime}
-		FSettings.SetPreserveFileTime(True); {Fall back to server mtime}
+		FSettings.SetTimestampMode(TimestampModeCloudTime); {CloudTime mode applies server mtime as fallback}
 		CreateHandler;
 		Context := CreateContext('', '', False);
 		Context.LocalName := TempFile;
@@ -435,20 +438,54 @@ begin
 	end;
 end;
 
-procedure TDownloadSuccessHandlerTest.TestHandleSuccess_TimestampReturnsZero_PreserveDisabled_NoFileTimeSet;
+procedure TDownloadSuccessHandlerTest.TestHandleSuccess_TimestampReturnsZero_DisabledMode_NoFileTimeSet;
 var
 	Context: TDownloadContext;
 begin
-	{When both timestamp and PreserveFileTime are inactive, no file time should be set}
+	{When both timestamp sync returns 0 and TimestampMode is disabled, no file time should be set}
 	FTimestampSyncGuard := TMockTimestampSyncGuard.Create;
 	FTimestampSyncGuard.DownloadReturnValue := 0;
-	FSettings.SetPreserveFileTime(False);
+	FSettings.SetTimestampMode(TimestampModeDisabled);
 	CreateHandler;
 	Context := CreateContext('', '', False);
 	Context.Item.mtime := 1700000000;
 
 	{Should succeed without trying to access file (NullFileSystem)}
 	Assert.AreEqual(FS_FILE_OK, FHandler.HandleSuccess(Context));
+end;
+
+procedure TDownloadSuccessHandlerTest.TestHandleSuccess_FullSyncMode_TimestampReturnsZero_FallsBackToCloudTime;
+var
+	Context: TDownloadContext;
+	TempFile: WideString;
+	FileHandle: THandle;
+begin
+	{FullSync mode with no stored mtime should still apply cloud server time as fallback}
+	TempFile := GetEnvironmentVariable('TEMP') + '\DownloadFullSyncFallback_' + IntToStr(GetTickCount) + '.tmp';
+	FileHandle := CreateFileW(PWideChar(TempFile), GENERIC_WRITE, 0, nil, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
+	if FileHandle = INVALID_HANDLE_VALUE then
+	begin
+		Assert.Pass('Cannot create temp file, skipping test');
+		Exit;
+	end;
+	CloseHandle(FileHandle);
+
+	try
+		FFileSystem := TWindowsFileSystem.Create;
+		FTimestampSyncGuard := TMockTimestampSyncGuard.Create;
+		FTimestampSyncGuard.DownloadReturnValue := 0; {No stored mtime}
+		FSettings.SetTimestampMode(TimestampModeFullSync); {FullSync >= CloudTime, so fallback applies}
+		CreateHandler;
+		Context := CreateContext('', '', False);
+		Context.LocalName := TempFile;
+		Context.Item.mtime := 1700000000; {Server mtime - should be used as fallback}
+
+		FHandler.HandleSuccess(Context);
+
+		Assert.IsTrue(FileExists(TempFile), 'File should exist after time modification');
+	finally
+		DeleteFile(TempFile);
+	end;
 end;
 
 {Null handler tests}

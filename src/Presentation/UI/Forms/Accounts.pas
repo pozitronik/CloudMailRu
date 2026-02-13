@@ -39,7 +39,6 @@ type
 		OptionPages: TPageControl;
 		AccountsTab: TTabSheet;
 		GlobalTab: TTabSheet;
-		PreserveFileTimeCB: TCheckBox;
 		GlobalSettingsApplyBtn: TButton;
 		NetworkTab: TTabSheet;
 		ProxyGB: TGroupBox;
@@ -187,9 +186,8 @@ type
     DescriptionFileNameEdit: TEdit;
     DescriptionTrackCloudFSCB: TCheckBox;
     FileTimestampsCB: TGroupBox;
-    TimestampCopyToCloudCB: TCheckBox;
-    TimestampCopyFromCloudCB: TCheckBox;
-    TimestampTrackCloudFSCB: TCheckBox;
+    TimestampModeLabel: TLabel;
+    TimestampModeCB: TComboBox;
     TimestampFileNameLabel: TLabel;
     TimestampFileNameEdit: TEdit;
     TimestampConflictModeLabel: TLabel;
@@ -241,6 +239,7 @@ type
 		procedure ServersButtonClick(Sender: TObject);
 		procedure ApplyTranslationBtnClick(Sender: TObject);
     procedure OptionPagesChange(Sender: TObject);
+    procedure TimestampModeCBChange(Sender: TObject);
 	private
 		FPresenter: TAccountsPresenter;
 		procedure AutoFitListViewColumns(LV: TListView);
@@ -249,8 +248,6 @@ type
 		{IAccountsView - Global settings}
 		procedure SetLoadSSLFromPluginDir(Value: Boolean);
 		function GetLoadSSLFromPluginDir: Boolean;
-		procedure SetPreserveFileTime(Value: Boolean);
-		function GetPreserveFileTime: Boolean;
 		procedure SetCloudMaxFileSize(Value: Int64);
 		function GetCloudMaxFileSize: Int64;
 		procedure SetCloudMaxFileSizeEditEnabled(Value: Boolean);
@@ -331,12 +328,8 @@ type
 		function GetDescriptionFileName: WideString;
 
 		{IAccountsView - Timestamp settings}
-		procedure SetTimestampCopyToCloud(Value: Boolean);
-		function GetTimestampCopyToCloud: Boolean;
-		procedure SetTimestampCopyFromCloud(Value: Boolean);
-		function GetTimestampCopyFromCloud: Boolean;
-		procedure SetTimestampTrackCloudFS(Value: Boolean);
-		function GetTimestampTrackCloudFS: Boolean;
+		procedure SetTimestampMode(Value: Integer);
+		function GetTimestampMode: Integer;
 		procedure SetTimestampFileName(Value: WideString);
 		function GetTimestampFileName: WideString;
 		procedure SetTimestampConflictMode(Value: Integer);
@@ -496,16 +489,6 @@ end;
 function TAccountsForm.GetLoadSSLFromPluginDir: Boolean;
 begin
 	Result := UseDLLFromPluginDir.Checked;
-end;
-
-procedure TAccountsForm.SetPreserveFileTime(Value: Boolean);
-begin
-	PreserveFileTimeCB.Checked := Value;
-end;
-
-function TAccountsForm.GetPreserveFileTime: Boolean;
-begin
-	Result := PreserveFileTimeCB.Checked;
 end;
 
 procedure TAccountsForm.SetCloudMaxFileSize(Value: Int64);
@@ -884,34 +867,15 @@ end;
 
 {IAccountsView - Timestamp settings}
 
-procedure TAccountsForm.SetTimestampCopyToCloud(Value: Boolean);
+procedure TAccountsForm.SetTimestampMode(Value: Integer);
 begin
-	TimestampCopyToCloudCB.Checked := Value;
+	TimestampModeCB.ItemIndex := Value;
+	TimestampModeCBChange(nil);
 end;
 
-function TAccountsForm.GetTimestampCopyToCloud: Boolean;
+function TAccountsForm.GetTimestampMode: Integer;
 begin
-	Result := TimestampCopyToCloudCB.Checked;
-end;
-
-procedure TAccountsForm.SetTimestampCopyFromCloud(Value: Boolean);
-begin
-	TimestampCopyFromCloudCB.Checked := Value;
-end;
-
-function TAccountsForm.GetTimestampCopyFromCloud: Boolean;
-begin
-	Result := TimestampCopyFromCloudCB.Checked;
-end;
-
-procedure TAccountsForm.SetTimestampTrackCloudFS(Value: Boolean);
-begin
-	TimestampTrackCloudFSCB.Checked := Value;
-end;
-
-function TAccountsForm.GetTimestampTrackCloudFS: Boolean;
-begin
-	Result := TimestampTrackCloudFSCB.Checked;
+	Result := TimestampModeCB.ItemIndex;
 end;
 
 procedure TAccountsForm.SetTimestampFileName(Value: WideString);
@@ -1774,6 +1738,19 @@ begin
 
 end;
 
+procedure TAccountsForm.TimestampModeCBChange(Sender: TObject);
+var
+	IsFullSync: Boolean;
+begin
+	IsFullSync := TimestampModeCB.ItemIndex = TimestampModeFullSync;
+	TimestampConflictModeCB.Enabled := IsFullSync;
+	TimestampConflictModeLabel.Enabled := IsFullSync;
+	TimestampFileNameEdit.Enabled := IsFullSync;
+	TimestampFileNameLabel.Enabled := IsFullSync;
+	if Sender <> nil then
+		FPresenter.OnGlobalSettingsFieldChanged;
+end;
+
 {Event handlers - Server combobox on accounts tab}
 
 procedure TAccountsForm.ServerComboChange(Sender: TObject);
@@ -1963,7 +1940,6 @@ begin
 	msLabel.Caption := DFM_LBL_MS;
 	ShowAccountsGB.Caption := DFM_GB_SHOW_ACCOUNTS;
 	CopyBetweenAccountsModeLabel.Caption := DFM_LBL_COPY_BETWEEN;
-	PreserveFileTimeCB.Caption := DFM_CB_PRESERVE_TIME;
 	UseDLLFromPluginDir.Caption := DFM_CB_LOAD_SSL;
 	SpaceInfoLoggingCB.Caption := DFM_CB_LOG_SPACE;
 	DisableMultiThreadingCB.Caption := DFM_CB_DISABLE_MT;
@@ -2001,9 +1977,8 @@ begin
 
 	{Metadata tab - File timestamps groupbox}
 	FileTimestampsCB.Caption := DFM_GB_FILE_TIMESTAMPS;
-	TimestampCopyToCloudCB.Caption := DFM_CB_TS_COPY_TO;
-	TimestampCopyFromCloudCB.Caption := DFM_CB_TS_COPY_FROM;
-	TimestampTrackCloudFSCB.Caption := DFM_CB_TS_TRACK;
+	TimestampModeLabel.Caption := DFM_LBL_TS_MODE;
+	RepopulateCombo(TimestampModeCB, [DFM_OPT_TS_DISABLED, DFM_OPT_TS_CLOUD_TIME, DFM_OPT_TS_FULL_SYNC]);
 	TimestampFileNameLabel.Caption := DFM_LBL_TS_FILENAME;
 	TimestampConflictModeLabel.Caption := DFM_LBL_TS_CONFLICT;
 	RepopulateCombo(TimestampConflictModeCB, [DFM_OPT_TS_USE_STORED, DFM_OPT_TS_USE_SERVER]);

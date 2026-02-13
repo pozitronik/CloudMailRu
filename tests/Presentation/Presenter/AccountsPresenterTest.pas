@@ -28,7 +28,6 @@ type
 	private
 		{Global settings}
 		FLoadSSLFromPluginDir: Boolean;
-		FPreserveFileTime: Boolean;
 		FCloudMaxFileSize: Int64;
 		FCloudMaxFileSizeEditEnabled: Boolean;
 		FChunkOverwriteMode: Integer;
@@ -74,9 +73,7 @@ type
 		FDescriptionFileName: WideString;
 
 		{Timestamp settings}
-		FTimestampCopyToCloud: Boolean;
-		FTimestampCopyFromCloud: Boolean;
-		FTimestampTrackCloudFS: Boolean;
+		FTimestampMode: Integer;
 		FTimestampFileName: WideString;
 		FTimestampConflictMode: Integer;
 
@@ -173,8 +170,6 @@ type
 		{IAccountsView - Global settings}
 		procedure SetLoadSSLFromPluginDir(Value: Boolean);
 		function GetLoadSSLFromPluginDir: Boolean;
-		procedure SetPreserveFileTime(Value: Boolean);
-		function GetPreserveFileTime: Boolean;
 		procedure SetCloudMaxFileSize(Value: Int64);
 		function GetCloudMaxFileSize: Int64;
 		procedure SetCloudMaxFileSizeEditEnabled(Value: Boolean);
@@ -255,12 +250,8 @@ type
 		function GetDescriptionFileName: WideString;
 
 		{IAccountsView - Timestamp settings}
-		procedure SetTimestampCopyToCloud(Value: Boolean);
-		function GetTimestampCopyToCloud: Boolean;
-		procedure SetTimestampCopyFromCloud(Value: Boolean);
-		function GetTimestampCopyFromCloud: Boolean;
-		procedure SetTimestampTrackCloudFS(Value: Boolean);
-		function GetTimestampTrackCloudFS: Boolean;
+		procedure SetTimestampMode(Value: Integer);
+		function GetTimestampMode: Integer;
 		procedure SetTimestampFileName(Value: WideString);
 		function GetTimestampFileName: WideString;
 		procedure SetTimestampConflictMode(Value: Integer);
@@ -796,16 +787,6 @@ begin
 	Result := FLoadSSLFromPluginDir;
 end;
 
-procedure TMockAccountsView.SetPreserveFileTime(Value: Boolean);
-begin
-	FPreserveFileTime := Value;
-end;
-
-function TMockAccountsView.GetPreserveFileTime: Boolean;
-begin
-	Result := FPreserveFileTime;
-end;
-
 procedure TMockAccountsView.SetCloudMaxFileSize(Value: Int64);
 begin
 	FCloudMaxFileSize := Value;
@@ -1182,34 +1163,14 @@ end;
 
 {Timestamp settings}
 
-procedure TMockAccountsView.SetTimestampCopyToCloud(Value: Boolean);
+procedure TMockAccountsView.SetTimestampMode(Value: Integer);
 begin
-	FTimestampCopyToCloud := Value;
+	FTimestampMode := Value;
 end;
 
-function TMockAccountsView.GetTimestampCopyToCloud: Boolean;
+function TMockAccountsView.GetTimestampMode: Integer;
 begin
-	Result := FTimestampCopyToCloud;
-end;
-
-procedure TMockAccountsView.SetTimestampCopyFromCloud(Value: Boolean);
-begin
-	FTimestampCopyFromCloud := Value;
-end;
-
-function TMockAccountsView.GetTimestampCopyFromCloud: Boolean;
-begin
-	Result := FTimestampCopyFromCloud;
-end;
-
-procedure TMockAccountsView.SetTimestampTrackCloudFS(Value: Boolean);
-begin
-	FTimestampTrackCloudFS := Value;
-end;
-
-function TMockAccountsView.GetTimestampTrackCloudFS: Boolean;
-begin
-	Result := FTimestampTrackCloudFS;
+	Result := FTimestampMode;
 end;
 
 procedure TMockAccountsView.SetTimestampFileName(Value: WideString);
@@ -2055,16 +2016,13 @@ begin
 
 	{Set various settings via view}
 	FView.SetLoadSSLFromPluginDir(True);
-	FView.SetPreserveFileTime(True);
 	FView.SetRetryAttempts(5);
 	FView.SetAttemptWait(2000);
 	FView.SetIconsMode(2);
 	FView.SetSSLBackend(2);
 	FView.SetDescriptionEnabled(True);
 	FView.SetDescriptionFileName('descript.ion');
-	FView.SetTimestampCopyToCloud(True);
-	FView.SetTimestampCopyFromCloud(True);
-	FView.SetTimestampTrackCloudFS(True);
+	FView.SetTimestampMode(2);
 	FView.SetTimestampFileName('.my_timestamps');
 	FView.SetTimestampConflictMode(1);
 	FView.SetFileHistoryEnabled(True);
@@ -2074,16 +2032,13 @@ begin
 	{Verify settings were saved}
 	Settings := FSettingsManager.GetSettings;
 	Assert.IsTrue(Settings.LoadSSLDLLOnlyFromPluginDir, 'LoadSSLDLLOnlyFromPluginDir should be saved');
-	Assert.IsTrue(Settings.PreserveFileTime, 'PreserveFileTime should be saved');
 	Assert.AreEqual(5, Settings.RetryAttempts, 'RetryAttempts should be saved');
 	Assert.AreEqual(2000, Settings.AttemptWait, 'AttemptWait should be saved');
 	Assert.AreEqual(2, Settings.IconsMode, 'IconsMode should be saved');
 	Assert.AreEqual(2, Settings.SSLBackend, 'SSLBackend should be saved');
 	Assert.IsTrue(Settings.DescriptionEnabled, 'DescriptionEnabled should be saved');
 	Assert.AreEqual('descript.ion', Settings.DescriptionFileName, 'DescriptionFileName should be saved');
-	Assert.IsTrue(Settings.TimestampCopyToCloud, 'TimestampCopyToCloud should be saved');
-	Assert.IsTrue(Settings.TimestampCopyFromCloud, 'TimestampCopyFromCloud should be saved');
-	Assert.IsTrue(Settings.TimestampTrackCloudFS, 'TimestampTrackCloudFS should be saved');
+	Assert.AreEqual(2, Settings.TimestampMode, 'TimestampMode should be saved');
 	Assert.AreEqual('.my_timestamps', Settings.TimestampFileName, 'TimestampFileName should be saved');
 	Assert.AreEqual(1, Settings.TimestampConflictMode, 'TimestampConflictMode should be saved');
 	Assert.IsTrue(Settings.FileHistoryEnabled, 'FileHistoryEnabled should be saved');
@@ -3255,7 +3210,6 @@ begin
 	{Setup: Configure various settings}
 	Settings := FSettingsManager.GetSettings;
 	Settings.LoadSSLDLLOnlyFromPluginDir := True;
-	Settings.PreserveFileTime := True;
 	Settings.RetryAttempts := 3;
 	Settings.AttemptWait := 1500;
 	Settings.IconsMode := 2;
@@ -3269,9 +3223,7 @@ begin
 	Settings.DescriptionEnabled := True;
 	Settings.DescriptionCopyToCloud := True;
 	Settings.DescriptionCopyFromCloud := True;
-	Settings.TimestampCopyToCloud := True;
-	Settings.TimestampCopyFromCloud := True;
-	Settings.TimestampTrackCloudFS := True;
+	Settings.TimestampMode := 2;
 	Settings.TimestampFileName := '.my_timestamps';
 	Settings.TimestampConflictMode := 1;
 	Settings.FileHistoryEnabled := True;
@@ -3281,7 +3233,6 @@ begin
 
 	{Verify all settings are loaded to view}
 	Assert.IsTrue(FView.GetLoadSSLFromPluginDir, 'LoadSSLFromPluginDir should be loaded');
-	Assert.IsTrue(FView.GetPreserveFileTime, 'PreserveFileTime should be loaded');
 	Assert.AreEqual(3, FView.GetRetryAttempts, 'RetryAttempts should be loaded');
 	Assert.AreEqual(1500, FView.GetAttemptWait, 'AttemptWait should be loaded');
 	Assert.AreEqual(2, FView.GetIconsMode, 'IconsMode should be loaded');
@@ -3295,9 +3246,7 @@ begin
 	Assert.IsTrue(FView.GetDescriptionEnabled, 'DescriptionEnabled should be loaded');
 	Assert.IsTrue(FView.GetDescriptionCopyToCloud, 'DescriptionCopyToCloud should be loaded');
 	Assert.IsTrue(FView.GetDescriptionCopyFromCloud, 'DescriptionCopyFromCloud should be loaded');
-	Assert.IsTrue(FView.GetTimestampCopyToCloud, 'TimestampCopyToCloud should be loaded');
-	Assert.IsTrue(FView.GetTimestampCopyFromCloud, 'TimestampCopyFromCloud should be loaded');
-	Assert.IsTrue(FView.GetTimestampTrackCloudFS, 'TimestampTrackCloudFS should be loaded');
+	Assert.AreEqual(2, FView.GetTimestampMode, 'TimestampMode should be loaded');
 	Assert.AreEqual('.my_timestamps', FView.GetTimestampFileName, 'TimestampFileName should be loaded');
 	Assert.AreEqual(1, FView.GetTimestampConflictMode, 'TimestampConflictMode should be loaded');
 	Assert.IsTrue(FView.GetFileHistoryEnabled, 'FileHistoryEnabled should be loaded');

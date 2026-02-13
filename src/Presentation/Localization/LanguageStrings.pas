@@ -313,7 +313,7 @@ var
 	DFM_CB_TC_PASSWORD: WideString;
 	DFM_CB_UNLIMITED_SIZE: WideString;
 	DFM_CB_SPLIT_FILES: WideString;
-	DFM_CB_PRESERVE_TIME: WideString;
+	DFM_LBL_TS_MODE: WideString;
 	DFM_CB_LOAD_SSL: WideString;
 	DFM_CB_LOG_SPACE: WideString;
 	DFM_CB_OVERRIDE_SPLIT: WideString;
@@ -332,9 +332,9 @@ var
 	DFM_CB_DESC_TRACK: WideString;
 	DFM_GB_FILE_COMMENTS: WideString;
 	DFM_GB_FILE_TIMESTAMPS: WideString;
-	DFM_CB_TS_COPY_TO: WideString;
-	DFM_CB_TS_COPY_FROM: WideString;
-	DFM_CB_TS_TRACK: WideString;
+	DFM_OPT_TS_DISABLED: WideString;
+	DFM_OPT_TS_CLOUD_TIME: WideString;
+	DFM_OPT_TS_FULL_SYNC: WideString;
 	DFM_LBL_TS_FILENAME: WideString;
 	DFM_LBL_TS_CONFLICT: WideString;
 	DFM_OPT_TS_USE_STORED: WideString;
@@ -768,7 +768,7 @@ begin
 	DFM_CB_TC_PASSWORD := 'Store password in TC password manager';
 	DFM_CB_UNLIMITED_SIZE := 'Ignore 2Gb limit (paid account)';
 	DFM_CB_SPLIT_FILES := 'Split files when '#8805' than';
-	DFM_CB_PRESERVE_TIME := 'Preserve file creation time';
+	DFM_LBL_TS_MODE := 'Timestamp mode:';
 	DFM_CB_LOAD_SSL := 'Load SSL libraries only from plugin directory';
 	DFM_CB_LOG_SPACE := 'Enable space info logging';
 	DFM_CB_OVERRIDE_SPLIT := 'Override split file size to';
@@ -787,9 +787,9 @@ begin
 	DFM_CB_DESC_TRACK := 'Track cloud filesystem changes';
 	DFM_GB_FILE_COMMENTS := 'File comments';
 	DFM_GB_FILE_TIMESTAMPS := 'File timestamps';
-	DFM_CB_TS_COPY_TO := 'Store file timestamps to cloud';
-	DFM_CB_TS_COPY_FROM := 'Restore file timestamps from cloud';
-	DFM_CB_TS_TRACK := 'Track cloud filesystem timestamp changes';
+	DFM_OPT_TS_DISABLED := 'Disabled';
+	DFM_OPT_TS_CLOUD_TIME := 'Cloud time';
+	DFM_OPT_TS_FULL_SYNC := 'Full sync';
 	DFM_LBL_TS_FILENAME := 'Override timestamp metadata file name:';
 	DFM_LBL_TS_CONFLICT := 'Timestamp conflict mode:';
 	DFM_OPT_TS_USE_STORED := 'Use stored local time';
@@ -1211,7 +1211,7 @@ begin
 	TranslationRegistry.Add('DFM_CB_TC_PASSWORD', @DFM_CB_TC_PASSWORD);
 	TranslationRegistry.Add('DFM_CB_UNLIMITED_SIZE', @DFM_CB_UNLIMITED_SIZE);
 	TranslationRegistry.Add('DFM_CB_SPLIT_FILES', @DFM_CB_SPLIT_FILES);
-	TranslationRegistry.Add('DFM_CB_PRESERVE_TIME', @DFM_CB_PRESERVE_TIME);
+	TranslationRegistry.Add('DFM_LBL_TS_MODE', @DFM_LBL_TS_MODE);
 	TranslationRegistry.Add('DFM_CB_LOAD_SSL', @DFM_CB_LOAD_SSL);
 	TranslationRegistry.Add('DFM_CB_LOG_SPACE', @DFM_CB_LOG_SPACE);
 	TranslationRegistry.Add('DFM_CB_OVERRIDE_SPLIT', @DFM_CB_OVERRIDE_SPLIT);
@@ -1230,9 +1230,9 @@ begin
 	TranslationRegistry.Add('DFM_CB_DESC_TRACK', @DFM_CB_DESC_TRACK);
 	TranslationRegistry.Add('DFM_GB_FILE_COMMENTS', @DFM_GB_FILE_COMMENTS);
 	TranslationRegistry.Add('DFM_GB_FILE_TIMESTAMPS', @DFM_GB_FILE_TIMESTAMPS);
-	TranslationRegistry.Add('DFM_CB_TS_COPY_TO', @DFM_CB_TS_COPY_TO);
-	TranslationRegistry.Add('DFM_CB_TS_COPY_FROM', @DFM_CB_TS_COPY_FROM);
-	TranslationRegistry.Add('DFM_CB_TS_TRACK', @DFM_CB_TS_TRACK);
+	TranslationRegistry.Add('DFM_OPT_TS_DISABLED', @DFM_OPT_TS_DISABLED);
+	TranslationRegistry.Add('DFM_OPT_TS_CLOUD_TIME', @DFM_OPT_TS_CLOUD_TIME);
+	TranslationRegistry.Add('DFM_OPT_TS_FULL_SYNC', @DFM_OPT_TS_FULL_SYNC);
 	TranslationRegistry.Add('DFM_LBL_TS_FILENAME', @DFM_LBL_TS_FILENAME);
 	TranslationRegistry.Add('DFM_LBL_TS_CONFLICT', @DFM_LBL_TS_CONFLICT);
 	TranslationRegistry.Add('DFM_OPT_TS_USE_STORED', @DFM_OPT_TS_USE_STORED);

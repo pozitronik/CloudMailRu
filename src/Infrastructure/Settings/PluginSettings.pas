@@ -12,16 +12,13 @@ type
 		ConnectionSettings: TConnectionSettings;
 		IniDir: TIniDirTypes; {See INI_DIR_* constants}
 		LoadSSLDLLOnlyFromPluginDir: boolean;
-		PreserveFileTime: boolean;
 		DescriptionEnabled: boolean;
 		DescriptionEditorEnabled: boolean;
 		DescriptionCopyToCloud: boolean;
 		DescriptionCopyFromCloud: boolean;
 		DescriptionTrackCloudFS: boolean;
 		DescriptionFileName: WideString;
-		TimestampCopyToCloud: boolean;       {Store local mtime in metadata on upload}
-		TimestampCopyFromCloud: boolean;     {Restore stored mtime on download}
-		TimestampTrackCloudFS: boolean;      {Track renames/deletes in timestamp metadata}
+		TimestampMode: integer;              {See TimestampMode* constants}
 		TimestampFileName: WideString;       {Metadata filename, default: .cloud_timestamps}
 		TimestampConflictMode: integer;      {See TimestampConflict* constants}
 		CopyBetweenAccountsMode: integer;

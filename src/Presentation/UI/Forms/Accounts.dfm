@@ -509,20 +509,9 @@ object AccountsForm: TAccountsForm
         ParentShowHint = False
         ShowHint = True
       end
-      object PreserveFileTimeCB: TCheckBox
-        Left = 4
-        Top = 317
-        Width = 697
-        Height = 17
-        Anchors = [akLeft, akTop, akRight]
-        Caption = 'Preserve file creation time'
-        TabOrder = 14
-        OnClick = GlobalSettingsFieldChanged
-        ExplicitWidth = 1176
-      end
       object FileHistoryCB: TCheckBox
         Left = 4
-        Top = 340
+        Top = 317
         Width = 697
         Height = 17
         Anchors = [akLeft, akTop, akRight]
@@ -1176,17 +1165,17 @@ object AccountsForm: TAccountsForm
         Left = 0
         Top = 168
         Width = 701
-        Height = 154
+        Height = 110
         Align = alTop
         Caption = 'File timestamps'
         TabOrder = 2
         ExplicitWidth = 1180
         DesignSize = (
           701
-          154)
+          110)
         object TimestampFileNameLabel: TLabel
           Left = 4
-          Top = 122
+          Top = 82
           Width = 193
           Height = 13
           Hint = 'Leave empty to use default .cloud_timestamps'
@@ -1196,7 +1185,7 @@ object AccountsForm: TAccountsForm
         end
         object TimestampConflictModeLabel: TLabel
           Left = 4
-          Top = 92
+          Top = 52
           Width = 121
           Height = 13
           Hint = 'How to handle conflicting timestamps on download'
@@ -1204,57 +1193,46 @@ object AccountsForm: TAccountsForm
           ParentShowHint = False
           ShowHint = True
         end
-        object TimestampCopyToCloudCB: TCheckBox
+        object TimestampModeLabel: TLabel
           Left = 4
+          Top = 20
+          Width = 86
+          Height = 13
+          Caption = 'Timestamp mode:'
+        end
+        object TimestampModeCB: TComboBox
+          Left = 251
           Top = 17
-          Width = 693
-          Height = 17
+          Width = 446
+          Height = 21
+          Style = csDropDownList
           Anchors = [akLeft, akTop, akRight]
-          Caption = 'Store file timestamps to cloud'
           TabOrder = 0
-          OnClick = GlobalSettingsFieldChanged
-          ExplicitWidth = 1172
-        end
-        object TimestampCopyFromCloudCB: TCheckBox
-          Left = 4
-          Top = 40
-          Width = 693
-          Height = 17
-          Anchors = [akLeft, akTop, akRight]
-          Caption = 'Restore file timestamps from cloud'
-          TabOrder = 1
-          OnClick = GlobalSettingsFieldChanged
-          ExplicitWidth = 1172
-        end
-        object TimestampTrackCloudFSCB: TCheckBox
-          Left = 4
-          Top = 63
-          Width = 693
-          Height = 17
-          Anchors = [akLeft, akTop, akRight]
-          Caption = 'Track cloud filesystem timestamp changes'
-          TabOrder = 2
-          OnClick = GlobalSettingsFieldChanged
-          ExplicitWidth = 1172
+          OnChange = TimestampModeCBChange
+          Items.Strings = (
+            'Disabled'
+            'Cloud time'
+            'Full sync')
+          ExplicitWidth = 925
         end
         object TimestampFileNameEdit: TEdit
           Left = 251
-          Top = 119
+          Top = 79
           Width = 446
           Height = 21
           Anchors = [akLeft, akTop, akRight]
-          TabOrder = 4
+          TabOrder = 2
           OnChange = GlobalSettingsFieldChanged
           ExplicitWidth = 925
         end
         object TimestampConflictModeCB: TComboBox
           Left = 251
-          Top = 89
+          Top = 49
           Width = 446
           Height = 21
           Style = csDropDownList
           Anchors = [akLeft, akTop, akRight]
-          TabOrder = 3
+          TabOrder = 1
           OnChange = GlobalSettingsFieldChanged
           Items.Strings = (
             'Use stored local time'

@@ -73,6 +73,11 @@ const
 		Comma-separated, with leading dots. Configurable via INI ThumbnailExtensions key.}
 	DEFAULT_THUMBNAIL_EXTENSIONS = '.jpg,.jpeg,.png,.gif,.bmp,.heic,.heif,.webp,.tiff,.tif,.mp4,.avi,.mov,.mkv,.wmv,.flv,.3gp,.m4v,.mpg,.mpeg';
 
+	{Timestamp mode - unified timestamp preservation setting}
+	TimestampModeDisabled = 0;   {No timestamp preservation}
+	TimestampModeCloudTime = 1;  {Apply cloud server mtime on download}
+	TimestampModeFullSync = 2;   {Full metadata sync: upload stores local mtime, download restores it}
+
 	{Timestamp sync conflict resolution - what to do when cloud mtime differs from stored value}
 	TimestampConflictUseStored = 0; {Default: apply stored local mtime regardless of cloud changes}
 	TimestampConflictUseServer = 1; {Use cloud server mtime when conflict detected}
