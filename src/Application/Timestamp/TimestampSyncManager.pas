@@ -134,8 +134,9 @@ function TTimestampSyncManager.OnFileDownloaded(const RemotePath: TRealPath;
 	Cloud: ICloudDescriptionOps): Int64;
 var
 	Metadata: TTimestampMetadata;
-	RemoteMetaPath, LocalTempPath: WideString;
+	RemoteMetaPath, LocalTempPath, FileName: WideString;
 	Entry: TTimestampEntry;
+	ShouldWriteBack: Boolean;
 begin
 	Result := 0;
 
@@ -148,10 +149,14 @@ begin
 		Metadata := TTimestampMetadata.Create(LocalTempPath, FFileSystem);
 		try
 			Metadata.Read;
-			Entry := Metadata.GetEntry(ExtractFileName(RemotePath.Path));
+			FileName := ExtractFileName(RemotePath.Path);
+			Entry := Metadata.GetEntry(FileName);
 
 			if Entry.IsEmpty then
 				Exit; {No stored timestamp for this file}
+
+			{Write back when actual cloud mtime is known and differs from stored}
+			ShouldWriteBack := (CloudMTime <> 0) and (Entry.CloudMTime <> CloudMTime);
 
 			{Conflict detection: if stored cloud_mtime differs from actual,
 			 the file was modified on cloud since we last uploaded}
@@ -159,10 +164,32 @@ begin
 				(Entry.CloudMTime <> CloudMTime) then
 			begin
 				if FConflictMode = TimestampConflictUseServer then
+				begin
+					{Record updated CloudMTime so next download won't
+					 re-trigger conflict for the same server version}
+					if ShouldWriteBack then
+					begin
+						Entry.CloudMTime := CloudMTime;
+						Metadata.SetEntry(FileName, Entry);
+						Metadata.Write();
+						Cloud.DeleteFile(RemoteMetaPath);
+						Cloud.PutDescriptionFile(RemoteMetaPath, Metadata.MetadataFileName);
+					end;
 					Exit; {Return 0 = use server time}
+				end;
 			end;
 
 			Result := Entry.LocalMTime;
+
+			{Record updated CloudMTime for non-conflict path}
+			if ShouldWriteBack then
+			begin
+				Entry.CloudMTime := CloudMTime;
+				Metadata.SetEntry(FileName, Entry);
+				Metadata.Write();
+				Cloud.DeleteFile(RemoteMetaPath);
+				Cloud.PutDescriptionFile(RemoteMetaPath, Metadata.MetadataFileName);
+			end;
 		finally
 			Metadata.Free;
 		end;

@@ -74,6 +74,18 @@ type
 		[Test]
 		procedure TestOnFileDownloaded_ZeroCloudMTime_AlwaysReturnsStored;
 
+		{CloudMTime write-back tests}
+		[Test]
+		procedure TestOnFileDownloaded_WritesBackCloudMTime;
+		[Test]
+		procedure TestOnFileDownloaded_SkipsWriteBackWhenCloudMTimeUnchanged;
+		[Test]
+		procedure TestOnFileDownloaded_WritesBackOnConflictUseServer;
+		[Test]
+		procedure TestOnFileDownloaded_WritesBackOnConflictUseStored;
+		[Test]
+		procedure TestOnFileDownloaded_SkipsWriteBackWhenCloudMTimeZero;
+
 		{OnFileDeleted tests}
 		[Test]
 		procedure TestOnFileDeleted_NoMetadata_DoesNothing;
@@ -318,10 +330,14 @@ begin
 	FMockCloud.SetDefaultResults(True, True, True);
 	Path := CreatePath('\account\folder\file2.txt');
 
-	{CloudMTime=9999 != stored 1704200000 = conflict, but UseStored mode}
+	{CloudMTime=9999 != stored 1704200000 = conflict, but UseStored mode returns stored mtime.
+	 Write-back still updates CloudMTime in metadata (GET + DELETE + PUT).}
 	StoredMTime := FManager.OnFileDownloaded(Path, TPath.Combine(FTempDir, 'file2.txt'), 9999, FMockCloud);
 
 	Assert.AreEqual(Int64(1704153600), StoredMTime);
+	Assert.AreEqual(3, FMockCloud.GetOperationCount, 'Should have GET + DELETE + PUT for write-back');
+	Assert.IsTrue(FMockCloud.WasOperationPerformed('DELETE', TEST_TIMESTAMP_FILE));
+	Assert.IsTrue(FMockCloud.WasOperationPerformed('PUT', TEST_TIMESTAMP_FILE));
 end;
 
 procedure TTimestampSyncManagerTest.TestOnFileDownloaded_ConflictUseServer_ReturnsZero;
@@ -336,10 +352,14 @@ begin
 	FMockCloud.SetDefaultResults(True, True, True);
 	Path := CreatePath('\account\folder\file2.txt');
 
-	{CloudMTime=9999 != stored 1704200000 = conflict, UseServer mode}
+	{CloudMTime=9999 != stored 1704200000 = conflict, UseServer mode returns 0.
+	 Write-back still records the new CloudMTime (GET + DELETE + PUT).}
 	StoredMTime := UseServerManager.OnFileDownloaded(Path, TPath.Combine(FTempDir, 'file2.txt'), 9999, FMockCloud);
 
 	Assert.AreEqual(Int64(0), StoredMTime);
+	Assert.AreEqual(3, FMockCloud.GetOperationCount, 'Should have GET + DELETE + PUT for write-back');
+	Assert.IsTrue(FMockCloud.WasOperationPerformed('DELETE', TEST_TIMESTAMP_FILE));
+	Assert.IsTrue(FMockCloud.WasOperationPerformed('PUT', TEST_TIMESTAMP_FILE));
 end;
 
 procedure TTimestampSyncManagerTest.TestOnFileDownloaded_NoConflict_ReturnsStoredMTime;
@@ -363,7 +383,8 @@ var
 	StoredMTime: Int64;
 	UseServerManager: ITimestampSyncManager;
 begin
-	{Even with UseServer mode, stored CloudMTime=0 means unknown = no conflict}
+	{Even with UseServer mode, stored CloudMTime=0 means unknown = no conflict.
+	 But write-back still records actual CloudMTime since it's now known (GET + DELETE + PUT).}
 	UseServerManager := TTimestampSyncManager.Create(TEST_TIMESTAMP_FILE, FFileSystemIntf,
 		TimestampConflictUseServer);
 	FMockCloud.SetGetFileResponse('folder\' + TEST_TIMESTAMP_FILE,
@@ -374,6 +395,104 @@ begin
 	StoredMTime := UseServerManager.OnFileDownloaded(Path, TPath.Combine(FTempDir, 'file.txt'), 9999, FMockCloud);
 
 	Assert.AreEqual(Int64(12345), StoredMTime);
+	Assert.AreEqual(3, FMockCloud.GetOperationCount, 'Should have GET + DELETE + PUT for write-back');
+	Assert.IsTrue(FMockCloud.WasOperationPerformed('DELETE', TEST_TIMESTAMP_FILE));
+	Assert.IsTrue(FMockCloud.WasOperationPerformed('PUT', TEST_TIMESTAMP_FILE));
+end;
+
+{CloudMTime write-back tests}
+
+procedure TTimestampSyncManagerTest.TestOnFileDownloaded_WritesBackCloudMTime;
+var
+	Path: TRealPath;
+	StoredMTime: Int64;
+begin
+	{file1.txt has CloudMTime=0, pass actual CloudMTime=5000 -> triggers write-back}
+	FMockCloud.SetGetFileResponse('folder\' + TEST_TIMESTAMP_FILE, METADATA_CONTENT, True);
+	FMockCloud.SetDefaultResults(True, True, True);
+	Path := CreatePath('\account\folder\file1.txt');
+
+	StoredMTime := FManager.OnFileDownloaded(Path, TPath.Combine(FTempDir, 'file1.txt'), 5000, FMockCloud);
+
+	Assert.AreEqual(Int64(1704067200), StoredMTime, 'Should return stored LocalMTime');
+	Assert.AreEqual(3, FMockCloud.GetOperationCount, 'Should have GET + DELETE + PUT');
+	Assert.AreEqual('GET', FMockCloud.GetOperation(0).Operation);
+	Assert.AreEqual('DELETE', FMockCloud.GetOperation(1).Operation);
+	Assert.AreEqual('PUT', FMockCloud.GetOperation(2).Operation);
+end;
+
+procedure TTimestampSyncManagerTest.TestOnFileDownloaded_SkipsWriteBackWhenCloudMTimeUnchanged;
+var
+	Path: TRealPath;
+	StoredMTime: Int64;
+begin
+	{file2.txt has CloudMTime=1704200000, pass same value -> no write-back needed}
+	FMockCloud.SetGetFileResponse('folder\' + TEST_TIMESTAMP_FILE, METADATA_CONTENT, True);
+	FMockCloud.SetDefaultResults(True, True, True);
+	Path := CreatePath('\account\folder\file2.txt');
+
+	StoredMTime := FManager.OnFileDownloaded(Path, TPath.Combine(FTempDir, 'file2.txt'), 1704200000, FMockCloud);
+
+	Assert.AreEqual(Int64(1704153600), StoredMTime, 'Should return stored LocalMTime');
+	Assert.AreEqual(1, FMockCloud.GetOperationCount, 'Should only have GET (no write-back)');
+	Assert.AreEqual('GET', FMockCloud.GetOperation(0).Operation);
+end;
+
+procedure TTimestampSyncManagerTest.TestOnFileDownloaded_WritesBackOnConflictUseServer;
+var
+	Path: TRealPath;
+	StoredMTime: Int64;
+	UseServerManager: ITimestampSyncManager;
+begin
+	{file2.txt: CloudMTime=1704200000, pass different value -> conflict + write-back}
+	UseServerManager := TTimestampSyncManager.Create(TEST_TIMESTAMP_FILE, FFileSystemIntf,
+		TimestampConflictUseServer);
+	FMockCloud.SetGetFileResponse('folder\' + TEST_TIMESTAMP_FILE, METADATA_CONTENT, True);
+	FMockCloud.SetDefaultResults(True, True, True);
+	Path := CreatePath('\account\folder\file2.txt');
+
+	StoredMTime := UseServerManager.OnFileDownloaded(Path, TPath.Combine(FTempDir, 'file2.txt'), 8888, FMockCloud);
+
+	Assert.AreEqual(Int64(0), StoredMTime, 'UseServer conflict should return 0');
+	Assert.IsTrue(FMockCloud.WasOperationPerformed('DELETE', TEST_TIMESTAMP_FILE),
+		'Should delete old metadata for write-back');
+	Assert.IsTrue(FMockCloud.WasOperationPerformed('PUT', TEST_TIMESTAMP_FILE),
+		'Should upload updated metadata with new CloudMTime');
+end;
+
+procedure TTimestampSyncManagerTest.TestOnFileDownloaded_WritesBackOnConflictUseStored;
+var
+	Path: TRealPath;
+	StoredMTime: Int64;
+begin
+	{file2.txt: CloudMTime=1704200000, pass different value -> conflict but UseStored + write-back}
+	FMockCloud.SetGetFileResponse('folder\' + TEST_TIMESTAMP_FILE, METADATA_CONTENT, True);
+	FMockCloud.SetDefaultResults(True, True, True);
+	Path := CreatePath('\account\folder\file2.txt');
+
+	StoredMTime := FManager.OnFileDownloaded(Path, TPath.Combine(FTempDir, 'file2.txt'), 7777, FMockCloud);
+
+	Assert.AreEqual(Int64(1704153600), StoredMTime, 'UseStored conflict should return stored LocalMTime');
+	Assert.IsTrue(FMockCloud.WasOperationPerformed('DELETE', TEST_TIMESTAMP_FILE),
+		'Should delete old metadata for write-back');
+	Assert.IsTrue(FMockCloud.WasOperationPerformed('PUT', TEST_TIMESTAMP_FILE),
+		'Should upload updated metadata with new CloudMTime');
+end;
+
+procedure TTimestampSyncManagerTest.TestOnFileDownloaded_SkipsWriteBackWhenCloudMTimeZero;
+var
+	Path: TRealPath;
+	StoredMTime: Int64;
+begin
+	{file2.txt has CloudMTime=1704200000, pass CloudMTime=0 -> don't overwrite known with unknown}
+	FMockCloud.SetGetFileResponse('folder\' + TEST_TIMESTAMP_FILE, METADATA_CONTENT, True);
+	FMockCloud.SetDefaultResults(True, True, True);
+	Path := CreatePath('\account\folder\file2.txt');
+
+	StoredMTime := FManager.OnFileDownloaded(Path, TPath.Combine(FTempDir, 'file2.txt'), 0, FMockCloud);
+
+	Assert.AreEqual(Int64(1704153600), StoredMTime, 'Should return stored LocalMTime');
+	Assert.AreEqual(1, FMockCloud.GetOperationCount, 'Should only have GET (no write-back when CloudMTime=0)');
 end;
 
 {OnFileDeleted tests}
